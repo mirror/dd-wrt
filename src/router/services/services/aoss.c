@@ -35,14 +35,14 @@ void start_aoss(void)
 {
 	int ret;
 #ifdef HAVE_WZRHPAG300NH
-	if (nvram_match("ath0_net_mode", "disabled")
-	    && nvram_match("ath1_net_mode", "disabled")) {
+	if (nvram_match("wlan0_net_mode", "disabled")
+	    && nvram_match("wlan1_net_mode", "disabled")) {
 		led_control(LED_SES, LED_OFF);
 		stop_aoss();
 		return;
 	}
 #else
-	if (nvram_match("ath0_net_mode", "disabled")) {
+	if (nvram_match("wlan0_net_mode", "disabled")) {
 		led_control(LED_SES, LED_OFF);
 		stop_aoss();
 		return;
@@ -53,16 +53,16 @@ void start_aoss(void)
 #ifdef HAVE_WPS
 		unlink("/tmp/.wpsdone");
 		if (nvram_matchi("wps_enabled", 1)) {
-			if (!nvram_match("ath0_net_mode", "disabled")) {
-				eval("hostapd_cli", "-i", "ath0", "wps_pbc");
+			if (!nvram_match("wlan0_net_mode", "disabled")) {
+				eval("hostapd_cli", "-i", "wlan0", "wps_pbc");
 #ifdef HAVE_IDEXX
 				eval("/usr/bin/check_wps");
 #endif
 			}
 #if defined(HAVE_WZRHPAG300NH)
-			if (!nvram_match("ath1_net_mode", "disabled")) {
+			if (!nvram_match("wlan1_net_mode", "disabled")) {
 				led_control(LED_SES, LED_FLASH);
-				eval("hostapd_cli", "-i", "ath1", "wps_pbc");
+				eval("hostapd_cli", "-i", "wlan1", "wps_pbc");
 #ifdef HAVE_IDEXX
 				eval("/usr/bin/check_wps");
 #endif
@@ -81,48 +81,48 @@ void start_aoss(void)
 	nvram_seti("aoss_success", 0);
 	led_control(LED_SES, LED_OFF);
 	system("ledtool 180 2");
-	char *vifbak = nvram_safe_get("ath0_vifs");
+	char *vifbak = nvram_safe_get("wlan0_vifs");
 	char copy[256];
 	strcpy(copy, vifbak);
 
 #ifdef HAVE_WZRHPAG300NH
-	char *vifbak2 = nvram_safe_get("ath1_vifs");
+	char *vifbak2 = nvram_safe_get("wlan1_vifs");
 	char copy2[256];
 	strcpy(copy2, vifbak2);
 #endif
-	if (!is_mac80211("ath0")) {
+	if (!is_mac80211("wlan0")) {
 		eval("startservice", "deconfigurewifi", "-f");
 	}
-	nvram_unset("ath0_vifs");
+	nvram_unset("wlan0_vifs");
 #ifdef HAVE_WZRHPAG300NH
-	nvram_unset("ath1_vifs");
+	nvram_unset("wlan1_vifs");
 #endif
-	if (!is_mac80211("ath0")) {
+	if (!is_mac80211("wlan0")) {
 		eval("startservice", "configurewifi", "-f");
 	}
-	nvram_set("ath0_vifs", copy);
+	nvram_set("wlan0_vifs", copy);
 #ifdef HAVE_WZRHPAG300NH
-	nvram_set("ath1_vifs", copy2);
+	nvram_set("wlan1_vifs", copy2);
 #endif
 	nvram_commit();
 	int hasaoss = 0;
 #ifdef HAVE_WZRHPAG300NH
 #ifdef HAVE_ATH9K
-	if ((nvram_match("ath0_mode", "ap")
-	     || nvram_match("ath0_mode", "wdsap"))
-	    && !nvram_match("ath0_net_mode", "disabled")) {
+	if ((nvram_match("wlan0_mode", "ap")
+	     || nvram_match("wlan0_mode", "wdsap"))
+	    && !nvram_match("wlan0_net_mode", "disabled")) {
 		hasaoss = 1;
 		deconfigure_single_ath9k(0);
 		configure_single_ath9k(0);
 		hasaoss = 1;
 		char *next;
 		char var[80];
-		char *vifs = nvram_safe_get("ath0_vifs");
+		char *vifs = nvram_safe_get("wlan0_vifs");
 		int counter = 1;
 		foreach(var, vifs, next) {
 			counter++;
 		}
-		setupHostAP_ath9k("ath0", 0, counter, 1);
+		setupHostAP_ath9k("wlan0", 0, counter, 1);
 		FILE *fp = fopen("/var/run/ath0_hostapd.pid", "rb");
 		if (fp)		// file not found means that hostapd usually doesnt run
 		{
@@ -134,21 +134,21 @@ void start_aoss(void)
 		}
 		eval("hostapd", "-B", "-P", "/var/run/ath0_hostapd.pid", "/tmp/ath0_hostap.conf");
 	}
-	if ((nvram_match("ath1_mode", "ap")
-	     || nvram_match("ath1_mode", "wdsap"))
-	    && !nvram_match("ath1_net_mode", "disabled")) {
+	if ((nvram_match("wlan1_mode", "ap")
+	     || nvram_match("wlan1_mode", "wdsap"))
+	    && !nvram_match("wlan1_net_mode", "disabled")) {
 		hasaoss = 1;
 		deconfigure_single_ath9k(1);
 		configure_single_ath9k(1);
 		hasaoss = 1;
 		char *next;
 		char var[80];
-		char *vifs = nvram_safe_get("ath1_vifs");
+		char *vifs = nvram_safe_get("wlan1_vifs");
 		int counter = 1;
 		foreach(var, vifs, next) {
 			counter++;
 		}
-		setupHostAP_ath9k("ath1", 0, counter, 1);
+		setupHostAP_ath9k("wlan1", 0, counter, 1);
 		FILE *fp = fopen("/var/run/ath1_hostapd.pid", "rb");
 		if (fp)		// file not found means that hostapd usually doesnt run
 		{
@@ -163,9 +163,9 @@ void start_aoss(void)
 	}
 #else
 
-	if ((nvram_match("ath1_mode", "ap")
-	     || nvram_match("ath1_mode", "wdsap"))
-	    && !nvram_match("ath1_net_mode", "disabled")) {
+	if ((nvram_match("wlan1_mode", "ap")
+	     || nvram_match("wlan1_mode", "wdsap"))
+	    && !nvram_match("wlan1_net_mode", "disabled")) {
 		hasaoss = 1;
 		eval("80211n_wlanconfig", "aossa", "create", "wlandev", "wifi1", "wlanmode", "ap");
 		eval("iwconfig", "aossa", "essid", "ESSID-AOSS-1");
@@ -174,9 +174,9 @@ void start_aoss(void)
 		eval("iwconfig", "aossa", "key", "[1]");
 		eval("ifconfig", "aossa", "0.0.0.0", "up");
 	}
-	if ((nvram_match("ath0_mode", "ap")
-	     || nvram_match("ath0_mode", "wdsap"))
-	    && !nvram_match("ath0_net_mode", "disabled")) {
+	if ((nvram_match("wlan0_mode", "ap")
+	     || nvram_match("wlan0_mode", "wdsap"))
+	    && !nvram_match("wlan0_net_mode", "disabled")) {
 		hasaoss = 1;
 		eval("80211n_wlanconfig", "aossg", "create", "wlandev", "wifi0", "wlanmode", "ap");
 		eval("iwconfig", "aossg", "essid", "ESSID-AOSS");
@@ -190,27 +190,27 @@ void start_aoss(void)
 		//create aoss bridge
 		eval("brctl", "addbr", "aoss");
 		eval("ifconfig", "aoss", "0.0.0.0", "up");
-		if (!nvram_match("ath1_net_mode", "disabled")) {
+		if (!nvram_match("wlan1_net_mode", "disabled")) {
 			eval("brctl", "addif", "aoss", "aossa");
 		}
-		if (!nvram_match("ath0_net_mode", "disabled")) {
+		if (!nvram_match("wlan0_net_mode", "disabled")) {
 			eval("brctl", "addif", "aoss", "aossg");
 		}
 	}
 #else
-	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
-		if (is_mac80211("ath0")) {
+	if (nvram_match("wlan0_mode", "ap") || nvram_match("wlan0_mode", "wdsap")) {
+		if (is_mac80211("wlan0")) {
 			deconfigure_single_ath9k(0);
 			configure_single_ath9k(0);
 			hasaoss = 1;
 			char *next;
 			char var[80];
-			char *vifs = nvram_safe_get("ath0_vifs");
+			char *vifs = nvram_safe_get("wlan0_vifs");
 			int counter = 1;
 			foreach(var, vifs, next) {
 				counter++;
 			}
-			setupHostAP_ath9k("ath0", 0, counter, 1);
+			setupHostAP_ath9k("wlan0", 0, counter, 1);
 			FILE *fp = fopen("/var/run/ath0_hostapd.pid", "rb");
 			if (fp)	// file not found means that hostapd usually doesnt run
 			{

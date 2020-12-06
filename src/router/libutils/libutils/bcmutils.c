@@ -1417,7 +1417,7 @@ void getIfLists(char *eths, int size)
 	strcat(eths, eths2);
 #ifdef HAVE_MADWIFI
 	bzero(eths2, 256);
-	getIfList(eths2, "ath");
+	getIfList(eths2, "wlan");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 #elif defined(HAVE_RT2880) || defined(HAVE_RT61)

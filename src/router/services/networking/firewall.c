@@ -3053,9 +3053,9 @@ void start_firewall(void)
 		sysprintf("iptables -t nat -I PREROUTING -i br0 -p udp --dport 53 -j DNAT --to 192.168.11.1:55300");
 #endif
 #ifdef HAVE_GUESTPORT
-	set_gprules("ath0");
+	set_gprules("wlan0");
 #ifdef HAVE_WZRHPAG300NH
-	set_gprules("ath1");
+	set_gprules("wlan1");
 #endif
 #endif
 /*

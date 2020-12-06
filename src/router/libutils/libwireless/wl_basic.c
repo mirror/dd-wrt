@@ -132,29 +132,29 @@ const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
 }
 
 static char *stalist[] = {
-	"ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
+	"wlan0", "wlan1", "wlan2", "wlan3", "wlan4", "wlan5", "wlan6", "wlan8", "wlan9"
 };
 
 char *getWifi(char *ifname)
 {
 #ifdef HAVE_MVEBU
-	if (!strncmp(ifname, "ath0", 4))
+	if (!strncmp(ifname, "wlan0", 4))
 		return "wlan0";
-	if (!strncmp(ifname, "ath1", 4))
+	if (!strncmp(ifname, "wlan1", 4))
 		return "wlan1";
-	if (!strncmp(ifname, "ath2", 4))
+	if (!strncmp(ifname, "wlan2", 4))
 		return "wlan2";
-	if (!strncmp(ifname, "ath3", 4))
+	if (!strncmp(ifname, "wlan3", 4))
 		return "wlan3";
 	return NULL;
 #else
-	if (!strncmp(ifname, "ath0", 4))
+	if (!strncmp(ifname, "wlan0", 4))
 		return "wifi0";
-	if (!strncmp(ifname, "ath1", 4))
+	if (!strncmp(ifname, "wlan1", 4))
 		return "wifi1";
-	if (!strncmp(ifname, "ath2", 4))
+	if (!strncmp(ifname, "wlan2", 4))
 		return "wifi2";
-	if (!strncmp(ifname, "ath3", 4))
+	if (!strncmp(ifname, "wlan3", 4))
 		return "wifi3";
 	return NULL;
 #endif
@@ -185,8 +185,8 @@ char *getWDSSTA(void)
 		char mode[32];
 		char netmode[32];
 
-		sprintf(mode, "ath%d_mode", i);
-		sprintf(netmode, "ath%d_net_mode", i);
+		sprintf(mode, "wlan%d_mode", i);
+		sprintf(netmode, "wlan%d_net_mode", i);
 		if ((nvram_match(mode, "wdssta") || nvram_match(mode, "wdssta_mtik"))
 		    && !nvram_match(netmode, "disabled")) {
 			return stalist[i];
@@ -207,8 +207,8 @@ char *getSTA(void)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if ((nvram_nmatch("sta", "ath%d_mode", i))
-		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
+		if ((nvram_nmatch("sta", "wlan%d_mode", i))
+		    && !nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
 			return stalist[i];
 		}
 
@@ -226,8 +226,8 @@ char *getWET(void)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("wet", "ath%d_mode", i)
-		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
+		if (nvram_nmatch("wet", "wlan%d_mode", i)
+		    && !nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
 			return stalist[i];
 		}
 
@@ -351,7 +351,7 @@ char *get_wdev(void)
 	if (nvram_matchi("wifi_bonding", 1))
 		return "bond0";
 	else {
-		return "ath0";
+		return "wlan0";
 	}
 #elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 	return "ra0";

@@ -6555,7 +6555,7 @@ void start_sysinit(void)
 	 * Set a sane date 
 	 */
 	stime(&tm);
-//      nvram_set("wl0_ifname", "ath0");
+//      nvram_set("wl0_ifname", "wlan0");
 
 	if (!nvram_matchi("disable_watchdog", 1)) {
 		eval("watchdog");

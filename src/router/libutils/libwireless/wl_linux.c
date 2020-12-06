@@ -109,8 +109,8 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	if (is_wil6210(name))
 		name = "giwifi0";
 #ifdef HAVE_DIR862
-	if (!strcmp(name, "ath1"))
-		name = "ath0";
+	if (!strcmp(name, "wlan1"))
+		name = "wlan0";
 #endif
 
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {

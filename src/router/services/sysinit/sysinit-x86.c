@@ -338,7 +338,7 @@ void start_sysinit(void)
 	// insmod("lm77");
 #endif
 
-	nvram_set("wl0_ifname", "ath0");
+	nvram_set("wl0_ifname", "wlan0");
 	mknod("/dev/crypto", S_IFCHR | 0644, makedev(10, 70));
 	/*
 	 * Set a sane date 

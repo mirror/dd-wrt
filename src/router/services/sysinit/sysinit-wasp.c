@@ -108,8 +108,8 @@ static void setdlinkcountry(void)
 	if (set) {
 		if (!nvram_exists("nocountrysel"))
 			nvram_seti("nocountrysel", 1);
-		nvram_set("ath0_regdomain", set);
-		nvram_set("ath1_regdomain", set);
+		nvram_set("wlan0_regdomain", set);
+		nvram_set("wlan1_regdomain", set);
 	}
 }
 
@@ -501,12 +501,12 @@ void start_sysinit(void)
 #endif
 
 #ifdef HAVE_ONNET
-	if (nvram_matchi("ath10k-ct", 1)) {
+	if (nvram_matchi("wlan10k-ct", 1)) {
 		fprintf(stderr, "Select QCA988x (CT) Firmware\n");
 		eval("mount", "--bind", "/lib/firmware/ath10k/QCA988X-CT/firmware-2-ct-full-community.bin", "/lib/firmware/ath10k/QCA988X/hw2.0/firmware-5.bin");
-		nvram_set("ath10k-ct_bak", "1");
+		nvram_set("wlan10k-ct_bak", "1");
 	} else
-		nvram_set("ath10k-ct_bak", "0");
+		nvram_set("wlan10k-ct_bak", "0");
 	nvram_commit();
 #endif
 #if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
@@ -832,7 +832,7 @@ void start_sysinit(void)
 	 * Set a sane date 
 	 */
 	stime(&tm);
-	nvram_set("wl0_ifname", "ath0");
+	nvram_set("wl0_ifname", "wlan0");
 
 	return;
 	cprintf("done\n");

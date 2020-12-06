@@ -189,7 +189,7 @@ void delete_ath9k_devices(char *physical_iface)
 		if (has_ad(dev)) {
 			sysprintf("echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
 			sysprintf("echo 10000 0 10000 0 10000 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
-			br_del_interface(getBridge("ath2", tmp), dev);
+			br_del_interface(getBridge("wlan2", tmp), dev);
 		} else
 			br_del_interface(getBridge(dev, tmp), dev);
 		eval("ifconfig", dev, "down");
@@ -200,7 +200,7 @@ void delete_ath9k_devices(char *physical_iface)
 void deconfigure_single_ath9k(int count)
 {
 	int idx = get_ath9k_phy_idx(count);
-	fprintf(stderr, "ath9k deconfigure_single: phy%d ath%d\n", idx, count);
+	fprintf(stderr, "wlan9k deconfigure_single: phy%d ath%d\n", idx, count);
 	char wif[10];
 	sprintf(wif, "phy%d", idx);
 	sysprintf("rm -f /tmp/ath%d_hostapd.conf", idx);
@@ -252,11 +252,11 @@ void mesh_params_main(int argc, char *argv[])
 	char var[32], *next;
 	int i;
 	for (i = 0; i < c; i++) {
-		sprintf(dev, "ath%d", i);
+		sprintf(dev, "wlan%d", i);
 		if (nvram_nmatch("mesh", "%s_mode", dev))
 			set_mesh_params(dev);
 		char vifs[32];
-		sprintf(vifs, "ath%d_vifs", i);
+		sprintf(vifs, "wlan%d_vifs", i);
 		char *vaps = nvram_safe_get(vifs);
 		foreach(var, vaps, next) {
 			if (nvram_nmatch("mesh", "%s_mode", var))
@@ -301,7 +301,7 @@ void configure_single_ath9k(int count)
 	char *country;
 	int isadhoc = 0;
 
-	sprintf(dev, "ath%d", count);
+	sprintf(dev, "wlan%d", count);
 	isath5k = is_ath5k(dev);
 	isath10k = is_ath10k(dev);
 	ismt7615 = is_mt7615(dev);
@@ -312,14 +312,14 @@ void configure_single_ath9k(int count)
 	if (count == 0)
 		vapcount = 0;
 	sprintf(wif, "phy%d", phy_idx);
-	sprintf(wifivifs, "ath%d_vifs", count);
-	fprintf(stderr, "ath9k configure_single: phy%d ath%d\n", phy_idx, count);
-	sprintf(channel, "ath%d_channel", count);
-	sprintf(sens, "ath%d_distance", count);
-	sprintf(diversity, "ath%d_diversity", count);
-	sprintf(athmac, "ath%d_hwaddr", count);
-	sprintf(rxantenna, "ath%d_rxantenna", count);
-	sprintf(txantenna, "ath%d_txantenna", count);
+	sprintf(wifivifs, "wlan%d_vifs", count);
+	fprintf(stderr, "wlan9k configure_single: phy%d ath%d\n", phy_idx, count);
+	sprintf(channel, "wlan%d_channel", count);
+	sprintf(sens, "wlan%d_distance", count);
+	sprintf(diversity, "wlan%d_diversity", count);
+	sprintf(athmac, "wlan%d_hwaddr", count);
+	sprintf(rxantenna, "wlan%d_rxantenna", count);
+	sprintf(txantenna, "wlan%d_txantenna", count);
 	// create base device
 	cprintf("configure base interface %d / %s\n", count, dev);
 	sprintf(net, "%s_net_mode", dev);
@@ -429,7 +429,7 @@ void configure_single_ath9k(int count)
 	if (!has_ad(dev))
 		mac80211_set_antennas(phy_idx, txchain, rxchain);
 
-	sprintf(wl, "ath%d_mode", count);
+	sprintf(wl, "wlan%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
 
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "sta")
@@ -692,7 +692,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	fprintf(fp, "tx_queue_data0_cwmin=3\n");
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
-	const char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
+	const char *country = getIsoName(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
 	fprintf(fp, "country_code=%s\n", country);
@@ -1245,7 +1245,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 #ifdef HAVE_WZRHPAG300NH
 	if (aoss) {
-		if (!strncmp(ifname, "ath0", 4))
+		if (!strncmp(ifname, "wlan0", 4))
 			sprintf(ifname, "aossg");
 		else
 			sprintf(ifname, "aossa");
@@ -1322,7 +1322,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (nvram_matchi("mac_clone_enable", 1)
 	    && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
 	    && nvram_invmatch("def_whwaddr", "")
-	    && !strcmp(maininterface, "ath0")) {
+	    && !strcmp(maininterface, "wlan0")) {
 		ieee80211_aton(nvram_safe_get("def_whwaddr"), hwbuff);
 	} else {
 		int i = wl_hwaddr(maininterface, hwbuff);
@@ -1400,9 +1400,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_nmatch("1", "%s_bridged", ifname))
 			fprintf(fp, "bridge=%s\n", getBridge(ifname, tmp));
 		if (!aoss) {
-			if (!strncmp(ifname, "ath0", 4))
+			if (!strncmp(ifname, "wlan0", 4))
 				led_control(LED_SEC0, LED_ON);
-			if (!strncmp(ifname, "ath1", 4))
+			if (!strncmp(ifname, "wlan1", 4))
 				led_control(LED_SEC1, LED_ON);
 		}
 		fprintf(fp, "logger_syslog=-1\n");
@@ -1578,7 +1578,7 @@ static char *makescanlist(char *prefix, char *value)
 	char *new = NULL;
 	struct wifi_channels *chan;
 	char *country;
-	country = nvram_default_get("ath0_regdomain", "UNITED_STATES");
+	country = nvram_default_get("wlan0_regdomain", "UNITED_STATES");
 	chan = mac80211_get_channels_simple(prefix, getIsoName(country), 20, 255);
 /* format list */
 	for (i = 0; i < len; i++) {
@@ -1753,9 +1753,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
 		char fstr[32];
 		char psk[16];
-		if (!strncmp(prefix, "ath0", 4))
+		if (!strncmp(prefix, "wlan0", 4))
 			led_control(LED_SEC0, LED_ON);
-		if (!strncmp(prefix, "ath1", 4))
+		if (!strncmp(prefix, "wlan1", 4))
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -1919,9 +1919,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		char fstr[32];
 		char psk[64];
 		char ath[64];
-		if (!strncmp(prefix, "ath0", 4))
+		if (!strncmp(prefix, "wlan0", 4))
 			led_control(LED_SEC0, LED_ON);
-		if (!strncmp(prefix, "ath1", 4))
+		if (!strncmp(prefix, "wlan1", 4))
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -1940,9 +1940,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		char fstr[32];
 		char psk[16];
 		if (nvram_match(akm, "wep")) {
-			if (!strncmp(prefix, "ath0", 4))
+			if (!strncmp(prefix, "wlan0", 4))
 				led_control(LED_SEC0, LED_ON);
-			if (!strncmp(prefix, "ath1", 4))
+			if (!strncmp(prefix, "wlan1", 4))
 				led_control(LED_SEC1, LED_ON);
 		}
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);

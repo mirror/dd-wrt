@@ -40,7 +40,7 @@
 #ifndef HAVE_MADWIFI
 #define IFPREFIX "wl"
 #else
-#define IFPREFIX "ath"
+#define IFPREFIX "wlan"
 #endif
 
 void doHash(md5_ctx_t * MD, char *filename)
@@ -136,7 +136,7 @@ void start_anchorfree(void)
 #ifndef HAVE_MADWIFI
 			toURL(nvram_safe_get("wl0_ssid"), ssid);
 #else
-			toURL(nvram_safe_get("ath0_ssid"), ssid);
+			toURL(nvram_safe_get("wlan0_ssid"), ssid);
 #endif
 		}
 
@@ -153,13 +153,13 @@ void start_anchorfree(void)
 			nvram_seti("mdhcpd_count", 1);
 			nvram_set("mdhcpd", "wl0.1>On>100>50>1440");
 #else
-			nvram_set("ath0_vifs", "ath0.1");
-			nvram_set("ath0.1_ssid", nvram_safe_get("af_ssid_name"));
-			nvram_seti("ath0.1_bridged", 0);
-			nvram_set("ath0.1_ipaddr", "172.45.0.1");
-			nvram_set("ath0.1_netmask", "255.255.255.0");
+			nvram_set("wlan0_vifs", "wlan0.1");
+			nvram_set("wlan0.1_ssid", nvram_safe_get("af_ssid_name"));
+			nvram_seti("wlan0.1_bridged", 0);
+			nvram_set("wlan0.1_ipaddr", "172.45.0.1");
+			nvram_set("wlan0.1_netmask", "255.255.255.0");
 			nvram_seti("mdhcpd_count", 1);
-			nvram_set("mdhcpd", "ath0.1>On>100>50>1440");
+			nvram_set("mdhcpd", "wlan0.1>On>100>50>1440");
 #endif
 			need_commit = 1;
 			stop_lan();
@@ -187,7 +187,7 @@ void start_anchorfree(void)
 			nvram_seti("mdhcpd_count", 0);
 			nvram_set("mdhcpd", "");
 #else
-			nvram_set("ath0_vifs", "");
+			nvram_set("wlan0_vifs", "");
 			nvram_seti("mdhcpd_count", 0);
 			nvram_set("mdhcpd", "");
 #endif
@@ -208,8 +208,8 @@ void start_anchorfree(void)
 			if (!nvram_match("af_ssid_name", nvram_safe_get("wl0.1_ssid"))) {
 				nvram_set("wl0.1_ssid", nvram_safe_get("af_ssid_name"));
 #else
-			if (!nvram_match("af_ssid_name", nvram_safe_get("ath0.1_ssid"))) {
-				nvram_set("ath0.1_ssid", nvram_safe_get("af_ssid_name"));
+			if (!nvram_match("af_ssid_name", nvram_safe_get("wlan0.1_ssid"))) {
+				nvram_set("wlan0.1_ssid", nvram_safe_get("af_ssid_name"));
 
 #endif
 				need_commit = 1;
@@ -313,7 +313,7 @@ void start_anchorfree(void)
 		nvram_seti("mdhcpd_count", 0);
 		nvram_set("mdhcpd", "");
 #else
-		nvram_set("ath0_vifs", "");
+		nvram_set("wlan0_vifs", "");
 		nvram_seti("mdhcpd_count", 0);
 		nvram_set("mdhcpd", "");
 #endif

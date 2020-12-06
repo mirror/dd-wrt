@@ -106,7 +106,7 @@ int has_2ghz(const char *prefix)
 {
 	INITVALUECACHE();
 #ifdef HAVE_MVEBU
-	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4)) {
+	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "wlan0", 4)) {
 		RETURNVALUE(0);
 	}
 #endif
@@ -1361,7 +1361,7 @@ static int checkid(char *ifname, int vendorid, int productid)	//checks if its us
 	char readid[64];
 
 	strcpy(readid, ifname);
-	sscanf(readid, "ath%d", &devcount);
+	sscanf(readid, "wlan%d", &devcount);
 	int vendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
 	int product = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount, "%d", NULL);
 	if (vendor == vendorid && product == productid)	//XR3.3/XR3.6/XR3.7 share the same pci id's
@@ -1391,7 +1391,7 @@ int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO ca
 	int devcount;
 
 	strcpy(readid, ifname);
-	sscanf(readid, "ath%d", &devcount);
+	sscanf(readid, "wlan%d", &devcount);
 	int cvendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount, "0x%x", NULL);
 	int cproduct = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_device", devcount, "0x%x", NULL);
 	if (cvendor == 0x168c && cproduct == 0x2096) {	//F36N-PRO / F64N-PRO shares the same id's
@@ -1409,7 +1409,7 @@ int isSR71E(char *ifname)
 	int devcount;
 
 	strcpy(readid, ifname);
-	sscanf(readid, "ath%d", &devcount);
+	sscanf(readid, "wlan%d", &devcount);
 
 	int cvendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount, "0x%x", NULL);
 	int cproduct = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_device", devcount, "0x%x", NULL);
@@ -1439,7 +1439,7 @@ int isDL4600(char *ifname)
 	char readid[64];
 
 	strcpy(readid, ifname);
-	sscanf(readid, "ath%d", &devcount);
+	sscanf(readid, "wlan%d", &devcount);
 	int vendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
 	int product = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount, "%d", NULL);
 	if (vendor == 0x1C14 && product == 0x19)
@@ -1561,7 +1561,7 @@ int wifi_gettxpoweroffset(char *ifname)
 	char readid[64];
 
 	strcpy(readid, ifname);
-	sscanf(readid, "ath%d", &devcount);
+	sscanf(readid, "wlan%d", &devcount);
 	poweroffset = getValueFromPath("/proc/sys/dev/wifi%d/poweroffset", devcount, "%d", &err);
 	if (err || poweroffset < 0 || poweroffset > 20)
 		poweroffset = 0;
@@ -1613,7 +1613,7 @@ int get_freqoffset(char *ifname)
 	char readid[64];
 
 	strcpy(readid, ifname);
-	sscanf(readid, "ath%d", &devcount);
+	sscanf(readid, "wlan%d", &devcount);
 	vendor = getValueFromPath("/proc/sys/dev/wifi%d/vendor", devcount, "%d", NULL);
 
 	switch (vendor) {
@@ -1660,7 +1660,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	if (has_ad(ifname)) {
 		struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 		bzero(interface, sizeof(struct wifi_interface));
-		interface->freq = atoi(nvram_safe_get("ath2_channel"));
+		interface->freq = atoi(nvram_safe_get("wlan2_channel"));
 		interface->center1 = -1;
 		interface->center2 = -1;
 		return interface;
@@ -1790,7 +1790,7 @@ void radio_on_off_ath9k(int idx, int on)
 			write(fp, "0", sizeof("0") - 1);
 		else
 			write(fp, "3", sizeof("3") - 1);
-		fprintf(stderr, "ath9k radio %d: phy%d ath%d\n", on, get_ath9k_phy_idx(idx), idx);
+		fprintf(stderr, "wlan9k radio %d: phy%d ath%d\n", on, get_ath9k_phy_idx(idx), idx);
 		close(fp);
 	}
 	// LED
@@ -1807,7 +1807,7 @@ void radio_on_off_ath9k(int idx, int on)
 		if (on) {
 			sprintf(tpt, "phy%dtpt", get_ath9k_phy_idx(idx));
 			write(fp, tpt, strlen(tpt));
-			sprintf(secmode, "ath%d_akm", idx);
+			sprintf(secmode, "wlan%d_akm", idx);
 			if (nvram_exists(secmode) && !nvram_match(secmode, "disabled")) {
 				// needs refinements
 				if (idx == 0)
@@ -1887,11 +1887,11 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		// filter out A channels if mode isnt A-Only or mixed
 		if (IEEE80211_IS_CHAN_A(&achans.ic_chans[i])) {
 #ifdef HAVE_WHRAG108
-			if (!strcmp(ifname, "ath1"))
+			if (!strcmp(ifname, "wlan1"))
 				continue;
 #endif
 #ifdef HAVE_TW6600
-			if (!strcmp(ifname, "ath1"))
+			if (!strcmp(ifname, "wlan1"))
 				continue;
 #endif
 			if (nvram_invmatch(wl_mode, "a-only")
@@ -1902,11 +1902,11 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		if (IEEE80211_IS_CHAN_ANYG(&achans.ic_chans[i])
 		    || IEEE80211_IS_CHAN_B(&achans.ic_chans[i])) {
 #ifdef HAVE_WHRAG108
-			if (!strcmp(ifname, "ath0"))
+			if (!strcmp(ifname, "wlan0"))
 				continue;
 #endif
 #ifdef HAVE_TW6600
-			if (!strcmp(ifname, "ath0"))
+			if (!strcmp(ifname, "wlan0"))
 				continue;
 #endif
 			if (nvram_invmatch(wl_mode, "g-only")
@@ -3060,7 +3060,7 @@ static struct wifidevices wdevices[] = {
 	{ "Intel Wireless AX211", NONE, 0x8086, 0x7AF0, PCI_ANY, 0x0510, NULL },
 	{ "Intel Wireless AX411", NONE, 0x8086, 0x7AF0, PCI_ANY, 0x0A10, NULL },
 #endif
-	{ "Atheros AR9100 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ath9k" },
+	{ "Atheros AR9100 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "wlan9k" },
 	{ "Atheros AR933x 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar933x_wmac" },
 	{ "Atheros AR934x 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar934x_wmac" },
 	{ "Qualcomm Atheros QCA955x 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "qca955x_wmac" },
@@ -3078,7 +3078,7 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	int i;
 	int device = 0, vendor = 0, subdevice = 0, subvendor = 0;
 	int devcount;
-	sscanf(prefix, "ath%d", &devcount);
+	sscanf(prefix, "wlan%d", &devcount);
 	vendor = getValueFromPath("/proc/sys/dev/wifi%d/dev_vendor", devcount, "%d", NULL);
 	device = getValueFromPath("/proc/sys/dev/wifi%d/dev_device", devcount, "%d", NULL);
 	subvendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
@@ -3112,7 +3112,7 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 #endif
 #ifdef HAVE_RT2880
 	char basedev[32];
-	sprintf(basedev, "ath%d", devcount);
+	sprintf(basedev, "wlan%d", devcount);
 	if (is_rt2880_wmac(basedev)) {
 		*flags = CHANNELSURVEY;
 		return "MT7620 WiSOC";
@@ -3254,9 +3254,9 @@ int get_ath9k_phy_ifname(const char *ifname)
 		return -1;
 	if (is_wil6210(ifname))
 		return 2;
-	if (strncmp(ifname, "ath", 3))
+	if (strncmp(ifname, "wlan", 3))
 		return -1;
-	if (!sscanf(ifname, "ath%d", &devnum))
+	if (!sscanf(ifname, "wlan%d", &devnum))
 		return -1;
 	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
 	return get_ath9k_phy_idx(devnum);
@@ -3267,7 +3267,7 @@ int is_mac80211(const char *prefix)
 #ifdef HAVE_MVEBU
 	return 1;
 #endif
-	if (strncmp(prefix, "ath", 3))
+	if (strncmp(prefix, "wlan", 3))
 		return 0;
 	INITVALUECACHE();
 	glob_t globbuf;
@@ -3511,7 +3511,7 @@ int is_wil6210(const char *prefix)
 {
 	if (!strcmp(prefix, "giwifi0"))
 		return 1;
-	if (!strcmp(prefix, "ath2"))
+	if (!strcmp(prefix, "wlan2"))
 		return 1;
 	return 0;
 }

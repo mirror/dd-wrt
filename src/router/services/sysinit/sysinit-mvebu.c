@@ -129,8 +129,8 @@ void start_sysinit(void)
 	 * Set a sane date 
 	 */
 	stime(&tm);
-	nvram_set("wl0_ifname", "ath0");
-	nvram_set("wl1_ifname", "ath1");
+	nvram_set("wl0_ifname", "wlan0");
+	nvram_set("wl1_ifname", "wlan1");
 
 	writeint("/sys/class/hwmon/hwmon0/pwm1", 0);
 	char line[256];

@@ -489,7 +489,7 @@ void start_sysinit(void)
 	 * Set a sane date 
 	 */
 	stime(&tm);
-	nvram_set("wl0_ifname", "ath0");
+	nvram_set("wl0_ifname", "wlan0");
 #ifndef HAVE_NOP8670
 	eval("hwclock", "-s", "-u");
 #endif

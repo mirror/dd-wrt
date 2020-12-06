@@ -477,7 +477,7 @@ static void do_madwifi_check(void)
 	int i, s;
 
 	for (i = 0; i < c; i++) {
-		sprintf(dev, "ath%d", i);
+		sprintf(dev, "wlan%d", i);
 		if (is_mac80211(dev))
 			continue;
 		if (nvram_nmatch("disabled", "%s_net_mode", dev))
@@ -669,7 +669,7 @@ int main(int argc, char **argv)
 		char dev[32];
 		int i;
 		for (i = 0; i < c; i++) {
-			sprintf(dev, "ath%d", i);
+			sprintf(dev, "wlan%d", i);
 			char dst[32];
 			sprintf(dst, "%s_distance", dev);
 			if (is_ath10k(dev)) {	// evil hack for QCA 

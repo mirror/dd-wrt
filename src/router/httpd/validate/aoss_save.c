@@ -61,12 +61,12 @@ void aoss_save(webs_t wp)
 		nvram_seti("aoss_aes", 1);
 	}
 	if (*(nvram_safe_get("aoss_vifs"))) {
-		nvram_unset("ath0_vifs");
+		nvram_unset("wlan0_vifs");
 		nvram_unset("aoss_vifs");
 		nvram_commit();
 	}
 	if (*(nvram_safe_get("aossa_vifs"))) {
-		nvram_unset("ath1_vifs");
+		nvram_unset("wlan1_vifs");
 		nvram_unset("aossa_vifs");
 		nvram_commit();
 	}

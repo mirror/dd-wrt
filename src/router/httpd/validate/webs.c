@@ -669,7 +669,7 @@ void generate_wep_key(webs_t wp)
 	char *prefix, *passphrase, *bit, *tx;
 
 #ifdef HAVE_MADWIFI
-	prefix = websGetVar(wp, "security_varname", "ath0");
+	prefix = websGetVar(wp, "security_varname", "wlan0");
 #else
 	prefix = websGetVar(wp, "security_varname", "wl");
 #endif
@@ -1114,7 +1114,7 @@ void security_save(webs_t wp)
 	for (i = 0; i < dc; i++) {
 		char b[16];
 
-		sprintf(b, "ath%d", i);
+		sprintf(b, "wlan%d", i);
 		security_save_prefix(wp, b);
 	}
 #else
@@ -2553,8 +2553,8 @@ void add_vifs_single(char *prefix, int device)
 
 #ifdef HAVE_MADWIFI
 	// char *cou[] = { "a", "b", "c", "d", "e", "f" };
-	sprintf(v, "ath%d.%d", device, count + 1);
-	snprintf(v3, sizeof(v3), "ath%d_ssid", device);
+	sprintf(v, "wlan%d.%d", device, count + 1);
+	snprintf(v3, sizeof(v3), "wlan%d_ssid", device);
 #else
 	sprintf(v, "wl%d.%d", device, count + 1);
 	snprintf(v3, sizeof(v3), "wl%d_ssid", device);
@@ -3052,12 +3052,12 @@ void remove_vifs_single(char *prefix, int vap)
 #ifdef HAVE_AOSS
 // must remove all aoss vap's if one of them is touched
 	if (*(nvram_safe_get("aoss_vifs"))) {
-		nvram_unset("ath0_vifs");
+		nvram_unset("wlan0_vifs");
 		nvram_unset("aoss_vifs");
 		nvram_commit();
 	}
 	if (*(nvram_safe_get("aossa_vifs"))) {
-		nvram_unset("ath1_vifs");
+		nvram_unset("wlan1_vifs");
 		nvram_unset("aossa_vifs");
 		nvram_commit();
 	}
@@ -4253,10 +4253,10 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 #ifdef HAVE_MAKSAT
-	copytonv(wp, "ath_specialmode");
+	copytonv(wp, "wlan_specialmode");
 #endif
 #ifdef HAVE_ATH9K
-	if (!strcmp(prefix, "ath0"))
+	if (!strcmp(prefix, "wlan0"))
 		copytonv_prefix(wp, "regdomain", prefix);
 #else
 	copytonv_prefix(wp, "regdomain", prefix);
@@ -4568,7 +4568,7 @@ void wireless_join(webs_t wp)
 	if (ssid) {
 		char *wifi = nvram_safe_get("wifi_display");
 		if (*(wifi)) {
-			if (!strcmp(wifi, "ath0"))
+			if (!strcmp(wifi, "wlan0"))
 				nvram_set("wl_ssid", ssid);
 			if (!strcmp(wifi, "wl0"))
 				nvram_set("wl_ssid", ssid);
@@ -4605,9 +4605,9 @@ void wireless_save(webs_t wp)
 	for (i = 0; i < c; i++) {
 		char buf[16];
 
-		sprintf(buf, "ath%d", i);
+		sprintf(buf, "wlan%d", i);
 		save_prefix(wp, buf);
-		char *vifs = nvram_nget("ath%d_vifs", i);
+		char *vifs = nvram_nget("wlan%d_vifs", i);
 
 #endif
 		if (vifs == NULL)
@@ -4618,10 +4618,10 @@ void wireless_save(webs_t wp)
 #ifdef HAVE_ATH9K
 		copytonv(wp, "radio%d_timer_enable", i);
 		copytonv(wp, "radio%d_on_time", i);
-		int intval = atoi(nvram_nget("ath%d_bcn", i));
+		int intval = atoi(nvram_nget("wlan%d_bcn", i));
 		if (*vifs && has_beacon_limit(buf)) {
 			if (intval < 100)
-				nvram_nset("100", "ath%d_bcn", i);
+				nvram_nset("100", "wlan%d_bcn", i);
 		}
 #endif
 	}
@@ -5345,7 +5345,7 @@ void save_macmode(webs_t wp)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		sprintf(devs, "ath%d", i);
+		sprintf(devs, "wlan%d", i);
 		save_macmode_if(wp, devs);
 		char vif[32];
 
@@ -5585,7 +5585,7 @@ void nassrv_save(webs_t wp)
 void nintendo_save(webs_t wp)
 {
 
-	char prefix[16] = "ath0";
+	char prefix[16] = "wlan0";
 	char var[32], param[32];
 	int device = 0;
 

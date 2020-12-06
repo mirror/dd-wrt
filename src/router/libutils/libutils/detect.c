@@ -1365,13 +1365,13 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_LS2;
 #elif HAVE_WNR2200
 	setRouter("Netgear WNR2200");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WNR2000
 	setRouter("Netgear WNR2000v3");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WLAEAG300N
 #ifdef HAVE_BUFFALO
@@ -1379,8 +1379,8 @@ int internal_getRouterBrand()
 #else
 	setRouter("Buffalo WLAE-AG300N");
 #endif
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_CARAMBOLA
 #ifdef HAVE_ERC
@@ -1388,188 +1388,188 @@ int internal_getRouterBrand()
 #else
 	setRouter("8Devices Carambola 2");
 #endif
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_HORNET
 	setRouter("Atheros Hornet");
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_RB2011
 	setRouter("Mikrotik RB2011");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR2543
 	setRouter("TP-Link TL-WR2543");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR3500
 	setRouter("TP-Link TL-WDR3500 v1");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR3600
 	setRouter("TP-Link TL-WDR3600 v1");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR4300
 	setRouter("TP-Link TL-WDR4300 v1");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR835A1
 	setRouter("Dlink DIR835-A1");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WNDR4300
 	setRouter("Netgear WNDR4300");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WNDR3700V4
 	setRouter("Netgear WNDR3700 V4");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_TEW824
 	setRouter("Trendnet TEW824DRU");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR866
 	setRouter("Dlink DIR866-A1");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DAP2660
 	setRouter("Dlink DAP2660");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DAP2330
 	setRouter("Dlink DAP2330");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DAP3662
 	setRouter("Dlink DAP3662");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR862
 	setRouter("Dlink DIR862-A1");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_CPE880
 	setRouter("Yuncore CPE880");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WILLY
 	setRouter("Wallystech DR342-NAS");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_MMS344
 	setRouter("Compex MMS344");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR4900V2
 	setRouter("TP-Link WDR4900 v2");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_ARCHERC5
 	setRouter("TP-Link ARCHER-C5 v1");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR1043V5
 	setRouter("TP-Link WR1043N v5");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR1043V4
 	setRouter("TP-Link WR1043ND v4");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_ARCHERA7V5
 	setRouter("TP-Link ARCHER-A7 v5");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_ARCHERC7V5
 	setRouter("TP-Link ARCHER-C7 v5");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_ARCHERC7V4
 	setRouter("TP-Link ARCHER-C7 v4");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_ARCHERC7
 	setRouter("TP-Link ARCHER-C7 v2");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR1043V3
 	setRouter("TP-Link WR1043ND V3");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR1043V2
 	setRouter("TP-Link WR1043ND V2");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WZR450HP2
 #ifdef HAVE_BUFFALO
@@ -1577,33 +1577,33 @@ int internal_getRouterBrand()
 #else
 	setRouter("Buffalo WZR-450HP2");
 #endif
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DHP1565
 	setRouter("Dlink DHP1565-A1");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_XD9531
 	setRouter("Yuncore XD9531");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR615N
 	setRouter("Comfast WR615N");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_E325N
 	setRouter("Comfast E325N");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_E355AC
 	setRouter("Comfast E355AC");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_XD3200
 #ifdef HAVE_SR3200
@@ -1613,75 +1613,75 @@ int internal_getRouterBrand()
 #else
 	setRouter("Yuncore XD3200");
 #endif
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_E380AC
 	setRouter("Comfast E380AC");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_AP120C
 	setRouter("Alfa AP120C");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR650AC
 	setRouter("Comfast WR650AC");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "7");
-	nvram_default_get("ath1_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "7");
+	nvram_default_get("wlan1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR869
 	setRouter("Dlink DIR869");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR859
 	setRouter("Dlink DIR859");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_JWAP606
 	setRouter("JJPlus JWAP606");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR825C1
 	setRouter("Dlink DIR825-C1");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_PERU
 	setRouter("Antaira Peru");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_LIMA
 	setRouter("8devices Lima");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_RAMBUTAN
 	setRouter("8devices Rambutan");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WASP
 	setRouter("Atheros Wasp");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WHRHPG300N
 #ifdef HAVE_BUFFALO
@@ -1693,8 +1693,8 @@ int internal_getRouterBrand()
 #else
 	setRouter("Buffalo WHR-HP-G300N");
 #endif
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WHRG300NV2
 #ifdef HAVE_BUFFALO
@@ -1702,8 +1702,8 @@ int internal_getRouterBrand()
 #else
 	setRouter("Buffalo WHR-G300N");
 #endif
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WHRHPGN
 #ifdef HAVE_BUFFALO
@@ -1711,38 +1711,38 @@ int internal_getRouterBrand()
 #else
 	setRouter("Buffalo WHR-HP-GN");
 #endif
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_JJAP93
 	setRouter("JJPLUS AP93");
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_JJAP005
 	setRouter("JJPLUS AP005");
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_JJAP501
 	setRouter("JJPLUS AP501");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_AC722
 	setRouter("ACCTON AC722");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_AC622
 	setRouter("ACCTON AC622");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WPE72
 	setRouter("Compex WPE72");
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	return ROUTER_BOARD_NS5M;
 #elif HAVE_UBNTTI
 	return ROUTER_BOARD_TI;
@@ -1966,24 +1966,24 @@ int internal_getRouterBrand()
 			char txchain[16];
 			sprintf(rxchain, "%d", dev[devcnt].rxchain);
 			sprintf(txchain, "%d", dev[devcnt].txchain);
-			nvram_default_get("ath0_rxantenna", rxchain);
-			nvram_default_get("ath0_txantenna", txchain);
+			nvram_default_get("wlan0_rxantenna", rxchain);
+			nvram_default_get("wlan0_txantenna", txchain);
 			if (dev[devcnt].rxchain5) {
 				sprintf(rxchain, "%d", dev[devcnt].rxchain5);
 				sprintf(txchain, "%d", dev[devcnt].txchain5);
-				nvram_default_get("ath1_rxantenna", rxchain);
-				nvram_default_get("ath1_txantenna", txchain);
+				nvram_default_get("wlan1_rxantenna", rxchain);
+				nvram_default_get("wlan1_txantenna", txchain);
 
 			}
 			if (dev[devcnt].offset) {
 				char foff[32];
 				sprintf(foff, "%d", dev[devcnt].offset);
-				nvram_set("ath0_offset", foff);
+				nvram_set("wlan0_offset", foff);
 			}
 			if (dev[devcnt].poffset) {
 				char poff[32];
 				sprintf(poff, "%d", dev[devcnt].poffset);
-				nvram_set("ath0_poweroffset", poff);
+				nvram_set("wlan0_poweroffset", poff);
 			}
 			static char devicename[64];
 			sprintf(devicename, "Ubiquiti %s", dev[devcnt].devicename);
@@ -2083,8 +2083,8 @@ int internal_getRouterBrand()
 	setRouter("ZCom TG-2521");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG300NH2
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 #ifdef HAVE_BUFFALO
 #ifdef HAVE_WZR300HP
 	setRouter("WZR-300HP");
@@ -2096,8 +2096,8 @@ int internal_getRouterBrand()
 #endif
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG450
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 
 	void *getUEnv(char *name);
 
@@ -2121,8 +2121,8 @@ int internal_getRouterBrand()
 #else
 	setRouter("Buffalo WZR-HP-G300NH");
 #endif
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRHPAG300NH
 #if defined(HAVE_BUFFALO) || defined(HAVE_IDEXX)
@@ -2136,161 +2136,161 @@ int internal_getRouterBrand()
 #endif
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR632
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("Dlink-DIR-632A");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WNDR3700V2
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	setRouter("Netgear WNDR3700 v2/WNDR37AV v2/WNDR3800/WNDR38AV");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WNDR3700
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	setRouter("Netgear WNDR3700");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR825
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	setRouter("Dlink DIR-825");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_TEW673GRU
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	setRouter("Trendnet TEW-673GRU");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WRT400
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
-	nvram_default_get("ath1_rxantenna", "3");
-	nvram_default_get("ath1_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
 	setRouter("Linksys WRT400N");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615C1
 	setRouter("D-Link DIR-615-C1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR601A1
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("D-Link DIR-601-A1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR842V2
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR842ND v2");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DAP3320
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("Dlink DAP-3320");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DAP2230
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("Dlink DAP-2230");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WA901V4
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	setRouter("TP-Link TL-WA901ND v4");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WA901V5
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	setRouter("TP-Link TL-WA901ND v5");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR940V6
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	setRouter("TP-Link TL-WR940ND v6");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR940V4
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	setRouter("TP-Link TL-WR940ND v4/v5");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR941V6
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	setRouter("TP-Link TL-WR941ND v6");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V12
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v12");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_ARCHERC25
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
-	nvram_default_get("ath1_rxantenna", "1");
-	nvram_default_get("ath1_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
+	nvram_default_get("wlan1_rxantenna", "1");
+	nvram_default_get("wlan1_txantenna", "1");
 	setRouter("TP-Link TL-ARCHER C25");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V11
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v11");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V10
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v10");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V9
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v9");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WA901V3
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WA901ND v3");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR810N
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR810N v1/v2");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_PERU
 	setRouter("Antaira Peru");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_LIMA
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("8devices Lima");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_RAMBUTAN
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("8devices Rambutan");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V8
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v8");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615I
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("D-Link DIR-615-I1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615E1
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("D-Link DIR-615-E1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615E
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("D-Link DIR-615-E3/E4");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_TEW652BRP
@@ -2309,121 +2309,121 @@ int internal_getRouterBrand()
 	setRouter("TP-Link TL-WR941ND v2/v3");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841v5
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v5");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR840v1
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR840N v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_MR3220
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-MR3220");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_MR3420
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-MR3420");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841v7
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v7");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR842
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR842ND v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR740v1
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR740N");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WA801v1
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WA801ND v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WA901v1
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WA901ND v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR941v4
 	setRouter("TP-Link TL-WR941ND v4");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR743
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR743ND v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_MR3020
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-MR3020");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_GL150
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("GL.iNet-AR150");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR71021
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR710N v2.1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR710V1
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR710N v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR710
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR710N v2");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WA701V2
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WA701ND v2");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR703
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR703N v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR740V4
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR740N v4");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR743V2
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR743ND v2");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR741V4
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR741ND v4");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WA7510
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WA7510N v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR741
-	nvram_default_get("ath0_rxantenna", "1");
-	nvram_default_get("ath0_txantenna", "1");
+	nvram_default_get("wlan0_rxantenna", "1");
+	nvram_default_get("wlan0_txantenna", "1");
 	setRouter("TP-Link TL-WR741ND v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR1043
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("wlan0_rxantenna", "7");
+	nvram_default_get("wlan0_txantenna", "7");
 	setRouter("TP-Link TL-WR1043ND");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_AP83
@@ -2449,8 +2449,8 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WMBR_G300NH
 	setRouter("Buffalo WBMR-HP-G300H");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_DANUBE;
 #elif HAVE_VF802
 	setRouter("Vodafone Easybox 802");
