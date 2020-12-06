@@ -1790,7 +1790,7 @@ void radio_on_off_ath9k(int idx, int on)
 			write(fp, "0", sizeof("0") - 1);
 		else
 			write(fp, "3", sizeof("3") - 1);
-		fprintf(stderr, "wlan9k radio %d: phy%d wlan%d\n", on, get_ath9k_phy_idx(idx), idx);
+		fprintf(stderr, "ath9k radio %d: phy%d wlan%d\n", on, get_ath9k_phy_idx(idx), idx);
 		close(fp);
 	}
 	// LED
@@ -3060,7 +3060,7 @@ static struct wifidevices wdevices[] = {
 	{ "Intel Wireless AX211", NONE, 0x8086, 0x7AF0, PCI_ANY, 0x0510, NULL },
 	{ "Intel Wireless AX411", NONE, 0x8086, 0x7AF0, PCI_ANY, 0x0A10, NULL },
 #endif
-	{ "Atheros AR9100 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "wlan9k" },
+	{ "Atheros AR9100 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ath9k" },
 	{ "Atheros AR933x 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar933x_wmac" },
 	{ "Atheros AR934x 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar934x_wmac" },
 	{ "Qualcomm Atheros QCA955x 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "qca955x_wmac" },
