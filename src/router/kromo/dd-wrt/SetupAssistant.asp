@@ -420,10 +420,10 @@ function submitcheck(F) {
 
 		case '3':
 			// Wireless
-			if(F.ath0_ssid)
-                		if(F.ath0_ssid.value == ""){
+			if(F.wlan0_ssid)
+                		if(F.wlan0_ssid.value == ""){
                         		alert(errmsg.err50);
-                        		F.ath0_ssid.focus();
+                        		F.wlan0_ssid.focus();
                         		return false;
                 		}
         		if(F.wl1_ssid)
