@@ -3672,6 +3672,10 @@ void start_nvram(void)
 				sprintf(newname, "wlan%s", &name[3]);
 				found = 1;
 			}
+			if (!strncmp(s, "bat_ath", 3) && isdigit(s[7])) {
+				sprintf(newname, "bat_wlan%s", &name[7]);
+				found = 1;
+			}
 			char *next;
 			char *newvalue = malloc((strlen(value) * 2) + 1);
 			char *entry = malloc(strlen(value) + 1);
@@ -3717,13 +3721,13 @@ void start_nvram(void)
 			GETENTRYBYIDX(stp, word, 4);
 			GETENTRYBYIDX(pathcost, word, 5);
 			char newname[64];
-			strcpy(newname, tag);
-			if (!strncmp(tag, "ath", 3))
-				sprintf(newname, "wlan%s", &tag[3]);
+			strcpy(newname, port);
+			if (!strncmp(port, "ath", 3))
+				sprintf(newname, "wlan%s", &port[3]);
 			if (*newwordlist)
-				sprintf(newwordlist, "%s %s>%s>%s>%s>%s>%s", newwordlist, newname, port, prio, hairpin, stp, pathcost);
+				sprintf(newwordlist, "%s %s>%s>%s>%s>%s>%s", newwordlist, tag, newname, prio, hairpin, stp, pathcost);
 			else
-				sprintf(newwordlist, "%s>%s>%s>%s>%s>%s", newname, port, prio, hairpin, stp, pathcost);
+				sprintf(newwordlist, "%s>%s>%s>%s>%s>%s", tag, newname, prio, hairpin, stp, pathcost);
 		}
 		nvram_set("bridgesif", newwordlist);
 		free(newwordlist);
