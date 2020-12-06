@@ -3660,35 +3660,41 @@ void start_nvram(void)
 		char *s;
 		nvram_getall(buf, NVRAMSPACE);
 		for (s = buf; *s; s++) {
+			char *name = s;
+			char *value = strchr(s, '=');
+			value[0] = 0;
+			value++;
+			char *newname = malloc((strlen(name)*2) + 1);
+			strcpy(newname, name);
+			int found = 0;
 			if (!strncmp(s, "ath", 3) && isdigit(s[3])) {
-				char *name = s;
-				char *value = strchr(s, '=');
-				value[0] = 0;
-				value++;
-				char newname[64];
 				sprintf(newname, "wlan%s", name + 3);
-				char *next;
-				char entry[128];
-				char *newvalue = malloc((strlen(value) * 2) + 1);
-				int first = 1;
-				foreach(entry, value, next) {
-					if (!strncmp(entry, "ath", 3) && isdigit(entry[3])) {
-						if (first)
-							sprintf(newvalue, "wlan%s", &entry[3]);
-						else
-							sprintf(newvalue, "%s wlan%s", newvalue, &entry[3]);
-
-					} else {
-						if (first)
-							sprintf(newvalue, "%s", &entry[3]);
-						else
-							sprintf(newvalue, "%s %s", newvalue, &entry[3]);
-					}
-					first = 0;
-				}
-				nvram_set(newname, newvalue);
-				free(newvalue);
+				found = 1;
 			}
+			char *next;
+			char entry[128];
+			char *newvalue = malloc((strlen(value) * 2) + 1);
+			int first = 1;
+			foreach(entry, value, next) {
+				if (!strncmp(entry, "ath", 3) && isdigit(entry[3])) {
+					found = 1;
+					if (first)
+						sprintf(newvalue, "wlan%s", &entry[3]);
+					else
+						sprintf(newvalue, "%s wlan%s", newvalue, &entry[3]);
+
+				} else {
+					if (first)
+						sprintf(newvalue, "%s", &entry[3]);
+					else
+						sprintf(newvalue, "%s %s", newvalue, &entry[3]);
+				}
+				first = 0;
+			}
+			if (found)
+				nvram_set(newname, newvalue);
+			free(newvalue);
+			free(newname);
 		}
 		free(buf);
 		nvram_commit();
