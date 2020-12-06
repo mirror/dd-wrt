@@ -261,9 +261,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan3_regdomain", "GERMANY" },	/* LAN IP address */
 #elif HAVE_CARLSONWIRELESS
 	{ "lan_ipaddr", "192.168.2.20" },	/* LAN ip address */
-	{ "wlan0_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* ath0 regulatory domain */
-	{ "wlan1_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* ath0 regulatory domain */
-	{ "wlan2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* ath0 regulatory domain */
+	{ "wlan0_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* wlan0 regulatory domain */
+	{ "wlan1_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* wlan0 regulatory domain */
+	{ "wlan2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* wlan0 regulatory domain */
 #elif HAVE_IPR
 	{ "lan_ipaddr", "192.168.14.14" },	/* LAN ip address */
 #elif HAVE_KORENRON
@@ -1060,12 +1060,12 @@ struct nvram_param srouter_defaults[] = {
 	{ "wl0_ifname", "wlan0" },	/* Wireless interface name) */
 	{ "wl0_ssid", "Carlson" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "Carlson" },	/* Service set ID (network name) */
-	{ "wlan0_nctrlsb", "upper" },	/* ath0 11n sub channel */
-	{ "wlan0_ccmp", "1" },	/* ath0 encryption type */
-	{ "wlan0_security_mode", "psk" },	/* ath0 encryption type */
-	{ "wlan0_akm", "psk2" },	/* ath0 encryption type */
-	{ "wlan0_psk2", "1" },	/* ath0 encryption type */
-	{ "wlan0_txpwrdbm", "19" },	/* ath0 transmit power */
+	{ "wlan0_nctrlsb", "upper" },	/* wlan0 11n sub channel */
+	{ "wlan0_ccmp", "1" },	/* wlan0 encryption type */
+	{ "wlan0_security_mode", "psk" },	/* wlan0 encryption type */
+	{ "wlan0_akm", "psk2" },	/* wlan0 encryption type */
+	{ "wlan0_psk2", "1" },	/* wlan0 encryption type */
+	{ "wlan0_txpwrdbm", "19" },	/* wlan0 transmit power */
 #elif defined(HAVE_IMMERSIVE)
 	{ "wlan0_ssid", "imm" },
 	{ "wlan1_ssid", "imm_1" },
@@ -1131,28 +1131,28 @@ struct nvram_param srouter_defaults[] = {
 	{ "wl0_ssid", "IPR" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "IPR" },	/* Service set ID (network name) */
 	{ "wlan0_regulatory", "1" },
-	{ "wlan0_channel", "6000" },	/* 6000/chan 200 -ath0 frequency */
+	{ "wlan0_channel", "6000" },	/* 6000/chan 200 -wlan0 frequency */
 	{ "wlan0_txpwrdbm", "6" },
-	{ "wlan0_ccmp", "aes" },	/* ath0 encryption type */
-	{ "wlan0_security_mode", "psk" },	/* ath0 encryption type */
-	{ "wlan0_akm", "psk2" },	/* ath0 encryption type */
-	{ "wlan0_psk2", "1" },	/* ath0 encryption type */
-	{ "wlan0_wpa_psk", "marcomarco14" },	/* ath0 encryption key */
+	{ "wlan0_ccmp", "aes" },	/* wlan0 encryption type */
+	{ "wlan0_security_mode", "psk" },	/* wlan0 encryption type */
+	{ "wlan0_akm", "psk2" },	/* wlan0 encryption type */
+	{ "wlan0_psk2", "1" },	/* wlan0 encryption type */
+	{ "wlan0_wpa_psk", "marcomarco14" },	/* wlan0 encryption key */
 #elif defined(HAVE_KORENRON)
 	{ "wl0_ssid", "WBR2000" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "WBR2000" },	/* Service set ID (network name) */
 #elif HAVE_IDEXX
 	{ "wl0_ssid", "IDEXXw1" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "IDEXXw1" },	/* Service set ID (network name) */
-	{ "wlan0_ccmp", "1" },	/* ath0 encryption type */
-	{ "wlan0_tkip", "1" },	/* ath0 encryption type */
+	{ "wlan0_ccmp", "1" },	/* wlan0 encryption type */
+	{ "wlan0_tkip", "1" },	/* wlan0 encryption type */
 	{ "wl1_ssid", "IDEXXw2" },	/* Service set ID (network name) */
-	{ "wlan1_ccmp", "1" },	/* ath0 encryption type */
-	{ "wlan1_tkip", "1" },	/* ath0 encryption type */
+	{ "wlan1_ccmp", "1" },	/* wlan0 encryption type */
+	{ "wlan1_tkip", "1" },	/* wlan0 encryption type */
 	{ "wlan1_ssid", "IDEXXw2" },	/* Service set ID (network name) */
-	{ "wlan0_vifs", "ath0.1" },
-	{ "wlan0.1_ccmp", "1" },	/* ath0 encryption type */
-	{ "wlan0.1_tkip", "1" },	/* ath0 encryption type */
+	{ "wlan0_vifs", "wlan0.1" },
+	{ "wlan0.1_ccmp", "1" },	/* wlan0 encryption type */
+	{ "wlan0.1_tkip", "1" },	/* wlan0 encryption type */
 	{ "wlan0.1_ssid", "LabStation Guest" },	/* Service set ID (network name) */
 #else
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL) && !defined(HAVE_ANTAIRA)
@@ -1163,7 +1163,7 @@ struct nvram_param srouter_defaults[] = {
 
 #endif
 #ifdef HAVE_IDEXX
-	{ "wlan0_wpa_psk", "IDEXXwlan1234" },	/* ath0 encryption key */
+	{ "wlan0_wpa_psk", "IDEXXwlan1234" },	/* wlan0 encryption key */
 	{ "wlan0.1_ssid", "LabStation Guest" },	/* Service set ID (network name) */
 #else
 	{ "wlan0.1_ssid", "" },	/* Service set ID (network name) */
@@ -1286,7 +1286,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "wl_mode", "ap" },	/* AP mode (ap|sta|wet|infra) */
 #endif
 #ifdef HAVE_CARLSONWIRELESS
-	{ "wlan0_channelbw", "40" },	/* ath0 channel bandwidth */
+	{ "wlan0_channelbw", "40" },	/* wlan0 channel bandwidth */
 #elif defined(HAVE_ONNET)
 #ifdef HAVE_CPE880
 	{ "wlan0_channelbw", "40" },
@@ -1403,7 +1403,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "wl_macmode1", "disabled" },	/* "disabled" or "other" for WEBB *//* Add */
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_CARLSONWIRELESS
-	{ "wlan0_channel", "5180" },	/* 5275ath0 frequency */
+	{ "wlan0_channel", "5180" },	/* 5275wlan0 frequency */
 	{ "wlan0_rxantenna", "3" },
 	{ "wlan0_txantenna", "3" },
 #elif HAVE_IMMERSIVE
@@ -1473,12 +1473,12 @@ struct nvram_param srouter_defaults[] = {
 					 * (mixed|g-only|b-only|disable) */
 #endif
 #elif HAVE_CARLSONWIRELESS
-	{ "wlan0_net_mode", "n5-only" },	/* ath0 wireless mode */
+	{ "wlan0_net_mode", "n5-only" },	/* wlan0 wireless mode */
 #elif HAVE_ONNET
 #ifdef HAVE_CPE880
-	{ "wlan0_net_mode", "n5-only" },	/* ath0 wireless mode */
+	{ "wlan0_net_mode", "n5-only" },	/* wlan0 wireless mode */
 #else
-	{ "wlan0_net_mode", "mixed" },	/* ath0 wireless mode */
+	{ "wlan0_net_mode", "mixed" },	/* wlan0 wireless mode */
 #endif
 #else
 	{ "wl_net_mode", "mixed" },	/* Wireless mode
@@ -1601,7 +1601,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_CARLSONWIRELESS
 	{ "wlan0_akm", "psk2" },
 	{ "wlan0_psk2", "1" },
-	{ "wlan0_wpa_psk", "7078227000" },	/* ath0 encryption key */
+	{ "wlan0_wpa_psk", "7078227000" },	/* wlan0 encryption key */
 #else
 	{ "wlan0_akm", "disabled" },
 	{ "wlan0_wpa_psk", "" },	/* WPA pre-shared key */
@@ -1611,9 +1611,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan0_akm", "psk psk2" },
 	{ "wlan0_psk", "1" },
 	{ "wlan0_psk2", "1" },
-	{ "wlan0_wpa_psk", "IDEXXwlan1234" },	/* ath0 encryption key */
+	{ "wlan0_wpa_psk", "IDEXXwlan1234" },	/* wlan0 encryption key */
 	{ "wlan0.1_akm", "psk psk2" },
-	{ "wlan0.1_wpa_psk", "IDEXXguest1234" },	/* ath0 encryption key */
+	{ "wlan0.1_wpa_psk", "IDEXXguest1234" },	/* wlan0 encryption key */
 #endif
 	{ "wlan0_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
 	{ "wlan0_radius_port", "1812" },	/* RADIUS server UDP port */
