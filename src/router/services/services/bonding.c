@@ -67,7 +67,7 @@ void start_bonding(void)
 		if (!tag || !port) {
 			break;
 		}
-		if (!strncmp(port, "ath", 3)
+		if (!strncmp(port, "wlan", 3)
 		    && nvram_nmatch("wdsap", "%s_mode", port)) {
 			eval("ifconfig", port, "down");
 			eval("iwpriv", port, "wdssep", "0");

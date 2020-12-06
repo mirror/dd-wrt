@@ -300,20 +300,20 @@ void start_sysinit(void)
 
 	getRouterBrand();	// restore some default settings
 
-	if (!nvram_exists("ath0_rxantenna"))
-		nvram_seti("ath0_rxantenna", 3);
-	if (!nvram_exists("ath0_txantenna"))
-		nvram_seti("ath0_txantenna", 3);
-	if (!nvram_exists("ath1_rxantenna"))
-		nvram_seti("ath1_rxantenna", 3);
-	if (!nvram_exists("ath1_txantenna"))
-		nvram_seti("ath1_txantenna", 3);
+	if (!nvram_exists("wlan0_rxantenna"))
+		nvram_seti("wlan0_rxantenna", 3);
+	if (!nvram_exists("wlan0_txantenna"))
+		nvram_seti("wlan0_txantenna", 3);
+	if (!nvram_exists("wlan1_rxantenna"))
+		nvram_seti("wlan1_rxantenna", 3);
+	if (!nvram_exists("wlan1_txantenna"))
+		nvram_seti("wlan1_txantenna", 3);
 
 	/*
 	 * Set a sane date 
 	 */
 	stime(&tm);
-	nvram_set("wl0_ifname", "ath0");
+	nvram_set("wl0_ifname", "wlan0");
 
 	return;
 	cprintf("done\n");

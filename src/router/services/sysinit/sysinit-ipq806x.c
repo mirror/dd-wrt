@@ -367,8 +367,8 @@ static void setasrockcountry(void)
 		return;
 	if (!nvram_exists("nocountrysel"))
 		nvram_seti("nocountrysel", 1);
-	nvram_set("ath0_regdomain", ctry);
-	nvram_set("ath1_regdomain", ctry);
+	nvram_set("wlan0_regdomain", ctry);
+	nvram_set("wlan1_regdomain", ctry);
 }
 
 void start_sysinit(void)
@@ -670,8 +670,8 @@ void start_sysinit(void)
 	 * Set a sane date 
 	 */
 	stime(&tm);
-	nvram_set("wl0_ifname", "ath0");
-	nvram_set("wl1_ifname", "ath1");
+	nvram_set("wl0_ifname", "wlan0");
+	nvram_set("wl1_ifname", "wlan1");
 }
 
 void start_resetleds(void)

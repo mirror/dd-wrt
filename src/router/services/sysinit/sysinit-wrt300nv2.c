@@ -124,7 +124,7 @@ void start_sysinit(void)
 	 * Set a sane date 
 	 */
 	stime(&tm);
-	nvram_set("wl0_ifname", "ath0");
+	nvram_set("wl0_ifname", "wlan0");
 
 	nvram_seti("use_crypto", 0);
 	cprintf("done\n");

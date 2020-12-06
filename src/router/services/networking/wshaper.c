@@ -1079,7 +1079,7 @@ void stop_wshaper(void)
 	strcat(eths, " ");
 	strcat(eths, eths2);
 	bzero(eths2, 512);
-	getIfList(eths2, "ath");
+	getIfList(eths2, "wlan");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 	bzero(eths2, 512);

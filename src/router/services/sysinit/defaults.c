@@ -187,7 +187,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "lan_hwaddr", "" },	/* LAN interface MAC address */
 //KONG needs to be modified for marvel
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
-	{ "wl0_ifname", "ath0" },	/* LAN interface MAC address */
+	{ "wl0_ifname", "wlan0" },	/* LAN interface MAC address */
 #else
 	{ "wl0_ifname", "eth1" },	/* LAN interface MAC address */
 #endif
@@ -209,39 +209,39 @@ struct nvram_param srouter_defaults[] = {
 	{ "lan_ipaddr", "192.168.0.1" },	/* LAN IP address */
 #elif HAVE_DDLAN
 #ifdef HAVE_NS5
-	{ "ath0_regdomain", "GERMANY_BFWA" },	/* LAN IP address */
-	{ "ath0_channelbw", "10" },	/* LAN IP address */
+	{ "wlan0_regdomain", "GERMANY_BFWA" },	/* LAN IP address */
+	{ "wlan0_channelbw", "10" },	/* LAN IP address */
 #else
-	{ "ath0_regdomain", "GERMANY" },
-	{ "ath1_regdomain", "GERMANY" },
+	{ "wlan0_regdomain", "GERMANY" },
+	{ "wlan1_regdomain", "GERMANY" },
 #endif
 	{ "lan_ipaddr", "192.168.1.1" },	/* LAN IP address */
 #elif HAVE_IDEXX
 	{ "lan_ipaddr", "192.168.222.1" },	/* LAN ip address */
-	{ "ath0_regdomain", "UNITED_STATES" },
-	{ "ath1_regdomain", "UNITED_STATES" },
+	{ "wlan0_regdomain", "UNITED_STATES" },
+	{ "wlan1_regdomain", "UNITED_STATES" },
 #elif HAVE_ENEO
-	{ "ath0_regdomain", "GERMANY" },
+	{ "wlan0_regdomain", "GERMANY" },
 	{ "nocountrysel", "1" },
-	{ "ath0_doth", "1" },
+	{ "wlan0_doth", "1" },
 #elif HAVE_BUFFALO
 #ifdef BUFFALO_EU
-	{ "ath0_regdomain", "GERMANY" },	/* LAN IP address */
+	{ "wlan0_regdomain", "GERMANY" },	/* LAN IP address */
 #endif
 	{ "lan_ipaddr", "192.168.11.1" },	/* LAN IP address */
 	{ "dhcp_start", "192.168.11.2" },	/* DHCP Start IP */
 	{ "dhcp_num", "64" },	/* DHCP Start IP */
 #elif HAVE_GGEW
 #if defined(HAVE_NS5) || defined(HAVE_EOC5610)
-	{ "ath0_regdomain", "GERMANY_BFWA" },	/* LAN IP address */
+	{ "wlan0_regdomain", "GERMANY_BFWA" },	/* LAN IP address */
 #elif defined(HAVE_NS2) || defined(HAVE_EOC2610)
-	{ "ath0_regdomain", "GERMANY" },	/* LAN IP address */
+	{ "wlan0_regdomain", "GERMANY" },	/* LAN IP address */
 #elif defined(HAVE_WHRHPGN)
-	{ "ath0_regdomain", "GERMANY" },	/* LAN IP address */
+	{ "wlan0_regdomain", "GERMANY" },	/* LAN IP address */
 #endif
 	{ "lan_ipaddr", "192.168.1.1" },	/* LAN IP address */
 #elif HAVE_CORENET
-	{ "ath0_regdomain", "UNITED_KINGDOM" },	/* LAN IP address */
+	{ "wlan0_regdomain", "UNITED_KINGDOM" },	/* LAN IP address */
 	{ "lan_ipaddr", "192.168.1.1" },	/* LAN IP address */
 #elif HAVE_NEWMEDIA
 	{ "lan_ipaddr", "172.31.28.3" },	/* LAN IP address */
@@ -255,15 +255,15 @@ struct nvram_param srouter_defaults[] = {
 	{ "lan_ipaddr", "10.195.0.1" },	/* LAN IP address */
 #elif HAVE_BKM
 	{ "lan_ipaddr", "192.168.42.1" },	/* LAN IP address */
-	{ "ath0_regdomain", "GERMANY" },	/* LAN IP address */
-	{ "ath1_regdomain", "GERMANY" },	/* LAN IP address */
-	{ "ath2_regdomain", "GERMANY" },	/* LAN IP address */
-	{ "ath3_regdomain", "GERMANY" },	/* LAN IP address */
+	{ "wlan0_regdomain", "GERMANY" },	/* LAN IP address */
+	{ "wlan1_regdomain", "GERMANY" },	/* LAN IP address */
+	{ "wlan2_regdomain", "GERMANY" },	/* LAN IP address */
+	{ "wlan3_regdomain", "GERMANY" },	/* LAN IP address */
 #elif HAVE_CARLSONWIRELESS
 	{ "lan_ipaddr", "192.168.2.20" },	/* LAN ip address */
-	{ "ath0_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* ath0 regulatory domain */
-	{ "ath1_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* ath0 regulatory domain */
-	{ "ath2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* ath0 regulatory domain */
+	{ "wlan0_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* ath0 regulatory domain */
+	{ "wlan1_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* ath0 regulatory domain */
+	{ "wlan2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* ath0 regulatory domain */
 #elif HAVE_IPR
 	{ "lan_ipaddr", "192.168.14.14" },	/* LAN ip address */
 #elif HAVE_KORENRON
@@ -274,7 +274,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "lan_gateway", "192.168.50.254" },	/* Gateway */
 #elif HAVE_AXTEL
 	{ "lan_ipaddr", "192.168.11.1" },	/* LAN IP address */
-	{ "ath0_regdomain", "MEXICO" },	/* LAN IP address */
+	{ "wlan0_regdomain", "MEXICO" },	/* LAN IP address */
 #elif HAVE_RAYTRONIK
 	{ "lan_ipaddr", "10.0.0.1" },	/* LAN IP address */
 #elif HAVE_ONNET
@@ -1003,7 +1003,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "wl_ssid", "changeme" },	/* Service set ID (network name) */
 #elif HAVE_MAKSAT
 #if defined(HAVE_DEFREGDOMAIN)
-	{ "ath0_regdomain", HAVE_DEFREGDOMAIN },
+	{ "wlan0_regdomain", HAVE_DEFREGDOMAIN },
 #endif
 #ifdef HAVE_MAKSAT_BLANK
 	{ "wl_ssid", "default" },	/* Service set ID (network name) */
@@ -1013,7 +1013,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_TMK
 	{ "wl_ssid", "KMT" },	/* Service set ID (network name) */
 #if defined(HAVE_UBNTM) && !defined(HAVE_UBNTXW)
-	{ "ath0_bias", "10" },
+	{ "wlan0_bias", "10" },
 #endif
 #elif HAVE_BKM
 	{ "wl_ssid", "BKM-HSDL" },	/* Service set ID (network name) */
@@ -1029,158 +1029,158 @@ struct nvram_param srouter_defaults[] = {
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_MAKSAT
-	{ "ath0_regulatory", "0" },
-	{ "ath1_regulatory", "0" },
-	{ "ath2_regulatory", "0" },
-	{ "ath3_regulatory", "0" },
+	{ "wlan0_regulatory", "0" },
+	{ "wlan1_regulatory", "0" },
+	{ "wlan2_regulatory", "0" },
+	{ "wlan3_regulatory", "0" },
 #ifdef HAVE_MAKSAT_BLANK
-	{ "ath0_ssid", "default" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "default" },	/* Service set ID (network name) */
 #else
-	{ "ath0_ssid", "maksat" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "maksat" },	/* Service set ID (network name) */
 #endif
 #else
 #if defined(HAVE_TRIMAX)
 	{ "wl0_ssid", "M2M" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "M2M" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "M2M" },	/* Service set ID (network name) */
 #elif defined(HAVE_WIKINGS)
 	{ "wl0_ssid", "Excel Networks" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "Excel Networks" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "Excel Networks" },	/* Service set ID (network name) */
 	{ "wkregdomain", "IR" },
 #elif defined(HAVE_ESPOD)
 	{ "wl0_ssid", "ESPOD" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "ESPOD" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "ESPOD" },	/* Service set ID (network name) */
 	{ "wl1_ssid", "ESPOD" },	/* Service set ID (network name) */
-	{ "ath1_ssid", "ESPOD" },	/* Service set ID (network name) */
+	{ "wlan1_ssid", "ESPOD" },	/* Service set ID (network name) */
 	{ "wl2_ssid", "ESPOD" },	/* Service set ID (network name) */
-	{ "ath2_ssid", "ESPOD" },	/* Service set ID (network name) */
+	{ "wlan2_ssid", "ESPOD" },	/* Service set ID (network name) */
 #elif defined(HAVE_NEXTMEDIA)
 	{ "wl0_ssid", "nextmedia" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "nextmedia" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "nextmedia" },	/* Service set ID (network name) */
 #elif defined(HAVE_CARLSONWIRELESS)
-	{ "wl0_ifname", "ath0" },	/* Wireless interface name) */
+	{ "wl0_ifname", "wlan0" },	/* Wireless interface name) */
 	{ "wl0_ssid", "Carlson" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "Carlson" },	/* Service set ID (network name) */
-	{ "ath0_nctrlsb", "upper" },	/* ath0 11n sub channel */
-	{ "ath0_ccmp", "1" },	/* ath0 encryption type */
-	{ "ath0_security_mode", "psk" },	/* ath0 encryption type */
-	{ "ath0_akm", "psk2" },	/* ath0 encryption type */
-	{ "ath0_psk2", "1" },	/* ath0 encryption type */
-	{ "ath0_txpwrdbm", "19" },	/* ath0 transmit power */
+	{ "wlan0_ssid", "Carlson" },	/* Service set ID (network name) */
+	{ "wlan0_nctrlsb", "upper" },	/* ath0 11n sub channel */
+	{ "wlan0_ccmp", "1" },	/* ath0 encryption type */
+	{ "wlan0_security_mode", "psk" },	/* ath0 encryption type */
+	{ "wlan0_akm", "psk2" },	/* ath0 encryption type */
+	{ "wlan0_psk2", "1" },	/* ath0 encryption type */
+	{ "wlan0_txpwrdbm", "19" },	/* ath0 transmit power */
 #elif defined(HAVE_IMMERSIVE)
-	{ "ath0_ssid", "imm" },
-	{ "ath1_ssid", "imm_1" },
-	{ "ath2_ssid", "imm_2" },
+	{ "wlan0_ssid", "imm" },
+	{ "wlan1_ssid", "imm_1" },
+	{ "wlan2_ssid", "imm_2" },
 #elif defined(HAVE_HDWIFI)
-	{ "ath0_ssid", "hdwifi1" },
-	{ "ath1_ssid", "hdwifi2" },
-	{ "ath2_ssid", "hdwifi3" },
-	{ "ath3_ssid", "hdwifi4" },
+	{ "wlan0_ssid", "hdwifi1" },
+	{ "wlan1_ssid", "hdwifi2" },
+	{ "wlan2_ssid", "hdwifi3" },
+	{ "wlan3_ssid", "hdwifi4" },
 #elif defined(HAVE_ONNET_BLANK)
 #ifdef HAVE_MMS344
 #ifdef HAVE_CPE880
-	{ "ath0_ssid", "OTAi5.8" },
+	{ "wlan0_ssid", "OTAi5.8" },
 #else
-	{ "ath0_ssid", "OTAi2.4" },
-	{ "ath1_ssid", "OTAi5.8" },
+	{ "wlan0_ssid", "OTAi2.4" },
+	{ "wlan1_ssid", "OTAi5.8" },
 #endif
 #else
-	{ "ath0_ssid", "Enterprise WIFI" },
-	{ "ath1_ssid", "Enterprise WIFI_1" },
-	{ "ath2_ssid", "Enterprise WIFI_2" },
+	{ "wlan0_ssid", "Enterprise WIFI" },
+	{ "wlan1_ssid", "Enterprise WIFI_1" },
+	{ "wlan2_ssid", "Enterprise WIFI_2" },
 #endif
 #elif defined(HAVE_ONNET)
 #ifdef HAVE_MMS344
 #ifdef HAVE_CPE880
-	{ "ath0_ssid", "OTAi5.8" },
+	{ "wlan0_ssid", "OTAi5.8" },
 #else
-	{ "ath0_ssid", "OTAi2.4" },
-	{ "ath1_ssid", "OTAi5.8" },
+	{ "wlan0_ssid", "OTAi2.4" },
+	{ "wlan1_ssid", "OTAi5.8" },
 #endif
 #else
-	{ "ath0_ssid", "OTAi" },
-	{ "ath1_ssid", "OTAi_1" },
+	{ "wlan0_ssid", "OTAi" },
+	{ "wlan1_ssid", "OTAi_1" },
 #endif
 #elif defined(HAVE_RAYTRONIK)
-	{ "ath0_ssid", "raytronik" },
-	{ "ath1_ssid", "raytronik" },
+	{ "wlan0_ssid", "raytronik" },
+	{ "wlan1_ssid", "raytronik" },
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
-	{ "ath0_ssid", "GGEWnet-WLAN" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "GGEWnet-WLAN" },	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
-	{ "ath0_ssid", "GGEWnet-WLAN" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "GGEWnet-WLAN" },	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
-	{ "ath0_ssid", "GGEWnet-WLAN" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "GGEWnet-WLAN" },	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
-	{ "ath0_ssid", "GGEWnet-WLAN" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "GGEWnet-WLAN" },	/* Service set ID (network name) */
 #elif defined(HAVE_CORENET)
-	{ "ath0_ssid", "corenet" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "corenet" },	/* Service set ID (network name) */
 #elif defined(HAVE_DDLAN)
 	{ "wl0_ssid", "www.ddlan.de" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "www.ddlan.de" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "www.ddlan.de" },	/* Service set ID (network name) */
 #elif defined(HAVE_TMK)
 	{ "wl0_ssid", "KMT" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "KMT" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "KMT" },	/* Service set ID (network name) */
 #elif defined(HAVE_BKM)
 	{ "wl0_ssid", "BKM-HSDL" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "BKM-HSDL" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "BKM-HSDL" },	/* Service set ID (network name) */
 #elif defined(HAVE_SANSFIL)
-	{ "ath0_ssid", "SANSFIL" },
+	{ "wlan0_ssid", "SANSFIL" },
 #elif defined(HAVE_ERC)
 	{ "wl0_ssid", "ERC" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "ERC" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "ERC" },	/* Service set ID (network name) */
 #elif defined(HAVE_IPR)
 	{ "wl0_ssid", "IPR" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "IPR" },	/* Service set ID (network name) */
-	{ "ath0_regulatory", "1" },
-	{ "ath0_channel", "6000" },	/* 6000/chan 200 -ath0 frequency */
-	{ "ath0_txpwrdbm", "6" },
-	{ "ath0_ccmp", "aes" },	/* ath0 encryption type */
-	{ "ath0_security_mode", "psk" },	/* ath0 encryption type */
-	{ "ath0_akm", "psk2" },	/* ath0 encryption type */
-	{ "ath0_psk2", "1" },	/* ath0 encryption type */
-	{ "ath0_wpa_psk", "marcomarco14" },	/* ath0 encryption key */
+	{ "wlan0_ssid", "IPR" },	/* Service set ID (network name) */
+	{ "wlan0_regulatory", "1" },
+	{ "wlan0_channel", "6000" },	/* 6000/chan 200 -ath0 frequency */
+	{ "wlan0_txpwrdbm", "6" },
+	{ "wlan0_ccmp", "aes" },	/* ath0 encryption type */
+	{ "wlan0_security_mode", "psk" },	/* ath0 encryption type */
+	{ "wlan0_akm", "psk2" },	/* ath0 encryption type */
+	{ "wlan0_psk2", "1" },	/* ath0 encryption type */
+	{ "wlan0_wpa_psk", "marcomarco14" },	/* ath0 encryption key */
 #elif defined(HAVE_KORENRON)
 	{ "wl0_ssid", "WBR2000" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "WBR2000" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "WBR2000" },	/* Service set ID (network name) */
 #elif HAVE_IDEXX
 	{ "wl0_ssid", "IDEXXw1" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "IDEXXw1" },	/* Service set ID (network name) */
-	{ "ath0_ccmp", "1" },	/* ath0 encryption type */
-	{ "ath0_tkip", "1" },	/* ath0 encryption type */
+	{ "wlan0_ssid", "IDEXXw1" },	/* Service set ID (network name) */
+	{ "wlan0_ccmp", "1" },	/* ath0 encryption type */
+	{ "wlan0_tkip", "1" },	/* ath0 encryption type */
 	{ "wl1_ssid", "IDEXXw2" },	/* Service set ID (network name) */
-	{ "ath1_ccmp", "1" },	/* ath0 encryption type */
-	{ "ath1_tkip", "1" },	/* ath0 encryption type */
-	{ "ath1_ssid", "IDEXXw2" },	/* Service set ID (network name) */
-	{ "ath0_vifs", "ath0.1" },
-	{ "ath0.1_ccmp", "1" },	/* ath0 encryption type */
-	{ "ath0.1_tkip", "1" },	/* ath0 encryption type */
-	{ "ath0.1_ssid", "LabStation Guest" },	/* Service set ID (network name) */
+	{ "wlan1_ccmp", "1" },	/* ath0 encryption type */
+	{ "wlan1_tkip", "1" },	/* ath0 encryption type */
+	{ "wlan1_ssid", "IDEXXw2" },	/* Service set ID (network name) */
+	{ "wlan0_vifs", "ath0.1" },
+	{ "wlan0.1_ccmp", "1" },	/* ath0 encryption type */
+	{ "wlan0.1_tkip", "1" },	/* ath0 encryption type */
+	{ "wlan0.1_ssid", "LabStation Guest" },	/* Service set ID (network name) */
 #else
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL) && !defined(HAVE_ANTAIRA)
 	{ "wl0_ssid", "dd-wrt" },	/* Service set ID (network name) */
-	{ "ath0_ssid", "dd-wrt" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "dd-wrt" },	/* Service set ID (network name) */
 #endif
 #endif
 
 #endif
 #ifdef HAVE_IDEXX
-	{ "ath0_wpa_psk", "IDEXXwlan1234" },	/* ath0 encryption key */
-	{ "ath0.1_ssid", "LabStation Guest" },	/* Service set ID (network name) */
+	{ "wlan0_wpa_psk", "IDEXXwlan1234" },	/* ath0 encryption key */
+	{ "wlan0.1_ssid", "LabStation Guest" },	/* Service set ID (network name) */
 #else
-	{ "ath0.1_ssid", "" },	/* Service set ID (network name) */
-	{ "ath0.2_ssid", "" },	/* Service set ID (network name) */
-	{ "ath0.3_ssid", "" },	/* Service set ID (network name) */
-	{ "ath0_bridged", "1" },	/* Service set ID (network name) */
-	{ "ath0.1_bridged", "1" },	/* Service set ID (network name) */
-	{ "ath0.2_bridged", "1" },	/* Service set ID (network name) */
-	{ "ath0.3_bridged", "1" },	/* Service set ID (network name) */
-	{ "ath0_ipaddr", "0.0.0.0" },	/* Service set ID (network name) */
-	{ "ath0.1_ipaddr", "0.0.0.0" },	/* Service set ID (network name) */
-	{ "ath0.2_ipaddr", "0.0.0.0" },	/* Service set ID (network name) */
-	{ "ath0.3_ipaddr", "0.0.0.0" },	/* Service set ID (network name) */
-	{ "ath0_netmask", "0.0.0.0" },	/* Service set ID (network name) */
-	{ "ath0.1_netmask", "0.0.0.0" },	/* Service set ID (network name) */
-	{ "ath0.2_netmask", "0.0.0.0" },	/* Service set ID (network name) */
-	{ "ath0.3_netmask", "0.0.0.0" },	/* Service set ID (network name) */
+	{ "wlan0.1_ssid", "" },	/* Service set ID (network name) */
+	{ "wlan0.2_ssid", "" },	/* Service set ID (network name) */
+	{ "wlan0.3_ssid", "" },	/* Service set ID (network name) */
+	{ "wlan0_bridged", "1" },	/* Service set ID (network name) */
+	{ "wlan0.1_bridged", "1" },	/* Service set ID (network name) */
+	{ "wlan0.2_bridged", "1" },	/* Service set ID (network name) */
+	{ "wlan0.3_bridged", "1" },	/* Service set ID (network name) */
+	{ "wlan0_ipaddr", "0.0.0.0" },	/* Service set ID (network name) */
+	{ "wlan0.1_ipaddr", "0.0.0.0" },	/* Service set ID (network name) */
+	{ "wlan0.2_ipaddr", "0.0.0.0" },	/* Service set ID (network name) */
+	{ "wlan0.3_ipaddr", "0.0.0.0" },	/* Service set ID (network name) */
+	{ "wlan0_netmask", "0.0.0.0" },	/* Service set ID (network name) */
+	{ "wlan0.1_netmask", "0.0.0.0" },	/* Service set ID (network name) */
+	{ "wlan0.2_netmask", "0.0.0.0" },	/* Service set ID (network name) */
+	{ "wlan0.3_netmask", "0.0.0.0" },	/* Service set ID (network name) */
 #endif
 #else
 #ifndef HAVE_BUFFALO
@@ -1212,20 +1212,20 @@ struct nvram_param srouter_defaults[] = {
 #else
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_IDEXX
-	{ "ath1_closed", "0" },	/* Closed (hidden) network */
+	{ "wlan1_closed", "0" },	/* Closed (hidden) network */
 #else
-	{ "ath0_radio", "1" },	/* Enable (1) or disable (0) radio */
-	{ "ath0_closed", "0" },	/* Closed (hidden) network */
-	{ "ath1_radio", "1" },	/* Enable (1) or disable (0) radio */
-	{ "ath1_closed", "0" },	/* Closed (hidden) network */
-	{ "ath2_radio", "1" },	/* Enable (1) or disable (0) radio */
-	{ "ath2_closed", "0" },	/* Closed (hidden) network */
-	{ "ath3_radio", "1" },	/* Enable (1) or disable (0) radio */
-	{ "ath3_closed", "0" },	/* Closed (hidden) network */
-	{ "ath4_radio", "1" },	/* Enable (1) or disable (0) radio */
-	{ "ath4_closed", "0" },	/* Closed (hidden) network */
-	{ "ath5_radio", "1" },	/* Enable (1) or disable (0) radio */
-	{ "ath5_closed", "0" },	/* Closed (hidden) network */
+	{ "wlan0_radio", "1" },	/* Enable (1) or disable (0) radio */
+	{ "wlan0_closed", "0" },	/* Closed (hidden) network */
+	{ "wlan1_radio", "1" },	/* Enable (1) or disable (0) radio */
+	{ "wlan1_closed", "0" },	/* Closed (hidden) network */
+	{ "wlan2_radio", "1" },	/* Enable (1) or disable (0) radio */
+	{ "wlan2_closed", "0" },	/* Closed (hidden) network */
+	{ "wlan3_radio", "1" },	/* Enable (1) or disable (0) radio */
+	{ "wlan3_closed", "0" },	/* Closed (hidden) network */
+	{ "wlan4_radio", "1" },	/* Enable (1) or disable (0) radio */
+	{ "wlan4_closed", "0" },	/* Closed (hidden) network */
+	{ "wlan5_radio", "1" },	/* Enable (1) or disable (0) radio */
+	{ "wlan5_closed", "0" },	/* Closed (hidden) network */
 #endif
 #else
 	{ "wl_radio", "1" },	/* Enable (1) or disable (0) radio */
@@ -1286,71 +1286,71 @@ struct nvram_param srouter_defaults[] = {
 	{ "wl_mode", "ap" },	/* AP mode (ap|sta|wet|infra) */
 #endif
 #ifdef HAVE_CARLSONWIRELESS
-	{ "ath0_channelbw", "40" },	/* ath0 channel bandwidth */
+	{ "wlan0_channelbw", "40" },	/* ath0 channel bandwidth */
 #elif defined(HAVE_ONNET)
 #ifdef HAVE_CPE880
-	{ "ath0_channelbw", "40" },
+	{ "wlan0_channelbw", "40" },
 #else
-	{ "ath0_channelbw", "2040" },
-	{ "ath1_channelbw", "2040" },
+	{ "wlan0_channelbw", "2040" },
+	{ "wlan1_channelbw", "2040" },
 #endif
 #elif defined(HAVE_AXTEL)
-	{ "ath0_channelbw", "2040" },
+	{ "wlan0_channelbw", "2040" },
 #else
-	{ "ath0_channelbw", "20" },	/* AP mode (ap|sta|wds) */
-	{ "ath1_channelbw", "20" },	/* AP mode (ap|sta|wds) */
-	{ "ath2_channelbw", "20" },	/* AP mode (ap|sta|wds) */
-	{ "ath3_channelbw", "20" },	/* AP mode (ap|sta|wds) */
-	{ "ath4_channelbw", "20" },	/* AP mode (ap|sta|wds) */
-	{ "ath5_channelbw", "20" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_channelbw", "20" },	/* AP mode (ap|sta|wds) */
+	{ "wlan1_channelbw", "20" },	/* AP mode (ap|sta|wds) */
+	{ "wlan2_channelbw", "20" },	/* AP mode (ap|sta|wds) */
+	{ "wlan3_channelbw", "20" },	/* AP mode (ap|sta|wds) */
+	{ "wlan4_channelbw", "20" },	/* AP mode (ap|sta|wds) */
+	{ "wlan5_channelbw", "20" },	/* AP mode (ap|sta|wds) */
 #endif
 
 #ifdef HAVE_DDLAN
-	{ "ath0_mode", "sta" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_mode", "sta" },	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
-	{ "ath0_mode", "sta" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_mode", "sta" },	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
-	{ "ath0_mode", "sta" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_mode", "sta" },	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
-	{ "ath0_mode", "sta" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_mode", "sta" },	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
-	{ "ath0_mode", "sta" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_mode", "sta" },	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_WHRHPGN)
-	{ "ath0_mode", "ap" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_mode", "ap" },	/* AP mode (ap|sta|wds) */
 #elif HAVE_TRIMAX
-	{ "ath0_mode", "ap" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_mode", "ap" },	/* AP mode (ap|sta|wds) */
 #elif HAVE_CARLSONWIRELES
-	{ "ath0_mode", "wdsap" },	/* AP mode (wdsap) */
+	{ "wlan0_mode", "wdsap" },	/* AP mode (wdsap) */
 #elif HAVE_RAYTRONIK
-	{ "ath0_mode", "wdsap" },	/* AP mode (wdsap) */
-	{ "ath0_channelbw", "2040" },	/* LAN IP address */
+	{ "wlan0_mode", "wdsap" },	/* AP mode (wdsap) */
+	{ "wlan0_channelbw", "2040" },	/* LAN IP address */
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_STATION
-	{ "ath0_mode", "wdssta" },
+	{ "wlan0_mode", "wdssta" },
 #else
-	{ "ath0_mode", "wdsap" },
+	{ "wlan0_mode", "wdsap" },
 #endif
 #else
-	{ "ath0_mode", "ap" },	/* AP mode (ap|sta|wds) */
-	{ "ath1_mode", "ap" },	/* AP mode (ap|sta|wds) */
-	{ "ath2_mode", "ap" },	/* AP mode (ap|sta|wds) */
-	{ "ath3_mode", "ap" },	/* AP mode (ap|sta|wds) */
-	{ "ath4_mode", "ap" },	/* AP mode (ap|sta|wds) */
-	{ "ath5_mode", "ap" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_mode", "ap" },	/* AP mode (ap|sta|wds) */
+	{ "wlan1_mode", "ap" },	/* AP mode (ap|sta|wds) */
+	{ "wlan2_mode", "ap" },	/* AP mode (ap|sta|wds) */
+	{ "wlan3_mode", "ap" },	/* AP mode (ap|sta|wds) */
+	{ "wlan4_mode", "ap" },	/* AP mode (ap|sta|wds) */
+	{ "wlan5_mode", "ap" },	/* AP mode (ap|sta|wds) */
 #endif
-	{ "ath0_xr", "0" },	/* AP mode (ap|sta|wds) */
-	{ "ath1_xr", "0" },	/* AP mode (ap|sta|wds) */
-	{ "ath2_xr", "0" },	/* AP mode (ap|sta|wds) */
-	{ "ath3_xr", "0" },	/* AP mode (ap|sta|wds) */
-	{ "ath4_xr", "0" },	/* AP mode (ap|sta|wds) */
-	{ "ath5_xr", "0" },	/* AP mode (ap|sta|wds) */
+	{ "wlan0_xr", "0" },	/* AP mode (ap|sta|wds) */
+	{ "wlan1_xr", "0" },	/* AP mode (ap|sta|wds) */
+	{ "wlan2_xr", "0" },	/* AP mode (ap|sta|wds) */
+	{ "wlan3_xr", "0" },	/* AP mode (ap|sta|wds) */
+	{ "wlan4_xr", "0" },	/* AP mode (ap|sta|wds) */
+	{ "wlan5_xr", "0" },	/* AP mode (ap|sta|wds) */
 #endif
 #endif
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
-	{ "ath0_lazywds", "0" },	/* Enable "lazy" WDS mode (0|1) */
-	{ "ath1_lazywds", "0" },	/* Enable "lazy" WDS mode (0|1) */
-	{ "ath2_lazywds", "0" },	/* Enable "lazy" WDS mode (0|1) */
-	{ "ath3_lazywds", "0" },	/* Enable "lazy" WDS mode (0|1) */
+	{ "wlan0_lazywds", "0" },	/* Enable "lazy" WDS mode (0|1) */
+	{ "wlan1_lazywds", "0" },	/* Enable "lazy" WDS mode (0|1) */
+	{ "wlan2_lazywds", "0" },	/* Enable "lazy" WDS mode (0|1) */
+	{ "wlan3_lazywds", "0" },	/* Enable "lazy" WDS mode (0|1) */
 #else
 	{ "wl_lazywds", "0" },	/* Enable "lazy" WDS mode (0|1) */
 #endif
@@ -1403,20 +1403,20 @@ struct nvram_param srouter_defaults[] = {
 	{ "wl_macmode1", "disabled" },	/* "disabled" or "other" for WEBB *//* Add */
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_CARLSONWIRELESS
-	{ "ath0_channel", "5180" },	/* 5275ath0 frequency */
-	{ "ath0_rxantenna", "3" },
-	{ "ath0_txantenna", "3" },
+	{ "wlan0_channel", "5180" },	/* 5275ath0 frequency */
+	{ "wlan0_rxantenna", "3" },
+	{ "wlan0_txantenna", "3" },
 #elif HAVE_IMMERSIVE
-	{ "ath0_channel", "2412" },
-	{ "ath1_channel", "2437" },
-	{ "ath2_channel", "2462" },
+	{ "wlan0_channel", "2412" },
+	{ "wlan1_channel", "2437" },
+	{ "wlan2_channel", "2462" },
 #elif HAVE_HDWIFI
-	{ "ath0_channel", "2412" },
-	{ "ath1_channel", "2437" },
-	{ "ath2_channel", "2462" },
+	{ "wlan0_channel", "2412" },
+	{ "wlan1_channel", "2437" },
+	{ "wlan2_channel", "2462" },
 #else
-	{ "ath0_channel", "0" },	/* Channel number */
-	{ "ath1_channel", "0" },	/* Channel number */
+	{ "wlan0_channel", "0" },	/* Channel number */
+	{ "wlan1_channel", "0" },	/* Channel number */
 #endif
 #else
 
@@ -1451,9 +1451,9 @@ struct nvram_param srouter_defaults[] = {
 
 #ifdef HAVE_GGEW
 #if defined(HAVE_NS5) || defined(HAVE_EOC5610)
-	{ "ath0_net_mode", "a-only" },
+	{ "wlan0_net_mode", "a-only" },
 #elif defined(HAVE_EOC2610) || defined(HAVE_NS2)
-	{ "ath0_net_mode", "mixed" },
+	{ "wlan0_net_mode", "mixed" },
 #else
 	{ "wl0_net_mode", "b-only" },	/* Wireless mode (mixed|g-only|b-only|disable) */
 #endif
@@ -1464,21 +1464,21 @@ struct nvram_param srouter_defaults[] = {
 					 * (mixed|g-only|b-only|disable) */
 #elif HAVE_DDLAN
 #ifdef HAVE_NS5
-	{ "ath0_net_mode", "a-only" },
+	{ "wlan0_net_mode", "a-only" },
 	{ "wl0_net_mode", "a-only" },	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
 #else
-	{ "ath0_net_mode", "b-only" },
+	{ "wlan0_net_mode", "b-only" },
 	{ "wl0_net_mode", "b-only" },	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
 #endif
 #elif HAVE_CARLSONWIRELESS
-	{ "ath0_net_mode", "n5-only" },	/* ath0 wireless mode */
+	{ "wlan0_net_mode", "n5-only" },	/* ath0 wireless mode */
 #elif HAVE_ONNET
 #ifdef HAVE_CPE880
-	{ "ath0_net_mode", "n5-only" },	/* ath0 wireless mode */
+	{ "wlan0_net_mode", "n5-only" },	/* ath0 wireless mode */
 #else
-	{ "ath0_net_mode", "mixed" },	/* ath0 wireless mode */
+	{ "wlan0_net_mode", "mixed" },	/* ath0 wireless mode */
 #endif
 #else
 	{ "wl_net_mode", "mixed" },	/* Wireless mode
@@ -1583,97 +1583,97 @@ struct nvram_param srouter_defaults[] = {
 
 #else
 #ifdef HAVE_IDEXX
-	{ "ath0_security_mode", "psk" },	/* WPA mode */
-	{ "ath0_akm", "psk psk2" },	/* WPA mode */
-	{ "ath0_psk", "1" },	/* WPA mode */
-	{ "ath0_psk2", "1" },	/* WPA mode */
-	{ "ath0_auth_mode", "psk psk2" },	/* WPA mode (disabled|radius|wpa|psk)  */
-	{ "ath0.1_security_mode", "psk psk2" },	/* WPA mode */
-	{ "ath0X1_security_mode", "psk psk2" },	/* WPA mode */
-	{ "ath1_security_mode", "psk" },	/* WPA mode */
-	{ "ath1_akm", "psk psk2" },	/* WPA mode */
-	{ "ath1_psk", "1" },	/* WPA mode */
-	{ "ath1_psk2", "1" },	/* WPA mode */
+	{ "wlan0_security_mode", "psk" },	/* WPA mode */
+	{ "wlan0_akm", "psk psk2" },	/* WPA mode */
+	{ "wlan0_psk", "1" },	/* WPA mode */
+	{ "wlan0_psk2", "1" },	/* WPA mode */
+	{ "wlan0_auth_mode", "psk psk2" },	/* WPA mode (disabled|radius|wpa|psk)  */
+	{ "wlan0.1_security_mode", "psk psk2" },	/* WPA mode */
+	{ "wlan0X1_security_mode", "psk psk2" },	/* WPA mode */
+	{ "wlan1_security_mode", "psk" },	/* WPA mode */
+	{ "wlan1_akm", "psk psk2" },	/* WPA mode */
+	{ "wlan1_psk", "1" },	/* WPA mode */
+	{ "wlan1_psk2", "1" },	/* WPA mode */
 #else
-	{ "ath0_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk)  */
+	{ "wlan0_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk)  */
 #endif
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL)
 #ifdef HAVE_CARLSONWIRELESS
-	{ "ath0_akm", "psk2" },
-	{ "ath0_psk2", "1" },
-	{ "ath0_wpa_psk", "7078227000" },	/* ath0 encryption key */
+	{ "wlan0_akm", "psk2" },
+	{ "wlan0_psk2", "1" },
+	{ "wlan0_wpa_psk", "7078227000" },	/* ath0 encryption key */
 #else
-	{ "ath0_akm", "disabled" },
-	{ "ath0_wpa_psk", "" },	/* WPA pre-shared key */
+	{ "wlan0_akm", "disabled" },
+	{ "wlan0_wpa_psk", "" },	/* WPA pre-shared key */
 #endif
 #endif
 #ifdef HAVE_IDEXX
-	{ "ath0_akm", "psk psk2" },
-	{ "ath0_psk", "1" },
-	{ "ath0_psk2", "1" },
-	{ "ath0_wpa_psk", "IDEXXwlan1234" },	/* ath0 encryption key */
-	{ "ath0.1_akm", "psk psk2" },
-	{ "ath0.1_wpa_psk", "IDEXXguest1234" },	/* ath0 encryption key */
+	{ "wlan0_akm", "psk psk2" },
+	{ "wlan0_psk", "1" },
+	{ "wlan0_psk2", "1" },
+	{ "wlan0_wpa_psk", "IDEXXwlan1234" },	/* ath0 encryption key */
+	{ "wlan0.1_akm", "psk psk2" },
+	{ "wlan0.1_wpa_psk", "IDEXXguest1234" },	/* ath0 encryption key */
 #endif
-	{ "ath0_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
-	{ "ath0_radius_port", "1812" },	/* RADIUS server UDP port */
-	{ "ath0_radius_ipaddr", "" },	/* RADIUS server IP address */
-	{ "ath0_radius_key", "" },	/* RADIUS shared secret */
+	{ "wlan0_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
+	{ "wlan0_radius_port", "1812" },	/* RADIUS server UDP port */
+	{ "wlan0_radius_ipaddr", "" },	/* RADIUS server IP address */
+	{ "wlan0_radius_key", "" },	/* RADIUS shared secret */
 
-	{ "ath1_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
-	{ "ath1_radius_port", "1812" },	/* RADIUS server UDP port */
-	{ "ath1_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
+	{ "wlan1_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
+	{ "wlan1_radius_port", "1812" },	/* RADIUS server UDP port */
+	{ "wlan1_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
 #ifndef HAVE_BUFFALO
-	{ "ath1_akm", "disabled" },
-	{ "ath1_wpa_psk", "" },	/* WPA pre-shared key */
+	{ "wlan1_akm", "disabled" },
+	{ "wlan1_wpa_psk", "" },	/* WPA pre-shared key */
 #endif
 #ifdef HAVE_IDEXX
-	{ "ath1_akm", "psk psk2" },
-	{ "ath1_wpa_psk", "IDEXXwlan1234" },	/* WPA pre-shared key */
+	{ "wlan1_akm", "psk psk2" },
+	{ "wlan1_wpa_psk", "IDEXXwlan1234" },	/* WPA pre-shared key */
 #endif
-	{ "ath1_radius_ipaddr", "" },	/* RADIUS server IP address */
-	{ "ath1_radius_key", "" },	/* RADIUS shared secret */
+	{ "wlan1_radius_ipaddr", "" },	/* RADIUS server IP address */
+	{ "wlan1_radius_key", "" },	/* RADIUS shared secret */
 
-	{ "ath2_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
-	{ "ath2_radius_port", "1812" },	/* RADIUS server UDP port */
-	{ "ath2_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
+	{ "wlan2_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
+	{ "wlan2_radius_port", "1812" },	/* RADIUS server UDP port */
+	{ "wlan2_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
-	{ "ath2_akm", "disabled" },
-	{ "ath2_wpa_psk", "" },	/* WPA pre-shared key */
-	{ "ath2_radius_ipaddr", "" },	/* RADIUS server IP address */
-	{ "ath2_radius_key", "" },	/* RADIUS shared secret */
+	{ "wlan2_akm", "disabled" },
+	{ "wlan2_wpa_psk", "" },	/* WPA pre-shared key */
+	{ "wlan2_radius_ipaddr", "" },	/* RADIUS server IP address */
+	{ "wlan2_radius_key", "" },	/* RADIUS shared secret */
 
-	{ "ath3_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
-	{ "ath3_radius_port", "1812" },	/* RADIUS server UDP port */
-	{ "ath3_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
+	{ "wlan3_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
+	{ "wlan3_radius_port", "1812" },	/* RADIUS server UDP port */
+	{ "wlan3_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
-	{ "ath3_akm", "disabled" },
-	{ "ath3_wpa_psk", "" },	/* WPA pre-shared key */
-	{ "ath3_radius_ipaddr", "" },	/* RADIUS server IP address */
-	{ "ath3_radius_key", "" },	/* RADIUS shared secret */
+	{ "wlan3_akm", "disabled" },
+	{ "wlan3_wpa_psk", "" },	/* WPA pre-shared key */
+	{ "wlan3_radius_ipaddr", "" },	/* RADIUS server IP address */
+	{ "wlan3_radius_key", "" },	/* RADIUS shared secret */
 
-	{ "ath4_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
-	{ "ath4_radius_port", "1812" },	/* RADIUS server UDP port */
-	{ "ath4_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
+	{ "wlan4_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
+	{ "wlan4_radius_port", "1812" },	/* RADIUS server UDP port */
+	{ "wlan4_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
-	{ "ath4_akm", "disabled" },
-	{ "ath4_wpa_psk", "" },	/* WPA pre-shared key */
-	{ "ath4_radius_ipaddr", "" },	/* RADIUS server IP address */
-	{ "ath4_radius_key", "" },	/* RADIUS shared secret */
-	{ "ath5_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
-	{ "ath5_radius_port", "1812" },	/* RADIUS server UDP port */
-	{ "ath5_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
+	{ "wlan4_akm", "disabled" },
+	{ "wlan4_wpa_psk", "" },	/* WPA pre-shared key */
+	{ "wlan4_radius_ipaddr", "" },	/* RADIUS server IP address */
+	{ "wlan4_radius_key", "" },	/* RADIUS shared secret */
+	{ "wlan5_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
+	{ "wlan5_radius_port", "1812" },	/* RADIUS server UDP port */
+	{ "wlan5_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
-	{ "ath5_akm", "disabled" },
-	{ "ath5_wpa_psk", "" },	/* WPA pre-shared key */
-	{ "ath5_radius_ipaddr", "" },	/* RADIUS server IP address */
-	{ "ath5_radius_key", "" },	/* RADIUS shared secret */
+	{ "wlan5_akm", "disabled" },
+	{ "wlan5_wpa_psk", "" },	/* WPA pre-shared key */
+	{ "wlan5_radius_ipaddr", "" },	/* RADIUS server IP address */
+	{ "wlan5_radius_key", "" },	/* RADIUS shared secret */
 #ifdef HAVE_GGEW
-	{ "ath0_8021xtype", "ttls" },
-	{ "ath0_ttls8021xanon", "anonymous" },
-	{ "ath0_ttls8021xphase2", "auth=PAP" },
-	{ "ath0_ttls8021xca", "-----BEGIN CERTIFICATE-----\n"
+	{ "wlan0_8021xtype", "ttls" },
+	{ "wlan0_ttls8021xanon", "anonymous" },
+	{ "wlan0_ttls8021xphase2", "auth=PAP" },
+	{ "wlan0_ttls8021xca", "-----BEGIN CERTIFICATE-----\n"
 	 "MIICfTCCAeYCCQC/0xTqd3htwDANBgkqhkiG9w0BAQUFADCBgjELMAkGA1UEBhMC\n"
 	 "REUxDzANBgNVBAgTBkhlc3NlbjERMA8GA1UEBxMIQmVuc2hlaW0xFTATBgNVBAoT\n"
 	 "DEdHRVduZXQgR21iSDEXMBUGA1UEAxMOY2EuZ2dldy1uZXQuZGUxHzAdBgkqhkiG\n"
@@ -1687,13 +1687,13 @@ struct nvram_param srouter_defaults[] = {
 	 "ENGTIghlKJH/AgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAe7Q6yWGdMX5f6GDAbFVR\n"
 	 "xEZSLgIM6TIazKARcgoV1fD5ymfb9bkWHt2/gXp9EGKVH97nwlkxvR4oYCCVQ9Cp\n" "hyMc/KTqX9P9M6ZTxwIBN+bkgIIbmArzkHRMrONYOgxAW1oGV+mnHPmgo3rF7fuI\n" "kSlc2ZFwN5KCX2+3TdcNnVk=\n" "-----END CERTIFICATE-----\n" },
 #else
-	{ "ath0_8021xtype", "peap" },
+	{ "wlan0_8021xtype", "peap" },
 #endif
-	{ "ath1_8021xtype", "peap" },
-	{ "ath2_8021xtype", "peap" },
-	{ "ath3_8021xtype", "peap" },
-	{ "ath4_8021xtype", "peap" },
-	{ "ath5_8021xtype", "peap" },
+	{ "wlan1_8021xtype", "peap" },
+	{ "wlan2_8021xtype", "peap" },
+	{ "wlan3_8021xtype", "peap" },
+	{ "wlan4_8021xtype", "peap" },
+	{ "wlan5_8021xtype", "peap" },
 #endif
 	{ "wl0_radius_override", "1" },	// overrides radius if server is
 	// unavailable
@@ -1762,13 +1762,13 @@ struct nvram_param srouter_defaults[] = {
 	{ "router_name", "KMT-WAS" },
 #elif  HAVE_ANTAIRA
 #ifdef HAVE_HABANERO
-	{ "ath0_ssid", "Antaira-2" },
-	{ "ath1_ssid", "Antaira-5" },
+	{ "wlan0_ssid", "Antaira-2" },
+	{ "wlan1_ssid", "Antaira-5" },
 #else
-	{ "ath0_ssid", "Antaira" },
-	{ "ath1_ssid", "Antaira" },
+	{ "wlan0_ssid", "Antaira" },
+	{ "wlan1_ssid", "Antaira" },
 #endif
-	{ "ath2_ssid", "Antaira" },
+	{ "wlan2_ssid", "Antaira" },
 	{ "router_style", "red" },
 	{ "router_name", "Antaira" },
 	{ "radius_country", "US" },
@@ -1782,21 +1782,21 @@ struct nvram_param srouter_defaults[] = {
 	{ "wan_default", "eth0" },
 	{ "fullswitch", "1" },
 	{ "time_zone", "America/Los_Angeles" },
-	{ "ath0_security_mode", "psk2" },
-	{ "ath0_akm", "psk2" },
-	{ "ath0_psk2", "1" },
-	{ "ath0_wpa_psk", "12345678" },
-	{ "ath0_ccmp", "1" },
-	{ "ath1_security_mode", "psk2" },
-	{ "ath1_akm", "psk2" },
-	{ "ath1_psk2", "1" },
-	{ "ath1_wpa_psk", "12345678" },
-	{ "ath1_ccmp", "1" },
-	{ "ath2_security_mode", "psk2" },
-	{ "ath2_akm", "psk2" },
-	{ "ath2_psk2", "1" },
-	{ "ath2_wpa_psk", "12345678" },
-	{ "ath2_ccmp", "1" },
+	{ "wlan0_security_mode", "psk2" },
+	{ "wlan0_akm", "psk2" },
+	{ "wlan0_psk2", "1" },
+	{ "wlan0_wpa_psk", "12345678" },
+	{ "wlan0_ccmp", "1" },
+	{ "wlan1_security_mode", "psk2" },
+	{ "wlan1_akm", "psk2" },
+	{ "wlan1_psk2", "1" },
+	{ "wlan1_wpa_psk", "12345678" },
+	{ "wlan1_ccmp", "1" },
+	{ "wlan2_security_mode", "psk2" },
+	{ "wlan2_akm", "psk2" },
+	{ "wlan2_psk2", "1" },
+	{ "wlan2_wpa_psk", "12345678" },
+	{ "wlan2_ccmp", "1" },
 	{ "resetbutton_enable", "0" },
 	{ "menu_nosecurity", "1" },
 	{ "menu_noaccrestriction", "1" },
@@ -2179,32 +2179,32 @@ struct nvram_param srouter_defaults[] = {
 	{ "rc_shutdown", "" },
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_XIOCOM
-	{ "ath0_txpwrdbm", "17" },
-	{ "ath1_txpwrdbm", "17" },
-	{ "ath2_txpwrdbm", "17" },
-	{ "ath3_txpwrdbm", "17" },
-	{ "ath4_txpwrdbm", "17" },
-	{ "ath5_txpwrdbm", "17" },
+	{ "wlan0_txpwrdbm", "17" },
+	{ "wlan1_txpwrdbm", "17" },
+	{ "wlan2_txpwrdbm", "17" },
+	{ "wlan3_txpwrdbm", "17" },
+	{ "wlan4_txpwrdbm", "17" },
+	{ "wlan5_txpwrdbm", "17" },
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
-	{ "ath0_txpwrdbm", "28" },
+	{ "wlan0_txpwrdbm", "28" },
 #elif HAVE_WZR450HP2
-	{ "ath0_txpwrdbm", "30" },
+	{ "wlan0_txpwrdbm", "30" },
 #else
 #ifdef HAVE_ANTAIRA
 #ifdef HAVE_HABANERO
-	{ "ath0_txpwrdbm", "25" },
-	{ "ath1_txpwrdbm", "25" },
+	{ "wlan0_txpwrdbm", "25" },
+	{ "wlan1_txpwrdbm", "25" },
 #else
-	{ "ath0_txpwrdbm", "20" },
-	{ "ath1_txpwrdbm", "20" },
+	{ "wlan0_txpwrdbm", "20" },
+	{ "wlan1_txpwrdbm", "20" },
 #endif
 #else
-	{ "ath0_txpwrdbm", "20" },
-	{ "ath1_txpwrdbm", "20" },
-	{ "ath2_txpwrdbm", "20" },
-	{ "ath3_txpwrdbm", "20" },
-	{ "ath4_txpwrdbm", "20" },
-	{ "ath5_txpwrdbm", "20" },
+	{ "wlan0_txpwrdbm", "20" },
+	{ "wlan1_txpwrdbm", "20" },
+	{ "wlan2_txpwrdbm", "20" },
+	{ "wlan3_txpwrdbm", "20" },
+	{ "wlan4_txpwrdbm", "20" },
+	{ "wlan5_txpwrdbm", "20" },
 #endif
 #endif
 #else
@@ -3215,10 +3215,10 @@ struct nvram_param srouter_defaults[] = {
 	{ "newhttp_passwd", "$1$hFOmcfz/$eYEVGPdzfrkGcA6MbUukF." },
 #endif
 #ifdef HAVE_MVEBU
-	{ "ath0_regdomain", "UNITED_STATES" },
-	{ "ath1_regdomain", "UNITED_STATES" },
-	{ "ath0_txpwrdbm", "30" },
-	{ "ath1_txpwrdbm", "30" },
+	{ "wlan0_regdomain", "UNITED_STATES" },
+	{ "wlan1_regdomain", "UNITED_STATES" },
+	{ "wlan0_txpwrdbm", "30" },
+	{ "wlan1_txpwrdbm", "30" },
 #endif
 #ifdef HAVE_SPUTNIK_APD
 
@@ -3378,7 +3378,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "iradius_enable", "0" },
 #endif
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
-	{ "wifi_display", "ath0" },
+	{ "wifi_display", "wlan0" },
 #else
 	{ "wifi_display", "wl0" },
 #endif

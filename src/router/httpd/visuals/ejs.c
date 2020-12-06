@@ -1373,7 +1373,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 		}
 		if (!strcmp("etherip0", var))
 			continue;
-		if (!strncmp("ath", var, 3))
+		if (!strncmp("wlan", var, 3))
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
@@ -1415,7 +1415,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		char dev[32];
 
-		sprintf(dev, "ath%d", i);
+		sprintf(dev, "wlan%d", i);
 
 		snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, dev));
 		show_bwif(wp, dev, name);
@@ -1605,7 +1605,7 @@ static struct menucontext *init_menu(webs_t wp)
 	int count = 0;
 	for (a = 0; a < ifcount; a++) {
 		char check[32];
-		sprintf(check, "ath%d", a);
+		sprintf(check, "wlan%d", a);
 		if (has_ad(check))
 			continue;
 		sprintf(&m->menu[MENU_WIRELESS][count + 8][0], "Wireless_WDS-ath%d.asp", a);
@@ -2500,7 +2500,7 @@ void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
 
 	char *ifname = nvram_safe_get("wifi_display");
 	if (has_ad(ifname))
-		ifname = "ath2";
+		ifname = "wlan2";
 	sprintf(ssid, "%s_ssid", ifname);
 	tf_webWriteESCNV(wp, ssid);
 
@@ -2512,7 +2512,7 @@ void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 
 	char *ifname = nvram_safe_get("wifi_display");
 	if (has_ad(ifname))
-		ifname = "ath2";
+		ifname = "wlan2";
 	sprintf(mode, "%s_mode", ifname);
 
 	websWrite(wp, "<script type=\"text/javascript\">");
@@ -2552,7 +2552,7 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 
 	char *ifname = nvram_safe_get("wifi_display");
 	if (has_ad(ifname))
-		ifname = "ath2";
+		ifname = "wlan2";
 	strncpy(m, ifname, 4);
 	m[4] = 0;
 	sprintf(netmode, "%s_net_mode", m);

@@ -1296,7 +1296,7 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 	int count, wildcard, wildcard_valid;
 #endif
 	for (i = 0; i < WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE; i++) {
-		char filter_mac[] = "ath10.99_macXXX";
+		char filter_mac[] = "wlan10.99_macXXX";
 		char *mac = NULL;
 		char mac1[21];
 

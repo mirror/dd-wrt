@@ -205,7 +205,7 @@ static int assoc_count[16];
 
 void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
-	assoc_count_prefix(wp, "ath");
+	assoc_count_prefix(wp, "wlan");
 }
 
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
@@ -222,7 +222,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	memset(assoc_count, 0, sizeof(assoc_count));
 	macmask = atoi(argv[0]);
 	for (i = 0; i < c; i++) {
-		sprintf(devs, "ath%d", i);
+		sprintf(devs, "wlan%d", i);
 		sprintf(turbo, "%s_channelbw", devs);
 		if (nvram_matchi(turbo, 40))
 			t = 2;
@@ -271,7 +271,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 
 	// show wds links
 	for (i = 0; i < c; i++) {
-		sprintf(devs, "ath%d", i);
+		sprintf(devs, "wlan%d", i);
 		if (!is_mac80211(devs)) {
 
 			int s;
@@ -284,10 +284,10 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 				char *hwaddr;
 				char var[80];
 
-				sprintf(wdsvarname, "ath%d_wds%d_enable", i, s);
-				sprintf(wdsdevname, "ath%d_wds%d_if", i, s);
-				sprintf(wdsmacname, "ath%d_wds%d_hwaddr", i, s);
-				sprintf(turbo, "ath%d_channelbw", i);
+				sprintf(wdsvarname, "wlan%d_wds%d_enable", i, s);
+				sprintf(wdsdevname, "wlan%d_wds%d_if", i, s);
+				sprintf(wdsmacname, "wlan%d_wds%d_hwaddr", i, s);
+				sprintf(turbo, "wlan%d_channelbw", i);
 				if (nvram_matchi(turbo, 40))
 					t = 2;
 				else
@@ -311,7 +311,7 @@ static int get_distance(char *ifname)
 	int ifcount, distance = 0;
 
 	strcpy(path, ifname);
-	sscanf(path, "ath%d", &ifcount);
+	sscanf(path, "wlan%d", &ifcount);
 	sprintf(path, "/proc/sys/dev/wifi%d/distance", ifcount);
 	FILE *in = fopen(path, "rb");
 
@@ -338,7 +338,7 @@ static int get_acktiming(char *ifname)
 	int ifcount, ack = 0;
 
 	strcpy(path, ifname);
-	sscanf(path, "ath%d", &ifcount);
+	sscanf(path, "wlan%d", &ifcount);
 	sprintf(path, "/proc/sys/dev/wifi%d/acktimeout", ifcount);
 	FILE *in = fopen(path, "rb");
 

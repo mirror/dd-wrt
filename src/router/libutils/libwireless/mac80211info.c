@@ -2438,10 +2438,10 @@ nla_put_failure:
 #ifdef TEST
 void main(int argc, char *argv[])
 {
-	mac80211_get_channels("ath0", "US", 20, 255);
-	mac80211_get_channels("ath1", "DE", 20, 255);
-	mac80211_get_channels("ath1", "DE", 20, 255);
-	mac80211_get_channels("ath0", "US", 20, 255);
+	mac80211_get_channels("wlan0", "US", 20, 255);
+	mac80211_get_channels("wlan1", "DE", 20, 255);
+	mac80211_get_channels("wlan1", "DE", 20, 255);
+	mac80211_get_channels("wlan0", "US", 20, 255);
 	fprintf(stderr, "phy0 %d %d %d %d\n", mac80211_get_avail_tx_antenna(0), mac80211_get_avail_rx_antenna(0), mac80211_get_configured_tx_antenna(0), mac80211_get_configured_rx_antenna(0));
 	fprintf(stderr, "phy1 %d %d %d %d\n", mac80211_get_avail_tx_antenna(1), mac80211_get_avail_rx_antenna(1), mac80211_get_configured_tx_antenna(1), mac80211_get_configured_rx_antenna(1));
 }

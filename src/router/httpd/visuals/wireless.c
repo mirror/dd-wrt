@@ -554,15 +554,15 @@ void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
 	ejArgs(argc, argv, "%s", &type);
 	cprintf("get wep value %s\n", type);
 #ifdef HAVE_MADWIFI
-	bit = GOZILA_GET(wp, "ath0_wep_bit");
+	bit = GOZILA_GET(wp, "wlan0_wep_bit");
 	if (bit == NULL)
-		bit = nvram_safe_get("ath0_wep_bit");
+		bit = nvram_safe_get("wlan0_wep_bit");
 
-	value = get_wep_value(wp, temp, type, bit, "ath0");
+	value = get_wep_value(wp, temp, type, bit, "wlan0");
 #else
 	bit = GOZILA_GET(wp, "wl_wep_bit");
 	if (bit == NULL)
-		bit = nvram_safe_get("ath0_wep_bit");
+		bit = nvram_safe_get("wlan0_wep_bit");
 	cprintf("bit = %s\n", bit);
 	value = get_wep_value(wp, temp, type, bit, "wl");
 #endif
@@ -871,7 +871,7 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 	int i;
 	int cnt = getdevicecount();
 	for (i = 0; i < cnt; i++) {
-		sprintf(ifname, "ath%d", i);
+		sprintf(ifname, "wlan%d", i);
 		if (ifexists(ifname)) {
 			if (!is_mac80211(ifname)) {
 				showrate = 1;

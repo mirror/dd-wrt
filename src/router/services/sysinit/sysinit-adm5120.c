@@ -318,7 +318,7 @@ void start_sysinit(void)
 	 */
 
 	stime(&tm);
-	nvram_set("wl0_ifname", "ath0");
+	nvram_set("wl0_ifname", "wlan0");
 
 	return;
 }
