@@ -3644,7 +3644,6 @@ void start_nvram(void)
 		free(newip);
 	}
 #endif
-
 	if (nvram_geti("nvram_ver") < 5) {
 		nvram_seti("nvram_ver", 5);
 		nvram_seti("block_multicast", 1);
@@ -3659,7 +3658,9 @@ void start_nvram(void)
 		 */
 		char *s;
 		nvram_getall(buf, NVRAMSPACE);
-		for (s = buf; *s; s++) {
+		s = buf;
+		while(*s) {
+			int len = strlen(s);
 			char *name = s;
 			char *value = strchr(s, '=');
 			value[0] = 0;
@@ -3672,8 +3673,8 @@ void start_nvram(void)
 				found = 1;
 			}
 			char *next;
-			char entry[128];
 			char *newvalue = malloc((strlen(value) * 2) + 1);
+			char *entry = malloc(strlen(value) + 1);
 			int first = 1;
 			foreach(entry, value, next) {
 				if (!strncmp(entry, "ath", 3) && isdigit(entry[3])) {
@@ -3685,16 +3686,21 @@ void start_nvram(void)
 
 				} else {
 					if (first)
-						sprintf(newvalue, "%s", &entry[3]);
+						sprintf(newvalue, "%s", entry);
 					else
-						sprintf(newvalue, "%s %s", newvalue, &entry[3]);
+						sprintf(newvalue, "%s %s", newvalue, entry);
 				}
 				first = 0;
 			}
-			if (found)
+			if (found) {
+				nvram_unset(name);
 				nvram_set(newname, newvalue);
+			}
+			free(entry);
 			free(newvalue);
 			free(newname);
+			s+=len + 1;
+
 		}
 		free(buf);
 
