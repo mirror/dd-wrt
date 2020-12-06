@@ -94,7 +94,7 @@ static void deconfigure_single(int count)
 	char vifs[128];
 	if (is_mac80211(dev)) {
 		deconfigure_single_ath9k(count);
-		sysprintf("rm -f /tmp/ath%d_configured", count);
+		sysprintf("rm -f /tmp/wlan%d_configured", count);
 		return;
 	}
 #ifdef HAVE_MADWIFI
@@ -129,7 +129,7 @@ static void deconfigure_single(int count)
 		}
 	}
 #endif
-	sysprintf("rm -f /tmp/ath%d_configured", count);
+	sysprintf("rm -f /tmp/wlan%d_configured", count);
 }
 
 void deconfigure_wifi(void)
@@ -1992,7 +1992,7 @@ static void configure_single(int count)
 	if (is_mac80211(dev)) {
 		configure_single_ath9k(count);
 		ath9k_start_supplicant(count, dev);
-		sysprintf("touch /tmp/ath%d_configured", count);
+		sysprintf("touch /tmp/wlan%d_configured", count);
 		return;
 	}
 #ifdef HAVE_MADWIFI
@@ -2019,7 +2019,7 @@ static void configure_single(int count)
 	cprintf("configure base interface %d\n", count);
 	sprintf(net, "%s_net_mode", dev);
 	if (nvram_match(net, "disabled")) {
-		sysprintf("touch /tmp/ath%d_configured", count);
+		sysprintf("touch /tmp/wlan%d_configured", count);
 		return;
 	}
 //    set_compression( count );
@@ -2764,7 +2764,7 @@ static void configure_single(int count)
 		eval("ifconfig", dev, "0.0.0.0", "up");
 	}
 #endif
-	sysprintf("touch /tmp/ath%d_configured", count);
+	sysprintf("touch /tmp/wlan%d_configured", count);
 }
 
 void start_vifs(void)
@@ -2924,7 +2924,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	for (i = 0; i < c; i++)
 		adjust_regulatory(i);
 	for (i = 0; i < c; i++) {
-		sysprintf("rm -f /tmp/ath%d_configured", i);
+		sysprintf("rm -f /tmp/wlan%d_configured", i);
 		configure_single(i);
 	}
 
@@ -2934,7 +2934,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		int cnf = 0;
 		for (i = 0; i < c; i++) {
 			char path[42];
-			sprintf(path, "/tmp/ath%d_configured", i);
+			sprintf(path, "/tmp/wlan%d_configured", i);
 			FILE *check = fopen(path, "rb");
 			if (check) {
 				cnf++;
