@@ -3687,7 +3687,7 @@ void start_nvram(void)
 					first = 0;
 				}
 				nvram_set(newname, newvalue);
-				    free(newvalue);
+				free(newvalue);
 			}
 		}
 		free(buf);
