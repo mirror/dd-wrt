@@ -76,7 +76,7 @@ char *get_monitor(void)
 {
 	char *ifname = nvram_safe_get("wifi_display");
 	int devcount;
-	sscanf(ifname, "ath%d", &devcount);
+	sscanf(ifname, "wlan%d", &devcount);
 	static char mon[32];
 	sprintf(mon, "mon%d", devcount);
 	return mon;
