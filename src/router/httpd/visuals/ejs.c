@@ -2421,8 +2421,8 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	char mode[32];
 	char net_mode[32];
 
-	strncpy(m, nvram_safe_get("wifi_display"), 4);
-	m[4] = 0;
+	strncpy(m, nvram_safe_get("wifi_display"), 5);
+	m[5] = 0;
 	sprintf(net_mode, "%s_net_mode", m);
 	sprintf(mode, "%s_mode", m);
 	if (nvram_match(net_mode, "disabled") || nvram_match(mode, "disabled")) {
@@ -2472,8 +2472,8 @@ void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
 	char m[32];
 	int showap = 0, showcli = 0;
 
-	strncpy(m, nvram_safe_get("wifi_display"), 4);
-	m[4] = 0;
+	strncpy(m, nvram_safe_get("wifi_display"), 5);
+	m[5] = 0;
 	sprintf(var, "%s_mode", m);
 
 	if (nvram_match(var, "ap") || nvram_match(var, "wdsap")) {
@@ -2553,8 +2553,8 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 	char *ifname = nvram_safe_get("wifi_display");
 	if (has_ad(ifname))
 		ifname = "wlan2";
-	strncpy(m, ifname, 4);
-	m[4] = 0;
+	strncpy(m, ifname, 5);
+	m[5] = 0;
 	sprintf(netmode, "%s_net_mode", m);
 
 	websWrite(wp, "<script type=\"text/javascript\">");
