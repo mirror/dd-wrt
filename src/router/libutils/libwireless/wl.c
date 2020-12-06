@@ -1790,7 +1790,7 @@ void radio_on_off_ath9k(int idx, int on)
 			write(fp, "0", sizeof("0") - 1);
 		else
 			write(fp, "3", sizeof("3") - 1);
-		fprintf(stderr, "wlan9k radio %d: phy%d ath%d\n", on, get_ath9k_phy_idx(idx), idx);
+		fprintf(stderr, "wlan9k radio %d: phy%d wlan%d\n", on, get_ath9k_phy_idx(idx), idx);
 		close(fp);
 	}
 	// LED
