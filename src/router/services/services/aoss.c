@@ -123,7 +123,7 @@ void start_aoss(void)
 			counter++;
 		}
 		setupHostAP_ath9k("wlan0", 0, counter, 1);
-		FILE *fp = fopen("/var/run/ath0_hostapd.pid", "rb");
+		FILE *fp = fopen("/var/run/wlan0_hostapd.pid", "rb");
 		if (fp)		// file not found means that hostapd usually doesnt run
 		{
 			int pid;
@@ -132,7 +132,7 @@ void start_aoss(void)
 			kill(pid, SIGTERM);
 			sleep(2);
 		}
-		eval("hostapd", "-B", "-P", "/var/run/ath0_hostapd.pid", "/tmp/ath0_hostap.conf");
+		eval("hostapd", "-B", "-P", "/var/run/wlan0_hostapd.pid", "/tmp/wlan0_hostap.conf");
 	}
 	if ((nvram_match("wlan1_mode", "ap")
 	     || nvram_match("wlan1_mode", "wdsap"))
@@ -149,7 +149,7 @@ void start_aoss(void)
 			counter++;
 		}
 		setupHostAP_ath9k("wlan1", 0, counter, 1);
-		FILE *fp = fopen("/var/run/ath1_hostapd.pid", "rb");
+		FILE *fp = fopen("/var/run/wlan1_hostapd.pid", "rb");
 		if (fp)		// file not found means that hostapd usually doesnt run
 		{
 			int pid;
@@ -158,7 +158,7 @@ void start_aoss(void)
 			kill(pid, SIGTERM);
 			sleep(2);
 		}
-		eval("hostapd", "-B", "-P", "/var/run/ath1_hostapd.pid", "/tmp/ath1_hostap.conf");
+		eval("hostapd", "-B", "-P", "/var/run/wlan1_hostapd.pid", "/tmp/wlan1_hostap.conf");
 
 	}
 #else
@@ -211,7 +211,7 @@ void start_aoss(void)
 				counter++;
 			}
 			setupHostAP_ath9k("wlan0", 0, counter, 1);
-			FILE *fp = fopen("/var/run/ath0_hostapd.pid", "rb");
+			FILE *fp = fopen("/var/run/wlan0_hostapd.pid", "rb");
 			if (fp)	// file not found means that hostapd usually doesnt run
 			{
 				int pid;
@@ -220,7 +220,7 @@ void start_aoss(void)
 				kill(pid, SIGTERM);
 				sleep(2);
 			}
-			eval("hostapd", "-B", "-P", "/var/run/ath0_hostapd.pid", "/tmp/ath0_hostap.conf");
+			eval("hostapd", "-B", "-P", "/var/run/wlan0_hostapd.pid", "/tmp/wlan0_hostap.conf");
 		} else {
 			hasaoss = 1;
 			eval("80211n_wlanconfig", "aoss", "create", "wlandev", "wifi0", "wlanmode", "ap");

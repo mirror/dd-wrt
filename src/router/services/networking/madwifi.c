@@ -2845,9 +2845,9 @@ void start_duallink(void)
 		sysprintf("ip route flush table 200");
 		sysprintf("ip route del fwmark 1 table 200");
 		sysprintf("iptables -t mangle -F PREROUTING");
-		sysprintf("ip route add %s/%s dev ath0 src %s table 100", nvram_safe_get("wlan0_ipaddr"), nvram_safe_get("wlan0_netmask"), nvram_safe_get("wlan0_ipaddr"));
+		sysprintf("ip route add %s/%s dev wlan0 src %s table 100", nvram_safe_get("wlan0_ipaddr"), nvram_safe_get("wlan0_netmask"), nvram_safe_get("wlan0_ipaddr"));
 		sysprintf("ip route default via %s table 100", nvram_safe_get("wlan0_duallink_parent"));
-		sysprintf("ip route add %s/%s dev ath0 src %s table 200", nvram_safe_get("wlan1_ipaddr"), nvram_safe_get("wlan1_netmask"), nvram_safe_get("wlan1_ipaddr"));
+		sysprintf("ip route add %s/%s dev wlan0 src %s table 200", nvram_safe_get("wlan1_ipaddr"), nvram_safe_get("wlan1_netmask"), nvram_safe_get("wlan1_ipaddr"));
 		sysprintf("ip route default via %s table 200", nvram_safe_get("wlan1_duallink_parent"));
 		sysprintf("iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
 		sysprintf("ip rule add fwmark 1 table 200");
@@ -2857,9 +2857,9 @@ void start_duallink(void)
 		sysprintf("ip route flush table 200");
 		sysprintf("ip route del fwmark 1 table 100");
 		sysprintf("iptables -t mangle -F PREROUTING");
-		sysprintf("ip route add %s/%s dev ath0 src %s table 100", nvram_safe_get("wlan0_ipaddr"), nvram_safe_get("wlan0_netmask"), nvram_safe_get("wlan0_ipaddr"));
+		sysprintf("ip route add %s/%s dev wlan0 src %s table 100", nvram_safe_get("wlan0_ipaddr"), nvram_safe_get("wlan0_netmask"), nvram_safe_get("wlan0_ipaddr"));
 		sysprintf("ip route default via %s table 100", nvram_safe_get("wlan0_duallink_parent"));
-		sysprintf("ip route add %s/%s dev ath0 src %s table 200", nvram_safe_get("wlan1_ipaddr"), nvram_safe_get("wlan1_netmask"), nvram_safe_get("wlan1_ipaddr"));
+		sysprintf("ip route add %s/%s dev wlan0 src %s table 200", nvram_safe_get("wlan1_ipaddr"), nvram_safe_get("wlan1_netmask"), nvram_safe_get("wlan1_ipaddr"));
 		sysprintf("ip route default via %s table 200", nvram_safe_get("wlan1_duallink_parent"));
 		sysprintf("iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
 		sysprintf("ip rule add fwmark 1 table 100");
@@ -2913,7 +2913,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		unlink("/tmp/.crdalock");	// delete lock file, no matter if crda still running. 4 sec is enough
 */
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
-		if (nvram_geti("wlan10k-ct") != nvram_geti("wlan10k-ct_bak")) {
+		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
 			eval("reboot");
 		}
