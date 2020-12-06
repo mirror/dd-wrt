@@ -3679,6 +3679,7 @@ void start_nvram(void)
 			char *next;
 			char *newvalue = malloc((strlen(value) * 2) + 1);
 			char *entry = malloc(strlen(value) + 1);
+			*newvalue=0;
 			int first = 1;
 			foreach(entry, value, next) {
 				if (!strncmp(entry, "ath", 3) && isdigit(entry[3])) {
