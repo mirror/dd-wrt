@@ -1264,7 +1264,7 @@ long long wifi_getrate(char *ifname)
 	if (is_mac80211(ifname) && !is_mvebu(ifname)) {
 		char physical[32];
 		bzero(physical, sizeof(physical));
-		strncpy(physical, ifname, 4);
+		strncpy(physical, ifname, 5);
 		if (nvram_nmatch("b-only", "%s_net_mode", physical))
 			return 11000 * KILO;
 		if (nvram_nmatch("g-only", "%s_net_mode", physical))
