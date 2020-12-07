@@ -115,14 +115,14 @@ build your kernel
 11. Pre-authentication integrity(SMB 3.1.1)
 12. SMB3 encryption(CCM, GCM)
 13. SMB direct(RDMA)
+14. Win-ACL
+15. Kerberos
 
 *Planned*
 1. Multi-channel
 2. Durable handle v1/v2
-3. Kerberos
-4. Persistent handles
-5. Directory lease
-6. Win-ACL
+3. Persistent handles
+4. Directory lease
 
 
 ## Supported Linux Kernel Versions

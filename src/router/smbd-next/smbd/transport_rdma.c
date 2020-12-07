@@ -507,7 +507,7 @@ static int smb_direct_check_recvmsg(struct smb_direct_recvmsg *recvmsg)
 			le32_to_cpu(req->max_fragmented_size));
 		if (le16_to_cpu(req->min_version) > 0x0100 ||
 				le16_to_cpu(req->max_version) < 0x0100)
-			return -ENOTSUPP;
+			return -EOPNOTSUPP;
 		if (le16_to_cpu(req->credits_requested) <= 0 ||
 				le32_to_cpu(req->max_receive_size) <= 128 ||
 				le32_to_cpu(req->max_fragmented_size) <=

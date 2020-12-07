@@ -45,6 +45,7 @@ script:
  - echo 'CONFIG_SMB_INSECURE_SERVER=y' >> .config
  - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_KERBEROS5 is not set' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile with latest Torvalds' kernel
@@ -56,6 +57,7 @@ script:
  - echo 'CONFIG_SMB_INSECURE_SERVER=y' >> .config
  - echo 'CONFIG_SMB_SERVER_SMBDIRECT=y' >> .config
  - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_KERBEROS5 is not set' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile secure server build (no smb1.0 & smb2.0) with 4.1 kernel
@@ -67,6 +69,7 @@ script:
  - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_KERBEROS5 is not set' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile secure server build (no smb1/smb2) with latest Torvalds' kernel
@@ -78,6 +81,7 @@ script:
  - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_KERBEROS5 is not set' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile secure server build + SMBD with latest Torvalds' kernel
@@ -89,6 +93,31 @@ script:
  - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
  - echo 'CONFIG_SMB_SERVER_SMBDIRECT=y' >> .config
  - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_KERBEROS5 is not set' >> .config
+ - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
+
+ # Compile secure server build + Kerberos  with 4.1 kernel
+ - cd ../linux-stable
+ - yes "" | make oldconfig > /dev/null
+ - echo 'obj-$(CONFIG_SMB_SERVER) += cifsd/' >> fs/Makefile
+ - echo 'source "fs/cifsd/Kconfig"' >> fs/Kconfig
+ - echo 'CONFIG_SMB_SERVER=m' >> .config
+ - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
+ - echo 'CONFIG_SMB_SERVER_KERBEROS5=y' >> .config
+ - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
+
+ # Compile secure server build + SMBD + Kerberos with latest Torvalds' kernel
+ - cd ../linux
+ - yes "" | make oldconfig > /dev/null
+ - echo 'obj-$(CONFIG_SMB_SERVER) += cifsd/' >> fs/Makefile
+ - echo 'source "fs/cifsd/Kconfig"' >> fs/Kconfig
+ - echo 'CONFIG_SMB_SERVER=m' >> .config
+ - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
+ - echo 'CONFIG_SMB_SERVER_SMBDIRECT=y' >> .config
+ - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
+ - echo 'CONFIG_SMB_SERVER_KERBEROS5=y' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Run xfstests testsuite
@@ -374,6 +403,11 @@ script:
  - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.create.leading-slash
  - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.create.impersonation
  - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.create.dir-alloc-size
+ - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.create.aclfile
+ - sudo rm -rf /mnt/test3/*
+ - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.create.acldir
+ - sudo rm -rf /mnt/test3/*
+ - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.create.nulldacl
  - sudo rm -rf /mnt/test3/*
  # smb2 delete-on-close test
  - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.delete-on-close-perms.OVERWRITE_IF
@@ -483,3 +517,15 @@ script:
  - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.lease.complex1
  - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.lease.timeout
 # - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.lease.unlink
+ # smb2 acls test
+ - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.acls.CREATOR
+ - sudo rm -rf /mnt/test3/*
+ - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.acls.GENERIC
+ - sudo rm -rf /mnt/test3/*
+ - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.acls.OWNER
+ - sudo rm -rf /mnt/test3/*
+ - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.acls.INHERITANCE
+ - sudo rm -rf /mnt/test3/*
+ - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.acls.INHERITFLAGS
+ - sudo rm -rf /mnt/test3/*
+ - ./bin/smbtorture //127.0.0.1/cifsd-test3/ -Utestuser%1234 smb2.acls.DYNAMIC
