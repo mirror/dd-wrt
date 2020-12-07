@@ -426,10 +426,10 @@ bmenu.wirelessAdvanced="Erweiterte Einstellungen";
 bmenu.wirelessAdvancedwl0="WL0-Erweitert";
 bmenu.wirelessAdvancedwl1="WL1-Erweitert";
 bmenu.wirelessWds="WDS";
-bmenu.wirelessWds0="Ath0-WDS";
-bmenu.wirelessWds1="Ath1-WDS";
-bmenu.wirelessWds2="Ath2-WDS";
-bmenu.wirelessWds3="Ath3-WDS";
+bmenu.wirelessWds0="Wlan0-WDS";
+bmenu.wirelessWds1="Wlan1-WDS";
+bmenu.wirelessWds2="Wlan2-WDS";
+bmenu.wirelessWds3="Wlan3-WDS";
 bmenu.wirelessWdswl0="WL0-WDS";
 bmenu.wirelessWdswl1="WL1-WDS";
 
