@@ -954,7 +954,7 @@ static int build_sess_rsp_noextsec(struct ksmbd_session *sess,
 	WARN_ON(sess->user);
 
 	ksmbd_debug(SMB, "session setup request for user %s\n", name);
-	sess->user = ksmbd_alloc_user(name);
+	sess->user = ksmbd_login_user(name);
 	kfree(name);
 	if (!sess->user) {
 		ksmbd_err("user not present in database\n");
@@ -1166,7 +1166,7 @@ static int build_sess_rsp_extsec(struct ksmbd_session *sess,
 
 		ksmbd_debug(SMB, "session setup request for user %s\n",
 			username);
-		sess->user = ksmbd_alloc_user(username);
+		sess->user = ksmbd_login_user(username);
 		kfree(username);
 
 		if (!sess->user) {

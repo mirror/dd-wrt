@@ -82,14 +82,8 @@ struct ksmbd_conn {
 	struct preauth_integrity_info	*preauth_info;
 
 	bool				need_neg;
-	/* Supports NTLMSSP */
-	bool				sec_ntlmssp;
-	/* Supports U2U Kerberos */
-	bool				sec_kerberosu2u;
-	/* Supports plain Kerberos */
-	bool				sec_kerberos;
-	/* Supports legacy MS Kerberos */
-	bool				sec_mskerberos;
+	unsigned int			auth_mechs;
+	unsigned int			preferred_auth_mech;
 	bool				sign;
 	bool				use_spnego:1;
 	__u16				cli_sec_mode;
