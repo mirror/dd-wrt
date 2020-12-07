@@ -54,7 +54,7 @@ void start_ipvs(void)
 			break;
 		if (!first) {
 			first = 1;
-			insmod("ipv6 ip_vs ip_ftp ip_pe_sip");
+			insmod("libcrc32c ipv6 ip_vs ip_ftp ip_pe_sip");
 		}
 		char modname[32];
 		sprintf(modname, "ip_vs_%s", scheduler);	//build module name for scheduler implementation
