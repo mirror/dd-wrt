@@ -361,6 +361,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CRYPTO_CCM is not set/CONFIG_CRYPTO_CCM=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_AEAD is not set/CONFIG_CRYPTO_AEAD=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_AEAD2 is not set/CONFIG_CRYPTO_AEAD2=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_LIBCRC32C is not set/CONFIG_LIBCRC32C=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_CRYPTO_DRBG_CTR=n" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NFS)" = "y" ]; then \
