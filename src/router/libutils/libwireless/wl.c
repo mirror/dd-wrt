@@ -3254,7 +3254,7 @@ int get_ath9k_phy_ifname(const char *ifname)
 		return -1;
 	if (is_wil6210(ifname))
 		return 2;
-	if (strncmp(ifname, "wlan", 3))
+	if (strncmp(ifname, "wlan", 4))
 		return -1;
 	if (!sscanf(ifname, "wlan%d", &devnum))
 		return -1;
@@ -3267,7 +3267,7 @@ int is_mac80211(const char *prefix)
 #ifdef HAVE_MVEBU
 	return 1;
 #endif
-	if (strncmp(prefix, "wlan", 3))
+	if (strncmp(prefix, "wlan", 4))
 		return 0;
 	INITVALUECACHE();
 	glob_t globbuf;
