@@ -315,13 +315,13 @@ int br_add_interface(const char *br, const char *dev)
 	sprintf(hwaddr, "%s_hwaddr", dev);
 
 	eval("ifconfig", dev, "0.0.0.0");
-	if (strncmp(dev, "wlan", 3) != 0) {	// this is not an ethernet driver
+	if (strncmp(dev, "wlan", 4) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
 	}
 	if (!nvram_match(hwaddr, ""))
 		set_hwaddr(dev, nvram_safe_get(hwaddr));
 	eval("ifconfig", dev, "mtu", getBridgeMTU(br, tmp));
-	if (strncmp(dev, "wlan", 3) != 0) {	// this is not an ethernet driver
+	if (strncmp(dev, "wlan", 4) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "up");
 	}
 
@@ -338,7 +338,7 @@ int br_add_interface(const char *br, const char *dev)
 	char *sep = NULL;
 	char mainif[32];
 	strncpy(mainif, dev, 31);
-	if (!strncmp(dev, "wlan", 3) && (sep = strstr(mainif, ".sta"))) {
+	if (!strncmp(dev, "wlan", 4) && (sep = strstr(mainif, ".sta"))) {
 		*sep = 0;
 		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_ngeti("%s_multicast_to_unicast", mainif), dev);
 	} else {
