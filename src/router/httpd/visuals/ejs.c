@@ -1373,7 +1373,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 		}
 		if (!strcmp("etherip0", var))
 			continue;
-		if (!strncmp("wlan", var, 3))
+		if (!strncmp("wlan", var, 4))
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
