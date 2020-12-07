@@ -1189,7 +1189,7 @@ static int generate_preauth_hash(struct ksmbd_work *work)
 	if (conn->dialect != SMB311_PROT_ID)
 		return 0;
 
-	if (negblob->MessageType == NtLmNegotiate) {
+	if (!sess->Preauth_HashValue) {
 		if (alloc_preauth_hash(sess, conn)) {
 			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			return -ENOMEM;
