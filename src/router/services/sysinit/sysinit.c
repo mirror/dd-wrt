@@ -3659,7 +3659,7 @@ void start_nvram(void)
 		char *s;
 		nvram_getall(buf, NVRAMSPACE);
 		s = buf;
-		while(*s) {
+		while (*s) {
 			int len = strlen(s);
 			char *name = s;
 			char *value = strchr(s, '=');
@@ -3679,22 +3679,19 @@ void start_nvram(void)
 			char *next;
 			char *newvalue = malloc((strlen(value) * 2) + 1);
 			char *entry = malloc(strlen(value) + 1);
-			*newvalue=0;
+			*newvalue = 0;
 			int first = 1;
 			foreach(entry, value, next) {
+				char *prefix = "";
 				if (!strncmp(entry, "ath", 3) && isdigit(entry[3])) {
 					found = 1;
-					if (first)
-						sprintf(newvalue, "wlan%s", &entry[3]);
-					else
-						sprintf(newvalue, "%s wlan%s", newvalue, &entry[3]);
-
-				} else {
-					if (first)
-						sprintf(newvalue, "%s", entry);
-					else
-						sprintf(newvalue, "%s %s", newvalue, entry);
+					prefix = "wlan";
 				}
+				if (first)
+					sprintf(newvalue, "%s%s", prefix, entry);
+				else
+					sprintf(newvalue, "%s %s%s", prefix, newvalue, entry);
+
 				first = 0;
 			}
 			if (found) {
@@ -3704,7 +3701,7 @@ void start_nvram(void)
 			free(entry);
 			free(newvalue);
 			free(newname);
-			s+=len + 1;
+			s += len + 1;
 
 		}
 		free(buf);
