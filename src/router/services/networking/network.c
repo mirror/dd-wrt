@@ -2140,7 +2140,7 @@ void start_lan(void)
 				continue;
 #ifdef HAVE_EAD
 #if defined(HAVE_RT2880) || defined(HAVE_MADWIFI) || defined(HAVE_RT61)
-			if (strncmp(name, "wlan", 3) && strncmp(name, "ra", 2))
+			if (strncmp(name, "wlan", 4) && strncmp(name, "ra", 2))
 #else
 			if (wl_probe(name))
 #endif
@@ -2175,7 +2175,7 @@ void start_lan(void)
 			}
 			// set proper mtu
 
-			if (strncmp(realname, "wlan", 3) != 0) {	// this is not an ethernet driver
+			if (strncmp(realname, "wlan", 4) != 0) {	// this is not an ethernet driver
 				eval("ifconfig", realname, "down");	//fixup for some ethernet drivers
 			}
 			eval("ifconfig", realname, "mtu", getMTU(realname));
@@ -2183,7 +2183,7 @@ void start_lan(void)
 			if (!nvram_nmatch("", "%s_hwaddr", realname))
 				set_hwaddr(realname, nvram_nget("%s_hwaddr", realname));
 
-			if (strncmp(realname, "wlan", 3) != 0) {	// this is not an ethernet driver
+			if (strncmp(realname, "wlan", 4) != 0) {	// this is not an ethernet driver
 				eval("ifconfig", realname, "up");	//fixup for some ethernet drivers
 			}
 
