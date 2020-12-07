@@ -2076,30 +2076,6 @@ static int __caseless_lookup(struct dir_context *ctx,
 	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
 #endif
 
-int ksmbd_vfs_xattr_sd(char *sd_data, char **xattr_sd, size_t *xattr_sd_size)
-{
-	int sd_size;
-	char *xattr_sd_buf;
-	struct smb_ntacl *acl = (struct smb_ntacl *)sd_data;
-
-	sd_size = sizeof(struct smb_ace)*acl->num_aces + 4;
-	*xattr_sd_size = sd_size + XATTR_NAME_SD_LEN + 1;
-	xattr_sd_buf = kmalloc(*xattr_sd_size, GFP_KERNEL);
-	if (!xattr_sd_buf)
-		return -ENOMEM;
-
-	memcpy(xattr_sd_buf, XATTR_NAME_SD, XATTR_NAME_SD_LEN);
-
-	if (sd_size)
-		memcpy(&xattr_sd_buf[XATTR_NAME_SD_LEN], sd_data,
-				sd_size);
-
-	xattr_sd_buf[*xattr_sd_size - 1] = '\0';
-	*xattr_sd = xattr_sd_buf;
-
-	return 0;
-}
-
 	if (buf->used != namlen)
 		return 0;
 	if (!strncasecmp((char *)buf->private, name, namlen)) {
@@ -2298,6 +2274,30 @@ int ksmbd_vfs_xattr_stream_name(char *stream_name,
 extern long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
 		loff_t *opos, size_t len, unsigned int flags);
 #endif
+
+int ksmbd_vfs_xattr_sd(char *sd_data, char **xattr_sd, size_t *xattr_sd_size)
+{
+	int sd_size;
+	char *xattr_sd_buf;
+	struct smb_ntacl *acl = (struct smb_ntacl *)sd_data;
+
+	sd_size = sizeof(struct smb_ace)*acl->num_aces + 4;
+	*xattr_sd_size = sd_size + XATTR_NAME_SD_LEN + 1;
+	xattr_sd_buf = kmalloc(*xattr_sd_size, GFP_KERNEL);
+	if (!xattr_sd_buf)
+		return -ENOMEM;
+
+	memcpy(xattr_sd_buf, XATTR_NAME_SD, XATTR_NAME_SD_LEN);
+
+	if (sd_size)
+		memcpy(&xattr_sd_buf[XATTR_NAME_SD_LEN], sd_data,
+				sd_size);
+
+	xattr_sd_buf[*xattr_sd_size - 1] = '\0';
+	*xattr_sd = xattr_sd_buf;
+
+	return 0;
+}
 
 static int ksmbd_vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 				struct file *file_out, loff_t pos_out,

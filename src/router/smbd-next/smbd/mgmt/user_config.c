@@ -32,7 +32,7 @@ struct ksmbd_user *ksmbd_alloc_user(struct ksmbd_login_response *resp)
 {
 	struct ksmbd_user *user = NULL;
 
-	user = ksmbd_alloc(sizeof(struct ksmbd_user));
+	user = ksmbd_zalloc(sizeof(struct ksmbd_user));
 	if (!user)
 		return NULL;
 
@@ -41,7 +41,7 @@ struct ksmbd_user *ksmbd_alloc_user(struct ksmbd_login_response *resp)
 	user->gid = resp->gid;
 	user->uid = resp->uid;
 	user->passkey_sz = resp->hash_sz;
-	user->passkey = ksmbd_alloc(resp->hash_sz);
+	user->passkey = ksmbd_zalloc(resp->hash_sz);
 	if (user->passkey)
 		memcpy(user->passkey, resp->hash, resp->hash_sz);
 

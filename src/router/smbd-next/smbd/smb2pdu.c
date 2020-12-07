@@ -1918,7 +1918,14 @@ int smb2_session_logoff(struct ksmbd_work *work)
 	ksmbd_close_session_fds(work);
 	ksmbd_conn_wait_idle(conn);
 
-	ksmbd_tree_conn_session_logoff(sess);
+	if (ksmbd_tree_conn_session_logoff(sess)) {
+		struct smb2_logoff_req *req = REQUEST_BUF(work);
+
+		ksmbd_debug(SMB, "Invalid tid %d\n", req->hdr.Id.SyncId.TreeId);
+		rsp->hdr.Status = STATUS_NETWORK_NAME_DELETED;
+		smb2_set_err_rsp(work);
+		return 0;
+	}
 	ksmbd_destroy_file_table(&sess->file_table);
 	sess->state = SMB2_SESSION_EXPIRED;
 
