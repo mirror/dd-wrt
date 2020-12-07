@@ -5343,10 +5343,6 @@ void start_hotplug_net(void)
 	if (strncmp(ifname, "sta", 3)) {
 		return;
 	}
-	char nr[32];
-
-	bzero(nr, 32);
-	strcpy(nr, ((char *)&ifname[0]) + 4);
 	bzero(ifname, 32);
 	strncpy(ifname, interface, index - interface);
 	char bridged[32];
