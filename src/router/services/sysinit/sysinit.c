@@ -3682,16 +3682,19 @@ void start_nvram(void)
 			*newvalue = 0;
 			int first = 1;
 			foreach(entry, value, next) {
-				char *prefix = "";
 				if (!strncmp(entry, "ath", 3) && isdigit(entry[3])) {
 					found = 1;
-					prefix = "wlan";
-				}
-				if (first)
-					sprintf(newvalue, "%s%s", prefix, entry);
-				else
-					sprintf(newvalue, "%s %s%s", prefix, newvalue, entry);
+					if (first)
+						sprintf(newvalue, "wlan%s", &entry[3]);
+					else
+						sprintf(newvalue, "%s wlan%s", newvalue, &entry[3]);
 
+				} else {
+					if (first)
+						sprintf(newvalue, "%s", entry);
+					else
+						sprintf(newvalue, "%s %s", newvalue, entry);
+				}
 				first = 0;
 			}
 			if (found) {
