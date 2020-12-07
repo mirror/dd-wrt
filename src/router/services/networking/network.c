@@ -5324,7 +5324,7 @@ void start_hotplug_net(void)
 	}
 #ifdef HAVE_MADWIFI
 	// sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
-	if (strncmp(interface, "wlan", 3))
+	if (strncmp(interface, "wlan", 4))
 		return;
 
 	// try to parse
@@ -5346,7 +5346,7 @@ void start_hotplug_net(void)
 	char nr[32];
 
 	bzero(nr, 32);
-	strcpy(nr, ((char *)&ifname[0]) + 3);
+	strcpy(nr, ((char *)&ifname[0]) + 4);
 	bzero(ifname, 32);
 	strncpy(ifname, interface, index - interface);
 	char bridged[32];
