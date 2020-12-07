@@ -365,10 +365,10 @@ bmenu.wirelessAdvanced="Param&egrave;tres avanc&eacute;s";
 bmenu.wirelessAdvancedwl0="WL0-Avanc&eacute;s";
 bmenu.wirelessAdvancedwl1="WL1-Avanc&eacute;s";
 bmenu.wirelessWds="WDS";
-bmenu.wirelessWds0="Wlan0-WDS";
-bmenu.wirelessWds1="Wlan1-WDS";
-bmenu.wirelessWds2="Wlan2-WDS";
-bmenu.wirelessWds3="Wlan3-WDS";
+bmenu.wirelessWds0="wlan0-WDS";
+bmenu.wirelessWds1="wlan1-WDS";
+bmenu.wirelessWds2="wlan2-WDS";
+bmenu.wirelessWds3="wlan3-WDS";
 bmenu.wirelessWdswl0="WL0-WDS";
 bmenu.wirelessWdswl1="WL1-WDS";
 
