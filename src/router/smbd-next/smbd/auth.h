@@ -8,8 +8,13 @@
 
 #include "ntlmssp.h"
 
+#ifdef CONFIG_SMB_SERVER_KERBEROS5
+#define AUTH_GSS_LENGTH		96
+#define AUTH_GSS_PADDING	0
+#else
 #define AUTH_GSS_LENGTH		74
 #define AUTH_GSS_PADDING	6
+#endif
 
 #define CIFS_HMAC_MD5_HASH_SIZE	(16)
 #define CIFS_NTHASH_SIZE	(16)
@@ -20,6 +25,11 @@
 #define CIFS_AUTH_RESP_SIZE		24
 #define CIFS_SMB1_SIGNATURE_SIZE	8
 #define CIFS_SMB1_SESSKEY_SIZE		16
+
+#define KSMBD_AUTH_NTLMSSP	0x0001
+#define KSMBD_AUTH_KRB5		0x0002
+#define KSMBD_AUTH_MSKRB5	0x0004
+#define KSMBD_AUTH_KRB5U2U	0x0008
 
 struct ksmbd_session;
 struct ksmbd_conn;
@@ -51,6 +61,10 @@ int ksmbd_decode_ntlmssp_neg_blob(struct negotiate_message *negblob,
 unsigned int
 ksmbd_build_ntlmssp_challenge_blob(struct challenge_message *chgblob,
 		struct ksmbd_session *sess);
+
+int ksmbd_krb5_authenticate(struct ksmbd_session *sess,
+			char *in_blob, int in_len,
+			char *out_blob, int *out_len);
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 int ksmbd_sign_smb1_pdu(struct ksmbd_session *sess,

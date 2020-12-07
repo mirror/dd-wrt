@@ -18,6 +18,7 @@
 #include <linux/dcache.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
+#include <linux/crc32c.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <linux/sched/xacct.h>
@@ -31,6 +32,7 @@
 #include "buffer_pool.h"
 #include "vfs.h"
 #include "vfs_cache.h"
+#include "smbacl.h"
 
 #include "time_wrappers.h"
 #include "smb_common.h"
@@ -416,9 +418,7 @@ int ksmbd_vfs_read(struct ksmbd_work *work,
 		return 0;
 
 	if (work->conn->connection_type) {
-		if (!(fp->daccess & (FILE_READ_DATA_LE |
-		    FILE_GENERIC_READ_LE | FILE_MAXIMAL_ACCESS_LE |
-		    FILE_GENERIC_ALL_LE | FILE_EXECUTE_LE))) {
+		if (!(fp->daccess & (FILE_READ_DATA_LE | FILE_EXECUTE_LE))) {
 			ksmbd_err("no right to read(%s)\n", FP_FILENAME(fp));
 			return -EACCES;
 		}
@@ -536,9 +536,7 @@ int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 #endif
 
 	if (sess->conn->connection_type) {
-		if (!(fp->daccess & (FILE_WRITE_DATA_LE |
-		   FILE_GENERIC_WRITE_LE | FILE_MAXIMAL_ACCESS_LE |
-		   FILE_GENERIC_ALL_LE))) {
+		if (!(fp->daccess & FILE_WRITE_DATA_LE)) {
 			ksmbd_err("no right to write(%s)\n", FP_FILENAME(fp));
 			err = -EACCES;
 			goto out;
@@ -874,8 +872,14 @@ int ksmbd_vfs_symlink(struct ksmbd_work *work,
 int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp)
 {
 	struct inode *inode;
-	mm_segment_t old_fs;
 	int err;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+	const char *link;
+	DEFINE_DELAYED_CALL(done);
+	int len;
+#else
+	mm_segment_t old_fs;
+#endif
 
 	if (!path)
 		return -ENOENT;
@@ -884,6 +888,23 @@ int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp)
 	if (!S_ISLNK(inode->i_mode))
 		return -EINVAL;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+	link = vfs_get_link(path->dentry, &done);
+	if (IS_ERR(link)) {
+		err = PTR_ERR(link);
+		ksmbd_err("readlink failed, err = %d\n", err);
+		return err;
+	}
+
+	len = strlen(link);
+	if (len > lenp)
+		len = lenp;
+
+	memcpy(buf, link, len);
+	do_delayed_call(&done);
+
+	return 0;
+#else
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
 	err = inode->i_op->readlink(path->dentry, (char __user *)buf, lenp);
@@ -892,6 +913,7 @@ int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp)
 		ksmbd_err("readlink failed, err = %d\n", err);
 
 	return err;
+#endif
 }
 
 static void fill_file_attributes(struct ksmbd_work *work,
@@ -1500,6 +1522,158 @@ static struct backing_dev_info *inode_to_bdi(struct inode *bd_inode)
 }
 #endif
 
+int ksmbd_vfs_remove_acl_xattrs(struct dentry *dentry)
+{
+	char *name, *xattr_list = NULL;
+	ssize_t xattr_list_len;
+	int err = 0;
+
+	xattr_list_len = ksmbd_vfs_listxattr(dentry, &xattr_list);
+	if (xattr_list_len < 0) {
+		goto out;
+	} else if (!xattr_list_len) {
+		ksmbd_debug(SMB, "empty xattr in the file\n");
+		goto out;
+	}
+
+	for (name = xattr_list; name - xattr_list < xattr_list_len;
+			name += strlen(name) + 1) {
+		ksmbd_debug(SMB, "%s, len %zd\n", name, strlen(name));
+
+		if (!strncmp(name, XATTR_NAME_POSIX_ACL_ACCESS,
+			     sizeof(XATTR_NAME_POSIX_ACL_ACCESS)-1) ||
+		    !strncmp(name, XATTR_NAME_POSIX_ACL_DEFAULT,
+			     sizeof(XATTR_NAME_POSIX_ACL_DEFAULT)-1)) {
+			err = ksmbd_vfs_remove_xattr(dentry, name);
+			if (err)
+				ksmbd_debug(SMB,
+					"remove acl xattr failed : %s\n", name);
+		}
+	}
+out:
+	ksmbd_vfs_xattr_free(xattr_list);
+	return err;
+}
+
+int ksmbd_vfs_remove_sd_xattrs(struct dentry *dentry)
+{
+	char *name, *xattr_list = NULL;
+	ssize_t xattr_list_len;
+	int err = 0;
+
+	xattr_list_len = ksmbd_vfs_listxattr(dentry, &xattr_list);
+	if (xattr_list_len < 0) {
+		goto out;
+	} else if (!xattr_list_len) {
+		ksmbd_debug(SMB, "empty xattr in the file\n");
+		goto out;
+	}
+
+	for (name = xattr_list; name - xattr_list < xattr_list_len;
+			name += strlen(name) + 1) {
+		ksmbd_debug(SMB, "%s, len %zd\n", name, strlen(name));
+
+		if (!strncmp(name, XATTR_NAME_SD, XATTR_NAME_SD_LEN)) {
+			err = ksmbd_vfs_remove_xattr(dentry, name);
+			if (err)
+				ksmbd_debug(SMB, "remove xattr failed : %s\n", name);
+		}
+	}
+out:
+	ksmbd_vfs_xattr_free(xattr_list);
+	return err;
+}
+
+int ksmbd_vfs_set_sd_xattr(struct dentry *dentry, char *sd_data)
+{
+	struct smb_ntacl *ntacl = (struct smb_ntacl *)sd_data;
+	int rc;
+
+	if (!ntacl)
+		return 0;
+
+	ntacl->crc32 = crc32c(0, ntacl->ace, ntacl->size);
+	rc = ksmbd_vfs_setxattr(dentry, XATTR_NAME_SD, sd_data,
+			ntacl->size + sizeof(struct smb_ntacl), 0);
+	if (rc < 0)
+		ksmbd_err("Failed to store XATTR sd :%d\n", rc);
+	return 0;
+}
+
+struct smb_ntacl *ksmbd_vfs_get_sd_xattr(struct dentry *dentry)
+{
+	struct smb_ntacl *ntacl = NULL;
+	char *attr = NULL, *sd_data = NULL;
+	int rc;
+
+	rc = ksmbd_vfs_getxattr(dentry, XATTR_NAME_SD, &attr);
+	if (rc > 0) {
+		sd_data = kzalloc(rc, GFP_KERNEL);
+		if (!sd_data)
+			return NULL;
+
+		memcpy(sd_data, attr, rc);
+		ntacl = (struct smb_ntacl *)sd_data;
+		if (ntacl->crc32 != crc32c(0, ntacl->ace, ntacl->size)) {
+			ksmbd_vfs_remove_sd_xattrs(dentry);
+			kfree(sd_data);
+			ntacl = NULL;
+		}
+	}
+	ksmbd_free(attr);
+
+	return ntacl;
+}
+
+struct posix_acl *ksmbd_vfs_posix_acl_alloc(int count, gfp_t flags)
+{
+#if IS_ENABLED(CONFIG_FS_POSIX_ACL)
+	return posix_acl_alloc(count, flags);
+#else
+	return NULL;
+#endif
+}
+
+struct posix_acl *ksmbd_vfs_get_acl(struct inode *inode, int type)
+{
+#if IS_ENABLED(CONFIG_FS_POSIX_ACL)
+	return get_acl(inode, type);
+#else
+	return NULL;
+#endif
+}
+
+int ksmbd_vfs_set_posix_acl(struct inode *inode, int type,
+		struct posix_acl *acl)
+{
+#if IS_ENABLED(CONFIG_FS_POSIX_ACL)
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 4, 21)
+	int ret;
+
+	if (!IS_POSIXACL(inode))
+		return -EOPNOTSUPP;
+	if (!inode->i_op->set_acl)
+		return -EOPNOTSUPP;
+
+	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
+		return -EACCES;
+	if (!inode_owner_or_capable(inode))
+		return -EPERM;
+	if (!acl)
+		return -EINVAL;
+
+	ret = posix_acl_valid(acl);
+	if (ret)
+		return ret;
+	return inode->i_op->set_acl(inode, acl, type);
+#else
+	return set_posix_acl(inode, type, acl);
+#endif
+#else
+	return -EOPNOTSUPP;
+#endif
+}
+
 /**
  * ksmbd_vfs_set_fadvise() - convert smb IO caching options to linux options
  * @filp:	file pointer for IO
@@ -1902,6 +2076,29 @@ static int __caseless_lookup(struct dir_context *ctx,
 	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
 #endif
 
+int ksmbd_vfs_xattr_sd(char *sd_data, char **xattr_sd, size_t *xattr_sd_size)
+{
+	int sd_size;
+	char *xattr_sd_buf;
+	struct smb_ntacl *acl = (struct smb_ntacl *)sd_data;
+
+	sd_size = sizeof(struct smb_ace)*acl->num_aces + 4;
+	*xattr_sd_size = sd_size + XATTR_NAME_SD_LEN + 1;
+	xattr_sd_buf = kmalloc(*xattr_sd_size, GFP_KERNEL);
+	if (!xattr_sd_buf)
+		return -ENOMEM;
+
+	memcpy(xattr_sd_buf, XATTR_NAME_SD, XATTR_NAME_SD_LEN);
+
+	if (sd_size)
+		memcpy(&xattr_sd_buf[XATTR_NAME_SD_LEN], sd_data,
+				sd_size);
+
+	xattr_sd_buf[*xattr_sd_size - 1] = '\0';
+	*xattr_sd = xattr_sd_buf;
+
+	return 0;
+}
 
 	if (buf->used != namlen)
 		return 0;
@@ -2169,15 +2366,11 @@ int ksmbd_vfs_copy_file_ranges(struct ksmbd_work *work,
 	*chunk_size_written = 0;
 	*total_size_written = 0;
 
-	if (!(src_fp->daccess & (FILE_READ_DATA_LE | FILE_GENERIC_READ_LE |
-			FILE_GENERIC_ALL_LE | FILE_MAXIMAL_ACCESS_LE |
-			FILE_EXECUTE_LE))) {
+	if (!(src_fp->daccess & (FILE_READ_DATA_LE | FILE_EXECUTE_LE))) {
 		ksmbd_err("no right to read(%s)\n", FP_FILENAME(src_fp));
 		return -EACCES;
 	}
-	if (!(dst_fp->daccess & (FILE_WRITE_DATA_LE | FILE_APPEND_DATA_LE |
-			FILE_GENERIC_WRITE_LE | FILE_GENERIC_ALL_LE |
-			FILE_MAXIMAL_ACCESS_LE))) {
+	if (!(dst_fp->daccess & (FILE_WRITE_DATA_LE | FILE_APPEND_DATA_LE))) {
 		ksmbd_err("no right to write(%s)\n", FP_FILENAME(dst_fp));
 		return -EACCES;
 	}

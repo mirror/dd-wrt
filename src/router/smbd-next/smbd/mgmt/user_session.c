@@ -82,6 +82,12 @@ static int __rpc_method(char *rpc_name)
 	if (!strcmp(rpc_name, "LANMAN") || !strcmp(rpc_name, "lanman"))
 		return KSMBD_RPC_RAP_METHOD;
 
+	if (!strcmp(rpc_name, "\\samr") || !strcmp(rpc_name, "samr"))
+		return KSMBD_RPC_SAMR_METHOD_INVOKE;
+
+	if (!strcmp(rpc_name, "\\lsarpc") || !strcmp(rpc_name, "lsarpc"))
+		return KSMBD_RPC_LSARPC_METHOD_INVOKE;
+
 	ksmbd_err("Unsupported RPC: %s\n", rpc_name);
 	return 0;
 }
@@ -147,6 +153,17 @@ void ksmbd_session_destroy(struct ksmbd_session *sess)
 	if (!sess)
 		return;
 
+	if (!atomic_dec_and_test(&sess->refcnt))
+		return;
+
+	list_del(&sess->sessions_entry);
+
+	if (IS_SMB2(sess->conn)) {
+		down_write(&sessions_table_lock);
+		hash_del(&sess->hlist);
+		up_write(&sessions_table_lock);
+	}
+
 	if (sess->user)
 		ksmbd_free_user(sess->user);
 
@@ -156,14 +173,6 @@ void ksmbd_session_destroy(struct ksmbd_session *sess)
 	free_channel_list(sess);
 	kfree(sess->Preauth_HashValue);
 	ksmbd_release_id(session_ida, sess->id);
-
-	list_del(&sess->sessions_entry);
-
-	if (IS_SMB2(sess->conn)) {
-		down_write(&sessions_table_lock);
-		hash_del(&sess->hlist);
-		up_write(&sessions_table_lock);
-	}
 
 	ksmbd_ida_free(sess->tree_conn_ida);
 	ksmbd_free(sess);
@@ -217,12 +226,27 @@ struct ksmbd_session *ksmbd_session_lookup(struct ksmbd_conn *conn,
 	return NULL;
 }
 
+int get_session(struct ksmbd_session *sess)
+{
+	return atomic_inc_not_zero(&sess->refcnt);
+}
+
+void put_session(struct ksmbd_session *sess)
+{
+	if (atomic_dec_and_test(&sess->refcnt))
+		ksmbd_err("get/%s seems to be mismatched.", __func__);
+}
+
 struct ksmbd_session *ksmbd_session_lookup_slowpath(unsigned long long id)
 {
 	struct ksmbd_session *sess;
 
 	down_read(&sessions_table_lock);
 	sess = __session_lookup(id);
+	if (sess) {
+		if (!get_session(sess))
+			sess = NULL;
+	}
 	up_read(&sessions_table_lock);
 
 	return sess;
@@ -268,6 +292,7 @@ static struct ksmbd_session *__session_create(int protocol)
 	INIT_LIST_HEAD(&sess->ksmbd_chann_list);
 	INIT_LIST_HEAD(&sess->rpc_handle_list);
 	sess->sequence_number = 1;
+	atomic_set(&sess->refcnt, 1);
 
 	switch (protocol) {
 #ifdef CONFIG_SMB_INSECURE_SERVER
