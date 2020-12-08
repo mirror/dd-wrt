@@ -562,11 +562,7 @@ struct frr_yang_module_info {
 
 		/* Priority - lower priorities are processed first. */
 		uint32_t priority;
-#if defined(__GNUC__) && ((__GNUC__ - 0) < 5) && !defined(__clang__)
 	} nodes[YANG_MODULE_MAX_NODES + 1];
-#else
-	} nodes[];
-#endif
 };
 
 /* Northbound error codes. */
