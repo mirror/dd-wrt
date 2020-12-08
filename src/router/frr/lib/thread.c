@@ -305,8 +305,7 @@ DEFUN (show_thread_cpu,
 		filter = parse_filter(argv[idx]->arg);
 		if (!filter) {
 			vty_out(vty,
-				"Invalid filter \"%s\" specified; must contain at least"
-				"one of 'RWTEXB'\n",
+				"Invalid filter \"%s\" specified; must contain at leastone of 'RWTEXB'\n",
 				argv[idx]->arg);
 			return CMD_WARNING;
 		}
@@ -393,8 +392,7 @@ DEFUN (clear_thread_cpu,
 		filter = parse_filter(argv[idx]->arg);
 		if (!filter) {
 			vty_out(vty,
-				"Invalid filter \"%s\" specified; must contain at least"
-				"one of 'RWTEXB'\n",
+				"Invalid filter \"%s\" specified; must contain at leastone of 'RWTEXB'\n",
 				argv[idx]->arg);
 			return CMD_WARNING;
 		}
@@ -636,6 +634,36 @@ struct timeval thread_timer_remain(struct thread *thread)
 	return remain;
 }
 
+static int time_hhmmss(char *buf, int buf_size, long sec)
+{
+	long hh;
+	long mm;
+	int wr;
+
+	zassert(buf_size >= 8);
+
+	hh = sec / 3600;
+	sec %= 3600;
+	mm = sec / 60;
+	sec %= 60;
+
+	wr = snprintf(buf, buf_size, "%02ld:%02ld:%02ld", hh, mm, sec);
+
+	return wr != 8;
+}
+
+char *thread_timer_to_hhmmss(char *buf, int buf_size,
+		struct thread *t_timer)
+{
+	if (t_timer) {
+		time_hhmmss(buf, buf_size,
+				thread_timer_remain_second(t_timer));
+	} else {
+		snprintf(buf, buf_size, "--:--:--");
+	}
+	return buf;
+}
+
 /* Get new thread.  */
 static struct thread *thread_get(struct thread_master *m, uint8_t type,
 				 int (*func)(struct thread *), void *arg,
@@ -698,17 +726,16 @@ static void thread_free(struct thread_master *master, struct thread *thread)
 static int fd_poll(struct thread_master *m, struct pollfd *pfds, nfds_t pfdsize,
 		   nfds_t count, const struct timeval *timer_wait)
 {
-	/* If timer_wait is null here, that means poll() should block
-	 * indefinitely,
-	 * unless the thread_master has overridden it by setting
+	/*
+	 * If timer_wait is null here, that means poll() should block
+	 * indefinitely, unless the thread_master has overridden it by setting
 	 * ->selectpoll_timeout.
+	 *
 	 * If the value is positive, it specifies the maximum number of
-	 * milliseconds
-	 * to wait. If the timeout is -1, it specifies that we should never wait
-	 * and
-	 * always return immediately even if no event is detected. If the value
-	 * is
-	 * zero, the behavior is default. */
+	 * milliseconds to wait. If the timeout is -1, it specifies that
+	 * we should never wait and always return immediately even if no
+	 * event is detected. If the value is zero, the behavior is default.
+	 */
 	int timeout = -1;
 
 	/* number of file descriptors with events */
@@ -832,7 +859,7 @@ funcname_thread_add_timer_timeval(struct thread_master *m,
 
 	frr_with_mutex(&m->mtx) {
 		if (t_ptr && *t_ptr)
-			// thread is already scheduled; don't reschedule
+			/* thread is already scheduled; don't reschedule */
 			return NULL;
 
 		thread = thread_get(m, type, func, arg, debugargpass);
@@ -912,7 +939,7 @@ struct thread *funcname_thread_add_event(struct thread_master *m,
 
 	frr_with_mutex(&m->mtx) {
 		if (t_ptr && *t_ptr)
-			// thread is already scheduled; don't reschedule
+			/* thread is already scheduled; don't reschedule */
 			break;
 
 		thread = thread_get(m, THREAD_EVENT, func, arg, debugargpass);
@@ -1019,11 +1046,12 @@ static void do_thread_cancel(struct thread_master *master)
 	struct cancel_req *cr;
 	struct listnode *ln;
 	for (ALL_LIST_ELEMENTS_RO(master->cancel_req, ln, cr)) {
-		/* If this is an event object cancellation, linear search
-		 * through event
-		 * list deleting any events which have the specified argument.
-		 * We also
-		 * need to check every thread in the ready queue. */
+		/*
+		 * If this is an event object cancellation, linear search
+		 * through event list deleting any events which have the
+		 * specified argument. We also need to check every thread
+		 * in the ready queue.
+		 */
 		if (cr->eventobj) {
 			struct thread *t;
 
@@ -1047,11 +1075,12 @@ static void do_thread_cancel(struct thread_master *master)
 			continue;
 		}
 
-		/* The pointer varies depending on whether the cancellation
-		 * request was
-		 * made asynchronously or not. If it was, we need to check
-		 * whether the
-		 * thread even exists anymore before cancelling it. */
+		/*
+		 * The pointer varies depending on whether the cancellation
+		 * request was made asynchronously or not. If it was, we
+		 * need to check whether the thread even exists anymore
+		 * before cancelling it.
+		 */
 		thread = (cr->thread) ? cr->thread : *cr->threadref;
 
 		if (!thread)
@@ -1276,18 +1305,21 @@ static void thread_process_io(struct thread_master *m, unsigned int num)
 
 		ready++;
 
-		/* Unless someone has called thread_cancel from another pthread,
-		 * the only
-		 * thing that could have changed in m->handler.pfds while we
-		 * were
-		 * asleep is the .events field in a given pollfd. Barring
-		 * thread_cancel()
-		 * that value should be a superset of the values we have in our
-		 * copy, so
-		 * there's no need to update it. Similarily, barring deletion,
-		 * the fd
-		 * should still be a valid index into the master's pfds. */
-		if (pfds[i].revents & (POLLIN | POLLHUP)) {
+		/*
+		 * Unless someone has called thread_cancel from another
+		 * pthread, the only thing that could have changed in
+		 * m->handler.pfds while we were asleep is the .events
+		 * field in a given pollfd. Barring thread_cancel() that
+		 * value should be a superset of the values we have in our
+		 * copy, so there's no need to update it. Similarily,
+		 * barring deletion, the fd should still be a valid index
+		 * into the master's pfds.
+		 *
+		 * We are including POLLERR here to do a READ event
+		 * this is because the read should fail and the
+		 * read function should handle it appropriately
+		 */
+		if (pfds[i].revents & (POLLIN | POLLHUP | POLLERR)) {
 			thread_process_io_helper(m, m->read[pfds[i].fd], POLLIN,
 						 pfds[i].revents, i);
 		}
@@ -1399,11 +1431,10 @@ struct thread *thread_fetch(struct thread_master *m, struct thread *fetch)
 		 *
 		 * - If there are events pending, set the poll() timeout to zero
 		 * - If there are no events pending, but there are timers
-		 * pending, set the
-		 *   timeout to the smallest remaining time on any timer
+		 * pending, set the timeout to the smallest remaining time on
+		 * any timer.
 		 * - If there are neither timers nor events pending, but there
-		 * are file
-		 *   descriptors pending, block indefinitely in poll()
+		 * are file descriptors pending, block indefinitely in poll()
 		 * - If nothing is pending, it's time for the application to die
 		 *
 		 * In every case except the last, we need to hit poll() at least

@@ -147,6 +147,8 @@ void ptm_bfd_echo_snd(struct bfd_session *bfd)
 	bep.my_discr = htonl(bfd->discrs.my_discr);
 
 	if (CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_IPV6)) {
+		if (bvrf->bg_echov6 == -1)
+			return;
 		sd = bvrf->bg_echov6;
 		memset(&sin6, 0, sizeof(sin6));
 		sin6.sin6_family = AF_INET6;
@@ -577,7 +579,7 @@ int bfd_recv_cb(struct thread *t)
 		return 0;
 	}
 
-	/* Validate packet TTL. */
+	/* Validate single hop packet TTL. */
 	if ((!is_mhop) && (ttl != BFD_TTL_VAL)) {
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "invalid TTL: %d expected %d", ttl, BFD_TTL_VAL);
@@ -630,10 +632,10 @@ int bfd_recv_cb(struct thread *t)
 	 * Single hop: set local address that received the packet.
 	 */
 	if (is_mhop) {
-		if ((BFD_TTL_VAL - bfd->mh_ttl) > BFD_TTL_VAL) {
+		if (ttl < bfd->mh_ttl) {
 			cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 				 "exceeded max hop count (expected %d, got %d)",
-				 bfd->mh_ttl, BFD_TTL_VAL);
+				 bfd->mh_ttl, ttl);
 			return 0;
 		}
 	} else if (bfd->local_address.sa_sin.sin_family == AF_UNSPEC) {
@@ -1145,8 +1147,14 @@ int bp_udp6_shop(const struct vrf *vrf)
 		sd = vrf_socket(AF_INET6, SOCK_DGRAM, PF_UNSPEC, vrf->vrf_id,
 				vrf->name);
 	}
-	if (sd == -1)
-		zlog_fatal("udp6-shop: socket: %s", strerror(errno));
+	if (sd == -1) {
+		if (errno != EAFNOSUPPORT)
+			zlog_fatal("udp6-shop: socket: %s", strerror(errno));
+		else
+			zlog_warn("udp6-shop: V6 is not supported, continuing");
+
+		return -1;
+	}
 
 	bp_set_ipv6opts(sd);
 	bp_bind_ipv6(sd, BFD_DEFDESTPORT);
@@ -1162,8 +1170,14 @@ int bp_udp6_mhop(const struct vrf *vrf)
 		sd = vrf_socket(AF_INET6, SOCK_DGRAM, PF_UNSPEC, vrf->vrf_id,
 				vrf->name);
 	}
-	if (sd == -1)
-		zlog_fatal("udp6-mhop: socket: %s", strerror(errno));
+	if (sd == -1) {
+		if (errno != EAFNOSUPPORT)
+			zlog_fatal("udp6-mhop: socket: %s", strerror(errno));
+		else
+			zlog_warn("udp6-mhop: V6 is not supported, continuing");
+
+		return -1;
+	}
 
 	bp_set_ipv6opts(sd);
 	bp_bind_ipv6(sd, BFD_DEF_MHOP_DEST_PORT);
@@ -1194,8 +1208,15 @@ int bp_echov6_socket(const struct vrf *vrf)
 	frr_with_privs(&bglobal.bfdd_privs) {
 		s = vrf_socket(AF_INET6, SOCK_DGRAM, 0, vrf->vrf_id, vrf->name);
 	}
-	if (s == -1)
-		zlog_fatal("echov6-socket: socket: %s", strerror(errno));
+	if (s == -1) {
+		if (errno != EAFNOSUPPORT)
+			zlog_fatal("echov6-socket: socket: %s",
+				   strerror(errno));
+		else
+			zlog_warn("echov6-socket: V6 is not supported, continuing");
+
+		return -1;
+	}
 
 	bp_set_ipv6opts(s);
 	bp_bind_ipv6(s, BFD_DEF_ECHO_PORT);

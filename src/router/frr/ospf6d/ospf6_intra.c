@@ -1400,11 +1400,9 @@ void ospf6_intra_prefix_route_ecmp_path(struct ospf6_area *oa,
 				continue;
 
 			if (IS_OSPF6_DEBUG_EXAMIN(INTRA_PREFIX)) {
-				prefix2str(&old_route->prefix, buf,
-					   sizeof(buf));
 				zlog_debug(
-					"%s: route %s cost old %u new %u is not same, replace route",
-					__func__, buf, o_path->cost,
+					"%s: route %pFX cost old %u new %u is not same, replace route",
+					__func__, &old_route->prefix, o_path->cost,
 					route->path.cost);
 			}
 
@@ -1458,11 +1456,9 @@ void ospf6_intra_prefix_route_ecmp_path(struct ospf6_area *oa,
 				}
 			} else {
 				if (IS_OSPF6_DEBUG_EXAMIN(INTRA_PREFIX)) {
-					prefix2str(&old_route->prefix, buf,
-						   sizeof(buf));
 					zlog_debug(
-						"%s: route %s old cost %u new cost %u, delete old entry.",
-						__func__, buf,
+						"%s: route %pFX old cost %u new cost %u, delete old entry.",
+						__func__, &old_route->prefix,
 						old_route->path.cost,
 						route->path.cost);
 				}
@@ -1515,11 +1511,9 @@ void ospf6_intra_prefix_route_ecmp_path(struct ospf6_area *oa,
 				listnode_add_sort(old_route->paths, ecmp_path);
 
 				if (IS_OSPF6_DEBUG_EXAMIN(INTRA_PREFIX)) {
-					prefix2str(&route->prefix, buf,
-						   sizeof(buf));
 					zlog_debug(
-						"%s: route %s %p another path added with nh %u, effective paths %u nh %u",
-						__func__, buf,
+						"%s: route %pFX %p another path added with nh %u, effective paths %u nh %u",
+						__func__, &route->prefix,
 						(void *)old_route,
 						listcount(ecmp_path->nh_list),
 						old_route->paths ? listcount(
@@ -1575,8 +1569,8 @@ void ospf6_intra_prefix_route_ecmp_path(struct ospf6_area *oa,
 				if (intra_prefix_lsa->ref_adv_router
 				     == oa->ospf6->router_id) {
 					ifp = if_lookup_prefix(
-							&old_route->prefix,
-							VRF_DEFAULT);
+						&old_route->prefix,
+						oa->ospf6->vrf_id);
 					if (ifp)
 						ospf6_route_add_nexthop(
 								old_route,
@@ -1720,7 +1714,8 @@ void ospf6_intra_prefix_lsa_add(struct ospf6_lsa *lsa)
 		memcpy(&route->path.ls_prefix, &ls_prefix,
 		       sizeof(struct prefix));
 		if (direct_connect) {
-			ifp = if_lookup_prefix(&route->prefix, VRF_DEFAULT);
+			ifp = if_lookup_prefix(&route->prefix,
+					       oa->ospf6->vrf_id);
 			if (ifp)
 				ospf6_route_add_nexthop(route, ifp->ifindex,
 							NULL);

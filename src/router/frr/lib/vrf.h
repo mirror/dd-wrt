@@ -262,12 +262,8 @@ extern int vrf_getaddrinfo(const char *node, const char *service,
 
 extern int vrf_ioctl(vrf_id_t vrf_id, int d, unsigned long request, char *args);
 
-/* function called by macro VRF_DEFAULT
- * to get the default VRF_ID
- */
-extern vrf_id_t vrf_get_default_id(void);
 /* The default VRF ID */
-#define VRF_DEFAULT vrf_get_default_id()
+#define VRF_DEFAULT 0
 
 extern void vrf_set_default_name(const char *default_name, bool force);
 extern const char *vrf_get_default_name(void);
@@ -315,7 +311,7 @@ extern int vrf_handler_create(struct vty *vty, const char *name,
  */
 extern int vrf_netns_handler_create(struct vty *vty, struct vrf *vrf,
 				    char *pathname, ns_id_t ext_ns_id,
-				    ns_id_t ns_id);
+				    ns_id_t ns_id, ns_id_t rel_def_ns_id);
 
 /* used internally to enable or disable VRF.
  * Notify a change in the VRF ID of the VRF
