@@ -65,6 +65,7 @@
 #include "bgpd/bgp_io.h"
 #include "bgpd/bgp_evpn.h"
 #include "bgpd/bgp_evpn_vty.h"
+#include "bgpd/bgp_evpn_mh.h"
 #include "bgpd/bgp_addpath.h"
 #include "bgpd/bgp_mac.h"
 #include "bgpd/bgp_flowspec.h"
@@ -1093,7 +1094,8 @@ DEFUN_HIDDEN (bgp_local_mac,
 		return CMD_WARNING;
 	}
 
-	rv = bgp_evpn_local_macip_add(bgp, vni, &mac, &ip, 0 /* flags */, seq);
+	rv = bgp_evpn_local_macip_add(bgp, vni, &mac, &ip, 0 /* flags */, seq,
+			zero_esi);
 	if (rv < 0) {
 		vty_out(vty, "Internal error\n");
 		return CMD_WARNING;
@@ -1640,16 +1642,91 @@ DEFUN (no_bgp_maxmed_onstartup,
 	return CMD_SUCCESS;
 }
 
-static int bgp_update_delay_config_vty(struct vty *vty, const char *delay,
-				       const char *wait)
+static int bgp_global_update_delay_config_vty(struct vty *vty,
+					      uint16_t update_delay,
+					      uint16_t establish_wait)
+{
+	struct listnode *node, *nnode;
+	struct bgp *bgp;
+	bool vrf_cfg = false;
+
+	/*
+	 * See if update-delay is set per-vrf and warn user to delete it
+	 * Note that we only need to check this if this is the first time
+	 * setting the global config.
+	 */
+	if (bm->v_update_delay == BGP_UPDATE_DELAY_DEF) {
+		for (ALL_LIST_ELEMENTS(bm->bgp, node, nnode, bgp)) {
+			if (bgp->v_update_delay != BGP_UPDATE_DELAY_DEF) {
+				vty_out(vty,
+					"%% update-delay configuration found in vrf %s\n",
+					bgp->inst_type == BGP_INSTANCE_TYPE_DEFAULT
+						? VRF_DEFAULT_NAME
+						: bgp->name);
+				vrf_cfg = true;
+			}
+		}
+	}
+
+	if (vrf_cfg) {
+		vty_out(vty,
+			"%%Failed: global update-delay config not permitted\n");
+		return CMD_WARNING;
+	}
+
+	if (!establish_wait) { /* update-delay <delay> */
+		bm->v_update_delay = update_delay;
+		bm->v_establish_wait = bm->v_update_delay;
+	} else {
+		/* update-delay <delay> <establish-wait> */
+		if (update_delay < establish_wait) {
+			vty_out(vty,
+				"%%Failed: update-delay less than the establish-wait!\n");
+			return CMD_WARNING_CONFIG_FAILED;
+		}
+
+		bm->v_update_delay = update_delay;
+		bm->v_establish_wait = establish_wait;
+	}
+
+	for (ALL_LIST_ELEMENTS(bm->bgp, node, nnode, bgp)) {
+		bgp->v_update_delay = bm->v_update_delay;
+		bgp->v_establish_wait = bm->v_establish_wait;
+	}
+
+	return CMD_SUCCESS;
+}
+
+static int bgp_global_update_delay_deconfig_vty(struct vty *vty)
+{
+	struct listnode *node, *nnode;
+	struct bgp *bgp;
+
+	bm->v_update_delay = BGP_UPDATE_DELAY_DEF;
+	bm->v_establish_wait = bm->v_update_delay;
+
+	for (ALL_LIST_ELEMENTS(bm->bgp, node, nnode, bgp)) {
+		bgp->v_update_delay = bm->v_update_delay;
+		bgp->v_establish_wait = bm->v_establish_wait;
+	}
+
+	return CMD_SUCCESS;
+}
+
+static int bgp_update_delay_config_vty(struct vty *vty, uint16_t update_delay,
+				       uint16_t establish_wait)
 {
 	VTY_DECLVAR_CONTEXT(bgp, bgp);
-	uint16_t update_delay;
-	uint16_t establish_wait;
 
-	update_delay = strtoul(delay, NULL, 10);
+	/* if configured globally, per-instance config is not allowed */
+	if (bm->v_update_delay) {
+		vty_out(vty,
+			"%%Failed: per-vrf update-delay config not permitted with global update-delay\n");
+		return CMD_WARNING_CONFIG_FAILED;
+	}
 
-	if (!wait) /* update-delay <delay> */
+
+	if (!establish_wait) /* update-delay <delay> */
 	{
 		bgp->v_update_delay = update_delay;
 		bgp->v_establish_wait = bgp->v_update_delay;
@@ -1657,7 +1734,6 @@ static int bgp_update_delay_config_vty(struct vty *vty, const char *delay,
 	}
 
 	/* update-delay <delay> <establish-wait> */
-	establish_wait = atoi(wait);
 	if (update_delay < establish_wait) {
 		vty_out(vty,
 			"%%Failed: update-delay less than the establish-wait!\n");
@@ -1674,6 +1750,12 @@ static int bgp_update_delay_deconfig_vty(struct vty *vty)
 {
 	VTY_DECLVAR_CONTEXT(bgp, bgp);
 
+	/* If configured globally, cannot remove from one bgp instance */
+	if (bm->v_update_delay) {
+		vty_out(vty,
+			"%%Failed: bgp update-delay configured globally. Delete per-vrf not permitted\n");
+		return CMD_WARNING_CONFIG_FAILED;
+	}
 	bgp->v_update_delay = BGP_UPDATE_DELAY_DEF;
 	bgp->v_establish_wait = bgp->v_update_delay;
 
@@ -1682,7 +1764,8 @@ static int bgp_update_delay_deconfig_vty(struct vty *vty)
 
 void bgp_config_write_update_delay(struct vty *vty, struct bgp *bgp)
 {
-	if (bgp->v_update_delay != BGP_UPDATE_DELAY_DEF) {
+	/* If configured globally, no need to display per-instance value */
+	if (bgp->v_update_delay != bm->v_update_delay) {
 		vty_out(vty, " update-delay %d", bgp->v_update_delay);
 		if (bgp->v_update_delay != bgp->v_establish_wait)
 			vty_out(vty, " %d", bgp->v_establish_wait);
@@ -1690,39 +1773,51 @@ void bgp_config_write_update_delay(struct vty *vty, struct bgp *bgp)
 	}
 }
 
-
-/* Update-delay configuration */
-DEFUN (bgp_update_delay,
-       bgp_update_delay_cmd,
-       "update-delay (0-3600)",
-       "Force initial delay for best-path and updates\n"
-       "Seconds\n")
+/* Global update-delay configuration */
+DEFPY (bgp_global_update_delay,
+       bgp_global_update_delay_cmd,
+       "bgp update-delay (0-3600)$delay [(1-3600)$wait]",
+       BGP_STR
+       "Force initial delay for best-path and updates for all bgp instances\n"
+       "Max delay in seconds\n"
+       "Establish wait in seconds\n")
 {
-	int idx_number = 1;
-	return bgp_update_delay_config_vty(vty, argv[idx_number]->arg, NULL);
+	return bgp_global_update_delay_config_vty(vty, delay, wait);
 }
 
-DEFUN (bgp_update_delay_establish_wait,
-       bgp_update_delay_establish_wait_cmd,
-       "update-delay (0-3600) (1-3600)",
+/* Global update-delay deconfiguration */
+DEFPY (no_bgp_global_update_delay,
+       no_bgp_global_update_delay_cmd,
+       "no bgp update-delay [(0-3600) [(1-3600)]]",
+       NO_STR
+       BGP_STR
        "Force initial delay for best-path and updates\n"
-       "Seconds\n"
-       "Seconds\n")
+       "Max delay in seconds\n"
+       "Establish wait in seconds\n")
 {
-	int idx_number = 1;
-	int idx_number_2 = 2;
-	return bgp_update_delay_config_vty(vty, argv[idx_number]->arg,
-					   argv[idx_number_2]->arg);
+	return bgp_global_update_delay_deconfig_vty(vty);
+}
+
+/* Update-delay configuration */
+
+DEFPY (bgp_update_delay,
+       bgp_update_delay_cmd,
+       "update-delay (0-3600)$delay [(1-3600)$wait]",
+       "Force initial delay for best-path and updates\n"
+       "Max delay in seconds\n"
+       "Establish wait in seconds\n")
+{
+	return bgp_update_delay_config_vty(vty, delay, wait);
 }
 
 /* Update-delay deconfiguration */
-DEFUN (no_bgp_update_delay,
+DEFPY (no_bgp_update_delay,
        no_bgp_update_delay_cmd,
        "no update-delay [(0-3600) [(1-3600)]]",
        NO_STR
        "Force initial delay for best-path and updates\n"
-       "Seconds\n"
-       "Seconds\n")
+       "Max delay in seconds\n"
+       "Establish wait in seconds\n")
 {
 	return bgp_update_delay_deconfig_vty(vty);
 }
@@ -3598,6 +3693,50 @@ DEFUN (bgp_default_shutdown,
 	return CMD_SUCCESS;
 }
 
+DEFPY(bgp_shutdown_msg, bgp_shutdown_msg_cmd, "bgp shutdown message MSG...",
+      BGP_STR
+      "Administrative shutdown of the BGP instance\n"
+      "Add a shutdown message (RFC 8203)\n"
+      "Shutdown message\n")
+{
+	char *msgstr = NULL;
+
+	VTY_DECLVAR_CONTEXT(bgp, bgp);
+
+	if (argc > 3)
+		msgstr = argv_concat(argv, argc, 3);
+
+	bgp_shutdown_enable(bgp, msgstr);
+	XFREE(MTYPE_TMP, msgstr);
+
+	return CMD_SUCCESS;
+}
+
+DEFPY(bgp_shutdown, bgp_shutdown_cmd, "bgp shutdown",
+      BGP_STR "Administrative shutdown of the BGP instance\n")
+{
+	VTY_DECLVAR_CONTEXT(bgp, bgp);
+
+	bgp_shutdown_enable(bgp, NULL);
+
+	return CMD_SUCCESS;
+}
+
+DEFPY(no_bgp_shutdown, no_bgp_shutdown_cmd, "no bgp shutdown",
+      NO_STR BGP_STR "Administrative shutdown of the BGP instance\n")
+{
+	VTY_DECLVAR_CONTEXT(bgp, bgp);
+
+	bgp_shutdown_disable(bgp);
+
+	return CMD_SUCCESS;
+}
+
+ALIAS(no_bgp_shutdown, no_bgp_shutdown_msg_cmd,
+      "no bgp shutdown message MSG...", NO_STR BGP_STR
+      "Administrative shutdown of the BGP instance\n"
+      "Add a shutdown message (RFC 8203)\n" "Shutdown message\n")
+
 DEFUN (neighbor_remote_as,
        neighbor_remote_as_cmd,
        "neighbor <A.B.C.D|X:X::X:X|WORD> remote-as <(1-4294967295)|internal|external>",
@@ -4330,8 +4469,7 @@ static int peer_flag_modify_vty(struct vty *vty, const char *ip_str,
 	 */
 	if (peer->conf_if && (flag == PEER_FLAG_DISABLE_CONNECTED_CHECK)) {
 		vty_out(vty,
-			"%s is directly connected peer, cannot accept disable-"
-			"connected-check\n",
+			"%s is directly connected peer, cannot accept disable-connected-check\n",
 			ip_str);
 		return CMD_WARNING_CONFIG_FAILED;
 	}
@@ -4389,7 +4527,7 @@ DEFUN (neighbor_shutdown_msg,
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
        "Administratively shut down this neighbor\n"
-       "Add a shutdown message (draft-ietf-idr-shutdown-06)\n"
+       "Add a shutdown message (RFC 8203)\n"
        "Shutdown message\n")
 {
 	int idx_peer = 1;
@@ -4421,7 +4559,7 @@ DEFUN (no_neighbor_shutdown_msg,
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
        "Administratively shut down this neighbor\n"
-       "Remove a shutdown message (draft-ietf-idr-shutdown-06)\n"
+       "Remove a shutdown message (RFC 8203)\n"
        "Shutdown message\n")
 {
 	int idx_peer = 2;
@@ -4434,6 +4572,64 @@ ALIAS(no_neighbor_shutdown_msg, no_neighbor_shutdown_cmd,
       "no neighbor <A.B.C.D|X:X::X:X|WORD> shutdown",
       NO_STR NEIGHBOR_STR NEIGHBOR_ADDR_STR2
       "Administratively shut down this neighbor\n")
+
+DEFUN(neighbor_shutdown_rtt,
+      neighbor_shutdown_rtt_cmd,
+      "neighbor <A.B.C.D|X:X::X:X|WORD> shutdown rtt (1-65535) [count (1-255)]",
+      NEIGHBOR_STR
+      NEIGHBOR_ADDR_STR2
+      "Administratively shut down this neighbor\n"
+      "Shutdown if round-trip-time is higher than expected\n"
+      "Round-trip-time in milliseconds\n"
+      "Specify the number of keepalives before shutdown\n"
+      "The number of keepalives with higher RTT to shutdown\n")
+{
+	int idx_peer = 1;
+	int idx_rtt = 4;
+	int idx_count = 0;
+	struct peer *peer;
+
+	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
+
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	peer->rtt_expected = strtol(argv[idx_rtt]->arg, NULL, 10);
+
+	if (argv_find(argv, argc, "count", &idx_count))
+		peer->rtt_keepalive_conf =
+			strtol(argv[idx_count + 1]->arg, NULL, 10);
+
+	return peer_flag_set_vty(vty, argv[idx_peer]->arg,
+				 PEER_FLAG_RTT_SHUTDOWN);
+}
+
+DEFUN(no_neighbor_shutdown_rtt,
+      no_neighbor_shutdown_rtt_cmd,
+      "no neighbor <A.B.C.D|X:X::X:X|WORD> shutdown rtt [(1-65535) [count (1-255)]]",
+      NO_STR
+      NEIGHBOR_STR
+      NEIGHBOR_ADDR_STR2
+      "Administratively shut down this neighbor\n"
+      "Shutdown if round-trip-time is higher than expected\n"
+      "Round-trip-time in milliseconds\n"
+      "Specify the number of keepalives before shutdown\n"
+      "The number of keepalives with higher RTT to shutdown\n")
+{
+	int idx_peer = 2;
+	struct peer *peer;
+
+	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
+
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	peer->rtt_expected = 0;
+	peer->rtt_keepalive_conf = 1;
+
+	return peer_flag_unset_vty(vty, argv[idx_peer]->arg,
+				   PEER_FLAG_RTT_SHUTDOWN);
+}
 
 /* neighbor capability dynamic. */
 DEFUN (neighbor_capability_dynamic,
@@ -4561,23 +4757,31 @@ DEFUN (neighbor_capability_orf_prefix,
        "Capability to RECEIVE the ORF from this neighbor\n"
        "Capability to SEND the ORF to this neighbor\n")
 {
-	int idx_peer = 1;
 	int idx_send_recv = 5;
-	uint16_t flag = 0;
+	char *peer_str = argv[1]->arg;
+	struct peer *peer;
+	afi_t afi = bgp_node_afi(vty);
+	safi_t safi = bgp_node_safi(vty);
+
+	peer = peer_and_group_lookup_vty(vty, peer_str);
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
 
 	if (strmatch(argv[idx_send_recv]->text, "send"))
-		flag = PEER_FLAG_ORF_PREFIX_SM;
-	else if (strmatch(argv[idx_send_recv]->text, "receive"))
-		flag = PEER_FLAG_ORF_PREFIX_RM;
-	else if (strmatch(argv[idx_send_recv]->text, "both"))
-		flag = PEER_FLAG_ORF_PREFIX_SM | PEER_FLAG_ORF_PREFIX_RM;
-	else {
-		vty_out(vty, "%% BGP invalid orf prefix-list option\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
+		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					    PEER_FLAG_ORF_PREFIX_SM);
 
-	return peer_af_flag_set_vty(vty, argv[idx_peer]->arg, bgp_node_afi(vty),
-				    bgp_node_safi(vty), flag);
+	if (strmatch(argv[idx_send_recv]->text, "receive"))
+		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					    PEER_FLAG_ORF_PREFIX_RM);
+
+	if (strmatch(argv[idx_send_recv]->text, "both"))
+		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					    PEER_FLAG_ORF_PREFIX_SM)
+		       | peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_ORF_PREFIX_RM);
+
+	return CMD_WARNING_CONFIG_FAILED;
 }
 
 ALIAS_HIDDEN(
@@ -4605,24 +4809,31 @@ DEFUN (no_neighbor_capability_orf_prefix,
        "Capability to RECEIVE the ORF from this neighbor\n"
        "Capability to SEND the ORF to this neighbor\n")
 {
-	int idx_peer = 2;
 	int idx_send_recv = 6;
-	uint16_t flag = 0;
+	char *peer_str = argv[2]->arg;
+	struct peer *peer;
+	afi_t afi = bgp_node_afi(vty);
+	safi_t safi = bgp_node_safi(vty);
+
+	peer = peer_and_group_lookup_vty(vty, peer_str);
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
 
 	if (strmatch(argv[idx_send_recv]->text, "send"))
-		flag = PEER_FLAG_ORF_PREFIX_SM;
-	else if (strmatch(argv[idx_send_recv]->text, "receive"))
-		flag = PEER_FLAG_ORF_PREFIX_RM;
-	else if (strmatch(argv[idx_send_recv]->text, "both"))
-		flag = PEER_FLAG_ORF_PREFIX_SM | PEER_FLAG_ORF_PREFIX_RM;
-	else {
-		vty_out(vty, "%% BGP invalid orf prefix-list option\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
+		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_ORF_PREFIX_SM);
 
-	return peer_af_flag_unset_vty(vty, argv[idx_peer]->arg,
-				      bgp_node_afi(vty), bgp_node_safi(vty),
-				      flag);
+	if (strmatch(argv[idx_send_recv]->text, "receive"))
+		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_ORF_PREFIX_RM);
+
+	if (strmatch(argv[idx_send_recv]->text, "both"))
+		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_ORF_PREFIX_SM)
+		       | peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+						PEER_FLAG_ORF_PREFIX_RM);
+
+	return CMD_WARNING_CONFIG_FAILED;
 }
 
 ALIAS_HIDDEN(
@@ -4997,27 +5208,40 @@ DEFUN (neighbor_send_community_type,
        "Send Standard Community attributes\n"
        "Send Large Community attributes\n")
 {
-	int idx_peer = 1;
-	uint32_t flag = 0;
 	const char *type = argv[argc - 1]->text;
+	char *peer_str = argv[1]->arg;
+	struct peer *peer;
+	afi_t afi = bgp_node_afi(vty);
+	safi_t safi = bgp_node_safi(vty);
 
-	if (strmatch(type, "standard")) {
-		SET_FLAG(flag, PEER_FLAG_SEND_COMMUNITY);
-	} else if (strmatch(type, "extended")) {
-		SET_FLAG(flag, PEER_FLAG_SEND_EXT_COMMUNITY);
-	} else if (strmatch(type, "large")) {
-		SET_FLAG(flag, PEER_FLAG_SEND_LARGE_COMMUNITY);
-	} else if (strmatch(type, "both")) {
-		SET_FLAG(flag, PEER_FLAG_SEND_COMMUNITY);
-		SET_FLAG(flag, PEER_FLAG_SEND_EXT_COMMUNITY);
-	} else { /* if (strmatch(type, "all")) */
-		SET_FLAG(flag, PEER_FLAG_SEND_COMMUNITY);
-		SET_FLAG(flag, PEER_FLAG_SEND_EXT_COMMUNITY);
-		SET_FLAG(flag, PEER_FLAG_SEND_LARGE_COMMUNITY);
+	peer = peer_and_group_lookup_vty(vty, peer_str);
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	if (strmatch(type, "standard"))
+		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					    PEER_FLAG_SEND_COMMUNITY);
+
+	if (strmatch(type, "extended"))
+		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					    PEER_FLAG_SEND_EXT_COMMUNITY);
+
+	if (strmatch(type, "large"))
+		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					    PEER_FLAG_SEND_LARGE_COMMUNITY);
+
+	if (strmatch(type, "both")) {
+		return peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					    PEER_FLAG_SEND_COMMUNITY)
+		       | peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_SEND_EXT_COMMUNITY);
 	}
-
-	return peer_af_flag_set_vty(vty, argv[idx_peer]->arg, bgp_node_afi(vty),
-				    bgp_node_safi(vty), flag);
+	return peer_af_flag_set_vty(vty, peer_str, afi, safi,
+				    PEER_FLAG_SEND_COMMUNITY)
+	       | peer_af_flag_set_vty(vty, peer_str, afi, safi,
+				      PEER_FLAG_SEND_EXT_COMMUNITY)
+	       | peer_af_flag_set_vty(vty, peer_str, afi, safi,
+				      PEER_FLAG_SEND_LARGE_COMMUNITY);
 }
 
 ALIAS_HIDDEN(
@@ -5044,28 +5268,42 @@ DEFUN (no_neighbor_send_community_type,
        "Send Standard Community attributes\n"
        "Send Large Community attributes\n")
 {
-	int idx_peer = 2;
-	uint32_t flag = 0;
 	const char *type = argv[argc - 1]->text;
+	char *peer_str = argv[2]->arg;
+	struct peer *peer;
+	afi_t afi = bgp_node_afi(vty);
+	safi_t safi = bgp_node_safi(vty);
 
-	if (strmatch(type, "standard")) {
-		SET_FLAG(flag, PEER_FLAG_SEND_COMMUNITY);
-	} else if (strmatch(type, "extended")) {
-		SET_FLAG(flag, PEER_FLAG_SEND_EXT_COMMUNITY);
-	} else if (strmatch(type, "large")) {
-		SET_FLAG(flag, PEER_FLAG_SEND_LARGE_COMMUNITY);
-	} else if (strmatch(type, "both")) {
-		SET_FLAG(flag, PEER_FLAG_SEND_COMMUNITY);
-		SET_FLAG(flag, PEER_FLAG_SEND_EXT_COMMUNITY);
-	} else { /* if (strmatch(type, "all")) */
-		SET_FLAG(flag, PEER_FLAG_SEND_COMMUNITY);
-		SET_FLAG(flag, PEER_FLAG_SEND_EXT_COMMUNITY);
-		SET_FLAG(flag, PEER_FLAG_SEND_LARGE_COMMUNITY);
+	peer = peer_and_group_lookup_vty(vty, peer_str);
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	if (strmatch(type, "standard"))
+		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_SEND_COMMUNITY);
+
+	if (strmatch(type, "extended"))
+		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_SEND_EXT_COMMUNITY);
+
+	if (strmatch(type, "large"))
+		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_SEND_LARGE_COMMUNITY);
+
+	if (strmatch(type, "both")) {
+
+		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_SEND_COMMUNITY)
+		       | peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+						PEER_FLAG_SEND_EXT_COMMUNITY);
 	}
 
-	return peer_af_flag_unset_vty(vty, argv[idx_peer]->arg,
-				      bgp_node_afi(vty), bgp_node_safi(vty),
-				      flag);
+	return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+				      PEER_FLAG_SEND_COMMUNITY)
+	       | peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					PEER_FLAG_SEND_EXT_COMMUNITY)
+	       | peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					PEER_FLAG_SEND_LARGE_COMMUNITY);
 }
 
 ALIAS_HIDDEN(
@@ -5257,52 +5495,74 @@ DEFUN (neighbor_attr_unchanged,
 	int idx = 0;
 	char *peer_str = argv[1]->arg;
 	struct peer *peer;
-	uint16_t flags = 0;
+	bool aspath = false;
+	bool nexthop = false;
+	bool med = false;
 	afi_t afi = bgp_node_afi(vty);
 	safi_t safi = bgp_node_safi(vty);
+	int ret = 0;
 
 	peer = peer_and_group_lookup_vty(vty, peer_str);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
 
 	if (argv_find(argv, argc, "as-path", &idx))
-		SET_FLAG(flags, PEER_FLAG_AS_PATH_UNCHANGED);
+		aspath = true;
+
 	idx = 0;
 	if (argv_find(argv, argc, "next-hop", &idx))
-		SET_FLAG(flags, PEER_FLAG_NEXTHOP_UNCHANGED);
+		nexthop = true;
+
 	idx = 0;
 	if (argv_find(argv, argc, "med", &idx))
-		SET_FLAG(flags, PEER_FLAG_MED_UNCHANGED);
+		med = true;
 
 	/* no flags means all of them! */
-	if (!flags) {
-		SET_FLAG(flags, PEER_FLAG_AS_PATH_UNCHANGED);
-		SET_FLAG(flags, PEER_FLAG_NEXTHOP_UNCHANGED);
-		SET_FLAG(flags, PEER_FLAG_MED_UNCHANGED);
+	if (!aspath && !nexthop && !med) {
+		ret = peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					   PEER_FLAG_AS_PATH_UNCHANGED);
+		ret |= peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					    PEER_FLAG_NEXTHOP_UNCHANGED);
+		ret |= peer_af_flag_set_vty(vty, peer_str, afi, safi,
+					    PEER_FLAG_MED_UNCHANGED);
 	} else {
-		if (!CHECK_FLAG(flags, PEER_FLAG_AS_PATH_UNCHANGED)
-		    && peer_af_flag_check(peer, afi, safi,
-					  PEER_FLAG_AS_PATH_UNCHANGED)) {
-			peer_af_flag_unset_vty(vty, peer_str, afi, safi,
-					       PEER_FLAG_AS_PATH_UNCHANGED);
-		}
+		if (!aspath) {
+			if (peer_af_flag_check(peer, afi, safi,
+					       PEER_FLAG_AS_PATH_UNCHANGED)) {
+				ret |= peer_af_flag_unset_vty(
+					vty, peer_str, afi, safi,
+					PEER_FLAG_AS_PATH_UNCHANGED);
+			}
+		} else
+			ret |= peer_af_flag_set_vty(
+				vty, peer_str, afi, safi,
+				PEER_FLAG_AS_PATH_UNCHANGED);
 
-		if (!CHECK_FLAG(flags, PEER_FLAG_NEXTHOP_UNCHANGED)
-		    && peer_af_flag_check(peer, afi, safi,
-					  PEER_FLAG_NEXTHOP_UNCHANGED)) {
-			peer_af_flag_unset_vty(vty, peer_str, afi, safi,
-					       PEER_FLAG_NEXTHOP_UNCHANGED);
-		}
+		if (!nexthop) {
+			if (peer_af_flag_check(peer, afi, safi,
+					       PEER_FLAG_NEXTHOP_UNCHANGED)) {
+				ret |= peer_af_flag_unset_vty(
+					vty, peer_str, afi, safi,
+					PEER_FLAG_NEXTHOP_UNCHANGED);
+			}
+		} else
+			ret |= peer_af_flag_set_vty(
+				vty, peer_str, afi, safi,
+				PEER_FLAG_NEXTHOP_UNCHANGED);
 
-		if (!CHECK_FLAG(flags, PEER_FLAG_MED_UNCHANGED)
-		    && peer_af_flag_check(peer, afi, safi,
-					  PEER_FLAG_MED_UNCHANGED)) {
-			peer_af_flag_unset_vty(vty, peer_str, afi, safi,
-					       PEER_FLAG_MED_UNCHANGED);
-		}
+		if (!med) {
+			if (peer_af_flag_check(peer, afi, safi,
+					       PEER_FLAG_MED_UNCHANGED)) {
+				ret |= peer_af_flag_unset_vty(
+					vty, peer_str, afi, safi,
+					PEER_FLAG_MED_UNCHANGED);
+			}
+		} else
+			ret |= peer_af_flag_set_vty(vty, peer_str, afi, safi,
+						    PEER_FLAG_MED_UNCHANGED);
 	}
 
-	return peer_af_flag_set_vty(vty, peer_str, afi, safi, flags);
+	return ret;
 }
 
 ALIAS_HIDDEN(
@@ -5326,27 +5586,51 @@ DEFUN (no_neighbor_attr_unchanged,
        "Med attribute\n")
 {
 	int idx = 0;
-	char *peer = argv[2]->arg;
-	uint16_t flags = 0;
+	char *peer_str = argv[2]->arg;
+	struct peer *peer;
+	bool aspath = false;
+	bool nexthop = false;
+	bool med = false;
+	afi_t afi = bgp_node_afi(vty);
+	safi_t safi = bgp_node_safi(vty);
+	int ret = 0;
+
+	peer = peer_and_group_lookup_vty(vty, peer_str);
+	if (!peer)
+		return CMD_WARNING_CONFIG_FAILED;
 
 	if (argv_find(argv, argc, "as-path", &idx))
-		SET_FLAG(flags, PEER_FLAG_AS_PATH_UNCHANGED);
+		aspath = true;
+
 	idx = 0;
 	if (argv_find(argv, argc, "next-hop", &idx))
-		SET_FLAG(flags, PEER_FLAG_NEXTHOP_UNCHANGED);
+		nexthop = true;
+
 	idx = 0;
 	if (argv_find(argv, argc, "med", &idx))
-		SET_FLAG(flags, PEER_FLAG_MED_UNCHANGED);
+		med = true;
 
-	if (!flags) // no flags means all of them!
-	{
-		SET_FLAG(flags, PEER_FLAG_AS_PATH_UNCHANGED);
-		SET_FLAG(flags, PEER_FLAG_NEXTHOP_UNCHANGED);
-		SET_FLAG(flags, PEER_FLAG_MED_UNCHANGED);
-	}
+	if (!aspath && !nexthop && !med) // no flags means all of them!
+		return peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_AS_PATH_UNCHANGED)
+		       | peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+						PEER_FLAG_NEXTHOP_UNCHANGED)
+		       | peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+						PEER_FLAG_MED_UNCHANGED);
 
-	return peer_af_flag_unset_vty(vty, peer, bgp_node_afi(vty),
-				      bgp_node_safi(vty), flags);
+	if (aspath)
+		ret |= peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_AS_PATH_UNCHANGED);
+
+	if (nexthop)
+		ret |= peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_NEXTHOP_UNCHANGED);
+
+	if (med)
+		ret |= peer_af_flag_unset_vty(vty, peer_str, afi, safi,
+					      PEER_FLAG_MED_UNCHANGED);
+
+	return ret;
 }
 
 ALIAS_HIDDEN(
@@ -6615,7 +6899,8 @@ static int peer_maximum_prefix_set_vty(struct vty *vty, const char *ip_str,
 				       afi_t afi, safi_t safi,
 				       const char *num_str,
 				       const char *threshold_str, int warning,
-				       const char *restart_str)
+				       const char *restart_str,
+				       const char *force_str)
 {
 	int ret;
 	struct peer *peer;
@@ -6639,7 +6924,7 @@ static int peer_maximum_prefix_set_vty(struct vty *vty, const char *ip_str,
 		restart = 0;
 
 	ret = peer_maximum_prefix_set(peer, afi, safi, max, threshold, warning,
-				      restart);
+				      restart, force_str ? true : false);
 
 	return bgp_vty_return(vty, ret);
 }
@@ -6710,172 +6995,220 @@ DEFUN(no_neighbor_maximum_prefix_out,
 	return CMD_SUCCESS;
 }
 
-/* Maximum number of prefix configuration.  prefix count is different
-   for each peer configuration.  So this configuration can be set for
+/* Maximum number of prefix configuration. Prefix count is different
+   for each peer configuration. So this configuration can be set for
    each peer configuration. */
 DEFUN (neighbor_maximum_prefix,
        neighbor_maximum_prefix_cmd,
-       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295)",
+       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) [force]",
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
        "Maximum number of prefix accept from this peer\n"
-       "maximum no. of prefix limit\n")
+       "maximum no. of prefix limit\n"
+       "Force checking all received routes not only accepted\n")
 {
 	int idx_peer = 1;
 	int idx_number = 3;
+	int idx_force = 0;
+	char *force = NULL;
+
+	if (argv_find(argv, argc, "force", &idx_force))
+		force = argv[idx_force]->arg;
+
 	return peer_maximum_prefix_set_vty(
 		vty, argv[idx_peer]->arg, bgp_node_afi(vty), bgp_node_safi(vty),
-		argv[idx_number]->arg, NULL, 0, NULL);
+		argv[idx_number]->arg, NULL, 0, NULL, force);
 }
 
 ALIAS_HIDDEN(neighbor_maximum_prefix, neighbor_maximum_prefix_hidden_cmd,
-	     "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295)",
+	     "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) [force]",
 	     NEIGHBOR_STR NEIGHBOR_ADDR_STR2
 	     "Maximum number of prefix accept from this peer\n"
-	     "maximum no. of prefix limit\n")
+	     "maximum no. of prefix limit\n"
+	     "Force checking all received routes not only accepted\n")
 
 DEFUN (neighbor_maximum_prefix_threshold,
        neighbor_maximum_prefix_threshold_cmd,
-       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100)",
-       NEIGHBOR_STR
-       NEIGHBOR_ADDR_STR2
-       "Maximum number of prefix accept from this peer\n"
-       "maximum no. of prefix limit\n"
-       "Threshold value (%) at which to generate a warning msg\n")
-{
-	int idx_peer = 1;
-	int idx_number = 3;
-	int idx_number_2 = 4;
-	return peer_maximum_prefix_set_vty(
-		vty, argv[idx_peer]->arg, bgp_node_afi(vty), bgp_node_safi(vty),
-		argv[idx_number]->arg, argv[idx_number_2]->arg, 0, NULL);
-}
-
-ALIAS_HIDDEN(
-	neighbor_maximum_prefix_threshold,
-	neighbor_maximum_prefix_threshold_hidden_cmd,
-	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100)",
-	NEIGHBOR_STR NEIGHBOR_ADDR_STR2
-	"Maximum number of prefix accept from this peer\n"
-	"maximum no. of prefix limit\n"
-	"Threshold value (%) at which to generate a warning msg\n")
-
-DEFUN (neighbor_maximum_prefix_warning,
-       neighbor_maximum_prefix_warning_cmd,
-       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) warning-only",
-       NEIGHBOR_STR
-       NEIGHBOR_ADDR_STR2
-       "Maximum number of prefix accept from this peer\n"
-       "maximum no. of prefix limit\n"
-       "Only give warning message when limit is exceeded\n")
-{
-	int idx_peer = 1;
-	int idx_number = 3;
-	return peer_maximum_prefix_set_vty(
-		vty, argv[idx_peer]->arg, bgp_node_afi(vty), bgp_node_safi(vty),
-		argv[idx_number]->arg, NULL, 1, NULL);
-}
-
-ALIAS_HIDDEN(
-	neighbor_maximum_prefix_warning,
-	neighbor_maximum_prefix_warning_hidden_cmd,
-	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) warning-only",
-	NEIGHBOR_STR NEIGHBOR_ADDR_STR2
-	"Maximum number of prefix accept from this peer\n"
-	"maximum no. of prefix limit\n"
-	"Only give warning message when limit is exceeded\n")
-
-DEFUN (neighbor_maximum_prefix_threshold_warning,
-       neighbor_maximum_prefix_threshold_warning_cmd,
-       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) warning-only",
+       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) [force]",
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
        "Maximum number of prefix accept from this peer\n"
        "maximum no. of prefix limit\n"
        "Threshold value (%) at which to generate a warning msg\n"
-       "Only give warning message when limit is exceeded\n")
+       "Force checking all received routes not only accepted\n")
 {
 	int idx_peer = 1;
 	int idx_number = 3;
 	int idx_number_2 = 4;
+	int idx_force = 0;
+	char *force = NULL;
+
+	if (argv_find(argv, argc, "force", &idx_force))
+		force = argv[idx_force]->arg;
+
 	return peer_maximum_prefix_set_vty(
 		vty, argv[idx_peer]->arg, bgp_node_afi(vty), bgp_node_safi(vty),
-		argv[idx_number]->arg, argv[idx_number_2]->arg, 1, NULL);
+		argv[idx_number]->arg, argv[idx_number_2]->arg, 0, NULL, force);
+}
+
+ALIAS_HIDDEN(
+	neighbor_maximum_prefix_threshold,
+	neighbor_maximum_prefix_threshold_hidden_cmd,
+	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) [force]",
+	NEIGHBOR_STR NEIGHBOR_ADDR_STR2
+	"Maximum number of prefix accept from this peer\n"
+	"maximum no. of prefix limit\n"
+	"Threshold value (%) at which to generate a warning msg\n"
+	"Force checking all received routes not only accepted\n")
+
+DEFUN (neighbor_maximum_prefix_warning,
+       neighbor_maximum_prefix_warning_cmd,
+       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) warning-only [force]",
+       NEIGHBOR_STR
+       NEIGHBOR_ADDR_STR2
+       "Maximum number of prefix accept from this peer\n"
+       "maximum no. of prefix limit\n"
+       "Only give warning message when limit is exceeded\n"
+       "Force checking all received routes not only accepted\n")
+{
+	int idx_peer = 1;
+	int idx_number = 3;
+	int idx_force = 0;
+	char *force = NULL;
+
+	if (argv_find(argv, argc, "force", &idx_force))
+		force = argv[idx_force]->arg;
+
+	return peer_maximum_prefix_set_vty(
+		vty, argv[idx_peer]->arg, bgp_node_afi(vty), bgp_node_safi(vty),
+		argv[idx_number]->arg, NULL, 1, NULL, force);
+}
+
+ALIAS_HIDDEN(
+	neighbor_maximum_prefix_warning,
+	neighbor_maximum_prefix_warning_hidden_cmd,
+	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) warning-only [force]",
+	NEIGHBOR_STR NEIGHBOR_ADDR_STR2
+	"Maximum number of prefix accept from this peer\n"
+	"maximum no. of prefix limit\n"
+	"Only give warning message when limit is exceeded\n"
+	"Force checking all received routes not only accepted\n")
+
+DEFUN (neighbor_maximum_prefix_threshold_warning,
+       neighbor_maximum_prefix_threshold_warning_cmd,
+       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) warning-only [force]",
+       NEIGHBOR_STR
+       NEIGHBOR_ADDR_STR2
+       "Maximum number of prefix accept from this peer\n"
+       "maximum no. of prefix limit\n"
+       "Threshold value (%) at which to generate a warning msg\n"
+       "Only give warning message when limit is exceeded\n"
+       "Force checking all received routes not only accepted\n")
+{
+	int idx_peer = 1;
+	int idx_number = 3;
+	int idx_number_2 = 4;
+	int idx_force = 0;
+	char *force = NULL;
+
+	if (argv_find(argv, argc, "force", &idx_force))
+		force = argv[idx_force]->arg;
+
+	return peer_maximum_prefix_set_vty(
+		vty, argv[idx_peer]->arg, bgp_node_afi(vty), bgp_node_safi(vty),
+		argv[idx_number]->arg, argv[idx_number_2]->arg, 1, NULL, force);
 }
 
 ALIAS_HIDDEN(
 	neighbor_maximum_prefix_threshold_warning,
 	neighbor_maximum_prefix_threshold_warning_hidden_cmd,
-	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) warning-only",
+	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) warning-only [force]",
 	NEIGHBOR_STR NEIGHBOR_ADDR_STR2
 	"Maximum number of prefix accept from this peer\n"
 	"maximum no. of prefix limit\n"
 	"Threshold value (%) at which to generate a warning msg\n"
-	"Only give warning message when limit is exceeded\n")
+	"Only give warning message when limit is exceeded\n"
+	"Force checking all received routes not only accepted\n")
 
 DEFUN (neighbor_maximum_prefix_restart,
        neighbor_maximum_prefix_restart_cmd,
-       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) restart (1-65535)",
+       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) restart (1-65535) [force]",
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
        "Maximum number of prefix accept from this peer\n"
        "maximum no. of prefix limit\n"
        "Restart bgp connection after limit is exceeded\n"
-       "Restart interval in minutes\n")
+       "Restart interval in minutes\n"
+       "Force checking all received routes not only accepted\n")
 {
 	int idx_peer = 1;
 	int idx_number = 3;
 	int idx_number_2 = 5;
+	int idx_force = 0;
+	char *force = NULL;
+
+	if (argv_find(argv, argc, "force", &idx_force))
+		force = argv[idx_force]->arg;
+
 	return peer_maximum_prefix_set_vty(
 		vty, argv[idx_peer]->arg, bgp_node_afi(vty), bgp_node_safi(vty),
-		argv[idx_number]->arg, NULL, 0, argv[idx_number_2]->arg);
+		argv[idx_number]->arg, NULL, 0, argv[idx_number_2]->arg, force);
 }
 
 ALIAS_HIDDEN(
 	neighbor_maximum_prefix_restart,
 	neighbor_maximum_prefix_restart_hidden_cmd,
-	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) restart (1-65535)",
+	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) restart (1-65535) [force]",
 	NEIGHBOR_STR NEIGHBOR_ADDR_STR2
 	"Maximum number of prefix accept from this peer\n"
 	"maximum no. of prefix limit\n"
 	"Restart bgp connection after limit is exceeded\n"
-	"Restart interval in minutes\n")
+	"Restart interval in minutes\n"
+	"Force checking all received routes not only accepted\n")
 
 DEFUN (neighbor_maximum_prefix_threshold_restart,
        neighbor_maximum_prefix_threshold_restart_cmd,
-       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) restart (1-65535)",
+       "neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) restart (1-65535) [force]",
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
        "Maximum number of prefixes to accept from this peer\n"
        "maximum no. of prefix limit\n"
        "Threshold value (%) at which to generate a warning msg\n"
        "Restart bgp connection after limit is exceeded\n"
-       "Restart interval in minutes\n")
+       "Restart interval in minutes\n"
+       "Force checking all received routes not only accepted\n")
 {
 	int idx_peer = 1;
 	int idx_number = 3;
 	int idx_number_2 = 4;
 	int idx_number_3 = 6;
+	int idx_force = 0;
+	char *force = NULL;
+
+	if (argv_find(argv, argc, "force", &idx_force))
+		force = argv[idx_force]->arg;
+
 	return peer_maximum_prefix_set_vty(
 		vty, argv[idx_peer]->arg, bgp_node_afi(vty), bgp_node_safi(vty),
 		argv[idx_number]->arg, argv[idx_number_2]->arg, 0,
-		argv[idx_number_3]->arg);
+		argv[idx_number_3]->arg, force);
 }
 
 ALIAS_HIDDEN(
 	neighbor_maximum_prefix_threshold_restart,
 	neighbor_maximum_prefix_threshold_restart_hidden_cmd,
-	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) restart (1-65535)",
+	"neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix (1-4294967295) (1-100) restart (1-65535) [force]",
 	NEIGHBOR_STR NEIGHBOR_ADDR_STR2
 	"Maximum number of prefixes to accept from this peer\n"
 	"maximum no. of prefix limit\n"
 	"Threshold value (%) at which to generate a warning msg\n"
 	"Restart bgp connection after limit is exceeded\n"
-	"Restart interval in minutes\n")
+	"Restart interval in minutes\n"
+	"Force checking all received routes not only accepted\n")
 
 DEFUN (no_neighbor_maximum_prefix,
        no_neighbor_maximum_prefix_cmd,
-       "no neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix [(1-4294967295) [(1-100)] [restart (1-65535)] [warning-only]]",
+       "no neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix [(1-4294967295) [(1-100)] [restart (1-65535)] [warning-only] [force]]",
        NO_STR
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
@@ -6884,7 +7217,8 @@ DEFUN (no_neighbor_maximum_prefix,
        "Threshold value (%) at which to generate a warning msg\n"
        "Restart bgp connection after limit is exceeded\n"
        "Restart interval in minutes\n"
-       "Only give warning message when limit is exceeded\n")
+       "Only give warning message when limit is exceeded\n"
+       "Force checking all received routes not only accepted\n")
 {
 	int idx_peer = 2;
 	return peer_maximum_prefix_unset_vty(vty, argv[idx_peer]->arg,
@@ -6894,14 +7228,15 @@ DEFUN (no_neighbor_maximum_prefix,
 
 ALIAS_HIDDEN(
 	no_neighbor_maximum_prefix, no_neighbor_maximum_prefix_hidden_cmd,
-	"no neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix [(1-4294967295) [(1-100)] [restart (1-65535)] [warning-only]]",
+	"no neighbor <A.B.C.D|X:X::X:X|WORD> maximum-prefix [(1-4294967295) [(1-100)] [restart (1-65535)] [warning-only] [force]]",
 	NO_STR NEIGHBOR_STR NEIGHBOR_ADDR_STR2
 	"Maximum number of prefixes to accept from this peer\n"
 	"maximum no. of prefix limit\n"
 	"Threshold value (%) at which to generate a warning msg\n"
 	"Restart bgp connection after limit is exceeded\n"
 	"Restart interval in minutes\n"
-	"Only give warning message when limit is exceeded\n")
+	"Only give warning message when limit is exceeded\n"
+	"Force checking all received routes not only accepted\n")
 
 
 /* "neighbor allowas-in" */
@@ -7192,15 +7527,20 @@ DEFPY(
 }
 
 static int set_ecom_list(struct vty *vty, int argc, struct cmd_token **argv,
-			 struct ecommunity **list)
+			 struct ecommunity **list, bool is_rt6)
 {
 	struct ecommunity *ecom = NULL;
 	struct ecommunity *ecomadd;
 
 	for (; argc; --argc, ++argv) {
-
-		ecomadd = ecommunity_str2com(argv[0]->arg,
-					     ECOMMUNITY_ROUTE_TARGET, 0);
+		if (is_rt6)
+			ecomadd = ecommunity_str2com_ipv6(argv[0]->arg,
+						ECOMMUNITY_ROUTE_TARGET,
+						0);
+		else
+			ecomadd = ecommunity_str2com(argv[0]->arg,
+						ECOMMUNITY_ROUTE_TARGET,
+						0);
 		if (!ecomadd) {
 			vty_out(vty, "Malformed community-list value\n");
 			if (ecom)
@@ -7280,10 +7620,10 @@ DEFPY (af_rd_vpn_export,
 	int ret;
 	afi_t afi;
 	int idx = 0;
-	int yes = 1;
+	bool yes = true;
 
 	if (argv_find(argv, argc, "no", &idx))
-		yes = 0;
+		yes = false;
 
 	if (yes) {
 		ret = str2prefix_rd(rd_str, &prd);
@@ -7341,10 +7681,10 @@ DEFPY (af_label_vpn_export,
 	mpls_label_t label = MPLS_LABEL_NONE;
 	afi_t afi;
 	int idx = 0;
-	int yes = 1;
+	bool yes = true;
 
 	if (argv_find(argv, argc, "no", &idx))
-		yes = 0;
+		yes = false;
 
 	/* If "no ...", squash trailing parameter */
 	if (!yes)
@@ -7436,7 +7776,6 @@ DEFPY (af_nexthop_vpn_export,
 			vty_out(vty, "%% Nexthop required\n");
 			return CMD_WARNING_CONFIG_FAILED;
 		}
-
 		if (!sockunion2hostprefix(nexthop_su, &p))
 			return CMD_WARNING_CONFIG_FAILED;
 	}
@@ -7502,10 +7841,10 @@ DEFPY (af_rt_vpn_imexport,
 	vpn_policy_direction_t dir;
 	afi_t afi;
 	int idx = 0;
-	int yes = 1;
+	bool yes = true;
 
 	if (argv_find(argv, argc, "no", &idx))
-		yes = 0;
+		yes = false;
 
 	afi = vpn_policy_getafi(vty, bgp, false);
 	if (afi == AFI_MAX)
@@ -7520,7 +7859,7 @@ DEFPY (af_rt_vpn_imexport,
 			vty_out(vty, "%% Missing RTLIST\n");
 			return CMD_WARNING_CONFIG_FAILED;
 		}
-		ret = set_ecom_list(vty, argc - idx, argv + idx, &ecom);
+		ret = set_ecom_list(vty, argc - idx, argv + idx, &ecom, false);
 		if (ret != CMD_SUCCESS) {
 			return ret;
 		}
@@ -7582,10 +7921,10 @@ DEFPY (af_route_map_vpn_imexport,
 	vpn_policy_direction_t dir;
 	afi_t afi;
 	int idx = 0;
-	int yes = 1;
+	bool yes = true;
 
 	if (argv_find(argv, argc, "no", &idx))
-		yes = 0;
+		yes = false;
 
 	afi = vpn_policy_getafi(vty, bgp, false);
 	if (afi == AFI_MAX)
@@ -7824,12 +8163,12 @@ DEFPY (bgp_imexport_vpn,
 	afi_t afi;
 	safi_t safi;
 	int idx = 0;
-	int yes = 1;
+	bool yes = true;
 	int flag;
 	vpn_policy_direction_t dir;
 
 	if (argv_find(argv, argc, "no", &idx))
-		yes = 0;
+		yes = false;
 
 	if (BGP_INSTANCE_TYPE_VRF != bgp->inst_type &&
 		BGP_INSTANCE_TYPE_DEFAULT != bgp->inst_type) {
@@ -7877,26 +8216,36 @@ DEFPY (bgp_imexport_vpn,
 
 DEFPY (af_routetarget_import,
        af_routetarget_import_cmd,
-       "[no] <rt|route-target> redirect import RTLIST...",
+       "[no] <rt|route-target|route-target6|rt6> redirect import RTLIST...",
        NO_STR
+       "Specify route target list\n"
+       "Specify route target list\n"
        "Specify route target list\n"
        "Specify route target list\n"
        "Flow-spec redirect type route target\n"
        "Import routes to this address-family\n"
-       "Space separated route target list (A.B.C.D:MN|EF:OPQR|GHJK:MN)\n")
+       "Space separated route target list (A.B.C.D:MN|EF:OPQR|GHJK:MN|IPV6:MN)\n")
 {
 	VTY_DECLVAR_CONTEXT(bgp, bgp);
 	int ret;
 	struct ecommunity *ecom = NULL;
 	afi_t afi;
-	int idx = 0;
-	int yes = 1;
+	int idx = 0, idx_unused = 0;
+	bool yes = true;
+	bool rt6 = false;
 
 	if (argv_find(argv, argc, "no", &idx))
-		yes = 0;
+		yes = false;
+
+	if (argv_find(argv, argc, "rt6", &idx_unused) ||
+	    argv_find(argv, argc, "route-target6", &idx_unused))
+		rt6 = true;
 
 	afi = vpn_policy_getafi(vty, bgp, false);
 	if (afi == AFI_MAX)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	if (rt6 && afi != AFI_IP6)
 		return CMD_WARNING_CONFIG_FAILED;
 
 	if (yes) {
@@ -7904,7 +8253,7 @@ DEFPY (af_routetarget_import,
 			vty_out(vty, "%% Missing RTLIST\n");
 			return CMD_WARNING_CONFIG_FAILED;
 		}
-		ret = set_ecom_list(vty, argc - idx, argv + idx, &ecom);
+		ret = set_ecom_list(vty, argc - idx, argv + idx, &ecom, rt6);
 		if (ret != CMD_SUCCESS)
 			return ret;
 	}
@@ -8036,8 +8385,8 @@ static int bgp_clear_prefix(struct vty *vty, const char *view_name,
 {
 	int ret;
 	struct prefix match;
-	struct bgp_node *rn;
-	struct bgp_node *rm;
+	struct bgp_dest *dest;
+	struct bgp_dest *rm;
 	struct bgp *bgp;
 	struct bgp_table *table;
 	struct bgp_table *rib;
@@ -8069,37 +8418,38 @@ static int bgp_clear_prefix(struct vty *vty, const char *view_name,
 	rib = bgp->rib[afi][safi];
 
 	if (safi == SAFI_MPLS_VPN) {
-		for (rn = bgp_table_top(rib); rn; rn = bgp_route_next(rn)) {
-			const struct prefix *rn_p = bgp_node_get_prefix(rn);
+		for (dest = bgp_table_top(rib); dest;
+		     dest = bgp_route_next(dest)) {
+			const struct prefix *dest_p = bgp_dest_get_prefix(dest);
 
-			if (prd && memcmp(rn_p->u.val, prd->val, 8) != 0)
+			if (prd && memcmp(dest_p->u.val, prd->val, 8) != 0)
 				continue;
 
-			table = bgp_node_get_bgp_table_info(rn);
+			table = bgp_dest_get_bgp_table_info(dest);
 			if (table == NULL)
 				continue;
 
 			if ((rm = bgp_node_match(table, &match)) != NULL) {
 				const struct prefix *rm_p =
-					bgp_node_get_prefix(rm);
+					bgp_dest_get_prefix(rm);
 
 				if (rm_p->prefixlen == match.prefixlen) {
 					SET_FLAG(rm->flags,
 						 BGP_NODE_USER_CLEAR);
 					bgp_process(bgp, rm, afi, safi);
 				}
-				bgp_unlock_node(rm);
+				bgp_dest_unlock_node(rm);
 			}
 		}
 	} else {
-		if ((rn = bgp_node_match(rib, &match)) != NULL) {
-			const struct prefix *rn_p = bgp_node_get_prefix(rn);
+		if ((dest = bgp_node_match(rib, &match)) != NULL) {
+			const struct prefix *dest_p = bgp_dest_get_prefix(dest);
 
-			if (rn_p->prefixlen == match.prefixlen) {
-				SET_FLAG(rn->flags, BGP_NODE_USER_CLEAR);
-				bgp_process(bgp, rn, afi, safi);
+			if (dest_p->prefixlen == match.prefixlen) {
+				SET_FLAG(dest->flags, BGP_NODE_USER_CLEAR);
+				bgp_process(bgp, dest, afi, safi);
 			}
-			bgp_unlock_node(rn);
+			bgp_dest_unlock_node(dest);
 		}
 	}
 
@@ -8525,7 +8875,7 @@ DEFUN (show_bgp_memory,
 	count = mtype_stats_alloc(MTYPE_BGP_NODE);
 	vty_out(vty, "%ld RIB nodes, using %s of memory\n", count,
 		mtype_memstr(memstrbuf, sizeof(memstrbuf),
-			     count * sizeof(struct bgp_node)));
+			     count * sizeof(struct bgp_dest)));
 
 	count = mtype_stats_alloc(MTYPE_BGP_ROUTE);
 	vty_out(vty, "%ld BGP routes, using %s of memory\n", count,
@@ -9043,7 +9393,7 @@ static int bgp_show_summary(struct vty *vty, struct bgp *bgp, int afi, int safi,
 				json_object_int_add(json, "ribCount", ents);
 				json_object_int_add(
 					json, "ribMemory",
-					ents * sizeof(struct bgp_node));
+					ents * sizeof(struct bgp_dest));
 
 				ents = bgp->af_peer_count[afi][safi];
 				json_object_int_add(json, "peerCount", ents);
@@ -9079,10 +9429,11 @@ static int bgp_show_summary(struct vty *vty, struct bgp *bgp, int afi, int safi,
 				vty_out(vty,
 					"RIB entries %ld, using %s of memory\n",
 					ents,
-					mtype_memstr(memstrbuf,
-						     sizeof(memstrbuf),
-						     ents * sizeof(struct
-								   bgp_node)));
+					mtype_memstr(
+						memstrbuf, sizeof(memstrbuf),
+						ents
+							* sizeof(struct
+								 bgp_dest)));
 
 				/* Peer related usage */
 				ents = bgp->af_peer_count[afi][safi];
@@ -9186,7 +9537,9 @@ static int bgp_show_summary(struct vty *vty, struct bgp *bgp, int afi, int safi,
 					json_object_int_add(json_peer,
 							    "pfxSnt",
 							    (PAF_SUBGRP(paf))->scount);
-				if (CHECK_FLAG(peer->flags, PEER_FLAG_SHUTDOWN))
+				if (CHECK_FLAG(peer->flags, PEER_FLAG_SHUTDOWN)
+				    || CHECK_FLAG(peer->bgp->flags,
+						  BGP_FLAG_SHUTDOWN))
 					json_object_string_add(json_peer, "state",
 							       "Idle (Admin)");
 				else if (peer->afc_recv[afi][safi])
@@ -9262,8 +9615,7 @@ static int bgp_show_summary(struct vty *vty, struct bgp *bgp, int afi, int safi,
 					memory_order_relaxed);
 
 				vty_out(vty,
-					"4 %10u %9u %9u %8" PRIu64
-					" %4zu %4zu %8s",
+					"4 %10u %9u %9u %8" PRIu64" %4zu %4zu %8s",
 					peer->as, PEER_TOTAL_RX(peer),
 					PEER_TOTAL_TX(peer),
 					peer->version[afi][safi], inq_count,
@@ -9282,7 +9634,7 @@ static int bgp_show_summary(struct vty *vty, struct bgp *bgp, int afi, int safi,
 								"(Policy)");
 						else
 							vty_out(vty,
-								" %12" PRIu32,
+								" %12u",
 								peer->pcount
 									[afi]
 									[pfx_rcd_safi]);
@@ -9300,13 +9652,16 @@ static int bgp_show_summary(struct vty *vty, struct bgp *bgp, int afi, int safi,
 								"(Policy)");
 						else
 							vty_out(vty,
-								" %8" PRIu32,
+								" %8u",
 								(PAF_SUBGRP(
 									 paf))
 									->scount);
 					}
 				} else {
-					if (CHECK_FLAG(peer->flags, PEER_FLAG_SHUTDOWN))
+					if (CHECK_FLAG(peer->flags,
+						       PEER_FLAG_SHUTDOWN)
+					    || CHECK_FLAG(peer->bgp->flags,
+							  BGP_FLAG_SHUTDOWN))
 						vty_out(vty, " Idle (Admin)");
 					else if (CHECK_FLAG(
 							    peer->sflags,
@@ -9317,7 +9672,7 @@ static int bgp_show_summary(struct vty *vty, struct bgp *bgp, int afi, int safi,
 							lookup_msg(bgp_status_msg,
 								   peer->status, NULL));
 
-					vty_out(vty, " %8" PRIu32, 0);
+					vty_out(vty, " %8u", 0);
 				}
 				vty_out(vty, "\n");
 			}
@@ -10340,8 +10695,7 @@ static void bgp_show_peer_afi(struct vty *vty, struct peer *p, afi_t afi,
 
 		paf = peer_af_find(p, afi, safi);
 		if (paf && PAF_SUBGRP(paf)) {
-			vty_out(vty, "  Update group %" PRIu64
-				     ", subgroup %" PRIu64 "\n",
+			vty_out(vty, "  Update group %" PRIu64", subgroup %" PRIu64 "\n",
 				PAF_UPDGRP(paf)->id, PAF_SUBGRP(paf)->id);
 			vty_out(vty, "  Packet Queue length %d\n",
 				bpacket_queue_virtual_length(paf));
@@ -10592,20 +10946,20 @@ static void bgp_show_peer_afi(struct vty *vty, struct peer *p, afi_t afi,
 				filter->usmap.name);
 
 		/* Receive prefix count */
-		vty_out(vty, "  %" PRIu32 " accepted prefixes\n",
+		vty_out(vty, "  %u accepted prefixes\n",
 			p->pcount[afi][safi]);
 
 		/* maximum-prefix-out */
 		if (CHECK_FLAG(p->af_flags[afi][safi],
 			       PEER_FLAG_MAX_PREFIX_OUT))
 			vty_out(vty,
-				"  Maximum allowed prefixes sent %" PRIu32 "\n",
+				"  Maximum allowed prefixes sent %u\n",
 				p->pmax_out[afi][safi]);
 
 		/* Maximum prefix */
 		if (CHECK_FLAG(p->af_flags[afi][safi], PEER_FLAG_MAX_PREFIX)) {
 			vty_out(vty,
-				"  Maximum prefixes allowed %" PRIu32 "%s\n",
+				"  Maximum prefixes allowed %u%s\n",
 				p->pmax[afi][safi],
 				CHECK_FLAG(p->af_flags[afi][safi],
 					   PEER_FLAG_MAX_PREFIX_WARNING)
@@ -10794,10 +11148,9 @@ static void bgp_show_peer(struct vty *vty, struct peer *p, bool use_json,
 					p->group, &prefix);
 
 				if (range) {
-					prefix2str(range, buf1, sizeof(buf1));
 					vty_out(vty,
-						" Belongs to the subnet range group: %s\n",
-						buf1);
+						" Belongs to the subnet range group: %pFX\n",
+						range);
 				}
 			}
 		}
@@ -10805,7 +11158,8 @@ static void bgp_show_peer(struct vty *vty, struct peer *p, bool use_json,
 
 	if (use_json) {
 		/* Administrative shutdown. */
-		if (CHECK_FLAG(p->flags, PEER_FLAG_SHUTDOWN))
+		if (CHECK_FLAG(p->flags, PEER_FLAG_SHUTDOWN)
+		    || CHECK_FLAG(p->bgp->flags, BGP_FLAG_SHUTDOWN))
 			json_object_boolean_true_add(json_neigh,
 						     "adminShutDown");
 
@@ -10911,7 +11265,8 @@ static void bgp_show_peer(struct vty *vty, struct peer *p, bool use_json,
 		}
 	} else {
 		/* Administrative shutdown. */
-		if (CHECK_FLAG(p->flags, PEER_FLAG_SHUTDOWN))
+		if (CHECK_FLAG(p->flags, PEER_FLAG_SHUTDOWN)
+		    || CHECK_FLAG(p->bgp->flags, BGP_FLAG_SHUTDOWN))
 			vty_out(vty, " Administratively shut down\n");
 
 		/* BGP Version. */
@@ -12607,12 +12962,11 @@ static void bgp_show_all_instances_neighbors_vty(struct vty *vty,
 					  use_json, json);
 		}
 		json_object_free(json);
+		json = NULL;
 	}
 
-	if (use_json) {
+	if (use_json)
 		vty_out(vty, "}\n");
-		json_object_free(json);
-	}
 	else if (!nbr_output)
 		vty_out(vty, "%% BGP instance not found\n");
 }
@@ -13432,10 +13786,10 @@ static int bgp_show_one_peer_group(struct vty *vty, struct peer_group *group)
 	conf = group->conf;
 
 	if (conf->as_type == AS_SPECIFIED || conf->as_type == AS_EXTERNAL) {
-		vty_out(vty, "\nBGP peer-group %s, remote AS %" PRIu32 "\n",
+		vty_out(vty, "\nBGP peer-group %s, remote AS %u\n",
 			group->name, conf->as);
 	} else if (conf->as_type == AS_INTERNAL) {
-		vty_out(vty, "\nBGP peer-group %s, remote AS %" PRIu32 "\n",
+		vty_out(vty, "\nBGP peer-group %s, remote AS %u\n",
 			group->name, group->bgp->as);
 	} else {
 		vty_out(vty, "\nBGP peer-group %s\n", group->name);
@@ -13485,7 +13839,8 @@ static int bgp_show_one_peer_group(struct vty *vty, struct peer_group *group)
 	if (listcount(group->peer)) {
 		vty_out(vty, "  Peer-group members:\n");
 		for (ALL_LIST_ELEMENTS(group->peer, node, nnode, peer)) {
-			if (CHECK_FLAG(peer->flags, PEER_FLAG_SHUTDOWN))
+			if (CHECK_FLAG(peer->flags, PEER_FLAG_SHUTDOWN)
+			    || CHECK_FLAG(peer->bgp->flags, BGP_FLAG_SHUTDOWN))
 				peer_status = "Idle (Admin)";
 			else if (CHECK_FLAG(peer->sflags,
 					    PEER_STATUS_PREFIX_OVERFLOW))
@@ -14436,7 +14791,13 @@ static void bgp_vpn_policy_config_write_afi(struct vty *vty, struct bgp *bgp,
 					ECOMMUNITY_FORMAT_ROUTE_MAP,
 					ECOMMUNITY_ROUTE_TARGET);
 
-		vty_out(vty, "%*srt redirect import %s\n", indent, "", b);
+		if (bgp->vpn_policy[afi].import_redirect_rtlist->unit_size
+		    != ECOMMUNITY_SIZE)
+			vty_out(vty, "%*srt6 redirect import %s\n",
+				indent, "", b);
+		else
+			vty_out(vty, "%*srt redirect import %s\n",
+				indent, "", b);
 		XFREE(MTYPE_ECOMMUNITY_STR, b);
 	}
 }
@@ -14618,6 +14979,10 @@ static void bgp_config_write_peer_global(struct vty *vty, struct bgp *bgp,
 		else
 			vty_out(vty, " neighbor %s shutdown\n", addr);
 	}
+
+	if (peergroup_flag_check(peer, PEER_FLAG_RTT_SHUTDOWN))
+		vty_out(vty, " neighbor %s shutdown rtt %u count %u\n", addr,
+			peer->rtt_expected, peer->rtt_keepalive_conf);
 
 	/* bfd */
 	if (peer->bfd_info) {
@@ -14954,7 +15319,7 @@ static void bgp_config_write_peer_af(struct vty *vty, struct bgp *bgp,
 
 	/* maximum-prefix. */
 	if (peergroup_af_flag_check(peer, afi, safi, PEER_FLAG_MAX_PREFIX)) {
-		vty_out(vty, "  neighbor %s maximum-prefix %" PRIu32, addr,
+		vty_out(vty, "  neighbor %s maximum-prefix %u", addr,
 			peer->pmax[afi][safi]);
 
 		if (peer->pmax_threshold[afi][safi]
@@ -14966,13 +15331,16 @@ static void bgp_config_write_peer_af(struct vty *vty, struct bgp *bgp,
 		if (peer->pmax_restart[afi][safi])
 			vty_out(vty, " restart %u",
 				peer->pmax_restart[afi][safi]);
+		if (peer_af_flag_check(peer, afi, safi,
+				       PEER_FLAG_MAX_PREFIX_FORCE))
+			vty_out(vty, " force");
 
 		vty_out(vty, "\n");
 	}
 
 	/* maximum-prefix-out */
 	if (peergroup_af_flag_check(peer, afi, safi, PEER_FLAG_MAX_PREFIX_OUT))
-		vty_out(vty, "  neighbor %s maximum-prefix-out %" PRIu32 "\n",
+		vty_out(vty, "  neighbor %s maximum-prefix-out %u\n",
 			addr, peer->pmax_out[afi][safi]);
 
 	/* Route server client. */
@@ -15153,6 +15521,13 @@ int bgp_config_write(struct vty *vty)
 	if (bm->rmap_update_timer != RMAP_DEFAULT_UPDATE_TIMER)
 		vty_out(vty, "bgp route-map delay-timer %u\n",
 			bm->rmap_update_timer);
+
+	if (bm->v_update_delay != BGP_UPDATE_DELAY_DEF) {
+		vty_out(vty, "bgp update-delay %d", bm->v_update_delay);
+		if (bm->v_update_delay != bm->v_establish_wait)
+			vty_out(vty, " %d", bm->v_establish_wait);
+		vty_out(vty, "\n");
+	}
 
 	/* BGP configuration. */
 	for (ALL_LIST_ELEMENTS(bm->bgp, mnode, mnnode, bgp)) {
@@ -15421,6 +15796,10 @@ int bgp_config_write(struct vty *vty)
 		if (bgp->autoshutdown)
 			vty_out(vty, " bgp default shutdown\n");
 
+		/* BGP instance administrative shutdown */
+		if (CHECK_FLAG(bgp->flags, BGP_FLAG_SHUTDOWN))
+			vty_out(vty, " bgp shutdown\n");
+
 		/* IPv4 unicast configuration.  */
 		bgp_config_write_family(vty, bgp, AFI_IP, SAFI_UNICAST);
 
@@ -15664,6 +16043,10 @@ void bgp_vty_init(void)
 	install_element(CONFIG_NODE, &bgp_set_route_map_delay_timer_cmd);
 	install_element(CONFIG_NODE, &no_bgp_set_route_map_delay_timer_cmd);
 
+	/* global bgp update-delay command */
+	install_element(CONFIG_NODE, &bgp_global_update_delay_cmd);
+	install_element(CONFIG_NODE, &no_bgp_global_update_delay_cmd);
+
 	/* Dummy commands (Currently not supported) */
 	install_element(BGP_NODE, &no_synchronization_cmd);
 	install_element(BGP_NODE, &no_auto_summary_cmd);
@@ -15704,7 +16087,6 @@ void bgp_vty_init(void)
 	/* bgp update-delay command */
 	install_element(BGP_NODE, &bgp_update_delay_cmd);
 	install_element(BGP_NODE, &no_bgp_update_delay_cmd);
-	install_element(BGP_NODE, &bgp_update_delay_establish_wait_cmd);
 
 	install_element(BGP_NODE, &bgp_wpkt_quanta_cmd);
 	install_element(BGP_NODE, &bgp_rpkt_quanta_cmd);
@@ -15729,6 +16111,11 @@ void bgp_vty_init(void)
 	install_element(BGP_IPV6_NODE, &bgp_maxpaths_ibgp_cluster_cmd);
 	install_element(BGP_IPV6_NODE, &no_bgp_maxpaths_ibgp_cmd);
 
+	install_element(BGP_IPV4L_NODE, &bgp_maxpaths_cmd);
+	install_element(BGP_IPV4L_NODE, &no_bgp_maxpaths_cmd);
+	install_element(BGP_IPV4L_NODE, &bgp_maxpaths_ibgp_cmd);
+	install_element(BGP_IPV4L_NODE, &bgp_maxpaths_ibgp_cluster_cmd);
+	install_element(BGP_IPV4L_NODE, &no_bgp_maxpaths_ibgp_cmd);
 	install_element(BGP_IPV6L_NODE, &bgp_maxpaths_cmd);
 	install_element(BGP_IPV6L_NODE, &no_bgp_maxpaths_cmd);
 	install_element(BGP_IPV6L_NODE, &bgp_maxpaths_ibgp_cmd);
@@ -15878,6 +16265,12 @@ void bgp_vty_init(void)
 
 	/* "bgp default shutdown" command */
 	install_element(BGP_NODE, &bgp_default_shutdown_cmd);
+
+	/* "bgp shutdown" commands */
+	install_element(BGP_NODE, &bgp_shutdown_cmd);
+	install_element(BGP_NODE, &bgp_shutdown_msg_cmd);
+	install_element(BGP_NODE, &no_bgp_shutdown_cmd);
+	install_element(BGP_NODE, &no_bgp_shutdown_msg_cmd);
 
 	/* "neighbor remote-as" commands. */
 	install_element(BGP_NODE, &neighbor_remote_as_cmd);
@@ -16090,6 +16483,8 @@ void bgp_vty_init(void)
 	install_element(BGP_VPNV6_NODE, &neighbor_nexthop_self_all_hidden_cmd);
 	install_element(BGP_VPNV6_NODE,
 			&no_neighbor_nexthop_self_all_hidden_cmd);
+	install_element(BGP_EVPN_NODE, &neighbor_nexthop_self_force_cmd);
+	install_element(BGP_EVPN_NODE, &no_neighbor_nexthop_self_force_cmd);
 
 	/* "neighbor as-override" commands. */
 	install_element(BGP_NODE, &neighbor_as_override_hidden_cmd);
@@ -16398,6 +16793,8 @@ void bgp_vty_init(void)
 	install_element(BGP_NODE, &no_neighbor_shutdown_cmd);
 	install_element(BGP_NODE, &neighbor_shutdown_msg_cmd);
 	install_element(BGP_NODE, &no_neighbor_shutdown_msg_cmd);
+	install_element(BGP_NODE, &neighbor_shutdown_rtt_cmd);
+	install_element(BGP_NODE, &no_neighbor_shutdown_rtt_cmd);
 
 	/* "neighbor capability extended-nexthop" commands.*/
 	install_element(BGP_NODE, &neighbor_capability_enhe_cmd);
@@ -17183,9 +17580,10 @@ DEFUN (no_community_list_expanded_all,
 	return CMD_SUCCESS;
 }
 
-ALIAS(no_community_list_expanded_all, no_bgp_community_list_expanded_all_list_cmd,
+ALIAS(no_community_list_expanded_all,
+      no_bgp_community_list_expanded_all_list_cmd,
       "no bgp community-list <(100-500)|expanded WORD>",
-      NO_STR IP_STR COMMUNITY_LIST_STR
+      NO_STR BGP_STR COMMUNITY_LIST_STR
       "Community list number (expanded)\n"
       "Add an expanded community-list entry\n"
       "Community list name\n")
@@ -17804,7 +18202,7 @@ DEFUN (no_extcommunity_list_standard_all,
 ALIAS(no_extcommunity_list_standard_all,
       no_bgp_extcommunity_list_standard_all_list_cmd,
       "no bgp extcommunity-list <(1-99)|standard WORD>",
-      NO_STR IP_STR EXTCOMMUNITY_LIST_STR
+      NO_STR BGP_STR EXTCOMMUNITY_LIST_STR
       "Extended Community list number (standard)\n"
       "Specify standard extcommunity-list\n"
       "Community list name\n")
@@ -17869,7 +18267,7 @@ DEFUN (no_extcommunity_list_expanded_all,
 ALIAS(no_extcommunity_list_expanded_all,
       no_bgp_extcommunity_list_expanded_all_list_cmd,
       "no bgp extcommunity-list <(100-500)|expanded WORD>",
-      NO_STR IP_STR EXTCOMMUNITY_LIST_STR
+      NO_STR BGP_STR EXTCOMMUNITY_LIST_STR
       "Extended Community list number (expanded)\n"
       "Specify expanded extcommunity-list\n"
       "Extended Community list name\n")
@@ -18000,8 +18398,7 @@ static int community_list_config_write(struct vty *vty)
 	for (list = cm->str.head; list; list = list->next)
 		for (entry = list->head; entry; entry = entry->next) {
 			vty_out(vty,
-				"bgp extcommunity-list %s %s seq %" PRId64
-				" %s %s\n",
+				"bgp extcommunity-list %s %s seq %" PRId64" %s %s\n",
 				entry->style == EXTCOMMUNITY_LIST_STANDARD
 					? "standard"
 					: "expanded",
@@ -18019,8 +18416,7 @@ static int community_list_config_write(struct vty *vty)
 	for (list = cm->num.head; list; list = list->next)
 		for (entry = list->head; entry; entry = entry->next) {
 			vty_out(vty,
-				"bgp large-community-list %s seq %" PRId64
-				" %s %s\n",
+				"bgp large-community-list %s seq %" PRId64" %s %s\n",
 				list->name, entry->seq,
 				community_direct_str(entry->direct),
 				community_list_config_str(entry));
@@ -18029,8 +18425,7 @@ static int community_list_config_write(struct vty *vty)
 	for (list = cm->str.head; list; list = list->next)
 		for (entry = list->head; entry; entry = entry->next) {
 			vty_out(vty,
-				"bgp large-community-list %s %s seq %" PRId64
-				" %s %s\n",
+				"bgp large-community-list %s %s seq %" PRId64" %s %s\n",
 
 				entry->style == LARGE_COMMUNITY_LIST_STANDARD
 					? "standard"

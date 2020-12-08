@@ -235,6 +235,9 @@ ldpe_shutdown(void)
 	free(pkt_ptr);
 
 	log_info("ldp engine exiting");
+
+	zlog_fini();
+
 	exit(0);
 }
 
@@ -352,13 +355,11 @@ ldpe_dispatch_main(struct thread *thread)
 			break;
 		case IMSG_SOCKET_IPC:
 			if (iev_lde) {
-				log_warnx("%s: received unexpected imsg fd "
-				    "to lde", __func__);
+				log_warnx("%s: received unexpected imsg fd to lde", __func__);
 				break;
 			}
 			if ((fd = imsg.fd) == -1) {
-				log_warnx("%s: expected to receive imsg fd to "
-				    "lde but didn't receive any", __func__);
+				log_warnx("%s: expected to receive imsg fd to lde but didn't receive any", __func__);
 				break;
 			}
 
@@ -613,11 +614,8 @@ ldpe_dispatch_lde(struct thread *thread)
 			map = imsg.data;
 
 			nbr = nbr_find_peerid(imsg.hdr.peerid);
-			if (nbr == NULL) {
-				log_debug("ldpe_dispatch_lde: cannot find "
-				    "neighbor");
+			if (nbr == NULL)
 				break;
-			}
 			if (nbr->state != NBR_STA_OPER)
 				break;
 
@@ -641,11 +639,8 @@ ldpe_dispatch_lde(struct thread *thread)
 		case IMSG_REQUEST_ADD_END:
 		case IMSG_WITHDRAW_ADD_END:
 			nbr = nbr_find_peerid(imsg.hdr.peerid);
-			if (nbr == NULL) {
-				log_debug("ldpe_dispatch_lde: cannot find "
-				    "neighbor");
+			if (nbr == NULL)
 				break;
-			}
 			if (nbr->state != NBR_STA_OPER)
 				break;
 
@@ -676,8 +671,7 @@ ldpe_dispatch_lde(struct thread *thread)
 
 			nbr = nbr_find_peerid(imsg.hdr.peerid);
 			if (nbr == NULL) {
-				log_debug("ldpe_dispatch_lde: cannot find "
-				    "neighbor");
+				log_debug("ldpe_dispatch_lde: cannot find neighbor");
 				break;
 			}
 			if (nbr->state != NBR_STA_OPER)
@@ -697,8 +691,7 @@ ldpe_dispatch_lde(struct thread *thread)
 		case IMSG_NBR_SHUTDOWN:
 			nbr = nbr_find_peerid(imsg.hdr.peerid);
 			if (nbr == NULL) {
-				log_debug("ldpe_dispatch_lde: cannot find "
-				    "neighbor");
+				log_debug("ldpe_dispatch_lde: cannot find neighbor");
 				break;
 			}
 			if (nbr->state != NBR_STA_OPER)

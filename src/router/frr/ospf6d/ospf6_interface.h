@@ -90,10 +90,10 @@ struct ospf6_interface {
 	uint8_t mtu_ignore;
 
 	/* Decision of DR Election */
-	uint32_t drouter;
-	uint32_t bdrouter;
-	uint32_t prev_drouter;
-	uint32_t prev_bdrouter;
+	in_addr_t drouter;
+	in_addr_t bdrouter;
+	in_addr_t prev_drouter;
+	in_addr_t prev_bdrouter;
 
 	/* Linklocal LSA Database: includes Link-LSA */
 	struct ospf6_lsdb *lsdb;
@@ -170,7 +170,8 @@ extern const char *const ospf6_interface_state_str[];
 
 /* Function Prototypes */
 
-extern struct ospf6_interface *ospf6_interface_lookup_by_ifindex(ifindex_t);
+extern struct ospf6_interface *
+ospf6_interface_lookup_by_ifindex(ifindex_t, vrf_id_t vrf_id);
 extern struct ospf6_interface *ospf6_interface_create(struct interface *);
 extern void ospf6_interface_delete(struct ospf6_interface *);
 

@@ -170,8 +170,7 @@ void nhrp_route_announce(int add, enum nhrp_cache_type type,
 
 		prefix2str(&api.prefix, buf[0], sizeof(buf[0]));
 		zlog_debug(
-			"Zebra send: route %s %s nexthop %s metric %u"
-			" count %d dev %s",
+			"Zebra send: route %s %s nexthop %s metric %u count %d dev %s",
 			add ? "add" : "del", buf[0],
 			nexthop ? inet_ntop(api.prefix.family, &api_nh->gate,
 					    buf[1], sizeof(buf[1]))
@@ -197,6 +196,10 @@ int nhrp_route_read(ZAPI_CALLBACK_ARGS)
 
 	/* we completely ignore srcdest routes for now. */
 	if (CHECK_FLAG(api.message, ZAPI_MESSAGE_SRCPFX))
+		return 0;
+
+	/* ignore our routes */
+	if (api.type == ZEBRA_ROUTE_NHRP)
 		return 0;
 
 	sockunion_family(&nexthop_addr) = AF_UNSPEC;
