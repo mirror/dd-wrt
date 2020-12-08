@@ -249,6 +249,8 @@ struct ospf {
 
 	struct thread *t_write;
 #define OSPF_WRITE_INTERFACE_COUNT_DEFAULT    20
+	struct thread *t_default_routemap_timer;
+
 	int write_oi_count; /* Num of packets sent per thread invocation */
 	struct thread *t_read;
 	int fd;
@@ -309,6 +311,10 @@ struct ospf {
 	/* Used during ospf instance going down send LSDB
 	 * update to neighbors immediatly */
 	uint8_t inst_shutdown;
+
+	/* Enable or disable sending proactive ARP requests. */
+	bool proactive_arp;
+#define OSPF_PROACTIVE_ARP_DEFAULT true
 
 	/* Redistributed external information. */
 	struct list *external[ZEBRA_ROUTE_MAX + 1];
@@ -408,6 +414,12 @@ struct ospf_area {
 
 	/* Shortest Path Tree. */
 	struct vertex *spf;
+	struct list *spf_vertex_list;
+
+	bool spf_dry_run;   /* flag for checking if the SPF calculation is
+			       intended for the local RIB */
+	bool spf_root_node; /* flag for checking if the calculating node is the
+			       root node of the SPF tree */
 
 	/* Threads. */
 	struct thread *t_stub_router;     /* Stub-router timer */
@@ -564,8 +576,6 @@ extern void ospf_area_del_if(struct ospf_area *, struct ospf_interface *);
 
 extern void ospf_interface_area_set(struct ospf *, struct interface *);
 extern void ospf_interface_area_unset(struct ospf *, struct interface *);
-extern bool ospf_interface_area_is_already_set(struct ospf *ospf,
-					       struct interface *ifp);
 
 extern void ospf_route_map_init(void);
 
