@@ -25,11 +25,7 @@
 #ifdef SUNOS_5
 #include <sys/ethernet.h>
 #else
-#ifdef GNU_LINUX
-#include <net/ethernet.h>
-#else
-#include <netinet/if_ether.h>
-#endif
+//#include <linux/if_ether.h>
 #endif
 #include "sockunion.h"
 #include "ipaddr.h"
