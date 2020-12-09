@@ -30,8 +30,6 @@
 #include "mgmt/user_session.h"
 #include "mgmt/user_config.h"
 #include "crypto_ctx.h"
-#include "transport_ipc.h"
-#include "buffer_pool.h"
 
 /*
  * Fixed format data defining GSS header and fixed string
@@ -39,20 +37,6 @@
  * So sec blob data in neg phase could be generated statically.
  */
 static char NEGOTIATE_GSS_HEADER[AUTH_GSS_LENGTH] = {
-#ifdef CONFIG_SMB_SERVER_KERBEROS5
-	0x60, 0x5e, 0x06, 0x06, 0x2b, 0x06, 0x01, 0x05,
-	0x05, 0x02, 0xa0, 0x54, 0x30, 0x52, 0xa0, 0x24,
-	0x30, 0x22, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86,
-	0xf7, 0x12, 0x01, 0x02, 0x02, 0x06, 0x09, 0x2a,
-	0x86, 0x48, 0x82, 0xf7, 0x12, 0x01, 0x02, 0x02,
-	0x06, 0x0a, 0x2b, 0x06, 0x01, 0x04, 0x01, 0x82,
-	0x37, 0x02, 0x02, 0x0a, 0xa3, 0x2a, 0x30, 0x28,
-	0xa0, 0x26, 0x1b, 0x24, 0x6e, 0x6f, 0x74, 0x5f,
-	0x64, 0x65, 0x66, 0x69, 0x6e, 0x65, 0x64, 0x5f,
-	0x69, 0x6e, 0x5f, 0x52, 0x46, 0x43, 0x34, 0x31,
-	0x37, 0x38, 0x40, 0x70, 0x6c, 0x65, 0x61, 0x73,
-	0x65, 0x5f, 0x69, 0x67, 0x6e, 0x6f, 0x72, 0x65
-#else
 	0x60, 0x48, 0x06, 0x06, 0x2b, 0x06, 0x01, 0x05,
 	0x05, 0x02, 0xa0, 0x3e, 0x30, 0x3c, 0xa0, 0x0e,
 	0x30, 0x0c, 0x06, 0x0a, 0x2b, 0x06, 0x01, 0x04,
@@ -63,9 +47,7 @@ static char NEGOTIATE_GSS_HEADER[AUTH_GSS_LENGTH] = {
 	0x34, 0x31, 0x37, 0x38, 0x40, 0x70, 0x6c, 0x65,
 	0x61, 0x73, 0x65, 0x5f, 0x69, 0x67, 0x6e, 0x6f,
 	0x72, 0x65
-#endif
 };
-
 
 void ksmbd_copy_gss_neg_header(void *buf)
 {
@@ -740,66 +722,6 @@ ksmbd_build_ntlmssp_challenge_blob(struct challenge_message *chgblob,
 	ksmbd_debug(AUTH, "NTLMSSP SecurityBufferLength %d\n", blob_len);
 	return blob_len;
 }
-
-#ifdef CONFIG_SMB_SERVER_KERBEROS5
-int ksmbd_krb5_authenticate(struct ksmbd_session *sess,
-			char *in_blob, int in_len,
-			char *out_blob, int *out_len)
-{
-	struct ksmbd_spnego_authen_response *resp;
-	struct ksmbd_user *user = NULL;
-	int retval;
-
-	resp = ksmbd_ipc_spnego_authen_request(in_blob, in_len);
-	if (!resp) {
-		ksmbd_debug(AUTH, "SPNEGO_AUTHEN_REQUEST failure\n");
-		return -EINVAL;
-	}
-
-	if (!(resp->login_response.status & KSMBD_USER_FLAG_OK)) {
-		ksmbd_debug(AUTH, "krb5 authentication failure\n");
-		retval = -EPERM;
-		goto out;
-	}
-
-	if (*out_len <= resp->spnego_blob_len) {
-		ksmbd_debug(AUTH, "buf len %d, but blob len %d\n",
-				*out_len, resp->spnego_blob_len);
-		retval = -EINVAL;
-		goto out;
-	}
-
-	if (resp->session_key_len > sizeof(sess->sess_key)) {
-		ksmbd_debug(AUTH, "session key is too long\n");
-		retval = -EINVAL;
-		goto out;
-	}
-
-	user = ksmbd_alloc_user(&resp->login_response);
-	if (!user) {
-		ksmbd_debug(AUTH, "login failure\n");
-		retval = -ENOMEM;
-		goto out;
-	}
-	sess->user = user;
-
-	memcpy(sess->sess_key, resp->payload, resp->session_key_len);
-	memcpy(out_blob, resp->payload + resp->session_key_len,
-			resp->spnego_blob_len);
-	*out_len = resp->spnego_blob_len;
-	retval = 0;
-out:
-	ksmbd_free(resp);
-	return retval;
-}
-#else
-int ksmbd_krb5_authenticate(struct ksmbd_session *sess,
-			char *in_blob, int in_len,
-			char *out_blob, int *out_len)
-{
-	return -EOPNOTSUPP;
-}
-#endif
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 /**

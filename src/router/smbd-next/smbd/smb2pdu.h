@@ -8,13 +8,12 @@
 #define _SMB2PDU_H
 
 #include "ntlmssp.h"
-#include "smbacl.h"
 
 /*
  * Note that, due to trying to use names similar to the protocol specifications,
  * there are many mixed case field names in the structures below.  Although
  * this does not match typical Linux kernel style, it is necessary to be
- * able to match against the protocol specfication.
+ * be able to match against the protocol specfication.
  *
  * SMB2 commands
  * Some commands have minimal (wct=0,bcc=0), or uninteresting, responses
@@ -244,18 +243,11 @@ struct preauth_integrity_info {
 	__u8			Preauth_HashValue[PREAUTH_HASHVALUE_SIZE];
 };
 
-/* offset is sizeof smb2_negotiate_rsp - 4 but rounded up to 8 bytes. */
-#ifdef CONFIG_SMB_SERVER_KERBEROS5
-/* sizeof(struct smb2_negotiate_rsp) - 4 =
- * header(64) + response(64) + GSS_LENGTH(96) + GSS_PADDING(0)
- */
-#define OFFSET_OF_NEG_CONTEXT	0xe0
-#else
-/* sizeof(struct smb2_negotiate_rsp) - 4 =
+/* offset is sizeof smb2_negotiate_rsp - 4 but rounded up to 8 bytes.
+ * sizeof(struct smb2_negotiate_rsp) - 4 =
  * header(64) + response(64) + GSS_LENGTH(74) + GSS_PADDING(6)
  */
 #define OFFSET_OF_NEG_CONTEXT	0xd0
-#endif
 
 #define SMB2_PREAUTH_INTEGRITY_CAPABILITIES	cpu_to_le16(1)
 #define SMB2_ENCRYPTION_CAPABILITIES		cpu_to_le16(2)
@@ -519,15 +511,18 @@ struct smb2_tree_disconnect_rsp {
 #define FILE_OVERWRITE_IF_LE		cpu_to_le32(0x00000005)
 #define FILE_CREATE_MASK_LE		cpu_to_le32(0x00000007)
 
-#define FILE_READ_DESIRED_ACCESS_LE	(FILE_READ_DATA_LE |		\
+#define FILE_READ_DESIRED_ACCESS	(FILE_READ_DATA_LE |		\
 					FILE_READ_EA_LE |		\
 					FILE_READ_ATTRIBUTES_LE |	\
 					FILE_GENERIC_READ_LE)
-#define FILE_WRITE_DESIRE_ACCESS_LE	(FILE_WRITE_DATA_LE |		\
+#define FILE_WRITE_DESIRE_ACCESS	(FILE_WRITE_DATA_LE |		\
 					FILE_APPEND_DATA_LE |		\
 					FILE_WRITE_EA_LE |		\
 					FILE_WRITE_ATTRIBUTES_LE |	\
+					FILE_DELETE_LE |		\
 					FILE_GENERIC_WRITE_LE)
+#define FILE_RW_DESIRED_ACCESS		(FILE_MAXIMAL_ACCESS_LE |	\
+					FILE_GENERIC_ALL_LE)
 
 /* Impersonation Levels */
 #define IL_ANONYMOUS_LE		cpu_to_le32(0x00000000)
@@ -699,16 +694,6 @@ struct create_disk_id_rsp {
 	__le64 DiskFileId;
 	__le64 VolumeId;
 	__u8  Reserved[16];
-} __packed;
-
-/* equivalent of the contents of SMB3.1.1 POSIX open context response */
-struct create_posix_rsp {
-	struct create_context ccontext;
-	__u8    Name[16];
-	__le32 nlink;
-	__le32 reparse_tag;
-	__le32 mode;
-	u8 SidBuffer[40];
 } __packed;
 
 #define SMB2_LEASE_NONE_LE			cpu_to_le32(0x00)
@@ -974,13 +959,6 @@ struct file_allocated_range_buffer {
 	__le64	length;
 } __packed;
 
-struct reparse_data_buffer {
-	__le32	ReparseTag;
-	__le16	ReparseDataLength;
-	__u16	Reserved;
-	__u8	DataBuffer[]; /* Variable Length */
-} __packed;
-
 /* Completion Filter flags for Notify */
 #define FILE_NOTIFY_CHANGE_FILE_NAME	0x00000001
 #define FILE_NOTIFY_CHANGE_DIR_NAME	0x00000002
@@ -1210,7 +1188,6 @@ struct smb2_set_info_rsp {
 #define FS_SECTOR_SIZE_INFORMATION_SIZE 28
 #define FS_OBJECT_ID_INFORMATION_SIZE 64
 #define FS_CONTROL_INFORMATION_SIZE 48
-#define FS_POSIX_INFORMATION_SIZE 56
 
 /* FS_ATTRIBUTE_File_System_Name */
 #define FS_TYPE_SUPPORT_SIZE   44
@@ -1270,7 +1247,7 @@ struct smb2_lease_ack {
 #define FS_OBJECT_ID_INFORMATION	8 /* Query, Set */
 #define FS_DRIVER_PATH_INFORMATION	9 /* Query */
 #define FS_SECTOR_SIZE_INFORMATION	11 /* SMB3 or later. Query */
-#define FS_POSIX_INFORMATION		100 /* SMB3.1.1 POSIX. Query */
+
 
 struct smb2_fs_full_size_info {
 	__le64 TotalAllocationUnits;
@@ -1515,68 +1492,6 @@ struct create_ea_buf_req {
 	struct create_context ccontext;
 	__u8   Name[8];
 	struct smb2_ea_info ea;
-} __packed;
-
-struct create_sd_buf_req {
-	struct create_context ccontext;
-	__u8   Name[8];
-	struct smb_ntsd ntsd;
-} __packed;
-
-/* Find File infolevels */
-#define SMB_FIND_FILE_POSIX_INFO	0x064
-
-/* Level 100 query info */
-struct smb311_posix_qinfo {
-	__le64 CreationTime;
-	__le64 LastAccessTime;
-	__le64 LastWriteTime;
-	__le64 ChangeTime;
-	__le64 EndOfFile;
-	__le64 AllocationSize;
-	__le32 DosAttributes;
-	__le64 Inode;
-	__le32 DeviceId;
-	__le32 Zero;
-	/* beginning of POSIX Create Context Response */
-	__le32 HardLinks;
-	__le32 ReparseTag;
-	__le32 Mode;
-	u8     Sids[];
-	/*
-	 * var sized owner SID
-	 * var sized group SID
-	 * le32 filenamelength
-	 * u8  filename[]
-	 */
-} __packed;
-
-struct smb2_posix_info {
-	__le32 NextEntryOffset;
-	__u32 Ignored;
-	__le64 CreationTime;
-	__le64 LastAccessTime;
-	__le64 LastWriteTime;
-	__le64 ChangeTime;
-	__le64 EndOfFile;
-	__le64 AllocationSize;
-	__le32 DosAttributes;
-	__le64 Inode;
-	__le32 DeviceId;
-	__le32 Zero;
-	/* beginning of POSIX Create Context Response */
-	__le32 HardLinks;
-	__le32 ReparseTag;
-	__le32 Mode;
-	u8 SidBuffer[40];
-	__le32 name_len;
-	u8 name[1];
-	/*
-	 * var sized owner SID
-	 * var sized group SID
-	 * le32 filenamelength
-	 * u8  filename[]
-	 */
 } __packed;
 
 /* functions */
