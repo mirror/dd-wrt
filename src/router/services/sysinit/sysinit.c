@@ -3677,7 +3677,7 @@ void start_nvram(void)
 			GETENTRYBYIDX(tag, word, 1);
 			GETENTRYBYIDX(prio, word, 2);
 			char newname[64];
-			strcpy(newname, tag);
+			strcpy(newname, ifname);
 			if (!strncmp(ifname, "ath", 3))
 				sprintf(newname, "wlan%s", &ifname[3]);
 			if (*newwordlist)
