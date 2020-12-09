@@ -369,8 +369,8 @@ bmenu.wirelessWds0="wlan0-WDS";
 bmenu.wirelessWds1="wlan1-WDS";
 bmenu.wirelessWds2="wlan2-WDS";
 bmenu.wirelessWds3="wlan3-WDS";
-bmenu.wirelessWdswl0="WL0-WDS";
-bmenu.wirelessWdswl1="WL1-WDS";
+bmenu.wirelessWdswlan0="wlan0-WDS";
+bmenu.wirelessWdswlan1="wlan1-WDS";
 
 bmenu.security="Security";
 bmenu.firwall="Firewall";

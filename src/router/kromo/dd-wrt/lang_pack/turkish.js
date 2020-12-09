@@ -1,3 +1,4 @@
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 //		Turkish reference translation file - DD-WRT V24 SP2       Sep/2012 by Buffalo //
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -397,15 +398,16 @@ bmenu.wirelessAoss="AOSS";
 bmenu.wirelessAossWPS="AOSS / WPS";
 bmenu.wirelessMac="MAC Filtresi";
 bmenu.wirelessAdvanced="Gelişmiş Ayarlar";
-bmenu.wirelessAdvancedwl0="WL0-Gelişmiş";
-bmenu.wirelessAdvancedwl1="WL1-Gelişmiş";
+bmenu.wirelessAdvancedwlan0="wlan0-Gelişmiş";
+bmenu.wirelessAdvancedwlan1="wlan1-Gelişmiş";
+bmenu.wirelessAdvancedwlan2="wlan2-Gelişmiş";
 bmenu.wirelessWds="WDS";
 bmenu.wirelessWds0="wlan0-WDS";
 bmenu.wirelessWds1="wlan1-WDS";
 bmenu.wirelessWds2="wlan2-WDS";
 bmenu.wirelessWds3="wlan3-WDS";
-bmenu.wirelessWdswl0="WL0-WDS";
-bmenu.wirelessWdswl1="WL1-WDS";
+bmenu.wirelessWdswlan0="wlan0-WDS";
+bmenu.wirelessWdswlan1="wlan1-WDS";
 
 bmenu.security="Güvenlik";
 bmenu.firwall="Güvenlik Duvarı";
