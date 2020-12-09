@@ -3679,7 +3679,7 @@ void start_nvram(void)
 			char newname[64];
 			strcpy(newname, tag);
 			if (!strncmp(ifname, "ath", 3))
-				sprintf(newname, "wlan%s", &tag[3]);
+				sprintf(newname, "wlan%s", &ifname[3]);
 			if (*newwordlist)
 				sprintf(newwordlist, "%s %s>%s>%s", newwordlist, newname, tag, prio);
 			else
