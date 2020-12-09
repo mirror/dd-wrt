@@ -1837,50 +1837,6 @@ void create_disk_id_rsp_buf(char *cc, __u64 file_id, __u64 vol_id)
 	buf->VolumeId = cpu_to_le64(vol_id);
 }
 
-/**
- * create_posix_buf() - create posix extension context
- * @cc:	buffer to create posix on posix response
- */
-void create_posix_rsp_buf(char *cc, struct ksmbd_file *fp)
-{
-	struct create_posix_rsp *buf;
-	struct inode *inode = FP_INODE(fp);
-
-	buf = (struct create_posix_rsp *)cc;
-	memset(buf, 0, sizeof(struct create_posix_rsp));
-	buf->ccontext.DataOffset = cpu_to_le16(offsetof
-			(struct create_posix_rsp, nlink));
-	buf->ccontext.DataLength = cpu_to_le32(52);
-	buf->ccontext.NameOffset = cpu_to_le16(offsetof
-			(struct create_posix_rsp, Name));
-	buf->ccontext.NameLength = cpu_to_le16(POSIX_CTXT_DATA_LEN);
-	/* SMB2_CREATE_TAG_POSIX is "0x93AD25509CB411E7B42383DE968BCD7C" */
-	buf->Name[0] = 0x93;
-	buf->Name[1] = 0xAD;
-	buf->Name[2] = 0x25;
-	buf->Name[3] = 0x50;
-	buf->Name[4] = 0x9C;
-	buf->Name[5] = 0xB4;
-	buf->Name[6] = 0x11;
-	buf->Name[7] = 0xE7;
-	buf->Name[8] = 0xB4;
-	buf->Name[9] = 0x23;
-	buf->Name[10] = 0x83;
-	buf->Name[11] = 0xDE;
-	buf->Name[12] = 0x96;
-	buf->Name[13] = 0x8B;
-	buf->Name[14] = 0xCD;
-	buf->Name[15] = 0x7C;
-
-	buf->nlink = cpu_to_le32(inode->i_nlink);
-	buf->reparse_tag = cpu_to_le32(fp->volatile_id);
-	buf->mode = cpu_to_le32(inode->i_mode);
-	id_to_sid(from_kuid(&init_user_ns, inode->i_uid),
-		SIDNFS_USER, (struct smb_sid *)&buf->SidBuffer[0]);
-	id_to_sid(from_kgid(&init_user_ns, inode->i_gid),
-		SIDNFS_GROUP, (struct smb_sid *)&buf->SidBuffer[20]);
-}
-
 /*
  * Find lease object(opinfo) for given lease key/fid from lease
  * break/file close path.

@@ -124,10 +124,6 @@ static const struct nla_policy ksmbd_nl_policy[KSMBD_EVENT_MAX] = {
 	},
 	[KSMBD_EVENT_RPC_RESPONSE] = {
 	},
-	[KSMBD_EVENT_SPNEGO_AUTHEN_REQUEST] = {
-	},
-	[KSMBD_EVENT_SPNEGO_AUTHEN_RESPONSE] = {
-	},
 };
 
 static struct genl_ops ksmbd_genl_ops[] = {
@@ -185,14 +181,6 @@ static struct genl_ops ksmbd_genl_ops[] = {
 	},
 	{
 		.cmd	= KSMBD_EVENT_RPC_RESPONSE,
-		.doit	= handle_generic_event,
-	},
-	{
-		.cmd	= KSMBD_EVENT_SPNEGO_AUTHEN_REQUEST,
-		.doit	= handle_unsupported_event,
-	},
-	{
-		.cmd	= KSMBD_EVENT_SPNEGO_AUTHEN_RESPONSE,
 		.doit	= handle_generic_event,
 	},
 };
@@ -311,7 +299,6 @@ static int ipc_server_config_on_startup(struct ksmbd_startup_request *req)
 	server_conf.ipc_timeout = req->ipc_timeout * HZ;
 	server_conf.deadtime = req->deadtime * SMB_ECHO_INTERVAL;
 	server_conf.share_fake_fscaps = req->share_fake_fscaps;
-	ksmbd_init_domain(req->sub_auth);
 
 //#ifdef CONFIG_SMB_INSECURE_SERVER
 //	server_conf.flags &= ~KSMBD_GLOBAL_FLAG_CACHE_TBUF;
@@ -523,9 +510,6 @@ struct ksmbd_login_response *ksmbd_ipc_login_request(const char *account)
 	struct ksmbd_login_request *req;
 	struct ksmbd_login_response *resp;
 
-	if (strlen(account) >= KSMBD_REQ_MAX_ACCOUNT_NAME_SZ)
-		return NULL;
-
 	msg = ipc_msg_alloc(sizeof(struct ksmbd_login_request));
 	if (!msg)
 		return NULL;
@@ -533,35 +517,7 @@ struct ksmbd_login_response *ksmbd_ipc_login_request(const char *account)
 	msg->type = KSMBD_EVENT_LOGIN_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
 	req->handle = ksmbd_acquire_id(ida);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
-	strlcpy(req->account, account, KSMBD_REQ_MAX_ACCOUNT_NAME_SZ);
-#else
-	strscpy(req->account, account, KSMBD_REQ_MAX_ACCOUNT_NAME_SZ);
-#endif
-
-	resp = ipc_msg_send_request(msg, req->handle);
-	ipc_msg_handle_free(req->handle);
-	ipc_msg_free(msg);
-	return resp;
-}
-
-struct ksmbd_spnego_authen_response *
-ksmbd_ipc_spnego_authen_request(const char *spnego_blob, int blob_len)
-{
-	struct ksmbd_ipc_msg *msg;
-	struct ksmbd_spnego_authen_request *req;
-	struct ksmbd_spnego_authen_response *resp;
-
-	msg = ipc_msg_alloc(sizeof(struct ksmbd_spnego_authen_request) +
-			blob_len + 1);
-	if (!msg)
-		return NULL;
-
-	msg->type = KSMBD_EVENT_SPNEGO_AUTHEN_REQUEST;
-	req = KSMBD_IPC_MSG_PAYLOAD(msg);
-	req->handle = ksmbd_acquire_id(ida);
-	req->spnego_blob_len = blob_len;
-	memcpy(req->spnego_blob, spnego_blob, blob_len);
+	memcpy(req->account, account, sizeof(req->account) - 1);
 
 	resp = ipc_msg_send_request(msg, req->handle);
 	ipc_msg_handle_free(req->handle);
@@ -579,12 +535,6 @@ ksmbd_ipc_tree_connect_request(struct ksmbd_session *sess,
 	struct ksmbd_tree_connect_request *req;
 	struct ksmbd_tree_connect_response *resp;
 
-	if (strlen(user_name(sess->user)) >= KSMBD_REQ_MAX_ACCOUNT_NAME_SZ)
-		return NULL;
-
-	if (strlen(share->name) >= KSMBD_REQ_MAX_SHARE_NAME)
-		return NULL;
-
 	msg = ipc_msg_alloc(sizeof(struct ksmbd_tree_connect_request));
 	if (!msg)
 		return NULL;
@@ -596,13 +546,8 @@ ksmbd_ipc_tree_connect_request(struct ksmbd_session *sess,
 	req->account_flags = sess->user->flags;
 	req->session_id = sess->id;
 	req->connect_id = tree_conn->id;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
-	strlcpy(req->account, user_name(sess->user), KSMBD_REQ_MAX_ACCOUNT_NAME_SZ);
-	strlcpy(req->share, share->name, KSMBD_REQ_MAX_SHARE_NAME);
-#else
-	strscpy(req->account, user_name(sess->user), KSMBD_REQ_MAX_ACCOUNT_NAME_SZ);
-	strscpy(req->share, share->name, KSMBD_REQ_MAX_SHARE_NAME);
-#endif
+	memcpy(req->account, user_name(sess->user), sizeof(req->account) - 1);
+	memcpy(req->share, share->name, sizeof(req->share) - 1);
 	snprintf(req->peer_addr, sizeof(req->peer_addr), "%pIS", peer_addr);
 
 	if (peer_addr->sa_family == AF_INET6)
@@ -645,9 +590,6 @@ int ksmbd_ipc_logout_request(const char *account)
 	struct ksmbd_logout_request *req;
 	int ret;
 
-	if (strlen(account) >= KSMBD_REQ_MAX_ACCOUNT_NAME_SZ)
-		return -EINVAL;
-
 	msg = ipc_msg_alloc(sizeof(struct ksmbd_logout_request));
 	if (!msg) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
@@ -670,9 +612,6 @@ ksmbd_ipc_share_config_request(const char *name)
 	struct ksmbd_share_config_request *req;
 	struct ksmbd_share_config_response *resp;
 
-	if (strlen(name) >= KSMBD_REQ_MAX_SHARE_NAME)
-		return NULL;
-
 	msg = ipc_msg_alloc(sizeof(struct ksmbd_share_config_request));
 	if (!msg)
 		return NULL;
@@ -680,11 +619,7 @@ ksmbd_ipc_share_config_request(const char *name)
 	msg->type = KSMBD_EVENT_SHARE_CONFIG_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
 	req->handle = ksmbd_acquire_id(ida);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
-	strlcpy(req->share_name, name, KSMBD_REQ_MAX_SHARE_NAME);
-#else
-	strscpy(req->share_name, name, KSMBD_REQ_MAX_SHARE_NAME);
-#endif
+	memcpy(req->share_name, name, sizeof(req->share_name) - 1);
 
 	resp = ipc_msg_send_request(msg, req->handle);
 	ipc_msg_handle_free(req->handle);
