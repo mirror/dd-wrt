@@ -966,8 +966,6 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 			} else {
 				if (!strncmp(ifname, "wifi", 4))
 					skip = 1;
-				if (!strncmp(ifname, "wlan", 4))
-					skip = 1;
 				if (!strncmp(ifname, "ifb", 3))
 					skip = 1;
 				if (!strncmp(ifname, "imq", 3))
