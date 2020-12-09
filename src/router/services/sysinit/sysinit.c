@@ -3335,53 +3335,7 @@ void start_nvram(void)
 {
 	int i = 0;
 
-	/*
-	 * broadcom 3.11.48.7 change some nvram name 
-	 */
-#if 0
-// TEMP!!!!
-	nvram_seti("wl_bss_opmode_cap_reqd", 2);
-	nvram_seti("wl_channel", 52);
-	nvram_seti("wl_nband", 1);
-	nvram_seti("wl_nmode", 2);
-	nvram_seti("wl_nreqd", 1);
-
-	nvram_set("wl0_authmode", "open");
-	nvram_set("wl0_macmode1", "disabled");
-	nvram_set("wl1_auth_mode", "none");
-	nvram_set("wl1_authmode", "open");
-	nvram_seti("wl1_bss_opmode_cap_reqd", 2);
-	nvram_set("wl1_vifs", "");
-
-	nvram_seti("af_dnathost", 0);
-	nvram_seti("af_dnatport", 0);
-	nvram_seti("af_registered", 0);
-	nvram_seti("af_serviceid", 0);
-	nvram_seti("br0_mtu", 1500);
-	nvram_set("bridges", "br0>Off>32768>1500");
-	nvram_seti("bridges_count", 1);
-	nvram_set("bridgesif", "");
-	nvram_seti("bridgesif_count", 0);
-	nvram_set("browser_method", "USE_LAN");
-	nvram_seti("eth0_mtu", 1500);
-	nvram_seti("eth0_multicast", 0);
-	nvram_seti("eth0_nat", 1);
-	nvram_seti("eth1_mtu", 1500);
-	nvram_seti("eth2_mtu", 1500);
-	nvram_seti("vlan1_mtu", 1500);
-	nvram_seti("vlan1_multicast", 0);
-	nvram_seti("vlan1_nat", 1);
-	nvram_seti("vlan2_bridged", 1);
-	nvram_seti("vlan2_mtu", 1500);
-	nvram_seti("vlan2_multicast", 0);
-	nvram_seti("vlan2_nat", 1);
-	nvram_seti("vlan_tagcount", 0);
-	nvram_set("vlan_tags", "");
-	nvram_set("wan_iface", "");
-#endif
 	nvram_unset("wl0_hwaddr");	// When disbale wireless, we must get 
-	// 
-	// null wireless mac */
 
 	nvram_set("wan_get_dns", "");
 	nvram_set("openvpn_get_dns", "");
@@ -3391,12 +3345,6 @@ void start_nvram(void)
 	nvram_unset("action_service");
 	nvram_set("wan_get_domain", "");
 
-	// if(!nvram_exists("wl_macmode1")){
-	// if(nvram_match("wl_macmode","disabled"))
-	// nvram_set("wl_macmode1","disabled");
-	// else
-	// nvram_set("wl_macmode1","other");
-	// }
 	if (nvram_matchi("wl_gmode", 5))	// Mixed mode had been
 		// changed to 5
 		nvram_seti("wl_gmode", 1);
@@ -3406,14 +3354,11 @@ void start_nvram(void)
 		// for WiFi G certication
 		nvram_seti("wl_gmode", 2);
 
-	// nvram_set("wl_country","Worldwide"); // The country always Worldwide
 
 	nvram_set("ping_ip", "");
 	nvram_set("ping_times", "");
-	// nvram_set ("traceroute_ip", "");
 
 	nvram_set("filter_port", "");	// The name have been disbaled from
-	// 1.41.3
 
 #ifdef HAVE_UPNP
 	if ((nvram_matchi("restore_defaults", 1))
@@ -3447,9 +3392,6 @@ void start_nvram(void)
 
 	if (nvram_match("wl_wep", "restricted"))
 		nvram_set("wl_wep", "enabled");	// the nas need this value,
-	// the "restricted" is no
-	// longer need. (20040624 by
-	// honor)
 
 #ifdef HAVE_SET_BOOT
 	if (!nvram_matchi("boot_wait_web", 0))
@@ -3503,12 +3445,7 @@ void start_nvram(void)
 		nvram_set("openvpncl_lzo", "adaptive");
 
 	nvram_unset("vdsl_state");	// important (this value should never 
-	// 
-	// be commited, but if this will fix
-	// the vlan7 issue)
 	nvram_unset("fromvdsl");	// important (this value should never be
-	// commited, but if this will fix the vlan7
-	// issue)
 
 	nvram_unset("do_reboot");	//for GUI, see broadcom.c
 	nvram_seti("auth_time", 0);
