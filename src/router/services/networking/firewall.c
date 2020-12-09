@@ -616,6 +616,64 @@ static void parse_spec_forward(char *wanaddr, char *wordlist)
 	}
 }
 
+#ifdef HAVE_ANTAIRA
+
+#define ANT_IPF_PREROUTING  0
+#define ANT_IPF_POSTROUTING 1
+
+static void create_ip_forward(int mode, char *proto, char *wan_iface, char *src_ip, char *dest_ip)
+{
+	char buff[256];
+	static int cnt=0;
+
+	if (mode == ANT_IPF_PREROUTING) {
+		snprintf(buff, sizeof(buff), "%s:%d", wan_iface, cnt++);
+		eval("ifconfig", buff, src_ip, "netmask", "255.255.255.0", "up");
+
+		save2file_A_prerouting("-i %s -p %s -m %s -d %s -j DNAT --to-destination %s", wan_iface, proto, proto, src_ip, dest_ip);
+
+		snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -d %s -j %s\n", proto, proto, dest_ip, log_accept);
+		count += strlen(buff) + 1;
+		suspense = realloc(suspense, count);
+		strcat(suspense, buff);	
+	}
+	if (mode == ANT_IPF_POSTROUTING) {
+		save2file_A_postrouting("-o %s -p %s -m %s -s %s -j SNAT --to-source %s", wan_iface, proto, proto, dest_ip, src_ip);
+	}
+}
+
+static void parse_ip_forward(int mode, char *wanface, char *wordlist)
+{
+	char var[256], *next;
+	char buff[256];
+
+	/*
+	 * name:enale:src:proto:dest
+	 * name:enale:src:proto:dest
+	 */
+	foreach(var, wordlist, next) {
+		GETENTRYBYIDX(name, var, 0);
+		GETENTRYBYIDX(enable, var, 1);
+		GETENTRYBYIDX(src, var, 2);
+		GETENTRYBYIDX(proto, var, 3);
+		GETENTRYBYIDX(dest, var, 4);
+
+		if (!name || !enable || !src || !proto || !dest)
+			continue;
+
+		if (strcmp(enable, "off") == 0)
+			continue;
+
+		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
+			create_ip_forward(mode, "tcp", wanface, src, dest);
+		}
+		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
+			create_ip_forward(mode, "udp", wanface, src, dest);
+		}
+	}
+}
+#endif
+
 static void nat_prerouting_bridged(char *wanface, char *vifs)
 {
 	char var[256], *wordlist, *next;
@@ -787,6 +845,10 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		/*
 		 * Port forwarding 
 		 */
+#ifdef HAVE_ANTAIRA
+		parse_ip_forward(ANT_IPF_PREROUTING, wanface, nvram_safe_get("forward_ip"));
+#endif
+
 #ifdef HAVE_UPNP
 		parse_upnp_forward(wanface, wanaddr, lan_cclass);
 #endif
@@ -828,8 +890,12 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 			save2file_A_postrouting("-o %s -j SNAT --to-source %s", nvram_safe_get("tvnicfrom"), nvram_safe_get("tvnicaddr"));
 		}
 		if (*wanface && wanactive(wanaddr)
-		    && !nvram_matchi("br0_nat", 0))
+		    && !nvram_matchi("br0_nat", 0)) {
+#ifdef HAVE_ANTAIRA
+			parse_ip_forward(ANT_IPF_POSTROUTING, wanface, nvram_safe_get("forward_ip"));
+#endif
 			save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
+		}
 		char *sr = nvram_safe_get("static_route");
 		foreach(word, sr, tmp) {
 			GETENTRYBYIDX(ipaddr, word, 0);
@@ -853,6 +919,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 			save2file_A_postrouting("-o %s -j SNAT --to-source %s", wan_ifname_tun, inet_ntoa(ifaddr));
 		}
 #endif
+
 /*
 		if (nvram_match("wan_proto", "pptp")) {
 			struct in_addr ifaddr;
