@@ -621,7 +621,7 @@ static void parse_spec_forward(char *wanaddr, char *wordlist)
 #define ANT_IPF_PREROUTING  0
 #define ANT_IPF_POSTROUTING 1
 
-static void create_ip_forward(int mode, char *proto, char *wan_iface, char *src_ip, char *dest_ip)
+static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *dest_ip)
 {
 	char buff[256];
 	static int cnt=0;
@@ -630,15 +630,15 @@ static void create_ip_forward(int mode, char *proto, char *wan_iface, char *src_
 		snprintf(buff, sizeof(buff), "%s:%d", wan_iface, cnt++);
 		eval("ifconfig", buff, src_ip, "netmask", "255.255.255.0", "up");
 
-		save2file_A_prerouting("-i %s -p %s -m %s -d %s -j DNAT --to-destination %s", wan_iface, proto, proto, src_ip, dest_ip);
+		save2file_A_prerouting("-i %s -d %s -j DNAT --to-destination %s", wan_iface, src_ip, dest_ip);
 
-		snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -d %s -j %s\n", proto, proto, dest_ip, log_accept);
+		snprintf(buff, sizeof(buff), "-A FORWARD -d %s -j %s\n", dest_ip, log_accept);
 		count += strlen(buff) + 1;
 		suspense = realloc(suspense, count);
 		strcat(suspense, buff);	
 	}
 	if (mode == ANT_IPF_POSTROUTING) {
-		save2file_A_postrouting("-o %s -p %s -m %s -s %s -j SNAT --to-source %s", wan_iface, proto, proto, dest_ip, src_ip);
+		save2file_A_postrouting("-o %s -s %s -j SNAT --to-source %s", wan_iface, dest_ip, src_ip);
 	}
 }
 
@@ -648,28 +648,22 @@ static void parse_ip_forward(int mode, char *wanface, char *wordlist)
 	char buff[256];
 
 	/*
-	 * name:enale:src:proto:dest
-	 * name:enale:src:proto:dest
+	 * name:enale:src:dest
+	 * name:enale:src:dest
 	 */
 	foreach(var, wordlist, next) {
 		GETENTRYBYIDX(name, var, 0);
 		GETENTRYBYIDX(enable, var, 1);
 		GETENTRYBYIDX(src, var, 2);
-		GETENTRYBYIDX(proto, var, 3);
-		GETENTRYBYIDX(dest, var, 4);
+		GETENTRYBYIDX(dest, var, 3);
 
-		if (!name || !enable || !src || !proto || !dest)
+		if (!name || !enable || !src || !dest)
 			continue;
 
 		if (strcmp(enable, "off") == 0)
 			continue;
 
-		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			create_ip_forward(mode, "tcp", wanface, src, dest);
-		}
-		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
-			create_ip_forward(mode, "udp", wanface, src, dest);
-		}
+		create_ip_forward(mode, wanface, src, dest);
 	}
 }
 #endif
