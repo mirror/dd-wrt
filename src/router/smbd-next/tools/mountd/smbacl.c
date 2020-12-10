@@ -8,7 +8,8 @@
 
 #include <smbacl.h>
 #include <ksmbdtools.h>
-#include <glib.h>
+#include <limits.h>
+#include <ctype.h>
 
 static const struct smb_sid sid_domain = {1, 1, {0, 0, 0, 0, 0, 5},
 	{21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
@@ -121,13 +122,15 @@ int set_domain_name(struct smb_sid *sid, char *domain, int sid_type)
 
 	if (!smb_compare_sids(sid, &sid_domain)) {
 		char domain_string[NAME_MAX];
-		gchar *domain_name;
+		char *domain_name;
 
 		gethostname(domain_string, NAME_MAX);
-		domain_name = g_ascii_strup(domain_string,
-				strlen(domain_string));
+		domain_name = strdup(domain_string);
+		int i;
+		for (i=0;i<strlen(domain_string);i++)
+		    domain_name[i] = toupper(domain_string[i]);
 		strcpy(domain, domain_name);
-		g_free(domain_name);
+		free(domain_name);
 	} else if (sid_type == SID_TYPE_USER)
 		strcpy(domain, "Unix User");
 	else if (sid_type == SID_TYPE_GROUP)

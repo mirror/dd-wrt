@@ -7,7 +7,6 @@
 
 #include <memory.h>
 #include <endian.h>
-#include <glib.h>
 #include <pwd.h>
 #include <errno.h>
 #include <linux/ksmbd_server.h>
