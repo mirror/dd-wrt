@@ -1,3 +1,9 @@
+/*
+ * burl - buffer URL normalization
+ *
+ * Copyright(c) 2018 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
+ * License: BSD 3-clause (same as lighttpd)
+ */
 #include "first.h"
 #include "burl.h"
 
@@ -139,7 +145,9 @@ static int burl_normalize_basic_required_fix (buffer *b, buffer *t, int i, int q
         else if (s[i]=='%' && li_cton(s[i+1], n1) && li_cton(s[i+2], n2)) {
             const unsigned int x = (n1 << 4) | n2;
             if (!encoded_chars_http_uri_reqd[x]
-                && (qs < 0 ? (x!='/'&&x!='?') : (x!='&'&&x!='='&&x!=';'))) {
+                && (qs < 0
+                    ? (x != '/' && x != '?')
+                    : (x != '&' && x != '=' && x != ';' && x != '+'))) {
                 p[j] = x;
             }
             else {
@@ -177,7 +185,9 @@ static int burl_normalize_basic_required (buffer *b, buffer *t)
         }
         else if (s[i]=='%' && li_cton(s[i+1], n1) && li_cton(s[i+2], n2)
                  && (encoded_chars_http_uri_reqd[(x = (n1 << 4) | n2)]
-                     ||(qs < 0 ? (x=='/'||x=='?') : (x=='&'||x=='='||x==';')))){
+                     || (qs < 0
+                         ? (x == '/' || x == '?')
+                         : (x == '&' || x == '=' || x == ';' || x == '+')))) {
             if (li_utf8_invalid_byte(x)) qs = -2;
             if (s[i+1] >= 'a') b->ptr[i+1] &= 0xdf; /* uppercase hex */
             if (s[i+2] >= 'a') b->ptr[i+2] &= 0xdf; /* uppercase hex */
@@ -453,7 +463,7 @@ static void burl_offset_tolower (buffer * const b, const size_t off)
 {
     /*(skips over all percent-encodings, including encoding of alpha chars)*/
     for (char *p = b->ptr+off; p[0]; ++p) {
-        if (p[0] >= 'A' && p[0] <= 'Z') p[0] |= 0x20;
+        if (light_isupper(p[0])) p[0] |= 0x20;
         else if (p[0]=='%' && light_isxdigit(p[1]) && light_isxdigit(p[2]))
             p+=2;
     }
@@ -464,7 +474,7 @@ static void burl_offset_toupper (buffer * const b, const size_t off)
 {
     /*(skips over all percent-encodings, including encoding of alpha chars)*/
     for (char *p = b->ptr+off; p[0]; ++p) {
-        if (p[0] >= 'a' && p[0] <= 'z') p[0] &= 0xdf;
+        if (light_islower(p[0])) p[0] &= 0xdf;
         else if (p[0]=='%' && light_isxdigit(p[1]) && light_isxdigit(p[2]))
             p+=2;
     }

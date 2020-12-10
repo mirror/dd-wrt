@@ -36,8 +36,8 @@ CONFS=\
 	mod-auth.conf \
 	mod-auth.t \
 	mod-cgi.t \
-	mod-compress.conf \
-	mod-compress.t \
+	mod-deflate.conf \
+	mod-deflate.t \
 	mod-extforward.conf \
 	mod-extforward.t \
 	mod-fastcgi.t \
@@ -46,7 +46,6 @@ CONFS=\
 	mod-secdownload.t \
 	mod-setenv.t \
 	mod-ssi.t \
-	mod-userdir.t \
 	proxy.conf \
 	request.t \
 	scgi-responder.conf \

@@ -2,12 +2,13 @@
 #define _FDEVENT_H_
 #include "first.h"
 
-#include "base_decls.h"
+#include "base_decls.h" /* handler_t */
 
+struct log_error_st;    /* declaration */
 struct fdevents;        /* declaration */
 typedef struct fdevents fdevents;
 
-typedef handler_t (*fdevent_handler)(struct server *srv, void *ctx, int revents);
+typedef handler_t (*fdevent_handler)(void *ctx, int revents);
 
 struct fdnode_st {
     fdevent_handler handler;
@@ -46,13 +47,13 @@ struct fdnode_st {
 #define FDEVENT_STREAM_RESPONSE_POLLRDHUP BV(15)
 
 __attribute_cold__
-int fdevent_config(server *srv);
+int fdevent_config(const char **event_handler_name, struct log_error_st *errh);
 
 __attribute_cold__
 const char * fdevent_show_event_handlers(void);
 
 __attribute_cold__
-fdevents *fdevent_init(struct server *srv);
+fdevents * fdevent_init(const char *event_handler, int *max_fds, int *cur_fds, struct log_error_st *errh);
 
 __attribute_cold__
 int fdevent_reset(fdevents *ev); /* "init" after fork() */
@@ -74,13 +75,15 @@ void fdevent_sched_close(fdevents *ev, int fd, int issock);
 
 void fdevent_setfd_cloexec(int fd);
 void fdevent_clrfd_cloexec(int fd);
-int fdevent_fcntl_set_nb(fdevents *ev, int fd);
-int fdevent_fcntl_set_nb_cloexec(fdevents *ev, int fd);
-int fdevent_fcntl_set_nb_cloexec_sock(fdevents *ev, int fd);
+int fdevent_fcntl_set_nb(int fd);
+int fdevent_fcntl_set_nb_cloexec(int fd);
+int fdevent_fcntl_set_nb_cloexec_sock(int fd);
 int fdevent_socket_cloexec(int domain, int type, int protocol);
 int fdevent_socket_nb_cloexec(int domain, int type, int protocol);
+int fdevent_dup_cloexec(int fd);
 int fdevent_open_cloexec(const char *pathname, int symlinks, int flags, mode_t mode);
 int fdevent_mkstemp_append(char *path);
+int fdevent_rename(const char *oldpath, const char *newpath);
 
 struct sockaddr;
 int fdevent_accept_listenfd(int listenfd, struct sockaddr *addr, size_t *addrlen);
@@ -110,5 +113,9 @@ int fdevent_is_tcp_half_closed(int fd);
 int fdevent_set_tcp_nodelay (const int fd, const int opt);
 
 int fdevent_set_so_reuseaddr (const int fd, const int opt);
+
+char * fdevent_load_file (const char * const fn, off_t *lim, log_error_st *errh, void *(malloc_fn)(size_t), void(free_fn)(void *));
+
+int fdevent_load_file_bytes (char *buf, off_t sz, off_t off, const char *fn, log_error_st *errh);
 
 #endif

@@ -4,7 +4,20 @@
 
 #include <string.h>
 
-#if !defined(HAVE_MEMSET_S) && !defined(HAVE_EXPLICIT_BZERO)
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <WinBase.h>
+/*(Windows XP and later provide SecureZeroMemory())*/
+#define HAVE_SECUREZEROMEMORY
+#endif
+
+#if !defined(HAVE_MEMSET_S) \
+ && !defined(HAVE_EXPLICIT_BZERO) \
+ && !defined(HAVE_EXPLICIT_MEMSET) \
+ && !defined(HAVE_SECUREZEROMEMORY)
+
+typedef void *(*safe_memclear_func_t)(void *, int, size_t);
+extern volatile safe_memclear_func_t safe_memclear_func;
+volatile safe_memclear_func_t safe_memclear_func = memset;
 
 #  if defined(HAVE_WEAK_SYMBOLS)
 /* it seems weak functions are never inlined, even for static builds */
@@ -24,7 +37,7 @@ static void* safe_memset(void *s, int c, size_t n)
 		volatile unsigned char *vs = (volatile unsigned char*)s;
 
 		do {
-			memset(s, c, n);
+			safe_memclear_func(s, c, n);
 		} while (vs[volatile_zero] != (unsigned char)c);
 #  if defined(HAVE_WEAK_SYMBOLS)
 		__li_safe_memset_hook(s, n);
@@ -33,7 +46,8 @@ static void* safe_memset(void *s, int c, size_t n)
 
 	return s;
 }
-#endif /* !defined(HAVE_MEMSET_S) && !defined(HAVE_EXPLICIT_BZERO) */
+
+#endif
 
 
 void safe_memclear(void *s, size_t n) {
@@ -41,6 +55,10 @@ void safe_memclear(void *s, size_t n) {
 	memset_s(s, n, 0, n);
 #elif defined(HAVE_EXPLICIT_BZERO)
 	explicit_bzero(s, n);
+#elif defined(HAVE_EXPLICIT_MEMSET)
+	explicit_memset(s, 0, n);
+#elif defined(HAVE_SECUREZEROMEMORY)
+	SecureZeroMemory(s, n);
 #else
 	safe_memset(s, 0, n);
 #endif

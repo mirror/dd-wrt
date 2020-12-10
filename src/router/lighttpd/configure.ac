@@ -14,7 +14,7 @@ dnl - if an argument uses more than one line and is not a single
 dnl   function call, the argument should be on different lines than the
 dnl   wrapping braces
 AC_PREREQ(2.60)
-AC_INIT([lighttpd], [1.4.54], [contact@lighttpd.net])
+AC_INIT([lighttpd], [1.4.56], [https://redmine.lighttpd.net/projects/lighttpd/boards/2], [lighttpd], [https://www.lighttpd.net/])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -112,6 +112,8 @@ AC_CHECK_HEADERS([\
   sys/epoll.h \
   sys/event.h \
   sys/filio.h \
+  sys/inotify.h \
+  sys/loadavg.h \
   sys/mman.h \
   sys/poll.h \
   sys/prctl.h \
@@ -298,28 +300,34 @@ AC_ARG_WITH([pgsql],
 )
 AC_MSG_RESULT([$WITH_PGSQL])
 
-PGSQL_INCLUDE=
+PGSQL_CFLAGS=
 PGSQL_LIBS=
 
 if test "$WITH_PGSQL" != no; then
   if test "$WITH_PGSQL" = yes; then
-    AC_PATH_PROG([PGSQL_CONFIG], [pg_config])
+    PKG_CHECK_MODULES([PGSQL],[libpq],[
+      PGSQL_CONFIG=$PKG_CONFIG
+    ],[
+      AC_PATH_PROG([PGSQL_CONFIG], [pg_config])
+    ])
   else
     PGSQL_CONFIG=$WITH_PGSQL
   fi
 
-  if test -z "$PGSQL_CONFIG"; then
-    AC_MSG_ERROR([pg_config is not found])
-  fi
-  if test ! -x "$PGSQL_CONFIG"; then
-    AC_MSG_ERROR([pg_config not exists or not executable, use --with-pgsql=path-to-pg_config])
-  fi
+  if test "$PGSQL_CONFIG" != "$PKG_CONFIG"; then
+    if test -z "$PGSQL_CONFIG"; then
+      AC_MSG_ERROR([pg_config is not found])
+    fi
+    if test ! -x "$PGSQL_CONFIG"; then
+      AC_MSG_ERROR([pg_config not exists or not executable, use --with-pgsql=path-to-pg_config])
+    fi
 
-  PGSQL_INCLUDE="-I`"$PGSQL_CONFIG" --includedir`"
-  PGSQL_LIBS="-L`"$PGSQL_CONFIG" --libdir` -lpq"
+    PGSQL_CFLAGS="-I`"$PGSQL_CONFIG" --includedir`"
+    PGSQL_LIBS="-L`"$PGSQL_CONFIG" --libdir` -lpq"
+  fi
 
   AC_MSG_CHECKING([for PgSQL includes at])
-  AC_MSG_RESULT([$PGSQL_INCLUDE])
+  AC_MSG_RESULT([$PGSQL_CFLAGS])
 
   AC_MSG_CHECKING([for PgSQL libraries at])
   AC_MSG_RESULT([$PGSQL_LIBS])
@@ -329,7 +337,7 @@ fi
 AM_CONDITIONAL([BUILD_WITH_PGSQL], [test "$WITH_PGSQL" != no])
 
 AC_SUBST([PGSQL_LIBS])
-AC_SUBST([PGSQL_INCLUDE])
+AC_SUBST([PGSQL_CFLAGS])
 
 dnl Checks for libdbi library
 AC_MSG_NOTICE([----------------------------------------])
@@ -496,6 +504,15 @@ if test "$WITH_ATTR" != no; then
   ])
   AC_SUBST([ATTR_LIB])
 
+  # Linux getxattr
+  AC_CHECK_FUNC([getxattr], [
+    AC_CHECK_HEADERS([sys/xattr.h], [
+      AC_DEFINE([HAVE_XATTR], [1], [Linux extended attributes])
+      AC_DEFINE([HAVE_SYS_XATTR_H], [1])
+      have_xattr=yes
+    ])
+  ])
+
   # (Free)BSD extattr
   AC_CHECK_FUNC([extattr_get_file], [
     AC_CHECK_HEADERS([sys/extattr.h], [
@@ -624,6 +641,7 @@ AC_ARG_WITH([openssl],
   [WITH_OPENSSL=no]
 )
 AC_MSG_RESULT([$WITH_OPENSSL])
+AM_CONDITIONAL([BUILD_WITH_OPENSSL], test ! "$WITH_OPENSSL" = no)
 
 if test "$WITH_OPENSSL" != no; then
   if test "$WITH_OPENSSL" != yes; then
@@ -674,13 +692,15 @@ if test "$WITH_OPENSSL" != no; then
     [AC_MSG_ERROR([openssl crypto library not found. install it or build without --with-openssl])]
   )
   AC_CHECK_LIB([ssl], [SSL_new],
-    [SSL_LIB="-lssl -lcrypto"],
+    [OPENSSL_LIBS="${openssl_append_LDFLAGS} -lssl -lcrypto"],
     [AC_MSG_ERROR([openssl ssl library not found. install it or build without --with-openssl])],
     [ -lcrypto "$DL_LIB" ]
   )
 
-  AC_DEFINE([HAVE_LIBSSL], [], [Have libssl])
-  AC_SUBST([SSL_LIB])
+  AC_DEFINE([HAVE_LIBSSL], [1], [Have libssl])
+  OPENSSL_CFLAGS="${openssl_append_CPPFLAGS}"
+  AC_SUBST([OPENSSL_CFLAGS])
+  AC_SUBST([OPENSSL_LIBS])
   AC_SUBST([CRYPTO_LIB])
 fi
 
@@ -689,45 +709,198 @@ AC_MSG_NOTICE([----------------------------------------])
 AC_MSG_CHECKING([for wolfSSL])
 AC_ARG_WITH([wolfssl],
   [AC_HELP_STRING([--with-wolfssl@<:@=DIR@:>@],
-    [Include openssl support (default no)]
+    [Include wolfSSL support (default no)]
   )],
   [WITH_WOLFSSL=$withval],
   [WITH_WOLFSSL=no]
 )
 AC_MSG_RESULT([$WITH_WOLFSSL])
+AM_CONDITIONAL([BUILD_WITH_WOLFSSL], test ! "$WITH_WOLFSSL" = no)
 
 if test "$WITH_WOLFSSL" != no; then
-  if test "$WITH_WOLFSSL" = yes; then
-    WITH_WOLFSSL="/usr/local"
+  CPPFLAGS_SAVE="${CPPFLAGS}"
+  LDFLAGS_SAVE="${LDFLAGS}"
+  if test "$WITH_WOLFSSL" != yes; then
+    WOLFSSL_CFLAGS="-I$WITH_WOLFSSL/include -I$WITH_WOLFSSL/include/wolfssl"
+    WOLFSSL_LIBS="-L$WITH_WOLFSSL/lib -lwolfssl"
+    LDFLAGS="${LDFLAGS} -L$WITH_WOLFSSL/lib"
+  else
+    PKG_CHECK_MODULES([WOLFSSL], [wolfssl], [], [
+      AC_MSG_ERROR([wolfssl not found, install it or build without --with-wolfssl])
+    ])
+    if test "$WOLFSSL_LIBS" != "-lwolfssl"; then
+      LDFLAGS="${LDFLAGS} ${WOLFSSL_LIBS% -lwolfssl}"
+    fi
   fi
 
-  CPPFLAGS="${CPPFLAGS} -I$WITH_WOLFSSL/include -I$WITH_WOLFSSL/include/wolfssl"
-  LDFLAGS="${LDFLAGS} -L$WITH_WOLFSSL/lib"
-
+  CPPFLAGS="${CPPFLAGS} $WOLFSSL_CFLAGS"
   AC_CHECK_HEADERS([wolfssl/ssl.h], [], [
     AC_MSG_ERROR([wolfssl headers not found. install them or build without --with-wolfssl])
   ])
   AC_CHECK_LIB([wolfssl], [wolfSSL_Init],
-    [CRYPTO_LIB="-lwolfssl"],
+    [WOLFSSL_CRYPTO_LIB="-lwolfssl"],
     [AC_MSG_ERROR([wolfssl crypto library not found. install it or build without --with-wolfssl])]
   )
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
     #include <wolfssl/options.h>
-    #if !defined(HAVE_LIGHTY) && !defined(OPENSSL_ALL)
+    #if !defined(HAVE_LIGHTY) && !defined(OPENSSL_EXTRA)
     #error HAVE_LIGHTY macro not defined
     #endif
   ]])], [], [AC_MSG_ERROR([wolfssl must be built with ./configure --enable-lighty])])
-  SSL_LIB="-lwolfssl"
 
-  AC_SUBST([SSL_LIB])
+  AC_SUBST([WOLFSSL_CFLAGS])
+  AC_SUBST([WOLFSSL_LIBS])
+  if test "$WITH_OPENSSL" = no; then
+    CRYPTO_LIB="$WOLFSSL_CRYPTO_LIB"
+    AC_SUBST([CRYPTO_LIB])
+  else
+    CPPFLAGS="${CPPFLAGS_SAVE}"
+    LDFLAGS="${LDFLAGS_SAVE}"
+  fi
+fi
+
+dnl Check for mbedTLS
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for mbedTLS])
+AC_ARG_WITH([mbedtls],
+  AC_HELP_STRING([--with-mbedtls@<:@=DIR@:>@],[Include mbedTLS support. DIR points to the installation root. (default no)]),
+  [WITH_MBEDTLS=$withval],
+  [WITH_MBEDTLS=no]
+)
+
+if test "$WITH_MBEDTLS" != "no"; then
+  use_mbedtls=yes
+  if test "$WITH_MBEDTLS" != "yes"; then
+      CPPFLAGS="$CPPFLAGS -I$WITH_MBEDTLS/include"
+      LDFLAGS="$LDFLAGS -L$WITH_MBEDTLS/lib"
+  fi
+else
+  use_mbedtls=no
+fi
+AC_MSG_RESULT([$use_mbedtls])
+AM_CONDITIONAL(BUILD_WITH_MBEDTLS, test ! $WITH_MBEDTLS = no)
+
+if test "x$use_mbedtls" = "xyes"; then
+  AC_CHECK_HEADERS([mbedtls/ssl.h])
+  OLDLIBS="$LIBS"
+  AC_CHECK_LIB(mbedcrypto,mbedtls_base64_encode,
+    [AC_CHECK_LIB(mbedx509, mbedtls_x509_get_name,
+      [AC_CHECK_LIB(mbedtls, mbedtls_cipher_info_from_type,
+        [MTLS_LIBS="-lmbedtls -lmbedx509 -lmbedcrypto"
+         CRYPTO_LIB="-lmbedcrypto"
+         AC_DEFINE(HAVE_LIBMBEDTLS, [1], [Have libmbedtls library])
+         AC_DEFINE(HAVE_LIBMBEDX509, [1], [Have libmbedx509 library])
+         AC_DEFINE(HAVE_LIBMBEDCRYPTO, [1], [Have libmbedcrypto library]) ],
+        [],[-lmbedcrypto "$DL_LIB"])
+      ],[],[-lmbedcrypto "$DL_LIB"])
+    ],[],[])
+  LIBS="$OLDLIBS"
+  AC_SUBST(MTLS_LIBS)
+  AC_SUBST(CRYPTO_LIB)
+fi
+
+dnl Check for Nettle (and overwrite CRYPTO_LIB if set by OpenSSL or wolfSSL)
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for Nettle])
+AC_ARG_WITH([nettle],
+  [AC_HELP_STRING([--with-nettle@<:@=DIR@:>@],
+    [Include Nettle support (default no)]
+  )],
+  [WITH_NETTLE=$withval],
+  [WITH_NETTLE=no]
+)
+AC_MSG_RESULT([$WITH_NETTLE])
+
+if test "$WITH_NETTLE" != no; then
+  if test "$WITH_NETTLE" != yes; then
+    CPPFLAGS="${CPPFLAGS} -I$WITH_NETTLE/include"
+    LDFLAGS="${LDFLAGS} -L$WITH_NETTLE/lib"
+  fi
+
+  AC_CHECK_HEADERS([nettle/nettle-types.h], [], [
+    AC_MSG_ERROR([nettle headers not found. install them or build without --with-nettle])
+  ])
+  AC_CHECK_LIB([nettle], [nettle_md5_init],
+    [CRYPTO_LIB="-lnettle"],
+    [AC_MSG_ERROR([nettle crypto library not found. install it or build without --with-nettle])]
+  )
+
   AC_SUBST([CRYPTO_LIB])
 fi
 
-AM_CONDITIONAL([BUILD_WITH_OPENSSL],
-               [test "$WITH_OPENSSL" != no || test "$WITH_WOLFSSL" != no])
+dnl Check for GnuTLS
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for GnuTLS])
+AC_ARG_WITH([gnutls],
+  AC_HELP_STRING([--with-gnutls@<:@=DIR@:>@],[Include GnuTLS support. DIR points to the installation root. (default no)]),
+  [WITH_GNUTLS=$withval],
+  [WITH_GNUTLS=no]
+)
 
-if test "$WITH_OPENSSL" != no && test "$WITH_WOLFSSL" != no; then
-  AC_MSG_ERROR([lighttpd should not be built with both --with-openssl and --with-wolfssl])
+if test "$WITH_GNUTLS" != "no"; then
+  use_gnutls=yes
+else
+  use_gnutls=no
+fi
+AC_MSG_RESULT([$use_gnutls])
+AM_CONDITIONAL(BUILD_WITH_GNUTLS, test ! $WITH_GNUTLS = no)
+
+GNUTLS_CFLAGS=
+GNUTLS_LIBS=
+
+if test "x$use_gnutls" = "xyes"; then
+  if test "$WITH_GNUTLS" != "yes"; then
+      GNUTLS_CFLAGS="-I$WITH_GNUTLS/include"
+      GNUTLS_LIBS="-L$WITH_GNUTLS/lib -lgnutls"
+  else
+      dnl oldest GnuTLS supported release is 3.3.x at time this is being written
+      PKG_CHECK_MODULES([GNUTLS], [gnutls >= 3.3.0])
+  fi
+  AC_SUBST([GNUTLS_CFLAGS])
+  AC_SUBST([GNUTLS_LIBS])
+  AC_DEFINE([HAVE_GNUTLS_CRYPTO_H], [1], [gnutls/crypto.h])
+  if test "$WITH_OPENSSL" = no && test "$WITH_WOLFSSL" = no && \
+     test "$WITH_MBEDTLS" = no && test "$WITH_NETTLE" = no; then
+      AC_SUBST([CRYPTO_LIB],[$GNUTLS_LIBS])
+  fi
+fi
+
+dnl Check for NSS
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for NSS])
+AC_ARG_WITH([nss],
+  AC_HELP_STRING([--with-nss@<:@=DIR@:>@],[Include NSS support. DIR points to the installation root. (default no)]),
+  [WITH_NSS=$withval],
+  [WITH_NSS=no]
+)
+
+if test "$WITH_NSS" != "no"; then
+  use_nss=yes
+else
+  use_nss=no
+fi
+AC_MSG_RESULT([$use_nss])
+AM_CONDITIONAL(BUILD_WITH_NSS, test ! $WITH_NSS = no)
+
+NSS_CFLAGS=
+NSS_LIBS=
+
+if test "x$use_nss" = "xyes"; then
+  if test "$WITH_NSS" != "yes"; then
+      NSS_CFLAGS="-I$WITH_NSS/include"
+      NSS_LIBS="-L$WITH_NSS/lib -lnss3"
+  else
+      PKG_CHECK_MODULES([NSS],[nss])
+      CPPFLAGS="$CPPFLAGS -I/usr/include/nspr4"
+  fi
+  AC_DEFINE([HAVE_NSS_NSS_H], [1], [nss/nss.h])
+  AC_DEFINE([HAVE_NSS3_NSS_H], [1], [nss3/nss.h])
+  AC_SUBST([NSS_CFLAGS])
+  AC_SUBST([NSS_LIBS])
+  if test "x$CRYPTO_LIB" = "x"; then
+    CRYPTO_LIB="-lnss3"
+    AC_SUBST([CRYPTO_LIB])
+  fi
 fi
 
 
@@ -767,7 +940,7 @@ AC_MSG_NOTICE([----------------------------------------])
 AC_MSG_CHECKING([for zlib support])
 AC_ARG_WITH([zlib],
   [AC_HELP_STRING([--with-zlib],
-    [Enable zlib support for mod_compress]
+    [Enable zlib support for mod_deflate]
   )],
   [WITH_ZLIB=$withval],
   [WITH_ZLIB=yes]
@@ -798,10 +971,10 @@ AC_MSG_NOTICE([----------------------------------------])
 AC_MSG_CHECKING([for bzip2 support])
 AC_ARG_WITH([bzip2],
   [AC_HELP_STRING([--with-bzip2],
-    [Enable bzip2 support for mod_compress]
+    [Enable bzip2 support for mod_deflate]
   )],
   [WITH_BZIP2=$withval],
-  [WITH_BZIP2=yes]
+  [WITH_BZIP2=no]
 )
 AC_MSG_RESULT([$WITH_BZIP2])
 
@@ -824,6 +997,34 @@ if test "$WITH_BZIP2" != no; then
   AC_SUBST([BZ_LIB])
 fi
 
+dnl brotli
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for brotli support])
+AC_ARG_WITH([brotli],
+  [AC_HELP_STRING([--with-brotli],
+    [Enable brotli support for mod_deflate]
+  )],
+  [WITH_BROTLI=$withval],
+  [WITH_BROTLI=no]
+)
+AC_MSG_RESULT([$WITH_BROTLI])
+
+if test "$WITH_BROTLI" != no; then
+  if test "$WITH_BROTLI" != yes; then
+    BROTLI_LIBS="-L$WITH_BROTLI -lbrotlienc"
+    CPPFLAGS="$CPPFLAGS -I$WITH_BROTLI"
+  else
+    PKG_CHECK_MODULES([BROTLI], [libbrotlienc], [], [
+      AC_MSG_ERROR([brotli not found, install it or build without --with-brotli])
+    ])
+  fi
+
+  AC_DEFINE([HAVE_BROTLI_ENCODE_H], [1], [brotli/encode.h])
+  AC_DEFINE([HAVE_BROTLI], [1], [libbrotlienc])
+  AC_SUBST([BROTLI_CFLAGS])
+  AC_SUBST([BROTLI_LIBS])
+fi
+
 dnl Check for fam/gamin
 AC_MSG_NOTICE([----------------------------------------])
 AC_MSG_CHECKING([for FAM])
@@ -835,6 +1036,10 @@ AC_ARG_WITH([fam],
   [WITH_FAM=no]
 )
 AC_MSG_RESULT([$WITH_FAM])
+
+if test "$HAVE_SYS_NOTIFY_H" != no; then
+  WITH_FAM=no
+fi
 
 if test "$WITH_FAM" != no; then
   if test "$WITH_FAM" != yes; then
@@ -979,6 +1184,40 @@ if test "$WITH_WEBDAV_LOCKS" != no; then
   AC_DEFINE([HAVE_LIBUUID], [1], [libuuid])
   AC_DEFINE([HAVE_UUID_UUID_H], [1], [uuid/uuid.h is available])
   AC_SUBST([UUID_LIBS])
+fi
+
+dnl xxhash
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for xxhash support])
+AC_ARG_WITH([xxhash],
+  [AC_HELP_STRING([--with-xxhash],
+    [Enable system-provided xxhash]
+  )],
+  [WITH_XXHASH=$withval],
+  [WITH_XXHASH=no]
+)
+AC_MSG_RESULT([$WITH_XXHASH])
+
+if test "$WITH_XXHASH" != no; then
+  if test "$WITH_XXHASH" != yes; then
+    XXHASH_LIBS="-L$WITH_XXHASH -lxxhash"
+    CPPFLAGS="$CPPFLAGS -I$WITH_XXHASH"
+  else
+    PKG_CHECK_MODULES([XXHASH], [libxxhash], [], [
+      AC_CHECK_LIB([xxhash], [XXH_versionNumber],
+        [XXHASH_LIBS=-lxxhash],
+        [AC_MSG_ERROR([xxhash not found, install it or build without --with-xxhash])]
+      )
+      AC_CHECK_HEADERS([xxhash.h], [],
+        [AC_MSG_ERROR([xxhash not found, install it or build without --with-xxhash])]
+      )
+    ])
+  fi
+
+  AC_DEFINE([HAVE_XXHASH_H], [1], [xxhash.h])
+  AC_DEFINE([HAVE_XXHASH], [1], [xxhash])
+  AC_SUBST([XXHASH_CFLAGS])
+  AC_SUBST([XXHASH_LIBS])
 fi
 
 dnl Check for gdbm
@@ -1131,7 +1370,7 @@ if test "$WITH_LUA" != no; then
       LUA_CFLAGS="-I$WITH_LUA"
     fi
   else
-    for luaname in lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua; do
+    for luaname in lua5.4 lua-5.4 lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua; do
       if test "$found_lua" = "0"; then
         PKG_CHECK_MODULES([LUA], [$luaname >= 5.1],
           [found_lua=1],
@@ -1209,8 +1448,10 @@ AC_CHECK_FUNCS([\
   arc4random_buf \
   chroot \
   clock_gettime \
+  copy_file_range \
   epoll_ctl \
   explicit_bzero \
+  explicit_memset \
   fork \
   getloadavg \
   getrlimit \
@@ -1436,7 +1677,6 @@ do_build="\
   mod_auth \
   mod_authn_file \
   mod_cgi \
-  mod_compress \
   mod_deflate \
   mod_dirlisting \
   mod_evhost \
@@ -1492,7 +1732,7 @@ lighty_track_feature "mysql" "mod_authn_mysql mod_mysql_vhost mod_vhostdb_mysql"
 lighty_track_feature "postgresql" "mod_vhostdb_pgsql" \
   'test "$WITH_PGSQL" != no'
 
-lighty_track_feature "dbi" "mod_vhostdb_dbi" \
+lighty_track_feature "dbi" "mod_authn_dbi mod_vhostdb_dbi" \
   'test "$WITH_DBI" != no'
 
 lighty_track_feature "lua" "mod_cml mod_magnet" \
@@ -1510,6 +1750,9 @@ lighty_track_feature "compress-gzip compress-deflate" "" \
 lighty_track_feature "compress-bzip2" "" \
   'test "$WITH_BZIP2" != no'
 
+lighty_track_feature "compress-brotli" "" \
+  'test "$WITH_BROTLI" != no'
+
 lighty_track_feature "kerberos" "mod_authn_gssapi" \
   'test "$WITH_KRB5" != no'
 
@@ -1520,7 +1763,19 @@ lighty_track_feature "pam" "mod_authn_pam" \
   'test "$WITH_PAM" != no'
 
 lighty_track_feature "network-openssl" "mod_openssl" \
-  'test "$WITH_OPENSSL" != no || test "$WITH_WOLFSSL" != no'
+  'test "$WITH_OPENSSL" != no'
+
+lighty_track_feature "network-mbedtls" "mod_mbedtls" \
+  'test "$WITH_MBEDTLS" != no'
+
+lighty_track_feature "network-gnutls" "mod_gnutls" \
+  'test "$WITH_GNUTLS" != no'
+
+lighty_track_feature "network-nss" "mod_nss" \
+  'test "$WITH_NSS" != no'
+
+lighty_track_feature "network-wolfssl" "mod_wolfssl" \
+  'test "$WITH_WOLFSSL" != no'
 
 lighty_track_feature "auth-crypt" "" \
   'test "$found_crypt" != no'

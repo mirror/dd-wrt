@@ -1,8 +1,13 @@
+/*
+ * mod_vhostdb_ldap - virtual hosts mapping from backend LDAP database
+ *
+ * Copyright(c) 2017 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
+ * License: BSD 3-clause (same as lighttpd)
+ */
 #include "first.h"
 
 #include <ldap.h>
 
-#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -17,8 +22,8 @@
 
 typedef struct {
     LDAP *ldap;
-    buffer *filter;
-    server *srv;
+    const buffer *filter;
+    log_error_st *errh;
 
     const char *attr;
     const char *host;
@@ -27,16 +32,16 @@ typedef struct {
     const char *bindpw;
     const char *cafile;
     unsigned short starttls;
+    struct timeval timeout;
 } vhostdb_config;
 
 typedef struct {
     void *vdata;
-    array *options;
 } plugin_config;
 
 typedef struct {
     PLUGIN_DATA;
-    plugin_config **config_storage;
+    plugin_config defaults;
     plugin_config conf;
 } plugin_data;
 
@@ -57,7 +62,8 @@ static void mod_vhostdb_dbconf_add_scheme (server *srv, buffer *host)
           "ldap://", "ldaps://", "ldapi://", "cldap://"
         };
         char *b, *e = host->ptr;
-        buffer_clear(srv->tmp_buf);
+        buffer * const tb = srv->tmp_buf;
+        buffer_clear(tb);
         while (*(b = e)) {
             unsigned int j;
             while (*b==' '||*b=='\t'||*b=='\r'||*b=='\n'||*b==',') ++b;
@@ -65,50 +71,51 @@ static void mod_vhostdb_dbconf_add_scheme (server *srv, buffer *host)
             e = b;
             while (*e!=' '&&*e!='\t'&&*e!='\r'&&*e!='\n'&&*e!=','&&*e!='\0')
                 ++e;
-            if (!buffer_string_is_empty(srv->tmp_buf))
-                buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN(","));
+            if (!buffer_string_is_empty(tb))
+                buffer_append_string_len(tb, CONST_STR_LEN(","));
             for (j = 0; j < sizeof(schemes)/sizeof(char *); ++j) {
-                if (0 == strncasecmp(b, schemes[j], strlen(schemes[j]))) {
+                if (buffer_eq_icase_ssn(b, schemes[j], strlen(schemes[j]))) {
                     break;
                 }
             }
             if (j == sizeof(schemes)/sizeof(char *))
-                buffer_append_string_len(srv->tmp_buf,
-                                         CONST_STR_LEN("ldap://"));
-            buffer_append_string_len(srv->tmp_buf, b, (size_t)(e - b));
+                buffer_append_string_len(tb, CONST_STR_LEN("ldap://"));
+            buffer_append_string_len(tb, b, (size_t)(e - b));
         }
-        buffer_copy_buffer(host, srv->tmp_buf);
+        buffer_copy_buffer(host, tb);
     }
 }
 
-static int mod_vhostdb_dbconf_setup (server *srv, array *opts, void **vdata)
+static int mod_vhostdb_dbconf_setup (server *srv, const array *opts, void **vdata)
 {
-    buffer *filter = NULL;
+    const buffer *filter = NULL;
     const char *attr = "documentRoot";
     const char *basedn=NULL,*binddn=NULL,*bindpw=NULL,*host=NULL,*cafile=NULL;
     unsigned short starttls = 0;
+    long timeout = 2000000; /* set 2 sec default timeout (instead of infinite) */
 
     for (size_t i = 0; i < opts->used; ++i) {
-        const data_string *ds = (data_string *)opts->data[i];
+        data_string *ds = (data_string *)opts->data[i];
         if (ds->type == TYPE_STRING) {
-            if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("filter"))) {
-                filter = ds->value;
-            } else if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("attr"))) {
-                if (!buffer_string_is_empty(ds->value)) attr   = ds->value->ptr;
-            } else if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("host"))) {
-                mod_vhostdb_dbconf_add_scheme(srv, ds->value);
-                host   = ds->value->ptr;
-            } else if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("base-dn"))) {
-                if (!buffer_string_is_empty(ds->value)) basedn = ds->value->ptr;
-            } else if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("bind-dn"))) {
-                if (!buffer_string_is_empty(ds->value)) binddn = ds->value->ptr;
-            } else if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("bind-pw"))) {
-                bindpw = ds->value->ptr;
-            } else if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("ca-file"))) {
-                if (!buffer_string_is_empty(ds->value)) cafile = ds->value->ptr;
-            } else if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("starttls"))) {
-                starttls = !buffer_is_equal_string(ds->value, CONST_STR_LEN("disable"))
-                        && !buffer_is_equal_string(ds->value, CONST_STR_LEN("0"));
+            if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("filter"))) {
+                filter = &ds->value;
+            } else if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("attr"))) {
+                if (!buffer_string_is_empty(&ds->value)) attr   = ds->value.ptr;
+            } else if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("host"))) {
+                mod_vhostdb_dbconf_add_scheme(srv, &ds->value);
+                host   = ds->value.ptr;
+            } else if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("base-dn"))) {
+                if (!buffer_string_is_empty(&ds->value)) basedn = ds->value.ptr;
+            } else if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("bind-dn"))) {
+                if (!buffer_string_is_empty(&ds->value)) binddn = ds->value.ptr;
+            } else if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("bind-pw"))) {
+                bindpw = ds->value.ptr;
+            } else if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("ca-file"))) {
+                if (!buffer_string_is_empty(&ds->value)) cafile = ds->value.ptr;
+            } else if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("starttls"))) {
+                starttls = config_plugin_value_tobool((data_unset *)ds, 1);
+            } else if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("timeout"))) {
+                timeout = strtol(ds->value.ptr, NULL, 10);
             }
         }
     }
@@ -130,8 +137,8 @@ static int mod_vhostdb_dbconf_setup (server *srv, array *opts, void **vdata)
         vhostdb_config *dbconf;
 
         if (NULL == strchr(filter->ptr, '?')) {
-            log_error_write(srv, __FILE__, __LINE__, "s",
-                            "ldap: filter is missing a replace-operator '?'");
+            log_error(srv->errh, __FILE__, __LINE__,
+              "ldap: filter is missing a replace-operator '?'");
             return -1;
         }
 
@@ -149,8 +156,11 @@ static int mod_vhostdb_dbconf_setup (server *srv, array *opts, void **vdata)
         dbconf->bindpw   = bindpw;
         dbconf->cafile   = cafile;
         dbconf->starttls = starttls;
+        dbconf->timeout.tv_sec  = timeout / 1000000;
+        dbconf->timeout.tv_usec = timeout % 1000000;
         *vdata = dbconf;
     }
+
     return 0;
 }
 
@@ -160,16 +170,18 @@ static int mod_vhostdb_dbconf_setup (server *srv, array *opts, void **vdata)
  * and (const char *) strings in vhostdb_config instead of (buffer *).
  */
 
-static void mod_authn_ldap_err(server *srv, const char *file, unsigned long line, const char *fn, int err)
+__attribute_cold__
+static void mod_authn_ldap_err(log_error_st *errh, const char *file, unsigned long line, const char *fn, int err)
 {
-    log_error_write(srv,file,line,"sSss","ldap:",fn,":",ldap_err2string(err));
+    log_error(errh, file, line, "ldap: %s: %s", fn, ldap_err2string(err));
 }
 
-static void mod_authn_ldap_opt_err(server *srv, const char *file, unsigned long line, const char *fn, LDAP *ld)
+__attribute_cold__
+static void mod_authn_ldap_opt_err(log_error_st *errh, const char *file, unsigned long line, const char *fn, LDAP *ld)
 {
     int err;
     ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &err);
-    mod_authn_ldap_err(srv, file, line, fn, err);
+    mod_authn_ldap_err(errh, file, line, fn, err);
 }
 
 static void mod_authn_append_ldap_filter_escape(buffer * const filter, const buffer * const raw) {
@@ -237,21 +249,20 @@ static void mod_authn_append_ldap_filter_escape(buffer * const filter, const buf
     }
 }
 
-static LDAP * mod_authn_ldap_host_init(server *srv, vhostdb_config *s) {
+static LDAP * mod_authn_ldap_host_init(log_error_st *errh, vhostdb_config *s) {
     LDAP *ld;
     int ret;
 
     ret = ldap_initialize(&ld, s->host);
     if (LDAP_SUCCESS != ret) {
-        log_error_write(srv, __FILE__, __LINE__, "sss", "ldap:",
-                        "ldap_initialize():", strerror(errno));
+        log_perror(errh, __FILE__, __LINE__, "ldap: ldap_initialize()");
         return NULL;
     }
 
     ret = LDAP_VERSION3;
     ret = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &ret);
     if (LDAP_OPT_SUCCESS != ret) {
-        mod_authn_ldap_err(srv, __FILE__, __LINE__, "ldap_set_options()", ret);
+        mod_authn_ldap_err(errh, __FILE__, __LINE__, "ldap_set_options()", ret);
         ldap_destroy(ld);
         return NULL;
     }
@@ -259,15 +270,22 @@ static LDAP * mod_authn_ldap_host_init(server *srv, vhostdb_config *s) {
     /* restart ldap functions if interrupted by a signal, e.g. SIGCHLD */
     ldap_set_option(ld, LDAP_OPT_RESTART, LDAP_OPT_ON);
 
+  #ifdef LDAP_OPT_NETWORK_TIMEOUT /* OpenLDAP-specific */
+    ldap_set_option(ld, LDAP_OPT_NETWORK_TIMEOUT, &s->timeout);
+  #endif
+
+  #ifdef LDAP_OPT_TIMEOUT /* OpenLDAP-specific; OpenLDAP 2.4+ */
+    ldap_set_option(ld, LDAP_OPT_TIMEOUT, &s->timeout);
+  #endif
+
     if (s->starttls) {
         /* if no CA file is given, it is ok, as we will use encryption
          * if the server requires a CAfile it will tell us */
         if (s->cafile) {
             ret = ldap_set_option(NULL, LDAP_OPT_X_TLS_CACERTFILE, s->cafile);
             if (LDAP_OPT_SUCCESS != ret) {
-                mod_authn_ldap_err(srv, __FILE__, __LINE__,
-                                   "ldap_set_option(LDAP_OPT_X_TLS_CACERTFILE)",
-                                   ret);
+                mod_authn_ldap_err(errh, __FILE__, __LINE__,
+                  "ldap_set_option(LDAP_OPT_X_TLS_CACERTFILE)", ret);
                 ldap_destroy(ld);
                 return NULL;
             }
@@ -275,7 +293,7 @@ static LDAP * mod_authn_ldap_host_init(server *srv, vhostdb_config *s) {
 
         ret = ldap_start_tls_s(ld, NULL,  NULL);
         if (LDAP_OPT_SUCCESS != ret) {
-            mod_authn_ldap_err(srv,__FILE__,__LINE__,"ldap_start_tls_s()",ret);
+            mod_authn_ldap_err(errh,__FILE__,__LINE__,"ldap_start_tls_s()",ret);
             ldap_destroy(ld);
             return NULL;
         }
@@ -284,7 +302,7 @@ static LDAP * mod_authn_ldap_host_init(server *srv, vhostdb_config *s) {
     return ld;
 }
 
-static int mod_authn_ldap_bind(server *srv, LDAP *ld, const char *dn, const char *pw) {
+static int mod_authn_ldap_bind(log_error_st *errh, LDAP *ld, const char *dn, const char *pw) {
     struct berval creds;
     int ret;
 
@@ -300,7 +318,7 @@ static int mod_authn_ldap_bind(server *srv, LDAP *ld, const char *dn, const char
 
     ret = ldap_sasl_bind_s(ld,dn,LDAP_SASL_SIMPLE,&creds,NULL,NULL,NULL);
     if (ret != LDAP_SUCCESS) {
-        mod_authn_ldap_err(srv, __FILE__, __LINE__, "ldap_sasl_bind_s()", ret);
+        mod_authn_ldap_err(errh, __FILE__, __LINE__, "ldap_sasl_bind_s()", ret);
     }
 
     return ret;
@@ -311,10 +329,10 @@ static int mod_authn_ldap_rebind_proc (LDAP *ld, LDAP_CONST char *url, ber_tag_t
     UNUSED(url);
     UNUSED(ldap_request);
     UNUSED(msgid);
-    return mod_authn_ldap_bind(s->srv, ld, s->binddn, s->bindpw);
+    return mod_authn_ldap_bind(s->errh, ld, s->binddn, s->bindpw);
 }
 
-static LDAPMessage * mod_authn_ldap_search(server *srv, vhostdb_config *s, char *base, char *filter) {
+static LDAPMessage * mod_authn_ldap_search(log_error_st *errh, vhostdb_config *s, char *base, char *filter) {
     LDAPMessage *lm = NULL;
     char *attrs[] = { LDAP_NO_ATTRS, NULL };
     int ret;
@@ -343,13 +361,13 @@ static LDAPMessage * mod_authn_ldap_search(server *srv, vhostdb_config *s, char 
         ldap_unbind_ext_s(s->ldap, NULL, NULL);
     }
 
-    s->ldap = mod_authn_ldap_host_init(srv, s);
+    s->ldap = mod_authn_ldap_host_init(errh, s);
     if (NULL == s->ldap) {
         return NULL;
     }
 
     ldap_set_rebind_proc(s->ldap, mod_authn_ldap_rebind_proc, s);
-    ret = mod_authn_ldap_bind(srv, s->ldap, s->binddn, s->bindpw);
+    ret = mod_authn_ldap_bind(errh, s->ldap, s->binddn, s->bindpw);
     if (LDAP_SUCCESS != ret) {
         ldap_destroy(s->ldap);
         s->ldap = NULL;
@@ -359,8 +377,8 @@ static LDAPMessage * mod_authn_ldap_search(server *srv, vhostdb_config *s, char 
     ret = ldap_search_ext_s(s->ldap, base, LDAP_SCOPE_SUBTREE, filter,
                             attrs, 0, NULL, NULL, NULL, 0, &lm);
     if (LDAP_SUCCESS != ret) {
-        log_error_write(srv, __FILE__, __LINE__, "sSss",
-                        "ldap:", ldap_err2string(ret), "; filter:", filter);
+        log_error(errh, __FILE__, __LINE__,
+          "ldap: %s; filter: %s", ldap_err2string(ret), filter);
         ldap_unbind_ext_s(s->ldap, NULL, NULL);
         s->ldap = NULL;
         return NULL;
@@ -369,9 +387,9 @@ static LDAPMessage * mod_authn_ldap_search(server *srv, vhostdb_config *s, char 
     return lm;
 }
 
-static void mod_vhostdb_patch_connection (server *srv, connection *con, plugin_data *p);
+static void mod_vhostdb_patch_config (request_st * const r, plugin_data * const p);
 
-static int mod_vhostdb_ldap_query(server *srv, connection *con, void *p_d, buffer *docroot)
+static int mod_vhostdb_ldap_query(request_st * const r, void *p_d, buffer *docroot)
 {
     plugin_data *p = (plugin_data *)p_d;
     vhostdb_config *dbconf;
@@ -380,22 +398,23 @@ static int mod_vhostdb_ldap_query(server *srv, connection *con, void *p_d, buffe
     struct berval **vals;
     int count;
     char *basedn;
-    buffer *template;
+    const buffer *template;
 
     /*(reuse buffer for ldap query before generating docroot result)*/
     buffer *filter = docroot;
     buffer_clear(filter); /*(also resets docroot (alias))*/
 
-    mod_vhostdb_patch_connection(srv, con, p);
+    mod_vhostdb_patch_config(r, p);
     if (NULL == p->conf.vdata) return 0; /*(after resetting docroot)*/
     dbconf = (vhostdb_config *)p->conf.vdata;
-    dbconf->srv = srv;
+    log_error_st * const errh = r->conf.errh;
+    dbconf->errh = errh;
 
     template = dbconf->filter;
     for (char *b = template->ptr, *d; *b; b = d+1) {
         if (NULL != (d = strchr(b, '?'))) {
             buffer_append_string_len(filter, b, (size_t)(d - b));
-            mod_authn_append_ldap_filter_escape(filter, con->uri.authority);
+            mod_authn_append_ldap_filter_escape(filter, &r->uri.authority);
         } else {
             d = template->ptr + buffer_string_length(template);
             buffer_append_string_len(filter, b, (size_t)(d - b));
@@ -407,7 +426,7 @@ static int mod_vhostdb_ldap_query(server *srv, connection *con, void *p_d, buffe
     *(const char **)&basedn = dbconf->basedn;
 
     /* ldap_search (synchronous; blocking) */
-    lm = mod_authn_ldap_search(srv, dbconf, basedn, filter->ptr);
+    lm = mod_authn_ldap_search(errh, dbconf, basedn, filter->ptr);
     if (NULL == lm) {
         return -1;
     }
@@ -417,9 +436,9 @@ static int mod_vhostdb_ldap_query(server *srv, connection *con, void *p_d, buffe
 
     count = ldap_count_entries(ld, lm);
     if (count > 1) {
-        log_error_write(srv, __FILE__, __LINE__, "ssb",
-                        "ldap:", "more than one record returned.  "
-                        "you might have to refine the filter:", filter);
+        log_error(errh, __FILE__, __LINE__,
+          "ldap: more than one record returned.  "
+          "you might have to refine the filter: %s", filter->ptr);
     }
 
     buffer_clear(docroot); /*(reset buffer to store result)*/
@@ -430,7 +449,7 @@ static int mod_vhostdb_ldap_query(server *srv, connection *con, void *p_d, buffe
     }
 
     if (NULL == (first = ldap_first_entry(ld, lm))) {
-        mod_authn_ldap_opt_err(srv,__FILE__,__LINE__,"ldap_first_entry()",ld);
+        mod_authn_ldap_opt_err(errh,__FILE__,__LINE__,"ldap_first_entry()",ld);
         ldap_msgfree(lm);
         return -1;
     }
@@ -460,96 +479,100 @@ INIT_FUNC(mod_vhostdb_init) {
 }
 
 FREE_FUNC(mod_vhostdb_cleanup) {
-    plugin_data *p = p_d;
-    if (!p) return HANDLER_GO_ON;
-
-    if (p->config_storage) {
-        for (size_t i = 0; i < srv->config_context->used; i++) {
-            plugin_config *s = p->config_storage[i];
-            if (!s) continue;
-            mod_vhostdb_dbconf_free(s->vdata);
-            array_free(s->options);
-            free(s);
-        }
-        free(p->config_storage);
-    }
-    free(p);
-
-    UNUSED(srv);
-    return HANDLER_GO_ON;
-}
-
-SETDEFAULTS_FUNC(mod_vhostdb_set_defaults) {
-    plugin_data *p = p_d;
-
-    config_values_t cv[] = {
-        { "vhostdb.ldap",  NULL, T_CONFIG_ARRAY,  T_CONFIG_SCOPE_CONNECTION },
-        { NULL,            NULL, T_CONFIG_UNSET,  T_CONFIG_SCOPE_UNSET }
-    };
-
-    p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
-
-    for (size_t i = 0; i < srv->config_context->used; ++i) {
-        data_config const *config = (data_config const*)srv->config_context->data[i];
-        plugin_config *s = calloc(1, sizeof(plugin_config));
-
-        s->options = array_init();
-        cv[0].destination = s->options;
-
-        p->config_storage[i] = s;
-
-        if (config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
-            return HANDLER_ERROR;
-        }
-
-	if (!array_is_kvstring(s->options)) {
-		log_error_write(srv, __FILE__, __LINE__, "s",
-				"unexpected value for vhostdb.ldap; expected list of \"option\" => \"value\"");
-		return HANDLER_ERROR;
-	}
-
-        if (s->options->used
-            && 0 != mod_vhostdb_dbconf_setup(srv, s->options, &s->vdata)) {
-            return HANDLER_ERROR;
-        }
-    }
-
-    return HANDLER_GO_ON;
-}
-
-#define PATCH(x) \
-    p->conf.x = s->x;
-static void mod_vhostdb_patch_connection (server *srv, connection *con, plugin_data *p)
-{
-    plugin_config *s = p->config_storage[0];
-    PATCH(vdata);
-
-    /* skip the first, the global context */
-    for (size_t i = 1; i < srv->config_context->used; ++i) {
-        data_config *dc = (data_config *)srv->config_context->data[i];
-        s = p->config_storage[i];
-
-        /* condition didn't match */
-        if (!config_check_cond(srv, con, dc)) continue;
-
-        /* merge config */
-        for (size_t j = 0; j < dc->value->used; ++j) {
-            data_unset *du = dc->value->data[j];
-
-            if (buffer_is_equal_string(du->key,CONST_STR_LEN("vhostdb.ldap"))) {
-                PATCH(vdata);
+    plugin_data * const p = p_d;
+    if (NULL == p->cvlist) return;
+    /* (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            if (cpv->vtype != T_CONFIG_LOCAL || NULL == cpv->v.v) continue;
+            switch (cpv->k_id) {
+              case 0: /* vhostdb.<db> */
+                mod_vhostdb_dbconf_free(cpv->v.v);
+                break;
+              default:
+                break;
             }
         }
     }
 }
-#undef PATCH
 
-/* this function is called at dlopen() time and inits the callbacks */
+static void mod_vhostdb_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
+    switch (cpv->k_id) { /* index into static config_plugin_keys_t cpk[] */
+      case 0: /* vhostdb.<db> */
+        if (cpv->vtype == T_CONFIG_LOCAL)
+            pconf->vdata = cpv->v.v;
+        break;
+      default:/* should not happen */
+        return;
+    }
+}
+
+static void mod_vhostdb_merge_config(plugin_config * const pconf, const config_plugin_value_t *cpv) {
+    do {
+        mod_vhostdb_merge_config_cpv(pconf, cpv);
+    } while ((++cpv)->k_id != -1);
+}
+
+static void mod_vhostdb_patch_config(request_st * const r, plugin_data * const p) {
+    p->conf = p->defaults; /* copy small struct instead of memcpy() */
+    /*memcpy(&p->conf, &p->defaults, sizeof(plugin_config));*/
+    for (int i = 1, used = p->nconfig; i < used; ++i) {
+        if (config_check_cond(r, (uint32_t)p->cvlist[i].k_id))
+            mod_vhostdb_merge_config(&p->conf,p->cvlist + p->cvlist[i].v.u2[0]);
+    }
+}
+
+SETDEFAULTS_FUNC(mod_vhostdb_set_defaults) {
+    static const config_plugin_keys_t cpk[] = {
+      { CONST_STR_LEN("vhostdb.ldap"),
+        T_CONFIG_ARRAY_KVSTRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ NULL, 0,
+        T_CONFIG_UNSET,
+        T_CONFIG_SCOPE_UNSET }
+    };
+
+    plugin_data * const p = p_d;
+    if (!config_plugin_values_init(srv, p, cpk, "mod_vhostdb_ldap"))
+        return HANDLER_ERROR;
+
+    /* process and validate config directives
+     * (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* vhostdb.<db> */
+                if (cpv->v.a->used) {
+                    if (0 != mod_vhostdb_dbconf_setup(srv, cpv->v.a, &cpv->v.v))
+                        return HANDLER_ERROR;
+                    if (NULL != cpv->v.v)
+                        cpv->vtype = T_CONFIG_LOCAL;
+                }
+                break;
+              default:/* should not happen */
+                break;
+            }
+        }
+    }
+
+    /* initialize p->defaults from global config context */
+    if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
+        if (-1 != cpv->k_id)
+            mod_vhostdb_merge_config(&p->defaults, cpv);
+    }
+
+    return HANDLER_GO_ON;
+}
+
+
 int mod_vhostdb_ldap_plugin_init (plugin *p);
 int mod_vhostdb_ldap_plugin_init (plugin *p)
 {
     p->version          = LIGHTTPD_VERSION_ID;
-    p->name             = buffer_init_string("vhostdb_ldap");
+    p->name             = "vhostdb_ldap";
 
     p->init             = mod_vhostdb_init;
     p->cleanup          = mod_vhostdb_cleanup;

@@ -28,12 +28,13 @@ struct http_auth_backend_t;
 
 typedef struct http_auth_require_t {
     const struct http_auth_scheme_t *scheme;
-    buffer *realm;
+    const buffer *realm;
+    const buffer *nonce_secret;
     int valid_user;
     int algorithm;
-    array *user;
-    array *group;
-    array *host;
+    array user;
+    array group;
+    array host;
 } http_auth_require_t;
 
 http_auth_require_t * http_auth_require_init (void);
@@ -53,14 +54,14 @@ typedef struct http_auth_info_t {
 
 typedef struct http_auth_backend_t {
     const char *name;
-    handler_t(*basic)(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw);
-    handler_t(*digest)(server *srv, connection *con, void *p_d, http_auth_info_t *ai);
+    handler_t(*basic)(request_st *r, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw);
+    handler_t(*digest)(request_st *r, void *p_d, http_auth_info_t *ai);
     void *p_d;
 } http_auth_backend_t;
 
 typedef struct http_auth_scheme_t {
     const char *name;
-    handler_t(*checkfn)(server *srv, connection *con, void *p_d, const struct http_auth_require_t *require, const struct http_auth_backend_t *backend);
+    handler_t(*checkfn)(request_st *r, void *p_d, const struct http_auth_require_t *require, const struct http_auth_backend_t *backend);
     /*(backend is arg only because auth.backend is separate config directive)*/
     void *p_d;
 } http_auth_scheme_t;
@@ -69,9 +70,14 @@ const http_auth_scheme_t * http_auth_scheme_get (const buffer *name);
 void http_auth_scheme_set (const http_auth_scheme_t *scheme);
 const http_auth_backend_t * http_auth_backend_get (const buffer *name);
 void http_auth_backend_set (const http_auth_backend_t *backend);
-int http_auth_const_time_memeq (const char *a, size_t alen, const char *b, size_t blen);
 
-void http_auth_setenv(connection *con, const char *username, size_t ulen, const char *auth_type, size_t alen);
+__attribute_pure__
+int http_auth_const_time_memeq (const void *a, const void *b, size_t len);
+
+__attribute_pure__
+int http_auth_const_time_memeq_pad (const void *a, size_t alen, const void *b, size_t blen);
+
+void http_auth_setenv(request_st *r, const char *username, size_t ulen, const char *auth_type, size_t alen);
 
 int http_auth_digest_hex2bin (const char *hexstr, size_t len, unsigned char *bin, size_t binlen);
 

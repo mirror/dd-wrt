@@ -9,9 +9,9 @@ inline
 static void check_base64 (char *out, const size_t out_sz, const char *in, const size_t in_len, const base64_charset enc) {
 	force_assert(out_sz == li_to_base64_no_padding(out, out_sz, (const unsigned char *)in, in_len, enc));
 
-	buffer_reset(check);
+	buffer_clear(check);
 	force_assert(NULL != buffer_append_base64_decode(check, out, out_sz, enc));
-	force_assert(buffer_is_equal_string(check, in, in_len));
+	force_assert(buffer_eq_slen(check, in, in_len));
 }
 
 static void check_all_len_0 (const base64_charset enc) {

@@ -1,8 +1,9 @@
 #include "first.h"
 
 #include "base.h"
-#include "log.h"
+#include "array.h"
 #include "buffer.h"
+#include "log.h"
 
 #include "plugin.h"
 
@@ -10,141 +11,103 @@
 #include <string.h>
 
 typedef struct {
-	array *access_allow;
-	array *access_deny;
+    const array *access_allow;
+    const array *access_deny;
 } plugin_config;
 
 typedef struct {
-	PLUGIN_DATA;
-
-	plugin_config **config_storage;
-
-	plugin_config conf;
+    PLUGIN_DATA;
+    plugin_config defaults;
+    plugin_config conf;
 } plugin_data;
 
 INIT_FUNC(mod_access_init) {
-	plugin_data *p;
-
-	p = calloc(1, sizeof(*p));
-
-	return p;
+    return calloc(1, sizeof(plugin_data));
 }
 
-FREE_FUNC(mod_access_free) {
-	plugin_data *p = p_d;
+static void mod_access_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
+    switch (cpv->k_id) { /* index into static config_plugin_keys_t cpk[] */
+      case 0: /* url.access-deny */
+        pconf->access_deny = cpv->v.a;
+        break;
+      case 1: /* url.access-allow */
+        pconf->access_allow = cpv->v.a;
+        break;
+      default:/* should not happen */
+        return;
+    }
+}
 
-	UNUSED(srv);
+static void mod_access_merge_config(plugin_config * const pconf, const config_plugin_value_t *cpv) {
+    do {
+        mod_access_merge_config_cpv(pconf, cpv);
+    } while ((++cpv)->k_id != -1);
+}
 
-	if (!p) return HANDLER_GO_ON;
-
-	if (p->config_storage) {
-		size_t i;
-		for (i = 0; i < srv->config_context->used; i++) {
-			plugin_config *s = p->config_storage[i];
-
-			if (NULL == s) continue;
-
-			array_free(s->access_allow);
-			array_free(s->access_deny);
-
-			free(s);
-		}
-		free(p->config_storage);
-	}
-
-	free(p);
-
-	return HANDLER_GO_ON;
+static void mod_access_patch_config(request_st * const r, plugin_data * const p) {
+    p->conf = p->defaults; /* copy small struct instead of memcpy() */
+    /*memcpy(&p->conf, &p->defaults, sizeof(plugin_config));*/
+    for (int i = 1, used = p->nconfig; i < used; ++i) {
+        if (config_check_cond(r, (uint32_t)p->cvlist[i].k_id))
+            mod_access_merge_config(&p->conf, p->cvlist + p->cvlist[i].v.u2[0]);
+    }
 }
 
 SETDEFAULTS_FUNC(mod_access_set_defaults) {
-	plugin_data *p = p_d;
-	size_t i = 0;
+    static const config_plugin_keys_t cpk[] = {
+      { CONST_STR_LEN("url.access-deny"),
+        T_CONFIG_ARRAY_VLIST,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("url.access-allow"),
+        T_CONFIG_ARRAY_VLIST,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ NULL, 0,
+        T_CONFIG_UNSET,
+        T_CONFIG_SCOPE_UNSET }
+    };
 
-	config_values_t cv[] = {
-		{ "url.access-deny",             NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },
-		{ "url.access-allow",            NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },
-		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
-	};
+    plugin_data * const p = p_d;
+    if (!config_plugin_values_init(srv, p, cpk, "mod_access"))
+        return HANDLER_ERROR;
 
-	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
+    /* initialize p->defaults from global config context */
+    if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
+        if (-1 != cpv->k_id)
+            mod_access_merge_config(&p->defaults, cpv);
+    }
 
-	for (i = 0; i < srv->config_context->used; i++) {
-		data_config const* config = (data_config const*)srv->config_context->data[i];
-		plugin_config *s;
-
-		s = calloc(1, sizeof(plugin_config));
-		s->access_deny    = array_init();
-		s->access_allow   = array_init();
-
-		cv[0].destination = s->access_deny;
-		cv[1].destination = s->access_allow;
-
-		p->config_storage[i] = s;
-
-		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
-			return HANDLER_ERROR;
-		}
-
-		if (!array_is_vlist(s->access_deny)) {
-			log_error_write(srv, __FILE__, __LINE__, "s",
-					"unexpected value for url.access-deny; expected list of \"suffix\"");
-			return HANDLER_ERROR;
-		}
-
-		if (!array_is_vlist(s->access_allow)) {
-			log_error_write(srv, __FILE__, __LINE__, "s",
-					"unexpected value for url.access-allow; expected list of \"suffix\"");
-			return HANDLER_ERROR;
-		}
-	}
-
-	return HANDLER_GO_ON;
+    return HANDLER_GO_ON;
 }
 
-#define PATCH(x) \
-	p->conf.x = s->x;
-static int mod_access_patch_connection(server *srv, connection *con, plugin_data *p) {
-	size_t i, j;
-	plugin_config *s = p->config_storage[0];
+__attribute_cold__
+static handler_t mod_access_reject (request_st * const r, plugin_data * const p) {
+    if (r->conf.log_request_handling) {
+        if (p->conf.access_allow && p->conf.access_allow->used)
+            log_error(r->conf.errh, __FILE__, __LINE__,
+              "url denied as failed to match any from access_allow %s",
+              r->uri.path.ptr);
+        else
+            log_error(r->conf.errh, __FILE__, __LINE__,
+              "url denied as we match access_deny %s",
+              r->uri.path.ptr);
+    }
 
-	PATCH(access_allow);
-	PATCH(access_deny);
-
-	/* skip the first, the global context */
-	for (i = 1; i < srv->config_context->used; i++) {
-		data_config *dc = (data_config *)srv->config_context->data[i];
-		s = p->config_storage[i];
-
-		/* condition didn't match */
-		if (!config_check_cond(srv, con, dc)) continue;
-
-		/* merge config */
-		for (j = 0; j < dc->value->used; j++) {
-			data_unset *du = dc->value->data[j];
-
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN("url.access-deny"))) {
-				PATCH(access_deny);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("url.access-allow"))) {
-				PATCH(access_allow);
-			}
-		}
-	}
-
-	return 0;
+    r->http_status = 403;
+    r->handler_module = NULL;
+    return HANDLER_FINISHED;
 }
-#undef PATCH
 
 static int mod_access_check (const array *allow, const array *deny, const buffer *urlpath, const int lc) {
 
-    if (allow->used) {
+    if (allow && allow->used) {
         const buffer *match = (!lc)
           ? array_match_value_suffix(allow, urlpath)
           : array_match_value_suffix_nc(allow, urlpath);
         return (match != NULL); /* allowed if match; denied if none matched */
     }
 
-    if (deny->used) {
+    if (deny && deny->used) {
         const buffer *match = (!lc)
           ? array_match_value_suffix(deny, urlpath)
           : array_match_value_suffix_nc(deny, urlpath);
@@ -164,53 +127,35 @@ static int mod_access_check (const array *allow, const array *deny, const buffer
  * this handles the issue of trailing slashes
  */
 URIHANDLER_FUNC(mod_access_uri_handler) {
-	plugin_data *p = p_d;
-	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
+    plugin_data *p = p_d;
 
-	mod_access_patch_connection(srv, con, p);
+    mod_access_patch_config(r, p);
 
-	if (0 == p->conf.access_allow->used && 0 == p->conf.access_deny->used) {
-		return HANDLER_GO_ON; /* access allowed; nothing to match */
-	}
+    if (NULL == p->conf.access_allow && NULL == p->conf.access_deny) {
+        return HANDLER_GO_ON; /* access allowed; nothing to match */
+    }
 
-	if (con->conf.log_request_handling) {
-		log_error_write(srv, __FILE__, __LINE__, "s",
-				"-- mod_access_uri_handler called");
-	}
+    if (r->conf.log_request_handling) {
+        log_error(r->conf.errh, __FILE__, __LINE__,
+          "-- mod_access_uri_handler called");
+    }
 
-	if (mod_access_check(p->conf.access_allow, p->conf.access_deny,
-			     con->uri.path, con->conf.force_lowercase_filenames)) {
-		return HANDLER_GO_ON; /* access allowed */
-	}
-
-	/* (else) access denied */
-	if (con->conf.log_request_handling) {
-		if (p->conf.access_allow->used) {
-			log_error_write(srv, __FILE__, __LINE__, "sb", "url denied as failed to match any from access_allow", con->uri.path);
-		}
-		else {
-			log_error_write(srv, __FILE__, __LINE__, "sb", "url denied as we match access_deny", con->uri.path);
-		}
-	}
-
-	con->http_status = 403;
-	con->mode = DIRECT;
-	return HANDLER_FINISHED;
+    return mod_access_check(p->conf.access_allow, p->conf.access_deny,
+                            &r->uri.path, r->conf.force_lowercase_filenames)
+      ? HANDLER_GO_ON              /* access allowed */
+      : mod_access_reject(r, p);   /* access denied */
 }
 
 
 int mod_access_plugin_init(plugin *p);
 int mod_access_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;
-	p->name        = buffer_init_string("access");
+	p->name        = "access";
 
 	p->init        = mod_access_init;
 	p->set_defaults = mod_access_set_defaults;
 	p->handle_uri_clean = mod_access_uri_handler;
 	p->handle_subrequest_start  = mod_access_uri_handler;
-	p->cleanup     = mod_access_free;
-
-	p->data        = NULL;
 
 	return 0;
 }

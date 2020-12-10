@@ -52,171 +52,165 @@
  *
  * Note:
  * 	GeoIP Library and API must be installed!
+ *
+ *
+ * Fully-rewritten from original
+ * Copyright(c) 2016 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
+ * License: BSD 3-clause (same as lighttpd)
  */
 
 
-/* plugin config for all request/connections */
-
 typedef struct {
-	unsigned short mem_cache;
-	buffer	*db_name;
-	GeoIP   *gi;
+    GeoIP *gi;
 } plugin_config;
 
 typedef struct {
-	PLUGIN_DATA;
-
-	plugin_config **config_storage;
-
-	plugin_config conf;
+    PLUGIN_DATA;
+    plugin_config defaults;
+    plugin_config conf;
 } plugin_data;
 
-/* init the plugin data */
 INIT_FUNC(mod_geoip_init) {
-	plugin_data *p;
-
-	p = calloc(1, sizeof(*p));
-
-	return p;
+    return calloc(1, sizeof(plugin_data));
 }
 
-/* destroy the plugin data */
 FREE_FUNC(mod_geoip_free) {
-	plugin_data *p = p_d;
-
-	UNUSED(srv);
-
-	if (!p) return HANDLER_GO_ON;
-
-	if (p->config_storage) {
-		size_t i;
-
-		for (i = 0; i < srv->config_context->used; i++) {
-			plugin_config *s = p->config_storage[i];
-
-			if (!s) continue;
-
-			buffer_free(s->db_name);
-
-			/* clean up */
-			if (s->gi) GeoIP_delete(s->gi);
-
-			free(s);
-		}
-		free(p->config_storage);
-	}
-
-	free(p);
-
-	return HANDLER_GO_ON;
+    plugin_data * const p = p_d;
+    if (NULL == p->cvlist) return;
+    /* (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* geoip.db-filename */
+                if (cpv->vtype == T_CONFIG_LOCAL && NULL != cpv->v.v)
+                    GeoIP_delete(cpv->v.v);
+                break;
+              default:
+                break;
+            }
+        }
+    }
 }
 
-/* handle plugin config and check values */
+static int mod_geoip_open_db(server *srv, config_plugin_value_t * const cpv, int mem_cache) {
+    /* country db filename is required! */
+    if (buffer_is_empty(cpv->v.b)) {
+        cpv->v.v = NULL;
+        return 1;
+    }
+
+    /* let's start cooking */
+    const int mode = (mem_cache)
+      ? GEOIP_MEMORY_CACHE | GEOIP_CHECK_CACHE
+      : GEOIP_STANDARD | GEOIP_CHECK_CACHE;
+
+    GeoIP *gi = GeoIP_open(cpv->v.b->ptr, mode);
+    if (NULL == gi) {
+        log_error(srv->errh, __FILE__, __LINE__,
+          "failed to open GeoIP database!!!");
+        return 0;
+    }
+
+    /* is the db supported ? */
+    if (   gi->databaseType != GEOIP_COUNTRY_EDITION
+        && gi->databaseType != GEOIP_CITY_EDITION_REV0
+        && gi->databaseType != GEOIP_CITY_EDITION_REV1) {
+        log_error(srv->errh, __FILE__, __LINE__,
+          "GeoIP database is of unsupported type!!!");
+        GeoIP_delete(gi);
+        return 0;
+    }
+
+    cpv->vtype = T_CONFIG_LOCAL;
+    cpv->v.v = gi;
+    return 1;
+}
+
+static void mod_geoip_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
+    switch (cpv->k_id) { /* index into static config_plugin_keys_t cpk[] */
+      case 0: /* geoip.db-filename */
+        if (cpv->vtype != T_CONFIG_LOCAL) break;
+        pconf->gi = cpv->v.v;
+        break;
+      case 1: /* geoip.memory-cache */
+        break;
+      default:/* should not happen */
+        return;
+    }
+}
+
+static void mod_geoip_merge_config(plugin_config * const pconf, const config_plugin_value_t *cpv) {
+    do {
+        mod_geoip_merge_config_cpv(pconf, cpv);
+    } while ((++cpv)->k_id != -1);
+}
+
+static void mod_geoip_patch_config(request_st * const r, plugin_data * const p) {
+    p->conf = p->defaults; /* copy small struct instead of memcpy() */
+    /*memcpy(&p->conf, &p->defaults, sizeof(plugin_config));*/
+    for (int i = 1, used = p->nconfig; i < used; ++i) {
+        if (config_check_cond(r, (uint32_t)p->cvlist[i].k_id))
+            mod_geoip_merge_config(&p->conf, p->cvlist + p->cvlist[i].v.u2[0]);
+    }
+}
 
 SETDEFAULTS_FUNC(mod_geoip_set_defaults) {
-	plugin_data *p = p_d;
-	size_t i = 0;
+    static const config_plugin_keys_t cpk[] = {
+      { CONST_STR_LEN("geoip.db-filename"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("geoip.memory-cache"),
+        T_CONFIG_BOOL,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ NULL, 0,
+        T_CONFIG_UNSET,
+        T_CONFIG_SCOPE_UNSET }
+    };
 
-	config_values_t cv[] = {
-		{ "geoip.db-filename",	NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },	/* 0 */
-		{ "geoip.memory-cache",	NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },    /* 1 */
-		{ NULL,			NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
-	};
+    plugin_data * const p = p_d;
+    if (!config_plugin_values_init(srv, p, cpk, "mod_geoip"))
+        return HANDLER_ERROR;
 
-	if (!p) return HANDLER_ERROR;
+    /* process and validate config directives
+     * (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        config_plugin_value_t *fn = NULL;
+        int mem_cache = 0;
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* geoip.db-filename */
+                fn = cpv;
+                break;
+              case 1: /* geoip.memory-cache */
+                mem_cache = cpv->v.u;
+                break;
+              default:/* should not happen */
+                break;
+            }
+        }
+        if (fn) {
+            if (!mod_geoip_open_db(srv, fn, mem_cache))
+                return HANDLER_ERROR;
+        }
+    }
 
-	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
+    /* initialize p->defaults from global config context */
+    if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
+        if (-1 != cpv->k_id)
+            mod_geoip_merge_config(&p->defaults, cpv);
+    }
 
-	for (i = 0; i < srv->config_context->used; i++) {
-		data_config const* config = (data_config const*)srv->config_context->data[i];
-		plugin_config *s;
-		int mode;
-
-		s = calloc(1, sizeof(plugin_config));
-
-		s->db_name = buffer_init();
-		s->mem_cache = 0; /* default: do not load db to cache */
-		s->gi = NULL;
-
-		cv[0].destination = s->db_name;
-		cv[1].destination = &(s->mem_cache);
-
-		p->config_storage[i] = s;
-
-		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
-			return HANDLER_ERROR;
-		}
-
-		mode = GEOIP_STANDARD | GEOIP_CHECK_CACHE;
-
-		/* country db filename is requeried! */
-		if (!buffer_is_empty(s->db_name)) {
-
-			/* let's start cooking */
-			if (s->mem_cache != 0)
-				mode = GEOIP_MEMORY_CACHE | GEOIP_CHECK_CACHE;
-
-			if (NULL == (s->gi = GeoIP_open(s->db_name->ptr, mode))) {
-				log_error_write(srv, __FILE__, __LINE__, "s",
-					"failed to open GeoIP database!!!");
-
-				return HANDLER_ERROR;
-			}
-
-			/* is the db supported ? */
-			if (s->gi->databaseType != GEOIP_COUNTRY_EDITION &&
-				s->gi->databaseType != GEOIP_CITY_EDITION_REV0 &&
-				s->gi->databaseType != GEOIP_CITY_EDITION_REV1) {
-				log_error_write(srv, __FILE__, __LINE__, "s",
-					"GeoIP database is of unsupported type!!!");
-			}
-		}
-	}
-
-	return HANDLER_GO_ON;
+    return HANDLER_GO_ON;
 }
 
-#define PATCH(x) \
-	p->conf.x = s->x;
-static int mod_geoip_patch_connection(server *srv, connection *con, plugin_data *p) {
-	size_t i, j;
-	plugin_config *s = p->config_storage[0];
-
-	PATCH(db_name);
-	PATCH(mem_cache);
-	PATCH(gi);
-
-	/* skip the first, the global context */
-	for (i = 1; i < srv->config_context->used; i++) {
-		data_config *dc = (data_config *)srv->config_context->data[i];
-		s = p->config_storage[i];
-
-		/* condition didn't match */
-		if (!config_check_cond(srv, con, dc)) continue;
-
-		/* merge config */
-		for (j = 0; j < dc->value->used; j++) {
-			data_unset *du = dc->value->data[j];
-
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN("geoip.db-filename"))) {
-				PATCH(db_name);
-			}
-
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN("geoip.memory-cache"))) {
-				PATCH(mem_cache);
-			}
-		}
-	}
-
-	return 0;
-}
-#undef PATCH
-
-static handler_t mod_geoip_query (connection *con, plugin_data *p) {
+static handler_t mod_geoip_query (request_st * const r, plugin_data * const p) {
     GeoIPRecord *gir;
-    const char *remote_ip = con->dst_addr_buf->ptr;
+    const char *remote_ip = r->con->dst_addr_buf->ptr;
 
-    if (NULL != http_header_env_get(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE"))) {
+    if (NULL != http_header_env_get(r, CONST_STR_LEN("GEOIP_COUNTRY_CODE"))) {
         return HANDLER_GO_ON;
     }
 
@@ -224,15 +218,15 @@ static handler_t mod_geoip_query (connection *con, plugin_data *p) {
         const char *returnedCountry;
 
         if (NULL != (returnedCountry = GeoIP_country_code_by_addr(p->conf.gi, remote_ip))) {
-            http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE"), returnedCountry, strlen(returnedCountry));
+            http_header_env_set(r, CONST_STR_LEN("GEOIP_COUNTRY_CODE"), returnedCountry, strlen(returnedCountry));
         }
 
         if (NULL != (returnedCountry = GeoIP_country_code3_by_addr(p->conf.gi, remote_ip))) {
-            http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE3"), returnedCountry, strlen(returnedCountry));
+            http_header_env_set(r, CONST_STR_LEN("GEOIP_COUNTRY_CODE3"), returnedCountry, strlen(returnedCountry));
         }
 
         if (NULL != (returnedCountry = GeoIP_country_name_by_addr(p->conf.gi, remote_ip))) {
-            http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_NAME"), returnedCountry, strlen(returnedCountry));
+            http_header_env_set(r, CONST_STR_LEN("GEOIP_COUNTRY_NAME"), returnedCountry, strlen(returnedCountry));
         }
 
         return HANDLER_GO_ON;
@@ -242,35 +236,35 @@ static handler_t mod_geoip_query (connection *con, plugin_data *p) {
 
     if (NULL != (gir = GeoIP_record_by_addr(p->conf.gi, remote_ip))) {
 
-        http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE"), gir->country_code, strlen(gir->country_code));
-        http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE3"), gir->country_code3, strlen(gir->country_code3));
-        http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_NAME"), gir->country_name, strlen(gir->country_name));
-        http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_REGION"), gir->region, strlen(gir->region));
-        http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_NAME"), gir->city, strlen(gir->city));
-        http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_POSTAL_CODE"), gir->postal_code, strlen(gir->postal_code));
+        http_header_env_set(r, CONST_STR_LEN("GEOIP_COUNTRY_CODE"), gir->country_code, strlen(gir->country_code));
+        http_header_env_set(r, CONST_STR_LEN("GEOIP_COUNTRY_CODE3"), gir->country_code3, strlen(gir->country_code3));
+        http_header_env_set(r, CONST_STR_LEN("GEOIP_COUNTRY_NAME"), gir->country_name, strlen(gir->country_name));
+        http_header_env_set(r, CONST_STR_LEN("GEOIP_CITY_REGION"), gir->region, strlen(gir->region));
+        http_header_env_set(r, CONST_STR_LEN("GEOIP_CITY_NAME"), gir->city, strlen(gir->city));
+        http_header_env_set(r, CONST_STR_LEN("GEOIP_CITY_POSTAL_CODE"), gir->postal_code, strlen(gir->postal_code));
 
         {
             char latitude[32];
             snprintf(latitude, sizeof(latitude), "%f", gir->latitude);
-            http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_LATITUDE"), latitude, strlen(latitude));
+            http_header_env_set(r, CONST_STR_LEN("GEOIP_CITY_LATITUDE"), latitude, strlen(latitude));
         }
 
         {
             char long_latitude[32];
             snprintf(long_latitude, sizeof(long_latitude), "%f", gir->longitude);
-            http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_LONG_LATITUDE"), long_latitude, strlen(long_latitude));
+            http_header_env_set(r, CONST_STR_LEN("GEOIP_CITY_LONG_LATITUDE"), long_latitude, strlen(long_latitude));
         }
 
         {
             char dc[LI_ITOSTRING_LENGTH];
-            li_utostrn(dc, sizeof(dc), gir->dma_code);
-            http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_DMA_CODE"), dc, strlen(dc));
+            http_header_env_set(r, CONST_STR_LEN("GEOIP_CITY_DMA_CODE"),
+                                dc, li_utostrn(dc, sizeof(dc), gir->dma_code));
         }
 
         {
             char ac[LI_ITOSTRING_LENGTH];
-            li_utostrn(ac, sizeof(ac), gir->area_code);
-            http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_AREA_CODE"), ac, strlen(ac));
+            http_header_env_set(r, CONST_STR_LEN("GEOIP_CITY_AREA_CODE"),
+                                ac, li_utostrn(ac, sizeof(ac), gir->area_code));
         }
 
         GeoIPRecord_delete(gir);
@@ -279,27 +273,22 @@ static handler_t mod_geoip_query (connection *con, plugin_data *p) {
     return HANDLER_GO_ON;
 }
 
-CONNECTION_FUNC(mod_geoip_handle_request_env) {
-	plugin_data *p = p_d;
-	mod_geoip_patch_connection(srv, con, p);
-	if (buffer_is_empty(p->conf.db_name)) return HANDLER_GO_ON;
-
-	return mod_geoip_query(con, p);
+REQUEST_FUNC(mod_geoip_handle_request_env) {
+    plugin_data *p = p_d;
+    mod_geoip_patch_config(r, p);
+    return (p->conf.gi) ? mod_geoip_query(r, p) : HANDLER_GO_ON;
 }
 
-/* this function is called at dlopen() time and inits the callbacks */
 
 int mod_geoip_plugin_init(plugin *p);
 int mod_geoip_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;
-	p->name        = buffer_init_string("geoip");
+	p->name        = "geoip";
 
 	p->init        = mod_geoip_init;
 	p->handle_request_env = mod_geoip_handle_request_env;
 	p->set_defaults  = mod_geoip_set_defaults;
 	p->cleanup     = mod_geoip_free;
-
-	p->data        = NULL;
 
 	return 0;
 }

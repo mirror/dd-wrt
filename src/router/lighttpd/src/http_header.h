@@ -5,55 +5,120 @@
 #include "base_decls.h"
 #include "buffer.h"
 
+/* HTTP header enum for select HTTP field-names
+ * reference:
+ *   https://www.iana.org/assignments/message-headers/message-headers.xml
+ *   https://en.wikipedia.org/wiki/List_of_HTTP_header_fields
+ */
 /* Note: must be kept in sync with http_header.c http_headers[] */
+/* Note: must be kept in sync h2.c:http_header_lc[] */
+/* Note: must be kept in sync h2.c:http_header_lshpack_idx[] */
+/* Note: must be kept in sync h2.c:lshpack_idx_http_header[] */
 /* Note: when adding new items, must replace OTHER in existing code for item */
+/* Note: current implementation has limit of 64 htags
+ *       Use of htags is an optimization for quick existence checks in lighttpd.
+ *       (In the future, these values may also be used to map to HPACK indices.)
+ *       However, listing all possible headers here is highly discouraged,
+ *       as extending the bitmap greater than 64-bits may make quick bitmasks
+ *       check more expensive, and the cost for looking up unmarked headers
+ *       (HTTP_HEADER_OTHER) is not substantially more.  In the future, this
+ *       list may be revisitied and reviewed, and less frequent headers removed
+ *       or replaced.
+ */
 enum http_header_e {
-  HTTP_HEADER_UNSPECIFIED       = -1
- ,HTTP_HEADER_OTHER             = 0x00000000
- ,HTTP_HEADER_ACCEPT_ENCODING   = 0x00000001
- ,HTTP_HEADER_AUTHORIZATION     = 0x00000002
- ,HTTP_HEADER_CACHE_CONTROL     = 0x00000004
- ,HTTP_HEADER_CONNECTION        = 0x00000008
- ,HTTP_HEADER_CONTENT_ENCODING  = 0x00000010
- ,HTTP_HEADER_CONTENT_LENGTH    = 0x00000020
- ,HTTP_HEADER_CONTENT_LOCATION  = 0x00000040
- ,HTTP_HEADER_CONTENT_TYPE      = 0x00000080
- ,HTTP_HEADER_COOKIE            = 0x00000100
- ,HTTP_HEADER_DATE              = 0x00000200
- ,HTTP_HEADER_ETAG              = 0x00000400
- ,HTTP_HEADER_EXPECT            = 0x00000800
- ,HTTP_HEADER_FORWARDED         = 0x00001000
- ,HTTP_HEADER_HOST              = 0x00002000
- ,HTTP_HEADER_IF_MODIFIED_SINCE = 0x00004000
- ,HTTP_HEADER_IF_NONE_MATCH     = 0x00008000
- ,HTTP_HEADER_LAST_MODIFIED     = 0x00010000
- ,HTTP_HEADER_LOCATION          = 0x00020000
- ,HTTP_HEADER_RANGE             = 0x00040000
- ,HTTP_HEADER_SERVER            = 0x00080000
- ,HTTP_HEADER_SET_COOKIE        = 0x00100000
- ,HTTP_HEADER_STATUS            = 0x00200000
- ,HTTP_HEADER_TRANSFER_ENCODING = 0x00400000
- ,HTTP_HEADER_UPGRADE           = 0x00800000
- ,HTTP_HEADER_VARY              = 0x01000000
- ,HTTP_HEADER_X_FORWARDED_FOR   = 0x02000000
- ,HTTP_HEADER_X_FORWARDED_PROTO = 0x04000000
+  HTTP_HEADER_OTHER = 0
+ ,HTTP_HEADER_ACCEPT
+ ,HTTP_HEADER_ACCEPT_ENCODING
+ ,HTTP_HEADER_ACCEPT_LANGUAGE
+ ,HTTP_HEADER_ACCEPT_RANGES
+ ,HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN
+ ,HTTP_HEADER_AGE
+ ,HTTP_HEADER_ALLOW
+ ,HTTP_HEADER_ALT_SVC
+ ,HTTP_HEADER_ALT_USED
+ ,HTTP_HEADER_AUTHORIZATION
+ ,HTTP_HEADER_CACHE_CONTROL
+ ,HTTP_HEADER_CONNECTION
+ ,HTTP_HEADER_CONTENT_ENCODING
+ ,HTTP_HEADER_CONTENT_LENGTH
+ ,HTTP_HEADER_CONTENT_LOCATION
+ ,HTTP_HEADER_CONTENT_RANGE
+ ,HTTP_HEADER_CONTENT_SECURITY_POLICY
+ ,HTTP_HEADER_CONTENT_TYPE
+ ,HTTP_HEADER_COOKIE
+ ,HTTP_HEADER_DATE
+ ,HTTP_HEADER_DNT
+ ,HTTP_HEADER_ETAG
+ ,HTTP_HEADER_EXPECT
+ ,HTTP_HEADER_EXPECT_CT
+ ,HTTP_HEADER_EXPIRES
+ ,HTTP_HEADER_FORWARDED
+ ,HTTP_HEADER_HOST
+ ,HTTP_HEADER_HTTP2_SETTINGS
+ ,HTTP_HEADER_IF_MATCH
+ ,HTTP_HEADER_IF_MODIFIED_SINCE
+ ,HTTP_HEADER_IF_NONE_MATCH
+ ,HTTP_HEADER_IF_RANGE
+ ,HTTP_HEADER_IF_UNMODIFIED_SINCE
+ ,HTTP_HEADER_LAST_MODIFIED
+ ,HTTP_HEADER_LINK
+ ,HTTP_HEADER_LOCATION
+ ,HTTP_HEADER_ONION_LOCATION
+ ,HTTP_HEADER_P3P
+ ,HTTP_HEADER_PRAGMA
+ ,HTTP_HEADER_RANGE
+ ,HTTP_HEADER_REFERER
+ ,HTTP_HEADER_REFERRER_POLICY
+ ,HTTP_HEADER_SERVER
+ ,HTTP_HEADER_SET_COOKIE
+ ,HTTP_HEADER_STATUS
+ ,HTTP_HEADER_STRICT_TRANSPORT_SECURITY
+ ,HTTP_HEADER_TE
+ ,HTTP_HEADER_TRANSFER_ENCODING
+ ,HTTP_HEADER_UPGRADE
+ ,HTTP_HEADER_UPGRADE_INSECURE_REQUESTS
+ ,HTTP_HEADER_USER_AGENT
+ ,HTTP_HEADER_VARY
+ ,HTTP_HEADER_WWW_AUTHENTICATE
+ ,HTTP_HEADER_X_CONTENT_TYPE_OPTIONS
+ ,HTTP_HEADER_X_FORWARDED_FOR
+ ,HTTP_HEADER_X_FORWARDED_PROTO
+ ,HTTP_HEADER_X_FRAME_OPTIONS
+ ,HTTP_HEADER_X_XSS_PROTECTION
 };
 
-enum http_header_e http_header_hkey_get(const char *s, size_t slen);
+__attribute_pure__
+enum http_header_e http_header_hkey_get(const char *s, uint32_t slen);
+__attribute_pure__
+enum http_header_e http_header_hkey_get_lc(const char *s, uint32_t slen);
 
-buffer * http_header_response_get(connection *con, enum http_header_e id, const char *k, size_t klen);
-void http_header_response_unset(connection *con, enum http_header_e id, const char *k, size_t klen);
-void http_header_response_set(connection *con, enum http_header_e id, const char *k, size_t klen, const char *v, size_t vlen);
-void http_header_response_append(connection *con, enum http_header_e id, const char *k, size_t klen, const char *v, size_t vlen);
-void http_header_response_insert(connection *con, enum http_header_e id, const char *k, size_t klen, const char *v, size_t vlen);
+__attribute_pure__
+int http_header_str_to_code (const char * const s);
 
-buffer * http_header_request_get(connection *con, enum http_header_e id, const char *k, size_t klen);
-void http_header_request_unset(connection *con, enum http_header_e id, const char *k, size_t klen);
-void http_header_request_set(connection *con, enum http_header_e id, const char *k, size_t klen, const char *v, size_t vlen);
-void http_header_request_append(connection *con, enum http_header_e id, const char *k, size_t klen, const char *v, size_t vlen);
+__attribute_pure__
+int http_header_str_contains_token (const char *s, uint32_t slen, const char *m, uint32_t mlen);
 
-buffer * http_header_env_get(connection *con, const char *k, size_t klen);
-void http_header_env_set(connection *con, const char *k, size_t klen, const char *v, size_t vlen);
-void http_header_env_append(connection *con, const char *k, size_t klen, const char *v, size_t vlen);
+int http_header_remove_token (buffer * const b, const char * const m, const uint32_t mlen);
+
+__attribute_pure__
+buffer * http_header_response_get(const request_st *r, enum http_header_e id, const char *k, uint32_t klen);
+void http_header_response_unset(request_st *r, enum http_header_e id, const char *k, uint32_t klen);
+void http_header_response_set(request_st *r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen);
+void http_header_response_append(request_st *r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen);
+void http_header_response_insert(request_st *r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen);
+
+__attribute_pure__
+buffer * http_header_request_get(const request_st *r, enum http_header_e id, const char *k, uint32_t klen);
+void http_header_request_unset(request_st *r, enum http_header_e id, const char *k, uint32_t klen);
+void http_header_request_set(request_st *r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen);
+void http_header_request_append(request_st *r, enum http_header_e id, const char *k, uint32_t klen, const char *v, uint32_t vlen);
+
+__attribute_pure__
+buffer * http_header_env_get(const request_st *r, const char *k, uint32_t klen);
+void http_header_env_set(request_st *r, const char *k, uint32_t klen, const char *v, uint32_t vlen);
+void http_header_env_append(request_st *r, const char *k, uint32_t klen, const char *v, uint32_t vlen);
+
+__attribute_hot__
+uint32_t http_header_parse_hoff (const char *n, const uint32_t clen, unsigned short hoff[8192]);
 
 #endif

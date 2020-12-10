@@ -1,8 +1,8 @@
 #include "first.h"
 typedef int innocuous_typedef_to_quiet_empty_translation_unit_compiler_warning;
 
-#include "sys-crypto.h"
-#ifndef USE_OPENSSL_CRYPTO
+#include "sys-crypto-md.h"
+#ifndef USE_LIB_CRYPTO_SHA1
 
 #include "sys-endian.h"
 #include "algo_sha1.h"
@@ -66,6 +66,7 @@ typedef union _BYTE64QUAD16 {
 } BYTE64QUAD16;
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
+static
 void SHA1_Transform(sha1_quadbyte state[5], const sha1_byte buffer[64]) {
     sha1_quadbyte a, b, c, d, e;
     BYTE64QUAD16 src;

@@ -23,14 +23,13 @@ set(T_FILES
 	lowercase.t
 	mod-auth.t
 	mod-cgi.t
-	mod-compress.t
+	mod-deflate.t
 	mod-extforward.t
 	mod-fastcgi.t
 	mod-proxy.t
 	mod-secdownload.t
 	mod-setenv.t
 	mod-ssi.t
-	mod-userdir.t
 	request.t
 	symlink.t
 	cleanup.sh
