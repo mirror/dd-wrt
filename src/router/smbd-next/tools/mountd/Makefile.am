@@ -5,4 +5,5 @@ smbd_multicall_LDADD = $(top_builddir)/lib/libksmbdtools.la -L$(TOP)/libutils -L
 
 sbin_PROGRAMS = smbd_multicall
 
-smbd_multicall_SOURCES = worker.c ipc.c rpc.c rpc_srvsvc.c rpc_wkssvc.c mountd.c multicall.c ../adduser/md4_hash.c ../adduser/user_admin.c ../adduser/adduser.c ../addshare/share_admin.c ../addshare/addshare.c smbacl.c rpc_samr.c rpc_lsarpc.c
+smbd_multicall_SOURCES = worker.c ipc.c rpc.c rpc_srvsvc.c rpc_wkssvc.c mountd.c multicall.c ../adduser/md4_hash.c ../adduser/user_admin.c ../adduser/adduser.c ../addshare/share_admin.c ../addshare/addshare.c smbacl.c
+#rpc_samr.c rpc_lsarpc.c

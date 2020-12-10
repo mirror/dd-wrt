@@ -8,6 +8,7 @@
 #ifndef __KSMBD_RPC_H__
 #define __KSMBD_RPC_H__
 
+#include <sys/types.h>
 #include <linux/types.h>
 
 #define KSMBD_DCERPC_LITTLE_ENDIAN	(1 << 0)

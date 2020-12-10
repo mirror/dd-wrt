@@ -10,7 +10,6 @@
 #define __KSMBD_SMBACL_H__
 
 #include <linux/types.h>
-#include <glib.h>
 #include <rpc.h>
 
 #define NUM_AUTHS (6)	/* number of authority fields */

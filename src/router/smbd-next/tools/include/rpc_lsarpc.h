@@ -9,6 +9,7 @@
 #define __KSMBD_RPC_LSARPC_H__
 
 #include <smbacl.h>
+#include <limits.h>
 
 #define HANDLE_SIZE	20
 

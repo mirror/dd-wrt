@@ -467,14 +467,14 @@ int ndr_write_string(struct ksmbd_dcerpc *dce, char *str)
 	ret |= ndr_write_bytes(dce, out, bytes_written);
 	auto_align_offset(dce);
 
-	g_free(out);
+	free(out);
 	return ret;
 }
 
 int ndr_write_lsa_string(struct ksmbd_dcerpc *dce, char *str)
 {
-	gchar *out;
-	gsize bytes_written = 0;
+	char *out;
+	size_t bytes_written = 0;
 
 	size_t len;
 	int ret;
@@ -493,7 +493,7 @@ int ndr_write_lsa_string(struct ksmbd_dcerpc *dce, char *str)
 	ret |= ndr_write_bytes(dce, out, bytes_written);
 	auto_align_offset(dce);
 
-	g_free(out);
+	free(out);
 	return ret;
 }
 
@@ -691,8 +691,10 @@ int rpc_init(void)
 	list_init(&pipes_table);
 	if (!pipes_table)
 		return -ENOMEM;
+#ifdef CONFIG_KRB5
 	rpc_samr_init();
 	rpc_lsarpc_init();
+#endif
 	return 0;
 }
 
@@ -704,8 +706,10 @@ void rpc_destroy(void)
 	}
 	pthread_mutex_destroy(&request_lock);
 	pthread_rwlock_destroy(&pipes_table_lock);
+#ifdef CONFIG_KRB5
 	rpc_samr_destroy();
 	rpc_lsarpc_destroy();
+#endif
 }
 
 static int dcerpc_hdr_write(struct ksmbd_dcerpc *dce, struct dcerpc_header *hdr)
@@ -1110,12 +1114,14 @@ int rpc_read_request(struct ksmbd_rpc_command *req,
 		ret = rpc_wkssvc_read_request(pipe, resp, max_resp_sz);
 		goto err;
 	}
+#ifdef CONFIG_KRB5
 	if (req->flags & KSMBD_RPC_SAMR_METHOD_INVOKE) {
 		ret = rpc_samr_read_request(pipe, resp, max_resp_sz);
 		goto err;
 	}
 	if (req->flags & KSMBD_RPC_LSARPC_METHOD_INVOKE)
 		ret = rpc_lsarpc_read_request(pipe, resp, max_resp_sz);
+#endif
 
 	err:;
 	pthread_mutex_unlock(&request_lock);
@@ -1175,6 +1181,7 @@ int rpc_write_request(struct ksmbd_rpc_command *req,
 		ret = rpc_wkssvc_write_request(pipe);
 		goto end;
 	}
+#ifdef CONFIG_KRB5
 	if (req->flags & KSMBD_RPC_SAMR_METHOD_INVOKE) {
 		ret =rpc_samr_write_request(pipe);
 		goto end;
@@ -1182,6 +1189,7 @@ int rpc_write_request(struct ksmbd_rpc_command *req,
 	if (req->flags & KSMBD_RPC_LSARPC_METHOD_INVOKE) {
 		ret = rpc_lsarpc_write_request(pipe);
 	}
+#endif
 	end:;
 	pthread_mutex_unlock(&request_lock);
 	return ret;
