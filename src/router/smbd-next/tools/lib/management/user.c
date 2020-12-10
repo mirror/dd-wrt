@@ -251,7 +251,7 @@ int usm_add_subauth_global_conf(char *data)
 	}
 
 	*spos = 0x00;
-	global_conf.gen_subauth[0] = atoi(g_strdup(pos));
+	global_conf.gen_subauth[0] = atoi(pos);
 	pos = spos + 1;
 
 	spos = strchr(pos, ':');
@@ -260,8 +260,8 @@ int usm_add_subauth_global_conf(char *data)
 		return -EINVAL;
 	}
 	*spos = 0x00;
-	global_conf.gen_subauth[1] = atoi(g_strdup(pos));
-	global_conf.gen_subauth[2] = atoi(g_strdup(spos + 1));
+	global_conf.gen_subauth[1] = atoi(pos);
+	global_conf.gen_subauth[2] = atoi(spos + 1);
 
 	return 0;
 }

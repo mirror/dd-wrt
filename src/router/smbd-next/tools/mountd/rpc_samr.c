@@ -7,7 +7,6 @@
 
 #include <memory.h>
 #include <endian.h>
-#include <glib.h>
 #include <errno.h>
 #include <linux/ksmbd_server.h>
 
@@ -30,7 +29,7 @@
 #define SAMR_OPNUM_CLOSE		1
 
 static GHashTable	*ch_table;
-static GRWLock		ch_table_lock;
+static pthread_rwlock_t	ch_table_lock;
 static GArray		*domain_entries;
 static gchar		*domain_name;
 static int		num_domain_entries;

@@ -142,12 +142,10 @@ static int create_subauth_file(char *path_subauth)
 {
 	int fd;
 	char subauth_buf[35];
-	GRand *rnd;
-
-	rnd = g_rand_new();
-	sprintf(subauth_buf, "%d:%d:%d\n", g_rand_int_range(rnd, 0, INT_MAX),
-		g_rand_int_range(rnd, 0, INT_MAX),
-		g_rand_int_range(rnd, 0, INT_MAX));
+	srand(time(NULL));
+	sprintf(subauth_buf, "%d:%d:%d\n", rand(),
+		rand(),
+		rand());
 
 	fd = open(path_subauth, O_CREAT | O_WRONLY,
 			S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
