@@ -16,6 +16,7 @@
 
 #include "asn1.h"
 #include "connection.h"
+#include "auth.h"
 
 /*****************************************************************************
  *
@@ -346,6 +347,7 @@ ksmbd_decode_negTokenInit(unsigned char *security_blob, int length,
 	unsigned char *sequence_end;
 	unsigned long *oid = NULL;
 	unsigned int cls, con, tag, oidlen, rc, mechTokenlen;
+	unsigned int mech_type;
 
 	ksmbd_debug(AUTH, "Received SecBlob: length %d\n", length);
 
@@ -444,18 +446,24 @@ ksmbd_decode_negTokenInit(unsigned char *security_blob, int length,
 			if (asn1_oid_decode(&ctx, end, &oid, &oidlen)) {
 				if (compare_oid(oid, oidlen, MSKRB5_OID,
 						MSKRB5_OID_LEN))
-					conn->sec_mskerberos = true;
+					mech_type = KSMBD_AUTH_MSKRB5;
 				else if (compare_oid(oid, oidlen, KRB5U2U_OID,
 						     KRB5U2U_OID_LEN))
-					conn->sec_kerberosu2u = true;
+					mech_type = KSMBD_AUTH_KRB5U2U;
 				else if (compare_oid(oid, oidlen, KRB5_OID,
 						     KRB5_OID_LEN))
-					conn->sec_kerberos = true;
+					mech_type = KSMBD_AUTH_KRB5;
 				else if (compare_oid(oid, oidlen, NTLMSSP_OID,
-						     NTLMSSP_OID_LEN)) {
-					conn->sec_ntlmssp = true;
+						     NTLMSSP_OID_LEN))
+					mech_type = KSMBD_AUTH_NTLMSSP;
+				else {
+					kfree(oid);
+					continue;
 				}
 
+				conn->auth_mechs |= mech_type;
+				if (conn->preferred_auth_mech == 0)
+					conn->preferred_auth_mech = mech_type;
 				kfree(oid);
 			}
 		} else {

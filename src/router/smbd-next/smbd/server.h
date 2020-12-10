@@ -6,6 +6,8 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
+#include "smbacl.h"
+
 #define SERVER_STATE_STARTING_UP	0
 #define SERVER_STATE_RUNNING		1
 #define SERVER_STATE_RESETTING		2
@@ -29,6 +31,8 @@ struct ksmbd_server_config {
 	unsigned long		ipc_last_active;
 	unsigned long		deadtime;
 	unsigned int		share_fake_fscaps;
+	struct smb_sid		domain_sid;
+	unsigned int		auth_mechs;
 
 	char			*conf[SERVER_CONF_WORK_GROUP + 1];
 };

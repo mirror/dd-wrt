@@ -124,6 +124,7 @@ void create_durable_rsp_buf(char *cc);
 void create_durable_v2_rsp_buf(char *cc, struct ksmbd_file *fp);
 void create_mxac_rsp_buf(char *cc, int maximal_access);
 void create_disk_id_rsp_buf(char *cc, __u64 file_id, __u64 vol_id);
+void create_posix_rsp_buf(char *cc, struct ksmbd_file *fp);
 struct create_context *smb2_find_context_vals(void *open_req, const char *str);
 int ksmbd_durable_verify_and_del_oplock(struct ksmbd_session *curr_sess,
 					  struct ksmbd_session *prev_sess,

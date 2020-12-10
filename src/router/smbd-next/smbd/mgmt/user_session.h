@@ -63,6 +63,7 @@ struct ksmbd_session {
 
 	struct list_head		sessions_entry;
 	struct ksmbd_file_table		file_table;
+	atomic_t			refcnt;
 };
 
 static inline int test_session_flag(struct ksmbd_session *sess, int bit)
@@ -101,6 +102,8 @@ void ksmbd_release_tree_conn_id(struct ksmbd_session *sess, int id);
 int ksmbd_session_rpc_open(struct ksmbd_session *sess, char *rpc_name);
 void ksmbd_session_rpc_close(struct ksmbd_session *sess, int id);
 int ksmbd_session_rpc_method(struct ksmbd_session *sess, int id);
+int get_session(struct ksmbd_session *sess);
+void put_session(struct ksmbd_session *sess);
 
 int ksmbd_init_session_table(void);
 void ksmbd_free_session_table(void);

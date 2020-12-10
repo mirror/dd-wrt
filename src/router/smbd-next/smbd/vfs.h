@@ -11,6 +11,7 @@
 #include <linux/fs.h>
 #include <linux/namei.h>
 #include <uapi/linux/xattr.h>
+#include <linux/posix_acl.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 static inline bool d_is_symlink(const struct dentry *dentry) {
@@ -39,6 +40,15 @@ static inline bool d_is_symlink(const struct dentry *dentry) {
 		(XATTR_USER_PREFIX FILE_ATTRIBUTE_PREFIX)
 #define XATTR_NAME_FILE_ATTRIBUTE_LEN	\
 		(sizeof(XATTR_USER_PREFIX FILE_ATTRIBUTE_PREFIX) - 1)
+
+/* SECURITY DESCRIPTOR XATTR PREFIX */
+#define SD_PREFIX			"sd."
+#define SD_PREFIX_LEN	(sizeof(SD_PREFIX) - 1)
+#define XATTR_NAME_SD	\
+		(XATTR_SECURITY_PREFIX SD_PREFIX)
+#define XATTR_NAME_SD_LEN	\
+		(sizeof(XATTR_SECURITY_PREFIX SD_PREFIX) - 1)
+
 
 /* CreateOptions */
 /* Flag is set, it must not be a file , valid for directory only */
@@ -210,6 +220,7 @@ int ksmbd_vfs_fsetxattr(struct ksmbd_work *work,
 int ksmbd_vfs_xattr_stream_name(char *stream_name,
 				char **xattr_stream_name,
 				size_t *xattr_stream_name_size);
+int ksmbd_vfs_xattr_sd(char *sd_data, char **xattr_sd, size_t *xattr_sd_size);
 
 int ksmbd_vfs_truncate_xattr(struct dentry *dentry, int wo_streams);
 int ksmbd_vfs_remove_xattr(struct dentry *dentry, char *attr_name);
@@ -246,5 +257,14 @@ int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
 int ksmbd_vfs_posix_lock_wait(struct file_lock *flock);
 int ksmbd_vfs_posix_lock_wait_timeout(struct file_lock *flock, long timeout);
 void ksmbd_vfs_posix_lock_unblock(struct file_lock *flock);
+
+int ksmbd_vfs_remove_acl_xattrs(struct dentry *dentry);
+int ksmbd_vfs_remove_sd_xattrs(struct dentry *dentry);
+int ksmbd_vfs_set_sd_xattr(struct dentry *dentry, char *sd_data);
+struct smb_ntacl *ksmbd_vfs_get_sd_xattr(struct dentry *dentry);
+struct posix_acl *ksmbd_vfs_posix_acl_alloc(int count, gfp_t flags);
+struct posix_acl *ksmbd_vfs_get_acl(struct inode *inode, int type);
+int ksmbd_vfs_set_posix_acl(struct inode *inode, int type,
+		struct posix_acl *acl);
 
 #endif /* __KSMBD_VFS_H__ */

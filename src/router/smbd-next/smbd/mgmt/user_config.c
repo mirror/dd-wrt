@@ -10,7 +10,7 @@
 #include "../transport_ipc.h"
 #include "../ksmbd_server.h" /* FIXME */
 
-struct ksmbd_user *ksmbd_alloc_user(const char *account)
+struct ksmbd_user *ksmbd_login_user(const char *account)
 {
 	struct ksmbd_login_response *resp;
 	struct ksmbd_user *user = NULL;
@@ -22,9 +22,19 @@ struct ksmbd_user *ksmbd_alloc_user(const char *account)
 	if (!(resp->status & KSMBD_USER_FLAG_OK))
 		goto out;
 
+	user = ksmbd_alloc_user(resp);
+out:
+	ksmbd_free(resp);
+	return user;
+}
+
+struct ksmbd_user *ksmbd_alloc_user(struct ksmbd_login_response *resp)
+{
+	struct ksmbd_user *user = NULL;
+
 	user = ksmbd_zalloc(sizeof(struct ksmbd_user));
 	if (!user)
-		goto out;
+		return NULL;
 
 	user->name = kstrdup(resp->account, GFP_KERNEL);
 	user->flags = resp->status;
@@ -41,8 +51,6 @@ struct ksmbd_user *ksmbd_alloc_user(const char *account)
 		ksmbd_free(user);
 		user = NULL;
 	}
-out:
-	ksmbd_free(resp);
 	return user;
 }
 
