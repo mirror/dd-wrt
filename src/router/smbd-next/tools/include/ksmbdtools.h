@@ -34,8 +34,7 @@ char *ascii_strdown(char *str, size_t len);
 int atomic_int_add(volatile int *atomic, int val);
 void atomic_int_inc(volatile int *atomic);
 
-int atomic_int_compare_and_exchange(volatile int *atomic,
-				    int oldval, int newval);
+int atomic_int_compare_and_exchange(volatile int *atomic, int oldval, int newval);
 
 #define KEY_ID 0x0
 #define KEY_STRING 0x1
@@ -57,9 +56,7 @@ int list_remove(struct LIST **list, unsigned long long id);
 int list_remove_dec(struct LIST **list, unsigned long long id);
 void *list_get(struct LIST **list, unsigned long long id);
 void list_clear(struct LIST **list);
-int list_foreach(struct LIST **list,
-		 void (*func)(void *item, unsigned long long id,
-			      void *user_data), void *user_data);
+int list_foreach(struct LIST **list, void (*func)(void *item, unsigned long long id, void *user_data), void *user_data);
 
 static unsigned long long list_tokey(void *ptr)
 {
@@ -117,8 +114,11 @@ struct smbconf_global {
 	unsigned int smb2_max_write;
 	unsigned int smb2_max_trans;
 	unsigned int share_fake_fscaps;
-	char			*pwddb;
-	char			*smbconf;
+	unsigned int gen_subauth[3];
+	char *krb5_keytab_file;
+	char *krb5_service_name;
+	char *pwddb;
+	char *smbconf;
 };
 
 #define KSMBD_LOCK_FILE		"/tmp/ksmbd.lock"
@@ -211,11 +211,7 @@ void pr_hex_dump(const void *mem, size_t sz);
 char *base64_encode(unsigned char *src, size_t srclen);
 unsigned char *base64_decode(char const *src, size_t *dstlen);
 
-char *ksmbd_gconvert(const char *str,
-		     size_t str_len,
-		     int to_codeset,
-		     int from_codeset,
-		     size_t *bytes_read, size_t *bytes_written);
+char *ksmbd_gconvert(const char *str, size_t str_len, int to_codeset, int from_codeset, size_t *bytes_read, size_t *bytes_written);
 
 enum charset_idx {
 	KSMBD_CHARSET_UTF8 = 0,
@@ -233,4 +229,4 @@ extern char *ksmbd_conv_charsets[KSMBD_CHARSET_MAX + 1];
 void notify_ksmbd_daemon(void);
 int test_file_access(char *conf);
 
-#endif /* __KSMBDTOOLS_H__ */
+#endif				/* __KSMBDTOOLS_H__ */

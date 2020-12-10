@@ -27,6 +27,25 @@ AC_PROG_CC_STDC
 AM_SILENT_RULES([yes])
 AC_PROG_LIBTOOL
 
+# enable options
+AC_ARG_ENABLE(krb5,
+	      [AC_HELP_STRING([--enable-krb5], [Enable kerberos authentication @<:@default=no@:>@:])],
+	      enable_krb5=$enableval,
+	      enable_krb5="no")
+
+# Checks for header files.
+if test "$enable_krb5" != "no"; then
+	AC_CHECK_HEADERS([krb5.h])
+	if test x$ac_cv_header_krb5_h != xyes; then
+		if test "$enable_krb5" = "yes"; then
+			AC_MSG_ERROR([krb5.h not found, please install krb5-libs-devel.])
+		else
+			AC_MSG_WARN([krb5.h not found, disabling krb5.])
+			enable_krb5="no"
+		fi
+	fi
+fi
+
 PKG_PROG_PKG_CONFIG([0.9])
 
 # Checks for header files.
@@ -54,6 +73,12 @@ PKG_CHECK_MODULES([LIBNL], [libnl-3.0 >= 3.0 libnl-genl-3.0 >= 3.0], [has_libnl_
 AS_IF([test "$has_libnl_ver" -eq 0], [
 	AC_MSG_ERROR([No libnl (libnl-3-dev or libnl3-devel) and libnl-genl (libnl-genl-3-dev) or were not found])
 ])
+
+if test "$enable_krb5" != "no"; then
+	PKG_CHECK_MODULES([LIBKRB5], [krb5])
+	AC_DEFINE([CONFIG_KRB5], [], "support kerberos authentication")
+fi
+AM_CONDITIONAL(HAVE_LIBKRB5, [test "$enable_krb5" != "no"])
 
 AC_CONFIG_FILES([
 	Makefile

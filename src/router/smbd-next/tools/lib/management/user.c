@@ -234,6 +234,38 @@ int usm_add_update_user_from_pwdentry(char *data)
 	return usm_add_new_user(name, pwd);
 }
 
+int usm_add_subauth_global_conf(char *data)
+{
+	unsigned int subauth[3];
+	char *pos = data;
+	char *spos;
+	int ret;
+
+	if (!pos)
+		return -EINVAL;
+
+	spos = strchr(pos, ':');
+	if (!spos) {
+		pr_err("Invalid subauth entry %s\n", data);
+		return -EINVAL;
+	}
+
+	*spos = 0x00;
+	global_conf.gen_subauth[0] = atoi(g_strdup(pos));
+	pos = spos + 1;
+
+	spos = strchr(pos, ':');
+	if (!spos) {
+		pr_err("Invalid subauth entry %s\n", data);
+		return -EINVAL;
+	}
+	*spos = 0x00;
+	global_conf.gen_subauth[1] = atoi(g_strdup(pos));
+	global_conf.gen_subauth[2] = atoi(g_strdup(spos + 1));
+
+	return 0;
+}
+
 void foreach_ksmbd_user(walk_users cb, void *user_data)
 {
 	pthread_rwlock_rdlock(&users_table_lock);

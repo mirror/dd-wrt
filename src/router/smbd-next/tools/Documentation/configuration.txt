@@ -99,6 +99,16 @@ Define ksmbd configuration parameters list.
 		With share:fake_fscaps = 64 the SPARSE_FILES file system
 		capability flag is set. Use other decimal values to specify
 		the bitmask you need to fake.
+	- kerberos keytab file
+		This option tells ksmbd where the path of the keytab file
+		which stores the ksmbd service's password can be found.
+		If this option is not given, ksmbd try to find the file
+		in system default location.
+	- kerberos service name
+		This option tells ksmbd the fully qualified domain name of the
+		host where ksmbd runs. the format is "cifs/<FQDN>". if this
+		option is not given, ksmbd sets "cifs" to the service name and
+		try to get the host FQDN using getaddrinfo(3).
 
 * Supported [share] level parameters list:
 	- comment (default: none)
