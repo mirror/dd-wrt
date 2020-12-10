@@ -7,6 +7,7 @@
 #include "base.h"
 #include "array.h"
 #include "buffer.h"
+#include "fdevent.h"
 #include "http_kv.h"
 #include "http_header.h"
 #include "log.h"
@@ -45,23 +46,21 @@ typedef enum {
 } proxy_forwarded_t;
 
 typedef struct {
-	gw_plugin_config gw;
-	array *forwarded_params;
-	array *header_params;
-	unsigned short replace_http_host;
-	unsigned int forwarded;
-
-	http_header_remap_opts header;
+    gw_plugin_config gw; /* start must match layout of gw_plugin_config */
+    unsigned int replace_http_host;
+    unsigned int forwarded;
+    http_header_remap_opts header;
 } plugin_config;
 
 typedef struct {
-	PLUGIN_DATA;
-	plugin_config **config_storage;
-
-	plugin_config conf;
+    PLUGIN_DATA;
+    pid_t srv_pid; /* must match layout of gw_plugin_data through conf member */
+    plugin_config conf;
+    plugin_config defaults;
 } plugin_data;
 
 static int proxy_check_extforward;
+static int proxy_force_http10;
 
 typedef struct {
 	gw_handler_ctx gw;
@@ -71,218 +70,314 @@ typedef struct {
 
 
 INIT_FUNC(mod_proxy_init) {
-	plugin_data *p;
+    return calloc(1, sizeof(plugin_data));
+}
 
-	p = calloc(1, sizeof(*p));
 
-	return p;
+static void mod_proxy_free_config(plugin_data * const p)
+{
+    if (NULL == p->cvlist) return;
+    /* (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 5: /* proxy.header */
+                if (cpv->vtype == T_CONFIG_LOCAL) free(cpv->v.v);
+                break;
+              default:
+                break;
+            }
+        }
+    }
 }
 
 
 FREE_FUNC(mod_proxy_free) {
-	plugin_data *p = p_d;
-
-	UNUSED(srv);
-
-	if (p->config_storage) {
-		size_t i;
-		for (i = 0; i < srv->config_context->used; i++) {
-			plugin_config *s = p->config_storage[i];
-
-			if (NULL == s) continue;
-
-			array_free(s->forwarded_params);
-			array_free(s->header_params);
-
-			/*assert(0 == offsetof(s->gw));*/
-			gw_plugin_config_free(&s->gw);
-			/*free(s);*//*free'd by gw_plugin_config_free()*/
-		}
-		free(p->config_storage);
-	}
-
-	free(p);
-
-	return HANDLER_GO_ON;
+    plugin_data * const p = p_d;
+    mod_proxy_free_config(p);
+    gw_free(p);
 }
 
-SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
-	plugin_data *p = p_d;
-	data_unset *du;
-	size_t i = 0;
+static void mod_proxy_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv)
+{
+    switch (cpv->k_id) { /* index into static config_plugin_keys_t cpk[] */
+      case 0: /* proxy.server */
+        if (cpv->vtype == T_CONFIG_LOCAL) {
+            gw_plugin_config * const gw = cpv->v.v;
+            pconf->gw.exts      = gw->exts;
+            pconf->gw.exts_auth = gw->exts_auth;
+            pconf->gw.exts_resp = gw->exts_resp;
+        }
+        break;
+      case 1: /* proxy.balance */
+        /*if (cpv->vtype == T_CONFIG_LOCAL)*//*always true here for this param*/
+            pconf->gw.balance = (int)cpv->v.u;
+        break;
+      case 2: /* proxy.debug */
+        pconf->gw.debug = (int)cpv->v.u;
+        break;
+      case 3: /* proxy.map-extensions */
+        pconf->gw.ext_mapping = cpv->v.a;
+        break;
+      case 4: /* proxy.forwarded */
+        /*if (cpv->vtype == T_CONFIG_LOCAL)*//*always true here for this param*/
+            pconf->forwarded = cpv->v.u;
+        break;
+      case 5: /* proxy.header */
+        /*if (cpv->vtype == T_CONFIG_LOCAL)*//*always true here for this param*/
+        pconf->header = *(http_header_remap_opts *)cpv->v.v; /*(copies struct)*/
+        break;
+      case 6: /* proxy.replace-http-host */
+        pconf->replace_http_host = cpv->v.u;
+        break;
+      default:/* should not happen */
+        return;
+    }
+}
 
-	config_values_t cv[] = {
-		{ "proxy.server",              NULL, T_CONFIG_LOCAL, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
-		{ "proxy.debug",               NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },       /* 1 */
-		{ "proxy.balance",             NULL, T_CONFIG_LOCAL, T_CONFIG_SCOPE_CONNECTION },       /* 2 */
-		{ "proxy.replace-http-host",   NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },     /* 3 */
-		{ "proxy.forwarded",           NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },       /* 4 */
-		{ "proxy.header",              NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },       /* 5 */
-		{ "proxy.map-extensions",      NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },       /* 6 */
-		{ NULL,                        NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
-	};
 
-	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
+static void mod_proxy_merge_config(plugin_config * const pconf, const config_plugin_value_t *cpv)
+{
+    do {
+        mod_proxy_merge_config_cpv(pconf, cpv);
+    } while ((++cpv)->k_id != -1);
+}
 
-	for (i = 0; i < srv->config_context->used; i++) {
-		data_config const* config = (data_config const*)srv->config_context->data[i];
-		plugin_config *s;
 
-		s = calloc(1, sizeof(plugin_config));
-		s->gw.debug          = 0;
-		s->replace_http_host = 0;
-		s->forwarded_params  = array_init();
-		s->forwarded         = PROXY_FORWARDED_NONE;
-		s->header_params     = array_init();
-		s->gw.ext_mapping    = array_init();
+static void mod_proxy_patch_config(request_st * const r, plugin_data * const p)
+{
+    memcpy(&p->conf, &p->defaults, sizeof(plugin_config));
+    for (int i = 1, used = p->nconfig; i < used; ++i) {
+        if (config_check_cond(r, (uint32_t)p->cvlist[i].k_id))
+            mod_proxy_merge_config(&p->conf, p->cvlist+p->cvlist[i].v.u2[0]);
+    }
+}
 
-		cv[0].destination = NULL; /* T_CONFIG_LOCAL */
-		cv[1].destination = &(s->gw.debug);
-		cv[2].destination = NULL; /* T_CONFIG_LOCAL */
-		cv[3].destination = &(s->replace_http_host);
-		cv[4].destination = s->forwarded_params;
-		cv[5].destination = s->header_params;
-		cv[6].destination = s->gw.ext_mapping;
 
-		p->config_storage[i] = s;
+static unsigned int mod_proxy_parse_forwarded(server *srv, const array *a)
+{
+    unsigned int forwarded = 0;
+    for (uint32_t j = 0, used = a->used; j < used; ++j) {
+        proxy_forwarded_t param;
+        data_unset *du = a->data[j];
+        if (buffer_eq_slen(&du->key, CONST_STR_LEN("by")))
+            param = PROXY_FORWARDED_BY;
+        else if (buffer_eq_slen(&du->key, CONST_STR_LEN("for")))
+            param = PROXY_FORWARDED_FOR;
+        else if (buffer_eq_slen(&du->key, CONST_STR_LEN("host")))
+            param = PROXY_FORWARDED_HOST;
+        else if (buffer_eq_slen(&du->key, CONST_STR_LEN("proto")))
+            param = PROXY_FORWARDED_PROTO;
+        else if (buffer_eq_slen(&du->key, CONST_STR_LEN("remote_user")))
+            param = PROXY_FORWARDED_REMOTE_USER;
+        else {
+            log_error(srv->errh, __FILE__, __LINE__,
+              "proxy.forwarded keys must be one of: "
+              "by, for, host, proto, remote_user, but not: %s", du->key.ptr);
+            return UINT_MAX;
+        }
+        int val = config_plugin_value_tobool(du, 2);
+        if (2 == val) {
+            log_error(srv->errh, __FILE__, __LINE__,
+              "proxy.forwarded values must be one of: "
+              "0, 1, enable, disable; error for key: %s", du->key.ptr);
+            return UINT_MAX;
+        }
+        if (val)
+            forwarded |= param;
+    }
+    return forwarded;
+}
 
-		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
-			return HANDLER_ERROR;
-		}
 
-		du = array_get_element(config->value, "proxy.server");
-		if (!gw_set_defaults_backend(srv, (gw_plugin_data *)p, du, i, 0)) {
-			return HANDLER_ERROR;
-		}
+static http_header_remap_opts * mod_proxy_parse_header_opts(server *srv, const array *a)
+{
+    http_header_remap_opts header;
+    memset(&header, 0, sizeof(header));
+    for (uint32_t j = 0, used = a->used; j < used; ++j) {
+        data_array *da = (data_array *)a->data[j];
+        if (buffer_eq_slen(&da->key, CONST_STR_LEN("https-remap"))) {
+            int val = config_plugin_value_tobool((data_unset *)da, 2);
+            if (2 == val) {
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "unexpected value for proxy.header; "
+                  "expected \"https-remap\" => \"enable\" or \"disable\"");
+                return NULL;
+            }
+            header.https_remap = val;
+            continue;
+        }
+        else if (buffer_eq_slen(&da->key, CONST_STR_LEN("upgrade"))) {
+            int val = config_plugin_value_tobool((data_unset *)da, 2);
+            if (2 == val) {
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "unexpected value for proxy.header; "
+                  "expected \"upgrade\" => \"enable\" or \"disable\"");
+                return NULL;
+            }
+            header.upgrade = val;
+            continue;
+        }
+        else if (buffer_eq_slen(&da->key, CONST_STR_LEN("connect"))) {
+            int val = config_plugin_value_tobool((data_unset *)da, 2);
+            if (2 == val) {
+                log_error(srv->errh, __FILE__, __LINE__,
+                  "unexpected value for proxy.header; "
+                  "expected \"connect\" => \"enable\" or \"disable\"");
+                return NULL;
+            }
+            header.connect_method = val;
+            continue;
+        }
+        if (da->type != TYPE_ARRAY || !array_is_kvstring(&da->value)) {
+            log_error(srv->errh, __FILE__, __LINE__,
+              "unexpected value for proxy.header; "
+              "expected ( \"param\" => ( \"key\" => \"value\" ) ) near key %s",
+              da->key.ptr);
+            return NULL;
+        }
+        if (buffer_eq_slen(&da->key, CONST_STR_LEN("map-urlpath"))) {
+            header.urlpaths = &da->value;
+        }
+        else if (buffer_eq_slen(&da->key, CONST_STR_LEN("map-host-request"))) {
+            header.hosts_request = &da->value;
+        }
+        else if (buffer_eq_slen(&da->key, CONST_STR_LEN("map-host-response"))) {
+            header.hosts_response = &da->value;
+        }
+        else {
+            log_error(srv->errh, __FILE__, __LINE__,
+              "unexpected key for proxy.header; "
+              "expected ( \"param\" => ( \"key\" => \"value\" ) ) near key %s",
+              da->key.ptr);
+            return NULL;
+        }
+    }
 
-		du = array_get_element(config->value, "proxy.balance");
-		if (!gw_set_defaults_balance(srv, &s->gw, du)) {
-			return HANDLER_ERROR;
-		}
+    http_header_remap_opts *opts = malloc(sizeof(header));
+    force_assert(opts);
+    memcpy(opts, &header, sizeof(header));
+    return opts;
+}
 
-		/* disable check-local for all exts (default enabled) */
-		if (s->gw.exts) { /*(check after gw_set_defaults_backend())*/
-			for (size_t j = 0; j < s->gw.exts->used; ++j) {
-				gw_extension *ex = s->gw.exts->exts[j];
-				for (size_t n = 0; n < ex->used; ++n) {
-					ex->hosts[n]->check_local = 0;
-				}
-			}
-		}
 
-		if (!array_is_kvany(s->forwarded_params)) {
-			log_error_write(srv, __FILE__, __LINE__, "s",
-					"unexpected value for proxy.forwarded; expected ( \"param\" => \"value\" )");
-			return HANDLER_ERROR;
-		}
-		for (size_t j = 0, used = s->forwarded_params->used; j < used; ++j) {
-			proxy_forwarded_t param;
-			du = s->forwarded_params->data[j];
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN("by"))) {
-				param = PROXY_FORWARDED_BY;
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("for"))) {
-				param = PROXY_FORWARDED_FOR;
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("host"))) {
-				param = PROXY_FORWARDED_HOST;
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("proto"))) {
-				param = PROXY_FORWARDED_PROTO;
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("remote_user"))) {
-				param = PROXY_FORWARDED_REMOTE_USER;
-			} else {
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-					        "proxy.forwarded keys must be one of: by, for, host, proto, remote_user, but not:", du->key);
-				return HANDLER_ERROR;
-			}
-			if (du->type == TYPE_STRING) {
-				data_string *ds = (data_string *)du;
-				if (buffer_is_equal_string(ds->value, CONST_STR_LEN("enable"))) {
-					s->forwarded |= param;
-				} else if (!buffer_is_equal_string(ds->value, CONST_STR_LEN("disable"))) {
-					log_error_write(srv, __FILE__, __LINE__, "sb",
-						        "proxy.forwarded values must be one of: 0, 1, enable, disable; error for key:", du->key);
-					return HANDLER_ERROR;
-				}
-			} else if (du->type == TYPE_INTEGER) {
-				data_integer *di = (data_integer *)du;
-				if (di->value) s->forwarded |= param;
-			} else {
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-					        "proxy.forwarded values must be one of: 0, 1, enable, disable; error for key:", du->key);
-				return HANDLER_ERROR;
-			}
-		}
+SETDEFAULTS_FUNC(mod_proxy_set_defaults)
+{
+    static const config_plugin_keys_t cpk[] = {
+      { CONST_STR_LEN("proxy.server"),
+        T_CONFIG_ARRAY_KVARRAY,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("proxy.balance"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("proxy.debug"),
+        T_CONFIG_INT,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("proxy.map-extensions"),
+        T_CONFIG_ARRAY_KVSTRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("proxy.forwarded"),
+        T_CONFIG_ARRAY_KVANY,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("proxy.header"),
+        T_CONFIG_ARRAY_KVANY,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("proxy.replace-http-host"),
+        T_CONFIG_BOOL,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ NULL, 0,
+        T_CONFIG_UNSET,
+        T_CONFIG_SCOPE_UNSET }
+    };
 
-		if (!array_is_kvany(s->header_params)) {
-			log_error_write(srv, __FILE__, __LINE__, "s",
-					"unexpected value for proxy.header; expected ( \"param\" => ( \"key\" => \"value\" ) )");
-			return HANDLER_ERROR;
-		}
-		for (size_t j = 0, used = s->header_params->used; j < used; ++j) {
-			data_array *da = (data_array *)s->header_params->data[j];
-			if (buffer_is_equal_string(da->key, CONST_STR_LEN("https-remap"))) {
-				data_string *ds = (data_string *)da;
-				if (ds->type != TYPE_STRING) {
-					log_error_write(srv, __FILE__, __LINE__, "s",
-							"unexpected value for proxy.header; expected \"enable\" or \"disable\" for https-remap");
-					return HANDLER_ERROR;
-				}
-				s->header.https_remap = !buffer_is_equal_string(ds->value, CONST_STR_LEN("disable"))
-						     && !buffer_is_equal_string(ds->value, CONST_STR_LEN("0"));
-				continue;
-			}
-			else if (buffer_is_equal_string(da->key, CONST_STR_LEN("upgrade"))) {
-				data_string *ds = (data_string *)da;
-				if (ds->type != TYPE_STRING) {
-					log_error_write(srv, __FILE__, __LINE__, "s",
-							"unexpected value for proxy.header; expected \"upgrade\" => \"enable\" or \"disable\"");
-					return HANDLER_ERROR;
-				}
-				s->header.upgrade = !buffer_is_equal_string(ds->value, CONST_STR_LEN("disable"))
-						 && !buffer_is_equal_string(ds->value, CONST_STR_LEN("0"));
-				continue;
-			}
-			else if (buffer_is_equal_string(da->key, CONST_STR_LEN("connect"))) {
-				data_string *ds = (data_string *)da;
-				if (ds->type != TYPE_STRING) {
-					log_error_write(srv, __FILE__, __LINE__, "s",
-							"unexpected value for proxy.header; expected \"connect\" => \"enable\" or \"disable\"");
-					return HANDLER_ERROR;
-				}
-				s->header.connect_method = !buffer_is_equal_string(ds->value, CONST_STR_LEN("disable"))
-							&& !buffer_is_equal_string(ds->value, CONST_STR_LEN("0"));
-				continue;
-			}
-			if (da->type != TYPE_ARRAY || !array_is_kvstring(da->value)) {
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-						"unexpected value for proxy.header; expected ( \"param\" => ( \"key\" => \"value\" ) ) near key", da->key);
-				return HANDLER_ERROR;
-			}
-			if (buffer_is_equal_string(da->key, CONST_STR_LEN("map-urlpath"))) {
-				s->header.urlpaths = da->value;
-			}
-			else if (buffer_is_equal_string(da->key, CONST_STR_LEN("map-host-request"))) {
-				s->header.hosts_request = da->value;
-			}
-			else if (buffer_is_equal_string(da->key, CONST_STR_LEN("map-host-response"))) {
-				s->header.hosts_response = da->value;
-			}
-			else {
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-						"unexpected key for proxy.header; expected ( \"param\" => ( \"key\" => \"value\" ) ) near key", da->key);
-				return HANDLER_ERROR;
-			}
-		}
-	}
+    plugin_data * const p = p_d;
+    if (!config_plugin_values_init(srv, p, cpk, "mod_proxy"))
+        return HANDLER_ERROR;
 
-	for (i = 0; i < srv->srvconf.modules->used; i++) {
-		data_string *ds = (data_string *)srv->srvconf.modules->data[i];
-		if (buffer_is_equal_string(ds->value, CONST_STR_LEN("mod_extforward"))) {
-			proxy_check_extforward = 1;
-			break;
-		}
-	}
+    /* process and validate config directives
+     * (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        gw_plugin_config *gw = NULL;
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* proxy.server */
+                gw = calloc(1, sizeof(gw_plugin_config));
+                force_assert(gw);
+                if (!gw_set_defaults_backend(srv, (gw_plugin_data *)p, cpv->v.a,
+                                             gw, 0, cpk[cpv->k_id].k)) {
+                    gw_plugin_config_free(gw);
+                    return HANDLER_ERROR;
+                }
+                /* error if "mode" = "authorizer";
+                 * proxy can not act as authorizer */
+                /*(check after gw_set_defaults_backend())*/
+                if (gw->exts_auth && gw->exts_auth->used) {
+                    log_error(srv->errh, __FILE__, __LINE__,
+                      "%s must not define any hosts with "
+                      "attribute \"mode\" = \"authorizer\"", cpk[cpv->k_id].k);
+                    gw_plugin_config_free(gw);
+                    return HANDLER_ERROR;
+                }
+                cpv->v.v = gw;
+                cpv->vtype = T_CONFIG_LOCAL;
+                break;
+              case 1: /* proxy.balance */
+                cpv->v.u = (unsigned int)gw_get_defaults_balance(srv, cpv->v.b);
+                break;
+              case 2: /* proxy.debug */
+              case 3: /* proxy.map-extensions */
+                break;
+              case 4: /* proxy.forwarded */
+                cpv->v.u = mod_proxy_parse_forwarded(srv, cpv->v.a);
+                if (UINT_MAX == cpv->v.u) return HANDLER_ERROR;
+                cpv->vtype = T_CONFIG_LOCAL;
+                break;
+              case 5: /* proxy.header */
+                cpv->v.v = mod_proxy_parse_header_opts(srv, cpv->v.a);
+                if (NULL == cpv->v.v) return HANDLER_ERROR;
+                cpv->vtype = T_CONFIG_LOCAL;
+                break;
+              case 6: /* proxy.replace-http-host */
+                break;
+              default:/* should not happen */
+                break;
+            }
+        }
 
-	return HANDLER_GO_ON;
+        /* disable check-local for all exts (default enabled) */
+        if (gw && gw->exts) { /*(check after gw_set_defaults_backend())*/
+            gw_exts_clear_check_local(gw->exts);
+        }
+    }
+
+    /* default is 0 */
+    /*p->defaults.balance = (unsigned int)gw_get_defaults_balance(srv, NULL);*/
+
+    /* initialize p->defaults from global config context */
+    if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
+        if (-1 != cpv->k_id)
+            mod_proxy_merge_config(&p->defaults, cpv);
+    }
+
+    /* special-case behavior if mod_extforward is loaded */
+    for (uint32_t i = 0; i < srv->srvconf.modules->used; ++i) {
+        buffer *m = &((data_string *)srv->srvconf.modules->data[i])->value;
+        if (buffer_eq_slen(m, CONST_STR_LEN("mod_extforward"))) {
+            proxy_check_extforward = 1;
+            break;
+        }
+    }
+
+    proxy_force_http10 =
+      srv->srvconf.feature_flags
+      && config_plugin_value_tobool(
+           array_get_element_klen(srv->srvconf.feature_flags,
+                                  CONST_STR_LEN("proxy.force-http10")), 0);
+
+    return HANDLER_GO_ON;
 }
 
 
@@ -296,7 +391,7 @@ static const buffer * http_header_remap_host_match (buffer *b, size_t off, http_
         const char * const s = b->ptr+off;
         for (size_t i = 0, used = hosts->used; i < used; ++i) {
             const data_string * const ds = (data_string *)hosts->data[i];
-            const buffer *k = ds->key;
+            const buffer *k = &ds->key;
             size_t mlen = buffer_string_length(k);
             if (1 == mlen && k->ptr[0] == '-') {
                 /* match with authority provided in Host (if is_req)
@@ -309,15 +404,15 @@ static const buffer * http_header_remap_host_match (buffer *b, size_t off, http_
                 if (NULL == k) continue;
                 mlen = buffer_string_length(k);
             }
-            if (mlen == alen && 0 == strncasecmp(s, k->ptr, alen)) {
-                if (buffer_is_equal_string(ds->value, CONST_STR_LEN("-"))) {
+            if (buffer_eq_icase_ss(s, alen, k->ptr, mlen)) {
+                if (buffer_is_equal_string(&ds->value, CONST_STR_LEN("-"))) {
                     return remap_hdrs->http_host;
                 }
-                else if (!buffer_string_is_empty(ds->value)) {
+                else if (!buffer_string_is_empty(&ds->value)) {
                     /*(save first matched request host for response match)*/
                     if (is_req && NULL == remap_hdrs->forwarded_host)
-                        remap_hdrs->forwarded_host = ds->value;
-                    return ds->value;
+                        remap_hdrs->forwarded_host = &ds->value;
+                    return &ds->value;
                 } /*(else leave authority as-is and stop matching)*/
                 break;
             }
@@ -349,30 +444,30 @@ static size_t http_header_remap_urlpath (buffer *b, size_t off, http_header_rema
         if (is_req) { /* request */
             for (size_t i = 0, used = urlpaths->used; i < used; ++i) {
                 const data_string * const ds = (data_string *)urlpaths->data[i];
-                const size_t mlen = buffer_string_length(ds->key);
-                if (mlen <= plen && 0 == memcmp(s, ds->key->ptr, mlen)) {
+                const size_t mlen = buffer_string_length(&ds->key);
+                if (mlen <= plen && 0 == memcmp(s, ds->key.ptr, mlen)) {
                     if (NULL == remap_hdrs->forwarded_urlpath)
                         remap_hdrs->forwarded_urlpath = ds;
-                    buffer_substr_replace(b, off, mlen, ds->value);
-                    return buffer_string_length(ds->value);/*(replacement len)*/
+                    buffer_substr_replace(b, off, mlen, &ds->value);
+                    return buffer_string_length(&ds->value);/*(replacement len)*/
                 }
             }
         }
         else {        /* response; perform reverse map */
             if (NULL != remap_hdrs->forwarded_urlpath) {
                 const data_string * const ds = remap_hdrs->forwarded_urlpath;
-                const size_t mlen = buffer_string_length(ds->value);
-                if (mlen <= plen && 0 == memcmp(s, ds->value->ptr, mlen)) {
-                    buffer_substr_replace(b, off, mlen, ds->key);
-                    return buffer_string_length(ds->key); /*(replacement len)*/
+                const size_t mlen = buffer_string_length(&ds->value);
+                if (mlen <= plen && 0 == memcmp(s, ds->value.ptr, mlen)) {
+                    buffer_substr_replace(b, off, mlen, &ds->key);
+                    return buffer_string_length(&ds->key); /*(replacement len)*/
                 }
             }
             for (size_t i = 0, used = urlpaths->used; i < used; ++i) {
                 const data_string * const ds = (data_string *)urlpaths->data[i];
-                const size_t mlen = buffer_string_length(ds->value);
-                if (mlen <= plen && 0 == memcmp(s, ds->value->ptr, mlen)) {
-                    buffer_substr_replace(b, off, mlen, ds->key);
-                    return buffer_string_length(ds->key); /*(replacement len)*/
+                const size_t mlen = buffer_string_length(&ds->value);
+                if (mlen <= plen && 0 == memcmp(s, ds->value.ptr, mlen)) {
+                    buffer_substr_replace(b, off, mlen, &ds->key);
+                    return buffer_string_length(&ds->key); /*(replacement len)*/
                 }
             }
         }
@@ -442,7 +537,7 @@ static void http_header_remap_setcookie (buffer *b, size_t off, http_header_rema
      * characters allowed, for best results, the Set-Cookie value should be the
      * entire string in b from offset to end of string.  In response headers,
      * lighttpd may concatenate multiple Set-Cookie headers into single entry
-     * in con->response.headers, separated by "\r\nSet-Cookie: " */
+     * in r->resp_headers, separated by "\r\nSet-Cookie: " */
     for (char *s = b->ptr+off, *e; *s; s = e) {
         size_t len;
         {
@@ -462,7 +557,7 @@ static void http_header_remap_setcookie (buffer *b, size_t off, http_header_rema
             ++e;
             switch ((int)(e - s - 1)) {
               case 4:
-                if (0 == strncasecmp(s, "path", 4)) {
+                if (buffer_eq_icase_ssn(s, "path", 4)) {
                     if (*e == '"') ++e;
                     if (*e != '/') continue;
                     off = (size_t)(e - b->ptr);
@@ -472,7 +567,7 @@ static void http_header_remap_setcookie (buffer *b, size_t off, http_header_rema
                 }
                 break;
               case 6:
-                if (0 == strncasecmp(s, "domain", 6)) {
+                if (buffer_eq_icase_ssn(s, "domain", 6)) {
                     size_t alen = 0;
                     if (*e == '"') ++e;
                     if (*e == '.') ++e;
@@ -511,34 +606,34 @@ static void buffer_append_string_backslash_escaped(buffer *b, const char *s, siz
     buffer_commit(b, j);
 }
 
-static void proxy_set_Forwarded(connection *con, const unsigned int flags) {
+static void proxy_set_Forwarded(connection * const con, request_st * const r, const unsigned int flags) {
     buffer *b = NULL, *efor = NULL, *eproto = NULL, *ehost = NULL;
     int semicolon = 0;
 
     if (proxy_check_extforward) {
         efor   =
-          http_header_env_get(con, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_FOR"));
+          http_header_env_get(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_FOR"));
         eproto =
-          http_header_env_get(con, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_PROTO"));
+          http_header_env_get(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_PROTO"));
         ehost  =
-          http_header_env_get(con, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_HOST"));
+          http_header_env_get(r, CONST_STR_LEN("_L_EXTFORWARD_ACTUAL_HOST"));
     }
 
     /* note: set "Forwarded" prior to updating X-Forwarded-For (below) */
 
     if (flags)
-        b = http_header_request_get(con, HTTP_HEADER_FORWARDED, CONST_STR_LEN("Forwarded"));
+        b = http_header_request_get(r, HTTP_HEADER_FORWARDED, CONST_STR_LEN("Forwarded"));
 
     if (flags && NULL == b) {
-        buffer *xff =
-          http_header_request_get(con, HTTP_HEADER_X_FORWARDED_FOR, CONST_STR_LEN("X-Forwarded-For"));
-        http_header_request_set(con, HTTP_HEADER_FORWARDED,
+        const buffer *xff =
+          http_header_request_get(r, HTTP_HEADER_X_FORWARDED_FOR, CONST_STR_LEN("X-Forwarded-For"));
+        http_header_request_set(r, HTTP_HEADER_FORWARDED,
                                 CONST_STR_LEN("Forwarded"),
                                 CONST_STR_LEN("x")); /*(must not be blank for _get below)*/
       #ifdef __COVERITY__
         force_assert(NULL != b); /*(not NULL because created directly above)*/
       #endif
-        b = http_header_request_get(con, HTTP_HEADER_FORWARDED, CONST_STR_LEN("Forwarded"));
+        b = http_header_request_get(r, HTTP_HEADER_FORWARDED, CONST_STR_LEN("Forwarded"));
         buffer_clear(b);
         if (NULL != xff) {
             /* use X-Forwarded-For contents to seed Forwarded */
@@ -659,20 +754,20 @@ static void proxy_set_Forwarded(connection *con, const unsigned int flags) {
               b, CONST_BUF_LEN(ehost));
             buffer_append_string_len(b, CONST_STR_LEN("\""));
             semicolon = 1;
-        } else if (!buffer_string_is_empty(con->request.http_host)) {
+        } else if (!buffer_string_is_empty(r->http_host)) {
             if (semicolon)
                 buffer_append_string_len(b, CONST_STR_LEN(";"));
             buffer_append_string_len(b, CONST_STR_LEN("host=\""));
             buffer_append_string_backslash_escaped(
-              b, CONST_BUF_LEN(con->request.http_host));
+              b, CONST_BUF_LEN(r->http_host));
             buffer_append_string_len(b, CONST_STR_LEN("\""));
             semicolon = 1;
         }
     }
 
     if (flags & PROXY_FORWARDED_REMOTE_USER) {
-        buffer *remote_user =
-          http_header_env_get(con, CONST_STR_LEN("REMOTE_USER"));
+        const buffer *remote_user =
+          http_header_env_get(r, CONST_STR_LEN("REMOTE_USER"));
         if (NULL != remote_user) {
             if (semicolon)
                 buffer_append_string_len(b, CONST_STR_LEN(";"));
@@ -680,121 +775,186 @@ static void proxy_set_Forwarded(connection *con, const unsigned int flags) {
             buffer_append_string_backslash_escaped(
               b, CONST_BUF_LEN(remote_user));
             buffer_append_string_len(b, CONST_STR_LEN("\""));
-            semicolon = 1;
+            /*semicolon = 1;*/
         }
     }
 
     /* legacy X-* headers, including X-Forwarded-For */
 
     b = (NULL != efor) ? efor : con->dst_addr_buf;
-    http_header_request_set(con, HTTP_HEADER_X_FORWARDED_FOR,
+    http_header_request_set(r, HTTP_HEADER_X_FORWARDED_FOR,
                             CONST_STR_LEN("X-Forwarded-For"),
                             CONST_BUF_LEN(b));
 
-    b = (NULL != ehost) ? ehost : con->request.http_host;
+    b = (NULL != ehost) ? ehost : r->http_host;
     if (!buffer_string_is_empty(b)) {
-        http_header_request_set(con, HTTP_HEADER_OTHER,
+        http_header_request_set(r, HTTP_HEADER_OTHER,
                                 CONST_STR_LEN("X-Host"),
                                 CONST_BUF_LEN(b));
-        http_header_request_set(con, HTTP_HEADER_OTHER,
+        http_header_request_set(r, HTTP_HEADER_OTHER,
                                 CONST_STR_LEN("X-Forwarded-Host"),
                                 CONST_BUF_LEN(b));
     }
 
-    b = (NULL != eproto) ? eproto : con->uri.scheme;
-    http_header_request_set(con, HTTP_HEADER_X_FORWARDED_PROTO,
+    b = (NULL != eproto) ? eproto : &r->uri.scheme;
+    http_header_request_set(r, HTTP_HEADER_X_FORWARDED_PROTO,
                             CONST_STR_LEN("X-Forwarded-Proto"),
                             CONST_BUF_LEN(b));
 }
 
 
-static handler_t proxy_create_env(server *srv, gw_handler_ctx *gwhctx) {
+static handler_t proxy_stdin_append(gw_handler_ctx *hctx) {
+    /*handler_ctx *hctx = (handler_ctx *)gwhctx;*/
+    chunkqueue * const req_cq = &hctx->r->reqbody_queue;
+    const off_t req_cqlen = chunkqueue_length(req_cq);
+    if (req_cqlen) {
+        /* XXX: future: use http_chunk_len_append() */
+        buffer * const tb = hctx->r->tmp_buf;
+        buffer_clear(tb);
+        buffer_append_uint_hex_lc(tb, (uintmax_t)req_cqlen);
+        buffer_append_string_len(tb, CONST_STR_LEN("\r\n"));
+
+        const off_t len = (off_t)buffer_string_length(tb)
+                        + 2 /*(+2 end chunk "\r\n")*/
+                        + req_cqlen;
+        if (-1 != hctx->wb_reqlen)
+            hctx->wb_reqlen += (hctx->wb_reqlen >= 0) ? len : -len;
+
+        (chunkqueue_is_empty(&hctx->wb) || hctx->wb.first->type == MEM_CHUNK)
+                                          /* else FILE_CHUNK for temp file */
+          ? chunkqueue_append_mem(&hctx->wb, CONST_BUF_LEN(tb))
+          : chunkqueue_append_mem_min(&hctx->wb, CONST_BUF_LEN(tb));
+        chunkqueue_steal(&hctx->wb, req_cq, req_cqlen);
+
+        chunkqueue_append_mem_min(&hctx->wb, CONST_STR_LEN("\r\n"));
+    }
+
+    if (hctx->wb.bytes_in == hctx->wb_reqlen) {/*hctx->r->reqbody_length >= 0*/
+        /* terminate STDIN */
+        chunkqueue_append_mem(&hctx->wb, CONST_STR_LEN("0\r\n\r\n"));
+        hctx->wb_reqlen += (int)sizeof("0\r\n\r\n");
+    }
+
+    return HANDLER_GO_ON;
+}
+
+
+static handler_t proxy_create_env(gw_handler_ctx *gwhctx) {
 	handler_ctx *hctx = (handler_ctx *)gwhctx;
-	connection *con = hctx->gw.remote_conn;
+	request_st * const r = hctx->gw.r;
 	const int remap_headers = (NULL != hctx->conf.header.urlpaths
 				   || NULL != hctx->conf.header.hosts_request);
-	const int upgrade = hctx->conf.header.upgrade
-	    && (NULL != http_header_request_get(con, HTTP_HEADER_UPGRADE, CONST_STR_LEN("Upgrade")));
-	size_t rsz = (size_t)(con->read_queue->bytes_out - hctx->gw.wb->bytes_in);
-	buffer * const b = chunkqueue_prepend_buffer_open_sz(hctx->gw.wb, rsz < 65536 ? rsz : con->header_len);
+	size_t rsz = (size_t)(r->read_queue.bytes_out - hctx->gw.wb.bytes_in);
+	if (rsz >= 65536) rsz = r->rqst_header_len;
+	buffer * const b = chunkqueue_prepend_buffer_open_sz(&hctx->gw.wb, rsz);
 
 	/* build header */
 
 	/* request line */
-	http_method_append(b, con->request.http_method);
+	http_method_append(b, r->http_method);
 	buffer_append_string_len(b, CONST_STR_LEN(" "));
-	buffer_append_string_buffer(b, con->request.uri);
+	buffer_append_string_buffer(b, &r->target);
 	if (remap_headers)
-		http_header_remap_uri(b, buffer_string_length(b) - buffer_string_length(con->request.uri), &hctx->conf.header, 1);
-	if (!upgrade)
-		buffer_append_string_len(b, CONST_STR_LEN(" HTTP/1.0\r\n"));
-	else
+		http_header_remap_uri(b, buffer_string_length(b) - buffer_string_length(&r->target), &hctx->conf.header, 1);
+
+	if (!proxy_force_http10)
 		buffer_append_string_len(b, CONST_STR_LEN(" HTTP/1.1\r\n"));
+	else
+		buffer_append_string_len(b, CONST_STR_LEN(" HTTP/1.0\r\n"));
 
 	if (hctx->conf.replace_http_host && !buffer_string_is_empty(hctx->gw.host->id)) {
 		if (hctx->gw.conf.debug > 1) {
-			log_error_write(srv, __FILE__, __LINE__,  "SBS",
-					"proxy - using \"", hctx->gw.host->id, "\" as HTTP Host");
+			log_error(r->conf.errh, __FILE__, __LINE__,
+			  "proxy - using \"%s\" as HTTP Host", hctx->gw.host->id->ptr);
 		}
 		buffer_append_string_len(b, CONST_STR_LEN("Host: "));
 		buffer_append_string_buffer(b, hctx->gw.host->id);
 		buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
-	} else if (!buffer_string_is_empty(con->request.http_host)) {
+	} else if (!buffer_string_is_empty(r->http_host)) {
 		buffer_append_string_len(b, CONST_STR_LEN("Host: "));
-		buffer_append_string_buffer(b, con->request.http_host);
+		buffer_append_string_buffer(b, r->http_host);
 		if (remap_headers) {
-			size_t alen = buffer_string_length(con->request.http_host);
+			size_t alen = buffer_string_length(r->http_host);
 			http_header_remap_host(b, buffer_string_length(b) - alen, &hctx->conf.header, 1, alen);
 		}
 		buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
 	}
 
 	/* "Forwarded" and legacy X- headers */
-	proxy_set_Forwarded(con, hctx->conf.forwarded);
+	proxy_set_Forwarded(r->con, r, hctx->conf.forwarded);
 
-	if (con->request.content_length > 0
-	    || (0 == con->request.content_length
-		&& HTTP_METHOD_GET != con->request.http_method
-		&& HTTP_METHOD_HEAD != con->request.http_method)) {
+	if (r->reqbody_length > 0
+	    || (0 == r->reqbody_length
+		&& !http_method_get_or_head(r->http_method))) {
 		/* set Content-Length if client sent Transfer-Encoding: chunked
 		 * and not streaming to backend (request body has been fully received) */
-		buffer *vb = http_header_request_get(con, HTTP_HEADER_CONTENT_LENGTH, CONST_STR_LEN("Content-Length"));
+		const buffer *vb = http_header_request_get(r, HTTP_HEADER_CONTENT_LENGTH, CONST_STR_LEN("Content-Length"));
 		if (NULL == vb) {
 			char buf[LI_ITOSTRING_LENGTH];
-			li_itostrn(buf, sizeof(buf), con->request.content_length);
-			http_header_request_set(con, HTTP_HEADER_CONTENT_LENGTH, CONST_STR_LEN("Content-Length"), buf, strlen(buf));
+			http_header_request_set(r, HTTP_HEADER_CONTENT_LENGTH, CONST_STR_LEN("Content-Length"),
+			                        buf, li_itostrn(buf, sizeof(buf), r->reqbody_length));
 		}
+	}
+	else if (!proxy_force_http10
+	         && -1 == r->reqbody_length
+	         && (r->conf.stream_request_body
+	             & (FDEVENT_STREAM_REQUEST | FDEVENT_STREAM_REQUEST_BUFMIN))) {
+		hctx->gw.stdin_append = proxy_stdin_append; /* stream chunked body */
+		buffer_append_string_len(b, CONST_STR_LEN("Transfer-Encoding: chunked\r\n"));
 	}
 
 	/* request header */
-	for (size_t i = 0, used = con->request.headers->used; i < used; ++i) {
-		data_string *ds = (data_string *)con->request.headers->data[i];
-		const size_t klen = buffer_string_length(ds->key);
+	const buffer *connhdr = NULL;
+	buffer *te = NULL;
+	buffer *upgrade = NULL;
+	for (size_t i = 0, used = r->rqst_headers.used; i < used; ++i) {
+		data_string *ds = (data_string *)r->rqst_headers.data[i];
+		const size_t klen = buffer_string_length(&ds->key);
 		size_t vlen;
 		switch (klen) {
 		default:
 			break;
+		case 2:
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("TE"))) {
+				if (proxy_force_http10 || r->http_version == HTTP_VERSION_1_0) continue;
+				/* ignore if not exactly "trailers" */
+				if (!buffer_eq_icase_slen(&ds->value, CONST_STR_LEN("trailers"))) continue;
+				te = &ds->value;
+			}
+			break;
 		case 4:
-			if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("Host"))) continue; /*(handled further above)*/
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Host"))) continue; /*(handled further above)*/
+			break;
+		case 7:
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Upgrade"))) {
+				if (proxy_force_http10 || r->http_version == HTTP_VERSION_1_0) continue;
+				if (!hctx->conf.header.upgrade) continue;
+				upgrade = &ds->value;
+			}
 			break;
 		case 10:
-			if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("Connection"))) continue;
-			if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("Set-Cookie"))) continue; /*(response header only; avoid accidental reflection)*/
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Connection"))) { connhdr = &ds->value; continue; }
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Set-Cookie"))) continue; /*(response header only; avoid accidental reflection)*/
 			break;
 		case 16:
-			if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("Proxy-Connection"))) continue;
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Proxy-Connection"))) continue;
 			break;
 		case 5:
 			/* Do not emit HTTP_PROXY in environment.
 			 * Some executables use HTTP_PROXY to configure
 			 * outgoing proxy.  See also https://httpoxy.org/ */
-			if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("Proxy"))) continue;
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Proxy"))) continue;
+			break;
+		case 6:
+			/* Do not forward Expect: 100-continue
+			 * since we do not handle "HTTP/1.1 100 Continue" response */
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Expect"))) continue;
 			break;
 		case 0:
 			continue;
 		}
 
-		vlen = buffer_string_length(ds->value);
+		vlen = buffer_string_length(&ds->value);
 		if (0 == vlen) continue;
 
 		if (buffer_string_space(b) < klen + vlen + 4) {
@@ -803,9 +963,9 @@ static handler_t proxy_create_env(server *srv, gw_handler_ctx *gwhctx) {
 			buffer_string_prepare_append(b, extend);
 		}
 
-		buffer_append_string_len(b, ds->key->ptr, klen);
+		buffer_append_string_len(b, ds->key.ptr, klen);
 		buffer_append_string_len(b, CONST_STR_LEN(": "));
-		buffer_append_string_len(b, ds->value->ptr, vlen);
+		buffer_append_string_len(b, ds->value.ptr, vlen);
 		buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
 
 		if (!remap_headers) continue;
@@ -817,131 +977,86 @@ static handler_t proxy_create_env(server *srv, gw_handler_ctx *gwhctx) {
 			continue;
 	      #if 0 /* "URI" is HTTP response header (non-standard; historical in Apache) */
 		case 3:
-			if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("URI"))) break;
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("URI"))) break;
 			continue;
 	      #endif
 	      #if 0 /* "Location" is HTTP response header */
 		case 8:
-			if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("Location"))) break;
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Location"))) break;
 			continue;
 	      #endif
 		case 11: /* "Destination" is WebDAV request header */
-			if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("Destination"))) break;
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Destination"))) break;
 			continue;
 		case 16: /* "Content-Location" may be HTTP request or response header */
-			if (buffer_is_equal_caseless_string(ds->key, CONST_STR_LEN("Content-Location"))) break;
+			if (buffer_is_equal_caseless_string(&ds->key, CONST_STR_LEN("Content-Location"))) break;
 			continue;
 		}
 
 		http_header_remap_uri(b, buffer_string_length(b) - vlen - 2, &hctx->conf.header, 1);
 	}
 
-	if (!upgrade)
+	if (connhdr && !proxy_force_http10 && r->http_version >= HTTP_VERSION_1_1
+	    && !buffer_eq_icase_slen(connhdr, CONST_STR_LEN("close"))) {
+		/* mod_proxy always sends Connection: close to backend */
+		buffer_append_string_len(b, CONST_STR_LEN("Connection: close"));
+		/* (future: might be pedantic and also check Connection header for each
+		 * token using http_header_str_contains_token() */
+		if (!buffer_string_is_empty(te))
+			buffer_append_string_len(b, CONST_STR_LEN(", te"));
+		if (!buffer_string_is_empty(upgrade))
+			buffer_append_string_len(b, CONST_STR_LEN(", upgrade"));
+		buffer_append_string_len(b, CONST_STR_LEN("\r\n\r\n"));
+	}
+	else    /* mod_proxy always sends Connection: close to backend */
 		buffer_append_string_len(b, CONST_STR_LEN("Connection: close\r\n\r\n"));
-	else
-		buffer_append_string_len(b, CONST_STR_LEN("Connection: close, upgrade\r\n\r\n"));
 
 	hctx->gw.wb_reqlen = buffer_string_length(b);
-	chunkqueue_prepend_buffer_commit(hctx->gw.wb);
+	chunkqueue_prepend_buffer_commit(&hctx->gw.wb);
 
-	if (con->request.content_length) {
-		chunkqueue_append_chunkqueue(hctx->gw.wb, con->request_content_queue);
-		if (con->request.content_length > 0)
-			hctx->gw.wb_reqlen += con->request.content_length; /* total req size */
+	if (r->reqbody_length) {
+		chunkqueue_append_chunkqueue(&hctx->gw.wb, &r->reqbody_queue);
+		if (r->reqbody_length > 0)
+			hctx->gw.wb_reqlen += r->reqbody_length; /* total req size */
 		else /* as-yet-unknown total request size (Transfer-Encoding: chunked)*/
 			hctx->gw.wb_reqlen = -hctx->gw.wb_reqlen;
 	}
 
-	status_counter_inc(srv, CONST_STR_LEN("proxy.requests"));
+	status_counter_inc(CONST_STR_LEN("proxy.requests"));
 	return HANDLER_GO_ON;
 }
 
 
-static handler_t proxy_create_env_connect(server *srv, gw_handler_ctx *gwhctx) {
+static handler_t proxy_create_env_connect(gw_handler_ctx *gwhctx) {
 	handler_ctx *hctx = (handler_ctx *)gwhctx;
-	connection *con = hctx->gw.remote_conn;
-	con->http_status = 200; /* OK */
-	con->file_started = 1;
-	gw_set_transparent(srv, &hctx->gw);
-	http_response_upgrade_read_body_unknown(srv, con);
+	request_st * const r = hctx->gw.r;
+	r->http_status = 200; /* OK */
+	r->resp_body_started = 1;
+	gw_set_transparent(&hctx->gw);
+	http_response_upgrade_read_body_unknown(r);
 
-	status_counter_inc(srv, CONST_STR_LEN("proxy.requests"));
+	status_counter_inc(CONST_STR_LEN("proxy.requests"));
 	return HANDLER_GO_ON;
 }
 
 
-#define PATCH(x) \
-	p->conf.x = s->x;
-#define PATCH_GW(x) \
-	p->conf.gw.x = s->gw.x;
-static int mod_proxy_patch_connection(server *srv, connection *con, plugin_data *p) {
-	size_t i, j;
-	plugin_config *s = p->config_storage[0];
-
-	PATCH_GW(exts);
-	PATCH_GW(exts_auth);
-	PATCH_GW(exts_resp);
-	PATCH_GW(debug);
-	PATCH_GW(ext_mapping);
-	PATCH_GW(balance);
-	PATCH(replace_http_host);
-	PATCH(forwarded);
-	PATCH(header); /*(copies struct)*/
-
-	/* skip the first, the global context */
-	for (i = 1; i < srv->config_context->used; i++) {
-		data_config *dc = (data_config *)srv->config_context->data[i];
-		s = p->config_storage[i];
-
-		/* condition didn't match */
-		if (!config_check_cond(srv, con, dc)) continue;
-
-		/* merge config */
-		for (j = 0; j < dc->value->used; j++) {
-			data_unset *du = dc->value->data[j];
-
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN("proxy.server"))) {
-				PATCH_GW(exts);
-				PATCH_GW(exts_auth);
-				PATCH_GW(exts_resp);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("proxy.debug"))) {
-				PATCH_GW(debug);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("proxy.balance"))) {
-				PATCH_GW(balance);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("proxy.map-extensions"))) {
-				PATCH_GW(ext_mapping);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("proxy.replace-http-host"))) {
-				PATCH(replace_http_host);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("proxy.forwarded"))) {
-				PATCH(forwarded);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("proxy.header"))) {
-				PATCH(header); /*(copies struct)*/
-			}
-		}
-	}
-
-	return 0;
-}
-#undef PATCH_GW
-#undef PATCH
-
-static handler_t proxy_response_headers(server *srv, connection *con, struct http_response_opts_t *opts) {
+static handler_t proxy_response_headers(request_st * const r, struct http_response_opts_t *opts) {
     /* response headers just completed */
     handler_ctx *hctx = (handler_ctx *)opts->pdata;
 
-    if (con->response.htags & HTTP_HEADER_UPGRADE) {
-        if (hctx->conf.header.upgrade && con->http_status == 101) {
+    if (light_btst(r->resp_htags, HTTP_HEADER_UPGRADE)) {
+        if (hctx->conf.header.upgrade && r->http_status == 101) {
             /* 101 Switching Protocols; transition to transparent proxy */
-            gw_set_transparent(srv, &hctx->gw);
-            http_response_upgrade_read_body_unknown(srv, con);
+            gw_set_transparent(&hctx->gw);
+            http_response_upgrade_read_body_unknown(r);
         }
         else {
-            con->response.htags &= ~HTTP_HEADER_UPGRADE;
+            light_bclr(r->resp_htags, HTTP_HEADER_UPGRADE);
           #if 0
             /* preserve prior questionable behavior; likely broken behavior
              * anyway if backend thinks connection is being upgraded but client
              * does not receive Connection: upgrade */
-            http_header_response_unset(con, HTTP_HEADER_UPGRADE,
+            http_header_response_unset(r, HTTP_HEADER_UPGRADE,
                                        CONST_STR_LEN("Upgrade"))
           #endif
         }
@@ -953,36 +1068,36 @@ static handler_t proxy_response_headers(server *srv, connection *con, struct htt
         && NULL == hctx->conf.header.hosts_response)
         return HANDLER_GO_ON;
 
-    if (con->response.htags & HTTP_HEADER_LOCATION) {
-        buffer *vb = http_header_response_get(con, HTTP_HEADER_LOCATION, CONST_STR_LEN("Location"));
+    if (light_btst(r->resp_htags, HTTP_HEADER_LOCATION)) {
+        buffer *vb = http_header_response_get(r, HTTP_HEADER_LOCATION, CONST_STR_LEN("Location"));
         if (vb) http_header_remap_uri(vb, 0, &hctx->conf.header, 0);
     }
-    if (con->response.htags & HTTP_HEADER_CONTENT_LOCATION) {
-        buffer *vb = http_header_response_get(con, HTTP_HEADER_CONTENT_LOCATION, CONST_STR_LEN("Content-Location"));
+    if (light_btst(r->resp_htags, HTTP_HEADER_CONTENT_LOCATION)) {
+        buffer *vb = http_header_response_get(r, HTTP_HEADER_CONTENT_LOCATION, CONST_STR_LEN("Content-Location"));
         if (vb) http_header_remap_uri(vb, 0, &hctx->conf.header, 0);
     }
-    if (con->response.htags & HTTP_HEADER_SET_COOKIE) {
-        buffer *vb = http_header_response_get(con, HTTP_HEADER_SET_COOKIE, CONST_STR_LEN("Set-Cookie"));
+    if (light_btst(r->resp_htags, HTTP_HEADER_SET_COOKIE)) {
+        buffer *vb = http_header_response_get(r, HTTP_HEADER_SET_COOKIE, CONST_STR_LEN("Set-Cookie"));
         if (vb) http_header_remap_setcookie(vb, 0, &hctx->conf.header);
     }
 
     return HANDLER_GO_ON;
 }
 
-static handler_t mod_proxy_check_extension(server *srv, connection *con, void *p_d) {
+static handler_t mod_proxy_check_extension(request_st * const r, void *p_d) {
 	plugin_data *p = p_d;
 	handler_t rc;
 
-	if (con->mode != DIRECT) return HANDLER_GO_ON;
+	if (NULL != r->handler_module) return HANDLER_GO_ON;
 
-	mod_proxy_patch_connection(srv, con, p);
+	mod_proxy_patch_config(r, p);
 	if (NULL == p->conf.gw.exts) return HANDLER_GO_ON;
 
-	rc = gw_check_extension(srv, con, (gw_plugin_data *)p, 1, sizeof(handler_ctx));
+	rc = gw_check_extension(r, (gw_plugin_data *)p, 1, sizeof(handler_ctx));
 	if (HANDLER_GO_ON != rc) return rc;
 
-	if (con->mode == p->id) {
-		handler_ctx *hctx = con->plugin_ctx[p->id];
+	if (r->handler_module == p->self) {
+		handler_ctx *hctx = r->plugin_ctx[p->id];
 		hctx->gw.create_env = proxy_create_env;
 		hctx->gw.response = chunk_buffer_acquire();
 		hctx->gw.opts.backend = BACKEND_PROXY;
@@ -990,26 +1105,26 @@ static handler_t mod_proxy_check_extension(server *srv, connection *con, void *p
 		hctx->gw.opts.headers = proxy_response_headers;
 
 		hctx->conf = p->conf; /*(copies struct)*/
-		hctx->conf.header.http_host = con->request.http_host;
-		hctx->conf.header.upgrade  &= (con->request.http_version == HTTP_VERSION_1_1);
+		hctx->conf.header.http_host = r->http_host;
+		hctx->conf.header.upgrade  &= (r->http_version == HTTP_VERSION_1_1);
 		/* mod_proxy currently sends all backend requests as http.
 		 * https-remap is a flag since it might not be needed if backend
 		 * honors Forwarded or X-Forwarded-Proto headers, e.g. by using
 		 * lighttpd mod_extforward or similar functionality in backend*/
 		if (hctx->conf.header.https_remap) {
 			hctx->conf.header.https_remap =
-			  buffer_is_equal_string(con->uri.scheme, CONST_STR_LEN("https"));
+			  buffer_is_equal_string(&r->uri.scheme, CONST_STR_LEN("https"));
 		}
 
-		if (con->request.http_method == HTTP_METHOD_CONNECT) {
+		if (r->http_method == HTTP_METHOD_CONNECT) {
 			/*(note: not requiring HTTP/1.1 due to too many non-compliant
 			 * clients such as 'openssl s_client')*/
 			if (hctx->conf.header.connect_method) {
 				hctx->gw.create_env = proxy_create_env_connect;
 			}
 			else {
-				con->http_status = 405; /* Method Not Allowed */
-				con->mode = DIRECT;
+				r->http_status = 405; /* Method Not Allowed */
+				r->handler_module = NULL;
 				return HANDLER_FINISHED;
 			}
 		}
@@ -1022,18 +1137,16 @@ static handler_t mod_proxy_check_extension(server *srv, connection *con, void *p
 int mod_proxy_plugin_init(plugin *p);
 int mod_proxy_plugin_init(plugin *p) {
 	p->version      = LIGHTTPD_VERSION_ID;
-	p->name         = buffer_init_string("proxy");
+	p->name         = "proxy";
 
 	p->init         = mod_proxy_init;
 	p->cleanup      = mod_proxy_free;
 	p->set_defaults = mod_proxy_set_defaults;
-	p->connection_reset        = gw_connection_reset;
+	p->handle_request_reset    = gw_handle_request_reset;
 	p->handle_uri_clean        = mod_proxy_check_extension;
 	p->handle_subrequest       = gw_handle_subrequest;
 	p->handle_trigger          = gw_handle_trigger;
 	p->handle_waitpid          = gw_handle_waitpid_cb;
-
-	p->data         = NULL;
 
 	return 0;
 }

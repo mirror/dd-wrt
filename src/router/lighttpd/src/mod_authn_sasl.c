@@ -1,3 +1,9 @@
+/*
+ * mod_authn_sasl - SASL backend for lighttpd HTTP auth
+ *
+ * Copyright(c) 2017 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
+ * License: BSD 3-clause (same as lighttpd)
+ */
 #include "first.h"
 
 /* mod_authn_sasl
@@ -19,12 +25,10 @@
 #include "plugin.h"
 
 #include <sys/utsname.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
 typedef struct {
-    array *opts;
     const char *service;
     const char *fqdn;
     const buffer *pwcheck_method;
@@ -33,13 +37,13 @@ typedef struct {
 
 typedef struct {
     PLUGIN_DATA;
-    plugin_config **config_storage;
+    plugin_config defaults;
     plugin_config conf;
-    buffer *fqdn;
+
     int initonce;
 } plugin_data;
 
-static handler_t mod_authn_sasl_basic(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw);
+static handler_t mod_authn_sasl_basic(request_st *r, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw);
 
 INIT_FUNC(mod_authn_sasl_init) {
     static http_auth_backend_t http_auth_backend_sasl =
@@ -54,131 +58,152 @@ INIT_FUNC(mod_authn_sasl_init) {
 }
 
 FREE_FUNC(mod_authn_sasl_free) {
-    plugin_data *p = p_d;
-    if (!p) return HANDLER_GO_ON;
-
+    plugin_data * const p = p_d;
     if (p->initonce) sasl_done();
-
-    if (p->config_storage) {
-        for (size_t i = 0; i < srv->config_context->used; ++i) {
-            plugin_config *s = p->config_storage[i];
-            if (NULL == s) continue;
-            array_free(s->opts);
-            free(s);
+    if (NULL == p->cvlist) return;
+    /* (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1], used = p->nconfig; i < used; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* auth.backend.sasl.opts */
+                if (cpv->vtype == T_CONFIG_LOCAL) free(cpv->v.v);
+                break;
+              default:
+                break;
+            }
         }
-        free(p->config_storage);
     }
-    buffer_free(p->fqdn);
-    free(p);
-    UNUSED(srv);
-    return HANDLER_GO_ON;
+}
+
+static void mod_authn_sasl_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
+    switch (cpv->k_id) { /* index into static config_plugin_keys_t cpk[] */
+      case 0: /* auth.backend.sasl.opts */
+        if (cpv->vtype == T_CONFIG_LOCAL)
+            memcpy(pconf, cpv->v.v, sizeof(plugin_config));
+        break;
+      default:/* should not happen */
+        return;
+    }
+}
+
+static void mod_authn_sasl_merge_config(plugin_config * const pconf, const config_plugin_value_t *cpv) {
+    do {
+        mod_authn_sasl_merge_config_cpv(pconf, cpv);
+    } while ((++cpv)->k_id != -1);
+}
+
+static void mod_authn_sasl_patch_config(request_st * const r, plugin_data * const p) {
+    p->conf = p->defaults; /* copy small struct instead of memcpy() */
+    /*memcpy(&p->conf, &p->defaults, sizeof(plugin_config));*/
+    for (int i = 1, used = p->nconfig; i < used; ++i) {
+        if (config_check_cond(r, (uint32_t)p->cvlist[i].k_id))
+            mod_authn_sasl_merge_config(&p->conf,
+                                        p->cvlist + p->cvlist[i].v.u2[0]);
+    }
+}
+
+static plugin_config * mod_authn_sasl_parse_opts(server *srv, const array * const opts) {
+    const data_string *ds;
+    const char *service = NULL;
+    const char *fqdn = NULL;
+    const buffer *pwcheck_method = NULL;
+    const buffer *sasldb_path = NULL;
+
+    ds = (const data_string *)
+      array_get_element_klen(opts, CONST_STR_LEN("service"));
+    service = (NULL != ds) ? ds->value.ptr : "http";
+
+    ds = (const data_string *)
+      array_get_element_klen(opts, CONST_STR_LEN("fqdn"));
+    if (NULL != ds) fqdn = ds->value.ptr;
+    if (NULL == fqdn) {
+        static struct utsname uts;
+        if (uts.nodename[0] == '\0') {
+            if (0 != uname(&uts)) {
+                log_perror(srv->errh, __FILE__, __LINE__, "uname()");
+                return NULL;
+            }
+        }
+        fqdn = uts.nodename;
+    }
+
+    ds = (const data_string *)
+      array_get_element_klen(opts, CONST_STR_LEN("pwcheck_method"));
+    if (NULL != ds) {
+        pwcheck_method = &ds->value;
+        if (!buffer_is_equal_string(&ds->value, CONST_STR_LEN("saslauthd"))
+            && !buffer_is_equal_string(&ds->value, CONST_STR_LEN("auxprop"))
+            && !buffer_is_equal_string(&ds->value, CONST_STR_LEN("sasldb"))){
+            log_error(srv->errh, __FILE__, __LINE__,
+              "sasl pwcheck_method must be one of saslauthd, "
+              "sasldb, or auxprop, not: %s", ds->value.ptr);
+            return NULL;
+        }
+        if (buffer_is_equal_string(&ds->value, CONST_STR_LEN("sasldb"))) {
+            /* Cyrus libsasl2 expects "auxprop" instead of "sasldb"
+             * (mod_authn_sasl_cb_getopt auxprop_plugin returns "sasldb") */
+            buffer *b;
+            *(const buffer **)&b = &ds->value;
+            buffer_copy_string_len(b, CONST_STR_LEN("auxprop"));
+        }
+    }
+
+    ds = (const data_string *)
+      array_get_element_klen(opts, CONST_STR_LEN("sasldb_path"));
+    if (NULL != ds) sasldb_path = &ds->value;
+
+    plugin_config *pconf = malloc(sizeof(plugin_config));
+    force_assert(pconf);
+    pconf->service = service;
+    pconf->fqdn = fqdn;
+    pconf->pwcheck_method = pwcheck_method;
+    pconf->sasldb_path = sasldb_path;
+    return pconf;
 }
 
 SETDEFAULTS_FUNC(mod_authn_sasl_set_defaults) {
-    plugin_data *p = p_d;
-    size_t i;
-    config_values_t cv[] = {
-        { "auth.backend.sasl.opts",         NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },
-        { NULL,                             NULL, T_CONFIG_UNSET,  T_CONFIG_SCOPE_UNSET }
+    static const config_plugin_keys_t cpk[] = {
+      { CONST_STR_LEN("auth.backend.sasl.opts"),
+        T_CONFIG_ARRAY_KVSTRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ NULL, 0,
+        T_CONFIG_UNSET,
+        T_CONFIG_SCOPE_UNSET }
     };
 
-    p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
+    plugin_data * const p = p_d;
+    if (!config_plugin_values_init(srv, p, cpk, "mod_authn_sasl"))
+        return HANDLER_ERROR;
 
-    for (i = 0; i < srv->config_context->used; i++) {
-        data_config const *config = (data_config const*)srv->config_context->data[i];
-        data_string *ds;
-        plugin_config *s = calloc(1, sizeof(plugin_config));
-        s->opts = array_init();
-
-        cv[0].destination = s->opts;
-
-        p->config_storage[i] = s;
-
-        if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
-            return HANDLER_ERROR;
-        }
-
-        if (0 == s->opts->used) continue;
-
-        ds = (data_string *)
-          array_get_element_klen(s->opts, CONST_STR_LEN("service"));
-        s->service = (NULL != ds) ? ds->value->ptr : "http";
-
-        ds = (data_string *)
-          array_get_element_klen(s->opts, CONST_STR_LEN("fqdn"));
-        if (NULL != ds) s->fqdn = ds->value->ptr;
-        if (NULL == s->fqdn) {
-            if (NULL == p->fqdn) {
-                struct utsname uts;
-                if (0 != uname(&uts)) {
-                    log_error_write(srv, __FILE__, __LINE__, "ss",
-                                    "uname():", strerror(errno));
-                    return HANDLER_ERROR;
+    /* process and validate config directives
+     * (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* auth.backend.sasl.opts */
+                if (cpv->v.a->used) {
+                    cpv->v.v = mod_authn_sasl_parse_opts(srv, cpv->v.a);
+                    if (NULL == cpv->v.v) return HANDLER_ERROR;
+                    cpv->vtype = T_CONFIG_LOCAL;
                 }
-                p->fqdn = buffer_init_string(uts.nodename);
-            }
-            s->fqdn = p->fqdn->ptr;
-        }
-
-        ds = (data_string *)
-          array_get_element_klen(s->opts, CONST_STR_LEN("pwcheck_method"));
-        if (NULL != ds) {
-            s->pwcheck_method = ds->value;
-            if (!buffer_is_equal_string(ds->value, CONST_STR_LEN("saslauthd"))
-                && !buffer_is_equal_string(ds->value, CONST_STR_LEN("auxprop"))
-                && !buffer_is_equal_string(ds->value, CONST_STR_LEN("sasldb"))){
-                log_error_write(srv, __FILE__, __LINE__, "sb",
-                                "sasl pwcheck_method must be one of saslauthd, "
-                                "sasldb, or auxprop, not:", ds->value);
-                return HANDLER_ERROR;
-            }
-            if (buffer_is_equal_string(ds->value, CONST_STR_LEN("sasldb"))) {
-                /* Cyrus libsasl2 expects "auxprop" instead of "sasldb"
-                 * (mod_authn_sasl_cb_getopt auxprop_plugin returns "sasldb") */
-                buffer_copy_string_len(ds->value, CONST_STR_LEN("auxprop"));
+                break;
+              default:/* should not happen */
+                break;
             }
         }
+    }
 
-        ds = (data_string *)
-          array_get_element_klen(s->opts, CONST_STR_LEN("sasldb_path"));
-        if (NULL != ds) s->sasldb_path = ds->value;
+    /* initialize p->defaults from global config context */
+    if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
+        if (-1 != cpv->k_id)
+            mod_authn_sasl_merge_config(&p->defaults, cpv);
     }
 
     return HANDLER_GO_ON;
 }
-
-#define PATCH(x) \
-    p->conf.x = s->x;
-static int mod_authn_sasl_patch_connection(server *srv, connection *con, plugin_data *p) {
-    plugin_config *s = p->config_storage[0];
-    PATCH(service);
-    PATCH(fqdn);
-    PATCH(pwcheck_method);
-    PATCH(sasldb_path);
-
-    /* skip the first, the global context */
-    for (size_t i = 1; i < srv->config_context->used; ++i) {
-        data_config *dc = (data_config *)srv->config_context->data[i];
-
-        /* condition didn't match */
-        if (!config_check_cond(srv, con, dc)) continue;
-
-        /* merge config */
-        s = p->config_storage[i];
-        for (size_t j = 0; j < dc->value->used; ++j) {
-            data_unset *du = dc->value->data[j];
-            if (buffer_is_equal_string(du->key, CONST_STR_LEN("auth.backend.sasl.opts"))) {
-                PATCH(service);
-                PATCH(fqdn);
-                PATCH(pwcheck_method);
-                PATCH(sasldb_path);
-            }
-        }
-    }
-
-    return 0;
-}
-#undef PATCH
 
 static int mod_authn_sasl_cb_getopt(void *p_d, const char *plugin_name, const char *opt, const char **res, unsigned *len) {
     plugin_data *p = (plugin_data *)p_d;
@@ -212,7 +237,7 @@ static int mod_authn_sasl_cb_getopt(void *p_d, const char *plugin_name, const ch
     return SASL_OK;
 }
 
-static int mod_authn_sasl_cb_log(void *vsrv, int level, const char *message) {
+static int mod_authn_sasl_cb_log(void *vreq, int level, const char *message) {
     switch (level) {
      #if 0
       case SASL_LOG_NONE:
@@ -226,23 +251,24 @@ static int mod_authn_sasl_cb_log(void *vsrv, int level, const char *message) {
       case SASL_LOG_ERR:
       case SASL_LOG_FAIL:
       case SASL_LOG_WARN: /* (might omit SASL_LOG_WARN if too noisy in logs) */
-        log_error_write((server *)vsrv, __FILE__, __LINE__, "s", message);
+        log_error(((request_st *)vreq)->conf.errh, __FILE__, __LINE__,
+                  "%s", message);
         break;
     }
     return SASL_OK;
 }
 
-static handler_t mod_authn_sasl_query(server *srv, connection *con, void *p_d, const buffer *username, const char *realm, const char *pw) {
+static handler_t mod_authn_sasl_query(request_st * const r, void *p_d, const buffer * const username, const char * const realm, const char * const pw) {
     plugin_data *p = (plugin_data *)p_d;
     sasl_conn_t *sc;
     sasl_callback_t const cb[] = {
       { SASL_CB_GETOPT,   (int(*)())mod_authn_sasl_cb_getopt, (void *) p },
-      { SASL_CB_LOG,      (int(*)())mod_authn_sasl_cb_log, (void *) srv },
+      { SASL_CB_LOG,      (int(*)())mod_authn_sasl_cb_log, (void *) r },
       { SASL_CB_LIST_END, NULL, NULL }
     };
     int rc;
 
-    mod_authn_sasl_patch_connection(srv, con, p);
+    mod_authn_sasl_patch_config(r, p);
 
     if (!p->initonce) {
         /* must be done once, but after fork() if multiple lighttpd workers */
@@ -261,9 +287,9 @@ static handler_t mod_authn_sasl_query(server *srv, connection *con, void *p_d, c
     return (SASL_OK == rc) ? HANDLER_GO_ON : HANDLER_ERROR;
 }
 
-static handler_t mod_authn_sasl_basic(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw) {
+static handler_t mod_authn_sasl_basic(request_st * const r, void *p_d, const http_auth_require_t * const require, const buffer * const username, const char * const pw) {
     char *realm = require->realm->ptr;
-    handler_t rc = mod_authn_sasl_query(srv, con, p_d, username, realm, pw);
+    handler_t rc = mod_authn_sasl_query(r, p_d, username, realm, pw);
     if (HANDLER_GO_ON != rc) return rc;
     return http_auth_match_rules(require, username->ptr, NULL, NULL)
       ? HANDLER_GO_ON  /* access granted */
@@ -273,12 +299,10 @@ static handler_t mod_authn_sasl_basic(server *srv, connection *con, void *p_d, c
 int mod_authn_sasl_plugin_init(plugin *p);
 int mod_authn_sasl_plugin_init(plugin *p) {
     p->version     = LIGHTTPD_VERSION_ID;
-    p->name        = buffer_init_string("authn_sasl");
+    p->name        = "authn_sasl";
     p->init        = mod_authn_sasl_init;
     p->set_defaults= mod_authn_sasl_set_defaults;
     p->cleanup     = mod_authn_sasl_free;
-
-    p->data        = NULL;
 
     return 0;
 }

@@ -17,10 +17,9 @@ extra_dist = Split('fastcgi-10.conf \
 	mod-auth.conf \
 	mod-auth.t \
 	mod-cgi.t \
-	mod-compress.t \
-	mod-compress.conf \
+	mod-deflate.t \
+	mod-deflate.conf \
 	mod-fastcgi.t \
-	mod-userdir.t \
 	request.t \
 	mod-ssi.t \
 	LightyTest.pm \

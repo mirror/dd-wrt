@@ -2,7 +2,6 @@
 
 #include "fdevent_impl.h"
 #include "fdevent.h"
-#include "base.h"
 #include "buffer.h"
 #include "log.h"
 
@@ -24,7 +23,7 @@ static int use_sock_cloexec;
 static int use_sock_nonblock;
 #endif
 
-int fdevent_config(server *srv) {
+int fdevent_config(const char **event_handler_name, log_error_st *errh) {
 	static const struct ev_map { fdevent_handler_t et; const char *name; } event_handlers[] =
 	{
 		/* - epoll is most reliable
@@ -56,58 +55,45 @@ int fdevent_config(server *srv) {
 		{ FDEVENT_HANDLER_UNSET,          NULL }
 	};
 
-	if (buffer_string_is_empty(srv->srvconf.event_handler)) {
+	const char * event_handler = *event_handler_name;
+	fdevent_handler_t et = FDEVENT_HANDLER_UNSET;
+
+	if (NULL == event_handler) {
 		/* choose a good default
 		 *
 		 * the event_handler list is sorted by 'goodness'
 		 * taking the first available should be the best solution
 		 */
-		srv->event_handler = event_handlers[0].et;
+		et = event_handlers[0].et;
+		*event_handler_name = event_handlers[0].name;
 
-		if (FDEVENT_HANDLER_UNSET == srv->event_handler) {
-			log_error_write(srv, __FILE__, __LINE__, "s",
-					"sorry, there is no event handler for this system");
+		if (FDEVENT_HANDLER_UNSET == et) {
+			log_error(errh, __FILE__, __LINE__,
+			  "sorry, there is no event handler for this system");
 
 			return -1;
 		}
-
-		buffer_copy_string(srv->srvconf.event_handler, event_handlers[0].name);
 	} else {
 		/*
 		 * User override
 		 */
 
-		for (size_t i = 0; event_handlers[i].name; i++) {
-			if (0 == strcmp(event_handlers[i].name, srv->srvconf.event_handler->ptr)) {
-				srv->event_handler = event_handlers[i].et;
+		for (uint32_t i = 0; event_handlers[i].name; ++i) {
+			if (0 == strcmp(event_handlers[i].name, event_handler)) {
+				et = event_handlers[i].et;
 				break;
 			}
 		}
 
-		if (FDEVENT_HANDLER_UNSET == srv->event_handler) {
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-					"the selected event-handler in unknown or not supported:",
-					srv->srvconf.event_handler );
-
+		if (FDEVENT_HANDLER_UNSET == et) {
+			log_error(errh, __FILE__, __LINE__,
+			  "the selected event-handler in unknown or not supported: %s",
+			  event_handler);
 			return -1;
 		}
 	}
 
-      #ifdef FDEVENT_USE_SELECT
-	if (srv->event_handler == FDEVENT_HANDLER_SELECT) {
-		/* select limits itself
-		 *
-		 * as it is a hard limit and will lead to a segfault we add some safety
-		 * */
-		srv->max_fds = FD_SETSIZE - 200;
-	}
-	else
-      #endif
-	{
-		srv->max_fds = 4096;
-	}
-
-	return 0;
+	return et;
 }
 
 const char * fdevent_show_event_handlers(void) {
@@ -151,10 +137,13 @@ const char * fdevent_show_event_handlers(void) {
       ;
 }
 
-fdevents *fdevent_init(server *srv) {
+fdevents * fdevent_init(const char *event_handler, int *max_fds, int *cur_fds, log_error_st *errh) {
 	fdevents *ev;
-	int type = srv->event_handler;
-	size_t maxfds;
+	uint32_t maxfds = (0 != *max_fds)
+	  ? (uint32_t)*max_fds
+	  : 4096;
+	int type = fdevent_config(&event_handler, errh);
+	if (type <= 0) return NULL;
 
       #ifdef SOCK_CLOEXEC
 	/* Test if SOCK_CLOEXEC is supported by kernel.
@@ -181,21 +170,26 @@ fdevents *fdevent_init(server *srv) {
       #endif
 
       #ifdef FDEVENT_USE_SELECT
+	/* select limits itself
+	 * as it is a hard limit and will lead to a segfault we add some safety
+	 * */
 	if (type == FDEVENT_HANDLER_SELECT) {
-		if (srv->max_fds > (int)FD_SETSIZE - 200) {
-			srv->max_fds = (int)FD_SETSIZE - 200;
-		}
+		if (maxfds > (uint32_t)FD_SETSIZE - 200)
+		    maxfds = (uint32_t)FD_SETSIZE - 200;
 	}
       #endif
-	maxfds = srv->max_fds + 1; /*(+1 for event-handler fd)*/
+	*max_fds = (int)maxfds;
+	++maxfds; /*(+1 for event-handler fd)*/
 
 	ev = calloc(1, sizeof(*ev));
 	force_assert(NULL != ev);
-	ev->srv = srv;
+	ev->errh = errh;
+	ev->cur_fds = cur_fds;
+	ev->event_handler = event_handler;
 	ev->fdarray = calloc(maxfds, sizeof(*ev->fdarray));
 	if (NULL == ev->fdarray) {
-		log_error_write(srv, __FILE__, __LINE__, "SDS",
-				"server.max-fds too large? (", maxfds-1, ")");
+		log_error(ev->errh, __FILE__, __LINE__,
+		  "server.max-fds too large? (%u)", maxfds-1);
 		free(ev);
 		return NULL;
 	}
@@ -237,7 +231,7 @@ fdevents *fdevent_init(server *srv) {
 		if (0 == fdevent_libev_init(ev)) return ev;
 		break;
 	#endif
-	case FDEVENT_HANDLER_UNSET:
+	/*case FDEVENT_HANDLER_UNSET:*/
 	default:
 		break;
 	}
@@ -245,18 +239,19 @@ fdevents *fdevent_init(server *srv) {
 	free(ev->fdarray);
 	free(ev);
 
-	log_error_write(srv, __FILE__, __LINE__, "sBS",
-		"event-handler failed:", srv->srvconf.event_handler, "; try to set server.event-handler = \"poll\" or \"select\"");
+	log_error(errh, __FILE__, __LINE__,
+	  "event-handler failed: %s; "
+	  "try to set server.event-handler = \"poll\" or \"select\"",
+	  event_handler);
 	return NULL;
 }
 
 void fdevent_free(fdevents *ev) {
-	size_t i;
 	if (!ev) return;
 
 	if (ev->free) ev->free(ev);
 
-	for (i = 0; i < ev->maxfds; i++) {
+	for (uint32_t i = 0; i < ev->maxfds; ++i) {
 		/* (fdevent_sched_run() should already have been run,
 		 *  but take reasonable precautions anyway) */
 		if (ev->fdarray[i])
@@ -270,8 +265,10 @@ void fdevent_free(fdevents *ev) {
 int fdevent_reset(fdevents *ev) {
 	int rc = (NULL != ev->reset) ? ev->reset(ev) : 0;
 	if (-1 == rc) {
-		log_error_write(ev->srv, __FILE__, __LINE__, "sBS",
-			"event-handler failed:", ev->srv->srvconf.event_handler, "; try to set server.event-handler = \"poll\" or \"select\"");
+		log_error(ev->errh, __FILE__, __LINE__,
+		  "event-handler failed: %s; "
+		  "try to set server.event-handler = \"poll\" or \"select\"",
+		  ev->event_handler ? ev->event_handler : "");
 	}
 	return rc;
 }
@@ -315,7 +312,6 @@ void fdevent_sched_close(fdevents *ev, int fd, int issock) {
 }
 
 static void fdevent_sched_run(fdevents *ev) {
-	server *srv = ev->srv;
 	for (fdnode *fdn = ev->pendclose; fdn; ) {
 		int fd, rc;
 		fdnode *fdn_tmp;
@@ -336,10 +332,10 @@ static void fdevent_sched_run(fdevents *ev) {
 	      #endif
 
 		if (0 != rc) {
-			log_error_write(srv, __FILE__, __LINE__, "sds", "close failed ", fd, strerror(errno));
+			log_perror(ev->errh, __FILE__, __LINE__, "close failed %d", fd);
 		}
 		else {
-			--srv->cur_fds;
+			--(*ev->cur_fds);
 		}
 
 		fdn_tmp = fdn;
@@ -351,16 +347,62 @@ static void fdevent_sched_run(fdevents *ev) {
 	ev->pendclose = NULL;
 }
 
+__attribute_cold__
+__attribute_noinline__
+static int fdevent_fdnode_event_unsetter_retry(fdevents *ev, fdnode *fdn) {
+    do {
+        switch (errno) {
+         #ifdef EWOULDBLOCK
+         #if EAGAIN != EWOULDBLOCK
+          case EWOULDBLOCK:
+         #endif
+         #endif
+          case EAGAIN:
+          case EINTR:
+            /* temporary error; retry */
+            break;
+          /*case ENOMEM:*/
+          default:
+            /* unrecoverable error; might leak fd */
+            log_perror(ev->errh, __FILE__, __LINE__,
+              "fdevent event_del failed on fd %d", fdn->fd);
+            return 0;
+        }
+    } while (0 != ev->event_del(ev, fdn));
+    return 1;
+}
+
 static void fdevent_fdnode_event_unsetter(fdevents *ev, fdnode *fdn) {
     if (-1 == fdn->fde_ndx) return;
-    if (0 == ev->event_del(ev, fdn)) {
-        fdn->fde_ndx = -1;
-        fdn->events = 0;
-    }
-    else {
-        log_error_write(ev->srv, __FILE__, __LINE__, "SS",
-                        "fdevent event_del failed: ", strerror(errno));
-    }
+    if (0 != ev->event_del(ev, fdn))
+        fdevent_fdnode_event_unsetter_retry(ev, fdn);
+    fdn->fde_ndx = -1;
+    fdn->events = 0;
+}
+
+__attribute_cold__
+__attribute_noinline__
+static int fdevent_fdnode_event_setter_retry(fdevents *ev, fdnode *fdn, int events) {
+    do {
+        switch (errno) {
+         #ifdef EWOULDBLOCK
+         #if EAGAIN != EWOULDBLOCK
+          case EWOULDBLOCK:
+         #endif
+         #endif
+          case EAGAIN:
+          case EINTR:
+            /* temporary error; retry */
+            break;
+          /*case ENOMEM:*/
+          default:
+            /* unrecoverable error */
+            log_perror(ev->errh, __FILE__, __LINE__,
+              "fdevent event_set failed on fd %d", fdn->fd);
+            return 0;
+        }
+    } while (0 != ev->event_set(ev, fdn, events));
+    return 1;
 }
 
 static void fdevent_fdnode_event_setter(fdevents *ev, fdnode *fdn, int events) {
@@ -370,11 +412,9 @@ static void fdevent_fdnode_event_setter(fdevents *ev, fdnode *fdn, int events) {
      * then FDEVENT_HUP or FDEVENT_ERR will never be returned.) */
     if (fdn->events == events) return;/*(no change; nothing to do)*/
 
-    if (0 == ev->event_set(ev, fdn, events))
+    if (0 == ev->event_set(ev, fdn, events)
+        || fdevent_fdnode_event_setter_retry(ev, fdn, events))
         fdn->events = events;
-    else
-        log_error_write(ev->srv, __FILE__, __LINE__, "SS",
-                        "fdevent event_set failed: ", strerror(errno));
 }
 
 void fdevent_fdnode_event_del(fdevents *ev, fdnode *fdn) {
@@ -398,8 +438,7 @@ int fdevent_poll(fdevents *ev, int timeout_ms) {
     if (n >= 0)
         fdevent_sched_run(ev);
     else if (errno != EINTR)
-        log_error_write(ev->srv, __FILE__, __LINE__, "SS",
-                        "fdevent_poll failed: ", strerror(errno));
+        log_perror(ev->errh, __FILE__, __LINE__, "fdevent_poll failed");
     return n;
 }
 
@@ -420,8 +459,7 @@ void fdevent_clrfd_cloexec(int fd) {
 #endif
 }
 
-int fdevent_fcntl_set_nb(fdevents *ev, int fd) {
-	UNUSED(ev);
+int fdevent_fcntl_set_nb(int fd) {
 #ifdef O_NONBLOCK
 	return fcntl(fd, F_SETFL, O_NONBLOCK | O_RDWR);
 #else
@@ -430,17 +468,17 @@ int fdevent_fcntl_set_nb(fdevents *ev, int fd) {
 #endif
 }
 
-int fdevent_fcntl_set_nb_cloexec(fdevents *ev, int fd) {
+int fdevent_fcntl_set_nb_cloexec(int fd) {
 	fdevent_setfd_cloexec(fd);
-	return fdevent_fcntl_set_nb(ev, fd);
+	return fdevent_fcntl_set_nb(fd);
 }
 
-int fdevent_fcntl_set_nb_cloexec_sock(fdevents *ev, int fd) {
+int fdevent_fcntl_set_nb_cloexec_sock(int fd) {
 #if defined(SOCK_CLOEXEC) && defined(SOCK_NONBLOCK)
 	if (use_sock_cloexec && use_sock_nonblock)
 		return 0;
 #endif
-	return fdevent_fcntl_set_nb_cloexec(ev, fd);
+	return fdevent_fcntl_set_nb_cloexec(fd);
 }
 
 int fdevent_socket_cloexec(int domain, int type, int protocol) {
@@ -482,6 +520,16 @@ int fdevent_socket_nb_cloexec(int domain, int type, int protocol) {
 #endif
 	}
 	return fd;
+}
+
+int fdevent_dup_cloexec (int fd) {
+  #ifdef F_DUPFD_CLOEXEC
+    return fcntl(fd, F_DUPFD_CLOEXEC, 3);
+  #else
+    const int newfd = fcntl(fd, F_DUPFD, 3);
+    if (newfd >= 0) fdevent_setfd_cloexec(newfd);
+    return newfd;
+  #endif
 }
 
 #ifndef O_BINARY
@@ -586,14 +634,23 @@ int fdevent_accept_listenfd(int listenfd, struct sockaddr *addr, size_t *addrlen
 		fd = accept4(listenfd, addr, &len, SOCK_CLOEXEC | SOCK_NONBLOCK);
 		if (fd >= 0) {
 			if (!use_sock_nonblock) {
-				if (0 != fdevent_fcntl_set_nb(NULL, fd)) {
+				if (0 != fdevent_fcntl_set_nb(fd)) {
 					close(fd);
 					fd = -1;
 				}
 			}
-		} else if (errno == ENOSYS || errno == ENOTSUP) {
-			fd = accept(listenfd, addr, &len);
-			sock_cloexec = 0;
+		}
+		else {
+			switch (errno) {
+			case ENOSYS:
+			case ENOTSUP:
+			case EPERM:
+				fd = accept(listenfd, addr, &len);
+				sock_cloexec = 0;
+				break;
+			default:
+				break;
+			}
 		}
 	}
 	else {
@@ -607,7 +664,7 @@ int fdevent_accept_listenfd(int listenfd, struct sockaddr *addr, size_t *addrlen
 
 	if (fd >= 0) {
 		*addrlen = (size_t)len;
-		if (!sock_cloexec && 0 != fdevent_fcntl_set_nb_cloexec(NULL, fd)) {
+		if (!sock_cloexec && 0 != fdevent_fcntl_set_nb_cloexec(fd)) {
 			close(fd);
 			fd = -1;
 		}
@@ -677,8 +734,14 @@ int fdevent_set_stdin_stdout_stderr(int fdin, int fdout, int fderr) {
 }
 
 
-#include <stdio.h>      /* perror() */
+#include <stdio.h>      /* perror() rename() */
 #include <signal.h>     /* signal() */
+
+
+int fdevent_rename(const char *oldpath, const char *newpath) {
+    return rename(oldpath, newpath);
+}
+
 
 pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin, int fdout, int fderr, int dfd) {
  #ifdef HAVE_FORK
@@ -695,7 +758,7 @@ pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin
     }
 
     if (0 != fdevent_set_stdin_stdout_stderr(fdin, fdout, fderr)) _exit(errno);
-  #ifdef FD_CLOEXEC
+  #ifndef FD_CLOEXEC
     /*(might not be sufficient for open fds, but modern OS have FD_CLOEXEC)*/
     for (int i = 3; i < 256; ++i) close(i);
   #endif
@@ -714,12 +777,13 @@ pid_t fdevent_fork_execve(const char *name, char *argv[], char *envp[], int fdin
 
     execve(name, argv, envp ? envp : environ);
 
+    int errnum = errno;
     if (0 == memcmp(argv[0], "/bin/sh", sizeof("/bin/sh")-1)
         && argv[1] && 0 == memcmp(argv[1], "-c", sizeof("-c")-1))
         perror(argv[2]);
     else
         perror(argv[0]);
-    _exit(errno);
+    _exit(errnum);
 
  #else
 
@@ -745,8 +809,8 @@ typedef struct fdevent_cmd_pipe {
 
 typedef struct fdevent_cmd_pipes {
     fdevent_cmd_pipe *ptr;
-    size_t used;
-    size_t size;
+    uint32_t used;
+    uint32_t size;
 } fdevent_cmd_pipes;
 
 static fdevent_cmd_pipes cmd_pipes;
@@ -791,7 +855,7 @@ static void fdevent_restart_logger_pipe(fdevent_cmd_pipe *fcp, time_t ts) {
 
 
 void fdevent_restart_logger_pipes(time_t ts) {
-    for (size_t i = 0; i < cmd_pipes.used; ++i) {
+    for (uint32_t i = 0; i < cmd_pipes.used; ++i) {
         fdevent_cmd_pipe * const fcp = cmd_pipes.ptr+i;
         if (fcp->pid > 0) continue;
         fdevent_restart_logger_pipe(fcp, ts);
@@ -800,7 +864,7 @@ void fdevent_restart_logger_pipes(time_t ts) {
 
 
 int fdevent_waitpid_logger_pipe_pid(pid_t pid, time_t ts) {
-    for (size_t i = 0; i < cmd_pipes.used; ++i) {
+    for (uint32_t i = 0; i < cmd_pipes.used; ++i) {
         fdevent_cmd_pipe * const fcp = cmd_pipes.ptr+i;
         if (pid != fcp->pid) continue;
         fcp->pid = -1;
@@ -812,7 +876,7 @@ int fdevent_waitpid_logger_pipe_pid(pid_t pid, time_t ts) {
 
 
 void fdevent_clr_logger_pipe_pids(void) {
-    for (size_t i = 0; i < cmd_pipes.used; ++i) {
+    for (uint32_t i = 0; i < cmd_pipes.used; ++i) {
         fdevent_cmd_pipe *fcp = cmd_pipes.ptr+i;
         fcp->pid = -1;
     }
@@ -820,14 +884,14 @@ void fdevent_clr_logger_pipe_pids(void) {
 
 
 int fdevent_reaped_logger_pipe(pid_t pid) {
-    for (size_t i = 0; i < cmd_pipes.used; ++i) {
+    for (uint32_t i = 0; i < cmd_pipes.used; ++i) {
         fdevent_cmd_pipe *fcp = cmd_pipes.ptr+i;
         if (fcp->pid == pid) {
             time_t ts = time(NULL);
             if (fcp->start + 5 < ts) { /* limit restart to once every 5 sec */
                 fcp->start = ts;
                 fcp->pid = fdevent_open_logger_pipe_spawn(fcp->cmd,fcp->fds[0]);
-                return 1;
+                return (fcp->pid > 0) ? 1 : -1;
             }
             else {
                 fcp->pid = -1;
@@ -840,7 +904,7 @@ int fdevent_reaped_logger_pipe(pid_t pid) {
 
 
 void fdevent_close_logger_pipes(void) {
-    for (size_t i = 0; i < cmd_pipes.used; ++i) {
+    for (uint32_t i = 0; i < cmd_pipes.used; ++i) {
         fdevent_cmd_pipe *fcp = cmd_pipes.ptr+i;
         close(fcp->fds[0]);
         if (fcp->fds[1] != STDERR_FILENO) close(fcp->fds[1]);
@@ -853,7 +917,7 @@ void fdevent_close_logger_pipes(void) {
 
 
 void fdevent_breakagelog_logger_pipe(int fd) {
-    for (size_t i = 0; i < cmd_pipes.used; ++i) {
+    for (uint32_t i = 0; i < cmd_pipes.used; ++i) {
         fdevent_cmd_pipe *fcp = cmd_pipes.ptr+i;
         if (fcp->fds[1] != fd) continue;
         fcp->fds[1] = STDERR_FILENO;
@@ -888,7 +952,7 @@ static int fdevent_open_logger_pipe(const char *logger) {
     fdevent_setfd_cloexec(fds[0]);
     fdevent_setfd_cloexec(fds[1]);
     /*(nonblocking write() from lighttpd)*/
-    if (0 != fdevent_fcntl_set_nb(NULL, fds[1])) { /*(ignore)*/ }
+    if (0 != fdevent_fcntl_set_nb(fds[1])) { /*(ignore)*/ }
 
     pid = fdevent_open_logger_pipe_spawn(logger, fds[0]);
 
@@ -1025,4 +1089,93 @@ int fdevent_set_tcp_nodelay (const int fd, const int opt)
 int fdevent_set_so_reuseaddr (const int fd, const int opt)
 {
     return setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+}
+
+
+#include <sys/stat.h>
+#include "safe_memclear.h"
+__attribute_cold__ /*(convenience routine for use at config at startup)*/
+char *
+fdevent_load_file (const char * const fn, off_t *lim, log_error_st *errh, void *(malloc_fn)(size_t), void(free_fn)(void *))
+{
+    int fd = -1;
+    off_t sz = 0;
+    char *buf = NULL;
+    do {
+        fd = fdevent_open_cloexec(fn, 1, O_RDONLY, 0); /*(1: follows symlinks)*/
+        if (fd < 0) break;
+
+        struct stat st;
+        if (0 != fstat(fd, &st)) break;
+        if ((sizeof(off_t) > sizeof(size_t) && st.st_size >= (off_t)~(size_t)0u)
+            || (*lim != 0 && st.st_size >= *lim)) {
+            errno = EOVERFLOW;
+            break;
+        }
+
+        sz = st.st_size;
+        buf = malloc_fn((size_t)sz+1);/*+1 trailing '\0' for str funcs on data*/
+        if (NULL == buf) break;
+
+        if (sz) {
+            ssize_t rd = 0;
+            off_t off = 0;
+            do {
+                rd = read(fd, buf+off, (size_t)(sz-off));
+            } while (rd > 0 ? (off += rd) != sz : rd < 0 && errno == EINTR);
+            if (off != sz) { /*(file truncated?)*/
+                if (rd >= 0) errno = EIO;
+                break;
+            }
+        }
+
+        buf[sz] = '\0';
+        *lim = sz;
+        close(fd);
+        return buf;
+    } while (0);
+    int errnum = errno;
+    if (errh)
+        log_perror(errh, __FILE__, __LINE__, "%s() %s", __func__, fn);
+    if (fd >= 0) close(fd);
+    if (buf) {
+        safe_memclear(buf, (size_t)sz);
+        free_fn(buf);
+    }
+    *lim = 0;
+    errno = errnum;
+    return NULL;
+}
+
+
+int
+fdevent_load_file_bytes (char * const buf, const off_t sz, off_t off, const char * const fn, log_error_st *errh)
+{
+    int fd = -1;
+    do {
+        fd = fdevent_open_cloexec(fn, 1, O_RDONLY, 0); /*(1: follows symlinks)*/
+        if (fd < 0) break;
+
+        if (0 != off && (off_t)-1 == lseek(fd, off, SEEK_SET)) break;
+        off = 0;
+
+        ssize_t rd = 0;
+        do {
+            rd = read(fd, buf+off, (size_t)(sz-off));
+        } while (rd > 0 ? (off += rd) != sz : rd < 0 && errno == EINTR);
+        if (off != sz) { /*(file truncated? or incorrect sz requested)*/
+            if (rd >= 0) errno = EIO;
+            break;
+        }
+
+        close(fd);
+        return 0;
+    } while (0);
+    int errnum = errno;
+    if (errh)
+        log_perror(errh, __FILE__, __LINE__, "%s() %s", __func__, fn);
+    if (fd >= 0) close(fd);
+    safe_memclear(buf, (size_t)sz);
+    errno = errnum;
+    return -1;
 }

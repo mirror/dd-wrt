@@ -33,6 +33,9 @@ static int fdevent_solaris_devpoll_event_del(fdevents *ev, fdnode *fdn) {
 static int fdevent_solaris_devpoll_event_set(fdevents *ev, fdnode *fdn, int events) {
 	struct pollfd pfd;
 	pfd.fd = fdn->fde_ndx = fdn->fd;
+      #ifndef POLLRDHUP
+	events &= ~FDEVENT_RDHUP;
+      #endif
 	pfd.events = events;
 	pfd.revents = 0;
 	return (-1 != write(ev->devpoll_fd, &pfd, sizeof(pfd))) ? 0 : -1;
@@ -40,7 +43,6 @@ static int fdevent_solaris_devpoll_event_set(fdevents *ev, fdnode *fdn, int even
 
 static int fdevent_solaris_devpoll_poll(fdevents *ev, int timeout_ms) {
     int n;
-    server * const srv = ev->srv;
     struct dvpoll dopoll;
 
     dopoll.dp_timeout = timeout_ms;
@@ -53,7 +55,7 @@ static int fdevent_solaris_devpoll_poll(fdevents *ev, int timeout_ms) {
         fdnode * const fdn = ev->fdarray[ev->devpollfds[i].fd];
         int revents = ev->devpollfds[i].revents;
         if (0 == ((uintptr_t)fdn & 0x3)) {
-            (*fdn->handler)(srv, fdn->ctx, revents);
+            (*fdn->handler)(fdn->ctx, revents);
         }
     }
     return n;
@@ -75,7 +77,9 @@ int fdevent_solaris_devpoll_init(fdevents *ev) {
 	force_assert(POLLERR   == FDEVENT_ERR);
 	force_assert(POLLHUP   == FDEVENT_HUP);
 	force_assert(POLLNVAL  == FDEVENT_NVAL);
+      #ifdef POLLRDHUP
 	force_assert(POLLRDHUP == FDEVENT_RDHUP);
+      #endif
 
 	ev->type       = FDEVENT_HANDLER_SOLARIS_DEVPOLL;
 	ev->event_set  = fdevent_solaris_devpoll_event_set;

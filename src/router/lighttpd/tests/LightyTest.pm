@@ -78,6 +78,9 @@ sub new {
 		$self->{MODULES_PATH} = $self->{BASEDIR}.'/build';
 	}
 	$self->{LIGHTTPD_PATH} = $self->{BINDIR}.'/lighttpd';
+	if (exists $ENV{LIGHTTPD_EXE_PATH}) {
+		$self->{LIGHTTPD_PATH} = $ENV{LIGHTTPD_EXE_PATH};
+	}
 	$self->{PORT} = 2048;
 
 	my ($name, $aliases, $addrtype, $net) = gethostbyaddr(inet_aton("127.0.0.1"), AF_INET);
@@ -159,6 +162,7 @@ sub start_proc {
 	$ENV{'PORT'} = $self->{PORT};
 
 	my @cmdline = ($self->{LIGHTTPD_PATH}, "-D", "-f", $self->{SRCDIR}."/".$self->{CONFIGFILE}, "-m", $self->{MODULES_PATH});
+	splice(@cmdline, -2) if exists $ENV{LIGHTTPD_EXE_PATH};
 	if (defined $ENV{"TRACEME"} && $ENV{"TRACEME"} eq 'strace') {
 		@cmdline = (qw(strace -tt -s 4096 -o strace -f -v), @cmdline);
 	} elsif (defined $ENV{"TRACEME"} && $ENV{"TRACEME"} eq 'truss') {
@@ -234,15 +238,15 @@ sub handle_http {
 
 			print $remote $_;
 			diag("<< ".$_."\n") if $is_debug;
-			select(undef, undef, undef, 0.1);
+			select(undef, undef, undef, 0.001);
 			print $remote "\015";
-			select(undef, undef, undef, 0.1);
+			select(undef, undef, undef, 0.001);
 			print $remote "\012";
-			select(undef, undef, undef, 0.1);
+			select(undef, undef, undef, 0.001);
 			print $remote "\015";
-			select(undef, undef, undef, 0.1);
+			select(undef, undef, undef, 0.001);
 			print $remote "\012";
-			select(undef, undef, undef, 0.1);
+			select(undef, undef, undef, 0.001);
 		}
 
 	}
@@ -452,6 +456,19 @@ sub has_feature {
 	open($FH, "-|",$self->{LIGHTTPD_PATH}, "-V") || return 0;
 	while (<$FH>) {
 		return ($1 eq '+') if (/([-+]) \Q$feature\E/);
+	}
+	close $FH;
+	return 0;
+}
+
+sub has_crypto {
+	# quick-n-dirty crude parse of "lighttpd -V"
+	# (XXX: should be run on demand and only once per instance, then cached)
+	my ($self) = @_;
+	my $FH;
+	open($FH, "-|",$self->{LIGHTTPD_PATH}, "-V") || return 0;
+	while (<$FH>) {
+		return 1 if (/[+] (?i:OpenSSL|mbedTLS|GnuTLS|WolfSSL|Nettle) support/);
 	}
 	close $FH;
 	return 0;

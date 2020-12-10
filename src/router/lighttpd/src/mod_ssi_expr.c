@@ -44,16 +44,14 @@ int ssi_val_tobool(ssi_val_t *B) {
 	}
 }
 
-static int ssi_expr_tokenizer(server *srv, connection *con, handler_ctx *p,
+static int ssi_expr_tokenizer(handler_ctx *p,
 			      ssi_tokenizer_t *t, int *token_id, buffer *token) {
 	int tid = 0;
 	size_t i;
 
-	UNUSED(con);
-
 	for (tid = 0; tid == 0 && t->offset < t->size && t->input[t->offset] ; ) {
 		char c = t->input[t->offset];
-		data_string *ds;
+		const data_string *ds;
 
 		switch (c) {
 		case '=':
@@ -129,9 +127,8 @@ static int ssi_expr_tokenizer(server *srv, connection *con, handler_ctx *p,
 
 				buffer_copy_string_len(token, CONST_STR_LEN("(&&)"));
 			} else {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"pos:", t->line_pos,
-						"missing second &");
+				log_error(p->errh, __FILE__, __LINE__,
+				  "pos: %d missing second &", t->line_pos);
 				return -1;
 			}
 
@@ -145,9 +142,8 @@ static int ssi_expr_tokenizer(server *srv, connection *con, handler_ctx *p,
 
 				buffer_copy_string_len(token, CONST_STR_LEN("(||)"));
 			} else {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"pos:", t->line_pos,
-						"missing second |");
+				log_error(p->errh, __FILE__, __LINE__,
+				  "pos: %d missing second |", t->line_pos);
 				return -1;
 			}
 
@@ -171,11 +167,8 @@ static int ssi_expr_tokenizer(server *srv, connection *con, handler_ctx *p,
 				t->line_pos += i + 1;
 			} else {
 				/* ERROR */
-
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"pos:", t->line_pos,
-						"missing closing quote");
-
+				log_error(p->errh, __FILE__, __LINE__,
+				  "pos: %d missing closing quote", t->line_pos);
 				return -1;
 			}
 
@@ -201,28 +194,26 @@ static int ssi_expr_tokenizer(server *srv, connection *con, handler_ctx *p,
 				for (i = 2; t->input[t->offset + i] && t->input[t->offset + i] != '}';  i++);
 
 				if (t->input[t->offset + i] != '}') {
-					log_error_write(srv, __FILE__, __LINE__, "sds",
-							"pos:", t->line_pos,
-							"missing closing quote");
-
+					log_error(p->errh, __FILE__, __LINE__,
+					  "pos: %d missing closing curly-brace", t->line_pos);
 					return -1;
 				}
 
 				buffer_copy_string_len(token, t->input + t->offset + 2, i-3);
 			} else {
-				for (i = 1; isalpha(t->input[t->offset + i]) ||
+				for (i = 1; isalpha(((unsigned char *)t->input)[t->offset + i]) ||
 					    t->input[t->offset + i] == '_' ||
-					    ((i > 1) && isdigit(t->input[t->offset + i]));  i++);
+					    ((i > 1) && isdigit(((unsigned char *)t->input)[t->offset + i]));  i++);
 
 				buffer_copy_string_len(token, t->input + t->offset + 1, i-1);
 			}
 
 			tid = TK_VALUE;
 
-			if (NULL != (ds = (data_string *)array_get_element_klen(p->ssi_cgi_env, CONST_BUF_LEN(token)))) {
-				buffer_copy_buffer(token, ds->value);
-			} else if (NULL != (ds = (data_string *)array_get_element_klen(p->ssi_vars, CONST_BUF_LEN(token)))) {
-				buffer_copy_buffer(token, ds->value);
+			if (NULL != (ds = (const data_string *)array_get_element_klen(p->ssi_cgi_env, CONST_BUF_LEN(token)))) {
+				buffer_copy_buffer(token, &ds->value);
+			} else if (NULL != (ds = (const data_string *)array_get_element_klen(p->ssi_vars, CONST_BUF_LEN(token)))) {
+				buffer_copy_buffer(token, &ds->value);
 			} else {
 				buffer_copy_string_len(token, CONST_STR_LEN(""));
 			}
@@ -232,7 +223,7 @@ static int ssi_expr_tokenizer(server *srv, connection *con, handler_ctx *p,
 
 			break;
 		default:
-			for (i = 0; isgraph(t->input[t->offset + i]);  i++) {
+			for (i = 0; isgraph(((unsigned char *)t->input)[t->offset + i]);  i++) {
 				char d = t->input[t->offset + i];
 				switch(d) {
 				case ' ':
@@ -266,14 +257,13 @@ static int ssi_expr_tokenizer(server *srv, connection *con, handler_ctx *p,
 
 		return 1;
 	} else if (t->offset < t->size) {
-		log_error_write(srv, __FILE__, __LINE__, "sds",
-				"pos:", t->line_pos,
-				"foobar");
+		log_error(p->errh, __FILE__, __LINE__,
+		  "pos: %d foobar", t->line_pos);
 	}
 	return 0;
 }
 
-int ssi_eval_expr(server *srv, connection *con, handler_ctx *p, const char *expr) {
+int ssi_eval_expr(handler_ctx *p, const char *expr) {
 	ssi_tokenizer_t t;
 	void *pParser;
 	int token_id;
@@ -291,14 +281,13 @@ int ssi_eval_expr(server *srv, connection *con, handler_ctx *p, const char *expr
 	t.in_cond = 0;
 
 	context.ok = 1;
-	context.srv = srv;
 
 	/* default context */
 
 	pParser = ssiexprparserAlloc( malloc );
 	force_assert(pParser);
 	token = buffer_init();
-	while((1 == (ret = ssi_expr_tokenizer(srv, con, p, &t, &token_id, token))) && context.ok) {
+	while((1 == (ret = ssi_expr_tokenizer(p, &t, &token_id, token))) && context.ok) {
 		ssiexprparser(pParser, token_id, token, &context);
 
 		token = buffer_init();
@@ -309,22 +298,18 @@ int ssi_eval_expr(server *srv, connection *con, handler_ctx *p, const char *expr
 	buffer_free(token);
 
 	if (ret == -1) {
-		log_error_write(srv, __FILE__, __LINE__, "s",
-				"expr parser failed");
+		log_error(p->errh, __FILE__, __LINE__, "expr parser failed");
 		return -1;
 	}
 
 	if (context.ok == 0) {
-		log_error_write(srv, __FILE__, __LINE__, "sds",
-				"pos:", t.line_pos,
-				"parser failed somehow near here");
+		log_error(p->errh, __FILE__, __LINE__,
+		  "pos: %d parser failed somehow near here", t.line_pos);
 		return -1;
 	}
 #if 0
-	log_error_write(srv, __FILE__, __LINE__, "ssd",
-			"expr: ",
-			expr,
-			context.val.bo);
+	log_error(p->errh, __FILE__, __LINE__,
+	  "expr: %s %d", expr, context.val.bo);
 #endif
 	return context.val.bo;
 }

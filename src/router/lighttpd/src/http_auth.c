@@ -1,3 +1,10 @@
+/*
+ * http_auth - HTTP Auth backend registration, low-level shared funcs
+ *
+ * Fully-rewritten from original
+ * Copyright(c) 2016 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
+ * License: BSD 3-clause (same as lighttpd)
+ */
 #include "first.h"
 
 #include "http_auth.h"
@@ -51,16 +58,50 @@ void http_auth_backend_set (const http_auth_backend_t *backend)
 }
 
 
-int http_auth_const_time_memeq (const char *a, const size_t alen, const char *b, const size_t blen)
+int http_auth_const_time_memeq (const void *a, const void *b, const size_t len)
+{
+    /* constant time memory compare, unless compiler figures it out
+     * (similar to mod_secdownload.c:const_time_memeq()) */
+    /* caller should prefer http_auth_const_time_memeq_pad()
+     * if not operating on digests, which have defined lengths */
+    /* Note: some libs provide similar funcs, e.g.
+     * OpenSSL:
+     *   int CRYPTO_memcmp(const void * in_a, const void * in_b, size_t len)
+     * Note: some OS provide similar funcs, e.g.
+     * OpenBSD: int timingsafe_bcmp(const void *b1, const void *b2, size_t len)
+     * NetBSD: int consttime_memequal(void *b1, void *b2, size_t len)
+     */
+    const volatile unsigned char * const av = (const unsigned char *)a;
+    const volatile unsigned char * const bv = (const unsigned char *)b;
+    int diff = 0;
+    for (size_t i = 0; i < len; ++i) {
+        diff |= (av[i] ^ bv[i]);
+    }
+    return (0 == diff);
+}
+
+
+int http_auth_const_time_memeq_pad (const void *a, const size_t alen, const void *b, const size_t blen)
 {
     /* constant time memory compare, unless compiler figures it out
      * (similar to mod_secdownload.c:const_time_memeq()) */
     /* round to next multiple of 64 to avoid potentially leaking exact
-     * password length when subject to high precision timing attacks) */
+     * password length when subject to high precision timing attacks)
+     * (not necessary when comparing digests, which have defined lengths)
+     */
+    /* Note: some libs provide similar funcs but might not obscure length, e.g.
+     * OpenSSL:
+     *   int CRYPTO_memcmp(const void * in_a, const void * in_b, size_t len)
+     * Note: some OS provide similar funcs but might not obscure length, e.g.
+     * OpenBSD: int timingsafe_bcmp(const void *b1, const void *b2, size_t len)
+     * NetBSD: int consttime_memequal(void *b1, void *b2, size_t len)
+     */
+    const volatile unsigned char * const av = (const unsigned char *)a;
+    const volatile unsigned char * const bv = (const unsigned char *)b;
     size_t lim = ((alen >= blen ? alen : blen) + 0x3F) & ~0x3F;
-    int diff = 0;
+    int diff = (alen != blen); /*(never match if string length mismatch)*/
     for (size_t i = 0, j = 0; lim; --lim) {
-        diff |= (a[i] ^ b[j]);
+        diff |= (av[i] ^ bv[j]);
         i += (i < alen);
         j += (j < blen);
     }
@@ -79,22 +120,14 @@ http_auth_require_t * http_auth_require_init (void)
 {
     http_auth_require_t *require = calloc(1, sizeof(http_auth_require_t));
     force_assert(NULL != require);
-
-    require->realm = buffer_init();
-    require->valid_user = 0;
-    require->user = array_init();
-    require->group = array_init();
-    require->host = array_init();
-
     return require;
 }
 
 void http_auth_require_free (http_auth_require_t * const require)
 {
-    buffer_free(require->realm);
-    array_free(require->user);
-    array_free(require->group);
-    array_free(require->host);
+    array_free_data(&require->user);
+    array_free_data(&require->group);
+    array_free_data(&require->host);
     free(require);
 }
 
@@ -104,7 +137,7 @@ void http_auth_require_free (http_auth_require_t * const require)
 static int http_auth_array_contains (const array * const a, const char * const k, const size_t klen)
 {
     for (size_t i = 0, used = a->used; i < used; ++i) {
-        if (buffer_is_equal_string(a->data[i]->key, k, klen)) {
+        if (buffer_is_equal_string(&a->data[i]->key, k, klen)) {
             return 1;
         }
     }
@@ -115,26 +148,26 @@ int http_auth_match_rules (const http_auth_require_t * const require, const char
 {
     if (NULL != user
         && (require->valid_user
-            || http_auth_array_contains(require->user, user, strlen(user)))) {
+            || http_auth_array_contains(&require->user, user, strlen(user)))) {
         return 1; /* match */
     }
 
     if (NULL != group
-        && http_auth_array_contains(require->group, group, strlen(group))) {
+        && http_auth_array_contains(&require->group, group, strlen(group))) {
         return 1; /* match */
     }
 
     if (NULL != host
-        && http_auth_array_contains(require->host, host, strlen(host))) {
+        && http_auth_array_contains(&require->host, host, strlen(host))) {
         return 1; /* match */
     }
 
     return 0; /* no match */
 }
 
-void http_auth_setenv(connection *con, const char *username, size_t ulen, const char *auth_type, size_t alen) {
-    http_header_env_set(con, CONST_STR_LEN("REMOTE_USER"), username, ulen);
-    http_header_env_set(con, CONST_STR_LEN("AUTH_TYPE"), auth_type, alen);
+void http_auth_setenv(request_st * const r, const char *username, size_t ulen, const char *auth_type, size_t alen) {
+    http_header_env_set(r, CONST_STR_LEN("REMOTE_USER"), username, ulen);
+    http_header_env_set(r, CONST_STR_LEN("AUTH_TYPE"), auth_type, alen);
 }
 
 unsigned int http_auth_digest_len (int algo)
@@ -159,10 +192,10 @@ int http_auth_digest_hex2bin (const char *hexstr, size_t len, unsigned char *bin
         int hi = hexstr[i];
         int lo = hexstr[i+1];
         if ('0' <= hi && hi <= '9')                    hi -= '0';
-        else if ((hi |= 0x20), 'a' <= hi && hi <= 'f') hi += -'a' + 10;
+        else if ((uint32_t)(hi |= 0x20)-'a' <= 'f'-'a')hi += -'a' + 10;
         else                                           return -1;
         if ('0' <= lo && lo <= '9')                    lo -= '0';
-        else if ((lo |= 0x20), 'a' <= lo && lo <= 'f') lo += -'a' + 10;
+        else if ((uint32_t)(lo |= 0x20)-'a' <= 'f'-'a')lo += -'a' + 10;
         else                                           return -1;
         bin[(i >> 1)] = (unsigned char)((hi << 4) | lo);
     }
@@ -176,9 +209,9 @@ int http_auth_md5_hex2lc (char *md5hex)
     int i;
     for (i = 0; md5hex[i]; ++i) {
         int c = md5hex[i];
-        if ('0' <= c && c <= '9')                   continue;
-        else if ((c |= 0x20), 'a' <= c && c <= 'f') md5hex[i] = c;
-        else                                        return -1;
+        if ('0' <= c && c <= '9')                      continue;
+        else if ((uint32_t)(c |= 0x20)-'a' <= 'f'-'a') md5hex[i] = c;
+        else                                           return -1;
     }
     return (32 == i) ? 0 : -1; /*(Note: char *md5hex must be a 32-char string)*/
 }

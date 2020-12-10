@@ -8,11 +8,9 @@
 
 #include "plugin.h"
 
-/* plugin config for all request/connections */
-
 typedef struct {
-	array *ssi_extension;
-	buffer *content_type;
+	const array *ssi_extension;
+	const buffer *content_type;
 	unsigned short conditional_requests;
 	unsigned short ssi_exec;
 	unsigned short ssi_recursion_max;
@@ -20,6 +18,8 @@ typedef struct {
 
 typedef struct {
 	PLUGIN_DATA;
+	plugin_config defaults;
+	plugin_config conf;
 
 	buffer *timefmt;
 
@@ -27,10 +27,6 @@ typedef struct {
 
 	array *ssi_vars;
 	array *ssi_cgi_env;
-
-	plugin_config **config_storage;
-
-	plugin_config conf;
 } plugin_data;
 
 typedef struct {
@@ -45,9 +41,10 @@ typedef struct {
 	int if_level, if_is_false_level, if_is_false, if_is_false_endif;
 	unsigned short ssi_recursion_depth;
 
+	log_error_st *errh;
 	plugin_config conf;
 } handler_ctx;
 
-int ssi_eval_expr(server *srv, connection *con, handler_ctx *p, const char *expr);
+int ssi_eval_expr(handler_ctx *p, const char *expr);
 
 #endif

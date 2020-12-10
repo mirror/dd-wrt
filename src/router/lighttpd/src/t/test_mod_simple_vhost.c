@@ -17,15 +17,15 @@ static void test_mod_simple_vhost_build_doc_root_path(void) {
     buffer_copy_string_len(host,  CONST_STR_LEN("www.example.org"));
     buffer_copy_string_len(droot, CONST_STR_LEN("/droot/b/"));
     build_doc_root_path(result, sroot, host, droot);
-    assert(buffer_is_equal_string(result, CONST_STR_LEN("/sroot/a/www.example.org/droot/b/")));
+    assert(buffer_eq_slen(result, CONST_STR_LEN("/sroot/a/www.example.org/droot/b/")));
 
     buffer_copy_string_len(host,  CONST_STR_LEN("www.example.org:8080"));
     build_doc_root_path(result, sroot, host, droot);
-    assert(buffer_is_equal_string(result, CONST_STR_LEN("/sroot/a/www.example.org/droot/b/")));
+    assert(buffer_eq_slen(result, CONST_STR_LEN("/sroot/a/www.example.org/droot/b/")));
 
     buffer_copy_string_len(droot, CONST_STR_LEN(""));
     build_doc_root_path(result, sroot, host, droot);
-    assert(buffer_is_equal_string(result, CONST_STR_LEN("/sroot/a/www.example.org/")));
+    assert(buffer_eq_slen(result, CONST_STR_LEN("/sroot/a/www.example.org/")));
 
     buffer_free(sroot);
     buffer_free(host);
@@ -43,11 +43,21 @@ int main (void) {
  * stub functions
  */
 
-handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_cache_entry **sce) {
-    UNUSED(srv);
-    UNUSED(con);
+int stat_cache_path_isdir(const buffer *name) {
     UNUSED(name);
-    UNUSED(sce);
-    return HANDLER_GO_ON;
+    return 1;
 }
 
+int config_plugin_values_init(server *srv, void *p_d, const config_plugin_keys_t *cpk, const char *mname) {
+    UNUSED(srv);
+    UNUSED(p_d);
+    UNUSED(cpk);
+    UNUSED(mname);
+    return 0;
+}
+
+int config_check_cond(request_st *r, int context_ndx) {
+    UNUSED(r);
+    UNUSED(context_ndx);
+    return 0;
+}

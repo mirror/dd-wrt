@@ -37,6 +37,8 @@ static int fdevent_freebsd_kqueue_event_del(fdevents *ev, fdnode *fdn) {
 	}
 
 	return (0 != n) ? kevent(ev->kq_fd, kev, n, NULL, 0, &ts) : 0;
+	/*(kevent() changelist still processed on EINTR,
+	 * but EINTR should not be received since 0 == nevents)*/
 }
 
 static int fdevent_freebsd_kqueue_event_set(fdevents *ev, fdnode *fdn, int events) {
@@ -64,10 +66,11 @@ static int fdevent_freebsd_kqueue_event_set(fdevents *ev, fdnode *fdn, int event
 	}
 
 	return (0 != n) ? kevent(ev->kq_fd, kev, n, NULL, 0, &ts) : 0;
+	/*(kevent() changelist still processed on EINTR,
+	 * but EINTR should not be received since 0 == nevents)*/
 }
 
 static int fdevent_freebsd_kqueue_poll(fdevents * const ev, int timeout_ms) {
-    server * const srv = ev->srv;
     struct timespec ts;
     int n;
 
@@ -86,7 +89,7 @@ static int fdevent_freebsd_kqueue_poll(fdevents * const ev, int timeout_ms) {
                 revents |= (filt == EVFILT_READ ? FDEVENT_RDHUP : FDEVENT_HUP);
             if (e & EV_ERROR)
                 revents |= FDEVENT_ERR;
-            (*fdn->handler)(srv, fdn->ctx, revents);
+            (*fdn->handler)(fdn->ctx, revents);
         }
     }
     return n;
@@ -94,7 +97,15 @@ static int fdevent_freebsd_kqueue_poll(fdevents * const ev, int timeout_ms) {
 
 __attribute_cold__
 static int fdevent_freebsd_kqueue_reset(fdevents *ev) {
-	return (-1 != (ev->kq_fd = kqueue())) ? 0 : -1;
+  #ifdef __NetBSD__
+	ev->kq_fd = kqueue1(O_NONBLOCK|O_CLOEXEC|O_NOSIGPIPE);
+	return (-1 != ev->kq_fd) ? 0 : -1;
+  #else
+	ev->kq_fd = kqueue();
+	if (-1 == ev->kq_fd) return -1;
+	fdevent_setfd_cloexec(ev->kq_fd);
+	return 0;
+  #endif
 }
 
 __attribute_cold__

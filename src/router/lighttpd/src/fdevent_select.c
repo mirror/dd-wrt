@@ -52,7 +52,7 @@ static int fdevent_select_event_set(fdevents *ev, fdnode *fdn, int events) {
 	return 0;
 }
 
-static int fdevent_select_event_get_revent(const fdevents *ev, size_t ndx) {
+static int fdevent_select_event_get_revent(const fdevents *ev, int ndx) {
 	int revents = 0;
 	if (FD_ISSET(ndx, &ev->select_read))  revents |= FDEVENT_IN;
 	if (FD_ISSET(ndx, &ev->select_write)) revents |= FDEVENT_OUT;
@@ -90,7 +90,7 @@ static int fdevent_select_poll(fdevents *ev, int timeout_ms) {
         fdn = ev->fdarray[ndx];
         if (0 == ((uintptr_t)fdn & 0x3)) {
             int revents = fdevent_select_event_get_revent(ev, ndx);
-            (*fdn->handler)(ev->srv, fdn->ctx, revents);
+            (*fdn->handler)(fdn->ctx, revents);
         }
     }
     return n;

@@ -1,9 +1,9 @@
 #include "first.h"
 
 #include "base.h"
-#include "log.h"
+#include "array.h"
 #include "buffer.h"
-
+#include "log.h"
 #include "response.h"
 
 #include "plugin.h"
@@ -18,332 +18,268 @@
 # include <pwd.h>
 #endif
 
-/* plugin config for all request/connections */
 typedef struct {
-	array *exclude_user;
-	array *include_user;
-	buffer *path;
-	buffer *basepath;
-	unsigned short letterhomes;
-	unsigned short active;
+    const array *exclude_user;
+    const array *include_user;
+    const buffer *path;
+    const buffer *basepath;
+    unsigned short letterhomes;
+    unsigned short active;
 } plugin_config;
 
 typedef struct {
-	PLUGIN_DATA;
-
-	buffer *username;
-	buffer *temp_path;
-
-	plugin_config **config_storage;
-
-	plugin_config conf;
+    PLUGIN_DATA;
+    plugin_config defaults;
+    plugin_config conf;
 } plugin_data;
 
-/* init the plugin data */
 INIT_FUNC(mod_userdir_init) {
-	plugin_data *p;
-
-	p = calloc(1, sizeof(*p));
-
-	p->username = buffer_init();
-	p->temp_path = buffer_init();
-
-	return p;
+    return calloc(1, sizeof(plugin_data));
 }
 
-/* detroy the plugin data */
-FREE_FUNC(mod_userdir_free) {
-	plugin_data *p = p_d;
-
-	if (!p) return HANDLER_GO_ON;
-
-	if (p->config_storage) {
-		size_t i;
-
-		for (i = 0; i < srv->config_context->used; i++) {
-			plugin_config *s = p->config_storage[i];
-
-			if (NULL == s) continue;
-
-			array_free(s->include_user);
-			array_free(s->exclude_user);
-			buffer_free(s->path);
-			buffer_free(s->basepath);
-
-			free(s);
-		}
-		free(p->config_storage);
-	}
-
-	buffer_free(p->username);
-	buffer_free(p->temp_path);
-
-	free(p);
-
-	return HANDLER_GO_ON;
+static void mod_userdir_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
+    switch (cpv->k_id) { /* index into static config_plugin_keys_t cpk[] */
+      case 0: /* userdir.path */
+        pconf->path = cpv->v.b;
+        break;
+      case 1: /* userdir.exclude-user */
+        pconf->exclude_user = cpv->v.a;
+        break;
+      case 2: /* userdir.include-user */
+        pconf->include_user = cpv->v.a;
+        break;
+      case 3: /* userdir.basepath */
+        pconf->basepath = cpv->v.b;
+        break;
+      case 4: /* userdir.letterhomes */
+        pconf->letterhomes = cpv->v.u;
+        break;
+      case 5: /* userdir.active */
+        pconf->active = cpv->v.u;
+        break;
+      default:/* should not happen */
+        return;
+    }
 }
 
-/* handle plugin config and check values */
+static void mod_userdir_merge_config(plugin_config * const pconf, const config_plugin_value_t *cpv) {
+    do {
+        mod_userdir_merge_config_cpv(pconf, cpv);
+    } while ((++cpv)->k_id != -1);
+}
+
+static void mod_userdir_patch_config(request_st * const r, plugin_data * const p) {
+    memcpy(&p->conf, &p->defaults, sizeof(plugin_config));
+    for (int i = 1, used = p->nconfig; i < used; ++i) {
+        if (config_check_cond(r, (uint32_t)p->cvlist[i].k_id))
+            mod_userdir_merge_config(&p->conf, p->cvlist + p->cvlist[i].v.u2[0]);
+    }
+}
 
 SETDEFAULTS_FUNC(mod_userdir_set_defaults) {
-	plugin_data *p = p_d;
-	size_t i;
+    static const config_plugin_keys_t cpk[] = {
+      { CONST_STR_LEN("userdir.path"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("userdir.exclude-user"),
+        T_CONFIG_ARRAY_VLIST,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("userdir.include-user"),
+        T_CONFIG_ARRAY_VLIST,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("userdir.basepath"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("userdir.letterhomes"),
+        T_CONFIG_BOOL,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("userdir.active"),
+        T_CONFIG_BOOL,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ NULL, 0,
+        T_CONFIG_UNSET,
+        T_CONFIG_SCOPE_UNSET }
+    };
 
-	config_values_t cv[] = {
-		{ "userdir.path",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
-		{ "userdir.exclude-user",       NULL, T_CONFIG_ARRAY,  T_CONFIG_SCOPE_CONNECTION },       /* 1 */
-		{ "userdir.include-user",       NULL, T_CONFIG_ARRAY,  T_CONFIG_SCOPE_CONNECTION },       /* 2 */
-		{ "userdir.basepath",           NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },       /* 3 */
-		{ "userdir.letterhomes",        NULL, T_CONFIG_BOOLEAN,T_CONFIG_SCOPE_CONNECTION },       /* 4 */
-		{ "userdir.active",             NULL, T_CONFIG_BOOLEAN,T_CONFIG_SCOPE_CONNECTION },       /* 5 */
-		{ NULL,                         NULL, T_CONFIG_UNSET,  T_CONFIG_SCOPE_UNSET }
-	};
+    plugin_data * const p = p_d;
+    if (!config_plugin_values_init(srv, p, cpk, "mod_userdir"))
+        return HANDLER_ERROR;
 
-	if (!p) return HANDLER_ERROR;
+    /* enabled by default for backward compatibility;
+     * if userdir.path isn't set userdir is disabled too,
+     * but you can't disable it by setting it to an empty string. */
+    p->defaults.active = 1;
 
-	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
+    /* initialize p->defaults from global config context */
+    if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
+        if (-1 != cpv->k_id)
+            mod_userdir_merge_config(&p->defaults, cpv);
+    }
 
-	for (i = 0; i < srv->config_context->used; i++) {
-		data_config const* config = (data_config const*)srv->config_context->data[i];
-		plugin_config *s;
-
-		s = calloc(1, sizeof(plugin_config));
-		s->exclude_user = array_init();
-		s->include_user = array_init();
-		s->path = buffer_init();
-		s->basepath = buffer_init();
-		s->letterhomes = 0;
-		/* enabled by default for backward compatibility; if userdir.path isn't set userdir is disabled too,
-		 * but you can't disable it by setting it to an empty string. */
-		s->active = 1;
-
-		cv[0].destination = s->path;
-		cv[1].destination = s->exclude_user;
-		cv[2].destination = s->include_user;
-		cv[3].destination = s->basepath;
-		cv[4].destination = &(s->letterhomes);
-		cv[5].destination = &(s->active);
-
-		p->config_storage[i] = s;
-
-		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
-			return HANDLER_ERROR;
-		}
-
-		if (!array_is_vlist(s->exclude_user)) {
-			log_error_write(srv, __FILE__, __LINE__, "s",
-					"unexpected value for userdir.exclude-user; expected list of \"suffix\"");
-			return HANDLER_ERROR;
-		}
-
-		if (!array_is_vlist(s->include_user)) {
-			log_error_write(srv, __FILE__, __LINE__, "s",
-					"unexpected value for userdir.include-user; expected list of \"suffix\"");
-			return HANDLER_ERROR;
-		}
-	}
-
-	return HANDLER_GO_ON;
+    return HANDLER_GO_ON;
 }
 
-#define PATCH(x) \
-	p->conf.x = s->x;
-static int mod_userdir_patch_connection(server *srv, connection *con, plugin_data *p) {
-	size_t i, j;
-	plugin_config *s = p->config_storage[0];
-
-	PATCH(path);
-	PATCH(exclude_user);
-	PATCH(include_user);
-	PATCH(basepath);
-	PATCH(letterhomes);
-	PATCH(active);
-
-	/* skip the first, the global context */
-	for (i = 1; i < srv->config_context->used; i++) {
-		data_config *dc = (data_config *)srv->config_context->data[i];
-		s = p->config_storage[i];
-
-		/* condition didn't match */
-		if (!config_check_cond(srv, con, dc)) continue;
-
-		/* merge config */
-		for (j = 0; j < dc->value->used; j++) {
-			data_unset *du = dc->value->data[j];
-
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN("userdir.path"))) {
-				PATCH(path);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("userdir.exclude-user"))) {
-				PATCH(exclude_user);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("userdir.include-user"))) {
-				PATCH(include_user);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("userdir.basepath"))) {
-				PATCH(basepath);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("userdir.letterhomes"))) {
-				PATCH(letterhomes);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("userdir.active"))) {
-				PATCH(active);
-			}
-		}
-	}
-
-	return 0;
+static int mod_userdir_in_vlist_nc(const array * const a, const char * const k, const size_t klen) {
+    for (uint32_t i = 0, used = a->used; i < used; ++i) {
+        const data_string * const ds = (const data_string *)a->data[i];
+        if (buffer_eq_icase_slen(&ds->value, k, klen)) return 1;
+    }
+    return 0;
 }
-#undef PATCH
+
+static int mod_userdir_in_vlist(const array * const a, const char * const k, const size_t klen) {
+    for (uint32_t i = 0, used = a->used; i < used; ++i) {
+        const data_string * const ds = (const data_string *)a->data[i];
+        if (buffer_eq_slen(&ds->value, k, klen)) return 1;
+    }
+    return 0;
+}
+
+__attribute_noinline__
+static handler_t mod_userdir_docroot_construct(request_st * const r, plugin_data * const p, const char * const uptr, const size_t ulen) {
+    char u[256];
+    if (ulen >= sizeof(u)) return HANDLER_GO_ON;
+
+    memcpy(u, uptr, ulen);
+    u[ulen] = '\0';
+
+    /* we build the physical path */
+    buffer * const b = r->tmp_buf;
+
+    if (buffer_string_is_empty(p->conf.basepath)) {
+      #ifdef HAVE_PWD_H
+        /* XXX: future: might add cache; getpwnam() lookup is expensive */
+        struct passwd *pwd = getpwnam(u);
+        if (pwd) {
+            struct stat st;
+            buffer_copy_string(b, pwd->pw_dir);
+            buffer_append_path_len(b, CONST_BUF_LEN(p->conf.path));
+            if (0 != stat(b->ptr, &st) || !S_ISDIR(st.st_mode)) {
+                return HANDLER_GO_ON;
+            }
+        }
+        else /* user not found */
+      #endif
+            return HANDLER_GO_ON;
+    } else {
+        /* check if the username is valid
+         * a request for /~../ should lead to a directory traversal
+         * limiting to [-_a-z0-9.] should fix it */
+        if (ulen <= 2 && (u[0] == '.' && (1 == ulen || u[1] == '.'))) {
+            return HANDLER_GO_ON;
+        }
+
+        for (size_t i = 0; i < ulen; ++i) {
+            const int c = u[i];
+            if (!(light_isalnum(c) || c == '-' || c == '_' || c == '.')) {
+                return HANDLER_GO_ON;
+            }
+        }
+
+        if (r->conf.force_lowercase_filenames) {
+            for (size_t i = 0; i < ulen; ++i) {
+                if (light_isupper(u[i])) u[i] |= 0x20;
+            }
+        }
+
+        buffer_copy_buffer(b, p->conf.basepath);
+        if (p->conf.letterhomes) {
+            if (u[0] == '.') return HANDLER_GO_ON;
+            buffer_append_path_len(b, u, 1);
+        }
+        buffer_append_path_len(b, u, ulen);
+        buffer_append_path_len(b, CONST_BUF_LEN(p->conf.path));
+    }
+
+    buffer_copy_buffer(&r->physical.basedir, b);
+    buffer_copy_buffer(&r->physical.path, b);
+
+    /* the physical rel_path is basically the same as uri.path;
+     * but it is converted to lowercase in case of force_lowercase_filenames
+     * and some special handling for trailing '.', ' ' and '/' on windows
+     * we assume that no docroot/physical handler changed this
+     * (docroot should only set the docroot/server name, physical should only
+     *  change the physical.path;
+     *  the exception mod_secdownload doesn't work with userdir anyway)
+     */
+    buffer_append_slash(&r->physical.path);
+    /* if no second '/' is found, we assume that it was stripped from the
+     * uri.path for the special handling on windows.  we do not care about the
+     * trailing slash here on windows, as we already ensured it is a directory
+     *
+     * TODO: what to do with trailing dots in usernames on windows?
+     * they may result in the same directory as a username without them.
+     */
+    char *rel_url;
+    if (NULL != (rel_url = strchr(r->physical.rel_path.ptr + 2, '/'))) {
+        buffer_append_string(&r->physical.path, rel_url + 1); /* skip the / */
+    }
+
+    return HANDLER_GO_ON;
+}
 
 URIHANDLER_FUNC(mod_userdir_docroot_handler) {
-	plugin_data *p = p_d;
-	size_t k;
-	char *rel_url;
-#ifdef HAVE_PWD_H
-	struct passwd *pwd = NULL;
-#endif
+    /* /~user/foo.html -> /home/user/public_html/foo.html */
 
-	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
+  #ifdef __COVERITY__
+    if (buffer_is_empty(&r->uri.path)) return HANDLER_GO_ON;
+  #endif
 
-	mod_userdir_patch_connection(srv, con, p);
+    if (r->uri.path.ptr[0] != '/' ||
+        r->uri.path.ptr[1] != '~') return HANDLER_GO_ON;
 
-	/* enforce the userdir.path to be set in the config, ugly fix for #1587;
-	 * should be replaced with a clean .enabled option in 1.5
-	 */
-	if (!p->conf.active || buffer_is_empty(p->conf.path)) return HANDLER_GO_ON;
+    plugin_data * const p = p_d;
+    mod_userdir_patch_config(r, p);
 
-	/* /~user/foo.html -> /home/user/public_html/foo.html */
+    /* enforce the userdir.path to be set in the config, ugly fix for #1587;
+     * should be replaced with a clean .enabled option in 1.5
+     */
+    if (!p->conf.active || buffer_is_empty(p->conf.path)) return HANDLER_GO_ON;
 
-	if (con->uri.path->ptr[0] != '/' ||
-	    con->uri.path->ptr[1] != '~') return HANDLER_GO_ON;
+    const char * const uptr = r->uri.path.ptr + 2;
+    const char * const rel_url = strchr(uptr, '/');
+    if (NULL == rel_url) {
+        if (!*uptr) return HANDLER_GO_ON; /* "/~" is not a valid userdir path */
+        /* / is missing -> redirect to .../ as we are a user - DIRECTORY ! :) */
+        http_response_redirect_to_directory(r, 301);
+        return HANDLER_FINISHED;
+    }
 
-	if (NULL == (rel_url = strchr(con->uri.path->ptr + 2, '/'))) {
-		/* / is missing -> redirect to .../ as we are a user - DIRECTORY ! :) */
-		http_response_redirect_to_directory(srv, con, 301);
+    /* /~/ is a empty username, catch it directly */
+    const size_t ulen = (size_t)(rel_url - uptr);
+    if (0 == ulen) return HANDLER_GO_ON;
 
-		return HANDLER_FINISHED;
-	}
+    /* vlists could be turned into sorted array at config time,
+     * but these lists are expected to be relatively short in most cases
+     * so there is not a huge benefit to doing so in the common case */
 
-	/* /~/ is a empty username, catch it directly */
-	if (0 == rel_url - (con->uri.path->ptr + 2)) {
-		return HANDLER_GO_ON;
-	}
+    if (p->conf.exclude_user) {
+        /* use case-insensitive comparison for exclude list
+         * if r->conf.force_lowercase_filenames */
+        if (!r->conf.force_lowercase_filenames
+            ? mod_userdir_in_vlist(p->conf.exclude_user, uptr, ulen)
+            : mod_userdir_in_vlist_nc(p->conf.exclude_user, uptr, ulen))
+            return HANDLER_GO_ON; /* user in exclude list */
+    }
 
-	buffer_copy_string_len(p->username, con->uri.path->ptr + 2, rel_url - (con->uri.path->ptr + 2));
+    if (p->conf.include_user) {
+        if (!mod_userdir_in_vlist(p->conf.include_user, uptr, ulen))
+            return HANDLER_GO_ON; /* user not in include list */
+    }
 
-	if (buffer_string_is_empty(p->conf.basepath)
-#ifdef HAVE_PWD_H
-	    && NULL == (pwd = getpwnam(p->username->ptr))
-#endif
-	    ) {
-		/* user not found */
-		return HANDLER_GO_ON;
-	}
-
-
-	for (k = 0; k < p->conf.exclude_user->used; k++) {
-		data_string *ds = (data_string *)p->conf.exclude_user->data[k];
-
-		if (buffer_is_equal(ds->value, p->username)) {
-			/* user in exclude list */
-			return HANDLER_GO_ON;
-		}
-	}
-
-	if (p->conf.include_user->used) {
-		int found_user = 0;
-		for (k = 0; k < p->conf.include_user->used; k++) {
-			data_string *ds = (data_string *)p->conf.include_user->data[k];
-
-			if (buffer_is_equal(ds->value, p->username)) {
-				/* user in include list */
-				found_user = 1;
-				break;
-			}
-		}
-
-		if (!found_user) return HANDLER_GO_ON;
-	}
-
-	/* we build the physical path */
-	buffer_clear(p->temp_path);
-
-	if (buffer_string_is_empty(p->conf.basepath)) {
-#ifdef HAVE_PWD_H
-		buffer_copy_string(p->temp_path, pwd->pw_dir);
-#endif
-	} else {
-		char *cp = p->username->ptr;
-		/* check if the username is valid
-		 * a request for /~../ should lead to a directory traversal
-		 * limiting to [-_a-z0-9.] should fix it */
-		if (cp[0] == '.' && (cp[1] == '\0' || (cp[1] == '.' && cp[2] == '\0'))) {
-			return HANDLER_GO_ON;
-		}
-
-		for (; *cp; cp++) {
-			char c = *cp;
-			if (!(light_isalnum(c) || c == '-' || c == '_' || c == '.')) {
-				return HANDLER_GO_ON;
-			}
-		}
-		if (con->conf.force_lowercase_filenames) {
-			buffer_to_lower(p->username);
-		}
-
-		buffer_copy_buffer(p->temp_path, p->conf.basepath);
-		if (p->conf.letterhomes) {
-			if (p->username->ptr[0] == '.') return HANDLER_GO_ON;
-			buffer_append_path_len(p->temp_path, p->username->ptr, 1);
-		}
-		buffer_append_path_len(p->temp_path, CONST_BUF_LEN(p->username));
-	}
-	buffer_append_path_len(p->temp_path, CONST_BUF_LEN(p->conf.path));
-
-	if (buffer_string_is_empty(p->conf.basepath)) {
-		struct stat st;
-		int ret;
-
-		ret = stat(p->temp_path->ptr, &st);
-		if (ret < 0 || S_ISDIR(st.st_mode) != 1) {
-			return HANDLER_GO_ON;
-		}
-	}
-
-	buffer_copy_buffer(con->physical.basedir, p->temp_path);
-
-	/* the physical rel_path is basically the same as uri.path;
-	 * but it is converted to lowercase in case of force_lowercase_filenames and some special handling
-	 * for trailing '.', ' ' and '/' on windows
-	 * we assume that no docroot/physical handler changed this
-	 * (docroot should only set the docroot/server name, phyiscal should only change the phyiscal.path;
-	 *  the exception mod_secdownload doesn't work with userdir anyway)
-	 */
-	buffer_append_slash(p->temp_path);
-	/* if no second '/' is found, we assume that it was stripped from the uri.path for the special handling
-	 * on windows.
-	 * we do not care about the trailing slash here on windows, as we already ensured it is a directory
-	 *
-	 * TODO: what to do with trailing dots in usernames on windows? they may result in the same directory
-	 *       as a username without them.
-	 */
-	if (NULL != (rel_url = strchr(con->physical.rel_path->ptr + 2, '/'))) {
-		buffer_append_string(p->temp_path, rel_url + 1); /* skip the / */
-	}
-	buffer_copy_buffer(con->physical.path, p->temp_path);
-
-	return HANDLER_GO_ON;
+    return mod_userdir_docroot_construct(r, p, uptr, ulen);
 }
 
-/* this function is called at dlopen() time and inits the callbacks */
 
 int mod_userdir_plugin_init(plugin *p);
 int mod_userdir_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;
-	p->name        = buffer_init_string("userdir");
+	p->name        = "userdir";
 
 	p->init           = mod_userdir_init;
 	p->handle_physical = mod_userdir_docroot_handler;
 	p->set_defaults   = mod_userdir_set_defaults;
-	p->cleanup        = mod_userdir_free;
-
-	p->data        = NULL;
 
 	return 0;
 }

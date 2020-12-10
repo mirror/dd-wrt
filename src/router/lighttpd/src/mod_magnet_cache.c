@@ -1,7 +1,7 @@
 #include "first.h"
 
 #include "mod_magnet_cache.h"
-#include "base.h"
+#include "log.h"
 #include "stat_cache.h"
 
 #include <stdlib.h>
@@ -33,15 +33,15 @@ static void script_free(script *sc) {
 	free(sc);
 }
 
+#if 0
 script_cache *script_cache_init() {
-	script_cache *p;
-
-	p = calloc(1, sizeof(*p));
-
+	script_cache *p = calloc(1, sizeof(script_cache));
+	force_assert(p);
 	return p;
 }
+#endif
 
-void script_cache_free(script_cache *p) {
+void script_cache_free_data(script_cache *p) {
 	size_t i;
 
 	if (!p) return;
@@ -51,33 +51,31 @@ void script_cache_free(script_cache *p) {
 	}
 
 	free(p->ptr);
-
-	free(p);
 }
 
-lua_State *script_cache_get_script(server *srv, connection *con, script_cache *cache, buffer *name) {
-	size_t i;
+lua_State *script_cache_get_script(script_cache *cache, buffer *name, int etag_flags) {
 	script *sc = NULL;
 	stat_cache_entry *sce;
 
-	for (i = 0; i < cache->used; i++) {
+	for (uint32_t i = 0; i < cache->used; ++i, sc = NULL) {
 		sc = cache->ptr[i];
+		if (!buffer_is_equal(name, sc->name)) continue;
 
-		if (buffer_is_equal(name, sc->name)) {
-			sc->last_used = time(NULL);
+			sc->last_used = log_epoch_secs;
 
 			/* oops, the script failed last time */
 
 			if (lua_gettop(sc->L) == 0) break;
 			force_assert(lua_gettop(sc->L) == 1);
 
-			if (HANDLER_ERROR == stat_cache_get_entry(srv, con, sc->name, &sce)) {
+			sce = stat_cache_get_entry(sc->name);
+			if (NULL == sce) {
 				lua_pop(sc->L, 1); /* pop the old function */
 				break;
 			}
 
-			stat_cache_etag_get(sce, con->etag_flags);
-			if (!buffer_is_equal(sce->etag, sc->etag)) {
+			const buffer *etag = stat_cache_etag_get(sce, etag_flags);
+			if (NULL == etag || !buffer_is_equal(sc->etag, etag)) {
 				/* the etag is outdated, reload the function */
 				lua_pop(sc->L, 1);
 				break;
@@ -86,9 +84,6 @@ lua_State *script_cache_get_script(server *srv, connection *con, script_cache *c
 			force_assert(lua_isfunction(sc->L, -1));
 
 			return sc->L;
-		}
-
-		sc = NULL;
 	}
 
 	/* if the script was script already loaded but either got changed or
@@ -109,15 +104,16 @@ lua_State *script_cache_get_script(server *srv, connection *con, script_cache *c
 		luaL_openlibs(sc->L);
 	}
 
-	sc->last_used = time(NULL);
+	sc->last_used = log_epoch_secs;
 
 	if (0 != luaL_loadfile(sc->L, name->ptr)) {
 		/* oops, an error, return it */
 		return sc->L;
 	}
 
-	if (HANDLER_GO_ON == stat_cache_get_entry(srv, con, sc->name, &sce)) {
-		buffer_copy_buffer(sc->etag, stat_cache_etag_get(sce, con->etag_flags));
+	sce = stat_cache_get_entry(sc->name);
+	if (sce) {
+		buffer_copy_buffer(sc->etag, stat_cache_etag_get(sce, etag_flags));
 	}
 
 	force_assert(lua_isfunction(sc->L, -1));
