@@ -49,7 +49,7 @@ static void ngx_http_request_finalizer(ngx_http_request_t *r);
 
 static void ngx_http_set_keepalive(ngx_http_request_t *r);
 static void ngx_http_keepalive_handler(ngx_event_t *ev);
-static void ngx_http_set_lingering_close(ngx_http_request_t *r);
+static void ngx_http_set_lingering_close(ngx_connection_t *c);
 static void ngx_http_lingering_close_handler(ngx_event_t *ev);
 static ngx_int_t ngx_http_post_action(ngx_http_request_t *r);
 static void ngx_http_close_request(ngx_http_request_t *r, ngx_int_t error);
@@ -871,10 +871,14 @@ ngx_http_ssl_servername(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg)
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
 
+    hc = c->data;
+
     servername = SSL_get_servername(ssl_conn, TLSEXT_NAMETYPE_host_name);
 
     if (servername == NULL) {
-        return SSL_TLSEXT_ERR_OK;
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
+                       "SSL server name: null");
+        goto done;
     }
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
@@ -883,7 +887,7 @@ ngx_http_ssl_servername(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg)
     host.len = ngx_strlen(servername);
 
     if (host.len == 0) {
-        return SSL_TLSEXT_ERR_OK;
+        goto done;
     }
 
     host.data = (u_char *) servername;
@@ -891,32 +895,27 @@ ngx_http_ssl_servername(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg)
     rc = ngx_http_validate_host(&host, c->pool, 1);
 
     if (rc == NGX_ERROR) {
-        *ad = SSL_AD_INTERNAL_ERROR;
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
+        goto error;
     }
 
     if (rc == NGX_DECLINED) {
-        return SSL_TLSEXT_ERR_OK;
+        goto done;
     }
-
-    hc = c->data;
 
     rc = ngx_http_find_virtual_server(c, hc->addr_conf->virtual_names, &host,
                                       NULL, &cscf);
 
     if (rc == NGX_ERROR) {
-        *ad = SSL_AD_INTERNAL_ERROR;
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
+        goto error;
     }
 
     if (rc == NGX_DECLINED) {
-        return SSL_TLSEXT_ERR_OK;
+        goto done;
     }
 
     hc->ssl_servername = ngx_palloc(c->pool, sizeof(ngx_str_t));
     if (hc->ssl_servername == NULL) {
-        *ad = SSL_AD_INTERNAL_ERROR;
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
+        goto error;
     }
 
     *hc->ssl_servername = host;
@@ -932,7 +931,9 @@ ngx_http_ssl_servername(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg)
     c->ssl->buffer_size = sscf->buffer_size;
 
     if (sscf->ssl.ctx) {
-        SSL_set_SSL_CTX(ssl_conn, sscf->ssl.ctx);
+        if (SSL_set_SSL_CTX(ssl_conn, sscf->ssl.ctx) == NULL) {
+            goto error;
+        }
 
         /*
          * SSL_set_SSL_CTX() only changes certs as of 1.0.0d
@@ -957,7 +958,22 @@ ngx_http_ssl_servername(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg)
 #endif
     }
 
+done:
+
+    sscf = ngx_http_get_module_srv_conf(hc->conf_ctx, ngx_http_ssl_module);
+
+    if (sscf->reject_handshake) {
+        c->ssl->handshake_rejected = 1;
+        *ad = SSL_AD_UNRECOGNIZED_NAME;
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
     return SSL_TLSEXT_ERR_OK;
+
+error:
+
+    *ad = SSL_AD_INTERNAL_ERROR;
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
 }
 
 #endif
@@ -1646,6 +1662,12 @@ ngx_http_alloc_large_header_buffer(ngx_http_request_t *r,
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http large header copy: %uz", r->header_in->pos - old);
+
+    if (r->header_in->pos - old > b->end - b->start) {
+        ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
+                      "too large header to copy");
+        return NGX_ERROR;
+    }
 
     new = b->start;
 
@@ -2732,7 +2754,7 @@ ngx_http_finalize_connection(ngx_http_request_t *r)
                 || r->header_in->pos < r->header_in->last
                 || r->connection->read->ready)))
     {
-        ngx_http_set_lingering_close(r);
+        ngx_http_set_lingering_close(r->connection);
         return;
     }
 
@@ -2986,6 +3008,12 @@ closed:
         rev->error = 1;
     }
 
+#if (NGX_HTTP_SSL)
+    if (c->ssl) {
+        c->ssl->no_send_shutdown = 1;
+    }
+#endif
+
     ngx_log_error(NGX_LOG_INFO, c->log, err,
                   "client prematurely closed connection");
 
@@ -3010,13 +3038,6 @@ ngx_http_set_keepalive(ngx_http_request_t *r)
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "set http keepalive handler");
-
-    if (r->discard_body) {
-        r->write_event_handler = ngx_http_request_empty_handler;
-        r->lingering_time = ngx_time() + (time_t) (clcf->lingering_time / 1000);
-        ngx_add_timer(rev, clcf->lingering_timeout);
-        return;
-    }
 
     c->log->action = "closing request";
 
@@ -3347,21 +3368,42 @@ ngx_http_keepalive_handler(ngx_event_t *rev)
 
 
 static void
-ngx_http_set_lingering_close(ngx_http_request_t *r)
+ngx_http_set_lingering_close(ngx_connection_t *c)
 {
     ngx_event_t               *rev, *wev;
-    ngx_connection_t          *c;
+    ngx_http_request_t        *r;
     ngx_http_core_loc_conf_t  *clcf;
 
-    c = r->connection;
+    r = c->data;
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
+    if (r->lingering_time == 0) {
+        r->lingering_time = ngx_time() + (time_t) (clcf->lingering_time / 1000);
+    }
+
+#if (NGX_HTTP_SSL)
+    if (c->ssl) {
+        ngx_int_t  rc;
+
+        rc = ngx_ssl_shutdown(c);
+
+        if (rc == NGX_ERROR) {
+            ngx_http_close_request(r, 0);
+            return;
+        }
+
+        if (rc == NGX_AGAIN) {
+            c->ssl->handler = ngx_http_set_lingering_close;
+            return;
+        }
+
+        c->recv = ngx_recv;
+    }
+#endif
+
     rev = c->read;
     rev->handler = ngx_http_lingering_close_handler;
-
-    r->lingering_time = ngx_time() + (time_t) (clcf->lingering_time / 1000);
-    ngx_add_timer(rev, clcf->lingering_timeout);
 
     if (ngx_handle_read_event(rev, 0) != NGX_OK) {
         ngx_http_close_request(r, 0);
@@ -3384,6 +3426,8 @@ ngx_http_set_lingering_close(ngx_http_request_t *r)
         ngx_http_close_request(r, 0);
         return;
     }
+
+    ngx_add_timer(rev, clcf->lingering_timeout);
 
     if (rev->ready) {
         ngx_http_lingering_close_handler(rev);

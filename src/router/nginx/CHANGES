@@ -1,4 +1,88 @@
 
+Changes with nginx 1.19.5                                        24 Nov 2020
+
+    *) Feature: the -e switch.
+
+    *) Feature: the same source files can now be specified in different
+       modules while building addon modules.
+
+    *) Bugfix: SSL shutdown did not work when lingering close was used.
+
+    *) Bugfix: "upstream sent frame for closed stream" errors might occur
+       when working with gRPC backends.
+
+    *) Bugfix: in request body filters internal API.
+
+
+Changes with nginx 1.19.4                                        27 Oct 2020
+
+    *) Feature: the "ssl_conf_command", "proxy_ssl_conf_command",
+       "grpc_ssl_conf_command", and "uwsgi_ssl_conf_command" directives.
+
+    *) Feature: the "ssl_reject_handshake" directive.
+
+    *) Feature: the "proxy_smtp_auth" directive in mail proxy.
+
+
+Changes with nginx 1.19.3                                        29 Sep 2020
+
+    *) Feature: the ngx_stream_set_module.
+
+    *) Feature: the "proxy_cookie_flags" directive.
+
+    *) Feature: the "userid_flags" directive.
+
+    *) Bugfix: the "stale-if-error" cache control extension was erroneously
+       applied if backend returned a response with status code 500, 502,
+       503, 504, 403, 404, or 429.
+
+    *) Bugfix: "[crit] cache file ... has too long header" messages might
+       appear in logs if caching was used and the backend returned responses
+       with the "Vary" header line.
+
+    *) Workaround: "[crit] SSL_write() failed" messages might appear in logs
+       when using OpenSSL 1.1.1.
+
+    *) Bugfix: "SSL_shutdown() failed (SSL: ... bad write retry)" messages
+       might appear in logs; the bug had appeared in 1.19.2.
+
+    *) Bugfix: a segmentation fault might occur in a worker process when
+       using HTTP/2 if errors with code 400 were redirected to a proxied
+       location using the "error_page" directive.
+
+    *) Bugfix: socket leak when using HTTP/2 and subrequests in the njs
+       module.
+
+
+Changes with nginx 1.19.2                                        11 Aug 2020
+
+    *) Change: now nginx starts closing keepalive connections before all
+       free worker connections are exhausted, and logs a warning about this
+       to the error log.
+
+    *) Change: optimization of client request body reading when using
+       chunked transfer encoding.
+
+    *) Bugfix: memory leak if the "ssl_ocsp" directive was used.
+
+    *) Bugfix: "zero size buf in output" alerts might appear in logs if a
+       FastCGI server returned an incorrect response; the bug had appeared
+       in 1.19.1.
+
+    *) Bugfix: a segmentation fault might occur in a worker process if
+       different large_client_header_buffers sizes were used in different
+       virtual servers.
+
+    *) Bugfix: SSL shutdown might not work.
+
+    *) Bugfix: "SSL_shutdown() failed (SSL: ... bad write retry)" messages
+       might appear in logs.
+
+    *) Bugfix: in the ngx_http_slice_module.
+
+    *) Bugfix: in the ngx_http_xslt_filter_module.
+
+
 Changes with nginx 1.19.1                                        07 Jul 2020
 
     *) Change: the "lingering_close", "lingering_time", and
