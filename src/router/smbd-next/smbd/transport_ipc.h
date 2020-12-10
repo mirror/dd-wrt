@@ -32,6 +32,9 @@ int ksmbd_ipc_logout_request(const char *account);
 struct ksmbd_share_config_response *
 ksmbd_ipc_share_config_request(const char *name);
 
+struct ksmbd_spnego_authen_response *
+ksmbd_ipc_spnego_authen_request(const char *spnego_blob, int blob_len);
+
 int ksmbd_ipc_id_alloc(void);
 void ksmbd_rpc_id_free(int handle);
 

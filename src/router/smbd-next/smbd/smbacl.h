@@ -8,6 +8,13 @@
 #ifndef _SMBACL_H
 #define _SMBACL_H
 
+#include <linux/fs.h>
+#include <linux/namei.h>
+#include <linux/posix_acl.h>
+
+#include "glob.h"
+#include "vfs_cache.h"
+
 #define NUM_AUTHS (6)	/* number of authority fields */
 #define SID_MAX_SUB_AUTHORITIES (15) /* max number of sub authority fields */
 
@@ -16,6 +23,13 @@
 
 #define SIDOWNER 1
 #define SIDGROUP 2
+#define SIDCREATOR_OWNER 3
+#define SIDCREATOR_GROUP 4
+#define SIDUNIX_USER 5
+#define SIDUNIX_GROUP 6
+#define SIDNFS_USER 7
+#define SIDNFS_GROUP 8
+#define SIDNFS_MODE 9
 
 /* Revision for ACLs */
 #define SD_REVISION	1
@@ -60,6 +74,33 @@
 #define SYSTEM_RESOURCE_ATTRIBUTE_ACE_TYPE 0x12
 #define SYSTEM_SCOPED_POLICY_ID_ACE_TYPE 0x13
 
+/* ACE flags */
+#define OBJECT_INHERIT_ACE		0x01
+#define CONTAINER_INHERIT_ACE		0x02
+#define NO_PROPAGATE_INHERIT_ACE	0x04
+#define INHERIT_ONLY_ACE		0x08
+#define INHERITED_ACE			0x10
+#define SUCCESSFUL_ACCESS_ACE_FLAG	0x40
+#define FAILED_ACCESS_ACE_FLAG		0x80
+
+/*
+ * Maximum size of a string representation of a SID:
+ *
+ * The fields are unsigned values in decimal. So:
+ *
+ * u8:  max 3 bytes in decimal
+ * u32: max 10 bytes in decimal
+ *
+ * "S-" + 3 bytes for version field + 15 for authority field + NULL terminator
+ *
+ * For authority field, max is when all 6 values are non-zero and it must be
+ * represented in hex. So "-0x" + 12 hex digits.
+ *
+ * Add 11 bytes for each subauthority field (10 bytes each + 1 for '-')
+ */
+#define SID_STRING_BASE_SIZE (2 + 3 + 15 + 1)
+#define SID_STRING_SUBAUTH_SIZE (11) /* size of a single subauth string */
+
 struct smb_ntsd {
 	__le16 revision; /* revision level */
 	__le16 type;
@@ -76,6 +117,9 @@ struct smb_sid {
 	__le32 sub_auth[SID_MAX_SUB_AUTHORITIES]; /* sub_auth[num_subauth] */
 } __packed;
 
+/* size of a struct cifs_sid, sans sub_auth array */
+#define CIFS_SID_BASE_SIZE (1 + 1 + NUM_AUTHS)
+
 struct smb_acl {
 	__le16 revision; /* revision level */
 	__le16 size;
@@ -90,14 +134,74 @@ struct smb_ace {
 	struct smb_sid sid; /* ie UUID of user or group who gets these perms */
 } __packed;
 
+struct smb_ntacl {
+	unsigned int crc32;
+	int size;
+	int type;
+	int num_aces;
+	struct smb_ace ace[];
+};
+
 struct smb_fattr {
 	kuid_t	cf_uid;
 	kgid_t	cf_gid;
 	umode_t	cf_mode;
+	__le32 daccess;
+	struct posix_acl *cf_acls;
+	struct posix_acl *cf_dacls;
+	struct smb_ntacl *ntacl;
+};
+
+struct posix_ace_state {
+	u32 allow;
+	u32 deny;
+};
+
+struct posix_user_ace_state {
+	union {
+		kuid_t uid;
+		kgid_t gid;
+	};
+	struct posix_ace_state perms;
+};
+
+struct posix_ace_state_array {
+	int n;
+	struct posix_user_ace_state aces[];
+};
+
+/*
+ * while processing the nfsv4 ace, this maintains the partial permissions
+ * calculated so far:
+ */
+
+struct posix_acl_state {
+	struct posix_ace_state owner;
+	struct posix_ace_state group;
+	struct posix_ace_state other;
+	struct posix_ace_state everyone;
+	struct posix_ace_state mask; /* deny unused in this case */
+	struct posix_ace_state_array *users;
+	struct posix_ace_state_array *groups;
 };
 
 int parse_sec_desc(struct smb_ntsd *pntsd, int acl_len,
 		struct smb_fattr *fattr);
-int build_sec_desc(struct smb_ntsd *pntsd, __u32 *secdesclen, umode_t mode);
-
+int build_sec_desc(struct smb_ntsd *pntsd, int addition_info, __u32 *secdesclen,
+		struct smb_fattr *fattr);
+int init_acl_state(struct posix_acl_state *state, int cnt);
+void free_acl_state(struct posix_acl_state *state);
+void posix_state_to_acl(struct posix_acl_state *state,
+		struct posix_acl_entry *pace);
+int compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid);
+bool smb_inherit_flags(int flags, bool is_dir);
+int smb_inherit_dacl(struct dentry *dentry, unsigned int uid, unsigned int gid);
+int smb_inherit_posix_acl(struct inode *inode, struct inode *parent_inode);
+int smb_check_perm_dacl(struct dentry *dentry, __le32 *pdaccess, int uid);
+int store_init_ntacl(struct dentry *dentry);
+int store_init_posix_acl(struct inode *inode);
+int set_info_sec(struct dentry *dentry, struct smb_ntsd *pntsd,
+		int ntsd_len, bool type_check);
+void id_to_sid(unsigned int cid, uint sidtype, struct smb_sid *ssid);
+void ksmbd_init_domain(u32 *sub_auth);
 #endif /* _SMBACL_H */
