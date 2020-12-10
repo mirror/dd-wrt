@@ -18,6 +18,7 @@
 #include <management/user.h>
 #include <management/share.h>
 #include <management/tree_conn.h>
+#include <management/spnego.h>
 
 #define MAX_WORKER_THREADS	4
 static sem_t semaphore;
@@ -56,6 +57,75 @@ static int login_request(struct ksmbd_ipc_msg *msg)
 out:
 	ipc_msg_free(resp_msg);
 	return 0;
+}
+
+static int spnego_authen_request(struct ksmbd_ipc_msg *msg)
+{
+	struct ksmbd_spnego_authen_request *req;
+	struct ksmbd_spnego_authen_response *resp;
+	struct ksmbd_ipc_msg *resp_msg = NULL;
+	struct ksmbd_spnego_auth_out auth_out;
+	struct ksmbd_login_request login_req;
+	int retval = 0;
+
+	req = KSMBD_IPC_MSG_PAYLOAD(msg);
+	resp_msg = ipc_msg_alloc(sizeof(*resp));
+	if (!resp_msg)
+		return -ENOMEM;
+	resp_msg->type = KSMBD_EVENT_SPNEGO_AUTHEN_RESPONSE;
+	resp = KSMBD_IPC_MSG_PAYLOAD(resp_msg);
+	resp->handle = req->handle;
+	resp->login_response.status = KSMBD_USER_FLAG_INVALID;
+
+	if (msg->sz <= sizeof(struct ksmbd_spnego_authen_request)) {
+		retval = -EINVAL;
+		goto out;
+	}
+
+	/* Authentication */
+	if (spnego_handle_authen_request(req, &auth_out) != 0) {
+		retval = -EPERM;
+		goto out;
+	}
+
+	ipc_msg_free(resp_msg);
+	resp_msg = ipc_msg_alloc(sizeof(*resp) +
+			auth_out.key_len + auth_out.blob_len);
+	if (!resp_msg) {
+		retval = -ENOMEM;
+		goto out_free_auth;
+	}
+
+	resp_msg->type = KSMBD_EVENT_SPNEGO_AUTHEN_RESPONSE;
+	resp = KSMBD_IPC_MSG_PAYLOAD(resp_msg);
+	resp->handle = req->handle;
+	resp->login_response.status = KSMBD_USER_FLAG_INVALID;
+
+	/* login */
+	login_req.handle = req->handle;
+	strncpy(login_req.account, auth_out.user_name,
+			sizeof(login_req.account));
+	usm_handle_login_request(&login_req, &resp->login_response);
+	if (!(resp->login_response.status & KSMBD_USER_FLAG_OK)) {
+		pr_info("failed to login %s\n", login_req.account);
+		goto out_free_auth;
+	}
+
+	resp->session_key_len = auth_out.key_len;
+	memcpy(resp->payload, auth_out.sess_key, auth_out.key_len);
+	resp->spnego_blob_len = auth_out.blob_len;
+	memcpy(resp->payload + auth_out.key_len, auth_out.spnego_blob,
+			auth_out.blob_len);
+out_free_auth:
+	free(auth_out.spnego_blob);
+	free(auth_out.sess_key);
+	free(auth_out.user_name);
+out:
+	if (resp_msg) {
+		ipc_msg_send(resp_msg);
+		ipc_msg_free(resp_msg);
+	}
+	return retval;
 }
 
 static int tree_connect_request(struct ksmbd_ipc_msg *msg)
@@ -225,6 +295,10 @@ static void *worker_pool_fn(void *event)
 
 	case KSMBD_EVENT_HEARTBEAT_REQUEST:
 		heartbeat_request(msg);
+		break;
+
+	case KSMBD_EVENT_SPNEGO_AUTHEN_REQUEST:
+		spnego_authen_request(msg);
 		break;
 
 	default:

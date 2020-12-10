@@ -583,6 +583,12 @@ static void process_group_kv(void *_v, unsigned long long _k, void *user_data)
 	}
 }
 
+static void fixup_missing_fields(struct ksmbd_share *share)
+{
+	if (!share->comment)
+		share->comment = strdup("");
+}
+
 static void init_share_from_group(struct ksmbd_share *share,
 				  struct smbconf_group *group)
 {
@@ -606,6 +612,8 @@ static void init_share_from_group(struct ksmbd_share *share,
 		set_share_flag(share, KSMBD_SHARE_FLAG_PIPE);
 
 	list_foreach(&(group->kv), process_group_kv, share);
+
+	fixup_missing_fields(share);
 }
 
 int shm_add_new_share(struct smbconf_group *group)

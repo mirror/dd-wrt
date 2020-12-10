@@ -60,9 +60,7 @@ static int __share_entry_size_ctr1(struct ksmbd_dcerpc *dce, void *entry)
 	    return 0;
 
 	sz = strlen(share->name) * 2;
-	if (share->comment)
-		sz += strlen(share->comment) * 2;
-
+	sz += strlen(share->comment) * 2;
 	sz += 9 * sizeof(__u32);
 	return sz;
 }
