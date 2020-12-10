@@ -30,27 +30,26 @@
 #include "http_header.h"
 #include "base.h"
 #include "log.h"
-#include "md5.h"
 #include "base64.h"
 
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 typedef struct {
-    buffer *auth_gssapi_keytab;
-    buffer *auth_gssapi_principal;
+    const buffer *auth_gssapi_keytab;
+    const buffer *auth_gssapi_principal;
+    unsigned int auth_gssapi_store_creds;
 } plugin_config;
 
 typedef struct {
     PLUGIN_DATA;
-    plugin_config **config_storage;
+    plugin_config defaults;
     plugin_config conf;
 } plugin_data;
 
-static handler_t mod_authn_gssapi_check(server *srv, connection *con, void *p_d, const struct http_auth_require_t *require, const struct http_auth_backend_t *backend);
-static handler_t mod_authn_gssapi_basic(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw);
+static handler_t mod_authn_gssapi_check(request_st *r, void *p_d, const struct http_auth_require_t *require, const struct http_auth_backend_t *backend);
+static handler_t mod_authn_gssapi_basic(request_st *r, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw);
 
 INIT_FUNC(mod_authn_gssapi_init) {
     static http_auth_scheme_t http_auth_scheme_gssapi =
@@ -68,109 +67,81 @@ INIT_FUNC(mod_authn_gssapi_init) {
     return p;
 }
 
-FREE_FUNC(mod_authn_gssapi_free) {
-    plugin_data *p = p_d;
-
-    UNUSED(srv);
-
-    if (!p) return HANDLER_GO_ON;
-
-    if (p->config_storage) {
-        size_t i;
-        for (i = 0; i < srv->config_context->used; i++) {
-            plugin_config *s = p->config_storage[i];
-
-            if (NULL == s) continue;
-
-            buffer_free(s->auth_gssapi_keytab);
-            buffer_free(s->auth_gssapi_principal);
-
-            free(s);
-        }
-        free(p->config_storage);
+static void mod_authn_gssapi_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
+    switch (cpv->k_id) { /* index into static config_plugin_keys_t cpk[] */
+      case 0: /* auth.backend.gssapi.keytab */
+        pconf->auth_gssapi_keytab = cpv->v.b;
+        break;
+      case 1: /* auth.backend.gssapi.principal */
+        pconf->auth_gssapi_principal = cpv->v.b;
+        break;
+      case 2: /* auth.backend.gssapi.store-creds */
+        pconf->auth_gssapi_store_creds = cpv->v.u;
+        break;
+      default:/* should not happen */
+        return;
     }
+}
 
-    free(p);
+static void mod_authn_gssapi_merge_config(plugin_config * const pconf, const config_plugin_value_t *cpv) {
+    do {
+        mod_authn_gssapi_merge_config_cpv(pconf, cpv);
+    } while ((++cpv)->k_id != -1);
+}
 
-    return HANDLER_GO_ON;
+static void mod_authn_gssapi_patch_config(request_st * const r, plugin_data * const p) {
+    p->conf = p->defaults; /* copy small struct instead of memcpy() */
+    /*memcpy(&p->conf, &p->defaults, sizeof(plugin_config));*/
+    for (int i = 1, used = p->nconfig; i < used; ++i) {
+        if (config_check_cond(r, (uint32_t)p->cvlist[i].k_id))
+            mod_authn_gssapi_merge_config(&p->conf,
+                                        p->cvlist + p->cvlist[i].v.u2[0]);
+    }
 }
 
 SETDEFAULTS_FUNC(mod_authn_gssapi_set_defaults) {
-    plugin_data *p = p_d;
-    size_t i;
-    config_values_t cv[] = {
-        { "auth.backend.gssapi.keytab",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
-        { "auth.backend.gssapi.principal",  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
-        { NULL,                             NULL, T_CONFIG_UNSET,  T_CONFIG_SCOPE_UNSET }
+    static const config_plugin_keys_t cpk[] = {
+      { CONST_STR_LEN("auth.backend.gssapi.keytab"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("auth.backend.gssapi.principal"),
+        T_CONFIG_STRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("auth.backend.gssapi.store-creds"),
+        T_CONFIG_BOOL,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ NULL, 0,
+        T_CONFIG_UNSET,
+        T_CONFIG_SCOPE_UNSET }
     };
 
-    p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
+    plugin_data * const p = p_d;
+    if (!config_plugin_values_init(srv, p, cpk, "mod_authn_gssapi"))
+        return HANDLER_ERROR;
 
-    for (i = 0; i < srv->config_context->used; i++) {
-        data_config const* config = (data_config const*)srv->config_context->data[i];
-        plugin_config *s;
+    /* default enabled for backwards compatibility; disable in future */
+    p->defaults.auth_gssapi_store_creds = 1;
 
-        s = calloc(1, sizeof(plugin_config));
-
-        s->auth_gssapi_keytab = buffer_init();
-        s->auth_gssapi_principal = buffer_init();
-
-        cv[0].destination = s->auth_gssapi_keytab;
-        cv[1].destination = s->auth_gssapi_principal;
-
-        p->config_storage[i] = s;
-
-        if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
-            return HANDLER_ERROR;
-        }
+    /* initialize p->defaults from global config context */
+    if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
+        if (-1 != cpv->k_id)
+            mod_authn_gssapi_merge_config(&p->defaults, cpv);
     }
 
     return HANDLER_GO_ON;
 }
 
-#define PATCH(x) \
-    p->conf.x = s->x;
-static int mod_authn_gssapi_patch_connection(server *srv, connection *con, plugin_data *p)
+__attribute_cold__
+static handler_t mod_authn_gssapi_send_400_bad_request (request_st * const r)
 {
-    size_t i, j;
-    plugin_config *s = p->config_storage[0];
-
-    PATCH(auth_gssapi_keytab);
-    PATCH(auth_gssapi_principal);
-
-    /* skip the first, the global context */
-    for (i = 1; i < srv->config_context->used; i++) {
-        data_config *dc = (data_config *)srv->config_context->data[i];
-        s = p->config_storage[i];
-
-        /* condition didn't match */
-        if (!config_check_cond(srv, con, dc)) continue;
-
-        /* merge config */
-        for (j = 0; j < dc->value->used; j++) {
-            data_unset *du = dc->value->data[j];
-
-            if (buffer_is_equal_string(du->key, CONST_STR_LEN("auth.backend.gssapi.keytab"))) {
-                PATCH(auth_gssapi_keytab);
-            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("auth.backend.gssapi.principal"))) {
-                PATCH(auth_gssapi_principal);
-            }
-        }
-    }
-
-    return 0;
-}
-#undef PATCH
-
-static handler_t mod_authn_gssapi_send_400_bad_request (server *srv, connection *con)
-{
-    UNUSED(srv);
-    con->http_status = 400;
-    con->mode = DIRECT;
+    r->http_status = 400;
+    r->handler_module = NULL;
     return HANDLER_FINISHED;
 }
 
-static void mod_authn_gssapi_log_gss_error(server *srv, const char *file, unsigned int line, const char *func, const char *extra, OM_uint32 err_maj, OM_uint32 err_min)
+__attribute_cold__
+static void mod_authn_gssapi_log_gss_error(log_error_st *errh, const char *file, unsigned int line, const char *func, const char *extra, OM_uint32 err_maj, OM_uint32 err_min)
 {
     buffer * const msg = buffer_init_string(func);
     OM_uint32 maj_stat, min_stat;
@@ -200,19 +171,20 @@ static void mod_authn_gssapi_log_gss_error(server *srv, const char *file, unsign
         }
     } while (!GSS_ERROR(maj_stat) && msg_ctx != 0);
 
-    log_error_write(srv, file, line, "b", msg);
+    log_error(errh, file, line, "%s", msg->ptr);
     buffer_free(msg);
 }
 
-static void mod_authn_gssapi_log_krb5_error(server *srv, const char *file, unsigned int line, const char *func, const char *extra, krb5_context context, int code)
+__attribute_cold__
+static void mod_authn_gssapi_log_krb5_error(log_error_st *errh, const char *file, unsigned int line, const char *func, const char *extra, krb5_context context, int code)
 {
     UNUSED(context);
     /*(extra might be NULL)*/
-    log_error_write(srv, file, line, "sssss", func, "(", extra, "):",
-                    error_message(code));
+    log_error(errh, file, line,
+      "%s (%s): %s", func, extra ? extra : "", error_message(code));
 }
 
-static int mod_authn_gssapi_create_krb5_ccache(server *srv, connection *con, plugin_data *p, krb5_context kcontext, krb5_principal princ, krb5_ccache *ccache)
+static int mod_authn_gssapi_create_krb5_ccache(request_st * const r, plugin_data * const p, krb5_context kcontext, krb5_principal princ, krb5_ccache * const ccache)
 {
     buffer * const kccname = buffer_init_string("FILE:/tmp/krb5cc_gssapi_XXXXXX");
     char * const ccname    = kccname->ptr + sizeof("FILE:")-1;
@@ -225,7 +197,7 @@ static int mod_authn_gssapi_create_krb5_ccache(server *srv, connection *con, plu
     /* coverity[secure_temp : FALSE] */
     int fd = mkstemp(ccname);
     if (fd < 0) {
-        log_error_write(srv, __FILE__, __LINE__, "sss", "mkstemp():", ccname, strerror(errno));
+        log_perror(r->conf.errh, __FILE__, __LINE__, "mkstemp(): %s", ccname);
         buffer_free(kccname);
         return -1;
     }
@@ -236,20 +208,20 @@ static int mod_authn_gssapi_create_krb5_ccache(server *srv, connection *con, plu
 
         problem = krb5_cc_resolve(kcontext, kccname->ptr, ccache);
         if (problem) {
-            mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_cc_resolve", NULL, kcontext, problem);
+            mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_cc_resolve", NULL, kcontext, problem);
             break;
         }
 
         problem = krb5_cc_initialize(kcontext, *ccache, princ);
         if (problem) {
-            mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_cc_initialize", kccname->ptr, kcontext, problem);
+            mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_cc_initialize", kccname->ptr, kcontext, problem);
             break;
         }
 
-        con->plugin_ctx[p->id] = kccname;
+        r->plugin_ctx[p->id] = kccname;
 
-        http_header_env_set(con, CONST_STR_LEN("KRB5CCNAME"), ccname, ccnamelen);
-        http_header_request_set(con, HTTP_HEADER_OTHER, CONST_STR_LEN("X-Forwarded-Keytab"), ccname, ccnamelen);
+        http_header_env_set(r, CONST_STR_LEN("KRB5CCNAME"), ccname, ccnamelen);
+        http_header_request_set(r, HTTP_HEADER_OTHER, CONST_STR_LEN("X-Forwarded-Keytab"), ccname, ccnamelen);
 
         return 0;
 
@@ -269,15 +241,25 @@ static int mod_authn_gssapi_create_krb5_ccache(server *srv, connection *con, plu
  * HTTP auth Negotiate
  */
 
-static handler_t mod_authn_gssapi_send_401_unauthorized_negotiate (connection *con)
+__attribute_cold__
+static handler_t mod_authn_gssapi_send_500_server_error (request_st * const r)
 {
-    con->http_status = 401;
-    con->mode = DIRECT;
-    http_header_response_set(con, HTTP_HEADER_OTHER, CONST_STR_LEN("WWW-Authenticate"), CONST_STR_LEN("Negotiate"));
+    r->http_status = 500;
+    r->handler_module = NULL;
     return HANDLER_FINISHED;
 }
 
-static int mod_authn_gssapi_store_gss_creds(server *srv, connection *con, plugin_data *p, char *princ_name, gss_cred_id_t delegated_cred)
+static handler_t mod_authn_gssapi_send_401_unauthorized_negotiate (request_st * const r)
+{
+    r->http_status = 401;
+    r->handler_module = NULL;
+    http_header_response_set(r, HTTP_HEADER_WWW_AUTHENTICATE,
+                             CONST_STR_LEN("WWW-Authenticate"),
+                             CONST_STR_LEN("Negotiate"));
+    return HANDLER_FINISHED;
+}
+
+static int mod_authn_gssapi_store_gss_creds(request_st * const r, plugin_data * const p, char * const princ_name, gss_cred_id_t delegated_cred)
 {
     OM_uint32 maj_stat, min_stat;
     krb5_principal princ = NULL;
@@ -287,22 +269,22 @@ static int mod_authn_gssapi_store_gss_creds(server *srv, connection *con, plugin
 
     problem = krb5_init_context(&context);
     if (problem) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_init_context", NULL, context, problem);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_init_context", NULL, context, problem);
         return 0;
     }
 
     problem = krb5_parse_name(context, princ_name, &princ);
     if (problem) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_parse_name", NULL, context, problem);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_parse_name", NULL, context, problem);
         goto end;
     }
 
-    if (mod_authn_gssapi_create_krb5_ccache(srv, con, p, context, princ, &ccache))
+    if (mod_authn_gssapi_create_krb5_ccache(r, p, context, princ, &ccache))
         goto end;
 
     maj_stat = gss_krb5_copy_ccache(&min_stat, delegated_cred, ccache);
     if (GSS_ERROR(maj_stat)) {
-        mod_authn_gssapi_log_gss_error(srv, __FILE__, __LINE__, "gss_krb5_copy_ccache", princ_name, maj_stat, min_stat);
+        mod_authn_gssapi_log_gss_error(r->conf.errh, __FILE__, __LINE__, "gss_krb5_copy_ccache", princ_name, maj_stat, min_stat);
         goto end;
     }
 
@@ -321,7 +303,7 @@ static int mod_authn_gssapi_store_gss_creds(server *srv, connection *con, plugin
         return 0;
 }
 
-static handler_t mod_authn_gssapi_check_spnego(server *srv, connection *con, plugin_data *p, const http_auth_require_t *require, const char *realm_str)
+static handler_t mod_authn_gssapi_check_spnego(request_st * const r, plugin_data * const p, const http_auth_require_t * const require, const char * const realm_str)
 {
     OM_uint32 st_major, st_minor, acc_flags;
     gss_buffer_desc token_s   = GSS_C_EMPTY_BUFFER;
@@ -334,21 +316,21 @@ static handler_t mod_authn_gssapi_check_spnego(server *srv, connection *con, plu
     gss_name_t client_name    = GSS_C_NO_NAME;
 
     buffer *sprinc;
-    int ret = 0;
+    handler_t rc = HANDLER_UNSET;
 
     buffer *t_in = buffer_init();
     if (!buffer_append_base64_decode(t_in, realm_str, strlen(realm_str), BASE64_STANDARD)) {
-        log_error_write(srv, __FILE__, __LINE__, "ss", "decoding GSSAPI authentication header failed", realm_str);
+        log_error(r->conf.errh, __FILE__, __LINE__, "decoding GSSAPI authentication header failed %s", realm_str);
         buffer_free(t_in);
-        return mod_authn_gssapi_send_400_bad_request(srv, con);
+        return mod_authn_gssapi_send_400_bad_request(r);
     }
 
-    mod_authn_gssapi_patch_connection(srv, con, p);
+    mod_authn_gssapi_patch_config(r, p);
 
     {
         /* ??? Should code = krb5_kt_resolve(kcontext, p->conf.auth_gssapi_keytab->ptr, &keytab);
          *     be used, instead of putenv() of KRB5_KTNAME=...?  See mod_authn_gssapi_basic() */
-        /* ??? Should KRB5_KTNAME go into con->environment instead ??? */
+        /* ??? Should KRB5_KTNAME go into r->env instead ??? */
         /* ??? Should KRB5_KTNAME be added to mod_authn_gssapi_basic(), too? */
         buffer ktname;
         memset(&ktname, 0, sizeof(ktname));
@@ -361,12 +343,12 @@ static handler_t mod_authn_gssapi_check_spnego(server *srv, connection *con, plu
     sprinc = buffer_init_buffer(p->conf.auth_gssapi_principal);
     if (strchr(sprinc->ptr, '/') == NULL) {
         /*(copy HTTP Host, omitting port if port is present)*/
-        /* ??? Should con->server_name be used if http_host not present?
-         * ??? What if con->server_name is not set?
+        /* ??? Should r->server_name be used if http_host not present?
+         * ??? What if r->server_name is not set?
          * ??? Will this work below if IPv6 provided in Host?  probably not */
-        if (!buffer_is_empty(con->request.http_host)) {
+        if (!buffer_is_empty(r->http_host)) {
             buffer_append_string_len(sprinc, CONST_STR_LEN("/"));
-            buffer_append_string_len(sprinc, con->request.http_host->ptr, strcspn(con->request.http_host->ptr, ":"));
+            buffer_append_string_len(sprinc, r->http_host->ptr, strcspn(r->http_host->ptr, ":"));
         }
     }
     if (strchr(sprinc->ptr, '@') == NULL) {
@@ -381,21 +363,21 @@ static handler_t mod_authn_gssapi_check_spnego(server *srv, connection *con, plu
     token_s.length = buffer_string_length(sprinc);
     st_major = gss_import_name(&st_minor, &token_s, (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME, &server_name);
     if (GSS_ERROR(st_major)) {
-        mod_authn_gssapi_log_gss_error(srv, __FILE__, __LINE__, "gss_import_name", NULL, st_major, st_minor);
+        mod_authn_gssapi_log_gss_error(r->conf.errh, __FILE__, __LINE__, "gss_import_name", NULL, st_major, st_minor);
         goto end;
     }
 
     memset(&token_s, 0, sizeof(token_s));
     st_major = gss_display_name(&st_minor, server_name, &token_s, NULL);
     if (GSS_ERROR(st_major)) {
-        mod_authn_gssapi_log_gss_error(srv, __FILE__, __LINE__, "gss_display_name", NULL, st_major, st_minor);
+        mod_authn_gssapi_log_gss_error(r->conf.errh, __FILE__, __LINE__, "gss_display_name", NULL, st_major, st_minor);
         goto end;
     }
 
     /* acquire server's own credentials */
     st_major = gss_acquire_cred(&st_minor, server_name, GSS_C_INDEFINITE, GSS_C_NO_OID_SET, GSS_C_ACCEPT, &server_cred, NULL, NULL);
     if (GSS_ERROR(st_major)) {
-        mod_authn_gssapi_log_gss_error(srv, __FILE__, __LINE__, "gss_acquire_cred", sprinc->ptr, st_major, st_minor);
+        mod_authn_gssapi_log_gss_error(r->conf.errh, __FILE__, __LINE__, "gss_acquire_cred", sprinc->ptr, st_major, st_minor);
         goto end;
     }
 
@@ -405,24 +387,19 @@ static handler_t mod_authn_gssapi_check_spnego(server *srv, connection *con, plu
     st_major = gss_accept_sec_context(&st_minor, &context, server_cred, &token_in, GSS_C_NO_CHANNEL_BINDINGS,
                                       &client_name, NULL, &token_out, &acc_flags, NULL, &client_cred);
     if (GSS_ERROR(st_major)) {
-        mod_authn_gssapi_log_gss_error(srv, __FILE__, __LINE__, "gss_accept_sec_context", NULL, st_major, st_minor);
+        mod_authn_gssapi_log_gss_error(r->conf.errh, __FILE__, __LINE__, "gss_accept_sec_context", NULL, st_major, st_minor);
         goto end;
     }
 
     /* fetch the username */
     st_major = gss_display_name(&st_minor, client_name, &token_out, NULL);
     if (GSS_ERROR(st_major)) {
-        mod_authn_gssapi_log_gss_error(srv, __FILE__, __LINE__, "gss_display_name", NULL, st_major, st_minor);
+        mod_authn_gssapi_log_gss_error(r->conf.errh, __FILE__, __LINE__, "gss_display_name", NULL, st_major, st_minor);
         goto end;
     }
 
     if (!(acc_flags & GSS_C_CONF_FLAG)) {
-        log_error_write(srv, __FILE__, __LINE__, "ss", "No confidentiality for user:", token_out.value);
-        goto end;
-    }
-
-    if (!(acc_flags & GSS_C_DELEG_FLAG)) {
-        log_error_write(srv, __FILE__, __LINE__, "ss", "Unable to delegate credentials for user:", token_out.value);
+        log_error(r->conf.errh, __FILE__, __LINE__, "No confidentiality for user: %s", (char *)token_out.value);
         goto end;
     }
 
@@ -431,9 +408,19 @@ static handler_t mod_authn_gssapi_check_spnego(server *srv, connection *con, plu
         goto end;
     }
 
-    ret = mod_authn_gssapi_store_gss_creds(srv, con, p, token_out.value, client_cred);
-    if (ret)
-        http_auth_setenv(con, token_out.value, token_out.length, CONST_STR_LEN("GSSAPI"));
+    if (p->conf.auth_gssapi_store_creds) {
+        if (!(acc_flags & GSS_C_DELEG_FLAG)) {
+            log_error(r->conf.errh, __FILE__, __LINE__, "Unable to delegate credentials for user: %s", (char *)token_out.value);
+            goto end;
+        }
+        else if (!mod_authn_gssapi_store_gss_creds(r, p, token_out.value, client_cred)) {
+            rc = mod_authn_gssapi_send_500_server_error(r);
+            goto end;
+        }
+    }
+
+    http_auth_setenv(r, token_out.value, token_out.length, CONST_STR_LEN("GSSAPI"));
+    rc = HANDLER_GO_ON; /* success */
 
     end:
         buffer_free(t_in);
@@ -459,30 +446,30 @@ static handler_t mod_authn_gssapi_check_spnego(server *srv, connection *con, plu
         if (token_out.length)
             gss_release_buffer(&st_minor, &token_out);
 
-        return ret ? HANDLER_GO_ON : mod_authn_gssapi_send_401_unauthorized_negotiate(con);
+        return rc != HANDLER_UNSET ? rc : mod_authn_gssapi_send_401_unauthorized_negotiate(r);
 }
 
-static handler_t mod_authn_gssapi_check (server *srv, connection *con, void *p_d, const struct http_auth_require_t *require, const struct http_auth_backend_t *backend)
+static handler_t mod_authn_gssapi_check (request_st * const r, void *p_d, const struct http_auth_require_t * const require, const struct http_auth_backend_t * const backend)
 {
-    buffer *vb = http_header_request_get(con, HTTP_HEADER_AUTHORIZATION, CONST_STR_LEN("Authorization"));
+    const buffer *vb = http_header_request_get(r, HTTP_HEADER_AUTHORIZATION, CONST_STR_LEN("Authorization"));
 
     UNUSED(backend);
     if (NULL == vb) {
-        return mod_authn_gssapi_send_401_unauthorized_negotiate(con);
+        return mod_authn_gssapi_send_401_unauthorized_negotiate(r);
     }
 
-    if (0 != strncasecmp(vb->ptr, "Negotiate ", sizeof("Negotiate ")-1)) {
-        return mod_authn_gssapi_send_400_bad_request(srv, con);
+    if (!buffer_eq_icase_ssn(vb->ptr, CONST_STR_LEN("Negotiate "))) {
+        return mod_authn_gssapi_send_400_bad_request(r);
     }
 
-    return mod_authn_gssapi_check_spnego(srv, con, (plugin_data *)p_d, require, vb->ptr+sizeof("Negotiate ")-1);
+    return mod_authn_gssapi_check_spnego(r, (plugin_data *)p_d, require, vb->ptr+sizeof("Negotiate ")-1);
 }
 
 /*
  * HTTP auth Basic realm="kerberos"
  */
 
-static krb5_error_code mod_authn_gssapi_verify_krb5_init_creds(server *srv, krb5_context context, krb5_creds *creds, krb5_principal ap_req_server, krb5_keytab ap_req_keytab)
+static krb5_error_code mod_authn_gssapi_verify_krb5_init_creds(krb5_context context, krb5_creds *creds, krb5_principal ap_req_server, krb5_keytab ap_req_keytab, log_error_st *errh)
 {
     krb5_error_code ret;
     krb5_data req;
@@ -503,26 +490,26 @@ static krb5_error_code mod_authn_gssapi_verify_krb5_init_creds(server *srv, krb5
 
     ret = krb5_cc_resolve(context, "MEMORY:", &local_ccache);
     if (ret) {
-        log_error_write(srv, __FILE__, __LINE__, "s", "krb5_cc_resolve() failed when verifying KDC");
+        log_error(errh, __FILE__, __LINE__, "krb5_cc_resolve() failed when verifying KDC");
         /* return ret; */
         goto end;
     }
 
     ret = krb5_cc_initialize(context, local_ccache, creds->client);
     if (ret) {
-        log_error_write(srv, __FILE__, __LINE__, "s", "krb5_cc_initialize() failed when verifying KDC");
+        log_error(errh, __FILE__, __LINE__, "krb5_cc_initialize() failed when verifying KDC");
         goto end;
     }
 
     ret = krb5_cc_store_cred(context, local_ccache, creds);
     if (ret) {
-        log_error_write(srv, __FILE__, __LINE__, "s", "krb5_cc_store_cred() failed when verifying KDC");
+        log_error(errh, __FILE__, __LINE__, "krb5_cc_store_cred() failed when verifying KDC");
         goto end;
     }
 
     ret = krb5_unparse_name(context, ap_req_server, &server_name);
     if (ret) {
-        log_error_write(srv, __FILE__, __LINE__, "s", "krb5_unparse_name() failed when verifying KDC");
+        log_error(errh, __FILE__, __LINE__, "krb5_unparse_name() failed when verifying KDC");
         goto end;
     }
     krb5_free_unparsed_name(context, server_name);
@@ -537,7 +524,7 @@ static krb5_error_code mod_authn_gssapi_verify_krb5_init_creds(server *srv, krb5
 
         ret = krb5_get_credentials(context, 0, local_ccache, &match_cred, &new_creds);
         if (ret) {
-            log_error_write(srv, __FILE__, __LINE__, "s", "krb5_get_credentials() failed when verifying KDC");
+            log_error(errh, __FILE__, __LINE__, "krb5_get_credentials() failed when verifying KDC");
             goto end;
         }
         creds = new_creds;
@@ -545,7 +532,7 @@ static krb5_error_code mod_authn_gssapi_verify_krb5_init_creds(server *srv, krb5
 
     ret = krb5_mk_req_extended(context, &auth_context, 0, NULL, creds, &req);
     if (ret) {
-        log_error_write(srv, __FILE__, __LINE__, "s", "krb5_mk_req_extended() failed when verifying KDC");
+        log_error(errh, __FILE__, __LINE__, "krb5_mk_req_extended() failed when verifying KDC");
         goto end;
     }
 
@@ -553,7 +540,7 @@ static krb5_error_code mod_authn_gssapi_verify_krb5_init_creds(server *srv, krb5
     auth_context = NULL;
     ret = krb5_auth_con_init(context, &auth_context);
     if (ret) {
-        log_error_write(srv, __FILE__, __LINE__, "s", "krb5_auth_con_init() failed when verifying KDC");
+        log_error(errh, __FILE__, __LINE__, "krb5_auth_con_init() failed when verifying KDC");
         goto end;
     }
 
@@ -561,7 +548,7 @@ static krb5_error_code mod_authn_gssapi_verify_krb5_init_creds(server *srv, krb5
     krb5_auth_con_setflags(context, auth_context, KRB5_AUTH_CONTEXT_DO_SEQUENCE);
     ret = krb5_rd_req(context, &auth_context, &req, ap_req_server, keytab, 0, NULL);
     if (ret) {
-        log_error_write(srv, __FILE__, __LINE__, "s", "krb5_rd_req() failed when verifying KDC");
+        log_error(errh, __FILE__, __LINE__, "krb5_rd_req() failed when verifying KDC");
         goto end;
     }
 
@@ -579,7 +566,7 @@ static krb5_error_code mod_authn_gssapi_verify_krb5_init_creds(server *srv, krb5
     return ret;
 }
 
-static int mod_authn_gssapi_store_krb5_creds(server *srv, connection *con, plugin_data *p,
+static int mod_authn_gssapi_store_krb5_creds(request_st * const r, plugin_data * const p,
                                              krb5_context kcontext, krb5_ccache delegated_cred)
 {
     krb5_error_code problem;
@@ -588,17 +575,17 @@ static int mod_authn_gssapi_store_krb5_creds(server *srv, connection *con, plugi
 
     problem = krb5_cc_get_principal(kcontext, delegated_cred, &princ);
     if (problem) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_cc_get_principal", NULL, kcontext, problem);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_cc_get_principal", NULL, kcontext, problem);
         goto end;
     }
 
-    if (mod_authn_gssapi_create_krb5_ccache(srv, con, p, kcontext, princ, &ccache)) {
+    if (mod_authn_gssapi_create_krb5_ccache(r, p, kcontext, princ, &ccache)) {
         goto end;
     }
 
     problem = krb5_cc_copy_creds(kcontext, delegated_cred, ccache);
     if (problem) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_cc_copy_creds", NULL, kcontext, problem);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_cc_copy_creds", NULL, kcontext, problem);
         goto end;
     }
 
@@ -614,15 +601,17 @@ static int mod_authn_gssapi_store_krb5_creds(server *srv, connection *con, plugi
         return -1;
 }
 
-static handler_t mod_authn_gssapi_send_401_unauthorized_basic (connection *con)
+static handler_t mod_authn_gssapi_send_401_unauthorized_basic (request_st * const r)
 {
-    con->http_status = 401;
-    con->mode = DIRECT;
-    http_header_response_set(con, HTTP_HEADER_OTHER, CONST_STR_LEN("WWW-Authenticate"), CONST_STR_LEN("Basic realm=\"Kerberos\""));
+    r->http_status = 401;
+    r->handler_module = NULL;
+    http_header_response_set(r, HTTP_HEADER_WWW_AUTHENTICATE,
+                             CONST_STR_LEN("WWW-Authenticate"),
+                             CONST_STR_LEN("Basic realm=\"Kerberos\""));
     return HANDLER_FINISHED;
 }
 
-static handler_t mod_authn_gssapi_basic(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw)
+static handler_t mod_authn_gssapi_basic(request_st * const r, void *p_d, const http_auth_require_t * const require, const buffer * const username, const char * const pw)
 {
     krb5_context kcontext  = NULL;
     krb5_keytab keytab     = NULL;
@@ -638,33 +627,38 @@ static handler_t mod_authn_gssapi_basic(server *srv, connection *con, void *p_d,
     plugin_data * const p = (plugin_data *)p_d;
 
     if (*pw == '\0') {
-        log_error_write(srv, __FILE__, __LINE__, "s", "Empty passwords are not accepted");
-        return mod_authn_gssapi_send_401_unauthorized_basic(con);
+        log_error(r->conf.errh, __FILE__, __LINE__, "Empty passwords are not accepted");
+        return mod_authn_gssapi_send_401_unauthorized_basic(r);
     }
 
-    mod_authn_gssapi_patch_connection(srv, con, p);
+    mod_authn_gssapi_patch_config(r, p);
 
     code = krb5_init_context(&kcontext);
     if (code) {
-        log_error_write(srv, __FILE__, __LINE__, "sd", "krb5_init_context():", code);
-        return mod_authn_gssapi_send_401_unauthorized_basic(con); /*(well, should be 500)*/
+        log_error(r->conf.errh, __FILE__, __LINE__, "krb5_init_context(): %d", code);
+        return mod_authn_gssapi_send_401_unauthorized_basic(r); /*(well, should be 500)*/
+    }
+
+    if (buffer_string_is_empty(p->conf.auth_gssapi_keytab)) {
+        log_error(r->conf.errh, __FILE__, __LINE__, "auth.backend.gssapi.keytab not configured");
+        return mod_authn_gssapi_send_401_unauthorized_basic(r); /*(well, should be 500)*/
     }
 
     code = krb5_kt_resolve(kcontext, p->conf.auth_gssapi_keytab->ptr, &keytab);
     if (code) {
-        log_error_write(srv, __FILE__, __LINE__, "sdb", "krb5_kt_resolve():", code, p->conf.auth_gssapi_keytab);
-        return mod_authn_gssapi_send_401_unauthorized_basic(con); /*(well, should be 500)*/
+        log_error(r->conf.errh, __FILE__, __LINE__, "krb5_kt_resolve(): %d %s", code, p->conf.auth_gssapi_keytab->ptr);
+        return mod_authn_gssapi_send_401_unauthorized_basic(r); /*(well, should be 500)*/
     }
 
     sprinc = buffer_init_buffer(p->conf.auth_gssapi_principal);
     if (strchr(sprinc->ptr, '/') == NULL) {
         /*(copy HTTP Host, omitting port if port is present)*/
-        /* ??? Should con->server_name be used if http_host not present?
-         * ??? What if con->server_name is not set?
+        /* ??? Should r->server_name be used if http_host not present?
+         * ??? What if r->server_name is not set?
          * ??? Will this work below if IPv6 provided in Host?  probably not */
-        if (!buffer_is_empty(con->request.http_host)) {
+        if (!buffer_is_empty(r->http_host)) {
             buffer_append_string_len(sprinc, CONST_STR_LEN("/"));
-            buffer_append_string_len(sprinc, con->request.http_host->ptr, strcspn(con->request.http_host->ptr, ":"));
+            buffer_append_string_len(sprinc, r->http_host->ptr, strcspn(r->http_host->ptr, ":"));
         }
     }
 
@@ -673,7 +667,7 @@ static handler_t mod_authn_gssapi_basic(server *srv, connection *con, void *p_d,
 
     ret = krb5_parse_name(kcontext, sprinc->ptr, &s_princ);
     if (ret) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_parse_name", sprinc->ptr, kcontext, ret);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_parse_name", sprinc->ptr, kcontext, ret);
         ret = -1;
         goto end;
     }
@@ -686,7 +680,7 @@ static handler_t mod_authn_gssapi_basic(server *srv, connection *con, void *p_d,
 
     ret = krb5_parse_name(kcontext, (user_at_realm ? user_at_realm->ptr : username->ptr), &c_princ);
     if (ret) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_parse_name", (user_at_realm ? user_at_realm->ptr : username->ptr), kcontext, ret);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_parse_name", (user_at_realm ? user_at_realm->ptr : username->ptr), kcontext, ret);
         if (user_at_realm) buffer_free(user_at_realm);
         ret = -1;
         goto end;
@@ -702,38 +696,40 @@ static handler_t mod_authn_gssapi_basic(server *srv, connection *con, void *p_d,
      * char *name = NULL;
      * ret = krb5_unparse_name(kcontext, c_princ, &name);
      * if (ret == 0) {
-     *    log_error_write(srv, __FILE__, __LINE__, "sbss", "Trying to get TGT for user:", username, "password:", pw);
+     *    log_error(r->conf.errh, __FILE__, __LINE__, "Trying to get TGT for user: %s password: %s", username->ptr, pw);
      * }
      * krb5_free_unparsed_name(kcontext, name);
      */
 
     ret = krb5_get_init_creds_password(kcontext, &c_creds, c_princ, pw, NULL, NULL, 0, NULL, NULL);
     if (ret) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_get_init_creds_password", NULL, kcontext, ret);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_get_init_creds_password", NULL, kcontext, ret);
         goto end;
     }
 
-    ret = mod_authn_gssapi_verify_krb5_init_creds(srv, kcontext, &c_creds, s_princ, keytab);
+    ret = mod_authn_gssapi_verify_krb5_init_creds(kcontext, &c_creds, s_princ, keytab, r->conf.errh);
     if (ret) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "mod_authn_gssapi_verify_krb5_init_creds", NULL, kcontext, ret);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "mod_authn_gssapi_verify_krb5_init_creds", NULL, kcontext, ret);
         goto end;
     }
+
+    if (!p->conf.auth_gssapi_store_creds) goto end;
 
     ret = krb5_cc_resolve(kcontext, "MEMORY:", &ret_ccache);
     if (ret) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_cc_resolve", NULL, kcontext, ret);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_cc_resolve", NULL, kcontext, ret);
         goto end;
     }
 
     ret = krb5_cc_initialize(kcontext, ret_ccache, c_princ);
     if (ret) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_cc_initialize", NULL, kcontext, ret);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_cc_initialize", NULL, kcontext, ret);
         goto end;
     }
 
     ret = krb5_cc_store_cred(kcontext, ret_ccache, &c_creds);
     if (ret) {
-        mod_authn_gssapi_log_krb5_error(srv, __FILE__, __LINE__, "krb5_cc_store_cred", NULL, kcontext, ret);
+        mod_authn_gssapi_log_krb5_error(r->conf.errh, __FILE__, __LINE__, "krb5_cc_store_cred", NULL, kcontext, ret);
         goto end;
     }
 
@@ -746,8 +742,8 @@ static handler_t mod_authn_gssapi_basic(server *srv, connection *con, void *p_d,
         if (ret_ccache)
             krb5_cc_destroy(kcontext, ret_ccache);
 
-        if (!ret && c_ccache && (ret = mod_authn_gssapi_store_krb5_creds(srv, con, p, kcontext, c_ccache))) {
-            log_error_write(srv, __FILE__, __LINE__, "sb", "mod_authn_gssapi_store_krb5_creds failed for", username);
+        if (!ret && c_ccache && (ret = mod_authn_gssapi_store_krb5_creds(r, p, kcontext, c_ccache))) {
+            log_error(r->conf.errh, __FILE__, __LINE__, "mod_authn_gssapi_store_krb5_creds failed for %s", username->ptr);
         }
 
         buffer_free(sprinc);
@@ -767,35 +763,33 @@ static handler_t mod_authn_gssapi_basic(server *srv, connection *con, void *p_d,
         }
         else {
             /* ret == KRB5KDC_ERR_C_PRINCIPAL_UNKNOWN or no authz rules match */
-            log_error_write(srv, __FILE__, __LINE__, "sbsBsB", "password doesn't match for", con->uri.path, "username:", username, ", IP:", con->dst_addr_buf);
-            return mod_authn_gssapi_send_401_unauthorized_basic(con);
+            log_error(r->conf.errh, __FILE__, __LINE__,
+              "password doesn't match for %s username: %s IP: %s",
+              r->uri.path.ptr, username->ptr, r->con->dst_addr_buf->ptr);
+            return mod_authn_gssapi_send_401_unauthorized_basic(r);
         }
 }
 
 
-CONNECTION_FUNC(mod_authn_gssapi_handle_reset) {
+REQUEST_FUNC(mod_authn_gssapi_handle_reset) {
     plugin_data *p = (plugin_data *)p_d;
-    buffer *kccname = (buffer *)con->plugin_ctx[p->id];
+    buffer *kccname = (buffer *)r->plugin_ctx[p->id];
     if (NULL != kccname) {
-        con->plugin_ctx[p->id] = NULL;
+        r->plugin_ctx[p->id] = NULL;
         unlink(kccname->ptr+sizeof("FILE:")-1);
         buffer_free(kccname);
     }
 
-    UNUSED(srv);
     return HANDLER_GO_ON;
 }
 
 int mod_authn_gssapi_plugin_init(plugin *p);
 int mod_authn_gssapi_plugin_init(plugin *p) {
     p->version     = LIGHTTPD_VERSION_ID;
-    p->name        = buffer_init_string("authn_gssapi");
+    p->name        = "authn_gssapi";
     p->init        = mod_authn_gssapi_init;
     p->set_defaults= mod_authn_gssapi_set_defaults;
-    p->cleanup     = mod_authn_gssapi_free;
-    p->connection_reset = mod_authn_gssapi_handle_reset;
-
-    p->data        = NULL;
+    p->handle_request_reset = mod_authn_gssapi_handle_reset;
 
     return 0;
 }

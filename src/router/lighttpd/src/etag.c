@@ -1,10 +1,10 @@
 #include "first.h"
 
+#include "algo_md.h"
 #include "buffer.h"
 #include "etag.h"
 
 #include <sys/stat.h>
-#include <string.h>
 
 int etag_is_equal(const buffer *etag, const char *line, int weak_ok) {
 	enum {
@@ -143,7 +143,7 @@ int etag_is_equal(const buffer *etag, const char *line, int weak_ok) {
 	return 0;
 }
 
-int etag_create(buffer *etag, const struct stat *st, etag_flags_t flags) {
+int etag_create(buffer *etag, const struct stat *st, int flags) {
 	if (0 == flags) return 0;
 
 	buffer_clear(etag);
@@ -172,16 +172,12 @@ int etag_create(buffer *etag, const struct stat *st, etag_flags_t flags) {
 	return 0;
 }
 
-int etag_mutate(buffer *mut, buffer *etag) {
-	size_t i, len;
-	uint32_t h;
 
-	len = buffer_string_length(etag);
-	for (h=0, i=0; i < len; ++i) h = (h<<5)^(h>>27)^(etag->ptr[i]);
-
+void
+etag_mutate (buffer * const mut, const buffer * const etag) {
+	/* mut and etag may be the same, so calculate hash before modifying mut */
+	const uint32_t h = dekhash(CONST_BUF_LEN(etag));
 	buffer_copy_string_len(mut, CONST_STR_LEN("\""));
 	buffer_append_int(mut, h);
 	buffer_append_string_len(mut, CONST_STR_LEN("\""));
-
-	return 0;
 }

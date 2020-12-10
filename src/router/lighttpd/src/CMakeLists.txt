@@ -13,17 +13,25 @@ include(LighttpdMacros)
 
 add_definitions(-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES)
 
+# default to ON
+set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Default value for ``POSITION_INDEPENDENT_CODE`` of targets.")
+
 option(WITH_XATTR "with xattr-support for the stat-cache [default: off]")
 option(WITH_MYSQL "with mysql-support for mod_vhostdb_mysql [default: off]")
 option(WITH_PGSQL "with postgres-support for mod_vhostdb_pgsql [default: off]")
 option(WITH_DBI "with dbi-support for mod_vhostdb_dbi [default: off]")
+option(WITH_GNUTLS "with GnuTLS-support [default: off]")
+option(WITH_MBEDTLS "with mbedTLS-support [default: off]")
+option(WITH_NSS "with NSS-crypto-support [default: off]")
 option(WITH_OPENSSL "with openssl-support [default: off]")
 option(WITH_WOLFSSL "with wolfSSL-support [default: off]")
+option(WITH_NETTLE "with Nettle-support [default: off]")
 option(WITH_PCRE "with regex support [default: on]" ON)
 option(WITH_WEBDAV_PROPS "with property-support for mod_webdav [default: off]")
 option(WITH_WEBDAV_LOCKS "locks in webdav [default: off]")
-option(WITH_BZIP "with bzip2-support for mod_compress [default: off]")
-option(WITH_ZLIB "with deflate-support for mod_compress [default: on]" ON)
+option(WITH_BROTLI "with brotli-support for mod_deflate [default: off]")
+option(WITH_BZIP "with bzip2-support for mod_deflate [default: off]")
+option(WITH_ZLIB "with deflate-support for mod_deflate [default: on]" ON)
 option(WITH_KRB5 "with Kerberos5-support for mod_auth [default: off]")
 option(WITH_LDAP "with LDAP-support for mod_auth mod_vhostdb_ldap [default: off]")
 option(WITH_PAM "with PAM-support for mod_auth [default: off]")
@@ -37,6 +45,7 @@ option(WITH_LIBUNWIND "with libunwind to print backtraces in asserts [default: o
 option(WITH_GEOIP "with GeoIP-support mod_geoip [default: off]")
 option(WITH_MAXMINDDB "with MaxMind GeoIP2-support mod_maxminddb [default: off]")
 option(WITH_SASL "with SASL-support for mod_authn_sasl [default: off]")
+option(WITH_XXHASH "with system-provided xxhash [default: off]")
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	option(BUILD_EXTRA_WARNINGS "extra warnings")
@@ -82,7 +91,9 @@ check_include_files(sys/epoll.h HAVE_SYS_EPOLL_H)
 set(CMAKE_REQUIRED_FLAGS "-include sys/types.h")
 check_include_files(sys/event.h HAVE_SYS_EVENT_H)
 set(CMAKE_REQUIRED_FLAGS)
+check_include_files(sys/inotify.h HAVE_SYS_INOTIFY_H)
 check_include_files(sys/mman.h HAVE_SYS_MMAN_H)
+check_include_files(sys/loadavg.h HAVE_SYS_LOADAVG_H)
 check_include_files(sys/poll.h HAVE_SYS_POLL_H)
 check_include_files(sys/port.h HAVE_SYS_PORT_H)
 check_include_files(sys/prctl.h HAVE_SYS_PRCTL_H)
@@ -146,6 +157,7 @@ check_type_size(off_t SIZEOF_OFF_T)
 
 check_function_exists(arc4random_buf HAVE_ARC4RANDOM_BUF)
 check_function_exists(chroot HAVE_CHROOT)
+check_function_exists(copy_file_range HAVE_COPY_FILE_RANGE)
 check_function_exists(epoll_ctl HAVE_EPOLL_CTL)
 check_function_exists(fork HAVE_FORK)
 check_function_exists(getloadavg HAVE_GETLOADAVG)
@@ -185,6 +197,7 @@ check_function_exists(issetugid HAVE_ISSETUGID)
 check_function_exists(inet_pton HAVE_INET_PTON)
 check_function_exists(memset_s HAVE_MEMSET_S)
 check_function_exists(explicit_bzero HAVE_EXPLICIT_BZERO)
+check_function_exists(explicit_memset HAVE_EXPLICIT_MEMSET)
 check_symbol_exists(clock_gettime "time.h" HAVE_CLOCK_GETTIME)
 if (NOT HAVE_CLOCK_GETTIME)
 	check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
@@ -240,6 +253,8 @@ macro(XCONFIG _package _include_DIR _link_DIR _link_FLAGS _cflags)
 endmacro(XCONFIG _package _include_DIR _link_DIR _link_FLAGS _cflags)
 
 if(WITH_XATTR)
+	check_include_files("sys/types.h;sys/xattr.h" HAVE_SYS_XATTR_H)
+	check_function_exists(getxattr HAVE_XATTR)
 	check_include_files("sys/types.h;attr/attributes.h" HAVE_ATTR_ATTRIBUTES_H)
 	if(HAVE_ATTR_ATTRIBUTES_H)
 		check_library_exists(attr attr_get "" HAVE_XATTR)
@@ -300,6 +315,7 @@ if(WITH_OPENSSL)
 		if(HAVE_LIBCRYPTO)
 			set(CRYPTO_LIBRARY crypto)
 			check_library_exists(ssl SSL_new "" HAVE_LIBSSL)
+			set(HAVE_OPENSSL 1)
 		endif()
 	endif()
 else()
@@ -308,8 +324,11 @@ else()
 endif()
 
 if(WITH_WOLFSSL)
+	pkg_check_modules(WOLFSSL QUIET wolfssl)
 	if(NOT ${WITH_WOLFSSL} EQUAL "")
 		find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h ${WITH_WOLFSSL}/include)
+	elseif(WOLFSSL_FOUND)
+		set(WOLFSSL_INCLUDE_DIR ${WOLFSSL_INCLUDE_DIRS})
 	elseif(APPLE)
 		find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h /opt/local/include)
 	else()
@@ -321,6 +340,8 @@ if(WITH_WOLFSSL)
 			NAMES wolfssl
 			PATHS ${WITH_WOLFSSL}/lib
 		)
+	elseif(WOLFSSL_FOUND)
+		set(WOLFSSL_LIBRARY ${WOLFSSL_LIBRARY_DIRS})
 	else()
 		find_library(WOLFSSL_LIBRARY
 			NAMES wolfssl
@@ -334,7 +355,7 @@ if(WITH_WOLFSSL)
 
 		check_c_source_compiles("
 		#include <wolfssl/options.h>
-		#if !defined(HAVE_LIGHTY) && !defined(OPENSSL_ALL)
+		#if !defined(HAVE_LIGHTY) && !defined(OPENSSL_EXTRA)
 		#error HAVE_LIGHTY macro not defined
 		#endif
 		int main() { return 0; }
@@ -349,6 +370,7 @@ if(WITH_WOLFSSL)
 		if(HAVE_LIBCRYPTO)
 			set(CRYPTO_LIBRARY ${WOLFSSL_LIBRARY})
 			add_definitions(-DHAVE_WOLFSSL_SSL_H)
+			set(HAVE_WOLFSSL 1)
 		endif()
 		set(CMAKE_REQUIRED_INCLUDES)
 		set(CMAKE_REQUIRED_LIBRARIES)
@@ -360,8 +382,73 @@ else()
 	unset(HAVE_WOLFSSL_SSL_H)
 endif()
 
-if(WITH_OPENSSL AND WITH_WOLFSSL)
-	message(FATAL_ERROR "lighttpd should not be built with both --with-openssl and --with-wolfssl")
+if(WITH_MBEDTLS)
+	check_include_files(mbedtls/ssl.h HAVE_MBEDTLS_SSL_H)
+	if(HAVE_MBEDTLS_SSL_H)
+		check_library_exists(mbedcrypto mbedtls_base64_encode "" HAVE_LIBMBEDCRYPTO)
+		if(HAVE_LIBMEDTLSCRYPTO)
+		    check_library_exists(mbedtls mbedtls_cipher_info_from_type "" HAVE_LIBMBEDTLS)
+			if(HAVE_LIBMBEDTLS)
+			    check_library_exists(mbedx509 mbedtls_x509_get_name "" HAVE_LIBMBEDX509)
+			endif()
+		endif()
+	endif()
+else()
+	unset(HAVE_MBEDTLS_SSL_H)
+	unset(HAVE_LIBMBEDCRYPTO)
+	unset(HAVE_LIBMBEDTLS)
+	unset(HAVE_LIBMEDX509)
+endif()
+
+if(WITH_NSS)
+	check_include_files(nss/nss.h HAVE_NSS_NSS_H)
+	check_include_files(nss3/nss.h HAVE_NSS3_NSS_H)
+	if(HAVE_NSS3_NSS_H OR HAVE_NSS_NSS_H)
+		check_library_exists(ssl3 NSSSSL_GetVersion "" HAVE_LIBSSL3)
+		if(HAVE_LIBSSL3)
+		    check_library_exists(smime3 NSSSMIME_GetVersion "" HAVE_LIBSMIME3)
+			if(HAVE_LIBSMIME3)
+			    check_library_exists(nss3 NSS_GetVersion "" HAVE_LIBNSS3)
+			    if(HAVE_LIBNSS3)
+				check_library_exists(nssutil3 NSSUTIL_GetVersion "" HAVE_LIBNSSUTIL3)
+			    endif()
+			endif()
+		endif()
+	endif()
+else()
+	unset(HAVE_NSS_NSS_H)
+	unset(HAVE_NSS3_NSS_H)
+	unset(HAVE_LIBSSL3)
+	unset(HAVE_LIBSMIME3)
+	unset(HAVE_LIBNSS3)
+	unset(HAVE_LIBNSSUTIL3)
+endif()
+
+if(WITH_NETTLE)
+	if(APPLE)
+		set(CMAKE_REQUIRED_INCLUDES /opt/local/include)
+	endif()
+	check_include_files(nettle/nettle-types.h HAVE_NETTLE_NETTLE_TYPES_H)
+	if(APPLE)
+		set(CMAKE_REQUIRED_INCLUDES)
+	endif()
+	if(HAVE_NETTLE_NETTLE_TYPES_H)
+		check_library_exists(nettle nettle_md5_init "" HAVE_LIBCRYPTO)
+		if(HAVE_LIBCRYPTO)
+			set(CRYPTO_LIBRARY nettle)
+		endif()
+	endif()
+else()
+	unset(HAVE_NETTLE_NETTLE_TYPES_H)
+endif()
+
+if(WITH_GNUTLS)
+	pkg_check_modules(LIBGNUTLS REQUIRED gnutls)
+	set(HAVE_LIBGNUTLS 1)
+	add_definitions(-DHAVE_GNUTLS_CRYPTO_H)
+	if(NOT WITH_OPENSSL AND NOT WITH_WOLFSSL AND NOT WITH_MBEDTLS AND NOT WITH_NETTLE)
+		set(CRYPTO_LIBRARY gnutls)
+	endif()
 endif()
 
 if(WITH_PCRE)
@@ -479,6 +566,14 @@ else()
 	unset(HAVE_LIBUUID)
 endif()
 
+if(WITH_XXHASH)
+	check_include_files(xxhash.h HAVE_XXHASH_H)
+	check_library_exists(xxhash XXH_versionNumber "" HAVE_XXHASH)
+else()
+	unset(HAVE_XXHASH_H)
+	unset(HAVE_XXHASH)
+endif()
+
 if(WITH_ZLIB)
 	if(NOT WIN32)
 		check_include_files(zlib.h HAVE_ZLIB_H)
@@ -522,6 +617,14 @@ else()
 	unset(HAVE_LIBBZ2)
 endif()
 
+if(WITH_BROTLI)
+	pkg_check_modules(LIBBROTLI REQUIRED libbrotlienc)
+	set(HAVE_BROTLI 1)
+	add_definitions(-DHAVE_BROTLI_ENCODE_H -DHAVE_BROTLI)
+else()
+	unset(HAVE_BROTLI)
+endif()
+
 if(WITH_LDAP)
 	check_include_files(ldap.h HAVE_LDAP_H)
 	check_library_exists(ldap ldap_bind "" HAVE_LIBLDAP)
@@ -543,7 +646,7 @@ else()
 endif()
 
 if(WITH_LUA)
-	pkg_search_module(LUA REQUIRED lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua)
+	pkg_search_module(LUA REQUIRED lua5.4 lua-5.4 lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua)
 	message(STATUS "found lua at: INCDIR: ${LUA_INCLUDE_DIRS} LIBDIR: ${LUA_LIBRARY_DIRS} LDFLAGS: ${LUA_LDFLAGS} CFLAGS: ${LUA_CFLAGS}")
 	set(HAVE_LIBLUA 1 "Have liblua")
 	set(HAVE_LUA_H  1 "Have liblua header")
@@ -552,7 +655,7 @@ else()
 	unset(HAVE_LUA_H)
 endif()
 
-if(WITH_FAM)
+if(WITH_FAM AND NOT HAVE_SYS_INOTIFY_H)
 	check_include_files(fam.h HAVE_FAM_H)
 	check_library_exists(fam FAMOpen2 "" HAVE_LIBFAM)
 	if(HAVE_LIBFAM)
@@ -633,16 +736,14 @@ set(COMMON_SRC
 	base64.c buffer.c burl.c log.c
 	http_header.c http_kv.c keyvalue.c chunk.c
 	http_chunk.c stream.c fdevent.c gw_backend.c
-	stat_cache.c plugin.c joblist.c etag.c array.c
+	stat_cache.c plugin.c etag.c array.c
 	data_string.c data_array.c
-	data_integer.c algo_sha1.c md5.c
-	vector.c
+	data_integer.c
+	algo_md5.c algo_sha1.c algo_splaytree.c
 	fdevent_select.c fdevent_libev.c
 	fdevent_poll.c fdevent_linux_sysepoll.c
 	fdevent_solaris_devpoll.c fdevent_solaris_port.c
 	fdevent_freebsd_kqueue.c
-	data_config.c
-	crc32.c
 	connections-glue.c
 	configfile-glue.c
 	http-header-glue.c
@@ -650,7 +751,6 @@ set(COMMON_SRC
 	http_vhostdb.c
 	request.c
 	sock_addr.c
-	splaytree.c
 	rand.c
 	safe_memclear.c
 )
@@ -676,9 +776,15 @@ add_executable(lighttpd
 	server.c
 	response.c
 	connections.c
+	h2.c
+	reqpool.c
 	inet_ntop_cache.c
+	ls-hpack/lshpack.c
+	algo_xxhash.c
 	network.c
 	network_write.c
+	data_config.c
+	vector.c
 	configfile.c
 	configparser.c
 	${COMMON_SRC}
@@ -693,7 +799,6 @@ add_and_install_library(mod_authn_file "mod_authn_file.c")
 if(NOT WIN32)
 	add_and_install_library(mod_cgi mod_cgi.c)
 endif()
-add_and_install_library(mod_compress mod_compress.c)
 add_and_install_library(mod_deflate mod_deflate.c)
 add_and_install_library(mod_dirlisting mod_dirlisting.c)
 add_and_install_library(mod_evasive mod_evasive.c)
@@ -782,56 +887,49 @@ add_test(NAME test_keyvalue COMMAND test_keyvalue)
 
 add_executable(test_mod_access
 	t/test_mod_access.c
-	configfile-glue.c
 	buffer.c
 	array.c
-	data_config.c
 	data_integer.c
 	data_string.c
-	http_header.c
-	http_kv.c
-	vector.c
 	log.c
-	sock_addr.c
 )
 add_test(NAME test_mod_access COMMAND test_mod_access)
 
 add_executable(test_mod_evhost
 	t/test_mod_evhost.c
-	configfile-glue.c
 	buffer.c
 	array.c
-	data_config.c
 	data_integer.c
 	data_string.c
-	http_header.c
-	http_kv.c
-	vector.c
 	log.c
-	sock_addr.c
 )
 add_test(NAME test_mod_evhost COMMAND test_mod_evhost)
 
 add_executable(test_mod_simple_vhost
 	t/test_mod_simple_vhost.c
-	configfile-glue.c
 	buffer.c
 	array.c
-	data_config.c
 	data_integer.c
 	data_string.c
-	http_header.c
-	http_kv.c
-	vector.c
 	log.c
-	sock_addr.c
 )
 add_test(NAME test_mod_simple_vhost COMMAND test_mod_simple_vhost)
 
+add_executable(test_mod_userdir
+	t/test_mod_userdir.c
+	buffer.c
+	array.c
+	data_integer.c
+	data_string.c
+	log.c
+)
+add_test(NAME test_mod_userdir COMMAND test_mod_userdir)
+
 add_executable(test_request
 	t/test_request.c
-	request.c
+	base64.c
 	buffer.c
+	burl.c
 	array.c
 	data_integer.c
 	data_string.c
@@ -855,12 +953,6 @@ if(HAVE_PCRE_H)
 	add_target_properties(test_configfile COMPILE_FLAGS ${PCRE_CFLAGS})
 	target_link_libraries(test_keyvalue ${PCRE_LDFLAGS})
 	add_target_properties(test_keyvalue COMPILE_FLAGS ${PCRE_CFLAGS})
-	target_link_libraries(test_mod_access ${PCRE_LDFLAGS})
-	add_target_properties(test_mod_access COMPILE_FLAGS ${PCRE_CFLAGS})
-	target_link_libraries(test_mod_evhost ${PCRE_LDFLAGS})
-	add_target_properties(test_mod_evhost COMPILE_FLAGS ${PCRE_CFLAGS})
-	target_link_libraries(test_mod_simple_vhost ${PCRE_LDFLAGS})
-	add_target_properties(test_mod_simple_vhost COMPILE_FLAGS ${PCRE_CFLAGS})
 endif()
 
 if(WITH_PCRE AND (WITH_MEMCACHED OR WITH_GDBM))
@@ -875,7 +967,7 @@ if(WITH_LUA)
 	add_target_properties(mod_magnet COMPILE_FLAGS ${LUA_CFLAGS})
 
 	add_and_install_library(mod_cml "mod_cml.c;mod_cml_lua.c;mod_cml_funcs.c")
-	target_link_libraries(mod_cml ${LUA_LDFLAGS})
+	target_link_libraries(mod_cml ${LUA_LDFLAGS} ${CRYPTO_LIBRARY})
 	add_target_properties(mod_cml COMPILE_FLAGS ${LUA_CFLAGS})
 	if(WITH_MEMCACHED)
 		target_link_libraries(mod_cml memcached)
@@ -900,7 +992,7 @@ if(HAVE_MYSQL_H AND HAVE_MYSQL)
 	include_directories(/usr/include/mysql)
 
 	add_and_install_library(mod_authn_mysql "mod_authn_mysql.c")
-	set(L_MOD_AUTHN_MYSQL)
+	set(L_MOD_AUTHN_MYSQL ${CRYPTO_LIBRARY})
 	if(HAVE_LIBCRYPT)
 		set(L_MOD_AUTHN_MYSQL ${L_MOD_AUTHN_MYSQL} crypt)
 	endif()
@@ -915,6 +1007,13 @@ endif()
 if(HAVE_DBI_H AND HAVE_DBI)
 	add_and_install_library(mod_vhostdb_dbi "mod_vhostdb_dbi.c")
 	target_link_libraries(mod_vhostdb_dbi dbi)
+
+	add_and_install_library(mod_authn_dbi "mod_authn_dbi.c")
+	set(L_MOD_AUTHN_DBI ${CRYPTO_LIBRARY})
+	if(HAVE_LIBCRYPT)
+		set(L_MOD_AUTHN_DBI ${L_MOD_AUTHN_DBI} crypt)
+	endif()
+	target_link_libraries(mod_authn_dbi ${L_MOD_AUTHN_DBI} dbi)
 endif()
 
 set(L_MOD_WEBDAV)
@@ -965,14 +1064,17 @@ if(WITH_SASL)
 	target_link_libraries(mod_authn_sasl ${L_MOD_AUTHN_SASL})
 endif()
 
-if(HAVE_ZLIB_H)
-	if(HAVE_BZLIB_H)
-		target_link_libraries(mod_compress ${ZLIB_LIBRARY} bz2)
-		target_link_libraries(mod_deflate ${ZLIB_LIBRARY} bz2)
-	else()
-		target_link_libraries(mod_compress ${ZLIB_LIBRARY})
-		target_link_libraries(mod_deflate ${ZLIB_LIBRARY})
+if(HAVE_ZLIB_H OR HAVE_BZLIB_H OR HAVE_BROTLI)
+	if(HAVE_ZLIB_H)
+		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} ${ZLIB_LIBRARY})
 	endif()
+	if(HAVE_BZLIB_H)
+		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} bz2)
+	endif()
+	if(HAVE_BROTLI)
+		set(L_MOD_DEFLATE ${L_MOD_DEFLATE} brotlienc)
+	endif()
+	target_link_libraries(mod_deflate ${L_MOD_DEFLATE})
 endif()
 
 if(HAVE_LIBFAM)
@@ -989,6 +1091,10 @@ endif()
 
 if(HAVE_XATTR)
 	target_link_libraries(lighttpd attr)
+endif()
+
+if(HAVE_XXHASH)
+	target_link_libraries(lighttpd xxhash)
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -1028,21 +1134,42 @@ if(NOT BUILD_STATIC)
 endif()
 
 if(NOT ${CRYPTO_LIBRARY} EQUAL "")
-	if(NOT WITH_WOLFSSL)
-		target_link_libraries(lighttpd ssl)
-	endif()
 	target_link_libraries(lighttpd ${CRYPTO_LIBRARY})
-	add_and_install_library(mod_openssl "mod_openssl.c")
-	if(NOT WITH_WOLFSSL)
-		set(L_MOD_OPENSSL ${L_MOD_OPENSSL} ssl)
-	endif()
-	set(L_MOD_OPENSSL ${L_MOD_OPENSSL} ${CRYPTO_LIBRARY})
-	target_link_libraries(mod_openssl ${L_MOD_OPENSSL})
 	target_link_libraries(mod_auth ${CRYPTO_LIBRARY})
 	set(L_MOD_AUTHN_FILE ${L_MOD_AUTHN_FILE} ${CRYPTO_LIBRARY})
 	target_link_libraries(mod_authn_file ${L_MOD_AUTHN_FILE})
 	target_link_libraries(mod_secdownload ${CRYPTO_LIBRARY})
+	target_link_libraries(mod_usertrack ${CRYPTO_LIBRARY})
 	target_link_libraries(mod_wstunnel ${CRYPTO_LIBRARY})
+endif()
+
+if(HAVE_OPENSSL)
+	add_and_install_library(mod_openssl "mod_openssl.c")
+	set(L_MOD_OPENSSL ${L_MOD_OPENSSL} ssl crypto)
+	target_link_libraries(mod_openssl ${L_MOD_OPENSSL})
+endif()
+
+if(HAVE_WOLFSSL)
+	add_and_install_library(mod_wolfssl "mod_wolfssl.c")
+	target_link_libraries(mod_wolfssl wolfssl)
+endif()
+
+if(HAVE_LIBGNUTLS)
+	add_and_install_library(mod_gnutls "mod_gnutls.c")
+	target_link_libraries(mod_gnutls gnutls)
+endif()
+
+if(HAVE_LIBMBEDTLS AND HAVE_LIBMEDCRYPTO AND HAVE_LIBMEDX509)
+	add_and_install_library(mod_mbedtls "mod_mbedtls.c")
+	set(L_MOD_MBEDTLS ${L_MOD_MBEDTLS} mbedtls mbedcrypto mbedx509)
+	target_link_libraries(mod_mbedtls ${L_MOD_MBEDTLS})
+	# not doing "cross module" linkage yet (e.g. mod_authn, secdownload)
+endif()
+
+if(HAVE_LIBSSL3 AND HAVE_LIBSMIME3 AND HAVE_LIBNSS3 AND HAVE_LIBNSSUTIL3)
+	add_and_install_library(mod_nss "mod_nss.c")
+	set(L_MOD_NSS ${L_MOD_NSS} ssl3 smime3 nss3 nssutil3)
+	target_link_libraries(mod_nss ${L_MOD_NSS})
 endif()
 
 if(WITH_LIBEV)
@@ -1066,12 +1193,14 @@ if(WITH_LIBUNWIND)
 	add_target_properties(test_configfile COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
 	target_link_libraries(test_keyvalue ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
 	add_target_properties(test_keyvalue COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_mod_access ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_mod_access COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_mod_evhost ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_mod_evhost COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
-	target_link_libraries(test_mod_simple_vhost ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
-	add_target_properties(test_mod_simple_vhost COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_mod_access ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_mod_access COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_mod_evhost ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_mod_evhost COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_mod_simple_vhost ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_mod_simple_vhost COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_mod_userdir ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_mod_userdir COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
 	target_link_libraries(test_request ${LIBUNWIND_LDFLAGS})
 	add_target_properties(test_request COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
 endif()

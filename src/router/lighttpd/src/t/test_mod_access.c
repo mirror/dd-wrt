@@ -8,8 +8,8 @@
 #include "mod_access.c"
 
 static void test_mod_access_check(void) {
-    array *allow    = array_init();
-    array *deny     = array_init();
+    array *allow    = array_init(0);
+    array *deny     = array_init(0);
     buffer *urlpath = buffer_init();
     int lc = 0;
 
@@ -51,5 +51,23 @@ static void test_mod_access_check(void) {
 int main (void) {
     test_mod_access_check();
 
+    return 0;
+}
+
+/*
+ * stub functions
+ */
+
+int config_plugin_values_init(server *srv, void *p_d, const config_plugin_keys_t *cpk, const char *mname) {
+    UNUSED(srv);
+    UNUSED(p_d);
+    UNUSED(cpk);
+    UNUSED(mname);
+    return 0;
+}
+
+int config_check_cond(request_st *r, int context_ndx) {
+    UNUSED(r);
+    UNUSED(context_ndx);
     return 0;
 }

@@ -9,6 +9,12 @@
 /* Define to 1 if you have the <attr/attributes.h> header file. */
 #undef HAVE_ATTR_ATTRIBUTES_H
 
+/* libbrotlienc */
+#undef HAVE_BROTLI
+
+/* brotli/encode.h */
+#undef HAVE_BROTLI_ENCODE_H
+
 /* Define to 1 if you have the <bzlib.h> header file. */
 #undef HAVE_BZLIB_H
 
@@ -17,6 +23,9 @@
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the `copy_file_range' function. */
+#undef HAVE_COPY_FILE_RANGE
 
 /* crypt */
 #undef HAVE_CRYPT
@@ -47,6 +56,9 @@
 
 /* Define to 1 if you have the `explicit_bzero' function. */
 #undef HAVE_EXPLICIT_BZERO
+
+/* Define to 1 if you have the `explicit_memset' function. */
+#undef HAVE_EXPLICIT_MEMSET
 
 /* BSD extended attributes */
 #undef HAVE_EXTATTR
@@ -98,6 +110,9 @@
 
 /* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
+
+/* gnutls/crypto.h */
+#undef HAVE_GNUTLS_CRYPTO_H
 
 /* Define to 1 if you have the <gssapi/gssapi_krb5.h> header file. */
 #undef HAVE_GSSAPI_GSSAPI_KRB5_H
@@ -153,6 +168,15 @@
 /* libldap */
 #undef HAVE_LIBLDAP
 
+/* Have libmbedcrypto library */
+#undef HAVE_LIBMBEDCRYPTO
+
+/* Have libmbedtls library */
+#undef HAVE_LIBMBEDTLS
+
+/* Have libmbedx509 library */
+#undef HAVE_LIBMBEDX509
+
 /* Define to 1 if you have the <libmemcached/memcached.h> header file. */
 #undef HAVE_LIBMEMCACHED_MEMCACHED_H
 
@@ -201,6 +225,9 @@
 /* Define to 1 if you have the <maxminddb.h> header file. */
 #undef HAVE_MAXMINDDB_H
 
+/* Define to 1 if you have the <mbedtls/ssl.h> header file. */
+#undef HAVE_MBEDTLS_SSL_H
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -215,6 +242,15 @@
 
 /* mysql support */
 #undef HAVE_MYSQL
+
+/* Define to 1 if you have the <nettle/nettle-types.h> header file. */
+#undef HAVE_NETTLE_NETTLE_TYPES_H
+
+/* nss3/nss.h */
+#undef HAVE_NSS3_NSS_H
+
+/* nss/nss.h */
+#undef HAVE_NSS_NSS_H
 
 /* Define to 1 if you have the <openssl/ssl.h> header file. */
 #undef HAVE_OPENSSL_SSL_H
@@ -327,6 +363,12 @@
 /* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H
 
+/* Define to 1 if you have the <sys/inotify.h> header file. */
+#undef HAVE_SYS_INOTIFY_H
+
+/* Define to 1 if you have the <sys/loadavg.h> header file. */
+#undef HAVE_SYS_LOADAVG_H
+
 /* Define to 1 if you have the <sys/mman.h> header file. */
 #undef HAVE_SYS_MMAN_H
 
@@ -366,6 +408,9 @@
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 #undef HAVE_SYS_WAIT_H
 
+/* Define to 1 if you have the <sys/xattr.h> header file. */
+#undef HAVE_SYS_XATTR_H
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
@@ -384,8 +429,14 @@
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
 
-/* libattr */
+/* Linux extended attributes */
 #undef HAVE_XATTR
+
+/* xxhash */
+#undef HAVE_XXHASH
+
+/* xxhash.h */
+#undef HAVE_XXHASH_H
 
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H

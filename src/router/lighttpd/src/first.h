@@ -60,6 +60,10 @@
 #define __has_attribute(x) 0
 #endif
 
+#ifndef __has_builtin         /* clang */
+#define __has_builtin(x) 0
+#endif
+
 #ifdef __GNUC__
 #ifndef __GNUC_PREREQ
 #  ifdef __GNUC_PREREQ__
@@ -73,6 +77,13 @@
 #endif
 #else
 #define __GNUC_PREREQ(maj,min) 0
+#endif
+
+#ifndef __builtin_expect
+#if !__has_builtin(__builtin_expect) \
+ && !__GNUC_PREREQ(2,96)
+#define __builtin_expect(x,y) (x)
+#endif
 #endif
 
 #ifndef __attribute_noinline__
@@ -126,6 +137,24 @@
 #define __attribute_format__(x)  __attribute__((__format__ x))
 #else
 #define __attribute_format__(x)
+#endif
+#endif
+
+#ifndef __attribute_pure__
+#if __has_attribute(pure) \
+ || __GNUC_PREREQ(2,96)
+#define __attribute_pure__  __attribute__((__pure__))
+#else
+#define __attribute_pure__
+#endif
+#endif
+
+#ifndef __attribute_returns_nonnull__
+#if __has_attribute(returns_nonnull) \
+ || __GNUC_PREREQ(4,9)
+#define __attribute_returns_nonnull__  __attribute__((__returns_nonnull__))
+#else
+#define __attribute_returns_nonnull__
 #endif
 #endif
 

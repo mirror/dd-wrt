@@ -29,6 +29,8 @@ conf_data = configuration_data()
 conf_data.set('HAVE_SYS_DEVPOLL_H', compiler.has_header('sys/devpoll.h'))
 conf_data.set('HAVE_SYS_EPOLL_H', compiler.has_header('sys/epoll.h'))
 conf_data.set('HAVE_SYS_EVENT_H', compiler.has_header('sys/event.h'))
+conf_data.set('HAVE_SYS_INOTIFY_H', compiler.has_header('sys/inotify.h'))
+conf_data.set('HAVE_SYS_LOADAVG_H', compiler.has_header('sys/loadavg.h'))
 conf_data.set('HAVE_SYS_MMAN_H', compiler.has_header('sys/mman.h'))
 conf_data.set('HAVE_SYS_POLL_H', compiler.has_header('sys/poll.h'))
 conf_data.set('HAVE_SYS_PORT_H', compiler.has_header('sys/port.h'))
@@ -112,6 +114,7 @@ conf_data.set('SIZEOF_OFF_T', compiler.sizeof('off_t', args: defs))
 
 conf_data.set('HAVE_ARC4RANDOM_BUF', compiler.has_function('arc4random_buf', args: defs))
 conf_data.set('HAVE_CHROOT', compiler.has_function('chroot', args: defs))
+conf_data.set('HAVE_COPY_FILE_RANGE', compiler.has_function('copy_file_range', args: defs))
 conf_data.set('HAVE_EPOLL_CTL', compiler.has_function('epoll_ctl', args: defs))
 conf_data.set('HAVE_FORK', compiler.has_function('fork', args: defs))
 conf_data.set('HAVE_GETLOADAVG', compiler.has_function('getloadavg', args: defs))
@@ -151,6 +154,7 @@ conf_data.set('HAVE_ISSETUGID', compiler.has_function('issetugid', args: defs))
 conf_data.set('HAVE_INET_PTON', compiler.has_function('inet_pton', args: defs))
 conf_data.set('HAVE_MEMSET_S', compiler.has_function('memset_s', args: defs))
 conf_data.set('HAVE_EXPLICIT_BZERO', compiler.has_function('explicit_bzero', args: defs))
+conf_data.set('HAVE_EXPLICIT_MEMSET', compiler.has_function('explicit_memset', args: defs))
 
 conf_data.set('HAVE_CLOCK_GETTIME', compiler.has_header_symbol('time.h', 'clock_gettime'))
 clock_lib = []
@@ -220,6 +224,17 @@ if not(get_option('build_static'))
 	endif
 endif
 
+libbrotli = []
+if get_option('with_brotli')
+	libbrotli = [ compiler.find_library('brotlienc') ]
+	if compiler.has_function('BrotliEncoderCreateInstance', args: defs, dependencies: libbrotlienc, prefix: '#include <brotli/encode.h>')
+		conf_data.set('HAVE_BROTLI_ENCODE_H', true)
+		conf_data.set('HAVE_BROTLI', true)
+	else
+		error('Couldn\'t find brotli header / library')
+	endif
+endif
+
 libbz2 = []
 if get_option('with_bzip')
 	libbz2 = [ compiler.find_library('bz2') ]
@@ -245,12 +260,20 @@ if get_option('with_dbi')
 endif
 
 libfam = []
-if get_option('with_fam')
+if get_option('with_fam') and not(conf_data.get('HAVE_SYS_INOTIFY_H'))
 	libfam = [ compiler.find_library('fam') ]
 	if not(compiler.has_function('FAMOpen2', args: defs, dependencies: libfam, prefix: '#include <fam.h>'))
 		error('Couldn\'t find fam.h or FAMOpen2 in lib fam')
 	endif
 	conf_data.set('HAVE_FAM_H', true)
+endif
+
+libmaxminddb = []
+if get_option('with_maxminddb')
+	libmaxminddb = [ compiler.find_library('maxminddb') ]
+	if not(compiler.has_function('MMDB_open', args: defs, dependencies: libmaxminddb, prefix: '#include <maxminddb.h>'))
+		error('Couldn\'t find maxminddb.h or MMDB_open in lib maxminddb')
+	endif
 endif
 
 libgeoip = []
@@ -358,10 +381,27 @@ endif
 liblua = []
 if get_option('with_lua')
 	found_lua = false
-	foreach l: ['lua5.3', 'lua-5.3', 'lua5.2', 'lua-5.2', 'lua5.1', 'lua-5.1', 'lua']
+	foreach l: ['lua5.4', 'lua-5.4', 'lua5.3', 'lua-5.3', 'lua5.2', 'lua-5.2', 'lua5.1', 'lua-5.1', 'lua']
 		if not(found_lua)
 			liblua = dependency(l, required: false)
-			found_lua = liblua.found()
+			if (liblua.found())
+				found_lua = true
+			else
+				liblua = compiler.find_library(l, required: false)
+				if (liblua.found())
+					found_lua = true
+					liblua_found_header = false
+					foreach ib: include_base_paths
+						if not(liblua_found_header)
+							i = join_paths(ib, l)
+							if compiler.has_header(join_paths(i, 'lua.h'))
+								liblua_found_header = true
+								liblua += [ declare_dependency(include_directories: include_directories(i)) ]
+							endif
+						endif
+					endforeach
+				endif
+			endif
 		endif
 	endforeach
 	if not(found_lua)
@@ -385,14 +425,16 @@ if get_option('with_mysql')
 	# manual search: extend include path with 'mysql/'
 	# header: mysql.h
 	# function: mysql_real_connect (-lmariadb)
-	libmysqlclient = [ dependency('mariadb') ]
+	libmysqlclient = [ dependency('libmariadb') ]
 	#-# function: mysql_real_connect (-lmysqlclient)
 	#-libmysqlclient = [ dependency('mysqlclient') ]
 	conf_data.set('HAVE_MYSQL', true)
 endif
 
 libssl = []
+libx509 = []
 libcrypto = []
+libgnutls = []
 if get_option('with_openssl')
 	# manual search:
 	# header: openssl/ssl.h
@@ -403,19 +445,67 @@ if get_option('with_openssl')
 	conf_data.set('HAVE_OPENSSL_SSL_H', true)
 	conf_data.set('HAVE_LIBSSL', true)
 endif
-if get_option('with_wolfssl') != 'false'
+if get_option('with_wolfssl')
 	# manual search:
 	# header: wolfssl/ssl.h
 	# function: wolfSSL_Init (-lwolfssl)
-	p = get_option('with_wolfssl')
-	if p == 'true'
-		p = '/usr/local'
-	endif
-	i = include_directories(p+'/include', p+'/include/wolfssl')
-	libwolfssl_includes_dep = [ declare_dependency(include_directories: i) ]
-	libcrypto = [ compiler.find_library('libwolfssl', dirs: [ p+'/lib', p+'/lib64' ]) ]
-	libcrypto += libwolfssl_includes_dep
+	libssl = [ dependency('wolfssl') ]
+	libcrypto = [ dependency('wolfssl') ]
 	conf_data.set('HAVE_WOLFSSL_SSL_H', true)
+endif
+if get_option('with_mbedtls')
+	# manual search:
+	# header: mbedtls/ssl.h
+	# function: mbedtls_cipher_info_from_type (-lmbedtls)
+	# function: mbedtls_x509_get_name (-lmbedx509)
+	# function: mbedtls_base64_encode (-lmbedcrypto)
+	libssl = [ compiler.find_library('mbedtls') ]
+	libx509 = [ compiler.find_library('mbedx509') ]
+	libcrypto = [ compiler.find_library('mbedcrypto') ]
+	conf_data.set('HAVE_LIBMBEDCRYPTO', true)
+endif
+if get_option('with_nettle')
+	# manual search:
+	# header: nettle/nettle-types.h
+	# function: nettle_md5_init (-lnettle)
+	libcrypto = [ dependency('nettle') ]
+	conf_data.set('HAVE_NETTLE_NETTLE_TYPES_H', true)
+endif
+if get_option('with_gnutls')
+	# manual search:
+	# header: gnutls/gnutls.h
+	# function: gnutls_check_version (-lgnutls)
+	libgnutls = [ dependency('gnutls') ]
+	conf_data.set('HAVE_GNUTLS_CRYPTO_H', true)
+	if not(get_option('with_openssl')) and not(get_option('with_wolfssl')) and not(get_option('with_mbedtls')) and not(getoption('with_nettle'))
+	  libcrypto = [ dependency('gnutls') ]
+	endif
+endif
+libssl3 = []
+libsmime3 = []
+libnss3 = []
+libnssutil3 = []
+if get_option('with_nss')
+	# manual search:
+	# header: nss3/nss.h
+	# function: NSSSSL_GetVersion (-lssl3)
+	# function: NSSSMIME_GetVersion (-lsmime3)
+	# function: NSS_GetVersion (-lnss3)
+	# function: NSSUTIL_GetVersion (-lnssutil3)
+	libnss3 = [ dependency('nss') ]
+	#libssl3 = [ compiler.find_library('libssl3') ]
+	#libsmime3 = [ compiler.find_library('libsmime3') ]
+	#libnss3 = [ compiler.find_library('libnss3') ]
+	#libnssutil3 = [ compiler.find_library('libnssutil3') ]
+	conf_data.set('HAVE_NSS3_NSS_H', true)
+	if not(get_option('with_openssl')) and not(get_option('with_wolfssl')) and not(get_option('with_mbedtls')) and not(getoption('with_nettle')) and not(getoption('with_gnutls'))
+	  libcrypto = [ dependency('nss') ]
+	endif
+endif
+if get_option('with_nss')
+	# manual search:
+	# header: nss/nss.h
+	conf_data.set('HAVE_NSS_NSS_H', true)
 endif
 
 libpcre = []
@@ -535,6 +625,16 @@ endif
 
 libattr = []
 if get_option('with_xattr')
+    if compiler.has_function('getxattr',
+		args: defs,
+		prefix: '''
+			#include <sys/types.h>
+			#include <sys/xattr.h>
+		'''
+    )
+	conf_data.set('HAVE_SYS_XATTR_H', true)
+	conf_data.set('HAVE_XATTR', true)
+    else
 	libattr = [ compiler.find_library('attr') ]
 	if not(compiler.has_function('attr_get',
 		args: defs,
@@ -548,6 +648,21 @@ if get_option('with_xattr')
 	endif
 	conf_data.set('HAVE_ATTR_ATTRIBUTES_H', true)
 	conf_data.set('HAVE_XATTR', true)
+    endif
+endif
+
+libxxhash = []
+if get_option('with_xxhash')
+	libxxhash = dependency('libxxhash', required: false)
+	if libxxhash.found()
+		libxxhash = [ libxxhash ]
+	else
+		libxxhash = [ compiler.find_library('xxhash') ]
+		if not(compiler.has_function('XXH_versionNumber', args: defs, dependencies: libxxhash, prefix: '#include <xxhash.h>'))
+			error('Couldn\'t find xxhash/xxhash.h or XXH_versionNumber in lib xxhash')
+		endif
+	endif
+	conf_data.set('HAVE_XXHASH_H', true)
 endif
 
 libz = []
@@ -572,7 +687,9 @@ configure_file(
 )
 
 common_src = [
+	'algo_md5.c',
 	'algo_sha1.c',
+	'algo_splaytree.c',
 	'array.c',
 	'base64.c',
 	'buffer.c',
@@ -580,9 +697,7 @@ common_src = [
 	'chunk.c',
 	'configfile-glue.c',
 	'connections-glue.c',
-	'crc32.c',
 	'data_array.c',
-	'data_config.c',
 	'data_integer.c',
 	'data_string.c',
 	'etag.c',
@@ -601,16 +716,13 @@ common_src = [
 	'http_kv.c',
 	'http_vhostdb.c',
 	'http-header-glue.c',
-	'joblist.c',
 	'keyvalue.c',
 	'log.c',
-	'md5.c',
 	'plugin.c',
 	'rand.c',
 	'request.c',
 	'safe_memclear.c',
 	'sock_addr.c',
-	'splaytree.c',
 	'stat_cache.c',
 	'stream.c',
 	'vector.c',
@@ -621,9 +733,14 @@ endif
 main_src = [
 	'configfile.c',
 	'connections.c',
+	'data_config.c',
+	'h2.c',
 	'inet_ntop_cache.c',
+	'ls-hpack/lshpack.c',
+	'algo_xxhash.c',
 	'network_write.c',
 	'network.c',
+	'reqpool.c',
 	'response.c',
 	'server.c',
 ]
@@ -709,7 +826,6 @@ executable('lighttpd-angel',
 
 executable('lighttpd', configparser,
 	sources: common_src + main_src,
-	# libssl needed?
 	dependencies: [ common_flags, lighttpd_flags
 		, libattr
 		, libcrypto
@@ -718,6 +834,7 @@ executable('lighttpd', configparser,
 		, libfam
 		, libpcre
 		, libunwind
+		, libxxhash
 		, libws2_32
 	],
 	install: true,
@@ -784,65 +901,61 @@ test('test_keyvalue', executable('test_keyvalue',
 test('test_mod_access', executable('test_mod_access',
 	sources: [
 		't/test_mod_access.c',
-		'configfile-glue.c',
 		'buffer.c',
 		'array.c',
-		'data_config.c',
 		'data_integer.c',
 		'data_string.c',
-		'http_header.c',
-		'http_kv.c',
-		'vector.c',
 		'log.c',
-		'sock_addr.c',
 	],
-	dependencies: common_flags + libpcre + libunwind,
+	dependencies: common_flags + libunwind,
 	build_by_default: false,
 ))
 
 test('test_mod_evhost', executable('test_mod_evhost',
 	sources: [
 		't/test_mod_evhost.c',
-		'configfile-glue.c',
 		'buffer.c',
 		'array.c',
-		'data_config.c',
 		'data_integer.c',
 		'data_string.c',
-		'http_header.c',
-		'http_kv.c',
-		'vector.c',
 		'log.c',
-		'sock_addr.c',
 	],
-	dependencies: common_flags + libpcre + libunwind,
+	dependencies: common_flags + libunwind,
 	build_by_default: false,
 ))
 
 test('test_mod_simple_vhost', executable('test_mod_simple_vhost',
 	sources: [
 		't/test_mod_simple_vhost.c',
-		'configfile-glue.c',
 		'buffer.c',
 		'array.c',
-		'data_config.c',
 		'data_integer.c',
 		'data_string.c',
-		'http_header.c',
-		'http_kv.c',
-		'vector.c',
 		'log.c',
-		'sock_addr.c',
 	],
-	dependencies: common_flags + libpcre + libunwind,
+	dependencies: common_flags + libunwind,
+	build_by_default: false,
+))
+
+test('test_mod_userdir', executable('test_mod_userdir',
+	sources: [
+		't/test_mod_userdir.c',
+		'buffer.c',
+		'array.c',
+		'data_integer.c',
+		'data_string.c',
+		'log.c',
+	],
+	dependencies: common_flags + libunwind,
 	build_by_default: false,
 ))
 
 test('test_request', executable('test_request',
 	sources: [
 		't/test_request.c',
-		'request.c',
+		'base64.c',
 		'buffer.c',
+		'burl.c',
 		'array.c',
 		'data_integer.c',
 		'data_string.c',
@@ -861,8 +974,7 @@ modules = [
 	[ 'mod_alias', [ 'mod_alias.c' ] ],
 	[ 'mod_auth', [ 'mod_auth.c' ], [ libcrypto ] ],
 	[ 'mod_authn_file', [ 'mod_authn_file.c' ], [ libcrypt, libcrypto ] ],
-	[ 'mod_compress', [ 'mod_compress.c' ], libbz2 + libz ],
-	[ 'mod_deflate', [ 'mod_deflate.c' ], libbz2 + libz ],
+	[ 'mod_deflate', [ 'mod_deflate.c' ], libbz2 + libz + libbrotli ],
 	[ 'mod_dirlisting', [ 'mod_dirlisting.c' ], libpcre ],
 	[ 'mod_evasive', [ 'mod_evasive.c' ] ],
 	[ 'mod_evhost', [ 'mod_evhost.c' ] ],
@@ -885,7 +997,7 @@ modules = [
 	[ 'mod_status', [ 'mod_status.c' ] ],
 	[ 'mod_uploadprogress', [ 'mod_uploadprogress.c' ] ],
 	[ 'mod_userdir', [ 'mod_userdir.c' ] ],
-	[ 'mod_usertrack', [ 'mod_usertrack.c' ] ],
+	[ 'mod_usertrack', [ 'mod_usertrack.c' ], libcrypto ],
 	[ 'mod_vhostdb', [ 'mod_vhostdb.c' ] ],
 	[ 'mod_webdav', [ 'mod_webdav.c' ], libsqlite3 + libuuid + libxml2 + libelftc ],
 	[ 'mod_wstunnel', [ 'mod_wstunnel.c' ], libcrypto ],
@@ -905,7 +1017,7 @@ endif
 
 if get_option('with_lua')
 	modules += [
-		[ 'mod_cml', [ 'mod_cml.c', 'mod_cml_lua.c', 'mod_cml_funcs.c' ], liblua + libmemcached ],
+		[ 'mod_cml', [ 'mod_cml.c', 'mod_cml_lua.c', 'mod_cml_funcs.c' ], liblua + libmemcached + libcrypto ],
 		[ 'mod_magnet', [ 'mod_magnet.c', 'mod_magnet_cache.c' ], liblua ],
 	]
 endif
@@ -924,7 +1036,7 @@ endif
 
 if get_option('with_mysql')
 	modules += [
-		[ 'mod_authn_mysql', [ 'mod_authn_mysql.c' ], libcrypt + libmysqlclient ],
+		[ 'mod_authn_mysql', [ 'mod_authn_mysql.c' ], libcrypt + libmysqlclient + libcrypto ],
 		[ 'mod_mysql_vhost', [ 'mod_mysql_vhost.c' ], libmysqlclient ],
 		[ 'mod_vhostdb_mysql', [ 'mod_vhostdb_mysql.c' ], libmysqlclient ],
 	]
@@ -938,6 +1050,7 @@ endif
 
 if get_option('with_dbi')
 	modules += [
+		[ 'mod_authn_dbi', [ 'mod_authn_dbi.c' ], libcrypt + libdbi + libcrypto ],
 		[ 'mod_vhostdb_dbi', [ 'mod_vhostdb_dbi.c' ], libdbi ],
 	]
 endif
@@ -961,9 +1074,27 @@ if get_option('with_openssl')
 	]
 endif
 
-if get_option('with_wolfssl') != 'false'
+if get_option('with_wolfssl')
 	modules += [
-		[ 'mod_openssl', [ 'mod_openssl.c' ], libcrypto ],
+		[ 'mod_wolfssl', [ 'mod_wolfssl.c' ], libcrypto ],
+	]
+endif
+
+if get_option('with_mbedtls')
+	modules += [
+		[ 'mod_mbedtls', [ 'mod_mbedtls.c' ], libssl + libx509 + libcrypto ],
+	]
+endif
+
+if get_option('with_nss')
+	modules += [
+		[ 'mod_nss', [ 'mod_nss.c' ], libssl3 + libsmime3 + libnss3 + libnssutil3 ],
+	]
+endif
+
+if get_option('with_gnutls')
+	modules += [
+		[ 'mod_gnutls', [ 'mod_gnutls.c' ], libgnutls ],
 	]
 endif
 

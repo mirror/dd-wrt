@@ -1,3 +1,9 @@
+/*
+ * mod_authn_pam - PAM backend for lighttpd HTTP auth
+ *
+ * Copyright(c) 2018 Glenn Strauss gstrauss()gluelogic.com  All rights reserved
+ * License: BSD 3-clause (same as lighttpd)
+ */
 #include "first.h"
 
 /* mod_authn_pam
@@ -22,17 +28,16 @@
 #include <string.h>
 
 typedef struct {
-    array *opts;
     const char *service;
 } plugin_config;
 
 typedef struct {
     PLUGIN_DATA;
-    plugin_config **config_storage;
+    plugin_config defaults;
     plugin_config conf;
 } plugin_data;
 
-static handler_t mod_authn_pam_basic(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw);
+static handler_t mod_authn_pam_basic(request_st *r, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw);
 
 INIT_FUNC(mod_authn_pam_init) {
     static http_auth_backend_t http_auth_backend_pam =
@@ -46,86 +51,78 @@ INIT_FUNC(mod_authn_pam_init) {
     return p;
 }
 
-FREE_FUNC(mod_authn_pam_free) {
-    plugin_data *p = p_d;
-    if (!p) return HANDLER_GO_ON;
-
-    if (p->config_storage) {
-        for (size_t i = 0; i < srv->config_context->used; ++i) {
-            plugin_config *s = p->config_storage[i];
-            if (NULL == s) continue;
-            array_free(s->opts);
-            free(s);
-        }
-        free(p->config_storage);
+static void mod_authn_pam_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
+    switch (cpv->k_id) { /* index into static config_plugin_keys_t cpk[] */
+      case 0: /* auth.backend.pam.opts */
+        if (cpv->vtype == T_CONFIG_LOCAL)
+            pconf->service = cpv->v.v;
+        break;
+      default:/* should not happen */
+        return;
     }
-    free(p);
-    UNUSED(srv);
-    return HANDLER_GO_ON;
+}
+
+static void mod_authn_pam_merge_config(plugin_config * const pconf, const config_plugin_value_t *cpv) {
+    do {
+        mod_authn_pam_merge_config_cpv(pconf, cpv);
+    } while ((++cpv)->k_id != -1);
+}
+
+static void mod_authn_pam_patch_config(request_st * const r, plugin_data * const p) {
+    p->conf = p->defaults; /* copy small struct instead of memcpy() */
+    /*memcpy(&p->conf, &p->defaults, sizeof(plugin_config));*/
+    for (int i = 1, used = p->nconfig; i < used; ++i) {
+        if (config_check_cond(r, (uint32_t)p->cvlist[i].k_id))
+            mod_authn_pam_merge_config(&p->conf,
+                                        p->cvlist + p->cvlist[i].v.u2[0]);
+    }
 }
 
 SETDEFAULTS_FUNC(mod_authn_pam_set_defaults) {
-    plugin_data *p = p_d;
-    config_values_t cv[] = {
-        { "auth.backend.pam.opts",          NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },
-        { NULL,                             NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+    static const config_plugin_keys_t cpk[] = {
+      { CONST_STR_LEN("auth.backend.pam.opts"),
+        T_CONFIG_ARRAY_KVSTRING,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ NULL, 0,
+        T_CONFIG_UNSET,
+        T_CONFIG_SCOPE_UNSET }
     };
 
-    p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
+    plugin_data * const p = p_d;
+    if (!config_plugin_values_init(srv, p, cpk, "mod_authn_pam"))
+        return HANDLER_ERROR;
 
-    for (size_t i = 0; i < srv->config_context->used; ++i) {
-        data_config const *config = (data_config const*)srv->config_context->data[i];
-        data_string *ds;
-        plugin_config *s = calloc(1, sizeof(plugin_config));
-        s->opts = array_init();
-
-        cv[0].destination = s->opts;
-
-        p->config_storage[i] = s;
-
-        if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
-            return HANDLER_ERROR;
-        }
-
-        if (0 == s->opts->used) continue;
-
-        ds = (data_string *)
-          array_get_element_klen(s->opts, CONST_STR_LEN("service"));
-        s->service = (NULL != ds) ? ds->value->ptr : "http";
-    }
-
-    if (p->config_storage[0]->service == NULL)
-        p->config_storage[0]->service = "http";
-
-    return HANDLER_GO_ON;
-}
-
-#define PATCH(x) \
-    p->conf.x = s->x;
-static int mod_authn_pam_patch_connection(server *srv, connection *con, plugin_data *p) {
-    plugin_config *s = p->config_storage[0];
-    PATCH(service);
-
-    /* skip the first, the global context */
-    for (size_t i = 1; i < srv->config_context->used; ++i) {
-        data_config *dc = (data_config *)srv->config_context->data[i];
-
-        /* condition didn't match */
-        if (!config_check_cond(srv, con, dc)) continue;
-
-        /* merge config */
-        s = p->config_storage[i];
-        for (size_t j = 0; j < dc->value->used; ++j) {
-            data_unset *du = dc->value->data[j];
-            if (buffer_is_equal_string(du->key, CONST_STR_LEN("auth.backend.pam.opts"))) {
-                PATCH(service);
+    /* process and validate config directives
+     * (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
+        config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* auth.backend.pam.opts */
+                if (cpv->v.a->used) {
+                    const data_string *ds = (const data_string *)
+                      array_get_element_klen(cpv->v.a,CONST_STR_LEN("service"));
+                    cpv->v.v = (NULL != ds) ? ds->value.ptr : "http";
+                    cpv->vtype = T_CONFIG_LOCAL;
+                }
+                break;
+              default:/* should not happen */
+                break;
             }
         }
     }
 
-    return 0;
+    p->defaults.service = "http";
+
+    /* initialize p->defaults from global config context */
+    if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
+        if (-1 != cpv->k_id)
+            mod_authn_pam_merge_config(&p->defaults, cpv);
+    }
+
+    return HANDLER_GO_ON;
 }
-#undef PATCH
 
 static int mod_authn_pam_fn_conv(int num_msg, const struct pam_message **msg, struct pam_response **resp, void *appdata_ptr)  {
     const char * const pw = (char *)appdata_ptr;
@@ -141,7 +138,7 @@ static int mod_authn_pam_fn_conv(int num_msg, const struct pam_message **msg, st
     return PAM_SUCCESS;
 }
 
-static handler_t mod_authn_pam_query(server *srv, connection *con, void *p_d, const buffer *username, const char *realm, const char *pw) {
+static handler_t mod_authn_pam_query(request_st * const r, void *p_d, const buffer * const username, const char * const realm, const char * const pw) {
     plugin_data *p = (plugin_data *)p_d;
     pam_handle_t *pamh = NULL;
     struct pam_conv conv = { mod_authn_pam_fn_conv, NULL };
@@ -150,22 +147,23 @@ static handler_t mod_authn_pam_query(server *srv, connection *con, void *p_d, co
     UNUSED(realm);
     *(const char **)&conv.appdata_ptr = pw; /*(cast away const)*/
 
-    mod_authn_pam_patch_connection(srv, con, p);
+    mod_authn_pam_patch_config(r, p);
 
+    const char * const addrstr = r->con->dst_addr_buf->ptr;
     rc = pam_start(p->conf.service, username->ptr, &conv, &pamh);
     if (PAM_SUCCESS != rc
-     || PAM_SUCCESS !=(rc = pam_set_item(pamh,PAM_RHOST,con->dst_addr_buf->ptr))
+     || PAM_SUCCESS !=(rc = pam_set_item(pamh, PAM_RHOST, addrstr))
      || PAM_SUCCESS !=(rc = pam_authenticate(pamh, flags))
      || PAM_SUCCESS !=(rc = pam_acct_mgmt(pamh, flags)))
-        log_error_write(srv, __FILE__, __LINE__, "ss",
-                        "pam:", pam_strerror(pamh, rc));
+        log_error(r->conf.errh, __FILE__, __LINE__,
+          "pam: %s", pam_strerror(pamh, rc));
     pam_end(pamh, rc);
     return (PAM_SUCCESS == rc) ? HANDLER_GO_ON : HANDLER_ERROR;
 }
 
-static handler_t mod_authn_pam_basic(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw) {
+static handler_t mod_authn_pam_basic(request_st * const r, void *p_d, const http_auth_require_t * const require, const buffer * const username, const char * const pw) {
     char *realm = require->realm->ptr;
-    handler_t rc = mod_authn_pam_query(srv, con, p_d, username, realm, pw);
+    handler_t rc = mod_authn_pam_query(r, p_d, username, realm, pw);
     if (HANDLER_GO_ON != rc) return rc;
     return http_auth_match_rules(require, username->ptr, NULL, NULL)
       ? HANDLER_GO_ON  /* access granted */
@@ -175,10 +173,8 @@ static handler_t mod_authn_pam_basic(server *srv, connection *con, void *p_d, co
 int mod_authn_pam_plugin_init(plugin *p);
 int mod_authn_pam_plugin_init(plugin *p) {
     p->version     = LIGHTTPD_VERSION_ID;
-    p->name        = buffer_init_string("authn_pam");
-    p->data        = NULL;
+    p->name        = "authn_pam";
     p->init        = mod_authn_pam_init;
-    p->cleanup     = mod_authn_pam_free;
     p->set_defaults= mod_authn_pam_set_defaults;
 
     return 0;

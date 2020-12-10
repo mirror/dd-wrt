@@ -5,6 +5,7 @@
 #include "buffer.h"
 #include "http_chunk.h"
 #include "http_header.h"
+#include "response.h"   /* http_response_send_1xx() */
 
 #include "plugin.h"
 
@@ -21,11 +22,8 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#define LUA_RIDX_LIGHTTPD_SERVER     "lighty.srv"
-#define LUA_RIDX_LIGHTTPD_CONNECTION "lighty.con"
+#define LUA_RIDX_LIGHTTPD_REQUEST "lighty.request"
 
-#define MAGNET_CONFIG_RAW_URL       "magnet.attract-raw-url-to"
-#define MAGNET_CONFIG_PHYSICAL_PATH "magnet.attract-physical-path-to"
 #define MAGNET_RESTART_REQUEST      99
 
 /* plugin config for all request/connections */
@@ -33,143 +31,114 @@
 static jmp_buf exceptionjmp;
 
 typedef struct {
-	array *url_raw;
-	array *physical_path;
+    const array *url_raw;
+    const array *physical_path;
+    const array *response_start;
+    int stage;
 } plugin_config;
 
 typedef struct {
-	PLUGIN_DATA;
+    PLUGIN_DATA;
+    plugin_config defaults;
+    plugin_config conf;
 
-	script_cache *cache;
-
-	plugin_config **config_storage;
-
-	plugin_config conf;
+    script_cache cache;
 } plugin_data;
 
-/* init the plugin data */
 INIT_FUNC(mod_magnet_init) {
-	plugin_data *p;
-
-	p = calloc(1, sizeof(*p));
-
-	p->cache = script_cache_init();
-
-	return p;
+    return calloc(1, sizeof(plugin_data));
 }
 
-/* detroy the plugin data */
 FREE_FUNC(mod_magnet_free) {
-	plugin_data *p = p_d;
-
-	UNUSED(srv);
-
-	if (!p) return HANDLER_GO_ON;
-
-	if (p->config_storage) {
-		size_t i;
-
-		for (i = 0; i < srv->config_context->used; i++) {
-			plugin_config *s = p->config_storage[i];
-
-			if (NULL == s) continue;
-
-			array_free(s->url_raw);
-			array_free(s->physical_path);
-
-			free(s);
-		}
-		free(p->config_storage);
-	}
-
-	script_cache_free(p->cache);
-
-	free(p);
-
-	return HANDLER_GO_ON;
+    plugin_data *p = p_d;
+    script_cache_free_data(&p->cache);
 }
 
-/* handle plugin config and check values */
+static void mod_magnet_merge_config_cpv(plugin_config * const pconf, const config_plugin_value_t * const cpv) {
+    switch (cpv->k_id) { /* index into static config_plugin_keys_t cpk[] */
+      case 0: /* magnet.attract-raw-url-to */
+        pconf->url_raw = cpv->v.a;
+        break;
+      case 1: /* magnet.attract-physical-path-to */
+        pconf->physical_path = cpv->v.a;
+        break;
+      case 2: /* magnet.attract-response-start-to */
+        pconf->response_start = cpv->v.a;
+        break;
+      default:/* should not happen */
+        return;
+    }
+}
+
+static void mod_magnet_merge_config(plugin_config * const pconf, const config_plugin_value_t *cpv) {
+    do {
+        mod_magnet_merge_config_cpv(pconf, cpv);
+    } while ((++cpv)->k_id != -1);
+}
+
+static void mod_magnet_patch_config(request_st * const r, plugin_data * const p) {
+    p->conf = p->defaults; /* copy small struct instead of memcpy() */
+    /*memcpy(&p->conf, &p->defaults, sizeof(plugin_config));*/
+    for (int i = 1, used = p->nconfig; i < used; ++i) {
+        if (config_check_cond(r, (uint32_t)p->cvlist[i].k_id))
+            mod_magnet_merge_config(&p->conf, p->cvlist + p->cvlist[i].v.u2[0]);
+    }
+}
 
 SETDEFAULTS_FUNC(mod_magnet_set_defaults) {
-	plugin_data *p = p_d;
-	size_t i = 0;
+    static const config_plugin_keys_t cpk[] = {
+      { CONST_STR_LEN("magnet.attract-raw-url-to"),
+        T_CONFIG_ARRAY_VLIST,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("magnet.attract-physical-path-to"),
+        T_CONFIG_ARRAY_VLIST,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ CONST_STR_LEN("magnet.attract-response-start-to"),
+        T_CONFIG_ARRAY_VLIST,
+        T_CONFIG_SCOPE_CONNECTION }
+     ,{ NULL, 0,
+        T_CONFIG_UNSET,
+        T_CONFIG_SCOPE_UNSET }
+    };
 
-	config_values_t cv[] = {
-		{ MAGNET_CONFIG_RAW_URL,       NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
-		{ MAGNET_CONFIG_PHYSICAL_PATH, NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },       /* 1 */
-		{ NULL,                           NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
-	};
+    plugin_data * const p = p_d;
+    if (!config_plugin_values_init(srv, p, cpk, "mod_magnet"))
+        return HANDLER_ERROR;
 
-	if (!p) return HANDLER_ERROR;
+    /* process and validate config directives
+     * (init i to 0 if global context; to 1 to skip empty global context) */
+    for (int i = !p->cvlist[0].v.u2[1]; i < p->nconfig; ++i) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist[i].v.u2[0];
+        for (; -1 != cpv->k_id; ++cpv) {
+            switch (cpv->k_id) {
+              case 0: /* magnet.attract-raw-url-to */
+              case 1: /* magnet.attract-physical-path-to */
+              case 2: /* magnet.attract-response-start-to */
+                for (uint32_t j = 0; j < cpv->v.a->used; ++j) {
+                    data_string *ds = (data_string *)cpv->v.a->data[j];
+                    if (buffer_string_is_empty(&ds->value)) {
+                        log_error(srv->errh, __FILE__, __LINE__,
+                          "unexpected (blank) value for %s; "
+                          "expected list of \"scriptpath\"", cpk[cpv->k_id].k);
+                        return HANDLER_ERROR;
+                    }
+                }
+                break;
+              default:/* should not happen */
+                break;
+            }
+        }
+    }
 
-	p->config_storage = calloc(srv->config_context->used, sizeof(plugin_config *));
+    /* initialize p->defaults from global config context */
+    if (p->nconfig > 0 && p->cvlist->v.u2[1]) {
+        const config_plugin_value_t *cpv = p->cvlist + p->cvlist->v.u2[0];
+        if (-1 != cpv->k_id)
+            mod_magnet_merge_config(&p->defaults, cpv);
+    }
 
-	for (i = 0; i < srv->config_context->used; i++) {
-		data_config const* config = (data_config const*)srv->config_context->data[i];
-		plugin_config *s;
-
-		s = calloc(1, sizeof(plugin_config));
-		s->url_raw  = array_init();
-		s->physical_path = array_init();
-
-		cv[0].destination = s->url_raw;
-		cv[1].destination = s->physical_path;
-
-		p->config_storage[i] = s;
-
-		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
-			return HANDLER_ERROR;
-		}
-
-		if (!array_is_vlist(s->url_raw)) {
-			log_error_write(srv, __FILE__, __LINE__, "s",
-					"unexpected value for magnet.attract-raw-url-to; expected list of \"scriptpath\"");
-			return HANDLER_ERROR;
-		}
-
-		if (!array_is_vlist(s->physical_path)) {
-			log_error_write(srv, __FILE__, __LINE__, "s",
-					"unexpected value for magnet.attract-physical-path-to; expected list \"scriptpath\"");
-			return HANDLER_ERROR;
-		}
-	}
-
-	return HANDLER_GO_ON;
+    return HANDLER_GO_ON;
 }
-
-#define PATCH(x) \
-	p->conf.x = s->x;
-static int mod_magnet_patch_connection(server *srv, connection *con, plugin_data *p) {
-	size_t i, j;
-	plugin_config *s = p->config_storage[0];
-
-	PATCH(url_raw);
-	PATCH(physical_path);
-
-	/* skip the first, the global context */
-	for (i = 1; i < srv->config_context->used; i++) {
-		data_config *dc = (data_config *)srv->config_context->data[i];
-		s = p->config_storage[i];
-
-		/* condition didn't match */
-		if (!config_check_cond(srv, con, dc)) continue;
-
-		/* merge config */
-		for (j = 0; j < dc->value->used; j++) {
-			data_unset *du = dc->value->data[j];
-
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN(MAGNET_CONFIG_RAW_URL))) {
-				PATCH(url_raw);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN(MAGNET_CONFIG_PHYSICAL_PATH))) {
-				PATCH(physical_path);
-			}
-		}
-	}
-
-	return 0;
-}
-#undef PATCH
 
 #if !defined(LUA_VERSION_NUM) || LUA_VERSION_NUM < 502
 /* lua5.1 backward compat definition */
@@ -234,8 +203,9 @@ static int magnet_array_get_element(lua_State *L, const array *a) {
     /* __index: param 1 is the (empty) table the value was not found in */
     size_t klen;
     const char * const k = luaL_checklstring(L, 2, &klen);
-    data_string * const ds = (data_string *)array_get_element_klen(a, k, klen);
-    magnet_push_buffer(L, NULL != ds ? ds->value : NULL);
+    const data_string * const ds = (const data_string *)
+      array_get_element_klen(a, k, klen);
+    magnet_push_buffer(L, NULL != ds ? &ds->value : NULL);
     return 1;
 }
 #endif
@@ -253,11 +223,11 @@ static int magnet_array_next(lua_State *L) {
 
 	if (pos >= a->used) return 0;
 	if (NULL != (du = a->data[pos])) {
-		lua_pushlstring(L, CONST_BUF_LEN(du->key));
+		lua_pushlstring(L, CONST_BUF_LEN(&du->key));
 		switch (du->type) {
 			case TYPE_STRING:
 				ds = (data_string *)du;
-				magnet_push_buffer(L, ds->value);
+				magnet_push_buffer(L, &ds->value);
 				break;
 			case TYPE_INTEGER:
 				di = (data_integer *)du;
@@ -287,24 +257,11 @@ static int magnet_array_pairs(lua_State *L, array *a) {
 	return 1;
 }
 
-static server* magnet_get_server(lua_State *L) {
-	server *srv;
-
-	lua_getfield(L, LUA_REGISTRYINDEX, LUA_RIDX_LIGHTTPD_SERVER);
-	srv = lua_touserdata(L, -1);
+static request_st * magnet_get_request(lua_State *L) {
+	lua_getfield(L, LUA_REGISTRYINDEX, LUA_RIDX_LIGHTTPD_REQUEST);
+	request_st * const r = lua_touserdata(L, -1);
 	lua_pop(L, 1);
-
-	return srv;
-}
-
-static connection* magnet_get_connection(lua_State *L) {
-	connection *con;
-
-	lua_getfield(L, LUA_REGISTRYINDEX, LUA_RIDX_LIGHTTPD_CONNECTION);
-	con = lua_touserdata(L, -1);
-	lua_pop(L, 1);
-
-	return con;
+	return r;
 }
 
 typedef struct {
@@ -312,14 +269,14 @@ typedef struct {
 	size_t len;
 } const_buffer;
 
-static const_buffer magnet_checkconstbuffer(lua_State *L, int index) {
+static const_buffer magnet_checkconstbuffer(lua_State *L, int idx) {
 	const_buffer cb;
-	cb.ptr = luaL_checklstring(L, index, &cb.len);
+	cb.ptr = luaL_checklstring(L, idx, &cb.len);
 	return cb;
 }
 
-static buffer* magnet_checkbuffer(lua_State *L, int index) {
-	const_buffer cb = magnet_checkconstbuffer(L, index);
+static buffer* magnet_checkbuffer(lua_State *L, int idx) {
+	const_buffer cb = magnet_checkconstbuffer(L, idx);
 	buffer *b = buffer_init();
 	buffer_copy_string_len(b, cb.ptr, cb.len);
 	return b;
@@ -327,30 +284,19 @@ static buffer* magnet_checkbuffer(lua_State *L, int index) {
 
 static int magnet_print(lua_State *L) {
 	const_buffer cb = magnet_checkconstbuffer(L, 1);
-	log_error_write(magnet_get_server(L), __FILE__, __LINE__, "ss",
-			"(lua-print)", cb.ptr);
+	request_st * const r = magnet_get_request(L);
+	log_error(r->conf.errh, __FILE__, __LINE__, "(lua-print) %s", cb.ptr);
 	return 0;
 }
 
 static int magnet_stat(lua_State *L) {
-	server *srv = magnet_get_server(L);
-	connection *con = magnet_get_connection(L);
-	stat_cache_entry *sce = NULL;
-    {
-	buffer *sb = magnet_checkbuffer(L, 1);
-	handler_t res;
-
-	res = stat_cache_get_entry(srv, con, sb, &sce);
-
-	if (HANDLER_GO_ON != res) {
-		buffer_free(sb);
+	buffer * const sb = magnet_checkbuffer(L, 1);
+	stat_cache_entry * const sce = stat_cache_get_entry(sb);
+	buffer_free(sb);
+	if (NULL == sce) {
 		lua_pushnil(L);
 		return 1;
 	}
-
-	stat_cache_content_type_get(srv, con, sb, sce);
-	buffer_free(sb);
-    }
 
 	lua_newtable(L); // return value
 
@@ -396,17 +342,21 @@ static int magnet_stat(lua_State *L) {
 	lua_pushinteger(L, sce->st.st_ino);
 	lua_setfield(L, -2, "st_ino");
 
-	if (!buffer_string_is_empty(stat_cache_etag_get(sce, con->etag_flags))) {
+	request_st * const r = magnet_get_request(L);
+	const buffer *etag = stat_cache_etag_get(sce, r->conf.etag_flags);
+	if (!buffer_string_is_empty(etag)) {
 		/* we have to mutate the etag */
-		etag_mutate(srv->tmp_buf, sce->etag);
-		lua_pushlstring(L, CONST_BUF_LEN(srv->tmp_buf));
+		buffer * const tb = r->tmp_buf;
+		etag_mutate(tb, etag);
+		lua_pushlstring(L, CONST_BUF_LEN(tb));
 	} else {
 		lua_pushnil(L);
 	}
 	lua_setfield(L, -2, "etag");
 
-	if (!buffer_string_is_empty(sce->content_type)) {
-		lua_pushlstring(L, CONST_BUF_LEN(sce->content_type));
+	const buffer *content_type = stat_cache_content_type_get(sce, r);
+	if (!buffer_string_is_empty(content_type)) {
+		lua_pushlstring(L, CONST_BUF_LEN(content_type));
 	} else {
 		lua_pushnil(L);
 	}
@@ -418,55 +368,48 @@ static int magnet_stat(lua_State *L) {
 
 static int magnet_atpanic(lua_State *L) {
 	const_buffer cb = magnet_checkconstbuffer(L, 1);
-	log_error_write(magnet_get_server(L), __FILE__, __LINE__, "ss",
-			"(lua-atpanic)", cb.ptr);
+	request_st * const r = magnet_get_request(L);
+	log_error(r->conf.errh, __FILE__, __LINE__, "(lua-atpanic) %s", cb.ptr);
 	longjmp(exceptionjmp, 1);
 }
 
 static int magnet_reqhdr_get(lua_State *L) {
     /* __index: param 1 is the (empty) table the value was not found in */
-    connection *con = magnet_get_connection(L);
     size_t klen;
     const char * const k = luaL_checklstring(L, 2, &klen);
-    buffer * const vb =
-      http_header_request_get(con, HTTP_HEADER_UNSPECIFIED, k, klen);
+    request_st * const r = magnet_get_request(L);
+    const int id = http_header_hkey_get(k, (uint32_t)klen);
+    const buffer * const vb = http_header_request_get(r, id, k, klen);
     magnet_push_buffer(L, NULL != vb ? vb : NULL);
     return 1;
 }
 
 static int magnet_reqhdr_pairs(lua_State *L) {
-	connection *con = magnet_get_connection(L);
-	return magnet_array_pairs(L, con->request.headers);
+	request_st * const r = magnet_get_request(L);
+	return magnet_array_pairs(L, &r->rqst_headers);
 }
 
 static int magnet_status_get(lua_State *L) {
-	int *i;
-	server *srv = magnet_get_server(L);
-
 	/* __index: param 1 is the (empty) table the value was not found in */
 	const_buffer key = magnet_checkconstbuffer(L, 2);
-	i = status_counter_get_counter(srv, key.ptr, key.len);
+	int *i = status_counter_get_counter(key.ptr, key.len);
 	lua_pushinteger(L, (lua_Integer)*i);
 
 	return 1;
 }
 
 static int magnet_status_set(lua_State *L) {
-	server *srv = magnet_get_server(L);
-
 	/* __newindex: param 1 is the (empty) table the value is supposed to be set in */
 	const_buffer key = magnet_checkconstbuffer(L, 2);
 	int counter = (int) luaL_checkinteger(L, 3);
 
-	status_counter_set(srv, key.ptr, key.len, counter);
+	status_counter_set(key.ptr, key.len, counter);
 
 	return 0;
 }
 
 static int magnet_status_pairs(lua_State *L) {
-	server *srv = magnet_get_server(L);
-
-	return magnet_array_pairs(L, srv->status);
+	return magnet_array_pairs(L, &plugin_stats);
 }
 
 typedef struct {
@@ -474,10 +417,10 @@ typedef struct {
 	enum {
 		MAGNET_ENV_UNSET,
 
-		MAGNET_ENV_PHYICAL_PATH,
-		MAGNET_ENV_PHYICAL_REL_PATH,
-		MAGNET_ENV_PHYICAL_DOC_ROOT,
-		MAGNET_ENV_PHYICAL_BASEDIR,
+		MAGNET_ENV_PHYSICAL_PATH,
+		MAGNET_ENV_PHYSICAL_REL_PATH,
+		MAGNET_ENV_PHYSICAL_DOC_ROOT,
+		MAGNET_ENV_PHYSICAL_BASEDIR,
 
 		MAGNET_ENV_URI_PATH,
 		MAGNET_ENV_URI_PATH_RAW,
@@ -491,15 +434,19 @@ typedef struct {
 		MAGNET_ENV_REQUEST_PATH_INFO,
 		MAGNET_ENV_REQUEST_REMOTE_IP,
 		MAGNET_ENV_REQUEST_SERVER_ADDR,
-		MAGNET_ENV_REQUEST_PROTOCOL
+		MAGNET_ENV_REQUEST_PROTOCOL,
+
+		MAGNET_ENV_RESPONSE_HTTP_STATUS,
+		MAGNET_ENV_RESPONSE_BODY_LENGTH,
+		MAGNET_ENV_RESPONSE_BODY
 	} type;
 } magnet_env_t;
 
 static const magnet_env_t magnet_env[] = {
-	{ "physical.path", MAGNET_ENV_PHYICAL_PATH },
-	{ "physical.rel-path", MAGNET_ENV_PHYICAL_REL_PATH },
-	{ "physical.doc-root", MAGNET_ENV_PHYICAL_DOC_ROOT },
-	{ "physical.basedir", MAGNET_ENV_PHYICAL_BASEDIR },
+	{ "physical.path", MAGNET_ENV_PHYSICAL_PATH },
+	{ "physical.rel-path", MAGNET_ENV_PHYSICAL_REL_PATH },
+	{ "physical.doc-root", MAGNET_ENV_PHYSICAL_DOC_ROOT },
+	{ "physical.basedir", MAGNET_ENV_PHYSICAL_BASEDIR },
 
 	{ "uri.path", MAGNET_ENV_URI_PATH },
 	{ "uri.path-raw", MAGNET_ENV_URI_PATH_RAW },
@@ -516,13 +463,15 @@ static const magnet_env_t magnet_env[] = {
 	{ "request.server-addr", MAGNET_ENV_REQUEST_SERVER_ADDR },
 	{ "request.protocol", MAGNET_ENV_REQUEST_PROTOCOL },
 
+	{ "response.http-status", MAGNET_ENV_RESPONSE_HTTP_STATUS },
+	{ "response.body-length", MAGNET_ENV_RESPONSE_BODY_LENGTH },
+	{ "response.body", MAGNET_ENV_RESPONSE_BODY },
+
 	{ NULL, MAGNET_ENV_UNSET }
 };
 
-static buffer *magnet_env_get_buffer_by_id(server *srv, connection *con, int id) {
+static buffer *magnet_env_get_buffer_by_id(request_st * const r, int id) {
 	buffer *dest = NULL;
-
-	UNUSED(srv);
 
 	/**
 	 * map all internal variables to lua
@@ -530,36 +479,47 @@ static buffer *magnet_env_get_buffer_by_id(server *srv, connection *con, int id)
 	 */
 
 	switch (id) {
-	case MAGNET_ENV_PHYICAL_PATH: dest = con->physical.path; break;
-	case MAGNET_ENV_PHYICAL_REL_PATH: dest = con->physical.rel_path; break;
-	case MAGNET_ENV_PHYICAL_DOC_ROOT: dest = con->physical.doc_root; break;
-	case MAGNET_ENV_PHYICAL_BASEDIR: dest = con->physical.basedir; break;
+	case MAGNET_ENV_PHYSICAL_PATH: dest = &r->physical.path; break;
+	case MAGNET_ENV_PHYSICAL_REL_PATH: dest = &r->physical.rel_path; break;
+	case MAGNET_ENV_PHYSICAL_DOC_ROOT: dest = &r->physical.doc_root; break;
+	case MAGNET_ENV_PHYSICAL_BASEDIR: dest = &r->physical.basedir; break;
 
-	case MAGNET_ENV_URI_PATH: dest = con->uri.path; break;
-	case MAGNET_ENV_URI_PATH_RAW: dest = con->uri.path_raw; break;
-	case MAGNET_ENV_URI_SCHEME: dest = con->uri.scheme; break;
-	case MAGNET_ENV_URI_AUTHORITY: dest = con->uri.authority; break;
-	case MAGNET_ENV_URI_QUERY: dest = con->uri.query; break;
+	case MAGNET_ENV_URI_PATH: dest = &r->uri.path; break;
+	case MAGNET_ENV_URI_PATH_RAW:
+	    {
+		dest = r->tmp_buf;
+		buffer_clear(dest);
+		uint32_t len = buffer_string_length(&r->target);
+		char *qmark = memchr(r->target.ptr, '?', len);
+		buffer_copy_string_len(dest, r->target.ptr, qmark ? (uint32_t)(qmark - r->target.ptr) : len);
+		break;
+	    }
+	case MAGNET_ENV_URI_SCHEME: dest = &r->uri.scheme; break;
+	case MAGNET_ENV_URI_AUTHORITY: dest = &r->uri.authority; break;
+	case MAGNET_ENV_URI_QUERY: dest = &r->uri.query; break;
 
 	case MAGNET_ENV_REQUEST_METHOD:
-		buffer_clear(srv->tmp_buf);
-		http_method_append(srv->tmp_buf, con->request.http_method);
-		dest = srv->tmp_buf;
-		break;
-	case MAGNET_ENV_REQUEST_URI:      dest = con->request.uri; break;
-	case MAGNET_ENV_REQUEST_ORIG_URI: dest = con->request.orig_uri; break;
-	case MAGNET_ENV_REQUEST_PATH_INFO: dest = con->request.pathinfo; break;
-	case MAGNET_ENV_REQUEST_REMOTE_IP: dest = con->dst_addr_buf; break;
-	case MAGNET_ENV_REQUEST_SERVER_ADDR:
-		dest = srv->tmp_buf;
+		dest = r->tmp_buf;
 		buffer_clear(dest);
-		switch (con->srv_socket->addr.plain.sa_family) {
+		http_method_append(dest, r->http_method);
+		break;
+	case MAGNET_ENV_REQUEST_URI:      dest = &r->target; break;
+	case MAGNET_ENV_REQUEST_ORIG_URI: dest = &r->target_orig; break;
+	case MAGNET_ENV_REQUEST_PATH_INFO: dest = &r->pathinfo; break;
+	case MAGNET_ENV_REQUEST_REMOTE_IP: dest = r->con->dst_addr_buf; break;
+	case MAGNET_ENV_REQUEST_SERVER_ADDR:
+	    {
+		const server_socket * const srv_socket = r->con->srv_socket;
+		dest = r->tmp_buf;
+		buffer_clear(dest);
+		switch (sock_addr_get_family(&srv_socket->addr)) {
 		case AF_INET:
 		case AF_INET6:
-			if (sock_addr_is_addr_wildcard(&con->srv_socket->addr)) {
+			if (sock_addr_is_addr_wildcard(&srv_socket->addr)) {
 				sock_addr addrbuf;
 				socklen_t addrlen = sizeof(addrbuf);
-				if (0 == getsockname(con->fd,(struct sockaddr *)&addrbuf,&addrlen)){
+				const int fd = r->con->fd;
+				if (0 == getsockname(fd,(struct sockaddr *)&addrbuf,&addrlen)) {
 					char buf[INET6_ADDRSTRLEN + 1];
 					const char *s = sock_addr_inet_ntop(&addrbuf, buf, sizeof(buf)-1);
 					if (NULL != s)
@@ -567,7 +527,7 @@ static buffer *magnet_env_get_buffer_by_id(server *srv, connection *con, int id)
 				}
 			}
 			else {
-				buffer_copy_buffer(dest, con->srv_socket->srv_token);
+				buffer_copy_buffer(dest, srv_socket->srv_token);
 				if (dest->ptr[0] != '[' || dest->ptr[buffer_string_length(dest)-1] != ']') {
 					char *s = strrchr(dest->ptr, ':');
 					if (s != NULL) /* local IP without port */
@@ -579,9 +539,41 @@ static buffer *magnet_env_get_buffer_by_id(server *srv, connection *con, int id)
 			break;
 		}
 		break;
+	    }
 	case MAGNET_ENV_REQUEST_PROTOCOL:
-		buffer_copy_string(srv->tmp_buf, get_http_version_name(con->request.http_version));
-		dest = srv->tmp_buf;
+		dest = r->tmp_buf;
+		buffer_clear(dest);
+		http_version_append(dest, r->http_version);
+		break;
+	case MAGNET_ENV_RESPONSE_HTTP_STATUS:
+		dest = r->tmp_buf;
+		buffer_clear(dest);
+		buffer_append_int(dest, r->http_status);
+		break;
+	case MAGNET_ENV_RESPONSE_BODY_LENGTH:
+		dest = r->tmp_buf;
+		buffer_clear(dest);
+		if (!r->resp_body_finished)
+			break;
+		buffer_append_int(dest, chunkqueue_length(&r->write_queue));
+		break;
+	case MAGNET_ENV_RESPONSE_BODY:
+		if (!r->resp_body_finished)
+			break;
+		else {
+			chunkqueue * const cq = &r->write_queue;
+			off_t len = chunkqueue_length(cq);
+			if (0 == len) {
+				dest = r->tmp_buf;
+				buffer_copy_string_len(dest, CONST_STR_LEN(""));
+				break;
+			}
+			dest = chunkqueue_read_squash(cq, r->conf.errh);
+			if (NULL == dest) {
+				dest = r->tmp_buf;
+				buffer_clear(dest);
+			}
+		}
 		break;
 
 	case MAGNET_ENV_UNSET: break;
@@ -590,55 +582,92 @@ static buffer *magnet_env_get_buffer_by_id(server *srv, connection *con, int id)
 	return dest;
 }
 
-static buffer *magnet_env_get_buffer(server *srv, connection *con, const char *key) {
-	size_t i;
-
-	for (i = 0; magnet_env[i].name; i++) {
-		if (0 == strcmp(key, magnet_env[i].name)) break;
+static int magnet_env_get_id(const char * const key) {
+	for (int i = 0; magnet_env[i].name; ++i) {
+		if (0 == strcmp(key, magnet_env[i].name))
+			return magnet_env[i].type;
 	}
+	return MAGNET_ENV_UNSET;
+}
 
-	return magnet_env_get_buffer_by_id(srv, con, magnet_env[i].type);
+static buffer *magnet_env_get_buffer(request_st * const r, const char * const key) {
+	return magnet_env_get_buffer_by_id(r, magnet_env_get_id(key));
 }
 
 static int magnet_env_get(lua_State *L) {
-	server *srv = magnet_get_server(L);
-	connection *con = magnet_get_connection(L);
-
 	/* __index: param 1 is the (empty) table the value was not found in */
 	const char *key = luaL_checkstring(L, 2);
-	magnet_push_buffer(L, magnet_env_get_buffer(srv, con, key));
+	request_st * const r = magnet_get_request(L);
+	magnet_push_buffer(L, magnet_env_get_buffer(r, key));
 	return 1;
 }
 
 static int magnet_env_set(lua_State *L) {
-	server *srv = magnet_get_server(L);
-	connection *con = magnet_get_connection(L);
+    /* __newindex: param 1 is the (empty) table the value is supposed to be set in */
+    const char * const key = luaL_checkstring(L, 2);
+    luaL_checkany(L, 3); /* nil or a string */
 
-	/* __newindex: param 1 is the (empty) table the value is supposed to be set in */
-	const char *key = luaL_checkstring(L, 2);
-	buffer *dest = NULL;
+    request_st * const r = magnet_get_request(L);
+    const int env_id = magnet_env_get_id(key);
 
-	luaL_checkany(L, 3); /* nil or a string */
+    switch (env_id) {
+      default:
+        break;
+      case MAGNET_ENV_URI_PATH_RAW:
+      {
+        /* modify uri-path of r->target; preserve query-part, if present */
+        /* XXX: should we require that resulting path begin with '/' or %2F ? */
+        const uint32_t len = buffer_string_length(&r->target);
+        const char * const qmark = memchr(r->target.ptr, '?', len);
+        const_buffer val = { NULL, 0 };
+        if (!lua_isnil(L, 3))
+            val = magnet_checkconstbuffer(L, 3);
+        if (NULL != qmark)
+            buffer_copy_string_len(r->tmp_buf, qmark,
+                                   len - (uint32_t)(qmark - r->target.ptr));
+        buffer_copy_string_len(&r->target, val.ptr, val.len);
+        if (NULL != qmark)
+            buffer_append_string_buffer(&r->target, r->tmp_buf);
+        return 0;
+      }
+      case MAGNET_ENV_RESPONSE_HTTP_STATUS:
+      case MAGNET_ENV_RESPONSE_BODY_LENGTH:
+      case MAGNET_ENV_RESPONSE_BODY:
+        return luaL_error(L, "lighty.env['%s'] is read-only", key);
+    }
 
-	if (NULL != (dest = magnet_env_get_buffer(srv, con, key))) {
-		if (lua_isnil(L, 3)) {
-			buffer_reset(dest);
-		} else {
-			const_buffer val = magnet_checkconstbuffer(L, 3);
-			buffer_copy_string_len(dest, val.ptr, val.len);
-		}
-	} else {
-		/* couldn't save */
+    buffer * const dest = magnet_env_get_buffer_by_id(r, env_id);
+    if (NULL == dest)
+        return luaL_error(L, "couldn't store '%s' in lighty.env[]", key);
 
-		return luaL_error(L, "couldn't store '%s' in lighty.env[]", key);
-	}
+    if (lua_isnil(L, 3)) {
+        if (env_id==MAGNET_ENV_URI_QUERY || env_id==MAGNET_ENV_PHYSICAL_PATH)
+            buffer_clear(dest);
+        else
+            buffer_string_set_length(dest, 0);
+    }
+    else {
+        const_buffer val = magnet_checkconstbuffer(L, 3);
+        buffer_copy_string_len(dest, val.ptr, val.len);
+        /* NB: setting r->uri.query does not modify query-part in r->target
+         * (r->uri.query is uri-decoded; r->target is not) */
+    }
 
-	return 0;
+    switch (env_id) {
+      case MAGNET_ENV_URI_SCHEME:
+      case MAGNET_ENV_URI_AUTHORITY:
+        buffer_to_lower(dest);
+        if (env_id == MAGNET_ENV_URI_AUTHORITY)
+            r->server_name = dest;
+        break;
+      default:
+        break;
+    }
+
+    return 0;
 }
 
 static int magnet_env_next(lua_State *L) {
-	server *srv = magnet_get_server(L);
-	connection *con = magnet_get_connection(L);
 	const int pos = lua_tointeger(L, lua_upvalueindex(1));
 
 	/* ignore previous key: use upvalue for current pos */
@@ -653,7 +682,8 @@ static int magnet_env_next(lua_State *L) {
 	lua_pushstring(L, magnet_env[pos].name);
 
 	/* get value */
-	magnet_push_buffer(L, magnet_env_get_buffer_by_id(srv, con, magnet_env[pos].type));
+	request_st * const r = magnet_get_request(L);
+	magnet_push_buffer(L, magnet_env_get_buffer_by_id(r, magnet_env[pos].type));
 
 	/* return 2 items on the stack (key, value) */
 	return 2;
@@ -667,31 +697,30 @@ static int magnet_env_pairs(lua_State *L) {
 
 static int magnet_cgi_get(lua_State *L) {
     /* __index: param 1 is the (empty) table the value was not found in */
-    connection *con = magnet_get_connection(L);
     size_t klen;
     const char * const k = luaL_checklstring(L, 2, &klen);
-    buffer * const vb = http_header_env_get(con, k, klen);
+    request_st * const r = magnet_get_request(L);
+    const buffer * const vb = http_header_env_get(r, k, klen);
     magnet_push_buffer(L, NULL != vb ? vb : NULL);
     return 1;
 }
 
 static int magnet_cgi_set(lua_State *L) {
     /* __newindex: param 1 is the (empty) table the value is supposed to be set in */
-    connection *con = magnet_get_connection(L);
     const_buffer key = magnet_checkconstbuffer(L, 2);
     const_buffer val = magnet_checkconstbuffer(L, 3);
-    http_header_env_set(con, key.ptr, key.len, val.ptr, val.len);
+    request_st * const r = magnet_get_request(L);
+    http_header_env_set(r, key.ptr, key.len, val.ptr, val.len);
     return 0;
 }
 
 static int magnet_cgi_pairs(lua_State *L) {
-	connection *con = magnet_get_connection(L);
-
-	return magnet_array_pairs(L, con->environment);
+	request_st * const r = magnet_get_request(L);
+	return magnet_array_pairs(L, &r->env);
 }
 
 
-static int magnet_copy_response_header(connection *con, lua_State *L, int lighty_table_ndx) {
+static int magnet_copy_response_header(request_st * const r, lua_State * const L, int lighty_table_ndx) {
 	force_assert(lua_istable(L, lighty_table_ndx));
 
 	lua_getfield(L, lighty_table_ndx, "header"); /* lighty.header */
@@ -706,8 +735,8 @@ static int magnet_copy_response_header(connection *con, lua_State *L, int lighty
 				enum http_header_e id = http_header_hkey_get(key.ptr, key.len);
 
 				val.len
-				  ? http_header_response_set(con, id, key.ptr, key.len, val.ptr, val.len)
-				  : http_header_response_unset(con, id, key.ptr, key.len);
+				  ? http_header_response_set(r, id, key.ptr, key.len, val.ptr, val.len)
+				  : http_header_response_unset(r, id, key.ptr, key.len);
 			}
 
 			lua_pop(L, 1);
@@ -727,13 +756,15 @@ static int magnet_copy_response_header(connection *con, lua_State *L, int lighty
  *
  * return 200
  */
-static int magnet_attach_content(server *srv, connection *con, lua_State *L, int lighty_table_ndx) {
+static int magnet_attach_content(request_st * const r, lua_State * const L, int lighty_table_ndx) {
 	force_assert(lua_istable(L, lighty_table_ndx));
 
 	lua_getfield(L, lighty_table_ndx, "content"); /* lighty.content */
 	if (lua_istable(L, -1)) {
 		int i;
 		/* content is found, and is a table */
+
+		http_response_body_clear(r, 0);
 
 		for (i = 1; ; i++) {
 			lua_rawgeti(L, -1, i);
@@ -742,7 +773,7 @@ static int magnet_attach_content(server *srv, connection *con, lua_State *L, int
 			if (lua_isstring(L, -1)) {
 				const_buffer data = magnet_checkconstbuffer(L, -1);
 
-				chunkqueue_append_mem(con->write_queue, data.ptr, data.len);
+				chunkqueue_append_mem(&r->write_queue, data.ptr, data.len);
 			} else if (lua_istable(L, -1)) {
 				lua_getfield(L, -1, "filename");
 				lua_getfield(L, -2, "length"); /* (0-based) end of range (not actually "length") */
@@ -763,7 +794,7 @@ static int magnet_attach_content(server *srv, connection *con, lua_State *L, int
 
 					if (0 != len) {
 						buffer *fn = magnet_checkbuffer(L, -3);
-						int rc = http_chunk_append_file_range(srv, con, fn, off, len);
+						int rc = http_chunk_append_file_range(r, fn, off, len);
 						buffer_free(fn);
 						if (0 != rc) {
 							return luaL_error(L, "error opening file content '%s' at offset %lld", lua_tostring(L, -3), (long long)off);
@@ -824,29 +855,27 @@ static int push_traceback(lua_State *L, int narg) {
 	return base;
 }
 
-static handler_t magnet_attract(server *srv, connection *con, plugin_data *p, buffer *name) {
+static handler_t magnet_attract(request_st * const r, plugin_data * const p, buffer * const name) {
 	lua_State *L;
 	int lua_return_value;
 	const int func_ndx = 1;
 	const int lighty_table_ndx = 2;
 
 	/* get the script-context */
-	L = script_cache_get_script(srv, con, p->cache, name);
+	L = script_cache_get_script(&p->cache, name, r->conf.etag_flags);
 
 	if (lua_isstring(L, -1)) {
-		log_error_write(srv, __FILE__, __LINE__,
-				"sbss",
-				"loading script",
-				name,
-				"failed:",
-				lua_tostring(L, -1));
+		log_error(r->conf.errh, __FILE__, __LINE__,
+		  "loading script %s failed: %s", name->ptr, lua_tostring(L, -1));
 
 		lua_pop(L, 1);
 
 		force_assert(lua_gettop(L) == 0); /* only the error should have been on the stack */
 
-		con->http_status = 500;
-		con->mode = DIRECT;
+		if (p->conf.stage != -1) { /* skip for response-start */
+			r->http_status = 500;
+			r->handler_module = NULL;
+		}
 
 		return HANDLER_FINISHED;
 	}
@@ -854,11 +883,8 @@ static handler_t magnet_attract(server *srv, connection *con, plugin_data *p, bu
 	force_assert(lua_gettop(L) == 1);
 	force_assert(lua_isfunction(L, func_ndx));
 
-	lua_pushlightuserdata(L, srv);
-	lua_setfield(L, LUA_REGISTRYINDEX, LUA_RIDX_LIGHTTPD_SERVER);
-
-	lua_pushlightuserdata(L, con);
-	lua_setfield(L, LUA_REGISTRYINDEX, LUA_RIDX_LIGHTTPD_CONNECTION);
+	lua_pushlightuserdata(L, r);
+	lua_setfield(L, LUA_REGISTRYINDEX, LUA_RIDX_LIGHTTPD_REQUEST);
 
 	lua_atpanic(L, magnet_atpanic);
 
@@ -980,16 +1006,16 @@ static handler_t magnet_attract(server *srv, connection *con, plugin_data *p, bu
 		magnet_setfenv_mainfn(L, 1);                          /* (sp -= 1) */
 
 		if (0 != ret) {
-			log_error_write(srv, __FILE__, __LINE__,
-				"ss",
-				"lua_pcall():",
-				lua_tostring(L, -1));
+			log_error(r->conf.errh, __FILE__, __LINE__,
+			  "lua_pcall(): %s", lua_tostring(L, -1));
 			lua_pop(L, 2); /* remove the error-msg and the lighty table at index 2 */
 
 			force_assert(lua_gettop(L) == 1); /* only the function should be on the stack */
 
-			con->http_status = 500;
-			con->mode = DIRECT;
+			if (p->conf.stage != -1) { /* skip for response-start */
+				r->http_status = 500;
+				r->handler_module = NULL;
+			}
 
 			return HANDLER_FINISHED;
 		}
@@ -1004,39 +1030,42 @@ static handler_t magnet_attract(server *srv, connection *con, plugin_data *p, bu
 		lua_return_value = (int) luaL_optinteger(L, -1, -1);
 		break;
 	default:
-		log_error_write(srv, __FILE__, __LINE__, "sss",
-				"lua_pcall():",
-				"unexpected return type:",
-				luaL_typename(L, -1));
+		log_error(r->conf.errh, __FILE__, __LINE__,
+		  "lua_pcall(): unexpected return type: %s", luaL_typename(L, -1));
 		lua_return_value = -1;
 		break;
 	}
 
 	lua_pop(L, 1); /* pop return value */
 
-	magnet_copy_response_header(con, L, lighty_table_ndx);
+	magnet_copy_response_header(r, L, lighty_table_ndx);
 
 	{
 		handler_t result = HANDLER_GO_ON;
 
-		if (lua_return_value > 99) {
-			con->http_status = lua_return_value;
-			con->file_finished = 1;
+		if (lua_return_value >= 200) {
+			r->http_status = lua_return_value;
+			r->resp_body_finished = 1;
 
-			/* try { ...*/
 			if (0 == setjmp(exceptionjmp)) {
-				magnet_attach_content(srv, con, L, lighty_table_ndx);
-				if (!chunkqueue_is_empty(con->write_queue)) {
-					con->mode = p->id;
+				magnet_attach_content(r, L, lighty_table_ndx);
+				if (!chunkqueue_is_empty(&r->write_queue)) {
+					r->handler_module = p->self;
 				}
 			} else {
 				lua_settop(L, 2); /* remove all but function and lighty table */
-				/* } catch () { */
-				con->http_status = 500;
-				con->mode = DIRECT;
+				r->http_status = 500;
+				r->handler_module = NULL;
+				http_response_body_clear(r, 0);
 			}
 
 			result = HANDLER_FINISHED;
+		} else if (lua_return_value >= 100) {
+			/*(custom lua code should not return 101 Switching Protocols)*/
+			r->http_status = lua_return_value;
+			result = http_response_send_1xx(r)
+			  ? HANDLER_GO_ON
+			  : HANDLER_ERROR;
 		} else if (MAGNET_RESTART_REQUEST == lua_return_value) {
 			result = HANDLER_COMEBACK;
 		}
@@ -1048,70 +1077,68 @@ static handler_t magnet_attract(server *srv, connection *con, plugin_data *p, bu
 	}
 }
 
-static handler_t magnet_attract_array(server *srv, connection *con, plugin_data *p, array *files) {
-	size_t i;
-	handler_t ret = HANDLER_GO_ON;
+static handler_t magnet_attract_array(request_st * const r, plugin_data * const p, int stage) {
+	mod_magnet_patch_config(r, p);
+	p->conf.stage = stage;
+
+	const array *files;
+	switch (stage) {
+	  case  1: files = p->conf.url_raw; break;
+	  case  0: files = p->conf.physical_path; break;
+	  case -1: files = p->conf.response_start; break;
+	  default: files = NULL; break;
+	}
 
 	/* no filename set */
-	if (files->used == 0) return HANDLER_GO_ON;
+	if (NULL == files || files->used == 0) return HANDLER_GO_ON;
 
-	srv->request_env(srv, con);
+	r->con->srv->request_env(r);
 
 	/**
 	 * execute all files and jump out on the first !HANDLER_GO_ON
 	 */
-	for (i = 0; i < files->used && ret == HANDLER_GO_ON; i++) {
+	handler_t ret = HANDLER_GO_ON;
+	for (uint32_t i = 0; i < files->used && ret == HANDLER_GO_ON; ++i) {
 		data_string *ds = (data_string *)files->data[i];
-
-		if (buffer_string_is_empty(ds->value)) continue;
-
-		ret = magnet_attract(srv, con, p, ds->value);
+		ret = magnet_attract(r, p, &ds->value);
 	}
 
-	if (con->error_handler_saved_status) {
+	if (r->error_handler_saved_status) {
 		/* retrieve (possibly modified) REDIRECT_STATUS and store as number */
-		unsigned long x;
-		buffer * const vb = http_header_env_get(con, CONST_STR_LEN("REDIRECT_STATUS"));
-		if (vb && (x = strtoul(vb->ptr, NULL, 10)) < 1000)
-			/*(simplified validity check x < 1000)*/
-			con->error_handler_saved_status =
-			  con->error_handler_saved_status > 0 ? (int)x : -(int)x;
+		int x;
+		const buffer * const vb = http_header_env_get(r, CONST_STR_LEN("REDIRECT_STATUS"));
+		if (vb && (x = http_header_str_to_code(vb->ptr)) != -1)
+			r->error_handler_saved_status =
+			  r->error_handler_saved_status > 0 ? (int)x : -(int)x;
 	}
 
 	return ret;
 }
 
 URIHANDLER_FUNC(mod_magnet_uri_handler) {
-	plugin_data *p = p_d;
-
-	mod_magnet_patch_connection(srv, con, p);
-
-	return magnet_attract_array(srv, con, p, p->conf.url_raw);
+	return magnet_attract_array(r, p_d, 1);
 }
 
 URIHANDLER_FUNC(mod_magnet_physical) {
-	plugin_data *p = p_d;
-
-	mod_magnet_patch_connection(srv, con, p);
-
-	return magnet_attract_array(srv, con, p, p->conf.physical_path);
+	return magnet_attract_array(r, p_d, 0);
 }
 
+URIHANDLER_FUNC(mod_magnet_response_start) {
+	return magnet_attract_array(r, p_d, -1);
+}
 
-/* this function is called at dlopen() time and inits the callbacks */
 
 int mod_magnet_plugin_init(plugin *p);
 int mod_magnet_plugin_init(plugin *p) {
 	p->version     = LIGHTTPD_VERSION_ID;
-	p->name        = buffer_init_string("magnet");
+	p->name        = "magnet";
 
 	p->init        = mod_magnet_init;
 	p->handle_uri_clean  = mod_magnet_uri_handler;
 	p->handle_physical   = mod_magnet_physical;
+	p->handle_response_start = mod_magnet_response_start;
 	p->set_defaults  = mod_magnet_set_defaults;
 	p->cleanup     = mod_magnet_free;
-
-	p->data        = NULL;
 
 	return 0;
 }

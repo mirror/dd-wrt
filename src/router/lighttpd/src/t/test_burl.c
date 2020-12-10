@@ -16,7 +16,7 @@ static void run_burl_normalize (buffer *psrc, buffer *ptmp, int flags, int line,
                 __FILE__, line, __func__+4, in, psrc->ptr);
     }
     else {
-        if (buffer_is_equal_string(psrc, out, out_len)) return;
+        if (buffer_eq_slen(psrc, out, out_len)) return;
         fprintf(stderr,
                 "%s.%d: %s('%s') failed: expected '%s', got '%s'\n",
                 __FILE__, line, __func__+4, in, out, psrc->ptr);
@@ -78,6 +78,8 @@ static void test_burl_normalize (void) {
     run_burl_normalize(psrc, ptmp, flags, __LINE__, CONST_STR_LEN("/%2B"), CONST_STR_LEN("/+"));
     run_burl_normalize(psrc, ptmp, flags, __LINE__, CONST_STR_LEN("/%3a"), CONST_STR_LEN("/:"));
     run_burl_normalize(psrc, ptmp, flags, __LINE__, CONST_STR_LEN("/%3A"), CONST_STR_LEN("/:"));
+    run_burl_normalize(psrc, ptmp, flags, __LINE__, CONST_STR_LEN("/%2b?x=%2b"), CONST_STR_LEN("/+?x=%2B"));
+    run_burl_normalize(psrc, ptmp, flags, __LINE__, CONST_STR_LEN("/%2B?x=%2B"), CONST_STR_LEN("/+?x=%2B"));
     run_burl_normalize(psrc, ptmp, flags, __LINE__, CONST_STR_LEN("/~test%20ä_"), CONST_STR_LEN("/~test%20%C3%A4_"));
     run_burl_normalize(psrc, ptmp, flags, __LINE__, CONST_STR_LEN("/\375"), "", (size_t)-2);
     run_burl_normalize(psrc, ptmp, flags, __LINE__, CONST_STR_LEN("/\376"), "", (size_t)-2);
@@ -139,6 +141,7 @@ static void test_burl_normalize (void) {
     run_burl_normalize(psrc, ptmp, flags, __LINE__, CONST_STR_LEN("/a/b?c=d%20e"), CONST_STR_LEN("/a/b?c=d+e"));
     flags &= ~HTTP_PARSEOPT_URL_NORMALIZE_QUERY_20_PLUS;
 
+    UNUSED(flags);
     buffer_free(psrc);
     buffer_free(ptmp);
 }

@@ -9,6 +9,15 @@ typedef struct server server;
 struct connection;
 typedef struct connection connection;
 
+struct h2con;
+typedef struct h2con h2con;
+
+struct plugin;
+typedef struct plugin plugin;
+
+struct request_st;
+typedef struct request_st request_st;
+
 union sock_addr;
 typedef union sock_addr sock_addr;
 
