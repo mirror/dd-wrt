@@ -153,6 +153,19 @@ struct wkssvc_netwksta_info_request {
 	int				level;
 };
 
+struct samr_info_request {
+	int				level;
+	int				client_version;
+	struct ndr_uniq_char_ptr	name;
+	unsigned char handle[20];
+	unsigned int rid;
+};
+
+struct lsarpc_info_request {
+	unsigned char handle[20];
+	unsigned int level;
+};
+
 struct dcerpc_guid {
 	__u32		time_low;
 	__u16		time_mid;
@@ -240,6 +253,8 @@ struct ksmbd_dcerpc {
 		struct srvsvc_share_info_request	si_req;
 		struct dcerpc_bind_request		bi_req;
 		struct wkssvc_netwksta_info_request	wi_req;
+		struct samr_info_request		sm_req;
+		struct lsarpc_info_request		lr_req;
 	};
 
 	struct ksmbd_rpc_command	*rpc_req;
@@ -298,7 +313,9 @@ __u32 ndr_read_union_int32(struct ksmbd_dcerpc *dce);
 
 int ndr_write_bytes(struct ksmbd_dcerpc *dce, void *value, size_t sz);
 int ndr_read_bytes(struct ksmbd_dcerpc *dce, void *value, size_t sz);
-int ndr_write_vstring(struct ksmbd_dcerpc *dce, char *value);
+int ndr_write_vstring(struct ksmbd_dcerpc *dce, void *value);
+int ndr_write_string(struct ksmbd_dcerpc *dce, char *str);
+int ndr_write_lsa_string(struct ksmbd_dcerpc *dce, char *str);
 char *ndr_read_vstring(struct ksmbd_dcerpc *dce);
 void ndr_read_vstring_ptr(struct ksmbd_dcerpc *dce, struct ndr_char_ptr *ctr);
 void ndr_read_uniq_vsting_ptr(struct ksmbd_dcerpc *dce,
@@ -334,4 +351,5 @@ int rpc_open_request(struct ksmbd_rpc_command *req,
 		     struct ksmbd_rpc_command *resp);
 int rpc_close_request(struct ksmbd_rpc_command *req,
 		      struct ksmbd_rpc_command *resp);
+void auto_align_offset(struct ksmbd_dcerpc *dce);
 #endif /* __KSMBD_RPC_H__ */

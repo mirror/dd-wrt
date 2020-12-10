@@ -29,6 +29,7 @@ void cp_smbconfig_destroy(void);
 int cp_parse_pwddb(const char *pwddb);
 int cp_parse_smbconf(const char *smbconf);
 int cp_parse_reload_smbconf(const char *smbconf);
+int cp_parse_subauth(const char *subauth_path);
 
 char *cp_ltrim(char *v);
 int cp_key_cmp(char *k, char *v);

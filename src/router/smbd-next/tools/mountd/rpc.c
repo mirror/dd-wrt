@@ -13,6 +13,8 @@
 #include <rpc.h>
 #include <rpc_srvsvc.h>
 #include <rpc_wkssvc.h>
+#include <rpc_samr.h>
+#include <rpc_lsarpc.h>
 #include <pthread.h>
 #include <ksmbdtools.h>
 
@@ -250,7 +252,7 @@ static void align_offset(struct ksmbd_dcerpc *dce, size_t n)
 	dce->offset = __ALIGN(dce->offset, n);
 }
 
-static void auto_align_offset(struct ksmbd_dcerpc *dce)
+void auto_align_offset(struct ksmbd_dcerpc *dce)
 {
 	if (dce->flags & KSMBD_DCERPC_ALIGN8)
 		dce->offset = __ALIGN(dce->offset, 8);
@@ -383,20 +385,13 @@ int ndr_read_bytes(struct ksmbd_dcerpc *dce, void *value, size_t sz)
 	return 0;
 }
 
-int ndr_write_vstring(struct ksmbd_dcerpc *dce, char *value)
+static char *ndr_convert_char_to_unicode(struct ksmbd_dcerpc *dce, char *str,
+		size_t len, size_t *bytes_written)
 {
 	char *out;
 	size_t bytes_read = 0;
-	size_t bytes_written = 0;
 
-	size_t raw_len;
-	char *raw_value = value;
 	int charset = KSMBD_CHARSET_UTF16LE;
-	int ret;
-
-	if (!value)
-		raw_value = "";
-	raw_len = strlen(raw_value) + 1;
 
 	if (!(dce->flags & KSMBD_DCERPC_LITTLE_ENDIAN))
 		charset = KSMBD_CHARSET_UTF16BE;
@@ -404,11 +399,29 @@ int ndr_write_vstring(struct ksmbd_dcerpc *dce, char *value)
 	if (dce->flags & KSMBD_DCERPC_ASCII_STRING)
 		charset = KSMBD_CHARSET_UTF8;
 
-	out = ksmbd_gconvert(raw_value,
-			     raw_len,
+	out = ksmbd_gconvert(str,
+			     len,
 			     charset,
 			     KSMBD_CHARSET_DEFAULT,
-			     &bytes_read, &bytes_written);
+			     &bytes_read, bytes_written);
+	return out;
+}
+
+int ndr_write_vstring(struct ksmbd_dcerpc *dce, void *value)
+{
+	char *out;
+	size_t bytes_written = 0;
+
+	size_t raw_len;
+	char *raw_value = value;
+	int ret;
+
+	if (!value)
+		raw_value = "";
+
+	raw_len = strlen(raw_value) + 1;
+	out = ndr_convert_char_to_unicode(dce, raw_value, raw_len,
+			&bytes_written);
 	if (!out)
 		return -EINVAL;
 
@@ -429,6 +442,58 @@ int ndr_write_vstring(struct ksmbd_dcerpc *dce, char *value)
 	auto_align_offset(dce);
 
 	free(out);
+	return ret;
+}
+
+int ndr_write_string(struct ksmbd_dcerpc *dce, char *str)
+{
+	char *out;
+	size_t bytes_written = 0;
+
+	size_t len;
+	int ret;
+
+	if (!str)
+		str = "";
+
+	len = strlen(str);
+	out = ndr_convert_char_to_unicode(dce, str, len, &bytes_written);
+	if (!out)
+		return -EINVAL;
+
+	ret = ndr_write_int32(dce, len); // max count
+	ret |= ndr_write_int32(dce, 0);
+	ret |= ndr_write_int32(dce, len); // actual count
+	ret |= ndr_write_bytes(dce, out, bytes_written);
+	auto_align_offset(dce);
+
+	g_free(out);
+	return ret;
+}
+
+int ndr_write_lsa_string(struct ksmbd_dcerpc *dce, char *str)
+{
+	gchar *out;
+	gsize bytes_written = 0;
+
+	size_t len;
+	int ret;
+
+	if (!str)
+		str = "";
+
+	len = strlen(str);
+	out = ndr_convert_char_to_unicode(dce, str, len, &bytes_written);
+	if (!out)
+		return -EINVAL;
+
+	ret = ndr_write_int32(dce, len + 1); // max count
+	ret |= ndr_write_int32(dce, 0);
+	ret |= ndr_write_int32(dce, len); // actual count
+	ret |= ndr_write_bytes(dce, out, bytes_written);
+	auto_align_offset(dce);
+
+	g_free(out);
 	return ret;
 }
 
@@ -626,6 +691,8 @@ int rpc_init(void)
 	list_init(&pipes_table);
 	if (!pipes_table)
 		return -ENOMEM;
+	rpc_samr_init();
+	rpc_lsarpc_init();
 	return 0;
 }
 
@@ -637,6 +704,8 @@ void rpc_destroy(void)
 	}
 	pthread_mutex_destroy(&request_lock);
 	pthread_rwlock_destroy(&pipes_table_lock);
+	rpc_samr_destroy();
+	rpc_lsarpc_destroy();
 }
 
 static int dcerpc_hdr_write(struct ksmbd_dcerpc *dce, struct dcerpc_header *hdr)
@@ -897,11 +966,20 @@ static int dcerpc_bind_ack_return(struct ksmbd_rpc_pipe *pipe)
 		addr = "\\PIPE\\srvsvc";
 	else if (dce->bi_req.flags & KSMBD_RPC_WKSSVC_METHOD_INVOKE)
 		addr = "\\PIPE\\wkssvc";
+	else if (dce->bi_req.flags & KSMBD_RPC_SAMR_METHOD_INVOKE)
+		addr = "\\PIPE\\samr";
+	else if (dce->bi_req.flags & KSMBD_RPC_LSARPC_METHOD_INVOKE)
+		addr = "\\PIPE\\lsarpc";
 	else
 		return KSMBD_RPC_EBAD_FUNC;
 
-	ndr_write_int16(dce, strlen(addr));
-	ndr_write_bytes(dce, addr, strlen(addr));
+	if (dce->hdr.ptype == DCERPC_PTYPE_RPC_ALTCONT) {
+		ndr_write_int16(dce, 0);
+		ndr_write_int16(dce, 0);
+	} else {
+		ndr_write_int16(dce, strlen(addr));
+		ndr_write_bytes(dce, addr, strlen(addr));
+	}
 	align_offset(dce, 4);	/* [flag(NDR_ALIGN4)]    DATA_BLOB _pad1; */
 
 	num_trans = dce->bi_req.num_contexts;
@@ -933,7 +1011,10 @@ static int dcerpc_bind_ack_return(struct ksmbd_rpc_pipe *pipe)
 	payload_offset = dce->offset;
 	dce->offset = 0;
 
-	dce->hdr.ptype = DCERPC_PTYPE_RPC_BINDACK;
+	if (dce->hdr.ptype == DCERPC_PTYPE_RPC_ALTCONT)
+		dce->hdr.ptype = DCERPC_PTYPE_RPC_ALTCONTRESP;
+	else
+		dce->hdr.ptype = DCERPC_PTYPE_RPC_BINDACK;
 	dce->hdr.pfc_flags = DCERPC_PFC_FIRST_FRAG | DCERPC_PFC_LAST_FRAG;
 	dce->hdr.frag_length = payload_offset;
 	dcerpc_hdr_write(dce, &dce->hdr);
@@ -1012,14 +1093,29 @@ int rpc_read_request(struct ksmbd_rpc_command *req,
 	dce->rpc_resp = resp;
 	dcerpc_set_ext_payload(dce, resp->payload, max_resp_sz);
 
-	if (dce->hdr.ptype == DCERPC_PTYPE_RPC_BIND)
+	if (dce->hdr.ptype == DCERPC_PTYPE_RPC_BIND ||
+	    dce->hdr.ptype == DCERPC_PTYPE_RPC_ALTCONT) {
 		ret = dcerpc_bind_return(pipe);
-	else if (dce->hdr.ptype != DCERPC_PTYPE_RPC_REQUEST)
+		goto err;
+	}
+	if (dce->hdr.ptype != DCERPC_PTYPE_RPC_REQUEST) {
 		ret = KSMBD_RPC_ENOTIMPLEMENTED;
-	else if (req->flags & KSMBD_RPC_SRVSVC_METHOD_INVOKE)
+		goto err;
+	}
+	if (req->flags & KSMBD_RPC_SRVSVC_METHOD_INVOKE) {
 		ret = rpc_srvsvc_read_request(pipe, resp, max_resp_sz);
-	else if (req->flags & KSMBD_RPC_WKSSVC_METHOD_INVOKE)
+		goto err;
+	}
+	if (req->flags & KSMBD_RPC_WKSSVC_METHOD_INVOKE) {
 		ret = rpc_wkssvc_read_request(pipe, resp, max_resp_sz);
+		goto err;
+	}
+	if (req->flags & KSMBD_RPC_SAMR_METHOD_INVOKE) {
+		ret = rpc_samr_read_request(pipe, resp, max_resp_sz);
+		goto err;
+	}
+	if (req->flags & KSMBD_RPC_LSARPC_METHOD_INVOKE)
+		ret = rpc_lsarpc_read_request(pipe, resp, max_resp_sz);
 
 	err:;
 	pthread_mutex_unlock(&request_lock);
@@ -1058,17 +1154,34 @@ int rpc_write_request(struct ksmbd_rpc_command *req,
 
 	if (dcerpc_hdr_read(dce, &dce->hdr))
 		ret = KSMBD_RPC_EBAD_DATA;
-	else if (dce->hdr.ptype == DCERPC_PTYPE_RPC_BIND)
+	if (dce->hdr.ptype == DCERPC_PTYPE_RPC_BIND ||
+	    dce->hdr.ptype == DCERPC_PTYPE_RPC_ALTCONT) {
 		ret = dcerpc_bind_invoke(pipe);
-	else if (dce->hdr.ptype != DCERPC_PTYPE_RPC_REQUEST)
+		goto end;
+	}
+	if (dce->hdr.ptype != DCERPC_PTYPE_RPC_REQUEST) {
 		ret = KSMBD_RPC_ENOTIMPLEMENTED;
-	else if (dcerpc_request_hdr_read(dce, &dce->req_hdr))
+		goto end;
+	}
+	if (dcerpc_request_hdr_read(dce, &dce->req_hdr)) {
 		ret = KSMBD_RPC_EBAD_DATA;
-	else if (req->flags & KSMBD_RPC_SRVSVC_METHOD_INVOKE)
+		goto end;
+	}
+	if (req->flags & KSMBD_RPC_SRVSVC_METHOD_INVOKE) {
 		ret = rpc_srvsvc_write_request(pipe);
-	else if (req->flags & KSMBD_RPC_WKSSVC_METHOD_INVOKE)
+		goto end;
+	}
+	if (req->flags & KSMBD_RPC_WKSSVC_METHOD_INVOKE) {
 		ret = rpc_wkssvc_write_request(pipe);
-
+		goto end;
+	}
+	if (req->flags & KSMBD_RPC_SAMR_METHOD_INVOKE) {
+		ret =rpc_samr_write_request(pipe);
+		goto end;
+	}
+	if (req->flags & KSMBD_RPC_LSARPC_METHOD_INVOKE) {
+		ret = rpc_lsarpc_write_request(pipe);
+	}
 	end:;
 	pthread_mutex_unlock(&request_lock);
 	return ret;

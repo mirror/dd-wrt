@@ -633,6 +633,16 @@ static void global_group_kv(void *_v, unsigned long long id, void *user_data)
 		global_conf.share_fake_fscaps = cp_get_group_kv_long(_v);
 		return;
 	}
+
+	if (!cp_key_cmp(_k, "kerberos service name")) {
+		global_conf.krb5_service_name = cp_get_group_kv_string(_v);
+		return;
+	}
+
+	if (!cp_key_cmp(_k, "kerberos keytab file")) {
+		global_conf.krb5_keytab_file = cp_get_group_kv_string(_v);
+		return;
+	}
 }
 
 static void fixup_missing_global_group(void)
@@ -765,6 +775,11 @@ int cp_smbconfig_hash_create(const char *smbconf)
 	if (ret)
 		return ret;
 	return __mmap_parse_file(smbconf, process_smbconf_entry);
+}
+
+int cp_parse_subauth(const char *subauth_path)
+{
+	return __mmap_parse_file(subauth_path, usm_add_subauth_global_conf);
 }
 
 void cp_smbconfig_destroy(void)

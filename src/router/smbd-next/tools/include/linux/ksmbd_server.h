@@ -51,6 +51,7 @@ struct ksmbd_startup_request {
 	__u32	smb2_max_read;
 	__u32	smb2_max_trans;
 	__u32	share_fake_fscaps;
+	__u32	sub_auth[3];
 	__u32	ifc_list_sz;
 	__s8	____payload[0];
 } ____ksmbd_align;
@@ -136,6 +137,20 @@ struct ksmbd_rpc_command {
 	__u8	payload[0];
 } ____ksmbd_align;
 
+struct ksmbd_spnego_authen_request {
+	__u32	handle;
+	__u16	spnego_blob_len;
+	__u8	spnego_blob[0];
+} ____ksmbd_align;
+
+struct ksmbd_spnego_authen_response {
+	__u32	handle;
+	struct ksmbd_login_response	login_response;
+	__u16	session_key_len;
+	__u16	spnego_blob_len;
+	__u8	payload[0];
+} ____ksmbd_align;
+
 /*
  * This also used as NETLINK attribute type value.
  *
@@ -165,6 +180,9 @@ enum ksmbd_event {
 
 	KSMBD_EVENT_RPC_REQUEST,
 	KSMBD_EVENT_RPC_RESPONSE,
+
+	KSMBD_EVENT_SPNEGO_AUTHEN_REQUEST,
+	KSMBD_EVENT_SPNEGO_AUTHEN_RESPONSE	= 15,
 
 	KSMBD_EVENT_MAX
 };
@@ -241,6 +259,10 @@ enum KSMBD_TREE_CONN_STATUS {
 #define KSMBD_RPC_CLOSE_METHOD		(1 << 7)
 #define KSMBD_RPC_RAP_METHOD		((1 << 8) | KSMBD_RPC_METHOD_RETURN)
 #define KSMBD_RPC_RESTRICTED_CONTEXT	(1 << 9)
+#define KSMBD_RPC_SAMR_METHOD_INVOKE	(1 << 10)
+#define KSMBD_RPC_SAMR_METHOD_RETURN	((1 << 10) | KSMBD_RPC_METHOD_RETURN)
+#define KSMBD_RPC_LSARPC_METHOD_INVOKE	(1 << 11)
+#define KSMBD_RPC_LSARPC_METHOD_RETURN	((1 << 11) | KSMBD_RPC_METHOD_RETURN)
 
 #define KSMBD_RPC_OK			0
 #define KSMBD_RPC_EBAD_FUNC		0x00000001
