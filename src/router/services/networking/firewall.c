@@ -2907,10 +2907,15 @@ void start_firewall(void)
 		writeproc("/proc/net/arp_spoofing_enable", "0");
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 #ifndef	HAVE_80211AC
+#ifndef HAVE_MADWIFI
 	/*
 	 * Improve WAN<->LAN Performance on K26
 	 */
 	writeprocsysnet("core/netdev_max_backlog", "120");
+#else
+	// this is old crap code and we did not consider devices which are unrelated to broadcom devices. 
+	writeprocsysnet("core/netdev_max_backlog", "2000");
+#endif
 #endif
 	char vifs[256];
 	getIfLists(vifs, 256);
