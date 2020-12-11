@@ -42,26 +42,25 @@ static struct nlattr *tb[SWITCH_ATTR_MAX + 1];
 static int refcount = 0;
 
 static struct nla_policy port_policy[SWITCH_ATTR_MAX] = {
-	[SWITCH_PORT_ID] = { .type = NLA_U32 },
-	[SWITCH_PORT_FLAG_TAGGED] = { .type = NLA_FLAG },
+	[SWITCH_PORT_ID] = {.type = NLA_U32 },
+	[SWITCH_PORT_FLAG_TAGGED] = {.type = NLA_FLAG },
 };
 
 static struct nla_policy portmap_policy[SWITCH_PORTMAP_MAX] = {
-	[SWITCH_PORTMAP_SEGMENT] = { .type = NLA_STRING },
-	[SWITCH_PORTMAP_VIRT] = { .type = NLA_U32 },
+	[SWITCH_PORTMAP_SEGMENT] = {.type = NLA_STRING },
+	[SWITCH_PORTMAP_VIRT] = {.type = NLA_U32 },
 };
 
 static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
-	[SWITCH_LINK_FLAG_LINK] = { .type = NLA_FLAG },
-	[SWITCH_LINK_FLAG_DUPLEX] = { .type = NLA_FLAG },
-	[SWITCH_LINK_FLAG_ANEG] = { .type = NLA_FLAG },
-	[SWITCH_LINK_SPEED] = { .type = NLA_U32 },
-	[SWITCH_LINK_FLAG_EEE_100BASET] = { .type = NLA_FLAG },
-	[SWITCH_LINK_FLAG_EEE_1000BASET] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_LINK] = {.type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_DUPLEX] = {.type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_ANEG] = {.type = NLA_FLAG },
+	[SWITCH_LINK_SPEED] = {.type = NLA_U32 },
+	[SWITCH_LINK_FLAG_EEE_100BASET] = {.type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_EEE_1000BASET] = {.type = NLA_FLAG },
 };
 
-static inline void *
-swlib_alloc(size_t size)
+static inline void *swlib_alloc(size_t size)
 {
 	void *ptr;
 
@@ -74,8 +73,7 @@ done:
 	return ptr;
 }
 
-static int
-wait_handler(struct nl_msg *msg, void *arg)
+static int wait_handler(struct nl_msg *msg, void *arg)
 {
 	int *finished = arg;
 
@@ -84,9 +82,7 @@ wait_handler(struct nl_msg *msg, void *arg)
 }
 
 /* helper function for performing netlink requests */
-static int
-swlib_call(int cmd, int (*call)(struct nl_msg *, void *),
-		int (*data)(struct nl_msg *, void *), void *arg)
+static int swlib_call(int cmd, int (*call)(struct nl_msg *, void *), int (*data)(struct nl_msg *, void *), void *arg)
 {
 	struct nl_msg *msg;
 	struct nl_cb *cb = NULL;
@@ -147,15 +143,14 @@ nla_put_failure:
 	return err;
 }
 
-static int
-send_attr(struct nl_msg *msg, void *arg)
+static int send_attr(struct nl_msg *msg, void *arg)
 {
 	struct switch_val *val = arg;
 	struct switch_attr *attr = val->attr;
 
 	NLA_PUT_U32(msg, SWITCH_ATTR_ID, attr->dev->id);
 	NLA_PUT_U32(msg, SWITCH_ATTR_OP_ID, attr->id);
-	switch(attr->atype) {
+	switch (attr->atype) {
 	case SWLIB_ATTR_GROUP_PORT:
 		NLA_PUT_U32(msg, SWITCH_ATTR_OP_PORT, val->port_vlan);
 		break;
@@ -172,8 +167,7 @@ nla_put_failure:
 	return -1;
 }
 
-static int
-store_port_val(struct nl_msg *msg, struct nlattr *nla, struct switch_val *val)
+static int store_port_val(struct nl_msg *msg, struct nlattr *nla, struct switch_val *val)
 {
 	struct nlattr *p;
 	int ports = val->attr->dev->ports;
@@ -184,7 +178,7 @@ store_port_val(struct nl_msg *msg, struct nlattr *nla, struct switch_val *val)
 		val->value.ports = malloc(sizeof(struct switch_port) * ports);
 
 	nla_for_each_nested(p, nla, remaining) {
-		struct nlattr *tb[SWITCH_PORT_ATTR_MAX+1];
+		struct nlattr *tb[SWITCH_PORT_ATTR_MAX + 1];
 		struct switch_port *port;
 
 		if (val->len >= ports)
@@ -210,8 +204,7 @@ out:
 	return err;
 }
 
-static int
-store_link_val(struct nl_msg *msg, struct nlattr *nla, struct switch_val *val)
+static int store_link_val(struct nl_msg *msg, struct nlattr *nla, struct switch_val *val)
 {
 	struct nlattr *tb[SWITCH_LINK_ATTR_MAX + 1];
 	struct switch_port_link *link;
@@ -241,8 +234,7 @@ out:
 	return err;
 }
 
-static int
-store_val(struct nl_msg *msg, void *arg)
+static int store_val(struct nl_msg *msg, void *arg)
 {
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct switch_val *val = arg;
@@ -250,8 +242,7 @@ store_val(struct nl_msg *msg, void *arg)
 	if (!val)
 		goto error;
 
-	if (nla_parse(tb, SWITCH_ATTR_MAX - 1, genlmsg_attrdata(gnlh, 0),
-			genlmsg_attrlen(gnlh, 0), NULL) < 0) {
+	if (nla_parse(tb, SWITCH_ATTR_MAX - 1, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0) {
 		goto error;
 	}
 
@@ -271,13 +262,12 @@ error:
 	return NL_SKIP;
 }
 
-int
-swlib_get_attr(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
+int swlib_get_attr(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
 {
 	int cmd;
 	int err;
 
-	switch(attr->atype) {
+	switch (attr->atype) {
 	case SWLIB_ATTR_GROUP_GLOBAL:
 		cmd = SWITCH_CMD_GET_GLOBAL;
 		break;
@@ -302,8 +292,7 @@ swlib_get_attr(struct switch_dev *dev, struct switch_attr *attr, struct switch_v
 	return err;
 }
 
-static int
-send_attr_ports(struct nl_msg *msg, struct switch_val *val)
+static int send_attr_ports(struct nl_msg *msg, struct switch_val *val)
 {
 	struct nlattr *n;
 	int i;
@@ -336,8 +325,7 @@ nla_put_failure:
 	return -1;
 }
 
-static int
-send_attr_link(struct nl_msg *msg, struct switch_val *val)
+static int send_attr_link(struct nl_msg *msg, struct switch_val *val)
 {
 	struct switch_port_link *link = val->value.link;
 	struct nlattr *n;
@@ -360,8 +348,7 @@ nla_put_failure:
 	return -1;
 }
 
-static int
-send_attr_val(struct nl_msg *msg, void *arg)
+static int send_attr_val(struct nl_msg *msg, void *arg)
 {
 	struct switch_val *val = arg;
 	struct switch_attr *attr = val->attr;
@@ -369,7 +356,7 @@ send_attr_val(struct nl_msg *msg, void *arg)
 	if (send_attr(msg, arg))
 		goto nla_put_failure;
 
-	switch(attr->type) {
+	switch (attr->type) {
 	case SWITCH_TYPE_NOVAL:
 		break;
 	case SWITCH_TYPE_INT:
@@ -397,12 +384,11 @@ nla_put_failure:
 	return -1;
 }
 
-int
-swlib_set_attr(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
+int swlib_set_attr(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
 {
 	int cmd;
 
-	switch(attr->atype) {
+	switch (attr->atype) {
 	case SWLIB_ATTR_GROUP_GLOBAL:
 		cmd = SWITCH_CMD_SET_GLOBAL;
 		break;
@@ -437,7 +423,7 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 
 	memset(&val, 0, sizeof(val));
 	val.port_vlan = port_vlan;
-	switch(a->type) {
+	switch (a->type) {
 	case SWITCH_TYPE_INT:
 		val.value.i = atoi(str);
 		break;
@@ -449,9 +435,8 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 		memset(ports, 0, sizeof(struct switch_port) * dev->ports);
 		val.len = 0;
 		ptr = (char *)str;
-		while(ptr && *ptr)
-		{
-			while(*ptr && isspace(*ptr))
+		while (ptr && *ptr) {
+			while (*ptr && isspace(*ptr))
 				ptr++;
 
 			if (!*ptr)
@@ -465,7 +450,7 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 
 			ports[val.len].flags = 0;
 			ports[val.len].id = strtoul(ptr, &ptr, 10);
-			while(*ptr && !isspace(*ptr)) {
+			while (*ptr && !isspace(*ptr)) {
 				if (*ptr == 't')
 					ports[val.len].flags |= SWLIB_PORT_FLAG_TAGGED;
 				else
@@ -483,7 +468,7 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 		link = malloc(sizeof(struct switch_port_link));
 		memset(link, 0, sizeof(struct switch_port_link));
 		ptr = (char *)str;
-		for (ptr = strtok(ptr," "); ptr; ptr = strtok(NULL, " ")) {
+		for (ptr = strtok(ptr, " "); ptr; ptr = strtok(NULL, " ")) {
 			switch (cmd) {
 			case CMD_NONE:
 				if (!strcmp(ptr, "duplex"))
@@ -532,7 +517,6 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 	return swlib_set_attr(dev, a, &val);
 }
 
-
 struct attrlist_arg {
 	int id;
 	int atype;
@@ -541,8 +525,7 @@ struct attrlist_arg {
 	struct switch_attr **head;
 };
 
-static int
-add_id(struct nl_msg *msg, void *arg)
+static int add_id(struct nl_msg *msg, void *arg)
 {
 	struct attrlist_arg *l = arg;
 
@@ -553,15 +536,13 @@ nla_put_failure:
 	return -1;
 }
 
-static int
-add_attr(struct nl_msg *msg, void *ptr)
+static int add_attr(struct nl_msg *msg, void *ptr)
 {
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct attrlist_arg *arg = ptr;
 	struct switch_attr *new;
 
-	if (nla_parse(tb, SWITCH_ATTR_MAX - 1, genlmsg_attrdata(gnlh, 0),
-			genlmsg_attrlen(gnlh, 0), NULL) < 0)
+	if (nla_parse(tb, SWITCH_ATTR_MAX - 1, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
 		goto done;
 
 	new = swlib_alloc(sizeof(struct switch_attr));
@@ -591,8 +572,7 @@ done:
 	return NL_SKIP;
 }
 
-int
-swlib_scan(struct switch_dev *dev)
+int swlib_scan(struct switch_dev *dev)
 {
 	struct attrlist_arg arg;
 
@@ -619,15 +599,14 @@ swlib_scan(struct switch_dev *dev)
 	return 0;
 }
 
-struct switch_attr *swlib_lookup_attr(struct switch_dev *dev,
-		enum swlib_attr_group atype, const char *name)
+struct switch_attr *swlib_lookup_attr(struct switch_dev *dev, enum swlib_attr_group atype, const char *name)
 {
 	struct switch_attr *head;
 
 	if (!name || !dev)
 		return NULL;
 
-	switch(atype) {
+	switch (atype) {
 	case SWLIB_ATTR_GROUP_GLOBAL:
 		head = dev->ops;
 		break;
@@ -638,7 +617,7 @@ struct switch_attr *swlib_lookup_attr(struct switch_dev *dev,
 		head = dev->vlan_ops;
 		break;
 	}
-	while(head) {
+	while (head) {
 		if (!strcmp(name, head->name))
 			return head;
 		head = head->next;
@@ -647,11 +626,10 @@ struct switch_attr *swlib_lookup_attr(struct switch_dev *dev,
 	return NULL;
 }
 
-static void
-swlib_priv_free(void)
+static void swlib_priv_free(void)
 {
 	if (family)
-		nl_object_put((struct nl_object*)family);
+		nl_object_put((struct nl_object *)family);
 	if (cache)
 		nl_cache_free(cache);
 	if (handle)
@@ -661,8 +639,7 @@ swlib_priv_free(void)
 	cache = NULL;
 }
 
-static int
-swlib_priv_init(void)
+static int swlib_priv_init(void)
 {
 	int ret;
 
@@ -701,8 +678,7 @@ struct swlib_scan_arg {
 	struct switch_dev *ptr;
 };
 
-static int
-add_port_map(struct switch_dev *dev, struct nlattr *nla)
+static int add_port_map(struct switch_dev *dev, struct nlattr *nla)
 {
 	struct nlattr *p;
 	int err = 0, idx = 0;
@@ -714,7 +690,7 @@ add_port_map(struct switch_dev *dev, struct nlattr *nla)
 	memset(dev->maps, 0, sizeof(struct switch_portmap) * dev->ports);
 
 	nla_for_each_nested(p, nla, remaining) {
-		struct nlattr *tb[SWITCH_PORTMAP_MAX+1];
+		struct nlattr *tb[SWITCH_PORTMAP_MAX + 1];
 
 		if (idx >= dev->ports)
 			continue;
@@ -722,7 +698,6 @@ add_port_map(struct switch_dev *dev, struct nlattr *nla)
 		err = nla_parse_nested(tb, SWITCH_PORTMAP_MAX, p, portmap_policy);
 		if (err < 0)
 			continue;
-
 
 		if (tb[SWITCH_PORTMAP_SEGMENT] && tb[SWITCH_PORTMAP_VIRT]) {
 			dev->maps[idx].segment = strdup(nla_get_string(tb[SWITCH_PORTMAP_SEGMENT]));
@@ -735,9 +710,7 @@ out:
 	return err;
 }
 
-
-static int
-add_switch(struct nl_msg *msg, void *arg)
+static int add_switch(struct nl_msg *msg, void *arg)
 {
 	struct swlib_scan_arg *sa = arg;
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
@@ -789,8 +762,7 @@ done:
 	return NL_SKIP;
 }
 
-static int
-list_switch(struct nl_msg *msg, void *arg)
+static int list_switch(struct nl_msg *msg, void *arg)
 {
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
@@ -800,15 +772,13 @@ list_switch(struct nl_msg *msg, void *arg)
 	if (!tb[SWITCH_ATTR_DEV_NAME] || !tb[SWITCH_ATTR_NAME])
 		goto done;
 
-	fprintf(stdout, "Found: %s - %s\n", nla_get_string(tb[SWITCH_ATTR_DEV_NAME]),
-		nla_get_string(tb[SWITCH_ATTR_ALIAS]));
+	fprintf(stdout, "Found: %s - %s\n", nla_get_string(tb[SWITCH_ATTR_DEV_NAME]), nla_get_string(tb[SWITCH_ATTR_ALIAS]));
 
 done:
 	return NL_SKIP;
 }
 
-void
-swlib_list(void)
+void swlib_list(void)
 {
 	if (swlib_priv_init() < 0)
 		return;
@@ -816,8 +786,7 @@ swlib_list(void)
 	swlib_priv_free();
 }
 
-void
-swlib_print_portmap(struct switch_dev *dev, char *segment)
+void swlib_print_portmap(struct switch_dev *dev, char *segment)
 {
 	int i;
 
@@ -828,10 +797,11 @@ swlib_print_portmap(struct switch_dev *dev, char *segment)
 			for (i = 0; i < dev->ports; i++)
 				if (!dev->maps[i].segment)
 					fprintf(stdout, "%d ", i);
-		} else for (i = 0; i < dev->ports; i++) {
-			if (dev->maps[i].segment && !strcmp(dev->maps[i].segment, segment))
-				fprintf(stdout, "%d ", i);
-		}
+		} else
+			for (i = 0; i < dev->ports; i++) {
+				if (dev->maps[i].segment && !strcmp(dev->maps[i].segment, segment))
+					fprintf(stdout, "%d ", i);
+			}
 	} else {
 		fprintf(stdout, "%s - %s\n", dev->dev_name, dev->name);
 		for (i = 0; i < dev->ports; i++)
@@ -844,8 +814,7 @@ swlib_print_portmap(struct switch_dev *dev, char *segment)
 	}
 }
 
-struct switch_dev *
-swlib_connect(const char *name)
+struct switch_dev *swlib_connect(const char *name)
 {
 	struct swlib_scan_arg arg;
 
@@ -865,8 +834,7 @@ swlib_connect(const char *name)
 	return arg.head;
 }
 
-static void
-swlib_free_attributes(struct switch_attr **head)
+static void swlib_free_attributes(struct switch_attr **head)
 {
 	struct switch_attr *a = *head;
 	struct switch_attr *next;
@@ -881,8 +849,7 @@ swlib_free_attributes(struct switch_attr **head)
 	*head = NULL;
 }
 
-static void
-swlib_free_port_map(struct switch_dev *dev)
+static void swlib_free_port_map(struct switch_dev *dev)
 {
 	int i;
 
@@ -894,8 +861,7 @@ swlib_free_port_map(struct switch_dev *dev)
 	free(dev->maps);
 }
 
-void
-swlib_free(struct switch_dev *dev)
+void swlib_free(struct switch_dev *dev)
 {
 	swlib_free_attributes(&dev->ops);
 	swlib_free_attributes(&dev->port_ops);
@@ -913,8 +879,7 @@ swlib_free(struct switch_dev *dev)
 		swlib_priv_free();
 }
 
-void
-swlib_free_all(struct switch_dev *dev)
+void swlib_free_all(struct switch_dev *dev)
 {
 	struct switch_dev *p;
 
