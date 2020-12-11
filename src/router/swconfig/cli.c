@@ -45,36 +45,34 @@ enum {
 	CMD_PORTMAP,
 };
 
-static void
-print_attrs(const struct switch_attr *attr)
+static void print_attrs(const struct switch_attr *attr)
 {
 	int i = 0;
 	while (attr) {
 		const char *type;
-		switch(attr->type) {
-			case SWITCH_TYPE_INT:
-				type = "int";
-				break;
-			case SWITCH_TYPE_STRING:
-				type = "string";
-				break;
-			case SWITCH_TYPE_PORTS:
-				type = "ports";
-				break;
-			case SWITCH_TYPE_NOVAL:
-				type = "none";
-				break;
-			default:
-				type = "unknown";
-				break;
+		switch (attr->type) {
+		case SWITCH_TYPE_INT:
+			type = "int";
+			break;
+		case SWITCH_TYPE_STRING:
+			type = "string";
+			break;
+		case SWITCH_TYPE_PORTS:
+			type = "ports";
+			break;
+		case SWITCH_TYPE_NOVAL:
+			type = "none";
+			break;
+		default:
+			type = "unknown";
+			break;
 		}
 		fprintf(stdout, "\tAttribute %d (%s): %s (%s)\n", ++i, type, attr->name, attr->description);
 		attr = attr->next;
 	}
 }
 
-static void
-list_attributes(struct switch_dev *dev)
+static void list_attributes(struct switch_dev *dev)
 {
 	fprintf(stdout, "%s: %s(%s), ports: %d (cpu @ %d), vlans: %d\n", dev->dev_name, dev->alias, dev->name, dev->ports, dev->cpu_port, dev->vlans);
 	fprintf(stdout, "     --switch\n");
@@ -85,8 +83,7 @@ list_attributes(struct switch_dev *dev)
 	print_attrs(dev->port_ops);
 }
 
-static const char *
-speed_str(int speed)
+static const char *speed_str(int speed)
 {
 	switch (speed) {
 	case 10:
@@ -102,8 +99,7 @@ speed_str(int speed)
 	return "unknown";
 }
 
-static void
-print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
+static void print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 {
 	struct switch_port_link *link;
 	int i;
@@ -116,11 +112,8 @@ print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 		fprintf(stdout, "%s", val->value.s);
 		break;
 	case SWITCH_TYPE_PORTS:
-		for(i = 0; i < val->len; i++) {
-			fprintf(stdout, "%d%s ",
-				val->value.ports[i].id,
-				(val->value.ports[i].flags &
-				 SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
+		for (i = 0; i < val->len; i++) {
+			fprintf(stdout, "%d%s ", val->value.ports[i].id, (val->value.ports[i].flags & SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
 		}
 		break;
 	case SWITCH_TYPE_LINK:
@@ -131,10 +124,7 @@ print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 				speed_str(link->speed),
 				link->duplex ? "full" : "half",
 				link->tx_flow ? "txflow " : "",
-				link->rx_flow ? "rxflow " : "",
-				link->eee & SWLIB_LINK_FLAG_EEE_100BASET ? "eee100 " : "",
-				link->eee & SWLIB_LINK_FLAG_EEE_1000BASET ? "eee1000 " : "",
-				link->aneg ? "auto" : "");
+				link->rx_flow ? "rxflow " : "", link->eee & SWLIB_LINK_FLAG_EEE_100BASET ? "eee100 " : "", link->eee & SWLIB_LINK_FLAG_EEE_1000BASET ? "eee1000 " : "", link->aneg ? "auto" : "");
 		else
 			fprintf(stdout, "port:%d link:down", val->port_vlan);
 		break;
@@ -143,8 +133,7 @@ print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 	}
 }
 
-static void
-show_attrs(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
+static void show_attrs(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
 {
 	while (attr) {
 		if (attr->type != SWITCH_TYPE_NOVAL) {
@@ -159,8 +148,7 @@ show_attrs(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *
 	}
 }
 
-static void
-show_global(struct switch_dev *dev)
+static void show_global(struct switch_dev *dev)
 {
 	struct switch_val val;
 
@@ -168,8 +156,7 @@ show_global(struct switch_dev *dev)
 	show_attrs(dev, dev->ops, &val);
 }
 
-static void
-show_port(struct switch_dev *dev, int port)
+static void show_port(struct switch_dev *dev, int port)
 {
 	struct switch_val val;
 
@@ -178,8 +165,7 @@ show_port(struct switch_dev *dev, int port)
 	show_attrs(dev, dev->port_ops, &val);
 }
 
-static void
-show_vlan(struct switch_dev *dev, int vlan, bool all)
+static void show_vlan(struct switch_dev *dev, int vlan, bool all)
 {
 	struct switch_val val;
 	struct switch_attr *attr;
@@ -199,8 +185,7 @@ show_vlan(struct switch_dev *dev, int vlan, bool all)
 	show_attrs(dev, dev->vlan_ops, &val);
 }
 
-static void
-print_usage(void)
+static void print_usage(void)
 {
 	fprintf(stdout, "swconfig list\n");
 	fprintf(stdout, "swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>|show)\n");
@@ -249,39 +234,38 @@ int main(int argc, char **argv)
 	char *cvalue = NULL;
 	char *csegment = NULL;
 
-	if((argc == 2) && !strcmp(argv[1], "list")) {
+	if ((argc == 2) && !strcmp(argv[1], "list")) {
 		swlib_list();
 		return 0;
 	}
 
-	if(argc < 4)
+	if (argc < 4)
 		print_usage();
 
-	if(strcmp(argv[1], "dev"))
+	if (strcmp(argv[1], "dev"))
 		print_usage();
 
 	cdev = argv[2];
 
-	for(i = 3; i < argc; i++)
-	{
+	for (i = 3; i < argc; i++) {
 		char *arg = argv[i];
 		if (cmd != CMD_NONE) {
 			print_usage();
-		} else if (!strcmp(arg, "port") && i+1 < argc) {
+		} else if (!strcmp(arg, "port") && i + 1 < argc) {
 			cport = atoi(argv[++i]);
-		} else if (!strcmp(arg, "vlan") && i+1 < argc) {
+		} else if (!strcmp(arg, "vlan") && i + 1 < argc) {
 			cvlan = atoi(argv[++i]);
 		} else if (!strcmp(arg, "help")) {
 			cmd = CMD_HELP;
-		} else if (!strcmp(arg, "set") && i+1 < argc) {
+		} else if (!strcmp(arg, "set") && i + 1 < argc) {
 			cmd = CMD_SET;
 			ckey = argv[++i];
-			if (i+1 < argc)
+			if (i + 1 < argc)
 				cvalue = argv[++i];
-		} else if (!strcmp(arg, "get") && i+1 < argc) {
+		} else if (!strcmp(arg, "get") && i + 1 < argc) {
 			cmd = CMD_GET;
 			ckey = argv[++i];
-		} else if (!strcmp(arg, "load") && i+1 < argc) {
+		} else if (!strcmp(arg, "load") && i + 1 < argc) {
 			if ((cport >= 0) || (cvlan >= 0))
 				print_usage();
 			cmd = CMD_LOAD;
@@ -304,62 +288,56 @@ int main(int argc, char **argv)
 
 	dev = swlib_connect(cdev);
 	if (!dev) {
-               if (!strcmp(cdev,"eth0"))
-               {
-                   dev = swlib_connect("switch0");
-                   if (!dev)
-                   dev = swlib_connect("rtl8366s");
-                   if (!dev)
-                   dev = swlib_connect("rtl8366rb");
-               }
-               if (!dev) {
-		       fprintf(stderr, "Failed to connect to the switch. Use the \"list\" command to see which switches are available.\n");
-                       return 1;
-               }
+		if (!strcmp(cdev, "eth0")) {
+			dev = swlib_connect("switch0");
+			if (!dev)
+				dev = swlib_connect("rtl8366s");
+			if (!dev)
+				dev = swlib_connect("rtl8366rb");
+		}
+		if (!dev) {
+			fprintf(stderr, "Failed to connect to the switch. Use the \"list\" command to see which switches are available.\n");
+			return 1;
+		}
 	}
 
 	swlib_scan(dev);
 
 	if (cmd == CMD_GET || cmd == CMD_SET) {
-		if(cport > -1)
+		if (cport > -1)
 			a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_PORT, ckey);
-		else if(cvlan > -1)
+		else if (cvlan > -1)
 			a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_VLAN, ckey);
 		else
 			a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_GLOBAL, ckey);
 
-		if(!a)
-		{
+		if (!a) {
 			fprintf(stderr, "Unknown attribute \"%s\"\n", ckey);
 			retval = -1;
 			goto out;
 		}
 	}
 
-	switch(cmd)
-	{
+	switch (cmd) {
 	case CMD_SET:
-		if ((a->type != SWITCH_TYPE_NOVAL) &&
-				(cvalue == NULL))
+		if ((a->type != SWITCH_TYPE_NOVAL) && (cvalue == NULL))
 			print_usage();
 
-		if(cvlan > -1)
+		if (cvlan > -1)
 			cport = cvlan;
 
-		if(swlib_set_attr_string(dev, a, cport, cvalue) < 0)
-		{
+		if (swlib_set_attr_string(dev, a, cport, cvalue) < 0) {
 			fprintf(stderr, "failed\n");
 			retval = -1;
 			goto out;
 		}
 		break;
 	case CMD_GET:
-		if(cvlan > -1)
+		if (cvlan > -1)
 			val.port_vlan = cvlan;
-		if(cport > -1)
+		if (cport > -1)
 			val.port_vlan = cport;
-		if(swlib_get_attr(dev, a, &val) < 0)
-		{
+		if (swlib_get_attr(dev, a, &val) < 0) {
 			fprintf(stderr, "failed\n");
 			retval = -1;
 			goto out;
@@ -367,9 +345,9 @@ int main(int argc, char **argv)
 		print_attr_val(a, &val);
 		putchar('\n');
 		break;
-//	case CMD_LOAD:
-//		swconfig_load_uci(dev, ckey);
-//		break;
+//      case CMD_LOAD:
+//              swconfig_load_uci(dev, ckey);
+//              break;
 	case CMD_HELP:
 		list_attributes(dev);
 		break;
@@ -384,9 +362,9 @@ int main(int argc, char **argv)
 				show_vlan(dev, cvlan, false);
 		} else {
 			show_global(dev);
-			for (i=0; i < dev->ports; i++)
+			for (i = 0; i < dev->ports; i++)
 				show_port(dev, i);
-			for (i=0; i < dev->vlans; i++)
+			for (i = 0; i < dev->vlans; i++)
 				show_vlan(dev, i, true);
 		}
 		break;
