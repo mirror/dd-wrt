@@ -14,6 +14,16 @@ do
 	    ip link del oet${i} 2>&1 > /dev/null
 	    wg set oet${i} peer $($nv get oet${i}_peerkey) remove 2>&1 > /dev/null
 	    rm -f ${i}.pid
+		#remove DNS
+		$nv unset wg_get_dns
+		if [[ -f /tmp/resolv.dnsmasq_oet${i} ]]; then
+			cat /tmp/resolv.dnsmasq_oet${i} | while read -r  remdns; do
+				sed -i "/$remdns/d" /tmp/resolv.dnsmasq
+			done
+			rm /tmp/resolv.dnsmasq_oet${i}
+		fi
+		# execute route down script
+		[[ ! -z "$($nv get oet${i}_rtdownscript | sed '/^[[:blank:]]*#/d')" ]] && { sh $($nv get oet${i}_rtdownscript) & }
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
@@ -46,8 +56,14 @@ do
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
 			rm /tmp/wireguard/oet${i}_private
 			
-			## egc add code to regenerate public key from private key if private key is set manually
+			#egc add code to regenerate public key from private key if private key is set manually
 			$nv set oet${i}_public="$($nv get oet${i}_private|wg pubkey)"
+			
+			#egc add fwmark
+			if [[ ! -z "$($nv get oet${i}_fwmark)" ]]
+			then
+				wg set oet${i} fwmark $($nv get oet${i}_fwmark)
+			fi
 			
 			peers=$((`$nv get oet${i}_peers` - 1))
 			$nv set oet${i}_bridged=0
@@ -68,24 +84,43 @@ do
 					logger -p user.info "Establish WireGuard tunnel with peer endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 					ENDPOINTARG1="endpoint"
 					ENDPOINTARG2="$($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
-					#egc: add way out if default route is set via tunnel
-					
-					# # not working on  WAP's as wan_gateway is 0.0.0.0 on WAP 's should use lan_gateway first ask BS if this is feasible
-					# GATEWAY="$(nvram get wan_gateway)"
-					# [[ $GATEWAY = "0.0.0.0" ]] && { GATEWAY="$(nvram get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
-					# route add -host $($nv get oet${i}_rem${p}) gw $GATEWAY dev $(get_wanface) 2>&1 > /dev/null
-					
-					route add -host $($nv get oet${i}_rem${p}) gw $($nv get wan_gateway) dev $(get_wanface) 2>&1 > /dev/null
+					#egc On WAP's wan_gateway is 0.0.0.0 and wan_proto=disabled use lan_gateway
+					GATEWAY="$($nv get wan_gateway)"
+					[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
+					#[[ $GATEWAY = "0.0.0.0" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
+					route add -host $($nv get oet${i}_rem${p}) gw $GATEWAY dev $(get_wanface) 2>&1 > /dev/null
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
 				#rm -f /tmp/wireguard/oet${i}_psk${p}
 			done
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
 			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i} 2>&1 > /dev/null
-			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
+			# alternative input with ipaddrmask
+			if [[ ! -z "$($nv get oet${i}_ipaddrmask)" ]]
+			then
+				for ipaddrmask in $($nv get oet${i}_ipaddrmask | sed "s/,/ /g") ; do
+					ip addr add $ipaddrmask dev oet${i} 2>&1 > /dev/null
+					logger -p user.info "Wireguard $ipaddrmask added to oet${i}" #debug 
+					#set ip address and netmask for backwards compatibility only for IPv4
+					case $ipaddrmask in
+					  *.*)
+						IPADDR=${ipaddrmask%%/*}
+						mask="${ipaddrmask#*/}"
+						set -- $(( 5 - ($mask / 8) )) 255 255 255 255 $(( (255 << (8 - ($mask % 8))) & 255 )) 0 0 0
+						[ $1 -gt 1 ] && shift $1 || shift
+						NETMASK=${1-0}.${2-0}.${3-0}.${4-0}
+						$nv set oet${i}_ipaddr=$IPADDR
+						$nv set oet${i}_netmask=$NETMASK
+					esac
+				done
+				# ip addr add "$($nv get oet${i}_ipaddrmask)" dev oet${i} 2>&1 > /dev/null
+			else
+				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
+			fi
+			
 			echo enable > ${i}.pid
-			#add routes based on allowed IP's has to be after interface is up
-			#spawn process so that it does not stop, tunnel is send as parameter maybe use nohup
+			# add routes based on allowed IP's has to be after interface is up
+			# spawn process so that it does not stop, tunnel is send as parameter maybe use nohup
 			/usr/bin/eop-tunnel-raip.sh $i &
 
 		fi
