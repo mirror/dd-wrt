@@ -1600,10 +1600,16 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_port", i);
 		copytonv(wp, "oet%d_mtu", i);
 		copytonv(wp, "oet%d_pbr", i);
+		copytonv(wp, "oet%d_dns", i);
 		copytonv(wp, "oet%d_public", i);
 		copytonv(wp, "oet%d_private", i);
+		copytonv(wp, "oet%d_showadvanced", i);
+		copytonv(wp, "oet%d_rtupscript", i);
+		copytonv(wp, "oet%d_rtdownscript", i);
+		copytonv(wp, "oet%d_fwmark", i);
 		copytonv(wp, "oet%d_killswitch", i);
 		copytonv(wp, "oet%d_firewallin", i);
+		copytonv(wp, "oet%d_ipaddrmask", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
@@ -1815,23 +1821,31 @@ void add_tunnel(webs_t wp)
 #define default_seti(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nseti(val, "oet%d_%s",tunnels,name)
 	default_seti("en", 0);
 	default_seti("mit", 1);
-	default_seti("natout", 0);
+	default_seti("natout", 1);
 	default_set("pbr", "");
+	default_set("dns", "");
 	default_set("public", "");
 	default_set("private", "");
+	default_seti("showadvanced", 0);
+	default_set("rtupscript", "");
+	default_set("rtdownscript", "");
+	default_set("fwmark", "");
 	default_seti("killswitch", 0);
-	default_seti("firewallin", 0);
+	default_seti("firewallin", 1);
+	default_set("ipaddrmask", "");
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
-	default_set("ipaddr", "1.2.3.4");
-	default_set("netmask", "255.255.255.0");
+//	default_set("ipaddr", "1.2.3.4");
+//	default_set("netmask", "255.255.255.0");
+	default_set("ipaddr", "");
+	default_set("netmask", "");
 	default_seti("id", 1);
 	int overhead = nvram_matchi("ipv6_enable", 1) ? 80 : 40;
 	if (!nvram_match("wan_proto", "disabled"))
 		default_seti("mtu", atoi(nvram_safe_get("wan_mtu")) - overhead);
 	else
 		default_seti("mtu", 1500 - overhead);
-	default_seti("proto", 0);
+	default_seti("proto", 2);
 	default_seti("bridged", 1);
 	default_seti("peers", 0);
 #undef default_set
@@ -1850,10 +1864,16 @@ void del_tunnel(webs_t wp)
 		copytunvalue("mit", i, i - 1);
 		copytunvalue("natout", i, i - 1);
 		copytunvalue("pbr", i, i - 1);
+		copytunvalue("dns", i, i - 1);
 		copytunvalue("public", i, i - 1);
 		copytunvalue("private", i, i - 1);
+		copytunvalue("showadvanced", i, i - 1);
+		copytunvalue("rtupscript", i, i - 1);
+		copytunvalue("rtdownscript", i, i - 1);
+		copytunvalue("fwmark", i, i - 1);
 		copytunvalue("killswitch", i, i - 1);
 		copytunvalue("firewallin", i, i - 1);
+		copytunvalue("ipaddrmask", i, i - 1);
 		copytunvalue("rem", i, i - 1);
 		copytunvalue("local", i, i - 1);
 		copytunvalue("ipaddr", i, i - 1);
@@ -1884,10 +1904,16 @@ void del_tunnel(webs_t wp)
 	deltunvalue("mit", tunnels);
 	deltunvalue("natout", tunnels);
 	deltunvalue("pbr", tunnels);
+	deltunvalue("dns", tunnels);
 	deltunvalue("public", tunnels);
 	deltunvalue("private", tunnels);
+	deltunvalue("showadvanced", tunnels);
+	deltunvalue("rtupscript", tunnels);
+	deltunvalue("rtdownscript", tunnels);
+	deltunvalue("fwmark", tunnels);
 	deltunvalue("killswitch", tunnels);
 	deltunvalue("firewallin", tunnels);
+	deltunvalue("ipaddrmask", tunnels);
 	deltunvalue("rem", tunnels);
 	deltunvalue("local", tunnels);
 	deltunvalue("ipaddr", tunnels);
