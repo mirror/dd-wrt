@@ -97,6 +97,12 @@ bld.SAMBA_LIBRARY('msghdr',
                   local_include=False,
                   private_library=True)
 
+bld.SAMBA_LIBRARY('genrand',
+                  source='genrand.c',
+                  deps='replace gnutls',
+                  local_include=False,
+                  private_library=True)
+
 if bld.env.SAMBA_UTIL_CORE_ONLY:
 
     bld.SAMBA_LIBRARY('tevent-util',
@@ -108,12 +114,6 @@ if bld.env.SAMBA_UTIL_CORE_ONLY:
 else:
 
     bld.env.public_headers_skip.append('charset_compat.h')
-
-    bld.SAMBA_LIBRARY('genrand',
-                      source='genrand.c',
-                      deps='replace gnutls',
-                      local_include=False,
-                      private_library=True)
 
     bld.SAMBA_BINARY('genrandperf',
                      source='tests/genrandperf.c',
@@ -154,7 +154,6 @@ else:
                   public_deps='talloc tevent execinfo pthread LIBCRYPTO charset util_setid',
                   public_headers='''
                                  attr.h
-                                 byteorder.h
                                  data_blob.h
                                  debug.h
                                  discard.h
@@ -289,8 +288,26 @@ else:
                      local_include=False,
                      for_selftest=True)
 
+    bld.SAMBA_BINARY('test_bytearray',
+                     source='tests/test_bytearray.c',
+                     deps='cmocka replace samba-util',
+                     local_include=False,
+                     for_selftest=True)
+
+    bld.SAMBA_BINARY('test_byteorder_verify',
+                     source='tests/test_byteorder_verify.c',
+                     deps='cmocka replace samba-util',
+                     local_include=False,
+                     for_selftest=True)
+
     bld.SAMBA_BINARY('test_util_paths',
                      source='tests/test_util_paths.c',
                      deps='cmocka replace talloc samba-util',
                      local_include=False,
                      for_selftest=True)
+
+    bld.SAMBA_BINARY('test_util',
+                     source='tests/test_util.c',
+                     deps='cmocka replace talloc samba-util',
+                     local_include=False,
+                     for_selftest=True);

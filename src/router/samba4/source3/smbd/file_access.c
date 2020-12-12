@@ -33,12 +33,14 @@
 ****************************************************************************/
 
 bool can_delete_file_in_directory(connection_struct *conn,
-				  const struct smb_filename *smb_fname)
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname)
 {
 	TALLOC_CTX *ctx = talloc_tos();
-	char *dname = NULL;
-	struct smb_filename *smb_fname_parent;
+	struct smb_filename *smb_fname_parent = NULL;
 	bool ret;
+
+	SMB_ASSERT(dirfsp == conn->cwd_fsp);
 
 	if (!CAN_WRITE(conn)) {
 		return False;
@@ -50,18 +52,9 @@ bool can_delete_file_in_directory(connection_struct *conn,
 	}
 
 	/* Get the parent directory permission mask and owners. */
-	if (!parent_dirname(ctx, smb_fname->base_name, &dname, NULL)) {
-		return False;
-	}
-
-	smb_fname_parent = synthetic_smb_fname(ctx,
-				dname,
-				NULL,
-				NULL,
-				smb_fname->flags);
-	if (smb_fname_parent == NULL) {
-		ret = false;
-		goto out;
+	ret = parent_smb_fname(ctx, smb_fname, &smb_fname_parent, NULL);
+	if (ret != true) {
+		return false;
 	}
 
 	if(SMB_VFS_STAT(conn, smb_fname_parent) != 0) {
@@ -124,12 +117,16 @@ bool can_delete_file_in_directory(connection_struct *conn,
 	 * check the file DELETE permission separately.
 	 */
 
+	/*
+	 * NB. When dirfsp != conn->cwd_fsp, we must
+	 * change smb_fname_parent to be "." for the name here.
+	 */
 	ret = NT_STATUS_IS_OK(smbd_check_access_rights(conn,
+				dirfsp,
 				smb_fname_parent,
 				false,
 				FILE_DELETE_CHILD));
  out:
-	TALLOC_FREE(dname);
 	TALLOC_FREE(smb_fname_parent);
 	return ret;
 }
@@ -139,9 +136,12 @@ bool can_delete_file_in_directory(connection_struct *conn,
 ****************************************************************************/
 
 bool can_write_to_file(connection_struct *conn,
-		       const struct smb_filename *smb_fname)
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname)
 {
+	SMB_ASSERT(dirfsp == conn->cwd_fsp);
 	return NT_STATUS_IS_OK(smbd_check_access_rights(conn,
+				dirfsp,
 				smb_fname,
 				false,
 				FILE_WRITE_DATA));
@@ -151,24 +151,20 @@ bool can_write_to_file(connection_struct *conn,
  Check for an existing default Windows ACL on a directory.
 ****************************************************************************/
 
-bool directory_has_default_acl(connection_struct *conn, const char *fname)
+bool directory_has_default_acl(connection_struct *conn,
+		struct files_struct *dirfsp,
+		struct smb_filename *smb_fname)
 {
 	struct security_descriptor *secdesc = NULL;
 	unsigned int i;
 	NTSTATUS status;
-	struct smb_filename *smb_fname = synthetic_smb_fname(talloc_tos(),
-						fname,
-						NULL,
-						NULL,
-						0);
 
-	if (smb_fname == NULL) {
-		return false;
-	}
-
-	status = SMB_VFS_GET_NT_ACL(conn, smb_fname,
-					     SECINFO_DACL, talloc_tos(),
-					     &secdesc);
+	status = SMB_VFS_GET_NT_ACL_AT(conn,
+				dirfsp,
+				smb_fname,
+				SECINFO_DACL,
+				talloc_tos(),
+				&secdesc);
 
 	if (!NT_STATUS_IS_OK(status) ||
 			secdesc == NULL ||
@@ -231,7 +227,7 @@ NTSTATUS can_set_delete_on_close(files_struct *fsp, uint32_t dosmode)
 	}
 
 	/* Don't allow delete on close for non-empty directories. */
-	if (fsp->is_directory) {
+	if (fsp->fsp_flags.is_directory) {
 		SMB_ASSERT(!is_ntfs_stream_smb_fname(fsp->fsp_name));
 
 		/* Or the root of a share. */

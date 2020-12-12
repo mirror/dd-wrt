@@ -33,6 +33,8 @@ samba_dist.DIST_DIRS('''ctdb:. lib/replace:lib/replace lib/talloc:lib/talloc
                         lib/util:lib/util lib/tdb_wrap:lib/tdb_wrap
                         lib/ccan:lib/ccan libcli/util:libcli/util
                         lib/async_req:lib/async_req
+                        lib/pthreadpool:lib/pthreadpool
+                        lib/messaging:lib/messaging
                         buildtools:buildtools third_party/waf:third_party/waf''')
 
 manpages_binary = [
@@ -144,6 +146,10 @@ def configure(conf):
         # build system, see Options.options.disable_python = True above
         conf.SAMBA_CHECK_PYTHON()
         conf.SAMBA_CHECK_PYTHON_HEADERS()
+
+        # We just want gnutls_rnd for rand subsystem
+        conf.CHECK_FUNCS_IN('gnutls_rnd', 'gnutls')
+
 
     if conf.CHECK_FOR_THIRD_PARTY():
         conf.RECURSE('third_party/popt')
@@ -359,6 +365,8 @@ def build(bld):
     bld.RECURSE('lib/tdb_wrap')
     bld.RECURSE('lib/util')
     bld.RECURSE('lib/async_req')
+    bld.RECURSE('lib/pthreadpool')
+    bld.RECURSE('lib/messaging')
 
     bld.RECURSE('lib/talloc')
     bld.RECURSE('lib/tevent')

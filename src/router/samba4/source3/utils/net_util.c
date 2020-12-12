@@ -29,6 +29,8 @@
 #include "secrets.h"
 #include "../libcli/security/security.h"
 #include "libsmb/libsmb.h"
+#include "lib/param/param.h"
+#include "auth/gensec/gensec.h"
 
 NTSTATUS net_rpc_lookup_name(struct net_context *c,
 			     TALLOC_CTX *mem_ctx, struct cli_state *cli,
@@ -106,32 +108,23 @@ NTSTATUS connect_to_service(struct net_context *c,
 			    const char *service_type)
 {
 	NTSTATUS nt_status;
-	int flags = 0;
 	enum smb_signing_setting signing_setting = SMB_SIGNING_DEFAULT;
+	struct cli_credentials *creds = NULL;
 
-	c->opt_password = net_prompt_pass(c, c->opt_user_name);
-
-	if (c->opt_kerberos) {
-		flags |= CLI_FULL_CONNECTION_USE_KERBEROS;
-	}
-
-	if (c->opt_kerberos && c->opt_password) {
-		flags |= CLI_FULL_CONNECTION_FALLBACK_AFTER_KERBEROS;
-	}
-
-	if (c->opt_ccache) {
-		flags |= CLI_FULL_CONNECTION_USE_CCACHE;
+	creds = net_context_creds(c, c);
+	if (creds == NULL) {
+		d_fprintf(stderr, "net_context_creds() failed.\n");
+		return NT_STATUS_INTERNAL_ERROR;
 	}
 
 	if (strequal(service_type, "IPC")) {
 		signing_setting = SMB_SIGNING_IPC_DEFAULT;
 	}
 
-	nt_status = cli_full_connection(cli_ctx, NULL, server_name,
+	nt_status = cli_full_connection_creds(cli_ctx, NULL, server_name,
 					server_ss, c->opt_port,
 					service_name, service_type,
-					c->opt_user_name, c->opt_workgroup,
-					c->opt_password, flags,
+					creds, 0,
 					signing_setting);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		d_fprintf(stderr, _("Could not connect to server %s\n"),
@@ -156,11 +149,9 @@ NTSTATUS connect_to_service(struct net_context *c,
 	}
 
 	if (c->smb_encrypt) {
-		nt_status = cli_cm_force_encryption(*cli_ctx,
-						    c->opt_user_name,
-						    c->opt_password,
-						    c->opt_workgroup,
-						    service_name);
+		nt_status = cli_cm_force_encryption_creds(*cli_ctx,
+							  creds,
+							  service_name);
 		if (!NT_STATUS_IS_OK(nt_status)) {
 			cli_shutdown(*cli_ctx);
 			*cli_ctx = NULL;
@@ -193,12 +184,18 @@ NTSTATUS connect_to_ipc_anonymous(struct net_context *c,
 				const char *server_name)
 {
 	NTSTATUS nt_status;
+	struct cli_credentials *anon_creds = NULL;
 
-	nt_status = cli_full_connection(cli_ctx, c->opt_requester_name,
+	anon_creds = cli_credentials_init_anon(c);
+	if (anon_creds == NULL) {
+		DBG_ERR("cli_credentials_init_anon() failed\n");
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	nt_status = cli_full_connection_creds(cli_ctx, c->opt_requester_name,
 					server_name, server_ss, c->opt_port,
 					"IPC$", "IPC",
-					"", "",
-					"", 0, SMB_SIGNING_DEFAULT);
+					anon_creds, 0, SMB_SIGNING_OFF);
 
 	if (NT_STATUS_IS_OK(nt_status)) {
 		return nt_status;
@@ -279,28 +276,7 @@ int net_use_krb_machine_account(struct net_context *c)
 		return -1;
 	}
 	c->opt_user_name = user_name;
-	return 0;
-}
-
-/****************************************************************************
- Use the machine account name and password for this session.
-****************************************************************************/
-
-int net_use_machine_account(struct net_context *c)
-{
-	char *user_name = NULL;
-
-	if (!secrets_init()) {
-		d_fprintf(stderr,_("ERROR: Unable to open secrets database\n"));
-		exit(1);
-	}
-
-	c->opt_password = secrets_fetch_machine_password(
-				c->opt_target_workgroup, NULL, NULL);
-	if (asprintf(&user_name, "%s$", lp_netbios_name()) == -1) {
-		return -1;
-	}
-	c->opt_user_name = user_name;
+	c->opt_user_specified = true;
 	return 0;
 }
 
@@ -485,6 +461,10 @@ const char *net_prompt_pass(struct net_context *c, const char *user)
 		return NULL;
 	}
 
+	if (c->opt_ccache) {
+		return NULL;
+	}
+
 	if (asprintf(&prompt, _("Enter %s's password:"), user) == -1) {
 		return NULL;
 	}
@@ -496,6 +476,107 @@ const char *net_prompt_pass(struct net_context *c, const char *user)
 	}
 
 	return SMB_STRDUP(pwd);
+}
+
+struct cli_credentials *net_context_creds(struct net_context *c,
+					  TALLOC_CTX *mem_ctx)
+{
+	struct cli_credentials *creds = NULL;
+	struct loadparm_context *lp_ctx = NULL;
+
+	c->opt_password = net_prompt_pass(c, c->opt_user_name);
+
+	creds = cli_credentials_init(mem_ctx);
+	if (creds == NULL) {
+		d_printf("ERROR: Unable to allocate memory!\n");
+		exit(-1);
+	}
+
+	lp_ctx = loadparm_init_s3(creds, loadparm_s3_helpers());
+	if (lp_ctx == NULL) {
+		d_printf("loadparm_init_s3 failed\n");
+		exit(-1);
+	}
+
+	cli_credentials_guess(creds, lp_ctx);
+
+	if (c->opt_kerberos && c->opt_user_specified) {
+		cli_credentials_set_kerberos_state(creds,
+						   CRED_AUTO_USE_KERBEROS);
+	} else if (c->opt_kerberos) {
+		cli_credentials_set_kerberos_state(creds,
+						   CRED_MUST_USE_KERBEROS);
+	} else {
+		cli_credentials_set_kerberos_state(creds,
+						   CRED_DONT_USE_KERBEROS);
+	}
+
+	if (c->opt_ccache) {
+		uint32_t features;
+
+		features = cli_credentials_get_gensec_features(creds);
+		features |= GENSEC_FEATURE_NTLM_CCACHE;
+		cli_credentials_set_gensec_features(creds, features);
+
+		if (c->opt_password != NULL && strlen(c->opt_password) == 0) {
+			/*
+			 * some callers pass "" as no password
+			 *
+			 * GENSEC_FEATURE_NTLM_CCACHE only handles
+			 * NULL as no password.
+			 */
+			c->opt_password = NULL;
+		}
+	}
+
+	if (c->opt_user_specified) {
+		const char *default_domain =
+			cli_credentials_get_domain(creds);
+		char *username = NULL;
+		const char *domain = NULL;
+		char *tmp = NULL;
+		char *p = NULL;
+		bool is_default;
+
+		tmp = talloc_strdup(creds, c->opt_user_name);
+		if (tmp == NULL) {
+			exit(-1);
+		}
+		username = tmp;
+
+		/* allow for workgroups as part of the username */
+		if ((p = strchr_m(tmp, '\\')) ||
+		    (p = strchr_m(tmp, '/')) ||
+		    (p = strchr_m(tmp, *lp_winbind_separator()))) {
+			*p = 0;
+			username = p + 1;
+			domain = tmp;
+		}
+
+		if (domain == NULL) {
+			domain = c->opt_workgroup;
+		}
+
+		/*
+		 * Don't overwrite the value from cli_credentials_guess()
+		 * with CRED_SPECIFIED, unless we have to.
+		 */
+		is_default = strequal_m(domain, default_domain);
+		if (!is_default) {
+			cli_credentials_set_domain(creds,
+						   domain,
+						   CRED_SPECIFIED);
+		}
+
+		cli_credentials_set_username(creds,
+					     username,
+					     CRED_SPECIFIED);
+		cli_credentials_set_password(creds,
+					     c->opt_password,
+					     CRED_SPECIFIED);
+	}
+
+	return creds;
 }
 
 int net_run_function(struct net_context *c, int argc, const char **argv,

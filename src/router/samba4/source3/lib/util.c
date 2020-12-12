@@ -29,7 +29,7 @@
 #include "ctdbd_conn.h"
 #include "../lib/util/util_pw.h"
 #include "messages.h"
-#include "messages_dgm.h"
+#include "lib/messaging/messages_dgm.h"
 #include "libcli/security/security.h"
 #include "serverid.h"
 #include "lib/util/sys_rw.h"
@@ -513,7 +513,7 @@ NTSTATUS reinit_after_fork(struct messaging_context *msg_ctx,
 	}
 
 	if (comment) {
-		prctl_set_comment(comment);
+		prctl_set_comment("%s", comment);
 	}
 
  done:
@@ -825,10 +825,6 @@ void smb_panic_s3(const char *why)
 		loadparm_s3_global_substitution();
 	char *cmd;
 	int result;
-
-	DEBUG(0,("PANIC (pid %llu): %s\n",
-		    (unsigned long long)getpid(), why));
-	log_stack_trace();
 
 #if defined(HAVE_PRCTL) && defined(PR_SET_PTRACER)
 	/*

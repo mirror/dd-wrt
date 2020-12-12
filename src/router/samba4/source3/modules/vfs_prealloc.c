@@ -106,15 +106,15 @@ static int prealloc_connect(
 	return 0;
 }
 
-static int prealloc_open(vfs_handle_struct* handle,
-			struct smb_filename *smb_fname,
-			files_struct *	    fsp,
-			int		    flags,
-			mode_t		    mode)
+static int prealloc_openat(struct vfs_handle_struct* handle,
+			   const struct files_struct *dirfsp,
+			   const struct smb_filename *smb_fname,
+			   files_struct *fsp,
+			   int flags,
+			   mode_t mode)
 {
 	int fd;
 	off_t size = 0;
-
 	const char * dot;
 	char fext[10];
 
@@ -153,7 +153,7 @@ static int prealloc_open(vfs_handle_struct* handle,
 		goto normal_open;
 	}
 
-	fd = SMB_VFS_NEXT_OPEN(handle, smb_fname, fsp, flags, mode);
+	fd = SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, flags, mode);
 	if (fd < 0) {
 		return fd;
 	}
@@ -189,7 +189,7 @@ normal_open:
 	 */
 	DEBUG(module_debug, ("%s: skipping preallocation for %s\n",
 		MODULE, smb_fname_str_dbg(smb_fname)));
-	return SMB_VFS_NEXT_OPEN(handle, smb_fname, fsp, flags, mode);
+	return SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, flags, mode);
 }
 
 static int prealloc_ftruncate(vfs_handle_struct * handle,
@@ -208,7 +208,7 @@ static int prealloc_ftruncate(vfs_handle_struct * handle,
 }
 
 static struct vfs_fn_pointers prealloc_fns = {
-	.open_fn = prealloc_open,
+	.openat_fn = prealloc_openat,
 	.ftruncate_fn = prealloc_ftruncate,
 	.connect_fn = prealloc_connect,
 };

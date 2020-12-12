@@ -28,8 +28,10 @@
 #include "nsswitch/winbind_client.h"
 #include "nsswitch/wb_reqtrans.h"
 #include "ntdomain.h"
-#include "../librpc/gen_ndr/srv_lsa.h"
-#include "../librpc/gen_ndr/srv_samr.h"
+#include "librpc/rpc/dcesrv_core.h"
+#include "librpc/gen_ndr/ndr_lsa_scompat.h"
+#include "librpc/gen_ndr/ndr_samr_scompat.h"
+#include "librpc/gen_ndr/ndr_winbind_scompat.h"
 #include "secrets.h"
 #include "rpc_client/cli_netlogon.h"
 #include "idmap.h"
@@ -47,6 +49,7 @@
 #include "passdb.h"
 #include "lib/util/tevent_req_profile.h"
 #include "lib/gencache.h"
+#include "rpc_server/rpc_config.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
@@ -1659,6 +1662,8 @@ int main(int argc, const char **argv)
 	TALLOC_CTX *frame;
 	NTSTATUS status;
 	bool ok;
+	const struct dcesrv_endpoint_server *ep_server = NULL;
+	struct dcesrv_context *dce_ctx = NULL;
 
 	setproctitle_init(argc, discard_const(argv), environ);
 
@@ -1875,8 +1880,11 @@ int main(int argc, const char **argv)
 	BlockSignals(False, SIGHUP);
 	BlockSignals(False, SIGCHLD);
 
-	if (!interactive)
+	if (!interactive) {
 		become_daemon(Fork, no_process_group, log_stdout);
+	} else {
+		daemon_status("winbindd", "Starting process ...");
+	}
 
 	pidfile_create(lp_pid_directory(), "winbindd");
 
@@ -1931,8 +1939,59 @@ int main(int argc, const char **argv)
 		exit_daemon("Winbindd failed to setup system user info", map_errno_from_nt_status(status));
 	}
 
-	rpc_lsarpc_init(NULL);
-	rpc_samr_init(NULL);
+	DBG_INFO("Registering DCE/RPC endpoint servers\n");
+
+	/* Register the endpoint server to dispatch calls locally through
+	 * the legacy api_struct */
+	ep_server = lsarpc_get_ep_server();
+	if (ep_server == NULL) {
+		DBG_ERR("Failed to get 'lsarpc' endpoint server\n");
+		exit(1);
+	}
+	status = dcerpc_register_ep_server(ep_server);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to register 'lsarpc' endpoint "
+			"server: %s\n", nt_errstr(status));
+		exit(1);
+	}
+
+	/* Register the endpoint server to dispatch calls locally through
+	 * the legacy api_struct */
+	ep_server = samr_get_ep_server();
+	if (ep_server == NULL) {
+		DBG_ERR("Failed to get 'samr' endpoint server\n");
+		exit(1);
+	}
+	status = dcerpc_register_ep_server(ep_server);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to register 'samr' endpoint "
+			"server: %s\n", nt_errstr(status));
+		exit(1);
+	}
+
+	ep_server = winbind_get_ep_server();
+	if (ep_server == NULL) {
+		DBG_ERR("Failed to get 'winbind' endpoint server\n");
+		exit(1);
+	}
+	status = dcerpc_register_ep_server(ep_server);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to register 'winbind' endpoint "
+			"server: %s\n", nt_errstr(status));
+		exit(1);
+	}
+
+	dce_ctx = global_dcesrv_context();
+
+	DBG_INFO("Initializing DCE/RPC registered endpoint servers\n");
+
+	/* Init all registered ep servers */
+	status = dcesrv_init_registered_ep_servers(dce_ctx);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to init DCE/RPC endpoint servers: %s\n",
+			nt_errstr(status));
+		exit(1);
+	}
 
 	winbindd_init_addrchange(NULL, global_event_context(),
 				 global_messaging_context());

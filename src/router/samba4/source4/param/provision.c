@@ -35,6 +35,9 @@ static bool dict_insert(PyObject* dict,
 			const char* key,
 			PyObject* value)
 {
+	if (value == NULL) {
+		return false;
+	}
 	if (PyDict_SetItemString(dict, key, value) == -1) {
 		Py_XDECREF(value);
 		return false;
@@ -250,14 +253,14 @@ NTSTATUS provision_bare(TALLOC_CTX *mem_ctx, struct loadparm_context *lp_ctx,
 
 	if (!dict_insert(parameters,
 			 "debuglevel",
-			 PyInt_FromLong(DEBUGLEVEL))) {
+			 PyLong_FromLong(DEBUGLEVEL))) {
 		status = NT_STATUS_UNSUCCESSFUL;
 		goto out;
 	}
 
 	if (!dict_insert(parameters,
 			 "use_ntvfs",
-			 PyInt_FromLong(settings->use_ntvfs))) {
+			 PyLong_FromLong(settings->use_ntvfs))) {
 		status = NT_STATUS_UNSUCCESSFUL;
 		goto out;
 	}
@@ -333,7 +336,7 @@ NTSTATUS provision_store_self_join(TALLOC_CTX *mem_ctx, struct loadparm_context 
 	int ret;
 	PyObject *provision_mod = NULL, *provision_dict = NULL;
 	PyObject *provision_fn = NULL, *py_result = NULL;
-	PyObject *parameters = NULL, *py_sid = NULL;
+	PyObject *parameters = NULL;
 	struct ldb_context *ldb = NULL;
 	TALLOC_CTX *tmp_mem = talloc_new(mem_ctx);
 
@@ -345,8 +348,8 @@ NTSTATUS provision_store_self_join(TALLOC_CTX *mem_ctx, struct loadparm_context 
 		goto out;
 	}
 
-	/* Open the secrets database */
-	ldb = secrets_db_connect(tmp_mem, lp_ctx);
+	/* Create/Open the secrets database */
+	ldb = secrets_db_create(tmp_mem, lp_ctx);
 	if (!ldb) {
 		*error_string
 			= talloc_asprintf(mem_ctx, 
@@ -428,29 +431,24 @@ NTSTATUS provision_store_self_join(TALLOC_CTX *mem_ctx, struct loadparm_context 
 		goto out;
 	}
 
-	py_sid = py_dom_sid_FromSid(settings->domain_sid);
-	if (py_sid == NULL) {
-		status = NT_STATUS_UNSUCCESSFUL;
-		goto out;
-	}
 
 	if (!dict_insert(parameters,
 			 "domainsid",
-			 py_sid)) {
+			 py_dom_sid_FromSid(settings->domain_sid))) {
 		status = NT_STATUS_UNSUCCESSFUL;
 		goto out;
 	}
 
 	if (!dict_insert(parameters,
 			 "secure_channel_type",
-			 PyInt_FromLong(settings->secure_channel_type))) {
+			 PyLong_FromLong(settings->secure_channel_type))) {
 		status = NT_STATUS_UNSUCCESSFUL;
 		goto out;
 	}
 
 	if (!dict_insert(parameters,
 			 "key_version_number",
-			 PyInt_FromLong(settings->key_version_number))) {
+			 PyLong_FromLong(settings->key_version_number))) {
 		status = NT_STATUS_UNSUCCESSFUL;
 		goto out;
 	}
@@ -477,10 +475,8 @@ out:
 	talloc_free(tmp_mem);
 	Py_CLEAR(parameters);
 	Py_CLEAR(provision_mod);
-	Py_CLEAR(provision_fn);
 	Py_CLEAR(provision_dict);
 	Py_CLEAR(py_result);
-	Py_CLEAR(py_sid);
 	if (!NT_STATUS_IS_OK(status)) {
 		PyErr_Print();
 		PyErr_Clear();

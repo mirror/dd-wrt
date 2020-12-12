@@ -27,7 +27,8 @@
 #include "librpc/gen_ndr/libnet_join.h"
 #include "libnet/libnet_join.h"
 #include "../libcli/auth/libcli_auth.h"
-#include "../librpc/gen_ndr/srv_wkssvc.h"
+#include "librpc/gen_ndr/ndr_wkssvc.h"
+#include "librpc/gen_ndr/ndr_wkssvc_scompat.h"
 #include "../libcli/security/security.h"
 #include "session.h"
 #include "smbd/smbd.h"
@@ -1070,3 +1071,6 @@ WERROR _wkssvc_NetrEnumerateComputerNames(struct pipes_struct *p,
 	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
 	return WERR_NOT_SUPPORTED;
 }
+
+/* include the generated boilerplate */
+#include "librpc/gen_ndr/ndr_wkssvc_scompat.c"

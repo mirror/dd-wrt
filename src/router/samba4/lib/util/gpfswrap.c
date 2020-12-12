@@ -23,23 +23,27 @@
 
 static int (*gpfs_set_share_fn)(int fd, unsigned int allow, unsigned int deny);
 static int (*gpfs_set_lease_fn)(int fd, unsigned int type);
-static int (*gpfs_getacl_fn)(char *pathname, int flags, void *acl);
-static int (*gpfs_putacl_fn)(char *pathname, int flags, void *acl);
-static int (*gpfs_get_realfilename_path_fn)(char *pathname, char *filenamep,
+static int (*gpfs_getacl_fn)(const char *pathname, int flags, void *acl);
+static int (*gpfs_putacl_fn)(const char *pathname, int flags, void *acl);
+static int (*gpfs_get_realfilename_path_fn)(const char *pathname,
+					    char *filenamep,
 					    int *len);
-static int (*gpfs_set_winattrs_path_fn)(char *pathname, int flags,
+static int (*gpfs_set_winattrs_path_fn)(const char *pathname,
+					int flags,
 					struct gpfs_winattr *attrs);
 static int (*gpfs_set_winattrs_fn)(int fd, int flags,
 				   struct gpfs_winattr *attrs);
-static int (*gpfs_get_winattrs_path_fn)(char *pathname,
+static int (*gpfs_get_winattrs_path_fn)(const char *pathname,
 					struct gpfs_winattr *attrs);
 static int (*gpfs_get_winattrs_fn)(int fd, struct gpfs_winattr *attrs);
 static int (*gpfs_ftruncate_fn)(int fd, gpfs_off64_t length);
 static int (*gpfs_lib_init_fn)(int flags);
 static int (*gpfs_set_times_path_fn)(char *pathname, int flags,
 				     gpfs_timestruc_t times[4]);
-static int (*gpfs_quotactl_fn)(char *pathname, int cmd, int id, void *bufp);
-static int (*gpfs_getfilesetid_fn)(char *pathname, char *name, int *idp);
+static int (*gpfs_quotactl_fn)(const char *pathname,
+			       int cmd,
+			       int id,
+			       void *bufp);
 static int (*gpfs_init_trace_fn)(void);
 static int (*gpfs_query_trace_fn)(void);
 static void (*gpfs_add_trace_fn)(int level, const char *msg);
@@ -75,7 +79,6 @@ int gpfswrap_init(void)
 	gpfs_lib_init_fn	      = dlsym(l, "gpfs_lib_init");
 	gpfs_set_times_path_fn	      = dlsym(l, "gpfs_set_times_path");
 	gpfs_quotactl_fn	      = dlsym(l, "gpfs_quotactl");
-	gpfs_getfilesetid_fn	      = dlsym(l, "gpfs_getfilesetid");
 	gpfs_init_trace_fn	      = dlsym(l, "gpfs_init_trace");
 	gpfs_query_trace_fn	      = dlsym(l, "gpfs_query_trace");
 	gpfs_add_trace_fn	      = dlsym(l, "gpfs_add_trace");
@@ -106,7 +109,7 @@ int gpfswrap_set_lease(int fd, unsigned int type)
 	return gpfs_set_lease_fn(fd, type);
 }
 
-int gpfswrap_getacl(char *pathname, int flags, void *acl)
+int gpfswrap_getacl(const char *pathname, int flags, void *acl)
 {
 	if (gpfs_getacl_fn == NULL) {
 		errno = ENOSYS;
@@ -116,7 +119,7 @@ int gpfswrap_getacl(char *pathname, int flags, void *acl)
 	return gpfs_getacl_fn(pathname, flags, acl);
 }
 
-int gpfswrap_putacl(char *pathname, int flags, void *acl)
+int gpfswrap_putacl(const char *pathname, int flags, void *acl)
 {
 	if (gpfs_putacl_fn == NULL) {
 		errno = ENOSYS;
@@ -126,7 +129,9 @@ int gpfswrap_putacl(char *pathname, int flags, void *acl)
 	return gpfs_putacl_fn(pathname, flags, acl);
 }
 
-int gpfswrap_get_realfilename_path(char *pathname, char *filenamep, int *len)
+int gpfswrap_get_realfilename_path(const char *pathname,
+				   char *filenamep,
+				   int *len)
 {
 	if (gpfs_get_realfilename_path_fn == NULL) {
 		errno = ENOSYS;
@@ -136,7 +141,8 @@ int gpfswrap_get_realfilename_path(char *pathname, char *filenamep, int *len)
 	return gpfs_get_realfilename_path_fn(pathname, filenamep, len);
 }
 
-int gpfswrap_set_winattrs_path(char *pathname, int flags,
+int gpfswrap_set_winattrs_path(const char *pathname,
+			       int flags,
 			       struct gpfs_winattr *attrs)
 {
 	if (gpfs_set_winattrs_path_fn == NULL) {
@@ -157,7 +163,8 @@ int gpfswrap_set_winattrs(int fd, int flags, struct gpfs_winattr *attrs)
 	return gpfs_set_winattrs_fn(fd, flags, attrs);
 }
 
-int gpfswrap_get_winattrs_path(char *pathname, struct gpfs_winattr *attrs)
+int gpfswrap_get_winattrs_path(const char *pathname,
+			       struct gpfs_winattr *attrs)
 {
 	if (gpfs_get_winattrs_path_fn == NULL) {
 		errno = ENOSYS;
@@ -208,7 +215,7 @@ int gpfswrap_set_times_path(char *pathname, int flags,
 	return gpfs_set_times_path_fn(pathname, flags, times);
 }
 
-int gpfswrap_quotactl(char *pathname, int cmd, int id, void *bufp)
+int gpfswrap_quotactl(const char *pathname, int cmd, int id, void *bufp)
 {
 	if (gpfs_quotactl_fn == NULL) {
 		errno = ENOSYS;
@@ -216,16 +223,6 @@ int gpfswrap_quotactl(char *pathname, int cmd, int id, void *bufp)
 	}
 
 	return gpfs_quotactl_fn(pathname, cmd, id, bufp);
-}
-
-int gpfswrap_getfilesetid(char *pathname, char *name, int *idp)
-{
-	if (gpfs_getfilesetid_fn == NULL) {
-		errno = ENOSYS;
-		return -1;
-	}
-
-	return gpfs_getfilesetid_fn(pathname, name, idp);
 }
 
 int gpfswrap_init_trace(void)

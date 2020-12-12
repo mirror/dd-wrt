@@ -34,10 +34,10 @@ setup_ctdb ()
 	fi
 
 	if $no_event_scripts ; then
-		local pnn
-		for pnn in $(seq 0 $((CTDB_TEST_LOCAL_DAEMONS - 1))) ; do
-			rm -vf "${CTDB_BASE}/events/legacy/"*
-		done
+		# Want CTDB_BASE expanded when executed under onnode
+		# shellcheck disable=SC2016
+		$ctdb_local_daemons onnode -q all \
+				    'rm "${CTDB_BASE}/events/legacy/"*'
 	fi
 
 	if $CTDB_TEST_PRINT_LOGS_ON_ERROR ; then
@@ -45,39 +45,42 @@ setup_ctdb ()
 	fi
 }
 
-start_ctdb_1 ()
+ctdb_nodes_start ()
 {
-	local pnn="$1"
+	local nodespec="${1:-all}"
 
-	$ctdb_local_daemons start "$pnn"
+	$ctdb_local_daemons start "$nodespec"
 }
 
-ctdb_start_all ()
+ctdb_nodes_stop ()
 {
-	$ctdb_local_daemons start "all"
-}
+	local nodespec="${1:-all}"
 
-stop_ctdb_1 ()
-{
-	local pnn="$1"
+	if $ctdb_local_daemons stop "$nodespec" ; then
+		return 0
+	fi
 
-	$ctdb_local_daemons stop "$pnn"
-}
+	# Failed, dump logs?
+	if $CTDB_TEST_PRINT_LOGS_ON_ERROR ; then
+		_print_logs
+	fi
 
-ctdb_stop_all ()
-{
-	$ctdb_local_daemons stop "all"
-}
-
-restart_ctdb_1 ()
-{
-	stop_ctdb_1 "$1"
-	start_ctdb_1 "$1"
+	# Next level up can log the error...
+	return 1
 }
 
 onnode ()
 {
 	$ctdb_local_daemons onnode "$@"
+}
+
+
+
+_print_logs ()
+{
+	echo "*** LOG START --------------------"
+	$ctdb_local_daemons print-log all | tail -n 500
+	echo "*** LOG END   --------------------"
 }
 
 _print_logs_on_test_failure ()
@@ -88,7 +91,5 @@ _print_logs_on_test_failure ()
 		return
 	fi
 
-	echo "*** LOG START --------------------"
-	$ctdb_local_daemons print-log all | tail -n 100
-	echo "*** LOG END   --------------------"
+	_print_logs
 }

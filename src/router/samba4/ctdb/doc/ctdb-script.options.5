@@ -2,12 +2,12 @@
 .\"     Title: ctdb-script.options
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 08/13/2020
+.\"      Date: 11/03/2020
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB\-SCRIPT\&.OPTIO" "5" "08/13/2020" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB\-SCRIPT\&.OPTIO" "5" "11/03/2020" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -356,6 +356,16 @@ FILENAME is the socket to monitor ClamAV\&.
 .sp
 No default\&.
 .RE
+.SS "48\&.netbios"
+.PP
+Provides CTDB\*(Aqs NetBIOS service management\&.
+.PP
+CTDB_SERVICE_NMB=\fISERVICE\fR
+.RS 4
+Distribution specific SERVICE for managing nmbd\&.
+.sp
+Default is distribution\-dependant\&.
+.RE
 .SS "49\&.winbind"
 .PP
 Provides CTDB\*(Aqs Samba winbind service management\&.
@@ -382,13 +392,6 @@ CTDB_SAMBA_SKIP_SHARE_CHECK=yes|no
 As part of monitoring, should CTDB skip the check for the existence of each directory configured as share in Samba\&. This may be desirable if there is a large number of shares\&.
 .sp
 Default is no\&.
-.RE
-.PP
-CTDB_SERVICE_NMB=\fISERVICE\fR
-.RS 4
-Distribution specific SERVICE for managing nmbd\&.
-.sp
-Default is distribution\-dependant\&.
 .RE
 .PP
 CTDB_SERVICE_SMB=\fISERVICE\fR

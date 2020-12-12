@@ -291,7 +291,15 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 	      FILENAME is the socket to monitor ClamAV.
 	    </p><p>
 	      No default.
-	    </p></dd></dl></div></div><div class="refsect2"><a name="idm222"></a><h3>49.winbind</h3><p>
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm222"></a><h3>48.netbios</h3><p>
+	Provides CTDB's NetBIOS service management.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+	    CTDB_SERVICE_NMB=<em class="parameter"><code>SERVICE</code></em>
+	  </span></dt><dd><p>
+	      Distribution specific SERVICE for managing nmbd.
+	    </p><p>
+	      Default is distribution-dependant.
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm232"></a><h3>49.winbind</h3><p>
 	Provides CTDB's Samba winbind service management.
       </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 	    CTDB_SERVICE_WINBIND=<em class="parameter"><code>SERVICE</code></em>
@@ -299,7 +307,7 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 	      Distribution specific SERVICE for managing winbindd.
 	    </p><p>
 	      Default is "winbind".
-	    </p></dd></dl></div></div><div class="refsect2"><a name="idm232"></a><h3>50.samba</h3><p>
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm242"></a><h3>50.samba</h3><p>
 	Provides the core of CTDB's Samba file service management.
       </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 	    CTDB_SAMBA_CHECK_PORTS=<em class="parameter"><code>PORT-LIST</code></em>
@@ -318,18 +326,12 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 	    </p><p>
 	      Default is no.
 	    </p></dd><dt><span class="term">
-	    CTDB_SERVICE_NMB=<em class="parameter"><code>SERVICE</code></em>
-	  </span></dt><dd><p>
-	      Distribution specific SERVICE for managing nmbd.
-	    </p><p>
-	      Default is distribution-dependant.
-	    </p></dd><dt><span class="term">
 	    CTDB_SERVICE_SMB=<em class="parameter"><code>SERVICE</code></em>
 	  </span></dt><dd><p>
 	      Distribution specific SERVICE for managing smbd.
 	    </p><p>
 	      Default is distribution-dependant.
-	    </p></dd></dl></div></div><div class="refsect2"><a name="idm259"></a><h3>60.nfs</h3><p>
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm263"></a><h3>60.nfs</h3><p>
 	This event script (along with 06.nfs) provides CTDB's NFS
 	service management.
       </p><p>
@@ -404,7 +406,7 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 	  </span></dt><dd><p>
 	      The directory where a clustered NFS' shared state will be
 	      located. No default.
-	    </p></dd></dl></div></div><div class="refsect2"><a name="idm316"></a><h3>70.iscsi</h3><p>
+	    </p></dd></dl></div></div><div class="refsect2"><a name="idm320"></a><h3>70.iscsi</h3><p>
 	Provides CTDB's Linux iSCSI tgtd service management.
       </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 	    CTDB_START_ISCSI_SCRIPTS=<em class="parameter"><code>DIRECTORY</code></em>
@@ -413,11 +415,11 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 	      tgtd for each public IP address.
 	    </p><p>
 	      No default.
-	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm326"></a><h2>
+	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm330"></a><h2>
       DATABASE SETUP
       </h2><p>
 	CTDB checks the consistency of databases during startup.
-      </p><div class="refsect2"><a name="idm329"></a><h3>00.ctdb</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">CTDB_MAX_CORRUPT_DB_BACKUPS=<em class="parameter"><code>NUM</code></em></span></dt><dd><p>
+      </p><div class="refsect2"><a name="idm333"></a><h3>00.ctdb</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">CTDB_MAX_CORRUPT_DB_BACKUPS=<em class="parameter"><code>NUM</code></em></span></dt><dd><p>
 		NUM is the maximum number of volatile TDB database
 		backups to be kept (for each database) when a corrupt
 		database is found during startup.  Volatile TDBs are
@@ -425,7 +427,7 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 		any corruption that occurs before a restart.
 	      </p><p>
 		Default is 10.
-	      </p></dd></dl></div></div></div><div class="refsect1"><a name="idm338"></a><h2>SYSTEM RESOURCE MONITORING</h2><div class="refsect2"><a name="idm340"></a><h3>
+	      </p></dd></dl></div></div></div><div class="refsect1"><a name="idm342"></a><h2>SYSTEM RESOURCE MONITORING</h2><div class="refsect2"><a name="idm344"></a><h3>
 	05.system
       </h3><p>
 	Provides CTDB's filesystem and memory usage monitoring.
@@ -470,7 +472,7 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 	    </p><p>
 	      Default is 80, so warnings will be logged when memory
 	      usage reaches 80%.
-	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm368"></a><h2>EVENT SCRIPT DEBUGGING</h2><div class="refsect2"><a name="idm370"></a><h3>
+	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm372"></a><h2>EVENT SCRIPT DEBUGGING</h2><div class="refsect2"><a name="idm374"></a><h3>
 	debug-hung-script.sh
       </h3><div class="variablelist"><dl class="variablelist"><dt><span class="term">CTDB_DEBUG_HUNG_SCRIPT_STACKPAT=<em class="parameter"><code>REGEXP</code></em></span></dt><dd><p>
 	      REGEXP specifies interesting processes for which stack
@@ -482,7 +484,7 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 	      [event] "debug script" option.
 	    </p><p>
 	      Default is "exportfs|rpcinfo".
-	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm382"></a><h2>FILES</h2><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="filename">/usr/local/etc/ctdb/script.options</code></td></tr></table></div><div class="refsect1"><a name="idm387"></a><h2>SEE ALSO</h2><p>
+	    </p></dd></dl></div></div></div><div class="refsect1"><a name="idm386"></a><h2>FILES</h2><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="filename">/usr/local/etc/ctdb/script.options</code></td></tr></table></div><div class="refsect1"><a name="idm391"></a><h2>SEE ALSO</h2><p>
       <span class="citerefentry"><span class="refentrytitle">ctdbd</span>(1)</span>,
 
       <span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>,

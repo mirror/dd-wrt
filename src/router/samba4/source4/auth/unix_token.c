@@ -136,40 +136,93 @@ NTSTATUS security_token_to_unix_token(TALLOC_CTX *mem_ctx,
 }
 
 /*
-  Fill in the auth_user_info_unix and auth_unix_token elements in a struct session_info
-*/
-NTSTATUS auth_session_info_fill_unix(struct loadparm_context *lp_ctx,
-				     const char *original_user_name,
-				     struct auth_session_info *session_info)
+ * Fill in the unix_info elements in a struct session_info
+ */
+NTSTATUS fill_unix_info(struct loadparm_context *lp_ctx,
+			const char *original_user_name,
+			struct auth_session_info *session_info)
 {
-	char *su;
-	size_t len;
-	NTSTATUS status = security_token_to_unix_token(session_info,
-						       session_info->security_token,
-						       &session_info->unix_token);
-	if (!NT_STATUS_IS_OK(status)) {
-		return status;
-	}
-
-	session_info->unix_info = talloc_zero(session_info, struct auth_user_info_unix);
+	session_info->unix_info = talloc_zero(session_info,
+					      struct auth_user_info_unix);
 	NT_STATUS_HAVE_NO_MEMORY(session_info->unix_info);
 
-	session_info->unix_info->unix_name = talloc_asprintf(session_info->unix_info,
-							     "%s%s%s", session_info->info->domain_name,
-							     lpcfg_winbind_separator(lp_ctx),
-							     session_info->info->account_name);
+	session_info->unix_info->unix_name =
+		talloc_asprintf(session_info->unix_info,
+				"%s%s%s", session_info->info->domain_name,
+				lpcfg_winbind_separator(lp_ctx),
+				session_info->info->account_name);
 	NT_STATUS_HAVE_NO_MEMORY(session_info->unix_info->unix_name);
 
 	if (original_user_name == NULL) {
 		original_user_name = session_info->unix_info->unix_name;
 	}
 
-	len = strlen(original_user_name) + 1;
-	session_info->unix_info->sanitized_username = su = talloc_array(session_info->unix_info, char, len);
-	NT_STATUS_HAVE_NO_MEMORY(su);
+	session_info->unix_info->sanitized_username =
+		talloc_alpha_strcpy(session_info->unix_info,
+				    original_user_name,
+				    ". _-$");
+	NT_STATUS_HAVE_NO_MEMORY(session_info->unix_info->sanitized_username);
 
-	alpha_strcpy(su, original_user_name,
-		     ". _-$", len);
+	return NT_STATUS_OK;
+}
+
+/*
+  Fill in the auth_user_info_unix and auth_unix_token elements in a struct session_info
+*/
+NTSTATUS auth_session_info_fill_unix(struct loadparm_context *lp_ctx,
+				     const char *original_user_name,
+				     struct auth_session_info *session_info)
+{
+	NTSTATUS status = NT_STATUS_OK;
+
+	status = security_token_to_unix_token(session_info,
+					      session_info->security_token,
+					      &session_info->unix_token);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	status = fill_unix_info(lp_ctx,
+				original_user_name,
+				session_info);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	return NT_STATUS_OK;
+}
+
+/*
+ * Set the given auth_user_info_unix and auth_unix_token elements in a
+ * struct session_info, similar auth_session_info_fill_unix().
+ * Receives the uid and gid for the unix token as parameters and does
+ * not query the unix token from winbind (via security_token_to_unix_token()).
+ * This is useful to fill a user session info manually if winbind is not
+ * available.
+ */
+NTSTATUS auth_session_info_set_unix(struct loadparm_context *lp_ctx,
+				    const char *original_user_name,
+				    int uid,
+				    int gid,
+				    struct auth_session_info *session_info)
+{
+	NTSTATUS status;
+
+	session_info->unix_token = talloc_zero(session_info,
+					       struct security_unix_token);
+	if (session_info->unix_token == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	session_info->unix_token->uid = uid;
+	session_info->unix_token->gid = gid;
+
+	status = fill_unix_info(lp_ctx,
+				original_user_name,
+				session_info);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
 
 	return NT_STATUS_OK;
 }

@@ -177,12 +177,12 @@ static int commit_connect(
         return 0;
 }
 
-static int commit_open(
-	vfs_handle_struct * handle,
-	struct smb_filename *smb_fname,
-	files_struct *	    fsp,
-	int		    flags,
-	mode_t		    mode)
+static int commit_openat(struct vfs_handle_struct *handle,
+			 const struct files_struct *dirfsp,
+			 const struct smb_filename *smb_fname,
+			 files_struct *fsp,
+			 int flags,
+			 mode_t mode)
 {
         off_t dthresh;
 	const char *eof_mode;
@@ -191,7 +191,12 @@ static int commit_open(
 
         /* Don't bother with read-only files. */
         if ((flags & O_ACCMODE) == O_RDONLY) {
-                return SMB_VFS_NEXT_OPEN(handle, smb_fname, fsp, flags, mode);
+                return SMB_VFS_NEXT_OPENAT(handle,
+					   dirfsp,
+					   smb_fname,
+					   fsp,
+					   flags,
+					   mode);
         }
 
         /* Read and check module configuration */
@@ -221,7 +226,7 @@ static int commit_open(
                 }
         }
 
-        fd = SMB_VFS_NEXT_OPEN(handle, smb_fname, fsp, flags, mode);
+        fd = SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, flags, mode);
 	if (fd == -1) {
 		VFS_REMOVE_FSP_EXTENSION(handle, fsp);
 		return fd;
@@ -375,7 +380,7 @@ static int commit_ftruncate(
 }
 
 static struct vfs_fn_pointers vfs_commit_fns = {
-        .open_fn = commit_open,
+        .openat_fn = commit_openat,
         .close_fn = commit_close,
         .pwrite_fn = commit_pwrite,
         .pwrite_send_fn = commit_pwrite_send,

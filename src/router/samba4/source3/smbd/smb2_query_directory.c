@@ -293,7 +293,7 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	if (!fsp->is_directory) {
+	if (!fsp->fsp_flags.is_directory) {
 		tevent_req_nterror(req, NT_STATUS_NOT_SUPPORTED);
 		return tevent_req_post(req, ev);
 	}
@@ -386,7 +386,7 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 #ifdef O_DIRECTORY
 		flags |= O_DIRECTORY;
 #endif
-		status = fd_open(conn, fsp, flags, 0);
+		status = fd_open(fsp, flags, 0);
 		if (tevent_req_nterror(req, status)) {
 			return tevent_req_post(req, ev);
 		}
@@ -402,8 +402,7 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 		const char *fullpath;
 		char tmpbuf[PATH_MAX];
 		char *to_free = NULL;
-		uint32_t ucf_flags = UCF_SAVE_LCOMP |
-				     UCF_ALWAYS_ALLOW_WCARD_LCOMP |
+		uint32_t ucf_flags = UCF_ALWAYS_ALLOW_WCARD_LCOMP |
 				     (state->smbreq->posix_pathnames ?
 					UCF_POSIX_PATHNAMES : 0);
 
@@ -426,7 +425,7 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 				conn,
 				fullpath,
 				ucf_flags,
-				NULL,
+				0,
 				&wcard_has_wild,
 				&smb_fname);
 
@@ -436,7 +435,20 @@ static struct tevent_req *smbd_smb2_query_directory_send(TALLOC_CTX *mem_ctx,
 			return tevent_req_post(req, ev);
 		}
 
-		state->in_file_name = smb_fname->original_lcomp;
+		/*
+		 * We still need to do the case processing
+		 * to save off the client-supplied last component.
+		 * At least we know there's no @GMT normalization
+		 * or MS-DFS paths to do in a directory mask.
+		 */
+		state->in_file_name = get_original_lcomp(state,
+						conn,
+						state->in_file_name,
+						0);
+		if (state->in_file_name == NULL) {
+			tevent_req_oom(req);
+			return tevent_req_post(req, ev);
+		}
 	}
 
 	if (fsp->dptr == NULL) {

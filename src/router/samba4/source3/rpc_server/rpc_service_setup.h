@@ -22,16 +22,33 @@
 #ifndef _RPC_EP_SETUP_H
 #define _RPC_EP_SETUP_H
 
-struct ndr_interface_table;
-struct rpc_srv_callbacks;
+#include "rpc_server/rpc_server.h"
 
-NTSTATUS dcesrv_ep_setup(struct tevent_context *ev_ctx,
-			 struct messaging_context *msg_ctx);
+struct pf_listen_fd;
+
+NTSTATUS dcesrv_init(TALLOC_CTX *mem_ctx,
+		     struct tevent_context *ev_ctx,
+		     struct messaging_context *msg_ctx,
+		     struct dcesrv_context *dce_ctx);
+
+NTSTATUS dcesrv_setup_endpoint_sockets(struct tevent_context *ev_ctx,
+				       struct messaging_context *msg_ctx,
+				       struct dcesrv_context *dce_ctx,
+				       struct dcesrv_endpoint *e,
+				       dcerpc_ncacn_termination_fn term_fn,
+				       void *term_data);
+
+NTSTATUS dcesrv_create_endpoint_sockets(struct tevent_context *ev_ctx,
+					struct messaging_context *msg_ctx,
+					struct dcesrv_context *dce_ctx,
+					struct dcesrv_endpoint *e,
+					struct pf_listen_fd *listen_fds,
+					int *listen_fds_size);
 
 NTSTATUS rpc_setup_embedded(struct tevent_context *ev_ctx,
 			    struct messaging_context *msg_ctx,
-			    const struct ndr_interface_table *t,
-			    const char *pipe_name);
+			    struct dcesrv_context *dce_ctx,
+			    const struct dcesrv_interface *iface);
 
 #endif /* _RPC_EP_SETUP_H */
 

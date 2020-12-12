@@ -79,8 +79,8 @@ static bool PyObject_AsDestinationTuple(PyObject *obj, const char **dest_addr, u
 		if (PyTuple_Size(obj) == 1) {
 			*dest_port = NBT_NAME_SERVICE_PORT;
 			return true;
-		} else if (PyInt_Check(PyTuple_GetItem(obj, 1))) {
-			*dest_port = PyInt_AsLong(PyTuple_GetItem(obj, 1));
+		} else if (PyLong_Check(PyTuple_GetItem(obj, 1))) {
+			*dest_port = PyLong_AsLong(PyTuple_GetItem(obj, 1));
 			return true;
 		} else {
 			PyErr_SetString(PyExc_TypeError, "Destination tuple second element not a port");
@@ -100,7 +100,7 @@ static bool PyObject_AsNBTName(PyObject *obj, struct nbt_name_socket *name_socke
 			if (name->name == NULL) {
 				goto err;
 			}
-			name->type = PyInt_AsLong(PyTuple_GetItem(obj, 1));
+			name->type = PyLong_AsLong(PyTuple_GetItem(obj, 1));
 			if (name->type == -1 && PyErr_Occurred()) {
 				goto err;
 			}
@@ -115,7 +115,7 @@ static bool PyObject_AsNBTName(PyObject *obj, struct nbt_name_socket *name_socke
 			if (name->scope == NULL) {
 				goto err;
 			}
-			name->type = PyInt_AsLong(PyTuple_GetItem(obj, 2));
+			name->type = PyLong_AsLong(PyTuple_GetItem(obj, 2));
 			if (name->type == -1 && PyErr_Occurred()) {
 				goto err;
 			}
@@ -322,7 +322,7 @@ static PyObject *py_nbt_name_register(PyObject *self, PyObject *args, PyObject *
 
 	PyTuple_SetItem(ret, 2, PyUnicode_FromString(io.out.reply_addr));
 
-	PyTuple_SetItem(ret, 3, PyInt_FromLong(io.out.rcode));
+	PyTuple_SetItem(ret, 3, PyLong_FromLong(io.out.rcode));
 
 	return ret;
 }
@@ -378,7 +378,7 @@ static PyObject *py_nbt_name_refresh(PyObject *self, PyObject *args, PyObject *k
 
 	PyTuple_SetItem(ret, 2, PyUnicode_FromString(io.out.reply_addr));
 
-	PyTuple_SetItem(ret, 3, PyInt_FromLong(io.out.rcode));
+	PyTuple_SetItem(ret, 3, PyLong_FromLong(io.out.rcode));
 
 	return ret;
 }
@@ -409,7 +409,7 @@ static PyMethodDef py_nbt_methods[] = {
 		"S.name_status(name, dest, timeout=0, retries=0) -> (reply_from, name, status)\n"
 		"Find the status of a name" },
 
-	{ NULL }
+	{0}
 };
 
 PyTypeObject nbt_node_Type = {

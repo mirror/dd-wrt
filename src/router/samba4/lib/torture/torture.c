@@ -54,6 +54,11 @@ struct torture_context *torture_context_init(struct tevent_context *event_ctx,
 	torture->ev = event_ctx;
 	torture->results = talloc_reference(torture, results);
 
+	/*
+	 * We start with an empty subunit prefix
+	 */
+	torture_subunit_prefix_reset(torture, NULL);
+
 	return torture;
 }
 
@@ -297,6 +302,7 @@ bool torture_suite_init_tcase(struct torture_suite *suite,
 	tcase->tests = NULL;
 
 	DLIST_ADD_END(suite->testcases, tcase);
+	tcase->suite = suite;
 
 	return true;
 }
@@ -311,6 +317,75 @@ struct torture_tcase *torture_suite_add_tcase(struct torture_suite *suite,
 		return NULL;
 
 	return tcase;
+}
+
+char *torture_subunit_test_name(struct torture_context *ctx,
+				struct torture_tcase *tcase,
+				struct torture_test *test)
+{
+	if (!strcmp(tcase->name, test->name)) {
+		return talloc_asprintf(ctx, "%s%s",
+				ctx->active_prefix->subunit_prefix,
+				test->name);
+	} else {
+		return talloc_asprintf(ctx, "%s%s.%s",
+				ctx->active_prefix->subunit_prefix,
+				tcase->name, test->name);
+	}
+}
+
+void torture_subunit_prefix_reset(struct torture_context *ctx,
+				  const char *name)
+{
+	struct torture_subunit_prefix *prefix = &ctx->_initial_prefix;
+
+	ZERO_STRUCTP(prefix);
+
+	if (name != NULL) {
+		int ret;
+
+		ret = snprintf(prefix->subunit_prefix,
+			       sizeof(prefix->subunit_prefix),
+			       "%s.", name);
+		if (ret < 0) {
+			abort();
+		}
+	}
+
+	ctx->active_prefix = prefix;
+}
+
+static void torture_subunit_prefix_push(struct torture_context *ctx,
+					struct torture_subunit_prefix *prefix,
+					const char *name)
+{
+	*prefix = (struct torture_subunit_prefix) {
+		.parent = ctx->active_prefix,
+	};
+
+	if (ctx->active_prefix->parent != NULL ||
+	    ctx->active_prefix->subunit_prefix[0] != '\0') {
+		/*
+		 * We need a new component for the prefix.
+		 */
+		int ret;
+
+		ret = snprintf(prefix->subunit_prefix,
+			       sizeof(prefix->subunit_prefix),
+			       "%s%s.",
+			       ctx->active_prefix->subunit_prefix,
+			       name);
+		if (ret < 0) {
+			abort();
+		}
+	}
+
+	ctx->active_prefix = prefix;
+}
+
+static void torture_subunit_prefix_pop(struct torture_context *ctx)
+{
+	ctx->active_prefix = ctx->active_prefix->parent;
 }
 
 int torture_suite_children_count(const struct torture_suite *suite)
@@ -342,9 +417,12 @@ bool torture_run_suite(struct torture_context *context,
 bool torture_run_suite_restricted(struct torture_context *context, 
 		       struct torture_suite *suite, const char **restricted)
 {
+	struct torture_subunit_prefix _prefix_stack;
 	bool ret = true;
 	struct torture_tcase *tcase;
 	struct torture_suite *tsuite;
+
+	torture_subunit_prefix_push(context, &_prefix_stack, suite->name);
 
 	if (context->results->ui_ops->suite_start)
 		context->results->ui_ops->suite_start(context, suite);
@@ -365,6 +443,8 @@ bool torture_run_suite_restricted(struct torture_context *context,
 
 	if (context->results->ui_ops->suite_finish)
 		context->results->ui_ops->suite_finish(context, suite);
+
+	torture_subunit_prefix_pop(context);
 
 	return ret;
 }
@@ -407,13 +487,7 @@ static bool internal_torture_run_test(struct torture_context *context,
 					  const char **restricted)
 {
 	bool success;
-	char *subunit_testname = NULL;
-
-	if (tcase == NULL || strcmp(test->name, tcase->name) != 0) {
-		subunit_testname = talloc_asprintf(context, "%s.%s", tcase->name, test->name);
-	} else {
-		subunit_testname = talloc_strdup(context, test->name);
-	}
+	char *subunit_testname = torture_subunit_test_name(context, tcase, test);
 
 	if (!test_needs_running(subunit_testname, restricted))
 		return true;
@@ -618,6 +692,7 @@ struct torture_tcase *torture_suite_add_simple_tcase_const(
 	test->dangerous = false;
 
 	DLIST_ADD_END(tcase->tests, test);
+	test->tcase = tcase;
 
 	return tcase;
 }
@@ -666,6 +741,7 @@ bool torture_suite_add_suite(struct torture_suite *suite,
 		return false;
 
 	DLIST_ADD_END(suite->children, child);
+	child->parent = suite;
 
 	/* FIXME: Check for duplicates and return false if the 
 	 * added suite already exists as a child */

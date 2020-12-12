@@ -61,10 +61,12 @@ struct ldapsrv_connection {
 		int max_notifications;
 		int search_timeout;
 		struct timeval endtime;
+		struct timeval expire_time; /* Krb5 ticket expiry */
 		const char *reason;
 	} limits;
 
 	struct tevent_req *active_call;
+	struct tevent_req *deferred_expire_disconnect;
 
 	struct ldapsrv_call *pending_calls;
 };

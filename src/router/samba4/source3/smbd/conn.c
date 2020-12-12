@@ -84,15 +84,19 @@ connection_struct *conn_new(struct smbd_server_connection *sconn)
 		TALLOC_FREE(conn);
 		return NULL;
 	}
-	conn->origpath = talloc_strdup(conn, "");
-	if (conn->origpath == NULL) {
+	conn->cwd_fsp = talloc_zero(conn, struct files_struct);
+	if (conn->cwd_fsp == NULL) {
 		DBG_ERR("talloc_zero failed\n");
 		TALLOC_FREE(conn);
 		return NULL;
 	}
-	conn->cwd_fsp = talloc_zero(conn, struct files_struct);
-	if (conn->cwd_fsp == NULL) {
-		DBG_ERR("talloc_zero failed\n");
+	conn->cwd_fsp->fsp_name = synthetic_smb_fname(conn->cwd_fsp,
+						      ".",
+						      NULL,
+						      NULL,
+						      0,
+						      0);
+	if (conn->cwd_fsp->fsp_name == NULL) {
 		TALLOC_FREE(conn);
 		return NULL;
 	}

@@ -72,6 +72,7 @@
 #include "libds/common/roles.h"
 #include "lib/util/samba_util.h"
 #include "libcli/auth/ntlm_check.h"
+#include "lib/crypto/gnutls_helpers.h"
 
 #ifdef HAVE_HTTPCONNECTENCRYPT
 #include <cups/http.h>
@@ -94,6 +95,19 @@ int lpcfg_rpc_low_port(struct loadparm_context *lp_ctx)
 int lpcfg_rpc_high_port(struct loadparm_context *lp_ctx)
 {
 	return lp_ctx->globals->rpc_high_port;
+}
+
+enum samba_weak_crypto lpcfg_weak_crypto(struct loadparm_context *lp_ctx)
+{
+	if (lp_ctx->globals->weak_crypto == SAMBA_WEAK_CRYPTO_UNKNOWN) {
+		lp_ctx->globals->weak_crypto = SAMBA_WEAK_CRYPTO_DISALLOWED;
+
+		if (samba_gnutls_weak_crypto_allowed()) {
+			lp_ctx->globals->weak_crypto = SAMBA_WEAK_CRYPTO_ALLOWED;
+		}
+	}
+
+	return lp_ctx->globals->weak_crypto;
 }
 
 /**
@@ -1849,8 +1863,15 @@ bool lpcfg_do_global_parameter(struct loadparm_context *lp_ctx,
 	}
 
 	if (parm_table[parmnum].flags & FLAG_DEPRECATED) {
-		DEBUG(1, ("WARNING: The \"%s\" option is deprecated\n",
-			  pszParmName));
+		char *suppress_env = getenv("SAMBA_DEPRECATED_SUPPRESS");
+		bool print_warning = (suppress_env == NULL
+				      || suppress_env[0] == '\0');
+		if (print_warning) {
+			DBG_WARNING("WARNING: The \"%s\" option "
+				    "is deprecated\n",
+				    pszParmName);
+
+		}
 	}
 
 	parm_ptr = lpcfg_parm_ptr(lp_ctx, NULL, &parm_table[parmnum]);
@@ -1882,8 +1903,15 @@ bool lpcfg_do_service_parameter(struct loadparm_context *lp_ctx,
 	}
 
 	if (parm_table[parmnum].flags & FLAG_DEPRECATED) {
-		DEBUG(1, ("WARNING: The \"%s\" option is deprecated\n",
-			  pszParmName));
+		char *suppress_env = getenv("SAMBA_DEPRECATED_SUPPRESS");
+		bool print_warning = (suppress_env == NULL
+				      || suppress_env[0] == '\0');
+		if (print_warning) {
+			DBG_WARNING("WARNING: The \"%s\" option "
+				    "is deprecated\n",
+				    pszParmName);
+
+		}
 	}
 
 	if (parm_table[parmnum].p_class == P_GLOBAL) {
@@ -2607,6 +2635,7 @@ struct loadparm_context *loadparm_init(TALLOC_CTX *mem_ctx)
 	lp_ctx->globals->ctx = lp_ctx->globals;
 	lp_ctx->globals->rpc_low_port = SERVER_TCP_LOW_PORT;
 	lp_ctx->globals->rpc_high_port = SERVER_TCP_HIGH_PORT;
+	lp_ctx->globals->weak_crypto = SAMBA_WEAK_CRYPTO_UNKNOWN;
 	lp_ctx->sDefault = talloc_zero(lp_ctx, struct loadparm_service);
 	lp_ctx->flags = talloc_zero_array(lp_ctx, unsigned int, num_parameters());
 
@@ -2803,7 +2832,9 @@ struct loadparm_context *loadparm_init(TALLOC_CTX *mem_ctx)
 	lpcfg_do_global_parameter(lp_ctx, "tls keyfile", "tls/key.pem");
 	lpcfg_do_global_parameter(lp_ctx, "tls certfile", "tls/cert.pem");
 	lpcfg_do_global_parameter(lp_ctx, "tls cafile", "tls/ca.pem");
-	lpcfg_do_global_parameter(lp_ctx, "tls priority", "NORMAL:-VERS-SSL3.0");
+	lpcfg_do_global_parameter(lp_ctx,
+				  "tls priority",
+				  "NORMAL:-VERS-SSL3.0");
 
 	lpcfg_do_global_parameter(lp_ctx, "nsupdate command", "/usr/bin/nsupdate -g");
 
@@ -3214,9 +3245,12 @@ static bool lpcfg_load_internal(struct loadparm_context *lp_ctx,
 	char *n2;
 	bool bRetval;
 
-	filename = talloc_strdup(lp_ctx, filename);
+	if (lp_ctx->szConfigFile != NULL) {
+		talloc_free(discard_const_p(char, lp_ctx->szConfigFile));
+		lp_ctx->szConfigFile = NULL;
+	}
 
-	lp_ctx->szConfigFile = filename;
+	lp_ctx->szConfigFile = talloc_strdup(lp_ctx, filename);
 
 	if (lp_ctx->s3_fns) {
 		return lp_ctx->s3_fns->load(filename);

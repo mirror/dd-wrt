@@ -84,17 +84,6 @@ static uint32_t filter_mode_by_protocol(uint32_t mode)
 	return mode;
 }
 
-static int set_link_read_only_flag(const SMB_STRUCT_STAT *const sbuf)
-{
-#ifdef S_ISLNK
-#if LINKS_READ_ONLY
-	if (S_ISLNK(sbuf->st_mode) && S_ISDIR(sbuf->st_mode))
-		return FILE_ATTRIBUTE_READONLY;
-#endif
-#endif
-	return 0;
-}
-
 /****************************************************************************
  Change a dos mode to a unix mode.
     Base permission for files:
@@ -120,7 +109,7 @@ static int set_link_read_only_flag(const SMB_STRUCT_STAT *const sbuf)
 
 mode_t unix_mode(connection_struct *conn, int dosmode,
 		 const struct smb_filename *smb_fname,
-		 const char *inherit_from_dir)
+		 struct smb_filename *smb_fname_parent)
 {
 	mode_t result = (S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR | S_IWGRP | S_IWOTH);
 	mode_t dir_mode = 0; /* Mode of the inherit_from directory if
@@ -130,30 +119,15 @@ mode_t unix_mode(connection_struct *conn, int dosmode,
 		result &= ~(S_IWUSR | S_IWGRP | S_IWOTH);
 	}
 
-	if ((inherit_from_dir != NULL) && lp_inherit_permissions(SNUM(conn))) {
-		struct smb_filename *smb_fname_parent;
-
-		DEBUG(2, ("unix_mode(%s) inheriting from %s\n",
+	if ((smb_fname_parent != NULL) && lp_inherit_permissions(SNUM(conn))) {
+		DBG_DEBUG("[%s] inheriting from [%s]\n",
 			  smb_fname_str_dbg(smb_fname),
-			  inherit_from_dir));
-
-		smb_fname_parent = synthetic_smb_fname(talloc_tos(),
-					inherit_from_dir,
-					NULL,
-					NULL,
-					smb_fname->flags);
-		if (smb_fname_parent == NULL) {
-			DEBUG(1,("unix_mode(%s) failed, [dir %s]: No memory\n",
-				 smb_fname_str_dbg(smb_fname),
-				 inherit_from_dir));
-			return(0);
-		}
+			  smb_fname_str_dbg(smb_fname_parent));
 
 		if (SMB_VFS_STAT(conn, smb_fname_parent) != 0) {
-			DEBUG(4,("unix_mode(%s) failed, [dir %s]: %s\n",
-				 smb_fname_str_dbg(smb_fname),
-				 inherit_from_dir, strerror(errno)));
-			TALLOC_FREE(smb_fname_parent);
+			DBG_ERR("stat failed [%s]: %s\n",
+				smb_fname_str_dbg(smb_fname_parent),
+				strerror(errno));
 			return(0);      /* *** shouldn't happen! *** */
 		}
 
@@ -163,7 +137,6 @@ mode_t unix_mode(connection_struct *conn, int dosmode,
 			 smb_fname_str_dbg(smb_fname), (int)dir_mode));
 		/* Clear "result" */
 		result = 0;
-		TALLOC_FREE(smb_fname_parent);
 	} 
 
 	if (IS_DOS_DIR(dosmode)) {
@@ -233,7 +206,10 @@ static uint32_t dos_mode_from_sbuf(connection_struct *conn,
 		}
 	} else if (ro_opts == MAP_READONLY_PERMISSIONS) {
 		/* Check actual permissions for read-only. */
-		if (!can_write_to_file(conn, smb_fname)) {
+		if (!can_write_to_file(conn,
+				conn->cwd_fsp,
+				smb_fname))
+		{
 			result |= FILE_ATTRIBUTE_READONLY;
 		}
 	} /* Else never set the readonly bit. */
@@ -249,8 +225,6 @@ static uint32_t dos_mode_from_sbuf(connection_struct *conn,
 
 	if (S_ISDIR(smb_fname->st.st_ex_mode))
 		result = FILE_ATTRIBUTE_DIRECTORY | (result & FILE_ATTRIBUTE_READONLY);
-
-	result |= set_link_read_only_flag(&smb_fname->st);
 
 	dos_mode_debug_print(__func__, result);
 
@@ -546,14 +520,19 @@ NTSTATUS set_ea_dos_attribute(connection_struct *conn,
 			return NT_STATUS_ACCESS_DENIED;
 		}
 
-		status = smbd_check_access_rights(conn, smb_fname, false,
-						  FILE_WRITE_ATTRIBUTES);
+		status = smbd_check_access_rights(conn,
+					conn->cwd_fsp,
+					smb_fname,
+					false,
+					FILE_WRITE_ATTRIBUTES);
 		if (NT_STATUS_IS_OK(status)) {
 			set_dosmode_ok = true;
 		}
 
 		if (!set_dosmode_ok && lp_dos_filemode(SNUM(conn))) {
-			set_dosmode_ok = can_write_to_file(conn, smb_fname);
+			set_dosmode_ok = can_write_to_file(conn,
+						conn->cwd_fsp,
+						smb_fname);
 		}
 
 		if (!set_dosmode_ok) {
@@ -916,6 +895,7 @@ static void dos_mode_at_vfs_get_dosmode_done(struct tevent_req *subreq)
 				       path,
 				       NULL,
 				       &state->smb_fname->st,
+				       state->smb_fname->twrp,
 				       0);
 	if (tevent_req_nomem(smb_path, req)) {
 		return;
@@ -950,8 +930,11 @@ NTSTATUS dos_mode_at_recv(struct tevent_req *req, uint32_t *dosmode)
  attribute also.
 ********************************************************************/
 
-int file_set_dosmode(connection_struct *conn, struct smb_filename *smb_fname,
-		     uint32_t dosmode, const char *parent_dir, bool newfile)
+int file_set_dosmode(connection_struct *conn,
+		     struct smb_filename *smb_fname,
+		     uint32_t dosmode,
+		     struct smb_filename *parent_dir,
+		     bool newfile)
 {
 	int mask=0;
 	mode_t tmp;
@@ -1080,7 +1063,10 @@ int file_set_dosmode(connection_struct *conn, struct smb_filename *smb_fname,
 		bits on a file. Just like file_ntimes below.
 	*/
 
-	if (!can_write_to_file(conn, smb_fname)) {
+	if (!can_write_to_file(conn,
+			conn->cwd_fsp,
+			smb_fname))
+	{
 		errno = EACCES;
 		return -1;
 	}
@@ -1152,7 +1138,7 @@ NTSTATUS file_set_sparse(connection_struct *conn,
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
-	if (fsp->is_directory) {
+	if (fsp->fsp_flags.is_directory) {
 		DEBUG(9, ("invalid attempt to %s sparse flag on dir %s\n",
 			  (sparse ? "set" : "clear"),
 			  smb_fname_str_dbg(fsp->fsp_name)));
@@ -1197,7 +1183,7 @@ NTSTATUS file_set_sparse(connection_struct *conn,
 		     FILE_NOTIFY_CHANGE_ATTRIBUTES,
 		     fsp->fsp_name->base_name);
 
-	fsp->is_sparse = sparse;
+	fsp->fsp_flags.is_sparse = sparse;
 
 	return NT_STATUS_OK;
 }
@@ -1253,7 +1239,10 @@ int file_ntimes(connection_struct *conn, const struct smb_filename *smb_fname,
 	 */
 
 	/* Check if we have write access. */
-	if (can_write_to_file(conn, smb_fname)) {
+	if (can_write_to_file(conn,
+			conn->cwd_fsp,
+			smb_fname))
+	{
 		/* We are allowed to become root and change the filetime. */
 		become_root();
 		ret = SMB_VFS_NTIMES(conn, smb_fname, ft);
@@ -1292,7 +1281,7 @@ bool set_sticky_write_time_fsp(struct files_struct *fsp, struct timespec mtime)
 		return true;
 	}
 
-	fsp->write_time_forced = true;
+	fsp->fsp_flags.write_time_forced = true;
 	TALLOC_FREE(fsp->update_write_time_event);
 
 	return set_sticky_write_time_path(fsp->file_id, mtime);
@@ -1318,6 +1307,7 @@ NTSTATUS set_create_timespec_ea(connection_struct *conn,
 					psmb_fname->base_name,
 					NULL,
 					&psmb_fname->st,
+					psmb_fname->twrp,
 					psmb_fname->flags);
 
 	if (smb_fname == NULL) {
@@ -1405,7 +1395,7 @@ static NTSTATUS get_file_handle_for_metadata(connection_struct *conn,
 	status = SMB_VFS_CREATE_FILE(
 		conn,                                   /* conn */
 		NULL,                                   /* req */
-		0,                                      /* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname_cp,				/* fname */
 		FILE_WRITE_ATTRIBUTES,			/* access_mask */
 		(FILE_SHARE_READ | FILE_SHARE_WRITE |   /* share_access */

@@ -213,6 +213,10 @@ struct smb2_create_blob *smb2_create_blob_find(const struct smb2_create_blobs *b
 {
 	uint32_t i;
 
+	if (b == NULL) {
+		return NULL;
+	}
+
 	for (i=0; i < b->num_blobs; i++) {
 		if (strcmp(b->blobs[i].tag, tag) == 0) {
 			return &b->blobs[i];
@@ -220,4 +224,19 @@ struct smb2_create_blob *smb2_create_blob_find(const struct smb2_create_blobs *b
 	}
 
 	return NULL;
+}
+
+void smb2_create_blob_remove(struct smb2_create_blobs *b, const char *tag)
+{
+	struct smb2_create_blob *blob = smb2_create_blob_find(b, tag);
+
+	if (blob == NULL) {
+		return;
+	}
+
+	TALLOC_FREE(blob->tag);
+	data_blob_free(&blob->data);
+
+	*blob = b->blobs[b->num_blobs-1];
+	b->num_blobs -= 1;
 }

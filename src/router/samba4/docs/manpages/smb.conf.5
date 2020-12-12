@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 08/13/2020
+.\"      Date: 11/03/2020
 .\"    Manual: File Formats and Conventions
-.\"    Source: Samba 4.12.6
+.\"    Source: Samba 4.13.2
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "08/13/2020" "Samba 4\&.12\&.6" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "11/03/2020" "Samba 4\&.13\&.2" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,6 +36,44 @@ smb\&.conf
 file is a configuration file for the Samba suite\&.
 smb\&.conf
 contains runtime configuration information for the Samba programs\&. The complete description of the file format and possible parameters held within are here for reference purposes\&.
+.SH "HOW CONFIGURATION CHANGES ARE APPLIED"
+.PP
+The Samba suite includes a number of different programs\&. Some of them operate in a client mode, others are server daemons that provide various services to its clients\&. The
+smb\&.conf
+file is processed in the following way:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The Samba suite\*(Aqs client applications read their configuration only once\&. Any changes made after start aren\*(Aqt reflected in the context of already running client code\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The Samba suite\*(Aqs server daemons reload their configuration when requested\&. However, already active connections do not change their configuration\&. More detailed information can be found in
+\fBsmbd\fR(8)
+and
+\fBwinbindd\fR(8)
+manual pages\&.
+.RE
+.sp
+.RE
+.PP
+To request Samba server daemons to refresh their configuration, please use
+\fBsmbcontrol\fR(1)
+utility\&.
 .SH "FILE FORMAT"
 .PP
 The file consists of sections and parameters\&. A section begins with the name of the section in square brackets and continues until the next section begins\&. Sections contain parameters of the form:
@@ -1988,6 +2026,12 @@ Default:
 client lanman auth (G)
 .PP
 .RS 4
+This parameter has been deprecated since Samba 4\&.13 and support for LanMan (as distinct from NTLM, NTLMv2 or Kerberos) authentication as a client will be removed in a future Samba release\&.
+.sp
+That is, in the future, the current default of
+client NTLMv2 auth = yes
+will be the enforced behaviour\&.
+.sp
 This parameter determines whether or not
 \fBsmbclient\fR(8)
 and other samba client tools will attempt to authenticate itself to servers using the weaker LANMAN password hash\&. If disabled, only server which support NT password hashes (e\&.g\&. Windows NT/2000, Samba, etc\&.\&.\&. but not Windows 95/98) will be able to be connected from the Samba client\&.
@@ -2268,6 +2312,12 @@ Example:
 client NTLMv2 auth (G)
 .PP
 .RS 4
+This parameter has been deprecated since Samba 4\&.13 and support for NTLM and LanMan (as distinct from NTLMv2 or Kerberos authentication) will be removed in a future Samba release\&.
+.sp
+That is, in the future, the current default of
+client NTLMv2 auth = yes
+will be the enforced behaviour\&.
+.sp
 This parameter determines whether or not
 \fBsmbclient\fR(8)
 will attempt to authenticate itself to servers using the NTLMv2 encrypted password response\&.
@@ -2298,6 +2348,12 @@ Default:
 client plaintext auth (G)
 .PP
 .RS 4
+This parameter has been deprecated since Samba 4\&.13 and support for plaintext (as distinct from NTLM, NTLMv2 or Kerberos authentication) will be removed in a future Samba release\&.
+.sp
+That is, in the future, the current default of
+client plaintext auth = no
+will be the enforced behaviour\&.
+.sp
 Specifies whether a client should send a plaintext password if the server does not support encrypted passwords\&.
 .sp
 Default:
@@ -2376,6 +2432,12 @@ Default:
 client use spnego (G)
 .PP
 .RS 4
+This parameter has been deprecated since Samba 4\&.13 and support for NTLMv2, NTLM and LanMan authentication outside NTLMSSP will be removed in a future Samba release\&.
+.sp
+That is, in the future, the current default of
+client use spnego = yes
+will be the enforced behaviour\&.
+.sp
 This variable controls whether Samba clients will try to use Simple and Protected NEGOciation (as specified by rfc2478) with supporting servers (including WindowsXP, Windows2000 and Samba 3\&.0) to agree upon an authentication mechanism\&. This enables Kerberos authentication in particular\&.
 .sp
 When
@@ -3323,6 +3385,12 @@ Default:
 domain logons (G)
 .PP
 .RS 4
+This parameter has been deprecated since Samba 4\&.13 and support for NT4\-style domain logons(as distinct from the Samba AD DC) will be removed in a future Samba release\&.
+.sp
+That is, in the future, the current default of
+domain logons = no
+will be the enforced behaviour\&.
+.sp
 If set to
 \fByes\fR, the Samba server will provide the netlogon service for Windows 9X network logons for the
 \m[blue]\fBworkgroup\fR\m[]
@@ -4886,19 +4954,36 @@ The "IP" parameters above can either be a full dotted decimal IP address or a ho
 .sp
 By default Samba enables all active interfaces that are broadcast capable except the loopback adaptor (IP address 127\&.0\&.0\&.1)\&.
 .sp
-In order to support SMB3 multi\-channel configurations, smbd understands some extra data that can be appended after the actual interface with this extended syntax:
+In order to support SMB3 multi\-channel configurations, smbd understands some extra parameters which can be appended after the actual interface with this extended syntax (note that the quoting is important in order to handle the ; and , characters):
 .sp
-interface[;key1=value1[,key2=value2[\&.\&.\&.]]]
+"interface[;key1=value1[,key2=value2[\&.\&.\&.]]]"
 .sp
-Known keys are speed, capability, and if_index\&. Speed is specified in bits per second\&. Known capabilities are RSS and RDMA\&. The if_index should be used with care: the values must not coincide with indexes used by the kernel\&. Note that these options are mainly intended for testing and development rather than for production use\&. At least on Linux systems, these values should be auto\-detected, but the settings can serve as last a resort when autodetection is not working or is not available\&.
+Known keys are speed, capability, and if_index\&. Speed is specified in bits per second\&. Known capabilities are RSS and RDMA\&. The if_index should be used with care: the values must not coincide with indexes used by the kernel\&. Note that these options are mainly intended for testing and development rather than for production use\&. At least on Linux systems, these values should be auto\-detected, but the settings can serve as last a resort when autodetection is not working or is not available\&. The specified values overwrite the auto\-detected values\&.
 .sp
-The example below configures three network interfaces corresponding to the eth0 device and IP addresses 192\&.168\&.2\&.10 and 192\&.168\&.3\&.10\&. The netmasks of the latter two interfaces would be set to 255\&.255\&.255\&.0\&.
+The first two example below configures three network interfaces corresponding to the eth0 device and IP addresses 192\&.168\&.2\&.10 and 192\&.168\&.3\&.10\&. The netmasks of the latter two interfaces would be set to 255\&.255\&.255\&.0\&.
+.sp
+The other examples show how per interface extra parameters can be specified\&. Notice the possible usage of "," and ";", which makes the double quoting necessary\&.
 .sp
 Default:
 \fI\fIinterfaces\fR\fR\fI = \fR\fI\fR\fI \fR
 .sp
 Example:
 \fI\fIinterfaces\fR\fR\fI = \fR\fIeth0 192\&.168\&.2\&.10/24 192\&.168\&.3\&.10/255\&.255\&.255\&.0\fR\fI \fR
+.sp
+Example:
+\fI\fIinterfaces\fR\fR\fI = \fR\fIeth0, 192\&.168\&.2\&.10/24; 192\&.168\&.3\&.10/255\&.255\&.255\&.0\fR\fI \fR
+.sp
+Example:
+\fI\fIinterfaces\fR\fR\fI = \fR\fI"eth0;if_index=65,speed=1000000000,capability=RSS"\fR\fI \fR
+.sp
+Example:
+\fI\fIinterfaces\fR\fR\fI = \fR\fI"lo;speed=1000000000" "eth0;capability=RSS"\fR\fI \fR
+.sp
+Example:
+\fI\fIinterfaces\fR\fR\fI = \fR\fI"lo;speed=1000000000" , "eth0;capability=RSS"\fR\fI \fR
+.sp
+Example:
+\fI\fIinterfaces\fR\fR\fI = \fR\fI"eth0;capability=RSS" , "rdma1;capability=RDMA" ; "rdma2;capability=RSS,capability=RDMA"\fR\fI \fR
 .RE
 
 invalid users (S)
@@ -5656,25 +5741,6 @@ for more information on
 .sp
 Default:
 \fI\fIldap ssl\fR\fR\fI = \fR\fIstart tls\fR\fI \fR
-.RE
-
-ldap ssl ads (G)
-.PP
-.RS 4
-This option is used to define whether or not Samba should use SSL when connecting to the ldap server using
-\fIads\fR
-methods\&. Rpc methods are not affected by this parameter\&. Please note, that this parameter won\*(Aqt have any effect if
-\m[blue]\fBldap ssl\fR\m[]
-is set to
-\fIno\fR\&.
-.sp
-See
-smb\&.conf(5)
-for more information on
-\m[blue]\fBldap ssl\fR\m[]\&.
-.sp
-Default:
-\fI\fIldap ssl ads\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
 ldap suffix (G)
@@ -7099,7 +7165,7 @@ map acl inherit (S)
 .RS 4
 This boolean parameter controls whether
 \fBsmbd\fR(8)
-will attempt to map the \*(Aqinherit\*(Aq and \*(Aqprotected\*(Aq access control entry flags stored in Windows ACLs into an extended attribute called user\&.SAMBA_PAI\&. This parameter only takes effect if Samba is being run on a platform that supports extended attributes (Linux and IRIX so far) and allows the Windows 2000 ACL editor to correctly use inheritance with the Samba POSIX ACL mapping code\&.
+will attempt to map the \*(Aqinherit\*(Aq and \*(Aqprotected\*(Aq access control entry flags stored in Windows ACLs into an extended attribute called user\&.SAMBA_PAI (POSIX ACL Inheritance)\&. This parameter requires supports for extended attributes on the filesystem and allows the Windows ACL editor to store inheritance information while NT ACLs are mapped best\-effort to the POSIX ACLs\&.
 .sp
 Default:
 \fI\fImap acl inherit\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -9251,6 +9317,12 @@ Example:
 raw NTLMv2 auth (G)
 .PP
 .RS 4
+This parameter has been deprecated since Samba 4\&.13 and support for NTLMv2 authentication without NTLMSSP will be removed in a future Samba release\&.
+.sp
+That is, in the future, the current default of
+raw NTLMv2 auth = no
+will be the enforced behaviour\&.
+.sp
 This parameter determines whether or not
 \fBsmbd\fR(8)
 will allow SMB1 clients without extended security (without SPNEGO) to use NTLMv2 authentication\&.
@@ -10344,6 +10416,10 @@ This parameter was added with version 4\&.4\&.
 .sp
 Warning: Note that this feature is still considered experimental\&. Use it at your own risk: Even though it may seem to work well in testing, it may result in data corruption under some race conditions\&. Future releases may improve this situation\&.
 .sp
+Due to dependencies to kernel APIs of Linux or FreeBSD, it\*(Aqs only possible to use this feature on Linux and FreeBSD for now\&. For testing this restriction can be overwritten by specifying
+\fBforce:server multi channel support=yes\fR
+in addition\&.
+.sp
 Default:
 \fI\fIserver multi channel support\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
@@ -10427,26 +10503,53 @@ Example:
 server schannel (G)
 .PP
 .RS 4
-This option is deprecated with Samba 4\&.8 and will be removed in future\&. At the same time the default changed to yes, which will be the hardcoded behavior in future\&. If you have the need for the behavior of "auto" to be kept, please file a bug at https://bugzilla\&.samba\&.org\&.
+This option is deprecated and will be removed in future, as it is a security problem if not set to "yes" (which will be the hardcoded behavior in future)\&.
 .sp
-This controls whether the server offers or even demands the use of the netlogon schannel\&.
-\m[blue]\fBserver schannel = no\fR\m[]
-does not offer the schannel,
-\m[blue]\fBserver schannel = auto\fR\m[]
-offers the schannel but does not enforce it, and
-\m[blue]\fBserver schannel = yes\fR\m[]
-denies access if the client is not able to speak netlogon schannel\&. This is only the case for Windows NT4 before SP4\&.
+Samba will complain in the log files at log level 0, about the security problem if the option is not set to "yes"\&.
 .sp
-Please note that with this set to
-no, you will have to apply the WindowsXP
-WinXP_SignOrSeal\&.reg
-registry patch found in the docs/registry subdirectory of the Samba distribution tarball\&.
+See CVE\-2020\-1472(ZeroLogon) https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=14497
+.sp
+If you still have legacy domain members use the
+\m[blue]\fBserver require schannel:COMPUTERACCOUNT\fR\m[]
+option\&.
+.sp
+This option yields precedence to the
+\m[blue]\fBserver require schannel:COMPUTERACCOUNT\fR\m[]
+option\&.
 .sp
 Default:
 \fI\fIserver schannel\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
+server require schannel:COMPUTERACCOUNT (G)
+.PP
+.RS 4
+If you still have legacy domain members, which required "server schannel = auto" before, it is possible to specify explicit expection per computer account by using \*(Aqserver require schannel:COMPUTERACCOUNT = no\*(Aq as option\&. Note that COMPUTERACCOUNT has to be the sAMAccountName value of the computer account (including the trailing \*(Aq$\*(Aq sign)\&.
 .sp
-Example:
-\fI\fIserver schannel\fR\fR\fI = \fR\fIauto\fR\fI \fR
+Samba will complain in the log files at log level 0, about the security problem if the option is not set to "no", but the related computer is actually using the netlogon secure channel (schannel) feature\&.
+.sp
+Samba will warn in the log files at log level 5, if a setting is still needed for the specified computer account\&.
+.sp
+See CVE\-2020\-1472(ZeroLogon) https://bugzilla\&.samba\&.org/show_bug\&.cgi?id=14497
+.sp
+This option takes precedence to the
+\m[blue]\fBserver schannel\fR\m[]
+option\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	server require schannel:LEGACYCOMPUTER1$ = no
+	server require schannel:NASBOX$ = no
+	server require schannel:LEGACYCOMPUTER2$ = no
+    
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fINo default\fR
 .RE
 
 server services (G)
@@ -10867,6 +10970,59 @@ Default:
 .sp
 Example:
 \fI\fIshutdown script\fR\fR\fI = \fR\fI/usr/local/samba/sbin/shutdown %m %t %r %f\fR\fI \fR
+.RE
+
+smb2 disable lock sequence checking (G)
+.PP
+.RS 4
+This boolean parameter controls whether
+\fBsmbd\fR(8)
+will disable lock sequence checking even for multi\-channel connections as well as durable handles\&.
+.sp
+The [MS\-SMB2] specification (under 3\&.3\&.5\&.14 Receiving an SMB2 LOCK Request) documents that a server should do lock sequence if Open\&.IsResilient or Open\&.IsDurable or Open\&.IsPersistent is TRUE or if Connection\&.Dialect belongs to the SMB 3\&.x dialect family and Connection\&.ServerCapabilities includes SMB2_GLOBAL_CAP_MULTI_CHANNEL\&.
+.sp
+But Windows Server (at least up to v2004) only does these checks for the Open\&.IsResilient and Open\&.IsPersistent\&. That means they do not implement the behavior specified in [MS\-SMB2]\&.
+.sp
+By default Samba behaves according to the specification and sends smb2 oplock break notification retries\&.
+.sp
+Warning: Only enable this option if existing clients can\*(Aqt handle lock sequence checking for handles without Open\&.IsResilient and Open\&.IsPersistent\&. And it turns out that the Windows Server behavior is required\&.
+.sp
+Note: it\*(Aqs likely that this option will be removed again if future Windows versions change their behavior\&.
+.sp
+Note: Samba does not implement Open\&.IsResilient and Open\&.IsPersistent yet\&.
+.sp
+Default:
+\fI\fIsmb2 disable lock sequence checking\fR\fR\fI = \fR\fIno\fR\fI \fR
+.sp
+Example:
+\fI\fIsmb2 disable lock sequence checking\fR\fR\fI = \fR\fIyes\fR\fI \fR
+.RE
+
+smb2 disable oplock break retry (G)
+.PP
+.RS 4
+This boolean parameter controls whether
+\fBsmbd\fR(8)
+will trigger smb2 oplock break notification retries when using
+\m[blue]\fBserver multi channel support = yes\fR\m[]\&.
+.sp
+The [MS\-SMB2] specification documents that a server should send smb2 oplock break notification retries on all available channel to the given client\&.
+.sp
+But Windows Server versions (at least up to 2019) do not send smb2 oplock break notification retries on channel failures\&. That means they do not implement the behavior specified in [MS\-SMB2]\&.
+.sp
+By default Samba behaves according to the specification and send smb2 oplock break notification retries\&.
+.sp
+Warning: Only enable this option if existing clients can\*(Aqt handle possible retries and it turns out that the Windows Server behavior is required\&.
+.sp
+Note: it\*(Aqs likely that this option gets removed again if future Windows versions change their behavior\&.
+.sp
+Note: this only applies to oplocks and not SMB2 leases\&.
+.sp
+Default:
+\fI\fIsmb2 disable oplock break retry\fR\fR\fI = \fR\fIno\fR\fI \fR
+.sp
+Example:
+\fI\fIsmb2 disable oplock break retry\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .RE
 
 smb2 leases (G)
@@ -11545,6 +11701,17 @@ TCP_KEEPALIVE_ABORT_THRESHOLD *
 TCP_DEFER_ACCEPT *
 .RE
 .sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+TCP_USER_TIMEOUT *
+.RE
+.sp
 .RE
 Those marked with a
 \fI\*(Aq*\*(Aq\fR
@@ -11591,10 +11758,10 @@ spoolss: architecture (G)
 Windows spoolss print clients only allow association of server\-side drivers with printers when the driver architecture matches the advertised print server architecture\&. Samba\*(Aqs spoolss print server architecture can be changed using this parameter\&.
 .sp
 Default:
-\fI\fIspoolss: architecture\fR\fR\fI = \fR\fIWindows NT x86\fR\fI \fR
+\fI\fIspoolss: architecture\fR\fR\fI = \fR\fIWindows x64\fR\fI \fR
 .sp
 Example:
-\fI\fIspoolss: architecture\fR\fR\fI = \fR\fIWindows x64\fR\fI \fR
+\fI\fIspoolss: architecture\fR\fR\fI = \fR\fIWindows NT x86\fR\fI \fR
 .RE
 
 spoolss: os_major (G)
@@ -12135,10 +12302,12 @@ tls priority (G)
 .RS 4
 This option can be set to a string describing the TLS protocols to be supported in the parts of Samba that use GnuTLS, specifically the AD DC\&.
 .sp
-The default turns off SSLv3, as this protocol is no longer considered secure after CVE\-2014\-3566 (otherwise known as POODLE) impacted SSLv3 use in HTTPS applications\&.
+The string is appended to the default priority list of GnuTLS\&.
 .sp
 The valid options are described in the
 GNUTLS Priority\-Strings documentation at http://gnutls\&.org/manual/html_node/Priority\-Strings\&.html
+.sp
+The SSL3\&.0 protocol will be disabled\&.
 .sp
 Default:
 \fI\fItls priority\fR\fR\fI = \fR\fINORMAL:\-VERS\-SSL3\&.0\fR\fI \fR
@@ -12276,9 +12445,8 @@ Default:
 use mmap (G)
 .PP
 .RS 4
-This global parameter determines if the tdb internals of Samba can depend on mmap working correctly on the running system\&. Samba requires a coherent mmap/read\-write system memory cache\&. Currently only HPUX does not have such a coherent cache, and so this parameter is set to
-\fBno\fR
-by default on HPUX\&. On all other systems this parameter should be left alone\&. This parameter is provided to help the Samba developers track down problems with the tdb internal code\&.
+This global parameter determines if the tdb internals of Samba can depend on mmap working correctly on the running system\&. Samba requires a coherent mmap/read\-write system memory cache\&. Currently only OpenBSD and HPUX do not have such a coherent cache, and on those platforms this paramter is overridden internally to be effeceively
+\fBno\fR\&. On all systems this parameter should be left alone\&. This parameter is provided to help the Samba developers track down problems with the tdb internal code\&.
 .sp
 Default:
 \fI\fIuse mmap\fR\fR\fI = \fR\fIyes\fR\fI \fR
@@ -13454,7 +13622,7 @@ and
 special sections make life for an administrator easy, but the various combinations of default attributes can be tricky\&. Take extreme care when designing these sections\&. In particular, ensure that the permissions on spool directories are correct\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.12\&.6 of the Samba suite\&.
+This man page is part of version 4\&.13\&.2 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsamba\fR(7),

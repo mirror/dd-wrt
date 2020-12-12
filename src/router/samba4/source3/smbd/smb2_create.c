@@ -461,7 +461,7 @@ static NTSTATUS smbd_smb2_create_durable_lease_check(struct smb_request *smb1req
 	ucf_flags = filename_create_ucf_flags(smb1req, FILE_OPEN);
 	status = filename_convert(talloc_tos(), fsp->conn,
 				  filename, ucf_flags,
-				  NULL, NULL, &smb_fname);
+				  0, NULL, &smb_fname);
 	TALLOC_FREE(filename);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(10, ("filename_convert returned %s\n",
@@ -514,8 +514,7 @@ struct smbd_smb2_create_state {
 	ssize_t lease_len;
 	bool need_replay_cache;
 	struct smbXsrv_open *op;
-	time_t twrp_time;
-	time_t *twrp_timep;
+	NTTIME twrp_time;
 
 	struct smb2_create_blob *dhnc;
 	struct smb2_create_blob *dh2c;
@@ -550,6 +549,14 @@ static NTSTATUS smbd_smb2_create_fetch_create_ctx(
 {
 	struct smbd_smb2_create_state *state = tevent_req_data(
 		req, struct smbd_smb2_create_state);
+
+	/*
+	 * For now, remove the posix create context from the wire. We
+	 * are using it inside smbd and will properly use it once
+	 * smb3.11 unix extensions will be done. So in the future we
+	 * will remove it only if unix extensions are not negotiated.
+	 */
+	smb2_create_blob_remove(in_context_blobs, SMB2_CREATE_TAG_POSIX);
 
 	state->dhnq = smb2_create_blob_find(in_context_blobs,
 					    SMB2_CREATE_TAG_DHNQ);
@@ -938,7 +945,7 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 				  smb1req->conn,
 				  state->fname,
 				  ucf_flags,
-				  state->twrp_timep,
+				  state->twrp_time,
 				  NULL, /* ppath_contains_wcards */
 				  &smb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -982,7 +989,7 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 
 	status = SMB_VFS_CREATE_FILE(smb1req->conn,
 				     smb1req,
-				     0, /* root_dir_fid */
+				     &smb1req->conn->cwd_fsp,
 				     smb_fname,
 				     in_desired_access,
 				     in_share_access,
@@ -1023,7 +1030,6 @@ static void smbd_smb2_create_before_exec(struct tevent_req *req)
 {
 	struct smbd_smb2_create_state *state = tevent_req_data(
 		req, struct smbd_smb2_create_state);
-	struct smb_request *smb1req = state->smb1req;
 	struct smbd_smb2_request *smb2req = state->smb2req;
 	NTSTATUS status;
 
@@ -1151,7 +1157,7 @@ static void smbd_smb2_create_before_exec(struct tevent_req *req)
 		 * durable handle v2 request processed below
 		 */
 		state->durable_requested = true;
-		state->durable_timeout_msec = durable_v2_timeout;
+		state->durable_timeout_msec = MIN(durable_v2_timeout, 300*1000);
 		if (state->durable_timeout_msec == 0) {
 			/*
 			 * Set the timeout to 1 min as default.
@@ -1225,18 +1231,12 @@ static void smbd_smb2_create_before_exec(struct tevent_req *req)
 	}
 
 	if (state->twrp != NULL) {
-		NTTIME nttime;
-
 		if (state->twrp->data.length != 8) {
 			tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
 			return;
 		}
 
-		nttime = BVAL(state->twrp->data.data, 0);
-		state->twrp_time = nt_time_to_unix(nttime);
-		state->twrp_timep = &state->twrp_time;
-
-		smb1req->flags2 |= FLAGS2_REPARSE_PATH;
+		state->twrp_time = BVAL(state->twrp->data.data, 0);
 	}
 
 	if (state->qfid != NULL) {
@@ -1333,10 +1333,11 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 			DATA_BLOB blob = data_blob_const(p, sizeof(p));
 
 			status = smbd_calculate_access_mask(smb1req->conn,
-							    state->result->fsp_name,
-							    false,
-							    SEC_FLAG_MAXIMUM_ALLOWED,
-							    &max_access_granted);
+					smb1req->conn->cwd_fsp,
+					state->result->fsp_name,
+					false,
+					SEC_FLAG_MAXIMUM_ALLOWED,
+					&max_access_granted);
 
 			SIVAL(p, 0, NT_STATUS_V(status));
 			SIVAL(p, 4, max_access_granted);

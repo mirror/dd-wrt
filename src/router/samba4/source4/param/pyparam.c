@@ -348,7 +348,7 @@ static PyObject *py_lp_dump_a_parameter(PyObject *self, PyObject *args)
 static PyObject *py_lp_log_level(PyObject *self, PyObject *unused)
 {
 	int ret = debuglevel_get();
-	return PyInt_FromLong(ret);
+	return PyLong_FromLong(ret);
 }
 
 
@@ -446,7 +446,7 @@ static PyMethodDef py_lp_ctx_methods[] = {
 	{ "state_path", py_state_path, METH_VARARGS,
 		"S.state_path(name) -> string\n"
 		"Returns a path in the Samba state directory." },
-	{ NULL }
+	{0}
 };
 
 static PyObject *py_lp_ctx_default_service(PyObject *self, void *closure)
@@ -605,7 +605,7 @@ static PyObject *py_lp_service_dump(PyObject *self, PyObject *args)
 static PyMethodDef py_lp_service_methods[] = {
 	{ "dump", (PyCFunction)py_lp_service_dump, METH_VARARGS, 
 		"S.dump(default_service, show_defaults=False, file_name='', mode='w')" },
-	{ NULL }
+	{0}
 };
 
 PyTypeObject PyLoadparmService = {
@@ -613,6 +613,11 @@ PyTypeObject PyLoadparmService = {
 	.tp_methods = py_lp_service_methods,
 	.tp_flags = Py_TPFLAGS_DEFAULT,
 };
+
+static PyObject *py_data_dir(PyObject *self)
+{
+        return PyUnicode_FromString(dyn_DATADIR);
+}
 
 static PyObject *py_default_path(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -640,6 +645,8 @@ static PyObject *py_sbin_dir(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef pyparam_methods[] = {
+	{ "data_dir", (PyCFunction)py_data_dir, METH_NOARGS,
+		"Returns the compiled in location of data directory." },
 	{ "default_path", (PyCFunction)py_default_path, METH_NOARGS,
 		"Returns the default smb.conf path." },
 	{ "setup_dir", (PyCFunction)py_setup_dir, METH_NOARGS,
@@ -650,7 +657,7 @@ static PyMethodDef pyparam_methods[] = {
 		"Returns the compiled in BINDIR." },
 	{ "sbin_dir", (PyCFunction)py_sbin_dir, METH_NOARGS,
 		"Returns the compiled in SBINDIR." },
-	{ NULL }
+	{0}
 };
 
 static struct PyModuleDef moduledef = {

@@ -199,12 +199,8 @@ _PUBLIC_ enum ndr_err_code ndr_pull_pop(struct ndr_pull *ndr)
 */
 _PUBLIC_ enum ndr_err_code ndr_pull_advance(struct ndr_pull *ndr, uint32_t size)
 {
+	NDR_PULL_NEED_BYTES(ndr, size);
 	ndr->offset += size;
-	if (ndr->offset > ndr->data_size) {
-		return ndr_pull_error(ndr, NDR_ERR_BUFSIZE,
-				      "ndr_pull_advance by %u failed",
-				      size);
-	}
 	return NDR_ERR_SUCCESS;
 }
 
@@ -1326,16 +1322,16 @@ _PUBLIC_ enum ndr_err_code ndr_pull_struct_blob_all_noalloc(const DATA_BLOB *blo
 	};
 	uint32_t highest_ofs;
 	NDR_CHECK(fn(&ndr, NDR_SCALARS|NDR_BUFFERS, p));
-	if (ndr.offset > ndr.relative_highest_offset) {
-		highest_ofs = ndr.offset;
-	} else {
-		highest_ofs = ndr.relative_highest_offset;
-	}
+	highest_ofs = MAX(ndr.offset, ndr.relative_highest_offset);
 	if (highest_ofs < ndr.data_size) {
 		enum ndr_err_code ret;
-		ret = ndr_pull_error(&ndr, NDR_ERR_UNREAD_BYTES,
-				     "not all bytes consumed ofs[%u] size[%u]",
-				     highest_ofs, ndr.data_size);
+		ret = ndr_pull_error(
+			&ndr,
+			NDR_ERR_UNREAD_BYTES,
+			"not all bytes consumed ofs[%"PRIu32"] "
+			"size[%"PRIu32"]",
+			highest_ofs,
+			ndr.data_size);
 		return ret;
 	}
 	return NDR_ERR_SUCCESS;
@@ -1930,7 +1926,7 @@ _PUBLIC_ enum ndr_err_code ndr_pull_relative_ptr2(struct ndr_pull *ndr, const vo
 	return ndr_pull_set_offset(ndr, rel_offset);
 }
 
-const static struct {
+static const struct {
 	enum ndr_err_code err;
 	const char *string;
 } ndr_err_code_strings[] = {
@@ -1954,6 +1950,8 @@ const static struct {
 	{ NDR_ERR_UNREAD_BYTES, "Unread Bytes" },
 	{ NDR_ERR_NDR64, "NDR64 assertion error" },
 	{ NDR_ERR_INCOMPLETE_BUFFER, "Incomplete Buffer" },
+	{ NDR_ERR_MAX_RECURSION_EXCEEDED, "Maximum Recursion Exceeded" },
+	{ NDR_ERR_UNDERFLOW, "Underflow" },
 	{ 0, NULL }
 };
 

@@ -431,6 +431,78 @@ static struct case_semantics_state *set_posix_case_semantics(TALLOC_CTX *mem_ctx
 	return result;
 }
 
+/*
+ * Calculate the full path name given a relative fid.
+ */
+static NTSTATUS get_relative_fid_filename(connection_struct *conn,
+					  struct smb_request *req,
+					  uint16_t root_dir_fid,
+					  char *path,
+					  char **path_out)
+{
+	struct files_struct *dir_fsp = NULL;
+	char *new_path = NULL;
+
+	if (root_dir_fid == 0 || path == NULL) {
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
+	dir_fsp = file_fsp(req, root_dir_fid);
+	if (dir_fsp == NULL) {
+		return NT_STATUS_INVALID_HANDLE;
+	}
+
+	if (is_ntfs_stream_smb_fname(dir_fsp->fsp_name)) {
+		return NT_STATUS_INVALID_HANDLE;
+	}
+
+	if (!dir_fsp->fsp_flags.is_directory) {
+		/*
+		 * Check to see if this is a mac fork of some kind.
+		 */
+		if (conn->fs_capabilities & FILE_NAMED_STREAMS) {
+			char *stream = NULL;
+
+			stream = strchr_m(path, ':');
+			if (stream != NULL) {
+				return NT_STATUS_OBJECT_PATH_NOT_FOUND;
+			}
+		}
+
+		/*
+		 * We need to handle the case when we get a relative open
+		 * relative to a file and the pathname is blank - this is a
+		 * reopen! (hint from demyn plantenberg)
+		 */
+		return NT_STATUS_INVALID_HANDLE;
+	}
+
+	if (ISDOT(dir_fsp->fsp_name->base_name)) {
+		/*
+		 * We're at the toplevel dir, the final file name
+		 * must not contain ./, as this is filtered out
+		 * normally by srvstr_get_path and unix_convert
+		 * explicitly rejects paths containing ./.
+		 */
+		new_path = talloc_strdup(talloc_tos(), path);
+	} else {
+		/*
+		 * Copy in the base directory name.
+		 */
+
+		new_path = talloc_asprintf(talloc_tos(),
+					   "%s/%s",
+					   dir_fsp->fsp_name->base_name,
+					   path);
+	}
+	if (new_path == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	*path_out = new_path;
+	return NT_STATUS_OK;
+}
+
 /****************************************************************************
  Reply to an NT create and X call.
 ****************************************************************************/
@@ -537,12 +609,27 @@ void reply_ntcreate_and_X(struct smb_request *req)
 		}
 	}
 
+	if (root_dir_fid != 0) {
+		char *new_fname = NULL;
+
+		status = get_relative_fid_filename(conn,
+						   req,
+						   root_dir_fid,
+						   fname,
+						   &new_fname);
+		if (!NT_STATUS_IS_OK(status)) {
+			reply_nterror(req, status);
+			goto out;
+		}
+		fname = new_fname;
+	}
+
 	ucf_flags = filename_create_ucf_flags(req, create_disposition);
 	status = filename_convert(ctx,
 				conn,
 				fname,
 				ucf_flags,
-				NULL,
+				0,
 				NULL,
 				&smb_fname);
 
@@ -569,7 +656,7 @@ void reply_ntcreate_and_X(struct smb_request *req)
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		req,					/* req */
-		root_dir_fid,				/* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		access_mask,				/* access_mask */
 		share_access,				/* share_access */
@@ -719,14 +806,17 @@ void reply_ntcreate_and_X(struct smb_request *req)
 		SSVAL(p,2,file_status);
 	}
 	p += 4;
-	SCVAL(p,0,fsp->is_directory ? 1 : 0);
+	SCVAL(p,0,fsp->fsp_flags.is_directory ? 1 : 0);
 
 	if (flags & EXTENDED_RESPONSE_REQUIRED) {
 		uint32_t perms = 0;
 		p += 25;
-		if (fsp->is_directory ||
-		    fsp->can_write ||
-		    can_write_to_file(conn, smb_fname)) {
+		if (fsp->fsp_flags.is_directory ||
+		    fsp->fsp_flags.can_write ||
+		    can_write_to_file(conn,
+				conn->cwd_fsp,
+				smb_fname))
+		{
 			perms = FILE_GENERIC_ALL;
 		} else {
 			perms = FILE_GENERIC_READ|FILE_EXECUTE;
@@ -950,6 +1040,13 @@ NTSTATUS set_sd(files_struct *fsp, struct security_descriptor *psd,
 		if (!(fsp->access_mask & SEC_FLAG_SYSTEM_SECURITY)) {
 			return NT_STATUS_ACCESS_DENIED;
 		}
+		/*
+		 * Setting a SACL also requires WRITE_DAC.
+		 * See the smbtorture3 SMB2-SACL test.
+		 */
+		if (!(fsp->access_mask & SEC_STD_WRITE_DAC)) {
+			return NT_STATUS_ACCESS_DENIED;
+		}
 		/* Convert all the generic bits. */
 		if (psd->sacl) {
 			security_acl_map_generic(psd->sacl, &file_generic_mapping);
@@ -1116,12 +1213,27 @@ static void call_nt_transact_create(connection_struct *conn,
 		}
 	}
 
+	if (root_dir_fid != 0) {
+		char *new_fname = NULL;
+
+		status = get_relative_fid_filename(conn,
+						   req,
+						   root_dir_fid,
+						   fname,
+						   &new_fname);
+		if (!NT_STATUS_IS_OK(status)) {
+			reply_nterror(req, status);
+			goto out;
+		}
+		fname = new_fname;
+	}
+
 	ucf_flags = filename_create_ucf_flags(req, create_disposition);
 	status = filename_convert(ctx,
 				conn,
 				fname,
 				ucf_flags,
-				NULL,
+				0,
 				NULL,
 				&smb_fname);
 
@@ -1227,7 +1339,7 @@ static void call_nt_transact_create(connection_struct *conn,
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		req,					/* req */
-		root_dir_fid,				/* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		access_mask,				/* access_mask */
 		share_access,				/* share_access */
@@ -1374,14 +1486,17 @@ static void call_nt_transact_create(connection_struct *conn,
 		SSVAL(p,2,file_status);
 	}
 	p += 4;
-	SCVAL(p,0,fsp->is_directory ? 1 : 0);
+	SCVAL(p,0,fsp->fsp_flags.is_directory ? 1 : 0);
 
 	if (flags & EXTENDED_RESPONSE_REQUIRED) {
 		uint32_t perms = 0;
 		p += 25;
-		if (fsp->is_directory ||
-		    fsp->can_write ||
-		    can_write_to_file(conn, smb_fname)) {
+		if (fsp->fsp_flags.is_directory ||
+		    fsp->fsp_flags.can_write ||
+		    can_write_to_file(conn,
+				conn->cwd_fsp,
+				smb_fname))
+		{
 			perms = FILE_GENERIC_ALL;
 		} else {
 			perms = FILE_GENERIC_READ|FILE_EXECUTE;
@@ -1443,7 +1558,8 @@ static NTSTATUS copy_internals(TALLOC_CTX *ctx,
 	int info;
 	off_t ret=-1;
 	NTSTATUS status = NT_STATUS_OK;
-	char *parent;
+	struct smb_filename *parent = NULL;
+	bool ok;
 
 	if (!CAN_WRITE(conn)) {
 		status = NT_STATUS_MEDIA_WRITE_PROTECTED;
@@ -1482,7 +1598,7 @@ static NTSTATUS copy_internals(TALLOC_CTX *ctx,
         status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		req,					/* req */
-		0,					/* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname_src,				/* fname */
 		FILE_READ_DATA|FILE_READ_ATTRIBUTES|
 			FILE_READ_EA,			/* access_mask */
@@ -1508,7 +1624,7 @@ static NTSTATUS copy_internals(TALLOC_CTX *ctx,
         status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		req,					/* req */
-		0,					/* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname_dst,				/* fname */
 		FILE_WRITE_DATA|FILE_WRITE_ATTRIBUTES|
 			FILE_WRITE_EA,			/* access_mask */
@@ -1552,8 +1668,12 @@ static NTSTATUS copy_internals(TALLOC_CTX *ctx,
 	/* Grrr. We have to do this as open_file_ntcreate adds FILE_ATTRIBUTE_ARCHIVE when it
 	   creates the file. This isn't the correct thing to do in the copy
 	   case. JRA */
-	if (!parent_dirname(talloc_tos(), smb_fname_dst->base_name, &parent,
-			    NULL)) {
+
+	ok = parent_smb_fname(talloc_tos(),
+			      smb_fname_dst,
+			      &parent,
+			      NULL);
+	if (!ok) {
 		status = NT_STATUS_NO_MEMORY;
 		goto out;
 	}
@@ -1585,6 +1705,7 @@ void reply_ntrename(struct smb_request *req)
 	struct smb_filename *smb_fname_new = NULL;
 	char *oldname = NULL;
 	char *newname = NULL;
+	const char *dst_original_lcomp = NULL;
 	const char *p;
 	NTSTATUS status;
 	bool src_has_wcard = False;
@@ -1645,14 +1766,14 @@ void reply_ntrename(struct smb_request *req)
 	 */
 	if (rename_type == RENAME_FLAG_RENAME) {
 		ucf_flags_src |= UCF_COND_ALLOW_WCARD_LCOMP;
-		ucf_flags_dst |= UCF_COND_ALLOW_WCARD_LCOMP | UCF_SAVE_LCOMP;
+		ucf_flags_dst |= UCF_COND_ALLOW_WCARD_LCOMP;
 	}
 
 	/* rename_internals() calls unix_convert(), so don't call it here. */
 	status = filename_convert(ctx, conn,
 				  oldname,
 				  ucf_flags_src,
-				  NULL,
+				  0,
 				  NULL,
 				  &smb_fname_old);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -1670,7 +1791,7 @@ void reply_ntrename(struct smb_request *req)
 	status = filename_convert(ctx, conn,
 				  newname,
 				  ucf_flags_dst,
-				  NULL,
+				  0,
 				  &dest_has_wcard,
 				  &smb_fname_new);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -1682,6 +1803,16 @@ void reply_ntrename(struct smb_request *req)
 			goto out;
 		}
 		reply_nterror(req, status);
+		goto out;
+	}
+
+	/* Get the last component of the destination for rename_internals(). */
+	dst_original_lcomp = get_original_lcomp(ctx,
+					conn,
+					newname,
+					ucf_flags_dst);
+	if (dst_original_lcomp == NULL) {
+		reply_nterror(req, NT_STATUS_NO_MEMORY);
 		goto out;
 	}
 
@@ -1702,11 +1833,17 @@ void reply_ntrename(struct smb_request *req)
 
 	switch(rename_type) {
 		case RENAME_FLAG_RENAME:
-			status = rename_internals(ctx, conn, req,
-						  smb_fname_old, smb_fname_new,
-						  attrs, False, src_has_wcard,
-						  dest_has_wcard,
-						  DELETE_ACCESS);
+			status = rename_internals(ctx,
+						conn,
+						req,
+						smb_fname_old,
+						smb_fname_new,
+						dst_original_lcomp,
+						attrs,
+						false,
+						src_has_wcard,
+						dest_has_wcard,
+						DELETE_ACCESS);
 			break;
 		case RENAME_FLAG_HARD_LINK:
 			if (src_has_wcard || dest_has_wcard) {
@@ -1820,7 +1957,7 @@ static void call_nt_transact_notify_change(connection_struct *conn,
 		TALLOC_FREE(filter_string);
 	}
 
-	if((!fsp->is_directory) || (conn != fsp->conn)) {
+	if((!fsp->fsp_flags.is_directory) || (conn != fsp->conn)) {
 		reply_nterror(req, NT_STATUS_INVALID_PARAMETER);
 		return;
 	}
@@ -1979,6 +2116,7 @@ NTSTATUS smbd_do_query_security_desc(connection_struct *conn,
 	NTSTATUS status;
 	struct security_descriptor *psd = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
+	bool need_to_read_sd = false;
 
 	/*
 	 * Get the permissions to return.
@@ -2010,17 +2148,26 @@ NTSTATUS smbd_do_query_security_desc(connection_struct *conn,
 		/* Don't return SECINFO_LABEL if anything else was
 		   requested. See bug #8458. */
 		security_info_wanted &= ~SECINFO_LABEL;
+
+		/*
+		 * Only query the file system SD if the caller asks
+		 * for any bits. This allows a caller to open without
+		 * READ_CONTROL but still issue a query sd. See
+		 * smb2.sdread test.
+		 */
+		need_to_read_sd = true;
 	}
 
-	if (!lp_nt_acl_support(SNUM(conn))) {
-		status = get_null_nt_acl(frame, &psd);
-	} else if (security_info_wanted & SECINFO_LABEL) {
-		/* Like W2K3 return a null object. */
-		status = get_null_nt_acl(frame, &psd);
-	} else {
+	if (lp_nt_acl_support(SNUM(conn)) &&
+	    ((security_info_wanted & SECINFO_LABEL) == 0) &&
+	    need_to_read_sd)
+	{
 		status = SMB_VFS_FGET_NT_ACL(
 			fsp, security_info_wanted, frame, &psd);
+	} else {
+		status = get_null_nt_acl(frame, &psd);
 	}
+
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(frame);
 		return status;

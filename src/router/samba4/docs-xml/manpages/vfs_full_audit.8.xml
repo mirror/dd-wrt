@@ -61,7 +61,7 @@
         <member>fchown</member>
         <member>fdopendir</member>
         <member>fget_dos_attributes</member>
-        <member>fget_nt_acl</member>
+        <member>fget_nt_acl_at</member>
         <member>fgetxattr</member>
         <member>file_id_create</member>
         <member>flistxattr</member>
@@ -109,7 +109,6 @@
         <member>offload_write_recv</member>
         <member>offload_write_send</member>
         <member>open</member>
-        <member>opendir</member>
         <member>pread</member>
         <member>pread_recv</member>
         <member>pread_send</member>

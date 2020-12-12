@@ -24,33 +24,39 @@
 
 #include "../lib/tsocket/tsocket.h"
 #include "librpc/rpc/dcerpc_ep.h"
-#include "rpc_server/rpc_server.h"
+#include "librpc/rpc/dcesrv_core.h"
 #include "rpc_server/rpc_sock_helper.h"
 #include "lib/server_prefork.h"
+#include "librpc/ndr/ndr_table.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
 
-NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
-				const struct ndr_interface_table *iface,
-				struct dcerpc_binding_vector *bvec,
-				uint16_t port,
-				struct pf_listen_fd *listen_fd,
-				int *listen_fd_size)
+NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(struct dcesrv_endpoint *e,
+					    struct pf_listen_fd *listen_fd,
+					    int *listen_fd_size)
 {
-	uint32_t num_ifs = iface_count();
-	uint32_t i;
-	uint16_t p = port;
 	TALLOC_CTX *tmp_ctx;
 	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
-	int rc;
+	uint16_t port = 0;
+	char port_str[6];
+	const char *endpoint = NULL;
 
 	tmp_ctx = talloc_stackframe();
 	if (tmp_ctx == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
 
+	endpoint = dcerpc_binding_get_string_option(e->ep_description,
+						    "endpoint");
+	if (endpoint != NULL) {
+		port = atoi(endpoint);
+	}
+
 	if (lp_interfaces() && lp_bind_interfaces_only()) {
+		uint32_t num_ifs = iface_count();
+		uint32_t i;
+
 		/*
 		 * We have been given an interfaces line, and been told to only
 		 * bind to those interfaces. Create a socket per interface and
@@ -61,48 +67,17 @@ NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
 		for (i = 0; i < num_ifs; i++) {
 			const struct sockaddr_storage *ifss =
 					iface_n_sockaddr_storage(i);
-			struct tsocket_address *bind_addr;
-			const char *addr;
-			int fd;
+			int fd = -1;
 
 			status = dcesrv_create_ncacn_ip_tcp_socket(ifss,
-								   &p,
+								   &port,
 								   &fd);
 			if (!NT_STATUS_IS_OK(status)) {
 				goto done;
 			}
 			listen_fd[*listen_fd_size].fd = fd;
-			listen_fd[*listen_fd_size].fd_data = NULL;
+			listen_fd[*listen_fd_size].fd_data = e;
 			(*listen_fd_size)++;
-
-			if (bvec != NULL) {
-				rc = tsocket_address_bsd_from_sockaddr(tmp_ctx,
-								       (const struct sockaddr *)ifss,
-								       sizeof(struct sockaddr_storage),
-								       &bind_addr);
-				if (rc < 0) {
-					close(fd);
-					status = NT_STATUS_NO_MEMORY;
-					goto done;
-				}
-
-				addr = tsocket_address_inet_addr_string(bind_addr,
-									tmp_ctx);
-				if (addr == NULL) {
-					close(fd);
-					status = NT_STATUS_NO_MEMORY;
-					goto done;
-				}
-
-				status = dcerpc_binding_vector_add_port(iface,
-									bvec,
-									addr,
-									p);
-				if (!NT_STATUS_IS_OK(status)) {
-					close(fd);
-					goto done;
-				}
-			}
 		}
 	} else {
 		const char *sock_addr;
@@ -119,7 +94,7 @@ NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
 		     next_token_talloc(talloc_tos(), &sock_ptr, &sock_tok, " \t,");
 		    ) {
 			struct sockaddr_storage ss;
-			int fd;
+			int fd = -1;
 
 			/* open an incoming socket */
 			if (!interpret_string_addr(&ss,
@@ -129,26 +104,26 @@ NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
 			}
 
 			status = dcesrv_create_ncacn_ip_tcp_socket(&ss,
-								   &p,
+								   &port,
 								   &fd);
 			if (!NT_STATUS_IS_OK(status)) {
 				goto done;
 			}
 			listen_fd[*listen_fd_size].fd = fd;
-			listen_fd[*listen_fd_size].fd_data = NULL;
+			listen_fd[*listen_fd_size].fd_data = e;
 			(*listen_fd_size)++;
-
-			if (bvec != NULL) {
-				status = dcerpc_binding_vector_add_port(iface,
-									bvec,
-									sock_tok,
-									p);
-				if (!NT_STATUS_IS_OK(status)) {
-					close(fd);
-					goto done;
-				}
-			}
 		}
+	}
+
+	/* Set the port in the endpoint */
+	snprintf(port_str, sizeof(port_str), "%u", port);
+
+	status = dcerpc_binding_set_string_option(e->ep_description,
+						  "endpoint", port_str);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to set binding endpoint '%s': %s\n",
+			port_str, nt_errstr(status));
+		goto done;
 	}
 
 	status = NT_STATUS_OK;
@@ -158,17 +133,14 @@ done:
 }
 
 NTSTATUS dcesrv_setup_ncacn_ip_tcp_sockets(struct tevent_context *ev_ctx,
-				struct messaging_context *msg_ctx,
-				const struct ndr_interface_table *iface,
-				struct dcerpc_binding_vector *bvec,
-				uint16_t port)
+					   struct messaging_context *msg_ctx,
+					   struct dcesrv_context *dce_ctx,
+					   struct dcesrv_endpoint *e,
+					   dcerpc_ncacn_termination_fn t_fn,
+					   void *t_data)
 {
-	uint32_t num_ifs = iface_count();
-	uint32_t i;
-	uint16_t p = port;
 	TALLOC_CTX *tmp_ctx;
-	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
-	int rc;
+	NTSTATUS status;
 
 	tmp_ctx = talloc_stackframe();
 	if (tmp_ctx == NULL) {
@@ -176,6 +148,9 @@ NTSTATUS dcesrv_setup_ncacn_ip_tcp_sockets(struct tevent_context *ev_ctx,
 	}
 
 	if (lp_interfaces() && lp_bind_interfaces_only()) {
+		uint32_t num_ifs = iface_count();
+		uint32_t i;
+
 		/*
 		 * We have been given an interfaces line, and been told to only
 		 * bind to those interfaces. Create a socket per interface and
@@ -186,41 +161,16 @@ NTSTATUS dcesrv_setup_ncacn_ip_tcp_sockets(struct tevent_context *ev_ctx,
 		for (i = 0; i < num_ifs; i++) {
 			const struct sockaddr_storage *ifss =
 					iface_n_sockaddr_storage(i);
-			struct tsocket_address *bind_addr;
-			const char *addr;
 
 			status = dcesrv_setup_ncacn_ip_tcp_socket(ev_ctx,
 								  msg_ctx,
+								  dce_ctx,
+								  e,
 								  ifss,
-								  &p);
+								  t_fn,
+								  t_data);
 			if (!NT_STATUS_IS_OK(status)) {
 				goto done;
-			}
-
-			if (bvec != NULL) {
-				rc = tsocket_address_bsd_from_sockaddr(tmp_ctx,
-								       (const struct sockaddr*)ifss,
-								       sizeof(struct sockaddr_storage),
-								       &bind_addr);
-				if (rc < 0) {
-					status = NT_STATUS_NO_MEMORY;
-					goto done;
-				}
-
-				addr = tsocket_address_inet_addr_string(bind_addr,
-									tmp_ctx);
-				if (addr == NULL) {
-					status = NT_STATUS_NO_MEMORY;
-					goto done;
-				}
-
-				status = dcerpc_binding_vector_add_port(iface,
-									bvec,
-									addr,
-									p);
-				if (!NT_STATUS_IS_OK(status)) {
-					goto done;
-				}
 			}
 		}
 	} else {
@@ -248,20 +198,13 @@ NTSTATUS dcesrv_setup_ncacn_ip_tcp_sockets(struct tevent_context *ev_ctx,
 
 			status = dcesrv_setup_ncacn_ip_tcp_socket(ev_ctx,
 								  msg_ctx,
+								  dce_ctx,
+								  e,
 								  &ss,
-								  &p);
+								  t_fn,
+								  t_data);
 			if (!NT_STATUS_IS_OK(status)) {
 				goto done;
-			}
-
-			if (bvec != NULL) {
-				status = dcerpc_binding_vector_add_port(iface,
-									bvec,
-									sock_tok,
-									p);
-				if (!NT_STATUS_IS_OK(status)) {
-					goto done;
-				}
 			}
 		}
 	}

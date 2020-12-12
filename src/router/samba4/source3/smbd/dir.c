@@ -59,7 +59,6 @@ struct smb_Dir {
 	unsigned int file_number;
 	files_struct *fsp; /* Back pointer to containing fsp, only
 			      set from OpenDir_fsp(). */
-	bool fallback_opendir;
 };
 
 struct dptr_struct {
@@ -86,11 +85,6 @@ static struct smb_Dir *OpenDir_fsp(TALLOC_CTX *mem_ctx, connection_struct *conn,
 
 static void DirCacheAdd(struct smb_Dir *dir_hnd, const char *name, long offset);
 
-static struct smb_Dir *open_dir_safely(TALLOC_CTX *ctx,
-					connection_struct *conn,
-					const struct smb_filename *smb_dname,
-					const char *wcard,
-					uint32_t attr);
 static int smb_Dir_destructor(struct smb_Dir *dir_hnd);
 
 #define INVALID_DPTR_KEY (-3)
@@ -414,7 +408,7 @@ static const char *dptr_normal_ReadDirName(struct dptr_struct *dptr,
 	while ((name = ReadDirName(dptr->dir_hnd, poffset, pst, &talloced))
 	       != NULL) {
 		if (is_visible_file(dptr->conn,
-				dptr->smb_dname->base_name,
+				dptr->dir_hnd,
 				name,
 				pst,
 				true)) {
@@ -472,7 +466,7 @@ static char *dptr_ReadDirName(TALLOC_CTX *ctx,
 
 	/* First check if it should be visible. */
 	if (!is_visible_file(dptr->conn,
-			dptr->smb_dname->base_name,
+			dptr->dir_hnd,
 			dptr->wcard,
 			pst,
 			true)) {
@@ -496,7 +490,10 @@ static char *dptr_ReadDirName(TALLOC_CTX *ctx,
 		return NULL;
 
 	/* Create an smb_filename with stream_name == NULL. */
-	smb_fname_base = (struct smb_filename) { .base_name = pathreal };
+	smb_fname_base = (struct smb_filename) {
+		.base_name = pathreal,
+		.twrp = dptr->smb_dname->twrp,
+	};
 
 	if (SMB_VFS_STAT(dptr->conn, &smb_fname_base) == 0) {
 		*pst = smb_fname_base.st;
@@ -526,7 +523,7 @@ static char *dptr_ReadDirName(TALLOC_CTX *ctx,
 	 * scanning the whole directory.
 	 */
 	ret = SMB_VFS_GET_REAL_FILENAME(dptr->conn,
-					dptr->smb_dname->base_name,
+					dptr->smb_dname,
 					dptr->wcard,
 					ctx,
 					&found_name);
@@ -872,7 +869,9 @@ bool smbd_dirptr_get_entry(TALLOC_CTX *ctx,
 
 		/* Create smb_fname with NULL stream_name. */
 		smb_fname = (struct smb_filename) {
-			.base_name = pathreal, .st = sbuf
+			.base_name = pathreal,
+			.st = sbuf,
+			.twrp = dirptr->smb_dname->twrp,
 		};
 
 		ok = mode_fn(ctx, private_data, &smb_fname, get_dosmode, &mode);
@@ -1075,7 +1074,8 @@ bool get_dir_entry(TALLOC_CTX *ctx,
 ********************************************************************/
 
 static bool user_can_read_file(connection_struct *conn,
-			       struct smb_filename *smb_fname)
+				struct files_struct *dirfsp,
+				struct smb_filename *smb_fname)
 {
 	NTSTATUS status;
 	uint32_t rejected_share_access = 0;
@@ -1085,6 +1085,8 @@ static bool user_can_read_file(connection_struct *conn,
 				FILE_READ_EA|
 				FILE_READ_ATTRIBUTES|
 				SEC_STD_READ_CONTROL;
+
+	SMB_ASSERT(dirfsp == conn->cwd_fsp);
 
 	/*
 	 * Never hide files from the root user.
@@ -1118,7 +1120,8 @@ static bool user_can_read_file(connection_struct *conn,
 		return false;
         }
 
-	status = SMB_VFS_GET_NT_ACL(conn,
+	status = SMB_VFS_GET_NT_ACL_AT(conn,
+			dirfsp,
 			smb_fname,
 			(SECINFO_OWNER |
 			 SECINFO_GROUP |
@@ -1159,8 +1162,11 @@ static bool user_can_read_file(connection_struct *conn,
 ********************************************************************/
 
 static bool user_can_write_file(connection_struct *conn,
+				struct files_struct *dirfsp,
 				const struct smb_filename *smb_fname)
 {
+	SMB_ASSERT(dirfsp == conn->cwd_fsp);
+
 	/*
 	 * Never hide files from the root user.
 	 * We use (uid_t)0 here not sec_initial_uid()
@@ -1179,7 +1185,7 @@ static bool user_can_write_file(connection_struct *conn,
 		return True;
 	}
 
-	return can_write_to_file(conn, smb_fname);
+	return can_write_to_file(conn, dirfsp, smb_fname);
 }
 
 /*******************************************************************
@@ -1214,14 +1220,18 @@ static bool file_is_special(connection_struct *conn,
  NOTE: A successful return is no guarantee of the file's existence.
 ********************************************************************/
 
-bool is_visible_file(connection_struct *conn, const char *dir_path,
-		     const char *name, SMB_STRUCT_STAT *pst, bool use_veto)
+bool is_visible_file(connection_struct *conn,
+		struct smb_Dir *dir_hnd,
+		const char *name,
+		SMB_STRUCT_STAT *pst,
+		bool use_veto)
 {
 	bool hide_unreadable = lp_hide_unreadable(SNUM(conn));
 	bool hide_unwriteable = lp_hide_unwriteable_files(SNUM(conn));
 	bool hide_special = lp_hide_special_files(SNUM(conn));
 	int hide_new_files_timeout = lp_hide_new_files_timeout(SNUM(conn));
 	char *entry = NULL;
+	struct smb_filename *dir_path = dir_hnd->fsp->fsp_name;
 	struct smb_filename *smb_fname_base = NULL;
 	bool ret = false;
 
@@ -1240,7 +1250,10 @@ bool is_visible_file(connection_struct *conn, const char *dir_path,
 	    hide_special ||
 	    (hide_new_files_timeout != 0))
 	{
-		entry = talloc_asprintf(talloc_tos(), "%s/%s", dir_path, name);
+		entry = talloc_asprintf(talloc_tos(),
+					"%s/%s",
+					dir_path->base_name,
+					name);
 		if (!entry) {
 			ret = false;
 			goto out;
@@ -1251,6 +1264,7 @@ bool is_visible_file(connection_struct *conn, const char *dir_path,
 						entry,
 						NULL,
 						pst,
+						dir_path->twrp,
 						0);
 		if (smb_fname_base == NULL) {
 			ret = false;
@@ -1271,15 +1285,21 @@ bool is_visible_file(connection_struct *conn, const char *dir_path,
 
 		/* Honour _hide unreadable_ option */
 		if (hide_unreadable &&
-		    !user_can_read_file(conn, smb_fname_base)) {
+		    !user_can_read_file(conn,
+				conn->cwd_fsp,
+				smb_fname_base))
+		{
 			DEBUG(10,("is_visible_file: file %s is unreadable.\n",
 				 entry ));
 			ret = false;
 			goto out;
 		}
 		/* Honour _hide unwriteable_ option */
-		if (hide_unwriteable && !user_can_write_file(conn,
-							     smb_fname_base)) {
+		if (hide_unwriteable &&
+		    !user_can_write_file(conn,
+				conn->cwd_fsp,
+				smb_fname_base))
+		{
 			DEBUG(10,("is_visible_file: file %s is unwritable.\n",
 				 entry ));
 			ret = false;
@@ -1317,21 +1337,11 @@ static int smb_Dir_destructor(struct smb_Dir *dir_hnd)
 	files_struct *fsp = dir_hnd->fsp;
 
 	SMB_VFS_CLOSEDIR(dir_hnd->conn, dir_hnd->dir);
-	/*
-	 * The SMB_VFS_CLOSEDIR above
-	 * closes the underlying fd inside
-	 * dirp->fsp, unless fallback_opendir
-	 * was set in which case the fd
-	 * in dir_hnd->fsp->fh->fd isn't
-	 * the one being closed. Close
-	 * it separately.
-	 */
-	if (dir_hnd->fallback_opendir) {
-		SMB_VFS_CLOSE(fsp);
-	}
 	fsp->fh->fd = -1;
-	SMB_ASSERT(fsp->dptr->dir_hnd == dir_hnd);
-	fsp->dptr->dir_hnd = NULL;
+	if (fsp->dptr != NULL) {
+		SMB_ASSERT(fsp->dptr->dir_hnd == dir_hnd);
+		fsp->dptr->dir_hnd = NULL;
+	}
 	dir_hnd->fsp = NULL;
 	return 0;
 }
@@ -1340,169 +1350,42 @@ static int smb_Dir_destructor(struct smb_Dir *dir_hnd)
  Open a directory.
 ********************************************************************/
 
-static struct smb_Dir *OpenDir_internal(TALLOC_CTX *mem_ctx,
+static int smb_Dir_OpenDir_destructor(struct smb_Dir *dir_hnd)
+{
+	files_struct *fsp = dir_hnd->fsp;
+
+	smb_Dir_destructor(dir_hnd);
+	file_free(NULL, fsp);
+	return 0;
+}
+
+struct smb_Dir *OpenDir(TALLOC_CTX *mem_ctx,
 			connection_struct *conn,
 			const struct smb_filename *smb_dname,
 			const char *mask,
 			uint32_t attr)
 {
-	struct smb_Dir *dir_hnd = talloc_zero(mem_ctx, struct smb_Dir);
-
-	if (!dir_hnd) {
-		return NULL;
-	}
-
-	dir_hnd->dir = SMB_VFS_OPENDIR(conn, smb_dname, mask, attr);
-
-	if (!dir_hnd->dir) {
-		DEBUG(5,("OpenDir: Can't open %s. %s\n",
-			smb_dname->base_name,
-			strerror(errno) ));
-		goto fail;
-	}
-
-	dir_hnd->conn = conn;
-
-	if (!conn->sconn->using_smb2) {
-		/*
-		 * The dircache is only needed for SMB1 because SMB1 uses a name
-		 * for the resume wheras SMB2 always continues from the next
-		 * position (unless it's told to restart or close-and-reopen the
-		 * listing).
-		 */
-		dir_hnd->name_cache_size =
-			lp_directory_name_cache_size(SNUM(conn));
-	}
-
-	return dir_hnd;
-
-  fail:
-	TALLOC_FREE(dir_hnd);
-	return NULL;
-}
-
-/**
- * @brief Open a directory handle by pathname, ensuring it's under the share path.
- *
- * First stores the $cwd, then changes directory to the passed in pathname
- * uses check_name() to ensure this is under the connection struct share path,
- * then operates on a pathname of "." to ensure we're in the same place.
- *
- * The returned struct smb_Dir * should have a talloc destrctor added to
- * ensure that when the struct is freed the internal POSIX DIR * pointer
- * is closed.
- *
- * @code
- *
- * static int sample_smb_Dir_destructor(struct smb_Dir *dirp)
- * {
- *     SMB_VFS_CLOSEDIR(dirp->conn,dirp->dir);
- * }
- * ..
- *     struct smb_Dir *dir_hnd = open_dir_safely(mem_ctx,
- *                              conn,
- *                              smb_dname,
- *                              mask,
- *                              attr);
- *      if (dir_hnd == NULL) {
- *              return NULL;
- *      }
- *      talloc_set_destructor(dir_hnd, smb_Dir_destructor);
- * ..
- * @endcode
- */
-
-static struct smb_Dir *open_dir_safely(TALLOC_CTX *ctx,
-					connection_struct *conn,
-					const struct smb_filename *smb_dname,
-					const char *wcard,
-					uint32_t attr)
-{
+	struct files_struct *fsp = NULL;
 	struct smb_Dir *dir_hnd = NULL;
-	struct smb_filename *smb_fname_cwd = NULL;
-	struct smb_filename *saved_dir_fname = vfs_GetWd(ctx, conn);
 	NTSTATUS status;
 
-	if (saved_dir_fname == NULL) {
-		return NULL;
-	}
-
-	if (vfs_ChDir(conn, smb_dname) == -1) {
-		goto out;
-	}
-
-	smb_fname_cwd = synthetic_smb_fname(talloc_tos(),
-					".",
-					NULL,
-					NULL,
-					smb_dname->flags);
-	if (smb_fname_cwd == NULL) {
-		goto out;
-	}
-
-	/*
-	 * Now the directory is pinned, use
-	 * REALPATH to ensure we can access it.
-	 */
-	status = check_name(conn, smb_fname_cwd);
+	status = open_internal_dirfsp(conn,
+				      smb_dname,
+				      O_RDONLY,
+				      &fsp);
 	if (!NT_STATUS_IS_OK(status)) {
-		goto out;
+		return NULL;
 	}
 
-	dir_hnd = OpenDir_internal(ctx,
-				conn,
-				smb_fname_cwd,
-				wcard,
-				attr);
-
-	if (dir_hnd == NULL) {
-		goto out;
-	}
-
-	/*
-	 * OpenDir_internal only gets "." as the dir name.
-	 * Store the real dir name here.
-	 */
-
-	dir_hnd->dir_smb_fname = cp_smb_filename(dir_hnd, smb_dname);
-	if (!dir_hnd->dir_smb_fname) {
-		TALLOC_FREE(dir_hnd);
-		SMB_VFS_CLOSEDIR(conn, dir_hnd->dir);
-		errno = ENOMEM;
-	}
-
-  out:
-
-	vfs_ChDir(conn, saved_dir_fname);
-	TALLOC_FREE(saved_dir_fname);
-	return dir_hnd;
-}
-
-/*
- * Simple destructor for OpenDir() use. Don't need to
- * care about fsp back pointer as we know we have never
- * set it in the OpenDir() code path.
- */
-
-static int smb_Dir_OpenDir_destructor(struct smb_Dir *dir_hnd)
-{
-	SMB_VFS_CLOSEDIR(dir_hnd->conn, dir_hnd->dir);
-	return 0;
-}
-
-struct smb_Dir *OpenDir(TALLOC_CTX *mem_ctx, connection_struct *conn,
-			const struct smb_filename *smb_dname,
-			const char *mask,
-			uint32_t attr)
-{
-	struct smb_Dir *dir_hnd = open_dir_safely(mem_ctx,
-				conn,
-				smb_dname,
-				mask,
-				attr);
+	dir_hnd = OpenDir_fsp(mem_ctx, conn, fsp, mask, attr);
 	if (dir_hnd == NULL) {
 		return NULL;
 	}
+
+	/*
+	 * This overwrites the destructor set by smb_Dir_OpenDir_destructor(),
+	 * but smb_Dir_OpenDir_destructor() calls the OpenDir_fsp() destructor.
+	 */
 	talloc_set_destructor(dir_hnd, smb_Dir_OpenDir_destructor);
 	return dir_hnd;
 }
@@ -1522,7 +1405,7 @@ static struct smb_Dir *OpenDir_fsp(TALLOC_CTX *mem_ctx, connection_struct *conn,
 		goto fail;
 	}
 
-	if (!fsp->is_directory) {
+	if (!fsp->fsp_flags.is_directory) {
 		errno = EBADF;
 		goto fail;
 	}
@@ -1552,40 +1435,10 @@ static struct smb_Dir *OpenDir_fsp(TALLOC_CTX *mem_ctx, connection_struct *conn,
 	}
 
 	dir_hnd->dir = SMB_VFS_FDOPENDIR(fsp, mask, attr);
-	if (dir_hnd->dir != NULL) {
-		dir_hnd->fsp = fsp;
-	} else {
-		DEBUG(10,("OpenDir_fsp: SMB_VFS_FDOPENDIR on %s returned "
-			"NULL (%s)\n",
-			dir_hnd->dir_smb_fname->base_name,
-			strerror(errno)));
-		if (errno != ENOSYS) {
-			goto fail;
-		}
-	}
-
 	if (dir_hnd->dir == NULL) {
-		/* FDOPENDIR is not supported. Use OPENDIR instead. */
-		TALLOC_FREE(dir_hnd);
-		dir_hnd = open_dir_safely(mem_ctx,
-					conn,
-					fsp->fsp_name,
-					mask,
-					attr);
-		if (dir_hnd == NULL) {
-			errno = ENOMEM;
-			goto fail;
-		}
-		/*
-		 * Remember if we used the fallback.
-		 * We need to change the destructor
-		 * to also close the fsp file descriptor
-		 * in this case as it isn't the same
-		 * one the directory handle uses.
-		 */
-		dir_hnd->fsp = fsp;
-		dir_hnd->fallback_opendir = true;
+		goto fail;
 	}
+	dir_hnd->fsp = fsp;
 
 	talloc_set_destructor(dir_hnd, smb_Dir_destructor);
 
@@ -1908,7 +1761,6 @@ NTSTATUS can_delete_directory_fsp(files_struct *fsp)
 	NTSTATUS status = NT_STATUS_OK;
 	long dirpos = 0;
 	const char *dname = NULL;
-	const char *dirname = fsp->fsp_name->base_name;
 	char *talloced = NULL;
 	SMB_STRUCT_STAT st;
 	struct connection_struct *conn = fsp->conn;
@@ -1931,7 +1783,11 @@ NTSTATUS can_delete_directory_fsp(files_struct *fsp)
 			}
 		}
 
-		if (!is_visible_file(conn, dirname, dname, &st, True)) {
+		if (!is_visible_file(conn,
+				dir_hnd,
+				dname,
+				&st,
+				True)) {
 			TALLOC_FREE(talloced);
 			continue;
 		}

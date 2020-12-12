@@ -67,6 +67,10 @@ struct dcesrv_interface {
 	 */
 	NTSTATUS (*ndr_push)(struct dcesrv_call_state *, TALLOC_CTX *, struct ndr_push *, const void *);
 
+	/* the local dispatch function for the chosen interface.
+	 */
+	NTSTATUS (*local)(struct dcesrv_call_state *, TALLOC_CTX *, void *);
+
 	/* for any private use by the interface code */
 	const void *private_data;
 
@@ -620,6 +624,9 @@ _PUBLIC_ void dcesrv_sock_report_output_data(struct dcesrv_connection *dce_conn)
 
 _PUBLIC_ NTSTATUS dcesrv_connection_loop_start(struct dcesrv_connection *conn);
 
+_PUBLIC_ const struct dcesrv_interface *find_interface_by_uuid(
+				const struct dcesrv_endpoint *endpoint,
+				const struct GUID *uuid, uint32_t if_version);
 
 void _dcesrv_save_ndr_fuzz_seed(DATA_BLOB call_blob,
 				struct dcesrv_call_state *call,

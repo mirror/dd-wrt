@@ -26,19 +26,19 @@
 #include "messages.h"
 
 #include "librpc/rpc/dcerpc_ep.h"
-#include "../librpc/gen_ndr/srv_fsrvp.h"
+
+#include "librpc/rpc/dcesrv_core.h"
+#include "librpc/gen_ndr/ndr_fsrvp_scompat.h"
+
 #include "rpc_server/rpc_server.h"
+#include "rpc_server/rpc_service_setup.h"
 #include "rpc_server/rpc_sock_helper.h"
-#include "rpc_server/fss/srv_fss_agent.h"
 #include "rpc_server/fssd.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
 
 #define DAEMON_NAME "fssd"
-
-void start_fssd(struct tevent_context *ev_ctx,
-		struct messaging_context *msg_ctx);
 
 static void fssd_reopen_logs(void)
 {
@@ -129,33 +129,15 @@ static void fssd_setup_sig_hup_handler(struct tevent_context *ev_ctx,
 	}
 }
 
-static bool fss_shutdown_cb(void *ptr)
-{
-	srv_fssa_cleanup();
-	return true;
-}
-
-static bool fss_init_cb(void *ptr)
-{
-	NTSTATUS status;
-        struct messaging_context *msg_ctx;
-
-	msg_ctx = talloc_get_type_abort(ptr, struct messaging_context);
-	status = srv_fssa_start(msg_ctx);
-	return NT_STATUS_IS_OK(status);
-}
-
 void start_fssd(struct tevent_context *ev_ctx,
-		struct messaging_context *msg_ctx)
+		struct messaging_context *msg_ctx,
+		struct dcesrv_context *dce_ctx)
 {
-	struct rpc_srv_callbacks fss_cb;
 	NTSTATUS status;
 	pid_t pid;
 	int rc;
-
-	fss_cb.init = fss_init_cb;
-	fss_cb.shutdown = fss_shutdown_cb;
-	fss_cb.private_data = msg_ctx;
+	const struct dcesrv_endpoint_server *ep_server = NULL;
+	struct dcesrv_endpoint *e = NULL;
 
 	DEBUG(1, ("Forking File Server Shadow-copy Daemon\n"));
 
@@ -189,18 +171,57 @@ void start_fssd(struct tevent_context *ev_ctx,
 			   MSG_SMB_CONF_UPDATED,
 			   fssd_smb_conf_updated);
 
-	status = rpc_FileServerVssAgent_init(&fss_cb);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("Failed to register fssd rpc interface! (%s)\n",
-			  nt_errstr(status)));
+	DBG_INFO("Registering DCE/RPC endpoint servers\n");
+
+	ep_server = FileServerVssAgent_get_ep_server();
+	if (ep_server == NULL) {
+		DBG_ERR("Failed to get 'FileServerVssAgent' endpoint "
+			"server\n");
 		exit(1);
 	}
 
-	/* case is normalized by smbd on connection */
-	status = dcesrv_setup_ncacn_np_socket("fssagentrpc", ev_ctx, msg_ctx);
+	status = dcerpc_register_ep_server(ep_server);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("Failed to open fssd named pipe!\n"));
+		DBG_ERR("Failed to register 'FileServerVssAgent' endpoint "
+			"server: %s\n", nt_errstr(status));
 		exit(1);
+	}
+
+	DBG_INFO("Reinitializing DCE/RPC server context\n");
+
+	status = dcesrv_reinit_context(dce_ctx);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to reinit DCE/RPC context: %s\n",
+			nt_errstr(status));
+		exit(1);
+	}
+
+	DBG_INFO("Initializing DCE/RPC registered endpoint servers\n");
+
+	status = dcesrv_init_ep_server(dce_ctx, "FileServerVssAgent");
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to init DCE/RPC endpoint server: %s\n",
+			nt_errstr(status));
+		exit(1);
+	}
+
+	DBG_INFO("Initializing DCE/RPC connection endpoints\n");
+
+	for (e = dce_ctx->endpoint_list; e; e = e->next) {
+		status = dcesrv_setup_endpoint_sockets(ev_ctx,
+						       msg_ctx,
+						       dce_ctx,
+						       e,
+						       NULL, /* termination function */
+						       NULL); /* termination data */
+		if (!NT_STATUS_IS_OK(status)) {
+			char *ep_string = dcerpc_binding_string(
+					dce_ctx, e->ep_description);
+			DBG_ERR("Failed to setup endpoint '%s': %s\n",
+					ep_string, nt_errstr(status));
+			TALLOC_FREE(ep_string);
+			exit(1);
+		}
 	}
 
 	DEBUG(1, ("File Server Shadow-copy Daemon Started (%d)\n",

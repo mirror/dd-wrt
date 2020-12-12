@@ -32,9 +32,6 @@
 #include <tdb.h>
 
 #if PY_MAJOR_VERSION >= 3
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_Check PyLong_Check
-#define PyInt_AsLong PyLong_AsLong
 #define Py_TPFLAGS_HAVE_ITER 0
 #endif
 
@@ -384,6 +381,53 @@ static PyObject *obj_store(PyTdbObject *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+static PyObject *obj_storev(PyTdbObject *self, PyObject *args)
+{
+	TDB_DATA key, *values, value;
+	int ret;
+	int flag = TDB_REPLACE;
+	Py_ssize_t num_values, i;
+	PyObject *py_key, *py_values, *py_value;
+
+	PyErr_TDB_RAISE_IF_CLOSED(self);
+
+	if (!PyArg_ParseTuple(
+		    args, "OO!|i", &py_key, &PyList_Type, &py_values, &flag)) {
+		return NULL;
+	}
+
+	num_values = PyList_Size(py_values);
+
+	key = PyBytes_AsTDB_DATA(py_key);
+	if (key.dptr == NULL) {
+		return NULL;
+	}
+
+	if (SSIZE_MAX/sizeof(TDB_DATA) < num_values) {
+		PyErr_SetFromErrno(PyExc_OverflowError);
+		return NULL;
+	}
+	values = malloc(sizeof(TDB_DATA) * num_values);
+	if (values == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	for (i=0; i<num_values; i++) {
+		py_value = PyList_GetItem(py_values, i);
+		value = PyBytes_AsTDB_DATA(py_value);
+		if (!value.dptr) {
+			free(values);
+			return NULL;
+		}
+		values[i] = value;
+	}
+
+	ret = tdb_storev(self->ctx, key, values, num_values, flag);
+	free(values);
+	PyErr_TDB_ERROR_IS_ERR_RAISE(ret, self->ctx);
+	Py_RETURN_NONE;
+}
+
 static PyObject *obj_add_flags(PyTdbObject *self, PyObject *args)
 {
 	unsigned flags;
@@ -528,6 +572,8 @@ static PyMethodDef tdb_object_methods[] = {
 #endif
 	{ "store", (PyCFunction)obj_store, METH_VARARGS, "S.store(key, data, flag=REPLACE) -> None"
 		"Store data." },
+	{ "storev", (PyCFunction)obj_storev, METH_VARARGS, "S.storev(key, data, flag=REPLACE) -> None"
+		"Store several data." },
 	{ "add_flags", (PyCFunction)obj_add_flags, METH_VARARGS, "S.add_flags(flags) -> None" },
 	{ "remove_flags", (PyCFunction)obj_remove_flags, METH_VARARGS, "S.remove_flags(flags) -> None" },
 #if PY_MAJOR_VERSION >= 3
@@ -543,40 +589,40 @@ static PyMethodDef tdb_object_methods[] = {
 		"S.enable_seqnum() -> None" },
 	{ "increment_seqnum_nonblock", (PyCFunction)obj_increment_seqnum_nonblock, METH_NOARGS,
 		"S.increment_seqnum_nonblock() -> None" },
-	{ NULL }
+	{0}
 };
 
 static PyObject *obj_get_hash_size(PyTdbObject *self, void *closure)
 {
 	PyErr_TDB_RAISE_IF_CLOSED(self);
-	return PyInt_FromLong(tdb_hash_size(self->ctx));
+	return PyLong_FromLong(tdb_hash_size(self->ctx));
 }
 
 static int obj_set_max_dead(PyTdbObject *self, PyObject *max_dead, void *closure)
 {
 	PyErr_TDB_RAISE_RETURN_MINUS_1_IF_CLOSED(self);
-	if (!PyInt_Check(max_dead))
+	if (!PyLong_Check(max_dead))
 		return -1;
-	tdb_set_max_dead(self->ctx, PyInt_AsLong(max_dead));
+	tdb_set_max_dead(self->ctx, PyLong_AsLong(max_dead));
 	return 0;
 }
 
 static PyObject *obj_get_map_size(PyTdbObject *self, void *closure)
 {
 	PyErr_TDB_RAISE_IF_CLOSED(self);
-	return PyInt_FromLong(tdb_map_size(self->ctx));
+	return PyLong_FromLong(tdb_map_size(self->ctx));
 }
 
 static PyObject *obj_get_freelist_size(PyTdbObject *self, void *closure)
 {
 	PyErr_TDB_RAISE_IF_CLOSED(self);
-	return PyInt_FromLong(tdb_freelist_size(self->ctx));
+	return PyLong_FromLong(tdb_freelist_size(self->ctx));
 }
 
 static PyObject *obj_get_flags(PyTdbObject *self, void *closure)
 {
 	PyErr_TDB_RAISE_IF_CLOSED(self);
-	return PyInt_FromLong(tdb_get_flags(self->ctx));
+	return PyLong_FromLong(tdb_get_flags(self->ctx));
 }
 
 static PyObject *obj_get_filename(PyTdbObject *self, void *closure)
@@ -588,7 +634,7 @@ static PyObject *obj_get_filename(PyTdbObject *self, void *closure)
 static PyObject *obj_get_seqnum(PyTdbObject *self, void *closure)
 {
 	PyErr_TDB_RAISE_IF_CLOSED(self);
-	return PyInt_FromLong(tdb_get_seqnum(self->ctx));
+	return PyLong_FromLong(tdb_get_seqnum(self->ctx));
 }
 
 static PyObject *obj_get_text(PyTdbObject *self, void *closure)

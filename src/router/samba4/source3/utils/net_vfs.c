@@ -224,7 +224,12 @@ static int net_vfs_get_ntacl(struct net_context *net,
 	}
 
 	path = argv[1];
-	smb_fname = synthetic_smb_fname(state.mem_ctx, path, NULL, NULL, 0);
+	smb_fname = synthetic_smb_fname(state.mem_ctx,
+					path,
+					NULL,
+					NULL,
+					0,
+					0);
 	if (smb_fname == NULL) {
 		goto done;
 	}
@@ -239,7 +244,7 @@ static int net_vfs_get_ntacl(struct net_context *net,
 	status = SMB_VFS_CREATE_FILE(
 		state.conn_tos->conn,
 		NULL,				/* req */
-		0,				/* root_dir_fid */
+		&state.conn_tos->conn->cwd_fsp,
 		smb_fname,
 		FILE_READ_ATTRIBUTES|READ_CONTROL_ACCESS,
 		FILE_SHARE_READ|FILE_SHARE_WRITE,
@@ -315,6 +320,7 @@ static bool do_unfruit(const char *path)
 					path,
 					NULL,
 					NULL,
+					0,
 					0);
 	if (smb_fname == NULL) {
 		return false;

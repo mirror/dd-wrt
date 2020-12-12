@@ -48,7 +48,7 @@ static ino_t generate_inode(const char *name)
 void setup_stat(struct stat *st,
 		const char *fname,
 		off_t size,
-		int mode,
+		int attr,
 		ino_t ino,
 		dev_t dev,
 		struct timespec access_time_ts,
@@ -57,22 +57,22 @@ void setup_stat(struct stat *st,
 {
 	st->st_mode = 0;
 
-	if (IS_DOS_DIR(mode)) {
+	if (IS_DOS_DIR(attr)) {
 		st->st_mode = SMBC_DIR_MODE;
 	} else {
 		st->st_mode = SMBC_FILE_MODE;
 	}
 
-	if (IS_DOS_ARCHIVE(mode)) {
+	if (IS_DOS_ARCHIVE(attr)) {
 		st->st_mode |= S_IXUSR;
 	}
-	if (IS_DOS_SYSTEM(mode)) {
+	if (IS_DOS_SYSTEM(attr)) {
 		st->st_mode |= S_IXGRP;
 	}
-	if (IS_DOS_HIDDEN(mode)) {
+	if (IS_DOS_HIDDEN(attr)) {
 		st->st_mode |= S_IXOTH;
 	}
-	if (!IS_DOS_READONLY(mode)) {
+	if (!IS_DOS_READONLY(attr)) {
 		st->st_mode |= S_IWUSR;
 	}
 
@@ -89,7 +89,7 @@ void setup_stat(struct stat *st,
 	st->st_uid = getuid();
 	st->st_gid = getgid();
 
-	if (IS_DOS_DIR(mode)) {
+	if (IS_DOS_DIR(attr)) {
 		st->st_nlink = 2;
 	} else {
 		st->st_nlink = 1;
@@ -102,18 +102,18 @@ void setup_stat(struct stat *st,
 	}
 
 	st->st_dev = dev;
-	st->st_atime = convert_timespec_to_time_t(access_time_ts);
-	st->st_ctime = convert_timespec_to_time_t(change_time_ts);
-	st->st_mtime = convert_timespec_to_time_t(write_time_ts);
+	st->st_atim = access_time_ts;
+	st->st_ctim = change_time_ts;
+	st->st_mtim = write_time_ts;
 }
 
 void setup_stat_from_stat_ex(const struct stat_ex *stex,
 			     const char *fname,
 			     struct stat *st)
 {
-	st->st_atime = convert_timespec_to_time_t(stex->st_ex_atime);
-	st->st_ctime = convert_timespec_to_time_t(stex->st_ex_ctime);
-	st->st_mtime = convert_timespec_to_time_t(stex->st_ex_mtime);
+	st->st_atim = stex->st_ex_atime;
+	st->st_ctim = stex->st_ex_ctime;
+	st->st_mtim = stex->st_ex_mtime;
 
 	st->st_mode = stex->st_ex_mode;
 	st->st_size = stex->st_ex_size;
@@ -232,7 +232,7 @@ SMBC_fstat_ctx(SMBCCTX *context,
         struct timespec access_time_ts;
         struct timespec write_time_ts;
 	off_t size;
-	uint16_t mode;
+	uint32_t attr;
 	char *server = NULL;
 	char *share = NULL;
 	char *user = NULL;
@@ -251,7 +251,7 @@ SMBC_fstat_ctx(SMBCCTX *context,
 		return -1;
 	}
 
-	if (!file || !SMBC_dlist_contains(context->internal->files, file)) {
+	if (!SMBC_dlist_contains(context->internal->files, file)) {
 		errno = EBADF;
 		TALLOC_FREE(frame);
 		return -1;
@@ -292,29 +292,21 @@ SMBC_fstat_ctx(SMBCCTX *context,
 	/*d_printf(">>>fstat: resolved path as %s\n", targetpath);*/
 
 	if (!NT_STATUS_IS_OK(cli_qfileinfo_basic(
-				     targetcli, file->cli_fd, &mode, &size,
+				     targetcli, file->cli_fd, &attr, &size,
 				     NULL,
 				     &access_time_ts,
 				     &write_time_ts,
 				     &change_time_ts,
 				     &ino))) {
-		time_t change_time, access_time, write_time;
-
-		if (!NT_STATUS_IS_OK(cli_getattrE(targetcli, file->cli_fd, &mode, &size,
-                                  &change_time, &access_time, &write_time))) {
-			errno = EINVAL;
-			TALLOC_FREE(frame);
-			return -1;
-		}
-		change_time_ts = convert_time_t_to_timespec(change_time);
-		access_time_ts = convert_time_t_to_timespec(access_time);
-		write_time_ts = convert_time_t_to_timespec(write_time);
+		errno = EINVAL;
+		TALLOC_FREE(frame);
+		return -1;
 	}
 
 	setup_stat(st,
 		path,
 		size,
-		mode,
+		attr,
 		ino,
 		file->srv->dev,
 		access_time_ts,

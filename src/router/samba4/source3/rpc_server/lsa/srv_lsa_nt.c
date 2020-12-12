@@ -31,7 +31,8 @@
 
 #include "includes.h"
 #include "ntdomain.h"
-#include "../librpc/gen_ndr/srv_lsa.h"
+#include "librpc/gen_ndr/ndr_lsa.h"
+#include "librpc/gen_ndr/ndr_lsa_scompat.h"
 #include "secrets.h"
 #include "../librpc/gen_ndr/netlogon.h"
 #include "rpc_client/init_lsa.h"
@@ -49,6 +50,7 @@
 #include "../libcli/auth/libcli_auth.h"
 #include "../libcli/lsarpc/util_lsarpc.h"
 #include "lsa.h"
+#include "librpc/rpc/dcesrv_core.h"
 
 #include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/gnutls.h>
@@ -469,10 +471,12 @@ NTSTATUS _lsa_EnumTrustDom(struct pipes_struct *p,
 	int i;
 	NTSTATUS nt_status;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_POLICY_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_POLICY_TYPE,
+				  struct lsa_info,
+				  &nt_status);
+	if (!NT_STATUS_IS_OK(nt_status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -548,10 +552,12 @@ NTSTATUS _lsa_QueryInfoPolicy(struct pipes_struct *p,
 	union lsa_PolicyInformation *info = NULL;
 	uint32_t acc_required = 0;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -930,11 +936,12 @@ NTSTATUS _lsa_LookupSids(struct pipes_struct *p,
 		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -1016,11 +1023,12 @@ static NTSTATUS _lsa_LookupSids_common(struct pipes_struct *p,
 	}
 
 	if (check_policy) {
-		if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
-			return NT_STATUS_INVALID_HANDLE;
-		}
-
-		if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+		handle = find_policy_by_hnd(p,
+					    r->in.handle,
+					    LSA_HANDLE_POLICY_TYPE,
+					    struct lsa_info,
+					    &status);
+		if (!NT_STATUS_IS_OK(status)) {
 			return NT_STATUS_INVALID_HANDLE;
 		}
 
@@ -1180,13 +1188,14 @@ NTSTATUS _lsa_LookupNames(struct pipes_struct *p,
 		rids = NULL;
 	}
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		status = NT_STATUS_INVALID_HANDLE;
 		goto done;
-	}
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
-		return NT_STATUS_INVALID_HANDLE;
 	}
 
 	/* check if the user has enough rights */
@@ -1322,13 +1331,14 @@ static NTSTATUS _lsa_LookupNames_common(struct pipes_struct *p,
 
 	if (check_policy) {
 
-		if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
+		handle = find_policy_by_hnd(p,
+					    r->in.handle,
+					    LSA_HANDLE_POLICY_TYPE,
+					    struct lsa_info,
+					    &status);
+		if (!NT_STATUS_IS_OK(status)) {
 			status = NT_STATUS_INVALID_HANDLE;
 			goto done;
-		}
-
-		if (handle->type != LSA_HANDLE_POLICY_TYPE) {
-			return NT_STATUS_INVALID_HANDLE;
 		}
 
 		/* check if the user has enough rights */
@@ -1423,12 +1433,19 @@ NTSTATUS _lsa_LookupNames4(struct pipes_struct *p,
 
 NTSTATUS _lsa_Close(struct pipes_struct *p, struct lsa_Close *r)
 {
+	NTSTATUS status;
+
 	if (p->transport != NCACN_NP && p->transport != NCALRPC) {
 		p->fault_state = DCERPC_FAULT_ACCESS_DENIED;
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
-	if (!find_policy_by_hnd(p, r->in.handle, NULL)) {
+	(void)find_policy_by_hnd(p,
+				 r->in.handle,
+				 DCESRV_HANDLE_ANY,
+				 struct lsa_info,
+				 &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -1507,16 +1524,16 @@ static NTSTATUS lsa_lookup_trusted_domain_by_name(TALLOC_CTX *mem_ctx,
 NTSTATUS _lsa_OpenSecret(struct pipes_struct *p,
 			 struct lsa_OpenSecret *r)
 {
-	struct lsa_info *handle;
 	struct security_descriptor *psd;
 	NTSTATUS status;
 	uint32_t acc_granted;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	(void)find_policy_by_hnd(p,
+				r->in.handle,
+				LSA_HANDLE_POLICY_TYPE,
+				struct lsa_info,
+				&status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -1626,15 +1643,15 @@ static NTSTATUS _lsa_OpenTrustedDomain_base(struct pipes_struct *p,
 NTSTATUS _lsa_OpenTrustedDomain(struct pipes_struct *p,
 				struct lsa_OpenTrustedDomain *r)
 {
-	struct lsa_info *handle = NULL;
 	struct trustdom_info *info = NULL;
 	NTSTATUS status;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	(void)find_policy_by_hnd(p,
+				 r->in.handle,
+				 LSA_HANDLE_POLICY_TYPE,
+				 struct lsa_info,
+				 &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -1656,15 +1673,15 @@ NTSTATUS _lsa_OpenTrustedDomain(struct pipes_struct *p,
 NTSTATUS _lsa_OpenTrustedDomainByName(struct pipes_struct *p,
 				      struct lsa_OpenTrustedDomainByName *r)
 {
-	struct lsa_info *handle = NULL;
 	struct trustdom_info *info = NULL;
 	NTSTATUS status;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	(void)find_policy_by_hnd(p,
+				 r->in.handle,
+				 LSA_HANDLE_POLICY_TYPE,
+				 struct lsa_info,
+				 &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -1812,7 +1829,12 @@ NTSTATUS _lsa_CreateTrustedDomainEx2(struct pipes_struct *p,
 		return NT_STATUS_NOT_SUPPORTED;
 	}
 
-	if (!find_policy_by_hnd(p, r->in.policy_handle, (void **)(void *)&policy)) {
+	policy = find_policy_by_hnd(p,
+				    r->in.policy_handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -1972,11 +1994,12 @@ NTSTATUS _lsa_DeleteTrustedDomain(struct pipes_struct *p,
 	struct pdb_trusted_domain *td;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2054,11 +2077,12 @@ NTSTATUS _lsa_QueryTrustedDomainInfo(struct pipes_struct *p,
 	uint32_t acc_required;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.trustdom_handle, (void **)(void *)&handle)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (handle->type != LSA_HANDLE_TRUST_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.trustdom_handle,
+				    LSA_HANDLE_TRUST_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2283,11 +2307,12 @@ NTSTATUS _lsa_CreateSecret(struct pipes_struct *p,
 	size_t sd_size;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2369,11 +2394,12 @@ NTSTATUS _lsa_SetSecret(struct pipes_struct *p,
 	DATA_BLOB *cleartext_blob_old_p = NULL;
 	DATA_BLOB session_key;
 
-	if (!find_policy_by_hnd(p, r->in.sec_handle, (void **)(void *)&info)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (info->type != LSA_HANDLE_SECRET_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.sec_handle,
+				  LSA_HANDLE_SECRET_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2443,11 +2469,12 @@ NTSTATUS _lsa_QuerySecret(struct pipes_struct *p,
 	NTTIME nttime_new, nttime_old;
 	NTSTATUS status;
 
-	if (!find_policy_by_hnd(p, r->in.sec_handle, (void **)(void *)&info)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (info->type != LSA_HANDLE_SECRET_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.sec_handle,
+				  LSA_HANDLE_SECRET_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2531,7 +2558,12 @@ NTSTATUS _lsa_DeleteObject(struct pipes_struct *p,
 	NTSTATUS status;
 	struct lsa_info *info = NULL;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info)) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  DCESRV_HANDLE_ANY,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2582,6 +2614,7 @@ NTSTATUS _lsa_EnumPrivs(struct pipes_struct *p,
 	uint32_t enum_context = *r->in.resume_handle;
 	int num_privs = num_privileges_in_short_list();
 	struct lsa_PrivEntry *entries = NULL;
+	NTSTATUS status;
 
 	/* remember that the enum_context starts at 0 and not 1 */
 
@@ -2591,10 +2624,12 @@ NTSTATUS _lsa_EnumPrivs(struct pipes_struct *p,
 	DEBUG(10,("_lsa_EnumPrivs: enum_context:%d total entries:%d\n",
 		enum_context, num_privs));
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2648,11 +2683,14 @@ NTSTATUS _lsa_LookupPrivDisplayName(struct pipes_struct *p,
 	struct lsa_info *handle;
 	const char *description;
 	struct lsa_StringLarge *lsa_name;
+	NTSTATUS status;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2700,10 +2738,12 @@ NTSTATUS _lsa_EnumAccounts(struct pipes_struct *p,
 	NTSTATUS status;
 	struct lsa_SidPtr *sids = NULL;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2832,10 +2872,12 @@ NTSTATUS _lsa_CreateAccount(struct pipes_struct *p,
 			SEC_STD_DELETE));
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_POLICY_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2891,7 +2933,6 @@ NTSTATUS _lsa_CreateAccount(struct pipes_struct *p,
 NTSTATUS _lsa_OpenAccount(struct pipes_struct *p,
 			  struct lsa_OpenAccount *r)
 {
-	struct lsa_info *handle;
 	struct security_descriptor *psd = NULL;
 	size_t sd_size;
 	uint32_t des_access = r->in.access_mask;
@@ -2903,10 +2944,12 @@ NTSTATUS _lsa_OpenAccount(struct pipes_struct *p,
 	NTSTATUS status;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (handle->type != LSA_HANDLE_POLICY_TYPE) {
+	(void)find_policy_by_hnd(p,
+				 r->in.handle,
+				 LSA_HANDLE_POLICY_TYPE,
+				 struct lsa_info,
+				 &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -2971,10 +3014,12 @@ NTSTATUS _lsa_EnumPrivsAccount(struct pipes_struct *p,
 	struct dom_sid_buf buf;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_ACCOUNT_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_ACCOUNT_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3016,10 +3061,12 @@ NTSTATUS _lsa_GetSystemAccessAccount(struct pipes_struct *p,
 
 	/* find the connection policy handle. */
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_ACCOUNT_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_ACCOUNT_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3073,10 +3120,12 @@ NTSTATUS _lsa_SetSystemAccessAccount(struct pipes_struct *p,
 	GROUP_MAP *map;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_ACCOUNT_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_ACCOUNT_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3109,12 +3158,15 @@ NTSTATUS _lsa_AddPrivilegesToAccount(struct pipes_struct *p,
 {
 	struct lsa_info *info = NULL;
 	struct lsa_PrivilegeSet *set = NULL;
+	NTSTATUS status;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_ACCOUNT_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_ACCOUNT_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3144,12 +3196,15 @@ NTSTATUS _lsa_RemovePrivilegesFromAccount(struct pipes_struct *p,
 {
 	struct lsa_info *info = NULL;
 	struct lsa_PrivilegeSet *set = NULL;
+	NTSTATUS status;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_ACCOUNT_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_ACCOUNT_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3179,13 +3234,15 @@ NTSTATUS _lsa_LookupPrivName(struct pipes_struct *p,
 	struct lsa_info *info = NULL;
 	const char *name;
 	struct lsa_StringLarge *lsa_name;
+	NTSTATUS status;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (info->type != LSA_HANDLE_POLICY_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_POLICY_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3231,8 +3288,14 @@ NTSTATUS _lsa_QuerySecurity(struct pipes_struct *p,
 	NTSTATUS status;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle))
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    DCESRV_HANDLE_ANY,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
+	}
 
 	switch (handle->type) {
 	case LSA_HANDLE_POLICY_TYPE:
@@ -3267,7 +3330,6 @@ NTSTATUS _lsa_QuerySecurity(struct pipes_struct *p,
 NTSTATUS _lsa_AddAccountRights(struct pipes_struct *p,
 			       struct lsa_AddAccountRights *r)
 {
-	struct lsa_info *info = NULL;
 	int i = 0;
 	uint32_t acc_granted = 0;
 	struct security_descriptor *psd = NULL;
@@ -3276,10 +3338,12 @@ NTSTATUS _lsa_AddAccountRights(struct pipes_struct *p,
 	NTSTATUS status;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_POLICY_TYPE) {
+	(void)find_policy_by_hnd(p,
+				 r->in.handle,
+				 LSA_HANDLE_POLICY_TYPE,
+				 struct lsa_info,
+				 &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3337,7 +3401,6 @@ NTSTATUS _lsa_AddAccountRights(struct pipes_struct *p,
 NTSTATUS _lsa_RemoveAccountRights(struct pipes_struct *p,
 				  struct lsa_RemoveAccountRights *r)
 {
-	struct lsa_info *info = NULL;
 	int i = 0;
 	struct security_descriptor *psd = NULL;
 	size_t sd_size;
@@ -3347,10 +3410,12 @@ NTSTATUS _lsa_RemoveAccountRights(struct pipes_struct *p,
 	NTSTATUS status;
 
 	/* find the connection policy handle. */
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_POLICY_TYPE) {
+	(void)find_policy_by_hnd(p,
+				 r->in.handle,
+				 LSA_HANDLE_POLICY_TYPE,
+				 struct lsa_info,
+				 &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3462,10 +3527,12 @@ NTSTATUS _lsa_EnumAccountRights(struct pipes_struct *p,
 
 	/* find the connection policy handle. */
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_POLICY_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_POLICY_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3503,13 +3570,16 @@ NTSTATUS _lsa_LookupPrivValue(struct pipes_struct *p,
 {
 	struct lsa_info *info = NULL;
 	const char *name = NULL;
+	NTSTATUS status;
 
 	/* find the connection policy handle. */
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_POLICY_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_POLICY_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3542,11 +3612,12 @@ NTSTATUS _lsa_EnumAccountsWithUserRight(struct pipes_struct *p,
 	uint32_t i;
 	enum sec_privilege privilege;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (info->type != LSA_HANDLE_POLICY_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_POLICY_TYPE,
+				  struct lsa_info,
+				  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3851,12 +3922,14 @@ NTSTATUS _lsa_SetInformationTrustedDomain(struct pipes_struct *p,
 					  struct lsa_SetInformationTrustedDomain *r)
 {
 	struct lsa_info *policy;
+	NTSTATUS status;
 
-	if (!find_policy_by_hnd(p, r->in.trustdom_handle, (void **)(void *)&policy)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (policy->type != LSA_HANDLE_TRUST_TYPE) {
+	policy = find_policy_by_hnd(p,
+				    r->in.trustdom_handle,
+				    LSA_HANDLE_TRUST_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -3950,10 +4023,12 @@ NTSTATUS _lsa_EnumTrustedDomainsEx(struct pipes_struct *p,
 		return NT_STATUS_NOT_IMPLEMENTED;
 	}
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&info))
-		return NT_STATUS_INVALID_HANDLE;
-
-	if (info->type != LSA_HANDLE_POLICY_TYPE) {
+	info = find_policy_by_hnd(p,
+				  r->in.handle,
+				  LSA_HANDLE_POLICY_TYPE,
+				  struct lsa_info,
+				  &nt_status);
+	if (!NT_STATUS_IS_OK(nt_status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -4502,11 +4577,12 @@ NTSTATUS _lsa_lsaRSetForestTrustInformation(struct pipes_struct *p,
 		return NT_STATUS_NOT_SUPPORTED;
 	}
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&handle)) {
-		return NT_STATUS_INVALID_HANDLE;
-	}
-
-	if (handle->type != LSA_HANDLE_TRUST_TYPE) {
+	handle = find_policy_by_hnd(p,
+				    r->in.handle,
+				    LSA_HANDLE_TRUST_TYPE,
+				    struct lsa_info,
+				    &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -4665,3 +4741,49 @@ NTSTATUS _lsa_LSARADTREPORTSECURITYEVENT(struct pipes_struct *p,
 	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
+
+#include "librpc/rpc/dcesrv_core.h"
+
+#define DCESRV_INTERFACE_LSARPC_BIND(context, iface) \
+       dcesrv_interface_lsarpc_bind(context, iface)
+
+static NTSTATUS dcesrv_interface_lsarpc_bind(
+			struct dcesrv_connection_context *context,
+			const struct dcesrv_interface *iface)
+{
+	return dcesrv_interface_bind_reject_connect(context, iface);
+}
+
+static NTSTATUS lsarpc__op_init_server(struct dcesrv_context *dce_ctx,
+			const struct dcesrv_endpoint_server *ep_server);
+static const struct dcesrv_interface dcesrv_lsarpc_interface;
+
+#define NCACN_NP_PIPE_NETLOGON "ncacn_np:[\\pipe\\netlogon]"
+#define NCACN_NP_PIPE_LSASS "ncacn_np:[\\pipe\\lsass]"
+
+#define DCESRV_INTERFACE_LSARPC_NCACN_NP_SECONDARY_ENDPOINT \
+	NCACN_NP_PIPE_LSASS
+
+#define DCESRV_INTERFACE_LSARPC_INIT_SERVER \
+       dcesrv_interface_lsarpc_init_server
+
+static NTSTATUS dcesrv_interface_lsarpc_init_server(
+			struct dcesrv_context *dce_ctx,
+			const struct dcesrv_endpoint_server *ep_server)
+{
+	NTSTATUS ret = dcesrv_interface_register(dce_ctx,
+						 NCACN_NP_PIPE_NETLOGON,
+						 NCACN_NP_PIPE_LSASS,
+						 &dcesrv_lsarpc_interface,
+						 NULL);
+	if (!NT_STATUS_IS_OK(ret)) {
+		DBG_ERR("Failed to register endpoint "
+			"'\\pipe\\netlogon'\n");
+		return ret;
+	}
+
+	return lsarpc__op_init_server(dce_ctx, ep_server);
+}
+
+/* include the generated boilerplate */
+#include "librpc/gen_ndr/ndr_lsa_scompat.c"

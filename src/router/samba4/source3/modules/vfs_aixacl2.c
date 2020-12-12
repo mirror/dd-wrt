@@ -185,7 +185,8 @@ static NTSTATUS aixjfs2_fget_nt_acl(vfs_handle_struct *handle,
 	return status;
 }
 
-static NTSTATUS aixjfs2_get_nt_acl(vfs_handle_struct *handle,
+static NTSTATUS aixjfs2_get_nt_acl_at(vfs_handle_struct *handle,
+	struct files_struct *dirfsp,
 	const struct smb_filename *smb_fname,
 	uint32_t security_info,
 	TALLOC_CTX *mem_ctx,
@@ -194,6 +195,8 @@ static NTSTATUS aixjfs2_get_nt_acl(vfs_handle_struct *handle,
 	struct SMB4ACL_T *pacl = NULL;
 	bool	result;
 	bool	retryPosix = False;
+
+	SMB_ASSERT(dirfsp == handle->conn->cwd_fsp);
 
 	*ppdesc = NULL;
 	result = aixjfs2_get_nfs4_acl(mem_ctx,
@@ -220,6 +223,7 @@ static NTSTATUS aixjfs2_get_nt_acl(vfs_handle_struct *handle,
 				ppdesc,
 				pacl);
 }
+
 
 static int aixjfs2_sys_acl_blob_get_file(vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname,
@@ -556,7 +560,7 @@ int aixjfs2_sys_acl_delete_def_file(vfs_handle_struct *handle,
 
 static struct vfs_fn_pointers vfs_aixacl2_fns = {
 	.fget_nt_acl_fn = aixjfs2_fget_nt_acl,
-	.get_nt_acl_fn = aixjfs2_get_nt_acl,
+	.get_nt_acl_at_fn = aixjfs2_get_nt_acl_at,
 	.fset_nt_acl_fn = aixjfs2_fset_nt_acl,
 	.sys_acl_get_file_fn = aixjfs2_sys_acl_get_file,
 	.sys_acl_get_fd_fn = aixjfs2_sys_acl_get_fd,

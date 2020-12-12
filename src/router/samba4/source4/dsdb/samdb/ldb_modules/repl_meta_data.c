@@ -1486,7 +1486,7 @@ static int replmd_add(struct ldb_module *module, struct ldb_request *req)
 		}
 	}
 
-	/* mark the control done */
+	/* mark the relax control done */
 	if (control) {
 		control->critical = 0;
 	}
@@ -2829,12 +2829,10 @@ static int replmd_modify_la_delete(struct ldb_module *module,
 		return ret;
 	}
 
-	if (parent) {
-		vanish_links_ctrl = ldb_request_get_control(parent, DSDB_CONTROL_REPLMD_VANISH_LINKS);
-		if (vanish_links_ctrl) {
-			vanish_links = true;
-			vanish_links_ctrl->critical = false;
-		}
+	vanish_links_ctrl = ldb_request_get_control(parent, DSDB_CONTROL_REPLMD_VANISH_LINKS);
+	if (vanish_links_ctrl) {
+		vanish_links = true;
+		vanish_links_ctrl->critical = false;
 	}
 
 	/* we empty out el->values here to avoid damage if we return early. */
@@ -3344,20 +3342,18 @@ static int replmd_modify_handle_linked_attribs(struct ldb_module *module,
 			continue;
 		}
 		if ((schema_attr->linkID & 1) == 1) {
-			if (parent) {
-				struct ldb_control *ctrl;
+			struct ldb_control *ctrl;
 
-				ctrl = ldb_request_get_control(parent,
-						DSDB_CONTROL_REPLMD_VANISH_LINKS);
-				if (ctrl != NULL) {
-					ctrl->critical = false;
-					continue;
-				}
-				ctrl = ldb_request_get_control(parent,
-						DSDB_CONTROL_DBCHECK);
-				if (ctrl != NULL) {
-					continue;
-				}
+			ctrl = ldb_request_get_control(parent,
+						       DSDB_CONTROL_REPLMD_VANISH_LINKS);
+			if (ctrl != NULL) {
+				ctrl->critical = false;
+				continue;
+			}
+			ctrl = ldb_request_get_control(parent,
+						       DSDB_CONTROL_DBCHECK);
+			if (ctrl != NULL) {
+				continue;
 			}
 
 			/* Odd is for the target.  Illegal to modify */
@@ -4029,7 +4025,8 @@ static int replmd_delete_remove_link(struct ldb_module *module,
 				     struct GUID *guid,
 				     struct ldb_message_element *el,
 				     const struct dsdb_attribute *sa,
-				     struct ldb_request *parent)
+				     struct ldb_request *parent,
+				     bool *caller_should_vanish)
 {
 	unsigned int i;
 	TALLOC_CTX *tmp_ctx = talloc_new(module);
@@ -4069,7 +4066,6 @@ static int replmd_delete_remove_link(struct ldb_module *module,
 			return LDB_ERR_OPERATIONS_ERROR;
 		}
 
-
 		msg->dn = dsdb_dn->dn;
 
 		target_attr = dsdb_attribute_by_linkID(schema, sa->linkID ^ 1);
@@ -4093,6 +4089,16 @@ static int replmd_delete_remove_link(struct ldb_module *module,
 					    DSDB_SEARCH_SHOW_RECYCLED,
 					    parent);
 
+		if (ret == LDB_ERR_NO_SUCH_OBJECT) {
+			DBG_WARNING("Failed to find forward link object %s "
+				    "to remove backlink %s on %s",
+				    ldb_dn_get_linearized(msg->dn),
+				    sa->lDAPDisplayName,
+				    ldb_dn_get_linearized(dn));
+			*caller_should_vanish = true;
+			continue;
+		}
+
 		if (ret != LDB_SUCCESS) {
 			talloc_free(tmp_ctx);
 			return ret;
@@ -4102,8 +4108,14 @@ static int replmd_delete_remove_link(struct ldb_module *module,
 		link_el = ldb_msg_find_element(link_msg,
 					       target_attr->lDAPDisplayName);
 		if (link_el == NULL) {
-			talloc_free(tmp_ctx);
-			return LDB_ERR_NO_SUCH_ATTRIBUTE;
+			DBG_WARNING("Failed to find forward link on %s "
+				    "as %s to remove backlink %s on %s",
+				    ldb_dn_get_linearized(msg->dn),
+				    target_attr->lDAPDisplayName,
+				    sa->lDAPDisplayName,
+				    ldb_dn_get_linearized(dn));
+			*caller_should_vanish = true;
+			continue;
 		}
 
 		/*
@@ -4133,17 +4145,29 @@ static int replmd_delete_remove_link(struct ldb_module *module,
 		}
 
 		if (p == NULL) {
-			ldb_asprintf_errstring(ldb_module_get_ctx(module),
-					       "Failed to find forward link on %s "
-					       "as %s to remove backlink %s on %s",
-					       ldb_dn_get_linearized(msg->dn),
-					       target_attr->lDAPDisplayName,
-					       sa->lDAPDisplayName,
-					       ldb_dn_get_linearized(dn));
-			talloc_free(tmp_ctx);
-			return LDB_ERR_NO_SUCH_ATTRIBUTE;
+			DBG_WARNING("Failed to find forward link on %s "
+				    "as %s to remove backlink %s on %s",
+				    ldb_dn_get_linearized(msg->dn),
+				    target_attr->lDAPDisplayName,
+				    sa->lDAPDisplayName,
+				    ldb_dn_get_linearized(dn));
+			*caller_should_vanish = true;
+			continue;
 		}
 
+		/*
+		 * If we find a backlink to ourself, we will delete
+		 * the forward link before we get to process that
+		 * properly, so just let the caller process this via
+		 * the forward link.
+		 *
+		 * We do this once we are sure we have the forward
+		 * link (to ourself) in case something is very wrong
+		 * and they are out of sync.
+		 */
+		if (ldb_dn_compare(dsdb_dn->dn, dn) == 0) {
+			continue;
+		}
 
 		/* This needs to get the Binary DN, by first searching */
 		dn_str = dsdb_dn_get_linearized(tmp_ctx,
@@ -4605,6 +4629,17 @@ static int replmd_delete_internals(struct ldb_module *module, struct ldb_request
 			el = &old_msg->elements[i];
 			sa = dsdb_attribute_by_lDAPDisplayName(schema, el->name);
 			if (!sa) {
+				const char *old_dn_str
+					= ldb_dn_get_linearized(old_dn);
+
+				ldb_asprintf_errstring(ldb,
+						       __location__
+						       ": Attribute %s "
+						       "not found in schema "
+						       "when deleting %s. "
+						       "Existing record is invalid",
+						       el->name,
+						       old_dn_str);
 				talloc_free(tmp_ctx);
 				return LDB_ERR_OPERATIONS_ERROR;
 			}
@@ -4614,6 +4649,7 @@ static int replmd_delete_internals(struct ldb_module *module, struct ldb_request
 			}
 
 			if (sa->linkID & 1) {
+				bool caller_should_vanish = false;
 				/*
 				 * we have a backlink in this object
 				 * that needs to be removed. We're not
@@ -4625,17 +4661,9 @@ static int replmd_delete_internals(struct ldb_module *module, struct ldb_request
 				ret = replmd_delete_remove_link(module, schema,
 								replmd_private,
 								old_dn, &guid,
-								el, sa, req);
-				if (ret == LDB_SUCCESS) {
-					/*
-					 * now we continue, which means we
-					 * won't remove this backlink
-					 * directly
-					 */
-					continue;
-				}
-
-				if (ret != LDB_ERR_NO_SUCH_ATTRIBUTE) {
+								el, sa, req,
+								&caller_should_vanish);
+				if (ret != LDB_SUCCESS) {
 					const char *old_dn_str
 						= ldb_dn_get_linearized(old_dn);
 					ldb_asprintf_errstring(ldb,
@@ -4647,6 +4675,15 @@ static int replmd_delete_internals(struct ldb_module *module, struct ldb_request
 							       ldb_errstring(ldb));
 					talloc_free(tmp_ctx);
 					return LDB_ERR_OPERATIONS_ERROR;
+				}
+
+				if (caller_should_vanish == false) {
+					/*
+					 * now we continue, which means we
+					 * won't remove this backlink
+					 * directly
+					 */
+					continue;
 				}
 
 				/*
@@ -4668,6 +4705,11 @@ static int replmd_delete_internals(struct ldb_module *module, struct ldb_request
 						      el->name,
 						      ldb_attr_cmp,
 						      attr);
+				/*
+				 * If we are preserving, do not do the
+				 * ldb_msg_add_empty() below, continue
+				 * to the next element
+				 */
 				if (attr != NULL) {
 					continue;
 				}
@@ -4776,8 +4818,42 @@ static int replmd_delete_internals(struct ldb_module *module, struct ldb_request
 
 	ret = dsdb_module_modify(module, msg, dsdb_flags|DSDB_FLAG_OWN_MODULE, req);
 	if (ret != LDB_SUCCESS) {
-		ldb_asprintf_errstring(ldb, "replmd_delete: Failed to modify object %s in delete - %s",
-				       ldb_dn_get_linearized(old_dn), ldb_errstring(ldb));
+		char *s = NULL;
+		/*
+		 * This should not fail, so be quite verbose in the
+		 * error handling if it fails
+		 */
+		if (strcmp(ldb_dn_get_linearized(old_dn),
+			   ldb_dn_get_linearized(new_dn)) != 0) {
+			DBG_NOTICE("Failure to handle '%s' of object %s "
+				   "after successful rename to %s.  "
+				   "Error during tombstone modificaton was: %s\n",
+				   re_delete ? "re-delete" : "delete",
+				   ldb_dn_get_linearized(new_dn),
+				   ldb_dn_get_linearized(old_dn),
+				   ldb_errstring(ldb));
+		} else {
+			DBG_NOTICE("Failure to handle '%s' of object %s. "
+				   "Error during tombstone modificaton was: %s\n",
+				   re_delete ? "re-delete" : "delete",
+				   ldb_dn_get_linearized(new_dn),
+				   ldb_errstring(ldb));
+		}
+		s = ldb_ldif_message_redacted_string(ldb_module_get_ctx(module),
+						     tmp_ctx,
+						     LDB_CHANGETYPE_MODIFY,
+						     msg);
+
+		DBG_INFO("Failed tombstone modify%s was:\n%s\n",
+			 (dsdb_flags & DSDB_REPLMD_VANISH_LINKS) ?
+			 " with VANISH_LINKS" : "",
+			 s);
+		ldb_asprintf_errstring(ldb,
+				       "replmd_delete: Failed to modify"
+				       " object %s in '%s' - %s",
+				       ldb_dn_get_linearized(old_dn),
+				       re_delete ? "re-delete" : "delete",
+				       ldb_errstring(ldb));
 		talloc_free(tmp_ctx);
 		return ret;
 	}

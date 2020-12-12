@@ -22,6 +22,7 @@ yum install -y \
     bind-utils \
     binutils \
     bison \
+    ccache \
     chrpath \
     compat-gnutls34-devel \
     cups-devel \
@@ -83,9 +84,11 @@ yum install -y \
     procps-ng \
     psmisc \
     python36 \
+    python36-cryptography \
     python36-devel \
     python36-dns \
     python36-markdown \
+    python36-pyasn1 \
     quota-devel \
     readline-devel \
     redhat-lsb \
@@ -97,6 +100,7 @@ yum install -y \
     systemd-devel \
     tar \
     tree \
+    wget \
     which \
     xfsprogs-devel \
     yum-utils \

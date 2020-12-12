@@ -360,21 +360,6 @@ bld.SAMBA3_SUBSYSTEM('TDB_LIB',
                           samba-cluster-support
                           ''')
 
-bld.SAMBA3_LIBRARY('messages_dgm',
-                   source='''
-                          lib/messages_dgm.c
-                          lib/messages_dgm_ref.c
-                          ''',
-                   deps='''
-                        talloc
-                        samba-debug
-                        PTHREADPOOL
-                        msghdr
-                        genrand
-			samba-util
-                        ''',
-                   private_library=True)
-
 bld.SAMBA3_LIBRARY('messages_util',
                    source='''lib/messages_util.c''',
                    deps='samba-util',
@@ -406,10 +391,8 @@ bld.SAMBA3_SUBSYSTEM('samba3core',
                           lib/server_prefork.c
                           lib/server_prefork_util.c
                           lib/ldap_escape.c
-                          libads/krb5_errs.c
                           lib/system_smbd.c
                           lib/audit.c
-                          lib/tevent_wait.c
                           lib/idmap_cache.c
                           lib/namemap_cache.c
                           lib/util_ea.c
@@ -460,13 +443,11 @@ bld.SAMBA3_LIBRARY('libsmb',
                           libsmb/cliprint.c
                           libsmb/clitrans.c
                           libsmb/clisecdesc.c
-                          libsmb/clidgram.c
                           libsmb/clistr.c
                           libsmb/cliquota.c
                           libsmb/clifsinfo.c
                           libsmb/clidfs.c
                           libsmb/clioplock.c
-                          libsmb/clirap2.c
                           libsmb/async_smb.c
                           libsmb/reparse_symlink.c
                           libsmb/clisymlink.c
@@ -608,7 +589,7 @@ bld.SAMBA3_LIBRARY('smbconf',
 
 bld.SAMBA3_LIBRARY('smbd_conn',
                    source='smbd/conn.c',
-                   deps='samba3-util samba-util',
+                   deps='samba3-util samba-util FNAME_UTIL',
                    private_library=True)
 
 bld.SAMBA3_SUBSYSTEM('sysquotas',
@@ -894,12 +875,14 @@ bld.SAMBA3_SUBSYSTEM('LIBNMB',
                             libsmb/unexpected.c
                             libsmb/namecache.c
                             libsmb/nmblib.c
+                            libsmb/clidgram.c
                             libsmb/namequery.c
                             libsmb/conncache.c
                             libads/sitename_cache.c
                             ''',
                      deps='''
                           LIBTSOCKET
+                          LIBCLI_NETLOGON
                           samba3util
                           addns
                           lmhosts
@@ -948,13 +931,22 @@ bld.SAMBA3_SUBSYSTEM('SLCACHE',
                          tdb
                          ''')
 
-bld.SAMBA3_SUBSYSTEM('DCUTIL',
+bld.SAMBA3_SUBSYSTEM('dsgetdcname',
                     source='''
-                           libsmb/namequery_dc.c
                            libsmb/dsgetdcname.c
                            ''',
                     deps='''
+                         CLDAP
+                         LIBNMB
+                         ''')
+
+bld.SAMBA3_SUBSYSTEM('DCUTIL',
+                    source='''
+                           libsmb/namequery_dc.c
+                           ''',
+                    deps='''
                          ads
+                         dsgetdcname
                          msrpc3
                          libcli_lsa3
                          ''')
@@ -1174,6 +1166,11 @@ bld.SAMBA3_BINARY('locktest2',
                       ''',
                  for_selftest=True)
 
+TORTURE3_ADDITIONAL_SOURCE=""
+
+if bld.env.with_ctdb:
+    TORTURE3_ADDITIONAL_SOURCE += ' torture/test_ctdbd_conn.c'
+
 bld.SAMBA3_BINARY('smbtorture' + bld.env.suffix3,
                  source='''
                         torture/torture.c
@@ -1213,7 +1210,8 @@ bld.SAMBA3_BINARY('smbtorture' + bld.env.suffix3,
                         torture/test_namemap_cache.c
                         torture/test_idmap_cache.c
                         torture/test_hidenewfiles.c
-                        ''',
+                        torture/test_readdir_timestamp.c
+                        ''' + TORTURE3_ADDITIONAL_SOURCE,
                  deps='''
                       talloc
                       smbconf
@@ -1268,7 +1266,7 @@ bld.SAMBA3_BINARY('test_mdsparser_es',
                  source='''
                  rpc_server/mdssvc/test_mdsparser_es.c
                  rpc_server/mdssvc/es_parser.y
-                 rpc_server/mdssvc/es_lexer.l
+                 rpc_server/mdssvc/es_lexer.gcov.lex.c
                  rpc_server/mdssvc/es_mapping.c
                  ''',
                  deps='''
@@ -1360,7 +1358,7 @@ bld.SAMBA3_BINARY('spotlight2sparql',
                  source='''
                  rpc_server/mdssvc/sparql_parser_test.c
                  rpc_server/mdssvc/sparql_parser.y
-                 rpc_server/mdssvc/sparql_lexer.l
+                 rpc_server/mdssvc/sparql_lexer.gcov.lex.c
                  rpc_server/mdssvc/sparql_mapping.c''',
                  deps='samba3-util talloc ' + bld.env['libtracker'],
                  enabled=bld.env.spotlight_backend_tracker,
@@ -1370,7 +1368,7 @@ bld.SAMBA3_BINARY('spotlight2es',
                  source='''
                  rpc_server/mdssvc/es_parser_test.c
                  rpc_server/mdssvc/es_parser.y
-                 rpc_server/mdssvc/es_lexer.l
+                 rpc_server/mdssvc/es_lexer.gcov.lex.c
                  rpc_server/mdssvc/es_mapping.c''',
                  deps='samba3-util talloc jansson smbconf',
                  enabled=bld.env.spotlight_backend_es,

@@ -52,10 +52,10 @@
 #include "messages.h"
 #include "lib/util/tevent_unix.h"
 #include "lib/background.h"
-#include "lib/messages_dgm.h"
+#include "lib/messaging/messages_dgm.h"
 #include "lib/util/iov_buf.h"
 #include "lib/util/server_id_db.h"
-#include "lib/messages_dgm_ref.h"
+#include "lib/messaging/messages_dgm_ref.h"
 #include "lib/messages_ctdb.h"
 #include "lib/messages_ctdb_ref.h"
 #include "lib/messages_util.h"
@@ -1333,12 +1333,8 @@ static bool messaging_dispatch_waiters(struct messaging_context *msg_ctx,
 			 * to keep the order of waiters, as
 			 * other code may depend on this.
 			 */
-			if (i < msg_ctx->num_waiters - 1) {
-				memmove(&msg_ctx->waiters[i],
-					&msg_ctx->waiters[i+1],
-					sizeof(struct tevent_req *) *
-					    (msg_ctx->num_waiters - i - 1));
-			}
+			ARRAY_DEL_ELEMENT(
+				msg_ctx->waiters, i, msg_ctx->num_waiters);
 			msg_ctx->num_waiters -= 1;
 			continue;
 		}

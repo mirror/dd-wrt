@@ -29,8 +29,6 @@
  * "PyBytes_*" work like in Python 3; on Python 2 they are aliased to their
  * PyString_* names.
  *
- * "PyInt_*" works like PyLong_*
- *
  * Syntax for module initialization is as in Python 3, except the entrypoint
  * function definition and declaration:
  *     PyMODINIT_FUNC PyInit_modulename(void);
@@ -56,26 +54,6 @@
 
 /* description of bytes objects */
 #define PY_DESC_PY3_BYTES "bytes"
-
-/* Determine if object is really bytes, for code that runs
- * in python2 & python3 (note: PyBytes_Check is replaced by
- * PyString_Check in python2) so care needs to be taken when
- * writing code that will check if incoming type is bytes that
- * will work as expected in python2 & python3
- */
-
-#define IsPy3Bytes PyBytes_Check
-
-#define IsPy3BytesOrString(pystr) \
-    (PyUnicode_Check(pystr) || PyBytes_Check(pystr))
-
-
-/* Ints */
-
-#define PyInt_Type PyLong_Type
-#define PyInt_Check PyLong_Check
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_AsLong PyLong_AsLong
 
 /* Module init */
 

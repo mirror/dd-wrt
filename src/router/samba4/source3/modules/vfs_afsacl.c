@@ -930,7 +930,7 @@ static NTSTATUS afs_set_nt_acl(vfs_handle_struct *handle, files_struct *fsp,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	if (!fsp->is_directory) {
+	if (!fsp->fsp_flags.is_directory) {
 		/* We need to get the name of the directory containing the
 		 * file, this is where the AFS acls live */
 		char *p = strrchr(name, '/');
@@ -951,7 +951,7 @@ static NTSTATUS afs_set_nt_acl(vfs_handle_struct *handle, files_struct *fsp,
 
 	split_afs_acl(&old_afs_acl, &dir_acl, &file_acl);
 
-	if (fsp->is_directory) {
+	if (fsp->fsp_flags.is_directory) {
 
 		if (!strequal(fileacls, "yes")) {
 			/* Throw away file acls, we depend on the
@@ -1035,7 +1035,8 @@ static NTSTATUS afsacl_fget_nt_acl(struct vfs_handle_struct *handle,
 	return (sd_size != 0) ? NT_STATUS_OK : NT_STATUS_ACCESS_DENIED;
 }
 
-static NTSTATUS afsacl_get_nt_acl(struct vfs_handle_struct *handle,
+static NTSTATUS afsacl_get_nt_acl_at(struct vfs_handle_struct *handle,
+				struct files_struct *dirfsp,
 				const struct smb_filename *smb_fname,
 				uint32_t security_info,
 				TALLOC_CTX *mem_ctx,
@@ -1043,6 +1044,8 @@ static NTSTATUS afsacl_get_nt_acl(struct vfs_handle_struct *handle,
 {
 	struct afs_acl acl;
 	size_t sd_size;
+
+	SMB_ASSERT(dirfsp == handle->conn->cwd_fsp);
 
 	DEBUG(5, ("afsacl_get_nt_acl: %s\n", smb_fname->base_name));
 
@@ -1108,7 +1111,7 @@ static int afsacl_sys_acl_blob_get_fd(vfs_handle_struct *handle, files_struct *f
 static struct vfs_fn_pointers vfs_afsacl_fns = {
 	.connect_fn = afsacl_connect,
 	.fget_nt_acl_fn = afsacl_fget_nt_acl,
-	.get_nt_acl_fn = afsacl_get_nt_acl,
+	.get_nt_acl_at_fn = afsacl_get_nt_acl_at,
 	.fset_nt_acl_fn = afsacl_fset_nt_acl,
 	.sys_acl_blob_get_file_fn = afsacl_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = afsacl_sys_acl_blob_get_fd

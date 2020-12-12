@@ -1824,6 +1824,7 @@ static bool check_stream(struct smb2_tree *tree,
 	status = smb2_create(tree, mem_ctx, &create);
 	if (!NT_STATUS_IS_OK(status)) {
 		if (value == NULL) {
+			TALLOC_FREE(full_name);
 			return true;
 		}
 		torture_comment(tctx, "Unable to open stream %s\n", full_name);
@@ -6897,7 +6898,7 @@ static bool test_empty_stream(struct torture_context *tctx,
 		tcase_afpresource_rw,
 		tcase_foo_ro,
 		tcase_foo_rw,
-		{NULL}
+		{0}
 	};
 
 	ret = torture_smb2_connection(tctx, &tree2);

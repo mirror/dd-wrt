@@ -154,10 +154,8 @@ sort_acl(struct security_acl *the_acl)
 	for (i=1;i<the_acl->num_aces;) {
 		if (security_ace_equal(&the_acl->aces[i-1],
 				       &the_acl->aces[i])) {
-			int j;
-			for (j=i; j<the_acl->num_aces-1; j++) {
-				the_acl->aces[j] = the_acl->aces[j+1];
-			}
+			ARRAY_DEL_ELEMENT(
+				the_acl->aces, i, the_acl->num_aces);
 			the_acl->num_aces--;
 		} else {
 			i++;
@@ -546,16 +544,16 @@ done:
 
 
 /* Obtain the current dos attributes */
-static DOS_ATTR_DESC *
+static struct DOS_ATTR_DESC *
 dos_attr_query(SMBCCTX *context,
                TALLOC_CTX *ctx,
                const char *filename,
                SMBCSRV *srv)
 {
 	struct stat sb = {0};
-        DOS_ATTR_DESC *ret;
+        struct DOS_ATTR_DESC *ret = NULL;
 
-        ret = talloc(ctx, DOS_ATTR_DESC);
+        ret = talloc(ctx, struct DOS_ATTR_DESC);
         if (!ret) {
                 errno = ENOMEM;
                 return NULL;
@@ -584,7 +582,7 @@ dos_attr_query(SMBCCTX *context,
 /* parse a ascii version of a security descriptor */
 static void
 dos_attr_parse(SMBCCTX *context,
-               DOS_ATTR_DESC *dad,
+               struct DOS_ATTR_DESC *dad,
                SMBCSRV *srv,
                char *str)
 {
@@ -878,10 +876,19 @@ cacl_get(SMBCCTX *context,
 		}
 
                 /* ... then obtain any NT attributes which were requested */
-		status = cli_ntcreate(targetcli, targetpath, 0,
-				      CREATE_ACCESS_READ, 0,
-				      FILE_SHARE_READ|FILE_SHARE_WRITE,
-				      FILE_OPEN, 0x0, 0x0, &fnum, NULL);
+		status = cli_ntcreate(
+			targetcli,		/* cli */
+			targetpath,		/* fname */
+			0,			/* CreatFlags */
+			READ_CONTROL_ACCESS,	/* DesiredAccess */
+			0,			/* FileAttributes */
+			FILE_SHARE_READ|
+			FILE_SHARE_WRITE,	/* ShareAccess */
+			FILE_OPEN,		/* CreateDisposition */
+			0x0,			/* CreateOptions */
+			0x0,			/* SecurityFlags */
+			&fnum,			/* pfid */
+			NULL);			/* cr */
 		if (!NT_STATUS_IS_OK(status)) {
 			DEBUG(5, ("cacl_get failed to open %s: %s\n",
 				  targetpath, nt_errstr(status)));
@@ -1544,9 +1551,19 @@ cacl_set(SMBCCTX *context,
 	/* The desired access below is the only one I could find that works
 	   with NT4, W2KP and Samba */
 
-	status = cli_ntcreate(targetcli, targetpath, 0, CREATE_ACCESS_READ, 0,
-			      FILE_SHARE_READ|FILE_SHARE_WRITE, FILE_OPEN,
-			      0x0, 0x0, &fnum, NULL);
+	status = cli_ntcreate(
+		targetcli,		/* cli */
+		targetpath,		/* fname */
+		0,			/* CreatFlags */
+		READ_CONTROL_ACCESS,	/* DesiredAccess */
+		0,			/* FileAttributes */
+		FILE_SHARE_READ|
+		FILE_SHARE_WRITE,	/* ShareAccess */
+		FILE_OPEN,		/* CreateDisposition */
+		0x0,			/* CreateOptions */
+		0x0,			/* SecurityFlags */
+		&fnum,			/* pfid */
+		NULL);			/* cr */
 	if (!NT_STATUS_IS_OK(status)) {
                 DEBUG(5, ("cacl_set failed to open %s: %s\n",
                           targetpath, nt_errstr(status)));
@@ -1700,7 +1717,7 @@ SMBC_setxattr_ctx(SMBCCTX *context,
 	char *password = NULL;
 	char *workgroup = NULL;
 	char *path = NULL;
-        DOS_ATTR_DESC *dad = NULL;
+        struct DOS_ATTR_DESC *dad = NULL;
         struct {
                 const char * create_time_attr;
                 const char * access_time_attr;
@@ -1798,17 +1815,26 @@ SMBC_setxattr_ctx(SMBCCTX *context,
                 /* get a DOS Attribute Descriptor with current attributes */
                 dad = dos_attr_query(context, talloc_tos(), path, srv);
                 if (dad) {
+			bool ok;
+
                         /* Overwrite old with new, using what was provided */
                         dos_attr_parse(context, dad, srv, namevalue);
 
                         /* Set the new DOS attributes */
-                        if (! SMBC_setatr(context, srv, path,
-                                          dad->create_time,
-                                          dad->access_time,
-                                          dad->write_time,
-                                          dad->change_time,
-                                          dad->mode)) {
-
+			ok = SMBC_setatr(
+				context,
+				srv,
+				path,
+				(struct timespec) {
+					.tv_sec = dad->create_time },
+				(struct timespec) {
+					.tv_sec = dad->access_time },
+				(struct timespec) {
+					.tv_sec = dad->write_time },
+				(struct timespec) {
+					.tv_sec = dad->change_time },
+				dad->mode);
+			if (!ok) {
                                 /* cause failure if NT failed too */
                                 dad = NULL; 
                         }
@@ -1953,12 +1979,19 @@ SMBC_setxattr_ctx(SMBCCTX *context,
                                 dos_attr_parse(context, dad, srv, namevalue);
 
                                 /* Set the new DOS attributes */
-                                ret2 = SMBC_setatr(context, srv, path,
-                                                   dad->create_time,
-                                                   dad->access_time,
-                                                   dad->write_time,
-                                                   dad->change_time,
-                                                   dad->mode);
+				ret2 = SMBC_setatr(
+					context,
+					srv,
+					path,
+					(struct timespec) {
+						.tv_sec = dad->create_time },
+					(struct timespec) {
+						.tv_sec = dad->access_time },
+					(struct timespec) {
+						.tv_sec = dad->write_time },
+					(struct timespec) {
+						.tv_sec = dad->change_time },
+					dad->mode);
 
                                 /* ret2 has True (success) / False (failure) */
                                 if (ret2) {

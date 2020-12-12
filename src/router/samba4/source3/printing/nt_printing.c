@@ -277,7 +277,7 @@ static NTSTATUS driver_unix_convert(connection_struct *conn,
 	}
 	trim_string(name,"/","/");
 
-	status = unix_convert(ctx, conn, name, smb_fname, 0);
+	status = unix_convert(ctx, conn, name, 0, smb_fname, 0);
 	if (!NT_STATUS_IS_OK(status)) {
 		return NT_STATUS_NO_MEMORY;
 	}
@@ -843,7 +843,7 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		0,					/* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_GENERIC_READ,			/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
@@ -898,7 +898,7 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		0,					/* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_GENERIC_READ,			/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
@@ -1102,7 +1102,7 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 	nt_status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		0,					/* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_GENERIC_READ,			/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
@@ -2029,7 +2029,12 @@ static NTSTATUS driver_unlink_internals(connection_struct *conn,
 		goto err_out;
 	}
 
-	smb_fname = synthetic_smb_fname(tmp_ctx, print_dlr_path, NULL, NULL, 0);
+	smb_fname = synthetic_smb_fname(tmp_ctx,
+					print_dlr_path,
+					NULL,
+					NULL,
+					0,
+					0);
 	if (smb_fname == NULL) {
 		goto err_out;
 	}

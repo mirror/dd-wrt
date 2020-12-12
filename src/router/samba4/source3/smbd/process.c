@@ -632,7 +632,6 @@ static bool init_smb_request(struct smb_request *req,
 	}
 	req->chain_fsp = NULL;
 	req->smb2req = NULL;
-	req->priv_paths = NULL;
 	req->chain = NULL;
 	req->posix_pathnames = lp_posix_pathnames();
 	smb_init_perfcount_data(&req->pcd);
@@ -2803,6 +2802,25 @@ static NTSTATUS smbd_register_ips(struct smbXsrv_connection *xconn,
 		return NT_STATUS_NO_MEMORY;
 	}
 
+	if (xconn->client->server_multi_channel_enabled) {
+		struct ctdb_public_ip_list_old *ips = NULL;
+
+		ret = ctdbd_control_get_public_ips(cconn,
+						   0, /* flags */
+						   state,
+						   &ips);
+		if (ret != 0) {
+			return NT_STATUS_INTERNAL_ERROR;
+		}
+
+		xconn->has_ctdb_public_ip = ctdbd_find_in_public_ips(ips, srv);
+		TALLOC_FREE(ips);
+		if (xconn->has_ctdb_public_ip) {
+			DBG_DEBUG("CTDB public ip on %s\n",
+				  smbXsrv_connection_dbg(xconn));
+		}
+	}
+
 	ret = ctdbd_register_ips(cconn, srv, clnt, release_ip, state);
 	if (ret != 0) {
 		return map_nt_error_from_unix(ret);
@@ -3721,7 +3739,7 @@ const char *smbXsrv_connection_dbg(const struct smbXsrv_connection *xconn)
 }
 
 NTSTATUS smbd_add_connection(struct smbXsrv_client *client, int sock_fd,
-			     struct smbXsrv_connection **_xconn)
+			     NTTIME now, struct smbXsrv_connection **_xconn)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
 	struct smbXsrv_connection *xconn;
@@ -3751,6 +3769,11 @@ NTSTATUS smbd_add_connection(struct smbXsrv_client *client, int sock_fd,
 		return NT_STATUS_NO_MEMORY;
 	}
 	talloc_steal(frame, xconn);
+	xconn->client = client;
+	xconn->connect_time = now;
+	if (client->next_channel_id != 0) {
+		xconn->channel_id = client->next_channel_id++;
+	}
 
 	xconn->transport.sock = sock_fd;
 	smbd_echo_init(xconn);
@@ -3863,8 +3886,7 @@ NTSTATUS smbd_add_connection(struct smbXsrv_client *client, int sock_fd,
 		 * so that the caller can return an error message
 		 * to the client
 		 */
-		client->connections = xconn;
-		xconn->client = client;
+		DLIST_ADD_END(client->connections, xconn);
 		talloc_steal(client, xconn);
 
 		*_xconn = xconn;
@@ -3911,10 +3933,10 @@ NTSTATUS smbd_add_connection(struct smbXsrv_client *client, int sock_fd,
 		TALLOC_FREE(frame);
 		return NT_STATUS_NO_MEMORY;
 	}
+	tevent_fd_set_auto_close(xconn->transport.fde);
 
 	/* for now we only have one connection */
 	DLIST_ADD_END(client->connections, xconn);
-	xconn->client = client;
 	talloc_steal(client, xconn);
 
 	*_xconn = xconn;
@@ -3928,6 +3950,7 @@ NTSTATUS smbd_add_connection(struct smbXsrv_client *client, int sock_fd,
 
 void smbd_process(struct tevent_context *ev_ctx,
 		  struct messaging_context *msg_ctx,
+		  struct dcesrv_context *dce_ctx,
 		  int sock_fd,
 		  bool interactive)
 {
@@ -3970,6 +3993,7 @@ void smbd_process(struct tevent_context *ev_ctx,
 
 	sconn->ev_ctx = ev_ctx;
 	sconn->msg_ctx = msg_ctx;
+	sconn->dce_ctx = dce_ctx;
 
 	ret = pthreadpool_tevent_init(sconn, lp_aio_max_threads(),
 				      &sconn->pool);
@@ -3993,7 +4017,7 @@ void smbd_process(struct tevent_context *ev_ctx,
 		smbd_setup_sig_hup_handler(sconn);
 	}
 
-	status = smbd_add_connection(client, sock_fd, &xconn);
+	status = smbd_add_connection(client, sock_fd, now, &xconn);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_NETWORK_ACCESS_DENIED)) {
 		/*
 		 * send a negative session response "not listening on calling
@@ -4020,6 +4044,24 @@ void smbd_process(struct tevent_context *ev_ctx,
 	sconn->remote_hostname =
 		talloc_strdup(sconn, xconn->remote_hostname);
 	if (sconn->remote_hostname == NULL) {
+		exit_server_cleanly("tsocket_strdup() failed");
+	}
+
+	client->global->local_address =
+		tsocket_address_string(sconn->local_address,
+				       client->global);
+	if (client->global->local_address == NULL) {
+		exit_server_cleanly("tsocket_address_string() failed");
+	}
+	client->global->remote_address =
+		tsocket_address_string(sconn->remote_address,
+				       client->global);
+	if (client->global->remote_address == NULL) {
+		exit_server_cleanly("tsocket_address_string() failed");
+	}
+	client->global->remote_name =
+		talloc_strdup(client->global, sconn->remote_hostname);
+	if (client->global->remote_name == NULL) {
 		exit_server_cleanly("tsocket_strdup() failed");
 	}
 

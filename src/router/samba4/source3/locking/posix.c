@@ -51,7 +51,7 @@ static struct db_context *posix_pending_close_db;
 
 static int map_posix_lock_type( files_struct *fsp, enum brl_type lock_type)
 {
-	if((lock_type == WRITE_LOCK) && !fsp->can_write) {
+	if ((lock_type == WRITE_LOCK) && !fsp->fsp_flags.can_write) {
 		/*
 		 * Many UNIX's cannot get a write lock on a file opened read-only.
 		 * Win32 locking semantics allow this.
@@ -83,6 +83,8 @@ static const char *posix_lock_type_name(int lock_type)
  range. Modifies the given args to be in range if possible, just returns
  False if not.
 ****************************************************************************/
+
+#define SMB_OFF_T_BITS (sizeof(off_t)*8)
 
 static bool posix_lock_in_range(off_t *offset_out, off_t *count_out,
 				uint64_t u_offset, uint64_t u_count)
@@ -579,13 +581,11 @@ static void fd_close_posix_fn(
 
 int fd_close_posix(const struct files_struct *fsp)
 {
-	int saved_errno = 0;
-	int ret;
 	NTSTATUS status;
 
 	if (!lp_locking(fsp->conn->params) ||
 	    !lp_posix_locking(fsp->conn->params) ||
-	    fsp->use_ofd_locks)
+	    fsp->fsp_flags.use_ofd_locks)
 	{
 		/*
 		 * No locking or POSIX to worry about or we are using POSIX
@@ -625,14 +625,7 @@ int fd_close_posix(const struct files_struct *fsp)
 	 * Finally close the fd associated with this fsp.
 	 */
 
-	ret = close(fsp->fh->fd);
-
-	if (ret == 0 && saved_errno != 0) {
-		errno = saved_errno;
-		ret = -1;
-	}
-
-	return ret;
+	return close(fsp->fh->fd);
 }
 
 /****************************************************************************
