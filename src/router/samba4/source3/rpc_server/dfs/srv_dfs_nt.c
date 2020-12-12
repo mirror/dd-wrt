@@ -23,7 +23,8 @@
 
 #include "includes.h"
 #include "ntdomain.h"
-#include "../librpc/gen_ndr/srv_dfs.h"
+#include "librpc/gen_ndr/ndr_dfs.h"
+#include "librpc/gen_ndr/ndr_dfs_scompat.h"
 #include "msdfs.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
@@ -560,3 +561,6 @@ WERROR _dfs_SetInfo2(struct pipes_struct *p, struct dfs_SetInfo2 *r)
 	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
 	return WERR_NOT_SUPPORTED;
 }
+
+/* include the generated boilerplate */
+#include "librpc/gen_ndr/ndr_dfs_scompat.c"

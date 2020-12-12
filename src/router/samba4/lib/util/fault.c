@@ -71,21 +71,15 @@ report a fault
 static void fault_report(int sig)
 {
 	static int counter;
+	char signal_string[128];
 
 	if (counter) _exit(1);
 
 	counter++;
 
-	DEBUGSEP(0);
-	DEBUG(0,("INTERNAL ERROR: Signal %d in pid %d (%s)",sig,(int)getpid(),SAMBA_VERSION_STRING));
-	DEBUG(0,("\nIf you are running a recent Samba version, and "
-		 "if you think this problem is not yet fixed in the "
-		 "latest versions, please consider reporting this "
-		 "bug, see "
-		 "https://wiki.samba.org/index.php/Bug_Reporting\n"));
-	DEBUGSEP(0);
-
-	smb_panic("internal error");
+	snprintf(signal_string, sizeof(signal_string),
+		 "Signal %d: %s", sig, strsignal(sig));
+	smb_panic(signal_string);
 
 	/* smb_panic() never returns, so this is really redundant */
 	exit(1);
@@ -128,10 +122,6 @@ _PUBLIC_ const char *panic_action = NULL;
 static void smb_panic_default(const char *why) _NORETURN_;
 static void smb_panic_default(const char *why)
 {
-	DBG_ERR("PANIC (pid %llu): %s\n",
-		    (unsigned long long)getpid(), why);
-	log_stack_trace();
-
 #if defined(HAVE_PRCTL) && defined(PR_SET_PTRACER)
 	/*
 	 * Make sure all children can attach a debugger.
@@ -164,12 +154,32 @@ static void smb_panic_default(const char *why)
 	abort();
 }
 
+_PUBLIC_ void smb_panic_log(const char *why)
+{
+	DEBUGSEP(0);
+	DEBUG(0,("INTERNAL ERROR: %s in pid %lld (%s)\n",
+		 why,
+		 (unsigned long long)getpid(),
+		 SAMBA_VERSION_STRING));
+	DEBUG(0,("If you are running a recent Samba version, and "
+		 "if you think this problem is not yet fixed in the "
+		 "latest versions, please consider reporting this "
+		 "bug, see "
+		 "https://wiki.samba.org/index.php/Bug_Reporting\n"));
+	DEBUGSEP(0);
+	DEBUG(0,("PANIC (pid %llu): %s in " SAMBA_VERSION_STRING "\n",
+		 (unsigned long long)getpid(), why));
+
+	log_stack_trace();
+}
 
 /**
    Something really nasty happened - panic !
 **/
 _PUBLIC_ void smb_panic(const char *why)
 {
+	smb_panic_log(why);
+
 	if (fault_state.panic_handler) {
 		fault_state.panic_handler(why);
 		_exit(1);

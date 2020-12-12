@@ -19,6 +19,7 @@ apt-get -y install \
     binutils \
     bison \
     build-essential \
+    ccache \
     chrpath \
     curl \
     debhelper \
@@ -80,6 +81,7 @@ apt-get -y install \
     procps \
     psmisc \
     python3 \
+    python3-cryptography \
     python3-dbg \
     python3-dev \
     python3-dnspython \
@@ -88,6 +90,7 @@ apt-get -y install \
     python3-markdown \
     python3-matplotlib \
     python3-pexpect \
+    python3-pyasn1 \
     rng-tools \
     rsync \
     sed \
@@ -95,6 +98,7 @@ apt-get -y install \
     tar \
     tree \
     uuid-dev \
+    wget \
     xfslibs-dev \
     xsltproc \
     zlib1g-dev

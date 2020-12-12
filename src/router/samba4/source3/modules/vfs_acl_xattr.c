@@ -64,9 +64,67 @@ static ssize_t getxattr_do(vfs_handle_struct *handle,
 	return sizeret;
 }
 
-static NTSTATUS get_acl_blob(TALLOC_CTX *ctx,
+static NTSTATUS fget_acl_blob(TALLOC_CTX *ctx,
 			vfs_handle_struct *handle,
 			files_struct *fsp,
+			DATA_BLOB *pblob)
+{
+	size_t size = 4096;
+	uint8_t *val = NULL;
+	uint8_t *tmp;
+	ssize_t sizeret;
+
+	ZERO_STRUCTP(pblob);
+
+  again:
+
+	tmp = talloc_realloc(ctx, val, uint8_t, size);
+	if (tmp == NULL) {
+		TALLOC_FREE(val);
+		return NT_STATUS_NO_MEMORY;
+	}
+	val = tmp;
+
+	sizeret =
+	    getxattr_do(handle, fsp, NULL, XATTR_NTACL_NAME, val, size);
+
+	if (sizeret >= 0) {
+		pblob->data = val;
+		pblob->length = sizeret;
+		return NT_STATUS_OK;
+	}
+
+	if (errno != ERANGE) {
+		goto err;
+	}
+
+	/* Too small, try again. */
+	sizeret =
+	    getxattr_do(handle, fsp, NULL, XATTR_NTACL_NAME, NULL, 0);
+	if (sizeret < 0) {
+		goto err;
+	}
+
+	if (size < sizeret) {
+		size = sizeret;
+	}
+
+	if (size > 65536) {
+		/* Max ACL size is 65536 bytes. */
+		errno = ERANGE;
+		goto err;
+	}
+
+	goto again;
+  err:
+	/* Real error - exit here. */
+	TALLOC_FREE(val);
+	return map_nt_error_from_unix(errno);
+}
+
+static NTSTATUS get_acl_blob_at(TALLOC_CTX *ctx,
+			vfs_handle_struct *handle,
+			struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			DATA_BLOB *pblob)
 {
@@ -87,7 +145,7 @@ static NTSTATUS get_acl_blob(TALLOC_CTX *ctx,
 	val = tmp;
 
 	sizeret =
-	    getxattr_do(handle, fsp, smb_fname, XATTR_NTACL_NAME, val, size);
+	    getxattr_do(handle, NULL, smb_fname, XATTR_NTACL_NAME, val, size);
 
 	if (sizeret >= 0) {
 		pblob->data = val;
@@ -101,7 +159,7 @@ static NTSTATUS get_acl_blob(TALLOC_CTX *ctx,
 
 	/* Too small, try again. */
 	sizeret =
-	    getxattr_do(handle, fsp, smb_fname, XATTR_NTACL_NAME, NULL, 0);
+	    getxattr_do(handle, NULL, smb_fname, XATTR_NTACL_NAME, NULL, 0);
 	if (sizeret < 0) {
 		goto err;
 	}
@@ -305,20 +363,26 @@ static NTSTATUS acl_xattr_fget_nt_acl(vfs_handle_struct *handle,
 				      struct security_descriptor **ppdesc)
 {
 	NTSTATUS status;
-	status = get_nt_acl_common(get_acl_blob, handle, fsp, NULL,
+	status = fget_nt_acl_common(fget_acl_blob, handle, fsp,
 				   security_info, mem_ctx, ppdesc);
 	return status;
 }
 
-static NTSTATUS acl_xattr_get_nt_acl(vfs_handle_struct *handle,
-				     const struct smb_filename *smb_fname,
-				     uint32_t security_info,
-				     TALLOC_CTX *mem_ctx,
-				     struct security_descriptor **ppdesc)
+static NTSTATUS acl_xattr_get_nt_acl_at(vfs_handle_struct *handle,
+				struct files_struct *dirfsp,
+				const struct smb_filename *smb_fname,
+				uint32_t security_info,
+				TALLOC_CTX *mem_ctx,
+				struct security_descriptor **ppdesc)
 {
 	NTSTATUS status;
-	status = get_nt_acl_common(get_acl_blob, handle, NULL, smb_fname,
-				   security_info, mem_ctx, ppdesc);
+	status = get_nt_acl_common_at(get_acl_blob_at,
+				handle,
+				dirfsp,
+				smb_fname,
+				security_info,
+				mem_ctx,
+				ppdesc);
 	return status;
 }
 
@@ -328,7 +392,7 @@ static NTSTATUS acl_xattr_fset_nt_acl(vfs_handle_struct *handle,
 				      const struct security_descriptor *psd)
 {
 	NTSTATUS status;
-	status = fset_nt_acl_common(get_acl_blob, store_acl_blob_fsp,
+	status = fset_nt_acl_common(fget_acl_blob, store_acl_blob_fsp,
 				    ACL_MODULE_NAME,
 				    handle, fsp, security_info_sent, psd);
 	return status;
@@ -340,7 +404,7 @@ static struct vfs_fn_pointers vfs_acl_xattr_fns = {
 	.chmod_fn = chmod_acl_module_common,
 	.fchmod_fn = fchmod_acl_module_common,
 	.fget_nt_acl_fn = acl_xattr_fget_nt_acl,
-	.get_nt_acl_fn = acl_xattr_get_nt_acl,
+	.get_nt_acl_at_fn = acl_xattr_get_nt_acl_at,
 	.fset_nt_acl_fn = acl_xattr_fset_nt_acl,
 	.sys_acl_set_file_fn = sys_acl_set_file_xattr,
 	.sys_acl_set_fd_fn = sys_acl_set_fd_xattr

@@ -25,7 +25,8 @@
 #include "winbindd/winbindd_proto.h"
 #include "rpc_client/cli_pipe.h"
 #include "ntdomain.h"
-#include "librpc/gen_ndr/srv_winbind.h"
+#include "librpc/gen_ndr/ndr_winbind.h"
+#include "librpc/gen_ndr/ndr_winbind_scompat.h"
 #include "../librpc/gen_ndr/ndr_netlogon_c.h"
 #include "../librpc/gen_ndr/ndr_lsa_c.h"
 #include "idmap.h"
@@ -672,7 +673,8 @@ NTSTATUS _wbint_LookupRids(struct pipes_struct *p, struct wbint_LookupRids *r)
 					r->in.rids->rids, r->in.rids->num_rids,
 					&domain_name, &names, &types);
 	reset_cm_connection_on_error(domain, NULL, status);
-	if (!NT_STATUS_IS_OK(status)) {
+	if (!NT_STATUS_IS_OK(status) &&
+	    !NT_STATUS_EQUAL(status, STATUS_SOME_UNMAPPED)) {
 		return status;
 	}
 
@@ -1899,3 +1901,5 @@ reconnect:
 
 	return status;
 }
+
+#include "librpc/gen_ndr/ndr_winbind_scompat.c"

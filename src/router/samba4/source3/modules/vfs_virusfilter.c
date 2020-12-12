@@ -153,8 +153,12 @@ static bool quarantine_create_dir(
 
 			DBG_INFO("quarantine: creating new dir %s\n", new_dir);
 
-			smb_fname = synthetic_smb_fname(talloc_tos(), new_dir,
-							NULL, NULL, 0);
+			smb_fname = synthetic_smb_fname(talloc_tos(),
+							new_dir,
+							NULL,
+							NULL,
+							0,
+							0);
 			if (smb_fname == NULL) {
 				goto done;
 			}
@@ -371,8 +375,12 @@ static int virusfilter_vfs_connect(
 		config->socket_path = NULL;
         }
 	if (config->socket_path != NULL) {
-		canonicalize_absolute_path(handle,
-					   config->socket_path);
+		config->socket_path = canonicalize_absolute_path(
+			handle, config->socket_path);
+		if (config->socket_path == NULL) {
+			errno = ENOMEM;
+			return -1;
+		}
 	}
 
 	connect_timeout = lp_parm_int(snum, "virusfilter",
@@ -659,9 +667,12 @@ static virusfilter_action infected_file_action_quarantine(
 		goto out;
 	}
 
-	q_smb_fname = synthetic_smb_fname(frame, q_filepath,
+	q_smb_fname = synthetic_smb_fname(frame,
+					  q_filepath,
 					  smb_fname->stream_name,
-					  NULL, smb_fname->flags);
+					  NULL,
+					  0,
+					  smb_fname->flags);
 	if (q_smb_fname == NULL) {
 		action = VIRUSFILTER_ACTION_DO_NOTHING;
 		goto out;
@@ -742,6 +753,7 @@ static virusfilter_action infected_file_action_rename(
 
 	q_smb_fname = synthetic_smb_fname(frame, q_filepath,
 					  smb_fname->stream_name, NULL,
+					  0,
 					  smb_fname->flags);
 	if (q_smb_fname == NULL) {
 		action = VIRUSFILTER_ACTION_DO_NOTHING;
@@ -1133,16 +1145,16 @@ virusfilter_scan_return:
 	return scan_result;
 }
 
-static int virusfilter_vfs_open(
-	struct vfs_handle_struct *handle,
-	struct smb_filename *smb_fname,
-	files_struct *fsp,
-	int flags,
-	mode_t mode)
+static int virusfilter_vfs_openat(struct vfs_handle_struct *handle,
+				  const struct files_struct *dirfsp,
+				  const struct smb_filename *smb_fname_in,
+				  struct files_struct *fsp,
+				  int flags,
+				  mode_t mode)
 {
 	TALLOC_CTX *mem_ctx = talloc_tos();
-	struct virusfilter_config *config;
-	const char *cwd_fname = fsp->conn->cwd_fsp->fsp_name->base_name;
+	struct virusfilter_config *config = NULL;
+	const char *cwd_fname = dirfsp->fsp_name->base_name;
 	virusfilter_result scan_result;
 	const char *fname = fsp->fsp_name->base_name;
 	char *dir_name = NULL;
@@ -1154,11 +1166,17 @@ static int virusfilter_vfs_open(
 	int ret;
 	bool ok1;
 	char *sret = NULL;
+	struct smb_filename *smb_fname = NULL;
+
+	/*
+	 * For now assert this, so SMB_VFS_NEXT_STAT() below works.
+	 */
+	SMB_ASSERT(dirfsp->fh->fd == AT_FDCWD);
 
 	SMB_VFS_HANDLE_GET_DATA(handle, config,
 				struct virusfilter_config, return -1);
 
-	if (fsp->is_directory) {
+	if (fsp->fsp_flags.is_directory) {
 		DBG_INFO("Not scanned: Directory: %s/\n", cwd_fname);
 		goto virusfilter_vfs_open_next;
 	}
@@ -1170,6 +1188,11 @@ static int virusfilter_vfs_open(
 	}
 	if (test_suffix > 0) {
 		rename_trap_count++;
+	}
+
+	smb_fname = cp_smb_filename(mem_ctx, smb_fname_in);
+	if (smb_fname == NULL) {
+		goto virusfilter_vfs_open_fail;
 	}
 
 	if (is_named_stream(smb_fname)) {
@@ -1292,10 +1315,13 @@ static int virusfilter_vfs_open(
 		goto virusfilter_vfs_open_fail;
 	}
 
+	TALLOC_FREE(smb_fname);
+
 virusfilter_vfs_open_next:
-	return SMB_VFS_NEXT_OPEN(handle, smb_fname, fsp, flags, mode);
+	return SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname_in, fsp, flags, mode);
 
 virusfilter_vfs_open_fail:
+	TALLOC_FREE(smb_fname);
 	errno = (scan_errno != 0) ? scan_errno : EACCES;
 	return -1;
 }
@@ -1335,7 +1361,7 @@ static int virusfilter_vfs_close(
 	 * If close failed, file likely doesn't exist, do not try to scan.
 	 */
 	if (close_result == -1 && close_errno == EBADF) {
-		if (fsp->modified) {
+		if (fsp->fsp_flags.modified) {
 			DBG_DEBUG("Removing cache entry (if existent): "
 				  "fname: %s\n", fname);
 			virusfilter_cache_remove(config->cache,
@@ -1344,13 +1370,13 @@ static int virusfilter_vfs_close(
 		goto virusfilter_vfs_close_fail;
 	}
 
-	if (fsp->is_directory) {
+	if (fsp->fsp_flags.is_directory) {
 		DBG_INFO("Not scanned: Directory: %s/\n", cwd_fname);
 		return close_result;
 	}
 
 	if (is_named_stream(fsp->fsp_name)) {
-		if (config->scan_on_open && fsp->modified) {
+		if (config->scan_on_open && fsp->fsp_flags.modified) {
 			if (config->cache) {
 				DBG_DEBUG("Removing cache entry (if existent)"
 					  ": fname: %s\n", fname);
@@ -1365,7 +1391,7 @@ static int virusfilter_vfs_close(
 	}
 
 	if (!config->scan_on_close) {
-		if (config->scan_on_open && fsp->modified) {
+		if (config->scan_on_open && fsp->fsp_flags.modified) {
 			if (config->cache) {
 				DBG_DEBUG("Removing cache entry (if existent)"
 					  ": fname: %s\n", fname);
@@ -1379,7 +1405,7 @@ static int virusfilter_vfs_close(
 		return close_result;
 	}
 
-	if (!fsp->modified) {
+	if (!fsp->fsp_flags.modified) {
 		DBG_NOTICE("Not scanned: File not modified: %s/%s\n",
 			   cwd_fname, fname);
 
@@ -1504,7 +1530,7 @@ static int virusfilter_vfs_renameat(
 static struct vfs_fn_pointers vfs_virusfilter_fns = {
 	.connect_fn	= virusfilter_vfs_connect,
 	.disconnect_fn	= virusfilter_vfs_disconnect,
-	.open_fn	= virusfilter_vfs_open,
+	.openat_fn	= virusfilter_vfs_openat,
 	.close_fn	= virusfilter_vfs_close,
 	.unlinkat_fn	= virusfilter_vfs_unlinkat,
 	.renameat_fn	= virusfilter_vfs_renameat,

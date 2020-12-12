@@ -92,7 +92,23 @@ static void gotalarm_sig(int signum)
 		return NULL;
 	}
 
-#ifdef HAVE_LDAP_INITIALIZE
+#ifdef HAVE_LDAP_INIT_FD
+	{
+		int fd = -1;
+		NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
+
+		status = open_socket_out(ss, port, to, &fd);
+		if (!NT_STATUS_IS_OK(status)) {
+			return NULL;
+		}
+
+/* define LDAP_PROTO_TCP from openldap.h if required */
+#ifndef LDAP_PROTO_TCP
+#define LDAP_PROTO_TCP 1
+#endif
+		ldap_err = ldap_init_fd(fd, LDAP_PROTO_TCP, uri, &ldp);
+	}
+#elif defined(HAVE_LDAP_INITIALIZE)
 	ldap_err = ldap_initialize(&ldp, uri);
 #else
 	ldp = ldap_open(server, port);
@@ -669,7 +685,7 @@ got_connection:
 
 	/* Otherwise setup the TCP LDAP session */
 
-	ads->ldap.ld = ldap_open_with_timeout(addr,
+	ads->ldap.ld = ldap_open_with_timeout(ads->config.ldap_server_name,
 					      &ads->ldap.ss,
 					      ads->ldap.port, lp_ldap_timeout());
 	if (ads->ldap.ld == NULL) {
@@ -685,13 +701,6 @@ got_connection:
 	}
 
 	ldap_set_option(ads->ldap.ld, LDAP_OPT_PROTOCOL_VERSION, &version);
-
-	if ( lp_ldap_ssl_ads() ) {
-		status = ADS_ERROR(smbldap_start_tls(ads->ldap.ld, version));
-		if (!ADS_ERR_OK(status)) {
-			goto out;
-		}
-	}
 
 	/* fill in the current time and offsets */
 
@@ -3676,6 +3685,12 @@ static char **get_addl_hosts(ADS_STRUCT *ads, TALLOC_CTX *mem_ctx,
 	struct berval **values = NULL;
 	char **ret = NULL;
 	size_t i, converted_size;
+
+	/*
+	 * Windows DC implicitly adds a short name for each FQDN added to
+	 * msDS-AdditionalDnsHostName, but it comes with a strage binary
+	 * suffix "\0$" which we should ignore (see bug #14406).
+	 */
 
 	values = ldap_get_values_len(ads->ldap.ld, msg, field);
 	if (values == NULL) {

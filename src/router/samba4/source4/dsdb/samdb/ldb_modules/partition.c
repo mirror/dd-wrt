@@ -238,6 +238,7 @@ static int partition_prep_request(struct partition_context *ac,
 	int ret;
 	struct ldb_request *req;
 	struct ldb_control *partition_ctrl = NULL;
+	void *part_data = NULL;
 
 	ac->part_req = talloc_realloc(ac, ac->part_req,
 					struct part_request,
@@ -323,42 +324,37 @@ static int partition_prep_request(struct partition_context *ac,
 		}
 	}
 
-	if (partition) {
-		void *part_data = partition->ctrl;
+	part_data = partition->ctrl;
 
-		ac->part_req[ac->num_requests].module = partition->module;
+	ac->part_req[ac->num_requests].module = partition->module;
 
-		if (partition_ctrl != NULL) {
-			if (partition_ctrl->data != NULL) {
-				part_data = partition_ctrl->data;
-			}
-
-			/*
-			 * If the provided current partition control is without
-			 * data then use the calculated one.
-			 */
-			ret = ldb_request_add_control(req,
-						      DSDB_CONTROL_CURRENT_PARTITION_OID,
-						      false, part_data);
-			if (ret != LDB_SUCCESS) {
-				return ret;
-			}
+	if (partition_ctrl != NULL) {
+		if (partition_ctrl->data != NULL) {
+			part_data = partition_ctrl->data;
 		}
 
-		if (req->operation == LDB_SEARCH) {
-			/* If the search is for 'more' than this partition,
-			 * then change the basedn, so a remote LDAP server
-			 * doesn't object */
-			if (ldb_dn_compare_base(partition->ctrl->dn,
-						req->op.search.base) != 0) {
-				req->op.search.base = partition->ctrl->dn;
-			}
+		/*
+		 * If the provided current partition control is without
+		 * data then use the calculated one.
+		 */
+		ret = ldb_request_add_control(req,
+					      DSDB_CONTROL_CURRENT_PARTITION_OID,
+					      false, part_data);
+		if (ret != LDB_SUCCESS) {
+			return ret;
 		}
+	}
 
-	} else {
-		/* make sure you put the module here, or
-		 * or ldb_next_request() will skip a module */
-		ac->part_req[ac->num_requests].module = ac->module;
+	if (req->operation == LDB_SEARCH) {
+		/*
+		 * If the search is for 'more' than this partition,
+		 * then change the basedn, so the check of the BASE DN
+		 * still passes in the ldb_key_value layer
+		 */
+		if (ldb_dn_compare_base(partition->ctrl->dn,
+					req->op.search.base) != 0) {
+			req->op.search.base = partition->ctrl->dn;
+		}
 	}
 
 	ac->num_requests++;
@@ -752,7 +748,6 @@ static int partition_replicate(struct ldb_module *module, struct ldb_request *re
 /* search */
 static int partition_search(struct ldb_module *module, struct ldb_request *req)
 {
-	struct ldb_control **saved_controls;
 	/* Find backend */
 	struct partition_private_data *data = talloc_get_type(ldb_module_get_private(module),
 							      struct partition_private_data);
@@ -785,12 +780,6 @@ static int partition_search(struct ldb_module *module, struct ldb_request *req)
 		search_options = talloc_get_type(search_control->data, struct ldb_search_options_control);
 		search_control->critical = 0;
 
-	}
-
-	/* Remove the "domain_scope" control, so we don't confuse a backend
-	 * server */
-	if (domain_scope_control && !ldb_save_controls(domain_scope_control, req, &saved_controls)) {
-		return ldb_oom(ldb_module_get_ctx(module));
 	}
 
 	/* if we aren't initialised yet go further */

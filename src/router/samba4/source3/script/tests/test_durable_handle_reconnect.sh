@@ -17,6 +17,18 @@ testit "durable_v2_delay.durable_v2_reconnect_delay" $VALGRIND \
        smb2.durable-v2-delay.durable_v2_reconnect_delay ||
 	failed=$(expr $failed + 1)
 
+SMBD_LOG_FILES="$SMBD_TEST_LOG"
+if [ $SMBD_DONT_LOG_STDOUT -eq 1 ]; then
+	_SMBD_LOG_FILE=$(dirname $SMBD_TEST_LOG)/logs/log.smbd
+	SMBD_LOG_FILES="$SMBD_LOG_FILES $_SMBD_LOG_FILE"
+fi
+
+testit "durable_v2_delay.durable_v2_reconnect_delay_msec" $VALGRIND \
+       $BINDIR/smbtorture //$SERVER_IP/durable \
+       -U$USERNAME%$PASSWORD \
+       smb2.durable-v2-delay.durable_v2_reconnect_delay_msec ||
+	failed=$(expr $failed + 1)
+
 rm $delay_inject_conf
 
 testok $0 $failed

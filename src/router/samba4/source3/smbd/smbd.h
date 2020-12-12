@@ -26,15 +26,6 @@ struct dptr_struct;
 #include "smbd/proto.h"
 #include "locking/proto.h"
 
-/*
- * Pathnames used if request done
- * under privilege.
- */
-struct privilege_paths {
-	struct smb_filename parent_name;
-	struct smb_filename file_name;
-};
-
 struct trans_state {
 	struct trans_state *next, *prev;
 	uint64_t vuid; /* SMB2 compat */
@@ -68,7 +59,7 @@ struct trans_state {
 /*
  * unix_convert_flags
  */
-#define UCF_SAVE_LCOMP			0x00000001
+/* UCF_SAVE_LCOMP 0x00000001 is no longer used. */
 #define UCF_ALWAYS_ALLOW_WCARD_LCOMP	0x00000002
 #define UCF_COND_ALLOW_WCARD_LCOMP	0x00000004
 #define UCF_POSIX_PATHNAMES		0x00000008

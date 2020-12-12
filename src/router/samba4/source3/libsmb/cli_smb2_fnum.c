@@ -760,46 +760,84 @@ NTSTATUS cli_smb2_delete_on_close(struct cli_state *cli, uint16_t fnum, bool fla
 	return status;
 }
 
-/***************************************************************
- Small wrapper that allows SMB2 to create a directory
- Synchronous only.
-***************************************************************/
+struct cli_smb2_mkdir_state {
+	struct tevent_context *ev;
+	struct cli_state *cli;
+};
 
-NTSTATUS cli_smb2_mkdir(struct cli_state *cli, const char *dname)
+static void cli_smb2_mkdir_opened(struct tevent_req *subreq);
+static void cli_smb2_mkdir_closed(struct tevent_req *subreq);
+
+struct tevent_req *cli_smb2_mkdir_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	const char *dname)
 {
+	struct tevent_req *req = NULL, *subreq = NULL;
+	struct cli_smb2_mkdir_state *state = NULL;
+
+	req = tevent_req_create(
+		mem_ctx, &state, struct cli_smb2_mkdir_state);
+	if (req == NULL) {
+		return NULL;
+	}
+	state->ev = ev;
+	state->cli = cli;
+
+	/* Ensure this is a directory. */
+	subreq = cli_smb2_create_fnum_send(
+		state,				   /* mem_ctx */
+		ev,				   /* ev */
+		cli,				   /* cli */
+		dname,				   /* fname */
+		0,				   /* create_flags */
+		SMB2_IMPERSONATION_IMPERSONATION,  /* impersonation_level */
+		FILE_READ_ATTRIBUTES,		   /* desired_access */
+		FILE_ATTRIBUTE_DIRECTORY,	   /* file_attributes */
+		FILE_SHARE_READ|
+		FILE_SHARE_WRITE,		   /* share_access */
+		FILE_CREATE,			   /* create_disposition */
+		FILE_DIRECTORY_FILE,		   /* create_options */
+		NULL);				   /* in_cblobs */
+	if (tevent_req_nomem(subreq, req)) {
+		return tevent_req_post(req, ev);
+	}
+	tevent_req_set_callback(subreq, cli_smb2_mkdir_opened, req);
+	return req;
+}
+
+static void cli_smb2_mkdir_opened(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	struct cli_smb2_mkdir_state *state = tevent_req_data(
+		req, struct cli_smb2_mkdir_state);
 	NTSTATUS status;
 	uint16_t fnum;
 
-	if (smbXcli_conn_has_async_calls(cli->conn)) {
-		/*
-		 * Can't use sync call while an async call is in flight
-		 */
-		return NT_STATUS_INVALID_PARAMETER;
+	status = cli_smb2_create_fnum_recv(subreq, &fnum, NULL, NULL, NULL);
+	TALLOC_FREE(subreq);
+	if (tevent_req_nterror(req, status)) {
+		return;
 	}
 
-	if (smbXcli_conn_protocol(cli->conn) < PROTOCOL_SMB2_02) {
-		return NT_STATUS_INVALID_PARAMETER;
+	subreq = cli_smb2_close_fnum_send(state, state->ev, state->cli, fnum);
+	if (tevent_req_nomem(subreq, req)) {
+		return;
 	}
+	tevent_req_set_callback(subreq, cli_smb2_mkdir_closed, req);
+}
 
-	status = cli_smb2_create_fnum(cli,
-			dname,
-			0,			/* create_flags */
-			SMB2_IMPERSONATION_IMPERSONATION,
-			FILE_READ_ATTRIBUTES,	/* desired_access */
-			FILE_ATTRIBUTE_DIRECTORY, /* file attributes */
-			FILE_SHARE_READ|FILE_SHARE_WRITE, /* share_access */
-			FILE_CREATE,		/* create_disposition */
-			FILE_DIRECTORY_FILE,	/* create_options */
-			NULL,
-			&fnum,
-			NULL,
-			NULL,
-			NULL);
+static void cli_smb2_mkdir_closed(struct tevent_req *subreq)
+{
+	NTSTATUS status = cli_smb2_close_fnum_recv(subreq);
+	tevent_req_simple_finish_ntstatus(subreq, status);
+}
 
-	if (!NT_STATUS_IS_OK(status)) {
-		return status;
-	}
-	return cli_smb2_close_fnum(cli, fnum);
+NTSTATUS cli_smb2_mkdir_recv(struct tevent_req *req)
+{
+	return tevent_req_simple_recv_ntstatus(req);
 }
 
 struct cli_smb2_rmdir_state {
@@ -976,46 +1014,8 @@ NTSTATUS cli_smb2_rmdir_recv(struct tevent_req *req)
 	return state->status;
 }
 
-NTSTATUS cli_smb2_rmdir(
-	struct cli_state *cli,
-	const char *dname,
-	const struct smb2_create_blobs *in_cblobs)
-{
-	TALLOC_CTX *frame = talloc_stackframe();
-	struct tevent_context *ev;
-	struct tevent_req *req;
-	NTSTATUS status = NT_STATUS_NO_MEMORY;
-	bool ok;
-
-	if (smbXcli_conn_has_async_calls(cli->conn)) {
-		/*
-		 * Can't use sync call while an async call is in flight
-		 */
-		status = NT_STATUS_INVALID_PARAMETER;
-		goto fail;
-	}
-	ev = samba_tevent_context_init(frame);
-	if (ev == NULL) {
-		goto fail;
-	}
-	req = cli_smb2_rmdir_send(frame, ev, cli, dname, in_cblobs);
-	if (req == NULL) {
-		goto fail;
-	}
-	ok = tevent_req_poll_ntstatus(req, ev, &status);
-	if (!ok) {
-		goto fail;
-	}
-	status = cli_smb2_rmdir_recv(req);
-fail:
-	cli->raw_status = status;
-	TALLOC_FREE(frame);
-	return status;
-}
-
 /***************************************************************
  Small wrapper that allows SMB2 to unlink a pathname.
- Synchronous only.
 ***************************************************************/
 
 struct cli_smb2_unlink_state {
@@ -1161,48 +1161,11 @@ NTSTATUS cli_smb2_unlink_recv(struct tevent_req *req)
 	return tevent_req_simple_recv_ntstatus(req);
 }
 
-NTSTATUS cli_smb2_unlink(
-	struct cli_state *cli,
-	const char *fname,
-	const struct smb2_create_blobs *in_cblobs)
-{
-	TALLOC_CTX *frame = talloc_stackframe();
-	struct tevent_context *ev;
-	struct tevent_req *req;
-	NTSTATUS status = NT_STATUS_NO_MEMORY;
-	bool ok;
-
-	if (smbXcli_conn_has_async_calls(cli->conn)) {
-		/*
-		 * Can't use sync call while an async call is in flight
-		 */
-		status = NT_STATUS_INVALID_PARAMETER;
-		goto fail;
-	}
-	ev = samba_tevent_context_init(frame);
-	if (ev == NULL) {
-		goto fail;
-	}
-	req = cli_smb2_unlink_send(frame, ev, cli, fname, in_cblobs);
-	if (req == NULL) {
-		goto fail;
-	}
-	ok = tevent_req_poll_ntstatus(req, ev, &status);
-	if (!ok) {
-		goto fail;
-	}
-	status = cli_smb2_unlink_recv(req);
-fail:
-	cli->raw_status = status;
-	TALLOC_FREE(frame);
-	return status;
-}
-
 /***************************************************************
  Utility function to parse a SMB2_FIND_ID_BOTH_DIRECTORY_INFO reply.
 ***************************************************************/
 
-static NTSTATUS parse_finfo_id_both_directory_info(uint8_t *dir_data,
+static NTSTATUS parse_finfo_id_both_directory_info(const uint8_t *dir_data,
 				uint32_t dir_data_length,
 				struct file_info *finfo,
 				uint32_t *next_offset)
@@ -1236,8 +1199,7 @@ static NTSTATUS parse_finfo_id_both_directory_info(uint8_t *dir_data,
 	finfo->ctime_ts = interpret_long_date((const char *)dir_data + 32);
 	finfo->size = IVAL2_TO_SMB_BIG_UINT(dir_data + 40, 0);
 	finfo->allocated_size = IVAL2_TO_SMB_BIG_UINT(dir_data + 48, 0);
-	/* NB. We need to enlarge finfo->mode to be 32-bits. */
-	finfo->mode = (uint16_t)IVAL(dir_data + 56, 0);
+	finfo->attr = IVAL(dir_data + 56, 0);
 	finfo->ino = IVAL2_TO_SMB_BIG_UINT(dir_data + 96, 0);
 	namelen = IVAL(dir_data + 60,0);
 	if (namelen > (dir_data_length - 104)) {
@@ -1323,7 +1285,7 @@ static bool windows_parent_dirname(TALLOC_CTX *mem_ctx,
 
 NTSTATUS cli_smb2_list(struct cli_state *cli,
 			const char *pathname,
-			uint16_t attribute,
+			uint32_t attribute,
 			NTSTATUS (*fn)(const char *,
 				struct file_info *,
 				const char *,
@@ -1456,8 +1418,7 @@ NTSTATUS cli_smb2_list(struct cli_state *cli,
 				goto fail;
 			}
 
-			if (dir_check_ftype((uint32_t)finfo->mode,
-					(uint32_t)attribute)) {
+			if (dir_check_ftype(finfo->attr, attribute)) {
 				/*
 				 * Only process if attributes match.
 				 * On SMB1 server does this, so on
@@ -1556,8 +1517,10 @@ NTSTATUS cli_smb2_qpathinfo_basic(struct cli_state *cli,
 	/* SMB2 is pickier about pathnames. Ensure it doesn't
 	   end in a '\' */
 	if (namelen > 0 && name[namelen-1] == '\\') {
-		char *modname = talloc_strdup(talloc_tos(), name);
-		modname[namelen-1] = '\0';
+		char *modname = talloc_strndup(talloc_tos(), name, namelen-1);
+		if (modname == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
 		name = modname;
 	}
 
@@ -1614,49 +1577,85 @@ NTSTATUS cli_smb2_qpathinfo_basic(struct cli_state *cli,
 	return status;
 }
 
-/***************************************************************
- Wrapper that allows SMB2 to check if a path is a directory.
- Synchronous only.
-***************************************************************/
+struct cli_smb2_chkpath_state {
+	struct tevent_context *ev;
+	struct cli_state *cli;
+};
 
-NTSTATUS cli_smb2_chkpath(struct cli_state *cli,
-				const char *name)
+static void cli_smb2_chkpath_opened(struct tevent_req *subreq);
+static void cli_smb2_chkpath_closed(struct tevent_req *subreq);
+
+struct tevent_req *cli_smb2_chkpath_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	const char *name)
 {
-	NTSTATUS status;
-	uint16_t fnum = 0xffff;
+	struct tevent_req *req = NULL, *subreq = NULL;
+	struct cli_smb2_chkpath_state *state = NULL;
 
-	if (smbXcli_conn_has_async_calls(cli->conn)) {
-		/*
-		 * Can't use sync call while an async call is in flight
-		 */
-		return NT_STATUS_INVALID_PARAMETER;
+	req = tevent_req_create(
+		mem_ctx, &state, struct cli_smb2_chkpath_state);
+	if (req == NULL) {
+		return NULL;
 	}
-
-	if (smbXcli_conn_protocol(cli->conn) < PROTOCOL_SMB2_02) {
-		return NT_STATUS_INVALID_PARAMETER;
-	}
+	state->ev = ev;
+	state->cli = cli;
 
 	/* Ensure this is a directory. */
-	status = cli_smb2_create_fnum(cli,
-			name,
-			0,			/* create_flags */
-			SMB2_IMPERSONATION_IMPERSONATION,
-			FILE_READ_ATTRIBUTES,	/* desired_access */
-			FILE_ATTRIBUTE_DIRECTORY, /* file attributes */
-			FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, /* share_access */
-			FILE_OPEN,		/* create_disposition */
-			FILE_DIRECTORY_FILE,	/* create_options */
-			NULL,
-			&fnum,
-			NULL,
-			NULL,
-			NULL);
+	subreq = cli_smb2_create_fnum_send(
+		state,				   /* mem_ctx */
+		ev,				   /* ev */
+		cli,				   /* cli */
+		name,				   /* fname */
+		0,				   /* create_flags */
+		SMB2_IMPERSONATION_IMPERSONATION,  /* impersonation_level */
+		FILE_READ_ATTRIBUTES,		   /* desired_access */
+		FILE_ATTRIBUTE_DIRECTORY,	   /* file_attributes */
+		FILE_SHARE_READ|
+		FILE_SHARE_WRITE|
+		FILE_SHARE_DELETE,		   /* share_access */
+		FILE_OPEN,			   /* create_disposition */
+		FILE_DIRECTORY_FILE,		   /* create_options */
+		NULL);				   /* in_cblobs */
+	if (tevent_req_nomem(subreq, req)) {
+		return tevent_req_post(req, ev);
+	}
+	tevent_req_set_callback(subreq, cli_smb2_chkpath_opened, req);
+	return req;
+}
 
-	if (!NT_STATUS_IS_OK(status)) {
-		return status;
+static void cli_smb2_chkpath_opened(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	struct cli_smb2_chkpath_state *state = tevent_req_data(
+		req, struct cli_smb2_chkpath_state);
+	NTSTATUS status;
+	uint16_t fnum;
+
+	status = cli_smb2_create_fnum_recv(subreq, &fnum, NULL, NULL, NULL);
+	TALLOC_FREE(subreq);
+	if (tevent_req_nterror(req, status)) {
+		return;
 	}
 
-	return cli_smb2_close_fnum(cli, fnum);
+	subreq = cli_smb2_close_fnum_send(state, state->ev, state->cli, fnum);
+	if (tevent_req_nomem(subreq, req)) {
+		return;
+	}
+	tevent_req_set_callback(subreq, cli_smb2_chkpath_closed, req);
+}
+
+static void cli_smb2_chkpath_closed(struct tevent_req *subreq)
+{
+	NTSTATUS status = cli_smb2_close_fnum_recv(subreq);
+	tevent_req_simple_finish_ntstatus(subreq, status);
+}
+
+NTSTATUS cli_smb2_chkpath_recv(struct tevent_req *req)
+{
+	return tevent_req_simple_recv_ntstatus(req);
 }
 
 struct cli_smb2_query_info_fnum_state {
@@ -2004,141 +2003,6 @@ NTSTATUS cli_smb2_qpathinfo_alt_name(struct cli_state *cli,
 	return status;
 }
 
-
-/***************************************************************
- Wrapper that allows SMB2 to query a fnum info (basic level).
- Synchronous only.
-***************************************************************/
-
-NTSTATUS cli_smb2_qfileinfo_basic(struct cli_state *cli,
-			uint16_t fnum,
-			uint16_t *mode,
-			off_t *size,
-			struct timespec *create_time,
-			struct timespec *access_time,
-			struct timespec *write_time,
-			struct timespec *change_time,
-			SMB_INO_T *ino)
-{
-	NTSTATUS status;
-	DATA_BLOB outbuf = data_blob_null;
-	TALLOC_CTX *frame = talloc_stackframe();
-
-	if (smbXcli_conn_has_async_calls(cli->conn)) {
-		/*
-		 * Can't use sync call while an async call is in flight
-		 */
-		status = NT_STATUS_INVALID_PARAMETER;
-		goto fail;
-	}
-
-	if (smbXcli_conn_protocol(cli->conn) < PROTOCOL_SMB2_02) {
-		status = NT_STATUS_INVALID_PARAMETER;
-		goto fail;
-	}
-
-	/* getinfo on the handle with info_type SMB2_GETINFO_FILE (1),
-	   level 0x12 (SMB2_FILE_ALL_INFORMATION). */
-
-	status = cli_smb2_query_info_fnum(
-		cli,
-		fnum,
-		1, /* in_info_type */
-		(SMB_FILE_ALL_INFORMATION - 1000), /* in_file_info_class */
-		0xFFFF, /* in_max_output_length */
-		NULL, /* in_input_buffer */
-		0, /* in_additional_info */
-		0, /* in_flags */
-		frame,
-		&outbuf);
-	if (!NT_STATUS_IS_OK(status)) {
-		goto fail;
-	}
-
-	/* Parse the reply. */
-	if (outbuf.length < 0x60) {
-		status = NT_STATUS_INVALID_NETWORK_RESPONSE;
-		goto fail;
-	}
-
-	if (create_time) {
-		*create_time = interpret_long_date((const char *)outbuf.data + 0x0);
-	}
-	if (access_time) {
-		*access_time = interpret_long_date((const char *)outbuf.data + 0x8);
-	}
-	if (write_time) {
-		*write_time = interpret_long_date((const char *)outbuf.data + 0x10);
-	}
-	if (change_time) {
-		*change_time = interpret_long_date((const char *)outbuf.data + 0x18);
-	}
-	if (mode) {
-		uint32_t attr = IVAL(outbuf.data, 0x20);
-		*mode = (uint16_t)attr;
-	}
-	if (size) {
-		uint64_t file_size = BVAL(outbuf.data, 0x30);
-		*size = (off_t)file_size;
-	}
-	if (ino) {
-		uint64_t file_index = BVAL(outbuf.data, 0x40);
-		*ino = (SMB_INO_T)file_index;
-	}
-
-  fail:
-
-	cli->raw_status = status;
-
-	TALLOC_FREE(frame);
-	return status;
-}
-
-/***************************************************************
- Wrapper that allows SMB2 to query an fnum.
- Implement on top of cli_smb2_qfileinfo_basic().
- Synchronous only.
-***************************************************************/
-
-NTSTATUS cli_smb2_getattrE(struct cli_state *cli,
-			uint16_t fnum,
-			uint16_t *attr,
-			off_t *size,
-			time_t *change_time,
-			time_t *access_time,
-			time_t *write_time)
-{
-	struct timespec access_time_ts;
-	struct timespec write_time_ts;
-	struct timespec change_time_ts;
-	NTSTATUS status = cli_smb2_qfileinfo_basic(cli,
-					fnum,
-					attr,
-					size,
-					NULL,
-					&access_time_ts,
-					&write_time_ts,
-					&change_time_ts,
-                                        NULL);
-
-	cli->raw_status = status;
-
-	if (!NT_STATUS_IS_OK(status)) {
-		return status;
-	}
-
-	if (change_time) {
-		*change_time = change_time_ts.tv_sec;
-	}
-	if (access_time) {
-		*access_time = access_time_ts.tv_sec;
-	}
-	if (write_time) {
-		*write_time = write_time_ts.tv_sec;
-	}
-	return NT_STATUS_OK;
-}
-
 /***************************************************************
  Wrapper that allows SMB2 to get pathname attributes.
  Synchronous only.
@@ -2146,13 +2010,14 @@ NTSTATUS cli_smb2_getattrE(struct cli_state *cli,
 
 NTSTATUS cli_smb2_getatr(struct cli_state *cli,
 			const char *name,
-			uint16_t *attr,
+			uint32_t *pattr,
 			off_t *size,
 			time_t *write_time)
 {
 	NTSTATUS status;
 	uint16_t fnum = 0xffff;
 	struct smb2_hnd *ph = NULL;
+	struct timespec write_time_ts;
 	TALLOC_CTX *frame = talloc_stackframe();
 
 	if (smbXcli_conn_has_async_calls(cli->conn)) {
@@ -2183,15 +2048,21 @@ NTSTATUS cli_smb2_getatr(struct cli_state *cli,
 	if (!NT_STATUS_IS_OK(status)) {
 		goto fail;
 	}
-	status = cli_smb2_getattrE(cli,
-				fnum,
-				attr,
-				size,
-				NULL,
-				NULL,
-				write_time);
+	status = cli_qfileinfo_basic(
+		cli,
+		fnum,
+		pattr,
+		size,
+		NULL,		/* create_time */
+		NULL,		/* access_time */
+		&write_time_ts,
+		NULL,		/* change_time */
+		NULL);		/* ino */
 	if (!NT_STATUS_IS_OK(status)) {
 		goto fail;
+	}
+	if (write_time != NULL) {
+		*write_time = write_time_ts.tv_sec;
 	}
 
   fail:
@@ -2208,7 +2079,7 @@ NTSTATUS cli_smb2_getatr(struct cli_state *cli,
 
 /***************************************************************
  Wrapper that allows SMB2 to query a pathname info (basic level).
- Implement on top of cli_smb2_qfileinfo_basic().
+ Implement on top of cli_qfileinfo_basic().
  Synchronous only.
 ***************************************************************/
 
@@ -2219,7 +2090,7 @@ NTSTATUS cli_smb2_qpathinfo2(struct cli_state *cli,
 			struct timespec *write_time,
 			struct timespec *change_time,
 			off_t *size,
-			uint16_t *mode,
+			uint32_t *pattr,
 			SMB_INO_T *ino)
 {
 	NTSTATUS status;
@@ -2256,15 +2127,16 @@ NTSTATUS cli_smb2_qpathinfo2(struct cli_state *cli,
 		goto fail;
 	}
 
-	status = cli_smb2_qfileinfo_basic(cli,
-					fnum,
-					mode,
-					size,
-					create_time,
-					access_time,
-					write_time,
-					change_time,
-					ino);
+	status = cli_qfileinfo_basic(
+		cli,
+		fnum,
+		pattr,
+		size,
+		create_time,
+		access_time,
+		write_time,
+		change_time,
+		ino);
 
   fail:
 
@@ -2422,7 +2294,7 @@ NTSTATUS cli_smb2_setpathinfo(struct cli_state *cli,
 
 NTSTATUS cli_smb2_setatr(struct cli_state *cli,
 			const char *name,
-			uint16_t attr,
+			uint32_t attr,
 			time_t mtime)
 {
 	uint8_t inbuf_store[40];
@@ -2458,7 +2330,7 @@ NTSTATUS cli_smb2_setatr(struct cli_state *cli,
 		attr = 0;
 	}
 
-	SSVAL(inbuf.data, 32, attr);
+	SIVAL(inbuf.data, 32, attr);
 	if (mtime != 0) {
 		put_long_date((char *)inbuf.data + 16,mtime);
 	}
@@ -2901,13 +2773,13 @@ NTSTATUS cli_smb2_get_fs_volume_info(struct cli_state *cli,
 		goto fail;
 	}
 
-	clistr_pull_talloc(mem_ctx,
-			(const char *)outbuf.data,
-			0,
-			&volume_name,
-			outbuf.data + 18,
-			nlen,
-			STR_UNICODE);
+	pull_string_talloc(mem_ctx,
+			   (const char *)outbuf.data,
+			   0,
+			   &volume_name,
+			   outbuf.data + 18,
+			   nlen,
+			   STR_UNICODE);
 	if (volume_name == NULL) {
 		status = map_nt_error_from_unix(errno);
 		goto fail;

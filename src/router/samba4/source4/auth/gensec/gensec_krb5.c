@@ -107,17 +107,12 @@ static NTSTATUS gensec_krb5_start(struct gensec_security *gensec_security, bool 
 		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	gensec_krb5_state = talloc(gensec_security, struct gensec_krb5_state);
+	gensec_krb5_state = talloc_zero(gensec_security, struct gensec_krb5_state);
 	if (!gensec_krb5_state) {
 		return NT_STATUS_NO_MEMORY;
 	}
 
 	gensec_security->private_data = gensec_krb5_state;
-	gensec_krb5_state->smb_krb5_context = NULL;
-	gensec_krb5_state->auth_context = NULL;
-	gensec_krb5_state->ticket = NULL;
-	ZERO_STRUCT(gensec_krb5_state->enc_ticket);
-	gensec_krb5_state->keyblock = NULL;
 	gensec_krb5_state->gssapi = gssapi;
 
 	talloc_set_destructor(gensec_krb5_state, gensec_krb5_destroy); 
@@ -150,18 +145,18 @@ static NTSTATUS gensec_krb5_start(struct gensec_security *gensec_security, bool 
 
 	tlocal_addr = gensec_get_local_address(gensec_security);
 	if (tlocal_addr) {
-		ssize_t socklen;
-		struct sockaddr_storage ss;
+		ssize_t sockaddr_ret;
+		struct samba_sockaddr addr;
 		bool ok;
 
-		socklen = tsocket_address_bsd_sockaddr(tlocal_addr,
-				(struct sockaddr *) &ss,
-				sizeof(struct sockaddr_storage));
-		if (socklen < 0) {
+		sockaddr_ret = tsocket_address_bsd_sockaddr(
+			tlocal_addr, &addr.u.sa, sizeof(addr.u.sa));
+		if (sockaddr_ret < 0) {
 			talloc_free(gensec_krb5_state);
 			return NT_STATUS_INTERNAL_ERROR;
 		}
-		ok = smb_krb5_sockaddr_to_kaddr(&ss, &my_krb5_addr);
+		addr.sa_socklen = sockaddr_ret;
+		ok = smb_krb5_sockaddr_to_kaddr(&addr.u.ss, &my_krb5_addr);
 		if (!ok) {
 			DBG_WARNING("smb_krb5_sockaddr_to_kaddr (local) failed\n");
 			talloc_free(gensec_krb5_state);
@@ -171,18 +166,18 @@ static NTSTATUS gensec_krb5_start(struct gensec_security *gensec_security, bool 
 
 	tremote_addr = gensec_get_remote_address(gensec_security);
 	if (tremote_addr) {
-		ssize_t socklen;
-		struct sockaddr_storage ss;
+		ssize_t sockaddr_ret;
+		struct samba_sockaddr addr;
 		bool ok;
 
-		socklen = tsocket_address_bsd_sockaddr(tremote_addr,
-				(struct sockaddr *) &ss,
-				sizeof(struct sockaddr_storage));
-		if (socklen < 0) {
+		sockaddr_ret = tsocket_address_bsd_sockaddr(
+			tremote_addr, &addr.u.sa, sizeof(addr.u.sa));
+		if (sockaddr_ret < 0) {
 			talloc_free(gensec_krb5_state);
 			return NT_STATUS_INTERNAL_ERROR;
 		}
-		ok = smb_krb5_sockaddr_to_kaddr(&ss, &peer_krb5_addr);
+		addr.sa_socklen = sockaddr_ret;
+		ok = smb_krb5_sockaddr_to_kaddr(&addr.u.ss, &peer_krb5_addr);
 		if (!ok) {
 			DBG_WARNING("smb_krb5_sockaddr_to_kaddr (remote) failed\n");
 			talloc_free(gensec_krb5_state);
@@ -274,8 +269,7 @@ static NTSTATUS gensec_krb5_common_client_start(struct gensec_security *gensec_s
 }
 
 static NTSTATUS gensec_krb5_common_client_creds(struct gensec_security *gensec_security,
-						struct tevent_context *ev,
-						bool gssapi)
+						struct tevent_context *ev)
 {
 	struct gensec_krb5_state *gensec_krb5_state;
 	krb5_error_code ret;
@@ -525,7 +519,7 @@ static NTSTATUS gensec_krb5_update_internal(struct gensec_security *gensec_secur
 	{
 		DATA_BLOB unwrapped_out;
 		
-		nt_status = gensec_krb5_common_client_creds(gensec_security, ev, gensec_krb5_state->gssapi);
+		nt_status = gensec_krb5_common_client_creds(gensec_security, ev);
 		if (!NT_STATUS_IS_OK(nt_status)) {
 			return nt_status;
 		}

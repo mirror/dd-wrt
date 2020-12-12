@@ -36,8 +36,10 @@
 
 #include "torture/torture.h"
 #include "torture/smb2/proto.h"
+#include "torture/smb2/block.h"
 
 #include "lib/util/sys_rw.h"
+#include "libcli/security/security.h"
 
 #define CHECK_RANGE(v, min, max) do { \
 	if ((v) < (min) || (v) > (max)) { \
@@ -2561,16 +2563,16 @@ static bool test_smb2_oplock_batch21(struct torture_context *tctx,
 	return ret;
 }
 
-static bool test_smb2_oplock_batch22(struct torture_context *tctx,
-				     struct smb2_tree *tree1)
+static bool test_smb2_oplock_batch22a(struct torture_context *tctx,
+				      struct smb2_tree *tree1)
 {
-	const char *fname = BASEDIR "\\test_batch22.dat";
+	const char *fname = BASEDIR "\\test_batch22a.dat";
 	NTSTATUS status;
 	bool ret = true;
 	union smb_open io;
 	struct smb2_handle h, h1, h2;
 	struct timeval tv;
-	int timeout = torture_setting_int(tctx, "oplocktimeout", 30);
+	int timeout = torture_setting_int(tctx, "oplocktimeout", 35);
 	int te;
 
 	status = torture_smb2_testdir(tree1, BASEDIR, &h);
@@ -2630,6 +2632,99 @@ static bool test_smb2_oplock_batch22(struct torture_context *tctx,
 	CHECK_VAL(break_info.handle.data[0], h1.data[0]);
 	CHECK_VAL(break_info.level, SMB2_OPLOCK_LEVEL_II);
 	CHECK_VAL(break_info.failures, 0);
+
+	smb2_util_close(tree1, h1);
+	smb2_util_close(tree1, h2);
+	smb2_util_close(tree1, h);
+
+	smb2_deltree(tree1, BASEDIR);
+	return ret;
+}
+
+static bool test_smb2_oplock_batch22b(struct torture_context *tctx,
+				      struct smb2_tree *tree1,
+				      struct smb2_tree *tree2)
+{
+	const char *fname = BASEDIR "\\test_batch22b.dat";
+	NTSTATUS status;
+	bool ret = true;
+	union smb_open io;
+	struct smb2_handle h, h1, h2;
+	struct timeval tv;
+	int timeout = torture_setting_int(tctx, "oplocktimeout", 35);
+	struct smb2_transport *transport1 = tree1->session->transport;
+	bool block_setup = false;
+	bool block_ok = false;
+	int te;
+
+	status = torture_smb2_testdir(tree1, BASEDIR, &h);
+	torture_assert_ntstatus_ok(tctx, status, "Error creating directory");
+
+	/* cleanup */
+	smb2_util_unlink(tree1, fname);
+
+	tree1->session->transport->oplock.handler = torture_oplock_handler;
+	tree1->session->transport->oplock.private_data = tree1;
+	/*
+	  base ntcreatex parms
+	*/
+	ZERO_STRUCT(io.smb2);
+	io.generic.level = RAW_OPEN_SMB2;
+	io.smb2.in.desired_access = SEC_RIGHTS_FILE_ALL;
+	io.smb2.in.alloc_size = 0;
+	io.smb2.in.file_attributes = FILE_ATTRIBUTE_NORMAL;
+	io.smb2.in.share_access = NTCREATEX_SHARE_ACCESS_NONE;
+	io.smb2.in.create_disposition = NTCREATEX_DISP_OPEN_IF;
+	io.smb2.in.create_options = 0;
+	io.smb2.in.impersonation_level = SMB2_IMPERSONATION_ANONYMOUS;
+	io.smb2.in.security_flags = 0;
+	io.smb2.in.fname = fname;
+
+	/*
+	  with a batch oplock we get a break
+	*/
+	torture_comment(tctx, "BATCH22: open with batch oplock\n");
+	ZERO_STRUCT(break_info);
+	io.smb2.in.create_flags = NTCREATEX_FLAGS_EXTENDED;
+	io.smb2.in.oplock_level = SMB2_OPLOCK_LEVEL_BATCH;
+	io.smb2.in.share_access = NTCREATEX_SHARE_ACCESS_READ|
+		NTCREATEX_SHARE_ACCESS_WRITE|
+		NTCREATEX_SHARE_ACCESS_DELETE;
+	status = smb2_create(tree1, tctx, &(io.smb2));
+	torture_assert_ntstatus_ok(tctx, status, "Error opening the file");
+	h1 = io.smb2.out.file.handle;
+	CHECK_VAL(io.smb2.out.oplock_level, SMB2_OPLOCK_LEVEL_BATCH);
+
+	torture_comment(tctx, "a 2nd open should succeed after the oplock "
+			"break timeout\n");
+	tv = timeval_current();
+	tree1->session->transport->oplock.handler =
+				torture_oplock_handler_timeout;
+	block_setup = test_setup_blocked_transports(tctx);
+	torture_assert(tctx, block_setup, "test_setup_blocked_transports");
+	block_ok = test_block_smb2_transport(tctx, transport1);
+	torture_assert(tctx, block_ok, "test_block_smb2_transport");
+
+	status = smb2_create(tree2, tctx, &(io.smb2));
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done, "Incorrect status");
+	h2 = io.smb2.out.file.handle;
+	CHECK_VAL(io.smb2.out.oplock_level, SMB2_OPLOCK_LEVEL_BATCH);
+
+	torture_wait_for_oplock_break(tctx);
+	te = (int)timeval_elapsed(&tv);
+	CHECK_RANGE(te, 0, timeout);
+	torture_comment(tctx, "waited %d seconds for oplock timeout\n", te);
+
+	CHECK_VAL(break_info.count, 1);
+	CHECK_VAL(break_info.handle.data[0], h1.data[0]);
+	CHECK_VAL(break_info.level, SMB2_OPLOCK_LEVEL_II);
+	CHECK_VAL(break_info.failures, 0);
+
+done:
+	if (block_ok) {
+		test_unblock_smb2_transport(tctx, transport1);
+	}
+	test_cleanup_blocked_transports(tctx);
 
 	smb2_util_close(tree1, h1);
 	smb2_util_close(tree1, h2);
@@ -3968,6 +4063,159 @@ static bool test_smb2_oplock_levelII502(struct torture_context *tctx,
 	return true;
 }
 
+static bool test_oplock_statopen1_do(struct torture_context *tctx,
+				     struct smb2_tree *tree,
+				     uint32_t access_mask,
+				     bool expect_stat_open)
+{
+	TALLOC_CTX *mem_ctx = talloc_new(tctx);
+	struct smb2_create cr;
+	struct smb2_handle h1 = {{0}};
+	struct smb2_handle h2 = {{0}};
+	NTSTATUS status;
+	const char *fname = "oplock_statopen1.dat";
+	bool ret = true;
+
+	/* Open file with exclusive oplock. */
+	cr = (struct smb2_create) {
+		.in.desired_access = SEC_FILE_ALL,
+		.in.file_attributes = FILE_ATTRIBUTE_NORMAL,
+		.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+		.in.create_disposition = NTCREATEX_DISP_OPEN_IF,
+		.in.impersonation_level = SMB2_IMPERSONATION_IMPERSONATION,
+		.in.fname = fname,
+		.in.oplock_level = SMB2_OPLOCK_LEVEL_BATCH,
+	};
+	status = smb2_create(tree, mem_ctx, &cr);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"smb2_create failed\n");
+	h1 = cr.out.file.handle;
+	CHECK_VAL(cr.out.oplock_level, SMB2_OPLOCK_LEVEL_BATCH);
+
+	/* Stat open */
+	cr = (struct smb2_create) {
+		.in.desired_access = access_mask,
+		.in.share_access = NTCREATEX_SHARE_ACCESS_MASK,
+		.in.file_attributes = FILE_ATTRIBUTE_NORMAL,
+		.in.create_disposition = NTCREATEX_DISP_OPEN,
+		.in.impersonation_level = SMB2_IMPERSONATION_IMPERSONATION,
+		.in.fname = fname,
+	};
+	status = smb2_create(tree, mem_ctx, &cr);
+	torture_assert_ntstatus_ok_goto(tctx, status, ret, done,
+					"smb2_create failed\n");
+	h2 = cr.out.file.handle;
+
+	if (expect_stat_open) {
+		torture_wait_for_oplock_break(tctx);
+		CHECK_VAL(break_info.count, 0);
+		CHECK_VAL(break_info.level, 0);
+		CHECK_VAL(break_info.failures, 0);
+		if (!ret) {
+			goto done;
+		}
+	} else {
+		CHECK_VAL(break_info.count, 1);
+	}
+
+done:
+	if (!smb2_util_handle_empty(h2)) {
+		smb2_util_close(tree, h2);
+	}
+	if (!smb2_util_handle_empty(h1)) {
+		smb2_util_close(tree, h1);
+	}
+	talloc_free(mem_ctx);
+	return ret;
+}
+
+static bool test_smb2_oplock_statopen1(struct torture_context *tctx,
+				       struct smb2_tree *tree)
+{
+	const char *fname = "oplock_statopen1.dat";
+	size_t i;
+	bool ret = true;
+	struct {
+		uint32_t access_mask;
+		bool expect_stat_open;
+	} tests[] = {
+		{
+			.access_mask = FILE_READ_DATA,
+			.expect_stat_open = false,
+		},
+		{
+			.access_mask = FILE_WRITE_DATA,
+			.expect_stat_open = false,
+		},
+		{
+			.access_mask = FILE_READ_EA,
+			.expect_stat_open = false,
+		},
+		{
+			.access_mask = FILE_WRITE_EA,
+			.expect_stat_open = false,
+		},
+		{
+			.access_mask = FILE_EXECUTE,
+			.expect_stat_open = false,
+		},
+		{
+			.access_mask = FILE_READ_ATTRIBUTES,
+			.expect_stat_open = true,
+		},
+		{
+			.access_mask = FILE_WRITE_ATTRIBUTES,
+			.expect_stat_open = true,
+		},
+		{
+			.access_mask = DELETE_ACCESS,
+			.expect_stat_open = false,
+		},
+		{
+			.access_mask = READ_CONTROL_ACCESS,
+			.expect_stat_open = false,
+		},
+		{
+			.access_mask = WRITE_DAC_ACCESS,
+			.expect_stat_open = false,
+		},
+		{
+			.access_mask = WRITE_OWNER_ACCESS,
+			.expect_stat_open = false,
+		},
+		{
+			.access_mask = SYNCHRONIZE_ACCESS,
+			.expect_stat_open = true,
+		},
+	};
+
+	tree->session->transport->oplock.handler = torture_oplock_handler;
+	tree->session->transport->oplock.private_data = tree;
+
+	for (i = 0; i < ARRAY_SIZE(tests); i++) {
+		ZERO_STRUCT(break_info);
+
+		ret = test_oplock_statopen1_do(tctx,
+					       tree,
+					       tests[i].access_mask,
+					       tests[i].expect_stat_open);
+		if (ret == true) {
+			continue;
+		}
+		torture_result(tctx, TORTURE_FAIL,
+			       "test %zu: access_mask: %s, "
+			       "expect_stat_open: %s\n",
+			       i,
+			       get_sec_mask_str(tree, tests[i].access_mask),
+			       tests[i].expect_stat_open ? "yes" : "no");
+		goto done;
+	}
+
+done:
+	smb2_util_unlink(tree, fname);
+	return ret;
+}
+
 struct torture_suite *torture_smb2_oplocks_init(TALLOC_CTX *ctx)
 {
 	struct torture_suite *suite =
@@ -4001,7 +4249,8 @@ struct torture_suite *torture_smb2_oplocks_init(TALLOC_CTX *ctx)
 	torture_suite_add_1smb2_test(suite, "batch19", test_smb2_oplock_batch19);
 	torture_suite_add_2smb2_test(suite, "batch20", test_smb2_oplock_batch20);
 	torture_suite_add_1smb2_test(suite, "batch21", test_smb2_oplock_batch21);
-	torture_suite_add_1smb2_test(suite, "batch22", test_smb2_oplock_batch22);
+	torture_suite_add_1smb2_test(suite, "batch22a", test_smb2_oplock_batch22a);
+	torture_suite_add_2smb2_test(suite, "batch22b", test_smb2_oplock_batch22b);
 	torture_suite_add_2smb2_test(suite, "batch23", test_smb2_oplock_batch23);
 	torture_suite_add_2smb2_test(suite, "batch24", test_smb2_oplock_batch24);
 	torture_suite_add_1smb2_test(suite, "batch25", test_smb2_oplock_batch25);
@@ -4016,6 +4265,7 @@ struct torture_suite *torture_smb2_oplocks_init(TALLOC_CTX *ctx)
 				     test_smb2_oplock_levelII501);
 	torture_suite_add_2smb2_test(suite, "levelii502",
 				     test_smb2_oplock_levelII502);
+	torture_suite_add_1smb2_test(suite, "statopen1", test_smb2_oplock_statopen1);
 	suite->description = talloc_strdup(suite, "SMB2-OPLOCK tests");
 
 	return suite;

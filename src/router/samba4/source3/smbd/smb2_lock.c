@@ -47,12 +47,15 @@ struct smbd_smb2_lock_state {
 	uint32_t retry_msecs;
 	uint16_t lock_count;
 	struct smbd_lock_element *locks;
+	uint8_t lock_sequence_value;
+	uint8_t *lock_sequence_element;
 };
 
 static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 						 struct tevent_context *ev,
 						 struct smbd_smb2_request *smb2req,
 						 struct files_struct *in_fsp,
+						 uint32_t in_lock_sequence,
 						 uint16_t in_lock_count,
 						 struct smbd_smb2_lock_element *in_locks);
 static NTSTATUS smbd_smb2_lock_recv(struct tevent_req *req);
@@ -62,6 +65,7 @@ NTSTATUS smbd_smb2_request_process_lock(struct smbd_smb2_request *req)
 {
 	const uint8_t *inbody;
 	uint16_t in_lock_count;
+	uint32_t in_lock_sequence;
 	uint64_t in_file_id_persistent;
 	uint64_t in_file_id_volatile;
 	struct files_struct *in_fsp;
@@ -78,7 +82,12 @@ NTSTATUS smbd_smb2_request_process_lock(struct smbd_smb2_request *req)
 	inbody = SMBD_SMB2_IN_BODY_PTR(req);
 
 	in_lock_count			= CVAL(inbody, 0x02);
-	/* 0x04 - 4 bytes reserved */
+	if (req->xconn->protocol >= PROTOCOL_SMB2_10) {
+		in_lock_sequence	= IVAL(inbody, 0x04);
+	} else {
+		/* 0x04 - 4 bytes reserved */
+		in_lock_sequence	= 0;
+	}
 	in_file_id_persistent		= BVAL(inbody, 0x08);
 	in_file_id_volatile		= BVAL(inbody, 0x10);
 
@@ -139,6 +148,7 @@ NTSTATUS smbd_smb2_request_process_lock(struct smbd_smb2_request *req)
 
 	subreq = smbd_smb2_lock_send(req, req->sconn->ev_ctx,
 				     req, in_fsp,
+				     in_lock_sequence,
 				     in_lock_count,
 				     in_locks);
 	if (subreq == NULL) {
@@ -191,6 +201,8 @@ static void smbd_smb2_request_lock_done(struct tevent_req *subreq)
 	}
 }
 
+static void smbd_smb2_lock_cleanup(struct tevent_req *req,
+				   enum tevent_req_state req_state);
 static void smbd_smb2_lock_try(struct tevent_req *req);
 static void smbd_smb2_lock_retry(struct tevent_req *subreq);
 static bool smbd_smb2_lock_cancel(struct tevent_req *req);
@@ -199,6 +211,7 @@ static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 						 struct tevent_context *ev,
 						 struct smbd_smb2_request *smb2req,
 						 struct files_struct *fsp,
+						 uint32_t in_lock_sequence,
 						 uint16_t in_lock_count,
 						 struct smbd_smb2_lock_element *in_locks)
 {
@@ -208,6 +221,8 @@ static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 	uint16_t i;
 	struct smbd_lock_element *locks;
 	NTSTATUS status;
+	bool check_lock_sequence = false;
+	uint32_t lock_sequence_bucket = 0;
 
 	req = tevent_req_create(mem_ctx, &state,
 			struct smbd_smb2_lock_state);
@@ -219,6 +234,8 @@ static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 	state->smb2req = smb2req;
 	smb2req->subreq = req; /* So we can find this when going async. */
 
+	tevent_req_set_cleanup_fn(req, smbd_smb2_lock_cleanup);
+
 	state->smb1req = smbd_smb2_fake_smb_request(smb2req);
 	if (tevent_req_nomem(state->smb1req, req)) {
 		return tevent_req_post(req, ev);
@@ -226,6 +243,91 @@ static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 
 	DEBUG(10,("smbd_smb2_lock_send: %s - %s\n",
 		  fsp_str_dbg(fsp), fsp_fnum_dbg(fsp)));
+
+	/*
+	 * Windows sets check_lock_sequence = true
+	 * only for resilient and persistent handles.
+	 *
+	 * [MS-SMB2] 3.3.5.14 Receiving an SMB2 LOCK Request
+	 *
+	 *  ... if Open.IsResilient or Open.IsDurable or Open.IsPersistent is
+	 *  TRUE or if Connection.Dialect belongs to the SMB 3.x dialect family
+	 *  and Connection.ServerCapabilities includes
+	 *  SMB2_GLOBAL_CAP_MULTI_CHANNEL bit, the server SHOULD<314>
+	 *  perform lock sequence * verification ...
+
+	 *  <314> Section 3.3.5.14: Windows 7 and Windows Server 2008 R2 perform
+	 *  lock sequence verification only when Open.IsResilient is TRUE.
+	 *  Windows 8 through Windows 10 v1909 and Windows Server 2012 through
+	 *  Windows Server v1909 perform lock sequence verification only when
+	 *  Open.IsResilient or Open.IsPersistent is TRUE.
+	 *
+	 * Note <314> also applies to all versions (at least) up to
+	 * Windows Server v2004.
+	 *
+	 * Hopefully this will be fixed in future Windows versions and they
+	 * will avoid Note <314>.
+	 *
+	 * We implement what the specification says by default, but
+	 * allow "smb2 disable lock sequence checking = yes" to
+	 * behave like Windows again.
+	 *
+	 * Note: that we already check the dialect before setting
+	 * SMB2_CAP_MULTI_CHANNEL in smb2_negprot.c
+	 */
+	if (smb2req->xconn->smb2.server.capabilities & SMB2_CAP_MULTI_CHANNEL) {
+		check_lock_sequence = true;
+	}
+	if (fsp->op->global->durable) {
+		check_lock_sequence = true;
+	}
+
+	if (check_lock_sequence) {
+		bool disable_lock_sequence_checking =
+			lp_smb2_disable_lock_sequence_checking();
+
+		if (disable_lock_sequence_checking) {
+			check_lock_sequence = false;
+		}
+	}
+
+	if (check_lock_sequence) {
+		state->lock_sequence_value = in_lock_sequence & 0xF;
+		lock_sequence_bucket = in_lock_sequence >> 4;
+	}
+	if ((lock_sequence_bucket > 0) &&
+	    (lock_sequence_bucket <= sizeof(fsp->op->global->lock_sequence_array)))
+	{
+		uint32_t idx = lock_sequence_bucket - 1;
+		uint8_t *array = fsp->op->global->lock_sequence_array;
+
+		state->lock_sequence_element = &array[idx];
+	}
+
+	if (state->lock_sequence_element != NULL) {
+		/*
+		 * The incoming 'state->lock_sequence_value' is masked with 0xF.
+		 *
+		 * Note per default '*state->lock_sequence_element'
+		 * is invalid, a value of 0xFF that can never match on
+		 * incoming value.
+		 */
+		if (*state->lock_sequence_element == state->lock_sequence_value)
+		{
+			DBG_INFO("replayed smb2 lock request detected: "
+				 "file %s, value %u, bucket %u\n",
+				 fsp_str_dbg(fsp),
+				 (unsigned)state->lock_sequence_value,
+				 (unsigned)lock_sequence_bucket);
+			tevent_req_done(req);
+			return tevent_req_post(req, ev);
+		}
+		/*
+		 * If it's not a replay, mark the element as
+		 * invalid again.
+		 */
+		*state->lock_sequence_element = 0xFF;
+	}
 
 	locks = talloc_array(state, struct smbd_lock_element, in_lock_count);
 	if (locks == NULL) {
@@ -372,6 +474,25 @@ static struct tevent_req *smbd_smb2_lock_send(TALLOC_CTX *mem_ctx,
 	tevent_req_set_cancel_fn(req, smbd_smb2_lock_cancel);
 
 	return req;
+}
+
+static void smbd_smb2_lock_cleanup(struct tevent_req *req,
+				   enum tevent_req_state req_state)
+{
+	struct smbd_smb2_lock_state *state = tevent_req_data(
+		req, struct smbd_smb2_lock_state);
+
+	if (req_state != TEVENT_REQ_DONE) {
+		return;
+	}
+
+	if (state->lock_sequence_element != NULL) {
+		/*
+		 * On success we remember the given/incoming
+		 * value (which was masked with 0xF.
+		 */
+		*state->lock_sequence_element = state->lock_sequence_value;
+	}
 }
 
 static void smbd_smb2_lock_update_retry_msecs(
@@ -629,7 +750,7 @@ static bool smbd_smb2_lock_cancel(struct tevent_req *req)
 	 * the status is NT_STATUS_RANGE_NOT_LOCKED instead of
 	 * NT_STATUS_CANCELLED.
 	 */
-	if (state->fsp->closing ||
+	if (state->fsp->fsp_flags.closing ||
 	    !NT_STATUS_IS_OK(smb2req->session->status) ||
 	    !NT_STATUS_IS_OK(smb2req->tcon->status)) {
 		tevent_req_nterror(req, NT_STATUS_RANGE_NOT_LOCKED);

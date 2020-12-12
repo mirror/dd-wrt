@@ -153,7 +153,7 @@ static PyMethodDef registry_methods[] = {
         	"Apply the diff from the specified file" },
 	{ "mount_hive", py_mount_hive, METH_VARARGS, "S.mount_hive(key, key_id, elements=None) -> None\n"
 		"Mount the specified key at the specified path." },
-	{ NULL }
+	{0}
 };
 
 PyTypeObject PyRegistry = {
@@ -240,7 +240,7 @@ static PyMethodDef hive_key_methods[] = {
                  "Delete a value" },
 	{ "set_value", py_hive_key_set_value, METH_VARARGS, "S.set_value(name, type, data) -> None\n"
                  "Set a value" },
-	{ NULL }
+	{0}
 };
 
 static PyObject *hive_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
@@ -443,7 +443,7 @@ static PyMethodDef py_registry_methods[] = {
 		METH_VARARGS|METH_KEYWORDS, "open_hive(location, session_info=None, credentials=None, loadparm_context=None) -> key" },
 	{ "str_regtype", py_str_regtype, METH_VARARGS, "str_regtype(int) -> str" },
 	{ "get_predef_name", py_get_predef_name, METH_VARARGS, "get_predef_name(hkey) -> str" },
-	{ NULL }
+	{0}
 };
 
 static struct PyModuleDef moduledef = {
@@ -471,15 +471,15 @@ MODULE_INIT_FUNC(registry)
 	if (m == NULL)
 		return NULL;
 
-	PyModule_AddObject(m, "HKEY_CLASSES_ROOT", PyInt_FromLong(HKEY_CLASSES_ROOT));
-	PyModule_AddObject(m, "HKEY_CURRENT_USER", PyInt_FromLong(HKEY_CURRENT_USER));
-	PyModule_AddObject(m, "HKEY_LOCAL_MACHINE", PyInt_FromLong(HKEY_LOCAL_MACHINE));
-	PyModule_AddObject(m, "HKEY_USERS", PyInt_FromLong(HKEY_USERS));
-	PyModule_AddObject(m, "HKEY_PERFORMANCE_DATA", PyInt_FromLong(HKEY_PERFORMANCE_DATA));
-	PyModule_AddObject(m, "HKEY_CURRENT_CONFIG", PyInt_FromLong(HKEY_CURRENT_CONFIG));
-	PyModule_AddObject(m, "HKEY_DYN_DATA", PyInt_FromLong(HKEY_DYN_DATA));
-	PyModule_AddObject(m, "HKEY_PERFORMANCE_TEXT", PyInt_FromLong(HKEY_PERFORMANCE_TEXT));
-	PyModule_AddObject(m, "HKEY_PERFORMANCE_NLSTEXT", PyInt_FromLong(HKEY_PERFORMANCE_NLSTEXT));
+	PyModule_AddObject(m, "HKEY_CLASSES_ROOT", PyLong_FromLong(HKEY_CLASSES_ROOT));
+	PyModule_AddObject(m, "HKEY_CURRENT_USER", PyLong_FromLong(HKEY_CURRENT_USER));
+	PyModule_AddObject(m, "HKEY_LOCAL_MACHINE", PyLong_FromLong(HKEY_LOCAL_MACHINE));
+	PyModule_AddObject(m, "HKEY_USERS", PyLong_FromLong(HKEY_USERS));
+	PyModule_AddObject(m, "HKEY_PERFORMANCE_DATA", PyLong_FromLong(HKEY_PERFORMANCE_DATA));
+	PyModule_AddObject(m, "HKEY_CURRENT_CONFIG", PyLong_FromLong(HKEY_CURRENT_CONFIG));
+	PyModule_AddObject(m, "HKEY_DYN_DATA", PyLong_FromLong(HKEY_DYN_DATA));
+	PyModule_AddObject(m, "HKEY_PERFORMANCE_TEXT", PyLong_FromLong(HKEY_PERFORMANCE_TEXT));
+	PyModule_AddObject(m, "HKEY_PERFORMANCE_NLSTEXT", PyLong_FromLong(HKEY_PERFORMANCE_NLSTEXT));
 
 	Py_INCREF(&PyRegistry);
 	PyModule_AddObject(m, "Registry", (PyObject *)&PyRegistry);

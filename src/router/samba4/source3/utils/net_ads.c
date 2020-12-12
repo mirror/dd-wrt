@@ -40,6 +40,7 @@
 #include "libsmb/libsmb.h"
 #include "lib/param/loadparm.h"
 #include "utils/net_dns.h"
+#include "auth/kerberos/pac_utils.h"
 
 #ifdef HAVE_JANSSON
 #include <jansson.h>
@@ -2386,6 +2387,7 @@ static int net_ads_printer_publish(struct net_context *c, int argc, const char *
 	char *prt_dn, *srv_dn, **srv_cn;
 	char *srv_cn_escaped = NULL, *printername_escaped = NULL;
 	LDAPMessage *res = NULL;
+	struct cli_credentials *creds = NULL;
 	bool ok;
 
 	if (argc < 1 || c->display_usage) {
@@ -2423,12 +2425,19 @@ static int net_ads_printer_publish(struct net_context *c, int argc, const char *
 		return -1;
 	}
 
-	nt_status = cli_full_connection(&cli, lp_netbios_name(), servername,
+	creds = net_context_creds(c, mem_ctx);
+	if (creds == NULL) {
+		d_fprintf(stderr, "net_context_creds() failed\n");
+		ads_destroy(&ads);
+		talloc_destroy(mem_ctx);
+		return -1;
+	}
+	cli_credentials_set_kerberos_state(creds, CRED_MUST_USE_KERBEROS);
+
+	nt_status = cli_full_connection_creds(&cli, lp_netbios_name(), servername,
 					&server_ss, 0,
 					"IPC$", "IPC",
-					c->opt_user_name, c->opt_workgroup,
-					c->opt_password ? c->opt_password : "",
-					CLI_FULL_CONNECTION_USE_KERBEROS,
+					creds, 0,
 					SMB_SIGNING_IPC_DEFAULT);
 
 	if (NT_STATUS_IS_ERR(nt_status)) {
@@ -3206,7 +3215,7 @@ static int net_ads_kerberos_pac_common(struct net_context *c, int argc, const ch
 static int net_ads_kerberos_pac_dump(struct net_context *c, int argc, const char **argv)
 {
 	struct PAC_DATA_CTR *pac_data_ctr = NULL;
-	int i;
+	int i, num_buffers;
 	int ret = -1;
 	enum PAC_TYPE type = 0;
 
@@ -3244,7 +3253,9 @@ static int net_ads_kerberos_pac_dump(struct net_context *c, int argc, const char
 		return 0;
 	}
 
-	for (i=0; i < pac_data_ctr->pac_data->num_buffers; i++) {
+	num_buffers = pac_data_ctr->pac_data->num_buffers;
+
+	for (i=0; i<num_buffers; i++) {
 
 		char *s = NULL;
 

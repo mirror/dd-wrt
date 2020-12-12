@@ -66,8 +66,6 @@ static int max_protocol = -1;
 static int process_tok(char *tok);
 static int cmd_help(void);
 
-#define CREATE_ACCESS_READ READ_CONTROL_ACCESS
-
 /* value for unused fid field in trans2 secondary request */
 #define FID_UNUSED (0xFFFF)
 
@@ -271,7 +269,7 @@ static void send_message(const char *username)
 {
 	char buf[1600];
 	NTSTATUS status;
-	int i;
+	size_t i;
 
 	d_printf("Type your message, ending it with a Control-D\n");
 
@@ -539,7 +537,7 @@ static bool do_this_one(struct file_info *finfo)
 		return false;
 	}
 
-	if (finfo->mode & FILE_ATTRIBUTE_DIRECTORY) {
+	if (finfo->attr & FILE_ATTRIBUTE_DIRECTORY) {
 		return true;
 	}
 
@@ -554,7 +552,7 @@ static bool do_this_one(struct file_info *finfo)
 		return false;
 	}
 
-	if ((archive_level==1 || archive_level==2) && !(finfo->mode & FILE_ATTRIBUTE_ARCHIVE)) {
+	if ((archive_level==1 || archive_level==2) && !(finfo->attr & FILE_ATTRIBUTE_ARCHIVE)) {
 		DEBUG(3,("archive %s failed\n", finfo->name));
 		return false;
 	}
@@ -581,7 +579,7 @@ static NTSTATUS display_finfo(struct cli_state *cli_state, struct file_info *fin
 	if (!showacls) {
 		d_printf("  %-30s%7.7s %8.0f  %s",
 			 finfo->name,
-			 attrib_string(talloc_tos(), finfo->mode),
+			 attrib_string(talloc_tos(), finfo->attr),
 		 	(double)finfo->size,
 			time_to_asc(t));
 		dir_total += finfo->size;
@@ -603,13 +601,22 @@ static NTSTATUS display_finfo(struct cli_state *cli_state, struct file_info *fin
 		}
 		/* print file meta date header */
 		d_printf( "FILENAME:%s\n", finfo->name);
-		d_printf( "MODE:%s\n", attrib_string(talloc_tos(), finfo->mode));
+		d_printf( "MODE:%s\n", attrib_string(talloc_tos(), finfo->attr));
 		d_printf( "SIZE:%.0f\n", (double)finfo->size);
 		d_printf( "MTIME:%s", time_to_asc(t));
-		status = cli_ntcreate(cli_state, afname, 0,
-				      CREATE_ACCESS_READ, 0,
-				      FILE_SHARE_READ|FILE_SHARE_WRITE,
-				      FILE_OPEN, 0x0, 0x0, &fnum, NULL);
+		status = cli_ntcreate(
+			cli_state,	      /* cli */
+			afname,		      /* fname */
+			0,		      /* CreatFlags */
+			READ_CONTROL_ACCESS,  /* DesiredAccess */
+			0,		      /* FileAttributes */
+			FILE_SHARE_READ|
+			FILE_SHARE_WRITE,     /* ShareAccess */
+			FILE_OPEN,	      /* CreateDisposition */
+			0x0,		      /* CreateOptions */
+			0x0,		      /* SecurityFlags */
+			&fnum,		      /* pfid */
+			NULL);		      /* cr */
 		if (!NT_STATUS_IS_OK(status)) {
 			DEBUG( 0, ("display_finfo() Failed to open %s: %s\n",
 				   afname, nt_errstr(status)));
@@ -644,12 +651,18 @@ static NTSTATUS do_du(struct cli_state *cli_state, struct file_info *finfo,
 	return NT_STATUS_OK;
 }
 
+struct do_list_queue_entry {
+	struct do_list_queue_entry *prev, *next;
+	char name[];
+};
+
+struct do_list_queue {
+	struct do_list_queue_entry *list;
+};
+
 static bool do_list_recurse;
 static bool do_list_dirs;
-static char *do_list_queue = 0;
-static long do_list_queue_size = 0;
-static long do_list_queue_start = 0;
-static long do_list_queue_end = 0;
+static struct do_list_queue *queue = NULL;
 static NTSTATUS (*do_list_fn)(struct cli_state *cli_state, struct file_info *,
 			  const char *dir);
 
@@ -657,111 +670,52 @@ static NTSTATUS (*do_list_fn)(struct cli_state *cli_state, struct file_info *,
  Functions for do_list_queue.
 ****************************************************************************/
 
-/*
- * The do_list_queue is a NUL-separated list of strings stored in a
- * char*.  Since this is a FIFO, we keep track of the beginning and
- * ending locations of the data in the queue.  When we overflow, we
- * double the size of the char*.  When the start of the data passes
- * the midpoint, we move everything back.  This is logically more
- * complex than a linked list, but easier from a memory management
- * angle.  In any memory error condition, do_list_queue is reset.
- * Functions check to ensure that do_list_queue is non-NULL before
- * accessing it.
- */
-
 static void reset_do_list_queue(void)
 {
-	SAFE_FREE(do_list_queue);
-	do_list_queue_size = 0;
-	do_list_queue_start = 0;
-	do_list_queue_end = 0;
+	TALLOC_FREE(queue);
 }
 
 static void init_do_list_queue(void)
 {
-	reset_do_list_queue();
-	do_list_queue_size = 1024;
-	do_list_queue = (char *)SMB_MALLOC(do_list_queue_size);
-	if (do_list_queue == 0) {
-		d_printf("malloc fail for size %d\n",
-			 (int)do_list_queue_size);
-		reset_do_list_queue();
-	} else {
-		memset(do_list_queue, 0, do_list_queue_size);
-	}
-}
-
-static void adjust_do_list_queue(void)
-{
-	/*
-	 * If the starting point of the queue is more than half way through,
-	 * move everything toward the beginning.
-	 */
-
-	if (do_list_queue == NULL) {
-		DEBUG(4,("do_list_queue is empty\n"));
-		do_list_queue_start = do_list_queue_end = 0;
-		return;
-	}
-
-	if (do_list_queue_start == do_list_queue_end) {
-		DEBUG(4,("do_list_queue is empty\n"));
-		do_list_queue_start = do_list_queue_end = 0;
-		*do_list_queue = '\0';
-	} else if (do_list_queue_start > (do_list_queue_size / 2)) {
-		DEBUG(4,("sliding do_list_queue backward\n"));
-		memmove(do_list_queue,
-			do_list_queue + do_list_queue_start,
-			do_list_queue_end - do_list_queue_start);
-		do_list_queue_end -= do_list_queue_start;
-		do_list_queue_start = 0;
-	}
+	TALLOC_FREE(queue);
+	queue = talloc_zero(NULL, struct do_list_queue);
 }
 
 static void add_to_do_list_queue(const char *entry)
 {
-	long new_end = do_list_queue_end + ((long)strlen(entry)) + 1;
-	while (new_end > do_list_queue_size) {
-		do_list_queue_size *= 2;
-		DEBUG(4,("enlarging do_list_queue to %d\n",
-			 (int)do_list_queue_size));
-		do_list_queue = (char *)SMB_REALLOC(do_list_queue, do_list_queue_size);
-		if (! do_list_queue) {
-			d_printf("failure enlarging do_list_queue to %d bytes\n",
-				 (int)do_list_queue_size);
-			reset_do_list_queue();
-		} else {
-			memset(do_list_queue + do_list_queue_size / 2,
-			       0, do_list_queue_size / 2);
-		}
+	struct do_list_queue_entry *e = NULL;
+	size_t entry_str_len = strlen(entry)+1;
+	size_t entry_len = offsetof(struct do_list_queue_entry, name);
+
+	entry_len += entry_str_len;
+	SMB_ASSERT(entry_len >= entry_str_len);
+
+	e = talloc_size(queue, entry_len);
+	if (e == NULL) {
+		d_printf("talloc failed for entry %s\n", entry);
+		return;
 	}
-	if (do_list_queue) {
-		strlcpy_base(do_list_queue + do_list_queue_end,
-				 entry, do_list_queue, do_list_queue_size);
-		do_list_queue_end = new_end;
-		DEBUG(4,("added %s to do_list_queue (start=%d, end=%d)\n",
-			 entry, (int)do_list_queue_start, (int)do_list_queue_end));
-	}
+	talloc_set_name_const(e, "struct do_list_queue_entry");
+
+	memcpy(e->name, entry, entry_str_len);
+	DLIST_ADD_END(queue->list, e);
 }
 
 static char *do_list_queue_head(void)
 {
-	return do_list_queue + do_list_queue_start;
+	return queue->list->name;
 }
 
 static void remove_do_list_queue_head(void)
 {
-	if (do_list_queue_end > do_list_queue_start) {
-		do_list_queue_start += strlen(do_list_queue_head()) + 1;
-		adjust_do_list_queue();
-		DEBUG(4,("removed head of do_list_queue (start=%d, end=%d)\n",
-			 (int)do_list_queue_start, (int)do_list_queue_end));
-	}
+	struct do_list_queue_entry *e = queue->list;
+	DLIST_REMOVE(queue->list, e);
+	TALLOC_FREE(e);
 }
 
 static int do_list_queue_empty(void)
 {
-	return (! (do_list_queue && *do_list_queue));
+	return (queue == NULL) || (queue->list == NULL);
 }
 
 /****************************************************************************
@@ -776,6 +730,8 @@ static NTSTATUS do_list_helper(const char *mntpoint, struct file_info *f,
 	char *dir = NULL;
 	char *dir_end = NULL;
 	NTSTATUS status = NT_STATUS_OK;
+	char *mask2 = NULL;
+	char *p = NULL;
 
 	/* Work out the directory. */
 	dir = talloc_strdup(ctx, mask);
@@ -786,60 +742,61 @@ static NTSTATUS do_list_helper(const char *mntpoint, struct file_info *f,
 		*dir_end = '\0';
 	}
 
-	if (f->mode & FILE_ATTRIBUTE_DIRECTORY) {
-		if (do_list_dirs && do_this_one(f)) {
+	if (!(f->attr & FILE_ATTRIBUTE_DIRECTORY)) {
+		if (do_this_one(f)) {
 			status = do_list_fn(cli_state, f, dir);
-			if (!NT_STATUS_IS_OK(status)) {
-				return status;
-			}
-		}
-		if (do_list_recurse &&
-		    f->name &&
-		    !strequal(f->name,".") &&
-		    !strequal(f->name,"..")) {
-			char *mask2 = NULL;
-			char *p = NULL;
-
-			if (!f->name[0]) {
-				d_printf("Empty dir name returned. Possible server misconfiguration.\n");
-				TALLOC_FREE(dir);
-				return NT_STATUS_UNSUCCESSFUL;
-			}
-
-			mask2 = talloc_asprintf(ctx,
-					"%s%s",
-					mntpoint,
-					mask);
-			if (!mask2) {
-				TALLOC_FREE(dir);
-				return NT_STATUS_NO_MEMORY;
-			}
-			p = strrchr_m(mask2,CLI_DIRSEP_CHAR);
-			if (p) {
-				p[1] = 0;
-			} else {
-				mask2[0] = '\0';
-			}
-			mask2 = talloc_asprintf_append(mask2,
-					"%s%s*",
-					f->name,
-					CLI_DIRSEP_STR);
-			if (!mask2) {
-				TALLOC_FREE(dir);
-				return NT_STATUS_NO_MEMORY;
-			}
-			add_to_do_list_queue(mask2);
-			TALLOC_FREE(mask2);
 		}
 		TALLOC_FREE(dir);
+		return status;
+	}
+
+	if (do_list_dirs && do_this_one(f)) {
+		status = do_list_fn(cli_state, f, dir);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
+	}
+
+	if (!do_list_recurse ||
+	    (f->name == NULL) ||
+	    ISDOT(f->name) ||
+	    ISDOTDOT(f->name)) {
 		return NT_STATUS_OK;
 	}
 
-	if (do_this_one(f)) {
-		status = do_list_fn(cli_state, f, dir);
+	if (!f->name[0]) {
+		d_printf("Empty dir name returned. Possible server misconfiguration.\n");
+		TALLOC_FREE(dir);
+		return NT_STATUS_UNSUCCESSFUL;
 	}
+
+	mask2 = talloc_asprintf(ctx,
+				"%s%s",
+				mntpoint,
+				mask);
+	if (!mask2) {
+		TALLOC_FREE(dir);
+		return NT_STATUS_NO_MEMORY;
+	}
+	p = strrchr_m(mask2,CLI_DIRSEP_CHAR);
+	if (p) {
+		p[1] = 0;
+	} else {
+		mask2[0] = '\0';
+	}
+	mask2 = talloc_asprintf_append(mask2,
+				       "%s%s*",
+				       f->name,
+				       CLI_DIRSEP_STR);
+	if (!mask2) {
+		TALLOC_FREE(dir);
+		return NT_STATUS_NO_MEMORY;
+	}
+	add_to_do_list_queue(mask2);
+	TALLOC_FREE(mask2);
+
 	TALLOC_FREE(dir);
-	return status;
+	return NT_STATUS_OK;
 }
 
 /****************************************************************************
@@ -847,7 +804,7 @@ static NTSTATUS do_list_helper(const char *mntpoint, struct file_info *f,
 ****************************************************************************/
 
 NTSTATUS do_list(const char *mask,
-			uint16_t attribute,
+			uint32_t attribute,
 			NTSTATUS (*fn)(struct cli_state *cli_state, struct file_info *,
 				   const char *dir),
 			bool rec,
@@ -871,85 +828,53 @@ NTSTATUS do_list(const char *mask,
 	do_list_dirs = dirs;
 	do_list_fn = fn;
 
-	if (rec) {
-		init_do_list_queue();
-		add_to_do_list_queue(mask);
+	init_do_list_queue();
+	add_to_do_list_queue(mask);
 
-		while (!do_list_queue_empty()) {
-			/*
-			 * Need to copy head so that it doesn't become
-			 * invalid inside the call to cli_list.  This
-			 * would happen if the list were expanded
-			 * during the call.
-			 * Fix from E. Jay Berkenbilt (ejb@ql.org)
-			 */
-			char *head = talloc_strdup(ctx, do_list_queue_head());
+	while (!do_list_queue_empty()) {
+		const char *head = do_list_queue_head();
 
-			if (!head) {
-				return NT_STATUS_NO_MEMORY;
-			}
-
-			/* check for dfs */
-
-			status = cli_resolve_path(ctx, "",
-					popt_get_cmdline_auth_info(),
-					cli, head, &targetcli, &targetpath);
-			if (!NT_STATUS_IS_OK(status)) {
-				d_printf("do_list: [%s] %s\n", head,
-					 nt_errstr(status));
-				remove_do_list_queue_head();
-				continue;
-			}
-
-			status = cli_list(targetcli, targetpath, attribute,
-				 do_list_helper, targetcli);
-			if (!NT_STATUS_IS_OK(status)) {
-				d_printf("%s listing %s\n",
-					 nt_errstr(status), targetpath);
-				ret_status = status;
-			}
-			remove_do_list_queue_head();
-			if ((! do_list_queue_empty()) && (fn == display_finfo)) {
-				char *next_file = do_list_queue_head();
-				char *save_ch = 0;
-				if ((strlen(next_file) >= 2) &&
-				    (next_file[strlen(next_file) - 1] == '*') &&
-				    (next_file[strlen(next_file) - 2] == CLI_DIRSEP_CHAR)) {
-					save_ch = next_file +
-						strlen(next_file) - 2;
-					*save_ch = '\0';
-					if (showacls) {
-						/* cwd is only used if showacls is on */
-						client_set_cwd(next_file);
-					}
-				}
-				if (!showacls) /* don't disturbe the showacls output */
-					d_printf("\n%s\n",next_file);
-				if (save_ch) {
-					*save_ch = CLI_DIRSEP_CHAR;
-				}
-			}
-			TALLOC_FREE(head);
-			TALLOC_FREE(targetpath);
-		}
-	} else {
 		/* check for dfs */
+
 		status = cli_resolve_path(ctx, "",
-				popt_get_cmdline_auth_info(), cli, mask,
-				  &targetcli, &targetpath);
-		if (NT_STATUS_IS_OK(status)) {
-			status = cli_list(targetcli, targetpath, attribute,
-					  do_list_helper, targetcli);
-			if (!NT_STATUS_IS_OK(status)) {
-				d_printf("%s listing %s\n",
-					 nt_errstr(status), targetpath);
-				ret_status = status;
-			}
-			TALLOC_FREE(targetpath);
-		} else {
-			d_printf("do_list: [%s] %s\n", mask, nt_errstr(status));
+					  popt_get_cmdline_auth_info(),
+					  cli, head, &targetcli, &targetpath);
+		if (!NT_STATUS_IS_OK(status)) {
+			d_printf("do_list: [%s] %s\n", head,
+				 nt_errstr(status));
+			remove_do_list_queue_head();
+			continue;
+		}
+
+		status = cli_list(targetcli, targetpath, attribute,
+				  do_list_helper, targetcli);
+		if (!NT_STATUS_IS_OK(status)) {
+			d_printf("%s listing %s\n",
+				 nt_errstr(status), targetpath);
 			ret_status = status;
 		}
+		remove_do_list_queue_head();
+		if ((! do_list_queue_empty()) && (fn == display_finfo)) {
+			char *next_file = do_list_queue_head();
+			char *save_ch = 0;
+			if ((strlen(next_file) >= 2) &&
+			    (next_file[strlen(next_file) - 1] == '*') &&
+			    (next_file[strlen(next_file) - 2] == CLI_DIRSEP_CHAR)) {
+				save_ch = next_file +
+					strlen(next_file) - 2;
+				*save_ch = '\0';
+				if (showacls) {
+					/* cwd is only used if showacls is on */
+					client_set_cwd(next_file);
+				}
+			}
+			if (!showacls) /* don't disturbe the showacls output */
+				d_printf("\n%s\n",next_file);
+			if (save_ch) {
+				*save_ch = CLI_DIRSEP_CHAR;
+			}
+		}
+		TALLOC_FREE(targetpath);
 	}
 
 	in_do_list = 0;
@@ -964,7 +889,7 @@ NTSTATUS do_list(const char *mask,
 static int cmd_dir(void)
 {
 	TALLOC_CTX *ctx = talloc_tos();
-	uint16_t attribute = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
+	uint32_t attribute = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
 	char *mask = NULL;
 	char *buf = NULL;
 	int rc = 1;
@@ -1019,7 +944,7 @@ static int cmd_dir(void)
 static int cmd_du(void)
 {
 	TALLOC_CTX *ctx = talloc_tos();
-	uint16_t attribute = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
+	uint32_t attribute = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
 	char *mask = NULL;
 	char *buf = NULL;
 	NTSTATUS status;
@@ -1114,7 +1039,7 @@ static int do_get(const char *rname, const char *lname_in, bool reget)
 	uint16_t fnum;
 	bool newhandle = false;
 	struct timespec tp_start;
-	uint16_t attr;
+	uint32_t attr;
 	off_t size;
 	off_t start = 0;
 	off_t nread = 0;
@@ -1179,15 +1104,11 @@ static int do_get(const char *rname, const char *lname_in, bool reget)
 	status = cli_qfileinfo_basic(targetcli, fnum, &attr, &size, NULL, NULL,
 				     NULL, NULL, NULL);
 	if (!NT_STATUS_IS_OK(status)) {
-		status = cli_getattrE(targetcli, fnum, &attr, &size, NULL, NULL,
-				      NULL);
-		if(!NT_STATUS_IS_OK(status)) {
-			d_printf("getattrib: %s\n", nt_errstr(status));
-			if (newhandle) {
-				close(handle);
-			}
-			return 1;
+		d_printf("getattrib: %s\n", nt_errstr(status));
+		if (newhandle) {
+			close(handle);
 		}
+		return 1;
 	}
 
 	DEBUG(1,("getting file %s of size %.0f as %s ",
@@ -1216,7 +1137,7 @@ static int do_get(const char *rname, const char *lname_in, bool reget)
 	}
 
 	if (archive_level >= 2 && (attr & FILE_ATTRIBUTE_ARCHIVE)) {
-		cli_setatr(cli, rname, attr & ~(uint16_t)FILE_ATTRIBUTE_ARCHIVE, 0);
+		cli_setatr(cli, rname, attr & ~(uint32_t)FILE_ATTRIBUTE_ARCHIVE, 0);
 	}
 
 	{
@@ -1301,7 +1222,7 @@ static NTSTATUS do_mget(struct cli_state *cli_state, struct file_info *finfo,
 		return NT_STATUS_UNSUCCESSFUL;
 	}
 
-	if (finfo->mode & FILE_ATTRIBUTE_DIRECTORY) {
+	if (finfo->attr & FILE_ATTRIBUTE_DIRECTORY) {
 		if (asprintf(&quest,
 			 "Get directory %s? ",finfo->name) < 0) {
 			return NT_STATUS_NO_MEMORY;
@@ -1319,7 +1240,7 @@ static NTSTATUS do_mget(struct cli_state *cli_state, struct file_info *finfo,
 	}
 	SAFE_FREE(quest);
 
-	if (!(finfo->mode & FILE_ATTRIBUTE_DIRECTORY)) {
+	if (!(finfo->attr & FILE_ATTRIBUTE_DIRECTORY)) {
 		rname = talloc_asprintf(ctx,
 				"%s%s",
 				client_get_cur_dir(),
@@ -1489,7 +1410,7 @@ static int cmd_more(void)
 static int cmd_mget(void)
 {
 	TALLOC_CTX *ctx = talloc_tos();
-	uint16_t attribute = FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
+	uint32_t attribute = FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
 	char *mget_mask = NULL;
 	char *buf = NULL;
 	NTSTATUS status = NT_STATUS_OK;
@@ -1720,49 +1641,49 @@ static int cmd_altname(void)
 	return 0;
 }
 
-static char *attr_str(TALLOC_CTX *mem_ctx, uint16_t mode)
+static char *attr_str(TALLOC_CTX *mem_ctx, uint32_t attr)
 {
 	char *attrs = talloc_zero_array(mem_ctx, char, 17);
 	int i = 0;
 
-	if (!(mode & FILE_ATTRIBUTE_NORMAL)) {
-		if (mode & FILE_ATTRIBUTE_ENCRYPTED) {
+	if (!(attr & FILE_ATTRIBUTE_NORMAL)) {
+		if (attr & FILE_ATTRIBUTE_ENCRYPTED) {
 			attrs[i++] = 'E';
 		}
-		if (mode & FILE_ATTRIBUTE_NONINDEXED) {
+		if (attr & FILE_ATTRIBUTE_NONINDEXED) {
 			attrs[i++] = 'N';
 		}
-		if (mode & FILE_ATTRIBUTE_OFFLINE) {
+		if (attr & FILE_ATTRIBUTE_OFFLINE) {
 			attrs[i++] = 'O';
 		}
-		if (mode & FILE_ATTRIBUTE_COMPRESSED) {
+		if (attr & FILE_ATTRIBUTE_COMPRESSED) {
 			attrs[i++] = 'C';
 		}
-		if (mode & FILE_ATTRIBUTE_REPARSE_POINT) {
+		if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
 			attrs[i++] = 'r';
 		}
-		if (mode & FILE_ATTRIBUTE_SPARSE) {
+		if (attr & FILE_ATTRIBUTE_SPARSE) {
 			attrs[i++] = 's';
 		}
-		if (mode & FILE_ATTRIBUTE_TEMPORARY) {
+		if (attr & FILE_ATTRIBUTE_TEMPORARY) {
 			attrs[i++] = 'T';
 		}
-		if (mode & FILE_ATTRIBUTE_NORMAL) {
+		if (attr & FILE_ATTRIBUTE_NORMAL) {
 			attrs[i++] = 'N';
 		}
-		if (mode & FILE_ATTRIBUTE_READONLY) {
+		if (attr & FILE_ATTRIBUTE_READONLY) {
 			attrs[i++] = 'R';
 		}
-		if (mode & FILE_ATTRIBUTE_HIDDEN) {
+		if (attr & FILE_ATTRIBUTE_HIDDEN) {
 			attrs[i++] = 'H';
 		}
-		if (mode & FILE_ATTRIBUTE_SYSTEM) {
+		if (attr & FILE_ATTRIBUTE_SYSTEM) {
 			attrs[i++] = 'S';
 		}
-		if (mode & FILE_ATTRIBUTE_DIRECTORY) {
+		if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 			attrs[i++] = 'D';
 		}
-		if (mode & FILE_ATTRIBUTE_ARCHIVE) {
+		if (attr & FILE_ATTRIBUTE_ARCHIVE) {
 			attrs[i++] = 'A';
 		}
 	}
@@ -1778,12 +1699,12 @@ static int do_allinfo(const char *name)
 	fstring altname;
 	struct timespec b_time, a_time, m_time, c_time;
 	off_t size;
-	uint16_t mode;
+	uint32_t attr;
 	NTTIME tmp;
 	uint16_t fnum;
 	unsigned int num_streams;
 	struct stream_struct *streams;
-	int num_snapshots;
+	int j, num_snapshots;
 	char **snapshots = NULL;
 	unsigned int i;
 	NTSTATUS status;
@@ -1806,7 +1727,7 @@ static int do_allinfo(const char *name)
 	d_printf("altname: %s\n", altname);
 
 	status = cli_qpathinfo3(cli, name, &b_time, &a_time, &m_time, &c_time,
-				&size, &mode, NULL);
+				&size, &attr, NULL);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("%s getting pathinfo for %s\n", nt_errstr(status),
 			 name);
@@ -1825,7 +1746,7 @@ static int do_allinfo(const char *name)
 	tmp = full_timespec_to_nt_time(&c_time);
 	d_printf("change_time:    %s\n", nt_time_string(talloc_tos(), tmp));
 
-	d_printf("attributes: %s (%x)\n", attr_str(talloc_tos(), mode), mode);
+	d_printf("attributes: %s (%x)\n", attr_str(talloc_tos(), attr), attr);
 
 	status = cli_qpathinfo_streams(cli, name, talloc_tos(), &num_streams,
 				       &streams);
@@ -1840,7 +1761,7 @@ static int do_allinfo(const char *name)
 			 (unsigned long long)streams[i].size);
 	}
 
-	if (mode & FILE_ATTRIBUTE_REPARSE_POINT) {
+	if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
 		char *subst, *print;
 		uint32_t flags;
 
@@ -1891,12 +1812,12 @@ static int do_allinfo(const char *name)
 		return 0;
 	}
 
-	for (i=0; i<num_snapshots; i++) {
+	for (j=0; j<num_snapshots; j++) {
 		char *snap_name;
 
-		d_printf("%s\n", snapshots[i]);
+		d_printf("%s\n", snapshots[j]);
 		snap_name = talloc_asprintf(talloc_tos(), "%s%s",
-					    snapshots[i], name);
+					    snapshots[j], name);
 		status = cli_qpathinfo3(cli, snap_name, &b_time, &a_time,
 					&m_time, &c_time, &size,
 					NULL, NULL);
@@ -1987,11 +1908,7 @@ static int do_put(const char *rname, const char *lname, bool reput)
 			if (!NT_STATUS_IS_OK(status = cli_qfileinfo_basic(
 						     targetcli, fnum, NULL,
 						     &start, NULL, NULL,
-						     NULL, NULL, NULL)) &&
-			    !NT_STATUS_IS_OK(status = cli_getattrE(
-						     targetcli, fnum, NULL,
-						     &start, NULL, NULL,
-						     NULL))) {
+						     NULL, NULL, NULL))) {
 				d_printf("getattrib: %s\n", nt_errstr(status));
 				return 1;
 			}
@@ -2504,7 +2421,7 @@ static NTSTATUS do_del(struct cli_state *cli_state, struct file_info *finfo,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	if (finfo->mode & FILE_ATTRIBUTE_DIRECTORY) {
+	if (finfo->attr & FILE_ATTRIBUTE_DIRECTORY) {
 		TALLOC_FREE(mask);
 		return NT_STATUS_OK;
 	}
@@ -2528,7 +2445,7 @@ static int cmd_del(void)
 	char *mask = NULL;
 	char *buf = NULL;
 	NTSTATUS status = NT_STATUS_OK;
-	uint16_t attribute = FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
+	uint32_t attribute = FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
 
 	if (recurse) {
 		attribute |= FILE_ATTRIBUTE_DIRECTORY;
@@ -2634,7 +2551,7 @@ static NTSTATUS do_deltree_list(struct cli_state *cli_state,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	if (finfo->mode & FILE_ATTRIBUTE_DIRECTORY) {
+	if (finfo->attr & FILE_ATTRIBUTE_DIRECTORY) {
 		dt->isdir = true;
 	}
 
@@ -2649,7 +2566,7 @@ static int cmd_deltree(void)
 	NTSTATUS status = NT_STATUS_OK;
 	struct file_list *deltree_list_norecurse = NULL;
 	struct file_list *deltree_list_iter = NULL;
-	uint16_t attribute = FILE_ATTRIBUTE_SYSTEM |
+	uint32_t attribute = FILE_ATTRIBUTE_SYSTEM |
 			     FILE_ATTRIBUTE_HIDDEN |
 			     FILE_ATTRIBUTE_DIRECTORY;
 	bool ok;
@@ -2748,7 +2665,7 @@ static int cmd_wdel(void)
 	TALLOC_CTX *ctx = talloc_tos();
 	char *mask = NULL;
 	char *buf = NULL;
-	uint16_t attribute;
+	uint32_t attribute;
 	struct cli_state *targetcli;
 	char *targetname = NULL;
 	NTSTATUS status;
@@ -2758,7 +2675,7 @@ static int cmd_wdel(void)
 		return 1;
 	}
 
-	attribute = (uint16_t)strtol(buf, (char **)NULL, 16);
+	attribute = (uint32_t)strtol(buf, (char **)NULL, 16);
 
 	if (!next_token_talloc(ctx, &cmd_ptr,&buf,NULL)) {
 		d_printf("wdel 0x<attrib> <wcard>\n");
@@ -3766,8 +3683,9 @@ static int cmd_getfacl(void)
 	char *retbuf = NULL;
 	size_t rb_size = 0;
 	SMB_STRUCT_STAT sbuf;
-	uint16_t num_file_acls = 0;
-	uint16_t num_dir_acls = 0;
+	size_t num_file_acls = 0;
+	size_t num_dir_acls = 0;
+	size_t expected_buflen;
 	uint16_t i;
 	NTSTATUS status;
 
@@ -3814,7 +3732,7 @@ static int cmd_getfacl(void)
 	}
 
 	status = cli_posix_stat(targetcli, targetname, &sbuf);
-	if (!NT_STATUS_IS_OK(cli_posix_stat(targetcli, targetname, &sbuf))) {
+	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("%s getfacl doing a stat on file %s\n",
 			 nt_errstr(status), src);
 		return 1;
@@ -3836,11 +3754,21 @@ static int cmd_getfacl(void)
 
 	num_file_acls = SVAL(retbuf,2);
 	num_dir_acls = SVAL(retbuf,4);
-	if (rb_size != SMB_POSIX_ACL_HEADER_SIZE + SMB_POSIX_ACL_ENTRY_SIZE*(num_file_acls+num_dir_acls)) {
-		d_printf("getfacl file %s, incorrect POSIX acl buffer size (should be %u, was %u).\n",
-			src,
-			(unsigned int)(SMB_POSIX_ACL_HEADER_SIZE + SMB_POSIX_ACL_ENTRY_SIZE*(num_file_acls+num_dir_acls)),
-			(unsigned int)rb_size);
+
+	/*
+	 * No overflow check, num_*_acls comes from a 16-bit value,
+	 * and we expect expected_buflen (size_t) to be of at least 32
+	 * bit.
+	 */
+	expected_buflen = SMB_POSIX_ACL_HEADER_SIZE +
+		SMB_POSIX_ACL_ENTRY_SIZE*(num_file_acls+num_dir_acls);
+
+	if (rb_size != expected_buflen) {
+		d_printf("getfacl file %s, incorrect POSIX acl buffer size "
+			 "(should be %zu, was %zu).\n",
+			 src,
+			 expected_buflen,
+			 rb_size);
 		return 1;
 	}
 
@@ -4587,7 +4515,7 @@ static int cmd_notify(void)
 		status = cli_notify(cli, fnum, 1000, FILE_NOTIFY_CHANGE_ALL,
 				    true,
 				    talloc_tos(), &num_changes, &changes);
-		if (NT_STATUS_EQUAL(status, STATUS_NOTIFY_ENUM_DIR)) {
+		if (NT_STATUS_EQUAL(status, NT_STATUS_NOTIFY_ENUM_DIR)) {
 			printf("NOTIFY_ENUM_DIR\n");
 			status = NT_STATUS_OK;
 		}
@@ -4853,7 +4781,7 @@ static bool browse_host_rpc(bool sort)
 	struct srvsvc_NetShareCtr1 ctr1;
 	uint32_t resume_handle = 0;
 	uint32_t total_entries = 0;
-	int i;
+	uint32_t i;
 	struct dcerpc_binding_handle *b;
 
 	status = cli_rpc_pipe_open_noauth(cli, &ndr_table_srvsvc,
@@ -4913,10 +4841,6 @@ static bool browse_host(bool sort)
 
 	if (browse_host_rpc(sort)) {
 		return true;
-	}
-
-	if (lp_client_min_protocol() > PROTOCOL_NT1) {
-		return false;
 	}
 
 	if (smbXcli_conn_protocol(cli->conn) > PROTOCOL_NT1) {
@@ -5181,41 +5105,6 @@ static int cmd_show_connect( void )
 }
 
 /**
- * set_remote_times - set times of a remote file
- * @filename: path to the file name
- * @create_time: New create time
- * @access_time: New access time
- * @write_time: New write time
- * @change_time: New metadata change time
- *
- * Update the file times with the ones provided.
- */
-static int set_remote_times(const char *filename,
-			    struct timespec *create_time,
-			    struct timespec *access_time,
-			    struct timespec *write_time,
-			    struct timespec *change_time)
-{
-	extern struct cli_state *cli;
-	NTSTATUS status;
-
-	status = cli_setpathinfo_ext(cli,
-				filename,
-				create_time,
-				access_time,
-				write_time,
-				change_time,
-				-1);
-	if (!NT_STATUS_IS_OK(status)) {
-		d_printf("cli_setpathinfo_basic failed: %s\n",
-			 nt_errstr(status));
-		return 1;
-	}
-
-	return 0;
-}
-
-/**
  * cmd_utimes - interactive command to set the four times
  *
  * Read a filename and four times from the client command line and update
@@ -5223,7 +5112,6 @@ static int set_remote_times(const char *filename,
  */
 static int cmd_utimes(void)
 {
-	const extern char *cmd_ptr;
 	char *buf;
 	char *fname = NULL;
 	struct timespec times[4] = {{0}};
@@ -5232,6 +5120,8 @@ static int cmd_utimes(void)
 	int err = 0;
 	bool ok;
 	TALLOC_CTX *ctx = talloc_new(NULL);
+	NTSTATUS status;
+
 	if (ctx == NULL) {
 		return 1;
 	}
@@ -5271,8 +5161,12 @@ static int cmd_utimes(void)
 			times[time_count] = make_omit_timespec();
 			time_count++;
 			continue;
-		} else {
-			ret = strptime(s, "%y:%m:%d-%H:%M:%S", &tm);
+		}
+
+		ret = strptime(s, "%y:%m:%d-%H:%M:%S", &tm);
+
+		if (ret == NULL) {
+			ret = strptime(s, "%Y:%m:%d-%H:%M:%S", &tm);
 		}
 
 		/* We could not match all the chars, so print error */
@@ -5280,8 +5174,8 @@ static int cmd_utimes(void)
 			d_printf("Invalid date format: %s\n", s);
 			d_printf("utimes <filename> <create-time> "
 				"<access-time> <write-time> <change-time>\n");
-			d_printf("Dates should be in YY:MM:DD-HH:MM:SS format "
-				"or -1 for no change\n");
+			d_printf("Dates should be in [YY]YY:MM:DD-HH:MM:SS "
+				 "format or -1 for no change\n");
 			err = 1;
 			goto out;
 		}
@@ -5308,7 +5202,15 @@ static int cmd_utimes(void)
 		   timespec_string_buf(&times[2], false, &tbuf[2]),
 		   timespec_string_buf(&times[3], false, &tbuf[3])));
 
-	set_remote_times(fname, &times[0], &times[1], &times[2], &times[3]);
+	status = cli_setpathinfo_ext(
+		cli, fname, times[0], times[1], times[2], times[3],
+		(uint32_t)-1);
+	if (!NT_STATUS_IS_OK(status)) {
+		d_printf("cli_setpathinfo_ext failed: %s\n",
+			 nt_errstr(status));
+		err = 1;
+		goto out;
+	}
 out:
 	talloc_free(ctx);
 	return err;
@@ -5322,10 +5224,10 @@ out:
  *
  * Update the file attributes with the one provided.
  */
-int set_remote_attr(const char *filename, uint16_t new_attr, int mode)
+int set_remote_attr(const char *filename, uint32_t new_attr, int mode)
 {
 	extern struct cli_state *cli;
-	uint16_t old_attr;
+	uint32_t old_attr;
 	NTSTATUS status;
 
 	status = cli_getatr(cli, filename, &old_attr, NULL, NULL);
@@ -5357,10 +5259,9 @@ int set_remote_attr(const char *filename, uint16_t new_attr, int mode)
  */
 int cmd_setmode(void)
 {
-	const extern char *cmd_ptr;
 	char *buf;
 	char *fname = NULL;
-	uint16_t attr[2] = {0};
+	uint32_t attr[2] = {0};
 	int mode = ATTR_SET;
 	int err = 0;
 	bool ok;
@@ -5719,10 +5620,12 @@ static int process_command_string(const char *cmd_in)
 		NTSTATUS status;
 
 		status = cli_cm_open(talloc_tos(), NULL,
-				     have_ip ? dest_ss_str : desthost,
+				     desthost,
 				     service, popt_get_cmdline_auth_info(),
 				     smb_encrypt,
-				     max_protocol, port, name_type,
+				     max_protocol,
+				     have_ip ? &dest_ss : NULL, port,
+				     name_type,
 				     &cli);
 		if (!NT_STATUS_IS_OK(status)) {
 			return 1;
@@ -5790,7 +5693,7 @@ static NTSTATUS completion_remote_filter(const char *mnt,
 		return NT_STATUS_OK;
 	}
 
-	if ((info->dirmask[0] == 0) && !(f->mode & FILE_ATTRIBUTE_DIRECTORY))
+	if ((info->dirmask[0] == 0) && !(f->attr & FILE_ATTRIBUTE_DIRECTORY))
 		info->matches[info->count] = SMB_STRDUP(f->name);
 	else {
 		TALLOC_CTX *ctx = talloc_stackframe();
@@ -5806,7 +5709,7 @@ static NTSTATUS completion_remote_filter(const char *mnt,
 			TALLOC_FREE(ctx);
 			return NT_STATUS_NO_MEMORY;
 		}
-		if (f->mode & FILE_ATTRIBUTE_DIRECTORY) {
+		if (f->attr & FILE_ATTRIBUTE_DIRECTORY) {
 			tmp = talloc_asprintf_append(tmp, "%s",
 						     CLI_DIRSEP_STR);
 		}
@@ -5820,7 +5723,7 @@ static NTSTATUS completion_remote_filter(const char *mnt,
 	if (info->matches[info->count] == NULL) {
 		return NT_STATUS_OK;
 	}
-	if (f->mode & FILE_ATTRIBUTE_DIRECTORY) {
+	if (f->attr & FILE_ATTRIBUTE_DIRECTORY) {
 		smb_readline_ca_char(0);
 	}
 	if (info->count == 1) {
@@ -6162,9 +6065,10 @@ static int process(const char *base_directory)
 	NTSTATUS status;
 
 	status = cli_cm_open(talloc_tos(), NULL,
-			     have_ip ? dest_ss_str : desthost,
+			     desthost,
 			     service, popt_get_cmdline_auth_info(),
-			     smb_encrypt, max_protocol, port,
+			     smb_encrypt, max_protocol,
+			     have_ip ? &dest_ss : NULL, port,
 			     name_type, &cli);
 	if (!NT_STATUS_IS_OK(status)) {
 		return 1;
@@ -6199,9 +6103,10 @@ static int do_host_query(const char *query_host)
 	NTSTATUS status;
 
 	status = cli_cm_open(talloc_tos(), NULL,
-			     have_ip ? dest_ss_str : query_host,
+			     query_host,
 			     "IPC$", popt_get_cmdline_auth_info(),
-			     smb_encrypt, max_protocol, port,
+			     smb_encrypt, max_protocol,
+			     have_ip ? &dest_ss : NULL, port,
 			     name_type, &cli);
 	if (!NT_STATUS_IS_OK(status)) {
 		return 1;
@@ -6245,10 +6150,11 @@ static int do_host_query(const char *query_host)
 		cli_shutdown(cli);
 		d_printf("Reconnecting with SMB1 for workgroup listing.\n");
 		status = cli_cm_open(talloc_tos(), NULL,
-				     have_ip ? dest_ss_str : query_host,
+				     query_host,
 				     "IPC$", popt_get_cmdline_auth_info(),
 				     smb_encrypt, max_proto,
-				     NBT_SMB_PORT, name_type, &cli);
+				     have_ip ? &dest_ss : NULL, NBT_SMB_PORT,
+				     name_type, &cli);
 		if (!NT_STATUS_IS_OK(status)) {
 			d_printf("Unable to connect with SMB1 "
 				 "-- no workgroup available\n");
@@ -6278,10 +6184,11 @@ static int do_tar_op(const char *base_directory)
 		NTSTATUS status;
 
 		status = cli_cm_open(talloc_tos(), NULL,
-				     have_ip ? dest_ss_str : desthost,
+				     desthost,
 				     service, popt_get_cmdline_auth_info(),
 				     smb_encrypt, max_protocol,
-				     port, name_type, &cli);
+				     have_ip ? &dest_ss : NULL, port,
+				     name_type, &cli);
 		if (!NT_STATUS_IS_OK(status)) {
             ret = 1;
             goto out;
@@ -6512,7 +6419,10 @@ int main(int argc,char *argv[])
 
 	while ((opt = poptGetNextOpt(pc)) != -1) {
 
-		/* if the tar option has been called previouslt, now we need to eat out the leftovers */
+		/*
+		 * if the tar option has been called previously, now
+		 * we need to eat out the leftovers
+		 */
 		/* I see no other way to keep things sane --SSS */
 		if (tar_opt == true) {
 			while (poptPeekArg(pc)) {

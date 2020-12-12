@@ -3188,7 +3188,6 @@ NTSTATUS cli_rpc_pipe_open_with_creds(struct cli_state *cli,
 	struct rpc_pipe_client *result;
 	struct pipe_auth_data *auth = NULL;
 	const char *target_service = table->authservices->names[0];
-
 	NTSTATUS status;
 
 	status = cli_rpc_pipe_open(cli, transport, table, &result);
@@ -3202,83 +3201,22 @@ NTSTATUS cli_rpc_pipe_open_with_creds(struct cli_state *cli,
 						     creds,
 						     &auth);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("rpccli_generic_bind_data returned %s\n",
-			  nt_errstr(status)));
+		DBG_ERR("rpccli_generic_bind_data_from_creds returned %s\n",
+			nt_errstr(status));
 		goto err;
 	}
 
 	status = rpc_pipe_bind(result, auth);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("cli_rpc_pipe_open_generic_auth: cli_rpc_pipe_bind failed with error %s\n",
-			nt_errstr(status) ));
+		DBG_ERR("cli_rpc_pipe_bind failed with error %s\n",
+			nt_errstr(status));
 		goto err;
 	}
 
-	DEBUG(10,("cli_rpc_pipe_open_generic_auth: opened pipe %s to "
-		"machine %s and bound as user %s.\n", table->name,
-		  result->desthost, cli_credentials_get_unparsed_name(creds, talloc_tos())));
-
-	*presult = result;
-	return NT_STATUS_OK;
-
-  err:
-
-	TALLOC_FREE(result);
-	return status;
-}
-
-/****************************************************************************
- Open a named pipe to an SMB server and bind using the mech specified
-
- This routine steals the creds pointer that is passed in
- ****************************************************************************/
-
-NTSTATUS cli_rpc_pipe_open_generic_auth(struct cli_state *cli,
-					const struct ndr_interface_table *table,
-					enum dcerpc_transport_t transport,
-					enum credentials_use_kerberos use_kerberos,
-					enum dcerpc_AuthType auth_type,
-					enum dcerpc_AuthLevel auth_level,
-					const char *server,
-					const char *domain,
-					const char *username,
-					const char *password,
-					struct rpc_pipe_client **presult)
-{
-	struct rpc_pipe_client *result;
-	struct pipe_auth_data *auth = NULL;
-	const char *target_service = table->authservices->names[0];
-	
-	NTSTATUS status;
-
-	status = cli_rpc_pipe_open(cli, transport, table, &result);
-	if (!NT_STATUS_IS_OK(status)) {
-		return status;
-	}
-
-	status = rpccli_generic_bind_data(result,
-					  auth_type, auth_level,
-					  server, target_service,
-					  domain, username, password, 
-					  CRED_AUTO_USE_KERBEROS,
-					  NULL,
-					  &auth);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("rpccli_generic_bind_data returned %s\n",
-			  nt_errstr(status)));
-		goto err;
-	}
-
-	status = rpc_pipe_bind(result, auth);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("cli_rpc_pipe_open_generic_auth: cli_rpc_pipe_bind failed with error %s\n",
-			nt_errstr(status) ));
-		goto err;
-	}
-
-	DEBUG(10,("cli_rpc_pipe_open_generic_auth: opened pipe %s to "
-		"machine %s and bound as user %s\\%s.\n", table->name,
-		  result->desthost, domain, username));
+	DBG_DEBUG("opened pipe %s to machine %s and bound as user %s.\n",
+		  table->name,
+		  result->desthost,
+		  cli_credentials_get_unparsed_name(creds, talloc_tos()));
 
 	*presult = result;
 	return NT_STATUS_OK;

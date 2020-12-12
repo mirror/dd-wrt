@@ -29,20 +29,23 @@
 int gpfswrap_init(void);
 int gpfswrap_set_share(int fd, unsigned int allow, unsigned int deny);
 int gpfswrap_set_lease(int fd, unsigned int type);
-int gpfswrap_getacl(char *pathname, int flags, void *acl);
-int gpfswrap_putacl(char *pathname, int flags, void *acl);
-int gpfswrap_get_realfilename_path(char *pathname, char *filenamep, int *len);
-int gpfswrap_set_winattrs_path(char *pathname, int flags,
+int gpfswrap_getacl(const char *pathname, int flags, void *acl);
+int gpfswrap_putacl(const char *pathname, int flags, void *acl);
+int gpfswrap_get_realfilename_path(const char *pathname,
+				   char *filenamep,
+				   int *len);
+int gpfswrap_set_winattrs_path(const char *pathname,
+			       int flags,
 			       struct gpfs_winattr *attrs);
 int gpfswrap_set_winattrs(int fd, int flags, struct gpfs_winattr *attrs);
-int gpfswrap_get_winattrs_path(char *pathname, struct gpfs_winattr *attrs);
+int gpfswrap_get_winattrs_path(const char *pathname,
+			       struct gpfs_winattr *attrs);
 int gpfswrap_get_winattrs(int fd, struct gpfs_winattr *attrs);
 int gpfswrap_ftruncate(int fd, gpfs_off64_t length);
 int gpfswrap_lib_init(int flags);
 int gpfswrap_set_times_path(char *pathname, int flags,
 			    gpfs_timestruc_t times[4]);
-int gpfswrap_quotactl(char *pathname, int cmd, int id, void *bufp);
-int gpfswrap_getfilesetid(char *pathname, char *name, int *idp);
+int gpfswrap_quotactl(const char *pathname, int cmd, int id, void *bufp);
 int gpfswrap_init_trace(void);
 int gpfswrap_query_trace(void);
 void gpfswrap_add_trace(int level, const char *msg);

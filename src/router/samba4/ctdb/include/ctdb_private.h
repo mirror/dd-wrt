@@ -342,6 +342,12 @@ struct ctdb_context {
 	struct lock_context *lock_pending;
 };
 
+struct ctdb_db_hot_key {
+	uint32_t count;
+	TDB_DATA key;
+	uint32_t last_logged_count;
+};
+
 struct ctdb_db_context {
 	struct ctdb_db_context *next, *prev;
 	struct ctdb_context *ctdb;
@@ -375,10 +381,11 @@ struct ctdb_db_context {
 	struct trbt_tree *defer_dmaster;
 
 	struct ctdb_db_statistics_old statistics;
+	struct ctdb_db_hot_key hot_keys[MAX_HOT_KEYS];
 
 	struct lock_context *lock_current;
 	struct lock_context *lock_pending;
-	int lock_num_current;
+	unsigned int lock_num_current;
 	struct db_hash_context *lock_log;
 
 	struct ctdb_call_state *pending_calls;
@@ -558,7 +565,9 @@ int daemon_deregister_message_handler(struct ctdb_context *ctdb,
 void daemon_tunnel_handler(uint64_t tunnel_id, TDB_DATA data,
 			   void *private_data);
 
-int ctdb_start_daemon(struct ctdb_context *ctdb, bool do_fork);
+int ctdb_start_daemon(struct ctdb_context *ctdb,
+		      bool interactive,
+		      bool test_mode_enabled);
 
 struct ctdb_req_header *_ctdb_transport_allocate(struct ctdb_context *ctdb,
 						 TALLOC_CTX *mem_ctx,

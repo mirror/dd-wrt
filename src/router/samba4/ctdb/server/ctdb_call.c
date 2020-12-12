@@ -820,31 +820,62 @@ ctdb_defer_pinned_down_request(struct ctdb_context *ctdb, struct ctdb_db_context
 	return 0;
 }
 
+static int hot_key_cmp(const void *a, const void *b)
+{
+	const struct ctdb_db_hot_key *ka = (const struct ctdb_db_hot_key *)a;
+	const struct ctdb_db_hot_key *kb = (const struct ctdb_db_hot_key *)b;
+
+	if (ka->count < kb->count) {
+		return -1;
+	}
+	if (ka->count > kb->count) {
+		return 1;
+	}
+
+	return 0;
+}
+
 static void
 ctdb_update_db_stat_hot_keys(struct ctdb_db_context *ctdb_db, TDB_DATA key,
 			     unsigned int count)
 {
-	int i, id;
+	unsigned int i, id;
 	char *keystr;
 
-	/* smallest value is always at index 0 */
-	if (count <= ctdb_db->statistics.hot_keys[0].count) {
+	/*
+	 * If all slots are being used then only need to compare
+	 * against the count in the 0th slot, since it contains the
+	 * smallest count.
+	 */
+	if (ctdb_db->statistics.num_hot_keys == MAX_HOT_KEYS &&
+	    count <= ctdb_db->hot_keys[0].count) {
 		return;
 	}
 
 	/* see if we already know this key */
 	for (i = 0; i < MAX_HOT_KEYS; i++) {
-		if (key.dsize != ctdb_db->statistics.hot_keys[i].key.dsize) {
+		if (key.dsize != ctdb_db->hot_keys[i].key.dsize) {
 			continue;
 		}
-		if (memcmp(key.dptr, ctdb_db->statistics.hot_keys[i].key.dptr, key.dsize)) {
+		if (memcmp(key.dptr, ctdb_db->hot_keys[i].key.dptr, key.dsize)) {
 			continue;
 		}
 		/* found an entry for this key */
-		if (count <= ctdb_db->statistics.hot_keys[i].count) {
+		if (count <= ctdb_db->hot_keys[i].count) {
 			return;
 		}
-		ctdb_db->statistics.hot_keys[i].count = count;
+		if (count >= (2 * ctdb_db->hot_keys[i].last_logged_count)) {
+			keystr = hex_encode_talloc(ctdb_db,
+						   (unsigned char *)key.dptr,
+						   key.dsize);
+			D_NOTICE("Updated hot key database=%s key=%s count=%d\n",
+				 ctdb_db->db_name,
+				 keystr ? keystr : "" ,
+				 count);
+			TALLOC_FREE(keystr);
+			ctdb_db->hot_keys[i].last_logged_count = count;
+		}
+		ctdb_db->hot_keys[i].count = count;
 		goto sort_keys;
 	}
 
@@ -855,35 +886,29 @@ ctdb_update_db_stat_hot_keys(struct ctdb_db_context *ctdb_db, TDB_DATA key,
 		id = 0;
 	}
 
-	if (ctdb_db->statistics.hot_keys[id].key.dptr != NULL) {
-		talloc_free(ctdb_db->statistics.hot_keys[id].key.dptr);
+	if (ctdb_db->hot_keys[id].key.dptr != NULL) {
+		talloc_free(ctdb_db->hot_keys[id].key.dptr);
 	}
-	ctdb_db->statistics.hot_keys[id].key.dsize = key.dsize;
-	ctdb_db->statistics.hot_keys[id].key.dptr  = talloc_memdup(ctdb_db, key.dptr, key.dsize);
-	ctdb_db->statistics.hot_keys[id].count = count;
+	ctdb_db->hot_keys[id].key.dsize = key.dsize;
+	ctdb_db->hot_keys[id].key.dptr = talloc_memdup(ctdb_db,
+						       key.dptr,
+						       key.dsize);
+	ctdb_db->hot_keys[id].count = count;
 
 	keystr = hex_encode_talloc(ctdb_db,
 				   (unsigned char *)key.dptr, key.dsize);
-	DEBUG(DEBUG_NOTICE,("Updated hot key database=%s key=%s id=%d "
-			    "count=%d\n", ctdb_db->db_name,
-			    keystr ? keystr : "" , id, count));
+	D_NOTICE("Added hot key database=%s key=%s count=%d\n",
+		 ctdb_db->db_name,
+		 keystr ? keystr : "" ,
+		 count);
 	talloc_free(keystr);
+	ctdb_db->hot_keys[id].last_logged_count = count;
 
 sort_keys:
-	for (i = 1; i < MAX_HOT_KEYS; i++) {
-		if (ctdb_db->statistics.hot_keys[i].count == 0) {
-			continue;
-		}
-		if (ctdb_db->statistics.hot_keys[i].count < ctdb_db->statistics.hot_keys[0].count) {
-			count = ctdb_db->statistics.hot_keys[i].count;
-			ctdb_db->statistics.hot_keys[i].count = ctdb_db->statistics.hot_keys[0].count;
-			ctdb_db->statistics.hot_keys[0].count = count;
-
-			key = ctdb_db->statistics.hot_keys[i].key;
-			ctdb_db->statistics.hot_keys[i].key = ctdb_db->statistics.hot_keys[0].key;
-			ctdb_db->statistics.hot_keys[0].key = key;
-		}
-	}
+	qsort(&ctdb_db->hot_keys[0],
+	      ctdb_db->statistics.num_hot_keys,
+	      sizeof(struct ctdb_db_hot_key),
+	      hot_key_cmp);
 }
 
 /*

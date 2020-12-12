@@ -52,12 +52,12 @@ NTSTATUS fsp_new(struct connection_struct *conn, TALLOC_CTX *mem_ctx,
 	}
 
 #if defined(HAVE_OFD_LOCKS)
-	fsp->use_ofd_locks = true;
+	fsp->fsp_flags.use_ofd_locks = true;
 	if (lp_parm_bool(SNUM(conn),
 			 "smbd",
 			 "force process locks",
 			 false)) {
-		fsp->use_ofd_locks = false;
+		fsp->fsp_flags.use_ofd_locks = false;
 	}
 #endif
 	fsp->fh->ref_count = 1;
@@ -140,7 +140,12 @@ NTSTATUS file_new(struct smb_request *req, connection_struct *conn,
 	 * few NULL checks, so make sure it's initialized with something. to
 	 * be safe until an audit can be done.
 	 */
-	fsp->fsp_name = synthetic_smb_fname(fsp, "", NULL, NULL, 0);
+	fsp->fsp_name = synthetic_smb_fname(fsp,
+					    "",
+					    NULL,
+					    NULL,
+					    0,
+					    0);
 	if (fsp->fsp_name == NULL) {
 		file_free(NULL, fsp);
 		return NT_STATUS_NO_MEMORY;
@@ -162,6 +167,85 @@ NTSTATUS file_new(struct smb_request *req, connection_struct *conn,
 	ZERO_STRUCT(sconn->fsp_fi_cache);
 
 	*result = fsp;
+	return NT_STATUS_OK;
+}
+
+/*
+ * Create an internal fsp for an *existing* directory.
+ *
+ * This should only be used by callers in the VFS that need to control the
+ * opening of the directory. Otherwise use open_internal_dirfsp_at().
+ */
+NTSTATUS create_internal_dirfsp(connection_struct *conn,
+				const struct smb_filename *smb_dname,
+				struct files_struct **_fsp)
+{
+	struct files_struct *fsp = NULL;
+	NTSTATUS status;
+
+	status = file_new(NULL, conn, &fsp);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	status = fsp_set_smb_fname(fsp, smb_dname);
+	if (!NT_STATUS_IS_OK(status)) {
+		file_free(NULL, fsp);
+		return status;
+	}
+
+	fsp->access_mask = FILE_LIST_DIRECTORY;
+	fsp->fsp_flags.is_directory = true;
+	fsp->fsp_flags.is_dirfsp = true;
+
+	*_fsp = fsp;
+	return NT_STATUS_OK;
+}
+
+/*
+ * Open an internal fsp for an *existing* directory.
+ */
+NTSTATUS open_internal_dirfsp(connection_struct *conn,
+			      const struct smb_filename *smb_dname,
+			      int open_flags,
+			      struct files_struct **_fsp)
+{
+	struct files_struct *fsp = NULL;
+	NTSTATUS status;
+	int ret;
+
+	status = create_internal_dirfsp(conn, smb_dname, &fsp);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+#ifdef O_DIRECTORY
+	open_flags |= O_DIRECTORY;
+#endif
+	status = fd_open(fsp, open_flags, 0);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_INFO("Could not open fd for %s (%s)\n",
+			 smb_fname_str_dbg(smb_dname),
+			 nt_errstr(status));
+		file_free(NULL, fsp);
+		return status;
+	}
+
+	ret = SMB_VFS_FSTAT(fsp, &fsp->fsp_name->st);
+	if (ret != 0) {
+		return map_nt_error_from_unix(errno);
+	}
+
+	if (!S_ISDIR(fsp->fsp_name->st.st_ex_mode)) {
+		DBG_ERR("%s is not a directory!\n",
+			smb_fname_str_dbg(smb_dname));
+                file_free(NULL, fsp);
+		return NT_STATUS_NOT_A_DIRECTORY;
+	}
+
+	fsp->file_id = vfs_file_id_from_sbuf(conn, &fsp->fsp_name->st);
+
+	*_fsp = fsp;
 	return NT_STATUS_OK;
 }
 
@@ -578,10 +662,7 @@ files_struct *file_fsp(struct smb_request *req, uint16_t fid)
 	}
 
 	if (req->chain_fsp != NULL) {
-		if (req->chain_fsp->deferred_close) {
-			return NULL;
-		}
-		if (req->chain_fsp->closing) {
+		if (req->chain_fsp->fsp_flags.closing) {
 			return NULL;
 		}
 		return req->chain_fsp;
@@ -604,11 +685,7 @@ files_struct *file_fsp(struct smb_request *req, uint16_t fid)
 		return NULL;
 	}
 
-	if (fsp->deferred_close) {
-		return NULL;
-	}
-
-	if (fsp->closing) {
+	if (fsp->fsp_flags.closing) {
 		return NULL;
 	}
 
@@ -655,11 +732,7 @@ struct files_struct *file_fsp_get(struct smbd_smb2_request *smb2req,
 		return NULL;
 	}
 
-	if (fsp->deferred_close) {
-		return NULL;
-	}
-
-	if (fsp->closing) {
+	if (fsp->fsp_flags.closing) {
 		return NULL;
 	}
 
@@ -673,10 +746,7 @@ struct files_struct *file_fsp_smb2(struct smbd_smb2_request *smb2req,
 	struct files_struct *fsp;
 
 	if (smb2req->compat_chain_fsp != NULL) {
-		if (smb2req->compat_chain_fsp->deferred_close) {
-			return NULL;
-		}
-		if (smb2req->compat_chain_fsp->closing) {
+		if (smb2req->compat_chain_fsp->fsp_flags.closing) {
 			return NULL;
 		}
 		return smb2req->compat_chain_fsp;
@@ -717,14 +787,14 @@ NTSTATUS dup_file_fsp(
 	to->open_time = from->open_time;
 	to->access_mask = access_mask;
 	to->oplock_type = from->oplock_type;
-	to->can_lock = from->can_lock;
-	to->can_read = ((access_mask & FILE_READ_DATA) != 0);
-	to->can_write =
+	to->fsp_flags.can_lock = from->fsp_flags.can_lock;
+	to->fsp_flags.can_read = ((access_mask & FILE_READ_DATA) != 0);
+	to->fsp_flags.can_write =
 		CAN_WRITE(from->conn) &&
 		((access_mask & (FILE_WRITE_DATA | FILE_APPEND_DATA)) != 0);
-	to->modified = from->modified;
-	to->is_directory = from->is_directory;
-	to->aio_write_behind = from->aio_write_behind;
+	to->fsp_flags.modified = from->fsp_flags.modified;
+	to->fsp_flags.is_directory = from->fsp_flags.is_directory;
+	to->fsp_flags.aio_write_behind = from->fsp_flags.aio_write_behind;
 
 	return fsp_set_smb_fname(to, from->fsp_name);
 }

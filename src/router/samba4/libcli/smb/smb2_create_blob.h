@@ -23,8 +23,13 @@
 #ifndef _LIBCLI_SMB_SMB2_CREATE_BLOB_H_
 #define _LIBCLI_SMB_SMB2_CREATE_BLOB_H_
 
+#include "replace.h"
+#include "lib/util/data_blob.h"
+#include "lib/util/time.h"
+#include "libcli/util/ntstatus.h"
+
 struct smb2_create_blob {
-	const char *tag;
+	char *tag;
 	DATA_BLOB data;
 };
 
@@ -65,5 +70,7 @@ NTSTATUS smb2_create_blob_add(TALLOC_CTX *mem_ctx, struct smb2_create_blobs *b,
  */
 struct smb2_create_blob *smb2_create_blob_find(const struct smb2_create_blobs *b,
 					       const char *tag);
+
+void smb2_create_blob_remove(struct smb2_create_blobs *b, const char *tag);
 
 #endif /* _LIBCLI_SMB_SMB2_CREATE_BLOB_H_ */

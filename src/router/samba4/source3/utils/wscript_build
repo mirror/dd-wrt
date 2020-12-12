@@ -29,7 +29,7 @@ bld.SAMBA3_BINARY('smbtree',
                  deps='''
                  talloc
                  smbconf
-                 libsmb
+                 smbclient
                  msrpc3
                  popt_samba3_cmdline
                  RPC_NDR_SRVSVC''')
@@ -171,12 +171,14 @@ bld.SAMBA3_BINARY('testparm',
                  smbconf
                  popt_samba3
                  cmdline_contexts
+                 GNUTLS_HELPERS
                  ''')
 
 bld.SAMBA3_BINARY('net',
                  source='''net.c
                  net_ads.c
                  net_help.c
+                 clirap2.c
                  net_rap.c
                  net_rpc.c
                  net_rpc_samsync.c

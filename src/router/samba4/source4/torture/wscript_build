@@ -102,6 +102,7 @@ bld.SAMBA_MODULE('torture_rpc',
                         rpc/unixinfo.c
                         rpc/samr.c
                         rpc/samr_accessmask.c
+                        rpc/samr_handletype.c
                         rpc/samr_priv.c
                         rpc/wkssvc.c
                         rpc/srvsvc.c
@@ -248,7 +249,18 @@ bld.SAMBA_MODULE('TORTURE_UNIX',
 
 
 bld.SAMBA_MODULE('TORTURE_LDAP',
-	source='ldap/common.c ldap/basic.c ldap/schema.c ldap/uptodatevector.c ldap/cldap.c ldap/netlogon.c ldap/cldapbench.c ldap/ldap_sort.c ldap/nested_search.c',
+	source='''
+            ldap/common.c
+            ldap/basic.c
+            ldap/schema.c
+            ldap/uptodatevector.c
+            ldap/cldap.c
+            ldap/netlogon.c
+            ldap/cldapbench.c
+            ldap/ldap_sort.c
+            ldap/nested_search.c
+            ldap/session_expiry.c
+            ''',
 	subsystem='smbtorture',
 	deps='cli-ldap cli_cldap samdb popt POPT_CREDENTIALS torture ldbsamba',
 	internal_module=True,

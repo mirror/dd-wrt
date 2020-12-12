@@ -790,6 +790,7 @@ int main(void) {
         if not Options.options.disable_warnings_as_errors:
             conf.ADD_NAMED_CFLAGS('PICKY_CFLAGS', '-Werror -Wno-error=deprecated-declarations', testflags=True)
             conf.ADD_NAMED_CFLAGS('PICKY_CFLAGS', '-Wno-error=tautological-compare', testflags=True)
+            conf.ADD_NAMED_CFLAGS('PICKY_CFLAGS', '-Wno-error=cast-align', testflags=True)
 
     if Options.options.fatal_errors:
         conf.ADD_CFLAGS('-Wfatal-errors', testflags=True)

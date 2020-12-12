@@ -538,7 +538,7 @@ sub PythonFunctionStruct($$$$)
 	$self->indent;
 	$self->pidl("");
 	$self->pidl("");
-	$self->pidl("return PyInt_FromLong($fn->{OPNUM});");
+	$self->pidl("return PyLong_FromLong($fn->{OPNUM});");
 	$self->deindent;
 	$self->pidl("}");
 	$self->pidl("");
@@ -1419,7 +1419,7 @@ sub Interface($$$)
 			my ($infn, $outfn, $callfn, $prettyname, $docstring, $opnum) = @$d;
 			$self->pidl("{ \"$prettyname\", $docstring, (py_dcerpc_call_fn)$callfn, (py_data_pack_fn)$infn, (py_data_unpack_fn)$outfn, $opnum, &ndr_table_$interface->{NAME} },");
 		}
-		$self->pidl("{ NULL }");
+		$self->pidl("{0}");
 		$self->deindent;
 		$self->pidl("};");
 		$self->pidl("");
@@ -1747,21 +1747,8 @@ sub ConvertObjectFromPythonData($$$$$$;$$)
 		$self->pidl("}");
 		$self->pidl("if (test_var > uint_max) {");
 		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s or %s within range 0 - %llu, got %llu\",\\");
-		$self->pidl("  PyInt_Type.tp_name, PyLong_Type.tp_name, uint_max, test_var);");
-		$self->pidl($fail);
-		$self->deindent;
-		$self->pidl("}");
-		$self->pidl("$target = test_var;");
-		$self->deindent;
-		$self->pidl("} else if (PyInt_Check($cvar)) {");
-		$self->indent;
-		$self->pidl("long test_var;");
-		$self->pidl("test_var = PyInt_AsLong($cvar);");
-		$self->pidl("if (test_var < 0 || (unsigned long long)test_var > uint_max) {");
-		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s or %s within range 0 - %llu, got %ld\",\\");
-		$self->pidl("  PyInt_Type.tp_name, PyLong_Type.tp_name, uint_max, test_var);");
+		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s within range 0 - %llu, got %llu\",\\");
+		$self->pidl("  PyLong_Type.tp_name, uint_max, test_var);");
 		$self->pidl($fail);
 		$self->deindent;
 		$self->pidl("}");
@@ -1769,8 +1756,8 @@ sub ConvertObjectFromPythonData($$$$$$;$$)
 		$self->deindent;
 		$self->pidl("} else {");
 		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_TypeError, \"Expected type %s or %s\",\\");
-		$self->pidl("  PyInt_Type.tp_name, PyLong_Type.tp_name);");
+		$self->pidl("PyErr_Format(PyExc_TypeError, \"Expected type %s\",\\");
+		$self->pidl("  PyLong_Type.tp_name);");
 		$self->pidl($fail);
 		$self->deindent;
 		$self->pidl("}");
@@ -1799,21 +1786,8 @@ sub ConvertObjectFromPythonData($$$$$$;$$)
 		$self->pidl("}");
 		$self->pidl("if (test_var < int_min || test_var > int_max) {");
 		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s or %s within range %lld - %lld, got %lld\",\\");
-		$self->pidl("  PyInt_Type.tp_name, PyLong_Type.tp_name, int_min, int_max, test_var);");
-		$self->pidl($fail);
-		$self->deindent;
-		$self->pidl("}");
-		$self->pidl("$target = test_var;");
-		$self->deindent;
-		$self->pidl("} else if (PyInt_Check($cvar)) {");
-		$self->indent;
-		$self->pidl("long test_var;");
-		$self->pidl("test_var = PyInt_AsLong($cvar);");
-		$self->pidl("if (test_var < int_min || test_var > int_max) {");
-		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s or %s within range %lld - %lld, got %ld\",\\");
-		$self->pidl("  PyInt_Type.tp_name, PyLong_Type.tp_name, int_min, int_max, test_var);");
+		$self->pidl("PyErr_Format(PyExc_OverflowError, \"Expected type %s within range %lld - %lld, got %lld\",\\");
+		$self->pidl("  PyLong_Type.tp_name, int_min, int_max, test_var);");
 		$self->pidl($fail);
 		$self->deindent;
 		$self->pidl("}");
@@ -1821,8 +1795,8 @@ sub ConvertObjectFromPythonData($$$$$$;$$)
 		$self->deindent;
 		$self->pidl("} else {");
 		$self->indent;
-		$self->pidl("PyErr_Format(PyExc_TypeError, \"Expected type %s or %s\",\\");
-		$self->pidl("  PyInt_Type.tp_name, PyLong_Type.tp_name);");
+		$self->pidl("PyErr_Format(PyExc_TypeError, \"Expected type %s\",\\");
+		$self->pidl("  PyLong_Type.tp_name);");
 		$self->pidl($fail);
 		$self->deindent;
 		$self->pidl("}");
@@ -1882,17 +1856,17 @@ sub ConvertObjectFromPythonData($$$$$$;$$)
 	}
 
 	if ($actual_ctype->{TYPE} eq "SCALAR" and $actual_ctype->{NAME} eq "NTSTATUS") {
-		$self->pidl("$target = NT_STATUS(PyInt_AsLong($cvar));");
+		$self->pidl("$target = NT_STATUS(PyLong_AsLong($cvar));");
 		return;
 	}
 
 	if ($actual_ctype->{TYPE} eq "SCALAR" and $actual_ctype->{NAME} eq "WERROR") {
-		$self->pidl("$target = W_ERROR(PyInt_AsLong($cvar));");
+		$self->pidl("$target = W_ERROR(PyLong_AsLong($cvar));");
 		return;
 	}
 
 	if ($actual_ctype->{TYPE} eq "SCALAR" and $actual_ctype->{NAME} eq "HRESULT") {
-		$self->pidl("$target = HRES_ERROR(PyInt_AsLong($cvar));");
+		$self->pidl("$target = HRES_ERROR(PyLong_AsLong($cvar));");
 		return;
 	}
 
@@ -1973,6 +1947,11 @@ sub ConvertObjectFromPythonLevel($$$$$$$$$)
 		if ($need_deref == 1) {
 			my $ndr_pointer_typename = $self->import_type_variable("samba.dcerpc.base", "ndr_pointer");
 			$self->pidl("$py_var = py_dcerpc_ndr_pointer_deref($ndr_pointer_typename, $py_var);");
+			$self->pidl("if ($py_var == NULL) {");
+			$self->indent;
+                        $self->pidl($fail);
+			$self->deindent;
+			$self->pidl("}");
 		}
 		unless ($nl->{TYPE} eq "DATA" and Parse::Pidl::Typelist::scalar_is_reference($nl->{DATA_TYPE})) {
 			$var_name = get_value_of($var_name);
@@ -2065,7 +2044,7 @@ sub ConvertScalarToPython($$$$)
 	}
 
 	if ($ctypename =~ /^(char|int|int8|int16|int32|time_t)$/) {
-		return "PyInt_FromLong($cvar)";
+		return "PyLong_FromLong($cvar)";
 	}
 
 	# Needed to ensure unsigned values in a 32 or 16 bit enum is
@@ -2077,7 +2056,7 @@ sub ConvertScalarToPython($$$$)
 	}
 
 	if ($ctypename =~ /^(uint|uint8|uint16|uint1632)$/) {
-		return "PyInt_FromLong((uint16_t)$cvar)";
+		return "PyLong_FromLong((uint16_t)$cvar)";
 	}
 
 	if ($ctypename eq "DATA_BLOB") {
@@ -2321,6 +2300,17 @@ sub Parse($$$$$)
 $ndr_hdr_include
 
 /*
+ * Suppress compiler warnings if the generated code does not call these
+ * functions
+ */
+#ifndef _MAYBE_UNUSED_
+#ifdef HAVE___ATTRIBUTE__
+#define _MAYBE_UNUSED_ __attribute__ ((unused))
+#else
+#define _MAYBE_UNUSED_
+#endif
+#endif
+/*
  * These functions are here to ensure they can be optimized out by
  * the compiler based on the constant input values
  */
@@ -2341,7 +2331,7 @@ static inline unsigned long long ndr_sizeof2uintmax(size_t var_size)
 	return 0;
 }
 
-static inline long long ndr_sizeof2intmax(size_t var_size)
+static inline _MAYBE_UNUSED_ long long ndr_sizeof2intmax(size_t var_size)
 {
 	switch (var_size) {
 	case 8:

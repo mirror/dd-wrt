@@ -65,7 +65,7 @@ static PyObject *py_se_access_check(PyObject *module, PyObject *args, PyObject *
 		PyErr_NTSTATUS_IS_ERR_RAISE(nt_status);
 	}
 
-	return PyInt_FromLong(access_granted);
+	return PyLong_FromLong(access_granted);
 }
 
 static PyMethodDef py_security_methods[] = {
@@ -73,7 +73,7 @@ static PyMethodDef py_security_methods[] = {
 					      py_se_access_check),
 	METH_VARARGS|METH_KEYWORDS,
 	"access_check(security_descriptor, token, access_desired) -> access_granted.  Raises NT_STATUS on error, including on access check failure, returns access granted bitmask"},
-	{ NULL },
+	{0},
 };
 
 static struct PyModuleDef moduledef = {

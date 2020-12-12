@@ -1095,6 +1095,7 @@ static bool ad_convert_xattr(vfs_handle_struct *handle,
 						  smb_fname->base_name,
 						  mapped_name,
 						  NULL,
+						  smb_fname->twrp,
 						  smb_fname->flags);
 		TALLOC_FREE(mapped_name);
 		if (stream_name == NULL) {
@@ -1108,7 +1109,7 @@ static bool ad_convert_xattr(vfs_handle_struct *handle,
 		status = SMB_VFS_CREATE_FILE(
 			handle->conn,			/* conn */
 			NULL,				/* req */
-			0,				/* root_dir_fid */
+			&handle->conn->cwd_fsp,		/* dirfsp */
 			stream_name,			/* fname */
 			FILE_GENERIC_WRITE,		/* access_mask */
 			FILE_SHARE_READ | FILE_SHARE_WRITE, /* share_access */
@@ -1225,6 +1226,7 @@ static bool ad_convert_finderinfo(vfs_handle_struct *handle,
 					  smb_fname->base_name,
 					  AFPINFO_STREAM,
 					  NULL,
+					  smb_fname->twrp,
 					  smb_fname->flags);
 	if (stream_name == NULL) {
 		data_blob_free(&aiblob);
@@ -1237,7 +1239,7 @@ static bool ad_convert_finderinfo(vfs_handle_struct *handle,
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,			/* conn */
 		NULL,				/* req */
-		0,				/* root_dir_fid */
+		&handle->conn->cwd_fsp,		/* dirfsp */
 		stream_name,			/* fname */
 		FILE_GENERIC_WRITE,		/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE, /* share_access */
@@ -1468,7 +1470,7 @@ static bool ad_unconvert_open_ad(TALLOC_CTX *mem_ctx,
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,
 		NULL,				/* req */
-		0,				/* root_dir_fid */
+		&handle->conn->cwd_fsp,		/* dirfsp */
 		adpath,
 		FILE_READ_DATA|FILE_WRITE_DATA,
 		FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
@@ -1520,7 +1522,7 @@ static bool ad_unconvert_get_streams(struct vfs_handle_struct *handle,
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,				/* conn */
 		NULL,					/* req */
-		0,					/* root_dir_fid */
+		&handle->conn->cwd_fsp,			/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_READ_ATTRIBUTES,			/* access_mask */
 		(FILE_SHARE_READ | FILE_SHARE_WRITE |	/* share_access */
@@ -1597,6 +1599,7 @@ static bool ad_collect_one_stream(struct vfs_handle_struct *handle,
 				    smb_fname->base_name,
 				    stream->name,
 				    NULL,
+				    smb_fname->twrp,
 				    0);
 	if (sname == NULL) {
 		return false;
@@ -1619,7 +1622,7 @@ static bool ad_collect_one_stream(struct vfs_handle_struct *handle,
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,
 		NULL,				/* req */
-		0,				/* root_dir_fid */
+		&handle->conn->cwd_fsp,		/* dirfsp */
 		sname,
 		FILE_READ_DATA|DELETE_ACCESS,
 		FILE_SHARE_READ,
@@ -1839,7 +1842,7 @@ bool ad_unconvert(TALLOC_CTX *mem_ctx,
 	struct adouble *ad = NULL;
 	unsigned int num_streams = 0;
 	size_t to_convert = 0;
-	bool have_rsrc;
+	bool have_rsrc = false;
 	files_struct *fsp = NULL;
 	size_t i;
 	NTSTATUS status;
@@ -2081,7 +2084,7 @@ static int ad_open_rsrc(vfs_handle_struct *handle,
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,			/* conn */
 		NULL,				/* req */
-		0,				/* root_dir_fid */
+		&handle->conn->cwd_fsp,		/* dirfsp */
 		adp_smb_fname,
 		access_mask,
 		share_access,
@@ -2388,7 +2391,7 @@ static struct adouble *ad_get_internal(TALLOC_CTX *ctx,
 
 	DEBUG(10, ("ad_get(%s) called for %s\n",
 		   type == ADOUBLE_META ? "meta" : "rsrc",
-		   smb_fname->base_name));
+		   smb_fname != NULL ? smb_fname->base_name : "???"));
 
 	ad = ad_alloc(ctx, type);
 	if (ad == NULL) {

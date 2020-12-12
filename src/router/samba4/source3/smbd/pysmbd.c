@@ -73,6 +73,21 @@ static connection_struct *get_conn_tos(
 		}
 	}
 
+	/*
+	 * Make sure that session unix info is filled,
+	 * which is required by vfs operations.
+	 */
+	if (session_info->unix_info == NULL) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"Session unix info not initialized");
+		return NULL;
+	}
+	if (session_info->unix_info->unix_name == NULL) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"Session unix info not available");
+		return NULL;
+	}
+
 	status = create_conn_struct_tos(NULL,
 					snum,
 					"/",
@@ -143,6 +158,8 @@ static NTSTATUS init_files_struct(TALLOC_CTX *mem_ctx,
 	int ret;
 	mode_t saved_umask;
 	struct files_struct *fsp;
+	struct files_struct *fspcwd = NULL;
+	NTSTATUS status;
 
 	fsp = talloc_zero(mem_ctx, struct files_struct);
 	if (fsp == NULL) {
@@ -163,13 +180,23 @@ static NTSTATUS init_files_struct(TALLOC_CTX *mem_ctx,
 
 	fsp->fsp_name = smb_fname;
 
+	status = vfs_at_fspcwd(fsp, conn, &fspcwd);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
 	/*
 	 * we want total control over the permissions on created files,
 	 * so set our umask to 0 (this matters if flags contains O_CREAT)
 	 */
 	saved_umask = umask(0);
 
-	fsp->fh->fd = SMB_VFS_OPEN(conn, smb_fname, fsp, flags, 00644);
+	fsp->fh->fd = SMB_VFS_OPENAT(conn,
+				     fspcwd,
+				     smb_fname,
+				     fsp,
+				     flags,
+				     00644);
 
 	umask(saved_umask);
 
@@ -193,13 +220,13 @@ static NTSTATUS init_files_struct(TALLOC_CTX *mem_ctx,
 	fsp->file_id = vfs_file_id_from_sbuf(conn, &smb_fname->st);
 	fsp->vuid = UID_FIELD_INVALID;
 	fsp->file_pid = 0;
-	fsp->can_lock = True;
-	fsp->can_read = True;
-	fsp->can_write = True;
+	fsp->fsp_flags.can_lock = true;
+	fsp->fsp_flags.can_read = true;
+	fsp->fsp_flags.can_write = true;
 	fsp->print_file = NULL;
-	fsp->modified = False;
+	fsp->fsp_flags.modified = false;
 	fsp->sent_oplock_break = NO_BREAK_SENT;
-	fsp->is_directory = S_ISDIR(smb_fname->st.st_ex_mode);
+	fsp->fsp_flags.is_directory = S_ISDIR(smb_fname->st.st_ex_mode);
 
 	*_fsp = fsp;
 
@@ -262,6 +289,7 @@ static NTSTATUS get_nt_acl_conn(TALLOC_CTX *mem_ctx,
 					fname,
 					NULL,
 					NULL,
+					0,
 					lp_posix_pathnames() ?
 						SMB_FILENAME_POSIX_PATH : 0);
 
@@ -270,13 +298,15 @@ static NTSTATUS get_nt_acl_conn(TALLOC_CTX *mem_ctx,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	status = SMB_VFS_GET_NT_ACL(conn,
+	status = SMB_VFS_GET_NT_ACL_AT(conn,
+				conn->cwd_fsp,
 				smb_fname,
 				security_info_wanted,
 				mem_ctx,
 				sd);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0,("get_nt_acl_conn: get_nt_acl returned %s.\n", nt_errstr(status)));
+		DBG_ERR("get_nt_acl_at returned %s.\n",
+			nt_errstr(status));
 	}
 
 	TALLOC_FREE(frame);
@@ -1022,6 +1052,7 @@ static PyObject *py_smbd_mkdir(PyObject *self, PyObject *args, PyObject *kwargs)
 					fname,
 					NULL,
 					NULL,
+					0,
 					lp_posix_pathnames() ?
 					SMB_FILENAME_POSIX_PATH : 0);
 
@@ -1160,7 +1191,7 @@ static PyMethodDef py_smbd_methods[] = {
 		PY_DISCARD_FUNC_SIG(PyCFunction, py_smbd_create_file),
 		METH_VARARGS|METH_KEYWORDS,
 		NULL },
-	{ NULL }
+	{0}
 };
 
 void initsmbd(void);

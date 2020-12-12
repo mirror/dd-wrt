@@ -47,6 +47,7 @@
 #include "../lib/util/tevent_ntstatus.h"
 #include "../libcli/util/tstream.h"
 #include "libds/common/roles.h"
+#include "lib/util/time.h"
 
 static void ldapsrv_terminate_connection_done(struct tevent_req *subreq);
 
@@ -68,6 +69,7 @@ static void ldapsrv_terminate_connection(struct ldapsrv_connection *conn,
 
 	tevent_queue_stop(conn->sockets.send_queue);
 	TALLOC_FREE(conn->sockets.read_req);
+	TALLOC_FREE(conn->deferred_expire_disconnect);
 	if (conn->active_call) {
 		tevent_req_cancel(conn->active_call);
 		conn->active_call = NULL;
@@ -178,6 +180,9 @@ static int ldapsrv_load_limits(struct ldapsrv_connection *conn)
 	conn->limits.max_page_size = 1000;
 	conn->limits.max_notifications = 5;
 	conn->limits.search_timeout = 120;
+	conn->limits.expire_time = (struct timeval) {
+		.tv_sec = get_time_t_max(),
+	};
 
 
 	tmp_ctx = talloc_new(conn);
@@ -256,7 +261,7 @@ static int ldapsrv_load_limits(struct ldapsrv_connection *conn)
 	return 0;
 
 failed:
-	DEBUG(0, ("Failed to load ldap server query policies\n"));
+	DBG_ERR("Failed to load ldap server query policies\n");
 	talloc_free(tmp_ctx);
 	return -1;
 }
@@ -1012,22 +1017,83 @@ static struct tevent_req *ldapsrv_process_call_send(TALLOC_CTX *mem_ctx,
 	return req;
 }
 
+static void ldapsrv_disconnect_ticket_expired(struct tevent_req *subreq);
+
 static void ldapsrv_process_call_trigger(struct tevent_req *req,
 					 void *private_data)
 {
 	struct ldapsrv_process_call_state *state =
 		tevent_req_data(req,
 		struct ldapsrv_process_call_state);
+	struct ldapsrv_connection *conn = state->call->conn;
 	NTSTATUS status;
+
+	if (conn->deferred_expire_disconnect != NULL) {
+		/*
+		 * Just drop this on the floor
+		 */
+		tevent_req_done(req);
+		return;
+	}
 
 	/* make the call */
 	status = ldapsrv_do_call(state->call);
+
+	if (NT_STATUS_EQUAL(status, NT_STATUS_NETWORK_SESSION_EXPIRED)) {
+		/*
+		 * For testing purposes, defer the TCP disconnect
+		 * after having sent the msgid 0
+		 * 1.3.6.1.4.1.1466.20036 exop response. LDAP clients
+		 * should not wait for the TCP connection to close but
+		 * handle this packet equivalent to a TCP
+		 * disconnect. This delay enables testing both cases
+		 * in LDAP client libraries.
+		 */
+
+		int defer_msec = lpcfg_parm_int(
+			conn->lp_ctx,
+			NULL,
+			"ldap_server",
+			"delay_expire_disconnect",
+			0);
+
+		conn->deferred_expire_disconnect = tevent_wakeup_send(
+			conn,
+			conn->connection->event.ctx,
+			timeval_current_ofs_msec(defer_msec));
+		if (tevent_req_nomem(conn->deferred_expire_disconnect, req)) {
+			return;
+		}
+		tevent_req_set_callback(
+			conn->deferred_expire_disconnect,
+			ldapsrv_disconnect_ticket_expired,
+			conn);
+
+		tevent_req_done(req);
+		return;
+	}
+
 	if (!NT_STATUS_IS_OK(status)) {
 		tevent_req_nterror(req, status);
 		return;
 	}
 
 	tevent_req_done(req);
+}
+
+static void ldapsrv_disconnect_ticket_expired(struct tevent_req *subreq)
+{
+	struct ldapsrv_connection *conn = tevent_req_callback_data(
+		subreq, struct ldapsrv_connection);
+	bool ok;
+
+	ok = tevent_wakeup_recv(subreq);
+	TALLOC_FREE(subreq);
+	if (!ok) {
+		DBG_WARNING("tevent_wakeup_recv failed\n");
+	}
+	conn->deferred_expire_disconnect = NULL;
+	ldapsrv_terminate_connection(conn, "network session expired");
 }
 
 static NTSTATUS ldapsrv_process_call_recv(struct tevent_req *req)
@@ -1116,8 +1182,8 @@ static NTSTATUS add_socket(struct task_server *task,
 				     lpcfg_socket_options(lp_ctx),
 				     ldap_service, task->process_context);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0,("ldapsrv failed to bind to %s:%u - %s\n",
-			 address, port, nt_errstr(status)));
+		DBG_ERR("ldapsrv failed to bind to %s:%u - %s\n",
+			address, port, nt_errstr(status));
 		return status;
 	}
 
@@ -1132,8 +1198,8 @@ static NTSTATUS add_socket(struct task_server *task,
 					     ldap_service,
 					     task->process_context);
 		if (!NT_STATUS_IS_OK(status)) {
-			DEBUG(0,("ldapsrv failed to bind to %s:%u - %s\n",
-				 address, port, nt_errstr(status)));
+			DBG_ERR("ldapsrv failed to bind to %s:%u - %s\n",
+				address, port, nt_errstr(status));
 			return status;
 		}
 	}
@@ -1159,8 +1225,8 @@ static NTSTATUS add_socket(struct task_server *task,
 					     ldap_service,
 					     task->process_context);
 		if (!NT_STATUS_IS_OK(status)) {
-			DEBUG(0,("ldapsrv failed to bind to %s:%u - %s\n",
-				 address, port, nt_errstr(status)));
+			DBG_ERR("ldapsrv failed to bind to %s:%u - %s\n",
+				address, port, nt_errstr(status));
 			return status;
 		}
 		if (tstream_tls_params_enabled(ldap_service->tls_params)) {
@@ -1174,8 +1240,8 @@ static NTSTATUS add_socket(struct task_server *task,
 						     ldap_service,
 						     task->process_context);
 			if (!NT_STATUS_IS_OK(status)) {
-				DEBUG(0,("ldapsrv failed to bind to %s:%u - %s\n",
-					 address, port, nt_errstr(status)));
+				DBG_ERR("ldapsrv failed to bind to %s:%u - %s\n",
+					address, port, nt_errstr(status));
 				return status;
 			}
 		}
@@ -1244,8 +1310,8 @@ static NTSTATUS ldapsrv_task_init(struct task_server *task)
 					   lpcfg_tls_priority(task->lp_ctx),
 					   &ldap_service->tls_params);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0,("ldapsrv failed tstream_tls_params_server - %s\n",
-			 nt_errstr(status)));
+		DBG_ERR("ldapsrv failed tstream_tls_params_server - %s\n",
+			nt_errstr(status));
 		goto failed;
 	}
 
@@ -1279,7 +1345,7 @@ static NTSTATUS ldapsrv_task_init(struct task_server *task)
 		size_t num_binds = 0;
 		wcard = iface_list_wildcard(task);
 		if (wcard == NULL) {
-			DEBUG(0,("No wildcard addresses available\n"));
+			DBG_ERR("No wildcard addresses available\n");
 			status = NT_STATUS_UNSUCCESSFUL;
 			goto failed;
 		}
@@ -1310,8 +1376,8 @@ static NTSTATUS ldapsrv_task_init(struct task_server *task)
 				     ldap_service, task->process_context);
 	talloc_free(ldapi_path);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0,("ldapsrv failed to bind to %s - %s\n",
-			 ldapi_path, nt_errstr(status)));
+		DBG_ERR("ldapsrv failed to bind to %s - %s\n",
+			ldapi_path, nt_errstr(status));
 	}
 
 #ifdef WITH_LDAPI_PRIV_SOCKET
@@ -1344,8 +1410,8 @@ static NTSTATUS ldapsrv_task_init(struct task_server *task)
 				     task->process_context);
 	talloc_free(ldapi_path);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0,("ldapsrv failed to bind to %s - %s\n",
-			 ldapi_path, nt_errstr(status)));
+		DBG_ERR("ldapsrv failed to bind to %s - %s\n",
+			ldapi_path, nt_errstr(status));
 	}
 
 #endif

@@ -152,7 +152,7 @@ static size_t interpret_long_filename(TALLOC_CTX *ctx,
 			finfo->mtime_ts = convert_time_t_to_timespec(
 				make_unix_date2(p+12, smb1cli_conn_server_time_zone(cli->conn)));
 			finfo->size = IVAL(p,16);
-			finfo->mode = SVAL(p,24);
+			finfo->attr = SVAL(p,24);
 			len = CVAL(p, 26);
 			p += 27;
 			if (recv_flags2 & FLAGS2_UNICODE_STRINGS) {
@@ -177,13 +177,13 @@ static size_t interpret_long_filename(TALLOC_CTX *ctx,
 			   important to cope with the differences
 			   between win2000 and win9x for this call
 			   (tridge) */
-			ret = clistr_pull_talloc(ctx,
-						base_ptr,
-						recv_flags2,
-						&finfo->name,
-						p,
-						len+2,
-						STR_TERMINATE);
+			ret = pull_string_talloc(ctx,
+						 base_ptr,
+						 recv_flags2,
+						 &finfo->name,
+						 p,
+						 len+2,
+						 STR_TERMINATE);
 			if (ret == (size_t)-1) {
 				return pdata_end - base;
 			}
@@ -211,20 +211,20 @@ static size_t interpret_long_filename(TALLOC_CTX *ctx,
 			finfo->mtime_ts = convert_time_t_to_timespec(
 				make_unix_date2(p+12, smb1cli_conn_server_time_zone(cli->conn)));
 			finfo->size = IVAL(p,16);
-			finfo->mode = SVAL(p,24);
+			finfo->attr = SVAL(p,24);
 			len = CVAL(p, 30);
 			p += 31;
 			/* check for unisys! */
 			if (p + len + 1 > pdata_end) {
 				return pdata_end - base;
 			}
-			ret = clistr_pull_talloc(ctx,
-						base_ptr,
-						recv_flags2,
-						&finfo->name,
-						p,
-					 	len,
-						STR_NOALIGN);
+			ret = pull_string_talloc(ctx,
+						 base_ptr,
+						 recv_flags2,
+						 &finfo->name,
+						 p,
+						 len,
+						 STR_NOALIGN);
 			if (ret == (size_t)-1) {
 				return pdata_end - base;
 			}
@@ -257,8 +257,7 @@ static size_t interpret_long_filename(TALLOC_CTX *ctx,
 			finfo->size = IVAL2_TO_SMB_BIG_UINT(p,0);
 			p += 8;
 			p += 8; /* alloc size */
-			/* NB. We need to enlarge finfo->mode to be 32-bits. */
-			finfo->mode = (uint16_t)IVAL(p,0);
+			finfo->attr = IVAL(p,0);
 			p += 4;
 			namelen = IVAL(p,0);
 			p += 4;
@@ -269,13 +268,13 @@ static size_t interpret_long_filename(TALLOC_CTX *ctx,
 				return pdata_end - base;
 			}
 			p += 2;
-			ret = clistr_pull_talloc(ctx,
-						base_ptr,
-						recv_flags2,
-						&finfo->short_name,
-						p,
-						slen,
-						STR_UNICODE);
+			ret = pull_string_talloc(ctx,
+						 base_ptr,
+						 recv_flags2,
+						 &finfo->short_name,
+						 p,
+						 slen,
+						 STR_UNICODE);
 			if (ret == (size_t)-1) {
 				return pdata_end - base;
 			}
@@ -283,13 +282,13 @@ static size_t interpret_long_filename(TALLOC_CTX *ctx,
 			if (p + namelen < p || p + namelen > pdata_end) {
 				return pdata_end - base;
 			}
-			ret = clistr_pull_talloc(ctx,
-						base_ptr,
-						recv_flags2,
-						&finfo->name,
-						p,
-				    		namelen,
-						0);
+			ret = pull_string_talloc(ctx,
+						 base_ptr,
+						 recv_flags2,
+						 &finfo->name,
+						 p,
+						 namelen,
+						 0);
 			if (ret == (size_t)-1) {
 				return pdata_end - base;
 			}
@@ -325,7 +324,7 @@ static bool interpret_short_filename(TALLOC_CTX *ctx,
 	size_t ret;
 	ZERO_STRUCTP(finfo);
 
-	finfo->mode = CVAL(p,21);
+	finfo->attr = CVAL(p,21);
 
 	/* We don't get birth time. */
 	finfo->btime_ts.tv_sec = 0;
@@ -336,13 +335,13 @@ static bool interpret_short_filename(TALLOC_CTX *ctx,
 	finfo->mtime_ts.tv_sec = finfo->atime_ts.tv_sec = finfo->ctime_ts.tv_sec;
 	finfo->mtime_ts.tv_nsec = finfo->atime_ts.tv_nsec = 0;
 	finfo->size = IVAL(p,26);
-	ret = clistr_pull_talloc(ctx,
-			NULL,
-			0,
-			&finfo->name,
-			p+30,
-			12,
-			STR_ASCII);
+	ret = pull_string_talloc(ctx,
+				 NULL,
+				 0,
+				 &finfo->name,
+				 p+30,
+				 12,
+				 STR_ASCII);
 	if (ret == (size_t)-1) {
 		return false;
 	}
@@ -362,7 +361,7 @@ struct cli_list_old_state {
 	uint16_t vwv[2];
 	char *mask;
 	int num_asked;
-	uint16_t attribute;
+	uint32_t attribute;
 	uint8_t search_status[23];
 	bool first;
 	bool done;
@@ -375,7 +374,7 @@ static struct tevent_req *cli_list_old_send(TALLOC_CTX *mem_ctx,
 					    struct tevent_context *ev,
 					    struct cli_state *cli,
 					    const char *mask,
-					    uint16_t attribute)
+					    uint32_t attribute)
 {
 	struct tevent_req *req, *subreq;
 	struct cli_list_old_state *state;
@@ -569,7 +568,7 @@ static NTSTATUS cli_list_old_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 }
 
 NTSTATUS cli_list_old(struct cli_state *cli, const char *mask,
-		      uint16_t attribute,
+		      uint32_t attribute,
 		      NTSTATUS (*fn)(const char *, struct file_info *,
 				 const char *, void *), void *state)
 {
@@ -618,7 +617,7 @@ struct cli_list_trans_state {
 	struct tevent_context *ev;
 	struct cli_state *cli;
 	char *mask;
-	uint16_t attribute;
+	uint32_t attribute;
 	uint16_t info_level;
 
 	int loop_count;
@@ -641,7 +640,7 @@ static struct tevent_req *cli_list_trans_send(TALLOC_CTX *mem_ctx,
 					      struct tevent_context *ev,
 					      struct cli_state *cli,
 					      const char *mask,
-					      uint16_t attribute,
+					      uint32_t attribute,
 					      uint16_t info_level)
 {
 	struct tevent_req *req, *subreq;
@@ -922,7 +921,7 @@ static NTSTATUS cli_list_trans_recv(struct tevent_req *req,
 }
 
 NTSTATUS cli_list_trans(struct cli_state *cli, const char *mask,
-			uint16_t attribute, int info_level,
+			uint32_t attribute, int info_level,
 			NTSTATUS (*fn)(const char *mnt, struct file_info *finfo,
 				   const char *mask, void *private_data),
 			void *private_data)
@@ -980,7 +979,7 @@ struct tevent_req *cli_list_send(TALLOC_CTX *mem_ctx,
 				 struct tevent_context *ev,
 				 struct cli_state *cli,
 				 const char *mask,
-				 uint16_t attribute,
+				 uint32_t attribute,
 				 uint16_t info_level)
 {
 	struct tevent_req *req, *subreq;
@@ -1038,7 +1037,7 @@ NTSTATUS cli_list_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 	return NT_STATUS_OK;
 }
 
-NTSTATUS cli_list(struct cli_state *cli, const char *mask, uint16_t attribute,
+NTSTATUS cli_list(struct cli_state *cli, const char *mask, uint32_t attribute,
 		  NTSTATUS (*fn)(const char *, struct file_info *, const char *,
 			     void *), void *state)
 {

@@ -301,25 +301,6 @@ static uint32_t cephwrap_fs_capabilities(struct vfs_handle_struct *handle,
 
 /* Directory operations */
 
-static DIR *cephwrap_opendir(struct vfs_handle_struct *handle,
-			     const struct smb_filename *smb_fname,
-			     const char *mask, uint32_t attr)
-{
-	int ret = 0;
-	struct ceph_dir_result *result;
-	DBG_DEBUG("[CEPH] opendir(%p, %s)\n", handle, smb_fname->base_name);
-
-	/* Returns NULL if it does not exist or there are problems ? */
-	ret = ceph_opendir(handle->data, smb_fname->base_name, &result);
-	if (ret < 0) {
-		result = NULL;
-		errno = -ret; /* We return result which is NULL in this case */
-	}
-
-	DBG_DEBUG("[CEPH] opendir(...) = %d\n", ret);
-	return (DIR *) result;
-}
-
 static DIR *cephwrap_fdopendir(struct vfs_handle_struct *handle,
 			       struct files_struct *fsp,
 			       const char *mask,
@@ -374,22 +355,27 @@ static int cephwrap_mkdirat(struct vfs_handle_struct *handle,
 			mode_t mode)
 {
 	int result;
-	char *parent = NULL;
-	const char *path = smb_fname->base_name;
+	struct smb_filename *parent = NULL;
+	bool ok;
 
-	DBG_DEBUG("[CEPH] mkdir(%p, %s)\n", handle, path);
+	DBG_DEBUG("[CEPH] mkdir(%p, %s)\n",
+		  handle, smb_fname_str_dbg(smb_fname));
 
 	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
 
-	if (lp_inherit_acls(SNUM(handle->conn))
-	    && parent_dirname(talloc_tos(), path, &parent, NULL)
-	    && directory_has_default_acl(handle->conn, parent)) {
-		mode = 0777;
+	if (lp_inherit_acls(SNUM(handle->conn))) {
+		ok = parent_smb_fname(talloc_tos(), smb_fname, &parent, NULL);
+		if (ok && directory_has_default_acl(handle->conn,
+				dirfsp,
+				parent))
+		{
+			mode = 0777;
+		}
 	}
 
 	TALLOC_FREE(parent);
 
-	result = ceph_mkdir(handle->data, path, mode);
+	result = ceph_mkdir(handle->data, smb_fname->base_name, mode);
 	return WRAP_RETURN(result);
 }
 
@@ -405,12 +391,21 @@ static int cephwrap_closedir(struct vfs_handle_struct *handle, DIR *dirp)
 
 /* File operations */
 
-static int cephwrap_open(struct vfs_handle_struct *handle,
-			struct smb_filename *smb_fname,
-			files_struct *fsp, int flags, mode_t mode)
+static int cephwrap_openat(struct vfs_handle_struct *handle,
+			   const struct files_struct *dirfsp,
+			   const struct smb_filename *smb_fname,
+			   files_struct *fsp,
+			   int flags,
+			   mode_t mode)
 {
 	int result = -ENOENT;
-	DBG_DEBUG("[CEPH] open(%p, %s, %p, %d, %d)\n", handle,
+
+	/*
+	 * cephfs API doesn't have ceph_openat(), so for now assert this.
+	 */
+	SMB_ASSERT(dirfsp->fh->fd == AT_FDCWD);
+
+	DBG_DEBUG("[CEPH] openat(%p, %s, %p, %d, %d)\n", handle,
 		  smb_fname_str_dbg(smb_fname), fsp, flags, mode);
 
 	if (smb_fname->stream_name) {
@@ -891,6 +886,7 @@ static struct smb_filename *cephwrap_getwd(struct vfs_handle_struct *handle,
 				cwd,
 				NULL,
 				NULL,
+				0,
 				0);
 }
 
@@ -1027,19 +1023,19 @@ static int cephwrap_linux_setlease(struct vfs_handle_struct *handle, files_struc
 }
 
 static int cephwrap_symlinkat(struct vfs_handle_struct *handle,
-		const char *link_target,
+		const struct smb_filename *link_target,
 		struct files_struct *dirfsp,
 		const struct smb_filename *new_smb_fname)
 {
 	int result = -1;
 	DBG_DEBUG("[CEPH] symlink(%p, %s, %s)\n", handle,
-			link_target,
+			link_target->base_name,
 			new_smb_fname->base_name);
 
 	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
 
 	result = ceph_symlink(handle->data,
-			link_target,
+			link_target->base_name,
 			new_smb_fname->base_name);
 	DBG_DEBUG("[CEPH] symlink(...) = %d\n", result);
 	WRAP_RETURN(result);
@@ -1136,6 +1132,7 @@ static struct smb_filename *cephwrap_realpath(struct vfs_handle_struct *handle,
 				result,
 				NULL,
 				NULL,
+				0,
 				0);
 	SAFE_FREE(result);
 	return result_fname;
@@ -1150,7 +1147,7 @@ static int cephwrap_chflags(struct vfs_handle_struct *handle,
 }
 
 static int cephwrap_get_real_filename(struct vfs_handle_struct *handle,
-				     const char *path,
+				     const struct smb_filename *path,
 				     const char *name,
 				     TALLOC_CTX *mem_ctx,
 				     char **found_name)
@@ -1343,7 +1340,7 @@ static NTSTATUS cephwrap_create_dfs_pathat(struct vfs_handle_struct *handle,
 static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 				TALLOC_CTX *mem_ctx,
 				struct files_struct *dirfsp,
-				const struct smb_filename *smb_fname,
+				struct smb_filename *smb_fname,
 				struct referral **ppreflist,
 				size_t *preferral_count)
 {
@@ -1357,8 +1354,15 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 #else
 	char link_target_buf[7];
 #endif
+	struct ceph_statx stx;
+	int ret;
 
 	SMB_ASSERT(dirfsp == dirfsp->conn->cwd_fsp);
+
+	if (is_named_stream(smb_fname)) {
+		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
+		goto err;
+	}
 
 	if (ppreflist == NULL && preferral_count == NULL) {
 		/*
@@ -1373,6 +1377,16 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 		if (!link_target) {
 			goto err;
 		}
+	}
+
+	ret = ceph_statx(handle->data,
+			 smb_fname->base_name,
+			 &stx,
+			 SAMBA_STATX_ATTR_MASK,
+			 AT_SYMLINK_NOFOLLOW);
+	if (ret < 0) {
+		status = map_nt_error_from_unix(-ret);
+		goto err;
 	}
 
         referral_len = ceph_readlink(handle->data,
@@ -1407,6 +1421,7 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
 
         if (ppreflist == NULL && preferral_count == NULL) {
                 /* Early return for checking if this is a DFS link. */
+		init_stat_ex_from_ceph_statx(&smb_fname->st, &stx);
                 return NT_STATUS_OK;
         }
 
@@ -1417,6 +1432,7 @@ static NTSTATUS cephwrap_read_dfs_pathat(struct vfs_handle_struct *handle,
                         preferral_count);
 
         if (ok) {
+		init_stat_ex_from_ceph_statx(&smb_fname->st, &stx);
                 status = NT_STATUS_OK;
         } else {
                 status = NT_STATUS_NO_MEMORY;
@@ -1443,7 +1459,6 @@ static struct vfs_fn_pointers ceph_fns = {
 
 	/* Directory operations */
 
-	.opendir_fn = cephwrap_opendir,
 	.fdopendir_fn = cephwrap_fdopendir,
 	.readdir_fn = cephwrap_readdir,
 	.seekdir_fn = cephwrap_seekdir,
@@ -1456,7 +1471,7 @@ static struct vfs_fn_pointers ceph_fns = {
 
 	.create_dfs_pathat_fn = cephwrap_create_dfs_pathat,
 	.read_dfs_pathat_fn = cephwrap_read_dfs_pathat,
-	.open_fn = cephwrap_open,
+	.openat_fn = cephwrap_openat,
 	.close_fn = cephwrap_close,
 	.pread_fn = cephwrap_pread,
 	.pread_send_fn = cephwrap_pread_send,

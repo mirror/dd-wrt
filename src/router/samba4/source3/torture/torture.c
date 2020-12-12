@@ -148,10 +148,6 @@ static struct cli_state *open_nbt_connection(void)
 		flags |= CLI_FULL_CONNECTION_LEVEL_II_OPLOCKS;
 	}
 
-	if (use_kerberos) {
-		flags |= CLI_FULL_CONNECTION_USE_KERBEROS;
-	}
-
 	if (force_dos_errors) {
 		flags |= CLI_FULL_CONNECTION_FORCE_DOS_ERRORS;
 	}
@@ -1013,21 +1009,6 @@ static bool run_readwritelarge_internal(void)
 		       (unsigned long)fsize);
 		correct = False;
 	}
-
-#if 0
-	/* ToDo - set allocation. JRA */
-	if(!cli_set_allocation_size(cli1, fnum1, 0)) {
-		printf("set allocation size to zero failed (%s)\n", cli_errstr(&cli1));
-		return False;
-	}
-	if (!cli_qfileinfo_basic(cli1, fnum1, NULL, &fsize, NULL, NULL, NULL,
-				 NULL, NULL)) {
-		printf("qfileinfo failed (%s)\n", cli_errstr(cli1));
-		correct = False;
-	}
-	if (fsize != 0)
-		printf("readwritelarge test 3 (truncate test) succeeded (size = %x)\n", fsize);
-#endif
 
 	status = cli_close(cli1, fnum1);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -3994,9 +3975,9 @@ static bool run_browsetest(int dummy)
 
 static bool check_attributes(struct cli_state *cli,
 				const char *fname,
-				uint16_t expected_attrs)
+				uint32_t expected_attrs)
 {
-	uint16_t attrs = 0;
+	uint32_t attrs = 0;
 	NTSTATUS status = cli_getatr(cli,
 				fname,
 				&attrs,
@@ -4034,6 +4015,13 @@ static bool run_attrtest(int dummy)
 		return False;
 	}
 
+	/* Ensure we can't unlink with out-of-range (unknown) attribute. */
+	status = cli_unlink(cli, fname, 0x20000);
+	if (!NT_STATUS_EQUAL(status, NT_STATUS_INVALID_PARAMETER)) {
+		correct = false;
+		goto out;
+	}
+
 	cli_unlink(cli, fname, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
 	cli_openx(cli, fname, 
 			O_RDWR | O_CREAT | O_TRUNC, DENY_NONE, &fnum);
@@ -4053,6 +4041,13 @@ static bool run_attrtest(int dummy)
 	}
 
 	t2 = t-60*60*24; /* 1 day ago */
+
+	/* Ensure we can't set with out-of-range (unknown) attribute. */
+	status = cli_setatr(cli, fname, 0x20000, t2);
+	if (!NT_STATUS_EQUAL(status, NT_STATUS_INVALID_PARAMETER)) {
+		correct = false;
+		goto out;
+	}
 
 	status = cli_setatr(cli, fname, 0, t2);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -4075,7 +4070,7 @@ static bool run_attrtest(int dummy)
 
 	cli_unlink(cli, fname, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
 
-	/* Check cli_setpathinfo_basic() */
+	/* Check cli_setpathinfo_ext() */
 	/* Re-create the file. */
 	status = cli_openx(cli, fname,
 			O_RDWR | O_CREAT | O_TRUNC, DENY_NONE, &fnum);
@@ -4086,17 +4081,18 @@ static bool run_attrtest(int dummy)
 	}
 	cli_close(cli, fnum);
 
-	status = cli_setpathinfo_basic(cli,
-					fname,
-					0, /* create */
-					0, /* access */
-					0, /* write */
-					0, /* change */
-					FILE_ATTRIBUTE_SYSTEM |
-					FILE_ATTRIBUTE_HIDDEN |
-					FILE_ATTRIBUTE_READONLY);
+	status = cli_setpathinfo_ext(
+		cli,
+		fname,
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* create */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* access */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* write */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* change */
+		FILE_ATTRIBUTE_SYSTEM |
+		FILE_ATTRIBUTE_HIDDEN |
+		FILE_ATTRIBUTE_READONLY);
 	if (!NT_STATUS_IS_OK(status)) {
-		printf("cli_setpathinfo_basic failed with %s\n",
+		printf("cli_setpathinfo_ext failed with %s\n",
 			nt_errstr(status));
 		correct = false;
 	}
@@ -4112,15 +4108,16 @@ static bool run_attrtest(int dummy)
 	}
 
 	/* Setting to FILE_ATTRIBUTE_NORMAL should be ignored. */
-	status = cli_setpathinfo_basic(cli,
-					fname,
-					0, /* create */
-					0, /* access */
-					0, /* write */
-					0, /* change */
-					FILE_ATTRIBUTE_NORMAL);
+	status = cli_setpathinfo_ext(
+		cli,
+		fname,
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* create */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* access */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* write */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* change */
+		FILE_ATTRIBUTE_NORMAL);
 	if (!NT_STATUS_IS_OK(status)) {
-		printf("cli_setpathinfo_basic failed with %s\n",
+		printf("cli_setpathinfo_ext failed with %s\n",
 			nt_errstr(status));
 		correct = false;
 	}
@@ -4136,15 +4133,16 @@ static bool run_attrtest(int dummy)
 	}
 
 	/* Setting to (uint16_t)-1 should also be ignored. */
-	status = cli_setpathinfo_basic(cli,
-					fname,
-					0, /* create */
-					0, /* access */
-					0, /* write */
-					0, /* change */
-					(uint16_t)-1);
+	status = cli_setpathinfo_ext(
+		cli,
+		fname,
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* create */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* access */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* write */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* change */
+		(uint32_t)-1);
 	if (!NT_STATUS_IS_OK(status)) {
-		printf("cli_setpathinfo_basic failed with %s\n",
+		printf("cli_setpathinfo_ext failed with %s\n",
 			nt_errstr(status));
 		correct = false;
 	}
@@ -4160,15 +4158,16 @@ static bool run_attrtest(int dummy)
 	}
 
 	/* Setting to 0 should clear them all. */
-	status = cli_setpathinfo_basic(cli,
-					fname,
-					0, /* create */
-					0, /* access */
-					0, /* write */
-					0, /* change */
-					0);
+	status = cli_setpathinfo_ext(
+		cli,
+		fname,
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* create */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* access */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* write */
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT }, /* change */
+		0);
 	if (!NT_STATUS_IS_OK(status)) {
-		printf("cli_setpathinfo_basic failed with %s\n",
+		printf("cli_setpathinfo_ext failed with %s\n",
 			nt_errstr(status));
 		correct = false;
 	}
@@ -6263,7 +6262,7 @@ static bool run_rename(int dummy)
 	const char *fname1 = "\\test1.txt";
 	bool correct = True;
 	uint16_t fnum1;
-	uint16_t attr;
+	uint32_t attr;
 	NTSTATUS status;
 
 	printf("starting rename test\n");
@@ -6337,27 +6336,6 @@ static bool run_rename(int dummy)
 	}
 
 
-#if 0
-  {
-	uint16_t fnum2;
-
-	if (!NT_STATUS_IS_OK(cli_ntcreate(cli1, fname, 0, DELETE_ACCESS, FILE_ATTRIBUTE_NORMAL,
-				   FILE_SHARE_NONE, FILE_OVERWRITE_IF, 0, 0, &fnum2, NULL))) {
-		printf("Fourth open failed - %s\n", cli_errstr(cli1));
-		return False;
-	}
-	if (!NT_STATUS_IS_OK(cli_nt_delete_on_close(cli1, fnum2, true))) {
-		printf("[8] setting delete_on_close on file failed !\n");
-		return False;
-	}
-
-	if (!NT_STATUS_IS_OK(cli_close(cli1, fnum2))) {
-		printf("close - 4 failed (%s)\n", cli_errstr(cli1));
-		return False;
-	}
-  }
-#endif
-
 	status = cli_rename(cli1, fname, fname1, false);
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("Third rename failed (SHARE_NONE) - this should have succeeded - %s\n", nt_errstr(status));
@@ -6421,21 +6399,6 @@ static bool run_rename(int dummy)
 	} else {
 		printf("Fifth rename succeeded (SHARE_READ | SHARE_WRITE | SHARE_DELETE) (this is correct) - %s\n", nt_errstr(status));
 	}
-
-        /*
-         * Now check if the first name still exists ...
-         */
-
-        /* if (!NT_STATUS_OP(cli_ntcreate(cli1, fname, 0, GENERIC_READ_ACCESS, FILE_ATTRIBUTE_NORMAL,
-				   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-				   FILE_OVERWRITE_IF, 0, 0, &fnum2, NULL))) {
-          printf("Opening original file after rename of open file fails: %s\n",
-              cli_errstr(cli1));
-        }
-        else {
-          printf("Opening original file after rename of open file works ...\n");
-          (void)cli_close(cli1, fnum2);
-          } */
 
         /*--*/
 	status = cli_close(cli1, fnum1);
@@ -7031,6 +6994,100 @@ static bool run_owner_rights(int dummy)
 	cli_unlink(cli, fname,
 		FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
 
+	TALLOC_FREE(frame);
+	return true;
+
+  fail:
+
+	if (cli) {
+		if (fnum != (uint16_t)-1) {
+			cli_close(cli, fnum);
+		}
+		cli_unlink(cli, fname,
+			FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
+		torture_close_connection(cli);
+	}
+
+	TALLOC_FREE(frame);
+	return false;
+}
+
+/*
+ * Test SMB1-specific open with SEC_FLAG_SYSTEM_SECURITY.
+ * Note this test only works with a user with SeSecurityPrivilege set.
+ *
+ * NB. This is also tested in samba3.base.createx_access
+ * but this makes it very explicit what we're looking for.
+ */
+static bool run_smb1_system_security(int dummy)
+{
+	static struct cli_state *cli = NULL;
+	const char *fname = "system_security.txt";
+	uint16_t fnum = (uint16_t)-1;
+	NTSTATUS status;
+	TALLOC_CTX *frame = NULL;
+
+	frame = talloc_stackframe();
+	printf("starting smb1 system security test\n");
+
+	/* SMB1 connection - torture_open_connection() forces this. */
+	if (!torture_open_connection(&cli, 0)) {
+		goto fail;
+	}
+
+	smbXcli_conn_set_sockopt(cli->conn, sockops);
+
+	/* Start with a clean slate. */
+	cli_unlink(cli, fname, FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
+
+	/* Create the test file. */
+	status = cli_ntcreate(cli,
+				fname,
+				0,
+				GENERIC_ALL_ACCESS,
+				FILE_ATTRIBUTE_NORMAL,
+				FILE_SHARE_READ|FILE_SHARE_WRITE|
+					FILE_SHARE_DELETE,
+				FILE_CREATE,
+				0,
+				0,
+				&fnum,
+				NULL);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("Create of %s - %s\n", fname, nt_errstr(status));
+		goto fail;
+	}
+
+	status = cli_close(cli, fnum);
+
+	/* Open with SEC_FLAG_SYSTEM_SECURITY only. */
+	/*
+	 * On SMB1 this succeeds - SMB2 it fails,
+	 * see the SMB2-SACL test.
+	 */
+	status = cli_ntcreate(cli,
+				fname,
+				0,
+				SEC_FLAG_SYSTEM_SECURITY,
+				FILE_ATTRIBUTE_NORMAL,
+				FILE_SHARE_READ|FILE_SHARE_WRITE|
+					FILE_SHARE_DELETE,
+				FILE_OPEN,
+				0,
+				0,
+				&fnum,
+				NULL);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("Open of %s - %s\n", fname, nt_errstr(status));
+		goto fail;
+	}
+
+	status = cli_close(cli, fnum);
+
+	cli_unlink(cli, fname,
+		FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
+
+	torture_close_connection(cli);
 	TALLOC_FREE(frame);
 	return true;
 
@@ -9496,7 +9553,7 @@ static bool run_openattrtest(int dummy)
 	const char *fname = "\\openattr.file";
 	uint16_t fnum1;
 	bool correct = True;
-	uint16_t attr;
+	uint32_t attr;
 	unsigned int i, j, k, l;
 	NTSTATUS status;
 
@@ -9686,7 +9743,7 @@ static NTSTATUS del_fn(const char *mnt, struct file_info *finfo, const char *mas
 	if (strcmp(finfo->name, ".") == 0 || strcmp(finfo->name, "..") == 0)
 		return NT_STATUS_OK;
 
-	if (finfo->mode & FILE_ATTRIBUTE_DIRECTORY) {
+	if (finfo->attr & FILE_ATTRIBUTE_DIRECTORY) {
 		if (!NT_STATUS_IS_OK(cli_rmdir(pcli, fname)))
 			printf("del_fn: failed to rmdir %s\n,", fname );
 	} else {
@@ -10808,7 +10865,7 @@ static bool run_mangle1(int dummy)
 	NTSTATUS status;
 	time_t change_time, access_time, write_time;
 	off_t size;
-	uint16_t mode;
+	uint32_t attr;
 
 	printf("starting mangle1 test\n");
 	if (!torture_open_connection(&cli, 0)) {
@@ -10843,7 +10900,7 @@ static bool run_mangle1(int dummy)
 	cli_close(cli, fnum);
 
 	status = cli_qpathinfo1(cli, alt_name, &change_time, &access_time,
-				&write_time, &size, &mode);
+				&write_time, &size, &attr);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("cli_qpathinfo1(%s) failed: %s\n", alt_name,
 			 nt_errstr(status));
@@ -11410,10 +11467,10 @@ static NTSTATUS msdfs_attribute_list_fn(const char *mnt,
 				  const char *mask,
 				  void *private_data)
 {
-	uint16_t *p_mode = (uint16_t *)private_data;
+	uint32_t *p_attr = (uint32_t *)private_data;
 
 	if (strequal(finfo->name, test_filename)) {
-		*p_mode = finfo->mode;
+		*p_attr = finfo->attr;
 	}
 
 	return NT_STATUS_OK;
@@ -11423,7 +11480,7 @@ static bool run_msdfs_attribute(int dummy)
 {
 	static struct cli_state *cli;
 	bool correct = false;
-	uint16_t mode = 0;
+	uint32_t attr = 0;
 	NTSTATUS status;
 
 	printf("Starting MSDFS-ATTRIBUTE test\n");
@@ -11449,26 +11506,26 @@ static bool run_msdfs_attribute(int dummy)
 			"*",
 			FILE_ATTRIBUTE_DIRECTORY,
 			msdfs_attribute_list_fn,
-			&mode);
+			&attr);
 
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("cli_list failed with %s\n",
 			nt_errstr(status));
 		goto out;
 	}
-	if ((mode & FILE_ATTRIBUTE_REPARSE_POINT) == 0) {
+	if ((attr & FILE_ATTRIBUTE_REPARSE_POINT) == 0) {
 		printf("file %s should have "
 			"FILE_ATTRIBUTE_REPARSE_POINT set. attr = 0x%x\n",
 			test_filename,
-			(unsigned int)mode);
+			(unsigned int)attr);
 		goto out;
 	}
 
-	if ((mode & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+	if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 		printf("file %s should have "
 			"FILE_ATTRIBUTE_DIRECTORY set. attr = 0x%x\n",
 			test_filename,
-			(unsigned int)mode);
+			(unsigned int)attr);
 		goto out;
 	}
 
@@ -11762,7 +11819,7 @@ static NTSTATUS shortname_del_fn(const char *mnt, struct file_info *finfo,
 	if (strcmp(finfo->name, ".") == 0 || strcmp(finfo->name, "..") == 0)
 		return NT_STATUS_OK;
 
-	if (finfo->mode & FILE_ATTRIBUTE_DIRECTORY) {
+	if (finfo->attr & FILE_ATTRIBUTE_DIRECTORY) {
 		status = cli_rmdir(pcli, fname);
 		if (!NT_STATUS_IS_OK(status)) {
 			printf("del_fn: failed to rmdir %s\n,", fname );
@@ -12287,7 +12344,8 @@ static bool run_streamerror(int dummy)
 	NTSTATUS status;
 	time_t change_time, access_time, write_time;
 	off_t size;
-	uint16_t mode, fnum;
+	uint16_t fnum;
+	uint32_t attr;
 	bool ret = true;
 
 	if (!torture_open_connection(&cli, 0)) {
@@ -12304,7 +12362,7 @@ static bool run_streamerror(int dummy)
 	}
 
 	status = cli_qpathinfo1(cli, streamname, &change_time, &access_time,
-				&write_time, &size, &mode);
+				&write_time, &size, &attr);
 	if (!NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
 		printf("pathinfo returned %s, expected "
 		       "NT_STATUS_OBJECT_NAME_NOT_FOUND\n",
@@ -12822,6 +12880,54 @@ static bool run_local_gencache(int dummy)
 	return True;
 }
 
+static bool rbt_testflags(struct db_context *db, const char *key,
+			  const char *value)
+{
+	bool ret = false;
+	NTSTATUS status;
+	struct db_record *rec;
+
+	rec = dbwrap_fetch_locked(db, db, string_tdb_data(key));
+	if (rec == NULL) {
+		d_fprintf(stderr, "fetch_locked failed\n");
+		goto done;
+	}
+
+	status = dbwrap_record_store(rec, string_tdb_data(value), TDB_MODIFY);
+	if (!NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
+		d_fprintf(stderr, "store TDB_MODIFY unexpected status: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	status = dbwrap_record_store(rec, string_tdb_data("overwriteme"),
+				     TDB_INSERT);
+	if (!NT_STATUS_IS_OK(status)) {
+		d_fprintf(stderr, "store TDB_INSERT failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	status = dbwrap_record_store(rec, string_tdb_data(value), TDB_INSERT);
+	if (!NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_COLLISION)) {
+		d_fprintf(stderr, "store TDB_INSERT unexpected status: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	status = dbwrap_record_store(rec, string_tdb_data(value), TDB_MODIFY);
+	if (!NT_STATUS_IS_OK(status)) {
+		d_fprintf(stderr, "store TDB_MODIFY failed: %s\n",
+			  nt_errstr(status));
+		goto done;
+	}
+
+	ret = true;
+done:
+	TALLOC_FREE(rec);
+	return ret;
+}
+
 static bool rbt_testval(struct db_context *db, const char *key,
 			const char *value)
 {
@@ -12893,37 +12999,26 @@ static bool run_local_rbtree(int dummy)
 		return false;
 	}
 
-	for (i=0; i<1000; i++) {
-		char *key, *value;
+	if (!rbt_testflags(db, "firstkey", "firstval")) {
+		goto done;
+	}
 
-		if (asprintf(&key, "key%ld", random()) == -1) {
-			goto done;
-		}
-		if (asprintf(&value, "value%ld", random()) == -1) {
-			SAFE_FREE(key);
-			goto done;
-		}
+	for (i = 0; i < 999; i++) {
+		char key[sizeof("key-9223372036854775807")];
+		char value[sizeof("value-9223372036854775807")];
 
-		if (!rbt_testval(db, key, value)) {
-			SAFE_FREE(key);
-			SAFE_FREE(value);
-			goto done;
-		}
-
-		SAFE_FREE(value);
-		if (asprintf(&value, "value%ld", random()) == -1) {
-			SAFE_FREE(key);
-			goto done;
-		}
+		snprintf(key, sizeof(key), "key%ld", random());
+		snprintf(value, sizeof(value) ,"value%ld", random());
 
 		if (!rbt_testval(db, key, value)) {
-			SAFE_FREE(key);
-			SAFE_FREE(value);
 			goto done;
 		}
 
-		SAFE_FREE(key);
-		SAFE_FREE(value);
+		snprintf(value, sizeof(value) ,"value%ld", random());
+
+		if (!rbt_testval(db, key, value)) {
+			goto done;
+		}
 	}
 
 	ret = true;
@@ -14043,6 +14138,25 @@ static bool run_local_canonicalize_path(int dummy)
 			".././././",
 			".././././../../../boo",
 			"./..",
+			"/",
+			"/../../",
+			"/foo/../",
+			"/./././",
+			"/./././.",
+			"/.../././.",
+			"/./././.foo",
+			"/./././.foo.",
+			"/./././foo.",
+			"/foo/bar/..",
+			"/foo/bar/../baz/",
+			"////////////////",
+			"/////////./././././.",
+			"/./.././../.boo/../baz",
+			"/a/component/path",
+			"/a/component/path/",
+			"/a/component/path/..",
+			"/a/component/../path/",
+			"///a/./././///component/../////path/",
 			NULL
 			};
 	const char *dst[] = {
@@ -14054,6 +14168,25 @@ static bool run_local_canonicalize_path(int dummy)
 			"/",
 			"/boo",
 			"/",
+			"/",
+			"/",
+			"/",
+			"/",
+			"/",
+			"/...",
+			"/.foo",
+			"/.foo.",
+			"/foo.",
+			"/foo",
+			"/foo/baz",
+			"/",
+			"/",
+			"/baz",
+			"/a/component/path",
+			"/a/component/path",
+			"/a/component",
+			"/a/path",
+			"/a/path",
 			NULL
 			};
 	unsigned int i;
@@ -14711,6 +14844,18 @@ static struct {
 		.fn    = run_smb2_path_slash,
 	},
 	{
+		.name  = "SMB1-SYSTEM-SECURITY",
+		.fn    = run_smb1_system_security,
+	},
+	{
+		.name  = "SMB2-SACL",
+		.fn    = run_smb2_sacl,
+	},
+	{
+		.name  = "SMB2-QUOTA1",
+		.fn    = run_smb2_quota1,
+	},
+	{
 		.name  = "CLEANUP1",
 		.fn    = run_cleanup1,
 	},
@@ -14863,8 +15008,8 @@ static struct {
 		.fn    = run_local_tdb_writer,
 	},
 	{
-		.name  = "LOCAL-DBWRAP-CTDB",
-		.fn    = run_local_dbwrap_ctdb,
+		.name  = "LOCAL-DBWRAP-CTDB1",
+		.fn    = run_local_dbwrap_ctdb1,
 	},
 	{
 		.name  = "LOCAL-BENCH-PTHREADPOOL",
@@ -14907,6 +15052,10 @@ static struct {
 		.fn    = run_g_lock7,
 	},
 	{
+		.name  = "LOCAL-G-LOCK8",
+		.fn    = run_g_lock8,
+	},
+	{
 		.name  = "LOCAL-G-LOCK-PING-PONG",
 		.fn    = run_g_lock_ping_pong,
 	},
@@ -14929,6 +15078,16 @@ static struct {
 	{
 		.name  = "hide-new-files-timeout",
 		.fn    = run_hidenewfiles,
+	},
+#ifdef CLUSTER_SUPPORT
+	{
+		.name  = "ctdbd-conn1",
+		.fn    = run_ctdbd_conn1,
+	},
+#endif
+	{
+		.name  = "readdir-timestamp",
+		.fn    = run_readdir_timestamp,
 	},
 	{
 		.name = NULL,

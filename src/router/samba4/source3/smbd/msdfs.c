@@ -254,6 +254,7 @@ static NTSTATUS create_conn_struct_as_root(TALLOC_CTX *ctx,
 	const char *vfs_user;
 	struct smbd_server_connection *sconn;
 	const char *servicename = lp_const_servicename(snum);
+	bool ok;
 
 	sconn = talloc_zero(ctx, struct smbd_server_connection);
 	if (sconn == NULL) {
@@ -357,11 +358,11 @@ static NTSTATUS create_conn_struct_as_root(TALLOC_CTX *ctx,
 		return NT_STATUS_UNSUCCESSFUL;
 	}
 
-	talloc_free(conn->origpath);
-	conn->origpath = talloc_strdup(conn, conn->connectpath);
-	if (conn->origpath == NULL) {
+	ok = canonicalize_connect_path(conn);
+	if (!ok) {
+		DBG_ERR("Failed to canonicalize sharepath\n");
 		conn_free(conn);
-		return NT_STATUS_NO_MEMORY;
+		return NT_STATUS_ACCESS_DENIED;
 	}
 
 	conn->fs_capabilities = SMB_VFS_FS_CAPABILITIES(conn, &conn->ts_res);
@@ -633,13 +634,6 @@ bool is_msdfs_link(connection_struct *conn,
 					smb_fname,
 					NULL,
 					NULL);
-	if (NT_STATUS_IS_OK(status)) {
-		int ret;
-		ret = SMB_VFS_LSTAT(conn, smb_fname);
-		if (ret < 0) {
-			status = map_nt_error_from_unix(errno);
-		}
-	}
 	return (NT_STATUS_IS_OK(status));
 }
 
@@ -685,7 +679,7 @@ static NTSTATUS dfs_path_lookup(TALLOC_CTX *ctx,
 	 * unix_convert later in the codepath.
 	 */
 
-	status = unix_convert(ctx, conn, pdp->reqpath, &smb_fname,
+	status = unix_convert(ctx, conn, pdp->reqpath, 0, &smb_fname,
 			      ucf_flags);
 
 	if (!NT_STATUS_IS_OK(status)) {
@@ -1417,6 +1411,7 @@ bool create_msdfs_link(const struct junction_map *jucn,
 				path,
 				NULL,
 				NULL,
+				0,
 				0);
 	if (smb_fname == NULL) {
 		goto out;
@@ -1490,6 +1485,7 @@ bool remove_msdfs_link(const struct junction_map *jucn,
 					path,
 					NULL,
 					NULL,
+					0,
 					0);
 	if (smb_fname == NULL) {
 		TALLOC_FREE(frame);
@@ -1521,7 +1517,6 @@ static size_t count_dfs_links(TALLOC_CTX *ctx,
 	const struct loadparm_substitution *lp_sub =
 		loadparm_s3_global_substitution();
 	size_t cnt = 0;
-	DIR *dirp = NULL;
 	const char *dname = NULL;
 	char *talloced = NULL;
 	const char *connect_path = lp_path(frame, lp_sub, snum);
@@ -1530,6 +1525,8 @@ static size_t count_dfs_links(TALLOC_CTX *ctx,
 	connection_struct *conn = NULL;
 	NTSTATUS status;
 	struct smb_filename *smb_fname = NULL;
+	struct smb_Dir *dir_hnd = NULL;
+	long offset = 0;
 
 	if(*connect_path == '\0') {
 		TALLOC_FREE(frame);
@@ -1565,24 +1562,27 @@ static size_t count_dfs_links(TALLOC_CTX *ctx,
 					".",
 					NULL,
 					NULL,
+					0,
 					0);
 	if (smb_fname == NULL) {
 		goto out;
 	}
 
 	/* Now enumerate all dfs links */
-	dirp = SMB_VFS_OPENDIR(conn, smb_fname, NULL, 0);
-	if(!dirp) {
+	dir_hnd = OpenDir(frame, conn, smb_fname, NULL, 0);
+	if (dir_hnd == NULL) {
 		goto out;
 	}
 
-	while ((dname = vfs_readdirname(conn, dirp, NULL, &talloced))
-	       != NULL) {
+        while ((dname = ReadDirName(dir_hnd, &offset, NULL, &talloced))
+	       != NULL)
+	{
 		struct smb_filename *smb_dname =
 			synthetic_smb_fname(frame,
 					dname,
 					NULL,
 					NULL,
+					0,
 					0);
 		if (smb_dname == NULL) {
 			goto out;
@@ -1597,8 +1597,6 @@ static size_t count_dfs_links(TALLOC_CTX *ctx,
 		TALLOC_FREE(talloced);
 		TALLOC_FREE(smb_dname);
 	}
-
-	SMB_VFS_CLOSEDIR(conn,dirp);
 
 out:
 	TALLOC_FREE(frame);
@@ -1618,7 +1616,6 @@ static int form_junctions(TALLOC_CTX *ctx,
 	const struct loadparm_substitution *lp_sub =
 		loadparm_s3_global_substitution();
 	size_t cnt = 0;
-	DIR *dirp = NULL;
 	const char *dname = NULL;
 	char *talloced = NULL;
 	const char *connect_path = lp_path(frame, lp_sub, snum);
@@ -1628,6 +1625,8 @@ static int form_junctions(TALLOC_CTX *ctx,
 	connection_struct *conn = NULL;
 	struct referral *ref = NULL;
 	struct smb_filename *smb_fname = NULL;
+	struct smb_Dir *dir_hnd = NULL;
+	long offset = 0;
 	NTSTATUS status;
 
 	if (jn_remain == 0) {
@@ -1700,19 +1699,21 @@ static int form_junctions(TALLOC_CTX *ctx,
 					".",
 					NULL,
 					NULL,
+					0,
 					0);
 	if (smb_fname == NULL) {
 		goto out;
 	}
 
 	/* Now enumerate all dfs links */
-	dirp = SMB_VFS_OPENDIR(conn, smb_fname, NULL, 0);
-	if(!dirp) {
+	dir_hnd = OpenDir(frame, conn, smb_fname, NULL, 0);
+	if (dir_hnd == NULL) {
 		goto out;
 	}
 
-	while ((dname = vfs_readdirname(conn, dirp, NULL, &talloced))
-	       != NULL) {
+        while ((dname = ReadDirName(dir_hnd, &offset, NULL, &talloced))
+	       != NULL)
+	{
 		struct smb_filename *smb_dname = NULL;
 
 		if (cnt >= jn_remain) {
@@ -1725,6 +1726,7 @@ static int form_junctions(TALLOC_CTX *ctx,
 				dname,
 				NULL,
 				NULL,
+				0,
 				0);
 		if (smb_dname == NULL) {
 			TALLOC_FREE(talloced);
@@ -1754,11 +1756,6 @@ static int form_junctions(TALLOC_CTX *ctx,
 	}
 
 out:
-
-	if (dirp) {
-		SMB_VFS_CLOSEDIR(conn,dirp);
-	}
-
 	TALLOC_FREE(frame);
 	return cnt;
 }

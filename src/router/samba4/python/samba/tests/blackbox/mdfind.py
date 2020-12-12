@@ -67,7 +67,7 @@ class MdfindBlackboxTests(BlackboxTestCase):
     def setUp(self):
         super(MdfindBlackboxTests, self).setUp()
 
-        self.server = HTTPServer(('127.0.0.35', 8080),
+        self.server = HTTPServer(('10.53.57.35', 8080),
                                  MdssvcHTTPRequestHandler,
                                  bind_and_activate=False)
 
@@ -127,4 +127,4 @@ class MdfindBlackboxTests(BlackboxTestCase):
 
         actual = output.decode('utf-8').splitlines()
         expected = ["%s/%s" % (self.sharepath, file) for file in testfiles]
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)

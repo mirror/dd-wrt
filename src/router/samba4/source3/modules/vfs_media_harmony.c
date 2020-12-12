@@ -755,62 +755,6 @@ err:
 	return status;
 }
 
-/* Success: return a mh_dirinfo_struct cast as a DIR
- * Failure: set errno, return NULL
- */
-static DIR *mh_opendir(vfs_handle_struct *handle,
-		const struct smb_filename *smb_fname,
-		const char *mask,
-		uint32_t attr)
-{
-	struct mh_dirinfo_struct *dirInfo;
-
-	DEBUG(MH_INFO_DEBUG, ("Entering with fname '%s'\n",
-		smb_fname->base_name));
-
-	if (alloc_set_client_dirinfo(handle, smb_fname->base_name, &dirInfo))
-	{
-		goto err;
-	}
-
-	if (!dirInfo->isInMediaFiles)
-	{
-		dirInfo->dirstream = SMB_VFS_NEXT_OPENDIR(handle,
-			smb_fname, mask, attr);
-	} else {
-		struct smb_filename *smb_fname_clientpath =
-				synthetic_smb_fname(talloc_tos(),
-					dirInfo->clientPath,
-					NULL,
-					NULL,
-					smb_fname->flags);
-		if (smb_fname_clientpath == NULL) {
-			goto err;
-		}
-
-		dirInfo->dirstream = SMB_VFS_NEXT_OPENDIR(handle,
-			smb_fname_clientpath, mask, attr);
-		TALLOC_FREE(smb_fname_clientpath);
-	}
-
-	if (dirInfo->dirstream == NULL) {
-		goto err;
-	}
-
-	/* Success is freed in closedir. */
-	DEBUG(MH_INFO_DEBUG, ("Leaving with dirInfo->dirpath '%s', "
-				"dirInfo->clientPath '%s'\n",
-				dirInfo->dirpath,
-				dirInfo->clientPath));
-	return (DIR*)dirInfo;
-err:
-	/* Failure is freed here. */
-	DEBUG(MH_ERR_DEBUG, ("Failing with fname '%s'\n",
-		smb_fname->base_name));
-	TALLOC_FREE(dirInfo);
-	return NULL;
-}
-
 static DIR *mh_fdopendir(vfs_handle_struct *handle,
 		files_struct *fsp,
 		const char *mask,
@@ -1103,50 +1047,51 @@ static int mh_closedir(vfs_handle_struct *handle,
  * Success: return non-negative file descriptor
  * Failure: set errno, return -1
  */
-static int mh_open(vfs_handle_struct *handle,
-		struct smb_filename *smb_fname,
-		files_struct *fsp,
-		int flags,
-		mode_t mode)
+static int mh_openat(struct vfs_handle_struct *handle,
+		     const struct files_struct *dirfsp,
+		     const struct smb_filename *smb_fname,
+		     files_struct *fsp,
+		     int flags,
+		     mode_t mode)
 {
 	int ret;
 	struct smb_filename *clientFname;
 	TALLOC_CTX *ctx;
 
-
 	DEBUG(MH_INFO_DEBUG, ("Entering with smb_fname->base_name '%s'\n",
 			      smb_fname->base_name));
 
-	if (!is_in_media_files(smb_fname->base_name))
-	{
-		ret = SMB_VFS_NEXT_OPEN(handle, smb_fname, fsp, flags,
-				mode);
+	if (!is_in_media_files(smb_fname->base_name)) {
+		ret = SMB_VFS_NEXT_OPENAT(handle,
+					  dirfsp,
+					  smb_fname,
+					  fsp,
+					  flags,
+					  mode);
 		goto out;
 	}
 
 	clientFname = NULL;
 	ctx = talloc_tos();
 
-	if(alloc_get_client_smb_fname(handle, ctx,
-				smb_fname,
-				&clientFname))
-	{
+	if (alloc_get_client_smb_fname(handle, ctx, smb_fname, &clientFname)) {
 		ret = -1;
 		goto err;
 	}
 
-	// What about fsp->fsp_name?
-	// We also have to get correct stat info into fsp and smb_fname
-	// for DB files, don't we?
+	/*
+	 * What about fsp->fsp_name? We also have to get correct stat info into
+	 * fsp and smb_fname for DB files, don't we?
+	 */
 
 	DEBUG(MH_INFO_DEBUG, ("Leaving with smb_fname->base_name '%s' "
-			"smb_fname->st.st_ex_mtime %s"
-			"		fsp->fsp_name->st.st_ex_mtime %s",
-			smb_fname->base_name,
-			ctime(&(smb_fname->st.st_ex_mtime.tv_sec)),
-			ctime(&(fsp->fsp_name->st.st_ex_mtime.tv_sec))));
+			      "smb_fname->st.st_ex_mtime %s"
+			      " fsp->fsp_name->st.st_ex_mtime %s",
+			      smb_fname->base_name,
+			      ctime(&(smb_fname->st.st_ex_mtime.tv_sec)),
+			      ctime(&(fsp->fsp_name->st.st_ex_mtime.tv_sec))));
 
-	ret = SMB_VFS_NEXT_OPEN(handle, clientFname, fsp, flags, mode);
+	ret = SMB_VFS_NEXT_OPENAT(handle, dirfsp, clientFname, fsp, flags, mode);
 err:
 	TALLOC_FREE(clientFname);
 out:
@@ -1161,7 +1106,7 @@ out:
  */
 static NTSTATUS mh_create_file(vfs_handle_struct *handle,
 		struct smb_request *req,
-		uint16_t root_dir_fid,
+		struct files_struct **dirfsp,
 		struct smb_filename *smb_fname,
 		uint32_t access_mask,
 		uint32_t share_access,
@@ -1191,7 +1136,7 @@ static NTSTATUS mh_create_file(vfs_handle_struct *handle,
 		status = SMB_VFS_NEXT_CREATE_FILE(
 			handle,
 			req,
-			root_dir_fid,
+			dirfsp,
 			smb_fname,
 			access_mask,
 			share_access,
@@ -1230,7 +1175,7 @@ static NTSTATUS mh_create_file(vfs_handle_struct *handle,
 	status = SMB_VFS_NEXT_CREATE_FILE(
 		handle,
 		req,
-		root_dir_fid,
+		dirfsp,
 		clientFname,
 		access_mask,
 		share_access,
@@ -1656,16 +1601,16 @@ out:
  */
 
 static int mh_symlinkat(vfs_handle_struct *handle,
-		const char *link_contents,
+		const struct smb_filename *link_contents,
 		struct files_struct *dirfsp,
 		const struct smb_filename *new_smb_fname)
 {
 	int status = -1;
-	char *client_link_contents = NULL;
+	struct smb_filename *new_link_target = NULL;
 	struct smb_filename *newclientFname = NULL;
 
 	DEBUG(MH_INFO_DEBUG, ("Entering mh_symlinkat\n"));
-	if (!is_in_media_files(link_contents) &&
+	if (!is_in_media_files(link_contents->base_name) &&
 			!is_in_media_files(new_smb_fname->base_name)) {
 		status = SMB_VFS_NEXT_SYMLINKAT(handle,
 				link_contents,
@@ -1674,9 +1619,9 @@ static int mh_symlinkat(vfs_handle_struct *handle,
 		goto out;
 	}
 
-	if ((status = alloc_get_client_path(handle, talloc_tos(),
+	if ((status = alloc_get_client_smb_fname(handle, talloc_tos(),
 				link_contents,
-				&client_link_contents))) {
+				&new_link_target))) {
 		goto err;
 	}
 	if ((status = alloc_get_client_smb_fname(handle, talloc_tos(),
@@ -1686,11 +1631,11 @@ static int mh_symlinkat(vfs_handle_struct *handle,
 	}
 
 	status = SMB_VFS_NEXT_SYMLINKAT(handle,
-				client_link_contents,
+				new_link_target,
 				dirfsp,
 				newclientFname);
 err:
-	TALLOC_FREE(client_link_contents);
+	TALLOC_FREE(new_link_target);
 	TALLOC_FREE(newclientFname);
 out:
 	return status;
@@ -1949,23 +1894,28 @@ out:
  * Failure: return NT status error
  * In this case, "name" is a path.
  */
-static NTSTATUS mh_get_nt_acl(vfs_handle_struct *handle,
-			      const struct smb_filename *smb_fname,
-			      uint32_t security_info,
-			      TALLOC_CTX *mem_ctx,
-			      struct security_descriptor **ppdesc)
+static NTSTATUS mh_get_nt_acl_at(vfs_handle_struct *handle,
+			struct files_struct *dirfsp,
+			const struct smb_filename *smb_fname,
+			uint32_t security_info,
+			TALLOC_CTX *mem_ctx,
+			struct security_descriptor **ppdesc)
 {
 	NTSTATUS status;
 	char *clientPath;
 	struct smb_filename *client_smb_fname = NULL;
 	TALLOC_CTX *ctx;
 
-	DEBUG(MH_INFO_DEBUG, ("Entering mh_get_nt_acl\n"));
-	if (!is_in_media_files(smb_fname->base_name))
-	{
-		status = SMB_VFS_NEXT_GET_NT_ACL(handle, smb_fname,
-						 security_info,
-						 mem_ctx, ppdesc);
+	SMB_ASSERT(dirfsp == handle->conn->cwd_fsp);
+
+	DEBUG(MH_INFO_DEBUG, ("Entering mh_get_nt_acl_at\n"));
+	if (!is_in_media_files(smb_fname->base_name)) {
+		status = SMB_VFS_NEXT_GET_NT_ACL_AT(handle,
+					dirfsp,
+					smb_fname,
+					security_info,
+					mem_ctx,
+					ppdesc);
 		goto out;
 	}
 
@@ -1974,8 +1924,7 @@ static NTSTATUS mh_get_nt_acl(vfs_handle_struct *handle,
 
 	if (alloc_get_client_path(handle, ctx,
 				smb_fname->base_name,
-				&clientPath))
-	{
+				&clientPath)) {
 		status = map_nt_error_from_unix(errno);
 		goto err;
 	}
@@ -1984,15 +1933,19 @@ static NTSTATUS mh_get_nt_acl(vfs_handle_struct *handle,
 					clientPath,
 					NULL,
 					NULL,
+					smb_fname->twrp,
 					smb_fname->flags);
 	if (client_smb_fname == NULL) {
 		TALLOC_FREE(clientPath);
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	status = SMB_VFS_NEXT_GET_NT_ACL(handle, client_smb_fname,
-					 security_info,
-					 mem_ctx, ppdesc);
+	status = SMB_VFS_NEXT_GET_NT_ACL_AT(handle,
+					dirfsp,
+					client_smb_fname,
+					security_info,
+					mem_ctx,
+					ppdesc);
 err:
 	TALLOC_FREE(clientPath);
 	TALLOC_FREE(client_smb_fname);
@@ -2253,7 +2206,6 @@ static struct vfs_fn_pointers vfs_mh_fns = {
 
 	/* Directory operations */
 
-	.opendir_fn = mh_opendir,
 	.fdopendir_fn = mh_fdopendir,
 	.readdir_fn = mh_readdir,
 	.seekdir_fn = mh_seekdir,
@@ -2264,7 +2216,7 @@ static struct vfs_fn_pointers vfs_mh_fns = {
 
 	/* File operations */
 
-	.open_fn = mh_open,
+	.openat_fn = mh_openat,
 	.create_file_fn = mh_create_file,
 	.renameat_fn = mh_renameat,
 	.stat_fn = mh_stat,
@@ -2285,7 +2237,7 @@ static struct vfs_fn_pointers vfs_mh_fns = {
 
 	/* NT ACL operations. */
 
-	.get_nt_acl_fn = mh_get_nt_acl,
+	.get_nt_acl_at_fn = mh_get_nt_acl_at,
 
 	/* POSIX ACL operations. */
 

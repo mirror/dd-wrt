@@ -31,7 +31,6 @@
 #include "secrets.h"
 #include "../lib/tsocket/tsocket.h"
 #include "lib/util/asn1.h"
-#include "krb5_errs.h"
 
 #ifdef HAVE_KRB5
 
@@ -593,9 +592,10 @@ static char *get_enctypes(TALLOC_CTX *mem_ctx)
 #endif
 	}
 
-	if (lp_kerberos_encryption_types() == KERBEROS_ETYPES_ALL ||
-	    lp_kerberos_encryption_types() == KERBEROS_ETYPES_LEGACY) {
-		legacy_enctypes = "RC4-HMAC DES-CBC-CRC DES-CBC-MD5";
+	if (lp_weak_crypto() == SAMBA_WEAK_CRYPTO_ALLOWED &&
+	    (lp_kerberos_encryption_types() == KERBEROS_ETYPES_ALL ||
+	     lp_kerberos_encryption_types() == KERBEROS_ETYPES_LEGACY)) {
+		legacy_enctypes = "RC4-HMAC";
 	}
 
 	enctypes =
@@ -726,10 +726,14 @@ bool create_local_private_krb5_conf_for_domain(const char *realm,
 			    "\tdns_lookup_kdc = true\n\n"
 			    "[realms]\n\t%s = {\n"
 			    "%s\t}\n"
+			    "\t%s = {\n"
+			    "%s\t}\n"
 			    "%s\n",
 			    realm_upper,
 			    enctypes,
 			    realm_upper,
+			    kdc_ip_string,
+			    domain,
 			    kdc_ip_string,
 			    include_system_krb5);
 

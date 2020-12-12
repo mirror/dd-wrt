@@ -54,6 +54,7 @@ struct smb_filename *synthetic_smb_fname(TALLOC_CTX *mem_ctx,
 					 const char *base_name,
 					 const char *stream_name,
 					 const SMB_STRUCT_STAT *psbuf,
+					 NTTIME twrp,
 					 uint32_t flags)
 {
 	struct smb_filename smb_fname_loc = { 0, };
@@ -62,6 +63,7 @@ struct smb_filename *synthetic_smb_fname(TALLOC_CTX *mem_ctx,
 	smb_fname_loc.base_name = discard_const_p(char, base_name);
 	smb_fname_loc.stream_name = discard_const_p(char, stream_name);
 	smb_fname_loc.flags = flags;
+	smb_fname_loc.twrp = twrp;
 
 	/* Copy the psbuf if one was given. */
 	if (psbuf)
@@ -105,6 +107,7 @@ struct smb_filename *synthetic_smb_fname_split(TALLOC_CTX *ctx,
 				fname,
 				NULL,
 				NULL,
+				0,
 				SMB_FILENAME_POSIX_PATH);
 	}
 
@@ -116,7 +119,12 @@ struct smb_filename *synthetic_smb_fname_split(TALLOC_CTX *ctx,
 		return NULL;
 	}
 
-	ret = synthetic_smb_fname(ctx, base_name, stream_name, NULL, 0);
+	ret = synthetic_smb_fname(ctx,
+				  base_name,
+				  stream_name,
+				  NULL,
+				  0,
+				  0);
 	TALLOC_FREE(base_name);
 	TALLOC_FREE(stream_name);
 	return ret;
@@ -128,6 +136,11 @@ struct smb_filename *synthetic_smb_fname_split(TALLOC_CTX *ctx,
 const char *smb_fname_str_dbg(const struct smb_filename *smb_fname)
 {
 	char *fname = NULL;
+	time_t t;
+	struct tm tm;
+	struct tm *ptm = NULL;
+	fstring tstr;
+	ssize_t slen;
 	NTSTATUS status;
 
 	if (smb_fname == NULL) {
@@ -135,6 +148,28 @@ const char *smb_fname_str_dbg(const struct smb_filename *smb_fname)
 	}
 	status = get_full_smb_filename(talloc_tos(), smb_fname, &fname);
 	if (!NT_STATUS_IS_OK(status)) {
+		return "";
+	}
+	if (smb_fname->twrp == 0) {
+		return fname;
+	}
+
+	t = nt_time_to_unix(smb_fname->twrp);
+	ptm = gmtime_r(&t, &tm);
+	if (ptm == NULL) {
+		return "";
+	}
+
+	slen = strftime(tstr, sizeof(tstr), GMT_FORMAT, &tm);
+	if (slen == 0) {
+		return "";
+	}
+
+	fname = talloc_asprintf(talloc_tos(),
+				"%s {%s}",
+				fname,
+				tstr);
+	if (fname == NULL) {
 		return "";
 	}
 	return fname;
@@ -145,7 +180,29 @@ const char *smb_fname_str_dbg(const struct smb_filename *smb_fname)
  */
 const char *fsp_str_dbg(const struct files_struct *fsp)
 {
-	return smb_fname_str_dbg(fsp->fsp_name);
+	const char *name = NULL;
+
+	name = smb_fname_str_dbg(fsp->fsp_name);
+	if (name == NULL) {
+		return "";
+	}
+
+	if (fsp->dirfsp == NULL || fsp->dirfsp == fsp->conn->cwd_fsp) {
+		return name;
+	}
+
+	if (ISDOT(fsp->dirfsp->fsp_name->base_name)) {
+		return name;
+	}
+
+	name = talloc_asprintf(talloc_tos(),
+			       "%s/%s",
+			       fsp->dirfsp->fsp_name->base_name,
+			       fsp->fsp_name->base_name);
+	if (name == NULL) {
+		return "";
+	}
+	return name;
 }
 
 /**
@@ -183,7 +240,6 @@ struct smb_filename *cp_smb_filename(TALLOC_CTX *mem_ctx,
 	struct smb_filename *out;
 	size_t base_len = 0;
 	size_t stream_len = 0;
-	size_t lcomp_len = 0;
 	int num = 0;
 
 	/* stream_name must always be NULL if there is no stream. */
@@ -199,13 +255,9 @@ struct smb_filename *cp_smb_filename(TALLOC_CTX *mem_ctx,
 		stream_len = strlen(in->stream_name) + 1;
 		num += 1;
 	}
-	if (in->original_lcomp != NULL) {
-		lcomp_len = strlen(in->original_lcomp) + 1;
-		num += 1;
-	}
 
 	out = talloc_pooled_object(mem_ctx, struct smb_filename,
-				num, stream_len + base_len + lcomp_len);
+				num, stream_len + base_len);
 	if (out == NULL) {
 		return NULL;
 	}
@@ -228,15 +280,73 @@ struct smb_filename *cp_smb_filename(TALLOC_CTX *mem_ctx,
 		talloc_set_name_const(out->stream_name,
 				      out->stream_name);
 	}
-	if (in->original_lcomp != NULL) {
-		out->original_lcomp = talloc_memdup(
-				out, in->original_lcomp, lcomp_len);
-		talloc_set_name_const(out->original_lcomp,
-				      out->original_lcomp);
-	}
 	out->flags = in->flags;
 	out->st = in->st;
+	out->twrp = in->twrp;
 	return out;
+}
+
+/**
+ * Return allocated parent directory and basename of path
+ *
+ * Note: if requesting name, it is returned as talloc child of the
+ * parent. Freeing the parent is thus sufficient to free both.
+ */
+bool parent_smb_fname(TALLOC_CTX *mem_ctx,
+		      const struct smb_filename *path,
+		      struct smb_filename **_parent,
+		      struct smb_filename  **_name)
+{
+	TALLOC_CTX *frame = talloc_stackframe();
+	struct smb_filename *parent = NULL;
+	struct smb_filename *name = NULL;
+	char *p = NULL;
+
+	parent = cp_smb_filename(frame, path);
+	if (parent == NULL) {
+		TALLOC_FREE(frame);
+		return false;
+	}
+	TALLOC_FREE(parent->stream_name);
+	SET_STAT_INVALID(parent->st);
+
+	p = strrchr_m(parent->base_name, '/'); /* Find final '/', if any */
+	if (p == NULL) {
+		TALLOC_FREE(parent->base_name);
+		parent->base_name = talloc_strdup(parent, ".");
+		if (parent->base_name == NULL) {
+			TALLOC_FREE(frame);
+			return false;
+		}
+		p = path->base_name;
+	} else {
+		*p = '\0';
+		p++;
+	}
+
+	if (_name == NULL) {
+		*_parent = talloc_move(mem_ctx, &parent);
+		TALLOC_FREE(frame);
+		return true;
+	}
+
+	name = cp_smb_filename(frame, path);
+	if (name == NULL) {
+		TALLOC_FREE(frame);
+		return false;
+	}
+	TALLOC_FREE(name->base_name);
+
+	name->base_name = talloc_strdup(mem_ctx, p);
+	if (name == NULL) {
+		TALLOC_FREE(frame);
+		return false;
+	}
+
+	*_parent = talloc_move(mem_ctx, &parent);
+	*_name = talloc_move(*_parent, &name);
+	TALLOC_FREE(frame);
+	return true;
 }
 
 static void assert_valid_stream_smb_fname(const struct smb_filename *smb_fname)
@@ -375,25 +485,6 @@ bool split_stream_filename(TALLOC_CTX *ctx,
 	}
 	if (streamname_out) {
 		*streamname_out = stream_out;
-	}
-	return true;
-}
-
-/**
- * Checks whether the first part of path is a valid GMT token
- */
-bool is_gmt_token(const char *path)
-{
-	struct tm tm;
-	char *p = NULL;
-
-	p = strptime(path, GMT_FORMAT, &tm);
-	if (p == NULL) {
-		/* Not a valid timestring. */
-		return false;
-	}
-	if (p[0] != '\0' && p[0] != '/') {
-		return false;
 	}
 	return true;
 }

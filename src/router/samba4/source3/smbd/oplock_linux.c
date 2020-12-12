@@ -33,10 +33,6 @@
 #define F_GETLEASE	1025
 #endif
 
-#ifndef CAP_LEASE
-#define CAP_LEASE 28
-#endif
-
 #ifndef RT_SIGNAL_LEASE
 #define RT_SIGNAL_LEASE (SIGRTMIN+1)
 #endif
@@ -44,14 +40,6 @@
 #ifndef F_SETSIG
 #define F_SETSIG 10
 #endif
-
-/*
- * public function to get linux lease capability. Needed by some VFS modules (eg. gpfs.c)
- */
-void linux_set_lease_capability(void)
-{
-	set_effective_capability(LEASE_CAPABILITY);
-}
 
 /* 
  * Call to set the kernel lease signal handler

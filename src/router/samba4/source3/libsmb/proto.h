@@ -111,14 +111,6 @@ NTSTATUS cli_full_connection_creds(struct cli_state **output_cli,
 				   struct cli_credentials *creds,
 				   int flags,
 				   int signing_state);
-NTSTATUS cli_full_connection(struct cli_state **output_cli,
-			     const char *my_name,
-			     const char *dest_host,
-			     const struct sockaddr_storage *dest_ss, int port,
-			     const char *service, const char *service_type,
-			     const char *user, const char *domain,
-			     const char *password, int flags,
-			     int signing_state);
 NTSTATUS cli_raw_tcon(struct cli_state *cli,
 		      const char *service, const char *pass, const char *dev,
 		      uint16_t *max_xmit, uint16_t *tid);
@@ -129,20 +121,12 @@ struct cli_state *get_ipc_connect_master_ip(TALLOC_CTX *ctx,
 				struct sockaddr_storage *mb_ip,
 				const struct user_auth_info *user_info,
 				char **pp_workgroup_out);
-struct cli_state *get_ipc_connect_master_ip_bcast(TALLOC_CTX *ctx,
-					const struct user_auth_info *user_info,
-					char **pp_workgroup_out);
 
 /* The following definitions come from libsmb/clidfs.c  */
 
 NTSTATUS cli_cm_force_encryption_creds(struct cli_state *c,
 				       struct cli_credentials *creds,
 				       const char *sharename);
-NTSTATUS cli_cm_force_encryption(struct cli_state *c,
-			const char *username,
-			const char *password,
-			const char *domain,
-			const char *sharename);
 NTSTATUS cli_cm_open(TALLOC_CTX *ctx,
 				struct cli_state *referring_cli,
 				const char *server,
@@ -150,6 +134,7 @@ NTSTATUS cli_cm_open(TALLOC_CTX *ctx,
 				const struct user_auth_info *auth_info,
 				bool force_encrypt,
 				int max_protocol,
+				const struct sockaddr_storage *dest_ss,
 				int port,
 				int name_type,
 				struct cli_state **pcli);
@@ -186,7 +171,6 @@ bool cli_check_msdfs_proxy(TALLOC_CTX *ctx,
 
 /* The following definitions come from libsmb/clientgen.c  */
 
-int cli_set_message(char *buf,int num_words,int num_bytes,bool zero);
 unsigned int cli_set_timeout(struct cli_state *cli, unsigned int timeout);
 bool cli_set_backup_intent(struct cli_state *cli, bool flag);
 extern struct GUID cli_state_client_guid;
@@ -227,7 +211,6 @@ NTSTATUS cli_smb(TALLOC_CTX *mem_ctx, struct cli_state *cli,
 
 /* The following definitions come from libsmb/clierror.c  */
 
-const char *cli_errstr(struct cli_state *cli);
 NTSTATUS cli_nt_error(struct cli_state *cli);
 void cli_dos_error(struct cli_state *cli, uint8_t *eclass, uint32_t *ecode);
 int cli_errno(struct cli_state *cli);
@@ -251,6 +234,15 @@ NTSTATUS cli_setpathinfo(struct cli_state *cli,
 			 const char *path,
 			 uint8_t *data,
 			 size_t data_len);
+struct tevent_req *cli_setfileinfo_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	uint16_t fnum,
+	uint16_t level,
+	uint8_t *data,
+	size_t data_len);
+NTSTATUS cli_setfileinfo_recv(struct tevent_req *req);
 
 struct tevent_req *cli_posix_symlink_send(TALLOC_CTX *mem_ctx,
 					struct tevent_context *ev,
@@ -369,9 +361,9 @@ struct tevent_req *cli_unlink_send(TALLOC_CTX *mem_ctx,
                                 struct tevent_context *ev,
                                 struct cli_state *cli,
                                 const char *fname,
-                                uint16_t mayhave_attrs);
+                                uint32_t mayhave_attrs);
 NTSTATUS cli_unlink_recv(struct tevent_req *req);
-NTSTATUS cli_unlink(struct cli_state *cli, const char *fname, uint16_t mayhave_attrs);
+NTSTATUS cli_unlink(struct cli_state *cli, const char *fname, uint32_t mayhave_attrs);
 
 struct tevent_req *cli_mkdir_send(TALLOC_CTX *mem_ctx,
 				  struct tevent_context *ev,
@@ -526,18 +518,11 @@ struct tevent_req *cli_getattrE_send(TALLOC_CTX *mem_ctx,
 				struct cli_state *cli,
                                 uint16_t fnum);
 NTSTATUS cli_getattrE_recv(struct tevent_req *req,
-                        uint16_t *attr,
+                        uint32_t *pattr,
                         off_t *size,
                         time_t *change_time,
                         time_t *access_time,
                         time_t *write_time);
-NTSTATUS cli_getattrE(struct cli_state *cli,
-			uint16_t fnum,
-			uint16_t *attr,
-			off_t *size,
-			time_t *change_time,
-			time_t *access_time,
-			time_t *write_time);
 struct tevent_req *cli_setattrE_send(TALLOC_CTX *mem_ctx,
 				struct tevent_context *ev,
 				struct cli_state *cli,
@@ -556,24 +541,24 @@ struct tevent_req *cli_getatr_send(TALLOC_CTX *mem_ctx,
 				struct cli_state *cli,
 				const char *fname);
 NTSTATUS cli_getatr_recv(struct tevent_req *req,
-				uint16_t *attr,
+				uint32_t *pattr,
 				off_t *size,
 				time_t *write_time);
 NTSTATUS cli_getatr(struct cli_state *cli,
 			const char *fname,
-			uint16_t *attr,
+			uint32_t *pattr,
 			off_t *size,
 			time_t *write_time);
 struct tevent_req *cli_setatr_send(TALLOC_CTX *mem_ctx,
 				struct tevent_context *ev,
 				struct cli_state *cli,
 				const char *fname,
-				uint16_t attr,
+				uint32_t attr,
 				time_t mtime);
 NTSTATUS cli_setatr_recv(struct tevent_req *req);
 NTSTATUS cli_setatr(struct cli_state *cli,
                 const char *fname,
-                uint16_t attr,
+                uint32_t attr,
                 time_t mtime);
 struct tevent_req *cli_chkpath_send(TALLOC_CTX *mem_ctx,
 				  struct tevent_context *ev,
@@ -763,11 +748,11 @@ NTSTATUS cli_posix_whoami(struct cli_state *cli,
 NTSTATUS is_bad_finfo_name(const struct cli_state *cli,
 			const struct file_info *finfo);
 
-NTSTATUS cli_list_old(struct cli_state *cli,const char *Mask,uint16_t attribute,
+NTSTATUS cli_list_old(struct cli_state *cli,const char *Mask,uint32_t attribute,
 		      NTSTATUS (*fn)(const char *, struct file_info *,
 				 const char *, void *), void *state);
 NTSTATUS cli_list_trans(struct cli_state *cli, const char *mask,
-			uint16_t attribute, int info_level,
+			uint32_t attribute, int info_level,
 			NTSTATUS (*fn)(const char *mnt, struct file_info *finfo,
 				   const char *mask, void *private_data),
 			void *private_data);
@@ -775,11 +760,11 @@ struct tevent_req *cli_list_send(TALLOC_CTX *mem_ctx,
 				 struct tevent_context *ev,
 				 struct cli_state *cli,
 				 const char *mask,
-				 uint16_t attribute,
+				 uint32_t attribute,
 				 uint16_t info_level);
 NTSTATUS cli_list_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 		       struct file_info **finfo, size_t *num_finfo);
-NTSTATUS cli_list(struct cli_state *cli,const char *Mask,uint16_t attribute,
+NTSTATUS cli_list(struct cli_state *cli,const char *Mask,uint32_t attribute,
 		  NTSTATUS (*fn)(const char *, struct file_info *, const char *,
 			     void *), void *state);
 
@@ -973,13 +958,6 @@ NTSTATUS cli_query_mxac(struct cli_state *cli,
 
 /* The following definitions come from libsmb/clistr.c  */
 
-size_t clistr_pull_talloc(TALLOC_CTX *ctx,
-			  const char *base,
-			  uint16_t flags2,
-			  char **pp_dest,
-			  const void *src,
-			  int src_len,
-			  int flags);
 bool clistr_is_previous_version_path(const char *path,
 			const char **startp,
 			const char **endp,

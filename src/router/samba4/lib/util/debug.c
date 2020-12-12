@@ -190,7 +190,7 @@ static int debug_level_to_priority(int level)
 	};
 	int priority;
 
-	if( level >= ARRAY_SIZE(priority_map) || level < 0)
+	if (level < 0 || (size_t)level >= ARRAY_SIZE(priority_map))
 		priority = LOG_DEBUG;
 	else
 		priority = priority_map[level];
@@ -1153,7 +1153,7 @@ bool reopen_logs_internal(void)
 	oldumask = umask( 022 );
 
 	for (i = DBGC_ALL; i < debug_num_classes; i++) {
-		if (dbgc_config[DBGC_ALL].logfile != NULL) {
+		if (dbgc_config[i].logfile != NULL) {
 			break;
 		}
 	}

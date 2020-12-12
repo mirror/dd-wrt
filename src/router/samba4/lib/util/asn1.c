@@ -45,7 +45,7 @@ struct asn1_data *asn1_init(TALLOC_CTX *mem_ctx, unsigned max_depth)
 {
 	struct asn1_data *ret = talloc_zero(mem_ctx, struct asn1_data);
 	if (ret == NULL) {
-		DEBUG(0,("asn1_init failed! out of memory\n"));
+		DBG_ERR("asn1_init failed! out of memory\n");
 		return ret;
 	}
 	ret->max_depth = max_depth;
@@ -713,9 +713,10 @@ bool asn1_end_tag(struct asn1_data *data)
 {
 	struct nesting *nesting;
 
-	if (data->depth > 0) {
-		data->depth--;
+	if (data->depth == 0) {
+		smb_panic("Unbalanced ASN.1 Tag nesting");
 	}
+	data->depth--;
 	/* make sure we read it all */
 	if (asn1_tag_remaining(data) != 0) {
 		data->has_error = true;
@@ -1047,9 +1048,10 @@ bool asn1_read_BitString(struct asn1_data *data, TALLOC_CTX *mem_ctx, DATA_BLOB 
 	return true;
 }
 
-/* read an integer */
+/* read a non-negative enumerated value */
 bool asn1_read_enumerated(struct asn1_data *data, int *v)
 {
+	unsigned int val_will_wrap = (0xFF << ((sizeof(int)*8)-8));
 	*v = 0;
 
 	if (!asn1_start_tag(data, ASN1_ENUMERATED)) return false;
@@ -1058,7 +1060,22 @@ bool asn1_read_enumerated(struct asn1_data *data, int *v)
 		if (!asn1_read_uint8(data, &b)) {
 			return false;
 		}
+		if (*v & val_will_wrap) {
+			/*
+			 * There is something already in
+			 * the top byte of the int. If we
+			 * shift left by 8 it's going to
+			 * wrap. Prevent this.
+			 */
+			data->has_error = true;
+			return false;
+		}
 		*v = (*v << 8) + b;
+		if (*v < 0) {
+			/* ASN1_ENUMERATED can't be -ve. */
+			data->has_error = true;
+			return false;
+		}
 	}
 	return asn1_end_tag(data);
 }

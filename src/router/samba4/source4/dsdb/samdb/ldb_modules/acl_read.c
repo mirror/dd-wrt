@@ -50,6 +50,11 @@ struct aclread_context {
 	bool added_objectClass;
 	bool indirsync;
 
+	bool do_list_object_initialized;
+	bool do_list_object;
+	bool base_invisible;
+	uint64_t num_entries;
+
 	/* cache on the last parent we checked in this search */
 	struct ldb_dn *last_parent_dn;
 	int last_parent_check_ret;
@@ -150,6 +155,100 @@ static int aclread_check_parent(struct aclread_context *ac,
 		TALLOC_FREE(frame);
 	}
 	return ret;
+}
+
+static int aclread_check_object_visible(struct aclread_context *ac,
+					struct ldb_message *msg,
+					struct ldb_request *req)
+{
+	uint32_t instanceType;
+	int ret;
+
+	/* get the object instance type */
+	instanceType = ldb_msg_find_attr_as_uint(msg,
+						 "instanceType", 0);
+	if (instanceType & INSTANCE_TYPE_IS_NC_HEAD) {
+		/*
+		 * NC_HEAD objects are always visible
+		 */
+		return LDB_SUCCESS;
+	}
+
+	ret = aclread_check_parent(ac, msg, req);
+	if (ret == LDB_SUCCESS) {
+		/*
+		 * SEC_ADS_LIST (List Children) alone
+		 * on the parent is enough to make the
+		 * object visible.
+		 */
+		return LDB_SUCCESS;
+	}
+	if (ret != LDB_ERR_INSUFFICIENT_ACCESS_RIGHTS) {
+		return ret;
+	}
+
+	if (!ac->do_list_object_initialized) {
+		/*
+		 * We only call dsdb_do_list_object() once
+		 * and only when needed in order to
+		 * check the dSHeuristics for fDoListObject.
+		 */
+		ac->do_list_object = dsdb_do_list_object(ac->module, ac, req);
+		ac->do_list_object_initialized = true;
+	}
+
+	if (ac->do_list_object) {
+		TALLOC_CTX *frame = talloc_stackframe();
+		struct ldb_dn *parent_dn = NULL;
+
+		/*
+		 * Here we're in "List Object" mode (fDoListObject=true).
+		 *
+		 * If SEC_ADS_LIST (List Children) is not
+		 * granted on the parent, we need to check if
+		 * SEC_ADS_LIST_OBJECT (List Object) is granted
+		 * on the parent and also on the object itself.
+		 *
+		 * We could optimize this similar to aclread_check_parent(),
+		 * but that would require quite a bit of restructuring,
+		 * so that we cache the granted access bits instead
+		 * of just the result for 'SEC_ADS_LIST (List Children)'.
+		 *
+		 * But as this is the uncommon case and
+		 * 'SEC_ADS_LIST (List Children)' is most likely granted
+		 * on most of the objects, we'll just implement what
+		 * we have to.
+		 */
+
+		parent_dn = ldb_dn_get_parent(frame, msg->dn);
+		if (parent_dn == NULL) {
+			TALLOC_FREE(frame);
+			return ldb_oom(ldb_module_get_ctx(ac->module));
+		}
+		ret = dsdb_module_check_access_on_dn(ac->module,
+						     frame,
+						     parent_dn,
+						     SEC_ADS_LIST_OBJECT,
+						     NULL, req);
+		if (ret != LDB_SUCCESS) {
+			TALLOC_FREE(frame);
+			return ret;
+		}
+		ret = dsdb_module_check_access_on_dn(ac->module,
+						     frame,
+						     msg->dn,
+						     SEC_ADS_LIST_OBJECT,
+						     NULL, req);
+		if (ret != LDB_SUCCESS) {
+			TALLOC_FREE(frame);
+			return ret;
+		}
+
+		TALLOC_FREE(frame);
+		return LDB_SUCCESS;
+	}
+
+	return LDB_ERR_INSUFFICIENT_ACCESS_RIGHTS;
 }
 
 /*
@@ -464,7 +563,6 @@ static int aclread_callback(struct ldb_request *req, struct ldb_reply *ares)
 	struct security_descriptor *sd = NULL;
 	struct dom_sid *sid = NULL;
 	TALLOC_CTX *tmp_ctx;
-	uint32_t instanceType;
 	const struct dsdb_class *objectclass;
 	bool suppress_result = false;
 
@@ -507,14 +605,12 @@ static int aclread_callback(struct ldb_request *req, struct ldb_reply *ares)
 		}
 
 		sid = samdb_result_dom_sid(tmp_ctx, msg, "objectSid");
-		/* get the object instance type */
-		instanceType = ldb_msg_find_attr_as_uint(msg,
-							 "instanceType", 0);
-		if (!ldb_dn_is_null(msg->dn) && !(instanceType & INSTANCE_TYPE_IS_NC_HEAD))
-		{
-			/* the object has a parent, so we have to check for visibility */
-			ret = aclread_check_parent(ac, msg, req);
-			
+		if (!ldb_dn_is_null(msg->dn)) {
+			/*
+			 * this is a real object, so we have
+			 * to check for visibility
+			 */
+			ret = aclread_check_object_visible(ac, msg, req);
 			if (ret == LDB_ERR_INSUFFICIENT_ACCESS_RIGHTS) {
 				talloc_free(tmp_ctx);
 				return LDB_SUCCESS;
@@ -695,10 +791,21 @@ static int aclread_callback(struct ldb_request *req, struct ldb_reply *ares)
 		}
 		talloc_free(tmp_ctx);
 
+		ac->num_entries++;
 		return ldb_module_send_entry(ac->req, ret_msg, ares->controls);
 	case LDB_REPLY_REFERRAL:
 		return ldb_module_send_referral(ac->req, ares->referral);
 	case LDB_REPLY_DONE:
+		if (ac->base_invisible && ac->num_entries == 0) {
+			/*
+			 * If the base is invisible and we didn't
+			 * returned any object, we need to return
+			 * NO_SUCH_OBJECT.
+			 */
+			return ldb_module_done(ac->req,
+					       NULL, NULL,
+					       LDB_ERR_NO_SUCH_OBJECT);
+		}
 		return ldb_module_done(ac->req, ares->controls,
 					ares->response, LDB_SUCCESS);
 
@@ -726,7 +833,6 @@ static int aclread_search(struct ldb_module *module, struct ldb_request *req)
 	static const char * const _all_attrs[] = { "*", NULL };
 	bool all_attrs = false;
 	const char * const *attrs = NULL;
-	uint32_t instanceType;
 	static const char *acl_attrs[] = {
 		"instanceType",
 		NULL
@@ -747,36 +853,6 @@ static int aclread_search(struct ldb_module *module, struct ldb_request *req)
 		return ldb_next_request(module, req);
 	}
 
-	/* check accessibility of base */
-	if (!ldb_dn_is_null(req->op.search.base)) {
-		ret = dsdb_module_search_dn(module, req, &res, req->op.search.base,
-					    acl_attrs,
-					    DSDB_FLAG_NEXT_MODULE |
-					    DSDB_FLAG_AS_SYSTEM |
-					    DSDB_SEARCH_SHOW_RECYCLED,
-					    req);
-		if (ret != LDB_SUCCESS) {
-			return ldb_error(ldb, ret,
-					"acl_read: Error retrieving instanceType for base.");
-		}
-		instanceType = ldb_msg_find_attr_as_uint(res->msgs[0],
-							"instanceType", 0);
-		if (instanceType != 0 && !(instanceType & INSTANCE_TYPE_IS_NC_HEAD))
-		{
-			/* the object has a parent, so we have to check for visibility */
-			struct ldb_dn *parent_dn = ldb_dn_get_parent(req, req->op.search.base);
-			ret = dsdb_module_check_access_on_dn(module,
-							     req,
-							     parent_dn,
-							     SEC_ADS_LIST,
-							     NULL, req);
-			if (ret == LDB_ERR_INSUFFICIENT_ACCESS_RIGHTS) {
-				return ldb_module_done(req, NULL, NULL, LDB_ERR_NO_SUCH_OBJECT);
-			} else if (ret != LDB_SUCCESS) {
-				return ldb_module_done(req, NULL, NULL, ret);
-			}
-		}
-	}
 	ac = talloc_zero(req, struct aclread_context);
 	if (ac == NULL) {
 		return ldb_oom(ldb);
@@ -849,6 +925,35 @@ static int aclread_search(struct ldb_module *module, struct ldb_request *req)
 	}
 
 	ac->attrs = req->op.search.attrs;
+
+	/* check accessibility of base */
+	if (!ldb_dn_is_null(req->op.search.base)) {
+		ret = dsdb_module_search_dn(module, req, &res, req->op.search.base,
+					    acl_attrs,
+					    DSDB_FLAG_NEXT_MODULE |
+					    DSDB_FLAG_AS_SYSTEM |
+					    DSDB_SEARCH_SHOW_RECYCLED,
+					    req);
+		if (ret != LDB_SUCCESS) {
+			return ldb_error(ldb, ret,
+					"acl_read: Error retrieving instanceType for base.");
+		}
+		ret = aclread_check_object_visible(ac, res->msgs[0], req);
+		if (ret == LDB_ERR_INSUFFICIENT_ACCESS_RIGHTS) {
+			if (req->op.search.scope == LDB_SCOPE_BASE) {
+				return ldb_module_done(req, NULL, NULL,
+						       LDB_ERR_NO_SUCH_OBJECT);
+			}
+			/*
+			 * Defer LDB_ERR_NO_SUCH_OBJECT,
+			 * we may return sub objects
+			 */
+			ac->base_invisible = true;
+		} else if (ret != LDB_SUCCESS) {
+			return ldb_module_done(req, NULL, NULL, ret);
+		}
+	}
+
 	ret = ldb_build_search_req_ex(&down_req,
 				      ldb, ac,
 				      req->op.search.base,

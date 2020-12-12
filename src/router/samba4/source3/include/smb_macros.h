@@ -44,9 +44,11 @@
 #define IS_IPC(conn)       ((conn) && (conn)->ipc)
 #define IS_PRINT(conn)       ((conn) && (conn)->printer)
 
-#define CHECK_READ(fsp,req) (((fsp)->fh->fd != -1) && ((fsp)->can_read || \
-			((req->flags2 & FLAGS2_READ_PERMIT_EXECUTE) && \
-			 (fsp->access_mask & FILE_EXECUTE))))
+#define CHECK_READ(fsp,req) \
+	(((fsp)->fh->fd != -1) && \
+	 (((fsp)->fsp_flags.can_read) || \
+	  ((req->flags2 & FLAGS2_READ_PERMIT_EXECUTE) && \
+	   (fsp->access_mask & FILE_EXECUTE))))
 
 /*
  * This is not documented in revision 49 of [MS-SMB2] but should be added in a
@@ -62,7 +64,8 @@
  */
 #define CHECK_READ_SMB2(fsp) \
 	(((fsp)->fh->fd != -1) && \
-	 ((fsp)->can_read || (fsp->access_mask & FILE_EXECUTE)))
+	 (((fsp)->fsp_flags.can_read) || \
+	  (fsp->access_mask & FILE_EXECUTE)))
 
 /* An IOCTL readability check (validating read access
  * when the IOCTL code requires it)
@@ -70,9 +73,13 @@
  * ). On Windows servers, this is done by the IO manager, which is unaware of
  * the "if execute is granted then also grant read" arrangement.
  */
-#define CHECK_READ_IOCTL(fsp) (((fsp)->fh->fd != -1) && ((fsp)->can_read))
+#define CHECK_READ_IOCTL(fsp) \
+	(((fsp)->fh->fd != -1) && \
+	 (((fsp)->fsp_flags.can_read)))
 
-#define CHECK_WRITE(fsp) ((fsp)->can_write && ((fsp)->fh->fd != -1))
+#define CHECK_WRITE(fsp) \
+	((fsp)->fsp_flags.can_write && \
+	 ((fsp)->fh->fd != -1))
 
 #define ERROR_WAS_LOCK_DENIED(status) (NT_STATUS_EQUAL((status), NT_STATUS_LOCK_NOT_GRANTED) || \
 				NT_STATUS_EQUAL((status), NT_STATUS_FILE_LOCK_CONFLICT) )
@@ -158,19 +165,6 @@
 #define IS_CONN_ENCRYPTED(conn) ((conn) ? (conn)->encrypted_tid : false)
 
 /****************************************************************************
-true if two IPv4 addresses are equal
-****************************************************************************/
-
-#define ip_equal_v4(ip1,ip2) ((ip1).s_addr == (ip2).s_addr)
-
-/*****************************************************************
- splits out the last subkey of a key
- *****************************************************************/  
-
-#define reg_get_subkey(full_keyname, key_name, subkey_name) \
-	split_at_last_component(full_keyname, key_name, '\\', subkey_name)
-
-/****************************************************************************
  Return True if the offset is at zero.
 ****************************************************************************/
 
@@ -224,9 +218,7 @@ copy an IP address from one buffer to another
 #define SMB_MALLOC_ARRAY(type,count) (type *)malloc_array(sizeof(type),(count))
 #define SMB_MEMALIGN_ARRAY(type,align,count) (type *)memalign_array(sizeof(type),align,(count))
 #define SMB_REALLOC(p,s) Realloc((p),(s),True)	/* Always frees p on error or s == 0 */
-#define SMB_REALLOC_KEEP_OLD_ON_ERROR(p,s) Realloc((p),(s),False) /* Never frees p on error or s == 0 */
 #define SMB_REALLOC_ARRAY(p,type,count) (type *)realloc_array((p),sizeof(type),(count),True) /* Always frees p on error or s == 0 */
-#define SMB_REALLOC_ARRAY_KEEP_OLD_ON_ERROR(p,type,count) (type *)realloc_array((p),sizeof(type),(count),False) /* Never frees p on error or s == 0 */
 #define SMB_CALLOC_ARRAY(type,count) (type *)calloc_array(sizeof(type),(count))
 #define SMB_XMALLOC_P(type) (type *)smb_xmalloc_array(sizeof(type),1)
 #define SMB_XMALLOC_ARRAY(type,count) (type *)smb_xmalloc_array(sizeof(type),(count))

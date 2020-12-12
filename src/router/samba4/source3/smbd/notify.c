@@ -289,6 +289,14 @@ NTSTATUS change_notify_create(struct files_struct *fsp,
 	char fullpath[len+1];
 	NTSTATUS status = NT_STATUS_NOT_IMPLEMENTED;
 
+	/*
+	 * Setting a changenotify needs READ/LIST access
+	 * on the directory handle.
+	 */
+	if (!(fsp->access_mask & SEC_DIR_LIST)) {
+		return NT_STATUS_ACCESS_DENIED;
+	}
+
 	if (fsp->notify != NULL) {
 		DEBUG(1, ("change_notify_create: fsp->notify != NULL, "
 			  "fname = %s\n", fsp->fsp_name->base_name));
@@ -411,11 +419,11 @@ static void smbd_notify_cancel_by_map(struct notify_mid_map *map)
 		}
 
 		if (!NT_STATUS_IS_OK(sstatus)) {
-			notify_status = STATUS_NOTIFY_CLEANUP;
+			notify_status = NT_STATUS_NOTIFY_CLEANUP;
 		} else if (smb2req->tcon == NULL) {
-			notify_status = STATUS_NOTIFY_CLEANUP;
+			notify_status = NT_STATUS_NOTIFY_CLEANUP;
 		} else if (!NT_STATUS_IS_OK(smb2req->tcon->status)) {
-			notify_status = STATUS_NOTIFY_CLEANUP;
+			notify_status = NT_STATUS_NOTIFY_CLEANUP;
 		}
 	}
 

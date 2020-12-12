@@ -25,8 +25,12 @@
 #include "messages.h"
 
 #include "librpc/rpc/dcerpc_ep.h"
-#include "../librpc/gen_ndr/srv_epmapper.h"
+
+#include "librpc/rpc/dcesrv_core.h"
+#include "librpc/gen_ndr/ndr_epmapper_scompat.h"
+
 #include "rpc_server/rpc_server.h"
+#include "rpc_server/rpc_service_setup.h"
 #include "rpc_server/rpc_sock_helper.h"
 #include "rpc_server/epmapper/srv_epmapper.h"
 #include "rpc_server/epmd.h"
@@ -126,23 +130,15 @@ static void epmd_setup_sig_hup_handler(struct tevent_context *ev_ctx,
 	}
 }
 
-static bool epmapper_shutdown_cb(void *ptr) {
-	srv_epmapper_cleanup();
-
-	return true;
-}
-
 void start_epmd(struct tevent_context *ev_ctx,
-		struct messaging_context *msg_ctx)
+		struct messaging_context *msg_ctx,
+		struct dcesrv_context *dce_ctx)
 {
-	struct rpc_srv_callbacks epmapper_cb;
 	NTSTATUS status;
 	pid_t pid;
 	int rc;
-
-	epmapper_cb.init = NULL;
-	epmapper_cb.shutdown = epmapper_shutdown_cb;
-	epmapper_cb.private_data = NULL;
+	const struct dcesrv_endpoint_server *ep_server = NULL;
+	struct dcesrv_endpoint *e = NULL;
 
 	DEBUG(1, ("Forking Endpoint Mapper Daemon\n"));
 
@@ -175,37 +171,69 @@ void start_epmd(struct tevent_context *ev_ctx,
 			   MSG_SMB_CONF_UPDATED,
 			   epmd_smb_conf_updated);
 
-	status = rpc_epmapper_init(&epmapper_cb);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("Failed to register epmd rpc interface! (%s)\n",
-			  nt_errstr(status)));
+	DBG_INFO("Registering DCE/RPC endpoint servers\n");
+
+	/* Register the endpoint server in DCERPC core */
+	ep_server = epmapper_get_ep_server();
+	if (ep_server == NULL) {
+		DBG_ERR("Failed to get 'epmapper' endpoint server\n");
 		exit(1);
 	}
 
-	status = dcesrv_setup_ncacn_ip_tcp_sockets(ev_ctx,
-						   msg_ctx,
-						   &ndr_table_epmapper,
-						   NULL,
-						   135);
+	status = dcerpc_register_ep_server(ep_server);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("Failed to open epmd tcpip sockets!\n"));
+		DBG_ERR("Failed to register 'epmapper' endpoint server: %s\n",
+			nt_errstr(status));
 		exit(1);
 	}
 
-	status = dcesrv_setup_ncalrpc_socket(ev_ctx,
-					     msg_ctx,
-					     "EPMAPPER",
-					     srv_epmapper_delete_endpoints,
-					     NULL);
+	DBG_INFO("Reinitializing DCE/RPC server context\n");
+
+	status = dcesrv_reinit_context(dce_ctx);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("Failed to open epmd ncalrpc pipe!\n"));
+		DBG_ERR("Failed to reinit DCE/RPC context: %s\n",
+			nt_errstr(status));
 		exit(1);
 	}
 
-	status = dcesrv_setup_ncacn_np_socket("epmapper", ev_ctx, msg_ctx);
+	DBG_INFO("Initializing DCE/RPC registered endpoint servers\n");
+
+	status = dcesrv_init_ep_server(dce_ctx, "epmapper");
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("Failed to open epmd named pipe!\n"));
+		DBG_ERR("Failed to init DCE/RPC endpoint server: %s\n",
+			nt_errstr(status));
 		exit(1);
+	}
+
+	DBG_INFO("Initializing DCE/RPC connection endpoints\n");
+
+	for (e = dce_ctx->endpoint_list; e; e = e->next) {
+		enum dcerpc_transport_t transport =
+			dcerpc_binding_get_transport(e->ep_description);
+		dcerpc_ncacn_termination_fn term_fn = NULL;
+
+		if (transport == NCACN_HTTP) {
+			continue;
+		}
+
+		if (transport == NCALRPC) {
+			term_fn = srv_epmapper_delete_endpoints;
+		}
+
+		status = dcesrv_setup_endpoint_sockets(ev_ctx,
+						       msg_ctx,
+						       dce_ctx,
+						       e,
+						       term_fn,
+						       NULL); /* termination_data */
+		if (!NT_STATUS_IS_OK(status)) {
+			char *ep_string = dcerpc_binding_string(
+					dce_ctx, e->ep_description);
+			DBG_ERR("Failed to setup endpoint '%s': %s\n",
+				ep_string, nt_errstr(status));
+			TALLOC_FREE(ep_string);
+			exit(1);
+		}
 	}
 
 	DEBUG(1, ("Endpoint Mapper Daemon Started (%u)\n", (unsigned int)getpid()));

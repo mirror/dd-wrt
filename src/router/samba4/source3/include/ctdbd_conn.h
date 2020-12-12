@@ -34,10 +34,14 @@ struct messaging_rec;
 int ctdbd_init_connection(TALLOC_CTX *mem_ctx,
 			  const char *sockname, int timeout,
 			  struct ctdbd_connection **pconn);
+int ctdbd_init_async_connection(
+	TALLOC_CTX *mem_ctx,
+	const char *sockname,
+	int timeout,
+	struct ctdbd_connection **pconn);
 int ctdbd_reinit_connection(TALLOC_CTX *mem_ctx,
 			    const char *sockname, int timeout,
 			    struct ctdbd_connection *conn);
-int ctdbd_setup_fde(struct ctdbd_connection *conn, struct tevent_context *ev);
 
 uint32_t ctdbd_vnn(const struct ctdbd_connection *conn);
 
@@ -81,6 +85,14 @@ int ctdbd_register_ips(struct ctdbd_connection *conn,
 				 void *private_data),
 		       void *private_data);
 
+struct ctdb_public_ip_list_old;
+int ctdbd_control_get_public_ips(struct ctdbd_connection *conn,
+				 uint32_t flags,
+				 TALLOC_CTX *mem_ctx,
+				 struct ctdb_public_ip_list_old **_ips);
+bool ctdbd_find_in_public_ips(const struct ctdb_public_ip_list_old *ips,
+			      const struct sockaddr_storage *ip);
+
 int ctdbd_control_local(struct ctdbd_connection *conn, uint32_t opcode,
 			uint64_t srvid, uint32_t flags, TDB_DATA data,
 			TALLOC_CTX *mem_ctx, TDB_DATA *outdata,
@@ -98,6 +110,25 @@ int register_with_ctdbd(struct ctdbd_connection *conn, uint64_t srvid,
 				  void *private_data),
 			void *private_data);
 int ctdbd_probe(const char *sockname, int timeout);
+
+struct ctdb_req_header;
+void ctdbd_prep_hdr_next_reqid(
+	struct ctdbd_connection *conn, struct ctdb_req_header *hdr);
+
+/*
+ * Async ctdb_request. iov[0] must start with an initialized
+ * struct ctdb_req_header
+ */
+struct tevent_req *ctdbd_req_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct ctdbd_connection *conn,
+	struct iovec *iov,
+	size_t num_iov);
+int ctdbd_req_recv(
+	struct tevent_req *req,
+	TALLOC_CTX *mem_ctx,
+	struct ctdb_req_header **reply);
 
 struct tevent_req *ctdbd_parse_send(TALLOC_CTX *mem_ctx,
 				    struct tevent_context *ev,

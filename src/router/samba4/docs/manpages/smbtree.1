@@ -2,12 +2,12 @@
 .\"     Title: smbtree
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 08/13/2020
+.\"      Date: 11/03/2020
 .\"    Manual: User Commands
-.\"    Source: Samba 4.12.6
+.\"    Source: Samba 4.13.2
 .\"  Language: English
 .\"
-.TH "SMBTREE" "1" "08/13/2020" "Samba 4\&.12\&.6" "User Commands"
+.TH "SMBTREE" "1" "11/03/2020" "Samba 4\&.13\&.2" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 smbtree \- A text based smb network browser
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-smbtree [\-b] [\-D] [\-S]
+smbtree [\-D] [\-S]
 .SH "DESCRIPTION"
 .PP
 This tool is part of the
@@ -41,11 +41,6 @@ suite\&.
 smbtree
 is a smb browser program in text mode\&. It is similar to the "Network Neighborhood" found on Windows computers\&. It prints a tree with all the known domains, the servers in those domains and the shares on the servers\&.
 .SH "OPTIONS"
-.PP
-\-b|\-\-broadcast
-.RS 4
-Query network nodes by sending requests as broadcasts instead of querying the local master browser\&.
-.RE
 .PP
 \-D|\-\-domains
 .RS 4
@@ -191,7 +186,7 @@ Display brief usage message\&.
 .RE
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.12\&.6 of the Samba suite\&.
+This man page is part of version 4\&.13\&.2 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

@@ -129,7 +129,7 @@ ctdb_test_run ()
 	start_time=$(date '+%s')
 
 	if [ -x "$f" ] ; then
-		timeout "$test_time_limit" "$f" | show_progress
+		timeout "$test_time_limit" "$f" </dev/null | show_progress
 		status=$?
 	else
 		echo "TEST IS NOT EXECUTABLE"
@@ -175,6 +175,13 @@ ctdb_test_run ()
 		fi
 		printf '%-10s %s\n' "$t" "$f" >>"$summary_file"
 	fi
+
+	# Skipped tests should not cause failure
+	case "$status" in
+	77)
+		status=0
+		;;
+	esac
 
 	return $status
 }

@@ -24,6 +24,12 @@
 #include "secrets.h"
 #include "auth.h"
 
+/* Max DNS name is 253 + '\0' */
+#define MACHINE_NAME_SIZE 254
+
+static char local_machine[MACHINE_NAME_SIZE];
+static char remote_machine[MACHINE_NAME_SIZE];
+
 userdom_struct current_user_info;
 fstring remote_proto="UNKNOWN";
 
@@ -32,45 +38,25 @@ fstring remote_proto="UNKNOWN";
  * @param local_name the name we are being called
  * @param if this is the 'final' name for us, not be be changed again
  */
-
-static char *local_machine;
-
-void free_local_machine_name(void)
-{
-	TALLOC_FREE(local_machine);
-}
-
 bool set_local_machine_name(const char *local_name, bool perm)
 {
 	static bool already_perm = false;
-	char *tmp_local_machine = NULL;
-	size_t len;
+	char tmp[MACHINE_NAME_SIZE];
 
 	if (already_perm) {
 		return true;
 	}
 
-	tmp_local_machine = talloc_strdup(NULL, local_name);
-	if (!tmp_local_machine) {
-		return false;
-	}
-	trim_char(tmp_local_machine,' ',' ');
+	strlcpy(tmp, local_name, sizeof(tmp));
+	trim_char(tmp, ' ', ' ');
 
-	TALLOC_FREE(local_machine);
-	len = strlen(tmp_local_machine);
-	local_machine = (char *)TALLOC_ZERO(NULL, len+1);
-	if (!local_machine) {
-		TALLOC_FREE(tmp_local_machine);
-		return false;
-	}
-	/* alpha_strcpy includes the space for the terminating nul. */
-	alpha_strcpy(local_machine,tmp_local_machine,
-			SAFE_NETBIOS_CHARS,len+1);
+	alpha_strcpy(local_machine,
+		     tmp,
+		     SAFE_NETBIOS_CHARS,
+		     sizeof(local_machine) - 1);
 	if (!strlower_m(local_machine)) {
-		TALLOC_FREE(tmp_local_machine);
 		return false;
 	}
-	TALLOC_FREE(tmp_local_machine);
 
 	already_perm = perm;
 
@@ -79,7 +65,7 @@ bool set_local_machine_name(const char *local_name, bool perm)
 
 const char *get_local_machine_name(void)
 {
-	if (!local_machine || !*local_machine) {
+	if (local_machine[0] == '\0') {
 		return lp_netbios_name();
 	}
 
@@ -88,44 +74,29 @@ const char *get_local_machine_name(void)
 
 /**
  * Set the 'remote' machine name
+ *
  * @param remote_name the name our client wants to be called by
  * @param if this is the 'final' name for them, not be be changed again
  */
-
-static char *remote_machine;
-
 bool set_remote_machine_name(const char *remote_name, bool perm)
 {
 	static bool already_perm = False;
-	char *tmp_remote_machine;
-	size_t len;
+	char tmp[MACHINE_NAME_SIZE];
 
 	if (already_perm) {
 		return true;
 	}
 
-	tmp_remote_machine = talloc_strdup(NULL, remote_name);
-	if (!tmp_remote_machine) {
-		return false;
-	}
-	trim_char(tmp_remote_machine,' ',' ');
+	strlcpy(tmp, remote_name, sizeof(tmp));
+	trim_char(tmp, ' ', ' ');
 
-	TALLOC_FREE(remote_machine);
-	len = strlen(tmp_remote_machine);
-	remote_machine = (char *)TALLOC_ZERO(NULL, len+1);
-	if (!remote_machine) {
-		TALLOC_FREE(tmp_remote_machine);
-		return false;
-	}
-
-	/* alpha_strcpy includes the space for the terminating nul. */
-	alpha_strcpy(remote_machine,tmp_remote_machine,
-			SAFE_NETBIOS_CHARS,len+1);
+	alpha_strcpy(remote_machine,
+		     tmp,
+		     SAFE_NETBIOS_CHARS,
+		     sizeof(remote_machine) - 1);
 	if (!strlower_m(remote_machine)) {
-		TALLOC_FREE(tmp_remote_machine);
 		return false;
 	}
-	TALLOC_FREE(tmp_remote_machine);
 
 	already_perm = perm;
 
@@ -134,70 +105,7 @@ bool set_remote_machine_name(const char *remote_name, bool perm)
 
 const char *get_remote_machine_name(void)
 {
-	return remote_machine ? remote_machine : "";
-}
-
-/*******************************************************************
- Setup the string used by %U substitution.
-********************************************************************/
-
-static char *smb_user_name;
-
-void sub_set_smb_name(const char *name)
-{
-	char *tmp;
-	size_t len;
-	bool is_machine_account = false;
-
-	/* don't let anonymous logins override the name */
-	if (!name || !*name) {
-		return;
-	}
-
-	tmp = talloc_strdup(NULL, name);
-	if (!tmp) {
-		return;
-	}
-	trim_char(tmp, ' ', ' ');
-	if (!strlower_m(tmp)) {
-		TALLOC_FREE(tmp);
-		return;
-	}
-
-	len = strlen(tmp);
-
-	if (len == 0) {
-		TALLOC_FREE(tmp);
-		return;
-	}
-
-	/* long story but here goes....we have to allow usernames
-	   ending in '$' as they are valid machine account names.
-	   So check for a machine account and re-add the '$'
-	   at the end after the call to alpha_strcpy().   --jerry  */
-
-	if (tmp[len-1] == '$') {
-		is_machine_account = True;
-	}
-
-	TALLOC_FREE(smb_user_name);
-	smb_user_name = (char *)TALLOC_ZERO(NULL, len+1);
-	if (!smb_user_name) {
-		TALLOC_FREE(tmp);
-		return;
-	}
-
-	/* alpha_strcpy includes the space for the terminating nul. */
-	alpha_strcpy(smb_user_name, tmp,
-			SAFE_NETBIOS_CHARS,
-			len+1);
-
-	TALLOC_FREE(tmp);
-
-	if (is_machine_account) {
-		len = strlen(smb_user_name);
-		smb_user_name[len-1] = '$';
-	}
+	return remote_machine;
 }
 
 static char sub_peeraddr[INET6_ADDRSTRLEN];
@@ -232,11 +140,6 @@ void sub_set_socket_ids(const char *peeraddr, const char *peername,
 	strlcpy(sub_sockaddr, sockaddr, sizeof(sub_sockaddr));
 }
 
-static const char *get_smb_user_name(void)
-{
-	return smb_user_name ? smb_user_name : "";
-}
-
 /*******************************************************************
  Setup the strings used by substitutions. Called per packet. Ensure
  %U name is set correctly also.
@@ -262,11 +165,6 @@ void set_current_user_info(const char *smb_name, const char *unix_name,
 	fstrcpy(current_user_info.unix_name, unix_name);
 	fstrcpy(current_user_info.domain, domain);
 
-	/* The following is safe as current_user_info.smb_name
-	 * has already been sanitised in register_existing_vuid. */
-
-	sub_set_smb_name(current_user_info.smb_name);
-
 	last_smb_name = smb_name;
 	last_unix_name = unix_name;
 	last_domain = domain;
@@ -278,10 +176,6 @@ void set_current_user_info(const char *smb_name, const char *unix_name,
 
 const char *get_current_username(void)
 {
-	if (current_user_info.smb_name[0] == '\0' ) {
-		return get_smb_user_name();
-	}
-
 	return current_user_info.smb_name;
 }
 
@@ -638,9 +532,7 @@ char *talloc_sub_basic(TALLOC_CTX *mem_ctx,
 			break;
 		case 'm' :
 			a_string = realloc_string_sub(a_string, "%m",
-						      remote_machine
-						      ? remote_machine
-						      : "");
+						      remote_machine);
 			break;
 		case 'v' :
 			a_string = realloc_string_sub(a_string, "%v", samba_version_string());

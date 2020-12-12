@@ -116,7 +116,7 @@ static NTSTATUS skel_create_dfs_pathat(struct vfs_handle_struct *handle,
 static NTSTATUS skel_read_dfs_pathat(struct vfs_handle_struct *handle,
 				TALLOC_CTX *mem_ctx,
 				struct files_struct *dirfsp,
-				const struct smb_filename *smb_fname,
+				struct smb_filename *smb_fname,
 				struct referral **ppreflist,
 				size_t *preferral_count)
 {
@@ -126,14 +126,6 @@ static NTSTATUS skel_read_dfs_pathat(struct vfs_handle_struct *handle,
 					smb_fname,
 					ppreflist,
 					preferral_count);
-}
-
-static DIR *skel_opendir(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			const char *mask,
-			uint32_t attr)
-{
-	return SMB_VFS_NEXT_OPENDIR(handle, smb_fname, mask, attr);
 }
 
 static NTSTATUS skel_snap_check_path(struct vfs_handle_struct *handle,
@@ -208,15 +200,19 @@ static int skel_closedir(vfs_handle_struct *handle, DIR *dir)
 	return SMB_VFS_NEXT_CLOSEDIR(handle, dir);
 }
 
-static int skel_open(vfs_handle_struct *handle, struct smb_filename *smb_fname,
-		     files_struct *fsp, int flags, mode_t mode)
+static int skel_openat(struct vfs_handle_struct *handle,
+		       const struct files_struct *dirfsp,
+		       const struct smb_filename *smb_fname,
+		       struct files_struct *fsp,
+		       int flags,
+		       mode_t mode)
 {
-	return SMB_VFS_NEXT_OPEN(handle, smb_fname, fsp, flags, mode);
+	return SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, flags, mode);
 }
 
 static NTSTATUS skel_create_file(struct vfs_handle_struct *handle,
 				 struct smb_request *req,
-				 uint16_t root_dir_fid,
+				 struct files_struct **dirfsp,
 				 struct smb_filename *smb_fname,
 				 uint32_t access_mask,
 				 uint32_t share_access,
@@ -235,7 +231,7 @@ static NTSTATUS skel_create_file(struct vfs_handle_struct *handle,
 {
 	return SMB_VFS_NEXT_CREATE_FILE(handle,
 					req,
-					root_dir_fid,
+					dirfsp,
 					smb_fname,
 					access_mask,
 					share_access,
@@ -595,7 +591,7 @@ static bool skel_getlock(vfs_handle_struct *handle, files_struct *fsp,
 }
 
 static int skel_symlinkat(vfs_handle_struct *handle,
-			const char *link_contents,
+			const struct smb_filename *link_contents,
 			struct files_struct *dirfsp,
 			const struct smb_filename *new_smb_fname)
 {
@@ -868,7 +864,7 @@ static NTSTATUS skel_streaminfo(struct vfs_handle_struct *handle,
 }
 
 static int skel_get_real_filename(struct vfs_handle_struct *handle,
-				  const char *path,
+				  const struct smb_filename *path,
 				  const char *name,
 				  TALLOC_CTX *mem_ctx, char **found_name)
 {
@@ -1063,13 +1059,15 @@ static NTSTATUS skel_fget_nt_acl(vfs_handle_struct *handle, files_struct *fsp,
 					ppdesc);
 }
 
-static NTSTATUS skel_get_nt_acl(vfs_handle_struct *handle,
+static NTSTATUS skel_get_nt_acl_at(vfs_handle_struct *handle,
+				struct files_struct *dirfsp,
 				const struct smb_filename *smb_fname,
 				uint32_t security_info,
 				TALLOC_CTX *mem_ctx,
 				struct security_descriptor **ppdesc)
 {
-	return SMB_VFS_NEXT_GET_NT_ACL(handle,
+	return SMB_VFS_NEXT_GET_NT_ACL_AT(handle,
+				dirfsp,
 				smb_fname,
 				security_info,
 				mem_ctx,
@@ -1366,7 +1364,6 @@ static struct vfs_fn_pointers skel_transparent_fns = {
 
 	/* Directory operations */
 
-	.opendir_fn = skel_opendir,
 	.fdopendir_fn = skel_fdopendir,
 	.readdir_fn = skel_readdir,
 	.seekdir_fn = skel_seekdir,
@@ -1377,7 +1374,7 @@ static struct vfs_fn_pointers skel_transparent_fns = {
 
 	/* File operations */
 
-	.open_fn = skel_open,
+	.openat_fn = skel_openat,
 	.create_file_fn = skel_create_file,
 	.close_fn = skel_close_fn,
 	.pread_fn = skel_pread,
@@ -1448,7 +1445,7 @@ static struct vfs_fn_pointers skel_transparent_fns = {
 	/* NT ACL operations. */
 
 	.fget_nt_acl_fn = skel_fget_nt_acl,
-	.get_nt_acl_fn = skel_get_nt_acl,
+	.get_nt_acl_at_fn = skel_get_nt_acl_at,
 	.fset_nt_acl_fn = skel_fset_nt_acl,
 
 	/* POSIX ACL operations. */

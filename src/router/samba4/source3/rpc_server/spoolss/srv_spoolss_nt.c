@@ -32,7 +32,8 @@
 #include "ntdomain.h"
 #include "nt_printing.h"
 #include "srv_spoolss_util.h"
-#include "../librpc/gen_ndr/srv_spoolss.h"
+#include "librpc/gen_ndr/ndr_spoolss.h"
+#include "librpc/gen_ndr/ndr_spoolss_scompat.h"
 #include "../librpc/gen_ndr/ndr_spoolss_c.h"
 #include "rpc_client/init_spoolss.h"
 #include "rpc_client/cli_pipe.h"
@@ -59,6 +60,9 @@
 #include "../libcli/smb/smbXcli_base.h"
 #include "rpc_server/spoolss/srv_spoolss_handle.h"
 #include "lib/gencache.h"
+#include "rpc_server/rpc_server.h"
+#include "librpc/rpc/dcesrv_core.h"
+#include "printing/nt_printing_migrate_internal.h"
 
 /* macros stolen from s4 spoolss server */
 #define SPOOLSS_BUFFER_UNION(fn,info,level) \
@@ -310,8 +314,14 @@ static struct printer_handle *find_printer_index_by_hnd(struct pipes_struct *p,
 							struct policy_handle *hnd)
 {
 	struct printer_handle *find_printer = NULL;
+	NTSTATUS status;
 
-	if(!find_policy_by_hnd(p,hnd,(void **)(void *)&find_printer)) {
+	find_printer = find_policy_by_hnd(p,
+					  hnd,
+					  DCESRV_HANDLE_ANY,
+					  struct printer_handle,
+					  &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(2,("find_printer_index_by_hnd: Printer handle not found: "));
 		return NULL;
 	}
@@ -741,8 +751,7 @@ static WERROR open_printer_hnd(struct pipes_struct *p,
 
 	new_printer->access_granted = access_granted;
 
-	DEBUG(5, ("%d printer handles active\n",
-		  (int)num_pipe_handles(p)));
+	DBG_INFO("%d printer handles active\n", (int)num_pipe_handles());
 
 	return WERR_OK;
 }
@@ -2440,6 +2449,7 @@ static bool spoolss_connect_to_client(struct rpc_pipe_client **pp_pipe, struct c
 	NTSTATUS ret;
 	struct sockaddr_storage rm_addr;
 	char addr[INET6_ADDRSTRLEN];
+	struct cli_credentials *anon_creds = NULL;
 
 	if ( is_zero_addr(client_ss) ) {
 		DEBUG(2,("spoolss_connect_to_client: resolving %s\n",
@@ -2462,14 +2472,17 @@ static bool spoolss_connect_to_client(struct rpc_pipe_client **pp_pipe, struct c
 		return false;
 	}
 
-	/* setup the connection */
-	ret = cli_full_connection( pp_cli, lp_netbios_name(), remote_machine,
-		&rm_addr, 0, "IPC$", "IPC",
-		"", /* username */
-		"", /* domain */
-		"", /* password */
-		0, lp_client_signing());
+	anon_creds = cli_credentials_init_anon(NULL);
+	if (anon_creds == NULL) {
+		DBG_ERR("cli_credentials_init_anon() failed\n");
+		return false;
+	}
 
+	/* setup the connection */
+	ret = cli_full_connection_creds( pp_cli, lp_netbios_name(), remote_machine,
+		&rm_addr, 0, "IPC$", "IPC",
+		anon_creds, 0, SMB_SIGNING_OFF);
+	TALLOC_FREE(anon_creds);
 	if ( !NT_STATUS_IS_OK( ret ) ) {
 		DEBUG(2,("spoolss_connect_to_client: connection to [%s] failed!\n",
 			remote_machine ));
@@ -11518,3 +11531,49 @@ WERROR _spoolss_LogJobInfoForBranchOffice(struct pipes_struct *p,
 	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
 	return WERR_NOT_SUPPORTED;
 }
+
+static NTSTATUS spoolss__op_init_server(struct dcesrv_context *dce_ctx,
+		const struct dcesrv_endpoint_server *ep_server);
+
+static NTSTATUS spoolss__op_shutdown_server(struct dcesrv_context *dce_ctx,
+		const struct dcesrv_endpoint_server *ep_server);
+
+#define DCESRV_INTERFACE_SPOOLSS_INIT_SERVER \
+	spoolss_init_server
+
+#define DCESRV_INTERFACE_SPOOLSS_SHUTDOWN_SERVER \
+	spoolss_shutdown_server
+
+static NTSTATUS spoolss_init_server(struct dcesrv_context *dce_ctx,
+		const struct dcesrv_endpoint_server *ep_server)
+{
+	struct messaging_context *msg_ctx = global_messaging_context();
+	NTSTATUS status;
+	bool ok;
+
+	status = dcesrv_init_ep_server(dce_ctx, "winreg");
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	/*
+	 * Migrate the printers first.
+	 */
+	ok = nt_printing_tdb_migrate(msg_ctx);
+	if (!ok) {
+		return NT_STATUS_UNSUCCESSFUL;
+	}
+
+	return spoolss__op_init_server(dce_ctx, ep_server);
+}
+
+static NTSTATUS spoolss_shutdown_server(struct dcesrv_context *dce_ctx,
+		const struct dcesrv_endpoint_server *ep_server)
+{
+	srv_spoolss_cleanup();
+
+	return spoolss__op_shutdown_server(dce_ctx, ep_server);
+}
+
+/* include the generated boilerplate */
+#include "librpc/gen_ndr/ndr_spoolss_scompat.c"

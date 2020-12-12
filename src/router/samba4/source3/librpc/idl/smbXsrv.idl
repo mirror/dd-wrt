@@ -141,6 +141,12 @@ interface smbXsrv
 		 */
 		[ignore] struct smbXsrv_connection	*connections;
 		boolean8		server_multi_channel_enabled;
+		hyper			next_channel_id;
+
+		/*
+		 * A List of pending breaks.
+		 */
+		[ignore] struct smbXsrv_pending_break *pending_breaks;
 	} smbXsrv_client;
 
 	typedef union {
@@ -200,6 +206,8 @@ interface smbXsrv
 
 	typedef struct {
 		server_id				server_id;
+		hyper					channel_id;
+		NTTIME					creation_time;
 		[charset(UTF8),string] char		local_address[];
 		[charset(UTF8),string] char		remote_address[];
 		[charset(UTF8),string] char		remote_name[];
@@ -267,7 +275,7 @@ interface smbXsrv
 
 	typedef struct {
 		[ignore] smbXsrv_session_auth0		*prev;
-		smbXsrv_session_auth0			*next;
+		[max_recursion(20000)] smbXsrv_session_auth0 *next;
 		[ignore] smbXsrv_session		*session;
 		[ignore] smbXsrv_connection		*connection;
 		[ignore] gensec_security		*gensec;
@@ -276,6 +284,7 @@ interface smbXsrv
 		uint8					in_security_mode;
 		NTTIME					creation_time;
 		NTTIME					idle_time;
+		hyper					channel_id;
 	} smbXsrv_session_auth0;
 
 	typedef struct {
@@ -435,6 +444,7 @@ interface smbXsrv
 		DATA_BLOB				backend_cookie;
 		uint16					channel_sequence;
 		hyper					channel_generation;
+		[flag(NDR_PAHEX)] uint8			lock_sequence_array[64];
 	} smbXsrv_open_global0;
 
 	typedef union {

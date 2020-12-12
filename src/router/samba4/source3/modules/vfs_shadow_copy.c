@@ -73,58 +73,6 @@ static bool shadow_copy_match_name(const char *name)
 	return False;
 }
 
-static DIR *shadow_copy_opendir(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			const char *mask,
-			uint32_t attr)
-{
-	shadow_copy_Dir *dirp;
-	DIR *p = SMB_VFS_NEXT_OPENDIR(handle,smb_fname,mask,attr);
-
-	if (!p) {
-		DEBUG(0,("shadow_copy_opendir: SMB_VFS_NEXT_OPENDIR() "
-			"failed for [%s]\n",
-			smb_fname->base_name));
-		return NULL;
-	}
-
-	dirp = SMB_MALLOC_P(shadow_copy_Dir);
-	if (!dirp) {
-		DEBUG(0,("shadow_copy_opendir: Out of memory\n"));
-		SMB_VFS_NEXT_CLOSEDIR(handle,p);
-		return NULL;
-	}
-
-	ZERO_STRUCTP(dirp);
-
-	while (True) {
-		struct dirent *d;
-
-		d = SMB_VFS_NEXT_READDIR(handle, p, NULL);
-		if (d == NULL) {
-			break;
-		}
-
-		if (shadow_copy_match_name(d->d_name)) {
-			DEBUG(8,("shadow_copy_opendir: hide [%s]\n",d->d_name));
-			continue;
-		}
-
-		DEBUG(10,("shadow_copy_opendir: not hide [%s]\n",d->d_name));
-
-		dirp->dirs = SMB_REALLOC_ARRAY(dirp->dirs,struct dirent, dirp->num+1);
-		if (!dirp->dirs) {
-			DEBUG(0,("shadow_copy_opendir: Out of memory\n"));
-			break;
-		}
-
-		dirp->dirs[dirp->num++] = *d;
-	}
-
-	SMB_VFS_NEXT_CLOSEDIR(handle,p);
-	return((DIR *)dirp);
-}
-
 static DIR *shadow_copy_fdopendir(vfs_handle_struct *handle, files_struct *fsp, const char *mask, uint32_t attr)
 {
 	shadow_copy_Dir *dirp;
@@ -226,49 +174,52 @@ static int shadow_copy_get_shadow_copy_data(vfs_handle_struct *handle,
 					    struct shadow_copy_data *shadow_copy_data,
 					    bool labels)
 {
-	DIR *p = NULL;
+	struct smb_Dir *dir_hnd = NULL;
+	const char *dname = NULL;
+	char *talloced = NULL;
+	long offset = 0;
 	struct smb_filename *smb_fname = synthetic_smb_fname(talloc_tos(),
 						fsp->conn->connectpath,
 						NULL,
 						NULL,
+						0,
 						0);
 	if (smb_fname == NULL) {
 		errno = ENOMEM;
 		return -1;
 	}
 
-	p = SMB_VFS_NEXT_OPENDIR(handle,smb_fname,NULL,0);
-
+	dir_hnd = OpenDir(talloc_tos(), handle->conn, smb_fname, NULL, 0);
 	TALLOC_FREE(smb_fname);
+	if (dir_hnd == NULL) {
+		DBG_ERR("OpenDir() failed for [%s]\n", fsp->conn->connectpath);
+		return -1;
+	}
 
 	shadow_copy_data->num_volumes = 0;
 	shadow_copy_data->labels = NULL;
 
-	if (!p) {
-		DEBUG(0,("shadow_copy_get_shadow_copy_data: SMB_VFS_NEXT_OPENDIR() failed for [%s]\n",fsp->conn->connectpath));
-		return -1;
-	}
-
 	while (True) {
 		SHADOW_COPY_LABEL *tlabels;
-		struct dirent *d;
 		int ret;
 
-		d = SMB_VFS_NEXT_READDIR(handle, p, NULL);
-		if (d == NULL) {
+		dname = ReadDirName(dir_hnd, &offset, NULL, &talloced);
+		if (dname == NULL) {
 			break;
 		}
 
 		/* */
-		if (!shadow_copy_match_name(d->d_name)) {
-			DEBUG(10,("shadow_copy_get_shadow_copy_data: ignore [%s]\n",d->d_name));
+		if (!shadow_copy_match_name(dname)) {
+			DBG_DEBUG("ignore [%s]\n", dname);
+			TALLOC_FREE(talloced);
 			continue;
 		}
 
-		DEBUG(7,("shadow_copy_get_shadow_copy_data: not ignore [%s]\n",d->d_name));
+		DBG_DEBUG("not ignore [%s]\n", dname);
 
 		if (!labels) {
 			shadow_copy_data->num_volumes++;
+			TALLOC_FREE(talloced);
 			continue;
 		}
 
@@ -277,29 +228,30 @@ static int shadow_copy_get_shadow_copy_data(vfs_handle_struct *handle,
 									(shadow_copy_data->num_volumes+1)*sizeof(SHADOW_COPY_LABEL));
 		if (tlabels == NULL) {
 			DEBUG(0,("shadow_copy_get_shadow_copy_data: Out of memory\n"));
-			SMB_VFS_NEXT_CLOSEDIR(handle,p);
+			TALLOC_FREE(talloced);
+			TALLOC_FREE(dir_hnd);
 			return -1;
 		}
 
-		ret = strlcpy(tlabels[shadow_copy_data->num_volumes], d->d_name,
+		ret = strlcpy(tlabels[shadow_copy_data->num_volumes], dname,
 			      sizeof(tlabels[shadow_copy_data->num_volumes]));
 		if (ret != sizeof(tlabels[shadow_copy_data->num_volumes]) - 1) {
-			DEBUG(0,("shadow_copy_get_shadow_copy_data: malformed label %s\n",
-				 d->d_name));
-			SMB_VFS_NEXT_CLOSEDIR(handle, p);
+			DBG_ERR("malformed label %s\n", dname);
+			TALLOC_FREE(talloced);
+			TALLOC_FREE(dir_hnd);
 			return -1;
 		}
 		shadow_copy_data->num_volumes++;
 
 		shadow_copy_data->labels = tlabels;
+		TALLOC_FREE(talloced);
 	}
 
-	SMB_VFS_NEXT_CLOSEDIR(handle,p);
+	TALLOC_FREE(dir_hnd);
 	return 0;
 }
 
 static struct vfs_fn_pointers vfs_shadow_copy_fns = {
-	.opendir_fn = shadow_copy_opendir,
 	.fdopendir_fn = shadow_copy_fdopendir,
 	.readdir_fn = shadow_copy_readdir,
 	.seekdir_fn = shadow_copy_seekdir,

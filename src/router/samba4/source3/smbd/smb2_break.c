@@ -399,7 +399,7 @@ static struct tevent_req *smbd_smb2_lease_break_send(
 		return tevent_req_post(req, ev);
 	}
 
-	status = downgrade_lease(smb2_req->xconn,
+	status = downgrade_lease(smb2_req->xconn->client,
 				lls.num_file_ids,
 				lls.ids,
 				&in_lease_key,
@@ -442,41 +442,25 @@ void send_break_message_smb2(files_struct *fsp,
 			     uint32_t break_from,
 			     uint32_t break_to)
 {
+	struct smbXsrv_client *client =
+		fsp->conn->sconn->client;
 	NTSTATUS status;
-	struct smbXsrv_connection *xconn = NULL;
-	struct smbXsrv_session *session = NULL;
-	struct timeval tv = timeval_current();
-	NTTIME now = timeval_to_nttime(&tv);
 
-	/*
-	 * TODO: in future we should have a better algorithm
-	 * to find the correct connection for a break message.
-	 * Then we also need some retries if a channel gets disconnected.
-	 */
-	xconn = fsp->conn->sconn->client->connections;
-
-	status = smb2srv_session_lookup_conn(xconn,
-					     fsp->vuid,
-					     now,
-					     &session);
-	if (NT_STATUS_EQUAL(status, NT_STATUS_USER_SESSION_DELETED) ||
-	    (session == NULL))
-	{
-
-		DEBUG(10,("send_break_message_smb2: skip oplock break "
-			"for file %s, %s, smb2 level %u session %llu not found\n",
-			fsp_str_dbg(fsp),
-			fsp_fnum_dbg(fsp),
-			(unsigned int)break_to,
-			(unsigned long long)fsp->vuid));
+	if (!NT_STATUS_IS_OK(fsp->op->status)) {
+		DBG_DEBUG("skip oplock break for file %s, %s, "
+			  "smb2 level %u fsp status=%s\n",
+			  fsp_str_dbg(fsp),
+			  fsp_fnum_dbg(fsp),
+			  (unsigned int)break_to,
+			  nt_errstr(fsp->op->status));
 		return;
 	}
 
-	DEBUG(10,("send_break_message_smb2: sending oplock break "
-		"for file %s, %s, smb2 level %u\n",
-		fsp_str_dbg(fsp),
-		fsp_fnum_dbg(fsp),
-		(unsigned int)break_to ));
+	DBG_DEBUG("sending oplock break "
+		  "for file %s, %s, smb2 level %u\n",
+		  fsp_str_dbg(fsp),
+		  fsp_fnum_dbg(fsp),
+		  (unsigned int)break_to);
 
 	if (fsp->oplock_type == LEASE_OPLOCK) {
 		uint32_t break_flags = 0;
@@ -492,22 +476,20 @@ void send_break_message_smb2(files_struct *fsp,
 			new_epoch = 0;
 		}
 
-		status = smbd_smb2_send_lease_break(xconn, new_epoch, break_flags,
+		status = smbd_smb2_send_lease_break(client, new_epoch, break_flags,
 						    &fsp->lease->lease.lease_key,
 						    break_from, break_to);
 	} else {
 		uint8_t smb2_oplock_level;
 		smb2_oplock_level = (break_to & SMB2_LEASE_READ) ?
 			SMB2_OPLOCK_LEVEL_II : SMB2_OPLOCK_LEVEL_NONE;
-		status = smbd_smb2_send_oplock_break(xconn,
-						     session,
-						     fsp->conn->tcon,
+		status = smbd_smb2_send_oplock_break(client,
 						     fsp->op,
 						     smb2_oplock_level);
 	}
 	if (!NT_STATUS_IS_OK(status)) {
-		smbd_server_connection_terminate(xconn,
-						 nt_errstr(status));
+		smbd_server_disconnect_client(client,
+					      nt_errstr(status));
 		return;
 	}
 }

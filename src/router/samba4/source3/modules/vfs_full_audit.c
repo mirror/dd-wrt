@@ -106,7 +106,6 @@ typedef enum _vfs_op_type {
 
 	/* Directory operations */
 
-	SMB_VFS_OP_OPENDIR,
 	SMB_VFS_OP_FDOPENDIR,
 	SMB_VFS_OP_READDIR,
 	SMB_VFS_OP_SEEKDIR,
@@ -118,6 +117,7 @@ typedef enum _vfs_op_type {
 	/* File operations */
 
 	SMB_VFS_OP_OPEN,
+	SMB_VFS_OP_OPENAT,
 	SMB_VFS_OP_CREATE_FILE,
 	SMB_VFS_OP_CLOSE,
 	SMB_VFS_OP_READ,
@@ -191,7 +191,7 @@ typedef enum _vfs_op_type {
 	/* NT ACL operations. */
 
 	SMB_VFS_OP_FGET_NT_ACL,
-	SMB_VFS_OP_GET_NT_ACL,
+	SMB_VFS_OP_GET_NT_ACL_AT,
 	SMB_VFS_OP_FSET_NT_ACL,
 	SMB_VFS_OP_AUDIT_FILE,
 
@@ -253,7 +253,6 @@ static struct {
 	{ SMB_VFS_OP_GET_DFS_REFERRALS,	"get_dfs_referrals" },
 	{ SMB_VFS_OP_CREATE_DFS_PATHAT,	"create_dfs_pathat" },
 	{ SMB_VFS_OP_READ_DFS_PATHAT,	"read_dfs_pathat" },
-	{ SMB_VFS_OP_OPENDIR,	"opendir" },
 	{ SMB_VFS_OP_FDOPENDIR,	"fdopendir" },
 	{ SMB_VFS_OP_READDIR,	"readdir" },
 	{ SMB_VFS_OP_SEEKDIR,   "seekdir" },
@@ -262,6 +261,7 @@ static struct {
 	{ SMB_VFS_OP_MKDIRAT,	"mkdirat" },
 	{ SMB_VFS_OP_CLOSEDIR,	"closedir" },
 	{ SMB_VFS_OP_OPEN,	"open" },
+	{ SMB_VFS_OP_OPENAT,	"openat" },
 	{ SMB_VFS_OP_CREATE_FILE, "create_file" },
 	{ SMB_VFS_OP_CLOSE,	"close" },
 	{ SMB_VFS_OP_READ,	"read" },
@@ -330,7 +330,7 @@ static struct {
 	{ SMB_VFS_OP_SET_DOS_ATTRIBUTES, "set_dos_attributes" },
 	{ SMB_VFS_OP_FSET_DOS_ATTRIBUTES, "fset_dos_attributes" },
 	{ SMB_VFS_OP_FGET_NT_ACL,	"fget_nt_acl" },
-	{ SMB_VFS_OP_GET_NT_ACL,	"get_nt_acl" },
+	{ SMB_VFS_OP_GET_NT_ACL_AT,	"get_nt_acl_at" },
 	{ SMB_VFS_OP_FSET_NT_ACL,	"fset_nt_acl" },
 	{ SMB_VFS_OP_AUDIT_FILE,	"audit_file" },
 	{ SMB_VFS_OP_SYS_ACL_GET_FILE,	"sys_acl_get_file" },
@@ -921,7 +921,7 @@ static NTSTATUS smb_full_audit_create_dfs_pathat(struct vfs_handle_struct *handl
 static NTSTATUS smb_full_audit_read_dfs_pathat(struct vfs_handle_struct *handle,
 			TALLOC_CTX *mem_ctx,
 			struct files_struct *dirfsp,
-			const struct smb_filename *smb_fname,
+			struct smb_filename *smb_fname,
 			struct referral **ppreflist,
 			size_t *preferral_count)
 {
@@ -987,24 +987,6 @@ static NTSTATUS smb_full_audit_snap_delete(struct vfs_handle_struct *handle,
 	do_log(SMB_VFS_OP_SNAP_DELETE, NT_STATUS_IS_OK(status), handle, "");
 
 	return status;
-}
-
-static DIR *smb_full_audit_opendir(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			const char *mask,
-			uint32_t attr)
-{
-	DIR *result;
-
-	result = SMB_VFS_NEXT_OPENDIR(handle, smb_fname, mask, attr);
-
-	do_log(SMB_VFS_OP_OPENDIR,
-	       (result != NULL),
-	       handle,
-	       "%s",
-	       smb_fname_str_do_log(handle->conn, smb_fname));
-
-	return result;
 }
 
 static DIR *smb_full_audit_fdopendir(vfs_handle_struct *handle,
@@ -1096,24 +1078,27 @@ static int smb_full_audit_closedir(vfs_handle_struct *handle,
 	return result;
 }
 
-static int smb_full_audit_open(vfs_handle_struct *handle,
-			       struct smb_filename *smb_fname,
-			       files_struct *fsp, int flags, mode_t mode)
+static int smb_full_audit_openat(vfs_handle_struct *handle,
+				 const struct files_struct *dirfsp,
+				 const struct smb_filename *smb_fname,
+				 struct files_struct *fsp,
+				 int flags,
+				 mode_t mode)
 {
 	int result;
-	
-	result = SMB_VFS_NEXT_OPEN(handle, smb_fname, fsp, flags, mode);
 
-	do_log(SMB_VFS_OP_OPEN, (result >= 0), handle, "%s|%s",
+	result = SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, flags, mode);
+
+	do_log(SMB_VFS_OP_OPENAT, (result >= 0), handle, "%s|%s",
 	       ((flags & O_WRONLY) || (flags & O_RDWR))?"w":"r",
-	       smb_fname_str_do_log(handle->conn, smb_fname));
+	       fsp_str_do_log(fsp));
 
 	return result;
 }
 
 static NTSTATUS smb_full_audit_create_file(vfs_handle_struct *handle,
 				      struct smb_request *req,
-				      uint16_t root_dir_fid,
+				      struct files_struct **dirfsp,
 				      struct smb_filename *smb_fname,
 				      uint32_t access_mask,
 				      uint32_t share_access,
@@ -1160,7 +1145,7 @@ static NTSTATUS smb_full_audit_create_file(vfs_handle_struct *handle,
 	result = SMB_VFS_NEXT_CREATE_FILE(
 		handle,					/* handle */
 		req,					/* req */
-		root_dir_fid,				/* root_dir_fid */
+		dirfsp,
 		smb_fname,				/* fname */
 		access_mask,				/* access_mask */
 		share_access,				/* share_access */
@@ -1807,7 +1792,7 @@ static bool smb_full_audit_getlock(vfs_handle_struct *handle, files_struct *fsp,
 }
 
 static int smb_full_audit_symlinkat(vfs_handle_struct *handle,
-			const char *link_contents,
+			const struct smb_filename *link_contents,
 			struct files_struct *dirfsp,
 			const struct smb_filename *new_smb_fname)
 {
@@ -1822,7 +1807,7 @@ static int smb_full_audit_symlinkat(vfs_handle_struct *handle,
 	       (result >= 0),
 	       handle,
 	       "%s|%s",
-	       link_contents,
+	       link_contents->base_name,
 	       smb_fname_str_do_log(handle->conn, new_smb_fname));
 
 	return result;
@@ -1988,7 +1973,7 @@ static NTSTATUS smb_full_audit_streaminfo(vfs_handle_struct *handle,
 }
 
 static int smb_full_audit_get_real_filename(struct vfs_handle_struct *handle,
-					    const char *path,
+					    const struct smb_filename *path,
 					    const char *name,
 					    TALLOC_CTX *mem_ctx,
 					    char **found_name)
@@ -1999,7 +1984,8 @@ static int smb_full_audit_get_real_filename(struct vfs_handle_struct *handle,
 						found_name);
 
 	do_log(SMB_VFS_OP_GET_REAL_FILENAME, (result == 0), handle,
-	       "%s/%s->%s", path, name, (result == 0) ? *found_name : "");
+	       "%s/%s->%s",
+	       path->base_name, name, (result == 0) ? *found_name : "");
 
 	return result;
 }
@@ -2454,19 +2440,27 @@ static NTSTATUS smb_full_audit_fget_nt_acl(vfs_handle_struct *handle, files_stru
 	return result;
 }
 
-static NTSTATUS smb_full_audit_get_nt_acl(vfs_handle_struct *handle,
-					  const struct smb_filename *smb_fname,
-					  uint32_t security_info,
-					  TALLOC_CTX *mem_ctx,
-					  struct security_descriptor **ppdesc)
+static NTSTATUS smb_full_audit_get_nt_acl_at(vfs_handle_struct *handle,
+				struct files_struct *dirfsp,
+				const struct smb_filename *smb_fname,
+				uint32_t security_info,
+				TALLOC_CTX *mem_ctx,
+				struct security_descriptor **ppdesc)
 {
 	NTSTATUS result;
 
-	result = SMB_VFS_NEXT_GET_NT_ACL(handle, smb_fname, security_info,
-					 mem_ctx, ppdesc);
+	result = SMB_VFS_NEXT_GET_NT_ACL_AT(handle,
+				dirfsp,
+				smb_fname,
+				security_info,
+				mem_ctx,
+				ppdesc);
 
-	do_log(SMB_VFS_OP_GET_NT_ACL, NT_STATUS_IS_OK(result), handle,
-	       "%s", smb_fname_str_do_log(handle->conn, smb_fname));
+	do_log(SMB_VFS_OP_GET_NT_ACL_AT,
+		NT_STATUS_IS_OK(result),
+		handle,
+	       "%s",
+		smb_fname_str_do_log(handle->conn, smb_fname));
 
 	return result;
 }
@@ -2990,7 +2984,6 @@ static struct vfs_fn_pointers vfs_full_audit_fns = {
 	.get_dfs_referrals_fn = smb_full_audit_get_dfs_referrals,
 	.create_dfs_pathat_fn = smb_full_audit_create_dfs_pathat,
 	.read_dfs_pathat_fn = smb_full_audit_read_dfs_pathat,
-	.opendir_fn = smb_full_audit_opendir,
 	.fdopendir_fn = smb_full_audit_fdopendir,
 	.readdir_fn = smb_full_audit_readdir,
 	.seekdir_fn = smb_full_audit_seekdir,
@@ -2998,7 +2991,7 @@ static struct vfs_fn_pointers vfs_full_audit_fns = {
 	.rewind_dir_fn = smb_full_audit_rewinddir,
 	.mkdirat_fn = smb_full_audit_mkdirat,
 	.closedir_fn = smb_full_audit_closedir,
-	.open_fn = smb_full_audit_open,
+	.openat_fn = smb_full_audit_openat,
 	.create_file_fn = smb_full_audit_create_file,
 	.close_fn = smb_full_audit_close,
 	.pread_fn = smb_full_audit_pread,
@@ -3064,7 +3057,7 @@ static struct vfs_fn_pointers vfs_full_audit_fns = {
 	.set_dos_attributes_fn = smb_full_audit_set_dos_attributes,
 	.fset_dos_attributes_fn = smb_full_audit_fset_dos_attributes,
 	.fget_nt_acl_fn = smb_full_audit_fget_nt_acl,
-	.get_nt_acl_fn = smb_full_audit_get_nt_acl,
+	.get_nt_acl_at_fn = smb_full_audit_get_nt_acl_at,
 	.fset_nt_acl_fn = smb_full_audit_fset_nt_acl,
 	.audit_file_fn = smb_full_audit_audit_file,
 	.sys_acl_get_file_fn = smb_full_audit_sys_acl_get_file,

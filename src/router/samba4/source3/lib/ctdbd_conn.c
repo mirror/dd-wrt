@@ -24,6 +24,7 @@
 #include "serverid.h"
 #include "ctdbd_conn.h"
 #include "system/select.h"
+#include "lib/util/util_net.h"
 #include "lib/util/sys_rw_data.h"
 #include "lib/util/iov_buf.h"
 #include "lib/util/select.h"
@@ -36,6 +37,7 @@
 #include "lib/util/sys_rw.h"
 #include "lib/util/blocking.h"
 #include "ctdb/include/ctdb_protocol.h"
+#include "lib/async_req/async_sock.h"
 
 /* paths to these include files come from --with-ctdb= in configure */
 
@@ -49,9 +51,6 @@ struct ctdbd_srvid_cb {
 	void *private_data;
 };
 
-struct ctdb_pkt_send_state;
-struct ctdb_pkt_recv_state;
-
 struct ctdbd_connection {
 	uint32_t reqid;
 	uint32_t our_vnn;
@@ -60,41 +59,18 @@ struct ctdbd_connection {
 	int fd;
 	int timeout;
 
-	/* For async connections, enabled via ctdbd_setup_fde() */
-	struct tevent_fd *fde;
-
-	/* State to track in-progress read */
-	struct ctdb_read_state {
-		/* Receive buffer for the initial packet length */
-		uint32_t msglen;
-
-		/* iovec state for current read */
-		struct iovec iov;
-		struct iovec *iovs;
-		int iovcnt;
-
-		/* allocated receive buffer based on packet length */
-		struct ctdb_req_header *hdr;
-	} read_state;
-
-	/* Lists of pending async reads and writes */
-	struct ctdb_pkt_recv_state *recv_list;
-	struct ctdb_pkt_send_state *send_list;
+	/*
+	 * Outgoing queue for writev_send of asynchronous ctdb requests
+	 */
+	struct tevent_queue *outgoing;
+	struct tevent_req **pending;
+	struct tevent_req *read_req;
 };
-
-static void ctdbd_async_socket_handler(struct tevent_context *ev,
-				       struct tevent_fd *fde,
-				       uint16_t flags,
-				       void *private_data);
-
-static bool ctdbd_conn_has_async_sends(struct ctdbd_connection *conn)
-{
-	return (conn->send_list != NULL);
-}
 
 static bool ctdbd_conn_has_async_reqs(struct ctdbd_connection *conn)
 {
-	return (conn->fde != NULL);
+	size_t len = talloc_array_length(conn->pending);
+	return (len != 0);
 }
 
 static uint32_t ctdbd_next_reqid(struct ctdbd_connection *conn)
@@ -134,10 +110,14 @@ static void ctdb_packet_dump(struct ctdb_req_header *hdr)
 	if (DEBUGLEVEL < 11) {
 		return;
 	}
-	DEBUGADD(11, ("len=%d, magic=%x, vers=%d, gen=%d, op=%d, reqid=%d\n",
-		      (int)hdr->length, (int)hdr->ctdb_magic,
-		      (int)hdr->ctdb_version, (int)hdr->generation,
-		      (int)hdr->operation, (int)hdr->reqid));
+	DEBUGADD(11, ("len=%"PRIu32", magic=%"PRIu32", vers=%"PRIu32", "
+		      "gen=%"PRIu32", op=%"PRIu32", reqid=%"PRIu32"\n",
+		      hdr->length,
+		      hdr->ctdb_magic,
+		      hdr->ctdb_version,
+		      hdr->generation,
+		      hdr->operation,
+		      hdr->reqid));
 }
 
 /*
@@ -242,7 +222,7 @@ static int get_cluster_vnn(struct ctdbd_connection *conn, uint32_t *vnn)
 static bool ctdbd_working(struct ctdbd_connection *conn, uint32_t vnn)
 {
 	int32_t cstatus=-1;
-	TDB_DATA outdata;
+	TDB_DATA outdata = {0};
 	struct ctdb_node_map_old *m;
 	bool ok = false;
 	uint32_t i;
@@ -256,7 +236,7 @@ static bool ctdbd_working(struct ctdbd_connection *conn, uint32_t vnn)
 	}
 	if ((cstatus != 0) || (outdata.dptr == NULL)) {
 		DEBUG(2, ("Received invalid ctdb data\n"));
-		return false;
+		goto fail;
 	}
 
 	m = (struct ctdb_node_map_old *)outdata.dptr;
@@ -296,10 +276,17 @@ uint32_t ctdbd_vnn(const struct ctdbd_connection *conn)
 
 static int ctdbd_connect(const char *sockname, int *pfd)
 {
-	struct sockaddr_un addr = { 0, };
+	struct samba_sockaddr addr = {
+		.sa_socklen = sizeof(struct sockaddr_un),
+		.u = {
+			.un = {
+				.sun_family = AF_UNIX,
+			},
+		},
+	};
 	int fd;
-	socklen_t salen;
 	size_t namelen;
+	int ret;
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (fd == -1) {
@@ -308,19 +295,18 @@ static int ctdbd_connect(const char *sockname, int *pfd)
 		return err;
 	}
 
-	addr.sun_family = AF_UNIX;
-
-	namelen = strlcpy(addr.sun_path, sockname, sizeof(addr.sun_path));
-	if (namelen >= sizeof(addr.sun_path)) {
+	namelen = strlcpy(addr.u.un.sun_path,
+			  sockname,
+			  sizeof(addr.u.un.sun_path));
+	if (namelen >= sizeof(addr.u.un.sun_path)) {
 		DEBUG(3, ("%s: Socket name too long: %s\n", __func__,
 			  sockname));
 		close(fd);
 		return ENAMETOOLONG;
 	}
 
-	salen = sizeof(struct sockaddr_un);
-
-	if (connect(fd, (struct sockaddr *)(void *)&addr, salen) == -1) {
+	ret = connect(fd, &addr.u.sa, addr.sa_socklen);
+	if (ret == -1) {
 		int err = errno;
 		DEBUG(1, ("connect(%s) failed: %s\n", sockname,
 			  strerror(err)));
@@ -440,31 +426,6 @@ static int ctdb_read_req(struct ctdbd_connection *conn, uint32_t reqid,
 	return 0;
 }
 
-/**
- * This prepares conn for handling async requests
- **/
-int ctdbd_setup_fde(struct ctdbd_connection *conn, struct tevent_context *ev)
-{
-	int ret;
-
-	ret = set_blocking(conn->fd, false);
-	if (ret == -1) {
-		return errno;
-	}
-
-	conn->fde = tevent_add_fd(ev,
-				  conn,
-				  conn->fd,
-				  TEVENT_FD_READ,
-				  ctdbd_async_socket_handler,
-				  conn);
-	if (conn->fde == NULL) {
-		return ENOMEM;
-	}
-
-	return 0;
-}
-
 static int ctdbd_connection_destructor(struct ctdbd_connection *c);
 
 /*
@@ -568,6 +529,37 @@ int ctdbd_reinit_connection(TALLOC_CTX *mem_ctx,
 	return 0;
 }
 
+int ctdbd_init_async_connection(
+	TALLOC_CTX *mem_ctx,
+	const char *sockname,
+	int timeout,
+	struct ctdbd_connection **pconn)
+{
+	struct ctdbd_connection *conn = NULL;
+	int ret;
+
+	ret = ctdbd_init_connection(mem_ctx, sockname, timeout, &conn);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = set_blocking(conn->fd, false);
+	if (ret == -1) {
+		int err = errno;
+		TALLOC_FREE(conn);
+		return err;
+	}
+
+	conn->outgoing = tevent_queue_create(conn, "ctdb async outgoing");
+	if (conn->outgoing == NULL) {
+		TALLOC_FREE(conn);
+		return ENOMEM;
+	}
+
+	*pconn = conn;
+	return 0;
+}
+
 int ctdbd_conn_get_fd(struct ctdbd_connection *conn)
 {
 	return conn->fd;
@@ -616,41 +608,6 @@ void ctdbd_socket_readable(struct tevent_context *ev,
 		DEBUG(10, ("could not handle incoming message: %s\n",
 			   strerror(ret)));
 	}
-}
-
-static int ctdb_pkt_send_handler(struct ctdbd_connection *conn);
-static int ctdb_pkt_recv_handler(struct ctdbd_connection *conn);
-
-/* Used for async connection and async ctcb requests */
-static void ctdbd_async_socket_handler(struct tevent_context *ev,
-				       struct tevent_fd *fde,
-				       uint16_t flags,
-				       void *private_data)
-{
-	struct ctdbd_connection *conn = talloc_get_type_abort(
-		private_data, struct ctdbd_connection);
-	int ret;
-
-	if ((flags & TEVENT_FD_READ) != 0) {
-		ret = ctdb_pkt_recv_handler(conn);
-		if (ret != 0) {
-			DBG_DEBUG("ctdb_read_iov_handler returned %s\n",
-				  strerror(ret));
-		}
-		return;
-	}
-
-	if ((flags & TEVENT_FD_WRITE) != 0) {
-		ret = ctdb_pkt_send_handler(conn);
-		if (ret != 0) {
-			DBG_DEBUG("ctdb_write_iov_handler returned %s\n",
-				  strerror(ret));
-			return;
-		}
-		return;
-	}
-
-	return;
 }
 
 int ctdbd_messaging_send_iov(struct ctdbd_connection *conn,
@@ -834,7 +791,7 @@ char *ctdbd_dbpath(struct ctdbd_connection *conn,
 	if ((ret != 0) || cstatus != 0) {
 		DEBUG(0, (__location__ " ctdb_control for getdbpath failed: %s\n",
 			  strerror(ret)));
-		return NULL;
+		TALLOC_FREE(rdata.dptr);
 	}
 
 	return (char *)rdata.dptr;
@@ -847,7 +804,7 @@ int ctdbd_db_attach(struct ctdbd_connection *conn,
 		    const char *name, uint32_t *db_id, bool persistent)
 {
 	int ret;
-	TDB_DATA data;
+	TDB_DATA data = {0};
 	int32_t cstatus;
 
 	data = string_term_tdb_data(name);
@@ -865,6 +822,7 @@ int ctdbd_db_attach(struct ctdbd_connection *conn,
 
 	if (cstatus != 0 || data.dsize != sizeof(uint32_t)) {
 		DEBUG(0,(__location__ " ctdb_control for db_attach failed\n"));
+		TALLOC_FREE(data.dptr);
 		return EIO;
 	}
 
@@ -1211,14 +1169,83 @@ int ctdbd_register_ips(struct ctdbd_connection *conn,
 	 * can send an extra ack to trigger a reset for our client, so it
 	 * immediately reconnects
 	 */
-	ret = ctdbd_control(conn, CTDB_CURRENT_NODE,
-			    CTDB_CONTROL_TCP_CLIENT, 0,
-			    CTDB_CTRL_FLAG_NOREPLY, data, NULL, NULL,
-			    NULL);
+	ret = ctdbd_control_local(conn,
+				  CTDB_CONTROL_TCP_CLIENT, 0,
+				  CTDB_CTRL_FLAG_NOREPLY, data, NULL, NULL,
+				  NULL);
 	if (ret != 0) {
 		return ret;
 	}
 	return 0;
+}
+
+int ctdbd_control_get_public_ips(struct ctdbd_connection *conn,
+				 uint32_t flags,
+				 TALLOC_CTX *mem_ctx,
+				 struct ctdb_public_ip_list_old **_ips)
+{
+	struct ctdb_public_ip_list_old *ips = NULL;
+	TDB_DATA outdata;
+	int32_t cstatus = -1;
+	size_t min_dsize;
+	size_t max_ips;
+	int ret;
+
+	*_ips = NULL;
+
+	ret = ctdbd_control_local(conn,
+				  CTDB_CONTROL_GET_PUBLIC_IPS,
+				  0, /* srvid */
+				  flags,
+				  tdb_null, /* indata */
+				  mem_ctx,
+				  &outdata,
+				  &cstatus);
+	if (ret != 0 || cstatus != 0) {
+		DBG_ERR("ctdb_control for getpublicips failed ret:%d cstatus:%d\n",
+			ret, (int)cstatus);
+		return -1;
+	}
+
+	min_dsize = offsetof(struct ctdb_public_ip_list_old, ips);
+	if (outdata.dsize < min_dsize) {
+		DBG_ERR("outdata.dsize=%zu < min_dsize=%zu\n",
+			outdata.dsize, min_dsize);
+		return -1;
+	}
+	max_ips = (outdata.dsize - min_dsize)/sizeof(struct ctdb_public_ip);
+	ips = (struct ctdb_public_ip_list_old *)outdata.dptr;
+	if ((size_t)ips->num > max_ips) {
+		DBG_ERR("ips->num=%zu > max_ips=%zu\n",
+			(size_t)ips->num, max_ips);
+		return -1;
+	}
+
+	*_ips = ips;
+	return 0;
+}
+
+bool ctdbd_find_in_public_ips(const struct ctdb_public_ip_list_old *ips,
+			      const struct sockaddr_storage *ip)
+{
+	uint32_t i;
+
+	for (i=0; i < ips->num; i++) {
+		struct samba_sockaddr tmp = {
+			.u = {
+				.ss = *ip,
+			},
+		};
+		bool match;
+
+		match = sockaddr_equal(&ips->ips[i].addr.sa,
+				       &tmp.u.sa);
+		if (match) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 /*
@@ -1295,506 +1322,345 @@ int ctdbd_probe(const char *sockname, int timeout)
 	return ret;
 }
 
-struct ctdb_pkt_send_state {
-	struct ctdb_pkt_send_state *prev, *next;
-	struct tevent_context *ev;
-	struct ctdbd_connection *conn;
-
-	/* ctdb request id */
-	uint32_t reqid;
-
-	/* the associated tevent request */
-	struct tevent_req *req;
-
-	/* iovec array with data to send */
-	struct iovec _iov;
-	struct iovec *iov;
-	int iovcnt;
-
-	/* Initial packet length */
-	size_t packet_len;
-};
-
-static void ctdb_pkt_send_cleanup(struct tevent_req *req,
-				  enum tevent_req_state req_state);
-
-/**
- * Asynchronously send a ctdb packet given as iovec array
- *
- * Note: the passed iov array is not const here. Similar
- * functions in samba take a const array and create a copy
- * before calling iov_advance() on the array.
- *
- * This function will modify the iov array! But
- * this is a static function and our only caller
- * ctdb_parse_send/recv is preparared for this to
- * happen!
- **/
-static struct tevent_req *ctdb_pkt_send_send(TALLOC_CTX *mem_ctx,
-					     struct tevent_context *ev,
-					     struct ctdbd_connection *conn,
-					     uint32_t reqid,
-					     struct iovec *iov,
-					     int iovcnt,
-					     enum dbwrap_req_state *req_state)
-{
-	struct tevent_req *req = NULL;
-	struct ctdb_pkt_send_state *state = NULL;
-	ssize_t nwritten;
-	bool ok;
-
-	DBG_DEBUG("sending async ctdb reqid [%" PRIu32 "]\n", reqid);
-
-	req = tevent_req_create(mem_ctx, &state, struct ctdb_pkt_send_state);
-	if (req == NULL) {
-		return NULL;
-	}
-
-	*state = (struct ctdb_pkt_send_state) {
-		.ev = ev,
-		.conn = conn,
-		.req = req,
-		.reqid = reqid,
-		.iov = iov,
-		.iovcnt = iovcnt,
-		.packet_len = iov_buflen(iov, iovcnt),
-	};
-
-	tevent_req_set_cleanup_fn(req, ctdb_pkt_send_cleanup);
-
-	*req_state = DBWRAP_REQ_QUEUED;
-
-	if (ctdbd_conn_has_async_sends(conn)) {
-		/*
-		 * Can't attempt direct write with messages already queued and
-		 * possibly in progress
-		 */
-		DLIST_ADD_END(conn->send_list, state);
-		return req;
-	}
-
-	/*
-	 * Attempt a direct write. If this returns short, schedule the
-	 * remaining data as an async write, otherwise we're already done.
-	 */
-
-	nwritten = writev(conn->fd, state->iov, state->iovcnt);
-	if (nwritten == state->packet_len) {
-		DBG_DEBUG("Finished sending reqid [%" PRIu32 "]\n", reqid);
-
-		*req_state = DBWRAP_REQ_DISPATCHED;
-		tevent_req_done(req);
-		return tevent_req_post(req, ev);
-	}
-
-	if (nwritten == -1) {
-		if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
-			cluster_fatal("cluster write error\n");
-		}
-		nwritten = 0;
-	}
-
-	DBG_DEBUG("Posting async write of reqid [%" PRIu32"]"
-		  "after short write [%zd]\n", reqid, nwritten);
-
-	ok = iov_advance(&state->iov, &state->iovcnt, nwritten);
-	if (!ok) {
-		*req_state = DBWRAP_REQ_ERROR;
-		tevent_req_error(req, EIO);
-		return tevent_req_post(req, ev);
-	}
-
-	/*
-	 * As this is the first async write req we post, we must enable
-	 * fd-writable events.
-	 */
-	TEVENT_FD_WRITEABLE(conn->fde);
-	DLIST_ADD_END(conn->send_list, state);
-	return req;
-}
-
-static int ctdb_pkt_send_state_destructor(struct ctdb_pkt_send_state *state)
-{
-	struct ctdbd_connection *conn = state->conn;
-
-	if (conn == NULL) {
-		return 0;
-	}
-
-	if (state->req == NULL) {
-		DBG_DEBUG("Removing cancelled reqid [%" PRIu32"]\n",
-			  state->reqid);
-		state->conn = NULL;
-		DLIST_REMOVE(conn->send_list, state);
-		return 0;
-	}
-
-	DBG_DEBUG("Reparenting cancelled reqid [%" PRIu32"]\n",
-		  state->reqid);
-
-	talloc_reparent(state->req, conn, state);
-	state->req = NULL;
-	return -1;
-}
-
-static void ctdb_pkt_send_cleanup(struct tevent_req *req,
-				  enum tevent_req_state req_state)
-{
-	struct ctdb_pkt_send_state *state = tevent_req_data(
-		req, struct ctdb_pkt_send_state);
-	struct ctdbd_connection *conn = state->conn;
-	size_t missing_len = 0;
-
-	if (conn == NULL) {
-		return;
-	}
-
-	missing_len = iov_buflen(state->iov, state->iovcnt);
-	if (state->packet_len == missing_len) {
-		/*
-		 * We haven't yet started sending this one, so we can just
-		 * remove it from the pending list
-		 */
-		missing_len = 0;
-	}
-	if (missing_len != 0) {
-		uint8_t *buf = NULL;
-
-		if (req_state != TEVENT_REQ_RECEIVED) {
-			/*
-			 * Wait til the req_state is TEVENT_REQ_RECEIVED, as
-			 * that will be the final state when the request state
-			 * is talloc_free'd from tallloc_req_received(). Which
-			 * ensures we only run the following code *ONCE*!
-			 */
-			return;
-		}
-
-		DBG_DEBUG("Cancelling in-flight reqid [%" PRIu32"]\n",
-			  state->reqid);
-		/*
-		 * A request in progress of being sent. Reparent the iov buffer
-		 * so we can continue sending the request. See also the comment
-		 * in ctdbd_parse_send() when copying the key buffer.
-		 */
-
-		buf = iov_concat(state, state->iov, state->iovcnt);
-		if (buf == NULL) {
-			cluster_fatal("iov_concat error\n");
-			return;
-		}
-
-		state->iovcnt = 1;
-		state->_iov.iov_base = buf;
-		state->_iov.iov_len = missing_len;
-		state->iov = &state->_iov;
-
-		talloc_set_destructor(state, ctdb_pkt_send_state_destructor);
-		return;
-	}
-
-	DBG_DEBUG("Removing pending reqid [%" PRIu32"]\n", state->reqid);
-
-	state->conn = NULL;
-	DLIST_REMOVE(conn->send_list, state);
-
-	if (!ctdbd_conn_has_async_sends(conn)) {
-		DBG_DEBUG("No more sends, disabling fd-writable events\n");
-		TEVENT_FD_NOT_WRITEABLE(conn->fde);
-	}
-}
-
-static int ctdb_pkt_send_handler(struct ctdbd_connection *conn)
-{
-	struct ctdb_pkt_send_state *state = NULL;
-	ssize_t nwritten;
-	ssize_t iovlen;
-	bool ok;
-
-	DBG_DEBUG("send handler\n");
-
-	if (!ctdbd_conn_has_async_sends(conn)) {
-		DBG_WARNING("Writable fd-event without pending send\n");
-		TEVENT_FD_NOT_WRITEABLE(conn->fde);
-		return 0;
-	}
-
-	state = conn->send_list;
-	iovlen = iov_buflen(state->iov, state->iovcnt);
-
-	nwritten = writev(conn->fd, state->iov, state->iovcnt);
-	if (nwritten == -1) {
-		if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
-			DBG_ERR("writev failed: %s\n", strerror(errno));
-			cluster_fatal("cluster write error\n");
-		}
-		DBG_DEBUG("recoverable writev error, retry\n");
-		return 0;
-	}
-
-	if (nwritten < iovlen) {
-		DBG_DEBUG("short write\n");
-
-		ok = iov_advance(&state->iov, &state->iovcnt, nwritten);
-		if (!ok) {
-			DBG_ERR("iov_advance failed\n");
-			if (state->req == NULL) {
-				TALLOC_FREE(state);
-				return 0;
-			}
-			tevent_req_error(state->req, EIO);
-			return 0;
-		}
-		return 0;
-	}
-
-	if (state->req == NULL) {
-		DBG_DEBUG("Finished sending cancelled reqid [%" PRIu32 "]\n",
-			  state->reqid);
-		TALLOC_FREE(state);
-		return 0;
-	}
-
-	DBG_DEBUG("Finished send request id [%" PRIu32 "]\n", state->reqid);
-
-	tevent_req_done(state->req);
-	return 0;
-}
-
-static int ctdb_pkt_send_recv(struct tevent_req *req)
-{
-	int ret;
-
-	if (tevent_req_is_unix_error(req, &ret)) {
-		tevent_req_received(req);
-		return ret;
-	}
-
-	tevent_req_received(req);
-	return 0;
-}
-
-struct ctdb_pkt_recv_state {
-	struct ctdb_pkt_recv_state *prev, *next;
-	struct tevent_context *ev;
-	struct ctdbd_connection *conn;
-
-	/* ctdb request id */
-	uint32_t reqid;
-
-	/* the associated tevent_req */
-	struct tevent_req *req;
-
-	/* pointer to allocated ctdb packet buffer */
-	struct ctdb_req_header *hdr;
-};
-
-static void ctdb_pkt_recv_cleanup(struct tevent_req *req,
-				  enum tevent_req_state req_state);
-
-static struct tevent_req *ctdb_pkt_recv_send(TALLOC_CTX *mem_ctx,
-					     struct tevent_context *ev,
-					     struct ctdbd_connection *conn,
-					     uint32_t reqid)
-{
-	struct tevent_req *req = NULL;
-	struct ctdb_pkt_recv_state *state = NULL;
-
-	req = tevent_req_create(mem_ctx, &state, struct ctdb_pkt_recv_state);
-	if (req == NULL) {
-		return NULL;
-	}
-
-	*state = (struct ctdb_pkt_recv_state) {
-		.ev = ev,
-		.conn = conn,
-		.reqid = reqid,
-		.req = req,
-	};
-
-	tevent_req_set_cleanup_fn(req, ctdb_pkt_recv_cleanup);
-
-	/*
-	 * fd-readable event is always set for the fde, no need to deal with
-	 * that here.
-	 */
-
-	DLIST_ADD_END(conn->recv_list, state);
-	DBG_DEBUG("Posted receive reqid [%" PRIu32 "]\n", state->reqid);
-
-	return req;
-}
-
-static void ctdb_pkt_recv_cleanup(struct tevent_req *req,
-				  enum tevent_req_state req_state)
-{
-	struct ctdb_pkt_recv_state *state = tevent_req_data(
-		req, struct ctdb_pkt_recv_state);
-	struct ctdbd_connection *conn = state->conn;
-
-	if (conn == NULL) {
-		return;
-	}
-	state->conn = NULL;
-	DLIST_REMOVE(conn->recv_list, state);
-}
-
-static int ctdb_pkt_recv_handler(struct ctdbd_connection *conn)
-{
-	struct ctdb_pkt_recv_state *state = NULL;
-	ssize_t nread;
-	ssize_t iovlen;
-	bool ok;
-
-	DBG_DEBUG("receive handler\n");
-
-	if (conn->read_state.iovs == NULL) {
-		conn->read_state.iov.iov_base = &conn->read_state.msglen;
-		conn->read_state.iov.iov_len = sizeof(conn->read_state.msglen);
-		conn->read_state.iovs = &conn->read_state.iov;
-		conn->read_state.iovcnt = 1;
-	}
-
-	iovlen = iov_buflen(conn->read_state.iovs, conn->read_state.iovcnt);
-
-	DBG_DEBUG("iovlen [%zd]\n", iovlen);
-
-	nread = readv(conn->fd, conn->read_state.iovs, conn->read_state.iovcnt);
-	if (nread == 0) {
-		cluster_fatal("cluster read error, peer closed connection\n");
-	}
-	if (nread == -1) {
-		if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
-			cluster_fatal("cluster read error\n");
-		}
-		DBG_DEBUG("recoverable error from readv, retry\n");
-		return 0;
-	}
-
-	if (nread < iovlen) {
-		DBG_DEBUG("iovlen [%zd] nread [%zd]\n", iovlen, nread);
-		ok = iov_advance(&conn->read_state.iovs,
-				 &conn->read_state.iovcnt,
-				 nread);
-		if (!ok) {
-			return EIO;
-		}
-		return 0;
-	}
-
-	conn->read_state.iovs = NULL;
-	conn->read_state.iovcnt = 0;
-
-	if (conn->read_state.hdr == NULL) {
-		/*
-		 * Going this way after reading the 4 initial byte message
-		 * length
-		 */
-		uint32_t msglen = conn->read_state.msglen;
-		uint8_t *readbuf = NULL;
-		size_t readlen;
-
-		DBG_DEBUG("msglen: %" PRIu32 "\n", msglen);
-
-		if (msglen < sizeof(struct ctdb_req_header)) {
-			DBG_ERR("short message %" PRIu32 "\n", msglen);
-			return EIO;
-		}
-
-		conn->read_state.hdr = talloc_size(conn, msglen);
-		if (conn->read_state.hdr == NULL) {
-			return ENOMEM;
-		}
-		conn->read_state.hdr->length = msglen;
-		talloc_set_name_const(conn->read_state.hdr,
-				      "struct ctdb_req_header");
-
-		readbuf = (uint8_t *)conn->read_state.hdr + sizeof(msglen);
-		readlen = msglen - sizeof(msglen);
-
-		conn->read_state.iov.iov_base = readbuf;
-		conn->read_state.iov.iov_len = readlen;
-		conn->read_state.iovs = &conn->read_state.iov;
-		conn->read_state.iovcnt = 1;
-
-		DBG_DEBUG("Scheduled packet read size %zd\n", readlen);
-		return 0;
-	}
-
-	/*
-	 * Searching a list here is expected to be cheap, as messages are
-	 * exepcted to be coming in more or less ordered and we should find the
-	 * waiting request near the beginning of the list.
-	 */
-	for (state = conn->recv_list; state != NULL; state = state->next) {
-		if (state->reqid == conn->read_state.hdr->reqid) {
-			break;
-		}
-	}
-
-	if (state == NULL) {
-		DBG_ERR("Discarding async ctdb reqid %u\n",
-			conn->read_state.hdr->reqid);
-		TALLOC_FREE(conn->read_state.hdr);
-		ZERO_STRUCT(conn->read_state);
-		return EINVAL;
-	}
-
-	DBG_DEBUG("Got reply for reqid [%" PRIu32 "]\n", state->reqid);
-
-	state->hdr = talloc_move(state, &conn->read_state.hdr);
-	ZERO_STRUCT(conn->read_state);
-	tevent_req_done(state->req);
-	return 0;
-}
-
-static int ctdb_pkt_recv_recv(struct tevent_req *req,
-			      TALLOC_CTX *mem_ctx,
-			      struct ctdb_req_header **_hdr)
-{
-	struct ctdb_pkt_recv_state *state = tevent_req_data(
-		req, struct ctdb_pkt_recv_state);
-	int error;
-
-	if (tevent_req_is_unix_error(req, &error)) {
-		DBG_ERR("ctdb_read_req failed %s\n", strerror(error));
-		tevent_req_received(req);
-		return error;
-	}
-
-	*_hdr = talloc_move(mem_ctx, &state->hdr);
-
-	tevent_req_received(req);
-	return 0;
-}
-
 static int ctdbd_connection_destructor(struct ctdbd_connection *c)
 {
-	TALLOC_FREE(c->fde);
 	if (c->fd != -1) {
 		close(c->fd);
 		c->fd = -1;
 	}
+	return 0;
+}
 
-	TALLOC_FREE(c->read_state.hdr);
-	ZERO_STRUCT(c->read_state);
+void ctdbd_prep_hdr_next_reqid(
+	struct ctdbd_connection *conn, struct ctdb_req_header *hdr)
+{
+	*hdr = (struct ctdb_req_header) {
+		.ctdb_magic = CTDB_MAGIC,
+		.ctdb_version = CTDB_PROTOCOL,
+		.reqid = ctdbd_next_reqid(conn),
+		.destnode = CTDB_CURRENT_NODE,
+	};
+}
 
-	while (c->send_list != NULL) {
-		struct ctdb_pkt_send_state *send_state = c->send_list;
-		DLIST_REMOVE(c->send_list, send_state);
-		send_state->conn = NULL;
-		tevent_req_defer_callback(send_state->req, send_state->ev);
-		tevent_req_error(send_state->req, EIO);
+struct ctdbd_pkt_read_state {
+	uint8_t *pkt;
+};
+
+static ssize_t ctdbd_pkt_read_more(
+	uint8_t *buf, size_t buflen, void *private_data);
+static void ctdbd_pkt_read_done(struct tevent_req *subreq);
+
+static struct tevent_req *ctdbd_pkt_read_send(
+	TALLOC_CTX *mem_ctx, struct tevent_context *ev, int fd)
+{
+	struct tevent_req *req = NULL, *subreq = NULL;
+	struct ctdbd_pkt_read_state *state = NULL;
+
+	req = tevent_req_create(mem_ctx, &state, struct ctdbd_pkt_read_state);
+	if (req == NULL) {
+		return NULL;
+	}
+	subreq = read_packet_send(state, ev, fd, 4, ctdbd_pkt_read_more, NULL);
+	if (tevent_req_nomem(subreq, req)) {
+		return tevent_req_post(req, ev);
+	}
+	tevent_req_set_callback(subreq, ctdbd_pkt_read_done, req);
+	return req;
+}
+
+static ssize_t ctdbd_pkt_read_more(
+	uint8_t *buf, size_t buflen, void *private_data)
+{
+	uint32_t msglen;
+	if (buflen < 4) {
+		return -1;
+	}
+	if (buflen > 4) {
+		return 0; 	/* Been here, done */
+	}
+	memcpy(&msglen, buf, 4);
+
+	if (msglen < sizeof(struct ctdb_req_header)) {
+		return -1;
+	}
+	return msglen - sizeof(msglen);
+}
+
+static void ctdbd_pkt_read_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	struct ctdbd_pkt_read_state *state = tevent_req_data(
+		req, struct ctdbd_pkt_read_state);
+	ssize_t nread;
+	int err;
+
+	nread = read_packet_recv(subreq, state, &state->pkt, &err);
+	TALLOC_FREE(subreq);
+	if (nread == -1) {
+		tevent_req_error(req, err);
+		return;
+	}
+	tevent_req_done(req);
+}
+
+static int ctdbd_pkt_read_recv(
+	struct tevent_req *req, TALLOC_CTX *mem_ctx, uint8_t **pkt)
+{
+	struct ctdbd_pkt_read_state *state = tevent_req_data(
+		req, struct ctdbd_pkt_read_state);
+	int err;
+
+	if (tevent_req_is_unix_error(req, &err)) {
+		return err;
+	}
+	*pkt = talloc_move(mem_ctx, &state->pkt);
+	tevent_req_received(req);
+	return 0;
+}
+
+static bool ctdbd_conn_receive_next(struct ctdbd_connection *conn);
+static void ctdbd_conn_received(struct tevent_req *subreq);
+
+struct ctdbd_req_state {
+	struct ctdbd_connection *conn;
+	struct tevent_context *ev;
+	uint32_t reqid;
+	struct ctdb_req_header *reply;
+};
+
+static void ctdbd_req_unset_pending(struct tevent_req *req)
+{
+	struct ctdbd_req_state *state = tevent_req_data(
+		req, struct ctdbd_req_state);
+	struct ctdbd_connection *conn = state->conn;
+	size_t num_pending = talloc_array_length(conn->pending);
+	size_t i, num_after;
+
+	tevent_req_set_cleanup_fn(req, NULL);
+
+	if (num_pending == 1) {
+		/*
+		 * conn->read_req is a child of conn->pending
+		 */
+		TALLOC_FREE(conn->pending);
+		conn->read_req = NULL;
+		return;
 	}
 
-	while (c->recv_list != NULL) {
-		struct ctdb_pkt_recv_state *recv_state = c->recv_list;
-		DLIST_REMOVE(c->recv_list, recv_state);
-		recv_state->conn = NULL;
-		tevent_req_defer_callback(recv_state->req, recv_state->ev);
-		tevent_req_error(recv_state->req, EIO);
+	for (i=0; i<num_pending; i++) {
+		if (req == conn->pending[i]) {
+			break;
+		}
+	}
+	if (i == num_pending) {
+		/*
+		 * Something's seriously broken. Just returning here is the
+		 * right thing nevertheless, the point of this routine is to
+		 * remove ourselves from conn->pending.
+		 */
+		return;
 	}
 
+	num_after = num_pending - i - 1;
+	if (num_after > 0) {
+		memmove(&conn->pending[i],
+			&conn->pending[i] + 1,
+			sizeof(*conn->pending) * num_after);
+	}
+	conn->pending = talloc_realloc(
+		NULL, conn->pending, struct tevent_req *, num_pending - 1);
+}
+
+static void ctdbd_req_cleanup(
+	struct tevent_req *req, enum tevent_req_state req_state)
+{
+	ctdbd_req_unset_pending(req);
+}
+
+static bool ctdbd_req_set_pending(struct tevent_req *req)
+{
+	struct ctdbd_req_state *state = tevent_req_data(
+		req, struct ctdbd_req_state);
+	struct ctdbd_connection *conn = state->conn;
+	struct tevent_req **pending = NULL;
+	size_t num_pending = talloc_array_length(conn->pending);
+	bool ok;
+
+	pending = talloc_realloc(
+		conn, conn->pending, struct tevent_req *, num_pending + 1);
+	if (pending == NULL) {
+		return false;
+	}
+	pending[num_pending] = req;
+	conn->pending = pending;
+
+	tevent_req_set_cleanup_fn(req, ctdbd_req_cleanup);
+
+	ok = ctdbd_conn_receive_next(conn);
+	if (!ok) {
+		ctdbd_req_unset_pending(req);
+		return false;
+	}
+
+	return true;
+}
+
+static bool ctdbd_conn_receive_next(struct ctdbd_connection *conn)
+{
+	size_t num_pending = talloc_array_length(conn->pending);
+	struct tevent_req *req = NULL;
+	struct ctdbd_req_state *state = NULL;
+
+	if (conn->read_req != NULL) {
+		return true;
+	}
+	if (num_pending == 0) {
+		/*
+		 * done for now
+		 */
+		return true;
+	}
+
+	req = conn->pending[0];
+	state = tevent_req_data(req, struct ctdbd_req_state);
+
+	conn->read_req = ctdbd_pkt_read_send(
+		conn->pending, state->ev, conn->fd);
+	if (conn->read_req == NULL) {
+		return false;
+	}
+	tevent_req_set_callback(conn->read_req, ctdbd_conn_received, conn);
+	return true;
+}
+
+static void ctdbd_conn_received(struct tevent_req *subreq)
+{
+	struct ctdbd_connection *conn = tevent_req_callback_data(
+		subreq, struct ctdbd_connection);
+	TALLOC_CTX *frame = talloc_stackframe();
+	uint8_t *pkt = NULL;
+	int ret;
+	struct ctdb_req_header *hdr = NULL;
+	uint32_t reqid;
+	struct tevent_req *req = NULL;
+	struct ctdbd_req_state *state = NULL;
+	size_t i, num_pending;
+	bool ok;
+
+	SMB_ASSERT(subreq == conn->read_req);
+	conn->read_req = NULL;
+
+	ret = ctdbd_pkt_read_recv(subreq, frame, &pkt);
+	TALLOC_FREE(subreq);
+	if (ret != 0) {
+		cluster_fatal("ctdbd_pkt_read failed\n");
+	}
+
+	hdr = (struct ctdb_req_header *)pkt;
+	reqid = hdr->reqid;
+	num_pending = talloc_array_length(conn->pending);
+
+	for (i=0; i<num_pending; i++) {
+		req = conn->pending[i];
+		state = tevent_req_data(req, struct ctdbd_req_state);
+		if (state->reqid == reqid) {
+			break;
+		}
+	}
+
+	if (i == num_pending) {
+		/* not found */
+		TALLOC_FREE(frame);
+		return;
+	}
+
+	state->reply = talloc_move(state, &hdr);
+	tevent_req_defer_callback(req, state->ev);
+	tevent_req_done(req);
+
+	TALLOC_FREE(frame);
+
+	ok = ctdbd_conn_receive_next(conn);
+	if (!ok) {
+		cluster_fatal("ctdbd_conn_receive_next failed\n");
+	}
+}
+
+static void ctdbd_req_written(struct tevent_req *subreq);
+
+struct tevent_req *ctdbd_req_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct ctdbd_connection *conn,
+	struct iovec *iov,
+	size_t num_iov)
+{
+	struct tevent_req *req = NULL, *subreq = NULL;
+	struct ctdbd_req_state *state = NULL;
+	struct ctdb_req_header *hdr = NULL;
+	bool ok;
+
+	req = tevent_req_create(mem_ctx, &state, struct ctdbd_req_state);
+	if (req == NULL) {
+		return NULL;
+	}
+	state->conn = conn;
+	state->ev = ev;
+
+	if ((num_iov == 0) ||
+	    (iov[0].iov_len < sizeof(struct ctdb_req_header))) {
+		tevent_req_error(req, EINVAL);
+		return tevent_req_post(req, ev);
+	}
+	hdr = iov[0].iov_base;
+	state->reqid = hdr->reqid;
+
+	ok = ctdbd_req_set_pending(req);
+	if (!ok) {
+		tevent_req_oom(req);
+		return tevent_req_post(req, ev);
+	}
+
+	subreq = writev_send(
+		state, ev, conn->outgoing, conn->fd, false, iov, num_iov);
+	if (tevent_req_nomem(subreq, req)) {
+		return tevent_req_post(req, ev);
+	}
+	tevent_req_set_callback(subreq, ctdbd_req_written, req);
+
+	return req;
+}
+
+static void ctdbd_req_written(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	ssize_t nwritten;
+	int err;
+
+	nwritten = writev_recv(subreq, &err);
+	TALLOC_FREE(subreq);
+	if (nwritten == -1) {
+		tevent_req_error(req, err);
+		return;
+	}
+}
+
+int ctdbd_req_recv(
+	struct tevent_req *req,
+	TALLOC_CTX *mem_ctx,
+	struct ctdb_req_header **reply)
+{
+	struct ctdbd_req_state *state = tevent_req_data(
+		req, struct ctdbd_req_state);
+	int err;
+
+	if (tevent_req_is_unix_error(req, &err)) {
+		return err;
+	}
+	*reply = talloc_move(mem_ctx, &state->reply);
+	tevent_req_received(req);
 	return 0;
 }
 
@@ -1810,10 +1676,8 @@ struct ctdbd_parse_state {
 		       TDB_DATA data,
 		       void *private_data);
 	void *private_data;
-	enum dbwrap_req_state *req_state;
 };
 
-static void ctdbd_parse_pkt_send_done(struct tevent_req *subreq);
 static void ctdbd_parse_done(struct tevent_req *subreq);
 
 struct tevent_req *ctdbd_parse_send(TALLOC_CTX *mem_ctx,
@@ -1840,13 +1704,14 @@ struct tevent_req *ctdbd_parse_send(TALLOC_CTX *mem_ctx,
 		return NULL;
 	}
 
+	*req_state = DBWRAP_REQ_DISPATCHED;
+
 	*state = (struct ctdbd_parse_state) {
 		.ev = ev,
 		.conn = conn,
 		.reqid = ctdbd_next_reqid(conn),
 		.parser = parser,
 		.private_data = private_data,
-		.req_state = req_state,
 	};
 
 	flags = local_copy ? CTDB_WANT_READONLY : 0;
@@ -1886,53 +1751,15 @@ struct tevent_req *ctdbd_parse_send(TALLOC_CTX *mem_ctx,
 	state->iov[1].iov_base = state->key.dptr;
 	state->iov[1].iov_len = state->key.dsize;
 
-	/*
-	 * Note that ctdb_pkt_send_send()
-	 * will modify state->iov using
-	 * iov_advance() without making a copy.
-	 */
-	subreq = ctdb_pkt_send_send(state,
-				    ev,
-				    conn,
-				    state->reqid,
-				    state->iov,
-				    ARRAY_SIZE(state->iov),
-				    req_state);
+	subreq = ctdbd_req_send(
+		state, ev, conn, state->iov, ARRAY_SIZE(state->iov));
 	if (tevent_req_nomem(subreq, req)) {
 		*req_state = DBWRAP_REQ_ERROR;
 		return tevent_req_post(req, ev);
 	}
-	tevent_req_set_callback(subreq, ctdbd_parse_pkt_send_done, req);
+	tevent_req_set_callback(subreq, ctdbd_parse_done, req);
 
 	return req;
-}
-
-static void ctdbd_parse_pkt_send_done(struct tevent_req *subreq)
-{
-	struct tevent_req *req = tevent_req_callback_data(
-		subreq, struct tevent_req);
-	struct ctdbd_parse_state *state = tevent_req_data(
-		req, struct ctdbd_parse_state);
-	int ret;
-
-	ret = ctdb_pkt_send_recv(subreq);
-	TALLOC_FREE(subreq);
-	if (tevent_req_error(req, ret)) {
-		DBG_DEBUG("ctdb_pkt_send_recv failed %s\n", strerror(ret));
-		return;
-	}
-
-	subreq = ctdb_pkt_recv_send(state,
-				    state->ev,
-				    state->conn,
-				    state->reqid);
-	if (tevent_req_nomem(subreq, req)) {
-		return;
-	}
-
-	*state->req_state = DBWRAP_REQ_DISPATCHED;
-	tevent_req_set_callback(subreq, ctdbd_parse_done, req);
-	return;
 }
 
 static void ctdbd_parse_done(struct tevent_req *subreq)
@@ -1945,12 +1772,10 @@ static void ctdbd_parse_done(struct tevent_req *subreq)
 	struct ctdb_reply_call_old *reply = NULL;
 	int ret;
 
-	DBG_DEBUG("async parse request finished\n");
-
-	ret = ctdb_pkt_recv_recv(subreq, state, &hdr);
+	ret = ctdbd_req_recv(subreq, state, &hdr);
 	TALLOC_FREE(subreq);
 	if (tevent_req_error(req, ret)) {
-		DBG_ERR("ctdb_pkt_recv_recv returned %s\n", strerror(ret));
+		DBG_DEBUG("ctdb_req_recv failed %s\n", strerror(ret));
 		return;
 	}
 	SMB_ASSERT(hdr != NULL);
@@ -1982,14 +1807,5 @@ static void ctdbd_parse_done(struct tevent_req *subreq)
 
 int ctdbd_parse_recv(struct tevent_req *req)
 {
-	int error;
-
-	if (tevent_req_is_unix_error(req, &error)) {
-		DBG_DEBUG("async parse returned %s\n", strerror(error));
-		tevent_req_received(req);
-		return error;
-	}
-
-	tevent_req_received(req);
-	return 0;
+	return tevent_req_simple_recv_unix(req);
 }
