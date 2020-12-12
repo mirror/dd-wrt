@@ -2945,7 +2945,6 @@ void start_firewall(void)
 	writeprocsysnet("ipv4/icmp_echo_ignore_broadcasts", "1");
 	writeprocsysnet("ipv4/tcp_rfc1337", "1");
 	writeprocsysnet("ipv4/tcp_syncookies", "1");
-	writeprocsysnet("ipv4/tcp_syncookies", "1");
 
 
 	char vifs[256];
