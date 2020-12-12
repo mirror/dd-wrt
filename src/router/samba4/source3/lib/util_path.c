@@ -112,135 +112,106 @@ char *cache_path(TALLOC_CTX *mem_ctx, const char *name)
  * @retval Pointer to a talloc'ed string containing the absolute full path.
  **/
 
-char *canonicalize_absolute_path(TALLOC_CTX *ctx, const char *abs_path)
+char *canonicalize_absolute_path(TALLOC_CTX *ctx, const char *pathname_in)
 {
-	char *destname;
-	char *d;
-	const char *s = abs_path;
-	bool start_of_name_component = true;
+	/*
+	 * Note we use +2 here so if pathname_in=="" then we
+	 * have space to return "/".
+	 */
+	char *pathname = talloc_array(ctx, char, strlen(pathname_in)+2);
+	const char *s = pathname_in;
+	char *p = pathname;
+	bool wrote_slash = false;
 
-	/* Allocate for strlen + '\0' + possible leading '/' */
-	destname = (char *)talloc_size(ctx, strlen(abs_path) + 2);
-	if (destname == NULL) {
+	if (pathname == NULL) {
 		return NULL;
-        }
-	d = destname;
+	}
 
-	*d++ = '/'; /* Always start with root. */
+	/* Always start with a '/'. */
+	*p++ = '/';
+	wrote_slash = true;
 
 	while (*s) {
-		if (*s == '/') {
-			/* Eat multiple '/' */
-			while (*s == '/') {
+		/* Deal with '/' or multiples of '/'. */
+		if (s[0] == '/') {
+			while (s[0] == '/') {
+				/* Eat trailing '/' */
 				s++;
 			}
-			if ((d > destname + 1) && (*s != '\0')) {
-				*d++ = '/';
+			/* Update target with one '/' */
+			if (!wrote_slash) {
+				*p++ = '/';
+				wrote_slash = true;
 			}
-			start_of_name_component = true;
 			continue;
 		}
-
-		if (start_of_name_component) {
-			if ((s[0] == '.') && (s[1] == '.') &&
+		if (wrote_slash) {
+			/* Deal with "./" or ".\0" */
+			if (s[0] == '.' &&
+					(s[1] == '/' || s[1] == '\0')) {
+				/* Eat the dot. */
+				s++;
+				while (s[0] == '/') {
+					/* Eat any trailing '/' */
+					s++;
+				}
+				/* Don't write anything to target. */
+				/* wrote_slash is still true. */
+				continue;
+			}
+			/* Deal with "../" or "..\0" */
+			if (s[0] == '.' && s[1] == '.' &&
 					(s[2] == '/' || s[2] == '\0')) {
-				/* Uh oh - "/../" or "/..\0" ! */
-
-				/* Go past the .. leaving us on the / or '\0' */
+				/* Eat the dot dot. */
 				s += 2;
-
-				/* If  we just added a '/' - delete it */
-				if ((d > destname) && (*(d-1) == '/')) {
-					*(d-1) = '\0';
-					d--;
+				while (s[0] == '/') {
+					/* Eat any trailing '/' */
+					s++;
 				}
-
 				/*
-				 * Are we at the start ?
-				 * Can't go back further if so.
+				 * As wrote_slash is true, we go back
+				 * one character to point p at the slash
+				 * we just saw.
 				 */
-				if (d <= destname) {
-					*d++ = '/'; /* Can't delete root */
-					continue;
+				if (p > pathname) {
+					p--;
 				}
-				/* Go back one level... */
 				/*
-				 * Decrement d first as d points to
-				 * the *next* char to write into.
+				 * Now go back to the slash
+				 * before the one that p currently points to.
 				 */
-				for (d--; d > destname; d--) {
-					if (*d == '/') {
+				while (p > pathname) {
+					p--;
+					if (p[0] == '/') {
 						break;
 					}
 				}
+				/*
+				 * Step forward one to leave the
+				 * last written '/' alone.
+				 */
+				p++;
 
-				/*
-				 * Are we at the start ?
-				 * Can't go back further if so.
-				 */
-				if (d <= destname) {
-					*d++ = '/'; /* Can't delete root */
-					continue;
-				}
-
-				/*
-				 * We're still at the start of a name
-				 * component, just the previous one.
-				 */
-				continue;
-			} else if ((s[0] == '.') &&
-					((s[1] == '\0') || s[1] == '/')) {
-				/*
-				 * Component of pathname can't be "." only.
-				 * Skip the '.' .
-				 */
-				if (s[1] == '/') {
-					s += 2;
-				} else {
-					s++;
-				}
+				/* Don't write anything to target. */
+				/* wrote_slash is still true. */
 				continue;
 			}
 		}
-
-		if (!(*s & 0x80)) {
-			*d++ = *s++;
-		} else {
-			size_t siz;
-			/* Get the size of the next MB character. */
-			next_codepoint(s,&siz);
-			switch(siz) {
-				case 5:
-					*d++ = *s++;
-
-					FALL_THROUGH;
-				case 4:
-					*d++ = *s++;
-
-					FALL_THROUGH;
-				case 3:
-					*d++ = *s++;
-
-					FALL_THROUGH;
-				case 2:
-					*d++ = *s++;
-
-					FALL_THROUGH;
-				case 1:
-					*d++ = *s++;
-					break;
-				default:
-					break;
-			}
+		/* Non-separator character, just copy. */
+		*p++ = *s++;
+		wrote_slash = false;
+	}
+	if (wrote_slash) {
+		/*
+		 * We finished on a '/'.
+		 * Remove the trailing '/', but not if it's
+		 * the sole character in the path.
+		 */
+		if (p > pathname + 1) {
+			p--;
 		}
-		start_of_name_component = false;
 	}
-	*d = '\0';
-
-	/* And must not end in '/' */
-	if (d > destname + 1 && (*(d-1) == '/')) {
-		*(d-1) = '\0';
-	}
-
-	return destname;
+	/* Terminate and we're done ! */
+	*p++ = '\0';
+	return pathname;
 }

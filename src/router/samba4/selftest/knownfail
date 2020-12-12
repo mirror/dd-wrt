@@ -14,8 +14,8 @@
 ^samba3.smb2.session enc.reconnect # expected to give CONNECTION_DISCONNECTED, we need to fix the test
 ^samba3.raw.session enc # expected to give ACCESS_DENIED as SMB1 encryption isn't used
 ^samba3.smbtorture_s3.crypt_server # expected to give ACCESS_DENIED as SMB1 encryption isn't used
-^samba3.smbtorture_s3.*.LOCK12.*\(fileserver\)
-^samba3.smbtorture_s3.*.LOCK12.*\(nt4_dc\)
+^samba3.smbtorture_s3.*.LOCK12.*\(fileserver_smb1\)
+^samba3.smbtorture_s3.*.LOCK12.*\(nt4_dc_smb1\)
 ^samba3.nbt.dgram.*netlogon2\(nt4_dc\)
 ^samba3.*rap.sam.*.useradd # Not provided by Samba 3
 ^samba3.*rap.sam.*.userdelete # Not provided by Samba 3
@@ -24,42 +24,48 @@
 ^samba3.smb2.rename.*.simple_nodelete
 ^samba3.smb2.rename.*.no_share_delete_no_delete_access
 ^samba3.blackbox.smbclient_machine_auth.plain.*nt4_dc:local # the NT4 DC does not currently set up a self-join
-^samba3.raw.samba3hide.samba3hide\(ad_dc\) # This test fails against the ad_dc environment.
-^samba3.raw.samba3closeerr.samba3closeerr\(nt4_dc\) # This test fails against an smbd environment with NT ACLs enabled
-^samba3.raw.acls nfs4acl_xattr-simple-40.INHERITFLAGS\(nt4_dc\) # This (and the follow nfs4acl_xattr tests fail because our NFSv4 backend isn't a complete mapping yet.
-^samba3.raw.acls nfs4acl_xattr-simple-40.create_owner_file\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-simple-40.create_owner_dir\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-simple-40.nulldacl\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-simple-41.create_owner_file\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-simple-41.create_owner_dir\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-simple-41.nulldacl\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-special-40.INHERITFLAGS\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-special-40.create_owner_file\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-special-40.create_owner_dir\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-special-40.nulldacl\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-special-40.inherit_creator_owner\(nt4_dc\)
+^samba3.raw.samba3hide.samba3hide\(ad_dc_smb1\) # This test fails against the ad_dc environment.
+^samba3.raw.samba3closeerr.samba3closeerr\(nt4_dc_smb1\) # This test fails against an smbd environment with NT ACLs enabled
+^samba3.raw.samba3closeerr.samba3closeerr\(fileserver_smb1\) # This test fails against an smbd environment with NT ACLs enabled
+^samba3.raw.acls nfs4acl_xattr-simple-40.INHERITFLAGS\(nt4_dc_smb1\) # This (and the follow nfs4acl_xattr tests fail because our NFSv4 backend isn't a complete mapping yet.
+^samba3.raw.acls nfs4acl_xattr-simple-40.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-40.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-40.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-41.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-41.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-simple-41.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.INHERITFLAGS\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-special-40.inherit_creator_owner\(nt4_d_smb1\)
 ^samba3.raw.acls nfs4acl_xattr-special-40.inherit_creator_group\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-xdr-40.INHERITFLAGS\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-xdr-40.create_owner_file\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-xdr-40.create_owner_dir\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-xdr-40.nulldacl\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-xdr-40.inherit_creator_owner\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-xdr-40.inherit_creator_group\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-xdr-41.create_owner_file\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-xdr-41.create_owner_dir\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-xdr-41.nulldacl\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-nfs-40.INHERITFLAGS\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-nfs-40.create_owner_file\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-nfs-40.create_owner_dir\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-nfs-40.nulldacl\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-nfs-40.inherit_creator_owner\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-nfs-40.inherit_creator_group\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-nfs-41.create_owner_file\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-nfs-41.create_owner_dir\(nt4_dc\)
-^samba3.raw.acls nfs4acl_xattr-nfs-41.nulldacl\(nt4_dc\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.INHERITFLAGS\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.inherit_creator_owner\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-40.inherit_creator_group\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-41.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-41.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-xdr-41.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.INHERITFLAGS\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.nulldacl\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.inherit_creator_owner\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-40.inherit_creator_group\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-41.create_owner_file\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-41.create_owner_dir\(nt4_dc_smb1\)
+^samba3.raw.acls nfs4acl_xattr-nfs-41.nulldacl\(nt4_dc_smb1\)
 ^samba3.base.delete.deltest16a
 ^samba3.base.delete.deltest17a
-^samba3.unix.whoami anonymous connection.whoami\(ad_dc\) # We need to resolve if we should be including SID_NT_WORLD and SID_NT_NETWORK in this token
+^samba3.unix.whoami anonymous connection.whoami\(ad_dc_smb1\) # We need to resolve if we should be including SID_NT_WORLD and SID_NT_NETWORK in this token
+# smbclient4 behaves differently from smbclient (s3) when encountering
+# logon failures when possesing a valid ticket. Test below has been
+# changed to use smbclient (in order to support SMB2) and this part of the
+# test fails due to this difference
+^samba4.blackbox.chgdcpass.Test login with kerberos ccache after 2nd password change\(chgdcpass\)
 # these show that we still have some differences between our system
 # with our internal iconv because it passes except when we bypass our
 # internal iconv modules
@@ -77,11 +83,13 @@
 ^samba4.raw.rename.*.osxrename
 ^samba4.raw.rename.*.directory rename
 ^samba4.rpc.winreg.*security
-^samba4.local.registry.(dir|ldb).check hive security
-^samba4.local.registry.local.security
+^samba4.local.registry.*.(dir|ldb).check hive security
+^samba4.local.registry.*.local.security
 ^samba4.rpc.wkssvc
 ^samba4.rpc.handles.*.lsarpc-shared
-^samba4.rpc.epmapper
+^samba4.rpc.epmapper.*.Lookup_simple
+^samba4.rpc.epmapper.*.Map_simple
+^samba4.rpc.epmapper.*.Map_full
 ^samba4.rpc.lsalookup on ncalrpc
 ^samba4.rpc.lsalookup on ncacn_np
 ^samba4.rpc.lsalookup with seal,padcheck
@@ -106,7 +114,10 @@
 ^samba4.rpc.samr.passwords.validate.*ncacn_ip_tcp.*with.validate # should only work with seal
 ^samba4.rpc.samr.passwords.validate.*ncacn_ip_tcp.*with.bigendian # should only work with seal
 ^samba4.base.charset.*.Testing partial surrogate
+^samba4.smb2.charset.*.Testing partial surrogate # This test is currently broken
+^samba3.smb2.charset.*.Testing partial surrogate # This test is currently broken
 ^samba4.*.base.maximum_allowed		# broken until we implement NTCREATEX_OPTIONS_BACKUP_INTENT
+^samba..*.smb2.maximum_allowed
 .*net.api.delshare.*				# DelShare isn't implemented yet
 ^samba4.smb2.oplock.doc
 ^samba4.smb2.lock.valid-request
@@ -149,7 +160,7 @@
 ^samba4.smb2.oplock.levelii500\(.*\)$ # samba 4 oplocks are a mess
 ^samba4.smb2.oplock.levelii502\(.*\)$ # samba 4 oplocks are a mess
 ^samba4.smb2.oplock.brl1\(.*\)$ # samba 4 oplocks are a mess
-^samba4.smb2.oplock.batch22\(.*\)$ # samba 4 oplocks are a mess
+^samba4.smb2.oplock.batch22.\(.*\)$ # samba 4 oplocks are a mess
 ^samba4.smb2.oplock.batch19\(.*\)$ # samba 4 oplocks are a mess
 ^samba4.smb2.oplock.batch12\(.*\)$ # samba 4 oplocks are a mess
 ^samba4.smb2.oplock.batch11\(.*\)$ # samba 4 oplocks are a mess
@@ -161,6 +172,7 @@
 ^samba4.smb2.oplock.batch20\(.*\)$ # samba 4 oplocks are a mess
 ^samba4.smb2.oplock.batch26\(.*\)$
 ^samba4.smb2.oplock.stream1 # samba 4 oplocks are a mess
+^samba4.smb2.oplock.statopen1\(ad_dc_ntvfs\)$ # fails with ACCESS_DENIED on a SYNCHRONIZE_ACCESS open
 ^samba4.smb2.getinfo.complex # streams on directories does not work
 ^samba4.smb2.getinfo.qfs_buffercheck # S4 does not do the INFO_LENGTH_MISMATCH/BUFFER_OVERFLOW thingy
 ^samba4.smb2.getinfo.qfile_buffercheck # S4 does not do the INFO_LENGTH_MISMATCH/BUFFER_OVERFLOW thingy
@@ -201,10 +213,10 @@
 ^samba3.smb2.session.*reauth5 # some special anonymous checks?
 ^samba3.smb2.compound.interim2 # wrong return code (STATUS_CANCELLED)
 ^samba3.smb2.compound.aio.interim2 # wrong return code (STATUS_CANCELLED)
-^samba3.smb2.replay.channel-sequence
-^samba3.smb2.replay.replay3
-^samba3.smb2.replay.replay4
-^samba3.smb2.lock.*replay
+^samba3.smb2.replay.replay3 # This requires multi-chanel
+^samba3.smb2.replay.replay4 # This requires multi-chanel
+^samba3.smb2.lock.replay_smb3_specification # This requires multi-chanel or durable handles
+^samba3.smb2.lock.*replay_broken_windows # This tests the windows behaviour
 ^samba3.smb2.lease.statopen3
 ^samba3.smb2.lease.unlink # we currently do not downgrade RH lease to R after unlink
 ^samba3.smb2.multichannel
@@ -234,7 +246,7 @@
 ^samba3.rpc.eventlog.eventlog.ReadEventLog\(ad_dc\)
 ^samba3.rpc.eventlog.eventlog.GetNumRecords\(ad_dc\)
 ^samba3.rpc.eventlog.eventlog.OpenEventLog\(ad_dc\)
-^samba3.rap.basic.netsessiongetinfo\(ad_dc\)
+^samba3.rap.basic.netsessiongetinfo\(ad_dc_smb1\)
 # not implemented
 ^samba3.rpc.svcctl.svcctl.ChangeServiceConfigW\(ad_dc\)
 ^samba3.rpc.svcctl.svcctl.ChangeServiceConfigW\(nt4_dc\)
@@ -336,13 +348,16 @@
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_no_auth_presentation_ctx_invalid4
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_spnego_change_auth_type2
 ^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_spnego_change_transfer
+# Association groups not implemented yet in s3 server implementation
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_fail1\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_fail2\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_fail3\(ad_member\)
+^samba.tests.dcerpc.raw_protocol.*.TestDCERPC_BIND.test_assoc_group_diff1\(ad_member\)
 ^samba4.rpc.echo.*on.*with.object.echo.doublepointer.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.surrounding.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.enum.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.testcall.*nt4_dc
 ^samba4.rpc.echo.*on.*with.object.echo.testcall2.*nt4_dc
-^samba4.rpc.echo.*on.*with.object.echo.sinkdata.*nt4_dc
-^samba4.rpc.echo.*on.*with.object.echo.addone.*nt4_dc
 ^samba4.rpc.echo.*on.*ncacn_ip_tcp.*with.object.*nt4_dc
 ^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_add_duplicate_different_type.*
 ^samba.tests.dcerpc.dnsserver.samba.tests.dcerpc.dnsserver.DnsserverTests.test_rank_none.*

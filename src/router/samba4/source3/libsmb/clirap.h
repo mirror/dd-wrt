@@ -34,7 +34,6 @@ bool cli_api(struct cli_state *cli,
 	     char *data, int drcnt, int mdrcnt,
 	     char **rparam, unsigned int *rprcnt,
 	     char **rdata, unsigned int *rdrcnt);
-bool cli_NetWkstaUserLogon(struct cli_state *cli,char *user, char *workstation);
 int cli_RNetShareEnum(struct cli_state *cli, void (*fn)(const char *, uint32_t, const char *, void *), void *state);
 bool cli_NetServerEnum(struct cli_state *cli, char *workgroup, uint32_t stype,
 		       void (*fn)(const char *, uint32_t, const char *, void *),
@@ -50,26 +49,39 @@ NTSTATUS cli_qpathinfo1_recv(struct tevent_req *req,
 			     time_t *access_time,
 			     time_t *write_time,
 			     off_t *size,
-			     uint16_t *mode);
+			     uint32_t *pattr);
 NTSTATUS cli_qpathinfo1(struct cli_state *cli,
 			const char *fname,
 			time_t *change_time,
 			time_t *access_time,
 			time_t *write_time,
 			off_t *size,
-			uint16_t *mode);
-NTSTATUS cli_setpathinfo_basic(struct cli_state *cli, const char *fname,
-			       time_t create_time,
-			       time_t access_time,
-			       time_t write_time,
-			       time_t change_time,
-			       uint16_t mode);
+			uint32_t *pattr);
 NTSTATUS cli_setpathinfo_ext(struct cli_state *cli, const char *fname,
-			     const struct timespec *create_time,
-			     const struct timespec *access_time,
-			     const struct timespec *write_time,
-			     const struct timespec *change_time,
-			     uint16_t mode);
+			     struct timespec create_time,
+			     struct timespec access_time,
+			     struct timespec write_time,
+			     struct timespec change_time,
+			     uint32_t attr);
+struct tevent_req *cli_setfileinfo_ext_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	uint16_t fnum,
+	struct timespec create_time,
+	struct timespec access_time,
+	struct timespec write_time,
+	struct timespec change_time,
+	uint32_t attr);
+NTSTATUS cli_setfileinfo_ext_recv(struct tevent_req *req);
+NTSTATUS cli_setfileinfo_ext(
+	struct cli_state *cli,
+	uint16_t fnum,
+	struct timespec create_time,
+	struct timespec access_time,
+	struct timespec write_time,
+	struct timespec change_time,
+	uint32_t attr);
 struct tevent_req *cli_qpathinfo2_send(TALLOC_CTX *mem_ctx,
 				       struct tevent_context *ev,
 				       struct cli_state *cli,
@@ -79,21 +91,21 @@ NTSTATUS cli_qpathinfo2_recv(struct tevent_req *req,
 			     struct timespec *access_time,
 			     struct timespec *write_time,
 			     struct timespec *change_time,
-			     off_t *size, uint16_t *mode,
+			     off_t *size, uint32_t *pattr,
 			     SMB_INO_T *ino);
 NTSTATUS cli_qpathinfo2(struct cli_state *cli, const char *fname,
 			struct timespec *create_time,
 			struct timespec *access_time,
 			struct timespec *write_time,
 			struct timespec *change_time,
-			off_t *size, uint16_t *mode,
+			off_t *size, uint32_t *pattr,
 			SMB_INO_T *ino);
 NTSTATUS cli_qpathinfo3(struct cli_state *cli, const char *fname,
 			struct timespec *create_time,
 			struct timespec *access_time,
 			struct timespec *write_time,
 			struct timespec *change_time,
-			off_t *size, uint16_t *mode,
+			off_t *size, uint32_t *pattr,
 			SMB_INO_T *ino);
 struct tevent_req *cli_qpathinfo_streams_send(TALLOC_CTX *mem_ctx,
 					      struct tevent_context *ev,
@@ -113,13 +125,30 @@ bool parse_streams_blob(TALLOC_CTX *mem_ctx, const uint8_t *rdata,
 				struct stream_struct **pstreams);
 NTSTATUS cli_qfilename(struct cli_state *cli, uint16_t fnum,
 		       TALLOC_CTX *mem_ctx, char **name);
-NTSTATUS cli_qfileinfo_basic(struct cli_state *cli, uint16_t fnum,
-			     uint16_t *mode, off_t *size,
-			     struct timespec *create_time,
-			     struct timespec *access_time,
-			     struct timespec *write_time,
-			     struct timespec *change_time,
-			     SMB_INO_T *ino);
+struct tevent_req *cli_qfileinfo_basic_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	uint16_t fnum);
+NTSTATUS cli_qfileinfo_basic_recv(
+	struct tevent_req *req,
+	uint32_t *attr,
+	off_t *size,
+	struct timespec *create_time,
+	struct timespec *access_time,
+	struct timespec *write_time,
+	struct timespec *change_time,
+	SMB_INO_T *ino);
+NTSTATUS cli_qfileinfo_basic(
+	struct cli_state *cli,
+	uint16_t fnum,
+	uint32_t *attr,
+	off_t *size,
+	struct timespec *create_time,
+	struct timespec *access_time,
+	struct timespec *write_time,
+	struct timespec *change_time,
+	SMB_INO_T *ino);
 struct tevent_req *cli_qpathinfo_basic_send(TALLOC_CTX *mem_ctx,
 					    struct tevent_context *ev,
 					    struct cli_state *cli,
@@ -175,56 +204,5 @@ NTSTATUS cli_shadow_copy_data_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 NTSTATUS cli_shadow_copy_data(TALLOC_CTX *mem_ctx, struct cli_state *cli,
 			      uint16_t fnum, bool get_names,
 			      char ***pnames, int *pnum_names);
-
-/* The following definitions come from libsmb/clirap2.c  */
-struct rap_group_info_1;
-struct rap_user_info_1;
-struct rap_share_info_2;
-
-int cli_NetGroupDelete(struct cli_state *cli, const char *group_name);
-int cli_NetGroupAdd(struct cli_state *cli, struct rap_group_info_1 *grinfo);
-int cli_RNetGroupEnum(struct cli_state *cli, void (*fn)(const char *, const char *, void *), void *state);
-int cli_RNetGroupEnum0(struct cli_state *cli,
-		       void (*fn)(const char *, void *),
-		       void *state);
-int cli_NetGroupDelUser(struct cli_state * cli, const char *group_name, const char *user_name);
-int cli_NetGroupAddUser(struct cli_state * cli, const char *group_name, const char *user_name);
-int cli_NetGroupGetUsers(struct cli_state * cli, const char *group_name, void (*fn)(const char *, void *), void *state );
-int cli_NetUserGetGroups(struct cli_state * cli, const char *user_name, void (*fn)(const char *, void *), void *state );
-int cli_NetUserDelete(struct cli_state *cli, const char * user_name );
-int cli_NetUserAdd(struct cli_state *cli, struct rap_user_info_1 * userinfo );
-int cli_RNetUserEnum(struct cli_state *cli, void (*fn)(const char *, const char *, const char *, const char *, void *), void *state);
-int cli_RNetUserEnum0(struct cli_state *cli,
-		      void (*fn)(const char *, void *),
-		      void *state);
-int cli_NetFileClose(struct cli_state *cli, uint32_t file_id );
-int cli_NetFileGetInfo(struct cli_state *cli, uint32_t file_id, void (*fn)(const char *, const char *, uint16_t, uint16_t, uint32_t));
-int cli_NetFileEnum(struct cli_state *cli, const char * user,
-		    const char * base_path,
-		    void (*fn)(const char *, const char *, uint16_t, uint16_t,
-			       uint32_t));
-int cli_NetShareAdd(struct cli_state *cli, struct rap_share_info_2 * sinfo );
-int cli_NetShareDelete(struct cli_state *cli, const char * share_name );
-bool cli_get_pdc_name(struct cli_state *cli, const char *workgroup, char **pdc_name);
-bool cli_get_server_name(TALLOC_CTX *mem_ctx, struct cli_state *cli,
-			 char **servername);
-bool cli_ns_check_server_type(struct cli_state *cli, char *workgroup, uint32_t stype);
-bool cli_NetWkstaUserLogoff(struct cli_state *cli, const char *user, const char *workstation);
-int cli_NetPrintQEnum(struct cli_state *cli,
-		void (*qfn)(const char*,uint16_t,uint16_t,uint16_t,const char*,const char*,const char*,const char*,const char*,uint16_t,uint16_t),
-		void (*jfn)(uint16_t,const char*,const char*,const char*,const char*,uint16_t,uint16_t,const char*,unsigned int,unsigned int,const char*));
-int cli_NetPrintQGetInfo(struct cli_state *cli, const char *printer,
-	void (*qfn)(const char*,uint16_t,uint16_t,uint16_t,const char*,const char*,const char*,const char*,const char*,uint16_t,uint16_t),
-	void (*jfn)(uint16_t,const char*,const char*,const char*,const char*,uint16_t,uint16_t,const char*,unsigned int,unsigned int,const char*));
-int cli_RNetServiceEnum(struct cli_state *cli, void (*fn)(const char *, const char *, void *), void *state);
-int cli_NetSessionEnum(struct cli_state *cli, void (*fn)(char *, char *, uint16_t, uint16_t, uint16_t, unsigned int, unsigned int, unsigned int, char *));
-int cli_NetSessionGetInfo(struct cli_state *cli, const char *workstation,
-		void (*fn)(const char *, const char *, uint16_t, uint16_t, uint16_t, unsigned int, unsigned int, unsigned int, const char *));
-int cli_NetSessionDel(struct cli_state *cli, const char *workstation);
-int cli_NetConnectionEnum(struct cli_state *cli, const char *qualifier,
-			void (*fn)(uint16_t conid, uint16_t contype,
-				uint16_t numopens, uint16_t numusers,
-				uint32_t contime, const char *username,
-				const char *netname));
 
 #endif /* _LIBSMB_CLIRAP_H */

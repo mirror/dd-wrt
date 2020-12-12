@@ -645,7 +645,7 @@ bld.SAMBA_LIBRARY('ndr',
     header_path= [('*gen_ndr*', 'gen_ndr')],
     vnum='1.0.0',
     abi_directory='ABI',
-    abi_match='!ndr_table_* ndr_* GUID_* _ndr_pull_error _ndr_push_error',
+    abi_match='!ndr_table_* ndr_* GUID_* _ndr_pull_error* _ndr_push_error*',
     )
 
 bld.SAMBA_LIBRARY('dcerpc-binding',
@@ -661,6 +661,7 @@ bld.SAMBA_LIBRARY('dcerpc-server-core',
            rpc/dcesrv_auth.c
            rpc/dcesrv_mgmt.c
            rpc/dcesrv_reply.c
+           rpc/dcesrv_handles.c
            ''',
     deps='ndr dcerpc-binding samba-util-core gnutls GNUTLS_HELPERS',
     pc_files=[],
@@ -678,11 +679,6 @@ bld.SAMBA_SUBSYSTEM('RPC_NDR_WINBIND',
 	public_deps='dcerpc NDR_WINBIND'
 	)
 
-bld.SAMBA3_SUBSYSTEM('SRV_NDR_WINBIND',
-	source='gen_ndr/srv_winbind.c',
-	public_deps='NDR_WINBIND'
-	)
-
 bld.SAMBA_SUBSYSTEM('NDR_FSRVP_STATE',
     source='gen_ndr/ndr_fsrvp_state.c',
     public_deps='ndr'
@@ -690,11 +686,28 @@ bld.SAMBA_SUBSYSTEM('NDR_FSRVP_STATE',
 #
 # Cmocka tests
 #
+
+bld.SAMBA_BINARY('test_ndr_macros',
+                 source='tests/test_ndr_macros.c',
+                 deps='''
+                      cmocka
+                      ndr
+                      ''',
+                 for_selftest=True)
+
 bld.SAMBA_BINARY('test_ndr_string',
                  source='tests/test_ndr_string.c',
                  deps='''
                       cmocka
                       talloc
+                      ndr
+                      ''',
+                 for_selftest=True)
+
+bld.SAMBA_BINARY('test_ndr',
+                 source='tests/test_ndr.c',
+                 deps='''
+                      cmocka
                       ndr
                       ''',
                  for_selftest=True)

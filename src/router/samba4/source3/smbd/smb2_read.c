@@ -475,7 +475,7 @@ static struct tevent_req *smbd_smb2_read_send(TALLOC_CTX *mem_ctx,
 	}
 	state->smbreq = smbreq;
 
-	if (fsp->is_directory) {
+	if (fsp->fsp_flags.is_directory) {
 		tevent_req_nterror(req, NT_STATUS_INVALID_DEVICE_REQUEST);
 		return tevent_req_post(req, ev);
 	}
@@ -651,6 +651,7 @@ static NTSTATUS smbd_smb2_read_recv(struct tevent_req *req,
 		talloc_set_destructor(state, smb2_smb2_read_state_deny_destructor);
 		tevent_req_received(req);
 		state->smb2req->queue_entry.sendfile_header = &state->out_headers;
+		state->smb2req->queue_entry.sendfile_body_size = state->in_length;
 		talloc_set_destructor(state, smb2_sendfile_send_data);
 	} else {
 		tevent_req_received(req);

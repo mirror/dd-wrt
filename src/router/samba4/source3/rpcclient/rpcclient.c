@@ -795,7 +795,11 @@ static NTSTATUS do_cmd(struct cli_state *cli,
 	/* Open pipe */
 
 	if ((cmd_entry->table != NULL) && (cmd_entry->rpc_pipe == NULL)) {
-		enum credentials_use_kerberos use_kerberos = CRED_AUTO_USE_KERBEROS;
+		struct cli_credentials *creds =
+			get_cmdline_auth_info_creds(auth_info);
+		enum credentials_use_kerberos krb5_state =
+			cli_credentials_get_kerberos_state(creds);
+
 		switch (pipe_default_auth_type) {
 		case DCERPC_AUTH_TYPE_NONE:
 			ntresult = cli_rpc_pipe_open_noauth_transport(
@@ -806,28 +810,29 @@ static NTSTATUS do_cmd(struct cli_state *cli,
 		case DCERPC_AUTH_TYPE_SPNEGO:
 			switch (pipe_default_auth_spnego_type) {
 			case PIPE_AUTH_TYPE_SPNEGO_NTLMSSP:
-				use_kerberos = CRED_DONT_USE_KERBEROS;
+				krb5_state = CRED_DONT_USE_KERBEROS;
 				break;
 			case PIPE_AUTH_TYPE_SPNEGO_KRB5:
-				use_kerberos = CRED_MUST_USE_KERBEROS;
+				krb5_state = CRED_MUST_USE_KERBEROS;
 				break;
 			case PIPE_AUTH_TYPE_SPNEGO_NONE:
-				use_kerberos = CRED_AUTO_USE_KERBEROS;
+				krb5_state = CRED_AUTO_USE_KERBEROS;
 				break;
 			}
 			FALL_THROUGH;
 		case DCERPC_AUTH_TYPE_NTLMSSP:
 		case DCERPC_AUTH_TYPE_KRB5:
-			ntresult = cli_rpc_pipe_open_generic_auth(
+			if (krb5_state != CRED_AUTO_USE_KERBEROS) {
+				cli_credentials_set_kerberos_state(creds,
+								   krb5_state);
+			}
+			ntresult = cli_rpc_pipe_open_with_creds(
 				cli, cmd_entry->table,
 				default_transport,
-				use_kerberos,
 				pipe_default_auth_type,
 				pipe_default_auth_level,
 				smbXcli_conn_remote_name(cli->conn),
-				get_cmdline_auth_info_domain(auth_info),
-				get_cmdline_auth_info_username(auth_info),
-				get_cmdline_auth_info_password(auth_info),
+				creds,
 				&cmd_entry->rpc_pipe);
 			break;
 		case DCERPC_AUTH_TYPE_SCHANNEL:
@@ -860,10 +865,10 @@ static NTSTATUS do_cmd(struct cli_state *cli,
 		if (rpcclient_netlogon_creds == NULL && cmd_entry->use_netlogon_creds) {
 			const char *dc_name = cmd_entry->rpc_pipe->desthost;
 			const char *domain = rpcclient_netlogon_domain;
-			struct cli_credentials *creds = NULL;
+			struct cli_credentials *trust_creds = NULL;
 
 			ntresult = pdb_get_trust_credentials(domain, NULL,
-							     mem_ctx, &creds);
+							     mem_ctx, &trust_creds);
 			if (!NT_STATUS_IS_OK(ntresult)) {
 				DEBUG(0, ("Failed to fetch trust credentials for "
 					  "%s to connect to %s: %s\n",
@@ -874,7 +879,7 @@ static NTSTATUS do_cmd(struct cli_state *cli,
 				return ntresult;
 			}
 
-			ntresult = rpccli_create_netlogon_creds_ctx(creds,
+			ntresult = rpccli_create_netlogon_creds_ctx(trust_creds,
 							dc_name,
 							rpcclient_msg_ctx,
 							rpcclient_msg_ctx,
@@ -892,8 +897,8 @@ static NTSTATUS do_cmd(struct cli_state *cli,
 				NCACN_NP,
 				rpcclient_netlogon_creds,
 				false, /* force_reauth */
-				creds);
-			TALLOC_FREE(creds);
+				trust_creds);
+			TALLOC_FREE(trust_creds);
 			if (!NT_STATUS_IS_OK(ntresult)) {
 				DEBUG(0, ("Could not initialise credentials for %s.\n",
 					  cmd_entry->table->name));
@@ -1188,18 +1193,6 @@ out_free:
 		break;
 	}
 
-	if (get_cmdline_auth_info_use_kerberos(popt_get_cmdline_auth_info())) {
-		flags |= CLI_FULL_CONNECTION_USE_KERBEROS |
-			 CLI_FULL_CONNECTION_FALLBACK_AFTER_KERBEROS;
-	}
-	if (get_cmdline_auth_info_use_ccache(popt_get_cmdline_auth_info())) {
-		flags |= CLI_FULL_CONNECTION_USE_CCACHE;
-	}
-	if (get_cmdline_auth_info_use_pw_nt_hash(
-			popt_get_cmdline_auth_info())) {
-		flags |= CLI_FULL_CONNECTION_USE_NT_HASH;
-	}
-
 	rpcclient_netlogon_domain = get_cmdline_auth_info_domain(
 			popt_get_cmdline_auth_info());
 	if (rpcclient_netlogon_domain == NULL ||
@@ -1208,14 +1201,10 @@ out_free:
 		rpcclient_netlogon_domain = lp_workgroup();
 	}
 
-	nt_status = cli_full_connection(&cli, lp_netbios_name(), host,
+	nt_status = cli_full_connection_creds(&cli, lp_netbios_name(), host,
 					opt_ipaddr ? &server_ss : NULL, opt_port,
 					"IPC$", "IPC",
-					get_cmdline_auth_info_username(
-						popt_get_cmdline_auth_info()),
-					get_cmdline_auth_info_domain(
-						popt_get_cmdline_auth_info()),
-					get_cmdline_auth_info_password(
+					get_cmdline_auth_info_creds(
 						popt_get_cmdline_auth_info()),
 					flags,
 					SMB_SIGNING_IPC_DEFAULT);
@@ -1227,12 +1216,8 @@ out_free:
 	}
 
 	if (get_cmdline_auth_info_smb_encrypt(popt_get_cmdline_auth_info())) {
-		nt_status = cli_cm_force_encryption(cli,
-					get_cmdline_auth_info_username(
-						popt_get_cmdline_auth_info()),
-					get_cmdline_auth_info_password(
-						popt_get_cmdline_auth_info()),
-					get_cmdline_auth_info_domain(
+		nt_status = cli_cm_force_encryption_creds(cli,
+					get_cmdline_auth_info_creds(
 						popt_get_cmdline_auth_info()),
 					"IPC$");
 		if (!NT_STATUS_IS_OK(nt_status)) {

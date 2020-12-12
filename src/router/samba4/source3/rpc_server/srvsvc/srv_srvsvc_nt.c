@@ -27,7 +27,8 @@
 #include "system/passwd.h"
 #include "lib/util/server_id.h"
 #include "ntdomain.h"
-#include "../librpc/gen_ndr/srv_srvsvc.h"
+#include "librpc/gen_ndr/ndr_srvsvc.h"
+#include "librpc/gen_ndr/ndr_srvsvc_scompat.h"
 #include "../libcli/security/security.h"
 #include "../librpc/gen_ndr/ndr_security.h"
 #include "../librpc/gen_ndr/open_files.h"
@@ -2418,7 +2419,7 @@ WERROR _srvsvc_NetGetFileSecurity(struct pipes_struct *p,
 					conn,
 					r->in.file,
 					ucf_flags,
-					NULL,
+					0,
 					NULL,
 					&smb_fname);
 	if (!NT_STATUS_IS_OK(nt_status)) {
@@ -2429,7 +2430,7 @@ WERROR _srvsvc_NetGetFileSecurity(struct pipes_struct *p,
 	nt_status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		0,					/* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_READ_ATTRIBUTES,			/* access_mask */
 		FILE_SHARE_READ|FILE_SHARE_WRITE,	/* share_access */
@@ -2554,7 +2555,7 @@ WERROR _srvsvc_NetSetFileSecurity(struct pipes_struct *p,
 					conn,
 					r->in.file,
 					ucf_flags,
-					NULL,
+					0,
 					NULL,
 					&smb_fname);
 	if (!NT_STATUS_IS_OK(nt_status)) {
@@ -2565,7 +2566,7 @@ WERROR _srvsvc_NetSetFileSecurity(struct pipes_struct *p,
 	nt_status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		0,					/* root_dir_fid */
+		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_WRITE_ATTRIBUTES,			/* access_mask */
 		FILE_SHARE_READ|FILE_SHARE_WRITE,	/* share_access */
@@ -3048,3 +3049,6 @@ WERROR _srvsvc_NETRSERVERTRANSPORTDELEX(struct pipes_struct *p,
 	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
 	return WERR_NOT_SUPPORTED;
 }
+
+/* include the generated boilerplate */
+#include "librpc/gen_ndr/ndr_srvsvc_scompat.c"

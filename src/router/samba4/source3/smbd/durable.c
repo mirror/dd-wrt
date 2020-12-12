@@ -70,7 +70,7 @@ NTSTATUS vfs_default_durable_cookie(struct files_struct *fsp,
 		return NT_STATUS_NOT_SUPPORTED;
 	}
 
-	if (fsp->is_directory) {
+	if (fsp->fsp_flags.is_directory) {
 		return NT_STATUS_NOT_SUPPORTED;
 	}
 
@@ -101,9 +101,11 @@ NTSTATUS vfs_default_durable_cookie(struct files_struct *fsp,
 	cookie.base_name = fsp->fsp_name->base_name;
 	cookie.initial_allocation_size = fsp->initial_allocation_size;
 	cookie.position_information = fsp->fh->position_information;
-	cookie.update_write_time_triggered = fsp->update_write_time_triggered;
-	cookie.update_write_time_on_close = fsp->update_write_time_on_close;
-	cookie.write_time_forced = fsp->write_time_forced;
+	cookie.update_write_time_triggered =
+		fsp->fsp_flags.update_write_time_triggered;
+	cookie.update_write_time_on_close =
+		fsp->fsp_flags.update_write_time_on_close;
+	cookie.write_time_forced = fsp->fsp_flags.write_time_forced;
 	cookie.close_write_time = full_timespec_to_nt_time(
 		&fsp->close_write_time);
 
@@ -178,10 +180,10 @@ NTSTATUS vfs_default_durable_disconnect(struct files_struct *fsp,
 	 * For now let it be simple and do not keep
 	 * delete on close files durable open
 	 */
-	if (fsp->initial_delete_on_close) {
+	if (fsp->fsp_flags.initial_delete_on_close) {
 		return NT_STATUS_NOT_SUPPORTED;
 	}
-	if (fsp->delete_on_close) {
+	if (fsp->fsp_flags.delete_on_close) {
 		return NT_STATUS_NOT_SUPPORTED;
 	}
 
@@ -208,10 +210,10 @@ NTSTATUS vfs_default_durable_disconnect(struct files_struct *fsp,
 
 		init_smb_file_time(&ft);
 
-		if (fsp->write_time_forced) {
+		if (fsp->fsp_flags.write_time_forced) {
 			ft.mtime = nt_time_to_full_timespec(
 				lck->data->changed_write_time);
-		} else if (fsp->update_write_time_on_close) {
+		} else if (fsp->fsp_flags.update_write_time_on_close) {
 			if (is_omit_timespec(&fsp->close_write_time)) {
 				ft.mtime = timespec_current();
 			} else {
@@ -249,12 +251,14 @@ NTSTATUS vfs_default_durable_disconnect(struct files_struct *fsp,
 	cookie.allow_reconnect = true;
 	cookie.id = fsp->file_id;
 	cookie.servicepath = conn->connectpath;
-	cookie.base_name = fsp->fsp_name->base_name;
+	cookie.base_name = fsp_str_dbg(fsp);
 	cookie.initial_allocation_size = fsp->initial_allocation_size;
 	cookie.position_information = fsp->fh->position_information;
-	cookie.update_write_time_triggered = fsp->update_write_time_triggered;
-	cookie.update_write_time_on_close = fsp->update_write_time_on_close;
-	cookie.write_time_forced = fsp->write_time_forced;
+	cookie.update_write_time_triggered =
+		fsp->fsp_flags.update_write_time_triggered;
+	cookie.update_write_time_on_close =
+		fsp->fsp_flags.update_write_time_on_close;
+	cookie.write_time_forced = fsp->fsp_flags.write_time_forced;
 	cookie.close_write_time = full_timespec_to_nt_time(
 		&fsp->close_write_time);
 
@@ -583,6 +587,7 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 					cookie.base_name,
 					NULL,
 					NULL,
+					0,
 					0);
 	if (smb_fname == NULL) {
 		return NT_STATUS_NO_MEMORY;
@@ -678,8 +683,8 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	fsp->vuid = smb1req->vuid;
 	fsp->open_time = e.time;
 	fsp->access_mask = e.access_mask;
-	fsp->can_read = ((fsp->access_mask & (FILE_READ_DATA)) != 0);
-	fsp->can_write = ((fsp->access_mask & (FILE_WRITE_DATA|FILE_APPEND_DATA)) != 0);
+	fsp->fsp_flags.can_read = ((fsp->access_mask & FILE_READ_DATA) != 0);
+	fsp->fsp_flags.can_write = ((fsp->access_mask & (FILE_WRITE_DATA|FILE_APPEND_DATA)) != 0);
 	fsp->fnum = op->local_id;
 	fsp_set_gen_id(fsp);
 
@@ -687,19 +692,19 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	 * TODO:
 	 * Do we need to store the modified flag in the DB?
 	 */
-	fsp->modified = false;
+	fsp->fsp_flags.modified = false;
 	/*
 	 * no durables for directories
 	 */
-	fsp->is_directory = false;
+	fsp->fsp_flags.is_directory = false;
 	/*
 	 * For normal files, can_lock == !is_directory
 	 */
-	fsp->can_lock = true;
+	fsp->fsp_flags.can_lock = true;
 	/*
 	 * We do not support aio write behind for smb2
 	 */
-	fsp->aio_write_behind = false;
+	fsp->fsp_flags.aio_write_behind = false;
 	fsp->oplock_type = e.op_type;
 
 	if (fsp->oplock_type == LEASE_OPLOCK) {
@@ -748,11 +753,16 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 
 	fsp->initial_allocation_size = cookie.initial_allocation_size;
 	fsp->fh->position_information = cookie.position_information;
-	fsp->update_write_time_triggered = cookie.update_write_time_triggered;
-	fsp->update_write_time_on_close = cookie.update_write_time_on_close;
-	fsp->write_time_forced = cookie.write_time_forced;
+	fsp->fsp_flags.update_write_time_triggered =
+		cookie.update_write_time_triggered;
+	fsp->fsp_flags.update_write_time_on_close =
+		cookie.update_write_time_on_close;
+	fsp->fsp_flags.write_time_forced = cookie.write_time_forced;
 	fsp->close_write_time = nt_time_to_full_timespec(
 		cookie.close_write_time);
+
+	/* TODO: real dirfsp... */
+	fsp->dirfsp = fsp->conn->cwd_fsp;
 
 	status = fsp_set_smb_fname(fsp, smb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -797,15 +807,15 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	/*
 	 * TODO: properly calculate open flags
 	 */
-	if (fsp->can_write && fsp->can_read) {
+	if (fsp->fsp_flags.can_write && fsp->fsp_flags.can_read) {
 		flags = O_RDWR;
-	} else if (fsp->can_write) {
+	} else if (fsp->fsp_flags.can_write) {
 		flags = O_WRONLY;
-	} else if (fsp->can_read) {
+	} else if (fsp->fsp_flags.can_read) {
 		flags = O_RDONLY;
 	}
 
-	status = fd_open(conn, fsp, flags, 0 /* mode */);
+	status = fd_openat(fsp, flags, 0);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(lck);
 		DEBUG(1, ("vfs_default_durable_reconnect: failed to open "

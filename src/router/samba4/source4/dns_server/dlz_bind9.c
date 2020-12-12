@@ -544,7 +544,7 @@ static isc_result_t parse_options(struct dlz_bind9_data *state,
 	struct poptOption long_options[] = {
 		{ "url", 'H', POPT_ARG_STRING, &options->url, 0, "database URL", "URL" },
 		{ "debug", 'd', POPT_ARG_STRING, &options->debug, 0, "debug level", "DEBUG" },
-		{ NULL }
+		{0}
 	};
 
 	pc = poptGetContext("dlz_bind9", argc, argv, long_options,
@@ -1575,7 +1575,7 @@ _PUBLIC_ isc_boolean_t dlz_ssumatch(const char *signer, const char *name, const 
 		state->update_name = NULL;
 	}
 
-	tmp_ctx = talloc_new(NULL);
+	tmp_ctx = talloc_new(state);
 	if (tmp_ctx == NULL) {
 		state->log(ISC_LOG_ERROR, "samba_dlz: no memory");
 		result = ISC_FALSE;

@@ -1293,7 +1293,7 @@ NTSTATUS smbXsrv_session_create(struct smbXsrv_connection *conn,
 	global->creation_time = now;
 	global->expiration_time = GENSEC_EXPIRE_TIME_INFINITY;
 
-	status = smbXsrv_session_add_channel(session, conn, &channel);
+	status = smbXsrv_session_add_channel(session, conn, now, &channel);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(session);
 		return status;
@@ -1338,6 +1338,7 @@ NTSTATUS smbXsrv_session_create(struct smbXsrv_connection *conn,
 
 NTSTATUS smbXsrv_session_add_channel(struct smbXsrv_session *session,
 				     struct smbXsrv_connection *conn,
+				     NTTIME now,
 				     struct smbXsrv_channel_global0 **_c)
 {
 	struct smbXsrv_session_global0 *global = session->global;
@@ -1345,7 +1346,7 @@ NTSTATUS smbXsrv_session_add_channel(struct smbXsrv_session *session,
 
 	if (global->num_channels > 31) {
 		/*
-		 * Windows 2012 and 2012R2 allow up to 32 channels
+		 * Windows allow up to 32 channels
 		 */
 		return NT_STATUS_INSUFFICIENT_RESOURCES;
 	}
@@ -1363,6 +1364,8 @@ NTSTATUS smbXsrv_session_add_channel(struct smbXsrv_session *session,
 	ZERO_STRUCTP(c);
 
 	c->server_id = messaging_server_id(conn->client->msg_ctx);
+	c->channel_id = conn->channel_id;
+	c->creation_time = now;
 	c->local_address = tsocket_address_string(conn->local_address,
 						  global->channels);
 	if (c->local_address == NULL) {
@@ -1438,10 +1441,16 @@ NTSTATUS smbXsrv_session_find_channel(const struct smbXsrv_session *session,
 	for (i=0; i < session->global->num_channels; i++) {
 		struct smbXsrv_channel_global0 *c = &session->global->channels[i];
 
-		if (c->connection == conn) {
-			*_c = c;
-			return NT_STATUS_OK;
+		if (c->channel_id != conn->channel_id) {
+			continue;
 		}
+
+		if (c->connection != conn) {
+			continue;
+		}
+
+		*_c = c;
+		return NT_STATUS_OK;
 	}
 
 	return NT_STATUS_USER_SESSION_DELETED;
@@ -1455,6 +1464,10 @@ NTSTATUS smbXsrv_session_find_auth(const struct smbXsrv_session *session,
 	struct smbXsrv_session_auth0 *a;
 
 	for (a = session->pending_auth; a != NULL; a = a->next) {
+		if (a->channel_id != conn->channel_id) {
+			continue;
+		}
+
 		if (a->connection == conn) {
 			if (now != 0) {
 				a->idle_time = now;
@@ -1503,6 +1516,7 @@ NTSTATUS smbXsrv_session_create_auth(struct smbXsrv_session *session,
 	a->in_security_mode = in_security_mode;
 	a->creation_time = now;
 	a->idle_time = now;
+	a->channel_id = conn->channel_id;
 
 	if (conn->protocol >= PROTOCOL_SMB3_10) {
 		a->preauth = talloc(a, struct smbXsrv_preauth);
@@ -1898,6 +1912,128 @@ static int smbXsrv_session_local_traverse_cb(struct db_record *local_rec,
 	session->db_rec = local_rec;
 
 	return state->caller_cb(session, state->caller_data);
+}
+
+struct smbXsrv_session_disconnect_xconn_state {
+	struct smbXsrv_connection *xconn;
+	NTSTATUS first_status;
+	int errors;
+};
+
+static int smbXsrv_session_disconnect_xconn_callback(struct db_record *local_rec,
+					       void *private_data);
+
+NTSTATUS smbXsrv_session_disconnect_xconn(struct smbXsrv_connection *xconn)
+{
+	struct smbXsrv_client *client = xconn->client;
+	struct smbXsrv_session_table *table = client->session_table;
+	struct smbXsrv_session_disconnect_xconn_state state;
+	NTSTATUS status;
+	int count = 0;
+
+	if (table == NULL) {
+		DBG_ERR("empty session_table, nothing to do.\n");
+		return NT_STATUS_OK;
+	}
+
+	ZERO_STRUCT(state);
+	state.xconn = xconn;
+
+	status = dbwrap_traverse(table->local.db_ctx,
+				 smbXsrv_session_disconnect_xconn_callback,
+				 &state, &count);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("dbwrap_traverse() failed: %s\n",
+			nt_errstr(status));
+		return status;
+	}
+
+	if (!NT_STATUS_IS_OK(state.first_status)) {
+		DBG_ERR("count[%d] errors[%d] first[%s]\n",
+			count, state.errors,
+			nt_errstr(state.first_status));
+		return state.first_status;
+	}
+
+	return NT_STATUS_OK;
+}
+
+static int smbXsrv_session_disconnect_xconn_callback(struct db_record *local_rec,
+					       void *private_data)
+{
+	struct smbXsrv_session_disconnect_xconn_state *state =
+		(struct smbXsrv_session_disconnect_xconn_state *)private_data;
+	TDB_DATA val;
+	void *ptr = NULL;
+	struct smbXsrv_session *session = NULL;
+	struct smbXsrv_session_auth0 *a = NULL;
+	struct smbXsrv_channel_global0 *c = NULL;
+	NTSTATUS status;
+	bool need_update = false;
+
+	val = dbwrap_record_get_value(local_rec);
+	if (val.dsize != sizeof(ptr)) {
+		status = NT_STATUS_INTERNAL_ERROR;
+		if (NT_STATUS_IS_OK(state->first_status)) {
+			state->first_status = status;
+		}
+		state->errors++;
+		return 0;
+	}
+
+	memcpy(&ptr, val.dptr, val.dsize);
+	session = talloc_get_type_abort(ptr, struct smbXsrv_session);
+
+	session->db_rec = local_rec;
+
+	status = smbXsrv_session_find_auth(session, state->xconn, 0, &a);
+	if (!NT_STATUS_IS_OK(status)) {
+		a = NULL;
+	}
+	status = smbXsrv_session_find_channel(session, state->xconn, &c);
+	if (!NT_STATUS_IS_OK(status)) {
+		c = NULL;
+	}
+	if (session->global->num_channels <= 1) {
+		/*
+		 * The last channel is treated different
+		 */
+		c = NULL;
+	}
+
+	if (a != NULL) {
+		smbXsrv_session_auth0_destructor(a);
+		a->connection = NULL;
+		need_update = true;
+	}
+
+	if (c != NULL) {
+		struct smbXsrv_session_global0 *global = session->global;
+		ptrdiff_t n;
+
+		n = (c - global->channels);
+		if (n >= global->num_channels || n < 0) {
+			status = NT_STATUS_INTERNAL_ERROR;
+			if (NT_STATUS_IS_OK(state->first_status)) {
+				state->first_status = status;
+			}
+			state->errors++;
+			return 0;
+		}
+		ARRAY_DEL_ELEMENT(global->channels, n, global->num_channels);
+		global->num_channels--;
+		need_update = true;
+	}
+
+	if (need_update) {
+		status = smbXsrv_session_update(session);
+		if (NT_STATUS_IS_OK(state->first_status)) {
+			state->first_status = status;
+		}
+		state->errors++;
+	}
+
+	return 0;
 }
 
 NTSTATUS smb1srv_session_table_init(struct smbXsrv_connection *conn)

@@ -80,6 +80,10 @@ int map_errno_from_nt_status(NTSTATUS status);
 
 struct file_id vfs_file_id_from_sbuf(connection_struct *conn, const SMB_STRUCT_STAT *sbuf);
 
+NTSTATUS vfs_at_fspcwd(TALLOC_CTX *mem_ctx,
+		       struct connection_struct *conn,
+		       struct files_struct **_fsp);
+
 /* The following definitions come from lib/interface.c  */
 
 bool ismyaddr(const struct sockaddr *ip);
@@ -159,7 +163,6 @@ int smbrunsecret(const char *cmd, const char *secret);
 
 /* The following definitions come from lib/substitute.c  */
 
-void free_local_machine_name(void);
 bool set_local_machine_name(const char *local_name, bool perm);
 const char *get_local_machine_name(void);
 bool set_remote_machine_name(const char *remote_name, bool perm);
@@ -393,6 +396,10 @@ char *myhostname_upper(void);
 #include "lib/util_path.h"
 bool parent_dirname(TALLOC_CTX *mem_ctx, const char *dir, char **parent,
 		    const char **name);
+bool parent_smb_fname(TALLOC_CTX *mem_ctx,
+		      const struct smb_filename *path,
+		      struct smb_filename **_parent,
+		      struct smb_filename  **_name);
 bool ms_has_wild(const char *s);
 bool ms_has_wild_w(const smb_ucs2_t *s);
 bool mask_match(const char *string, const char *pattern, bool is_case_sensitive);
@@ -581,7 +588,6 @@ bool next_token(const char **ptr, char *buff, const char *sep, size_t bufsize);
 bool strnequal(const char *s1,const char *s2,size_t n);
 bool strcsequal(const char *s1,const char *s2);
 bool strnorm(char *s, int case_default);
-char *push_skip_string(char *buf);
 char *skip_string(const char *base, size_t len, char *buf);
 size_t str_charnum(const char *s);
 bool trim_char(char *s,char cfront,char cback);
@@ -766,6 +772,7 @@ bool lp_widelinks(int );
 int lp_rpc_low_port(void);
 int lp_rpc_high_port(void);
 bool lp_lanman_auth(void);
+enum samba_weak_crypto lp_weak_crypto(void);
 
 int lp_wi_scan_global_parametrics(
 	const char *regex, size_t max_matches,
@@ -977,6 +984,7 @@ struct smb_filename *synthetic_smb_fname(TALLOC_CTX *mem_ctx,
 					 const char *base_name,
 					 const char *stream_name,
 					 const SMB_STRUCT_STAT *psbuf,
+					 NTTIME twrp,
 					 uint32_t flags);
 struct smb_filename *synthetic_smb_fname_split(TALLOC_CTX *ctx,
 						const char *fname,
@@ -997,7 +1005,6 @@ bool split_stream_filename(TALLOC_CTX *ctx,
 			const char *filename_in,
 			char **filename_out,
 			char **streamname_out);
-bool is_gmt_token(const char *path);
 
 /* The following definitions come from lib/dummyroot.c */
 

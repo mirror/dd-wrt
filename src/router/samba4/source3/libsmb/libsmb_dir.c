@@ -34,6 +34,7 @@
 #include "../libcli/smb/smbXcli_base.h"
 #include "../libcli/security/security.h"
 #include "lib/util/tevent_ntstatus.h"
+#include "lib/util/time_basic.h"
 
 /*
  * Routine to open a directory
@@ -186,7 +187,7 @@ static int add_dirplus(SMBCFILE *dir, struct file_info *finfo)
 	info->ctime_ts = finfo->ctime_ts;
 	info->mtime_ts = finfo->mtime_ts;
 	info->gid = finfo->gid;
-	info->attrs = finfo->mode;
+	info->attrs = finfo->attr;
 	info->size = finfo->size;
 	info->uid = finfo->uid;
 	info->name = SMB_STRDUP(finfo->name);
@@ -340,7 +341,7 @@ dir_list_fn(const char *mnt,
 	int ret;
 
 	if (add_dirent((SMBCFILE *)state, finfo->name, "",
-		       (finfo->mode&FILE_ATTRIBUTE_DIRECTORY?SMBC_DIR:SMBC_FILE)) < 0) {
+		       (finfo->attr&FILE_ATTRIBUTE_DIRECTORY?SMBC_DIR:SMBC_FILE)) < 0) {
 		SMBCFILE *dir = (SMBCFILE *)state;
 		return map_nt_error_from_unix(dir->dir_error);
 	}
@@ -359,7 +360,7 @@ net_share_enum_rpc(struct cli_state *cli,
                               void *state),
                    void *state)
 {
-        int i;
+        uint32_t i;
 	WERROR result;
 	uint32_t preferred_len = 0xffffffff;
         uint32_t type;
@@ -466,7 +467,6 @@ SMBCFILE *
 SMBC_opendir_ctx(SMBCCTX *context,
                  const char *fname)
 {
-        int saved_errno;
 	char *server = NULL;
         char *share = NULL;
         char *user = NULL;
@@ -546,6 +546,12 @@ SMBC_opendir_ctx(SMBCCTX *context,
 
 	dir->cli_fd   = 0;
 	dir->fname    = SMB_STRDUP(fname);
+	if (dir->fname == NULL) {
+		SAFE_FREE(dir);
+		TALLOC_FREE(frame);
+		errno = ENOMEM;
+		return NULL;
+	}
 	dir->srv      = NULL;
 	dir->offset   = 0;
 	dir->file     = False;
@@ -954,6 +960,7 @@ SMBC_opendir_ctx(SMBCCTX *context,
 					  FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN,
 					  dir_list_fn, (void *)dir);
 			if (!NT_STATUS_IS_OK(status)) {
+				int saved_errno;
 				if (dir) {
 					SAFE_FREE(dir->fname);
 					SAFE_FREE(dir);
@@ -1034,7 +1041,7 @@ SMBC_closedir_ctx(SMBCCTX *context,
 		return -1;
 	}
 
-	if (!dir || !SMBC_dlist_contains(context->internal->files, dir)) {
+	if (!SMBC_dlist_contains(context->internal->files, dir)) {
 		errno = EBADF;
 		TALLOC_FREE(frame);
 		return -1;
@@ -1147,7 +1154,7 @@ SMBC_readdir_ctx(SMBCCTX *context,
 
 	}
 
-	if (!dir || !SMBC_dlist_contains(context->internal->files, dir)) {
+	if (!SMBC_dlist_contains(context->internal->files, dir)) {
 
 		errno = EBADF;
                 DEBUG(0, ("Invalid dir in SMBC_readdir_ctx()\n"));
@@ -1226,9 +1233,7 @@ SMBC_readdirplus_ctx(SMBCCTX *context,
 		return NULL;
 	}
 
-	if (dir == NULL ||
-	    SMBC_dlist_contains(context->internal->files,
-				dir) == 0) {
+	if (!SMBC_dlist_contains(context->internal->files, dir)) {
 		DBG_ERR("Invalid dir in SMBC_readdirplus_ctx()\n");
 		TALLOC_FREE(frame);
 		errno = EBADF;
@@ -1307,10 +1312,7 @@ const struct libsmb_file_info *SMBC_readdirplus2_ctx(SMBCCTX *context,
 		return NULL;
 	}
 
-	if (dir == NULL ||
-	    SMBC_dlist_contains(context->internal->files,
-					dir) == 0)
-	{
+	if (!SMBC_dlist_contains(context->internal->files, dir)) {
 		DBG_ERR("Invalid dir in SMBC_readdirplus2_ctx()\n");
 		TALLOC_FREE(frame);
 		errno = EBADF;
@@ -1415,7 +1417,7 @@ SMBC_getdents_ctx(SMBCCTX *context,
 
 	}
 
-	if (!dir || !SMBC_dlist_contains(context->internal->files, dir)) {
+	if (!SMBC_dlist_contains(context->internal->files, dir)) {
 
 		errno = EBADF;
 		TALLOC_FREE(frame);
@@ -1782,7 +1784,7 @@ SMBC_telldir_ctx(SMBCCTX *context,
 
 	}
 
-	if (!dir || !SMBC_dlist_contains(context->internal->files, dir)) {
+	if (!SMBC_dlist_contains(context->internal->files, dir)) {
 
 		errno = EBADF;
 		TALLOC_FREE(frame);
@@ -1955,7 +1957,7 @@ SMBC_chmod_ctx(SMBCCTX *context,
 	char *targetpath = NULL;
 	struct cli_state *targetcli = NULL;
 	char *path = NULL;
-	uint16_t mode;
+	uint32_t attr;
 	uint16_t port = 0;
 	TALLOC_CTX *frame = talloc_stackframe();
         NTSTATUS status;
@@ -2018,14 +2020,14 @@ SMBC_chmod_ctx(SMBCCTX *context,
 		return -1;
 	}
 
-	mode = 0;
+	attr = 0;
 
-	if (!(newmode & (S_IWUSR | S_IWGRP | S_IWOTH))) mode |= FILE_ATTRIBUTE_READONLY;
-	if ((newmode & S_IXUSR) && lp_map_archive(-1)) mode |= FILE_ATTRIBUTE_ARCHIVE;
-	if ((newmode & S_IXGRP) && lp_map_system(-1)) mode |= FILE_ATTRIBUTE_SYSTEM;
-	if ((newmode & S_IXOTH) && lp_map_hidden(-1)) mode |= FILE_ATTRIBUTE_HIDDEN;
+	if (!(newmode & (S_IWUSR | S_IWGRP | S_IWOTH))) attr |= FILE_ATTRIBUTE_READONLY;
+	if ((newmode & S_IXUSR) && lp_map_archive(-1)) attr |= FILE_ATTRIBUTE_ARCHIVE;
+	if ((newmode & S_IXGRP) && lp_map_system(-1)) attr |= FILE_ATTRIBUTE_SYSTEM;
+	if ((newmode & S_IXOTH) && lp_map_hidden(-1)) attr |= FILE_ATTRIBUTE_HIDDEN;
 
-	if (!NT_STATUS_IS_OK(cli_setatr(targetcli, targetpath, mode, 0))) {
+	if (!NT_STATUS_IS_OK(cli_setatr(targetcli, targetpath, attr, 0))) {
 		errno = SMBC_errno(context, targetcli);
 		TALLOC_FREE(frame);
 		return -1;
@@ -2047,10 +2049,10 @@ SMBC_utimes_ctx(SMBCCTX *context,
 	char *password = NULL;
 	char *workgroup = NULL;
 	char *path = NULL;
-        time_t access_time;
-        time_t write_time;
+	struct timespec access_time, write_time;
 	uint16_t port = 0;
 	TALLOC_CTX *frame = talloc_stackframe();
+	bool ok;
 
 	if (!context || !context->internal->initialized) {
 
@@ -2066,31 +2068,19 @@ SMBC_utimes_ctx(SMBCCTX *context,
 	}
 
         if (tbuf == NULL) {
-                access_time = write_time = time(NULL);
+                access_time = write_time = timespec_current();
         } else {
-                access_time = tbuf[0].tv_sec;
-                write_time = tbuf[1].tv_sec;
+		access_time = convert_timeval_to_timespec(tbuf[0]);
+                write_time = convert_timeval_to_timespec(tbuf[1]);
         }
 
         if (DEBUGLVL(4)) {
-                char *p;
-                char atimebuf[32];
-                char mtimebuf[32];
-
-                strncpy(atimebuf, ctime(&access_time), sizeof(atimebuf) - 1);
-                atimebuf[sizeof(atimebuf) - 1] = '\0';
-                if ((p = strchr(atimebuf, '\n')) != NULL) {
-                        *p = '\0';
-                }
-
-                strncpy(mtimebuf, ctime(&write_time), sizeof(mtimebuf) - 1);
-                mtimebuf[sizeof(mtimebuf) - 1] = '\0';
-                if ((p = strchr(mtimebuf, '\n')) != NULL) {
-                        *p = '\0';
-                }
+		struct timeval_buf abuf, wbuf;
 
                 dbgtext("smbc_utimes(%s, atime = %s mtime = %s)\n",
-                        fname, atimebuf, mtimebuf);
+                        fname,
+			timespec_string_buf(&access_time, false, &abuf),
+			timespec_string_buf(&write_time, false, &wbuf));
         }
 
 	if (SMBC_parse_path(frame,
@@ -2126,8 +2116,16 @@ SMBC_utimes_ctx(SMBCCTX *context,
 		return -1;      /* errno set by SMBC_server */
 	}
 
-        if (!SMBC_setatr(context, srv, path,
-                         0, access_time, write_time, 0, 0)) {
+	ok = SMBC_setatr(
+		context,
+		srv,
+		path,
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT },
+		access_time,
+		write_time,
+		(struct timespec) { .tv_nsec = SAMBA_UTIME_OMIT },
+		0);
+	if (!ok) {
 		TALLOC_FREE(frame);
                 return -1;      /* errno set by SMBC_setatr */
         }
@@ -2630,8 +2628,7 @@ SMBC_notify_ctx(SMBCCTX *context, SMBCFILE *dir, smbc_bool recursive,
 		errno = EINVAL;
 		return -1;
 	}
-	if ((dir == NULL) ||
-	    !SMBC_dlist_contains(context->internal->files, dir)) {
+	if (!SMBC_dlist_contains(context->internal->files, dir)) {
 		TALLOC_FREE(frame);
 		errno = EBADF;
 		return -1;

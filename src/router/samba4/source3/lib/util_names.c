@@ -81,7 +81,6 @@ static bool set_my_netbios_names(const char *name, int i)
 void gfree_names(void)
 {
 	free_netbios_names_array();
-	free_local_machine_name();
 }
 
 const char *my_netbios_names(int i)
@@ -146,8 +145,6 @@ bool init_names(void)
 		DEBUG( 0, ( "init_names: malloc fail.\n" ) );
 		return False;
 	}
-
-	set_local_machine_name(lp_netbios_name(),false);
 
 	DEBUG( 5, ("Netbios name list:-\n") );
 	for( n=0; my_netbios_names(n); n++ ) {

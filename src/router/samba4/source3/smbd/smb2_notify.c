@@ -255,7 +255,7 @@ static struct tevent_req *smbd_smb2_notify_send(TALLOC_CTX *mem_ctx,
 		TALLOC_FREE(filter_string);
 	}
 
-	if ((!fsp->is_directory) || (conn != fsp->conn)) {
+	if ((!fsp->fsp_flags.is_directory) || (conn != fsp->conn)) {
 		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
 		return tevent_req_post(req, ev);
 	}
@@ -348,7 +348,7 @@ static void smbd_smb2_notify_reply(struct smb_request *smbreq,
 	if (!NT_STATUS_IS_OK(error_code)) {
 		/* nothing */
 	} else if (len == 0) {
-		state->status = STATUS_NOTIFY_ENUM_DIR;
+		state->status = NT_STATUS_NOTIFY_ENUM_DIR;
 	} else {
 		state->out_output_buffer = data_blob_talloc(state, buf, len);
 		if (state->out_output_buffer.data == NULL) {

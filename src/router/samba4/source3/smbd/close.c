@@ -191,6 +191,7 @@ NTSTATUS delete_all_streams(connection_struct *conn,
 					smb_fname->base_name,
 					stream_info[i].name,
 					NULL,
+					smb_fname->twrp,
 					(smb_fname->flags &
 						~SMB_FILENAME_POSIX_PATH));
 
@@ -313,7 +314,7 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
 		remove_oplock(fsp);
 	}
 
-	if (fsp->write_time_forced) {
+	if (fsp->fsp_flags.write_time_forced) {
 		struct timespec ts;
 
 		DEBUG(10,("close_remove_share_mode: write time forced "
@@ -321,7 +322,7 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
 			fsp_str_dbg(fsp)));
 		ts = nt_time_to_full_timespec(lck->data->changed_write_time);
 		set_close_write_time(fsp, ts);
-	} else if (fsp->update_write_time_on_close) {
+	} else if (fsp->fsp_flags.update_write_time_on_close) {
 		/* Someone had a pending write. */
 		if (is_omit_timespec(&fsp->close_write_time)) {
 			DEBUG(10,("close_remove_share_mode: update to current time "
@@ -338,24 +339,23 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
 		}
 	}
 
-	if (fsp->initial_delete_on_close &&
+	if (fsp->fsp_flags.initial_delete_on_close &&
 			!is_delete_on_close_set(lck, fsp->name_hash)) {
-		bool became_user = False;
+		struct auth_session_info *session_info = NULL;
 
 		/* Initial delete on close was set and no one else
 		 * wrote a real delete on close. */
 
-		if (get_current_vuid(conn) != fsp->vuid) {
-			become_user_without_service(conn, fsp->vuid);
-			became_user = True;
+		status = smbXsrv_session_info_lookup(conn->sconn->client,
+						     fsp->vuid,
+						     &session_info);
+		if (!NT_STATUS_IS_OK(status)) {
+			return NT_STATUS_INTERNAL_ERROR;
 		}
-		fsp->delete_on_close = true;
+		fsp->fsp_flags.delete_on_close = true;
 		set_delete_on_close_lck(fsp, lck,
-				get_current_nttok(conn),
-				get_current_utok(conn));
-		if (became_user) {
-			unbecome_user_without_service();
-		}
+					session_info->security_token,
+					session_info->unix_token);
 	}
 
 	delete_file = is_delete_on_close_set(lck, fsp->name_hash) &&
@@ -383,7 +383,7 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
 	/*
 	 * Don't try to update the write time when we delete the file
 	 */
-	fsp->update_write_time_on_close = false;
+	fsp->fsp_flags.update_write_time_on_close = false;
 
 	got_tokens = get_delete_on_close_token(lck, fsp->name_hash,
 					&del_nt_token, &del_token);
@@ -455,7 +455,7 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
 		}
 	}
 
-	if (fsp->kernel_share_modes_taken) {
+	if (fsp->fsp_flags.kernel_share_modes_taken) {
 		int ret_flock;
 
 		/*
@@ -468,7 +468,7 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
 				  fsp_str_dbg(fsp), strerror(errno));
 		}
 
-		fsp->kernel_share_modes_taken = false;
+		fsp->fsp_flags.kernel_share_modes_taken = false;
 	}
 
 
@@ -499,7 +499,7 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
  	 * the delete on close flag. JRA.
  	 */
 
-	fsp->delete_on_close = false;
+	fsp->fsp_flags.delete_on_close = false;
 	reset_delete_on_close_lck(fsp, lck);
 
  done:
@@ -509,7 +509,7 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
 		pop_sec_ctx();
 	}
 
-	if (fsp->kernel_share_modes_taken) {
+	if (fsp->fsp_flags.kernel_share_modes_taken) {
 		int ret_flock;
 
 		/* remove filesystem sharemodes */
@@ -555,8 +555,8 @@ void set_close_write_time(struct files_struct *fsp, struct timespec ts)
 	if (is_omit_timespec(&ts)) {
 		return;
 	}
-	fsp->write_time_forced = false;
-	fsp->update_write_time_on_close = true;
+	fsp->fsp_flags.write_time_forced = false;
+	fsp->fsp_flags.update_write_time_on_close = true;
 	fsp->close_write_time = ts;
 }
 
@@ -568,7 +568,7 @@ static NTSTATUS update_write_time_on_close(struct files_struct *fsp)
 
 	init_smb_file_time(&ft);
 
-	if (!fsp->update_write_time_on_close) {
+	if (!(fsp->fsp_flags.update_write_time_on_close)) {
 		return NT_STATUS_OK;
 	}
 
@@ -858,8 +858,11 @@ bool recursive_rmdir(TALLOC_CTX *ctx,
 			continue;
 		}
 
-		if (!is_visible_file(conn, smb_dname->base_name, dname, &st,
-				     false)) {
+		if (!is_visible_file(conn,
+					dir_hnd,
+					dname,
+					&st,
+					false)) {
 			TALLOC_FREE(talloced);
 			continue;
 		}
@@ -878,6 +881,7 @@ bool recursive_rmdir(TALLOC_CTX *ctx,
 						fullname,
 						NULL,
 						NULL,
+						smb_dname->twrp,
 						smb_dname->flags);
 		if (smb_dname_full == NULL) {
 			errno = ENOMEM;
@@ -995,8 +999,11 @@ static NTSTATUS rmdir_internals(TALLOC_CTX *ctx, files_struct *fsp)
 				TALLOC_FREE(talloced);
 				continue;
 			}
-			if (!is_visible_file(conn, smb_dname->base_name, dname,
-					     &st, false)) {
+			if (!is_visible_file(conn,
+						dir_hnd,
+						dname,
+						&st,
+						false)) {
 				TALLOC_FREE(talloced);
 				continue;
 			}
@@ -1030,8 +1037,11 @@ static NTSTATUS rmdir_internals(TALLOC_CTX *ctx, files_struct *fsp)
 				TALLOC_FREE(talloced);
 				continue;
 			}
-			if (!is_visible_file(conn, smb_dname->base_name, dname,
-					     &st, false)) {
+			if (!is_visible_file(conn,
+						dir_hnd,
+						dname,
+						&st,
+						false)) {
 				TALLOC_FREE(talloced);
 				continue;
 			}
@@ -1050,6 +1060,7 @@ static NTSTATUS rmdir_internals(TALLOC_CTX *ctx, files_struct *fsp)
 							fullname,
 							NULL,
 							NULL,
+							smb_dname->twrp,
 							smb_dname->flags);
 			if (smb_dname_full == NULL) {
 				errno = ENOMEM;
@@ -1132,7 +1143,7 @@ static NTSTATUS close_directory(struct smb_request *req, files_struct *fsp,
 	NTSTATUS notify_status;
 
 	if (fsp->conn->sconn->using_smb2) {
-		notify_status = STATUS_NOTIFY_CLEANUP;
+		notify_status = NT_STATUS_NOTIFY_CLEANUP;
 	} else {
 		notify_status = NT_STATUS_OK;
 	}
@@ -1152,26 +1163,26 @@ static NTSTATUS close_directory(struct smb_request *req, files_struct *fsp,
 		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	if (fsp->initial_delete_on_close) {
-		bool became_user = False;
+	if (fsp->fsp_flags.initial_delete_on_close) {
+		struct auth_session_info *session_info = NULL;
 
 		/* Initial delete on close was set - for
 		 * directories we don't care if anyone else
 		 * wrote a real delete on close. */
 
-		if (get_current_vuid(fsp->conn) != fsp->vuid) {
-			become_user_without_service(fsp->conn, fsp->vuid);
-			became_user = True;
+		status = smbXsrv_session_info_lookup(fsp->conn->sconn->client,
+						     fsp->vuid,
+						     &session_info);
+		if (!NT_STATUS_IS_OK(status)) {
+			return NT_STATUS_INTERNAL_ERROR;
 		}
+
 		send_stat_cache_delete_message(fsp->conn->sconn->msg_ctx,
 					       fsp->fsp_name->base_name);
 		set_delete_on_close_lck(fsp, lck,
-				get_current_nttok(fsp->conn),
-				get_current_utok(fsp->conn));
-		fsp->delete_on_close = true;
-		if (became_user) {
-			unbecome_user_without_service();
-		}
+					session_info->security_token,
+					session_info->unix_token);
+		fsp->fsp_flags.delete_on_close = true;
 	}
 
 	delete_dir = get_delete_on_close_token(
@@ -1269,7 +1280,27 @@ NTSTATUS close_file(struct smb_request *req, files_struct *fsp,
 	NTSTATUS status;
 	struct files_struct *base_fsp = fsp->base_fsp;
 
-	if(fsp->is_directory) {
+	if (fsp->fsp_flags.is_dirfsp) {
+		/*
+		 * The typical way to get here is via file_close_[conn|user]()
+		 * and this is taken care of below.
+		 */
+		return NT_STATUS_OK;
+	}
+
+	if (fsp->dirfsp != NULL &&
+	    fsp->dirfsp != fsp->conn->cwd_fsp)
+	{
+		status = fd_close(fsp->dirfsp);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
+
+		file_free(NULL, fsp->dirfsp);
+		fsp->dirfsp = NULL;
+	}
+
+	if (fsp->fsp_flags.is_directory) {
 		status = close_directory(req, fsp, close_type);
 	} else if (fsp->fake_file_handle != NULL) {
 		status = close_fake_file(req, fsp);

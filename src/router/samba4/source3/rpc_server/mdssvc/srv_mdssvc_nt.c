@@ -20,73 +20,50 @@
 #include "includes.h"
 #include "messages.h"
 #include "ntdomain.h"
+#include "rpc_server/rpc_server.h"
 #include "rpc_server/rpc_service_setup.h"
 #include "rpc_server/rpc_config.h"
 #include "rpc_server/rpc_modules.h"
 #include "rpc_server/mdssvc/srv_mdssvc_nt.h"
-#include "../librpc/gen_ndr/srv_mdssvc.h"
 #include "libcli/security/security_token.h"
 #include "libcli/security/dom_sid.h"
 #include "gen_ndr/auth.h"
 #include "mdssvc.h"
 #include "smbd/globals.h"
 
+#include "librpc/rpc/dcesrv_core.h"
+#include "librpc/gen_ndr/ndr_mdssvc.h"
+#include "librpc/gen_ndr/ndr_mdssvc_scompat.h"
+
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
-
-static bool mdssvc_init_cb(void *ptr)
-{
-	struct messaging_context *msg_ctx =
-		talloc_get_type_abort(ptr, struct messaging_context);
-	bool ok;
-
-	ok = init_service_mdssvc(msg_ctx);
-	if (!ok) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool mdssvc_shutdown_cb(void *ptr)
-{
-	shutdown_service_mdssvc();
-
-	return true;
-}
 
 static bool rpc_setup_mdssvc(struct tevent_context *ev_ctx,
 			     struct messaging_context *msg_ctx)
 {
 	const struct ndr_interface_table *t = &ndr_table_mdssvc;
-	const char *pipe_name = "mdssvc";
-	struct rpc_srv_callbacks mdssvc_cb;
 	NTSTATUS status;
 	enum rpc_service_mode_e service_mode = rpc_service_mode(t->name);
 	enum rpc_daemon_type_e mdssvc_type = rpc_mdssd_daemon();
 	bool external = service_mode != RPC_SERVICE_MODE_EMBEDDED ||
 			mdssvc_type != RPC_DAEMON_EMBEDDED;
 	bool in_mdssd = external && am_parent == NULL;
+	const struct dcesrv_endpoint_server *ep_server = NULL;
 
 	if (external && !in_mdssd) {
 		return true;
 	}
 
-	mdssvc_cb.init         = mdssvc_init_cb;
-	mdssvc_cb.shutdown     = mdssvc_shutdown_cb;
-	mdssvc_cb.private_data = msg_ctx;
-
-	status = rpc_mdssvc_init(&mdssvc_cb);
-	if (!NT_STATUS_IS_OK(status)) {
+	ep_server = mdssvc_get_ep_server();
+	if (ep_server == NULL) {
+		DBG_ERR("Failed to get endpoint server\n");
 		return false;
 	}
 
-	if (external) {
-		return true;
-	}
-
-	status = rpc_setup_embedded(ev_ctx, msg_ctx, t, pipe_name);
+	status = dcerpc_register_ep_server(ep_server);
 	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("Failed to register 'mdssvc' endpoint "
+			"server: %s\n", nt_errstr(status));
 		return false;
 	}
 
@@ -95,8 +72,6 @@ static bool rpc_setup_mdssvc(struct tevent_context *ev_ctx,
 
 static struct rpc_module_fns rpc_module_mdssvc_fns = {
 	.setup = rpc_setup_mdssvc,
-	.init = rpc_mdssvc_init,
-	.shutdown = rpc_mdssvc_shutdown,
 };
 
 static_decl_rpc;
@@ -105,17 +80,6 @@ NTSTATUS rpc_mdssvc_module_init(TALLOC_CTX *mem_ctx)
 	DBG_DEBUG("Registering mdsvc RPC service\n");
 
 	return register_rpc_module(&rpc_module_mdssvc_fns, "mdssvc");
-}
-
-
-bool init_service_mdssvc(struct messaging_context *msg_ctx)
-{
-	return mds_init(msg_ctx);
-}
-
-bool shutdown_service_mdssvc(void)
-{
-	return mds_shutdown();
 }
 
 static NTSTATUS create_mdssvc_policy_handle(TALLOC_CTX *mem_ctx,
@@ -212,8 +176,14 @@ static bool is_zero_policy_handle(const struct policy_handle *h)
 void _mdssvc_unknown1(struct pipes_struct *p, struct mdssvc_unknown1 *r)
 {
 	struct mds_ctx *mds_ctx;
+	NTSTATUS status;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&mds_ctx)) {
+	mds_ctx = find_policy_by_hnd(p,
+				     r->in.handle,
+				     DCESRV_HANDLE_ANY,
+				     struct mds_ctx,
+				     &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		if (is_zero_policy_handle(r->in.handle)) {
 			p->fault_state = 0;
 		} else {
@@ -239,8 +209,14 @@ void _mdssvc_cmd(struct pipes_struct *p, struct mdssvc_cmd *r)
 	bool ok;
 	char *rbuf;
 	struct mds_ctx *mds_ctx;
+	NTSTATUS status;
 
-	if (!find_policy_by_hnd(p, r->in.handle, (void **)(void *)&mds_ctx)) {
+	mds_ctx = find_policy_by_hnd(p,
+				     r->in.handle,
+				     DCESRV_HANDLE_ANY,
+				     struct mds_ctx,
+				     &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		if (is_zero_policy_handle(r->in.handle)) {
 			p->fault_state = 0;
 		} else {
@@ -313,10 +289,14 @@ void _mdssvc_cmd(struct pipes_struct *p, struct mdssvc_cmd *r)
 void _mdssvc_close(struct pipes_struct *p, struct mdssvc_close *r)
 {
 	struct mds_ctx *mds_ctx;
-	bool ok;
+	NTSTATUS status;
 
-	ok = find_policy_by_hnd(p, r->in.in_handle, (void **)(void *)&mds_ctx);
-	if (!ok) {
+	mds_ctx = find_policy_by_hnd(p,
+				     r->in.in_handle,
+				     DCESRV_HANDLE_ANY,
+				     struct mds_ctx,
+				     &status);
+	if (!NT_STATUS_IS_OK(status)) {
 		DBG_WARNING("invalid handle\n");
 		if (is_zero_policy_handle(r->in.in_handle)) {
 			p->fault_state = 0;
@@ -336,3 +316,40 @@ void _mdssvc_close(struct pipes_struct *p, struct mdssvc_close *r)
 
 	return;
 }
+
+static NTSTATUS mdssvc__op_init_server(struct dcesrv_context *dce_ctx,
+		const struct dcesrv_endpoint_server *ep_server);
+
+static NTSTATUS mdssvc__op_shutdown_server(struct dcesrv_context *dce_ctx,
+		const struct dcesrv_endpoint_server *ep_server);
+
+#define DCESRV_INTERFACE_MDSSVC_INIT_SERVER \
+	mdssvc_init_server
+
+#define DCESRV_INTERFACE_MDSSVC_SHUTDOWN_SERVER \
+	mdssvc_shutdown_server
+
+static NTSTATUS mdssvc_init_server(struct dcesrv_context *dce_ctx,
+		const struct dcesrv_endpoint_server *ep_server)
+{
+	struct messaging_context *msg_ctx = global_messaging_context();
+	bool ok;
+
+	ok = mds_init(msg_ctx);
+	if (!ok) {
+		return NT_STATUS_UNSUCCESSFUL;
+	}
+
+	return mdssvc__op_init_server(dce_ctx, ep_server);
+}
+
+static NTSTATUS mdssvc_shutdown_server(struct dcesrv_context *dce_ctx,
+		const struct dcesrv_endpoint_server *ep_server)
+{
+	mds_shutdown();
+
+	return mdssvc__op_shutdown_server(dce_ctx, ep_server);
+}
+
+/* include the generated boilerplate */
+#include "librpc/gen_ndr/ndr_mdssvc_scompat.c"

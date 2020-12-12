@@ -23,7 +23,8 @@
 
 #include "includes.h"
 #include "ntdomain.h"
-#include "../librpc/gen_ndr/srv_echo.h"
+#include "librpc/gen_ndr/ndr_echo.h"
+#include "librpc/gen_ndr/ndr_echo_scompat.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
@@ -120,3 +121,6 @@ uint16_t _echo_TestDoublePointer(struct pipes_struct *p, struct echo_TestDoubleP
 	p->fault_state = DCERPC_FAULT_OP_RNG_ERROR;
 	return 0;
 }
+
+/* include the generated boilerplate */
+#include "librpc/gen_ndr/ndr_echo_scompat.c"

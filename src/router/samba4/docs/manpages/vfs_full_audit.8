@@ -2,12 +2,12 @@
 .\"     Title: vfs_full_audit
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 08/13/2020
+.\"      Date: 11/03/2020
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.12.6
+.\"    Source: Samba 4.13.2
 .\"  Language: English
 .\"
-.TH "VFS_FULL_AUDIT" "8" "08/13/2020" "Samba 4\&.12\&.6" "System Administration tools"
+.TH "VFS_FULL_AUDIT" "8" "11/03/2020" "Samba 4\&.13\&.2" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -115,7 +115,7 @@ fdopendir
 fget_dos_attributes
 .RE
 .RS 4
-fget_nt_acl
+fget_nt_acl_at
 .RE
 .RS 4
 fgetxattr
@@ -257,9 +257,6 @@ offload_write_send
 .RE
 .RS 4
 open
-.RE
-.RS 4
-opendir
 .RE
 .RS 4
 pread
@@ -520,7 +517,7 @@ Log file and directory open operations on the [records] share using the LOCAL7 f
 .\}
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.12\&.6 of the Samba suite\&.
+This man page is part of version 4\&.13\&.2 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

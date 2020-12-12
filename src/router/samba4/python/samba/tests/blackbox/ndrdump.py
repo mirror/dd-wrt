@@ -22,6 +22,7 @@ from __future__ import print_function
 """Blackbox tests for ndrdump."""
 
 import os
+import re
 from samba.tests import BlackboxTestCase, BlackboxProcessError
 
 for p in ["../../../../../source4/librpc/tests",
@@ -301,6 +302,18 @@ dump OK
         # convert expected to bytes for python 3
         self.assertEqual(actual, expected.encode('utf-8'))
 
+    def test_ndrdump_fuzzed_drsuapi_DsaAddressListItem_V1(self):
+        expected = "Maximum Recursion Exceeded"
+        try:
+            self.check_output(
+                "ndrdump drsuapi 17 out --base64-input %s" %
+                self.data_path(
+                    "fuzzed_drsuapi_DsaAddressListItem_V1-in.b64.txt"))
+            self.fail("Input should have been rejected with %s" % expected)
+        except BlackboxProcessError as e:
+            if expected not in str(e):
+                self.fail(e)
+
     def test_ndrdump_fuzzed_drsuapi_DsReplicaAttribute(self):
         expected = open(self.data_path("fuzzed_drsuapi_DsReplicaAttribute.txt")).read()
         try:
@@ -424,6 +437,11 @@ dump OK
         except BlackboxProcessError as e:
             self.fail(e)
 
+        # Filter out the C source file and line number
+        regex = rb"\.\./\.\./librpc/ndr/ndr\.c:[0-9]+"
+        actual = re.sub(regex, b"", actual)
+        expected = re.sub(regex, b"", expected)
+
         self.assertEqual(actual, expected)
 
     # Test a print of NULL pointer in manually-written ndr_drsuapi.c
@@ -437,6 +455,19 @@ dump OK
             self.fail(e)
 
         self.assertEqual(actual, expected)
+
+    def test_ndrdump_fuzzed_ndr_compression(self):
+        expected = 'pull returned Buffer Size Error'
+        command = (
+            "ndrdump drsuapi 3 out --base64-input "
+            "--input BwAAAAcAAAAGAAAAAwAgICAgICAJAAAAICAgIAkAAAAgIAAA//////8=")
+        try:
+            actual = self.check_exit_code(command, 2)
+        except BlackboxProcessError as e:
+            self.fail(e)
+        # check_output will return bytes
+        # convert expected to bytes for python 3
+        self.assertRegex(actual.decode('utf8'), expected + '$')
 
     def test_ndrdump_short_dnsProperty(self):
         expected = b'''pull returned Success

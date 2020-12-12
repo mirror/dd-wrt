@@ -109,19 +109,11 @@ NTSTATUS vfs_not_implemented_create_dfs_pathat(struct vfs_handle_struct *handle,
 NTSTATUS vfs_not_implemented_read_dfs_pathat(struct vfs_handle_struct *handle,
 				TALLOC_CTX *mem_ctx,
 				struct files_struct *dirfsp,
-				const struct smb_filename *smb_fname,
+				struct smb_filename *smb_fname,
 				struct referral **ppreflist,
 				size_t *preferral_count)
 {
 	return NT_STATUS_NOT_IMPLEMENTED;
-}
-
-DIR *vfs_not_implemented_opendir(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname,
-			const char *mask,
-			uint32_t attr)
-{
-	return NULL;
 }
 
 NTSTATUS vfs_not_implemented_snap_check_path(struct vfs_handle_struct *handle,
@@ -196,9 +188,12 @@ int vfs_not_implemented_closedir(vfs_handle_struct *handle, DIR *dir)
 	return -1;
 }
 
-int vfs_not_implemented_open(vfs_handle_struct *handle,
-			     struct smb_filename *smb_fname,
-			     files_struct *fsp, int flags, mode_t mode)
+int vfs_not_implemented_openat(vfs_handle_struct *handle,
+			       const struct files_struct *dirfsp,
+			       const struct smb_filename *smb_fname,
+			       struct files_struct *fsp,
+			       int flags,
+			       mode_t mode)
 {
 	errno = ENOSYS;
 	return -1;
@@ -206,7 +201,7 @@ int vfs_not_implemented_open(vfs_handle_struct *handle,
 
 NTSTATUS vfs_not_implemented_create_file(struct vfs_handle_struct *handle,
 				struct smb_request *req,
-				uint16_t root_dir_fid,
+				struct files_struct **dirsp,
 				struct smb_filename *smb_fname,
 				uint32_t access_mask,
 				uint32_t share_access,
@@ -469,7 +464,7 @@ bool vfs_not_implemented_getlock(vfs_handle_struct *handle, files_struct *fsp,
 }
 
 int vfs_not_implemented_symlinkat(vfs_handle_struct *handle,
-				const char *link_contents,
+				const struct smb_filename *link_contents,
 				struct files_struct *dirfsp,
 				const struct smb_filename *new_smb_fname)
 {
@@ -654,7 +649,7 @@ NTSTATUS vfs_not_implemented_streaminfo(struct vfs_handle_struct *handle,
 }
 
 int vfs_not_implemented_get_real_filename(struct vfs_handle_struct *handle,
-					  const char *path,
+					  const struct smb_filename *path,
 					  const char *name,
 					  TALLOC_CTX *mem_ctx,
 					  char **found_name)
@@ -804,7 +799,8 @@ NTSTATUS vfs_not_implemented_fget_nt_acl(vfs_handle_struct *handle, files_struct
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS vfs_not_implemented_get_nt_acl(vfs_handle_struct *handle,
+NTSTATUS vfs_not_implemented_get_nt_acl_at(vfs_handle_struct *handle,
+					struct files_struct *dirfsp,
 					const struct smb_filename *smb_fname,
 					uint32_t security_info,
 					TALLOC_CTX *mem_ctx,
@@ -1064,7 +1060,6 @@ static struct vfs_fn_pointers vfs_not_implemented_fns = {
 
 	/* Directory operations */
 
-	.opendir_fn = vfs_not_implemented_opendir,
 	.fdopendir_fn = vfs_not_implemented_fdopendir,
 	.readdir_fn = vfs_not_implemented_readdir,
 	.seekdir_fn = vfs_not_implemented_seekdir,
@@ -1075,7 +1070,7 @@ static struct vfs_fn_pointers vfs_not_implemented_fns = {
 
 	/* File operations */
 
-	.open_fn = vfs_not_implemented_open,
+	.openat_fn = vfs_not_implemented_openat,
 	.create_file_fn = vfs_not_implemented_create_file,
 	.close_fn = vfs_not_implemented_close_fn,
 	.pread_fn = vfs_not_implemented_pread,
@@ -1146,7 +1141,7 @@ static struct vfs_fn_pointers vfs_not_implemented_fns = {
 	/* NT ACL operations. */
 
 	.fget_nt_acl_fn = vfs_not_implemented_fget_nt_acl,
-	.get_nt_acl_fn = vfs_not_implemented_get_nt_acl,
+	.get_nt_acl_at_fn = vfs_not_implemented_get_nt_acl_at,
 	.fset_nt_acl_fn = vfs_not_implemented_fset_nt_acl,
 
 	/* POSIX ACL operations. */

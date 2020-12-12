@@ -106,11 +106,6 @@
                 (pcount))
 
 /* Directory operations */
-#define SMB_VFS_OPENDIR(conn, smb_fname, mask, attr) \
-	smb_vfs_call_opendir((conn)->vfs_handles, (smb_fname), (mask), (attr))
-#define SMB_VFS_NEXT_OPENDIR(handle, smb_fname, mask, attr) \
-	smb_vfs_call_opendir((handle)->next, (smb_fname), (mask), (attr))
-
 #define SMB_VFS_FDOPENDIR(fsp, mask, attr) \
 	smb_vfs_call_fdopendir((fsp)->conn->vfs_handles, (fsp), (mask), (attr))
 #define SMB_VFS_NEXT_FDOPENDIR(handle, fsp, mask, attr) \
@@ -147,19 +142,19 @@
 	smb_vfs_call_closedir((handle)->next, (dir))
 
 /* File operations */
-#define SMB_VFS_OPEN(conn, fname, fsp, flags, mode) \
-	smb_vfs_call_open((conn)->vfs_handles, (fname), (fsp), (flags), (mode))
-#define SMB_VFS_NEXT_OPEN(handle, fname, fsp, flags, mode) \
-	smb_vfs_call_open((handle)->next, (fname), (fsp), (flags), (mode))
+#define SMB_VFS_OPENAT(conn, dirfsp, smb_fname, fsp, flags, mode) \
+	smb_vfs_call_openat((conn)->vfs_handles, (dirfsp), (smb_fname), (fsp), (flags), (mode))
+#define SMB_VFS_NEXT_OPENAT(handle, dirfsp, smb_fname, fsp, flags, mode) \
+	smb_vfs_call_openat((handle)->next, (dirfsp), (smb_fname), (fsp), (flags), (mode))
 
-#define SMB_VFS_CREATE_FILE(conn, req, root_dir_fid, smb_fname, access_mask, share_access, create_disposition, \
+#define SMB_VFS_CREATE_FILE(conn, req, dirfsp, smb_fname, access_mask, share_access, create_disposition, \
         create_options, file_attributes, oplock_request, lease, allocation_size, private_flags, sd, ea_list, result, pinfo, in_context_blobs, out_context_blobs) \
-        smb_vfs_call_create_file((conn)->vfs_handles, (req), (root_dir_fid), (smb_fname), (access_mask), (share_access), (create_disposition), \
+        smb_vfs_call_create_file((conn)->vfs_handles, (req), (dirfsp), (smb_fname), (access_mask), (share_access), (create_disposition), \
         (create_options), (file_attributes), (oplock_request), (lease), (allocation_size), (private_flags), (sd), (ea_list), (result), (pinfo), \
 	(in_context_blobs), (out_context_blobs))
-#define SMB_VFS_NEXT_CREATE_FILE(handle, req, root_dir_fid, smb_fname, access_mask, share_access, create_disposition, \
+#define SMB_VFS_NEXT_CREATE_FILE(handle, req, dirfsp, smb_fname, access_mask, share_access, create_disposition, \
 	create_options, file_attributes, oplock_request, lease, allocation_size, private_flags, sd, ea_list, result, pinfo, in_context_blobs, out_context_blobs) \
-	smb_vfs_call_create_file((handle)->next, (req), (root_dir_fid), (smb_fname), (access_mask), (share_access), (create_disposition), \
+	smb_vfs_call_create_file((handle)->next, (req), (dirfsp), (smb_fname), (access_mask), (share_access), (create_disposition), \
         (create_options), (file_attributes), (oplock_request), (lease), (allocation_size), (private_flags), (sd), (ea_list), (result), (pinfo), \
 	(in_context_blobs), (out_context_blobs))
 
@@ -482,10 +477,10 @@
 #define SMB_VFS_NEXT_FGET_NT_ACL(handle, fsp, security_info, mem_ctx, ppdesc) \
 	smb_vfs_call_fget_nt_acl((handle)->next, (fsp), (security_info), (mem_ctx), (ppdesc))
 
-#define SMB_VFS_GET_NT_ACL(conn, smb_fname, security_info, mem_ctx, ppdesc)	\
-	smb_vfs_call_get_nt_acl((conn)->vfs_handles, (smb_fname), (security_info), (mem_ctx), (ppdesc))
-#define SMB_VFS_NEXT_GET_NT_ACL(handle, smb_fname, security_info, mem_ctx, ppdesc) \
-	smb_vfs_call_get_nt_acl((handle)->next, (smb_fname), (security_info), (mem_ctx), (ppdesc))
+#define SMB_VFS_GET_NT_ACL_AT(conn, dirfsp, smb_fname, security_info, mem_ctx, ppdesc)	\
+	smb_vfs_call_get_nt_acl_at((conn)->vfs_handles, (dirfsp), (smb_fname), (security_info), (mem_ctx), (ppdesc))
+#define SMB_VFS_NEXT_GET_NT_ACL_AT(handle, dirfsp, smb_fname, security_info, mem_ctx, ppdesc) \
+	smb_vfs_call_get_nt_acl_at((handle)->next, (dirfsp), (smb_fname), (security_info), (mem_ctx), (ppdesc))
 
 #define SMB_VFS_AUDIT_FILE(conn, name, sacl, access_requested, access_denied) \
 	smb_vfs_call_audit_file((conn)->vfs_handles, (name), (sacl), (access_requested), (access_denied))

@@ -262,16 +262,19 @@ static NTSTATUS nfs4acl_xattr_fget_nt_acl(struct vfs_handle_struct *handle,
 	return status;
 }
 
-static NTSTATUS nfs4acl_xattr_get_nt_acl(struct vfs_handle_struct *handle,
-				  const struct smb_filename *smb_fname,
-				  uint32_t security_info,
-				  TALLOC_CTX *mem_ctx,
-				  struct security_descriptor **sd)
+static NTSTATUS nfs4acl_xattr_get_nt_acl_at(struct vfs_handle_struct *handle,
+				struct files_struct *dirfsp,
+				const struct smb_filename *smb_fname,
+				uint32_t security_info,
+				TALLOC_CTX *mem_ctx,
+				struct security_descriptor **sd)
 {
 	struct SMB4ACL_T *smb4acl = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
 	DATA_BLOB blob;
 	NTSTATUS status;
+
+	SMB_ASSERT(dirfsp == handle->conn->cwd_fsp);
 
 	status = nfs4acl_get_blob(handle, NULL, smb_fname, frame, &blob);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND)) {
@@ -657,7 +660,7 @@ static int nfs4acl_xattr_fail__sys_acl_blob_get_fd(vfs_handle_struct *handle, fi
 static struct vfs_fn_pointers nfs4acl_xattr_fns = {
 	.connect_fn = nfs4acl_connect,
 	.fget_nt_acl_fn = nfs4acl_xattr_fget_nt_acl,
-	.get_nt_acl_fn = nfs4acl_xattr_get_nt_acl,
+	.get_nt_acl_at_fn = nfs4acl_xattr_get_nt_acl_at,
 	.fset_nt_acl_fn = nfs4acl_xattr_fset_nt_acl,
 
 	.sys_acl_get_file_fn = nfs4acl_xattr_fail__sys_acl_get_file,

@@ -40,6 +40,27 @@ def options(opt):
                          "--with-shared-modules"),
                    action="store", dest='shared_modules', default=None)
 
+# Optional Libraries
+# ------------------
+#
+# Most of the calls to opt.samba_add_onoff_option() implicitly
+# or explicity use default=True
+#
+# To assist users and distributors to build Samba with the full feature
+# set, the build system will abort if our dependent libraries and their
+# header files are not found on the target system.  This will mean for
+# example, that xattr, acl and ldap headers must be installed for the
+# default build to complete.  The configure system will check for these
+# headers, and the error message will indicate the option (such as
+# --without-acl-support) that can be specified to skip this requirement.
+#
+# This will assist users and in particular distributors in building fully
+# functional packages, while allowing those on systems truly without these
+# facilities to continue to build Samba after careful consideration.
+#
+# It also ensures our container image generation in bootstrap/ is correct
+# as otherwise a missing package there would just silently work
+
     opt.samba_add_onoff_option('winbind')
     opt.samba_add_onoff_option('ads')
     opt.samba_add_onoff_option('ldap')
@@ -63,6 +84,7 @@ def options(opt):
     opt.samba_add_onoff_option('cluster-support', default=False)
 
     opt.samba_add_onoff_option('regedit', default=None)
+    opt.samba_add_onoff_option('winexe', default=None)
 
     opt.samba_add_onoff_option('fake-kaserver',
                           help=("Include AFS fake-kaserver support"), default=False)
@@ -809,6 +831,9 @@ msg.msg_accrightslen = sizeof(fd);
         forced_shared_modules.extend(TO_LIST('idmap_ad idmap_rfc2307'))
     elif Options.options.with_ads == False:
         Logs.info("Building without Active Directory support (--without-ads).")
+        if not Options.options.without_ad_dc:
+            conf.fatal("Building --without-ads requires also "
+                       "building --without-ad-dc.")
     else:
         if not use_ads_krb5:
             Logs.warn("Active Directory support not available: krb5 libs don't have all required features")
@@ -1670,7 +1695,7 @@ main() {
     conf.env['legacy_quota_libs'] = legacy_quota_libs
 
     if Options.options.with_quotas == True and not conf.CONFIG_SET('WITH_QUOTAS'):
-        conf.fatal('quota support not found but it was equested !')
+        conf.fatal('quota support not found but it was requested !')
 
     conf.CHECK_CODE('(void)unshare(CLONE_FS);',
                     headers='sched.h',
@@ -1759,12 +1784,6 @@ main() {
     if Options.options.enable_vxfs:
         conf.DEFINE('HAVE_VXFS', '1')
 
-    if conf.CHECK_CFG(package='dbus-1', args='--cflags --libs',
-                      msg='Checking for dbus', uselib_store="DBUS-1"):
-        if (conf.CHECK_HEADERS('dbus/dbus.h', lib='dbus-1')
-                                      and conf.CHECK_LIB('dbus-1', shlib=True)):
-            conf.DEFINE('HAVE_DBUS', '1')
-
     if conf.CHECK_CFG(package='liburing', args='--cflags --libs',
                       msg='Checking for liburing package', uselib_store="URING"):
         if (conf.CHECK_HEADERS('liburing.h', lib='uring')
@@ -1792,6 +1811,22 @@ main() {
 
     if conf.CHECK_HEADERS('ftw.h') and conf.CHECK_FUNCS('nftw'):
         conf.env.build_mvxattr = True
+
+    conf.env.build_winexe = False
+    if not Options.options.with_winexe == False:
+        if conf.CONFIG_SET('HAVE_WINEXE_CC_WIN32') or conf.CONFIG_SET('HAVE_WINEXE_CC_WIN64'):
+            conf.env.build_winexe = True
+
+    if conf.env.build_winexe:
+        Logs.info("building winexe")
+    else:
+        if Options.options.with_winexe == False:
+            Logs.info("not building winexe (--without-winexe)")
+        elif Options.options.with_winexe == True:
+            Logs.error("mingw not available, cannot build winexe")
+            conf.fatal("mingw not available, but --with-winexe was specified")
+        else:
+            Logs.info("mingw not available, not building winexe")
 
     conf.CHECK_FUNCS_IN('DES_pcbc_encrypt', 'crypto')
     if Options.options.with_fake_kaserver == True:
@@ -1916,8 +1951,11 @@ main() {
                                       vfs_preopen vfs_catia
                                       vfs_media_harmony vfs_unityed_media vfs_fruit vfs_shell_snap
                                       vfs_commit vfs_worm vfs_crossrename vfs_linux_xfs_sgid
-                                      vfs_time_audit vfs_offline vfs_virusfilter
+                                      vfs_time_audit vfs_offline vfs_virusfilter vfs_widelinks
                                   '''))
+    if host_os.rfind('linux') > -1:
+        default_shared_modules.extend(['vfs_snapper'])
+
     default_shared_modules.extend(TO_LIST('idmap_tdb2 idmap_script'))
     # these have broken dependencies
     forced_shared_modules.extend(TO_LIST('idmap_autorid idmap_rid idmap_hash'))
@@ -1963,7 +2001,7 @@ main() {
     if conf.CONFIG_SET('DARWINOS'):
         default_static_modules.extend(TO_LIST('charset_macosxfs'))
 
-    if conf.CONFIG_SET('HAVE_GPFS'):
+    if conf.CONFIG_SET('HAVE_GPFS') and conf.CONFIG_SET('HAVE_KERNEL_OPLOCKS_LINUX'):
         default_shared_modules.extend(TO_LIST('vfs_gpfs'))
 
     if (conf.CONFIG_SET('HAVE_LINUX_IOCTL')
@@ -1986,9 +2024,6 @@ main() {
 
     if conf.CONFIG_SET('HAVE_VXFS'):
         default_shared_modules.extend(TO_LIST('vfs_vxfs'))
-
-    if conf.CONFIG_SET('HAVE_DBUS'):
-        default_shared_modules.extend(TO_LIST('vfs_snapper'))
 
     explicit_shared_modules = TO_LIST(Options.options.shared_modules, delimiter=',')
     explicit_static_modules = TO_LIST(Options.options.static_modules, delimiter=',')
@@ -2109,5 +2144,14 @@ main() {
                 conf.env[shared_env].append('%s' % entry)
         Logs.info("%s: %s" % (static_env, ','.join(conf.env[static_env])))
         Logs.info("%s: %s" % (shared_env, ','.join(conf.env[shared_env])))
+
+    if (('vfs_snapper' in shared_list.get('vfs', []) or 'vfs_snapper' in static_list.get('vfs', []))
+        and not (conf.CHECK_CFG(package='dbus-1', args='--cflags --libs',
+                                msg='Checking for dbus', uselib_store="DBUS-1")
+                 and conf.CHECK_HEADERS('dbus/dbus.h', lib='dbus-1')
+                 and conf.CHECK_LIB('dbus-1', shlib=True))):
+        conf.fatal("vfs_snapper is enabled but prerequisite dbus-1 package not "
+                   "found. Use --with-shared-modules=!vfs_snapper to disable "
+                   "vfs_snapper support.")
 
     conf.SAMBA_CONFIG_H('include/config.h')

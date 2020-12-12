@@ -270,33 +270,23 @@ NTSTATUS vfs_offload_token_check_handles(uint32_t fsctl,
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
-	if (src_fsp->deferred_close != NULL) {
-		DBG_INFO("copy chunk src handle with deferred close.\n");
-		return NT_STATUS_ACCESS_DENIED;
-	}
-
-	if (dst_fsp->deferred_close != NULL) {
-		DBG_INFO("copy chunk dst handle with deferred close.\n");
-		return NT_STATUS_ACCESS_DENIED;
-	}
-
-	if (src_fsp->closing) {
+	if (src_fsp->fsp_flags.closing) {
 		DBG_INFO("copy chunk src handle with closing in progress.\n");
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
-	if (dst_fsp->closing) {
+	if (dst_fsp->fsp_flags.closing) {
 		DBG_INFO("copy chunk dst handle with closing in progress.\n");
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
-	if (src_fsp->is_directory) {
+	if (src_fsp->fsp_flags.is_directory) {
 		DBG_INFO("copy chunk no read on src directory handle (%s).\n",
 			 smb_fname_str_dbg(src_fsp->fsp_name));
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
-	if (dst_fsp->is_directory) {
+	if (dst_fsp->fsp_flags.is_directory) {
 		DBG_INFO("copy chunk no read on dst directory handle (%s).\n",
 			 smb_fname_str_dbg(dst_fsp->fsp_name));
 		return NT_STATUS_ACCESS_DENIED;

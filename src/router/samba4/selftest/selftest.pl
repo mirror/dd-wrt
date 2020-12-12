@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use strict;
+use warnings;
 
 use FindBin qw($RealBin $Script);
 use File::Spec;
@@ -104,35 +105,6 @@ sub skip
 
 sub getlog_env($);
 
-sub setup_pcap($)
-{
-	my ($name) = @_;
-
-	return unless ($opt_socket_wrapper_pcap);
-	return unless defined($ENV{SOCKET_WRAPPER_PCAP_DIR});
-
-	my $fname = $name;
-	$fname =~ s%[^abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\-]%_%g;
-
-	my $pcap_file = "$ENV{SOCKET_WRAPPER_PCAP_DIR}/$fname.pcap";
-
-	SocketWrapper::setup_pcap($pcap_file);
-
-	return $pcap_file;
-}
-
-sub cleanup_pcap($$)
-{
-	my ($pcap_file, $exitcode) = @_;
-
-	return unless ($opt_socket_wrapper_pcap);
-	return if ($opt_socket_wrapper_keep_pcap);
-	return unless ($exitcode == 0);
-	return unless defined($pcap_file);
-
-	unlink($pcap_file);
-}
-
 # expand strings from %ENV
 sub expand_environment_strings($)
 {
@@ -144,10 +116,12 @@ sub expand_environment_strings($)
 	return $s;
 }
 
+my $target;
+
 sub run_testsuite($$$$$)
 {
 	my ($envname, $name, $cmd, $i, $totalsuites) = @_;
-	my $pcap_file = setup_pcap($name);
+	my $pcap_file = $target->setup_pcap($name);
 
 	Subunit::start_testsuite($name);
 	Subunit::progress_push();
@@ -185,7 +159,7 @@ sub run_testsuite($$$$$)
 		Subunit::end_testsuite($name, "failure", "Exit code was $exitcode");
 	}
 
-	cleanup_pcap($pcap_file, $exitcode);
+	$target->cleanup_pcap($pcap_file, $exitcode);
 
 	if (not $opt_socket_wrapper_keep_pcap and defined($pcap_file)) {
 		print "PCAP FILE: $pcap_file\n";
@@ -297,7 +271,9 @@ unless (defined($ENV{VALGRIND})) {
 $ENV{PYTHONUNBUFFERED} = 1;
 
 # do not depend on the users setup
+# see also bootstrap/config.py
 $ENV{TZ} = "UTC";
+$ENV{LC_ALL} = $ENV{LANG} = "en_US.utf8";
 
 my $bindir_abs = abs_path($bindir);
 
@@ -446,7 +422,6 @@ if ($opt_use_dns_faking) {
 	$ENV{SAMBA_DNS_FAKING} = 1;
 }
 
-my $target;
 my $testenv_default = "none";
 
 if ($opt_mitkrb5 == 1) {
@@ -471,7 +446,9 @@ if (defined($ENV{SMBD_MAXTIME}) and $ENV{SMBD_MAXTIME} ne "") {
     $server_maxtime = $ENV{SMBD_MAXTIME};
 }
 
-$target = new Samba($bindir, $srcdir, $server_maxtime);
+$target = new Samba($bindir, $srcdir, $server_maxtime,
+		    $opt_socket_wrapper_pcap,
+		    $opt_socket_wrapper_keep_pcap);
 unless ($opt_list) {
 	if ($opt_target eq "samba") {
 		$testenv_default = "ad_dc";
@@ -510,6 +487,7 @@ foreach (@opt_include) {
 # We give the selftest client 6 different IPv4 addresses to use. Most tests
 # only use the first (.11) IP. Note that winsreplication.c is one test that
 # uses the other IPs (search for iface_list_count()).
+$ENV{SOCKET_WRAPPER_IPV4_NETWORK} = "10.53.57.0";
 my $interfaces = Samba::get_interfaces_config("client", 6);
 
 my $clientdir = "$prefix_abs/client";
@@ -583,7 +561,7 @@ sub write_clientconf($$$)
 	# USER-${USER_PRINCIPAL_NAME}-private-key.pem symlink
 	# We make a copy here and make the certificated easily
 	# accessable in the client environment.
-	my $mask = umask;
+	$mask = umask;
 	umask 0077;
 	opendir USERS, "${ca_users_dir}" or die "Could not open dir '${ca_users_dir}': $!";
 	for my $d (readdir USERS) {
@@ -708,6 +686,9 @@ if ($opt_quick) {
 	$ENV{SELFTEST_QUICK} = "";
 }
 $ENV{SELFTEST_MAXTIME} = $torture_maxtime;
+
+my $selftest_resolv_conf_path = "$tmpdir_abs/selftest.resolv.conf";
+$ENV{RESOLV_CONF} = "${selftest_resolv_conf_path}.global";
 
 my $selftest_krbt_ccache_path = "$tmpdir_abs/selftest.krb5_ccache";
 $ENV{KRB5CCNAME} = "FILE:${selftest_krbt_ccache_path}.global";
@@ -846,6 +827,7 @@ sub setup_env($$)
 	delete $ENV{SOCKET_WRAPPER_DEFAULT_IFACE};
 	delete $ENV{SMB_CONF_PATH};
 
+	$ENV{RESOLV_CONF} = "${selftest_resolv_conf_path}.${envname}/ignore";
 	$ENV{KRB5CCNAME} = "FILE:${selftest_krbt_ccache_path}.${envname}/ignore";
 
 	if (defined(get_running_env($envname))) {
@@ -856,17 +838,19 @@ sub setup_env($$)
 		}
 	} else {
 		$testenv_vars = $target->setup_env($envname, $prefix);
-		if (defined($testenv_vars) and $testenv_vars eq "UNKNOWN") {
-		    return $testenv_vars;
-		} elsif (defined($testenv_vars) && not defined($testenv_vars->{target})) {
-		        $testenv_vars->{target} = $target;
-		}
 		if (not defined($testenv_vars)) {
+			my $msg = "$opt_target can't start up known environment '$envname'";
 			if ($opt_one) {
-				die("$opt_target can't start up known environment '$envname'");
-			} else {
-				warn("$opt_target can't start up known environment '$envname'");
+				die($msg);
 			}
+			warn $msg;
+			return;
+		}
+		if (ref $testenv_vars ne "HASH") {
+			return $testenv_vars;
+		}
+		if (defined($testenv_vars->{target})) {
+			$testenv_vars->{target} = $target;
 		}
 	}
 

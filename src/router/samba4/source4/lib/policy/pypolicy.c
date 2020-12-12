@@ -143,7 +143,7 @@ static PyMethodDef py_policy_methods[] = {
 		"get_gplink_options(options) -> list" },
 	{ "ads_to_dir_access_mask", (PyCFunction)py_ads_to_dir_access_mask, METH_VARARGS,
 		"ads_to_dir_access_mask(access_mask) -> dir_mask" },
-	{ NULL }
+	{0}
 };
 
 static struct PyModuleDef moduledef = {
@@ -163,12 +163,12 @@ MODULE_INIT_FUNC(policy)
 		return m;
 
 	PyModule_AddObject(m, "GPO_FLAG_USER_DISABLE",
-					   PyInt_FromLong(GPO_FLAG_USER_DISABLE));
+					   PyLong_FromLong(GPO_FLAG_USER_DISABLE));
 	PyModule_AddObject(m, "GPO_MACHINE_USER_DISABLE",
-					   PyInt_FromLong(GPO_FLAG_MACHINE_DISABLE));
+					   PyLong_FromLong(GPO_FLAG_MACHINE_DISABLE));
 	PyModule_AddObject(m, "GPLINK_OPT_DISABLE",
-					   PyInt_FromLong(GPLINK_OPT_DISABLE ));
+					   PyLong_FromLong(GPLINK_OPT_DISABLE ));
 	PyModule_AddObject(m, "GPLINK_OPT_ENFORCE ",
-					   PyInt_FromLong(GPLINK_OPT_ENFORCE ));
+					   PyLong_FromLong(GPLINK_OPT_ENFORCE ));
 	return m;
 }

@@ -23,20 +23,20 @@
 #ifndef _RPC_SOCK_HELPER_H_
 #define _RPC_SOCK_HELPER_H_
 
+#include "rpc_server.h"
+
 struct pf_listen_fd;
 
-NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
-				const struct ndr_interface_table *iface,
-				struct dcerpc_binding_vector *bvec,
-				uint16_t port,
-				struct pf_listen_fd *listen_fd,
-				int *listen_fd_size);
+NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(struct dcesrv_endpoint *e,
+					    struct pf_listen_fd *listen_fd,
+					    int *listen_fd_size);
 
 NTSTATUS dcesrv_setup_ncacn_ip_tcp_sockets(struct tevent_context *ev_ctx,
-				struct messaging_context *msg_ctx,
-				const struct ndr_interface_table *iface,
-				struct dcerpc_binding_vector *bvec,
-				uint16_t port);
+					   struct messaging_context *msg_ctx,
+					   struct dcesrv_context *dce_ctx,
+					   struct dcesrv_endpoint *e,
+					   dcerpc_ncacn_termination_fn t_fn,
+					   void *t_data);
 
 #endif /* _RPC_SOCK_HELPER_H_ */
 

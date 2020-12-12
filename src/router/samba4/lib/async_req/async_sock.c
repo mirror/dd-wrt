@@ -131,10 +131,6 @@ struct tevent_req *async_connect_send(
 	 * The only errno indicating that an initial connect is still
 	 * in flight is EINPROGRESS.
 	 *
-	 * We get EALREADY when someone calls us a second time for a
-	 * given fd and the connect is still in flight (and returned
-	 * EINPROGRESS the first time).
-	 *
 	 * This allows callers like open_socket_out_send() to reuse
 	 * fds and call us with an fd for which the connect is still
 	 * in flight. The proper thing to do for callers would be
@@ -142,12 +138,19 @@ struct tevent_req *async_connect_send(
 	 * socket.
 	 */
 
-	if (errno != EINPROGRESS && errno != EALREADY) {
+	if (errno != EINPROGRESS) {
 		tevent_req_error(req, errno);
 		return tevent_req_post(req, ev);
 	}
 
-	state->fde = tevent_add_fd(ev, state, fd, TEVENT_FD_WRITE,
+	/*
+	 * Note for historic reasons TEVENT_FD_WRITE is not enough
+	 * to get notified for POLLERR or EPOLLHUP even if they
+	 * come together with POLLOUT. That means we need to
+	 * use TEVENT_FD_READ in addition until we have
+	 * TEVENT_FD_ERROR.
+	 */
+	state->fde = tevent_add_fd(ev, state, fd, TEVENT_FD_READ|TEVENT_FD_WRITE,
 				   async_connect_connected, req);
 	if (state->fde == NULL) {
 		tevent_req_error(req, ENOMEM);
@@ -288,9 +291,21 @@ struct tevent_req *writev_send(TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 		return req;
 	}
 
-	state->queue_entry = tevent_queue_add_entry(queue, ev, req,
-						    writev_trigger, NULL);
+	/*
+	 * writev_trigger tries a nonblocking write. If that succeeds,
+	 * we can't directly notify the callback to call
+	 * writev_recv. The callback would TALLOC_FREE(req) after
+	 * calling writev_recv even before writev_trigger can inspect
+	 * it for success.
+	 */
+	tevent_req_defer_callback(req, ev);
+
+	state->queue_entry = tevent_queue_add_optimize_empty(
+		queue, ev, req, writev_trigger, NULL);
 	if (tevent_req_nomem(state->queue_entry, req)) {
+		return tevent_req_post(req, ev);
+	}
+	if (!tevent_req_is_in_progress(req)) {
 		return tevent_req_post(req, ev);
 	}
 	return req;
@@ -309,27 +324,54 @@ static bool writev_cancel(struct tevent_req *req)
 {
 	struct writev_state *state = tevent_req_data(req, struct writev_state);
 
-	TALLOC_FREE(state->queue_entry);
-	TALLOC_FREE(state->fde);
-
-	if (state->count == 0) {
-		/*
-		 * already completed.
-		 */
-		return false;
-	}
-
-	tevent_req_defer_callback(req, state->ev);
 	if (state->total_size > 0) {
 		/*
 		 * We've already started to write :-(
 		 */
-		tevent_req_error(req, EIO);
 		return false;
 	}
 
+	TALLOC_FREE(state->queue_entry);
+	TALLOC_FREE(state->fde);
+
+	tevent_req_defer_callback(req, state->ev);
 	tevent_req_error(req, ECANCELED);
 	return true;
+}
+
+static void writev_do(struct tevent_req *req, struct writev_state *state)
+{
+	ssize_t written;
+	bool ok;
+
+	written = writev(state->fd, state->iov, state->count);
+	if ((written == -1) &&
+	    ((errno == EINTR) ||
+	     (errno == EAGAIN) ||
+	     (errno == EWOULDBLOCK))) {
+		/* retry after going through the tevent loop */
+		return;
+	}
+	if (written == -1) {
+		tevent_req_error(req, errno);
+		return;
+	}
+	if (written == 0) {
+		tevent_req_error(req, EPIPE);
+		return;
+	}
+	state->total_size += written;
+
+	ok = iov_advance(&state->iov, &state->count, written);
+	if (!ok) {
+		tevent_req_error(req, EIO);
+		return;
+	}
+
+	if (state->count == 0) {
+		tevent_req_done(req);
+		return;
+	}
 }
 
 static void writev_trigger(struct tevent_req *req, void *private_data)
@@ -337,6 +379,11 @@ static void writev_trigger(struct tevent_req *req, void *private_data)
 	struct writev_state *state = tevent_req_data(req, struct writev_state);
 
 	state->queue_entry = NULL;
+
+	writev_do(req, state);
+	if (!tevent_req_is_in_progress(req)) {
+		return;
+	}
 
 	state->fde = tevent_add_fd(state->ev, state, state->fd, state->flags,
 			    writev_handler, req);
@@ -352,8 +399,6 @@ static void writev_handler(struct tevent_context *ev, struct tevent_fd *fde,
 		private_data, struct tevent_req);
 	struct writev_state *state =
 		tevent_req_data(req, struct writev_state);
-	ssize_t written;
-	bool ok;
 
 	if ((state->flags & TEVENT_FD_READ) && (flags & TEVENT_FD_READ)) {
 		int ret, value;
@@ -387,31 +432,7 @@ static void writev_handler(struct tevent_context *ev, struct tevent_fd *fde,
 		}
 	}
 
-	written = writev(state->fd, state->iov, state->count);
-	if ((written == -1) && (errno == EINTR)) {
-		/* retry */
-		return;
-	}
-	if (written == -1) {
-		tevent_req_error(req, errno);
-		return;
-	}
-	if (written == 0) {
-		tevent_req_error(req, EPIPE);
-		return;
-	}
-	state->total_size += written;
-
-	ok = iov_advance(&state->iov, &state->count, written);
-	if (!ok) {
-		tevent_req_error(req, EIO);
-		return;
-	}
-
-	if (state->count == 0) {
-		tevent_req_done(req);
-		return;
-	}
+	writev_do(req, state);
 }
 
 ssize_t writev_recv(struct tevent_req *req, int *perrno)

@@ -254,6 +254,39 @@ check_server_cache:
         return NULL;
 }
 
+static struct cli_credentials *SMBC_auth_credentials(TALLOC_CTX *mem_ctx,
+						     SMBCCTX *context,
+						     const char *domain,
+						     const char *username,
+						     const char *password)
+{
+	struct cli_credentials *creds = NULL;
+	bool use_kerberos = false;
+	bool fallback_after_kerberos = false;
+	bool use_ccache = false;
+	bool pw_nt_hash = false;
+
+	use_kerberos = smbc_getOptionUseKerberos(context);
+	fallback_after_kerberos = smbc_getOptionFallbackAfterKerberos(context);
+	use_ccache = smbc_getOptionUseCCache(context);
+	pw_nt_hash = smbc_getOptionUseNTHash(context);
+
+	creds = cli_session_creds_init(mem_ctx,
+				       username,
+				       domain,
+				       NULL, /* realm */
+				       password,
+				       use_kerberos,
+				       fallback_after_kerberos,
+				       use_ccache,
+				       pw_nt_hash);
+	if (creds == NULL) {
+		return NULL;
+	}
+
+	return creds;
+}
+
 /*
  * Connect to a server, possibly on an existing connection
  *
@@ -291,12 +324,7 @@ SMBC_server_internal(TALLOC_CTX *ctx,
 	struct smbXcli_tcon *tcon = NULL;
 	int signing_state = SMB_SIGNING_DEFAULT;
 	struct cli_credentials *creds = NULL;
-	bool use_kerberos = false;
-	bool fallback_after_kerberos = false;
-	bool use_ccache = false;
-	bool pw_nt_hash = false;
 
-	ZERO_STRUCT(c);
 	*in_cache = false;
 
 	if (server[0] == 0) {
@@ -366,6 +394,7 @@ SMBC_server_internal(TALLOC_CTX *ctx,
                                 smbc_getFunctionRemoveCachedServer(context)(context,
                                                                             srv);
                                 srv = NULL;
+				goto not_found;
                         }
 
                         /* Determine if this share supports case sensitivity */
@@ -374,7 +403,7 @@ SMBC_server_internal(TALLOC_CTX *ctx,
                                       ("IPC$ so ignore case sensitivity\n"));
                                 status = NT_STATUS_OK;
                         } else {
-                                status = cli_get_fs_attr_info(c, &fs_attrs);
+                                status = cli_get_fs_attr_info(srv->cli, &fs_attrs);
                         }
 
                         if (!NT_STATUS_IS_OK(status)) {
@@ -388,9 +417,9 @@ SMBC_server_internal(TALLOC_CTX *ctx,
                                  * user-specified case sensitivity setting.
                                  */
                                 if (smbc_getOptionCaseSensitive(context)) {
-                                        cli_set_case_sensitive(c, True);
+                                        cli_set_case_sensitive(srv->cli, true);
                                 } else {
-                                        cli_set_case_sensitive(c, False);
+                                        cli_set_case_sensitive(srv->cli, false);
                                 }
                         } else if (!is_ipc) {
                                 DEBUG(4,
@@ -399,7 +428,7 @@ SMBC_server_internal(TALLOC_CTX *ctx,
                                         ? "True"
                                         : "False")));
                                 cli_set_case_sensitive(
-                                        c,
+                                        srv->cli,
                                         (fs_attrs & FILE_CASE_SENSITIVE_SEARCH
                                          ? True
                                          : False));
@@ -418,6 +447,8 @@ SMBC_server_internal(TALLOC_CTX *ctx,
                         }
                 }
         }
+
+ not_found:
 
         /* If we have a connection... */
         if (srv) {
@@ -443,26 +474,6 @@ SMBC_server_internal(TALLOC_CTX *ctx,
 	DEBUG(4,(" -> server_n=[%s] server=[%s]\n", server_n, server));
 
 	status = NT_STATUS_UNSUCCESSFUL;
-
-	if (smbc_getOptionUseKerberos(context)) {
-		flags |= CLI_FULL_CONNECTION_USE_KERBEROS;
-		use_kerberos = true;
-	}
-
-	if (smbc_getOptionFallbackAfterKerberos(context)) {
-		flags |= CLI_FULL_CONNECTION_FALLBACK_AFTER_KERBEROS;
-		fallback_after_kerberos = true;
-	}
-
-	if (smbc_getOptionUseCCache(context)) {
-		flags |= CLI_FULL_CONNECTION_USE_CCACHE;
-		use_ccache = true;
-	}
-
-	if (smbc_getOptionUseNTHash(context)) {
-		flags |= CLI_FULL_CONNECTION_USE_NT_HASH;
-		pw_nt_hash = true;
-	}
 
 	if (context->internal->smb_encryption_level != SMBC_ENCRYPTLEVEL_NONE) {
 		signing_state = SMB_SIGNING_REQUIRED;
@@ -516,15 +527,11 @@ SMBC_server_internal(TALLOC_CTX *ctx,
 	username_used = *pp_username;
 	password_used = *pp_password;
 
-	creds = cli_session_creds_init(c,
-				       username_used,
-				       *pp_workgroup,
-				       NULL, /* realm */
-				       password_used,
-				       use_kerberos,
-				       fallback_after_kerberos,
-				       use_ccache,
-				       pw_nt_hash);
+	creds = SMBC_auth_credentials(c,
+				      context,
+				      *pp_workgroup,
+				      username_used,
+				      password_used);
 	if (creds == NULL) {
 		cli_shutdown(c);
 		errno = ENOMEM;
@@ -777,6 +784,7 @@ SMBC_attr_server(TALLOC_CTX *ctx,
         ipc_srv = SMBC_find_server(ctx, context, server, "*IPC$",
                                    pp_workgroup, pp_username, pp_password);
         if (!ipc_srv) {
+		struct cli_credentials *creds = NULL;
 		int signing_state = SMB_SIGNING_DEFAULT;
 
                 /* We didn't find a cached connection.  Get the password */
@@ -793,38 +801,41 @@ SMBC_attr_server(TALLOC_CTX *ctx,
                 }
 
                 flags = 0;
-                if (smbc_getOptionUseKerberos(context)) {
-                        flags |= CLI_FULL_CONNECTION_USE_KERBEROS;
-                }
-                if (smbc_getOptionUseCCache(context)) {
-                        flags |= CLI_FULL_CONNECTION_USE_CCACHE;
-                }
+
+		creds = SMBC_auth_credentials(NULL,
+					      context,
+					      *pp_workgroup,
+					      *pp_username,
+					      *pp_password);
+		if (creds == NULL) {
+			errno = ENOMEM;
+			return NULL;
+		}
+
 		if (context->internal->smb_encryption_level != SMBC_ENCRYPTLEVEL_NONE) {
 			signing_state = SMB_SIGNING_REQUIRED;
 		}
 
-                nt_status = cli_full_connection(&ipc_cli,
+		nt_status = cli_full_connection_creds(&ipc_cli,
 						lp_netbios_name(), server,
 						NULL, 0, "IPC$", "?????",
-						*pp_username,
-						*pp_workgroup,
-						*pp_password,
+						creds,
 						flags,
 						signing_state);
                 if (! NT_STATUS_IS_OK(nt_status)) {
+			TALLOC_FREE(creds);
                         DEBUG(1,("cli_full_connection failed! (%s)\n",
                                  nt_errstr(nt_status)));
                         errno = ENOTSUP;
                         return NULL;
                 }
+		talloc_steal(ipc_cli, creds);
 
 		if (context->internal->smb_encryption_level) {
 			/* Attempt encryption. */
-			nt_status = cli_cm_force_encryption(ipc_cli,
-							    *pp_username,
-							    *pp_password,
-							    *pp_workgroup,
-							    "IPC$");
+			nt_status = cli_cm_force_encryption_creds(ipc_cli,
+								  creds,
+								  "IPC$");
 			if (!NT_STATUS_IS_OK(nt_status)) {
 
 				/*

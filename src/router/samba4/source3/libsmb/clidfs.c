@@ -99,34 +99,6 @@ NTSTATUS cli_cm_force_encryption_creds(struct cli_state *c,
 	return NT_STATUS_OK;
 }
 
-NTSTATUS cli_cm_force_encryption(struct cli_state *c,
-			const char *username,
-			const char *password,
-			const char *domain,
-			const char *sharename)
-{
-	struct cli_credentials *creds = NULL;
-	NTSTATUS status;
-
-	creds = cli_session_creds_init(c,
-				       username,
-				       domain,
-				       NULL, /* default realm */
-				       password,
-				       c->use_kerberos,
-				       c->fallback_after_kerberos,
-				       c->use_ccache,
-				       c->pw_nt_hash);
-	if (creds == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	status = cli_cm_force_encryption_creds(c, creds, sharename);
-	/* gensec currently references the creds so we can't free them here */
-	talloc_unlink(c, creds);
-	return status;
-}
-
 /********************************************************************
  Return a connection to a server.
 ********************************************************************/
@@ -137,6 +109,7 @@ static NTSTATUS do_connect(TALLOC_CTX *ctx,
 					const struct user_auth_info *auth_info,
 					bool force_encrypt,
 					int max_protocol,
+					const struct sockaddr_storage *dest_ss,
 					int port,
 					int name_type,
 					struct cli_state **pcli)
@@ -177,21 +150,8 @@ static NTSTATUS do_connect(TALLOC_CTX *ctx,
 		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	if (get_cmdline_auth_info_use_kerberos(auth_info)) {
-		flags |= CLI_FULL_CONNECTION_USE_KERBEROS;
-	}
-	if (get_cmdline_auth_info_fallback_after_kerberos(auth_info)) {
-		flags |= CLI_FULL_CONNECTION_FALLBACK_AFTER_KERBEROS;
-	}
-	if (get_cmdline_auth_info_use_ccache(auth_info)) {
-		flags |= CLI_FULL_CONNECTION_USE_CCACHE;
-	}
-	if (get_cmdline_auth_info_use_pw_nt_hash(auth_info)) {
-		flags |= CLI_FULL_CONNECTION_USE_NT_HASH;
-	}
-
 	status = cli_connect_nb(
-		server, NULL, port, name_type, NULL,
+		server, dest_ss, port, name_type, NULL,
 		signing_state,
 		flags, &c);
 
@@ -274,7 +234,7 @@ static NTSTATUS do_connect(TALLOC_CTX *ctx,
 		return do_connect(ctx, newserver,
 				newshare, auth_info,
 				force_encrypt, max_protocol,
-				port, name_type, pcli);
+				NULL, port, name_type, pcli);
 	}
 
 	/* must be a normal share */
@@ -329,6 +289,7 @@ static NTSTATUS cli_cm_connect(TALLOC_CTX *ctx,
 			       const struct user_auth_info *auth_info,
 			       bool force_encrypt,
 			       int max_protocol,
+			       const struct sockaddr_storage *dest_ss,
 			       int port,
 			       int name_type,
 			       struct cli_state **pcli)
@@ -339,7 +300,7 @@ static NTSTATUS cli_cm_connect(TALLOC_CTX *ctx,
 	status = do_connect(ctx, server, share,
 				auth_info,
 				force_encrypt, max_protocol,
-				port, name_type, &cli);
+				dest_ss, port, name_type, &cli);
 
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
@@ -424,6 +385,7 @@ NTSTATUS cli_cm_open(TALLOC_CTX *ctx,
 				const struct user_auth_info *auth_info,
 				bool force_encrypt,
 				int max_protocol,
+				const struct sockaddr_storage *dest_ss,
 				int port,
 				int name_type,
 				struct cli_state **pcli)
@@ -453,6 +415,7 @@ NTSTATUS cli_cm_open(TALLOC_CTX *ctx,
 				auth_info,
 				force_encrypt,
 				max_protocol,
+				dest_ss,
 				port,
 				name_type,
 				&c);
@@ -838,7 +801,7 @@ NTSTATUS cli_dfs_get_referral_ex(TALLOC_CTX *ctx,
 				status = NT_STATUS_INVALID_NETWORK_RESPONSE;
 				goto out;
 			}
-			clistr_pull_talloc(referrals,
+			pull_string_talloc(referrals,
 					   (const char *)rdata,
 					   recv_flags2,
 					   &referrals[i].dfspath,
@@ -1001,6 +964,7 @@ NTSTATUS cli_resolve_path(TALLOC_CTX *ctx,
 			     dfs_auth_info,
 			     cli_state_is_encryption_on(rootcli),
 			     smbXcli_conn_protocol(rootcli->conn),
+			     NULL, /* dest_ss not needed, we reuse the transport */
 			     0,
 			     0x20,
 			     &cli_ipc);
@@ -1058,7 +1022,8 @@ NTSTATUS cli_resolve_path(TALLOC_CTX *ctx,
 				dfs_auth_info,
 				cli_state_is_encryption_on(rootcli),
 				smbXcli_conn_protocol(rootcli->conn),
-				0,
+				NULL, /* dest_ss */
+				0, /* port */
 				0x20,
 				targetcli);
 		if (!NT_STATUS_IS_OK(status)) {

@@ -44,12 +44,13 @@ struct aio_open_private_data {
 	struct aio_open_private_data *prev, *next;
 	/* Inputs. */
 	int dir_fd;
+	bool opened_dir_fd;
 	int flags;
 	mode_t mode;
 	uint64_t mid;
 	bool in_progress;
-	const char *fname;
-	char *dname;
+	struct smb_filename *fsp_name;
+	struct smb_filename *smb_fname;
 	connection_struct *conn;
 	struct smbXsrv_connection *xconn;
 	const struct security_unix_token *ux_tok;
@@ -110,9 +111,8 @@ static void aio_open_handle_completion(struct tevent_req *subreq)
 		 * to the NULL context, so just free it so we
 		 * don't leak memory.
 		 */
-		DBG_NOTICE("aio open request for %s/%s abandoned in flight\n",
-			opd->dname,
-			opd->fname);
+		DBG_NOTICE("aio open request for %s abandoned in flight\n",
+			opd->fsp_name->base_name);
 		if (opd->ret_fd != -1) {
 			close(opd->ret_fd);
 			opd->ret_fd = -1;
@@ -152,10 +152,9 @@ static void aio_open_handle_completion(struct tevent_req *subreq)
 	}
 
 	DEBUG(10,("aio_open_handle_completion: mid %llu "
-		"for file %s/%s completed\n",
+		"for file %s completed\n",
 		(unsigned long long)opd->mid,
-		opd->dname,
-		opd->fname));
+		opd->fsp_name->base_name));
 
 	opd->in_progress = false;
 
@@ -202,7 +201,7 @@ static void aio_open_worker(void *private_data)
 static void aio_open_do(struct aio_open_private_data *opd)
 {
 	opd->ret_fd = openat(opd->dir_fd,
-			opd->fname,
+			opd->smb_fname->base_name,
 			opd->flags,
 			opd->mode);
 
@@ -237,7 +236,7 @@ static void aio_open_do(struct aio_open_private_data *opd)
 
 static void opd_free(struct aio_open_private_data *opd)
 {
-	if (opd->dir_fd != -1) {
+	if (opd->opened_dir_fd && opd->dir_fd != -1) {
 		close(opd->dir_fd);
 	}
 	DLIST_REMOVE(open_pd_list, opd);
@@ -248,14 +247,16 @@ static void opd_free(struct aio_open_private_data *opd)
  Create and initialize a private data struct for async open.
 ***********************************************************************/
 
-static struct aio_open_private_data *create_private_open_data(TALLOC_CTX *ctx,
-					const files_struct *fsp,
-					int flags,
-					mode_t mode)
+static struct aio_open_private_data *create_private_open_data(
+	TALLOC_CTX *ctx,
+	const struct files_struct *dirfsp,
+	const struct smb_filename *smb_fname,
+	const files_struct *fsp,
+	int flags,
+	mode_t mode)
 {
 	struct aio_open_private_data *opd = talloc_zero(ctx,
 					struct aio_open_private_data);
-	const char *fname = NULL;
 
 	if (!opd) {
 		return NULL;
@@ -287,27 +288,30 @@ static struct aio_open_private_data *create_private_open_data(TALLOC_CTX *ctx,
 	}
 
 	/*
-	 * Copy the parent directory name and the
-	 * relative path within it.
+	 * Copy the full fsp_name and smb_fname which is the basename.
 	 */
-	if (parent_dirname(opd,
-			fsp->fsp_name->base_name,
-			&opd->dname,
-			&fname) == false) {
-		opd_free(opd);
-		return NULL;
-	}
-	opd->fname = talloc_strdup(opd, fname);
-	if (opd->fname == NULL) {
+	opd->smb_fname = cp_smb_filename(opd, smb_fname);
+	if (opd->smb_fname == NULL) {
 		opd_free(opd);
 		return NULL;
 	}
 
+	opd->fsp_name = cp_smb_filename(opd, fsp->fsp_name);
+	if (opd->fsp_name == NULL) {
+		opd_free(opd);
+		return NULL;
+	}
+
+	if (dirfsp->fh->fd != AT_FDCWD) {
+		opd->dir_fd = dirfsp->fh->fd;
+	} else {
 #if defined(O_DIRECTORY)
-	opd->dir_fd = open(opd->dname, O_RDONLY|O_DIRECTORY);
+		opd->dir_fd = open(".", O_RDONLY|O_DIRECTORY);
 #else
-	opd->dir_fd = open(opd->dname, O_RDONLY);
+		opd->dir_fd = open(".", O_RDONLY);
 #endif
+		opd->opened_dir_fd = true;
+	}
 	if (opd->dir_fd == -1) {
 		opd_free(opd);
 		return NULL;
@@ -325,9 +329,8 @@ static int opd_inflight_destructor(struct aio_open_private_data *opd)
 	 * down which kills the fsp that owns
 	 * opd.
 	 */
-	DBG_NOTICE("aio open request for %s/%s cancelled\n",
-		opd->dname,
-		opd->fname);
+	DBG_NOTICE("aio open request for %s cancelled\n",
+		opd->fsp_name->base_name);
 	opd->conn = NULL;
 	/* Don't let opd go away. */
 	return -1;
@@ -337,9 +340,11 @@ static int opd_inflight_destructor(struct aio_open_private_data *opd)
  Setup an async open.
 *****************************************************************/
 
-static int open_async(const files_struct *fsp,
-			int flags,
-			mode_t mode)
+static int open_async(const struct files_struct *dirfsp,
+		      const struct smb_filename *smb_fname,
+		      const files_struct *fsp,
+		      int flags,
+		      mode_t mode)
 {
 	struct aio_open_private_data *opd = NULL;
 	struct tevent_req *subreq = NULL;
@@ -355,7 +360,12 @@ static int open_async(const files_struct *fsp,
 	 * opd is always safely freed in all codepath so no
 	 * memory leaks.
 	 */
-	opd = create_private_open_data(fsp->conn, fsp, flags, mode);
+	opd = create_private_open_data(fsp->conn,
+				       dirfsp,
+				       smb_fname,
+				       fsp,
+				       flags,
+				       mode);
 	if (opd == NULL) {
 		DEBUG(10, ("open_async: Could not create private data.\n"));
 		return -1;
@@ -371,10 +381,9 @@ static int open_async(const files_struct *fsp,
 	}
 	tevent_req_set_callback(subreq, aio_open_handle_completion, opd);
 
-	DEBUG(5,("open_async: mid %llu created for file %s/%s\n",
+	DEBUG(5,("open_async: mid %llu created for file %s\n",
 		(unsigned long long)opd->mid,
-		opd->dname,
-		opd->fname));
+		opd->fsp_name->base_name));
 
 	/*
 	 * Add a destructor to protect us from connection
@@ -406,10 +415,9 @@ static bool find_completed_open(files_struct *fsp,
 	if (opd->in_progress) {
 		DEBUG(0,("find_completed_open: mid %llu "
 			"still in progress for "
-			"file %s/%s. PANIC !\n",
+			"file %s. PANIC !\n",
 			(unsigned long long)opd->mid,
-			opd->dname,
-			opd->fname));
+			opd->fsp_name->base_name));
 		/* Disaster ! This is an open timeout. Just panic. */
 		smb_panic("find_completed_open - in_progress\n");
 		/* notreached. */
@@ -438,18 +446,19 @@ static bool find_completed_open(files_struct *fsp,
  opens to prevent any race conditions.
 *****************************************************************/
 
-static int aio_pthread_open_fn(vfs_handle_struct *handle,
-			struct smb_filename *smb_fname,
-			files_struct *fsp,
-			int flags,
-			mode_t mode)
+static int aio_pthread_openat_fn(vfs_handle_struct *handle,
+				 const struct files_struct *dirfsp,
+				 const struct smb_filename *smb_fname,
+				 struct files_struct *fsp,
+				 int flags,
+				 mode_t mode)
 {
 	int my_errno = 0;
 	int fd = -1;
 	bool aio_allow_open = lp_parm_bool(
 		SNUM(handle->conn), "aio_pthread", "aio open", false);
 
-	if (smb_fname->stream_name) {
+	if (smb_fname->stream_name != NULL) {
 		/* Don't handle stream opens. */
 		errno = ENOENT;
 		return -1;
@@ -457,17 +466,26 @@ static int aio_pthread_open_fn(vfs_handle_struct *handle,
 
 	if (!aio_allow_open) {
 		/* aio opens turned off. */
-		return open(smb_fname->base_name, flags, mode);
+		return openat(dirfsp->fh->fd,
+			      smb_fname->base_name,
+			      flags,
+			      mode);
 	}
 
 	if (!(flags & O_CREAT)) {
 		/* Only creates matter. */
-		return open(smb_fname->base_name, flags, mode);
+		return openat(dirfsp->fh->fd,
+			      smb_fname->base_name,
+			      flags,
+			      mode);
 	}
 
 	if (!(flags & O_EXCL)) {
 		/* Only creates with O_EXCL matter. */
-		return open(smb_fname->base_name, flags, mode);
+		return openat(dirfsp->fh->fd,
+			      smb_fname->base_name,
+			      flags,
+			      mode);
 	}
 
 	/*
@@ -483,13 +501,13 @@ static int aio_pthread_open_fn(vfs_handle_struct *handle,
 	}
 
 	/* Ok, it's a create exclusive call - pass it to a thread helper. */
-	return open_async(fsp, flags, mode);
+	return open_async(dirfsp, smb_fname, fsp, flags, mode);
 }
 #endif
 
 static struct vfs_fn_pointers vfs_aio_pthread_fns = {
 #if defined(HAVE_OPENAT) && defined(HAVE_LINUX_THREAD_CREDENTIALS)
-	.open_fn = aio_pthread_open_fn,
+	.openat_fn = aio_pthread_openat_fn,
 #endif
 };
 

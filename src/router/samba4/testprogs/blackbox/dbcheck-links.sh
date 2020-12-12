@@ -14,6 +14,23 @@ shift 2
 . `dirname $0`/subunit.sh
 
 . `dirname $0`/common-links.sh
+. `dirname $0`/common_test_fns.inc
+
+failed=0
+
+if [ ! -x $samba_undump ] || [ ! -d $release_dir ]; then
+    subunit_start_test $RELEASE
+    subunit_skip_test $RELEASE <<EOF
+no test provision
+EOF
+
+    subunit_start_test "tombstones_expunge"
+    subunit_skip_test "tombstones_expunge" <<EOF
+no test provision
+EOF
+
+    exit 0
+fi
 
 dbcheck() {
     tmpfile=$PREFIX_ABS/$RELEASE/expected-dbcheck-link-output${1}.txt.tmp
@@ -731,80 +748,212 @@ dangling_multi_valued_check_equal_or_too_many() {
     fi
 }
 
+dangling_link_does_not_prevent_delete() {
 
-if [ -d $release_dir ]; then
-    testit $RELEASE undump
-    testit "add_two_more_users" add_two_more_users
-    testit "add_four_more_links" add_four_more_links
-    testit "remove_one_link" remove_one_link
-    testit "remove_one_user" remove_one_user
-    testit "move_one_user" move_one_user
-    testit "add_dangling_link" add_dangling_link
-    testit "add_dangling_backlink" add_dangling_backlink
-    testit "add_deleted_dangling_backlink" add_deleted_dangling_backlink
-    testit "revive_links_on_deleted_group" revive_links_on_deleted_group
-    testit "revive_backlink_on_deleted_group" revive_backlink_on_deleted_group
-    testit "add_deleted_target_link" add_deleted_target_link
-    testit "add_deleted_target_backlink" add_deleted_target_backlink
-    testit "dbcheck_dangling" dbcheck_dangling
-    testit "dbcheck_clean" dbcheck_clean
-    testit "check_expected_after_deleted_links" check_expected_after_deleted_links
-    testit "check_expected_after_links" check_expected_after_links
-    testit "check_expected_after_objects" check_expected_after_objects
-    testit "duplicate_member" duplicate_member
-    testit "dbcheck_duplicate_member" dbcheck_duplicate_member
-    testit "check_expected_after_duplicate_links" check_expected_after_duplicate_links
-    testit "duplicate_clean" dbcheck_clean
-    testit "forward_link_corruption" forward_link_corruption
-    testit "dbcheck_forward_link_corruption" dbcheck_forward_link_corruption
-    testit "check_expected_after_dbcheck_forward_link_corruption" check_expected_after_dbcheck_forward_link_corruption
-    testit "forward_link_corruption_clean" dbcheck_clean
-    testit "oneway_link_corruption" oneway_link_corruption
-    testit "dbcheck_oneway_link_corruption" dbcheck_oneway_link_corruption
-    testit "check_expected_after_dbcheck_oneway_link_corruption" check_expected_after_dbcheck_oneway_link_corruption
-    testit "oneway_link_corruption_clean" dbcheck_clean
-    testit "dangling_one_way_link" dangling_one_way_link
-    testit "dbcheck_one_way" dbcheck_one_way
-    testit "dbcheck_clean2" dbcheck_clean
-    testit "missing_link_sid_corruption" missing_link_sid_corruption
-    testit "dbcheck_missing_link_sid_corruption" dbcheck_missing_link_sid_corruption
-    testit "missing_link_sid_clean" dbcheck_clean
-    testit "add_lost_deleted_user1" add_lost_deleted_user1
-    testit "dbcheck_lost_deleted_user1" dbcheck_lost_deleted_user1
-    testit "lost_deleted_user1_clean_A" dbcheck_clean
-    testit "remove_lost_deleted_user1" remove_lost_deleted_user1
-    testit "lost_deleted_user1_clean_B" dbcheck_clean
-    testit "add_lost_deleted_user2" add_lost_deleted_user2
-    testit "dbcheck_lost_deleted_user2" dbcheck_lost_deleted_user2
-    testit "lost_deleted_user2_clean" dbcheck_clean
-    testit "add_lost_deleted_user3" add_lost_deleted_user3
-    testit "dbcheck_lost_deleted_user3" dbcheck_lost_deleted_user3
-    testit "lost_deleted_user3_clean_A" dbcheck_clean
-    testit "remove_lost_deleted_user3" remove_lost_deleted_user3
-    testit "lost_deleted_user3_clean_B" dbcheck_clean
-    testit "dangling_one_way_dn" dangling_one_way_dn
-    testit "deleted_one_way_dn" deleted_one_way_dn
-    testit "dbcheck_clean3" dbcheck_clean
-    testit "add_dangling_multi_valued" add_dangling_multi_valued
-    testit "dbcheck_dangling_multi_valued" dbcheck_dangling_multi_valued
-    testit "dangling_multi_valued_check_missing" dangling_multi_valued_check_missing
-    testit "dangling_multi_valued_check_equal_or_too_many" dangling_multi_valued_check_equal_or_too_many
-    # Currently this cannot pass
-    testit "dbcheck_dangling_multi_valued_clean" dbcheck_clean
-else
-    subunit_start_test $RELEASE
-    subunit_skip_test $RELEASE <<EOF
-no test provision
+    #
+    # Step1: add user "dangling"
+    #
+    ldif=$PREFIX_ABS/${RELEASE}/backlink_can_be_vanished1.ldif
+    dn='CN=dangling-for-vanish,CN=users,DC=release-4-5-0-pre1,DC=samba,DC=corp'
+    cat > $ldif <<EOF
+dn: $dn
+changetype: add
+objectclass: user
+samaccountname: dangling-v
+objectGUID: fd8a04ac-cea0-4921-b1a6-c173e1155c23
 EOF
 
-    subunit_start_test "tombstones_expunge"
-    subunit_skip_test "tombstones_expunge" <<EOF
-no test provision
-EOF
-fi
+    out=$(TZ=UTC $ldbmodify -H tdb://$PREFIX_ABS/${RELEASE}/private/sam.ldb --relax $ldif)
+    if [ "$?" != "0" ]; then
+	echo "ldbmodify returned:\n$out"
+	return 1
+    fi
 
-if [ -d $PREFIX_ABS/${RELEASE} ]; then
-    rm -fr $PREFIX_ABS/${RELEASE}
-fi
+    #
+    # Step2: add a dangling backlink from
+    # "CN=dangling-for-vanish" to "CN=Enterprise Admins"
+    #
+    ldif=$PREFIX_ABS/${RELEASE}/backlink_can_be_vanished2.ldif
+    {
+	echo "dn: $dn"
+	echo "changetype: modify"
+	echo "add: memberOf"
+	echo "memberOf: <GUID=304ad703-468b-465e-9787-470b3dfd7d75>;<SID=S-1-5-21-4177067393-1453636373-93818738-519>;CN=Enterprise Admins,CN=Users,DC=release-4-5-0-pre1,DC=samba,DC=corp"
+    } > $ldif
+
+    out=$(TZ=UTC $ldbmodify -H tdb://$PREFIX_ABS/${RELEASE}/private/sam.ldb.d/DC%3DRELEASE-4-5-0-PRE1,DC%3DSAMBA,DC%3DCORP.ldb $ldif)
+    if [ "$?" != "0" ]; then
+	echo "ldbmodify returned:\n$out"
+	return 1
+    fi
+
+    out=$(TZ=UTC $ldbdel -H tdb://$PREFIX_ABS/${RELEASE}/private/sam.ldb "$dn")
+    if [ "$?" != "0" ]; then
+	echo "ldbdel returned:\n$out"
+	return 1
+    fi
+}
+    
+dangling_link_to_unknown_does_not_prevent_delete() {
+
+    #
+    # Step1: add user "dangling"
+    #
+    ldif=$PREFIX_ABS/${RELEASE}/backlink_can_be_vanished1.ldif
+    dn='CN=dangling-for-vanish,CN=users,DC=release-4-5-0-pre1,DC=samba,DC=corp'
+    cat > $ldif <<EOF
+dn: $dn
+changetype: add
+objectclass: user
+samaccountname: dangling-v
+objectGUID: a4090081-ac2a-410c-8924-b255375160e8
+EOF
+
+    out=$(TZ=UTC $ldbmodify -H tdb://$PREFIX_ABS/${RELEASE}/private/sam.ldb --relax $ldif)
+    if [ "$?" != "0" ]; then
+	echo "ldbmodify returned:\n$out"
+	return 1
+    fi
+
+    #
+    # Step2: add a dangling backlink from
+    # "CN=dangling-for-vanish" to "CN=NOT Enterprise Admins"
+    #
+    ldif=$PREFIX_ABS/${RELEASE}/backlink_can_be_vanished2.ldif
+    {
+	echo "dn: $dn"
+	echo "changetype: modify"
+	echo "add: memberOf"
+	echo "memberOf: <GUID=09a47bff-0227-44e1-a8e4-63f9e726515d>;<SID=S-1-5-21-4177067393-1453636373-93818738-588>;CN=NOT Enterprise Admins,CN=Users,DC=release-4-5-0-pre1,DC=samba,DC=corp"
+    } > $ldif
+
+    out=$(TZ=UTC $ldbmodify -H tdb://$PREFIX_ABS/${RELEASE}/private/sam.ldb.d/DC%3DRELEASE-4-5-0-PRE1,DC%3DSAMBA,DC%3DCORP.ldb $ldif)
+    if [ "$?" != "0" ]; then
+	echo "ldbmodify returned:\n$out"
+	return 1
+    fi
+
+    out=$(TZ=UTC $ldbdel -H tdb://$PREFIX_ABS/${RELEASE}/private/sam.ldb "$dn")
+    if [ "$?" != "0" ]; then
+	echo "ldbdel returned:\n$out"
+	return 1
+    fi
+}
+
+dangling_link_to_known_and_unknown_does_not_prevent_delete() {
+
+    #
+    # Step1: add user "dangling"
+    #
+    ldif=$PREFIX_ABS/${RELEASE}/backlink_can_be_vanished1.ldif
+    dn='CN=dangling-for-vanish,CN=users,DC=release-4-5-0-pre1,DC=samba,DC=corp'
+    cat > $ldif <<EOF
+dn: $dn
+changetype: add
+objectclass: user
+samaccountname: dangling-v
+objectGUID: 2882ffb1-31c3-485e-a7fc-184dfafc32d4
+EOF
+
+    out=$(TZ=UTC $ldbmodify -H tdb://$PREFIX_ABS/${RELEASE}/private/sam.ldb --relax $ldif)
+    if [ "$?" != "0" ]; then
+	echo "ldbmodify returned:\n$out"
+	return 1
+    fi
+
+    #
+    # Step2: add a dangling backlink from
+    # "CN=dangling-for-vanish" to "CN=Enterprise Admins",
+    # "CN=dangling-for-vanish" to "CN=NOT Enterprise Admins" and
+    # back to ourselves
+    #
+    ldif=$PREFIX_ABS/${RELEASE}/backlink_can_be_vanished2.ldif
+    {
+	echo "dn: $dn"
+	echo "changetype: modify"
+	echo "add: memberOf"
+	echo "memberOf: <GUID=304ad703-468b-465e-9787-470b3dfd7d75>;<SID=S-1-5-21-4177067393-1453636373-93818738-519>;CN=Enterprise Admins,CN=Users,DC=release-4-5-0-pre1,DC=samba,DC=corp"
+	echo "memberOf: <GUID=09a47bff-0227-44e1-a8e4-63f9e726515d>;<SID=S-1-5-21-4177067393-1453636373-93818738-588>;CN=NOT Enterprise Admins,CN=Users,DC=release-4-5-0-pre1,DC=samba,DC=corp"
+	echo "memberOf: <GUID=2882ffb1-31c3-485e-a7fc-184dfafc32d4>;CN=dangling-for-vanish,CN=users,DC=release-4-5-0-pre1,DC=samba,DC=corp"
+    } > $ldif
+
+    out=$(TZ=UTC $ldbmodify -H tdb://$PREFIX_ABS/${RELEASE}/private/sam.ldb.d/DC%3DRELEASE-4-5-0-PRE1,DC%3DSAMBA,DC%3DCORP.ldb $ldif)
+    if [ "$?" != "0" ]; then
+	echo "ldbmodify returned:\n$out"
+	return 1
+    fi
+
+    out=$(TZ=UTC $ldbdel -H tdb://$PREFIX_ABS/${RELEASE}/private/sam.ldb "$dn")
+    if [ "$?" != "0" ]; then
+	echo "ldbdel returned:\n$out"
+	return 1
+    fi
+}
+
+remove_directory $PREFIX_ABS/${RELEASE}
+
+testit $RELEASE undump || failed=`expr $failed + 1`
+testit "add_two_more_users" add_two_more_users || failed=`expr $failed + 1`
+testit "add_four_more_links" add_four_more_links || failed=`expr $failed + 1`
+testit "remove_one_link" remove_one_link || failed=`expr $failed + 1`
+testit "remove_one_user" remove_one_user || failed=`expr $failed + 1`
+testit "move_one_user" move_one_user || failed=`expr $failed + 1`
+testit "add_dangling_link" add_dangling_link || failed=`expr $failed + 1`
+testit "add_dangling_backlink" add_dangling_backlink || failed=`expr $failed + 1`
+testit "add_deleted_dangling_backlink" add_deleted_dangling_backlink || failed=`expr $failed + 1`
+testit "revive_links_on_deleted_group" revive_links_on_deleted_group || failed=`expr $failed + 1`
+testit "revive_backlink_on_deleted_group" revive_backlink_on_deleted_group || failed=`expr $failed + 1`
+testit "add_deleted_target_link" add_deleted_target_link || failed=`expr $failed + 1`
+testit "add_deleted_target_backlink" add_deleted_target_backlink || failed=`expr $failed + 1`
+testit "dbcheck_dangling" dbcheck_dangling || failed=`expr $failed + 1`
+testit "dbcheck_clean" dbcheck_clean || failed=`expr $failed + 1`
+testit "check_expected_after_deleted_links" check_expected_after_deleted_links || failed=`expr $failed + 1`
+testit "check_expected_after_links" check_expected_after_links || failed=`expr $failed + 1`
+testit "check_expected_after_objects" check_expected_after_objects || failed=`expr $failed + 1`
+testit "duplicate_member" duplicate_member || failed=`expr $failed + 1`
+testit "dbcheck_duplicate_member" dbcheck_duplicate_member || failed=`expr $failed + 1`
+testit "check_expected_after_duplicate_links" check_expected_after_duplicate_links || failed=`expr $failed + 1`
+testit "duplicate_clean" dbcheck_clean || failed=`expr $failed + 1`
+testit "forward_link_corruption" forward_link_corruption || failed=`expr $failed + 1`
+testit "dbcheck_forward_link_corruption" dbcheck_forward_link_corruption || failed=`expr $failed + 1`
+testit "check_expected_after_dbcheck_forward_link_corruption" check_expected_after_dbcheck_forward_link_corruption || failed=`expr $failed + 1`
+testit "forward_link_corruption_clean" dbcheck_clean || failed=`expr $failed + 1`
+testit "oneway_link_corruption" oneway_link_corruption || failed=`expr $failed + 1`
+testit "dbcheck_oneway_link_corruption" dbcheck_oneway_link_corruption || failed=`expr $failed + 1`
+testit "check_expected_after_dbcheck_oneway_link_corruption" check_expected_after_dbcheck_oneway_link_corruption || failed=`expr $failed + 1`
+testit "oneway_link_corruption_clean" dbcheck_clean || failed=`expr $failed + 1`
+testit "dangling_one_way_link" dangling_one_way_link || failed=`expr $failed + 1`
+testit "dbcheck_one_way" dbcheck_one_way || failed=`expr $failed + 1`
+testit "dbcheck_clean2" dbcheck_clean || failed=`expr $failed + 1`
+testit "missing_link_sid_corruption" missing_link_sid_corruption || failed=`expr $failed + 1`
+testit "dbcheck_missing_link_sid_corruption" dbcheck_missing_link_sid_corruption || failed=`expr $failed + 1`
+testit "missing_link_sid_clean" dbcheck_clean || failed=`expr $failed + 1`
+testit "add_lost_deleted_user1" add_lost_deleted_user1 || failed=`expr $failed + 1`
+testit "dbcheck_lost_deleted_user1" dbcheck_lost_deleted_user1 || failed=`expr $failed + 1`
+testit "lost_deleted_user1_clean_A" dbcheck_clean || failed=`expr $failed + 1`
+testit "remove_lost_deleted_user1" remove_lost_deleted_user1 || failed=`expr $failed + 1`
+testit "lost_deleted_user1_clean_B" dbcheck_clean || failed=`expr $failed + 1`
+testit "add_lost_deleted_user2" add_lost_deleted_user2 || failed=`expr $failed + 1`
+testit "dbcheck_lost_deleted_user2" dbcheck_lost_deleted_user2 || failed=`expr $failed + 1`
+testit "lost_deleted_user2_clean" dbcheck_clean || failed=`expr $failed + 1`
+testit "add_lost_deleted_user3" add_lost_deleted_user3 || failed=`expr $failed + 1`
+testit "dbcheck_lost_deleted_user3" dbcheck_lost_deleted_user3 || failed=`expr $failed + 1`
+testit "lost_deleted_user3_clean_A" dbcheck_clean || failed=`expr $failed + 1`
+testit "remove_lost_deleted_user3" remove_lost_deleted_user3 || failed=`expr $failed + 1`
+testit "lost_deleted_user3_clean_B" dbcheck_clean || failed=`expr $failed + 1`
+testit "dangling_one_way_dn" dangling_one_way_dn || failed=`expr $failed + 1`
+testit "deleted_one_way_dn" deleted_one_way_dn || failed=`expr $failed + 1`
+testit "dbcheck_clean3" dbcheck_clean || failed=`expr $failed + 1`
+testit "add_dangling_multi_valued" add_dangling_multi_valued || failed=`expr $failed + 1`
+testit "dbcheck_dangling_multi_valued" dbcheck_dangling_multi_valued || failed=`expr $failed + 1`
+testit "dangling_multi_valued_check_missing" dangling_multi_valued_check_missing || failed=`expr $failed + 1`
+testit "dangling_multi_valued_check_equal_or_too_many" dangling_multi_valued_check_equal_or_too_many || failed=`expr $failed + 1`
+# Currently this cannot pass
+testit "dbcheck_dangling_multi_valued_clean" dbcheck_clean || failed=`expr $failed + 1`
+testit "dangling_link_does_not_prevent_delete" dangling_link_does_not_prevent_delete || failed=`expr $failed + 1`
+testit "dangling_link_to_unknown_does_not_prevent_delete" dangling_link_to_unknown_does_not_prevent_delete || failed=`expr $failed + 1`
+testit "dangling_link_to_known_and_unknown_does_not_prevent_delete" dangling_link_to_known_and_unknown_does_not_prevent_delete || failed=`expr $failed + 1`
+
+remove_directory $PREFIX_ABS/${RELEASE}
 
 exit $failed

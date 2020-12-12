@@ -34,7 +34,7 @@
 #include "lib/afs/afs_funcs.h"
 #include "lib/util_path.h"
 
-static bool canonicalize_connect_path(connection_struct *conn)
+bool canonicalize_connect_path(connection_struct *conn)
 {
 	bool ret;
 	struct smb_filename con_fname = { .base_name = conn->connectpath };
@@ -80,6 +80,7 @@ bool set_conn_connectpath(connection_struct *conn, const char *connectpath)
 				conn->connectpath,
 				NULL,
 				NULL,
+				0,
 				0);
 	if (conn->cwd_fsp->fsp_name == NULL) {
 		return false;
@@ -143,9 +144,6 @@ bool chdir_current_service(connection_struct *conn)
 	const struct smb_filename connectpath_fname = {
 		.base_name = conn->connectpath,
 	};
-	const struct smb_filename origpath_fname = {
-		.base_name = conn->origpath,
-	};
 	int saved_errno = 0;
 	char *utok_str = NULL;
 	int ret;
@@ -167,18 +165,6 @@ bool chdir_current_service(connection_struct *conn)
 
 	DBG_ERR("vfs_ChDir(%s) failed: %s. Current token: %s\n",
 		conn->connectpath,
-		strerror(saved_errno),
-		utok_str);
-
-	ret = vfs_ChDir(conn, &origpath_fname);
-	if (ret == 0) {
-		TALLOC_FREE(utok_str);
-		return true;
-	}
-	saved_errno = errno;
-
-	DBG_ERR("vfs_ChDir(%s) failed: %s. Current token: %s\n",
-		conn->origpath,
 		strerror(saved_errno),
 		utok_str);
 
@@ -535,6 +521,7 @@ static NTSTATUS make_connection_snum(struct smbXsrv_connection *xconn,
 	uid_t effuid;
 	gid_t effgid;
 	NTSTATUS status;
+	bool ok;
 
 	fstrcpy(dev, pdev);
 
@@ -796,21 +783,20 @@ static NTSTATUS make_connection_snum(struct smbXsrv_connection *xconn,
 /* ROOT Activites: */
 
 	/*
-	 * If widelinks are disallowed we need to canonicalise the connect
+	 * Canonicalise the connect
 	 * path here to ensure we don't have any symlinks in the
 	 * connectpath. We will be checking all paths on this connection are
 	 * below this directory. We must do this after the VFS init as we
 	 * depend on the realpath() pointer in the vfs table. JRA.
 	 */
-	if (!lp_widelinks(snum)) {
-		if (!canonicalize_connect_path(conn)) {
-			DBG_ERR("canonicalize_connect_path failed "
-			"for service %s, path %s\n",
-				lp_const_servicename(snum),
-				conn->connectpath);
-			status = NT_STATUS_BAD_NETWORK_NAME;
-			goto err_root_exit;
-		}
+	ok = canonicalize_connect_path(conn);
+	if (!ok) {
+		DBG_ERR("canonicalize_connect_path failed "
+		"for service %s, path %s\n",
+			lp_const_servicename(snum),
+			conn->connectpath);
+		status = NT_STATUS_BAD_NETWORK_NAME;
+		goto err_root_exit;
 	}
 
 	/* Add veto/hide lists */
@@ -828,6 +814,7 @@ static NTSTATUS make_connection_snum(struct smbXsrv_connection *xconn,
 					conn->connectpath,
 					NULL,
 					NULL,
+					0,
 					0);
 	if (smb_fname_cpath == NULL) {
 		status = NT_STATUS_NO_MEMORY;
@@ -857,9 +844,6 @@ static NTSTATUS make_connection_snum(struct smbXsrv_connection *xconn,
 		goto err_root_exit;
 	}
 	conn->base_share_dev = smb_fname_cpath->st.st_ex_dev;
-
-	talloc_free(conn->origpath);
-	conn->origpath = talloc_strdup(conn, conn->connectpath);
 
 	/* Figure out the characteristics of the underlying filesystem. This
 	 * assumes that all the filesystem mounted within a share path have

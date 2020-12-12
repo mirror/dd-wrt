@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # Copyright (C) Catalyst.Net Ltd 2019
 #
@@ -36,6 +36,7 @@ COMMON = [
     'autoconf',
     'binutils',
     'bison',
+    'ccache',
     'curl',
     'chrpath',
     'flex',
@@ -56,6 +57,7 @@ COMMON = [
     'sudo',  # docker images has no sudo by default
     'tar',
     'tree',
+    'wget',
 ]
 
 
@@ -129,6 +131,7 @@ PKGS = [
     ('mawk', 'gawk'),
 
     ('/usr/bin/python3', 'python3'),
+    ('python3-cryptography', 'python3-cryptography'), # for krb5 tests
     ('python3-dev', 'python3-devel'),
     ('python3-dbg', ''),
     ('python3-iso8601', ''),
@@ -137,6 +140,7 @@ PKGS = [
     ('python3-matplotlib', ''),
     ('python3-dnspython', 'python3-dns'),
     ('python3-pexpect', ''),  # for wintest only
+    ('python3-pyasn1', 'python3-pyasn1'), # for krb5 tests
 
     ('', 'libsemanage-python'),
     ('', 'policycoreutils-python'),
@@ -226,7 +230,10 @@ set -xueo pipefail
 yum update -y
 yum install -y dnf-plugins-core
 yum install -y epel-release
+
+yum -v repolist all
 yum config-manager --set-enabled PowerTools -y
+yum config-manager --set-enabled Devel -y
 yum update -y
 
 yum install -y \
@@ -374,59 +381,11 @@ end
 
 
 DEB_DISTS = {
-    'debian7': {
-        'docker_image': 'debian:7',
-        'vagrant_box': 'debian/wheezy64',
-        'replace': {
-            'libgnutls28-dev': 'libgnutls-dev',
-            'libsystemd-dev': '',  # not available, remove
-            'lmdb-utils': '',  # not available, remove
-            'liblmdb-dev': '',  # not available, remove
-            'python-gpg': 'python-gpgme',
-            'python3-gpg': '',  # no python3 gpg pkg available, remove
-            'language-pack-en': '',   # included in locales
-            'liburing-dev': '',   # not available
-        }
-    },
-    'debian8': {
-        'docker_image': 'debian:8',
-        'vagrant_box': 'debian/jessie64',
-        'replace': {
-            'python-gpg': 'python-gpgme',
-            'python3-gpg': 'python3-gpgme',
-            'language-pack-en': '',   # included in locales
-            'liburing-dev': '',   # not available
-        }
-    },
-    'debian9': {
-        'docker_image': 'debian:9',
-        'vagrant_box': 'debian/stretch64',
-        'replace': {
-            'language-pack-en': '',   # included in locales
-            'liburing-dev': '',   # not available
-        }
-    },
     'debian10': {
         'docker_image': 'debian:10',
         'vagrant_box': 'debian/buster64',
         'replace': {
             'language-pack-en': '',   # included in locales
-            'liburing-dev': '',   # not available
-        }
-    },
-    'ubuntu1404': {
-        'docker_image': 'ubuntu:14.04',
-        'vagrant_box': 'ubuntu/trusty64',
-        'replace': {
-            'libsystemd-dev': '',  # remove
-            'libgnutls28-dev': 'libgnutls-dev',
-            'python-gpg': 'python-gpgme',
-            'python3-gpg': 'python3-gpgme',
-            'lmdb-utils': 'lmdb-utils/trusty-backports',
-            'liblmdb-dev': 'liblmdb-dev/trusty-backports',
-            'libunwind-dev': 'libunwind8-dev',
-            'glusterfs-common': '',
-            'libcephfs-dev': '',
             'liburing-dev': '',   # not available
         }
     },
@@ -448,34 +407,17 @@ DEB_DISTS = {
             'liburing-dev': '',   # not available
         }
     },
+    'ubuntu2004': {
+        'docker_image': 'ubuntu:20.04',
+        'vagrant_box': 'ubuntu/focal64',
+        'replace': {
+            'liburing-dev': '',   # not available
+        }
+    },
 }
 
 
 RPM_DISTS = {
-    'centos6': {
-        'docker_image': 'centos:6',
-        'vagrant_box': 'centos/6',
-        'bootstrap': YUM_BOOTSTRAP,
-        'replace': {
-            'lsb-release': 'redhat-lsb',
-            '/usr/bin/python3': 'python36',
-            'python3-devel': 'python36-devel',
-            'python2-gpg': 'pygpgme',
-            'python3-gpg': '',  # no python3-gpg yet
-            '@development-tools': '"@Development Tools"',  # add quotes
-            'glibc-langpack-en': '',  # included in glibc-common
-            'glibc-locale-source': '',  # included in glibc-common
-            'procps-ng': 'procps',  # centos6 still use old name
-            # update perl core modules on centos
-            # fix: Can't locate Archive/Tar.pm in @INC
-            'perl': 'perl-core',
-            'rpcsvc-proto-devel': '',
-            'glusterfs-api-devel': '',
-            'glusterfs-devel': '',
-            'libcephfs-devel': '',
-            'liburing-devel': '',   # not available
-        }
-    },
     'centos7': {
         'docker_image': 'centos:7',
         'vagrant_box': 'centos/7',
@@ -483,9 +425,10 @@ RPM_DISTS = {
         'replace': {
             'lsb-release': 'redhat-lsb',
             '/usr/bin/python3': 'python36',
-            'python3-crypto': 'python36-crypto',
+            'python3-cryptography': 'python36-cryptography',
             'python3-devel': 'python36-devel',
             'python3-dns': 'python36-dns',
+            'python3-pyasn1': 'python36-pyasn1',
             'python3-gpg': 'python36-gpg',
             'python3-iso8601' : 'python36-iso8601',
             'python3-markdown': 'python36-markdown',
@@ -520,32 +463,22 @@ RPM_DISTS = {
             'perl-JSON-Parse': '', # does not exist?
             'perl-Test-Base': 'perl-Test-Simple',
             'policycoreutils-python': 'python3-policycoreutils',
-            'python3-crypto': '',
-            'quota-devel': '', # FIXME: Add me back, once available!
             'liburing-devel': '', # not available yet, Add me back, once available!
-        }
-    },
-    'fedora29': {
-        'docker_image': 'fedora:29',
-        'vagrant_box': 'fedora/29-cloud-base',
-        'bootstrap': DNF_BOOTSTRAP,
-        'replace': {
-            'lsb-release': 'redhat-lsb',
-            'liburing-devel': '',   # not available
-        }
-    },
-    'fedora30': {
-        'docker_image': 'fedora:30',
-        'vagrant_box': 'fedora/30-cloud-base',
-        'bootstrap': DNF_BOOTSTRAP,
-        'replace': {
-            'lsb-release': 'redhat-lsb',
-            'liburing-devel': '',   # not available
         }
     },
     'fedora31': {
         'docker_image': 'fedora:31',
         'vagrant_box': 'fedora/31-cloud-base',
+        'bootstrap': DNF_BOOTSTRAP,
+        'replace': {
+            'lsb-release': 'redhat-lsb',
+            'libsemanage-python': 'python3-libsemanage',
+            'policycoreutils-python': 'python3-policycoreutils',
+        }
+    },
+    'fedora32': {
+        'docker_image': 'fedora:32',
+        'vagrant_box': 'fedora/32-cloud-base',
         'bootstrap': DNF_BOOTSTRAP,
         'replace': {
             'lsb-release': 'redhat-lsb',
@@ -576,7 +509,6 @@ RPM_DISTS = {
             'perl-interpreter': '',
             'procps-ng': 'procps',
             'python-dns': 'python2-dnspython',
-            'python3-crypto': 'python3-pycrypto',
             'python3-dns': 'python3-dnspython',
             'python3-markdown': 'python3-Markdown',
             'quota-devel': '',
@@ -609,7 +541,6 @@ RPM_DISTS = {
             'perl-interpreter': '',
             'procps-ng': 'procps',
             'python-dns': 'python2-dnspython',
-            'python3-crypto': 'python3-pycrypto',
             'python3-dns': 'python3-dnspython',
             'python3-markdown': 'python3-Markdown',
             'quota-devel': '',

@@ -1063,25 +1063,47 @@ static NTSTATUS libnet_join_connect_dc_ipc(const char *dc,
 					   bool use_kerberos,
 					   struct cli_state **cli)
 {
+	TALLOC_CTX *frame = talloc_stackframe();
+	bool fallback_after_kerberos = false;
+	bool use_ccache = false;
+	bool pw_nt_hash = false;
+	struct cli_credentials *creds = NULL;
 	int flags = 0;
-
-	if (use_kerberos) {
-		flags |= CLI_FULL_CONNECTION_USE_KERBEROS;
-	}
+	NTSTATUS status;
 
 	if (use_kerberos && pass) {
-		flags |= CLI_FULL_CONNECTION_FALLBACK_AFTER_KERBEROS;
+		fallback_after_kerberos = true;
 	}
 
-	return cli_full_connection(cli, NULL,
-				   dc,
-				   NULL, 0,
-				   "IPC$", "IPC",
-				   user,
-				   domain,
-				   pass,
-				   flags,
-				   SMB_SIGNING_IPC_DEFAULT);
+	creds = cli_session_creds_init(frame,
+				       user,
+				       domain,
+				       NULL, /* realm (use default) */
+				       pass,
+				       use_kerberos,
+				       fallback_after_kerberos,
+				       use_ccache,
+				       pw_nt_hash);
+	if (creds == NULL) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	status = cli_full_connection_creds(cli,
+					   NULL,
+					   dc,
+					   NULL, 0,
+					   "IPC$", "IPC",
+					   creds,
+					   flags,
+					   SMB_SIGNING_IPC_DEFAULT);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(frame);
+		return status;
+	}
+
+	TALLOC_FREE(frame);
+	return NT_STATUS_OK;
 }
 
 /****************************************************************
@@ -1698,15 +1720,22 @@ NTSTATUS libnet_join_ok(struct messaging_context *msg_ctx,
 					   SMB_SIGNING_IPC_DEFAULT);
 
 	if (!NT_STATUS_IS_OK(status)) {
-		status = cli_full_connection(&cli, NULL,
-					     dc_name,
-					     NULL, 0,
-					     "IPC$", "IPC",
-					     "",
-					     NULL,
-					     "",
-					     0,
-					     SMB_SIGNING_IPC_DEFAULT);
+		struct cli_credentials *anon_creds = NULL;
+
+		anon_creds = cli_credentials_init_anon(frame);
+		if (anon_creds == NULL) {
+			TALLOC_FREE(frame);
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		status = cli_full_connection_creds(&cli,
+						   NULL,
+						   dc_name,
+						   NULL, 0,
+						   "IPC$", "IPC",
+						   anon_creds,
+						   0,
+						   SMB_SIGNING_OFF);
 	}
 
 	if (!NT_STATUS_IS_OK(status)) {

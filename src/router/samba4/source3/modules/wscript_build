@@ -39,6 +39,10 @@ bld.SAMBA3_SUBSYSTEM('OFFLOAD_TOKEN',
                     source='offload_token.c',
                     deps='samba-util')
 
+bld.SAMBA3_SUBSYSTEM('UTIL_REPARSE',
+                    source='util_reparse.c',
+                    deps='samba-util')
+
 bld.SAMBA3_SUBSYSTEM('HASH_INODE',
                     source='hash_inode.c',
                     deps='gnutls')
@@ -50,7 +54,7 @@ bld.SAMBA3_SUBSYSTEM('HASH_INODE',
 bld.SAMBA3_MODULE('vfs_default',
                  subsystem='vfs',
                  source='vfs_default.c',
-                 deps='samba-util NDR_DFSBLOBS OFFLOAD_TOKEN',
+                 deps='samba-util NDR_DFSBLOBS OFFLOAD_TOKEN UTIL_REPARSE',
                  init_function='',
                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_default'),
                  enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_default'))
@@ -110,7 +114,8 @@ bld.SAMBA3_MODULE('vfs_fake_acls',
                  deps='samba-util',
                  init_function='',
                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_fake_acls'),
-                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_fake_acls'))
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_fake_acls'),
+                 install=False)
 
 bld.SAMBA3_MODULE('vfs_recycle',
                  subsystem='vfs',
@@ -606,18 +611,28 @@ bld.SAMBA3_MODULE('vfs_fake_dfq',
                  source='vfs_fake_dfq.c',
                  init_function='',
                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_fake_dfq'),
-                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_fake_dfq'))
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_fake_dfq'),
+                 install=False)
 
 bld.SAMBA3_MODULE('vfs_error_inject',
                  subsystem='vfs',
                  source='vfs_error_inject.c',
                  init_function='',
                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_error_inject'),
-                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_error_inject'))
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_error_inject'),
+                 install=False)
 
 bld.SAMBA3_MODULE('vfs_delay_inject',
                  subsystem='vfs',
                  source='vfs_delay_inject.c',
                  init_function='',
                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_delay_inject'),
-                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_delay_inject'))
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_delay_inject'),
+                 install=False)
+
+bld.SAMBA3_MODULE('vfs_widelinks',
+                 subsystem='vfs',
+                 source='vfs_widelinks.c',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_widelinks'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_widelinks'))

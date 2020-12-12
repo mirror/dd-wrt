@@ -150,7 +150,7 @@ static PyMethodDef py_dom_sid_extra_methods[] = {
 	{ "split", (PyCFunction)py_dom_sid_split, METH_NOARGS,
 		"S.split() -> (domain_sid, rid)\n"
 		"Split a domain sid" },
-	{ NULL }
+	{0}
 };
 
 
@@ -306,7 +306,7 @@ static PyMethodDef py_descriptor_extra_methods[] = {
 		NULL },
 	{ "as_sddl", (PyCFunction)py_descriptor_as_sddl, METH_VARARGS,
 		NULL },
-	{ NULL }
+	{0}
 };
 
 static void py_descriptor_patch(PyTypeObject *type)
@@ -422,7 +422,7 @@ static PyMethodDef py_token_extra_methods[] = {
 		NULL },
 	{ "set_privilege", (PyCFunction)py_token_set_privilege, METH_VARARGS,
 		NULL },
-	{ NULL }
+	{0}
 };
 
 #define PY_TOKEN_PATCH py_token_patch
@@ -456,7 +456,7 @@ static PyObject *py_privilege_id(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s", &name))
 		return NULL;
 
-	return PyInt_FromLong(sec_privilege_id(name));
+	return PyLong_FromLong(sec_privilege_id(name));
 }
 
 static PyObject *py_random_sid(PyObject *self,
@@ -479,7 +479,7 @@ static PyMethodDef py_mod_security_extra_methods[] = {
 	{ "random_sid", (PyCFunction)py_random_sid, METH_NOARGS, NULL },
 	{ "privilege_id", (PyCFunction)py_privilege_id, METH_VARARGS, NULL },
 	{ "privilege_name", (PyCFunction)py_privilege_name, METH_VARARGS, NULL },
-	{ NULL }
+	{0}
 };
 
 static void py_mod_security_patch(PyObject *m)

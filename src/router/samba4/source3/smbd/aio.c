@@ -23,7 +23,6 @@
 #include "smbd/globals.h"
 #include "../lib/util/tevent_ntstatus.h"
 #include "../lib/util/tevent_unix.h"
-#include "lib/tevent_wait.h"
 
 /****************************************************************************
  The buffer we keep around whilst an aio request is in process.
@@ -102,7 +101,6 @@ static int aio_del_req_from_fsp(struct aio_req_fsp_link *lnk)
 	fsp->aio_requests[i] = fsp->aio_requests[fsp->num_aio_requests];
 
 	if (fsp->num_aio_requests == 0) {
-		tevent_wait_done(fsp->deferred_close);
 		TALLOC_FREE(fsp->aio_requests);
 	}
 	return 0;
@@ -510,7 +508,8 @@ NTSTATUS schedule_aio_write_and_X(connection_struct *conn,
 	contend_level2_oplocks_end(fsp, LEVEL2_CONTEND_WRITE);
 
 	if (!aio_ex->write_through && !lp_sync_always(SNUM(fsp->conn))
-	    && fsp->aio_write_behind) {
+	    && fsp->fsp_flags.aio_write_behind)
+	{
 		/* Lie to the client and immediately claim we finished the
 		 * write. */
 	        SSVAL(aio_ex->outbuf.data,smb_vwv2,numtowrite);
@@ -562,7 +561,7 @@ static void aio_pwrite_smb1_done(struct tevent_req *req)
 
 	mark_file_modified(fsp);
 
-	if (fsp->aio_write_behind) {
+	if (fsp->fsp_flags.aio_write_behind) {
 
 		if (nwritten != numtowrite) {
 			if (nwritten == -1) {

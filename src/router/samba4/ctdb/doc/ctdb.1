@@ -2,12 +2,12 @@
 .\"     Title: ctdb
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 08/13/2020
+.\"      Date: 11/03/2020
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB" "1" "08/13/2020" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB" "1" "11/03/2020" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -563,12 +563,13 @@ The command will terminate with the exit status corresponding to the overall sta
 .sp
 The output is the list of event scripts executed\&. Each line shows the name, status, duration and start time for each script\&.
 .sp
-Example output:
+Example
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
+# ctdb event status legacy monitor
 00\&.ctdb              OK         0\&.014 Sat Dec 17 19:39:11 2016
 01\&.reclock           OK         0\&.013 Sat Dec 17 19:39:11 2016
 05\&.system            OK         0\&.029 Sat Dec 17 19:39:11 2016
@@ -599,12 +600,13 @@ List the available event scripts in COMPONENT\&. Enabled scripts are flagged wit
 .sp
 Generally, event scripts are provided by CTDB\&. However, local or 3rd party event scripts may also be available\&. These are shown in a separate section after those provided by CTDB\&.
 .sp
-Example output:
+Example
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
+# ctdb event script list legacy
 * 00\&.ctdb             
 * 01\&.reclock          
 * 05\&.system           

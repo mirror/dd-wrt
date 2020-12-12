@@ -89,8 +89,10 @@ static ssize_t real_write_file(struct smb_request *req,
 	}
 
 	fsp->fh->pos = pos;
-	if (pos && lp_strict_allocate(SNUM(fsp->conn) &&
-			!fsp->is_sparse)) {
+	if (pos &&
+	    lp_strict_allocate(SNUM(fsp->conn)) &&
+	    !fsp->fsp_flags.is_sparse)
+	{
 		if (vfs_fill_sparse(fsp, pos) == -1) {
 			return -1;
 		}
@@ -148,7 +150,7 @@ void trigger_write_time_update(struct files_struct *fsp)
 		return;
 	}
 
-	if (fsp->write_time_forced) {
+	if (fsp->fsp_flags.write_time_forced) {
 		/* No point - "sticky" write times
 		 * in effect.
 		 */
@@ -158,9 +160,9 @@ void trigger_write_time_update(struct files_struct *fsp)
 	/* We need to remember someone did a write
 	 * and update to current time on close. */
 
-	fsp->update_write_time_on_close = true;
+	fsp->fsp_flags.update_write_time_on_close = true;
 
-	if (fsp->update_write_time_triggered) {
+	if (fsp->fsp_flags.update_write_time_triggered) {
 		/*
 		 * We only update the write time after 2 seconds
 		 * on the first normal write. After that
@@ -168,7 +170,7 @@ void trigger_write_time_update(struct files_struct *fsp)
 		 */
 		return;
 	}
-	fsp->update_write_time_triggered = true;
+	fsp->fsp_flags.update_write_time_triggered = true;
 
 	delay = lp_parm_int(SNUM(fsp->conn),
 			    "smbd", "writetimeupdatedelay",
@@ -195,7 +197,7 @@ void trigger_write_time_update_immediate(struct files_struct *fsp)
 		return;
 	}
 
-        if (fsp->write_time_forced) {
+        if (fsp->fsp_flags.write_time_forced) {
 		/*
 		 * No point - "sticky" write times
 		 * in effect.
@@ -208,8 +210,8 @@ void trigger_write_time_update_immediate(struct files_struct *fsp)
 		  fsp_str_dbg(fsp)));
 
 	/* After an immediate update, reset the trigger. */
-	fsp->update_write_time_triggered = true;
-        fsp->update_write_time_on_close = false;
+	fsp->fsp_flags.update_write_time_triggered = true;
+        fsp->fsp_flags.update_write_time_on_close = false;
 
 	ft.mtime = timespec_current();
 
@@ -226,11 +228,11 @@ void mark_file_modified(files_struct *fsp)
 
 	trigger_write_time_update(fsp);
 
-	if (fsp->modified) {
+	if (fsp->fsp_flags.modified) {
 		return;
 	}
 
-	fsp->modified = true;
+	fsp->fsp_flags.modified = true;
 
 	if (fsp->posix_flags & FSP_POSIX_FLAGS_OPEN) {
 		return;
@@ -272,7 +274,7 @@ ssize_t write_file(struct smb_request *req,
 		return t;
 	}
 
-	if (!fsp->can_write) {
+	if (!fsp->fsp_flags.can_write) {
 		errno = EPERM;
 		return -1;
 	}

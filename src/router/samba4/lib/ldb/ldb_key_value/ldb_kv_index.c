@@ -975,6 +975,7 @@ int ldb_kv_index_transaction_cancel(struct ldb_module *module)
   the caller is responsible for freeing
 */
 static struct ldb_dn *ldb_kv_index_key(struct ldb_context *ldb,
+				       TALLOC_CTX *mem_ctx,
 				       struct ldb_kv_private *ldb_kv,
 				       const char *attr,
 				       const struct ldb_val *value,
@@ -1110,7 +1111,7 @@ static struct ldb_dn *ldb_kv_index_key(struct ldb_context *ldb,
 
 	if (should_b64_encode) {
 		size_t vstr_len = 0;
-		char *vstr = ldb_base64_encode(ldb, (char *)v.data, v.length);
+		char *vstr = ldb_base64_encode(mem_ctx, (char *)v.data, v.length);
 		if (!vstr) {
 			talloc_free(attr_folded);
 			return NULL;
@@ -1131,7 +1132,7 @@ static struct ldb_dn *ldb_kv_index_key(struct ldb_context *ldb,
 			* Note: the double hash "##" is not a typo and
 			* indicates that the following value is base64 encoded
 			*/
-			ret = ldb_dn_new_fmt(ldb, ldb, "%s#%s##%.*s",
+			ret = ldb_dn_new_fmt(mem_ctx, ldb, "%s#%s##%.*s",
 					     LDB_KV_INDEX, attr_for_dn,
 					     frmt_len, vstr);
 		} else {
@@ -1141,7 +1142,7 @@ static struct ldb_dn *ldb_kv_index_key(struct ldb_context *ldb,
 			 * Note: the double colon "::" is not a typo and
 			 * indicates that the following value is base64 encoded
 			 */
-			ret = ldb_dn_new_fmt(ldb, ldb, "%s:%s::%.*s",
+			ret = ldb_dn_new_fmt(mem_ctx, ldb, "%s:%s::%.*s",
 					     LDB_KV_INDEX, attr_for_dn,
 					     frmt_len, vstr);
 		}
@@ -1163,13 +1164,13 @@ static struct ldb_dn *ldb_kv_index_key(struct ldb_context *ldb,
 			 * Truncated keys are placed in a separate key space
 			 * from the non truncated keys
 			 */
-			ret = ldb_dn_new_fmt(ldb, ldb, "%s#%s#%.*s",
+			ret = ldb_dn_new_fmt(mem_ctx, ldb, "%s#%s#%.*s",
 					     LDB_KV_INDEX, attr_for_dn,
 					     frmt_len, (char *)v.data);
 		} else {
 			frmt_len = v.length;
 			*truncation = KEY_NOT_TRUNCATED;
-			ret = ldb_dn_new_fmt(ldb, ldb, "%s:%s:%.*s",
+			ret = ldb_dn_new_fmt(mem_ctx, ldb, "%s:%s:%.*s",
 					     LDB_KV_INDEX, attr_for_dn,
 					     frmt_len, (char *)v.data);
 		}
@@ -1269,9 +1270,15 @@ static int ldb_kv_index_dn_simple(struct ldb_module *module,
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
-	/* the attribute is indexed. Pull the list of DNs that match the
-	   search criterion */
+	/*
+	 * the attribute is indexed. Pull the list of DNs that match the
+	 * search criterion
+	 *
+	 * list is used as a memory context as it has a shorter life
+	 * than 'ldb'.  Regardless we talloc_free() 'dn' below.
+	 */
 	dn = ldb_kv_index_key(ldb,
+			      list,
 			      ldb_kv,
 			      tree->u.equality.attr,
 			      &tree->u.equality.value,
@@ -1282,7 +1289,9 @@ static int ldb_kv_index_dn_simple(struct ldb_module *module,
 	 * as ltdb_search_indexed will filter out the wrong one in
 	 * ltdb_index_filter() which calls ldb_match_message().
 	 */
-	if (!dn) return LDB_ERR_OPERATIONS_ERROR;
+	if (!dn) {
+		return LDB_ERR_OPERATIONS_ERROR;
+	}
 
 	ret = ldb_kv_dn_list_load(module, ldb_kv, dn, list,
 				  DN_LIST_WILL_BE_READ_ONLY);
@@ -1910,7 +1919,7 @@ static int ldb_kv_index_dn_ordered(struct ldb_module *module,
 	struct ldb_kv_ordered_index_context ctx;
 	int ret;
 
-	TALLOC_CTX *tmp_ctx = talloc_new(NULL);
+	TALLOC_CTX *tmp_ctx = NULL;
 
 	if (!ldb_kv_is_indexed(module, ldb_kv, tree->u.comparison.attr)) {
 		return LDB_ERR_OPERATIONS_ERROR;
@@ -1950,39 +1959,51 @@ static int ldb_kv_index_dn_ordered(struct ldb_module *module,
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
-	key_dn = ldb_kv_index_key(ldb, ldb_kv, tree->u.comparison.attr,
+	tmp_ctx = talloc_new(NULL);
+	if (tmp_ctx == NULL) {
+		return ldb_module_oom(module);
+	}
+
+	key_dn = ldb_kv_index_key(ldb, tmp_ctx, ldb_kv, tree->u.comparison.attr,
 				  &tree->u.comparison.value,
 				  NULL, &truncation);
 	if (!key_dn) {
+		TALLOC_FREE(tmp_ctx);
 		return LDB_ERR_OPERATIONS_ERROR;
 	} else if (truncation == KEY_TRUNCATED) {
 		ldb_debug(ldb, LDB_DEBUG_WARNING,
 			  __location__
 			  ": ordered index violation: key dn truncated: %s\n",
 			  ldb_dn_get_linearized(key_dn));
+		TALLOC_FREE(tmp_ctx);
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
 	ldb_key = ldb_kv_key_dn(tmp_ctx, key_dn);
 	talloc_free(key_dn);
 	if (ldb_key.data == NULL) {
+		TALLOC_FREE(tmp_ctx);
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
-	key_dn = ldb_kv_index_key(ldb, ldb_kv, tree->u.comparison.attr,
+	key_dn = ldb_kv_index_key(ldb, tmp_ctx,
+				  ldb_kv, tree->u.comparison.attr,
 				  NULL, NULL, &truncation);
 	if (!key_dn) {
+		TALLOC_FREE(tmp_ctx);
 		return LDB_ERR_OPERATIONS_ERROR;
 	} else if (truncation == KEY_TRUNCATED) {
 		ldb_debug(ldb, LDB_DEBUG_WARNING,
 			  __location__
 			  ": ordered index violation: key dn truncated: %s\n",
 			  ldb_dn_get_linearized(key_dn));
+		TALLOC_FREE(tmp_ctx);
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
 	ldb_key2 = ldb_kv_key_dn(tmp_ctx, key_dn);
 	talloc_free(key_dn);
 	if (ldb_key2.data == NULL) {
+		TALLOC_FREE(tmp_ctx);
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
@@ -2022,13 +2043,14 @@ static int ldb_kv_index_dn_ordered(struct ldb_module *module,
 					    traverse_range_index, &ctx);
 
 	if (ret != LDB_SUCCESS || ctx.error != LDB_SUCCESS) {
+		TALLOC_FREE(tmp_ctx);
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
 	TYPESAFE_QSORT(ctx.dn_list->dn, ctx.dn_list->count,
 		       ldb_val_equal_exact_for_qsort);
 
-	talloc_free(tmp_ctx);
+	TALLOC_FREE(tmp_ctx);
 
 	return LDB_SUCCESS;
 }
@@ -2084,7 +2106,13 @@ static int ldb_kv_index_dn_attr(struct ldb_module *module,
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
 	val.length = strlen((char *)val.data);
-	key = ldb_kv_index_key(ldb, ldb_kv, attr, &val, NULL, truncation);
+
+	/*
+	 * We use list as a TALLOC_CTX to provide a shorter-lived
+	 * memory context than ldb, even as the result is freed with
+	 * the talloc_free(key) below.
+	 */
+	key = ldb_kv_index_key(ldb, list, ldb_kv, attr, &val, NULL, truncation);
 	if (!key) {
 		ldb_oom(ldb);
 		return LDB_ERR_OPERATIONS_ERROR;
@@ -2656,8 +2684,13 @@ static int ldb_kv_index_add1(struct ldb_module *module,
 		return LDB_ERR_OPERATIONS_ERROR;
 	}
 
-	dn_key = ldb_kv_index_key(
-	    ldb, ldb_kv, el->name, &el->values[v_idx], &a, &truncation);
+	dn_key = ldb_kv_index_key(ldb,
+				  list,
+				  ldb_kv,
+				  el->name,
+				  &el->values[v_idx],
+				  &a,
+				  &truncation);
 	if (!dn_key) {
 		talloc_free(list);
 		return LDB_ERR_OPERATIONS_ERROR;
@@ -2681,7 +2714,6 @@ static int ldb_kv_index_add1(struct ldb_module *module,
 		talloc_free(list);
 		return LDB_ERR_CONSTRAINT_VIOLATION;
 	}
-	talloc_steal(list, dn_key);
 
 	ret = ldb_kv_dn_list_load(module, ldb_kv, dn_key, list,
 				  DN_LIST_MUTABLE);
@@ -3181,8 +3213,18 @@ int ldb_kv_index_del_value(struct ldb_module *module,
 		return LDB_SUCCESS;
 	}
 
-	dn_key = ldb_kv_index_key(
-	    ldb, ldb_kv, el->name, &el->values[v_idx], NULL, &truncation);
+	/*
+	 * ldb is being used as the memory context to ldb_kv_index_key
+	 * as dn_key itself is also used as the TALLOC_CTX for the
+	 * rest of this function.
+	 */
+	dn_key = ldb_kv_index_key(ldb,
+				  ldb,
+				  ldb_kv,
+				  el->name,
+				  &el->values[v_idx],
+				  NULL,
+				  &truncation);
 	/*
 	 * We ignore key truncation in ltdb_index_add1() so
 	 * match that by ignoring it here as well
@@ -3224,9 +3266,7 @@ int ldb_kv_index_del_value(struct ldb_module *module,
 	}
 
 	j = (unsigned int) i;
-	if (j != list->count - 1) {
-		memmove(&list->dn[j], &list->dn[j+1], sizeof(list->dn[0])*(list->count - (j+1)));
-	}
+	ARRAY_DEL_ELEMENT(list->dn, j, list->count);
 	list->count--;
 	if (list->count == 0) {
 		talloc_free(list->dn);

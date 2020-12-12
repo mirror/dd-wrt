@@ -64,6 +64,8 @@ pam_winbind_manpages = '''
 krb5_locator_manpages = 'manpages/winbind_krb5_locator.8'
 krb5_localauth_manpages = 'manpages/winbind_krb5_localauth.8'
 
+winexe_manpages = 'manpages/winexe.1'
+
 vfs_module_manpages = ['vfs_acl_tdb',
                        'vfs_acl_xattr',
                        'vfs_aio_fork',
@@ -108,6 +110,7 @@ vfs_module_manpages = ['vfs_acl_tdb',
                        'vfs_tsmsm',
                        'vfs_unityed_media',
                        'vfs_virusfilter',
+                       'vfs_widelinks',
                        'vfs_worm',
                        'vfs_xattr_tdb',
                        'vfs_zfsacl' ]
@@ -118,8 +121,9 @@ def smbdotconf_generate_parameter_list(task):
 
     entities = bld.pathconfig_entities()
 
-    # We need this if we build with Heimdal
-    mit_kdc_path = '"/usr/sbin/krb5kdc"'
+    # We need this if we build with Heimdal as we can't easily make
+    # the whole option go away
+    mit_kdc_path = '""'
     # The MIT krb5kdc path is set if we build with MIT Kerberos
     if bld.CONFIG_SET('MIT_KDC_PATH'):
         mit_kdc_path = bld.CONFIG_GET('MIT_KDC_PATH')
@@ -167,6 +171,9 @@ if ('XSLTPROC_MANPAGES' in bld.env and bld.env['XSLTPROC_MANPAGES']):
 
     if bld.CONFIG_SET('HAVE_KRB5_LOCALAUTH_PLUGIN_H'):
         bld.SAMBAMANPAGES(krb5_localauth_manpages)
+
+    if conf.env.build_winexe == True:
+        bld.SAMBAMANPAGES(winexe_manpages)
 
     for manpage in vfs_module_manpages:
         if bld.SAMBA3_IS_ENABLED_MODULE(manpage):

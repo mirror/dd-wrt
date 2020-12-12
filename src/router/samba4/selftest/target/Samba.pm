@@ -6,18 +6,23 @@
 package Samba;
 
 use strict;
+use warnings;
 use target::Samba3;
 use target::Samba4;
 use POSIX;
 use Cwd qw(abs_path);
+use IO::Poll qw(POLLIN);
 
 sub new($$$$$) {
-	my ($classname, $bindir, $srcdir, $server_maxtime) = @_;
+	my ($classname, $bindir, $srcdir, $server_maxtime,
+	    $opt_socket_wrapper_pcap, $opt_socket_wrapper_keep_pcap) = @_;
 
 	my $self = {
-	    samba3 => new Samba3($bindir, $srcdir, $server_maxtime),
-	    samba4 => new Samba4($bindir, $srcdir, $server_maxtime),
+	    opt_socket_wrapper_pcap => $opt_socket_wrapper_pcap,
+	    opt_socket_wrapper_keep_pcap => $opt_socket_wrapper_keep_pcap,
 	};
+	$self->{samba3} = new Samba3($self, $bindir, $srcdir, $server_maxtime);
+	$self->{samba4} = new Samba4($self, $bindir, $srcdir, $server_maxtime);
 	bless $self;
 	return $self;
 }
@@ -40,6 +45,35 @@ our %ENV_TARGETS;
 our %ENV_NEEDS_AD_DC;
 foreach my $env (keys %Samba3::ENV_DEPS) {
     $ENV_NEEDS_AD_DC{$env} = ($env =~ /^ad_/);
+}
+
+sub setup_pcap($$)
+{
+	my ($self, $name) = @_;
+
+	return unless ($self->{opt_socket_wrapper_pcap});
+	return unless defined($ENV{SOCKET_WRAPPER_PCAP_DIR});
+
+	my $fname = $name;
+	$fname =~ s%[^abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\-]%_%g;
+
+	my $pcap_file = "$ENV{SOCKET_WRAPPER_PCAP_DIR}/$fname.pcap";
+
+	SocketWrapper::setup_pcap($pcap_file);
+
+	return $pcap_file;
+}
+
+sub cleanup_pcap($$$)
+{
+	my ($self, $pcap_file, $exitcode) = @_;
+
+	return unless ($self->{opt_socket_wrapper_pcap});
+	return if ($self->{opt_socket_wrapper_keep_pcap});
+	return unless ($exitcode == 0);
+	return unless defined($pcap_file);
+
+	unlink($pcap_file);
 }
 
 sub setup_env($$$)
@@ -79,10 +113,14 @@ sub setup_env($$$)
 	# Avoid hitting system krb5.conf -
 	# An env that needs Kerberos will reset this to the real value.
 	$ENV{KRB5_CONFIG} = "$path/no_krb5.conf";
+	$ENV{RESOLV_CONF} = "$path/no_resolv.conf";
 
 	my $setup_name = $ENV_TARGETS{$envname}."::setup_".$envname;
 	my $setup_sub = \&$setup_name;
+	my $setup_pcap_file = $self->setup_pcap("env-$ENV{ENVNAME}-setup");
 	my $env = &$setup_sub($target, "$path/$envname", @dep_vars);
+	$self->cleanup_pcap($setup_pcap_file, not defined($env));
+	SocketWrapper::setup_pcap(undef);
 
 	if (not defined($env)) {
 		warn("failed to start up environment '$envname'");
@@ -93,6 +131,9 @@ sub setup_env($$$)
 	$target->{vars}->{$envname}->{target} = $target;
 
 	foreach(@{$ENV_DEPS_POST{$envname}}) {
+		if (not defined $_) {
+			continue;
+		}
 		my $vars = $self->setup_env($_, $path);
 		if (not defined($vars)) {
 			return undef;
@@ -160,9 +201,9 @@ sub prepare_keyblobs($)
 	my $admincert = "$admindir/USER-$adminprincipalname-cert.pem";
 	my $adminkey_private = "$admindir/USER-$adminprincipalname-private-key.pem";
 	my $pkinitprincipalname = "pkinit\@$ctx->{dnsname}";
-	my $pkinitdir = "$cadir/Users/$pkinitprincipalname";
-	my $pkinitcert = "$pkinitdir/USER-$pkinitprincipalname-cert.pem";
-	my $pkinitkey_private = "$pkinitdir/USER-$pkinitprincipalname-private-key.pem";
+	my $ca_pkinitdir = "$cadir/Users/$pkinitprincipalname";
+	my $pkinitcert = "$ca_pkinitdir/USER-$pkinitprincipalname-cert.pem";
+	my $pkinitkey_private = "$ca_pkinitdir/USER-$pkinitprincipalname-private-key.pem";
 
 	my $tlsdir = "$ctx->{tlsdir}";
 	my $pkinitdir = "$ctx->{prefix_abs}/pkinit";
@@ -396,6 +437,20 @@ sub mk_mitkdc_conf($$)
 	close(KDCCONF);
 }
 
+sub mk_resolv_conf($$)
+{
+	my ($ctx) = @_;
+
+	unless (open(RESOLV_CONF, ">$ctx->{resolv_conf}")) {
+		warn("can't open $ctx->{resolv_conf}$?");
+		return undef;
+	}
+
+	print RESOLV_CONF "nameserver $ctx->{dns_ipv4}\n";
+	print RESOLV_CONF "nameserver $ctx->{dns_ipv6}\n";
+	close(RESOLV_CONF);
+}
+
 sub realm_to_ip_mappings
 {
 	# this maps the DNS realms for the various testenvs to the corresponding
@@ -407,20 +462,25 @@ sub realm_to_ip_mappings
 		'samba2003.example.com'           => 'dc6',
 		'samba2008r2.example.com'         => 'dc7',
 		'addom.samba.example.com'         => 'addc',
+		'addom2.samba.example.com'        => 'addcsmb1',
 		'sub.samba.example.com'           => 'localsubdc',
 		'chgdcpassword.samba.example.com' => 'chgdcpass',
 		'backupdom.samba.example.com'     => 'backupfromdc',
 		'renamedom.samba.example.com'     => 'renamedc',
 		'labdom.samba.example.com'        => 'labdc',
 		'schema.samba.example.com'        => 'liveupgrade1dc',
+		'prockilldom.samba.example.com'   => 'prockilldc',
+		'proclimit.samba.example.com'     => 'proclimitdc',
 		'samba.example.com'               => 'localdc',
+		'fips.samba.example.com'          => 'fipsdc',
 	);
 
 	my @mapping = ();
 
 	# convert the hashmap to a list of key=value strings, where key is the
 	# realm and value is the IP address
-	while (my ($realm, $pdc) = each(%realm_to_pdc_mapping)) {
+	foreach my $realm (sort(keys %realm_to_pdc_mapping)) {
+		my $pdc = $realm_to_pdc_mapping{$realm};
 		my $ipaddr = get_ipv4_addr($pdc);
 		push(@mapping, "$realm=$ipaddr");
 	}
@@ -487,6 +547,13 @@ sub get_interface($)
 		proclimitdc       => 47,
 		liveupgrade1dc    => 48,
 		liveupgrade2dc    => 49,
+		ctdb0             => 50,
+		ctdb1             => 51,
+		ctdb2             => 52,
+		fileserversmb1    => 53,
+		addcsmb1	  => 54,
+		lclnt4dc2smb1	  => 55,
+		fipsdc            => 56,
 
 		rootdnsforwarder  => 64,
 
@@ -515,13 +582,7 @@ sub get_ipv4_addr
 		$swiface += $iface_num;
 	}
 
-	if (use_namespaces()) {
-		# use real IPs if selftest is running in its own network namespace
-		return "10.0.0.$swiface";
-	} else {
-		# use loopback IPs with socket-wrapper
-		return "127.0.0.$swiface";
-	}
+	return "10.53.57.$swiface";
 }
 
 sub get_ipv6_addr
@@ -608,6 +669,7 @@ sub get_env_for_process
 {
 	my ($proc_name, $env_vars) = @_;
 	my $proc_envs = {
+		RESOLV_CONF => $env_vars->{RESOLV_CONF},
 		KRB5_CONFIG => $env_vars->{KRB5_CONFIG},
 		KRB5CCNAME => "$env_vars->{KRB5_CCACHE}.$proc_name",
 		SELFTEST_WINBINDD_SOCKET_DIR => $env_vars->{SELFTEST_WINBINDD_SOCKET_DIR},
@@ -627,12 +689,26 @@ sub get_env_for_process
 	} else {
 		$proc_envs->{RESOLV_WRAPPER_HOSTS} = $env_vars->{RESOLV_WRAPPER_HOSTS};
 	}
+	if (defined($env_vars->{GNUTLS_FORCE_FIPS_MODE})) {
+		$proc_envs->{GNUTLS_FORCE_FIPS_MODE} = $env_vars->{GNUTLS_FORCE_FIPS_MODE};
+	}
+	if (defined($env_vars->{OPENSSL_FORCE_FIPS_MODE})) {
+		$proc_envs->{OPENSSL_FORCE_FIPS_MODE} = $env_vars->{OPENSSL_FORCE_FIPS_MODE};
+	}
 	return $proc_envs;
 }
 
 sub fork_and_exec
 {
-	my ($self, $env_vars, $daemon_ctx, $STDIN_READER) = @_;
+	my ($self, $env_vars, $daemon_ctx, $STDIN_READER, $child_cleanup) = @_;
+	my $SambaCtx = $self;
+	$SambaCtx = $self->{SambaCtx} if defined($self->{SambaCtx});
+
+	# we close the child's write-end of the pipe and redirect the
+	# read-end to its stdin. That way the daemon will receive an
+	# EOF on stdin when parent selftest process closes its
+	# write-end.
+	$child_cleanup //= sub { close($env_vars->{STDIN_PIPE}) };
 
 	unlink($daemon_ctx->{LOG_FILE});
 	print "STARTING $daemon_ctx->{NAME} for $ENV{ENVNAME}...";
@@ -657,12 +733,14 @@ sub fork_and_exec
 
 		SocketWrapper::set_default_iface($env_vars->{SOCKET_WRAPPER_DEFAULT_IFACE});
 		if (defined($daemon_ctx->{PCAP_FILE})) {
-			SocketWrapper::setup_pcap($daemon_ctx->{PCAP_FILE});
+			$SambaCtx->setup_pcap("$daemon_ctx->{PCAP_FILE}");
 		}
 
 		# setup ENV variables in the child process
 		set_env_for_process($daemon_ctx->{NAME}, $env_vars,
 				    $daemon_ctx->{ENV_VARS});
+
+		$child_cleanup->();
 
 		# not all s3 daemons run in all testenvs (e.g. fileserver doesn't
 		# run winbindd). In which case, the child process just sleeps
@@ -672,16 +750,14 @@ sub fork_and_exec
 				print("Skip $daemon_ctx->{NAME} received signal $signame");
 				exit 0;
 			};
-			sleep($self->{server_maxtime});
+			my $poll = IO::Poll->new();
+			$poll->mask($STDIN_READER, POLLIN);
+			$poll->poll($self->{server_maxtime});
 			exit 0;
 		}
 
 		$ENV{MAKE_TEST_BINARY} = $daemon_ctx->{BINARY_PATH};
 
-		# we close the child's write-end of the pipe and redirect the read-end
-		# to its stdin. That way the daemon will receive an EOF on stdin when
-		# parent selftest process closes its write-end.
-		close($env_vars->{STDIN_PIPE});
 		open STDIN, ">&", $STDIN_READER or die "can't dup STDIN_READER to STDIN: $!";
 
 		# if using kernel namespaces, prepend the command so the process runs in
@@ -802,6 +878,10 @@ my @exported_envvars = (
 	# resolv_wrapper
 	"RESOLV_WRAPPER_CONF",
 	"RESOLV_WRAPPER_HOSTS",
+
+	# crypto libraries
+	"GNUTLS_FORCE_FIPS_MODE",
+	"OPENSSL_FORCE_FIPS_MODE",
 );
 
 sub exported_envvars_str
@@ -919,6 +999,22 @@ sub ns_exec_preargs
 		return ("unshare", "--net", "$ENV{SRCDIR}/selftest/ns/start_in_ns.sh",
 				$interface, $exports_file, $parent_pid);
 	}
+}
+
+
+sub check_env {
+	my ($self, $envvars) = @_;
+	return 1;
+}
+
+sub teardown_env {
+	my ($self, $env) = @_;
+	return 1;
+}
+
+
+sub getlog_env {
+	return '';
 }
 
 1;

@@ -84,7 +84,11 @@ EXCLUDE_USAGE = {
     'selftest/tests.py',
     'python/samba/subunit/run.py',
     'bin/python/samba/subunit/run.py',
-    'python/samba/tests/dcerpc/raw_protocol.py'
+    'python/samba/tests/dcerpc/raw_protocol.py',
+    'python/samba/tests/krb5/kcrypto.py',
+    'python/samba/tests/krb5/simple_tests.py',
+    'python/samba/tests/krb5/s4u_tests.py',
+    'python/samba/tests/krb5/xrealm_tests.py',
 }
 
 EXCLUDE_HELP = {
@@ -101,6 +105,7 @@ EXCLUDE_DIRS = {
     'bin/ab',
     'bin/python/samba/tests',
     'bin/python/samba/tests/dcerpc',
+    'bin/python/samba/tests/krb5',
 }
 
 
@@ -331,8 +336,9 @@ class HelpTestSuper(TestCase):
 
                     if self.check_return_code:
                         self.assertEqual(p.returncode, 0,
-                                         "%s %s\nreturncode should not be %d" %
-                                         (filename, h, p.returncode))
+                                         "%s %s\nreturncode should not be %d\n"
+                                         "err:\n%s\nout:\n%s" %
+                                         (filename, h, p.returncode, err, out))
                     if self.check_contains_usage:
                         self.assertIn('usage', outl, 'lacks "Usage:"\n')
                     if self.check_multiline:

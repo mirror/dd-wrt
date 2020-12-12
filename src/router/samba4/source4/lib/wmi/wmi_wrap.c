@@ -2670,8 +2670,8 @@ SWIG_AsVal_double (PyObject *obj, double *val)
   if (PyFloat_Check(obj)) {
     if (val) *val = PyFloat_AsDouble(obj);
     return SWIG_OK;
-  } else if (PyInt_Check(obj)) {
-    if (val) *val = PyInt_AsLong(obj);
+  } else if (PyLong_Check(obj)) {
+    if (val) *val = PyLong_AsLong(obj);
     return SWIG_OK;
   } else if (PyLong_Check(obj)) {
     double v = PyLong_AsDouble(obj);
@@ -2746,8 +2746,8 @@ SWIG_CanCastAsInteger(double *d, double min, double max) {
 SWIGINTERN int
 SWIG_AsVal_unsigned_SS_long (PyObject *obj, unsigned long *val) 
 {
-  if (PyInt_Check(obj)) {
-    long v = PyInt_AsLong(obj);
+  if (PyLong_Check(obj)) {
+    long v = PyLong_AsLong(obj);
     if (v >= 0) {
       if (val) *val = v;
       return SWIG_OK;
@@ -2803,14 +2803,14 @@ SWIG_AsVal_unsigned_SS_int (PyObject * obj, unsigned int *val)
 }
 
 
-  #define SWIG_From_long   PyInt_FromLong 
+  #define SWIG_From_long   PyLong_FromLong 
 
 
 SWIGINTERNINLINE PyObject* 
 SWIG_From_unsigned_SS_long  (unsigned long value)
 {
   return (value > LONG_MAX) ?
-    PyLong_FromUnsignedLong(value) : PyInt_FromLong((long)(value)); 
+    PyLong_FromUnsignedLong(value) : PyLong_FromLong((long)(value)); 
 }
 
 
@@ -2824,8 +2824,8 @@ SWIG_From_unsigned_SS_int  (unsigned int value)
 SWIGINTERN int
 SWIG_AsVal_long (PyObject *obj, long* val)
 {
-  if (PyInt_Check(obj)) {
-    if (val) *val = PyInt_AsLong(obj);
+  if (PyLong_Check(obj)) {
+    if (val) *val = PyLong_AsLong(obj);
     return SWIG_OK;
   } else if (PyLong_Check(obj)) {
     long v = PyLong_AsLong(obj);
@@ -2839,7 +2839,7 @@ SWIG_AsVal_long (PyObject *obj, long* val)
 #ifdef SWIG_PYTHON_CAST_MODE
   {
     int dispatch = 0;
-    long v = PyInt_AsLong(obj);
+    long v = PyLong_AsLong(obj);
     if (!PyErr_Occurred()) {
       if (val) *val = v;
       return SWIG_AddCast(SWIG_OK);
@@ -3607,8 +3607,8 @@ SWIGINTERN PyObject *_wrap_IEnumWbemClassObject_SmartNext(PyObject *SWIGUNUSEDPA
   {
     if (PyLong_Check(obj2))
     arg4 = PyLong_AsUnsignedLong(obj2);
-    else if (PyInt_Check(obj2))
-    arg4 = PyInt_AsLong(obj2);
+    else if (PyLong_Check(obj2))
+    arg4 = PyLong_AsLong(obj2);
     else {
       PyErr_SetString(PyExc_TypeError,"Expected a long or an int");
       return NULL;

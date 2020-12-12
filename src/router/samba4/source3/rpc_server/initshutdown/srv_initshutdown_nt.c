@@ -22,8 +22,10 @@
 
 #include "includes.h"
 #include "ntdomain.h"
-#include "../librpc/gen_ndr/srv_initshutdown.h"
-#include "../librpc/gen_ndr/srv_winreg.h"
+#include "librpc/gen_ndr/ndr_initshutdown.h"
+#include "librpc/gen_ndr/ndr_initshutdown_scompat.h"
+#include "librpc/gen_ndr/ndr_winreg.h"
+#include "librpc/gen_ndr/ndr_winreg_scompat.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
@@ -77,3 +79,6 @@ WERROR _initshutdown_Abort(struct pipes_struct *p, struct initshutdown_Abort *r)
 	s.in.server = r->in.server;
 	return _winreg_AbortSystemShutdown( p, &s );
 }
+
+/* include the generated boilerplate */
+#include "librpc/gen_ndr/ndr_initshutdown_scompat.c"

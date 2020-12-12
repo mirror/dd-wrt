@@ -1263,26 +1263,18 @@ static bool uid_entry_in_group(connection_struct *conn, canon_ace *uid_ace, cano
 	if (dom_sid_equal(&group_ace->trustee, &global_sid_World))
 		return True;
 
-	/*
-	 * if we have session info in conn, we already have the (SID
-	 * based) NT token and don't need to do the complex
-	 * user_in_group_sid() call
-	 */
-	if (conn->session_info) {
-		security_token = conn->session_info->security_token;
-		/* security_token should not be NULL */
-		SMB_ASSERT(security_token);
-		is_sid = security_token_is_sid(security_token,
-					       &uid_ace->trustee);
-		if (is_sid) {
-			has_sid = security_token_has_sid(security_token,
-							 &group_ace->trustee);
+	security_token = conn->session_info->security_token;
+	/* security_token should not be NULL */
+	SMB_ASSERT(security_token);
+	is_sid = security_token_is_sid(security_token,
+				       &uid_ace->trustee);
+	if (is_sid) {
+		has_sid = security_token_has_sid(security_token,
+						 &group_ace->trustee);
 
-			if (has_sid) {
-				return true;
-			}
+		if (has_sid) {
+			return true;
 		}
-
 	}
 
 	/*
@@ -1707,7 +1699,7 @@ static bool add_current_ace_to_acl(files_struct *fsp, struct security_ace *psa,
 	 * DLIST_ADD_END) as NT ACLs are order dependent.
 	 */
 
-	if (fsp->is_directory) {
+	if (fsp->fsp_flags.is_directory) {
 
 		/*
 		 * We can only add to the default POSIX ACE list if the ACE is
@@ -1870,7 +1862,7 @@ static bool create_canon_ace_lists(files_struct *fsp,
 					canon_ace **ppdir_ace,
 					const struct security_acl *dacl)
 {
-	bool all_aces_are_inherit_only = (fsp->is_directory ? True : False);
+	bool all_aces_are_inherit_only = (fsp->fsp_flags.is_directory);
 	canon_ace *file_ace = NULL;
 	canon_ace *dir_ace = NULL;
 	canon_ace *current_ace = NULL;
@@ -2131,7 +2123,7 @@ static bool create_canon_ace_lists(files_struct *fsp,
 		}
 	}
 
-	if (fsp->is_directory && all_aces_are_inherit_only) {
+	if (fsp->fsp_flags.is_directory && all_aces_are_inherit_only) {
 		/*
 		 * Windows 2000 is doing one of these weird 'inherit acl'
 		 * traverses to conserve NTFS ACL resources. Just pretend
@@ -2490,6 +2482,7 @@ static bool unpack_canon_ace(files_struct *fsp,
 {
 	canon_ace *file_ace = NULL;
 	canon_ace *dir_ace = NULL;
+	bool ok;
 
 	*ppfile_ace = NULL;
 	*ppdir_ace = NULL;
@@ -2552,8 +2545,16 @@ static bool unpack_canon_ace(files_struct *fsp,
 
 	print_canon_ace_list( "file ace - before valid", file_ace);
 
-	if (!ensure_canon_entry_valid_on_set(fsp->conn, &file_ace, false, fsp->conn->params,
-			fsp->is_directory, pfile_owner_sid, pfile_grp_sid, pst)) {
+	ok = ensure_canon_entry_valid_on_set(
+		fsp->conn,
+		&file_ace,
+		false,
+		fsp->conn->params,
+		fsp->fsp_flags.is_directory,
+		pfile_owner_sid,
+		pfile_grp_sid,
+		pst);
+	if (!ok) {
 		free_canon_ace_list(file_ace);
 		free_canon_ace_list(dir_ace);
 		return False;
@@ -2561,11 +2562,21 @@ static bool unpack_canon_ace(files_struct *fsp,
 
 	print_canon_ace_list( "dir ace - before valid", dir_ace);
 
-	if (dir_ace && !ensure_canon_entry_valid_on_set(fsp->conn, &dir_ace, true, fsp->conn->params,
-			fsp->is_directory, pfile_owner_sid, pfile_grp_sid, pst)) {
-		free_canon_ace_list(file_ace);
-		free_canon_ace_list(dir_ace);
-		return False;
+	if (dir_ace != NULL) {
+		ok = ensure_canon_entry_valid_on_set(
+			fsp->conn,
+			&dir_ace,
+			true,
+			fsp->conn->params,
+			fsp->fsp_flags.is_directory,
+			pfile_owner_sid,
+			pfile_grp_sid,
+			pst);
+		if (!ok) {
+			free_canon_ace_list(file_ace);
+			free_canon_ace_list(dir_ace);
+			return False;
+		}
 	}
 
 	print_canon_ace_list( "file ace - return", file_ace);
@@ -2827,7 +2838,10 @@ static bool acl_group_override(connection_struct *conn,
 
 	/* user has writeable permission */
 	if (lp_dos_filemode(SNUM(conn)) &&
-	    can_write_to_file(conn, smb_fname)) {
+	    can_write_to_file(conn,
+				conn->cwd_fsp,
+				smb_fname))
+	{
 		return true;
 	}
 
@@ -3007,7 +3021,7 @@ static bool set_canon_ace_list(files_struct *fsp,
 	 * Finally apply it to the file or directory.
 	 */
 
-	if(default_ace || fsp->is_directory || fsp->fh->fd == -1) {
+	if (default_ace || fsp->fsp_flags.is_directory || fsp->fh->fd == -1) {
 		if (SMB_VFS_SYS_ACL_SET_FILE(conn, fsp->fsp_name,
 					     the_acl_type, the_acl) == -1) {
 			/*
@@ -3196,7 +3210,7 @@ static bool convert_canon_ace_to_posix_perms( files_struct *fsp, canon_ace *file
 	/* The owner must have at least read access. */
 
 	*posix_perms |= S_IRUSR;
-	if (fsp->is_directory)
+	if (fsp->fsp_flags.is_directory)
 		*posix_perms |= (S_IWUSR|S_IXUSR);
 
 	DEBUG(10,("convert_canon_ace_to_posix_perms: converted u=%o,g=%o,w=%o "
@@ -3244,9 +3258,7 @@ static size_t merge_default_aces( struct security_ace *nt_ace_list, size_t num_a
 				if (nt_ace_list[i].access_mask == 0) {
 					nt_ace_list[j].flags = SEC_ACE_FLAG_OBJECT_INHERIT|SEC_ACE_FLAG_CONTAINER_INHERIT|
 								(i_inh ? SEC_ACE_FLAG_INHERITED_ACE : 0);
-					if (num_aces - i - 1 > 0)
-						memmove(&nt_ace_list[i], &nt_ace_list[i+1], (num_aces-i-1) *
-								sizeof(struct security_ace));
+					ARRAY_DEL_ELEMENT(nt_ace_list, i, num_aces);
 
 					DEBUG(10,("merge_default_aces: Merging zero access ACE %u onto ACE %u.\n",
 						(unsigned int)i, (unsigned int)j ));
@@ -3258,9 +3270,7 @@ static size_t merge_default_aces( struct security_ace *nt_ace_list, size_t num_a
 
 					nt_ace_list[i].flags = SEC_ACE_FLAG_OBJECT_INHERIT|SEC_ACE_FLAG_CONTAINER_INHERIT|
 								(i_inh ? SEC_ACE_FLAG_INHERITED_ACE : 0);
-					if (num_aces - j - 1 > 0)
-						memmove(&nt_ace_list[j], &nt_ace_list[j+1], (num_aces-j-1) *
-								sizeof(struct security_ace));
+					ARRAY_DEL_ELEMENT(nt_ace_list, j, num_aces);
 
 					DEBUG(10,("merge_default_aces: Merging ACE %u onto ACE %u.\n",
 						(unsigned int)j, (unsigned int)i ));
@@ -3473,14 +3483,6 @@ NTSTATUS posix_fget_nt_acl(struct files_struct *fsp, uint32_t security_info,
 
 	DEBUG(10,("posix_fget_nt_acl: called for file %s\n",
 		  fsp_str_dbg(fsp)));
-
-	/* can it happen that fsp_name == NULL ? */
-	if (fsp->is_directory ||  fsp->fh->fd == -1) {
-		status = posix_get_nt_acl(fsp->conn, fsp->fsp_name,
-					  security_info, mem_ctx, ppdesc);
-		TALLOC_FREE(frame);
-		return status;
-	}
 
 	/* Get the stat struct for the owner info. */
 	if(SMB_VFS_FSTAT(fsp, &sbuf) != 0) {
@@ -3863,7 +3865,7 @@ NTSTATUS set_nt_acl(files_struct *fsp, uint32_t security_info_sent, const struct
 		}
 	}
 
-	if (acl_perms && acl_set_support && fsp->is_directory) {
+	if (acl_perms && acl_set_support && fsp->fsp_flags.is_directory) {
 		if (dir_ace_list) {
 			if (set_acl_as_root) {
 				become_root();
@@ -4174,24 +4176,14 @@ static bool directory_has_default_posix_acl(connection_struct *conn,
 ****************************************************************************/
 
 int inherit_access_posix_acl(connection_struct *conn,
-			const char *inherit_from_dir,
+			struct smb_filename *inherit_from_dir,
 			const struct smb_filename *smb_fname,
 			mode_t mode)
 {
-	struct smb_filename *inherit_from_fname =
-			synthetic_smb_fname(talloc_tos(),
-				smb_fname->base_name,
-				NULL,
-				NULL,
-				smb_fname->flags);
-	if (inherit_from_fname == NULL) {
-		return-1;
-	}
-
-	if (directory_has_default_posix_acl(conn, inherit_from_fname))
+	if (directory_has_default_posix_acl(conn, inherit_from_dir))
 		return 0;
 
-	return copy_access_posix_acl(conn, inherit_from_fname, smb_fname, mode);
+	return copy_access_posix_acl(conn, inherit_from_dir, smb_fname, mode);
 }
 
 /****************************************************************************
@@ -4365,7 +4357,7 @@ NTSTATUS set_unix_posix_default_acl(connection_struct *conn,
 	NTSTATUS status;
 	int ret;
 
-	if (!fsp->is_directory) {
+	if (!fsp->fsp_flags.is_directory) {
 		return NT_STATUS_INVALID_HANDLE;
 	}
 
@@ -4630,67 +4622,6 @@ NTSTATUS set_unix_posix_acl(connection_struct *conn,
 	return NT_STATUS_OK;
 }
 
-/********************************************************************
- Pull the NT ACL from a file on disk or the OpenEventlog() access
- check.  Caller is responsible for freeing the returned security
- descriptor via TALLOC_FREE().  This is designed for dealing with 
- user space access checks in smbd outside of the VFS.  For example,
- checking access rights in OpenEventlog() or from python.
-
-********************************************************************/
-
-NTSTATUS get_nt_acl_no_snum(TALLOC_CTX *ctx,
-			    struct auth_session_info *session_info,
-			    const char *fname,
-				uint32_t security_info_wanted,
-				struct security_descriptor **sd)
-{
-	TALLOC_CTX *frame = talloc_stackframe();
-	struct conn_struct_tos *c = NULL;
-	NTSTATUS status = NT_STATUS_OK;
-	struct smb_filename *smb_fname = synthetic_smb_fname(talloc_tos(),
-						fname,
-						NULL,
-						NULL,
-						0);
-
-	if (smb_fname == NULL) {
-		TALLOC_FREE(frame);
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	if (!posix_locking_init(false)) {
-		TALLOC_FREE(frame);
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	status = create_conn_struct_tos(global_messaging_context(),
-					-1,
-					"/",
-					session_info,
-					&c);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0,("create_conn_struct returned %s.\n",
-			nt_errstr(status)));
-		TALLOC_FREE(frame);
-		return status;
-	}
-
-	status = SMB_VFS_GET_NT_ACL(c->conn,
-				smb_fname,
-				security_info_wanted,
-				ctx,
-				sd);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("get_nt_acl_no_snum: SMB_VFS_GET_NT_ACL returned %s.\n",
-			  nt_errstr(status)));
-	}
-
-	TALLOC_FREE(frame);
-
-	return status;
-}
-
 int posix_sys_acl_blob_get_file(vfs_handle_struct *handle,
 				const struct smb_filename *smb_fname_in,
 				TALLOC_CTX *mem_ctx,
@@ -4701,7 +4632,7 @@ int posix_sys_acl_blob_get_file(vfs_handle_struct *handle,
 	TALLOC_CTX *frame = talloc_stackframe();
 	/* Initialise this to zero, in a portable way */
 	struct smb_acl_wrapper acl_wrapper = {
-		NULL
+		0
 	};
 	struct smb_filename *smb_fname = cp_smb_filename_nostream(frame,
 						smb_fname_in);
@@ -4766,7 +4697,7 @@ int posix_sys_acl_blob_get_fd(vfs_handle_struct *handle,
 	int ret;
 
 	/* This ensures that we also consider the default ACL */
-	if (fsp->is_directory ||  fsp->fh->fd == -1) {
+	if (fsp->fsp_flags.is_directory ||  fsp->fh->fd == -1) {
 		return posix_sys_acl_blob_get_file(handle,
 						fsp->fsp_name,
 						mem_ctx,

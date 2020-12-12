@@ -2,12 +2,12 @@
 .\"     Title: ctdb
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 08/13/2020
+.\"      Date: 11/03/2020
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB" "7" "08/13/2020" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB" "7" "11/03/2020" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -95,10 +95,33 @@ section of
 \fBping_pong\fR(1)
 for more details\&.
 .PP
-The recovery lock can also be implemented using an arbitrary cluster mutex call\-out by using an exclamation point (\*(Aq!\*(Aq) as the first character of
-\fIrecovery lock\fR\&. For example, a value of
+The recovery lock can also be implemented using an arbitrary cluster mutex helper (or call\-out)\&. This is indicated by using an exclamation point (\*(Aq!\*(Aq) as the first character of the
+\fIrecovery lock\fR
+parameter\&. For example, a value of
 \fB!/usr/local/bin/myhelper recovery\fR
-would run the given helper with the specified arguments\&. See the source code relating to cluster mutexes for clues about writing call\-outs\&.
+would run the given helper with the specified arguments\&. The helper will continue to run as long as it holds its mutex\&. See
+ctdb/doc/cluster_mutex_helper\&.txt
+in the source tree, and related code, for clues about writing helpers\&.
+.PP
+When a file is specified for the
+\fIrecovery lock\fR
+parameter (i\&.e\&. no leading \*(Aq!\*(Aq) the file lock is implemented by a default helper (\fB/usr/local/libexec/ctdb/ctdb_mutex_fcntl_helper\fR)\&. This helper has arguments as follows:
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBctdb_mutex_fcntl_helper\fR \fIFILE\fR [\fIRECHECK\-INTERVAL\fR]
+      
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+\fBctdb_mutex_fcntl_helper\fR
+will take a lock on FILE and then check every RECHECK\-INTERVAL seconds to ensure that FILE still exists and that its inode number is unchanged from when the lock was taken\&. The default value for RECHECK\-INTERVAL is 5\&.
 .PP
 If a cluster becomes partitioned (for example, due to a communication failure) and a different recovery master is elected by the nodes in each partition, then only one of these recovery masters will be able to take the recovery lock\&. The recovery master in the "losing" partition will not be able to take the recovery lock and will be excluded from the cluster\&. The nodes in the "losing" partition will elect each node in turn as their recovery master so eventually all the nodes in that partition will be excluded\&.
 .PP

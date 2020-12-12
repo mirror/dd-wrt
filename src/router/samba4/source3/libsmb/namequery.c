@@ -1166,11 +1166,7 @@ int remove_duplicate_addrs2(struct ip_service *iplist, int count )
 	for (i = 0; i < count; i++) {
 		while (i < count &&
 				is_zero_addr(&iplist[i].ss)) {
-			if (count-i-1>0) {
-				memmove(&iplist[i],
-					&iplist[i+1],
-					(count-i-1)*sizeof(struct ip_service));
-			}
+			ARRAY_DEL_ELEMENT(iplist, i, count);
 			count--;
 		}
 	}
@@ -1871,7 +1867,7 @@ struct tevent_req *name_resolve_bcast_send(TALLOC_CTX *mem_ctx,
 	}
 
 	subreq = name_queries_send(state, ev, name, name_type, true, true,
-				   bcast_addrs, num_bcast_addrs, 0, 1000);
+				   bcast_addrs, num_bcast_addrs, 0, 250);
 	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
 	}

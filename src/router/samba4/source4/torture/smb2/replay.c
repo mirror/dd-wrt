@@ -402,7 +402,7 @@ static bool test_replay_dhv2_oplock1(struct torture_context *tctx,
 	} else {
 		CHECK_VAL(io.out.oplock_level, smb2_util_oplock_level("b"));
 		CHECK_VAL(io.out.durable_open_v2, true);
-		CHECK_VAL(io.out.timeout, io.in.timeout);
+		CHECK_VAL(io.out.timeout, 300*1000);
 	}
 
 	/*
@@ -493,7 +493,7 @@ static bool test_replay_dhv2_oplock2(struct torture_context *tctx,
 	} else {
 		CHECK_VAL(io.out.oplock_level, smb2_util_oplock_level("b"));
 		CHECK_VAL(io.out.durable_open_v2, true);
-		CHECK_VAL(io.out.timeout, io.in.timeout);
+		CHECK_VAL(io.out.timeout, 300*1000);
 	}
 
 	/*
@@ -628,7 +628,7 @@ static bool test_replay_dhv2_oplock3(struct torture_context *tctx,
 	} else {
 		CHECK_VAL(io.out.oplock_level, smb2_util_oplock_level("b"));
 		CHECK_VAL(io.out.durable_open_v2, true);
-		CHECK_VAL(io.out.timeout, io.in.timeout);
+		CHECK_VAL(io.out.timeout, 300*1000);
 	}
 
 	/*
@@ -760,7 +760,7 @@ static bool test_replay_dhv2_oplock_lease(struct torture_context *tctx,
 	} else {
 		CHECK_VAL(io.out.oplock_level, smb2_util_oplock_level("b"));
 		CHECK_VAL(io.out.durable_open_v2, true);
-		CHECK_VAL(io.out.timeout, io.in.timeout);
+		CHECK_VAL(io.out.timeout, 300*1000);
 	}
 
 	/*
@@ -877,7 +877,7 @@ static bool test_replay_dhv2_lease1(struct torture_context *tctx,
 		CHECK_VAL(io1.out.lease_response.lease_state,
 			  smb2_util_lease_state("RH"));
 		CHECK_VAL(io1.out.durable_open_v2, true);
-		CHECK_VAL(io1.out.timeout, io1.in.timeout);
+		CHECK_VAL(io1.out.timeout, 300*1000);
 	}
 
 	/*
@@ -1015,7 +1015,7 @@ static bool test_replay_dhv2_lease2(struct torture_context *tctx,
 		CHECK_VAL(io1.out.lease_response.lease_state,
 			  smb2_util_lease_state("RH"));
 		CHECK_VAL(io1.out.durable_open_v2, true);
-		CHECK_VAL(io1.out.timeout, io1.in.timeout);
+		CHECK_VAL(io1.out.timeout, 300*1000);
 	}
 	ref1 = io1;
 	_h1 = io1.out.file.handle;
@@ -1159,7 +1159,7 @@ static bool test_replay_dhv2_lease3(struct torture_context *tctx,
 		CHECK_VAL(io1.out.lease_response.lease_state,
 			  smb2_util_lease_state("RH"));
 		CHECK_VAL(io1.out.durable_open_v2, true);
-		CHECK_VAL(io1.out.timeout, io1.in.timeout);
+		CHECK_VAL(io1.out.timeout, 300*1000);
 	}
 	_h1 = io1.out.file.handle;
 	h1 = &_h1;
@@ -1296,7 +1296,7 @@ static bool test_replay_dhv2_lease_oplock(struct torture_context *tctx,
 		CHECK_VAL(io1.out.lease_response.lease_state,
 			  smb2_util_lease_state("RH"));
 		CHECK_VAL(io1.out.durable_open_v2, true);
-		CHECK_VAL(io1.out.timeout, io1.in.timeout);
+		CHECK_VAL(io1.out.timeout, 300*1000);
 	}
 
 	/*
@@ -1580,7 +1580,6 @@ static bool test_channel_sequence(struct torture_context *tctx,
 	const char *fname = BASEDIR "\\channel_sequence.dat";
 	struct smb2_transport *transport1 = tree->session->transport;
 	struct smb2_handle handle;
-	uint32_t server_capabilities;
 	uint16_t opcodes[] = { SMB2_OP_WRITE, SMB2_OP_IOCTL, SMB2_OP_SETINFO };
 	int i;
 
@@ -1589,14 +1588,9 @@ static bool test_channel_sequence(struct torture_context *tctx,
 				   "Replay tests\n");
 	}
 
-	server_capabilities = smb2cli_conn_server_capabilities(
-					tree->session->transport->conn);
-	if (!(server_capabilities & SMB2_CAP_MULTI_CHANNEL)) {
-		torture_skip(tctx,
-			     "Server does not support multi-channel.");
-	}
-
 	torture_comment(tctx, "Testing channel sequence numbers\n");
+
+	smbXcli_conn_set_force_channel_sequence(transport1->conn, true);
 
 	torture_assert_ntstatus_ok_goto(tctx,
 		torture_smb2_testdir(tree, BASEDIR, &handle),
@@ -1702,7 +1696,7 @@ static bool test_replay3(struct torture_context *tctx, struct smb2_tree *tree1)
 	} else {
 		CHECK_VAL(io.out.oplock_level, smb2_util_oplock_level("b"));
 		CHECK_VAL(io.out.durable_open_v2, true);
-		CHECK_VAL(io.out.timeout, io.in.timeout);
+		CHECK_VAL(io.out.timeout, 300*1000);
 	}
 	CHECK_VAL(io.out.durable_open, false);
 	CHECK_VAL(break_info.count, 0);
@@ -1757,7 +1751,7 @@ static bool test_replay3(struct torture_context *tctx, struct smb2_tree *tree1)
 	} else {
 		CHECK_VAL(io.out.oplock_level, smb2_util_oplock_level("b"));
 		CHECK_VAL(io.out.durable_open_v2, true);
-		CHECK_VAL(io.out.timeout, io.in.timeout);
+		CHECK_VAL(io.out.timeout, 300*1000);
 	}
 	CHECK_VAL(io.out.durable_open, false);
 	CHECK_VAL(break_info.count, 0);
@@ -1864,7 +1858,7 @@ static bool test_replay4(struct torture_context *tctx, struct smb2_tree *tree1)
 	} else {
 		CHECK_VAL(io.out.oplock_level, smb2_util_oplock_level("b"));
 		CHECK_VAL(io.out.durable_open_v2, true);
-		CHECK_VAL(io.out.timeout, io.in.timeout);
+		CHECK_VAL(io.out.timeout, 300*1000);
 	}
 	CHECK_VAL(io.out.durable_open, false);
 	CHECK_VAL(break_info.count, 0);
@@ -2107,7 +2101,7 @@ static bool test_replay5(struct torture_context *tctx, struct smb2_tree *tree)
 	CHECK_VAL(io.out.durable_open, false);
 	CHECK_VAL(io.out.durable_open_v2, true);
 	CHECK_VAL(io.out.persistent_open, true);
-	CHECK_VAL(io.out.timeout, io.in.timeout);
+	CHECK_VAL(io.out.timeout, 300*1000);
 	CHECK_VAL(break_info.count, 0);
 
 	/* disconnect, leaving the durable open */

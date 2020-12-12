@@ -48,10 +48,15 @@ NTSTATUS open_np_file(struct smb_request *smb_req, const char *name,
 	fsp->conn = conn;
 	fsp->fh->fd = -1;
 	fsp->vuid = smb_req->vuid;
-	fsp->can_lock = false;
+	fsp->fsp_flags.can_lock = false;
 	fsp->access_mask = FILE_READ_DATA | FILE_WRITE_DATA;
 
-	smb_fname = synthetic_smb_fname(talloc_tos(), name, NULL, NULL, 0);
+	smb_fname = synthetic_smb_fname(talloc_tos(),
+					name,
+					NULL,
+					NULL,
+					0,
+					0);
 	if (smb_fname == NULL) {
 		file_free(smb_req, fsp);
 		return NT_STATUS_NO_MEMORY;
@@ -69,6 +74,7 @@ NTSTATUS open_np_file(struct smb_request *smb_req, const char *name,
 			 conn->session_info,
 			 conn->sconn->ev_ctx,
 			 conn->sconn->msg_ctx,
+			 conn->sconn->dce_ctx,
 			 &fsp->fake_file_handle);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(10, ("np_open(%s) returned %s\n", name,

@@ -44,6 +44,7 @@ finally:
 
 have_man_pages_support = ("XSLTPROC_MANPAGES" in config_hash)
 with_pam = ("WITH_PAM" in config_hash)
+with_elasticsearch_backend = ("HAVE_SPOTLIGHT_BACKEND_ES" in config_hash)
 pam_wrapper_so_path = config_hash["LIBPAM_WRAPPER_SO_PATH"]
 pam_set_items_so_path = config_hash["PAM_SET_ITEMS_SO_PATH"]
 
@@ -389,8 +390,14 @@ plantestsuite("samba.unittests.ms_fnmatch", "none",
               [os.path.join(bindir(), "default/lib/util/test_ms_fnmatch")])
 plantestsuite("samba.unittests.byteorder", "none",
               [os.path.join(bindir(), "default/lib/util/test_byteorder")])
+plantestsuite("samba.unittests.bytearray", "none",
+              [os.path.join(bindir(), "default/lib/util/test_bytearray")])
+plantestsuite("samba.unittests.byteorder_verify", "none",
+              [os.path.join(bindir(), "default/lib/util/test_byteorder_verify")])
 plantestsuite("samba.unittests.util_paths", "none",
               [os.path.join(bindir(), "default/lib/util/test_util_paths")])
+plantestsuite("samba.unittests.util", "none",
+              [os.path.join(bindir(), "default/lib/util/test_util")])
 plantestsuite("samba.unittests.ntlm_check", "none",
               [os.path.join(bindir(), "default/libcli/auth/test_ntlm_check")])
 plantestsuite("samba.unittests.gnutls", "none",
@@ -403,5 +410,6 @@ plantestsuite("samba.unittests.test_registry_regfio", "none",
               [os.path.join(bindir(), "default/source3/test_registry_regfio")])
 plantestsuite("samba.unittests.test_oLschema2ldif", "none",
               [os.path.join(bindir(), "default/source4/utils/oLschema2ldif/test_oLschema2ldif")])
-plantestsuite("samba.unittests.mdsparser_es", "none",
-              [os.path.join(bindir(), "default/source3/test_mdsparser_es")] + [configuration])
+if with_elasticsearch_backend:
+    plantestsuite("samba.unittests.mdsparser_es", "none",
+                  [os.path.join(bindir(), "default/source3/test_mdsparser_es")] + [configuration])

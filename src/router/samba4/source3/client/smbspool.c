@@ -64,16 +64,6 @@
 static int      get_exit_code(NTSTATUS nt_status);
 static void     list_devices(void);
 static NTSTATUS
-smb_complete_connection(struct cli_state **output_cli,
-			const char *myname,
-			const char *server,
-			int port,
-			const char *username,
-			const char *password,
-			const char *workgroup,
-			const char *share,
-			int flags);
-static NTSTATUS
 smb_connect(struct cli_state **output_cli,
 	    const char *workgroup,
 	    const char *server,
@@ -474,12 +464,24 @@ get_exit_code(NTSTATUS nt_status)
 	 */
 	static const NTSTATUS auth_errors[] =
 	{
-		NT_STATUS_ACCESS_DENIED, NT_STATUS_ACCESS_VIOLATION,
-		NT_STATUS_SHARING_VIOLATION, NT_STATUS_PRIVILEGE_NOT_HELD,
-		NT_STATUS_INVALID_ACCOUNT_NAME, NT_STATUS_NO_SUCH_USER,
-		NT_STATUS_WRONG_PASSWORD, NT_STATUS_LOGON_FAILURE,
-		NT_STATUS_ACCOUNT_RESTRICTION, NT_STATUS_INVALID_LOGON_HOURS,
-		NT_STATUS_PASSWORD_EXPIRED, NT_STATUS_ACCOUNT_DISABLED
+		NT_STATUS_ACCESS_DENIED,
+		NT_STATUS_ACCESS_VIOLATION,
+		NT_STATUS_ACCOUNT_DISABLED,
+		NT_STATUS_ACCOUNT_LOCKED_OUT,
+		NT_STATUS_ACCOUNT_RESTRICTION,
+		NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND,
+		NT_STATUS_INVALID_ACCOUNT_NAME,
+		NT_STATUS_INVALID_COMPUTER_NAME,
+		NT_STATUS_INVALID_LOGON_HOURS,
+		NT_STATUS_INVALID_WORKSTATION,
+		NT_STATUS_LOGON_FAILURE,
+		NT_STATUS_NO_SUCH_USER,
+		NT_STATUS_NO_SUCH_DOMAIN,
+		NT_STATUS_NO_LOGON_SERVERS,
+		NT_STATUS_PASSWORD_EXPIRED,
+		NT_STATUS_PRIVILEGE_NOT_HELD,
+		NT_STATUS_SHARING_VIOLATION,
+		NT_STATUS_WRONG_PASSWORD,
 	};
 
 
@@ -534,28 +536,19 @@ smb_complete_connection(struct cli_state **output_cli,
 			const char *password,
 			const char *workgroup,
 			const char *share,
-			int flags)
+			bool use_kerberos,
+			bool fallback_after_kerberos)
 {
 	struct cli_state *cli;	/* New connection */
 	NTSTATUS        nt_status;
 	struct cli_credentials *creds = NULL;
-	bool use_kerberos = false;
-	bool fallback_after_kerberos = false;
 
 	/* Start the SMB connection */
 	nt_status = cli_start_connection(&cli, myname, server, NULL, port,
-					 SMB_SIGNING_DEFAULT, flags);
+					 SMB_SIGNING_DEFAULT, 0);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		fprintf(stderr, "ERROR: Connection failed: %s\n", nt_errstr(nt_status));
 		return nt_status;
-	}
-
-	if (flags & CLI_FULL_CONNECTION_USE_KERBEROS) {
-		use_kerberos = true;
-	}
-
-	if (flags & CLI_FULL_CONNECTION_FALLBACK_AFTER_KERBEROS) {
-		fallback_after_kerberos = true;
 	}
 
 	creds = cli_session_creds_init(cli,
@@ -682,8 +675,8 @@ smb_connect(struct cli_state **output_cli,
 	struct cli_state *cli = NULL;	/* New connection */
 	char           *myname = NULL;	/* Client name */
 	struct passwd  *pwd;
-	int flags = CLI_FULL_CONNECTION_USE_KERBEROS;
 	bool use_kerberos = false;
+	bool fallback_after_kerberos = false;
 	const char *user = username;
 	NTSTATUS nt_status;
 
@@ -714,7 +707,7 @@ smb_connect(struct cli_state **output_cli,
 		}
 
 		/* Fallback to NTLM */
-		flags |= CLI_FULL_CONNECTION_FALLBACK_AFTER_KERBEROS;
+		fallback_after_kerberos = true;
 
 		fprintf(stderr,
 			"DEBUG: Try to connect using username/password ...\n");
@@ -722,7 +715,7 @@ smb_connect(struct cli_state **output_cli,
 		goto anonymous;
 	} else if (strcmp(auth_info_required, "samba") == 0) {
 		if (username != NULL) {
-			flags |= CLI_FULL_CONNECTION_FALLBACK_AFTER_KERBEROS;
+			fallback_after_kerberos = true;
 		} else if (kerberos_ccache_is_valid()) {
 			auth_info_required = "negotiate";
 
@@ -745,7 +738,8 @@ smb_connect(struct cli_state **output_cli,
 					    password,
 					    workgroup,
 					    share,
-					    flags);
+					    true, /* try kerberos */
+					    fallback_after_kerberos);
 	if (NT_STATUS_IS_OK(nt_status)) {
 		fprintf(stderr, "DEBUG: SMB connection established.\n");
 
@@ -772,7 +766,7 @@ smb_connect(struct cli_state **output_cli,
 					    "",
 					    workgroup,
 					    share,
-					    0);
+					    false, false);
 	if (NT_STATUS_IS_OK(nt_status)) {
 		fputs("DEBUG: Connected with NTLMSSP...\n", stderr);
 
@@ -793,7 +787,7 @@ anonymous:
 					    "",
 					    workgroup,
 					    share,
-					    0);
+					    false, false);
 	if (NT_STATUS_IS_OK(nt_status)) {
 		*output_cli = cli;
 		return NT_STATUS_OK;

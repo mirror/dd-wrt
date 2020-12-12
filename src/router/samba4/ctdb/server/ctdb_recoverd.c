@@ -425,18 +425,62 @@ static int set_recovery_mode(struct ctdb_context *ctdb,
 }
 
 /*
-  update flags on all active nodes
+ * Update flags on all connected nodes
  */
-static int update_flags_on_all_nodes(struct ctdb_context *ctdb, struct ctdb_node_map_old *nodemap, uint32_t pnn, uint32_t flags)
+static int update_flags_on_all_nodes(struct ctdb_recoverd *rec,
+				     uint32_t pnn,
+				     uint32_t flags)
 {
+	struct ctdb_context *ctdb = rec->ctdb;
+	struct timeval timeout = CONTROL_TIMEOUT();
+	TDB_DATA data;
+	struct ctdb_node_map_old *nodemap=NULL;
+	struct ctdb_node_flag_change c;
+	TALLOC_CTX *tmp_ctx = talloc_new(ctdb);
+	uint32_t *nodes;
+	uint32_t i;
 	int ret;
 
-	ret = ctdb_ctrl_modflags(ctdb, CONTROL_TIMEOUT(), pnn, flags, ~flags);
-		if (ret != 0) {
-		DEBUG(DEBUG_ERR, (__location__ " Unable to update nodeflags on remote nodes\n"));
+	nodemap = rec->nodemap;
+
+	for (i = 0; i < nodemap->num; i++) {
+		if (pnn == nodemap->nodes[i].pnn) {
+			break;
+		}
+	}
+	if (i >= nodemap->num) {
+		DBG_ERR("Nodemap does not contain node %d\n", pnn);
+		talloc_free(tmp_ctx);
 		return -1;
 	}
 
+	c.pnn       = pnn;
+	c.old_flags = nodemap->nodes[i].flags;
+	c.new_flags = flags;
+
+	data.dsize = sizeof(c);
+	data.dptr = (unsigned char *)&c;
+
+	/* send the flags update to all connected nodes */
+	nodes = list_of_connected_nodes(ctdb, nodemap, tmp_ctx, true);
+
+	ret = ctdb_client_async_control(ctdb,
+					CTDB_CONTROL_MODIFY_FLAGS,
+					nodes,
+					0,
+					timeout,
+					false,
+					data,
+					NULL,
+					NULL,
+					NULL);
+	if (ret != 0) {
+		DBG_ERR("Unable to update flags on remote nodes\n");
+		talloc_free(tmp_ctx);
+		return -1;
+	}
+
+	talloc_free(tmp_ctx);
 	return 0;
 }
 
@@ -493,60 +537,57 @@ static void ctdb_wait_election(struct ctdb_recoverd *rec)
 }
 
 /*
-  Update our local flags from all remote connected nodes. 
-  This is only run when we are or we belive we are the recovery master
+ * Update local flags from all remote connected nodes and push out
+ * flags changes to all nodes.  This is only run by the recovery
+ * master.
  */
-static int update_local_flags(struct ctdb_recoverd *rec, struct ctdb_node_map_old *nodemap)
+static int update_flags(struct ctdb_recoverd *rec,
+			struct ctdb_node_map_old *nodemap,
+			struct ctdb_node_map_old **remote_nodemaps)
 {
 	unsigned int j;
 	struct ctdb_context *ctdb = rec->ctdb;
 	TALLOC_CTX *mem_ctx = talloc_new(ctdb);
 
-	/* get the nodemap for all active remote nodes and verify
-	   they are the same as for this node
-	 */
+	/* Check flags from remote nodes */
 	for (j=0; j<nodemap->num; j++) {
 		struct ctdb_node_map_old *remote_nodemap=NULL;
+		uint32_t local_flags = nodemap->nodes[j].flags;
+		uint32_t remote_flags;
 		int ret;
 
-		if (nodemap->nodes[j].flags & NODE_FLAGS_DISCONNECTED) {
+		if (local_flags & NODE_FLAGS_DISCONNECTED) {
 			continue;
 		}
 		if (nodemap->nodes[j].pnn == ctdb->pnn) {
 			continue;
 		}
 
-		ret = ctdb_ctrl_getnodemap(ctdb, CONTROL_TIMEOUT(), nodemap->nodes[j].pnn, 
-					   mem_ctx, &remote_nodemap);
-		if (ret != 0) {
-			DEBUG(DEBUG_ERR, (__location__ " Unable to get nodemap from remote node %u\n", 
-				  nodemap->nodes[j].pnn));
-			ctdb_set_culprit(rec, nodemap->nodes[j].pnn);
-			talloc_free(mem_ctx);
-			return -1;
-		}
-		if (nodemap->nodes[j].flags != remote_nodemap->nodes[j].flags) {
-			/* We should tell our daemon about this so it
-			   updates its flags or else we will log the same 
-			   message again in the next iteration of recovery.
-			   Since we are the recovery master we can just as
-			   well update the flags on all nodes.
-			*/
-			ret = ctdb_ctrl_modflags(ctdb, CONTROL_TIMEOUT(), nodemap->nodes[j].pnn, remote_nodemap->nodes[j].flags, ~remote_nodemap->nodes[j].flags);
+		remote_nodemap = remote_nodemaps[j];
+		remote_flags = remote_nodemap->nodes[j].flags;
+
+		if (local_flags != remote_flags) {
+			ret = update_flags_on_all_nodes(rec,
+							nodemap->nodes[j].pnn,
+							remote_flags);
 			if (ret != 0) {
-				DEBUG(DEBUG_ERR, (__location__ " Unable to update nodeflags on remote nodes\n"));
+				DBG_ERR(
+				    "Unable to update flags on remote nodes\n");
+				talloc_free(mem_ctx);
 				return -1;
 			}
 
-			/* Update our local copy of the flags in the recovery
-			   daemon.
-			*/
-			DEBUG(DEBUG_NOTICE,("Remote node %u had flags 0x%x, local had 0x%x - updating local\n",
-				 nodemap->nodes[j].pnn, remote_nodemap->nodes[j].flags,
-				 nodemap->nodes[j].flags));
-			nodemap->nodes[j].flags = remote_nodemap->nodes[j].flags;
+			/*
+			 * Update the local copy of the flags in the
+			 * recovery daemon.
+			 */
+			D_NOTICE("Remote node %u had flags 0x%x, "
+				 "local had 0x%x - updating local\n",
+				 nodemap->nodes[j].pnn,
+				 remote_flags,
+				 local_flags);
+			nodemap->nodes[j].flags = remote_flags;
 		}
-		talloc_free(remote_nodemap);
 	}
 	talloc_free(mem_ctx);
 	return 0;
@@ -1125,7 +1166,9 @@ static int do_recovery(struct ctdb_recoverd *rec,
 			continue;
 		}
 
-		ret = update_flags_on_all_nodes(ctdb, nodemap, i, nodemap->nodes[i].flags);
+		ret = update_flags_on_all_nodes(rec,
+						nodemap->nodes[i].pnn,
+						nodemap->nodes[i].flags);
 		if (ret != 0) {
 			if (nodemap->nodes[i].flags & NODE_FLAGS_INACTIVE) {
 				DEBUG(DEBUG_WARNING, (__location__ "Unable to update flags on inactive node %d\n", i));
@@ -2172,37 +2215,94 @@ done:
 }
 
 
-static void async_getnodemap_callback(struct ctdb_context *ctdb, uint32_t node_pnn, int32_t res, TDB_DATA outdata, void *callback_data)
-{
-	struct ctdb_node_map_old **remote_nodemaps = callback_data;
+struct remote_nodemaps_state {
+	struct ctdb_node_map_old **remote_nodemaps;
+	struct ctdb_recoverd *rec;
+};
 
-	if (node_pnn >= ctdb->num_nodes) {
-		DEBUG(DEBUG_ERR,(__location__ " pnn from invalid node\n"));
+static void async_getnodemap_callback(struct ctdb_context *ctdb,
+				      uint32_t node_pnn,
+				      int32_t res,
+				      TDB_DATA outdata,
+				      void *callback_data)
+{
+	struct remote_nodemaps_state *state =
+		(struct remote_nodemaps_state *)callback_data;
+	struct ctdb_node_map_old **remote_nodemaps = state->remote_nodemaps;
+	struct ctdb_node_map_old *nodemap = state->rec->nodemap;
+	size_t i;
+
+	for (i = 0; i < nodemap->num; i++) {
+		if (nodemap->nodes[i].pnn == node_pnn) {
+			break;
+		}
+	}
+
+	if (i >= nodemap->num) {
+		DBG_ERR("Invalid PNN %"PRIu32"\n", node_pnn);
 		return;
 	}
 
-	remote_nodemaps[node_pnn] = (struct ctdb_node_map_old *)talloc_steal(remote_nodemaps, outdata.dptr);
+	remote_nodemaps[i] = (struct ctdb_node_map_old *)talloc_steal(
+					remote_nodemaps, outdata.dptr);
 
 }
 
-static int get_remote_nodemaps(struct ctdb_context *ctdb, TALLOC_CTX *mem_ctx,
-	struct ctdb_node_map_old *nodemap,
-	struct ctdb_node_map_old **remote_nodemaps)
+static void async_getnodemap_error(struct ctdb_context *ctdb,
+				   uint32_t node_pnn,
+				   int32_t res,
+				   TDB_DATA outdata,
+				   void *callback_data)
 {
+	struct remote_nodemaps_state *state =
+		(struct remote_nodemaps_state *)callback_data;
+	struct ctdb_recoverd *rec = state->rec;
+
+	DBG_ERR("Failed to retrieve nodemap from node %u\n", node_pnn);
+	ctdb_set_culprit(rec, node_pnn);
+}
+
+static int get_remote_nodemaps(struct ctdb_recoverd *rec,
+			       TALLOC_CTX *mem_ctx,
+			       struct ctdb_node_map_old ***remote_nodemaps)
+{
+	struct ctdb_context *ctdb = rec->ctdb;
+	struct ctdb_node_map_old **t;
 	uint32_t *nodes;
+	struct remote_nodemaps_state state;
+	int ret;
 
-	nodes = list_of_active_nodes(ctdb, nodemap, mem_ctx, true);
-	if (ctdb_client_async_control(ctdb, CTDB_CONTROL_GET_NODEMAP,
-					nodes, 0,
-					CONTROL_TIMEOUT(), false, tdb_null,
-					async_getnodemap_callback,
-					NULL,
-					remote_nodemaps) != 0) {
-		DEBUG(DEBUG_ERR, (__location__ " Unable to pull all remote nodemaps\n"));
-
+	t = talloc_zero_array(mem_ctx,
+			      struct ctdb_node_map_old *,
+			      rec->nodemap->num);
+	if (t == NULL) {
+		DBG_ERR("Memory allocation error\n");
 		return -1;
 	}
 
+	nodes = list_of_connected_nodes(ctdb, rec->nodemap, mem_ctx, false);
+
+	state.remote_nodemaps = t;
+	state.rec = rec;
+
+	ret = ctdb_client_async_control(ctdb,
+					CTDB_CONTROL_GET_NODEMAP,
+					nodes,
+					0,
+					CONTROL_TIMEOUT(),
+					false,
+					tdb_null,
+					async_getnodemap_callback,
+					async_getnodemap_error,
+					&state);
+	talloc_free(nodes);
+
+	if (ret != 0) {
+		talloc_free(t);
+		return ret;
+	}
+
+	*remote_nodemaps = t;
 	return 0;
 }
 
@@ -2447,10 +2547,17 @@ static void main_loop(struct ctdb_context *ctdb, struct ctdb_recoverd *rec,
 	}
 
 
-	/* ensure our local copies of flags are right */
-	ret = update_local_flags(rec, nodemap);
+	/* Get the nodemaps for all connected remote nodes */
+	ret = get_remote_nodemaps(rec, mem_ctx, &remote_nodemaps);
 	if (ret != 0) {
-		DEBUG(DEBUG_ERR,("Unable to update local flags\n"));
+		DBG_ERR("Failed to read remote nodemaps\n");
+		return;
+	}
+
+	/* Ensure our local and remote flags are correct */
+	ret = update_flags(rec, nodemap, remote_nodemaps);
+	if (ret != 0) {
+		D_ERR("Unable to update flags\n");
 		return;
 	}
 
@@ -2523,33 +2630,14 @@ static void main_loop(struct ctdb_context *ctdb, struct ctdb_recoverd *rec,
 		goto takeover_run_checks;
 	}
 
-	/* get the nodemap for all active remote nodes
-	 */
-	remote_nodemaps = talloc_array(mem_ctx, struct ctdb_node_map_old *, nodemap->num);
-	if (remote_nodemaps == NULL) {
-		DEBUG(DEBUG_ERR, (__location__ " failed to allocate remote nodemap array\n"));
-		return;
-	}
-	for(i=0; i<nodemap->num; i++) {
-		remote_nodemaps[i] = NULL;
-	}
-	if (get_remote_nodemaps(ctdb, mem_ctx, nodemap, remote_nodemaps) != 0) {
-		DEBUG(DEBUG_ERR,(__location__ " Failed to read remote nodemaps\n"));
-		return;
-	} 
-
 	/* verify that all other nodes have the same nodemap as we have
 	*/
 	for (j=0; j<nodemap->num; j++) {
-		if (nodemap->nodes[j].flags & NODE_FLAGS_INACTIVE) {
+		if (nodemap->nodes[j].pnn == ctdb->pnn) {
 			continue;
 		}
-
-		if (remote_nodemaps[j] == NULL) {
-			DEBUG(DEBUG_ERR,(__location__ " Did not get a remote nodemap for node %d, restarting monitoring\n", j));
-			ctdb_set_culprit(rec, j);
-
-			return;
+		if (nodemap->nodes[j].flags & NODE_FLAGS_INACTIVE) {
+			continue;
 		}
 
  		/* if the nodes disagree on how many nodes there are
@@ -2578,55 +2666,6 @@ static void main_loop(struct ctdb_context *ctdb, struct ctdb_recoverd *rec,
 			}
 		}
 	}
-
-	/*
-	 * Update node flags obtained from each active node. This ensure we have
-	 * up-to-date information for all the nodes.
-	 */
-	for (j=0; j<nodemap->num; j++) {
-		if (nodemap->nodes[j].flags & NODE_FLAGS_INACTIVE) {
-			continue;
-		}
-		nodemap->nodes[j].flags = remote_nodemaps[j]->nodes[j].flags;
-	}
-
-	for (j=0; j<nodemap->num; j++) {
-		if (nodemap->nodes[j].flags & NODE_FLAGS_INACTIVE) {
-			continue;
-		}
-
-		/* verify the flags are consistent
-		*/
-		for (i=0; i<nodemap->num; i++) {
-			if (nodemap->nodes[i].flags & NODE_FLAGS_DISCONNECTED) {
-				continue;
-			}
-			
-			if (nodemap->nodes[i].flags != remote_nodemaps[j]->nodes[i].flags) {
-				DEBUG(DEBUG_ERR, (__location__ " Remote node:%u has different flags for node %u. It has 0x%02x vs our 0x%02x\n", 
-				  nodemap->nodes[j].pnn, 
-				  nodemap->nodes[i].pnn, 
-				  remote_nodemaps[j]->nodes[i].flags,
-				  nodemap->nodes[i].flags));
-				if (i == j) {
-					DEBUG(DEBUG_ERR,("Use flags 0x%02x from remote node %d for cluster update of its own flags\n", remote_nodemaps[j]->nodes[i].flags, j));
-					update_flags_on_all_nodes(ctdb, nodemap, nodemap->nodes[i].pnn, remote_nodemaps[j]->nodes[i].flags);
-					ctdb_set_culprit(rec, nodemap->nodes[j].pnn);
-					do_recovery(rec, mem_ctx, pnn, nodemap, 
-						    vnnmap);
-					return;
-				} else {
-					DEBUG(DEBUG_ERR,("Use flags 0x%02x from local recmaster node for cluster update of node %d flags\n", nodemap->nodes[i].flags, i));
-					update_flags_on_all_nodes(ctdb, nodemap, nodemap->nodes[i].pnn, nodemap->nodes[i].flags);
-					ctdb_set_culprit(rec, nodemap->nodes[j].pnn);
-					do_recovery(rec, mem_ctx, pnn, nodemap, 
-						    vnnmap);
-					return;
-				}
-			}
-		}
-	}
-
 
 	/* count how many active nodes there are */
 	num_lmasters  = 0;

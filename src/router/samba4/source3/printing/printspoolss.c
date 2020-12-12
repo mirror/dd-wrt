@@ -213,7 +213,12 @@ NTSTATUS print_spool_open(files_struct *fsp,
 	}
 
 	/* setup a full fsp */
-	fsp->fsp_name = synthetic_smb_fname(fsp, pf->filename, NULL, NULL, 0);
+	fsp->fsp_name = synthetic_smb_fname(fsp,
+					    pf->filename,
+					    NULL,
+					    NULL,
+					    0,
+					    0);
 	if (fsp->fsp_name == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto done;
@@ -228,14 +233,14 @@ NTSTATUS print_spool_open(files_struct *fsp,
 	fsp->fh->fd = fd;
 
 	fsp->vuid = current_vuid;
-	fsp->can_lock = false;
-	fsp->can_read = false;
+	fsp->fsp_flags.can_lock = false;
+	fsp->fsp_flags.can_read = false;
 	fsp->access_mask = FILE_GENERIC_WRITE;
-	fsp->can_write = true;
-	fsp->modified = false;
+	fsp->fsp_flags.can_write = true;
+	fsp->fsp_flags.modified = false;
 	fsp->oplock_type = NO_OPLOCK;
 	fsp->sent_oplock_break = NO_BREAK_SENT;
-	fsp->is_directory = false;
+	fsp->fsp_flags.is_directory = false;
 
 	fsp->print_file = pf;
 

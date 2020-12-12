@@ -20,6 +20,7 @@
 */
 
 #include "includes.h"
+#include "system/network.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
 #include "../libcli/smb/smb_common.h"
@@ -31,6 +32,17 @@
 #include "lib/util/iov_buf.h"
 #include "auth.h"
 #include "libcli/smb/smbXcli_base.h"
+
+#if defined(LINUX)
+/* SIOCOUTQ TIOCOUTQ are the same */
+#define __IOCTL_SEND_QUEUE_SIZE_OPCODE TIOCOUTQ
+#define __HAVE_TCP_INFO_RTO 1
+#define __ALLOW_MULTI_CHANNEL_SUPPORT 1
+#elif defined(FREEBSD)
+#define __IOCTL_SEND_QUEUE_SIZE_OPCODE FIONWRITE
+#define __HAVE_TCP_INFO_RTO 1
+#define __ALLOW_MULTI_CHANNEL_SUPPORT 1
+#endif
 
 #include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/gnutls.h>
@@ -219,8 +231,6 @@ bool smbd_smb2_is_compound(const struct smbd_smb2_request *req)
 static NTSTATUS smbd_initialize_smb2(struct smbXsrv_connection *xconn,
 				     uint64_t expected_seq_low)
 {
-	TALLOC_FREE(xconn->transport.fde);
-
 	xconn->smb2.credits.seq_low = expected_seq_low;
 	xconn->smb2.credits.seq_range = 1;
 	xconn->smb2.credits.granted = 1;
@@ -231,6 +241,9 @@ static NTSTATUS smbd_initialize_smb2(struct smbXsrv_connection *xconn,
 		return NT_STATUS_NO_MEMORY;
 	}
 
+	tevent_fd_set_close_fn(xconn->transport.fde, NULL);
+	TALLOC_FREE(xconn->transport.fde);
+
 	xconn->transport.fde = tevent_add_fd(
 					xconn->client->raw_ev_ctx,
 					xconn,
@@ -239,8 +252,11 @@ static NTSTATUS smbd_initialize_smb2(struct smbXsrv_connection *xconn,
 					smbd_smb2_connection_handler,
 					xconn);
 	if (xconn->transport.fde == NULL) {
+		close(xconn->transport.sock);
+		xconn->transport.sock = -1;
 		return NT_STATUS_NO_MEMORY;
 	}
+	tevent_fd_set_auto_close(xconn->transport.fde);
 
 	/* Ensure child is set to non-blocking mode */
 	set_blocking(xconn->transport.sock, false);
@@ -1106,6 +1122,362 @@ static NTSTATUS smbd_smb2_request_setup_out(struct smbd_smb2_request *req)
 	return NT_STATUS_OK;
 }
 
+bool smbXsrv_server_multi_channel_enabled(void)
+{
+	bool enabled = lp_server_multi_channel_support();
+#ifndef __ALLOW_MULTI_CHANNEL_SUPPORT
+	bool forced = false;
+	/*
+	 * If we don't have support from the kernel
+	 * to ask for the un-acked number of bytes
+	 * in the socket send queue, we better
+	 * don't support multi-channel.
+	 */
+	forced = lp_parm_bool(-1, "force", "server multi channel support", false);
+	if (enabled && !forced) {
+		D_NOTICE("'server multi channel support' enabled "
+			 "but not supported on %s (%s)\n",
+			 SYSTEM_UNAME_SYSNAME, SYSTEM_UNAME_RELEASE);
+		DEBUGADD(DBGLVL_NOTICE, ("Please report this on "
+			"https://bugzilla.samba.org/show_bug.cgi?id=11897\n"));
+		enabled = false;
+	}
+#endif /* ! __ALLOW_MULTI_CHANNEL_SUPPORT */
+	return enabled;
+}
+
+static NTSTATUS smbXsrv_connection_get_rto_usecs(struct smbXsrv_connection *xconn,
+						 uint32_t *_rto_usecs)
+{
+	/*
+	 * Define an Retransmission Timeout
+	 * of 1 second, if there's no way for the
+	 * kernel to tell us the current value.
+	 */
+	uint32_t rto_usecs = 1000000;
+
+#ifdef __HAVE_TCP_INFO_RTO
+	{
+		struct tcp_info info;
+		socklen_t ilen = sizeof(info);
+		int ret;
+
+		ZERO_STRUCT(info);
+		ret = getsockopt(xconn->transport.sock,
+				 IPPROTO_TCP, TCP_INFO,
+				 (void *)&info, &ilen);
+		if (ret != 0) {
+			int saved_errno = errno;
+			NTSTATUS status = map_nt_error_from_unix(errno);
+			DBG_ERR("getsockopt(TCP_INFO) errno[%d/%s] -s %s\n",
+				saved_errno, strerror(saved_errno),
+				nt_errstr(status));
+			return status;
+		}
+
+		DBG_DEBUG("tcpi_rto[%u] tcpi_rtt[%u] tcpi_rttvar[%u]\n",
+			  (unsigned)info.tcpi_rto,
+			  (unsigned)info.tcpi_rtt,
+			  (unsigned)info.tcpi_rttvar);
+		rto_usecs = info.tcpi_rto;
+	}
+#endif /* __HAVE_TCP_INFO_RTO */
+
+	rto_usecs = MAX(rto_usecs,  200000); /* at least 0.2s */
+	rto_usecs = MIN(rto_usecs, 1000000); /* at max   1.0s */
+	*_rto_usecs = rto_usecs;
+	return NT_STATUS_OK;
+}
+
+static NTSTATUS smbXsrv_connection_get_acked_bytes(struct smbXsrv_connection *xconn,
+						   uint64_t *_acked_bytes)
+{
+	/*
+	 * Unless the kernel has an interface
+	 * to reveal the number of un-acked bytes
+	 * in the socket send queue, we'll assume
+	 * everything is already acked.
+	 *
+	 * But that would mean that we better don't
+	 * pretent to support multi-channel.
+	 */
+	uint64_t unacked_bytes = 0;
+
+	*_acked_bytes = 0;
+
+	if (xconn->ack.force_unacked_timeout) {
+		/*
+		 * Smbtorture tries to test channel failures...
+		 * Just pretend nothing was acked...
+		 */
+		DBG_INFO("Simulating channel failure: "
+			 "xconn->ack.unacked_bytes[%llu]\n",
+			 (unsigned long long)xconn->ack.unacked_bytes);
+		return NT_STATUS_OK;
+	}
+
+#ifdef __IOCTL_SEND_QUEUE_SIZE_OPCODE
+	{
+		int value = 0;
+		int ret;
+
+		/*
+		 * If we have kernel support to get
+		 * the number of bytes waiting in
+		 * the socket's send queue, we
+		 * use that in order to find out
+		 * the number of unacked bytes.
+		 */
+		ret = ioctl(xconn->transport.sock,
+			    __IOCTL_SEND_QUEUE_SIZE_OPCODE,
+			    &value);
+		if (ret != 0) {
+			int saved_errno = errno;
+			NTSTATUS status = map_nt_error_from_unix(saved_errno);
+			DBG_ERR("Failed to get the SEND_QUEUE_SIZE - "
+				"errno %d (%s) - %s\n",
+				saved_errno, strerror(saved_errno),
+				nt_errstr(status));
+			return status;
+		}
+
+		if (value < 0) {
+			DBG_ERR("xconn->ack.unacked_bytes[%llu] value[%d]\n",
+				(unsigned long long)xconn->ack.unacked_bytes,
+				value);
+			return NT_STATUS_INTERNAL_ERROR;
+		}
+		unacked_bytes = value;
+	}
+#endif
+	if (xconn->ack.unacked_bytes == 0) {
+		xconn->ack.unacked_bytes = unacked_bytes;
+		return NT_STATUS_OK;
+	}
+
+	if (xconn->ack.unacked_bytes < unacked_bytes) {
+		DBG_ERR("xconn->ack.unacked_bytes[%llu] unacked_bytes[%llu]\n",
+			(unsigned long long)xconn->ack.unacked_bytes,
+			(unsigned long long)unacked_bytes);
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
+	*_acked_bytes = xconn->ack.unacked_bytes - unacked_bytes;
+	xconn->ack.unacked_bytes = unacked_bytes;
+	return NT_STATUS_OK;
+}
+
+static void smbd_smb2_send_queue_ack_fail(struct smbd_smb2_send_queue **queue,
+					  NTSTATUS status)
+{
+	struct smbd_smb2_send_queue *e = NULL;
+	struct smbd_smb2_send_queue *n = NULL;
+
+	for (e = *queue; e != NULL; e = n) {
+		n = e->next;
+
+		DLIST_REMOVE(*queue, e);
+		if (e->ack.req != NULL) {
+			tevent_req_nterror(e->ack.req, status);
+		}
+	}
+}
+
+static NTSTATUS smbd_smb2_send_queue_ack_bytes(struct smbd_smb2_send_queue **queue,
+					       uint64_t acked_bytes)
+{
+	struct smbd_smb2_send_queue *e = NULL;
+	struct smbd_smb2_send_queue *n = NULL;
+
+	for (e = *queue; e != NULL; e = n) {
+		bool expired;
+
+		n = e->next;
+
+		if (e->ack.req == NULL) {
+			continue;
+		}
+
+		if (e->ack.required_acked_bytes <= acked_bytes) {
+			e->ack.required_acked_bytes = 0;
+			DLIST_REMOVE(*queue, e);
+			tevent_req_done(e->ack.req);
+			continue;
+		}
+		e->ack.required_acked_bytes -= acked_bytes;
+
+		expired = timeval_expired(&e->ack.timeout);
+		if (expired) {
+			return NT_STATUS_IO_TIMEOUT;
+		}
+	}
+
+	return NT_STATUS_OK;
+}
+
+static NTSTATUS smbd_smb2_check_ack_queue(struct smbXsrv_connection *xconn)
+{
+	uint64_t acked_bytes = 0;
+	NTSTATUS status;
+
+	status = smbXsrv_connection_get_acked_bytes(xconn, &acked_bytes);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	status = smbd_smb2_send_queue_ack_bytes(&xconn->ack.queue, acked_bytes);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	status = smbd_smb2_send_queue_ack_bytes(&xconn->smb2.send_queue, 0);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	return NT_STATUS_OK;
+}
+
+static void smbXsrv_connection_ack_checker(struct tevent_req *subreq)
+{
+	struct smbXsrv_connection *xconn =
+		tevent_req_callback_data(subreq,
+		struct smbXsrv_connection);
+	struct smbXsrv_client *client = xconn->client;
+	struct timeval next_check;
+	NTSTATUS status;
+	bool ok;
+
+	xconn->ack.checker_subreq = NULL;
+
+	ok = tevent_wakeup_recv(subreq);
+	TALLOC_FREE(subreq);
+	if (!ok) {
+		smbd_server_connection_terminate(xconn,
+						 "tevent_wakeup_recv() failed");
+		return;
+	}
+
+	status = smbd_smb2_check_ack_queue(xconn);
+	if (!NT_STATUS_IS_OK(status)) {
+		smbd_server_connection_terminate(xconn, nt_errstr(status));
+		return;
+	}
+
+	next_check = timeval_current_ofs_usec(xconn->ack.rto_usecs);
+	xconn->ack.checker_subreq = tevent_wakeup_send(xconn,
+						       client->raw_ev_ctx,
+						       next_check);
+	if (xconn->ack.checker_subreq == NULL) {
+		smbd_server_connection_terminate(xconn,
+						 "tevent_wakeup_send() failed");
+		return;
+	}
+	tevent_req_set_callback(xconn->ack.checker_subreq,
+				smbXsrv_connection_ack_checker,
+				xconn);
+}
+
+static NTSTATUS smbXsrv_client_pending_breaks_updated(struct smbXsrv_client *client)
+{
+	struct smbXsrv_connection *xconn = NULL;
+
+	for (xconn = client->connections; xconn != NULL; xconn = xconn->next) {
+		struct timeval next_check;
+		uint64_t acked_bytes = 0;
+		NTSTATUS status;
+
+		/*
+		 * A new 'pending break cycle' starts
+		 * with a first pending break and lasts until
+		 * all pending breaks are finished.
+		 *
+		 * This is typically a very short time,
+		 * the value of one retransmission timeout.
+		 */
+
+		if (client->pending_breaks == NULL) {
+			/*
+			 * No more pending breaks, remove a pending
+			 * checker timer
+			 */
+			TALLOC_FREE(xconn->ack.checker_subreq);
+			continue;
+		}
+
+		if (xconn->ack.checker_subreq != NULL) {
+			/*
+			 * The cycle already started =>
+			 * nothing todo
+			 */
+			continue;
+		}
+
+		/*
+		 * Get the current retransmission timeout value.
+		 *
+		 * It may change over time, but fetching it once
+		 * per 'pending break' cycled should be enough.
+		 */
+		status = smbXsrv_connection_get_rto_usecs(xconn,
+							  &xconn->ack.rto_usecs);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
+
+		/*
+		 * At the start of the cycle we reset the
+		 * unacked_bytes counter (first to 0 and
+		 * within smbXsrv_connection_get_acked_bytes()
+		 * to the current value in the kernel
+		 * send queue.
+		 */
+		xconn->ack.unacked_bytes = 0;
+		status = smbXsrv_connection_get_acked_bytes(xconn, &acked_bytes);
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
+
+		/*
+		 * We setup a timer in order to check for
+		 * acked bytes after one retransmission timeout.
+		 *
+		 * The code that sets up the send_queue.ack.timeout
+		 * uses a multiple of the retransmission timeout.
+		 */
+		next_check = timeval_current_ofs_usec(xconn->ack.rto_usecs);
+		xconn->ack.checker_subreq = tevent_wakeup_send(xconn,
+							client->raw_ev_ctx,
+							next_check);
+		if (xconn->ack.checker_subreq == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+		tevent_req_set_callback(xconn->ack.checker_subreq,
+					smbXsrv_connection_ack_checker,
+					xconn);
+	}
+
+	return NT_STATUS_OK;
+}
+
+void smbXsrv_connection_disconnect_transport(struct smbXsrv_connection *xconn,
+					     NTSTATUS status)
+{
+	if (!NT_STATUS_IS_OK(xconn->transport.status)) {
+		return;
+	}
+
+	xconn->transport.status = status;
+	TALLOC_FREE(xconn->transport.fde);
+	if (xconn->transport.sock != -1) {
+		xconn->transport.sock = -1;
+	}
+	smbd_smb2_send_queue_ack_fail(&xconn->ack.queue, status);
+	smbd_smb2_send_queue_ack_fail(&xconn->smb2.send_queue, status);
+	xconn->smb2.send_queue_len = 0;
+	DO_PROFILE_INC(disconnect);
+}
+
 size_t smbXsrv_client_valid_connections(struct smbXsrv_client *client)
 {
 	struct smbXsrv_connection *xconn = NULL;
@@ -1120,25 +1492,200 @@ size_t smbXsrv_client_valid_connections(struct smbXsrv_client *client)
 	return num_ok;
 }
 
+struct smbXsrv_connection_shutdown_state {
+	struct tevent_queue *wait_queue;
+};
+
+static void smbXsrv_connection_shutdown_wait_done(struct tevent_req *subreq);
+
+static struct tevent_req *smbXsrv_connection_shutdown_send(TALLOC_CTX *mem_ctx,
+					struct tevent_context *ev,
+					struct smbXsrv_connection *xconn)
+{
+	struct tevent_req *req = NULL;
+	struct smbXsrv_connection_shutdown_state *state = NULL;
+	struct tevent_req *subreq = NULL;
+	size_t len = 0;
+	struct smbd_smb2_request *preq = NULL;
+	NTSTATUS status;
+
+	/*
+	 * The caller should have called
+	 * smbXsrv_connection_disconnect_transport() before.
+	 */
+	SMB_ASSERT(!NT_STATUS_IS_OK(xconn->transport.status));
+
+	req = tevent_req_create(mem_ctx, &state,
+				struct smbXsrv_connection_shutdown_state);
+	if (req == NULL) {
+		return NULL;
+	}
+
+	status = smbXsrv_session_disconnect_xconn(xconn);
+	if (tevent_req_nterror(req, status)) {
+		return tevent_req_post(req, ev);
+	}
+
+	state->wait_queue = tevent_queue_create(state, "smbXsrv_connection_shutdown_queue");
+	if (tevent_req_nomem(state->wait_queue, req)) {
+		return tevent_req_post(req, ev);
+	}
+
+	for (preq = xconn->smb2.requests; preq != NULL; preq = preq->next) {
+		/*
+		 * The connection is gone so we
+		 * don't need to take care of
+		 * any crypto
+		 */
+		preq->session = NULL;
+		preq->do_signing = false;
+		preq->do_encryption = false;
+		preq->preauth = NULL;
+
+		if (preq->subreq != NULL) {
+			tevent_req_cancel(preq->subreq);
+		}
+
+		/*
+		 * Now wait until the request is finished.
+		 *
+		 * We don't set a callback, as we just want to block the
+		 * wait queue and the talloc_free() of the request will
+		 * remove the item from the wait queue.
+		 */
+		subreq = tevent_queue_wait_send(preq, ev, state->wait_queue);
+		if (tevent_req_nomem(subreq, req)) {
+			return tevent_req_post(req, ev);
+		}
+	}
+
+	len = tevent_queue_length(state->wait_queue);
+	if (len == 0) {
+		tevent_req_done(req);
+		return tevent_req_post(req, ev);
+	}
+
+	/*
+	 * Now we add our own waiter to the end of the queue,
+	 * this way we get notified when all pending requests are finished
+	 * and send to the socket.
+	 */
+	subreq = tevent_queue_wait_send(state, ev, state->wait_queue);
+	if (tevent_req_nomem(subreq, req)) {
+		return tevent_req_post(req, ev);
+	}
+	tevent_req_set_callback(subreq, smbXsrv_connection_shutdown_wait_done, req);
+
+	return req;
+}
+
+static void smbXsrv_connection_shutdown_wait_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req =
+		tevent_req_callback_data(subreq,
+		struct tevent_req);
+
+	tevent_queue_wait_recv(subreq);
+	TALLOC_FREE(subreq);
+
+	tevent_req_done(req);
+}
+
+static NTSTATUS smbXsrv_connection_shutdown_recv(struct tevent_req *req)
+{
+	return tevent_req_simple_recv_ntstatus(req);
+}
+
+static void smbd_server_connection_terminate_done(struct tevent_req *subreq)
+{
+	struct smbXsrv_connection *xconn =
+		tevent_req_callback_data(subreq,
+		struct smbXsrv_connection);
+	struct smbXsrv_client *client = xconn->client;
+	NTSTATUS status;
+
+	status = smbXsrv_connection_shutdown_recv(subreq);
+	if (!NT_STATUS_IS_OK(status)) {
+		exit_server("smbXsrv_connection_shutdown_recv failed");
+	}
+
+	DLIST_REMOVE(client->connections, xconn);
+	TALLOC_FREE(xconn);
+}
+
 void smbd_server_connection_terminate_ex(struct smbXsrv_connection *xconn,
 					 const char *reason,
 					 const char *location)
 {
 	struct smbXsrv_client *client = xconn->client;
+	size_t num_ok = 0;
 
-	DEBUG(10,("smbd_server_connection_terminate_ex: conn[%s] reason[%s] at %s\n",
-		  smbXsrv_connection_dbg(xconn), reason, location));
+	/*
+	 * Make sure that no new request will be able to use this session.
+	 *
+	 * smbXsrv_connection_disconnect_transport() might be called already,
+	 * but calling it again is a no-op.
+	 */
+	smbXsrv_connection_disconnect_transport(xconn,
+					NT_STATUS_CONNECTION_DISCONNECTED);
 
-	if (client->connections->next != NULL) {
-		/* TODO: cancel pending requests */
-		DLIST_REMOVE(client->connections, xconn);
-		TALLOC_FREE(xconn);
-		DO_PROFILE_INC(disconnect);
+	num_ok = smbXsrv_client_valid_connections(client);
+
+	DBG_DEBUG("conn[%s] num_ok[%zu] reason[%s] at %s\n",
+		  smbXsrv_connection_dbg(xconn), num_ok,
+		  reason, location);
+
+	if (xconn->has_ctdb_public_ip) {
+		/*
+		 * If the connection has a ctdb public address
+		 * we disconnect all client connections,
+		 * as the public address might be moved to
+		 * a different node.
+		 *
+		 * In future we may recheck which node currently
+		 * holds this address, but for now we keep it simple.
+		 */
+		smbd_server_disconnect_client_ex(xconn->client,
+						 reason,
+						 location);
+		return;
+	}
+
+	if (num_ok != 0) {
+		struct tevent_req *subreq = NULL;
+
+		subreq = smbXsrv_connection_shutdown_send(client,
+							  client->raw_ev_ctx,
+							  xconn);
+		if (subreq == NULL) {
+			exit_server("smbXsrv_connection_shutdown_send failed");
+		}
+		tevent_req_set_callback(subreq,
+					smbd_server_connection_terminate_done,
+					xconn);
 		return;
 	}
 
 	/*
 	 * The last connection was disconnected
+	 */
+	exit_server_cleanly(reason);
+}
+
+void smbd_server_disconnect_client_ex(struct smbXsrv_client *client,
+				      const char *reason,
+				      const char *location)
+{
+	size_t num_ok = 0;
+
+	num_ok = smbXsrv_client_valid_connections(client);
+
+	DBG_WARNING("client[%s] num_ok[%zu] reason[%s] at %s\n",
+		    client->global->remote_address, num_ok,
+		    reason, location);
+
+	/*
+	 * Something bad happened we need to disconnect all connections.
 	 */
 	exit_server_cleanly(reason);
 }
@@ -1683,7 +2230,7 @@ static void smbd_smb2_request_pending_timer(struct tevent_context *ev,
 	SIVAL(hdr, SMB2_HDR_PROTOCOL_ID, SMB2_MAGIC);
 	SSVAL(hdr, SMB2_HDR_LENGTH, SMB2_HDR_BODY);
 	SSVAL(hdr, SMB2_HDR_EPOCH, 0);
-	SIVAL(hdr, SMB2_HDR_STATUS, NT_STATUS_V(STATUS_PENDING));
+	SIVAL(hdr, SMB2_HDR_STATUS, NT_STATUS_V(NT_STATUS_PENDING));
 	SSVAL(hdr, SMB2_HDR_OPCODE, SVAL(outhdr, SMB2_HDR_OPCODE));
 
 	SIVAL(hdr, SMB2_HDR_FLAGS, flags);
@@ -2529,6 +3076,42 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 		}
 	} else if (opcode == SMB2_OP_CANCEL) {
 		/* Cancel requests are allowed to skip the signing */
+	} else if (opcode == SMB2_OP_IOCTL) {
+		/*
+		 * Some special IOCTL calls don't require
+		 * file, tcon nor session.
+		 *
+		 * They typically don't do any real action
+		 * on behalf of the client.
+		 *
+		 * They are mainly used to alter the behavior
+		 * of the connection for testing. So we can
+		 * run as root and skip all file, tcon and session
+		 * checks below.
+		 */
+		static const struct smbd_smb2_dispatch_table _root_ioctl_call = {
+			_OP(SMB2_OP_IOCTL),
+			.as_root = true,
+		};
+		const uint8_t *body = SMBD_SMB2_IN_BODY_PTR(req);
+		size_t body_size = SMBD_SMB2_IN_BODY_LEN(req);
+		uint32_t in_ctl_code;
+		size_t needed = 4;
+
+		if (needed > body_size) {
+			return smbd_smb2_request_error(req,
+					NT_STATUS_INVALID_PARAMETER);
+		}
+
+		in_ctl_code = IVAL(body, 0x04);
+		/*
+		 * Only add trusted IOCTL codes here!
+		 */
+		switch (in_ctl_code) {
+		case FSCTL_SMBTORTURE_FORCE_UNACKED_TIMEOUT:
+			call = &_root_ioctl_call;
+			break;
+		}
 	} else if (signing_required) {
 		/*
 		 * If signing is required we try to sign
@@ -3328,61 +3911,34 @@ NTSTATUS smbd_smb2_request_error_ex(struct smbd_smb2_request *req,
 	return smbd_smb2_request_done_ex(req, status, body, info, __location__);
 }
 
-
-struct smbd_smb2_send_break_state {
+struct smbd_smb2_break_state {
+	struct tevent_req *req;
 	struct smbd_smb2_send_queue queue_entry;
 	uint8_t nbt_hdr[NBT_HDR_SIZE];
-	uint8_t tf[SMB2_TF_HDR_SIZE];
 	uint8_t hdr[SMB2_HDR_BODY];
 	struct iovec vector[1+SMBD_SMB2_NUM_IOV_PER_REQ];
-	uint8_t body[1];
 };
 
-static NTSTATUS smbd_smb2_send_break(struct smbXsrv_connection *xconn,
-				     struct smbXsrv_session *session,
-				     struct smbXsrv_tcon *tcon,
-				     const uint8_t *body,
-				     size_t body_len)
+static struct tevent_req *smbd_smb2_break_send(TALLOC_CTX *mem_ctx,
+					       struct tevent_context *ev,
+					       struct smbXsrv_connection *xconn,
+					       uint64_t session_id,
+					       const uint8_t *body,
+					       size_t body_len)
 {
-	struct smbd_smb2_send_break_state *state;
-	bool do_encryption = false;
-	uint64_t session_wire_id = 0;
-	uint64_t nonce_high = 0;
-	uint64_t nonce_low = 0;
+	struct tevent_req *req = NULL;
+	struct smbd_smb2_break_state *state = NULL;
 	NTSTATUS status;
-	size_t statelen;
 	bool ok;
 
-	if (session != NULL) {
-		session_wire_id = session->global->session_wire_id;
-		do_encryption = session->global->encryption_flags & SMBXSRV_ENCRYPTION_DESIRED;
-		if (tcon->global->encryption_flags & SMBXSRV_ENCRYPTION_DESIRED) {
-			do_encryption = true;
-		}
+	req = tevent_req_create(mem_ctx, &state,
+				struct smbd_smb2_break_state);
+	if (req == NULL) {
+		return NULL;
 	}
 
-	statelen = offsetof(struct smbd_smb2_send_break_state, body) +
-		body_len;
-
-	state = talloc_zero_size(xconn, statelen);
-	if (state == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-	talloc_set_name_const(state, "struct smbd_smb2_send_break_state");
-
-	if (do_encryption) {
-		status = smb2_get_new_nonce(session,
-					    &nonce_high,
-					    &nonce_low);
-		if (!NT_STATUS_IS_OK(status)) {
-			return status;
-		}
-	}
-
-	SIVAL(state->tf, SMB2_TF_PROTOCOL_ID, SMB2_TF_MAGIC);
-	SBVAL(state->tf, SMB2_TF_NONCE+0, nonce_low);
-	SBVAL(state->tf, SMB2_TF_NONCE+8, nonce_high);
-	SBVAL(state->tf, SMB2_TF_SESSION_ID, session_wire_id);
+	state->req = req;
+	tevent_req_defer_callback(req, ev);
 
 	SIVAL(state->hdr, 0,				SMB2_MAGIC);
 	SSVAL(state->hdr, SMB2_HDR_LENGTH,		SMB2_HDR_BODY);
@@ -3393,9 +3949,9 @@ static NTSTATUS smbd_smb2_send_break(struct smbXsrv_connection *xconn,
 	SIVAL(state->hdr, SMB2_HDR_FLAGS,		SMB2_HDR_FLAG_REDIRECT);
 	SIVAL(state->hdr, SMB2_HDR_NEXT_COMMAND,	0);
 	SBVAL(state->hdr, SMB2_HDR_MESSAGE_ID,		UINT64_MAX);
-	SIVAL(state->hdr, SMB2_HDR_PID,		0);
-	SIVAL(state->hdr, SMB2_HDR_TID,		0);
-	SBVAL(state->hdr, SMB2_HDR_SESSION_ID,		0);
+	SIVAL(state->hdr, SMB2_HDR_PID,			0);
+	SIVAL(state->hdr, SMB2_HDR_TID,			0);
+	SBVAL(state->hdr, SMB2_HDR_SESSION_ID,		session_id);
 	memset(state->hdr+SMB2_HDR_SIGNATURE, 0, 16);
 
 	state->vector[0] = (struct iovec) {
@@ -3403,28 +3959,19 @@ static NTSTATUS smbd_smb2_send_break(struct smbXsrv_connection *xconn,
 		.iov_len  = sizeof(state->nbt_hdr)
 	};
 
-	if (do_encryption) {
-		state->vector[1+SMBD_SMB2_TF_IOV_OFS] = (struct iovec) {
-			.iov_base = state->tf,
-			.iov_len  = sizeof(state->tf)
-		};
-	} else {
-		state->vector[1+SMBD_SMB2_TF_IOV_OFS] = (struct iovec) {
-			.iov_base = NULL,
-			.iov_len  = 0
-		};
-	}
+	state->vector[1+SMBD_SMB2_TF_IOV_OFS] = (struct iovec) {
+		.iov_base = NULL,
+		.iov_len  = 0
+	};
 
 	state->vector[1+SMBD_SMB2_HDR_IOV_OFS] = (struct iovec) {
 		.iov_base = state->hdr,
 		.iov_len  = sizeof(state->hdr)
 	};
 
-	memcpy(state->body, body, body_len);
-
 	state->vector[1+SMBD_SMB2_BODY_IOV_OFS] = (struct iovec) {
-		.iov_base = state->body,
-		.iov_len  = body_len /* no sizeof(state->body) .. :-) */
+		.iov_base = discard_const_p(uint8_t, body),
+		.iov_len  = body_len,
 	};
 
 	/*
@@ -3434,22 +3981,31 @@ static NTSTATUS smbd_smb2_send_break(struct smbXsrv_connection *xconn,
 	ok = smb2_setup_nbt_length(state->vector,
 				   1 + SMBD_SMB2_NUM_IOV_PER_REQ);
 	if (!ok) {
-		return NT_STATUS_INVALID_PARAMETER_MIX;
+		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER_MIX);
+		return tevent_req_post(req, ev);
 	}
 
-	if (do_encryption) {
-		struct smb2_signing_key *encryption_key =
-			session->global->encryption_key;
-
-		status = smb2_signing_encrypt_pdu(encryption_key,
-					xconn->smb2.server.cipher,
-					&state->vector[1+SMBD_SMB2_TF_IOV_OFS],
-					SMBD_SMB2_NUM_IOV_PER_REQ);
-		if (!NT_STATUS_IS_OK(status)) {
-			return status;
-		}
-	}
-
+	/*
+	 * We require TCP acks for this PDU to the client!
+	 * We want 5 retransmissions and timeout when the
+	 * retransmission timeout (rto) passed 6 times.
+	 *
+	 * required_acked_bytes gets a dummy value of
+	 * UINT64_MAX, as long it's in xconn->smb2.send_queue,
+	 * it'll get the real value when it's moved to
+	 * xconn->ack.queue.
+	 *
+	 * state->queue_entry.ack.req gets completed with
+	 * 1.  tevent_req_done(), when all bytes are acked.
+	 * 2a. tevent_req_nterror(NT_STATUS_IO_TIMEOUT), when
+	 *     the timeout expired before all bytes were acked.
+	 * 2b. tevent_req_nterror(transport_error), when the
+	 *     connection got a disconnect from the kernel.
+	 */
+	state->queue_entry.ack.timeout =
+		timeval_current_ofs_usec(xconn->ack.rto_usecs * 6);
+	state->queue_entry.ack.required_acked_bytes = UINT64_MAX;
+	state->queue_entry.ack.req = req;
 	state->queue_entry.mem_ctx = state;
 	state->queue_entry.vector = state->vector;
 	state->queue_entry.count = ARRAY_SIZE(state->vector);
@@ -3457,6 +4013,65 @@ static NTSTATUS smbd_smb2_send_break(struct smbXsrv_connection *xconn,
 	xconn->smb2.send_queue_len++;
 
 	status = smbd_smb2_flush_send_queue(xconn);
+	if (tevent_req_nterror(req, status)) {
+		return tevent_req_post(req, ev);
+	}
+
+	return req;
+}
+
+static NTSTATUS smbd_smb2_break_recv(struct tevent_req *req)
+{
+	return tevent_req_simple_recv_ntstatus(req);
+}
+
+struct smbXsrv_pending_break {
+	struct smbXsrv_pending_break *prev, *next;
+	struct smbXsrv_client *client;
+	bool disable_oplock_break_retries;
+	uint64_t session_id;
+	uint64_t last_channel_id;
+	union {
+		uint8_t generic[1];
+		uint8_t oplock[0x18];
+		uint8_t lease[0x2c];
+	} body;
+	size_t body_len;
+};
+
+static void smbXsrv_pending_break_done(struct tevent_req *subreq);
+
+static struct smbXsrv_pending_break *smbXsrv_pending_break_create(
+		struct smbXsrv_client *client,
+		uint64_t session_id)
+{
+	struct smbXsrv_pending_break *pb = NULL;
+
+	pb = talloc_zero(client, struct smbXsrv_pending_break);
+	if (pb == NULL) {
+		return NULL;
+	}
+	pb->client = client;
+	pb->session_id = session_id;
+	pb->disable_oplock_break_retries = lp_smb2_disable_oplock_break_retry();
+
+	return pb;
+}
+
+static NTSTATUS smbXsrv_pending_break_submit(struct smbXsrv_pending_break *pb);
+
+static NTSTATUS smbXsrv_pending_break_schedule(struct smbXsrv_pending_break *pb)
+{
+	struct smbXsrv_client *client = pb->client;
+	NTSTATUS status;
+
+	DLIST_ADD_END(client->pending_breaks, pb);
+	status = smbXsrv_client_pending_breaks_updated(client);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	status = smbXsrv_pending_break_submit(pb);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
@@ -3464,34 +4079,208 @@ static NTSTATUS smbd_smb2_send_break(struct smbXsrv_connection *xconn,
 	return NT_STATUS_OK;
 }
 
-NTSTATUS smbd_smb2_send_oplock_break(struct smbXsrv_connection *xconn,
-				     struct smbXsrv_session *session,
-				     struct smbXsrv_tcon *tcon,
+static NTSTATUS smbXsrv_pending_break_submit(struct smbXsrv_pending_break *pb)
+{
+	struct smbXsrv_client *client = pb->client;
+	struct smbXsrv_session *session = NULL;
+	struct smbXsrv_connection *xconn = NULL;
+	struct smbXsrv_connection *oplock_xconn = NULL;
+	struct tevent_req *subreq = NULL;
+	NTSTATUS status;
+
+	if (pb->session_id != 0) {
+		status = get_valid_smbXsrv_session(client,
+						   pb->session_id,
+						   &session);
+		if (NT_STATUS_EQUAL(status, NT_STATUS_USER_SESSION_DELETED)) {
+			return NT_STATUS_ABANDONED;
+		}
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
+
+		if (pb->last_channel_id != 0) {
+			/*
+			 * This is what current Windows servers
+			 * do, they don't retry on all available
+			 * channels. They only use the last channel.
+			 *
+			 * But it doesn't match the specification in
+			 * [MS-SMB2] "3.3.4.6 Object Store Indicates an
+			 * Oplock Break"
+			 *
+			 * Per default disable_oplock_break_retries is false
+			 * and we behave like the specification.
+			 */
+			if (pb->disable_oplock_break_retries) {
+				return NT_STATUS_ABANDONED;
+			}
+		}
+	}
+
+	for (xconn = client->connections; xconn != NULL; xconn = xconn->next) {
+		if (!NT_STATUS_IS_OK(xconn->transport.status)) {
+			continue;
+		}
+
+		if (xconn->channel_id == 0) {
+			/*
+			 * non-multichannel case
+			 */
+			break;
+		}
+
+		if (session != NULL) {
+			struct smbXsrv_channel_global0 *c = NULL;
+
+			/*
+			 * Having a session means we're handling
+			 * an oplock break and we only need to
+			 * use channels available on the
+			 * session.
+			 */
+			status = smbXsrv_session_find_channel(session, xconn, &c);
+			if (!NT_STATUS_IS_OK(status)) {
+				continue;
+			}
+
+			/*
+			 * This is what current Windows servers
+			 * do, they don't retry on all available
+			 * channels. They only use the last channel.
+			 *
+			 * But it doesn't match the specification
+			 * in [MS-SMB2] "3.3.4.6 Object Store Indicates an
+			 * Oplock Break"
+			 *
+			 * Per default disable_oplock_break_retries is false
+			 * and we behave like the specification.
+			 */
+			if (pb->disable_oplock_break_retries) {
+				oplock_xconn = xconn;
+				continue;
+			}
+		}
+
+		if (xconn->channel_id > pb->last_channel_id) {
+			/*
+			 * multichannel case
+			 */
+			break;
+		}
+	}
+
+	if (xconn == NULL) {
+		xconn = oplock_xconn;
+	}
+
+	if (xconn == NULL) {
+		/*
+		 * If there's no remaining connection available
+		 * tell the caller to stop...
+		 */
+		return NT_STATUS_ABANDONED;
+	}
+
+	pb->last_channel_id = xconn->channel_id;
+
+	subreq = smbd_smb2_break_send(pb,
+				      client->raw_ev_ctx,
+				      xconn,
+				      pb->session_id,
+				      pb->body.generic,
+				      pb->body_len);
+	if (subreq == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	tevent_req_set_callback(subreq,
+				smbXsrv_pending_break_done,
+				pb);
+
+	return NT_STATUS_OK;
+}
+
+static void smbXsrv_pending_break_done(struct tevent_req *subreq)
+{
+	struct smbXsrv_pending_break *pb =
+		tevent_req_callback_data(subreq,
+		struct smbXsrv_pending_break);
+	struct smbXsrv_client *client = pb->client;
+	NTSTATUS status;
+
+	status = smbd_smb2_break_recv(subreq);
+	TALLOC_FREE(subreq);
+	if (!NT_STATUS_IS_OK(status)) {
+		status = smbXsrv_pending_break_submit(pb);
+		if (NT_STATUS_EQUAL(status, NT_STATUS_ABANDONED)) {
+			/*
+			 * If there's no remaing connection
+			 * there's no need to send a break again.
+			 */
+			goto remove;
+		}
+		if (!NT_STATUS_IS_OK(status)) {
+			smbd_server_disconnect_client(client, nt_errstr(status));
+			return;
+		}
+		return;
+	}
+
+remove:
+	DLIST_REMOVE(client->pending_breaks, pb);
+	TALLOC_FREE(pb);
+
+	status = smbXsrv_client_pending_breaks_updated(client);
+	if (!NT_STATUS_IS_OK(status)) {
+		smbd_server_disconnect_client(client, nt_errstr(status));
+		return;
+	}
+}
+
+NTSTATUS smbd_smb2_send_oplock_break(struct smbXsrv_client *client,
 				     struct smbXsrv_open *op,
 				     uint8_t oplock_level)
 {
-	uint8_t body[0x18];
+	struct smbXsrv_pending_break *pb = NULL;
+	uint8_t *body = NULL;
 
-	SSVAL(body, 0x00, sizeof(body));
+	pb = smbXsrv_pending_break_create(client,
+					  op->compat->vuid);
+	if (pb == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	pb->body_len = sizeof(pb->body.oplock);
+	body = pb->body.oplock;
+
+	SSVAL(body, 0x00, pb->body_len);
 	SCVAL(body, 0x02, oplock_level);
 	SCVAL(body, 0x03, 0);		/* reserved */
 	SIVAL(body, 0x04, 0);		/* reserved */
 	SBVAL(body, 0x08, op->global->open_persistent_id);
 	SBVAL(body, 0x10, op->global->open_volatile_id);
 
-	return smbd_smb2_send_break(xconn, NULL, NULL, body, sizeof(body));
+	return smbXsrv_pending_break_schedule(pb);
 }
 
-NTSTATUS smbd_smb2_send_lease_break(struct smbXsrv_connection *xconn,
+NTSTATUS smbd_smb2_send_lease_break(struct smbXsrv_client *client,
 				    uint16_t new_epoch,
 				    uint32_t lease_flags,
 				    struct smb2_lease_key *lease_key,
 				    uint32_t current_lease_state,
 				    uint32_t new_lease_state)
 {
-	uint8_t body[0x2c];
+	struct smbXsrv_pending_break *pb = NULL;
+	uint8_t *body = NULL;
 
-	SSVAL(body, 0x00, sizeof(body));
+	pb = smbXsrv_pending_break_create(client,
+					  0); /* no session_id */
+	if (pb == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	pb->body_len = sizeof(pb->body.lease);
+	body = pb->body.lease;
+
+	SSVAL(body, 0x00, pb->body_len);
 	SSVAL(body, 0x02, new_epoch);
 	SIVAL(body, 0x04, lease_flags);
 	SBVAL(body, 0x08, lease_key->data[0]);
@@ -3502,7 +4291,7 @@ NTSTATUS smbd_smb2_send_lease_break(struct smbXsrv_connection *xconn,
 	SIVAL(body, 0x24, 0);		/* AccessMaskHint, MUST be 0 */
 	SIVAL(body, 0x28, 0);		/* ShareMaskHint, MUST be 0 */
 
-	return smbd_smb2_send_break(xconn, NULL, NULL, body, sizeof(body));
+	return smbXsrv_pending_break_schedule(pb);
 }
 
 static bool is_smb2_recvfile_write(struct smbd_smb2_request_read_state *state)
@@ -3655,6 +4444,23 @@ NTSTATUS smbd_smb2_process_negprot(struct smbXsrv_connection *xconn,
 		return status;
 	}
 
+	/*
+	 * If a new connection joins the process, when we're
+	 * already in a "pending break cycle", we need to
+	 * turn on the ack checker on the new connection.
+	 */
+	status = smbXsrv_client_pending_breaks_updated(xconn->client);
+	if (!NT_STATUS_IS_OK(status)) {
+		/*
+		 * If there's a problem, we disconnect the whole
+		 * client with all connections here!
+		 *
+		 * Instead of just the new connection.
+		 */
+		smbd_server_disconnect_client(xconn->client, nt_errstr(status));
+		return status;
+	}
+
 	status = smbd_smb2_request_create(xconn, inpdu, size, &req);
 	if (!NT_STATUS_IS_OK(status)) {
 		smbd_server_connection_terminate(xconn, nt_errstr(status));
@@ -3764,6 +4570,7 @@ static NTSTATUS smbd_smb2_flush_send_queue(struct smbXsrv_connection *xconn)
 	while (xconn->smb2.send_queue != NULL) {
 		struct smbd_smb2_send_queue *e = xconn->smb2.send_queue;
 		bool ok;
+		struct msghdr msg;
 
 		if (e->sendfile_header != NULL) {
 			size_t size = 0;
@@ -3800,6 +4607,9 @@ static NTSTATUS smbd_smb2_flush_send_queue(struct smbXsrv_connection *xconn)
 
 			xconn->smb2.send_queue_len--;
 			DLIST_REMOVE(xconn->smb2.send_queue, e);
+
+			size += e->sendfile_body_size;
+
 			/*
 			 * This triggers the sendfile path via
 			 * the destructor.
@@ -3807,12 +4617,20 @@ static NTSTATUS smbd_smb2_flush_send_queue(struct smbXsrv_connection *xconn)
 			talloc_free(e->mem_ctx);
 
 			if (!NT_STATUS_IS_OK(status)) {
+				smbXsrv_connection_disconnect_transport(xconn,
+									status);
 				return status;
 			}
+			xconn->ack.unacked_bytes += size;
 			continue;
 		}
 
-		ret = writev(xconn->transport.sock, e->vector, e->count);
+		msg = (struct msghdr) {
+			.msg_iov = e->vector,
+			.msg_iovlen = e->count,
+		};
+
+		ret = sendmsg(xconn->transport.sock, &msg, 0);
 		if (ret == 0) {
 			/* propagate end of file */
 			return NT_STATUS_INTERNAL_ERROR;
@@ -3824,8 +4642,13 @@ static NTSTATUS smbd_smb2_flush_send_queue(struct smbXsrv_connection *xconn)
 			return NT_STATUS_OK;
 		}
 		if (err != 0) {
-			return map_nt_error_from_unix_common(err);
+			status = map_nt_error_from_unix_common(err);
+			smbXsrv_connection_disconnect_transport(xconn,
+								status);
+			return status;
 		}
+
+		xconn->ack.unacked_bytes += ret;
 
 		ok = iov_advance(&e->vector, &e->count, ret);
 		if (!ok) {
@@ -3840,7 +4663,14 @@ static NTSTATUS smbd_smb2_flush_send_queue(struct smbXsrv_connection *xconn)
 
 		xconn->smb2.send_queue_len--;
 		DLIST_REMOVE(xconn->smb2.send_queue, e);
-		talloc_free(e->mem_ctx);
+
+		if (e->ack.req == NULL) {
+			talloc_free(e->mem_ctx);
+			continue;
+		}
+
+		e->ack.required_acked_bytes = xconn->ack.unacked_bytes;
+		DLIST_ADD_END(xconn->ack.queue, e);
 	}
 
 	/*
@@ -3868,6 +4698,7 @@ static NTSTATUS smbd_smb2_io_handler(struct smbXsrv_connection *xconn,
 	bool retry;
 	NTSTATUS status;
 	NTTIME now;
+	struct msghdr msg;
 
 	if (!NT_STATUS_IS_OK(xconn->transport.status)) {
 		/*
@@ -3902,10 +4733,18 @@ again:
 		state->vector.iov_len = NBT_HDR_SIZE;
 	}
 
-	ret = readv(xconn->transport.sock, &state->vector, 1);
+	msg = (struct msghdr) {
+		.msg_iov = &state->vector,
+		.msg_iovlen = 1,
+	};
+
+	ret = recvmsg(xconn->transport.sock, &msg, 0);
 	if (ret == 0) {
 		/* propagate end of file */
-		return NT_STATUS_END_OF_FILE;
+		status = NT_STATUS_END_OF_FILE;
+		smbXsrv_connection_disconnect_transport(xconn,
+							status);
+		return status;
 	}
 	err = socket_error_from_errno(ret, errno, &retry);
 	if (retry) {
@@ -3914,7 +4753,10 @@ again:
 		return NT_STATUS_OK;
 	}
 	if (err != 0) {
-		return map_nt_error_from_unix_common(err);
+		status = map_nt_error_from_unix_common(err);
+		smbXsrv_connection_disconnect_transport(xconn,
+							status);
+		return status;
 	}
 
 	if (ret < state->vector.iov_len) {

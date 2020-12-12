@@ -26,22 +26,7 @@
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
 #include "ntdomain.h"
-#include "../librpc/gen_ndr/srv_dfs.h"
-#include "../librpc/gen_ndr/srv_dssetup.h"
-#include "../librpc/gen_ndr/srv_echo.h"
-#include "../librpc/gen_ndr/srv_eventlog.h"
-#include "../librpc/gen_ndr/srv_initshutdown.h"
-#include "../librpc/gen_ndr/srv_lsa.h"
-#include "../librpc/gen_ndr/srv_netlogon.h"
-#include "../librpc/gen_ndr/srv_ntsvcs.h"
-#include "../librpc/gen_ndr/srv_samr.h"
-#include "../librpc/gen_ndr/srv_spoolss.h"
-#include "../librpc/gen_ndr/srv_srvsvc.h"
-#include "../librpc/gen_ndr/srv_svcctl.h"
-#include "../librpc/gen_ndr/srv_winreg.h"
-#include "../librpc/gen_ndr/srv_wkssvc.h"
-#include "../librpc/gen_ndr/srv_fsrvp.h"
-#include "../librpc/gen_ndr/srv_epmapper.h"
+#include "librpc/rpc/dcesrv_core.h"
 #include "printing/notify.h"
 #include "printing.h"
 #include "serverid.h"
@@ -51,6 +36,7 @@
 #include "smbprofile.h"
 #include "libcli/auth/netlogon_creds_cli.h"
 #include "lib/gencache.h"
+#include "rpc_server/rpc_config.h"
 
 static struct files_struct *log_writeable_file_fn(
 	struct files_struct *fsp, void *private_data)
@@ -58,7 +44,7 @@ static struct files_struct *log_writeable_file_fn(
 	bool *found = (bool *)private_data;
 	char *path;
 
-	if (!fsp->can_write) {
+	if (!fsp->fsp_flags.can_write) {
 		return NULL;
 	}
 	if (!(*found)) {
@@ -95,6 +81,17 @@ static void exit_server_common(enum server_exit_reason how,
 	struct smbXsrv_connection *xconn = NULL;
 	struct smbd_server_connection *sconn = NULL;
 	struct messaging_context *msg_ctx = global_messaging_context();
+	NTSTATUS disconnect_status;
+
+	switch (how) {
+	case SERVER_EXIT_NORMAL:
+		disconnect_status = NT_STATUS_LOCAL_DISCONNECT;
+		break;
+	case SERVER_EXIT_ABNORMAL:
+	default:
+		disconnect_status = NT_STATUS_INTERNAL_ERROR;
+		break;
+	}
 
 	if (client != NULL) {
 		sconn = client->sconn;
@@ -114,19 +111,12 @@ static void exit_server_common(enum server_exit_reason how,
 	for (; xconn != NULL; xconn = xconn->next) {
 		/*
 		 * This is typically the disconnect for the only
-		 * (or with multi-channel last) connection of the client
+		 * (or with multi-channel last) connection of the client.
+		 *
+		 * smbXsrv_connection_disconnect_transport() might be called already,
+		 * but calling it again is a no-op.
 		 */
-		if (NT_STATUS_IS_OK(xconn->transport.status)) {
-			switch (how) {
-			case SERVER_EXIT_ABNORMAL:
-				xconn->transport.status = NT_STATUS_INTERNAL_ERROR;
-				break;
-			case SERVER_EXIT_NORMAL:
-				xconn->transport.status = NT_STATUS_LOCAL_DISCONNECT;
-				break;
-			}
-		}
-		DO_PROFILE_INC(disconnect);
+		smbXsrv_connection_disconnect_transport(xconn, disconnect_status);
 	}
 
 	change_to_root_user();
@@ -194,29 +184,10 @@ static void exit_server_common(enum server_exit_reason how,
 	}
 #endif
 
-	if (am_parent) {
-		rpc_wkssvc_shutdown();
-		rpc_dssetup_shutdown();
-#ifdef DEVELOPER
-		rpc_rpcecho_shutdown();
-#endif
-		rpc_netdfs_shutdown();
-		rpc_initshutdown_shutdown();
-		rpc_eventlog_shutdown();
-		rpc_ntsvcs_shutdown();
-		rpc_svcctl_shutdown();
-		rpc_spoolss_shutdown();
+	if (am_parent && sconn != NULL) {
+		dcesrv_shutdown_registered_ep_servers(sconn->dce_ctx);
 
-		rpc_srvsvc_shutdown();
-		rpc_winreg_shutdown();
-
-		rpc_netlogon_shutdown();
-		rpc_samr_shutdown();
-		rpc_lsarpc_shutdown();
-
-		rpc_FileServerVssAgent_shutdown();
-
-		rpc_epmapper_shutdown();
+		global_dcesrv_context_free();
 	}
 
 	/*
