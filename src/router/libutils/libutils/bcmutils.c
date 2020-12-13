@@ -1545,12 +1545,18 @@ int doMultiCast(void)
 	if (nvram_matchi("block_multicast", 0)) {
 		ifcount++;
 	}
-	char *lan_ifnames = nvram_safe_get("lan_ifnames");
 
-	foreach(name, lan_ifnames, next) {
-		if (nvram_nmatch("1", "%s_multicast", name)
-		    && nvram_nmatch("0", "%s_bridged", name)) {
-			ifcount++;
+	char ifnames[256];
+
+	getIfLists(ifnames, 256);
+	foreach(name, ifnames, next) {
+		if (strcmp(get_wan_face(), name)
+		    && strcmp(nvram_safe_get("lan_ifname"), name)
+		    && strcmp(nvram_safe_get("tvnicfrom"), name)) {
+			if ((nvram_nmatch("0", "%s_bridged", name) || isbridge(name))
+			    && nvram_nmatch("1", "%s_multicast", name)) {
+				ifcount++;
+			}
 		}
 	}
 	return ifcount;
