@@ -7,11 +7,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -37,8 +37,8 @@ struct GlobalConfig;
 
 struct State {
   struct getout *urlnode;
-  URLGlob *inglob;
-  URLGlob *urls;
+  struct URLGlob *inglob;
+  struct URLGlob *urls;
   char *outfiles;
   char *httpgetfields;
   char *uploadfile;
@@ -58,6 +58,7 @@ struct OperationConfig {
   char *cookiejar;          /* write to this file */
   char *cookiefile;         /* read from this file */
   char *altsvc;             /* alt-svc cache file name */
+  char *hsts;               /* HSTS cache file name */
   bool cookiesession;       /* new session? */
   bool encoding;            /* Accept-Encoding please */
   bool tr_encoding;         /* Transfer-Encoding please */
@@ -80,6 +81,7 @@ struct OperationConfig {
   double connecttimeout;
   long maxredirs;
   curl_off_t max_filesize;
+  char *output_dir;
   char *headerfile;
   char *ftpport;
   char *iface;
@@ -108,6 +110,7 @@ struct OperationConfig {
   char *mail_from;
   struct curl_slist *mail_rcpt;
   char *mail_auth;
+  bool mail_rcpt_allowfails; /* --mail-rcpt-allowfails */
   char *sasl_authzid;       /* Authorisation identity (identity to use) */
   bool sasl_ir;             /* Enable/disable SASL initial response */
   bool proxytunnel;
@@ -156,8 +159,11 @@ struct OperationConfig {
   char *pubkey;
   char *hostpubmd5;
   char *engine;
+  char *etag_save_file;
+  char *etag_compare_file;
   bool crlf;
   char *customrequest;
+  char *ssl_ec_curves;
   char *krblevel;
   char *request_target;
   long httpversion;
@@ -191,8 +197,8 @@ struct OperationConfig {
   curl_off_t condtime;
   struct curl_slist *headers;
   struct curl_slist *proxyheaders;
-  tool_mime *mimeroot;
-  tool_mime *mimecurrent;
+  struct tool_mime *mimeroot;
+  struct tool_mime *mimecurrent;
   curl_mime *mimepost;
   struct curl_slist *telnet_options;
   struct curl_slist *resolve;
@@ -220,6 +226,7 @@ struct OperationConfig {
   bool tcp_nodelay;
   bool tcp_fastopen;
   long req_retry;           /* number of retries */
+  bool retry_all_errors;    /* retry on any error */
   bool retry_connrefused;   /* set connection refused as a transient error */
   long retry_delay;         /* delay between retries (in seconds) */
   long retry_maxtime;       /* maximum time to keep retrying */
@@ -251,9 +258,14 @@ struct OperationConfig {
   bool ssl_no_revoke;       /* disable SSL certificate revocation checks */
   /*bool proxy_ssl_no_revoke; */
 
+  bool ssl_revoke_best_effort; /* ignore SSL revocation offline/missing
+                                  revocation list errors */
+
+  bool native_ca_store;        /* use the native os ca store */
+
   bool use_metalink;        /* process given URLs as metalink XML file */
-  metalinkfile *metalinkfile_list; /* point to the first node */
-  metalinkfile *metalinkfile_last; /* point to the last/current node */
+  struct metalinkfile *metalinkfile_list; /* point to the first node */
+  struct metalinkfile *metalinkfile_last; /* point to the last/current node */
   char *oauth_bearer;             /* OAuth 2.0 bearer token */
   bool nonpn;                     /* enable/disable TLS NPN extension */
   bool noalpn;                    /* enable/disable TLS ALPN extension */
@@ -300,6 +312,8 @@ struct GlobalConfig {
 #endif
   bool parallel;
   long parallel_max;
+  bool parallel_connect;
+  char *help_category;            /* The help category, if set */
   struct OperationConfig *first;
   struct OperationConfig *current;
   struct OperationConfig *last;   /* Always last in the struct */

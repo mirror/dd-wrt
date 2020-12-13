@@ -9,7 +9,7 @@
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
-.\" * are also available at https://curl.haxx.se/docs/copyright.html.
+.\" * are also available at https://curl.se/docs/copyright.html.
 .\" *
 .\" * You may opt to use, copy, modify, merge, publish, distribute and/or sell
 .\" * copies of the Software, and permit persons to whom the Software is
@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_MAIL_AUTH 3 "May 31, 2017" "libcurl 7.67.0" "curl_easy_setopt options"
+.TH CURLOPT_MAIL_AUTH 3 "November 04, 2020" "libcurl 7.74.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_MAIL_AUTH \- SMTP authentication address
@@ -29,7 +29,7 @@ CURLOPT_MAIL_AUTH \- SMTP authentication address
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_MAIL_AUTH, char *auth);
 .SH DESCRIPTION
-Pass a pointer to a zero terminated string as parameter. This will be used to
+Pass a pointer to a null-terminated string as parameter. This will be used to
 specify the authentication address (identity) of a submitted message that is
 being relayed to another server.
 

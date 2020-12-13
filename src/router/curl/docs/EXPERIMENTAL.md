@@ -19,4 +19,6 @@ Experimental support in curl means:
 ## Experimental features right now
 
  - HTTP/3 support and options
- - alt-svc support and options
+ - CURLSSLOPT_NATIVE_CA (No configure option, feature built in when supported)
+ - HSTS support and options
+ 

@@ -105,8 +105,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\DLL Debug - DLL OpenSSL\libcurld.dll" /pdbtype:con /fixed:no
-# ADD LINK32 advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\DLL Debug - DLL OpenSSL\libcurld.dll" /pdbtype:con /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /fixed:no
+# ADD BASE LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\DLL Debug - DLL OpenSSL\libcurld.dll" /pdbtype:con /fixed:no
+# ADD LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\DLL Debug - DLL OpenSSL\libcurld.dll" /pdbtype:con /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /fixed:no
 
 !ELSEIF  "$(CFG)" == "libcurl - Win32 DLL Debug DLL OpenSSL DLL LibSSH2"
 
@@ -135,8 +135,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2d.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\DLL Debug - DLL OpenSSL - DLL LibSSH2\libcurld.dll" /pdbtype:con /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Debug" /fixed:no
-# ADD LINK32 advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2d.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\DLL Debug - DLL OpenSSL - DLL LibSSH2\libcurld.dll" /pdbtype:con /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Debug" /fixed:no
+# ADD BASE LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2d.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\DLL Debug - DLL OpenSSL - DLL LibSSH2\libcurld.dll" /pdbtype:con /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Debug" /fixed:no
+# ADD LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2d.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\..\build\Win32\VC6\DLL Debug - DLL OpenSSL - DLL LibSSH2\libcurld.dll" /pdbtype:con /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Debug" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Debug" /fixed:no
 
 !ELSEIF  "$(CFG)" == "libcurl - Win32 DLL Debug DLL Windows SSPI"
 
@@ -254,8 +254,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib /nologo /dll /pdb:none /machine:I386 /fixed:no /release
-# ADD LINK32 advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib /nologo /dll /pdb:none /machine:I386 /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /fixed:no /release
+# ADD BASE LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib /nologo /dll /pdb:none /machine:I386 /fixed:no /release
+# ADD LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib /nologo /dll /pdb:none /machine:I386 /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /fixed:no /release
 
 !ELSEIF  "$(CFG)" == "libcurl - Win32 DLL Release DLL OpenSSL DLL LibSSH2"
 
@@ -284,8 +284,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2.lib /nologo /dll /pdb:none /machine:I386 /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Release" /fixed:no /release
-# ADD LINK32 advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2.lib /nologo /dll /pdb:none /machine:I386 /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Release" /fixed:no /release
+# ADD BASE LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2.lib /nologo /dll /pdb:none /machine:I386 /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Release" /fixed:no /release
+# ADD LINK32 crypt32.lib advapi32.lib wldap32.lib ws2_32.lib libeay32.lib ssleay32.lib libssh2.lib /nologo /dll /pdb:none /machine:I386 /libpath:"..\..\..\..\..\openssl\build\Win32\VC6\DLL Release" /libpath:"..\..\..\..\..\libssh2\build\Win32\VC6\DLL Release" /fixed:no /release
 
 !ELSEIF  "$(CFG)" == "libcurl - Win32 DLL Release DLL Windows SSPI"
 
@@ -850,7 +850,19 @@ SOURCE=..\..\..\..\lib\dotdot.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\dynbuf.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\easy.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\easygetopt.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\easyoptions.c
 # End Source File
 # Begin Source File
 
@@ -919,6 +931,10 @@ SOURCE=..\..\..\..\lib\hostip.c
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\hostsyn.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\hsts.c
 # End Source File
 # Begin Source File
 
@@ -1002,6 +1018,10 @@ SOURCE=..\..\..\..\lib\mprintf.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\mqtt.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\multi.c
 # End Source File
 # Begin Source File
@@ -1046,11 +1066,11 @@ SOURCE=..\..\..\..\lib\rand.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\rtsp.c
+SOURCE=..\..\..\..\lib\rename.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\security.c
+SOURCE=..\..\..\..\lib\rtsp.c
 # End Source File
 # Begin Source File
 
@@ -1162,6 +1182,10 @@ SOURCE=..\..\..\..\lib\version.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\version_win32.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\warnless.c
 # End Source File
 # Begin Source File
@@ -1222,6 +1246,34 @@ SOURCE=..\..\..\..\lib\vauth\vauth.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\vquic\ngtcp2.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vquic\quiche.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vquic\vquic.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vssh\libssh2.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vssh\libssh.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vssh\wolfssh.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\bearssl.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\vtls\gskit.c
 # End Source File
 # Begin Source File
@@ -1230,7 +1282,15 @@ SOURCE=..\..\..\..\lib\vtls\gtls.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\vtls\keylog.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\vtls\mbedtls.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\mbedtls_threadlock.c
 # End Source File
 # Begin Source File
 
@@ -1243,14 +1303,6 @@ SOURCE=..\..\..\..\lib\vtls\nss.c
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\vtls\openssl.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\vtls\polarssl.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\vtls\polarssl_threadlock.c
 # End Source File
 # Begin Source File
 
@@ -1354,6 +1406,10 @@ SOURCE=..\..\..\..\lib\curl_hmac.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\curl_krb5.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\curl_ldap.h
 # End Source File
 # Begin Source File
@@ -1406,10 +1462,6 @@ SOURCE=..\..\..\..\lib\curl_sasl.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\curl_sec.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\curl_setup.h
 # End Source File
 # Begin Source File
@@ -1446,7 +1498,15 @@ SOURCE=..\..\..\..\lib\dotdot.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\dynbuf.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\easyif.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\easyoptions.h
 # End Source File
 # Begin Source File
 
@@ -1491,6 +1551,10 @@ SOURCE=..\..\..\..\lib\hostcheck.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\hostip.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\hsts.h
 # End Source File
 # Begin Source File
 
@@ -1550,6 +1614,10 @@ SOURCE=..\..\..\..\lib\mime.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\mqtt.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\multihandle.h
 # End Source File
 # Begin Source File
@@ -1595,6 +1663,10 @@ SOURCE=..\..\..\..\lib\quic.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\rand.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\rename.h
 # End Source File
 # Begin Source File
 
@@ -1658,10 +1730,6 @@ SOURCE=..\..\..\..\lib\splay.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\ssh.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\strcase.h
 # End Source File
 # Begin Source File
@@ -1714,6 +1782,10 @@ SOURCE=..\..\..\..\lib\url.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\version_win32.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\warnless.h
 # End Source File
 # Begin Source File
@@ -1738,6 +1810,26 @@ SOURCE=..\..\..\..\lib\vauth\vauth.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\vquic\ngtcp2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vquic\quiche.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vquic\vquic.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vssh\ssh.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\bearssl.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\vtls\gskit.h
 # End Source File
 # Begin Source File
@@ -1746,7 +1838,15 @@ SOURCE=..\..\..\..\lib\vtls\gtls.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\vtls\keylog.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\vtls\mbedtls.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\mbedtls_threadlock.h
 # End Source File
 # Begin Source File
 
@@ -1759,14 +1859,6 @@ SOURCE=..\..\..\..\lib\vtls\nssg.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\vtls\openssl.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\vtls\polarssl.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\vtls\polarssl_threadlock.h
 # End Source File
 # Begin Source File
 
