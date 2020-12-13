@@ -7,11 +7,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -40,7 +40,6 @@ int Curl_safe_strcasecompare(const char *first, const char *second);
 int Curl_strncasecompare(const char *first, const char *second, size_t max);
 
 char Curl_raw_toupper(char in);
-char Curl_raw_tolower(char in);
 
 /* checkprefix() is a shorter version of the above, used when the first
    argument is zero-byte terminated */
