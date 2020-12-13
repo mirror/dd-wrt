@@ -1528,7 +1528,7 @@ static struct menucontext *init_menu(webs_t wp)
 		{ "Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "Filters.asp", "", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", "", "" },	//
-		{ "Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "", "", "" },	//
+		{ "Management.asp", "Alive.asp", "Sysctl.asp", "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "", "" },	//
 		{ "Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Syslog.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp" }	//
 	};
 	/*
@@ -1551,7 +1551,7 @@ static struct menucontext *init_menu(webs_t wp)
 		{ "security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", "", "" },	// 
 		{ "accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "applications", "applicationspforwarding", "applicationsprforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", "", "" },	//
-		{ "admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", "", "" },	//
+		{ "admin", "adminManagement", "adminAlive", "adminSysctl", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", "" },	//
 		{ "statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP" }	//
 	};
 	int x, y;
@@ -1582,8 +1582,8 @@ static struct menucontext *init_menu(webs_t wp)
 		m->menu[MENU_SERVICES][4][0] = 0;	// services - USB
 		m->menu[MENU_SERVICES][5][0] = 0;	// services - NAS
 		m->menu[MENU_SERVICES][6][0] = 0;	// services - Hotspot
-		m->menu[MENU_ADMIN][2][0] = 0;	// administration - commands
-		m->menu[MENU_ADMIN][5][0] = 0;	// administration - upgrade
+		m->menu[MENU_ADMIN][3][0] = 0;	// administration - commands
+		m->menu[MENU_ADMIN][6][0] = 0;	// administration - upgrade
 	}
 	m->menu[MENU_SERVICES][9][0] = 0;	// services - anchorfree
 #endif
@@ -1675,9 +1675,9 @@ static struct menucontext *init_menu(webs_t wp)
 
 	//m->menu[MENU_ADMIN][1][0] = 0;        // admin - keepalive
 #if !defined(HAVE_PERU)
-	m->menu[MENU_ADMIN][2][0] = 0;	// admin - diag
+	m->menu[MENU_ADMIN][3][0] = 0;	// admin - diag
 #endif
-	//m->menu[MENU_ADMIN][3][0] = 0;        // admin - wol
+	//m->menu[MENU_ADMIN][4][0] = 0;        // admin - wol
 
 	m->menu[MENU_STATUS][4][0] = 0;	// status - sputnik
 	m->menu[MENU_STATUS][5][0] = 0;	// status - vpn
@@ -1855,6 +1855,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifndef HAVE_USB
 				if (!strcmp(m->menu[i][j], "USB.asp"))	// jump over USB
+					j++;
+#endif
+#ifndef HAVE_SYSCTL_EDIT
+				if (!strcmp(m->menu[i][j], "Sysctl.asp"))	// jump over sysctl editor
 					j++;
 #endif
 #ifndef HAVE_NAS_SERVER

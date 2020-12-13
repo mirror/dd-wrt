@@ -1835,8 +1835,8 @@ void add_tunnel(webs_t wp)
 	default_set("ipaddrmask", "");
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
-//	default_set("ipaddr", "1.2.3.4");
-//	default_set("netmask", "255.255.255.0");
+//      default_set("ipaddr", "1.2.3.4");
+//      default_set("netmask", "255.255.255.0");
 	default_set("ipaddr", "");
 	default_set("netmask", "");
 	default_seti("id", 1);
@@ -4606,7 +4606,76 @@ void wireless_join(webs_t wp)
 	}
 	applytake(value);
 }
+#ifdef HAVE_SYSCTL_EDIT
+static char *getsysctl(char *path, char *nvname, char *name, char *fval)
+{
+	char fname[128];
+	sprintf(fname, "%s/%s", path, name);
+	struct stat sb;
+	stat(fname, &sb);
+	if (!(sb.st_mode & S_IWUSR))
+		return NULL;
 
+	FILE *in = fopen(fname, "rb");
+	if (!in)
+		return NULL;
+	fgets(fval, 127, in);
+	int i;
+	int len = strlen(fval);
+	for (i = 0; i < len; i++)
+		if (fval[i] == '\n')
+			fval[i] = 0;
+	fclose(in);
+	return fval;
+}
+
+static void sysctl_save_do(webs_t wp, char *path)
+{
+
+	DIR *directory;
+	char buf[256];
+	int cnt = 0;
+	directory = opendir(path);
+	struct dirent *entry;
+	while ((entry = readdir(directory)) != NULL) {
+		char dir[1024];
+		sprintf(dir, "%s/%s", path, entry->d_name);
+		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
+			continue;
+		if (entry->d_type == DT_DIR) {
+			sysctl_save_do(wp, dir);
+			continue;
+		}
+	}
+	closedir(directory);
+	directory = opendir(path);
+	while ((entry = readdir(directory)) != NULL) {
+		if (entry->d_type == DT_REG) {
+			char title[64] = { 0 };
+			strcpy(title, &path[10]);
+			int i;
+			int len = strlen(title);
+			for (i = 0; i < len; i++)
+				if (title[i] == '/')
+					title[i] = '.';
+			char fval[128];
+				char nvname[128];
+				sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
+			char *value = getsysctl(path, nvname, entry->d_name, fval);
+			if (value) {
+			
+			}
+		}
+
+	}
+	closedir(directory);
+}
+
+void sysctl_save(webs_t wp)
+{
+	sysctl_save_do(wp, "/proc/sys");
+}
+#endif
 void wireless_save(webs_t wp)
 {
 	char *value = websGetVar(wp, "action", "");

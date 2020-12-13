@@ -932,6 +932,9 @@ endif
 ifneq ($(CONFIG_IAS),y)
 	rm -f $(INSTALLDIR)/www/detect.asp
 endif
+ifneq ($(CONFIG_SYSCTL_EDIT),y)
+	rm -f $(INSTALLDIR)/www/Sysctl.asp
+endif
 ifneq ($(CONFIG_SUPERCHANNEL),y)
 	rm -f $(INSTALLDIR)/www/SuperChannel.asp
 endif

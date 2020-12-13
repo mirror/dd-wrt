@@ -1086,10 +1086,10 @@ static struct gozila_action gozila_actions[] = {
 	{ "Wireless_Advanced-wl2", "save", "wireless_2", REFRESH,
 	 "save_wireless_advanced" },
 #else
-	{ "Wireless_WDS-ath0", "save", "wireless_2", REFRESH, "save_wds" },
-	{ "Wireless_WDS-ath1", "save", "wireless_2", REFRESH, "save_wds" },
-	{ "Wireless_WDS-ath2", "save", "wireless_2", REFRESH, "save_wds" },
-	{ "Wireless_WDS-ath3", "save", "wireless_2", REFRESH, "save_wds" },
+	{ "Wireless_WDS-wlan0", "save", "wireless_2", REFRESH, "save_wds" },
+	{ "Wireless_WDS-wlan1", "save", "wireless_2", REFRESH, "save_wds" },
+	{ "Wireless_WDS-wlan2", "save", "wireless_2", REFRESH, "save_wds" },
+	{ "Wireless_WDS-wlan3", "save", "wireless_2", REFRESH, "save_wds" },
 #endif
 	{ "Ping", "startup", "", REFRESH, "save_startup" },
 	{ "Ping", "shutdown", "", REFRESH, "save_shutdown" },
@@ -1274,7 +1274,9 @@ static struct gozila_action gozila_actions[] = {
 	{ "AOSS", "wps_configure", "aoss", REFRESH, "wps_configure" },
 #endif
 #endif
-
+#ifdef HAVE_SYSCTL_EDIT
+	{ "Sysctl", "save", "sysctl", REFRESH, "sysctl_save" },
+#endif
 };
 
 static struct gozila_action *handle_gozila_action(char *name, char *type)
@@ -1418,6 +1420,9 @@ static struct apply_action apply_actions[] = {
 	{ "Management", "management", SYS_RESTART, NULL },
 	{ "Services", "services", SERVICE_RESTART, NULL },
 	{ "Alive", "alive", SERVICE_RESTART, NULL },
+#ifdef HAVE_SYSCTL_EDIT
+	{ "Sysctl", "sysctl", SERVICE_RESTART, NULL },
+#endif
 
 	/*
 	 * SERVICES 
