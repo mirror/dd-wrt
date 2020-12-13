@@ -471,6 +471,7 @@ bmenu.sipathstatus="Status";
 bmenu.admin="Administration";
 bmenu.adminManagement="Management";
 bmenu.adminAlive="Keep Alive";
+bmenu.adminSysctl="Sysctl";
 bmenu.adminLog="Log";
 bmenu.adminDiag="Commands";
 bmenu.adminWol="WOL";
@@ -509,6 +510,9 @@ bmenu.statuSyslog="Syslog";
 
 bmenu.setupnetw="Network";
 bmenu.adminman="Management";
+
+var sysctl=new Object();
+sysctl.titl="Sysctl Configuration";
 
 // ** Alive.asp **//
 var alive=new Object();
