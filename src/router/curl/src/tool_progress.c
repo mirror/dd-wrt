@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -95,10 +95,17 @@ int xferinfo_cb(void *clientp,
                 curl_off_t ulnow)
 {
   struct per_transfer *per = clientp;
+  struct OperationConfig *config = per->config;
   per->dltotal = dltotal;
   per->dlnow = dlnow;
   per->ultotal = ultotal;
   per->ulnow = ulnow;
+
+  if(config->readbusy) {
+    config->readbusy = FALSE;
+    curl_easy_pause(per->curl, CURLPAUSE_CONT);
+  }
+
   return 0;
 }
 
@@ -220,11 +227,11 @@ bool progress_meter(struct GlobalConfig *global,
     }
     if(dlknown && all_dltotal)
       /* TODO: handle integer overflow */
-      msnprintf(dlpercen, sizeof(dlpercen), "%3d",
+      msnprintf(dlpercen, sizeof(dlpercen), "%3" CURL_FORMAT_CURL_OFF_T,
                 all_dlnow * 100 / all_dltotal);
     if(ulknown && all_ultotal)
       /* TODO: handle integer overflow */
-      msnprintf(ulpercen, sizeof(ulpercen), "%3d",
+      msnprintf(ulpercen, sizeof(ulpercen), "%3" CURL_FORMAT_CURL_OFF_T,
                 all_ulnow * 100 / all_ultotal);
 
     /* get the transfer speed, the higher of the two */
