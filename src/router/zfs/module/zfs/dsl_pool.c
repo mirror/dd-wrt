@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2019 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2020 by Delphix. All rights reserved.
  * Copyright (c) 2013 Steven Hartland. All rights reserved.
  * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
  * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
@@ -220,11 +220,12 @@ dsl_pool_open_impl(spa_t *spa, uint64_t txg)
 	mutex_init(&dp->dp_lock, NULL, MUTEX_DEFAULT, NULL);
 	cv_init(&dp->dp_spaceavail_cv, NULL, CV_DEFAULT, NULL);
 
-	dp->dp_zrele_taskq = taskq_create("z_zrele", boot_ncpus, defclsyspri,
-	    boot_ncpus * 8, INT_MAX, TASKQ_PREPOPULATE | TASKQ_DYNAMIC);
+	dp->dp_zrele_taskq = taskq_create("z_zrele", 100, defclsyspri,
+	    boot_ncpus * 8, INT_MAX, TASKQ_PREPOPULATE | TASKQ_DYNAMIC |
+	    TASKQ_THREADS_CPU_PCT);
 	dp->dp_unlinked_drain_taskq = taskq_create("z_unlinked_drain",
-	    boot_ncpus, defclsyspri, boot_ncpus, INT_MAX,
-	    TASKQ_PREPOPULATE | TASKQ_DYNAMIC);
+	    100, defclsyspri, boot_ncpus, INT_MAX,
+	    TASKQ_PREPOPULATE | TASKQ_DYNAMIC | TASKQ_THREADS_CPU_PCT);
 
 	return (dp);
 }
@@ -565,6 +566,11 @@ dsl_pool_sync_mos(dsl_pool_t *dp, dmu_tx_t *tx)
 	zio_t *zio = zio_root(dp->dp_spa, NULL, NULL, ZIO_FLAG_MUSTSUCCEED);
 	dmu_objset_sync(dp->dp_meta_objset, zio, tx);
 	VERIFY0(zio_wait(zio));
+	dmu_objset_sync_done(dp->dp_meta_objset, tx);
+	taskq_wait(dp->dp_sync_taskq);
+	multilist_destroy(dp->dp_meta_objset->os_synced_dnodes);
+	dp->dp_meta_objset->os_synced_dnodes = NULL;
+
 	dprintf_bp(&dp->dp_meta_rootbp, "meta objset rootbp is %s", "");
 	spa_set_rootblkptr(dp->dp_spa, &dp->dp_meta_rootbp);
 }
@@ -676,7 +682,7 @@ dsl_pool_sync(dsl_pool_t *dp, uint64_t txg)
 	 */
 	for (ds = list_head(&synced_datasets); ds != NULL;
 	    ds = list_next(&synced_datasets, ds)) {
-		dmu_objset_do_userquota_updates(ds->ds_objset, tx);
+		dmu_objset_sync_done(ds->ds_objset, tx);
 	}
 	taskq_wait(dp->dp_sync_taskq);
 

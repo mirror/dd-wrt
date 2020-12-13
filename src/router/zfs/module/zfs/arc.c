@@ -5759,7 +5759,7 @@ arc_read_done(zio_t *zio)
 	 */
 	int callback_cnt = 0;
 	for (acb = callback_list; acb != NULL; acb = acb->acb_next) {
-		if (!acb->acb_done)
+		if (!acb->acb_done || acb->acb_nobuf)
 			continue;
 
 		callback_cnt++;
@@ -5924,6 +5924,7 @@ arc_read(zio_t *pio, spa_t *spa, const blkptr_t *bp,
 	boolean_t noauth_read = BP_IS_AUTHENTICATED(bp) &&
 	    (zio_flags & ZIO_FLAG_RAW_ENCRYPT) != 0;
 	boolean_t embedded_bp = !!BP_IS_EMBEDDED(bp);
+	boolean_t no_buf = *arc_flags & ARC_FLAG_NO_BUF;
 	int rc = 0;
 
 	ASSERT(!embedded_bp ||
@@ -6008,6 +6009,7 @@ top:
 				acb->acb_compressed = compressed_read;
 				acb->acb_encrypted = encrypted_read;
 				acb->acb_noauth = noauth_read;
+				acb->acb_nobuf = no_buf;
 				acb->acb_zb = *zb;
 				if (pio != NULL)
 					acb->acb_zio_dummy = zio_null(pio,
@@ -6017,8 +6019,6 @@ top:
 				acb->acb_zio_head = head_zio;
 				acb->acb_next = hdr->b_l1hdr.b_acb;
 				hdr->b_l1hdr.b_acb = acb;
-				mutex_exit(hash_lock);
-				goto out;
 			}
 			mutex_exit(hash_lock);
 			goto out;
@@ -6027,7 +6027,7 @@ top:
 		ASSERT(hdr->b_l1hdr.b_state == arc_mru ||
 		    hdr->b_l1hdr.b_state == arc_mfu);
 
-		if (done) {
+		if (done && !no_buf) {
 			if (hdr->b_flags & ARC_FLAG_PREDICTIVE_PREFETCH) {
 				/*
 				 * This is a demand read which does not have to
@@ -7592,6 +7592,15 @@ arc_target_bytes(void)
 }
 
 void
+arc_set_limits(uint64_t allmem)
+{
+	/* Set min cache to 1/32 of all memory, or 32MB, whichever is more. */
+	arc_c_min = MAX(allmem / 32, 2ULL << SPA_MAXBLOCKSHIFT);
+
+	/* How to set default max varies by platform. */
+	arc_c_max = arc_default_max(arc_c_min, allmem);
+}
+void
 arc_init(void)
 {
 	uint64_t percent, allmem = arc_all_memory();
@@ -7606,11 +7615,7 @@ arc_init(void)
 	arc_lowmem_init();
 #endif
 
-	/* Set min cache to 1/32 of all memory, or 32MB, whichever is more. */
-	arc_c_min = MAX(allmem / 32, 2ULL << SPA_MAXBLOCKSHIFT);
-
-	/* How to set default max varies by platform. */
-	arc_c_max = arc_default_max(arc_c_min, allmem);
+	arc_set_limits(allmem);
 
 #ifndef _KERNEL
 	/*
@@ -7647,6 +7652,8 @@ arc_init(void)
 	if (arc_c < arc_c_min)
 		arc_c = arc_c_min;
 
+	arc_register_hotplug();
+
 	arc_state_init();
 
 	buf_init();
@@ -7655,8 +7662,9 @@ arc_init(void)
 	    offsetof(arc_prune_t, p_node));
 	mutex_init(&arc_prune_mtx, NULL, MUTEX_DEFAULT, NULL);
 
-	arc_prune_taskq = taskq_create("arc_prune", boot_ncpus, defclsyspri,
-	    boot_ncpus, INT_MAX, TASKQ_PREPOPULATE | TASKQ_DYNAMIC);
+	arc_prune_taskq = taskq_create("arc_prune", 100, defclsyspri,
+	    boot_ncpus, INT_MAX, TASKQ_PREPOPULATE | TASKQ_DYNAMIC |
+	    TASKQ_THREADS_CPU_PCT);
 
 	arc_ksp = kstat_create("zfs", 0, "arcstats", "misc", KSTAT_TYPE_NAMED,
 	    sizeof (arc_stats) / sizeof (kstat_named_t), KSTAT_FLAG_VIRTUAL);
@@ -7752,6 +7760,8 @@ arc_fini(void)
 	 */
 	buf_fini();
 	arc_state_fini();
+
+	arc_unregister_hotplug();
 
 	/*
 	 * We destroy the zthrs after all the ARC state has been
