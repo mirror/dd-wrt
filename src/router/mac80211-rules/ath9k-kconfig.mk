@@ -377,7 +377,7 @@ else
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-ahb-a000000.wifi.bin && ln -s /tmp/board1.bin pre-cal-ahb-a000000.wifi.bin
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-ahb-a800000.wifi.bin && ln -s /tmp/board2.bin pre-cal-ahb-a800000.wifi.bin
 ifeq ($(CONFIG_HABANERO),y)
-	-cp $(MAC80211_PATH)/ipq-wifi/board-8dev_habanero.bin $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019/hw1.0/board-2.bin
+	-cp $(MAC80211_PATH)/ipq-wifi/board-8dev_habanero-dvk.bin.qca4019 $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019/hw1.0/board-2.bin
 endif
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9888
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X
