@@ -618,12 +618,10 @@ static int write_main(int argc, char *argv[])
 			}
 			printf("\n");
 		}
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_RAMBUTAN) || defined(HAVE_VENTANA)	// erase all blocks first
-		if (!first) {
+		if (!first && mtdtype == MTD_NANDFLASH) {
 			mtd_erase(mtd);
 			first = 1;
 		}
-#endif
 		erase_info.length = mtd_info.erasesize;
 
 		int length = ROUNDUP(count, mtd_info.erasesize);
@@ -642,13 +640,12 @@ static int write_main(int argc, char *argv[])
 				badblocks += mtd_info.erasesize;
 				continue;
 			}
-#if !defined(HAVE_MVEBU) && !defined(HAVE_IPQ806X) && !defined(HAVE_VENTANA)	// we do not need to erase again. it has been done before
-
-			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-				dd_logerror("flash", "\nerase/write failed\n");
-				goto fail;
+			if (!mtdtype == MTD_NANDFLASH) {
+				if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+					dd_logerror("flash", "\nerase/write failed\n");
+					goto fail;
+				}
 			}
-#endif
 
 			if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) != mtd_info.erasesize) {
 				dd_loginfo("flash", "\ntry again %d\n", redo++);
