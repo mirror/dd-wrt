@@ -2911,40 +2911,40 @@ void start_firewall(void)
 	/*
 	 * Improve WAN<->LAN Performance on K26
 	 */
-	writeprocsysnet("core/netdev_max_backlog", "120");
+	writeprocsysnet("core/netdev_max_backlog", nvram_default_get("net.core.netdev_max_backlog","120"));
 #else
 	// this is old crap code and we did not consider devices which are unrelated to broadcom devices. 
-	writeprocsysnet("core/netdev_max_backlog", "2048");
+	writeprocsysnet("core/netdev_max_backlog", nvram_default_get("net.core.netdev_max_backlog","2048"));
 #endif
 #endif
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_IPQ806X) || defined(HAVE_LAGUNA) || defined(HAVE_CAMBRIA) || defined(HAVE_NEWPORT) || defined(HAVE_NORTHSTAR) || defined(HAVE_OCTEON) || defined(HAVE_80211AC)
-	writeprocsysnet("core/somaxconn", "1024");
-	writeprocsysnet("ipv4/tcp_max_syn_backlog", "1024");
-	writeprocsysnet("core/rmem_default", "262144");
-	writeprocsysnet("core/rmem_max", "262144");
-	writeprocsysnet("core/wmem_default", "262144");
-	writeprocsysnet("core/wmem_max", "262144");
-	writeprocsysnet("ipv4/tcp_rmem", "8192 131072 262144");
-	writeprocsysnet("ipv4/tcp_wmem", "8192 131072 262144");
-	writeprocsysnet("ipv4/neigh/default/gc_thresh1", "1024");
-	writeprocsysnet("ipv4/neigh/default/gc_thresh2", "2024");
-	writeprocsysnet("ipv4/neigh/default/gc_thresh3", "4024");
+	writeprocsysnet("core/somaxconn", nvram_default_get("net.core.somaxconn","1024"));
+	writeprocsysnet("ipv4/tcp_max_syn_backlog", nvram_default_get("net.ipv4.tcp_max_syn_backlog", "1024"));
+	writeprocsysnet("core/rmem_default", nvram_default_get("net.core.rmem_default","262144"));
+	writeprocsysnet("core/rmem_max", nvram_default_get("net.core.rmem_max","262144"));
+	writeprocsysnet("core/wmem_default", nvram_default_get("net.core.wmem_default","262144"));
+	writeprocsysnet("core/wmem_max", nvram_default_get("net.core.wmem_max","262144"));
+	writeprocsysnet("ipv4/tcp_rmem", nvram_default_get("net.ipv4.tcp_rmem","8192 131072 262144"));
+	writeprocsysnet("ipv4/tcp_wmem", nvram_default_get("net.ipv4.tcp_wmem","8192 131072 262144"));
+	writeprocsysnet("ipv4/neigh/default/gc_thresh1", nvram_default_get("net.ipv4.neigh.default.gc_thres1","1024"));
+	writeprocsysnet("ipv4/neigh/default/gc_thresh2", nvram_default_get("net.ipv4.neigh.default.gc_thres2","2048"));
+	writeprocsysnet("ipv4/neigh/default/gc_thresh3", nvram_default_get("net.ipv4.neigh.default.gc_thres3","4096"));
 #endif
-	writeprocsysnet("ipv4/tcp_fin_timeout", "40");
-	writeprocsysnet("ipv4/tcp_keepalive_intvl", "30");
-	writeprocsysnet("ipv4/tcp_keepalive_probes", "5");
-	writeprocsysnet("ipv4/tcp_keepalive_time", "1800");
-	writeprocsysnet("ipv4/tcp_retries2", "5");
-	writeprocsysnet("ipv4/tcp_syn_retries", "3");
-	writeprocsysnet("ipv4/tcp_synack_retries", "3");
+	writeprocsysnet("ipv4/tcp_fin_timeout",nvram_default_get("net.ipv4.tcp_fin_timeout", "40"));
+	writeprocsysnet("ipv4/tcp_keepalive_intvl",nvram_default_get("net.ipv4.tcp_keepalive_intvl", "30"));
+	writeprocsysnet("ipv4/tcp_keepalive_probes",nvram_default_get("net.ipv4.tcp_keepalive_probes", "5"));
+	writeprocsysnet("ipv4/tcp_keepalive_time",nvram_default_get("net.ipv4.tcp_keepalive_time", "1800"));
+	writeprocsysnet("ipv4/tcp_retries2",nvram_default_get("net.ipv4.tcp_retries2", "5"));
+	writeprocsysnet("ipv4/tcp_syn_retries",nvram_default_get("net.ipv4.tcp_syn_retries", "3"));
+	writeprocsysnet("ipv4/tcp_synack_retries",nvram_default_get("net.ipv4.tcp_synack_retries", "3"));
 #ifdef HAVE_MADWIFI
-	writeprocsysnet("ipv4/tcp_tw_recycle", "1");
+	writeprocsysnet("ipv4/tcp_tw_recycle",nvram_default_get("net.ipv4.tcp_tw_recycle", "1"));
 #endif
-	writeprocsysnet("ipv4/tcp_tw_reuse", "1");
-	writeprocsysnet("ipv4/icmp_ignore_bogus_error_responses", "1");
-	writeprocsysnet("ipv4/icmp_echo_ignore_broadcasts", "1");
-	writeprocsysnet("ipv4/tcp_rfc1337", "1");
-	writeprocsysnet("ipv4/tcp_syncookies", "1");
+	writeprocsysnet("ipv4/tcp_tw_reuse", nvram_default_get("net.ipv4.tcp_tw_reuse","1"));
+	writeprocsysnet("ipv4/icmp_ignore_bogus_error_responses",nvram_default_get("net.ipv4.icmp_ignore_bogus_error_responses", "1"));
+	writeprocsysnet("ipv4/icmp_echo_ignore_broadcasts",nvram_default_get("net.ipv4.icmp_echo_ignore_broadcasts", "1"));
+	writeprocsysnet("ipv4/tcp_rfc1337",nvram_default_get("net.ipv4.tcp_rfc1337", "1"));
+	writeprocsysnet("ipv4/tcp_syncookies",nvram_default_get("net.ipv4.tcp_syncookies" "1"));
 
 
 	char vifs[256];
@@ -3134,7 +3134,7 @@ void start_firewall(void)
 	cprintf("start ipv6\n");
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1)) {
-		writeprocsysnet("ipv6/conf/all/forwarding", "1");
+		writeprocsysnet("ipv6/conf/all/forwarding", nvram_default_get("net.ipv6.conf.all.forwarding","1"));
 	}
 #endif
 #ifdef HAVE_GGEW

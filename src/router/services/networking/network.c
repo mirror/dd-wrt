@@ -709,7 +709,7 @@ void start_lan(void)
 
 	// fix list of active client in webif
 	writeprocsysnet("ipv4/neigh/default/gc_thresh1", "1");
-	writeprocsysnet("ipv4/neigh/default/gc_interval", "120");
+	writeprocsysnet("ipv4/neigh/default/gc_interval", nvram_default_get("net.ipv4.neigh.default.gc_interval","120"));
 
 	strcpy(lan_ifname, nvram_safe_get("lan_ifname"));
 	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
