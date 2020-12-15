@@ -4606,6 +4606,7 @@ void wireless_join(webs_t wp)
 	}
 	applytake(value);
 }
+
 #ifdef HAVE_SYSCTL_EDIT
 static char *getsysctl(char *path, char *nvname, char *name, char *fval)
 {
@@ -4622,10 +4623,18 @@ static char *getsysctl(char *path, char *nvname, char *name, char *fval)
 	fgets(fval, 127, in);
 	int i;
 	int len = strlen(fval);
-	for (i = 0; i < len; i++)
+	for (i = 0; i < len; i++) {
+		if (fval[i] == '\t')
+			fval[i] = 0x20;
 		if (fval[i] == '\n')
 			fval[i] = 0;
+	}
 	fclose(in);
+	char *webvalue = websGetVar(wp, nvname, NULL);
+	if (!webvalue)
+		return NULL;
+	if (strcmp(webvalue, fval))
+		return NULL;
 	return fval;
 }
 
@@ -4659,11 +4668,11 @@ static void sysctl_save_do(webs_t wp, char *path)
 				if (title[i] == '/')
 					title[i] = '.';
 			char fval[128];
-				char nvname[128];
-				sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
+			char nvname[128];
+			sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
 			char *value = getsysctl(path, nvname, entry->d_name, fval);
 			if (value) {
-			
+				nvram_set(nvname, value);
 			}
 		}
 

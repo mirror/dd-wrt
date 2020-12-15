@@ -53,9 +53,12 @@ static char *getsysctl(char *path, char *name, char *fval)
 	fgets(fval, 127, in);
 	int i;
 	int len = strlen(fval);
-	for (i = 0; i < len; i++)
+	for (i = 0; i < len; i++) {
+		if (fval[i] == '\t')
+			fval[i] = 0x20;
 		if (fval[i] == '\n')
 			fval[i] = 0;
+	}
 	fclose(in);
 	return fval;
 }
