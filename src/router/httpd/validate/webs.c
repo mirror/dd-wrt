@@ -4608,7 +4608,9 @@ void wireless_join(webs_t wp)
 }
 
 #ifdef HAVE_SYSCTL_EDIT
-static char *getsysctl(char *path, char *nvname, char *name, char *fval)
+#include <dirent.h>
+
+static char *getsysctl(webs_t wp, char *path, char *nvname, char *name, char *fval)
 {
 	char fname[128];
 	sprintf(fname, "%s/%s", path, name);
@@ -4634,8 +4636,8 @@ static char *getsysctl(char *path, char *nvname, char *name, char *fval)
 	if (!webvalue)
 		return NULL;
 	if (strcmp(webvalue, fval))
-		return NULL;
-	return fval;
+		return fval;
+	return NULL;
 }
 
 static void sysctl_save_do(webs_t wp, char *path)
@@ -4647,11 +4649,13 @@ static void sysctl_save_do(webs_t wp, char *path)
 	directory = opendir(path);
 	struct dirent *entry;
 	while ((entry = readdir(directory)) != NULL) {
-		char dir[1024];
-		sprintf(dir, "%s/%s", path, entry->d_name);
+		if (!strcmp(entry->d_name, "nf_log")) // pointless
+			continue;
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
 			continue;
 		if (entry->d_type == DT_DIR) {
+			char dir[1024];
+			sprintf(dir, "%s/%s", path, entry->d_name);
 			sysctl_save_do(wp, dir);
 			continue;
 		}
@@ -4660,6 +4664,10 @@ static void sysctl_save_do(webs_t wp, char *path)
 	directory = opendir(path);
 	while ((entry = readdir(directory)) != NULL) {
 		if (entry->d_type == DT_REG) {
+			if (!strcmp(entry->d_name, "base_reachable_time")) // supress kernel warning
+				continue;
+			if (!strcmp(entry->d_name, "nf_conntrack_max")) // dynamic value
+				continue;
 			char title[64] = { 0 };
 			strcpy(title, &path[10]);
 			int i;
@@ -4670,7 +4678,7 @@ static void sysctl_save_do(webs_t wp, char *path)
 			char fval[128];
 			char nvname[128];
 			sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
-			char *value = getsysctl(path, nvname, entry->d_name, fval);
+			char *value = getsysctl(wp, path, nvname, entry->d_name, fval);
 			if (value) {
 				nvram_set(nvname, value);
 			}
