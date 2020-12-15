@@ -4644,8 +4644,8 @@ static char *getsysctl(webs_t wp, char *path, char *nvname, char *name, char *fv
 	char *webvalue = websGetVar(wp, nvname, NULL);
 	if (!webvalue)
 		return NULL;
-	if (strcmp(webvalue, webvalue))
-		return fval;
+	if (strcmp(webvalue, fval))
+		return webvalue;
 	return NULL;
 }
 
