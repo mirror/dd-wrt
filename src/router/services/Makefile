@@ -1654,6 +1654,9 @@ ifeq ($(CONFIG_BIRD),y)
 CFLAGS_EXTRA += -DHAVE_BIRD
 OBJS += routing.o
 endif
+ifeq ($(CONFIG_SYSCTL_EDIT),y)
+CFLAGS_EXTRA += -DHAVE_SYSCTL_EDIT
+endif
 
 ifeq ($(CONFIG_PPP),y)
 CFLAGS_EXTRA += -DHAVE_PPP
