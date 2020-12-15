@@ -549,6 +549,9 @@ endif
 ifeq ($(CONFIG_ALFAAP94),y)
 CFLAGS += -DHAVE_ALFAAP94
 endif
+ifeq ($(CONFIG_SYSCTL_EDIT),y)
+CFLAGS += -DHAVE_SYSCTL_EDIT
+endif
 ifeq ($(CONFIG_JWAP003),y)
 CFLAGS += -DHAVE_JWAP003
 endif

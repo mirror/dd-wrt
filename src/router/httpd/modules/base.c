@@ -1421,7 +1421,7 @@ static struct apply_action apply_actions[] = {
 	{ "Services", "services", SERVICE_RESTART, NULL },
 	{ "Alive", "alive", SERVICE_RESTART, NULL },
 #ifdef HAVE_SYSCTL_EDIT
-	{ "Sysctl", "sysctl", SERVICE_RESTART, NULL },
+	{ "Sysctl", "sysctl", SERVICE_RESTART, "sysctl_save" },
 #endif
 
 	/*

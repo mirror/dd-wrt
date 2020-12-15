@@ -1115,6 +1115,13 @@ static void handle_ddns(void)
 
 }
 
+#ifdef HAVE_SYSCTL_EDIT
+static void handle_sysctl(void)
+{
+	restart("sysctl");
+}
+#endif
+
 #ifdef HAVE_FREERADIUS
 
 static void handle_freeradius(void)
@@ -1461,6 +1468,9 @@ static struct SERVICES services_def[] = {
 #endif
 #ifdef HAVE_HEARTBEAT
 	{ "stop_heartbeat", handle_spppoe },
+#endif
+#ifdef HAVE_SYSCTL_EDIT
+	{ "sysctl", handle_sysctl },
 #endif
 	{ "filters", handle_filters },
 	{ "routing", handle_routing },
