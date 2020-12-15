@@ -137,6 +137,7 @@ static void start_gozila(char *name, webs_t wp)
 	int (*fptr)(webs_t wp);
 
 	snprintf(service, sizeof(service), "%s", name);
+	dd_debug(DEBUG_HTTPD, "start gozila %s\n", service);
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
@@ -166,6 +167,7 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	int (*fptr)(webs_t wp, char *value, struct variable * v);
 
 	snprintf(service, sizeof(service), "%s", name);
+	dd_debug(DEBUG_HTTPD, "start validator %s\n", service);
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp, char *value, struct variable * v))
 	    dlsym(s_service, service);
