@@ -920,10 +920,10 @@ ifeq ($(CONFIG_NFS),y)
 CFLAGS += -DHAVE_NFS
 VISOBJS += nfs.o
 endif
-ifeq ($(CONFIG_SYSCTL_EDIT),y)
+#ifeq ($(CONFIG_SYSCTL_EDIT),y)
 CFLAGS += -DHAVE_SYSCTL_EDIT
 VISOBJS += sysctl.o
-endif
+#endif
 
 ifeq ($(CONFIG_RSYNC),y)
 CFLAGS += -DHAVE_RSYNC
