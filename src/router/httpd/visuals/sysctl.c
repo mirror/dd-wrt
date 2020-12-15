@@ -71,12 +71,13 @@ static void showdir(webs_t wp, char *path)
 	directory = opendir(path);
 	struct dirent *entry;
 	while ((entry = readdir(directory)) != NULL) {
-		char dir[1024];
-		sprintf(dir, "%s/%s", path, entry->d_name);
-//              fprintf(stderr, "get %s\n", dir);
+		if (!strcmp(entry->d_name, "nf_log")) // pointless
+			continue;
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
 			continue;
 		if (entry->d_type == DT_DIR) {
+			char dir[1024];
+			sprintf(dir, "%s/%s", path, entry->d_name);
 			showdir(wp, dir);
 			continue;
 		}
@@ -87,6 +88,10 @@ static void showdir(webs_t wp, char *path)
 		if (entry->d_type == DT_REG) {
 			char title[64] = { 0 };
 			char fval[128];
+			if (!strcmp(entry->d_name, "base_reachable_time")) // supress kernel warning
+				continue;
+			if (!strcmp(entry->d_name, "nf_conntrack_max")) // dynamic value
+				continue;
 			char *value = getsysctl(path, entry->d_name, fval);
 			if (value) {
 					strcpy(title, &path[10]);
