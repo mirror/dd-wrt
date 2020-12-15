@@ -3687,7 +3687,7 @@ void start_nvram(void)
 		}
 		nvram_set("vlan_tags", newwordlist);
 		free(newwordlist);
-		wordlist = nvram_safe_get("static_routes");
+		wordlist = nvram_safe_get("static_route");
 		newwordlist = malloc(strlen(wordlist) * 2 + 1);
 		*newwordlist = 0;
 		foreach(word, wordlist, next) {
@@ -3705,7 +3705,7 @@ void start_nvram(void)
 			else
 				sprintf(newwordlist, "%s:%s:%s:%s:%s:", ipaddr, netmask, gateway, metric, newname);
 		}
-		nvram_set("static_routes", newwordlist);
+		nvram_set("static_route", newwordlist);
 		free(newwordlist);
 
 		wordlist = nvram_safe_get("mdhcpd");
