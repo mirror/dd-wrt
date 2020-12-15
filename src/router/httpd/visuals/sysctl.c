@@ -35,9 +35,9 @@
 #include "fs_common.h"
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
 
-static char *getsysctl(char *path, char *name, char *fval)
+static char *getsysctl(char *path, char *name, char *nvname, char *fval)
 {
-	char *val = nvram_safe_get(name);
+	char *val = nvram_safe_get(nvname);
 	if (*val)
 		return val;
 	char fname[128];
@@ -102,21 +102,23 @@ static void showdir(webs_t wp, char *path)
 				if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
 					goto next;
 			}
-			char *value = getsysctl(path, entry->d_name, fval);
+			strcpy(title, &path[10]);
+			int i;
+			int len = strlen(title);
+			for (i = 0; i < len; i++)
+				if (title[i] == '/')
+					title[i] = '.';
+			char nvname[128];
+			sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
+			char *value = getsysctl(path, entry->d_name, nvname, fval);
 			if (value) {
-				strcpy(title, &path[10]);
-				int i;
-				int len = strlen(title);
-				for (i = 0; i < len; i++)
-					if (title[i] == '/')
-						title[i] = '.';
 				if (!cnt) {
 					websWrite(wp, "<fieldset>\n");
 					websWrite(wp, "<legend>%s</legend>\n", title);
 				}
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\">%s</div>\n", entry->d_name);
-				websWrite(wp, "<input maxlength=\"100\" size=\"40\" name=\"%s%s%s\" value=\"%s\" />\n", title, strlen(title) ? "." : "", entry->d_name, value);
+				websWrite(wp, "<input maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n", nvname, value);
 				websWrite(wp, "</div>\n");
 				cnt++;
 			}
