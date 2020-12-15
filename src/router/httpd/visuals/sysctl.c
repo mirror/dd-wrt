@@ -63,6 +63,15 @@ static char *getsysctl(char *path, char *name, char *fval)
 	return fval;
 }
 
+static char *sysctl_blacklist[] = {	//
+	"base_reachable_time",
+	"nf_conntrack_max",
+	"nf_conntrack_helper",
+	"bridge-nf-call-arptables",
+	"bridge-nf-call-ip6tables",
+	"bridge-nf-call-iptables"
+};
+
 static void showdir(webs_t wp, char *path)
 {
 	DIR *directory;
@@ -71,7 +80,7 @@ static void showdir(webs_t wp, char *path)
 	directory = opendir(path);
 	struct dirent *entry;
 	while ((entry = readdir(directory)) != NULL) {
-		if (!strcmp(entry->d_name, "nf_log")) // pointless
+		if (!strcmp(entry->d_name, "nf_log"))	// pointless
 			continue;
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
 			continue;
@@ -88,18 +97,19 @@ static void showdir(webs_t wp, char *path)
 		if (entry->d_type == DT_REG) {
 			char title[64] = { 0 };
 			char fval[128];
-			if (!strcmp(entry->d_name, "base_reachable_time")) // supress kernel warning
-				continue;
-			if (!strcmp(entry->d_name, "nf_conntrack_max")) // dynamic value
-				continue;
+			int a;
+			for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
+				if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
+					goto next;
+			}
 			char *value = getsysctl(path, entry->d_name, fval);
 			if (value) {
-					strcpy(title, &path[10]);
-					int i;
-					int len = strlen(title);
-					for (i = 0; i < len; i++)
-						if (title[i] == '/')
-							title[i] = '.';
+				strcpy(title, &path[10]);
+				int i;
+				int len = strlen(title);
+				for (i = 0; i < len; i++)
+					if (title[i] == '/')
+						title[i] = '.';
 				if (!cnt) {
 					websWrite(wp, "<fieldset>\n");
 					websWrite(wp, "<legend>%s</legend>\n", title);
@@ -110,6 +120,7 @@ static void showdir(webs_t wp, char *path)
 				websWrite(wp, "</div>\n");
 				cnt++;
 			}
+		      next:;
 		}
 
 	}

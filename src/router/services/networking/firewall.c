@@ -624,7 +624,7 @@ static void parse_spec_forward(char *wanaddr, char *wordlist)
 static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *dest_ip)
 {
 	char buff[256];
-	static int cnt=0;
+	static int cnt = 0;
 
 	if (mode == ANT_IPF_PREROUTING) {
 		snprintf(buff, sizeof(buff), "%s:%d", wan_iface, cnt++);
@@ -635,7 +635,7 @@ static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *des
 		snprintf(buff, sizeof(buff), "-A FORWARD -d %s -j %s\n", dest_ip, log_accept);
 		count += strlen(buff) + 1;
 		suspense = realloc(suspense, count);
-		strcat(suspense, buff);	
+		strcat(suspense, buff);
 	}
 	if (mode == ANT_IPF_POSTROUTING) {
 		save2file_A_postrouting("-o %s -s %s -j SNAT --to-source %s", wan_iface, dest_ip, src_ip);
@@ -2863,6 +2863,99 @@ void start_loadfwmodules(void)
 	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 }
 
+#ifdef HAVE_SYSCTL_EDIT
+
+#include <dirent.h>
+
+static char *sysctl_blacklist[] = {	//
+	"base_reachable_time",
+	"nf_conntrack_max",
+	"nf_conntrack_helper",
+	"bridge-nf-call-arptables",
+	"bridge-nf-call-ip6tables",
+	"bridge-nf-call-iptables"
+};
+
+static void setsysctl(char *path, char *nvname, char *name, int cleanup)
+{
+	char fname[128];
+	sprintf(fname, "%s/%s", path, name);
+	struct stat sb;
+	stat(fname, &sb);
+	if (!(sb.st_mode & S_IWUSR))
+		return;
+	if (cleanup) {
+		nvram_unset(nvname);
+	}else{
+	char *val = nvram_safe_get(nvname);
+	if (*val) {
+		FILE *out = fopen(fname, "wb");
+		if (!out)
+			return;
+		fputs(val, out);
+		fclose(out);
+	}
+	}
+}
+
+static void sysctl_apply(char *path, int cleanup)
+{
+
+	DIR *directory;
+	char buf[256];
+	int cnt = 0;
+	directory = opendir(path);
+	struct dirent *entry;
+	while ((entry = readdir(directory)) != NULL) {
+		if (!strcmp(entry->d_name, "nf_log"))	// pointless
+			continue;
+		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
+			continue;
+		if (entry->d_type == DT_DIR) {
+			char dir[1024];
+			sprintf(dir, "%s/%s", path, entry->d_name);
+			sysctl_apply(dir,cleanup);
+			continue;
+		}
+	}
+	closedir(directory);
+	directory = opendir(path);
+	while ((entry = readdir(directory)) != NULL) {
+		if (entry->d_type == DT_REG) {
+			int a;
+			for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
+				if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
+					goto next;
+			}
+			char title[64] = { 0 };
+			strcpy(title, &path[10]);
+			int i;
+			int len = strlen(title);
+			for (i = 0; i < len; i++)
+				if (title[i] == '/')
+					title[i] = '.';
+			char nvname[128];
+			sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
+			setsysctl(path, nvname, entry->d_name, cleanup);
+			next:;
+		}
+
+	}
+	closedir(directory);
+}
+
+void start_sysctl_config(void)
+{
+	sysctl_apply("/proc/sys", 0);
+}
+
+void start_sysctl_cleanup(void)
+{
+	sysctl_apply("/proc/sys", 1);
+}
+
+#endif
+
 int client_bridged_enabled(void);
 
 #ifdef DEVELOPE_ENV
@@ -2911,41 +3004,40 @@ void start_firewall(void)
 	/*
 	 * Improve WAN<->LAN Performance on K26
 	 */
-	writeprocsysnet("core/netdev_max_backlog", nvram_default_get("net.core.netdev_max_backlog","120"));
+	writeprocsysnet("core/netdev_max_backlog", nvram_default_get("net.core.netdev_max_backlog", "120"));
 #else
 	// this is old crap code and we did not consider devices which are unrelated to broadcom devices. 
-	writeprocsysnet("core/netdev_max_backlog", nvram_default_get("net.core.netdev_max_backlog","2048"));
+	writeprocsysnet("core/netdev_max_backlog", nvram_default_get("net.core.netdev_max_backlog", "2048"));
 #endif
 #endif
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_IPQ806X) || defined(HAVE_LAGUNA) || defined(HAVE_CAMBRIA) || defined(HAVE_NEWPORT) || defined(HAVE_NORTHSTAR) || defined(HAVE_OCTEON) || defined(HAVE_80211AC)
-	writeprocsysnet("core/somaxconn", nvram_default_get("net.core.somaxconn","1024"));
+	writeprocsysnet("core/somaxconn", nvram_default_get("net.core.somaxconn", "1024"));
 	writeprocsysnet("ipv4/tcp_max_syn_backlog", nvram_default_get("net.ipv4.tcp_max_syn_backlog", "1024"));
-	writeprocsysnet("core/rmem_default", nvram_default_get("net.core.rmem_default","262144"));
-	writeprocsysnet("core/rmem_max", nvram_default_get("net.core.rmem_max","262144"));
-	writeprocsysnet("core/wmem_default", nvram_default_get("net.core.wmem_default","262144"));
-	writeprocsysnet("core/wmem_max", nvram_default_get("net.core.wmem_max","262144"));
-	writeprocsysnet("ipv4/tcp_rmem", nvram_default_get("net.ipv4.tcp_rmem","8192 131072 262144"));
-	writeprocsysnet("ipv4/tcp_wmem", nvram_default_get("net.ipv4.tcp_wmem","8192 131072 262144"));
-	writeprocsysnet("ipv4/neigh/default/gc_thresh1", nvram_default_get("net.ipv4.neigh.default.gc_thres1","1024"));
-	writeprocsysnet("ipv4/neigh/default/gc_thresh2", nvram_default_get("net.ipv4.neigh.default.gc_thres2","2048"));
-	writeprocsysnet("ipv4/neigh/default/gc_thresh3", nvram_default_get("net.ipv4.neigh.default.gc_thres3","4096"));
+	writeprocsysnet("core/rmem_default", nvram_default_get("net.core.rmem_default", "262144"));
+	writeprocsysnet("core/rmem_max", nvram_default_get("net.core.rmem_max", "262144"));
+	writeprocsysnet("core/wmem_default", nvram_default_get("net.core.wmem_default", "262144"));
+	writeprocsysnet("core/wmem_max", nvram_default_get("net.core.wmem_max", "262144"));
+	writeprocsysnet("ipv4/tcp_rmem", nvram_default_get("net.ipv4.tcp_rmem", "8192 131072 262144"));
+	writeprocsysnet("ipv4/tcp_wmem", nvram_default_get("net.ipv4.tcp_wmem", "8192 131072 262144"));
+	writeprocsysnet("ipv4/neigh/default/gc_thresh1", nvram_default_get("net.ipv4.neigh.default.gc_thres1", "1024"));
+	writeprocsysnet("ipv4/neigh/default/gc_thresh2", nvram_default_get("net.ipv4.neigh.default.gc_thres2", "2048"));
+	writeprocsysnet("ipv4/neigh/default/gc_thresh3", nvram_default_get("net.ipv4.neigh.default.gc_thres3", "4096"));
 #endif
-	writeprocsysnet("ipv4/tcp_fin_timeout",nvram_default_get("net.ipv4.tcp_fin_timeout", "40"));
-	writeprocsysnet("ipv4/tcp_keepalive_intvl",nvram_default_get("net.ipv4.tcp_keepalive_intvl", "30"));
-	writeprocsysnet("ipv4/tcp_keepalive_probes",nvram_default_get("net.ipv4.tcp_keepalive_probes", "5"));
-	writeprocsysnet("ipv4/tcp_keepalive_time",nvram_default_get("net.ipv4.tcp_keepalive_time", "1800"));
-	writeprocsysnet("ipv4/tcp_retries2",nvram_default_get("net.ipv4.tcp_retries2", "5"));
-	writeprocsysnet("ipv4/tcp_syn_retries",nvram_default_get("net.ipv4.tcp_syn_retries", "3"));
-	writeprocsysnet("ipv4/tcp_synack_retries",nvram_default_get("net.ipv4.tcp_synack_retries", "3"));
+	writeprocsysnet("ipv4/tcp_fin_timeout", nvram_default_get("net.ipv4.tcp_fin_timeout", "40"));
+	writeprocsysnet("ipv4/tcp_keepalive_intvl", nvram_default_get("net.ipv4.tcp_keepalive_intvl", "30"));
+	writeprocsysnet("ipv4/tcp_keepalive_probes", nvram_default_get("net.ipv4.tcp_keepalive_probes", "5"));
+	writeprocsysnet("ipv4/tcp_keepalive_time", nvram_default_get("net.ipv4.tcp_keepalive_time", "1800"));
+	writeprocsysnet("ipv4/tcp_retries2", nvram_default_get("net.ipv4.tcp_retries2", "5"));
+	writeprocsysnet("ipv4/tcp_syn_retries", nvram_default_get("net.ipv4.tcp_syn_retries", "3"));
+	writeprocsysnet("ipv4/tcp_synack_retries", nvram_default_get("net.ipv4.tcp_synack_retries", "3"));
 #ifdef HAVE_MADWIFI
-	writeprocsysnet("ipv4/tcp_tw_recycle",nvram_default_get("net.ipv4.tcp_tw_recycle", "1"));
+	writeprocsysnet("ipv4/tcp_tw_recycle", nvram_default_get("net.ipv4.tcp_tw_recycle", "1"));
 #endif
-	writeprocsysnet("ipv4/tcp_tw_reuse", nvram_default_get("net.ipv4.tcp_tw_reuse","1"));
-	writeprocsysnet("ipv4/icmp_ignore_bogus_error_responses",nvram_default_get("net.ipv4.icmp_ignore_bogus_error_responses", "1"));
-	writeprocsysnet("ipv4/icmp_echo_ignore_broadcasts",nvram_default_get("net.ipv4.icmp_echo_ignore_broadcasts", "1"));
-	writeprocsysnet("ipv4/tcp_rfc1337",nvram_default_get("net.ipv4.tcp_rfc1337", "1"));
-	writeprocsysnet("ipv4/tcp_syncookies",nvram_default_get("net.ipv4.tcp_syncookies" "1"));
-
+	writeprocsysnet("ipv4/tcp_tw_reuse", nvram_default_get("net.ipv4.tcp_tw_reuse", "1"));
+	writeprocsysnet("ipv4/icmp_ignore_bogus_error_responses", nvram_default_get("net.ipv4.icmp_ignore_bogus_error_responses", "1"));
+	writeprocsysnet("ipv4/icmp_echo_ignore_broadcasts", nvram_default_get("net.ipv4.icmp_echo_ignore_broadcasts", "1"));
+	writeprocsysnet("ipv4/tcp_rfc1337", nvram_default_get("net.ipv4.tcp_rfc1337", "1"));
+	writeprocsysnet("ipv4/tcp_syncookies", nvram_default_get("net.ipv4.tcp_syncookies", "1"));
 
 	char vifs[256];
 	getIfLists(vifs, 256);
@@ -3134,7 +3226,7 @@ void start_firewall(void)
 	cprintf("start ipv6\n");
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1)) {
-		writeprocsysnet("ipv6/conf/all/forwarding", nvram_default_get("net.ipv6.conf.all.forwarding","1"));
+		writeprocsysnet("ipv6/conf/all/forwarding", nvram_default_get("net.ipv6.conf.all.forwarding", "1"));
 	}
 #endif
 #ifdef HAVE_GGEW
@@ -3192,6 +3284,9 @@ void start_firewall(void)
 	unlock();
 	cprintf("ready");
 	cprintf("done\n");
+#ifdef HAVE_SYSCTL_EDIT
+	start_sysctl_config();
+#endif
 }
 
 #ifdef HAVE_IPV6

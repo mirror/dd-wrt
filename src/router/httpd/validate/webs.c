@@ -4610,6 +4610,15 @@ void wireless_join(webs_t wp)
 #ifdef HAVE_SYSCTL_EDIT
 #include <dirent.h>
 
+static char *sysctl_blacklist[] = {	//
+	"base_reachable_time",
+	"nf_conntrack_max",
+	"nf_conntrack_helper",
+	"bridge-nf-call-arptables",
+	"bridge-nf-call-ip6tables",
+	"bridge-nf-call-iptables"
+};
+
 static char *getsysctl(webs_t wp, char *path, char *nvname, char *name, char *fval)
 {
 	char fname[128];
@@ -4664,10 +4673,11 @@ static void sysctl_save_do(webs_t wp, char *path)
 	directory = opendir(path);
 	while ((entry = readdir(directory)) != NULL) {
 		if (entry->d_type == DT_REG) {
-			if (!strcmp(entry->d_name, "base_reachable_time")) // supress kernel warning
-				continue;
-			if (!strcmp(entry->d_name, "nf_conntrack_max")) // dynamic value
-				continue;
+			int a;
+			for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
+				if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
+					goto next;
+			}
 			char title[64] = { 0 };
 			strcpy(title, &path[10]);
 			int i;
@@ -4682,6 +4692,7 @@ static void sysctl_save_do(webs_t wp, char *path)
 			if (value) {
 				nvram_set(nvname, value);
 			}
+			next:;
 		}
 
 	}
