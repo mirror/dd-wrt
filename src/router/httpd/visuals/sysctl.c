@@ -106,7 +106,7 @@ static void showdir(webs_t wp, char *path)
 				}
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\">%s</div>\n", entry->d_name);
-				websWrite(wp, "<input maxlength=\"100\" size=\"64\" name=\"%s%s%s\" value=\"%s\" />\n", title, strlen(title) ? "." : "", entry->d_name, value);
+				websWrite(wp, "<input maxlength=\"100\" size=\"40\" name=\"%s%s%s\" value=\"%s\" />\n", title, strlen(title) ? "." : "", entry->d_name, value);
 				websWrite(wp, "</div>\n");
 				cnt++;
 			}
