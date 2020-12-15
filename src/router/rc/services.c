@@ -1118,7 +1118,7 @@ static void handle_ddns(void)
 #ifdef HAVE_SYSCTL_EDIT
 static void handle_sysctl(void)
 {
-	restart("sysctl");
+	restart("sysctl_config");
 }
 #endif
 
