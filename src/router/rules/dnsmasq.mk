@@ -40,7 +40,7 @@ dnsmasq-clean:
 
 
 
-dnsmasq:
+dnsmasq: nettle gmp
 	$(MAKE) -C $(DNSMASQ_PATH) clean
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
 	$(MAKE) -j 4 -C $(DNSMASQ_PATH) CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
