@@ -29,7 +29,7 @@ DNSMASQ_COPTS += -DNEED_PRINTF
 endif
 
 ifeq ($(CONFIG_DNSSEC),y)
-export DNSSEC_MAKEFLAGS +=-DHAVE_DNSSEC -DNO_NETTLE_ECC -I$(TOP) -I$(TOP)/gmp
+export DNSSEC_MAKEFLAGS +=-DHAVE_DNSSEC -DNO_NETTLE_ECC -DHAVE_NETTLEHASH -I$(TOP) -I$(TOP)/gmp
 #export DNSSEC_LINKFLAGS:=-L$(TOP)/pcre/.libs -lpcre -L$(TOP)/zlib -lz -L$(TOP)/nettle/.lib -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp
 export DNSSEC_LINKFLAGS=-L$(TOP)/pcre/.libs -lpcre -L$(TOP)/zlib -lz $(TOP)/nettle/libhogweed.a $(TOP)/nettle/libnettle.a $(TOP)/gmp/.libs/libgmp.a
 endif
@@ -43,7 +43,7 @@ dnsmasq-clean:
 dnsmasq: nettle gmp
 	$(MAKE) -C $(DNSMASQ_PATH) clean
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
-	$(MAKE) -j 4 -C $(DNSMASQ_PATH) CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
+	$(MAKE) -j 4 -C $(DNSMASQ_PATH) CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSSEC_MAKEFLAGS)  -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSSEC_LINKFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
 else
 ifeq ($(CONFIG_DIST),"micro")
 	$(MAKE) -j 4 -C $(DNSMASQ_PATH) "COPTS=-DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
