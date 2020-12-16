@@ -86,7 +86,8 @@ void create_openvpnrules(FILE * fp)
 		//fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ system(\"nvram set openvpn_get_dns=\"$3) }'\n");
 		fprintf(fp, "nvram set openvpn_get_dns=\"$(env | grep 'dhcp-option DNS' | awk '{ printf \"\%%s \",$3 }')\"\n");
 		//egc route only pushed DNS servers and not client set DNS servers
-		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{print $NF}' | while read vpn_dns; do grep -q \"^dhcp-option DNS $vpn_dns\" /tmp/openvpncl/openvpn.conf || ip route add $vpn_dns via $route_vpn_gateway dev $dev 2> /dev/null; done\n");
+		fprintf(fp,
+			"env | grep 'dhcp-option DNS' | awk '{print $NF}' | while read vpn_dns; do grep -q \"^dhcp-option DNS $vpn_dns\" /tmp/openvpncl/openvpn.conf || ip route add $vpn_dns via $route_vpn_gateway dev $dev 2> /dev/null; done\n");
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -200,7 +201,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
 		fprintf(fp, "pkcs12 /tmp/openvpn/cert.p12\n");
 	} else {
-		if (nvram_invmatch("openvpn_dh", "") && nvram_matchi("openvpn_dh_btn", 0)) //egc use ECDH instead of PEM key
+		if (nvram_invmatch("openvpn_dh", "") && nvram_matchi("openvpn_dh_btn", 0))	//egc use ECDH instead of PEM key
 			fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
 		if (nvram_invmatch("openvpn_ca", ""))
 			fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
