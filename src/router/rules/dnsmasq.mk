@@ -1,3 +1,5 @@
+DNSMASQ_PATH=private/dnsmasq-pre-2.83
+
 ifneq ($(CONFIG_IPV6),y)
 export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
 endif
@@ -33,42 +35,42 @@ export DNSSEC_LINKFLAGS=-L$(TOP)/pcre/.libs -lpcre -L$(TOP)/zlib -lz $(TOP)/nett
 endif
 
 dnsmasq-clean:
-	$(MAKE) -j 4 -C dnsmasq CFLAGS="$(COPTS)" clean
-	$(MAKE) -j 4 -C dnsmasq/contrib/lease-tools CFLAGS="$(COPTS)" clean
+	$(MAKE) -j 4 -C $(DNSMASQ_PATH) CFLAGS="$(COPTS)" clean
+	$(MAKE) -j 4 -C $(DNSMASQ_PATH)/contrib/lease-tools CFLAGS="$(COPTS)" clean
 
 
 
 dnsmasq:
-	$(MAKE) -C dnsmasq clean
+	$(MAKE) -C $(DNSMASQ_PATH) clean
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
-	$(MAKE) -j 4 -C dnsmasq CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
+	$(MAKE) -j 4 -C $(DNSMASQ_PATH) CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
 else
 ifeq ($(CONFIG_DIST),"micro")
-	$(MAKE) -j 4 -C dnsmasq "COPTS=-DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
+	$(MAKE) -j 4 -C $(DNSMASQ_PATH) "COPTS=-DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
 else
 ifeq ($(CONFIG_DIST),"micro-special")
-	$(MAKE) -j 4 -C dnsmasq "COPTS=-DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
+	$(MAKE) -j 4 -C $(DNSMASQ_PATH) "COPTS=-DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
 else
-	$(MAKE) -j 4 -C dnsmasq "COPTS=-DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) $(DNSSEC_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSSEC_LINKFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
+	$(MAKE) -j 4 -C $(DNSMASQ_PATH) "COPTS=-DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) $(DNSSEC_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSSEC_LINKFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
 endif
 endif
 endif
-	$(MAKE) -j 4 -C dnsmasq/contrib/lease-tools CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)"
+	$(MAKE) -j 4 -C $(DNSMASQ_PATH)/contrib/lease-tools CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)"
 
 dnsmasq-install:
-	install -D dnsmasq/contrib/wrt/lease_update.sh $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
-	install -D dnsmasq/contrib/lease-tools/dhcp_release $(INSTALLDIR)/dnsmasq/usr/sbin/dhcp_release
-	install -D dnsmasq/contrib/lease-tools/dhcp_lease_time $(INSTALLDIR)/dnsmasq/usr/sbin/dhcp_lease_time
-	install -D dnsmasq/src/dnsmasq $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
+	install -D $(DNSMASQ_PATH)/contrib/wrt/lease_update.sh $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
+	install -D $(DNSMASQ_PATH)/contrib/lease-tools/dhcp_release $(INSTALLDIR)/dnsmasq/usr/sbin/dhcp_release
+	install -D $(DNSMASQ_PATH)/contrib/lease-tools/dhcp_lease_time $(INSTALLDIR)/dnsmasq/usr/sbin/dhcp_lease_time
+	install -D $(DNSMASQ_PATH)/src/dnsmasq $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
 #ifeq ($(CONFIG_BUFFALO),y)
 #	install -D udhcpd/config/dhcpd.webservices.buffalo $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.webservices
 #else
 	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.webservices
 #endif
 	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.startup
-	install -D dnsmasq/configs/etc/rfc6761.conf $(INSTALLDIR)/dnsmasq/etc/rfc6761.conf
+	install -D $(DNSMASQ_PATH)/configs/etc/rfc6761.conf $(INSTALLDIR)/dnsmasq/etc/rfc6761.conf
 ifeq ($(CONFIG_DNSSEC),y)
-	install -D dnsmasq/trust-anchors.conf $(INSTALLDIR)/dnsmasq/etc/trust-anchors.conf
+	install -D $(DNSMASQ_PATH)/trust-anchors.conf $(INSTALLDIR)/dnsmasq/etc/trust-anchors.conf
 endif
 
 
