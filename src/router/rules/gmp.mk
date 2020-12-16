@@ -7,8 +7,12 @@ gmp-configure:
 		--host=$(ARCH)-linux-gnu \
 		--prefix=/usr \
 		--libdir=/usr/lib \
+		--disable-shared \
+		--enable-static \
 		--enable-assembly \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/iptables/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables/libipq"
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/iptables/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables/libipq $(LDLTO)" \
+		AR_FLAGS="cru $(LTOPLUGIN)" \
+		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 else
 gmp-configure:
 	cd gmp && ./configure \
@@ -16,12 +20,16 @@ gmp-configure:
 		--host=$(ARCH)-linux-gnu \
 		--prefix=/usr \
 		--libdir=/usr/lib \
+		--disable-shared \
+		--enable-static \
 		--enable-assembly \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/iptables-new/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs"
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/iptables-new/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs $(LDLTO)" \
+		AR_FLAGS="cru $(LTOPLUGIN)" \
+		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 endif
 
 gmp:
-	$(MAKE) -C gmp CFLAGS="$(COPTS)"
+	$(MAKE) -C gmp CFLAGS="$(COPTS) $(LTO)"
 
 gmp-install:
 	@true
