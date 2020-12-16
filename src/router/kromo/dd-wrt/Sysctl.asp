@@ -3,6 +3,7 @@
 		//<![CDATA[
 
 function to_submit(F) {
+	F.change_action.value="gozila_cgi";
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
@@ -43,7 +44,7 @@ addEvent(window, "unload", function() {
 						<form name="setup" action="apply.cgi" method="post">
 							<input type="hidden" name="submit_button" value="Sysctl" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" value="save" />
 							<input type="hidden" name="commit" value="1" />
 							
