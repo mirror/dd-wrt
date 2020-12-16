@@ -2873,7 +2873,14 @@ static char *sysctl_blacklist[] = {	//
 	"nf_conntrack_helper",
 	"bridge-nf-call-arptables",
 	"bridge-nf-call-ip6tables",
-	"bridge-nf-call-iptables"
+	"bridge-nf-call-iptables",
+	"drop_caches",
+	"ledpin",
+	"softled",
+	"default_qdisc",	// configured elsewhere
+	"tcp_bic",		// configured elsewhere
+	"tcp_westwood",		// configured elsewhere
+	"tcp_vegas_cong_avoid",	// configured elsewhere
 };
 
 static void setsysctl(char *path, char *nvname, char *name, int cleanup)
@@ -2886,15 +2893,15 @@ static void setsysctl(char *path, char *nvname, char *name, int cleanup)
 		return;
 	if (cleanup) {
 		nvram_unset(nvname);
-	}else{
-	char *val = nvram_safe_get(nvname);
-	if (*val) {
-		FILE *out = fopen(fname, "wb");
-		if (!out)
-			return;
-		fputs(val, out);
-		fclose(out);
-	}
+	} else {
+		char *val = nvram_safe_get(nvname);
+		if (*val) {
+			FILE *out = fopen(fname, "wb");
+			if (!out)
+				return;
+			fputs(val, out);
+			fclose(out);
+		}
 	}
 }
 
@@ -2914,7 +2921,7 @@ static void sysctl_apply(char *path, int cleanup)
 		if (entry->d_type == DT_DIR) {
 			char dir[1024];
 			sprintf(dir, "%s/%s", path, entry->d_name);
-			sysctl_apply(dir,cleanup);
+			sysctl_apply(dir, cleanup);
 			continue;
 		}
 	}
@@ -2937,7 +2944,7 @@ static void sysctl_apply(char *path, int cleanup)
 			char nvname[128];
 			sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
 			setsysctl(path, nvname, entry->d_name, cleanup);
-			next:;
+		      next:;
 		}
 
 	}

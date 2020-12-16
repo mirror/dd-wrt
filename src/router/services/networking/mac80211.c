@@ -1769,8 +1769,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "eapol_version=1\n");
 		if (ispsk3)
 			fprintf(fp, "sae_groups=19 20 21\n");
-//		if (ismesh)
-//			fprintf(fp, "user_mpm=1\n");
+//              if (ismesh)
+//                      fprintf(fp, "user_mpm=1\n");
 		fprintf(fp, "network={\n");
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);

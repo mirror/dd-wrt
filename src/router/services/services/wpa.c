@@ -454,8 +454,10 @@ static void start_nas_single(char *type, char *prefix)
 	char *sec_mode = { 0 };	/* -w N = security mode bitmask (N = 1: WEP,
 				 * 2: TKIP, 4: AES) */
 	char *key = { 0 }, *iface = {
-	0}, *mode = {
-	0};
+		0
+	}, *mode = {
+		0
+	};
 
 	if (!strcmp(prefix, "wl0")) {
 		led_control(LED_SEC0, LED_OFF);

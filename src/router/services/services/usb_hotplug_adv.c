@@ -211,7 +211,7 @@ void start_hotplug_block(void)
 	if (!devpath)
 		return;
 	if (!*devpath)
-		return;	
+		return;
 	len = strlen(devpath);
 	char *devp = strrchr(devpath, '/');
 	if (!devp)
@@ -219,7 +219,7 @@ void start_hotplug_block(void)
 	if (!*devp)
 		return;
 	strncpy(part, devp + 1, sizeof(part) - 1);
-	
+
 	optimize_block_device(devp + 1);
 
 	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) && strncmp(part, "hd", 2) && strncmp(part, "sr", 2) && strncmp(part, "md", 2))
@@ -512,21 +512,21 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
 #ifdef HAVE_80211AC
-	writeprocsys("vm/min_free_kbytes", "20480");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "20480"));
 #elif HAVE_MVEBU
-	writeprocsys("vm/min_free_kbytes", "65536");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #elif HAVE_IPQ806X
-	writeprocsys("vm/min_free_kbytes", "65536");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #elif HAVE_X86
-	writeprocsys("vm/min_free_kbytes", "65536");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #else
-	writeprocsys("vm/min_free_kbytes", "4096");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
 #endif
-	writeprocsys("vm/vfs_cache_pressure", "10000");
-	writeprocsys("vm/dirty_expire_centisecs", "100");
-	writeprocsys("vm/dirty_writeback_centisecs", "100");
-	writeprocsys("vm/overcommit_memory", "2");
-	writeprocsys("vm/overcommit_ratio", "80");
+	writeprocsys("vm/vfs_cache_pressure", nvram_default_get("vm.vfs_cache_pressure", "10000"));
+	writeprocsys("vm/dirty_expire_centisecs", nvram_default_get("vm.dirty_expire_centisecs", "100"));
+	writeprocsys("vm/dirty_writeback_centisecs", nvram_default_get("vm.dirty_writeback_centisecs", "100"));
+	writeprocsys("vm/overcommit_memory", nvram_default_get("vm.overcommit_memory", "2"));
+	writeprocsys("vm/overcommit_ratio", nvram_default_get("vm.overcommit_ratio", "80"));
 
 //      writeprocsys("vm/pagecache_ratio","90");
 //      writeprocsys("vm/swappiness","90");

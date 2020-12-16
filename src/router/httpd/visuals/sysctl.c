@@ -69,7 +69,14 @@ static char *sysctl_blacklist[] = {	//
 	"nf_conntrack_helper",
 	"bridge-nf-call-arptables",
 	"bridge-nf-call-ip6tables",
-	"bridge-nf-call-iptables"
+	"bridge-nf-call-iptables",
+	"drop_caches",
+	"ledpin",
+	"softled",
+	"default_qdisc",	// configured elsewhere
+	"tcp_bic",		// configured elsewhere
+	"tcp_westwood",		// configured elsewhere
+	"tcp_vegas_cong_avoid",	// configured elsewhere
 };
 
 static void showdir(webs_t wp, char *path)

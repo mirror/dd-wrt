@@ -135,9 +135,9 @@ void start_hotplug_block(void)
 	//sysprintf("echo action %s devpath %s >> /tmp/hotplugs", action,
 	//        devpath);
 	if (!slash)
-	    return;
+		return;
 	if (!*slash)
-	    return;
+		return;
 	char *name = slash + 1;
 	if (strncmp(name, "disc", 4) && (strncmp(name, "sd", 2))
 	    && (strncmp(name, "sr", 2))
@@ -145,7 +145,7 @@ void start_hotplug_block(void)
 		return;		//skip
 
 	char devname[64];
-	sprintf(devname,  "/dev/%s", name);
+	sprintf(devname, "/dev/%s", name);
 	optimize_block_device(slash + 1);
 	char sysdev[128];
 	sprintf(sysdev, "/sys%s/partition", devpath);
@@ -284,16 +284,16 @@ static int usb_process_path(char *path, char *fs, char *target)
 			ret = eval("/bin/mount", path, mount_point);	//guess fs
 	}
 #ifdef HAVE_80211AC
-	writeprocsys("vm/min_free_kbytes", "16384");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "16384"));
 #elif HAVE_IPQ806X
-	writeprocsys("vm/min_free_kbytes", "65536");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #elif HAVE_X86
-	writeprocsys("vm/min_free_kbytes", "65536");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #else
-	writeprocsys("vm/min_free_kbytes", "4096");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "4096"));
 #endif
-	writeprocsys("vm/overcommit_memory", "2");
-	writeprocsys("vm/overcommit_ratio", "80");
+	writeprocsys("vm/overcommit_memory", nvram_default_get("vm.overcommit_memory", "2"));
+	writeprocsys("vm/overcommit_ratio", nvram_default_get("vm.overcommit_ratio", "80"));
 //      writeprocsys("vm/pagecache_ratio","90");
 //      writeprocsys("vm/swappiness","90");
 //      writeprocsys("vm/overcommit_memory","2");
