@@ -4610,13 +4610,21 @@ void wireless_join(webs_t wp)
 #ifdef HAVE_SYSCTL_EDIT
 #include <dirent.h>
 
+// todo. need a central place to avoid copy and paste
 static char *sysctl_blacklist[] = {	//
 	"base_reachable_time",
 	"nf_conntrack_max",
 	"nf_conntrack_helper",
 	"bridge-nf-call-arptables",
 	"bridge-nf-call-ip6tables",
-	"bridge-nf-call-iptables"
+	"bridge-nf-call-iptables",
+	"drop_caches",
+	"ledpin",
+	"softled",
+	"default_qdisc",	// configured elsewhere
+	"tcp_bic",		// configured elsewhere
+	"tcp_westwood",		// configured elsewhere
+	"tcp_vegas_cong_avoid",	// configured elsewhere
 };
 
 static char *getsysctl(webs_t wp, char *path, char *nvname, char *name, char *fval)

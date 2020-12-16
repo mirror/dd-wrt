@@ -171,7 +171,6 @@ struct nvram_param srouter_defaults[] = {
 	// wan_proto=disabled */
 	{ "fw_disable", "0" },	/* Disable firewall (allow new connections from the WAN) */
 
-
 	/*
 	 * TCP/IP parameters 
 	 */

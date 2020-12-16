@@ -44,7 +44,7 @@ extern int nvram2file(char *varname, char *filename);
 #define start_services() eval("startservices");
 static void set_systunes(void)
 {
-	writeprocsys("vm/dirty_writeback_centisecs", "1500");
+	writeprocsys("vm/dirty_writeback_centisecs", nvram_default_get("vm.dirty_writeback_centisecs", "1500"));
 
 }
 
@@ -69,8 +69,8 @@ static void set_tcp_params(void)
 		writeprocsysnet("ipv4/tcp_westwood", westwood);
 		writeprocsysnet("ipv4/tcp_vegas_cong_avoid", vegas);
 		writeprocsysnet("ipv4/tcp_bic", bic);
-		writeprocsysnet("ipv4/tcp_vegas_alpha", "3");
-		writeprocsysnet("ipv4/tcp_vegas_beta", "3");
+		writeprocsysnet("ipv4/tcp_vegas_alpha", nvram_default_get("net.ipv4.vegas_alpha", "3"));
+		writeprocsysnet("ipv4/tcp_vegas_beta", nvram_default_get("net.ipv4.vegas_beta", "3"));
 	} else {
 		fclose(fp);
 		writeprocsysnet("ipv4/tcp_congestion_control", nvram_default_get("tcp_congestion_control", "westwood"));

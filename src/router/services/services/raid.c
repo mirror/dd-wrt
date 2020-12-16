@@ -89,10 +89,10 @@ void start_raid(void)
 	if (i == 0)
 		return;
 
-	writeprocsys("vm/min_free_kbytes", "65536");
-	writeprocsys("vm/vfs_cache_pressure", "10000");
-	writeprocsys("vm/dirty_expire_centisecs", "100");
-	writeprocsys("vm/dirty_writeback_centisecs", "100");
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+	writeprocsys("vm/vfs_cache_pressure", nvram_default_get("vm.vfs_cache_pressure", "10000"));
+	writeprocsys("vm/dirty_expire_centisecs", nvram_default_get("vm.dirty_expire_centisecs", "100"));
+	writeprocsys("vm/dirty_writeback_centisecs", nvram_default_get("vm.dirty_writeback_centisecs", "100"));
 
 #ifdef _SC_NPROCESSORS_ONLN
 	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
@@ -307,7 +307,7 @@ void start_raid(void)
 		if (!strcmp(type, "md")) {
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
 			sysprintf("echo 32768 > /sys/block/md%d/md/stripe_cache_size", i);
-			writeprocsys("dev/raid/speed_limit_max", "10000000");
+			writeprocsys("dev/raid/speed_limit_max", nvram_default_get("dev.raid.speed_limit_max", "10000000"));
 			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
 			if (nvram_nmatch("ext4", "raidfs%d", i)) {
 				sysprintf("mount -t ext4 /dev/md%d -o init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0 \"/tmp/mnt/%s\"", i, poolname);

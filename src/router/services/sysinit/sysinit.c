@@ -3354,7 +3354,6 @@ void start_nvram(void)
 		// for WiFi G certication
 		nvram_seti("wl_gmode", 2);
 
-
 	nvram_set("ping_ip", "");
 	nvram_set("ping_times", "");
 

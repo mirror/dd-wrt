@@ -144,7 +144,7 @@ void start_sysinit(void)
 	} else if (brand == ROUTER_DIR882) {
 		insmod("compat");
 		insmod("mac80211");
-		if (!nvram_match("no_mt76","1")) {
+		if (!nvram_match("no_mt76", "1")) {
 			insmod("mt76");
 			insmod("mt7615-common");
 			insmod("mt7615e");
