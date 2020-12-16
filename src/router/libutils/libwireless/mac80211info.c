@@ -113,7 +113,7 @@ void free_wifi_clients(struct wifi_client_info *wci);
 static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *list_root);
 static int mac80211_cb_survey(struct nl_msg *msg, void *data);
 
-static void __attribute__((constructor))mac80211_init(void)
+static void __attribute__((constructor)) mac80211_init(void)
 {
 	if (!bunl) {
 		int ret = unl_genl_init(&unl, "nl80211");
@@ -215,6 +215,14 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 		if (sinfo[NL80211_SURVEY_INFO_FREQUENCY])
 			mac80211_info->frequency = freq;
 	}
+	if (!mac80211_info->noise) {
+#ifdef HAVE_MVEBU
+		mac80211_info->noise = -104;
+#else
+		mac80211_info->noise = -95;
+#endif
+
+	}
 
 out:
 	return NL_SKIP;
@@ -222,7 +230,7 @@ out:
 
 static void getNoise_mac80211_internal(char *interface, struct mac80211_info *mac80211_info)
 {
-    	struct nl_msg *msg;
+	struct nl_msg *msg;
 	int wdev = if_nametoindex(interface);
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
@@ -1125,6 +1133,7 @@ int has_ht(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+
 int has_ldpc(const char *prefix)
 {
 	INITVALUECACHE();
