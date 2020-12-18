@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r5898 | brainslayer | 2020-12-18 20:12:09 +0700 (Fri, 18 Dec 2020) | 1 line
+
+fix api
+------------------------------------------------------------------------
+r5897 | brainslayer | 2020-12-18 19:55:46 +0700 (Fri, 18 Dec 2020) | 1 line
+
+recompile fw image
+------------------------------------------------------------------------
+r5896 | brainslayer | 2020-12-18 19:49:57 +0700 (Fri, 18 Dec 2020) | 1 line
+
+rx decap offload support
+------------------------------------------------------------------------
 r5895 | brainslayer | 2020-12-16 16:08:09 +0700 (Wed, 16 Dec 2020) | 1 line
 
 add unofficial prelease of dnsmasq 2.83 for testing. public version will be released in january
