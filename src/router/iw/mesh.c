@@ -264,6 +264,12 @@ const static struct mesh_param_descr _mesh_param_descrs[] =
 	_my_nla_put_u16, _parse_u16, _print_u16_in_TUs},
 	{"mesh_plink_timeout", NL80211_MESHCONF_PLINK_TIMEOUT,
 	_my_nla_put_u32, _parse_u32, _print_u32_in_seconds},
+	{"mesh_connected_to_gate", NL80211_MESHCONF_CONNECTED_TO_GATE,
+	_my_nla_put_u8, _parse_u8_as_bool, _print_u8},
+	{"mesh_nolearn", NL80211_MESHCONF_NOLEARN,
+	_my_nla_put_u8, _parse_u8_as_bool, _print_u8},
+	{"mesh_connected_to_as", NL80211_MESHCONF_CONNECTED_TO_AS,
+	_my_nla_put_u8, _parse_u8_as_bool, _print_u8},
 };
 
 static void print_all_mesh_param_descr(void)

@@ -309,6 +309,9 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
 		[NL80211_STA_INFO_BSS_PARAM] = { .type = NLA_NESTED },
 		[NL80211_STA_INFO_RX_DURATION] = { .type = NLA_U64 },
 		[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG] = { .type = NLA_U8 },
+		[NL80211_STA_INFO_AIRTIME_LINK_METRIC] = { .type = NLA_U32 },
+		[NL80211_STA_INFO_CONNECTED_TO_AS] = { .type = NLA_U8 },
+		[NL80211_STA_INFO_CONNECTED_TO_GATE] = { .type = NLA_U8 },
 		[NL80211_STA_INFO_RX_COMPRESSED] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_TX_COMPRESSED] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_RX_COMPRESSED_BYTES64] = { .type = NLA_U64 },
@@ -494,6 +497,18 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
 		}
 		printf("\n\tmesh plink:\t%s", state_name);
 	}
+	if (sinfo[NL80211_STA_INFO_AIRTIME_LINK_METRIC])
+		printf("\n\tmesh airtime link metric: %d",
+			nla_get_u32(sinfo[NL80211_STA_INFO_AIRTIME_LINK_METRIC]));
+	if (sinfo[NL80211_STA_INFO_CONNECTED_TO_GATE])
+		printf("\n\tmesh connected to gate:\t%s",
+			nla_get_u8(sinfo[NL80211_STA_INFO_CONNECTED_TO_GATE]) ?
+			"yes" : "no");
+	if (sinfo[NL80211_STA_INFO_CONNECTED_TO_AS])
+		printf("\n\tmesh connected to auth server:\t%s",
+			nla_get_u8(sinfo[NL80211_STA_INFO_CONNECTED_TO_AS]) ?
+			"yes" : "no");
+
 	if (sinfo[NL80211_STA_INFO_LOCAL_PM]) {
 		printf("\n\tmesh local PS mode:\t");
 		print_power_mode(sinfo[NL80211_STA_INFO_LOCAL_PM]);
