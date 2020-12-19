@@ -244,6 +244,8 @@ void set_mesh_params(char *dev)
 	mesh_param("mesh_awake_window", "10");
 	mesh_param("mesh_plink_timeout", "0");
 	mesh_param("mesh_nolearn", "0");
+	mesh_param("mesh_connected_to_gate", "0");
+	mesh_param("mesh_connected_to_as", "0");
 }
 
 void mesh_params_main(int argc, char *argv[])
