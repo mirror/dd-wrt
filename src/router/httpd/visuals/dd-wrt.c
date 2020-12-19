@@ -4224,6 +4224,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			} while(0)
 
 			mesh_radio("mesh_fwding", 1);
+			mesh_radio("mesh_nolearn", 0);
 			mesh_radio("mesh_gate_announcements", 0);
 			{
 				char mparam[64];
@@ -4260,6 +4261,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 			mesh_num("mesh_awake_window", 6, 10);
 			mesh_num("mesh_plink_timeout", 6, 0);
+//			mesh_radio("mesh_connected_to_gate", 0);
+//			mesh_radio("mesh_connected_to_as", 0);
 			websWrite(wp, "</fieldset>\n");
 		}
 	}
