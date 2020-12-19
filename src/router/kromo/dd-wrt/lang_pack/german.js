@@ -2573,9 +2573,9 @@ wl_basic.mesh_no_root="No Root";
 wl_basic.mesh_preq_no_prep="Preq No Prep";
 wl_basic.mesh_preq_with_prep="Preq With Prep";
 wl_basic.mesh_rann="Rann";
-wl_basic.mesh_active="Active";
-wl_basic.mesh_deep="Deep Sleep";
-wl_basic.mesh_light="Light Sleep";
+wl_basic.mesh_active="Aktiv";
+wl_basic.mesh_deep="Tiefschlaf";
+wl_basic.mesh_light="Leichter Schlaf";
 
 
 //help container
