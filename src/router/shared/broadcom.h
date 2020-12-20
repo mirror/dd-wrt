@@ -11,8 +11,10 @@
 #include <syslog.h>
 #include <bcmcvar.h>		// Added by Daniel(2004-07-29) for EZC
 
-#define EJ_VISIBLE __attribute__((__visibility__("default")))
+#define EJ_VISIBLE __attribute__((used)) __attribute__((__visibility__("default")))
 #define EJ_HIDDEN __attribute__((__visibility__("hidden")))
+//#define EJ_VISIBLE __attribute__((__visibility__("default")))
+//#define EJ_HIDDEN __attribute__((__visibility__("hidden")))
 
 EJ_VISIBLE void wan_proto(webs_t wp);
 EJ_VISIBLE void dhcpfwd(webs_t wp);

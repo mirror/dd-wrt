@@ -66,7 +66,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -fvisibility=hidden
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -fvisibility=hidden $(LTO)
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
@@ -1508,9 +1508,9 @@ validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBS
 visuals.so: dd-wrt.o packets.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o $(VISOBJS) $(REGOBJS2)
 	@echo "[LD] $@"
 ifeq ($(CONFIG_ATH9K),y)
-	@$(CC) -fvisibility=hidden --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+	@$(CC) -fvisibility=hidden -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
-	@$(CC) -fvisibility=hidden --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS)
+	@$(CC) -fvisibility=hidden --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS) $(LDLTO)
 	
 	
 build_date.o: build_date.c
