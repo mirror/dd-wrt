@@ -2865,37 +2865,18 @@ void start_loadfwmodules(void)
 
 #ifdef HAVE_SYSCTL_EDIT
 
-#include <dirent.h>
-
-static char *sysctl_blacklist[] = {	//
-	"base_reachable_time",
-	"nf_conntrack_max",
-	"nf_conntrack_helper",
-	"bridge-nf-call-arptables",
-	"bridge-nf-call-ip6tables",
-	"bridge-nf-call-iptables",
-	"drop_caches",
-	"ledpin",
-	"softled",
-	"default_qdisc",	// configured elsewhere
-	"tcp_bic",		// configured elsewhere
-	"tcp_westwood",		// configured elsewhere
-	"tcp_vegas_cong_avoid",	// configured elsewhere
-};
-
-static void setsysctl(char *path, char *nvname, char *name, int cleanup)
+static void setsysctl(char *path, char *nvname, char *name, void *priv)
 {
+	long cleanup = (long)priv;
 	char fname[128];
-	sprintf(fname, "%s/%s", path, name);
-	struct stat sb;
-	stat(fname, &sb);
-	if (!(sb.st_mode & S_IWUSR))
+	if (!path)
 		return;
 	if (cleanup) {
 		nvram_unset(nvname);
 	} else {
 		char *val = nvram_safe_get(nvname);
 		if (*val) {
+			sprintf(fname, "%s/%s", path, name);
 			FILE *out = fopen(fname, "wb");
 			if (!out)
 				return;
@@ -2905,62 +2886,14 @@ static void setsysctl(char *path, char *nvname, char *name, int cleanup)
 	}
 }
 
-static void sysctl_apply(char *path, int cleanup)
-{
-
-	DIR *directory;
-	char buf[256];
-	int cnt = 0;
-	directory = opendir(path);
-	struct dirent *entry;
-	while ((entry = readdir(directory)) != NULL) {
-		if (!cleanup && (!strcmp(entry->d_name, "nf_log")))	// pointless
-			continue;
-		if ((!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")))
-			continue;
-		if (entry->d_type == DT_DIR) {
-			char dir[1024];
-			sprintf(dir, "%s/%s", path, entry->d_name);
-			sysctl_apply(dir, cleanup);
-			continue;
-		}
-	}
-	closedir(directory);
-	directory = opendir(path);
-	while ((entry = readdir(directory)) != NULL) {
-		if (entry->d_type == DT_REG) {
-			int a;
-			if (!cleanup) {
-				for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
-					if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
-						goto next;
-				}
-			}
-			char title[64] = { 0 };
-			strcpy(title, &path[10]);
-			int i;
-			int len = strlen(title);
-			for (i = 0; i < len; i++)
-				if (title[i] == '/')
-					title[i] = '.';
-			char nvname[128];
-			sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
-			setsysctl(path, nvname, entry->d_name, cleanup);
-		      next:;
-		}
-
-	}
-	closedir(directory);
-}
-
 void start_sysctl_config(void)
 {
-	sysctl_apply("/proc/sys", 0);
+	sysctl_apply((void *)0, &setsysctl);
 }
 
 void start_sysctl_cleanup(void)
 {
-	sysctl_apply("/proc/sys", 1);
+	sysctl_apply((void *)1, &setsysctl);
 }
 
 #endif

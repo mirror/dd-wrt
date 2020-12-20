@@ -35,111 +35,48 @@
 #include "fs_common.h"
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
 
-static char *getsysctl(char *path, char *name, char *nvname, char *fval)
-{
-	char *val = nvram_safe_get(nvname);
-	if (*val)
-		return val;
-	char fname[128];
-	sprintf(fname, "%s/%s", path, name);
-	struct stat sb;
-	stat(fname, &sb);
-	if (!(sb.st_mode & S_IWUSR))
-		return NULL;
-
-	FILE *in = fopen(fname, "rb");
-	if (!in)
-		return NULL;
-	fgets(fval, 127, in);
-	int i;
-	int len = strlen(fval);
-	for (i = 0; i < len; i++) {
-		if (fval[i] == '\t')
-			fval[i] = 0x20;
-		if (fval[i] == '\n')
-			fval[i] = 0;
-	}
-	fclose(in);
-	return fval;
-}
-
-static char *sysctl_blacklist[] = {	//
-	"base_reachable_time",
-	"nf_conntrack_max",
-	"nf_conntrack_helper",
-	"bridge-nf-call-arptables",
-	"bridge-nf-call-ip6tables",
-	"bridge-nf-call-iptables",
-	"drop_caches",
-	"ledpin",
-	"softled",
-	"default_qdisc",	// configured elsewhere
-	"tcp_bic",		// configured elsewhere
-	"tcp_westwood",		// configured elsewhere
-	"tcp_vegas_cong_avoid",	// configured elsewhere
+struct sysctl_priv {
+	webs_t wp;
+	int cnt;
 };
 
-static void showdir(webs_t wp, char *path)
+static void showsysctl(char *path, char *nvname, char *name, char *sysval, void *priv)
 {
-	DIR *directory;
-	char buf[256];
-	int cnt = 0;
-	directory = opendir(path);
-	struct dirent *entry;
-	while ((entry = readdir(directory)) != NULL) {
-		if (!strcmp(entry->d_name, "nf_log"))	// pointless
-			continue;
-		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
-			continue;
-		if (entry->d_type == DT_DIR) {
-			char dir[1024];
-			sprintf(dir, "%s/%s", path, entry->d_name);
-			showdir(wp, dir);
-			continue;
-		}
+	struct sysctl_priv *p = (struct sysctl_priv *)priv;
+	webs_t wp = p->wp;
+	if (!path) {
+		if (p->cnt)
+			websWrite(wp, "</fieldset>\n");
+		p->cnt = 0;
+		return;
 	}
-	closedir(directory);
-	directory = opendir(path);
-	while ((entry = readdir(directory)) != NULL) {
-		if (entry->d_type == DT_REG) {
-			char title[64] = { 0 };
-			char fval[128];
-			int a;
-			for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
-				if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
-					goto next;
-			}
-			strcpy(title, &path[10]);
-			int i;
-			int len = strlen(title);
-			for (i = 0; i < len; i++)
-				if (title[i] == '/')
-					title[i] = '.';
-			char nvname[128];
-			sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
-			char *value = getsysctl(path, entry->d_name, nvname, fval);
-			if (value) {
-				if (!cnt) {
-					websWrite(wp, "<fieldset>\n");
-					websWrite(wp, "<legend>%s</legend>\n", title);
-				}
-				websWrite(wp, "<div class=\"setting\">\n");
-				websWrite(wp, "<div class=\"label\">%s</div>\n", entry->d_name);
-				websWrite(wp, "<input maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n", nvname, value);
-				websWrite(wp, "</div>\n");
-				cnt++;
-			}
-		      next:;
-		}
-
+	char fval[128];
+	char *val = nvram_safe_get(nvname);
+	if (*val) {
+		sysval = val;
 	}
-	closedir(directory);
-	if (cnt)
-		websWrite(wp, "</fieldset>\n");
 
+	if (!p->cnt) {
+		char title[64];
+		strcpy(title, nvname);
+		char *p = strrchr(title, '.');
+		if (p)
+			*p = 0;
+		websWrite(wp, "<fieldset>\n");
+		websWrite(wp, "<legend>%s</legend>\n", title);
+	}
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\">%s</div>\n", name);
+	websWrite(wp, "<input maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n", nvname, sysval);
+	websWrite(wp, "</div>\n");
+	p->cnt++;
+	return;
 }
 
 void ej_sysctl(webs_t wp, int argc, char_t ** argv)
 {
-	showdir(wp, "/proc/sys");
+	struct sysctl_priv p;
+	p.wp = wp;
+	p.cnt = 0;
+	apply_sysctl(&p, &showsysctl);
 }
