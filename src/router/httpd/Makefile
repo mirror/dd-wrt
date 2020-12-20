@@ -455,6 +455,9 @@ endif
 ifeq ($(CONFIG_BONDING),y)
   CFLAGS += -DHAVE_BONDING
 endif
+ifeq ($(CONFIG_MAC80211_COMPRESS),y)
+  CFLAGS += -DHAVE_MAC80211_COMPRESS
+endif
 ifeq ($(CONFIG_IPETH),y)
   CFLAGS += -DHAVE_IPETH
 endif
