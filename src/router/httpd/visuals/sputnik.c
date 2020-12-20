@@ -36,7 +36,7 @@
 
 #include <broadcom.h>
 
-void ej_sputnik_apd_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sputnik_apd_status(webs_t wp, int argc, char_t ** argv)
 {
 	char *key = argv[0];
 	FILE *fh;

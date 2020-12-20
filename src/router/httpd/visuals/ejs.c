@@ -113,7 +113,7 @@ struct onload onloads[] = {
 	// {"Traceroute", traceroute_onload},
 };
 
-void ej_onload(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_onload(webs_t wp, int argc, char_t ** argv)
 {
 	char *type, *arg;
 	struct onload *v;
@@ -135,7 +135,7 @@ void ej_onload(webs_t wp, int argc, char_t ** argv)
  * Meta tag command that will no allow page cached by browsers. The will
  * force the page to be refreshed when visited. 
  */
-void ej_no_cache(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_no_cache(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<meta http-equiv=\"expires\" content=\"0\">\n");
 	websWrite(wp, "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
@@ -160,7 +160,7 @@ void prefix_ip_get(char *name, char *buf, int type)
  * lan_ipaddr=192.168.1.1
  * <% prefix_ip_get("lan_ipaddr",1); %> produces "192.168.1."
  */
-void ej_prefix_ip_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_prefix_ip_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *name;
 	int type;
@@ -185,7 +185,7 @@ void ej_prefix_ip_get(webs_t wp, int argc, char_t ** argv)
  * lan_ipaddr = 192.168.1.1
  * <% nvram_get("lan_ipaddr"); %> produces "192.168.1.1"
  */
-void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
 {
 
 #if COUNTRY == JAPAN
@@ -202,7 +202,7 @@ void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
 
 EJALIAS(ej_nvram_get, ej_nvg);
 
-void ej_nvram_real_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_real_get(webs_t wp, int argc, char_t ** argv)
 {
 
 	websWrite(wp, "%s", nvram_safe_get(argv[0]));
@@ -217,7 +217,7 @@ void ej_nvram_real_get(webs_t wp, int argc, char_t ** argv)
  * lan_ipaddr = 192.168.1.1, gozila_action = 1, websGetVar(wp, "lan_proto", NULL) = 192.168.1.2;
  * <% nvram_selget("lan_ipaddr"); %> produces "192.168.1.2"
  */
-void ej_nvram_selget(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_selget(webs_t wp, int argc, char_t ** argv)
 {
 	char *name;
 
@@ -240,7 +240,7 @@ void ej_nvram_selget(webs_t wp, int argc, char_t ** argv)
  * wan_mac = 00:11:22:33:44:55
  * <% nvram_mac_get("wan_mac"); %> produces "00-11-22-33-44-55"
  */
-void ej_nvram_mac_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_mac_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
 	char *mac;
@@ -270,7 +270,7 @@ void ej_nvram_mac_get(webs_t wp, int argc, char_t ** argv)
  * wan_proto = dhcp; gozilla = 1; websGetVar(wp, "wan_proto", NULL) = static;
  * <% nvram_gozila_get("wan_proto"); %> produces "static"
  */
-void ej_nvram_gozila_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_gozila_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 
@@ -281,7 +281,7 @@ void ej_nvram_gozila_get(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", type);
 }
 
-void ej_webs_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_webs_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *value;
 
@@ -298,7 +298,7 @@ void ej_webs_get(webs_t wp, int argc, char_t ** argv)
  * lan_ipaddr = 192.168.1.1
  * <% get_single_ip("lan_ipaddr","1"); %> produces "168"
  */
-void ej_get_single_ip(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_single_ip(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
 
@@ -316,7 +316,7 @@ void ej_get_single_ip(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_get_single_nm(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_single_nm(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
 
@@ -347,7 +347,7 @@ int get_single_mac(char *macaddr, int which)
  * wan_mac = 00:11:22:33:44:55
  * <% get_single_mac("wan_mac","1"); %> produces "11"
  */
-void ej_get_single_mac(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_single_mac(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
 	int mac;
@@ -387,7 +387,7 @@ int nvram_selmatch(webs_t wp, char *name, char *match)
 	return 0;
 }
 
-void ej_nvram_selmatch(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_selmatch(webs_t wp, int argc, char_t ** argv)
 {
 
 	if (nvram_selmatch(wp, argv[0], argv[1])) {
@@ -398,7 +398,7 @@ void ej_nvram_selmatch(webs_t wp, int argc, char_t ** argv)
 
 EJALIAS(ej_nvram_selmatch, ej_nvsm);
 
-void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 
@@ -419,7 +419,7 @@ void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_selchecked(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_selchecked(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 
@@ -433,7 +433,7 @@ void ej_selchecked(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_else_selmatch(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_else_selmatch(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 
@@ -457,7 +457,7 @@ void ej_else_selmatch(webs_t wp, int argc, char_t ** argv)
  * <% nvram_else_match("wan_proto", "dhcp", "0","1"); %> produces "0"
  * <% nvram_else_match("wan_proto", "static", "0","1"); %> produces "1"
  */
-void ej_nvram_else_match(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 {
 
 	if (nvram_match(argv[0], argv[1]))
@@ -470,7 +470,7 @@ void ej_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 
 EJALIAS(ej_nvram_else_match, ej_nvem);
 
-void ej_startswith(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_startswith(webs_t wp, int argc, char_t ** argv)
 {
 
 	if (startswith(nvram_safe_get(argv[0]), argv[1]))
@@ -677,7 +677,7 @@ static struct defrule s_conditions[] = {
 	{ NULL, NULL }
 };
 
-void ej_ifdef(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ifdef(webs_t wp, int argc, char_t ** argv)
 {
 	char *name, *output;
 
@@ -698,7 +698,7 @@ void ej_ifdef(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_ifndef(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ifndef(webs_t wp, int argc, char_t ** argv)
 {
 	char *name, *output;
 
@@ -726,7 +726,7 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
  * <% nvram_match("wan_proto", "dhcp", "selected"); %> produces "selected"
  * <% nvram_match("wan_proto", "static", "selected"); %> does not produce
  */
-void ej_nvram_match(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_match(webs_t wp, int argc, char_t ** argv)
 {
 
 	if (nvram_match(argv[0], argv[1]))
@@ -743,7 +743,7 @@ EJALIAS(ej_nvram_match, ej_nvm);
  * <% nvram_invmatch("wan_proto", "dhcp", "disabled"); %> does not produce
  * <% nvram_invmatch("wan_proto", "static", "disabled"); %> produces "disabled"
  */
-void ej_nvram_invmatch(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_invmatch(webs_t wp, int argc, char_t ** argv)
 {
 	if (!nvram_match(argv[0], argv[1]))
 		websWrite(wp, argv[2]);
@@ -758,7 +758,7 @@ EJALIAS(ej_nvram_invmatch, ej_nvim);
  * <% nvram_list("filter_mac", 1); %> produces "00:87:65:43:21:00"
  * <% nvram_list("filter_mac", 100); %> produces ""
  */
-void ej_nvram_list(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_list(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char word[256], *next;
@@ -798,7 +798,7 @@ int get_dns_ip(char *name, int which, int count)
  * get_dns_ip("wan_dns", "1", "2"); %> produces "161" <%
  * get_dns_ip("wan_dns", "2", "3"); %> produces "1" 
  */
-void ej_get_dns_ip(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_dns_ip(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char word[256], *next;
@@ -816,7 +816,7 @@ void ej_get_dns_ip(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "0");	// not find
 }
 
-void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 {
 	char http[10];
 	char ipaddr[20];
@@ -862,7 +862,7 @@ void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_get_mtu(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_mtu(webs_t wp, int argc, char_t ** argv)
 {
 	struct mtu_lists *mtu_list;
 	char *type;
@@ -881,7 +881,7 @@ void ej_get_mtu(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_forward(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *count;
@@ -914,7 +914,7 @@ void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *count;
@@ -951,7 +951,7 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *count;
@@ -988,7 +988,7 @@ void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 }
 
 // SEG DD-WRT addition
-void ej_show_styles(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 {
 	// <option value="blue" <% nvram_selected("router_style", "blue");
 	// %>>Blue</option>
@@ -1016,7 +1016,7 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifdef HAVE_LANGUAGE
-void ej_show_languages(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[256];
 
@@ -1077,7 +1077,7 @@ static int checkandadd(char *name, char **lst)
 
 }
 
-void ej_show_modules(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[256];
 	struct dirent *entry;
@@ -1168,7 +1168,7 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 }
 
 #define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
-void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_XIOCOM
 	websWrite(wp, "XWR");
@@ -1258,14 +1258,14 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 }
 
 #undef getRouterName()
-void ej_get_syskernel(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_syskernel(webs_t wp, int argc, char_t ** argv)
 {
 	struct utsname name;
 	uname(&name);
 	websWrite(wp, "%s %s %s %s", name.sysname, name.release, name.version, name.machine);
 }
 
-void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 	char wanface[32];
@@ -1336,7 +1336,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	websWrite(wp, "<br />\n");
 }
 
-void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 {
 	char name[180];
 	char *next, *bnext;
@@ -1687,7 +1687,7 @@ static struct menucontext *init_menu(webs_t wp)
 	return m;
 }
 
-void ej_do_menu(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 {
 	char *mainmenu, *submenu;
 
@@ -2012,7 +2012,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
+EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *style = nvram_safe_get("router_style");
 	char *style_dark = nvram_safe_get("router_style_dark");
@@ -2066,7 +2066,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 
 }
 
-void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
+EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *htitle = argv[0];
 	websWrite(wp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
@@ -2087,7 +2087,7 @@ void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 
 }
 
-void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
+EJ_VISIBLE void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	int i;
 
@@ -2098,7 +2098,7 @@ void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 }
 
 #ifdef HAVE_IPV6
-void ej_show_ipv6options(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_ipv6options(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<option value=\"ipv6native\" %s>Native IPv6 from ISP</option>\n", nvram_match("ipv6_typ", "ipv6native") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"ipv6pd\" %s>DHCPv6 with Prefix Delegation</option>\n", nvram_match("ipv6_typ", "ipv6pd") ? "selected=\"selected\"" : "");
@@ -2106,7 +2106,7 @@ void ej_show_ipv6options(webs_t wp, int argc, char_t ** argv)
 	//websWrite(wp, "<option value=\"ipv6to4\" %s>6to4 Anycast Releay</option>\n", nvram_match("ipv6_typ", "ipv6to4") ? "selected=\"selected\"" : "");
 }
 #endif
-void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
+EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *wan_ipaddr;
 	int wan_link;
@@ -2174,7 +2174,7 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
  * <% nvram_selected_js("wan_proto", "dhcp"); %> produces: selected=\"selected\"
  * <% nvram_selected("wan_proto", "static"); %> does not produce
  */
-void ej_nvram_selected(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_selected(webs_t wp, int argc, char_t ** argv)
 {
 
 	if (nvram_match(argv[0], argv[1])) {
@@ -2185,7 +2185,7 @@ void ej_nvram_selected(webs_t wp, int argc, char_t ** argv)
 
 EJALIAS(ej_nvram_selected, ej_nvs);
 
-void ej_nvram_selected_js(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_selected_js(webs_t wp, int argc, char_t ** argv)
 {
 
 	if (nvram_match(argv[0], argv[1])) {
@@ -2196,7 +2196,7 @@ void ej_nvram_selected_js(webs_t wp, int argc, char_t ** argv)
 
 EJALIAS(ej_nvram_selected_js, ej_nvsjs);
 
-void ej_getboottime(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getboottime(webs_t wp, int argc, char_t ** argv)
 {
 	char *end = nvram_safe_get("end_time");
 	if (!*end) {
@@ -2221,7 +2221,7 @@ char *tran_string(char *buf, char *str)
 	return buf;
 }
 
-void ej_tran(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_tran(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[128];
 	websWrite(wp, "%s", tran_string(buf, argv[0]));
@@ -2235,7 +2235,7 @@ void ej_tran(webs_t wp, int argc, char_t ** argv)
  * <% nvram_checked("wan_proto", "static"); %> does not produce
  */
 
-void ej_nvram_checked(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_checked(webs_t wp, int argc, char_t ** argv)
 {
 
 	if (nvram_match(argv[0], argv[1])) {
@@ -2247,7 +2247,7 @@ void ej_nvram_checked(webs_t wp, int argc, char_t ** argv)
 
 EJALIAS(ej_nvram_checked, ej_nvc);
 
-void ej_nvram_checked_js(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_checked_js(webs_t wp, int argc, char_t ** argv)
 {
 
 	if (nvram_match(argv[0], argv[1])) {
@@ -2257,7 +2257,7 @@ void ej_nvram_checked_js(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 {
 	int i, st, en;
 	char ic[16];
@@ -2277,7 +2277,7 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 #include <qcnapi.h>
 #endif
 
-void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[128];
 	websWrite(wp, "<div class=\"setting\">");
@@ -2417,7 +2417,7 @@ static void showencstatus(webs_t wp, char *prefix)
 	return;
 }
 
-void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 {
 	char txpwr[32];
 	char m[32];
@@ -2463,14 +2463,14 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_getencryptionstatus(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getencryptionstatus(webs_t wp, int argc, char_t ** argv)
 {
 	char *mode = nvram_safe_get("wifi_display");
 
 	showencstatus(wp, mode);
 }
 
-void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
 {
 	char var[32];
 	char m[32];
@@ -2498,7 +2498,7 @@ void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
 
 }
 
-void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
 {
 	char ssid[32];
 
@@ -2510,7 +2510,7 @@ void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
 
 }
 
-void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 {
 	char mode[32];
 
@@ -2547,7 +2547,7 @@ void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</script>&nbsp;\n");
 }
 
-void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 {
 
 	char netmode[32];
@@ -2595,7 +2595,7 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</script>&nbsp;\n");
 }
 
-void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
 	char *buffer = malloc(4096);
@@ -2642,7 +2642,7 @@ void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 
 }
 
-void ej_radio_on(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_radio_on(webs_t wp, int argc, char_t ** argv)
 {
 	int radiooff = -1;
 
@@ -2774,7 +2774,7 @@ static void get_radio_state(char *buf)
 #endif
 }
 
-void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[64];
 	bzero(buf, sizeof(buf));
@@ -2782,7 +2782,7 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", live_translate(wp, buf));
 }
 
-void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[64];
 	bzero(buf, sizeof(buf));
@@ -2790,7 +2790,7 @@ void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", buf);
 }
 
-void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *f;
 	FILE *host;
@@ -2917,7 +2917,7 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_PPPOESERVER
 
-void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/pppoe_connected", "rb");
 	if (!in)
@@ -3016,7 +3016,7 @@ int tf_webWriteJS(webs_t wp, const char *s)
 
 // <% tf_upnp(); %>
 // returns all "forward_port#" nvram entries containing upnp port forwardings
-void ej_tf_upnp(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_tf_upnp(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	int len, pos, count;
@@ -3050,14 +3050,14 @@ void ej_tf_upnp(webs_t wp, int argc, char_t ** argv)
 
 //extern void show_onlineupdates(webs_t wp, int argc, char_t ** argv);
 
-void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_BUFFALO
 #ifndef HAVE_FREECWMP
 	show_onlineupdates(wp, argc, argv);
 #endif
 #endif
-} void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
+} EJ_VISIBLE void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_BUFFALO
 	if (endswith(wp->request_url, ".asp") || endswith(wp->request_url, ".htm")
@@ -3069,7 +3069,7 @@ void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
 #else
 	websWrite(wp, "Info.htm");
 #endif
-} void ej_wan_if_status(webs_t wp, int argc, char_t ** argv)
+} EJ_VISIBLE void ej_wan_if_status(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_DSL_CPE_CONTROL
 	char *annex = nvram_safe_get("annex");
@@ -3097,7 +3097,7 @@ void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifdef HAVE_SPOTPASS
-void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
 {
 	char url[128], proto[8], ports[64];
 	char dummy1[1], dummy2[8];

@@ -430,12 +430,12 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 	return globalcnt;
 }
 
-void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
 	assoc_count_prefix(wp, "wl");
 }
 
-void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 {
 	int c = get_wl_instances();
 	int i;
@@ -463,7 +463,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_get_currate(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 {
 	int rate = 0;
 	char name[32];
@@ -481,17 +481,17 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 {
 	return;
 }
 
-void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 {
 	return;
 }
 
-void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 {
 	channel_info_t ci;
 	char name[32];
@@ -536,19 +536,19 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 }
 
 #define WDS_RSSI_TMP	"/tmp/.rssi"
-int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, int cnt);
-void ej_active_wds(webs_t wp, int argc, char_t ** argv)
+int internal_ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, int cnt);
+EJ_VISIBLE void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 {
 	int cnt = 0;
 	int c = get_wl_instances();
 	int i;
 
 	for (i = 0; i < c; i++) {
-		cnt = ej_active_wds_instance(wp, argc, argv, i, cnt);
+		cnt = internal_ej_active_wds_instance(wp, argc, argv, i, cnt);
 	}
 }
 
-int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, int cnt)
+int internal_ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, int cnt)
 {
 	int rssi = 0, i;
 	FILE *fp2 = NULL;
@@ -643,7 +643,7 @@ static unsigned int bits_count(unsigned int n)
 
 	return count;
 }
-
+#if 0
 /* Writes "1" if Tx beamforming is supported. Otherwise, "0" */
 int ej_wl_txbf_capable(webs_t wp, int argc, char_t ** argv)
 {
@@ -675,3 +675,4 @@ int ej_wl_txbf_capable(webs_t wp, int argc, char_t ** argv)
 
 	return websWrite(wp, "%d", txbf_capable);
 }
+#endif

@@ -261,7 +261,7 @@ int valid_wep_key(webs_t wp, char *value, struct variable *v)
 	return TRUE;
 }
 
-void validate_statics(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_statics(webs_t wp, char *value, struct variable *v)
 {
 
 	if (!sv_valid_statics(value)) {
@@ -284,13 +284,13 @@ int valid_netmask(webs_t wp, char *value, struct variable *v)
 
 }
 
-void validate_netmask(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_netmask(webs_t wp, char *value, struct variable *v)
 {
 	if (valid_netmask(wp, value, v))
 		nvram_set(v->name, value);
 }
 
-void validate_merge_netmask(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_merge_netmask(webs_t wp, char *value, struct variable *v)
 {
 	char netmask[20], maskname[30];
 	char *mask;
@@ -317,7 +317,7 @@ void validate_merge_netmask(webs_t wp, char *value, struct variable *v)
 // char webs_buf[5000];
 // int webs_buf_offset = 0;
 
-void validate_list(webs_t wp, char *value, struct variable *v, int (*valid)(webs_t, char *, struct variable *))
+EJ_VISIBLE void validate_list(webs_t wp, char *value, struct variable *v, int (*valid)(webs_t, char *, struct variable *))
 {
 	int n, i;
 	char name[100];
@@ -366,13 +366,13 @@ int valid_ipaddr(webs_t wp, char *value, struct variable *v)
 	return TRUE;
 }
 
-void validate_ipaddr(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_ipaddr(webs_t wp, char *value, struct variable *v)
 {
 	if (valid_ipaddr(wp, value, v))
 		nvram_set(v->name, value);
 }
 
-void validate_ipaddrs(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_ipaddrs(webs_t wp, char *value, struct variable *v)
 {
 	validate_list(wp, value, v, valid_ipaddr);
 }
@@ -473,7 +473,7 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 
 }
 
-void validate_merge_ipaddrs(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_merge_ipaddrs(webs_t wp, char *value, struct variable *v)
 {
 	char ipaddr[20];
 
@@ -483,7 +483,7 @@ void validate_merge_ipaddrs(webs_t wp, char *value, struct variable *v)
 		nvram_set(v->name, ipaddr);
 }
 
-void validate_merge_dhcpstart(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_merge_dhcpstart(webs_t wp, char *value, struct variable *v)
 {
 	char ipaddr[20];
 
@@ -524,7 +524,7 @@ int get_merge_mac(webs_t wp, char *name, char *macaddr)
 
 }
 
-void validate_merge_mac(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_merge_mac(webs_t wp, char *value, struct variable *v)
 {
 	char macaddr[20];
 
@@ -535,7 +535,7 @@ void validate_merge_mac(webs_t wp, char *value, struct variable *v)
 
 }
 
-void validate_dns(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_dns(webs_t wp, char *value, struct variable *v)
 {
 	char buf[100] = "", *cur = buf;
 	char ipaddr[20], ipname[30];
@@ -582,13 +582,13 @@ int valid_choice(webs_t wp, char *value, struct variable *v)
 	return FALSE;
 }
 
-void validate_choice(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_choice(webs_t wp, char *value, struct variable *v)
 {
 	if (valid_choice(wp, value, v))
 		nvram_set(v->name, value);
 }
 
-void validate_noack(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_noack(webs_t wp, char *value, struct variable *v)
 {
 	char *wme;
 
@@ -619,7 +619,7 @@ int valid_range(webs_t wp, char *value, struct variable *v)
 	return TRUE;
 }
 
-void validate_range(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_range(webs_t wp, char *value, struct variable *v)
 {
 	char buf[20];
 	int range;
@@ -649,13 +649,13 @@ int valid_name(webs_t wp, char *value, struct variable *v)
 	return TRUE;
 }
 
-void validate_name(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_name(webs_t wp, char *value, struct variable *v)
 {
 	if (valid_name(wp, value, v))
 		nvram_set(v->name, value);
 }
 
-void validate_reboot(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_reboot(webs_t wp, char *value, struct variable *v)
 {
 	if (value && v) {
 		nvram_set(v->name, value);
@@ -666,7 +666,7 @@ void validate_reboot(webs_t wp, char *value, struct variable *v)
 /*
  * the html always show "d6nw5v1x2pc7st9m" so we must filter it. 
  */
-void validate_password(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_password(webs_t wp, char *value, struct variable *v)
 {
 #ifdef HAVE_IAS
 	if (!strcmp(value, "http_username")) {
@@ -685,7 +685,7 @@ void validate_password(webs_t wp, char *value, struct variable *v)
 	}
 }
 
-void validate_password2(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_password2(webs_t wp, char *value, struct variable *v)
 {
 	if (strcmp(value, TMP_PASSWD) && valid_name(wp, value, v)) {
 		nvram_set(v->name, value);
@@ -711,18 +711,18 @@ int valid_hwaddr(webs_t wp, char *value, struct variable *v)
 	return TRUE;
 }
 
-void validate_hwaddr(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_hwaddr(webs_t wp, char *value, struct variable *v)
 {
 	if (valid_hwaddr(wp, value, v))
 		nvram_set(v->name, value);
 }
 
-void validate_hwaddrs(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_hwaddrs(webs_t wp, char *value, struct variable *v)
 {
 	validate_list(wp, value, v, valid_hwaddr);
 }
 
-void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
 	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20], pptp_wan_gateway[20], l2tp_wan_gateway[20];
 	char wan_ipaddr_static[20], wan_netmask_static[20];
@@ -796,7 +796,7 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 }
 
 #ifdef HAVE_PORTSETUP
-void validate_portsetup(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 {
 	char *next;
 	char var[64];
@@ -875,7 +875,7 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 }
 #endif
 
-void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
 	char lan_ipaddr[20], lan_netmask[20];
 
@@ -908,7 +908,7 @@ void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 
 }
 
-void validate_remote_ip(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_remote_ip(webs_t wp, char *value, struct variable *v)
 {
 	char from[20], *to;
 	char remote_ip[254];
@@ -932,7 +932,7 @@ void validate_remote_ip(webs_t wp, char *value, struct variable *v)
 #define LRL_VALID(v)        (((v) > 0) && ((v) <= 15))
 #define LFBL_VALID(v)       (((v) > 0) && ((v) <= 15))
 
-void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v, char *varname)
+EJ_VISIBLE void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v, char *varname)
 {
 	int srl = 0, sfbl = 0, lrl = 0, lfbl = 0, max_rate = 0, nmode = 0;
 	char *s, *errmsg;
@@ -1007,7 +1007,7 @@ void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v, char 
 
 }
 
-void validate_wl_wme_params(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wl_wme_params(webs_t wp, char *value, struct variable *v)
 {
 	int n, i;
 	int cwmin = 0, cwmax = 0;
@@ -1082,7 +1082,7 @@ void validate_wl_wme_params(webs_t wp, char *value, struct variable *v)
 	nvram_set(v->name, buf);
 }
 
-void validate_wl_key(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wl_key(webs_t wp, char *value, struct variable *v)
 {
 	char *c;
 
@@ -1111,7 +1111,7 @@ void validate_wl_key(webs_t wp, char *value, struct variable *v)
 #	define GMODE_AFTERBURNER 7
 #endif
 
-void validate_wl_wep(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wl_wep(webs_t wp, char *value, struct variable *v)
 {
 	if (!valid_choice(wp, value, v))
 		return;
@@ -1125,14 +1125,14 @@ void validate_wl_wep(webs_t wp, char *value, struct variable *v)
 	nvram_set(v->name, value);
 }
 
-void validate_auth_mode(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_auth_mode(webs_t wp, char *value, struct variable *v)
 {
 	if (!valid_choice(wp, value, v))
 		return;
 	nvram_set(v->name, value);
 }
 
-void validate_wpa_psk(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wpa_psk(webs_t wp, char *value, struct variable *v)
 {
 	int len = strlen(value);
 	char *c;
@@ -1152,7 +1152,7 @@ void validate_wpa_psk(webs_t wp, char *value, struct variable *v)
 	nvram_set(v->name, value);
 }
 
-void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 {
 	char buf[200] = "";
 	int error_value = 0;
@@ -1254,7 +1254,7 @@ void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 
 }
 
-void validate_wl_auth(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wl_auth(webs_t wp, char *value, struct variable *v)
 {
 	if (!valid_choice(wp, value, v))
 		return;
@@ -1274,7 +1274,7 @@ void validate_wl_auth(webs_t wp, char *value, struct variable *v)
  * Example: 00:11:22:33:44:55=1 00:12:34:56:78:90=0 (ie 00:11:22:33:44:55 if
  * filterd, and 00:12:34:56:78:90 is not) wl_maclist = "00:11:22:33:44:55" 
  */
-void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 {
 	int i;
 	int error_value = 0;
@@ -1375,7 +1375,7 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
  * Example: name:[on|off]:[tcp|udp|both]:8000:80>100 
  */
 
-void validate_forward_proto(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 {
 	int i, error = 0;
 	char *buf, *cur;
@@ -1513,7 +1513,7 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
  * Example: name:[on|off]:[tcp|udp|both]:8000:80>100 
  */
 
-void validate_forward_spec(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 {
 	int i, error = 0;
 	char *buf, *cur;
@@ -1642,7 +1642,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 	free(buf);
 }
 
-void validate_dynamic_route(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_dynamic_route(webs_t wp, char *value, struct variable *v)
 {
 	struct variable dr_variables[] = {
 	      { argv:ARGV("0", "1", "2", "3") },
@@ -1711,7 +1711,7 @@ void validate_dynamic_route(webs_t wp, char *value, struct variable *v)
 	 */
 }
 
-void validate_wl_gmode(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wl_gmode(webs_t wp, char *value, struct variable *v)
 {
 	if (!valid_choice(wp, value, v))
 		return;
@@ -1897,7 +1897,7 @@ void convert_wl_gmode(char *value, char *prefix)
 	}
 }
 
-void validate_wl_net_mode(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wl_net_mode(webs_t wp, char *value, struct variable *v)
 {
 
 	if (!valid_choice(wp, value, v))
@@ -1910,7 +1910,7 @@ void validate_wl_net_mode(webs_t wp, char *value, struct variable *v)
 
 #ifdef HAVE_PPPOESERVER
 
-void validate_chaps(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_chaps(webs_t wp, char *value, struct variable *v)
 {
 
 	int i, error = 0;
@@ -1999,7 +1999,7 @@ void validate_chaps(webs_t wp, char *value, struct variable *v)
 #endif
 #ifdef HAVE_MILKFISH
 
-void validate_aliases(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_aliases(webs_t wp, char *value, struct variable *v)
 {
 
 	int i, error = 0;
@@ -2056,7 +2056,7 @@ void validate_aliases(webs_t wp, char *value, struct variable *v)
 
 }
 
-void validate_subscribers(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_subscribers(webs_t wp, char *value, struct variable *v)
 {
 
 	int i, error = 0;
@@ -2115,7 +2115,7 @@ void validate_subscribers(webs_t wp, char *value, struct variable *v)
 #endif
 
 #ifdef HAVE_RADLOCAL
-void validate_iradius(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_iradius(webs_t wp, char *value, struct variable *v)
 {
 	char username[32] = "iradiusxxx_name";
 	char active[32] = "iradiusxxx_active";
@@ -2189,7 +2189,7 @@ void validate_iradius(webs_t wp, char *value, struct variable *v)
 #endif
 
 #ifdef HAVE_CHILLILOCAL
-void validate_userlist(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_userlist(webs_t wp, char *value, struct variable *v)
 {
 	char username[32] = "fon_userxxx_name";
 	char password[32] = "fon_userxxx_password";
@@ -2265,7 +2265,7 @@ char *buildmac(char *in)
 	return outmac;
 }
 
-void validate_staticleases(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v)
 {
 	char lease_hwaddr[32] = "leasexxx_hwaddr";
 	char lease_hostname[32] = "leasexxx_hostname";
@@ -2336,7 +2336,7 @@ void dhcp_check(webs_t wp, char *value, struct variable *v)
 	// re-load udhcpd.leases. by honor 2003-08-05
 }
 
-void validate_wds(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 {
 #ifdef HAVE_MADWIFI
 	int h, i, devcount = 0;	// changed from 2 to 3
@@ -2551,7 +2551,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 	nvram_set(wl0wds, wds_list);
 }
 
-void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 {
 	D("validate_filter_ip_grp");
 	int i = 0;
@@ -2661,7 +2661,7 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
  * Example: tcp:100-200 udp:210-220 both:250-260 
  */
 
-void validate_filter_port(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_filter_port(webs_t wp, char *value, struct variable *v)
 {
 	int i;
 	char buf[1000] = "", *cur = buf;
@@ -2718,7 +2718,7 @@ void validate_filter_port(webs_t wp, char *value, struct variable *v)
 	D("success return");
 }
 
-void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
 {
 	int i;
 	char buf[1000] = "", *cur = buf;
@@ -2793,7 +2793,7 @@ void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
  * Example: 2 00:11:22:33:44:55 00:11:22:33:44:56 
  */
 
-void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v)
 {
 
 	int i;
@@ -2858,7 +2858,7 @@ void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v)
 /*
  * Format: url0=www.kimo.com.tw, ...  keywd0=sex, ... 
  */
-void validate_filter_web(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_filter_web(webs_t wp, char *value, struct variable *v)
 {
 	int i;
 	char buf[1000] = "", *cur = buf;
@@ -2919,7 +2919,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
  * Example: name:on:both:1000-2000>3000-4000 
  */
 
-void validate_port_trigger(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 {
 	int i, error = 0;
 	char *buf, *cur, *newbuf, *entry;
@@ -3039,7 +3039,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 	free(buf);
 }
 
-void validate_blocked_service(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 {
 	int i;
 	char buf[1000] = "", *cur = buf;
@@ -3070,7 +3070,7 @@ void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 /*
  * validates the p2p catchall filter 
  */
-void validate_catchall(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_catchall(webs_t wp, char *value, struct variable *v)
 {
 	char *p2p;
 	char port_grp[] = "filter_p2p_grpXXX";
@@ -3087,7 +3087,7 @@ void validate_catchall(webs_t wp, char *value, struct variable *v)
 void save_olsrd(webs_t wp);
 void addDeletion(char *word);
 
-void validate_static_route(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v)
 {
 #ifdef HAVE_OLSRD
 	save_olsrd(wp);

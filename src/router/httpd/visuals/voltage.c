@@ -20,7 +20,7 @@
  * $Id:
  */
 #ifdef HAVE_VOLT
-void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_LAGUNA
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input", "rb");
@@ -52,7 +52,7 @@ void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%d.%d V", high, low);	// no i2c lm75 found
 }
 
-void ej_show_voltage(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_voltage(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "status_router.inpvolt", NULL);

@@ -37,7 +37,7 @@ void sas_show_preshared(webs_t wp, char *prefix);
 void sas_show_radius(webs_t wp, char *prefix, int showmacformat, int backup);
 void sas_show_netmode(webs_t wp, char *prefix);
 void sas_show_channel(webs_t wp, char *dev, char *prefix, int type);
-void ej_sas_show_wireless_single(webs_t wp, char *prefix);
+EJ_VISIBLE void ej_sas_show_wireless_single(webs_t wp, char *prefix);
 void sas_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix);
 void sas_show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix, int primary);
 
@@ -135,7 +135,7 @@ static int sas_nvram_default_match(webs_t wp, char *var, char *match, char *def)
 	   return nvram_selmatch(wp, var, match); */
 }
 
-void ej_sas_nvram_checked(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_nvram_checked(webs_t wp, int argc, char_t ** argv)
 {
 	if (nvram_selmatch(wp, argv[0], argv[1])) {
 		websWrite(wp, "checked=\"checked\"");
@@ -144,13 +144,13 @@ void ej_sas_nvram_checked(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_sas_nvc(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_nvc(webs_t wp, int argc, char_t ** argv)
 {
 	ej_sas_nvram_checked(wp, argc, argv);
 	return;
 }
 
-void ej_sas_make_time_list(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_make_time_list(webs_t wp, int argc, char_t ** argv)
 {
 	int i, st, en;
 	char ic[16];
@@ -172,7 +172,7 @@ void ej_sas_make_time_list(webs_t wp, int argc, char_t ** argv)
  * <% nvram_else_match("wan_proto", "dhcp", "0","1"); %> produces "0"
  * <% nvram_else_match("wan_proto", "static", "0","1"); %> produces "1"
  */
-void ej_sas_nvram_else_match(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 {
 
 	if (nvram_selmatch(wp, argv[0], argv[1])) {
@@ -183,18 +183,18 @@ void ej_sas_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_sas_nvem(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_nvem(webs_t wp, int argc, char_t ** argv)
 {
 	ej_sas_nvram_else_match(wp, argc, argv);
 	return;
 }
 
-void ej_show_sas_stage(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_sas_stage(webs_t wp, int argc, char_t ** argv)
 {
 	do_ej(METHOD_GET, NULL, "sas_stage_1.asp", wp);
 }
 
-void ej_show_sas_wan_setting(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_sas_wan_setting(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 
@@ -223,7 +223,7 @@ char *ej_get_sas_stage(webs_t wp, int argc, char_t ** argv)
 	return stage;
 }
 
-void ej_visible_css(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_visible_css(webs_t wp, int argc, char_t ** argv)
 {
 	if (!strcmp(nvram_selget(wp, argv[0]), argv[1])) {
 		websWrite(wp, "");
@@ -232,7 +232,7 @@ void ej_visible_css(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_print_sas_stage(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_print_sas_stage(webs_t wp, int argc, char_t ** argv)
 {
 
 	char *stage;
@@ -240,7 +240,7 @@ void ej_print_sas_stage(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, stage);
 }
 
-int ej_sas_stage_is_visible(webs_t wp, int argc, char_t ** argv)
+int internal_ej_sas_stage_is_visible(webs_t wp, int argc, char_t ** argv)
 {
 	char *stage;
 	stage = ej_get_sas_stage(wp, argc, argv);
@@ -251,14 +251,14 @@ int ej_sas_stage_is_visible(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_sas_stage_visible_css(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_stage_visible_css(webs_t wp, int argc, char_t ** argv)
 {
-	if (ej_sas_stage_is_visible(wp, argc, argv) == 1) {
+	if (internal_ej_sas_stage_is_visible(wp, argc, argv) == 1) {
 		websWrite(wp, "display: none");
 	}
 }
 
-void ej_do_sas_stage_menu(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_do_sas_stage_menu(webs_t wp, int argc, char_t ** argv)
 {
 
 	int i;
@@ -296,7 +296,7 @@ void ej_do_sas_stage_menu(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</div>\n");
 }
 
-void ej_sas_show_wireless(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_show_wireless(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MADWIFI
 	int c = getdevicecount();
@@ -360,13 +360,13 @@ char *sas_get_single_ip(webs_t wp, char *label, int position)
 	}
 }
 
-void ej_sas_get_single_ip(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_get_single_ip(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, sas_get_single_ip(wp, argv[0], atoi(argv[1])));
 	return;
 }
 
-void ej_sas_get_single_nm(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_get_single_nm(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, sas_get_single_ip(wp, argv[0], atoi(argv[1])));
 }
@@ -406,12 +406,12 @@ char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position)
  * get_dns_ip("wan_dns", "1", "2"); %> produces "161" <%
  * get_dns_ip("wan_dns", "2", "3"); %> produces "1" 
  */
-void ej_sas_get_dns_ip(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_get_dns_ip(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "%s", sas_get_dns_ip(wp, argv[0], atoi(argv[1]), atoi(argv[2])));
 }
 
-void ej_sas_show_wireless_single(webs_t wp, char *prefix)
+EJ_VISIBLE void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 {
 
 	char wl_mode[16];
@@ -1098,7 +1098,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 	}
 }
 
-void ej_sas_show_security(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_show_security(webs_t wp, int argc, char_t ** argv)
 {
 	int i = 0;
 	int c = getdevicecount();
@@ -1308,7 +1308,7 @@ static void sas_init_80211x_layers(webs_t wp, char *prefix)
 	}
 }
 
-void ej_sas_init_80211x_layers(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_init_80211x_layers(webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
 	int c = get_wl_instances();
@@ -1904,7 +1904,7 @@ void sas_show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 #endif
 }
 
-void ej_sas_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sas_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 {
 
 	char *stage_visible_css = "display: none;";
@@ -1962,7 +1962,7 @@ void ej_sas_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_sas(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_sas(webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_IAS
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(sas.title);</script></h2>\n");

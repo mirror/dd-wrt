@@ -36,7 +36,7 @@
 #include <cy_conf.h>
 #include <revision.h>
 
-void ej_compile_date(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_compile_date(webs_t wp, int argc, char_t ** argv)
 {
 	char year[8], mon[4], day[4];
 	char string[20];
@@ -47,12 +47,12 @@ void ej_compile_date(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", string);
 }
 
-void ej_compile_time(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_compile_time(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "%s", __TIME__);
 }
 
-void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 {
 	char *name = nvram_safe_get("router_name");
 	char *printname;
@@ -82,7 +82,7 @@ void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 
 #ifndef HAVE_SPECIALEDITION
 
-void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 {
 #if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI) || defined(HAVE_IDEXX) || defined(HAVE_RAYTRONIK)
 	char *p;
@@ -212,22 +212,22 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 }
 #endif
 
-void ej_get_firmware_title(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_firmware_title(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "Wireless-G Broadband Router");
 }
 
-void ej_get_firmware_svnrev(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_firmware_svnrev(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "%s", SVN_REVISION);
-} void ej_get_web_page_name(webs_t wp, int argc, char_t ** argv)
+} EJ_VISIBLE void ej_get_web_page_name(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "%s.asp", websGetVar(wp, "submit_button", "index"));
-} void ej_get_model_name(webs_t wp, int argc, char_t ** argv)
+} EJ_VISIBLE void ej_get_model_name(webs_t wp, int argc, char_t ** argv)
 {
 	// return websWrite(wp,"%s",MODEL_NAME);
 	websWrite(wp, "%s", nvram_safe_get("router_name"));
-} void ej_show_logo(webs_t wp, int argc, char_t ** argv)
+} EJ_VISIBLE void ej_show_logo(webs_t wp, int argc, char_t ** argv)
 {
 	return;
 }

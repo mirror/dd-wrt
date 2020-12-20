@@ -47,7 +47,7 @@ void ping_onload(webs_t wp, char *arg)
 
 }
 
-void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
 {
 	int count = 0;
 	FILE *fp;

@@ -360,7 +360,7 @@ void save_policy(webs_t wp)
 	D("okay");
 }
 
-void validate_filter_policy(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 {
 	wp->p->filter_id = websGetVari(wp, "f_id", 1);
 	save_policy(wp);
@@ -394,7 +394,7 @@ char *num_to_protocol(int num)
  * Format: 21:21:tcp:FTP(&nbsp;)500:1000:both:TEST1 
  */
 
-void validate_services_port(webs_t wp)
+EJ_VISIBLE void validate_services_port(webs_t wp)
 {
 	char *buf = (char *)calloc(8192, 1);
 	char *services = (char *)calloc(8192, 1);

@@ -112,7 +112,7 @@ static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 
 }
 
-void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *type;
@@ -327,7 +327,7 @@ static void save_hostname_ip(webs_t wp)
 
 }
 
-void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 {
 	int i, flag = 0;
 	char word[256], *next;
@@ -546,7 +546,7 @@ char *get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *prefix)
 }
 
 /*
-void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
 {
 	char *type, *bit;
 	char *value = "", new_value[50] = "";
@@ -573,7 +573,7 @@ void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", new_value);
 }
 */
-void ej_show_wl_wep_setting(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_wl_wep_setting(webs_t wp, int argc, char_t ** argv)
 {
 
 	/*
@@ -625,7 +625,7 @@ void wl_active_onload(webs_t wp, char *arg)
 }
 
 // only for nonbrand
-void ej_get_wl_active_mac(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_wl_active_mac(webs_t wp, int argc, char_t ** argv)
 {
 	char line[80];
 	char list[2][20];
@@ -652,7 +652,7 @@ void ej_get_wl_active_mac(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_get_wl_value(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_wl_value(webs_t wp, int argc, char_t ** argv)
 {
 	char *type = argv[0];
 
@@ -826,7 +826,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 }
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 {
 	int unit, val;
 	char tmp[100], prefix[] = "wlXXXXXXXXXX_";
@@ -848,7 +848,7 @@ void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #endif
-void ej_wme_match_op(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_wme_match_op(webs_t wp, int argc, char_t ** argv)
 {
 	char word[256], *next;
 	char *list = nvram_safe_get(argv[0]);
@@ -862,7 +862,7 @@ void ej_wme_match_op(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MADWIFI
 	int showrate = 1;
@@ -899,14 +899,14 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-void ej_spectral_scan(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_spectral_scan(webs_t wp, int argc, char_t ** argv)
 {
 	if (has_spectralscanning(nvram_safe_get("wifi_display"))) {
 		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"spectral_survey\\\" value=\\\"\" + sbutton.spectral_survey + \"\\\" onclick=\\\"OpenSpectral()\\\" />\");\n");
 	}
 }
 
-void ej_getchipset(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getchipset(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[128];
 	char *chipset = getWifiDeviceName(nvram_safe_get("wifi_display"), NULL);
@@ -918,7 +918,7 @@ void ej_getchipset(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</div>\n");
 }
 
-void ej_get_status_curchannel(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_status_curchannel(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[128];
 	char *prefix = nvram_safe_get("wifi_display");

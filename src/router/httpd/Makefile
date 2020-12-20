@@ -66,7 +66,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -fvisibility=hidden
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
@@ -81,7 +81,7 @@ BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE
 
 ifeq ($(CONFIG_80211AC),y)
 BCFLAGS	+= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
-BCFLAGS	+= -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include -Wall
+BCFLAGS	+= -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include -Wall 
 endif
 
 ifeq ($(CONFIG_MSSID),y)
@@ -1497,20 +1497,20 @@ httpd: httpd.c $(ADDOBJ) $(OBJS)
 	@echo "[LD] $@"
 #	gcc -o write_web write_web.c
 #	./write_web www 
-	@$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS) $(LTO) $(LDLTO)
+	@$(CC) -fvisibility=hidden -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS) $(LTO) $(LDLTO)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
 validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)
 	@echo "[LD] $@"
-	@$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS) $(WEBSLDFLAGS)
+	@$(CC) -fvisibility=hidden --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS) $(WEBSLDFLAGS)
 
 visuals.so: dd-wrt.o packets.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o $(VISOBJS) $(REGOBJS2)
 	@echo "[LD] $@"
 ifeq ($(CONFIG_ATH9K),y)
-	@$(CC) --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+	@$(CC) -fvisibility=hidden --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
-	@$(CC) --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS)
+	@$(CC) -fvisibility=hidden --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS)
 	
 	
 build_date.o: build_date.c

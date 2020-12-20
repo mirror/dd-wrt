@@ -20,7 +20,7 @@
  * $Id:
  */
 
-void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 {
 	char buffer[256];
 	int count = 0;
@@ -217,7 +217,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	nvram_set("bridges_count", var);
 }
 
-void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
 {
 
 	FILE *f;
@@ -310,7 +310,7 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 
 }
 
-void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 {
 	char bufferif[512];
 	char finalbuffer[512];

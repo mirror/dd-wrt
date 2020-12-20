@@ -61,7 +61,7 @@ void start_aoss(void)
 	}
 }
 
-void ej_isChecked(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_isChecked(webs_t wp, int argc, char_t ** argv)
 {
 	fprintf(stderr, "[%s] %s %s\n", argv[0], argv[1], nvram_selget(wp, argv[0]));
 	if (!strcmp(nvram_selget(wp, argv[0]), argv[1])) {
@@ -70,7 +70,7 @@ void ej_isChecked(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_ifnvram_match(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ifnvram_match(webs_t wp, int argc, char_t ** argv)
 {
 	if (!strcmp(nvram_selget(wp, argv[0]), argv[1])) {
 		websWrite(wp, "%s", argv[2]);
@@ -78,7 +78,7 @@ void ej_ifnvram_match(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_ifnvram_nmatch(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ifnvram_nmatch(webs_t wp, int argc, char_t ** argv)
 {
 	if (strcmp(nvram_selget(wp, argv[0]), argv[1])) {
 		websWrite(wp, "%s", argv[2]);
@@ -86,7 +86,7 @@ void ej_ifnvram_nmatch(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_ifaoss_possible(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ifaoss_possible(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_WZRHPAG300NH
 	if (!strcmp(argv[0], "yes")) {

@@ -73,7 +73,7 @@ static void show_chaps_table(webs_t wp, char *type, int which)
 
 }
 
-void ej_show_chaps(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_chaps(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *count;
