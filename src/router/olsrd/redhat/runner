@@ -1,0 +1,232 @@
+#!/bin/bash
+
+set -e
+set -u
+
+script="$0"
+
+scriptDir="$(dirname "$script" 2> /dev/null)"
+pushd "$scriptDir" &> /dev/null
+scriptDir="$(pwd 2> /dev/null)"
+popd &> /dev/null
+
+baseDir="$(dirname "$scriptDir" 2> /dev/null)"
+pushd "$baseDir" &> /dev/null
+baseDir="$(pwd 2> /dev/null)"
+popd &> /dev/null
+
+
+declare -i FEDORAMINVERSION=30
+
+specTemplateFile="$scriptDir/olsrd.spec.template"
+outputDir="$scriptDir/generated"
+specOutputFile="$outputDir/olsrd.spec"
+
+RPMBUILDDIR="$HOME/rpmbuild"
+SPECDIR="$RPMBUILDDIR/SPECS"
+SRCDIR="$RPMBUILDDIR/SOURCES"
+
+toInstall=""
+if [[ -z "$(which "mock" 2> /dev/null)" ]]; then
+  toInstall="mock $toInstall"
+fi
+if [[ -z "$(which "rpmbuild" 2> /dev/null)" ]]; then
+  toInstall="rpm-build $toInstall"
+fi
+if [[ -z "$(which "rpmdev-setuptree" 2> /dev/null)" ]]; then
+  toInstall="rpmdevtools $toInstall"
+fi
+if [[ -n "$toInstall" ]]; then
+  echo "ERROR: one or more tools not found, please run"
+  echo "         sudo dnf install -y $toInstall"
+  exit 1
+fi
+
+
+
+declare -i fedoraVersion=0
+checkFedora() {
+  if [[ ! -f "/etc/fedora-release" ]]; then
+    echo "ERROR: this is not a fedora machine."
+    exit 1
+  fi
+
+  local _tmpFile="$(mktemp 2> /dev/null)"
+  cat > "$_tmpFile" << "EOF"
+Name:    dummy
+Version: 1
+Release: 1
+Summary: dummy
+License: BSD
+
+Source0: %{?fedora}
+
+%description
+Dummy
+EOF
+
+  local _tmpDir="$(mktemp -d 2> /dev/null)"
+  local _parsedSpec="$(rpmspec -D "%_topdir $_tmpDir" -P "$_tmpFile" 2> /dev/null)"
+  rm -f "$_tmpFile"
+
+  local -i fed=$(echo "$_parsedSpec" | \
+                 grep -E '^Source0:' 2> /dev/null | \
+                 awk '{print $NF}' 2> /dev/null)
+
+  if [[ $fed -lt $FEDORAMINVERSION ]]; then
+    echo "ERROR: This is Fedora $fed, need at least Fedora $FEDORAMINVERSION."
+    exit 1
+  fi
+  fedoraVersion=$fed
+}
+
+
+checkInGitTree() {
+  local gitDir="$(git rev-parse --show-toplevel 2> /dev/null)"
+  if [[ -z "$gitDir" ]]; then
+    echo "ERROR: not in a Git tree."
+    exit 1
+  fi
+}
+
+
+gitDescriptor=""
+gitSHAAbbrev=""
+gitSHA=""
+getGitInformation() {
+  pushd "$baseDir" &> /dev/null
+  gitDescriptor="$(git describe --always --dirty --match "v[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*" 2> /dev/null)"
+  gitSHAAbbrev="$(git log -1 --pretty=%h 2> /dev/null)"
+  gitSHA="$(git rev-list -1 HEAD 2> /dev/null)"
+  popd &> /dev/null
+}
+
+checkWorkspaceIsClean() {
+  local gitDescriptor="$1"
+
+  if [[ -n "$(echo "$gitDescriptor" | grep -E -i '\-dirty$' 2> /dev/null)" ]]; then
+    echo "ERROR: do not use a dirty workspace, clean up first with"
+    echo "         git clean -fdx"
+    echo "         git reset --hard"
+    exit 1
+  fi
+}
+
+
+gitVersion=""
+gitRelease=""
+adjustGitInformation() {
+  local gitDescriptor="$1"
+
+  gitDescriptor="${gitDescriptor#v}"
+  gitDescriptor="${gitDescriptor/-/.}"
+  gitDescriptor="${gitDescriptor/-/ }"
+  local -a gitDescriptors=( $gitDescriptor )
+  if [[ ${#gitDescriptors[*]} -eq 1 ]]; then
+    gitVersion="${gitDescriptors[0]}"
+    gitRelease="0"
+  elif [[ ${#gitDescriptors[*]} -eq 2 ]]; then
+    gitVersion="${gitDescriptors[0]}"
+    gitRelease="${gitDescriptors[1]}"
+  else
+    echo "ERROR: too many elements in the Git version"
+    set | egrep '^gitDescriptors='
+    exit 1
+  fi
+
+  gitVersion="${gitVersion//-/.}"
+  gitRelease="${gitRelease//-/.}"
+}
+
+
+function clean() {
+  rm -fv "$specOutputFile" "$outputDir/olsrd-"*.$tarGitFormat \
+         "$outputDir/RPMS/"*.rpm "$outputDir/RPMS/"*.log
+  if [[ -d "$outputDir/RPMS" ]]; then
+    rmdir -v --ignore-fail-on-non-empty "$outputDir/RPMS"
+  fi
+  if [[ -d "$outputDir" ]]; then
+    rmdir -v --ignore-fail-on-non-empty "$outputDir"
+  fi
+}
+
+
+# generate spec file and tar file in rpmbuild tree
+function generate() {
+  mkdir -p -v "$outputDir"
+
+  echo "Generating '$specOutputFile'"
+  sed -e "s/__gitVersion__/$gitVersion/g" \
+      -e "s/__gitRelease__/$gitRelease/g" \
+      -e "s/__gitDescriptor__/$gitDescriptor/g" \
+      -e "s/__gitSHAAbbrev__/$gitSHAAbbrev/g" \
+      -e "s/__gitSHA__/$gitSHA/g" \
+      -e "s!__tarFilename__!$tarOutputFilename!g" \
+      "$specTemplateFile" > "$specOutputFile"
+
+  echo "Generating '$outputDir/$tarOutputFilename'"
+  pushd "$baseDir" &> /dev/null
+  git archive \
+    --prefix=$tarPrefix/ \
+    --format $tarGitFormat HEAD \
+    > "$outputDir/$tarOutputFilename"
+  popd &> /dev/null
+}
+
+
+build() {
+  local _mockCfg="fedora-$fedoraVersion-x86_64"
+  if [[ $# -gt 0 ]]; then
+    _mockCfg="$1"
+  fi
+
+  rpmdev-setuptree
+
+  cp -v "$specOutputFile" "$SPECDIR/olsrd.spec"
+  cp -v "$outputDir/$tarOutputFilename"  "$SRCDIR/$tarOutputFilename"
+
+  cd "$SPECDIR"
+
+  local msg="$(rpmbuild -v -bs "olsrd.spec" 2> /dev/null)"
+  local srpmFile="$(echo "$msg" | sed -r 's/^[^:]*:[[:space:]]*//' 2> /dev/null)"
+
+  echo "$msg"
+
+  mock \
+    --dnf \
+    --enable-network \
+    -r "$_mockCfg" \
+    --resultdir="$outputDir/RPMS" \
+    "$srpmFile"
+}
+
+
+all() {
+  clean
+  generate
+  build "$@"
+}
+
+
+
+
+if [[ $# -lt 1 ]]; then
+  echo "ERROR: need a function to run."
+  exit 1
+fi
+
+whatToDo="$1"
+shift 1
+
+checkFedora
+checkInGitTree
+getGitInformation
+checkWorkspaceIsClean "$gitDescriptor"
+adjustGitInformation  "$gitDescriptor"
+
+tarPrefix="olsrd-$gitVersion-$gitRelease"
+tarGitFormat="tar.gz"
+tarOutputFilename="$tarPrefix.$tarGitFormat"
+
+"$whatToDo" "$@"
+

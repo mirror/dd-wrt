@@ -1,3 +1,76 @@
+0.9.8 -------------------------------------------------------------------
+
+Fabrice Fontaine (1):
+      Make ldconfig configurable
+
+Ferry Huberts (63):
+      Update version after branch of v0.9.7
+      Update version after release of v0.9.7
+      info: java: upgrade workspace
+      info: java: upgrade gradle wrapper
+      info: java: upgrade workspace
+      info: java: use latest jackson bundles
+      windows: fix the 64 bit builds on the latest mingw
+      pud: wireformat: java: build for Java 1.8
+      info: java: upgrade gradle wrapper
+      pud: fix the build against libgpsd 3.18
+      all: fix suppress string termination warnings
+      Merge branch 'release-0.9.7'
+      files: fix a shebang
+      files: use explicit paths for plugins
+      bmf: tighten up README
+      dotdraw: fix a typo
+      dotdraw: remove a duplicate file
+      dyngw: tighten up README
+      httpinfo: tighten up README
+      info: tighten up README
+      info: java: add install/uninstall targets
+      info: java: comment out maven repository artifacts
+      mdns: rename readme file
+      nameservice: fixup some text
+      p2pd: rename readme file
+      poprouting: tighten up README
+      pud: fix permissions of pud.odt document
+      pud: rename readme file
+      pud: nmealib: rename readme file
+      pud: wireformat-java: rename readme file
+      pud: wireformat-java: update the readme file
+      pud: wireformat: java: fix JDK detection
+      quagga: tighten up README
+      secure: tighten up README
+      sgwdynspeed: rename readme file
+      watchdog: tighten up README
+      arprefresh: install extra (documention) files
+      bmf: install extra (documention) files
+      dotdraw: install extra (documention) files
+      dyngw: install extra (documention) files
+      dyngw_plain: install extra (documention) files
+      httpinfo: install extra (documention) files
+      info: install extra (documention) files
+      jsoninfo: install extra (documention) files
+      mdns: install extra (documention) files
+      mini: install extra (documention) files
+      nameservice: install extra (documention) files
+      netjson: install extra (documention) files
+      p2pd: install extra (documention) files
+      pgraph: install extra (documention) files
+      poprouting: install extra (documention) files
+      pud: install extra (documention) files
+      quagga: install extra (documention) files
+      secure: install extra (documention) files
+      sgwdynspeed: install extra (documention) files
+      txtinfo: install extra (documention) files
+      watchdog: install extra (documention) files
+      olsrd: install extra (documentation) files
+      build: add NORPATH option
+      redhat: completely rewritten RPM spec file and generation
+      gradle: upgrade wrapper
+      Branch v0.9.8
+      Release v0.9.8
+
+pmelange (1):
+      README-Debian-package: Update build instructions
+
 0.9.7 -------------------------------------------------------------------
 
 Christoph Loesch (1):

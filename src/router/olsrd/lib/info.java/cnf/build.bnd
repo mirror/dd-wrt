@@ -62,6 +62,10 @@ Git-Descriptor:          ${system-allow-fail;git describe --dirty --always}
 Git-SHA:                 ${system-allow-fail;git rev-list -1 HEAD}
 
 
+# Do a reproducible build, see
+# https://reproducible-builds.org/docs/definition/
+-reproducible: true
+
 # To enable baselining, uncomment the following lines:
 -baseline:               *
 -diffignore:             Git-Descriptor,Git-SHA

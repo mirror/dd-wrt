@@ -6,8 +6,8 @@ addittions by:	Sven-Ola Tuecke <sven-ola-aet-gmx.de>
 	 	Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
 ---------------------------------------------------------------------
 
-This is the Quagga Plugin for OLSRd. 
-It allows olsrd to redistribute from various quagga-protocols 
+This is the Quagga Plugin for OLSRd.
+It allows OLSRd to redistribute from various quagga-protocols
 as well as to export olsr-routes to quagga so that they can be
 redistributed by the quagga-routing-daemons.
 

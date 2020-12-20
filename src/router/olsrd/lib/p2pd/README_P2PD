@@ -1,0 +1,118 @@
+= OLSR P2PD plugin =
+
+This README file is the main documentation source for the OLSR P2PD plugin
+
+Last update 01/03/2010
+
+== Description ==
+
+This plugin goal is the distribution of Peer to Peer Discovery messages over an
+OLSR Wireless Mesh Network.
+
+In a wireless mesh network, the usage of wireless interfaces in ad-hoc mode and
+the OLSR routing protocol prevent UDP messages to be distributed all over the
+network.
+
+We are especially interested in the distribution of UDP messages, used for host-
+based service discovery, over the networks that do not directly participate in
+the OLSR mesh cloud.
+
+This task is achieved in the following way: 
+ 1. the local router picks up from the local non-OLSR (HNA) network UDP messages
+    and encapsulates them in a new type of OLSR messages,
+ 2. the OLSR infrastructure is exploited for the transport of these messages,
+ 3. remote routers decapsulate UDP messages from received OLSR messages and send
+    them over their attached non-OLSR networks.
+
+The work could have its practical and immediate application in wireless network
+communities that employ the OLSR protocol.
+
+The plugin captures the traffic (only IPv4 if OLSR is running IPv4 and only IPv6
+if OLSR is running IPv6) and encapsulates this traffic in OLSR messages that are
+forwarded to all the other nodes in the mesh.
+
+Other nodes running the plugin will decapsulate the packets and will send them
+to the interfaces specified in the configuration file
+
+Let's get this example topology
+
+pc1->eth0 ----- eth0<-r1->ath0 -------ath0<-r2->eth0 ---------eth0<-pc2
+
+r1 and r2 are OLSR routers with p2pd plugin enabled. pc1 will be able to receive
+UDP traffic generated at pc2 and vice versa
+
+The most interesting feature is that messages are forwarded also by OLSR routers
+without the plugin. For example:
+
+pc1->eth0 ----- eth0<-r1->ath0 ---r3----ath0<-r2->eth0 ---------eth0<-pc2
+
+also in this topology UDP traffic between pc1 and pc2 is possible because r3
+forwards UDP plugin OLSR packets even if it is not aware of the new application.
+
+== Configuration ==
+
+To enable the Plugin use the following syntax
+
+LoadPlugin "olsrd_p2pd.so.0.1.0"
+{
+# Specify interfaces where the hosts running Peer to Peer applications are
+# attached
+PlParam     "NonOlsrIf"   "eth0"
+PlParam     "NonOlsrIf"   "eth1"
+# P2pdTtl is the time to live given to the P2PD OLSR messages
+PlParam     "P2pdTtl"     "5"
+# Specify the UDP destination address/port for P2P node discovery
+# Allowed: IPv4 broadcast and multicast, IPv6 multicast only
+#   MS Groove
+PlParam     "UdpDestPort" "255.255.255.255 1211"
+#   MDNS multicast (draft-cheshire-dnsext-multicastdns)
+PlParam     "UdpDestPort" "224.0.0.251 5353"
+# Set to 1 to decrement the TTL on the packet going into the OLSR network (default 0)
+#PlParam     "UseTTLDecrement" "0"
+}
+
+Where eth0 and eth1 are the names of the interfaces where you want to capture
+traffic (and decapsulate incoming traffic).
+
+Note that this interfaces must not talk OLSR and also the subnets on this
+interfaces must be announced with an appropriate HNA entry.
+This version of the plugin will not chech this stuff to be properly configured!
+
+P2pdTtl is the time to live given to the P2PD OLSR messages. It makes no sense
+to announce your services to hosts that are too many hops away, because they
+will experience a very bad unicast connection.
+With this TTL setting we can tune how far we announce our services and we make
+the protocol scale much better
+
+=== References ===
+
+ * OLSR Optimized Link State Routing:
+     [http://tools.ietf.org/html/rfc3626 IETF RFC 3626]
+
+=== Contact ===
+ * Caspar van Zon CHW.van.Zon@mindef.nl
+
+Revision history
+================
+
+01/03/2010 - Changes relative to olsr_mdns plug-in which was used as a base
+ * A new plug-in called olsrd_p2pd has been created based on the olsrd_mdns
+   plug-in.
+ * The initial version number for this plug-in has been set to v 0.1.0
+ * A parameter 'UdpDestPort' was added to allow for specification of a UDP IP
+   address/port pair.
+ * A number of obsolete functions have been removed from the source to decrease
+   the plug-in footprint.
+ * A mechanism has been added to check whether duplicate messages are received
+   and to allow them to be filtered out of the message stream. This is a new
+   mechanism and not the one provided within OLSR because the old mechanism
+   seems to hold a single list and this should not be contaminated. At this time
+   the list holds tuples with information conforming draft-ietf-manet-olsrv2-10.
+   Older non-duplicate messages are forwarded to NonOlsrIf interfaces.
+ * Some of the return values in the olsr_parser function (p2pdc) have been
+   changed so the related messages will not be forwarded if that is not
+   desired.
+ * Fragmented packets not supported.
+ * TTL for outgoing packets are not modified.
+ * Parameter 'UdpDestPort' is checked so only IPv4 broadcast and multicast and
+   IPv6 multicast values are allowed as the destination address.

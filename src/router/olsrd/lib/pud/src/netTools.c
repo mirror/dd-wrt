@@ -87,6 +87,7 @@ unsigned char * getHardwareAddress(const char * ifName, int family,
 	ifr->ifr_addr.sa_family = family;
 	memset(ifr->ifr_name, 0, sizeof(ifr->ifr_name));
 	strncpy(ifr->ifr_name, ifName, sizeof(ifr->ifr_name));
+	ifr->ifr_name[sizeof(ifr->ifr_name) - 1] = '\0';
 
 	errno = 0;
 	if (ioctl(fd, SIOCGIFHWADDR, ifr) < 0) {
@@ -128,6 +129,7 @@ struct in_addr * getIPv4Address(const char * ifName, struct ifreq *ifr) {
 	ifr->ifr_addr.sa_family = AF_INET;
 	memset(ifr->ifr_name, 0, sizeof(ifr->ifr_name));
 	strncpy(ifr->ifr_name, ifName, sizeof(ifr->ifr_name));
+  ifr->ifr_name[sizeof(ifr->ifr_name) - 1] = '\0';
 
 	errno = 0;
 	if (ioctl(fd, SIOCGIFADDR, ifr) < 0) {

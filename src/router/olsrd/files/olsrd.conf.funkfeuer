@@ -20,7 +20,7 @@ Interface "wlan0"
 {
 }
 
-LoadPlugin "olsrd_httpinfo.so.0.1"
+LoadPlugin "/usr/lib/olsrd_httpinfo.so.0.1"
 {
     PlParam "port"             "80"
     PlParam "Net"              "0.0.0.0 0.0.0.0"
@@ -28,7 +28,7 @@ LoadPlugin "olsrd_httpinfo.so.0.1"
 
 # This is only here to be able to generate a
 # configuration file with the script
-LoadPlugin "olsrd_jsoninfo.so.1.1"
+LoadPlugin "/usr/lib/olsrd_jsoninfo.so.1.1"
 {
   PlParam "port" "56789"
 }

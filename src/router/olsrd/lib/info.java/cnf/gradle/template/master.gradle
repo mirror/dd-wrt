@@ -10,7 +10,7 @@
  *
  * Called by build.gradle in the root of the workspace to configure the project set.
  *
- * Depends on bndURI and bndWorkspace properties set by settings.gradle.
+ * Depends on bndURIs and bndWorkspace properties set by settings.gradle.
  */
 
 import aQute.bnd.build.Workspace
@@ -20,7 +20,7 @@ import aQute.bnd.osgi.Constants
 /* Setup the build dependencies */
 buildscript {
   dependencies {
-    classpath files(bndURI) + bndBuildDependencies
+    classpath files(bndURIs) + bndBuildDependencies
   }
 }
 
@@ -28,7 +28,7 @@ buildscript {
 assert(project == rootProject             )
 assert(hasProperty('bnd_cnf'             ))
 assert(hasProperty('bndBuildDependencies'))
-assert(hasProperty('bndURI'              ))
+assert(hasProperty('bndURIs'             ))
 assert(hasProperty('bndWorkspace'        ))
 
 
@@ -63,9 +63,6 @@ allprojects { project ->
   if (settingsFile.exists()) {
     project.apply from: settingsFile
   }
-
-  /* Add index tasks to the project */
-  project.apply from: rootProject.file("${rootProject.bnd_cnf}/gradle/template/index.gradle")
 
   /* Add clean tasks to the project */
   project.apply from: rootProject.file("${rootProject.bnd_cnf}/gradle/template/clean.gradle")

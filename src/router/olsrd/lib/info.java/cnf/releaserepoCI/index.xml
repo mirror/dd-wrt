@@ -1,79 +1,29 @@
-<?xml version="1.0" encoding="utf-8"?>
-<repository increment="1483479640000" name="ReleaseCI" xmlns="http://www.osgi.org/xmlns/repository/v1.0.0">
+<?xml version='1.0' encoding='UTF-8'?>
+<repository xmlns="http://www.osgi.org/xmlns/repository/v1.0.0" name="ReleaseCI" increment="1505976747000">
   <resource>
     <capability namespace="osgi.identity">
-      <attribute name="osgi.identity" value="org.olsr.v1.info.api"/>
-      <attribute name="type" value="osgi.bundle"/>
-      <attribute name="version" type="Version" value="1.1.0.201701032138"/>
-    </capability>
-    <capability namespace="osgi.content">
-      <attribute name="osgi.content" value="d2115eb8df6d451938af246c45124d9ebe0edf63c6e4c2c58182775635064be5"/>
-      <attribute name="url" value="org.olsr.v1.info.api/org.olsr.v1.info.api-1.1.0.jar"/>
-      <attribute name="size" type="Long" value="127984"/>
-      <attribute name="mime" value="application/vnd.osgi.bundle"/>
-    </capability>
-    <capability namespace="osgi.wiring.bundle">
-      <attribute name="osgi.wiring.bundle" value="org.olsr.v1.info.api"/>
-      <attribute name="bundle-version" type="Version" value="1.1.0.201701032138"/>
-    </capability>
-    <capability namespace="osgi.wiring.host">
-      <attribute name="osgi.wiring.host" value="org.olsr.v1.info.api"/>
-      <attribute name="bundle-version" type="Version" value="1.1.0.201701032138"/>
-    </capability>
-    <capability namespace="osgi.wiring.package">
-      <attribute name="osgi.wiring.package" value="org.olsr.v1.info.api.commands"/>
-      <attribute name="version" type="Version" value="1.0.0"/>
-      <attribute name="bundle-symbolic-name" value="org.olsr.v1.info.api"/>
-      <attribute name="bundle-version" type="Version" value="1.1.0.201701032138"/>
-    </capability>
-    <capability namespace="osgi.wiring.package">
-      <attribute name="osgi.wiring.package" value="org.olsr.v1.info.api.contants"/>
-      <attribute name="version" type="Version" value="1.0.0"/>
-      <attribute name="bundle-symbolic-name" value="org.olsr.v1.info.api"/>
-      <attribute name="bundle-version" type="Version" value="1.1.0.201701032138"/>
-    </capability>
-    <capability namespace="osgi.wiring.package">
-      <attribute name="osgi.wiring.package" value="org.olsr.v1.info.api.dto"/>
-      <attribute name="version" type="Version" value="1.1.0"/>
-      <attribute name="bundle-symbolic-name" value="org.olsr.v1.info.api"/>
-      <attribute name="bundle-version" type="Version" value="1.1.0.201701032138"/>
-      <directive name="uses" value="com.fasterxml.jackson.annotation,org.olsr.v1.info.api.contants"/>
-    </capability>
-    <requirement namespace="osgi.wiring.package">
-      <directive name="filter" value="(&amp;(osgi.wiring.package=com.fasterxml.jackson.annotation)(version&gt;=2.8.0)(!(version&gt;=3.0.0)))"/>
-    </requirement>
-    <requirement namespace="osgi.wiring.package">
-      <directive name="filter" value="(&amp;(osgi.wiring.package=org.olsr.v1.info.api.contants)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))"/>
-    </requirement>
-    <requirement namespace="osgi.ee">
-      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.7))"/>
-    </requirement>
-  </resource>
-  <resource>
-    <capability namespace="osgi.identity">
+      <attribute name="license" value="http://www.gnu.org/licenses/gpl-2.0.txt"/>
       <attribute name="osgi.identity" value="org.olsr.v1.info.proxy.api"/>
       <attribute name="type" value="osgi.bundle"/>
-      <attribute name="version" type="Version" value="1.0.0.201608101051"/>
-    </capability>
-    <capability namespace="osgi.content">
-      <attribute name="osgi.content" value="97afbf6ee273d05e843a33fb689eb7d5fbc1d25ce63a4c42d8a5d425c2431869"/>
-      <attribute name="url" value="org.olsr.v1.info.proxy.api/org.olsr.v1.info.proxy.api-1.0.0.jar"/>
-      <attribute name="size" type="Long" value="2438"/>
-      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+      <attribute name="version" value="1.0.0.201608101051" type="Version"/>
     </capability>
     <capability namespace="osgi.wiring.bundle">
+      <attribute name="bundle-version" value="1.0.0.201608101051" type="Version"/>
       <attribute name="osgi.wiring.bundle" value="org.olsr.v1.info.proxy.api"/>
-      <attribute name="bundle-version" type="Version" value="1.0.0.201608101051"/>
     </capability>
     <capability namespace="osgi.wiring.host">
+      <attribute name="bundle-version" value="1.0.0.201608101051" type="Version"/>
       <attribute name="osgi.wiring.host" value="org.olsr.v1.info.proxy.api"/>
-      <attribute name="bundle-version" type="Version" value="1.0.0.201608101051"/>
     </capability>
     <capability namespace="osgi.wiring.package">
+      <attribute name="version" value="1.0.0" type="Version"/>
       <attribute name="osgi.wiring.package" value="org.olsr.v1.info.proxy.api"/>
-      <attribute name="version" type="Version" value="1.0.0"/>
-      <attribute name="bundle-symbolic-name" value="org.olsr.v1.info.proxy.api"/>
-      <attribute name="bundle-version" type="Version" value="1.0.0.201608101051"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="size" value="2438" type="Long"/>
+      <attribute name="url" value="org.olsr.v1.info.proxy.api/org.olsr.v1.info.proxy.api-1.0.0.jar"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+      <attribute name="osgi.content" value="97AFBF6EE273D05E843A33FB689EB7D5FBC1D25CE63A4C42D8A5D425C2431869"/>
     </capability>
     <requirement namespace="osgi.ee">
       <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.7))"/>
@@ -81,41 +31,30 @@
   </resource>
   <resource>
     <capability namespace="osgi.identity">
+      <attribute name="license" value="http://www.gnu.org/licenses/gpl-2.0.txt"/>
       <attribute name="osgi.identity" value="org.olsr.v1.info.proxy"/>
       <attribute name="type" value="osgi.bundle"/>
-      <attribute name="version" type="Version" value="1.0.1.201701032139"/>
-    </capability>
-    <capability namespace="osgi.content">
-      <attribute name="osgi.content" value="1067fc330bba860706231005088fe963d002a0fac31d5a5951737c8c228ca38c"/>
-      <attribute name="url" value="org.olsr.v1.info.proxy/org.olsr.v1.info.proxy-1.0.1.jar"/>
-      <attribute name="size" type="Long" value="11793"/>
-      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+      <attribute name="version" value="1.0.1.201701032139" type="Version"/>
     </capability>
     <capability namespace="osgi.wiring.bundle">
+      <attribute name="bundle-version" value="1.0.1.201701032139" type="Version"/>
       <attribute name="osgi.wiring.bundle" value="org.olsr.v1.info.proxy"/>
-      <attribute name="bundle-version" type="Version" value="1.0.1.201701032139"/>
     </capability>
     <capability namespace="osgi.wiring.host">
+      <attribute name="bundle-version" value="1.0.1.201701032139" type="Version"/>
       <attribute name="osgi.wiring.host" value="org.olsr.v1.info.proxy"/>
-      <attribute name="bundle-version" type="Version" value="1.0.1.201701032139"/>
     </capability>
     <capability namespace="osgi.service">
-      <attribute name="objectClass" type="List&lt;String&gt;" value="org.olsr.v1.info.proxy.api.OlsrdInfoProxy"/>
+      <attribute name="objectClass" value="org.olsr.v1.info.proxy.api.OlsrdInfoProxy" type="List&lt;String&gt;"/>
     </capability>
-    <capability namespace="osgi.service">
-      <attribute name="objectClass" type="List&lt;String&gt;" value="org.olsr.v1.info.proxy.api.OlsrdInfoProxy"/>
-      <attribute name="portJsonInfo" type="Long" value="2007"/>
-      <attribute name="address" value="127.0.0.1"/>
-      <attribute name="portTxtInfo" type="Long" value="2006"/>
-      <attribute name="localPort" type="Long" value="2301"/>
-      <attribute name="randomSleep" type="Long" value="250"/>
-      <attribute name="socketTimeout" type="Long" value="1000"/>
-      <attribute name="connectionTimeout" type="Long" value="500"/>
-      <attribute name="connectionRetries" type="Long" value="4"/>
-      <directive name="uses" value="org.olsr.v1.info.proxy.api"/>
+    <capability namespace="osgi.content">
+      <attribute name="size" value="11793" type="Long"/>
+      <attribute name="url" value="org.olsr.v1.info.proxy/org.olsr.v1.info.proxy-1.0.1.jar"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+      <attribute name="osgi.content" value="1067FC330BBA860706231005088FE963D002A0FAC31D5A5951737C8C228CA38C"/>
     </capability>
     <requirement namespace="osgi.wiring.package">
-      <directive name="filter" value="(&amp;(osgi.wiring.package=org.olsr.v1.info.proxy.api)(version&gt;=1.0.0)(!(version&gt;=1.1.0)))"/>
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.olsr.v1.info.proxy.api)(&amp;(version&gt;=1.0.0)(!(version&gt;=1.1.0))))"/>
     </requirement>
     <requirement namespace="osgi.extender">
       <directive name="filter" value="(&amp;(osgi.extender=osgi.component)(version&gt;=1.3.0)(!(version&gt;=2.0.0)))"/>
@@ -123,9 +62,49 @@
     <requirement namespace="osgi.ee">
       <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.7))"/>
     </requirement>
-    <requirement namespace="osgi.extender">
-      <directive name="filter" value="(&amp;(osgi.extender=osgi.component)(version&gt;=1.3.0)(!(version&gt;=2.0.0)))"/>
-      <directive name="effective" value="active"/>
+  </resource>
+  <resource>
+    <capability namespace="osgi.identity">
+      <attribute name="license" value="http://www.gnu.org/licenses/gpl-2.0.txt"/>
+      <attribute name="osgi.identity" value="org.olsr.v1.info.api"/>
+      <attribute name="type" value="osgi.bundle"/>
+      <attribute name="version" value="1.1.0.201701032138" type="Version"/>
+    </capability>
+    <capability namespace="osgi.wiring.bundle">
+      <attribute name="bundle-version" value="1.1.0.201701032138" type="Version"/>
+      <attribute name="osgi.wiring.bundle" value="org.olsr.v1.info.api"/>
+    </capability>
+    <capability namespace="osgi.wiring.host">
+      <attribute name="bundle-version" value="1.1.0.201701032138" type="Version"/>
+      <attribute name="osgi.wiring.host" value="org.olsr.v1.info.api"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="version" value="1.0.0" type="Version"/>
+      <attribute name="osgi.wiring.package" value="org.olsr.v1.info.api.commands"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <attribute name="version" value="1.0.0" type="Version"/>
+      <attribute name="osgi.wiring.package" value="org.olsr.v1.info.api.contants"/>
+    </capability>
+    <capability namespace="osgi.wiring.package">
+      <directive name="uses" value="com.fasterxml.jackson.annotation,org.olsr.v1.info.api.contants"/>
+      <attribute name="version" value="1.1.0" type="Version"/>
+      <attribute name="osgi.wiring.package" value="org.olsr.v1.info.api.dto"/>
+    </capability>
+    <capability namespace="osgi.content">
+      <attribute name="size" value="127984" type="Long"/>
+      <attribute name="url" value="org.olsr.v1.info.api/org.olsr.v1.info.api-1.1.0.jar"/>
+      <attribute name="mime" value="application/vnd.osgi.bundle"/>
+      <attribute name="osgi.content" value="D2115EB8DF6D451938AF246C45124D9EBE0EDF63C6E4C2C58182775635064BE5"/>
+    </capability>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=com.fasterxml.jackson.annotation)(&amp;(version&gt;=2.8.0)(!(version&gt;=3.0.0))))"/>
+    </requirement>
+    <requirement namespace="osgi.wiring.package">
+      <directive name="filter" value="(&amp;(osgi.wiring.package=org.olsr.v1.info.api.contants)(&amp;(version&gt;=1.0.0)(!(version&gt;=2.0.0))))"/>
+    </requirement>
+    <requirement namespace="osgi.ee">
+      <directive name="filter" value="(&amp;(osgi.ee=JavaSE)(version=1.7))"/>
     </requirement>
   </resource>
 </repository>

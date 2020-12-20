@@ -7,11 +7,11 @@ by Andreas Tonnesen(andreto@olsr.org)
 
 This plugin implements a tiny HTTP server that will respond to a GET request
 by returning a HTML formatted page containing information about the currently
-running olsrd process.
+running OLSRd process.
 
 This information includes detailed link status for all links and neighbors, all
-olsrd routes in the kernel, local configuration, uptime and more. The plugin
-can also generate an olsrd configfile based on current running configuration.
+OLSRd routes in the kernel, local configuration, uptime and more. The plugin
+can also generate an OLSRd configfile based on current running configuration.
 
 In adittion an experimental administrtion interface is available.
 

@@ -46,6 +46,7 @@
 #
 
 ARCH := $(shell uname -m)
+LDCONFIG ?= /sbin/ldconfig
 
 DESTDIR ?=
 prefix ?= /usr/local
@@ -75,9 +76,9 @@ LIBS += -lrt
 PLUGIN_SONAME ?= lib$(PLUGIN_NAME).so
 PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
 INSTALL_LIB =	install -D -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
-		/sbin/ldconfig -n $(LIBDIR)
+		$(LDCONFIG) -n $(LIBDIR)
 UNINSTALL_LIB =	rm -f $(LIBDIR)/$(PLUGIN_FULLNAME); \
-		/sbin/ldconfig -n $(LIBDIR)
+		$(LDCONFIG) -n $(LIBDIR)
 
 ifdef OLSRD_PLUGIN
 GENERATE_PIC = true

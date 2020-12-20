@@ -53,8 +53,16 @@ default_target: $(PLUGIN_FULLNAME)
 $(PLUGIN_FULLNAME): $(OBJS)
 
 install:
+ifneq ($(DOCDIR_OLSRD),)
+		mkdir -p "$(DOCDIR_OLSRD)"
+		cp "README_INFO" "$(DOCDIR_OLSRD)"
+endif
 
 uninstall:
+ifneq ($(DOCDIR_OLSRD),)
+		rm -f "$(DOCDIR_OLSRD)/README_INFO"
+		rmdir -p --ignore-fail-on-non-empty "$(DOCDIR_OLSRD)"
+endif
 
 clean:
 	rm -f $(OBJS) $(SRCS:%.c=%.d) $(PLUGIN_FULLNAME)
