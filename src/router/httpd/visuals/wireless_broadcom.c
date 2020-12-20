@@ -160,7 +160,7 @@ typedef struct {
 #define RSSI_CMD	"wl rssi"
 #define NOISE_CMD	"wl noise"
 
-int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *visible, int *cnt, int globalcnt)
+int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *visible, int *cnt, int globalcnt)
 {
 	int rssi = 0, noise = 0;
 	FILE *fp2 = NULL;
@@ -447,7 +447,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 		char wlif[32];
 
 		sprintf(wlif, "wl%d", i);
-		global = ej_active_wireless_if(wp, argc, argv, get_wl_instance_name(i), wlif, &assoc_count[cnt], global);
+		global = active_wireless_if(wp, argc, argv, get_wl_instance_name(i), wlif, &assoc_count[cnt], global);
 		cnt++;
 		char *next;
 		char var[80];
@@ -457,7 +457,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			return;
 
 		foreach(var, vifs, next) {
-			global = ej_active_wireless_if(wp, argc, argv, var, var, &assoc_count[cnt], global);
+			global = active_wireless_if(wp, argc, argv, var, var, &assoc_count[cnt], global);
 			cnt++;
 		}
 	}
