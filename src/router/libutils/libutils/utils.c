@@ -2195,6 +2195,8 @@ char *getAllDrives(void)
 	return s_getDrives(0);
 }
 
+#endif
+
 #ifdef HAVE_SYSCTL_EDIT
 #include <dirent.h>
 
@@ -2270,5 +2272,4 @@ void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *n
 {
 	internal_sysctl_apply("/proc/sys", priv, callback);
 }
-#endif
 #endif
