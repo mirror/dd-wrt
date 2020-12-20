@@ -81,15 +81,15 @@ static void assoc_count_prefix(webs_t wp, char *prefix)
 }
 
 #ifndef HAVE_ATH9K
-void ej_get_busy(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_busy(webs_t wp, int argc, char_t ** argv)
 {
 }
 
-void ej_get_active(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_active(webs_t wp, int argc, char_t ** argv)
 {
 }
 
-void ej_show_busy(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 {
 }
 #endif

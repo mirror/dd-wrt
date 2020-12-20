@@ -20,7 +20,7 @@
  * $Id:
  */
 extern char *getTXQ(char *ifname);
-void ej_portsetup(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 {
 	char ssid[64];
 	char *next, *bnext;

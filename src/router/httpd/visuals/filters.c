@@ -222,7 +222,7 @@ static char *filter_port_get(char *list, char *type, int which)
 		return "";
 }
 
-void ej_filter_dport_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_dport_get(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char *type;
@@ -237,7 +237,7 @@ void ej_filter_dport_get(webs_t wp, int argc, char_t ** argv)
 
 }
 
-void ej_filter_port_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_port_get(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char *type;
@@ -275,7 +275,7 @@ static char *filter_mac_get(webs_t wp, int which, char *word)
 	return "00:00:00:00:00:00";
 }
 
-void ej_filter_ip_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_ip_get(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char *type;
@@ -288,7 +288,7 @@ void ej_filter_ip_get(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_filter_mac_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_mac_get(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char word[256];
@@ -298,7 +298,7 @@ void ej_filter_mac_get(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 
@@ -320,7 +320,7 @@ void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_filterif(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t ** argv)
 {
 	if (argc < 1)
 		return;
@@ -366,7 +366,7 @@ void ej_show_filterif(webs_t wp, int argc, char_t ** argv)
 
 unsigned long long getpackettotal(char *table, char *chain);
 
-void ej_filter_getpacketcount(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_getpacketcount(webs_t wp, int argc, char_t ** argv)
 {
 	unsigned long long count;
 	char grp[32];
@@ -375,7 +375,7 @@ void ej_filter_getpacketcount(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%lld", count);
 }
 
-void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 {
 
 	char *type, *part;
@@ -530,7 +530,7 @@ int filter_tod_init(webs_t wp, int which)
 	return 0;
 }
 
-void ej_filter_tod_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_tod_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 	int i;
@@ -602,7 +602,7 @@ void ej_filter_tod_get(webs_t wp, int argc, char_t ** argv)
  * Format: url0, url1, url2, url3, ....  keywd0, keywd1, keywd2, keywd3,
  * keywd4, keywd5, .... 
  */
-void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 	int which;
@@ -635,7 +635,7 @@ void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 
@@ -708,14 +708,14 @@ void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 
 }
 
-void ej_filter_init(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_init(webs_t wp, int argc, char_t ** argv)
 {
 	wp->p->filter_id = websGetVari(wp, "f_id", 1);
 
 	return;
 }
 
-void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 {
 	int which = atoi(argv[1]);
 	filter_port_services_get(wp, argv[0], which);

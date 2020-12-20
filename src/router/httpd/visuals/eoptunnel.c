@@ -35,7 +35,7 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type);
 void show_caption(webs_t wp, const char *class, const char *cap, const char *ext);
 void show_caption_simple(webs_t wp, const char *cap);
 
-void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 {
 
 	int tun;

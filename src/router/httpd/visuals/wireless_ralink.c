@@ -226,7 +226,7 @@ static void DisplayLastTxRxRateFor11n(char *ifname, int s, int nID, int *fLastTx
 	TxRxRateFor11n(&HTSetting, fLastTxRxRate);
 }
 
-void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
 	assoc_count_prefix(wp, "wl");
 }
@@ -376,7 +376,7 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int *c
 	return globalcnt;
 }
 
-void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char turbo[32];
@@ -395,7 +395,7 @@ extern long long wifi_getrate(char *ifname);
 #define MEGA	1000000
 #define GIGA	1000000000
 
-void ej_get_currate(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 {
 	char mode[32];
 	int state = get_radiostate(nvram_safe_get("wifi_display"));
@@ -422,17 +422,17 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 
 }
 
-void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 {
 	return;
 }
 
-void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 {
 	return;
 }
 
-void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	int channel = wifi_getchannel(getRADev(prefix));
@@ -488,7 +488,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_active_wds(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 {
 }
 

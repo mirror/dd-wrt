@@ -23,7 +23,7 @@
  * Note: VLAN #16 designates tagging.  There is no VLAN #16 (only 0-15) 
  */
 
-void ej_show_qos_aqd(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_qos_aqd(webs_t wp, int argc, char_t ** argv)
 {
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
 
@@ -55,7 +55,7 @@ void ej_show_qos_aqd(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_pkts = nvram_safe_get("svqos_pkts");
 	char pkt_filter[4];
@@ -73,7 +73,7 @@ void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
 
 void getpacketcounts(char *table, char *chain, unsigned long long *counts, int len);
 
-void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
 	char name[32], type[32], data[32], level[32];
@@ -161,7 +161,7 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_ips = nvram_safe_get("svqos_devs");
 	char ip[32], level[32], level2[32], lanlevel[32], prio[32], proto[32];
@@ -260,7 +260,7 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_ips = nvram_safe_get("svqos_ips");
 	char ip[32], level[32], level2[32], lanlevel[32], prio[32];
@@ -341,7 +341,7 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_macs = nvram_safe_get("svqos_macs");
 	char mac[32], level[32], level2[32], lanlevel[32], user[32], prio[32];

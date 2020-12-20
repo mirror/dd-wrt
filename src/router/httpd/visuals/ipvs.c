@@ -19,7 +19,7 @@
  *
  * $Id:
  */
-void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 {
 	int count = 0;
 	char word[256];
@@ -133,7 +133,7 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 {
 	int count = 0;
 	char word[256];

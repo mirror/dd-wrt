@@ -50,7 +50,7 @@
 #include <wlutils.h>
 #include <bcmnvram.h>
 
-void ej_show_certificate_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_certificate_status(webs_t wp, int argc, char_t ** argv)
 {
 	int percent = 0;
 	if (f_exists("/jffs/etc/freeradius/certs/dh"))
@@ -97,7 +97,7 @@ struct radiusdb {
 	struct radiususer *users;
 };
 */
-void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<table class=\"table\" summary=\"Radius Users\">\n");
 
@@ -158,7 +158,7 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"user_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 }
 
-void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<table class=\"table\" summary=\"Radius Clients\">\n");
 

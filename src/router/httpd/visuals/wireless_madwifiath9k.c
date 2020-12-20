@@ -164,7 +164,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, 
 	return globalcnt;
 }
 
-void ej_get_busy(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_busy(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
@@ -180,7 +180,7 @@ void ej_get_busy(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_get_active(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_active(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
@@ -196,7 +196,7 @@ void ej_get_active(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_get_quality(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_quality(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
@@ -217,7 +217,7 @@ void ej_get_quality(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_show_busy(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
@@ -256,7 +256,7 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 {
 	struct frequency *f, *ftmp;
 	int first_survey = 0;
@@ -305,7 +305,7 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 
 }
 
-void ej_channel_survey(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_channel_survey(webs_t wp, int argc, char_t ** argv)
 {
 	if (has_channelsurvey(nvram_safe_get("wifi_display"))) {
 		if (nvram_nmatch("disabled", "%s_net_mode", nvram_safe_get("wifi_display")))

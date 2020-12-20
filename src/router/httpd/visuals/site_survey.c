@@ -215,7 +215,7 @@ static char *dtim_period(int dtim, char *mem)
 
 #ifdef FBNFW
 
-void ej_list_fbn(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_list_fbn(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 
@@ -240,7 +240,7 @@ void ej_list_fbn(webs_t wp, int argc, char_t ** argv)
 }
 
 #endif
-void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *rates = NULL;
@@ -429,7 +429,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_WIVIZ
 
-void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, for
+EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, for
 								// testing
 								// only
 {

@@ -203,12 +203,12 @@ extern int active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *i
 #endif
 static int assoc_count[16];
 
-void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
 	assoc_count_prefix(wp, "wlan");
 }
 
-void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 {
 	int c = getdevicecount();
 	char devs[32];
@@ -359,7 +359,7 @@ static int get_acktiming(char *ifname)
 	return ack;
 }
 
-void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 {
 	unsigned int ack, distance;
 	char *ifname = nvram_safe_get("wifi_display");
@@ -422,7 +422,7 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%d&#181;s (%dm)", ack, distance);
 }
 
-void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	if (nvram_nmatch("disabled", "%s_net_mode", prefix))
@@ -444,7 +444,7 @@ extern long long wifi_getrate(char *ifname);
 #define MEGA	1000000
 #define GIGA	1000000000
 
-void ej_get_currate(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 {
 	char mode[32];
 	char *ifname = nvram_safe_get("wifi_display");
@@ -480,7 +480,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s", live_translate(wp, "share.auto"));
 }
 
-void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	int channel = wifi_getchannel(prefix);
@@ -559,7 +559,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_active_wds(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 {
 }
 

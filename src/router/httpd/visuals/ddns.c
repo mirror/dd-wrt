@@ -44,7 +44,7 @@
 
 // #include "libbb.h"
 
-void ej_show_ddns_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_ddns_status(webs_t wp, int argc, char_t ** argv)
 {
 	char buff[512];
 	FILE *fp;

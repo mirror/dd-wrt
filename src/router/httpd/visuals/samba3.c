@@ -37,7 +37,7 @@ void show_caption_pp(webs_t wp, const char *class, const char *caption, const ch
 void show_caption_simple(webs_t wp, const char *caption);
 void show_caption(webs_t wp, const char *class, const char *caption, const char *ext);
 
-void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 {
 
 	struct fsentry *fs, *current;
@@ -174,7 +174,7 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 {
 
 	struct samba3_share *cs, *csnext;

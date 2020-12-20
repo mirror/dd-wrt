@@ -36,7 +36,7 @@ static char *lastunlock;
 #define unlock()
 #endif
 
-void ej_dumpip_conntrack(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dumpip_conntrack(webs_t wp, int argc, char_t ** argv)
 {
 	int ip_count = 0;
 	FILE *fp;
@@ -108,7 +108,7 @@ static int string_search(char *string, char *search)
 	return (0);
 }
 
-void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp;
 	int ip_count = 1;

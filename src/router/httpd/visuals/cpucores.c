@@ -52,7 +52,7 @@
 #elif defined(HAVE_PB42) || defined(HAVE_LSX)
 #define FREQLINE 5
 #elif HAVE_VENTANA
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
@@ -66,7 +66,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	}
 }
 #elif HAVE_MVEBU
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
@@ -90,7 +90,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #elif HAVE_ALPINE
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp = fopen("/sys/kernel/debug/clk/krait0_pri_mux/clk_rate", "rb");
 	if (fp) {
@@ -105,7 +105,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #elif HAVE_IPQ806X
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp2 = fopen("/sys/kernel/debug/clk/krait1_pri_mux/clk_rate", "rb");
 	FILE *fp = fopen("/sys/kernel/debug/clk/krait0_pri_mux/clk_rate", "rb");
@@ -137,7 +137,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #elif HAVE_X86
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
 
@@ -174,7 +174,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #else
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	char *clk = nvram_safe_get("clkfreq");
 
@@ -202,7 +202,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 #endif
 
 #if defined(FREQLINE)
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
 
@@ -242,7 +242,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 
 #undef FREQLINE
 #elif defined(HARDFREQ)
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, HARDFREQ);
 	return;
@@ -251,7 +251,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 #undef HARDFREQ
 #endif
 
-void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 {
 
 #ifdef HAVE_IPR
@@ -266,7 +266,7 @@ void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, str);
 }
 
-void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
 {
 	int count = 1;
 #ifdef _SC_NPROCESSORS_ONLN
@@ -338,7 +338,7 @@ static struct CPUFEATURES cpufeatures[] = {
 	{ "ASEs implemented", "mt", "MT" },
 };
 
-void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 {
 	char word[64];
 	char *next = NULL;

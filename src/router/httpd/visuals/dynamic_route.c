@@ -35,7 +35,7 @@
  * Dump route in <tr><td>IP</td><td>MASK</td><td>GW</td><td>Hop
  * Count</td><td>interface</td></tr> format 
  */
-void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 {
 	int count = 0;
 	FILE *fp;
