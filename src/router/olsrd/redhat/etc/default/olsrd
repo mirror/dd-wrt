@@ -1,0 +1,13 @@
+#
+# Debuglevel: from 0 (=none) to 9 (=max debug)
+# When running from systemd: use 0
+# Any level other than 0 requires a change of the systemd service unit file
+# to declare the service as 'exec' or 'simple' instead of 'forking'.
+#
+DEBUGLEVEL=0
+
+#
+# The configuration file
+#
+CONFIG_FILE=/etc/olsrd/olsrd.conf
+

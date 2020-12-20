@@ -1,6 +1,6 @@
 junit: \
   junit;version=latest, \
-  hamcrest-core;version=latest
+  org.hamcrest;version=latest
 
 test-reports: \
   test-results

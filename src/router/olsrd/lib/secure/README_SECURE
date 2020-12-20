@@ -9,6 +9,10 @@ It does _not_ cover secure OLSR protocol issues.
 
 Lines starting with '# ' indicates shell commands.
 
+The plugin encrypts all traffic on an OLSRd network, and uses a shared secret
+key for signature generation and verification. For nodes to participate in the
+OLSR routing domain they need to use the key used by the other nodes.
+
 NOTES
 
   The plugin interface and olsrd output buffering was

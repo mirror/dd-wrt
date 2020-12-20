@@ -69,6 +69,8 @@
 # LINUX SPECIFIC CONFIGURATION
 #
 
+LDCONFIG ?= /sbin/ldconfig
+
 DESTDIR ?=
 prefix ?=
 sbindir ?= $(prefix)/bin
@@ -131,9 +133,9 @@ endif
 PLUGIN_SONAME ?= $(PLUGIN_NAME)
 PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
 INSTALL_LIB =	install -D -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
-		/sbin/ldconfig -n $(LIBDIR)
+		$(LDCONFIG) -n $(LIBDIR)
 UNINSTALL_LIB =	rm -f $(LIBDIR)/$(PLUGIN_FULLNAME); \
-		/sbin/ldconfig -n $(LIBDIR)
+		$(LDCONFIG) -n $(LIBDIR)
 
 # include compiler settings
 include $(TOPDIR)/make/Makefile.android.compiler

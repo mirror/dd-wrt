@@ -6,7 +6,7 @@ Version 1.7.0
 ---------------
 
 The Basic Multicast Forwarding Plugin floods IP-multicast and
-IP-local-broadcast traffic over an OLSRD network. It uses the
+IP-local-broadcast traffic over an OLSRd network. It uses the
 Multi-Point Relays (MPRs) as identified by the OLSR protocol
 to optimize the flooding of multicast and local broadcast packets
 to all the hosts in the network. To prevent broadcast storms, a

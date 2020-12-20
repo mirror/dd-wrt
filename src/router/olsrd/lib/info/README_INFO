@@ -4,7 +4,7 @@ WARNING
 
 This is NOT a plugin.
 
-This is common code for the jsoninfo and txtinfo plugins.
+This is common code for the jsoninfo, txtinfo and other 'info' plugins.
 
 
 ============
@@ -12,7 +12,7 @@ INTRODUCTION
 ============
 
 An info plugin aims to deliver all of the information about the runtime status
-and configuration of olsrd.
+and configuration of OLSRd.
 
 Information that can be requested:
 * specific parts of runtime data or startup configuration
@@ -20,7 +20,7 @@ Information that can be requested:
 * overview of startup configuration
 * all of the information in one report
 
-Additionally, an info plugin can dump the current olsrd configuration in the
+Additionally, an info plugin can dump the current OLSRd configuration in the
 in the olsrd.conf format.
 
 

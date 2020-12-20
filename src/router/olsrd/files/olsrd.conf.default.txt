@@ -500,7 +500,7 @@ IpcConnect
 # Check whether a plugin is available for your operating system.
 # Each plugin should have a README file in it's lib subfolder.
 
-LoadPlugin "olsrd_jsoninfo.so.1.1" {
+LoadPlugin "/usr/lib/olsrd_jsoninfo.so.1.1" {
 }
 
 #############################################

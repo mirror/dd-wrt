@@ -1,0 +1,76 @@
+= OLSR mdns plugin =
+
+This README file is the main documentation source for the OLSR mdns plugin
+
+Last update 20/07/2012
+
+== Description ==
+
+This plugin goal is the distribution of multicast DNS messages over an OLSR Wireless Mesh Network.
+
+In a wireless mesh network, the usage of wireless interfaces in ad-hoc mode and the OLSR routing protocol prevent
+multicast messages to be distributed all over the network. 
+
+We are especially interested in the distribution of Multicast DNS (mDNS) messages, used for host-based service discovery, 
+over the networks that do not directly partecipate in the OLSR mesh cloud.
+
+This task is achieved in the following way: 
+ 1. the local router picks up from the local non-OLSR (HNA) network mDNS messages and encapsulates them in a new type of OLSR messages, 
+ 2. the OLSR infrastructure is exploited for the transport of these messages,
+ 3. remote routers decapsulate mDNS messages from received OLSR messages and send them over their attached non-OLSR networks.
+
+The work could have its practical and immediate application in all the wireless network communities that employ the OLSR protocol.
+
+The plugin captures the traffic (only IPv4 if OLSR is running IPv4 and only IPv6 if OLSR is running IPv6)
+and encapsulates this traffic in OLSR messages that are forwarded to all the other nodes in the mesh.
+
+Other nodes running the plugin will decapsulate the packets and will send them to the interfaces specified in the configuration file
+
+Let's get this example topology
+
+pc1->eth0 ----- eth0<-r1->ath0 -------ath0<-r2->eth0 ---------eth0<-pc2
+
+r1 and r2 are OLSR routers with mdns plugin enabled. pc1 will be able to receive mdns traffic generated at pc2 and vice versa
+
+The most interesting feature is that messages are forwarded also by OLSR routers without the plugin. For example:
+
+pc1->eth0 ----- eth0<-r1->ath0 ---r3----ath0<-r2->eth0 ---------eth0<-pc2
+
+also in this topology mdns traffic between pc1 and pc2 is possible because r3 forwards mdns plugin OLSR packets even if it is not aware of the new application.
+
+== Configuration ==
+
+To enable the Plugin use the following syntax
+
+LoadPlugin "olsrd_mdns.so.1.0.1"
+{
+PlParam     "NonOlsrIf"  "eth0"
+PlParam     "NonOlsrIf"  "eth1"
+PlParam     "MDNS_TTL"   "5"
+PlParam     "TTL_Check"  "true"
+PlParam	    "Network_ID" "1"
+PlParam     "FilteredHost" "192.168.0.1"
+PlParam     "FilteredHost" "2001:1418::1"
+}
+
+Where eth0 and eth1 are the names of the interfaces where you want to capture traffic (and decapsulate incoming traffic).
+
+Note that this interfaces must not talk OLSR and also the subnets on this interfaces must be announced with an appropriate HNA entry.
+This version of the plugin will not chech this stuff to be properly configured!
+
+MDNS_TTL is the time to live given to the MDNS OLSR messages. It makes no sense to announce your services to hosts that are too many hops away, because they will experience a very bad unicast connection.
+With this TTL setting we can tune how far we announce our services and we make the protocol scale much better
+
+TTL_Check enable or disable the rule that set TTL/HopLimit of generated mDns packet to 1 and discard capture of packets with TTL/HopLimit set to 1
+
+Network_ID is the network id value (default 1) that is used into router election for elect master router on the local hna, the plugin will elect master router the device with lower ip number on the same network id.
+
+FilteredHost is the ipv4 or ipv6 address of a mdns packets source that the router will discard.
+=== References ===
+
+ * Multicast DNS: [http://tools.ietf.org/html/draft-cheshire-dnsext-multicastdns-07 IETF draft-cheshire-dnsext-multicastdns-07]
+ * OLSR Optimized Link State Routing: [http://tools.ietf.org/html/rfc3626 IETF RFC 3626]
+
+=== Contact ===
+ * Saverio Proto proto@ing.uniroma2.it
+ * Claudio Pisa claudio.pisa@clauz.net

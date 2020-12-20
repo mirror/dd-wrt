@@ -28,7 +28,7 @@ The dot tool generates visual presentations of directed graphs.
 It can be downloaded as part of the GraphViz package from:
 http://www.graphviz.org/
 
-telet to 127.0.0.1 port 2004 to receive the data
+telnet to 127.0.0.1 port 2004 to receive the data
 
 installation:
 make

@@ -578,7 +578,13 @@ void readFromGpsd(GpsDaemon *gpsd, struct gps_data_t *gpsdata, struct GpsdConnec
   if (!connectionTracking->connected) {
     gpsReadCode = -1;
   } else {
+#if ((GPSD_API_MAJOR_VERSION >= 7) && (GPSD_API_MINOR_VERSION >= 0))
+    char msg[] = "\0";
+    int msg_len = 1;
+    gpsReadCode = gps_read(gpsdata, msg, msg_len);
+#else
     gpsReadCode = gps_read(gpsdata);
+#endif
   }
 
   if (gpsReadCode > 0) {

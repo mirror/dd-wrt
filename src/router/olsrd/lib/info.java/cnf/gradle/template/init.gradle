@@ -19,27 +19,44 @@ import aQute.bnd.osgi.Constants
 /* Add bnd as a script dependency */
 buildscript {
   dependencies {
-    def bndURI = rootDir.toURI().resolve(bnd_jar)
-    if (bndURI.scheme != 'file') {
-      /* If not a local file, copy to a local file in cnf/cache */
-      def cnfCache = mkdir("${rootDir}/${bnd_cnf}/cache")
-      def bndJarFile = new File(cnfCache, 'biz.aQute.bnd.gradle.jar')
-      if (!bndJarFile.exists()) {
-        println "Downloading ${bndURI} to ${bndJarFile} ..."
-        bndURI.toURL().withInputStream { is ->
-          bndJarFile.withOutputStream { os ->
-            def bos = new BufferedOutputStream( os )
-            bos << is
-          }
-        }
+    bnd_jars = bnd_jars.trim()
+
+    def bndURIs = []
+    if (bnd_jars.empty) {
+      def tree = fileTree("${rootDir}/${bnd_cnf}/gradle/dependencies").matching {
+        include "**/*.jar"
       }
-      bndURI = bndJarFile.toURI()
+      for (f in tree.files.sort()) {
+        bndURIs += f.toURI()
+      }
+    } else {
+      def bndJars = bnd_jars.split('\\s*,\\s*')
+      for (bndJar in bndJars) {
+        def bndURI = rootDir.toURI().resolve(bndJar)
+        if (bndURI.scheme != 'file') {
+          /* If not a local file, copy to a local file in cnf/cache */
+          def cnfCache = mkdir("${rootDir}/${bnd_cnf}/cache")
+          def bndJarFile = new File(cnfCache, new File(bndURI.path).name)
+          if (!bndJarFile.exists()) {
+            println "Downloading ${bndURI}"
+            bndURI.toURL().withInputStream { is ->
+              bndJarFile.withOutputStream { os ->
+                def bos = new BufferedOutputStream( os )
+                bos << is
+              }
+            }
+          }
+          bndURI = bndJarFile.toURI()
+        }
+        bndURIs += bndURI
+      }
     }
-    classpath files(bndURI)
+
+    classpath files(bndURIs)
 
     /* After the rootProject is created, pass URI to projects */
     gradle.rootProject { rootProject ->
-      rootProject.ext.bndURI = bndURI
+      rootProject.ext.bndURIs = bndURIs
     }
   }
 }

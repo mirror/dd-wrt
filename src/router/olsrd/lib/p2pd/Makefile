@@ -79,8 +79,16 @@ endif
 install:	$(PLUGIN_FULLNAME)
 		$(STRIP) $(PLUGIN_FULLNAME)
 		$(INSTALL_LIB)
+ifneq ($(DOCDIR_OLSRD),)
+		mkdir -p "$(DOCDIR_OLSRD)"
+		cp "README_P2PD" "$(DOCDIR_OLSRD)"
+endif
 
 uninstall:
+ifneq ($(DOCDIR_OLSRD),)
+		rm -f "$(DOCDIR_OLSRD)/README_P2PD"
+		rmdir -p --ignore-fail-on-non-empty "$(DOCDIR_OLSRD)"
+endif
 		$(UNINSTALL_LIB)
 
 clean:

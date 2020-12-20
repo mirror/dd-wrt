@@ -1,0 +1,915 @@
+# The olsr.org Optimized Link-State Routing daemon (olsrd)
+#
+# (c) by the OLSR project
+#
+# See our Git repository to find out who worked on this file
+# and thus is a copyright holder on it.
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in
+#   the documentation and/or other materials provided with the
+#   distribution.
+# * Neither the name of olsr.org, olsrd nor the names of its
+#   contributors may be used to endorse or promote products derived
+#   from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Visit http://www.olsr.org for more information.
+#
+# If you find this software useful feel free to make a donation
+# to the project. For more information see the website or contact
+# the copyright holders.
+#
+
+%global osSupported 0
+
+%if 0%{?fedora} >= 30
+%global osSupported 1
+%endif
+
+
+Name:             olsrd
+Version:          __gitVersion__
+Release:          __gitRelease__%{?dist}
+Summary:          OLSRd Routing Daemon
+
+License:          BSD
+URL:              https://github.com/OLSR/olsrd
+
+Source0:          __tarFilename__
+
+BuildRequires:    ant, bison, flex, gcc, gpsd-devel, java-1.8.0-openjdk-devel
+BuildRequires:    make, openssl-devel
+
+Requires:         bash, coreutils, iproute, iptables
+
+Recommends:       olsrd-plugin-jsoninfo
+
+
+%package plugin-arprefresh
+Summary:          The plugin caches MAC addresses of OLSRd neighbors
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-bmf
+Summary:          The plugin floods IP-multicast and IP-local-broadcast traffic over an OLSRd network.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-dot-draw
+Summary:          The plugin generates topology information in the dot format.
+Requires:         olsrd = __gitVersion__
+Requires:         coreutils, graphviz, ImageMagick
+Requires:         perl, perl-IO-Socket-IP, perl-Getopt-Long
+Enhances:         olsrd
+
+
+%package plugin-dyngw
+Summary:          The plugin checks if the local node has an Internet connection.
+Requires:         olsrd = __gitVersion__
+Requires:         iputils
+Enhances:         olsrd
+
+
+%package plugin-dyngw-plain
+Summary:          Automatically adds a default gateway HNA when the node has an Internet connection.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-info
+Summary:          The common base for info plugins.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-info-java
+Summary:          Java bindings for info plugins.
+Requires:         java-1.8.0-openjdk
+
+
+%package plugin-info-java-javadoc
+Summary:          Documentation for Java bindings for info plugins.
+
+
+%package plugin-httpinfo
+Summary:          The plugin delivers runtime status and configuration of OLSRd as webpages.
+Requires:         olsrd = __gitVersion__
+Requires:         olsrd-plugin-info = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-jsoninfo
+Summary:          The plugin delivers runtime status and configuration of OLSRd as json.
+Requires:         olsrd = __gitVersion__
+Requires:         olsrd-plugin-info = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-mdns
+Summary:          The plugin distributes multicast DNS messages over an OLSRd network.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-mini
+Summary:          The plugin is a minimal example plugin.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-nameservice
+Summary:          A simple DNS replacement for OLSR networks.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-netjson
+Summary:          The plugin delivers topology information of OLSRd as json.
+Requires:         olsrd = __gitVersion__
+Requires:         olsrd-plugin-info = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-p2pd
+Summary:          The plugin distributes Peer to Peer Discovery messages over an OLSRd network.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-pgraph
+Summary:          The plugin generates topology information.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-poprouting
+Summary:          The plugin can get and set the values of the Hello and the TC timers/multiplier.
+Requires:         olsrd = __gitVersion__
+Requires:         olsrd-plugin-info = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-pud
+Summary:          The plugin distributes position information over an OLSRd network.
+Requires:         olsrd = __gitVersion__
+Requires:         gpsd-libs
+Enhances:         olsrd
+
+
+%package plugin-pud-java-bindings
+Summary:          Java bindings for the PUD wireformat library.
+Requires:         java-1.8.0-openjdk
+
+
+%package plugin-quagga
+Summary:          The plugin allows OLSRd to redistribute routes via quagga.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-secure
+Summary:          The plugin encrypts all traffic on an OLSRd network.
+Requires:         olsrd = __gitVersion__
+Requires:         openssl-devel
+Enhances:         olsrd
+
+
+%package plugin-sgwdynspeed
+Summary:          The plugin allow dynamic adjustments of the default gateway speed.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-txtinfo
+Summary:          The plugin delivers runtime status and configuration of OLSRd as text.
+Requires:         olsrd = __gitVersion__
+Requires:         olsrd-plugin-info = __gitVersion__
+Enhances:         olsrd
+
+
+%package plugin-watchdog
+Summary:          The plugin lets an external program detect an OLSRd hang.
+Requires:         olsrd = __gitVersion__
+Enhances:         olsrd
+
+
+
+
+%description
+OLSRd is an implementation of the Ad-Hoc routing protocol OLSR (RFC3626).
+It provides (multihop) routing in a dynamic, changing Ad-Hoc network,
+either wired, wireless, or both.
+This version supports both IPv4 and IPv6.
+See http://www.olsr.org/ for more info.
+
+Please edit /etc/olsrd/olsrd.conf to suit your system.
+Run 'systemctl enable olsrd' to enable automatic starting of OLSRd.
+Run 'systemctl restart olsrd' to start OLSRd.
+
+
+%description plugin-arprefresh
+The plugin listens to all received UDP packets on port 698 and maintains
+an internal list of MAC addresses extracted from these. The kernel ARP
+cache will be refreshed from this list if a direct-neighbor host route is
+configured. Result: no more ARP lookups if you use a larger routing
+chain - e.g. fetch a web site 8 olsr-hops away does not show the typical
+8-nodes-need-to-ARP first delay.
+IPv4 only.
+Does not support VLANs.
+
+
+%description plugin-bmf
+The Basic Multicast Forwarding Plugin floods IP-multicast and
+IP-local-broadcast traffic over an OLSRd network. It uses the
+Multi-Point Relays (MPRs) as identified by the OLSR protocol
+to optimize the flooding of multicast and local broadcast packets
+to all the hosts in the network. To prevent broadcast storms, a
+history of packets is kept; only packets that have not been seen
+in the past 3-6 seconds are forwarded.
+
+
+%description plugin-dot-draw
+The plugin generates output (over a TCP-IPv4 socket) in the dot format.
+The dot tool generates visual presentations of directed graphs.
+It can be downloaded as part of the GraphViz package from:
+http://www.graphviz.org/
+
+telnet to 127.0.0.1 port 2004 to receive the data
+
+
+%description plugin-dyngw
+Plugin is IPv4 only and it only runs on Linux with the libpthread
+library installed!
+
+This is a plugin that checks if the local node has a Internet-
+connection. A Internet-connetion is identified by a "default gw" with a
+hopcount of 0. That is a route to 0.0.0.0/0 with metric 0.  By default
+the check is done every 5 secs. You can change the check interval by
+providing an value for "PingInterval" in the plugin's section of olsrd.conf.
+
+If one or more IPv4 addresses are given as values for "Ping" in the
+section or dyn_gw in olsrd.conf, then a test is done to validate if
+there is really an internet connection (and not just an entry in the
+routing table). If any of the arbitrary many given IPv4 addresses can be
+pinged, the validation was successful. The addresses are pinged in the
+order given in the olsrd.conf (i.e. the first given address is pinged
+first, the the 2nd, and so on). For this to work a command like
+"ping -c 1 -q <PING-ADDRESS>" must be possible on the system OLSRd runs
+on. The validation is based on the return value of this ping command.
+
+Since OLSR uses hopcount/metric on all routes this plugin will
+not respond to Internet gateways added by OLSRd.
+
+When a Internet gateway is discovered - this node will start
+announcing 0.0.0.0/0 connectivity by HNA messages flooded into
+the OLSR network. If the route is removed the HNA messages
+will not be transmitted. This check is totally dynamic and
+Internet connectivity might come and go.
+
+This plugin can also process more specific routes by specifying groups of HNAs
+(Host and Network Association) and ping hosts.
+
+
+%description plugin-dyngw-plain
+Automatically adds a default gateway HNA when the node has such a route.
+Automatically removes a default gateway HNA when the node has no such route.
+IPv4 only.
+
+This plugin is without Ping/libthread. It is the plain dyn_gw!
+
+
+%description plugin-info
+This is NOT a plugin.
+
+This is common code for the jsoninfo, txtinfo and other 'info' plugins.
+
+An info plugin aims to deliver all of the information about the runtime status
+and configuration of OLSRd.
+
+Information that can be requested:
+* specific parts of runtime data or startup configuration
+* overview of runtime data
+* overview of startup configuration
+* all of the information in one report
+
+Additionally, an info plugin can dump the current OLSRd configuration in the
+in the olsrd.conf format.
+
+
+%description plugin-httpinfo
+This plugin implements a tiny HTTP server that will respond to a GET request
+by returning a HTML formatted page containing information about the currently
+running OLSRd process.
+
+This information includes detailed link status for all links and neighbors, all
+OLSRd routes in the kernel, local configuration, uptime and more. The plugin
+can also generate an OLSRd configfile based on current running configuration.
+
+In adittion an experimental administrtion interface is available.
+
+
+%description plugin-info-java
+Java bindings for info plugins.
+
+
+%description plugin-info-java-javadoc
+Documentation for Java bindings for info plugins.
+
+
+%description plugin-jsoninfo
+The jsoninfo plugin is an info plugin.
+
+An info plugin aims to deliver all of the information about the runtime status
+and configuration of OLSRd.
+
+Information that can be requested:
+* specific parts of runtime data or startup configuration
+* overview of runtime data
+* overview of startup configuration
+* all of the information in one report
+
+Additionally, an info plugin can dump the current OLSRd configuration in the
+in the olsrd.conf format.
+
+==================
+SUPPORTED COMMANDS
+==================
+
+Grouped information:
+* /all
+* /runtime
+* /startup
+
+Runtime information:
+* /neighbors
+* /links
+* /routes
+* /hna
+* /mid
+* /topology
+* /gateways
+* /interfaces
+* /2hop
+* /sgw
+
+A special case for Freifunk, combining /neighbors and /links:
+* /neighbours
+
+Start-up information:
+* /version
+* /config
+* /plugins
+
+The current configuration, formatted for writing directly to a configuration
+file, like /etc/olsrd/olsrd.conf:
+* /olsrd.conf
+
+
+%description plugin-mdns
+This plugin goal is the distribution of multicast DNS messages over an OLSR
+Wireless Mesh Network.
+
+In a wireless mesh network, the usage of wireless interfaces in ad-hoc mode
+and the OLSR routing protocol prevent multicast messages to be distributed
+all over the network.
+
+We are especially interested in the distribution of Multicast DNS (mDNS)
+messages, used for host-based service discovery, over the networks that do
+not directly partecipate in the OLSR mesh cloud.
+
+This task is achieved in the following way:
+ 1. the local router picks up from the local non-OLSR (HNA) network mDNS
+    messages and encapsulates them in a new type of OLSR messages,
+ 2. the OLSR infrastructure is exploited for the transport of these messages,
+ 3. remote routers decapsulate mDNS messages from received OLSR messages and
+    send them over their attached non-OLSR networks.
+
+The work could have its practical and immediate application in all the
+wireless network communities that employ the OLSR protocol.
+
+
+%description plugin-mini
+This is a minimal example plugin to demonstrate the functions a plugin
+must implement. It documents the minimal requirements for the new
+plugin interface and is a good start for creating new plugins and
+testing the plugin loader.
+
+This plugin does nothing, except printing messages when it is loaded
+and unloaded.
+
+
+%description plugin-nameservice
+A simple DNS replacement for OLSR networks.
+
+This plugin distributes host name (DNS) information over OLSR. Every
+node which runs the olsr daemon can announce it's own name, names for
+other IP addresses it is associated with (HNAs) and whether it is running
+a "real" nameserver which can resolve other (internet) names (upstream
+DNS server).
+
+The nodes in the network collect this information and write the host
+names to a file (possibly /etc/hosts), and the 3 nearest upstream
+nameservers to another file (possibly /etc/resolv.conf).
+
+These files can be used to resolve hostnames on the local system and/or
+be read by a DNS server like "dnsmasq", to make the names available
+via the ordinary DNS protocol to other clients as well.
+
+
+%description plugin-netjson
+The netjson plugin is an info plugin.
+
+An info plugin aims to deliver all of the information about the runtime status
+and configuration of OLSRd.
+
+Information that can be requested:
+* specific parts of runtime data or startup configuration
+* overview of runtime data
+* overview of startup configuration
+* all of the information in one report
+
+Additionally, an info plugin can dump the current OLSRd configuration in the
+in the olsrd.conf format.
+
+==================
+SUPPORTED COMMANDS
+==================
+
+* /NetworkRoutes
+* /NetworkGraph
+* /DeviceConfiguration (not currently supported)
+* /DeviceMonitoring    (not currently supported)
+* /NetworkCollection
+
+
+%description plugin-p2pd
+This plugin goal is the distribution of Peer to Peer Discovery messages over an
+OLSR Wireless Mesh Network.
+
+In a wireless mesh network, the usage of wireless interfaces in ad-hoc mode and
+the OLSR routing protocol prevent UDP messages to be distributed all over the
+network.
+
+We are especially interested in the distribution of UDP messages, used for host-
+based service discovery, over the networks that do not directly participate in
+the OLSR mesh cloud.
+
+This task is achieved in the following way:
+ 1. the local router picks up from the local non-OLSR (HNA) network UDP messages
+    and encapsulates them in a new type of OLSR messages,
+ 2. the OLSR infrastructure is exploited for the transport of these messages,
+ 3. remote routers decapsulate UDP messages from received OLSR messages and send
+    them over their attached non-OLSR networks.
+
+The work could have its practical and immediate application in wireless network
+communities that employ the OLSR protocol.
+
+
+%description plugin-pgraph
+The plugin generates topology information.
+
+
+%description plugin-poprouting
+The poprouting plugin is used to set the values of the Hello and the TC
+timers/multiplier in OLSRd. It can be also used to get the current values from
+the daemon.
+
+==================
+SUPPORTED COMMANDS
+==================
+The commands can be specified with or without a float number after the =.
+In the former case the timer or the multiplier will be set at that specific
+value. In the latter case the plugin will return the actual value for that
+timer or multiplier.
+
+* /helloTimer=%f
+* /TCTimer=%f
+* /helloTimerMult=%f
+* /TCTimerMult=%f
+* /helloTimer
+* /TCTimer
+* /helloTimerMult
+* /TCTimerMult
+
+
+%description plugin-pud
+The Position Update Distribution (PUD) OLSR plugin has a number of functions:
+- It distributes the (GPS) position of the router over the OLSR mesh.
+- It transmits the position information of the router to a central (relay)
+  server (optional).
+
+
+%description plugin-pud-java-bindings
+These are java bindings for the PUD wireformat library.
+
+
+%description plugin-quagga
+This is the Quagga Plugin for OLSRd.
+It allows OLSRd to redistribute from various quagga-protocols
+as well as to export olsr-routes to quagga so that they can be
+redistributed by the quagga-routing-daemons.
+
+
+%description plugin-secure
+The plugin encrypts all traffic on an OLSRd network, and uses a shared secret
+key for signature generation and verification. For nodes to participate in the
+OLSR routing domain they need to use the key used by the other nodes.
+
+
+%description plugin-sgwdynspeed
+The plugin allow dynamic adjustments of the default gateway speed.
+
+
+%description plugin-txtinfo
+The jsoninfo plugin is an info plugin.
+
+An info plugin aims to deliver all of the information about the runtime status
+and configuration of OLSRd.
+
+Information that can be requested:
+* specific parts of runtime data or startup configuration
+* overview of runtime data
+* overview of startup configuration
+* all of the information in one report
+
+Additionally, an info plugin can dump the current OLSRd configuration in the
+in the olsrd.conf format.
+
+==================
+SUPPORTED COMMANDS
+==================
+
+Grouped information:
+* /all
+* /runtime
+* /startup
+
+Runtime information:
+* /nei
+* /lin
+* /rou
+* /hna
+* /mid
+* /top
+* /gat
+* /int
+* /2ho
+* /sgw
+
+A special case for Freifunk, combining /nei and /lin:
+* /neighbours
+
+Start-up information:
+* /ver
+* /config  (not supported, will output nothing)
+* /plugins (not supported, will output nothing)
+
+The current configuration, formatted for writing directly to a configuration
+file, like /etc/olsrd/olsrd.conf:
+* /con
+
+
+%description plugin-watchdog
+This plugin is used for detecting a total freeze of the OLSRd daemon by an
+external script. Once per timeinterval (configurable) it writes the current
+time into a file.
+
+
+
+
+%prep
+if [ %{osSupported} -ne 1 ]; then
+  echo "Dist '%{?dist}' is not supported"
+  exit 1
+fi
+
+%setup -n olsrd-__gitVersion__-__gitRelease__
+
+
+
+
+%build
+sed -ri -e 's/(Git-Descriptor:).*/\1 __gitDescriptor__/' \
+        -e 's/(Git-SHA:).*/\1 __gitSHA__/' \
+        "lib/info.java/cnf/build.bnd"
+
+sed -i -e 's/${git.commit.descriptor}/__gitDescriptor__/' \
+       -e 's/${git.commit.sha}/__gitSHA__/' \
+       -e 's/,getgitcommit//' \
+       "lib/pud/wireformat-java/resources/build.xml"
+
+sed -ri -e "s/gitSha=\"0+\"/gitSha=\"__gitSHAAbbrev__\"/" \
+        -e "s/gitShaFull=\"0+\"/gitShaFull=\"__gitSHA__\"/" \
+        -e "s/gitDescriptor=\".+\"/gitDescriptor=\"__gitDescriptor__\"/" \
+        "make/hash_source.sh"
+
+
+%ifarch x86_64
+_ARCH="M64=1"
+%else
+_ARCH="M32=1"
+%endif
+
+make -j 1 prefix=/usr DESTDIR="%{buildroot}" OS="linux" $_ARCH NOSTRIP=1 NORPATH=1 DEBUG="0" VERBOSE=1 SANITIZE_ADDRESS=0 SANITIZE_LEAK=0 SANITIZE_UNDEFINED=0 build_all pud_java info_java
+
+
+
+
+%install
+rm -rfv "%{buildroot}"
+
+%ifarch x86_64
+_ARCH="M64=1"
+%else
+_ARCH="M32=1"
+%endif
+
+make -j 1 prefix=/usr DESTDIR="%{buildroot}" OS="linux" $_ARCH NOSTRIP=1 NORPATH=1 DEBUG="0" VERBOSE=1 SANITIZE_ADDRESS=0 SANITIZE_LEAK=0 SANITIZE_UNDEFINED=0 install_all pud_java_install info_java_install
+cp -r -t "%{buildroot}" redhat/etc redhat/usr
+mkdir -p "%{buildroot}%{_rundir}"
+touch "%{buildroot}%{_rundir}/olsrd.pid"
+
+
+
+
+%files
+%defattr(-,root,root)
+%config %{_sysconfdir}/olsrd/olsrd.conf
+%config %{_sysconfdir}/default/olsrd
+%{_sbindir}/olsrd
+%{_sbindir}/sgw_policy_routing_setup.sh
+%{_mandir}/man5/olsrd.conf.5.gz
+%{_mandir}/man8/olsrd.8.gz
+%{_docdir}/olsrd/CHANGELOG
+%{_docdir}/olsrd/license.txt
+%{_docdir}/olsrd/README-Olsr-Extensions
+%{_docdir}/olsrd/README-LINUX_NL80211.txt
+%{_docdir}/olsrd/olsrd.conf.default
+%{_docdir}/olsrd/olsrd.conf.default.txt
+%{_prefix}/lib/systemd/system/olsrd.service
+%{_rundir}/olsrd.pid
+
+
+%files plugin-arprefresh
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_arprefresh.so.0.1
+%{_docdir}/olsrd/README_ARPREFRESH
+
+
+%files plugin-bmf
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_bmf.so.1.7.0
+%{_docdir}/olsrd/README_BMF
+
+
+%files plugin-dot-draw
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_dot_draw.so.0.3
+%{_docdir}/olsrd/README_DOT_DRAW
+%{_docdir}/olsrd/olsr-topology-view.pl
+
+
+%files plugin-dyngw
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_dyn_gw.so.0.5
+%{_docdir}/olsrd/README_DYN_GW
+
+
+%files plugin-dyngw-plain
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_dyn_gw_plain.so.0.4
+%{_docdir}/olsrd/README_DYN_GW_PLAIN
+
+
+%files plugin-info
+%defattr(-,root,root)
+%{_docdir}/olsrd/README_INFO
+
+
+%files plugin-info-java
+%defattr(-,root,root)
+%{_docdir}/olsrd/README_INFO
+%{_datadir}/java/olsrd/org.olsr.v1.info.api.jar
+%{_datadir}/java/olsrd/org.olsr.v1.info.proxy.api.jar
+%{_datadir}/java/olsrd/org.olsr.v1.info.proxy.jar
+
+
+%files plugin-info-java-javadoc
+%defattr(-,root,root)
+%{_datadir}/java/olsrd/javadoc/info.java/api
+%{_datadir}/java/olsrd/javadoc/info.java/all
+
+
+%files plugin-httpinfo
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_httpinfo.so.0.1
+%{_docdir}/olsrd/README_HTTPINFO
+
+
+%files plugin-jsoninfo
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_jsoninfo.so.1.1
+%{_docdir}/olsrd/README_JSONINFO
+
+
+%files plugin-mdns
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_mdns.so.1.0.1
+%{_docdir}/olsrd/README_MDNS
+
+
+%files plugin-mini
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_mini.so.0.1
+%{_docdir}/olsrd/README_MINI
+
+
+%files plugin-nameservice
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_nameservice.so.0.4
+%{_docdir}/olsrd/README_NAMESERVICE
+
+
+%files plugin-netjson
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_netjson.so.1.1
+%{_docdir}/olsrd/README_NETJSON
+
+
+%files plugin-p2pd
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_p2pd.so.0.1.0
+%{_docdir}/olsrd/README_P2PD
+
+
+%files plugin-pgraph
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_pgraph.so.1.1
+%{_docdir}/olsrd/README_PGRAPH
+
+
+%files plugin-poprouting
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_poprouting.so.1.0
+%{_docdir}/olsrd/README_POPROUTING
+
+
+%files plugin-pud
+%defattr(-,root,root)
+%config %{_sysconfdir}/olsrd/olsrd.pud.position.conf
+%{_exec_prefix}/lib/olsrd_pud.so.3.0.0
+%{_exec_prefix}/lib/libOlsrdPudWireFormat.so
+%{_exec_prefix}/lib/libOlsrdPudWireFormat.so.3.0.0
+%{_exec_prefix}/lib/libnmea.so
+%{_exec_prefix}/lib/libnmea.so.3.0.0
+%{_docdir}/olsrd/pud.odt
+%{_docdir}/olsrd/README_PUD
+%{_docdir}/olsrd/README_NMEALIB
+
+
+%files plugin-pud-java-bindings
+%defattr(-,root,root)
+%{_exec_prefix}/lib/libOlsrdPudWireFormatJava.so
+%{_exec_prefix}/lib/libOlsrdPudWireFormatJava.so.3.0.0
+%{_datadir}/java/olsrd/OlsrdPudWireFormatJava-doc.zip
+%{_datadir}/java/olsrd/OlsrdPudWireFormatJava-src.zip
+%{_datadir}/java/olsrd/OlsrdPudWireFormatJava.jar
+%{_docdir}/olsrd/README_PUD_WIREFORMAT_JAVA
+
+
+%files plugin-quagga
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_quagga.so.0.2.2
+%{_docdir}/olsrd/README_QUAGGA
+%{_docdir}/olsrd/quagga-0.98.6.diff
+%{_docdir}/olsrd/quagga-0.99.21.diff
+
+
+%files plugin-secure
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_secure.so.0.6
+%{_docdir}/olsrd/README_SECURE
+
+
+%files plugin-sgwdynspeed
+%defattr(-,root,root)
+%config %{_sysconfdir}/olsrd/olsrd.sgw.speed.conf
+%{_exec_prefix}/lib/olsrd_sgwdynspeed.so.1.0.0
+%{_docdir}/olsrd/README_SGWDYNSPEED
+
+
+%files plugin-txtinfo
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_txtinfo.so.1.1
+%{_docdir}/olsrd/README_TXTINFO
+
+
+%files plugin-watchdog
+%defattr(-,root,root)
+%{_exec_prefix}/lib/olsrd_watchdog.so.0.1
+%{_docdir}/olsrd/README_WATCHDOG
+
+
+
+
+%clean
+rm -rf "%{buildroot}"
+
+
+
+
+%preun
+
+
+
+
+%changelog
+* Mon Jun 17 2019 Ferry Huberts <ferry.huberts@pelagic.nl>
+- Completely rewritten RPM spec file and generation
+
+* Tue Jul 17 2007 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Created spec-file for 0.5.2
+
+* Mon Jul 09 2007 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Created spec-file for 0.5.1
+
+* Tue Apr 03 2007 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Created spec-file for 0.5.0
+- Changed from INSTALL_PREFIX to DESTDIR
+
+* Wed Jan 04 2006 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Created spec-file for 0.4.10
+- Removed OS=linux option to make
+- Updated plugin file list, added wildchar for plugins
+
+* Tue Apr 05 2005 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Created spec-file for 0.4.9
+
+* Tue Mar 29 2005 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Increased version number for nameservice and secure plugin
+
+* Tue Dec 07 2004 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Changed spec file for olsrd-0.4.8
+- Removed frontend GUI inclusion
+- Removed references to Unik
+- Changed licence to BSD
+
+* Tue Jun 29 2004 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Changed spec file for unik-olsrd-0.4.5
+- Remover ROOT-prefix patch as INSTALL_PREFIX is added to Makefile in 0.4.5
+- Added INSTALL_PREFIX patch for front-end/Makefile
+- Included plugins dot_draw and secure
+- Added documentation for the plugins dyn_gw, powerinfo, dot_draw and secure
+
+* Tue May 25 2004 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Changed spec file for unik-olsrd-0.4.4
+- Added man-page for olsrd
+- Removed documentation olsrd-plugin-howto.pdf as it is no longer part of
+  source package
+
+* Tue Mar 02 2004 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Changed spec file for unik-olsrd-0.4.3
+- Added OLSRD plugins olsrd_dyn_gw and olsrd_power to package
+- Added documentation olsrd-plugin-howto.pdf
+
+* Tue Mar 02 2004 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Renamed package from uolsrd to unik-olsrd to use the same name as the
+  .deb-package
+- Start olsrd daemon with option "-d 0" to start without debugging and in
+  daemon mode even if debugging is enabled in olsrd.conf.
+
+* Mon Mar 01 2004 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Included init-script to start uolsrd daemon
+  (installs as %{_initrddir}/uolsrd).
+
+* Wed Feb 25 2004 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Changed Group from Applications/System to System Environment/Daemons.
+- Included olsrd-gui (forgotten in first release)
+- Renamed spec file from unik-olsrd-0.4.0.spec to uolsrd-0.4.0.spec
+
+* Wed Feb 25 2004 Roar Bjorgum Rotvik <roarbr@tihlde.org>
+- Created first version of this spec-file
+

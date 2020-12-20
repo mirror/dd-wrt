@@ -65,6 +65,7 @@ digraph GradleSetup {
     subgraph cluster106 {
       label="";
       style=invis;
+      testOSGi             [shape=box, style=filled, fillcolor=cyan     , label="testOSGi"            ]
       check                [shape=box, style=filled, fillcolor=cyan     , label="check"               ]
       checkNeeded          [shape=box, style=filled, fillcolor=cyan     , label="checkNeeded"         ]
     }
@@ -79,6 +80,10 @@ digraph GradleSetup {
     subgraph cluster108 {
       label="";
       style=invis;
+      testrunX             [shape=box3d, style=filled, fillcolor=cyan   , label="testrun.<name>"      ]
+      runX                 [shape=box3d, style=filled, fillcolor=cyan   , label="run.<name>"          ]
+      resolveX             [shape=box3d, style=filled, fillcolor=cyan   , label="resolve.<name>"      ]
+      resolve              [shape=box  , style=filled, fillcolor=cyan   , label="resolve"             ]
       exportX              [shape=box3d, style=filled, fillcolor=cyan   , label="export.<name>"       ]
       export               [shape=box  , style=filled, fillcolor=cyan   , label="export"              ]
       runbundlesX          [shape=box3d, style=filled, fillcolor=cyan   , label="runbundles.<name>"   ]
@@ -119,7 +124,8 @@ digraph GradleSetup {
     jar                    -> assemble
     testClasses            -> test
     assemble               -> build
-    assemble               -> check
+    assemble               -> testOSGi
+    testOSGi               -> check
     test                   -> check
     check                  -> checkNeeded
     checkNeeded            -> checkNeeded        [color=red   ]
@@ -133,6 +139,10 @@ digraph GradleSetup {
     assemble               -> release
     assemble               -> exportX
     exportX                -> export
+    assemble               -> resolveX
+    resolveX               -> resolve
+    assemble               -> runX
+    assemble               -> testrunX
     assemble               -> runbundlesX
     runbundlesX            -> runbundles
     release                -> releaseNeeded
@@ -158,12 +168,6 @@ digraph GradleSetup {
     color=black;
 
     subgraph cluster201 {
-      label="";
-      style=invis;
-      index                [shape=box, style=filled, fillcolor=orange   , label="index"               ]
-    }
-
-    subgraph cluster202 {
       label="";
       style=invis;
       cleanAll             [shape=box, style=filled, fillcolor=orange   , label="clean"               ]

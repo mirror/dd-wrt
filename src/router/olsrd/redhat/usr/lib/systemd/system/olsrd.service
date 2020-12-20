@@ -1,0 +1,17 @@
+[Unit]
+Description=OLSRd Routing Daemon
+Documentation=http://www.olsr.org/
+
+[Service]
+EnvironmentFile=/etc/default/olsrd
+User=root
+Type=forking
+ExecStart=/usr/sbin/olsrd -f "${CONFIG_FILE}" -d ${DEBUGLEVEL} -pidfile /run/olsrd.pid
+Restart=on-abnormal
+StandardOutput=syslog
+StandardError=syslog
+PrivateTmp=true
+
+[Install]
+WantedBy=network.target
+

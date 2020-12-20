@@ -10,7 +10,7 @@
 /* Setup the build dependencies */
 buildscript {
   dependencies {
-    classpath files(bndURI) + bndBuildDependencies
+    classpath files(bndURIs) + bndBuildDependencies
   }
 }
 
