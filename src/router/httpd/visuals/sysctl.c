@@ -78,5 +78,5 @@ void ej_sysctl(webs_t wp, int argc, char_t ** argv)
 	struct sysctl_priv p;
 	p.wp = wp;
 	p.cnt = 0;
-	apply_sysctl(&p, &showsysctl);
+	sysctl_apply(&p, &showsysctl);
 }
