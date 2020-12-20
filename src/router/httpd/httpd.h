@@ -183,7 +183,7 @@ typedef char char_t;
 #define a_assert(a)
 
 #define EJALIAS(old, new) \
-	void new(webs_t wp, int argc, char **argv) { \
+	EJ_VISIBLE void new(webs_t wp, int argc, char **argv) { \
 	old(wp, argc, argv); \
 	} \
 
