@@ -2875,6 +2875,21 @@ void ej_show_countrylist(webs_t wp, int argc, char_t ** argv)
 	showOptionsChoose(wp, argv[0], list, nvram_safe_get(argv[0]));
 }
 
+static void mesh_num(char name, int len, int def)
+{
+	char mparam[64];
+	sprintf(mparam, "%s_%s", prefix, name);
+	nvram_default_geti(mparam, def);
+	show_inputlabel(wp, "wl_basic." name, mparam, len, "num", len);
+}
+
+static void mesh_radio(char *name, int def)
+{
+	char mparam[64];
+	sprintf(mparam, "%s_%s", prefix, name);
+	showRadioNoDef(wp, "wl_basic." name, mparam, nvram_default_geti(mparam, def));
+}
+
 void ej_show_wireless_single(webs_t wp, char *prefix)
 {
 	char wl_mode[16];
@@ -4211,20 +4226,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_mesh(prefix)) {
 		if (nvram_nmatch("mesh", "%s_mode", prefix)) {
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.mesh_settings)</script></legend>");
-
-#define mesh_num(name, len, def) \
-			do { \
-			char mparam[64]; \
-			sprintf(mparam, "%s_%s", prefix, name); \
-			nvram_default_geti(mparam, def); \
-			show_inputlabel(wp, "wl_basic." name, mparam, len, "num", len); \
-			} while(0)
-#define mesh_radio(name, def) \
-			do { \
-			char mparam[64]; \
-			sprintf(mparam, "%s_%s", prefix, name); \
-			showRadioNoDef(wp, "wl_basic." name, mparam, nvram_default_geti(mparam, def)); \
-			} while(0)
 
 			mesh_radio("mesh_fwding", 1);
 			mesh_radio("mesh_nolearn", 0);
