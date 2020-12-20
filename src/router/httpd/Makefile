@@ -1493,11 +1493,11 @@ packets.o: packets.c
 	@$(CC) -c -o $@ $^ $(BCFLAGS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/iptables/include  -I$(TOP)/iptables -DIPTCSTATIC=static
 
 	
-httpd: httpd.o $(ADDOBJ) $(OBJS)
+httpd: httpd.c $(ADDOBJ) $(OBJS)
 	@echo "[LD] $@"
 #	gcc -o write_web write_web.c
 #	./write_web www 
-	@$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS)
+	@$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS) $(LTO) $(LDLTO)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
