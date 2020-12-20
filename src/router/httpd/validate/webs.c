@@ -4627,7 +4627,7 @@ static void savesysctl(char *path, char *nvname, char *name, char *sysval, void 
 
 void sysctl_save(webs_t wp)
 {
-	apply_sysctl(wp, &savesysctl);
+	sysctl_apply(wp, &savesysctl);
 }
 #endif
 void wireless_save(webs_t wp)
