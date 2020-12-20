@@ -2624,6 +2624,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 		showrtssettings(wp, var);
 		showairtimepolicy(wp, var, prefix);
+#ifdef HAVE_MAC80211_COMPRESS
 		if (is_mac80211(prefix) && !is_mvebu(prefix)) {
 			char wl_fc[16];
 			sprintf(wl_fc, "%s_fc", var);
@@ -2646,7 +2647,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			else
 				showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 		}
-
+#endif
 		sprintf(wmm, "%s_wmm", var);
 		if (is_mac80211(var))
 			showRadioDefaultOn(wp, "wl_adv.label18", wmm);
@@ -3470,6 +3471,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_atf, "%s_atf", prefix);
 		showRadioDefaultOn(wp, "wl_basic.atf", wl_atf);
 	}
+#ifdef HAVE_MAC80211_COMPRESS
 	if (is_mac80211(prefix) && !is_mvebu(prefix)) {
 		char wl_fc[16];
 		sprintf(wl_fc, "%s_fc", prefix);
@@ -3492,6 +3494,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		else
 			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 	}
+#endif
 	sprintf(wmm, "%s_wmm", prefix);
 	if (is_mac80211(prefix))
 		showRadioDefaultOn(wp, "wl_adv.label18", wmm);
@@ -4531,6 +4534,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_atf, "%s_atf", prefix);
 		showRadioDefaultOn(wp, "wl_basic.atf", wl_atf);
 	}
+#ifdef HAVE_MAC80211_COMPRESS
 	if (is_mac80211(prefix) && !is_mvebu(prefix)) {
 		char wl_fc[16];
 		sprintf(wl_fc, "%s_fc", prefix);
@@ -4553,6 +4557,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		else
 			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 	}
+#endif
 // wmm
 
 	sprintf(wmm, "%s_wmm", prefix);
