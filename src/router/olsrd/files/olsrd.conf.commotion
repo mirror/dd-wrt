@@ -18,15 +18,15 @@ Interface "wlan0"
 {
 }
 
-LoadPlugin "olsrd_arprefresh.so.0.1"
+LoadPlugin "/usr/lib/olsrd_arprefresh.so.0.1"
 {
 }
 
-LoadPlugin "olsrd_dyn_gw.so.0.5"
+LoadPlugin "/usr/lib/olsrd_dyn_gw.so.0.5"
 {
 }
 
-LoadPlugin "olsrd_nameservice.so.0.4"
+LoadPlugin "/usr/lib/olsrd_nameservice.so.0.4"
 {
     # you should set this to your own node name
     PlParam "name"             "commotion-7814921"
@@ -34,14 +34,14 @@ LoadPlugin "olsrd_nameservice.so.0.4"
     PlParam "suffix"           ".mesh"
 }
 
-LoadPlugin "olsrd_p2pd.so.0.1.0"
+LoadPlugin "/usr/lib/olsrd_p2pd.so.0.1.0"
 {
     PlParam "NonOlsrIf"        "eth0"
     PlParam "P2pdTtl"          "5"
     PlParam "UdpDestPort"      "224.0.0.251 5353"
 }
 
-LoadPlugin "olsrd_jsoninfo.so.1.1"
+LoadPlugin "/usr/lib/olsrd_jsoninfo.so.1.1"
 {
     # PlParam "accept"         "0.0.0.0"
 
@@ -49,7 +49,7 @@ LoadPlugin "olsrd_jsoninfo.so.1.1"
     PlParam "port" "56789"
 }
 
-LoadPlugin "olsrd_txtinfo.so.1.1"
+LoadPlugin "/usr/lib/olsrd_txtinfo.so.1.1"
 {
     # PlParam "accept"         "0.0.0.0"
 }

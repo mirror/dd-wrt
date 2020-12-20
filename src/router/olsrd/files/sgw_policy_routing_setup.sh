@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # The olsr.org Optimized Link-State Routing daemon (olsrd)
 #

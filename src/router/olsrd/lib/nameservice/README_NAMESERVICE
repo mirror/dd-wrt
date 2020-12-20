@@ -3,25 +3,25 @@ NAMESERVICE PLUGIN FOR OLSRD
 by Bruno Randolf <bruno.randolf@4g-systems.biz>
 ---------------------------------------------------------------------
 
-a simple DNS replacement for OLSR networks
+A simple DNS replacement for OLSR networks.
 
-this plugin distributes host name (DNS) information over OLSR. every 
+This plugin distributes host name (DNS) information over OLSR. Every
 node which runs the olsr daemon can announce it's own name, names for
-other IP addresses it is associated with (HNAs) and if it is running
-a "real" nameserver which can resolve other (internet) names (upstream 
-dns server).
+other IP addresses it is associated with (HNAs) and whether it is running
+a "real" nameserver which can resolve other (internet) names (upstream
+DNS server).
 
-the nodes in the network collect this information and write the host 
-names to a file (possibly /etc/hosts), and the 3 nearest upstream 
+The nodes in the network collect this information and write the host
+names to a file (possibly /etc/hosts), and the 3 nearest upstream
 nameservers to another file (possibly /etc/resolv.conf).
 
-these files can be used to resolve hostnames on the local system and/or
-be read by a DNS server like "dnsmasq", to make the names available 
+These files can be used to resolve hostnames on the local system and/or
+be read by a DNS server like "dnsmasq", to make the names available
 via the ordinary DNS protocol to other clients as well.
 
-the default location of the hosts file is
-"/var/run/hosts_olsr" on unixes
-"C:\WINDOWS\hosts_olsr" on windows
+The default location of the hosts file is
+- "/var/run/hosts_olsr" on unixes
+- "C:\WINDOWS\hosts_olsr" on windows
 
 
 ---------------------------------------------------------------------

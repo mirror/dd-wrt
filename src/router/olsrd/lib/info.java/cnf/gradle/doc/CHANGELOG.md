@@ -7,9 +7,60 @@ This workspace is compatible with all bndtools versions since 3.3.0.REL.
 
 # Update Log
 
+# Changes since bndtools 4.2.0 release
+
 * this: -
 
-# Changes since bndtools 3.1.1 release
+# Changes since bndtools 4.1.0 release
+
+* Fix the clean task
+* Update the jacoco version to 0.8.3
+* Most bundle versions were updated
+
+# Changes since bndtools 4.0.0 release
+
+* Indexing is now done through the Index task of the Bnd Gradle plugin
+
+# Changes since bndtools 3.5.0 release
+
+* The project moved to GitLab:
+  https://gitlab.com/fhuberts/bndtoolsWorkspace
+
+* Removed the obsolete bnd_preCompileRefresh property
+
+# Changes since bndtools 3.4.0 release
+
+* Update versions in maven files
+
+* Update the jacoco version to 0.7.9
+
+# Changes since bndtools 3.3.0 release
+
+* Fix typos in cnf/ext/repositories.bnd
+
+* update build.bnd
+  Main update is to compile with debug information for non-batch builds.
+
+* Add Maven and Pelagic repositories, remove Bndtools Hub repository
+  Put some relevant bundles in the maven configurations and removed
+  everything from the Build repository: those can be downloaded through
+  the configured Maven repositories.
+
+* Clean up the workspace
+  Removed the bnd repository plugin, it is no longer needed since the
+  bnd gradle plugin contains all the classes that the bnd repository
+  plugin does. Also moved the gradle build dependencies into a file
+  repository to facilitate easier updating from the maven repository
+
+* Make build the default task for all projects
+
+* Add support for the Gradle 'offline' start parameter
+
+# Changes since bndtools 3.2.0 release
+
+* None
+
+# Changes since bndtools 3.1.0 release
 
 * Some documentation snippets were added: section 'Replacing The Bndtools
   Gradle Setup', a remark about using the latest Jenkins plugins, and 2 links

@@ -141,7 +141,7 @@ install: all
 	mkdir -v -p "$(LIBDIR)"
 	cp "$(LIBDIR_BUILD)/$(SONAME)" "$(LIBDIR)/$(SONAME).$(PLUGIN_VER)"
 	$(STRIP) "$(LIBDIR)/$(SONAME).$(PLUGIN_VER)"
-	/sbin/ldconfig -n "$(LIBDIR)"
+	$(LDCONFIG) -n "$(LIBDIR)"
 
 install-headers:
 	rm -fr "$(INCLUDEDIR)/$(PROJECT)"
@@ -151,7 +151,7 @@ install-headers:
 uninstall:
 	rm -f "$(LIBDIR)/$(SONAME)" \
 	      "$(LIBDIR)/$(SONAME).$(PLUGIN_VER)"
-	/sbin/ldconfig -n "$(LIBDIR)"
+	$(LDCONFIG) -n "$(LIBDIR)"
 	rmdir -v -p --ignore-fail-on-non-empty \
 	  "$(LIBDIR)"
 

@@ -102,13 +102,13 @@ INC_DIR_WIREFORMAT_FULL = $(INC_DIR_WIREFORMAT)/$(WIREFORMAT_PROJECT)
 
 
 JAVAHOMEREGEX = ^[[:space:]]*java\.home[[:space:]]*=[[:space:]]*(.+)[[:space:]]*$$
-JAVAHOME = $(shell java -XshowSettings 2>&1 | grep -E '$(JAVAHOMEREGEX)' | sed -r 's/$(JAVAHOMEREGEX)/\1/')
+JAVAHOME = $(shell java -XshowSettings 2>&1 | grep -E '$(JAVAHOMEREGEX)' | sed -r 's/$(JAVAHOMEREGEX)/\1/' | sed -r 's|/jre$$||')
 
 ifeq ($(JAVAHOME),)
   $(error No java detected)
 endif
 
-INC_DIR_JVM = $(JAVAHOME)/../include
+INC_DIR_JVM = $(JAVAHOME)/include
 
 ifeq ($(wildcard $(INC_DIR_JVM)),)
   $(error No java include directory detected at $(INC_DIR_JVM))
@@ -134,9 +134,8 @@ LIBRARIES = -L ../wireformat/lib -l$(WIREFORMAT_PROJECT)
 BUILD_DIR_JNI = $(BUILD_DIR)/jni
 
 JAVASRC = src/main/java
-JAVAVERSIONSRC = 1.6
-JAVAVERSIONDST = 1.6
-JAVABOOTCLASSPATH = resources/ee.j2se/$(JAVAVERSIONSRC)/ee.j2se.jar
+JAVAVERSIONSRC = 1.8
+JAVAVERSIONDST = 1.8
 JAVA_PKG = org.olsr.plugin.pud
 JAVA_PKG_DIR = $(subst .,/,$(JAVA_PKG))
 JAVA_PKG_UNDER = $(subst .,_,$(JAVA_PKG))
@@ -212,7 +211,7 @@ $(BUILD_DIR_JNI)/$(JAVA_PKG_DIR)/PositionUpdate.class: $(JAVASRC)/$(JAVA_PKG_DIR
 ifeq ($(VERBOSE),0)
 	@echo "[JavaC] $<"
 endif
-	$(MAKECMDPREFIX)javac -bootclasspath $(JAVABOOTCLASSPATH) -classpath $(JAVASRC) -source 1.6 -target 1.6 -Xlint -d "$(BUILD_DIR_JNI)" "$<"
+	$(MAKECMDPREFIX)javac -classpath $(JAVASRC) -source $(JAVAVERSIONSRC) -target $(JAVAVERSIONDST) -Xlint -d "$(BUILD_DIR_JNI)" "$<"
 
 # ClusterLeader
 $(BUILD_DIR)/$(JAVA_PKG_UNDER)_ClusterLeader.o: $(SRC_DIR_C)/$(JAVA_PKG_UNDER)_ClusterLeader.c \
@@ -237,7 +236,7 @@ $(BUILD_DIR_JNI)/$(JAVA_PKG_DIR)/ClusterLeader.class: $(JAVASRC)/$(JAVA_PKG_DIR)
 ifeq ($(VERBOSE),0)
 	@echo "[JavaC] $<"
 endif
-	$(MAKECMDPREFIX)javac -bootclasspath $(JAVABOOTCLASSPATH) -classpath $(JAVASRC) -source 1.6 -target 1.6 -Xlint -d "$(BUILD_DIR_JNI)" "$<"
+	$(MAKECMDPREFIX)javac -classpath $(JAVASRC) -source $(JAVAVERSIONSRC) -target $(JAVAVERSIONDST) -Xlint -d "$(BUILD_DIR_JNI)" "$<"
 
 # UplinkMessage
 $(BUILD_DIR)/$(JAVA_PKG_UNDER)_UplinkMessage.o: $(SRC_DIR_C)/$(JAVA_PKG_UNDER)_UplinkMessage.c \
@@ -262,7 +261,7 @@ $(BUILD_DIR_JNI)/$(JAVA_PKG_DIR)/UplinkMessage.class: $(JAVASRC)/$(JAVA_PKG_DIR)
 ifeq ($(VERBOSE),0)
 	@echo "[JavaC] $<"
 endif
-	$(MAKECMDPREFIX)javac -bootclasspath $(JAVABOOTCLASSPATH) -classpath $(JAVASRC) -source 1.6 -target 1.6 -Xlint -d "$(BUILD_DIR_JNI)" "$<"
+	$(MAKECMDPREFIX)javac -classpath $(JAVASRC) -source $(JAVAVERSIONSRC) -target $(JAVAVERSIONDST) -Xlint -d "$(BUILD_DIR_JNI)" "$<"
 
 
 #
@@ -356,7 +355,7 @@ install: all
 	mkdir -v -p "$(LIBDIR)"
 	cp "$(LIBDIR_BUILD)/$(SONAME)" "$(LIBDIR)/$(SONAME).$(PLUGIN_VER)"
 	$(STRIP) "$(LIBDIR)/$(SONAME).$(PLUGIN_VER)"
-	/sbin/ldconfig -n "$(LIBDIR)"
+	$(LDCONFIG) -n "$(LIBDIR)"
 	mkdir -v -p "$(SHAREJAVADIR)"
 	cp -t "$(SHAREJAVADIR)" \
       "$(LIBDIR_BUILD)/$(PROJECT).jar" \
@@ -366,7 +365,7 @@ install: all
 uninstall:
 	rm -f "$(LIBDIR)/$(SONAME)" \
 	      "$(LIBDIR)/$(SONAME).$(PLUGIN_VER)"
-	/sbin/ldconfig -n "$(LIBDIR)"
+	$(LDCONFIG) -n "$(LIBDIR)"
 	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)"
 	rm -f "$(SHAREJAVADIR)/$(PROJECT).jar" \
           "$(SHAREJAVADIR)/$(PROJECT)-src.zip" \

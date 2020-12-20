@@ -105,10 +105,17 @@ struct MibIpInterfaceRow {
   BOOLEAN DisableDefaultRoutes;
 };
 
+#ifdef __WIN64
+typedef LONG64(__stdcall * GETIPINTERFACEENTRY) (struct MibIpInterfaceRow * Row);
+
+typedef LONG64(__stdcall * GETADAPTERSADDRESSES) (ULONG Family, DWORD Flags, PVOID Reserved, PIP_ADAPTER_ADDRESSES pAdapterAddresses,
+                                                 PULONG pOutBufLen);
+#else
 typedef DWORD(__stdcall * GETIPINTERFACEENTRY) (struct MibIpInterfaceRow * Row);
 
 typedef DWORD(__stdcall * GETADAPTERSADDRESSES) (ULONG Family, DWORD Flags, PVOID Reserved, PIP_ADAPTER_ADDRESSES pAdapterAddresses,
                                                  PULONG pOutBufLen);
+#endif
 
 struct InterfaceInfo {
   unsigned int Index;

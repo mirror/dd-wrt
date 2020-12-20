@@ -1,0 +1,18 @@
+LoadPlugin "<olsrd plugin library path>/olsrd_sgwdynspeed.so.1.0.0"
+{
+  # Specifies the file to watch for (dynamic) values for SmartGatewaySpeed.
+  # If not specified then no watching is performed. An example file is
+  # available in the doc directory of olsrd.
+  #
+  # Default: none
+  #
+  #PlParam "speedFile" ""
+
+  # Specifies the period in milliseconds on which to read the speedFile
+  # (if it changed) and activate its new setting for SmartGatewaySpeed.
+  # This setting is only relevant if speedFile has been configured.
+  #
+  # Default: 10000
+  #
+  #PlParam "speedFilePeriod" "10000"
+}

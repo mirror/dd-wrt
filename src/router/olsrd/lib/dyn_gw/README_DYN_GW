@@ -19,12 +19,12 @@ there is really an internet connection (and not just an entry in the
 routing table). If any of the arbitrary many given IPv4 addresses can be
 pinged, the validation was successful. The addresses are pinged in the
 order given in the olsrd.conf (i.e. the first given address is pinged
-first, the the 2nd, and so on). For this to work a command like 
-"ping -c 1 -q <PING-ADDRESS>" must be possible on the system olsrd runs
+first, the the 2nd, and so on). For this to work a command like
+"ping -c 1 -q <PING-ADDRESS>" must be possible on the system OLSRd runs
 on. The validation is based on the return value of this ping command.
 
 Since OLSR uses hopcount/metric on all routes this plugin will
-not respond to Internet gateways added by olsrd.
+not respond to Internet gateways added by OLSRd.
 
 When a Internet gateway is discovered - this node will start
 announcing 0.0.0.0/0 connectivity by HNA messages flooded into
@@ -33,7 +33,7 @@ will not be transmitted. This check is totally dynamic and
 Internet connectivity might come and go.
 
 This plugin can also process more specific routes by specifying groups of HNAs
-(Host and Network Association) and ping hosts. 
+(Host and Network Association) and ping hosts.
 
 This plugin will work very good with a automatic network cable
 detection daemon such as  netplug:

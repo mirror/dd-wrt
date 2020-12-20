@@ -1230,7 +1230,7 @@ static int CreateLocalEtherTunTap(void)
   }
 
   memset(&ifreq, 0, sizeof(ifreq));
-  strncpy(ifreq.ifr_name, EtherTunTapIfName, IFNAMSIZ - 1);
+  strncpy(ifreq.ifr_name, EtherTunTapIfName, IFNAMSIZ);
   ifreq.ifr_name[IFNAMSIZ - 1] = '\0'; /* Ensures null termination */
 
   /* Specify the IFF_TUN flag for IP packets.
@@ -1246,7 +1246,7 @@ static int CreateLocalEtherTunTap(void)
   }
 
   memset(&ifreq, 0, sizeof(ifreq));
-  strncpy(ifreq.ifr_name, EtherTunTapIfName, IFNAMSIZ - 1);
+  strncpy(ifreq.ifr_name, EtherTunTapIfName, IFNAMSIZ);
   ifreq.ifr_name[IFNAMSIZ - 1] = '\0'; /* Ensures null termination */
   ifreq.ifr_addr.sa_family = AF_INET;
 
@@ -1328,7 +1328,7 @@ static int CreateLocalEtherTunTap(void)
 
   /* Set the multicast flag on the interface */
   memset(&ifreq, 0, sizeof(ifreq));
-  strncpy(ifreq.ifr_name, EtherTunTapIfName, IFNAMSIZ - 1);
+  strncpy(ifreq.ifr_name, EtherTunTapIfName, IFNAMSIZ);
   ifreq.ifr_name[IFNAMSIZ - 1] = '\0'; /* Ensures null termination */
 
   ioctlres = ioctl(ioctlSkfd, SIOCGIFFLAGS, &ifreq);
@@ -1458,7 +1458,7 @@ static int CreateInterface(
 
   /* Retrieve the MAC address of the interface. */
   memset(&ifr, 0, sizeof(struct ifreq));
-  strncpy(ifr.ifr_name, ifName, IFNAMSIZ - 1);
+  strncpy(ifr.ifr_name, ifName, IFNAMSIZ);
   ifr.ifr_name[IFNAMSIZ - 1] = '\0'; /* Ensures null termination */
   if (ioctl(ioctlSkfd, SIOCGIFHWADDR, &ifr) < 0)
   {
@@ -1502,7 +1502,7 @@ static int CreateInterface(
   {
     /* For a non-OLSR interface, retrieve the IP address ourselves */
     memset(&ifr, 0, sizeof(struct ifreq));
-    strncpy(ifr.ifr_name, ifName, IFNAMSIZ - 1);
+    strncpy(ifr.ifr_name, ifName, IFNAMSIZ);
     ifr.ifr_name[IFNAMSIZ - 1] = '\0'; /* Ensures null termination */
     if (ioctl(ioctlSkfd, SIOCGIFADDR, &ifr) < 0) 
     {
@@ -1519,7 +1519,7 @@ static int CreateInterface(
 
     /* For a non-OLSR interface, retrieve the IP broadcast address ourselves */
     memset(&ifr, 0, sizeof(struct ifreq));
-    strncpy(ifr.ifr_name, ifName, IFNAMSIZ - 1);
+    strncpy(ifr.ifr_name, ifName, IFNAMSIZ);
     ifr.ifr_name[IFNAMSIZ - 1] = '\0'; /* Ensures null termination */
     if (ioctl(ioctlSkfd, SIOCGIFBRDADDR, &ifr) < 0) 
     {
@@ -1839,7 +1839,7 @@ int AddNonOlsrBmfIf(
     return 1;
   }
 
-  strncpy(NonOlsrIfNames[nNonOlsrIfs], ifName, IFNAMSIZ - 1);
+  strncpy(NonOlsrIfNames[nNonOlsrIfs], ifName, IFNAMSIZ);
   NonOlsrIfNames[nNonOlsrIfs][IFNAMSIZ - 1] = '\0'; /* Ensures null termination */
   nNonOlsrIfs++;
   return 0;

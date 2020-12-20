@@ -104,7 +104,7 @@ endif
 
 install:
 		install -D -m 755 $(NAME) $(LIBDIR)/$(NAME)
-		/sbin/ldconfig -n $(LIBDIR)
+		$(LDCONFIG) -n $(LIBDIR)
 
 clean:
 		rm -f *.[od~] $(LIBNAME) $(BINNAME) $(TMPFILES)

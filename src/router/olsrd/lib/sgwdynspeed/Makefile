@@ -88,8 +88,16 @@ install: all
 	mkdir -p "$(ETCDIR)"
 	cp "$(RESOURCESDIR)/olsrd.sgw.speed.conf" "$(ETCDIR)"
 	$(STRIP) "$(LIBDIR)/$(PLUGIN_FULLNAME)"
+ifneq ($(DOCDIR_OLSRD),)
+	mkdir -p "$(DOCDIR_OLSRD)"
+	cp "README_SGWDYNSPEED" "$(DOCDIR_OLSRD)"
+endif
 
 uninstall:
+ifneq ($(DOCDIR_OLSRD),)
+	rm -f "$(DOCDIR_OLSRD)/README_SGWDYNSPEED"
+	rmdir -p --ignore-fail-on-non-empty "$(DOCDIR_OLSRD)"
+endif
 	rm -f "$(LIBDIR)/lib$(PLUGIN_NAME).so" "$(LIBDIR)/$(PLUGIN_NAME)" "$(ETCDIR)/olsrd.sgw.speed.conf"
 	$(UNINSTALL_LIB)
 	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)" "$(ETCDIR)"

@@ -41,12 +41,21 @@
 # the copyright holders.
 #
 
-OLSRD_PLUGIN =	false
-PLUGIN_NAME =	olsrdinfo
-PLUGIN_VER =	0.0
+OLSRD_PLUGIN = false
+PLUGIN_NAME = olsrdinfo
+PLUGIN_VER = 0.0
 
 TOPDIR =	../..
 include $(TOPDIR)/Makefile.inc
+
+DESTDIR ?=
+USRDIR ?= $(DESTDIR)/usr
+LIBDIR ?= $(USRDIR)/lib
+SHAREDIR ?= $(USRDIR)/share
+SHAREJAVADIR ?= $(SHAREDIR)/java/$(EXENAME)
+
+
+.PHONY: all default_target java install uninstall clean
 
 default_target: java
 
@@ -64,4 +73,24 @@ clean:
 	@./gradlew \
       -PCI -Djsse.enableSNIExtension=false \
       clean
+
+
+install: all
+	mkdir -p "$(SHAREJAVADIR)/javadoc/info.java/api" \
+	  "$(SHAREJAVADIR)/javadoc/info.java/all"
+	cp -t "$(SHAREJAVADIR)" \
+    org.olsr.v1.info.api/generated/org.olsr.v1.info.api.jar \
+    org.olsr.v1.info.proxy.api/generated/org.olsr.v1.info.proxy.api.jar \
+    org.olsr.v1.info.proxy/generated/org.olsr.v1.info.proxy.jar
+	cp -a -t "$(SHAREJAVADIR)/javadoc/info.java/api" javadoc-api/generated/javadoc/*
+	cp -a -t "$(SHAREJAVADIR)/javadoc/info.java/all" javadoc-all/generated/javadoc/*
+
+
+uninstall:
+	rm -f "$(SHAREJAVADIR)/org.olsr.v1.info.api.jar" \
+    "$(SHAREJAVADIR)/org.olsr.v1.info.proxy.api.jar" \
+    "$(SHAREJAVADIR)/org.olsr.v1.info.proxy.jar"
+	rm -fr "$(SHAREJAVADIR)/javadoc/info.java/api" \
+    "$(SHAREJAVADIR)/javadoc/info.java/all"
+	rmdir -p --ignore-fail-on-non-empty "$(SHAREJAVADIR)/javadoc/info.java"
 

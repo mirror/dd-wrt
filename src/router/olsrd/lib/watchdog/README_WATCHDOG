@@ -3,9 +3,9 @@ Watchdog PLUGIN FOR OLSRD
 by Henning Rogge <hrogge@googlemail.com>
 ---------------------------------------------------------------------
 
-This plugin is used for detecting a total freeze of the olsrd by an external script.
-Once per timeinterval (configurable) it writes the current time into
-a file.
+This plugin is used for detecting a total freeze of the OLSRd daemon by an
+external script. Once per timeinterval (configurable) it writes the current
+time into a file.
 
 ---------------------------------------------------------------------
 PLUGIN PARAMETERS (PlParam)

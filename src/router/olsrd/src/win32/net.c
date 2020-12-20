@@ -214,7 +214,11 @@ static OVERLAPPED RouterOver;
 void net_os_set_global_ifoptions(void)
 {
   HMODULE Lib;
+#ifdef __WIN64
+  long long int __stdcall(*enable_router)(HANDLE *, OVERLAPPED *);
+#else
   unsigned int __stdcall(*enable_router)(HANDLE *, OVERLAPPED *);
+#endif
   HANDLE Hand;
 
   Lib = LoadLibrary(WIDE_STRING("iphlpapi.dll"));
@@ -222,7 +226,11 @@ void net_os_set_global_ifoptions(void)
   if (Lib == NULL)
     return;
 
+#ifdef __WIN64
+  enable_router = (long long int __stdcall(*)(HANDLE *, OVERLAPPED *))GetProcAddress(Lib, WIDE_STRING("EnableRouter"));
+#else
   enable_router = (unsigned int __stdcall(*)(HANDLE *, OVERLAPPED *))GetProcAddress(Lib, WIDE_STRING("EnableRouter"));
+#endif
 
   if (enable_router == NULL)
     return;
@@ -250,7 +258,11 @@ static int
 disable_ip_forwarding(int Ver)
 {
   HMODULE Lib;
+#ifdef __WIN64
+  long long int __stdcall(*unenable_router)(OVERLAPPED *, unsigned int *);
+#else
   unsigned int __stdcall(*unenable_router)(OVERLAPPED *, unsigned int *);
+#endif
   unsigned int Count;
 
   Ver = Ver;
@@ -260,7 +272,11 @@ disable_ip_forwarding(int Ver)
   if (Lib == NULL)
     return 0;
 
+#ifdef __WIN64
+  unenable_router = (long long int __stdcall(*)(OVERLAPPED *, unsigned int *))GetProcAddress(Lib, WIDE_STRING("UnenableRouter"));
+#else
   unenable_router = (unsigned int __stdcall(*)(OVERLAPPED *, unsigned int *))GetProcAddress(Lib, WIDE_STRING("UnenableRouter"));
+#endif
 
   if (unenable_router == NULL)
     return 0;

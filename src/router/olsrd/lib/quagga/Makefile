@@ -69,8 +69,18 @@ endif
 install:	$(PLUGIN_FULLNAME)
 		$(STRIP) $(PLUGIN_FULLNAME)
 		$(INSTALL_LIB)
+ifneq ($(DOCDIR_OLSRD),)
+		mkdir -p "$(DOCDIR_OLSRD)"
+		cp -t "$(DOCDIR_OLSRD)" "README_QUAGGA" "patches/quagga-0.98.6.diff" \
+		  "patches/quagga-0.99.21.diff"
+endif
 
 uninstall:
+ifneq ($(DOCDIR_OLSRD),)
+		rm -f "$(DOCDIR_OLSRD)/README_QUAGGA" "$(DOCDIR_OLSRD)/quagga-0.98.6.diff" \
+		  "$(DOCDIR_OLSRD)/quagga-0.99.21.diff"
+		rmdir -p --ignore-fail-on-non-empty "$(DOCDIR_OLSRD)"
+endif
 		$(UNINSTALL_LIB)
 
 clean:
