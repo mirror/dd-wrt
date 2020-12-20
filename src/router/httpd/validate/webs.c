@@ -4608,108 +4608,26 @@ void wireless_join(webs_t wp)
 }
 
 #ifdef HAVE_SYSCTL_EDIT
-#include <dirent.h>
 
-// todo. need a central place to avoid copy and paste
-static char *sysctl_blacklist[] = {	//
-	"base_reachable_time",
-	"nf_conntrack_max",
-	"nf_conntrack_helper",
-	"bridge-nf-call-arptables",
-	"bridge-nf-call-ip6tables",
-	"bridge-nf-call-iptables",
-	"drop_caches",
-	"ledpin",
-	"softled",
-	"default_qdisc",	// configured elsewhere
-	"tcp_bic",		// configured elsewhere
-	"tcp_westwood",		// configured elsewhere
-	"tcp_vegas_cong_avoid",	// configured elsewhere
-};
-
-static char *getsysctl(webs_t wp, char *path, char *nvname, char *name, char *fval)
+static void savesysctl(char *path, char *nvname, char *name, char *sysval, void *priv)
 {
+	webs_t wp = (webs_t)priv;
 	char fname[128];
-	sprintf(fname, "%s/%s", path, name);
-	struct stat sb;
-	stat(fname, &sb);
-	if (!(sb.st_mode & S_IWUSR))
-		return NULL;
-
-	FILE *in = fopen(fname, "rb");
-	if (!in)
-		return NULL;
-	fgets(fval, 127, in);
-	int i;
-	int len = strlen(fval);
-	for (i = 0; i < len; i++) {
-		if (fval[i] == '\t')
-			fval[i] = 0x20;
-		if (fval[i] == '\n')
-			fval[i] = 0;
-	}
-	fclose(in);
+	char fval[128];
+	if (!path)
+		return;
 	char *webvalue = websGetVar(wp, nvname, NULL);
 	if (!webvalue)
-		return NULL;
-	if (strcmp(webvalue, fval))
-		return webvalue;
-	return NULL;
-}
-
-static void sysctl_save_do(webs_t wp, char *path)
-{
-
-	DIR *directory;
-	char buf[256];
-	int cnt = 0;
-	directory = opendir(path);
-	struct dirent *entry;
-	while ((entry = readdir(directory)) != NULL) {
-		if (!strcmp(entry->d_name, "nf_log")) // pointless
-			continue;
-		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
-			continue;
-		if (entry->d_type == DT_DIR) {
-			char dir[1024];
-			sprintf(dir, "%s/%s", path, entry->d_name);
-			sysctl_save_do(wp, dir);
-			continue;
-		}
+		return;
+	if (strcmp(webvalue, sysval)) {
+		nvram_set(nvname, webvalue);
 	}
-	closedir(directory);
-	directory = opendir(path);
-	while ((entry = readdir(directory)) != NULL) {
-		if (entry->d_type == DT_REG) {
-			int a;
-			for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
-				if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
-					goto next;
-			}
-			char title[64] = { 0 };
-			strcpy(title, &path[10]);
-			int i;
-			int len = strlen(title);
-			for (i = 0; i < len; i++)
-				if (title[i] == '/')
-					title[i] = '.';
-			char fval[128];
-			char nvname[128];
-			sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
-			char *value = getsysctl(wp, path, nvname, entry->d_name, fval);
-			if (value) {
-				nvram_set(nvname, value);
-			}
-			next:;
-		}
-
-	}
-	closedir(directory);
+	return;
 }
 
 void sysctl_save(webs_t wp)
 {
-	sysctl_save_do(wp, "/proc/sys");
+	apply_sysctl(wp, &savesysctl);
 }
 #endif
 void wireless_save(webs_t wp)
