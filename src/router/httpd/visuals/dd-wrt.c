@@ -2875,19 +2875,23 @@ void ej_show_countrylist(webs_t wp, int argc, char_t ** argv)
 	showOptionsChoose(wp, argv[0], list, nvram_safe_get(argv[0]));
 }
 
-static void mesh_num(char name, int len, int def)
+static void mesh_num(webs_t wp, char *prefix, char *name, int len, int def)
 {
 	char mparam[64];
 	sprintf(mparam, "%s_%s", prefix, name);
 	nvram_default_geti(mparam, def);
-	show_inputlabel(wp, "wl_basic." name, mparam, len, "num", len);
+	char label[32];
+	sprintf(label, "wl_basic.%s", name);
+	show_inputlabel(wp, label, mparam, len, "num", len);
 }
 
-static void mesh_radio(char *name, int def)
+static void mesh_radio(webs_t wp, char *prefix, char *name, int def)
 {
 	char mparam[64];
 	sprintf(mparam, "%s_%s", prefix, name);
-	showRadioNoDef(wp, "wl_basic." name, mparam, nvram_default_geti(mparam, def));
+	char label[32];
+	sprintf(label, "wl_basic.%s", name);
+	showRadioNoDef(wp, label, mparam, nvram_default_geti(mparam, def));
 }
 
 void ej_show_wireless_single(webs_t wp, char *prefix)
@@ -4227,9 +4231,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		if (nvram_nmatch("mesh", "%s_mode", prefix)) {
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.mesh_settings)</script></legend>");
 
-			mesh_radio("mesh_fwding", 1);
-			mesh_radio("mesh_nolearn", 0);
-			mesh_radio("mesh_gate_announcements", 0);
+			mesh_radio(wp, prefix, "mesh_fwding", 1);
+			mesh_radio(wp, prefix, "mesh_nolearn", 0);
+			mesh_radio(wp, prefix, "mesh_gate_announcements", 0);
 			{
 				char mparam[64];
 				sprintf(mparam, "%s_mesh_hwmp_rootmode", prefix);
@@ -4238,35 +4242,35 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				};
 				showOptionsNames(wp, "wl_basic.mesh_hwmp_rootmode", mparam, "0 2 3 4", names, nvram_default_get(mparam, "0"));
 			}
-			mesh_num("mesh_hwmp_rann_interval", 6, 5000);
-			mesh_num("mesh_hwmp_max_preq_retries", 4, 4);
-			mesh_num("mesh_hwmp_active_path_timeout", 6, 5000);
-			mesh_num("mesh_hwmp_preq_min_interval", 4, 10);
-			mesh_num("mesh_hwmp_net_diameter_traversal_time", 6, 50);
-			mesh_num("mesh_hwmp_active_path_to_root_timeout", 6, 6000);
-			mesh_num("mesh_hwmp_confirmation_interval", 6, 5000);
-			mesh_num("mesh_retry_timeout", 4, 100);
-			mesh_num("mesh_confirm_timeout", 4, 100);
-			mesh_num("mesh_holding_timeout", 4, 100);
-			mesh_num("mesh_max_peer_links", 4, 255);
-			mesh_num("mesh_max_retries", 4, 3);
-			mesh_num("mesh_ttl", 4, 31);
-			mesh_num("mesh_element_ttl", 4, 31);
-			mesh_num("mesh_path_refresh_time", 6, 1000);
-			mesh_num("mesh_min_discovery_timeout", 4, 100);
-			mesh_radio("mesh_auto_open_plinks", 1);
-			mesh_num("mesh_sync_offset_max_neighor", 4, 10);
-			mesh_num("mesh_rssi_threshold", 4, 0);
+			mesh_num(wp, prefix, "mesh_hwmp_rann_interval", 6, 5000);
+			mesh_num(wp, prefix, "mesh_hwmp_max_preq_retries", 4, 4);
+			mesh_num(wp, prefix, "mesh_hwmp_active_path_timeout", 6, 5000);
+			mesh_num(wp, prefix, "mesh_hwmp_preq_min_interval", 4, 10);
+			mesh_num(wp, prefix, "mesh_hwmp_net_diameter_traversal_time", 6, 50);
+			mesh_num(wp, prefix, "mesh_hwmp_active_path_to_root_timeout", 6, 6000);
+			mesh_num(wp, prefix, "mesh_hwmp_confirmation_interval", 6, 5000);
+			mesh_num(wp, prefix, "mesh_retry_timeout", 4, 100);
+			mesh_num(wp, prefix, "mesh_confirm_timeout", 4, 100);
+			mesh_num(wp, prefix, "mesh_holding_timeout", 4, 100);
+			mesh_num(wp, prefix, "mesh_max_peer_links", 4, 255);
+			mesh_num(wp, prefix, "mesh_max_retries", 4, 3);
+			mesh_num(wp, prefix, "mesh_ttl", 4, 31);
+			mesh_num(wp, prefix, "mesh_element_ttl", 4, 31);
+			mesh_num(wp, prefix, "mesh_path_refresh_time", 6, 1000);
+			mesh_num(wp, prefix, "mesh_min_discovery_timeout", 4, 100);
+			mesh_radio(wp, prefix, "mesh_auto_open_plinks", 1);
+			mesh_num(wp, prefix, "mesh_sync_offset_max_neighor", 4, 10);
+			mesh_num(wp, prefix, "mesh_rssi_threshold", 4, 0);
 			{
 				char mparam[64];
 				sprintf(mparam, "%s_mesh_power_mode", prefix);
 				char *names[] = { "\" + wl_basic.mesh_active + \"", "\" + wl_basic.mesh_deep + \"", "\" + wl_basic.mesh_light + \"" };
 				showOptionsNames(wp, "wl_basic.mesh_power_mode", mparam, "active light deep", names, nvram_default_get(mparam, "active"));
 			}
-			mesh_num("mesh_awake_window", 6, 10);
-			mesh_num("mesh_plink_timeout", 6, 0);
-			mesh_radio("mesh_connected_to_gate", 0);
-			mesh_radio("mesh_connected_to_as", 0);
+			mesh_num(wp, prefix, "mesh_awake_window", 6, 10);
+			mesh_num(wp, prefix, "mesh_plink_timeout", 6, 0);
+			mesh_radio(wp, prefix, "mesh_connected_to_gate", 0);
+			mesh_radio(wp, prefix, "mesh_connected_to_as", 0);
 			websWrite(wp, "</fieldset>\n");
 		}
 	}
