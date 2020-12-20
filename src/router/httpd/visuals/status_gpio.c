@@ -32,7 +32,7 @@
 #include <broadcom.h>
 #include <cymac.h>
 
-void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 {
 	char *var, *next, *rgpio, *gpio_name;
 	char nvgpio[32], gpio_new_name[32];
@@ -64,7 +64,7 @@ void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_show_status_gpio_input(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_status_gpio_input(webs_t wp, int argc, char_t ** argv)
 {
 	char *var, *next, *rgpio, *gpio_name;
 	char nvgpio[32], gpio_new_name[32];

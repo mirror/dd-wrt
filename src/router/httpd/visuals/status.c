@@ -48,7 +48,7 @@ void show_caption_simple(webs_t wp, const char *caption);
 int retry_count = -1;
 int refresh_time = STATUS_REFRESH_TIME2;
 
-void ej_show_status_setting(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_status_setting(webs_t wp, int argc, char_t ** argv)
 {
 
 	do_ej(METHOD_GET, NULL, "Status_Router1.asp", wp);
@@ -67,7 +67,7 @@ char *rfctime(const time_t * timep, char *s)
 /*
  * Report time in RFC-822 format 
  */
-void ej_localtime(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_localtime(webs_t wp, int argc, char_t ** argv)
 {
 	time_t tm;
 
@@ -252,7 +252,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 	return;
 }
 
-void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 	int trans = 0;
@@ -262,7 +262,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	nvram_status_get(wp, type, trans);
 }
 
-void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
 {
 	int i = 0;
 	struct dns_lists *dns_list = NULL;
@@ -288,7 +288,7 @@ void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
 	free_dns_list(dns_list);
 }
 
-void ej_show_live_dnslist(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_live_dnslist(webs_t wp, int argc, char_t ** argv)
 {
 	int i = 0;
 	struct dns_entry *entry;
@@ -301,7 +301,7 @@ void ej_show_live_dnslist(webs_t wp, int argc, char_t ** argv)
 	free_dns_list(dns_list);
 }
 
-void ej_show_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_status(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 	char *wan_proto = nvram_safe_get("wan_proto");
@@ -398,7 +398,7 @@ void ej_show_status(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_wan_domain(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_wan_domain(webs_t wp, int argc, char_t ** argv)
 {
 	if (nvram_invmatch("wan_domain", ""))
 		tf_webWriteESCNV(wp, "wan_domain");
@@ -408,7 +408,7 @@ void ej_show_wan_domain(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifndef HAVE_MADWIFI
-void ej_show_wl_mac(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_wl_mac(webs_t wp, int argc, char_t ** argv)
 {
 	char wifmac[32];
 	char mode[32];
@@ -427,7 +427,7 @@ void ej_show_wl_mac(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #else
-void ej_show_wl_mac(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_wl_mac(webs_t wp, int argc, char_t ** argv)
 {
 	char wifmac[32];
 
@@ -470,7 +470,7 @@ void ej_show_wl_mac(webs_t wp, int argc, char_t ** argv)
  * 
  */
 /*
- * void ej_show_meminfo (webs_t wp, int argc, char_t ** argv) { FILE *fp;
+ * EJ_VISIBLE void ej_show_meminfo (webs_t wp, int argc, char_t ** argv) { FILE *fp;
  * char line[254]; if ((fp = popen ("free", "r"))) { while (fgets (line,
  * sizeof (line), fp) != NULL) { websWrite (wp, "%s", line); } pclose (fp); }
  * return; } 

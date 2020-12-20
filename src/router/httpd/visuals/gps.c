@@ -32,7 +32,7 @@
 #include <broadcom.h>
 
 #ifdef HAVE_UNIWIP
-void ej_gps_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_gps_status(webs_t wp, int argc, char_t ** argv)
 {
 	int antennastate = get_gpio(242);
 	if (!antennastate)
@@ -41,13 +41,13 @@ void ej_gps_status(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Antenna Disconnected");
 }
 #else
-void ej_gps_status(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_gps_status(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "%s", nvram_safe_get("gps_status_text"));
 }
 #endif
 
-void ej_getlongitude(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getlongitude(webs_t wp, int argc, char_t ** argv)
 {
 	char *lon = nvram_safe_get("gps_lon");
 	char lon_deg[4];
@@ -74,7 +74,7 @@ void ej_getlongitude(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_getlatidude(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getlatidude(webs_t wp, int argc, char_t ** argv)
 {
 	char *lat = nvram_safe_get("gps_lat");
 	char lat_deg[4];
@@ -100,7 +100,7 @@ void ej_getlatidude(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_getgpslink(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_getgpslink(webs_t wp, int argc, char_t ** argv)
 {
 	char *lon = nvram_safe_get("gps_lon");
 	char lon_deg[4];

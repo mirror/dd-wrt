@@ -69,7 +69,7 @@ static void show_macfilter_if(webs_t wp, char *ifname)
 	websWrite(wp, "</fieldset><br />\n");
 }
 
-void ej_list_mac_layers(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_list_mac_layers(webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
 	int c = get_wl_instances();
@@ -123,7 +123,7 @@ void ej_list_mac_layers(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-void ej_show_macfilter(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_macfilter(webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
 	int c = get_wl_instances();

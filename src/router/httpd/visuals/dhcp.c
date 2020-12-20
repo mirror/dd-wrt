@@ -55,7 +55,7 @@ static int hasmdhcp(void)
 	return 0;
 }
 
-void ej_dhcpenabled(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dhcpenabled(webs_t wp, int argc, char_t ** argv)
 {
 	if (landhcp() || hasmdhcp())
 		websWrite(wp, argv[0]);
@@ -82,7 +82,7 @@ static char *dhcp_reltime(char *buf, time_t t, int sub)
  * dump in array: hostname,mac,ip,expires read leases from leasefile as:
  * expires mac ip hostname 
  */
-void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp;
 	unsigned long expires;
@@ -305,7 +305,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_dhcp_remaining_time(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dhcp_remaining_time(webs_t wp, int argc, char_t ** argv)
 {
 	// tofu12
 

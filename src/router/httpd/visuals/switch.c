@@ -28,7 +28,7 @@
 
 // Note that there is no VLAN #16.  It's just a convieniant way of denoting a 
 // "Tagged" port
-void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 {
 	/*
 	 * vlans[x][y] where x 0-15 are VLANS x 16 is tagging, 17 is

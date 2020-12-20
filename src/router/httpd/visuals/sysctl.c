@@ -73,7 +73,7 @@ static void showsysctl(char *path, char *nvname, char *name, char *sysval, void 
 	return;
 }
 
-void ej_sysctl(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_sysctl(webs_t wp, int argc, char_t ** argv)
 {
 	struct sysctl_priv p;
 	p.wp = wp;

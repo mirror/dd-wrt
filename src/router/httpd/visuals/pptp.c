@@ -33,7 +33,7 @@
 
 #include <broadcom.h>
 
-void ej_dumppptp(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dumppptp(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *in = fopen("/tmp/pptp_connected", "rb");
 	if (!in)

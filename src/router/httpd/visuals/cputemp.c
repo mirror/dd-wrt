@@ -111,7 +111,7 @@ int getCoreTemp(char *p, int *ridx)
 
 #endif
 
-void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 	int i, cpufound = 0;
 	int disable_wifitemp = 0;
@@ -386,7 +386,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "status_router.cputemp", NULL);

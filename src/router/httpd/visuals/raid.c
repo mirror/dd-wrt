@@ -69,7 +69,7 @@ static int checkfs(char *type)
 	return 0;
 }
 
-void ej_support_fs(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_support_fs(webs_t wp, int argc, char_t ** argv)
 {
 	if (argc < 1) {
 		websWrite(wp, "0");
@@ -268,7 +268,7 @@ static int ismember(char *name)
 	return 0;
 }
 
-void ej_show_raid(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.raidmanager)</script></h2>");
 	websWrite(wp, "<fieldset>\n");

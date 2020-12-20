@@ -28,7 +28,7 @@
 
 #include <broadcom.h>
 
-void ej_show_index_setting(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_index_setting(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 
@@ -43,13 +43,13 @@ void ej_show_index_setting(webs_t wp, int argc, char_t ** argv)
 	do_ej(METHOD_GET, NULL, ejname, wp);
 }
 
-void ej_get_wl_max_channel(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_wl_max_channel(webs_t wp, int argc, char_t ** argv)
 {
 
 	websWrite(wp, "%s", WL_MAX_CHANNEL);
 }
 
-void ej_get_wl_domain(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_wl_domain(webs_t wp, int argc, char_t ** argv)
 {
 
 #if COUNTRY == EUROPE
@@ -61,7 +61,7 @@ void ej_get_wl_domain(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
 	int mac, which = atoi(argv[0]);
@@ -100,7 +100,7 @@ void macclone_onload(webs_t wp, char *arg)
 	return;
 }
 
-void ej_atmsettings(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_atmsettings(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_DSL_CPE_CONTROL
 	char ejname[32];

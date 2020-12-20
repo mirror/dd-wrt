@@ -31,7 +31,7 @@
 
 #include <broadcom.h>
 
-void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv)
 {
 
 	FILE *fp;
@@ -49,7 +49,7 @@ void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_exec_milkfish_phonebook(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_exec_milkfish_phonebook(webs_t wp, int argc, char_t ** argv)
 {
 
 	FILE *fp;
@@ -95,7 +95,7 @@ void show_subscriber_table(webs_t wp, char *type, int which)
 	}
 }
 
-void ej_exec_show_subscribers(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_exec_show_subscribers(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *count;
@@ -144,7 +144,7 @@ void show_aliases_table(webs_t wp, char *type, int which)
 	}
 }
 
-void ej_exec_show_aliases(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_exec_show_aliases(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *count;
@@ -202,7 +202,7 @@ void show_registrations_table(webs_t wp, char *type, int which)
 	}
 }
 
-void ej_exec_show_registrations(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_exec_show_registrations(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *count;

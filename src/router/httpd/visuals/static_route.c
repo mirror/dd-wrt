@@ -32,7 +32,7 @@
 
 #include <broadcom.h>
 
-void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char word[256];
@@ -76,7 +76,7 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
  * <% static_route("ipaddr", 0); %> produces "192.168.2.0"
  * <% static_route("lan", 0); %> produces "selected" if nvram_match("lan_ifname", "br0")
  */
-void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 {
 	char *arg;
 	int which, count;
@@ -152,7 +152,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
 {
 	int i, page, tmp = 0;
 	int which;

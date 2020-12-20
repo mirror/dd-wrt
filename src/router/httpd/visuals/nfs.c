@@ -34,7 +34,7 @@
 #include "fs_common.h"
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
 
-void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 {
 
 	struct fsentry *fs, *current;

@@ -35,7 +35,7 @@
 /*
  * Dump firewall log 
  */
-void ej_dumplog(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 {
 	char *buf, *line, *next, *s;
 	int len;
