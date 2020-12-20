@@ -114,6 +114,9 @@ endif
 ifeq ($(CONFIG_TDMA),y)
   CPTCFG_MAC80211_TDMA=y
 endif
+ifeq ($(CONFIG_MAC80211_COMPRESS),y)
+  CPTCFG_MAC80211_COMPRESS=y
+endif
 
 KERNEL_ARCH=$(strip $(subst aarch64,arm64,$(subst i386,x86,$(subst armeb,arm,$(subst mipsel,mips,$(subst mips64,mips,$(subst mips64el,mips,$(subst sh2,sh,$(subst sh3,sh,$(subst sh4,sh,$(ARCH)))))))))))
 
@@ -247,6 +250,9 @@ ifeq ($(CONFIG_MAC80211_RT2800),y)
 endif
 ifeq ($(CPTCFG_MAC80211_MESH),y)
 	echo "CPTCFG_MAC80211_MESH=y" >>$(MAC80211_PATH)/.config_temp
+endif
+ifeq ($(CPTCFG_MAC80211_COMPRESS),y)
+	echo "CPTCFG_MAC80211_COMPRESS=y" >>$(MAC80211_PATH)/.config_temp
 endif
 ifneq ($(CONFIG_MAC80211_NOLEDS),y)
 	echo "CPTCFG_MAC80211_LEDS=y" >>$(MAC80211_PATH)/.config_temp
