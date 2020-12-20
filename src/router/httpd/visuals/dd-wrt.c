@@ -2880,16 +2880,16 @@ static void mesh_num(webs_t wp, char *prefix, char *name, int len, int def)
 	char mparam[64];
 	sprintf(mparam, "%s_%s", prefix, name);
 	nvram_default_geti(mparam, def);
-	char label[32];
+	char label[64];
 	sprintf(label, "wl_basic.%s", name);
 	show_inputlabel(wp, label, mparam, len, "num", len);
 }
 
 static void mesh_radio(webs_t wp, char *prefix, char *name, int def)
 {
-	char mparam[64];
+    	char mparam[64];
 	sprintf(mparam, "%s_%s", prefix, name);
-	char label[32];
+	char label[64];
 	sprintf(label, "wl_basic.%s", name);
 	showRadioNoDef(wp, label, mparam, nvram_default_geti(mparam, def));
 }
