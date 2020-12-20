@@ -672,7 +672,7 @@ void ej_get_wl_value(webs_t wp, int argc, char_t ** argv)
 
 }
 
-void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
+void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 {
 	char *type, *security_mode;
 	char var[80];

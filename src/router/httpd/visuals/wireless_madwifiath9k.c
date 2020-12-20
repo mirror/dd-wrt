@@ -51,7 +51,7 @@
 #include <net/if.h>
 #include <dd_list.h>
 
-int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask)
+int active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask)
 {
 	char mac[32];
 	struct mac80211_info *mac80211_info;

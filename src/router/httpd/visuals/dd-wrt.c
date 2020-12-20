@@ -971,7 +971,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	websWrite(wp, "</select></div>\n");
 	rep(prefix, 'X', '.');
 	cprintf("ej show wpa\n");
-	ej_show_wpa_setting(wp, argc, argv, prefix);
+	internal_ej_show_wpa_setting(wp, argc, argv, prefix);
 
 }
 
@@ -2894,7 +2894,7 @@ static void mesh_radio(webs_t wp, char *prefix, char *name, int def)
 	showRadioNoDef(wp, label, mparam, nvram_default_geti(mparam, def));
 }
 
-void ej_show_wireless_single(webs_t wp, char *prefix)
+void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 {
 	char wl_mode[16];
 	char wl_macaddr[18];
@@ -4785,7 +4785,7 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		char buf[16];
 		sprintf(buf, WIFINAME "%d", i);
-		ej_show_wireless_single(wp, buf);
+		internal_ej_show_wireless_single(wp, buf);
 	}
 #ifdef HAVE_GUESTPORT
 	websWrite(wp, "<input type=\"hidden\" name=\"gp_modify\" id=\"gp_modify\" value=\"\">\n");
