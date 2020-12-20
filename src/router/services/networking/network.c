@@ -5237,6 +5237,7 @@ static void writenet(char *path, int cpumask, char *ifname)
 }
 
 #ifdef HAVE_MADWIFI
+#ifdef HAVE_MAC80211_COMPRESS
 static void load_compressor(void)
 {
 	insmod("xxhash");
@@ -5280,7 +5281,10 @@ static void set_frame_compression(char *prefix, char *interface)
 	}
 
 }
-
+#else
+static void load_compressor(void) {}
+static void set_frame_compression(char *prefix, char *interface) {}
+#endif
 #endif
 void set_mesh_params(char *interface);
 
