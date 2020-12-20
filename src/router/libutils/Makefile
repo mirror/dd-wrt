@@ -289,6 +289,9 @@ endif
 ifeq ($(CONFIG_ANTAIRA_MINI),y)
     CFLAGS += -DHAVE_ANTAIRA_MINI
 endif
+#ifeq ($(CONFIG_SYSCTL_EDIT),y)
+    CFLAGS += -DHAVE_SYSCTL_EDIT
+#endif
 
 ifeq ($(CONFIG_NEXTMEDIA),y)
   CFLAGS += -DHAVE_NEXTMEDIA

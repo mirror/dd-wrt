@@ -206,8 +206,8 @@ int count_processes(char *pidName)
 	if ((fp = popen("ps", "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			int len = strlen(line);
-			if (len > sizeof(line)-1)
-				len = sizeof(line)-1;
+			if (len > sizeof(line) - 1)
+				len = sizeof(line) - 1;
 			line[len - 1] = ' ';
 			line[len] = 0;
 			if (strstr(line, safename) && !strstr(line, zombie)) {
@@ -559,7 +559,6 @@ int check_wan_link(int num)
 
 	return wan_link;
 }
-
 
 int wanactive(char *wanaddr)
 {
@@ -1221,7 +1220,6 @@ int _domod(char *module, char *loader)
 	}
 	return ret;
 }
-
 
 int insmod(char *module)
 {
@@ -2197,4 +2195,80 @@ char *getAllDrives(void)
 	return s_getDrives(0);
 }
 
+#ifdef HAVE_SYSCTL_EDIT
+#include <dirent.h>
+
+static char *sysctl_blacklist[] = { SYSCTL_BLACKLIST };
+
+static void internal_sysctl_apply(char *path, void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv))
+{
+
+	DIR *directory;
+	char buf[256];
+	int cnt = 0;
+	directory = opendir(path);
+	struct dirent *entry;
+	while ((entry = readdir(directory)) != NULL) {
+		if ((!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")))
+			continue;
+		if (entry->d_type == DT_DIR) {
+			char dir[1024];
+			sprintf(dir, "%s/%s", path, entry->d_name);
+			internal_sysctl_apply(dir, priv, callback);
+			continue;
+		}
+	}
+	closedir(directory);
+	directory = opendir(path);
+	while ((entry = readdir(directory)) != NULL) {
+		if (entry->d_type == DT_REG) {
+			int a;
+			for (a = 0; a < sizeof(sysctl_blacklist) / sizeof(char *); a++) {
+				if (!strcmp(entry->d_name, sysctl_blacklist[a]))	// supress kernel warning
+					goto next;
+			}
+
+			char fname[128];
+			char fval[128];
+			sprintf(fname, "%s/%s", path, entry->d_name);
+			struct stat sb;
+			stat(fname, &sb);
+			if (!(sb.st_mode & S_IWUSR))
+				continue;
+			FILE *in = fopen(fname, "rb");
+			if (!in)
+				continue;
+			fgets(fval, 127, in);
+			int i;
+			int len = strlen(fval);
+			for (i = 0; i < len; i++) {
+				if (fval[i] == '\t')
+					fval[i] = 0x20;
+				if (fval[i] == '\n')
+					fval[i] = 0;
+			}
+			fclose(in);
+
+			char title[64] = { 0 };
+			strcpy(title, &path[10]);
+			len = strlen(title);
+			for (i = 0; i < len; i++)
+				if (title[i] == '/')
+					title[i] = '.';
+			char nvname[128];
+			sprintf(nvname, "%s%s%s", title, strlen(title) ? "." : "", entry->d_name);
+			callback(path, nvname, entry->d_name, fval, priv);
+		      next:;
+		}
+
+	}
+	callback(NULL, NULL, NULL, NULL, priv);
+	closedir(directory);
+}
+
+void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv))
+{
+	internal_sysctl_apply("/proc/sys", priv, callback);
+}
+#endif
 #endif

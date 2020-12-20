@@ -1513,4 +1513,21 @@ int has_igmpsnooping(void);
 
 #endif
 
+#define SYSCTL_BLACKLIST \
+	"base_reachable_time", \
+	"nf_conntrack_max", \
+	"nf_conntrack_helper", \
+	"bridge-nf-call-arptables", \
+	"bridge-nf-call-ip6tables", \
+	"bridge-nf-call-iptables", \
+	"drop_caches", \
+	"ledpin", \
+	"softled", \
+	"default_qdisc", \
+	"tcp_bic", \
+	"tcp_westwood", \
+	"tcp_vegas_cong_avoid"
+
+void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv));
+
 #endif
