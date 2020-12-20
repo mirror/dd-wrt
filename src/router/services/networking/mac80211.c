@@ -270,6 +270,11 @@ void mesh_params_main(int argc, char *argv[])
 	}
 }
 
+static void setchanbw(char *wif, char *driver, int bw)
+{
+	sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/%s/bwmode", bw, wif, driver);
+}
+
 void configure_single_ath9k(int count)
 {
 	char *next;
@@ -337,43 +342,25 @@ void configure_single_ath9k(int count)
 	}
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
+	char *driver = "ath9k";
+	int bwmax = 20;
+	int bwmin = 2;
 	if (isath5k) {
-		if (nvram_matchi(bw, 2))
-			sysprintf("echo 2 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
-		else if (nvram_matchi(bw, 5))
-			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
-		else if (nvram_matchi(bw, 10))
-			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
-		else if (nvram_matchi(bw, 40))
-			sysprintf("echo 40 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
-		else
-			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
-	} else if (isath10k) {
-		if (nvram_matchi(bw, 2))
-			sysprintf("echo 2 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
-		else if (nvram_matchi(bw, 5))
-			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
-		else if (nvram_matchi(bw, 10))
-			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
-		else
-			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
-	} else if (ismt7615) {
-		if (nvram_matchi(bw, 5))
-			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/mt76/chanbw", wif);
-		else if (nvram_matchi(bw, 10))
-			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/mt76/chanbw", wif);
-		else
-			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/mt76/chanbw", wif);
-	} else {
-		if (nvram_matchi(bw, 2))
-			sysprintf("echo 2 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
-		else if (nvram_matchi(bw, 5))
-			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
-		else if (nvram_matchi(bw, 10))
-			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
-		else
-			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+		driver = "ath5k";
+		bwmax = 40;
+	} else if (isath10k)
+		driver = "ath10k";
+	else if (ismt7615) {
+		bwmin = 5;
+		driver = "mt76";
 	}
+	int chanbw = nvram_geti(bw);
+	if (chanbw < bwmin)
+		chanbw = bwmin;
+	if (chanbw > bwmax)
+		chanbw = bwmax;
+	setchanbw(wif, driver, chanbw);
+
 	char wl_intmit[32];
 	sprintf(wl_intmit, "%s_intmit", dev);
 	char wl_qboost[32];
