@@ -1515,6 +1515,7 @@ int has_igmpsnooping(void);
 
 #define SYSCTL_BLACKLIST \
 	"base_reachable_time", \
+	"retrans_time", \
 	"nf_conntrack_max", \
 	"nf_conntrack_helper", \
 	"bridge-nf-call-arptables", \
