@@ -233,18 +233,13 @@ case $1 in
 
         # create HTML page
 	rm -f $3.tmp
-	cp $dataDir/usage.htm1 $3.tmp
 
 	#!@todo fix publishing
 	while IFS=, read PEAKUSAGE_IN MAC IP IFACE PEAKUSAGE_OUT TOTAL FIRSTSEEN LASTSEEN
 	do
-	    echo "
-new Array(\"$(lookup $MAC $IP $4)\",\"$MAC\",\"$IP\",
-$PEAKUSAGE_IN,$PEAKUSAGE_OUT,$TOTAL,\"$FIRSTSEEN\",\"$LASTSEEN\")," >> $3.tmp
+	    echo $MAC $IP $IFACE $PEAKUSAGE_IN $PEAKUSAGE_OUT $TOTAL  >> $3.tmp
 	done < /tmp/sorted_$$.tmp
-	echo "0);" >> $3.tmp
 	
-	sed "s/(date)/`date`/" < $dataDir/usage.htm2 >> $3.tmp
 	mv $3.tmp $3
 
 	unlock

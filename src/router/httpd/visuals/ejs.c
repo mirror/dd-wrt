@@ -2792,7 +2792,14 @@ EJ_VISIBLE void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 {
-	FILE *f;
+	FILE *f = fopen("/tmp/bw.db","rb");
+	if (!f) {
+		eval("wrtbwmon","setup","/tmp/bw.db");
+	}else
+	    fclose(f);
+	eval("wrtbwmon","update","/tmp/bw.db");
+	eval("wrtbwmon","publish","/tmp/bw.db", "/tmp/report.tmp");
+
 	FILE *host;
 	FILE *conn;
 	char buf[256];
@@ -2802,19 +2809,21 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	char fullip[18];
 	char mac[18];
 	char landev[16];
+	char peakin[16];
+	char peakout[16];
+	char total[16];
 	int count = 0;
 	int i, len;
 	int conn_count = 0;
+	
 
-	if ((f = fopen("/proc/net/arp", "r")) != NULL) {
+	if ((f = fopen("/tmp/report.tmp", "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), f)) {
-			if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
+	    		if (sscanf(buf, "%s %s %s %s %s %s", mac, ip, landev, peakin, peakout, total ) != 6)
 				continue;
 			if ((strlen(mac) != 17)
 			    || (strcmp(mac, "00:00:00:00:00:00") == 0))
 				continue;
-//                      if (strcmp(landev, nvram_safe_get("wan_iface")) == 0)
-//                              continue;       // skip all but LAN arp entries
 			strcpy(hostname, "*");	// set name to *
 
 			/*
@@ -2831,23 +2840,6 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 				fclose(conn);
 			}
 
-			/*
-			 * end count 
-			 */
-
-			/*
-			 * do nslookup 
-			 */
-
-			// struct servent *servp;
-			// char buf1[256];
-			// 
-			// getHostName (buf1, ip);
-			// if (strcmp(buf1, "unknown"))
-			// strcpy (hostname, buf1);
-			/*
-			 * end nslookup 
-			 */
 
 			/*
 			 * look into hosts file for hostnames (static leases) 
@@ -2907,7 +2899,7 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			len = strlen(mac);
 			for (i = 0; i < len; i++)
 				mac[i] = toupper(mac[i]);
-			websWrite(wp, "%c'%s','%s','%s','%d', '%s'", (count ? ',' : ' '), hostname, ip, mac, conn_count, landev);
+			websWrite(wp, "%c'%s','%s','%s','%d', '%s','%s','%s','%s'", (count ? ',' : ' '), hostname, ip, mac, conn_count, landev, peakin, peakout, total);
 			++count;
 			conn_count = 0;
 		}
