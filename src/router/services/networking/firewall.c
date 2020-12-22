@@ -2865,7 +2865,7 @@ void start_loadfwmodules(void)
 
 #ifdef HAVE_SYSCTL_EDIT
 
-static void setsysctl(char *path, char *nvname, char *name, void *priv)
+static void setsysctl(char *path, char *nvname, char *name, char *sysval, void *priv)
 {
 	long cleanup = (long)priv;
 	char fname[128];
@@ -2983,7 +2983,6 @@ void start_firewall(void)
 	writeprocsysnet("ipv4/icmp_echo_ignore_broadcasts", nvram_default_get("net.ipv4.icmp_echo_ignore_broadcasts", "1"));
 	writeprocsysnet("ipv4/tcp_rfc1337", nvram_default_get("net.ipv4.tcp_rfc1337", "1"));
 	writeprocsysnet("ipv4/tcp_syncookies", nvram_default_get("net.ipv4.tcp_syncookies", "1"));
-
 	char vifs[256];
 	getIfLists(vifs, 256);
 	/*
