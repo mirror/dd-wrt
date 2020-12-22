@@ -632,7 +632,9 @@ endif
 ifneq ($(CONFIG_MICRO),y)
 	sed -i 's/\# CONFIG_FEATURE_AWK_LIBM is not set/CONFIG_FEATURE_AWK_LIBM=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_ALLOW_EXEC is not set/CONFIG_FEATURE_ALLOW_EXEC=y/g' busybox/.config
-	sed -i 's/\# # CONFIG_FEATURE_IP_NEIGH is not set/CONFIG_FEATURE_IP_NEIGH=y/g' busybox/.config
+ifeq ($(CONFIG_IPV6),y)
+	sed -i 's/\# CONFIG_FEATURE_IP_NEIGH is not set/CONFIG_FEATURE_IP_NEIGH=y/g' busybox/.config
+endif
 endif
 	cd busybox && make oldconfig
 	
