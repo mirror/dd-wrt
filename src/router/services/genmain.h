@@ -172,31 +172,23 @@ int check_arguments(int argc, char *argv[])
 					handle_procdeps();
 				} else
 					start();
-				if (nvram_changed())
-				    nvram_commit();
 				return 0;
 			}
 			if (!strcmp(argv[2], "stop") && stop) {
 				dd_debug(DEBUG_SERVICE, "call stop for %s\n", argv[1]);
 				stop();
-				if (nvram_changed())
-				    nvram_commit();
 				return 0;
 			}
 			if (!strcmp(argv[2], "restart") && stop && start) {
 				dd_debug(DEBUG_SERVICE, "call restart for %s\n", argv[1]);
 				stop();
 				start();
-				if (nvram_changed())
-				    nvram_commit();
 				return 0;
 			}
 			if (!strcmp(argv[2], "main") && functiontable[i].main) {
 				dd_debug(DEBUG_SERVICE, "call main for %s\n", argv[1]);
 				char **args = buildargs(argc, argv);
 				int ret = functiontable[i].main(argc - 2, args);
-				if (nvram_changed())
-				    nvram_commit();
 				return ret;
 			}
 			end(argv);
