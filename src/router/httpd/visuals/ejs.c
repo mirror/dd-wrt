@@ -2790,6 +2790,132 @@ EJ_VISIBLE void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", buf);
 }
 
+#ifdef HAVE_MICRO
+EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *f;
+	FILE *host;
+	FILE *conn;
+	char buf[256];
+	char hostname[128];
+	char ip[16];
+	char ip2[20];
+	char fullip[18];
+	char mac[18];
+	char landev[16];
+	int count = 0;
+	int i, len;
+	int conn_count = 0;
+
+	if ((f = fopen("/proc/net/arp", "r")) != NULL) {
+		while (fgets(buf, sizeof(buf), f)) {
+			if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
+				continue;
+			if ((strlen(mac) != 17)
+			    || (strcmp(mac, "00:00:00:00:00:00") == 0))
+				continue;
+//                      if (strcmp(landev, nvram_safe_get("wan_iface")) == 0)
+//                              continue;       // skip all but LAN arp entries
+			strcpy(hostname, "*");	// set name to *
+
+			/*
+			 * count open connections per IP 
+			 */
+			if ((conn = fopen("/proc/net/ip_conntrack", "r")) || (conn = fopen("/proc/net/nf_conntrack", "r"))) {
+				strcpy(ip2, ip);
+				strcat(ip2, " ");
+
+				while (fgets(buf, sizeof(buf), conn)) {
+					if (strstr(buf, ip2))
+						conn_count++;
+				}
+				fclose(conn);
+			}
+
+			/*
+			 * end count 
+			 */
+
+			/*
+			 * do nslookup 
+			 */
+
+			// struct servent *servp;
+			// char buf1[256];
+			// 
+			// getHostName (buf1, ip);
+			// if (strcmp(buf1, "unknown"))
+			// strcpy (hostname, buf1);
+			/*
+			 * end nslookup 
+			 */
+
+			/*
+			 * look into hosts file for hostnames (static leases) 
+			 */
+			if ((host = fopen("/tmp/hosts", "r")) != NULL && !strcmp(hostname, "*")) {
+				while (fgets(buf, sizeof(buf), host)) {
+					sscanf(buf, "%15s %*s", fullip);
+
+					if (!strcmp(ip, fullip)) {
+						sscanf(buf, "%*15s %s", hostname);
+					}
+				}
+				fclose(host);
+			}
+			/*
+			 * end hosts file lookup 
+			 */
+
+			/*
+			 * check for dnsmasq leases in /tmp/dnsmasq.leases and /jffs/ if
+			 * hostname is still unknown 
+			 */
+
+			if (!strcmp(hostname, "*")
+			    && nvram_matchi("dhcpd_usenvram", 0)) {
+				if (!(host = fopen("/tmp/dnsmasq.leases", "r")))
+					host = fopen("/jffs/dnsmasq.leases", "r");
+
+				if (host) {
+
+					while (fgets(buf, sizeof(buf), host)) {
+						sscanf(buf, "%*s %*s %15s %*s", fullip);
+
+						if (strcmp(ip, fullip) == 0) {
+							sscanf(buf, "%*s %*s %*s %s", hostname);
+						}
+					}
+					fclose(host);
+				}
+			}
+			/*
+			 * end dnsmasq.leases check 
+			 */
+
+			/*
+			 * check nvram for dnsmasq leases in nvram if hostname is still
+			 * unknown 
+			 */
+
+			if (!strcmp(hostname, "*")
+			    && nvram_matchi("dhcpd_usenvram", 1)) {
+				sscanf(nvram_nget("dnsmasq_lease_%s", ip), "%*s %*s %*s %s", hostname);
+			}
+			/*
+			 * end nvram check 
+			 */
+			len = strlen(mac);
+			for (i = 0; i < len; i++)
+				mac[i] = toupper(mac[i]);
+			websWrite(wp, "%c'%s','%s','%s','%d', '%s','N/A','N/A','N/A'", (count ? ',' : ' '), hostname, ip, mac, conn_count, landev);
+			++count;
+			conn_count = 0;
+		}
+		fclose(f);
+	}
+}
+#else
 EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *f = fopen("/tmp/bw.db","rb");
@@ -2906,6 +3032,7 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 		fclose(f);
 	}
 }
+#endif
 
 #ifdef HAVE_PPPOESERVER
 
