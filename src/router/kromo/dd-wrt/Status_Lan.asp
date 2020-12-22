@@ -123,7 +123,7 @@ function getSize(size) {
         size/=base; pos++;
     }
     if (pos > 2) precision=1000; else precision = 1;
-    return (Math.round(size*precision)/precision)+' '+prefix[pos];}
+    return (Math.round(size*precision)/precision)+prefix[pos];}
 
 function setARPTable() {
 	var table = document.getElementById("active_clients_table");
