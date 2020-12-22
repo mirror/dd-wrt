@@ -150,6 +150,8 @@ int nvhas(char *nvname, char *key);
  */
 extern int nvram_set(const char *name, const char *value);
 
+extern int nvram_changed(void);
+
 /*
  * Unset an NVRAM variable. Pointers to previously set values
  * remain valid until a set.
