@@ -291,7 +291,7 @@ addEvent(window, "unload", function() {
 										<th width="5%">In</th>
 										<th width="5%">Out</th>
 										<th width="5%">Total</th>
-										<th width="15%"><% tran("status_lan.concount"); %></th>
+										<th width="10%"><% tran("status_lan.concount"); %></th>
 										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
 								</table>
