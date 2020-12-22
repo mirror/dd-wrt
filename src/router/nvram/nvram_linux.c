@@ -208,7 +208,7 @@ int nvram_set(const char *name, const char *value)
 #endif
 	if (!strcmp(name, "et0macaddr_safe") && nvram_get("et0macaddr_safe"))
 	    return 0; //ignore if already set
-	nvram_changed = 1;
+	nvram_mod = 1;
 	ret = _nvram_set(name, value);
 
 	for (v = nvram_converts; v->name; v++) {
