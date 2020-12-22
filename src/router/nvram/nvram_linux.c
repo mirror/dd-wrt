@@ -38,7 +38,7 @@ static long NVRAMSPACE = NVRAM_SPACE;
 /* Globals */
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
-static int nvram_changed=0;
+static int nvram_mod=0;
 static int _nvram_init(void)
 {
 	if (nvram_fd >= 0)
@@ -222,8 +222,8 @@ int nvram_set(const char *name, const char *value)
 
 int nvram_changed(void)
 {
-    int ret = nvram_changed;
-    nvram_changed  = 0;
+    int ret = nvram_mod;
+    nvram_mod  = 0;
     return ret;
 }
 
