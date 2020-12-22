@@ -2809,7 +2809,7 @@ void start_firewall6(void)
 	if (nvram_matchi("ipv6_enable", 0))
 		return;
 	fprintf(stderr, "start firewall6\n");
-	insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter");
+	insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter ip6table_mangle");
 	eval("ip6tables", "-F", "INPUT");
 	eval("ip6tables", "-F", "FORWARD");
 	eval("ip6tables", "-F", "OUTPUT");
