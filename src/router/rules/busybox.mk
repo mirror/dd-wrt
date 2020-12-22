@@ -629,6 +629,10 @@ endif
 	echo "# CONFIG_FEATURE_FIND_EMPTY is not set" >> busybox/.config
 	echo "# CONFIG_SHELL_HUSH is not set" >> busybox/.config
 	echo "CONFIG_FEATURE_SYSLOGD_PRECISE_TIMESTAMPS=y" >> busybox/.config
+ifneq ($(CONFIG_MICRO),y)
+	sed -i 's/\# CONFIG_FEATURE_AWK_LIBM is not set/CONFIG_FEATURE_AWK_LIBM=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_ALLOW_EXEC is not set/CONFIG_FEATURE_ALLOW_EXEC=y/g' busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
