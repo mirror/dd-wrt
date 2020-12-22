@@ -38,7 +38,7 @@ static long NVRAMSPACE = NVRAM_SPACE;
 /* Globals */
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
-
+static int nvram_changed=0;
 static int _nvram_init(void)
 {
 	if (nvram_fd >= 0)
@@ -208,6 +208,7 @@ int nvram_set(const char *name, const char *value)
 #endif
 	if (!strcmp(name, "et0macaddr_safe") && nvram_get("et0macaddr_safe"))
 	    return 0; //ignore if already set
+	nvram_changed = 1;
 	ret = _nvram_set(name, value);
 
 	for (v = nvram_converts; v->name; v++) {
@@ -217,6 +218,13 @@ int nvram_set(const char *name, const char *value)
 		}
 	}
 	return ret;
+}
+
+int nvram_changed(void)
+{
+    int ret = nvram_changed;
+    nvram_changed  = 0;
+    return ret;
 }
 
 int nvram_immed_set(const char *name, const char *value)
