@@ -2961,9 +2961,12 @@ void start_firewall(void)
 	writeprocsysnet("core/wmem_max", nvram_default_get("net.core.wmem_max", "262144"));
 	writeprocsysnet("ipv4/tcp_rmem", nvram_default_get("net.ipv4.tcp_rmem", "8192 131072 262144"));
 	writeprocsysnet("ipv4/tcp_wmem", nvram_default_get("net.ipv4.tcp_wmem", "8192 131072 262144"));
-	writeprocsysnet("ipv4/neigh/default/gc_thresh1", nvram_default_get("net.ipv4.neigh.default.gc_thresh1", "1024"));
+	writeprocsysnet("ipv4/neigh/default/gc_thresh1", nvram_default_get("net.ipv4.neigh.default.gc_thresh1", "1"));
 	writeprocsysnet("ipv4/neigh/default/gc_thresh2", nvram_default_get("net.ipv4.neigh.default.gc_thresh2", "2048"));
 	writeprocsysnet("ipv4/neigh/default/gc_thresh3", nvram_default_get("net.ipv4.neigh.default.gc_thresh3", "4096"));
+	writeprocsysnet("ipv6/neigh/default/gc_thresh1", nvram_default_get("net.ipv6.neigh.default.gc_thresh1", "1"));
+	writeprocsysnet("ipv6/neigh/default/gc_thresh2", nvram_default_get("net.ipv6.neigh.default.gc_thresh2", "2048"));
+	writeprocsysnet("ipv6/neigh/default/gc_thresh3", nvram_default_get("net.ipv6.neigh.default.gc_thresh3", "4096"));
 #endif
 	writeprocsysnet("ipv4/tcp_fin_timeout", nvram_default_get("net.ipv4.tcp_fin_timeout", "40"));
 	writeprocsysnet("ipv4/tcp_keepalive_intvl", nvram_default_get("net.ipv4.tcp_keepalive_intvl", "30"));
