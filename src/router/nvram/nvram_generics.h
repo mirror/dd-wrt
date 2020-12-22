@@ -270,6 +270,7 @@ char *nvram_default_get(const char *var, const char *def)
 {
 	char *v = nvram_get(var);
 	if (v == NULL || !*v) {
+		fprintf(stderr, "set default to %s\n",def);
 		nvram_set(var, def);
 		return (char *)def;
 	}
