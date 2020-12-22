@@ -111,7 +111,7 @@ fid==3 {
     ndp_ip    = $1
     ndp_dev   = $3
     ndp_mac   = $5
-    ndp_state = $6
+    ndp_state = $12
     if(ndp_state == "REACHABLE" && !(ndp_ip in ip)){
 	if(debug)
 	    print "new host:", ndp_ip, ndp_state > "/dev/stderr"
