@@ -116,6 +116,15 @@ function setDHCPTable() {
 	}
 }
 
+function getSize(size) {
+    var prefix=new Array("","k","M","G","T","P","E","Z"); var base=1000;
+    var pos=0;
+    while (size>base) {
+        size/=base; pos++;
+    }
+    if (pos > 2) precision=1000; else precision = 1;
+    return (Math.round(size*precision)/precision)+' '+prefix[pos];}
+
 function setARPTable() {
 	var table = document.getElementById("active_clients_table");
 	var val = arguments;
@@ -127,7 +136,7 @@ function setARPTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 5) {
+	for(var i = 0; i < val.length; i = i + 8) {
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
 		row.insertCell(-1).innerHTML = val[i];
@@ -142,6 +151,19 @@ function setARPTable() {
 		var cellif = row.insertCell(-1);
 		cellif.style.textAlign = 'center';
 		cellif.innerHTML = val[i+4];
+
+		var cellcount = row.insertCell(-1);
+		cellcount.style.textAlign = 'center';
+		cellcount.innerHTML = getSize(val[i+5]);
+
+		var cellcount = row.insertCell(-1);
+		cellcount.style.textAlign = 'center';
+		cellcount.innerHTML = getSize(val[i+6]);
+		
+		var cellcount = row.insertCell(-1);
+		cellcount.style.textAlign = 'center';
+		cellcount.innerHTML = getSize(val[i+7]);
+
 
 		var cellcount = row.insertCell(-1);
 		cellcount.style.textAlign = 'center';
@@ -262,10 +284,13 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
-										<th width="25%"><% tran("share.hostname"); %></th>
-										<th width="17%"><% tran("share.ip"); %></th>
+										<th width="20%"><% tran("share.hostname"); %></th>
+										<th width="10%"><% tran("share.ip"); %></th>
 										<th width="16%"><% tran("share.mac"); %></th>
 										<th width="10%"><% tran("share.intrface"); %></th>
+										<th width="5%">In</th>
+										<th width="5%">Out</th>
+										<th width="5%">Total</th>
 										<th width="15%"><% tran("status_lan.concount"); %></th>
 										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
