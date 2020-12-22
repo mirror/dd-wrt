@@ -112,6 +112,8 @@ detectLAN()
 detectWAN()
 {
     [ -n "$WAN_IF" ] && echo $WAN_IF && return
+    wan=`get_wanface`
+    [ -n "$WAN_IF" ] && echo $WAN_IF && return
     wan=$(detectIF wan)
     [ -n "$wan" ] && echo $wan && return
     wan=$(ip route show 2>/dev/null | grep default | sed -re '/^default/ s/default.*dev +([^ ]+).*/\1/')
@@ -244,17 +246,12 @@ case $1 in
 
         # create HTML page
 	rm -f $3.tmp
-	cp $dataDir/usage.htm1 $3.tmp
 
 	while IFS=, read PEAKUSAGE_IN MAC IP IFACE PEAKUSAGE_OUT TOTAL FIRSTSEEN LASTSEEN
 	do
-	    echo "
-new Array(\"$(lookup $MAC $IP $4)\",\"$MAC\",\"$IP\",
-$PEAKUSAGE_IN,$PEAKUSAGE_OUT,$TOTAL,\"$FIRSTSEEN\",\"$LASTSEEN\"),"
-	done < /tmp/sorted_$$.tmp >> $3.tmp
-	echo "0);" >> $3.tmp
+	    echo $MAC $IP $IFACE $PEAKUSAGE_IN $PEAKUSAGE_OUT $TOTAL  >> $3.tmp
+	done < /tmp/sorted_$$.tmp
 	
-	sed "s/(date)/`date`/" < $dataDir/usage.htm2 >> $3.tmp
 	mv $3.tmp $3
 
 	unlock
