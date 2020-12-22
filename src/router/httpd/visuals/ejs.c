@@ -2804,8 +2804,8 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	FILE *conn;
 	char buf[256];
 	char hostname[128];
-	char ip[16];
-	char ip2[20];
+	char ip[64];
+	char ip2[70];
 	char fullip[18];
 	char mac[18];
 	char landev[16];
