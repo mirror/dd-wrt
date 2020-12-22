@@ -3232,6 +3232,9 @@ void start_firewall(void)
 #ifdef HAVE_SYSCTL_EDIT
 	start_sysctl_config();
 #endif
+#ifndef HAVE_MICRO
+	eval("wrtbwmon", "setup", "/tmp/bw.db");
+#endif
 }
 
 #ifdef HAVE_IPV6
@@ -3285,5 +3288,8 @@ void stop_firewall(void)
 		start_sfe();
 #endif
 	unlock();
+#ifndef HAVE_MICRO
+	eval("wrtbwmon", "setup", "/tmp/bw.db");
+#endif
 	return;
 }
