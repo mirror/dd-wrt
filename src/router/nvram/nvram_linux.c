@@ -38,7 +38,6 @@ static long NVRAMSPACE = NVRAM_SPACE;
 /* Globals */
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
-static int nvram_mod=0;
 static int _nvram_init(void)
 {
 	if (nvram_fd >= 0)
@@ -160,7 +159,6 @@ static int _nvram_set(const char *name, const char *value)
 
 	if (_nvram_init())
 		return -1;
-
 	/* Wolf add - keep nvram varname to sane len - may prevent corruption */
 	if (strlen(name) > 64) {
 		return -ENOMEM;
@@ -208,7 +206,6 @@ int nvram_set(const char *name, const char *value)
 #endif
 	if (!strcmp(name, "et0macaddr_safe") && nvram_get("et0macaddr_safe"))
 	    return 0; //ignore if already set
-	nvram_mod = 1;
 	ret = _nvram_set(name, value);
 
 	for (v = nvram_converts; v->name; v++) {
@@ -218,13 +215,6 @@ int nvram_set(const char *name, const char *value)
 		}
 	}
 	return ret;
-}
-
-int nvram_changed(void)
-{
-    int ret = nvram_mod;
-    nvram_mod  = 0;
-    return ret;
 }
 
 int nvram_immed_set(const char *name, const char *value)
