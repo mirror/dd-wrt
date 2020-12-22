@@ -30,7 +30,7 @@ function date(    cmd, d){
 BEGIN {
     od=""
     fid=1
-    debug=0
+    debug=1
     rrd=0
 }
 
