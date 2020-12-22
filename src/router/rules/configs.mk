@@ -368,6 +368,9 @@ obj-$(CONFIG_HTOP) += ncurses libnl htop
 obj-$(CONFIG_IPSET) += libmnl ipset
 obj-$(CONFIG_OCTEON) += lmsensors
 obj-$(CONFIG_P7ZIP) += p7zip
+ifneq ($(CONFIG_DIST),"micro")
+obj-y+=wrtbwmon
+endif
 
 
 obj-y+=configs
