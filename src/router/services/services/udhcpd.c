@@ -41,6 +41,7 @@ extern int usejffs;
 
 void stop_udhcpd(void);
 extern void addHost(char *host, char *ip, int withdomain);
+extern void genHosts(void);
 
 static int adjust_dhcp_range(void)
 {
@@ -287,6 +288,7 @@ void start_udhcpd(void)
 		char *cp = leasebuf;
 
 		strcpy(leasebuf, lease);
+		int first = 0;
 		for (i = 0; i < leasenum; i++) {
 			char *mac = strsep(&leasebuf, "=");
 			char *host = strsep(&leasebuf, "=");
@@ -296,6 +298,10 @@ void start_udhcpd(void)
 			if (mac == NULL || host == NULL || ip == NULL)
 				continue;
 			fprintf(fp, "%s %s %s\n", ip, mac, host);
+			if (!first) {
+				genHosts();
+				first = 1;
+			}
 			addHost(host, ip, 1);
 		}
 		free(cp);

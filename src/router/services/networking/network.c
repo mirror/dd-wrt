@@ -80,6 +80,7 @@
 
 #include "../sysinit/devices/ethtools.c"
 
+extern void genHosts(void);
 extern int br_add_bridge(const char *brname);
 extern int br_del_bridge(const char *brname);
 extern int br_add_interface(const char *br, const char *dev);
@@ -2799,15 +2800,7 @@ void start_lan(void)
 	{
 		char word[256];
 		br_set_stp_state("br0", getBridgeSTP("br0", word));
-		// eval ("rm", "/tmp/hosts");
-		addHost("localhost", "127.0.0.1", 0);
-		if (*(nvram_safe_get("wan_hostname"))) {
-			addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 0);
-			addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 1);
-		} else if (*(nvram_safe_get("router_name"))) {
-			addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 0);
-			addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 1);
-		}
+		genHosts();
 	}
 #ifdef HAVE_MICRO
 	br_shutdown();
@@ -5282,8 +5275,13 @@ static void set_frame_compression(char *prefix, char *interface)
 
 }
 #else
-static void load_compressor(void) {}
-static void set_frame_compression(char *prefix, char *interface) {}
+static void load_compressor(void)
+{
+}
+
+static void set_frame_compression(char *prefix, char *interface)
+{
+}
 #endif
 #endif
 void set_mesh_params(char *interface);

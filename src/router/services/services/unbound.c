@@ -28,6 +28,9 @@
 #include <signal.h>
 #include <services.h>
 
+extern void addHost(char *host, char *ip, int withdomain);
+extern void genHosts(void);
+
 static void unbound_config(void)
 {
 #ifdef _SC_NPROCESSORS_ONLN
@@ -130,6 +133,7 @@ static void unbound_config(void)
 
 		strcpy(leasebuf, lease);
 		int i;
+		int first = 0;
 		for (i = 0; i < leasenum; i++) {
 			char *mac = strsep(&leasebuf, "=");
 			char *host = strsep(&leasebuf, "=");
@@ -139,6 +143,10 @@ static void unbound_config(void)
 			if (mac == NULL || host == NULL || ip == NULL)
 				continue;
 
+			if (!first) {
+				genHosts();
+				first = 1;
+			}
 			addHost(host, ip, 1);
 		}
 		free(cp);
