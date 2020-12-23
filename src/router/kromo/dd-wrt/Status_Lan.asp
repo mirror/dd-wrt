@@ -122,7 +122,7 @@ function getSize(size) {
     while (size>base) {
         size/=base; pos++;
     }
-    if (pos > 2) precision=1000; else precision = 1;
+    if (pos > 2) precision=100; else precision = 1;
     return (Math.round(size*precision)/precision)+prefix[pos];}
 
 function setARPTable() {
@@ -287,7 +287,7 @@ addEvent(window, "unload", function() {
 										<th width="20%"><% tran("share.hostname"); %></th>
 										<th width="10%"><% tran("share.ip"); %></th>
 										<th width="16%"><% tran("share.mac"); %></th>
-										<th width="10%"><% tran("share.intrface"); %></th>
+										<th width="5%">If</th>
 										<th width="5%">In</th>
 										<th width="5%">Out</th>
 										<th width="5%">Total</th>
