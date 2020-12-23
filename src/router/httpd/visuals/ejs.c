@@ -1257,7 +1257,7 @@ EJ_VISIBLE void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-#undef getRouterName()
+#undef getRouterName
 EJ_VISIBLE void ej_get_syskernel(webs_t wp, int argc, char_t ** argv)
 {
 	struct utsname name;
@@ -2916,15 +2916,58 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	}
 }
 #else
+struct arptable {
+	char *hostname;
+	char *mac;
+	char *ip;
+	char *ifname;
+	int conncount;
+	long long in;
+	long long out;
+	long long total;
+};
+
+static int addtable(struct arptable **tbl, char *hostname, char *mac, char *ip, char *ifname, int conncount, long long in, long long out, long long total, int *tablelen)
+{
+	struct arptable *table = *tbl;
+	int len = *tablelen;
+	int i;
+	for (i = 0; i < len; i++) {
+		if (!strcmp(mac, table[i].mac) && !strcmp(ifname, table[i].ifname)) {
+			table[i].in += in;
+			table[i].out += out;
+			table[i].total += total;
+			table[i].conncount += conncount;
+			char *oldip = table[i].ip;
+			asprintf(&table[i].ip, "%s<br>%s", oldip, ip);
+			free(oldip);
+			return len;
+		}
+	}
+	table = realloc(table, sizeof(*table) * (len + 1));
+	table[i].hostname = strdup(hostname);
+	table[i].mac = strdup(mac);
+	table[i].ip = strdup(ip);
+	table[i].ifname = strdup(ifname);
+	table[i].in = in;
+	table[i].out = out;
+	table[i].total = total;
+	table[i].conncount = conncount;
+	len++;
+	*tablelen = len;
+	*tbl = table;
+	return len;
+}
+
 EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 {
-	FILE *f = fopen("/tmp/bw.db","rb");
+	FILE *f = fopen("/tmp/bw.db", "rb");
 	if (!f) {
-		eval("wrtbwmon","setup","/tmp/bw.db");
-	}else
-	    fclose(f);
-	eval("wrtbwmon","update","/tmp/bw.db");
-	eval("wrtbwmon","publish","/tmp/bw.db", "/tmp/report.tmp");
+		eval("wrtbwmon", "setup", "/tmp/bw.db");
+	} else
+		fclose(f);
+	eval("wrtbwmon", "update", "/tmp/bw.db");
+	eval("wrtbwmon", "publish", "/tmp/bw.db", "/tmp/report.tmp");
 
 	FILE *host;
 	FILE *conn;
@@ -2941,11 +2984,12 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	int count = 0;
 	int i, len;
 	int conn_count = 0;
-	
+	struct arptable *table = NULL;
+	int tablelen = 0;
 
 	if ((f = fopen("/tmp/report.tmp", "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), f)) {
-	    		if (sscanf(buf, "%s %s %s %s %s %s", mac, ip, landev, peakin, peakout, total ) != 6)
+			if (sscanf(buf, "%s %s %s %s %s %s", mac, ip, landev, peakin, peakout, total) != 6)
 				continue;
 			if ((strlen(mac) != 17)
 			    || (strcmp(mac, "00:00:00:00:00:00") == 0))
@@ -2965,7 +3009,6 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 				}
 				fclose(conn);
 			}
-
 
 			/*
 			 * look into hosts file for hostnames (static leases) 
@@ -3025,11 +3068,20 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			len = strlen(mac);
 			for (i = 0; i < len; i++)
 				mac[i] = toupper(mac[i]);
-			websWrite(wp, "%c'%s','%s','%s','%d', '%s','%s','%s','%s'", (count ? ',' : ' '), hostname, ip, mac, conn_count, landev, peakin, peakout, total);
-			++count;
+			tablelen = addtable(&table, hostname, mac, ip, landev, conn_count, atoll(peakin), atoll(peakout), atoll(total), &tablelen);
 			conn_count = 0;
 		}
 		fclose(f);
+		for (i = 0; i < tablelen; i++) {
+			websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount, table[i].ifname, table[i].in, table[i].out,
+				  table[i].total);
+			free(table[i].hostname);
+			free(table[i].ip);
+			free(table[i].mac);
+			free(table[i].ifname);
+			++count;
+		}
+		free(table);
 	}
 }
 #endif
