@@ -40,6 +40,7 @@
 extern int usejffs;
 
 extern void addHost(char *host, char *ip, int withdomain);
+extern void genHosts(void);
 
 void stop_dnsmasq(void);
 #define IDX_IFNAME 0
@@ -414,7 +415,7 @@ void start_dnsmasq(void)
 			char *lease = nvram_safe_get("static_leases");
 			char *leasebuf = (char *)malloc(strlen(lease) + 1);
 			char *cp = leasebuf;
-
+			int first = 0;
 			strcpy(leasebuf, lease);
 			for (i = 0; i < leasenum; i++) {
 				char *mac = strsep(&leasebuf, "=");
@@ -438,7 +439,13 @@ void start_dnsmasq(void)
 #ifdef HAVE_UNBOUND
 				if (!nvram_matchi("recursive_dns", 1))
 #endif
+				{
+					if (!first) {
+						genHosts();
+						first = 1;
+					}
 					addHost(host, ip, 1);
+				}
 			}
 			free(cp);
 		}

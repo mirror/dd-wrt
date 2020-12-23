@@ -80,6 +80,21 @@ static int alreadyInHost(char *host)
 	}
 }
 
+void addHost(char *host, char *ip, int withdomain);
+
+void genHosts(void)
+{
+	eval("rm", "/tmp/hosts");
+	addHost("localhost", "127.0.0.1", 0);
+	if (*(nvram_safe_get("wan_hostname"))) {
+		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 0);
+		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 1);
+	} else if (*(nvram_safe_get("router_name"))) {
+		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 0);
+		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 1);
+	}
+}
+
 void addHost(char *host, char *ip, int withdomain)
 {
 	char buf[100];
