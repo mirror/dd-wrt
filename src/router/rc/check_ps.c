@@ -71,6 +71,13 @@ static int check_ddns(void)
 	return !search_process("inadyn", 1);
 }
 
+static int check_radvd(void)
+{
+	if (!nvram_matchi("ipv6_enable", 1) || !nvram_matchi("radvd_enable", 1))
+		return 0;
+	return !search_process("radvd", 1);
+}
+
 static int check_httpd(void)
 {
 	if (nvram_match("http_enable", "0") && nvram_match("https_enable", "0"))	// todo: add upstream 
@@ -97,6 +104,9 @@ struct mon mons[] = {
 	{ "dhcpfwd", M_WAN, "dhcpfwd_enable", "1", NULL, NULL, NULL },
 #ifdef HAVE_PRIVOXY
 	{ "privoxy", M_WAN, "privoxy_enable", "1", NULL, NULL, NULL },
+#endif
+#ifdef HAVE_RADVD
+	{ "radvd", M_WAN, "radvd_enable", "1", NULL, NULL, &check_radvd },
 #endif
 #ifdef HAVE_NOCAT
 	{ "splashd", M_WAN, "NC_enable", "1", NULL, NULL, NULL },
