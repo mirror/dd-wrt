@@ -2978,9 +2978,9 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	char fullip[18];
 	char mac[18];
 	char landev[16];
-	char peakin[16];
-	char peakout[16];
-	char total[16];
+	char peakin[64];
+	char peakout[64];
+	char total[64];
 	int count = 0;
 	int i, len;
 	int conn_count = 0;
