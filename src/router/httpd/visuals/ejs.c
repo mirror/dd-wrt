@@ -2912,7 +2912,9 @@ struct arptable {
 	char *hostname;
 	char *mac;
 	char *ip;
+	int proto;
 	unsigned int v4;
+	struct in6_addr v6;
 	char *ifname;
 	int conncount;
 	long long in;
@@ -2933,6 +2935,13 @@ static int addtable(struct arptable **tbl, char *mac, char *ip, char *ifname, lo
 			char *oldip = table[i].ip;
 			asprintf(&table[i].ip, "%s<br>%s", oldip, ip);
 			free(oldip);
+			if (strlen(ip) < 16) {
+				table[i].proto |= 1;
+				inet_aton(ip, (struct in_addr *)&table[i].v4);
+			} else {
+				inet_pton(AF_INET6, ip, &table[i].v6);
+				table[i].proto |= 2;
+			}
 			return len;
 		}
 	}
@@ -2946,7 +2955,11 @@ static int addtable(struct arptable **tbl, char *mac, char *ip, char *ifname, lo
 	table[i].total = total;
 	table[i].conncount = 0;
 	if (strlen(ip) < 16) {
+		table[i].proto |= 1;
 		inet_aton(ip, (struct in_addr *)&table[i].v4);
+	} else {
+		inet_pton(AF_INET6, ip, &table[i].v6);
+		table[i].proto |= 2;
 	}
 
 	len++;
@@ -3027,20 +3040,34 @@ static void readconntrack(struct arptable *tbl, int tablelen)
 	FILE *conn;
 	if ((conn = fopen("/proc/net/ip_conntrack", "r")) || (conn = fopen("/proc/net/nf_conntrack", "r"))) {
 		while (fgets(buf, sizeof(buf), conn)) {
+			char l3proto[32];
 			char proto[32];
 			char state[32];
-			char src[32];
-			sscanf(buf, "%*s %*s %s %*s %*s %s %s", proto, state, src);
+			char src[64];
+			sscanf(buf, "%s %*s %s %*s %*s %s %s", l3proto, proto, state, src);
+			unsigned int v4;
+			struct in6_addr v6;
+			int connv6 = 0;
+			if (!strcmp(l3proto, "ipv6")) {
+				connv6 = 1;
+				if (!strcmp(proto, "tcp")) {
+					inet_pton(AF_INET6, &src[4], &v6);
+				} else
+					inet_pton(AF_INET6, &state[4], &v6);
+			} else {
+				if (!strcmp(proto, "tcp"))
+					inet_aton(&src[4], (struct in_addr *)&v4);
+				else
+					inet_aton(&state[4], (struct in_addr *)&v4);
+			}
 			if (strcmp(state, "ESTABLISHED"))
 				continue;
-			unsigned int v4;
-			if (!strcmp(proto, "udp"))
-				inet_aton(&state[4], (struct in_addr *)&v4);
-			else
-				inet_aton(&src[4], (struct in_addr *)&v4);
 			for (i = 0; i < tablelen; i++) {
-				if (v4 == tbl[i].v4)
+				if (!connv6 && (tbl[i].proto & 1) && v4 == tbl[i].v4)
 					tbl[i].conncount++;
+				else if (connv6 && (tbl[i].proto & 2) && !memcmp(&v6, &tbl[i].v6, sizeof(v6))) {
+					tbl[i].conncount++;
+				}
 			}
 		}
 		fclose(conn);
