@@ -3081,6 +3081,7 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 		eval("wrtbwmon", "setup", "/tmp/bw.db");
 	} else
 		fclose(f);
+	/* todo, rewrite that mess in C, which will speed up everything */
 	eval("wrtbwmon", "update", "/tmp/bw.db");
 	eval("wrtbwmon", "publish", "/tmp/bw.db", "/tmp/report.tmp");
 
