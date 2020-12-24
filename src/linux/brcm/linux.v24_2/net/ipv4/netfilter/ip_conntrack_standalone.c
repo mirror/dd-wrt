@@ -98,7 +98,7 @@ print_conntrack(char *buffer, struct ip_conntrack *conntrack)
 		= __ip_ct_find_proto(conntrack->tuplehash[IP_CT_DIR_ORIGINAL]
 			       .tuple.dst.protonum);
 
-	len = sprintf(buffer, "%-8s %u %lu ",
+	len = sprintf(buffer, "%-8s %u %-8s %u %lu ","ipv4",2,
 		      proto->name,
 		      conntrack->tuplehash[IP_CT_DIR_ORIGINAL]
 		      .tuple.dst.protonum,
