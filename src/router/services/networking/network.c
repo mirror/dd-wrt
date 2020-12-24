@@ -4738,13 +4738,6 @@ void wan_done(char *wan_ifname)
 	 * Restart DNS proxy 
 	 */
 
-#ifdef HAVE_DNSMASQ
-	stop_dnsmasq();
-	start_dnsmasq();
-#endif
-	stop_smartdns();
-	start_smartdns();
-
 	cprintf("start firewall\n");
 
 	/*
@@ -4888,6 +4881,13 @@ void wan_done(char *wan_ifname)
 	cprintf("done\n");
 
 	nvram_set("wan_iface", nvram_safe_get("wan_ifname"));
+
+#ifdef HAVE_DNSMASQ
+	stop_dnsmasq();
+	start_dnsmasq();
+#endif
+	stop_smartdns();
+	start_smartdns();
 
 #ifdef HAVE_OPENVPN
 	cprintf("starting openvpn\n");
