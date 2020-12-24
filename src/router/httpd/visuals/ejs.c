@@ -2955,11 +2955,11 @@ static int addtable(struct arptable **tbl, char *mac, char *ip, char *ifname, lo
 	table[i].total = total;
 	table[i].conncount = 0;
 	if (strlen(ip) < 16) {
-		table[i].proto |= 1;
+		table[i].proto = 1;
 		inet_aton(ip, (struct in_addr *)&table[i].v4);
 	} else {
 		inet_pton(AF_INET6, ip, &table[i].v6);
-		table[i].proto |= 2;
+		table[i].proto = 2;
 	}
 
 	len++;
@@ -3060,7 +3060,7 @@ static void readconntrack(struct arptable *tbl, int tablelen)
 				else
 					inet_aton(&state[4], (struct in_addr *)&v4);
 			}
-			if (strcmp(state, "ESTABLISHED"))
+			if (!strcmp(proto, "tcp") && strcmp(state, "ESTABLISHED"))
 				continue;
 			for (i = 0; i < tablelen; i++) {
 				if (!connv6 && (tbl[i].proto & 1) && v4 == tbl[i].v4)
