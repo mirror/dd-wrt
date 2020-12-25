@@ -407,7 +407,7 @@ libzstd.pc: libzstd.pc.in
           -e 's|@VERSION@|$(VERSION)|' \
           $< >$@
 
-install: install-pc install-static install-shared install-includes
+install: install-static install-shared install-includes
 	@echo zstd static and shared library installed
 
 install-pc: libzstd.pc
