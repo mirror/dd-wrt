@@ -1,20 +1,24 @@
 /*
 htop - Header.c
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
 #include "Header.h"
 
-#include "CRT.h"
-#include "StringUtils.h"
-#include "Platform.h"
-
-#include <assert.h>
-#include <time.h>
-#include <string.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "CRT.h"
+#include "Macros.h"
+#include "Object.h"
+#include "Platform.h"
+#include "ProvideCurses.h"
+#include "XUtils.h"
+
 
 Header* Header_new(struct ProcessList_* pl, Settings* settings, int nrColumns) {
    Header* this = xCalloc(1, sizeof(Header));
@@ -59,17 +63,17 @@ void Header_writeBackToSettings(const Header* this) {
       Vector* vec = this->columns[col];
       int len = Vector_size(vec);
 
-      colSettings->names = xCalloc(len+1, sizeof(char*));
+      colSettings->names = xCalloc(len + 1, sizeof(char*));
       colSettings->modes = xCalloc(len, sizeof(int));
       colSettings->len = len;
 
       for (int i = 0; i < len; i++) {
          Meter* meter = (Meter*) Vector_get(vec, i);
-         char* name = xCalloc(64, sizeof(char));
+         char* name;
          if (meter->param) {
-            xSnprintf(name, 63, "%s(%d)", As_Meter(meter)->name, meter->param);
+            xAsprintf(&name, "%s(%d)", As_Meter(meter)->name, meter->param);
          } else {
-            xSnprintf(name, 63, "%s", As_Meter(meter)->name);
+            xAsprintf(&name, "%s", As_Meter(meter)->name);
          }
          colSettings->names[i] = name;
          colSettings->modes[i] = meter->mode;
@@ -84,11 +88,12 @@ MeterModeId Header_addMeterByName(Header* this, char* name, int column) {
    int param = 0;
    if (paren) {
       int ok = sscanf(paren, "(%10d)", &param);
-      if (!ok) param = 0;
+      if (!ok)
+         param = 0;
       *paren = '\0';
    }
    MeterModeId mode = TEXT_METERMODE;
-   for (MeterClass** type = Platform_meterTypes; *type; type++) {
+   for (const MeterClass* const* type = Platform_meterTypes; *type; type++) {
       if (String_eq(name, (*type)->name)) {
          Meter* meter = Meter_new(this->pl, param, *type);
          Vector_add(meters, meter);
@@ -96,8 +101,10 @@ MeterModeId Header_addMeterByName(Header* this, char* name, int column) {
          break;
       }
    }
+
    if (paren)
       *paren = '(';
+
    return mode;
 }
 
@@ -106,11 +113,12 @@ void Header_setMode(Header* this, int i, MeterModeId mode, int column) {
 
    if (i >= Vector_size(meters))
       return;
+
    Meter* meter = (Meter*) Vector_get(meters, i);
    Meter_setMode(meter, mode);
 }
 
-Meter* Header_addMeterByClass(Header* this, MeterClass* type, int param, int column) {
+Meter* Header_addMeterByClass(Header* this, const MeterClass* type, int param, int column) {
    Vector* meters = this->columns[column];
 
    Meter* meter = Meter_new(this->pl, param, type);
@@ -121,21 +129,6 @@ Meter* Header_addMeterByClass(Header* this, MeterClass* type, int param, int col
 int Header_size(Header* this, int column) {
    Vector* meters = this->columns[column];
    return Vector_size(meters);
-}
-
-char* Header_readMeterName(Header* this, int i, int column) {
-   Vector* meters = this->columns[column];
-   Meter* meter = (Meter*) Vector_get(meters, i);
-
-   int nameLen = strlen(Meter_name(meter));
-   int len = nameLen + 100;
-   char* name = xMalloc(len);
-   memcpy(name, Meter_name(meter), nameLen);
-   name[nameLen] = '\0';
-   if (meter->param)
-      xSnprintf(name + nameLen, len - nameLen, "(%d)", meter->param);
-
-   return name;
 }
 
 MeterModeId Header_readMeterMode(Header* this, int i, int column) {
@@ -149,8 +142,9 @@ void Header_reinit(Header* this) {
    Header_forEachColumn(this, col) {
       for (int i = 0; i < Vector_size(this->columns[col]); i++) {
          Meter* meter = (Meter*) Vector_get(this->columns[col], i);
-         if (Meter_initFn(meter))
+         if (Meter_initFn(meter)) {
             Meter_init(meter);
+         }
       }
    }
 }

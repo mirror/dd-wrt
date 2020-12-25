@@ -3,12 +3,19 @@
 /*
 htop - Action.h
 (C) 2015 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "config.h" // IWYU pragma: keep
+
+#include <stdbool.h>
+#include <sys/types.h>
+
 #include "Header.h"
+#include "Object.h"
 #include "Panel.h"
+#include "Process.h"
 #include "ProcessList.h"
 #include "Settings.h"
 #include "UsersTable.h"
@@ -24,15 +31,17 @@ typedef enum {
    HTOP_UPDATE_PANELHDR = 0x41, // implies HTOP_REFRESH
 } Htop_Reaction;
 
-typedef Htop_Reaction (*Htop_Action)();
-
 typedef struct State_ {
    Settings* settings;
    UsersTable* ut;
    ProcessList* pl;
    Panel* panel;
    Header* header;
+   bool pauseProcessUpdate;
+   bool hideProcessSelection;
 } State;
+
+typedef Htop_Reaction (*Htop_Action)(State* st);
 
 Object* Action_pickFromVector(State* st, Panel* list, int x, bool followProcess);
 

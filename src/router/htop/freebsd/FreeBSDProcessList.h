@@ -3,19 +3,21 @@
 /*
 htop - FreeBSDProcessList.h
 (C) 2014 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include <kvm.h>
+#include <stdbool.h>
+#include <sys/types.h>
+
+#include "Hashtable.h"
+#include "ProcessList.h"
+#include "UsersTable.h"
 #include "zfs/ZfsArcStats.h"
 
-#include <kvm.h>
-#include <sys/param.h>
-#include <sys/jail.h>
-#include <sys/uio.h>
-#include <sys/resource.h>
 
-#define JAIL_ERRMSGLEN	1024
+#define JAIL_ERRMSGLEN 1024
 extern char jail_errmsg[JAIL_ERRMSGLEN];
 
 typedef struct CPUData_ {
@@ -40,11 +42,13 @@ typedef struct FreeBSDProcessList_ {
 
    CPUData* cpus;
 
-   unsigned long   *cp_time_o;
-   unsigned long   *cp_time_n;
+   Hashtable* ttys;
 
-   unsigned long  *cp_times_o;
-   unsigned long  *cp_times_n;
+   unsigned long* cp_time_o;
+   unsigned long* cp_time_n;
+
+   unsigned long* cp_times_o;
+   unsigned long* cp_times_n;
 
 } FreeBSDProcessList;
 
@@ -52,10 +56,6 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidMatchList, ui
 
 void ProcessList_delete(ProcessList* this);
 
-char* FreeBSDProcessList_readProcessName(kvm_t* kd, struct kinfo_proc* kproc, int* basenameEnd);
-
-char* FreeBSDProcessList_readJailName(struct kinfo_proc* kproc);
-
-void ProcessList_goThroughEntries(ProcessList* this);
+void ProcessList_goThroughEntries(ProcessList* super, bool pauseProcessUpdate);
 
 #endif

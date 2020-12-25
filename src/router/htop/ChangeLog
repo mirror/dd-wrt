@@ -1,3 +1,111 @@
+What's new in version 3.0.4
+
+* Separate tree and list sort orders
+* Invert Process_compare so that superclass matches run first
+(thanks to Hisham Muhammad)
+* Unhardcode Mac OS tick-to-milliseconds conversion
+(thanks to Alexander Momchilov)
+* Check if clock_gettime needs linking of librt
+* Define O_PATH if not already defined
+(thanks to Chris Burr)
+* Add column on Mac for processes running under translation
+(thanks to Dániel Bakai)
+* Configure check for additional linker flags for keypad(3)
+* PSI Meter: constant width and only print ten-duration as bar
+* Sort in paused mode after inverting sort order
+* Handle absence of package CPU temperature
+* Meter: restore non-wide-character build
+* LibSensors: restore temperature for Raspberry Pi
+* MainPanel: do not reset hideProcessSelection on KEY_SHUFFLE
+* BarMeter: rework text padding
+* Panel: rework drawing of FunctionBar
+* Meter: fix artifacts with very tiny width
+* DragonFlyBSD updates
+* BUGFIX: Fix dlopen issue for libsensors5 for some platforms
+* BUGFIX: Fix broken tree display on inverted sort order
+* BUGFIX: Fix pause mode ("Z") in tree view
+* BUGFIX: Correct timebase for non-x86 CPUs on Darwin
+* BUGFIX: Avoid NULL dereference on zombie processes
+* Document dynamic bindings and assumed external configuration
+* Update key mapping documentation for sorting
+
+What's new in version 3.0.3
+
+* Process sorting in 'tree' mode
+  (thanks to Maxim Zhiburt)
+* Improved command display/sort functionality
+  (thanks to Narendran Gopalakrishnan)
+* Add screen for active file locks
+  (thanks to Fynn J. Wulf)
+* Calculate library size (M_LRS column) from maps file
+  (thanks to Fynn J. Wulf)
+* Add a Zram meter
+  (thanks to Murloc Knight)
+* Add Linux cwd process column
+* Dynamically load libsensors at runtime
+* Improve PressureStall Meter display strings
+* Hide process selection on ESC
+* Fully support non-ascii characters in Meter-Bar
+* Add support to change numeric options in settings screen
+* Rename virtual memory column from M_SIZE to M_VIRT
+* Add process column for normalized CPU usage
+* Show CPU temperature in CPU meter
+* Drop hideThreads Setting
+* Add a systemd meter
+* Add a network IO meter
+* Add a SELinux meter
+* Compress size of default FunctionBar
+* Updates to the OpenFiles screen
+* Continue updating header data in paused mode
+* BUGFIX: Handle data wraparounds in IO meters
+* BUGFIX: Update InfoScreen content on resize
+* Add security attribute process column
+* Add DiskIOMeter for IO read/write usage
+* Read CPU frequency from sysfs by default
+* Add Linux process column for context switches
+* Several FreeBSD and Mac OS X platform updates
+  (thanks to Christian Göttsche)
+* Add process environment for FreeBSD
+  (thanks to Ross Williams)
+* Parse POWER_SUPPLY_CAPACITY for Linux Battery meter
+  (thanks to Jan Palus)
+* Add octuple-column CPU meters.
+* BUGFIX: On Linux consider ZFS ARC to be cache
+  (thanks to @multi)
+* BUGFIX: Limit screen title length to window width
+* Show selected command wrapped in a separate window
+  (thanks to @ryenus)
+* Allow to pass '/' for item search
+* Document implicit incremental search
+* Handle 'q' as quit if first character
+* Avoid expensive build of process tree when not using it
+* Include documentation for COMM and EXE
+* Distinguish display of no permissions for reading M_LRS
+* Only calculate M_LRS size every 2 seconds
+* Improvements to comm / cmdline display functionality
+* Merged view for COMM, EXE and cmdline
+  (thanks to Narendran Gopalakrishnan and Benny Baumann)
+* Consistent kernel thread display for COMM/EXE columns
+* Central fault handling for all platforms
+* Handle parsing envID & VPid from process status file
+* Use threshold for display of guest/steal/irq meters
+* Enhance highlighting of semi-large and large numbers
+* Documentation on the repository style guide
+  (thanks to Benny Baumann)
+* Align processor identifier to the right
+  (thanks to Christian Hesse)
+* Document M_PSS, M_PSSWP, M_SWAP in man page
+* Add Date and DateTime meters
+  (thanks to Michael F. Schönitzer)
+* BUGFIX: Fix Solaris 11.4 due to missing ZFS ARC kstats
+  (thanks to @senjan)
+* Code hardening, speedups, fd and memory leak fixes
+  (thanks to Christian Göttsche and Benny Baumann)
+* Number CPUs from zero by default
+  (thanks to Zev Weiss)
+* Remove residual python checks during the build process
+  (thanks to Stephen Gregoratto)
+
 What's new in version 3.0.2
 
 * BUGFIX: Drop 'vim_mode' - several issues, needs rethink

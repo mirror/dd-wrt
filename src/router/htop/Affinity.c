@@ -2,22 +2,27 @@
 htop - Affinity.c
 (C) 2004-2011 Hisham H. Muhammad
 (C) 2020 Red Hat, Inc.  All Rights Reserved.
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
+
+#include "config.h" // IWYU pragma: keep
 
 #include "Affinity.h"
 
 #include <stdlib.h>
 
+#include "XUtils.h"
+
 #ifdef HAVE_LIBHWLOC
 #include <hwloc.h>
-#if __linux__
+#include <hwloc/bitmap.h>
+#ifdef __linux__
 #define HTOP_HWLOC_CPUBIND_FLAG HWLOC_CPUBIND_THREAD
 #else
 #define HTOP_HWLOC_CPUBIND_FLAG HWLOC_CPUBIND_PROCESS
 #endif
-#elif HAVE_LINUX_AFFINITY
+#elif defined(HAVE_LINUX_AFFINITY)
 #include <sched.h>
 #endif
 
@@ -60,7 +65,7 @@ Affinity* Affinity_get(Process* proc, ProcessList* pl) {
       } else {
          unsigned int id;
          hwloc_bitmap_foreach_begin(id, cpuset);
-            Affinity_add(affinity, id);
+         Affinity_add(affinity, id);
          hwloc_bitmap_foreach_end();
       }
    }
@@ -69,7 +74,7 @@ Affinity* Affinity_get(Process* proc, ProcessList* pl) {
 }
 
 bool Affinity_set(Process* proc, Arg arg) {
-   Affinity *this = arg.v;
+   Affinity* this = arg.v;
    hwloc_cpuset_t cpuset = hwloc_bitmap_alloc();
    for (int i = 0; i < this->used; i++) {
       hwloc_bitmap_set(cpuset, this->cpus[i]);
@@ -79,22 +84,25 @@ bool Affinity_set(Process* proc, Arg arg) {
    return ok;
 }
 
-#elif HAVE_LINUX_AFFINITY
+#elif defined(HAVE_LINUX_AFFINITY)
 
 Affinity* Affinity_get(Process* proc, ProcessList* pl) {
    cpu_set_t cpuset;
    bool ok = (sched_getaffinity(proc->pid, sizeof(cpu_set_t), &cpuset) == 0);
-   if (!ok) return NULL;
+   if (!ok)
+      return NULL;
+
    Affinity* affinity = Affinity_new(pl);
    for (int i = 0; i < pl->cpuCount; i++) {
-      if (CPU_ISSET(i, &cpuset))
+      if (CPU_ISSET(i, &cpuset)) {
          Affinity_add(affinity, i);
+      }
    }
    return affinity;
 }
 
 bool Affinity_set(Process* proc, Arg arg) {
-   Affinity *this = arg.v;
+   Affinity* this = arg.v;
    cpu_set_t cpuset;
    CPU_ZERO(&cpuset);
    for (int i = 0; i < this->used; i++) {

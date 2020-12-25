@@ -4,14 +4,14 @@
 htop - SolarisProcessList.h
 (C) 2014 Hisham H. Muhammad
 (C) 2017,2018 Guy M. Broome
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
 #define MAXCMDLINE 255
 
-#define GZONE	"global    "
-#define UZONE	"unknown   "
+#define GZONE "global    "
+#define UZONE "unknown   "
 
 #include "zfs/ZfsArcStats.h"
 
@@ -58,8 +58,8 @@ void ProcessList_delete(ProcessList* pl);
  *       system for more info.
  */
 
-int SolarisProcessList_walkproc(psinfo_t *_psinfo, lwpsinfo_t *_lwpsinfo, void *listptr);
+int SolarisProcessList_walkproc(psinfo_t* _psinfo, lwpsinfo_t* _lwpsinfo, void* listptr);
 
-void ProcessList_goThroughEntries(ProcessList* this);
+void ProcessList_goThroughEntries(ProcessList* super, bool pauseProcessUpdate);
 
 #endif
