@@ -26,6 +26,7 @@ in the source distribution for its full text.
 #include <sys/types.h>
 
 #ifdef HAVE_DELAYACCT
+#include <sys/socket.h>
 #include <linux/netlink.h>
 #include <linux/taskstats.h>
 #include <netlink/attr.h>
