@@ -1,37 +1,53 @@
 /*
 htop - freebsd/Platform.c
 (C) 2014 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
 #include "Platform.h"
-#include "Meter.h"
-#include "CPUMeter.h"
-#include "MemoryMeter.h"
-#include "SwapMeter.h"
-#include "TasksMeter.h"
-#include "LoadAverageMeter.h"
-#include "UptimeMeter.h"
-#include "ClockMeter.h"
-#include "HostnameMeter.h"
-#include "zfs/ZfsArcMeter.h"
-#include "zfs/ZfsCompressedArcMeter.h"
-#include "FreeBSDProcess.h"
-#include "FreeBSDProcessList.h"
 
-#include <sys/types.h>
+#include <devstat.h>
+#include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
+#include <net/if.h>
+#include <net/if_mib.h>
+#include <sys/_types.h>
+#include <sys/devicestat.h>
+#include <sys/param.h>
+#include <sys/resource.h>
+#include <sys/socket.h>
 #include <sys/sysctl.h>
 #include <sys/time.h>
-#include <sys/resource.h>
+#include <sys/types.h>
 #include <vm/vm_param.h>
-#include <time.h>
-#include <math.h>
+
+#include "CPUMeter.h"
+#include "ClockMeter.h"
+#include "DateMeter.h"
+#include "DateTimeMeter.h"
+#include "DiskIOMeter.h"
+#include "FreeBSDProcess.h"
+#include "FreeBSDProcessList.h"
+#include "HostnameMeter.h"
+#include "LoadAverageMeter.h"
+#include "Macros.h"
+#include "MemoryMeter.h"
+#include "Meter.h"
+#include "NetworkIOMeter.h"
+#include "ProcessList.h"
+#include "Settings.h"
+#include "SwapMeter.h"
+#include "TasksMeter.h"
+#include "UptimeMeter.h"
+#include "XUtils.h"
+#include "zfs/ZfsArcMeter.h"
+#include "zfs/ZfsCompressedArcMeter.h"
 
 
-ProcessField Platform_defaultFields[] = { PID, USER, PRIORITY, NICE, M_SIZE, M_RESIDENT, STATE, PERCENT_CPU, PERCENT_MEM, TIME, COMM, 0 };
-
-int Platform_numberOfFields = LAST_PROCESSFIELD;
+const ProcessField Platform_defaultFields[] = { PID, USER, PRIORITY, NICE, M_VIRT, M_RESIDENT, STATE, PERCENT_CPU, PERCENT_MEM, TIME, COMM, 0 };
 
 const SignalItem Platform_signals[] = {
    { .name = " 0 Cancel",    .number =  0 },
@@ -70,15 +86,13 @@ const SignalItem Platform_signals[] = {
    { .name = "33 SIGLIBRT",  .number = 33 },
 };
 
-const unsigned int Platform_numberOfSignals = sizeof(Platform_signals)/sizeof(SignalItem);
+const unsigned int Platform_numberOfSignals = ARRAYSIZE(Platform_signals);
 
-void Platform_setBindings(Htop_Action* keys) {
-   (void) keys;
-}
-
-MeterClass* Platform_meterTypes[] = {
+const MeterClass* const Platform_meterTypes[] = {
    &CPUMeter_class,
    &ClockMeter_class,
+   &DateMeter_class,
+   &DateTimeMeter_class,
    &LoadAverageMeter_class,
    &LoadMeter_class,
    &MemoryMeter_class,
@@ -89,15 +103,36 @@ MeterClass* Platform_meterTypes[] = {
    &HostnameMeter_class,
    &AllCPUsMeter_class,
    &AllCPUs2Meter_class,
+   &AllCPUs4Meter_class,
+   &AllCPUs8Meter_class,
    &LeftCPUsMeter_class,
    &RightCPUsMeter_class,
    &LeftCPUs2Meter_class,
    &RightCPUs2Meter_class,
+   &LeftCPUs4Meter_class,
+   &RightCPUs4Meter_class,
+   &LeftCPUs8Meter_class,
+   &RightCPUs8Meter_class,
    &BlankMeter_class,
    &ZfsArcMeter_class,
    &ZfsCompressedArcMeter_class,
+   &DiskIOMeter_class,
+   &NetworkIOMeter_class,
    NULL
 };
+
+void Platform_init(void) {
+   /* no platform-specific setup needed */
+}
+
+void Platform_done(void) {
+   /* no platform-specific cleanup needed */
+}
+
+void Platform_setBindings(Htop_Action* keys) {
+   /* no platform-specific key bindings */
+   (void) keys;
+}
 
 int Platform_getUptime() {
    struct timeval bootTime, currTime;
@@ -141,15 +176,15 @@ int Platform_getMaxPid() {
 }
 
 double Platform_setCPUValues(Meter* this, int cpu) {
-   FreeBSDProcessList* fpl = (FreeBSDProcessList*) this->pl;
+   const FreeBSDProcessList* fpl = (const FreeBSDProcessList*) this->pl;
    int cpus = this->pl->cpuCount;
-   CPUData* cpuData;
+   const CPUData* cpuData;
 
    if (cpus == 1) {
-     // single CPU box has everything in fpl->cpus[0]
-     cpuData = &(fpl->cpus[0]);
+      // single CPU box has everything in fpl->cpus[0]
+      cpuData = &(fpl->cpus[0]);
    } else {
-     cpuData = &(fpl->cpus[cpu]);
+      cpuData = &(fpl->cpus[cpu]);
    }
 
    double  percent;
@@ -160,25 +195,25 @@ double Platform_setCPUValues(Meter* this, int cpu) {
    if (this->pl->settings->detailedCPUTime) {
       v[CPU_METER_KERNEL]  = cpuData->systemPercent;
       v[CPU_METER_IRQ]     = cpuData->irqPercent;
-      Meter_setItems(this, 4);
-      percent = v[0]+v[1]+v[2]+v[3];
+      this->curItems = 4;
+      percent = v[0] + v[1] + v[2] + v[3];
    } else {
       v[2] = cpuData->systemAllPercent;
-      Meter_setItems(this, 3);
-      percent = v[0]+v[1]+v[2];
+      this->curItems = 3;
+      percent = v[0] + v[1] + v[2];
    }
 
    percent = CLAMP(percent, 0.0, 100.0);
-   if (isnan(percent)) percent = 0.0;
 
-   v[CPU_METER_FREQUENCY] = -1;
+   v[CPU_METER_FREQUENCY] = NAN;
+   v[CPU_METER_TEMPERATURE] = NAN;
 
    return percent;
 }
 
 void Platform_setMemoryValues(Meter* this) {
    // TODO
-   ProcessList* pl = (ProcessList*) this->pl;
+   const ProcessList* pl = this->pl;
 
    this->total = pl->totalMem;
    this->values[0] = pl->usedMem;
@@ -187,28 +222,151 @@ void Platform_setMemoryValues(Meter* this) {
 }
 
 void Platform_setSwapValues(Meter* this) {
-   ProcessList* pl = (ProcessList*) this->pl;
+   const ProcessList* pl = this->pl;
    this->total = pl->totalSwap;
    this->values[0] = pl->usedSwap;
 }
 
 void Platform_setZfsArcValues(Meter* this) {
-   FreeBSDProcessList* fpl = (FreeBSDProcessList*) this->pl;
+   const FreeBSDProcessList* fpl = (const FreeBSDProcessList*) this->pl;
 
    ZfsArcMeter_readStats(this, &(fpl->zfs));
 }
 
 void Platform_setZfsCompressedArcValues(Meter* this) {
-   FreeBSDProcessList* fpl = (FreeBSDProcessList*) this->pl;
+   const FreeBSDProcessList* fpl = (const FreeBSDProcessList*) this->pl;
 
    ZfsCompressedArcMeter_readStats(this, &(fpl->zfs));
 }
 
-void Platform_setTasksValues(Meter* this) {
-   // TODO
+char* Platform_getProcessEnv(pid_t pid) {
+   int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ENV, pid };
+
+   size_t capacity = ARG_MAX;
+   char* env = xMalloc(capacity);
+
+   int err = sysctl(mib, 4, env, &capacity, NULL, 0);
+   if (err || capacity == 0) {
+      free(env);
+      return NULL;
+   }
+
+   if (env[capacity - 1] || env[capacity - 2]) {
+      env = xRealloc(env, capacity + 2);
+      env[capacity] = 0;
+      env[capacity + 1] = 0;
+   }
+
+   return env;
 }
 
-char* Platform_getProcessEnv(pid_t pid) {
-   // TODO
-   return NULL;
+char* Platform_getInodeFilename(pid_t pid, ino_t inode) {
+    (void)pid;
+    (void)inode;
+    return NULL;
+}
+
+FileLocks_ProcessData* Platform_getProcessLocks(pid_t pid) {
+    (void)pid;
+    return NULL;
+}
+
+bool Platform_getDiskIO(DiskIOData* data) {
+
+   if (devstat_checkversion(NULL) < 0)
+      return false;
+
+   struct devinfo info = { 0 };
+   struct statinfo current = { .dinfo = &info };
+
+   // get number of devices
+   if (devstat_getdevs(NULL, &current) < 0)
+      return false;
+
+   int count = current.dinfo->numdevs;
+
+   unsigned long int bytesReadSum = 0, bytesWriteSum = 0, timeSpendSum = 0;
+
+   // get data
+   for (int i = 0; i < count; i++) {
+      uint64_t bytes_read, bytes_write;
+      long double busy_time;
+
+      devstat_compute_statistics(&current.dinfo->devices[i],
+                                 NULL,
+                                 1.0,
+                                 DSM_TOTAL_BYTES_READ, &bytes_read,
+                                 DSM_TOTAL_BYTES_WRITE, &bytes_write,
+                                 DSM_TOTAL_BUSY_TIME, &busy_time,
+                                 DSM_NONE);
+
+      bytesReadSum += bytes_read;
+      bytesWriteSum += bytes_write;
+      timeSpendSum += 1000 * busy_time;
+   }
+
+   data->totalBytesRead = bytesReadSum;
+   data->totalBytesWritten = bytesWriteSum;
+   data->totalMsTimeSpend = timeSpendSum;
+   return true;
+}
+
+bool Platform_getNetworkIO(unsigned long int* bytesReceived,
+                           unsigned long int* packetsReceived,
+                           unsigned long int* bytesTransmitted,
+                           unsigned long int* packetsTransmitted) {
+   int r;
+
+   // get number of interfaces
+   int count;
+   size_t countLen = sizeof(count);
+   const int countMib[] = { CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_SYSTEM, IFMIB_IFCOUNT };
+
+   r = sysctl(countMib, ARRAYSIZE(countMib), &count, &countLen, NULL, 0);
+   if (r < 0)
+      return false;
+
+
+   unsigned long int bytesReceivedSum = 0, packetsReceivedSum = 0, bytesTransmittedSum = 0, packetsTransmittedSum = 0;
+
+   for (int i = 1; i <= count; i++) {
+      struct ifmibdata ifmd;
+      size_t ifmdLen = sizeof(ifmd);
+
+      const int dataMib[] = { CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_IFDATA, i, IFDATA_GENERAL };
+
+      r = sysctl(dataMib, ARRAYSIZE(dataMib), &ifmd, &ifmdLen, NULL, 0);
+      if (r < 0)
+         continue;
+
+      if (ifmd.ifmd_flags & IFF_LOOPBACK)
+         continue;
+
+      bytesReceivedSum += ifmd.ifmd_data.ifi_ibytes;
+      packetsReceivedSum += ifmd.ifmd_data.ifi_ipackets;
+      bytesTransmittedSum += ifmd.ifmd_data.ifi_obytes;
+      packetsTransmittedSum += ifmd.ifmd_data.ifi_opackets;
+   }
+
+   *bytesReceived = bytesReceivedSum;
+   *packetsReceived = packetsReceivedSum;
+   *bytesTransmitted = bytesTransmittedSum;
+   *packetsTransmitted = packetsTransmittedSum;
+   return true;
+}
+
+void Platform_getBattery(double* percent, ACPresence* isOnAC) {
+   int life;
+   size_t life_len = sizeof(life);
+   if (sysctlbyname("hw.acpi.battery.life", &life, &life_len, NULL, 0) == -1)
+      *percent = NAN;
+   else
+      *percent = life;
+
+   int acline;
+   size_t acline_len = sizeof(acline);
+   if (sysctlbyname("hw.acpi.acline", &acline, &acline_len, NULL, 0) == -1)
+      *isOnAC = AC_ERROR;
+   else
+      *isOnAC = acline == 0 ? AC_ABSENT : AC_PRESENT;
 }

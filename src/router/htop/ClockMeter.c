@@ -1,30 +1,33 @@
 /*
 htop - ClockMeter.c
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "ClockMeter.h"
+#include "config.h" // IWYU pragma: keep
 
-#include "CRT.h"
+#include "ClockMeter.h"
 
 #include <time.h>
 
+#include "CRT.h"
+#include "Object.h"
 
-int ClockMeter_attributes[] = {
+
+static const int ClockMeter_attributes[] = {
    CLOCK
 };
 
-static void ClockMeter_updateValues(Meter* this, char* buffer, int size) {
+static void ClockMeter_updateValues(Meter* this, char* buffer, size_t size) {
    time_t t = time(NULL);
    struct tm result;
-   struct tm *lt = localtime_r(&t, &result);
+   struct tm* lt = localtime_r(&t, &result);
    this->values[0] = lt->tm_hour * 60 + lt->tm_min;
    strftime(buffer, size, "%H:%M:%S", lt);
 }
 
-MeterClass ClockMeter_class = {
+const MeterClass ClockMeter_class = {
    .super = {
       .extends = Class(Meter),
       .delete = Meter_delete

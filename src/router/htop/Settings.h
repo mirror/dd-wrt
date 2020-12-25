@@ -3,14 +3,19 @@
 /*
 htop - Settings.h
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
-#define DEFAULT_DELAY 15
+#include "config.h" // IWYU pragma: keep
+
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "Process.h"
-#include <stdbool.h>
+
+
+#define DEFAULT_DELAY 15
 
 typedef struct {
    int len;
@@ -23,21 +28,26 @@ typedef struct Settings_ {
    MeterColumnSettings columns[2];
 
    ProcessField* fields;
-   int flags;
+   uint32_t flags;
    int colorScheme;
    int delay;
 
-   int cpuCount;
    int direction;
+   int treeDirection;
    ProcessField sortKey;
+   ProcessField treeSortKey;
 
-   bool countCPUsFromZero;
+   bool countCPUsFromOne;
    bool detailedCPUTime;
    bool showCPUUsage;
    bool showCPUFrequency;
+   #ifdef HAVE_SENSORS_SENSORS_H
+   bool showCPUTemperature;
+   bool degreeFahrenheit;
+   #endif
    bool treeView;
+   bool treeViewAlwaysByPID;
    bool showProgramPath;
-   bool hideThreads;
    bool shadowOtherUsers;
    bool showThreadNames;
    bool hideKernelThreads;
@@ -45,6 +55,11 @@ typedef struct Settings_ {
    bool highlightBaseName;
    bool highlightMegabytes;
    bool highlightThreads;
+   bool highlightChanges;
+   int highlightDelaySecs;
+   bool findCommInCmdline;
+   bool stripExeFromCmdline;
+   bool showMergedCommand;
    bool updateProcessNames;
    bool accountGuestInCPUMeter;
    bool headerMargin;
@@ -56,14 +71,26 @@ typedef struct Settings_ {
    bool changed;
 } Settings;
 
-#define Settings_cpuId(settings, cpu) ((settings)->countCPUsFromZero ? (cpu) : (cpu)+1)
+#define Settings_cpuId(settings, cpu) ((settings)->countCPUsFromOne ? (cpu)+1 : (cpu))
+
+static inline ProcessField Settings_getActiveSortKey(const Settings* this) {
+   return (this->treeView)
+          ? (this->treeViewAlwaysByPID ? PID : this->treeSortKey)
+          : this->sortKey;
+}
+
+static inline int Settings_getActiveDirection(const Settings* this) {
+   return this->treeView ? this->treeDirection : this->direction;
+}
 
 void Settings_delete(Settings* this);
 
 bool Settings_write(Settings* this);
 
-Settings* Settings_new(int cpuCount);
+Settings* Settings_new(int initialCpuCount);
 
 void Settings_invertSortOrder(Settings* this);
+
+void Settings_setSortKey(Settings* this, ProcessField sortKey);
 
 #endif

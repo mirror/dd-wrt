@@ -3,13 +3,15 @@
 /*
 htop - UnsupportedProcess.h
 (C) 2015 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
 #include "Settings.h"
 
 #define Process_delete UnsupportedProcess_delete
+
+extern const ProcessFieldData Process_fields[LAST_PROCESSFIELD];
 
 Process* UnsupportedProcess_new(Settings* settings);
 

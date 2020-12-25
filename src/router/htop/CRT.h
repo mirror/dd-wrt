@@ -3,37 +3,38 @@
 /*
 htop - CRT.h
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "config.h"
+
 #include <stdbool.h>
 
-#define KEY_WHEELUP   KEY_F(20)
-#define KEY_WHEELDOWN KEY_F(21)
-#define KEY_RECLICK   KEY_F(22)
+#include "Macros.h"
+#include "ProvideCurses.h"
+
 
 typedef enum TreeStr_ {
-   TREE_STR_HORZ,
    TREE_STR_VERT,
    TREE_STR_RTEE,
    TREE_STR_BEND,
    TREE_STR_TEND,
    TREE_STR_OPEN,
    TREE_STR_SHUT,
-   TREE_STR_COUNT
+   LAST_TREE_STR
 } TreeStr;
 
-typedef enum ColorSchemes_ {
-   COLORSCHEME_DEFAULT = 0,
-   COLORSCHEME_MONOCHROME = 1,
-   COLORSCHEME_BLACKONWHITE = 2,
-   COLORSCHEME_LIGHTTERMINAL = 3,
-   COLORSCHEME_MIDNIGHT = 4,
-   COLORSCHEME_BLACKNIGHT = 5,
-   COLORSCHEME_BROKENGRAY = 6,
-   LAST_COLORSCHEME = 7,
-} ColorSchemes;
+typedef enum ColorScheme_ {
+   COLORSCHEME_DEFAULT,
+   COLORSCHEME_MONOCHROME,
+   COLORSCHEME_BLACKONWHITE,
+   COLORSCHEME_LIGHTTERMINAL,
+   COLORSCHEME_MIDNIGHT,
+   COLORSCHEME_BLACKNIGHT,
+   COLORSCHEME_BROKENGRAY,
+   LAST_COLORSCHEME
+} ColorScheme;
 
 typedef enum ColorElements_ {
    RESET_COLOR,
@@ -41,6 +42,8 @@ typedef enum ColorElements_ {
    FUNCTION_BAR,
    FUNCTION_KEY,
    FAILED_SEARCH,
+   FAILED_READ,
+   PAUSED,
    PANEL_HEADER_FOCUS,
    PANEL_HEADER_UNFOCUS,
    PANEL_SELECTION_FOCUS,
@@ -49,6 +52,11 @@ typedef enum ColorElements_ {
    LARGE_NUMBER,
    METER_TEXT,
    METER_VALUE,
+   METER_VALUE_ERROR,
+   METER_VALUE_IOREAD,
+   METER_VALUE_IOWRITE,
+   METER_VALUE_NOTICE,
+   METER_VALUE_OK,
    LED_COLOR,
    UPTIME,
    BATTERY,
@@ -58,14 +66,19 @@ typedef enum ColorElements_ {
    PROCESS_SHADOW,
    PROCESS_TAG,
    PROCESS_MEGABYTES,
+   PROCESS_GIGABYTES,
    PROCESS_TREE,
    PROCESS_R_STATE,
    PROCESS_D_STATE,
    PROCESS_BASENAME,
    PROCESS_HIGH_PRIORITY,
    PROCESS_LOW_PRIORITY,
+   PROCESS_NEW,
+   PROCESS_TOMB,
    PROCESS_THREAD,
    PROCESS_THREAD_BASENAME,
+   PROCESS_COMM,
+   PROCESS_THREAD_COMM,
    BAR_BORDER,
    BAR_SHADOW,
    GRAPH_1,
@@ -82,6 +95,8 @@ typedef enum ColorElements_ {
    CHECK_MARK,
    CHECK_TEXT,
    CLOCK,
+   DATE,
+   DATETIME,
    HELP_BOLD,
    HOSTNAME,
    CPU_NICE,
@@ -103,33 +118,30 @@ typedef enum ColorElements_ {
    ZFS_OTHER,
    ZFS_COMPRESSED,
    ZFS_RATIO,
+   ZRAM,
    LAST_COLORELEMENT
 } ColorElements;
 
-void CRT_fatalError(const char* note) __attribute__ ((noreturn));
+void CRT_fatalError(const char* note) ATTR_NORETURN;
 
-void CRT_handleSIGSEGV(int sgn);
+void CRT_handleSIGSEGV(int signal) ATTR_NORETURN;
 
-#define KEY_ALT(x) (KEY_F(64 - 26) + (x - 'A'))
+#define KEY_WHEELUP   KEY_F(20)
+#define KEY_WHEELDOWN KEY_F(21)
+#define KEY_RECLICK   KEY_F(22)
+#define KEY_ALT(x)    (KEY_F(64 - 26) + ((x) - 'A'))
 
-
-extern const char *CRT_treeStrAscii[TREE_STR_COUNT];
+extern const char* CRT_degreeSign;
 
 #ifdef HAVE_LIBNCURSESW
-
-extern const char *CRT_treeStrUtf8[TREE_STR_COUNT];
 
 extern bool CRT_utf8;
 
 #endif
 
-extern const char **CRT_treeStr;
+extern const char* const* CRT_treeStr;
 
-extern int CRT_delay;
-
-extern int* CRT_colors;
-
-extern int CRT_colorSchemes[LAST_COLORSCHEME][LAST_COLORELEMENT];
+extern const int* CRT_colors;
 
 extern int CRT_cursorX;
 
@@ -137,40 +149,31 @@ extern int CRT_scrollHAmount;
 
 extern int CRT_scrollWheelVAmount;
 
-extern char* CRT_termType;
+extern ColorScheme CRT_colorScheme;
 
-extern int CRT_colorScheme;
+#ifdef HAVE_SETUID_ENABLED
 
-extern void *backtraceArray[128];
+void CRT_dropPrivileges(void);
 
-#if HAVE_SETUID_ENABLED
+void CRT_restorePrivileges(void);
 
-void CRT_dropPrivileges();
-
-void CRT_restorePrivileges();
-
-#else
+#else /* HAVE_SETUID_ENABLED */
 
 /* Turn setuid operations into NOPs */
+static inline void CRT_dropPrivileges(void) { }
+static inline void CRT_restorePrivileges(void) { }
 
-#ifndef CRT_dropPrivileges
-#define CRT_dropPrivileges()
-#define CRT_restorePrivileges()
-#endif
+#endif /* HAVE_SETUID_ENABLED */
 
-#endif
+void CRT_init(const int* delay, int colorScheme, bool allowUnicode);
 
-void CRT_init(int delay, int colorScheme, bool allowUnicode);
+void CRT_done(void);
 
-void CRT_done();
+int CRT_readKey(void);
 
-void CRT_fatalError(const char* note);
+void CRT_disableDelay(void);
 
-int CRT_readKey();
-
-void CRT_disableDelay();
-
-void CRT_enableDelay();
+void CRT_enableDelay(void);
 
 void CRT_setColors(int colorScheme);
 

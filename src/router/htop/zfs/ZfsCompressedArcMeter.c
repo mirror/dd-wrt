@@ -1,33 +1,27 @@
 /*
 htop - ZfsCompressedArcMeter.c
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
 #include "ZfsCompressedArcMeter.h"
-#include "ZfsArcStats.h"
 
 #include "CRT.h"
-#include "Platform.h"
-
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <sys/param.h>
-#include <assert.h>
-
-/*{
-#include "ZfsArcStats.h"
-
 #include "Meter.h"
-}*/
+#include "Object.h"
+#include "Platform.h"
+#include "RichString.h"
+#include "XUtils.h"
 
-int ZfsCompressedArcMeter_attributes[] = {
+#include "zfs/ZfsArcStats.h"
+
+
+static const int ZfsCompressedArcMeter_attributes[] = {
    ZFS_COMPRESSED
 };
 
-void ZfsCompressedArcMeter_readStats(Meter* this, ZfsArcStats* stats) {
+void ZfsCompressedArcMeter_readStats(Meter* this, const ZfsArcStats* stats) {
    if ( stats->isCompressed ) {
       this->total = stats->uncompressed;
       this->values[0] = stats->compressed;
@@ -38,37 +32,37 @@ void ZfsCompressedArcMeter_readStats(Meter* this, ZfsArcStats* stats) {
    }
 }
 
-static void ZfsCompressedArcMeter_printRatioString(Meter* this, char* buffer, int size) {
-   xSnprintf(buffer, size, "%.2f:1", this->total/this->values[0]);
+static void ZfsCompressedArcMeter_printRatioString(const Meter* this, char* buffer, size_t size) {
+   xSnprintf(buffer, size, "%.2f:1", this->total / this->values[0]);
 }
 
-static void ZfsCompressedArcMeter_updateValues(Meter* this, char* buffer, int size) {
+static void ZfsCompressedArcMeter_updateValues(Meter* this, char* buffer, size_t size) {
    Platform_setZfsCompressedArcValues(this);
 
    ZfsCompressedArcMeter_printRatioString(this, buffer, size);
 }
 
-static void ZfsCompressedArcMeter_display(Object* cast, RichString* out) {
-   char buffer[50];
-   Meter* this = (Meter*)cast;
+static void ZfsCompressedArcMeter_display(const Object* cast, RichString* out) {
+   const Meter* this = (const Meter*)cast;
 
    if (this->values[0] > 0) {
-      Meter_humanUnit(buffer, this->total, 50);
-      RichString_append(out, CRT_colors[METER_VALUE], buffer);
-      RichString_append(out, CRT_colors[METER_TEXT], " Uncompressed, ");
-      Meter_humanUnit(buffer, this->values[0], 50);
-      RichString_append(out, CRT_colors[METER_VALUE], buffer);
-      RichString_append(out, CRT_colors[METER_TEXT], " Compressed, ");
-      ZfsCompressedArcMeter_printRatioString(this, buffer, 50);
-      RichString_append(out, CRT_colors[METER_VALUE], buffer);
-      RichString_append(out, CRT_colors[METER_TEXT], " Ratio");
+      char buffer[50];
+      Meter_humanUnit(buffer, this->total, sizeof(buffer));
+      RichString_appendAscii(out, CRT_colors[METER_VALUE], buffer);
+      RichString_appendAscii(out, CRT_colors[METER_TEXT], " Uncompressed, ");
+      Meter_humanUnit(buffer, this->values[0], sizeof(buffer));
+      RichString_appendAscii(out, CRT_colors[METER_VALUE], buffer);
+      RichString_appendAscii(out, CRT_colors[METER_TEXT], " Compressed, ");
+      ZfsCompressedArcMeter_printRatioString(this, buffer, sizeof(buffer));
+      RichString_appendAscii(out, CRT_colors[METER_VALUE], buffer);
+      RichString_appendAscii(out, CRT_colors[METER_TEXT], " Ratio");
    } else {
-      RichString_write(out, CRT_colors[METER_TEXT], " ");
-      RichString_append(out, CRT_colors[FAILED_SEARCH], "Compression Unavailable");
+      RichString_writeAscii(out, CRT_colors[METER_TEXT], " ");
+      RichString_appendAscii(out, CRT_colors[FAILED_SEARCH], "Compression Unavailable");
    }
 }
 
-MeterClass ZfsCompressedArcMeter_class = {
+const MeterClass ZfsCompressedArcMeter_class = {
    .super = {
       .extends = Class(Meter),
       .delete = Meter_delete,
