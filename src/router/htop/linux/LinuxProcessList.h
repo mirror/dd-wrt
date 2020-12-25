@@ -3,14 +3,21 @@
 /*
 htop - LinuxProcessList.h
 (C) 2014 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include "config.h"
+
+#include <stdbool.h>
+#include <sys/types.h>
+
+#include "Hashtable.h"
 #include "ProcessList.h"
+#include "UsersTable.h"
+#include "ZramStats.h"
 #include "zfs/ZfsArcStats.h"
 
-extern long long btime;
 
 typedef struct CPUData_ {
    unsigned long long int totalTime;
@@ -40,6 +47,10 @@ typedef struct CPUData_ {
    unsigned long long int guestPeriod;
 
    double frequency;
+
+   #ifdef HAVE_SENSORS_SENSORS_H
+   double temperature;
+   #endif
 } CPUData;
 
 typedef struct TtyDriver_ {
@@ -57,11 +68,12 @@ typedef struct LinuxProcessList_ {
    bool haveSmapsRollup;
 
    #ifdef HAVE_DELAYACCT
-   struct nl_sock *netlink_socket;
+   struct nl_sock* netlink_socket;
    int netlink_family;
    #endif
 
    ZfsArcStats zfs;
+   ZramStats zram;
 } LinuxProcessList;
 
 #ifndef PROCDIR
@@ -96,6 +108,6 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidMatchList, ui
 
 void ProcessList_delete(ProcessList* pl);
 
-void ProcessList_goThroughEntries(ProcessList* super);
+void ProcessList_goThroughEntries(ProcessList* super, bool pauseProcessUpdate);
 
 #endif

@@ -3,7 +3,7 @@
 /*
 htop - CPUMeter.h
 (C) 2004-2011 Hisham H. Muhammad
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
@@ -19,29 +19,34 @@ typedef enum {
    CPU_METER_GUEST = 6,
    CPU_METER_IOWAIT = 7,
    CPU_METER_FREQUENCY = 8,
-   CPU_METER_ITEMCOUNT = 9, // number of entries in this enum
+   CPU_METER_TEMPERATURE = 9,
+   CPU_METER_ITEMCOUNT = 10, // number of entries in this enum
 } CPUMeterValues;
 
-extern int CPUMeter_attributes[];
+extern const MeterClass CPUMeter_class;
 
-extern MeterClass CPUMeter_class;
+extern const MeterClass AllCPUsMeter_class;
 
-extern MeterClass AllCPUsMeter_class;
+extern const MeterClass AllCPUs2Meter_class;
 
-extern MeterClass AllCPUs2Meter_class;
+extern const MeterClass LeftCPUsMeter_class;
 
-extern MeterClass LeftCPUsMeter_class;
+extern const MeterClass RightCPUsMeter_class;
 
-extern MeterClass RightCPUsMeter_class;
+extern const MeterClass LeftCPUs2Meter_class;
 
-extern MeterClass LeftCPUs2Meter_class;
+extern const MeterClass RightCPUs2Meter_class;
 
-extern MeterClass RightCPUs2Meter_class;
+extern const MeterClass AllCPUs4Meter_class;
 
-extern MeterClass AllCPUs4Meter_class;
+extern const MeterClass LeftCPUs4Meter_class;
 
-extern MeterClass LeftCPUs4Meter_class;
+extern const MeterClass RightCPUs4Meter_class;
 
-extern MeterClass RightCPUs4Meter_class;
+extern const MeterClass AllCPUs8Meter_class;
+
+extern const MeterClass LeftCPUs8Meter_class;
+
+extern const MeterClass RightCPUs8Meter_class;
 
 #endif

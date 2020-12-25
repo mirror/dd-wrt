@@ -4,89 +4,66 @@
 htop - LinuxProcess.h
 (C) 2014 Hisham H. Muhammad
 (C) 2020 Red Hat, Inc.  All Rights Reserved.
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
-#define PROCESS_FLAG_LINUX_IOPRIO   0x0100
-#define PROCESS_FLAG_LINUX_OPENVZ   0x0200
-#define PROCESS_FLAG_LINUX_VSERVER  0x0400
-#define PROCESS_FLAG_LINUX_CGROUP   0x0800
-#define PROCESS_FLAG_LINUX_OOM      0x1000
-#define PROCESS_FLAG_LINUX_SMAPS    0x2000
+#include "config.h" // IWYU pragma: keep
 
-typedef enum UnsupportedProcessFields {
-   FLAGS = 9,
-   ITREALVALUE = 20,
-   VSIZE = 22,
-   RSS = 23,
-   RLIM = 24,
-   STARTCODE = 25,
-   ENDCODE = 26,
-   STARTSTACK = 27,
-   KSTKESP = 28,
-   KSTKEIP = 29,
-   SIGNAL = 30,
-   BLOCKED = 31,
-   SSIGIGNORE = 32,
-   SIGCATCH = 33,
-   WCHAN = 34,
-   NSWAP = 35,
-   CNSWAP = 36,
-   EXIT_SIGNAL = 37,
-} UnsupportedProcessField;
-
-typedef enum LinuxProcessFields {
-   CMINFLT = 11,
-   CMAJFLT = 13,
-   UTIME = 14,
-   STIME = 15,
-   CUTIME = 16,
-   CSTIME = 17,
-   M_SHARE = 41,
-   M_TRS = 42,
-   M_DRS = 43,
-   M_LRS = 44,
-   M_DT = 45,
-   #ifdef HAVE_OPENVZ
-   CTID = 100,
-   VPID = 101,
-   #endif
-   #ifdef HAVE_VSERVER
-   VXID = 102,
-   #endif
-   #ifdef HAVE_TASKSTATS
-   RCHAR = 103,
-   WCHAR = 104,
-   SYSCR = 105,
-   SYSCW = 106,
-   RBYTES = 107,
-   WBYTES = 108,
-   CNCLWB = 109,
-   IO_READ_RATE = 110,
-   IO_WRITE_RATE = 111,
-   IO_RATE = 112,
-   #endif
-   #ifdef HAVE_CGROUP
-   CGROUP = 113,
-   #endif
-   OOM = 114,
-   IO_PRIORITY = 115,
-   #ifdef HAVE_DELAYACCT
-   PERCENT_CPU_DELAY = 116,
-   PERCENT_IO_DELAY = 117,
-   PERCENT_SWAP_DELAY = 118,
-   #endif
-   M_PSS = 119,
-   M_SWAP = 120,
-   M_PSSWP = 121,
-   LAST_PROCESSFIELD = 122,
-} LinuxProcessField;
+#include <stdbool.h>
 
 #include "IOPriority.h"
+#include "Object.h"
+#include "Process.h"
+#include "Settings.h"
+
+
+#define PROCESS_FLAG_LINUX_IOPRIO   0x00000100
+#define PROCESS_FLAG_LINUX_OPENVZ   0x00000200
+#define PROCESS_FLAG_LINUX_VSERVER  0x00000400
+#define PROCESS_FLAG_LINUX_CGROUP   0x00000800
+#define PROCESS_FLAG_LINUX_OOM      0x00001000
+#define PROCESS_FLAG_LINUX_SMAPS    0x00002000
+#define PROCESS_FLAG_LINUX_CTXT     0x00004000
+#define PROCESS_FLAG_LINUX_SECATTR  0x00008000
+#define PROCESS_FLAG_LINUX_LRS_FIX  0x00010000
+#define PROCESS_FLAG_LINUX_CWD      0x00020000
+
+
+/* LinuxProcessMergedCommand is populated by LinuxProcess_makeCommandStr: It
+ * contains the merged Command string, and the information needed by
+ * LinuxProcess_writeCommand to color the string. str will be NULL for kernel
+ * threads and zombies */
+typedef struct LinuxProcessMergedCommand_ {
+   char *str;           /* merged Command string */
+   int maxLen;          /* maximum expected length of Command string */
+   int baseStart;       /* basename's start offset */
+   int baseEnd;         /* basename's end offset */
+   int commStart;       /* comm's start offset */
+   int commEnd;         /* comm's end offset */
+   int sep1;            /* first field separator, used if non-zero */
+   int sep2;            /* second field separator, used if non-zero */
+   bool separateComm;   /* whether comm is a separate field */
+   bool unmatchedExe;   /* whether exe matched with cmdline */
+   bool cmdlineChanged; /* whether cmdline changed */
+   bool exeChanged;     /* whether exe changed */
+   bool commChanged;    /* whether comm changed */
+   bool prevMergeSet;   /* whether showMergedCommand was set */
+   bool prevPathSet;    /* whether showProgramPath was set */
+   bool prevCommSet;    /* whether findCommInCmdline was set */
+   bool prevCmdlineSet; /* whether findCommInCmdline was set */
+} LinuxProcessMergedCommand;
 
 typedef struct LinuxProcess_ {
    Process super;
+   char *procComm;
+   char *procExe;
+   int procExeLen;
+   int procExeBasenameOffset;
+   bool procExeDeleted;
+   int procCmdlineBasenameOffset;
+   int procCmdlineBasenameEnd;
+   LinuxProcessMergedCommand mergedCommand;
    bool isKernelThread;
    IOPriority ioPriority;
    unsigned long int cminflt;
@@ -103,8 +80,6 @@ typedef struct LinuxProcess_ {
    long m_drs;
    long m_lrs;
    long m_dt;
-   unsigned long long starttime;
-   #ifdef HAVE_TASKSTATS
    unsigned long long io_rchar;
    unsigned long long io_wchar;
    unsigned long long io_syscr;
@@ -116,17 +91,14 @@ typedef struct LinuxProcess_ {
    unsigned long long io_rate_write_time;
    double io_rate_read_bps;
    double io_rate_write_bps;
-   #endif
    #ifdef HAVE_OPENVZ
-   unsigned int ctid;
-   unsigned int vpid;
+   char* ctid;
+   pid_t vpid;
    #endif
    #ifdef HAVE_VSERVER
    unsigned int vxid;
    #endif
-   #ifdef HAVE_CGROUP
    char* cgroup;
-   #endif
    unsigned int oom;
    char* ttyDevice;
    #ifdef HAVE_DELAYACCT
@@ -138,46 +110,39 @@ typedef struct LinuxProcess_ {
    float blkio_delay_percent;
    float swapin_delay_percent;
    #endif
+   unsigned long ctxt_total;
+   unsigned long ctxt_diff;
+   char* secattr;
+   unsigned long long int last_mlrs_calctime;
+   char* cwd;
 } LinuxProcess;
 
-#define Process_isKernelThread(_process) (((LinuxProcess*)(_process))->isKernelThread)
+#define Process_isKernelThread(_process) (((const LinuxProcess*)(_process))->isKernelThread)
 
-#define Process_isUserlandThread(_process) (_process->pid != _process->tgid)
+static inline bool Process_isUserlandThread(const Process* this) {
+   return this->pid != this->tgid;
+}
 
-extern long long btime;
+extern int pageSize;
 
-extern ProcessFieldData Process_fields[];
+extern int pageSizeKB;
 
-extern ProcessPidColumn Process_pidColumns[];
+extern const ProcessFieldData Process_fields[LAST_PROCESSFIELD];
 
-extern ProcessClass LinuxProcess_class;
+extern const ProcessClass LinuxProcess_class;
 
-LinuxProcess* LinuxProcess_new(Settings* settings);
+Process* LinuxProcess_new(const Settings* settings);
 
 void Process_delete(Object* cast);
 
-/*
-[1] Note that before kernel 2.6.26 a process that has not asked for
-an io priority formally uses "none" as scheduling class, but the
-io scheduler will treat such processes as if it were in the best
-effort class. The priority within the best effort class will  be
-dynamically  derived  from  the  cpu  nice level of the process:
-extern io_priority;
-*/
-#define LinuxProcess_effectiveIOPriority(p_) (IOPriority_class(p_->ioPriority) == IOPRIO_CLASS_NONE ? IOPriority_tuple(IOPRIO_CLASS_BE, (p_->super.nice + 20) / 5) : p_->ioPriority)
-
 IOPriority LinuxProcess_updateIOPriority(LinuxProcess* this);
 
-bool LinuxProcess_setIOPriority(LinuxProcess* this, Arg ioprio);
+bool LinuxProcess_setIOPriority(Process* this, Arg ioprio);
 
-#ifdef HAVE_DELAYACCT
-void LinuxProcess_printDelay(float delay_percent, char* buffer, int n);
-#endif
+/* This function constructs the string that is displayed by
+ * LinuxProcess_writeCommand and also returned by LinuxProcess_getCommandStr */
+void LinuxProcess_makeCommandStr(Process *this);
 
-void LinuxProcess_writeField(Process* this, RichString* str, ProcessField field);
-
-long LinuxProcess_compare(const void* v1, const void* v2);
-
-bool Process_isThread(Process* this);
+bool Process_isThread(const Process* this);
 
 #endif

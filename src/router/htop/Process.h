@@ -4,29 +4,23 @@
 htop - Process.h
 (C) 2004-2015 Hisham H. Muhammad
 (C) 2020 Red Hat, Inc.  All Rights Reserved.
-Released under the GNU GPL, see the COPYING file
+Released under the GNU GPLv2, see the COPYING file
 in the source distribution for its full text.
 */
 
-#ifdef __ANDROID__
-#define SYS_ioprio_get __NR_ioprio_get
-#define SYS_ioprio_set __NR_ioprio_set
-#endif
-
-// On Linux, this works only with glibc 2.1+. On earlier versions
-// the behavior is similar to have a hardcoded page size.
-#ifndef PAGE_SIZE
-#define PAGE_SIZE ( sysconf(_SC_PAGESIZE) )
-#endif
-#define PAGE_SIZE_KB ( PAGE_SIZE / ONE_K )
-
-#include "Object.h"
-
+#include <stdbool.h>
+#include <stdint.h>
 #include <sys/types.h>
 
-#define PROCESS_FLAG_IO 0x0001
+#include "Object.h"
+#include "ProcessField.h"
+#include "RichString.h"
 
-typedef enum ProcessFields {
+
+#define PROCESS_FLAG_IO 0x0001
+#define DEFAULT_HIGHLIGHT_SECS 5
+
+typedef enum ProcessField_ {
    NULL_PROCESSFIELD = 0,
    PID = 1,
    COMM = 2,
@@ -42,7 +36,7 @@ typedef enum ProcessFields {
    NICE = 19,
    STARTTIME = 21,
    PROCESSOR = 38,
-   M_SIZE = 39,
+   M_VIRT = 39,
    M_RESIDENT = 40,
    ST_UID = 46,
    PERCENT_CPU = 47,
@@ -51,23 +45,27 @@ typedef enum ProcessFields {
    TIME = 50,
    NLWP = 51,
    TGID = 52,
+   PERCENT_NORM_CPU = 53,
+
+   /* Platform specific fields, defined in ${platform}/ProcessField.h */
+   PLATFORM_PROCESS_FIELDS
+
+   LAST_PROCESSFIELD
 } ProcessField;
 
-typedef struct ProcessPidColumn_ {
-   int id;
-   const char* label;
-} ProcessPidColumn;
+struct Settings_;
 
 typedef struct Process_ {
    Object super;
 
-   struct Settings_* settings;
+   const struct ProcessList_* processList;
+   const struct Settings_* settings;
 
    unsigned long long int time;
    pid_t pid;
    pid_t ppid;
    pid_t tgid;
-   char* comm;
+   char* comm;  /* use Process_getCommand() for Command actually displayed */
    int commLen;
    int indent;
 
@@ -78,6 +76,7 @@ typedef struct Process_ {
    bool tag;
    bool showChildren;
    bool show;
+   bool wasShown;
    unsigned int pgrp;
    unsigned int session;
    unsigned int tty_nr;
@@ -88,7 +87,7 @@ typedef struct Process_ {
 
    float percent_cpu;
    float percent_mem;
-   char* user;
+   const char* user;
 
    long int priority;
    long int nice;
@@ -96,100 +95,103 @@ typedef struct Process_ {
    char starttime_show[8];
    time_t starttime_ctime;
 
-   long m_size;
+   long m_virt;
    long m_resident;
 
    int exit_signal;
 
+   time_t seenTs;
+   time_t tombTs;
+
    unsigned long int minflt;
    unsigned long int majflt;
-   #ifdef DEBUG
-   long int itrealvalue;
-   unsigned long int vsize;
-   long int rss;
-   unsigned long int rlim;
-   unsigned long int startcode;
-   unsigned long int endcode;
-   unsigned long int startstack;
-   unsigned long int kstkesp;
-   unsigned long int kstkeip;
-   unsigned long int signal;
-   unsigned long int blocked;
-   unsigned long int sigignore;
-   unsigned long int sigcatch;
-   unsigned long int wchan;
-   unsigned long int nswap;
-   unsigned long int cnswap;
-   #endif
 
+   unsigned int tree_left;
+   unsigned int tree_right;
+   unsigned int tree_depth;
+   unsigned int tree_index;
 } Process;
 
 typedef struct ProcessFieldData_ {
    const char* name;
    const char* title;
    const char* description;
-   int flags;
+   uint32_t flags;
+   bool pidColumn;
 } ProcessFieldData;
 
 // Implemented in platform-specific code:
-void Process_writeField(Process* this, RichString* str, ProcessField field);
+void Process_writeField(const Process* this, RichString* str, ProcessField field);
 long Process_compare(const void* v1, const void* v2);
 void Process_delete(Object* cast);
-bool Process_isThread(Process* this);
-extern ProcessFieldData Process_fields[];
-extern ProcessPidColumn Process_pidColumns[];
-extern char Process_pidFormat[20];
+bool Process_isThread(const Process* this);
+extern const ProcessFieldData Process_fields[LAST_PROCESSFIELD];
+#define PROCESS_MAX_PID_DIGITS 19
+extern int Process_pidDigits;
 
-typedef Process*(*Process_New)(struct Settings_*);
-typedef void (*Process_WriteField)(Process*, RichString*, ProcessField);
+typedef Process*(*Process_New)(const struct Settings_*);
+typedef void (*Process_WriteField)(const Process*, RichString*, ProcessField);
+typedef long (*Process_CompareByKey)(const Process*, const Process*, ProcessField);
+typedef const char* (*Process_GetCommandStr)(const Process*);
 
 typedef struct ProcessClass_ {
    const ObjectClass super;
    const Process_WriteField writeField;
+   const Process_CompareByKey compareByKey;
+   const Process_GetCommandStr getCommandStr;
 } ProcessClass;
 
-#define As_Process(this_)              ((ProcessClass*)((this_)->super.klass))
+#define As_Process(this_)                              ((const ProcessClass*)((this_)->super.klass))
 
-#define Process_getParentPid(process_)    (process_->tgid == process_->pid ? process_->ppid : process_->tgid)
+#define Process_getCommand(this_)                      (As_Process(this_)->getCommandStr ? As_Process(this_)->getCommandStr((const Process*)(this_)) : ((const Process*)(this_))->comm)
+#define Process_compareByKey(p1_, p2_, key_)           (As_Process(p1_)->compareByKey ? (As_Process(p1_)->compareByKey(p1_, p2_, key_)) : Process_compareByKey_Base(p1_, p2_, key_))
 
-#define Process_isChildOf(process_, pid_) (process_->tgid == pid_ || (process_->tgid == process_->pid && process_->ppid == pid_))
+static inline pid_t Process_getParentPid(const Process* this) {
+   return this->tgid == this->pid ? this->ppid : this->tgid;
+}
+
+static inline bool Process_isChildOf(const Process* this, pid_t pid) {
+   return pid == Process_getParentPid(this);
+}
 
 #define Process_sortState(state) ((state) == 'I' ? 0x100 : (state))
 
 
-#define ONE_K 1024L
+#define ONE_K 1024UL
 #define ONE_M (ONE_K * ONE_K)
 #define ONE_G (ONE_M * ONE_K)
-#define ONE_T ((long long)ONE_G * ONE_K)
+#define ONE_T (1ULL * ONE_G * ONE_K)
 
-#define ONE_DECIMAL_K 1000L
+#define ONE_DECIMAL_K 1000UL
 #define ONE_DECIMAL_M (ONE_DECIMAL_K * ONE_DECIMAL_K)
 #define ONE_DECIMAL_G (ONE_DECIMAL_M * ONE_DECIMAL_K)
-#define ONE_DECIMAL_T ((long long)ONE_DECIMAL_G * ONE_DECIMAL_K)
+#define ONE_DECIMAL_T (1ULL * ONE_DECIMAL_G * ONE_DECIMAL_K)
 
-extern char Process_pidFormat[20];
+void Process_setupColumnWidths(void);
 
-void Process_setupColumnWidths();
-
-void Process_humanNumber(RichString* str, unsigned long number, bool coloring);
+void Process_humanNumber(RichString* str, unsigned long long number, bool coloring);
 
 void Process_colorNumber(RichString* str, unsigned long long number, bool coloring);
 
 void Process_printTime(RichString* str, unsigned long long totalHundredths);
 
-void Process_outputRate(RichString* str, char* buffer, int n, double rate, int coloring);
+void Process_fillStarttimeBuffer(Process* this);
 
-void Process_writeField(Process* this, RichString* str, ProcessField field);
+void Process_outputRate(RichString* str, char* buffer, size_t n, double rate, int coloring);
 
-void Process_display(Object* cast, RichString* out);
+void Process_display(const Object* cast, RichString* out);
 
 void Process_done(Process* this);
 
-extern ProcessClass Process_class;
+extern const ProcessClass Process_class;
 
-void Process_init(Process* this, struct Settings_* settings);
+void Process_init(Process* this, const struct Settings_* settings);
 
 void Process_toggleTag(Process* this);
+
+bool Process_isNew(const Process* this);
+
+bool Process_isTomb(const Process* this);
 
 bool Process_setPriority(Process* this, int priority);
 
@@ -199,6 +201,6 @@ bool Process_sendSignal(Process* this, Arg sgn);
 
 long Process_pidCompare(const void* v1, const void* v2);
 
-long Process_compare(const void* v1, const void* v2);
+long Process_compareByKey_Base(const Process* p1, const Process* p2, ProcessField key);
 
 #endif
