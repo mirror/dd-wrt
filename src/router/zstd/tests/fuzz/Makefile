@@ -95,9 +95,12 @@ FUZZ_TARGETS :=       \
 	simple_compress \
 	dictionary_loader \
 	raw_dictionary_round_trip \
-	dictionary_stream_round_trip
+	dictionary_stream_round_trip \
+	decompress_dstSize_tooSmall \
+	fse_read_ncount \
+	sequence_compression_api
 
-all: $(FUZZ_TARGETS)
+all: libregression.a $(FUZZ_TARGETS)
 
 rt_lib_common_%.o: $(ZSTDDIR)/common/%.c
 	$(CC) $(FUZZ_CPPFLAGS) $(FUZZ_CFLAGS) $(FUZZ_ROUND_TRIP_FLAGS) $< -c -o $@
@@ -180,6 +183,15 @@ zstd_frame_info: $(FUZZ_HEADERS) $(FUZZ_DECOMPRESS_OBJ) d_fuzz_zstd_frame_info.o
 dictionary_loader: $(FUZZ_HEADERS) $(FUZZ_ROUND_TRIP_OBJ) rt_fuzz_dictionary_loader.o
 	$(CXX) $(FUZZ_TARGET_FLAGS) $(FUZZ_ROUND_TRIP_OBJ) rt_fuzz_dictionary_loader.o $(LIB_FUZZING_ENGINE) -o $@
 
+decompress_dstSize_tooSmall: $(FUZZ_HEADERS) $(FUZZ_DECOMPRESS_OBJ) d_fuzz_decompress_dstSize_tooSmall.o
+	$(CXX) $(FUZZ_TARGET_FLAGS) $(FUZZ_DECOMPRESS_OBJ) d_fuzz_decompress_dstSize_tooSmall.o $(LIB_FUZZING_ENGINE) -o $@
+
+fse_read_ncount: $(FUZZ_HEADERS) $(FUZZ_ROUND_TRIP_OBJ) rt_fuzz_fse_read_ncount.o
+	$(CXX) $(FUZZ_TARGET_FLAGS) $(FUZZ_ROUND_TRIP_OBJ) rt_fuzz_fse_read_ncount.o $(LIB_FUZZING_ENGINE) -o $@
+
+sequence_compression_api: $(FUZZ_HEADERS) $(FUZZ_ROUND_TRIP_OBJ) rt_fuzz_sequence_compression_api.o
+	$(CXX) $(FUZZ_TARGET_FLAGS) $(FUZZ_ROUND_TRIP_OBJ) rt_fuzz_sequence_compression_api.o $(LIB_FUZZING_ENGINE) -o $@
+
 libregression.a: $(FUZZ_HEADERS) $(PRGDIR)/util.h $(PRGDIR)/util.c d_fuzz_regression_driver.o
 	$(AR) $(FUZZ_ARFLAGS) $@ d_fuzz_regression_driver.o
 
@@ -201,12 +213,10 @@ regressiontest: corpora
 	$(PYTHON) ./fuzz.py regression all
 
 clean:
-	@$(RM) *.a *.o
-	@$(RM) simple_round_trip stream_round_trip simple_decompress \
-           stream_decompress block_decompress block_round_trip \
-           simple_compress dictionary_round_trip dictionary_decompress \
-           zstd_frame_info
+	@$(RM) *.a *.o $(FUZZ_TARGETS)
+	@echo Cleaning completed
 
 cleanall:
 	@$(RM) -r Fuzzer
 	@$(RM) -r corpora
+	@echo Cleaning completed

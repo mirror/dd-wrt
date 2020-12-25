@@ -134,16 +134,37 @@ if (ZSTD_BUILD_STATIC)
             OUTPUT_NAME ${STATIC_LIBRARY_BASE_NAME})
 endif ()
 
-if (UNIX)
+if (UNIX OR MINGW)
     # pkg-config
     set(PREFIX "${CMAKE_INSTALL_PREFIX}")
-    set(LIBDIR "${CMAKE_INSTALL_LIBDIR}")
-    set(INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}")
+    set(EXEC_PREFIX "\\$$\{prefix}")
+    set(LIBDIR "${CMAKE_INSTALL_FULL_LIBDIR}")
+    set(INCLUDEDIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
     set(VERSION "${zstd_VERSION}")
+
+    string(LENGTH "${PREFIX}" PREFIX_LENGTH)
+    string(SUBSTRING "${LIBDIR}" 0 ${PREFIX_LENGTH} LIBDIR_PREFIX)
+    string(SUBSTRING "${LIBDIR}" ${PREFIX_LENGTH} -1 LIBDIR_SUFFIX)
+    string(SUBSTRING "${INCLUDEDIR}" 0 ${PREFIX_LENGTH} INCLUDEDIR_PREFIX)
+    string(SUBSTRING "${INCLUDEDIR}" ${PREFIX_LENGTH} -1 INCLUDEDIR_SUFFIX)
+
+    if ("${INCLUDEDIR_PREFIX}" STREQUAL "${PREFIX}")
+        set(INCLUDEDIR_PREFIX "\\$$\{prefix}")
+    endif()
+    if ("${LIBDIR_PREFIX}" STREQUAL "${PREFIX}")
+        set(LIBDIR_PREFIX "\\$$\{exec_prefix}")
+    endif()
+
     add_custom_target(libzstd.pc ALL
-            ${CMAKE_COMMAND} -DIN="${LIBRARY_DIR}/libzstd.pc.in" -DOUT="libzstd.pc"
-            -DPREFIX="${PREFIX}" -DLIBDIR="${LIBDIR}" -DINCLUDEDIR="${INCLUDEDIR}" -DVERSION="${VERSION}"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/pkgconfig.cmake"
+            ${CMAKE_COMMAND}
+            -DIN=${LIBRARY_DIR}/libzstd.pc.in
+            -DOUT="libzstd.pc"
+            -DPREFIX="${PREFIX}"
+            -DEXEC_PREFIX="${EXEC_PREFIX}"
+            -DINCLUDEDIR="${INCLUDEDIR_PREFIX}${INCLUDEDIR_SUFFIX}"
+            -DLIBDIR="${LIBDIR_PREFIX}${LIBDIR_SUFFIX}"
+            -DVERSION="${VERSION}"
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/pkgconfig.cmake
             COMMENT "Creating pkg-config file")
 
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libzstd.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
@@ -152,9 +173,7 @@ endif ()
 # install target
 install(FILES
     "${LIBRARY_DIR}/zstd.h"
-    "${LIBRARY_DIR}/deprecated/zbuff.h"
     "${LIBRARY_DIR}/dictBuilder/zdict.h"
-    "${LIBRARY_DIR}/dictBuilder/cover.h"
     "${LIBRARY_DIR}/common/zstd_errors.h"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
@@ -163,6 +182,7 @@ install(TARGETS ${library_targets}
     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
     )
 
 # uninstall target
