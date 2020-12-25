@@ -40,6 +40,7 @@ int find_each(char *name, int len, char *data, char *token, int which, char *def
 	int i;
 	int maxlen;
 	char *str;
+	int tokenlen = strlen(token);
 
 	bzero(name, len);
 
@@ -53,7 +54,7 @@ int find_each(char *name, int len, char *data, char *token, int which, char *def
 		if (i == which) {
 			return 1;
 		}
-		data = str + strlen(token);
+		data = str + tokenlen;
 	}
 
 	strncpy(name, def, len);	// No find

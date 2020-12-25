@@ -2370,36 +2370,36 @@ static void showencstatus(webs_t wp, char *prefix)
 		if (nvhas(akm, "wpa"))
 			sprintf(type, "WPA");
 		if (nvhas(akm, "wpa2"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA2");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2");
 		if (nvhas(akm, "wpa2-sha256"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA2-SHA256");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-SHA256");
 		if (nvhas(akm, "wpa3"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA3");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3");
 		if (nvhas(akm, "wpa3-128"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA3-SUITE-B");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-SUITE-B");
 		if (nvhas(akm, "wpa3-192"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA3-SUITE-B-192");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-SUITE-B-192");
 		if (nvhas(akm, "wep"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "802.1X");
-		asprintf(&enc, "%s%s%s%s%s", strlen(type) ? type : "UNKNOWN", nvhas(akm, "peap") ? "-PEAP" : "", nvhas(akm, "leap") ? "-LEAP" : "", nvhas(akm, "tls") ? "-TLS" : "", nvhas(akm, "ttls") ? "-TTLS" : "");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "802.1X");
+		asprintf(&enc, "%s%s%s%s%s", type[0] ? type : "UNKNOWN", nvhas(akm, "peap") ? "-PEAP" : "", nvhas(akm, "leap") ? "-LEAP" : "", nvhas(akm, "tls") ? "-TLS" : "", nvhas(akm, "ttls") ? "-TTLS" : "");
 	} else {
 
 		char type[128] = { 0 };
 		if (nvhas(akm, "wpa"))
 			sprintf(type, "WPA");
 		if (nvhas(akm, "wpa2"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA2");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2");
 		if (nvhas(akm, "wpa2-sha256"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA2-SHA256");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-SHA256");
 		if (nvhas(akm, "wpa3"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA3");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3");
 		if (nvhas(akm, "wpa3-128"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA3-SUITE-B");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-SUITE-B");
 		if (nvhas(akm, "wpa3-192"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "WPA3-SUITE-B-192");
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-SUITE-B-192");
 		if (nvhas(akm, "wep"))
-			sprintf(type, "%s%s%s", type, strlen(type) ? "/" : "", "802.1X");
-		if (strlen(type))
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "802.1X");
+		if (type[0])
 			enc = strdup(type);
 	}
 	if (enc) {
