@@ -199,7 +199,7 @@ typedef struct {
     int hufInit;
     /* the distribution used in the previous block for repeat mode */
     BYTE hufDist[DISTSIZE];
-    U32 hufTable [256]; /* HUF_CElt is an incomplete type */
+    HUF_CElt hufTable [256];
 
     int fseInit;
     FSE_CTable offcodeCTable  [FSE_CTABLE_SIZE_U32(OffFSELog, MaxOff)];
@@ -535,7 +535,7 @@ static size_t writeLiteralsBlockCompressed(U32* seed, frame_t* frame, size_t con
                  * actual data to avoid bugs with symbols that were in the
                  * distribution but never showed up in the output */
                 hufHeaderSize = writeHufHeader(
-                        seed, (HUF_CElt*)frame->stats.hufTable, op, opend - op,
+                        seed, frame->stats.hufTable, op, opend - op,
                         frame->stats.hufDist, DISTSIZE);
                 CHECKERR(hufHeaderSize);
                 /* repeat until a valid header is written */
@@ -558,10 +558,10 @@ static size_t writeLiteralsBlockCompressed(U32* seed, frame_t* frame, size_t con
                     sizeFormat == 0
                             ? HUF_compress1X_usingCTable(
                                       op, opend - op, LITERAL_BUFFER, litSize,
-                                      (HUF_CElt*)frame->stats.hufTable)
+                                      frame->stats.hufTable)
                             : HUF_compress4X_usingCTable(
                                       op, opend - op, LITERAL_BUFFER, litSize,
-                                      (HUF_CElt*)frame->stats.hufTable);
+                                      frame->stats.hufTable);
             CHECKERR(compressedSize);
             /* this only occurs when it could not compress or similar */
         } while (compressedSize <= 0);
@@ -815,7 +815,7 @@ static size_t writeSequences(U32* seed, frame_t* frame, seqStore_t* seqStorePtr,
     BYTE* const oend = (BYTE*)frame->dataEnd;
     BYTE* op = (BYTE*)frame->data;
     BYTE* seqHead;
-    BYTE scratchBuffer[1<<MAX(MLFSELog,LLFSELog)];
+    BYTE scratchBuffer[FSE_BUILD_CTABLE_WORKSPACE_SIZE(MaxSeq, MaxFSELog)];
 
     /* literals compressing block removed so that can be done separately */
 
@@ -852,18 +852,18 @@ static size_t writeSequences(U32* seed, frame_t* frame, seqStore_t* seqStorePtr,
             LLtype = set_rle;
         } else if (!(RAND(seed) & 3)) {
             /* maybe use the default distribution */
-            FSE_buildCTable_wksp(CTable_LitLength, LL_defaultNorm, MaxLL, LL_defaultNormLog, scratchBuffer, sizeof(scratchBuffer));
+            CHECKERR(FSE_buildCTable_wksp(CTable_LitLength, LL_defaultNorm, MaxLL, LL_defaultNormLog, scratchBuffer, sizeof(scratchBuffer)));
             LLtype = set_basic;
         } else {
             /* fall back on a full table */
             size_t nbSeq_1 = nbSeq;
             const U32 tableLog = FSE_optimalTableLog(LLFSELog, nbSeq, max);
             if (count[llCodeTable[nbSeq-1]]>1) { count[llCodeTable[nbSeq-1]]--; nbSeq_1--; }
-            FSE_normalizeCount(norm, tableLog, count, nbSeq_1, max);
+            FSE_normalizeCount(norm, tableLog, count, nbSeq_1, max, nbSeq >= 2048);
             { size_t const NCountSize = FSE_writeNCount(op, oend-op, norm, max, tableLog);   /* overflow protected */
               if (FSE_isError(NCountSize)) return ERROR(GENERIC);
               op += NCountSize; }
-            FSE_buildCTable_wksp(CTable_LitLength, norm, max, tableLog, scratchBuffer, sizeof(scratchBuffer));
+            CHECKERR(FSE_buildCTable_wksp(CTable_LitLength, norm, max, tableLog, scratchBuffer, sizeof(scratchBuffer)));
             LLtype = set_compressed;
     }   }
 
@@ -887,7 +887,7 @@ static size_t writeSequences(U32* seed, frame_t* frame, seqStore_t* seqStorePtr,
             size_t nbSeq_1 = nbSeq;
             const U32 tableLog = FSE_optimalTableLog(OffFSELog, nbSeq, max);
             if (count[ofCodeTable[nbSeq-1]]>1) { count[ofCodeTable[nbSeq-1]]--; nbSeq_1--; }
-            FSE_normalizeCount(norm, tableLog, count, nbSeq_1, max);
+            FSE_normalizeCount(norm, tableLog, count, nbSeq_1, max, nbSeq >= 2048);
             { size_t const NCountSize = FSE_writeNCount(op, oend-op, norm, max, tableLog);   /* overflow protected */
               if (FSE_isError(NCountSize)) return ERROR(GENERIC);
               op += NCountSize; }
@@ -917,7 +917,7 @@ static size_t writeSequences(U32* seed, frame_t* frame, seqStore_t* seqStorePtr,
             size_t nbSeq_1 = nbSeq;
             const U32 tableLog = FSE_optimalTableLog(MLFSELog, nbSeq, max);
             if (count[mlCodeTable[nbSeq-1]]>1) { count[mlCodeTable[nbSeq-1]]--; nbSeq_1--; }
-            FSE_normalizeCount(norm, tableLog, count, nbSeq_1, max);
+            FSE_normalizeCount(norm, tableLog, count, nbSeq_1, max, nbSeq >= 2048);
             { size_t const NCountSize = FSE_writeNCount(op, oend-op, norm, max, tableLog);   /* overflow protected */
               if (FSE_isError(NCountSize)) return ERROR(GENERIC);
               op += NCountSize; }
