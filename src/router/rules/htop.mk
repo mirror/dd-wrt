@@ -7,6 +7,7 @@ htop-configure: ncurses libnl
 	    --enable-delayacct \
 	    CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF $(LTO) -I$(TOP)/ncurses/include " \
 	    LDFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/ncurses/lib" \
+	    HTOP_NCURSES_CONFIG_SCRIPT="$(TOP)/ncurses/misc/ncurses-config" \
 	    LIBNL3_CFLAGS="-I$(TOP)/libnl/include" \
 	    LIBNL3_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3" \
 	    LIBNL3GENL_CFLAGS="-I$(TOP)/libnl/include" \
