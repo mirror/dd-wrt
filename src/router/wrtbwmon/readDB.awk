@@ -105,7 +105,9 @@ fid==2 {
 # ipv6 neighbours: ip "dev" device "lladr" hw_addr state
 fid==3 {
     if (ipv6 == 0) {
-	print "ipv6 disabled"
+	    if (debug) {
+		print "ipv6 disabled"
+	    }
 	nextfile;
     }
     ndp_ip    = $1
