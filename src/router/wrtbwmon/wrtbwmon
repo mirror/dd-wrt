@@ -192,12 +192,13 @@ update()
 
     lock
 
+    if [ `$nvram get ipv6_enable` != "1" ]; then
+	    echo "dummy" > /tmp/ipv6_neighbours_$$.tmp
+	    ipv6=0
+    fi
     if [ $ipv6 -eq 1 ]; then
         $ip -f inet6 neigh show
     fi > /tmp/ipv6_neighbours_$$.tmp 2>/dev/null
-    if [ `$nvram get ipv6_enable` != "1" ]; then
-	    echo "dummy" > /tmp/ipv6_neighbours_$$.tmp
-    fi
 
     # only zero our own chains
     for chain in $chains; do
