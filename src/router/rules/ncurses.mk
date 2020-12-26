@@ -19,6 +19,7 @@ ncurses-configure:
 		--disable-lib-suffixes \
 		--with-terminfo-dirs=/etc/terminfo \
 		--with-default-terminfo-dir=/etc/terminfo 
+	chmod a+x "$(TOP)/ncurses/misc/ncurses-config"
 	make -j 4 -C ncurses
 
 ncurses-clean:
