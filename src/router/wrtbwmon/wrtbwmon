@@ -195,6 +195,9 @@ update()
     if [ $ipv6 -eq 1 ]; then
         $ip -f inet6 neigh show
     fi > /tmp/ipv6_neighbours_$$.tmp 2>/dev/null
+    if [ `$nv get ipv6_enable` != "1" ]; then
+	    echo "dummy" > /tmp/ipv6_neighbours_$$.tmp
+    fi
 
     # only zero our own chains
     for chain in $chains; do
@@ -203,6 +206,7 @@ update()
             ip6tables -nvxL RRDIPT_$chain -t mangle -Z
         fi
     done > /tmp/iptables_$$.tmp
+
     # the iptables and readDB commands have to be separate. Otherwise,
     # they will fight over iptables locks
     awk -v mode="$mode" -v interfaces=\""$interfaces"\" -v ipv6="$ipv6" \
