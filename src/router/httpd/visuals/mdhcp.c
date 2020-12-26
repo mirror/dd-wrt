@@ -20,7 +20,7 @@
  * $Id:
  */
 
-void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 {
 	char buffer[256];
 	char buf[128];
