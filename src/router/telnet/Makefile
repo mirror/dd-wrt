@@ -7,11 +7,10 @@ endif
 
 MODULE:=telnet
 
-clean:
-	@true
 all:
 	cp $(MODULE)* $(TOP)/httpd/ej_temp/
 
+clean:
 	@true
 
 install:

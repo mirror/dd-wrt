@@ -46,10 +46,10 @@ endif
 #MODULE:=networksettings.buffalo
 #endif
 
-clean:
-	@true
 all:
 	cp $(MODULE)* $(TOP)/httpd/ej_temp/
+
+clean:
 	@true
 
 install:

@@ -7,10 +7,10 @@ endif
 
 MODULE:=jffs2
 
-clean:
-	@true
 all:
 	cp $(MODULE)* $(TOP)/httpd/ej_temp/
+
+clean:
 	@true
 
 install:
