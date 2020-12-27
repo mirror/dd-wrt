@@ -102,6 +102,8 @@ samba4-configure: gnutls icu zlib
 
 
 samba4: gnutls icu zlib
+	install -D samba4/config/samba4.webnas httpd/ej_temp/02samba4.webnas
+	install -D filesharing/config/zfilesharing.webnas httpd/ej_temp/03zfilesharing.webnas
 	-sed -i 's/\/USR\/BIN\/PYTHON3/PYTHON3/g' $(TOP)/samba4/bin/default/source3/smbd/build_options.c
 	make -C samba4
 

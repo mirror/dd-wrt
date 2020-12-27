@@ -3,6 +3,10 @@ wifidog-configure:
 	cd wifidog && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 wifidog:
+	install -D wifidog/config/*.webhotspot httpd/ej_temp/
+ifeq ($(CONFIG_TIEXTRA2),y)
+	install -D private/telkom/mwifidog.webhotspot httpd/ej_temp/5wifidogm.webhotspot
+endif
 	$(MAKE) -j 4 -C wifidog
 
 wifidog-clean:

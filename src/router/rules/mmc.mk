@@ -1,4 +1,5 @@
 mmc:
+	install -D  mmc_sdhc/config/mmc.webconfig httpd/ej_temp/mmc.webconfig
 	$(MAKE) -C mmc_sdhc
 
 mmc-install:

@@ -4,6 +4,7 @@ minidlna-configure: zlib
 	cd minidlna && make
 
 minidlna: zlib
+	install -D minidlna/config/minidlna.webnas httpd/ej_temp/05minidlna.webnas
 	cd minidlna && make
 
 minidlna-clean:

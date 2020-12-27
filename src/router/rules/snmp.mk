@@ -197,6 +197,7 @@ snmp-configure: nvram libutils
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 snmp:
+	install -D snmp/config/snmp.webservices httpd/ej_temp/snmp.webservices
 ifeq ($(CONFIG_SNMP),y)
 ifeq ($(CONFIG_ATH9K),y)
 	$(MAKE) -C snmp/build_mac80211 LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)"

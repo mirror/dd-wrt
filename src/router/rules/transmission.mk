@@ -1,4 +1,5 @@
 transmission: libevent curl zlib
+	install -D transmission/configs/transmission.webnas httpd/ej_temp/06transmission.webnas
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib  -I$(TOP)/curl/include -I$(TOP)/libevent/include  $(LTO)" \
 	CPPFLAGS="$(COPTS) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib   -I$(TOP)/curl/include -I$(TOP)/libevent/include  $(LTO)" \

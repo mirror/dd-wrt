@@ -339,6 +339,7 @@ include rules/mrp.mk
 include rules/htop.mk
 include rules/ipset.mk
 include rules/sdparm.mk
+include rules/prepare.mk
 
 #
 # Generic rules

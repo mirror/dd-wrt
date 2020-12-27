@@ -1,4 +1,5 @@
 mmc-fonera:
+	install -D  mmc-fonera/config/mmc.webconfig httpd/ej_temp/mmc.webconfig
 ifneq ($(CONFIG_HOTPLUG2),y)
 	$(MAKE) -C $(LINUXDIR) M=$(TOP)/mmc-fonera modules
 endif

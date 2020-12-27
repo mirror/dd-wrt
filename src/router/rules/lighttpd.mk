@@ -28,6 +28,7 @@ lighttpd-configure: pcre-configure pcre openssl zlib
 	cd lighttpd && ./configure --host=$(ARCH)-linux $(CONFIGURE_ARGS) CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/pcre -I$(TOP)/zlib" CPPFLAGS="$(COPTS) $(MIPS16_OPT)" LDFLAGS="-L$(TOP)/pcre/.libs -lpthread -lpcre -L$(TOP)/zlib $(LDFLAGS) -lz" PCRE_LIB="-lpcre" PCRECONFIG="true"
 
 lighttpd: openssl zlib
+	install -D lighttpd/configs/lighttpd.webservices httpd/ej_temp/lighttpd.webservices
 	make -C lighttpd 
 
 lighttpd-clean:

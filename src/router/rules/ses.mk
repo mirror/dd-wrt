@@ -1,4 +1,5 @@
 ses:
+	install -D ses/config/ses.webservices httpd/ej_temp/ses.webservices
 	[ ! -f ses/Makefile ] || $(MAKE) -C ses
 
 ses-install:

@@ -33,6 +33,7 @@ softether-configure: zlib readline ncurses
 	$(call CMakeConfigure,$(SOFTETHER_PKG_BUILD_DIR),$(SOFTETHER_STAGING_DIR),$(SOFTETHER_CMAKE_OPTIONS),$(SOFTETHER_EXTRA_CFLAGS),$(SOFTETHER_EXTRA_LDFLAGS),.) 
 
 softether: zlib ncurses
+	cp -f $(TOP)/softether/config/* httpd/ej_temp/
 	$(MAKE) -C softether
 
 softether-install:
