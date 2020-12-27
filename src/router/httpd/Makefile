@@ -1441,7 +1441,7 @@ vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visua
 	@echo "[CC] $@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-all: generate validate.so visuals.so httpd_static cert
+all: generate httpd_static cert
 
 generate:
 	@echo "[GENWWW] gen"
