@@ -1,3 +1,4 @@
+obj-y+=prepare
 obj-$(CONFIG_OMCPROXY) += omcproxy
 obj-$(CONFIG_NVRAM) += nvram
 obj-$(CONFIG_WIRELESS_TOOLS) += wireless-tools
@@ -12,7 +13,6 @@ obj-$(CONFIG_SFTPSERVER) += sftp-server
 obj-$(CONFIG_QTN) += qtn
 obj-$(CONFIG_IOZONE) += iozone
 obj-$(CONFIG_SWCONFIG) += libnltiny swconfig
-obj-$(CONFIG_HTTPD) += httpd
 obj-$(CONFIG_ATH9K) += libnltiny fft_eval
 obj-$(CONFIG_RC) += rc services 
 obj-$(CONFIG_LIBBCM) += libbcm
@@ -374,6 +374,7 @@ endif
 
 
 obj-y+=configs
+obj-$(CONFIG_HTTPD) += httpd
 
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)

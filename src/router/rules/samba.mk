@@ -1,4 +1,5 @@
 samba:
+	install -D samba/config/sambafs.webconfig httpd/ej_temp/sambafs.webconfig
 	cd samba/cifs && $(ARCH)-linux-uclibc-gcc $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -o mount.cifs mount.cifs.c mtab.c util.c resolve_host.c
 
 samba-install:

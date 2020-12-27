@@ -14,6 +14,13 @@ nocat-configure:
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 nocat:
+ifeq ($(CONFIG_RAMSKOV),y)
+	install -D nocat/config_redirect/nocat.webhotspot httpd/ej_temp/nocat.webhotspot
+else
+	install -D nocat/config/nocat.webhotspot httpd/ej_temp/nocat.webhotspot
+endif
+
+
 	make  -C glib
 	cp $(TOP)/glib/.libs/*.a $(TOP)/glib-1.2.10-install/lib
 	cp $(TOP)/glib/gmodule/.libs/*.a $(TOP)/glib-1.2.10-install/lib

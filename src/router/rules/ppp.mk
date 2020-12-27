@@ -1,4 +1,7 @@
 ppp:
+ifeq ($(CONFIG_PPPOERELAY),y)
+	install -D rp-pppoe/config/pppoe-relay.webservices httpd/ej_temp/pppoe-relay.webservices
+endif
 	$(MAKE) -C rp-pppoe/src
 
 ppp-clean:

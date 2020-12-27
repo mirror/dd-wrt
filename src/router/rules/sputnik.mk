@@ -1,4 +1,9 @@
 sputnik: shared nvram wireless-tools
+ifeq ($(CONFIG_SPUTNIK_PRO),y)
+	install -D sputnik/config/1sputnik.webhotspot_pro httpd/ej_temp/1sputnik.webhotspot
+else
+	install -D sputnik/config/1sputnik.webhotspot httpd/ej_temp/1sputnik.webhotspot
+endif
 	if test -e "sputnik/Makefile"; then make -C sputnik; fi
 	@true
 sputnik-clean:

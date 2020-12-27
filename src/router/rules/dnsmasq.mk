@@ -41,6 +41,7 @@ dnsmasq-clean:
 
 
 dnsmasq: nettle gmp
+	install -D udhcpd/config/dhcpd.webservices httpd/ej_temp/dhcpd.webservices
 	$(MAKE) -C $(DNSMASQ_PATH) clean
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
 	$(MAKE) -j 4 -C $(DNSMASQ_PATH) CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSSEC_MAKEFLAGS)  -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSSEC_LINKFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
@@ -62,11 +63,7 @@ dnsmasq-install:
 	install -D $(DNSMASQ_PATH)/contrib/lease-tools/dhcp_release $(INSTALLDIR)/dnsmasq/usr/sbin/dhcp_release
 	install -D $(DNSMASQ_PATH)/contrib/lease-tools/dhcp_lease_time $(INSTALLDIR)/dnsmasq/usr/sbin/dhcp_lease_time
 	install -D $(DNSMASQ_PATH)/src/dnsmasq $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
-#ifeq ($(CONFIG_BUFFALO),y)
-#	install -D udhcpd/config/dhcpd.webservices.buffalo $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.webservices
-#else
 	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.webservices
-#endif
 	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.startup
 	install -D $(DNSMASQ_PATH)/configs/etc/rfc6761.conf $(INSTALLDIR)/dnsmasq/etc/rfc6761.conf
 ifeq ($(CONFIG_DNSSEC),y)

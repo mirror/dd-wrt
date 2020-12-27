@@ -9,6 +9,8 @@ smbd-configure: libnl
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 smbd: libnl
+	install -D smbd-next/config/samba_ksmbd.webnas httpd/ej_temp/02samba_ksmbd.webnas
+	install -D filesharing/config/zfilesharing.webnas httpd/ej_temp/03zfilesharing.webnas
 	$(MAKE) -C smbd-next/smbd all
 	$(MAKE) -C smbd-next/tools all
 

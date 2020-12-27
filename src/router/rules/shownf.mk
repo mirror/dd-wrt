@@ -1,4 +1,5 @@
 shownf:
+	install -D shownf/configs/shownf.webconfig httpd/ej_temp/shownf.webconfig
 	@true
 
 shownf-clean:

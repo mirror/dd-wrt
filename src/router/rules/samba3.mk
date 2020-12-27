@@ -64,6 +64,8 @@ samba3-delete:
 	rm -f samba36/source3/Makefile
 
 samba3: samba3-preconfigure
+	install -D samba36/config/samba3.webnas httpd/ej_temp/02samba3.webnas
+	install -D filesharing/config/zfilesharing.webnas httpd/ej_temp/03zfilesharing.webnas
 	$(MAKE) -C samba36/source3 bin/libtalloc.a WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
 	$(MAKE) -C samba36/source3 bin/libtdb.a WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
 	$(MAKE) -C samba36/source3 bin/libtevent.a WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 

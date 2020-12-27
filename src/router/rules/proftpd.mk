@@ -3,6 +3,8 @@ proftpd-configure:
 	sed -i 's/HAVE_LU/HAVE_LLU/g' proftpd/config.h
 
 proftpd:
+	install -D proftpd/config/ftp.webnas httpd/ej_temp/01ftp.webnas
+	install -D filesharing/config/zfilesharing.webnas httpd/ej_temp/03zfilesharing.webnas
 	$(MAKE) -C proftpd
 
 proftpd-clean:
