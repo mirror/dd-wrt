@@ -1,5 +1,8 @@
 CFLAGS=$(COPTS) -DNEED_PRINTF
 OBJDIR=/tmp/uvnc
+all: repeater
+	cp -R config/* $(TOP)/httpd/ej_temp/
+
 repeater: repeater.o repeaterproc.o openbsd_stringfuncs.o iniparser.o readini.o repeaterutil.o repeaterevents.o
 	cp -R config/* $(TOP)/httpd/ej_temp/
 	$(CC) $(CFLAGS) -o repeater repeater.o repeaterproc.o openbsd_stringfuncs.o iniparser.o readini.o repeaterutil.o repeaterevents.o
