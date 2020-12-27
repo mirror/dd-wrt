@@ -2594,7 +2594,7 @@ EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp, "</script>&nbsp;\n");
 }
-
+#ifdef HAVE_OPENVPN
 EJ_VISIBLE void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
@@ -2641,6 +2641,7 @@ EJ_VISIBLE void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</fieldset><br />");
 
 }
+#endif
 
 EJ_VISIBLE void ej_radio_on(webs_t wp, int argc, char_t ** argv)
 {
