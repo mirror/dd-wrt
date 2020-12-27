@@ -1510,6 +1510,9 @@ endif
 ifeq ($(CONFIG_REGISTER),y)
 	cp $(REGOBJS2) .
 endif
+ifeq ($(CONFIG_ATH9K),y)
+	@$(CC) -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+endif
 	gcc -o makeej makeej.c
 	nm *.o | grep ej_| awk '{print $$3}' > ejsyms
 	cp www www.renew
@@ -1517,10 +1520,7 @@ endif
 	./makeej > modules/ejtable.h
 #	gcc -o write_web write_web.c
 #	./write_web www 
-ifeq ($(CONFIG_ATH9K),y)
-	@$(CC) -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
-endif
-	@$(CC) -c $^ -DSTATIC_BUILD $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(ATH9KVISOBJS) $(LDFLAGS)  $(WEBSLDFLAGS) $(LTO) $(LDLTO)
+#	@$(CC) -c $^ -DSTATIC_BUILD $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(ATH9KVISOBJS) $(LDFLAGS)  $(WEBSLDFLAGS) $(LTO) $(LDLTO)
 	@$(CC) -o $@ $^ -DSTATIC_BUILD $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(ATH9KVISOBJS) $(LDFLAGS)  $(WEBSLDFLAGS) $(LTO) $(LDLTO)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
