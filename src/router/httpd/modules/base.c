@@ -68,24 +68,24 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 static void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 static void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
 static int start_validator(char *name, webs_t wp, char *value, struct variable *v);
-static char *websGetVar(webs_t wp, char *var, char *d);
-static int websGetVari(webs_t wp, char *var, int d);
+char *websGetVar(webs_t wp, char *var, char *d);
+int websGetVari(webs_t wp, char *var, int d);
 static void start_gozila(char *name, webs_t wp);
 static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v);
 static int do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary);
-static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
-static char *wfgets(char *buf, int len, webs_t fp, int *eof);
-static int wfprintf(webs_t fp, char *fmt, ...);
-static size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
-static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
-static int wfclose(webs_t fp);
-static int wfflush(webs_t fp);
-static int wfputs(char *buf, webs_t fp);
+int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
+char *wfgets(char *buf, int len, webs_t fp, int *eof);
+int wfprintf(webs_t fp, char *fmt, ...);
+size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
+size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
+int wfclose(webs_t fp);
+int wfflush(webs_t fp);
+int wfputs(char *buf, webs_t fp);
 /* Basic authorization userid and passwd limit */
 
 static void send_authenticate(webs_t conn_fp);
 
-static char *_live_translate(webs_t wp, const char *tran);
+char *live_translate(webs_t wp, const char *tran);
 #ifdef HAVE_BUFFALO
 void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
 #endif
@@ -934,7 +934,7 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 	free(temp);
 }
 
-static void _validate_cgi(webs_t wp)
+void validate_cgi(webs_t wp)
 {
 	char *value;
 	int i;
@@ -1544,7 +1544,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		struct apply_action *act;
 
 		cprintf("validate cgi");
-		_validate_cgi(wp);
+		validate_cgi(wp);
 		cprintf("handle apply action\n");
 		act = handle_apply_action(submit_button);
 		cprintf("done\n");
@@ -2285,7 +2285,7 @@ static void clear_translationcache(void)
 
 }
 
-static char *_live_translate(webs_t wp, const char *tran)	// todo: add locking to be thread safe
+char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thread safe
 {
 	static char *cur_language = NULL;
 	if (!tran || *(tran) == 0) {
@@ -2356,7 +2356,7 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 
 	static const char filename[] = "/var/log/messages";
 	if (!charset)
-		charset = strdup(_live_translate(stream, "lang_charset.set"));
+		charset = strdup(live_translate(stream, "lang_charset.set"));
 	int offset = 0;
 	int count = 0;
 	char *query = strchr(url, '?');
@@ -2408,7 +2408,7 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 static void do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	if (!charset)
-		charset = strdup(_live_translate(stream, "lang_charset.set"));
+		charset = strdup(live_translate(stream, "lang_charset.set"));
 
 #define COL_WIDTH 16		/* single column width */
 
@@ -2479,9 +2479,9 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 		f = f * 10;
 	}
 
-	char *incom = _live_translate(stream, "status_inet.traffin");
-	char *outcom = _live_translate(stream, "status_inet.traffout");
-	char *monthname = _live_translate(stream, months[month - 1]);
+	char *incom = live_translate(stream, "status_inet.traffin");
+	char *outcom = live_translate(stream, "status_inet.traffout");
+	char *monthname = live_translate(stream, months[month - 1]);
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//

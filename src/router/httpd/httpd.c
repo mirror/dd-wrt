@@ -42,7 +42,8 @@ static int wfflush(webs_t fp);
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
 
-static int wfputs(char *buf, webs_t fp);
+
+int wfputs(char *buf, webs_t fp);
 #endif
 #endif
 /* Basic authorization userid and passwd limit */
@@ -770,7 +771,6 @@ void ias_sid_set(webs_t wp);
 int ias_sid_valid(webs_t wp);
 #endif
 static persistent_vars global_vars;
-static struct Webenvironment webenv;
 #define LINE_LEN 10000
 static void *handle_request(void *arg)
 {
@@ -1453,7 +1453,7 @@ int main(int argc, char **argv)
 	const char *pers = "ssl_server";
 #endif
 
-	webenv.websGetVar = websGetVar;
+/*	webenv.websGetVar = websGetVar;
 	webenv.websGetVari = websGetVari;
 	webenv.vwebsWrite = vwebsWrite;
 	webenv.do_ej_buffer = do_ej_buffer;
@@ -1463,8 +1463,8 @@ int main(int argc, char **argv)
 	webenv.websRomPageIndex = websRomPageIndex;
 	webenv.live_translate = _live_translate;
 	webenv.GOZILA_GET = _GOZILA_GET;
-	webenv.validate_cgi = _validate_cgi;
-	global_vars.env = &webenv;
+	webenv.validate_cgi = _validate_cgi;*/
+//	global_vars.env = &webenv;
 	CRYPT_MUTEX_INIT(&crypt_mutex, NULL);
 	SEM_INIT(&semaphore, 0, HTTP_MAXCONN);
 	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
@@ -1968,7 +1968,7 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 	return ret;
 }
 
-static int wfputs(char *buf, webs_t wp)
+int wfputs(char *buf, webs_t wp)
 {
 
 	FILE *fp = wp->fp;
@@ -2019,7 +2019,7 @@ static int wfprintf(webs_t wp, char *fmt, ...)
 	return ret;
 }
 
-static size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
+size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 {
 
 	char *buf;
@@ -2046,7 +2046,7 @@ static size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 	return ret;
 }
 
-static size_t websWrite(webs_t wp, char *fmt, ...)
+size_t websWrite(webs_t wp, char *fmt, ...)
 {
 	if (!wp || !fmt)
 		return -1;

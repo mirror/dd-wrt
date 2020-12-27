@@ -76,7 +76,7 @@ void add_raid(webs_t wp)
 
 void format_drive(webs_t wp)
 {
-	char *val = validate_websGetVar(wp, "raid_del_value", NULL);
+	char *val = websGetVar(wp, "raid_del_value", NULL);
 	if (!val)
 		return;
 	int idx = atoi(val);
@@ -85,9 +85,9 @@ void format_drive(webs_t wp)
 	char s_label[32];
 	sprintf(s_label, "label%d", idx);
 
-	char *fs = validate_websGetVar(wp, "do_format_drive", NULL);
-	char *format = validate_websGetVar(wp, s_format, NULL);
-	char *label = validate_websGetVar(wp, s_label, NULL);
+	char *fs = websGetVar(wp, "do_format_drive", NULL);
+	char *format = websGetVar(wp, s_format, NULL);
+	char *label = websGetVar(wp, s_label, NULL);
 	if (!fs || !format)
 		return;
 	if (!label)
@@ -140,7 +140,7 @@ void format_drive(webs_t wp)
 #ifdef HAVE_ZFS
 void zfs_scrub(webs_t wp)
 {
-	char *val = validate_websGetVar(wp, "zfs_scrub_value", NULL);
+	char *val = websGetVar(wp, "zfs_scrub_value", NULL);
 	if (!val)
 		return;
 	int idx = atoi(val);
@@ -151,7 +151,7 @@ void zfs_scrub(webs_t wp)
 
 void del_raid(webs_t wp)
 {
-	char *val = validate_websGetVar(wp, "raid_del_value", NULL);
+	char *val = websGetVar(wp, "raid_del_value", NULL);
 	if (!val)
 		return;
 	int idx = atoi(val);
@@ -219,7 +219,7 @@ void del_raid(webs_t wp)
 
 void add_raid_member(webs_t wp)
 {
-	char *val = validate_websGetVar(wp, "raid_member_add_value", NULL);
+	char *val = websGetVar(wp, "raid_member_add_value", NULL);
 	if (!val)
 		return;
 	int idx = atoi(val);
@@ -235,8 +235,8 @@ void add_raid_member(webs_t wp)
 
 void del_raid_member(webs_t wp)
 {
-	char *val = validate_websGetVar(wp, "raid_member_add_value", NULL);
-	char *del = validate_websGetVar(wp, "raid_member_del_value", NULL);
+	char *val = websGetVar(wp, "raid_member_add_value", NULL);
+	char *del = websGetVar(wp, "raid_member_del_value", NULL);
 	if (!val)
 		return;
 	if (!del)
@@ -274,21 +274,21 @@ void raid_save(webs_t wp)
 	while (1) {
 		char raidname[32];
 		sprintf(raidname, "raidname%d", idx);
-		char *rn = validate_websGetVar(wp, raidname, NULL);
+		char *rn = websGetVar(wp, raidname, NULL);
 		if (!rn)
 			break;
 		nvram_nset(rn, "raidname%d", idx);
 
 		char raidtype[32];
 		sprintf(raidtype, "raidtype%d", idx);
-		char *rt = validate_websGetVar(wp, raidtype, NULL);
+		char *rt = websGetVar(wp, raidtype, NULL);
 		if (!rt)
 			break;
 		nvram_nset(rt, "raidtype%d", idx);
 
 		char raidlevel[32];
 		sprintf(raidlevel, "raidlevel%d", idx);
-		char *rl = validate_websGetVar(wp, raidlevel, NULL);
+		char *rl = websGetVar(wp, raidlevel, NULL);
 		if (!rl)
 			break;
 		nvram_nset(rl, "raidlevel%d", idx);
@@ -296,24 +296,24 @@ void raid_save(webs_t wp)
 		if (!strcmp(rt, "zfs")) {
 			char raidlz[32];
 			sprintf(raidlz, "raidlz%d", idx);
-			char *rlz = validate_websGetVar(wp, raidlz, NULL);
+			char *rlz = websGetVar(wp, raidlz, NULL);
 			nvram_nset(rlz, "raidlz%d", idx);
 
 			char raidlzlevel[32];
 			sprintf(raidlzlevel, "raidlzlevel%d", idx);
-			char *rlzlevel = validate_websGetVar(wp, raidlzlevel, NULL);
+			char *rlzlevel = websGetVar(wp, raidlzlevel, NULL);
 			if (rlzlevel)
 				nvram_nset(rlzlevel, "raidlzlevel%d", idx);
 
 			char raiddedup[32];
 			sprintf(raiddedup, "raiddedup%d", idx);
-			char *rdd = validate_websGetVar(wp, raiddedup, "0");
+			char *rdd = websGetVar(wp, raiddedup, "0");
 			nvram_nset(rdd, "raiddedup%d", idx);
 		}
 
 		char raidfs[32];
 		sprintf(raidfs, "raidfs%d", idx);
-		char *rfs = validate_websGetVar(wp, raidfs, NULL);
+		char *rfs = websGetVar(wp, raidfs, NULL);
 		if (rfs)
 			nvram_nset(rfs, "raidfs%d", idx);
 
@@ -322,7 +322,7 @@ void raid_save(webs_t wp)
 		while (1) {
 			char member[32];
 			sprintf(member, "raid%dmember%d", idx, midx);
-			char *mb = validate_websGetVar(wp, member, NULL);
+			char *mb = websGetVar(wp, member, NULL);
 			if (!mb)
 				break;
 			a = realloc(a, a ? strlen(a) + strlen(mb) + 2 : strlen(mb) + 1);
@@ -345,11 +345,11 @@ void raid_save(webs_t wp)
 		sprintf(drivename, "drivename%d", idx);
 		char label[32];
 		sprintf(label, "label%d", idx);
-		char *dn = validate_websGetVar(wp, drivename, NULL);
+		char *dn = websGetVar(wp, drivename, NULL);
 		if (!dn)
 			break;
 		idx++;
-		char *l = validate_websGetVar(wp, label, NULL);
+		char *l = websGetVar(wp, label, NULL);
 		if (!l)
 			continue;
 		nvram_nset(l, "%s_label", dn);
@@ -358,7 +358,7 @@ void raid_save(webs_t wp)
 
 void format_raid(webs_t wp)
 {
-	char *val = validate_websGetVar(wp, "raid_del_value", NULL);
+	char *val = websGetVar(wp, "raid_del_value", NULL);
 	if (!val)
 		return;
 	int idx = atoi(val);
