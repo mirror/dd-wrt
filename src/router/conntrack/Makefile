@@ -11,11 +11,6 @@ MODULE:=conntrack.startup
 
 include $(TOP)/busybox/.config
 
-notifier: notifier.o
-	$(CC) -o $@ $^ $(CFLAGS) -L$(TOP)/nvram -lnvram
-
-clean:
-	rm -f notifier notifier.o
 
 all: notifier
 ifneq ($(CONFIG_DIST),"micro")
@@ -25,6 +20,13 @@ ifeq ($(CONFIG_SENDMAIL),y)
 endif
 endif
 endif
+
+notifier: notifier.o
+	$(CC) -o $@ $^ $(CFLAGS) -L$(TOP)/nvram -lnvram
+
+clean:
+	rm -f notifier notifier.o
+
 
 
 install:
