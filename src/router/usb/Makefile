@@ -12,9 +12,9 @@ clean:
 	@true
 all:
 ifeq ($(CONFIG_USB_ADVANCED),y)
-	cp $(MODULE_ADV)* httpd/ej_temp/
+	cp $(MODULE_ADV)* $(TOP)/httpd/ej_temp/
 else
-	cp $(MODULE)* httpd/ej_temp/
+	cp $(MODULE)* $(TOP)/httpd/ej_temp/
 endif
 	@true
 
