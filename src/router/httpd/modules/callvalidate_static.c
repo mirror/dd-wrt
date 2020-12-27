@@ -110,6 +110,14 @@ void validate_wl_wme_params(webs_t wp, char *value, struct variable *v);
 void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v);
 void validate_wpa_psk(webs_t wp, char *value, struct variable *v);
 
+void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv);
+void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv);
+void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv);
+void ej_exec_milkfish_phonebook(webs_t wp, int argc, char_t ** argv);
+void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv);
+void ej_exec_show_aliases(webs_t wp, int argc, char_t ** argv);
+void ej_exec_show_registrations(webs_t wp, int argc, char_t ** argv);
+void ej_exec_show_subscribers(webs_t wp, int argc, char_t ** argv);
 void ej_active_wds(webs_t wp, int argc, char_t ** argv);
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv);
 void ej_assoc_count(webs_t wp, int argc, char_t ** argv);
