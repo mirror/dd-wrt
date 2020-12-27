@@ -10,6 +10,7 @@ MODULE:=proxywatchdog
 clean:
 	@true
 all:
+	cp $(MODULE)* $(TOP)/httpd/ej_temp
 	@true
 
 install:
