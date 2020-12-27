@@ -1506,6 +1506,8 @@ httpd_static: httpd.c $(ADDOBJ) $(OBJS)  validators.o webs.o wepkey.o setupassis
 	@echo "[LD] $@"
 	gcc -o makeej makeej.c
 	nm *.o | grep ej_| awk '{print $$3}' > ejsyms
+	cp www www.renew
+	cat ej_temp/* >> www.renew
 	./makeej > modules/ejtable.h
 #	gcc -o write_web write_web.c
 #	./write_web www 
