@@ -1504,6 +1504,9 @@ httpd: httpd.c $(ADDOBJ) $(OBJS)
 httpd_static: httpd.c $(ADDOBJ) $(OBJS)  validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)  dd-wrt.o packets.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o $(VISOBJS) $(REGOBJS2)
 
 	@echo "[LD] $@"
+	gcc -o makeej makeej.c
+	nm *.o | grep ej_| awk '{print $$3}' > ejsyms
+	./makeej > modules/ejtable.h
 #	gcc -o write_web write_web.c
 #	./write_web www 
 ifeq ($(CONFIG_ATH9K),y)
