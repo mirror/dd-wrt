@@ -939,7 +939,6 @@ static struct callmap gozila_map[] = {
 #endif
 };
 
-static char *path_modules[] = { "/jffs/usr/lib", "/tmp/debug", "/usr/lib", "/lib", NULL };
 
 #define cprintf(fmt, args...)
 
@@ -975,12 +974,9 @@ static char *_GOZILA_GET(webs_t wp, char *name)
 	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
-extern const websRomPageIndexType websRomPageIndex[];
 
 static char *_live_translate(webs_t wp, const char *tran);
 static void _validate_cgi(webs_t wp);
-
-static void *s_service = NULL;
 
 static void start_gozila(char *name, webs_t wp)
 {
@@ -1042,7 +1038,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	void (*fptr)(webs_t wp, int argc, char_t ** argv) = NULL;
 	int i;
 	for (i = 0; i < sizeof(ej_map) / sizeof(ej_map[0]); i++) {
-		if (ej_map[i].name[0] == name[0] && !strcmp(ej_map[i].name, name)) {
+		if (*((unsigned int*)ej_map[i].name) == *((unsigned int*)name) && !strcmp(ej_map[i].name, name)) {
 			fptr = (void (*)(webs_t wp, int argc, char_t ** argv))ej_map[i].func;
 			break;
 		}
