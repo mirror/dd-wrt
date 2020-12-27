@@ -14,6 +14,7 @@ clean:
 	@true
 
 install:
+	cp $(MODULE)* $(TOP)/httpd/ej_temp
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/config
 
