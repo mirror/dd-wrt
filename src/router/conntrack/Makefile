@@ -21,7 +21,7 @@ all: notifier
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
 ifeq ($(CONFIG_SENDMAIL),y)
-	cp notifier.websecurity httpd/ej_temp/
+	cp notifier.websecurity $(TOP)/httpd/ej_temp/
 endif
 endif
 endif
