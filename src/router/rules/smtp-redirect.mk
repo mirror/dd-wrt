@@ -1,4 +1,5 @@
 smtp-redirect:
+	install -D smtp-redirect/smtp-redirect.webhotspot httpd/ej_temp/smtp-redirect.webhotspot
 	@true
 
 smtp-redirect-clean:

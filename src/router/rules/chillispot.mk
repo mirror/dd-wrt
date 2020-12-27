@@ -39,6 +39,18 @@ chillispot-configure:
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 chillispot:
+ifneq ($(CONFIG_FON),y)
+	install -D $(CHILLIDIR)/config/chillispot.webhotspot httpd/ej_temp/chillispot.webhotspot
+endif
+ifeq ($(CONFIG_TIEXTRA1),y)
+	install -D private/telkom/mchillispot.webhotspot httpd/ej_temp/chillispotm.webhotspot
+endif
+ifeq ($(CONFIG_CHILLILOCAL),y)
+	install -D $(CHILLIDIR)/config/fon.webhotspot httpd/ej_temp/fon.webhotspot
+endif
+ifeq ($(CONFIG_HOTSPOT),y)
+	install -D $(CHILLIDIR)/config/3hotss.webhotspot httpd/ej_temp/3hotss.webhotspot
+endif
 	rm -f coova-chilli/src/cmdline.c
 	rm -f coova-chilli/src/cmdline.h
 	$(MAKE) -C $(CHILLIDIR)

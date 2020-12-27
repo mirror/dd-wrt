@@ -12,6 +12,7 @@ chrony-configure:
 	--sysconfdir=/etc/chrony \
 
 chrony:
+	install -D chrony/config/chronyd.webservices httpd/ej_temp/
 	make   -C chrony
 
 chrony-clean:

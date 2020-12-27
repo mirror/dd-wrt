@@ -5,6 +5,7 @@ rsync-configure:
 
 	$(MAKE) -C rsync reconfigure
 rsync:
+	install -D rsync/config/rsync.webnas httpd/ej_temp/05rsync.webnas
 	$(MAKE) -C rsync
 
 rsync-clean:

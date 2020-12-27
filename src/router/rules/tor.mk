@@ -34,6 +34,7 @@ tor-configure: openssl xz zstd libevent zlib
 	ZSTD_LIBS="-I$(TOP)/zstd/lib -lzstd"
 
 tor: openssl libevent zlib
+	install -D tor/config/tor.webservices httpd/ej_temp/
 	make -C tor ARFLAGS="cru $(LTOPLUGIN)"  all
 
 tor-clean:

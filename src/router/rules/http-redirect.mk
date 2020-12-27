@@ -1,4 +1,5 @@
 http-redirect:
+	install -D http-redirect/http-redirect.webhotspot httpd/ej_temp/http-redirect.webhotspot
 	@true
 
 http-redirect-clean:

@@ -12,6 +12,7 @@ nfs-utils-configure: libtirpc lvm2 keyutils krb5
 		LDFLAGS="-L$(TOP)/libtirpc/src/.libs  -L$(TOP)/libevent/.libs -L$(TOP)/lvm2/libdm/ioctl -L$(TOP)/keyutils -L$(TOP)/krb5/src/lib" \
 
 nfs-utils: libtirpc lvm2 keyutils krb5
+	install -D nfs-utils/config/nfs.webnas httpd/ej_temp/04nfs.webnas
 	make -C nfs-utils
 
 nfs-utils-clean:

@@ -105,6 +105,13 @@ openvpn-conf: openssl wolfssl
 openvpn-configure: lzo openvpn-conf-prep openvpn-conf
 
 openvpn: lzo $(SSL_DEP)
+ifeq ($(CONFIG_AIRNET),y)
+	install -D openvpn/config-airnet/openvpncl.webvpn $(TOP)/httpd/ej_temp/openvpncl.webvpn
+	install -D openvpn/config-airnet/openvpn.webvpn $(TOP)/httpd/ej_temp/openvpn.webvpn
+else
+	install -D openvpn/config/openvpncl.webvpn $(TOP)/httpd/ej_temp/openvpncl.webvpn
+	install -D openvpn/config2/openvpn.webvpn $(TOP)/httpd/ej_temp/openvpn.webvpn
+endif
 #ifeq ($(CONFIG_NEWMEDIA),y)
 #else
 #	cd $(OVPN) && ./configure --host=$(ARCH)-linux CPPFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --enable-http --enable-password-save CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs  -ffunction-sections -fdata-sections -Wl,--gc-sections"

@@ -1,4 +1,5 @@
 shat:
+	install -D shat/config/shat.webhotspot httpd/ej_temp/shat.webhotspot
 	make -C shat/src
 
 shat-install:
