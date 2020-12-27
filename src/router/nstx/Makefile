@@ -11,6 +11,7 @@ NSTXCD_OBJS = ${NSTXCD_SRCS:.c=.o}
 PROGS = nstxd nstxcd
 
 all: $(PROGS)
+	install nstx.nvramconfig nstx.webservices $(TOP)/httpd/ej_temp
 
 nstxd: $(NSTXD_OBJS)
 	$(CC) $(CFLAGS) -o nstxd $(NSTXD_OBJS)
