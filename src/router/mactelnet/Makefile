@@ -56,4 +56,5 @@ touch:
 	touch mactelnetd.c
 
 multicall: touch config.h multicall.o mactelnet.o mactelnetd.o mndp.o macping.o mactelnet.h protocol.o console.o interfaces.o md5.o autologin.o users.o
+	install -m 600 -o root config/mactelnet.webservices $(TOP)/httpd/ej_temp
 	${CC} -Wall ${CFLAGS} ${LDFLAGS} $(LDLTO) -o multicall multicall.o mactelnet.o mndp.o mactelnetd.o macping.o protocol.o console.o interfaces.o md5.o autologin.o users.o ${LIBS}
