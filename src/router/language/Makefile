@@ -7,13 +7,13 @@ endif
 
 MODULE:=language
 
-clean:
-	@true
 all:
+	cp $(MODULE)* $(INSTALLDIR)/etc/config
+
+clean:
 	@true
 
 install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/config
-	cp $(MODULE)* $(INSTALLDIR)/etc/config
 
