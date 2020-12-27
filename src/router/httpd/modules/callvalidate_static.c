@@ -987,7 +987,7 @@ static void start_gozila(char *name, webs_t wp)
 	int (*fptr)(webs_t wp) = NULL;
 	int i;
 	for (i = 0; i < sizeof(gozila_map) / sizeof(gozila_map[0]); i++) {
-		if (!strcmp(gozila_map[i].name, name)) {
+		if (gozila_map[i].name[0] == name[0] && !strcmp(gozila_map[i].name, name)) {
 			fptr = (int (*)(webs_t wp))gozila_map[i].func;
 			break;
 		}
@@ -1007,7 +1007,7 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	int i;
 	int ret;
 	for (i = 0; i < sizeof(validate_map) / sizeof(validate_map[0]); i++) {
-		if (!strcmp(validate_map[i].name, name)) {
+		if (validate_map[i].name[0] == name[0] && !strcmp(validate_map[i].name, name)) {
 			fptr = (int (*)(webs_t wp, char *value, struct variable * v))validate_map[i].func;
 			break;
 		}
@@ -1042,7 +1042,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	void (*fptr)(webs_t wp, int argc, char_t ** argv) = NULL;
 	int i;
 	for (i = 0; i < sizeof(ej_map) / sizeof(ej_map[0]); i++) {
-		if (!strcmp(ej_map[i].name, name)) {
+		if (ej_map[i].name[0] == name[0] && !strcmp(ej_map[i].name, name)) {
 			fptr = (void (*)(webs_t wp, int argc, char_t ** argv))ej_map[i].func;
 			break;
 		}
