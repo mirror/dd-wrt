@@ -110,7 +110,6 @@ void validate_wl_wme_params(webs_t wp, char *value, struct variable *v);
 void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v);
 void validate_wpa_psk(webs_t wp, char *value, struct variable *v);
 
-
 void ej_active_wds(webs_t wp, int argc, char_t ** argv);
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv);
 void ej_assoc_count(webs_t wp, int argc, char_t ** argv);
@@ -346,38 +345,57 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv);
 void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv);
 void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv);
 void ej_wme_match_op(webs_t wp, int argc, char_t ** argv);
+void ej_show_mmc_cardinfo(webs_t wp, int argc, char_t ** argv);
 
 struct callmap {
 	char *name;
 	void *func;
 };
+
+static struct callmap ej_map[] = {
+#include "ejtable.h"
+};
+
+#if 0
 static struct callmap ej_map[] = {
 	{ "active_wds", &ej_active_wds },
 	{ "active_wireless", &ej_active_wireless },
 	{ "assoc_count", &ej_assoc_count },
 	{ "atmsettings", &ej_atmsettings },
 	{ "calcendip", &ej_calcendip },
+#ifdef HAVE_ATH9K
 	{ "channel_survey", &ej_channel_survey },
+#endif
 	{ "compile_date", &ej_compile_date },
 	{ "compile_time", &ej_compile_time },
 	{ "dhcpenabled", &ej_dhcpenabled },
 	{ "dhcp_remaining_time", &ej_dhcp_remaining_time },
+#ifdef HAVE_MINIDLNA
 	{ "dlna_sharepaths", &ej_dlna_sharepaths },
+#endif
 	{ "do_hpagehead", &ej_do_hpagehead },
 	{ "do_menu", &ej_do_menu },
 	{ "do_pagehead", &ej_do_pagehead },
 	{ "dumparptable", &ej_dumparptable },
+#ifdef HAVE_ATH9K
 	{ "dump_channel_survey", &ej_dump_channel_survey },
+#endif
 	{ "dumpip_conntrack", &ej_dumpip_conntrack },
 	{ "dumpleases", &ej_dumpleases },
 	{ "dumplog", &ej_dumplog },
 	{ "dumpmeminfo", &ej_dumpmeminfo },
 	{ "dump_ping_log", &ej_dump_ping_log },
+#ifdef HAVE_PPPOESERVER
 	{ "dumppppoe", &ej_dumppppoe },
+#endif
+#ifdef HAVE_PPTPD
 	{ "dumppptp", &ej_dumppptp },
+#endif
 	{ "dump_route_table", &ej_dump_route_table },
 	{ "dump_site_survey", &ej_dump_site_survey },
+#ifdef HAVE_WIVIZ
 	{ "dump_wiviz_data", &ej_dump_wiviz_data },
+#endif
 	{ "else_selmatch", &ej_else_selmatch },
 	{ "filter_dport_get", &ej_filter_dport_get },
 	{ "filter_getpacketcount", &ej_filter_getpacketcount },
@@ -395,17 +413,23 @@ static struct callmap ej_map[] = {
 	{ "gen_init_timer", &ej_gen_init_timer },
 	{ "gen_timer_compute", &ej_gen_timer_compute },
 	{ "gen_timer_fields", &ej_gen_timer_fields },
+#ifdef HAVE_ATH9K
 	{ "get_active", &ej_get_active },
+#endif
 	{ "get_backup_name", &ej_get_backup_name },
 	{ "getboottime", &ej_getboottime },
 	{ "get_br1_ip", &ej_get_br1_ip },
 	{ "get_br1_netmask", &ej_get_br1_netmask },
+#ifdef HAVE_ATH9K
 	{ "get_busy", &ej_get_busy },
+#endif
 	{ "getchipset", &ej_getchipset },
 	{ "get_clkfreq", &ej_get_clkfreq },
 	{ "get_clone_mac", &ej_get_clone_mac },
 	{ "get_clone_wmac", &ej_get_clone_wmac },
+#ifdef HAVE_CPUTEMP
 	{ "get_cputemp", &ej_get_cputemp },
+#endif
 	{ "get_curchannel", &ej_get_curchannel },
 	{ "get_currate", &ej_get_currate },
 	{ "getdefaultindex", &ej_getdefaultindex },
@@ -424,7 +448,9 @@ static struct callmap ej_map[] = {
 	{ "get_qosmacs", &ej_get_qosmacs },
 	{ "get_qospkts", &ej_get_qospkts },
 	{ "get_qossvcs", &ej_get_qossvcs },
+#ifdef HAVE_ATH9K
 	{ "get_quality", &ej_get_quality },
+#endif
 	{ "get_radio_state", &ej_get_radio_state },
 	{ "get_radio_statejs", &ej_get_radio_statejs },
 	{ "get_service_state", &ej_get_service_state },
@@ -457,7 +483,11 @@ static struct callmap ej_map[] = {
 	{ "has_routing", &ej_has_routing },
 	{ "ifdef", &ej_ifdef },
 	{ "ifndef", &ej_ifndef },
+#ifdef HAVE_WPA_SUPPLICANT
+#ifndef HAVE_MICRO
 	{ "init_80211x_layers", &ej_init_80211x_layers },
+#endif
+#endif
 	{ "ip_conntrack_table", &ej_ip_conntrack_table },
 	{ "list_mac_layers", &ej_list_mac_layers },
 	{ "localtime", &ej_localtime },
@@ -492,19 +522,31 @@ static struct callmap ej_map[] = {
 	{ "port_vlan_table", &ej_port_vlan_table },
 	{ "prefix_ip_get", &ej_prefix_ip_get },
 	{ "radio_on", &ej_radio_on },
+#ifdef HAVE_SAMBA_SERVER
 	{ "samba3_sharepaths", &ej_samba3_sharepaths },
 	{ "samba3_users", &ej_samba3_users },
+#endif
 	{ "selchecked", &ej_selchecked },
 	{ "show_acktiming", &ej_show_acktiming },
 	{ "show_bandwidth", &ej_show_bandwidth },
+#ifdef HAVE_BONDING
 	{ "show_bondings", &ej_show_bondings },
+#endif
+#ifdef HAVE_VLANTAGGING
 	{ "show_bridgeifnames", &ej_show_bridgeifnames },
 	{ "show_bridgenames", &ej_show_bridgenames },
 	{ "showbridgesettings", &ej_showbridgesettings },
 	{ "show_bridgetable", &ej_show_bridgetable },
+#endif
+#ifdef HAVE_ATH9K
 	{ "show_busy", &ej_show_busy },
+#endif
+#ifdef HAVE_FREERADIUS
 	{ "show_certificate_status", &ej_show_certificate_status },
+#endif
+#ifdef HAVE_PPPOESERVER
 	{ "show_chaps", &ej_show_chaps },
+#endif
 	{ "show_clocks", &ej_show_clocks },
 	{ "show_congestion", &ej_show_congestion },
 	{ "show_connectiontype", &ej_show_connectiontype },
@@ -513,14 +555,20 @@ static struct callmap ej_map[] = {
 	{ "show_cpucores", &ej_show_cpucores },
 	{ "show_cpufeatures", &ej_show_cpufeatures },
 	{ "show_cpuinfo", &ej_show_cpuinfo },
+#ifdef HAVE_CPUTEMP
 	{ "show_cpu_temperature", &ej_show_cpu_temperature },
+#endif
 	{ "show_ddns_status", &ej_show_ddns_status },
 	{ "show_default_level", &ej_show_default_level },
 	{ "show_defwpower", &ej_show_defwpower },
 	{ "show_dhcpd_settings", &ej_show_dhcpd_settings },
+#ifdef HAVE_DNSCRYPT
 	{ "show_dnscrypt", &ej_show_dnscrypt },
+#endif
 	{ "show_dnslist", &ej_show_dnslist },
+#ifdef HAVE_EOP_TUNNEL
 	{ "show_eop_tunnels", &ej_show_eop_tunnels },
+#endif
 	{ "show_filterif", &ej_show_filterif },
 	{ "show_filters", &ej_show_filters },
 	{ "show_forward", &ej_show_forward },
@@ -529,24 +577,42 @@ static struct callmap ej_map[] = {
 	{ "show_ifselect", &ej_show_ifselect },
 	{ "show_index_setting", &ej_show_index_setting },
 	{ "show_infopage", &ej_show_infopage },
+#ifdef HAVE_IPV6
 	{ "show_ipv6options", &ej_show_ipv6options },
+#endif
+#ifdef HAVE_IPVS
 	{ "show_ipvs", &ej_show_ipvs },
 	{ "show_ipvsassignments", &ej_show_ipvsassignments },
+#endif
+#ifdef HAVE_RADLOCAL
 	{ "show_iradius", &ej_show_iradius },
 	{ "show_iradius_check", &ej_show_iradius_check },
+#endif
+#ifdef HAVE_LANGUAGE
 	{ "show_languages", &ej_show_languages },
+#endif
 	{ "show_live_dnslist", &ej_show_live_dnslist },
 	{ "show_logo", &ej_show_logo },
 	{ "show_macfilter", &ej_show_macfilter },
+#ifdef HAVE_VLANTAGGING
 	{ "show_mdhcp", &ej_show_mdhcp },
+#endif
 	{ "show_modules", &ej_show_modules },
+#ifdef HAVE_OLSRD
 	{ "show_olsrd", &ej_show_olsrd },
+#endif
+#ifdef HAVE_OPENVPN
 	{ "show_openvpn_status", &ej_show_openvpn_status },
+#endif
 	{ "show_paypal", &ej_show_paypal },
 	{ "show_qos_aqd", &ej_show_qos_aqd },
+#ifdef HAVE_FREERADIUS
 	{ "show_radius_clients", &ej_show_radius_clients },
 	{ "show_radius_users", &ej_show_radius_users },
+#endif
+#ifdef HAVE_RAID
 	{ "show_raid", &ej_show_raid },
+#endif
 	{ "show_routeif", &ej_show_routeif },
 	{ "show_routing", &ej_show_routing },
 	{ "show_security", &ej_show_security },
@@ -557,9 +623,15 @@ static struct callmap ej_map[] = {
 	{ "show_timeoptions", &ej_show_timeoptions },
 	{ "show_triggering", &ej_show_triggering },
 	{ "show_upgrade_options", &ej_show_upgrade_options },
+#ifdef HAVE_USB
 	{ "show_usb_diskinfo", &ej_show_usb_diskinfo },
+#endif
+#ifdef HAVE_CHILLILOCAL
 	{ "show_userlist", &ej_show_userlist },
+#endif
+#ifdef HAVE_VLANTAGGING
 	{ "show_vlantagging", &ej_show_vlantagging },
+#endif
 	{ "show_wan_domain", &ej_show_wan_domain },
 	{ "show_wanipinfo", &ej_show_wanipinfo },
 	{ "show_wan_to_switch", &ej_show_wan_to_switch },
@@ -570,15 +642,23 @@ static struct callmap ej_map[] = {
 	{ "show_wl_mac", &ej_show_wl_mac },
 	{ "show_wl_wep_setting", &ej_show_wl_wep_setting },
 	{ "spectral_scan", &ej_spectral_scan },
+#ifdef HAVE_SPUTNIK_APD
 	{ "sputnik_apd_status", &ej_sputnik_apd_status },
+#endif
 	{ "startswith", &ej_startswith },
 	{ "statfs", &ej_statfs },
 	{ "static_route_setting", &ej_static_route_setting },
 	{ "static_route_table", &ej_static_route_table },
 	{ "statnv", &ej_statnv },
+#ifdef HAVE_NAS_SERVER
 	{ "support_fs", &ej_support_fs },
+#endif
+#ifdef HAVE_SYSCTL_EDIT
 	{ "sysctl", &ej_sysctl },
+#endif
+#ifdef HAVE_UPNP
 	{ "tf_upnp", &ej_tf_upnp },
+#endif
 	{ "tran", &ej_tran },
 	{ "update_acktiming", &ej_update_acktiming },
 	{ "wan_if_status", &ej_wan_if_status },
@@ -587,13 +667,19 @@ static struct callmap ej_map[] = {
 	{ "wireless_filter_table", &ej_wireless_filter_table },
 	{ "wl_packet_get", &ej_wl_packet_get },
 	{ "wme_match_op", &ej_wme_match_op },
+#ifdef HAVE_MMC
+	{ "show_mmc_cardinfo", &ej_show_mmc_cardinfo },
+#endif
 };
+#endif
 
 static struct callmap validate_map[] = {
 	{ "validate_auth_mode", &validate_auth_mode },
 	{ "validate_blocked_service", &validate_blocked_service },
 	{ "validate_catchall", &validate_catchall },
+#ifdef HAVE_PPPOESERVER
 	{ "validate_chaps", &validate_chaps },
+#endif
 	{ "validate_choice", &validate_choice },
 	{ "validate_dns", &validate_dns },
 	{ "validate_dynamic_route", &validate_dynamic_route },
@@ -609,7 +695,9 @@ static struct callmap validate_map[] = {
 	{ "validate_hwaddrs", &validate_hwaddrs },
 	{ "validate_ipaddr", &validate_ipaddr },
 	{ "validate_ipaddrs", &validate_ipaddrs },
+#ifdef HAVE_RADLOCAL
 	{ "validate_iradius", &validate_iradius },
+#endif
 	{ "validate_lan_ipaddr", &validate_lan_ipaddr },
 	{ "validate_merge_dhcpstart", &validate_merge_dhcpstart },
 	{ "validate_merge_ipaddrs", &validate_merge_ipaddrs },
@@ -628,7 +716,9 @@ static struct callmap validate_map[] = {
 	{ "validate_staticleases", &validate_staticleases },
 	{ "validate_static_route", &validate_static_route },
 	{ "validate_statics", &validate_statics },
+#ifdef HAVE_CHILLILOCAL
 	{ "validate_userlist", &validate_userlist },
+#endif
 	{ "validate_wan_ipaddr", &validate_wan_ipaddr },
 	{ "validate_wds", &validate_wds },
 	{ "validate_wl_auth", &validate_wl_auth },
@@ -885,7 +975,6 @@ static char *_GOZILA_GET(webs_t wp, char *name)
 	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
-
 extern const websRomPageIndexType websRomPageIndex[];
 
 static char *_live_translate(webs_t wp, const char *tran);
@@ -945,7 +1034,6 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	struct timeval before, after, r;
 
 	if (nvram_matchi("httpd_debug", 1)) {
-		dd_syslog(LOG_INFO, "%s:%s", __func__, name);
 		fprintf(stderr, "call_ej %s", name);
 		int i = 0;
 		for (i = 0; i < argc; i++)
@@ -953,19 +1041,16 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	}
 	void (*fptr)(webs_t wp, int argc, char_t ** argv) = NULL;
 	int i;
-	fprintf(stderr, "%s:%d\n", __func__,__LINE__);
 	for (i = 0; i < sizeof(ej_map) / sizeof(ej_map[0]); i++) {
 		if (!strcmp(ej_map[i].name, name)) {
 			fptr = (void (*)(webs_t wp, int argc, char_t ** argv))ej_map[i].func;
 			break;
 		}
 	}
-	fprintf(stderr, "%s:%d\n", __func__,__LINE__);
 	cprintf("found. pointer is %p\n", fptr);
 	{
 		memdebug_enter();
 		if (fptr) {
-	fprintf(stderr, "%s:%d\n", __func__,__LINE__);
 			gettimeofday(&before, NULL);
 			(*fptr) (wp, argc, argv);
 			gettimeofday(&after, NULL);
