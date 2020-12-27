@@ -10,6 +10,7 @@ MODULE:=hwmon
 clean:
 	@true
 all:
+	cp $(MODULE)* httpd/ej_temp/
 	@true
 
 install:
