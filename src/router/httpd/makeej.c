@@ -1,3 +1,10 @@
+/*
+this stupid and bad coded tool generates a symbol list for used ej function out of the webfiles and the symbol table.
+the generated header allows us to strip out unused code from the web code
+
+(c) 2020 - Sebastian Gottschall / NewMedia-NET GmbH
+*/
+
 #include  <stdio.h>
 #include  <malloc.h>
 #include  <string.h>
