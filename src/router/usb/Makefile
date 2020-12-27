@@ -11,6 +11,11 @@ MODULE_ADV:=adv_usb
 clean:
 	@true
 all:
+ifeq ($(CONFIG_USB_ADVANCED),y)
+	cp $(MODULE_ADV)* httpd/ej_temp/
+else
+	cp $(MODULE)* httpd/ej_temp/
+endif
 	@true
 
 install:
