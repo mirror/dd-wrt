@@ -7,10 +7,10 @@ endif
 
 MODULE:=ipv6
 
-clean:
-	cp $(MODULE)* httpd/ej_temp
-	@true
 all:
+	cp $(MODULE)* $(TOP)/httpd/ej_temp
+
+clean:
 	@true
 
 install:
