@@ -18,7 +18,10 @@ int checktable(char *name)
 
 int main(int argc, char *argv[])
 {
-	FILE *in = fopen("www", "rb");
+	FILE *in;
+	in = fopen("www.renew", "rb");
+	if (!in)
+	    in = fopen("www", "rb");
 	fseek(in, 0, SEEK_END);
 	size_t len = ftell(in);
 	rewind(in);
