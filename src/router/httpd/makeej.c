@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 					char ejname[64];
 					sprintf(ejname, "ej_%s", name);
 					if (!strstr(syms, ejname))
-						fprintf(stderr, "%s is missing, we ignore it\n", ejname);
+						printf("/* %s is missing, we ignore it */\n", ejname);
 					if (!checktable(name) && strstr(syms, ejname))
 						printf("{\"%s\",&ej_%s},\n", name, name);
 					goto next;
