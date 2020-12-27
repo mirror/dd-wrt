@@ -128,6 +128,7 @@ ifeq ($(CONFIG_IAS),y)
 	cp -r ../../private/buffalo/intatstart/www/css/images $(INSTALLDIR)/www/intatstart/css
 	cp -r ../../private/buffalo/intatstart/www/js/*.js $(INSTALLDIR)/www/intatstart/js
 	cp -r ../../private/buffalo/intatstart/www/config/*.webconfig $(INSTALLDIR)/www/intatstart/config
+	cp -r ../../private/buffalo/intatstart/www/config/*.webconfig $(TOP)/httpd/ej_temp
 	cp -r ../../private/buffalo/intatstart/www/lang_pack/*.js $(INSTALLDIR)/www/intatstart/lang_pack
 	cp -r ../../private/buffalo/intatstart/kromo/dd-wrt/* $(INSTALLDIR)/www/
 ifeq ($(CONFIG_IAS_NOPLNPWD),y)
@@ -160,6 +161,7 @@ ifeq ($(CONFIG_FREECWMP),y)
 	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/httpd
 	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/Status_CWMP.asp
 	cp -r ../../private/freecwmp/config/freecwmp.webconfig $(INSTALLDIR)/etc/config
+	cp -r ../../private/freecwmp/config/freecwmp.webconfig $(TOP)/httpd/ej_temp
 	cp -r ../../private/freecwmp/config/freecwmp.nvramconfig $(INSTALLDIR)/etc/config
 	cp -r ../../private/freecwmp/lang_pack/freecwmp-english.js $(INSTALLDIR)/www/lang_pack
 	mkdir -p $(INSTALLDIR)/usr/lib

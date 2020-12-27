@@ -10,7 +10,7 @@ MODULE:=telnet
 clean:
 	@true
 all:
-	cp $(MODULE)* httpd/ej_temp/
+	cp $(MODULE)* $(TOP)/httpd/ej_temp/
 
 	@true
 
