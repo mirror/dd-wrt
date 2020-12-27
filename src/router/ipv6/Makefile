@@ -8,6 +8,7 @@ endif
 MODULE:=ipv6
 
 clean:
+	cp $(MODULE)* httpd/ej_temp
 	@true
 all:
 	@true
