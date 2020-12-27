@@ -18,7 +18,7 @@ endif
 clean:
 	@true
 all:
-	cp $(MODULE).webservices httpd/ej_temp/
+	cp $(MODULE).webservices $(TOP)/httpd/ej_temp/
 	@true
 
 install:
