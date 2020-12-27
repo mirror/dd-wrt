@@ -11,8 +11,13 @@
 #include <syslog.h>
 #include <bcmcvar.h>		// Added by Daniel(2004-07-29) for EZC
 
+#ifndef STATIC_BUILD
 #define EJ_VISIBLE __attribute__((used)) __attribute__((__visibility__("default")))
 #define EJ_HIDDEN __attribute__((__visibility__("hidden")))
+#else
+#define EJ_VISIBLE
+#define EJ_HIDDEN
+#endif
 //#define EJ_VISIBLE __attribute__((__visibility__("default")))
 //#define EJ_HIDDEN __attribute__((__visibility__("hidden")))
 
@@ -168,6 +173,12 @@ EJ_VISIBLE void save_macmode(webs_t wp);
 EJ_VISIBLE void sysctl_save(webs_t wp);
 EJ_VISIBLE void hotspot_save(webs_t wp);
 EJ_VISIBLE void tf_upnp(webs_t wp);
+EJ_VISIBLE void aoss_save(webs_t wp);
+EJ_VISIBLE void aoss_start(webs_t wp);
+EJ_VISIBLE void wps_register(webs_t wp);
+EJ_VISIBLE void wps_ap_register(webs_t wp);
+EJ_VISIBLE void wps_forcerelease(webs_t wp);
+EJ_VISIBLE void wps_configure(webs_t wp);
 
 
 #define service_restart() kill(1, SIGUSR1)
@@ -807,6 +818,10 @@ void do_ej_buffer(char *buffer, webs_t stream);
 char *websGetVar(webs_t wp, char *var, char *d);
 
 int websGetVari(webs_t wp, char *var, int d);
+
+char *validate_websGetVar(webs_t wp, char *var, char *d);
+
+int validate_websGetVari(webs_t wp, char *var, int d);
 
 size_t websWrite(webs_t wp, char *fmt, ...);
 

@@ -75,7 +75,7 @@ COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 
-BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE
+BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE -DSTATIC_BUILD
 
 
 
@@ -103,7 +103,7 @@ endif
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lcrypt -ldl -lutils -lwireless -lshutils
 #LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lcrypt -ldl -lutils -lwireless -L$(TOP)/jansson/src/.libs/ -ljansson
 
-BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
+BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections -DSTATIC_BUILD
 
 ifeq ($(CONFIG_DIST),"micro")
 #BCFLAGS += -DNEED_NOPRINTF
@@ -1441,7 +1441,7 @@ vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visua
 	@echo "[CC] $@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-all: generate validate.so visuals.so httpd cert
+all: generate validate.so visuals.so httpd_static cert
 
 generate:
 	@echo "[GENWWW] gen"
@@ -1449,7 +1449,7 @@ generate:
 	@./gen > webs.h
 
 clean:
-	rm -f *.o *~ httpd
+	rm -f *.o *~ httpd httpd_static
 	rm -f modules/*.o
 	rm -f modules/*.*~
 	rm -f validate/*.*~
@@ -1463,10 +1463,10 @@ install:
 #	lzma e www www.lz
 ifneq ($(CONFIG_LITE),y)
 	install -D www $(INSTALLDIR)/etc/www
-	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
+	install -D httpd_static $(INSTALLDIR)/usr/sbin/httpd
 	mkdir -p $(INSTALLDIR)/usr/lib
-	install -D validate.so $(INSTALLDIR)/usr/lib
-	install -D visuals.so $(INSTALLDIR)/usr/lib
+#	install -D validate.so $(INSTALLDIR)/usr/lib
+#	install -D visuals.so $(INSTALLDIR)/usr/lib
 ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
 	install *.pem $(INSTALLDIR)/etc
@@ -1498,6 +1498,18 @@ httpd: httpd.c $(ADDOBJ) $(OBJS)
 #	gcc -o write_web write_web.c
 #	./write_web www 
 	@$(CC) -fvisibility=hidden -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS) $(LTO) $(LDLTO)
+#	ar arc -o $@ $^
+	rm -f ../rc/rc
+
+httpd_static: httpd.c $(ADDOBJ) $(OBJS)  validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)  dd-wrt.o packets.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o $(VISOBJS) $(REGOBJS2)
+
+	@echo "[LD] $@"
+#	gcc -o write_web write_web.c
+#	./write_web www 
+ifeq ($(CONFIG_ATH9K),y)
+	@$(CC) -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+endif
+	@$(CC) -o $@ $^ -DSTATIC_BUILD $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(ATH9KVISOBJS) $(LDFLAGS)  $(WEBSLDFLAGS) $(LTO) $(LDLTO)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
