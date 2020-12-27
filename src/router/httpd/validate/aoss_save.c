@@ -44,13 +44,13 @@ struct variable **variables;
 void aoss_save(webs_t wp)
 {
 	char buf[32];
-	nvram_set("aoss_enable", validate_websGetVar(wp, "aoss_enable", "0"));
-	nvram_set("aoss_aes", validate_websGetVar(wp, "aoss_aes", "0"));
-	nvram_set("aoss_tkip", validate_websGetVar(wp, "aoss_tkip", "0"));
-	nvram_set("aoss_wep", validate_websGetVar(wp, "aoss_wep", "0"));
+	nvram_set("aoss_enable", websGetVar(wp, "aoss_enable", "0"));
+	nvram_set("aoss_aes", websGetVar(wp, "aoss_aes", "0"));
+	nvram_set("aoss_tkip", websGetVar(wp, "aoss_tkip", "0"));
+	nvram_set("aoss_wep", websGetVar(wp, "aoss_wep", "0"));
 #ifdef HAVE_WPS
-	nvram_set("wps_enabled", validate_websGetVar(wp, "wps_enabled", "0"));
-	char *pin = validate_websGetVar(wp, "wps_ap_pin", NULL);
+	nvram_set("wps_enabled", websGetVar(wp, "wps_enabled", "0"));
+	char *pin = websGetVar(wp, "wps_ap_pin", NULL);
 	if (pin)
 		nvram_set("pincode", pin);
 #endif
@@ -70,7 +70,7 @@ void aoss_save(webs_t wp)
 		nvram_unset("aossa_vifs");
 		nvram_commit();
 	}
-	char *registrar = validate_websGetVar(wp, "wps_registrar", NULL);
+	char *registrar = websGetVar(wp, "wps_registrar", NULL);
 	if (registrar && nvram_invmatch("wps_registrar", registrar)) {
 		nvram_set("wps_registrar", registrar);
 		addAction("wireless");

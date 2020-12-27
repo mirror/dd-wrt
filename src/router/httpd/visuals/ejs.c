@@ -52,7 +52,7 @@
 #endif
 #include <glob.h>
 
-void do_ej_buffer(char *buffer, webs_t stream)
+/*void do_ej_buffer(char *buffer, webs_t stream)
 {
 	stream->p->env->do_ej_buffer(buffer, stream);
 }
@@ -66,8 +66,8 @@ int websGetVari(webs_t wp, char *var, int d)
 {
 	return wp->p->env->websGetVari(wp, var, d);
 }
-
-size_t websWrite(webs_t wp, char *fmt, ...)
+*/
+/*size_t websWrite(webs_t wp, char *fmt, ...)
 {
 	va_list arglist;
 	va_start(arglist, fmt);
@@ -101,6 +101,7 @@ char *GOZILA_GET(webs_t wp, char *name)
 {
 	return wp->p->env->GOZILA_GET(wp, name);
 }
+*/
 
 struct onload onloads[] = {
 	// { "Filters", filter_onload },
@@ -1014,6 +1015,8 @@ EJ_VISIBLE void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	closedir(directory);
 	return;
 }
+#include "../webs.h"
+extern const websRomPageIndexType websRomPageIndex[];
 
 #ifdef HAVE_LANGUAGE
 EJ_VISIBLE void ej_show_languages(webs_t wp, int argc, char_t ** argv)
@@ -1023,13 +1026,13 @@ EJ_VISIBLE void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	int i = 0;
 
-	while (wp->p->env->websRomPageIndex[i].path != NULL) {
-		cprintf("checking %s\n", wp->p->env->websRomPageIndex[i].path);
-		if (!strncmp(wp->p->env->websRomPageIndex[i].path, "lang_pack/", (sizeof("lang_pack/") - 1))) {
+	while (websRomPageIndex[i].path != NULL) {
+		cprintf("checking %s\n", websRomPageIndex[i].path);
+		if (!strncmp(websRomPageIndex[i].path, "lang_pack/", (sizeof("lang_pack/") - 1))) {
 			cprintf("found language\n");
-			if (strlen(wp->p->env->websRomPageIndex[i].path) < 14)
+			if (strlen(websRomPageIndex[i].path) < 14)
 				continue;
-			strcpy(buf, wp->p->env->websRomPageIndex[i].path);
+			strcpy(buf, websRomPageIndex[i].path);
 			char *mybuf = &buf[sizeof("lang_pack/") - 1];
 
 			if (strchr(mybuf, (int)'-') == NULL) {

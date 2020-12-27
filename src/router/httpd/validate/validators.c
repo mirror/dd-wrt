@@ -66,7 +66,7 @@ extern FILE *debout;
 #define D(a)
 #endif
 
-void validate_cgi(webs_t fp)
+/*void validate_cgi(webs_t fp)
 {
 	fp->p->env->validate_cgi(fp);
 }
@@ -80,7 +80,7 @@ int validate_websGetVari(webs_t wp, char *var, int d)
 {
 	return wp->p->env->websGetVari(wp, var, d);
 }
-
+*/
 char *copytonv(webs_t wp, const char *fmt, ...);
 char *copytonv_prefix(webs_t wp, const char *var, const char *prefix);
 
@@ -299,7 +299,7 @@ EJ_VISIBLE void validate_merge_netmask(webs_t wp, char *value, struct variable *
 	strcpy(netmask, "");
 	for (i = 0; i < 4; i++) {
 		snprintf(maskname, sizeof(maskname), "%s_%d", v->name, i);
-		mask = validate_websGetVar(wp, maskname, NULL);
+		mask = websGetVar(wp, maskname, NULL);
 		if (mask) {
 			strcat(netmask, mask);
 			if (i < 3)
@@ -327,7 +327,7 @@ static void validate_list(webs_t wp, char *value, struct variable *v, int (*vali
 
 	for (i = 0; i < n; i++) {
 		snprintf(name, sizeof(name), "%s%d", v->name, i);
-		if (!(value = validate_websGetVar(wp, name, NULL)))
+		if (!(value = websGetVar(wp, name, NULL)))
 			return;
 		if (!*value && v->nullok)
 			continue;
@@ -451,7 +451,7 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 	for (i = 0; i < 4; i++) {
 		// cprintf("merge %s_%d\n",name,i);
 		snprintf(ipname, sizeof(ipname), "%s_%d", name, i);
-		tmp = validate_websGetVar(wp, ipname, ip[i]);
+		tmp = websGetVar(wp, ipname, ip[i]);
 		if (tmp == NULL)
 			return 0;
 		target |= atoi(tmp) << ((3 - i) * 8);
@@ -487,7 +487,7 @@ EJ_VISIBLE void validate_merge_dhcpstart(webs_t wp, char *value, struct variable
 {
 	char ipaddr[20];
 
-	char *tmp = validate_websGetVar(wp, "lan_proto", "static");
+	char *tmp = websGetVar(wp, "lan_proto", "static");
 	if (!strcmp(tmp, "static"))
 		get_merge_ipaddr(wp, v->name, ipaddr, nvram_safe_get("dhcp_start"), nvram_safe_get("lan_netmask"));
 	else
@@ -512,7 +512,7 @@ int get_merge_mac(webs_t wp, char *name, char *macaddr)
 
 	for (i = 0; i < 6; i++) {
 		snprintf(macname, sizeof(macname), "%s_%d", name, i);
-		mac = validate_websGetVar(wp, macname, "00");
+		mac = websGetVar(wp, macname, "00");
 		if (strlen(mac) == 1)
 			strcat(macaddr, "0");
 		strcat(macaddr, mac);
@@ -546,7 +546,7 @@ EJ_VISIBLE void validate_dns(webs_t wp, char *value, struct variable *v)
 		strcpy(ipaddr, "");
 		for (i = 0; i < 4; i++) {
 			snprintf(ipname, sizeof(ipname), "%s%d_%d", v->name, j, i);
-			ip = validate_websGetVar(wp, ipname, NULL);
+			ip = websGetVar(wp, ipname, NULL);
 			if (ip) {
 				strcat(ipaddr, ip);
 				if (i < 3)
@@ -595,7 +595,7 @@ EJ_VISIBLE void validate_noack(webs_t wp, char *value, struct variable *v)
 	/*
 	 * return if wme is not enabled 
 	 */
-	if (!(wme = validate_websGetVar(wp, "wl_wme", NULL)))
+	if (!(wme = websGetVar(wp, "wl_wme", NULL)))
 		return;
 	else if (strcmp(wme, "on"))
 		return;
@@ -726,9 +726,9 @@ EJ_VISIBLE void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
 	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20], pptp_wan_gateway[20], l2tp_wan_gateway[20];
 	char wan_ipaddr_static[20], wan_netmask_static[20];
-	char *wan_proto = validate_websGetVar(wp, "wan_proto", NULL);
-	char *pptp_use_dhcp = validate_websGetVar(wp, "pptp_use_dhcp", NULL);
-	char *l2tp_use_dhcp = validate_websGetVar(wp, "l2tp_use_dhcp", NULL);
+	char *wan_proto = websGetVar(wp, "wan_proto", NULL);
+	char *pptp_use_dhcp = websGetVar(wp, "pptp_use_dhcp", NULL);
+	char *l2tp_use_dhcp = websGetVar(wp, "l2tp_use_dhcp", NULL);
 
 	int pptp_skip_check = FALSE;
 
@@ -820,14 +820,14 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		char val[64];
 
 		sprintf(val, "%s_mtu", var);
-		char *mtu = validate_websGetVar(wp, val, NULL);
+		char *mtu = websGetVar(wp, val, NULL);
 		if (mtu)
 			nvram_set(val, mtu);
 		else
 			nvram_seti(val, 1500);
 
 		sprintf(val, "%s_txq", var);
-		char *txq = validate_websGetVar(wp, val, NULL);
+		char *txq = websGetVar(wp, val, NULL);
 		if (txq)
 			nvram_set(val, txq);
 		else
@@ -835,17 +835,17 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 
 #ifdef HAVE_TMK
 		sprintf(val, "%s_r1x", var);
-		nvram_set(val, validate_websGetVar(wp, val, "0"));
+		nvram_set(val, websGetVar(wp, val, "0"));
 		sprintf(val, "%s_r1x_server", var);
-		nvram_set(val, validate_websGetVar(wp, val, ""));
+		nvram_set(val, websGetVar(wp, val, ""));
 		sprintf(val, "%s_r1x_port", var);
-		nvram_set(val, validate_websGetVar(wp, val, ""));
+		nvram_set(val, websGetVar(wp, val, ""));
 		sprintf(val, "%s_r1x_ss", var);
-		nvram_set(val, validate_websGetVar(wp, val, ""));
+		nvram_set(val, websGetVar(wp, val, ""));
 		sprintf(val, "%s_r1x_st", var);
-		nvram_set(val, validate_websGetVar(wp, val, "0"));
+		nvram_set(val, websGetVar(wp, val, "0"));
 		sprintf(val, "%s_r1x_wl", var);
-		nvram_set(val, validate_websGetVar(wp, val, ""));
+		nvram_set(val, websGetVar(wp, val, ""));
 #endif
 
 		if (bridged && strcmp(bridged, "0") == 0) {
@@ -868,7 +868,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 #endif
 		}
 	}
-	next = validate_websGetVar(wp, "wan_ifname", NULL);
+	next = websGetVar(wp, "wan_ifname", NULL);
 	if (next) {
 		nvram_set("wan_ifname2", next);
 	}
@@ -917,7 +917,7 @@ EJ_VISIBLE void validate_remote_ip(webs_t wp, char *value, struct variable *v)
 	get_merge_ipaddr(wp, v->name, from, NULL, NULL);
 
 	snprintf(name, sizeof(name), "%s_4", v->name);
-	to = validate_websGetVar(wp, name, NULL);
+	to = websGetVar(wp, name, NULL);
 
 	if (!valid_ipaddr(wp, from, v))
 		return;
@@ -939,14 +939,14 @@ EJ_VISIBLE void validate_wl_wme_tx_params(webs_t wp, char *value, struct variabl
 	char tmp[256];
 
 	/* return if wme is not enabled */
-	if (!(s = validate_websGetVar(wp, "wl0_wme", NULL))) {
+	if (!(s = websGetVar(wp, "wl0_wme", NULL))) {
 		return;
 	} else if (!strcmp(s, "off")) {
 		return;
 	}
 
 	/* return if afterburner enabled */
-	if ((s = validate_websGetVar(wp, "wl0_afterburner", NULL))
+	if ((s = websGetVar(wp, "wl0_afterburner", NULL))
 	    && (!strcmp(s, "auto"))) {
 		return;
 	}
@@ -960,7 +960,7 @@ EJ_VISIBLE void validate_wl_wme_tx_params(webs_t wp, char *value, struct variabl
 	if (*s)
 		sscanf(s, "%d %d %d %d %d", &srl, &sfbl, &lrl, &lfbl, &max_rate);
 
-	if ((value = validate_websGetVar(wp, strcat_r(v->name, "0", tmp), NULL)) != NULL)
+	if ((value = websGetVar(wp, strcat_r(v->name, "0", tmp), NULL)) != NULL)
 		srl = atoi(value);
 
 	if (!SRL_VALID(srl)) {
@@ -968,7 +968,7 @@ EJ_VISIBLE void validate_wl_wme_tx_params(webs_t wp, char *value, struct variabl
 		return;
 	}
 
-	if ((value = validate_websGetVar(wp, strcat_r(v->name, "1", tmp), NULL)) != NULL)
+	if ((value = websGetVar(wp, strcat_r(v->name, "1", tmp), NULL)) != NULL)
 		sfbl = atoi(value);
 
 	if (!SFBL_VALID(sfbl)) {
@@ -976,7 +976,7 @@ EJ_VISIBLE void validate_wl_wme_tx_params(webs_t wp, char *value, struct variabl
 		return;
 	}
 
-	if ((value = validate_websGetVar(wp, strcat_r(v->name, "2", tmp), NULL)) != NULL)
+	if ((value = websGetVar(wp, strcat_r(v->name, "2", tmp), NULL)) != NULL)
 		lrl = atoi(value);
 
 	if (!LRL_VALID(lrl)) {
@@ -984,7 +984,7 @@ EJ_VISIBLE void validate_wl_wme_tx_params(webs_t wp, char *value, struct variabl
 		return;
 	}
 
-	if ((value = validate_websGetVar(wp, strcat_r(v->name, "3", tmp), NULL)) != NULL)
+	if ((value = websGetVar(wp, strcat_r(v->name, "3", tmp), NULL)) != NULL)
 		lfbl = atoi(value);
 
 	if (!LFBL_VALID(lfbl)) {
@@ -992,7 +992,7 @@ EJ_VISIBLE void validate_wl_wme_tx_params(webs_t wp, char *value, struct variabl
 		return;
 	}
 
-	if ((value = validate_websGetVar(wp, strcat_r(v->name, "4", tmp), NULL)) != NULL)
+	if ((value = websGetVar(wp, strcat_r(v->name, "4", tmp), NULL)) != NULL)
 		max_rate = atoi(value);
 
 	s = nvram_safe_get("wl0_nmode");
@@ -1033,7 +1033,7 @@ EJ_VISIBLE void validate_wl_wme_params(webs_t wp, char *value, struct variable *
 	/*
 	 * return if wme is not enabled 
 	 */
-	if (!(wme = validate_websGetVar(wp, "wl_wme", NULL)))
+	if (!(wme = websGetVar(wp, "wl_wme", NULL)))
 		return;
 	else if (strcmp(wme, "on"))
 		return;
@@ -1041,7 +1041,7 @@ EJ_VISIBLE void validate_wl_wme_params(webs_t wp, char *value, struct variable *
 	/*
 	 * return if afterburner enabled 
 	 */
-	if ((afterburner = validate_websGetVar(wp, "wl_afterburner", NULL))
+	if ((afterburner = websGetVar(wp, "wl_afterburner", NULL))
 	    && (!strcmp(afterburner, "auto")))
 		return;
 
@@ -1049,7 +1049,7 @@ EJ_VISIBLE void validate_wl_wme_params(webs_t wp, char *value, struct variable *
 
 	for (i = 0; i < n; i++) {
 		snprintf(name, sizeof(name), "%s%d", v->name, i);
-		if (!(value = validate_websGetVar(wp, name, NULL)))
+		if (!(value = websGetVar(wp, name, NULL)))
 			return;
 		if (!*value && v->nullok)
 			continue;
@@ -1171,13 +1171,13 @@ EJ_VISIBLE void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 
 	which = &wl_wep_variables[0];
 
-	wep_bit = validate_websGetVar(wp, "wl_wep_bit", NULL);	// 64 or 128
+	wep_bit = websGetVar(wp, "wl_wep_bit", NULL);	// 64 or 128
 	if (!wep_bit)
 		return;
 	if (strcmp(wep_bit, "64") && strcmp(wep_bit, "128"))
 		return;
 
-	wep_passphrase = validate_websGetVar(wp, "wl_passphrase", "");
+	wep_passphrase = websGetVar(wp, "wl_passphrase", "");
 	// if(!wep_passphrase) return ;
 
 	// strip_space(wep_passphrase);
@@ -1189,11 +1189,11 @@ EJ_VISIBLE void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 		}
 	}
 
-	wep_key1 = validate_websGetVar(wp, "wl_key1", "");
-	wep_key2 = validate_websGetVar(wp, "wl_key2", "");
-	wep_key3 = validate_websGetVar(wp, "wl_key3", "");
-	wep_key4 = validate_websGetVar(wp, "wl_key4", "");
-	wep_tx = validate_websGetVar(wp, "wl_key", NULL);
+	wep_key1 = websGetVar(wp, "wl_key1", "");
+	wep_key2 = websGetVar(wp, "wl_key2", "");
+	wep_key3 = websGetVar(wp, "wl_key3", "");
+	wep_key4 = websGetVar(wp, "wl_key4", "");
+	wep_tx = websGetVar(wp, "wl_key", NULL);
 
 	if (!wep_tx) {
 		error_value = 1;
@@ -1283,7 +1283,7 @@ EJ_VISIBLE void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		return;		//out of memory
 	char *cur = buf;
 	unsigned int m[6];
-	char *ifname2 = validate_websGetVar(wp, "ifname", NULL);	// 64 or 128
+	char *ifname2 = websGetVar(wp, "ifname", NULL);	// 64 or 128
 	char ifname[32];
 	strcpy(ifname, ifname2);
 	rep(ifname, 'X', '.');
@@ -1302,7 +1302,7 @@ EJ_VISIBLE void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 
 		snprintf(filter_mac, sizeof(filter_mac), "%s%s%d", ifname2, "_mac", i);
 
-		mac = validate_websGetVar(wp, filter_mac, NULL);
+		mac = websGetVar(wp, filter_mac, NULL);
 
 		if (!mac || !strcmp(mac, "0") || !strcmp(mac, "")) {
 			continue;
@@ -1416,14 +1416,14 @@ EJ_VISIBLE void validate_forward_proto(webs_t wp, char *value, struct variable *
 		snprintf(forward_enable, sizeof(forward_enable), "enable%d", i);
 		snprintf(forward_pro, sizeof(forward_pro), "pro%d", i);
 
-		name = validate_websGetVar(wp, forward_name, "");
-		from = validate_websGetVar(wp, forward_from, "0");
-		to = validate_websGetVar(wp, forward_to, "0");
-		ip = validate_websGetVar(wp, forward_ip, "0");
-		tcp = validate_websGetVar(wp, forward_tcp, NULL);	// for checkbox
-		udp = validate_websGetVar(wp, forward_udp, NULL);	// for checkbox
-		pro = validate_websGetVar(wp, forward_pro, NULL);	// for select option
-		enable = validate_websGetVar(wp, forward_enable, "off");
+		name = websGetVar(wp, forward_name, "");
+		from = websGetVar(wp, forward_from, "0");
+		to = websGetVar(wp, forward_to, "0");
+		ip = websGetVar(wp, forward_ip, "0");
+		tcp = websGetVar(wp, forward_tcp, NULL);	// for checkbox
+		udp = websGetVar(wp, forward_udp, NULL);	// for checkbox
+		pro = websGetVar(wp, forward_pro, NULL);	// for select option
+		enable = websGetVar(wp, forward_enable, "off");
 
 		which = &forward_proto_variables[0];
 
@@ -1556,15 +1556,15 @@ EJ_VISIBLE void validate_forward_spec(webs_t wp, char *value, struct variable *v
 		snprintf(forward_enable, sizeof(forward_enable), "enable%d", i);
 		snprintf(forward_pro, sizeof(forward_pro), "pro%d", i);
 
-		name = validate_websGetVar(wp, forward_name, "");
-		from = validate_websGetVar(wp, forward_from, "0");
-		to = validate_websGetVar(wp, forward_to, "0");
-		ip = validate_websGetVar(wp, forward_ip, "0");
-		src = validate_websGetVar(wp, forward_src, NULL);
-		tcp = validate_websGetVar(wp, forward_tcp, NULL);	// for checkbox
-		udp = validate_websGetVar(wp, forward_udp, NULL);	// for checkbox
-		pro = validate_websGetVar(wp, forward_pro, NULL);	// for select option
-		enable = validate_websGetVar(wp, forward_enable, "off");
+		name = websGetVar(wp, forward_name, "");
+		from = websGetVar(wp, forward_from, "0");
+		to = websGetVar(wp, forward_to, "0");
+		ip = websGetVar(wp, forward_ip, "0");
+		src = websGetVar(wp, forward_src, NULL);
+		tcp = websGetVar(wp, forward_tcp, NULL);	// for checkbox
+		udp = websGetVar(wp, forward_udp, NULL);	// for checkbox
+		pro = websGetVar(wp, forward_pro, NULL);	// for select option
+		enable = websGetVar(wp, forward_enable, "off");
 
 		which = &forward_proto_variables[0];
 
@@ -1654,7 +1654,7 @@ EJ_VISIBLE void validate_dynamic_route(webs_t wp, char *value, struct variable *
 	if (valid_choice(wp, value, v))
 		nvram_set(v->name, value);
 
-	dr_setting = validate_websGetVar(wp, "dr_setting", NULL);
+	dr_setting = websGetVar(wp, "dr_setting", NULL);
 	if (!dr_setting)
 		return;
 
@@ -1693,18 +1693,18 @@ EJ_VISIBLE void validate_dynamic_route(webs_t wp, char *value, struct variable *
 	/*
 	 * <lonewolf> 
 	 */
-	if (validate_websGetVari(wp, "dyn_default", 0) == 1)
+	if (websGetVari(wp, "dyn_default", 0) == 1)
 		nvram_seti("dyn_default", 1);
 	else
 		nvram_seti("dyn_default", 0);
 
 	if (nvram_match("wk_mode", "ospf") || nvram_match("wk_mode", "router") || nvram_match("wk_mode", "ospf router")) {
-		nvram_set("zebra_conf", validate_websGetVar(wp, "zebra_conf", ""));
-		nvram_set("ospfd_conf", validate_websGetVar(wp, "ospfd_conf", ""));
-		nvram_set("ripd_conf", validate_websGetVar(wp, "ripd_conf", ""));
-		nvram_set("zebra_copt", validate_websGetVar(wp, "zebra_copt", "0"));
-		nvram_set("ripd_copt", validate_websGetVar(wp, "ripd_copt", "0"));
-		nvram_set("ospfd_copt", validate_websGetVar(wp, "ospfd_copt", "0"));
+		nvram_set("zebra_conf", websGetVar(wp, "zebra_conf", ""));
+		nvram_set("ospfd_conf", websGetVar(wp, "ospfd_conf", ""));
+		nvram_set("ripd_conf", websGetVar(wp, "ripd_conf", ""));
+		nvram_set("zebra_copt", websGetVar(wp, "zebra_copt", "0"));
+		nvram_set("ripd_copt", websGetVar(wp, "ripd_copt", "0"));
+		nvram_set("ospfd_copt", websGetVar(wp, "ospfd_copt", "0"));
 	}
 	/*
 	 * </lonewolf> 
@@ -1943,10 +1943,10 @@ EJ_VISIBLE void validate_chaps(webs_t wp, char *value, struct variable *v)
 		snprintf(chap_ip, sizeof(chap_ip), "ip%d", i);
 		snprintf(chap_enable, sizeof(chap_enable), "enable%d", i);
 
-		user = validate_websGetVar(wp, chap_user, "");
-		pass = validate_websGetVar(wp, chap_pass, "");
-		ip = validate_websGetVar(wp, chap_ip, "0");
-		enable = validate_websGetVar(wp, chap_enable, "off");
+		user = websGetVar(wp, chap_user, "");
+		pass = websGetVar(wp, chap_pass, "");
+		ip = websGetVar(wp, chap_ip, "0");
+		enable = websGetVar(wp, chap_enable, "off");
 
 		which = &chaps_variables[0];
 
@@ -2028,8 +2028,8 @@ EJ_VISIBLE void validate_aliases(webs_t wp, char *value, struct variable *v)
 		snprintf(alias_user, sizeof(alias_user), "user%d", i);
 		snprintf(alias_pass, sizeof(alias_pass), "pass%d", i);
 
-		user = validate_websGetVar(wp, alias_user, "");
-		pass = validate_websGetVar(wp, alias_pass, "");
+		user = websGetVar(wp, alias_user, "");
+		pass = websGetVar(wp, alias_pass, "");
 
 		which = &alias_variables[0];
 		if (strcmp(user, "")) {
@@ -2085,8 +2085,8 @@ EJ_VISIBLE void validate_subscribers(webs_t wp, char *value, struct variable *v)
 		snprintf(subscriber_user, sizeof(subscriber_user), "user%d", i);
 		snprintf(subscriber_pass, sizeof(subscriber_pass), "pass%d", i);
 
-		user = validate_websGetVar(wp, subscriber_user, "");
-		pass = validate_websGetVar(wp, subscriber_pass, "");
+		user = websGetVar(wp, subscriber_user, "");
+		pass = websGetVar(wp, subscriber_pass, "");
 
 		which = &subscriber_variables[0];
 		if (strcmp(user, "")) {
@@ -2143,22 +2143,22 @@ EJ_VISIBLE void validate_iradius(webs_t wp, char *value, struct variable *v)
 
 	for (i = 0; i < leasenum; i++) {
 		snprintf(del, sizeof(del), "iradius%d_delete", i);
-		char *d = validate_websGetVar(wp, del, "");
+		char *d = websGetVar(wp, del, "");
 
 		cprintf("radius delete = %s\n", d);
 		if (strcmp(d, "1") == 0)
 			continue;
 
 		snprintf(username, sizeof(username), "iradius%d_name", i);
-		strcat(leases, validate_websGetVar(wp, username, "00:00:00:00:00:00"));
+		strcat(leases, websGetVar(wp, username, "00:00:00:00:00:00"));
 		strcat(leases, " ");
 
 		snprintf(active, sizeof(active), "iradius%d_active", i);
-		strcat(leases, validate_websGetVar(wp, active, "0"));
+		strcat(leases, websGetVar(wp, active, "0"));
 		strcat(leases, " ");
 
 		snprintf(active, sizeof(active), "iradius%d_lease", i);
-		char *time = validate_websGetVar(wp, active, "-1");
+		char *time = websGetVar(wp, active, "-1");
 		int t = -1;
 
 		if (strcmp(time, "over"))
@@ -2209,10 +2209,10 @@ EJ_VISIBLE void validate_userlist(webs_t wp, char *value, struct variable *v)
 		return;
 	for (i = 0; i < leasenum; i++) {
 		snprintf(username, sizeof(username), "fon_user%d_name", i);
-		strcat(leases, validate_websGetVar(wp, username, ""));
+		strcat(leases, websGetVar(wp, username, ""));
 		strcat(leases, "=");
 		snprintf(password, sizeof(password), "fon_user%d_password", i);
-		strcat(leases, validate_websGetVar(wp, password, ""));
+		strcat(leases, websGetVar(wp, password, ""));
 		strcat(leases, " ");
 	}
 	nvram_set("fon_userlist", leases);
@@ -2288,7 +2288,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 
 	for (i = 0; i < leasenum; i++) {
 		snprintf(lease_hwaddr, sizeof(lease_hwaddr), "lease%d_hwaddr", i);
-		hwaddr = validate_websGetVar(wp, lease_hwaddr, NULL);
+		hwaddr = websGetVar(wp, lease_hwaddr, NULL);
 		if (hwaddr == NULL)
 			break;
 		char *mac = buildmac(hwaddr);
@@ -2299,13 +2299,13 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 			return;
 		}
 		snprintf(lease_hostname, sizeof(lease_hostname), "lease%d_hostname", i);
-		char *hostname = validate_websGetVar(wp, lease_hostname, NULL);
+		char *hostname = websGetVar(wp, lease_hostname, NULL);
 
 		snprintf(lease_ip, sizeof(lease_ip), "lease%d_ip", i);
-		char *ip = validate_websGetVar(wp, lease_ip, "");
+		char *ip = websGetVar(wp, lease_ip, "");
 
 		snprintf(lease_time, sizeof(lease_time), "lease%d_time", i);
-		char *time = validate_websGetVar(wp, lease_time, "");
+		char *time = websGetVar(wp, lease_time, "");
 
 		if (hostname == NULL || *(hostname) == 0 || ip == NULL || *(ip) == 0)
 			break;
@@ -2365,7 +2365,7 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 	char desc[48] = "";
 	char wds_if[32] = { 0 };
 	char wds_list[199] = "";
-	char *interface = validate_websGetVar(wp, "interface", NULL);
+	char *interface = websGetVar(wp, "interface", NULL);
 
 	if (interface == NULL)
 		return;
@@ -2392,7 +2392,7 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 		for (i = 0; i < 4; i++) {
 
 			snprintf(ipaddr_var, sizeof(ipaddr_var), "%s_%s%d", wds, "ipaddr", i);
-			val = validate_websGetVar(wp, ipaddr_var, NULL);
+			val = websGetVar(wp, ipaddr_var, NULL);
 			if (val) {
 				strcat(ipaddr, val);
 				if (i < 3)
@@ -2401,7 +2401,7 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 				break;
 
 			snprintf(netmask_var, sizeof(netmask_var), "%s_%s%d", wds, "netmask", i);
-			val = validate_websGetVar(wp, netmask_var, NULL);
+			val = websGetVar(wp, netmask_var, NULL);
 			if (val) {
 				strcat(netmask, val);
 
@@ -2434,7 +2434,7 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 		for (i = 0; i < 6; i++) {
 
 			snprintf(hwaddr_var, sizeof(hwaddr_var), "%s_%s%d", wds, "hwaddr", i);
-			val = validate_websGetVar(wp, hwaddr_var, NULL);
+			val = websGetVar(wp, hwaddr_var, NULL);
 
 			if (val) {
 				strcat(hwaddr, val);
@@ -2451,7 +2451,7 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 		nvram_set(hwaddr_var, hwaddr);
 
 		snprintf(desc_var, sizeof(desc_var), "%s_%s", wds, "desc");
-		val = validate_websGetVar(wp, desc_var, NULL);
+		val = websGetVar(wp, desc_var, NULL);
 		if (val) {
 			strcat(desc, val);
 			snprintf(desc_var, sizeof(desc_var), "%s_%s", wds, "desc");
@@ -2462,7 +2462,7 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 		 * <lonewolf> 
 		 */
 		snprintf(desc_var, sizeof(desc_var), "%s_%s", wds, "ospf");
-		val = validate_websGetVar(wp, desc_var, "");
+		val = websGetVar(wp, desc_var, "");
 		if (val) {
 			snprintf(desc_var, sizeof(desc_var), "%s_%s", wds, "ospf");
 			nvram_set(desc_var, val);
@@ -2488,7 +2488,7 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 			for (i = 0; i < 4; i++) {
 
 				snprintf(ipaddr_var, sizeof(ipaddr_var), "%s_%s%d", wds, "ipaddr", i);
-				val = validate_websGetVar(wp, ipaddr_var, NULL);
+				val = websGetVar(wp, ipaddr_var, NULL);
 				if (val) {
 					strcat(ipaddr, val);
 					if (i < 3)
@@ -2497,7 +2497,7 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 					break;
 
 				snprintf(netmask_var, sizeof(netmask_var), "%s_%s%d", wds, "netmask", i);
-				val = validate_websGetVar(wp, netmask_var, NULL);
+				val = websGetVar(wp, netmask_var, NULL);
 				if (val) {
 					strcat(netmask, val);
 
@@ -2571,28 +2571,28 @@ EJ_VISIBLE void validate_filter_ip_grp(webs_t wp, char *value, struct variable *
 
 	which = &filter_ip_variables[0];
 
-	ip0 = validate_websGetVar(wp, "ip0", "0");
-	ip1 = validate_websGetVar(wp, "ip1", "0");
-	ip2 = validate_websGetVar(wp, "ip2", "0");
-	ip3 = validate_websGetVar(wp, "ip3", "0");
-	ip4 = validate_websGetVar(wp, "ip4", "0");
-	ip5 = validate_websGetVar(wp, "ip5", "0");
-	ip_range0_0 = validate_websGetVar(wp, "ip_range0_0", "0");
-	ip_range0_1 = validate_websGetVar(wp, "ip_range0_1", "0");
-	ip_range0_2 = validate_websGetVar(wp, "ip_range0_2", "0");
-	ip_range0_3 = validate_websGetVar(wp, "ip_range0_3", "0");
-	ip_range0_4 = validate_websGetVar(wp, "ip_range0_4", "0");
-	ip_range0_5 = validate_websGetVar(wp, "ip_range0_5", "0");
-	ip_range0_6 = validate_websGetVar(wp, "ip_range0_6", "0");
-	ip_range0_7 = validate_websGetVar(wp, "ip_range0_7", "0");
-	ip_range1_0 = validate_websGetVar(wp, "ip_range1_0", "0");
-	ip_range1_1 = validate_websGetVar(wp, "ip_range1_1", "0");
-	ip_range1_2 = validate_websGetVar(wp, "ip_range1_2", "0");
-	ip_range1_3 = validate_websGetVar(wp, "ip_range1_3", "0");
-	ip_range1_4 = validate_websGetVar(wp, "ip_range1_4", "0");
-	ip_range1_5 = validate_websGetVar(wp, "ip_range1_5", "0");
-	ip_range1_6 = validate_websGetVar(wp, "ip_range1_6", "0");
-	ip_range1_7 = validate_websGetVar(wp, "ip_range1_7", "0");
+	ip0 = websGetVar(wp, "ip0", "0");
+	ip1 = websGetVar(wp, "ip1", "0");
+	ip2 = websGetVar(wp, "ip2", "0");
+	ip3 = websGetVar(wp, "ip3", "0");
+	ip4 = websGetVar(wp, "ip4", "0");
+	ip5 = websGetVar(wp, "ip5", "0");
+	ip_range0_0 = websGetVar(wp, "ip_range0_0", "0");
+	ip_range0_1 = websGetVar(wp, "ip_range0_1", "0");
+	ip_range0_2 = websGetVar(wp, "ip_range0_2", "0");
+	ip_range0_3 = websGetVar(wp, "ip_range0_3", "0");
+	ip_range0_4 = websGetVar(wp, "ip_range0_4", "0");
+	ip_range0_5 = websGetVar(wp, "ip_range0_5", "0");
+	ip_range0_6 = websGetVar(wp, "ip_range0_6", "0");
+	ip_range0_7 = websGetVar(wp, "ip_range0_7", "0");
+	ip_range1_0 = websGetVar(wp, "ip_range1_0", "0");
+	ip_range1_1 = websGetVar(wp, "ip_range1_1", "0");
+	ip_range1_2 = websGetVar(wp, "ip_range1_2", "0");
+	ip_range1_3 = websGetVar(wp, "ip_range1_3", "0");
+	ip_range1_4 = websGetVar(wp, "ip_range1_4", "0");
+	ip_range1_5 = websGetVar(wp, "ip_range1_5", "0");
+	ip_range1_6 = websGetVar(wp, "ip_range1_6", "0");
+	ip_range1_7 = websGetVar(wp, "ip_range1_7", "0");
 
 	if (!valid_range(wp, ip0, &which[0]) ||
 	    !valid_range(wp, ip1, &which[0]) ||
@@ -2684,9 +2684,9 @@ EJ_VISIBLE void validate_filter_port(webs_t wp, char *value, struct variable *v)
 		snprintf(filter_port, sizeof(filter_port), "proto%d", i);
 		snprintf(filter_port_start, sizeof(filter_port_start), "start%d", i);
 		snprintf(filter_port_end, sizeof(filter_port_end), "end%d", i);
-		port = validate_websGetVar(wp, filter_port, NULL);
-		start = validate_websGetVar(wp, filter_port_start, NULL);
-		end = validate_websGetVar(wp, filter_port_end, NULL);
+		port = websGetVar(wp, filter_port, NULL);
+		start = websGetVar(wp, filter_port_start, NULL);
+		end = websGetVar(wp, filter_port_end, NULL);
 
 		if (!port || !start || !end)
 			continue;
@@ -2745,9 +2745,9 @@ EJ_VISIBLE void validate_filter_dport_grp(webs_t wp, char *value, struct variabl
 		snprintf(filter_port, sizeof(filter_port), "proto%d", i);
 		snprintf(filter_port_start, sizeof(filter_port_start), "start%d", i);
 		snprintf(filter_port_end, sizeof(filter_port_end), "end%d", i);
-		port = validate_websGetVar(wp, filter_port, NULL);
-		start = validate_websGetVar(wp, filter_port_start, NULL);
-		end = validate_websGetVar(wp, filter_port_end, NULL);
+		port = websGetVar(wp, filter_port, NULL);
+		start = websGetVar(wp, filter_port_start, NULL);
+		end = websGetVar(wp, filter_port_end, NULL);
 
 		if (!port || !start || !end)
 			continue;
@@ -2810,7 +2810,7 @@ EJ_VISIBLE void validate_filter_mac_grp(webs_t wp, char *value, struct variable 
 
 		snprintf(filter_mac, sizeof(filter_mac), "mac%d", i);
 
-		mac = validate_websGetVar(wp, filter_mac, NULL);
+		mac = websGetVar(wp, filter_mac, NULL);
 		if (!mac)
 			continue;
 
@@ -2875,7 +2875,7 @@ EJ_VISIBLE void validate_filter_web(webs_t wp, char *value, struct variable *v)
 		char *host;
 
 		snprintf(filter_host, sizeof(filter_host), "host%d", i);
-		host = validate_websGetVar(wp, filter_host, "");
+		host = websGetVar(wp, filter_host, "");
 
 		if (!strcmp(host, ""))
 			continue;
@@ -2900,7 +2900,7 @@ EJ_VISIBLE void validate_filter_web(webs_t wp, char *value, struct variable *v)
 		char *url;
 
 		snprintf(filter_url, sizeof(filter_url), "url%d", i);
-		url = validate_websGetVar(wp, filter_url, "");
+		url = websGetVar(wp, filter_url, "");
 
 		if (!strcmp(url, ""))
 			continue;
@@ -2960,13 +2960,13 @@ EJ_VISIBLE void validate_port_trigger(webs_t wp, char *value, struct variable *v
 		snprintf(trigger_o_to, sizeof(trigger_o_to), "o_to%d", i);
 		snprintf(trigger_proto, sizeof(trigger_proto), "pro%d", i);
 
-		name = validate_websGetVar(wp, trigger_name, "");
-		enable = validate_websGetVar(wp, trigger_enable, "off");
-		i_from = validate_websGetVar(wp, trigger_i_from, NULL);
-		i_to = validate_websGetVar(wp, trigger_i_to, NULL);
-		o_from = validate_websGetVar(wp, trigger_o_from, NULL);
-		o_to = validate_websGetVar(wp, trigger_o_to, NULL);
-		proto = validate_websGetVar(wp, trigger_proto, "both");
+		name = websGetVar(wp, trigger_name, "");
+		enable = websGetVar(wp, trigger_enable, "off");
+		i_from = websGetVar(wp, trigger_i_from, NULL);
+		i_to = websGetVar(wp, trigger_i_to, NULL);
+		o_from = websGetVar(wp, trigger_o_from, NULL);
+		o_to = websGetVar(wp, trigger_o_to, NULL);
+		proto = websGetVar(wp, trigger_proto, "both");
 		which = &trigger_variables[0];
 
 		if (!i_from || !i_to || !o_from || !o_to)
@@ -3054,7 +3054,7 @@ EJ_VISIBLE void validate_blocked_service(webs_t wp, char *value, struct variable
 		char *service;
 
 		snprintf(blocked_service, sizeof(blocked_service), "blocked_service%d", i);
-		service = validate_websGetVar(wp, blocked_service, NULL);
+		service = websGetVar(wp, blocked_service, NULL);
 		if (!service || !strcmp(service, "None"))
 			continue;
 
@@ -3075,7 +3075,7 @@ EJ_VISIBLE void validate_catchall(webs_t wp, char *value, struct variable *v)
 	char *p2p;
 	char port_grp[] = "filter_p2p_grpXXX";
 
-	p2p = validate_websGetVar(wp, "filter_p2p", NULL);
+	p2p = websGetVar(wp, "filter_p2p", NULL);
 	if (p2p) {
 		snprintf(port_grp, sizeof(port_grp), "filter_p2p_grp%d", wp->p->filter_id);
 		nvram_set(port_grp, p2p);
@@ -3125,9 +3125,9 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	cur = buf;
 	cur_name = buf_name;
 
-	name = validate_websGetVar(wp, "route_name", "");	// default empty if no find
+	name = websGetVar(wp, "route_name", "");	// default empty if no find
 	// route_name
-	metric = validate_websGetVar(wp, "route_metric", "0");
+	metric = websGetVar(wp, "route_metric", "0");
 
 	/*
 	 * validate ip address 
@@ -3135,7 +3135,7 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	strcpy(ipaddr, "");
 	for (i = 0; i < 4; i++) {
 		snprintf(temp, sizeof(temp), "%s_%d", "route_ipaddr", i);
-		val = validate_websGetVar(wp, temp, NULL);
+		val = websGetVar(wp, temp, NULL);
 		if (val) {
 			strcat(ipaddr, val);
 			if (i < 3)
@@ -3156,7 +3156,7 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	strcpy(netmask, "");
 	for (i = 0; i < 4; i++) {
 		snprintf(temp, sizeof(temp), "%s_%d", "route_netmask", i);
-		val = validate_websGetVar(wp, temp, NULL);
+		val = websGetVar(wp, temp, NULL);
 		if (val) {
 			strcat(netmask, val);
 			if (i < 3)
@@ -3178,7 +3178,7 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	strcpy(gateway, "");
 	for (i = 0; i < 4; i++) {
 		snprintf(temp, sizeof(temp), "%s_%d", "route_gateway", i);
-		val = validate_websGetVar(wp, temp, NULL);
+		val = websGetVar(wp, temp, NULL);
 		if (val) {
 			strcat(gateway, val);
 			if (i < 3)
@@ -3195,9 +3195,9 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 		}
 	}
 
-	page = validate_websGetVar(wp, "route_page", NULL);
-	ifname = validate_websGetVar(wp, "route_ifname", NULL);
-	nat = validate_websGetVar(wp, "route_nat", "0");
+	page = websGetVar(wp, "route_page", NULL);
+	ifname = websGetVar(wp, "route_ifname", NULL);
+	nat = websGetVar(wp, "route_nat", "0");
 
 	if (!page || !metric || !ifname) {
 		free(old_name);
@@ -3326,7 +3326,7 @@ write_nvram:
 		}
 	}
 
-	if (!strcmp(validate_websGetVar(wp, "action", ""), "ApplyTake"))
+	if (!strcmp(websGetVar(wp, "action", ""), "ApplyTake"))
 		delete_old_routes();
 
 	nvram_set(v->name, buf);
