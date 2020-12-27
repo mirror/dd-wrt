@@ -952,20 +952,20 @@ static struct callmap gozila_map[] = {
 	} \
 } while (0)
 #endif
-static size_t websWrite(webs_t wp, char *fmt, ...);
-static size_t vwebsWrite(webs_t wp, char *fmt, va_list args);
-static char *websGetVar(webs_t wp, char *var, char *d)
+size_t websWrite(webs_t wp, char *fmt, ...);
+size_t vwebsWrite(webs_t wp, char *fmt, va_list args);
+char *websGetVar(webs_t wp, char *var, char *d)
 {
 	return get_cgi(wp, var) ? : d;
 }
 
-static int websGetVari(webs_t wp, char *var, int d)
+int websGetVari(webs_t wp, char *var, int d)
 {
 	char *res = get_cgi(wp, var);
 	return res ? atoi(res) : d;
 }
 
-static char *_GOZILA_GET(webs_t wp, char *name)
+char *GOZILA_GET(webs_t wp, char *name)
 {
 	if (!name)
 		return NULL;
@@ -975,8 +975,8 @@ static char *_GOZILA_GET(webs_t wp, char *name)
 }
 
 
-static char *_live_translate(webs_t wp, const char *tran);
-static void _validate_cgi(webs_t wp);
+char *live_translate(webs_t wp, const char *tran);
+void validate_cgi(webs_t wp);
 
 static void start_gozila(char *name, webs_t wp)
 {

@@ -44,7 +44,6 @@ extern BIO *bio_err;
 
 #define USE_LAN 0
 #define USE_WAN 1
-struct Webenvironment;
 
 typedef struct {
 //persistent
@@ -57,7 +56,6 @@ typedef struct {
 	int tod_data_null;
 	int nv_count;
 	struct wl_client_mac wl_client_macs[MAX_LEASES];
-	struct Webenvironment *env;
 } persistent_vars;
 
 typedef struct {
@@ -141,19 +139,6 @@ typedef struct {
 	unsigned int size;	/* Size of web page in bytes */
 } websRomPageIndexType;
 
-struct Webenvironment {
-	void (*do_ej_buffer)(char *buffer, webs_t stream);
-	char *(*websGetVar)(webs_t wp, char *var, char *d);
-	int (*websGetVari)(webs_t wp, char *var, int d);
-	size_t (*vwebsWrite)(webs_t wp, char *fmt, va_list args);
-	void (*do_ej)(unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003
-	FILE *(*getWebsFile)(webs_t wp, char *path);
-	int (*wfputs)(char *buf, webs_t fp);
-	char *(*GOZILA_GET)(webs_t wp, char *name);
-	char *(*live_translate)(webs_t wp, const char *tran);
-	void (*validate_cgi)(webs_t fp);
-	const websRomPageIndexType *websRomPageIndex;
-};
 
 //static void setLength(long len);
 

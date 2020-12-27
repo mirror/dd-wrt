@@ -64,7 +64,7 @@ struct variable **variables;
 
 void wps_ap_register(webs_t wp)
 {
-	char *pin = validate_websGetVar(wp, "wps_ap_pin", NULL);
+	char *pin = websGetVar(wp, "wps_ap_pin", NULL);
 	if (pin) {
 		nvram_set("pincode", pin);
 		eval("hostapd_cli", "-i", "wlan0", "wps_ap_pin", "set", pin, "300");
@@ -77,7 +77,7 @@ void wps_ap_register(webs_t wp)
 
 void wps_register(webs_t wp)
 {
-	char *pin = validate_websGetVar(wp, "wps_pin", NULL);
+	char *pin = websGetVar(wp, "wps_pin", NULL);
 	if (pin) {
 		eval("hostapd_cli", "-i", "wlan0", "wps_pin", "any", pin, "300");
 #ifdef HAVE_WZRHPAG300NH

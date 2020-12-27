@@ -148,7 +148,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	return 0;
 }
 
-static void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
+void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 
 static void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {

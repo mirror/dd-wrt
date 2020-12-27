@@ -117,7 +117,7 @@ static void *call(void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2
 	return call_ej(func, handle, stream, argc, argv);
 }
 
-static size_t websWrite(webs_t wp, char *fmt, ...);
+size_t websWrite(webs_t wp, char *fmt, ...);
 
 static inline int decompress(webs_t stream, char *pattern, int len, int last)
 {
@@ -194,7 +194,7 @@ static int file_get(webs_t wp)
 	return getc(wp->s_fp);
 }
 #endif
-static int wfputs(char *buf, webs_t fp);
+int wfputs(char *buf, webs_t fp);
 
 static void *global_handle = NULL;
 static void do_ej_s(int (*get)(webs_t wp), webs_t stream)	// jimmy, https, 8/4/2003
@@ -305,7 +305,7 @@ static void do_ej_file(FILE * fp, int len, webs_t stream)
 
 #include "../html.c"
 
-static FILE *getWebsFile(webs_t wp, char *path2)
+FILE *getWebsFile(webs_t wp, char *path2)
 {
 	FILE *web;
 
@@ -341,7 +341,7 @@ err:
 	return NULL;
 }
 
-static int getWebsFileLen(webs_t wp, char *path2)
+int getWebsFileLen(webs_t wp, char *path2)
 {
 	unsigned int len = 0;
 	int i = 0;
@@ -361,7 +361,7 @@ static int getWebsFileLen(webs_t wp, char *path2)
 	return len;
 }
 
-static void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, https, 8/4/2003
+void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
 	FILE *fp = NULL;
 	unsigned int len;

@@ -70,7 +70,7 @@ void wan_proto(webs_t wp)
 {
 	char *enable;
 
-	enable = validate_websGetVar(wp, "wan_proto", NULL);
+	enable = websGetVar(wp, "wan_proto", NULL);
 	nvram_set("wan_proto", enable);
 }
 
@@ -86,7 +86,7 @@ void dhcpfwd(webs_t wp)
 {
 	int enable;
 
-	enable = validate_websGetVari(wp, "dhcpfwd_enable", 0);
+	enable = websGetVari(wp, "dhcpfwd_enable", 0);
 	if (enable)
 		nvram_set("lan_proto", "static");
 	nvram_seti("dhcpfwd_enable", enable);
@@ -98,7 +98,7 @@ void dhcpfwd(webs_t wp)
 void execute(webs_t wp);
 
 {
-	char *var = validate_websGetVar(wp, "command", "");
+	char *var = websGetVar(wp, "command", "");
 
 	FILE *fp = popen(var, "rb");
 	if (fp) {
@@ -141,8 +141,8 @@ void delete_leases(webs_t wp)
 	}
 	//todo. detect correct interface
 
-	ip = validate_websGetVar(wp, "ip_del", NULL);
-	mac = validate_websGetVar(wp, "mac_del", NULL);
+	ip = websGetVar(wp, "ip_del", NULL);
+	mac = websGetVar(wp, "mac_del", NULL);
 
 	eval("dhcp_release", iface, ip, mac);
 	wordlist = nvram_safe_get("mdhcpd");
@@ -157,7 +157,7 @@ void delete_leases(webs_t wp)
 #if defined(HAVE_PPTPD) || defined(HAVE_PPPOESERVER)
 void delete_pptp(webs_t wp)
 {
-	int iface = validate_websGetVari(wp, "if_del", 0);
+	int iface = websGetVari(wp, "if_del", 0);
 	if (iface)
 		kill(iface, SIGTERM);
 }
@@ -165,7 +165,7 @@ void delete_pptp(webs_t wp)
 void save_wifi(webs_t wp)
 {
 	// fprintf (stderr, "save wifi\n");
-	char *var = validate_websGetVar(wp, "wifi_display", NULL);
+	char *var = websGetVar(wp, "wifi_display", NULL);
 
 	if (var) {
 		if (has_ad(var))
@@ -224,20 +224,20 @@ static void validate_filter_tod(webs_t wp)
 
 	which = &filter_tod_variables[0];
 
-	day_all = validate_websGetVari(wp, "day_all", 0);
-	week[0] = validate_websGetVari(wp, "week0", 0);
-	week[1] = validate_websGetVari(wp, "week1", 0);
-	week[2] = validate_websGetVari(wp, "week2", 0);
-	week[3] = validate_websGetVari(wp, "week3", 0);
-	week[4] = validate_websGetVari(wp, "week4", 0);
-	week[5] = validate_websGetVari(wp, "week5", 0);
-	week[6] = validate_websGetVari(wp, "week6", 0);
-	time_all = validate_websGetVari(wp, "time_all", 0);
-	start_hour = validate_websGetVari(wp, "start_hour", 0);
-	start_min = validate_websGetVari(wp, "start_min", 0);
-	// start_time = validate_websGetVari (wp, "start_time", 0);
-	end_hour = validate_websGetVari(wp, "end_hour", 0);
-	end_min = validate_websGetVari(wp, "end_min", 0);
+	day_all = websGetVari(wp, "day_all", 0);
+	week[0] = websGetVari(wp, "week0", 0);
+	week[1] = websGetVari(wp, "week1", 0);
+	week[2] = websGetVari(wp, "week2", 0);
+	week[3] = websGetVari(wp, "week3", 0);
+	week[4] = websGetVari(wp, "week4", 0);
+	week[5] = websGetVari(wp, "week5", 0);
+	week[6] = websGetVari(wp, "week6", 0);
+	time_all = websGetVari(wp, "time_all", 0);
+	start_hour = websGetVari(wp, "start_hour", 0);
+	start_min = websGetVari(wp, "start_min", 0);
+	// start_time = websGetVari (wp, "start_time", 0);
+	end_hour = websGetVari(wp, "end_hour", 0);
+	end_min = websGetVari(wp, "end_min", 0);
 
 	if (day_all == 1) {
 		strcpy(time, "0-6");
@@ -310,7 +310,7 @@ void save_policy(webs_t wp)
 	char *f_name, *f_status, *f_status2;
 	char *filter_if;
 	char buf[256] = "";
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 	struct variable filter_variables[] = {
 	      { argv:ARGV("1", "20") },
 	      { argv:ARGV("0", "1", "2") },
@@ -321,12 +321,12 @@ void save_policy(webs_t wp)
 
 	D("save policy");
 	which = &filter_variables[0];
-	char *f_id = validate_websGetVar(wp, "f_id", NULL);
-	f_name = validate_websGetVar(wp, "f_name", NULL);
-	filter_if = validate_websGetVar(wp, "filter_if", "Any");
-	f_status = validate_websGetVar(wp, "f_status", NULL);	// 0=>Disable /
+	char *f_id = websGetVar(wp, "f_id", NULL);
+	f_name = websGetVar(wp, "f_name", NULL);
+	filter_if = websGetVar(wp, "filter_if", "Any");
+	f_status = websGetVar(wp, "f_status", NULL);	// 0=>Disable /
 	// 1,2=>Enable
-	f_status2 = validate_websGetVar(wp, "f_status2", NULL);	// deny=>Deny /
+	f_status2 = websGetVar(wp, "f_status2", NULL);	// deny=>Deny /
 	// allow=>Allow
 	if (!f_id || !f_name || !f_status || !f_status2) {
 		D("invalid");
@@ -362,7 +362,7 @@ void save_policy(webs_t wp)
 
 EJ_VISIBLE void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 {
-	wp->p->filter_id = validate_websGetVari(wp, "f_id", 1);
+	wp->p->filter_id = websGetVari(wp, "f_id", 1);
 	save_policy(wp);
 }
 
@@ -400,16 +400,16 @@ static void validate_services_port(webs_t wp)
 	char *services = (char *)calloc(8192, 1);
 	char *cur = buf, *svcs = NULL;
 
-	char *services_array = validate_websGetVar(wp, "services_array0", NULL);
+	char *services_array = websGetVar(wp, "services_array0", NULL);
 
-	// char *services_length = validate_websGetVar (wp, "services_length0", NULL);
+	// char *services_length = websGetVar (wp, "services_length0", NULL);
 	char word[1026], *next;
 	char delim[] = "(&nbsp;)";
 	char var[32] = "";
 	int index = 0;
 	do {
 		snprintf(var, sizeof(var), "services_array%d", index++);
-		svcs = validate_websGetVar(wp, var, NULL);
+		svcs = websGetVar(wp, var, NULL);
 		if (svcs)
 			strcat(services, svcs);
 
@@ -452,7 +452,7 @@ static void validate_services_port(webs_t wp)
 void save_services_port(webs_t wp)
 {
 	validate_services_port(wp);
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 	applytake(value);
 }
 
@@ -491,7 +491,7 @@ void summary_delete_policy(webs_t wp)
 		char *sum;
 
 		snprintf(filter_sum, sizeof(filter_sum), "sum%d", i);
-		sum = validate_websGetVar(wp, filter_sum, NULL);
+		sum = websGetVar(wp, filter_sum, NULL);
 		if (sum)
 			delete_policy(wp, i);
 	}
@@ -541,8 +541,8 @@ void delete_static_route(webs_t wp)
 	char *cur_name = buf_name;
 	char word[256], *next;
 	char word_name[256], *next_name;
-	int page = validate_websGetVari(wp, "route_page", 0);
-	char *value = validate_websGetVar(wp, "action", "");
+	int page = websGetVari(wp, "route_page", 0);
+	char *value = websGetVar(wp, "action", "");
 	int i = 0;
 	char *performance = nvram_safe_get("static_route");
 	char *performance2 = nvram_safe_get("static_route_name");
@@ -669,20 +669,20 @@ void generate_wep_key(webs_t wp)
 	char *prefix, *passphrase, *bit, *tx;
 
 #ifdef HAVE_MADWIFI
-	prefix = validate_websGetVar(wp, "security_varname", "wlan0");
+	prefix = websGetVar(wp, "security_varname", "wlan0");
 #else
-	prefix = validate_websGetVar(wp, "security_varname", "wl");
+	prefix = websGetVar(wp, "security_varname", "wl");
 #endif
 	char var[80];
 
 	snprintf(var, sizeof(var), "%s_wep_bit", prefix);
-	bit = validate_websGetVar(wp, var, NULL);
+	bit = websGetVar(wp, var, NULL);
 	if (bit != NULL)
 		nvram_set("wl_wep_bit", bit);
 	snprintf(var, sizeof(var), "%s_passphrase", prefix);
-	passphrase = validate_websGetVar(wp, var, NULL);
+	passphrase = websGetVar(wp, var, NULL);
 	snprintf(var, sizeof(var), "%s_key", prefix);
-	tx = validate_websGetVar(wp, var, NULL);
+	tx = websGetVar(wp, var, NULL);
 	cprintf("gen wep key: bits = %s\n", bit);
 
 	generate_wep_key_single(wp, prefix, passphrase, bit, tx);
@@ -697,7 +697,7 @@ static char *_copytonv(webs_t wp, const char *fmt, ...)
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
 
-	char *wl = validate_websGetVar(wp, varbuf, NULL);
+	char *wl = websGetVar(wp, varbuf, NULL);
 	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	nvram_set(varbuf, wl);
 	return wl;
@@ -712,7 +712,7 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
 
-	char *wl = validate_websGetVar(wp, varbuf, NULL);
+	char *wl = websGetVar(wp, varbuf, NULL);
 	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	if (wl)
 		nvram_set(varbuf, wl);
@@ -738,7 +738,7 @@ static int copytonv_check(webs_t wp, const char *fmt, ...)
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
 
-	char *wl = validate_websGetVar(wp, varbuf, NULL);
+	char *wl = websGetVar(wp, varbuf, NULL);
 	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	char *oldval = nvram_safe_get(varbuf);
 	int ret = strcmp(wl ? wl : "", oldval);
@@ -768,7 +768,7 @@ void copytonv2(webs_t wp, char *prefix_get, char *prefix_set, char *name)
 
 	sprintf(tmpname, "%s_%s", prefix_get, name);
 
-	char *wl = validate_websGetVar(wp, tmpname, NULL);
+	char *wl = websGetVar(wp, tmpname, NULL);
 
 	sprintf(tmpname, "%s_%s", prefix_set, name);
 
@@ -786,7 +786,7 @@ void copytonv2_wme(webs_t wp, char *prefix_get, char *prefix_set, char *name, in
 
 	for (i = 0; i <= maxindex; i++) {
 		sprintf(tmpname, "%s_%s%d", prefix_get, name, i);
-		wl = validate_websGetVar(wp, tmpname, NULL);
+		wl = websGetVar(wp, tmpname, NULL);
 		if (wl) {
 			strcat(tmpvalue, wl);
 			strcat(tmpvalue, " ");
@@ -853,7 +853,7 @@ _8021xprv
 //      int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len, int iterations, u8 *buf, size_t buflen);
 //
 //      sprintf(n, "%s_wpa_psk", prefix);
-//      const char *passphrase = validate_websGetVar(wp, n, "");
+//      const char *passphrase = websGetVar(wp, n, "");
 //      if (strlen(passphrase) == 64)
 //              nvram_nset(passphrase, "%s_wpa_psk", prefix);
 //      else {
@@ -901,34 +901,34 @@ _8021xprv
 	copytonv_prefix(wp, "radmactype", prefix);
 
 	sprintf(n, "%s_authmode", prefix);
-	char *authmode = validate_websGetVar(wp, n, "");
+	char *authmode = websGetVar(wp, n, "");
 	if (*(authmode) == 0) {
 		nvram_set(n, "open");
 	} else {
 		copytonv(wp, n);
 	}
 	sprintf(n, "%s_key1", prefix);
-	char *key1 = validate_websGetVar(wp, n, "");
+	char *key1 = websGetVar(wp, n, "");
 
 	copytonv(wp, n);
 	sprintf(n, "%s_key2", prefix);
-	char *key2 = validate_websGetVar(wp, n, "");
+	char *key2 = websGetVar(wp, n, "");
 
 	copytonv(wp, n);
 	sprintf(n, "%s_key3", prefix);
-	char *key3 = validate_websGetVar(wp, n, "");
+	char *key3 = websGetVar(wp, n, "");
 
 	copytonv(wp, n);
 	sprintf(n, "%s_key4", prefix);
-	char *key4 = validate_websGetVar(wp, n, "");
+	char *key4 = websGetVar(wp, n, "");
 
 	copytonv(wp, n);
 	sprintf(n, "%s_passphrase", prefix);
-	char *pass = validate_websGetVar(wp, n, "");
+	char *pass = websGetVar(wp, n, "");
 
 	copytonv(wp, n);
 	sprintf(n, "%s_key", prefix);
-	char *tx = validate_websGetVar(wp, n, "");
+	char *tx = websGetVar(wp, n, "");
 	if (*(tx) == 0) {
 		nvram_seti(n, 1);
 	} else {
@@ -944,7 +944,7 @@ _8021xprv
 	sprintf(n, "%s_security_mode", p2);
 	char n2[80];
 
-	char *v = validate_websGetVar(wp, n, NULL);
+	char *v = websGetVar(wp, n, NULL);
 	sprintf(n2, "%s_akm", prefix);
 
 #ifdef HAVE_MADWIFI
@@ -993,7 +993,7 @@ _8021xprv
 		_copytonv_prefix(wp, "owe", prefix);
 		char oname[32];
 		sprintf(oname, "%s_owe_ifname", prefix);
-		char *oif = validate_websGetVar(wp, oname, NULL);
+		char *oif = websGetVar(wp, oname, NULL);
 		if (oif) {
 			nvram_set(oname, oif);
 			nvram_nset(prefix, "%s_owe_ifname", oif);
@@ -1075,7 +1075,7 @@ _8021xprv
 #ifdef HAVE_MADWIFI
 	sprintf(n, "%s_config", p2);
 	sprintf(n2, "%s_config", prefix);
-	v = validate_websGetVar(wp, n, NULL);
+	v = websGetVar(wp, n, NULL);
 	if (v && *(v)) {
 		nvram_set(n2, v);
 	} else {
@@ -1105,7 +1105,7 @@ static int security_save_prefix(webs_t wp, char *prefix)
 
 void security_save(webs_t wp)
 {
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 
 #ifdef HAVE_MADWIFI
 	int dc = getdevicecount();
@@ -1137,7 +1137,7 @@ void add_active_mac(webs_t wp)
 	int msize = 4608;	// 18 chars * 256 entries
 	char *buf = calloc(msize, 1);
 	char *cur = buf;
-	char *ifname = validate_websGetVar(wp, "ifname", NULL);
+	char *ifname = websGetVar(wp, "ifname", NULL);
 
 	nvram_seti("wl_active_add_mac", 1);
 
@@ -1146,7 +1146,7 @@ void add_active_mac(webs_t wp)
 		int index;
 
 		snprintf(active_mac, sizeof(active_mac), "%s%d", "on", i);
-		index = validate_websGetVari(wp, active_mac, 0);
+		index = websGetVari(wp, active_mac, 0);
 
 		count++;
 
@@ -1157,7 +1157,7 @@ void add_active_mac(webs_t wp)
 		int index;
 
 		snprintf(active_mac, sizeof(active_mac), "%s%d", "off", i);
-		index = validate_websGetVari(wp, active_mac, 0);
+		index = websGetVari(wp, active_mac, 0);
 
 		count++;
 		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wp->p->wl_client_macs[index].hwaddr);
@@ -1189,7 +1189,7 @@ static void do_script_save(webs_t wp, char *type)
 	char fname[32];
 	sprintf(fname, "/tmp/.%s", type);
 
-	char *startup = validate_websGetVar(wp, "ping_ip", NULL);
+	char *startup = websGetVar(wp, "ping_ip", NULL);
 	if (startup) {
 		// filter Windows <cr>ud
 		removeLineBreak(startup);
@@ -1229,7 +1229,7 @@ void save_usb(webs_t wp)
 
 void ping_wol(webs_t wp)
 {
-	char *wol_type = validate_websGetVar(wp, "wol_type", NULL);
+	char *wol_type = websGetVar(wp, "wol_type", NULL);
 
 	unlink(PING_TMP);
 
@@ -1237,7 +1237,7 @@ void ping_wol(webs_t wp)
 		return;
 
 	if (!strcmp(wol_type, "update")) {
-		char *wol_hosts = validate_websGetVar(wp, "wol_hosts", NULL);
+		char *wol_hosts = websGetVar(wp, "wol_hosts", NULL);
 
 		if (!wol_hosts || !strcmp(wol_hosts, ""))
 			return;
@@ -1247,9 +1247,9 @@ void ping_wol(webs_t wp)
 		return;
 	}
 
-	char *manual_wol_mac = validate_websGetVar(wp, "manual_wol_mac", NULL);
-	char *manual_wol_network = validate_websGetVar(wp, "manual_wol_network", NULL);
-	char *manual_wol_port = validate_websGetVar(wp, "manual_wol_port", NULL);
+	char *manual_wol_mac = websGetVar(wp, "manual_wol_mac", NULL);
+	char *manual_wol_network = websGetVar(wp, "manual_wol_network", NULL);
+	char *manual_wol_port = websGetVar(wp, "manual_wol_port", NULL);
 
 	if (!strcmp(wol_type, "manual")) {
 		nvram_set("manual_wol_mac", manual_wol_mac);
@@ -1282,7 +1282,7 @@ void ping_wol(webs_t wp)
 
 void diag_ping_start(webs_t wp)
 {
-	char *ip = validate_websGetVar(wp, "ping_ip", NULL);
+	char *ip = websGetVar(wp, "ping_ip", NULL);
 
 	if (!ip || !strcmp(ip, ""))
 		return;
@@ -1323,7 +1323,7 @@ void save_wireless_advanced(webs_t wp)
 {
 	char set_prefix[8];
 	char prefix[8];
-	char *wlface = validate_websGetVar(wp, "interface", NULL);
+	char *wlface = websGetVar(wp, "interface", NULL);
 
 	if (!strcmp(wlface, "wl0"))
 		snprintf(set_prefix, sizeof(set_prefix), "%s", "wl");
@@ -1371,19 +1371,19 @@ void save_wds(webs_t wp)
 {
 	char *wds_enable_val, wds_enable_var[32] = { 0 };
 	int h = 0;
-	char *interface = validate_websGetVar(wp, "interface", NULL);
+	char *interface = websGetVar(wp, "interface", NULL);
 
 	for (h = 1; h <= MAX_WDS_DEVS; h++) {
 		sprintf(wds_enable_var, "%s_wds%d_enable", interface, h);
-		wds_enable_val = validate_websGetVar(wp, wds_enable_var, NULL);
+		wds_enable_val = websGetVar(wp, wds_enable_var, NULL);
 		nvram_set(wds_enable_var, wds_enable_val);
 	}
 	sprintf(wds_enable_var, "%s_br1_enable", interface);
-	wds_enable_val = validate_websGetVar(wp, wds_enable_var, NULL);
+	wds_enable_val = websGetVar(wp, wds_enable_var, NULL);
 	nvram_set(wds_enable_var, wds_enable_val);
 
 	sprintf(wds_enable_var, "%s_br1_nat", interface);
-	wds_enable_val = validate_websGetVar(wp, wds_enable_var, NULL);
+	wds_enable_val = websGetVar(wp, wds_enable_var, NULL);
 	nvram_set(wds_enable_var, wds_enable_val);
 
 	return;
@@ -1453,7 +1453,7 @@ int get_svc(char *svc, char *protocol, char *ports)
 
 void qos_add_svc(webs_t wp)
 {
-	char *var = validate_websGetVar(wp, "wshaper_enable", NULL);
+	char *var = websGetVar(wp, "wshaper_enable", NULL);
 
 	if (var != NULL)
 		nvram_set("wshaper_enable", var);
@@ -1461,7 +1461,7 @@ void qos_add_svc(webs_t wp)
 	char protocol[100] = { 0 }, ports[100] = {
 		0
 	};
-	char *add_svc = validate_websGetVar(wp, "add_svc", NULL);
+	char *add_svc = websGetVar(wp, "add_svc", NULL);
 	char *svqos_svcs = nvram_safe_get("svqos_svcs");
 	char *new_svcs;
 	int i = 0;
@@ -1501,12 +1501,12 @@ void qos_add_svc(webs_t wp)
 
 void qos_add_dev(webs_t wp)
 {
-	char *var = validate_websGetVar(wp, "wshaper_enable", NULL);
+	char *var = websGetVar(wp, "wshaper_enable", NULL);
 
 	if (var != NULL)
 		nvram_set("wshaper_enable", var);
 
-	char *add_dev = validate_websGetVar(wp, "svqos_dev", NULL);
+	char *add_dev = websGetVar(wp, "svqos_dev", NULL);
 	char *svqos_ips = nvram_safe_get("svqos_devs");
 	char *new_ip;
 	if (!add_dev)
@@ -1522,16 +1522,16 @@ void qos_add_dev(webs_t wp)
 
 void qos_add_ip(webs_t wp)
 {
-	char *var = validate_websGetVar(wp, "wshaper_enable", NULL);
+	char *var = websGetVar(wp, "wshaper_enable", NULL);
 
 	if (var != NULL)
 		nvram_set("wshaper_enable", var);
 
-	char *add_ip0 = validate_websGetVar(wp, "svqos_ipaddr0", NULL);
-	char *add_ip1 = validate_websGetVar(wp, "svqos_ipaddr1", NULL);
-	char *add_ip2 = validate_websGetVar(wp, "svqos_ipaddr2", NULL);
-	char *add_ip3 = validate_websGetVar(wp, "svqos_ipaddr3", NULL);
-	char *add_nm = validate_websGetVar(wp, "svqos_netmask", NULL);
+	char *add_ip0 = websGetVar(wp, "svqos_ipaddr0", NULL);
+	char *add_ip1 = websGetVar(wp, "svqos_ipaddr1", NULL);
+	char *add_ip2 = websGetVar(wp, "svqos_ipaddr2", NULL);
+	char *add_ip3 = websGetVar(wp, "svqos_ipaddr3", NULL);
+	char *add_nm = websGetVar(wp, "svqos_netmask", NULL);
 	char add_ip[19] = { 0 };
 	char *svqos_ips = nvram_safe_get("svqos_ips");
 	char *new_ip;
@@ -1554,17 +1554,17 @@ void qos_add_ip(webs_t wp)
 
 void qos_add_mac(webs_t wp)
 {
-	char *var = validate_websGetVar(wp, "wshaper_enable", NULL);
+	char *var = websGetVar(wp, "wshaper_enable", NULL);
 
 	if (var != NULL)
 		nvram_set("wshaper_enable", var);
 
-	char *add_mac0 = validate_websGetVar(wp, "svqos_hwaddr0", NULL);
-	char *add_mac1 = validate_websGetVar(wp, "svqos_hwaddr1", NULL);
-	char *add_mac2 = validate_websGetVar(wp, "svqos_hwaddr2", NULL);
-	char *add_mac3 = validate_websGetVar(wp, "svqos_hwaddr3", NULL);
-	char *add_mac4 = validate_websGetVar(wp, "svqos_hwaddr4", NULL);
-	char *add_mac5 = validate_websGetVar(wp, "svqos_hwaddr5", NULL);
+	char *add_mac0 = websGetVar(wp, "svqos_hwaddr0", NULL);
+	char *add_mac1 = websGetVar(wp, "svqos_hwaddr1", NULL);
+	char *add_mac2 = websGetVar(wp, "svqos_hwaddr2", NULL);
+	char *add_mac3 = websGetVar(wp, "svqos_hwaddr3", NULL);
+	char *add_mac4 = websGetVar(wp, "svqos_hwaddr4", NULL);
+	char *add_mac5 = websGetVar(wp, "svqos_hwaddr5", NULL);
 	char *svqos_macs = nvram_safe_get("svqos_macs");
 	char *new_mac;
 	if (!svqos_macs || !add_mac0 || !add_mac1 || !add_mac2 || !add_mac3 || !add_mac4 || !add_mac5)
@@ -1637,7 +1637,7 @@ void tunnel_save(webs_t wp)
 			copytonv(wp, "oet%d_psk%d", i, peer);
 		}
 	}
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 	applytake(value);
 }
 
@@ -1645,7 +1645,7 @@ void tunnel_save(webs_t wp)
 void gen_wg_key(webs_t wp)
 {
 	tunnel_save(wp);
-	int key = validate_websGetVari(wp, "keyindex", -1);
+	int key = websGetVari(wp, "keyindex", -1);
 	if (key < 0)
 		return;
 	char idx[32];
@@ -1656,8 +1656,8 @@ void gen_wg_key(webs_t wp)
 void gen_wg_client(webs_t wp)
 {
 	tunnel_save(wp);
-	int key = validate_websGetVari(wp, "keyindex", -1);
-	int peer = validate_websGetVari(wp, "peerindex", -1);
+	int key = websGetVari(wp, "keyindex", -1);
+	int peer = websGetVari(wp, "peerindex", -1);
 	if (key < 0)
 		return;
 	if (peer < 0)
@@ -1672,8 +1672,8 @@ void gen_wg_client(webs_t wp)
 void del_wg_client(webs_t wp)
 {
 	tunnel_save(wp);
-	int key = validate_websGetVari(wp, "keyindex", -1);
-	int peer = validate_websGetVari(wp, "peerindex", -1);
+	int key = websGetVari(wp, "keyindex", -1);
+	int peer = websGetVari(wp, "peerindex", -1);
 	if (key < 0)
 		return;
 	if (peer < 0)
@@ -1690,7 +1690,7 @@ void del_wg_client(webs_t wp)
 void add_peer(webs_t wp)
 {
 	tunnel_save(wp);
-	int key = validate_websGetVari(wp, "keyindex", -1);
+	int key = websGetVari(wp, "keyindex", -1);
 	if (key < 0)
 		return;
 	char idx[32];
@@ -1856,7 +1856,7 @@ void del_tunnel(webs_t wp)
 {
 	int peer;
 	char idx[32];
-	int tun = validate_websGetVari(wp, "keyindex", -1);
+	int tun = websGetVari(wp, "keyindex", -1);
 	int tunnels = nvram_geti("oet_tunnels");
 	int i;
 	for (i = tun + 1; i < tunnels + 1; i++) {
@@ -1935,8 +1935,8 @@ void del_tunnel(webs_t wp)
 #ifdef HAVE_WIREGUARD
 void del_peer(webs_t wp)
 {
-	int tun = validate_websGetVari(wp, "keyindex", -1);
-	int peer = validate_websGetVari(wp, "peerindex", -1);
+	int tun = websGetVari(wp, "keyindex", -1);
+	int peer = websGetVari(wp, "peerindex", -1);
 	tunnel_save(wp);
 	char idx[32];
 	int i;
@@ -1955,8 +1955,8 @@ void del_peer(webs_t wp)
 void gen_wg_psk(webs_t wp)
 {
 	tunnel_save(wp);
-	int key = validate_websGetVari(wp, "keyindex", -1);
-	int peer = validate_websGetVari(wp, "peerindex", -1);
+	int key = websGetVari(wp, "keyindex", -1);
+	int peer = websGetVari(wp, "peerindex", -1);
 	if (key < 0 || peer < 0)
 		return;
 	char idx[32];
@@ -1971,21 +1971,21 @@ void gen_wg_psk(webs_t wp)
 
 void qos_save(webs_t wp)
 {
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 	char *svqos_var;
 	char svqos_pktstr[sizeof("ACK | XXX | XXX | XXX | XXX | ")] = { 0 };
 	char field[32] = { 0 };
 	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt, *proto;
-	int no_svcs = validate_websGetVari(wp, "svqos_nosvcs", 0);
-	int no_ips = validate_websGetVari(wp, "svqos_noips", 0);
-	int no_devs = validate_websGetVari(wp, "svqos_nodevs", 0);
-	int no_macs = validate_websGetVari(wp, "svqos_nomacs", 0);
+	int no_svcs = websGetVari(wp, "svqos_nosvcs", 0);
+	int no_ips = websGetVari(wp, "svqos_noips", 0);
+	int no_devs = websGetVari(wp, "svqos_nodevs", 0);
+	int no_macs = websGetVari(wp, "svqos_nomacs", 0);
 	int i = 0, j = 0;
 	/*
 	 * reused wshaper fields - see src/router/rc/wshaper.c 
 	 */
 
-	data = validate_websGetVar(wp, "wshaper_enable", NULL);
+	data = websGetVar(wp, "wshaper_enable", NULL);
 	nvram_set("wshaper_enable", data);
 
 	if (strcmp(data, "0") == 0) {
@@ -1998,18 +1998,18 @@ void qos_save(webs_t wp)
 	svqos_var = malloc(4096);
 	bzero(svqos_var, 4096);
 
-//      nvram_set("enable_game", validate_websGetVar(wp, "enable_game", NULL));
-	nvram_seti("svqos_defaults", validate_websGetVari(wp, "svqos_defaults", 0));
-	nvram_seti("default_uplevel", validate_websGetVari(wp, "default_uplevel", 0));
-	nvram_seti("default_downlevel", validate_websGetVari(wp, "default_downlevel", 0));
-	nvram_seti("default_lanlevel", validate_websGetVari(wp, "default_lanlevel", 0));
-	nvram_seti("wshaper_downlink", validate_websGetVari(wp, "wshaper_downlink", 0));
-	nvram_seti("wshaper_uplink", validate_websGetVari(wp, "wshaper_uplink", 0));
-	nvram_set("wshaper_dev", validate_websGetVar(wp, "wshaper_dev", "WAN"));
-	nvram_seti("qos_type", validate_websGetVari(wp, "qos_type", 0));
+//      nvram_set("enable_game", websGetVar(wp, "enable_game", NULL));
+	nvram_seti("svqos_defaults", websGetVari(wp, "svqos_defaults", 0));
+	nvram_seti("default_uplevel", websGetVari(wp, "default_uplevel", 0));
+	nvram_seti("default_downlevel", websGetVari(wp, "default_downlevel", 0));
+	nvram_seti("default_lanlevel", websGetVari(wp, "default_lanlevel", 0));
+	nvram_seti("wshaper_downlink", websGetVari(wp, "wshaper_downlink", 0));
+	nvram_seti("wshaper_uplink", websGetVari(wp, "wshaper_uplink", 0));
+	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", "WAN"));
+	nvram_seti("qos_type", websGetVari(wp, "qos_type", 0));
 
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL) || defined(HAVE_PIE) || defined(HAVE_CAKE)
-	nvram_set("svqos_aqd", validate_websGetVar(wp, "qos_aqd", "sfq"));
+	nvram_set("svqos_aqd", websGetVar(wp, "qos_aqd", "sfq"));
 #endif
 
 	// nvram_commit ();
@@ -2019,19 +2019,19 @@ void qos_save(webs_t wp)
 	 */
 	bzero(svqos_pktstr, sizeof(svqos_pktstr));
 
-	pktopt = validate_websGetVar(wp, "svqos_pktack", NULL);
+	pktopt = websGetVar(wp, "svqos_pktack", NULL);
 	if (pktopt)
 		strcat(svqos_pktstr, "ACK | ");
-	pktopt = validate_websGetVar(wp, "svqos_pktsyn", NULL);
+	pktopt = websGetVar(wp, "svqos_pktsyn", NULL);
 	if (pktopt)
 		strcat(svqos_pktstr, "SYN | ");
-	pktopt = validate_websGetVar(wp, "svqos_pktfin", NULL);
+	pktopt = websGetVar(wp, "svqos_pktfin", NULL);
 	if (pktopt)
 		strcat(svqos_pktstr, "FIN | ");
-	pktopt = validate_websGetVar(wp, "svqos_pktrst", NULL);
+	pktopt = websGetVar(wp, "svqos_pktrst", NULL);
 	if (pktopt)
 		strcat(svqos_pktstr, "RST | ");
-	pktopt = validate_websGetVar(wp, "svqos_pkticmp", NULL);
+	pktopt = websGetVar(wp, "svqos_pkticmp", NULL);
 	if (pktopt)
 		strcat(svqos_pktstr, "ICMP | ");
 
@@ -2048,18 +2048,18 @@ void qos_save(webs_t wp)
 		bzero(ports, 10);
 
 		snprintf(field, sizeof(field), "svqos_svcdel%d", i);
-		delete = validate_websGetVar(wp, field, NULL);
+		delete = websGetVar(wp, field, NULL);
 
 		if (delete && *(delete))
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_svcname%d", i);
-		name = validate_websGetVar(wp, field, NULL);
+		name = websGetVar(wp, field, NULL);
 		if (!name)
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_svcprio%d", i);
-		level = validate_websGetVar(wp, field, NULL);
+		level = websGetVar(wp, field, NULL);
 
 		if (!level)
 			continue;
@@ -2101,36 +2101,36 @@ void qos_save(webs_t wp)
 	for (i = 0; i < no_devs; i++) {
 
 		snprintf(field, sizeof(field), "svqos_devdel%d", i);
-		delete = validate_websGetVar(wp, field, NULL);
+		delete = websGetVar(wp, field, NULL);
 
 		if (delete && *(delete))
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_dev%d", i);
-		data = validate_websGetVar(wp, field, NULL);
+		data = websGetVar(wp, field, NULL);
 
 		if (!data)
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_devprio%d", i);
-		prio = validate_websGetVar(wp, field, NULL);
+		prio = websGetVar(wp, field, NULL);
 
 		snprintf(field, sizeof(field), "svqos_devup%d", i);
-		level = validate_websGetVar(wp, field, NULL);
+		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
 		snprintf(field, sizeof(field), "svqos_devdown%d", i);
-		level2 = validate_websGetVar(wp, field, NULL);
+		level2 = websGetVar(wp, field, NULL);
 		if (!level2)
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_devservice%d", i);
-		proto = validate_websGetVar(wp, field, NULL);
+		proto = websGetVar(wp, field, NULL);
 		if (!proto)
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_devlanlvl%d", i);
-		lanlevel = validate_websGetVar(wp, field, NULL);
+		lanlevel = websGetVar(wp, field, NULL);
 		if (!lanlevel)
 			continue;
 
@@ -2153,31 +2153,31 @@ void qos_save(webs_t wp)
 	for (i = 0; i < no_ips; i++) {
 
 		snprintf(field, sizeof(field), "svqos_ipdel%d", i);
-		delete = validate_websGetVar(wp, field, NULL);
+		delete = websGetVar(wp, field, NULL);
 
 		if (delete && *(delete))
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_ip%d", i);
-		data = validate_websGetVar(wp, field, NULL);
+		data = websGetVar(wp, field, NULL);
 		if (!data)
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_ipprio%d", i);
-		prio = validate_websGetVar(wp, field, NULL);
+		prio = websGetVar(wp, field, NULL);
 		if (!prio)
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_ipup%d", i);
-		level = validate_websGetVar(wp, field, NULL);
+		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
 		snprintf(field, sizeof(field), "svqos_ipdown%d", i);
-		level2 = validate_websGetVar(wp, field, NULL);
+		level2 = websGetVar(wp, field, NULL);
 		if (!level2)
 			continue;
 		snprintf(field, sizeof(field), "svqos_iplanlvl%d", i);
-		lanlevel = validate_websGetVar(wp, field, NULL);
+		lanlevel = websGetVar(wp, field, NULL);
 		if (!lanlevel)
 			continue;
 
@@ -2200,31 +2200,31 @@ void qos_save(webs_t wp)
 	 */
 	for (i = 0; i < no_macs; i++) {
 		snprintf(field, sizeof(field), "svqos_macdel%d", i);
-		delete = validate_websGetVar(wp, field, NULL);
+		delete = websGetVar(wp, field, NULL);
 
 		if (delete && *(delete))
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_mac%d", i);
-		data = validate_websGetVar(wp, field, NULL);
+		data = websGetVar(wp, field, NULL);
 		if (!data)
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_macprio%d", i);
-		prio = validate_websGetVar(wp, field, NULL);
+		prio = websGetVar(wp, field, NULL);
 		if (!prio)
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_macup%d", i);
-		level = validate_websGetVar(wp, field, NULL);
+		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
 		snprintf(field, sizeof(field), "svqos_macdown%d", i);
-		level2 = validate_websGetVar(wp, field, NULL);
+		level2 = websGetVar(wp, field, NULL);
 		if (!level2)
 			continue;
 		snprintf(field, sizeof(field), "svqos_maclanlvl%d", i);
-		lanlevel = validate_websGetVar(wp, field, NULL);
+		lanlevel = websGetVar(wp, field, NULL);
 		if (!lanlevel)
 			continue;
 
@@ -2245,15 +2245,15 @@ void qos_save(webs_t wp)
 	/*
 	 * adm6996 LAN port priorities 
 	 */
-	nvram_seti("svqos_port1prio", validate_websGetVari(wp, "svqos_port1prio", 0));
-	nvram_seti("svqos_port2prio", validate_websGetVari(wp, "svqos_port2prio", 0));
-	nvram_seti("svqos_port3prio", validate_websGetVari(wp, "svqos_port3prio", 0));
-	nvram_seti("svqos_port4prio", validate_websGetVari(wp, "svqos_port4prio", 0));
+	nvram_seti("svqos_port1prio", websGetVari(wp, "svqos_port1prio", 0));
+	nvram_seti("svqos_port2prio", websGetVari(wp, "svqos_port2prio", 0));
+	nvram_seti("svqos_port3prio", websGetVari(wp, "svqos_port3prio", 0));
+	nvram_seti("svqos_port4prio", websGetVari(wp, "svqos_port4prio", 0));
 
-	nvram_seti("svqos_port1bw", validate_websGetVari(wp, "svqos_port1bw", 0));
-	nvram_seti("svqos_port2bw", validate_websGetVari(wp, "svqos_port2bw", 0));
-	nvram_seti("svqos_port3bw", validate_websGetVari(wp, "svqos_port3bw", 0));
-	nvram_seti("svqos_port4bw", validate_websGetVari(wp, "svqos_port4bw", 0));
+	nvram_seti("svqos_port1bw", websGetVari(wp, "svqos_port1bw", 0));
+	nvram_seti("svqos_port2bw", websGetVari(wp, "svqos_port2bw", 0));
+	nvram_seti("svqos_port3bw", websGetVari(wp, "svqos_port3bw", 0));
+	nvram_seti("svqos_port4bw", websGetVari(wp, "svqos_port4bw", 0));
 
 	addAction("qos");
 	nvram_seti("nowebaction", 1);
@@ -2367,7 +2367,7 @@ void lease_add(webs_t wp)
 #ifdef HAVE_PPPOESERVER
 void chap_user_add(webs_t wp)
 {
-	int var = validate_websGetVari(wp, "pppoeserver_enabled", 0);
+	int var = websGetVari(wp, "pppoeserver_enabled", 0);
 
 	nvram_seti("pppoeserver_enabled", var);
 	macro_add("pppoeserver_chapsnum");
@@ -2375,7 +2375,7 @@ void chap_user_add(webs_t wp)
 
 void chap_user_remove(webs_t wp)
 {
-	int var = validate_websGetVari(wp, "pppoeserver_enabled", 0);
+	int var = websGetVari(wp, "pppoeserver_enabled", 0);
 
 	nvram_seti("pppoeserver_enabled", var);
 	macro_rem("pppoeserver_chapsnum", "pppoeserver_chaps");
@@ -2732,13 +2732,13 @@ void add_vifs_single(char *prefix, int device)
 
 void add_vifs(webs_t wp)
 {
-	char *prefix = validate_websGetVar(wp, "iface", NULL);
+	char *prefix = websGetVar(wp, "iface", NULL);
 
 	if (prefix == NULL)
 		return;
 	int devcount = prefix[strlen(prefix) - 1] - '0';
 #ifdef HAVE_GUESTPORT
-	if (!strcmp(validate_websGetVar(wp, "gp_modify", ""), "add")) {
+	if (!strcmp(websGetVar(wp, "gp_modify", ""), "add")) {
 		gp_action = 1;
 	}
 #endif
@@ -3093,10 +3093,10 @@ void remove_vifs_single(char *prefix, int vap)
 
 void remove_vifs(webs_t wp)
 {
-	char *prefix = validate_websGetVar(wp, "iface", NULL);
-	int vap = validate_websGetVari(wp, "vap", 0);
+	char *prefix = websGetVar(wp, "iface", NULL);
+	int vap = websGetVari(wp, "vap", 0);
 #ifdef HAVE_GUESTPORT
-	if (!strcmp(validate_websGetVar(wp, "gp_modify", ""), "remove")) {
+	if (!strcmp(websGetVar(wp, "gp_modify", ""), "remove")) {
 		gp_action = 2;
 	}
 #endif
@@ -3146,7 +3146,7 @@ static void pasteval(char *prefix, char *val)
 
 void copy_if(webs_t wp)
 {
-	char *prefix = validate_websGetVar(wp, "iface", NULL);
+	char *prefix = websGetVar(wp, "iface", NULL);
 	mkdir("/tmp/copy", 0700);
 	char ssname[32];
 	sprintf(ssname, "%s", prefix);
@@ -3163,7 +3163,7 @@ void copy_if(webs_t wp)
 
 void paste_if(webs_t wp)
 {
-	char *prefix = validate_websGetVar(wp, "iface", NULL);
+	char *prefix = websGetVar(wp, "iface", NULL);
 	char ssname[32];
 	sprintf(ssname, "%s", prefix);
 	if (strchr(ssname, '.'))
@@ -3209,7 +3209,7 @@ void del_bond(webs_t wp)
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	save_networking(wp);
-	int todel = validate_websGetVari(wp, "del_value", -1);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("bondings");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -3241,7 +3241,7 @@ void del_bond(webs_t wp)
 #ifdef HAVE_OLSRD
 void add_olsrd(webs_t wp)
 {
-	char *ifname = validate_websGetVar(wp, "olsrd_ifname", NULL);
+	char *ifname = websGetVar(wp, "olsrd_ifname", NULL);
 
 	if (ifname == NULL)
 		return;
@@ -3262,7 +3262,7 @@ void add_olsrd(webs_t wp)
 
 void del_olsrd(webs_t wp)
 {
-	int d = validate_websGetVari(wp, "olsrd_delcount", -1);
+	int d = websGetVari(wp, "olsrd_delcount", -1);
 
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
 	char *newlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -3302,31 +3302,31 @@ void save_olsrd(webs_t wp)
 		char valuename[32];
 
 		sprintf(valuename, "%s_hellointerval", interface);
-		char *hellointerval = validate_websGetVar(wp, valuename, "0");
+		char *hellointerval = websGetVar(wp, valuename, "0");
 
 		sprintf(valuename, "%s_hellovaliditytime", interface);
-		char *hellovaliditytime = validate_websGetVar(wp, valuename, "0");
+		char *hellovaliditytime = websGetVar(wp, valuename, "0");
 
 		sprintf(valuename, "%s_tcinterval", interface);
-		char *tcinterval = validate_websGetVar(wp, valuename, "0");
+		char *tcinterval = websGetVar(wp, valuename, "0");
 
 		sprintf(valuename, "%s_tcvaliditytime", interface);
-		char *tcvaliditytime = validate_websGetVar(wp, valuename, "0");
+		char *tcvaliditytime = websGetVar(wp, valuename, "0");
 
 		sprintf(valuename, "%s_midinterval", interface);
-		char *midinterval = validate_websGetVar(wp, valuename, "0");
+		char *midinterval = websGetVar(wp, valuename, "0");
 
 		sprintf(valuename, "%s_midvaliditytime", interface);
-		char *midvaliditytime = validate_websGetVar(wp, valuename, "0");
+		char *midvaliditytime = websGetVar(wp, valuename, "0");
 
 		sprintf(valuename, "%s_hnainterval", interface);
-		char *hnainterval = validate_websGetVar(wp, valuename, "0");
+		char *hnainterval = websGetVar(wp, valuename, "0");
 
 		sprintf(valuename, "%s_hnavaliditytime", interface);
-		char *hnavaliditytime = validate_websGetVar(wp, valuename, "0");
+		char *hnavaliditytime = websGetVar(wp, valuename, "0");
 
 		sprintf(valuename, "%s_linkqualitymult", interface);
-		char *linkqualitymult = validate_websGetVar(wp, valuename, "0");
+		char *linkqualitymult = websGetVar(wp, valuename, "0");
 		char *tmp;
 		asprintf(&tmp, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newlist, interface, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime,
 			 linkqualitymult);
@@ -3346,7 +3346,7 @@ void gpios_save(webs_t wp)
 	char *var, *next;
 	char nvgpio[32], gpioname[32];
 
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 
 	char *gpios = nvram_safe_get("gpio_outputs");
 	var = (char *)malloc(strlen(gpios) + 1);
@@ -3355,12 +3355,12 @@ void gpios_save(webs_t wp)
 			foreach(var, gpios, next) {
 				sprintf(nvgpio, "gpio%s", var);
 				sprintf(gpioname, "gpio%s_name", var);
-				value = validate_websGetVar(wp, nvgpio, NULL);
+				value = websGetVar(wp, nvgpio, NULL);
 				if (value) {
 					set_gpio(atoi(var), atoi(value));
 					nvram_set(nvgpio, value);
 				}
-				value = validate_websGetVar(wp, gpioname, NULL);
+				value = websGetVar(wp, gpioname, NULL);
 				if (value) {
 					nvram_set(gpioname, value);
 				} else {
@@ -3376,7 +3376,7 @@ void gpios_save(webs_t wp)
 		if (gpios != NULL) {
 			foreach(var, gpios, next) {
 				sprintf(gpioname, "gpio%s_name", var);
-				value = validate_websGetVar(wp, gpioname, NULL);
+				value = websGetVar(wp, gpioname, NULL);
 				if (value) {
 					nvram_set(gpioname, value);
 				} else {
@@ -3408,7 +3408,7 @@ static void trunkspaces(char *str)
 
 void save_networking(webs_t wp)
 {
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 	int vlancount = nvram_geti("vlan_tagcount");
 	int bridgescount = nvram_geti("bridges_count");
 	int bridgesifcount = nvram_geti("bridgesif_count");
@@ -3431,15 +3431,15 @@ void save_networking(webs_t wp)
 		char var[32];
 
 		sprintf(var, "vlanifname%d", i);
-		ifname = validate_websGetVar(wp, var, NULL);
+		ifname = websGetVar(wp, var, NULL);
 		if (!ifname)
 			break;
 		sprintf(var, "vlantag%d", i);
-		tag = validate_websGetVar(wp, var, NULL);
+		tag = websGetVar(wp, var, NULL);
 		if (!tag)
 			break;
 		sprintf(var, "vlanprio%d", i);
-		prio = validate_websGetVar(wp, var, NULL);
+		prio = websGetVar(wp, var, NULL);
 		if (!prio)
 			break;
 		strcat(buffer, ifname);
@@ -3454,11 +3454,11 @@ void save_networking(webs_t wp)
 	// save bonds
 	bzero(buffer, 1024);
 #ifdef HAVE_BONDING
-	char *bondingnumber = validate_websGetVar(wp, "bonding_number", NULL);
+	char *bondingnumber = websGetVar(wp, "bonding_number", NULL);
 
 	if (bondingnumber)
 		nvram_set("bonding_number", bondingnumber);
-	char *bondingtype = validate_websGetVar(wp, "bonding_type", NULL);
+	char *bondingtype = websGetVar(wp, "bonding_type", NULL);
 
 	if (bondingtype)
 		nvram_set("bonding_type", bondingtype);
@@ -3467,11 +3467,11 @@ void save_networking(webs_t wp)
 		char var[32];
 
 		sprintf(var, "bondingifname%d", i);
-		ifname = validate_websGetVar(wp, var, NULL);
+		ifname = websGetVar(wp, var, NULL);
 		if (!ifname)
 			break;
 		sprintf(var, "bondingattach%d", i);
-		tag = validate_websGetVar(wp, var, NULL);
+		tag = websGetVar(wp, var, NULL);
 		if (!tag)
 			break;
 		strcat(buffer, ifname);
@@ -3487,7 +3487,7 @@ void save_networking(webs_t wp)
 	{
 		char var[32];
 		sprintf(var, "ipvsrole");
-		char *ipvsrole = validate_websGetVar(wp, var, NULL);
+		char *ipvsrole = websGetVar(wp, var, NULL);
 		if (ipvsrole) {
 			if (!strcmp(ipvsrole, "Master"))
 				nvram_set("ipvs_role", "master");
@@ -3504,31 +3504,31 @@ void save_networking(webs_t wp)
 		char *ipvsscheduler;
 		char var[32];
 		sprintf(var, "ipvsname%d", i);
-		ipvsname = validate_websGetVar(wp, var, NULL);
+		ipvsname = websGetVar(wp, var, NULL);
 		if (!ipvsname)
 			break;
 		trunkspaces(ipvsname);
 
 		sprintf(var, "ipvsip%d", i);
-		ipvsip = validate_websGetVar(wp, var, NULL);
+		ipvsip = websGetVar(wp, var, NULL);
 		if (!ipvsip)
 			break;
 		trunkspaces(ipvsip);
 
 		sprintf(var, "ipvsport%d", i);
-		ipvsport = validate_websGetVar(wp, var, NULL);
+		ipvsport = websGetVar(wp, var, NULL);
 		if (!ipvsport)
 			break;
 		trunkspaces(ipvsport);
 
 		sprintf(var, "ipvsscheduler%d", i);
-		ipvsscheduler = validate_websGetVar(wp, var, NULL);
+		ipvsscheduler = websGetVar(wp, var, NULL);
 		if (!ipvsscheduler)
 			break;
 		trunkspaces(ipvsscheduler);
 
 		sprintf(var, "ipvsproto%d", i);
-		ipvsproto = validate_websGetVar(wp, var, NULL);
+		ipvsproto = websGetVar(wp, var, NULL);
 		if (!ipvsproto)
 			break;
 		trunkspaces(ipvsproto);
@@ -3556,30 +3556,30 @@ void save_networking(webs_t wp)
 		char *ipvsnat;
 		char var[32];
 		sprintf(var, "target_ipvsname%d", i);
-		ipvsname = validate_websGetVar(wp, var, NULL);
+		ipvsname = websGetVar(wp, var, NULL);
 		if (!ipvsname)
 			break;
 		trunkspaces(ipvsname);
 
 		sprintf(var, "target_ipvsip%d", i);
-		ipvsip = validate_websGetVar(wp, var, NULL);
+		ipvsip = websGetVar(wp, var, NULL);
 		if (!ipvsip)
 			break;
 		trunkspaces(ipvsip);
 
 		sprintf(var, "target_ipvsport%d", i);
-		ipvsport = validate_websGetVar(wp, var, NULL);
+		ipvsport = websGetVar(wp, var, NULL);
 		if (!ipvsport)
 			break;
 		trunkspaces(ipvsport);
 
 		sprintf(var, "target_ipvsweight%d", i);
-		ipvsweight = validate_websGetVar(wp, var, NULL);
+		ipvsweight = websGetVar(wp, var, NULL);
 		if (!ipvsweight)
 			break;
 		trunkspaces(ipvsweight);
 		sprintf(var, "target_ipvsmasquerade%d", i);
-		ipvsnat = validate_websGetVar(wp, var, "0");
+		ipvsnat = websGetVar(wp, var, "0");
 		if (!ipvsnat)
 			break;
 		trunkspaces(ipvsnat);
@@ -3614,15 +3614,15 @@ void save_networking(webs_t wp)
 		bzero(ipaddr, 32);
 		bzero(netmask, 32);
 		sprintf(var, "bridgename%d", i);
-		ifname = validate_websGetVar(wp, var, NULL);
+		ifname = websGetVar(wp, var, NULL);
 		if (!ifname)
 			break;
 		sprintf(var, "bridgestp%d", i);
-		tag = validate_websGetVar(wp, var, "Off");
+		tag = websGetVar(wp, var, "Off");
 		if (!tag)
 			break;
 		sprintf(var, "bridgemcastbr%d", i);
-		mcast = validate_websGetVar(wp, var, NULL);
+		mcast = websGetVar(wp, var, NULL);
 		if (!mcast) {
 			break;
 		} else {
@@ -3633,21 +3633,21 @@ void save_networking(webs_t wp)
 				nvram_seti(n, 0);
 		}
 		sprintf(var, "bridgeprio%d", i);
-		prio = validate_websGetVar(wp, var, "32768");
+		prio = websGetVar(wp, var, "32768");
 		if (*(prio) == 0)
 			prio = "32768";
 		if (atoi(prio) > 61440)
 			prio = "61440";
 
 		sprintf(var, "bridgeforward_delay%d", i);
-		forward_delay = atoi(validate_websGetVar(wp, var, "15"));
+		forward_delay = atoi(websGetVar(wp, var, "15"));
 		if (forward_delay < 4)
 			forward_delay = 4;
 		if (forward_delay > 30)
 			forward_delay = 30;
 
 		sprintf(var, "bridgemax_age%d", i);
-		max_age = atoi(validate_websGetVar(wp, var, "20"));
+		max_age = atoi(websGetVar(wp, var, "20"));
 		if (max_age < 6)
 			max_age = 6;
 		if (max_age > 40)
@@ -3660,7 +3660,7 @@ void save_networking(webs_t wp)
 		sprintf(s_max_age, "%d", max_age);
 
 		sprintf(var, "bridgemtu%d", i);
-		mtu = validate_websGetVar(wp, var, NULL);
+		mtu = websGetVar(wp, var, NULL);
 		if (!mtu)
 			mtu = "1500";
 		if (*(mtu) == 0)
@@ -3691,7 +3691,7 @@ void save_networking(webs_t wp)
 		else
 			sprintf(brname, "%s_hwaddr", ifname);
 
-		nvram_set(brname, validate_websGetVar(wp, brname, NULL));
+		nvram_set(brname, websGetVar(wp, brname, NULL));
 	}
 	nvram_set("bridges", buffer);
 	// save bridge assignment
@@ -3701,21 +3701,21 @@ void save_networking(webs_t wp)
 		char var[32];
 
 		sprintf(var, "bridge%d", i);
-		ifname = validate_websGetVar(wp, var, NULL);
+		ifname = websGetVar(wp, var, NULL);
 		if (!ifname)
 			break;
 		sprintf(var, "bridgeif%d", i);
-		tag = validate_websGetVar(wp, var, NULL);
+		tag = websGetVar(wp, var, NULL);
 		if (!tag)
 			break;
 		sprintf(var, "bridgeifstp%d", i);
-		stp = validate_websGetVar(wp, var, "On");
+		stp = websGetVar(wp, var, "On");
 		if (!strcmp(stp, "On"))
 			stp = "1";
 		else
 			stp = "0";
 		sprintf(var, "bridgeifprio%d", i);
-		prio = validate_websGetVar(wp, var, "112");
+		prio = websGetVar(wp, var, "112");
 		if (*(prio) == 0)
 			prio = "112";
 
@@ -3723,10 +3723,10 @@ void save_networking(webs_t wp)
 			prio = "240";
 
 		sprintf(var, "bridgeifhairpin%d", i);
-		hairpin = validate_websGetVar(wp, var, "0");
+		hairpin = websGetVar(wp, var, "0");
 
 		sprintf(var, "bridgeifcost%d", i);
-		cost = validate_websGetVar(wp, var, "100");
+		cost = websGetVar(wp, var, "100");
 		if (*(cost) == 0)
 			prio = "100";
 
@@ -3754,27 +3754,27 @@ void save_networking(webs_t wp)
 		char var[32];
 
 		sprintf(var, "mdhcpifname%d", i);
-		mdhcpinterface = validate_websGetVar(wp, var, NULL);
+		mdhcpinterface = websGetVar(wp, var, NULL);
 		if (!mdhcpinterface)
 			break;
 
 		sprintf(var, "mdhcpon%d", i);
-		mdhcpon = validate_websGetVar(wp, var, NULL);
+		mdhcpon = websGetVar(wp, var, NULL);
 		if (!mdhcpon)
 			break;
 
 		sprintf(var, "mdhcpstart%d", i);
-		mdhcpstart = validate_websGetVar(wp, var, NULL);
+		mdhcpstart = websGetVar(wp, var, NULL);
 		if (!mdhcpstart)
 			break;
 
 		sprintf(var, "mdhcpmax%d", i);
-		mdhcpmax = validate_websGetVar(wp, var, NULL);
+		mdhcpmax = websGetVar(wp, var, NULL);
 		if (!mdhcpmax)
 			break;
 
 		sprintf(var, "mdhcpleasetime%d", i);
-		mdhcpleasetime = validate_websGetVar(wp, var, NULL);
+		mdhcpleasetime = websGetVar(wp, var, NULL);
 		if (!mdhcpleasetime)
 			break;
 
@@ -3829,7 +3829,7 @@ void del_vlan(webs_t wp)
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	save_networking(wp);
-	int todel = validate_websGetVari(wp, "del_value", -1);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("vlan_tags");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -3898,7 +3898,7 @@ void del_mdhcp(webs_t wp)
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	save_networking(wp);
-	int todel = validate_websGetVari(wp, "del_value", -1);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("mdhcpd");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -3931,7 +3931,7 @@ void del_bridge(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	int todel = validate_websGetVari(wp, "del_value", -1);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("bridges");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -3999,7 +3999,7 @@ void del_bridgeif(webs_t wp)
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	save_networking(wp);
-	int todel = validate_websGetVari(wp, "del_value", -1);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("bridgesif");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -4084,7 +4084,7 @@ void del_ipvs(webs_t wp)
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	save_networking(wp);
-	int todel = validate_websGetVari(wp, "del_value", -1);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvs");
 	if (!*(wordlist))
@@ -4146,7 +4146,7 @@ void del_ipvstarget(webs_t wp)
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	save_networking(wp);
-	int todel = validate_websGetVari(wp, "del_value", -1);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvstarget");
 	if (!*(wordlist))
@@ -4205,7 +4205,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	snprintf(n, sizeof(n), "%s_ssid", prefix);
 	copytonv(wp, n);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
-		char *wl = validate_websGetVar(wp, n, NULL);
+		char *wl = websGetVar(wp, n, NULL);
 
 		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
 		if (wl) {
@@ -4221,7 +4221,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 	{
 		snprintf(n, sizeof(n), "%s_txpwrdbm", prefix);
-		char *sl = validate_websGetVar(wp, n, NULL);
+		char *sl = websGetVar(wp, n, NULL);
 
 		if (sl) {
 			int base = atoi(sl);
@@ -4262,7 +4262,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "regulatory", prefix);
 	snprintf(n, sizeof(n), "%s_scanlist", prefix);
 	{
-		char *sl = validate_websGetVar(wp, n, NULL);
+		char *sl = websGetVar(wp, n, NULL);
 
 		if (sl) {
 			char *slc = strdup(sl);
@@ -4291,7 +4291,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "rts", prefix);
 	if (nvram_nmatch("1", "%s_rts", prefix)) {
 		snprintf(turbo, sizeof(turbo), "%s_rtsvalue", prefix);
-		char *tw = validate_websGetVar(wp, turbo, NULL);
+		char *tw = websGetVar(wp, turbo, NULL);
 
 		if (tw) {
 			if (atoi(tw) < 1)
@@ -4376,7 +4376,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "maxassoc", prefix);
 
 	snprintf(chanbw, sizeof(chanbw), "%s_channelbw", prefix);
-	char *cbw = validate_websGetVar(wp, chanbw, NULL);
+	char *cbw = websGetVar(wp, chanbw, NULL);
 
 	if (cbw && !nvram_match(chanbw, cbw)) {
 		cbwchanged = 1;
@@ -4469,7 +4469,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	copytonv_prefix(wp, "ap_isolate", prefix);
 	snprintf(n, sizeof(n), "%s_mode", prefix);
-	char *wl_newmode = validate_websGetVar(wp, n, NULL);
+	char *wl_newmode = websGetVar(wp, n, NULL);
 	if (wl_newmode && (nvram_match(n, "sta") || nvram_match(n, "apsta")) && strcmp(wl_newmode, "sta") && strcmp(wl_newmode, "apsta"))
 		notifywanChange();
 
@@ -4478,7 +4478,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	copytonv(wp, n);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
-		char *wl = validate_websGetVar(wp, n, NULL);
+		char *wl = websGetVar(wp, n, NULL);
 
 		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
 		if (wl && !strcmp(prefix, "wl0"))
@@ -4501,10 +4501,10 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 	{
 		snprintf(n, sizeof(n), "%s_net_mode", prefix);
-		if (!nvram_match(n, validate_websGetVar(wp, n, ""))) {
+		if (!nvram_match(n, websGetVar(wp, n, ""))) {
 			chanchanged = 1;
 			copytonv(wp, n);
-			char *value = validate_websGetVar(wp, n, "");
+			char *value = websGetVar(wp, n, "");
 			if (!strcmp(prefix, "wl0"))
 #ifndef HAVE_MADWIFI
 				convert_wl_gmode(value, "wl0");
@@ -4543,7 +4543,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	snprintf(n, sizeof(n), "%s_channel", prefix);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
-		char *wl = validate_websGetVar(wp, n, NULL);
+		char *wl = websGetVar(wp, n, NULL);
 
 		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
 		if (wl && !strcmp(prefix, "wl0"))
@@ -4557,7 +4557,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	snprintf(n, sizeof(n), "%s_wchannel", prefix);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
-		char *wl = validate_websGetVar(wp, n, NULL);
+		char *wl = websGetVar(wp, n, NULL);
 
 		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
 		if (wl && !strcmp(prefix, "wl0"))
@@ -4575,7 +4575,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifndef HAVE_MADWIFI
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 	snprintf(n, sizeof(n), "wl_regdomain");
-	char *reg = validate_websGetVar(wp, n, NULL);
+	char *reg = websGetVar(wp, n, NULL);
 	if (reg) {
 		if (strcmp(nvram_safe_get("wl_regdomain"), reg)) {
 			setRegulationDomain(reg);
@@ -4589,8 +4589,8 @@ static void save_prefix(webs_t wp, char *prefix)
 
 void wireless_join(webs_t wp)
 {
-	char *value = validate_websGetVar(wp, "action", "");
-	char *ssid = validate_websGetVar(wp, "wl_ssid", NULL);
+	char *value = websGetVar(wp, "action", "");
+	char *ssid = websGetVar(wp, "wl_ssid", NULL);
 	if (ssid) {
 		char *wifi = nvram_safe_get("wifi_display");
 		if (*(wifi)) {
@@ -4616,7 +4616,7 @@ static void savesysctl(char *path, char *nvname, char *name, char *sysval, void 
 	char fval[128];
 	if (!path)
 		return;
-	char *webvalue = validate_websGetVar(wp, nvname, NULL);
+	char *webvalue = websGetVar(wp, nvname, NULL);
 	if (!webvalue)
 		return;
 	if (strcmp(webvalue, sysval)) {
@@ -4632,7 +4632,7 @@ void sysctl_save(webs_t wp)
 #endif
 void wireless_save(webs_t wp)
 {
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 
 	char *next;
 	char var[80];
@@ -4683,14 +4683,14 @@ void wireless_save(webs_t wp)
 
 	char *rd_off, *rd_boot_off;
 
-	rd_off = validate_websGetVar(wp, "radiooff_button", NULL);
-	rd_off = validate_websGetVar(wp, "radiooff_button", NULL);
+	rd_off = websGetVar(wp, "radiooff_button", NULL);
+	rd_off = websGetVar(wp, "radiooff_button", NULL);
 	if (!rd_off && !valid_choice(wp, rd_off, &which[0])) {
 		return;
 	}
 	nvram_set("radiooff_button", rd_off);
 
-	rd_boot_off = validate_websGetVar(wp, "radiooff_boot_off", NULL);
+	rd_boot_off = websGetVar(wp, "radiooff_boot_off", NULL);
 	if (!rd_boot_off && !valid_choice(wp, rd_boot_off, &which[1])) {
 		return;
 	}
@@ -4719,8 +4719,8 @@ void hotspot_save(webs_t wp)
 void set_wiviz(webs_t wp)
 {
 
-	char *hopdwell = validate_websGetVar(wp, "hopdwell", NULL);
-	char *hopseq = validate_websGetVar(wp, "hopseq", NULL);
+	char *hopdwell = websGetVar(wp, "hopdwell", NULL);
+	char *hopseq = websGetVar(wp, "hopseq", NULL);
 	FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
 
 	if (strstr(hopseq, ","))
@@ -4764,8 +4764,8 @@ void ttraff_erase(webs_t wp)
 
 void changepass(webs_t wp)
 {
-	char *value = validate_websGetVar(wp, "http_username", NULL);
-	char *pass = validate_websGetVar(wp, "http_passwd", NULL);
+	char *value = websGetVar(wp, "http_username", NULL);
+	char *pass = websGetVar(wp, "http_passwd", NULL);
 
 	if (value && pass && strcmp(value, TMP_PASSWD)
 	    && valid_name(wp, value, NULL)) {
@@ -4827,8 +4827,8 @@ void raduser_add(webs_t wp)
 #ifdef HAVE_MILKFISH
 void milkfish_sip_message(webs_t wp)
 {
-	char *message = validate_websGetVar(wp, "sip_message", NULL);
-	char *dest = validate_websGetVar(wp, "sip_message_dest", NULL);
+	char *message = websGetVar(wp, "sip_message", NULL);
+	char *dest = websGetVar(wp, "sip_message_dest", NULL);
 	int i;
 	FILE *fp = fopen("/tmp/sipmessage", "wb");
 
@@ -4851,10 +4851,10 @@ void milkfish_sip_message(webs_t wp)
 
 void set_security(webs_t wp)
 {
-	char *prefix = validate_websGetVar(wp, "security_varname", "security_mode");
+	char *prefix = websGetVar(wp, "security_varname", "security_mode");
 
-	char *ifname = validate_websGetVar(wp, "ifname", NULL);
-	char *prefix2 = validate_websGetVar(wp, prefix, "disabled");
+	char *ifname = websGetVar(wp, "ifname", NULL);
+	char *prefix2 = websGetVar(wp, prefix, "disabled");
 
 	nvram_set(prefix, prefix2);
 #ifdef HAVE_MADWIFI
@@ -5058,7 +5058,7 @@ void ddns_save_value(webs_t wp)
 	char _force[] = "ddns_force";
 	char _wan_ip[] = "ddns_wan_ip";
 
-	int enable = validate_websGetVari(wp, "ddns_enable", -1);
+	int enable = websGetVari(wp, "ddns_enable", -1);
 	if (enable > 11 || enable < 0) {
 		return;
 	}
@@ -5108,16 +5108,16 @@ void ddns_save_value(webs_t wp)
 		break;
 	}
 
-	username = validate_websGetVar(wp, _username, NULL);
-	passwd = validate_websGetVar(wp, _passwd, NULL);
-	hostname = validate_websGetVar(wp, _hostname, NULL);
-	dyndnstype = validate_websGetVar(wp, _dyndnstype, NULL);
-	wildcard = validate_websGetVar(wp, _wildcard, NULL);
-	custom = validate_websGetVar(wp, _custom, NULL);
-	conf = validate_websGetVar(wp, _conf, NULL);
-	url = validate_websGetVar(wp, _url, NULL);
-	force = validate_websGetVari(wp, _force, 0);
-	wan_ip = validate_websGetVar(wp, _wan_ip, NULL);
+	username = websGetVar(wp, _username, NULL);
+	passwd = websGetVar(wp, _passwd, NULL);
+	hostname = websGetVar(wp, _hostname, NULL);
+	dyndnstype = websGetVar(wp, _dyndnstype, NULL);
+	wildcard = websGetVar(wp, _wildcard, NULL);
+	custom = websGetVar(wp, _custom, NULL);
+	conf = websGetVar(wp, _conf, NULL);
+	url = websGetVar(wp, _url, NULL);
+	force = websGetVari(wp, _force, 0);
+	wan_ip = websGetVar(wp, _wan_ip, NULL);
 
 	if (!username || !passwd || !hostname || !force || !wan_ip) {
 		return;
@@ -5178,7 +5178,7 @@ void port_vlan_table_save(webs_t wp)
 	for (port = 0; port < ports; port++) {
 		for (vlan = 0; vlan < 22; vlan++) {
 			snprintf(portid, sizeof(portid), "port%dvlan%d", port, vlan);
-			char *s_portval = validate_websGetVar(wp, portid, "");
+			char *s_portval = websGetVar(wp, portid, "");
 			if (!*s_portval)
 				continue;
 #ifdef HAVE_SWCONFIG
@@ -5295,7 +5295,7 @@ void port_vlan_table_save(webs_t wp)
 
 	for (i = 0; i < 16; i++) {
 		snprintf(buff, sizeof(buff), "vlan%d", i);
-		portval = validate_websGetVari(wp, buff, -1);
+		portval = websGetVari(wp, buff, -1);
 
 		switch (portval) {
 		case 0:
@@ -5318,7 +5318,7 @@ void port_vlan_table_save(webs_t wp)
 
 	strcpy(buff, "");
 
-	switch (validate_websGetVari(wp, "wireless", -1)) {
+	switch (websGetVari(wp, "wireless", -1)) {
 	case 0:
 		if (*(br0vlans))
 			strcat(br0vlans, " ");
@@ -5336,7 +5336,7 @@ void port_vlan_table_save(webs_t wp)
 		break;
 	}
 
-	snprintf(buff, 3, "%s", validate_websGetVar(wp, "trunking", ""));
+	snprintf(buff, 3, "%s", websGetVar(wp, "trunking", ""));
 
 	nvram_set("lan_ifnames", br0vlans);
 	// nvram_set("ub1_ifnames", br1vlans);
@@ -5359,8 +5359,8 @@ static void save_macmode_if(webs_t wp, char *ifname)
 	rep(macmode1, '.', 'X');
 	char *wl_macmode1, *wl_macmode;
 
-	wl_macmode = validate_websGetVar(wp, macmode, NULL);
-	wl_macmode1 = validate_websGetVar(wp, macmode1, NULL);
+	wl_macmode = websGetVar(wp, macmode, NULL);
+	wl_macmode1 = websGetVar(wp, macmode1, NULL);
 
 	if (!wl_macmode1)
 		return;
@@ -5419,7 +5419,7 @@ void tf_upnp(webs_t wp)
 	char *v;
 	char s[64];
 
-	if (((v = validate_websGetVar(wp, "remove", NULL)) != NULL) && (*v)) {
+	if (((v = websGetVar(wp, "remove", NULL)) != NULL) && (*v)) {
 		if (strcmp(v, "all") == 0) {
 			nvram_seti("upnp_clear", 1);
 		} else {
@@ -5458,22 +5458,22 @@ static void dlna_save(webs_t wp)
 
 	// dlna shares
 	json_t *entries = json_array();
-	int share_number = validate_websGetVari(wp, "dlna_shares_count", 0);
+	int share_number = websGetVari(wp, "dlna_shares_count", 0);
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "dlnashare_mp_%d", c);
-		json_object_set_new(entry, "mp", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "dlnashare_subdir_%d", c);
-		json_object_set_new(entry, "sd", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
 		int type = 0;
 		sprintf(var, "dlnashare_audio_%d", c);
-		if (validate_websGetVari(wp, var, 0))
+		if (websGetVari(wp, var, 0))
 			type |= TYPE_AUDIO;
 		sprintf(var, "dlnashare_video_%d", c);
-		if (validate_websGetVari(wp, var, 0))
+		if (websGetVari(wp, var, 0))
 			type |= TYPE_VIDEO;
 		sprintf(var, "dlnashare_images_%d", c);
-		if (validate_websGetVari(wp, var, 0))
+		if (websGetVari(wp, var, 0))
 			type |= TYPE_IMAGES;
 		json_object_set_new(entry, "types", json_integer(type));
 		json_array_append(entries, entry);
@@ -5492,20 +5492,20 @@ static void nfs_save(webs_t wp)
 
 	// nfs shares
 	json_t *entries = json_array();
-	int share_number = validate_websGetVari(wp, "nfs_shares_count", 0);
+	int share_number = websGetVari(wp, "nfs_shares_count", 0);
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "nfsshare_mp_%d", c);
-		json_object_set_new(entry, "mp", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "nfsshare_subdir_%d", c);
-		json_object_set_new(entry, "sd", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "nfsshare_allowed_%d", c);
-		json_object_set_new(entry, "allowed", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "allowed", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "nfsshare_access_perms_%d", c);
-		sprintf(val, "%s", validate_websGetVar(wp, var, "-"));
+		sprintf(val, "%s", websGetVar(wp, var, "-"));
 		if (!strcmp(val, "-")) {
 			sprintf(var, "nfsshare_access_perms_prev_%d", c);
-			sprintf(val, "%s", validate_websGetVar(wp, var, "x"));
+			sprintf(val, "%s", websGetVar(wp, var, "x"));
 		}
 		json_object_set_new(entry, "perms", json_string(val));
 		json_array_append(entries, entry);
@@ -5524,15 +5524,15 @@ static void rsync_save(webs_t wp)
 
 	// rsync shares
 	json_t *entries = json_array();
-	int share_number = validate_websGetVari(wp, "rsync_shares_count", 0);
+	int share_number = websGetVari(wp, "rsync_shares_count", 0);
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "rsyncshare_mp_%d", c);
-		json_object_set_new(entry, "mp", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "rsyncshare_subdir_%d", c);
-		json_object_set_new(entry, "sd", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "rsyncshare_label_%d", c);
-		json_object_set_new(entry, "label", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "label", json_string(websGetVar(wp, var, "")));
 		json_array_append(entries, entry);
 	}
 	nvram_set("rsync_shares", json_dumps(entries, JSON_COMPACT));
@@ -5551,31 +5551,31 @@ void nassrv_save(webs_t wp)
 
 	// samba shares
 	json_t *entries = json_array();
-	int share_number = validate_websGetVari(wp, "samba_shares_count", 0);
-	int user_number = validate_websGetVari(wp, "samba_users_count", 0);
+	int share_number = websGetVari(wp, "samba_shares_count", 0);
+	int user_number = websGetVari(wp, "samba_users_count", 0);
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "smbshare_mp_%d", c);
-		json_object_set_new(entry, "mp", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_subdir_%d", c);
-		json_object_set_new(entry, "sd", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_label_%d", c);
-		json_object_set_new(entry, "label", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "label", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_public_%d", c);
-		json_object_set_new(entry, "public", json_integer(validate_websGetVari(wp, var, 0)));
+		json_object_set_new(entry, "public", json_integer(websGetVari(wp, var, 0)));
 		sprintf(var, "smbshare_access_perms_%d", c);
-		sprintf(val, "%s", validate_websGetVar(wp, var, "-"));
+		sprintf(val, "%s", websGetVar(wp, var, "-"));
 		if (!strcmp(val, "-")) {
 			sprintf(var, "smbshare_access_perms_prev_%d", c);
-			sprintf(val, "%s", validate_websGetVar(wp, var, "x"));
+			sprintf(val, "%s", websGetVar(wp, var, "x"));
 		}
 		json_object_set_new(entry, "perms", json_string(val));
 		user_entries = json_array();
 		for (j = 1; j <= user_number; j++) {
 			sprintf(var, "smbshare_%d_user_%d", c, j);
-			if (!strcmp(validate_websGetVar(wp, var, ""), "1")) {
+			if (!strcmp(websGetVar(wp, var, ""), "1")) {
 				sprintf(var, "smbuser_username_%d", j);
-				json_array_append(user_entries, json_string(validate_websGetVar(wp, var, "")));
+				json_array_append(user_entries, json_string(websGetVar(wp, var, "")));
 			}
 		}
 		json_object_set_new(entry, "users", user_entries);
@@ -5589,15 +5589,15 @@ void nassrv_save(webs_t wp)
 	for (c = 1; c <= user_number; c++) {
 		entry = json_object();
 		sprintf(var, "smbuser_username_%d", c);
-		json_object_set_new(entry, "user", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "user", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbuser_password_%d", c);
-		json_object_set_new(entry, "pass", json_string(validate_websGetVar(wp, var, "")));
+		json_object_set_new(entry, "pass", json_string(websGetVar(wp, var, "")));
 		int type = 0;
 		sprintf(var, "smbuser_samba_%d", c);
-		if (validate_websGetVari(wp, var, 0))
+		if (websGetVari(wp, var, 0))
 			type |= SHARETYPE_SAMBA;
 		sprintf(var, "smbuser_ftp_%d", c);
-		if (validate_websGetVari(wp, var, 0))
+		if (websGetVari(wp, var, 0))
 			type |= SHARETYPE_FTP;
 		json_object_set_new(entry, "type", json_integer(type));
 		json_array_append(entries, entry);
@@ -5606,7 +5606,7 @@ void nassrv_save(webs_t wp)
 	nvram_set("samba3_users", json_dumps(entries, JSON_COMPACT));
 	json_array_clear(entries);
 #endif
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 
 	// all other vars
 	validate_cgi(wp);
@@ -5644,19 +5644,19 @@ void nintendo_save(webs_t wp)
 
 	// handle server list
 	int count = 0;
-	char *buffer = (char *)safe_malloc(strlen(validate_websGetVar(wp, "spotpass_servers", "")) + 1);
-	strcpy(buffer, validate_websGetVar(wp, "spotpass_servers", ""));
+	char *buffer = (char *)safe_malloc(strlen(websGetVar(wp, "spotpass_servers", "")) + 1);
+	strcpy(buffer, websGetVar(wp, "spotpass_servers", ""));
 
 	char *ptr = strtok(buffer, "\n");
 	while (ptr != NULL) {
 		count++;
 		ptr = strtok(NULL, "\n");
 	}
-	char *serverlist = (char *)safe_malloc(strlen(validate_websGetVar(wp, "spotpass_servers", "")) + (count * 2) + 1);
+	char *serverlist = (char *)safe_malloc(strlen(websGetVar(wp, "spotpass_servers", "")) + (count * 2) + 1);
 	char line[256], url[128], proto[8], mode[16], ports[64];
 	int port1, port2, lines = 0;
 
-	strcpy(buffer, validate_websGetVar(wp, "spotpass_servers", ""));
+	strcpy(buffer, websGetVar(wp, "spotpass_servers", ""));
 	strcpy(serverlist, "\0");
 	fprintf(stderr, "%s\n", buffer);
 	ptr = strtok(buffer, "\n");
@@ -5680,7 +5680,7 @@ void nintendo_save(webs_t wp)
 	}
 	nvram_set("spotpass_servers", serverlist);
 
-	if (enabled == 0 && !strcmp(validate_websGetVar(wp, "spotpass", "0"), "1")) {
+	if (enabled == 0 && !strcmp(websGetVar(wp, "spotpass", "0"), "1")) {
 
 		// check if vap is set
 		if (!strcmp(nvram_default_get("spotpass_vif", ""), "")) {
@@ -5715,7 +5715,7 @@ void nintendo_save(webs_t wp)
 			nvram_seti("mdhcpd_count", 1);
 		}
 
-	} else if (enabled == 1 && !strcmp(validate_websGetVar(wp, "spotpass", "0"), "0")) {
+	} else if (enabled == 1 && !strcmp(websGetVar(wp, "spotpass", "0"), "0")) {
 
 		if (strcmp(nvram_default_get("spotpass_vif", ""), "")) {
 			sprintf(var, "%s.%%d", prefix);
@@ -5735,14 +5735,14 @@ void nintendo_save(webs_t wp)
 		}
 	}
 
-	if (validate_websGetVari(wp, "spotpass", 0) != enabled) {
+	if (websGetVari(wp, "spotpass", 0) != enabled) {
 		addAction("wireless");
 		nvram_seti("nowebaction", 1);
 	}
 
-	nvram_set("spotpass", validate_websGetVar(wp, "spotpass", "0"));
+	nvram_set("spotpass", websGetVar(wp, "spotpass", "0"));
 
-	char *value = validate_websGetVar(wp, "action", "");
+	char *value = websGetVar(wp, "action", "");
 
 	//addAction("spotpass_start");
 	applytake(value);
