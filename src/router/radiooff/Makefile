@@ -15,10 +15,10 @@ MODULE:=radiooff
 endif
 
 
-clean:
-	@true
 all:
 	cp $(MODULE).webservices $(TOP)/httpd/ej_temp/
+
+clean:
 	@true
 
 install:
