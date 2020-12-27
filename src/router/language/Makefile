@@ -8,7 +8,7 @@ endif
 MODULE:=language
 
 all:
-	cp $(MODULE)* $(INSTALLDIR)/etc/config
+	cp $(MODULE)* $(TOP)/httpd/ej_temp
 
 clean:
 	@true
