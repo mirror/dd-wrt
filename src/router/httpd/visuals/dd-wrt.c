@@ -975,7 +975,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 
 }
 
-static EJ_VISIBLE void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
+static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 {
 	char *next;
 	char var[80];

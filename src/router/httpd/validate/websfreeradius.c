@@ -62,15 +62,15 @@
 
 void radius_generate_certificate(webs_t wp)
 {
-	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
-	nvram_set("radius_country", websGetVar(wp, "radius_country", ""));
-	nvram_set("radius_state", websGetVar(wp, "radius_state", ""));
-	nvram_set("radius_locality", websGetVar(wp, "radius_locality", ""));
-	nvram_set("radius_expiration", websGetVar(wp, "radius_expiration", "365"));
-	nvram_set("radius_passphrase", websGetVar(wp, "radius_passphrase", "whatever"));
-	nvram_set("radius_organisation", websGetVar(wp, "radius_organisation", ""));
-	nvram_set("radius_email", websGetVar(wp, "radius_email", ""));
-	nvram_set("radius_common", websGetVar(wp, "radius_common", ""));
+	nvram_set("radius_enabled", validate_websGetVar(wp, "radius_enabled", "0"));
+	nvram_set("radius_country", validate_websGetVar(wp, "radius_country", ""));
+	nvram_set("radius_state", validate_websGetVar(wp, "radius_state", ""));
+	nvram_set("radius_locality", validate_websGetVar(wp, "radius_locality", ""));
+	nvram_set("radius_expiration", validate_websGetVar(wp, "radius_expiration", "365"));
+	nvram_set("radius_passphrase", validate_websGetVar(wp, "radius_passphrase", "whatever"));
+	nvram_set("radius_organisation", validate_websGetVar(wp, "radius_organisation", ""));
+	nvram_set("radius_email", validate_websGetVar(wp, "radius_email", ""));
+	nvram_set("radius_common", validate_websGetVar(wp, "radius_common", ""));
 
 //system("rm /jffs/etc/freeradius/certs/dh");
 	unlink("/jffs/etc/freeradius/certs/server.csr");
@@ -106,7 +106,7 @@ struct radiusdb {
 #include <radiusdb.h>
 void add_radius_user(webs_t wp)
 {
-	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
+	nvram_set("radius_enabled", validate_websGetVar(wp, "radius_enabled", "0"));
 	struct radiusdb *db = loadradiusdb();
 	if (db == NULL) {
 		db = safe_malloc(sizeof(struct radiusdb));
@@ -131,8 +131,8 @@ void add_radius_user(webs_t wp)
 
 void del_radius_user(webs_t wp)
 {
-	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
-	char *val = websGetVar(wp, "del_value", NULL);
+	nvram_set("radius_enabled", validate_websGetVar(wp, "radius_enabled", "0"));
+	char *val = validate_websGetVar(wp, "del_value", NULL);
 	if (val == NULL)
 		return;
 	int todel = atoi(val);
@@ -156,7 +156,7 @@ void del_radius_user(webs_t wp)
 
 void add_radius_client(webs_t wp)
 {
-	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
+	nvram_set("radius_enabled", validate_websGetVar(wp, "radius_enabled", "0"));
 	struct radiusclientdb *db = loadradiusclientdb();
 	if (!db) {
 		db = malloc(sizeof(struct radiusclientdb));
@@ -174,8 +174,8 @@ void add_radius_client(webs_t wp)
 
 void del_radius_client(webs_t wp)
 {
-	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
-	char *val = websGetVar(wp, "del_value", NULL);
+	nvram_set("radius_enabled", validate_websGetVar(wp, "radius_enabled", "0"));
+	char *val = validate_websGetVar(wp, "del_value", NULL);
 	if (val == NULL)
 		return;
 	int todel = atoi(val);
@@ -207,10 +207,10 @@ static void save_radius_clients(webs_t wp)
 	while (1) {
 		sprintf(user, "client%d", db->usercount);
 		sprintf(passwd, "shared%d", db->usercount);
-		char *u = websGetVar(wp, user, NULL);
+		char *u = validate_websGetVar(wp, user, NULL);
 		if (!u)
 			break;
-		char *p = websGetVar(wp, passwd, NULL);
+		char *p = validate_websGetVar(wp, passwd, NULL);
 		if (!p)
 			break;
 
@@ -248,28 +248,28 @@ static void save_radius_users(webs_t wp)
 		sprintf(upstream, "upstream%d", db->usercount);
 		sprintf(expiration, "expiration%d", db->usercount);
 		sprintf(enabled, "enabled%d", db->usercount);
-		char *u = websGetVar(wp, user, NULL);
+		char *u = validate_websGetVar(wp, user, NULL);
 		if (!u)
 			break;
 		sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem", u);
 		unlink(filename);
-		char *p = websGetVar(wp, passwd, NULL);
+		char *p = validate_websGetVar(wp, passwd, NULL);
 		if (!p)
 			break;
 
-		char *d = websGetVar(wp, downstream, NULL);
+		char *d = validate_websGetVar(wp, downstream, NULL);
 		if (!d)
 			break;
 
-		char *up = websGetVar(wp, upstream, NULL);
+		char *up = validate_websGetVar(wp, upstream, NULL);
 		if (!up)
 			break;
 
-		char *e = websGetVar(wp, expiration, NULL);
+		char *e = validate_websGetVar(wp, expiration, NULL);
 		if (!e)
 			break;
 
-		char *en = websGetVar(wp, enabled, "0");	// returns NULL if not set
+		char *en = validate_websGetVar(wp, enabled, "0");	// returns NULL if not set
 		if (!en)
 			break;
 		db->users = realloc(db->users, sizeof(struct radiususer) * (db->usercount + 1));
@@ -296,12 +296,12 @@ static void save_radius_users(webs_t wp)
 
 void save_radius_user(webs_t wp)
 {
-	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
-	nvram_set("radius_port", websGetVar(wp, "radius_port", "1812"));
+	nvram_set("radius_enabled", validate_websGetVar(wp, "radius_enabled", "0"));
+	nvram_set("radius_port", validate_websGetVar(wp, "radius_port", "1812"));
 	save_radius_users(wp);
 	save_radius_clients(wp);
 
-	char *value = websGetVar(wp, "action", "");
+	char *value = validate_websGetVar(wp, "action", "");
 	addAction("freeradius");
 	nvram_seti("nowebaction", 1);
 	applytake(value);
