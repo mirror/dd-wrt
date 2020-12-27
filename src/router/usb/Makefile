@@ -8,14 +8,14 @@ endif
 MODULE:=usb
 MODULE_ADV:=adv_usb
 
-clean:
-	@true
 all:
 ifeq ($(CONFIG_USB_ADVANCED),y)
 	cp $(MODULE_ADV)* $(TOP)/httpd/ej_temp/
 else
 	cp $(MODULE)* $(TOP)/httpd/ej_temp/
 endif
+
+clean:
 	@true
 
 install:
