@@ -75,7 +75,7 @@ COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 
-BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE -DSTATIC_BUILD
+BCFLAGS	= $(COPTS)  -DMEMLEAK_OVERRIDE -DSTATIC_BUILD
 
 
 
