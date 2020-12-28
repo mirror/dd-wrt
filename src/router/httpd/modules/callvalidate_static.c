@@ -110,6 +110,8 @@ void validate_wl_wme_params(webs_t wp, char *value, struct variable *v);
 void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v);
 void validate_wpa_psk(webs_t wp, char *value, struct variable *v);
 
+void ej_get_voltage(webs_t wp, int argc, char_t ** argv);
+void ej_show_voltage(webs_t wp, int argc, char_t ** argv);
 void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv);
 void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv);
 void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv);
