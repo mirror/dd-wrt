@@ -2794,7 +2794,7 @@ EJ_VISIBLE void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", buf);
 }
 
-#ifdef HAVE_MICRO
+#if defined(HAVE_MICRO) || (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
 EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *f;
@@ -2904,7 +2904,7 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			len = strlen(mac);
 			for (i = 0; i < len; i++)
 				mac[i] = toupper(mac[i]);
-			websWrite(wp, "%c'%s','%s','%s','%d', '%s','N/A','N/A','N/A'", (count ? ',' : ' '), hostname, ip, mac, conn_count, landev);
+			websWrite(wp, "%c'%s','%s','%s','%d', '%s','0','0','0'", (count ? ',' : ' '), hostname, ip, mac, conn_count, landev);
 			++count;
 			conn_count = 0;
 		}
