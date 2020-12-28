@@ -178,6 +178,7 @@ static int FAST_FUNC print_neigh(const struct sockaddr_nl *who UNUSED_PARAM,
 	if (r->ndm_flags & NTF_PROXY) {
 		printf(" proxy");
 	}
+#ifdef NDA_CACHEINFO
 	if (tb[NDA_CACHEINFO] && xshow_stats) {
 		struct nda_cacheinfo *ci = RTA_DATA(tb[NDA_CACHEINFO]);
 		int hz = get_hz();
@@ -187,12 +188,26 @@ static int FAST_FUNC print_neigh(const struct sockaddr_nl *who UNUSED_PARAM,
 		printf(" used %d/%d/%d", ci->ndm_used/hz,
 		       ci->ndm_confirmed/hz, ci->ndm_updated/hz);
 	}
+#else
+	if (xshow_stats) {
+		printf(" ref %d", 0);
+		printf(" used %d/%d/%d", 0,
+		       0, 0);
+	}
 
+#endif
+
+#ifdef NDA_PROBES
 	if (tb[NDA_PROBES] && xshow_stats) {
 		uint32_t p = rta_getattr_u32(tb[NDA_PROBES]);
 		printf(" probes %u", p);
 	}
-
+#else
+	if (xshow_stats) {
+		uint32_t p = 0;
+		printf(" probes %u", p);
+	}
+#endif
 	/*if (r->ndm_state)*/ {
 		int nud = r->ndm_state;
 		char c = ' ';
