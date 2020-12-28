@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
 	fread(syms, 1, ejlen, in);
 	fclose(in);
 	int i;
+	FILE *proto = fopen("modules/ej_proto.h","wb");
 	for (i = 0; i < len; i++) {
 		if (mem[i] == '<' && mem[i + 1] == '%' && mem[i + 2] == ' ') {
 			int a = 0;
@@ -57,8 +58,10 @@ int main(int argc, char *argv[])
 					sprintf(ejname, "ej_%s", name);
 					if (!strstr(syms, ejname))
 						printf("/* %s is missing, we ignore it */\n", ejname);
-					if (!checktable(name) && strstr(syms, ejname))
+					if (!checktable(name) && strstr(syms, ejname)) {
+						fprintf(proto,"void ej_%s(webs_t wp, int argc, char_t ** argv);\n", name);
 						printf("{\"%s\",&ej_%s},\n", name, name);
+					}
 					goto next;
 				}
 			}
@@ -66,4 +69,5 @@ int main(int argc, char *argv[])
 
 	      next:;
 	}
+	fclose(proto);
 }
