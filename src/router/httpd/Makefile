@@ -120,6 +120,7 @@ endif
 endif
 
 CFLAGS = $(BCFLAGS) -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+CFLAGS += -DARCH_$(ARCHITECTURE)
 
 ifeq ($(CONFIG_SPECIALEDITION),y)
 CFLAGS += -DHAVE_SPECIALEDITION
