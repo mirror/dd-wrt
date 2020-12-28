@@ -110,10 +110,10 @@ void validate_wl_wme_params(webs_t wp, char *value, struct variable *v);
 void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v);
 void validate_wpa_psk(webs_t wp, char *value, struct variable *v);
 
-void ej_get_gpslink(webs_t wp, int argc, char_t ** argv);
-void ej_get_latidude(webs_t wp, int argc, char_t ** argv);
-void ej_get_longitude(webs_t wp, int argc, char_t ** argv);
-void ej_get_gps_status(webs_t wp, int argc, char_t ** argv);
+void ej_getgpslink(webs_t wp, int argc, char_t ** argv);
+void ej_getlatidude(webs_t wp, int argc, char_t ** argv);
+void ej_getlongitude(webs_t wp, int argc, char_t ** argv);
+void ej_gps_status(webs_t wp, int argc, char_t ** argv);
 void ej_get_voltage(webs_t wp, int argc, char_t ** argv);
 void ej_show_voltage(webs_t wp, int argc, char_t ** argv);
 void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv);
