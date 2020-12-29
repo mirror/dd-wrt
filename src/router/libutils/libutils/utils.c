@@ -2231,7 +2231,7 @@ static void internal_sysctl_apply(char *path, void *priv, void (*callback)(char 
 			}
 
 			char fname[128];
-			char fval[128];
+			char fval[128]={0};
 			sprintf(fname, "%s/%s", path, entry->d_name);
 			struct stat sb;
 			stat(fname, &sb);
