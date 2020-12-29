@@ -83,7 +83,7 @@ COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
 BCFLAGS	 += $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd
 BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
-BCFLAGS  += -fpic -I$(TOP)/services/include $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
+BCFLAGS  += -I$(TOP)/services/include $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 BCFLAGS += -DARCH_$(ARCHITECTURE)
 
 ifeq ($(CONFIG_DIST),"micro")
@@ -97,7 +97,7 @@ CFLAGS += $(BCFLAGS)
 
 HCFLAGS	 += -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 HCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
-HCFLAGS  += -fpic -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/include -I$(LINUXDIR)/brcm/shared/bcmwifi/include  -I$(LINUXDIR)/brcm/$(ARCH)/wl/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+HCFLAGS  += -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/include -I$(LINUXDIR)/brcm/shared/bcmwifi/include  -I$(LINUXDIR)/brcm/$(ARCH)/wl/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 
 
 OBJS = init.o services.o network.o firewall.o mssid.o wshaper.o ddns.o devinit.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o defaults.o \
@@ -912,7 +912,7 @@ ifeq ($(CONFIG_ATH9K),y)
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ifneq ($(CONFIG_NOWIFI),y)
 
-ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
+ATH9KCFLAGS+= $(COPTS) -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KOBJS += mac80211.o site_survey_mac80211.o
 ATH9KFILES += networking/mac80211.c tools/site_survey_mac80211.c
 ATH9KCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(TOP)/shared
@@ -964,10 +964,10 @@ endif
 endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
-CFLAGS_EXTRA += -fpic
+#CFLAGS_EXTRA += -fpic
 endif
 ifeq ($(CONFIG_RB600),y)
-CFLAGS_EXTRA += -fpic
+#CFLAGS_EXTRA += -fpic
 endif
 
 ifeq ($(CONFIG_ESR9752),y)
