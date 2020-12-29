@@ -11,8 +11,8 @@ nettle-configure: pcre zlib openssl gmp
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 nettle: openssl gmp
-	make -C nettle desdata
-	make -C nettle 
+	make -C nettle desdata CC_FOR_BUILD="gcc"
+	make -C nettle CC_FOR_BUILD="gcc"
 
 nettle-clean:
 	-make -C nettle clean
