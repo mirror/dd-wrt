@@ -3231,7 +3231,8 @@ void start_firewall(void)
 #ifdef HAVE_SYSCTL_EDIT
 	start_sysctl_config();
 #endif                                                          
-#if !defined(HAVE_MICRO) && !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#if !defined(HAVE_MICRO) //&& !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+
 	eval("wrtbwmon", "setup", "/tmp/bw.db");
 #endif
 }
@@ -3287,7 +3288,8 @@ void stop_firewall(void)
 		start_sfe();
 #endif
 	unlock();
-#if !defined(HAVE_MICRO) && !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#if !defined(HAVE_MICRO) //&& !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+
 	eval("wrtbwmon", "setup", "/tmp/bw.db");
 #endif
 	return;
