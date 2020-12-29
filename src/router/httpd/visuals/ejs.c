@@ -2794,7 +2794,8 @@ EJ_VISIBLE void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", buf);
 }
 
-#if defined(HAVE_MICRO) || (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#if defined(HAVE_MICRO) //|| (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+
 EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *f;
