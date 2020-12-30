@@ -1600,11 +1600,12 @@ endif
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
 
-C_LIBS :=libshutils.so libshutils.a libutils.so libutils.a libwireless.so libwireless.a libqos.so $(ADDLIB)
+A_LIBS :=libshutils.a libutils.a libwireless.a
+C_LIBS :=libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
 ifeq ($(CONFIG_USB),y)
 C_LIBS +=libdisc.so
 endif
-all: $(C_LIBS)
+all: $(C_LIBS) $(A_LIBS)
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
@@ -1655,15 +1656,18 @@ libqos.so: libqos/qos.o
 
 libwireless.so: $(WOBJS) $(ATH9KOBJS)
 	@echo "[LD] $@"
-	@$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS)
+	echo "-L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils $(LDFLAGS) $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS) -lc -lgcc" > libwireless_ld
+	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS)
 
 libutils.so: $(OBJS)
 	@echo "[LD] $@"
-	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
+	echo "-lcrypt -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils $(LDFLAGS) -lc -lgcc" > libutils_ld
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
 
 libshutils.so: $(SHOBJS)
 	@echo "[LD] $@"
-	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
+	echo "-L$(TOP)/nvram -lnvram $(LDFLAGS) -lc -lgcc" > libshutils_ld
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
 
 libdisc.so: $(DISCOBJS)
 	@echo "[LD] $@"
