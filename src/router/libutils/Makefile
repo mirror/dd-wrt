@@ -1656,17 +1656,17 @@ libqos.so: libqos/qos.o
 
 libwireless.so: $(WOBJS) $(ATH9KOBJS)
 	@echo "[LD] $@"
-	echo "-L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils $(LDFLAGS) $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS) -lc -lgcc" > libwireless_ld
+	echo "-L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils $(LDFLAGS) $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS)" > libwireless_ld
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS)
 
 libutils.so: $(OBJS)
 	@echo "[LD] $@"
-	echo "-lcrypt -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils $(LDFLAGS) -lc -lgcc" > libutils_ld
+	echo "-lcrypt -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils $(LDFLAGS)" > libutils_ld
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
 
 libshutils.so: $(SHOBJS)
 	@echo "[LD] $@"
-	echo "-L$(TOP)/nvram -lnvram $(LDFLAGS) -lc -lgcc" > libshutils_ld
+	echo "-L$(TOP)/nvram -lnvram $(LDFLAGS)" > libshutils_ld
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
 
 libdisc.so: $(DISCOBJS)

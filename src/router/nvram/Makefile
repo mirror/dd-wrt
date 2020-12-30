@@ -177,7 +177,7 @@ clean:
 
 libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	@echo "[LD] $@"
-	echo $(LDFLAGS) -lc -lgcc > libnvram_ld
+	echo $(LDFLAGS) > libnvram_ld
 	@$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 	@$(AR) cr libnvram.a $^
 
