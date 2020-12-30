@@ -1015,6 +1015,7 @@ EJ_VISIBLE void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	closedir(directory);
 	return;
 }
+
 #include "../webs.h"
 extern const websRomPageIndexType websRomPageIndex[];
 
@@ -2597,6 +2598,7 @@ EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp, "</script>&nbsp;\n");
 }
+
 #ifdef HAVE_OPENVPN
 EJ_VISIBLE void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 {
@@ -2794,7 +2796,7 @@ EJ_VISIBLE void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", buf);
 }
 
-#if defined(HAVE_MICRO) //|| (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#if defined(HAVE_MICRO)		//|| (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
 
 EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 {
@@ -3043,13 +3045,25 @@ static void readconntrack(struct arptable *tbl, int tablelen)
 	int i;
 	char buf[256];
 	FILE *conn;
-	if ((conn = fopen("/proc/net/ip_conntrack", "r")) || (conn = fopen("/proc/net/nf_conntrack", "r"))) {
+	int nf = 1;
+	conn = fopen("/proc/net/nf_conntrack", "r");
+	if (!conn) {
+		nf = 0;
+		conn = fopen("/proc/net/ip_conntrack", "r")
+	}
+
+	if (conn) {
 		while (fgets(buf, sizeof(buf), conn)) {
 			char l3proto[32];
 			char proto[32];
 			char state[32];
 			char src[64];
-			sscanf(buf, "%s %*s %s %*s %*s %s %s", l3proto, proto, state, src);
+			if (nf)
+				sscanf(buf, "%s %*s %s %*s %*s %s %s", l3proto, proto, state, src);
+			else {
+				strcpy(l3proto, "ipv4");
+				sscanf(buf, "%s %*s %*s %s %s", proto, state, src);
+			}
 			unsigned int v4;
 			struct in6_addr v6;
 			int connv6 = 0;
