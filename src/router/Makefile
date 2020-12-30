@@ -221,12 +221,13 @@ optimize-lib:
 ifeq ($(CONFIG_LIBM),y)
 	../../tools/optimize_lib.sh lib.mipsel.brcm24/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
 endif
-ifeq ($(CONFIG_PTHREAD),y)
+ifeq ($(CONFIG_LIBPTHREAD),y)
 	../../tools/optimize_lib.sh lib.mipsel.brcm24/ libpthread.so libpthread.a libpthread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
 endif
-	../../tools/optimize_lib.sh libutils/ libutils.so libutils.a libutils_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libutils.so
-	../../tools/optimize_lib.sh libutils/ libwireless.so libwireless.a libwireless_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libwireless.so
-	../../tools/optimize_lib.sh libutils/ libshutils.so libshutils.a libshutils_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshutils.so
+	../../tools/optimize_lib.sh libutils/ libutils.so libutils.a libutils_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libutils.so  $(TOP)/libutils/libutils_ld
+	../../tools/optimize_lib.sh libutils/ libwireless.so libwireless.a libwireless_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libwireless.so $(TOP)/libutils/libwireless_ld
+	../../tools/optimize_lib.sh libutils/ libshutils.so libshutils.a libshutils_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshutils.so $(TOP)/libutils/libshutils_ld
+	../../tools/optimize_lib.sh nvram/ libnvram.so libnvram.a libnvram_min.so $(TARGETDIR) $(TARGETDIR)/lib/libnvram.so $(TOP)/nvram/libnvram_ld
 #	relink-lib.sh \
 ##		"$(ARCH)-linux-" \
 #		"${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}" \
@@ -382,6 +383,9 @@ install package: clean_target $(filter-out lib.mipsel.brcm24-install,$(obj-insta
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
+ifeq ($(CONFIG_OPENSSL),y)
+	rm -f $(TARGETDIR)/usr/sbin/openssl
+endif
 	$(MAKE) lib.mipsel.brcm24-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) optimize-lib
@@ -544,9 +548,6 @@ endif
 #	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
-ifeq ($(CONFIG_OPENSSL),y)
-	rm -f $(TARGETDIR)/usr/sbin/openssl
-endif
 #ifeq ($(CONFIG_KAID),y)
 #	make -C kaid/src
 #	cp kaid/kaid $(TARGETDIR)/usr/sbin
