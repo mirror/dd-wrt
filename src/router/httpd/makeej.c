@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 	int i;
 	FILE *proto = fopen("modules/ej_proto.h","wb");
 	for (i = 0; i < len; i++) {
-		if (mem[i] == '<' && mem[i + 1] == '%' && mem[i + 2] == ' ') {
+		if (!strncmp(&mem[i], "<% ",3)) {
 			int a = 0;
 			for (a = i + 3; a < i + 64; a++) {
 				if (!strncmp(&mem[a], " %>", 3)) {
@@ -53,6 +53,29 @@ int main(int argc, char *argv[])
 					char *cut = strstr(&mem[i + 3], "(");
 					char *p = &mem[i + 3];
 					strncpy(name, &mem[i + 3], cut - p);
+					name[cut - p] = 0;
+					char ejname[64];
+					sprintf(ejname, "ej_%s", name);
+					if (!strstr(syms, ejname))
+						printf("/* %s is missing, we ignore it */\n", ejname);
+					if (!checktable(name) && strstr(syms, ejname)) {
+						fprintf(proto,"void ej_%s(webs_t wp, int argc, char_t ** argv);\n", name);
+						printf("{\"%s\",&ej_%s},\n", name, name);
+					}
+					goto next;
+				}
+			}
+		}
+
+
+		if (!strncmp(&mem[i], "<%% ",4)) {
+			int a = 0;
+			for (a = i + 3; a < i + 64; a++) {
+				if (!strncmp(&mem[a], " %%>", 4)) {
+					char name[64];
+					char *cut = strstr(&mem[i + 4], "(");
+					char *p = &mem[i + 4];
+					strncpy(name, &mem[i + 4], cut - p);
 					name[cut - p] = 0;
 					char ejname[64];
 					sprintf(ejname, "ej_%s", name);
