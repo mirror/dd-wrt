@@ -36,14 +36,19 @@ rm -f $UNR
 $NM -o --defined-only --no-sort ${DIR}/${LIB_SO} | cut -d' ' -f3 > $MAP
 $NM --dynamic -u --no-sort $BINARIES | sort -u > $UNR
 
-for symbol in `cat $UNR` ; do 
-	if grep -q "^$symbol" $MAP ; then echo "-u $symbol" >> $SYM ;
-fi ; done 
-
+if [ ! -z $7 ] ; then
+	for symbol in `cat $UNR` ; do 
+		if grep -q "^$symbol" $MAP ; then echo "-Wl,-u,$symbol" >> $SYM ;
+	fi ; done 
+else
+	for symbol in `cat $UNR` ; do 
+		if grep -q "^$symbol" $MAP ; then echo "-u $symbol" >> $SYM ;
+	fi ; done 
+fi
 if ls $SYM ; then
 	if [ ! -z $7 ] ; then
 		echo "link with arguments"
-		xargs -t $LD -shared -o ${DIR}/${LIB_SO_M} ${DIR}/${LIB_A} `cat $7`< $SYM ;
+		xargs -t $CC -shared -o ${DIR}/${LIB_SO_M} ${DIR}/${LIB_A} `cat $7`< $SYM ;
 	else
 		echo "link with no arguments"
 		xargs -t $LD -shared -o ${DIR}/${LIB_SO_M} ${DIR}/${LIB_A} < $SYM ;
