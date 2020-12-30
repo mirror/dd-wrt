@@ -40,11 +40,18 @@ for symbol in `cat $UNR` ; do
 	if grep -q "^$symbol" $MAP ; then echo "-u $symbol" >> $SYM ;
 fi ; done 
 
-if ls $SYM ; then 
-	xargs -t $LD -shared -o ${DIR}/${LIB_SO_M} ${DIR}/${LIB_A} < $SYM ;
+if ls $SYM ; then
+	if [ ! -z $7 ] ; then
+		echo "link with arguments"
+		xargs -t $LD -shared -o ${DIR}/${LIB_SO_M} ${DIR}/${LIB_A} `cat $7`< $SYM ;
+	else
+		echo "link with no arguments"
+		xargs -t $LD -shared -o ${DIR}/${LIB_SO_M} ${DIR}/${LIB_A} < $SYM ;
+	fi
 fi
 
 if [ "a$INSTALLLIB" != "a" -a -f ${DIR}/${LIB_SO_M} ] ; then
+	echo install ${DIR}/${LIB_SO_M} $INSTALLLIB
 	install ${DIR}/${LIB_SO_M} $INSTALLLIB
 	$STRIP $INSTALLLIB
 fi
