@@ -309,9 +309,9 @@ bmenu.wirelessRadius="Radius";
 bmenu.wirelessSecurity="Vezetéknélküli biztonság";
 bmenu.wirelessMac="MAC filter";
 bmenu.wirelessAdvanced="Haladó beállítások";
-bmenu.wirelessAdvancedwl0="wlan0-Advanced";
-bmenu.wirelessAdvancedwl1="wlan1-Advanced";
-bmenu.wirelessAdvancedwl2="wlan2-Advanced";
+bmenu.wirelessAdvancedwl0="wl0-Advanced";
+bmenu.wirelessAdvancedwl1="wl1-Advanced";
+bmenu.wirelessAdvancedwl2="wl2-Advanced";
 bmenu.wirelessWds="WDS";
 
 bmenu.security="Biztonság";
