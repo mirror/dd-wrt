@@ -3049,7 +3049,7 @@ static void readconntrack(struct arptable *tbl, int tablelen)
 	conn = fopen("/proc/net/nf_conntrack", "r");
 	if (!conn) {
 		nf = 0;
-		conn = fopen("/proc/net/ip_conntrack", "r")
+		conn = fopen("/proc/net/ip_conntrack", "r");
 	}
 
 	if (conn) {
