@@ -218,8 +218,22 @@ distclean mrproper: $(obj-distclean) clean_target
 optimize-lib:
 #	../../tools/optimize_lib.sh netconf/ libnetconf.so libnetconf.a libnetconf_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libnetconf.so
 #	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshared.so
-#	../../tools/optimize_lib.sh lib/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
-	../../tools/optimize_lib.sh lib/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
+ifeq ($(CONFIG_LIBM),y)
+	../../tools/optimize_lib.sh lib.mipsel.brcm24/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
+endif
+ifeq ($(CONFIG_PTHREAD),y)
+	../../tools/optimize_lib.sh lib.mipsel.brcm24/ libpthread.so libpthread.a libpthread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
+endif
+	../../tools/optimize_lib.sh libutils/ libutils.so libutils.a libutils_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libutils.so
+	../../tools/optimize_lib.sh libutils/ libwireless.so libwireless.a libwireless_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libwireless.so
+	../../tools/optimize_lib.sh libutils/ libshutils.so libshutils.a libshutils_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshutils.so
+#	relink-lib.sh \
+##		"$(ARCH)-linux-" \
+#		"${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}" \
+#	"${shell $(ARCH)-linux-gcc -print-file-name=libgcc_pic.a}" \
+#		"$(ARCH)-uclibc/target/lib/libgcc_s.so.1" \
+#		-Wl,--version-script=${shell $(ARCH)-linux-gcc -print-file-name=libgcc.map} -Wl,-soname=libgcc_s.so.1
+
 #	../../tools/optimize_lib.sh services/ services.so services.a services_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/services.so
 #  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
 
@@ -456,9 +470,11 @@ endif
 endif
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
 ifeq ($(CONFIG_IPV6),y)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6/netfilter/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
 endif
