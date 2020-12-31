@@ -51,6 +51,7 @@
 #include <bcmnvram.h>
 //#include <l7protocols.h>
 
+
 #if defined(HAVE_80211AC) || (defined(HAVE_BRCMFMAC) && defined(HAVE_NORTHSTAR))
 #define COUNTRYLIST "EU DE GB FR NL ES IT CN US JP AU SG BR RU TW CA KR LA"
 #else
@@ -670,7 +671,7 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 		char st[32];
 
 		if (t >= 0)
-			sprintf(st, "%d", t);
+			sprintf(st, "%ld", t);
 		else
 			sprintf(st, "over");
 		websWrite(wp, "<input type=\"num\" name=\"%s\" value='%s' />\n", active, st);
@@ -1578,7 +1579,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		int channelbw = 20;
 		if (is_mac80211(prefix)) {
 			// temp must be replaced with the actual selected country
-			char regdomain[16];
+			char regdomain[32];
 			char *country;
 			int checkband = 255;
 #ifdef HAVE_ATH9K
@@ -2019,7 +2020,7 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 #endif
 static void show_netmode(webs_t wp, char *prefix)
 {
-	char wl_net_mode[16];
+	char wl_net_mode[32];
 
 	sprintf(wl_net_mode, "%s_net_mode", prefix);
 
@@ -2894,17 +2895,17 @@ static void mesh_radio(webs_t wp, char *prefix, char *name, int def)
 	showRadioNoDef(wp, label, mparam, nvram_default_geti(mparam, def));
 }
 
-void internal_ej_show_wireless_single(webs_t wp, char *prefix)
+static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 {
 	char wl_mode[16];
 	char wl_macaddr[18];
 	char wl_ssid[16];
-	char frequencies[128];
+	char frequencies[256];
 	char wl_outdoor[16];
-	char wl_diversity[16];
-	char wl_rxantenna[16];
-	char wl_txantenna[16];
-	char wl_width[16];
+	char wl_diversity[32];
+	char wl_rxantenna[32];
+	char wl_txantenna[32];
+	char wl_width[32];
 	char wl_preamble[16];
 	char wl_xr[16];
 	char wl_comp[32];
@@ -3015,7 +3016,7 @@ void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif				// ! HAVE MAKSAT
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
-		char wl_regdomain[16];
+		char wl_regdomain[32];
 #ifdef HAVE_ATH9K
 		if (!strcmp(prefix, "wlan0"))
 #endif
@@ -3675,7 +3676,7 @@ void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.overlap", wl_overlap);
 	}
 	if (has_ac(prefix) && has_2ghz(prefix)) {
-		char wl_turboqam[16];
+		char wl_turboqam[32];
 		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
 		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 	}
@@ -4113,7 +4114,7 @@ void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.overlap", wl_overlap);
 	}
 	if (has_ac(prefix) && has_2ghz(prefix)) {
-		char wl_turboqam[16];
+		char wl_turboqam[32];
 		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
 		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 	}
@@ -4276,7 +4277,7 @@ void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
-		char wl_regdomain[16];
+		char wl_regdomain[32];
 #ifdef HAVE_ATH9K
 		if (!strcmp(prefix, "wlan0"))
 #endif
@@ -4751,7 +4752,7 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 #ifndef HAVE_MADWIFI
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 	if (!nvram_matchi("nocountrysel", 1)) {
-		char wl_regdomain[16];
+		char wl_regdomain[32];
 		sprintf(wl_regdomain, "wl_regdomain");
 		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.country_settings)</script></h2>\n");
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></legend>\n");
@@ -4785,7 +4786,6 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		char buf[16];
 		sprintf(buf, WIFINAME "%d", i);
-		fprintf(stderr, "show wifi %s\n", buf);
 		internal_ej_show_wireless_single(wp, buf);
 	}
 #ifdef HAVE_GUESTPORT

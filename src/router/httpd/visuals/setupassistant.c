@@ -750,7 +750,7 @@ EJ_VISIBLE void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	}
 #ifdef HAVE_BCMMODERN
 	if (has_ac(prefix) && has_2ghz(prefix)) {
-		char wl_turboqam[16];
+		char wl_turboqam[32];
 
 		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
