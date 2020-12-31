@@ -2330,7 +2330,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 	free(leases);
 }
 
-void dhcp_check(webs_t wp, char *value, struct variable *v)
+EJ_VISIBLE void validate_dhcp_check(webs_t wp, char *value, struct variable *v)
 {
 	return;			// The udhcpd can valid lease table when
 	// re-load udhcpd.leases. by honor 2003-08-05
