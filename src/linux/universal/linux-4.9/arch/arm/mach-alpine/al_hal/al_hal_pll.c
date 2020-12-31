@@ -95,7 +95,7 @@ static inline int al_pll_test_is_done_s(
 /******************************************************************************/
 /******************************************************************************/
 int al_pll_init(
-	void __iomem			*regs_base,
+	resource_size_t			regs_base,
 	char				*name,
 	enum al_pll_ref_clk_freq	ref_clk_freq,
 	struct al_pll_obj		*obj)
@@ -103,7 +103,7 @@ int al_pll_init(
 	int status = 0;
 
 	al_dbg(
-		"%s(%p, %s, %d, %p)\n",
+		"%s(0x%08X, %s, %d, %p)\n",
 		__func__,
 		regs_base,
 		name,

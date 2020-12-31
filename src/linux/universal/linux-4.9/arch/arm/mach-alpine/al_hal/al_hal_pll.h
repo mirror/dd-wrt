@@ -211,7 +211,7 @@ struct al_pll_obj {
  *
  */
 int al_pll_init(
-	void __iomem			*regs_base,
+	resource_size_t			regs_base,
 	char				*name,
 	enum al_pll_ref_clk_freq	ref_clk_freq,
 	struct al_pll_obj		*obj);
