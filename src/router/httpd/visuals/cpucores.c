@@ -92,12 +92,13 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_ALPINE
 EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
-	FILE *fp = fopen("/sys/kernel/debug/clk/krait0_pri_mux/clk_rate", "rb");
+	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
 	if (fp) {
 		int freq;
 		fscanf(fp, "%d", &freq);
 		fclose(fp);
-		websWrite(wp, "%d", freq / 1000000);
+		websWrite(wp, "%d", freq / 1000);
+		return;
 	} else {
 		websWrite(wp, "1700");
 
