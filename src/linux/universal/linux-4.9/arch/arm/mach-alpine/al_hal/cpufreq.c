@@ -87,12 +87,17 @@ static int alpine_cpufreq_init(struct cpufreq_policy *policy)
 	iounmap(reg);
 
 	switch(field) {
-	case 0x0:
+	case AL_PLL_REF_CLK_FREQ_25_MHZ:
+
 		map = al_pll_freq_map_25;
 		ref_clk = AL_PLL_REF_CLK_FREQ_25_MHZ; 
 		break;
-	case 0x1:
+	case AL_PLL_REF_CLK_FREQ_100_MHZ:
 		map = al_pll_freq_map_100;
+		ref_clk = AL_PLL_REF_CLK_FREQ_100_MHZ;
+		break;
+	case AL_PLL_REF_CLK_FREQ_125_MHZ:
+		map = al_pll_freq_map_125;
 		ref_clk = AL_PLL_REF_CLK_FREQ_100_MHZ;
 		break;
 	default: 
