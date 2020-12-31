@@ -4785,6 +4785,7 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		char buf[16];
 		sprintf(buf, WIFINAME "%d", i);
+		fprintf(stderr, "show wifi %s\n", buf);
 		internal_ej_show_wireless_single(wp, buf);
 	}
 #ifdef HAVE_GUESTPORT
