@@ -18,3 +18,5 @@ obj-$(CONFIG_PCI)	+= al_hal_pcie.o
 obj-$(CONFIG_PCI)	+= al_hal_pcie_interrupts.o
 obj-y	+= al_hal_exports.o
 obj-$(CONFIG_EDAC_AL_MC)+= al_hal_ddr.o
+obj-y	+= al_hal_pll.o
+obj-y	+= cpufreq.o
