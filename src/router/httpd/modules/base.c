@@ -198,7 +198,7 @@ void Initnvramtab()
 		{ "MERGEDHCPSTART", "validate_merge_dhcpstart", 0 },
 		{ "DNS", "validate_dns", 0 },
 		{ "SAVEWDS", "save_wds", 0 },
-		{ "DHCP", "dhcp_check", 0 },
+		{ "DHCP", "validate_dhcp_check", 0 },
 		{ "STATICS", "validate_statics", 0 },
 #ifdef HAVE_PORTSETUP
 		{ "PORTSETUP", "validate_portsetup", 0 },
