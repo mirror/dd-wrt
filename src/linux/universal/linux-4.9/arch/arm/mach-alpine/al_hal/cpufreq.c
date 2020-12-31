@@ -201,10 +201,6 @@ static struct cpufreq_driver alpine_cpufreq_driver = {
 
 static int __init alpine_cpufreq_register(void)
 {
-	if (rb_mach != RB_MACH_ALPINE) {
-		return -1;
-	}
-
 	return cpufreq_register_driver(&alpine_cpufreq_driver);
 }
 
