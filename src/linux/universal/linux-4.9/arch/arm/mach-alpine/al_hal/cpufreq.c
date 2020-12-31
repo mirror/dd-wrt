@@ -1,5 +1,5 @@
 #include <linux/cpufreq.h>
-#include <mach/system.h>
+#include <linux/device.h>
 #include "al_hal_pll.h"
 #include "al_hal_pll_map.h"
 #include <linux/err.h>
@@ -43,11 +43,11 @@ static struct cpufreq_frequency_table *cpufreq_parse(int cpu)
 		f = map[i].freq_val * 1000;
 		f /= 1000;
 
-		ftbl[i].index = map[i].freq;
+		ftbl[i].driver_data = map[i].freq;
 		ftbl[i].frequency = f;
 	}
 
-	ftbl[i].index = i;
+	ftbl[i].driver_data = i;
 	ftbl[i].frequency = CPUFREQ_TABLE_END;
 
 
@@ -70,7 +70,7 @@ static int alpine_cpufreq_verify(struct cpufreq_policy *policy)
 	return 0;
 }
 
-static int __cpuinit alpine_cpufreq_init(struct cpufreq_policy *policy)
+static int alpine_cpufreq_init(struct cpufreq_policy *policy)
 {
 	int ret = 0, err = 0;
 	void *reg;
@@ -100,7 +100,7 @@ static int __cpuinit alpine_cpufreq_init(struct cpufreq_policy *policy)
 	}
 
 
-	err = al_pll_init((void *)AL_PLL_BASE(AL_PLL_CPU),
+	err = al_pll_init(AL_PLL_BASE(AL_PLL_CPU),
 			  "alpine", ref_clk, &pll_obj);
 	if (err)
 		return -1;
@@ -125,7 +125,7 @@ static int __cpuinit alpine_cpufreq_init(struct cpufreq_policy *policy)
 				max_scalable_frequency = freq;
 		}
 	}
-	cpufreq_frequency_table_get_attr(ftbl, 0);
+//	cpufreq_frequency_table_get_attr(ftbl, 0);
 
 	policy->cpuinfo.min_freq = min_freq; 
 	policy->min = min_freq;
@@ -136,6 +136,13 @@ static int __cpuinit alpine_cpufreq_init(struct cpufreq_policy *policy)
 		ret = AL_DEFAULT_CPUFREQ;
 	policy->cur = ret;
 	policy->cpuinfo.transition_latency = CPUFREQ_ETERNAL;
+
+	ret = cpufreq_table_validate_and_show(policy, ftbl);
+	if (ret) {
+		printk(KERN_ERR "%s: invalid frequency table: %d\n", __func__,
+			ret);
+	}
+
 	cpumask_setall(policy->cpus);
 	return 0;
 }
