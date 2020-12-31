@@ -439,6 +439,11 @@ static struct callmap ej_map[] = {
 #endif
 
 static struct callmap validate_map[] = {
+#ifdef HAVE_MILKFISH
+	{ "validate_subscribers", &validate_subscribers },
+	{ "validate_aliases", &validate_aliases },
+#endif
+	{ "validate_dhcp_check", &validate_dhcp_check },
 	{ "validate_auth_mode", &validate_auth_mode },
 	{ "validate_blocked_service", &validate_blocked_service },
 	{ "validate_catchall", &validate_catchall },
@@ -473,7 +478,9 @@ static struct callmap validate_map[] = {
 	{ "validate_noack", &validate_noack },
 	{ "validate_password", &validate_password },
 	{ "validate_password2", &validate_password2 },
+#ifdef HAVE_PORTSETUP
 	{ "validate_portsetup", &validate_portsetup },
+#endif
 	{ "validate_port_trigger", &validate_port_trigger },
 	{ "validate_range", &validate_range },
 	{ "validate_reboot", &validate_reboot },
@@ -704,7 +711,6 @@ static struct callmap gozila_map[] = {
 #endif
 };
 
-
 #define cprintf(fmt, args...)
 
 #ifndef cprintf
@@ -738,7 +744,6 @@ char *GOZILA_GET(webs_t wp, char *name)
 		return nvram_safe_get(name);
 	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
-
 
 char *live_translate(webs_t wp, const char *tran);
 void validate_cgi(webs_t wp);
