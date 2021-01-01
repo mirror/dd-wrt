@@ -41,9 +41,10 @@ python-install:
 	cd $(INSTALLDIR)/python/usr/bin && ln -sf /usr/bin/python3 python
 	rm -rf $(INSTALLDIR)/python/usr/include
 	rm -rf $(INSTALLDIR)/python/usr/share
-	rm -f $(INSTALLDIR)/python/usr/lib/python3.6/config-3.6m/*.a
+	rm -f $(INSTALLDIR)/python/usr/lib/python3.8/config-3.8/*.a
+	rm -f $(INSTALLDIR)/python/usr/lib/python3.8/config-3.8/*.o
 	-rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
-	rm -rf $(INSTALLDIR)/python/usr/lib/python3.6/test
+	rm -rf $(INSTALLDIR)/python/usr/lib/python3.8/test
 
 	rm -rf $(INSTALLDIR)/libffi/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
