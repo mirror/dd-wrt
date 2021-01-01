@@ -11,7 +11,7 @@ libcap-install:
 
 
 
-frr-configure: ncurses json-c readline libyang libcap
+frr-configure: ncurses json-c readline libyang libcap libcares
 	cd frr && autoreconf --force --install
 	rm -rf frr/build
 	-mkdir -p frr/build
