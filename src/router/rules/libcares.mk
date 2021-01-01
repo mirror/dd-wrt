@@ -18,6 +18,7 @@ libcares-clean:
 	$(MAKE) -C libcares clean
 
 libcares-configure:
+	cd libcares && ./buildconf
 	cd libcares && ./configure ac_cv_host=$(ARCH)-uclibc-linux --prefix=/usr --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc"
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-section"
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
