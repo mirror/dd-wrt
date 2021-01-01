@@ -340,6 +340,7 @@ include rules/htop.mk
 include rules/ipset.mk
 include rules/sdparm.mk
 include rules/prepare.mk
+include rules/libcares.mk
 
 #
 # Generic rules
