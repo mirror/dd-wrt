@@ -90,6 +90,7 @@ icu-install:
 
 php8: libxml2 libmcrypt glib20 zlib libzip openssl sqlite
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	PROF_FLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/zlib/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/zlib/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libpng/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs -fPIC" \
@@ -186,6 +187,8 @@ PHP_CONFIGURE_ARGS= \
 	PHP_SETUP_OPENSSL="$(TOP)/openssl" \
 	PHP_CURL="$(TOP)/curl" \
 	LIBS="-lc -lpthread -lm -lssl -lcrypto" \
+	CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" \
+	CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" \
 	EXTRA_CFLAGS="-I$(TOP)/sqlite -I$(TOP)/libmcrypt -I$(TOP)/zlib  -I$(TOP)/zlib/include -I$(TOP)/libpng -L$(TOP)/openssl -I$(TOP)/openssl/include  -I$(TOP)/curl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	EXTRA_LIBS="-L$(TOP)/openssl -lsqlite3 -lcurl -lcrypto -lssl -lcrypt -lxml2 -lmcrypt -lpng16 -lgd -lz" \
 	EXTRA_LDFLAGS="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/sqlite/.libs -L$(TOP)/minidlna/jpeg-8/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
