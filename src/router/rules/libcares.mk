@@ -8,11 +8,11 @@ libcares:
 
 libcares-install:
 	$(MAKE) -C libcares install DESTDIR=$(INSTALLDIR)/libcares
-	rm -rf $(INSTALLDIR)/libcares/include
+	rm -rf $(INSTALLDIR)/libcares/usr/include
 	rm -f $(INSTALLDIR)/libcares/usr/lib/*.a
 	rm -f $(INSTALLDIR)/libcares/usr/lib/*.la
 	rm -rf $(INSTALLDIR)/libcares/usr/lib/pkgconfig
-	rm -rf $(INSTALLDIR)/libcares/usr/lib/share
+	rm -rf $(INSTALLDIR)/libcares/usr/share
 
 libcares-clean:
 	$(MAKE) -C libcares clean
