@@ -46,6 +46,8 @@ frr-configure: ncurses json-c readline libyang libcap
 		LDFLAGS="-L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -lncurses -L$(TOP)/json-c/.libs -ljson-c -L$(TOP)/libyang/build -lyang -L$(TOP)/pcre/.libs -lpcre -L$(TOP)/libcap/libcap -lcap" \
 		LIBYANG_CFLAGS="-I$(TOP)/libyang/build" \
 		LIBYANG_LIBS="-L$(TOP)/libyang/build -lyang -L$(TOP)/pcre/.libs -lpcre" \
+		CARES_CFLAGS="-I$(TOP)/libcares/include" \
+		CARES_LIBS="-L$(TOP)/libcares/src/lib/.libs -lcares" \
 		PYTHON=/usr/bin/python3
 
 frr: ncurses json-c libyang libcap
