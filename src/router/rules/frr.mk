@@ -50,7 +50,7 @@ frr-configure: ncurses json-c readline libyang libcap libcares
 		CARES_LIBS="-L$(TOP)/libcares/src/lib/.libs -lcares" \
 		PYTHON=/usr/bin/python3
 
-frr: ncurses json-c libyang libcap
+frr: ncurses json-c libyang libcap libcares
 	make -C frr/build
 
 frr-install:
