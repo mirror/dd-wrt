@@ -116,10 +116,6 @@ check_include_files(stdint.h HAVE_STDINT_H)
 check_include_files(strings.h HAVE_STRINGS_H)
 check_include_files(syslog.h HAVE_SYSLOG_H)
 
-# check for fastcgi lib, for the tests only
-check_include_files(fastcgi.h HAVE_FASTCGI_H)
-check_include_files(fastcgi/fastcgi.h HAVE_FASTCGI_FASTCGI_H)
-
 # will be needed for auth
 check_include_files(crypt.h HAVE_CRYPT_H)
 # check if we need libcrypt for crypt_r()
@@ -164,6 +160,7 @@ check_function_exists(getloadavg HAVE_GETLOADAVG)
 check_function_exists(getrlimit HAVE_GETRLIMIT)
 check_function_exists(getuid HAVE_GETUID)
 check_function_exists(gmtime_r HAVE_GMTIME_R)
+check_function_exists(inet_aton HAVE_INET_ATON)
 check_function_exists(inet_ntop HAVE_INET_NTOP)
 check_function_exists(jrand48 HAVE_JRAND48)
 check_function_exists(kqueue HAVE_KQUEUE)
@@ -191,6 +188,7 @@ check_function_exists(sigtimedwait HAVE_SIGTIMEDWAIT)
 check_function_exists(srandom HAVE_SRANDOM)
 check_function_exists(strptime HAVE_STRPTIME)
 check_function_exists(syslog HAVE_SYSLOG)
+check_function_exists(timegm HAVE_TIMEGM)
 check_function_exists(writev HAVE_WRITEV)
 check_function_exists(inet_aton HAVE_INET_ATON)
 check_function_exists(issetugid HAVE_ISSETUGID)
@@ -736,7 +734,7 @@ set(COMMON_SRC
 	base64.c buffer.c burl.c log.c
 	http_header.c http_kv.c keyvalue.c chunk.c
 	http_chunk.c stream.c fdevent.c gw_backend.c
-	stat_cache.c plugin.c etag.c array.c
+	stat_cache.c plugin.c http_etag.c array.c
 	data_string.c data_array.c
 	data_integer.c
 	algo_md5.c algo_sha1.c algo_splaytree.c
@@ -748,6 +746,7 @@ set(COMMON_SRC
 	configfile-glue.c
 	http-header-glue.c
 	http_auth.c
+	http_date.c
 	http_vhostdb.c
 	request.c
 	sock_addr.c
@@ -778,7 +777,7 @@ add_executable(lighttpd
 	connections.c
 	h2.c
 	reqpool.c
-	inet_ntop_cache.c
+	sock_addr_cache.c
 	ls-hpack/lshpack.c
 	algo_xxhash.c
 	network.c

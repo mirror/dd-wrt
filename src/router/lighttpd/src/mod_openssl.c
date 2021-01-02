@@ -72,10 +72,6 @@
 #undef OPENSSL_NO_OCSP
 #endif
 
-#if ! defined OPENSSL_NO_TLSEXT && ! defined SSL_CTRL_SET_TLSEXT_HOSTNAME
-#define OPENSSL_NO_TLSEXT
-#endif
-
 #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
 #ifndef OPENSSL_NO_ECDH
 #include <openssl/ecdh.h>
@@ -88,6 +84,7 @@
 
 #include "base.h"
 #include "fdevent.h"
+#include "http_date.h"
 #include "http_header.h"
 #include "http_kv.h"
 #include "log.h"
@@ -1452,28 +1449,10 @@ mod_openssl_asn1_time_to_posix (ASN1_TIME *asn1time)
         && x.tm_hour == 23 && x.tm_min == 59 && x.tm_sec == 59 && s[0] == 'Z')
         return (time_t)-1; // 99991231235959Z RFC 5280
 
-   #if 0
-    #if defined(_WIN32) && !defined(__CYGWIN__)
-    #define timegm(x) _mkgmtime(x)
-    #endif
-    /* timegm() might not be available, and mktime() is sensitive to TZ */
     x.tm_year-= 1900;
     x.tm_mon -= 1;
-    time_t t = timegm(&d);
+    time_t t = http_date_timegm(&x);
     return (t != (time_t)-1) ? t + offset : t;
-   #else
-    int y = x.tm_year;
-    int m = x.tm_mon;
-    int d = x.tm_mday;
-    /* days_from_civil() http://howardhinnant.github.io/date_algorithms.html */
-    y -= m <= 2;
-    int era = y / 400;
-    int yoe = y - era * 400;                                   // [0, 399]
-    int doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;  // [0, 365]
-    int doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;           // [0, 146096]
-    int days_since_1970 = era * 146097 + doe - 719468;
-    return 60*(60*(24L*days_since_1970+x.tm_hour)+x.tm_min)+x.tm_sec+offset;
-   #endif
 
   #else
 
@@ -1708,8 +1687,6 @@ mod_openssl_acme_tls_1 (SSL *ssl, handler_ctx *hctx)
     /* check if acme-tls/1 protocol is enabled (path to dir of cert(s) is set)*/
     if (buffer_string_is_empty(hctx->conf.ssl_acme_tls_1))
         return SSL_TLSEXT_ERR_NOACK; /*(reuse value here for not-configured)*/
-    buffer_copy_buffer(b, hctx->conf.ssl_acme_tls_1);
-    buffer_append_slash(b);
 
     /* check if SNI set server name (required for acme-tls/1 protocol)
      * and perform simple path checks for no '/'
@@ -1721,7 +1698,8 @@ mod_openssl_acme_tls_1 (SSL *ssl, handler_ctx *hctx)
     if (0 != http_request_host_policy(name,hctx->r->conf.http_parseopts,443))
         return rc;
   #endif
-    buffer_append_string_buffer(b, name);
+    buffer_copy_buffer(b, hctx->conf.ssl_acme_tls_1);
+    buffer_append_path_len(b, CONST_BUF_LEN(name));
     len = buffer_string_length(b);
 
     do {
@@ -2929,7 +2907,7 @@ connection_write_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
 
                 if (wr == 0) return -2;
 
-                /* fall through */
+                __attribute_fallthrough__
             default:
                 while((err = ERR_get_error())) {
                     log_error(errh, __FILE__, __LINE__,
@@ -3007,7 +2985,7 @@ connection_read_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
         switch ((rc = SSL_get_error(hctx->ssl, len))) {
         case SSL_ERROR_WANT_WRITE:
             con->is_writable = -1;
-            /* fall through */
+            __attribute_fallthrough__
         case SSL_ERROR_WANT_READ:
             con->is_readable = 0;
 
@@ -3040,7 +3018,7 @@ connection_read_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
             switch(oerrno) {
             case ECONNRESET:
                 if (!hctx->conf.ssl_log_noise) break;
-                /* fall through */
+                __attribute_fallthrough__
             default:
                 /* (oerrno should be something like ECONNABORTED not 0
                  *  if client disconnected before anything was sent
@@ -3063,7 +3041,7 @@ connection_read_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
                 /* FIXME: later */
             }
 
-            /* fall through */
+            __attribute_fallthrough__
         default:
             while((ssl_err = ERR_get_error())) {
                 switch (ERR_GET_REASON(ssl_err)) {
@@ -3224,7 +3202,7 @@ mod_openssl_close_notify(handler_ctx *hctx)
                 break;
             }
 
-            /* fall through */
+            __attribute_fallthrough__
         default:
 
             if (!SSL_is_init_finished(hctx->ssl)) {

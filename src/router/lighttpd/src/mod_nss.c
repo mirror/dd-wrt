@@ -1190,8 +1190,6 @@ mod_nss_acme_tls_1 (handler_ctx *hctx)
     /* check if acme-tls/1 protocol is enabled (path to dir of cert(s) is set)*/
     if (buffer_string_is_empty(hctx->conf.ssl_acme_tls_1))
         return SECFailure; /*(should not happen)*/
-    buffer_copy_buffer(b, hctx->conf.ssl_acme_tls_1);
-    buffer_append_slash(b);
 
     /* check if SNI set server name (required for acme-tls/1 protocol)
      * and perform simple path checks for no '/'
@@ -1203,7 +1201,8 @@ mod_nss_acme_tls_1 (handler_ctx *hctx)
     if (0 != http_request_host_policy(name, hctx->r->conf.http_parseopts, 443))
         return SECFailure;
   #endif
-    buffer_append_string_buffer(b, name);
+    buffer_copy_buffer(b, hctx->conf.ssl_acme_tls_1);
+    buffer_append_path_len(b, CONST_BUF_LEN(name));
 
     /* cert and key load is similar to network_nss_load_pemfile() */
 
@@ -2995,12 +2994,14 @@ static const cipher_properties ciphers_def[] =
     {"dhe_rsa_chacha20_poly1305_sha_256", TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256, "DHE-RSA-CHACHA20-POLY1305", SSL_kDHE|SSL_aRSA|SSL_CHACHA20POLY1305|SSL_AEAD, TLSV1_2, SSL_HIGH, 256, 256, NULL},
 //#endif
 //#ifdef NSS_SUPPORTS_TLS_1_3
+  #ifdef TLS_AES_128_GCM_SHA256
     /* Special TLS 1.3 cipher suites that really just specify AEAD
      * TLS 1.3 ciphers don't specify key exchange and authentication.
      */
     {"aes_128_gcm_sha_256", TLS_AES_128_GCM_SHA256, "TLS-AES-128-GCM-SHA256", SSL_AES128GCM|SSL_AEAD, TLSV1_3, SSL_HIGH, 128, 128, NULL},
     {"aes_256_gcm_sha_384", TLS_AES_256_GCM_SHA384, "TLS-AES-256-GCM-SHA384", SSL_AES256GCM|SSL_AEAD, TLSV1_3, SSL_HIGH, 256, 256, NULL},
     {"chacha20_poly1305_sha_256", TLS_CHACHA20_POLY1305_SHA256, "TLS-CHACHA20-POLY1305_SHA256", SSL_CHACHA20POLY1305|SSL_AEAD, TLSV1_3, SSL_HIGH, 256, 256, NULL},
+  #endif
 //#endif
 };
 

@@ -87,9 +87,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@CHECK_WITH_FASTCGI_TRUE@check_PROGRAMS = fcgi-auth$(EXEEXT) \
-@CHECK_WITH_FASTCGI_TRUE@	fcgi-responder$(EXEEXT) \
-@CHECK_WITH_FASTCGI_TRUE@	scgi-responder$(EXEEXT)
+check_PROGRAMS = fcgi-responder$(EXEEXT) scgi-responder$(EXEEXT)
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -104,19 +102,13 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__fcgi_auth_SOURCES_DIST = fcgi-auth.c
-@CHECK_WITH_FASTCGI_TRUE@am_fcgi_auth_OBJECTS = fcgi-auth.$(OBJEXT)
-fcgi_auth_OBJECTS = $(am_fcgi_auth_OBJECTS)
-fcgi_auth_DEPENDENCIES =
+am_fcgi_responder_OBJECTS = fcgi-responder.$(OBJEXT)
+fcgi_responder_OBJECTS = $(am_fcgi_responder_OBJECTS)
+fcgi_responder_LDADD = $(LDADD)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-am__fcgi_responder_SOURCES_DIST = fcgi-responder.c
-@CHECK_WITH_FASTCGI_TRUE@am_fcgi_responder_OBJECTS =  \
-@CHECK_WITH_FASTCGI_TRUE@	fcgi-responder.$(OBJEXT)
-fcgi_responder_OBJECTS = $(am_fcgi_responder_OBJECTS)
-fcgi_responder_DEPENDENCIES =
 am_scgi_responder_OBJECTS = scgi-responder.$(OBJEXT)
 scgi_responder_OBJECTS = $(am_scgi_responder_OBJECTS)
 scgi_responder_LDADD = $(LDADD)
@@ -135,8 +127,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/fcgi-auth.Po \
-	./$(DEPDIR)/fcgi-responder.Po ./$(DEPDIR)/scgi-responder.Po
+am__depfiles_remade = ./$(DEPDIR)/fcgi-responder.Po \
+	./$(DEPDIR)/scgi-responder.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -156,10 +148,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(fcgi_auth_SOURCES) $(fcgi_responder_SOURCES) \
-	$(scgi_responder_SOURCES)
-DIST_SOURCES = $(am__fcgi_auth_SOURCES_DIST) \
-	$(am__fcgi_responder_SOURCES_DIST) $(scgi_responder_SOURCES)
+SOURCES = $(fcgi_responder_SOURCES) $(scgi_responder_SOURCES)
+DIST_SOURCES = $(fcgi_responder_SOURCES) $(scgi_responder_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -433,10 +423,7 @@ top_srcdir = @top_srcdir@
 
 # lighttpd.conf and conformance.pl expect this directory
 testdir = $(srcdir)/tmp/lighttpd/
-@CHECK_WITH_FASTCGI_TRUE@fcgi_auth_SOURCES = fcgi-auth.c
-@CHECK_WITH_FASTCGI_TRUE@fcgi_auth_LDADD = -lfcgi
-@CHECK_WITH_FASTCGI_TRUE@fcgi_responder_SOURCES = fcgi-responder.c
-@CHECK_WITH_FASTCGI_TRUE@fcgi_responder_LDADD = -lfcgi
+fcgi_responder_SOURCES = fcgi-responder.c
 scgi_responder_SOURCES = scgi-responder.c
 TESTS = \
 	prepare.sh \
@@ -453,7 +440,6 @@ CONFS = \
 	core-request.t \
 	core-response.t \
 	core-var-include.t \
-	fastcgi-10.conf \
 	fastcgi-responder.conf \
 	LightyTest.pm \
 	lowercase.conf \
@@ -534,10 +520,6 @@ clean-checkPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
-fcgi-auth$(EXEEXT): $(fcgi_auth_OBJECTS) $(fcgi_auth_DEPENDENCIES) $(EXTRA_fcgi_auth_DEPENDENCIES) 
-	@rm -f fcgi-auth$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(fcgi_auth_OBJECTS) $(fcgi_auth_LDADD) $(LIBS)
-
 fcgi-responder$(EXEEXT): $(fcgi_responder_OBJECTS) $(fcgi_responder_DEPENDENCIES) $(EXTRA_fcgi_responder_DEPENDENCIES) 
 	@rm -f fcgi-responder$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(fcgi_responder_OBJECTS) $(fcgi_responder_LDADD) $(LIBS)
@@ -552,7 +534,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fcgi-auth.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fcgi-responder.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scgi-responder.Po@am__quote@ # am--include-marker
 
@@ -885,8 +866,7 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool clean-local \
 	mostlyclean-am
 
 distclean: distclean-recursive
-		-rm -f ./$(DEPDIR)/fcgi-auth.Po
-	-rm -f ./$(DEPDIR)/fcgi-responder.Po
+		-rm -f ./$(DEPDIR)/fcgi-responder.Po
 	-rm -f ./$(DEPDIR)/scgi-responder.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -933,8 +913,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
-		-rm -f ./$(DEPDIR)/fcgi-auth.Po
-	-rm -f ./$(DEPDIR)/fcgi-responder.Po
+		-rm -f ./$(DEPDIR)/fcgi-responder.Po
 	-rm -f ./$(DEPDIR)/scgi-responder.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

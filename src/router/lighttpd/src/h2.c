@@ -16,6 +16,7 @@
 #include "buffer.h"
 #include "chunk.h"
 #include "fdevent.h"    /* FDEVENT_STREAM_REQUEST_BUFMIN */
+#include "http_date.h"
 #include "http_header.h"
 #include "log.h"
 #include "request.h"
@@ -1912,6 +1913,7 @@ h2_send_headers (request_st * const r, connection * const con)
     if (!light_btst(r->resp_htags, HTTP_HEADER_DATE)) {
         /* HTTP/1.1 and later requires a Date: header */
         /* "date: " 6-chars + 30-chars for "%a, %d %b %Y %H:%M:%S GMT" + '\0' */
+        static time_t tlast = 0;
         static char tstr[36] = "date: ";
 
         memset(&lsx, 0, sizeof(lsxpack_header_t));
@@ -1923,13 +1925,9 @@ h2_send_headers (request_st * const r, connection * const con)
         lsx.hpack_index = LSHPACK_HDR_DATE;
 
         /* cache the generated timestamp */
-        static time_t tlast;
         const time_t cur_ts = log_epoch_secs;
-        if (tlast != cur_ts) {
-            tlast = cur_ts;
-            strftime(tstr+6, sizeof(tstr)-6,
-                     "%a, %d %b %Y %H:%M:%S GMT", gmtime(&tlast));
-        }
+        if (__builtin_expect ( (tlast != cur_ts), 0))
+            http_date_time_to_str(tstr+6, sizeof(tstr)-6, (tlast = cur_ts));
 
         alen += 35+2;
 
@@ -2150,7 +2148,7 @@ h2_send_end_stream_trailers (request_st * const r, connection * const con, const
     /*hoff[2] = ...;*/                   /* offset from base for 2nd line */
     uint32_t rc = http_header_parse_hoff(CONST_BUF_LEN(trailers), hoff);
     if (0 == rc || rc > USHRT_MAX || hoff[0] >= sizeof(hoff)/sizeof(hoff[0])-1
-        || 1 == hoff[0]) { /*(initial blank line (should not happen))*/
+        || 1 == hoff[0]) { /*(initial blank line)*/
         /* skip trailers if incomplete, too many fields, or too long (> 64k-1)*/
         h2_send_end_stream_data(r, con);
         return;
@@ -2560,6 +2558,7 @@ h2_con_upgrade_h2c (request_st * const h2r, const buffer * const http2_settings)
   #if 0 /* expect empty request body */
     r->reqbody_length = h2r->reqbody_length; /* currently always 0 */
     r->te_chunked = h2r->te_chunked;         /* must be 0 */
+    r->resp_body_scratchpad = h2r->resp_body_scratchpad; /*(not started yet)*/
     swap(&r->reqbody_queue,&h2r->reqbody_queue);/*currently always empty queue*/
   #endif
     r->http_host = h2r->http_host;

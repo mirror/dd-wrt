@@ -1,1 +1,2 @@
-SUBDIRS=123 www
+SUBDIRS=www
+GNUMAKEFLAGS=--no-print-directory -s

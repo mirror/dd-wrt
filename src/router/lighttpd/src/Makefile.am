@@ -72,7 +72,7 @@ CLEANFILES = versionstamp.h versionstamp.h.tmp lemon$(BUILD_EXEEXT)
 common_src=base64.c buffer.c burl.c log.c \
 	http_header.c http_kv.c keyvalue.c chunk.c  \
 	http_chunk.c stream.c fdevent.c gw_backend.c \
-	stat_cache.c plugin.c etag.c array.c \
+	stat_cache.c plugin.c http_etag.c array.c \
 	data_string.c data_array.c \
 	data_integer.c \
 	algo_md5.c algo_sha1.c algo_splaytree.c \
@@ -84,6 +84,7 @@ common_src=base64.c buffer.c burl.c log.c \
 	configfile-glue.c \
 	http-header-glue.c \
 	http_auth.c \
+	http_date.c \
 	http_vhostdb.c \
 	rand.c \
 	request.c \
@@ -91,7 +92,7 @@ common_src=base64.c buffer.c burl.c log.c \
 	safe_memclear.c
 
 src = server.c response.c connections.c h2.c reqpool.c \
-	inet_ntop_cache.c \
+	sock_addr_cache.c \
 	network.c \
 	network_write.c \
 	ls-hpack/lshpack.c \
@@ -457,16 +458,17 @@ hdr = base64.h buffer.h burl.h network.h log.h http_kv.h keyvalue.h \
 	response.h request.h reqpool.h chunk.h h2.h \
 	first.h http_chunk.h \
 	algo_md.h algo_md5.h algo_sha1.h algo_splaytree.h algo_xxhash.h \
-	http_auth.h http_header.h http_vhostdb.h stream.h \
+	http_auth.h http_date.h http_header.h http_vhostdb.h stream.h \
 	fdevent.h gw_backend.h connections.h base.h base_decls.h stat_cache.h \
 	plugin.h plugin_config.h \
-	etag.h array.h vector.h \
+	http_etag.h array.h vector.h \
 	fdevent_impl.h network_write.h configfile.h \
-	mod_ssi.h mod_ssi_expr.h inet_ntop_cache.h \
+	mod_ssi.h mod_ssi_expr.h \
+	sock_addr_cache.h \
 	configparser.h mod_ssi_exprparser.h \
 	rand.h \
 	sys-crypto.h sys-crypto-md.h \
-	sys-endian.h sys-mmap.h sys-socket.h sys-strings.h \
+	sys-endian.h sys-mmap.h sys-socket.h sys-strings.h sys-time.h \
 	mod_cml.h mod_cml_funcs.h \
 	safe_memclear.h sock_addr.h status_counter.h \
 	mod_magnet_cache.h \

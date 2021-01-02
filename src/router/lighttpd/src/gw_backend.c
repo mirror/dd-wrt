@@ -33,6 +33,7 @@
 #include "buffer.h"
 #include "chunk.h"
 #include "fdevent.h"
+#include "http_header.h"
 #include "log.h"
 #include "sock_addr.h"
 
@@ -314,7 +315,7 @@ static void gw_proc_check_enable(gw_host * const host, gw_proc * const proc, log
     log_error(errh, __FILE__, __LINE__,
       "gw-server re-enabled: %s %s %hu %s",
       proc->connection_name->ptr, host->host->ptr, host->port,
-      host->unixsocket->ptr ? host->unixsocket->ptr : "");
+      host->unixsocket && host->unixsocket->ptr ? host->unixsocket->ptr : "");
 }
 
 static void gw_proc_waitpid_log(const gw_host * const host, const gw_proc * const proc, log_error_st * const errh, const int status) {
@@ -342,9 +343,7 @@ static int gw_proc_waitpid(gw_host *host, gw_proc *proc, log_error_st *errh) {
     if (!proc->is_local) return 0;
     if (proc->pid <= 0) return 0;
 
-    do {
-        rc = waitpid(proc->pid, &status, WNOHANG);
-    } while (-1 == rc && errno == EINTR);
+    rc = fdevent_waitpid(proc->pid, &status, 1);
     if (0 == rc) return 0; /* child still running */
 
     /* child terminated */
@@ -385,7 +384,8 @@ static int gw_proc_sockaddr_init(gw_host * const host, gw_proc * const proc, log
             errno = EINVAL;
             return -1;
         }
-        else {
+        else if (host->host->size) {
+            /*(skip if constant string set in gw_set_defaults_backend())*/
             /* overwrite host->host buffer with IP addr string so that
              * any further use of gw_host does not block on DNS lookup */
             buffer *h;
@@ -1029,7 +1029,7 @@ static void gw_restart_dead_procs(gw_host * const host, log_error_st * const err
             }
 
             if (proc->state != PROC_STATE_DIED) break;
-            /* fall through *//*(we have a dead proc now)*/
+            __attribute_fallthrough__/*(we have a dead proc now)*/
 
         case PROC_STATE_DIED:
             /* local procs get restarted by us,
@@ -1533,7 +1533,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, const array *a, gw_p
                 }
 
                 if (buffer_string_is_empty(host->host)) {
-                    static const buffer lhost = {CONST_STR_LEN("127.0.0.1"), 0};
+                    static const buffer lhost ={CONST_STR_LEN("127.0.0.1")+1,0};
                     host->host = &lhost;
                 }
 
@@ -1890,7 +1890,7 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
             hctx->reconnects = 0;
             break;
         }
-        /* fall through */
+        __attribute_fallthrough__
     case GW_STATE_CONNECT_DELAYED:
         if (hctx->state == GW_STATE_CONNECT_DELAYED) { /*(not GW_STATE_INIT)*/
             int socket_error = fdevent_connect_status(hctx->fd);
@@ -1905,7 +1905,7 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
         gw_proc_connect_success(hctx->host, hctx->proc, hctx->conf.debug, r);
 
         gw_set_state(hctx, GW_STATE_PREPARE_WRITE);
-        /* fall through */
+        __attribute_fallthrough__
     case GW_STATE_PREPARE_WRITE:
         /* ok, we have the connection */
 
@@ -1929,7 +1929,7 @@ static handler_t gw_write_request(gw_handler_ctx * const hctx, request_st * cons
 
         fdevent_fdnode_event_add(hctx->ev, hctx->fdn, FDEVENT_IN|FDEVENT_RDHUP);
         gw_set_state(hctx, GW_STATE_WRITE);
-        /* fall through */
+        __attribute_fallthrough__
     case GW_STATE_WRITE:
         if (!chunkqueue_is_empty(&hctx->wb)) {
             log_error_st * const errh = r->conf.errh;
@@ -2051,6 +2051,11 @@ handler_t gw_handle_subrequest(request_st * const r, void *p_d) {
     if ((r->conf.stream_response_body & FDEVENT_STREAM_RESPONSE_BUFMIN)
         && r->resp_body_started) {
         if (chunkqueue_length(&r->write_queue) > 65536 - 4096) {
+            /* Note: if apps inheriting gw_handle use hctx->rb, then those apps
+             * are responsible for limiting amount of data buffered in memory
+             * in hctx->rb.  Currently, mod_fastcgi is the only core app doing
+             * so, and the maximum FCGI_Record size is 8 + 65535 + 255 = 65798
+             * (FCGI_HEADER_LEN(8)+contentLength(65535)+paddingLength(255)) */
             fdevent_fdnode_event_clr(hctx->ev, hctx->fdn, FDEVENT_IN);
         }
         else if (!(fdevent_fdnode_interest(hctx->fdn) & FDEVENT_IN)) {
@@ -2105,10 +2110,11 @@ handler_t gw_handle_subrequest(request_st * const r, void *p_d) {
 
             if ((0 != hctx->wb.bytes_in || -1 == hctx->wb_reqlen)
                 && !chunkqueue_is_empty(&r->reqbody_queue)) {
-                if (hctx->stdin_append
-                    && chunkqueue_length(&hctx->wb) < 65536 - 16384) {
-                    handler_t rca = hctx->stdin_append(hctx);
-                    if (HANDLER_GO_ON != rca) return rca;
+                if (hctx->stdin_append) {
+                    if (chunkqueue_length(&hctx->wb) < 65536 - 16384) {
+                        handler_t rca = hctx->stdin_append(hctx);
+                        if (HANDLER_GO_ON != rca) return rca;
+                    }
                 }
                 else
                     chunkqueue_append_chunkqueue(&hctx->wb, &r->reqbody_queue);
@@ -2179,7 +2185,8 @@ static handler_t gw_recv_response(gw_handler_ctx * const hctx, request_st * cons
                 buffer_copy_buffer(&r->physical.basedir, host->docroot);
 
                 buffer_copy_buffer(&r->physical.path, host->docroot);
-                buffer_append_string_buffer(&r->physical.path, &r->uri.path);
+                buffer_append_path_len(&r->physical.path,
+                                       CONST_BUF_LEN(&r->uri.path));
                 physpath = r->physical.path.ptr;
             }
 
@@ -2265,7 +2272,7 @@ static handler_t gw_recv_response_error(gw_handler_ctx * const hctx, request_st 
               "socket: %s for %s?%.*s, closing connection",
               (long long)hctx->wb.bytes_out, proc->connection_name->ptr,
               r->uri.path.ptr, BUFFER_INTLEN_PTR(&r->uri.query));
-        } else {
+        } else if (!light_btst(r->resp_htags, HTTP_HEADER_UPGRADE)) {
             log_error(r->conf.errh, __FILE__, __LINE__,
               "response already sent out, but backend returned error on "
               "socket: %s for %s?%.*s, terminating connection",
