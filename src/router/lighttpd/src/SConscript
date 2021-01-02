@@ -58,7 +58,7 @@ def GatherLibs(env, *libs):
 common_src = Split("base64.c buffer.c burl.c log.c \
 	http_header.c http_kv.c keyvalue.c chunk.c  \
 	http_chunk.c stream.c fdevent.c gw_backend.c \
-	stat_cache.c plugin.c etag.c array.c \
+	stat_cache.c plugin.c http_etag.c array.c \
 	data_string.c data_array.c \
 	data_integer.c \
 	algo_md5.c algo_sha1.c algo_splaytree.c \
@@ -70,6 +70,7 @@ common_src = Split("base64.c buffer.c burl.c log.c \
 	configfile-glue.c \
 	http-header-glue.c \
 	http_auth.c \
+	http_date.c \
 	http_vhostdb.c \
 	request.c \
 	sock_addr.c \
@@ -78,7 +79,7 @@ common_src = Split("base64.c buffer.c burl.c log.c \
 ")
 
 src = Split("server.c response.c connections.c h2.c reqpool.c \
-	inet_ntop_cache.c \
+	sock_addr_cache.c \
 	ls-hpack/lshpack.c \
 	algo_xxhash.c \
 	network.c \
@@ -175,13 +176,13 @@ if env['with_sasl']:
 	modules['mod_authn_sasl'] = { 'src' : [ 'mod_authn_sasl.c' ], 'lib' : [ env['LIBSASL'] ] }
 
 if env['with_openssl']:
-	modules['mod_openssl'] = { 'src' : [ 'mod_openssl.c' ], 'lib' : [ env['LIBSSL'], env['LIBCRYPTO'] ] }
+	modules['mod_openssl'] = { 'src' : [ 'mod_openssl.c' ], 'lib' : [ env['LIBSSL'], env['LIBSSLCRYPTO'] ] }
 
 if env['with_wolfssl']:
-	modules['mod_wolfssl'] = { 'src' : [ 'mod_wolfssl.c' ], 'lib' : [ env['LIBCRYPTO'], 'm' ] }
+	modules['mod_wolfssl'] = { 'src' : [ 'mod_wolfssl.c' ], 'lib' : [ env['LIBWOLFSSL'], 'm' ] }
 
 if env['with_mbedtls']:
-	modules['mod_mbedtls'] = { 'src' : [ 'mod_mbedtls.c' ], 'lib' : [ env['LIBSSL'], env['LIBX509'], env['LIBCRYPTO'] ] }
+	modules['mod_mbedtls'] = { 'src' : [ 'mod_mbedtls.c' ], 'lib' : [ env['LIBMBEDTLS'], env['LIBMBEDX509'], env['LIBMBEDCRYPTO'] ] }
 
 if env['with_nss']:
 	modules['mod_nss'] = { 'src' : [ 'mod_nss.c' ], 'lib' : [ env['LIBNSS'] ] }

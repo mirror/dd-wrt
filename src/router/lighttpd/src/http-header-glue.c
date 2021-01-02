@@ -1,13 +1,16 @@
 #include "first.h"
 
+#include "sys-time.h"
+
 #include "base.h"
 #include "array.h"
 #include "buffer.h"
 #include "chunk.h"
 #include "fdevent.h"
 #include "log.h"
-#include "etag.h"
 #include "http_chunk.h"
+#include "http_date.h"
+#include "http_etag.h"
 #include "http_header.h"
 #include "response.h"
 #include "sock_addr.h"
@@ -17,8 +20,6 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
-
-#include <time.h>
 
 #include "sys-socket.h"
 #include <unistd.h>
@@ -150,7 +151,7 @@ void strftime_cache_reset(void) {
     }
 }
 
-const buffer * strftime_cache_get(const time_t last_mod) {
+static const buffer * strftime_cache_get(const time_t last_mod) {
     static int mtime_cache_idx;
 
     for (int j = 0; j < MTIME_CACHE_MAX; ++j) {
@@ -161,15 +162,28 @@ const buffer * strftime_cache_get(const time_t last_mod) {
     if (++mtime_cache_idx == MTIME_CACHE_MAX) mtime_cache_idx = 0;
 
     const int i = mtime_cache_idx;
-    mtime_cache[i].mtime = last_mod;
-    strftime(mtime_cache[i].str.ptr, sizeof(mtime_cache_str[0]),
-             "%a, %d %b %Y %H:%M:%S GMT", gmtime(&mtime_cache[i].mtime));
+    http_date_time_to_str(mtime_cache[i].str.ptr, sizeof(mtime_cache_str[0]),
+                          (mtime_cache[i].mtime = last_mod));
 
     return &mtime_cache[i].str;
 }
 
 
-int http_response_handle_cachable(request_st * const r, const buffer * const mtime) {
+const buffer * http_response_set_last_modified(request_st * const r, const time_t lmtime) {
+    const buffer * const mtime = strftime_cache_get(lmtime);
+    http_header_response_set(r, HTTP_HEADER_LAST_MODIFIED,
+                             CONST_STR_LEN("Last-Modified"),
+                             CONST_BUF_LEN(mtime));
+  #if 0
+    return http_header_response_get(r, HTTP_HEADER_LAST_MODIFIED,
+                                    CONST_STR_LEN("Last-Modified"));
+  #else
+    return mtime;
+  #endif
+}
+
+
+int http_response_handle_cachable(request_st * const r, const buffer * const lmod, const time_t lmtime) {
 	const buffer *vb;
 
 	/*
@@ -186,7 +200,7 @@ int http_response_handle_cachable(request_st * const r, const buffer * const mti
 	                                  CONST_STR_LEN("If-None-Match")))) {
 		/*(weak etag comparison must not be used for ranged requests)*/
 		int range_request = (0 != light_btst(r->rqst_htags, HTTP_HEADER_RANGE));
-		if (etag_is_equal(&r->physical.etag, vb->ptr, !range_request)) {
+		if (http_etag_matches(&r->physical.etag, vb->ptr, !range_request)) {
 			if (http_method_get_or_head(r->http_method)) {
 				r->http_status = 304;
 				return HANDLER_FINISHED;
@@ -200,44 +214,8 @@ int http_response_handle_cachable(request_st * const r, const buffer * const mti
 		   && (vb = http_header_request_get(r, HTTP_HEADER_IF_MODIFIED_SINCE,
 		                                    CONST_STR_LEN("If-Modified-Since")))) {
 		/* last-modified handling */
-		size_t used_len;
-		char *semicolon;
-
-		if (NULL == (semicolon = strchr(vb->ptr, ';'))) {
-			used_len = buffer_string_length(vb);
-		} else {
-			used_len = semicolon - vb->ptr;
-		}
-
-		if (buffer_is_equal_string(mtime, vb->ptr, used_len)) {
-			if ('\0' == mtime->ptr[used_len]) r->http_status = 304;
-			return HANDLER_FINISHED;
-		} else {
-			char buf[sizeof("Sat, 23 Jul 2005 21:20:01 GMT")];
-			time_t t_header, t_file;
-			struct tm tm;
-
-			/* convert to timestamp */
-			if (used_len >= sizeof(buf)) return HANDLER_GO_ON;
-
-			memcpy(buf, vb->ptr, used_len);
-			buf[used_len] = '\0';
-
-			if (NULL == strptime(buf, "%a, %d %b %Y %H:%M:%S GMT", &tm)) {
-				/**
-				 * parsing failed, let's get out of here 
-				 */
-				return HANDLER_GO_ON;
-			}
-			tm.tm_isdst = 0;
-			t_header = mktime(&tm);
-
-			strptime(mtime->ptr, "%a, %d %b %Y %H:%M:%S GMT", &tm);
-			tm.tm_isdst = 0;
-			t_file = mktime(&tm);
-
-			if (t_file > t_header) return HANDLER_GO_ON;
-
+		if (buffer_is_equal(lmod, vb)
+		    || !http_date_if_modified_since(CONST_BUF_LEN(vb), lmtime)) {
 			r->http_status = 304;
 			return HANDLER_FINISHED;
 		}
@@ -249,6 +227,7 @@ int http_response_handle_cachable(request_st * const r, const buffer * const mti
 
 void http_response_body_clear (request_st * const r, int preserve_length) {
     r->resp_send_chunked = 0;
+    r->resp_body_scratchpad = -1;
     if (light_btst(r->resp_htags, HTTP_HEADER_TRANSFER_ENCODING)) {
         http_header_response_unset(r, HTTP_HEADER_TRANSFER_ENCODING,
                                    CONST_STR_LEN("Transfer-Encoding"));
@@ -283,6 +262,7 @@ static void http_response_header_clear (request_st * const r) {
      * Transfer-Encoding: chunked set, then other items need to be reset */
     r->resp_send_chunked = 0;
     r->resp_decode_chunked = 0;
+    r->resp_body_scratchpad = -1;
     if (r->gw_dechunk) {
         free(r->gw_dechunk->b.ptr);
         free(r->gw_dechunk);
@@ -572,6 +552,16 @@ static int http_response_parse_range(request_st * const r, stat_cache_entry * co
 }
 
 
+__attribute_pure__
+static int http_response_match_if_range(request_st * const r, const buffer * const mtime) {
+    const buffer *vb = http_header_request_get(r, HTTP_HEADER_IF_RANGE,
+                                               CONST_STR_LEN("If-Range"));
+    return NULL == vb
+        || ((vb->ptr[0] == '"')
+            ? buffer_is_equal(vb, &r->physical.etag) /*compare ETag ("...") */
+            : mtime && buffer_is_equal(vb, mtime));  /*compare Last-Modified*/
+}
+
 void http_response_send_file (request_st * const r, buffer * const path) {
 	stat_cache_entry * const sce = stat_cache_get_entry_open(path, r->conf.follow_symlink);
 	const buffer *mtime = NULL;
@@ -655,8 +645,7 @@ void http_response_send_file (request_st * const r, buffer * const path) {
 			const buffer *etag =
 			  stat_cache_etag_get(sce, r->conf.etag_flags);
 			if (!buffer_string_is_empty(etag)) {
-				/* generate e-tag */
-				etag_mutate(&r->physical.etag, etag);
+				buffer_copy_buffer(&r->physical.etag, etag);
 				http_header_response_set(r, HTTP_HEADER_ETAG,
 				                         CONST_STR_LEN("ETag"),
 				                         CONST_BUF_LEN(&r->physical.etag));
@@ -667,13 +656,10 @@ void http_response_send_file (request_st * const r, buffer * const path) {
 		mtime = http_header_response_get(r, HTTP_HEADER_LAST_MODIFIED,
 		                                 CONST_STR_LEN("Last-Modified"));
 		if (NULL == mtime) {
-			mtime = strftime_cache_get(sce->st.st_mtime);
-			http_header_response_set(r, HTTP_HEADER_LAST_MODIFIED,
-			                         CONST_STR_LEN("Last-Modified"),
-			                         CONST_BUF_LEN(mtime));
+			mtime = http_response_set_last_modified(r, sce->st.st_mtime);
 		}
 
-		if (HANDLER_FINISHED == http_response_handle_cachable(r, mtime)) {
+		if (HANDLER_FINISHED == http_response_handle_cachable(r, mtime, sce->st.st_mtime)) {
 			return;
 		}
 	}
@@ -692,47 +678,13 @@ void http_response_send_file (request_st * const r, buffer * const path) {
 	    && (200 == r->http_status || 0 == r->http_status)
 	    && NULL != (vb = http_header_request_get(r, HTTP_HEADER_RANGE,
 	                                             CONST_STR_LEN("Range")))
-	    && !light_btst(r->resp_htags, HTTP_HEADER_CONTENT_ENCODING)) {
-		const buffer *range = vb;
-		int do_range_request = 1;
-		/* check if we have a conditional GET */
-
-		if (NULL != (vb = http_header_request_get(r, HTTP_HEADER_IF_RANGE,
-		                                          CONST_STR_LEN("If-Range")))) {
-			/* if the value is the same as our ETag, we do a Range-request,
-			 * otherwise a full 200 */
-
-			if (vb->ptr[0] == '"') {
-				/**
-				 * client wants a ETag
-				 */
-				if (!buffer_is_equal(vb, &r->physical.etag)) {
-					do_range_request = 0;
-				}
-			} else if (!mtime) {
-				/**
-				 * we don't have a Last-Modified and can match the If-Range:
-				 *
-				 * sending all
-				 */
-				do_range_request = 0;
-			} else if (!buffer_is_equal(vb, mtime)) {
-				do_range_request = 0;
-			}
-		}
-
-		if (do_range_request
-		    && !buffer_string_is_empty(range)
-		    && 0 == strncmp(range->ptr, "bytes=", 6)) {
-			/* support only "bytes" byte-unit */
-			/* content prepared, I'm done */
+	    && !light_btst(r->resp_htags, HTTP_HEADER_CONTENT_ENCODING)
+	    && http_response_match_if_range(r, mtime) /* "If-Range" */
+	    && !buffer_string_is_empty(vb) && 0 == strncmp(vb->ptr, "bytes=", 6)) {
 			r->resp_body_finished = 1;
-
-			if (0 == http_response_parse_range(r, sce, range->ptr+6)) {
+			if (0 == http_response_parse_range(r, sce, vb->ptr+6))
 				r->http_status = 206;
-			}
 			return;
-		}
 	}
 
 	/* if we are still here, prepare body */
@@ -977,7 +929,8 @@ void http_response_backend_done (request_st * const r) {
 			r->http_status = 500;
 			r->handler_module = NULL;
 			break;
-		} /* else fall through */
+		}
+		__attribute_fallthrough__
 	case CON_STATE_WRITE:
 		if (!r->resp_body_finished) {
 			if (r->http_version == HTTP_VERSION_1_1)
@@ -1181,8 +1134,37 @@ static int http_response_process_headers(request_st * const r, http_response_opt
             break;
           case HTTP_HEADER_CONTENT_LENGTH:
             if (*value == '+') ++value;
+            if (!r->resp_decode_chunked
+                && !light_btst(r->resp_htags, HTTP_HEADER_CONTENT_LENGTH)) {
+                const char *err = ns;
+                if (err[-1] == '\0') --err; /*(skip one '\0', trailing whitespace)*/
+                while (err > value && (err[-1] == ' ' || err[-1] == '\t')) --err;
+                if (err <= value) continue; /*(might error 502 Bad Gateway)*/
+                uint32_t vlen = (uint32_t)(err - value);
+                r->resp_body_scratchpad =
+                  (off_t)li_restricted_strtoint64(value, vlen, &err);
+                if (err != value + vlen) {
+                    /*(invalid Content-Length value from backend;
+                     * read from backend until backend close, hope for the best)
+                     *(might choose to treat this as 502 Bad Gateway) */
+                    r->resp_body_scratchpad = -1;
+                }
+            }
+            else {
+                /* ignore Content-Length if Transfer-Encoding: chunked
+                 * ignore subsequent (multiple) Content-Length
+                 * (might choose to treat this as 502 Bad Gateway) */
+                continue;
+            }
             break;
           case HTTP_HEADER_TRANSFER_ENCODING:
+            if (light_btst(r->resp_htags, HTTP_HEADER_CONTENT_LENGTH)) {
+                /* ignore Content-Length if Transfer-Encoding: chunked
+                 * (might choose to treat this as 502 Bad Gateway) */
+                r->resp_body_scratchpad = -1;
+                http_header_response_unset(r, HTTP_HEADER_CONTENT_LENGTH,
+                                           CONST_STR_LEN("Content-Length"));
+            }
             /*(assumes "Transfer-Encoding: chunked"; does not verify)*/
             r->resp_decode_chunked = 1;
             r->gw_dechunk = calloc(1, sizeof(response_dechunk));
@@ -1489,7 +1471,7 @@ handler_t http_response_read(request_st * const r, http_response_opts * const op
         if (avail < toread) {
             /*(add avail+toread to reduce allocations when ioctl EOPNOTSUPP)*/
             avail = avail ? avail - 1 + toread : toread;
-            buffer_string_prepare_append(b, avail);
+            avail = chunk_buffer_prepare_append(b, avail);
         }
 
         n = read(fd, b->ptr+buffer_string_length(b), avail);
@@ -1647,7 +1629,7 @@ int http_cgi_headers (request_st * const r, http_cgi_opts * const opts, http_cgi
             } else {
                 buffer_copy_buffer(tb, &r->physical.basedir);
             }
-            buffer_append_string_buffer(tb, &r->pathinfo);
+            buffer_append_path_len(tb, CONST_BUF_LEN(&r->pathinfo));
             rc |= cb(vdata, CONST_STR_LEN("PATH_TRANSLATED"),
                             CONST_BUF_LEN(tb));
         }
@@ -1663,7 +1645,7 @@ int http_cgi_headers (request_st * const r, http_cgi_opts * const opts, http_cgi
     if (!buffer_string_is_empty(opts->docroot)) {
         /* alternate docroot, e.g. for remote FastCGI or SCGI server */
         buffer_copy_buffer(tb, opts->docroot);
-        buffer_append_string_buffer(tb, &r->uri.path);
+        buffer_append_path_len(tb, CONST_BUF_LEN(&r->uri.path));
         rc |= cb(vdata, CONST_STR_LEN("SCRIPT_FILENAME"),
                         CONST_BUF_LEN(tb));
         rc |= cb(vdata, CONST_STR_LEN("DOCUMENT_ROOT"),
@@ -1676,7 +1658,7 @@ int http_cgi_headers (request_st * const r, http_cgi_opts * const opts, http_cgi
              * see src/sapi/cgi_main.c, init_request_info()
              */
             buffer_copy_buffer(tb, &r->physical.path);
-            buffer_append_string_buffer(tb, &r->pathinfo);
+            buffer_append_path_len(tb, CONST_BUF_LEN(&r->pathinfo));
             rc |= cb(vdata, CONST_STR_LEN("SCRIPT_FILENAME"),
                             CONST_BUF_LEN(tb));
         } else {

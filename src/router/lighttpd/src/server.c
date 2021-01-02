@@ -31,7 +31,6 @@ static const buffer default_server_tag = { CONST_STR_LEN(PACKAGE_DESC)+1, 0 };
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 
 #include <string.h>
 #include <errno.h>
@@ -50,10 +49,6 @@ static const buffer default_server_tag = { CONST_STR_LEN(PACKAGE_DESC)+1, 0 };
 
 #ifdef HAVE_VALGRIND_VALGRIND_H
 # include <valgrind/valgrind.h>
-#endif
-
-#ifdef HAVE_SYS_WAIT_H
-# include <sys/wait.h>
 #endif
 
 #ifdef HAVE_PWD_H
@@ -356,7 +351,7 @@ static int server_oneshot_read_cq(connection *con, chunkqueue *cq, off_t max_byt
     /* temporary set con->fd to oneshot_fd (fd input) rather than outshot_fdout
      * (lighttpd generally assumes operation on sockets, so this is a kludge) */
     int fd = con->fd;
-    con->fd = oneshot_fd;
+    con->fd = oneshot_fdn->fd;
     int rc = oneshot_read_cq(con, cq, max_bytes);
     con->fd = fd;
 
@@ -779,7 +774,7 @@ static void server_graceful_signal_prev_generation (void)
     pid_t pid = (pid_t)strtol(prev_gen, NULL, 10);
     unsetenv("LIGHTTPD_PREV_GEN");
     if (pid <= 0) return; /*(should not happen)*/
-    if (pid == waitpid(pid, NULL, WNOHANG)) return; /*(pid exited; unexpected)*/
+    if (pid == fdevent_waitpid(pid,NULL,1)) return; /*(pid exited; unexpected)*/
     kill(pid, SIGINT); /* signal previous generation for graceful shutdown */
 }
 
@@ -874,7 +869,7 @@ static int server_graceful_state_bg (server *srv) {
             buffer_append_int(tb, pid);
             setenv("LIGHTTPD_PREV_GEN", tb->ptr, 1);
         }
-        /*while (waitpid(pid, NULL, 0) < 0 && errno == EINTR) ;*//* detach? */
+        /*fdevent_waitpid(pid, NULL, 0);*//* detach? */
         execv(argv[0], argv);
         _exit(1);
     }
@@ -916,6 +911,17 @@ static int server_graceful_state_bg (server *srv) {
 }
 
 __attribute_cold__
+__attribute_noinline__
+static void server_graceful_shutdown_maint (server *srv) {
+    if (oneshot_fd) {
+        /* permit keep-alive on one-shot connections until graceful_expire_ts */
+        if (!srv->graceful_expire_ts) return;
+        if (srv->graceful_expire_ts >= log_epoch_secs) return;
+    }
+    connection_graceful_shutdown_maint(srv);
+}
+
+__attribute_cold__
 static void server_graceful_state (server *srv) {
 
     if (!srv_shutdown) {
@@ -927,11 +933,13 @@ static void server_graceful_state (server *srv) {
             if (srv->graceful_expire_ts)
                 srv->graceful_expire_ts += log_epoch_secs;
         }
-        connection_graceful_shutdown_maint(srv);
+        server_graceful_shutdown_maint(srv);
     }
 
-    if (!oneshot_fd
-        && (2 == srv->sockets_disabled || 3 == srv->sockets_disabled)) return;
+    if (2 == srv->sockets_disabled || 3 == srv->sockets_disabled) {
+        if (oneshot_fd) graceful_restart = 0;
+        return;
+    }
 
     log_error(srv->errh,__FILE__,__LINE__,"[note] graceful shutdown started");
 
@@ -1125,7 +1133,7 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 			return -1;
 		}
 		graceful_shutdown = 1;
-		srv->sockets_disabled = 1;
+		srv->sockets_disabled = 2;
 		srv->srvconf.dont_daemonize = 1;
 		if (srv->srvconf.pid_file) buffer_clear(srv->srvconf.pid_file);
 		if (srv->srvconf.max_worker) {
@@ -1496,7 +1504,8 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 			log_error(srv->errh, __FILE__, __LINE__, "Opening errorlog failed. Going down.");
 			return -1;
 		}
-		log_error(srv->errh, __FILE__, __LINE__, "server started (" PACKAGE_DESC ")");
+		if (!oneshot_fd)
+			log_error(srv->errh, __FILE__, __LINE__, "server started (" PACKAGE_DESC ")");
 	}
 
 	if (HANDLER_GO_ON != plugins_call_set_defaults(srv)) {
@@ -1562,7 +1571,7 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 			} else {
 				int status;
 
-				if (-1 != (pid = wait(&status))) {
+				if (-1 != (pid = fdevent_waitpid(-1, &status, 0))) {
 					log_epoch_secs = time(NULL);
 					if (plugins_call_handle_waitpid(srv, pid, status) != HANDLER_GO_ON) {
 						if (!timer) alarm((timer = 5));
@@ -1571,7 +1580,7 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
 					switch (fdevent_reaped_logger_pipe(pid)) {
 					  default: break;
 					  case -1: if (!timer) alarm((timer = 5));
-						   /* fall through */
+						   __attribute_fallthrough__
 					  case  1: continue;
 					}
 					/** 
@@ -1821,7 +1830,8 @@ static void server_handle_sigalrm (server * const srv, time_t min_ts, time_t las
 				/* reset global/aggregate rate limit counters */
 				config_reset_config_bytes_sec(srv->config_data_base);
 				/* if graceful_shutdown, accelerate cleanup of recently completed request/responses */
-				if (graceful_shutdown && !srv_shutdown) connection_graceful_shutdown_maint(srv);
+				if (graceful_shutdown && !srv_shutdown)
+					server_graceful_shutdown_maint(srv);
 				connection_periodic_maint(srv, min_ts);
 }
 
@@ -1830,7 +1840,7 @@ static void server_handle_sigchld (server * const srv) {
 			pid_t pid;
 			do {
 				int status;
-				pid = waitpid(-1, &status, WNOHANG);
+				pid = fdevent_waitpid(-1, &status, 1);
 				if (pid > 0) {
 					if (plugins_call_handle_waitpid(srv, pid, status) != HANDLER_GO_ON) {
 						continue;
@@ -1934,6 +1944,7 @@ int main (int argc, char **argv) {
 
     /* for nice %b handling in strftime() */
     setlocale(LC_TIME, "C");
+    tzset();
 
     do {
         server * const srv = server_init();
@@ -1955,7 +1966,7 @@ int main (int argc, char **argv) {
             if (2 == graceful_shutdown) { /* value 2 indicates idle timeout */
                 log_error(srv->errh, __FILE__, __LINE__,
                   "server stopped after idle timeout");
-            } else {
+            } else if (!oneshot_fd) {
               #ifdef HAVE_SIGACTION
                 log_error(srv->errh, __FILE__, __LINE__,
                   "server stopped by UID = %d PID = %d",
@@ -1983,7 +1994,7 @@ int main (int argc, char **argv) {
         if (rc < 0 || !graceful_restart) break;
 
         /* wait for all children to exit before graceful restart */
-        while (waitpid(-1, NULL, 0) > 0) ;
+        while (fdevent_waitpid(-1, NULL, 0) > 0) ;
     } while (graceful_restart);
 
     return rc;

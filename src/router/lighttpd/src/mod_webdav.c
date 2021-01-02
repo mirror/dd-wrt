@@ -174,6 +174,7 @@
 #include "sys-mmap.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "sys-time.h"
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -182,9 +183,18 @@
 #include <string.h>
 #include <unistd.h>     /* getpid() linkat() rmdir() unlinkat() */
 
+#ifdef AT_FDCWD
+#ifndef _ATFILE_SOURCE
+#define _ATFILE_SOURCE
+#endif
+#endif
+
+#ifndef AT_SYMLINK_NOFOLLOW
+#define AT_SYMLINK_NOFOLLOW 0
+#endif
+
 /* Note: filesystem access race conditions exist without _ATFILE_SOURCE */
 #ifndef _ATFILE_SOURCE
-#define AT_SYMLINK_NOFOLLOW 0
 /*(trigger linkat() fail to fallback logic in mod_webdav.c)*/
 #define linkat(odfd,opath,ndfd,npath,flags) -1
 #endif
@@ -220,8 +230,9 @@
 #include "buffer.h"
 #include "chunk.h"
 #include "fdevent.h"
+#include "http_date.h"
+#include "http_etag.h"
 #include "http_header.h"
-#include "etag.h"
 #include "log.h"
 #include "request.h"
 #include "response.h"   /* http_response_redirect_to_directory() */
@@ -2192,12 +2203,11 @@ webdav_if_match_or_unmodified_since (request_st * const r, struct stat *st)
 
     buffer *etagb = &r->physical.etag;
     if (NULL != st && (NULL != im || NULL != inm)) {
-        etag_create(etagb, st, r->conf.etag_flags);
-        etag_mutate(etagb, etagb);
+        http_etag_create(etagb, st, r->conf.etag_flags);
     }
 
     if (NULL != im) {
-        if (NULL == st || !etag_is_equal(etagb, im->ptr, 0))
+        if (NULL == st || !http_etag_matches(etagb, im->ptr, 0))
             return 412; /* Precondition Failed */
     }
 
@@ -2205,18 +2215,15 @@ webdav_if_match_or_unmodified_since (request_st * const r, struct stat *st)
         if (NULL == st
             ? !buffer_is_equal_string(inm,CONST_STR_LEN("*"))
               || (errno != ENOENT && errno != ENOTDIR)
-            : etag_is_equal(etagb, inm->ptr, 1))
+            : http_etag_matches(etagb, inm->ptr, 1))
             return 412; /* Precondition Failed */
     }
 
     if (NULL != ius) {
         if (NULL == st)
             return 412; /* Precondition Failed */
-        struct tm itm, *ftm = gmtime(&st->st_mtime);
-        if (NULL == strptime(ius->ptr, "%a, %d %b %Y %H:%M:%S GMT", &itm)
-            || mktime(ftm) > mktime(&itm)) { /* timegm() not standard */
+        if (http_date_if_modified_since(CONST_BUF_LEN(ius), st->st_mtime))
             return 412; /* Precondition Failed */
-        }
     }
 
     return 0;
@@ -2228,9 +2235,8 @@ webdav_response_etag (request_st * const r, struct stat *st)
 {
     if (0 != r->conf.etag_flags) {
         buffer *etagb = &r->physical.etag;
-        etag_create(etagb, st, r->conf.etag_flags);
+        http_etag_create(etagb, st, r->conf.etag_flags);
         stat_cache_update_entry(CONST_BUF_LEN(&r->physical.path), st, etagb);
-        etag_mutate(etagb, etagb);
         http_header_response_set(r, HTTP_HEADER_ETAG,
                                  CONST_STR_LEN("ETag"),
                                  CONST_BUF_LEN(etagb));
@@ -2371,7 +2377,10 @@ webdav_delete_dir (const plugin_config * const pconf,
         buffer_append_string_len(&dst->rel_path, de->d_name, len);
 
       #ifndef _ATFILE_SOURCE
-      #ifndef _DIRENT_HAVE_D_TYPE
+      #ifdef _DIRENT_HAVE_D_TYPE
+      if (de->d_type == DT_UNKNOWN)
+      #endif
+      {
         struct stat st;
         if (0 != stat(dst->path.ptr, &st)) {
             dst->path.ptr[    (dst->path.used     = dst_path_used)    -1]='\0';
@@ -2379,7 +2388,7 @@ webdav_delete_dir (const plugin_config * const pconf,
             continue; /* file *just* disappeared? */
         }
         s_isdir = S_ISDIR(st.st_mode);
-      #endif
+      }
       #endif
 
         if (s_isdir) {
@@ -2890,7 +2899,10 @@ webdav_copymove_dir (const plugin_config * const pconf,
         buffer_append_string_len(&dst->rel_path, de->d_name, len);
 
       #ifndef _ATFILE_SOURCE
-      #ifndef _DIRENT_HAVE_D_TYPE
+      #ifdef _DIRENT_HAVE_D_TYPE
+      if (de->d_type == DT_UNKNOWN)
+      #endif
+      {
         if (0 != stat(src->path.ptr, &st)) {
             src->path.ptr[    (src->path.used     = src_path_used)    -1]='\0';
             src->rel_path.ptr[(src->rel_path.used = src_rel_path_used)-1]='\0';
@@ -2899,7 +2911,7 @@ webdav_copymove_dir (const plugin_config * const pconf,
             continue; /* file *just* disappeared? */
         }
         d_type = st.st_mode;
-      #endif
+      }
       #endif
 
         if (S_ISDIR(d_type)) { /* recursive call; depth first */
@@ -3047,7 +3059,7 @@ webdav_propfind_live_props (const webdav_propfind_bufs * const restrict pb,
     buffer * const restrict b = pb->b_200;
     switch (pnum) {
       case WEBDAV_PROP_ALL:
-        /*(fall through)*/
+        __attribute_fallthrough__
       /*case WEBDAV_PROP_CREATIONDATE:*/  /* (located in database, if present)*/
       #if 0
       case WEBDAV_PROP_CREATIONDATE: {
@@ -3066,13 +3078,10 @@ webdav_propfind_live_props (const webdav_propfind_bufs * const restrict pb,
          *  i.e. wherever the status is 201 Created)
          */
         struct tm tm;
-        char ctime_buf[sizeof("2005-08-18T07:27:16Z")];
         if (__builtin_expect( (NULL != gmtime_r(&pb->st.st_ctime, &tm)), 1)) {
             buffer_append_string_len(b, CONST_STR_LEN(
               "<D:creationdate ns0:dt=\"dateTime.tz\">"));
-            buffer_append_string_len(b, ctime_buf,
-                                     strftime(ctime_buf, sizeof(ctime_buf),
-                                              "%Y-%m-%dT%TZ", &tm));
+            buffer_append_strftime(b, "%Y-%m-%dT%TZ", &tm));
             buffer_append_string_len(b, CONST_STR_LEN(
               "</D:creationdate>"));
         }
@@ -3151,8 +3160,7 @@ webdav_propfind_live_props (const webdav_propfind_bufs * const restrict pb,
       case WEBDAV_PROP_GETETAG:
         if (0 != pb->r->conf.etag_flags) {
             buffer *etagb = &pb->r->physical.etag;
-            etag_create(etagb, &pb->st, pb->r->conf.etag_flags);
-            etag_mutate(etagb, etagb);
+            http_etag_create(etagb, &pb->st, pb->r->conf.etag_flags);
             buffer_append_string_len(b, CONST_STR_LEN(
               "<D:getetag>"));
             buffer_append_string_buffer(b, etagb);
@@ -3164,17 +3172,18 @@ webdav_propfind_live_props (const webdav_propfind_bufs * const restrict pb,
             return -1; /* invalid; report 'not found' */
         if (pnum != WEBDAV_PROP_ALL) return 0;/* found *//*(else fall through)*/
         __attribute_fallthrough__
-      case WEBDAV_PROP_GETLASTMODIFIED:
-        {
+      case WEBDAV_PROP_GETLASTMODIFIED: {
+        struct tm tm;
+        if (__builtin_expect( (NULL != gmtime_r(&pb->st.st_mtime, &tm)), 1)) {
             buffer_append_string_len(b, CONST_STR_LEN(
               "<D:getlastmodified ns0:dt=\"dateTime.rfc1123\">"));
-            buffer_append_strftime(b, "%a, %d %b %Y %H:%M:%S GMT",
-                                   gmtime(&pb->st.st_mtime));
+            buffer_append_strftime(b, "%a, %d %b %Y %H:%M:%S GMT", &tm);
             buffer_append_string_len(b, CONST_STR_LEN(
               "</D:getlastmodified>"));
         }
         if (pnum != WEBDAV_PROP_ALL) return 0;/* found *//*(else fall through)*/
         __attribute_fallthrough__
+      }
       #if 0
       #ifdef USE_LOCKS
       case WEBDAV_PROP_LOCKDISCOVERY:
@@ -3544,36 +3553,13 @@ webdav_parse_chunkqueue (request_st * const r,
                 weHave = c->file.length - c->offset;
             }
             else {
-                switch (errno) {
-                  case ENOSYS: case ENODEV: case EINVAL: break;
-                  default:
-                    log_perror(r->conf.errh, __FILE__, __LINE__,
-                               "open() or mmap() '%*.s'",
-                               BUFFER_INTLEN_PTR(c->mem));
-                }
-                if (webdav_open_chunk_file_rd(c) < 0) {
-                    log_perror(r->conf.errh, __FILE__, __LINE__,
-                               "open() '%*.s'",
-                               BUFFER_INTLEN_PTR(c->mem));
-                    err = XML_IO_UNKNOWN;
-                    break;
-                }
-                ssize_t rd = -1;
-                do {
-                    if (-1 == lseek(c->file.fd, c->offset, SEEK_SET))
-                        break;
-                    off_t len = c->file.length - c->offset;
-                    if (len > (off_t)sizeof(buf)) len = (off_t)sizeof(buf);
-                    rd = read(c->file.fd, buf, (size_t)len);
-                } while (-1 == rd && errno == EINTR);
-                if (rd >= 0) {
-                    xmlstr = buf;
-                    weHave = (size_t)rd;
+                char *data = buf;
+                uint32_t dlen = sizeof(buf);
+                if (0 == chunkqueue_peek_data(cq, &data, &dlen, r->conf.errh)) {
+                    xmlstr = data;
+                    weHave = dlen;
                 }
                 else {
-                    log_perror(r->conf.errh, __FILE__, __LINE__,
-                               "read() '%*.s'",
-                               BUFFER_INTLEN_PTR(c->mem));
                     err = XML_IO_UNKNOWN;
                     break;
                 }
@@ -3776,10 +3762,9 @@ webdav_has_lock (request_st * const r,
                     }
                     if (S_ISDIR(st.st_mode)) continue;/*we ignore etag if dir*/
                     buffer *etagb = &r->physical.etag;
-                    etag_create(etagb, &st, r->conf.etag_flags);
-                    etag_mutate(etagb, etagb);
+                    http_etag_create(etagb, &st, r->conf.etag_flags);
                     *p = '\0';
-                    int ematch = etag_is_equal(etagb, etag, 0);
+                    int ematch = http_etag_matches(etagb, etag, 0);
                     *p = ']';
                     if (!ematch) {
                         http_status_set_error(r, 412); /* Precondition Failed */
@@ -4221,85 +4206,20 @@ mod_webdav_delete (request_st * const r, const plugin_config * const pconf)
 }
 
 
-static ssize_t
-mod_webdav_write_cq_first_chunk (request_st * const r, chunkqueue * const cq,
-                                 const int fd)
-{
-    /* (Note: copying might take some time, temporarily pausing server) */
-    chunk *c = cq->first;
-    ssize_t wr = 0;
-
-    switch(c->type) {
-    case FILE_CHUNK:
-        if (NULL != webdav_mmap_file_chunk(c)) {
-            do {
-                wr = write(fd,
-                           c->file.mmap.start + c->offset - c->file.mmap.offset,
-                           c->file.length - c->offset);
-            } while (-1 == wr && errno == EINTR);
-            break;
-        }
-        else {
-            switch (errno) {
-              case ENOSYS: case ENODEV: case EINVAL: break;
-              default:
-                log_perror(r->conf.errh, __FILE__, __LINE__,
-                           "open() or mmap() '%*.s'",
-                           BUFFER_INTLEN_PTR(c->mem));
-            }
-
-            if (webdav_open_chunk_file_rd(c) < 0) {
-                http_status_set_error(r, 500); /* Internal Server Error */
-                return -1;
-            }
-            ssize_t rd = -1;
-            char buf[16384];
-            do {
-                if (-1 == lseek(c->file.fd, c->offset, SEEK_SET))
-                    break;
-                off_t len = c->file.length - c->offset;
-                if (len > (off_t)sizeof(buf)) len = (off_t)sizeof(buf);
-                rd = read(c->file.fd, buf, (size_t)len);
-            } while (-1 == rd && errno == EINTR);
-            if (rd >= 0) {
-                do {
-                    wr = write(fd, buf, (size_t)rd);
-                } while (-1 == wr && errno == EINTR);
-                break;
-            }
-            else {
-                log_perror(r->conf.errh, __FILE__, __LINE__,
-                           "read() '%*.s'",
-                           BUFFER_INTLEN_PTR(c->mem));
-                http_status_set_error(r, 500); /* Internal Server Error */
-                return -1;
-            }
-        }
-    case MEM_CHUNK:
-        do {
-            wr = write(fd, c->mem->ptr + c->offset,
-                       buffer_string_length(c->mem) - c->offset);
-        } while (-1 == wr && errno == EINTR);
-        break;
-    }
-
-    if (wr > 0) {
-        chunkqueue_mark_written(cq, wr);
-    }
-    else if (wr < 0)
-        http_status_set_error(r, (errno == ENOSPC) ? 507 : 403);
-
-    return wr;
-}
-
-
 __attribute_noinline__
 static int
 mod_webdav_write_cq (request_st * const r, chunkqueue * const cq, const int fd)
 {
+    /* (Note: copying might take some time, temporarily pausing server) */
     chunkqueue_remove_finished_chunks(cq);
     while (!chunkqueue_is_empty(cq)) {
-        if (mod_webdav_write_cq_first_chunk(r, cq, fd) < 0) return 0;
+        ssize_t wr = chunkqueue_write_chunk(fd, cq, r->conf.errh);
+        if (wr > 0)
+            chunkqueue_mark_written(cq, wr);
+        else if (wr < 0) {
+            http_status_set_error(r, (errno == ENOSPC) ? 507 : 403);
+            return 0;
+        }
     }
     return 1;
 }
@@ -4560,6 +4480,9 @@ mod_webdav_put_deprecated_unsafe_partial_put_compat (request_st * const r,
     }
 
   #ifdef HAVE_COPY_FILE_RANGE
+   #ifdef __FreeBSD__
+   typedef off_t loff_t;
+   #endif
     /* use Linux copy_file_range() if available
      * (Linux 4.5, but glibc 2.27 provides a user-space emulation)
      * fd_in and fd_out must be on same mount (handled in mod_webdav_put_prep())
@@ -4887,9 +4810,9 @@ mod_webdav_copymove_b (request_st * const r, const plugin_config * const pconf, 
       #endif
         buffer_copy_string_len(dst_path, r->physical.path.ptr,
                                r->physical.path.used - 1 - remain);
-        buffer_append_string_len(dst_path,
-                                 dst_rel_path->ptr+i,
-                                 dst_rel_path->used - 1 - i);
+        buffer_append_path_len(dst_path,
+                               dst_rel_path->ptr+i,
+                               dst_rel_path->used - 1 - i);
         if (buffer_string_length(dst_path) >= PATH_MAX) {
             http_status_set_error(r, 403); /* Forbidden */
             return HANDLER_FINISHED;
@@ -4905,7 +4828,7 @@ mod_webdav_copymove_b (request_st * const r, const plugin_config * const pconf, 
         buffer_copy_buffer(dst_path, &r->physical.doc_root);
         if (dst_path->ptr[dst_path->used-2] == '/')
             --dst_path->used; /* since dst_rel_path begins with '/' */
-        buffer_append_string_buffer(dst_path, dst_rel_path);
+        buffer_append_path_len(dst_path, CONST_BUF_LEN(dst_rel_path));
         if (buffer_string_length(dst_rel_path) >= PATH_MAX) {
             http_status_set_error(r, 403); /* Forbidden */
             return HANDLER_FINISHED;
@@ -5085,7 +5008,7 @@ mod_webdav_copymove_b (request_st * const r, const plugin_config * const pconf, 
                         break;
                     }
                 }
-                /* fall through */
+                __attribute_fallthrough__
               /*case ENOTDIR:*/
               default:
                 http_status_set_error(r, 409); /* Conflict */
@@ -5700,7 +5623,7 @@ mod_webdav_unlock (request_st * const r, const plugin_config * const pconf)
             http_status_set_fin(r, 204); /* No Content */
             return HANDLER_FINISHED;
         }
-        /* fall through */
+        __attribute_fallthrough__
       default:
       case -1: /* lock does not exist */
       case -2: /* URI not in scope of locktoken and depth */
@@ -5777,7 +5700,8 @@ PHYSICALPATH_FUNC(mod_webdav_physical_handler)
         break;
       case HTTP_METHOD_DELETE:
       case HTTP_METHOD_MOVE:
-        reject_reqbody = 1; /*(fall through)*/ __attribute_fallthrough__
+        reject_reqbody = 1;
+        __attribute_fallthrough__
       case HTTP_METHOD_PROPPATCH:
       case HTTP_METHOD_PUT:
         check_readonly = check_lock_src = 1;

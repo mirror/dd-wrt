@@ -153,6 +153,7 @@ struct request_st {
 
     off_t reqbody_length; /* request Content-Length */
     off_t te_chunked;
+    off_t resp_body_scratchpad;
 
     buffer *http_host; /* copy of array value buffer ptr; not alloc'ed */
     const buffer *server_name;
@@ -215,5 +216,7 @@ void http_request_headers_process (request_st * restrict r, char * restrict hdrs
 int http_request_parse_target(request_st *r, int scheme_port);
 int http_request_host_normalize(buffer *b, int scheme_port);
 int http_request_host_policy(buffer *b, unsigned int http_parseopts, int scheme_port);
+
+int64_t li_restricted_strtoint64 (const char *v, const uint32_t vlen, const char ** const err);
 
 #endif

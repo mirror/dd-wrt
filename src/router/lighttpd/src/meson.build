@@ -54,12 +54,6 @@ conf_data.set('HAVE_STDINT_H', compiler.has_header('stdint.h'))
 conf_data.set('HAVE_STRINGS_H', compiler.has_header('strings.h'))
 conf_data.set('HAVE_SYSLOG_H', compiler.has_header('syslog.h'))
 
-# check for fastcgi lib, for the tests only
-conf_data.set('HAVE_FASTCGI_H', compiler.has_header('fastcgi.h'))
-if not(conf_data.get('HAVE_FASTCGI_H'))
-	conf_data.set('HAVE_FASTCGI_FASTCGI_H', compiler.has_header('fastcgi/fastcgi.h'))
-endif
-
 # will be needed for auth
 conf_data.set('HAVE_CRYPT_H', compiler.has_header('crypt.h'))
 if conf_data.get('HAVE_CRYPT_H')
@@ -121,6 +115,7 @@ conf_data.set('HAVE_GETLOADAVG', compiler.has_function('getloadavg', args: defs)
 conf_data.set('HAVE_GETRLIMIT', compiler.has_function('getrlimit', args: defs))
 conf_data.set('HAVE_GETUID', compiler.has_function('getuid', args: defs))
 conf_data.set('HAVE_GMTIME_R', compiler.has_function('gmtime_r', args: defs))
+conf_data.set('HAVE_INET_ATON', compiler.has_function('inet_aton', args: defs))
 conf_data.set('HAVE_INET_NTOP', compiler.has_function('inet_ntop', args: defs))
 conf_data.set('HAVE_JRAND48', compiler.has_function('jrand48', args: defs))
 conf_data.set('HAVE_KQUEUE', compiler.has_function('kqueue', args: defs))
@@ -148,6 +143,7 @@ conf_data.set('HAVE_SIGTIMEDWAIT', compiler.has_function('sigtimedwait', args: d
 conf_data.set('HAVE_SRANDOM', compiler.has_function('srandom', args: defs))
 conf_data.set('HAVE_STRPTIME', compiler.has_function('strptime', args: defs))
 conf_data.set('HAVE_SYSLOG', compiler.has_function('syslog', args: defs))
+conf_data.set('HAVE_TIMEGM', compiler.has_function('timegm', args: defs))
 conf_data.set('HAVE_WRITEV', compiler.has_function('writev', args: defs))
 conf_data.set('HAVE_INET_ATON', compiler.has_function('inet_aton', args: defs))
 conf_data.set('HAVE_ISSETUGID', compiler.has_function('issetugid', args: defs))
@@ -432,15 +428,20 @@ if get_option('with_mysql')
 endif
 
 libssl = []
-libx509 = []
 libcrypto = []
+libsslcrypto = []
 libgnutls = []
+libmbedtls = []
+libmbedcrypto = []
+libmbedx509 = []
+libwolfssl = []
 if get_option('with_openssl')
 	# manual search:
 	# header: openssl/ssl.h
 	# function: SSL_new (-lssl)
 	# function: BIO_f_base64 (-lcrypto)
 	libssl = [ dependency('libssl') ]
+	libsslcrypto = [ dependency('libcrypto') ]
 	libcrypto = [ dependency('libcrypto') ]
 	conf_data.set('HAVE_OPENSSL_SSL_H', true)
 	conf_data.set('HAVE_LIBSSL', true)
@@ -449,7 +450,7 @@ if get_option('with_wolfssl')
 	# manual search:
 	# header: wolfssl/ssl.h
 	# function: wolfSSL_Init (-lwolfssl)
-	libssl = [ dependency('wolfssl') ]
+	libwolfssl = [ dependency('wolfssl') ]
 	libcrypto = [ dependency('wolfssl') ]
 	conf_data.set('HAVE_WOLFSSL_SSL_H', true)
 endif
@@ -459,8 +460,9 @@ if get_option('with_mbedtls')
 	# function: mbedtls_cipher_info_from_type (-lmbedtls)
 	# function: mbedtls_x509_get_name (-lmbedx509)
 	# function: mbedtls_base64_encode (-lmbedcrypto)
-	libssl = [ compiler.find_library('mbedtls') ]
-	libx509 = [ compiler.find_library('mbedx509') ]
+	libmbedtls = [ compiler.find_library('mbedtls') ]
+	libmbedx509 = [ compiler.find_library('mbedx509') ]
+	libmbedcrypto = [ compiler.find_library('mbedcrypto') ]
 	libcrypto = [ compiler.find_library('mbedcrypto') ]
 	conf_data.set('HAVE_LIBMBEDCRYPTO', true)
 endif
@@ -700,7 +702,7 @@ common_src = [
 	'data_array.c',
 	'data_integer.c',
 	'data_string.c',
-	'etag.c',
+	'http_etag.c',
 	'fdevent_freebsd_kqueue.c',
 	'fdevent_libev.c',
 	'fdevent_linux_sysepoll.c',
@@ -712,6 +714,7 @@ common_src = [
 	'gw_backend.c',
 	'http_auth.c',
 	'http_chunk.c',
+	'http_date.c',
 	'http_header.c',
 	'http_kv.c',
 	'http_vhostdb.c',
@@ -735,7 +738,7 @@ main_src = [
 	'connections.c',
 	'data_config.c',
 	'h2.c',
-	'inet_ntop_cache.c',
+	'sock_addr_cache.c',
 	'ls-hpack/lshpack.c',
 	'algo_xxhash.c',
 	'network_write.c',
@@ -1070,19 +1073,19 @@ endif
 
 if get_option('with_openssl')
 	modules += [
-		[ 'mod_openssl', [ 'mod_openssl.c' ], libssl + libcrypto ],
+		[ 'mod_openssl', [ 'mod_openssl.c' ], libssl + libsslcrypto ],
 	]
 endif
 
 if get_option('with_wolfssl')
 	modules += [
-		[ 'mod_wolfssl', [ 'mod_wolfssl.c' ], libcrypto ],
+		[ 'mod_wolfssl', [ 'mod_wolfssl.c' ], libwolfssl ],
 	]
 endif
 
 if get_option('with_mbedtls')
 	modules += [
-		[ 'mod_mbedtls', [ 'mod_mbedtls.c' ], libssl + libx509 + libcrypto ],
+		[ 'mod_mbedtls', [ 'mod_mbedtls.c' ], libmbedtls + libmbedx509 + libmbedcrypto ],
 	]
 endif
 

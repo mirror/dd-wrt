@@ -2,8 +2,8 @@
 
 #include "base.h"
 #include "burl.h"
-#include "etag.h"
 #include "fdevent.h"
+#include "http_etag.h"
 #include "keyvalue.h"
 #include "log.h"
 #include "stream.h"
@@ -15,7 +15,9 @@
 #include "sys-crypto.h"
 
 #include <sys/stat.h>
+#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
+#endif
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -241,31 +243,6 @@ static int config_burl_normalize_cond (server *srv) {
     return 1;
 }
 
-#if defined(HAVE_MYSQL) || (defined(HAVE_LDAP_H) && defined(HAVE_LBER_H) && defined(HAVE_LIBLDAP) && defined(HAVE_LIBLBER))
-static void config_warn_authn_module (server *srv, const char *module, size_t len) {
-	for (uint32_t i = 0; i < srv->config_context->used; ++i) {
-		const data_config *config = (data_config const*)srv->config_context->data[i];
-		const data_unset *du = array_get_element_klen(config->value, CONST_STR_LEN("auth.backend"));
-		if (NULL != du && du->type == TYPE_STRING) {
-			data_string *ds = (data_string *)du;
-			if (buffer_is_equal_string(&ds->value, module, len)) {
-				buffer * const tb = srv->tmp_buf;
-				buffer_copy_string_len(tb, CONST_STR_LEN("mod_authn_"));
-				buffer_append_string_len(tb, module, len);
-				array_insert_value(srv->srvconf.modules, CONST_BUF_LEN(tb));
-				log_error(srv->errh, __FILE__, __LINE__,
-				  "Warning: please add \"mod_authn_%s\" to server.modules list "
-				  "in lighttpd.conf.  A future release of lighttpd 1.4.x will "
-				  "not automatically load mod_authn_%s and lighttpd will fail "
-				  "to start up since your lighttpd.conf uses "
-				  "auth.backend = \"%s\".", module, module, module);
-				return;
-			}
-		}
-	}
-}
-#endif
-
 #ifdef USE_OPENSSL_CRYPTO
 static void config_warn_openssl_module (server *srv) {
 	for (uint32_t i = 0; i < srv->config_context->used; ++i) {
@@ -318,6 +295,32 @@ static void config_check_module_duplicates (server *srv) {
     srv->srvconf.modules = modules;
 }
 
+static const char * config_has_opt_and_value (server * const srv, const char * const opt, const uint32_t olen, const char * const v, const uint32_t vlen) {
+    for (uint32_t i = 0; i < srv->config_context->used; ++i) {
+        const data_config * const config =
+            (data_config const *)srv->config_context->data[i];
+        const data_string * const ds =
+            (data_string *)array_get_element_klen(config->value, opt, olen);
+        if (NULL != ds && ds->type == TYPE_STRING
+            && buffer_eq_slen(&ds->value, v, vlen))
+            return v;
+    }
+    return NULL;
+}
+
+static void config_warn_authn_module (server *srv, const char *module, uint32_t len, const char *v) {
+    buffer * const tb = srv->tmp_buf;
+    buffer_copy_string_len(tb, CONST_STR_LEN("mod_authn_"));
+    buffer_append_string_len(tb, module, len);
+    array_insert_value(srv->srvconf.modules, CONST_BUF_LEN(tb));
+    log_error(srv->errh, __FILE__, __LINE__,
+      "Warning: please add \"mod_authn_%s\" to server.modules list "
+      "in lighttpd.conf.  A future release of lighttpd 1.4.x will "
+      "not automatically load mod_authn_%s and lighttpd will fail "
+      "to start up since your lighttpd.conf uses auth.backend = \"%s\".",
+      module, module, v);
+}
+
 static void config_compat_module_load (server *srv) {
     int prepend_mod_indexfile  = 1;
     int append_mod_dirlisting  = 1;
@@ -344,6 +347,8 @@ static void config_compat_module_load (server *srv) {
         else if (buffer_eq_slen(m, CONST_STR_LEN("mod_nss")))
             append_mod_openssl = 0;
         else if (buffer_eq_slen(m, CONST_STR_LEN("mod_openssl")))
+            append_mod_openssl = 0;
+        else if (buffer_eq_slen(m, CONST_STR_LEN("mod_wolfssl")))
             append_mod_openssl = 0;
         else if (buffer_eq_slen(m, CONST_STR_LEN("mod_authn_file")))
             append_mod_authn_file = 0;
@@ -403,16 +408,27 @@ static void config_compat_module_load (server *srv) {
      * existing lighttpd 1.4.x configs */
     if (contains_mod_auth) {
         if (append_mod_authn_file) {
-            array_insert_value(srv->srvconf.modules, CONST_STR_LEN("mod_authn_file"));
+            const char *v;
+            if (  (v=config_has_opt_and_value(srv,CONST_STR_LEN("auth.backend"),
+                                                  CONST_STR_LEN("htdigest")))
+                ||(v=config_has_opt_and_value(srv,CONST_STR_LEN("auth.backend"),
+                                                  CONST_STR_LEN("htpasswd")))
+                ||(v=config_has_opt_and_value(srv,CONST_STR_LEN("auth.backend"),
+                                                  CONST_STR_LEN("plain"))))
+                config_warn_authn_module(srv, CONST_STR_LEN("file"), v);
         }
         if (append_mod_authn_ldap) {
           #if defined(HAVE_LDAP_H) && defined(HAVE_LBER_H) && defined(HAVE_LIBLDAP) && defined(HAVE_LIBLBER)
-            config_warn_authn_module(srv, CONST_STR_LEN("ldap"));
+            if (config_has_opt_and_value(srv, CONST_STR_LEN("auth.backend"),
+                                              CONST_STR_LEN("ldap")))
+                config_warn_authn_module(srv, CONST_STR_LEN("ldap"), "ldap");
           #endif
         }
         if (append_mod_authn_mysql) {
           #if defined(HAVE_MYSQL)
-            config_warn_authn_module(srv, CONST_STR_LEN("mysql"));
+            if (config_has_opt_and_value(srv, CONST_STR_LEN("auth.backend"),
+                                              CONST_STR_LEN("mysql")))
+                config_warn_authn_module(srv, CONST_STR_LEN("mysql"), "mysql");
           #endif
         }
     }
@@ -1880,6 +1896,13 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 
 					t->offset += i;
 					t->line_pos += i;
+				} else if (0 == i
+				           && ((uint8_t *)t->input)[t->offset+0] == 0xc2
+				           && ((uint8_t *)t->input)[t->offset+1] == 0xa0) {
+					/* treat U+00A0	(c2 a0) "NO-BREAK SPACE" as whitespace */
+					/* http://www.fileformat.info/info/unicode/char/a0/index.htm */
+					t->offset+=2;
+					t->line_pos+=2;
 				} else {
 					return config_tokenizer_err(srv, __FILE__, __LINE__, t,
 							"invalid character in variable name");
@@ -1982,7 +2005,7 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
 		filename = buffer_init_string(fn);
 	} else {
 		filename = buffer_init_buffer(context->basedir);
-		buffer_append_string(filename, fn);
+		buffer_append_path_len(filename, fn, strlen(fn));
 	}
 
 	switch (glob(filename->ptr, flags, NULL, &gl)) {
@@ -2066,7 +2089,6 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 		}
 		else {
 			ssize_t rd;
-			pid_t wpid;
 			int wstatus = 0;
 			buffer *out = buffer_init();
 			close(fds[1]);
@@ -2081,8 +2103,7 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 			}
 			close(fds[0]);
 			fds[0] = -1;
-			while (-1 == (wpid = waitpid(pid, &wstatus, 0)) && errno == EINTR) ;
-			if (wpid != pid) {
+			if (pid != fdevent_waitpid(pid, &wstatus, 0)) {
 				log_perror(srv->errh, __FILE__, __LINE__, "waitpid \"%s\"",cmd);
 				ret = -1;
 			}
@@ -2169,6 +2190,27 @@ int config_read(server *srv, const char *fn) {
 		return ret;
 	}
 
+	/* reorder dc->context_ndx to match srv->config_context->data[] index.
+	 * srv->config_context->data[] may have been re-ordered in configparser.y.
+	 * Since the dc->context_ndx (id) is reused by config_insert*() and by
+	 * plugins to index into srv->config_context->data[], reorder into the
+	 * order encountered during config file parsing for least surprise to
+	 * end-users writing config files.  Note: this manipulation *breaks* the
+	 * srv->config_context->sorted[] structure, so searching the array by key
+	 * is no longer valid. */
+	for (uint32_t i = 0; i < srv->config_context->used; ++i) {
+		dc = (data_config *)srv->config_context->data[i];
+		if (dc->context_ndx == (int)i) continue;
+		for (uint32_t j = i; j < srv->config_context->used; ++j) {
+			dc = (data_config *)srv->config_context->data[j];
+			if (dc->context_ndx == (int)i) {
+				srv->config_context->data[j] = srv->config_context->data[i];
+				srv->config_context->data[i] = (data_unset *)dc;
+				break;
+			}
+		}
+	}
+
 	if (0 != config_insert_srvconf(srv)) {
 		return -1;
 	}
@@ -2215,14 +2257,17 @@ int config_set_defaults(server *srv) {
 		buffer_clear(b);
 		if (!buffer_string_is_empty(srv->srvconf.changeroot)) {
 			buffer_copy_buffer(b, srv->srvconf.changeroot);
-			buffer_append_slash(b);
 		}
 		len = buffer_string_length(b);
 
 		for (i = 0; i < srv->srvconf.upload_tempdirs->used; ++i) {
 			const data_string * const ds = (data_string *)srv->srvconf.upload_tempdirs->data[i];
-			buffer_string_set_length(b, len); /*(truncate)*/
-			buffer_append_string_buffer(b, &ds->value);
+			if (len) {
+				buffer_string_set_length(b, len); /*(truncate)*/
+				buffer_append_path_len(b, CONST_BUF_LEN(&ds->value));
+			} else {
+				buffer_copy_buffer(b, &ds->value);
+			}
 			if (-1 == stat(b->ptr, &st1)) {
 				log_error(srv->errh, __FILE__, __LINE__,
 				  "server.upload-dirs doesn't exist: %s", b->ptr);

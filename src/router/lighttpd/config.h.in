@@ -69,12 +69,6 @@
 /* fam.h */
 #undef HAVE_FAM_H
 
-/* Define to 1 if you have the <fastcgi/fastcgi.h> header file. */
-#undef HAVE_FASTCGI_FASTCGI_H
-
-/* Define to 1 if you have the <fastcgi.h> header file. */
-#undef HAVE_FASTCGI_H
-
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
 
@@ -116,6 +110,9 @@
 
 /* Define to 1 if you have the <gssapi/gssapi_krb5.h> header file. */
 #undef HAVE_GSSAPI_GSSAPI_KRB5_H
+
+/* Define to 1 if you have the `inet_aton' function. */
+#undef HAVE_INET_ATON
 
 /* Define to 1 if you have the `inet_pton' function. */
 #undef HAVE_INET_PTON
@@ -410,6 +407,9 @@
 
 /* Define to 1 if you have the <sys/xattr.h> header file. */
 #undef HAVE_SYS_XATTR_H
+
+/* Define to 1 if you have the `timegm' function. */
+#undef HAVE_TIMEGM
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
