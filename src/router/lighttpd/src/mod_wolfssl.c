@@ -82,7 +82,7 @@ WOLFSSL_API WOLFSSL_ASN1_OBJECT * wolfSSL_X509_NAME_ENTRY_get_object(WOLFSSL_X50
 WOLFSSL_API WOLFSSL_X509_NAME_ENTRY *wolfSSL_X509_NAME_get_entry(WOLFSSL_X509_NAME *name, int loc);
 #endif
 
-#ifndef OPENSSL_ALL
+#if !defined(OPENSSL_ALL) || LIBWOLFSSL_VERSION_HEX < 0x04002000
 /*(invalid; but centralize making these calls no-ops)*/
 #define wolfSSL_sk_X509_NAME_num(a)          0
 #define wolfSSL_sk_X509_NAME_push(a, b)      0
@@ -92,6 +92,12 @@ WOLFSSL_API WOLFSSL_X509_NAME_ENTRY *wolfSSL_X509_NAME_get_entry(WOLFSSL_X509_NA
         ((WOLFSSL_X509_NAME *)1) /* ! NULL */
 #define wolfSSL_sk_X509_NAME_new(a) \
         ((WOLF_STACK_OF(WOLFSSL_X509_NAME) *)1) /* ! NULL */
+#endif
+
+#if LIBWOLFSSL_VERSION_HEX < 0x04002000 /*(exact version needed not checked)*/
+#ifndef STACK_OF
+#define STACK_OF(x) WOLFSSL_STACK
+#endif
 #endif
 
 #include "base.h"
@@ -324,6 +330,9 @@ tlsext_ticket_wipe_expired (const time_t cur_ts)
  *   man SSL_CTX_set_tlsext_ticket_key_cb
  * but openssl code uses EVP_aes_256_cbc() instead of EVP_aes_128_cbc()
  */
+#ifndef EVP_MAX_IV_LENGTH
+#define EVP_MAX_IV_LENGTH 16
+#endif
 static int
 ssl_tlsext_ticket_key_cb (SSL *s, unsigned char key_name[16],
                           unsigned char iv[EVP_MAX_IV_LENGTH],
@@ -566,7 +575,7 @@ mod_openssl_free_config (server *srv, plugin_data * const p)
                     plugin_cacerts *cacerts = cpv->v.v;
                     wolfSSL_sk_X509_NAME_pop_free(cacerts->names,
                                                   X509_NAME_free);
-                    X509_STORE_free(cacerts->certs);
+                    wolfSSL_X509_STORE_free(cacerts->certs);
                     free(cacerts);
                 }
                 break;
@@ -1034,9 +1043,15 @@ mod_openssl_patch_config (request_st * const r, plugin_config * const pconf)
 static int
 safer_X509_NAME_oneline(X509_NAME *name, char *buf, size_t sz)
 {
+  #if LIBWOLFSSL_VERSION_HEX < 0x04003000
+    UNUSED(name);
+    UNUSED(sz);
+  #else
     if (wolfSSL_X509_get_name_oneline(name, buf, (int)sz))
         return (int)strlen(buf);
-    else {
+    else
+  #endif
+    {
         buf[0] = '\0';
         return -1;
     }
@@ -1052,7 +1067,6 @@ ssl_info_callback (const SSL *ssl, int where, int ret)
         handler_ctx *hctx = (handler_ctx *) SSL_get_app_data(ssl);
         if (hctx->renegotiations >= 0) ++hctx->renegotiations;
     }
-  #ifdef TLS1_3_VERSION
     /* https://github.com/openssl/openssl/issues/5721
      * "TLSv1.3 unexpected InfoCallback after handshake completed" */
     if (0 != (where & SSL_CB_HANDSHAKE_DONE)) {
@@ -1066,7 +1080,6 @@ ssl_info_callback (const SSL *ssl, int where, int ret)
             hctx->renegotiations = -1;
         }
     }
-  #endif
 }
 
 /* https://wiki.openssl.org/index.php/Manual:SSL_CTX_set_verify(3)#EXAMPLES */
@@ -1323,11 +1336,18 @@ mod_openssl_load_stapling_file (const char *file, log_error_st *errh, buffer *b)
 static time_t
 mod_openssl_asn1_time_to_posix (ASN1_TIME *asn1time)
 {
+  #if LIBWOLFSSL_VERSION_HEX >= 0x04002000
+    /* Note: up to at least wolfSSL 4.5.0 (current version as this is written)
+     * wolfSSL_ASN1_TIME_diff() is a stub function which always returns 0 */
     /* Note: this does not check for integer overflow of time_t! */
     int day, sec;
     return wolfSSL_ASN1_TIME_diff(&day, &sec, NULL, asn1time)
       ? log_epoch_secs + day*86400 + sec
       : (time_t)-1;
+  #else
+    UNUSED(asn1time);
+    return (time_t)-1;
+  #endif
 }
 
 
@@ -1549,8 +1569,6 @@ mod_openssl_acme_tls_1 (SSL *ssl, handler_ctx *hctx)
     /* check if acme-tls/1 protocol is enabled (path to dir of cert(s) is set)*/
     if (buffer_string_is_empty(hctx->conf.ssl_acme_tls_1))
         return SSL_TLSEXT_ERR_NOACK; /*(reuse value here for not-configured)*/
-    buffer_copy_buffer(b, hctx->conf.ssl_acme_tls_1);
-    buffer_append_slash(b);
 
     /* check if SNI set server name (required for acme-tls/1 protocol)
      * and perform simple path checks for no '/'
@@ -1562,7 +1580,8 @@ mod_openssl_acme_tls_1 (SSL *ssl, handler_ctx *hctx)
     if (0 != http_request_host_policy(name,hctx->r->conf.http_parseopts,443))
         return rc;
   #endif
-    buffer_append_string_buffer(b, name);
+    buffer_copy_buffer(b, hctx->conf.ssl_acme_tls_1);
+    buffer_append_path_len(b, CONST_BUF_LEN(name));
     len = buffer_string_length(b);
 
     do {
@@ -1709,6 +1728,7 @@ mod_openssl_ssl_conf_cmd (server *srv, plugin_config_socket *s);
 
 
 #ifndef NO_DH
+#include <wolfssl/openssl/dh.h>
 /* wolfSSL provides wolfSSL_DH_set0_pqg() for
  * Apache w/ OPENSSL_VERSION_NUMBER >= 0x10100000L
  * but does not provide most other openssl 1.1.0+ interfaces
@@ -1821,9 +1841,13 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
                         | SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION
                         | SSL_OP_NO_COMPRESSION;
 
+      #if LIBWOLFSSL_VERSION_HEX >= 0x04002000
         s->ssl_ctx = (!s->ssl_use_sslv2 && !s->ssl_use_sslv3)
           ? SSL_CTX_new(TLS_server_method())
           : SSL_CTX_new(SSLv23_server_method());
+      #else
+        s->ssl_ctx = SSL_CTX_new(SSLv23_server_method());
+      #endif
         if (NULL == s->ssl_ctx) {
             log_error(srv->errh, __FILE__, __LINE__,
               "SSL: %s", ERR_error_string(ERR_get_error(), NULL));
@@ -2041,13 +2065,22 @@ network_init_ssl (server *srv, plugin_config_socket *s, plugin_data *p)
          *           && (HAVE_STUNNEL || WOLFSSL_NGINX || HAVE_LIGHTY)))
          * and sniRecvCb sniRecvCbArg are hidden by *different* set of defines
          * in wolfssl/internal.h)
-         * Note: SNI callbacks disabled if wolfSSL is not built OPENSSL_ALL ! */
-       #ifdef OPENSSL_ALL /* regretable */
+         * Note: wolfSSL SNI callbacks members not present unless wolfSSL is
+         * built OPENSSL_ALL or some additional combination of preprocessor
+         * defines.  The following should work with more recent wolfSSL versions
+         * (and HAVE_LIGHTY is not sufficient in wolfssl <= 4.5.0) */
+       #if defined(OPENSSL_ALL) \
+        || (defined(OPENSSL_EXTRA) \
+            && (defined(HAVE_STUNNEL) \
+                || defined(WOLFSSL_NGINX) \
+                || defined(WOLFSSL_HAPROXY)))
+       #else
+       #undef HAVE_SNI
+       #endif
        #ifdef HAVE_SNI
         wolfSSL_CTX_set_servername_callback(
             s->ssl_ctx, network_ssl_servername_callback);
         wolfSSL_CTX_set_servername_arg(s->ssl_ctx, srv);
-       #endif             /* regretable */
        #else
         log_error(srv->errh, __FILE__, __LINE__,
           "SSL: WARNING: SNI callbacks *crippled* in wolfSSL library build");
@@ -2648,7 +2681,7 @@ connection_write_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
 
                 if (wr == 0) return -2;
 
-                /* fall through */
+                __attribute_fallthrough__
             default:
                 while((err = ERR_get_error())) {
                     log_error(errh, __FILE__, __LINE__,
@@ -2728,7 +2761,7 @@ connection_read_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
         switch ((rc = SSL_get_error(hctx->ssl, len))) {
         case SSL_ERROR_WANT_WRITE:
             con->is_writable = -1;
-            /* fall through */
+            __attribute_fallthrough__
         case SSL_ERROR_WANT_READ:
             con->is_readable = 0;
 
@@ -2761,7 +2794,7 @@ connection_read_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
             switch(oerrno) {
             case ECONNRESET:
                 if (!hctx->conf.ssl_log_noise) break;
-                /* fall through */
+                __attribute_fallthrough__
             default:
                 /* (oerrno should be something like ECONNABORTED not 0
                  *  if client disconnected before anything was sent
@@ -2784,7 +2817,7 @@ connection_read_cq_ssl (connection *con, chunkqueue *cq, off_t max_bytes)
                 /* FIXME: later */
             }
 
-            /* fall through */
+            __attribute_fallthrough__
         default:
             while((ssl_err = ERR_get_error())) {
                 switch (ERR_GET_REASON(ssl_err)) {
@@ -2945,7 +2978,7 @@ mod_openssl_close_notify(handler_ctx *hctx)
                 break;
             }
 
-            /* fall through */
+            __attribute_fallthrough__
         default:
 
             if (!SSL_is_init_finished(hctx->ssl)) {
@@ -3008,6 +3041,15 @@ CONNECTION_FUNC(mod_openssl_handle_con_close)
 
     return HANDLER_GO_ON;
 }
+
+
+#ifndef OBJ_nid2sn
+#define OBJ_nid2sn  wolfSSL_OBJ_nid2sn
+#endif
+#ifndef OBJ_obj2nid
+#define OBJ_obj2nid wolfSSL_OBJ_obj2nid
+#endif
+#include <wolfssl/wolfcrypt/asn_public.h>
 
 
 static void
@@ -3241,32 +3283,21 @@ static int
 mod_openssl_ssl_conf_proto_val (server *srv, plugin_config_socket *s, const buffer *b, int max)
 {
     if (NULL == b) /* default: min TLSv1.2, max TLSv1.3 */
-      #ifdef TLS1_3_VERSION
-        return max ? TLS1_3_VERSION : TLS1_2_VERSION;
-      #else
-        return TLS1_2_VERSION;
-      #endif
+        return max ? WOLFSSL_TLSV1_3 : WOLFSSL_TLSV1_2;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("None"))) /*"disable" limit*/
         return max
-          ?
-           #ifdef TLS1_3_VERSION
-            TLS1_3_VERSION
-           #else
-            TLS1_2_VERSION
-           #endif
-          : (s->ssl_use_sslv3 ? SSL3_VERSION : TLS1_VERSION);
+          ? WOLFSSL_TLSV1_3
+          : (s->ssl_use_sslv3 ? WOLFSSL_SSLV3 : WOLFSSL_TLSV1);
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("SSLv3")))
-        return SSL3_VERSION;
+        return WOLFSSL_SSLV3;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.0")))
-        return TLS1_VERSION;
+        return WOLFSSL_TLSV1;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.1")))
-        return TLS1_1_VERSION;
+        return WOLFSSL_TLSV1_1;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.2")))
-        return TLS1_2_VERSION;
-  #ifdef TLS1_3_VERSION
+        return WOLFSSL_TLSV1_2;
     else if (buffer_eq_icase_slen(b, CONST_STR_LEN("TLSv1.3")))
-        return TLS1_3_VERSION;
-  #endif
+        return WOLFSSL_TLSV1_3;
     else {
         if (buffer_eq_icase_slen(b, CONST_STR_LEN("DTLSv1"))
             || buffer_eq_icase_slen(b, CONST_STR_LEN("DTLSv1.2")))
@@ -3278,11 +3309,7 @@ mod_openssl_ssl_conf_proto_val (server *srv, plugin_config_socket *s, const buff
                       "SSL: ssl.openssl.ssl-conf-cmd %s %s invalid; ignored",
                       max ? "MaxProtocol" : "MinProtocol", b->ptr);
     }
-  #ifdef TLS1_3_VERSION
-    return max ? TLS1_3_VERSION : TLS1_2_VERSION;
-  #else
-    return TLS1_2_VERSION;
-  #endif
+    return max ? WOLFSSL_TLSV1_3 : WOLFSSL_TLSV1_2;
 }
 
 
@@ -3389,15 +3416,6 @@ mod_openssl_ssl_conf_cmd (server *srv, plugin_config_socket *s)
 
     if (minb) {
         int n = mod_openssl_ssl_conf_proto_val(srv, s, minb, 0);
-        /*(wolfSSL_CTX_SetMinVersion() alt uses enums with different values)*/
-        switch (n) {
-          case SSL3_VERSION:   n = WOLFSSL_SSLV3;   break;
-          case TLS1_VERSION:   n = WOLFSSL_TLSV1;   break;
-          case TLS1_1_VERSION: n = WOLFSSL_TLSV1_1; break;
-          case TLS1_2_VERSION: n = WOLFSSL_TLSV1_2; break;
-          case TLS1_3_VERSION: n = WOLFSSL_TLSV1_3; break;
-          default: rc = -1; break;
-        }
         if (wolfSSL_CTX_SetMinVersion(s->ssl_ctx, n) != WOLFSSL_SUCCESS)
             rc = -1;
     }

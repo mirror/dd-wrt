@@ -14,7 +14,7 @@ dnl - if an argument uses more than one line and is not a single
 dnl   function call, the argument should be on different lines than the
 dnl   wrapping braces
 AC_PREREQ(2.60)
-AC_INIT([lighttpd], [1.4.56], [https://redmine.lighttpd.net/projects/lighttpd/boards/2], [lighttpd], [https://www.lighttpd.net/])
+AC_INIT([lighttpd], [1.4.58], [https://redmine.lighttpd.net/projects/lighttpd/boards/2], [lighttpd], [https://www.lighttpd.net/])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -1457,6 +1457,7 @@ AC_CHECK_FUNCS([\
   getrlimit \
   getuid \
   gmtime_r \
+  inet_aton \
   inet_pton \
   issetugid \
   jrand48 \
@@ -1478,6 +1479,7 @@ AC_CHECK_FUNCS([\
   sigaction \
   signal \
   srandom \
+  timegm \
   writev \
 ])
 AC_CHECK_HEADERS([sys/random.h], [AC_CHECK_FUNCS([getentropy])])
@@ -1603,17 +1605,6 @@ if test "$mmap" = true; then
   AC_DEFINE([ENABLE_MMAP], [1], [Use mmap if available])
 fi
 
-dnl check for fastcgi lib, for the tests only
-AC_MSG_NOTICE([----------------------------------------])
-fastcgi_found=no
-AC_CHECK_LIB([fcgi], [FCGI_Accept], [
-  AC_CHECK_HEADERS([fastcgi.h fastcgi/fastcgi.h], [
-    fastcgi_found=yes
-  ])
-])
-
-AM_CONDITIONAL([CHECK_WITH_FASTCGI], [test "$fastcgi_found" = yes])
-
 
 AC_MSG_NOTICE([----------------------------------------])
 dnl check for extra compiler options (warning options)
@@ -1660,10 +1651,7 @@ AC_CONFIG_FILES([\
   doc/systemd/Makefile \
   Makefile \
   src/Makefile \
-  tests/docroot/123/Makefile \
   tests/docroot/Makefile \
-  tests/docroot/www/expire/Makefile \
-  tests/docroot/www/go/Makefile \
   tests/docroot/www/indexfile/Makefile \
   tests/docroot/www/Makefile \
   tests/Makefile \

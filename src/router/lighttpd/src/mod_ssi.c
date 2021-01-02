@@ -4,6 +4,7 @@
 #include "fdevent.h"
 #include "log.h"
 #include "buffer.h"
+#include "http_etag.h"
 #include "http_header.h"
 #include "stat_cache.h"
 
@@ -14,17 +15,19 @@
 #include "mod_ssi.h"
 
 #include "sys-socket.h"
+#include "sys-time.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
+#endif
 
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <time.h>
 #include <unistd.h>
 
 #ifdef HAVE_PWD_H
@@ -34,8 +37,6 @@
 #ifdef HAVE_SYS_FILIO_H
 # include <sys/filio.h>
 #endif
-
-#include "etag.h"
 
 static handler_ctx * handler_ctx_init(plugin_data *p, log_error_st *errh) {
 	handler_ctx *hctx = calloc(1, sizeof(*hctx));
@@ -383,34 +384,22 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 			chunkqueue_append_mem(cq, CONST_BUF_LEN(tb));
 			break;
 		}
-		case SSI_ECHO_LAST_MODIFIED: {
-			time_t t = st->st_mtime;
-
-			if (0 == strftime(buf, sizeof(buf), p->timefmt->ptr, localtime(&t))) {
-				chunkqueue_append_mem(cq, CONST_STR_LEN("(none)"));
-			} else {
-				chunkqueue_append_mem(cq, buf, strlen(buf));
-			}
-			break;
-		}
-		case SSI_ECHO_DATE_LOCAL: {
-			time_t t = time(NULL);
-
-			if (0 == strftime(buf, sizeof(buf), p->timefmt->ptr, localtime(&t))) {
-				chunkqueue_append_mem(cq, CONST_STR_LEN("(none)"));
-			} else {
-				chunkqueue_append_mem(cq, buf, strlen(buf));
-			}
-			break;
-		}
+		case SSI_ECHO_LAST_MODIFIED:
+		case SSI_ECHO_DATE_LOCAL:
 		case SSI_ECHO_DATE_GMT: {
-			time_t t = time(NULL);
+			struct tm tm;
+			time_t t = (var == SSI_ECHO_LAST_MODIFIED)
+			  ? st->st_mtime
+			  : time(NULL);
+			uint32_t len = strftime(buf, sizeof(buf), p->timefmt->ptr,
+			                        (var != SSI_ECHO_DATE_GMT)
+			                        ? localtime_r(&t, &tm)
+			                        : gmtime_r(&t, &tm));
 
-			if (0 == strftime(buf, sizeof(buf), p->timefmt->ptr, gmtime(&t))) {
+			if (len)
+				chunkqueue_append_mem(cq, buf, len);
+			else
 				chunkqueue_append_mem(cq, CONST_STR_LEN("(none)"));
-			} else {
-				chunkqueue_append_mem(cq, buf, strlen(buf));
-			}
 			break;
 		}
 		case SSI_ECHO_DOCUMENT_NAME: {
@@ -469,7 +458,6 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 	case SSI_FSIZE: {
 		const char * file_path = NULL, *virt_path = NULL;
 		struct stat stb;
-		char *sl;
 
 		for (i = 2; i < n; i += 2) {
 			if (0 == strcmp(l[i], "file")) {
@@ -501,11 +489,9 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 
 		if (file_path) {
 			/* current doc-root */
-			if (NULL == (sl = strrchr(r->physical.path.ptr, '/'))) {
-				buffer_copy_string_len(p->stat_fn, CONST_STR_LEN("/"));
-			} else {
-				buffer_copy_string_len(p->stat_fn, r->physical.path.ptr, sl - r->physical.path.ptr + 1);
-			}
+			char *sl = strrchr(r->physical.path.ptr, '/');
+			if (NULL == sl) break; /*(not expected)*/
+			buffer_copy_string_len(p->stat_fn, r->physical.path.ptr, sl - r->physical.path.ptr + 1);
 
 			buffer_copy_string(tb, file_path);
 			buffer_urldecode_path(tb);
@@ -515,17 +501,15 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 				break;
 			}
 			buffer_path_simplify(tb, tb);
-			buffer_append_string_buffer(p->stat_fn, tb);
+			buffer_append_path_len(p->stat_fn, CONST_BUF_LEN(tb));
 		} else {
 			/* virtual */
-			size_t remain;
 
 			if (virt_path[0] == '/') {
 				buffer_copy_string(tb, virt_path);
 			} else {
 				/* there is always a / */
-				sl = strrchr(r->uri.path.ptr, '/');
-
+				const char * const sl = strrchr(r->uri.path.ptr, '/');
 				buffer_copy_string_len(tb, r->uri.path.ptr, sl - r->uri.path.ptr + 1);
 				buffer_append_string(tb, virt_path);
 			}
@@ -567,18 +551,18 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 			if (r->conf.force_lowercase_filenames) {
 				buffer_to_lower(tb);
 			}
-			remain = buffer_string_length(&r->uri.path) - i;
+			uint32_t remain = buffer_string_length(&r->uri.path) - i;
 			if (!r->conf.force_lowercase_filenames
 			    ? buffer_is_equal_right_len(&r->physical.path, &r->physical.rel_path, remain)
 			    :(buffer_string_length(&r->physical.path) >= remain
 			      && buffer_eq_icase_ssn(r->physical.path.ptr+buffer_string_length(&r->physical.path)-remain, r->physical.rel_path.ptr+i, remain))) {
 				buffer_copy_string_len(p->stat_fn, r->physical.path.ptr, buffer_string_length(&r->physical.path)-remain);
-				buffer_append_string_len(p->stat_fn, tb->ptr+i, buffer_string_length(tb)-i);
+				buffer_append_path_len(p->stat_fn, tb->ptr+i, buffer_string_length(tb)-i);
 			} else {
 				/* unable to perform physical path remap here;
 				 * assume doc_root/rel_path and no remapping */
 				buffer_copy_buffer(p->stat_fn, &r->physical.doc_root);
-				buffer_append_string_buffer(p->stat_fn, tb);
+				buffer_append_path_len(p->stat_fn, CONST_BUF_LEN(tb));
 			}
 		}
 
@@ -609,13 +593,15 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 				}
 				chunkqueue_append_mem(cq, CONST_BUF_LEN(tb));
 				break;
-			case SSI_FLASTMOD:
-				if (0 == strftime(buf, sizeof(buf), p->timefmt->ptr, localtime(&t))) {
+			case SSI_FLASTMOD: {
+				struct tm tm;
+				uint32_t len = (uint32_t)strftime(buf, sizeof(buf), p->timefmt->ptr, localtime_r(&t, &tm));
+				if (len)
+					chunkqueue_append_mem(cq, buf, len);
+				else
 					chunkqueue_append_mem(cq, CONST_STR_LEN("(none)"));
-				} else {
-					chunkqueue_append_mem(cq, buf, strlen(buf));
-				}
 				break;
+			}
 			case SSI_INCLUDE:
 				/* Keep the newest mtime of included files */
 				if (stb.st_mtime > include_file_last_mtime)
@@ -806,11 +792,9 @@ static int process_ssi_stmt(request_st * const r, handler_ctx * const p, const c
 			/*
 			 * OpenBSD and Solaris send a EINTR on SIGCHILD even if we ignore it
 			 */
-			while (-1 == waitpid(pid, &status, 0)) {
-				if (errno != EINTR) {
-					log_perror(errh, __FILE__, __LINE__, "waitpid failed");
-					break;
-				}
+			if (fdevent_waitpid(pid, &status, 0) < 0) {
+				log_perror(errh, __FILE__, __LINE__, "waitpid failed");
+				break;
 			}
 			if (!WIFEXITED(status)) {
 				log_error(errh, __FILE__, __LINE__, "process exited abnormally: %s", cmd);
@@ -1214,20 +1198,16 @@ static int mod_ssi_handle_request(request_st * const r, handler_ctx * const p) {
 
 	if (p->conf.conditional_requests) {
 		/* Generate "ETag" & "Last-Modified" headers */
-		const buffer *mtime = NULL;
 
 		/* use most recently modified include file for ETag and Last-Modified */
 		if (st.st_mtime < include_file_last_mtime)
 			st.st_mtime = include_file_last_mtime;
 
-		etag_create(&r->physical.etag, &st, r->conf.etag_flags);
-		etag_mutate(&r->physical.etag, &r->physical.etag);
+		http_etag_create(&r->physical.etag, &st, r->conf.etag_flags);
 		http_header_response_set(r, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"), CONST_BUF_LEN(&r->physical.etag));
 
-		mtime = strftime_cache_get(st.st_mtime);
-		http_header_response_set(r, HTTP_HEADER_LAST_MODIFIED, CONST_STR_LEN("Last-Modified"), CONST_BUF_LEN(mtime));
-
-		if (HANDLER_FINISHED == http_response_handle_cachable(r, mtime)) {
+		const buffer * const mtime = http_response_set_last_modified(r, st.st_mtime);
+		if (HANDLER_FINISHED == http_response_handle_cachable(r, mtime, st.st_mtime)) {
 			/* ok, the client already has our content,
 			 * no need to send it again */
 

@@ -303,7 +303,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = index.php return-404.php query_string.pl
+EXTRA_DIST = index.pl
 all: all-am
 
 .SUFFIXES:
