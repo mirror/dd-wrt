@@ -8,7 +8,7 @@ MINTIME=$($nv get wg_mintime)
 [[ -z $MINTIME ]] && MINTIME=1
 sleep $MINTIME
 MAXTIME=$($nv get wg_maxtime) #0 = no maxtime
-[[ -z $MAXTIME ]] && MAXTIME=65
+[[ -z $MAXTIME ]] && MAXTIME=80
 SLEEPCT=$MINTIME
 while [[ $(date +%Y) -lt 2019 ]]; do
 	sleep 2
@@ -101,12 +101,12 @@ sleep $DNSTIME
 if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then	# consider not adding when PBR is used
 	# wait till dnsmasq is running
 	SLEEPDNSCT=0
-	MAXDNSTIME=65
+	MAXDNSTIME=45
 	while [[ ! -f /tmp/resolv.dnsmasq ]]; do
 		SLEEPDNSCT=$((SLEEPDNSCT+2))
 		sleep 2
 		if [[ $SLEEPDNS -gt $MAXDNSTIME && $MAXDNSTIME -ne 0 ]]; then
-			logger -p user.info "WireGuard ERROR waiting $SLEEPDNSCT sec. for DNSMasq"
+			logger -p user.info "WireGuard ERROR max. waiting $SLEEPDNSCT sec. for DNSMasq"
 			break
 		fi
 	done
@@ -133,8 +133,8 @@ fi
 
 # execute route-up script
 if [[ ! -z "$($nv get oet${i}_rtupscript | sed '/^[[:blank:]]*#/d')" ]]; then
-	# wait for availability of jffs
-	sh /usr/bin/is-mounted.sh /jffs
+	# wait for availability of directory
+	sh /usr/bin/is-mounted.sh $(dirname "$($nv get oet${i}_rtupscript)")
 	sleep 1
 	sh $($nv get oet${i}_rtupscript) &
 fi
