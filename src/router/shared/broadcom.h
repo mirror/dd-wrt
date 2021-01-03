@@ -44,7 +44,7 @@ EJ_VISIBLE void save_policy(webs_t wp);
 EJ_VISIBLE void single_delete_policy(webs_t wp);
 EJ_VISIBLE void summary_delete_policy(webs_t wp);
 EJ_VISIBLE void delete_static_route(webs_t wp);
-EJ_VISIBLE void delete_static_route(webs_t wp);
+EJ_VISIBLE void delete_pbr_rule(webs_t wp);
 EJ_VISIBLE void generate_wep_key(webs_t wp);
 EJ_VISIBLE void set_security(webs_t wp);
 EJ_VISIBLE void security_save(webs_t wp);
@@ -476,6 +476,7 @@ extern void ej_static_route_setting(webs_t wp, int argc, char_t ** argv);
 extern void ej_static_route_table(webs_t wp, int argc, char_t ** argv);
 extern void validate_static_route(webs_t wp, char *value, struct variable *v);
 extern void delete_static_route(webs_t wp);
+extern void delete_pbr_rule(webs_t wp);
 
 /*
  * for wireless 
