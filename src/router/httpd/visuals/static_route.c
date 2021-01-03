@@ -85,7 +85,6 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	char name[50] = "";
 	char new_name[200];
 	arg = argv[0];
-	count = atoi(argv[1]);
 
 	which = websGetVari(wp, "route_page", 0);
 
@@ -113,17 +112,27 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			GETENTRYBYIDX(metric, word, 3);
 			GETENTRYBYIDX(ifname, word, 4);
 			GETENTRYBYIDX(nat, word, 5);
+			GETENTRYBYIDX(src_en, word, 6);
+			GETENTRYBYIDX(src, word, 7);
+			GETENTRYBYIDX(scope_en, word, 8);
+			GETENTRYBYIDX(scope, word, 9);
+			GETENTRYBYIDX(table_en, word, 10);
+			GETENTRYBYIDX(table, word, 11);
+			GETENTRYBYIDX(mtu_en, word, 12);
+			GETENTRYBYIDX(mtu, word, 13);
+			GETENTRYBYIDX(advmss_en, word, 14);
+			GETENTRYBYIDX(advmss, word, 15);
 			if (!ipaddr || !netmask || !gateway || !metric || !ifname)
 				continue;
 
 			if (!strcmp(arg, "ipaddr")) {
-				websWrite(wp, "%d", get_single_ip(ipaddr, count));
+				websWrite(wp, "%d", get_single_ip(ipaddr, atoi(argv[1])));
 				return;
 			} else if (!strcmp(arg, "netmask")) {
-				websWrite(wp, "%d", get_single_ip(netmask, count));
+				websWrite(wp, "%d", get_single_ip(netmask, atoi(argv[1])));
 				return;
 			} else if (!strcmp(arg, "gateway")) {
-				websWrite(wp, "%d", get_single_ip(gateway, count));
+				websWrite(wp, "%d", get_single_ip(gateway, atoi(argv[1])));
 				return;
 			} else if (!strcmp(arg, "metric")) {
 				websWrite(wp, metric);
@@ -140,14 +149,48 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 				   && nvram_match("wan_ifname", ifname)) {
 				websWrite(wp, "selected=\"selected\"");
 				return;
-			}
+			} else if (!strcmp(arg, "scope_en")) {
+				if (scope_en && !strcmp(scope_en, "1"))
+					websWrite(wp, "checked=\"checked\"");
+			} else if (!strcmp(arg, "scope") && !strcmp(argv[1],scope)) {
+				websWrite(wp, "selected=\"selected\"");
+				return;
+			} else if (!strcmp(arg, "mtu_en")) {
+				if (mtu_en && !strcmp(mtu_en, "1"))
+					websWrite(wp, "checked=\"checked\"");
+			} else if (!strcmp(arg, "mtu")) {
+				websWrite(wp, mtu);
+				return;
+			} else if (!strcmp(arg, "advmss_en")) {
+				if (advmss_en && !strcmp(advmss_en, "1"))
+					websWrite(wp, "checked=\"checked\"");
+			} else if (!strcmp(arg, "advmss")) {
+				websWrite(wp, advmss);
+				return;
+			} else if (!strcmp(arg, "table_en")) {
+				if (table_en && !strcmp(table_en, "1"))
+					websWrite(wp, "checked=\"checked\"");
+			} else if (!strcmp(arg, "table")) {
+				websWrite(wp, table);
+				return;
+			} else if (!strcmp(arg, "src")) {
+				websWrite(wp, "%d", get_single_ip(src, atoi(argv[1])));
+				return;
+			}	
+			return;
 		}
 	}
 
-	if (!strcmp(arg, "ipaddr") || !strcmp(arg, "netmask")
+	if (!strcmp(arg, "ipaddr") || !strcmp(arg, "netmask") || !strcmp(arg, "src")
 	    || !strcmp(arg, "gateway"))
 		websWrite(wp, "0");
 	else if (!strcmp(arg, "metric"))
+		websWrite(wp, "0");
+	else if (!strcmp(arg, "mtu"))
+		websWrite(wp, "1500");
+	else if (!strcmp(arg, "advmss"))
+		websWrite(wp, "1460");
+	else if (!strcmp(arg, "table"))
 		websWrite(wp, "0");
 	return;
 }

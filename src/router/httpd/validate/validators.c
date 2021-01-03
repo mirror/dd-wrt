@@ -3114,13 +3114,13 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	char new_name[80];
 	char temp[60], *val = NULL;
 
-	buf = safe_malloc(2500 + 1);
-	buf_name = safe_malloc(2500 + 1);
-	old = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1);
+	buf = safe_malloc(8960 + 1);
+	buf_name = safe_malloc(3840 + 1);
+	old = safe_malloc(STATIC_ROUTE_PAGE * 140 + 1);
 	old_name = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1);
 	buf[0] = 0;
 	buf_name[0] = 0;
-	bzero(old, STATIC_ROUTE_PAGE * 60 + 1);
+	bzero(old, STATIC_ROUTE_PAGE * 140 + 1);
 	bzero(old_name, STATIC_ROUTE_PAGE * 60 + 1);
 	cur = buf;
 	cur_name = buf_name;
@@ -3128,7 +3128,7 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	name = websGetVar(wp, "route_name", "");	// default empty if no find
 	// route_name
 	metric = websGetVar(wp, "route_metric", "0");
-
+	fprintf(stderr, "route name %s\n",name
 	/*
 	 * validate ip address 
 	 */
@@ -3198,6 +3198,16 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	page = websGetVar(wp, "route_page", NULL);
 	ifname = websGetVar(wp, "route_ifname", NULL);
 	nat = websGetVar(wp, "route_nat", "0");
+	char *src_en = websGetVar(wp, "src_en", "0");
+	char *src = websGetVar(wp, "route_src", "0.0.0.0");
+	char *scope_en = websGetVar(wp, "scope_en", "0");
+	char *scope = websGetVar(wp, "route_scope", "link");
+	char *table_en = websGetVar(wp, "table_en", "0");
+	char *table = websGetVar(wp, "route_table", "0");
+	char *mtu_en = websGetVar(wp, "mtu_en", "0");
+	char *mtu = websGetVar(wp, "route_mtu", "1500");
+	char *advmss_en = websGetVar(wp, "advmss_en", "0");
+	char *advmss = websGetVar(wp, "route_advmss", "1460");
 
 	if (!page || !metric || !ifname) {
 		free(old_name);
@@ -3301,10 +3311,13 @@ write_nvram:
 			bzero(backuproute, strlen(backuproute));
 		}
 
-		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
+		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 140, "%s", "");
 		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
+		fprintf(stderr, "page %s %s\n", page, &old[atoi(page)]);
 	} else {
-		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat);
+		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 140, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, src_en, src, scope_en, scope, table_en, table, mtu_en,
+			 mtu, advmss_en, advmss);
+		fprintf(stderr, "page %s %s\n", page, &old[atoi(page)]);
 		httpd_filter_name(name, new_name, sizeof(new_name), SET);
 		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "$NAME:%s$$", new_name);
 	}
@@ -3321,8 +3334,8 @@ write_nvram:
 		//      cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
 		//                      cur == buf ? "" : " ", old[i]);
 		if (strcmp(&old_name[i * STATIC_ROUTE_PAGE], "")) {
-			cur += snprintf(cur, buf + 2500 - cur, "%s%s", cur == buf ? "" : " ", &old[i * STATIC_ROUTE_PAGE]);
-			cur_name += snprintf(cur_name, buf_name + 2500 - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * STATIC_ROUTE_PAGE]);
+			cur += snprintf(cur, buf + 8960 - cur, "%s%s", cur == buf ? "" : " ", &old[i * STATIC_ROUTE_PAGE]);
+			cur_name += snprintf(cur_name, buf_name + 3840 - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * STATIC_ROUTE_PAGE]);
 		}
 	}
 
