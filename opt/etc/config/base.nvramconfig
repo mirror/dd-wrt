@@ -249,6 +249,7 @@
  "forward_spec"  "TCP/UDP Port Spec"  "FORWARDSPEC"  "FALSE" "0"
  "port_trigger"  "TCP/UDP Port Trigger"  "PORTTRIGGER"  "FALSE" "0"
  "static_route"  "Static Route"  "STATICROUTE"  "FALSE" "0"
+ "pbr_rule"  "PBR Rule"  "PBRRULE"  "FALSE" "0"
  "wifi_select" " " "NULL" "TRUE" "0"
  "wk_mode"  "Working Mode"  "DYNAMICROUTE"  "7" "gateway" "olsr" "bgp" "router" "ospf router" "ospf" "static" "FALSE" "0"
  "dmz_enable"  "DMZ enable"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
