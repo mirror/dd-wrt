@@ -273,7 +273,7 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 			// -v is a counter, -H and -S are mutually exclusive, -a is a list
 			"vv:H--S:S--H",
 			&opt_from, NULL,
-			&G.timeout, &opt_connect, &opt_connect, &list, &verbose,&domain
+			&G.timeout, &opt_connect, &opt_connect, &list, &G.verbose,&domain
 	);
 	//argc -= optind;
 	argv += optind;
