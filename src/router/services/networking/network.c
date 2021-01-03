@@ -5106,29 +5106,29 @@ static void apply_rules(char *method, char *pbr)
 		GETENTRYBYIDX(nat, word, 20);
 		GETENTRYBYIDX(type_en, word, 21);
 		GETENTRYBYIDX(type, word, 22);
-		if (!strcmp(not, "1"))
+		if (not && !strcmp(not, "1"))
 			sprintf(cmd, "%s %s", cmd, "not");
-		if (!strcmp(from_en, "1"))
+		if (from_en && from && !strcmp(from_en, "1"))
 			sprintf(cmd, "%s from %s", cmd, from);
-		if (!strcmp(to_en, "1"))
+		if (to_en && to && !strcmp(to_en, "1"))
 			sprintf(cmd, "%s to %s", cmd, to);
-		if (!strcmp(priority_en, "1"))
+		if (priority_en && priority && !strcmp(priority_en, "1"))
 			sprintf(cmd, "%s priority %s", cmd, priority);
-		if (!strcmp(tos_en, "1"))
+		if (ton_en && tos && !strcmp(tos_en, "1"))
 			sprintf(cmd, "%s tos %s", cmd, tos);
-		if (!strcmp(fwmark_en, "1"))
+		if (fwmark_en && fwmark && !strcmp(fwmark_en, "1"))
 			sprintf(cmd, "%s fwmark %s", cmd, fwmark);
-		if (!strcmp(realms_en, "1"))
+		if (realms_en && realms && !strcmp(realms_en, "1"))
 			sprintf(cmd, "%s realms %s", cmd, realms);
-		if (!strcmp(table_en, "1"))
+		if (table_en && table && !strcmp(table_en, "1"))
 			sprintf(cmd, "%s table %s", cmd, table);
-		if (!strcmp(suppress_prefixlength_en, "1"))
+		if (suppress_prefixlength_en && suppress_prefixlength && !strcmp(suppress_prefixlength_en, "1"))
 			sprintf(cmd, "%s suppress_prefixlength %s", cmd, suppress_prefixlength);
-		if (!strcmp(iif_en, "1"))
+		if (iif_en && iif && !strcmp(iif_en, "1"))
 			sprintf(cmd, "%s iif %s", cmd, iif);
-		if (!strcmp(nat_en, "1"))
+		if (nat_en && nat && !strcmp(nat_en, "1"))
 			sprintf(cmd, "%s nat %s", cmd, nat);
-		if (!strcmp(type_en, "1"))
+		if (type_en && type && !strcmp(type_en, "1"))
 			sprintf(cmd, "%s type %s", cmd, type);
 		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
 		system(cmd);
@@ -5211,15 +5211,15 @@ void start_set_routes(void)
 			sprintf(cmd, "%s dev %s", cmd, ifname);
 		if (strcmp(metric, "0"))
 			sprintf(cmd, "%s metric %s", cmd, metric);
-		if (!strcmp(src_en, "1"))
+		if (src_en && src && !strcmp(src_en, "1"))
 			sprintf(cmd, "%s src %s", cmd, src);
-		if (!strcmp(scope_en, "1"))
+		if (scope_en && scope_en && !strcmp(scope_en, "1"))
 			sprintf(cmd, "%s scope %s", cmd, scope);
-		if (!strcmp(table_en, "1"))
+		if (table_en && table && !strcmp(table_en, "1"))
 			sprintf(cmd, "%s table %s", cmd, table);
-		if (!strcmp(mtu_en, "1"))
+		if (mtu_en && mtu && !strcmp(mtu_en, "1"))
 			sprintf(cmd, "%s mtu %s", cmd, mtu);
-		if (!strcmp(advmss_en, "1"))
+		if (advmss_en && advmss && !strcmp(advmss_en, "1"))
 			sprintf(cmd, "%s advmss %s", cmd, advmss);
 		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
 		system(cmd);
