@@ -1063,8 +1063,8 @@ static struct gozila_action gozila_actions[] = {
 	{ "RouteStatic", "del", "static_route_del", REFRESH,
 	 "delete_static_route" },
 #ifndef HAVE_MICRO
-	{ "Routing", "rule_del", "pbr_rule_del", REFRESH, "delete_pbr_rule" },
-	{ "RouteStatic", "rule_del", "pbr_rule_del", REFRESH, "delete_pbr_rule" },
+	{ "Routing", "del_rule", "pbr_rule_del", REFRESH, "delete_pbr_rule" },
+	{ "RouteStatic", "del_rule", "pbr_rule_del", REFRESH, "delete_pbr_rule" },
 #endif
 	{ "WL_WPATable", "wep_key_generate", "", REFRESH, "generate_wep_key" },
 	{ "WL_WPATable", "security", "", REFRESH, "set_security" },
