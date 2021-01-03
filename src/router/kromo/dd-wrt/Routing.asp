@@ -26,10 +26,22 @@ function DeleteEntry(F) {
 	F.submit_type.value = "del";
 	apply(F);
 }
+function DeleteRuleEntry(F) {
+	if(!confirm(errmsg.err57)) return;
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_rule";
+	apply(F);
+}
 
 function SelRoute(num,F) {
 	F.change_action.value="gozila_cgi";
 	F.route_page.value = F.route_page.options[num].value;
+	F.submit();
+}
+
+function SelRule(num,F) {
+	F.change_action.value="gozila_cgi";
+	F.rule_page.value = F.rule_page.options[num].value;
 	F.submit();
 }
 
@@ -83,6 +95,42 @@ function submitcheck(F) {
 	}
 	if(F._advmss_en){
 		F.advmss_en.value = F._advmss_en.checked ? 1 : 0;
+	}
+	if(F._not){
+		F.not.value = F._not.checked ? 1 : 0;
+	}
+	if(F._from_en){
+		F.from_en.value = F._from_en.checked ? 1 : 0;
+	}
+	if(F._to_en){
+		F.to_en.value = F._to_en.checked ? 1 : 0;
+	}
+	if(F._priority_en){
+		F.priority_en.value = F._priority_en.checked ? 1 : 0;
+	}
+	if(F._tos_en){
+		F.tos_en.value = F._tos_en.checked ? 1 : 0;
+	}
+	if(F._fwmark_en){
+		F.fwmark_en.value = F._fwmark_en.checked ? 1 : 0;
+	}
+	if(F._realms_en){
+		F.realms_en.value = F._realms_en.checked ? 1 : 0;
+	}
+	if(F._table_en){
+		F.table_en.value = F._table_en.checked ? 1 : 0;
+	}
+	if(F._suppress_prefixlength_en){
+		F.suppress_prefixlength_en.value = F._suppress_prefixlength_en.checked ? 1 : 0;
+	}
+	if(F._iif_en){
+		F.iif_en.value = F._iif_en.checked ? 1 : 0;
+	}
+	if(F._nat_en){
+		F.nat_en.value = F._nat_en.checked ? 1 : 0;
+	}
+	if(F._type_en){
+		F.type_en.value = F._type_en.checked ? 1 : 0;
 	}
 	F.change_action.value = "";
 	F.submit_type.value = "";
@@ -144,6 +192,9 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="advmss_en" />
 							<input type="hidden" name="olsrd_delcount" />
 							<input type="hidden" name="static_route" />
+							<% ifndef("HAVE_PBR", "-->"); %>
+							<input type="hidden" name="pbr_rule" />
+							<% ifndef("HAVE_PBR", "<--"); %>
 							<h2><% tran("route.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("route.mod"); %></legend>
@@ -284,16 +335,6 @@ addEvent(window, "unload", function() {
 									<input name="route_name" size="25" maxlength="25" onblur="valid_name(this,route.static_name)" value="<% static_route_setting("name"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><% tran("route.metric"); %></div>
-									<input name="route_metric" size="4" maxlength="4" onblur="valid_range(this,0,9999,route.metric)" class="num" value="<% static_route_setting("metric"); %>" />
-								</div>
-								<% has_routing("gateway", "<!--"); %>
-								<div class="setting">
-									<div class="label"><% tran("routetbl.nat"); %></div>
-									<input class="spaceradio" type="checkbox" value="1" name="_route_nat" <% static_route_setting("nat"); %> />
-								</div>
-								<% has_routing("gateway", "-->"); %>
-								<div class="setting">
 									<div class="label"><% tran("routetbl.th1"); %></div>
 									<input type="hidden" name="route_ipaddr" value="4" />
 									<input name="route_ipaddr_0" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","0"); %>" />.<input name="route_ipaddr_1" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","1"); %>" />.<input name="route_ipaddr_2" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","2"); %>" />.<input name="route_ipaddr_3" size="3" maxlength="3" onblur="valid_range(this,0,254,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","3"); %>" />
@@ -314,6 +355,16 @@ addEvent(window, "unload", function() {
 										<% show_routeif(); %>
 									</select>
 								</div>
+								<div class="setting">
+									<div class="label"><% tran("route.metric"); %></div>
+									<input name="route_metric" size="4" maxlength="4" onblur="valid_range(this,0,9999,route.metric)" class="num" value="<% static_route_setting("metric"); %>" />
+								</div>
+								<% has_routing("gateway", "<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("routetbl.nat"); %></div>
+									<input class="spaceradio" type="checkbox" value="1" name="_route_nat" <% static_route_setting("nat"); %> />
+								</div>
+								<% has_routing("gateway", "-->"); %>
 								<% ifndef("HAVE_PBR", "<!--"); %>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_src_en" <% static_route_setting("src_en"); %> />
@@ -357,6 +408,96 @@ addEvent(window, "unload", function() {
 									<input type="hidden" value="0" name="Route_reload" />
 								</div>
 							</fieldset><br />
+							<% ifndef("HAVE_PBR", "<!--"); %>
+							<fieldset>
+								<legend><% tran("route.rules"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("route.static_setno"); %></div>
+									<select size="1" name="rule_page" onchange="SelRule(this.form.rule_page.selectedIndex,this.form)">
+										<% pbr_rule_table("select"); %>
+									</select>&nbsp;&nbsp;
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"del_button\" value=\"" + sbutton.del + "\" onclick=\"DeleteRuleEntry(this.form);\" />");
+									//]]>
+									</script>
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("route.rule_name"); %></div>
+									<input name="rule_name" size="25" maxlength="25" onblur="valid_name(this,route.rule_name)" value="<% pbr_rule_setting("name"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("routetbl.not"); %></div>
+									<input class="spaceradio" type="checkbox" value="1" name="_not" <% pbr_rule_setting("not"); %> />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_from_en" <% pbr_rule_setting("from_en"); %> />
+									<div class="label"><% tran("routetbl.from"); %></div>
+									<input type="hidden" name="rule_from" value="4" />
+									<input name="rule_from_0" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.from)" class="num" value="<% pbr_rule_setting("from","0"); %>" />.<input name="rule_from_1" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.from)" class="num" value="<% pbr_rule_setting("from","1"); %>" />.<input name="rule_from_2" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.from)" class="num" value="<% pbr_rule_setting("from","2"); %>" />.<input name="rule_from_3" size="3" maxlength="3" onblur="valid_range(this,0,254,routetbl.from)" class="num" value="<% pbr_rule_setting("from","3"); %>" /> / <input name="rule_from_4" size="3" maxlength="3" onblur="valid_range(this,0,32,routetbl.from)" class="num" value="<% pbr_rule_setting("from","4"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_to_en" <% pbr_rule_setting("to_en"); %> />
+									<div class="label"><% tran("routetbl.to"); %></div>
+									<input type="hidden" name="rule_to" value="4" />
+									<input name="rule_to_0" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.to)" class="num" value="<% pbr_rule_setting("to","0"); %>" />.<input name="rule_to_1" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.to)" class="num" value="<% pbr_rule_setting("to","1"); %>" />.<input name="rule_to_2" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.to)" class="num" value="<% pbr_rule_setting("to","2"); %>" />.<input name="rule_to_3" size="3" maxlength="3" onblur="valid_range(this,0,254,routetbl.to)" class="num" value="<% pbr_rule_setting("to","3"); %>" /> / <input name="rule_to_4" size="3" maxlength="3" onblur="valid_range(this,0,32,routetbl.to)" class="num" value="<% pbr_rule_setting("to","4"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_priority_en" <% pbr_rule_setting("priority_en"); %> />
+									<div class="label"><% tran("routetbl.priority"); %></div>
+									<input name="rule_priority" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.priority)" class="num" value="<% pbr_rule_setting("priority"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_tos_en" <% pbr_rule_setting("tos_en"); %> />
+									<div class="label"><% tran("routetbl.tos"); %></div>
+									<input name="rule_tos" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.tos)" class="num" value="<% pbr_rule_setting("tos"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_fwmark_en" <% pbr_rule_setting("fwmark_en"); %> />
+									<div class="label"><% tran("routetbl.fwmark"); %></div>
+									<input name="rule_fwmark" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.fwmark)" class="num" value="<% pbr_rule_setting("fwmark"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_realms_en" <% pbr_rule_setting("realms_en"); %> />
+									<div class="label"><% tran("routetbl.realms"); %></div>
+									<input name="rule_realms" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.realms)" class="num" value="<% pbr_rule_setting("realms"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_table_en" <% pbr_rule_setting("table_en"); %> />
+									<div class="label"><% tran("routetbl.table"); %></div>
+									<input name="rule_table" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.table)" class="num" value="<% pbr_rule_setting("table"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_suppress_prefixlength_en" <% pbr_rule_setting("suppress_prefixlength_en"); %> />
+									<div class="label"><% tran("routetbl.suppress_prefixlength"); %></div>
+									<input name="rule_suppress_prefixlength" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.suppress_prefixlength)" class="num" value="<% pbr_rule_setting("suppress_prefixlength"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_iif_en" <% pbr_rule_setting("iif_en"); %> />
+									<div class="label"><% tran("routetbl.iif"); %></div>
+									<select name="rule_iif">
+										<% show_ruleiif(); %>
+									</select>
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_nat_en" <% pbr_rule_setting("nat_en"); %> />
+									<div class="label"><% tran("routetbl.nat"); %></div>
+									<input type="hidden" name="rule_nat" value="4" />
+									<input name="rule_nat_0" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.nat)" class="num" value="<% pbr_rule_setting("nat","0"); %>" />.<input name="rule_nat_1" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.nat)" class="num" value="<% pbr_rule_setting("nat","1"); %>" />.<input name="rule_nat_2" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.nat)" class="num" value="<% pbr_rule_setting("nat","2"); %>" />.<input name="rule_nat_3" size="3" maxlength="3" onblur="valid_range(this,0,254,routetbl.nat)" class="num" value="<% pbr_rule_setting("nat","3"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_type_en" <% pbr_rule_setting("type_en"); %> />
+									<div class="label"><% tran("routetbl.type"); %></div>
+									<select name="rule_type">
+										<option value="unicast" <% pbr_rule_setting("type", "unicast"); %> ><% tran("route.unicast"); %></option>
+										<option value="blackhole" <% pbr_rule_setting("type", "blackhole"); %> ><% tran("route.blackhole"); %></option>
+										<option value="unreachable" <% pbr_rule_setting("type", "unreachable"); %> ><% tran("route.unreachable"); %></option>
+										<option value="prohibit" <% pbr_rule_setting("type", "prohibit"); %> ><% tran("route.prohibit"); %></option>
+										<option value="nat" <% pbr_rule_setting("type", "nat"); %> ><% tran("route.nat"); %></option>
+									</select>
+								</div>
+							</fieldset><br />
+							<% ifndef("HAVE_PBR", "-->"); %>
 							
 							<div class="submitFooter">
 								<script type="text/javascript">

@@ -1378,11 +1378,34 @@ routetbl.scope="Bereich";
 routetbl.advmss="Bewerbe MSS";
 routetbl.table="Tabelle";
 routetbl.src="Ursprung";
+routetbl.not="Nicht";
+routetbl.from="Von";
+routetbl.to="Nach";
+routetbl.priority="Priorit&auml;t";
+routetbl.tos="Tos/Dsfield";
+routetbl.fwmark="Fwmark";
+routetbl.realms="Bereich";
+routetbl.table="Tabelle";
+routetbl.suppress_prefixlength="Prefixl&auml;nge Ausblenden";
+routetbl.iif="Eingehendes Interface";
+routetbl.nat="Nat Adresse";
+routetbl.type="Typ";
 
 
 // ** Routing.asp **//
 
 route.titl="Routing";
+route.rule_name="Regel Name";
+route.global="Global";
+route.nowhere="Nowhere";
+route.host="Host";
+route.link="Link";
+route.site="Site";
+route.unicast="Unicast";
+route.blackhole="Blackhole";
+route.unreachable="Unerreichbar";
+route.prohibit="Verboten";
+
 route.h2="Erweitertes Routing";
 route.metric="Metrik";
 route.flags="Markierungen";
@@ -1421,10 +1444,11 @@ route.ospf_copt="OSPF Konfigurationsmodus";
 route.copt_gui="GUI";
 route.copt_vtysh="Vtysh";
 route.gateway_legend="Dynamisches Routing";
-route.static_legend="Statisches Routing";
+route.static_legend="Routing Tabelle";
 route.static_setno="W&auml;hle Set-Nummer";
 route.static_name="Routenname";
 route.static_ip="Ziel-LAN-Netz";
+route.rules="Routing Regeln";
 
 //help container
 
