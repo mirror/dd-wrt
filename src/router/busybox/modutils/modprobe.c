@@ -263,7 +263,7 @@ static int is_conf_command(char *buffer, const char *command)
 
 static int FAST_FUNC include_conf_file_act(struct recursive_state *state,
 		const char *filename,
-		struct stat *statbuf UNUSED_PARAM)
+		struct stat *statbuf UNUSED_PARAM);
 
 static int FAST_FUNC include_conf_dir_act(struct recursive_state *state,
 		const char *filename,
@@ -280,7 +280,7 @@ static int include_conf_recursive(struct include_conf_t *conf, const char *filen
 	return recursive_action(filename, ACTION_RECURSE | flags,
 				include_conf_file_act,
 				include_conf_dir_act,
-				conf, 1);
+				conf);
 }
 
 static int FAST_FUNC include_conf_file_act(struct recursive_state *state,
@@ -396,7 +396,10 @@ static int FAST_FUNC include_conf_file_act(struct recursive_state *state,
 static int include_conf_file(struct include_conf_t *conf,
 			     const char *filename)
 {
-	return include_conf_file_act(filename, NULL, conf, 0);
+	struct recursive_state state;
+	state.userData = conf;
+	state.depth = 0;
+	return include_conf_file_act(&state, filename, NULL);
 }
 
 static int include_conf_file2(struct include_conf_t *conf,
