@@ -387,7 +387,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 	else if (!strcmp(arg, "type"))
 		websWrite(wp, "unicast");
 	else if (!strcmp(arg, "suppress_prefixlength"))
-		websWrite(wp, "unicast");
+		websWrite(wp, "0");
 	else if (!strcmp(arg, "table"))
 		websWrite(wp, "254");
 	return;
