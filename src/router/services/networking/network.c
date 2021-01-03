@@ -5130,7 +5130,7 @@ static void apply_rules(char *method, char *pbr)
 		GETENTRYBYIDX(type, word, 22);
 		if (!strcmp(type_en, "1"))
 			sprintf(cmd, "%s type %s", cmd, type);
-		fprintf(stderr, "call %s\n", cmd);
+		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
 		system(cmd);
 	}
 
