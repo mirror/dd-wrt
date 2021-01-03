@@ -3404,7 +3404,6 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	bzero(old_name, STATIC_ROUTE_PAGE * 60 + 1);
 	cur = buf;
 	cur_name = buf_name;
-	fprintf(stderr, "validate pbr rule\n");
 	name = websGetVar(wp, "rule_name", "");	// default empty if no find
 	char *not = websGetVar(wp, "not", "0");
 	char *from_en = websGetVar(wp, "from_en", "0");

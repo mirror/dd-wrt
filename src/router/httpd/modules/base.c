@@ -962,7 +962,6 @@ void validate_cgi(webs_t wp)
 			nvram_set("http_pwdpln", value);
 		}
 #endif
-		fprintf(stderr, "check variable %s, validator %s\n", variables[i]->name, variables[i]->validatename);
 		if ((!*value && variables[i]->nullok)
 		    || (!variables[i]->validate2name && !variables[i]->validatename))
 			nvram_set(variables[i]->name, value);
