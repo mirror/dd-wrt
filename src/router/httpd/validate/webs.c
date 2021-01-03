@@ -551,15 +551,15 @@ void delete_old_routes(void)
 			sprintf(cmd, "%s dev %s", cmd, ifname);
 		if (strcmp(metric, "0"))
 			sprintf(cmd, "%s metric %s", cmd, metric);
-		if (!strcmp(src_en, "1"))
+		if (src_en && !strcmp(src_en, "1"))
 			sprintf(cmd, "%s src %s", cmd, src);
-		if (!strcmp(scope_en, "1"))
+		if (scope_en && !strcmp(scope_en, "1"))
 			sprintf(cmd, "%s scope %s", cmd, scope);
-		if (!strcmp(table_en, "1"))
+		if (table_en && !strcmp(table_en, "1"))
 			sprintf(cmd, "%s table %s", cmd, table);
-		if (!strcmp(mtu_en, "1"))
+		if (mtu_en && !strcmp(mtu_en, "1"))
 			sprintf(cmd, "%s mtu %s", cmd, mtu);
-		if (!strcmp(advmss_en, "1"))
+		if (advmss_en && !strcmp(advmss_en, "1"))
 			sprintf(cmd, "%s advmss %s", cmd, advmss);
 		system(cmd);
 	#endif
