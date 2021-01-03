@@ -534,7 +534,7 @@ void delete_static_route(webs_t wp)
 {
 	addAction("routing");
 	nvram_seti("nowebaction", 1);
-	char *buf = calloc(2500, 1);
+	char *buf = calloc(8960, 1);
 	char *buf_name = calloc(2500, 1);
 
 	char *cur = buf;
@@ -554,7 +554,7 @@ void delete_static_route(webs_t wp)
 			continue;
 		}
 
-		cur += snprintf(cur, buf + 2500 - cur, "%s%s", cur == buf ? "" : " ", word);
+		cur += snprintf(cur, buf + 8960 - cur, "%s%s", cur == buf ? "" : " ", word);
 
 		i++;
 	}
@@ -577,7 +577,55 @@ void delete_static_route(webs_t wp)
 	applytake(value);
 	return;
 }
+#ifndef HAVE_MICRO
+void delete_pbr_rule(webs_t wp)
+{
+	addAction("routing");
+	nvram_seti("nowebaction", 1);
+	char *buf = calloc(8960, 1);
+	char *buf_name = calloc(2500, 1);
 
+	char *cur = buf;
+	char *cur_name = buf_name;
+	char word[256], *next;
+	char word_name[256], *next_name;
+	int page = websGetVari(wp, "rule_page", 0);
+	char *value = websGetVar(wp, "action", "");
+	int i = 0;
+	char *performance = nvram_safe_get("pbr_rule");
+	char *performance2 = nvram_safe_get("pbr_rule_name");
+
+	foreach(word, performance, next) {
+		if (i == page) {
+			addDeletion(word);
+			i++;
+			continue;
+		}
+
+		cur += snprintf(cur, buf + 8960 - cur, "%s%s", cur == buf ? "" : " ", word);
+
+		i++;
+	}
+
+	i = 0;
+	foreach(word_name, performance2, next_name) {
+		if (i == page) {
+			i++;
+			continue;
+		}
+		cur_name += snprintf(cur_name, buf_name + 2500 - cur_name, "%s%s", cur_name == buf_name ? "" : " ", word_name);
+
+		i++;
+	}
+
+	nvram_set("pbr_rule", buf);
+	nvram_set("pbr_rule_name", buf_name);
+	free(buf_name);
+	free(buf);
+	applytake(value);
+	return;
+}
+#endif
 extern void gen_key(webs_t wp, char *genstr, int weptype, unsigned char key64[4][5], unsigned char key128[4][14]);
 
 void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bit, char *tx)

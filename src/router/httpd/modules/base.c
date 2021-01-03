@@ -217,6 +217,9 @@ void Initnvramtab()
 		{ "MERGENETMASK", "validate_merge_netmask", 0 },
 		{ "WDS", "validate_wds", 0 },
 		{ "STATICROUTE", "validate_static_route", 0 },
+#ifndef HAVE_MICRO
+		{ "PBRRULE", "validate_pbr_rule", 0 },
+#endif
 		{ "MERGEMAC", "validate_merge_mac", 0 },
 		{ "FILTERPOLICY", "validate_filter_policy", 0 },
 		{ "FILTERIPGRP", "validate_filter_ip_grp", 0 },
@@ -1059,6 +1062,10 @@ static struct gozila_action gozila_actions[] = {
 	 "delete_static_route" },
 	{ "RouteStatic", "del", "static_route_del", REFRESH,
 	 "delete_static_route" },
+#ifndef HAVE_MICRO
+	{ "Routing", "rule_del", "pbr_rule_del", REFRESH, "delete_pbr_rule" },
+	{ "RouteStatic", "rule_del", "pbr_rule_del", REFRESH, "delete_pbr_rule" },
+#endif
 	{ "WL_WPATable", "wep_key_generate", "", REFRESH, "generate_wep_key" },
 	{ "WL_WPATable", "security", "", REFRESH, "set_security" },
 	{ "WL_WPATable", "save", "wireless_2", REFRESH, "security_save" },
