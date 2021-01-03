@@ -3326,7 +3326,8 @@ write_nvram:
 		snprintf(&old[atoi(page) * 140], 140, "%s", "");
 		snprintf(&old_name[atoi(page) * 60], 60, "%s", "");
 	} else {
-		snprintf(&old[atoi(page) * 140], 140, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, src_en, src, scope_en, scope, table_en, table, mtu_en, mtu, advmss_en, advmss);
+		snprintf(&old[atoi(page) * 140], 140, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, src_en, src, scope_en, scope, table_en, table, mtu_en, mtu,
+			 advmss_en, advmss);
 		httpd_filter_name(name, new_name, sizeof(new_name), SET);
 		snprintf(&old_name[atoi(page) * 60], 60, "$NAME:%s$$", new_name);
 	}
@@ -3439,7 +3440,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 			strcat(from, val);
 			if (i < 3)
 				strcat(from, ".");
-			if (i ==3)
+			if (i == 3)
 				strcat(from, "/");
 		} else {
 			// free (from);
@@ -3460,7 +3461,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 			strcat(to, val);
 			if (i < 3)
 				strcat(to, ".");
-			if (i ==3)
+			if (i == 3)
 				strcat(from, "/");
 		} else {
 			// free (to);
@@ -3491,7 +3492,6 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 		}
 	}
 
-
 	if (!page) {
 		free(old_name);
 		free(old);
@@ -3508,7 +3508,7 @@ write_nvram:
 	if (!strcmp(iif, "wan")) {
 		iif = nvram_safe_get("wan_ifname");
 	}
-	
+
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
 		strcpy(&old[i * 160], "");
 		strcpy(&old_name[i * 60], "");
@@ -3526,11 +3526,12 @@ write_nvram:
 
 	strcpy(backuproute, &old[atoi(page) * 160]);
 
-	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", not,from_en, from, to_en,to,priority_en,priority,tos_en,tos,fwmark_en,fwmark,realms_en,realms,table_en,table,suppress_prefixlength_en,suppress_prefixlength,iif_en,iif,nat_en,nat,type_en,type);
+	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", not, from_en, from, to_en, to, priority_en, priority, tos_en, tos, fwmark_en, fwmark,
+		 realms_en, realms, table_en, table, suppress_prefixlength_en, suppress_prefixlength, iif_en, iif, nat_en, nat, type_en, type);
 
 	httpd_filter_name(name, new_name, sizeof(new_name), SET);
 	snprintf(&old_name[atoi(page) * 60], 60, "$NAME:%s$$", new_name);
-	
+
 	if (strcmp(backuproute, &old[atoi(page) * 160])) {
 		if (*(backuproute)) {
 			//nvram_set("nowebaction","1");
@@ -3548,7 +3549,15 @@ write_nvram:
 
 	if (!strcmp(websGetVar(wp, "action", ""), "ApplyTake"))
 		delete_old_routes();
-
+	FILE *backup = fopen("/tmp/pbr_old", "rb");
+	if (!backup) {
+		backup = fopen("/tmp/pbr_old", "wb");
+		char *bck = nvram_safe_get(v->name);
+		int blen = strlen(bck);
+		for (i = 0; i < blen; i++)
+			putc(bck[i], backup);
+	}
+	fclose(backup);
 	nvram_set(v->name, buf);
 	nvram_set("pbr_rule_name", buf_name);
 	nvram_commit();
