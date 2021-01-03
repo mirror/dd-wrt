@@ -618,6 +618,15 @@ void delete_pbr_rule(webs_t wp)
 		i++;
 	}
 
+	FILE *backup = fopen("/tmp/pbr_old", "rb");
+	if (!backup) {
+		backup = fopen("/tmp/pbr_old", "wb");
+		char *bck = nvram_safe_get("pbr_rule");
+		int blen = strlen(bck);
+		for (i = 0; i < blen; i++)
+			putc(bck[i], backup);
+	}
+	fclose(backup);
 	nvram_set("pbr_rule", buf);
 	nvram_set("pbr_rule_name", buf_name);
 	free(buf_name);
