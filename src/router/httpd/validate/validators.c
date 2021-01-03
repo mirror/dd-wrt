@@ -3437,8 +3437,10 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 		val = websGetVar(wp, temp, NULL);
 		if (val) {
 			strcat(from, val);
-			if (i < 4)
+			if (i < 3)
 				strcat(from, ".");
+			if (i ==3)
+				strcat(from, "/");
 		} else {
 			// free (from);
 			free(old_name);
@@ -3456,8 +3458,10 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 		val = websGetVar(wp, temp, NULL);
 		if (val) {
 			strcat(to, val);
-			if (i < 4)
+			if (i < 3)
 				strcat(to, ".");
+			if (i ==3)
+				strcat(from, "/");
 		} else {
 			// free (to);
 			free(old_name);
