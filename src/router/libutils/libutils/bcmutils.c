@@ -639,7 +639,7 @@ int get_single_ip(char *ipaddr, int which)
 	};
 	int ret;
 	if (which == 4)
-		ret = sscanf(ipaddr, "%d.%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3], &ip[4]);
+		ret = sscanf(ipaddr, "%d.%d.%d.%d/%d", &ip[0], &ip[1], &ip[2], &ip[3], &ip[4]);
 	else
 		ret = sscanf(ipaddr, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 	return ip[which];
