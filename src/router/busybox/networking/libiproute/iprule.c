@@ -31,18 +31,18 @@
 
 /* If you add stuff here, update iprule_full_usage */
 static const char keywords[] ALIGN1 =
-	"from\0""to\0""preference\0""order\0""priority\0"
+	"not\0""from\0""to\0""preference\0""order\0""priority\0"
 	"tos\0""fwmark\0""realms\0""table\0""lookup\0"
 	"suppress_prefixlength\0""suppress_ifgroup\0"
 	"dev\0""iif\0""nat\0""map-to\0""type\0""help\0"
 	;
-#define keyword_preference            (keywords           + sizeof("from") + sizeof("to"))
+#define keyword_preference            (keywords           + sizeof("from") + sizeof("to") + sizeof("not"))
 #define keyword_fwmark                (keyword_preference + sizeof("preference") + sizeof("order") + sizeof("priority") + sizeof("tos"))
 #define keyword_realms                (keyword_fwmark     + sizeof("fwmark"))
 #define keyword_suppress_prefixlength (keyword_realms     + sizeof("realms") + sizeof("table") + sizeof("lookup"))
 #define keyword_suppress_ifgroup      (keyword_suppress_prefixlength + sizeof("suppress_prefixlength"))
 enum {
-	ARG_from = 1, ARG_to, ARG_preference, ARG_order, ARG_priority,
+	ARG_not = 1, ARG_from, ARG_to, ARG_preference, ARG_order, ARG_priority,
 	ARG_tos, ARG_fwmark, ARG_realms, ARG_table, ARG_lookup,
 	ARG_suppress_prefixlength, ARG_suppress_ifgroup,
 	ARG_dev, ARG_iif, ARG_nat, ARG_map_to, ARG_type, ARG_help,
@@ -78,6 +78,8 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 	printf("%u:\t", tb[RTA_PRIORITY] ?
 					*(unsigned*)RTA_DATA(tb[RTA_PRIORITY])
 					: 0);
+	if (r->rtm_flags & 0x2)
+		printf("not ");
 	printf("from ");
 	if (tb[RTA_SRC]) {
 		if (r->rtm_src_len != host_len) {
@@ -225,12 +227,16 @@ static int iprule_modify(int cmd, char **argv)
 		req.n.nlmsg_flags |= NLM_F_CREATE|NLM_F_EXCL;
 		req.r.rtm_type = RTN_UNICAST;
 	}
-
+#ifndef FIB_RULE_INVERT
+#define FIB_RULE_INVERT 0x00000002
+#endif
 	while (*argv) {
 		key = index_in_substrings(keywords, *argv) + 1;
 		if (key == 0) /* no match found in keywords array, bail out. */
 			invarg_1_to_2(*argv, applet_name);
-		if (key == ARG_from) {
+		if (key == ARG_not) {
+			req.r.rtm_flags |= FIB_RULE_INVERT;
+		} else if (key == ARG_from) {
 			inet_prefix dst;
 			NEXT_ARG();
 			get_prefix(&dst, *argv, req.r.rtm_family);
