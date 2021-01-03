@@ -675,6 +675,9 @@ static struct defrule s_conditions[] = {
 	{ "WANVLAN", rule_wanvlan },
 	{ "HASWIFI", rule_haswifi },
 	{ "AFTERBURNER", rule_afterburner },
+#ifndef HAVE_MICRO
+	{ "HAVE_PBR", NULL },
+#endif
 	{ NULL, NULL }
 };
 

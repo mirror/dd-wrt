@@ -69,7 +69,21 @@ function submitcheck(F) {
 	if(F._route_nat){
 		F.route_nat.value = F._route_nat.checked ? 1 : 0;
 	}
-	
+	if(F._src_en){
+		F.src_en.value = F._src_en.checked ? 1 : 0;
+	}
+	if(F._scope_en){
+		F.scope_en.value = F._scope_en.checked ? 1 : 0;
+	}
+	if(F._table_en){
+		F.table_en.value = F._table_en.checked ? 1 : 0;
+	}
+	if(F._mtu_en){
+		F.mtu_en.value = F._mtu_en.checked ? 1 : 0;
+	}
+	if(F._advmss_en){
+		F.advmss_en.value = F._advmss_en.checked ? 1 : 0;
+	}
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
@@ -123,6 +137,11 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="route_nat" />
+							<input type="hidden" name="src_en" />
+							<input type="hidden" name="scope_en" />
+							<input type="hidden" name="table_en" />
+							<input type="hidden" name="mtu_en" />
+							<input type="hidden" name="advmss_en" />
 							<input type="hidden" name="olsrd_delcount" />
 							<input type="hidden" name="static_route" />
 							<h2><% tran("route.h2"); %></h2>
@@ -262,16 +281,16 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.static_name"); %></div>
-									<input name="route_name" size="25" maxlength="25" onblur="valid_name(this,route.static_name)" value="<% static_route_setting("name",""); %>" />
+									<input name="route_name" size="25" maxlength="25" onblur="valid_name(this,route.static_name)" value="<% static_route_setting("name"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.metric"); %></div>
-									<input name="route_metric" size="4" maxlength="4" onblur="valid_range(this,0,9999,route.metric)" class="num" value="<% static_route_setting("metric",""); %>" />
+									<input name="route_metric" size="4" maxlength="4" onblur="valid_range(this,0,9999,route.metric)" class="num" value="<% static_route_setting("metric"); %>" />
 								</div>
 								<% has_routing("gateway", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("routetbl.nat"); %></div>
-									<input class="spaceradio" type="checkbox" value="1" name="_route_nat" <% static_route_setting("nat",""); %> />
+									<input class="spaceradio" type="checkbox" value="1" name="_route_nat" <% static_route_setting("nat"); %> />
 								</div>
 								<% has_routing("gateway", "-->"); %>
 								<div class="setting">
@@ -295,6 +314,40 @@ addEvent(window, "unload", function() {
 										<% show_routeif(); %>
 									</select>
 								</div>
+								<% ifndef("HAVE_PBR", "<!--"); %>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_src_en" <% static_route_setting("src_en"); %> />
+									<div class="label"><% tran("routetbl.src"); %></div>
+									<input type="hidden" name="route_src" value="4" />
+									<input name="route_src_0" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.src)" class="num" value="<% static_route_setting("src","0"); %>" />.<input name="route_src_1" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.src)" class="num" value="<% static_route_setting("src","1"); %>" />.<input name="route_src_2" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.src)" class="num" value="<% static_route_setting("src","2"); %>" />.<input name="route_src_3" size="3" maxlength="3" onblur="valid_range(this,0,254,routetbl.src)" class="num" value="<% static_route_setting("src","3"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_scope_en" <% static_route_setting("scope_en"); %> />
+									<div class="label"><% tran("routetbl.scope"); %></div>
+									<select name="route_scope">
+										<option value="0" <% static_route_setting("scope", "0"); %> ><% tran("route.global"); %></option>
+										<option value="255" <% static_route_setting("scope", "255"); %> ><% tran("route.nowhere"); %></option>
+										<option value="254" <% static_route_setting("scope", "254"); %> ><% tran("route.host"); %></option>
+										<option value="253" <% static_route_setting("scope", "253"); %> ><% tran("route.link"); %></option>
+										<option value="200" <% static_route_setting("scope", "200"); %> ><% tran("route.site"); %></option>
+									</select>
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_table_en" <% static_route_setting("table_en"); %> />
+									<div class="label"><% tran("routetbl.table"); %></div>
+									<input name="route_table" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.table)" class="num" value="<% static_route_setting("table"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_mtu_en" <% static_route_setting("mtu_en"); %> />
+									<div class="label"><% tran("idx.mtu"); %></div>
+									<input name="route_mtu" size="5" maxlength="5" onblur="valid_range(this,68,9000,idx.mtu)" class="num" value="<% static_route_setting("mtu"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_advmss_en" <% static_route_setting("advmss_en"); %> />
+									<div class="label"><% tran("routetbl.advmss"); %></div>
+									<input name="route_advmss" size="5" maxlength="5" onblur="valid_range(this,28,8960,routetbl.advmss)" class="num" value="<% static_route_setting("advmss"); %>" />
+								</div>
+								<% ifndef("HAVE_PBR", "-->"); %>
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
