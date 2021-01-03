@@ -5114,7 +5114,7 @@ static void apply_rules(char *method, char *pbr)
 			sprintf(cmd, "%s to %s", cmd, to);
 		if (priority_en && priority && !strcmp(priority_en, "1"))
 			sprintf(cmd, "%s priority %s", cmd, priority);
-		if (ton_en && tos && !strcmp(tos_en, "1"))
+		if (tos_en && tos && !strcmp(tos_en, "1"))
 			sprintf(cmd, "%s tos %s", cmd, tos);
 		if (fwmark_en && fwmark && !strcmp(fwmark_en, "1"))
 			sprintf(cmd, "%s fwmark %s", cmd, fwmark);
