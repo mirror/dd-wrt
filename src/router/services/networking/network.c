@@ -5076,51 +5076,13 @@ void stop_wan(void)
 	cprintf("done\n");
 }
 
-void start_set_routes(void)
+static void apply_rules(char *method, char *pbr)
 {
 	char word[512], *tmp;
-
-	if (!nvram_match("lan_gateway", "0.0.0.0")) {
-		eval("route", "del", "default");
-		eval("route", "add", "default", "gw", nvram_safe_get("lan_gateway"));
-	}
-	char *defgateway;
-
-	if (nvram_match("wan_proto", "pptp"))
-		defgateway = nvram_safe_get("pptp_get_ip");
-	else if (nvram_match("wan_proto", "l2tp"))
-		defgateway = nvram_safe_get("l2tp_get_ip");
-	else
-		defgateway = nvram_safe_get("wan_gateway");
-	if (strcmp(defgateway, "0.0.0.0")
-	    && !nvram_match("wan_proto", "disabled")) {
-		eval("route", "del", "default");
-		eval("route", "add", "default", "gw", defgateway);
-	}
-	char *sr = nvram_safe_get("static_route");
-	foreach(word, sr, tmp) {
-		GETENTRYBYIDX(ipaddr, word, 0);
-		GETENTRYBYIDX(netmask, word, 1);
-		GETENTRYBYIDX(gateway, word, 2);
-		GETENTRYBYIDX(metric, word, 3);
-		GETENTRYBYIDX(ifname, word, 4);
-		if (!ipaddr || !netmask || !gateway || !metric || !ifname)
-			continue;
-		if (!strcmp(ipaddr, "0.0.0.0") && !strcmp(gateway, "0.0.0.0"))
-			continue;
-		if (!strcmp(ipaddr, "0.0.0.0")) {
-			eval("route", "del", "default");
-			eval("route", "add", "default", "gw", gateway);
-		} else if (!strcmp(ifname, "any")) {
-			eval("route", "add", "-net", ipaddr, "netmask", netmask, "gw", gateway, "metric", metric);
-		} else
-			route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
-	}
-	eval("ip", "rule", "flush");	//busybox does not support flushing of rules, we need to find a solution here
-	char *pbr = nvram_safe_get("pbr_rule");
 	foreach(word, pbr, tmp) {
 		char cmd[160];
-		strcpy(cmd, "ip rule");
+		strcpy(cmd, "ip rule ");
+		strcat(cmd, method);
 		GETENTRYBYIDX(not, word, 0);	// not supported on old 2.4 kernels
 		if (!strcmp(not, "1"))
 			sprintf(cmd, "%s %s", cmd, "not");
@@ -5171,6 +5133,67 @@ void start_set_routes(void)
 		fprintf(stderr, "call %s\n", cmd);
 		system(cmd);
 	}
+
+}
+
+void start_set_routes(void)
+{
+	char word[512], *tmp;
+
+	if (!nvram_match("lan_gateway", "0.0.0.0")) {
+		eval("route", "del", "default");
+		eval("route", "add", "default", "gw", nvram_safe_get("lan_gateway"));
+	}
+	char *defgateway;
+
+	if (nvram_match("wan_proto", "pptp"))
+		defgateway = nvram_safe_get("pptp_get_ip");
+	else if (nvram_match("wan_proto", "l2tp"))
+		defgateway = nvram_safe_get("l2tp_get_ip");
+	else
+		defgateway = nvram_safe_get("wan_gateway");
+	if (strcmp(defgateway, "0.0.0.0")
+	    && !nvram_match("wan_proto", "disabled")) {
+		eval("route", "del", "default");
+		eval("route", "add", "default", "gw", defgateway);
+	}
+	char *sr = nvram_safe_get("static_route");
+	foreach(word, sr, tmp) {
+		GETENTRYBYIDX(ipaddr, word, 0);
+		GETENTRYBYIDX(netmask, word, 1);
+		GETENTRYBYIDX(gateway, word, 2);
+		GETENTRYBYIDX(metric, word, 3);
+		GETENTRYBYIDX(ifname, word, 4);
+		if (!ipaddr || !netmask || !gateway || !metric || !ifname)
+			continue;
+		if (!strcmp(ipaddr, "0.0.0.0") && !strcmp(gateway, "0.0.0.0"))
+			continue;
+		if (!strcmp(ipaddr, "0.0.0.0")) {
+			eval("route", "del", "default");
+			eval("route", "add", "default", "gw", gateway);
+		} else if (!strcmp(ifname, "any")) {
+			eval("route", "add", "-net", ipaddr, "netmask", netmask, "gw", gateway, "metric", metric);
+		} else
+			route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
+	}
+	eval("ip", "rule", "flush");	//busybox does not support flushing of rules, we need to find a solution here
+	FILE *old = fopen("/tmp/pbr_old", "rb");
+	if (old) {
+		fseek(old, 0, SEEK_END);
+		int len = ftell(old);
+		rewind(old);
+		if (len) {
+			char *buf = malloc(len + 1);
+			fread(buf, 1, len, old);
+			buf[len] = 0;
+			apply_rules("del", buf);
+			free(buf);
+		}
+		fclose(old);
+		eval("rm", "-f", "/tmp/pbr_old");
+	}
+	char *pbr = nvram_safe_get("pbr_rule");
+	apply_rules("add", pbr);
 	if (f_exists("/tmp/tvrouting"))
 		system("sh /tmp/tvrouting");
 	if (f_exists("/tmp/udhcpstaticroutes"))
