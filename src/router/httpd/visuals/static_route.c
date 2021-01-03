@@ -190,28 +190,28 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			} else if (!strcmp(arg, "scope_en")) {
 				if (scope_en && !strcmp(scope_en, "1"))
 					websWrite(wp, "checked=\"checked\"");
-			} else if (!strcmp(arg, "scope") && !strcmp(argv[1],scope)) {
+			} else if (scope && !strcmp(arg, "scope") && !strcmp(argv[1],scope)) {
 				websWrite(wp, "selected=\"selected\"");
 				return;
 			} else if (!strcmp(arg, "mtu_en")) {
 				if (mtu_en && !strcmp(mtu_en, "1"))
 					websWrite(wp, "checked=\"checked\"");
-			} else if (!strcmp(arg, "mtu")) {
+			} else if (mtu && !strcmp(arg, "mtu")) {
 				websWrite(wp, mtu);
 				return;
 			} else if (!strcmp(arg, "advmss_en")) {
 				if (advmss_en && !strcmp(advmss_en, "1"))
 					websWrite(wp, "checked=\"checked\"");
-			} else if (!strcmp(arg, "advmss")) {
+			} else if (advmss && !strcmp(arg, "advmss")) {
 				websWrite(wp, advmss);
 				return;
 			} else if (!strcmp(arg, "table_en")) {
 				if (table_en && !strcmp(table_en, "1"))
 					websWrite(wp, "checked=\"checked\"");
-			} else if (!strcmp(arg, "table")) {
+			} else if (table &&!strcmp(arg, "table")) {
 				websWrite(wp, table);
 				return;
-			} else if (!strcmp(arg, "src")) {
+			} else if (src && !strcmp(arg, "src")) {
 				websWrite(wp, "%d", get_single_ip(src, atoi(argv[1])));
 				return;
 			}	
@@ -336,37 +336,37 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				if (type_en && !strcmp(type_en, "1"))
 					websWrite(wp, "checked=\"checked\"");
 				return;
-			} else if (!strcmp(arg, "from")) {
+			} else if (from && !strcmp(arg, "from")) {
 				websWrite(wp, "%d", get_single_ip(from, atoi(argv[1])));
 				return;
-			} else if (!strcmp(arg, "to")) {
+			} else if (to && !strcmp(arg, "to")) {
 				websWrite(wp, "%d", get_single_ip(to, atoi(argv[1])));
 				return;
-			} else if (!strcmp(arg, "priority")) {
+			} else if (priority && !strcmp(arg, "priority")) {
 				websWrite(wp, priority);
 				return;
-			} else if (!strcmp(arg, "tos")) {
+			} else if (tos && !strcmp(arg, "tos")) {
 				websWrite(wp, tos);
 				return;
-			} else if (!strcmp(arg, "fwmark")) {
+			} else if (fwmark && !strcmp(arg, "fwmark")) {
 				websWrite(wp, fwmark);
 				return;
-			} else if (!strcmp(arg, "realms")) {
+			} else if (realms && !strcmp(arg, "realms")) {
 				websWrite(wp, realms);
 				return;
-			} else if (!strcmp(arg, "table")) {
+			} else if (table && !strcmp(arg, "table")) {
 				websWrite(wp, table);
 				return;
-			} else if (!strcmp(arg, "suppress_prefixlength")) {
+			} else if (suppress_prefixlength && !strcmp(arg, "suppress_prefixlength")) {
 				websWrite(wp, suppress_prefixlength);
 				return;
-			} else if (!strcmp(arg, "iif")) {
+			} else if (iif && !strcmp(arg, "iif")) {
 				websWrite(wp, iif);
 				return;
-			} else if (!strcmp(arg, "nat")) {
+			} else if (nat && !strcmp(arg, "nat")) {
 				websWrite(wp, "%d", get_single_ip(nat, atoi(argv[1])));
 				return;
-			} else if (!strcmp(arg, "type")) {
+			} else if (type && !strcmp(arg, "type")) {
 				websWrite(wp, type);
 				return;
 			}
