@@ -1592,10 +1592,18 @@ routetbl.titl="Routing Table";
 routetbl.h2="Routing Table Entry List";
 routetbl.th1="Destination LAN NET";
 routetbl.nat="Masquerade Route (NAT)";
-
+routetbl.scope="Scope";
+routetbl.advmss="Advertise MSS";
+routetbl.table="Table";
+routetbl.src="Source";
 
 // ** Routing.asp **//
 var route=new Object();
+route.global="global";
+route.nowhere="nowhere";
+route.host="host";
+route.link="link";
+route.site="site";
 route.titl="Routing";
 route.h2="Advanced Routing";
 route.metric="Metric";

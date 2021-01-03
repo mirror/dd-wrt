@@ -1374,6 +1374,10 @@ routetbl.titl="Routentabelle";
 routetbl.h2="Routentabelle";
 routetbl.th1="Ziel-LAN-Netz";
 routetbl.nat="Maskiere Route (NAT)";
+routetbl.scope="Bereich";
+routetbl.advmss="Bewerbe MSS";
+routetbl.table="Tabelle";
+routetbl.src="Ursprung";
 
 
 // ** Routing.asp **//
