@@ -117,8 +117,8 @@ function submitcheck(F) {
 	if(F._realms_en){
 		F.realms_en.value = F._realms_en.checked ? 1 : 0;
 	}
-	if(F._table_en){
-		F.table_en.value = F._table_en.checked ? 1 : 0;
+	if(F._pbr_table_en){
+		F.pbr_table_en.value = F._pbr_table_en.checked ? 1 : 0;
 	}
 	if(F._suppress_prefixlength_en){
 		F.suppress_prefixlength_en.value = F._suppress_prefixlength_en.checked ? 1 : 0;
@@ -190,6 +190,18 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="table_en" />
 							<input type="hidden" name="mtu_en" />
 							<input type="hidden" name="advmss_en" />
+							<input type="hidden" name="not" />
+							<input type="hidden" name="from_en" />
+							<input type="hidden" name="to_en" />
+							<input type="hidden" name="priority_en" />
+							<input type="hidden" name="tos_en" />
+							<input type="hidden" name="fwmark_en" />
+							<input type="hidden" name="realms_en" />
+							<input type="hidden" name="pbr_table_en" />
+							<input type="hidden" name="suppress_prefixlength_en" />
+							<input type="hidden" name="iif_en" />
+							<input type="hidden" name="nat_en" />
+							<input type="hidden" name="type_en" />
 							<input type="hidden" name="olsrd_delcount" />
 							<input type="hidden" name="static_route" />
 							<% ifndef("HAVE_PBR", "-->"); %>
@@ -463,7 +475,7 @@ addEvent(window, "unload", function() {
 									<input name="rule_realms" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.realms)" class="num" value="<% pbr_rule_setting("realms"); %>" />
 								</div>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_table_en" <% pbr_rule_setting("table_en"); %> />
+									<input class="spaceradio" type="checkbox" value="1" name="_pbr_table_en" <% pbr_rule_setting("table_en"); %> />
 									<div class="label"><% tran("routetbl.table"); %></div>
 									<input name="rule_table" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.table)" class="num" value="<% pbr_rule_setting("table"); %>" />
 								</div>
