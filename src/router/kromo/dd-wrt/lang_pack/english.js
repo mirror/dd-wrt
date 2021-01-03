@@ -1596,14 +1596,32 @@ routetbl.scope="Scope";
 routetbl.advmss="Advertise MSS";
 routetbl.table="Table";
 routetbl.src="Source";
+routetbl.not="Not";
+routetbl.from="From";
+routetbl.to="To";
+routetbl.priority="Priority";
+routetbl.tos="Tos/Dsfield";
+routetbl.fwmark="Fwmark";
+routetbl.realms="Realms";
+routetbl.table="Table";
+routetbl.suppress_prefixlength="Suppress Prefixlength";
+routetbl.iif="Incoming If";
+routetbl.nat="Nat Address";
+routetbl.type="Type";
 
 // ** Routing.asp **//
 var route=new Object();
-route.global="global";
-route.nowhere="nowhere";
-route.host="host";
-route.link="link";
-route.site="site";
+route.rule_name="Rule Name";
+route.global="Global";
+route.nowhere="Nowhere";
+route.host="Host";
+route.link="Link";
+route.site="Site";
+route.unicast="Unicast";
+route.blackhole="Blackhole";
+route.unreachable="Unreachable";
+route.prohibit="Prohibit";
+route.nat="Nat";
 route.titl="Routing";
 route.h2="Advanced Routing";
 route.metric="Metric";
@@ -1648,10 +1666,12 @@ route.rip2_conf="RIP2 Configuration";
 route.rip2_copt="RIP2 Config Style";
 
 route.gateway_legend="Dynamic Routing";
-route.static_legend="Static Routing";
+route.static_legend="Route Tables";
 route.static_setno="Select set number";
 route.static_name="Route Name";
 route.static_ip="Destination LAN NET";
+route.rules="Routing Rules";
+route.static_name="Rule Name";
 
 //help container
 var hroute=new Object();

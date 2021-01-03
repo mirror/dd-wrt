@@ -95,6 +95,7 @@ void validate_reboot(webs_t wp, char *value, struct variable *v);
 void validate_remote_ip(webs_t wp, char *value, struct variable *v);
 void validate_staticleases(webs_t wp, char *value, struct variable *v);
 void validate_static_route(webs_t wp, char *value, struct variable *v);
+void validate_pbr_rule(webs_t wp, char *value, struct variable *v);
 void validate_statics(webs_t wp, char *value, struct variable *v);
 void validate_userlist(webs_t wp, char *value, struct variable *v);
 void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v);
@@ -487,6 +488,9 @@ static struct callmap validate_map[] = {
 	{ "validate_remote_ip", &validate_remote_ip },
 	{ "validate_staticleases", &validate_staticleases },
 	{ "validate_static_route", &validate_static_route },
+#ifndef HAVE_MICRO
+	{ "validate_pbr_rule", &validate_pbr_rule },
+#endif
 	{ "validate_statics", &validate_statics },
 #ifdef HAVE_CHILLILOCAL
 	{ "validate_userlist", &validate_userlist },
@@ -529,6 +533,9 @@ static struct callmap gozila_map[] = {
 	{ "single_delete_policy", &single_delete_policy },
 	{ "summary_delete_policy", &summary_delete_policy },
 	{ "delete_static_route", &delete_static_route },
+#ifndef HAVE_MICRO
+	{ "delete_pbr_rule", &delete_pbr_rule },
+#endif
 	{ "generate_wep_key", &generate_wep_key },
 	{ "set_security", &set_security },
 	{ "security_save", &security_save },
