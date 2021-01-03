@@ -517,7 +517,7 @@ struct BcLexKeyword {
 };
 #define LEX_KW_ENTRY(a, b) \
 	{ .name8 = a /*, .posix = b */ }
-static const struct BcLexKeyword bc_lex_kws[20] = {
+static const struct BcLexKeyword bc_lex_kws[20] ALIGN8 = {
 	LEX_KW_ENTRY("auto"    , 1), // 0
 	LEX_KW_ENTRY("break"   , 1), // 1
 	LEX_KW_ENTRY("continue", 0), // 2 note: this one has no terminating NUL
@@ -2201,8 +2201,8 @@ static BC_STATUS zbc_num_sqrt(BcNum *a, BcNum *restrict b, size_t scale)
 	BcStatus s;
 	BcNum num1, num2, half, f, fprime, *x0, *x1, *temp;
 	BcDig half_digs[1];
-	size_t pow, len, digs, digs1, resrdx, req, times = 0;
-	ssize_t cmp = 1, cmp1 = SSIZE_MAX, cmp2 = SSIZE_MAX;
+	size_t pow, len, digs, digs1, resrdx, req, times;
+	ssize_t cmp, cmp1, cmp2;
 
 	req = BC_MAX(scale, a->rdx) + ((BC_NUM_INT(a) + 1) >> 1) + 1;
 	bc_num_expand(b, req);
@@ -2255,11 +2255,12 @@ static BC_STATUS zbc_num_sqrt(BcNum *a, BcNum *restrict b, size_t scale)
 		x0->rdx -= pow;
 	}
 
-	x0->rdx = digs = digs1 = 0;
+	x0->rdx = digs = digs1 = times = 0;
 	resrdx = scale + 2;
-	len = BC_NUM_INT(x0) + resrdx - 1;
-
-	while (cmp != 0 || digs < len) {
+	len = x0->len + resrdx - 1;
+	cmp = 1;
+	cmp1 = cmp2 = SSIZE_MAX;
+	do {
 		s = zbc_num_div(a, x0, &f, resrdx);
 		if (s) goto err;
 		s = zbc_num_add(x0, &f, &fprime, resrdx);
@@ -2284,11 +2285,12 @@ static BC_STATUS zbc_num_sqrt(BcNum *a, BcNum *restrict b, size_t scale)
 		temp = x0;
 		x0 = x1;
 		x1 = temp;
-	}
+	} while (cmp != 0 || digs < len);
 
 	bc_num_copy(b, x0);
 	scale -= 1;
-	if (b->rdx > scale) bc_num_truncate(b, b->rdx - scale);
+	if (b->rdx > scale)
+		bc_num_truncate(b, b->rdx - scale);
  err:
 	bc_num_free(&fprime);
 	bc_num_free(&f);
@@ -2545,6 +2547,8 @@ static void xc_read_line(BcVec *vec, FILE *fp)
 # if ENABLE_FEATURE_EDITING
 	if (G_ttyin && fp == stdin) {
 		int n, i;
+		if (!G.line_input_state)
+			G.line_input_state = new_line_input_t(DO_HISTORY);
 #  define line_buf bb_common_bufsiz1
 		n = read_line_input(G.line_input_state, "", line_buf, COMMON_BUFSIZE);
 		if (n <= 0) { // read errors or EOF, or ^D, or ^C
@@ -6872,22 +6876,6 @@ static BC_STATUS zxc_program_exec(void)
 }
 #define zxc_program_exec(...) (zxc_program_exec(__VA_ARGS__) COMMA_SUCCESS)
 
-static unsigned xc_vm_envLen(const char *var)
-{
-	char *lenv;
-	unsigned len;
-
-	lenv = getenv(var);
-	len = BC_NUM_PRINT_WIDTH;
-	if (!lenv) return len;
-
-	len = bb_strtou(lenv, NULL, 10) - 1;
-	if (errno || len < 2 || len >= INT_MAX)
-		len = BC_NUM_PRINT_WIDTH;
-
-	return len;
-}
-
 static BC_STATUS zxc_vm_process(const char *text)
 {
 	BcStatus s;
@@ -7377,12 +7365,25 @@ static void xc_program_init(void)
 	bc_char_vec_init(&G.input_buffer);
 }
 
+static unsigned xc_vm_envLen(const char *var)
+{
+	char *lenv;
+	unsigned len;
+
+	lenv = getenv(var);
+	len = BC_NUM_PRINT_WIDTH;
+	if (!lenv) return len;
+
+	len = bb_strtou(lenv, NULL, 10) - 1;
+	if (errno || len < 2 || len >= INT_MAX)
+		len = BC_NUM_PRINT_WIDTH;
+
+	return len;
+}
+
 static int xc_vm_init(const char *env_len)
 {
 	G.prog.len = xc_vm_envLen(env_len);
-#if ENABLE_FEATURE_EDITING
-	G.line_input_state = new_line_input_t(DO_HISTORY);
-#endif
 	bc_vec_init(&G.files, sizeof(char *), NULL);
 
 	xc_program_init();

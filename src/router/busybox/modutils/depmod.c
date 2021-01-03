@@ -30,10 +30,11 @@ typedef struct module_info {
 	struct module_info *dnext, *dprev;
 } module_info;
 
-static int FAST_FUNC parse_module(const char *fname, struct stat *sb UNUSED_PARAM,
-				void *data, int depth UNUSED_PARAM)
+static int FAST_FUNC parse_module(struct recursive_state *state,
+		const char *fname,
+		struct stat *sb UNUSED_PARAM)
 {
-	module_info **first = (module_info **) data;
+	module_info **first = (module_info **)state->userData;
 	char *image, *ptr;
 	module_info *info;
 	/* Arbitrary. Was sb->st_size, but that breaks .gz etc */
@@ -214,11 +215,12 @@ int depmod_main(int argc UNUSED_PARAM, char **argv)
 	modules = NULL;
 	if (*argv) {
 		do {
-			parse_module(*argv, /*sb (unused):*/ NULL, &modules, 0);
+			recursive_action(*argv, 0 /* no ACTION_RECURSE! */,
+				parse_module, NULL, &modules);
 		} while (*++argv);
 	} else {
 		recursive_action(".", ACTION_RECURSE,
-				parse_module, NULL, &modules, 0);
+				parse_module, NULL, &modules);
 	}
 
 	/* Generate dependency and alias files */

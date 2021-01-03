@@ -29,7 +29,7 @@ extern int capget(cap_user_header_t header, const cap_user_data_t data);
 #define _LINUX_CAPABILITY_U32S_3     2
 #endif
 
-static const char *const capabilities[] = {
+static const char *const capabilities[] ALIGN_PTR = {
 	"chown",
 	"dac_override",
 	"dac_read_search",

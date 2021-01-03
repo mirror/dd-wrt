@@ -10,7 +10,6 @@
 //config:config SETSERIAL
 //config:	bool "setserial (6.9 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	Retrieve or set Linux serial port.
 
@@ -382,8 +381,7 @@ static bool cmd_needs_arg(int cmd)
 # error "Unexpected flags size"
 #endif
 
-static const uint16_t setbits[CMD_FLAG_LAST + 1] =
-{
+static const uint16_t setbits[CMD_FLAG_LAST + 1] ALIGN2 = {
 	0,
 	ASYNC_SPD_HI,
 	ASYNC_SPD_VHI,

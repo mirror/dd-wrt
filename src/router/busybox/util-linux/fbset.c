@@ -14,7 +14,6 @@
 //config:config FBSET
 //config:	bool "fbset (5.9 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	fbset is used to show or change the settings of a Linux frame buffer
 //config:	device. The frame buffer device provides a simple and unique
@@ -194,7 +193,7 @@ static const struct cmdoptions_t {
 	const char name[9];
 	const unsigned char param_count;
 	const unsigned char code;
-} g_cmdoptions[] = {
+} g_cmdoptions[] ALIGN1 = {
 	/*"12345678" + NUL */
 //TODO: convert to index_in_strings()
 	{ "fb"      , 1, CMD_FB       },

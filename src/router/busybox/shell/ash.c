@@ -207,17 +207,17 @@
 #define IF_BASH_SUBSTR              IF_ASH_BASH_COMPAT
 /* BASH_TEST2: [[ EXPR ]]
  * Status of [[ support:
- * We replace && and || with -a and -o
+ *   && and || work as they should
+ *   = is glob match operator, not equality operator: STR = GLOB
+ *   == same as =
+ *   =~ is regex match operator: STR =~ REGEX
  * TODO:
  * singleword+noglob expansion:
  *   v='a b'; [[ $v = 'a b' ]]; echo 0:$?
  *   [[ /bin/n* ]]; echo 0:$?
- * -a/-o are not AND/OR ops! (they are just strings)
  * quoting needs to be considered (-f is an operator, "-f" and ""-f are not; etc)
- * = is glob match operator, not equality operator: STR = GLOB
- * (in GLOB, quoting is significant on char-by-char basis: a*cd"*")
- * == same as =
- * add =~ regex match operator: STR =~ REGEX
+ * ( ) < > should not have special meaning (IOW: should not require quoting)
+ * in word = GLOB, quoting should be significant on char-by-char basis: a*cd"*"
  */
 #define    BASH_TEST2           (ENABLE_ASH_BASH_COMPAT * ENABLE_ASH_TEST)
 #define    BASH_SOURCE          ENABLE_ASH_BASH_COMPAT
@@ -542,6 +542,61 @@ var_end(const char *var)
 			break;
 	return var;
 }
+
+
+/* ============ Parser data */
+
+/*
+ * ash_vmsg() needs parsefile->fd, hence parsefile definition is moved up.
+ */
+struct strlist {
+	struct strlist *next;
+	char *text;
+};
+
+struct alias;
+
+struct strpush {
+	struct strpush *prev;   /* preceding string on stack */
+	char *prev_string;
+	int prev_left_in_line;
+#if ENABLE_ASH_ALIAS
+	struct alias *ap;       /* if push was associated with an alias */
+#endif
+	char *string;           /* remember the string since it may change */
+
+	/* Remember last two characters for pungetc. */
+	int lastc[2];
+
+	/* Number of outstanding calls to pungetc. */
+	int unget;
+};
+
+/*
+ * The parsefile structure pointed to by the global variable parsefile
+ * contains information about the current file being read.
+ */
+struct parsefile {
+	struct parsefile *prev; /* preceding file on stack */
+	int linno;              /* current line */
+	int pf_fd;              /* file descriptor (or -1 if string) */
+	int left_in_line;       /* number of chars left in this line */
+	int left_in_buffer;     /* number of chars left in this buffer past the line */
+	char *next_to_pgetc;    /* next char in buffer */
+	char *buf;              /* input buffer */
+	struct strpush *strpush; /* for pushing strings at this level */
+	struct strpush basestrpush; /* so pushing one is fast */
+
+	/* Remember last two characters for pungetc. */
+	int lastc[2];
+
+	/* Number of outstanding calls to pungetc. */
+	int unget;
+};
+
+static struct parsefile basepf;        /* top level input file */
+static struct parsefile *g_parsefile = &basepf;  /* current input file */
+static char *commandname;              /* currently executing command */
 
 
 /* ============ Interrupts / exceptions */
@@ -1299,61 +1354,6 @@ showtree(union node *n)
 #endif /* DEBUG */
 
 
-/* ============ Parser data */
-
-/*
- * ash_vmsg() needs parsefile->fd, hence parsefile definition is moved up.
- */
-struct strlist {
-	struct strlist *next;
-	char *text;
-};
-
-struct alias;
-
-struct strpush {
-	struct strpush *prev;   /* preceding string on stack */
-	char *prev_string;
-	int prev_left_in_line;
-#if ENABLE_ASH_ALIAS
-	struct alias *ap;       /* if push was associated with an alias */
-#endif
-	char *string;           /* remember the string since it may change */
-
-	/* Remember last two characters for pungetc. */
-	int lastc[2];
-
-	/* Number of outstanding calls to pungetc. */
-	int unget;
-};
-
-/*
- * The parsefile structure pointed to by the global variable parsefile
- * contains information about the current file being read.
- */
-struct parsefile {
-	struct parsefile *prev; /* preceding file on stack */
-	int linno;              /* current line */
-	int pf_fd;              /* file descriptor (or -1 if string) */
-	int left_in_line;       /* number of chars left in this line */
-	int left_in_buffer;     /* number of chars left in this buffer past the line */
-	char *next_to_pgetc;    /* next char in buffer */
-	char *buf;              /* input buffer */
-	struct strpush *strpush; /* for pushing strings at this level */
-	struct strpush basestrpush; /* so pushing one is fast */
-
-	/* Remember last two characters for pungetc. */
-	int lastc[2];
-
-	/* Number of outstanding calls to pungetc. */
-	int unget;
-};
-
-static struct parsefile basepf;        /* top level input file */
-static struct parsefile *g_parsefile = &basepf;  /* current input file */
-static char *commandname;              /* currently executing command */
-
-
 /* ============ Message printing */
 
 static void
@@ -2091,7 +2091,7 @@ static const struct {
 	int flags;
 	const char *var_text;
 	void (*var_func)(const char *) FAST_FUNC;
-} varinit_data[] = {
+} varinit_data[] ALIGN_PTR = {
 	/*
 	 * Note: VEXPORT would not work correctly here for NOFORK applets:
 	 * some environment strings may be constant.
@@ -2770,7 +2770,7 @@ updatepwd(const char *dir)
 			lim++;
 		}
 	}
-	p = strtok(cdcomppath, "/");
+	p = strtok_r(cdcomppath, "/", &cdcomppath);
 	while (p) {
 		switch (*p) {
 		case '.':
@@ -2789,7 +2789,7 @@ updatepwd(const char *dir)
 			new = stack_putstr(p, new);
 			USTPUTC('/', new);
 		}
-		p = strtok(NULL, "/");
+		p = strtok_r(NULL, "/", &cdcomppath);
 	}
 	if (new > lim)
 		STUNPUTC(new);
@@ -4273,50 +4273,6 @@ sprint_status48(char *os, int status, int sigonly)
 	return s - os;
 }
 
-static int
-wait_block_or_sig(int *status)
-{
-	int pid;
-
-	do {
-		sigset_t mask;
-
-		/* Poll all children for changes in their state */
-		got_sigchld = 0;
-		/* if job control is active, accept stopped processes too */
-		pid = waitpid(-1, status, doing_jobctl ? (WNOHANG|WUNTRACED) : WNOHANG);
-		if (pid != 0)
-			break; /* Error (e.g. EINTR, ECHILD) or pid */
-
-		/* Children exist, but none are ready. Sleep until interesting signal */
-#if 1
-		sigfillset(&mask);
-		sigprocmask2(SIG_SETMASK, &mask); /* mask is updated */
-		while (!got_sigchld && !pending_sig) {
-			sigsuspend(&mask);
-			/* ^^^ add "sigdelset(&mask, SIGCHLD);" before sigsuspend
-			 * to make sure SIGCHLD is not masked off?
-			 * It was reported that this:
-			 *	fn() { : | return; }
-			 *	shopt -s lastpipe
-			 *	fn
-			 *	exec ash SCRIPT
-			 * under bash 4.4.23 runs SCRIPT with SIGCHLD masked,
-			 * making "wait" commands in SCRIPT block forever.
-			 */
-		}
-		sigprocmask(SIG_SETMASK, &mask, NULL);
-#else /* unsafe: a signal can set pending_sig after check, but before pause() */
-		while (!got_sigchld && !pending_sig)
-			pause();
-#endif
-
-		/* If it was SIGCHLD, poll children again */
-	} while (got_sigchld);
-
-	return pid;
-}
-
 #define DOWAIT_NONBLOCK 0
 #define DOWAIT_BLOCK    1
 #define DOWAIT_BLOCK_OR_SIG 2
@@ -4325,12 +4281,47 @@ wait_block_or_sig(int *status)
 #endif
 
 static int
+waitproc(int block, int *status)
+{
+	sigset_t oldmask;
+	int flags = block == DOWAIT_BLOCK ? 0 : WNOHANG;
+	int err;
+
+#if JOBS
+	if (doing_jobctl)
+		flags |= WUNTRACED;
+#endif
+
+	do {
+		got_sigchld = 0;
+		do
+			err = waitpid(-1, status, flags);
+		while (err < 0 && errno == EINTR);
+
+		if (err || (err = -!block))
+			break;
+
+		sigfillset(&oldmask);
+		sigprocmask2(SIG_SETMASK, &oldmask); /* mask is updated */
+		while (!got_sigchld && !pending_sig)
+			sigsuspend(&oldmask);
+		sigprocmask(SIG_SETMASK, &oldmask, NULL);
+		//simpler, but unsafe: a signal can set pending_sig after check, but before pause():
+		//while (!got_sigchld && !pending_sig)
+		//	pause();
+
+	} while (got_sigchld);
+
+	return err;
+}
+
+static int
 waitone(int block, struct job *job)
 {
 	int pid;
 	int status;
 	struct job *jp;
-	struct job *thisjob;
+	struct job *thisjob = NULL;
 #if BASH_WAIT_N
 	bool want_jobexitstatus = (block & DOWAIT_JOBSTATUS);
 	block = (block & ~DOWAIT_JOBSTATUS);
@@ -4357,21 +4348,8 @@ waitone(int block, struct job *job)
 	 * SIG_DFL handler does not wake sigsuspend().
 	 */
 	INT_OFF;
-	if (block == DOWAIT_BLOCK_OR_SIG) {
-		pid = wait_block_or_sig(&status);
-	} else {
-		int wait_flags = 0;
-		if (block == DOWAIT_NONBLOCK)
-			wait_flags = WNOHANG;
-		/* if job control is active, accept stopped processes too */
-		if (doing_jobctl)
-			wait_flags |= WUNTRACED;
-		/* NB: _not_ safe_waitpid, we need to detect EINTR */
-		pid = waitpid(-1, &status, wait_flags);
-	}
-	TRACE(("wait returns pid=%d, status=0x%x, errno=%d(%s)\n",
-				pid, status, errno, strerror(errno)));
-	thisjob = NULL;
+	pid = waitproc(block, &status);
+	TRACE(("wait returns pid %d, status=%d\n", pid, status));
 	if (pid <= 0)
 		goto out;
 
@@ -4453,15 +4431,27 @@ waitone(int block, struct job *job)
 static int
 dowait(int block, struct job *jp)
 {
-	int pid = block == DOWAIT_NONBLOCK ? got_sigchld : 1;
+	smallint gotchld = *(volatile smallint *)&got_sigchld;
+	int rpid;
+	int pid;
 
-	while (jp ? jp->state == JOBRUNNING : pid > 0) {
-		if (!jp)
-			got_sigchld = 0;
+	if (jp && jp->state != JOBRUNNING)
+		block = DOWAIT_NONBLOCK;
+
+	if (block == DOWAIT_NONBLOCK && !gotchld)
+		return 1;
+
+	rpid = 1;
+
+	do {
 		pid = waitone(block, jp);
-	}
+		rpid &= !!pid;
 
-	return pid;
+		if (!pid || (jp && jp->state != JOBRUNNING))
+			block = DOWAIT_NONBLOCK;
+	} while (pid >= 0);
+
+	return rpid;
 }
 
 #if JOBS
@@ -4618,7 +4608,7 @@ getstatus(struct job *job)
 				job->sigint = 1;
 #endif
 		}
-		retval += 128;
+		retval |= 128;
 	}
 	TRACE(("getstatus: job %d, nproc %d, status 0x%x, retval 0x%x\n",
 		jobno(job), job->nprocs, status, retval));
@@ -4684,7 +4674,7 @@ waitcmd(int argc UNUSED_PARAM, char **argv)
 				if (status != -1 && !WIFSTOPPED(status)) {
 					retval = WEXITSTATUS(status);
 					if (WIFSIGNALED(status))
-						retval = WTERMSIG(status) + 128;
+						retval = 128 | WTERMSIG(status);
 					goto ret;
 				}
 			}
@@ -4708,7 +4698,7 @@ waitcmd(int argc UNUSED_PARAM, char **argv)
 			job = getjob(*argv, 0);
 		}
 		/* loop until process terminated or stopped */
-		dowait(DOWAIT_BLOCK_OR_SIG, NULL);
+		dowait(DOWAIT_BLOCK_OR_SIG, job);
 		if (pending_sig)
 			goto sigout;
 		job->waited = 1;
@@ -4719,7 +4709,7 @@ waitcmd(int argc UNUSED_PARAM, char **argv)
  ret:
 	return retval;
  sigout:
-	retval = 128 + pending_sig;
+	retval = 128 | pending_sig;
 	return retval;
 }
 
@@ -4821,7 +4811,7 @@ static char *cmdnextc;
 static void
 cmdputs(const char *s)
 {
-	static const char vstype[VSTYPE + 1][3] = {
+	static const char vstype[VSTYPE + 1][3] ALIGN1 = {
 		"", "}", "-", "+", "?", "=",
 		"%", "%%", "#", "##"
 		IF_BASH_SUBSTR(, ":")
@@ -7287,7 +7277,9 @@ subevalvar(char *start, char *str, int strloc,
  out:
 	amount = loc - expdest;
 	STADJUST(amount, expdest);
+#if BASH_PATTERN_SUBST
  out1:
+#endif
 	/* Remove any recorded regions beyond start of variable */
 	removerecordregions(startloc);
 
@@ -8518,7 +8510,7 @@ enum {
 	, /* thus far 29 bits used */
 };
 
-static const char *const tokname_array[] = {
+static const char *const tokname_array[] ALIGN_PTR = {
 	"end of file",
 	"newline",
 	"redirection",
@@ -10603,7 +10595,7 @@ preadfd(void)
 
 	g_parsefile->next_to_pgetc = buf;
 #if ENABLE_FEATURE_EDITING
- retry:
+ /* retry: */
 	if (!iflag || g_parsefile->pf_fd != STDIN_FILENO)
 		nr = nonblock_immune_read(g_parsefile->pf_fd, buf, IBUFSIZ - 1);
 	else {
@@ -10625,15 +10617,14 @@ preadfd(void)
 		if (nr == 0) {
 			/* ^C pressed, "convert" to SIGINT */
 			write(STDOUT_FILENO, "^C", 2);
+			raise(SIGINT);
 			if (trap[SIGINT]) {
 				buf[0] = '\n';
 				buf[1] = '\0';
-				raise(SIGINT);
 				return 1;
 			}
 			exitstatus = 128 + SIGINT;
-			bb_putchar('\n');
-			goto retry;
+			return -1;
 		}
 		if (nr < 0) {
 			if (errno == 0) {
@@ -11833,7 +11824,8 @@ simplecmd(void)
 				tokpushback = 1;
 				goto out;
 			}
-			wordtext = (char *) (t == TAND ? "-a" : "-o");
+			/* pass "&&" or "||" to [[ ]] as literal args */
+			wordtext = (char *) (t == TAND ? "&&" : "||");
 #endif
 		case TWORD:
 			n = stzalloc(sizeof(struct narg));
@@ -12811,7 +12803,7 @@ parsebackq: {
 				goto done;
 
 			case '\\':
-				pc = pgetc(); /* or pgetc_eatbnl()? why (example)? */
+				pc = pgetc(); /* not pgetc_eatbnl! */
 				if (pc != '\\' && pc != '`' && pc != '$'
 				 && (!synstack->dblquote || pc != '"')
 				) {
@@ -14167,6 +14159,7 @@ reset(void)
 	/* from input.c: */
 	g_parsefile->left_in_buffer = 0;
 	g_parsefile->left_in_line = 0;      /* clear input buffer */
+	g_parsefile->unget = 0;
 	popallfiles();
 
 	/* from var.c: */
@@ -14183,8 +14176,7 @@ exitshell(void)
 	char *p;
 
 #if ENABLE_FEATURE_EDITING_SAVE_ON_EXIT
-	if (line_input_state)
-		save_history(line_input_state);
+	save_history(line_input_state); /* may be NULL */
 #endif
 	savestatus = exitstatus;
 	TRACE(("pid %d, exitshell(%d)\n", getpid(), savestatus));
@@ -14348,6 +14340,17 @@ procargs(char **argv)
 		shellparam.nparam++;
 		xargv++;
 	}
+
+	/* Interactive bash re-enables SIGHUP which is SIG_IGNed on entry.
+	 * Try:
+	 * trap '' hup; bash; echo RET	# type "kill -hup $$", see SIGHUP having effect
+	 * trap '' hup; bash -c 'kill -hup $$; echo ALIVE'  # here SIGHUP is SIG_IGNed
+	 * NB: must do it before setting up signals (in optschanged())
+	 * and reading .profile etc (after we return from here):
+	 */
+	if (iflag)
+		signal(SIGHUP, SIG_DFL);
+
 	optschanged();
 
 	return login_sh;
@@ -14518,14 +14521,6 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
 		}
 #endif
  state4: /* XXX ??? - why isn't this before the "if" statement */
-
-		/* Interactive bash re-enables SIGHUP which is SIG_IGNed on entry.
-		 * Try:
-		 * trap '' hup; bash; echo RET	# type "kill -hup $$", see SIGHUP having effect
-		 * trap '' hup; bash -c 'kill -hup $$; echo ALIVE'  # here SIGHUP is SIG_IGNed
-		 */
-		signal(SIGHUP, SIG_DFL);
-
 		cmdloop(1);
 	}
 #if PROFILE

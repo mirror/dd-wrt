@@ -43,7 +43,6 @@
 //config:config NTPD
 //config:	bool "ntpd (22 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	The NTP client/server daemon.
 //config:
@@ -78,7 +77,7 @@
 //usage:	IF_FEATURE_NTP_AUTH(" [-k KEYFILE] [-p [keyno:N:]PEER]...")
 //usage:#define ntpd_full_usage "\n\n"
 //usage:       "NTP client/server\n"
-//usage:     "\n	-d	Verbose (may be repeated)"
+//usage:     "\n	-d[d]	Verbose"
 //usage:     "\n	-n	Do not daemonize"
 //usage:     "\n	-q	Quit after clock is set"
 //usage:     "\n	-N	Run at high priority"
@@ -337,6 +336,9 @@ typedef struct {
 #endif
 	int              p_fd;
 	int              datapoint_idx;
+#if ENABLE_FEATURE_NTPD_SERVER
+	uint32_t         p_refid;
+#endif
 	uint32_t         lastpkt_refid;
 	uint8_t          lastpkt_status;
 	uint8_t          lastpkt_stratum;
@@ -413,7 +415,9 @@ struct globals {
 	 * in stratum 2+ packets, it's IPv4 address or 4 first bytes
 	 * of MD5 hash of IPv6
 	 */
+#if ENABLE_FEATURE_NTPD_SERVER
 	uint32_t refid;
+#endif
 	uint8_t  ntp_status;
 	/* precision is defined as the larger of the resolution and time to
 	 * read the clock, in log2 units.  For instance, the precision of a
@@ -836,6 +840,24 @@ reset_peer_stats(peer_t *p, double offset)
 	VERB6 bb_error_msg("%s->lastpkt_recv_time=%f", p->p_dotted, p->lastpkt_recv_time);
 }
 
+#if ENABLE_FEATURE_NTPD_SERVER
+static uint32_t calculate_refid(len_and_sockaddr *lsa)
+{
+# if ENABLE_FEATURE_IPV6
+	if (lsa->u.sa.sa_family == AF_INET6) {
+		md5_ctx_t md5;
+		uint32_t res[MD5_OUTSIZE / 4];
+
+		md5_begin(&md5);
+		md5_hash(&md5, &lsa->u.sin6.sin6_addr, sizeof(lsa->u.sin6.sin6_addr));
+		md5_end(&md5, res);
+		return res[0];
+	}
+# endif
+	return lsa->u.sin.sin_addr.s_addr;
+}
+#endif
+
 static len_and_sockaddr*
 resolve_peer_hostname(peer_t *p)
 {
@@ -847,6 +869,9 @@ resolve_peer_hostname(peer_t *p)
 		p->p_dotted = xmalloc_sockaddr2dotted_noport(&lsa->u.sa);
 		VERB1 if (strcmp(p->p_hostname, p->p_dotted) != 0)
 			bb_error_msg("'%s' is %s", p->p_hostname, p->p_dotted);
+#if ENABLE_FEATURE_NTPD_SERVER
+		p->p_refid = calculate_refid(p->p_lsa);
+#endif
 		p->dns_errors = 0;
 		return lsa;
 	}
@@ -1122,8 +1147,7 @@ step_time(double offset)
 	gettimeofday(&tvc, NULL); /* never fails */
 	dtime = tvc.tv_sec + (1.0e-6 * tvc.tv_usec) + offset;
 	d_to_tv(dtime, &tvn);
-	if (settimeofday(&tvn, NULL) == -1)
-		bb_simple_perror_msg_and_die("settimeofday");
+	xsettimeofday(&tvn);
 
 	VERB2 {
 		tval = tvc.tv_sec;
@@ -1764,7 +1788,10 @@ update_local_clock(peer_t *p)
 
 	G.reftime = G.cur_time;
 	G.ntp_status = p->lastpkt_status;
-	G.refid = p->lastpkt_refid;
+#if ENABLE_FEATURE_NTPD_SERVER
+	/* Our current refid is the IPv4 (or md5-hashed IPv6) address of the peer we took time from: */
+	G.refid = p->p_refid;
+#endif
 	G.rootdelay = p->lastpkt_rootdelay + p->lastpkt_delay;
 	dtemp = p->filter_jitter; // SQRT(SQUARE(p->filter_jitter) + SQUARE(G.cluster_jitter));
 	dtemp += MAXD(p->filter_dispersion + FREQ_TOLERANCE * (G.cur_time - p->lastpkt_recv_time) + abs_offset, MINDISP);
@@ -1996,6 +2023,15 @@ recv_and_process_peer_pkt(peer_t *p)
 	peer_t      *q;
 
 	offset = 0;
+
+	/* The below can happen as follows:
+	 * = we receive two peer rsponses at once.
+	 * = recv_and_process_peer_pkt(PEER1) -> update_local_clock()
+	 *   -> step_time() and it closes all other fds, sets all ->fd to -1.
+	 * = recv_and_process_peer_pkt(PEER2) sees PEER2->fd == -1
+	 */
+	if (p->p_fd < 0)
+		return;
 
 	/* We can recvfrom here and check from.IP, but some multihomed
 	 * ntp servers reply from their *other IP*.
@@ -2249,11 +2285,11 @@ recv_and_process_client_pkt(void /*int fd*/)
 	 * We don't support this.
 	 */
 
-#if ENABLE_FEATURE_NTP_AUTH
+# if ENABLE_FEATURE_NTP_AUTH
 	if (size != NTP_MSGSIZE_NOAUTH && size != NTP_MSGSIZE_MD5_AUTH && size != NTP_MSGSIZE_SHA1_AUTH)
-#else
+# else
 	if (size != NTP_MSGSIZE_NOAUTH && size != NTP_MSGSIZE_MD5_AUTH)
-#endif
+# endif
 	{
 		char *addr;
 		if (size < 0) {
@@ -2424,9 +2460,6 @@ static NOINLINE void ntp_init(char **argv)
 #endif
 
 	srand(getpid());
-
-	if (getuid())
-		bb_simple_error_msg_and_die(bb_msg_you_must_be_root);
 
 	/* Set some globals */
 	G.discipline_jitter = G_precision_sec;

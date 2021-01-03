@@ -9,7 +9,6 @@
 //config:config NSENTER
 //config:	bool "nsenter (6.5 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	Run program with namespaces of other processes.
 
@@ -18,7 +17,7 @@
 //kbuild:lib-$(CONFIG_NSENTER) += nsenter.o
 
 //usage:#define nsenter_trivial_usage
-//usage:       "[OPTIONS] [PROG [ARGS]]"
+//usage:       "[OPTIONS] [PROG ARGS]"
 //usage:#define nsenter_full_usage "\n"
 //usage:     "\n	-t PID		Target process to get namespaces from"
 //usage:     "\n	-m[FILE]	Enter mount namespace"
@@ -104,8 +103,9 @@ static const struct namespace_descr ns_list[] = {
 };
 /*
  * Upstream nsenter doesn't support the short option for --preserve-credentials
+ * "+": stop on first non-option
  */
-static const char opt_str[] ALIGN1 = "U::i::u::n::p::m::""t:+S:+G:+r::w::F";
+static const char opt_str[] ALIGN1 = "+""U::i::u::n::p::m::""t:+S:+G:+r::w::F";
 
 #if ENABLE_LONG_OPTS
 static const char nsenter_longopts[] ALIGN1 =

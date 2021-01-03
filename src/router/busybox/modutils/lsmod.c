@@ -10,7 +10,6 @@
 //config:config LSMOD
 //config:	bool "lsmod (4.3 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	lsmod is used to display a list of loaded modules.
 //config:
