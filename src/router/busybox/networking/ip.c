@@ -257,7 +257,7 @@
 //usage:#define iprule_trivial_usage
 //usage:       "[list] | add|del SELECTOR ACTION"
 //usage:#define iprule_full_usage "\n\n"
-//usage:       "	SELECTOR := [from PREFIX] [to PREFIX] [tos TOS] [fwmark FWMARK]\n"
+//usage:       "	SELECTOR := [not] [from PREFIX] [to PREFIX] [tos TOS] [fwmark FWMARK]\n"
 //usage:       "			[dev IFACE] [pref NUMBER]\n"
 //usage:       "	ACTION := [table TABLE_ID] [nat ADDR]\n"
 //usage:       "			[prohibit|reject|unreachable]\n"
