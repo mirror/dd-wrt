@@ -5078,7 +5078,7 @@ void stop_wan(void)
 
 void start_set_routes(void)
 {
-	char word[80], *tmp;
+	char word[512], *tmp;
 
 	if (!nvram_match("lan_gateway", "0.0.0.0")) {
 		eval("route", "del", "default");
@@ -5116,7 +5116,61 @@ void start_set_routes(void)
 		} else
 			route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
 	}
-
+	eval("ip", "rule", "flush");	//busybox does not support flushing of rules, we need to find a solution here
+	char *pbr = nvram_safe_get("pbr_rule");
+	foreach(word, pbr, tmp) {
+		char cmd[160];
+		strcpy(cmd, "ip rule");
+		GETENTRYBYIDX(not, word, 0);	// not supported on old 2.4 kernels
+		if (!strcmp(not, "1"))
+			sprintf(cmd, "%s %s", cmd, "not");
+		GETENTRYBYIDX(from_en, word, 1);
+		GETENTRYBYIDX(from, word, 2);
+		if (!strcmp(from_en, "1"))
+			sprintf(cmd, "%s from %s", cmd, from);
+		GETENTRYBYIDX(to_en, word, 3);
+		GETENTRYBYIDX(to, word, 4);
+		if (!strcmp(to_en, "1"))
+			sprintf(cmd, "%s to %s", cmd, to);
+		GETENTRYBYIDX(priority_en, word, 5);
+		GETENTRYBYIDX(priority, word, 6);
+		if (!strcmp(priority_en, "1"))
+			sprintf(cmd, "%s priority %s", cmd, priority);
+		GETENTRYBYIDX(tos_en, word, 7);
+		GETENTRYBYIDX(tos, word, 8);
+		if (!strcmp(tos_en, "1"))
+			sprintf(cmd, "%s tos %s", cmd, tos);
+		GETENTRYBYIDX(fwmark_en, word, 9);
+		GETENTRYBYIDX(fwmark, word, 10);
+		if (!strcmp(fwmark_en, "1"))
+			sprintf(cmd, "%s fwmark %s", cmd, fwmark);
+		GETENTRYBYIDX(realms_en, word, 11);
+		GETENTRYBYIDX(realms, word, 12);
+		if (!strcmp(realms_en, "1"))
+			sprintf(cmd, "%s realms %s", cmd, realms);
+		GETENTRYBYIDX(table_en, word, 13);
+		GETENTRYBYIDX(table, word, 14);
+		if (!strcmp(table_en, "1"))
+			sprintf(cmd, "%s table %s", cmd, table);
+		GETENTRYBYIDX(suppress_prefixlength_en, word, 15);
+		GETENTRYBYIDX(suppress_prefixlength, word, 16);
+		if (!strcmp(suppress_prefixlength_en, "1"))
+			sprintf(cmd, "%s suppress_prefixlength %s", cmd, suppress_prefixlength);
+		GETENTRYBYIDX(iif_en, word, 17);
+		GETENTRYBYIDX(iif, word, 18);
+		if (!strcmp(iif_en, "1"))
+			sprintf(cmd, "%s iif %s", cmd, iif);
+		GETENTRYBYIDX(nat_en, word, 19);
+		GETENTRYBYIDX(nat, word, 20);
+		if (!strcmp(nat_en, "1"))
+			sprintf(cmd, "%s nat %s", cmd, nat);
+		GETENTRYBYIDX(type_en, word, 21);
+		GETENTRYBYIDX(type, word, 22);
+		if (!strcmp(type_en, "1"))
+			sprintf(cmd, "%s type %s", cmd, type);
+		fprintf(stderr, "call %s\n", cmd);
+		system(cmd);
+	}
 	if (f_exists("/tmp/tvrouting"))
 		system("sh /tmp/tvrouting");
 	if (f_exists("/tmp/udhcpstaticroutes"))
