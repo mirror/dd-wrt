@@ -636,6 +636,9 @@ ifeq ($(CONFIG_IPV6),y)
 	sed -i 's/\# CONFIG_FEATURE_IP_NEIGH is not set/CONFIG_FEATURE_IP_NEIGH=y/g' busybox/.config
 endif
 endif
+	echo "# CONFIG_STATIC_LIBGCC is not set" >> busybox/.config
+	echo "# CONFIG_BASE32 is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_EROFS is not set" >> busybox/.config
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
