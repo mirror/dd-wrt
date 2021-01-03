@@ -831,11 +831,11 @@ static char *m_fullName;
 /*======================================================================*/
 
 
-static int FAST_FUNC check_module_name_match(const char *filename,
-		struct stat *statbuf UNUSED_PARAM,
-		void *userdata, int depth UNUSED_PARAM)
+static int FAST_FUNC check_module_name_match(struct recursive_state *state,
+		const char *filename,
+		struct stat *statbuf UNUSED_PARAM)
 {
-	char *fullname = (char *) userdata;
+	char *fullname = (char *) state->userData;
 	char *tmp;
 
 	if (fullname[0] == '\0')
@@ -4061,7 +4061,7 @@ int insmod_main(int argc, char **argv)
 			if (!module_dir)
 				module_dir = xstrdup(tmdn);
 			recursive_action(module_dir, ACTION_RECURSE,
-					check_module_name_match, NULL, m_fullName, 0);
+					check_module_name_match, NULL, m_fullName);
 			free(module_dir);
 			free(tmdn);
 		}
@@ -4079,7 +4079,7 @@ int insmod_main(int argc, char **argv)
 			/* No module found under /lib/modules/`uname -r`, this
 			 * time cast the net a bit wider.  Search /lib/modules/ */
 			r = recursive_action(module_dir, ACTION_RECURSE,
-					check_module_name_match, NULL, m_fullName, 0);
+					check_module_name_match, NULL, m_fullName);
 			if (r)
 				bb_error_msg_and_die("%s: module not found", m_fullName);
 			free(module_dir);
