@@ -512,10 +512,10 @@ struct dns_lists *get_dns_list(int v6)
 	char *openvpn_get_dns = nvram_safe_get("openvpn_get_dns");
 	char *wg_get_dns = nvram_safe_get("wg_get_dns");
 
-	if (*openvpn_get_dns) {	
+	if (*openvpn_get_dns) {
 		add_dnslist(dns_list, openvpn_get_dns, 0, 0);
 	}
-	if (*wg_get_dns) {	
+	if (*wg_get_dns) {
 		add_dnslist(dns_list, wg_get_dns, 0, 0);
 	}
 	/*
@@ -634,12 +634,14 @@ int dns_to_resolv(void)
  */
 int get_single_ip(char *ipaddr, int which)
 {
-	static int ip[4] = {
-		0, 0, 0, 0
+	static int ip[5] = {
+		0, 0, 0, 0, 0
 	};
 	int ret;
-
-	ret = sscanf(ipaddr, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
+	if (which == 4)
+		ret = sscanf(ipaddr, "%d.%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3], &ip[4]);
+	else
+		ret = sscanf(ipaddr, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 	return ip[which];
 }
 
