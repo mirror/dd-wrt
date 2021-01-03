@@ -9,7 +9,6 @@
 //config:config BEEP
 //config:	bool "beep (2.4 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	The beep applets beeps in a given freq/Hz.
 //config:
@@ -115,10 +114,10 @@ int beep_main(int argc, char **argv)
 		while (rep) {
 //bb_error_msg("rep[%d] freq=%d, length=%d, delay=%d", rep, freq, length, delay);
 			xioctl(speaker, KIOCSOUND, (void*)(uintptr_t)tickrate_div_freq);
-			usleep(1000 * length);
+			msleep(length);
 			ioctl(speaker, KIOCSOUND, (void*)0);
 			if (--rep)
-				usleep(1000 * delay);
+				msleep(delay);
 		}
 	}
 

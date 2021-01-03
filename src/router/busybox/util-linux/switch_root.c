@@ -9,7 +9,6 @@
 //config:config SWITCH_ROOT
 //config:	bool "switch_root (5.5 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	The switch_root utility is used from initramfs to select a new
 //config:	root device. Under initramfs, you have to use this instead of
@@ -165,7 +164,7 @@ static void drop_capabilities(char *string)
 {
 	char *cap;
 
-	cap = strtok(string, ",");
+	cap = strtok_r(string, ",", &string);
 	while (cap) {
 		unsigned cap_idx;
 
@@ -175,7 +174,7 @@ static void drop_capabilities(char *string)
 		drop_bounding_set(cap_idx);
 		drop_capset(cap_idx);
 		bb_error_msg("dropped capability: %s", cap);
-		cap = strtok(NULL, ",");
+		cap = strtok_r(NULL, ",", &string);
 	}
 }
 #endif

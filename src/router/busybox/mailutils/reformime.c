@@ -115,6 +115,7 @@ static int parse(const char *boundary, char **argv)
 		/* Split to tokens */
 		{
 			char *s, *p;
+			char *tokstate;
 			unsigned ntokens;
 			const char *delims = ";=\" \t\n";
 
@@ -127,13 +128,13 @@ static int parse(const char *boundary, char **argv)
 			}
 			dbg_error_msg("L:'%s'", p);
 			ntokens = 0;
-			s = strtok(s, delims);
+			s = strtok_r(s, delims, &tokstate);
 			while (s) {
 				tokens[ntokens] = s;
 				if (ntokens < ARRAY_SIZE(tokens) - 1)
 					ntokens++;
 				dbg_error_msg("L[%d]='%s'", ntokens, s);
-				s = strtok(NULL, delims);
+				s = strtok_r(NULL, delims, &tokstate);
 			}
 			tokens[ntokens] = NULL;
 			dbg_error_msg("EMPTYLINE, ntokens:%d", ntokens);
@@ -165,7 +166,7 @@ static int parse(const char *boundary, char **argv)
 			else
 				filename = bb_get_last_path_component_strip(xstrdup(filename));
 
-			if (opts & OPT_X) {
+			if (option_mask32 & OPT_X) {
 				int fd[2];
 
 				/* start external helper */
@@ -218,7 +219,7 @@ static int parse(const char *boundary, char **argv)
 			fclose(fp);
 
 			/* Wait for child */
-			if (opts & OPT_X) {
+			if (option_mask32 & OPT_X) {
 				int rc;
 				signal(SIGPIPE, SIG_DFL);
 				rc = (wait4pid(pid) & 0xff);
@@ -274,6 +275,7 @@ Usage: reformime [options]
 int reformime_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int reformime_main(int argc UNUSED_PARAM, char **argv)
 {
+	unsigned opts;
 	const char *opt_prefix = "";
 
 	INIT_G();

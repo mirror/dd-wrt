@@ -31,7 +31,6 @@
 //config:	bool "Enable display of filesystem status (-f)"
 //config:	default y
 //config:	depends on STAT
-//config:	select PLATFORM_LINUX # statfs()
 //config:	help
 //config:	Without this, stat will not support the '-f' option to display
 //config:	information about filesystem status.
@@ -41,7 +40,7 @@
 //kbuild:lib-$(CONFIG_STAT) += stat.o
 
 //usage:#define stat_trivial_usage
-//usage:       "[OPTIONS] FILE..."
+//usage:       "[-lt"IF_FEATURE_STAT_FILESYSTEM("f")"] "IF_FEATURE_STAT_FORMAT("[-c FMT] ")"FILE..."
 //usage:#define stat_full_usage "\n\n"
 //usage:       "Display file"
 //usage:            IF_FEATURE_STAT_FILESYSTEM(" (default) or filesystem")
@@ -209,7 +208,7 @@ FS_TYPE(0x62656572, "sysfs")
 static const char *human_fstype(uint32_t f_type)
 {
 # define FS_TYPE(type, name) type,
-	static const uint32_t fstype[] = {
+	static const uint32_t fstype[] ALIGN4 = {
 		FS_TYPE_LIST
 	};
 # undef FS_TYPE

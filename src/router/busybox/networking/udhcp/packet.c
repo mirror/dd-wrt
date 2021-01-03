@@ -164,14 +164,14 @@ int FAST_FUNC udhcp_send_raw_packet(struct dhcp_packet *dhcp_pkt,
 	packet.udp.len = htons(UDP_DHCP_SIZE - padding);
 	/* for UDP checksumming, ip.len is set to UDP packet len */
 	packet.ip.tot_len = packet.udp.len;
-	packet.udp.check = inet_cksum((uint16_t *)&packet,
+	packet.udp.check = inet_cksum(&packet,
 			IP_UDP_DHCP_SIZE - padding);
 	/* but for sending, it is set to IP packet len */
 	packet.ip.tot_len = htons(IP_UDP_DHCP_SIZE - padding);
 	packet.ip.ihl = sizeof(packet.ip) >> 2;
 	packet.ip.version = IPVERSION;
 	packet.ip.ttl = IPDEFTTL;
-	packet.ip.check = inet_cksum((uint16_t *)&packet.ip, sizeof(packet.ip));
+	packet.ip.check = inet_cksum(&packet.ip, sizeof(packet.ip));
 
 	udhcp_dump_packet(dhcp_pkt);
 	result = sendto(fd, &packet, IP_UDP_DHCP_SIZE - padding, /*flags:*/ 0,
@@ -189,7 +189,8 @@ int FAST_FUNC udhcp_send_raw_packet(struct dhcp_packet *dhcp_pkt,
 /* Let the kernel do all the work for packet generation */
 int FAST_FUNC udhcp_send_kernel_packet(struct dhcp_packet *dhcp_pkt,
 		uint32_t source_nip, int source_port,
-		uint32_t dest_nip, int dest_port)
+		uint32_t dest_nip, int dest_port,
+		const char *ifname)
 {
 	struct sockaddr_in sa;
 	unsigned padding;
@@ -203,6 +204,21 @@ int FAST_FUNC udhcp_send_kernel_packet(struct dhcp_packet *dhcp_pkt,
 		goto ret_msg;
 	}
 	setsockopt_reuseaddr(fd);
+
+	/* If interface carrier goes down, unless we
+	 * bind socket to a particular netdev, the packet
+	 * can go out through another interface, eg. via
+	 * default route despite being bound to a specific
+	 * source IP. As such, bind to device hard and fail
+	 * otherwise. Sending renewal packets on foreign
+	 * interfaces makes no sense.
+	 */
+	if (ifname) {
+		if (setsockopt_bindtodevice(fd, ifname) < 0) {
+			msg = "bindtodevice";
+			goto ret_close;
+		}
+	}
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
