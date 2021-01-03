@@ -35,7 +35,6 @@
 //config:	bool "Enable -o time and -o etime specifiers"
 //config:	default y
 //config:	depends on (PS || MINIPS) && DESKTOP
-//config:	select PLATFORM_LINUX
 //config:
 //config:config FEATURE_PS_UNUSUAL_SYSTEMS
 //config:	bool "Support Linux prior to 2.4.0 and non-ELF systems"
@@ -376,7 +375,7 @@ static void func_pcpu(char *buf, int size, const procps_status_t *ps)
 }
 */
 
-static const ps_out_t out_spec[] = {
+static const ps_out_t out_spec[] ALIGN_PTR = {
 /* Mandated by http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ps.html: */
 	{ 8                  , "user"  ,"USER"   ,func_user  ,PSSCAN_UIDGID  },
 	{ 8                  , "group" ,"GROUP"  ,func_group ,PSSCAN_UIDGID  },

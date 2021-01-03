@@ -304,11 +304,11 @@ static void parse_module(module_info *info, const char *pathname)
 	free(module_image);
 }
 
-static FAST_FUNC int fileAction(const char *pathname,
-		struct stat *sb UNUSED_PARAM,
-		void *modname_to_match,
-		int depth UNUSED_PARAM)
+static FAST_FUNC int fileAction(struct recursive_state *state,
+		const char *pathname,
+		struct stat *sb UNUSED_PARAM)
 {
+	const char *modname_to_match = state->userData;
 	int cur;
 	const char *fname;
 
@@ -674,8 +674,7 @@ static void process_module(char *name, const char *cmdline_options)
 			ACTION_RECURSE, /* flags */
 			fileAction, /* file action */
 			NULL, /* dir action */
-			name, /* user data */
-			0 /* depth */
+			name /* user data */
 		);
 		dbg1_error_msg("dirscan complete");
 		/* Module was not found, or load failed, or is_remove */

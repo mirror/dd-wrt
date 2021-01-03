@@ -27,7 +27,6 @@
 //config:config PING
 //config:	bool "ping (10 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	ping uses the ICMP protocol's mandatory ECHO_REQUEST datagram to
 //config:	elicit an ICMP ECHO_RESPONSE from a host or gateway.
@@ -59,16 +58,16 @@
 //usage:# define ping_trivial_usage
 //usage:       "HOST"
 //usage:# define ping_full_usage "\n\n"
-//usage:       "Send ICMP ECHO_REQUEST packets to network hosts"
+//usage:       "Send ICMP ECHO_REQUESTs to HOST"
 //usage:# define ping6_trivial_usage
 //usage:       "HOST"
 //usage:# define ping6_full_usage "\n\n"
-//usage:       "Send ICMP ECHO_REQUEST packets to network hosts"
+//usage:       "Send ICMP ECHO_REQUESTs to HOST"
 //usage:#else
 //usage:# define ping_trivial_usage
 //usage:       "[OPTIONS] HOST"
 //usage:# define ping_full_usage "\n\n"
-//usage:       "Send ICMP ECHO_REQUEST packets to network hosts\n"
+//usage:       "Send ICMP ECHO_REQUESTs to HOST\n"
 //usage:	IF_PING6(
 //usage:     "\n	-4,-6		Force IP or IPv6 name resolution"
 //usage:	)
@@ -82,22 +81,26 @@
 //usage:     "\n			(after all -c CNT packets are sent)"
 //usage:     "\n	-w SEC		Seconds until ping exits (default:infinite)"
 //usage:     "\n			(can exit earlier with -c CNT)"
-//usage:     "\n	-q		Quiet, only display output at start"
-//usage:     "\n			and when finished"
-//usage:     "\n	-p HEXBYTE	Pattern to use for payload"
+//usage:     "\n	-q		Quiet, only display output at start/finish"
+//usage:     "\n	-p HEXBYTE	Payload pattern"
 //usage:
 //usage:# define ping6_trivial_usage
 //usage:       "[OPTIONS] HOST"
 //usage:# define ping6_full_usage "\n\n"
-//usage:       "Send ICMP ECHO_REQUEST packets to network hosts\n"
+//usage:       "Send ICMP ECHO_REQUESTs to HOST\n"
 //usage:     "\n	-c CNT		Send only CNT pings"
 //usage:     "\n	-s SIZE		Send SIZE data bytes in packets (default 56)"
 //usage:     "\n	-i SECS		Interval"
 //usage:     "\n	-A		Ping as soon as reply is recevied"
+///////:     "\n	-t TTL		Set TTL"
+///////^^^^^ -t not tested for IPv6, might be not working
 //usage:     "\n	-I IFACE/IP	Source interface or IP address"
-//usage:     "\n	-q		Quiet, only display output at start"
-//usage:     "\n			and when finished"
-//usage:     "\n	-p HEXBYTE	Pattern to use for payload"
+//usage:     "\n	-W SEC		Seconds to wait for the first response (default 10)"
+//usage:     "\n			(after all -c CNT packets are sent)"
+//usage:     "\n	-w SEC		Seconds until ping exits (default:infinite)"
+//usage:     "\n			(can exit earlier with -c CNT)"
+//usage:     "\n	-q		Quiet, only display output at start/finish"
+//usage:     "\n	-p HEXBYTE	Payload pattern"
 //usage:
 //usage:#endif
 //usage:
@@ -218,7 +221,7 @@ static void ping4(len_and_sockaddr *lsa)
 	/*memset(pkt, 0, sizeof(G.packet)); already is */
 	pkt->icmp_type = ICMP_ECHO;
 	pkt->icmp_id = G.myid;
-	pkt->icmp_cksum = inet_cksum((uint16_t *) pkt, sizeof(G.packet));
+	pkt->icmp_cksum = inet_cksum(pkt, sizeof(G.packet));
 
 	xsendto(pingsock, G.packet, DEFDATALEN + ICMP_MINLEN, &lsa->u.sa, lsa->len);
 
@@ -333,6 +336,11 @@ static int common_ping_main(sa_family_t af, char **argv)
 
 	create_icmp_socket(lsa);
 	G.myid = (uint16_t) getpid();
+	/* we can use native-endian ident, but other Unix ping/traceroute
+	 * utils use *big-endian pid*, and e.g. traceroute on our machine may be
+	 * *not* from busybox, idents may collide. Follow the convention:
+	 */
+	G.myid = htons(G.myid);
 #if ENABLE_PING6
 	if (lsa->u.sa.sa_family == AF_INET6)
 		ping6(lsa);
@@ -467,16 +475,15 @@ static void sendping_tail(void (*sp)(int), int size_pkt)
 {
 	int sz;
 
-	CLR((uint16_t)G.ntransmitted % MAX_DUP_CHK);
-	G.ntransmitted++;
-
-	size_pkt += datalen;
-
 	if (G.deadline_us) {
 		unsigned n = G.cur_us - G.deadline_us;
 		if ((int)n >= 0)
 			print_stats_and_exit(0);
 	}
+
+	CLR((uint16_t)G.ntransmitted % MAX_DUP_CHK);
+	G.ntransmitted++;
+	size_pkt += datalen;
 
 	/* sizeof(pingaddr) can be larger than real sa size, but I think
 	 * it doesn't matter */
@@ -530,7 +537,7 @@ static void sendping4(int junk UNUSED_PARAM)
 		/* No hton: we'll read it back on the same machine */
 		*(uint32_t*)&pkt->icmp_dun = G.cur_us = monotonic_us();
 
-	pkt->icmp_cksum = inet_cksum((uint16_t *) pkt, datalen + ICMP_MINLEN);
+	pkt->icmp_cksum = inet_cksum(pkt, datalen + ICMP_MINLEN);
 
 	sendping_tail(sendping4, ICMP_MINLEN);
 }
@@ -928,6 +935,11 @@ static int common_ping_main(int opt, char **argv)
 	G.interval_us = interval * 1000000;
 
 	myid = (uint16_t) getpid();
+	/* we can use native-endian ident, but other Unix ping/traceroute
+	 * utils use *big-endian pid*, and e.g. traceroute on our machine may be
+	 * *not* from busybox, idents may collide. Follow the convention:
+	 */
+	myid = htons(myid);
 	hostname = argv[optind];
 #if ENABLE_PING6
 	{

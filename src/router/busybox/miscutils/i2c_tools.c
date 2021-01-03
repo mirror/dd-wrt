@@ -11,35 +11,30 @@
 //config:config I2CGET
 //config:	bool "i2cget (5.5 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	Read from I2C/SMBus chip registers.
 //config:
 //config:config I2CSET
 //config:	bool "i2cset (6.7 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	Set I2C registers.
 //config:
 //config:config I2CDUMP
 //config:	bool "i2cdump (7.1 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	Examine I2C registers.
 //config:
 //config:config I2CDETECT
 //config:	bool "i2cdetect (7.1 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	Detect I2C chips.
 //config:
 //config:config I2CTRANSFER
 //config:	bool "i2ctransfer (4.0 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	Send user-defined I2C messages in one transfer.
 //config:
@@ -278,7 +273,7 @@ static int i2c_bus_lookup(const char *bus_str)
 	return xstrtou_range(bus_str, 10, 0, 0xfffff);
 }
 
-#if ENABLE_I2CGET || ENABLE_I2CSET || ENABLE_I2CDUMP || ENABLE_I2CTRANSFER
+#if ENABLE_I2CGET || ENABLE_I2CSET || ENABLE_I2CDUMP
 static int i2c_parse_bus_addr(const char *addr_str)
 {
 	/* Slave address must be in range 0x03 - 0x77. */
@@ -291,14 +286,16 @@ static void i2c_set_pec(int fd, int pec)
 				itoptr(pec ? 1 : 0),
 				"can't set PEC");
 }
+#endif
 
+#if ENABLE_I2CGET || ENABLE_I2CSET || ENABLE_I2CDUMP || ENABLE_I2CTRANSFER
 static void i2c_set_slave_addr(int fd, int addr, int force)
 {
 	ioctl_or_perror_and_die(fd, force ? I2C_SLAVE_FORCE : I2C_SLAVE,
 				itoptr(addr),
 				"can't set address to 0x%02x", addr);
 }
-#endif /* ENABLE_I2CGET || ENABLE_I2CSET || ENABLE_I2CDUMP */
+#endif
 
 #if ENABLE_I2CGET || ENABLE_I2CSET
 static int i2c_parse_data_addr(const char *data_addr)
@@ -1057,24 +1054,19 @@ struct adap_desc {
 	const char *algo;
 };
 
-static const struct adap_desc adap_descs[] = {
-	{ .funcs	= "dummy",
-	  .algo		= "Dummy bus", },
-	{ .funcs	= "isa",
-	  .algo		= "ISA bus", },
-	{ .funcs	= "i2c",
-	  .algo		= "I2C adapter", },
-	{ .funcs	= "smbus",
-	  .algo		= "SMBus adapter", },
+static const struct adap_desc adap_descs[] ALIGN_PTR = {
+	{ .funcs = "dummy", .algo = "Dummy bus", },
+	{ .funcs = "isa",   .algo = "ISA bus", },
+	{ .funcs = "i2c",   .algo = "I2C adapter", },
+	{ .funcs = "smbus", .algo = "SMBus adapter", },
 };
 
-struct i2c_func
-{
+struct i2c_func {
 	long value;
 	const char* name;
 };
 
-static const struct i2c_func i2c_funcs_tab[] = {
+static const struct i2c_func i2c_funcs_tab[] ALIGN_PTR = {
 	{ .value = I2C_FUNC_I2C,
 	  .name = "I2C" },
 	{ .value = I2C_FUNC_SMBUS_QUICK,

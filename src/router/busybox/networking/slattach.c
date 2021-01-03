@@ -15,7 +15,6 @@
 //config:config SLATTACH
 //config:	bool "slattach (6.2 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	slattach configures serial line as SLIP network interface.
 
@@ -77,7 +76,7 @@ static void restore_state_and_exit(int exitcode)
 	cfsetispeed(&state, B0);
 	cfsetospeed(&state, B0);
 	exitcode |= tcsetattr_serial_or_warn(&state);
-	sleep(1);
+	sleep1();
 
 	/* Restore line status */
 	if (tcsetattr_serial_or_warn(&G.saved_state))

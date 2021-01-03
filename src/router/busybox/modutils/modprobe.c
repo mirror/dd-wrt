@@ -261,17 +261,15 @@ static int is_conf_command(char *buffer, const char *command)
  * (/etc/modprobe.conf syntax). It supports includes (only files, no directories).
  */
 
-static int FAST_FUNC include_conf_file_act(const char *filename,
-					   struct stat *statbuf UNUSED_PARAM,
-					   void *userdata,
-					   int depth UNUSED_PARAM);
+static int FAST_FUNC include_conf_file_act(struct recursive_state *state,
+		const char *filename,
+		struct stat *statbuf UNUSED_PARAM)
 
-static int FAST_FUNC include_conf_dir_act(const char *filename UNUSED_PARAM,
-					  struct stat *statbuf UNUSED_PARAM,
-					  void *userdata UNUSED_PARAM,
-					  int depth)
+static int FAST_FUNC include_conf_dir_act(struct recursive_state *state,
+		const char *filename,
+		struct stat *statbuf UNUSED_PARAM)
 {
-	if (depth > 1)
+	if (state->depth > 1)
 		return SKIP;
 
 	return TRUE;
@@ -285,12 +283,11 @@ static int include_conf_recursive(struct include_conf_t *conf, const char *filen
 				conf, 1);
 }
 
-static int FAST_FUNC include_conf_file_act(const char *filename,
-					   struct stat *statbuf UNUSED_PARAM,
-					   void *userdata,
-					   int depth UNUSED_PARAM)
+static int FAST_FUNC include_conf_file_act(struct recursive_state *state,
+		const char *filename,
+		struct stat *statbuf UNUSED_PARAM)
 {
-	struct include_conf_t *conf = (struct include_conf_t *) userdata;
+	struct include_conf_t *conf = (struct include_conf_t *) state->userData;
 	struct dep_t **first = &conf->first;
 	struct dep_t **current = &conf->current;
 	int continuation_line = 0;

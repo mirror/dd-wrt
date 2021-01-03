@@ -9,7 +9,6 @@
 //config:config ACPID
 //config:	bool "acpid (9 kb)"
 //config:	default y
-//config:	select PLATFORM_LINUX
 //config:	help
 //config:	acpid listens to ACPI events coming either in textual form from
 //config:	/proc/acpi/event (though it is marked deprecated it is still widely
@@ -42,7 +41,9 @@
 //usage:     "\n	-c DIR	Config directory [/etc/acpi]"
 //usage:     "\n	-e FILE	/proc event file [/proc/acpi/event]"
 //usage:     "\n	-l FILE	Log file [/var/log/acpid.log]"
-//usage:     "\n	-p FILE	Pid file [/var/run/acpid.pid]"
+//usage:	IF_FEATURE_PIDFILE(
+//usage:     "\n	-p FILE	Pid file [" CONFIG_PID_FILE_PATH "/acpid.pid]"
+//usage:	)
 //usage:     "\n	-a FILE	Action file [/etc/acpid.conf]"
 //usage:     "\n	-M FILE Map file [/etc/acpi.map]"
 //usage:	IF_FEATURE_ACPID_COMPAT(
@@ -98,7 +99,7 @@ struct acpi_event {
 	const char *desc;
 };
 
-static const struct acpi_event f_evt_tab[] = {
+static const struct acpi_event f_evt_tab[] ALIGN_PTR = {
 	{ "EV_KEY", 0x01, "KEY_POWER", 116, 1, "button/power PWRF 00000080" },
 	{ "EV_KEY", 0x01, "KEY_POWER", 116, 1, "button/power PWRB 00000080" },
 	{ "EV_SW", 0x05, "SW_LID", 0x00, 1, "button/lid LID0 00000080" },
@@ -109,7 +110,7 @@ struct acpi_action {
 	const char *action;
 };
 
-static const struct acpi_action f_act_tab[] = {
+static const struct acpi_action f_act_tab[] ALIGN_PTR = {
 	{ "PWRF", "PWRF/00000080" },
 	{ "LID0", "LID/00000080" },
 };

@@ -347,12 +347,13 @@ struct BUG_off_t_size_is_misdetected {
 #endif
 #endif
 
-#if defined(__GLIBC__)
-/* glibc uses __errno_location() to get a ptr to errno */
-/* We can just memorize it once - no multithreading in busybox :) */
+#if defined(errno)
+/* If errno is a define, assume it's "define errno (*__errno_location())"
+ * and we will cache it's result in this variable */
 extern int *const bb_errno;
 #undef errno
 #define errno (*bb_errno)
+#define bb_cached_errno_ptr 1
 #endif
 
 #if !(ULONG_MAX > 0xffffffff)
@@ -394,6 +395,32 @@ void* xrealloc_vector_helper(void *vector, unsigned sizeof_and_shift, int idx) F
 char *xstrdup(const char *s) FAST_FUNC RETURNS_MALLOC;
 char *xstrndup(const char *s, int n) FAST_FUNC RETURNS_MALLOC;
 void *xmemdup(const void *s, int n) FAST_FUNC RETURNS_MALLOC;
+void *mmap_read(int fd, size_t size) FAST_FUNC;
+void *mmap_anon(size_t size) FAST_FUNC;
+void *xmmap_anon(size_t size) FAST_FUNC;
+
+#if defined(__x86_64__) || defined(i386)
+# define BB_ARCH_FIXED_PAGESIZE 4096
+#elif defined(__arm__) /* only 32bit, 64bit ARM has variable page size */
+# define BB_ARCH_FIXED_PAGESIZE 4096
+#else /* if defined(ARCH) */
+/* add you favorite arch today! */
+//From Linux kernel inspection:
+//xtenza,s390[x],riscv,nios2,csky,sparc32: fixed 4k pages
+//sparc64,alpha,openrisc: fixed 8k pages
+#endif
+
+#if defined BB_ARCH_FIXED_PAGESIZE
+# define IF_VARIABLE_ARCH_PAGESIZE(...) /*nothing*/
+# define bb_getpagesize()     BB_ARCH_FIXED_PAGESIZE
+# define INIT_PAGESIZE(var)   ((void)0)
+# define cached_pagesize(var) BB_ARCH_FIXED_PAGESIZE
+#else
+# define IF_VARIABLE_ARCH_PAGESIZE(...) __VA_ARGS__
+# define bb_getpagesize()     getpagesize()
+# define INIT_PAGESIZE(var)   ((var) = getpagesize())
+# define cached_pagesize(var) (var)
+#endif
 
 
 //TODO: supply a pointer to char[11] buffer (avoid statics)?
@@ -444,15 +471,23 @@ enum {
 	ACTION_FOLLOWLINKS    = (1 << 1),
 	ACTION_FOLLOWLINKS_L0 = (1 << 2),
 	ACTION_DEPTHFIRST     = (1 << 3),
-	/*ACTION_REVERSE      = (1 << 4), - unused */
-	ACTION_QUIET          = (1 << 5),
-	ACTION_DANGLING_OK    = (1 << 6),
+	ACTION_QUIET          = (1 << 4),
+	ACTION_DANGLING_OK    = (1 << 5),
 };
 typedef uint8_t recurse_flags_t;
-extern int recursive_action(const char *fileName, unsigned flags,
-	int FAST_FUNC (*fileAction)(const char *fileName, struct stat* statbuf, void* userData, int depth),
-	int FAST_FUNC (*dirAction)(const char *fileName, struct stat* statbuf, void* userData, int depth),
-	void* userData, unsigned depth) FAST_FUNC;
+typedef struct recursive_state {
+	unsigned flags;
+	unsigned depth;
+	void *userData;
+	int FAST_FUNC (*fileAction)(struct recursive_state *state, const char *fileName, struct stat* statbuf);
+	int FAST_FUNC  (*dirAction)(struct recursive_state *state, const char *fileName, struct stat* statbuf);
+} recursive_state_t;
+int recursive_action(const char *fileName, unsigned flags,
+	int FAST_FUNC (*fileAction)(struct recursive_state *state, const char *fileName, struct stat* statbuf),
+	int FAST_FUNC  (*dirAction)(struct recursive_state *state, const char *fileName, struct stat* statbuf),
+	void *userData
+) FAST_FUNC;
+
 extern int device_open(const char *device, int mode) FAST_FUNC;
 enum { GETPTY_BUFSIZE = 16 }; /* more than enough for "/dev/ttyXXX" */
 extern int xgetpty(char *line) FAST_FUNC;
@@ -630,6 +665,8 @@ void parse_datestr(const char *date_str, struct tm *ptm) FAST_FUNC;
 time_t validate_tm_time(const char *date_str, struct tm *ptm) FAST_FUNC;
 char *strftime_HHMMSS(char *buf, unsigned len, time_t *tp) FAST_FUNC;
 char *strftime_YYYYMMDDHHMMSS(char *buf, unsigned len, time_t *tp) FAST_FUNC;
+void xsettimeofday(const struct timeval *tv) FAST_FUNC;
+
 
 int xsocket(int domain, int type, int protocol) FAST_FUNC;
 void xbind(int sockfd, struct sockaddr *my_addr, socklen_t addrlen) FAST_FUNC;
@@ -825,7 +862,7 @@ ssize_t recv_from_to(int fd, void *buf, size_t len, int flags,
 		struct sockaddr *to,
 		socklen_t sa_size) FAST_FUNC;
 
-uint16_t inet_cksum(uint16_t *addr, int len) FAST_FUNC;
+uint16_t inet_cksum(const void *addr, int len) FAST_FUNC;
 int parse_pasv_epsv(char *buf) FAST_FUNC;
 
 /* 0 if argv[0] is NULL: */
@@ -1025,8 +1062,9 @@ void generate_uuid(uint8_t *buf) FAST_FUNC;
 /* Last element is marked by mult == 0 */
 struct suffix_mult {
 	char suffix[4];
-	unsigned mult;
+	uint32_t mult;
 };
+#define ALIGN_SUFFIX ALIGN4
 extern const struct suffix_mult bkm_suffixes[];
 #define km_suffixes (bkm_suffixes + 1)
 extern const struct suffix_mult cwbkMG_suffixes[];
@@ -1138,7 +1176,6 @@ int BB_EXECVP(const char *file, char *const argv[]) FAST_FUNC;
 #define BB_EXECLP(prog,cmd,...) execlp(prog,cmd,__VA_ARGS__)
 #endif
 void BB_EXECVP_or_die(char **argv) NORETURN FAST_FUNC;
-void exec_prog_or_SHELL(char **argv) NORETURN FAST_FUNC;
 
 /* xvfork() can't be a _function_, return after vfork in child mangles stack
  * in the parent. It must be a macro. */
@@ -1571,7 +1608,8 @@ int del_loop(const char *device) FAST_FUNC;
  * malloc and return it in *devname.
  * return value is the opened fd to the loop device, or < on error
  */
-int set_loop(char **devname, const char *file, unsigned long long offset, unsigned flags) FAST_FUNC;
+int set_loop(char **devname, const char *file, unsigned long long offset,
+		unsigned long long sizelimit, unsigned flags) FAST_FUNC;
 /* These constants match linux/loop.h (without BB_ prefix): */
 #define BB_LO_FLAGS_READ_ONLY 1
 #define BB_LO_FLAGS_AUTOCLEAR 4
@@ -1647,12 +1685,14 @@ char *bb_simplify_path(const char *path) FAST_FUNC;
 /* Returns ptr to NUL */
 char *bb_simplify_abs_path_inplace(char *path) FAST_FUNC;
 
-#ifndef LOGIN_FAIL_DELAY
-#define LOGIN_FAIL_DELAY 3
-#endif
-extern void bb_do_delay(int seconds) FAST_FUNC;
-extern void change_identity(const struct passwd *pw) FAST_FUNC;
-extern void run_shell(const char *shell, int loginshell, const char **args) NORETURN FAST_FUNC;
+void pause_after_failed_login(void) FAST_FUNC;
+void bb_do_delay(unsigned seconds) FAST_FUNC;
+void msleep(unsigned ms) FAST_FUNC;
+void sleep1(void) FAST_FUNC;
+void change_identity(const struct passwd *pw) FAST_FUNC;
+void exec_shell(const char *shell, int loginshell, const char **args) NORETURN FAST_FUNC;
+void exec_login_shell(const char *shell) NORETURN FAST_FUNC;
+void exec_prog_or_SHELL(char **argv) NORETURN FAST_FUNC;
 
 /* Returns $SHELL, getpwuid(getuid())->pw_shell, or DEFAULT_SHELL.
  * Note that getpwuid result might need xstrdup'ing
@@ -1881,14 +1921,20 @@ typedef const char *get_exe_name_t(int i) FAST_FUNC;
 typedef struct line_input_t {
 	int flags;
 	int timeout;
+# if ENABLE_FEATURE_TAB_COMPLETION
+#  if ENABLE_SHELL_ASH
 	const char *path_lookup;
-# if ENABLE_FEATURE_TAB_COMPLETION \
-&& (ENABLE_ASH  || ENABLE_SH_IS_ASH  || ENABLE_BASH_IS_ASH \
-||  ENABLE_HUSH || ENABLE_SH_IS_HUSH || ENABLE_BASH_IS_HUSH \
-)
+#   define EDITING_HAS_path_lookup 1
+#  else
+#   define EDITING_HAS_path_lookup 0
+#  endif
+#  if ENABLE_SHELL_ASH || ENABLE_SHELL_HUSH
 	/* function to fetch additional application-specific names to match */
 	get_exe_name_t *get_exe_name;
-#  define EDITING_HAS_get_exe_name 1
+#   define EDITING_HAS_get_exe_name 1
+#  else
+#   define EDITING_HAS_get_exe_name 0
+#  endif
 # endif
 # if MAX_HISTORY
 	int cnt_history;
@@ -1916,7 +1962,11 @@ enum {
 	FOR_SHELL        = DO_HISTORY | TAB_COMPLETION | USERNAME_COMPLETION,
 };
 line_input_t *new_line_input_t(int flags) FAST_FUNC;
+#if ENABLE_FEATURE_EDITING_SAVEHISTORY
 void free_line_input_t(line_input_t *n) FAST_FUNC;
+#else
+# define free_line_input_t(n) free(n)
+#endif
 /*
  * maxsize must be >= 2.
  * Returns:
@@ -2072,14 +2122,17 @@ char *percent_decode_in_place(char *str, int strict) FAST_FUNC;
 
 
 extern const char bb_uuenc_tbl_base64[] ALIGN1;
+extern const char bb_uuenc_tbl_base32[] ALIGN1;
 extern const char bb_uuenc_tbl_std[] ALIGN1;
 void bb_uuencode(char *store, const void *s, int length, const char *tbl) FAST_FUNC;
 enum {
 	BASE64_FLAG_UU_STOP = 0x100,
+	BASE64_32           = 0x200, /* base32 */
 	/* Sign-extends to a value which never matches fgetc result: */
 	BASE64_FLAG_NO_STOP_CHAR = 0x80,
 };
-const char *decode_base64(char **pp_dst, const char *src) FAST_FUNC;
+char *decode_base64(char *dst, const char **pp_src) FAST_FUNC;
+char *decode_base32(char *dst, const char **pp_src) FAST_FUNC;
 void read_base64(FILE *src_stream, FILE *dst_stream, int flags) FAST_FUNC;
 
 typedef struct md5_ctx_t {
@@ -2119,6 +2172,13 @@ unsigned sha3_end(sha3_ctx_t *ctx, void *resbuf) FAST_FUNC;
 typedef struct md5_ctx_t md5sha_ctx_t;
 #define md5sha_hash md5_hash
 #define sha_end sha1_end
+enum {
+	MD5_OUTSIZE    = 16,
+	SHA1_OUTSIZE   = 20,
+	SHA256_OUTSIZE = 32,
+	SHA512_OUTSIZE = 64,
+	SHA3_OUTSIZE   = 28,
+};
 
 extern uint32_t *global_crc32_table;
 uint32_t *crc32_filltable(uint32_t *tbl256, int endian) FAST_FUNC;
