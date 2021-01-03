@@ -3110,7 +3110,7 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	char *cur;
 	char *cur_name;
 
-	char *name, ipaddr[20], netmask[20], gateway[20], *metric, *ifname, *page, *nat;
+	char *name, ipaddr[20], netmask[20], gateway[20], src[20], *metric, *ifname, *page, *nat;
 	char new_name[80];
 	char temp[60], *val = NULL;
 
@@ -3194,11 +3194,24 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 		}
 	}
 
+	strcpy(src, "");
+	for (i = 0; i < 4; i++) {
+		snprintf(temp, sizeof(temp), "%s_%d", "route_src", i);
+		val = websGetVar(wp, temp, NULL);
+		if (val) {
+			strcat(src, val);
+			if (i < 3)
+				strcat(src, ".");
+		} else {
+			strcpy(src, "0.0.0.0");
+			break;
+		}
+	}
+
 	page = websGetVar(wp, "route_page", NULL);
 	ifname = websGetVar(wp, "route_ifname", NULL);
 	nat = websGetVar(wp, "route_nat", "0");
 	char *src_en = websGetVar(wp, "src_en", "0");
-	char *src = websGetVar(wp, "route_src", "0.0.0.0");
 	char *scope_en = websGetVar(wp, "scope_en", "0");
 	char *scope = websGetVar(wp, "route_scope", "link");
 	char *table_en = websGetVar(wp, "table_en", "0");
@@ -3363,7 +3376,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	int i, tmp = 1;
 	char word[256], *next;
 	char backuproute[256];
-	struct variable static_route_variables[] = {
+	struct variable static_rule_variables[] = {
 	      { argv:NULL },
 	      { argv:NULL },
 	      { argv:NULL },
@@ -3377,37 +3390,58 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char *cur;
 	char *cur_name;
 
-	char *name, ipaddr[20], netmask[20], gateway[20], *metric, *ifname, *page, *nat;
+	char *name;
 	char new_name[80];
 	char temp[60], *val = NULL;
 
-	buf = safe_malloc(8960 + 1);
+	buf = safe_malloc(10240 + 1);
 	buf_name = safe_malloc(3840 + 1);
-	old = safe_malloc(STATIC_ROUTE_PAGE * 140 + 1);
+	old = safe_malloc(STATIC_ROUTE_PAGE * 160 + 1);
 	old_name = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1);
 	buf[0] = 0;
 	buf_name[0] = 0;
-	bzero(old, STATIC_ROUTE_PAGE * 140 + 1);
+	bzero(old, STATIC_ROUTE_PAGE * 160 + 1);
 	bzero(old_name, STATIC_ROUTE_PAGE * 60 + 1);
 	cur = buf;
 	cur_name = buf_name;
 
-	name = websGetVar(wp, "route_name", "");	// default empty if no find
-	// route_name
-	metric = websGetVar(wp, "route_metric", "0");
+	name = websGetVar(wp, "rule_name", "");	// default empty if no find
+	char *not = websGetVar(wp, "not", "0");
+	char *from_en = websGetVar(wp, "from_en", "0");
+	char *to_en = websGetVar(wp, "to_en", "0");
+	char *priority_en = websGetVar(wp, "priority_en", "0");
+	char *tos_en = websGetVar(wp, "tos_en", "0");
+	char *fwmark_en = websGetVar(wp, "fwmark_en", "0");
+	char *realms_en = websGetVar(wp, "realms_en", "0");
+	char *table_en = websGetVar(wp, "table_en", "0");
+	char *suppress_prefixlength_en = websGetVar(wp, "suppress_prefixlength_en", "0");
+	char *iif_en = websGetVar(wp, "iif_en", "0");
+	char *nat_en = websGetVar(wp, "nat_en", "0");
+	char *type_en = websGetVar(wp, "type_en", "0");
+	char *page = websGetVar(wp, "rule_page", NULL);
+	char *priority = websGetVar(wp, "rule_priority", "");
+	char *tos = websGetVar(wp, "rule_tos", "");
+	char *fwmark = websGetVar(wp, "rule_fwmark", "");
+	char *realms = websGetVar(wp, "rule_realms", "");
+	char *table = websGetVar(wp, "rule_table", "");
+	char *suppress_prefixlength = websGetVar(wp, "rule_suppress_prefixlength", "");
+	char *iif = websGetVar(wp, "rule_iif", "");
+	char *type = websGetVar(wp, "rule_type", "");
+
 	/*
 	 * validate ip address 
 	 */
-	strcpy(ipaddr, "");
-	for (i = 0; i < 4; i++) {
-		snprintf(temp, sizeof(temp), "%s_%d", "route_ipaddr", i);
+	char from[20];
+	strcpy(from, "");
+	for (i = 0; i < 5; i++) {
+		snprintf(temp, sizeof(temp), "%s_%d", "rule_from", i);
 		val = websGetVar(wp, temp, NULL);
 		if (val) {
-			strcat(ipaddr, val);
-			if (i < 3)
-				strcat(ipaddr, ".");
+			strcat(from, val);
+			if (i < 4)
+				strcat(from, ".");
 		} else {
-			// free (ipaddr);
+			// free (from);
 			free(old_name);
 			free(old);
 			free(buf_name);
@@ -3416,20 +3450,17 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 		}
 	}
 
-	/*
-	 * validate netmask 
-	 */
-	strcpy(netmask, "");
-	for (i = 0; i < 4; i++) {
-		snprintf(temp, sizeof(temp), "%s_%d", "route_netmask", i);
+	char to[20];
+	strcpy(to, "");
+	for (i = 0; i < 5; i++) {
+		snprintf(temp, sizeof(temp), "%s_%d", "rule_to", i);
 		val = websGetVar(wp, temp, NULL);
 		if (val) {
-			strcat(netmask, val);
-			if (i < 3)
-				strcat(netmask, ".");
+			strcat(to, val);
+			if (i < 4)
+				strcat(to, ".");
 		} else {
-			// free (netmask);
-			// free (ipaddr);
+			// free (to);
 			free(old_name);
 			free(old);
 			free(buf_name);
@@ -3438,21 +3469,17 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 		}
 	}
 
-	/*
-	 * validate gateway 
-	 */
-	strcpy(gateway, "");
+	char nat[20];
+	strcpy(nat, "");
 	for (i = 0; i < 4; i++) {
-		snprintf(temp, sizeof(temp), "%s_%d", "route_gateway", i);
+		snprintf(temp, sizeof(temp), "%s_%d", "rule_nat", i);
 		val = websGetVar(wp, temp, NULL);
 		if (val) {
-			strcat(gateway, val);
+			strcat(nat, val);
 			if (i < 3)
-				strcat(gateway, ".");
+				strcat(nat, ".");
 		} else {
-			// free (gateway);
-			// free (netmask);
-			// free (ipaddr);
+			// free (nat);
 			free(old_name);
 			free(old);
 			free(buf_name);
@@ -3461,21 +3488,8 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 		}
 	}
 
-	page = websGetVar(wp, "route_page", NULL);
-	ifname = websGetVar(wp, "route_ifname", NULL);
-	nat = websGetVar(wp, "route_nat", "0");
-	char *src_en = websGetVar(wp, "src_en", "0");
-	char *src = websGetVar(wp, "route_src", "0.0.0.0");
-	char *scope_en = websGetVar(wp, "scope_en", "0");
-	char *scope = websGetVar(wp, "route_scope", "link");
-	char *table_en = websGetVar(wp, "table_en", "0");
-	char *table = websGetVar(wp, "route_table", "0");
-	char *mtu_en = websGetVar(wp, "mtu_en", "0");
-	char *mtu = websGetVar(wp, "route_mtu", "1500");
-	char *advmss_en = websGetVar(wp, "advmss_en", "0");
-	char *advmss = websGetVar(wp, "route_advmss", "1460");
 
-	if (!page || !metric || !ifname) {
+	if (!page) {
 		free(old_name);
 		free(old);
 		free(buf_name);
@@ -3484,121 +3498,47 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	}
 	// Allow Defaultroute here
 
-	if (!strcmp(ipaddr, "0.0.0.0") && !strcmp(netmask, "0.0.0.0")
-	    && strcmp(gateway, "0.0.0.0")) {
-		tmp = 1;
-		goto write_nvram;
-	}
-	if ((!strcmp(ipaddr, "0.0.0.0") || !strcmp(ipaddr, "")) && (!strcmp(netmask, "0.0.0.0") || !strcmp(netmask, "")) && (!strcmp(gateway, "0.0.0.0") || !strcmp(gateway, ""))) {
-		tmp = 0;
-		goto write_nvram;
-	}
-	// if (!valid_choice (wp, ifname, &static_route_variables[3]))
-	// {
-	// free (gateway);
-	// free (netmask);
-	// free (ipaddr);
-
-	// return;
-	// }
-
-	if (!*ipaddr) {
-		websDebugWrite(wp, "Invalid <b>%s</b>: must specify an IP Address<br>", v->longname);
-		// free (gateway);
-		// free (netmask);
-		// free (ipaddr);
-		free(old_name);
-		free(old);
-		free(buf_name);
-		free(buf);
-
-		return;
-	}
-	if (!*netmask) {
-		websDebugWrite(wp, "Invalid <b>%s</b>: must specify a Subnet Mask<br>", v->longname);
-		// free (gateway);
-		// free (netmask);
-		// free (ipaddr);
-		free(old_name);
-		free(old);
-		free(buf_name);
-		free(buf);
-
-		return;
-	}
-	if (!valid_ipaddr(wp, ipaddr, &static_route_variables[0]) || !valid_netmask(wp, netmask, &static_route_variables[1]) || !valid_ipaddr(wp, gateway, &static_route_variables[2])) {
-		// free (gateway);
-		// free (netmask);
-		// free (ipaddr);
-		free(old_name);
-		free(old);
-		free(buf_name);
-		free(buf);
-
-		return;
-	}
-
-	/*
-	 * save old value in nvram 
-	 */
-
 write_nvram:
-	if (!strcmp(ifname, "lan")) {
-		ifname = nvram_safe_get("lan_ifname");
-		static_route_variables[2].argv = NULL;
+	if (!strcmp(iif, "lan")) {
+		iif = nvram_safe_get("lan_ifname");
 	}
-	if (!strcmp(ifname, "wan")) {
-		ifname = nvram_safe_get("wan_ifname");
-		static_route_variables[2].argv = NULL;
-	} else {
-		static_route_variables[2].argv = NULL;
+	if (!strcmp(iif, "wan")) {
+		iif = nvram_safe_get("wan_ifname");
 	}
-
+	
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
 		strcpy(&old[i * STATIC_ROUTE_PAGE], "");
 		strcpy(&old_name[i * STATIC_ROUTE_PAGE], "");
 	}
 	i = 0;
-	foreach(word, nvram_safe_get("static_route"), next) {
+	foreach(word, nvram_safe_get("pbr_rule"), next) {
 		strcpy(&old[i * STATIC_ROUTE_PAGE], word);
 		i++;
 	}
 	i = 0;
-	foreach(word, nvram_safe_get("static_route_name"), next) {
+	foreach(word, nvram_safe_get("pbr_rule_name"), next) {
 		strcpy(&old_name[i * STATIC_ROUTE_PAGE], word);
 		i++;
 	}
 
 	strcpy(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE]);
 
-	if (!tmp) {
-		if (*(backuproute)) {
-			addDeletion(backuproute);
-			bzero(backuproute, strlen(backuproute));
-		}
+	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", not,from_en, from, to_en,to,priority_en,priority,tos_en,tos,fwmark_en,fwmark,realms_en,realms,table_en,table,suppress_prefixlength_en,suppress_prefixlength,iif_en,iif,nat_en,nat,type_en,type);
 
-		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 140, "%s", "");
-		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
-	} else {
-		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 140, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, src_en, src, scope_en, scope, table_en, table, mtu_en,
-			 mtu, advmss_en, advmss);
-		httpd_filter_name(name, new_name, sizeof(new_name), SET);
-		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "$NAME:%s$$", new_name);
-	}
+	httpd_filter_name(name, new_name, sizeof(new_name), SET);
+	snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "$NAME:%s$$", new_name);
+	
 	if (strcmp(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE])) {
 		if (*(backuproute)) {
 			//nvram_set("nowebaction","1");
-			//addAction("static_route_del");
+			//addAction("pbr_rule_del");
 			addDeletion(backuproute);
 		}
 	}
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
-		//if (strcmp(old[i], ""))
-		//      cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
-		//                      cur == buf ? "" : " ", old[i]);
 		if (strcmp(&old_name[i * STATIC_ROUTE_PAGE], "")) {
-			cur += snprintf(cur, buf + 8960 - cur, "%s%s", cur == buf ? "" : " ", &old[i * STATIC_ROUTE_PAGE]);
+			cur += snprintf(cur, buf + 10240 - cur, "%s%s", cur == buf ? "" : " ", &old[i * STATIC_ROUTE_PAGE]);
 			cur_name += snprintf(cur_name, buf_name + 3840 - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * STATIC_ROUTE_PAGE]);
 		}
 	}
@@ -3607,19 +3547,12 @@ write_nvram:
 		delete_old_routes();
 
 	nvram_set(v->name, buf);
-	nvram_set("static_route_name", buf_name);
+	nvram_set("pbr_rule_name", buf_name);
 	nvram_commit();
 
 	free(old_name);
 	free(old);
 	free(buf_name);
 	free(buf);
-
-	// if (ipaddr)
-	// free (ipaddr);
-	// if (netmask)
-	// free (netmask);
-	// if (gateway)
-	// free (gateway);
 }
 #endif
