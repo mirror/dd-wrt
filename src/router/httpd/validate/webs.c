@@ -518,15 +518,51 @@ void addDeletion(char *word)
 void delete_old_routes(void)
 {
 	char word[256], *next;
-	char ipaddr[20], netmask[20], gateway[20], met[20], ifn[20];
 	foreach(word, nvram_safe_get("action_service_arg1"), next) {
+	#ifdef HAVE_MICRO
+		char ipaddr[20], netmask[20], gateway[20], met[20], ifn[20];
 		strcpy(ipaddr, strtok(word, ":"));
 		strcpy(netmask, strtok(NULL, ":"));
 		strcpy(gateway, strtok(NULL, ":"));
 		strcpy(met, strtok(NULL, ":"));
 		strcpy(ifn, strtok(NULL, ":"));
-
 		route_del(ifn, atoi(met) + 1, ipaddr, gateway, netmask);
+	#else
+		GETENTRYBYIDX(ipaddr, word, 0);
+		GETENTRYBYIDX(netmask, word, 1);
+		GETENTRYBYIDX(gateway, word, 2);
+		GETENTRYBYIDX(metric, word, 3);
+		GETENTRYBYIDX(ifname, word, 4);
+		GETENTRYBYIDX(src_en, word, 6);
+		GETENTRYBYIDX(src, word, 7);
+		GETENTRYBYIDX(scope_en, word, 8);
+		GETENTRYBYIDX(scope, word, 9);
+		GETENTRYBYIDX(table_en, word, 10);
+		GETENTRYBYIDX(table, word, 11);
+		GETENTRYBYIDX(mtu_en, word, 12);
+		GETENTRYBYIDX(mtu, word, 13);
+		GETENTRYBYIDX(advmss_en, word, 14);
+		GETENTRYBYIDX(advmss, word, 15);
+		char cmd[256] = { 0 };
+		sprintf(cmd, "ip route del to %s/%d", ipaddr, getmask(netmask));
+		if (strcmp(gateway, "0.0.0.0"))
+			sprintf(cmd, "%s via %s", cmd, gateway);
+		if (strcmp(ifname, "any"))
+			sprintf(cmd, "%s dev %s", cmd, ifname);
+		if (strcmp(metric, "0"))
+			sprintf(cmd, "%s metric %s", cmd, metric);
+		if (!strcmp(src_en, "1"))
+			sprintf(cmd, "%s src %s", cmd, src);
+		if (!strcmp(scope_en, "1"))
+			sprintf(cmd, "%s scope %s", cmd, scope);
+		if (!strcmp(table_en, "1"))
+			sprintf(cmd, "%s table %s", cmd, table);
+		if (!strcmp(mtu_en, "1"))
+			sprintf(cmd, "%s mtu %s", cmd, mtu);
+		if (!strcmp(advmss_en, "1"))
+			sprintf(cmd, "%s advmss %s", cmd, advmss);
+		system(cmd);
+	#endif
 	}
 }
 
