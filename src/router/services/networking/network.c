@@ -5084,50 +5084,50 @@ static void apply_rules(char *method, char *pbr)
 		strcpy(cmd, "ip rule ");
 		strcat(cmd, method);
 		GETENTRYBYIDX(not, word, 0);	// not supported on old 2.4 kernels
-		if (!strcmp(not, "1"))
-			sprintf(cmd, "%s %s", cmd, "not");
 		GETENTRYBYIDX(from_en, word, 1);
 		GETENTRYBYIDX(from, word, 2);
-		if (!strcmp(from_en, "1"))
-			sprintf(cmd, "%s from %s", cmd, from);
 		GETENTRYBYIDX(to_en, word, 3);
 		GETENTRYBYIDX(to, word, 4);
-		if (!strcmp(to_en, "1"))
-			sprintf(cmd, "%s to %s", cmd, to);
 		GETENTRYBYIDX(priority_en, word, 5);
 		GETENTRYBYIDX(priority, word, 6);
-		if (!strcmp(priority_en, "1"))
-			sprintf(cmd, "%s priority %s", cmd, priority);
 		GETENTRYBYIDX(tos_en, word, 7);
 		GETENTRYBYIDX(tos, word, 8);
-		if (!strcmp(tos_en, "1"))
-			sprintf(cmd, "%s tos %s", cmd, tos);
 		GETENTRYBYIDX(fwmark_en, word, 9);
 		GETENTRYBYIDX(fwmark, word, 10);
-		if (!strcmp(fwmark_en, "1"))
-			sprintf(cmd, "%s fwmark %s", cmd, fwmark);
 		GETENTRYBYIDX(realms_en, word, 11);
 		GETENTRYBYIDX(realms, word, 12);
-		if (!strcmp(realms_en, "1"))
-			sprintf(cmd, "%s realms %s", cmd, realms);
 		GETENTRYBYIDX(table_en, word, 13);
 		GETENTRYBYIDX(table, word, 14);
-		if (!strcmp(table_en, "1"))
-			sprintf(cmd, "%s table %s", cmd, table);
-		GETENTRYBYIDX(suppress_prefixlength_en, word, 15);
+		GETENTRYBYIDX(suppress_prefixlength_en, word, 15);	// not supported on brcm 2.4
 		GETENTRYBYIDX(suppress_prefixlength, word, 16);
-		if (!strcmp(suppress_prefixlength_en, "1"))
-			sprintf(cmd, "%s suppress_prefixlength %s", cmd, suppress_prefixlength);
 		GETENTRYBYIDX(iif_en, word, 17);
 		GETENTRYBYIDX(iif, word, 18);
-		if (!strcmp(iif_en, "1"))
-			sprintf(cmd, "%s iif %s", cmd, iif);
 		GETENTRYBYIDX(nat_en, word, 19);
 		GETENTRYBYIDX(nat, word, 20);
-		if (!strcmp(nat_en, "1"))
-			sprintf(cmd, "%s nat %s", cmd, nat);
 		GETENTRYBYIDX(type_en, word, 21);
 		GETENTRYBYIDX(type, word, 22);
+		if (!strcmp(not, "1"))
+			sprintf(cmd, "%s %s", cmd, "not");
+		if (!strcmp(from_en, "1"))
+			sprintf(cmd, "%s from %s", cmd, from);
+		if (!strcmp(to_en, "1"))
+			sprintf(cmd, "%s to %s", cmd, to);
+		if (!strcmp(priority_en, "1"))
+			sprintf(cmd, "%s priority %s", cmd, priority);
+		if (!strcmp(tos_en, "1"))
+			sprintf(cmd, "%s tos %s", cmd, tos);
+		if (!strcmp(fwmark_en, "1"))
+			sprintf(cmd, "%s fwmark %s", cmd, fwmark);
+		if (!strcmp(realms_en, "1"))
+			sprintf(cmd, "%s realms %s", cmd, realms);
+		if (!strcmp(table_en, "1"))
+			sprintf(cmd, "%s table %s", cmd, table);
+		if (!strcmp(suppress_prefixlength_en, "1"))
+			sprintf(cmd, "%s suppress_prefixlength %s", cmd, suppress_prefixlength);
+		if (!strcmp(iif_en, "1"))
+			sprintf(cmd, "%s iif %s", cmd, iif);
+		if (!strcmp(nat_en, "1"))
+			sprintf(cmd, "%s nat %s", cmd, nat);
 		if (!strcmp(type_en, "1"))
 			sprintf(cmd, "%s type %s", cmd, type);
 		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
@@ -5157,6 +5157,7 @@ void start_set_routes(void)
 		eval("route", "del", "default");
 		eval("route", "add", "default", "gw", defgateway);
 	}
+#ifdef HAVE_MICRO
 	char *sr = nvram_safe_get("static_route");
 	foreach(word, sr, tmp) {
 		GETENTRYBYIDX(ipaddr, word, 0);
@@ -5176,6 +5177,54 @@ void start_set_routes(void)
 		} else
 			route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
 	}
+#else
+	char *sr = nvram_safe_get("static_route");
+	foreach(word, sr, tmp) {
+		GETENTRYBYIDX(ipaddr, word, 0);
+		GETENTRYBYIDX(netmask, word, 1);
+		GETENTRYBYIDX(gateway, word, 2);
+		GETENTRYBYIDX(metric, word, 3);
+		GETENTRYBYIDX(ifname, word, 4);
+		GETENTRYBYIDX(src_en, word, 6);
+		GETENTRYBYIDX(src, word, 7);
+		GETENTRYBYIDX(scope_en, word, 8);
+		GETENTRYBYIDX(scope, word, 9);
+		GETENTRYBYIDX(table_en, word, 10);
+		GETENTRYBYIDX(table, word, 11);
+		GETENTRYBYIDX(mtu_en, word, 12);
+		GETENTRYBYIDX(mtu, word, 13);
+		GETENTRYBYIDX(advmss_en, word, 14);
+		GETENTRYBYIDX(advmss, word, 15);
+		if (!ipaddr || !netmask || !gateway || !metric || !ifname)
+			continue;
+		if (!strcmp(ipaddr, "0.0.0.0") && !strcmp(gateway, "0.0.0.0"))
+			continue;
+		if (!strcmp(ipaddr, "0.0.0.0")) {
+			eval("route", "del", "default");
+			eval("route", "add", "default", "gw", gateway);
+		}
+		char cmd[256] = { 0 };
+		sprintf(cmd, "ip route add to %s/%d", ipaddr, getmask(netmask));
+		if (strcmp(gateway, "0.0.0.0"))
+			sprintf(cmd, "%s via %s", cmd, gateway);
+		if (strcmp(ifname, "any"))
+			sprintf(cmd, "%s dev %s", cmd, ifname);
+		if (strcmp(metric, "0"))
+			sprintf(cmd, "%s metric %s", cmd, metric);
+		if (!strcmp(src_en, "1"))
+			sprintf(cmd, "%s src %s", cmd, src);
+		if (!strcmp(scope_en, "1"))
+			sprintf(cmd, "%s scope %s", cmd, scope);
+		if (!strcmp(table_en, "1"))
+			sprintf(cmd, "%s table %s", cmd, table);
+		if (!strcmp(mtu_en, "1"))
+			sprintf(cmd, "%s mtu %s", cmd, mtu);
+		if (!strcmp(advmss_en, "1"))
+			sprintf(cmd, "%s advmss %s", cmd, advmss);
+		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
+		system(cmd);
+	}
+#endif
 	eval("ip", "rule", "flush");	//busybox does not support flushing of rules, we need to find a solution here
 	FILE *old = fopen("/tmp/pbr_old", "rb");
 	if (old) {
