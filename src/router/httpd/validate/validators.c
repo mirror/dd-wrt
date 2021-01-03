@@ -3461,7 +3461,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 			if (i < 3)
 				strcat(to, ".");
 			if (i == 3)
-				strcat(from, "/");
+				strcat(to, "/");
 		} else {
 			// free (to);
 			free(old_name);
