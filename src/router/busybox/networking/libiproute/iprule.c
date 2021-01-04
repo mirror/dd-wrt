@@ -45,7 +45,7 @@ static const char keywords[] ALIGN1 =
 #define keyword_suppress_prefixlength (keyword_realms     + sizeof("realms") + sizeof("table") + sizeof("lookup"))
 #define keyword_suppress_ifgroup      (keyword_suppress_prefixlength + sizeof("suppress_prefixlength"))
 enum {
-	ARG_not = 1, ARG_iproto, ARG_sport, ARG_dport, ARG_from, ARG_to, ARG_preference, ARG_order, ARG_priority,
+	ARG_not = 1, ARG_ipproto, ARG_sport, ARG_dport, ARG_from, ARG_to, ARG_preference, ARG_order, ARG_priority,
 	ARG_tos, ARG_fwmark, ARG_realms, ARG_table, ARG_lookup,
 	ARG_suppress_prefixlength, ARG_suppress_ifgroup,
 	ARG_dev, ARG_iif, ARG_nat, ARG_map_to, ARG_type, ARG_help,
@@ -172,24 +172,24 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 			printf("fwmark %#x ", mark);
 	}
 
-	if (tb[COMPAT_RTA_IPPROTO]) {
-		printf("ipproto %d ", *(uint8_t*)RTA_DATA(tb[COMPAT_RTA_IPPROTO]);
+	if (tb[COMPAT_RTA_IP_PROTO]) {
+		printf("ipproto %d ", *(uint8_t*)RTA_DATA(tb[COMPAT_RTA_IP_PROTO]));
 	}
 
 	if (tb[COMPAT_RTA_SPORT_RANGE]) {
-		struct compat_fib_rule_port_range *r = RTA_DATA(tb[COMPAT_RTA_SPORT_RANGE]);
-		if (r->start == r->end)
-		    printf("sport %d", r->start);
+		struct compat_fib_rule_port_range *range = RTA_DATA(tb[COMPAT_RTA_SPORT_RANGE]);
+		if (range->start == range->end)
+		    printf("sport %d", range->start);
 		else
-		    printf("sport %d-%d ", r->start, r->end);
+		    printf("sport %d-%d ", range->start, range->end);
 	}
 
 	if (tb[COMPAT_RTA_DPORT_RANGE]) {
-		struct compat_fib_rule_port_range *r = RTA_DATA(tb[COMPAT_RTA_DPORT_RANGE]);
-		if (r->start == r->end)
-		    printf("dport %d", r->start);
+		struct compat_fib_rule_port_range *range = RTA_DATA(tb[COMPAT_RTA_DPORT_RANGE]);
+		if (range->start == range->end)
+		    printf("dport %d", range->start);
 		else
-		    printf("dport %d-%d ", r->start, r->end);
+		    printf("dport %d-%d ", range->start, range->end);
 	}
 
 	if (tb[RTA_IIF]) {
@@ -271,6 +271,7 @@ static int iprule_list(char **argv)
 static int iprule_modify(int cmd, char **argv)
 {
 	bool table_ok = 0;
+	int ret;
 	struct rtnl_handle rth;
 	struct {
 		struct nlmsghdr n;
@@ -328,12 +329,12 @@ static int iprule_modify(int cmd, char **argv)
 		} else if (key == ARG_ipproto) {
 			uint8_t ipproto;
 			NEXT_ARG();
-			pref = get_u8(*argv, keyword_ipproto);
-			addattr8(&req.n, sizeof(req), COMPAT_RTA_IPPROTO, ipproto);
+			ipproto = get_u8(*argv, keyword_ipproto);
+			addattr8(&req.n, sizeof(req), COMPAT_RTA_IP_PROTO, ipproto);
 		} else if (key == ARG_sport) {
 			struct compat_fib_rule_port_range r;
 			NEXT_ARG();
-			int ret = sscanf(*argv, "%hu-%hu", &r.start, &r.end);
+			ret = sscanf(*argv, "%hu-%hu", &r.start, &r.end);
 			if (ret == 1)
 				r.end = r.start;
 			else if (ret != 2)
@@ -343,7 +344,7 @@ static int iprule_modify(int cmd, char **argv)
 		} else if (key == ARG_dport) {
 			struct compat_fib_rule_port_range r;
 			NEXT_ARG();
-			int ret = sscanf(*argv, "%hu-%hu", &r.start, &r.end);
+			ret = sscanf(*argv, "%hu-%hu", &r.start, &r.end);
 			if (ret == 1)
 				r.end = r.start;
 			else if (ret != 2)
