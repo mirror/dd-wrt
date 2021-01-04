@@ -19,10 +19,15 @@ struct fib_rule {
 	u32			flags;
 	u32			table;
 	u8			action;
+ 	u8			l3mdev;
+	u8                      proto;
+	u8			ip_proto;
 	u32			target;
 	struct fib_rule __rcu	*ctarget;
 	char			iifname[IFNAMSIZ];
 	char			oifname[IFNAMSIZ];
+	struct fib_rule_port_range	sport_range;
+	struct fib_rule_port_range	dport_range;
 	struct rcu_head		rcu;
 	struct net *		fr_net;
 };
@@ -79,7 +84,10 @@ struct fib_rules_ops {
 	[FRA_FWMARK]	= { .type = NLA_U32 }, \
 	[FRA_FWMASK]	= { .type = NLA_U32 }, \
 	[FRA_TABLE]     = { .type = NLA_U32 }, \
-	[FRA_GOTO]	= { .type = NLA_U32 }
+	[FRA_GOTO]	= { .type = NLA_U32 }, \
+	[FRA_IP_PROTO]  = { .type = NLA_U8 }, \
+	[FRA_SPORT_RANGE] = { .len = sizeof(struct fib_rule_port_range) }, \
+	[FRA_DPORT_RANGE] = { .len = sizeof(struct fib_rule_port_range) }
 
 static inline void fib_rule_get(struct fib_rule *rule)
 {
@@ -104,6 +112,38 @@ static inline u32 frh_get_table(struct fib_rule_hdr *frh, struct nlattr **nla)
 	if (nla[FRA_TABLE])
 		return nla_get_u32(nla[FRA_TABLE]);
 	return frh->table;
+}
+
+static inline bool fib_rule_port_range_set(const struct fib_rule_port_range *range)
+{
+	return range->start != 0 && range->end != 0;
+}
+
+static inline bool fib_rule_port_inrange(const struct fib_rule_port_range *a,
+					 __be16 port)
+{
+	return ntohs(port) >= a->start &&
+		ntohs(port) <= a->end;
+}
+
+static inline bool fib_rule_port_range_valid(const struct fib_rule_port_range *a)
+{
+	return a->start != 0 && a->end != 0 && a->end < 0xffff &&
+		a->start <= a->end;
+}
+
+static inline bool fib_rule_port_range_compare(struct fib_rule_port_range *a,
+					       struct fib_rule_port_range *b)
+{
+	return a->start == b->start &&
+		a->end == b->end;
+}
+
+static inline bool fib_rule_requires_fldissect(struct fib_rule *rule)
+{
+	return rule->ip_proto ||
+		fib_rule_port_range_set(&rule->sport_range) ||
+		fib_rule_port_range_set(&rule->dport_range);
 }
 
 extern struct fib_rules_ops *fib_rules_register(const struct fib_rules_ops *, struct net *);
