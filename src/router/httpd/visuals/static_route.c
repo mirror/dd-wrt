@@ -428,9 +428,9 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 	else if (!strcmp(arg, "table"))
 		websWrite(wp, "254");
 	else if (!strcmp(arg, "sport"))
-		websWrite(wp, "0-0");
+		websWrite(wp, "0");
 	else if (!strcmp(arg, "dport"))
-		websWrite(wp, "0-0");
+		websWrite(wp, "0");
 	else if (!strcmp(arg, "ipproto"))
 		websWrite(wp, "0");
 	return;

@@ -677,9 +677,9 @@ static struct defrule s_conditions[] = {
 	{ "AFTERBURNER", rule_afterburner },
 #ifndef HAVE_MICRO
 	{ "HAVE_PBR", NULL },
-#endif
 #ifdef HAVE_EXT_IPROUTE
 	{ "HAVE_EXT_IPROUTE", NULL },
+#endif
 #endif
 	{ NULL, NULL }
 };
