@@ -330,7 +330,7 @@ static int iprule_modify(int cmd, char **argv)
 				r.end = r.start;
 			else if (ret != 2)
 				invarg_1_to_2(*argv, "dport");
-			addattr_l(&req.n, sizeof(req), FRA_SPORT_RANGE, &r,
+			addattr_l(&req.n, sizeof(req), FRA_DPORT_RANGE, &r,
 				  sizeof(r));
 		} else if (key == ARG_tos) {
 			uint32_t tos;
