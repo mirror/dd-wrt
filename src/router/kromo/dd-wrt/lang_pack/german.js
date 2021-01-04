@@ -1390,6 +1390,9 @@ routetbl.suppress_prefixlength="Prefixl&auml;nge Ausblenden";
 routetbl.iif="Eingehendes Interface";
 routetbl.nat="Nat Adresse";
 routetbl.type="Typ";
+routetbl.sport="Quell Port Bereich";
+routetbl.dport="Ziel Port Bereich";
+routetbl.ipproto="IP Protokoll";
 
 
 // ** Routing.asp **//
