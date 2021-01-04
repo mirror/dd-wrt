@@ -32,6 +32,9 @@ do
 		# remove because FW sets it by default
 		$ipt -D FORWARD -i oet${i} $FW_STATE -j ACCEPT > /dev/null 2>&1
 	fi
+done
+for i in `seq 1 $tunnels`
+do
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
 		if [ `$nv get oet${i}_proto` -eq 1 ]
