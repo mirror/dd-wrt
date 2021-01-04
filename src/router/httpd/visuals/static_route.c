@@ -287,6 +287,12 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			GETENTRYBYIDX(nat, word, 20);
 			GETENTRYBYIDX(type_en, word, 21);
 			GETENTRYBYIDX(type, word, 22);
+			GETENTRYBYIDX(ipproto_en, word, 23);
+			GETENTRYBYIDX(ipproto, word, 24);
+			GETENTRYBYIDX(sport_en, word, 25);
+			GETENTRYBYIDX(sport, word, 26);
+			GETENTRYBYIDX(dport_en, word, 27);
+			GETENTRYBYIDX(dport, word, 28);
 			
 			if (!strcmp(arg, "not")) {
 				if (not && !strcmp(not, "1"))
@@ -336,6 +342,18 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				if (type_en && !strcmp(type_en, "1"))
 					websWrite(wp, "checked=\"checked\"");
 				return;
+			} else if (!strcmp(arg, "sport_en")) {
+				if (sport_en && !strcmp(sport_en, "1"))
+					websWrite(wp, "checked=\"checked\"");
+				return;
+			} else if (!strcmp(arg, "dport_en")) {
+				if (dport_en && !strcmp(dport_en, "1"))
+					websWrite(wp, "checked=\"checked\"");
+				return;
+			} else if (!strcmp(arg, "ipproto_en")) {
+				if (ipproto_en && !strcmp(ipproto_en, "1"))
+					websWrite(wp, "checked=\"checked\"");
+				return;
 			} else if (from && !strcmp(arg, "from")) {
 				websWrite(wp, "%d", get_single_ip(from, atoi(argv[1])));
 				return;
@@ -369,6 +387,25 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			} else if (type && !strcmp(arg, "type")) {
 				websWrite(wp, type);
 				return;
+			} else if (sport && !strcmp(arg, "sport")) {
+				int from, to;
+				sscanf(sport,"%d-%d",&from,&to);
+				if (!strcmp(argv[1],"0"))
+					websWrite(wp, "%d",from);
+				else
+					websWrite(wp, "%d",to);
+				return;
+			} else if (dport && !strcmp(arg, "dport")) {
+				int from, to;
+				sscanf(dport,"%d-%d",&from,&to);
+				if (!strcmp(argv[1],"0"))
+					websWrite(wp, "%d",from);
+				else
+					websWrite(wp, "%d",to);
+				return;
+			} else if (ipproto && !strcmp(arg, "ipproto")) {
+				websWrite(wp, ipproto);
+				return;
 			}
 			return;
 		}
@@ -390,6 +427,12 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "0");
 	else if (!strcmp(arg, "table"))
 		websWrite(wp, "254");
+	else if (!strcmp(arg, "sport"))
+		websWrite(wp, "0-0");
+	else if (!strcmp(arg, "dport"))
+		websWrite(wp, "0-0");
+	else if (!strcmp(arg, "ipproto"))
+		websWrite(wp, "0");
 	return;
 }
 #endif

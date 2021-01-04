@@ -132,6 +132,15 @@ function submitcheck(F) {
 	if(F._type_en){
 		F.type_en.value = F._type_en.checked ? 1 : 0;
 	}
+	if(F._sport_en){
+		F.sport_en.value = F._sport_en.checked ? 1 : 0;
+	}
+	if(F._dport_en){
+		F.dport_en.value = F._dport_en.checked ? 1 : 0;
+	}
+	if(F._ipproto_en){
+		F.ipproto_en.value = F._ipproto_en.checked ? 1 : 0;
+	}
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
@@ -202,6 +211,9 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="iif_en" />
 							<input type="hidden" name="nat_en" />
 							<input type="hidden" name="type_en" />
+							<input type="hidden" name="ipproto_en" />
+							<input type="hidden" name="sport_en" />
+							<input type="hidden" name="dport_en" />
 							<input type="hidden" name="olsrd_delcount" />
 							<input type="hidden" name="static_route" />
 							<% ifndef("HAVE_PBR", "-->"); %>
@@ -510,6 +522,56 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% ifndef("HAVE_PBR", "-->"); %>
+							<% ifndef("HAVE_EXT_IPROUTE", "<!--"); %>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_ipproto_en" <% pbr_rule_setting("ipproto_en"); %> />
+									<div class="label"><% tran("routetbl.type"); %></div>
+									<select name="rule_ipproto">
+										<option value="0" <% pbr_rule_setting("ipproto", "0"); %> >IP</option>
+										<option value="1" <% pbr_rule_setting("ipproto", "1"); %> >ICMP</option>
+										<option value="2" <% pbr_rule_setting("ipproto", "2"); %> >IGMP</option>
+										<option value="4" <% pbr_rule_setting("ipproto", "4"); %> >IPIP</option>
+										<option value="6" <% pbr_rule_setting("ipproto", "6"); %> >TCP</option>
+										<option value="8" <% pbr_rule_setting("ipproto", "8"); %> >EGP</option>
+										<option value="12" <% pbr_rule_setting("ipproto", "12"); %> >PUP</option>
+										<option value="17" <% pbr_rule_setting("ipproto", "17"); %> >UDP</option>
+										<option value="22" <% pbr_rule_setting("ipproto", "22"); %> >IDP</option>
+										<option value="29" <% pbr_rule_setting("ipproto", "29"); %> >TP</option>
+										<option value="33" <% pbr_rule_setting("ipproto", "33"); %> >DCCP</option>
+										<option value="41" <% pbr_rule_setting("ipproto", "41"); %> >IPV6</option>
+										<option value="43" <% pbr_rule_setting("ipproto", "43"); %> >ROUTING</option>
+										<option value="44" <% pbr_rule_setting("ipproto", "44"); %> >FRAGMENT</option>
+										<option value="46" <% pbr_rule_setting("ipproto", "46"); %> >RSVP</option>
+										<option value="47" <% pbr_rule_setting("ipproto", "47"); %> >GRE</option>
+										<option value="50" <% pbr_rule_setting("ipproto", "50"); %> >ESP</option>
+										<option value="51" <% pbr_rule_setting("ipproto", "51"); %> >AH</option>
+										<option value="58" <% pbr_rule_setting("ipproto", "58"); %> >ICMPV6</option>
+										<option value="60" <% pbr_rule_setting("ipproto", "60"); %> >DSTOPTS</option>
+										<option value="92" <% pbr_rule_setting("ipproto", "92"); %> >MTP</option>
+										<option value="94" <% pbr_rule_setting("ipproto", "94"); %> >BEETPH</option>
+										<option value="97" <% pbr_rule_setting("ipproto", "97"); %> >ETHERIP</option>
+										<option value="98" <% pbr_rule_setting("ipproto", "98"); %> >ENCAP</option>
+										<option value="103" <% pbr_rule_setting("ipproto", "103"); %> >PIM</option>
+										<option value="108" <% pbr_rule_setting("ipproto", "108"); %> >COMP</option>
+										<option value="132" <% pbr_rule_setting("ipproto", "132"); %> >SCTP</option>
+										<option value="135" <% pbr_rule_setting("ipproto", "135"); %> >MH</option>
+										<option value="136" <% pbr_rule_setting("ipproto", "136"); %> >UDPLITE</option>
+										<option value="137" <% pbr_rule_setting("ipproto", "137"); %> >MPLS</option>
+									</select>
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_sport_table_en" <% pbr_rule_setting("sport_en"); %> />
+									<div class="label"><% tran("routetbl.table"); %></div>
+									<input name="rule_sport_from" size="5" maxlength="5" onblur="valid_range(this,0,65535,routetbl.sport)" class="num" value="<% pbr_rule_setting("sport","0"); %>" />
+									<input name="rule_sport_to" size="5" maxlength="5" onblur="valid_range(this,0,65535,routetbl.sport)" class="num" value="<% pbr_rule_setting("sport","1"); %>" />
+								</div>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_dport_table_en" <% pbr_rule_setting("dport_en"); %> />
+									<div class="label"><% tran("routetbl.table"); %></div>
+									<input name="rule_dport_from" size="5" maxlength="5" onblur="valid_range(this,0,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","0"); %>" />
+									<input name="rule_dport_to" size="5" maxlength="5" onblur="valid_range(this,0,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","1"); %>" />
+								</div>
+							<% ifndef("HAVE_EXT_IPROUTE", "-->"); %>
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
