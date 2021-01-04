@@ -64,6 +64,21 @@ uint32_t FAST_FUNC get_u32(char *arg, const char *errmsg)
 	invarg_1_to_2(arg, errmsg); /* does not return */
 }
 
+uint8_t FAST_FUNC get_u8(char *arg, const char *errmsg)
+{
+	unsigned long res;
+	char *ptr;
+
+	if (*arg) {
+		res = strtoul(arg, &ptr, 0);
+//FIXME: "" will be accepted too, is it correct?!
+		if (!*ptr && res <= 0xFF) {
+			return res;
+		}
+	}
+	invarg_1_to_2(arg, errmsg); /* does not return */
+}
+
 uint16_t FAST_FUNC get_u16(char *arg, const char *errmsg)
 {
 	unsigned long res;
