@@ -5106,6 +5106,12 @@ static void apply_rules(char *method, char *pbr)
 		GETENTRYBYIDX(nat, word, 20);
 		GETENTRYBYIDX(type_en, word, 21);
 		GETENTRYBYIDX(type, word, 22);
+		GETENTRYBYIDX(ipproto_en, word, 23);
+		GETENTRYBYIDX(ipproto, word, 24);
+		GETENTRYBYIDX(sport_en, word, 25);
+		GETENTRYBYIDX(sport, word, 26);
+		GETENTRYBYIDX(dport_en, word, 27);
+		GETENTRYBYIDX(dport, word, 28);
 		if (not && !strcmp(not, "1"))
 			sprintf(cmd, "%s %s", cmd, "not");
 		if (from_en && from && !strcmp(from_en, "1"))
@@ -5130,6 +5136,12 @@ static void apply_rules(char *method, char *pbr)
 			sprintf(cmd, "%s nat %s", cmd, nat);
 		if (type_en && type && !strcmp(type_en, "1"))
 			sprintf(cmd, "%s type %s", cmd, type);
+		if (ipproto_en && ipproto && !strcmp(ipproto_en, "1"))
+			sprintf(cmd, "%s ipproto %s", cmd, ipproto);
+		if (sport_en && sport && !strcmp(sport_en, "1"))
+			sprintf(cmd, "%s sport %s", cmd, sport);
+		if (dport_en && dport && !strcmp(dport_en, "1"))
+			sprintf(cmd, "%s dport %s", cmd, dport);
 		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
 		system(cmd);
 	}

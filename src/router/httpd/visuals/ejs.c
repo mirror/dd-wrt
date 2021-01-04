@@ -678,6 +678,9 @@ static struct defrule s_conditions[] = {
 #ifndef HAVE_MICRO
 	{ "HAVE_PBR", NULL },
 #endif
+#ifdef HAVE_EXT_IPROUTE
+	{ "HAVE_EXT_IPROUTE", NULL },
+#endif
 	{ NULL, NULL }
 };
 
