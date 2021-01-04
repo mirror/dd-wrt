@@ -654,7 +654,7 @@ static int fib_nl_fill_rule(struct sk_buff *skb, struct fib_rule *rule,
 		nla_put_port_range(skb, FRA_DPORT_RANGE, &rule->dport_range);
 	
 	if (rule->ip_proto)
-		NLA_PUT_U8(skb, FRA_IP_PROTO, rule->ip_proto)
+		NLA_PUT_U8(skb, FRA_IP_PROTO, rule->ip_proto);
 
 	if (ops->fill(rule, skb, frh) < 0)
 		goto nla_put_failure;
