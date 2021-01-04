@@ -190,8 +190,10 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			} else if (!strcmp(arg, "scope_en")) {
 				if (scope_en && !strcmp(scope_en, "1"))
 					websWrite(wp, "checked=\"checked\"");
-			} else if (scope && !strcmp(arg, "scope") && !strcmp(argv[1],scope)) {
-				websWrite(wp, "selected=\"selected\"");
+				return;
+			} else if (scope && !strcmp(arg, "scope")) {
+				if (!strcmp(argv[1],scope))
+					websWrite(wp, "selected=\"selected\"");
 				return;
 			} else if (!strcmp(arg, "mtu_en")) {
 				if (mtu_en && !strcmp(mtu_en, "1"))
@@ -378,14 +380,16 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			} else if (suppress_prefixlength && !strcmp(arg, "suppress_prefixlength")) {
 				websWrite(wp, suppress_prefixlength);
 				return;
-			} else if (iif && !strcmp(arg, "iif")) {
-				websWrite(wp, iif);
+			} else if (iif && !strcmp(arg, "iif") && !strcmp(iif,argv[1])) {
+				if (!strcmp(argv[1],iif))
+					websWrite(wp, "selected=\"selected\"");
 				return;
 			} else if (nat && !strcmp(arg, "nat")) {
 				websWrite(wp, "%d", get_single_ip(nat, atoi(argv[1])));
 				return;
 			} else if (type && !strcmp(arg, "type")) {
-				websWrite(wp, type);
+				if (!strcmp(argv[1],type))
+					websWrite(wp, "selected=\"selected\"");
 				return;
 			} else if (sport && !strcmp(arg, "sport")) {
 				int from, to;
@@ -404,7 +408,8 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "%d",to);
 				return;
 			} else if (ipproto && !strcmp(arg, "ipproto")) {
-				websWrite(wp, ipproto);
+				if (!strcmp(argv[1],ipproto))
+					websWrite(wp, "selected=\"selected\"");
 				return;
 			}
 			return;
