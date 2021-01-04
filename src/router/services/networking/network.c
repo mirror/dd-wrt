@@ -5108,10 +5108,10 @@ static void apply_rules(char *method, char *pbr)
 		GETENTRYBYIDX(type, word, 22);
 		GETENTRYBYIDX(ipproto_en, word, 23);
 		GETENTRYBYIDX(ipproto, word, 24);
-		GETENTRYBYIDX(sport_en, word, 25);
-		GETENTRYBYIDX(sport, word, 26);
-		GETENTRYBYIDX(dport_en, word, 27);
-		GETENTRYBYIDX(dport, word, 28);
+		GETENTRYBYIDX_DEL(sport_en, word, 25,"><:,");
+		GETENTRYBYIDX_DEL(sport, word, 26,"><:,");
+		GETENTRYBYIDX_DEL(dport_en, word, 27,"><:,");
+		GETENTRYBYIDX_DEL(dport, word, 28,"><:,");
 		if (not && !strcmp(not, "1"))
 			sprintf(cmd, "%s %s", cmd, "not");
 		if (from_en && from && !strcmp(from_en, "1"))
@@ -5237,7 +5237,6 @@ void start_set_routes(void)
 		system(cmd);
 	}
 #endif
-	eval("ip", "rule", "flush");	//busybox does not support flushing of rules, we need to find a solution here
 	FILE *old = fopen("/tmp/pbr_old", "rb");
 	if (old) {
 		fseek(old, 0, SEEK_END);
