@@ -3424,6 +3424,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char *priority = websGetVar(wp, "rule_priority", "0");
 	char *tos = websGetVar(wp, "rule_tos", "0");
 	char *fwmark = websGetVar(wp, "rule_fwmark", "0");
+	char *fwmask = websGetVar(wp, "rule_fwmask", "0");
 	char *realms = websGetVar(wp, "rule_realms", "0");
 	char *table = websGetVar(wp, "rule_table", "0");
 	char *suppress_prefixlength = websGetVar(wp, "rule_suppress_prefixlength", "");
@@ -3436,8 +3437,10 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char *ipproto = websGetVar(wp, "rule_ipproto", "0");
 	char sport[64];
 	char dport[64];
-	sprintf(sport,"%s-%s", sport_from,sport_to);
-	sprintf(dport,"%s-%s", dport_from,dport_to);
+	char fw[64];
+	sprintf(sport, "%s-%s", sport_from, sport_to);
+	sprintf(dport, "%s-%s", dport_from, dport_to);
+	sprintf(fw, "%s/%s", fwmark, fwmask);
 	/*
 	 * validate ip address 
 	 */
@@ -3536,8 +3539,8 @@ write_nvram:
 
 	strcpy(backuproute, &old[atoi(page) * 160]);
 
-	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", not, from_en, from, to_en, to, priority_en, priority, tos_en, tos, fwmark_en, fwmark,
-		 realms_en, realms, table_en, table, suppress_prefixlength_en, suppress_prefixlength, iif_en, iif, nat_en, nat, type_en, type,ipproto_en,ipproto,sport_en,sport,dport_en,dport);
+	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", not, from_en, from, to_en, to, priority_en, priority, tos_en, tos,
+		 fwmark_en, fw, realms_en, realms, table_en, table, suppress_prefixlength_en, suppress_prefixlength, iif_en, iif, nat_en, nat, type_en, type, ipproto_en, ipproto, sport_en, sport, dport_en, dport);
 
 	httpd_filter_name(name, new_name, sizeof(new_name), SET);
 	snprintf(&old_name[atoi(page) * 60], 60, "$NAME:%s$$", new_name);
