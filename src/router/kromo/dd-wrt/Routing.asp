@@ -480,7 +480,6 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="checkbox" value="1" name="_fwmark_en" <% pbr_rule_setting("fwmark_en"); %> />
 									<div class="label"><% tran("routetbl.fwmark"); %></div>
 									<input name="rule_fwmark" size="10" maxlength="10" class="num" value="<% pbr_rule_setting("fwmark","0"); %>" /> / <input name="rule_fwmask" size="10" maxlength="10" class="num" value="<% pbr_rule_setting("fwmark","1"); %>" />
-
 								</div>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_realms_en" <% pbr_rule_setting("realms_en"); %> />
