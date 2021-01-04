@@ -558,12 +558,12 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_sport_table_en" <% pbr_rule_setting("sport_en"); %> />
+									<input class="spaceradio" type="checkbox" value="1" name="_sport_en" <% pbr_rule_setting("sport_en"); %> />
 									<div class="label"><% tran("routetbl.sport"); %></div>
 									<input name="rule_sport_from" size="5" maxlength="5" onblur="valid_range(this,1,65535,routetbl.sport)" class="num" value="<% pbr_rule_setting("sport","0"); %>" /> ~ <input name="rule_sport_to" size="5" maxlength="5" onblur="valid_range(this,1,65535,routetbl.sport)" class="num" value="<% pbr_rule_setting("sport","1"); %>" />
 								</div>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_dport_table_en" <% pbr_rule_setting("dport_en"); %> />
+									<input class="spaceradio" type="checkbox" value="1" name="_dport_en" <% pbr_rule_setting("dport_en"); %> />
 									<div class="label"><% tran("routetbl.dport"); %></div>
 									<input name="rule_dport_from" size="5" maxlength="5" onblur="valid_range(this,1,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","0"); %>" /> ~ <input name="rule_dport_to" size="5" maxlength="5" onblur="valid_range(this,1,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","1"); %>" />
 								</div>
