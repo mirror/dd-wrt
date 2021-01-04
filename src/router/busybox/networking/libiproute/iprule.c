@@ -160,7 +160,7 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 	if (tb[FRA_SPORT_RANGE]) {
 		struct compat_fib_rule_port_range *range = RTA_DATA(tb[FRA_SPORT_RANGE]);
 		if (range->start == range->end)
-		    printf("sport %d", range->start);
+		    printf("sport %d ", range->start);
 		else
 		    printf("sport %d-%d ", range->start, range->end);
 	}
@@ -168,7 +168,7 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 	if (tb[FRA_DPORT_RANGE]) {
 		struct compat_fib_rule_port_range *range = RTA_DATA(tb[FRA_DPORT_RANGE]);
 		if (range->start == range->end)
-		    printf("dport %d", range->start);
+		    printf("dport %d ", range->start);
 		else
 		    printf("dport %d-%d ", range->start, range->end);
 	}
