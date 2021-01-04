@@ -172,6 +172,26 @@ void fib_rules_unregister(struct fib_rules_ops *ops)
 }
 EXPORT_SYMBOL_GPL(fib_rules_unregister);
 
+static int nla_get_port_range(struct nlattr *pattr,
+			      struct fib_rule_port_range *port_range)
+{
+	const struct fib_rule_port_range *pr = nla_data(pattr);
+
+	if (!fib_rule_port_range_valid(pr))
+		return -EINVAL;
+
+	port_range->start = pr->start;
+	port_range->end = pr->end;
+
+	return 0;
+}
+
+static int nla_put_port_range(struct sk_buff *skb, int attrtype,
+			      struct fib_rule_port_range *range)
+{
+	return nla_put(skb, attrtype, sizeof(*range), range);
+}
+
 static int fib_rule_match(struct fib_rule *rule, struct fib_rules_ops *ops,
 			  struct flowi *fl, int flags)
 {
