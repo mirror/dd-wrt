@@ -5143,7 +5143,8 @@ static void apply_rules(char *method, char *pbr)
 		if (dport_en && dport && !strcmp(dport_en, "1"))
 			sprintf(cmd, "%s dport %s", cmd, dport);
 		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
-		system(cmd);
+		if (strlen(cmd) > sizeof("ip rule del"))
+			system(cmd);
 	}
 
 }
