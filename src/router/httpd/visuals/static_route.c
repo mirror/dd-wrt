@@ -393,7 +393,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				return;
 			} else if (sport && !strcmp(arg, "sport")) {
 				int from, to;
-				sscanf(sport,"%hu-%hu",&from,&to);
+				sscanf(sport,"%d-%d",&from,&to);
 				if (!strcmp(argv[1],"0"))
 					websWrite(wp, "%d",from);
 				else
@@ -401,7 +401,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				return;
 			} else if (dport && !strcmp(arg, "dport")) {
 				int from, to;
-				sscanf(dport,"%hu-%hu",&from,&to);
+				sscanf(dport,"%d-%d",&from,&to);
 				if (!strcmp(argv[1],"0"))
 					websWrite(wp, "%d",from);
 				else
