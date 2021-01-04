@@ -1608,6 +1608,9 @@ routetbl.suppress_prefixlength="Suppress Prefixlength";
 routetbl.iif="Incoming If";
 routetbl.nat="Nat Address";
 routetbl.type="Type";
+routetbl.sport="Source Port Range";
+routetbl.dport="Destination Port Range";
+routetbl.ipproto="IP Protocol";
 
 // ** Routing.asp **//
 var route=new Object();

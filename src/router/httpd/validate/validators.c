@@ -3413,20 +3413,31 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char *fwmark_en = websGetVar(wp, "fwmark_en", "0");
 	char *realms_en = websGetVar(wp, "realms_en", "0");
 	char *table_en = websGetVar(wp, "pbr_table_en", "0");
+	char *ipproto_en = websGetVar(wp, "ipproto_en", "0");
+	char *sport_en = websGetVar(wp, "sport_en", "0");
+	char *dport_en = websGetVar(wp, "dport_en", "0");
 	char *suppress_prefixlength_en = websGetVar(wp, "suppress_prefixlength_en", "0");
 	char *iif_en = websGetVar(wp, "iif_en", "0");
 	char *nat_en = websGetVar(wp, "nat_en", "0");
 	char *type_en = websGetVar(wp, "type_en", "0");
 	char *page = websGetVar(wp, "rule_page", NULL);
-	char *priority = websGetVar(wp, "rule_priority", "");
-	char *tos = websGetVar(wp, "rule_tos", "");
-	char *fwmark = websGetVar(wp, "rule_fwmark", "");
-	char *realms = websGetVar(wp, "rule_realms", "");
-	char *table = websGetVar(wp, "rule_table", "");
+	char *priority = websGetVar(wp, "rule_priority", "0");
+	char *tos = websGetVar(wp, "rule_tos", "0");
+	char *fwmark = websGetVar(wp, "rule_fwmark", "0");
+	char *realms = websGetVar(wp, "rule_realms", "0");
+	char *table = websGetVar(wp, "rule_table", "0");
 	char *suppress_prefixlength = websGetVar(wp, "rule_suppress_prefixlength", "");
-	char *iif = websGetVar(wp, "rule_iif", "");
-	char *type = websGetVar(wp, "rule_type", "");
-
+	char *iif = websGetVar(wp, "rule_iif", "none");
+	char *type = websGetVar(wp, "rule_type", "0");
+	char *sport_from = websGetVar(wp, "rule_sport_from", "0");
+	char *sport_to = websGetVar(wp, "rule_sport_to", "0");
+	char *dport_from = websGetVar(wp, "rule_dport_from", "0");
+	char *dport_to = websGetVar(wp, "rule_dport_to", "0");
+	char *ipproto = websGetVar(wp, "rule_ipproto", "0");
+	char sport[64];
+	char dport[64];
+	sprintf(sport,"%s-%s", sport_from,sport_to);
+	sprintf(dport,"%s-%s", dport_from,dport_to);
 	/*
 	 * validate ip address 
 	 */
@@ -3525,8 +3536,8 @@ write_nvram:
 
 	strcpy(backuproute, &old[atoi(page) * 160]);
 
-	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", not, from_en, from, to_en, to, priority_en, priority, tos_en, tos, fwmark_en, fwmark,
-		 realms_en, realms, table_en, table, suppress_prefixlength_en, suppress_prefixlength, iif_en, iif, nat_en, nat, type_en, type);
+	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", not, from_en, from, to_en, to, priority_en, priority, tos_en, tos, fwmark_en, fwmark,
+		 realms_en, realms, table_en, table, suppress_prefixlength_en, suppress_prefixlength, iif_en, iif, nat_en, nat, type_en, type,ipproto_en,ipproto,sport_en,sport,dport_en,dport);
 
 	httpd_filter_name(name, new_name, sizeof(new_name), SET);
 	snprintf(&old_name[atoi(page) * 60], 60, "$NAME:%s$$", new_name);
