@@ -17,7 +17,9 @@ struct fib_rule {
 	u32			flags;
 	u32			table;
 	u8			action;
-	/* 3 bytes hole, try to use */
+ 	u8			l3mdev;
+	u8                      proto;
+	u8			ip_proto;
 	u32			target;
 	__be64			tun_id;
 	struct fib_rule __rcu	*ctarget;
@@ -29,6 +31,8 @@ struct fib_rule {
 	int			suppress_prefixlen;
 	char			iifname[IFNAMSIZ];
 	char			oifname[IFNAMSIZ];
+	struct fib_rule_port_range	sport_range;
+	struct fib_rule_port_range	dport_range;
 	struct rcu_head		rcu;
 };
 
@@ -90,7 +94,11 @@ struct fib_rules_ops {
 	[FRA_TABLE]     = { .type = NLA_U32 }, \
 	[FRA_SUPPRESS_PREFIXLEN] = { .type = NLA_U32 }, \
 	[FRA_SUPPRESS_IFGROUP] = { .type = NLA_U32 }, \
-	[FRA_GOTO]	= { .type = NLA_U32 }
+	[FRA_GOTO]	= { .type = NLA_U32 } \
+	[FRA_UID_RANGE]	= { .len = sizeof(struct fib_rule_uid_range) }, \
+	[FRA_IP_PROTO]  = { .type = NLA_U8 }, \
+	[FRA_SPORT_RANGE] = { .len = sizeof(struct fib_rule_port_range) }, \
+	[FRA_DPORT_RANGE] = { .len = sizeof(struct fib_rule_port_range) }
 
 static inline void fib_rule_get(struct fib_rule *rule)
 {
@@ -109,6 +117,39 @@ static inline u32 frh_get_table(struct fib_rule_hdr *frh, struct nlattr **nla)
 		return nla_get_u32(nla[FRA_TABLE]);
 	return frh->table;
 }
+
+static inline bool fib_rule_port_range_set(const struct fib_rule_port_range *range)
+{
+	return range->start != 0 && range->end != 0;
+}
+
+static inline bool fib_rule_port_inrange(const struct fib_rule_port_range *a,
+					 __be16 port)
+{
+	return ntohs(port) >= a->start &&
+		ntohs(port) <= a->end;
+}
+
+static inline bool fib_rule_port_range_valid(const struct fib_rule_port_range *a)
+{
+	return a->start != 0 && a->end != 0 && a->end < 0xffff &&
+		a->start <= a->end;
+}
+
+static inline bool fib_rule_port_range_compare(struct fib_rule_port_range *a,
+					       struct fib_rule_port_range *b)
+{
+	return a->start == b->start &&
+		a->end == b->end;
+}
+
+static inline bool fib_rule_requires_fldissect(struct fib_rule *rule)
+{
+	return rule->ip_proto ||
+		fib_rule_port_range_set(&rule->sport_range) ||
+		fib_rule_port_range_set(&rule->dport_range);
+}
+
 
 struct fib_rules_ops *fib_rules_register(const struct fib_rules_ops *,
 					 struct net *);
