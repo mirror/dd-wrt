@@ -192,7 +192,7 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "checked=\"checked\"");
 				return;
 			} else if (scope && !strcmp(arg, "scope")) {
-				if (!strcmp(argv[1],scope))
+				if (!strcmp(argv[1], scope))
 					websWrite(wp, "selected=\"selected\"");
 				return;
 			} else if (!strcmp(arg, "mtu_en")) {
@@ -210,13 +210,13 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			} else if (!strcmp(arg, "table_en")) {
 				if (table_en && !strcmp(table_en, "1"))
 					websWrite(wp, "checked=\"checked\"");
-			} else if (table &&!strcmp(arg, "table")) {
+			} else if (table && !strcmp(arg, "table")) {
 				websWrite(wp, table);
 				return;
 			} else if (src && !strcmp(arg, "src")) {
 				websWrite(wp, "%d", get_single_ip(src, atoi(argv[1])));
 				return;
-			}	
+			}
 			return;
 		}
 	}
@@ -291,11 +291,11 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			GETENTRYBYIDX(type, word, 22);
 			GETENTRYBYIDX(ipproto_en, word, 23);
 			GETENTRYBYIDX(ipproto, word, 24);
-			GETENTRYBYIDX_DEL(sport_en, word, 25,"><:,");
-			GETENTRYBYIDX_DEL(sport, word, 26,"><:,");
-			GETENTRYBYIDX_DEL(dport_en, word, 27,"><:,");
-			GETENTRYBYIDX_DEL(dport, word, 28,"><:,");
-			
+			GETENTRYBYIDX_DEL(sport_en, word, 25, "><:,");
+			GETENTRYBYIDX_DEL(sport, word, 26, "><:,");
+			GETENTRYBYIDX_DEL(dport_en, word, 27, "><:,");
+			GETENTRYBYIDX_DEL(dport, word, 28, "><:,");
+
 			if (!strcmp(arg, "not")) {
 				if (not && !strcmp(not, "1"))
 					websWrite(wp, "checked=\"checked\"");
@@ -369,7 +369,17 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, tos);
 				return;
 			} else if (fwmark && !strcmp(arg, "fwmark")) {
-				websWrite(wp, fwmark);
+				char *slash = strchr(fwmark, '/');
+				if (slash)
+					*slash = '\0';
+				if (!strcmp(argv[1], "0"))
+					websWrite(wp, fwmark);
+				else {
+					if (slash)
+						websWrite(wp, slash + 1);
+					else
+						websWrite(wp, 0xffffffff);
+				}
 				return;
 			} else if (realms && !strcmp(arg, "realms")) {
 				websWrite(wp, realms);
@@ -380,35 +390,35 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			} else if (suppress_prefixlength && !strcmp(arg, "suppress_prefixlength")) {
 				websWrite(wp, suppress_prefixlength);
 				return;
-			} else if (iif && !strcmp(arg, "iif") && !strcmp(iif,argv[1])) {
-				if (!strcmp(argv[1],iif))
+			} else if (iif && !strcmp(arg, "iif") && !strcmp(iif, argv[1])) {
+				if (!strcmp(argv[1], iif))
 					websWrite(wp, "selected=\"selected\"");
 				return;
 			} else if (nat && !strcmp(arg, "nat")) {
 				websWrite(wp, "%d", get_single_ip(nat, atoi(argv[1])));
 				return;
 			} else if (type && !strcmp(arg, "type")) {
-				if (!strcmp(argv[1],type))
+				if (!strcmp(argv[1], type))
 					websWrite(wp, "selected=\"selected\"");
 				return;
 			} else if (sport && !strcmp(arg, "sport")) {
 				int from, to;
-				sscanf(sport,"%d-%d",&from,&to);
-				if (!strcmp(argv[1],"0"))
-					websWrite(wp, "%d",from);
+				sscanf(sport, "%d-%d", &from, &to);
+				if (!strcmp(argv[1], "0"))
+					websWrite(wp, "%d", from);
 				else
-					websWrite(wp, "%d",to);
+					websWrite(wp, "%d", to);
 				return;
 			} else if (dport && !strcmp(arg, "dport")) {
 				int from, to;
-				sscanf(dport,"%d-%d",&from,&to);
-				if (!strcmp(argv[1],"0"))
-					websWrite(wp, "%d",from);
+				sscanf(dport, "%d-%d", &from, &to);
+				if (!strcmp(argv[1], "0"))
+					websWrite(wp, "%d", from);
 				else
-					websWrite(wp, "%d",to);
+					websWrite(wp, "%d", to);
 				return;
 			} else if (ipproto && !strcmp(arg, "ipproto")) {
-				if (!strcmp(argv[1],ipproto))
+				if (!strcmp(argv[1], ipproto))
 					websWrite(wp, "selected=\"selected\"");
 				return;
 			}
@@ -422,9 +432,12 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "0");
 	else if (!strcmp(arg, "tos"))
 		websWrite(wp, "0");
-	else if (!strcmp(arg, "fwmark"))
-		websWrite(wp, "0");
-	else if (!strcmp(arg, "realms"))
+	else if (!strcmp(arg, "fwmark")) {
+		if (!strcmp(argv[1], "0"))
+			websWrite(wp, "0");
+		else
+			websWrite(wp, "0xffffffff");
+	} else if (!strcmp(arg, "realms"))
 		websWrite(wp, "0");
 	else if (!strcmp(arg, "type"))
 		websWrite(wp, "unicast");
@@ -483,6 +496,7 @@ EJ_VISIBLE void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
+
 #ifndef HAVE_MICRO
 EJ_VISIBLE void ej_pbr_rule_table(webs_t wp, int argc, char_t ** argv)
 {
