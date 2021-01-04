@@ -312,7 +312,7 @@ static int iprule_modify(int cmd, char **argv)
 		} else if (key == ARG_sport) {
 			struct compat_fib_rule_port_range r;
 			NEXT_ARG();
-			ret = sscanf(*argv, "%hu-%hu", &r.start, &r.end);
+			ret = sscanf(*argv, "%d-%d", &r.start, &r.end);
 			if (ret == 1)
 				r.end = r.start;
 			else if (ret != 2)
@@ -322,7 +322,7 @@ static int iprule_modify(int cmd, char **argv)
 		} else if (key == ARG_dport) {
 			struct compat_fib_rule_port_range r;
 			NEXT_ARG();
-			ret = sscanf(*argv, "%hu-%hu", &r.start, &r.end);
+			ret = sscanf(*argv, "%d-%d", &r.start, &r.end);
 			if (ret == 1)
 				r.end = r.start;
 			else if (ret != 2)
