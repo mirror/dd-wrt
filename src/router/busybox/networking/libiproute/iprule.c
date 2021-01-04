@@ -21,6 +21,14 @@
 #define FRA_SUPPRESS_IFGROUP	13
 #define FRA_SUPPRESS_PREFIXLEN	14
 #define FRA_FWMASK		16
+#define FRA_OIFNAME		17
+#define FRA_PAD			18
+#define FRA_L3MDEV		19
+#define FRA_UID_RANGE		20
+#define FRA_PROTOCOL		21
+#define FRA_IP_PROTO		22
+#define FRA_SPORT_RANGE		23
+#define FRA_DPORT_RANGE		24
 
 #include "ip_common.h"  /* #include "libbb.h" is inside */
 #include "rt_names.h"
@@ -49,36 +57,6 @@ enum {
 	ARG_tos, ARG_fwmark, ARG_realms, ARG_table, ARG_lookup,
 	ARG_suppress_prefixlength, ARG_suppress_ifgroup,
 	ARG_dev, ARG_iif, ARG_nat, ARG_map_to, ARG_type, ARG_help,
-};
-
-enum {
-	COMPAT_RTA_UNSPEC,
-	COMPAT_RTA_DST,	/* destination address */
-	COMPAT_RTA_SRC,	/* source address */
-	COMPAT_RTA_IIFNAME,	/* interface name */
-#define COMPAT_RTA_IFNAME	COMPAT_RTA_IIFNAME
-	COMPAT_RTA_GOTO,	/* target to jump to (FR_ACT_GOTO) */
-	COMPAT_RTA_UNUSED2,
-	COMPAT_RTA_PRIORITY,	/* priority/preference */
-	COMPAT_RTA_UNUSED3,
-	COMPAT_RTA_UNUSED4,
-	COMPAT_RTA_UNUSED5,
-	COMPAT_RTA_FWMARK,	/* mark */
-	COMPAT_RTA_FLOW,	/* flow/class id */
-	COMPAT_RTA_TUN_ID,
-	COMPAT_RTA_SUPPRESS_IFGROUP,
-	COMPAT_RTA_SUPPRESS_PREFIXLEN,
-	COMPAT_RTA_TABLE,	/* Extended table id */
-	COMPAT_RTA_FWMASK,	/* mask for netfilter mark */
-	COMPAT_RTA_OIFNAME,
-	COMPAT_RTA_PAD,
-	COMPAT_RTA_L3MDEV,	/* iif or oif is l3mdev goto its table */
-	COMPAT_RTA_UID_RANGE,	/* UID range */
-	COMPAT_RTA_PROTOCOL,   /* Originator of the rule */
-	COMPAT_RTA_IP_PROTO,	/* ip proto */
-	COMPAT_RTA_SPORT_RANGE, /* sport */
-	COMPAT_RTA_DPORT_RANGE, /* dport */
-	__COMPAT_RTA_MAX
 };
 
 struct compat_fib_rule_port_range {
@@ -172,20 +150,20 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 			printf("fwmark %#x ", mark);
 	}
 
-	if (tb[COMPAT_RTA_IP_PROTO]) {
-		printf("ipproto %d ", *(uint8_t*)RTA_DATA(tb[COMPAT_RTA_IP_PROTO]));
+	if (tb[FRA_IP_PROTO]) {
+		printf("ipproto %d ", *(uint8_t*)RTA_DATA(tb[FRA_IP_PROTO]));
 	}
 
-	if (tb[COMPAT_RTA_SPORT_RANGE]) {
-		struct compat_fib_rule_port_range *range = RTA_DATA(tb[COMPAT_RTA_SPORT_RANGE]);
+	if (tb[FRA_SPORT_RANGE]) {
+		struct compat_fib_rule_port_range *range = RTA_DATA(tb[FRA_SPORT_RANGE]);
 		if (range->start == range->end)
 		    printf("sport %d", range->start);
 		else
 		    printf("sport %d-%d ", range->start, range->end);
 	}
 
-	if (tb[COMPAT_RTA_DPORT_RANGE]) {
-		struct compat_fib_rule_port_range *range = RTA_DATA(tb[COMPAT_RTA_DPORT_RANGE]);
+	if (tb[FRA_DPORT_RANGE]) {
+		struct compat_fib_rule_port_range *range = RTA_DATA(tb[FRA_DPORT_RANGE]);
 		if (range->start == range->end)
 		    printf("dport %d", range->start);
 		else
@@ -330,7 +308,7 @@ static int iprule_modify(int cmd, char **argv)
 			uint8_t ipproto;
 			NEXT_ARG();
 			ipproto = get_u8(*argv, keyword_ipproto);
-			addattr8(&req.n, sizeof(req), COMPAT_RTA_IP_PROTO, ipproto);
+			addattr8(&req.n, sizeof(req), FRA_IP_PROTO, ipproto);
 		} else if (key == ARG_sport) {
 			struct compat_fib_rule_port_range r;
 			NEXT_ARG();
@@ -339,7 +317,7 @@ static int iprule_modify(int cmd, char **argv)
 				r.end = r.start;
 			else if (ret != 2)
 				invarg_1_to_2(*argv, "sport");
-			addattr_l(&req.n, sizeof(req), COMPAT_RTA_SPORT_RANGE, &r,
+			addattr_l(&req.n, sizeof(req), FRA_SPORT_RANGE, &r,
 				  sizeof(r));
 		} else if (key == ARG_dport) {
 			struct compat_fib_rule_port_range r;
@@ -349,7 +327,7 @@ static int iprule_modify(int cmd, char **argv)
 				r.end = r.start;
 			else if (ret != 2)
 				invarg_1_to_2(*argv, "dport");
-			addattr_l(&req.n, sizeof(req), COMPAT_RTA_SPORT_RANGE, &r,
+			addattr_l(&req.n, sizeof(req), FRA_SPORT_RANGE, &r,
 				  sizeof(r));
 		} else if (key == ARG_tos) {
 			uint32_t tos;
