@@ -29,6 +29,9 @@
 #define FRA_IP_PROTO		22
 #define FRA_SPORT_RANGE		23
 #define FRA_DPORT_RANGE		24
+#define FRA_MAX		25
+
+
 
 #include "ip_common.h"  /* #include "libbb.h" is inside */
 #include "rt_names.h"
@@ -47,13 +50,13 @@ static const char keywords[] ALIGN1 =
 	"dev\0""iif\0""nat\0""map-to\0""type\0""help\0"
 	;
 #define keyword_ipproto               (keywords           + sizeof("not") + sizeof("sport") + sizeof("dport"))
-#define keyword_preference            (keyword_ipproto    + sizeof("from") + sizeof("to"))
+#define keyword_preference            (keyword_ipproto    + sizeof("ipproto") + sizeof("from") + sizeof("to"))
 #define keyword_fwmark                (keyword_preference + sizeof("preference") + sizeof("order") + sizeof("priority") + sizeof("tos"))
 #define keyword_realms                (keyword_fwmark     + sizeof("fwmark"))
 #define keyword_suppress_prefixlength (keyword_realms     + sizeof("realms") + sizeof("table") + sizeof("lookup"))
 #define keyword_suppress_ifgroup      (keyword_suppress_prefixlength + sizeof("suppress_prefixlength"))
 enum {
-	ARG_not = 1, ARG_ipproto, ARG_sport, ARG_dport, ARG_from, ARG_to, ARG_preference, ARG_order, ARG_priority,
+	ARG_not = 1, ARG_sport, ARG_dport, ARG_ipproto, ARG_from, ARG_to, ARG_preference, ARG_order, ARG_priority,
 	ARG_tos, ARG_fwmark, ARG_realms, ARG_table, ARG_lookup,
 	ARG_suppress_prefixlength, ARG_suppress_ifgroup,
 	ARG_dev, ARG_iif, ARG_nat, ARG_map_to, ARG_type, ARG_help,
@@ -71,7 +74,7 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 	struct rtmsg *r = NLMSG_DATA(n);
 	int len = n->nlmsg_len;
 	int host_len = -1;
-	struct rtattr * tb[RTA_MAX+1];
+	struct rtattr * tb[FRA_MAX+1];
 
 	if (n->nlmsg_type != RTM_NEWRULE)
 		return 0;
@@ -81,7 +84,7 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 		return -1;
 
 	//memset(tb, 0, sizeof(tb)); - parse_rtattr does this
-	parse_rtattr(tb, RTA_MAX, RTM_RTA(r), len);
+	parse_rtattr(tb, FRA_MAX, RTM_RTA(r), len);
 
 	if (r->rtm_family == AF_INET)
 		host_len = 32;
@@ -312,7 +315,7 @@ static int iprule_modify(int cmd, char **argv)
 		} else if (key == ARG_sport) {
 			struct compat_fib_rule_port_range r;
 			NEXT_ARG();
-			ret = sscanf(*argv, "%d-%d", &r.start, &r.end);
+			ret = sscanf(*argv, "%hu-%hu", &r.start, &r.end);
 			if (ret == 1)
 				r.end = r.start;
 			else if (ret != 2)
@@ -322,7 +325,7 @@ static int iprule_modify(int cmd, char **argv)
 		} else if (key == ARG_dport) {
 			struct compat_fib_rule_port_range r;
 			NEXT_ARG();
-			ret = sscanf(*argv, "%d-%d", &r.start, &r.end);
+			ret = sscanf(*argv, "%hu-%hu", &r.start, &r.end);
 			if (ret == 1)
 				r.end = r.start;
 			else if (ret != 2)
