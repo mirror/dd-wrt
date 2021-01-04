@@ -289,10 +289,10 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			GETENTRYBYIDX(type, word, 22);
 			GETENTRYBYIDX(ipproto_en, word, 23);
 			GETENTRYBYIDX(ipproto, word, 24);
-			GETENTRYBYIDX(sport_en, word, 25);
-			GETENTRYBYIDX(sport, word, 26);
-			GETENTRYBYIDX(dport_en, word, 27);
-			GETENTRYBYIDX(dport, word, 28);
+			GETENTRYBYIDX_DEL(sport_en, word, 25,"><:,");
+			GETENTRYBYIDX_DEL(sport, word, 26,"><:,");
+			GETENTRYBYIDX_DEL(dport_en, word, 27,"><:,");
+			GETENTRYBYIDX_DEL(dport, word, 28,"><:,");
 			
 			if (!strcmp(arg, "not")) {
 				if (not && !strcmp(not, "1"))
@@ -389,7 +389,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				return;
 			} else if (sport && !strcmp(arg, "sport")) {
 				int from, to;
-				sscanf(sport,"%d-%d",&from,&to);
+				sscanf(sport,"%hu-%hu",&from,&to);
 				if (!strcmp(argv[1],"0"))
 					websWrite(wp, "%d",from);
 				else
@@ -397,7 +397,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				return;
 			} else if (dport && !strcmp(arg, "dport")) {
 				int from, to;
-				sscanf(dport,"%d-%d",&from,&to);
+				sscanf(dport,"%hu-%hu",&from,&to);
 				if (!strcmp(argv[1],"0"))
 					websWrite(wp, "%d",from);
 				else
