@@ -525,7 +525,7 @@ addEvent(window, "unload", function() {
 							<% ifndef("HAVE_EXT_IPROUTE", "<!--"); %>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_ipproto_en" <% pbr_rule_setting("ipproto_en"); %> />
-									<div class="label"><% tran("routetbl.type"); %></div>
+									<div class="label"><% tran("routetbl.ipproto"); %></div>
 									<select name="rule_ipproto">
 										<option value="0" <% pbr_rule_setting("ipproto", "0"); %> >IP</option>
 										<option value="1" <% pbr_rule_setting("ipproto", "1"); %> >ICMP</option>
@@ -561,13 +561,13 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_sport_table_en" <% pbr_rule_setting("sport_en"); %> />
-									<div class="label"><% tran("routetbl.table"); %></div>
+									<div class="label"><% tran("routetbl.sport"); %></div>
 									<input name="rule_sport_from" size="5" maxlength="5" onblur="valid_range(this,0,65535,routetbl.sport)" class="num" value="<% pbr_rule_setting("sport","0"); %>" />
 									<input name="rule_sport_to" size="5" maxlength="5" onblur="valid_range(this,0,65535,routetbl.sport)" class="num" value="<% pbr_rule_setting("sport","1"); %>" />
 								</div>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_dport_table_en" <% pbr_rule_setting("dport_en"); %> />
-									<div class="label"><% tran("routetbl.table"); %></div>
+									<div class="label"><% tran("routetbl.dport"); %></div>
 									<input name="rule_dport_from" size="5" maxlength="5" onblur="valid_range(this,0,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","0"); %>" />
 									<input name="rule_dport_to" size="5" maxlength="5" onblur="valid_range(this,0,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","1"); %>" />
 								</div>
