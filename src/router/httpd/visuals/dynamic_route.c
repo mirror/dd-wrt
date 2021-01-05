@@ -134,8 +134,10 @@ EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 			if (flgs & RTF_MODIFIED)
 				flags[fidx++] = 'M';
 			flags[fidx] = 0;
-
-			websWrite(wp, "%s%c'%s','%s','%s','%s','%d','%s'\n", debug ? "//" : "", blank ? ' ' : ',', sdest, inet_ntop(AF_INET, &netmask_ip, client, 16), sgw, flags, metric, getNetworkLabel(wp, ifname));
+			if (dest_ip.s_addr == 0)
+			websWrite(wp, "%s%c'%s','%s','%s','%d','%s'\n", debug ? "//" : "", blank ? ' ' : ',', sdest, sgw, flags, metric, getNetworkLabel(wp, ifname));
+			else 
+			websWrite(wp, "%s%c'%s/%d','%s','%s','%d','%s'\n", debug ? "//" : "", blank ? ' ' : ',', sdest, getmask(inet_ntop(AF_INET, &netmask_ip, client, 16)), sgw, flags, metric, getNetworkLabel(wp, ifname));
 
 			if (debug && blank)
 				blank = 1;
