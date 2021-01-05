@@ -19,6 +19,7 @@
 #include <net/flow.h>
 #include <linux/seq_file.h>
 #include <net/fib_rules.h>
+#include <net/flow_keys.h>
 
 struct fib_config {
 	u8			fc_dst_len;
