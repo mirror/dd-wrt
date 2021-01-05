@@ -1841,13 +1841,14 @@ static int ip_route_input_slow(struct sk_buff *skb, __be32 daddr, __be32 saddr,
 {
 	struct fib_result res;
 	struct in_device *in_dev = __in_dev_get_rcu(dev);
+	struct flow_keys *flkeys = NULL, _flkeys;
+	struct net    *net = dev_net(dev);
 	struct ip_tunnel_info *tun_info;
-	struct flowi4	fl4;
+	int		err = -EINVAL;
 	unsigned int	flags = 0;
 	u32		itag = 0;
 	struct rtable	*rth;
-	int		err = -EINVAL;
-	struct net    *net = dev_net(dev);
+	struct flowi4	fl4;
 	bool do_cache;
 
 	/* IP on this device is disabled. */
@@ -1905,6 +1906,13 @@ static int ip_route_input_slow(struct sk_buff *skb, __be32 daddr, __be32 saddr,
 	fl4.flowi4_flags = 0;
 	fl4.daddr = daddr;
 	fl4.saddr = saddr;
+	if (fib4_rules_early_flow_dissect(net, skb, &fl4, &_flkeys)) {
+		flkeys = &_flkeys;
+	} else {
+		fl4.flowi4_proto = 0;
+		fl4.fl4_sport = 0;
+		fl4.fl4_dport = 0;
+	}
 	err = fib_lookup(net, &fl4, &res, 0);
 	if (err != 0) {
 		if (!IN_DEV_FORWARD(in_dev))
