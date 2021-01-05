@@ -56,7 +56,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 
 		if (*ipaddr && *netmask) {
 			show_caption_simple(wp, "networking.iface");
-			websWrite(wp, " %s: IP %s/%s\n", getNetworkLabel(wp, interface), ipaddr, netmask);
+			websWrite(wp, " %s: IP %s/%d\n", getNetworkLabel(wp, interface), ipaddr, getmask(netmask));
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "DHCP %d &nbsp;\n", count);

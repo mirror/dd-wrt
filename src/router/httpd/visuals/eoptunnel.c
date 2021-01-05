@@ -1,4 +1,4 @@
-/*
+/*OB
  * eoptunnel.c
  *
  * Copyright (C) 2005 - 2019 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -31,6 +31,7 @@
 
 #include <broadcom.h>
 
+void show_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *nmtype, char *nmname);
 void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type);
 void show_caption(webs_t wp, const char *class, const char *cap, const char *ext);
 void show_caption_simple(webs_t wp, const char *cap);
@@ -536,15 +537,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					show_caption(wp, "label", "share.ip", NULL);
 					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ipaddr\" value=\"0.0.0.0\"/>\n", tun);
 					snprintf(temp, sizeof(temp), "oet%d_ipaddr", tun);
-					show_ip(wp, NULL, temp, 0, "share.ip");
-				}
-				websWrite(wp, "</div>\n");
-				websWrite(wp, "<div class=\"setting\">\n");
-				{
-					show_caption(wp, "label", "share.subnet", NULL);
-					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_netmask\" value=\"0.0.0.0\"/>\n", tun);
-					snprintf(temp, sizeof(temp), "oet%d_netmask", tun);
-					show_ip(wp, NULL, temp, 1, "share.subnet");
+					snprintf(temp2, sizeof(temp2), "oet%d_netmask", tun);
+					show_ip_cidr(wp, NULL, temp, 0, "share.ip", temp2, "share.subnet");
 				}
 				websWrite(wp, "</div>\n");
 			}
