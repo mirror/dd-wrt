@@ -317,12 +317,25 @@ EJ_VISIBLE void ej_get_single_ip(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+EJ_VISIBLE void ej_get_cidr_mask(webs_t wp, int argc, char_t ** argv)
+
+{
+	char *c;
+	c = nvram_safe_get(argv[0]);
+	if (*c) {
+		websWrite(wp, "%d", getmask(c));
+	} else
+		websWrite(wp, "0");
+
+
+}
+
 EJ_VISIBLE void ej_get_single_nm(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
 
 	c = nvram_safe_get(argv[0]);
-	if (c) {
+	if (*c) {
 		websWrite(wp, "%d", get_single_ip(c, atoi(argv[1])));
 	} else
 		websWrite(wp, "0");

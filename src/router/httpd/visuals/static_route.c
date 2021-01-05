@@ -170,7 +170,7 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "%d", get_single_ip(ipaddr, atoi(argv[1])));
 				return;
 			} else if (!strcmp(arg, "netmask")) {
-				websWrite(wp, "%d", get_single_ip(netmask, atoi(argv[1])));
+				websWrite(wp, "%d", getmask(netmask));
 				return;
 			} else if (!strcmp(arg, "gateway")) {
 				websWrite(wp, "%d", get_single_ip(gateway, atoi(argv[1])));
