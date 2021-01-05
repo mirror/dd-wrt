@@ -208,6 +208,13 @@ static inline int fib_lookup(struct net *net, const struct flowi4 *flp,
 	return -ENETUNREACH;
 }
 
+static inline bool fib4_rules_early_flow_dissect(struct net *net,
+						 struct sk_buff *skb,
+						 struct flowi4 *fl4,
+						 struct flow_keys *flkeys)
+{
+	return false;
+}
 #else /* CONFIG_IP_MULTIPLE_TABLES */
 extern int __net_init fib4_rules_init(struct net *net);
 extern void __net_exit fib4_rules_exit(struct net *net);
@@ -220,6 +227,24 @@ extern int fib_lookup(struct net *n, struct flowi4 *flp, struct fib_result *res)
 
 extern struct fib_table *fib_new_table(struct net *net, u32 id);
 extern struct fib_table *fib_get_table(struct net *net, u32 id);
+
+static inline bool fib4_rules_early_flow_dissect(struct net *net,
+						 struct sk_buff *skb,
+						 struct flowi4 *fl4,
+						 struct flow_keys *flkeys)
+{
+	unsigned int flag = FLOW_DISSECTOR_F_STOP_AT_ENCAP;
+
+	if (!net->ipv4.fib_rules_require_fldissect)
+		return false;
+
+	skb_flow_dissect_flow_keys(skb, flkeys, flag);
+	fl4->fl4_sport = flkeys->ports.src;
+	fl4->fl4_dport = flkeys->ports.dst;
+	fl4->flowi4_proto = flkeys->basic.ip_proto;
+
+	return true;
+}
 
 #endif /* CONFIG_IP_MULTIPLE_TABLES */
 
