@@ -233,15 +233,13 @@ static inline bool fib4_rules_early_flow_dissect(struct net *net,
 						 struct flowi4 *fl4,
 						 struct flow_keys *flkeys)
 {
-	unsigned int flag = FLOW_DISSECTOR_F_STOP_AT_ENCAP;
-
 	if (!net->ipv4.fib_rules_require_fldissect)
 		return false;
 
-	skb_flow_dissect_flow_keys(skb, flkeys, flag);
-	fl4->fl4_sport = flkeys->ports.src;
-	fl4->fl4_dport = flkeys->ports.dst;
-	fl4->flowi4_proto = flkeys->basic.ip_proto;
+	skb_flow_dissect(skb, flkeys);
+	fl4->fl4_sport = flkeys->port16[0];
+	fl4->fl4_dport = flkeys->port16[1];
+	fl4->flowi4_proto = flkeys->ip_proto;
 
 	return true;
 }
