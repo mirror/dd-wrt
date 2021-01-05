@@ -118,16 +118,6 @@ static int fib4_rule_match(struct fib_rule *rule, struct flowi *fl, int flags)
 	if (r->tos && (r->tos != fl4->flowi4_tos))
 		return 0;
 
-	if (rule->ip_proto && (rule->ip_proto != fl4->flowi4_proto))
-		return 0;
-
-	if (fib_rule_port_range_set(&rule->sport_range) &&
-	    !fib_rule_port_inrange(&rule->sport_range, fl4->fl4_sport))
-		return 0;
-
-	if (fib_rule_port_range_set(&rule->dport_range) &&
-	    !fib_rule_port_inrange(&rule->dport_range, fl4->fl4_dport))
-		return 0;
 	return 1;
 }
 
@@ -182,9 +172,6 @@ static int fib4_rule_configure(struct fib_rule *rule, struct sk_buff *skb,
 		rule4->tclassid = nla_get_u32(tb[FRA_FLOW]);
 #endif
 
-	if (fib_rule_requires_fldissect(rule))
-		net->ipv4.fib_rules_require_fldissect++;
-
 	rule4->src_len = frh->src_len;
 	rule4->srcmask = inet_make_mask(rule4->src_len);
 	rule4->dst_len = frh->dst_len;
@@ -194,14 +181,6 @@ static int fib4_rule_configure(struct fib_rule *rule, struct sk_buff *skb,
 	err = 0;
 errout:
 	return err;
-}
-
-static void fib4_rule_delete(struct fib_rule *rule)
-{
-	struct net *net = rule->fr_net;
-	if (net->ipv4.fib_rules_require_fldissect &&
-	    fib_rule_requires_fldissect(rule))
-		net->ipv4.fib_rules_require_fldissect--;
 }
 
 static int fib4_rule_compare(struct fib_rule *rule, struct fib_rule_hdr *frh,
@@ -276,7 +255,6 @@ static const struct fib_rules_ops __net_initdata fib4_rules_ops_template = {
 	.action		= fib4_rule_action,
 	.match		= fib4_rule_match,
 	.configure	= fib4_rule_configure,
-	.delete		= fib4_rule_delete,
 	.compare	= fib4_rule_compare,
 	.fill		= fib4_rule_fill,
 	.default_pref	= fib_default_rule_pref,
@@ -316,7 +294,6 @@ int __net_init fib4_rules_init(struct net *net)
 	if (err < 0)
 		goto fail;
 	net->ipv4.rules_ops = ops;
-	net->ipv4.fib_rules_require_fldissect = 0;
 	return 0;
 
 fail:

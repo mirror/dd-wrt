@@ -25,7 +25,6 @@ struct netns_ipv4 {
 #ifdef CONFIG_IP_MULTIPLE_TABLES
 	struct fib_rules_ops	*rules_ops;
 #endif
-	unsigned int		fib_rules_require_fldissect;
 	struct hlist_head	*fib_table_hash;
 	struct sock		*fibnl;
 
