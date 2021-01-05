@@ -12,8 +12,6 @@ function valid_value(F) {
 	if(F.wk_mode.value != "ospf") {
 		if(!valid_ip(F,"F.route_ipaddr","IP",0))
 			return false;
-		if(!valid_mask(F,"F.route_netmask",ZERO_OK))
-			return false;
 		if(!valid_ip(F,"F.route_gateway","Gateway",MASK_NO))
 			return false;
 	}
@@ -361,12 +359,7 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("routetbl.th1"); %></div>
 									<input type="hidden" name="route_ipaddr" value="4" />
-									<input name="route_ipaddr_0" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","0"); %>" />.<input name="route_ipaddr_1" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","1"); %>" />.<input name="route_ipaddr_2" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","2"); %>" />.<input name="route_ipaddr_3" size="3" maxlength="3" onblur="valid_range(this,0,254,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","3"); %>" />
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("share.subnet"); %></div>
-									<input type="hidden" name="route_netmask" value="4" />
-									<input name="route_netmask_0" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" class="num" value="<% static_route_setting("netmask","0"); %>" />.<input name="route_netmask_1" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" class="num" value="<% static_route_setting("netmask","1"); %>" />.<input name="route_netmask_2" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" class="num" value="<% static_route_setting("netmask","2"); %>" />.<input name="route_netmask_3" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" class="num" value="<% static_route_setting("netmask","3"); %>" />
+									<input name="route_ipaddr_0" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","0"); %>" />.<input name="route_ipaddr_1" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","1"); %>" />.<input name="route_ipaddr_2" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","2"); %>" />.<input name="route_ipaddr_3" size="3" maxlength="3" onblur="valid_range(this,0,254,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","3"); %>" /> / <input name="route_netmask" size="3" maxlength="3" onblur="valid_range(this,0,32,share.subnet)" class="num" value="<% static_route_setting("netmask"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.gateway"); %></div>

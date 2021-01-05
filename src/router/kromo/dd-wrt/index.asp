@@ -52,16 +52,15 @@ function valid_value(F) {
 					F.wan_ipaddr_0.value == "0" &&
 					F.wan_ipaddr_1.value == "0" &&
 					F.wan_ipaddr_2.value == "0" &&
-					F.wan_ipaddr_3.value == "0")
+					F.wan_ipaddr_3.value == "0") {
 						pptp_dhcp = "skip";
+					}
 
 			
 			if (!F.pptp_use_dhcp || F.pptp_use_dhcp.value == "0") {
-				if(pptp_dhcp != "skip" && F.wan_ipaddr && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO))
+				if(pptp_dhcp != "skip" && F.wan_ipaddr && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO)) {
 					return false;
-	
-				if(pptp_dhcp != "skip" && F.wan_netmask && !valid_mask(F,"F.wan_netmask",ZERO_NO|BCST_NO))
-					return false;
+				}
 			}		
 		}
 	}
@@ -70,10 +69,9 @@ function valid_value(F) {
 		pptp_dhcp = "";
 			
 		if (!F.pptp_use_dhcp || F.pptp_use_dhcp.value == "0") {
-			if(pptp_dhcp != "skip" && F.wan_ipaddr_static && !valid_ip(F,"F.wan_ipaddr_static","IP",ZERO_NO|MASK_NO))
+			if(pptp_dhcp != "skip" && F.wan_ipaddr_static && !valid_ip(F,"F.wan_ipaddr_static","IP",ZERO_NO|MASK_NO)) {
 				return false;
-	
-			if(pptp_dhcp != "skip" && F.wan_netmask_static && !valid_mask(F,"F.wan_netmask_static",ZERO_NO|BCST_NO))					return false;
+			}
 		}		
 	}
 	
@@ -433,12 +431,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("idx.routerip"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("idx.lanip"); %></div>
-									<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,223,'IP')" name="lan_ipaddr_0" value="<% get_single_ip("lan_ipaddr","0"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_1" value="<% get_single_ip("lan_ipaddr","1"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_2" value="<% get_single_ip("lan_ipaddr","2"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,255,'IP')" name="lan_ipaddr_3" value="<% get_single_ip("lan_ipaddr","3"); %>"/>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("share.subnet"); %></div>
-									<input type="hidden" name="lan_netmask" value="4" />
-									<input class="num" maxlength="3" size="3" name="lan_netmask_0" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_nm("lan_netmask","0"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_netmask_1" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_nm("lan_netmask","1"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_netmask_2" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_nm("lan_netmask","2"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_netmask_3" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_nm("lan_netmask","3"); %>"/>
+									<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,223,'IP')" name="lan_ipaddr_0" value="<% get_single_ip("lan_ipaddr","0"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_1" value="<% get_single_ip("lan_ipaddr","1"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_2" value="<% get_single_ip("lan_ipaddr","2"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,255,'IP')" name="lan_ipaddr_3" value="<% get_single_ip("lan_ipaddr","3"); %>"/> / <input class="num" maxlength="3" size="3" name="lan_netmask" onblur="valid_range(this,0,255,'Netmask')" value="<% get_cidr_mask("lan_netmask"); %>"/>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.gateway"); %></div>

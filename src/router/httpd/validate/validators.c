@@ -473,6 +473,22 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 
 }
 
+char *cidr_to_nm(char *netmask, unsigned int netmask_cidr)
+{
+	strcpy(netmask, "");
+	unsigned int nm = (((unsigned long long)1<<32) - ((unsigned long long)(1<<(32-netmask_cidr))));	
+	sprintf(netmask,"%d.%d.%d.%d", (nm>>24) & 0xff, (nm >> 16) & 0xff, (nm >> 8) & 0xff, nm & 0xff);
+	return netmask;
+}
+
+
+
+int get_merge_ipaddr_cidr(webs_t wp, char *name, char *ipaddr, char *value, int netmask_cidr)
+{
+	char netmask[20];
+	return get_merge_ipaddr(wp, name, ipaddr, value, cidr_to_nm(netmask, netmask_cidr));
+}
+
 EJ_VISIBLE void validate_merge_ipaddrs(webs_t wp, char *value, struct variable *v)
 {
 	char ipaddr[20];
@@ -741,13 +757,12 @@ EJ_VISIBLE void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	which = &wan_variables[0];
 
 	get_merge_ipaddr(wp, "wan_ipaddr", wan_ipaddr, NULL, NULL);
-	get_merge_ipaddr(wp, "wan_netmask", wan_netmask, NULL, NULL);
+	cidr_to_nm(wan_netmask, websGetVari(wp, "wan_netmask", 0));
 	get_merge_ipaddr(wp, "wan_gateway", wan_gateway, NULL, NULL);
 	get_merge_ipaddr(wp, "pptp_wan_gateway", pptp_wan_gateway, NULL, NULL);
 	get_merge_ipaddr(wp, "l2tp_wan_gateway", l2tp_wan_gateway, NULL, NULL);
 	get_merge_ipaddr(wp, "wan_ipaddr_static", wan_ipaddr_static, NULL, NULL);
-	get_merge_ipaddr(wp, "wan_netmask_static", wan_netmask_static, NULL, NULL);
-
+	cidr_to_nm(wan_netmask_static, websGetVari(wp, "wan_netmask_static", 0));
 	if (!strcmp(wan_proto, "pptp")) {
 		nvram_seti("pptp_pass", 0);	// disable pptp passthrough
 	}
@@ -878,8 +893,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 EJ_VISIBLE void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
 	char lan_ipaddr[20], lan_netmask[20];
-
-	get_merge_ipaddr(wp, "lan_netmask", lan_netmask, NULL, NULL);
+	cidr_to_nm(lan_netmask, websGetVari(wp, "lan_netmask", 0));
 	get_merge_ipaddr(wp, v->name, lan_ipaddr, NULL, NULL);
 
 	if (!valid_ipaddr(wp, lan_ipaddr, v))
@@ -3155,25 +3169,8 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	/*
 	 * validate netmask 
 	 */
-	strcpy(netmask, "");
-	for (i = 0; i < 4; i++) {
-		snprintf(temp, sizeof(temp), "%s_%d", "route_netmask", i);
-		val = websGetVar(wp, temp, NULL);
-		if (val) {
-			strcat(netmask, val);
-			if (i < 3)
-				strcat(netmask, ".");
-		} else {
-			// free (netmask);
-			// free (ipaddr);
-			free(old_name);
-			free(old);
-			free(buf_name);
-			free(buf);
-			return;
-		}
-	}
-
+	int cidr_nm = websGetVari(wp, "netmask", 0);
+	cidr_to_nm(netmask, cidr_nm);
 	/*
 	 * validate gateway 
 	 */
