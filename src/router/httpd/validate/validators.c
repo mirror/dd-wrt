@@ -3210,17 +3210,21 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 
 	page = websGetVar(wp, "route_page", NULL);
 	ifname = websGetVar(wp, "route_ifname", NULL);
-	nat = websGetVar(wp, "route_nat", "0");
-	char *src_en = websGetVar(wp, "src_en", "0");
-	char *scope_en = websGetVar(wp, "scope_en", "0");
+	nat = websGetVar(wp, "route_nat", 0);
+	int src_en = websGetVari(wp, "src_en", 0);
+	int scope_en = websGetVari(wp, "scope_en", 0);
+	int table_en = websGetVari(wp, "table_en", 0);
+	int mtu_en = websGetVari(wp, "mtu_en", 0);
+	int advmss_en = websGetVari(wp, "advmss_en", 0);
+	int flags = src_en ? 1 << 0 : 0;
+	flags = scope_en ? 1 << 1 : 0;
+	flags = table_en ? 1 << 2 : 0;
+	flags = mtu_en ? 1 << 3 : 0;
+	flags = advmss_en ? 1 << 4 : 0;
 	char *scope = websGetVar(wp, "route_scope", "link");
-	char *table_en = websGetVar(wp, "table_en", "0");
 	char *table = websGetVar(wp, "route_table", "0");
-	char *mtu_en = websGetVar(wp, "mtu_en", "0");
 	char *mtu = websGetVar(wp, "route_mtu", "1500");
-	char *advmss_en = websGetVar(wp, "advmss_en", "0");
 	char *advmss = websGetVar(wp, "route_advmss", "1460");
-
 	if (!page || !metric || !ifname) {
 		free(old_name);
 		free(old);
@@ -3326,8 +3330,7 @@ write_nvram:
 		snprintf(&old[atoi(page) * 140], 140, "%s", "");
 		snprintf(&old_name[atoi(page) * 60], 60, "%s", "");
 	} else {
-		snprintf(&old[atoi(page) * 140], 140, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, src_en, src, scope_en, scope, table_en, table, mtu_en, mtu,
-			 advmss_en, advmss);
+		snprintf(&old[atoi(page) * 140], 140, "%s:%s:%s:%s:%s:%s:%X:%s:%s:%s:%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, flags, src, scope, table, mtu, advmss);
 		httpd_filter_name(name, new_name, sizeof(new_name), SET);
 		snprintf(&old_name[atoi(page) * 60], 60, "$NAME:%s$$", new_name);
 	}
@@ -3404,22 +3407,38 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	bzero(old_name, STATIC_ROUTE_PAGE * 60 + 1);
 	cur = buf;
 	cur_name = buf_name;
-	name = websGetVar(wp, "rule_name", "");	// default empty if no find
-	char *not = websGetVar(wp, "not", "0");
-	char *from_en = websGetVar(wp, "from_en", "0");
-	char *to_en = websGetVar(wp, "to_en", "0");
-	char *priority_en = websGetVar(wp, "priority_en", "0");
-	char *tos_en = websGetVar(wp, "tos_en", "0");
-	char *fwmark_en = websGetVar(wp, "fwmark_en", "0");
-	char *realms_en = websGetVar(wp, "realms_en", "0");
-	char *table_en = websGetVar(wp, "pbr_table_en", "0");
-	char *ipproto_en = websGetVar(wp, "ipproto_en", "0");
-	char *sport_en = websGetVar(wp, "sport_en", "0");
-	char *dport_en = websGetVar(wp, "dport_en", "0");
-	char *suppress_prefixlength_en = websGetVar(wp, "suppress_prefixlength_en", "0");
-	char *iif_en = websGetVar(wp, "iif_en", "0");
-	char *nat_en = websGetVar(wp, "nat_en", "0");
-	char *type_en = websGetVar(wp, "type_en", "0");
+	name = websGetVari(wp, "rule_name", "");	// default empty if no find
+	int not = websGetVari(wp, "not", 0);
+	int from_en = websGetVarii(wp, "from_en", 0);
+	int to_en = websGetVarii(wp, "to_en", 0);
+	int priority_en = websGetVarii(wp, "priority_en", 0);
+	int tos_en = websGetVarii(wp, "tos_en", 0);
+	int fwmark_en = websGetVarii(wp, "fwmark_en", 0);
+	int realms_en = websGetVarii(wp, "realms_en", 0);
+	int table_en = websGetVarii(wp, "pbr_table_en", 0);
+	int suppress_prefixlength_en = websGetVarii(wp, "suppress_prefixlength_en", 0);
+	int iif_en = websGetVarii(wp, "iif_en", 0);
+	int nat_en = websGetVarii(wp, "nat_en", 0);
+	int type_en = websGetVarii(wp, "type_en", 0);
+	int ipproto_en = websGetVarii(wp, "ipproto_en", 0);
+	int sport_en = websGetVarii(wp, "sport_en", 0);
+	int dport_en = websGetVarii(wp, "dport_en", 0);
+
+	int flags |= not ? 1 << 0 : 0;
+	flags |= from_en ? 1 << 1 : 0;
+	flags |= to_en ? 1 << 2 : 0;
+	flags |= priority_en ? 1 << 3 : 0;
+	flags |= tos_en ? 1 << 4 : 0;
+	flags |= fwmark_en ? 1 << 5 : 0;
+	flags |= realms_en ? 1 << 6 : 0;
+	flags |= table_en ? 1 << 7 : 0;
+	flags |= suppress_prefixlength_en ? 1 << 8 : 0;
+	flags |= iif_en ? 1 << 9 : 0;
+	flags |= nat_en ? 1 << 10 : 0;
+	flags |= type_en ? 1 << 11 : 0;
+	flags |= ipproto_en ? 1 << 12 : 0;
+	flags |= sport_en ? 1 << 13 : 0;
+	flags |= dport_en ? 1 << 14 : 0;
 	char *page = websGetVar(wp, "rule_page", NULL);
 	char *priority = websGetVar(wp, "rule_priority", "0");
 	char *tos = websGetVar(wp, "rule_tos", "0");
@@ -3539,8 +3558,8 @@ write_nvram:
 
 	strcpy(backuproute, &old[atoi(page) * 160]);
 
-	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", not, from_en, from, to_en, to, priority_en, priority, tos_en, tos,
-		 fwmark_en, fw, realms_en, realms, table_en, table, suppress_prefixlength_en, suppress_prefixlength, iif_en, iif, nat_en, nat, type_en, type, ipproto_en, ipproto, sport_en, sport, dport_en, dport);
+	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%X:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", flags, from, to, priority, tos, fw, realms, table, suppress_prefixlength, iif, nat, type, ipproto, sport,
+		 dport);
 
 	httpd_filter_name(name, new_name, sizeof(new_name), SET);
 	snprintf(&old_name[atoi(page) * 60], 60, "$NAME:%s$$", new_name);

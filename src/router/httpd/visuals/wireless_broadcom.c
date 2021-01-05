@@ -643,6 +643,7 @@ static unsigned int bits_count(unsigned int n)
 
 	return count;
 }
+
 #if 0
 /* Writes "1" if Tx beamforming is supported. Otherwise, "0" */
 int ej_wl_txbf_capable(webs_t wp, int argc, char_t ** argv)
