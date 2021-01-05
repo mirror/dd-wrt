@@ -138,6 +138,18 @@ static int fib6_rule_match(struct fib_rule *rule, struct flowi *fl, int flags)
 	if (r->tclass && r->tclass != ((ntohl(fl6->flowlabel) >> 20) & 0xff))
 		return 0;
 
+	if (rule->ip_proto && (rule->ip_proto != fl6->flowi6_proto))
+		return 0;
+
+	if (fib_rule_port_range_set(&rule->sport_range) &&
+	    !fib_rule_port_inrange(&rule->sport_range, fl6->fl6_sport))
+		return 0;
+
+	if (fib_rule_port_range_set(&rule->dport_range) &&
+	    !fib_rule_port_inrange(&rule->dport_range, fl6->fl6_dport))
+		return 0;
+
+
 	return 1;
 }
 
@@ -201,18 +213,6 @@ static int fib6_rule_compare(struct fib_rule *rule, struct fib_rule_hdr *frh,
 	if (frh->dst_len &&
 	    nla_memcmp(tb[FRA_DST], &rule6->dst.addr, sizeof(struct in6_addr)))
 		return 0;
-
-	if (rule->ip_proto && (rule->ip_proto != fl6->flowi6_proto))
-		return 0;
-
-	if (fib_rule_port_range_set(&rule->sport_range) &&
-	    !fib_rule_port_inrange(&rule->sport_range, fl6->fl6_sport))
-		return 0;
-
-	if (fib_rule_port_range_set(&rule->dport_range) &&
-	    !fib_rule_port_inrange(&rule->dport_range, fl6->fl6_dport))
-		return 0;
-
 
 	return 1;
 }
