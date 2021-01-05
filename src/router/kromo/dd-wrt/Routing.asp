@@ -474,7 +474,7 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_tos_en" <% pbr_rule_setting("tos_en"); %> />
 									<div class="label"><% tran("routetbl.tos"); %></div>
-									<input name="rule_tos" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.tos)" class="num" value="<% pbr_rule_setting("tos"); %>" />
+									<input name="rule_tos" size="5" maxlength="5" onblur="valid_range(this,0,255,routetbl.tos)" class="num" value="<% pbr_rule_setting("tos"); %>" />
 								</div>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_fwmark_en" <% pbr_rule_setting("fwmark_en"); %> />
