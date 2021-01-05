@@ -217,6 +217,9 @@ static int fib4_rule_configure(struct fib_rule *rule, struct sk_buff *skb,
 	}
 #endif
 
+	if (fib_rule_requires_fldissect(rule))
+		net->ipv4.fib_rules_require_fldissect++;
+
 	rule4->src_len = frh->src_len;
 	rule4->srcmask = inet_make_mask(rule4->src_len);
 	rule4->dst_len = frh->dst_len;
@@ -245,6 +248,9 @@ static int fib4_rule_delete(struct fib_rule *rule)
 		net->ipv4.fib_num_tclassid_users--;
 #endif
 	net->ipv4.fib_has_custom_rules = true;
+	if (net->ipv4.fib_rules_require_fldissect &&
+	    fib_rule_requires_fldissect(rule))
+		net->ipv4.fib_rules_require_fldissect--;
 errout:
 	return err;
 }
@@ -363,6 +369,7 @@ int __net_init fib4_rules_init(struct net *net)
 		goto fail;
 	net->ipv4.rules_ops = ops;
 	net->ipv4.fib_has_custom_rules = false;
+	net->ipv4.fib_rules_require_fldissect = 0;
 	return 0;
 
 fail:
