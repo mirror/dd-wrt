@@ -206,56 +206,56 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "</div>\n");
 				//end show
 
-				websWrite(wp, "<div id=\"idoet%d_showadvanced\">\n", tun);  //for show or hide advanced options
+				websWrite(wp, "<div id=\"idoet%d_showadvanced\">\n", tun);	//for show or hide advanced options
 				//websWrite(wp, "<div id=\"idoet%d_showadvanced\" style=\"display:none\">\n", tun);  //for show or hide advanced options
 
-					//egc set private key
-					snprintf(temp, sizeof(temp), "oet%d_private", tun);
-					websWrite(wp, "<div class=\"setting\">\n");
-					{
-						show_caption(wp, "label", "eoip.wireguard_localprivatekey", NULL);
-						websWrite(wp, "<input type=\"password\" size=\"48\" maxlength=\"48\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n", temp,
-							  nvram_safe_get(temp));
-					}
-					websWrite(wp, "</div>\n");
+				//egc set private key
+				snprintf(temp, sizeof(temp), "oet%d_private", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_localprivatekey", NULL);
+					websWrite(wp, "<input type=\"password\" size=\"48\" maxlength=\"48\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n", temp,
+						  nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
 
-					//route up script
-					snprintf(temp, sizeof(temp), "oet%d_rtupscript", tun);
-					websWrite(wp, "<div class=\"setting\">\n");
-					{
-						show_caption(wp, "label", "eoip.wireguard_rtupscript", NULL);
-						websWrite(wp, "<input size=\"48\" maxlength=\"64\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
-					}
-					websWrite(wp, "</div>\n");
+				//route up script
+				snprintf(temp, sizeof(temp), "oet%d_rtupscript", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_rtupscript", NULL);
+					websWrite(wp, "<input size=\"48\" maxlength=\"64\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
 
-					//route down script
-					snprintf(temp, sizeof(temp), "oet%d_rtdownscript", tun);
-					websWrite(wp, "<div class=\"setting\">\n");
-					{
-						show_caption(wp, "label", "eoip.wireguard_rtdownscript", NULL);
-						websWrite(wp, "<input size=\"48\" maxlength=\"64\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
-					}
-					websWrite(wp, "</div>\n");
+				//route down script
+				snprintf(temp, sizeof(temp), "oet%d_rtdownscript", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_rtdownscript", NULL);
+					websWrite(wp, "<input size=\"48\" maxlength=\"64\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
 
-					//fwmark
-					snprintf(temp, sizeof(temp), "oet%d_fwmark", tun);
-					websWrite(wp, "<div class=\"setting\">\n");
-					{
-						show_caption(wp, "label", "eoip.wireguard_fwmark", NULL);
-						websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
-					}
-					websWrite(wp, "</div>\n");
+				//fwmark
+				snprintf(temp, sizeof(temp), "oet%d_fwmark", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_fwmark", NULL);
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
 
-					//egc: PBR input box 
-					snprintf(temp, sizeof(temp), "oet%d_pbr", tun);
-					websWrite(wp, "<div class=\"setting\">\n");
-					{
-						show_caption(wp, "label", "eoip.wireguard_oet_pbr", NULL);
-						websWrite(wp, "<input size=\"78\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, ""));
-					}
-					websWrite(wp, "</div>\n");
-					//end PBR
-				websWrite(wp, "</div>\n");  //end show hide
+				//egc: PBR input box 
+				snprintf(temp, sizeof(temp), "oet%d_pbr", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_oet_pbr", NULL);
+					websWrite(wp, "<input size=\"78\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, ""));
+				}
+				websWrite(wp, "</div>\n");
+				//end PBR
+				websWrite(wp, "</div>\n");	//end show hide
 
 				snprintf(temp, sizeof(temp), "oet%d_peers", tun);
 				int peers = nvram_default_geti(temp, 0);
