@@ -51,7 +51,6 @@
 #include <bcmnvram.h>
 //#include <l7protocols.h>
 
-
 #if defined(HAVE_80211AC) || (defined(HAVE_BRCMFMAC) && defined(HAVE_NORTHSTAR))
 #define COUNTRYLIST "EU DE GB FR NL ES IT CN US JP AU SG BR RU TW CA KR LA"
 #else
@@ -2888,7 +2887,7 @@ static void mesh_num(webs_t wp, char *prefix, char *name, int len, int def)
 
 static void mesh_radio(webs_t wp, char *prefix, char *name, int def)
 {
-    	char mparam[64];
+	char mparam[64];
 	sprintf(mparam, "%s_%s", prefix, name);
 	char label[64];
 	sprintf(label, "wl_basic.%s", name);
