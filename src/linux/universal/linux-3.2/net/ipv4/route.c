@@ -2301,16 +2301,14 @@ static int ip_route_input_slow(struct sk_buff *skb, __be32 daddr, __be32 saddr,
 {
 	struct fib_result res;
 	struct in_device *in_dev = __in_dev_get_rcu(dev);
-	struct flow_keys *flkeys = NULL, _flkeys;
-	struct net    *net = dev_net(dev);
-	int		err = -EINVAL;
+	struct flowi4	fl4;
 	unsigned	flags = 0;
 	u32		itag = 0;
 	struct rtable * rth;
 	unsigned	hash;
 	__be32		spec_dst;
-	struct flowi4	fl4;
-
+	int		err = -EINVAL;
+	struct net    * net = dev_net(dev);
 
 	/* IP on this device is disabled. */
 
@@ -2347,13 +2345,6 @@ static int ip_route_input_slow(struct sk_buff *skb, __be32 daddr, __be32 saddr,
 	fl4.flowi4_scope = RT_SCOPE_UNIVERSE;
 	fl4.daddr = daddr;
 	fl4.saddr = saddr;
-	if (fib4_rules_early_flow_dissect(net, skb, &fl4, &_flkeys)) {
-		flkeys = &_flkeys;
-	} else {
-		fl4.flowi4_proto = 0;
-		fl4.fl4_sport = 0;
-		fl4.fl4_dport = 0;
-	}
 	err = fib_lookup(net, &fl4, &res);
 	if (err != 0) {
 		if (!IN_DEV_FORWARD(in_dev))
