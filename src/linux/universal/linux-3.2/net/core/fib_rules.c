@@ -177,26 +177,6 @@ void fib_rules_unregister(struct fib_rules_ops *ops)
 }
 EXPORT_SYMBOL_GPL(fib_rules_unregister);
 
-static int nla_get_port_range(struct nlattr *pattr,
-			      struct fib_rule_port_range *port_range)
-{
-	const struct fib_rule_port_range *pr = nla_data(pattr);
-
-	if (!fib_rule_port_range_valid(pr))
-		return -EINVAL;
-
-	port_range->start = pr->start;
-	port_range->end = pr->end;
-
-	return 0;
-}
-
-static int nla_put_port_range(struct sk_buff *skb, int attrtype,
-			      struct fib_rule_port_range *range)
-{
-	return nla_put(skb, attrtype, sizeof(*range), range);
-}
-
 static int fib_rule_match(struct fib_rule *rule, struct fib_rules_ops *ops,
 			  struct flowi *fl, int flags)
 {
@@ -340,23 +320,6 @@ static int fib_nl_newrule(struct sk_buff *skb, struct nlmsghdr* nlh, void *arg)
 			rule->oifindex = dev->ifindex;
 	}
 
-	if (tb[FRA_IP_PROTO])
-		rule->ip_proto = nla_get_u8(tb[FRA_IP_PROTO]);
-
-	if (tb[FRA_SPORT_RANGE]) {
-		err = nla_get_port_range(tb[FRA_SPORT_RANGE],
-					 &rule->sport_range);
-		if (err)
-			goto errout_free;
-	}
-
-	if (tb[FRA_DPORT_RANGE]) {
-		err = nla_get_port_range(tb[FRA_DPORT_RANGE],
-					 &rule->dport_range);
-		if (err)
-			goto errout_free;
-	}
-
 	if (tb[FRA_FWMARK]) {
 		rule->mark = nla_get_u32(tb[FRA_FWMARK]);
 		if (rule->mark)
@@ -453,8 +416,6 @@ errout:
 static int fib_nl_delrule(struct sk_buff *skb, struct nlmsghdr* nlh, void *arg)
 {
 	struct net *net = sock_net(skb->sk);
-	struct fib_rule_port_range sprange = {0, 0};
-	struct fib_rule_port_range dprange = {0, 0};
 	struct fib_rule_hdr *frh = nlmsg_data(nlh);
 	struct fib_rules_ops *ops = NULL;
 	struct fib_rule *rule, *tmp;
@@ -477,20 +438,6 @@ static int fib_nl_delrule(struct sk_buff *skb, struct nlmsghdr* nlh, void *arg)
 	err = validate_rulemsg(frh, tb, ops);
 	if (err < 0)
 		goto errout;
-
-	if (tb[FRA_SPORT_RANGE]) {
-		err = nla_get_port_range(tb[FRA_SPORT_RANGE],
-					 &sprange);
-		if (err)
-			goto errout;
-	}
-
-	if (tb[FRA_DPORT_RANGE]) {
-		err = nla_get_port_range(tb[FRA_DPORT_RANGE],
-					 &dprange);
-		if (err)
-			goto errout;
-	}
 
 	list_for_each_entry(rule, &ops->rules_list, list) {
 		if (frh->action && (frh->action != rule->action))
@@ -518,18 +465,6 @@ static int fib_nl_delrule(struct sk_buff *skb, struct nlmsghdr* nlh, void *arg)
 
 		if (tb[FRA_FWMASK] &&
 		    (rule->mark_mask != nla_get_u32(tb[FRA_FWMASK])))
-			continue;
-
-		if (tb[FRA_IP_PROTO] &&
-		    (rule->ip_proto != nla_get_u8(tb[FRA_IP_PROTO])))
-			continue;
-
-		if (fib_rule_port_range_set(&sprange) &&
-		    !fib_rule_port_range_compare(&rule->sport_range, &sprange))
-			continue;
-
-		if (fib_rule_port_range_set(&dprange) &&
-		    !fib_rule_port_range_compare(&rule->dport_range, &dprange))
 			continue;
 
 		if (!ops->compare(rule, frh, tb))
@@ -565,8 +500,6 @@ static int fib_nl_delrule(struct sk_buff *skb, struct nlmsghdr* nlh, void *arg)
 
 		notify_rule_change(RTM_DELRULE, rule, ops, nlh,
 				   NETLINK_CB(skb).pid);
-		if (ops->delete)
-			ops->delete(rule);
 		fib_rule_put(rule);
 		flush_route_cache(ops);
 		rules_ops_put(ops);
@@ -588,10 +521,7 @@ static inline size_t fib_rule_nlmsg_size(struct fib_rules_ops *ops,
 			 + nla_total_size(4) /* FRA_PRIORITY */
 			 + nla_total_size(4) /* FRA_TABLE */
 			 + nla_total_size(4) /* FRA_FWMARK */
-			 + nla_total_size(4) /* FRA_FWMASK */
-			 + nla_total_size(1) /* FRA_IP_PROTO */
-			 + nla_total_size(sizeof(struct fib_rule_port_range)) /* FRA_SPORT_RANGE */
-			 + nla_total_size(sizeof(struct fib_rule_port_range)); /* FRA_DPORT_RANGE */
+			 + nla_total_size(4); /* FRA_FWMASK */
 
 	if (ops->nlmsg_payload)
 		payload += ops->nlmsg_payload(rule);
@@ -648,15 +578,6 @@ static int fib_nl_fill_rule(struct sk_buff *skb, struct fib_rule *rule,
 
 	if (rule->target)
 		NLA_PUT_U32(skb, FRA_GOTO, rule->target);
-	
-	if (fib_rule_port_range_set(&rule->sport_range))
-		nla_put_port_range(skb, FRA_SPORT_RANGE, &rule->sport_range);
-
-	if (fib_rule_port_range_set(&rule->dport_range))
-		nla_put_port_range(skb, FRA_DPORT_RANGE, &rule->dport_range);
-	
-	if (rule->ip_proto)
-		NLA_PUT_U8(skb, FRA_IP_PROTO, rule->ip_proto);
 
 	if (ops->fill(rule, skb, frh) < 0)
 		goto nla_put_failure;
