@@ -565,6 +565,8 @@ static int fib_nl_delrule(struct sk_buff *skb, struct nlmsghdr* nlh, void *arg)
 
 		notify_rule_change(RTM_DELRULE, rule, ops, nlh,
 				   NETLINK_CB(skb).pid);
+		if (ops->delete)
+			ops->delete(rule);
 		fib_rule_put(rule);
 		flush_route_cache(ops);
 		rules_ops_put(ops);
