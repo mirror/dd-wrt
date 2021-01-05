@@ -476,12 +476,10 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 char *cidr_to_nm(char *netmask, unsigned int netmask_cidr)
 {
 	strcpy(netmask, "");
-	unsigned int nm = (((unsigned long long)1<<32) - ((unsigned long long)(1<<(32-netmask_cidr))));	
-	sprintf(netmask,"%d.%d.%d.%d", (nm>>24) & 0xff, (nm >> 16) & 0xff, (nm >> 8) & 0xff, nm & 0xff);
+	unsigned int nm = (((unsigned long long)1 << 32) - ((unsigned long long)(1 << (32 - netmask_cidr))));
+	sprintf(netmask, "%d.%d.%d.%d", (nm >> 24) & 0xff, (nm >> 16) & 0xff, (nm >> 8) & 0xff, nm & 0xff);
 	return netmask;
 }
-
-
 
 int get_merge_ipaddr_cidr(webs_t wp, char *name, char *ipaddr, char *value, int netmask_cidr)
 {
@@ -865,7 +863,10 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 
 		if (bridged && strcmp(bridged, "0") == 0) {
 			copymergetonv(wp, "%s_ipaddr", var);
-			copymergetonv(wp, "%s_netmask", var);
+			char buf[32];
+			char temp[32];
+			sprintf(temp, "%s_netmask", var);
+			nvram_set(temp, cidr_to_nm(buf, websGetVari(wp, temp, 0)));
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
 			if (1) {
 				copytonv(wp, "nld_%s_enable", var);
@@ -3169,7 +3170,7 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	/*
 	 * validate netmask 
 	 */
-	int cidr_nm = websGetVari(wp, "netmask", 0);
+	int cidr_nm = websGetVari(wp, "route_netmask", 0);
 	cidr_to_nm(netmask, cidr_nm);
 	/*
 	 * validate gateway 
@@ -3234,7 +3235,6 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 		return;
 	}
 	// Allow Defaultroute here
-
 	if (!strcmp(ipaddr, "0.0.0.0") && !strcmp(netmask, "0.0.0.0")
 	    && strcmp(gateway, "0.0.0.0")) {
 		tmp = 1;
@@ -3252,7 +3252,6 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 
 	// return;
 	// }
-
 	if (!*ipaddr) {
 		websDebugWrite(wp, "Invalid <b>%s</b>: must specify an IP Address<br>", v->longname);
 		// free (gateway);
@@ -3331,7 +3330,7 @@ write_nvram:
 		snprintf(&old[atoi(page) * ROUTE_LINE_SIZE], ROUTE_LINE_SIZE, "%s", "");
 		snprintf(&old_name[atoi(page) * ROUTE_NAME_SIZE], ROUTE_NAME_SIZE, "%s", "");
 	} else {
-		snprintf(&old[atoi(page) * ROUTE_LINE_SIZE], ROUTE_LINE_SIZE, "%s:%s:%s:%s:%s:%s:%X:%s:%s:%s:%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, flags, src, scope, table, mtu, advmss);
+		snprintf(&old[atoi(page) * ROUTE_LINE_SIZE], ROUTE_LINE_SIZE, "%s:%s:%s:%s:%s:%s:%X:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, flags, src, scope, table, mtu, advmss);
 		httpd_filter_name(name, new_name, sizeof(new_name), SET);
 		snprintf(&old_name[atoi(page) * ROUTE_NAME_SIZE], ROUTE_NAME_SIZE, "$NAME:%s$$", new_name);
 	}
@@ -3462,7 +3461,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char fw[64];
 	sprintf(sport, "%s-%s", sport_from, sport_to);
 	sprintf(dport, "%s-%s", dport_from, dport_to);
-	sprintf(fw, "0x%X/0x%X", strtoul(fwmark,NULL,0), strtoul(fwmask,NULL,0)); // force hex
+	sprintf(fw, "0x%X/0x%X", strtoul(fwmark, NULL, 0), strtoul(fwmask, NULL, 0));	// force hex
 	/*
 	 * validate ip address 
 	 */
@@ -3561,8 +3560,8 @@ write_nvram:
 
 	strcpy(backuproute, &old[atoi(page) * PBR_LINE_SIZE]);
 
-	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], PBR_LINE_SIZE, "%X:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", flags, from, to, priority, tos, fw, realms, table, suppress_prefixlength, iif, nat, type, ipproto, sport,
-		 dport);
+	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], PBR_LINE_SIZE, "%X:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", flags, from, to, priority, tos, fw, realms, table, suppress_prefixlength, iif, nat, type, ipproto,
+		 sport, dport);
 
 	httpd_filter_name(name, new_name, sizeof(new_name), SET);
 	snprintf(&old_name[atoi(page) * ROUTE_NAME_SIZE], ROUTE_NAME_SIZE, "$NAME:%s$$", new_name);

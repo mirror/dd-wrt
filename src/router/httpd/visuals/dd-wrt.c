@@ -145,15 +145,29 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
 
 }
 
+void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *nmname, char *nmtype)
+{
+	char name[64];
+	if (prefix)
+		snprintf(name, 64, "%s_%s", prefix, var);
+	else
+		snprintf(name, 64, "%s", var);
+	char *ipv = nvram_default_get(name, "0.0.0.0");
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" />.", nm ? 0 : 1, nm ? 255 : 223, type, name, get_single_ip(ipv, 0));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.", type, name, get_single_ip(ipv, 1));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.", type, name, get_single_ip(ipv, 2));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_3\" value=\"%d\" /> / ", type, name, get_single_ip(ipv, 3));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s\" value=\"%d\" />\n", nmtype, nmname, getmask(nvram_default_get(nmname, "0.0.0.0")));
+
+}
+
 void show_ipnetmask(webs_t wp, char *var)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.ip", NULL);
-	show_ip(wp, var, "ipaddr", 0, "share.ip");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.subnet", NULL);
-	show_ip(wp, var, "netmask", 1, "share.subnet");
+	char temp[32];
+	sprintf(temp, "%s_netmask", var);
+	show_ip_cidr(wp, var, "ipaddr", 0, "share.ip", temp, "share.subnet");
 	websWrite(wp, "</div>\n");
 
 }
@@ -2343,14 +2357,10 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "share.ip", NULL);
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_ipaddr\" value=\"4\" />\n", var);
-	show_ip(wp, var, "ipaddr", 0, "share.ip");
+	char netmask[32];
+	sprintf(netmask, "%s_netmask", var);
+	show_ip_cidr(wp, var, "ipaddr", 0, "share.ip", netmask, "share.subnet");
 	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.subnet", NULL);
-	websWrite(wp, "<input type=\"hidden\" name=\"%s_netmask\" value=\"4\" />\n", var);
-	show_ip(wp, var, "netmask", 1, "share.subnet");
-	websWrite(wp, "</div>\n");
-
 #ifdef HAVE_MADWIFI
 /*if (dual)
 {
