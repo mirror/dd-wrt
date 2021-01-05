@@ -297,6 +297,13 @@ static inline unsigned int fib4_rules_seq_read(struct net *net)
 	return 0;
 }
 
+static inline bool fib4_rules_early_flow_dissect(struct net *net,
+						 struct sk_buff *skb,
+						 struct flowi4 *fl4,
+						 struct flow_keys *flkeys)
+{
+	return false;
+}
 #else /* CONFIG_IP_MULTIPLE_TABLES */
 int __net_init fib4_rules_init(struct net *net);
 void __net_exit fib4_rules_exit(struct net *net);
@@ -344,6 +351,24 @@ out:
 bool fib4_rule_default(const struct fib_rule *rule);
 int fib4_rules_dump(struct net *net, struct notifier_block *nb);
 unsigned int fib4_rules_seq_read(struct net *net);
+
+static inline bool fib4_rules_early_flow_dissect(struct net *net,
+						 struct sk_buff *skb,
+						 struct flowi4 *fl4,
+						 struct flow_keys *flkeys)
+{
+	unsigned int flag = FLOW_DISSECTOR_F_STOP_AT_ENCAP;
+
+	if (!net->ipv4.fib_rules_require_fldissect)
+		return false;
+
+	skb_flow_dissect_flow_keys(skb, flkeys, flag);
+	fl4->fl4_sport = flkeys->ports.src;
+	fl4->fl4_dport = flkeys->ports.dst;
+	fl4->flowi4_proto = flkeys->basic.ip_proto;
+
+	return true;
+}
 
 #endif /* CONFIG_IP_MULTIPLE_TABLES */
 
