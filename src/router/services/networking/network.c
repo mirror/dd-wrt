@@ -5080,7 +5080,7 @@ static void apply_rules(char *method, char *pbr)
 {
 	char word[512], *tmp;
 	foreach(word, pbr, tmp) {
-		char cmd[160];
+		char cmd[256];
 		strcpy(cmd, "ip rule ");
 		strcat(cmd, method);
 		GETENTRYBYIDX(s_flags, word, 0);
