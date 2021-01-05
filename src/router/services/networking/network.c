@@ -5083,64 +5083,67 @@ static void apply_rules(char *method, char *pbr)
 		char cmd[160];
 		strcpy(cmd, "ip rule ");
 		strcat(cmd, method);
-		GETENTRYBYIDX(not, word, 0);	// not supported on old 2.4 kernels
-		GETENTRYBYIDX(from_en, word, 1);
-		GETENTRYBYIDX(from, word, 2);
-		GETENTRYBYIDX(to_en, word, 3);
-		GETENTRYBYIDX(to, word, 4);
-		GETENTRYBYIDX(priority_en, word, 5);
-		GETENTRYBYIDX(priority, word, 6);
-		GETENTRYBYIDX(tos_en, word, 7);
-		GETENTRYBYIDX(tos, word, 8);
-		GETENTRYBYIDX(fwmark_en, word, 9);
-		GETENTRYBYIDX(fwmark, word, 10);
-		GETENTRYBYIDX(realms_en, word, 11);
-		GETENTRYBYIDX(realms, word, 12);
-		GETENTRYBYIDX(table_en, word, 13);
-		GETENTRYBYIDX(table, word, 14);
-		GETENTRYBYIDX(suppress_prefixlength_en, word, 15);	// not supported on brcm 2.4
-		GETENTRYBYIDX(suppress_prefixlength, word, 16);
-		GETENTRYBYIDX(iif_en, word, 17);
-		GETENTRYBYIDX(iif, word, 18);
-		GETENTRYBYIDX(nat_en, word, 19);
-		GETENTRYBYIDX(nat, word, 20);
-		GETENTRYBYIDX(type_en, word, 21);
-		GETENTRYBYIDX(type, word, 22);
-		GETENTRYBYIDX(ipproto_en, word, 23);
-		GETENTRYBYIDX(ipproto, word, 24);
-		GETENTRYBYIDX_DEL(sport_en, word, 25,"><:,");
-		GETENTRYBYIDX_DEL(sport, word, 26,"><:,");
-		GETENTRYBYIDX_DEL(dport_en, word, 27,"><:,");
-		GETENTRYBYIDX_DEL(dport, word, 28,"><:,");
-		if (not && !strcmp(not, "1"))
+		GETENTRYBYIDX(s_flags, word, 0);
+		int flags;
+		sscanf(s_flags, "%X", &flags);
+		int not = flags & 0x1;
+		int from_en = flags & 0x2;
+		int to_en = flags & 0x4;
+		int priority_en = flags & 0x8;
+		int tos_en = flags & 0x10;
+		int fwmark_en = flags & 0x20;
+		int realms_en = flags & 0x40;
+		int table_en = flags & 0x80;
+		int suppress_prefixlength_en = flags & 0x100;
+		int iif_en = flags & 0x200;
+		int nat_en = flags & 0x400;
+		int type_en = flags & 0x800;
+		int ipproto_en = flags & 0x1000;
+		int sport_en = flags & 0x2000;
+		int dport_en = flags & 0x4000;
+		GETENTRYBYIDX(from, word, 1);
+		GETENTRYBYIDX(to, word, 2);
+		GETENTRYBYIDX(priority, word, 3);
+		GETENTRYBYIDX(tos, word, 4);
+		GETENTRYBYIDX(fwmark, word, 5);
+		GETENTRYBYIDX(realms, word, 6);
+		GETENTRYBYIDX(table, word, 7);
+		GETENTRYBYIDX(suppress_prefixlength, word, 8);
+		GETENTRYBYIDX(iif, word, 9);
+		GETENTRYBYIDX(nat, word, 10);
+		GETENTRYBYIDX(type, word, 11);
+		GETENTRYBYIDX(ipproto, word, 12);
+		GETENTRYBYIDX_DEL(sport, word, 13, "><:,");
+		GETENTRYBYIDX_DEL(dport, word, 14, "><:,");
+		if (not)
 			sprintf(cmd, "%s %s", cmd, "not");
-		if (from_en && from && !strcmp(from_en, "1"))
+		if (from_en && from)
 			sprintf(cmd, "%s from %s", cmd, from);
-		if (to_en && to && !strcmp(to_en, "1"))
+		if (to_en && to)
 			sprintf(cmd, "%s to %s", cmd, to);
-		if (priority_en && priority && !strcmp(priority_en, "1"))
+		if (priority_en && priority)
 			sprintf(cmd, "%s priority %s", cmd, priority);
-		if (tos_en && tos && !strcmp(tos_en, "1"))
+		if (tos_en && tos)
 			sprintf(cmd, "%s tos %s", cmd, tos);
-		if (fwmark_en && fwmark && !strcmp(fwmark_en, "1"))
+		if (fwmark_en && fwmark)
 			sprintf(cmd, "%s fwmark %s", cmd, fwmark);
-		if (realms_en && realms && !strcmp(realms_en, "1"))
+		if (realms_en && realms)
 			sprintf(cmd, "%s realms %s", cmd, realms);
-		if (table_en && table && !strcmp(table_en, "1"))
+		if (table_en && table)
 			sprintf(cmd, "%s table %s", cmd, table);
-		if (suppress_prefixlength_en && suppress_prefixlength && !strcmp(suppress_prefixlength_en, "1"))
+		if (suppress_prefixlength_en && suppress_prefixlength)
 			sprintf(cmd, "%s suppress_prefixlength %s", cmd, suppress_prefixlength);
-		if (iif_en && iif && !strcmp(iif_en, "1"))
+		if (iif_en && iif)
 			sprintf(cmd, "%s iif %s", cmd, iif);
-		if (nat_en && nat && !strcmp(nat_en, "1"))
+		if (nat_en && nat)
 			sprintf(cmd, "%s nat %s", cmd, nat);
-		if (type_en && type && !strcmp(type_en, "1"))
+		if (type_en && type)
 			sprintf(cmd, "%s type %s", cmd, type);
-		if (ipproto_en && ipproto && !strcmp(ipproto_en, "1"))
+		if (ipproto_en && ipproto)
 			sprintf(cmd, "%s ipproto %s", cmd, ipproto);
-		if (sport_en && sport && !strcmp(sport_en, "1"))
+		if (sport_en && sport)
 			sprintf(cmd, "%s sport %s", cmd, sport);
-		if (dport_en && dport && !strcmp(dport_en, "1"))
+		if (dport_en && dport)
 			sprintf(cmd, "%s dport %s", cmd, dport);
 		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
 		if (strlen(cmd) > sizeof("ip rule del"))
@@ -5198,16 +5201,20 @@ void start_set_routes(void)
 		GETENTRYBYIDX(gateway, word, 2);
 		GETENTRYBYIDX(metric, word, 3);
 		GETENTRYBYIDX(ifname, word, 4);
-		GETENTRYBYIDX(src_en, word, 6);
+
+		GETENTRYBYIDX(s_flags, word, 6);
+		int flags;
+		sscanf(s_flags, "%X", &flags);
+		int src_en = flags & 0x1;
+		int scope_en = flags & 0x2;
+		int table_en = flags & 0x4;
+		int mtu_en = flags & 0x8;
+		int advmss_en = flags & 0x10;
 		GETENTRYBYIDX(src, word, 7);
-		GETENTRYBYIDX(scope_en, word, 8);
-		GETENTRYBYIDX(scope, word, 9);
-		GETENTRYBYIDX(table_en, word, 10);
-		GETENTRYBYIDX(table, word, 11);
-		GETENTRYBYIDX(mtu_en, word, 12);
-		GETENTRYBYIDX(mtu, word, 13);
-		GETENTRYBYIDX(advmss_en, word, 14);
-		GETENTRYBYIDX(advmss, word, 15);
+		GETENTRYBYIDX(scope, word, 8);
+		GETENTRYBYIDX(table, word, 9);
+		GETENTRYBYIDX(mtu, word, 10);
+		GETENTRYBYIDX(advmss, word, 11);
 		if (!ipaddr || !netmask || !gateway || !metric || !ifname)
 			continue;
 		if (!strcmp(ipaddr, "0.0.0.0") && !strcmp(gateway, "0.0.0.0"))
@@ -5224,15 +5231,15 @@ void start_set_routes(void)
 			sprintf(cmd, "%s dev %s", cmd, ifname);
 		if (strcmp(metric, "0"))
 			sprintf(cmd, "%s metric %s", cmd, metric);
-		if (src_en && src && !strcmp(src_en, "1"))
+		if (src_en && src)
 			sprintf(cmd, "%s src %s", cmd, src);
-		if (scope_en && scope_en && !strcmp(scope_en, "1"))
+		if (scope_en && scope_en)
 			sprintf(cmd, "%s scope %s", cmd, scope);
-		if (table_en && table && !strcmp(table_en, "1"))
+		if (table_en && table)
 			sprintf(cmd, "%s table %s", cmd, table);
-		if (mtu_en && mtu && !strcmp(mtu_en, "1"))
+		if (mtu_en && mtu)
 			sprintf(cmd, "%s mtu %s", cmd, mtu);
-		if (advmss_en && advmss && !strcmp(advmss_en, "1"))
+		if (advmss_en && advmss)
 			sprintf(cmd, "%s advmss %s", cmd, advmss);
 		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
 		system(cmd);
