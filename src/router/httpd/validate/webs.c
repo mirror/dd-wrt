@@ -63,6 +63,8 @@
 #include <jansson.h>
 #endif
 
+char *cidr_to_nm(char *netmask, unsigned int netmask_cidr);
+
 extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *lanip, char *netmask);
 void save_networking(webs_t wp);
 
@@ -1799,8 +1801,10 @@ void tunnel_save(webs_t wp)
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
-		copymergetonv(wp, "oet%d_netmask", i);
 		char temp[32];
+		char buf[32];
+		sprintf(temp, "oet%d_netmask", i);
+		nvram_set(temp, cidr_to_nm(buf, websGetVari(wp, temp, 0)));
 		sprintf(temp, "oet%d_peers", i);
 		int peers = nvram_geti(temp);
 		int peer;
@@ -3853,8 +3857,10 @@ void save_networking(webs_t wp)
 			mtu = "1500";
 
 		copymergetonv(wp, "%s_ipaddr", ifname);
-
-		copymergetonv(wp, "%s_netmask", ifname);
+		char buf[32];
+		char temp[32];
+		sprintf(temp, "%s_netmask", ifname);
+		nvram_set(temp, cidr_to_nm(buf, websGetVari(wp, temp, 0)));
 
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
@@ -4629,7 +4635,10 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	copymergetonv(wp, "%s_dns_ipaddr", ifname);
 	copymergetonv(wp, "%s_ipaddr", ifname);
-	copymergetonv(wp, "%s_netmask", ifname);
+	char buf[32];
+	char temp[32];
+	sprintf(temp, "%s_netmask", ifname);
+	nvram_set(temp, cidr_to_nm(buf, websGetVari(wp, temp, 0)));
 
 #else
 
@@ -4645,7 +4654,10 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "dns_redirect", prefix);
 	copymergetonv(wp, "%s_dns_ipaddr", prefix);
 	copymergetonv(wp, "%s_ipaddr", prefix);
-	copymergetonv(wp, "%s_netmask", prefix);
+	char buf[32];
+	char temp[32];
+	sprintf(temp, "%s_netmask", prefix);
+	nvram_set(temp, cidr_to_nm(buf, websGetVari(wp, temp, 0)));
 
 	copytonv_prefix(wp, "duallink", prefix);
 

@@ -318,7 +318,6 @@ EJ_VISIBLE void ej_get_single_ip(webs_t wp, int argc, char_t ** argv)
 }
 
 EJ_VISIBLE void ej_get_cidr_mask(webs_t wp, int argc, char_t ** argv)
-
 {
 	char *c;
 	c = nvram_safe_get(argv[0]);
@@ -326,7 +325,6 @@ EJ_VISIBLE void ej_get_cidr_mask(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%d", getmask(c));
 	} else
 		websWrite(wp, "0");
-
 
 }
 
