@@ -384,7 +384,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 					if (slash)
 						websWrite(wp, slash + 1);
 					else
-						websWrite(wp, 0xffffffff);
+						websWrite(wp, "0xffffffff");
 				}
 				return;
 			} else if (realms && !strcmp(arg, "realms")) {
