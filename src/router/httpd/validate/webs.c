@@ -585,7 +585,7 @@ void delete_old_pbr(void)
 {
 	char word[256], *next;
 	foreach(word, nvram_safe_get("action_service_arg2"), next) {
-		char cmd[160];
+		char cmd[256];
 		strcpy(cmd, "ip rule del");
 		GETENTRYBYIDX(s_flags, word, 0);
 		int flags;
@@ -654,13 +654,16 @@ void delete_old_pbr(void)
 	}
 }
 #endif
+#define ROUTE_LINE_SIZE sizeof("255.255.255.255:255.255.255.255:255.255.255.255:65536:1234567890123456:1:12345:255.255.255.255:nowhere:2147483648:65536:65536")
+#define ROUTE_NAME_SIZE sizeof("$NAME:1234567890123456789012345:$$")
+#define PBR_LINE_SIZE sizeof("FFFFF:255.255.255.255/32:255.255.255.255/32:65536:255:0xffffffff/0xffffffff:2147483648:2147483648:2147483648:1234567890123456:255.255.255.255:unreachable:FRAGMENT:65535:65535")
 
 void delete_static_route(webs_t wp)
 {
 	addAction("routing");
 	nvram_seti("nowebaction", 1);
-	char *buf = calloc(8960, 1);
-	char *buf_name = calloc(2500, 1);
+	char *buf = calloc((ROUTE_LINE_SIZE * STATIC_ROUTE_PAGE), 1);
+	char *buf_name = calloc((ROUTE_NAME_SIZE * STATIC_ROUTE_PAGE), 1);
 
 	char *cur = buf;
 	char *cur_name = buf_name;
@@ -679,7 +682,7 @@ void delete_static_route(webs_t wp)
 			continue;
 		}
 
-		cur += snprintf(cur, buf + 8960 - cur, "%s%s", cur == buf ? "" : " ", word);
+		cur += snprintf(cur, buf + (ROUTE_LINE_SIZE * STATIC_ROUTE_PAGE) - cur, "%s%s", cur == buf ? "" : " ", word);
 
 		i++;
 	}
@@ -690,7 +693,7 @@ void delete_static_route(webs_t wp)
 			i++;
 			continue;
 		}
-		cur_name += snprintf(cur_name, buf_name + 2500 - cur_name, "%s%s", cur_name == buf_name ? "" : " ", word_name);
+		cur_name += snprintf(cur_name, buf_name + (ROUTE_NAME_SIZE * STATIC_ROUTE_PAGE) - cur_name, "%s%s", cur_name == buf_name ? "" : " ", word_name);
 
 		i++;
 	}
@@ -708,8 +711,8 @@ void delete_pbr_rule(webs_t wp)
 {
 	addAction("routing");
 	nvram_seti("nowebaction", 1);
-	char *buf = calloc(8960, 1);
-	char *buf_name = calloc(2500, 1);
+	char *buf = calloc((PBR_LINE_SIZE * STATIC_ROUTE_PAGE), 1);
+	char *buf_name = calloc((ROUTE_NAME_SIZE * STATIC_ROUTE_PAGE), 1);
 
 	char *cur = buf;
 	char *cur_name = buf_name;
@@ -728,7 +731,7 @@ void delete_pbr_rule(webs_t wp)
 			continue;
 		}
 
-		cur += snprintf(cur, buf + 8960 - cur, "%s%s", cur == buf ? "" : " ", word);
+		cur += snprintf(cur, buf + (ROUTE_LINE_SIZE * STATIC_ROUTE_PAGE) - cur, "%s%s", cur == buf ? "" : " ", word);
 
 		i++;
 	}
@@ -739,7 +742,7 @@ void delete_pbr_rule(webs_t wp)
 			i++;
 			continue;
 		}
-		cur_name += snprintf(cur_name, buf_name + 2500 - cur_name, "%s%s", cur_name == buf_name ? "" : " ", word_name);
+		cur_name += snprintf(cur_name, buf_name + (ROUTE_NAME_SIZE * STATIC_ROUTE_PAGE) - cur_name, "%s%s", cur_name == buf_name ? "" : " ", word_name);
 
 		i++;
 	}

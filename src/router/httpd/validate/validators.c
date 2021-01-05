@@ -3088,6 +3088,8 @@ void save_olsrd(webs_t wp);
 void addDeletion_route(char *word);
 void addDeletion_pbr(char *word);
 
+#define ROUTE_LINE_SIZE sizeof("255.255.255.255:255.255.255.255:255.255.255.255:65536:1234567890123456:1:12345:255.255.255.255:nowhere:2147483648:65536:65536")
+#define ROUTE_NAME_SIZE sizeof("$NAME:1234567890123456789012345:$$")
 EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v)
 {
 #ifdef HAVE_OLSRD
@@ -3115,14 +3117,14 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	char new_name[80];
 	char temp[60], *val = NULL;
 
-	buf = safe_malloc(8960 + 1);
-	buf_name = safe_malloc(3840 + 1);
-	old = safe_malloc(STATIC_ROUTE_PAGE * 140 + 1);
-	old_name = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1);
+	buf = safe_malloc(STATIC_ROUTE_PAGE * ROUTE_LINE_SIZE + 1);
+	buf_name = safe_malloc(STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE + 1);
+	old = safe_malloc(STATIC_ROUTE_PAGE * ROUTE_LINE_SIZE + 1);
+	old_name = safe_malloc(STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE + 1);
 	buf[0] = 0;
 	buf_name[0] = 0;
-	bzero(old, STATIC_ROUTE_PAGE * 140 + 1);
-	bzero(old_name, STATIC_ROUTE_PAGE * 60 + 1);
+	bzero(old, STATIC_ROUTE_PAGE * ROUTE_LINE_SIZE + 1);
+	bzero(old_name, STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE + 1);
 	cur = buf;
 	cur_name = buf_name;
 
@@ -3307,21 +3309,21 @@ write_nvram:
 	}
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
-		strcpy(&old[i * 140], "");
-		strcpy(&old_name[i * 60], "");
+		strcpy(&old[i * ROUTE_LINE_SIZE], "");
+		strcpy(&old_name[i * ROUTE_NAME_SIZE], "");
 	}
 	i = 0;
 	foreach(word, nvram_safe_get("static_route"), next) {
-		strcpy(&old[i * 140], word);
+		strcpy(&old[i * ROUTE_LINE_SIZE], word);
 		i++;
 	}
 	i = 0;
 	foreach(word, nvram_safe_get("static_route_name"), next) {
-		strcpy(&old_name[i * 60], word);
+		strcpy(&old_name[i * ROUTE_NAME_SIZE], word);
 		i++;
 	}
 
-	strcpy(backuproute, &old[atoi(page) * 140]);
+	strcpy(backuproute, &old[atoi(page) * ROUTE_LINE_SIZE]);
 
 	if (!tmp) {
 		if (*(backuproute)) {
@@ -3329,14 +3331,14 @@ write_nvram:
 			bzero(backuproute, strlen(backuproute));
 		}
 
-		snprintf(&old[atoi(page) * 140], 140, "%s", "");
-		snprintf(&old_name[atoi(page) * 60], 60, "%s", "");
+		snprintf(&old[atoi(page) * ROUTE_LINE_SIZE], ROUTE_LINE_SIZE, "%s", "");
+		snprintf(&old_name[atoi(page) * ROUTE_NAME_SIZE], ROUTE_NAME_SIZE, "%s", "");
 	} else {
-		snprintf(&old[atoi(page) * 140], 140, "%s:%s:%s:%s:%s:%s:%X:%s:%s:%s:%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, flags, src, scope, table, mtu, advmss);
+		snprintf(&old[atoi(page) * ROUTE_LINE_SIZE], ROUTE_LINE_SIZE, "%s:%s:%s:%s:%s:%s:%X:%s:%s:%s:%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat, flags, src, scope, table, mtu, advmss);
 		httpd_filter_name(name, new_name, sizeof(new_name), SET);
-		snprintf(&old_name[atoi(page) * 60], 60, "$NAME:%s$$", new_name);
+		snprintf(&old_name[atoi(page) * ROUTE_NAME_SIZE], ROUTE_NAME_SIZE, "$NAME:%s$$", new_name);
 	}
-	if (strcmp(backuproute, &old[atoi(page) * 140])) {
+	if (strcmp(backuproute, &old[atoi(page) * ROUTE_LINE_SIZE])) {
 		if (*(backuproute)) {
 			//nvram_set("nowebaction","1");
 			//addAction("static_route_del");
@@ -3348,9 +3350,9 @@ write_nvram:
 		//if (strcmp(old[i], ""))
 		//      cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
 		//                      cur == buf ? "" : " ", old[i]);
-		if (strcmp(&old_name[i * 60], "")) {
-			cur += snprintf(cur, buf + 8960 - cur, "%s%s", cur == buf ? "" : " ", &old[i * 140]);
-			cur_name += snprintf(cur_name, buf_name + 3840 - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * 60]);
+		if (strcmp(&old_name[i * ROUTE_NAME_SIZE], "")) {
+			cur += snprintf(cur, buf + (STATIC_ROUTE_PAGE * ROUTE_LINE_SIZE) - cur, "%s%s", cur == buf ? "" : " ", &old[i * ROUTE_LINE_SIZE]);
+			cur_name += snprintf(cur_name, buf_name + (STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE) - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * ROUTE_NAME_SIZE]);
 		}
 	}
 
@@ -3375,6 +3377,7 @@ write_nvram:
 }
 
 #ifndef HAVE_MICRO
+#define PBR_LINE_SIZE sizeof("FFFFF:255.255.255.255/32:255.255.255.255/32:65536:255:0xffffffff/0xffffffff:2147483648:2147483648:2147483648:1234567890123456:255.255.255.255:unreachable:FRAGMENT:65535:65535")
 EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 {
 
@@ -3399,14 +3402,14 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char new_name[80];
 	char temp[60], *val = NULL;
 
-	buf = safe_malloc(10240 + 1);
-	buf_name = safe_malloc(3840 + 1);
-	old = safe_malloc(STATIC_ROUTE_PAGE * 160 + 1);
-	old_name = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1);
+	buf = safe_malloc(STATIC_ROUTE_PAGE * PBR_LINE_SIZE + 1);
+	buf_name = safe_malloc(STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE + 1);
+	old = safe_malloc(STATIC_ROUTE_PAGE * PBR_LINE_SIZE + 1);
+	old_name = safe_malloc(STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE + 1);
 	buf[0] = 0;
 	buf_name[0] = 0;
-	bzero(old, STATIC_ROUTE_PAGE * 160 + 1);
-	bzero(old_name, STATIC_ROUTE_PAGE * 60 + 1);
+	bzero(old, STATIC_ROUTE_PAGE * PBR_LINE_SIZE + 1);
+	bzero(old_name, STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE + 1);
 	cur = buf;
 	cur_name = buf_name;
 	name = websGetVar(wp, "rule_name", "");	// default empty if no find
@@ -3462,7 +3465,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char fw[64];
 	sprintf(sport, "%s-%s", sport_from, sport_to);
 	sprintf(dport, "%s-%s", dport_from, dport_to);
-	sprintf(fw, "%s/%s", fwmark, fwmask);
+	sprintf(fw, "0x%X/0x%X", strtoul(fwmark,NULL,0), strtoul(fwmask,NULL,0)); // force hex
 	/*
 	 * validate ip address 
 	 */
@@ -3545,29 +3548,29 @@ write_nvram:
 	}
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
-		strcpy(&old[i * 160], "");
-		strcpy(&old_name[i * 60], "");
+		strcpy(&old[i * PBR_LINE_SIZE], "");
+		strcpy(&old_name[i * ROUTE_NAME_SIZE], "");
 	}
 	i = 0;
 	foreach(word, nvram_safe_get("pbr_rule"), next) {
-		strcpy(&old[i * 160], word);
+		strcpy(&old[i * PBR_LINE_SIZE], word);
 		i++;
 	}
 	i = 0;
 	foreach(word, nvram_safe_get("pbr_rule_name"), next) {
-		strcpy(&old_name[i * 60], word);
+		strcpy(&old_name[i * ROUTE_NAME_SIZE], word);
 		i++;
 	}
 
-	strcpy(backuproute, &old[atoi(page) * 160]);
+	strcpy(backuproute, &old[atoi(page) * PBR_LINE_SIZE]);
 
-	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 160, "%X:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", flags, from, to, priority, tos, fw, realms, table, suppress_prefixlength, iif, nat, type, ipproto, sport,
+	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], PBR_LINE_SIZE, "%X:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", flags, from, to, priority, tos, fw, realms, table, suppress_prefixlength, iif, nat, type, ipproto, sport,
 		 dport);
 
 	httpd_filter_name(name, new_name, sizeof(new_name), SET);
-	snprintf(&old_name[atoi(page) * 60], 60, "$NAME:%s$$", new_name);
+	snprintf(&old_name[atoi(page) * ROUTE_NAME_SIZE], ROUTE_NAME_SIZE, "$NAME:%s$$", new_name);
 
-	if (strcmp(backuproute, &old[atoi(page) * 160])) {
+	if (strcmp(backuproute, &old[atoi(page) * PBR_LINE_SIZE])) {
 		if (*(backuproute)) {
 			//nvram_set("nowebaction","1");
 			//addAction("pbr_rule_del");
@@ -3576,9 +3579,9 @@ write_nvram:
 	}
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
-		if (strcmp(&old_name[i * 60], "")) {
-			cur += snprintf(cur, buf + 10240 - cur, "%s%s", cur == buf ? "" : " ", &old[i * 160]);
-			cur_name += snprintf(cur_name, buf_name + 3840 - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * 60]);
+		if (strcmp(&old_name[i * ROUTE_NAME_SIZE], "")) {
+			cur += snprintf(cur, buf + (STATIC_ROUTE_PAGE * PBR_LINE_SIZE) - cur, "%s%s", cur == buf ? "" : " ", &old[i * PBR_LINE_SIZE]);
+			cur_name += snprintf(cur_name, buf_name + (STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE) - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * ROUTE_NAME_SIZE]);
 		}
 	}
 
