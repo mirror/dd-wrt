@@ -3085,7 +3085,8 @@ EJ_VISIBLE void validate_catchall(webs_t wp, char *value, struct variable *v)
 }
 
 void save_olsrd(webs_t wp);
-void addDeletion(char *word);
+void addDeletion_route(char *word);
+void addDeletion_pbr(char *word);
 
 EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v)
 {
@@ -3216,11 +3217,12 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 	int table_en = websGetVari(wp, "table_en", 0);
 	int mtu_en = websGetVari(wp, "mtu_en", 0);
 	int advmss_en = websGetVari(wp, "advmss_en", 0);
-	int flags = src_en ? 1 << 0 : 0;
-	flags = scope_en ? 1 << 1 : 0;
-	flags = table_en ? 1 << 2 : 0;
-	flags = mtu_en ? 1 << 3 : 0;
-	flags = advmss_en ? 1 << 4 : 0;
+	int flags = 0;
+	flags |= src_en ? 1 << 0 : 0;
+	flags |= scope_en ? 1 << 1 : 0;
+	flags |= table_en ? 1 << 2 : 0;
+	flags |= mtu_en ? 1 << 3 : 0;
+	flags |= advmss_en ? 1 << 4 : 0;
 	char *scope = websGetVar(wp, "route_scope", "link");
 	char *table = websGetVar(wp, "route_table", "0");
 	char *mtu = websGetVar(wp, "route_mtu", "1500");
@@ -3323,7 +3325,7 @@ write_nvram:
 
 	if (!tmp) {
 		if (*(backuproute)) {
-			addDeletion(backuproute);
+			addDeletion_route(backuproute);
 			bzero(backuproute, strlen(backuproute));
 		}
 
@@ -3338,7 +3340,7 @@ write_nvram:
 		if (*(backuproute)) {
 			//nvram_set("nowebaction","1");
 			//addAction("static_route_del");
-			addDeletion(backuproute);
+			addDeletion_route(backuproute);
 		}
 	}
 
@@ -3407,24 +3409,25 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	bzero(old_name, STATIC_ROUTE_PAGE * 60 + 1);
 	cur = buf;
 	cur_name = buf_name;
-	name = websGetVari(wp, "rule_name", "");	// default empty if no find
+	name = websGetVar(wp, "rule_name", "");	// default empty if no find
 	int not = websGetVari(wp, "not", 0);
-	int from_en = websGetVarii(wp, "from_en", 0);
-	int to_en = websGetVarii(wp, "to_en", 0);
-	int priority_en = websGetVarii(wp, "priority_en", 0);
-	int tos_en = websGetVarii(wp, "tos_en", 0);
-	int fwmark_en = websGetVarii(wp, "fwmark_en", 0);
-	int realms_en = websGetVarii(wp, "realms_en", 0);
-	int table_en = websGetVarii(wp, "pbr_table_en", 0);
-	int suppress_prefixlength_en = websGetVarii(wp, "suppress_prefixlength_en", 0);
-	int iif_en = websGetVarii(wp, "iif_en", 0);
-	int nat_en = websGetVarii(wp, "nat_en", 0);
-	int type_en = websGetVarii(wp, "type_en", 0);
-	int ipproto_en = websGetVarii(wp, "ipproto_en", 0);
-	int sport_en = websGetVarii(wp, "sport_en", 0);
-	int dport_en = websGetVarii(wp, "dport_en", 0);
+	int from_en = websGetVari(wp, "from_en", 0);
+	int to_en = websGetVari(wp, "to_en", 0);
+	int priority_en = websGetVari(wp, "priority_en", 0);
+	int tos_en = websGetVari(wp, "tos_en", 0);
+	int fwmark_en = websGetVari(wp, "fwmark_en", 0);
+	int realms_en = websGetVari(wp, "realms_en", 0);
+	int table_en = websGetVari(wp, "pbr_table_en", 0);
+	int suppress_prefixlength_en = websGetVari(wp, "suppress_prefixlength_en", 0);
+	int iif_en = websGetVari(wp, "iif_en", 0);
+	int nat_en = websGetVari(wp, "nat_en", 0);
+	int type_en = websGetVari(wp, "type_en", 0);
+	int ipproto_en = websGetVari(wp, "ipproto_en", 0);
+	int sport_en = websGetVari(wp, "sport_en", 0);
+	int dport_en = websGetVari(wp, "dport_en", 0);
 
-	int flags |= not ? 1 << 0 : 0;
+	int flags = 0;
+	flags |= not ? 1 << 0 : 0;
 	flags |= from_en ? 1 << 1 : 0;
 	flags |= to_en ? 1 << 2 : 0;
 	flags |= priority_en ? 1 << 3 : 0;
@@ -3568,7 +3571,7 @@ write_nvram:
 		if (*(backuproute)) {
 			//nvram_set("nowebaction","1");
 			//addAction("pbr_rule_del");
-			addDeletion(backuproute);
+			addDeletion_pbr(backuproute);
 		}
 	}
 
@@ -3580,7 +3583,7 @@ write_nvram:
 	}
 
 	if (!strcmp(websGetVar(wp, "action", ""), "ApplyTake"))
-		delete_old_routes();
+		delete_old_pbr();
 	FILE *backup = fopen("/tmp/pbr_old", "rb");
 	if (!backup) {
 		backup = fopen("/tmp/pbr_old", "wb");

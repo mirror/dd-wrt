@@ -498,28 +498,38 @@ void summary_delete_policy(webs_t wp)
 	D("okay");
 }
 
-void addDeletion(char *word)
+static void s_addDeletion(char *word, char *arg)
 {
 	if (!word || !*(word))
 		return;
 
-	char *oldarg = nvram_safe_get("action_service_arg1");
+	char *oldarg = nvram_safe_get(arg);
 
 	if (*(oldarg)) {
 		char *newarg = safe_malloc(strlen(oldarg) + strlen(word) + 2);
 
 		sprintf(newarg, "%s %s", oldarg, word);
-		nvram_set("action_service_arg1", newarg);
+		nvram_set(arg, newarg);
 		free(newarg);
 	} else
-		nvram_set("action_service_arg1", word);
+		nvram_set(arg, word);
+}
+
+void addDeletion_pbr(char *word)
+{
+	s_addDeletion(word, "action_service_arg2");
+}
+
+void addDeletion_route(char *word)
+{
+	s_addDeletion(word, "action_service_arg1");
 }
 
 void delete_old_routes(void)
 {
 	char word[256], *next;
 	foreach(word, nvram_safe_get("action_service_arg1"), next) {
-	#ifdef HAVE_MICRO
+#ifdef HAVE_MICRO
 		char ipaddr[20], netmask[20], gateway[20], met[20], ifn[20];
 		strcpy(ipaddr, strtok(word, ":"));
 		strcpy(netmask, strtok(NULL, ":"));
@@ -527,22 +537,26 @@ void delete_old_routes(void)
 		strcpy(met, strtok(NULL, ":"));
 		strcpy(ifn, strtok(NULL, ":"));
 		route_del(ifn, atoi(met) + 1, ipaddr, gateway, netmask);
-	#else
+#else
 		GETENTRYBYIDX(ipaddr, word, 0);
 		GETENTRYBYIDX(netmask, word, 1);
 		GETENTRYBYIDX(gateway, word, 2);
 		GETENTRYBYIDX(metric, word, 3);
 		GETENTRYBYIDX(ifname, word, 4);
-		GETENTRYBYIDX(src_en, word, 6);
+		GETENTRYBYIDX(nat, word, 5);
+		GETENTRYBYIDX(s_flags, word, 6);
+		int flags;
+		sscanf(s_flags, "%X", &flags);
+		int src_en = flags & 0x1;
+		int scope_en = flags & 0x2;
+		int table_en = flags & 0x4;
+		int mtu_en = flags & 0x8;
+		int advmss_en = flags & 0x10;
 		GETENTRYBYIDX(src, word, 7);
-		GETENTRYBYIDX(scope_en, word, 8);
-		GETENTRYBYIDX(scope, word, 9);
-		GETENTRYBYIDX(table_en, word, 10);
-		GETENTRYBYIDX(table, word, 11);
-		GETENTRYBYIDX(mtu_en, word, 12);
-		GETENTRYBYIDX(mtu, word, 13);
-		GETENTRYBYIDX(advmss_en, word, 14);
-		GETENTRYBYIDX(advmss, word, 15);
+		GETENTRYBYIDX(scope, word, 8);
+		GETENTRYBYIDX(table, word, 9);
+		GETENTRYBYIDX(mtu, word, 10);
+		GETENTRYBYIDX(advmss, word, 11);
 		char cmd[256] = { 0 };
 		sprintf(cmd, "ip route del to %s/%d", ipaddr, getmask(netmask));
 		if (strcmp(gateway, "0.0.0.0"))
@@ -551,20 +565,95 @@ void delete_old_routes(void)
 			sprintf(cmd, "%s dev %s", cmd, ifname);
 		if (strcmp(metric, "0"))
 			sprintf(cmd, "%s metric %s", cmd, metric);
-		if (src_en && !strcmp(src_en, "1"))
+		if (src_en)
 			sprintf(cmd, "%s src %s", cmd, src);
-		if (scope_en && !strcmp(scope_en, "1"))
+		if (scope_en)
 			sprintf(cmd, "%s scope %s", cmd, scope);
-		if (table_en && !strcmp(table_en, "1"))
+		if (table_en)
 			sprintf(cmd, "%s table %s", cmd, table);
-		if (mtu_en && !strcmp(mtu_en, "1"))
+		if (mtu_en)
 			sprintf(cmd, "%s mtu %s", cmd, mtu);
-		if (advmss_en && !strcmp(advmss_en, "1"))
+		if (advmss_en)
 			sprintf(cmd, "%s advmss %s", cmd, advmss);
 		system(cmd);
-	#endif
+#endif
 	}
 }
+
+#ifndef HAVE_MICRO
+void delete_old_pbr(void)
+{
+	char word[256], *next;
+	foreach(word, nvram_safe_get("action_service_arg2"), next) {
+		char cmd[160];
+		strcpy(cmd, "ip rule del");
+		GETENTRYBYIDX(s_flags, word, 0);
+		int flags;
+		sscanf(s_flags, "%X", &flags);
+		int not = flags & 0x1;
+		int from_en = flags & 0x2;
+		int to_en = flags & 0x4;
+		int priority_en = flags & 0x8;
+		int tos_en = flags & 0x10;
+		int fwmark_en = flags & 0x20;
+		int realms_en = flags & 0x40;
+		int table_en = flags & 0x80;
+		int suppress_prefixlength_en = flags & 0x100;
+		int iif_en = flags & 0x200;
+		int nat_en = flags & 0x400;
+		int type_en = flags & 0x800;
+		int ipproto_en = flags & 0x1000;
+		int sport_en = flags & 0x2000;
+		int dport_en = flags & 0x4000;
+		GETENTRYBYIDX(from, word, 1);
+		GETENTRYBYIDX(to, word, 2);
+		GETENTRYBYIDX(priority, word, 3);
+		GETENTRYBYIDX(tos, word, 4);
+		GETENTRYBYIDX(fwmark, word, 5);
+		GETENTRYBYIDX(realms, word, 6);
+		GETENTRYBYIDX(table, word, 7);
+		GETENTRYBYIDX(suppress_prefixlength, word, 8);
+		GETENTRYBYIDX(iif, word, 9);
+		GETENTRYBYIDX(nat, word, 10);
+		GETENTRYBYIDX(type, word, 11);
+		GETENTRYBYIDX(ipproto, word, 12);
+		GETENTRYBYIDX_DEL(sport, word, 13, "><:,");
+		GETENTRYBYIDX_DEL(dport, word, 14, "><:,");
+		if (not)
+			sprintf(cmd, "%s %s", cmd, "not");
+		if (from_en && from)
+			sprintf(cmd, "%s from %s", cmd, from);
+		if (to_en && to)
+			sprintf(cmd, "%s to %s", cmd, to);
+		if (priority_en && priority)
+			sprintf(cmd, "%s priority %s", cmd, priority);
+		if (tos_en && tos)
+			sprintf(cmd, "%s tos %s", cmd, tos);
+		if (fwmark_en && fwmark)
+			sprintf(cmd, "%s fwmark %s", cmd, fwmark);
+		if (realms_en && realms)
+			sprintf(cmd, "%s realms %s", cmd, realms);
+		if (table_en && table)
+			sprintf(cmd, "%s table %s", cmd, table);
+		if (suppress_prefixlength_en && suppress_prefixlength)
+			sprintf(cmd, "%s suppress_prefixlength %s", cmd, suppress_prefixlength);
+		if (iif_en && iif)
+			sprintf(cmd, "%s iif %s", cmd, iif);
+		if (nat_en && nat)
+			sprintf(cmd, "%s nat %s", cmd, nat);
+		if (type_en && type)
+			sprintf(cmd, "%s type %s", cmd, type);
+		if (ipproto_en && ipproto)
+			sprintf(cmd, "%s ipproto %s", cmd, ipproto);
+		if (sport_en && sport)
+			sprintf(cmd, "%s sport %s", cmd, sport);
+		if (dport_en && dport)
+			sprintf(cmd, "%s dport %s", cmd, dport);
+		if (strlen(cmd) > sizeof("ip rule del"))
+			system(cmd);
+	}
+}
+#endif
 
 void delete_static_route(webs_t wp)
 {
@@ -585,7 +674,7 @@ void delete_static_route(webs_t wp)
 
 	foreach(word, performance, next) {
 		if (i == page) {
-			addDeletion(word);
+			addDeletion_route(word);
 			i++;
 			continue;
 		}
@@ -613,6 +702,7 @@ void delete_static_route(webs_t wp)
 	applytake(value);
 	return;
 }
+
 #ifndef HAVE_MICRO
 void delete_pbr_rule(webs_t wp)
 {
@@ -633,7 +723,7 @@ void delete_pbr_rule(webs_t wp)
 
 	foreach(word, performance, next) {
 		if (i == page) {
-			addDeletion(word);
+			addDeletion_pbr(word);
 			i++;
 			continue;
 		}
