@@ -37,11 +37,6 @@ bool fib_rule_matchall(const struct fib_rule *rule)
 }
 EXPORT_SYMBOL_GPL(fib_rule_matchall);
 
-static const struct fib_kuid_range fib_kuid_range_unset = {
-	KUIDT_INIT(0),
-	KUIDT_INIT(~0),
-};
-
 int fib_default_rule_add(struct fib_rules_ops *ops,
 			 u32 pref, u32 table, u32 flags)
 {
@@ -197,34 +192,6 @@ void fib_rules_unregister(struct fib_rules_ops *ops)
 	kfree_rcu(ops, rcu);
 }
 EXPORT_SYMBOL_GPL(fib_rules_unregister);
-
-static int uid_range_set(struct fib_kuid_range *range)
-{
-	return uid_valid(range->start) && uid_valid(range->end);
-}
-
-static struct fib_kuid_range nla_get_kuid_range(struct nlattr **tb)
-{
-	struct fib_rule_uid_range *in;
-	struct fib_kuid_range out;
-
-	in = (struct fib_rule_uid_range *)nla_data(tb[FRA_UID_RANGE]);
-
-	out.start = make_kuid(current_user_ns(), in->start);
-	out.end = make_kuid(current_user_ns(), in->end);
-
-	return out;
-}
-
-static int nla_put_uid_range(struct sk_buff *skb, struct fib_kuid_range *range)
-{
-	struct fib_rule_uid_range out = {
-		from_kuid_munged(current_user_ns(), range->start),
-		from_kuid_munged(current_user_ns(), range->end)
-	};
-
-	return nla_put(skb, FRA_UID_RANGE, sizeof(out), &out);
-}
 
 static int uid_range_set(struct fib_kuid_range *range)
 {
@@ -933,7 +900,7 @@ static inline size_t fib_rule_nlmsg_size(struct fib_rules_ops *ops,
 			 + nla_total_size(4) /* FRA_FWMARK */
 			 + nla_total_size(4) /* FRA_FWMASK */
 			 + nla_total_size_64bit(8) /* FRA_TUN_ID */
-			 + nla_total_size(sizeof(struct fib_kuid_range)
+			 + nla_total_size(sizeof(struct fib_kuid_range))
 			 + nla_total_size(1) /* FRA_PROTOCOL */
 			 + nla_total_size(1) /* FRA_IP_PROTO */
 			 + nla_total_size(sizeof(struct fib_rule_port_range)) /* FRA_SPORT_RANGE */
