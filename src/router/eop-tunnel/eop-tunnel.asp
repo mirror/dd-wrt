@@ -92,7 +92,6 @@ if (value == 1) {
 if (value == 2) {
 	show_layer_ext(F, "idwireguard" + index, true);
 	show_layer_ext(F, "idl2support" + index, false);
-	show_layer_ext(F, "idbridged" + index, true);
 	show_layer_ext(F, "idwginput" + index, true);
 	show_layer_ext(F, "idlocalip" + index, false);
 	show_layer_ext(F, "idbridged" + index, false);
