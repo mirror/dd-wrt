@@ -35,11 +35,6 @@ struct fib_rule_uid_range {
 	__u32		end;
 };
 
-struct fib_rule_uid_range {
-	__u32		start;
-	__u32		end;
-};
-
 struct fib_rule_port_range {
 	__u16		start;
 	__u16		end;
