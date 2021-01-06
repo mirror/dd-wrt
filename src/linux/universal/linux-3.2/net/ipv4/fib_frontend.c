@@ -193,13 +193,14 @@ int fib_validate_source(struct sk_buff *skb, __be32 src, __be32 dst, u8 tos,
 			int oif, struct net_device *dev, __be32 *spec_dst,
 			u32 *itag)
 {
+	struct net *net = dev_net(dev);
+	struct flow_keys flkeys;
 	struct in_device *in_dev;
 	struct flowi4 fl4;
 	struct fib_result res;
 	int no_addr, rpf, accept_local;
 	bool dev_match;
 	int ret;
-	struct net *net;
 
 	fl4.flowi4_oif = 0;
 	fl4.flowi4_iif = oif;
@@ -223,7 +224,11 @@ int fib_validate_source(struct sk_buff *skb, __be32 src, __be32 dst, u8 tos,
 	if (in_dev == NULL)
 		goto e_inval;
 
-	net = dev_net(dev);
+	if (!fib4_rules_early_flow_dissect(net, skb, &fl4, &flkeys)) {
+		fl4.flowi4_proto = 0;
+		fl4.fl4_sport = 0;
+		fl4.fl4_dport = 0;
+	}
 	if (fib_lookup(net, &fl4, &res))
 		goto last_resort;
 	if (res.type != RTN_UNICAST) {
