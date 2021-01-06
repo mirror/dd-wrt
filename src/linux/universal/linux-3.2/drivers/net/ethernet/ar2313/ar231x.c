@@ -181,7 +181,7 @@ static const struct net_device_ops ar231x_ops = {
 #endif
 };
 
-int __init ar231x_probe(struct platform_device *pdev)
+int ar231x_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
 	struct ar231x_private *sp;
