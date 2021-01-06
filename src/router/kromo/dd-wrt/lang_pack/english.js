@@ -1669,7 +1669,7 @@ route.rip2_conf="RIP2 Configuration";
 route.rip2_copt="RIP2 Config Style";
 
 route.gateway_legend="Dynamic Routing";
-route.static_legend="Route Tables";
+route.static_legend="Routing Tables";
 route.static_setno="Select set number";
 route.static_name="Route Name";
 route.static_ip="Destination LAN NET";
