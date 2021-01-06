@@ -19,10 +19,7 @@
 #include <net/pkt_sched.h>
 #include <net/inet_ecn.h>
 #include <net/red.h>
-#include <linux/ip.h>
-#include <net/ip.h>
-#include <linux/ipv6.h>
-#include <net/ipv6.h>
+#include <net/flow_keys.h>
 
 /*
    CHOKe stateless AQM for fair bandwidth allocation
@@ -142,85 +139,10 @@ static void choke_drop_by_idx(struct Qdisc *sch, unsigned int idx)
 	--sch->q.qlen;
 }
 
-/*
- * Compare flow of two packets
- *  Returns true only if source and destination address and port match.
- *          false for special cases
- */
-static bool choke_match_flow(struct sk_buff *skb1,
-			     struct sk_buff *skb2)
-{
-	int off1, off2, poff;
-	const u32 *ports1, *ports2;
-	u8 ip_proto;
-	__u32 hash1;
-
-	if (skb1->protocol != skb2->protocol)
-		return false;
-
-	/* Use hash value as quick check
-	 * Assumes that __skb_get_rxhash makes IP header and ports linear
-	 */
-	hash1 = skb_get_rxhash(skb1);
-	if (!hash1 || hash1 != skb_get_rxhash(skb2))
-		return false;
-
-	/* Probably match, but be sure to avoid hash collisions */
-	off1 = skb_network_offset(skb1);
-	off2 = skb_network_offset(skb2);
-
-	switch (skb1->protocol) {
-	case __constant_htons(ETH_P_IP): {
-		const struct iphdr *ip1, *ip2;
-
-		ip1 = (const struct iphdr *) (skb1->data + off1);
-		ip2 = (const struct iphdr *) (skb2->data + off2);
-
-		ip_proto = ip1->protocol;
-		if (ip_proto != ip2->protocol ||
-		    ip1->saddr != ip2->saddr || ip1->daddr != ip2->daddr)
-			return false;
-
-		if (ip_is_fragment(ip1) | ip_is_fragment(ip2))
-			ip_proto = 0;
-		off1 += ip1->ihl * 4;
-		off2 += ip2->ihl * 4;
-		break;
-	}
-
-	case __constant_htons(ETH_P_IPV6): {
-		const struct ipv6hdr *ip1, *ip2;
-
-		ip1 = (const struct ipv6hdr *) (skb1->data + off1);
-		ip2 = (const struct ipv6hdr *) (skb2->data + off2);
-
-		ip_proto = ip1->nexthdr;
-		if (ip_proto != ip2->nexthdr ||
-		    ipv6_addr_cmp(&ip1->saddr, &ip2->saddr) ||
-		    ipv6_addr_cmp(&ip1->daddr, &ip2->daddr))
-			return false;
-		off1 += 40;
-		off2 += 40;
-	}
-
-	default: /* Maybe compare MAC header here? */
-		return false;
-	}
-
-	poff = proto_ports_offset(ip_proto);
-	if (poff < 0)
-		return true;
-
-	off1 += poff;
-	off2 += poff;
-
-	ports1 = (__force u32 *)(skb1->data + off1);
-	ports2 = (__force u32 *)(skb2->data + off2);
-	return *ports1 == *ports2;
-}
-
 struct choke_skb_cb {
-	u16 classid;
+	u16			classid;
+	u8			keys_valid;
+	struct flow_keys	keys;
 };
 
 static inline struct choke_skb_cb *choke_skb_cb(const struct sk_buff *skb)
@@ -237,6 +159,32 @@ static inline void choke_set_classid(struct sk_buff *skb, u16 classid)
 static u16 choke_get_classid(const struct sk_buff *skb)
 {
 	return choke_skb_cb(skb)->classid;
+}
+
+/*
+ * Compare flow of two packets
+ *  Returns true only if source and destination address and port match.
+ *          false for special cases
+ */
+static bool choke_match_flow(struct sk_buff *skb1,
+			     struct sk_buff *skb2)
+{
+	if (skb1->protocol != skb2->protocol)
+		return false;
+
+	if (!choke_skb_cb(skb1)->keys_valid) {
+		choke_skb_cb(skb1)->keys_valid = 1;
+		skb_flow_dissect(skb1, &choke_skb_cb(skb1)->keys);
+	}
+
+	if (!choke_skb_cb(skb2)->keys_valid) {
+		choke_skb_cb(skb2)->keys_valid = 1;
+		skb_flow_dissect(skb2, &choke_skb_cb(skb2)->keys);
+	}
+
+	return !memcmp(&choke_skb_cb(skb1)->keys,
+		       &choke_skb_cb(skb2)->keys,
+		       sizeof(struct flow_keys));
 }
 
 /*
@@ -325,6 +273,7 @@ static int choke_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 			goto other_drop;	/* Packet was eaten by filter */
 	}
 
+	choke_skb_cb(skb)->keys_valid = 0;
 	/* Compute average queue usage (see RED) */
 	p->qavg = red_calc_qavg(p, sch->q.qlen);
 	if (red_is_idling(p))
