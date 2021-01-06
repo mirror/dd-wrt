@@ -266,10 +266,6 @@ static int fib_rule_match(struct fib_rule *rule, struct fib_rules_ops *ops,
 	    uid_gt(fl->flowi_uid, rule->uid_range.end))
 		goto out;
 
-	if (uid_lt(fl->flowi_uid, rule->uid_range.start) ||
-	    uid_gt(fl->flowi_uid, rule->uid_range.end))
-		goto out;
-
 	ret = ops->match(rule, fl, flags);
 out:
 	return (rule->flags & FIB_RULE_INVERT) ? !ret : ret;
@@ -602,21 +598,6 @@ int fib_nl_newrule(struct sk_buff *skb, struct nlmsghdr *nlh,
 		rule->uid_range = fib_kuid_range_unset;
 	}
 
-	if (tb[FRA_UID_RANGE]) {
-		if (current_user_ns() != net->user_ns) {
-			err = -EPERM;
-			goto errout_free;
-		}
-
-		rule->uid_range = nla_get_kuid_range(tb);
-
-		if (!uid_range_set(&rule->uid_range) ||
-		    !uid_lte(rule->uid_range.start, rule->uid_range.end))
-			goto errout_free;
-	} else {
-		rule->uid_range = fib_kuid_range_unset;
-	}
-
 	if (tb[FRA_IP_PROTO])
 		rule->ip_proto = nla_get_u8(tb[FRA_IP_PROTO]);
 
@@ -794,11 +775,6 @@ int fib_nl_delrule(struct sk_buff *skb, struct nlmsghdr *nlh,
 
 		if (tb[FRA_L3MDEV] &&
 		    (rule->l3mdev != nla_get_u8(tb[FRA_L3MDEV])))
-			continue;
-
-		if (uid_range_set(&range) &&
-		    (!uid_eq(rule->uid_range.start, range.start) ||
-		     !uid_eq(rule->uid_range.end, range.end)))
 			continue;
 
 		if (uid_range_set(&range) &&
