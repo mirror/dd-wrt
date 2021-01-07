@@ -5101,6 +5101,7 @@ static void apply_rules(char *method, char *pbr)
 		int ipproto_en = flags & 0x1000;
 		int sport_en = flags & 0x2000;
 		int dport_en = flags & 0x4000;
+		int oif_en = flags & 0x8000;
 		GETENTRYBYIDX(from, word, 1);
 		GETENTRYBYIDX(to, word, 2);
 		GETENTRYBYIDX(priority, word, 3);
@@ -5115,6 +5116,7 @@ static void apply_rules(char *method, char *pbr)
 		GETENTRYBYIDX(ipproto, word, 12);
 		GETENTRYBYIDX_DEL(sport, word, 13, "><:,");
 		GETENTRYBYIDX_DEL(dport, word, 14, "><:,");
+		GETENTRYBYIDX_DEL(oif, word, 15, "><:,");
 		if (not)
 			sprintf(cmd, "%s %s", cmd, "not");
 		if (from_en && from)
@@ -5135,6 +5137,8 @@ static void apply_rules(char *method, char *pbr)
 			sprintf(cmd, "%s suppress_prefixlength %s", cmd, suppress_prefixlength);
 		if (iif_en && iif)
 			sprintf(cmd, "%s iif %s", cmd, iif);
+		if (oif_en && oif)
+			sprintf(cmd, "%s oif %s", cmd, oif);
 		if (nat_en && nat)
 			sprintf(cmd, "%s nat %s", cmd, nat);
 		if (type_en && type)
