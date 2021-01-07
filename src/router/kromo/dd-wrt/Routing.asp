@@ -504,6 +504,13 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_oif_en" <% pbr_rule_setting("oif_en"); %> />
+									<div class="label"><% tran("routetbl.oif"); %></div>
+									<select name="rule_oif">
+										<% show_ruleoif(); %>
+									</select>
+								</div>
+								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_nat_en" <% pbr_rule_setting("nat_en"); %> />
 									<div class="label"><% tran("routetbl.nat"); %></div>
 									<input type="hidden" name="rule_nat" value="4" />

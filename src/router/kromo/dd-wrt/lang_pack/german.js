@@ -1388,6 +1388,7 @@ routetbl.realms="Bereich";
 routetbl.table="Tabelle";
 routetbl.suppress_prefixlength="Prefixl&auml;nge Ausblenden";
 routetbl.iif="Eingehendes Interface";
+routetbl.oif="Ausgehendes Interface";
 routetbl.nat="Nat Adresse";
 routetbl.type="Typ";
 routetbl.sport="Quell Port Bereich";
