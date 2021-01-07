@@ -157,10 +157,6 @@ addEvent(window, "unload", function() {
 											<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr","2"); %></span>&nbsp;
 										</div>
 										<div class="setting">
-											<div class="label"><% tran("share.subnet"); %></div>
-											<span id="wan_netmask"><% nvram_status_get("wan_netmask","0"); %></span>&nbsp;
-										</div>
-										<div class="setting">
 											<div class="label"><% tran("share.gateway"); %></div>
 											<span id="wan_gateway"><% nvram_status_get("wan_gateway","0"); %></span>&nbsp;
 										</div>
