@@ -3445,7 +3445,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char *priority = websGetVar(wp, "rule_priority", "0");
 	char *tos = websGetVar(wp, "rule_tos", "0");
 	char *fwmark = websGetVar(wp, "rule_fwmark", "0");
-	char *fwmask = websGetVar(wp, "rule_fwmask", "0");
+	char *fwmask = websGetVar(wp, "rule_fwmask", NULL);
 	char *realms = websGetVar(wp, "rule_realms", "0");
 	char *table = websGetVar(wp, "rule_table", "0");
 	char *suppress_prefixlength = websGetVar(wp, "rule_suppress_prefixlength", "");
@@ -3461,7 +3461,10 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char fw[64];
 	sprintf(sport, "%s-%s", sport_from, sport_to);
 	sprintf(dport, "%s-%s", dport_from, dport_to);
-	sprintf(fw, "0x%X/0x%X", strtoul(fwmark, NULL, 0), strtoul(fwmask, NULL, 0));	// force hex
+	if (fwmask)
+		sprintf(fw, "0x%X/0x%X", strtoul(fwmark, NULL, 0), strtoul(fwmask, NULL, 0));	// force hex
+	else
+		sprintf(fw, "0x%X/0x%X", strtoul(fwmark, NULL, 0));	// force hex
 	/*
 	 * validate ip address 
 	 */

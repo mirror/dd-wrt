@@ -563,6 +563,9 @@ static int rule_afterburner(char *name)
 	return 0;
 
 }
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 
 static struct defrule s_conditions[] = {
 #ifdef HAVE_MICRO
@@ -688,7 +691,9 @@ static struct defrule s_conditions[] = {
 	{ "AFTERBURNER", rule_afterburner },
 #ifndef HAVE_MICRO
 	{ "HAVE_PBR", NULL },
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 	{ "HAVE_EXT_IPROUTE", NULL },
+#endif
 #endif
 	{ NULL, NULL }
 };
