@@ -31,6 +31,24 @@
 #define FRA_DPORT_RANGE		24
 #define FRA_MAX		25
 
+#ifndef FIB_RULE_PERMANENT
+#define FIB_RULE_PERMANENT	0x00000001
+#endif
+#ifndef FIB_RULE_INVERT
+#define FIB_RULE_INVERT 	0x00000002
+#endif
+#ifndef FIB_RULE_UNRESOLVED
+#define FIB_RULE_UNRESOLVED	0x00000004
+#endif
+#ifndef FIB_RULE_IIF_DETACHED
+#define FIB_RULE_IIF_DETACHED	0x00000008
+#endif
+#ifndef FIB_RULE_DEV_DETACHED
+#define FIB_RULE_DEV_DETACHED	FIB_RULE_IIF_DETACHED
+#endif
+#ifndef FIB_RULE_OIF_DETACHED
+#define FIB_RULE_OIF_DETACHED	0x00000010
+#endif
 
 
 #include "ip_common.h"  /* #include "libbb.h" is inside */
@@ -47,7 +65,7 @@ static const char keywords[] ALIGN1 =
 	"not\0""sport\0""dport\0""ipproto\0""from\0""to\0""preference\0""order\0""priority\0"
 	"tos\0""fwmark\0""realms\0""table\0""lookup\0"
 	"suppress_prefixlength\0""suppress_ifgroup\0"
-	"dev\0""iif\0""nat\0""map-to\0""type\0""help\0"
+	"dev\0""iif\0""oif\0""nat\0""map-to\0""type\0""help\0"
 	;
 #define keyword_ipproto               (keywords           + sizeof("not") + sizeof("sport") + sizeof("dport"))
 #define keyword_preference            (keyword_ipproto    + sizeof("ipproto") + sizeof("from") + sizeof("to"))
@@ -59,7 +77,7 @@ enum {
 	ARG_not = 1, ARG_sport, ARG_dport, ARG_ipproto, ARG_from, ARG_to, ARG_preference, ARG_order, ARG_priority,
 	ARG_tos, ARG_fwmark, ARG_realms, ARG_table, ARG_lookup,
 	ARG_suppress_prefixlength, ARG_suppress_ifgroup,
-	ARG_dev, ARG_iif, ARG_nat, ARG_map_to, ARG_type, ARG_help,
+	ARG_dev, ARG_iif, ARG_oif, ARG_nat, ARG_map_to, ARG_type, ARG_help,
 };
 
 struct compat_fib_rule_port_range {
@@ -98,7 +116,7 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 	printf("%u:\t", tb[RTA_PRIORITY] ?
 					*(unsigned*)RTA_DATA(tb[RTA_PRIORITY])
 					: 0);
-	if (r->rtm_flags & 0x2)
+	if (r->rtm_flags & FIB_RULE_INVERT)
 		printf("not ");
 	printf("from ");
 	if (tb[RTA_SRC]) {
@@ -175,7 +193,16 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 
 	if (tb[RTA_IIF]) {
 		printf("iif %s ", (char*)RTA_DATA(tb[RTA_IIF]));
+		if (r->rtm_flags & FIB_RULE_IIF_DETACHED)
+			printf("[detached] ");
 	}
+
+	if (tb[FRA_OIFNAME]) {
+		printf("oif %s ", (char*)RTA_DATA(tb[FRA_OIFNAME]));
+		if (r->rtm_flags & FIB_RULE_OIF_DETACHED)
+			printf("[detached] ");
+	}
+
 
 #if HAVE_RTA_TABLE
 	if (tb[RTA_TABLE])
@@ -278,9 +305,6 @@ static int iprule_modify(int cmd, char **argv)
 		req.n.nlmsg_flags |= NLM_F_CREATE|NLM_F_EXCL;
 		req.r.rtm_type = RTN_UNICAST;
 	}
-#ifndef FIB_RULE_INVERT
-#define FIB_RULE_INVERT 0x00000002
-#endif
 	while (*argv) {
 		key = index_in_substrings(keywords, *argv) + 1;
 		if (key == 0) /* no match found in keywords array, bail out. */
@@ -389,6 +413,9 @@ static int iprule_modify(int cmd, char **argv)
 		) {
 			NEXT_ARG();
 			addattr_l(&req.n, sizeof(req), RTA_IIF, *argv, strlen(*argv)+1);
+		} else if (key == ARG_oif){
+			NEXT_ARG();
+			addattr_l(&req.n, sizeof(req), RTA_OIF, *argv, strlen(*argv)+1);
 		} else if (key == ARG_nat ||
 			   key == ARG_map_to
 		) {
