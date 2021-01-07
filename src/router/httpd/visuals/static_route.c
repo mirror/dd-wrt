@@ -31,8 +31,7 @@
 #include <net/route.h>
 
 #include <broadcom.h>
-
-EJ_VISIBLE void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
+static void _show_ruleif(webs_t wp, int argc, char_t ** argv, char *page, char *rules, int index)
 {
 	int which;
 	char word[256];
@@ -40,14 +39,14 @@ EJ_VISIBLE void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 	char ifnamecopy[32];
 	char bufferif[512];
 
-	which = websGetVari(wp, "route_page", 0);
+	which = websGetVari(wp, page, 0);
 	strcpy(ifnamecopy, "br0");
 
-	char *sroute = nvram_safe_get("static_route");
+	char *sroute = nvram_safe_get(rules);
 
 	foreach(word, sroute, next) {
 		if (which-- == 0) {
-			GETENTRYBYIDX(ifname, word, 4);
+			GETENTRYBYIDX_DEL(oif, word, index, "><:,");
 			if (!ifname)
 				break;
 			strcpy(ifnamecopy, ifname);
@@ -58,7 +57,6 @@ EJ_VISIBLE void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 	getIfList(bufferif, NULL);
 	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
-	websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
 	bzero(word, 256);
 	next = NULL;
 	foreach(word, bufferif, next) {
@@ -70,42 +68,20 @@ EJ_VISIBLE void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
+EJ_VISIBLE void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
+{
+	_show_ruleif(wp, argc, argv, "route_page", "static_route", 4);
+}
+
 #ifndef HAVE_MICRO
 EJ_VISIBLE void ej_show_ruleiif(webs_t wp, int argc, char_t ** argv)
 {
-	int which;
-	char word[256];
-	char *next = NULL;
-	char ifnamecopy[32];
-	char bufferif[512];
+	_show_ruleif(wp, argc, argv, "rule_page", "pbr_rule", 9);
+}
 
-	which = websGetVari(wp, "rule_page", 0);
-	strcpy(ifnamecopy, "br0");
-
-	char *sroute = nvram_safe_get("pbr_rule");
-
-	foreach(word, sroute, next) {
-		if (which-- == 0) {
-			GETENTRYBYIDX(ifname, word, 18);
-			if (!ifname)
-				break;
-			strcpy(ifnamecopy, ifname);
-		}
-	}
-
-	bzero(bufferif, 512);
-	getIfList(bufferif, NULL);
-	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
-	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
-	bzero(word, 256);
-	next = NULL;
-	foreach(word, bufferif, next) {
-		if (nvram_match("lan_ifname", word))
-			continue;
-		if (nvram_match("wan_ifname", word))
-			continue;
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, strcmp(word, ifnamecopy) == 0 ? "selected=\"selected\"" : "", getNetworkLabel(wp, word));
-	}
+EJ_VISIBLE void ej_show_ruleoif(webs_t wp, int argc, char_t ** argv)
+{
+	_show_ruleif(wp, argc, argv, "rule_page", "pbr_rule", 15);
 }
 #endif
 /*
@@ -287,6 +263,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			int ipproto_en = flags & 0x1000;
 			int sport_en = flags & 0x2000;
 			int dport_en = flags & 0x4000;
+			int oif_en = flags & 0x8000;
 			GETENTRYBYIDX(from, word, 1);
 			GETENTRYBYIDX(to, word, 2);
 			GETENTRYBYIDX(priority, word, 3);
@@ -301,6 +278,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			GETENTRYBYIDX(ipproto, word, 12);
 			GETENTRYBYIDX_DEL(sport, word, 13, "><:,");
 			GETENTRYBYIDX_DEL(dport, word, 14, "><:,");
+			GETENTRYBYIDX_DEL(oif, word, 15, "><:,");
 
 			if (!strcmp(arg, "not")) {
 				if (not)
@@ -340,6 +318,10 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				return;
 			} else if (!strcmp(arg, "iif_en")) {
 				if (iif_en)
+					websWrite(wp, "checked=\"checked\"");
+				return;
+			} else if (!strcmp(arg, "oif_en")) {
+				if (oif_en)
 					websWrite(wp, "checked=\"checked\"");
 				return;
 			} else if (!strcmp(arg, "nat_en")) {
@@ -398,6 +380,10 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				return;
 			} else if (iif && !strcmp(arg, "iif") && !strcmp(iif, argv[1])) {
 				if (!strcmp(argv[1], iif))
+					websWrite(wp, "selected=\"selected\"");
+				return;
+			} else if (iif && !strcmp(arg, "oif") && !strcmp(oif, argv[1])) {
+				if (!strcmp(argv[1], oif))
 					websWrite(wp, "selected=\"selected\"");
 				return;
 			} else if (nat && !strcmp(arg, "nat")) {

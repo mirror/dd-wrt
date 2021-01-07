@@ -563,6 +563,7 @@ static int rule_afterburner(char *name)
 	return 0;
 
 }
+
 #include <linux/version.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
