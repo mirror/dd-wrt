@@ -1606,6 +1606,7 @@ routetbl.realms="Realms";
 routetbl.table="Table";
 routetbl.suppress_prefixlength="Suppress Prefixlength";
 routetbl.iif="Incoming If";
+routetbl.oif="Outgoing If";
 routetbl.nat="Nat Address";
 routetbl.type="Type";
 routetbl.sport="Source Port Range";
