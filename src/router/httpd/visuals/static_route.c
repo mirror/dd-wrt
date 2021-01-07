@@ -46,7 +46,7 @@ static void _show_ruleif(webs_t wp, int argc, char_t ** argv, char *page, char *
 
 	foreach(word, sroute, next) {
 		if (which-- == 0) {
-			GETENTRYBYIDX_DEL(oif, word, index, "><:,");
+			GETENTRYBYIDX_DEL(ifname, word, index, "><:,");
 			if (!ifname)
 				break;
 			strcpy(ifnamecopy, ifname);
