@@ -3419,6 +3419,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	int table_en = websGetVari(wp, "pbr_table_en", 0);
 	int suppress_prefixlength_en = websGetVari(wp, "suppress_prefixlength_en", 0);
 	int iif_en = websGetVari(wp, "iif_en", 0);
+	int oif_en = websGetVari(wp, "oif_en", 0);
 	int nat_en = websGetVari(wp, "nat_en", 0);
 	int type_en = websGetVari(wp, "type_en", 0);
 	int ipproto_en = websGetVari(wp, "ipproto_en", 0);
@@ -3441,6 +3442,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	flags |= ipproto_en ? 1 << 12 : 0;
 	flags |= sport_en ? 1 << 13 : 0;
 	flags |= dport_en ? 1 << 14 : 0;
+	flags |= oif_en ? 1 << 15 : 0;
 	char *page = websGetVar(wp, "rule_page", NULL);
 	char *priority = websGetVar(wp, "rule_priority", "0");
 	char *tos = websGetVar(wp, "rule_tos", "0");
@@ -3450,6 +3452,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	char *table = websGetVar(wp, "rule_table", "0");
 	char *suppress_prefixlength = websGetVar(wp, "rule_suppress_prefixlength", "");
 	char *iif = websGetVar(wp, "rule_iif", "none");
+	char *oif = websGetVar(wp, "rule_oif", "none");
 	char *type = websGetVar(wp, "rule_type", "0");
 	char *sport_from = websGetVar(wp, "rule_sport_from", "0");
 	char *sport_to = websGetVar(wp, "rule_sport_to", "0");
@@ -3563,8 +3566,8 @@ write_nvram:
 
 	strcpy(backuproute, &old[atoi(page) * PBR_LINE_SIZE]);
 
-	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], PBR_LINE_SIZE, "%X:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", flags, from, to, priority, tos, fw, realms, table, suppress_prefixlength, iif, nat, type, ipproto,
-		 sport, dport);
+	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], PBR_LINE_SIZE, "%X:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", flags, from, to, priority, tos, fw, realms, table, suppress_prefixlength, iif, nat, type, ipproto,
+		 sport, dport, oif);
 
 	httpd_filter_name(name, new_name, sizeof(new_name), SET);
 	snprintf(&old_name[atoi(page) * ROUTE_NAME_SIZE], ROUTE_NAME_SIZE, "$NAME:%s$$", new_name);
