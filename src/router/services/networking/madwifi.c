@@ -647,6 +647,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 
+		fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
@@ -783,6 +784,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
+		fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
@@ -823,6 +825,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 
+		fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
