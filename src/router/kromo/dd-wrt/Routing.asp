@@ -472,7 +472,12 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_fwmark_en" <% pbr_rule_setting("fwmark_en"); %> />
 									<div class="label"><% tran("routetbl.fwmark"); %></div>
+							<% ifndef("HAVE_EXT_IPROUTE", "<!--"); %>
 									<input name="rule_fwmark" size="10" maxlength="10" class="num" value="<% pbr_rule_setting("fwmark","0"); %>" /> / <input name="rule_fwmask" size="10" maxlength="10" class="num" value="<% pbr_rule_setting("fwmark","1"); %>" />
+							<% ifndef("HAVE_EXT_IPROUTE", "-->"); %>
+							<% ifdef("HAVE_EXT_IPROUTE", "<!--"); %>
+									<input name="rule_fwmark" size="10" maxlength="10" class="num" value="<% pbr_rule_setting("fwmark","0"); %>" />
+							<% ifdef("HAVE_EXT_IPROUTE", "-->"); %>
 								</div>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_realms_en" <% pbr_rule_setting("realms_en"); %> />
@@ -484,11 +489,13 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("routetbl.table"); %></div>
 									<input name="rule_table" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.table)" class="num" value="<% pbr_rule_setting("table"); %>" />
 								</div>
+							<% ifndef("HAVE_EXT_IPROUTE", "<!--"); %>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_suppress_prefixlength_en" <% pbr_rule_setting("suppress_prefixlength_en"); %> />
 									<div class="label"><% tran("routetbl.suppress_prefixlength"); %></div>
 									<input name="rule_suppress_prefixlength" size="5" maxlength="5" onblur="valid_range(this,0,2147483647,routetbl.suppress_prefixlength)" class="num" value="<% pbr_rule_setting("suppress_prefixlength"); %>" />
 								</div>
+							<% ifndef("HAVE_EXT_IPROUTE", "-->"); %>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_iif_en" <% pbr_rule_setting("iif_en"); %> />
 									<div class="label"><% tran("routetbl.iif"); %></div>
