@@ -80,6 +80,7 @@ struct rtattr
 /******************************************************************************
  *		Definitions used in routing table administration.
  ****/
+#define FIB_RULE_INVERT		0x00000002
 
 struct rtmsg
 {

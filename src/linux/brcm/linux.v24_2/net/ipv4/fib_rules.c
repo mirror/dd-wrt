@@ -306,20 +306,11 @@ static void fib_rules_attach(struct net_device *dev)
 		}
 	}
 }
-
-int fib_lookup(const struct rt_key *key, struct fib_result *res)
+static int fib_rule_match(struct fib_rule *r, const struct rt_key *key)
 {
-	int err;
-	struct fib_rule *r, *policy;
-	struct fib_table *tb;
-
+	int ret = 1;
 	u32 daddr = key->dst;
 	u32 saddr = key->src;
-
-FRprintk("Lookup: %u.%u.%u.%u <- %u.%u.%u.%u ",
-	NIPQUAD(key->dst), NIPQUAD(key->src));
-	read_lock(&fib_rules_lock);
-	for (r = fib_rules; r; r=r->r_next) {
 		if (((saddr^r->r_src) & r->r_srcmask) ||
 		    ((daddr^r->r_dst) & r->r_dstmask) ||
 #ifdef CONFIG_IP_ROUTE_TOS
@@ -329,6 +320,27 @@ FRprintk("Lookup: %u.%u.%u.%u <- %u.%u.%u.%u ",
 		    (r->r_fwmark && r->r_fwmark != key->fwmark) ||
 #endif
 		    (r->r_ifindex && r->r_ifindex != key->iif))
+			ret = 0;
+
+	return (r->r_flags & FIB_RULE_INVERT) ? !ret : ret;
+
+
+}
+int fib_lookup(const struct rt_key *key, struct fib_result *res)
+{
+	int err;
+	struct fib_rule *r, *policy;
+	struct fib_table *tb;
+	int ret = 0;
+
+	u32 daddr = key->dst;
+	u32 saddr = key->src;
+
+FRprintk("Lookup: %u.%u.%u.%u <- %u.%u.%u.%u ",
+	NIPQUAD(key->dst), NIPQUAD(key->src));
+	read_lock(&fib_rules_lock);
+	for (r = fib_rules; r; r=r->r_next) {
+		if (!fib_rule_match(key, r))
 			continue;
 
 FRprintk("tb %d r %d ", r->r_table, r->r_action);
