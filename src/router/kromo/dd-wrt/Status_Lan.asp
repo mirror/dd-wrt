@@ -264,11 +264,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ip"); %></div>
-									<span id="lan_ip"><% nvg("lan_ipaddr"); %></span>&nbsp;
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("share.subnet"); %></div>
-									<span id="lan_netmask"><% nvg("lan_netmask"); %></span>&nbsp;
+									<span id="lan_ip"><% nvg("lan_ipaddr"); %>/<% get_cidr_mask("lan_netmask"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.gateway"); %></div>
