@@ -566,7 +566,6 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		//hide or show advanced settings
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
 		//hide ip address and netmask for and show alternative input for WG (proto 2)
-//		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idbridged%d', %s);\n", tun, tun, nvram_nmatchi(2, "oet%d_proto", tun) ? "false" : "true");
 //		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idwginput%d', %s);\n", tun, tun, nvram_nmatchi(2, "oet%d_proto", tun) ? "true" : "false");
 		//end
 		websWrite(wp, "//]]>\n</script>\n");
