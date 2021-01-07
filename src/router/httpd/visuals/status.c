@@ -189,7 +189,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		if (getWET() || !strcmp(wan_proto, "disabled")) {
 			websWrite(wp, "%s", trans == 2 ? tran_string(buf, "share.disabled") : live_translate(wp, "share.disabled"));
 		} else
-			websWrite(wp, "%s/%d", wan_ipaddr,getmask(wan_netmask));
+			websWrite(wp, "%s/%d", wan_ipaddr, getmask(wan_netmask));
 #ifdef HAVE_IPV6
 	} else if (!strcmp(type, "wan_ipv6addr")) {
 		const char *ipv6addr = NULL;
