@@ -567,7 +567,6 @@ static int rule_afterburner(char *name)
 #include <linux/version.h>
 #define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 
-
 static struct defrule s_conditions[] = {
 #ifdef HAVE_MICRO
 	{ "MICRO", NULL },
