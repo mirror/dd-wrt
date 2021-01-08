@@ -5084,7 +5084,9 @@ static void apply_rules(char *method, char *pbr)
 		strcpy(cmd, "ip rule ");
 		strcat(cmd, method);
 		GETENTRYBYIDX(s_flags, word, 0);
-		int flags;
+		int flags = 0;
+		if (s_flags)
+			sscanf(s_flags, "%X", &flags);
 		sscanf(s_flags, "%X", &flags);
 		int not = flags & 0x1;
 		int from_en = flags & 0x2;
@@ -5207,7 +5209,9 @@ void start_set_routes(void)
 		GETENTRYBYIDX(ifname, word, 4);
 
 		GETENTRYBYIDX(s_flags, word, 6);
-		int flags;
+		int flags = 0;
+		if (s_flags)
+			sscanf(s_flags, "%X", &flags);
 		sscanf(s_flags, "%X", &flags);
 		int src_en = flags & 0x1;
 		int scope_en = flags & 0x2;

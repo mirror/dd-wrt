@@ -1756,7 +1756,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			else if (!ismesh)
 				fprintf(fp, "ap_scan=1\n");
 		}
-		fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
 		if (ispsk3)
@@ -1917,7 +1917,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-		fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
@@ -1939,7 +1939,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		}
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-		fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		if (!ismesh) {
 			if (isadhoc)
 				fprintf(fp, "ap_scan=2\n");
