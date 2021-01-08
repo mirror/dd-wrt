@@ -192,6 +192,9 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			} else if (table && !strcmp(arg, "table")) {
 				websWrite(wp, table);
 				return;
+			} else if (!strcmp(arg, "src_en")) {
+				if (src_en)
+					websWrite(wp, "checked=\"checked\"");
 			} else if (src && !strcmp(arg, "src")) {
 				websWrite(wp, "%d", get_single_ip(src, atoi(argv[1])));
 				return;
