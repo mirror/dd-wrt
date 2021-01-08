@@ -5087,7 +5087,6 @@ static void apply_rules(char *method, char *pbr)
 		int flags = 0;
 		if (s_flags)
 			sscanf(s_flags, "%X", &flags);
-		sscanf(s_flags, "%X", &flags);
 		int not = flags & 0x1;
 		int from_en = flags & 0x2;
 		int to_en = flags & 0x4;
@@ -5212,7 +5211,6 @@ void start_set_routes(void)
 		int flags = 0;
 		if (s_flags)
 			sscanf(s_flags, "%X", &flags);
-		sscanf(s_flags, "%X", &flags);
 		int src_en = flags & 0x1;
 		int scope_en = flags & 0x2;
 		int table_en = flags & 0x4;
