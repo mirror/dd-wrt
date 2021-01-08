@@ -31,7 +31,7 @@
 #include <net/route.h>
 
 #include <broadcom.h>
-static void _show_ruleif(webs_t wp, int argc, char_t ** argv, char *page, char *rules, int index)
+static void _show_ruleif(webs_t wp, int argc, char_t ** argv, char *page, char *rules, int index, int any)
 {
 	int which;
 	char word[256];
@@ -57,6 +57,8 @@ static void _show_ruleif(webs_t wp, int argc, char_t ** argv, char *page, char *
 	getIfList(bufferif, NULL);
 	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
+if (any)
+	websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
 	bzero(word, 256);
 	next = NULL;
 	foreach(word, bufferif, next) {
@@ -70,18 +72,18 @@ static void _show_ruleif(webs_t wp, int argc, char_t ** argv, char *page, char *
 
 EJ_VISIBLE void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 {
-	_show_ruleif(wp, argc, argv, "route_page", "static_route", 4);
+	_show_ruleif(wp, argc, argv, "route_page", "static_route", 4, 1);
 }
 
 #ifndef HAVE_MICRO
 EJ_VISIBLE void ej_show_ruleiif(webs_t wp, int argc, char_t ** argv)
 {
-	_show_ruleif(wp, argc, argv, "rule_page", "pbr_rule", 9);
+	_show_ruleif(wp, argc, argv, "rule_page", "pbr_rule", 9, 0);
 }
 
 EJ_VISIBLE void ej_show_ruleoif(webs_t wp, int argc, char_t ** argv)
 {
-	_show_ruleif(wp, argc, argv, "rule_page", "pbr_rule", 15);
+	_show_ruleif(wp, argc, argv, "rule_page", "pbr_rule", 15, 0);
 }
 #endif
 /*
@@ -142,7 +144,6 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			GETENTRYBYIDX(advmss, word, 11);
 			if (!ipaddr || !netmask || !gateway || !metric || !ifname)
 				continue;
-
 			if (!strcmp(arg, "ipaddr")) {
 				websWrite(wp, "%d", get_single_ip(ipaddr, atoi(argv[1])));
 				return;
@@ -200,10 +201,9 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "%d", get_single_ip(src, atoi(argv[1])));
 				return;
 			}
-			return;
+			break;
 		}
 	}
-
 	if (!strcmp(arg, "ipaddr") || !strcmp(arg, "netmask") || !strcmp(arg, "src")
 	    || !strcmp(arg, "gateway"))
 		websWrite(wp, "0");
@@ -215,6 +215,9 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "1460");
 	else if (!strcmp(arg, "table"))
 		websWrite(wp, "0");
+	else if (!strcmp(arg, "scope"))
+		websWrite(wp, "global");
+
 	return;
 }
 
@@ -419,7 +422,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "selected=\"selected\"");
 				return;
 			}
-			return;
+			break;
 		}
 	}
 
