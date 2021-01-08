@@ -127,8 +127,9 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			GETENTRYBYIDX(ifname, word, 4);
 			GETENTRYBYIDX(nat, word, 5);
 			GETENTRYBYIDX(s_flags, word, 6);
-			int flags;
-			sscanf(s_flags, "%X", &flags);
+			int flags = 0;
+			if (s_flags)
+				sscanf(s_flags, "%X", &flags);
 			int src_en = flags & 0x1;
 			int scope_en = flags & 0x2;
 			int table_en = flags & 0x4;
@@ -249,7 +250,9 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
 			GETENTRYBYIDX(s_flags, word, 0);
-			int flags;
+			int flags = 0;
+			if (s_flags)
+				sscanf(s_flags, "%X", &flags);
 			sscanf(s_flags, "%X", &flags);
 			int not = flags & 0x1;
 			int from_en = flags & 0x2;
