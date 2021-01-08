@@ -51,7 +51,7 @@ EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 	/*
 	 * open route table 
 	 */
-	if ((fp = fopen("/proc/net/route", "r")) == NULL) {
+	if ((fp = popen("ip route show table all", "r")) == NULL) {
 		websError(wp, 400, "No route table\n");
 		return;
 	}
@@ -64,91 +64,94 @@ EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 	// vmnet1 004410AC 00000000 0001 0 0 0 00FFFFFF 40 0 0 
 
 	while (fgets(line, sizeof(line), fp) != NULL) {
-		if (count) {
-			int ifl = 0;
-
-			while (line[ifl] != ' ' && line[ifl] != '\t' && line[ifl] != '\0')
-				ifl++;
-			line[ifl] = 0;	/* interface */
-			if (sscanf(line + ifl + 1, "%x%x%X%d%d%d%x", &dest, &gw, &flgs, &ref, &use, &metric, &netmask) != 7) {
-				break;
-			}
-			debug = 0;
-			dest_ip.s_addr = dest;
-			gw_ip.s_addr = gw;
-			netmask_ip.s_addr = netmask;
-			char client[32];
-			strcpy(sdest, (dest_ip.s_addr == 0 ? "default" : inet_ntop(AF_INET, &dest_ip, client, 16)));	// default
-			strcpy(sgw, (gw_ip.s_addr == 0 ? "*" : inet_ntop(AF_INET, &gw_ip, client, 16)));	// *
-
-			/*
-			 * not 0x0001 route usable 
-			 */
-			if (!(flgs & RTF_UP))
+		char *next;
+		char word[128];
+		int field = 0;
+		char net[128] = { 0 };
+		char gw[128] = { 0 };
+		char dev[32] = { 0 };
+		char scope[32] = { 0 };
+		char table[32] = { 0 };
+		strcpy(table, "default");
+		char src[32] = { 0 };
+		char metric[32] = { 0 };
+		strcpy(metric, "0");
+		int d_dev = 0;
+		int d_table = 0;
+		int d_scope = 0;
+		int d_src = 0;
+		int d_via = 0;
+		int d_metric = 0;
+		foreach(word, line, next) {
+			if (!field && !strcmp(word, "broadcast"))
+				goto nextline;
+			if (!field && !strcmp(word, "local"))
+				goto nextline;
+			if (!field && !strcmp(word, "unreachable"))
+				goto nextline;
+			if (!strcmp(word, "cache"))
+				goto nextline;
+			if (!strcmp(word, "ff00::/8"))
+				goto nextline;
+			if (!strcmp(word, "fe80::/64"))
+				goto nextline;
+			if (!field) {
+				strcpy(net, word);
+				field++;
 				continue;
-
-			/*
-			 * filter ppp pseudo interface for DOD 
-			 */
-			if (!strcmp(sdest, PPP_PSEUDO_IP)
-			    && !strcmp(sgw, PPP_PSEUDO_GW))
-				debug = 1;
-
-			/*
-			 * Don't show loopback device 
-			 */
-			if (!strcmp(line, "lo"))
-				debug = 1;
-
-			/*
-			 * Don't show eth1 information for pppoe mode 
-			 */
-			if (!strcmp(line, nvram_safe_get("wan_ifname"))
-			    && (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pppoe_dual")))
-				debug = 1;
-
-			/*
-			 * Don't show pseudo interface 
-			 */
-			if (!strncmp(line, "ppp", 3)) {
-				if (!f_exists("/tmp/ppp/link"))
-					debug = 1;
 			}
-			char *ifname = line;
+			if (d_dev) {
+				strcpy(dev, word);
+				d_dev = 0;
+			}
+			if (!strcmp(word, "dev"))
+				d_dev = 1;
 
-			if (!strcmp(ifname, nvram_safe_get("lan_ifname")))
-				ifname = "LAN";
-			if (!strcmp(ifname, nvram_safe_get("wan_ifname")))
-				ifname = "WAN";
-			char flags[32];
-			int fidx = 0;
-			flags[fidx++] = 'U';
-			if (flgs & RTF_GATEWAY)
-				flags[fidx++] = 'G';
-			if (flgs & RTF_HOST)
-				flags[fidx++] = 'H';
-			if (flgs & RTF_REINSTATE)
-				flags[fidx++] = 'R';
-			if (flgs & RTF_DYNAMIC)
-				flags[fidx++] = 'D';
-			if (flgs & RTF_MODIFIED)
-				flags[fidx++] = 'M';
-			flags[fidx] = 0;
-			if (dest_ip.s_addr == 0)
-				websWrite(wp, "%s%c'%s','%s','%s','%d','%s'\n", debug ? "//" : "", blank ? ' ' : ',', sdest, sgw, flags, metric, getNetworkLabel(wp, ifname));
-			else
-				websWrite(wp, "%s%c'%s/%d','%s','%s','%d','%s'\n", debug ? "//" : "", blank ? ' ' : ',', sdest, getmask(inet_ntop(AF_INET, &netmask_ip, client, 16)), sgw, flags, metric,
-					  getNetworkLabel(wp, ifname));
+			if (d_table) {
+				strcpy(table, word);
+				d_table = 0;
+			}
+			if (!strcmp(word, "table"))
+				d_table = 1;
 
-			if (debug && blank)
-				blank = 1;
-			else
-				blank = 0;
+			if (d_src) {
+				strcpy(src, word);
+				d_src = 0;
+			}
+			if (!strcmp(word, "src"))
+				d_src = 1;
 
+			if (d_metric) {
+				strcpy(metric, word);
+				d_metric = 0;
+			}
+			if (!strcmp(word, "metric"))
+				d_metric = 1;
+
+			if (d_scope) {
+				strcpy(scope, word);
+				d_scope = 0;
+			}
+			if (!strcmp(word, "scope"))
+				d_scope = 1;
+
+			if (d_via) {
+				strcpy(gw, word);
+				d_via = 0;
+			}
+			if (!strcmp(word, "via"))
+				d_via = 1;
+			field++;
 		}
 
-		count++;
+		if (!strcmp(dev, nvram_safe_get("lan_ifname")))
+			strcpy(dev, "LAN");
+		if (!strcmp(dev, nvram_safe_get("wan_ifname")))
+			strcpy(dev, "WAN");
+		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s'\n", blank ? ' ' : ',', net, gw, table, scope, metric, getNetworkLabel(wp, dev), src);
+		blank = 0;
+	      nextline:;
 	}
-	fclose(fp);
+	pclose(fp);
 	return;
 }
