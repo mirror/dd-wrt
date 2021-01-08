@@ -979,8 +979,6 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 					skip = 1;
 				if (!strncmp(ifname, "ppp", 3))
 					skip = 1;
-				if (!strncmp(ifname, "tun", 3))
-					skip = 1;
 				if (!strncmp(ifname, "tap", 3))
 					skip = 1;
 			}
