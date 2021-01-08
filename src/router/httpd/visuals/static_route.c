@@ -253,7 +253,6 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			int flags = 0;
 			if (s_flags)
 				sscanf(s_flags, "%X", &flags);
-			sscanf(s_flags, "%X", &flags);
 			int not = flags & 0x1;
 			int from_en = flags & 0x2;
 			int to_en = flags & 0x4;
