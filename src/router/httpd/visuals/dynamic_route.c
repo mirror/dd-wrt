@@ -193,15 +193,17 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t ** argv)
 		int d_oif = 0;
 		int d_lookup = 0;
 		int d_nat = 0;
-		foreach(word, line, next) {
-
+		foreach_delim(word, line, next," \t") {
 			if (!field) {
 				strcpy(priority, word);
 				field++;
 				continue;
 			}
-			if (!strcmp(word, "not"))
+			if (!strcmp(word, "not")) {
 				not = 1;
+				field++;
+				continue;
+			}
 			GETFIELD(from);
 			GETFIELD(to);
 			GETFIELD(tos);
@@ -225,7 +227,7 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t ** argv)
 			strcpy(oif, "LAN");
 		if (!strcmp(oif, nvram_safe_get("wan_ifname")))
 			strcpy(oif, "WAN");
-		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'\n", blank ? ' ' : ',', priority, not ? "!" : "", from, to, tos, fwmark, ipproto, sport, dport, getNetworkLabel(wp, iif),
+		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'\n", blank ? ' ' : ',', priority, not ? "!" : "", from, to, tos, fwmark, ipproto, sport, dport, getNetworkLabel(wp, iif),
 			  getNetworkLabel(wp, oif), lookup, nat);
 		blank = 0;
 	      nextline:;
