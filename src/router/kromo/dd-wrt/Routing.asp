@@ -575,6 +575,14 @@ addEvent(window, "unload", function() {
 									<input name="rule_dport_from" size="5" maxlength="5" onblur="valid_range(this,1,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","0"); %>" /> ~ <input name="rule_dport_to" size="5" maxlength="5" onblur="valid_range(this,1,65535,routetbl.dport)" class="num" value="<% pbr_rule_setting("dport","1"); %>" />
 								</div>
 							<% ifndef("HAVE_EXT_IPROUTE", "-->"); %>
+								<div class="center">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"button2\" value=\"" + sbutton.policytab + "\" onclick=\"openWindow('RuleTable.asp', 720, 600);\" />");
+									//]]>
+									</script>
+									<input type="hidden" value="0" name="Route_reload" />
+								</div>
 							</fieldset><br />
 							<% ifndef("HAVE_PBR", "-->"); %>
 							

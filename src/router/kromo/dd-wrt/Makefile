@@ -25,6 +25,7 @@ else
 endif
 	rm -f $(INSTALLDIR)/www/Log_incoming.asp
 	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
+	rm -f $(INSTALLDIR)/www/RuleTable.asp
 endif
 
 #ifneq ($(CONFIG_AOSS),y)
