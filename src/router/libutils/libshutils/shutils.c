@@ -1091,21 +1091,26 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 {
 	if (!list || !buf)
 		return NULL;
-	char *newlist;
+	char *newlist = NULL;
 	int i = 0;
 	while (1) {
-		newlist = strpbrk(list, delimiters);
+		if (!i)
+			newlist = strpbrk(list, delimiters_short);
+		else
+			newlist = strpbrk(list, delimiters);
 		if (!newlist)
 			return NULL;
 		i++;
 		if (i > idx)
 			break;
-		list = newlist;
+		list = newlist + 1;
 	}
-	if (newlist == list + 1)
+	int len = newlist - list;
+	if (!len)
 		return NULL;
-	*newlist = 0;
-	return list;
+	strncpy(buf, list, len);
+	buf[len] = 0;
+	return buf;
 }
 
 char *getentrybyidx(char *buf, char *list, int idx)
