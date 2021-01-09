@@ -275,6 +275,7 @@ sbutton.log_in="Eingehendes Log";
 sbutton.log_out="Ausgehendes Log";
 sbutton.edit_srv="Service hinzuf&uuml;gen/editieren";
 sbutton.routingtab="Routentabelle anzeigen";
+sbutton.policytab="Regeltabelle anzeigen";
 sbutton.wanmac="Zeige aktuelle PC-MAC-Adresse";
 sbutton.dhcprel="DHCP freigeben";
 sbutton.dhcpren="DHCP erneuern";
@@ -1372,6 +1373,7 @@ hqos.right12="Hier k&ouml;nnen Sie die Datenrate der physischen LAN-Ports an Ihr
 
 routetbl.titl="Routentabelle";
 routetbl.h2="Routentabelle";
+routetbl.h3="Routen Regeltabelle";
 routetbl.th1="Ziel-LAN-Netz";
 routetbl.masquerade="Maskiere Route (NAT)";
 routetbl.scope="Bereich";
