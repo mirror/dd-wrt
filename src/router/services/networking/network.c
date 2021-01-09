@@ -5239,7 +5239,7 @@ void start_set_routes(void)
 			sprintf(cmd, "%s metric %s", cmd, metric);
 		if (src_en && src)
 			sprintf(cmd, "%s src %s", cmd, src);
-		if (scope_en && scope_en)
+		if (scope_en && scope)
 			sprintf(cmd, "%s scope %s", cmd, scope);
 		if (table_en && table)
 			sprintf(cmd, "%s table %s", cmd, table);
