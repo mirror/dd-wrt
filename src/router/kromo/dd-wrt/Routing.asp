@@ -378,7 +378,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<% has_routing("gateway", "<!--"); %>
 								<div class="setting">
-									<div class="label"><% tran("routetbl.nat"); %></div>
+									<div class="label"><% tran("routetbl.masquerade"); %></div>
 									<input class="spaceradio" type="checkbox" value="1" name="_route_nat" <% static_route_setting("nat"); %> />
 								</div>
 								<% has_routing("gateway", "-->"); %>
