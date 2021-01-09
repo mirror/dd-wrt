@@ -1089,18 +1089,23 @@ char *foreach_last(char *next, char *word, char *delimiters)
 
 char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, char *delimiters)
 {
-	char *next, word[128];
 	if (!list || !buf)
 		return NULL;
-	int count = 0;
-	foreach_delim(word, list, next, !count ? delimiters_short : delimiters) {
-		if (count == idx) {
-			strcpy(buf, word);
-			return buf;
-		}
-		count++;
+	char *newlist;
+	int i = 0;
+	while (1) {
+		newlist = strpbrk(list, delimiters);
+		if (!newlist)
+			return NULL;
+		i++;
+		if (i > idx)
+			break;
+		list = newlist;
 	}
-	return NULL;
+	if (newlist == list + 1)
+		return NULL;
+	*newlist = 0;
+	return list;
 }
 
 char *getentrybyidx(char *buf, char *list, int idx)
