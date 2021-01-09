@@ -16,7 +16,7 @@
 					<th><% tran("routetbl.ipproto"); %></th>
 					<th><% tran("routetbl.sport"); %></th>
 					<th><% tran("routetbl.dport"); %></th>
-					<th><% tran("routetbl.íif"); %></th>
+					<th><% tran("routetbl.iif"); %></th>
 					<th><% tran("routetbl.oif"); %></th>
 					<th><% tran("routetbl.table"); %></th>
 					<th><% tran("routetbl.nat"); %></th>
