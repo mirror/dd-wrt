@@ -122,12 +122,6 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	foreach(word, sroute, next) {
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
-			GETENTRYBYIDX_DEL(ipaddr, word, 0, ":");
-			GETENTRYBYIDX_DEL(netmask, word, 1, ":");
-			GETENTRYBYIDX_DEL(gateway, word, 2, ":");
-			GETENTRYBYIDX_DEL(metric, word, 3, ":");
-			GETENTRYBYIDX_DEL(ifname, word, 4, ":");
-			GETENTRYBYIDX_DEL(nat, word, 5, ":");
 			GETENTRYBYIDX_DEL(s_flags, word, 6, ":");
 			int flags = 0;
 			if (s_flags)
@@ -137,69 +131,93 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			int table_en = flags & 0x4;
 			int mtu_en = flags & 0x8;
 			int advmss_en = flags & 0x10;
-			GETENTRYBYIDX_DEL(src, word, 7, ":");
-			GETENTRYBYIDX_DEL(scope, word, 8, ":");
-			GETENTRYBYIDX_DEL(table, word, 9, ":");
-			GETENTRYBYIDX_DEL(mtu, word, 10, ":");
-			GETENTRYBYIDX_DEL(advmss, word, 11, ":");
-			if (!ipaddr || !netmask || !gateway || !metric || !ifname)
-				continue;
 			if (!strcmp(arg, "ipaddr")) {
-				websWrite(wp, "%d", get_single_ip(ipaddr, atoi(argv[1])));
-				return;
+				GETENTRYBYIDX_DEL(ipaddr, word, 0, ":");
+				if (ipaddr) {
+					websWrite(wp, "%d", get_single_ip(ipaddr, atoi(argv[1])));
+					return;
+				}
 			} else if (!strcmp(arg, "netmask")) {
-				websWrite(wp, "%d", getmask(netmask));
-				return;
+				GETENTRYBYIDX_DEL(netmask, word, 1, ":");
+				if (netmask) {
+					websWrite(wp, "%d", getmask(netmask));
+					return;
+				}
 			} else if (!strcmp(arg, "gateway")) {
-				websWrite(wp, "%d", get_single_ip(gateway, atoi(argv[1])));
-				return;
+				GETENTRYBYIDX_DEL(gateway, word, 2, ":");
+				if (gateway) {
+					websWrite(wp, "%d", get_single_ip(gateway, atoi(argv[1])));
+					return;
+				}
 			} else if (!strcmp(arg, "metric")) {
-				websWrite(wp, metric);
-				return;
+				GETENTRYBYIDX_DEL(metric, word, 3, ":");
+				if (metric) {
+					websWrite(wp, metric);
+					return;
+				}
 			} else if (!strcmp(arg, "nat")) {
+				GETENTRYBYIDX_DEL(nat, word, 5, ":");
 				if (nat && !strcmp(nat, "1"))
 					websWrite(wp, "checked=\"checked\"");
 				return;
-			} else if (!strcmp(arg, "lan")
-				   && nvram_match("lan_ifname", ifname)) {
-				websWrite(wp, "selected=\"selected\"");
+			} else if (!strcmp(arg, "lan")) {
+				GETENTRYBYIDX_DEL(ifname, word, 4, ":");
+				if (nvram_match("lan_ifname", ifname)) {
+					websWrite(wp, "selected=\"selected\"");
+				}
 				return;
-			} else if (!strcmp(arg, "wan")
-				   && nvram_match("wan_ifname", ifname)) {
-				websWrite(wp, "selected=\"selected\"");
+			} else if (!strcmp(arg, "wan")) {
+				GETENTRYBYIDX_DEL(ifname, word, 4, ":");
+				if (nvram_match("wan_ifname", ifname)) {
+					websWrite(wp, "selected=\"selected\"");
+				}
 				return;
 			} else if (!strcmp(arg, "scope_en")) {
 				if (scope_en)
 					websWrite(wp, "checked=\"checked\"");
 				return;
-			} else if (scope && !strcmp(arg, "scope")) {
-				if (!strcmp(argv[1], scope))
+			} else if (!strcmp(arg, "scope")) {
+				GETENTRYBYIDX_DEL(scope, word, 8, ":");
+				if (scope && !strcmp(argv[1], scope)) {
 					websWrite(wp, "selected=\"selected\"");
+				}
 				return;
 			} else if (!strcmp(arg, "mtu_en")) {
 				if (mtu_en)
 					websWrite(wp, "checked=\"checked\"");
-			} else if (mtu && !strcmp(arg, "mtu")) {
-				websWrite(wp, mtu);
-				return;
+			} else if (!strcmp(arg, "mtu")) {
+				GETENTRYBYIDX_DEL(mtu, word, 10, ":");
+				if (mtu) {
+					websWrite(wp, mtu);
+					return;
+				}
 			} else if (!strcmp(arg, "advmss_en")) {
 				if (advmss_en)
 					websWrite(wp, "checked=\"checked\"");
-			} else if (advmss && !strcmp(arg, "advmss")) {
-				websWrite(wp, advmss);
-				return;
+			} else if (!strcmp(arg, "advmss")) {
+				GETENTRYBYIDX_DEL(advmss, word, 11, ":");
+				if (advmss) {
+					websWrite(wp, advmss);
+					return;
+				}
 			} else if (!strcmp(arg, "table_en")) {
 				if (table_en)
 					websWrite(wp, "checked=\"checked\"");
-			} else if (table && !strcmp(arg, "table")) {
-				websWrite(wp, table);
-				return;
+			} else if (!strcmp(arg, "table")) {
+				GETENTRYBYIDX_DEL(table, word, 9, ":");
+				if (table) {
+					websWrite(wp, table);
+					return;
+				}
 			} else if (!strcmp(arg, "src_en")) {
 				if (src_en)
 					websWrite(wp, "checked=\"checked\"");
-			} else if (src && !strcmp(arg, "src")) {
-				websWrite(wp, "%d", get_single_ip(src, atoi(argv[1])));
-				return;
+			} else if (!strcmp(arg, "src")) {
+				GETENTRYBYIDX_DEL(src, word, 7, ":");
+				if (src) {
+					websWrite(wp, "%d", get_single_ip(src, atoi(argv[1])));
+					return;
+				}
 			}
 			break;
 		}
@@ -391,7 +409,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, table);
 					return;
 				}
-			} else if (suppress_prefixlength && !strcmp(arg, "suppress_prefixlength")) {
+			} else if (!strcmp(arg, "suppress_prefixlength")) {
 				GETENTRYBYIDX_DEL(suppress_prefixlength, word, 8, ":");
 				if (suppress_prefixlength) {
 					websWrite(wp, suppress_prefixlength);
@@ -415,7 +433,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "%d", get_single_ip(nat, atoi(argv[1])));
 					return;
 				}
-			} else if (type && !strcmp(arg, "type")) {
+			} else if (!strcmp(arg, "type")) {
 				GETENTRYBYIDX_DEL(type, word, 11, ":");
 				if (type && !strcmp(argv[1], type)) {
 					websWrite(wp, "selected=\"selected\"");
@@ -443,7 +461,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 						websWrite(wp, "%d", to);
 					return;
 				}
-			} else if (ipproto && !strcmp(arg, "ipproto")) {
+			} else if (!strcmp(arg, "ipproto")) {
 				GETENTRYBYIDX_DEL(ipproto, word, 12, ":");
 				if (ipproto) {
 					if (!strcmp(argv[1], ipproto))
