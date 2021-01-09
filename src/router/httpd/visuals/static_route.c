@@ -57,8 +57,8 @@ static void _show_ruleif(webs_t wp, int argc, char_t ** argv, char *page, char *
 	getIfList(bufferif, NULL);
 	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
-if (any)
-	websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
+	if (any)
+		websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
 	bzero(word, 256);
 	next = NULL;
 	foreach(word, bufferif, next) {
@@ -122,13 +122,13 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	foreach(word, sroute, next) {
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
-			GETENTRYBYIDX_DEL(ipaddr, word, 0,":");
-			GETENTRYBYIDX_DEL(netmask, word, 1,":");
-			GETENTRYBYIDX_DEL(gateway, word, 2,":");
-			GETENTRYBYIDX_DEL(metric, word, 3,":");
-			GETENTRYBYIDX_DEL(ifname, word, 4,":");
-			GETENTRYBYIDX_DEL(nat, word, 5,":");
-			GETENTRYBYIDX_DEL(s_flags, word, 6,":");
+			GETENTRYBYIDX_DEL(ipaddr, word, 0, ":");
+			GETENTRYBYIDX_DEL(netmask, word, 1, ":");
+			GETENTRYBYIDX_DEL(gateway, word, 2, ":");
+			GETENTRYBYIDX_DEL(metric, word, 3, ":");
+			GETENTRYBYIDX_DEL(ifname, word, 4, ":");
+			GETENTRYBYIDX_DEL(nat, word, 5, ":");
+			GETENTRYBYIDX_DEL(s_flags, word, 6, ":");
 			int flags = 0;
 			if (s_flags)
 				sscanf(s_flags, "%X", &flags);
@@ -137,11 +137,11 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			int table_en = flags & 0x4;
 			int mtu_en = flags & 0x8;
 			int advmss_en = flags & 0x10;
-			GETENTRYBYIDX_DEL(src, word, 7,":");
-			GETENTRYBYIDX_DEL(scope, word, 8,":");
-			GETENTRYBYIDX_DEL(table, word, 9,":");
-			GETENTRYBYIDX_DEL(mtu, word, 10,":");
-			GETENTRYBYIDX_DEL(advmss, word, 11,":");
+			GETENTRYBYIDX_DEL(src, word, 7, ":");
+			GETENTRYBYIDX_DEL(scope, word, 8, ":");
+			GETENTRYBYIDX_DEL(table, word, 9, ":");
+			GETENTRYBYIDX_DEL(mtu, word, 10, ":");
+			GETENTRYBYIDX_DEL(advmss, word, 11, ":");
 			if (!ipaddr || !netmask || !gateway || !metric || !ifname)
 				continue;
 			if (!strcmp(arg, "ipaddr")) {
@@ -252,7 +252,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 	foreach(word, sroute, next) {
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
-			GETENTRYBYIDX_DEL(s_flags, word, 0);
+			GETENTRYBYIDX_DEL(s_flags, word, 0, ":");
 			int flags = 0;
 			if (s_flags)
 				sscanf(s_flags, "%X", &flags);
@@ -272,21 +272,6 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			int sport_en = flags & 0x2000;
 			int dport_en = flags & 0x4000;
 			int oif_en = flags & 0x8000;
-			GETENTRYBYIDX_DEL(from, word, 1,":");
-			GETENTRYBYIDX_DEL(to, word, 2,":");
-			GETENTRYBYIDX_DEL(priority, word, 3,":");
-			GETENTRYBYIDX_DEL(tos, word, 4,":");
-			GETENTRYBYIDX_DEL(fwmark, word, 5,":");
-			GETENTRYBYIDX_DEL(realms, word, 6,":");
-			GETENTRYBYIDX_DEL(table, word, 7,":");
-			GETENTRYBYIDX_DEL(suppress_prefixlength, word, 8,":");
-			GETENTRYBYIDX_DEL(iif, word, 9,":");
-			GETENTRYBYIDX_DEL(nat, word, 10,":");
-			GETENTRYBYIDX_DEL(type, word, 11,":");
-			GETENTRYBYIDX_DEL(ipproto, word, 12,":");
-			GETENTRYBYIDX_DEL(sport, word, 13, ":");
-			GETENTRYBYIDX_DEL(dport, word, 14, ":");
-			GETENTRYBYIDX_DEL(oif, word, 15, ":");
 
 			if (!strcmp(arg, "not")) {
 				if (not)
@@ -352,75 +337,119 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 				if (ipproto_en)
 					websWrite(wp, "checked=\"checked\"");
 				return;
-			} else if (from && !strcmp(arg, "from")) {
-				websWrite(wp, "%d", get_single_ip(from, atoi(argv[1])));
-				return;
-			} else if (to && !strcmp(arg, "to")) {
-				websWrite(wp, "%d", get_single_ip(to, atoi(argv[1])));
-				return;
-			} else if (priority && !strcmp(arg, "priority")) {
-				websWrite(wp, priority);
-				return;
-			} else if (tos && !strcmp(arg, "tos")) {
-				websWrite(wp, tos);
-				return;
-			} else if (fwmark && !strcmp(arg, "fwmark")) {
-				char *slash = strchr(fwmark, '/');
-				if (slash)
-					*slash = '\0';
-				if (!strcmp(argv[1], "0"))
-					websWrite(wp, fwmark);
-				else {
-					if (slash)
-						websWrite(wp, slash + 1);
-					else
-						websWrite(wp, "0xffffffff");
+			} else if (!strcmp(arg, "from")) {
+				GETENTRYBYIDX_DEL(from, word, 1, ":");
+				if (from) {
+
+					websWrite(wp, "%d", get_single_ip(from, atoi(argv[1])));
+
+					return;
 				}
-				return;
-			} else if (realms && !strcmp(arg, "realms")) {
-				websWrite(wp, realms);
-				return;
-			} else if (table && !strcmp(arg, "table")) {
-				websWrite(wp, table);
-				return;
+			} else if (!strcmp(arg, "to")) {
+				GETENTRYBYIDX_DEL(to, word, 2, ":");
+				if (to) {
+					websWrite(wp, "%d", get_single_ip(to, atoi(argv[1])));
+					return;
+				}
+			} else if (!strcmp(arg, "priority")) {
+				GETENTRYBYIDX_DEL(priority, word, 3, ":");
+				if (priority) {
+					websWrite(wp, priority);
+					return;
+				}
+			} else if (!strcmp(arg, "tos")) {
+				GETENTRYBYIDX_DEL(tos, word, 4, ":");
+				if (tos) {
+					websWrite(wp, tos);
+					return;
+				}
+			} else if (!strcmp(arg, "fwmark")) {
+				GETENTRYBYIDX_DEL(fwmark, word, 5, ":");
+				if (fwmark) {
+					char *slash = strchr(fwmark, '/');
+					if (slash)
+						*slash = '\0';
+					if (!strcmp(argv[1], "0"))
+						websWrite(wp, fwmark);
+					else {
+						if (slash)
+							websWrite(wp, slash + 1);
+						else
+							websWrite(wp, "0xffffffff");
+					}
+					return;
+				}
+			} else if (!strcmp(arg, "realms")) {
+				GETENTRYBYIDX_DEL(realms, word, 6, ":");
+				if (realms) {
+					websWrite(wp, realms);
+					return;
+				}
+			} else if (!strcmp(arg, "table")) {
+				GETENTRYBYIDX_DEL(table, word, 7, ":");
+				if (table) {
+					websWrite(wp, table);
+					return;
+				}
 			} else if (suppress_prefixlength && !strcmp(arg, "suppress_prefixlength")) {
-				websWrite(wp, suppress_prefixlength);
-				return;
-			} else if (iif && !strcmp(arg, "iif") && !strcmp(iif, argv[1])) {
-				if (!strcmp(argv[1], iif))
+				GETENTRYBYIDX_DEL(suppress_prefixlength, word, 8, ":");
+				if (suppress_prefixlength) {
+					websWrite(wp, suppress_prefixlength);
+					return;
+				}
+			} else if (!strcmp(arg, "iif")) {
+				GETENTRYBYIDX_DEL(iif, word, 9, ":");
+				if (iif && !strcmp(argv[1], iif)) {
 					websWrite(wp, "selected=\"selected\"");
-				return;
-			} else if (iif && !strcmp(arg, "oif") && !strcmp(oif, argv[1])) {
-				if (!strcmp(argv[1], oif))
+					return;
+				}
+			} else if (!strcmp(arg, "oif")) {
+				GETENTRYBYIDX_DEL(oif, word, 15, ":");
+				if (oif && !strcmp(argv[1], oif)) {
 					websWrite(wp, "selected=\"selected\"");
-				return;
-			} else if (nat && !strcmp(arg, "nat")) {
-				websWrite(wp, "%d", get_single_ip(nat, atoi(argv[1])));
-				return;
+					return;
+				}
+			} else if (!strcmp(arg, "nat")) {
+				GETENTRYBYIDX_DEL(nat, word, 10, ":");
+				if (nat) {
+					websWrite(wp, "%d", get_single_ip(nat, atoi(argv[1])));
+					return;
+				}
 			} else if (type && !strcmp(arg, "type")) {
-				if (!strcmp(argv[1], type))
+				GETENTRYBYIDX_DEL(type, word, 11, ":");
+				if (type && !strcmp(argv[1], type)) {
 					websWrite(wp, "selected=\"selected\"");
-				return;
-			} else if (sport && !strcmp(arg, "sport")) {
-				int from, to;
-				sscanf(sport, "%d-%d", &from, &to);
-				if (!strcmp(argv[1], "0"))
-					websWrite(wp, "%d", from);
-				else
-					websWrite(wp, "%d", to);
-				return;
-			} else if (dport && !strcmp(arg, "dport")) {
-				int from, to;
-				sscanf(dport, "%d-%d", &from, &to);
-				if (!strcmp(argv[1], "0"))
-					websWrite(wp, "%d", from);
-				else
-					websWrite(wp, "%d", to);
-				return;
+					return;
+				}
+			} else if (!strcmp(arg, "sport")) {
+				GETENTRYBYIDX_DEL(sport, word, 13, ":");
+				if (sport) {
+					int from, to;
+					sscanf(sport, "%d-%d", &from, &to);
+					if (!strcmp(argv[1], "0"))
+						websWrite(wp, "%d", from);
+					else
+						websWrite(wp, "%d", to);
+					return;
+				}
+			} else if (!strcmp(arg, "dport")) {
+				GETENTRYBYIDX_DEL(dport, word, 14, ":");
+				if (dport) {
+					int from, to;
+					sscanf(dport, "%d-%d", &from, &to);
+					if (!strcmp(argv[1], "0"))
+						websWrite(wp, "%d", from);
+					else
+						websWrite(wp, "%d", to);
+					return;
+				}
 			} else if (ipproto && !strcmp(arg, "ipproto")) {
-				if (!strcmp(argv[1], ipproto))
-					websWrite(wp, "selected=\"selected\"");
-				return;
+				GETENTRYBYIDX_DEL(ipproto, word, 12, ":");
+				if (ipproto) {
+					if (!strcmp(argv[1], ipproto))
+						websWrite(wp, "selected=\"selected\"");
+					return;
+				}
 			}
 			break;
 		}
