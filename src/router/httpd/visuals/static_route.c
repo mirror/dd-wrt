@@ -46,7 +46,7 @@ static void _show_ruleif(webs_t wp, int argc, char_t ** argv, char *page, char *
 
 	foreach(word, sroute, next) {
 		if (which-- == 0) {
-			GETENTRYBYIDX_DEL(ifname, word, index, "><:,");
+			GETENTRYBYIDX_DEL(ifname, word, index, ":");
 			if (!ifname)
 				break;
 			strcpy(ifnamecopy, ifname);
@@ -122,13 +122,13 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	foreach(word, sroute, next) {
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
-			GETENTRYBYIDX(ipaddr, word, 0);
-			GETENTRYBYIDX(netmask, word, 1);
-			GETENTRYBYIDX(gateway, word, 2);
-			GETENTRYBYIDX(metric, word, 3);
-			GETENTRYBYIDX(ifname, word, 4);
-			GETENTRYBYIDX(nat, word, 5);
-			GETENTRYBYIDX(s_flags, word, 6);
+			GETENTRYBYIDX_DEL(ipaddr, word, 0,":");
+			GETENTRYBYIDX_DEL(netmask, word, 1,":");
+			GETENTRYBYIDX_DEL(gateway, word, 2,":");
+			GETENTRYBYIDX_DEL(metric, word, 3,":");
+			GETENTRYBYIDX_DEL(ifname, word, 4,":");
+			GETENTRYBYIDX_DEL(nat, word, 5,":");
+			GETENTRYBYIDX_DEL(s_flags, word, 6,":");
 			int flags = 0;
 			if (s_flags)
 				sscanf(s_flags, "%X", &flags);
@@ -137,11 +137,11 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			int table_en = flags & 0x4;
 			int mtu_en = flags & 0x8;
 			int advmss_en = flags & 0x10;
-			GETENTRYBYIDX(src, word, 7);
-			GETENTRYBYIDX(scope, word, 8);
-			GETENTRYBYIDX(table, word, 9);
-			GETENTRYBYIDX(mtu, word, 10);
-			GETENTRYBYIDX(advmss, word, 11);
+			GETENTRYBYIDX_DEL(src, word, 7,":");
+			GETENTRYBYIDX_DEL(scope, word, 8,":");
+			GETENTRYBYIDX_DEL(table, word, 9,":");
+			GETENTRYBYIDX_DEL(mtu, word, 10,":");
+			GETENTRYBYIDX_DEL(advmss, word, 11,":");
 			if (!ipaddr || !netmask || !gateway || !metric || !ifname)
 				continue;
 			if (!strcmp(arg, "ipaddr")) {
@@ -252,7 +252,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 	foreach(word, sroute, next) {
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
-			GETENTRYBYIDX(s_flags, word, 0);
+			GETENTRYBYIDX_DEL(s_flags, word, 0);
 			int flags = 0;
 			if (s_flags)
 				sscanf(s_flags, "%X", &flags);
@@ -272,21 +272,21 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t ** argv)
 			int sport_en = flags & 0x2000;
 			int dport_en = flags & 0x4000;
 			int oif_en = flags & 0x8000;
-			GETENTRYBYIDX(from, word, 1);
-			GETENTRYBYIDX(to, word, 2);
-			GETENTRYBYIDX(priority, word, 3);
-			GETENTRYBYIDX(tos, word, 4);
-			GETENTRYBYIDX(fwmark, word, 5);
-			GETENTRYBYIDX(realms, word, 6);
-			GETENTRYBYIDX(table, word, 7);
-			GETENTRYBYIDX(suppress_prefixlength, word, 8);
-			GETENTRYBYIDX(iif, word, 9);
-			GETENTRYBYIDX(nat, word, 10);
-			GETENTRYBYIDX(type, word, 11);
-			GETENTRYBYIDX(ipproto, word, 12);
-			GETENTRYBYIDX_DEL(sport, word, 13, "><:,");
-			GETENTRYBYIDX_DEL(dport, word, 14, "><:,");
-			GETENTRYBYIDX_DEL(oif, word, 15, "><:,");
+			GETENTRYBYIDX_DEL(from, word, 1,":");
+			GETENTRYBYIDX_DEL(to, word, 2,":");
+			GETENTRYBYIDX_DEL(priority, word, 3,":");
+			GETENTRYBYIDX_DEL(tos, word, 4,":");
+			GETENTRYBYIDX_DEL(fwmark, word, 5,":");
+			GETENTRYBYIDX_DEL(realms, word, 6,":");
+			GETENTRYBYIDX_DEL(table, word, 7,":");
+			GETENTRYBYIDX_DEL(suppress_prefixlength, word, 8,":");
+			GETENTRYBYIDX_DEL(iif, word, 9,":");
+			GETENTRYBYIDX_DEL(nat, word, 10,":");
+			GETENTRYBYIDX_DEL(type, word, 11,":");
+			GETENTRYBYIDX_DEL(ipproto, word, 12,":");
+			GETENTRYBYIDX_DEL(sport, word, 13, ":");
+			GETENTRYBYIDX_DEL(dport, word, 14, ":");
+			GETENTRYBYIDX_DEL(oif, word, 15, ":");
 
 			if (!strcmp(arg, "not")) {
 				if (not)
