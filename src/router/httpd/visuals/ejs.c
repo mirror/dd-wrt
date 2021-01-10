@@ -3239,10 +3239,10 @@ int tf_webWriteJS(webs_t wp, const char *s)
 
 	n = 0;
 	r = 0;
-	for (; *s; s++) {
+	for (; *c; c++) {
 		if (*c == 0xc3) {
-			s++;
-			switch (*s) {
+			c++;
+			switch (*c) {
 			case 0xa3:
 				n += sprintf(buf + n, "&auml;");
 				break;
