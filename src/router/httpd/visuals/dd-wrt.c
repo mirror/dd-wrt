@@ -1300,26 +1300,6 @@ void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val)
 	websWrite(wp, "</div>\n");
 }
 
-#define showRadioDefaultOn(wp, propname, nvname) \
-	do { \
-	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,1)); \
-	} while(0)
-
-#define showRadioDefaultOff(wp, propname, nvname) \
-	do { \
-	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,0)); \
-	} while(0)
-
-void showRadio(webs_t wp, char *propname, char *nvname)
-{
-	showRadioDefaultOff(wp, propname, nvname);
-}
-
-void showRadioInv(webs_t wp, char *propname, char *nvname)
-{
-	showRadioDefaultOn(wp, propname, nvname);
-}
-
 #ifdef HAVE_MADWIFI
 void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable)
 {
