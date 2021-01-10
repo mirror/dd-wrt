@@ -1305,6 +1305,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	char mfp[16];
 	char ft[16];
 	char tmp[256];
+	char rekey[16];
 	char *debug;
 	char *types;
 
@@ -1556,8 +1557,9 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "okc=0\n");
 		fprintf(fp, "disable_pmksa_caching=1\n");
 	}
-
+	sprintf(rekey, "%s_wpa_strict_rekey", prefix);
 	fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
+	fprintf(fp, "wpa_strict_rekey=%d\n", nvram_default_geti("%s_wpa_strict_rekey", 1));
 	if (ispsk3 || ispsk || ispsk2 || ispsk2sha256)
 		addWPS(fp, prefix, 1);
 }
