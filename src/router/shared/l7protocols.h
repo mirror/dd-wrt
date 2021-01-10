@@ -14,6 +14,7 @@ typedef struct _l7filters {
 #define L7_ONLY 0
 #define PDPI_ONLY 1
 #define NDPI_ONLY 2
+#define WINDDOWS_SPY 3
 
 #ifdef HAVE_OPENDPI
 #define DPI 2			//open dpi based
@@ -556,6 +557,9 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "whois-das", NDPI_ONLY },
 	{ "wikipedia", NDPI_ONLY },
+#endif
+	{ "windows-telemetry", WINDOWS_SPY },
+#ifdef HAVE_OPENDPI
 	{ "windowsupdate", NDPI_ONLY },
 #endif
 	{ "winmx", DPI },
