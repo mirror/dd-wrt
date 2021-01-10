@@ -219,13 +219,13 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t ** argv)
 		}
 		char *p = strchr(priority, ':');
 		*p = 0;
-		if (!strcmp(iif, nvram_safe_get("lan_ifname")))
+		if (iif[0] &&!strcmp(iif, nvram_safe_get("lan_ifname")))
 			strcpy(iif, "LAN");
-		if (!strcmp(iif, nvram_safe_get("wan_ifname")))
+		if (iif[0] && !strcmp(iif, nvram_safe_get("wan_ifname")))
 			strcpy(iif, "WAN");
-		if (!strcmp(oif, nvram_safe_get("lan_ifname")))
+		if (oif[0] && !strcmp(oif, nvram_safe_get("lan_ifname")))
 			strcpy(oif, "LAN");
-		if (!strcmp(oif, nvram_safe_get("wan_ifname")))
+		if (oif[0] &&!strcmp(oif, nvram_safe_get("wan_ifname")))
 			strcpy(oif, "WAN");
 		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'\n", blank ? ' ' : ',', priority, not ? "!" : "", from, to, tos, fwmark, ipproto, sport, dport, getNetworkLabel(wp, iif),
 			  getNetworkLabel(wp, oif), lookup, nat);
