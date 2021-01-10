@@ -2529,6 +2529,7 @@ wpa.legend="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
 wpa.mfp="802.11w Management Frame Protection";
 wpa.radius="Radius";
+wpa.wpa_strict_rekey="WPA Strict Rekeying";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Key Renewal Interval (in seconds)";
 wpa.radius_ipaddr="RADIUS Server Address";
