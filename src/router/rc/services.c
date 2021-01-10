@@ -1548,6 +1548,7 @@ static int single_service_helper(void)
 	nvram_unset("nowebaction");
 	nvram_unset("action_service");
 	nvram_unset("action_service_arg1");
+	nvram_unset("action_service_arg2");
 	nvram_seti("service_running", 0);
 }
 
