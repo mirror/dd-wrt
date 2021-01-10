@@ -180,6 +180,27 @@ EJ_VISIBLE void wps_ap_register(webs_t wp);
 EJ_VISIBLE void wps_forcerelease(webs_t wp);
 EJ_VISIBLE void wps_configure(webs_t wp);
 
+void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val);
+
+#define showRadioDefaultOn(wp, propname, nvname) \
+	do { \
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,1)); \
+	} while(0)
+
+#define showRadioDefaultOff(wp, propname, nvname) \
+	do { \
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,0)); \
+	} while(0)
+
+static void showRadio(webs_t wp, char *propname, char *nvname)
+{
+	showRadioDefaultOff(wp, propname, nvname);
+}
+
+static void showRadioInv(webs_t wp, char *propname, char *nvname)
+{
+	showRadioDefaultOn(wp, propname, nvname);
+}
 
 #define service_restart() kill(1, SIGUSR1)
 /*
