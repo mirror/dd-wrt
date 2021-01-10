@@ -558,7 +558,7 @@ l7filters filters_list[] = {
 	{ "whois-das", NDPI_ONLY },
 	{ "wikipedia", NDPI_ONLY },
 #endif
-	{ "windows-telemetry", WINDOWS_SPY },
+	{ "windows-telemetry", L7_ONLY },
 #ifdef HAVE_OPENDPI
 	{ "windowsupdate", NDPI_ONLY },
 #endif
