@@ -3235,22 +3235,48 @@ int tf_webWriteJS(webs_t wp, const char *s)
 	char buf[512];
 	int n;
 	int r;
+	unsigned char *c = (unsigned char *)s;
 
 	n = 0;
 	r = 0;
 	for (; *s; s++) {
-		if (*s == '<') {
+		if (*c == 0xc3) {
+			s++;
+			switch (*s) {
+			case 0xa3:
+				n += sprintf(buf + n, "&auml;");
+				break;
+			case 0xb6:
+				n += sprintf(buf + n, "&ouml;");
+				break;
+			case 0xbc:
+				n += sprintf(buf + n, "&uuml;");
+				break;
+			case 0xc4:
+				n += sprintf(buf + n, "&Auml;");
+				break;
+			case 0xd6:
+				n += sprintf(buf + n, "&Ouml;");
+				break;
+			case 0xdc:
+				n += sprintf(buf + n, "&Uuml;");
+				break;
+			case 0xdf:
+				n += sprintf(buf + n, "&szlig;");
+				break;
+			default:
+				s--;
+			}
+		} else if (*c == '<') {
 			n += sprintf(buf + n, "&lt;");
-		} else if (*s == '<') {
-			n += sprintf(buf + n, "&lt;");
-		} else if (*s == '\'') {
+		} else if (*c == '\'') {
 			continue;
-		} else if (*s == '>') {
+		} else if (*c == '>') {
 			n += sprintf(buf + n, "&gt;");
-		} else if ((*s != '"') && (*s != '\\') && (*s != '/') && (*s != '*') && (isprint(*s))) {
-			buf[n++] = *s;
+		} else if ((*c != '"') && (*c != '\\') && (*c != '/') && (*c != '*') && (isprint(*c))) {
+			buf[n++] = *c;
 		} else {
-			n += sprintf(&buf[n], "\\x%02x", *s);
+			n += sprintf(&buf[n], "\\x%02x", *c);
 		}
 		if (n > (sizeof(buf) - 10)) {	// ! extra space for \xHH
 			buf[n] = 0;
