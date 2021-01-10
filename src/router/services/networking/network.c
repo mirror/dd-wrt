@@ -5080,9 +5080,13 @@ static void apply_rules(char *method, char *pbr)
 {
 	char word[512], *tmp;
 	foreach(word, pbr, tmp) {
-		char cmd[256];
-		strcpy(cmd, "ip rule ");
-		strcat(cmd, method);
+		char cmd[256] = { 0 };
+		char add[256];
+		char del[256];
+		strcpy(add, "ip rule ");
+		strcat(add, method);
+		strcpy(del, "ip rule ");
+		strcat(del, "del");
 		GETENTRYBYIDX(s_flags, word, 0);
 		int flags = 0;
 		if (s_flags)
@@ -5150,9 +5154,16 @@ static void apply_rules(char *method, char *pbr)
 			sprintf(cmd, "%s sport %s", cmd, sport);
 		if (dport_en && dport)
 			sprintf(cmd, "%s dport %s", cmd, dport);
-		dd_debug(DEBUG_CONSOLE, "%s\n", cmd);
-		if (strlen(cmd) > sizeof("ip rule del"))
-			system(cmd);
+		if (strlen(cmd)) {
+			strcat(add, cmd);
+			if (!strcmp(method, "add")) {
+				strcat(del, cmd);
+				dd_debug(DEBUG_CONSOLE, "%s\n", del);
+				system(del);
+			}
+			dd_debug(DEBUG_CONSOLE, "%s\n", add);
+			system(add);
+		}
 	}
 
 }
