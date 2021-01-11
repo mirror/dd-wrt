@@ -351,6 +351,11 @@ int dhcp6c_state_main(int argc, char **argv)
 		inet_ntop(AF_INET6, &addr, prefix, sizeof(prefix));
 
 		c |= nvram_change("ipv6_prefix", prefix);
+		if (c) {
+//			char loopback[128];
+//			sprintf(loopback, "%s/%d", prefix, r);
+//			eval("ip", "-6", "route", "unreachable", loopback, "dev", "lo");
+		}
 	}
 
 	c |= nvram_change("ipv6_get_dns", getenv("new_domain_name_servers"));
