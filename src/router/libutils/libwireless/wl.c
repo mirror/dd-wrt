@@ -106,7 +106,7 @@ int has_2ghz(const char *prefix)
 {
 	INITVALUECACHE();
 #ifdef HAVE_MVEBU
-	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "wlan0", 4)) {
+	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "wlan0", 5)) {
 		RETURNVALUE(0);
 	}
 #endif
