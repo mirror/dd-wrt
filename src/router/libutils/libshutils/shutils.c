@@ -1098,8 +1098,15 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 			newlist = strpbrk(list, delimiters_short);
 		else
 			newlist = strpbrk(list, delimiters);
-		if (!newlist)
-			return NULL;
+		if (!newlist) {
+			newlist = list + strlen(list);
+			if (newlist == list)
+				return NULL;
+			if (i == idx)
+				break;
+			else
+				return NULL;
+		}
 		i++;
 		if (i > idx)
 			break;
