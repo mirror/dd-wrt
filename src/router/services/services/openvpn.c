@@ -93,7 +93,7 @@ void create_openvpnrules(FILE * fp)
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 //              fprintf(fp, "ip route flush table 10\n");
 //              fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n" "\t ip rule add from $IP table 10\n" "done\n"); //egc: deleted and replaced by next line
-		fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//' \"/tmp/openvpncl/policy_ips\" | while read IP; do ip rule add table 10 from $IP; done\n");
+		fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//;/^$/d' \"/tmp/openvpncl/policy_ips\" | while read IP; do [[ \"$IP\" == [0-9]* ]] && IP=\"from $IP\"; ip rule add table 10 $IP; done\n");
 /*              if (nvram_match("openvpncl_tuntap", "tap"))
                         fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n"); //needs investigation cause in TAP mode no gateway is received
                 else */
