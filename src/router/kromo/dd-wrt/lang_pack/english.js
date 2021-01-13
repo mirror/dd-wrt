@@ -1617,7 +1617,7 @@ routetbl.ipproto="IP Protocol";
 
 // ** Routing.asp **//
 var route=new Object();
-route.rule_name="Rule Name";
+route.rule_name="Policy Name";
 route.global="Global";
 route.nowhere="Nowhere";
 route.host="Host";
@@ -1673,11 +1673,12 @@ route.rip2_copt="RIP2 Config Style";
 
 route.gateway_legend="Dynamic Routing";
 route.static_legend="Routing Tables";
-route.static_setno="Select set number";
+route.static_setno="Select Route";
+route.policy_setno="Select Policy";
 route.static_name="Route Name";
 route.static_ip="Destination LAN NET";
-route.rules="Routing Rules";
-route.static_name="Rule Name";
+route.rules="Routing Policies";
+route.static_name="Route Name";
 
 //help container
 var hroute=new Object();
