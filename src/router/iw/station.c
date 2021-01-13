@@ -598,12 +598,13 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
 				printf("no");
 		}
 
-		printf("\n\tCompression:\t");
-		if (nla_get_u32(sinfo[NL80211_STA_INFO_RX_COMPRESSED]))
-			printf("yes");
-		else
-			printf("no");
 	}
+
+	printf("\n\tCompression:\t");
+	if (sinfo[NL80211_STA_INFO_RX_COMPRESSED] && nla_get_u32(sinfo[NL80211_STA_INFO_RX_COMPRESSED]))
+		printf("yes");
+	else
+		printf("no");
 
 	if (sinfo[NL80211_STA_INFO_TID_STATS] && arg != NULL &&
 	    !strcmp((char *)arg, "-v"))
