@@ -476,7 +476,7 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 char *cidr_to_nm(char *netmask, unsigned int netmask_cidr)
 {
 	strcpy(netmask, "");
-	unsigned int nm = (((unsigned long long)1 << 32) - ((unsigned long long)(1 << (32 - netmask_cidr))));
+	unsigned int nm = (((unsigned long long)1 << 32) - ((unsigned long long)((unsigned long long)1 << ((unsigned long long)32 - (unsigned long long)netmask_cidr))));
 	sprintf(netmask, "%d.%d.%d.%d", (nm >> 24) & 0xff, (nm >> 16) & 0xff, (nm >> 8) & 0xff, nm & 0xff);
 	return netmask;
 }
