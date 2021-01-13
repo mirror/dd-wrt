@@ -429,7 +429,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("route.rules"); %></legend>
 								<div class="setting">
-									<div class="label"><% tran("route.static_setno"); %></div>
+									<div class="label"><% tran("route.policy_setno"); %></div>
 									<select size="1" name="rule_page" onchange="SelRule(this.form.rule_page.selectedIndex,this.form)">
 										<% pbr_rule_table("select"); %>
 									</select>&nbsp;&nbsp;
