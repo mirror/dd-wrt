@@ -3573,7 +3573,7 @@ write_nvram:
 
 	strcpy(backuproute, &old[atoi(page) * PBR_LINE_SIZE]);
 
-	snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], PBR_LINE_SIZE, "%X:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", flags, from, to, priority, tos, fw, realms, table, suppress_prefixlength, iif, nat, type, ipproto,
+	snprintf(&old[atoi(page) * PBR_LINE_SIZE], PBR_LINE_SIZE, "%X:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s", flags, from, to, priority, tos, fw, realms, table, suppress_prefixlength, iif, nat, type, ipproto,
 		 sport, dport, oif);
 
 	httpd_filter_name(name, new_name, sizeof(new_name), SET);
@@ -3589,10 +3589,7 @@ write_nvram:
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
 		if (strcmp(&old_name[i * ROUTE_NAME_SIZE], "")) {
-			fprintf(stderr, "add %s\n", &old[i * PBR_LINE_SIZE]);
-			fprintf(stderr, "before = %s\n", buf);
 			cur += snprintf(cur, buf + (STATIC_ROUTE_PAGE * PBR_LINE_SIZE) - cur, "%s%s", cur == buf ? "" : " ", &old[i * PBR_LINE_SIZE]);
-			fprintf(stderr, "result = %s\n", buf);
 			cur_name += snprintf(cur_name, buf_name + (STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE) - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * ROUTE_NAME_SIZE]);
 		}
 	}
