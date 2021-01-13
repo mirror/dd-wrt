@@ -5236,7 +5236,7 @@ void start_set_routes(void)
 			continue;
 		if (!strcmp(ipaddr, "0.0.0.0") && !strcmp(gateway, "0.0.0.0"))
 			continue;
-		if (!strcmp(ipaddr, "0.0.0.0")) {
+		if (!strcmp(ipaddr, "0.0.0.0") && !table_en) {
 			eval("route", "del", "default");
 			eval("route", "add", "default", "gw", gateway);
 		}
