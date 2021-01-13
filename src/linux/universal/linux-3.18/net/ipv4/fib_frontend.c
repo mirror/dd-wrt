@@ -265,7 +265,7 @@ __be32 fib_compute_spec_dst(struct sk_buff *skb)
 		fl4.flowi4_iif = LOOPBACK_IFINDEX;
 		fl4.daddr = ip_hdr(skb)->saddr;
 		fl4.saddr = 0;
-		fl4.flowi4_tos = RT_TOS(ip_hdr(skb)->tos);
+		fl4.flowi4_tos = ip_hdr(skb)->tos & IPTOS_RT_MASK;
 		fl4.flowi4_scope = scope;
 		fl4.flowi4_mark = vmark ? skb->mark : 0;
 		if (!fib_lookup(net, &fl4, &res))
