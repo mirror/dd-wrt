@@ -278,9 +278,11 @@ static void print_mcs_index(const __u8 *mcs)
 		} else if (!prev_cont) {
 			prev_cont = 1;
 		}
-		prev_bit = mcs_bit;
+		if (mcs_bit != 32)
+			prev_bit = mcs_bit;
+		else
+			prev_cont = 1;
 	}
-
 	if (prev_cont) {
 		if (prev_bit == 7)
 			rate_count = 150;
@@ -860,7 +862,6 @@ static void print_supprates(const uint8_t type, uint8_t len, const uint8_t * dat
 	int i;
 
 	printf(" ");
-
 	for (i = 0; i < len; i++) {
 		int r = data[i] & 0x7f;
 		printf("%d.%d%s _%d_", r / 2, 5 * (r & 1), data[i] & 0x80 ? "*" : "", rate_count);
