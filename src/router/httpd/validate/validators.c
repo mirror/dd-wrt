@@ -3548,6 +3548,12 @@ write_nvram:
 	if (!strcmp(iif, "wan")) {
 		iif = nvram_safe_get("wan_ifname");
 	}
+	if (!strcmp(oif, "lan")) {
+		oif = nvram_safe_get("lan_ifname");
+	}
+	if (!strcmp(oif, "wan")) {
+		oif = nvram_safe_get("wan_ifname");
+	}
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
 		strcpy(&old[i * PBR_LINE_SIZE], "");
@@ -3582,7 +3588,10 @@ write_nvram:
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
 		if (strcmp(&old_name[i * ROUTE_NAME_SIZE], "")) {
+			fprintf(stderr, "add %s\n", &old[i * PBR_LINE_SIZE]);
+			fprintf(stderr, "before = %s\n", buf);
 			cur += snprintf(cur, buf + (STATIC_ROUTE_PAGE * PBR_LINE_SIZE) - cur, "%s%s", cur == buf ? "" : " ", &old[i * PBR_LINE_SIZE]);
+			fprintf(stderr, "result = %s\n", buf);
 			cur_name += snprintf(cur_name, buf_name + (STATIC_ROUTE_PAGE * ROUTE_NAME_SIZE) - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * ROUTE_NAME_SIZE]);
 		}
 	}
