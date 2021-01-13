@@ -415,7 +415,7 @@ static int iprule_modify(int cmd, char **argv)
 			addattr_l(&req.n, sizeof(req), RTA_IIF, *argv, strlen(*argv)+1);
 		} else if (key == ARG_oif){
 			NEXT_ARG();
-			addattr_l(&req.n, sizeof(req), RTA_OIF, *argv, strlen(*argv)+1);
+			addattr_l(&req.n, sizeof(req), FRA_OIFNAME, *argv, strlen(*argv)+1);
 		} else if (key == ARG_nat ||
 			   key == ARG_map_to
 		) {
