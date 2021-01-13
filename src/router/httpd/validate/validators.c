@@ -3357,8 +3357,9 @@ write_nvram:
 
 	nvram_set(v->name, buf);
 	nvram_set("static_route_name", buf_name);
+#ifdef HAVE_MICRO
 	nvram_commit();
-
+#endif
 	free(old_name);
 	free(old);
 	free(buf_name);
