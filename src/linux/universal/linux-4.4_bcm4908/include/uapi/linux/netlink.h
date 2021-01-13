@@ -7,7 +7,7 @@
 #define __LINUX_NETLINK_H
 #endif 
 
-#include <linux/kernel.h>
+#include <linux/const.h>
 #include <linux/socket.h> /* for __kernel_sa_family_t */
 #include <linux/types.h>
 
