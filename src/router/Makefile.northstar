@@ -95,7 +95,7 @@ ifeq ($(ARCH),armeb)
 export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb 
 endif
 ifeq ($(ARCH),arm)
-export COPTS:=$(BASEOPT) -pipe -mcpu=cortex-a9 -mtune=cortex-a9  -msoft-float -mfloat-abi=soft -fno-caller-saves -fno-plt
+export COPTS:=$(BASEOPT) -pipe -mcpu=cortex-a9 -mtune=cortex-a9  -msoft-float -mfloat-abi=soft -fno-caller-saves -fno-plt -fcommon
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
@@ -499,6 +499,8 @@ endif
 	tools/lzma_4k e $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/vmlinuz.lzma
 	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
 #	./tools/trx -m 32000000 -o $(ARCH)-uclibc/northstar-firmware-jffs2.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/dd-wrt.jffs2
+	dd if=/dev/zero of=$(ARCH)-uclibc/pad bs=65536 count=1
+	cat $(ARCH)-uclibc/pad >> $(ARCH)-uclibc/root.fs
 	./tools/trx -m 40000000 -o $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/vmlinuz.lzma -a 131072 $(ARCH)-uclibc/root.fs
 	./tools/trx -m 40000000 -o tools/tplink/kernel.hdr0 $(ARCH)-uclibc/vmlinuz.lzma
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC9 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc9.bin
