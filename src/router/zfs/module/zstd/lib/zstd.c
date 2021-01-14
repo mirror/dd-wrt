@@ -31,10 +31,9 @@
 /*
  * Copyright (c) 2016-2020, Yann Collet, Facebook, Inc.
  * Copyright (c) 2019-2020, Michael Niewöhner
+ * Copyright (c) 2020, Kjeld Schouten-Lebbing
  */
 
-#define ZSTD_NO_UNUSED_FUNCTIONS
-#define DEBUGLEVEL 0
 #define	MEM_MODULE
 #define	XXH_NAMESPACE ZSTD_
 #define	XXH_PRIVATE_API
@@ -43,6 +42,128 @@
 #define	ZSTD_LIB_DICTBUILDER 0
 #define	ZSTD_LIB_DEPRECATED 0
 #define	ZSTD_NOBENCH
+#define	ZSTD_NODICT
+#define	ZSTD_NO_INTRINSICS
+#define	ZSTD_NO_UNUSED_FUNCTIONS
+#define	ZSTD_ADDRESS_SANITIZER 0
+#define	ZSTD_MEMORY_SANITIZER 0
+
+/* Include zstd_deps.h first with all the options we need enabled. */
+#define	ZSTD_DEPS_NEED_MALLOC
+#define	ZSTD_DEPS_NEED_MATH64
+/**** start inlining common/zstd_deps.h ****/
+/*
+ * Copyright (c) 2016-2020, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under both the BSD-style license (found in the
+ * LICENSE file in the root directory of this source tree) and the GPLv2 (found
+ * in the COPYING file in the root directory of this source tree).
+ * You may select, at your option, one of the above-listed licenses.
+ */
+
+/* This file provides common libc dependencies that zstd requires.
+ * The purpose is to allow replacing this file with a custom implementation
+ * to compile zstd without libc support.
+ */
+
+/* Need:
+ * NULL
+ * INT_MAX
+ * UINT_MAX
+ * ZSTD_memcpy()
+ * ZSTD_memset()
+ * ZSTD_memmove()
+ */
+#ifndef ZSTD_DEPS_COMMON
+#define ZSTD_DEPS_COMMON
+
+#include <limits.h>
+#include <stddef.h>
+#include <string.h>
+
+#if defined(__GNUC__) && __GNUC__ >= 4
+# define ZSTD_memcpy(d,s,l) __builtin_memcpy((d),(s),(l))
+# define ZSTD_memmove(d,s,l) __builtin_memmove((d),(s),(l))
+# define ZSTD_memset(p,v,l) __builtin_memset((p),(v),(l))
+#else
+# define ZSTD_memcpy(d,s,l) memcpy((d),(s),(l))
+# define ZSTD_memmove(d,s,l) memmove((d),(s),(l))
+# define ZSTD_memset(p,v,l) memset((p),(v),(l))
+#endif
+
+#endif /* ZSTD_DEPS_COMMON */
+
+/* Need:
+ * ZSTD_malloc()
+ * ZSTD_free()
+ * ZSTD_calloc()
+ */
+#ifdef ZSTD_DEPS_NEED_MALLOC
+#ifndef ZSTD_DEPS_MALLOC
+#define ZSTD_DEPS_MALLOC
+
+#include <stdlib.h>
+
+#define ZSTD_malloc(s) malloc(s)
+#define ZSTD_calloc(n,s) calloc((n), (s))
+#define ZSTD_free(p) free((p))
+
+#endif /* ZSTD_DEPS_MALLOC */
+#endif /* ZSTD_DEPS_NEED_MALLOC */
+
+/*
+ * Provides 64-bit math support.
+ * Need:
+ * U64 ZSTD_div64(U64 dividend, U32 divisor)
+ */
+#ifdef ZSTD_DEPS_NEED_MATH64
+#ifndef ZSTD_DEPS_MATH64
+#define ZSTD_DEPS_MATH64
+
+#define ZSTD_div64(dividend, divisor) ((dividend) / (divisor))
+
+#endif /* ZSTD_DEPS_MATH64 */
+#endif /* ZSTD_DEPS_NEED_MATH64 */
+
+/* Need:
+ * assert()
+ */
+#ifdef ZSTD_DEPS_NEED_ASSERT
+#ifndef ZSTD_DEPS_ASSERT
+#define ZSTD_DEPS_ASSERT
+
+#include <assert.h>
+
+#endif /* ZSTD_DEPS_ASSERT */
+#endif /* ZSTD_DEPS_NEED_ASSERT */
+
+/* Need:
+ * ZSTD_DEBUG_PRINT()
+ */
+#ifdef ZSTD_DEPS_NEED_IO
+#ifndef ZSTD_DEPS_IO
+#define ZSTD_DEPS_IO
+
+#include <stdio.h>
+#define ZSTD_DEBUG_PRINT(...) fprintf(stderr, __VA_ARGS__)
+
+#endif /* ZSTD_DEPS_IO */
+#endif /* ZSTD_DEPS_NEED_IO */
+
+/* Only requested when <stdint.h> is known to be present.
+ * Need:
+ * intptr_t
+ */
+#ifdef ZSTD_DEPS_NEED_STDINT
+#ifndef ZSTD_DEPS_STDINT
+#define ZSTD_DEPS_STDINT
+
+#include <stdint.h>
+
+#endif /* ZSTD_DEPS_STDINT */
+#endif /* ZSTD_DEPS_NEED_STDINT */
+/**** ended inlining common/zstd_deps.h ****/
 
 /**** start inlining common/debug.c ****/
 /* ******************************************************************
@@ -137,125 +258,12 @@ extern "C" {
 
 #if (DEBUGLEVEL>=1)
 #  define ZSTD_DEPS_NEED_ASSERT
+/**** skipping file: zstd_deps.h ****/
 #else
 #  ifndef assert   /* assert may be already defined, due to prior #include <assert.h> */
 #    define assert(condition) ((void)0)   /* disable assert (default) */
 #  endif
 #endif
-/**** start inlining zstd_deps.h ****/
-/*
- * Copyright (c) 2016-2020, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under both the BSD-style license (found in the
- * LICENSE file in the root directory of this source tree) and the GPLv2 (found
- * in the COPYING file in the root directory of this source tree).
- * You may select, at your option, one of the above-listed licenses.
- */
-
-/* This file provides common libc dependencies that zstd requires.
- * The purpose is to allow replacing this file with a custom implementation
- * to compile zstd without libc support.
- */
-
-/* Need:
- * NULL
- * INT_MAX
- * UINT_MAX
- * ZSTD_memcpy()
- * ZSTD_memset()
- * ZSTD_memmove()
- */
-#ifndef ZSTD_DEPS_COMMON
-#define ZSTD_DEPS_COMMON
-
-#include <limits.h>
-#include <stddef.h>
-#include <string.h>
-
-#if defined(__GNUC__) && __GNUC__ >= 4
-# define ZSTD_memcpy(d,s,l) __builtin_memcpy((d),(s),(l))
-# define ZSTD_memmove(d,s,l) __builtin_memmove((d),(s),(l))
-# define ZSTD_memset(p,v,l) __builtin_memset((p),(v),(l))
-#else
-# define ZSTD_memcpy(d,s,l) memcpy((d),(s),(l))
-# define ZSTD_memmove(d,s,l) memmove((d),(s),(l))
-# define ZSTD_memset(p,v,l) memset((p),(v),(l))
-#endif
-
-#endif /* ZSTD_DEPS_COMMON */
-
-/* Need:
- * ZSTD_malloc()
- * ZSTD_free()
- * ZSTD_calloc()
- */
-#define ZSTD_DEPS_NEED_MALLOC
-#ifdef ZSTD_DEPS_NEED_MALLOC
-#ifndef ZSTD_DEPS_MALLOC
-#define ZSTD_DEPS_MALLOC
-
-#include <stdlib.h>
-
-#define ZSTD_malloc(s) malloc(s)
-#define ZSTD_calloc(n,s) calloc((n), (s))
-#define ZSTD_free(p) free((p))
-
-#endif /* ZSTD_DEPS_MALLOC */
-#endif /* ZSTD_DEPS_NEED_MALLOC */
-
-/*
- * Provides 64-bit math support.
- * Need:
- * U64 ZSTD_div64(U64 dividend, U32 divisor)
- */
-#define ZSTD_DEPS_NEED_MATH64
-#ifdef ZSTD_DEPS_NEED_MATH64
-#ifndef ZSTD_DEPS_MATH64
-#define ZSTD_DEPS_MATH64
-
-#define ZSTD_div64(dividend, divisor) ((dividend) / (divisor))
-
-#endif /* ZSTD_DEPS_MATH64 */
-#endif /* ZSTD_DEPS_NEED_MATH64 */
-
-/* Need:
- * assert()
- */
-#ifdef ZSTD_DEPS_NEED_ASSERT
-#ifndef ZSTD_DEPS_ASSERT
-#define ZSTD_DEPS_ASSERT
-
-#include <assert.h>
-
-#endif /* ZSTD_DEPS_ASSERT */
-#endif /* ZSTD_DEPS_NEED_ASSERT */
-
-/* Need:
- * ZSTD_DEBUG_PRINT()
- */
-#ifdef ZSTD_DEPS_NEED_IO
-#ifndef ZSTD_DEPS_IO
-#define ZSTD_DEPS_IO
-
-#include <stdio.h>
-#define ZSTD_DEBUG_PRINT(...) fprintf(stderr, __VA_ARGS__)
-
-#endif /* ZSTD_DEPS_IO */
-#endif /* ZSTD_DEPS_NEED_IO */
-
-/* Only requested when <stdint.h> is known to be present.
- * Need:
- * intptr_t
- */
-#ifdef ZSTD_DEPS_NEED_STDINT
-#ifndef ZSTD_DEPS_STDINT
-#define ZSTD_DEPS_STDINT
-
-#include <stdint.h>
-
-#endif /* ZSTD_DEPS_STDINT */
-#endif /* ZSTD_DEPS_NEED_STDINT */
 
 #if (DEBUGLEVEL>=2)
 #  define ZSTD_DEPS_NEED_IO
@@ -3325,12 +3333,11 @@ static size_t FSE_buildDTable_internal(FSE_DTable* dt, const short* normalizedCo
     return 0;
 }
 
-#ifndef ZSTD_NO_UNUSED_FUNCTIONS
 size_t FSE_buildDTable_wksp(FSE_DTable* dt, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize)
 {
     return FSE_buildDTable_internal(dt, normalizedCounter, maxSymbolValue, tableLog, workSpace, wkspSize);
 }
-#endif
+
 
 #ifndef FSE_COMMONDEFS_ONLY
 
@@ -8156,6 +8163,7 @@ const char* ZSTD_versionString(void) { return ZSTD_VERSION_STRING; }
 *  ZSTD Error Management
 ******************************************/
 #undef ZSTD_isError   /* defined within zstd_internal.h */
+#define ZSTD_isError zfs_ZSTD_isError
 /*! ZSTD_isError() :
  *  tells if a return value is an error code
  *  symbol is required for external callers */
@@ -15131,6 +15139,15 @@ size_t ZSTD_CCtx_refCDict(ZSTD_CCtx* cctx, const ZSTD_CDict* cdict)
     cctx->cdict = cdict;
     return 0;
 }
+
+size_t ZSTD_CCtx_refThreadPool(ZSTD_CCtx* cctx, ZSTD_threadPool* pool)
+{
+    RETURN_ERROR_IF(cctx->streamStage != zcss_init, stage_wrong,
+                    "Can't ref a pool when ctx not in init stage.");
+    cctx->pool = pool;
+    return 0;
+}
+
 size_t ZSTD_CCtx_refPrefix(ZSTD_CCtx* cctx, const void* prefix, size_t prefixSize)
 {
     return ZSTD_CCtx_refPrefix_advanced(cctx, prefix, prefixSize, ZSTD_dct_rawContent);
@@ -16676,6 +16693,22 @@ size_t ZSTD_generateSequences(ZSTD_CCtx* zc, ZSTD_Sequence* outSeqs,
     ZSTD_compress2(zc, dst, dstCapacity, src, srcSize);
     ZSTD_customFree(dst, ZSTD_defaultCMem);
     return zc->seqCollector.seqIndex;
+}
+
+size_t ZSTD_mergeBlockDelimiters(ZSTD_Sequence* sequences, size_t seqsSize) {
+    size_t in = 0;
+    size_t out = 0;
+    for (; in < seqsSize; ++in) {
+        if (sequences[in].offset == 0 && sequences[in].matchLength == 0) {
+            if (in != seqsSize - 1) {
+                sequences[in+1].litLength += sequences[in].litLength;
+            }
+        } else {
+            sequences[out] = sequences[in];
+            ++out;
+        }
+    }
+    return out;
 }
 
 /* Unrolled loop to read four size_ts of input at a time. Returns 1 if is RLE, 0 if not. */
@@ -18953,6 +18986,47 @@ static size_t ZSTD_compressSequences_internal(ZSTD_CCtx* cctx,
         }
     }
 
+    return cSize;
+}
+
+size_t ZSTD_compressSequences(ZSTD_CCtx* const cctx, void* dst, size_t dstCapacity,
+                              const ZSTD_Sequence* inSeqs, size_t inSeqsSize,
+                              const void* src, size_t srcSize) {
+    BYTE* op = (BYTE*)dst;
+    size_t cSize = 0;
+    size_t compressedBlocksSize = 0;
+    size_t frameHeaderSize = 0;
+
+    /* Transparent initialization stage, same as compressStream2() */
+    DEBUGLOG(3, "ZSTD_compressSequences()");
+    assert(cctx != NULL);
+    FORWARD_IF_ERROR(ZSTD_CCtx_init_compressStream2(cctx, ZSTD_e_end, srcSize), "CCtx initialization failed");
+    /* Begin writing output, starting with frame header */
+    frameHeaderSize = ZSTD_writeFrameHeader(op, dstCapacity, &cctx->appliedParams, srcSize, cctx->dictID);
+    op += frameHeaderSize;
+    dstCapacity -= frameHeaderSize;
+    cSize += frameHeaderSize;
+    if (cctx->appliedParams.fParams.checksumFlag && srcSize) {
+        XXH64_update(&cctx->xxhState, src, srcSize);
+    }
+    /* cSize includes block header size and compressed sequences size */
+    compressedBlocksSize = ZSTD_compressSequences_internal(cctx,
+                                                           op, dstCapacity,
+                                                           inSeqs, inSeqsSize,
+                                                           src, srcSize);
+    FORWARD_IF_ERROR(compressedBlocksSize, "Compressing blocks failed!");
+    cSize += compressedBlocksSize;
+    dstCapacity -= compressedBlocksSize;
+
+    if (cctx->appliedParams.fParams.checksumFlag) {
+        U32 const checksum = (U32) XXH64_digest(&cctx->xxhState);
+        RETURN_ERROR_IF(dstCapacity<4, dstSize_tooSmall, "no room for checksum");
+        DEBUGLOG(4, "Write checksum : %08X", (unsigned)checksum);
+        MEM_writeLE32((char*)dst + cSize, checksum);
+        cSize += 4;
+    }
+
+    DEBUGLOG(3, "Final compressed size: %zu", cSize);
     return cSize;
 }
 
@@ -28396,6 +28470,27 @@ static int ZSTD_dParam_withinBounds(ZSTD_dParameter dParam, int value)
 #define CHECK_DBOUNDS(p,v) {                \
     RETURN_ERROR_IF(!ZSTD_dParam_withinBounds(p, v), parameter_outOfBound, ""); \
 }
+
+size_t ZSTD_DCtx_getParameter(ZSTD_DCtx* dctx, ZSTD_dParameter param, int* value)
+{
+    switch (param) {
+        case ZSTD_d_windowLogMax:
+            *value = (int)ZSTD_highbit32((U32)dctx->maxWindowSize);
+            return 0;
+        case ZSTD_d_format:
+            *value = (int)dctx->format;
+            return 0;
+        case ZSTD_d_stableOutBuffer:
+            *value = (int)dctx->outBufferMode;
+            return 0;
+        case ZSTD_d_forceIgnoreChecksum:
+            *value = (int)dctx->forceIgnoreChecksum;
+            return 0;
+        default:;
+    }
+    RETURN_ERROR(parameter_unsupported, "");
+}
+
 size_t ZSTD_DCtx_setParameter(ZSTD_DCtx* dctx, ZSTD_dParameter dParam, int value)
 {
     RETURN_ERROR_IF(dctx->streamStage != zdss_init, stage_wrong, "");
