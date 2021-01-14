@@ -3406,9 +3406,10 @@ void start_firewall(void)
 #ifdef HAVE_SYSCTL_EDIT
 	start_sysctl_config();
 #endif
-#if !defined(HAVE_MICRO)	//&& !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
-
+#ifndef HAVE_MICRO
+#if !defined(HAVE_80211AC) && !defined(HAVE_ATH9K)
 	eval("wrtbwmon", "setup", "/tmp/bw.db");
+#endif
 #endif
 }
 
