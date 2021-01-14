@@ -1173,6 +1173,7 @@ extern int has_beacon_limit(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
 extern int has_half(const char *prefix);
 extern int has_quarter(const char *prefix);
+extern int has_qam256(const char *prefix);
 extern int has_subquarter(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
@@ -1186,12 +1187,18 @@ static inline int is_ap8x(void)
 	return 0;
 }
 
+
 static inline int has_spectralscanning(char *prefix)
 {
 	return 0;
 }
 
 static inline int has_qboost(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_qam256(char *prefix)
 {
 	return 0;
 }
