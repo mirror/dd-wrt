@@ -3664,7 +3664,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_overlap, "%s_overlap", prefix);
 		showRadio(wp, "wl_basic.overlap", wl_overlap);
 	}
-	if (has_ac(prefix) && has_2ghz(prefix)) {
+	if (has_qam256(prefix) && has_2ghz(prefix)) {
 		char wl_turboqam[32];
 		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
 		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
@@ -4102,7 +4102,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_overlap, "%s_overlap", prefix);
 		showRadio(wp, "wl_basic.overlap", wl_overlap);
 	}
-	if (has_ac(prefix) && has_2ghz(prefix)) {
+	if (has_qam256(prefix) && has_2ghz(prefix)) {
 		char wl_turboqam[32];
 		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
 		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
