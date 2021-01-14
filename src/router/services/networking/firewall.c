@@ -3407,9 +3407,9 @@ void start_firewall(void)
 	start_sysctl_config();
 #endif
 #ifndef HAVE_MICRO
-#if !defined(HAVE_80211AC) && !defined(HAVE_ATH9K)
+//#if !defined(HAVE_80211AC) && !defined(HAVE_ATH9K)
 	eval("wrtbwmon", "setup", "/tmp/bw.db");
-#endif
+//#endif
 #endif
 }
 
