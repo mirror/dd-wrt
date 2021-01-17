@@ -162,7 +162,7 @@ WOBJS += $(TOP)/register/register_wifi.o
 OBJS += $(TOP)/register/register_regulatory.o
 endif
 ifeq ($(CONFIG_IPV6),y)
-OBJS += libutils/getifaddrs.o
+#OBJS += libutils/getifaddrs.o
 CFLAGS += -DHAVE_IPV6
 endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
