@@ -1608,13 +1608,8 @@ endif
 all: $(C_LIBS) $(A_LIBS)
 
 install: all
-ifeq ($(CONFIG_XSCALE),y)
-	install -d $(INSTALLDIR)/libutils/lib
-	cp $(C_LIBS) $(INSTALLDIR)/libutils/lib
-else
 	install -d $(INSTALLDIR)/libutils/usr/lib
 	cp $(C_LIBS) $(INSTALLDIR)/libutils/usr/lib
-endif
 
 clean:
 #	rm -f countrycode/countrycode_$(ARCH).o
