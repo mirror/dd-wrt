@@ -235,9 +235,8 @@ unsigned int daysformonth(unsigned int month, unsigned int year)
 }
 
 #ifdef HAVE_IPV6
-const char *getifaddr(char *ifname, int family, int linklocal)
+const char *getifaddr(char *buf, char *ifname, int family, int linklocal)
 {
-	static char buf[INET6_ADDRSTRLEN];
 	void *addr = NULL;
 	struct ifaddrs *ifap, *ifa;
 

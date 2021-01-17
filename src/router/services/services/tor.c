@@ -68,12 +68,13 @@ void start_tor(void)
 	fprintf(fp, "Log notice syslog\n");
 #ifdef HAVE_IPV6
 	const char *ipv6addr = NULL;
+	char buf[INET6_ADDRSTRLEN];
 	if (nvram_match("ipv6_typ", "ipv6native"))
-		ipv6addr = getifaddr(get_wan_face(), AF_INET6, 0);
+		ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6in4"))
-		ipv6addr = getifaddr("ip6tun", AF_INET6, 0);
+		ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6pd"))
-		ipv6addr = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0);
+		ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 #endif
 
 	if (nvram_matchi("tor_relayonly", 1)) {

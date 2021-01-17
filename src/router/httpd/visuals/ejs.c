@@ -2132,6 +2132,9 @@ EJ_VISIBLE void ej_show_ipv6options(webs_t wp, int argc, char_t ** argv)
 #endif
 EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 {
+#ifdef HAVE_IPV6
+	char buf[INET6_ADDRSTRLEN];
+#endif
 	char *wan_ipaddr;
 	int wan_link;
 	static char *disabled = NULL;
@@ -2179,11 +2182,11 @@ EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_IPV6
 	const char *ipv6addr = NULL;
 	if (nvram_match("ipv6_typ", "ipv6native"))
-		ipv6addr = getifaddr(get_wan_face(), AF_INET6, 0);
+		ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6in4"))
-		ipv6addr = getifaddr("ip6tun", AF_INET6, 0);
+		ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6pd"))
-		ipv6addr = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0);
+		ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 	if (ipv6addr)
 		websWrite(wp, "&nbsp;IPv6: %s", ipv6addr);
 #endif

@@ -193,12 +193,13 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 #ifdef HAVE_IPV6
 	} else if (!strcmp(type, "wan_ipv6addr")) {
 		const char *ipv6addr = NULL;
+		char buf[INET6_ADDRSTRLEN];
 		if (nvram_match("ipv6_typ", "ipv6native"))
-			ipv6addr = getifaddr(get_wan_face(), AF_INET6, 0);
+			ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6in4"))
-			ipv6addr = getifaddr("ip6tun", AF_INET6, 0);
+			ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6pd"))
-			ipv6addr = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0);
+			ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 		if (!ipv6addr || getWET() || !strcmp(wan_proto, "disabled")) {
 			websWrite(wp, "%s", trans == 2 ? tran_string(buf, "share.disabled") : live_translate(wp, "share.disabled"));
 		} else {
