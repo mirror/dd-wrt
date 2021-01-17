@@ -1,4 +1,5 @@
 /* (C) 2013 John Spencer. released under musl's standard MIT license. */
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <ifaddrs.h>
@@ -204,3 +205,4 @@ err2:
 	freeifaddrs((struct ifaddrs *)list);
 	return -1;
 }
+#endif
