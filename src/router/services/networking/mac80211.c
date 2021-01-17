@@ -369,9 +369,11 @@ void configure_single_ath9k(int count)
 	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", dev);
 	if (nvram_nmatch("1", "%s_turbo_qam", dev)) {
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
 	 } else {
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
 	}
 #ifdef HAVE_ATH10K
