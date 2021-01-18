@@ -430,7 +430,7 @@ static void add_telemetry(FILE * fp)
 		"ztd.dds.microsoft.com"
 	};
 	int i;
-	for (i = 0; i < sizeof(servers) / sizeof(servers[0]); i++)
+	for (i = 0; i < sizeof(servers) / sizeof(char *); i++)
 		add_server(fp, servers[i]);
 }
 
