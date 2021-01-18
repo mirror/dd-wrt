@@ -3444,6 +3444,7 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 	flags |= sport_en ? 1 << 13 : 0;
 	flags |= dport_en ? 1 << 14 : 0;
 	flags |= oif_en ? 1 << 15 : 0;
+	char *page = websGetVar(wp, "rule_page", NULL);
 	if (!name[0] || !flags || !page) {
 		free(old_name);
 		free(old);
@@ -3451,7 +3452,6 @@ EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 		free(buf);
 		return;		//nothing stored, we ignore it
 	}
-	char *page = websGetVar(wp, "rule_page", NULL);
 	char *priority = websGetVar(wp, "rule_priority", "0");
 	char *tos = websGetVar(wp, "rule_tos", "0");
 	char *fwmark = websGetVar(wp, "rule_fwmark", "0");
