@@ -239,11 +239,16 @@ const char *getifaddr(char *buf, char *ifname, int family, int linklocal)
 {
 	void *addr = NULL;
 	struct ifaddrs *ifap, *ifa;
+	if (!ifname || !*ifname)
+		return NULL;
+	if (!buf)
+		return NULL;
 
 	if (getifaddrs(&ifap) != 0) {
 		dprintf("getifaddrs failed: %s\n", strerror(errno));
 		return NULL;
 	}
+	
 
 	for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
 		if ((ifa->ifa_addr == NULL) || (strncmp(ifa->ifa_name, ifname, IFNAMSIZ) != 0) || (ifa->ifa_addr->sa_family != family))
@@ -259,7 +264,7 @@ const char *getifaddr(char *buf, char *ifname, int family, int linklocal)
 			addr = (void *)&(s->sin_addr);
 		}
 
-		if ((addr) && inet_ntop(ifa->ifa_addr->sa_family, addr, buf, sizeof(buf)) != NULL) {
+		if ((addr) && inet_ntop(ifa->ifa_addr->sa_family, addr, buf, INET6_ADDRSTRLEN) != NULL) {
 			freeifaddrs(ifap);
 			return buf;
 		}
