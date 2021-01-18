@@ -548,7 +548,8 @@ void delete_old_routes(void)
 		GETENTRYBYIDX(nat, word, 5);
 		GETENTRYBYIDX(s_flags, word, 6);
 		int flags;
-		sscanf(s_flags, "%X", &flags);
+		if (s_flags)
+			sscanf(s_flags, "%X", &flags);
 		int src_en = flags & 0x1;
 		int scope_en = flags & 0x2;
 		int table_en = flags & 0x4;
@@ -560,22 +561,24 @@ void delete_old_routes(void)
 		GETENTRYBYIDX(mtu, word, 10);
 		GETENTRYBYIDX(advmss, word, 11);
 		char cmd[256] = { 0 };
+		if (!ipaddr || !netmask)
+			continue;
 		sprintf(cmd, "ip route del to %s/%d", ipaddr, getmask(netmask));
-		if (strcmp(gateway, "0.0.0.0"))
+		if (gateway && strcmp(gateway, "0.0.0.0"))
 			sprintf(cmd, "%s via %s", cmd, gateway);
-		if (strcmp(ifname, "any"))
+		if (ifname && strcmp(ifname, "any"))
 			sprintf(cmd, "%s dev %s", cmd, ifname);
-		if (strcmp(metric, "0"))
+		if (metric && strcmp(metric, "0"))
 			sprintf(cmd, "%s metric %s", cmd, metric);
-		if (src_en)
+		if (src_en && src)
 			sprintf(cmd, "%s src %s", cmd, src);
-		if (scope_en)
+		if (scope_en && scope)
 			sprintf(cmd, "%s scope %s", cmd, scope);
-		if (table_en)
+		if (table_en && table)
 			sprintf(cmd, "%s table %s", cmd, table);
-		if (mtu_en)
+		if (mtu_en && mtu)
 			sprintf(cmd, "%s mtu %s", cmd, mtu);
-		if (advmss_en)
+		if (advmss_en && advmss)
 			sprintf(cmd, "%s advmss %s", cmd, advmss);
 		system(cmd);
 #endif
@@ -591,7 +594,8 @@ void delete_old_pbr(void)
 		strcpy(cmd, "ip rule del");
 		GETENTRYBYIDX(s_flags, word, 0);
 		int flags;
-		sscanf(s_flags, "%X", &flags);
+		if (s_flags)
+			sscanf(s_flags, "%X", &flags);
 		int not = flags & 0x1;
 		int from_en = flags & 0x2;
 		int to_en = flags & 0x4;
@@ -3021,7 +3025,8 @@ static char *vapsettings[] = {
 	"wds6_if", "wds6_ipaddr", "wds6_netmask", "wds6_ospf", "wds7", "wds7_desc", "wds7_enable", "wds7_hwaddr", "wds7_if", "wds7_ipaddr", "wds7_netmask", "wds7_ospf", "wds8", "wds8_desc", "wds8_enable",
 	"wds8_hwaddr", "wds8_if", "wds8_ipaddr", "wds8_netmask", "wds8_ospf", "wds9", "wds9_desc", "wds9_enable", "wds9_hwaddr", "wds9_if", "wds9_ipaddr", "wds9_netmask", "wds9_ospf", "web_filter", "wep", "wep_bit",
 	"wep_buf", "wme", "wme_ap_be", "wme_ap_bk", "wme_ap_vi", "wme_ap_vo", "wme_apsd", "wme_no_ack", "wme_sta_be", "wme_sta_bk", "wme_sta_vi", "wme_sta_vo", "wme_txp_be", "wme_txp_bk", "wme_txp_vi", "wme_txp_vo",
-	"wmf_bss_enable", "wmf_igmpq_filter", "wmf_mdata_sendup", "wmf_ucast_upnp", "wmf_ucigmp_query", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_strict_rekey", "wpa_psk", "xr", "at_policy",
+	"wmf_bss_enable", "wmf_igmpq_filter", "wmf_mdata_sendup", "wmf_ucast_upnp", "wmf_ucigmp_query", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_strict_rekey", "wpa_psk",
+	    "xr", "at_policy",
 	"at_weight", "at_limit", "mesh_fwding", "mesh_retry_timeout", "mesh_confirm_timeout", "mesh_holding_timeout", "mesh_max_peer_links", "mesh_max_retries", "mesh_ttl", "mesh_element_ttl",
 	"mesh_auto_open_plinks", "mesh_hwmp_max_preq_retries", "mesh_path_refresh_time", "mesh_min_discovery_timeout", "mesh_hwmp_active_path_timeout", "mesh_hwmp_preq_min_interval",
 	"mesh_hwmp_net_diameter_traversal_time",
