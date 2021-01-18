@@ -44,7 +44,7 @@ extern void genHosts(void);
 
 static void add_server(FILE * fp, char *server)
 {
-	fprintf(stderr, "server=/%s/", server);
+	fprintf(fp, "server=/%s/\n", server);
 }
 
 static void add_telemetry(FILE * fp)
