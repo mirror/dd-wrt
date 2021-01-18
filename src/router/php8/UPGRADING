@@ -29,6 +29,7 @@ PHP 8.0 UPGRADE NOTES
   . Removed ability to call non-static methods statically.
     Thus `is_callable` will fail when checking for a non-static method with a
     classname (must check with an object instance).
+  . Removed (real) cast.
   . Removed (unset) cast.
   . Removed track_errors ini directive. This means that $php_errormsg is no
     longer available. The error_get_last() function may be used instead.
@@ -442,6 +443,12 @@ PHP 8.0 UPGRADE NOTES
             string $statement, ?int $fetch_mode = null, ...$fetch_mode_args)
         PDOStatement::setFetchMode(int $mode, ...$params)
 
+- PDO MySQL:
+  . PDO::inTransaction() now reports the actual transaction state of the
+    connection, rather than an approximation maintained by PDO. If a query that
+    is subject to "implicit commit" is executed, PDO::inTransaction() will
+    subsequently return false, as a transaction is no longer active.
+
 - PDO_ODBC:
   . The php.ini directive pdo_odbc.db2_instance_name has been removed
 
@@ -509,6 +516,8 @@ PHP 8.0 UPGRADE NOTES
 
 - SPL:
   . SplFileObject::fgetss() has been removed.
+  . SplFileObject::seek() now always seeks to the beginning of the line.
+    Previously, positions >=1 sought to the beginning of the next line.
   . SplHeap::compare($a, $b) now specifies a method signature. Inheriting
     classes implementing this method will now have to use a compatible
     method signature.
@@ -656,10 +665,10 @@ PHP 8.0 UPGRADE NOTES
     RFC: https://wiki.php.net/rfc/namespaced_names_as_token
 
 - XML:
-  . xml_parser_create(_ns) will now return an XmlParser object rather than a
+  . xml_parser_create(_ns) will now return an XMLParser object rather than a
     resource. Return value checks using is_resource() should be replaced with
     checks for `false`. The xml_parser_free() function no longer has an effect,
-    instead the XmlParser instance is automatically destroyed if it is no longer
+    instead the XMLParser instance is automatically destroyed if it is no longer
     referenced.
 
 - XMLReader:
@@ -981,8 +990,8 @@ PHP 8.0 UPGRADE NOTES
 - Zip:
   . ZipArchive::setMtimeName and ZipArchive::setMtimeIndex to set the
     modification time of an entry.
-  . ZipArchive::setProgressCallback to provide updates during archive close.
-  . ZipArchive::setCancelCallback to allow cancellation during archive close.
+  . ZipArchive::registerProgressCallback to provide updates during archive close.
+  . ZipArchive::registerCancelCallback to allow cancellation during archive close.
   . ZipArchive::replaceFile to replace an entry content.
   . ZipArchive::isCompressionMethodSupported to check optional compression
     features.
