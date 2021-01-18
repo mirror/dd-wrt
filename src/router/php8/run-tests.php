@@ -23,7 +23,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 00881cf7797bfefafe17cd0aa5e0c244a73b2fa7 $ */
+/* $Id: a34434b7531d7d4c95d3fc07323ea0d2c04df3c7 $ */
 
 /* Let there be no top-level code beyond this point:
  * Only functions and classes, thanks!
@@ -632,7 +632,7 @@ function main(): void
                     }
                     break;
                 case '--version':
-                    echo '$Id: 00881cf7797bfefafe17cd0aa5e0c244a73b2fa7 $' . "\n";
+                    echo '$Id: a34434b7531d7d4c95d3fc07323ea0d2c04df3c7 $' . "\n";
                     exit(1);
 
                 default:
@@ -2776,7 +2776,8 @@ COMMAND $cmd
         }
 
         // write .sh
-        $sh_script = <<<SH
+        if (strpos($log_format, 'S') !== false) {
+            $sh_script = <<<SH
 #!/bin/sh
 
 case "$1" in
@@ -2794,10 +2795,11 @@ case "$1" in
     ;;
 esac
 SH;
-        if (strpos($log_format, 'S') !== false && file_put_contents($sh_filename, $sh_script) === false) {
-            error("Cannot create test shell script - $sh_filename");
+            if (file_put_contents($sh_filename, $sh_script) === false) {
+                error("Cannot create test shell script - $sh_filename");
+            }
+            chmod($sh_filename, 0755);
         }
-        chmod($sh_filename, 0755);
 
         // write .log
         if (strpos($log_format, 'L') !== false && file_put_contents($log_filename, "
