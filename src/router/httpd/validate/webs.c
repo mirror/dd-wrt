@@ -596,6 +596,8 @@ void delete_old_pbr(void)
 		int flags;
 		if (s_flags)
 			sscanf(s_flags, "%X", &flags);
+		if (!flags)
+			continue;
 		int not = flags & 0x1;
 		int from_en = flags & 0x2;
 		int to_en = flags & 0x4;
