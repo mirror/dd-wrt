@@ -173,6 +173,45 @@ int pdo_stmt_describe_columns(pdo_stmt_t *stmt) /* {{{ */
 }
 /* }}} */
 
+static void pdo_stmt_reset_columns(pdo_stmt_t *stmt) {
+	if (stmt->columns) {
+		int i;
+		struct pdo_column_data *cols = stmt->columns;
+
+		for (i = 0; i < stmt->column_count; i++) {
+			if (cols[i].name) {
+				zend_string_release_ex(cols[i].name, 0);
+			}
+		}
+		efree(stmt->columns);
+	}
+	stmt->columns = NULL;
+	stmt->column_count = 0;
+}
+
+/**
+ * Change the column count on the statement. If it differs from the previous one,
+ * discard existing columns information.
+ */
+PDO_API void php_pdo_stmt_set_column_count(pdo_stmt_t *stmt, int new_count)
+{
+	/* Columns not yet "described". */
+	if (!stmt->columns) {
+		stmt->column_count = new_count;
+		return;
+	}
+
+	/* The column count has not changed: No need to reload columns description.
+	 * Note: Do not handle attribute name change, without column count change. */
+	if (new_count == stmt->column_count) {
+		return;
+	}
+
+	/* Free previous columns to force reload description. */
+	pdo_stmt_reset_columns(stmt);
+	stmt->column_count = new_count;
+}
+
 static void get_lazy_object(pdo_stmt_t *stmt, zval *return_value) /* {{{ */
 {
 	if (Z_ISUNDEF(stmt->lazy_object_ref)) {
@@ -302,8 +341,8 @@ static bool really_register_bound_param(struct pdo_bound_param_data *param, pdo_
 	 * a reference to param, as it resides in transient storage only
 	 * at this time. */
 	if (stmt->methods->param_hook) {
-		if (!stmt->methods->param_hook(stmt, param, PDO_PARAM_EVT_NORMALIZE
-				)) {
+		if (!stmt->methods->param_hook(stmt, param, PDO_PARAM_EVT_NORMALIZE)) {
+			PDO_HANDLE_STMT_ERR();
 			if (param->name) {
 				zend_string_release_ex(param->name, 0);
 				param->name = NULL;
@@ -328,8 +367,8 @@ static bool really_register_bound_param(struct pdo_bound_param_data *param, pdo_
 
 	/* tell the driver we just created a parameter */
 	if (stmt->methods->param_hook) {
-		if (!stmt->methods->param_hook(stmt, pparam, PDO_PARAM_EVT_ALLOC
-					)) {
+		if (!stmt->methods->param_hook(stmt, pparam, PDO_PARAM_EVT_ALLOC)) {
+			PDO_HANDLE_STMT_ERR();
 			/* undo storage allocation; the hash will free the parameter
 			 * name if required */
 			if (pparam->name) {
@@ -419,7 +458,6 @@ PHP_METHOD(PDOStatement, execute)
 			ret = 1;
 		} else if (ret == -1) {
 			/* something broke */
-			PDO_HANDLE_STMT_ERR();
 			RETURN_FALSE;
 		}
 	} else if (!dispatch_param_event(stmt, PDO_PARAM_EVT_EXEC_PRE)) {
@@ -440,6 +478,7 @@ PHP_METHOD(PDOStatement, execute)
 		}
 
 		if (ret && !dispatch_param_event(stmt, PDO_PARAM_EVT_EXEC_POST)) {
+			PDO_HANDLE_STMT_ERR();
 			RETURN_FALSE;
 		}
 
@@ -1910,20 +1949,7 @@ PHP_METHOD(PDOStatement, setFetchMode)
 
 static bool pdo_stmt_do_next_rowset(pdo_stmt_t *stmt)
 {
-	/* un-describe */
-	if (stmt->columns) {
-		int i;
-		struct pdo_column_data *cols = stmt->columns;
-
-		for (i = 0; i < stmt->column_count; i++) {
-			if (cols[i].name) {
-				zend_string_release_ex(cols[i].name, 0);
-			}
-		}
-		efree(stmt->columns);
-		stmt->columns = NULL;
-		stmt->column_count = 0;
-	}
+	pdo_stmt_reset_columns(stmt);
 
 	if (!stmt->methods->next_rowset(stmt)) {
 		/* Set the executed flag to 0 to reallocate columns on next execute */
@@ -2156,19 +2182,7 @@ PDO_API void php_pdo_free_statement(pdo_stmt_t *stmt)
 		efree(stmt->query_string);
 	}
 
-	if (stmt->columns) {
-		int i;
-		struct pdo_column_data *cols = stmt->columns;
-
-		for (i = 0; i < stmt->column_count; i++) {
-			if (cols[i].name) {
-				zend_string_release_ex(cols[i].name, 0);
-				cols[i].name = NULL;
-			}
-		}
-		efree(stmt->columns);
-		stmt->columns = NULL;
-	}
+	pdo_stmt_reset_columns(stmt);
 
 	if (!Z_ISUNDEF(stmt->fetch.into) && stmt->default_fetch_type == PDO_FETCH_INTO) {
 		zval_ptr_dtor(&stmt->fetch.into);
