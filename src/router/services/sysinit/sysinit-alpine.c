@@ -324,7 +324,7 @@ void start_overclocking(void)
 	char *oclock = nvram_safe_get("overclocking");
 	if (*oclock) {
 	    sysprintf("echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
-	    sysprintf("echo %s > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
+	    sysprintf("echo %s000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
 	} else {
 	    sysprintf("echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
 	}
