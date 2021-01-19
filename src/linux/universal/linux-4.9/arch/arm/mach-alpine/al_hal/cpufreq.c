@@ -15,7 +15,7 @@
 #define AL_REG_FIELD_GET(reg, mask, shift)  (((reg) & (mask)) >> (shift))
 #define AL_SB_PBS_BASE		(AL_SB_BASE + 0xfd880000)
 #define AL_PBS_REGFILE_BASE	(AL_SB_PBS_BASE + 0x00028000)
-#define	AL_DEFAULT_CPUFREQ	1400000
+#define	AL_DEFAULT_CPUFREQ	2000000
 
 static struct cpufreq_frequency_table *ftbl;
 static struct al_pll_obj pll_obj;
@@ -140,7 +140,7 @@ static int alpine_cpufreq_init(struct cpufreq_policy *policy)
 	if(err)
 		ret = AL_DEFAULT_CPUFREQ;
 	policy->cur = ret;
-	policy->cpuinfo.transition_latency = CPUFREQ_ETERNAL;
+	policy->cpuinfo.transition_latency = 100000; // default latency in nanoseconds (we try to measure it to make sure)
 
 	ret = cpufreq_table_validate_and_show(policy, ftbl);
 	if (ret) {
@@ -166,6 +166,7 @@ static int alpine_target(struct cpufreq_policy *policy, unsigned int target_freq
 							unsigned int relation)
 {
 	int i, err = 0;
+	unsigned int transition;
 	enum al_pll_freq freq = AL_PLL_FREQ_NA;
 
 	if (!strcmp(policy->governor->name, "userspace"))
@@ -178,16 +179,28 @@ static int alpine_target(struct cpufreq_policy *policy, unsigned int target_freq
 			freq = (map[i]).freq;
 			break;
 		}
+		if((map[i]).freq_val == policy->max) { // if daemon is non userspace, limit it to known stable frequency
+			freq = (map[i]).freq;
+			break;
+		}
 		if((map[i]).freq_val > target_freq && i > 0) {
 			freq = (map[i - 1]).freq;
 			target_freq = (map[i]).freq_val;
 			break;
 		}
+		if((map[i]).freq_val > policy->max && i > 0) { // if daemon is non userspace, limit it to known stable frequency
+			freq = (map[i - 1]).freq;
+			break;
+		}
 	}
 	if(i == pll_obj.freq_map_size)
 		return -1;
-
-	err = al_pll_freq_set(&pll_obj,	freq, 100000);
+	    	
+	err = al_pll_freq_set(&pll_obj,	freq, 100000, &transition);
+	if (policy->cpuinfo.transition_latency == 100000) {
+		printk(KERN_INFO "Alpine CPU Clock transition time is %d us\n", transition);
+		policy->cpuinfo.transition_latency = transition * 10000; //transition is in us, we need it in ns
+	}
 	if (err) {
 		printk("Failure %d \n", err);
 		return -1;
