@@ -58,6 +58,9 @@
 #endif
 
 #ifdef HAVE_OVERCLOCKING
+#ifdef HAVE_ALPINE
+static unsigned int alpine_clocks[] = {533, 800, 1200, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 0}; //i tested up to 2200, but it hard on the limit
+#else
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
 static unsigned int type4_clocks[10] = { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
@@ -72,6 +75,7 @@ static unsigned int ns_type10_clocks[4] = { 600, 800, 1000, 0 };
 static unsigned int ns_type9_clocks[3] = { 600, 800, 0 };
 static unsigned int ns_type8_clocks[6] = { 600, 800, 1000, 1200, 1400, 0 };
 static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
+#endif
 #endif
 #endif
 
@@ -177,8 +181,9 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 {
 	int rev = cpu_plltype();
 	unsigned int *c;
-
-#ifdef HAVE_NORTHSTAR
+#if defined(HAVE_ALPINE)
+	c = alpine_clocks;
+#elif defined(HAVE_NORTHSTAR)
 	switch (rev) {
 	case 11:
 		c = ns_type11_clocks;
