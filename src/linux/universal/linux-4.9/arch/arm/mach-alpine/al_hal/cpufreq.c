@@ -199,7 +199,8 @@ static int alpine_target(struct cpufreq_policy *policy, unsigned int target_freq
 	err = al_pll_freq_set(&pll_obj,	freq, 100000, &transition);
 	if (policy->cpuinfo.transition_latency == 100000) {
 		printk(KERN_INFO "Alpine CPU Clock transition time is %d us\n", transition);
-		policy->cpuinfo.transition_latency = transition * 10000; //transition is in us, we need it in ns
+		policy->cpuinfo.transition_latency = transition * 1000; //transition is in us, we need it in ns
+		/* maximum acceptable time by the kernel is 10 ms */
 	}
 	if (err) {
 		printk("Failure %d \n", err);
