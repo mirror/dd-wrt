@@ -279,7 +279,8 @@ int al_pll_freq_get(
 int al_pll_freq_set(
 	struct al_pll_obj	*obj,
 	enum al_pll_freq	freq,
-	unsigned int		timeout);
+	unsigned int		timeout,
+	unsigned int 		*transition);
 
 /**
  * PLL switching to bypass

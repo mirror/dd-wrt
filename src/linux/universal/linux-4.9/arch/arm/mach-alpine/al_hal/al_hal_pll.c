@@ -211,7 +211,7 @@ int al_pll_freq_get(
 int al_pll_freq_set(
 	struct al_pll_obj	*obj,
 	enum al_pll_freq	freq,
-	unsigned int		timeout)
+	unsigned int		timeout, unsigned int *transition)
 {
 	int status = 0;
 	int i;
@@ -220,7 +220,7 @@ int al_pll_freq_set(
 	uint32_t setup_0;
 	uint32_t setup_1;
 	uint32_t tci_tst_mode_spcl_ctl;
-
+	*transition = timeout;
 	al_dbg(
 		"%s(%p, %d, %u)\n",
 		__func__,
@@ -268,7 +268,7 @@ int al_pll_freq_set(
 		al_udelay(1);
 		timeout--;
 	}
-
+	*transition -= timeout;
 	if (!al_pll_is_locked_s(obj)) {
 		al_err("%s: timed out!\n", __func__);
 		status = -ETIMEDOUT;
