@@ -141,7 +141,8 @@ static int alpine_cpufreq_init(struct cpufreq_policy *policy)
 	if(err)
 		ret = AL_DEFAULT_CPUFREQ;
 	policy->cur = ret;
-	policy->cpuinfo.transition_latency = 100000;//CPUFREQ_ETERNAL; // default latency in nanoseconds (we try to measure it to make sure)
+//	policy->cpuinfo.transition_latency = 100000;
+	policy->cpuinfo.transition_latency = CPUFREQ_ETERNAL; // default latency in nanoseconds (we try to measure it to make sure)
 
 	ret = cpufreq_table_validate_and_show(policy, ftbl);
 	if (ret) {
