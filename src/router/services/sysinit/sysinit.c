@@ -2926,7 +2926,7 @@ void start_restore_defaults(void)
 	nvram_unset("probe_working");
 	nvram_unset("probe_blacklist");
 
-	if (!nvram_exists("overclocking")) {
+	if (!nvram_exists("overclocking") && nvram_exists("clkfreq")) {
 		char *clk = nvram_safe_get("clkfreq");
 		char dup[64];
 
