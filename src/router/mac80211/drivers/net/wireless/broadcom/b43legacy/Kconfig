@@ -1,10 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
 config B43LEGACY
 	tristate "Broadcom 43xx-legacy wireless support (mac80211 stack)"
 	depends on m
 	depends on SSB_POSSIBLE && MAC80211 && HAS_DMA
-	select SSB
+	depends on SSB
 	depends on FW_LOADER
-	---help---
+	help
 	  b43legacy is a driver for 802.11b devices from Broadcom (BCM4301 and
 	  BCM4303) and early model 802.11g chips (BCM4306 Ver. 2) used in the
 	  Linksys WPC54G V1 PCMCIA devices.
@@ -24,15 +25,15 @@ config B43LEGACY
 config B43LEGACY_PCI_AUTOSELECT
 	bool
 	depends on B43LEGACY && SSB_PCIHOST_POSSIBLE
-	select SSB_PCIHOST
-	select SSB_B43_PCI_BRIDGE
+	depends on SSB_PCIHOST
+	depends on SSB_B43_PCI_BRIDGE
 	default y
 
 # Auto-select SSB PCICORE driver, if possible
 config B43LEGACY_PCICORE_AUTOSELECT
 	bool
 	depends on B43LEGACY && SSB_DRIVER_PCICORE_POSSIBLE
-	select SSB_DRIVER_PCICORE
+	depends on SSB_DRIVER_PCICORE
 	default y
 
 # LED support
@@ -54,7 +55,7 @@ config B43LEGACY_DEBUG
 	bool "Broadcom 43xx-legacy debugging"
 	depends on B43LEGACY
 	default y
-	---help---
+	help
 	  Say Y, because this information will help you get the driver running.
 	  This option generates a minimum of log output.
 
@@ -75,7 +76,7 @@ config B43LEGACY_DMA_AND_PIO_MODE
 	bool "DMA + PIO"
 	select B43LEGACY_DMA
 	select B43LEGACY_PIO
-	---help---
+	help
 	  Include both, Direct Memory Access (DMA) and Programmed I/O (PIO)
 	  data transfer modes. The mode actually used is selectable through
 	  the module parameter "pio". With pio=0 as a module parameter, the
@@ -86,14 +87,14 @@ config B43LEGACY_DMA_AND_PIO_MODE
 config B43LEGACY_DMA_MODE
 	bool "DMA (Direct Memory Access) only"
 	select B43LEGACY_DMA
-	---help---
+	help
 	  Only include Direct Memory Access (DMA).
 	  This reduces the size of the driver module, by omitting the PIO code.
 
 config B43LEGACY_PIO_MODE
 	bool "PIO (Programmed I/O) only"
 	select B43LEGACY_PIO
-	---help---
+	help
 	  Only include Programmed I/O (PIO).
 	  This reduces the size of the driver module, by omitting the DMA code.
 	  Please note that PIO transfers are slow (compared to DMA).

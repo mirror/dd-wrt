@@ -8,7 +8,6 @@
  * published by the Free Software Foundation.
  */
 
-#include <linux/leds.h>
 #include <linux/device.h>
 #include <linux/export.h>
 #include <linux/errno.h>
@@ -19,9 +18,9 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <asm/uaccess.h>
+#include <linux/io.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,19,0)
-#if 0
+#if LINUX_VERSION_IS_GEQ(3,19,0)
 int led_set_brightness_sync(struct led_classdev *led_cdev,
 			    enum led_brightness value)
 {
@@ -39,10 +38,9 @@ int led_set_brightness_sync(struct led_classdev *led_cdev,
 	return -ENOTSUPP;
 }
 EXPORT_SYMBOL_GPL(led_set_brightness_sync);
-#endif
 #endif /* >= 3.19 */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_IS_GEQ(3,2,0)
 /**
  * no_seek_end_llseek - llseek implementation for fixed-sized devices
  * @file:	file structure to seek on
@@ -54,7 +52,7 @@ loff_t no_seek_end_llseek(struct file *file, loff_t offset, int whence)
 {
 	switch (whence) {
 	case SEEK_SET: case SEEK_CUR:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0)
+#if LINUX_VERSION_IS_GEQ(3,6,0)
 		return generic_file_llseek_size(file, offset, whence,
 						~0ULL, 0);
 #else
@@ -153,3 +151,24 @@ int devm_led_trigger_register(struct device *dev,
 	return rc;
 }
 EXPORT_SYMBOL_GPL(devm_led_trigger_register);
+
+/**
+ * __ioread32_copy - copy data from MMIO space, in 32-bit units
+ * @to: destination (must be 32-bit aligned)
+ * @from: source, in MMIO space (must be 32-bit aligned)
+ * @count: number of 32-bit quantities to copy
+ *
+ * Copy data from MMIO space to kernel space, in units of 32 bits at a
+ * time.  Order of access is not guaranteed, nor is a memory barrier
+ * performed afterwards.
+ */
+void __ioread32_copy(void *to, const void __iomem *from, size_t count)
+{
+	u32 *dst = to;
+	const u32 __iomem *src = from;
+	const u32 __iomem *end = src + count;
+
+	while (src < end)
+		*dst++ = __raw_readl(src++);
+}
+EXPORT_SYMBOL_GPL(__ioread32_copy);

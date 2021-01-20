@@ -3,6 +3,7 @@
 #include_next <linux/netdevice.h>
 #include <linux/netdev_features.h>
 #include <linux/version.h>
+#include <backport/magic.h>
 
 /*
  * This is declared implicitly in newer kernels by netdevice.h using
@@ -20,7 +21,7 @@ struct inet6_dev;
  */
 #include <linux/hardirq.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
+#if LINUX_VERSION_IS_LESS(3,14,0)
 /*
  * Backports note: if in-kernel support is provided we could then just
  * take the kernel's implementation of __dev_kfree_skb_irq() as it requires
@@ -96,15 +97,15 @@ struct pcpu_sw_netstats {
 #else
 #define netdev_tstats(dev)	dev->tstats
 #define netdev_assign_tstats(dev, e)	dev->tstats = (e);
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,14,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,7,8)
+#if LINUX_VERSION_IS_LESS(3,7,8)
 #define netdev_set_default_ethtool_ops LINUX_BACKPORT(netdev_set_default_ethtool_ops)
 extern void netdev_set_default_ethtool_ops(struct net_device *dev,
 					   const struct ethtool_ops *ops);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_IS_LESS(3,3,0)
 /*
  * BQL was added as of v3.3 but some Linux distributions
  * have backported BQL to their v3.2 kernels or older. To
@@ -152,11 +153,11 @@ static inline void netdev_reset_queue(struct net_device *dev_queue)
 #define NETDEV_PRE_UP		0x000D
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
+#if LINUX_VERSION_IS_LESS(3,11,0)
 #define netdev_notifier_info_to_dev(ndev) ndev
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_IS_LESS(3,7,0)
 #define netdev_notify_peers(dev) netif_notify_peers(dev)
 #define napi_gro_flush(napi, old) napi_gro_flush(napi)
 #endif
@@ -178,7 +179,7 @@ static inline void netdev_reset_queue(struct net_device *dev_queue)
 #define __QUEUE_STATE_STACK_XOFF __QUEUE_STATE_XOFF
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
+#if LINUX_VERSION_IS_LESS(3,17,0)
 #ifndef NET_NAME_UNKNOWN
 #define NET_NAME_UNKNOWN	0
 #endif
@@ -206,22 +207,22 @@ static inline void netdev_reset_queue(struct net_device *dev_queue)
 #define alloc_netdev_mq(sizeof_priv, name, name_assign_type, setup, count) \
 	alloc_netdev_mqs(sizeof_priv, name, name_assign_type, setup, count, \
 			 count)
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,17,0) */
 
 /*
  * This backports this commit from upstream:
  * commit 87757a917b0b3c0787e0563c679762152be81312
  * net: force a list_del() in unregister_netdevice_many()
  */
-#if (!(LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,45) && \
-       LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)) && \
-     !(LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,23) && \
-       LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)) && \
-     !(LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,9) && \
-       LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)) && \
-     !(LINUX_VERSION_CODE >= KERNEL_VERSION(3,15,2) && \
-       LINUX_VERSION_CODE < KERNEL_VERSION(3,16,0)) && \
-     (LINUX_VERSION_CODE < KERNEL_VERSION(3,16,0)))
+#if (!(LINUX_VERSION_IS_GEQ(3,10,45) && \
+       LINUX_VERSION_IS_LESS(3,11,0)) && \
+     !(LINUX_VERSION_IS_GEQ(3,12,23) && \
+       LINUX_VERSION_IS_LESS(3,13,0)) && \
+     !(LINUX_VERSION_IS_GEQ(3,14,9) && \
+       LINUX_VERSION_IS_LESS(3,15,0)) && \
+     !(LINUX_VERSION_IS_GEQ(3,15,2) && \
+       LINUX_VERSION_IS_LESS(3,16,0)) && \
+     LINUX_VERSION_IS_LESS(3,16,0))
 static inline void backport_unregister_netdevice_many(struct list_head *head)
 {
 	unregister_netdevice_many(head);
@@ -232,53 +233,45 @@ static inline void backport_unregister_netdevice_many(struct list_head *head)
 #define unregister_netdevice_many LINUX_BACKPORT(unregister_netdevice_many)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#if LINUX_VERSION_IS_LESS(3,19,0)
 #define napi_alloc_frag(fragsz) netdev_alloc_frag(fragsz)
 #endif
 
-/*
- * Complicated way of saying: We only backport netdev_rss_key stuff on kernels
- * that either already have net_get_random_once() (>= 3.13) or where we've been
- * brave enough to backport it due to static keys, refer to backports commit
- * 8cb8816d for details on difficulty to backport that further down.
- */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0)
-#define __BACKPORT_NETDEV_RSS_KEY_FILL 1
-#else
-#ifdef __BACKPORT_NET_GET_RANDOM_ONCE
-#define __BACKPORT_NETDEV_RSS_KEY_FILL 1
-#endif
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0) */
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0) */
-
-#ifdef __BACKPORT_NETDEV_RSS_KEY_FILL
+#if LINUX_VERSION_IS_LESS(3,19,0)
 /* RSS keys are 40 or 52 bytes long */
 #define NETDEV_RSS_KEY_LEN 52
-#define netdev_rss_key LINUX_BACKPORT(netdev_rss_key)
-extern u8 netdev_rss_key[NETDEV_RSS_KEY_LEN];
 #define netdev_rss_key_fill LINUX_BACKPORT(netdev_rss_key_fill)
 void netdev_rss_key_fill(void *buffer, size_t len);
-#endif /* __BACKPORT_NETDEV_RSS_KEY_FILL */
+#endif /* LINUX_VERSION_IS_LESS(3,19,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#if LINUX_VERSION_IS_LESS(3,19,0)
 #define napi_alloc_skb LINUX_BACKPORT(napi_alloc_skb)
 static inline struct sk_buff *napi_alloc_skb(struct napi_struct *napi,
 					     unsigned int length)
 {
 	return netdev_alloc_skb_ip_align(napi->dev, length);
 }
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,19,0) */
 
 #ifndef IFF_TX_SKB_SHARING
 #define IFF_TX_SKB_SHARING 0
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,1,0)
+#if LINUX_VERSION_IS_LESS(4,1,0)
 netdev_features_t passthru_features_check(struct sk_buff *skb,
 					  struct net_device *dev,
 					  netdev_features_t features);
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(4,1,0) */
+#endif /* LINUX_VERSION_IS_LESS(4,1,0) */
+
+#if LINUX_VERSION_IS_LESS(4,2,0)
+#undef u64_stats_init
+static inline void u64_stats_init(struct u64_stats_sync *syncp)
+{
+#if BITS_PER_LONG == 32 && defined(CONFIG_SMP)
+	seqcount_init(&syncp->seq);
+#endif
+}
+#endif /* LINUX_VERSION_IS_LESS(4,2,0) */
 
 #ifndef netdev_alloc_pcpu_stats
 #define netdev_alloc_pcpu_stats(type)				\
@@ -296,16 +289,29 @@ netdev_features_t passthru_features_check(struct sk_buff *skb,
 })
 #endif /* netdev_alloc_pcpu_stats */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
-#define napi_complete_done LINUX_BACKPORT(napi_complete_done)
-static inline bool napi_complete_done(struct napi_struct *n, int work_done)
+#if LINUX_VERSION_IS_LESS(4,10,0)
+static inline bool backport_napi_complete_done(struct napi_struct *n, int work_done)
 {
+	if (unlikely(test_bit(NAPI_STATE_NPSVC, &n->state)))
+		return false;
+
+#if LINUX_VERSION_IS_LESS(3,19,0)
 	napi_complete(n);
+#else
+	napi_complete_done(n, work_done);
+#endif /* < 3.19 */
 	return true;
 }
-#endif /* < 3.19 */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
+static inline bool backport_napi_complete(struct napi_struct *n)
+{
+	return backport_napi_complete_done(n, 0);
+}
+#define napi_complete_done LINUX_BACKPORT(napi_complete_done)
+#define napi_complete LINUX_BACKPORT(napi_complete)
+#endif /* < 4.10 */
+
+#if LINUX_VERSION_IS_LESS(4,5,0)
 #define netif_tx_napi_add LINUX_BACKPORT(netif_tx_napi_add)
 /**
  *	netif_tx_napi_add - initialize a napi context
@@ -331,15 +337,15 @@ static inline void netif_tx_napi_add(struct net_device *dev,
 #define NETIF_F_CSUM_MASK NETIF_F_ALL_CSUM
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
-/* legacy drivers only, netdev_start_xmit() sets txq->trans_start */
+#if LINUX_VERSION_IS_LESS(4,7,0)
+#define netif_trans_update LINUX_BACKPORT(netif_trans_update)
 static inline void netif_trans_update(struct net_device *dev)
 {
 	dev->trans_start = jiffies;
 }
 #endif
 
-#if LINUX_VERSION_IS_LESS(4,12,0)
+#if LINUX_VERSION_IS_LESS(4,11,9)
 #define netdev_set_priv_destructor(_dev, _destructor) \
 	(_dev)->destructor = __ ## _destructor
 #define netdev_set_def_destructor(_dev) \
@@ -351,5 +357,45 @@ static inline void netif_trans_update(struct net_device *dev)
 #define netdev_set_def_destructor(_dev) \
 	(_dev)->needs_free_netdev = true;
 #endif
+
+#if LINUX_VERSION_IS_LESS(4,15,0) && \
+	!LINUX_VERSION_IN_RANGE(3,2,0, 3,7,0)
+static inline int _bp_netdev_upper_dev_link(struct net_device *dev,
+					    struct net_device *upper_dev)
+{
+	return netdev_upper_dev_link(dev, upper_dev);
+}
+#define netdev_upper_dev_link3(dev, upper, extack) \
+	netdev_upper_dev_link(dev, upper)
+#define netdev_upper_dev_link2(dev, upper) \
+	netdev_upper_dev_link(dev, upper)
+#define netdev_upper_dev_link(...) \
+	macro_dispatcher(netdev_upper_dev_link, __VA_ARGS__)(__VA_ARGS__)
+#endif
+
+#if LINUX_VERSION_IS_LESS(5,0,0)
+static inline int backport_dev_open(struct net_device *dev, struct netlink_ext_ack *extack)
+{
+	return dev_open(dev);
+}
+#define dev_open LINUX_BACKPORT(dev_open)
+#endif
+
+#if LINUX_VERSION_IS_LESS(4,4,0)
+#define netif_is_bridge_port LINUX_BACKPORT(netif_is_bridge_port)
+static inline bool netif_is_bridge_port(const struct net_device *dev)
+{
+	return dev->priv_flags & IFF_BRIDGE_PORT;
+}
+#endif
+
+#if LINUX_VERSION_IS_LESS(5,10,0)
+#define dev_fetch_sw_netstats LINUX_BACKPORT(dev_fetch_sw_netstats)
+void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
+			   const struct pcpu_sw_netstats __percpu *netstats);
+
+#define netif_rx_any_context LINUX_BACKPORT(netif_rx_any_context)
+int netif_rx_any_context(struct sk_buff *skb);
+#endif /* < 5.10 */
 
 #endif /* __BACKPORT_NETDEVICE_H */

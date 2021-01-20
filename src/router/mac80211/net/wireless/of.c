@@ -84,9 +84,7 @@ void wiphy_read_of_freq_limits(struct wiphy *wiphy)
 
 	if (!dev)
 		return;
-#if LINUX_VERSION_IS_GEQ(4,4,0)
 	np = dev_of_node(dev);
-#endif
 	if (!np)
 		return;
 

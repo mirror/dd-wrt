@@ -3,7 +3,7 @@
 
 #include <linux/version.h>
 #include <generated/utsrelease.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
+#if LINUX_VERSION_IS_GEQ(3,6,0)
 #include_next <linux/u64_stats_sync.h>
 #else
 
@@ -68,28 +68,28 @@
 #include <linux/seqlock.h>
 
 struct u64_stats_sync {
-#if BITS_PER_LONG==32 && defined(CONFIG_SMP)
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
 	seqcount_t	seq;
 #endif
 };
 
 static inline void u64_stats_update_begin(struct u64_stats_sync *syncp)
 {
-#if BITS_PER_LONG==32 && defined(CONFIG_SMP)
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
 	write_seqcount_begin(&syncp->seq);
 #endif
 }
 
 static inline void u64_stats_update_end(struct u64_stats_sync *syncp)
 {
-#if BITS_PER_LONG==32 && defined(CONFIG_SMP)
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
 	write_seqcount_end(&syncp->seq);
 #endif
 }
 
 static inline unsigned int u64_stats_fetch_begin(const struct u64_stats_sync *syncp)
 {
-#if BITS_PER_LONG==32 && defined(CONFIG_SMP)
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
 	return read_seqcount_begin(&syncp->seq);
 #else
 #if BITS_PER_LONG==32
@@ -102,7 +102,7 @@ static inline unsigned int u64_stats_fetch_begin(const struct u64_stats_sync *sy
 static inline bool u64_stats_fetch_retry(const struct u64_stats_sync *syncp,
 					 unsigned int start)
 {
-#if BITS_PER_LONG==32 && defined(CONFIG_SMP)
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
 	return read_seqcount_retry(&syncp->seq, start);
 #else
 #if BITS_PER_LONG==32
@@ -112,13 +112,13 @@ static inline bool u64_stats_fetch_retry(const struct u64_stats_sync *syncp,
 #endif
 }
 
-#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0)) */
+#endif /* LINUX_VERSION_IS_GEQ(3,6,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0) && \
+#if LINUX_VERSION_IS_LESS(3,15,0) && \
     !(LINUX_VERSION_CODE == KERNEL_VERSION(3,13,11) && UTS_UBUNTU_RELEASE_ABI > 30)
 static inline unsigned int u64_stats_fetch_begin_irq(const struct u64_stats_sync *syncp)
 {
-#if BITS_PER_LONG==32 && defined(CONFIG_SMP)
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
 	return read_seqcount_begin(&syncp->seq);
 #else
 #if BITS_PER_LONG==32
@@ -131,7 +131,7 @@ static inline unsigned int u64_stats_fetch_begin_irq(const struct u64_stats_sync
 static inline bool u64_stats_fetch_retry_irq(const struct u64_stats_sync *syncp,
 					 unsigned int start)
 {
-#if BITS_PER_LONG==32 && defined(CONFIG_SMP)
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
 	return read_seqcount_retry(&syncp->seq, start);
 #else
 #if BITS_PER_LONG==32
@@ -141,14 +141,40 @@ static inline bool u64_stats_fetch_retry_irq(const struct u64_stats_sync *syncp,
 #endif
 }
 
-#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(3,15,0)) */
+#endif /* LINUX_VERSION_IS_GEQ(3,15,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)
+#if LINUX_VERSION_IS_LESS(3,13,0)
 #if BITS_PER_LONG == 32 && defined(CONFIG_SMP)
 # define u64_stats_init(syncp)	seqcount_init(syncp.seq)
 #else
 # define u64_stats_init(syncp)	do { } while (0)
 #endif
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,13,0) */
+
+#if LINUX_VERSION_IS_LESS(4,16,0) && \
+    !LINUX_VERSION_IN_RANGE(4,14,44, 4,15,0) && \
+    !(LINUX_VERSION_IS_GEQ(4,15,18) && UTS_UBUNTU_RELEASE_ABI >= 33)
+static inline unsigned long
+u64_stats_update_begin_irqsave(struct u64_stats_sync *syncp)
+{
+	unsigned long flags = 0;
+
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
+	local_irq_save(flags);
+	write_seqcount_begin(&syncp->seq);
+#endif
+	return flags;
+}
+
+static inline void
+u64_stats_update_end_irqrestore(struct u64_stats_sync *syncp,
+				unsigned long flags)
+{
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
+	write_seqcount_end(&syncp->seq);
+	local_irq_restore(flags);
+#endif
+}
+#endif /* < 4.16 */
 
 #endif /* __BACKPORT_LINUX_U64_STATS_SYNC_H */

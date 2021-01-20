@@ -167,7 +167,7 @@ struct sk_buff *skb_clone_sk(struct sk_buff *skb)
 }
 EXPORT_SYMBOL_GPL(skb_clone_sk);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_IS_GEQ(3,2,0)
 /*
  * skb_complete_wifi_ack() needs to get backported, because the version from
  * 3.18 added the sock_hold() and sock_put() calles missing in older versions.
@@ -178,8 +178,10 @@ void skb_complete_wifi_ack(struct sk_buff *skb, bool acked)
 	struct sock_exterr_skb *serr;
 	int err;
 
+#if LINUX_VERSION_IS_GEQ(3,2,0)
 	skb->wifi_acked_valid = 1;
 	skb->wifi_acked = acked;
+#endif
 
 	serr = SKB_EXT_ERR(skb);
 	memset(serr, 0, sizeof(*serr));
@@ -198,7 +200,7 @@ void skb_complete_wifi_ack(struct sk_buff *skb, bool acked)
 EXPORT_SYMBOL_GPL(skb_complete_wifi_ack);
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)
+#if LINUX_VERSION_IS_GEQ(3,17,0)
 int __sched out_of_line_wait_on_bit_timeout(
 	void *word, int bit, wait_bit_action_f *action,
 	unsigned mode, unsigned long timeout)
@@ -288,17 +290,17 @@ int of_property_read_u64_array(const struct device_node *np,
 EXPORT_SYMBOL_GPL(of_property_read_u64_array);
 #endif /* CONFIG_OF */
 
-#if !(LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,3) || \
-      (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,24) && \
-      LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)) || \
-      (LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,33) && \
-      LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)) || \
-      (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,60) && \
-      LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)) || \
-      (LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,106) && \
-      LINUX_VERSION_CODE < KERNEL_VERSION(3,5,0)) || \
-      (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,65) && \
-      LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)))
+#if !(LINUX_VERSION_IS_GEQ(3,17,3) || \
+      (LINUX_VERSION_IS_GEQ(3,14,24) && \
+      LINUX_VERSION_IS_LESS(3,15,0)) || \
+      (LINUX_VERSION_IS_GEQ(3,12,33) && \
+      LINUX_VERSION_IS_LESS(3,13,0)) || \
+      (LINUX_VERSION_IS_GEQ(3,10,60) && \
+      LINUX_VERSION_IS_LESS(3,11,0)) || \
+      (LINUX_VERSION_IS_GEQ(3,4,106) && \
+      LINUX_VERSION_IS_LESS(3,5,0)) || \
+      (LINUX_VERSION_IS_GEQ(3,2,65) && \
+      LINUX_VERSION_IS_LESS(3,3,0)))
 /**
  * memzero_explicit - Fill a region of memory (e.g. sensitive
  *		      keying data) with 0s.
@@ -320,3 +322,13 @@ void memzero_explicit(void *s, size_t count)
 }
 EXPORT_SYMBOL_GPL(memzero_explicit);
 #endif
+
+char *bin2hex(char *dst, const void *src, size_t count)
+{
+	const unsigned char *_src = src;
+
+	while (count--)
+		dst = hex_byte_pack(dst, *_src++);
+	return dst;
+}
+EXPORT_SYMBOL(bin2hex);

@@ -2,7 +2,7 @@
 #define __BACKPORT_LINUX_SECURITY_H
 #include_next <linux/security.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,1,0)
+#if LINUX_VERSION_IS_LESS(3,1,0)
 /*
  * This has been defined in include/linux/security.h for some time, but was
  * only given an EXPORT_SYMBOL for 3.1.  Add a compat_* definition to avoid

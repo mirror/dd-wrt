@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 menuconfig RT2X00
 	tristate "Ralink driver support"
 	depends on m
@@ -71,8 +72,8 @@ config RT2800PCI
 	select RT2X00_LIB_FIRMWARE
 	select RT2X00_LIB_EEPROM
 	select RT2X00_LIB_CRYPTO
-	depends on CRC_CCITT
-	depends on EEPROM_93CX6
+#	depends on CRC_CCITT
+#	depends on EEPROM_93CX6
 	---help---
 	  This adds support for rt27xx/rt28xx/rt30xx wireless chipset family.
 	  Supported chips: RT2760, RT2790, RT2860, RT2880, RT2890, RT3052,
@@ -100,20 +101,20 @@ config RT2800PCI_RT35XX
 
 
 config RT2800PCI_RT53XX
-       bool "rt2800pci - Include support for rt53xx devices (EXPERIMENTAL)"
-       default y
-       ---help---
-         This adds support for rt53xx wireless chipset family to the
-         rt2800pci driver.
-         Supported chips: RT5390
+	bool "rt2800pci - Include support for rt53xx devices (EXPERIMENTAL)"
+	default y
+	---help---
+	  This adds support for rt53xx wireless chipset family to the
+	  rt2800pci driver.
+	  Supported chips: RT5390
 
 config RT2800PCI_RT3290
-       bool "rt2800pci - Include support for rt3290 devices (EXPERIMENTAL)"
-       default y
-       ---help---
-         This adds support for rt3290 wireless chipset family to the
-         rt2800pci driver.
-         Supported chips: RT3290
+	bool "rt2800pci - Include support for rt3290 devices (EXPERIMENTAL)"
+	default y
+	---help---
+	  This adds support for rt3290 wireless chipset family to the
+	  rt2800pci driver.
+	  Supported chips: RT3290
 endif
 
 config RT2500USB
@@ -182,18 +183,18 @@ config RT2800USB_RT3573
 	  in the rt2800usb driver.
 
 config RT2800USB_RT53XX
-       bool "rt2800usb - Include support for rt53xx devices (EXPERIMENTAL)"
-       ---help---
-         This adds support for rt53xx wireless chipset family to the
-         rt2800usb driver.
-         Supported chips: RT5370
+	bool "rt2800usb - Include support for rt53xx devices (EXPERIMENTAL)"
+	---help---
+	  This adds support for rt53xx wireless chipset family to the
+	  rt2800usb driver.
+	  Supported chips: RT5370
 
 config RT2800USB_RT55XX
-       bool "rt2800usb - Include support for rt55xx devices (EXPERIMENTAL)"
-       ---help---
-         This adds support for rt55xx wireless chipset family to the
-         rt2800usb driver.
-         Supported chips: RT5572
+	bool "rt2800usb - Include support for rt55xx devices (EXPERIMENTAL)"
+	---help---
+	  This adds support for rt55xx wireless chipset family to the
+	  rt2800usb driver.
+	  Supported chips: RT5572
 
 config RT2800USB_UNKNOWN
 	bool "rt2800usb - Include support for unknown (USB) devices"
@@ -211,7 +212,7 @@ endif
 config RT2800SOC
 	tristate "Ralink WiSoC support"
 	depends on m
-	depends on SOC_RT288X || SOC_RT305X || SOC_RT3883 || SOC_MT7620
+	depends on SOC_RT288X || SOC_RT305X || SOC_RT3883 || SOC_MT7620 || SOC_MT7620_OPENWRT
 	select RT2X00_LIB_SOC
 	select RT2X00_LIB_MMIO
 	select RT2X00_LIB_CRYPTO
@@ -248,7 +249,7 @@ config RT2X00_LIB_PCI
 
 config RT2X00_LIB_SOC
 	tristate "RT2x00 SoC support"
-	depends on SOC_RT288X || SOC_RT305X || SOC_RT3883 || SOC_MT7620
+	depends on SOC_RT288X || SOC_RT305X || SOC_RT3883 || SOC_MT7620 || SOC_MT7620_OPENWRT
 	depends on m
 	select RT2X00_LIB
 
@@ -269,7 +270,7 @@ config RT2X00_LIB_CRYPTO
 	bool
 
 config RT2X00_LIB_EEPROM
-	boolean
+	bool
 
 config RT2X00_LIB_LEDS
 	bool

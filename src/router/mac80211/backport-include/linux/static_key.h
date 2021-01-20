@@ -3,7 +3,7 @@
 
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0) /* kernels >= 3.3 */
+#if LINUX_VERSION_IS_GEQ(3,3,0) /* kernels >= 3.3 */
 /*
  * XXX: NOTE!
  *
@@ -13,7 +13,7 @@
  * kernels 3.3..3.4 don't have it and include <linux/jump_label.h> instead,
  * and for newer kernels include <linux/static_key.h>.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
+#if LINUX_VERSION_IS_GEQ(3,5,0)
 #include_next <linux/static_key.h>
 #else
 #include <linux/jump_label.h>

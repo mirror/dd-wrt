@@ -840,6 +840,9 @@ struct b43_wldev {
 	bool qos_enabled;		/* TRUE, if QoS is used. */
 	bool hwcrypto_enabled;		/* TRUE, if HW crypto acceleration is enabled. */
 	bool use_pio;			/* TRUE if next init should use PIO */
+	int gpiomask;			/* GPIO LED mask as a module parameter */
+	int rx_antenna;			/* Used RX antenna (B43_ANTENNAxxx) */
+	int tx_antenna;			/* Used TX antenna (B43_ANTENNAxxx) */
 
 	/* PHY/Radio device. */
 	struct b43_phy phy;
@@ -1037,7 +1040,7 @@ static inline void b43_write16(struct b43_wldev *dev, u16 offset, u16 value)
 static inline void b43_write16f(struct b43_wldev *dev, u16 offset, u16 value)
 {
 	b43_write16(dev, offset, value);
-#if defined(CPTCFG_BCM47XX_BCMA)
+#if defined(CONFIG_BCM47XX_BCMA)
 	if (dev->dev->flush_writes)
 		b43_read16(dev, offset);
 #endif

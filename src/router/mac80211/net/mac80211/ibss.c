@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * IBSS mode implementation
  * Copyright 2003-2008, Jouni Malinen <j@w1.fi>
@@ -8,10 +9,7 @@
  * Copyright 2009, Johannes Berg <johannes@sipsolutions.net>
  * Copyright 2013-2014  Intel Mobile Communications GmbH
  * Copyright(c) 2016 Intel Deutschland GmbH
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
+ * Copyright(c) 2018-2020 Intel Corporation
  */
 
 #include <linux/delay.h>
@@ -46,6 +44,7 @@ ieee80211_ibss_build_presp(struct ieee80211_sub_if_data *sdata,
 {
 	struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
 	struct ieee80211_local *local = sdata->local;
+	bool vht_allowed = true;
 	int rates_n = 0, i, ri;
 	struct ieee80211_mgmt *mgmt;
 	u8 *pos;
@@ -148,9 +147,9 @@ ieee80211_ibss_build_presp(struct ieee80211_sub_if_data *sdata,
 		*pos++ = csa_settings->block_tx ? 1 : 0;
 		*pos++ = ieee80211_frequency_to_channel(
 				csa_settings->chandef.chan->center_freq);
-		presp->csa_counter_offsets[0] = (pos - presp->head);
+		presp->cntdwn_counter_offsets[0] = (pos - presp->head);
 		*pos++ = csa_settings->count;
-		presp->csa_current_counter = csa_settings->count;
+		presp->cntdwn_current_counter = csa_settings->count;
 	}
 
 	/* put the remaining rates in WLAN_EID_EXT_SUPP_RATES */
@@ -175,6 +174,10 @@ ieee80211_ibss_build_presp(struct ieee80211_sub_if_data *sdata,
 		pos += ifibss->ie_len;
 	}
 
+	if (sband->vht_cap.vht_supported && sband->band == NL80211_BAND_2GHZ && !local->turboqam) {
+		vht_allowed = false;
+	}
+
 	/* add HT capability and information IEs */
 	if (chandef->width != NL80211_CHAN_WIDTH_20_NOHT &&
 	    chandef->width != NL80211_CHAN_WIDTH_5 &&
@@ -197,13 +200,14 @@ ieee80211_ibss_build_presp(struct ieee80211_sub_if_data *sdata,
 		/* add VHT capability and information IEs */
 		if (chandef->width != NL80211_CHAN_WIDTH_20 &&
 		    chandef->width != NL80211_CHAN_WIDTH_40 &&
-		    sband->vht_cap.vht_supported) {
+		    sband->vht_cap.vht_supported && vht_allowed) {
 			pos = ieee80211_ie_build_vht_cap(pos, &sband->vht_cap,
 							 sband->vht_cap.cap);
 			pos = ieee80211_ie_build_vht_oper(pos, &sband->vht_cap,
 							  chandef);
 		}
 	}
+
 	pos = ieee80211_add_mtik_ie(pos, sdata->vif.type == NL80211_IFTYPE_AP_VLAN);
 
 	if (local->hw.queues >= IEEE80211_NUM_ACS)
@@ -542,7 +546,6 @@ int ieee80211_ibss_finish_csa(struct ieee80211_sub_if_data *sdata)
 {
 	struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
 	struct cfg80211_bss *cbss;
-	int err, changed = 0;
 
 	sdata_assert_lock(sdata);
 
@@ -564,13 +567,7 @@ int ieee80211_ibss_finish_csa(struct ieee80211_sub_if_data *sdata)
 	ifibss->chandef = sdata->csa_chandef;
 
 	/* generate the beacon */
-	err = ieee80211_ibss_csa_beacon(sdata, NULL);
-	if (err < 0)
-		return err;
-
-	changed |= err;
-
-	return changed;
+	return ieee80211_ibss_csa_beacon(sdata, NULL);
 }
 
 void ieee80211_ibss_stop(struct ieee80211_sub_if_data *sdata)
@@ -792,6 +789,7 @@ ieee80211_ibss_process_chanswitch(struct ieee80211_sub_if_data *sdata,
 	enum nl80211_channel_type ch_type;
 	int err;
 	u32 sta_flags;
+	u32 vht_cap_info = 0;
 
 	sdata_assert_lock(sdata);
 
@@ -801,7 +799,7 @@ ieee80211_ibss_process_chanswitch(struct ieee80211_sub_if_data *sdata,
 	case NL80211_CHAN_WIDTH_10:
 	case NL80211_CHAN_WIDTH_20_NOHT:
 		sta_flags |= IEEE80211_STA_DISABLE_HT;
-		/* fall through */
+		fallthrough;
 	case NL80211_CHAN_WIDTH_20:
 		sta_flags |= IEEE80211_STA_DISABLE_40MHZ;
 		break;
@@ -809,9 +807,13 @@ ieee80211_ibss_process_chanswitch(struct ieee80211_sub_if_data *sdata,
 		break;
 	}
 
+	if (elems->vht_cap_elem)
+		vht_cap_info = le32_to_cpu(elems->vht_cap_elem->vht_cap_info);
+
 	memset(&params, 0, sizeof(params));
 	err = ieee80211_parse_ch_switch_ie(sdata, elems,
 					   ifibss->chandef.chan->band,
+					   vht_cap_info,
 					   sta_flags, ifibss->bssid, &csa_ie);
 	/* can't switch to destination channel, fail */
 	if (err < 0)
@@ -1043,7 +1045,8 @@ static void ieee80211_update_sta_info(struct ieee80211_sub_if_data *sdata,
 	}
 
 	if (sta && !sta->sta.wme &&
-	    elems->wmm_info && local->hw.queues >= IEEE80211_NUM_ACS) {
+	    (elems->wmm_info || elems->s1g_capab) &&
+	    local->hw.queues >= IEEE80211_NUM_ACS) {
 		sta->sta.wme = true;
 		ieee80211_check_fast_xmit(sta);
 	}
@@ -1071,8 +1074,12 @@ static void ieee80211_update_sta_info(struct ieee80211_sub_if_data *sdata,
 			/* we both use VHT */
 			struct ieee80211_vht_cap cap_ie;
 			struct ieee80211_sta_vht_cap cap = sta->sta.vht_cap;
+			u32 vht_cap_info =
+				le32_to_cpu(elems->vht_cap_elem->vht_cap_info);
 
-			ieee80211_chandef_vht_oper(&local->hw, elems->vht_operation,
+			ieee80211_chandef_vht_oper(&local->hw, vht_cap_info,
+						   elems->vht_operation,
+						   elems->ht_operation,
 						   &chandef);
 			memcpy(&cap_ie, elems->vht_cap_elem, sizeof(cap_ie));
 			ieee80211_vht_cap_ie_to_sta_vht_cap(sdata, sband,
@@ -1130,8 +1137,7 @@ static void ieee80211_rx_bss_info(struct ieee80211_sub_if_data *sdata,
 
 	ieee80211_update_sta_info(sdata, mgmt, len, rx_status, elems, channel);
 
-	bss = ieee80211_bss_info_update(local, rx_status, mgmt, len, elems,
-					channel);
+	bss = ieee80211_bss_info_update(local, rx_status, mgmt, len, channel);
 	if (!bss)
 		return;
 
@@ -1261,6 +1267,7 @@ void ieee80211_ibss_rx_no_sta(struct ieee80211_sub_if_data *sdata,
 
 static void ieee80211_ibss_sta_expire(struct ieee80211_sub_if_data *sdata)
 {
+	struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
 	struct ieee80211_local *local = sdata->local;
 	struct sta_info *sta, *tmp;
 	unsigned long exp_time = IEEE80211_IBSS_INACTIVITY_LIMIT;
@@ -1277,10 +1284,17 @@ static void ieee80211_ibss_sta_expire(struct ieee80211_sub_if_data *sdata)
 		if (time_is_before_jiffies(last_active + exp_time) ||
 		    (time_is_before_jiffies(last_active + exp_rsn) &&
 		     sta->sta_state != IEEE80211_STA_AUTHORIZED)) {
+			u8 frame_buf[IEEE80211_DEAUTH_FRAME_LEN];
+
 			sta_dbg(sta->sdata, "expiring inactive %sSTA %pM\n",
 				sta->sta_state != IEEE80211_STA_AUTHORIZED ?
 				"not authorized " : "", sta->sta.addr);
 
+			ieee80211_send_deauth_disassoc(sdata, sta->sta.addr,
+						       ifibss->bssid,
+						       IEEE80211_STYPE_DEAUTH,
+						       WLAN_REASON_DEAUTH_LEAVING,
+						       true, frame_buf);
 			WARN_ON(__sta_info_destroy(sta));
 		}
 	}
@@ -1402,7 +1416,7 @@ ieee80211_ibss_setup_scan_channels(struct wiphy *wiphy,
 		break;
 	case NL80211_CHAN_WIDTH_80P80:
 		cf2 = chandef->center_freq2;
-		/* fall through */
+		fallthrough;
 	case NL80211_CHAN_WIDTH_80:
 		width = 80;
 		break;
@@ -1610,7 +1624,8 @@ void ieee80211_rx_mgmt_probe_beacon(struct ieee80211_sub_if_data *sdata,
 		return;
 
 	ieee802_11_parse_elems(mgmt->u.probe_resp.variable, len - baselen,
-			       false, &elems);
+			       false, &elems, mgmt->bssid, NULL);
+
 	if (elems.mtik) {
 		memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
 		if (elems.mtik->namelen && elems.mtik->namelen < 16)
@@ -1665,10 +1680,11 @@ void ieee80211_ibss_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
 
 			ieee802_11_parse_elems(
 				mgmt->u.action.u.chan_switch.variable,
-				ies_len, true, &elems);
+				ies_len, true, &elems, mgmt->bssid, NULL);
 
 			if (elems.parse_error)
 				break;
+
 			if (elems.mtik) {
 				memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
 				if (elems.mtik->namelen && elems.mtik->namelen < 16)
@@ -1776,6 +1792,11 @@ int ieee80211_ibss_join(struct ieee80211_sub_if_data *sdata,
 	int i;
 	int ret;
 
+	if (params->chandef.chan->freq_offset) {
+		/* this may work, but is untested */
+		return -EOPNOTSUPP;
+	}
+
 	ret = cfg80211_chandef_dfs_required(local->hw.wiphy,
 					    &params->chandef,
 					    sdata->wdev.iftype);
@@ -1862,6 +1883,7 @@ int ieee80211_ibss_join(struct ieee80211_sub_if_data *sdata,
 
 	sdata->smps_mode = IEEE80211_SMPS_OFF;
 	sdata->needed_rx_chains = local->rx_chains;
+	sdata->control_port_over_nl80211 = params->control_port_over_nl80211;
 
 	ieee80211_queue_work(&local->hw, &sdata->work);
 

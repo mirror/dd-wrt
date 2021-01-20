@@ -4,7 +4,7 @@
 #include <linux/version.h>
 #include_next <linux/usb/ch9.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_IS_LESS(3,2,0)
 #include <linux/types.h>    /* __u8 etc */
 #include <asm/byteorder.h>  /* le16_to_cpu */
 
@@ -21,8 +21,8 @@ static inline int usb_endpoint_maxp(const struct usb_endpoint_descriptor *epd)
 }
 #endif /* < 3.2 */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
-#define USB_SPEED_SUPER_PLUS	(USB_SPEED_SUPER + 1)
-#endif /* < 4.6 */
+#if LINUX_VERSION_IS_LESS(4,6,0)
+#define USB_SPEED_SUPER_PLUS	6
+#endif
 
 #endif /* __BACKPORT__LINUX_USB_CH9_H */

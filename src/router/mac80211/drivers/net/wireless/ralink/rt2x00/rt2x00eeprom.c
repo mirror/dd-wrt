@@ -26,13 +26,16 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#if IS_ENABLED(CONFIG_MTD)
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#endif
 #include <linux/of.h>
 
 #include "rt2x00.h"
 #include "rt2x00lib.h"
 
+#if IS_ENABLED(CONFIG_MTD)
 static int rt2800lib_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
 {
 	int ret = -EINVAL;
@@ -84,7 +87,6 @@ static int rt2800lib_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
 			rt2x00dev->eeprom[i] = swab16(rt2x00dev->eeprom[i]);
 
 	rt2x00dev->eeprom_file = &mtd_fw;
-	mtd_fw.size = len;
 	mtd_fw.data = (const u8 *) rt2x00dev->eeprom;
 
 	dev_info(rt2x00dev->dev, "loaded eeprom from mtd device \"%s\"\n", part);
@@ -92,6 +94,7 @@ static int rt2800lib_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
 
 	return ret;
 }
+#endif
 
 static const char *
 rt2x00lib_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
@@ -120,8 +123,10 @@ static int rt2x00lib_request_eeprom_file(struct rt2x00_dev *rt2x00dev)
 	const char *ee_name;
 	int retval;
 
+#if IS_ENABLED(CONFIG_MTD)
 	if (!rt2800lib_read_eeprom_mtd(rt2x00dev))
 		return 0;
+#endif
 
 	ee_name = rt2x00lib_get_eeprom_file_name(rt2x00dev);
 	if (!ee_name && test_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags)) {
@@ -176,6 +181,7 @@ int rt2x00lib_load_eeprom_file(struct rt2x00_dev *rt2x00dev)
 
 void rt2x00lib_free_eeprom_file(struct rt2x00_dev *rt2x00dev)
 {
-	release_firmware(rt2x00dev->eeprom_file);
+	if (rt2x00dev->eeprom_file && rt2x00dev->eeprom_file->size)
+		release_firmware(rt2x00dev->eeprom_file);
 	rt2x00dev->eeprom_file = NULL;
 }

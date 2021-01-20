@@ -1,21 +1,20 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Mac80211 SDIO driver for ST-Ericsson CW1200 device
  *
  * Copyright (c) 2010, ST-Ericsson
  * Author: Dmitry Tarnyagin <dmitry.tarnyagin@lockless.no>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
  */
 
 #include <linux/module.h>
+#include <linux/interrupt.h>
 #include <linux/gpio.h>
 #include <linux/delay.h>
 #include <linux/mmc/host.h>
 #include <linux/mmc/sdio_func.h>
 #include <linux/mmc/card.h>
 #include <linux/mmc/sdio.h>
+#include <linux/mmc/sdio_ids.h>
 #include <net/mac80211.h>
 
 #include "cw1200.h"
@@ -49,14 +48,6 @@ struct hwbus_priv {
 	struct cw1200_common	*core;
 	const struct cw1200_platform_data_sdio *pdata;
 };
-
-#ifndef SDIO_VENDOR_ID_STE
-#define SDIO_VENDOR_ID_STE		0x0020
-#endif
-
-#ifndef SDIO_DEVICE_ID_STE_CW1200
-#define SDIO_DEVICE_ID_STE_CW1200	0x2280
-#endif
 
 static const struct sdio_device_id cw1200_sdio_ids[] = {
 	{ SDIO_DEVICE(SDIO_VENDOR_ID_STE, SDIO_DEVICE_ID_STE_CW1200) },
@@ -253,7 +244,7 @@ static size_t cw1200_sdio_align_size(struct hwbus_priv *self, size_t size)
 	else
 		size = sdio_align_size(self->func, size);
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0))
+#if LINUX_VERSION_IS_LESS(3, 2, 0)
 	/* A quirk to handle this was committed in 3.2-rc */
 	if (size == SDIO_BLOCK_SIZE)
 		size += SDIO_BLOCK_SIZE;  /* HW bug; force use of block mode */
@@ -271,7 +262,7 @@ static int cw1200_sdio_pm(struct hwbus_priv *self, bool suspend)
 	return ret;
 }
 
-static struct hwbus_ops cw1200_sdio_hwbus_ops = {
+static const struct hwbus_ops cw1200_sdio_hwbus_ops = {
 	.hwbus_memcpy_fromio	= cw1200_sdio_memcpy_fromio,
 	.hwbus_memcpy_toio	= cw1200_sdio_memcpy_toio,
 	.lock			= cw1200_sdio_lock,

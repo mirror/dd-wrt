@@ -8,4 +8,18 @@
 			 _name##_show, _name##_store)
 #endif
 
+#if LINUX_VERSION_IS_LESS(5,10,0)
+#define sysfs_emit LINUX_BACKPORT(sysfs_emit)
+#ifdef CONFIG_SYSFS
+__printf(2, 3)
+int sysfs_emit(char *buf, const char *fmt, ...);
+#else /* CONFIG_SYSFS */
+__printf(2, 3)
+static inline int sysfs_emit(char *buf, const char *fmt, ...)
+{
+	return 0;
+}
+#endif /* CONFIG_SYSFS */
+#endif /* < 5.10 */
+
 #endif /* __BACKPORT_LINUX_SYSFS_H */

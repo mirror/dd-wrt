@@ -1,4 +1,4 @@
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0))
+#if LINUX_VERSION_IS_GEQ(3,5,0)
 #include_next <linux/uidgid.h>
 #else
 
@@ -218,4 +218,4 @@ static inline bool kgid_has_mapping(struct user_namespace *ns, kgid_t gid)
 #endif /* CONFIG_USER_NS */
 
 #endif /* _LINUX_UIDGID_H */
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0) */
+#endif /* LINUX_VERSION_IS_GEQ(3,5,0) */

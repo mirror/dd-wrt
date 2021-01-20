@@ -25,7 +25,7 @@
  * supported and meats the expected form.
  */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
+#if LINUX_VERSION_IS_LESS(3,14,0)
 #define SIOCGHWTSTAMP	0x89b1		/* get config			*/
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,14,0) */
 #endif /* __BACKPORT_LINUX_SOCKIOS_H */

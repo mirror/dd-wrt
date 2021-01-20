@@ -13,7 +13,6 @@
 #include <linux/clk.h>
 
 /* whoopsie ! */
-#ifndef CONFIG_LANTIQ
 #ifndef CONFIG_COMMON_CLK
 int clk_enable(struct clk *clk)
 {
@@ -25,5 +24,4 @@ void clk_disable(struct clk *clk)
 {
 }
 EXPORT_SYMBOL_GPL(clk_disable);
-#endif
 #endif

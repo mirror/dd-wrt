@@ -1,12 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
 config WLAN_VENDOR_INTERSIL
 	bool "Intersil devices"
 	default y
-	---help---
+	help
 	  If you have a wireless card belonging to this class, say Y.
 
 	  Note that the answer to this question doesn't directly affect the
-	  kernel: saying N will just cause the configurator to skip all
-	  the questions about  cards. If you say Y, you will be asked for
+	  kernel: saying N will just cause the configurator to skip all the
+	  questions about these cards. If you say Y, you will be asked for
 	  your specific card in the following questions.
 
 if WLAN_VENDOR_INTERSIL
@@ -23,7 +24,7 @@ config PRISM54
 	depends on WEXT_SPY
 	depends on WEXT_PRIV
 	depends on FW_LOADER
-	---help---
+	help
 	  This enables support for FullMAC PCI/Cardbus prism54 devices. This
 	  driver is now deprecated in favor for the SoftMAC driver, p54pci.
 	  p54pci supports FullMAC PCI/Cardbus devices as well.

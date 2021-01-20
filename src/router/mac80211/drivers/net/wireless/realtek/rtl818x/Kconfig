@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # RTL818X Wireless LAN device configuration
 #
@@ -6,7 +7,7 @@ config RTL8180
 	depends on m
 	depends on MAC80211 && PCI
 	depends on EEPROM_93CX6
-	---help---
+	help
 	  This is a driver for RTL8180, RTL8185 and RTL8187SE based cards.
 	  These are PCI based chips found in cards such as:
 
@@ -63,7 +64,7 @@ config RTL8187
 	depends on m
 	depends on MAC80211 && USB
 	depends on EEPROM_93CX6
-	---help---
+	help
 	  This is a driver for RTL8187 and RTL8187B based cards.
 	  These are USB based chips found in devices such as:
 

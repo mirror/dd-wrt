@@ -65,3 +65,12 @@ struct aead_request *crypto_backport_convert(struct aead_request *req)
 	return &nreq->subreq;
 }
 EXPORT_SYMBOL_GPL(crypto_backport_convert);
+
+char *strreplace(char *s, char old, char new)
+{
+	for (; *s; ++s)
+		if (*s == old)
+			*s = new;
+	return s;
+}
+EXPORT_SYMBOL_GPL(strreplace);

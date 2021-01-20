@@ -517,12 +517,12 @@ static struct sk_buff *create_monitor_ctrl_open(struct sock *sk)
 	put_unaligned_le16(format, skb_put(skb, 2));
 	memcpy(skb_put(skb, sizeof(ver)), ver, sizeof(ver));
 	put_unaligned_le32(flags, skb_put(skb, 4));
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+//#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 	skb_put_data(skb, hci_pi(sk)->comm, TASK_COMM_LEN);
-#else
-	*skb_put(skb, 1) = TASK_COMM_LEN;
-	memcpy(skb_put(skb, TASK_COMM_LEN), hci_pi(sk)->comm, TASK_COMM_LEN);
-#endif
+//#else
+//	*skb_put(skb, 1) = TASK_COMM_LEN;
+//	memcpy(skb_put(skb, TASK_COMM_LEN), hci_pi(sk)->comm, TASK_COMM_LEN);
+//#endif
 
 	__net_timestamp(skb);
 

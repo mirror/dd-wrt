@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 obj-$(CPTCFG_B43)		+= b43/
 obj-$(CPTCFG_B43LEGACY)		+= b43legacy/
 

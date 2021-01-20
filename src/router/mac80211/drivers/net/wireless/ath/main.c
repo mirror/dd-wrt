@@ -26,7 +26,7 @@ MODULE_AUTHOR("Atheros Communications");
 MODULE_DESCRIPTION("Shared library for Atheros wireless LAN cards.");
 MODULE_LICENSE("Dual BSD/GPL");
 
-struct sk_buff *_ath_rxbuf_alloc(const char *name, const int line, struct ath_common *common,
+struct sk_buff *ath_rxbuf_alloc(struct ath_common *common,
 				u32 len,
 				gfp_t gfp_mask)
 {
@@ -52,13 +52,13 @@ struct sk_buff *_ath_rxbuf_alloc(const char *name, const int line, struct ath_co
 		if (off != 0)
 			skb_reserve(skb, common->cachelsz - off);
 	} else {
-		pr_err("%s:%d->skbuff alloc of size %u failed (%s)\n", name, line, len + common->cachelsz - 1, ((gfp_mask & GFP_ATOMIC) == GFP_ATOMIC) ? "GFP_ATOMIC" : "GFP_KERNEL");
+		pr_err("skbuff alloc of size %u failed\n", len);
 		return NULL;
 	}
 
 	return skb;
 }
-EXPORT_SYMBOL(_ath_rxbuf_alloc);
+EXPORT_SYMBOL(ath_rxbuf_alloc);
 
 bool ath_is_mybeacon(struct ath_common *common, struct ieee80211_hdr *hdr)
 {

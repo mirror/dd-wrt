@@ -112,7 +112,7 @@ void dma_walk_packets(struct dma_pub *dmah, void (*callback_fnc)
  */
 static inline void dma_spin_for_len(uint len, struct sk_buff *head)
 {
-#if defined(CONFIG_BCM47XX) && !defined(CONFIG_ARM)
+#if defined(CONFIG_BCM47XX)
 	if (!len) {
 		while (!(len = *(u16 *) KSEG1ADDR(head->data)))
 			udelay(1);

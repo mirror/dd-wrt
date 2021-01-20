@@ -13,6 +13,7 @@
 #include <linux/export.h>
 #include <linux/ktime.h>
 #include <linux/jiffies.h>
+#include <linux/moduleparam.h>
 
 int bit_wait(void *word)
 {
@@ -144,3 +145,22 @@ char *devm_kasprintf(struct device *dev, gfp_t gfp, const char *fmt, ...)
 	return p;
 }
 EXPORT_SYMBOL_GPL(devm_kasprintf);
+
+#define STANDARD_PARAM_DEF(name, type, format, strtolfn)      		\
+	int param_set_##name(const char *val, const struct kernel_param *kp) \
+	{								\
+		return strtolfn(val, 0, (type *)kp->arg);		\
+	}								\
+	int param_get_##name(char *buffer, const struct kernel_param *kp) \
+	{								\
+		return scnprintf(buffer, PAGE_SIZE, format,		\
+				*((type *)kp->arg));			\
+	}								\
+	struct kernel_param_ops param_ops_##name = {			\
+		.set = param_set_##name,				\
+		.get = param_get_##name,				\
+	};								\
+	EXPORT_SYMBOL(param_set_##name);				\
+	EXPORT_SYMBOL(param_get_##name);				\
+	EXPORT_SYMBOL(param_ops_##name)
+STANDARD_PARAM_DEF(ullong, unsigned long long, "%llu", kstrtoull);

@@ -11,4 +11,3 @@ subdir-ccflags-$(CPTCFG_BRCMDBG)	+= -DDEBUG
 obj-$(CPTCFG_BRCMUTIL)	+= brcmutil/
 obj-$(CPTCFG_BRCMFMAC)	+= brcmfmac/
 obj-$(CPTCFG_BRCMSMAC)	+= brcmsmac/
-#obj-$(CPTCFG_BRCMSMAC)	+= hybrid/

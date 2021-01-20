@@ -3,6 +3,10 @@
 #include_next <linux/pci.h>
 #include <linux/version.h>
 
+#if LINUX_VERSION_IS_LESS(5,4,0)
+#include <linux/pci-aspm.h>
+#endif
+
 #ifndef module_pci_driver
 /**
  * module_pci_driver() - Helper macro for registering a PCI driver
@@ -17,7 +21,7 @@
 		       pci_unregister_driver)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_IS_LESS(3,7,0)
 #define pcie_capability_read_word LINUX_BACKPORT(pcie_capability_read_word)
 int pcie_capability_read_word(struct pci_dev *dev, int pos, u16 *val);
 #define pcie_capability_read_dword LINUX_BACKPORT(pcie_capability_read_dword)
@@ -78,7 +82,7 @@ static inline int pcie_capability_clear_dword(struct pci_dev *dev, int pos,
 	.subvendor = (subvend), .subdevice = (subdev)
 #endif /* PCI_DEVICE_SUB */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_IS_LESS(3,2,0)
 #define pci_dev_flags LINUX_BACKPORT(pci_dev_flags)
 #define PCI_DEV_FLAGS_MSI_INTX_DISABLE_BUG LINUX_BACKPORT(PCI_DEV_FLAGS_MSI_INTX_DISABLE_BUG)
 #define PCI_DEV_FLAGS_NO_D3 LINUX_BACKPORT(PCI_DEV_FLAGS_NO_D3)
@@ -93,14 +97,14 @@ enum pci_dev_flags {
 	/* Provide indication device is assigned by a Virtual Machine Manager */
 	PCI_DEV_FLAGS_ASSIGNED = (__force pci_dev_flags_t) 4,
 };
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,2,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,2,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0)
+#if LINUX_VERSION_IS_LESS(3,8,0)
 #define pci_sriov_set_totalvfs LINUX_BACKPORT(pci_sriov_set_totalvfs)
 int pci_sriov_set_totalvfs(struct pci_dev *dev, u16 numvfs);
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,8,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+#if LINUX_VERSION_IS_LESS(3,10,0)
 /* Taken from drivers/pci/pci.h */
 struct pci_sriov {
 	int pos;		/* capability position */
@@ -132,9 +136,28 @@ static inline int pci_vfs_assigned(struct pci_dev *dev)
 }
 #endif
 
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,10,0) */
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0))
+#if LINUX_VERSION_IS_LESS(4,8,0)
+#define pci_alloc_irq_vectors LINUX_BACKPORT(pci_alloc_irq_vectors)
+#ifdef CONFIG_PCI_MSI
+int pci_alloc_irq_vectors(struct pci_dev *dev, unsigned int min_vecs,
+		unsigned int max_vecs, unsigned int flags);
+#else
+static inline int pci_alloc_irq_vectors(struct pci_dev *dev, unsigned int min_vecs,
+		unsigned int max_vecs, unsigned int flags)
+{ return -ENOSYS; }
+#endif
+#endif
+
+#if LINUX_VERSION_IS_LESS(4,8,0)
+#define pci_free_irq_vectors LINUX_BACKPORT(pci_free_irq_vectors)
+static inline void pci_free_irq_vectors(struct pci_dev *dev)
+{
+}
+#endif
+
+#if LINUX_VERSION_IS_LESS(3,14,0)
 #define pci_enable_msi_range LINUX_BACKPORT(pci_enable_msi_range)
 #ifdef CONFIG_PCI_MSI
 int pci_enable_msi_range(struct pci_dev *dev, int minvec, int maxvec);
@@ -146,7 +169,7 @@ static inline int pci_enable_msi_range(struct pci_dev *dev, int minvec,
 #endif
 
 #ifdef CONFIG_PCI
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
+#if LINUX_VERSION_IS_LESS(3,14,0)
 #define pci_enable_msix_range LINUX_BACKPORT(pci_enable_msix_range)
 #ifdef CONFIG_PCI_MSI
 int pci_enable_msix_range(struct pci_dev *dev, struct msix_entry *entries,
@@ -159,13 +182,13 @@ static inline int pci_enable_msix_range(struct pci_dev *dev,
 #endif
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)
+#if LINUX_VERSION_IS_LESS(3,13,0)
 #define pci_device_is_present LINUX_BACKPORT(pci_device_is_present)
 bool pci_device_is_present(struct pci_dev *pdev);
 #endif
 
 #ifdef CONFIG_PCI
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
+#if LINUX_VERSION_IS_LESS(3,14,0)
 #define pci_enable_msix_exact LINUX_BACKPORT(pci_enable_msix_exact)
 #ifdef CONFIG_PCI_MSI
 static inline int pci_enable_msix_exact(struct pci_dev *dev,
@@ -183,5 +206,60 @@ static inline int pci_enable_msix_exact(struct pci_dev *dev,
 #endif /* CONFIG_PCI_MSI */
 #endif
 #endif /* CONFIG_PCI */
+
+#if LINUX_VERSION_IS_LESS(4,9,0) &&			\
+	!LINUX_VERSION_IN_RANGE(3,2,0, 3,7,0) &&	\
+	!LINUX_VERSION_IN_RANGE(3,12,69, 3,13,0) &&	\
+	!LINUX_VERSION_IN_RANGE(4,4,37, 4,5,0) &&	\
+	!LINUX_VERSION_IN_RANGE(4,8,13, 4,9,0)
+
+static inline struct pci_dev *pcie_find_root_port(struct pci_dev *dev)
+{
+	while (1) {
+		if (!pci_is_pcie(dev))
+			break;
+		if (pci_pcie_type(dev) == PCI_EXP_TYPE_ROOT_PORT)
+			return dev;
+		if (!dev->bus->self)
+			break;
+		dev = dev->bus->self;
+	}
+	return NULL;
+}
+
+#endif/* <4.9.0 but not >= 3.12.69, 4.4.37, 4.8.13 */
+
+#ifndef PCI_IRQ_LEGACY
+#define PCI_IRQ_LEGACY		(1 << 0) /* Allow legacy interrupts */
+#define PCI_IRQ_MSI		(1 << 1) /* Allow MSI interrupts */
+#define PCI_IRQ_MSIX		(1 << 2) /* Allow MSI-X interrupts */
+#define PCI_IRQ_ALL_TYPES \
+	(PCI_IRQ_LEGACY | PCI_IRQ_MSI | PCI_IRQ_MSIX)
+#endif
+
+#if defined(CONFIG_PCI)
+#if LINUX_VERSION_IS_LESS(5,3,0)
+static inline int
+backport_pci_disable_link_state(struct pci_dev *pdev, int state)
+{
+	u16 aspmc;
+
+	pci_disable_link_state(pdev, state);
+
+	pcie_capability_read_word(pdev, PCI_EXP_LNKCTL, &aspmc);
+	if ((state & PCIE_LINK_STATE_L0S) &&
+	    (aspmc & PCI_EXP_LNKCTL_ASPM_L0S))
+		return -EPERM;
+
+	if ((state & PCIE_LINK_STATE_L1) &&
+	    (aspmc & PCI_EXP_LNKCTL_ASPM_L1))
+		return -EPERM;
+
+	return 0;
+}
+#define pci_disable_link_state LINUX_BACKPORT(pci_disable_link_state)
+
+#endif /* < 5.3 */
+#endif /* defined(CONFIG_PCI) */
 
 #endif /* _BACKPORT_LINUX_PCI_H */

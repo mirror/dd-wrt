@@ -3,7 +3,7 @@
 #include_next <net/ip.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,1,0)
+#if LINUX_VERSION_IS_LESS(3,1,0)
 /* Backports 56f8a75c */
 static inline bool ip_is_fragment(const struct iphdr *iph)
 {

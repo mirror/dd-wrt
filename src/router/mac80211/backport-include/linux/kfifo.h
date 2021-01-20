@@ -4,7 +4,7 @@
 #include <linux/version.h>
 #include_next <linux/kfifo.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)
+#if LINUX_VERSION_IS_LESS(3,13,0)
 #undef kfifo_put
 /**
  * kfifo_put - put data into the fifo

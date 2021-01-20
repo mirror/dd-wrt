@@ -1,10 +1,8 @@
+#undef CONFIG_NOPRINTK
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * AES-128-CMAC with TLen 16 for IEEE 802.11w BIP
  * Copyright 2008, Jouni Malinen <j@w1.fi>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
  */
 
 #include <linux/kernel.h>
@@ -95,37 +93,62 @@ void aes_cmac_vector(struct crypto_cipher *tfm, size_t num_elem,
 void ieee80211_aes_cmac(struct crypto_cipher *tfm, const u8 *aad,
 			const u8 *data, size_t data_len, u8 *mic)
 {
-	const u8 *addr[3];
-	size_t len[3];
+	const u8 *addr[4];
+	size_t len[4];
 	u8 zero[CMAC_TLEN];
+	const __le16 *fc;
 
 	memset(zero, 0, CMAC_TLEN);
 	addr[0] = aad;
 	len[0] = AAD_LEN;
-	addr[1] = data;
-	len[1] = data_len - CMAC_TLEN;
-	addr[2] = zero;
-	len[2] = CMAC_TLEN;
-
-	aes_cmac_vector(tfm, 3, addr, len, mic, CMAC_TLEN);
+	fc = (const __le16 *)aad;
+	if (ieee80211_is_beacon(*fc)) {
+		/* mask Timestamp field to zero */
+		addr[1] = zero;
+		len[1] = 8;
+		addr[2] = data + 8;
+		len[2] = data_len - 8 - CMAC_TLEN;
+		addr[3] = zero;
+		len[3] = CMAC_TLEN;
+		aes_cmac_vector(tfm, 4, addr, len, mic, CMAC_TLEN);
+	} else {
+		addr[1] = data;
+		len[1] = data_len - CMAC_TLEN;
+		addr[2] = zero;
+		len[2] = CMAC_TLEN;
+		aes_cmac_vector(tfm, 3, addr, len, mic, CMAC_TLEN);
+	}
 }
 
 void ieee80211_aes_cmac_256(struct crypto_cipher *tfm, const u8 *aad,
 			    const u8 *data, size_t data_len, u8 *mic)
 {
-	const u8 *addr[3];
-	size_t len[3];
+	const u8 *addr[4];
+	size_t len[4];
 	u8 zero[CMAC_TLEN_256];
+	const __le16 *fc;
 
 	memset(zero, 0, CMAC_TLEN_256);
 	addr[0] = aad;
 	len[0] = AAD_LEN;
 	addr[1] = data;
-	len[1] = data_len - CMAC_TLEN_256;
-	addr[2] = zero;
-	len[2] = CMAC_TLEN_256;
-
-	aes_cmac_vector(tfm, 3, addr, len, mic, CMAC_TLEN_256);
+	fc = (const __le16 *)aad;
+	if (ieee80211_is_beacon(*fc)) {
+		/* mask Timestamp field to zero */
+		addr[1] = zero;
+		len[1] = 8;
+		addr[2] = data + 8;
+		len[2] = data_len - 8 - CMAC_TLEN_256;
+		addr[3] = zero;
+		len[3] = CMAC_TLEN_256;
+		aes_cmac_vector(tfm, 4, addr, len, mic, CMAC_TLEN_256);
+	} else {
+		addr[1] = data;
+		len[1] = data_len - CMAC_TLEN_256;
+		addr[2] = zero;
+		len[2] = CMAC_TLEN_256;
+		aes_cmac_vector(tfm, 3, addr, len, mic, CMAC_TLEN_256);
+	}
 }
 
 struct crypto_cipher *ieee80211_aes_cmac_key_setup(const u8 key[],

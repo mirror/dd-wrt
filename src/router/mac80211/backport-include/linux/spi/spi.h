@@ -18,7 +18,7 @@
 #endif
 
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0)
+#if LINUX_VERSION_IS_LESS(3,9,0)
 /**
  * spi_message_init_with_transfers - Initialize spi_message and append transfers
  * @m: spi_message to be initialized

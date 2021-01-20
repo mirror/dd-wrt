@@ -6,7 +6,7 @@
 
 /* see pr_fmt at end of file */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0)
+#if LINUX_VERSION_IS_LESS(3,9,0)
 /* backports 7a555613 */
 #if defined(CONFIG_DYNAMIC_DEBUG)
 #define dynamic_hex_dump(prefix_str, prefix_type, rowsize,     \
@@ -30,7 +30,7 @@ do {                                                           \
 		       groupsize, buf, len, ascii)
 #endif /* defined(CONFIG_DYNAMIC_DEBUG) */
 
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,9,0) */
 
 #ifndef pr_warn
 #define pr_warn pr_warning
@@ -139,7 +139,7 @@ do {									\
 #endif /* pr_debug_ratelimited */
 
 /* replace hex_dump_to_buffer() with a version which returns the length */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
+#if LINUX_VERSION_IS_LESS(4,0,0)
 #define hex_dump_to_buffer LINUX_BACKPORT(hex_dump_to_buffer)
 extern int hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
 			      int groupsize, char *linebuf, size_t linebuflen,

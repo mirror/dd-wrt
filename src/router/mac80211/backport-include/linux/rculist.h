@@ -1,8 +1,9 @@
 #ifndef __BACKPORT_RCULIST_H
 #define __BACKPORT_RCULIST_H
 #include_next <linux/rculist.h>
+#include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0)
+#if LINUX_VERSION_IS_LESS(3,9,0)
 #include <backport/magic.h>
 #define hlist_for_each_entry_rcu4(tpos, pos, head, member)		\
 	for (pos = rcu_dereference_raw(hlist_first_rcu(head));		\
@@ -53,5 +54,26 @@
 	likely(__ptr != __next) ? list_entry_rcu(__next, type, member) : NULL; \
 })
 #endif /* list_first_or_null_rcu */
+
+
+#if LINUX_VERSION_IS_LESS(5,4,0)
+
+/**
+ * list_for_each_entry_rcu	-	iterate over rcu list of given type
+ * @pos:	the type * to use as a loop cursor.
+ * @head:	the head for your list.
+ * @member:	the name of the list_head within the struct.
+ * @cond...:	optional lockdep expression if called from non-RCU protection.
+ *
+ * This list-traversal primitive may safely run concurrently with
+ * the _rcu list-mutation primitives such as list_add_rcu()
+ * as long as the traversal is guarded by rcu_read_lock().
+ */
+#undef list_for_each_entry_rcu
+#define list_for_each_entry_rcu(pos, head, member, cond...)		\
+	for (pos = list_entry_rcu((head)->next, typeof(*pos), member); \
+		&pos->member != (head); \
+		pos = list_entry_rcu(pos->member.next, typeof(*pos), member))
+#endif /* < 5.4 */
 
 #endif /* __BACKPORT_RCULIST_H */

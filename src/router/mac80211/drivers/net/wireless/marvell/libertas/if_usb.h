@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _LBS_IF_USB_H
 #define _LBS_IF_USB_H
 
@@ -90,7 +91,7 @@ struct fwheader {
 struct fwdata {
 	struct fwheader hdr;
 	__le32 seqnum;
-	uint8_t data[0];
+	uint8_t data[];
 };
 
 /* fwsyncheader */

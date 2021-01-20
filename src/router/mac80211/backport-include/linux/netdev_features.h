@@ -3,7 +3,7 @@
 
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_IS_LESS(3,3,0)
 #include <linux/netdevice.h>
 #include <linux/types.h>
 
@@ -20,7 +20,7 @@ typedef u32 netdev_features_t;
 #else
 #include_next <linux/netdev_features.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+#if LINUX_VERSION_IS_LESS(3,10,0)
 /* See commit f646968f8f on next-20130423 */
 #define NETIF_F_HW_VLAN_CTAG_TX_BIT		NETIF_F_HW_VLAN_TX_BIT
 #define NETIF_F_HW_VLAN_CTAG_RX_BIT		NETIF_F_HW_VLAN_RX_BIT
@@ -31,7 +31,7 @@ typedef u32 netdev_features_t;
 #define NETIF_F_HW_VLAN_CTAG_TX			NETIF_F_HW_VLAN_TX
 #endif
 
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,3,0) */
 
 #if !defined(NETIF_F_RXCSUM)
 #define NETIF_F_RXCSUM 0

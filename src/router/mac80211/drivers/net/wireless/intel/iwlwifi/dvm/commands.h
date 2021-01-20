@@ -16,11 +16,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110,
- * USA
- *
  * The full GNU General Public License is included in this distribution
  * in the file called COPYING.
  *
@@ -311,11 +306,6 @@ enum {
 
 /**
  * rate_n_flags Tx antenna masks
- * 4965 has 2 transmitters
- * 5100 has 1 transmitter B
- * 5150 has 1 transmitter A
- * 5300 has 3 transmitters
- * 5350 has 3 transmitters
  * bit14:16
  */
 #define RATE_MCS_ANT_POS	14
@@ -1033,7 +1023,7 @@ struct iwl_wep_cmd {
 	u8 global_key_type;
 	u8 flags;
 	u8 reserved;
-	struct iwl_wep_key key[0];
+	struct iwl_wep_key key[];
 } __packed;
 
 #define WEP_KEY_WEP_TYPE 1
@@ -1230,7 +1220,6 @@ struct iwl_rx_mpdu_res_start {
  */
 
 /*
- * 4965 uCode updates these Tx attempt count values in host DRAM.
  * Used for managing Tx retries when expecting block-acks.
  * Driver should set these fields to 0.
  */
@@ -1316,7 +1305,7 @@ struct iwl_tx_cmd {
 	 * length is 26 or 30 bytes, followed by payload data
 	 */
 	u8 payload[0];
-	struct ieee80211_hdr hdr[0];
+	struct ieee80211_hdr hdr[];
 } __packed;
 
 /*
@@ -1437,22 +1426,6 @@ struct agg_tx_status {
 	__le16 sequence;
 } __packed;
 
-/*
- * definitions for initial rate index field
- * bits [3:0] initial rate index
- * bits [6:4] rate table color, used for the initial rate
- * bit-7 invalid rate indication
- *   i.e. rate was not chosen from rate table
- *   or rate table color was changed during frame retries
- * refer tlc rate info
- */
-
-#define IWL50_TX_RES_INIT_RATE_INDEX_POS	0
-#define IWL50_TX_RES_INIT_RATE_INDEX_MSK	0x0f
-#define IWL50_TX_RES_RATE_TABLE_COLOR_POS	4
-#define IWL50_TX_RES_RATE_TABLE_COLOR_MSK	0x70
-#define IWL50_TX_RES_INV_RATE_INDEX_MSK	0x80
-
 /* refer to ra_tid */
 #define IWLAGN_TX_RES_TID_POS	0
 #define IWLAGN_TX_RES_TID_MSK	0x0f
@@ -1556,7 +1529,7 @@ struct iwl_link_qual_general_params {
 	/* Best single antenna to use for single stream (legacy, SISO). */
 	u8 single_stream_ant_msk;	/* LINK_QUAL_ANT_* */
 
-	/* Best antennas to use for MIMO (unused for 4965, assumes both). */
+	/* Best antennas to use for MIMO */
 	u8 dual_stream_ant_msk;		/* LINK_QUAL_ANT_* */
 
 	/*
@@ -2407,7 +2380,7 @@ struct iwl_scan_cmd {
 	 * for one scan to complete (i.e. receive SCAN_COMPLETE_NOTIFICATION)
 	 * before requesting another scan.
 	 */
-	u8 data[0];
+	u8 data[];
 } __packed;
 
 /* Can abort will notify by complete notification with abort status. */
@@ -2502,7 +2475,7 @@ struct iwl_tx_beacon_cmd {
 	__le16 tim_idx;
 	u8 tim_size;
 	u8 reserved1;
-	struct ieee80211_hdr frame[0];	/* beacon frame */
+	struct ieee80211_hdr frame[];	/* beacon frame */
 } __packed;
 
 /******************************************************************************
@@ -3215,7 +3188,7 @@ struct iwl_calib_hdr {
 
 struct iwl_calib_cmd {
 	struct iwl_calib_hdr hdr;
-	u8 data[0];
+	u8 data[];
 } __packed;
 
 struct iwl_calib_xtal_freq_cmd {
@@ -3243,7 +3216,7 @@ struct iwl_calib_temperature_offset_v2_cmd {
 /* IWL_PHY_CALIBRATE_CHAIN_NOISE_RESET_CMD */
 struct iwl_calib_chain_noise_reset_cmd {
 	struct iwl_calib_hdr hdr;
-	u8 data[0];
+	u8 data[];
 };
 
 /* IWL_PHY_CALIBRATE_CHAIN_NOISE_GAIN_CMD */

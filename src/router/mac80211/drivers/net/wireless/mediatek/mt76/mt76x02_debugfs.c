@@ -7,7 +7,7 @@
 #include "mt76x02.h"
 
 static int
-mt76x02_ampdu_stat_read(struct seq_file *file, void *data)
+mt76x02_ampdu_stat_show(struct seq_file *file, void *data)
 {
 	struct mt76x02_dev *dev = file->private;
 	int i, j;
@@ -31,11 +31,7 @@ mt76x02_ampdu_stat_read(struct seq_file *file, void *data)
 	return 0;
 }
 
-static int
-mt76x02_ampdu_stat_open(struct inode *inode, struct file *f)
-{
-	return single_open(f, mt76x02_ampdu_stat_read, inode->i_private);
-}
+DEFINE_SHOW_ATTRIBUTE(mt76x02_ampdu_stat);
 
 static int read_txpower(struct seq_file *file, void *data)
 {
@@ -48,15 +44,8 @@ static int read_txpower(struct seq_file *file, void *data)
 	return 0;
 }
 
-static const struct file_operations fops_ampdu_stat = {
-	.open = mt76x02_ampdu_stat_open,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = single_release,
-};
-
 static int
-mt76x02_dfs_stat_read(struct seq_file *file, void *data)
+mt76x02_dfs_stat_show(struct seq_file *file, void *data)
 {
 	struct mt76x02_dev *dev = file->private;
 	struct mt76x02_dfs_pattern_detector *dfs_pd = &dev->dfs_pd;
@@ -81,18 +70,7 @@ mt76x02_dfs_stat_read(struct seq_file *file, void *data)
 	return 0;
 }
 
-static int
-mt76x02_dfs_stat_open(struct inode *inode, struct file *f)
-{
-	return single_open(f, mt76x02_dfs_stat_read, inode->i_private);
-}
-
-static const struct file_operations fops_dfs_stat = {
-	.open = mt76x02_dfs_stat_open,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = single_release,
-};
+DEFINE_SHOW_ATTRIBUTE(mt76x02_dfs_stat);
 
 static int read_agc(struct seq_file *file, void *data)
 {
@@ -136,6 +114,58 @@ mt76_edcca_get(void *data, u64 *val)
 DEFINE_DEBUGFS_ATTRIBUTE(fops_edcca, mt76_edcca_get, mt76_edcca_set,
 			 "%lld\n");
 
+static ssize_t read_file_turboqam(struct file *file, char __user *user_buf,
+			     size_t count, loff_t *ppos)
+{
+	struct mt76x02_dev *dev = file->private_data;
+	struct mt76_dev *mt76dev = &dev->mt76;
+	char buf[32];
+	unsigned int len;
+
+	len = sprintf(buf, "0x%08x\n", mt76dev->turboqam);
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+
+int
+mt76_init_sband_2g(struct mt76_phy *phy, struct ieee80211_rate *rates,
+		   int n_rates, bool vht);
+
+static ssize_t write_file_turboqam(struct file *file, const char __user *user_buf,
+			     size_t count, loff_t *ppos)
+{
+	struct mt76x02_dev *dev = file->private_data;
+	struct mt76_dev *mt76dev = &dev->mt76;
+	struct mt76_phy *mt76phy = &mt76dev->phy;
+	unsigned long turboqam;
+	char buf[32];
+	ssize_t len;
+
+	len = min(count, sizeof(buf) - 1);
+	if (copy_from_user(buf, user_buf, len))
+		return -EFAULT;
+
+	buf[len] = '\0';
+	if (kstrtoul(buf, 0, &turboqam))
+		return -EINVAL;
+		
+       mt76dev->turboqam = turboqam;
+       if (mt76phy->cap.has_2ghz) {
+		if (turboqam)
+			mt76_init_sband_2g(mt76phy, mt76x02_rates, ARRAY_SIZE(mt76x02_rates), 1);
+		else
+			mt76_init_sband_2g(mt76phy, mt76x02_rates, ARRAY_SIZE(mt76x02_rates), 0);
+	}
+	return count;
+}
+
+static const struct file_operations fops_turboqam = {
+	.read = read_file_turboqam,
+	.write = write_file_turboqam,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
 void mt76x02_init_debugfs(struct mt76x02_dev *dev)
 {
 	struct dentry *dir;
@@ -144,19 +174,21 @@ void mt76x02_init_debugfs(struct mt76x02_dev *dev)
 	if (!dir)
 		return;
 
-	debugfs_create_devm_seqfile(dev->mt76.dev, "queues", dir,
+	debugfs_create_devm_seqfile(dev->mt76.dev, "xmit-queues", dir,
 				    mt76_queues_read);
 	debugfs_create_u8("temperature", 0400, dir, &dev->cal.temp);
 	debugfs_create_bool("tpc", 0600, dir, &dev->enable_tpc);
 
 	debugfs_create_file("edcca", 0600, dir, dev, &fops_edcca);
-	debugfs_create_file("ampdu_stat", 0400, dir, dev, &fops_ampdu_stat);
-	debugfs_create_file("dfs_stats", 0400, dir, dev, &fops_dfs_stat);
+	debugfs_create_file("ampdu_stat", 0400, dir, dev, &mt76x02_ampdu_stat_fops);
+	debugfs_create_file("dfs_stats", 0400, dir, dev, &mt76x02_dfs_stat_fops);
 	debugfs_create_devm_seqfile(dev->mt76.dev, "txpower", dir,
 				    read_txpower);
 
 	debugfs_create_devm_seqfile(dev->mt76.dev, "agc", dir, read_agc);
 
 	debugfs_create_u32("tx_hang_reset", 0400, dir, &dev->tx_hang_reset);
+	debugfs_create_file("turboqam", S_IRUSR | S_IWUSR, dir,
+			    dev, &fops_turboqam);
 }
 EXPORT_SYMBOL_GPL(mt76x02_init_debugfs);

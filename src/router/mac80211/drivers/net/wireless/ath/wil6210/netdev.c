@@ -1,18 +1,7 @@
+// SPDX-License-Identifier: ISC
 /*
  * Copyright (c) 2012-2017 Qualcomm Atheros, Inc.
  * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <linux/etherdevice.h>
@@ -205,9 +194,7 @@ static int wil6210_netdev_poll_tx_edma(struct napi_struct *napi, int budget)
 static void wil_dev_setup(struct net_device *dev)
 {
 	ether_setup(dev);
-#if LINUX_VERSION_IS_GEQ(4,10,0)
- 	dev->max_mtu = mtu_max;
-#endif
+	dev->max_mtu = mtu_max;
 	dev->tx_queue_len = WIL_TX_Q_LEN_DEFAULT;
 }
 
@@ -307,6 +294,13 @@ static u8 wil_vif_find_free_mid(struct wil6210_priv *wil)
 	return U8_MAX;
 }
 
+#if LINUX_VERSION_IS_LESS(4,12,0)
+static void __wil_ndev_destructor(struct net_device *ndev){
+	wil_ndev_destructor(ndev);
+	free_netdev(ndev);
+}
+#endif
+
 struct wil6210_vif *
 wil_vif_alloc(struct wil6210_priv *wil, const char *name,
 	      unsigned char name_assign_type, enum nl80211_iftype iftype)
@@ -331,12 +325,7 @@ wil_vif_alloc(struct wil6210_priv *wil, const char *name,
 	if (mid == 0) {
 		wil->main_ndev = ndev;
 	} else {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
- 		ndev->priv_destructor = wil_ndev_destructor;
- 		ndev->needs_free_netdev = true;
-#else
-		ndev->destructor = wil_ndev_destructor;
-#endif
+		netdev_set_priv_destructor(ndev, wil_ndev_destructor);
 	}
 
 	vif = ndev_to_vif(ndev);
@@ -471,6 +460,7 @@ int wil_if_add(struct wil6210_priv *wil)
 	}
 
 	init_dummy_netdev(&wil->napi_ndev);
+	strcpy(wil->napi_ndev.name, "wil6210-napi");
 	if (wil->use_enhanced_dma_hw) {
 		netif_napi_add(&wil->napi_ndev, &wil->napi_rx,
 			       wil6210_netdev_poll_rx_edma,

@@ -60,7 +60,7 @@ defconfig-%::
 backport-include/backport/autoconf.h: .config Kconfig.versions Kconfig.kernel
 	@$(MAKE) oldconfig
 	@printf "Building backport-include/backport/autoconf.h ..."
-	@grep -f .local-symbols .config | (				\
+	@grep -f local-symbols .config | (				\
 		echo "#ifndef COMPAT_AUTOCONF_INCLUDED"			;\
 		echo "#define COMPAT_AUTOCONF_INCLUDED"			;\
 		echo "/*"						;\
@@ -123,3 +123,4 @@ uninstall:
 .PHONY: clean
 clean:
 	@$(MAKE) -f Makefile.build clean
+	@$(MAKE) -C kconf clean

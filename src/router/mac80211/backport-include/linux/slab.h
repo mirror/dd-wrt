@@ -3,7 +3,7 @@
 #include_next <linux/slab.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
+#if LINUX_VERSION_IS_LESS(3,4,0)
 /* This backports:
  *
  * commit a8203725dfded5c1f79dca3368a4a273e24b59bb
@@ -22,6 +22,10 @@ static inline void *kmalloc_array(size_t n, size_t size, gfp_t flags)
 		return NULL;
 	return __kmalloc(n * size, flags);
 }
+#endif
+
+#if LINUX_VERSION_IS_LESS(5,9,0)
+#define kfree_sensitive(x)	kzfree(x)
 #endif
 
 #endif /* __BACKPORT_SLAB_H */

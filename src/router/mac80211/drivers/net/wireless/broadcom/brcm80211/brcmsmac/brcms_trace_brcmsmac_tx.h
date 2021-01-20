@@ -99,7 +99,7 @@ TRACE_EVENT(brcms_ampdu_session,
 );
 #endif /* __TRACE_BRCMSMAC_TX_H */
 
-#ifdef CONFIG_BRCM_TRACING
+#ifdef CPTCFG_BRCM_TRACING
 
 #undef TRACE_INCLUDE_PATH
 #define TRACE_INCLUDE_PATH .
@@ -107,4 +107,4 @@ TRACE_EVENT(brcms_ampdu_session,
 #define TRACE_INCLUDE_FILE brcms_trace_brcmsmac_tx
 #include <trace/define_trace.h>
 
-#endif /* CONFIG_BRCM_TRACING */
+#endif /* CPTCFG_BRCM_TRACING */

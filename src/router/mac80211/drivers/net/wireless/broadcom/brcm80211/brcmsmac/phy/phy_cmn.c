@@ -278,7 +278,7 @@ u16 read_phy_reg(struct brcms_phy *pi, u16 addr)
 
 void write_phy_reg(struct brcms_phy *pi, u16 addr, u16 val)
 {
-#if defined(CONFIG_BCM47XX) && !defined(CONFIG_ARM)
+#ifdef CONFIG_BCM47XX
 	bcma_wflush16(pi->d11core, D11REGOFFS(phyregaddr), addr);
 	bcma_write16(pi->d11core, D11REGOFFS(phyregdata), val);
 	if (addr == 0x72)

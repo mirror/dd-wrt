@@ -2,7 +2,7 @@
 2017-06-10 : Igor Pavlov : Public domain */
 
 #include <stddef.h>
-#include <string.h>
+#include <linux/string.h>
 
 #include <linux/lzma/LzFind.h>
 #include <linux/lzma/LzHash.h>

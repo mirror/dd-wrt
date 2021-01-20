@@ -5,7 +5,7 @@
  *
  * GPL LICENSE SUMMARY
  *
- * Copyright(c) 2008 - 2014 Intel Corporation. All rights reserved.
+ * Copyright(c) 2008 - 2014, 2020 Intel Corporation. All rights reserved.
  * Copyright(c) 2013 - 2014 Intel Mobile Communications GmbH
  *
  * This program is free software; you can redistribute it and/or modify
@@ -17,11 +17,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110,
- * USA
- *
  * The full GNU General Public License is included in this distribution
  * in the file called COPYING.
  *
@@ -31,7 +26,7 @@
  *
  * BSD LICENSE
  *
- * Copyright(c) 2005 - 2014 Intel Corporation. All rights reserved.
+ * Copyright(c) 2005 - 2014, 2020 Intel Corporation. All rights reserved.
  * Copyright(c) 2013 - 2014 Intel Mobile Communications GmbH
  * All rights reserved.
  *
@@ -68,8 +63,7 @@
 
 /* for all modules */
 #define DRV_NAME        "iwlwifi"
-#define DRV_COPYRIGHT	"Copyright(c) 2003- 2015 Intel Corporation"
-#define DRV_AUTHOR     "<linuxwifi@intel.com>"
+#define DRV_AUTHOR	"Intel Corporation <linuxwifi@intel.com>"
 
 /* radio config bits (actual values from NVM definition) */
 #define NVM_RF_CFG_DASH_MSK(x)   (x & 0x3)         /* bits 0-1   */
@@ -79,12 +73,12 @@
 #define NVM_RF_CFG_TX_ANT_MSK(x) ((x >> 8)  & 0xF) /* bits 8-11  */
 #define NVM_RF_CFG_RX_ANT_MSK(x) ((x >> 12) & 0xF) /* bits 12-15 */
 
-#define NVM_RF_CFG_FLAVOR_MSK_FAMILY_8000(x)   (x & 0xF)
-#define NVM_RF_CFG_DASH_MSK_FAMILY_8000(x)   ((x >> 4) & 0xF)
-#define NVM_RF_CFG_STEP_MSK_FAMILY_8000(x)   ((x >> 8) & 0xF)
-#define NVM_RF_CFG_TYPE_MSK_FAMILY_8000(x)   ((x >> 12) & 0xFFF)
-#define NVM_RF_CFG_TX_ANT_MSK_FAMILY_8000(x) ((x >> 24) & 0xF)
-#define NVM_RF_CFG_RX_ANT_MSK_FAMILY_8000(x) ((x >> 28) & 0xF)
+#define EXT_NVM_RF_CFG_FLAVOR_MSK(x)   ((x) & 0xF)
+#define EXT_NVM_RF_CFG_DASH_MSK(x)   (((x) >> 4) & 0xF)
+#define EXT_NVM_RF_CFG_STEP_MSK(x)   (((x) >> 8) & 0xF)
+#define EXT_NVM_RF_CFG_TYPE_MSK(x)   (((x) >> 12) & 0xFFF)
+#define EXT_NVM_RF_CFG_TX_ANT_MSK(x) (((x) >> 24) & 0xF)
+#define EXT_NVM_RF_CFG_RX_ANT_MSK(x) (((x) >> 28) & 0xF)
 
 /**
  * DOC: Driver system flows - drv component
@@ -118,15 +112,13 @@ struct iwl_cfg;
  * iwl_drv_start - start the drv
  *
  * @trans_ops: the ops of the transport
- * @cfg: device specific constants / virtual functions
  *
  * starts the driver: fetches the firmware. This should be called by bus
  * specific system flows implementations. For example, the bus specific probe
  * function should do bus related operations only, and then call to this
  * function. It returns the driver object or %NULL if an error occurred.
  */
-struct iwl_drv *iwl_drv_start(struct iwl_trans *trans,
-			      const struct iwl_cfg *cfg);
+struct iwl_drv *iwl_drv_start(struct iwl_trans *trans);
 
 /**
  * iwl_drv_stop - stop the drv

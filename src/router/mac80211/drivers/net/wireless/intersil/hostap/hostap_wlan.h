@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef HOSTAP_WLAN_H
 #define HOSTAP_WLAN_H
 
@@ -6,6 +7,7 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/mutex.h>
+#include <linux/refcount.h>
 #include <net/iw_handler.h>
 #include <net/ieee80211_radiotap.h>
 #include <net/lib80211.h>
@@ -557,7 +559,7 @@ struct hostap_cmd_queue {
 	u16 resp0, res;
 	volatile int issued, issuing;
 
-	atomic_t usecnt;
+	refcount_t usecnt;
 	int del_req;
 };
 
@@ -597,7 +599,7 @@ struct prism2_helper_functions {
 			struct prism2_download_param *param);
 	int (*tx)(struct sk_buff *skb, struct net_device *dev);
 	int (*set_tim)(struct net_device *dev, int aid, int set);
-	const struct file_operations *read_aux_fops;
+	const struct proc_ops *read_aux_proc_ops;
 
 	int need_tx_headroom; /* number of bytes of headroom needed before
 			       * IEEE 802.11 header */
@@ -613,7 +615,7 @@ struct prism2_download_data {
 		u32 addr; /* wlan card address */
 		u32 len;
 		u8 *data; /* allocated data */
-	} data[0];
+	} data[];
 };
 
 

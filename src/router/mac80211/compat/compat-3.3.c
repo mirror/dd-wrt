@@ -25,10 +25,10 @@ static void __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
 	new->mac_header		= old->mac_header;
 	skb_dst_copy(new, old);
 	new->rxhash		= old->rxhash;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0))
+#if LINUX_VERSION_IS_GEQ(3,1,0)
 	new->ooo_okay		= old->ooo_okay;
 #endif
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+#if LINUX_VERSION_IS_GEQ(3,2,0)
 	new->l4_rxhash		= old->l4_rxhash;
 #endif
 #ifdef CONFIG_XFRM
@@ -145,7 +145,7 @@ struct sk_buff *__pskb_copy(struct sk_buff *skb, int headroom, gfp_t gfp_mask)
 #endif
 		for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
 			skb_shinfo(n)->frags[i] = skb_shinfo(skb)->frags[i];
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+#if LINUX_VERSION_IS_GEQ(3,2,0)
 			skb_frag_ref(skb, i);
 #else
 			get_page(skb_shinfo(skb)->frags[i].page);
@@ -224,16 +224,3 @@ void backport_destroy_workqueue(struct workqueue_struct *wq)
 	spin_unlock(&wq_name_lock);
 }
 EXPORT_SYMBOL_GPL(backport_destroy_workqueue);
-
-void genl_notify(struct sk_buff *skb, struct net *net, u32 pid, u32 group,
-		 struct nlmsghdr *nlh, gfp_t flags)
-{
-	struct sock *sk = net->genl_sock;
-	int report = 0;
-
-	if (nlh)
-		report = nlmsg_report(nlh);
-
-	nlmsg_notify(sk, skb, pid, group, report, flags);
-}
-EXPORT_SYMBOL_GPL(genl_notify);

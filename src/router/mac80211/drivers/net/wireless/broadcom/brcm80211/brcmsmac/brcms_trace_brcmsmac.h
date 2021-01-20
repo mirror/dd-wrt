@@ -91,7 +91,7 @@ TRACE_EVENT(brcms_macintstatus,
 );
 #endif /* __TRACE_BRCMSMAC_H */
 
-#ifdef CONFIG_BRCM_TRACING
+#ifdef CPTCFG_BRCM_TRACING
 
 #undef TRACE_INCLUDE_PATH
 #define TRACE_INCLUDE_PATH .
@@ -99,4 +99,4 @@ TRACE_EVENT(brcms_macintstatus,
 #define TRACE_INCLUDE_FILE brcms_trace_brcmsmac
 #include <trace/define_trace.h>
 
-#endif /* CONFIG_BRCM_TRACING */
+#endif /* CPTCFG_BRCM_TRACING */

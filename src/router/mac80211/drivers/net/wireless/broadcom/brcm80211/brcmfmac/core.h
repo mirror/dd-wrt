@@ -108,7 +108,10 @@ struct brcmf_pub {
 	struct brcmf_cfg80211_info *config;
 	int num_chan_stats;
 	struct brcmf_chan_stats *chan_stats;
-
+	bool turboqam;
+	struct dentry *debugfsdir;
+	int vhtmode;
+	int vhtmode_set;
 	/* Internal brcmf items */
 	uint hdrlen;		/* Total BRCMF header length (proto + bus) */
 
@@ -219,6 +222,8 @@ void brcmf_txflowblock_if(struct brcmf_if *ifp,
 void brcmf_txfinalize(struct brcmf_if *ifp, struct sk_buff *txp, bool success);
 void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb);
 void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb);
+void brcmf_net_detach(struct net_device *ndev, bool rtnl_locked);
+int brcmf_net_mon_attach(struct brcmf_if *ifp);
 void brcmf_net_setcarrier(struct brcmf_if *ifp, bool on);
 int __init brcmf_core_init(void);
 void __exit brcmf_core_exit(void);

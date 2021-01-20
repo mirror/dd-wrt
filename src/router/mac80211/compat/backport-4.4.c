@@ -16,13 +16,12 @@
 #include <linux/mm.h>
 #include <linux/skbuff.h>
 #include <linux/tcp.h>
-#include <linux/ipv6.h>
 #include <net/ip.h>
 #include <net/tso.h>
 #include <asm/unaligned.h>
 
 #ifdef CONFIG_DEBUG_FS
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,3,0)
+#if LINUX_VERSION_IS_LESS(4,3,0)
 static ssize_t debugfs_read_file_bool(struct file *file, char __user *user_buf,
 				      size_t count, loff_t *ppos)
 {
@@ -97,9 +96,14 @@ void tso_build_hdr(struct sk_buff *skb, char *hdr, struct tso_t *tso,
 		iph->tot_len = htons(size + hdr_len - mac_hdr_len);
 		tso->ip_id++;
 	} else {
+#ifdef CONFIG_IPV6
 		struct ipv6hdr *iph = (void *)(hdr + mac_hdr_len);
 
 		iph->payload_len = htons(size + tcp_hdrlen(skb));
+#else /* CONFIG_IPV6 */
+		/* tso->ipv6 should never be set if IPV6 is not enabeld */
+		WARN_ON(1);
+#endif /* CONFIG_IPV6 */
 	}
 	tcph = (struct tcphdr *)(hdr + skb_transport_offset(skb));
 	put_unaligned_be32(tso->tcp_seq, &tcph->seq);

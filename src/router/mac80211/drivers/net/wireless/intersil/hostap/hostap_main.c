@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Host AP (software wireless LAN access point) driver for
  * Intersil Prism2/2.5/3 - hostap.o module, common routines
@@ -5,11 +6,6 @@
  * Copyright (c) 2001-2002, SSH Communications Security Corp and Jouni Malinen
  * <j@w1.fi>
  * Copyright (c) 2002-2005, Jouni Malinen <j@w1.fi>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. See README and COPYING for
- * more details.
  */
 
 #include <linux/module.h>
@@ -73,7 +69,7 @@ struct net_device * hostap_add_interface(struct local_info *local,
 	dev->mem_end = mdev->mem_end;
 
 	hostap_setup_dev(dev, local, type);
-	dev->destructor = free_netdev;
+	netdev_set_def_destructor(dev);
 
 	sprintf(dev->name, "%s%s", prefix, name);
 	if (!rtnl_locked)
@@ -125,8 +121,8 @@ void hostap_remove_interface(struct net_device *dev, int rtnl_locked,
 	else
 		unregister_netdev(dev);
 
-	/* dev->destructor = free_netdev() will free the device data, including
-	 * private data, when removing the device */
+	/* 'dev->needs_free_netdev = true' implies device data, including
+	 * private data, will be freed when the device is removed */
 }
 
 
@@ -690,7 +686,7 @@ static int prism2_open(struct net_device *dev)
 		/* Master radio interface is needed for all operation, so open
 		 * it automatically when any virtual net_device is opened. */
 		local->master_dev_auto_open = 1;
-		dev_open(local->dev);
+		dev_open(local->dev, NULL);
 	}
 
 	netif_device_attach(dev);
@@ -765,27 +761,7 @@ static void hostap_set_multicast_list(struct net_device *dev)
 }
 
 
-static int prism2_change_mtu(struct net_device *dev, int new_mtu)
-{
-	if (new_mtu < PRISM2_MIN_MTU || new_mtu > PRISM2_MAX_MTU)
-		return -EINVAL;
-
-	dev->mtu = new_mtu;
-	return 0;
-}
-
-
-static int prism2_change_mtu(struct net_device *dev, int new_mtu)
-{
-	if (new_mtu < PRISM2_MIN_MTU || new_mtu > PRISM2_MAX_MTU)
-		return -EINVAL;
-
-	dev->mtu = new_mtu;
-	return 0;
-}
-
-
-static void prism2_tx_timeout(struct net_device *dev)
+static void prism2_tx_timeout(struct net_device *dev, unsigned int txqueue)
 {
 	struct hostap_interface *iface;
 	local_info_t *local;
@@ -805,6 +781,14 @@ static void prism2_tx_timeout(struct net_device *dev)
 
 	local->func->schedule_reset(local);
 }
+#if LINUX_VERSION_IS_LESS(5,6,0)
+/* Just declare it here to keep sparse happy */
+void bp_prism2_tx_timeout(struct net_device *dev);
+void bp_prism2_tx_timeout(struct net_device *dev) {
+	prism2_tx_timeout(dev, 0);
+}
+EXPORT_SYMBOL_GPL(bp_prism2_tx_timeout);
+#endif
 
 const struct header_ops hostap_80211_ops = {
 	.create		= eth_header,
@@ -815,7 +799,20 @@ const struct header_ops hostap_80211_ops = {
 EXPORT_SYMBOL(hostap_80211_ops);
 
 
+#if LINUX_VERSION_IS_LESS(4,10,0)
+static int __change_mtu(struct net_device *ndev, int new_mtu){
+	if (new_mtu < PRISM2_MIN_MTU || new_mtu > PRISM2_MAX_MTU)
+		return -EINVAL;
+	ndev->mtu = new_mtu;
+	return 0;
+}
+#endif
+
 static const struct net_device_ops hostap_netdev_ops = {
+#if LINUX_VERSION_IS_LESS(4,10,0)
+	.ndo_change_mtu = __change_mtu,
+#endif
+
 	.ndo_start_xmit		= hostap_data_start_xmit,
 
 	.ndo_open		= prism2_open,
@@ -823,12 +820,20 @@ static const struct net_device_ops hostap_netdev_ops = {
 	.ndo_do_ioctl		= hostap_ioctl,
 	.ndo_set_mac_address	= prism2_set_mac_address,
 	.ndo_set_rx_mode	= hostap_set_multicast_list,
-	.ndo_change_mtu 	= prism2_change_mtu,
+#if LINUX_VERSION_IS_GEQ(5,6,0)
 	.ndo_tx_timeout 	= prism2_tx_timeout,
+#else
+	.ndo_tx_timeout = bp_prism2_tx_timeout,
+#endif
+
 	.ndo_validate_addr	= eth_validate_addr,
 };
 
 static const struct net_device_ops hostap_mgmt_netdev_ops = {
+#if LINUX_VERSION_IS_LESS(4,10,0)
+	.ndo_change_mtu = __change_mtu,
+#endif
+
 	.ndo_start_xmit		= hostap_mgmt_start_xmit,
 
 	.ndo_open		= prism2_open,
@@ -836,12 +841,20 @@ static const struct net_device_ops hostap_mgmt_netdev_ops = {
 	.ndo_do_ioctl		= hostap_ioctl,
 	.ndo_set_mac_address	= prism2_set_mac_address,
 	.ndo_set_rx_mode	= hostap_set_multicast_list,
-	.ndo_change_mtu 	= prism2_change_mtu,
+#if LINUX_VERSION_IS_GEQ(5,6,0)
 	.ndo_tx_timeout 	= prism2_tx_timeout,
+#else
+	.ndo_tx_timeout = bp_prism2_tx_timeout,
+#endif
+
 	.ndo_validate_addr	= eth_validate_addr,
 };
 
 static const struct net_device_ops hostap_master_ops = {
+#if LINUX_VERSION_IS_LESS(4,10,0)
+	.ndo_change_mtu = __change_mtu,
+#endif
+
 	.ndo_start_xmit 	= hostap_master_start_xmit,
 
 	.ndo_open		= prism2_open,
@@ -849,8 +862,12 @@ static const struct net_device_ops hostap_master_ops = {
 	.ndo_do_ioctl		= hostap_ioctl,
 	.ndo_set_mac_address	= prism2_set_mac_address,
 	.ndo_set_rx_mode	= hostap_set_multicast_list,
-	.ndo_change_mtu 	= prism2_change_mtu,
+#if LINUX_VERSION_IS_GEQ(5,6,0)
 	.ndo_tx_timeout 	= prism2_tx_timeout,
+#else
+	.ndo_tx_timeout = bp_prism2_tx_timeout,
+#endif
+
 	.ndo_validate_addr	= eth_validate_addr,
 };
 
@@ -861,6 +878,12 @@ void hostap_setup_dev(struct net_device *dev, local_info_t *local,
 
 	iface = netdev_priv(dev);
 	ether_setup(dev);
+#if LINUX_VERSION_IS_GEQ(4,10,0)
+	dev->min_mtu = PRISM2_MIN_MTU;
+#endif
+#if LINUX_VERSION_IS_GEQ(4,10,0)
+	dev->max_mtu = PRISM2_MAX_MTU;
+#endif
 	dev->priv_flags &= ~IFF_TX_SKB_SHARING;
 
 	/* kernel callbacks */
@@ -875,7 +898,7 @@ void hostap_setup_dev(struct net_device *dev, local_info_t *local,
 
 	switch(type) {
 	case HOSTAP_INTERFACE_AP:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,3,0)
+#if LINUX_VERSION_IS_GEQ(4,3,0)
 		dev->priv_flags |= IFF_NO_QUEUE;
 #else
 		dev->tx_queue_len = 0;
@@ -889,7 +912,7 @@ void hostap_setup_dev(struct net_device *dev, local_info_t *local,
 		dev->netdev_ops = &hostap_master_ops;
 		break;
 	default:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,3,0)
+#if LINUX_VERSION_IS_GEQ(4,3,0)
 		dev->priv_flags |= IFF_NO_QUEUE;
 #else
 		dev->tx_queue_len = 0;
@@ -1070,15 +1093,13 @@ int prism2_sta_send_mgmt(local_info_t *local, u8 *dst, u16 stype,
 	if (skb == NULL)
 		return -ENOMEM;
 
-	mgmt = (struct hostap_ieee80211_mgmt *)
-		skb_put(skb, IEEE80211_MGMT_HDR_LEN);
-	memset(mgmt, 0, IEEE80211_MGMT_HDR_LEN);
+	mgmt = skb_put_zero(skb, IEEE80211_MGMT_HDR_LEN);
 	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT | stype);
 	memcpy(mgmt->da, dst, ETH_ALEN);
 	memcpy(mgmt->sa, dev->dev_addr, ETH_ALEN);
 	memcpy(mgmt->bssid, dst, ETH_ALEN);
 	if (body)
-		memcpy(skb_put(skb, bodylen), body, bodylen);
+		skb_put_data(skb, body, bodylen);
 
 	meta = (struct hostap_skb_tx_data *) skb->cb;
 	memset(meta, 0, sizeof(*meta));

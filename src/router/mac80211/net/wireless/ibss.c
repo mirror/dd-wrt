@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Some IBSS support code for cfg80211.
  *
@@ -83,14 +84,15 @@ void cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid,
 }
 EXPORT_SYMBOL(cfg80211_ibss_joined);
 
-static int __cfg80211_join_ibss(struct cfg80211_registered_device *rdev,
-				struct net_device *dev,
-				struct cfg80211_ibss_params *params,
-				struct cfg80211_cached_keys *connkeys)
+int __cfg80211_join_ibss(struct cfg80211_registered_device *rdev,
+			 struct net_device *dev,
+			 struct cfg80211_ibss_params *params,
+			 struct cfg80211_cached_keys *connkeys)
 {
 	struct wireless_dev *wdev = dev->ieee80211_ptr;
 	int err;
 
+	ASSERT_RTNL();
 	ASSERT_WDEV_LOCK(wdev);
 
 	if (wdev->ssid_len)
@@ -102,13 +104,19 @@ static int __cfg80211_join_ibss(struct cfg80211_registered_device *rdev,
 		* use the mandatory rate set for 11b or
 		* 11a for maximum compatibility.
 		*/
-		struct ieee80211_supported_band *sband =
-			rdev->wiphy.bands[params->chandef.chan->band];
+		struct ieee80211_supported_band *sband;
+		enum nl80211_band band;
+		u32 flag;
 		int j;
-		u32 flag = params->chandef.chan->band == NL80211_BAND_5GHZ ?
-			IEEE80211_RATE_MANDATORY_A :
-			IEEE80211_RATE_MANDATORY_B;
 
+		band = params->chandef.chan->band;
+		if (band == NL80211_BAND_5GHZ ||
+		    band == NL80211_BAND_6GHZ)
+			flag = IEEE80211_RATE_MANDATORY_A;
+		else
+			flag = IEEE80211_RATE_MANDATORY_B;
+
+		sband = rdev->wiphy.bands[band];
 		for (j = 0; j < sband->n_bitrates; j++) {
 			if (sband->bitrates[j].flags & flag)
 				params->basic_rates |= BIT(j);
@@ -119,12 +127,17 @@ static int __cfg80211_join_ibss(struct cfg80211_registered_device *rdev,
 		return -EINVAL;
 
 	if (WARN_ON(wdev->connect_keys))
-		kzfree(wdev->connect_keys);
+		kfree_sensitive(wdev->connect_keys);
 	wdev->connect_keys = connkeys;
 
 	wdev->ibss_fixed = params->channel_fixed;
 	wdev->ibss_dfs_possible = params->userspace_handles_dfs;
 	wdev->chandef = params->chandef;
+	if (connkeys) {
+		params->wep_keys = connkeys->params;
+		params->wep_tx_key = connkeys->def;
+	}
+
 #ifdef CPTCFG_CFG80211_WEXT
 	wdev->wext.ibss.chandef = params->chandef;
 #endif
@@ -140,23 +153,6 @@ static int __cfg80211_join_ibss(struct cfg80211_registered_device *rdev,
 	return 0;
 }
 
-int cfg80211_join_ibss(struct cfg80211_registered_device *rdev,
-		       struct net_device *dev,
-		       struct cfg80211_ibss_params *params,
-		       struct cfg80211_cached_keys *connkeys)
-{
-	struct wireless_dev *wdev = dev->ieee80211_ptr;
-	int err;
-
-	ASSERT_RTNL();
-
-	wdev_lock(wdev);
-	err = __cfg80211_join_ibss(rdev, dev, params, connkeys);
-	wdev_unlock(wdev);
-
-	return err;
-}
-
 static void __cfg80211_clear_ibss(struct net_device *dev, bool nowext)
 {
 	struct wireless_dev *wdev = dev->ieee80211_ptr;
@@ -165,7 +161,7 @@ static void __cfg80211_clear_ibss(struct net_device *dev, bool nowext)
 
 	ASSERT_WDEV_LOCK(wdev);
 
-	kzfree(wdev->connect_keys);
+	kfree_sensitive(wdev->connect_keys);
 	wdev->connect_keys = NULL;
 
 	rdev_set_qos_map(rdev, dev, NULL);
@@ -218,6 +214,7 @@ int __cfg80211_leave_ibss(struct cfg80211_registered_device *rdev,
 	if (err)
 		return err;
 
+	wdev->conn_owner_nlportid = 0;
 	__cfg80211_clear_ibss(dev, nowext);
 
 	return 0;

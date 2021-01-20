@@ -3,16 +3,16 @@
 #include_next <linux/random.h>
 #include <linux/version.h>
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0) && LINUX_VERSION_CODE < KERNEL_VERSION(3,4,10)) || \
-    (LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0) && LINUX_VERSION_CODE < KERNEL_VERSION(3,2,27)) || \
-    LINUX_VERSION_CODE < KERNEL_VERSION(3,0,41)
+#if (LINUX_VERSION_IS_GEQ(3,3,0) && LINUX_VERSION_IS_LESS(3,4,10)) || \
+    (LINUX_VERSION_IS_GEQ(3,1,0) && LINUX_VERSION_IS_LESS(3,2,27)) || \
+    LINUX_VERSION_IS_LESS(3,0,41)
 #define add_device_randomness LINUX_BACKPORT(add_device_randomness)
 static inline void add_device_randomness(const void *buf, unsigned int size)
 {
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0)
+#if LINUX_VERSION_IS_LESS(3,8,0)
 /* backports 496f2f9 */
 #define prandom_seed(_seed)		srandom32(_seed)
 #define prandom_u32()			random32()
@@ -22,7 +22,7 @@ static inline void add_device_randomness(const void *buf, unsigned int size)
 void prandom_bytes(void *buf, int bytes);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
+#if LINUX_VERSION_IS_LESS(3,14,0)
 /**
  * prandom_u32_max - returns a pseudo-random number in interval [0, ep_ro)
  * @ep_ro: right open interval endpoint
@@ -40,6 +40,13 @@ static inline u32 prandom_u32_max(u32 ep_ro)
 {
 	return (u32)(((u64) prandom_u32() * ep_ro) >> 32);
 }
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,14,0) */
+
+#if LINUX_VERSION_IS_LESS(4,11,0)
+static inline u32 get_random_u32(void)
+{
+	return get_random_int();
+}
+#endif
 
 #endif /* __BACKPORT_RANDOM_H */

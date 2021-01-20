@@ -3,7 +3,7 @@
 #include_next <linux/hwmon.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)
+#if LINUX_VERSION_IS_LESS(3,13,0)
 /*
  * Backports
  *
@@ -29,6 +29,6 @@ struct device *
 devm_hwmon_device_register_with_groups(struct device *dev, const char *name,
 				       void *drvdata,
 				       const struct attribute_group **groups);
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,13,0) */
 
 #endif /* __BACKPORT_LINUX_HWMON_H */

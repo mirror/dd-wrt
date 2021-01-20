@@ -1,11 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  *	Driver for ZyDAS zd1201 based wireless USB devices.
  *
  *	Copyright (c) 2004, 2005 Jeroen Vreeken (pe1rxq@amsat.org)
- *
- *	This program is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU General Public License
- *	version 2 as published by the Free Software Foundation.
  *
  *	Parts of this driver have been derived from a wlan-ng version
  *	modified by ZyDAS. They also made documentation available, thanks!
@@ -25,7 +22,7 @@
 #include <linux/firmware.h>
 #include "zd1201.h"
 
-static struct usb_device_id zd1201_table[] = {
+static const struct usb_device_id zd1201_table[] = {
 	{USB_DEVICE(0x0586, 0x3400)}, /* Peabird Wireless USB Adapter */
 	{USB_DEVICE(0x0ace, 0x1201)}, /* ZyDAS ZD1201 Wireless USB Adapter */
 	{USB_DEVICE(0x050d, 0x6051)}, /* Belkin F5D6051 usb  adapter */
@@ -230,8 +227,7 @@ static void zd1201_usbrx(struct urb *urb)
 	/* Info frame */
 	if (type == ZD1201_PACKET_INQUIRE) {
 		int i = 0;
-		unsigned short infotype, framelen, copylen;
-		framelen = le16_to_cpu(*(__le16*)&data[4]);
+		unsigned short infotype, copylen;
 		infotype = le16_to_cpu(*(__le16*)&data[6]);
 
 		if (infotype == ZD1201_INF_LINKSTATUS) {
@@ -326,13 +322,13 @@ static void zd1201_usbrx(struct urb *urb)
 			if (!(skb = dev_alloc_skb(datalen+24)))
 				goto resubmit;
 			
-			memcpy(skb_put(skb, 2), &data[datalen-16], 2);
-			memcpy(skb_put(skb, 2), &data[datalen-2], 2);
-			memcpy(skb_put(skb, 6), &data[datalen-14], 6);
-			memcpy(skb_put(skb, 6), &data[datalen-22], 6);
-			memcpy(skb_put(skb, 6), &data[datalen-8], 6);
-			memcpy(skb_put(skb, 2), &data[datalen-24], 2);
-			memcpy(skb_put(skb, len), data, len);
+			skb_put_data(skb, &data[datalen - 16], 2);
+			skb_put_data(skb, &data[datalen - 2], 2);
+			skb_put_data(skb, &data[datalen - 14], 6);
+			skb_put_data(skb, &data[datalen - 22], 6);
+			skb_put_data(skb, &data[datalen - 8], 6);
+			skb_put_data(skb, &data[datalen - 24], 2);
+			skb_put_data(skb, data, len);
 			skb->protocol = eth_type_trans(skb, zd->dev);
 			zd->dev->stats.rx_packets++;
 			zd->dev->stats.rx_bytes += skb->len;
@@ -359,9 +355,9 @@ static void zd1201_usbrx(struct urb *urb)
 				frag->skb = skb;
 				frag->seq = seq & IEEE80211_SCTL_SEQ;
 				skb_reserve(skb, 2);
-				memcpy(skb_put(skb, 12), &data[datalen-14], 12);
-				memcpy(skb_put(skb, 2), &data[6], 2);
-				memcpy(skb_put(skb, len), data+8, len);
+				skb_put_data(skb, &data[datalen - 14], 12);
+				skb_put_data(skb, &data[6], 2);
+				skb_put_data(skb, data + 8, len);
 				hlist_add_head(&frag->fnode, &zd->fraglist);
 				goto resubmit;
 			}
@@ -385,9 +381,9 @@ static void zd1201_usbrx(struct urb *urb)
 			if (!skb)
 				goto resubmit;
 			skb_reserve(skb, 2);
-			memcpy(skb_put(skb, 12), &data[datalen-14], 12);
-			memcpy(skb_put(skb, 2), &data[6], 2);
-			memcpy(skb_put(skb, len), data+8, len);
+			skb_put_data(skb, &data[datalen - 14], 12);
+			skb_put_data(skb, &data[6], 2);
+			skb_put_data(skb, data + 8, len);
 		}
 		skb->protocol = eth_type_trans(skb, zd->dev);
 		zd->dev->stats.rx_packets++;
@@ -834,7 +830,7 @@ static netdev_tx_t zd1201_hard_start_xmit(struct sk_buff *skb,
 	return NETDEV_TX_OK;
 }
 
-static void zd1201_tx_timeout(struct net_device *dev)
+static void zd1201_tx_timeout(struct net_device *dev, unsigned int txqueue)
 {
 	struct zd1201 *zd = netdev_priv(dev);
 
@@ -847,6 +843,14 @@ static void zd1201_tx_timeout(struct net_device *dev)
 	/* Restart the timeout to quiet the watchdog: */
 	netif_trans_update(dev); /* prevent tx timeout */
 }
+#if LINUX_VERSION_IS_LESS(5,6,0)
+/* Just declare it here to keep sparse happy */
+void bp_zd1201_tx_timeout(struct net_device *dev);
+void bp_zd1201_tx_timeout(struct net_device *dev) {
+	zd1201_tx_timeout(dev, 0);
+}
+EXPORT_SYMBOL_GPL(bp_zd1201_tx_timeout);
+#endif
 
 static int zd1201_set_mac_address(struct net_device *dev, void *p)
 {
@@ -970,6 +974,7 @@ static int zd1201_set_mode(struct net_device *dev,
 			 */
 			zd1201_join(zd, "\0-*#\0", 5);
 			/* Put port in pIBSS */
+			/* Fall through */
 		case 8: /* No pseudo-IBSS in wireless extensions (yet) */
 			porttype = ZD1201_PORTTYPE_PSEUDOIBSS;
 			break;
@@ -1721,7 +1726,12 @@ static const struct net_device_ops zd1201_netdev_ops = {
 	.ndo_open		= zd1201_net_open,
 	.ndo_stop		= zd1201_net_stop,
 	.ndo_start_xmit		= zd1201_hard_start_xmit,
+#if LINUX_VERSION_IS_GEQ(5,6,0)
 	.ndo_tx_timeout		= zd1201_tx_timeout,
+#else
+	.ndo_tx_timeout = bp_zd1201_tx_timeout,
+#endif
+
 	.ndo_set_rx_mode	= zd1201_set_multicast,
 	.ndo_set_mac_address	= zd1201_set_mac_address,
 	.ndo_validate_addr	= eth_validate_addr,
@@ -1906,7 +1916,7 @@ static struct usb_driver zd1201_usb = {
 	.id_table = zd1201_table,
 	.suspend = zd1201_suspend,
 	.resume = zd1201_resume,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0))
+#if LINUX_VERSION_IS_GEQ(3,5,0)
 	.disable_hub_initiated_lpm = 1,
 #endif
 };

@@ -3,7 +3,7 @@
 #include_next <linux/seq_file.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_IS_LESS(3,7,0)
 #include <linux/user_namespace.h>
 #include <linux/file.h>
 #include <linux/fs.h>
@@ -23,7 +23,7 @@ static inline struct user_namespace *seq_user_ns(struct seq_file *seq)
 #endif /* CONFIG_USER_NS */
 #endif /* < 3.7 */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#if LINUX_VERSION_IS_LESS(3,19,0)
 #define seq_has_overflowed LINUX_BACKPORT(seq_has_overflowed)
 /**
  * seq_has_overflowed - check if the buffer has overflowed
@@ -41,7 +41,7 @@ static inline bool seq_has_overflowed(struct seq_file *m)
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,3,0)
+#if LINUX_VERSION_IS_LESS(4,3,0)
 #define seq_hex_dump LINUX_BACKPORT(seq_hex_dump)
 void seq_hex_dump(struct seq_file *m, const char *prefix_str, int prefix_type,
 		  int rowsize, int groupsize, const void *buf, size_t len,
@@ -62,5 +62,6 @@ static const struct file_operations __name ## _fops = {			\
 	.llseek		= seq_lseek,					\
 	.release	= single_release,				\
 }
-#endif
+#endif /* DEFINE_SHOW_ATTRIBUTE */
+
 #endif /* __BACKPORT_SEQ_FILE_H */

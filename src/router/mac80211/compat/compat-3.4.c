@@ -14,13 +14,13 @@
 #include <linux/compat.h>
 #include <asm/uaccess.h>
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+#if LINUX_VERSION_IS_GEQ(3,2,0)
 #include <linux/regmap.h>
 #include <linux/i2c.h>
 #include <linux/spi/spi.h>
-#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)) */
+#endif /* LINUX_VERSION_IS_GEQ(3,2,0) */
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+#if LINUX_VERSION_IS_GEQ(3,2,0)
 
 #if defined(CONFIG_REGMAP)
 static void devm_regmap_release(struct device *dev, void *res)
@@ -172,7 +172,7 @@ EXPORT_SYMBOL_GPL(devm_regmap_init_i2c);
 #endif /* defined(CONFIG_REGMAP_I2C) */
 
 #endif /* defined(CONFIG_REGMAP) */
-#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)) */
+#endif /* LINUX_VERSION_IS_GEQ(3,2,0) */
 
 int simple_open(struct inode *inode, struct file *file)
 {

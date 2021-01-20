@@ -3,7 +3,7 @@
 #include_next <crypto/hash.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
+#if LINUX_VERSION_IS_LESS(4,6,0)
 #define shash_desc_zero LINUX_BACKPORT(shash_desc_zero)
 static inline void shash_desc_zero(struct shash_desc *desc)
 {
@@ -12,7 +12,7 @@ static inline void shash_desc_zero(struct shash_desc *desc)
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
+#if LINUX_VERSION_IS_LESS(4,6,0)
 #define ahash_request_zero LINUX_BACKPORT(ahash_request_zero)
 static inline void ahash_request_zero(struct ahash_request *req)
 {
