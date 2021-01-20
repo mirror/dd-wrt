@@ -1,4 +1,4 @@
-DNSMASQ_PATH=private/dnsmasq-pre-2.83
+DNSMASQ_PATH=dnsmasq
 
 ifneq ($(CONFIG_IPV6),y)
 export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
