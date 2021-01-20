@@ -1,4 +1,11 @@
+# detect if make supports --eval
+_EVAL := $(shell make --eval "test:" -f /dev/null test >/dev/null 2>&1 && echo YES || echo NO)
+ifeq ($(_EVAL),YES)
+MAKE=$(BACKPORT_DIR)/scripts/make
+else
 -include .config
+endif
+
 export
 
 .PHONY: modules

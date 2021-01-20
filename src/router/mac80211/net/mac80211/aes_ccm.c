@@ -1,3 +1,4 @@
+#undef CONFIG_NOPRINTK
 /*
  * Copyright 2003-2004, Instant802 Networks, Inc.
  * Copyright 2005-2006, Devicescape Software, Inc.

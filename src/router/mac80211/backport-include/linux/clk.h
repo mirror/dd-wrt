@@ -12,7 +12,7 @@
  * CONFIG_COMMON_CLK case. The 3.5 kernel is not supported as
  * per kernel.org so we don't send a fix upstream for that.
  */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0)
+#if LINUX_VERSION_IS_LESS(3,6,0)
 
 #ifndef CONFIG_COMMON_CLK
 
@@ -84,10 +84,10 @@ static inline struct clk *clk_get_parent(struct clk *clk)
 }
 #endif /* CONFIG_COMMON_CLK */
 
-#endif /* #if LINUX_VERSION_CODE < KERNEL_VERSION(3,0,0) */
+#endif /* #if LINUX_VERSION_IS_LESS(3,0,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0) && \
-    LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_IS_LESS(3,3,0) && \
+    LINUX_VERSION_IS_GEQ(3,2,0)
 #define clk_prepare_enable LINUX_BACKPORT(clk_prepare_enable)
 /* clk_prepare_enable helps cases using clk_enable in non-atomic context. */
 static inline int clk_prepare_enable(struct clk *clk)

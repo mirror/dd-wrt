@@ -2,7 +2,7 @@
 #define __BACKPORT_PM_RUNTIME_H
 #include_next <linux/pm_runtime.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0)
+#if LINUX_VERSION_IS_LESS(3,9,0)
 #define pm_runtime_active LINUX_BACKPORT(pm_runtime_active)
 #ifdef CONFIG_PM
 static inline bool pm_runtime_active(struct device *dev)
@@ -14,6 +14,27 @@ static inline bool pm_runtime_active(struct device *dev)
 static inline bool pm_runtime_active(struct device *dev) { return true; }
 #endif /* CONFIG_PM */
 
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,9,0) */
+
+#if LINUX_VERSION_IS_LESS(3,15,0)
+static inline int pm_runtime_force_suspend(struct device *dev)
+{
+#ifdef CONFIG_PM
+	/* cannot backport properly, I think */
+	WARN_ON_ONCE(1);
+	return -EINVAL;
+#endif
+	return 0;
+}
+static inline int pm_runtime_force_resume(struct device *dev)
+{
+#ifdef CONFIG_PM
+	/* cannot backport properly, I think */
+	WARN_ON_ONCE(1);
+	return -EINVAL;
+#endif
+	return 0;
+}
+#endif
 
 #endif /* __BACKPORT_PM_RUNTIME_H */

@@ -3,7 +3,7 @@
 #include_next <linux/lockdep.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0)
+#if LINUX_VERSION_IS_LESS(3,9,0)
 #undef lockdep_assert_held
 #ifdef CONFIG_LOCKDEP
 #define lockdep_assert_held(l)	do {				\
@@ -12,6 +12,15 @@
 #else
 #define lockdep_assert_held(l)			do { (void)(l); } while (0)
 #endif /* CONFIG_LOCKDEP */
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,9,0) */
 
+#if LINUX_VERSION_IS_LESS(4,15,0)
+#ifndef CONFIG_LOCKDEP
+struct lockdep_map { };
+#endif /* CONFIG_LOCKDEP */
+#endif /* LINUX_VERSION_IS_LESS(4,15,0) */
+
+#ifndef lock_acquire_exclusive
+#define lock_acquire_exclusive(l, s, t, n, i)		lock_acquire(l, s, t, 0, 1, n, i)
+#endif
 #endif /* __BACKPORT_LINUX_LOCKDEP_H */

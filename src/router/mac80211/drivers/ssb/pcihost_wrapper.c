@@ -33,9 +33,9 @@ static int ssb_pcihost_suspend(struct device *d)
 
 	/* if there is a wakeup enabled child device on ssb bus,
 	   enable pci wakeup posibility. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_IS_GEQ(3,2,0)
 	device_set_wakeup_enable(d, d->power.wakeup_path);
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0) */
+#endif /* LINUX_VERSION_IS_GEQ(3,2,0) */
 
 	pci_prepare_to_sleep(dev);
 

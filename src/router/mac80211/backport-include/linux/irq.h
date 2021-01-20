@@ -3,7 +3,7 @@
 #include_next <linux/irq.h>
 
 #ifdef CONFIG_HAVE_GENERIC_HARDIRQS
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
+#if LINUX_VERSION_IS_LESS(3,11,0)
 #define irq_get_trigger_type LINUX_BACKPORT(irq_get_trigger_type)
 static inline u32 irq_get_trigger_type(unsigned int irq)
 {

@@ -3,7 +3,7 @@
 #include_next <linux/of_address.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0) && !defined(CONFIG_OF_ADDRESS)
+#if LINUX_VERSION_IS_LESS(4,4,0) && !defined(CONFIG_OF_ADDRESS)
 #ifndef OF_BAD_ADDR
 #define OF_BAD_ADDR     ((u64)-1)
 #endif
@@ -13,6 +13,6 @@ static inline u64 of_translate_address(struct device_node *np,
 {
 	return OF_BAD_ADDR;
 }
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0) */
+#endif /* LINUX_VERSION_IS_LESS(4,4,0) */
 
 #endif /* __BACKPORT_OF_IRQ_H */

@@ -5,7 +5,7 @@
 
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0)
+#if LINUX_VERSION_IS_LESS(3,9,0)
 static inline bool ipv6_addr_is_solict_mult(const struct in6_addr *addr)
 {
 #if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) && BITS_PER_LONG == 64
@@ -20,6 +20,6 @@ static inline bool ipv6_addr_is_solict_mult(const struct in6_addr *addr)
 		(addr->s6_addr[12] ^ 0xff)) == 0;
 #endif
 }
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,9,0) */
 
 #endif	/* _BACKPORT_NET_ADDRCONF_H */

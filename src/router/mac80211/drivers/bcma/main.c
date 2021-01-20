@@ -65,7 +65,7 @@ static struct attribute *bcma_device_attrs[] = {
 	&dev_attr_class.attr,
 	NULL,
 };
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0)
+#if LINUX_VERSION_IS_GEQ(3,12,0)
 ATTRIBUTE_GROUPS(bcma_device);
 #else
 #define BP_ATTR_GRP_STRUCT device_attribute
@@ -78,11 +78,12 @@ static struct bus_type bcma_bus_type = {
 	.probe		= bcma_device_probe,
 	.remove		= bcma_device_remove,
 	.uevent		= bcma_device_uevent,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0)
+#if LINUX_VERSION_IS_GEQ(3,12,0)
 	.dev_groups	= bcma_device_groups,
 #else
 	.dev_attrs = bcma_device_dev_attrs,
 #endif
+
 };
 
 static u16 bcma_cc_core_id(struct bcma_bus *bus)
@@ -145,8 +146,6 @@ static bool bcma_is_core_needed_early(u16 core_id)
 	return false;
 }
 
-#if IS_ENABLED(CONFIG_OF) && LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0)
-
 static struct device_node *bcma_of_find_child_device(struct device *parent,
 						     struct bcma_device *core)
 {
@@ -167,6 +166,7 @@ static struct device_node *bcma_of_find_child_device(struct device *parent,
 	return NULL;
 }
 
+#if LINUX_VERSION_IS_GEQ(3,13,0)
 static int bcma_of_irq_parse(struct device *parent,
 			     struct bcma_device *core,
 			     struct of_phandle_args *out_irq, int num)
@@ -187,11 +187,10 @@ static int bcma_of_irq_parse(struct device *parent,
 	laddr[0] = cpu_to_be32(core->addr);
 	return of_irq_parse_raw(laddr, out_irq);
 }
-#endif
+
 static unsigned int bcma_of_get_irq(struct device *parent,
 				    struct bcma_device *core, int num)
 {
-#if IS_ENABLED(CONFIG_OF) && LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0)
 	struct of_phandle_args out_irq;
 	int ret;
 
@@ -206,19 +205,19 @@ static unsigned int bcma_of_get_irq(struct device *parent,
 	}
 
 	return irq_create_of_mapping(&out_irq);
-#else
-	return 0;
-#endif
 }
+#else
+static unsigned int bcma_of_get_irq(struct device *parent,
+				    struct bcma_device *core, int num)
+{
+	return 0;
+}
+#endif
 
 static void bcma_of_fill_device(struct device *parent,
 				struct bcma_device *core)
 {
-#if IS_ENABLED(CONFIG_OF) && LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0)
 	struct device_node *node;
-
-	if (!IS_ENABLED(CONFIG_OF_IRQ))
-		return;
 
 	node = bcma_of_find_child_device(parent, core);
 	if (node)
@@ -226,8 +225,7 @@ static void bcma_of_fill_device(struct device *parent,
 
 	core->irq = bcma_of_get_irq(parent, core, 0);
 
-	of_dma_configure(&core->dev, node);
-#endif
+	of_dma_configure(&core->dev, node, false);
 }
 
 unsigned int bcma_core_irq(struct bcma_device *core, int num)
@@ -243,8 +241,8 @@ unsigned int bcma_core_irq(struct bcma_device *core, int num)
 			mips_irq = bcma_core_mips_irq(core);
 			return mips_irq <= 4 ? mips_irq + 2 : 0;
 		}
-		if (bus->host_pdev)
-			return bcma_of_get_irq(&bus->host_pdev->dev, core, num);
+		if (bus->dev)
+			return bcma_of_get_irq(bus->dev, core, num);
 		return 0;
 	case BCMA_HOSTTYPE_SDIO:
 		return 0;
@@ -259,19 +257,18 @@ void bcma_prepare_core(struct bcma_bus *bus, struct bcma_device *core)
 	core->dev.release = bcma_release_core_dev;
 	core->dev.bus = &bcma_bus_type;
 	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
+	core->dev.parent = bus->dev;
+	if (bus->dev)
+		bcma_of_fill_device(bus->dev, core);
 
 	switch (bus->hosttype) {
 	case BCMA_HOSTTYPE_PCI:
-		core->dev.parent = &bus->host_pci->dev;
-		core->dma_dev = &bus->host_pci->dev;
+		core->dma_dev = bus->dev;
 		core->irq = bus->host_pci->irq;
 		break;
 	case BCMA_HOSTTYPE_SOC:
-		if (IS_ENABLED(CONFIG_OF) && bus->host_pdev) {
-			core->dma_dev = &bus->host_pdev->dev;
-			core->dev.parent = &bus->host_pdev->dev;
-			if (core->dev.parent)
-				bcma_of_fill_device(core->dev.parent, core);
+		if (IS_ENABLED(CONFIG_OF) && bus->dev) {
+			core->dma_dev = bus->dev;
 		} else {
 			core->dev.dma_mask = &core->dev.coherent_dma_mask;
 			core->dma_dev = &core->dev;
@@ -280,28 +277,6 @@ void bcma_prepare_core(struct bcma_bus *bus, struct bcma_device *core)
 	case BCMA_HOSTTYPE_SDIO:
 		break;
 	}
-}
-
-struct device *bcma_bus_get_host_dev(struct bcma_bus *bus)
-{
-	switch (bus->hosttype) {
-	case BCMA_HOSTTYPE_PCI:
-		if (bus->host_pci)
-			return &bus->host_pci->dev;
-		else
-			return NULL;
-	case BCMA_HOSTTYPE_SOC:
-		if (bus->host_pdev)
-			return &bus->host_pdev->dev;
-		else
-			return NULL;
-	case BCMA_HOSTTYPE_SDIO:
-		if (bus->host_sdio)
-			return &bus->host_sdio->dev;
-		else
-			return NULL;
-	}
-	return NULL;
 }
 
 void bcma_init_bus(struct bcma_bus *bus)
@@ -423,7 +398,6 @@ int bcma_bus_register(struct bcma_bus *bus)
 {
 	int err;
 	struct bcma_device *core;
-	struct device *dev;
 
 	/* Scan for devices (cores) */
 	err = bcma_bus_scan(bus);
@@ -446,12 +420,9 @@ int bcma_bus_register(struct bcma_bus *bus)
 		bcma_core_pci_early_init(&bus->drv_pci[0]);
 	}
 
-	dev = bcma_bus_get_host_dev(bus);
-#if IS_ENABLED(CONFIG_OF) && LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0)
-	if (dev) {
-		of_platform_default_populate(dev->of_node, NULL, dev);
-	}
-#endif
+	if (bus->dev)
+		of_platform_default_populate(bus->dev->of_node, NULL, bus->dev);
+
 	/* Cores providing flash access go before SPROM init */
 	list_for_each_entry(core, &bus->cores, list) {
 		if (bcma_is_core_needed_early(core->id.id))

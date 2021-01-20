@@ -2,14 +2,19 @@
 #define __BACKPORT_LINUX_FIRMWARE_H
 #include_next <linux/firmware.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
+#if LINUX_VERSION_IS_LESS(3,14,0)
 #define request_firmware_direct(fw, name, device) request_firmware(fw, name, device)
 #endif
+#if LINUX_VERSION_IS_LESS(4,18,0)
+#define firmware_request_nowarn(fw, name, device) request_firmware(fw, name, device)
+#endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,20,0)
-#define firmware_request_nowarn LINUX_BACKPORT(firmware_request_nowarn)
-int firmware_request_nowarn(const struct firmware **firmware, const char *name,
-			    struct device *device);
+#if LINUX_VERSION_IS_LESS(4,17,0)
+#define firmware_request_cache LINUX_BACKPORT(firmware_request_cache)
+static inline int firmware_request_cache(struct device *device, const char *name)
+{
+	return 0;
+}
 #endif
 
 #endif /* __BACKPORT_LINUX_FIRMWARE_H */

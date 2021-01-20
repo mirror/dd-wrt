@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * This file function prototypes, data structure
  * and  definitions for all the host/station commands
@@ -460,7 +461,7 @@ struct cmd_ds_802_11_scan {
 
 	uint8_t bsstype;
 	uint8_t bssid[ETH_ALEN];
-	uint8_t tlvbuffer[0];
+	uint8_t tlvbuffer[];
 } __packed;
 
 struct cmd_ds_802_11_scan_rsp {
@@ -468,7 +469,7 @@ struct cmd_ds_802_11_scan_rsp {
 
 	__le16 bssdescriptsize;
 	uint8_t nr_sets;
-	uint8_t bssdesc_and_tlvbuffer[0];
+	uint8_t bssdesc_and_tlvbuffer[];
 } __packed;
 
 struct cmd_ds_802_11_get_log {

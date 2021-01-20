@@ -12,7 +12,7 @@
  */
 #include <linux/string.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0)
+#if LINUX_VERSION_IS_LESS(3,9,0)
 /* backport
  * commit 9f3b795a626ee79574595e06d1437fe0c7d51d29
  * Author: Michał Mirosław <mirq-linux@rere.qmqm.pl>
@@ -49,19 +49,19 @@ static void __exit __driver##_exit(void) \
 module_exit(__driver##_exit);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0)
+#if LINUX_VERSION_IS_LESS(3,9,0)
 #define devm_ioremap_resource LINUX_BACKPORT(devm_ioremap_resource)
 void __iomem *devm_ioremap_resource(struct device *dev, struct resource *res);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,5,0) && \
-    LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_IS_LESS(3,5,0) && \
+    LINUX_VERSION_IS_GEQ(3,2,0)
 #define devres_release LINUX_BACKPORT(devres_release)
 extern int devres_release(struct device *dev, dr_release_t release,
 			  dr_match_t match, void *match_data);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,5,0)
+#if LINUX_VERSION_IS_LESS(3,5,0)
 #include <linux/ratelimit.h>
 
 #define dev_level_ratelimited(dev_level, dev, fmt, ...)			\
@@ -125,7 +125,11 @@ static inline struct device *kobj_to_dev(struct kobject *kobj)
 }
 #endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(3,6,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0) && RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(7,0)
+#if LINUX_VERSION_IS_LESS(3,10,0)
+int devm_add_action(struct device *dev, void (*action) (void *), void *data);
+#endif
+
+#if LINUX_VERSION_IS_LESS(3,11,0) && RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(7,0)
 #ifndef DEVICE_ATTR_RO
 #define DEVICE_ATTR_RO(_name) \
 struct device_attribute dev_attr_ ## _name = __ATTR_RO(_name);
@@ -134,6 +138,15 @@ struct device_attribute dev_attr_ ## _name = __ATTR_RO(_name);
 #define DEVICE_ATTR_RW(_name) \
 struct device_attribute dev_attr_ ## _name = __ATTR_RW(_name)
 #endif
+#endif
+
+#ifndef CLASS_ATTR_RW
+#define CLASS_ATTR_RW(_name) \
+	struct class_attribute class_attr_##_name = __ATTR_RW(_name)
+#endif
+#ifndef CLASS_ATTR_RO
+#define CLASS_ATTR_RO(_name) \
+	struct class_attribute class_attr_##_name = __ATTR_RO(_name)
 #endif
 
 #define ATTRIBUTE_GROUPS_BACKPORT(_name) \
@@ -164,16 +177,16 @@ static const struct attribute_group _name##_group = {		\
 static inline void init_##_name##_attrs(void) {}		\
 __ATTRIBUTE_GROUPS(_name)
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)
-#define devm_kmalloc(dev, size, flags) devm_kzalloc(dev, size, flags) 
+#if LINUX_VERSION_IS_LESS(3,13,0)
+#define devm_kmalloc(dev, size, flags) devm_kzalloc(dev, size, flags)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
+#if LINUX_VERSION_IS_LESS(3,15,0)
 #define devm_kstrdup LINUX_BACKPORT(devm_kstrdup)
 extern char *devm_kstrdup(struct device *dev, const char *s, gfp_t gfp);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)
+#if LINUX_VERSION_IS_LESS(3,13,0)
 #define devm_kmalloc_array LINUX_BACKPORT(devm_kmalloc_array)
 static inline void *devm_kmalloc_array(struct device *dev,
 				       size_t n, size_t size, gfp_t flags)
@@ -191,7 +204,7 @@ static inline void *devm_kcalloc(struct device *dev,
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,16,0)
+#if LINUX_VERSION_IS_LESS(3,16,0)
 #define devm_kmemdup LINUX_BACKPORT(devm_kmemdup)
 static inline void *devm_kmemdup(struct device *dev, const void *src,
 				 size_t len, gfp_t gfp)
@@ -243,7 +256,7 @@ do {									\
 	dev_level_once(dev_dbg, dev, fmt, ##__VA_ARGS__)
 #endif /* dev_level_once */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
+#if LINUX_VERSION_IS_LESS(3,17,0)
 #define devm_kvasprintf LINUX_BACKPORT(devm_kvasprintf)
 extern char *devm_kvasprintf(struct device *dev, gfp_t gfp, const char *fmt,
 			     va_list ap);
@@ -251,5 +264,17 @@ extern char *devm_kvasprintf(struct device *dev, gfp_t gfp, const char *fmt,
 extern char *devm_kasprintf(struct device *dev, gfp_t gfp,
 			    const char *fmt, ...);
 #endif /* < 3.17 */
+
+#if LINUX_VERSION_IS_LESS(4, 1, 0)
+#define dev_of_node LINUX_BACKPORT(dev_of_node)
+static inline struct device_node *dev_of_node(struct device *dev)
+{
+#ifndef CONFIG_OF
+	return NULL;
+#else
+	return dev->of_node;
+#endif
+}
+#endif
 
 #endif /* __BACKPORT_DEVICE_H */

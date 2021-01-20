@@ -2,7 +2,7 @@
 2018-04-29 : Igor Pavlov : Public domain */
 
 #if !IS_ENABLED(CONFIG_LZMA_COMPRESS)
-#include <string.h>
+#include <linux/string.h>
 
 #include "LzFind.c"
 /* #define SHOW_STAT */

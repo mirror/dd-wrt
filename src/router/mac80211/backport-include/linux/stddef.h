@@ -1,23 +1,8 @@
-#ifndef _LINUX_STDDEF_H
-#define _LINUX_STDDEF_H
+#ifndef __BACKPORT_LINUX_STDDEF_H
+#define __BACKPORT_LINUX_STDDEF_H
+#include_next <linux/stddef.h>
 
-#include <uapi/linux/stddef.h>
-
-#undef NULL
-#define NULL ((void *)0)
-
-enum {
-	false	= 0,
-	true	= 1
-};
-
-#undef offsetof
-#ifdef __compiler_offsetof
-#define offsetof(TYPE, MEMBER)	__compiler_offsetof(TYPE, MEMBER)
-#else
-#define offsetof(TYPE, MEMBER)	((size_t)&((TYPE *)0)->MEMBER)
-#endif
-
+#ifndef sizeof_field
 /**
  * sizeof_field(TYPE, MEMBER)
  *
@@ -25,7 +10,9 @@ enum {
  * @MEMBER: The field to return the size of
  */
 #define sizeof_field(TYPE, MEMBER) sizeof((((TYPE *)0)->MEMBER))
+#endif
 
+#ifndef offsetofend
 /**
  * offsetofend(TYPE, MEMBER)
  *
@@ -33,6 +20,7 @@ enum {
  * @MEMBER: The member within the structure to get the end offset of
  */
 #define offsetofend(TYPE, MEMBER) \
-	(offsetof(TYPE, MEMBER)	+ sizeof(((TYPE *)0)->MEMBER))
-
+	(offsetof(TYPE, MEMBER)	+ sizeof_field(TYPE, MEMBER))
 #endif
+
+#endif /* __BACKPORT_LINUX_STDDEF_H */

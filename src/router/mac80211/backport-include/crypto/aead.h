@@ -3,7 +3,7 @@
 #include_next <crypto/aead.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+#if LINUX_VERSION_IS_LESS(4,2,0)
 #define aead_request_set_ad LINUX_BACKPORT(aead_request_set_ad)
 static inline void aead_request_set_ad(struct aead_request *req,
 				       unsigned int assoclen)
@@ -28,6 +28,6 @@ static inline int backport_crypto_aead_decrypt(struct aead_request *req)
 }
 #define crypto_aead_decrypt LINUX_BACKPORT(crypto_aead_decrypt)
 
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0) */
+#endif /* LINUX_VERSION_IS_LESS(4,2,0) */
 
 #endif /* __BACKPORT_CRYPTO_AEAD_H */

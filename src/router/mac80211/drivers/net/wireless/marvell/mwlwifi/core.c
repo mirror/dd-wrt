@@ -62,14 +62,6 @@ static const struct ieee80211_rate mwl_rates_24[] = {
 };
 
 static const struct ieee80211_channel mwl_channels_50[] = {
-	{ .band = NL80211_BAND_5GHZ, .center_freq = 4920, .hw_value = 184, },
-	{ .band = NL80211_BAND_5GHZ, .center_freq = 4940, .hw_value = 188, },
-	{ .band = NL80211_BAND_5GHZ, .center_freq = 4960, .hw_value = 192, },
-	{ .band = NL80211_BAND_5GHZ, .center_freq = 4980, .hw_value = 196, },
-
-
-
-	{ .band = NL80211_BAND_5GHZ, .center_freq = 5170, .hw_value = 34, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5180, .hw_value = 36, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5200, .hw_value = 40, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5220, .hw_value = 44, },
@@ -94,9 +86,6 @@ static const struct ieee80211_channel mwl_channels_50[] = {
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5765, .hw_value = 153, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5785, .hw_value = 157, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5805, .hw_value = 161, },
-	{ .band = NL80211_BAND_5GHZ, .center_freq = 5825, .hw_value = 165, },
-	{ .band = NL80211_BAND_5GHZ, .center_freq = 5845, .hw_value = 169, },
-	{ .band = NL80211_BAND_5GHZ, .center_freq = 5865, .hw_value = 173, },
 };
 
 static const struct ieee80211_rate mwl_rates_50[] = {
@@ -142,12 +131,9 @@ static const struct region_code_mapping regmap[] = {
 	{"ES", 0x31}, /* Spain  */
 	{"FR", 0x32}, /* France */
 	{"JP", 0x40}, /* Japan  */
-//	{"RW", 0x61}, /* Japan  */
-//	{"ID", 0x52}, /* Japan  */
 	{"TW", 0x80}, /* Taiwan */
 	{"AU", 0x81}, /* Australia */
 	{"CN", 0x90}, /* China (Asia) */
-//	{"WW", 0xfc}, /* China (Asia) */
 };
 
 static int mwl_prepare_cmd_buf(struct mwl_priv *priv)
@@ -476,10 +462,14 @@ static void mwl_set_ht_caps(struct mwl_priv *priv,
 }
 
 static void mwl_set_vht_caps(struct mwl_priv *priv,
-			     struct ieee80211_supported_band *band)
+			     struct ieee80211_supported_band *band, bool on)
 {
 	u32 antenna_num = 4;
-
+	if (!on) {
+		band->vht_cap.vht_supported = 0;
+		band->vht_cap.cap = 0;
+		return;
+	} 
 	band->vht_cap.vht_supported = 1;
 
 	if (priv->chip_type == MWL8964) {
@@ -541,7 +531,7 @@ static void mwl_set_vht_caps(struct mwl_priv *priv,
 	}
 }
 
-static void mwl_set_caps(struct mwl_priv *priv)
+void mwl_set_caps(struct mwl_priv *priv, bool qam256)
 {
 	struct ieee80211_hw *hw;
 
@@ -564,7 +554,7 @@ static void mwl_set_caps(struct mwl_priv *priv)
 		priv->band_24.n_bitrates = ARRAY_SIZE(mwl_rates_24);
 
 		mwl_set_ht_caps(priv, &priv->band_24);
-		mwl_set_vht_caps(priv, &priv->band_24);
+		mwl_set_vht_caps(priv, &priv->band_24, qam256);
 
 		hw->wiphy->bands[NL80211_BAND_2GHZ] = &priv->band_24;
 	}
@@ -586,7 +576,7 @@ static void mwl_set_caps(struct mwl_priv *priv)
 		priv->band_50.n_bitrates = ARRAY_SIZE(mwl_rates_50);
 
 		mwl_set_ht_caps(priv, &priv->band_50);
-		mwl_set_vht_caps(priv, &priv->band_50);
+		mwl_set_vht_caps(priv, &priv->band_50, true);
 
 		hw->wiphy->bands[NL80211_BAND_5GHZ] = &priv->band_50;
 	}
@@ -908,7 +898,7 @@ static int mwl_wl_init(struct mwl_priv *priv)
 	hw->wiphy->iface_combinations = &ap_if_comb;
 	hw->wiphy->n_iface_combinations = 1;
 
-	mwl_set_caps(priv);
+	mwl_set_caps(priv, false);
 
 	priv->led_blink_enable = 1;
 	priv->led_blink_rate = LED_BLINK_RATE_MID;

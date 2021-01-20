@@ -3,7 +3,7 @@
 #include_next <linux/crc7.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,16,0)
+#if LINUX_VERSION_IS_LESS(3,16,0)
 #define crc7_be LINUX_BACKPORT(crc7_be)
 static inline u8 crc7_be(u8 crc, const u8 *buffer, size_t len)
 {

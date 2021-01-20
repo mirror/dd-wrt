@@ -16,7 +16,7 @@
 #include <linux/skbuff.h>
 #include <linux/debugfs.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,12)
+#if LINUX_VERSION_IS_LESS(3,18,12)
 static inline bool is_kthread_should_stop(void)
 {
 	return (current->flags & PF_KTHREAD) && kthread_should_stop();
@@ -83,17 +83,19 @@ int woken_wake_function(wait_queue_t *wait, unsigned mode, int sync, void *key)
 EXPORT_SYMBOL(woken_wake_function);
 #endif
 
-#ifdef __BACKPORT_NETDEV_RSS_KEY_FILL
-u8 netdev_rss_key[NETDEV_RSS_KEY_LEN];
+static u8 netdev_rss_key[NETDEV_RSS_KEY_LEN];
 
 void netdev_rss_key_fill(void *buffer, size_t len)
 {
 	BUG_ON(len > sizeof(netdev_rss_key));
+#ifdef __BACKPORT_NET_GET_RANDOM_ONCE
 	net_get_random_once(netdev_rss_key, sizeof(netdev_rss_key));
 	memcpy(buffer, netdev_rss_key, len);
+#else
+	get_random_bytes(buffer, len);
+#endif
 }
 EXPORT_SYMBOL_GPL(netdev_rss_key_fill);
-#endif /* __BACKPORT_NETDEV_RSS_KEY_FILL */
 
 #if defined(CONFIG_DEBUG_FS)
 struct debugfs_devm_entry {

@@ -4,7 +4,7 @@
 #include <linux/version.h>
 #include <asm/barrier.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,1,0)
+#if LINUX_VERSION_IS_LESS(3,1,0)
 /*
  * In many versions, several architectures do not seem to include an
  * atomic64_t implementation, and do not include the software emulation from

@@ -24,7 +24,6 @@
 #include <linux/interrupt.h>
 #include <linux/module.h>
 #include <linux/bcma/bcma.h>
-#include <linux/vmalloc.h>
 #include <net/mac80211.h>
 #include <defs.h>
 #include "phy/phy_int.h"
@@ -103,7 +102,7 @@ static struct bcma_device_id brcms_coreid_table[] = {
 };
 MODULE_DEVICE_TABLE(bcma, brcms_coreid_table);
 
-#if defined(CONFIG_BRCMDBG)
+#if defined(CPTCFG_BRCMDBG)
 /*
  * Module parameter for setting the debug message level. Available
  * flags are specified by the BRCM_DL_* macros in
@@ -851,7 +850,8 @@ brcms_ops_ampdu_action(struct ieee80211_hw *hw,
 				     "START: tid %d is not agg\'able\n", tid);
 			return -EINVAL;
 		}
-		return IEEE80211_AMPDU_TX_START_IMMEDIATE;
+		ieee80211_start_tx_ba_cb_irqsafe(vif, sta->addr, tid);
+		break;
 
 	case IEEE80211_AMPDU_TX_STOP_CONT:
 	case IEEE80211_AMPDU_TX_STOP_FLUSH:
@@ -1432,6 +1432,7 @@ int brcms_up(struct brcms_info *wl)
  * precondition: perimeter lock has been acquired
  */
 void brcms_down(struct brcms_info *wl)
+	__must_hold(&wl->lock)
 {
 	uint callbacks, ret_val = 0;
 
@@ -1587,32 +1588,7 @@ void brcms_free_timer(struct brcms_timer *t)
 	}
 
 }
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
 
-void *kvmalloc(size_t size, gfp_t flags)
-{
-	gfp_t kmalloc_flags = flags;
-	void *ret;
-	if (size > PAGE_SIZE) {
-		kmalloc_flags |= __GFP_NOWARN;
-		if (!(kmalloc_flags & __GFP_REPEAT) ||
-		    (size <= PAGE_SIZE << PAGE_ALLOC_COSTLY_ORDER))
-			kmalloc_flags |= __GFP_NORETRY;
-	}
-	ret = kmalloc(size, kmalloc_flags);
-	if (ret || size <= PAGE_SIZE)
-		return (ret);
-	return (__vmalloc(size, flags | __GFP_HIGHMEM, PAGE_KERNEL));
-}
-
-void kvfree(const void *addr)
-{
-	if (is_vmalloc_addr(addr))
-		vfree(addr);
-	else
-		kfree(addr);
-}
-#endif
 /*
  * precondition: no locking required
  */
@@ -1743,6 +1719,7 @@ int brcms_check_firmwares(struct brcms_info *wl)
  * precondition: perimeter lock has been acquired
  */
 bool brcms_rfkill_set_hw_state(struct brcms_info *wl)
+	__must_hold(&wl->lock)
 {
 	bool blocked = brcms_c_check_radio_disabled(wl->wlc);
 

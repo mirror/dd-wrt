@@ -5,7 +5,7 @@
 #include <linux/types.h>
 #include <linux/lzma/LzmaDec.h>
 
-#include <string.h>
+#include <linux/string.h>
 
 #define kNumTopBits 24
 #define kTopValue ((UInt32)1 << kNumTopBits)

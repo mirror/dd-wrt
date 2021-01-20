@@ -62,6 +62,11 @@ config BP_MODULES
 	This symbol is necessary for the newer kconf tool, it looks
 	for the "option modules" to control the 'm' state.
 
+config BPAUTO_BUILD_NLATTR
+	def_bool y
+	depends on KERNEL_5_2
+	#c-file lib/nlattr.c
+
 config BPAUTO_BUILD_CORDIC
 	tristate
 	depends on m
@@ -70,7 +75,7 @@ config BPAUTO_BUILD_CORDIC
 	default m if BPAUTO_CORDIC
 	default m if BPAUTO_USERSEL_BUILD_ALL
 	#module-name cordic
-	#c-file lib/cordic.c
+	#c-file lib/math/cordic.c
 
 config BPAUTO_CORDIC
 	bool
@@ -103,28 +108,6 @@ config BPAUTO_USERSEL_BUILD_ALL
 	  It's only really useful for compat testing, so
 	  you probably shouldn't enable it.
 
-config BPAUTO_CRYPTO_CCM
-	depends on CRYPTO_AEAD
-	depends on CRYPTO_CTR
-	bool
-
-config BPAUTO_BUILD_CRYPTO_CCM
-	bool
-	default n if CRYPTO_CCM
-	default y if BPAUTO_CRYPTO_CCM
-	#c-file crypto/ccm.c
-
-config BPAUTO_CRYPTO_SKCIPHER
-	tristate
-	depends on m
-	depends on KERNEL_4_3
-	default y if MAC802154
-	default y if LIB80211_CRYPT_WEP
-	default y if LIB80211_CRYPT_TKIP
-	default y if BT
-	#c-file crypto/skcipher.c
-	#module-name skcipher
-
 config BPAUTO_WANT_DEV_COREDUMP
 	bool
 
@@ -138,37 +121,21 @@ config BPAUTO_BUILD_WANT_DEV_COREDUMP
 
 config BPAUTO_RHASHTABLE
 	bool
-	# current API of rhashtable was introduced in version 4.1
-	depends on KERNEL_4_8
+	# current API of rhashtable was introduced in version 4.9
+	# (the one including rhltable)
+	depends on KERNEL_4_9
 	# not very nice - but better than always having it
-	default y if MAC80211
+	default y if BACKPORTED_MAC80211
 	#h-file linux/rhashtable.h
+	#h-file linux/rhashtable-types.h
 	#c-file lib/rhashtable.c
 
-config BPAUTO_BUILD_HDMI
+config BPAUTO_BUCKET_LOCKS
 	bool
-	# the hdmi driver got some new apis like hdmi_infoframe_unpack() in
-	# kernel 4.0 which are used by some drivers
-	depends on KERNEL_4_0
-	#h-file linux/hdmi.h
-	#c-file drivers/video/hdmi.c
-
-config BPAUTO_HDMI
-	bool
-	select BPAUTO_BUILD_HDMI if KERNEL_4_0
-	# these drivers are using the new features of the hdmi driver.
-	default y if VIDEO_ADV7511
-	default y if VIDEO_ADV7604
-	default y if VIDEO_ADV7842
-
-config BPAUTO_FRAME_VECTOR
-	bool
-
-config BPAUTO_BUILD_FRAME_VECTOR
-	bool
-	default n if FRAME_VECTOR
-	default y if BPAUTO_FRAME_VECTOR
-	#c-file mm/frame_vector.c
+	# the API of bucket_locks that we need was introduced in version 4.16
+	depends on KERNEL_4_16
+	default y if BPAUTO_RHASHTABLE
+	#c-file lib/bucket_locks.c
 
 config BPAUTO_REFCOUNT
 	bool
@@ -176,3 +143,26 @@ config BPAUTO_REFCOUNT
 	depends on KERNEL_4_11
 	#h-file linux/refcount.h
 	#c-file lib/refcount.c
+
+config BPAUTO_PUBLIC_KEY
+	bool
+	#h-file crypto/public_key.h
+
+config BPAUTO_ASN1_DECODER
+	bool
+	#h-file linux/asn1_decoder.h
+	#c-file lib/asn1_decoder.c
+
+config BPAUTO_PKCS7
+	bool
+	#h-file crypto/pkcs7.h
+
+config BPAUTO_CRYPTO_LIB_ARC4
+	bool
+
+config BPAUTO_BUILD_CRYPTO_LIB_ARC4
+	bool
+	default y if BPAUTO_CRYPTO_LIB_ARC4
+	depends on !(CRYPTO_LIB_ARC4=y || CRYPTO_LIB_ARC4=m)
+	#h-file crypto/arc4.h
+	#c-file lib/crypto/arc4.c

@@ -17,11 +17,13 @@
 
 #define MT7603_MCU_RX_RING_SIZE	64
 #define MT7603_RX_RING_SIZE     128
+#define MT7603_TX_RING_SIZE	256
+#define MT7603_PSD_RING_SIZE	128
 
-#define MT7603_FIRMWARE_E1	"mt7603_e1.bin"
-#define MT7603_FIRMWARE_E2	"mt7603_e2.bin"
-#define MT7628_FIRMWARE_E1	"mt7628_e1.bin"
-#define MT7628_FIRMWARE_E2	"mt7628_e2.bin"
+#define MT7603_FIRMWARE_E1	"mediatek/mt7603_e1.bin"
+#define MT7603_FIRMWARE_E2	"mediatek/mt7603_e2.bin"
+#define MT7628_FIRMWARE_E1	"mediatek/mt7628_e1.bin"
+#define MT7628_FIRMWARE_E2	"mediatek/mt7628_e2.bin"
 
 #define MT7603_EEPROM_SIZE	1024
 
@@ -108,8 +110,6 @@ struct mt7603_dev {
 
 	u32 rxfilter;
 
-	u8 vif_mask;
-
 	struct list_head sta_poll_list;
 	spinlock_t sta_poll_lock;
 
@@ -131,8 +131,6 @@ struct mt7603_dev {
 	ktime_t ed_time;
 
 	spinlock_t ps_lock;
-
-	u8 mac_work_count;
 
 	u8 mcu_running;
 
@@ -162,6 +160,7 @@ struct mt7603_dev {
 
 	unsigned int reset_cause[__RESET_CAUSE_MAX];
 };
+extern struct ieee80211_rate mt7603_rates[12];
 
 extern const struct mt76_driver_ops mt7603_drv_ops;
 extern const struct ieee80211_ops mt7603_ops;
@@ -243,8 +242,7 @@ int mt7603_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
 			  struct ieee80211_sta *sta,
 			  struct mt76_tx_info *tx_info);
 
-void mt7603_tx_complete_skb(struct mt76_dev *mdev, enum mt76_txq_id qid,
-			    struct mt76_queue_entry *e);
+void mt7603_tx_complete_skb(struct mt76_dev *mdev, struct mt76_queue_entry *e);
 
 void mt7603_queue_rx_skb(struct mt76_dev *mdev, enum mt76_rxq_id q,
 			 struct sk_buff *skb);

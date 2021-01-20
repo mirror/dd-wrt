@@ -1,22 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 /******************************************************************************
  *
- * Copyright(c) 2003 - 2014 Intel Corporation. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- * The full GNU General Public License is included in this distribution in the
- * file called LICENSE.
+ * Copyright(c) 2003 - 2014, 2020 Intel Corporation. All rights reserved.
  *
  * Contact Information:
  *  Intel Linux Wireless <linuxwifi@intel.com>
@@ -38,13 +23,13 @@
 #include <linux/slab.h>
 #include <linux/mutex.h>
 
-#include "iwl-fw.h"
+#include "fw/img.h"
 #include "iwl-eeprom-parse.h"
 #include "iwl-csr.h"
 #include "iwl-debug.h"
 #include "iwl-agn-hw.h"
 #include "iwl-op-mode.h"
-#include "iwl-notif-wait.h"
+#include "fw/notif-wait.h"
 #include "iwl-trans.h"
 
 #include "led.h"
@@ -251,11 +236,6 @@ struct iwl_sensitivity_ranges {
 	u16 barker_corr_th_min_mrc;
 	u16 nrg_th_cca;
 };
-
-
-#define KELVIN_TO_CELSIUS(x) ((x)-273)
-#define CELSIUS_TO_KELVIN(x) ((x)+273)
-
 
 /******************************************************************************
  *
@@ -830,7 +810,6 @@ struct iwl_priv {
 	u8 bt_traffic_load, last_bt_traffic_load;
 	bool bt_ch_announce;
 	bool bt_full_concurrent;
-	bool bt_ant_couple_ok;
 	__le32 kill_ack_mask;
 	__le32 kill_cts_mask;
 	__le16 bt_valid;

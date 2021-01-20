@@ -2,7 +2,7 @@
 # Makefile for the output source package
 #
 
-ifeq ($(KERNELRELEASE),)
+ifeq ($(KERNELVERSION),)
 
 MAKEFLAGS += --no-print-directory
 SHELL := /usr/bin/env bash
@@ -39,7 +39,7 @@ mrproper:
 
 .SILENT: $(STAMP_KERNEL_CONFIG)
 $(STAMP_KERNEL_CONFIG):
-	@set -e ; test -f .local-symbols || (						\
+	@set -e ; test -f local-symbols || (						\
 	echo "/--------------"								;\
 	echo "| You shouldn't run make in the backports tree, but only in"		;\
 	echo "| the generated output. This here is only the skeleton code"		;\
@@ -65,9 +65,9 @@ $(STAMP_KERNEL_CONFIG):
 	@rm -f .kernel_config_md5_*
 	@touch $@
 
-Kconfig.kernel: $(STAMP_KERNEL_CONFIG) .local-symbols
+Kconfig.kernel: $(STAMP_KERNEL_CONFIG) local-symbols
 	@printf "Generating local configuration database from kernel ..."
-	@grep -v -f .local-symbols $(KERNEL_CONFIG) | grep = | (			\
+	@grep -v -f local-symbols $(KERNEL_CONFIG) | grep = | (			\
 		while read l ; do						\
 			if [ "$${l:0:7}" != "CONFIG_" ] ; then			\
 				continue					;\
@@ -92,12 +92,13 @@ Kconfig.kernel: $(STAMP_KERNEL_CONFIG) .local-symbols
 
 Kconfig.versions: Kconfig.kernel
 	@kver=$$($(MAKE) --no-print-directory -C $(KLIB_BUILD) kernelversion |	\
-		sed 's/^\(\([3-4]\|2\.6\)\.[0-9]\+\).*/\1/;t;d')		;\
+		sed 's/^\(\([3-5]\|2\.6\)\.[0-9]\+\).*/\1/;t;d')		;\
 	test "$$kver" != "" || echo "Kernel version parse failed!"		;\
 	test "$$kver" != ""							;\
 	kvers="$$(seq 14 39 | sed 's/^/2.6./')"					;\
 	kvers="$$kvers $$(seq 0 19 | sed 's/^/3./')"				;\
-	kvers="$$kvers $$(seq 0 99 | sed 's/^/4./')"				;\
+	kvers="$$kvers $$(seq 0 20 | sed 's/^/4./')"				;\
+	kvers="$$kvers $$(seq 0 99 | sed 's/^/5./')"				;\
 	print=0									;\
 	for v in $$kvers ; do							\
 		if [ "$$print" = "1" ] ; then					\

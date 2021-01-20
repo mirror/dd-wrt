@@ -22,7 +22,7 @@
 #include <linux/pci.h>
 #include <linux/pci_regs.h>
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,8))
+#if LINUX_VERSION_IS_LESS(3,7,8)
 void netdev_set_default_ethtool_ops(struct net_device *dev,
 				    const struct ethtool_ops *ops)
 {
@@ -275,7 +275,7 @@ static bool hid_match_one_id(struct hid_device *hdev,
 		const struct hid_device_id *id)
 {
 	return (id->bus == HID_BUS_ANY || id->bus == hdev->bus) &&
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+#if LINUX_VERSION_IS_GEQ(3,8,0)
 		(id->group == HID_GROUP_ANY || id->group == hdev->group) &&
 #endif
 		(id->vendor == HID_ANY_ID || id->vendor == hdev->vendor) &&

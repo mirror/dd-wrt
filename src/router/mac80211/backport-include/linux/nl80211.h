@@ -3,7 +3,7 @@
 #include_next <linux/nl80211.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_IS_LESS(3,2,0)
 #define NL80211_FEATURE_SK_TX_STATUS 0
 #endif
 

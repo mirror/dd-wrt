@@ -1,12 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
 config WLAN_VENDOR_RSI
 	bool "Redpine Signals Inc devices"
 	default y
-	---help---
+	help
 	  If you have a wireless card belonging to this class, say Y.
 
 	  Note that the answer to this question doesn't directly affect the
-	  kernel: saying N will just cause the configurator to skip all
-	  the questions about  cards. If you say Y, you will be asked for
+	  kernel: saying N will just cause the configurator to skip all the
+	  questions about these cards. If you say Y, you will be asked for
 	  your specific card in the following questions.
 
 if WLAN_VENDOR_RSI
@@ -14,8 +15,9 @@ if WLAN_VENDOR_RSI
 config RSI_91X
 	tristate "Redpine Signals Inc 91x WLAN driver support"
 	depends on m
+	select BT_HCIRSI if RSI_COEX
 	depends on MAC80211
-	---help---
+	help
 	  This option enabes support for RSI 1x1 devices.
 	  Select M (recommended), if you have a RSI 1x1 wireless module.
 
@@ -23,16 +25,17 @@ config RSI_DEBUGFS
 	bool "Redpine Signals Inc debug support"
 	depends on RSI_91X
 	default y
-	---help---
+	help
 	 Say Y, if you would like to enable debug support. This option
 	 creates debugfs entries
 
 config RSI_SDIO
+	depends on !KERNEL_3_13
 	tristate "Redpine Signals SDIO bus support"
 	depends on m
 	depends on MMC && RSI_91X
 	default m
-	---help---
+	help
 	  This option enables the SDIO bus support in rsi drivers.
 	  Select M (recommended), if you have a RSI 1x1 wireless module.
 
@@ -41,8 +44,19 @@ config RSI_USB
 	depends on m
 	depends on USB && RSI_91X
 	default m
-	---help---
+	help
 	  This option enables the USB bus support in rsi drivers.
 	  Select M (recommended), if you have a RSI 1x1 wireless module.
+
+config RSI_COEX
+	depends on !KERNEL_4_17
+	bool "Redpine Signals WLAN BT Coexistence support"
+	depends on BT && RSI_91X
+	depends on !(BT=m && RSI_91X=y)
+	default y
+	help
+	  This option enables the WLAN BT coex support in rsi drivers.
+	  Select M (recommended), if you have want to use this feature
+	  and you have RS9113 module.
 
 endif # WLAN_VENDOR_RSI

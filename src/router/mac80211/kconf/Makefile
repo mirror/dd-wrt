@@ -1,4 +1,3 @@
-CC=gcc
 CFLAGS=-Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -DKBUILD_NO_NLS
 
 LXDIALOG := lxdialog/checklist.o lxdialog/inputbox.o lxdialog/menubox.o lxdialog/textbox.o lxdialog/util.o lxdialog/yesno.o
@@ -14,3 +13,11 @@ mconf: mconf.o zconf.tab.o $(LXDIALOG)
 .PHONY: clean
 clean:
 	@rm -f mconf conf *.o lxdialog/*.o
+
+zconf.tab.c: zconf.lex.c
+
+%.tab.c: %.y
+	$(YACC) -o$@ -t -l $<
+
+%.lex.c: %.l
+	flex -o$@ -L $<

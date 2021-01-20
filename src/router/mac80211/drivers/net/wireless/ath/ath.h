@@ -33,8 +33,6 @@
  */
 #define	ATH_KEYMAX	        128     /* max key cache size we handle */
 
-static const u8 ath_bcast_mac[ETH_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-
 struct ath_ani {
 	bool caldone;
 	unsigned int longcal_timer;
@@ -152,6 +150,10 @@ struct ath_common {
 	enum ath_device_state state;
 	unsigned long op_flags;
 	u32 chan_bw;
+	bool disallow_vht;
+	bool disallow_ht;
+	bool turboqam;
+	u32 pll_div;
 
 	struct ath_ani ani;
 
@@ -194,12 +196,9 @@ static inline const struct ath_ps_ops *ath_ps_ops(struct ath_common *common)
 	return common->ps_ops;
 }
 
-
-struct sk_buff *_ath_rxbuf_alloc(const char *name, const int line, struct ath_common *common,
+struct sk_buff *ath_rxbuf_alloc(struct ath_common *common,
 				u32 len,
 				gfp_t gfp_mask);
-
-#define ath_rxbuf_alloc(common,len,gfp_mask) _ath_rxbuf_alloc(__func__,__LINE__,common,len,gfp_mask)
 bool ath_is_mybeacon(struct ath_common *common, struct ieee80211_hdr *hdr);
 
 void ath_hw_setbssidmask(struct ath_common *common);

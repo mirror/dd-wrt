@@ -114,8 +114,8 @@ struct brcmf_bus;
 struct brcmf_pub;
 #if 1 //def DEBUG
 struct dentry *brcmf_debugfs_get_devdir(struct brcmf_pub *drvr);
-int brcmf_debugfs_add_entry(struct brcmf_pub *drvr, const char *fn,
-			    int (*read_fn)(struct seq_file *seq, void *data));
+void brcmf_debugfs_add_entry(struct brcmf_pub *drvr, const char *fn,
+			     int (*read_fn)(struct seq_file *seq, void *data));
 //int brcmf_debug_create_memdump(struct brcmf_bus *bus, const void *data,
 //			       size_t len);
 #else
@@ -124,11 +124,9 @@ static inline struct dentry *brcmf_debugfs_get_devdir(struct brcmf_pub *drvr)
 	return ERR_PTR(-ENOENT);
 }
 static inline
-int brcmf_debugfs_add_entry(struct brcmf_pub *drvr, const char *fn,
-			    int (*read_fn)(struct seq_file *seq, void *data))
-{
-	return 0;
-}
+void brcmf_debugfs_add_entry(struct brcmf_pub *drvr, const char *fn,
+			     int (*read_fn)(struct seq_file *seq, void *data))
+{ }
 #endif
 static inline
 int brcmf_debug_create_memdump(struct brcmf_bus *bus, const void *data,

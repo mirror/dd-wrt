@@ -21,7 +21,7 @@ netdev_features_t passthru_features_check(struct sk_buff *skb,
 EXPORT_SYMBOL_GPL(passthru_features_check);
 
 #ifdef CONFIG_TTY
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+#if LINUX_VERSION_IS_GEQ(4,0,0)
 static void unset_locked_termios(struct ktermios *termios,
 				 struct ktermios *old,
 				 struct ktermios *locked)
@@ -80,5 +80,5 @@ int tty_set_termios(struct tty_struct *tty, struct ktermios *new_termios)
 	return 0;
 }
 EXPORT_SYMBOL_GPL(tty_set_termios);
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0) */
+#endif /* LINUX_VERSION_IS_GEQ(4,0,0) */
 #endif /* CONFIG_TTY */

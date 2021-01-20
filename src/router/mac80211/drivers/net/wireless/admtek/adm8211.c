@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 
 /*
  * Linux device driver for ADMtek ADM8211 (IEEE 802.11b MAC/BBP)
@@ -8,11 +9,6 @@
  * and used with permission.
  *
  * Much thanks to Infineon-ADMtek for their support of this driver.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. See README and COPYING for
- * more details.
  */
 
 #include <linux/interrupt.h>
@@ -390,9 +386,9 @@ static void adm8211_interrupt_rci(struct ieee80211_hw *dev)
 					priv->pdev,
 					priv->rx_buffers[entry].mapping,
 					pktlen, PCI_DMA_FROMDEVICE);
-				memcpy(skb_put(skb, pktlen),
-				       skb_tail_pointer(priv->rx_buffers[entry].skb),
-				       pktlen);
+				skb_put_data(skb,
+					     skb_tail_pointer(priv->rx_buffers[entry].skb),
+					     pktlen);
 				pci_dma_sync_single_for_device(
 					priv->pdev,
 					priv->rx_buffers[entry].mapping,
@@ -1700,7 +1696,7 @@ static void adm8211_tx(struct ieee80211_hw *dev,
 	skb_pull(skb, hdrlen);
 	payload_len = skb->len;
 
-	txhdr = (struct adm8211_tx_hdr *) skb_push(skb, sizeof(*txhdr));
+	txhdr = skb_push(skb, sizeof(*txhdr));
 	memset(txhdr, 0, sizeof(*txhdr));
 	memcpy(txhdr->da, ieee80211_get_DA(hdr), ETH_ALEN);
 	txhdr->signal = plcp_signal;
@@ -1785,8 +1781,8 @@ static int adm8211_probe(struct pci_dev *pdev,
 {
 	struct ieee80211_hw *dev;
 	struct adm8211_priv *priv;
-	unsigned long mem_addr, mem_len;
-	unsigned int io_addr, io_len;
+	unsigned long mem_len;
+	unsigned int io_len;
 	int err;
 	u32 reg;
 	u8 perm_addr[ETH_ALEN];
@@ -1798,9 +1794,7 @@ static int adm8211_probe(struct pci_dev *pdev,
 		return err;
 	}
 
-	io_addr = pci_resource_start(pdev, 0);
 	io_len = pci_resource_len(pdev, 0);
-	mem_addr = pci_resource_start(pdev, 1);
 	mem_len = pci_resource_len(pdev, 1);
 	if (io_len < 256 || mem_len < 1024) {
 		printk(KERN_ERR "%s (adm8211): Too short PCI resources\n",
@@ -1916,6 +1910,8 @@ static int adm8211_probe(struct pci_dev *pdev,
 	priv->channel = 1;
 
 	dev->wiphy->bands[NL80211_BAND_2GHZ] = &priv->band;
+
+	wiphy_ext_feature_set(dev->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
 
 	err = ieee80211_register_hw(dev);
 	if (err) {
