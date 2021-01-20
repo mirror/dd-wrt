@@ -372,7 +372,7 @@ void configure_single_ath9k(int count)
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
-	 } else {
+	} else {
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
@@ -380,7 +380,7 @@ void configure_single_ath9k(int count)
 	}
 #ifdef HAVE_ATH10K
 	if (is_ath10k(dev)) {
-		
+
 		if (has_qboost(dev)) {
 			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
 			if (has_qboost_tdma(dev)) {
@@ -1736,6 +1736,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	char ft[16];
 	char mfp[16];
 	char *mrate;
+	char eapol[32];
+	sprintf(eapol, "%s_eapol_version", prefix);
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(ft, "%s_ft", prefix);
 	sprintf(mfp, "%s_mfp", prefix);
@@ -1774,7 +1776,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		}
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=1\n");
+		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
 		if (ispsk3)
 			fprintf(fp, "sae_groups=19 20 21\n");
 //              if (ismesh)
@@ -1936,7 +1938,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=1\n");
+		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		eap_sta_config(fp, prefix, ssidoverride, 1);
 
