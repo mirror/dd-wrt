@@ -1,12 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
 config WLAN_VENDOR_ADMTEK
 	bool "ADMtek devices"
 	default y
-	---help---
+	help
 	  If you have a wireless card belonging to this class, say Y.
 
 	  Note that the answer to this question doesn't directly affect the
-	  kernel: saying N will just cause the configurator to skip all
-	  the questions about  cards. If you say Y, you will be asked for
+	  kernel: saying N will just cause the configurator to skip all the
+	  questions about these cards. If you say Y, you will be asked for
 	  your specific card in the following questions.
 
 if WLAN_VENDOR_ADMTEK
@@ -17,7 +18,7 @@ config ADM8211
 	depends on MAC80211 && PCI
 	depends on CRC32
 	depends on EEPROM_93CX6
-	---help---
+	help
 	  This driver is for ADM8211A, ADM8211B, and ADM8211C based cards.
 	  These are PCI/mini-PCI/Cardbus 802.11b chips found in cards such as:
 

@@ -3,7 +3,7 @@
 
 #include <net/ip.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+#if LINUX_VERSION_IS_LESS(4,4,0)
 
 #define tso_t LINUX_BACKPORT(tso_t)
 struct tso_t {

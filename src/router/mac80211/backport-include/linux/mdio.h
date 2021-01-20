@@ -24,7 +24,7 @@
 #define MDIO_EEE_10GKR		0x0040	/* 10G KR EEE cap */
 #endif /* MDIO_EEE_100TX */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_IS_LESS(3,7,0)
 /**
  * mmd_eee_adv_to_ethtool_adv_t
  * @eee_adv: value of the MMD EEE Advertisement/Link Partner Ability registers
@@ -82,6 +82,6 @@ static inline u16 ethtool_adv_to_mmd_eee_adv_t(u32 adv)
 
 	return reg;
 }
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,7,0) */
 
 #endif /* __BACKPORT_LINUX_MDIO_H */

@@ -1,7 +1,7 @@
 #ifndef __BACKPORT_LINUX_TIMECOUNTER_H
 #define __BACKPORT_LINUX_TIMECOUNTER_H
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,20,0)
+#if LINUX_VERSION_IS_GEQ(3,20,0)
 #include_next <linux/timecounter.h>
 #else
 #include <linux/clocksource.h>

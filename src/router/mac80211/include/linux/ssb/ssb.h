@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef LINUX_SSB_H_
 #define LINUX_SSB_H_
 
@@ -498,11 +499,9 @@ struct ssb_bus {
 
 	/* Internal-only stuff follows. Do not touch. */
 	struct list_head list;
-#ifdef CPTCFG_SSB_DEBUG
 	/* Is the bus already powered up? */
 	bool powered_up;
 	int power_warn_count;
-#endif /* DEBUG */
 };
 
 enum ssb_quirks {
@@ -624,7 +623,7 @@ extern u32 ssb_dma_translation(struct ssb_device *dev);
 
 static inline void __cold __ssb_dma_not_implemented(struct ssb_device *dev)
 {
-#ifdef CPTCFG_SSB_DEBUG
+#ifdef CONFIG_SSB_DEBUG
 	printk(KERN_ERR "SSB: BUG! Calling DMA API for "
 	       "unsupported bustype %d\n", dev->bus->bustype);
 #endif /* DEBUG */

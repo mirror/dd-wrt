@@ -39,7 +39,7 @@ static int zstd_init(struct zstd_workspace *wksp)
 		goto failed;
 	if (wksp->dmem == NULL)
 		goto failed;
-	printk(KERN_INFO "mac80211: allocated %d bytes for zstd algorithm\n", wksp->mem_size * 2);
+	printk(KERN_INFO "mac80211: allocated %zu bytes for zstd algorithm\n", wksp->mem_size * 2);
 	return 0;
 
 failed:
@@ -47,7 +47,7 @@ failed:
 		kvfree(wksp->mem);
 	if (wksp->dmem)
 		kvfree(wksp->dmem);
-	printk(KERN_ERR "mac80211: Failed to allocate zstd workspace (%d bytes)\n", wksp->mem_size * 2);
+	printk(KERN_ERR "mac80211: Failed to allocate zstd workspace (%zu bytes)\n", wksp->mem_size * 2);
 	return -ENOMEM;
 }
 

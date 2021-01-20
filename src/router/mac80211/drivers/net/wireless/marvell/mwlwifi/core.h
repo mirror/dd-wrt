@@ -39,7 +39,7 @@
 /* band related constants */
 #define BAND_24_CHANNEL_NUM           14
 #define BAND_24_RATE_NUM              13
-#define BAND_50_CHANNEL_NUM           32
+#define BAND_50_CHANNEL_NUM           24
 #define BAND_50_RATE_NUM              8
 
 #define NUM_WEP_KEYS                  4
@@ -219,7 +219,7 @@ struct mwl_priv {
 	u8 number_of_channels;
 	struct mwl_device_pwr_tbl device_pwr_tbl[SYSADPT_MAX_NUM_CHANNELS];
 	int chip_type;
-
+	bool turboqam;
 	bool use_short_slot;
 	bool use_short_preamble;
 

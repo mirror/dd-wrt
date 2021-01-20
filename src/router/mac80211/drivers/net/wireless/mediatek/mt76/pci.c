@@ -3,6 +3,7 @@
  * Copyright (C) 2019 Lorenzo Bianconi <lorenzo@kernel.org>
  */
 
+#include "mt76.h"
 #include <linux/pci.h>
 #include <linux/pci-aspm.h>
 

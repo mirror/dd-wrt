@@ -5,7 +5,7 @@
 #include <net/addrconf.h>
 #include <net/inet_frag.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_IS_LESS(3,7,0)
 /*
  *	Equivalent of ipv4 struct ip
  */
@@ -21,9 +21,9 @@ struct frag_queue {
 	unsigned int            csum;
 	__u16                   nhoffset;
 };
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,7,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0)
+#if LINUX_VERSION_IS_LESS(3,6,0)
 #define ipv6_addr_hash LINUX_BACKPORT(ipv6_addr_hash)
 static inline u32 ipv6_addr_hash(const struct in6_addr *a)
 {
@@ -39,7 +39,7 @@ static inline u32 ipv6_addr_hash(const struct in6_addr *a)
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
+#if LINUX_VERSION_IS_LESS(4,5,0)
 #define ipv6_addr_prefix_copy LINUX_BACKPORT(ipv6_addr_prefix_copy)
 static inline void ipv6_addr_prefix_copy(struct in6_addr *addr,
 					 const struct in6_addr *pfx,

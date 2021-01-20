@@ -40,8 +40,10 @@ static const struct brcmf_feat_fwcap brcmf_fwcap_map[] = {
 	{ BRCMF_FEAT_MCHAN, "mchan" },
 	{ BRCMF_FEAT_P2P, "p2p" },
 	{ BRCMF_FEAT_MONITOR, "monitor" },
+	{ BRCMF_FEAT_MONITOR_FLAG, "rtap" },
 	{ BRCMF_FEAT_MONITOR_FMT_RADIOTAP, "rtap" },
-	{ BRCMF_FEAT_DOT11H, "802.11h" }
+	{ BRCMF_FEAT_DOT11H, "802.11h" },
+	{ BRCMF_FEAT_SAE, "sae" },
 };
 
 #if 1 //def DEBUG
@@ -93,8 +95,20 @@ struct brcmf_feat_fwfeat {
 static const struct brcmf_feat_fwfeat brcmf_feat_fwfeat_map[] = {
 	/* brcmfmac43602-pcie.ap.bin from linux-firmware.git commit ea1178515b88 */
 	{ "01-6cb8e269", BIT(BRCMF_FEAT_MONITOR) },
+	/* brcmfmac43602-pcie.ap.bin from linux-firmware.git commit ea1178515b88 */
+	{ "01-de3d698f", BIT(BRCMF_FEAT_MONITOR) },
+	/* brcmfmac43602-pcie.ap.bin from linux-firmware.git commit ea1178515b88 */
+	{ "01-a99631d2", BIT(BRCMF_FEAT_MONITOR) },
+	/* brcmfmac43602-pcie.ap.bin from linux-firmware.git commit ea1178515b88 */
+	{ "01-de3d698f", BIT(BRCMF_FEAT_MONITOR_FMT_RADIOTAP) },
 	/* brcmfmac4366b-pcie.bin from linux-firmware.git commit 52442afee990 */
 	{ "01-c47a91a4", BIT(BRCMF_FEAT_MONITOR) },
+	/* brcmfmac4366b-pcie.bin from linux-firmware.git commit 211de1679a68 */
+	{ "01-66a37fa", BIT(BRCMF_FEAT_MONITOR) },
+	/* brcmfmac4366b-pcie.bin from linux-firmware.git commit 211de1679a68 */
+	{ "01-66a37fa", BIT(BRCMF_FEAT_MONITOR_FMT_RADIOTAP) },
+	/* brcmfmac4366c-pcie.bin from linux-firmware.git commit 211de1679a68 */
+	{ "01-6dd414d0", BIT(BRCMF_FEAT_MONITOR_FMT_RADIOTAP) },
 	/* brcmfmac4366b-pcie.bin from linux-firmware.git commit 211de1679a68 */
 	{ "01-801fb449", BIT(BRCMF_FEAT_MONITOR_FMT_HW_RX_HDR) },
 	/* brcmfmac4366c-pcie.bin from linux-firmware.git commit 211de1679a68 */
@@ -111,7 +125,6 @@ static void brcmf_feat_firmware_overrides(struct brcmf_pub *drv)
 		e = &brcmf_feat_fwfeat_map[i];
 		if (!strcmp(e->fwid, drv->fwver)) {
 			feat_flags = e->feat_flags;
-			break;
 		}
 	}
 
@@ -287,13 +300,14 @@ void brcmf_feat_attach(struct brcmf_pub *drvr)
 	if (!err)
 		ifp->drvr->feat_flags |= BIT(BRCMF_FEAT_SCAN_RANDOM_MAC);
 
+	brcmf_feat_iovar_int_get(ifp, BRCMF_FEAT_FWSUP, "sup_wpa");
+
 	if (drvr->settings->feature_disable) {
 		brcmf_dbg(INFO, "Features: 0x%02x, disable: 0x%02x\n",
 			  ifp->drvr->feat_flags,
 			  drvr->settings->feature_disable);
 		ifp->drvr->feat_flags &= ~drvr->settings->feature_disable;
 	}
-	brcmf_feat_iovar_int_get(ifp, BRCMF_FEAT_FWSUP, "sup_wpa");
 
 	brcmf_feat_firmware_overrides(drvr);
 

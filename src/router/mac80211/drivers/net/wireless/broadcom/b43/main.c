@@ -72,6 +72,11 @@ MODULE_FIRMWARE("b43/ucode40.fw");
 MODULE_FIRMWARE("b43/ucode42.fw");
 MODULE_FIRMWARE("b43/ucode9.fw");
 
+static int modparam_gpiomask = 0x000F;
+module_param_named(gpiomask, modparam_gpiomask, int, 0444);
+MODULE_PARM_DESC(gpiomask,
+         "GPIO mask for LED control (default 0x000F)");
+
 static int modparam_bad_frames_preempt;
 module_param_named(bad_frames_preempt, modparam_bad_frames_preempt, int, 0444);
 MODULE_PARM_DESC(bad_frames_preempt,
@@ -109,7 +114,7 @@ static int b43_modparam_pio = 0;
 module_param_named(pio, b43_modparam_pio, int, 0644);
 MODULE_PARM_DESC(pio, "Use PIO accesses by default: 0=DMA, 1=PIO");
 
-static int modparam_allhwsupport = !IS_ENABLED(CONFIG_BRCMSMAC);
+static int modparam_allhwsupport = 1;
 module_param_named(allhwsupport, modparam_allhwsupport, int, 0444);
 MODULE_PARM_DESC(allhwsupport, "Enable support for all hardware (even it if overlaps with the brcmsmac driver)");
 
@@ -1637,7 +1642,7 @@ static void b43_write_beacon_template(struct b43_wldev *dev,
 				  len, ram_offset, shm_size_offset, rate);
 
 	/* Write the PHY TX control parameters. */
-	antenna = B43_ANTENNA_DEFAULT;
+	antenna = dev->tx_antenna;
 	antenna = b43_antenna_to_phyctl(antenna);
 	ctl = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_BEACPHYCTL);
 	/* We can't send beacons with short preamble. Would get PHY errors. */
@@ -1995,10 +2000,12 @@ static void b43_do_interrupt_thread(struct b43_wldev *dev)
 			dma_reason[0], dma_reason[1],
 			dma_reason[2], dma_reason[3],
 			dma_reason[4], dma_reason[5]);
+#ifdef CPTCFG_B43_PIO
 		b43err(dev->wl, "This device does not support DMA "
 			       "on your system. It will now be switched to PIO.\n");
 		/* Fall back to PIO transfers if we get fatal DMA errors! */
 		dev->use_pio = true;
+#endif
 		b43_controller_restart(dev, "DMA error");
 		return;
 	}
@@ -2851,7 +2858,7 @@ static struct ssb_device *b43_ssb_gpio_dev(struct b43_wldev *dev)
 {
 	struct ssb_bus *bus = dev->dev->sdev->bus;
 
-#ifdef CPTCFG_SSB_DRIVER_PCICORE
+#ifdef CONFIG_SSB_DRIVER_PCICORE
 	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
 #else
 	return bus->chipco.dev;
@@ -2867,16 +2874,24 @@ static int b43_gpio_init(struct b43_wldev *dev)
 	u32 mask, set;
 
 	b43_maskset32(dev, B43_MMIO_MACCTL, ~B43_MACCTL_GPOUTSMSK, 0);
-	b43_maskset16(dev, B43_MMIO_GPIO_MASK, ~0, 0xF);
+	b43_maskset16(dev, B43_MMIO_GPIO_MASK, ~0, modparam_gpiomask);
 
 	mask = 0x0000001F;
-	set = 0x0000000F;
+	set = modparam_gpiomask;
 	if (dev->dev->chip_id == 0x4301) {
 		mask |= 0x0060;
 		set |= 0x0060;
 	} else if (dev->dev->chip_id == 0x5354) {
 		/* Don't allow overtaking buttons GPIOs */
 		set &= 0x2; /* 0x2 is LED GPIO on BCM5354 */
+	} else if (dev->dev->chip_id == BCMA_CHIP_ID_BCM4716 || 
+		   dev->dev->chip_id == BCMA_CHIP_ID_BCM47162 ||
+		   dev->dev->chip_id == BCMA_CHIP_ID_BCM5356 ||
+		   dev->dev->chip_id == BCMA_CHIP_ID_BCM5357 ||
+		   dev->dev->chip_id == BCMA_CHIP_ID_BCM53572) {
+		/* just use gpio 0 and 1 for 2.4 GHz wifi led */
+		set &= 0x3;
+		mask &= 0x3;
 	}
 
 	if (0 /* FIXME: conditional unknown */ ) {
@@ -3275,8 +3290,8 @@ static int b43_chip_init(struct b43_wldev *dev)
 
 	/* Select the antennae */
 	if (phy->ops->set_rx_antenna)
-		phy->ops->set_rx_antenna(dev, B43_ANTENNA_DEFAULT);
-	b43_mgmtframe_txantenna(dev, B43_ANTENNA_DEFAULT);
+		phy->ops->set_rx_antenna(dev, dev->rx_antenna);
+	b43_mgmtframe_txantenna(dev, dev->tx_antenna);
 
 	if (phy->type == B43_PHYTYPE_B) {
 		value16 = b43_read16(dev, 0x005E);
@@ -3976,7 +3991,6 @@ static int b43_op_config(struct ieee80211_hw *hw, u32 changed)
 	struct b43_wldev *dev = wl->current_dev;
 	struct b43_phy *phy = &dev->phy;
 	struct ieee80211_conf *conf = &hw->conf;
-	int antenna;
 	int err = 0;
 
 	mutex_lock(&wl->mutex);
@@ -4019,11 +4033,9 @@ static int b43_op_config(struct ieee80211_hw *hw, u32 changed)
 	}
 
 	/* Antennas for RX and management frame TX. */
-	antenna = B43_ANTENNA_DEFAULT;
-	b43_mgmtframe_txantenna(dev, antenna);
-	antenna = B43_ANTENNA_DEFAULT;
+	b43_mgmtframe_txantenna(dev, dev->tx_antenna);
 	if (phy->ops->set_rx_antenna)
-		phy->ops->set_rx_antenna(dev, antenna);
+		phy->ops->set_rx_antenna(dev, dev->rx_antenna);
 
 	if (wl->radio_enabled != phy->radio_on) {
 		if (wl->radio_enabled) {
@@ -4868,7 +4880,7 @@ static int b43_wireless_core_init(struct b43_wldev *dev)
 	}
 	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
 		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */
-#if defined(CPTCFG_B43_SSB) && defined(CPTCFG_SSB_DRIVER_PCICORE)
+#if defined(CPTCFG_B43_SSB) && defined(CONFIG_SSB_DRIVER_PCICORE)
 	if (dev->dev->bus_type == B43_BUS_SSB &&
 	    dev->dev->sdev->bus->bustype == SSB_BUSTYPE_PCI &&
 	    dev->dev->sdev->bus->pcicore.dev->id.revision <= 10)
@@ -5167,6 +5179,47 @@ static int b43_op_get_survey(struct ieee80211_hw *hw, int idx,
 	return 0;
 }
 
+static int b43_op_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+{
+	struct b43_wl *wl = hw_to_b43_wl(hw);
+	struct b43_wldev *dev = wl->current_dev;
+
+	if (tx_ant == 1 && rx_ant == 1) {
+		dev->tx_antenna = B43_ANTENNA0;
+		dev->rx_antenna = B43_ANTENNA0;
+	}
+	else if (tx_ant == 2 && rx_ant == 2) {
+		dev->tx_antenna = B43_ANTENNA1;
+		dev->rx_antenna = B43_ANTENNA1;
+	}
+	else if ((tx_ant & 3) == 3 && (rx_ant & 3) == 3) {
+		dev->tx_antenna = B43_ANTENNA_DEFAULT;
+		dev->rx_antenna = B43_ANTENNA_DEFAULT;
+	}
+	else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+
+static int b43_op_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant)
+{
+	struct b43_wl *wl = hw_to_b43_wl(hw);
+	struct b43_wldev *dev = wl->current_dev;
+
+	switch (dev->tx_antenna) {
+	case B43_ANTENNA0:
+		*tx_ant = 1; *rx_ant = 1; break;
+	case B43_ANTENNA1:
+		*tx_ant = 2; *rx_ant = 2; break;
+	case B43_ANTENNA_DEFAULT:
+		*tx_ant = 3; *rx_ant = 3; break;
+	}
+	return 0;
+}
+
 static const struct ieee80211_ops b43_hw_ops = {
 	.tx			= b43_op_tx,
 	.conf_tx		= b43_op_conf_tx,
@@ -5188,6 +5241,8 @@ static const struct ieee80211_ops b43_hw_ops = {
 	.sw_scan_complete	= b43_op_sw_scan_complete_notifier,
 	.get_survey		= b43_op_get_survey,
 	.rfkill_poll		= b43_rfkill_poll,
+	.set_antenna		= b43_op_set_antenna,
+	.get_antenna		= b43_op_get_antenna,
 };
 
 /* Hard-reset the chip. Do not call this directly.
@@ -5489,6 +5544,8 @@ static int b43_one_core_attach(struct b43_bus_dev *dev, struct b43_wl *wl)
 	if (!wldev)
 		goto out;
 
+	wldev->rx_antenna = B43_ANTENNA_DEFAULT;
+	wldev->tx_antenna = B43_ANTENNA_DEFAULT;
 	wldev->use_pio = b43_modparam_pio;
 	wldev->dev = dev;
 	wldev->wl = wl;
@@ -5569,7 +5626,7 @@ static struct b43_wl *b43_wireless_init(struct b43_bus_dev *dev)
 	/* fill hw info */
 	ieee80211_hw_set(hw, RX_INCLUDES_FCS);
 	ieee80211_hw_set(hw, SIGNAL_DBM);
-
+	ieee80211_hw_set(hw, MFP_CAPABLE);
 	hw->wiphy->interface_modes =
 		BIT(NL80211_IFTYPE_AP) |
 		BIT(NL80211_IFTYPE_MESH_POINT) |
@@ -5582,6 +5639,9 @@ static struct b43_wl *b43_wireless_init(struct b43_bus_dev *dev)
 	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
 
 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
+
+	hw->wiphy->available_antennas_rx = 0x3;
+	hw->wiphy->available_antennas_tx = 0x3;
 
 	wl->hw_registered = false;
 	hw->max_rates = 2;
@@ -5790,7 +5850,7 @@ static void b43_print_driverinfo(void)
 #ifdef CPTCFG_B43_PCI_AUTOSELECT
 	feat_pci = "P";
 #endif
-#ifdef CPTCFG_B43_PCMCIA
+#ifdef CONFIG_B43_PCMCIA
 	feat_pcmcia = "M";
 #endif
 #ifdef CPTCFG_B43_PHY_N

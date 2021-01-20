@@ -20,15 +20,6 @@
 #include <linux/types.h>
 #include <linux/io.h>
 
-#define CORDIC_ANGLE_GEN	39797
-#define CORDIC_PRECISION_SHIFT	16
-#define CORDIC_NUM_ITER	(CORDIC_PRECISION_SHIFT + 2)
-
-#define CORDIC_FIXED(X)	((s32)((X) << CORDIC_PRECISION_SHIFT))
-#define CORDIC_FLOAT(X)	(((X) >= 0) \
-		? ((((X) >> (CORDIC_PRECISION_SHIFT - 1)) + 1) >> 1) \
-		: -((((-(X)) >> (CORDIC_PRECISION_SHIFT - 1)) + 1) >> 1))
-
 #define WL_CHAN_FREQ_RANGE_2G      0
 #define WL_CHAN_FREQ_RANGE_5GL     1
 #define WL_CHAN_FREQ_RANGE_5GM     2
@@ -259,7 +250,7 @@ do {						\
 		wiphy_err(dev, "%s: " fmt, __func__, ##args);	\
 } while (0)
 
-#if defined(CONFIG_BCM47XX) && !defined(CONFIG_ARM)
+#ifdef CONFIG_BCM47XX
 /*
  * bcm4716 (which includes 4717 & 4718), plus 4706 on PCIe can reorder
  * transactions. As a fix, a read after write is performed on certain places

@@ -3,7 +3,7 @@
 #include_next <linux/workqueue.h>
 #include <linux/version.h>
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
+#if LINUX_VERSION_IS_LESS(3,7,0)
 #define mod_delayed_work LINUX_BACKPORT(mod_delayed_work)
 bool mod_delayed_work(struct workqueue_struct *wq, struct delayed_work *dwork,
 		      unsigned long delay);
@@ -14,7 +14,7 @@ bool mod_delayed_work(struct workqueue_struct *wq, struct delayed_work *dwork,
 #define create_freezable_workqueue create_freezeable_workqueue
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_IS_LESS(3,3,0)
 #define __WQ_ORDERED	0
 /*
  * commit b196be89cdc14a88cc637cdad845a75c5886c82d
@@ -54,13 +54,13 @@ backport_alloc_workqueue(const char *fmt, unsigned int flags,
 void backport_destroy_workqueue(struct workqueue_struct *wq);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
+#if LINUX_VERSION_IS_LESS(3,11,0)
 /* power efficient workqueues were added in commit 0668106ca386. */
 #define system_power_efficient_wq system_wq
 #define system_freezable_power_efficient_wq system_freezable_wq
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,1,0)
+#if LINUX_VERSION_IS_LESS(3,1,0)
 #define drain_workqueue(wq) flush_workqueue(wq)
 #endif
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 obj-$(CPTCFG_LIBERTAS)		+= libertas/
 
 obj-$(CPTCFG_LIBERTAS_THINFIRM)	+= libertas_tf/

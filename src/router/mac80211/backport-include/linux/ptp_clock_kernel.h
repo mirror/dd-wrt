@@ -4,7 +4,7 @@
 #include <linux/version.h>
 #include_next <linux/ptp_clock_kernel.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,5,0)
+#if LINUX_VERSION_IS_LESS(3,5,0)
 #include <linux/posix-clock.h>
 
 #define PTP_MAX_TIMESTAMPS 128
@@ -31,10 +31,10 @@ struct ptp_clock {
 };
 
 extern int ptp_clock_index(struct ptp_clock *ptp);
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,5,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,5,0) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0) && !defined(CONFIG_SUSE_KERNEL)
+#if LINUX_VERSION_IS_LESS(3,7,0) && !defined(CONFIG_SUSE_KERNEL)
 #define ptp_clock_register(info,parent) ptp_clock_register(info)
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,7,0) */
 
 #endif /* __BACKPORT_PTP_CLOCK_KERNEL_H */

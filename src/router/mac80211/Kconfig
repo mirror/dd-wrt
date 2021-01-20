@@ -22,3 +22,4 @@ source "$BACKPORT_DIR/Kconfig.sources"
 # these will be generated
 source "$BACKPORT_DIR/Kconfig.kernel"
 source "$BACKPORT_DIR/Kconfig.versions"
+source "$BACKPORT_DIR/Kconfig.local"

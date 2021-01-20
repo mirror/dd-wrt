@@ -3,7 +3,7 @@
 #include_next <linux/proc_fs.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+#if LINUX_VERSION_IS_LESS(3,10,0)
 
 #ifdef CONFIG_PROC_FS
 /*
@@ -24,6 +24,6 @@ static inline void proc_set_size(struct proc_dir_entry *de, loff_t size) {}
 static inline void proc_set_user(struct proc_dir_entry *de, kuid_t uid, kgid_t gid) {}
 #endif /* CONFIG_PROC_FS */
 
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,10,0) */
 
 #endif /* __BACKPORT_PROC_FS_H */

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0
 #
 # Makefile for the Linux Wireless network device drivers.
 #
@@ -17,6 +18,7 @@ obj-$(CPTCFG_WLAN_VENDOR_RSI) += rsi/
 obj-$(CPTCFG_WLAN_VENDOR_ST) += st/
 obj-$(CPTCFG_WLAN_VENDOR_TI) += ti/
 obj-$(CPTCFG_WLAN_VENDOR_ZYDAS) += zydas/
+obj-$(CPTCFG_WLAN_VENDOR_QUANTENNA) += quantenna/
 
 # 16-bit wireless PCMCIA client drivers
 #obj-$(CPTCFG_PCMCIA_RAYCS)	+= ray_cs.o
@@ -25,3 +27,5 @@ obj-$(CPTCFG_WLAN_VENDOR_ZYDAS) += zydas/
 obj-$(CPTCFG_USB_NET_RNDIS_WLAN)	+= rndis_wlan.o
 
 obj-$(CPTCFG_MAC80211_HWSIM)	+= mac80211_hwsim.o
+#
+#obj-$(CPTCFG_VIRT_WIFI)	+= virt_wifi.o

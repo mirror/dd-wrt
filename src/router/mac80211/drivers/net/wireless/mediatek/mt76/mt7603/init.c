@@ -317,7 +317,7 @@ mt7603_init_hardware(struct mt7603_dev *dev)
 	.hw_value_short = (MT_PHY_TYPE_OFDM << 8) | (_idx),	\
 }
 
-static struct ieee80211_rate mt7603_rates[] = {
+struct ieee80211_rate mt7603_rates[] = {
 	CCK_RATE(0, 10),
 	CCK_RATE(1, 20),
 	CCK_RATE(2, 55),
@@ -342,6 +342,8 @@ static const struct ieee80211_iface_limit if_limits[] = {
 #ifdef CPTCFG_MAC80211_MESH
 			 BIT(NL80211_IFTYPE_MESH_POINT) |
 #endif
+			 BIT(NL80211_IFTYPE_P2P_CLIENT) |
+			 BIT(NL80211_IFTYPE_P2P_GO) |
 			 BIT(NL80211_IFTYPE_AP)
 	 },
 };
@@ -530,14 +532,9 @@ int mt7603_register_device(struct mt7603_dev *dev)
 	spin_lock_init(&dev->sta_poll_lock);
 	spin_lock_init(&dev->ps_lock);
 
-	INIT_DELAYED_WORK(&dev->mt76.mac_work, mt7603_mac_work);
+	INIT_DELAYED_WORK(&dev->mphy.mac_work, mt7603_mac_work);
 	tasklet_init(&dev->mt76.pre_tbtt_tasklet, mt7603_pre_tbtt_tasklet,
 		     (unsigned long)dev);
-
-	/* Check for 7688, which only has 1SS */
-	dev->mphy.antenna_mask = 3;
-	if (mt76_rr(dev, MT_EFUSE_BASE + 0x64) & BIT(4))
-		dev->mphy.antenna_mask = 1;
 
 	dev->slottime = 9;
 	dev->sensitivity_limit = 28;
@@ -560,6 +557,7 @@ int mt7603_register_device(struct mt7603_dev *dev)
 
 	ieee80211_hw_set(hw, TX_STATUS_NO_AMPDU_LEN);
 	ieee80211_hw_set(hw, HOST_BROADCAST_PS_BUFFERING);
+	ieee80211_hw_set(hw, NEEDS_UNIQUE_STA_ADDR);
 
 	/* init led callbacks */
 	if (IS_ENABLED(CPTCFG_MT76_LEDS)) {

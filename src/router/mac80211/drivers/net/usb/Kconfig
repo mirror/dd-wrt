@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # USB Network devices configuration
 #
@@ -124,6 +125,7 @@ config USB_LAN78XX
 	select BPAUTO_MII
 	depends on PHYLIB
 	depends on MICROCHIP_PHY
+	depends on FIXED_PHY
 	help
 	  This option adds support for Microchip LAN78XX based USB 2
 	  & USB 3 10/100/1000 Ethernet adapters.
@@ -137,6 +139,7 @@ config USB_LAN78XX
 	  module will be called lan78xx.
 
 config USB_USBNET
+	depends on !KERNEL_4_6
 	tristate "Multi-purpose USB Networking Framework"
 	depends on m
 	select BPAUTO_MII
@@ -409,7 +412,7 @@ config USB_NET_NET1080
 
 config USB_NET_PLUSB
 	depends on n
-	tristate "Prolific PL-2301/2302/25A1 based cables"
+	tristate "Prolific PL-2301/2302/25A1/27A1 based cables"
 	depends on m
 	# if the handshake/init/reset problems, from original 'plusb',
 	# are ever resolved ... then remove "experimental"
@@ -678,5 +681,18 @@ config USB_NET_CH9200
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called ch9200.
+
+config USB_NET_AQC111
+	depends on n
+	tristate "Aquantia AQtion USB to 5/2.5GbE Controllers support"
+	depends on m
+	depends on USB_USBNET
+	depends on CRC32
+	help
+	  This option adds support for Aquantia AQtion USB
+	  Ethernet adapters based on AQC111U/AQC112 chips.
+
+	  This driver should work with at least the following devices:
+	  * Aquantia AQtion USB to 5GbE
 
 endif # USB_NET_DRIVERS

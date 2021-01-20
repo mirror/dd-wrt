@@ -1,7 +1,6 @@
 config MWLWIFI
 	tristate "Marvell Avastar 88W8864/88W8897 PCIe driver (mac80211 compatible)"
 	depends on PCI && MAC80211
-	select FW_LOADER
 	---help---
 		Select to build the driver supporting the:
 

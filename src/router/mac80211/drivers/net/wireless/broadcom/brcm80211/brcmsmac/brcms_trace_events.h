@@ -22,7 +22,7 @@
 #include <linux/tracepoint.h>
 #include "mac80211_if.h"
 
-#ifndef CONFIG_BRCM_TRACING
+#ifndef CPTCFG_BRCM_TRACING
 #undef TRACE_EVENT
 #define TRACE_EVENT(name, proto, ...) \
 static inline void trace_ ## name(proto) {}

@@ -22,14 +22,6 @@
 #include "proto.h"
 #include "bcdc.h"
 
-struct brcmf_proto_bcdc_dcmd {
-	__le32 cmd;	/* dongle command value */
-	__le32 len;	/* lower 16: output buflen;
-			 * upper 16: input buflen (excludes header) */
-	__le32 flags;	/* flag defns given below */
-	__le32 status;	/* status code returned from the device */
-};
-
 /* BCDC flag definitions */
 #define BCDC_DCMD_ERROR		0x01		/* 1=cmd failed */
 #define BCDC_DCMD_SET		0x02		/* 0=get, 1=set cmd */
@@ -82,11 +74,6 @@ struct brcmf_proto_bcdc_header {
 #define BRCMF_PROT_FW_SIGNAL_MAX_TXBYTES	12
 
 #define RETRIES 2 /* # of retries to retrieve matching dcmd response */
-#define BUS_HEADER_LEN	(16+64)		/* Must be atleast SDPCM_RESERVE
-					 * (amount of header tha might be added)
-					 * plus any space that might be needed
-					 * for bus alignment padding.
-					 */
 struct brcmf_bcdc {
 	u16 reqid;
 	u8 bus_header[BUS_HEADER_LEN];

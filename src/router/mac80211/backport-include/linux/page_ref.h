@@ -9,10 +9,12 @@ static inline void page_ref_inc(struct page *page)
 	atomic_inc(&page->_count);
 }
 
+#if !LINUX_VERSION_IN_RANGE(4,4,216, 4,5,0)
 static inline int page_ref_count(struct page *page)
 {
 	return atomic_read(&page->_count);
 }
+#endif /* 4.4.216 <= x < 4.5 */
 
 static inline int page_ref_sub_and_test(struct page *page, int nr)
 {

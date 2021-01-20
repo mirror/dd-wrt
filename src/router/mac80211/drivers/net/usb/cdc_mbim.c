@@ -1,13 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012  Smith Micro Software, Inc.
  * Copyright (c) 2012  Bjørn Mork <bjorn@mork.no>
  *
  * This driver is based on and reuse most of cdc_ncm, which is
  * Copyright (C) ST-Ericsson 2010-2012
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * version 2 as published by the Free Software Foundation.
  */
 
 #include <linux/module.h>
@@ -23,6 +20,7 @@
 #include <linux/usb/cdc_ncm.h>
 #include <net/ipv6.h>
 #include <net/addrconf.h>
+#include <net/ipv6_stubs.h>
 
 /* alternative VLAN for IP session 0 if not untagged */
 #define MBIM_IPS0_VID	4094
@@ -70,7 +68,13 @@ static int cdc_mbim_wdm_manage_power(struct usb_interface *intf, int status)
 	return cdc_mbim_manage_power(dev, status);
 }
 
+#if LINUX_VERSION_IS_GEQ(3,10,0)
 static int cdc_mbim_rx_add_vid(struct net_device *netdev, __be16 proto, u16 vid)
+#elif LINUX_VERSION_IS_GEQ(3,3,0)
+static int cdc_mbim_rx_add_vid(struct net_device *netdev, u16 vid)
+#else
+static void cdc_mbim_rx_add_vid(struct net_device *netdev, u16 vid)
+#endif /* LINUX_VERSION_IS_GEQ(3,10,0) */
 {
 	struct usbnet *dev = netdev_priv(netdev);
 	struct cdc_mbim_state *info = (void *)&dev->data;
@@ -78,13 +82,21 @@ static int cdc_mbim_rx_add_vid(struct net_device *netdev, __be16 proto, u16 vid)
 	/* creation of this VLAN is a request to tag IP session 0 */
 	if (vid == MBIM_IPS0_VID)
 		info->flags |= FLAG_IPS0_VLAN;
+#if LINUX_VERSION_IS_GEQ(3,3,0)
 	else
 		if (vid >= 512)	/* we don't map these to MBIM session */
 			return -EINVAL;
 	return 0;
+#endif /* LINUX_VERSION_IS_GEQ(3,3,0) */
 }
 
+#if LINUX_VERSION_IS_GEQ(3,10,0)
 static int cdc_mbim_rx_kill_vid(struct net_device *netdev, __be16 proto, u16 vid)
+#elif LINUX_VERSION_IS_GEQ(3,3,0)
+static int cdc_mbim_rx_kill_vid(struct net_device *netdev, u16 vid)
+#else
+static void cdc_mbim_rx_kill_vid(struct net_device *netdev, u16 vid)
+#endif /* LINUX_VERSION_IS_GEQ(3,10,0) */
 {
 	struct usbnet *dev = netdev_priv(netdev);
 	struct cdc_mbim_state *info = (void *)&dev->data;
@@ -92,7 +104,9 @@ static int cdc_mbim_rx_kill_vid(struct net_device *netdev, __be16 proto, u16 vid
 	/* this is a request for an untagged IP session 0 */
 	if (vid == MBIM_IPS0_VID)
 		info->flags &= ~FLAG_IPS0_VLAN;
+#if LINUX_VERSION_IS_GEQ(3,3,0)
 	return 0;
+#endif /* LINUX_VERSION_IS_GEQ(3,3,0) */
 }
 
 static const struct net_device_ops cdc_mbim_netdev_ops = {
@@ -100,6 +114,12 @@ static const struct net_device_ops cdc_mbim_netdev_ops = {
 	.ndo_stop             = usbnet_stop,
 	.ndo_start_xmit       = usbnet_start_xmit,
 	.ndo_tx_timeout       = usbnet_tx_timeout,
+#if LINUX_VERSION_IS_GEQ(4,11,0)
+	.ndo_get_stats64      = usbnet_get_stats64,
+#else
+	.ndo_get_stats64 = bp_usbnet_get_stats64,
+#endif
+
 	.ndo_change_mtu       = cdc_ncm_change_mtu,
 	.ndo_set_mac_address  = eth_mac_addr,
 	.ndo_validate_addr    = eth_validate_addr,
@@ -301,7 +321,7 @@ error:
 	return NULL;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0)
+#if LINUX_VERSION_IS_GEQ(3,12,0)
 /* Some devices are known to send Neigbor Solicitation messages and
  * require Neigbor Advertisement replies.  The IPv6 core will not
  * respond since IFF_NOARP is set, so we must handle them ourselves.
@@ -343,7 +363,7 @@ static void do_neigh_solicit(struct usbnet *dev, u8 *buf, u16 tci)
 	in6_dev_put(in6_dev);
 
 	/* ipv6_stub != NULL if in6_dev_get returned an inet6_dev */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
+#if LINUX_VERSION_IS_GEQ(4,4,0)
 	ipv6_stub->ndisc_send_na(netdev, &iph->saddr, &msg->target,
 				 is_router /* router */,
 				 true /* solicited */,
@@ -367,7 +387,7 @@ static bool is_neigh_solicit(u8 *buf, size_t len)
 		msg->icmph.icmp6_code == 0 &&
 		msg->icmph.icmp6_type == NDISC_NEIGHBOUR_SOLICITATION);
 }
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0) */
+#endif /* LINUX_VERSION_IS_GEQ(3,12,0) */
 
 
 static struct sk_buff *cdc_mbim_process_dgram(struct usbnet *dev, u8 *buf, size_t len, u16 tci)
@@ -384,10 +404,10 @@ static struct sk_buff *cdc_mbim_process_dgram(struct usbnet *dev, u8 *buf, size_
 			proto = htons(ETH_P_IP);
 			break;
 		case 0x60:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0)
+#if LINUX_VERSION_IS_GEQ(3,12,0)
 			if (is_neigh_solicit(buf, len))
 				do_neigh_solicit(dev, buf, tci);
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0) */
+#endif /* LINUX_VERSION_IS_GEQ(3,12,0) */
 			proto = htons(ETH_P_IPV6);
 			break;
 		default:
@@ -407,7 +427,7 @@ static struct sk_buff *cdc_mbim_process_dgram(struct usbnet *dev, u8 *buf, size_
 	memcpy(eth_hdr(skb)->h_dest, dev->net->dev_addr, ETH_ALEN);
 
 	/* add datagram */
-	memcpy(skb_put(skb, len), buf, len);
+	skb_put_data(skb, buf, len);
 
 	/* map MBIM session to VLAN */
 	if (tci)
@@ -617,7 +637,7 @@ static const struct driver_info cdc_mbim_info_ndp_to_end = {
  */
 static const struct driver_info cdc_mbim_info_avoid_altsetting_toggle = {
 	.description = "CDC MBIM",
-	.flags = FLAG_NO_SETINT | FLAG_MULTI_PACKET | FLAG_WWAN,
+	.flags = FLAG_NO_SETINT | FLAG_MULTI_PACKET | FLAG_WWAN | FLAG_SEND_ZLP,
 	.bind = cdc_mbim_bind,
 	.unbind = cdc_mbim_unbind,
 	.manage_power = cdc_mbim_manage_power,
@@ -651,6 +671,13 @@ static const struct usb_device_id mbim_devs[] = {
 	  .driver_info = (unsigned long)&cdc_mbim_info_ndp_to_end,
 	},
 
+	/* The HP lt4132 (03f0:a31d) is a rebranded Huawei ME906s-158,
+	 * therefore it too requires the above "NDP to end" quirk.
+	 */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x03f0, 0xa31d, USB_CLASS_COMM, USB_CDC_SUBCLASS_MBIM, USB_CDC_PROTO_NONE),
+	  .driver_info = (unsigned long)&cdc_mbim_info_ndp_to_end,
+	},
+
 	/* Telit LE922A6 in MBIM composition */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x1bc7, 0x1041, USB_CLASS_COMM, USB_CDC_SUBCLASS_MBIM, USB_CDC_PROTO_NONE),
 	  .driver_info = (unsigned long)&cdc_mbim_info_avoid_altsetting_toggle,
@@ -674,7 +701,7 @@ static struct usb_driver cdc_mbim_driver = {
 	.resume = cdc_mbim_resume,
 	.reset_resume =	cdc_mbim_resume,
 	.supports_autosuspend = 1,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0))
+#if LINUX_VERSION_IS_GEQ(3,5,0)
 	.disable_hub_initiated_lpm = 1,
 #endif
 };

@@ -459,7 +459,7 @@ static void tdma_frame_acked(struct sta_info *sta, int rssi, int nseqs, u8 *star
 	}
 }
 
-extern void ieee80211_send_layer2_update(struct sta_info *);
+extern void cfg80211_send_layer2_update(struct net_device *dev, const u8 *addr);
 
 static struct sta_info *tdma_upd_sta_rcu(struct ieee80211_sub_if_data *sdata,
 					 const u8 *addr, struct ieee802_11_elems *elems, tdma_state state, u8 tie_tx_ratio, u8 tie_rx_ratio,
@@ -524,7 +524,7 @@ static struct sta_info *tdma_upd_sta_rcu(struct ieee80211_sub_if_data *sdata,
 		}
 		rates_updated = true;
 		ieee80211_set_wmm_default(sdata, true, sdata->vif.type != NL80211_IFTYPE_STATION);
-		ieee80211_send_layer2_update(sta);
+		cfg80211_send_layer2_update(sta->sdata->dev, sta->sta.addr);
 	}
 	if (state == TDMA_STATUS_ASSOCIATED)
 		sta_info_move_state(sta, IEEE80211_STA_AUTHORIZED);
@@ -679,12 +679,12 @@ static void tdma_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata, struct ieee
 	baselen = (u8 *)mgmt->u.beacon.variable - (u8 *)mgmt;
 	if (baselen > len) {
 #ifdef TDMA_DEBUG_BEACON_RX
-		printk("TDMA: Wrong beacon len - %d\n", baselen - len);
+		printk("TDMA: Wrong beacon len - %zu\n", baselen - len);
 #endif
 		return;
 	}
 
-	ieee802_11_parse_elems(mgmt->u.beacon.variable, len - baselen, false, &elems);
+	ieee802_11_parse_elems(mgmt->u.beacon.variable, len - baselen, false, &elems, NULL, NULL);
 	if (!elems.peering) {
 		return;
 	}

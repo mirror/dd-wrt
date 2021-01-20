@@ -4,7 +4,7 @@
 #include <linux/timekeeping.h>
 #include <linux/version.h>
 
-#if  LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
+#if  LINUX_VERSION_IS_LESS(3,17,0)
 #define ktime_get_raw LINUX_BACKPORT(ktime_get_raw)
 extern ktime_t ktime_get_raw(void);
 

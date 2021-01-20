@@ -19,7 +19,6 @@
 
 #include <linux/pci_ids.h>
 #include <linux/if_ether.h>
-#include <linux/cordic.h>
 #include <net/cfg80211.h>
 #include <net/mac80211.h>
 #include <brcm_hw_ids.h>
@@ -324,87 +323,6 @@ static const char fifo_names[6][1];
 /* pointer to most recently allocated wl/wlc */
 static struct brcms_c_info *wlc_info_dbg = (struct brcms_c_info *) (NULL);
 #endif
-
-
-#define CORDIC_ANGLE_GEN	39797
-#define CORDIC_PRECISION_SHIFT	16
-#define	CORDIC_NUM_ITER		(CORDIC_PRECISION_SHIFT + 2)
-
-#define	FIXED(X)	((s32)((X) << CORDIC_PRECISION_SHIFT))
-#define	FLOAT(X)	(((X) >= 0) \
-		? ((((X) >> (CORDIC_PRECISION_SHIFT - 1)) + 1) >> 1) \
-		: -((((-(X)) >> (CORDIC_PRECISION_SHIFT - 1)) + 1) >> 1))
-
-static const s32 arctan_table[] = {
-	2949120,
-	1740967,
-	919879,
-	466945,
-	234379,
-	117304,
-	58666,
-	29335,
-	14668,
-	7334,
-	3667,
-	1833,
-	917,
-	458,
-	229,
-	115,
-	57,
-	29
-};
-
-/*
- * cordic_calc_iq() - calculates the i/q coordinate for given angle
- *
- * theta: angle in degrees for which i/q coordinate is to be calculated
- * coord: function output parameter holding the i/q coordinate
- */
-struct cordic_iq cordic_calc_iq(s32 theta)
-{
-	struct cordic_iq coord;
-	s32 angle, valtmp;
-	unsigned iter;
-	int signx = 1;
-	int signtheta;
-
-	coord.i = CORDIC_ANGLE_GEN;
-	coord.q = 0;
-	angle = 0;
-
-	theta = FIXED(theta);
-	signtheta = (theta < 0) ? -1 : 1;
-	theta = ((theta + FIXED(180) * signtheta) % FIXED(360)) -
-		FIXED(180) * signtheta;
-
-	if (FLOAT(theta) > 90) {
-		theta -= FIXED(180);
-		signx = -1;
-	} else if (FLOAT(theta) < -90) {
-		theta += FIXED(180);
-		signx = -1;
-	}
-
-	for (iter = 0; iter < CORDIC_NUM_ITER; iter++) {
-		if (theta > angle) {
-			valtmp = coord.i - (coord.q >> iter);
-			coord.q += (coord.i >> iter);
-			angle += arctan_table[iter];
-		} else {
-			valtmp = coord.i + (coord.q >> iter);
-			coord.q -= (coord.i >> iter);
-			angle -= arctan_table[iter];
-		}
-		coord.i = valtmp;
-	}
-
-	coord.i *= signx;
-	coord.q *= signx;
-	return coord;
-}
-
 
 /* Mapping of ieee80211 AC numbers to tx fifos */
 static const u8 ac_to_fifo_mapping[IEEE80211_NUM_ACS] = {
@@ -1146,7 +1064,7 @@ brcms_b_txstatus(struct brcms_hardware *wlc_hw, bool bound, bool *fatal)
 		txs->lasttxtime = 0;
 
 		*fatal = brcms_c_dotxstatus(wlc_hw->wlc, txs);
-		if (*fatal == true)
+		if (*fatal)
 			return false;
 		n++;
 	}
@@ -3858,17 +3776,14 @@ static void brcms_c_set_ps_ctrl(struct brcms_c_info *wlc)
  * Write this BSS config's MAC address to core.
  * Updates RXE match engine.
  */
-static int brcms_c_set_mac(struct brcms_bss_cfg *bsscfg)
+static void brcms_c_set_mac(struct brcms_bss_cfg *bsscfg)
 {
-	int err = 0;
 	struct brcms_c_info *wlc = bsscfg->wlc;
 
 	/* enter the MAC addr into the RXE match registers */
 	brcms_c_set_addrmatch(wlc, RCM_MAC_OFFSET, wlc->pub->cur_etheraddr);
 
 	brcms_c_ampdu_macaddr_upd(wlc);
-
-	return err;
 }
 
 /* Write the BSS config's BSSID address to core (set_bssid in d11procs.tcl).

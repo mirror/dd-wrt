@@ -3,7 +3,7 @@
 #include_next <linux/mii.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_IS_LESS(3,3,0)
 #include <linux/ethtool.h>
 
 #define ethtool_adv_to_mii_adv_t LINUX_BACKPORT(ethtool_adv_to_mii_adv_t)
@@ -143,5 +143,12 @@ static inline u32 mii_lpa_to_ethtool_lpa_x(u32 lpa)
 	return result | mii_adv_to_ethtool_adv_x(lpa);
 }
 #endif
+
+#if LINUX_VERSION_IN_RANGE(4,6,0, 4,11,0)
+extern int mii_ethtool_get_link_ksettings(
+	struct mii_if_info *mii, struct ethtool_link_ksettings *cmd);
+extern int mii_ethtool_set_link_ksettings(
+	struct mii_if_info *mii, const struct ethtool_link_ksettings *cmd);
+#endif /* LINUX_VERSION_IN_RANGE(4,6,0, 4,11,0) */
 
 #endif /* __BACKPORT_LINUX_MII_H */

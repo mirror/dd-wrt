@@ -1,32 +1,10 @@
-/******************************************************************************
- *
- * Copyright(c) 2009-2012  Realtek Corporation.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * The full GNU General Public License is included in this distribution in the
- * file called LICENSE.
- *
- * Contact Information:
- * wlanfae <wlanfae@realtek.com>
- * Realtek Corporation, No. 2, Innovation Road II, Hsinchu Science Park,
- * Hsinchu 300, Taiwan.
- *
- * Larry Finger <Larry.Finger@lwfinger.net>
- *
- *****************************************************************************/
+// SPDX-License-Identifier: GPL-2.0
+/* Copyright(c) 2009-2012  Realtek Corporation.*/
 
 #include "wifi.h"
 #include "regd.h"
 
-static struct country_code_to_enum_rd allCountries[] = {
+static struct country_code_to_enum_rd all_countries[] = {
 	{COUNTRY_CODE_FCC, "US"},
 	{COUNTRY_CODE_IC, "US"},
 	{COUNTRY_CODE_ETSI, "EC"},
@@ -55,14 +33,10 @@ static struct country_code_to_enum_rd allCountries[] = {
  *by case basis by regulatory domain
  */
 #define RTL819x_2GHZ_CH12_13	\
-	REG_RULE(2467-10, 2472+10, 40, 0, 20,\
-	NL80211_RRF_PASSIVE_SCAN)
+	REG_RULE(2467-10, 2472+10, 40, 0, 20, 0)
 
 #define RTL819x_2GHZ_CH14	\
-	REG_RULE(2484-10, 2484+10, 40, 0, 20, \
-	NL80211_RRF_PASSIVE_SCAN | \
-	NL80211_RRF_NO_OFDM)
-
+	REG_RULE(2484-10, 2484+10, 40, 0, 20, 0)
 
 /* 5G chan 36 - chan 64*/
 #define RTL819x_5GHZ_5150_5350	\
@@ -267,27 +241,16 @@ static void _rtl_reg_apply_radar_flags(struct wiphy *wiphy)
 
 	sband = wiphy->bands[NL80211_BAND_5GHZ];
 
-	for (i = 0; i < sband->n_channels; i++) {
+/*	for (i = 0; i < sband->n_channels; i++) {
 		ch = &sband->channels[i];
 		if (!_rtl_is_radar_freq(ch->center_freq))
 			continue;
 
-		/*
-		 *We always enable radar detection/DFS on this
-		 *frequency range. Additionally we also apply on
-		 *this frequency range:
-		 *- If STA mode does not yet have DFS supports disable
-		 * active scanning
-		 *- If adhoc mode does not support DFS yet then disable
-		 * adhoc in the frequency.
-		 *- If AP mode does not yet support radar detection/DFS
-		 *do not allow AP mode
-		 */
 		if (!(ch->flags & IEEE80211_CHAN_DISABLED))
 			ch->flags |= IEEE80211_CHAN_RADAR |
 			    IEEE80211_CHAN_NO_IBSS |
 			    IEEE80211_CHAN_PASSIVE_SCAN;
-	}
+	}*/
 }
 
 static void _rtl_reg_apply_world_flags(struct wiphy *wiphy,
@@ -297,22 +260,6 @@ static void _rtl_reg_apply_world_flags(struct wiphy *wiphy,
 	_rtl_reg_apply_beaconing_flags(wiphy, initiator);
 	_rtl_reg_apply_active_scan_flags(wiphy, initiator);
 	return;
-}
-
-static void _rtl_dump_channel_map(struct wiphy *wiphy)
-{
-	enum nl80211_band band;
-	struct ieee80211_supported_band *sband;
-	struct ieee80211_channel *ch;
-	unsigned int i;
-
-	for (band = 0; band < NUM_NL80211_BANDS; band++) {
-		if (!wiphy->bands[band])
-			continue;
-		sband = wiphy->bands[band];
-		for (i = 0; i < sband->n_channels; i++)
-			ch = &sband->channels[i];
-	}
 }
 
 static int _rtl_reg_notifier_apply(struct wiphy *wiphy,
@@ -331,8 +278,6 @@ static int _rtl_reg_notifier_apply(struct wiphy *wiphy,
 		_rtl_reg_apply_world_flags(wiphy, request->initiator, reg);
 		break;
 	}
-
-	_rtl_dump_channel_map(wiphy);
 
 	return 0;
 }
@@ -391,9 +336,9 @@ static struct country_code_to_enum_rd *_rtl_regd_find_country(u16 countrycode)
 {
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(allCountries); i++) {
-		if (allCountries[i].countrycode == countrycode)
-			return &allCountries[i];
+	for (i = 0; i < ARRAY_SIZE(all_countries); i++) {
+		if (all_countries[i].countrycode == countrycode)
+			return &all_countries[i];
 	}
 	return NULL;
 }
@@ -427,7 +372,7 @@ int rtl_regd_init(struct ieee80211_hw *hw,
 	struct wiphy *wiphy = hw->wiphy;
 	struct country_code_to_enum_rd *country = NULL;
 
-	if (wiphy == NULL || &rtlpriv->regd == NULL)
+	if (!wiphy)
 		return -EINVAL;
 
 	/* init country_code from efuse channel plan */
@@ -435,7 +380,7 @@ int rtl_regd_init(struct ieee80211_hw *hw,
 		channel_plan_to_country_code(rtlpriv->efuse.channel_plan);
 
 	RT_TRACE(rtlpriv, COMP_REGD, DBG_DMESG,
-		 "rtl: EEPROM regdomain: 0x%0x conuntry code: %d\n",
+		 "rtl: EEPROM regdomain: 0x%0x country code: %d\n",
 		 rtlpriv->efuse.channel_plan, rtlpriv->regd.country_code);
 
 	if (rtlpriv->regd.country_code >= COUNTRY_CODE_MAX) {

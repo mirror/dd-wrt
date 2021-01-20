@@ -36,10 +36,8 @@ static int mt7622_wmac_probe(struct platform_device *pdev)
 	int irq;
 
 	irq = platform_get_irq(pdev, 0);
-	if (irq < 0) {
-		dev_err(&pdev->dev, "Failed to get device IRQ\n");
+	if (irq < 0)
 		return irq;
-	}
 
 	mem_base = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(mem_base)) {
@@ -47,7 +45,7 @@ static int mt7622_wmac_probe(struct platform_device *pdev)
 		return PTR_ERR(mem_base);
 	}
 
-	return mt7615_mmio_probe(&pdev->dev, mem_base, irq);
+	return mt7615_mmio_probe(&pdev->dev, mem_base, irq, mt7615e_reg_map);
 }
 
 static int mt7622_wmac_remove(struct platform_device *pdev)

@@ -26,9 +26,6 @@ extern void backport_dependency_symbol(void);
 #endif
 
 #ifdef MODULE
-#ifndef __copy
-# define __copy(symbol)
-#endif
 #undef module_init
 #define module_init(initfn)						\
 	static int __init __init_backport(void)				\
@@ -36,7 +33,7 @@ extern void backport_dependency_symbol(void);
 		backport_dependency_symbol();				\
 		return initfn();					\
 	}								\
-	int init_module(void) __copy(initfn) __attribute__((alias("__init_backport")));\
+	int init_module(void) __attribute__((cold,alias("__init_backport")));\
 	BACKPORT_MOD_VERSIONS
 
 /*
@@ -61,10 +58,10 @@ extern void backport_dependency_symbol(void);
 		exitfn();						\
 		rcu_barrier();						\
 	}								\
-	void cleanup_module(void) __copy(exitfn) __attribute__((alias("__exit_compat")));
+	void cleanup_module(void) __attribute__((cold,alias("__exit_compat")));
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_IS_LESS(3,3,0)
 #undef param_check_bool
 #define param_check_bool(name, p) __param_check(name, p, bool)
 #endif

@@ -2126,6 +2126,43 @@ err:
 	return ret;
 }
 
+static ssize_t mwl_debugfs_turboqam_read(struct file *file, char __user *user_buf,
+			     size_t count, loff_t *ppos)
+{
+	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
+	char buf[32];
+	unsigned int len;
+
+	len = sprintf(buf, "0x%08x\n", priv->turboqam);
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+void mwl_set_caps(struct mwl_priv *priv, bool qam256);
+
+static ssize_t mwl_debugfs_turboqam_write(struct file *file, const char __user *user_buf,
+			     size_t count, loff_t *ppos)
+{
+	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
+	unsigned long turboqam;
+	char buf[32];
+	ssize_t len;
+
+	len = min(count, sizeof(buf) - 1);
+	if (copy_from_user(buf, user_buf, len))
+		return -EFAULT;
+
+	buf[len] = '\0';
+	if (kstrtoul(buf, 0, &turboqam))
+		return -EINVAL;
+		
+       priv->turboqam = turboqam;
+	if (turboqam)
+		mwl_set_caps(priv, true);
+	else
+		mwl_set_caps(priv, false);
+	return count;
+}
+
+MWLWIFI_DEBUGFS_FILE_OPS(turboqam);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(info);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(tx_status);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(rx_status);
@@ -2190,6 +2227,7 @@ void mwl_debugfs_init(struct ieee80211_hw *hw)
 	MWLWIFI_DEBUGFS_ADD_FILE(core_dump);
 	MWLWIFI_DEBUGFS_ADD_FILE(mcast_cts);
 	MWLWIFI_DEBUGFS_ADD_FILE(wmmedcaap);
+	MWLWIFI_DEBUGFS_ADD_FILE(turboqam);
 }
 
 void mwl_debugfs_remove(struct ieee80211_hw *hw)

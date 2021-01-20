@@ -51,4 +51,45 @@
 
 #endif /* atomic_try_cmpxchg_acquire */
 
+#if LINUX_VERSION_IS_LESS(4,19,0)
+#ifndef atomic_fetch_add_unless
+static inline int atomic_fetch_add_unless(atomic_t *v, int a, int u)
+{
+	return __atomic_add_unless(v, a, u);
+}
+#endif
+#endif
+
+#ifndef __atomic_pre_full_fence
+#define __atomic_pre_full_fence         smp_mb__before_atomic
+#endif
+
+#ifndef __atomic_post_full_fence
+#define __atomic_post_full_fence        smp_mb__after_atomic
+#endif
+
+#if LINUX_VERSION_IS_LESS(4,8,0)
+static inline int
+atomic_fetch_add(int i, atomic_t *v)
+{
+	return atomic_add_return(i, v) - i;
+}
+
+static inline int
+atomic_fetch_sub(int i, atomic_t *v)
+{
+	return atomic_sub_return(i, v) + i;
+}
+#endif
+
+#ifndef atomic_fetch_add_relaxed
+#define atomic_fetch_add_relaxed atomic_fetch_add
+#endif
+
+#ifndef atomic_fetch_sub_relaxed
+#define atomic_fetch_sub_acquire atomic_fetch_sub
+#define atomic_fetch_sub_release atomic_fetch_sub
+#define atomic_fetch_sub_relaxed atomic_fetch_sub
+#endif
+
 #endif /* __BP_ATOMIC_H */

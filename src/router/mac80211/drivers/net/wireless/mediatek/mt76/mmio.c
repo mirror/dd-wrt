@@ -3,6 +3,7 @@
  * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
  */
 
+#include <linux/sched.h>
 #include "mt76.h"
 #include "trace.h"
 
@@ -73,7 +74,8 @@ void mt76_set_irq_mask(struct mt76_dev *dev, u32 addr,
 	spin_lock_irqsave(&dev->mmio.irq_lock, flags);
 	dev->mmio.irqmask &= ~clear;
 	dev->mmio.irqmask |= set;
-	mt76_mmio_wr(dev, addr, dev->mmio.irqmask);
+	if (addr)
+		mt76_mmio_wr(dev, addr, dev->mmio.irqmask);
 	spin_unlock_irqrestore(&dev->mmio.irq_lock, flags);
 }
 EXPORT_SYMBOL_GPL(mt76_set_irq_mask);

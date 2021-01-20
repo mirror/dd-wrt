@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
 	Copyright (C) 2004 - 2010 Ivo van Doorn <IvDoorn@gmail.com>
 	Copyright (C) 2010 Willow Garage <http://www.willowgarage.com>
@@ -10,18 +11,6 @@
 	Copyright (C) 2009 Bart Zolnierkiewicz <bzolnier@gmail.com>
 	<http://rt2x00.serialmonkey.com>
 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -96,6 +85,7 @@
 #define REV_RT3390E			0x0211
 #define REV_RT3593E			0x0211
 #define REV_RT5390F			0x0502
+#define REV_RT5370G			0x0503
 #define REV_RT5390R			0x1502
 #define REV_RT5592C			0x0221
 
@@ -642,12 +632,22 @@
 #define RF_CSR_CFG_BUSY			FIELD32(0x00020000)
 
 /*
- * mt7620 RF registers (reversed order)
+ * MT7620 RF registers (reversed order)
  */
 #define RF_CSR_CFG_DATA_MT7620		FIELD32(0x0000ff00)
 #define RF_CSR_CFG_REGNUM_MT7620	FIELD32(0x03ff0000)
 #define RF_CSR_CFG_WRITE_MT7620		FIELD32(0x00000010)
 #define RF_CSR_CFG_BUSY_MT7620		FIELD32(0x00000001)
+
+/* undocumented registers for calibration of new MAC */
+#define RF_CONTROL0			0x0518
+#define RF_BYPASS0			0x051c
+#define RF_CONTROL1			0x0520
+#define RF_BYPASS1			0x0524
+#define RF_CONTROL2			0x0528
+#define RF_BYPASS2			0x052c
+#define RF_CONTROL3			0x0530
+#define RF_BYPASS3			0x0534
 
 /*
  * EFUSE_CSR: RT30x0 EEPROM
@@ -1033,9 +1033,14 @@
 #define AUTOWAKEUP_CFG_AUTOWAKE		FIELD32(0x00008000)
 
 /*
- * mt7620
+ * MIMO_PS_CFG: MIMO Power-save Configuration
  */
 #define MIMO_PS_CFG			0x1210
+#define MIMO_PS_CFG_MMPS_BB_EN		FIELD32(0x00000001)
+#define MIMO_PS_CFG_MMPS_RX_ANT_NUM	FIELD32(0x00000006)
+#define MIMO_PS_CFG_MMPS_RF_EN		FIELD32(0x00000008)
+#define MIMO_PS_CFG_RX_STBY_POL		FIELD32(0x00000010)
+#define MIMO_PS_CFG_RX_RX_STBY0		FIELD32(0x00000020)
 
 /*
  * EDCA_AC0_CFG:
@@ -1111,6 +1116,12 @@
 #define TX_PWR_CFG_0_OFDM6_CH1		FIELD32(0x00f00000)
 #define TX_PWR_CFG_0_OFDM12_CH0		FIELD32(0x0f000000)
 #define TX_PWR_CFG_0_OFDM12_CH1		FIELD32(0xf0000000)
+/* bits for new 2T devices */
+#define TX_PWR_CFG_0B_1MBS_2MBS		FIELD32(0x000000ff)
+#define TX_PWR_CFG_0B_5MBS_11MBS		FIELD32(0x0000ff00)
+#define TX_PWR_CFG_0B_6MBS_9MBS		FIELD32(0x00ff0000)
+#define TX_PWR_CFG_0B_12MBS_18MBS	FIELD32(0xff000000)
+
 
 /*
  * TX_PWR_CFG_1:
@@ -1133,6 +1144,11 @@
 #define TX_PWR_CFG_1_MCS0_CH1		FIELD32(0x00f00000)
 #define TX_PWR_CFG_1_MCS2_CH0		FIELD32(0x0f000000)
 #define TX_PWR_CFG_1_MCS2_CH1		FIELD32(0xf0000000)
+/* bits for new 2T devices */
+#define TX_PWR_CFG_1B_24MBS_36MBS	FIELD32(0x000000ff)
+#define TX_PWR_CFG_1B_48MBS		FIELD32(0x0000ff00)
+#define TX_PWR_CFG_1B_MCS0_MCS1		FIELD32(0x00ff0000)
+#define TX_PWR_CFG_1B_MCS2_MCS3		FIELD32(0xff000000)
 
 /*
  * TX_PWR_CFG_2:
@@ -1155,6 +1171,11 @@
 #define TX_PWR_CFG_2_MCS8_CH1		FIELD32(0x00f00000)
 #define TX_PWR_CFG_2_MCS10_CH0		FIELD32(0x0f000000)
 #define TX_PWR_CFG_2_MCS10_CH1		FIELD32(0xf0000000)
+/* bits for new 2T devices */
+#define TX_PWR_CFG_2B_MCS4_MCS5		FIELD32(0x000000ff)
+#define TX_PWR_CFG_2B_MCS6_MCS7		FIELD32(0x0000ff00)
+#define TX_PWR_CFG_2B_MCS8_MCS9		FIELD32(0x00ff0000)
+#define TX_PWR_CFG_2B_MCS10_MCS11	FIELD32(0xff000000)
 
 /*
  * TX_PWR_CFG_3:
@@ -1164,10 +1185,10 @@
 #define TX_PWR_CFG_3_MCS13		FIELD32(0x000000f0)
 #define TX_PWR_CFG_3_MCS14		FIELD32(0x00000f00)
 #define TX_PWR_CFG_3_MCS15		FIELD32(0x0000f000)
-#define TX_PWR_CFG_3_UKNOWN1		FIELD32(0x000f0000)
-#define TX_PWR_CFG_3_UKNOWN2		FIELD32(0x00f00000)
-#define TX_PWR_CFG_3_UKNOWN3		FIELD32(0x0f000000)
-#define TX_PWR_CFG_3_UKNOWN4		FIELD32(0xf0000000)
+#define TX_PWR_CFG_3_UNKNOWN1		FIELD32(0x000f0000)
+#define TX_PWR_CFG_3_UNKNOWN2		FIELD32(0x00f00000)
+#define TX_PWR_CFG_3_UNKNOWN3		FIELD32(0x0f000000)
+#define TX_PWR_CFG_3_UNKNOWN4		FIELD32(0xf0000000)
 /* bits for 3T devices */
 #define TX_PWR_CFG_3_MCS12_CH0		FIELD32(0x0000000f)
 #define TX_PWR_CFG_3_MCS12_CH1		FIELD32(0x000000f0)
@@ -1177,20 +1198,28 @@
 #define TX_PWR_CFG_3_STBC0_CH1		FIELD32(0x00f00000)
 #define TX_PWR_CFG_3_STBC2_CH0		FIELD32(0x0f000000)
 #define TX_PWR_CFG_3_STBC2_CH1		FIELD32(0xf0000000)
+/* bits for new 2T devices */
+#define TX_PWR_CFG_3B_MCS12_MCS13	FIELD32(0x000000ff)
+#define TX_PWR_CFG_3B_MCS14		FIELD32(0x0000ff00)
+#define TX_PWR_CFG_3B_STBC_MCS0_MCS1	FIELD32(0x00ff0000)
+#define TX_PWR_CFG_3B_STBC_MCS2_MSC3	FIELD32(0xff000000)
 
 /*
  * TX_PWR_CFG_4:
  */
 #define TX_PWR_CFG_4			0x1324
-#define TX_PWR_CFG_4_UKNOWN5		FIELD32(0x0000000f)
-#define TX_PWR_CFG_4_UKNOWN6		FIELD32(0x000000f0)
-#define TX_PWR_CFG_4_UKNOWN7		FIELD32(0x00000f00)
-#define TX_PWR_CFG_4_UKNOWN8		FIELD32(0x0000f000)
+#define TX_PWR_CFG_4_UNKNOWN5		FIELD32(0x0000000f)
+#define TX_PWR_CFG_4_UNKNOWN6		FIELD32(0x000000f0)
+#define TX_PWR_CFG_4_UNKNOWN7		FIELD32(0x00000f00)
+#define TX_PWR_CFG_4_UNKNOWN8		FIELD32(0x0000f000)
 /* bits for 3T devices */
-#define TX_PWR_CFG_3_STBC4_CH0		FIELD32(0x0000000f)
-#define TX_PWR_CFG_3_STBC4_CH1		FIELD32(0x000000f0)
-#define TX_PWR_CFG_3_STBC6_CH0		FIELD32(0x00000f00)
-#define TX_PWR_CFG_3_STBC6_CH1		FIELD32(0x0000f000)
+#define TX_PWR_CFG_4_STBC4_CH0		FIELD32(0x0000000f)
+#define TX_PWR_CFG_4_STBC4_CH1		FIELD32(0x000000f0)
+#define TX_PWR_CFG_4_STBC6_CH0		FIELD32(0x00000f00)
+#define TX_PWR_CFG_4_STBC6_CH1		FIELD32(0x0000f000)
+/* bits for new 2T devices */
+#define TX_PWR_CFG_4B_STBC_MCS4_MCS5	FIELD32(0x000000ff)
+#define TX_PWR_CFG_4B_STBC_MCS6		FIELD32(0x0000ff00)
 
 /*
  * TX_PIN_CFG:
@@ -1217,8 +1246,8 @@
 #define TX_PIN_CFG_RFTR_POL		FIELD32(0x00020000)
 #define TX_PIN_CFG_TRSW_EN		FIELD32(0x00040000)
 #define TX_PIN_CFG_TRSW_POL		FIELD32(0x00080000)
-#define TX_PIN_CFG_RFRX_EN		FIELD32(0x00100000) /* mt7620 */
-#define TX_PIN_CFG_RFRX_POL		FIELD32(0x00200000) /* mt7620 */
+#define TX_PIN_CFG_RFRX_EN		FIELD32(0x00100000)
+#define TX_PIN_CFG_RFRX_POL		FIELD32(0x00200000)
 #define TX_PIN_CFG_PA_PE_A2_EN		FIELD32(0x01000000)
 #define TX_PIN_CFG_PA_PE_G2_EN		FIELD32(0x02000000)
 #define TX_PIN_CFG_PA_PE_A2_POL		FIELD32(0x04000000)
@@ -1565,16 +1594,94 @@
 #define TX_PWR_CFG_4_EXT_STBC4_CH2	FIELD32(0x0000000f)
 #define TX_PWR_CFG_4_EXT_STBC6_CH2	FIELD32(0x00000f00)
 
-/* mt7620 */
+/* TXn_RF_GAIN_CORRECT: RF Gain Correction for each RF_ALC[3:2]
+ * Unit: 0.1 dB, Range: -3.2 dB to 3.1 dB
+ */
 #define TX0_RF_GAIN_CORRECT		0x13a0
+#define TX0_RF_GAIN_CORRECT_GAIN_CORR_0	FIELD32(0x0000003f)
+#define TX0_RF_GAIN_CORRECT_GAIN_CORR_1	FIELD32(0x00003f00)
+#define TX0_RF_GAIN_CORRECT_GAIN_CORR_2	FIELD32(0x003f0000)
+#define TX0_RF_GAIN_CORRECT_GAIN_CORR_3	FIELD32(0x3f000000)
+
 #define TX1_RF_GAIN_CORRECT		0x13a4
+#define TX1_RF_GAIN_CORRECT_GAIN_CORR_0	FIELD32(0x0000003f)
+#define TX1_RF_GAIN_CORRECT_GAIN_CORR_1	FIELD32(0x00003f00)
+#define TX1_RF_GAIN_CORRECT_GAIN_CORR_2	FIELD32(0x003f0000)
+#define TX1_RF_GAIN_CORRECT_GAIN_CORR_3	FIELD32(0x3f000000)
+
+/* TXn_RF_GAIN_ATTEN: TXn RF Gain Attenuation Level
+ * Format: 7-bit, signed value
+ * Unit: 0.5 dB, Range: -20 dB to -5 dB
+ */
 #define TX0_RF_GAIN_ATTEN		0x13a8
+#define TX0_RF_GAIN_ATTEN_LEVEL_0	FIELD32(0x0000007f)
+#define TX0_RF_GAIN_ATTEN_LEVEL_1	FIELD32(0x00007f00)
+#define TX0_RF_GAIN_ATTEN_LEVEL_2	FIELD32(0x007f0000)
+#define TX0_RF_GAIN_ATTEN_LEVEL_3	FIELD32(0x7f000000)
 #define TX1_RF_GAIN_ATTEN		0x13ac
-#define TX_ALG_CFG_0			0x13b0
-#define TX_ALG_CFG_1			0x13b4
+#define TX1_RF_GAIN_ATTEN_LEVEL_0	FIELD32(0x0000007f)
+#define TX1_RF_GAIN_ATTEN_LEVEL_1	FIELD32(0x00007f00)
+#define TX1_RF_GAIN_ATTEN_LEVEL_2	FIELD32(0x007f0000)
+#define TX1_RF_GAIN_ATTEN_LEVEL_3	FIELD32(0x7f000000)
+
+/* TX_ALC_CFG_0: TX Automatic Level Control Configuration 0
+ * TX_ALC_LIMIT_n: TXn upper limit
+ * TX_ALC_CH_INIT_n: TXn channel initial transmission gain
+ * Unit: 0.5 dB, Range: 0 to 23.5 dB
+ */
+#define TX_ALC_CFG_0			0x13b0
+#define TX_ALC_CFG_0_CH_INIT_0		FIELD32(0x0000003f)
+#define TX_ALC_CFG_0_CH_INIT_1		FIELD32(0x00003f00)
+#define TX_ALC_CFG_0_LIMIT_0		FIELD32(0x003f0000)
+#define TX_ALC_CFG_0_LIMIT_1		FIELD32(0x3f000000)
+
+/* TX_ALC_CFG_1: TX Automatic Level Control Configuration 1
+ * TX_TEMP_COMP:      TX Power Temperature Compensation
+ *                    Unit: 0.5 dB, Range: -10 dB to 10 dB
+ * TXn_GAIN_FINE:     TXn Gain Fine Adjustment
+ *                    Unit: 0.1 dB, Range: -0.8 dB to 0.7 dB
+ * RF_TOS_DLY:        Sets the RF_TOS_EN assertion delay after
+ *                    deassertion of PA_PE.
+ *                    Unit: 0.25 usec
+ * TXn_RF_GAIN_ATTEN: TXn RF gain attentuation selector
+ * RF_TOS_TIMEOUT:    time-out value for RF_TOS_ENABLE
+ *                    deassertion if RF_TOS_DONE is missing.
+ *                    Unit: 0.25 usec
+ * RF_TOS_ENABLE:     TX offset calibration enable
+ * ROS_BUSY_EN:       RX offset calibration busy enable
+ */
+#define TX_ALC_CFG_1			0x13b4
+#define TX_ALC_CFG_1_TX_TEMP_COMP	FIELD32(0x0000003f)
+#define TX_ALC_CFG_1_TX0_GAIN_FINE	FIELD32(0x00000f00)
+#define TX_ALC_CFG_1_TX1_GAIN_FINE	FIELD32(0x0000f000)
+#define TX_ALC_CFG_1_RF_TOS_DLY		FIELD32(0x00070000)
+#define TX_ALC_CFG_1_TX0_RF_GAIN_ATTEN	FIELD32(0x00300000)
+#define TX_ALC_CFG_1_TX1_RF_GAIN_ATTEN	FIELD32(0x00c00000)
+#define TX_ALC_CFG_1_RF_TOS_TIMEOUT	FIELD32(0x3f000000)
+#define TX_ALC_CFG_1_RF_TOS_ENABLE	FIELD32(0x40000000)
+#define TX_ALC_CFG_1_ROS_BUSY_EN	FIELD32(0x80000000)
+
+/* TXn_BB_GAIN_ATTEN: TXn RF Gain Attenuation Level
+ * Format: 5-bit signed values
+ * Unit: 0.5 dB, Range: -8 dB to 7 dB
+ */
 #define TX0_BB_GAIN_ATTEN		0x13c0
+#define TX0_BB_GAIN_ATTEN_LEVEL_0	FIELD32(0x0000001f)
+#define TX0_BB_GAIN_ATTEN_LEVEL_1	FIELD32(0x00001f00)
+#define TX0_BB_GAIN_ATTEN_LEVEL_2	FIELD32(0x001f0000)
+#define TX0_BB_GAIN_ATTEN_LEVEL_3	FIELD32(0x1f000000)
 #define TX1_BB_GAIN_ATTEN		0x13c4
+#define TX1_BB_GAIN_ATTEN_LEVEL_0	FIELD32(0x0000001f)
+#define TX1_BB_GAIN_ATTEN_LEVEL_1	FIELD32(0x00001f00)
+#define TX1_BB_GAIN_ATTEN_LEVEL_2	FIELD32(0x001f0000)
+#define TX1_BB_GAIN_ATTEN_LEVEL_3	FIELD32(0x1f000000)
+
+/* TX_ALC_VGA3: TX Automatic Level Correction Variable Gain Amplifier 3 */
 #define TX_ALC_VGA3			0x13c8
+#define TX_ALC_VGA3_TX0_ALC_VGA3	FIELD32(0x0000001f)
+#define TX_ALC_VGA3_TX1_ALC_VGA3	FIELD32(0x00001f00)
+#define TX_ALC_VGA3_TX0_ALC_VGA2	FIELD32(0x001f0000)
+#define TX_ALC_VGA3_TX1_ALC_VGA2	FIELD32(0x1f000000)
 
 /* TX_PWR_CFG_7 */
 #define TX_PWR_CFG_7			0x13d4
@@ -1584,6 +1691,10 @@
 #define TX_PWR_CFG_7_MCS7_CH0		FIELD32(0x000f0000)
 #define TX_PWR_CFG_7_MCS7_CH1		FIELD32(0x00f00000)
 #define TX_PWR_CFG_7_MCS7_CH2		FIELD32(0x0f000000)
+/* bits for new 2T devices */
+#define TX_PWR_CFG_7B_54MBS		FIELD32(0x000000ff)
+#define TX_PWR_CFG_7B_MCS7		FIELD32(0x00ff0000)
+
 
 /* TX_PWR_CFG_8 */
 #define TX_PWR_CFG_8			0x13d8
@@ -1593,12 +1704,17 @@
 #define TX_PWR_CFG_8_MCS23_CH0		FIELD32(0x000f0000)
 #define TX_PWR_CFG_8_MCS23_CH1		FIELD32(0x00f00000)
 #define TX_PWR_CFG_8_MCS23_CH2		FIELD32(0x0f000000)
+/* bits for new 2T devices */
+#define TX_PWR_CFG_8B_MCS15		FIELD32(0x000000ff)
+
 
 /* TX_PWR_CFG_9 */
 #define TX_PWR_CFG_9			0x13dc
 #define TX_PWR_CFG_9_STBC7_CH0		FIELD32(0x0000000f)
 #define TX_PWR_CFG_9_STBC7_CH1		FIELD32(0x000000f0)
 #define TX_PWR_CFG_9_STBC7_CH2		FIELD32(0x00000f00)
+/* bits for new 2T devices */
+#define TX_PWR_CFG_9B_STBC_MCS7		FIELD32(0x000000ff)
 
 /*
  * TX_TXBF_CFG:
@@ -1803,6 +1919,8 @@
 #define TX_STA_FIFO_WCID		FIELD32(0x0000ff00)
 #define TX_STA_FIFO_SUCCESS_RATE	FIELD32(0xffff0000)
 #define TX_STA_FIFO_MCS			FIELD32(0x007f0000)
+#define TX_STA_FIFO_BW			FIELD32(0x00800000)
+#define TX_STA_FIFO_SGI			FIELD32(0x01000000)
 #define TX_STA_FIFO_PHYMODE		FIELD32(0xc0000000)
 
 /*
@@ -2178,12 +2296,15 @@ struct mac_iveiv_entry {
 #define RFCSR1_TX1_PD			FIELD8(0x20)
 #define RFCSR1_RX2_PD			FIELD8(0x40)
 #define RFCSR1_TX2_PD			FIELD8(0x80)
+#define RFCSR1_TX2_EN_MT7620		FIELD8(0x02)
 
 /*
  * RFCSR 2:
  */
 #define RFCSR2_RESCAL_BP		FIELD8(0x40)
 #define RFCSR2_RESCAL_EN		FIELD8(0x80)
+#define RFCSR2_RX2_EN_MT7620		FIELD8(0x02)
+#define RFCSR2_TX2_EN_MT7620		FIELD8(0x20)
 
 /*
  * RFCSR 3:
@@ -2200,6 +2321,12 @@ struct mac_iveiv_entry {
 #define RFCSR3_BIT3			FIELD8(0x08)
 #define RFCSR3_BIT4			FIELD8(0x10)
 #define RFCSR3_BIT5			FIELD8(0x20)
+
+/*
+ * RFCSR 4:
+ * VCOCAL_EN used by MT7620
+ */
+#define RFCSR4_VCOCAL_EN		FIELD8(0x80)
 
 /*
  * FRCSR 5:
@@ -2256,6 +2383,7 @@ struct mac_iveiv_entry {
  */
 #define RFCSR13_TX_POWER		FIELD8(0x1f)
 #define RFCSR13_DR0			FIELD8(0xe0)
+#define RFCSR13_RDIV_MT7620		FIELD8(0x03)
 
 /*
  * RFCSR 15:
@@ -2266,6 +2394,8 @@ struct mac_iveiv_entry {
  * RFCSR 16:
  */
 #define RFCSR16_TXMIXER_GAIN		FIELD8(0x07)
+#define RFCSR16_RF_PLL_FREQ_SEL_MT7620	FIELD8(0x0F)
+#define RFCSR16_SDM_MODE_MT7620		FIELD8(0xE0)
 
 /*
  * RFCSR 17:
@@ -2278,6 +2408,8 @@ struct mac_iveiv_entry {
 /* RFCSR 18 */
 #define RFCSR18_XO_TUNE_BYPASS		FIELD8(0x40)
 
+/* RFCSR 19 */
+#define RFCSR19_K			FIELD8(0x03)
 
 /*
  * RFCSR 20:
@@ -2288,11 +2420,14 @@ struct mac_iveiv_entry {
  * RFCSR 21:
  */
 #define RFCSR21_RX_LO2_EN		FIELD8(0x08)
+#define RFCSR21_BIT1			FIELD8(0x01)
+#define RFCSR21_BIT8			FIELD8(0x80)
 
 /*
  * RFCSR 22:
  */
 #define RFCSR22_BASEBAND_LOOPBACK	FIELD8(0x01)
+#define RFCSR22_FREQPLAN_D_MT7620	FIELD8(0x07)
 
 /*
  * RFCSR 23:
@@ -2313,6 +2448,11 @@ struct mac_iveiv_entry {
 #define RFCSR27_R2			FIELD8(0x04)
 #define RFCSR27_R3			FIELD8(0x30)
 #define RFCSR27_R4			FIELD8(0x40)
+
+/*
+ * RFCSR 28:
+ */
+#define RFCSR28_CH11_HT40		FIELD8(0x04)
 
 /*
  * RFCSR 29:
@@ -2375,6 +2515,7 @@ struct mac_iveiv_entry {
  */
 #define RFCSR42_BIT1			FIELD8(0x01)
 #define RFCSR42_BIT4			FIELD8(0x08)
+#define RFCSR42_TX2_EN_MT7620		FIELD8(0x40)
 
 /*
  * RFCSR 49:
@@ -2477,6 +2618,7 @@ enum rt2800_eeprom_word {
 	EEPROM_TSSI_BOUND_BG5,
 	EEPROM_TXPOWER_A1,
 	EEPROM_TXPOWER_A2,
+	EEPROM_TXPOWER_INIT,
 	EEPROM_TSSI_BOUND_A1,
 	EEPROM_TSSI_BOUND_A2,
 	EEPROM_TSSI_BOUND_A3,
@@ -2597,6 +2739,7 @@ enum rt2800_eeprom_word {
 #define EEPROM_NIC_CONF2_RX_STREAM	FIELD16(0x000f)
 #define EEPROM_NIC_CONF2_TX_STREAM	FIELD16(0x00f0)
 #define EEPROM_NIC_CONF2_CRYSTAL	FIELD16(0x0600)
+#define EEPROM_NIC_CONF2_EXTERNAL_PA	FIELD16(0xc000)
 
 /*
  * EEPROM LNA
@@ -3030,30 +3173,5 @@ enum rt2800_eeprom_word {
  * the hw beacon timer.
  */
 #define BCN_TBTT_OFFSET 64
-
-/*
- * Hardware has 255 WCID table entries. First 32 entries are reserved for
- * shared keys. Since parts of the pairwise key table might be shared with
- * the beacon frame buffers 6 & 7 we could only use the first 222 entries.
- */
-#define WCID_START	33
-#define WCID_END	222
-#define STA_IDS_SIZE	(WCID_END - WCID_START + 2)
-
-/*
- * RT2800 driver data structure
- */
-struct rt2800_drv_data {
-	u8 calibration_bw20;
-	u8 calibration_bw40;
-	u8 bbp25;
-	u8 bbp26;
-	u8 txmixer_gain_24g;
-	u8 txmixer_gain_5g;
-	u8 max_psdu;
-	unsigned int tbtt_tick;
-	unsigned int ampdu_factor_cnt[4];
-	DECLARE_BITMAP(sta_ids, STA_IDS_SIZE);
-};
 
 #endif /* RT2800_H */

@@ -3,8 +3,8 @@
 #include_next <linux/regmap.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,5,0) && \
-    LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_IS_LESS(3,5,0) && \
+    LINUX_VERSION_IS_GEQ(3,2,0)
 #define dev_get_regmap LINUX_BACKPORT(dev_get_regmap)
 static inline
 struct regmap *dev_get_regmap(struct device *dev, const char *name)
@@ -13,8 +13,8 @@ struct regmap *dev_get_regmap(struct device *dev, const char *name)
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0) && \
-    LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_IS_LESS(3,4,0) && \
+    LINUX_VERSION_IS_GEQ(3,2,0)
 #if defined(CONFIG_REGMAP)
 #define devm_regmap_init LINUX_BACKPORT(devm_regmap_init)
 struct regmap *devm_regmap_init(struct device *dev,

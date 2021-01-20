@@ -2,7 +2,7 @@
 #define __BACKPORT_LINUX_MATH64_H
 #include_next <linux/math64.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,12,0)
+#if LINUX_VERSION_IS_LESS(3,12,0)
 
 #if BITS_PER_LONG == 64
 /**

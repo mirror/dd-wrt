@@ -4,12 +4,12 @@
 #include <linux/compiler.h>
 #include <linux/version.h>
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,9,0))
+#if LINUX_VERSION_IS_LESS(3,9,0)
 #define phy_connect(dev, bus_id, handler, interface) \
 	phy_connect(dev, bus_id, handler, 0, interface)
 #endif
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0))
+#if LINUX_VERSION_IS_LESS(4,5,0)
 #define phydev_name LINUX_BACKPORT(phydev_name)
 static inline const char *phydev_name(const struct phy_device *phydev)
 {
@@ -58,7 +58,7 @@ static inline void backport_mdiobus_unregister(struct mii_bus *bus)
 #define mdiobus_unregister LINUX_BACKPORT(mdiobus_unregister)
 #endif /* < 4.5 */
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0))
+#if LINUX_VERSION_IS_LESS(4,5,0)
 #define phydev_get_addr LINUX_BACKPORT(phydev_get_addr)
 static inline int phydev_get_addr(struct phy_device *phydev)
 {

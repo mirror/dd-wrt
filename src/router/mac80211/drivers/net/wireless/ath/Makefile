@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: ISC
 obj-$(CPTCFG_ATH5K)		+= ath5k/
 obj-$(CPTCFG_ATH9K_HW)		+= ath9k/
 obj-$(CPTCFG_CARL9170)		+= carl9170/
@@ -6,6 +7,7 @@ obj-$(CPTCFG_AR5523)		+= ar5523/
 obj-$(CPTCFG_WIL6210)		+= wil6210/
 obj-$(CPTCFG_ATH10K)		+= ath10k/
 obj-$(CPTCFG_WCN36XX)		+= wcn36xx/
+obj-$(CPTCFG_ATH11K)		+= ath11k/
 
 obj-$(CPTCFG_ATH_COMMON)	+= ath.o
 

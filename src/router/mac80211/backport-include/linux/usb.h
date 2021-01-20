@@ -76,7 +76,7 @@
 #define USB_SUBCLASS_VENDOR_SPEC	0xff
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_IS_LESS(3,2,0)
 #define usb_translate_errors LINUX_BACKPORT(usb_translate_errors)
 static inline int usb_translate_errors(int error_code)
 {
@@ -90,6 +90,6 @@ static inline int usb_translate_errors(int error_code)
 		return -EIO;
 	}
 }
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,2,0) */
+#endif /* LINUX_VERSION_IS_LESS(3,2,0) */
 
 #endif /* __BACKPORT_USB_H */

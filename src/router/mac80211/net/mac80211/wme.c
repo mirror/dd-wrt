@@ -1,10 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright 2004, Instant802 Networks, Inc.
  * Copyright 2013-2014  Intel Mobile Communications GmbH
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
  */
 
 #include <linux/netdevice.h>
@@ -189,6 +186,7 @@ u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
 	const u8 *ra = NULL;
 	u16 ret;
 	u8 ver = 0;
+
 	/* when using iTXQ, we can do this later */
 	if (local->ops->wake_tx_queue)
 		return 0;
@@ -204,7 +202,7 @@ u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
 		sta = rcu_dereference(sdata->u.vlan.sta);
 		if (sta)
 			break;
-		/* fall through */
+		fallthrough;
 	case NL80211_IFTYPE_AP:
 		ra = skb->data;
 		break;
@@ -242,7 +240,8 @@ u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
 		sta = sta_info_get(sdata, ra);
 
 	ret = __ieee80211_select_queue(sdata, sta, skb);
-out:;
+
+out:
 	rcu_read_unlock();
 	return ret;
 }
