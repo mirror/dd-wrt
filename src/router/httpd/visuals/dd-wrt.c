@@ -181,7 +181,12 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 {
 	int rev = cpu_plltype();
 	unsigned int *c;
+	char *oclk = nvram_safe_get("overclocking");
 #if defined(HAVE_ALPINE)
+	if (!*oclk) {
+	    oclk = "2000";
+	    nvram_set("clkfreq","2000");
+	}
 	c = alpine_clocks;
 #elif defined(HAVE_NORTHSTAR)
 	switch (rev) {
@@ -230,7 +235,6 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 
-	char *oclk = nvram_safe_get("overclocking");
 
 	int cclk = atoi(oclk);
 
