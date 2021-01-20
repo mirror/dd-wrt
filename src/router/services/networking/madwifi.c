@@ -597,6 +597,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	char tmp[256];
 	char ft[16];
 	char mfp[16];
+	char eapol[32];
+	sprintf(eapol, "%s_eapol_version", prefix);
 	int i;
 	debug = nvram_nget("%s_wpa_debug", prefix);
 	if (debug != NULL) {
@@ -650,7 +652,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=1\n");
+		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
 		if (ispsk3)
 			fprintf(fp, "\tsae_groups=19 20 21\n");
 
@@ -787,7 +789,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=1\n");
+		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		eap_sta_config(fp, prefix, ssidoverride, 0);
@@ -1308,6 +1310,8 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	char rekey[16];
 	char *debug;
 	char *types;
+	char eapol[32];
+	sprintf(eapol, "%s_eapol_version", prefix);
 
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(ft, "%s_ft", prefix);
@@ -1348,7 +1352,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	fprintf(fp, "logger_stdout_level=2\n");
 	// fprintf (fp, "eap_server=0\n");
 	// fprintf (fp, "own_ip_addr=127.0.0.1\n");
-	fprintf(fp, "eapol_version=1\n");
+	fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
 	fprintf(fp, "eapol_key_index_workaround=0\n");
 	char eap_key_retries[32];
 	sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);

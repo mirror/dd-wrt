@@ -67,6 +67,8 @@ void setupSupplicant(char *prefix)
 {
 	char akm[16];
 
+	char eapol[32];
+	sprintf(eapol, "%s_eapol_version", prefix);
 	sprintf(akm, "%s_akm", prefix);
 	char wmode[16];
 
@@ -81,7 +83,7 @@ void setupSupplicant(char *prefix)
 
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=1\n");
+		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
 		fprintf(fp, "network={\n");
 		sprintf(psk, "%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", nvram_safe_get(psk));
