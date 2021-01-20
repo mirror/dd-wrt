@@ -120,6 +120,9 @@ HAVE_AUTH
    define this to include the facility to act as an authoritative DNS
    server for one or more zones.
 
+HAVE_NETTLEHASH
+   include just hash function from nettle, but no DNSSEC.
+
 HAVE_DNSSEC
    include DNSSEC validator.
 
@@ -195,6 +198,7 @@ RESOLVFILE
 /* #define HAVE_IDN */
 /* #define HAVE_LIBIDN2 */
 /* #define HAVE_CONNTRACK */
+/* #define HAVE_NETTLEHASH */
 /* #define HAVE_DNSSEC */
 
 
@@ -424,6 +428,10 @@ static char *compile_opts =
 "no-"
 #endif
 "auth "
+#if !defined(HAVE_NETTLEHASH) && !defined(HAVE_DNSSEC)
+"no-"
+#endif
+"nettlehash "
 #ifndef HAVE_DNSSEC
 "no-"
 #endif
