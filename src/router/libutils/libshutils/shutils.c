@@ -1011,11 +1011,16 @@ int getMTD(char *name)
 	char size[32];
 	char esize[32];
 	char n[32];
+	char line[128];
 	sprintf(buf, "\"%s\"", name);
 	FILE *fp = fopen("/proc/mtd", "rb");
 	if (!fp)
 		return -1;
-	while (!feof(fp) && fscanf(fp, "%s %s %s %s", dev, size, esize, n) == 4) {
+	while (!feof(fp)) {
+		fgets(line, 127, fp);
+		if (sscanf(line,"%s %s %s %s", dev, size, esize, n)<4)
+		    break;
+		fprintf(stderr, "mtd = %s, buf = %s\n", n, buf);
 		if (!strcmp(n, buf)) {
 			if (dev[4] == ':') {
 				device = dev[3] - '0';
