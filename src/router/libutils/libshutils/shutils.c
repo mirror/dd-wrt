@@ -1020,7 +1020,6 @@ int getMTD(char *name)
 		fgets(line, 127, fp);
 		if (sscanf(line,"%s %s %s %s", dev, size, esize, n)<4)
 		    break;
-		fprintf(stderr, "mtd = %s, buf = %s\n", n, buf);
 		if (!strcmp(n, buf)) {
 			if (dev[4] == ':') {
 				device = dev[3] - '0';
