@@ -1005,6 +1005,9 @@ int internal_getRouterBrand()
 #elif HAVE_E1700
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
+#elif HAVE_R6800
+	setRouter("Netgear R6800");
+	return ROUTER_R6800;
 #elif HAVE_DIR860
 	FILE *fp = fopen("/dev/mtdblock3", "rb");
 	if (fp) {
