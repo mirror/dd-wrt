@@ -97,7 +97,12 @@ void start_sysinit(void)
 #ifdef HAVE_WHR300HP2
 	insmod("rt2880_wdt");
 	int brand = getRouterBrand();
-	FILE *in = fopen("/dev/mtdblock/2", "rb");
+	FILE *in;
+	if (brand == ROUTER_R6800)
+		in = fopen("/dev/mtdblock/5", "rb");
+	else
+		in = fopen("/dev/mtdblock/2", "rb");
+
 	unsigned char mac[32];
 	if (in != NULL) {
 		if (brand == ROUTER_DIR810L)
@@ -118,8 +123,8 @@ void start_sysinit(void)
 		else
 			set_hwaddr("eth0", mac);
 	}
-	//LAN/WAN ports as security mode
-	if (brand == ROUTER_DIR860LB1) {
+	switch (brand) {
+	case ROUTER_DIR860LB1:
 		insmod("compat");
 		insmod("mac80211");
 		insmod("mt76");
@@ -141,7 +146,9 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 2);
 		nvram_seti("sw_lan3", 3);
 		nvram_seti("sw_lan4", 4);
-	} else if (brand == ROUTER_DIR882) {
+		break;
+	case ROUTER_DIR882:
+	case ROUTER_R6800:
 		insmod("compat");
 		insmod("mac80211");
 		if (!nvram_match("no_mt76", "1")) {
@@ -163,7 +170,9 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 1);
 		nvram_seti("sw_lan3", 2);
 		nvram_seti("sw_lan4", 3);
-	} else if (brand == ROUTER_BOARD_E1700 || brand == ROUTER_DIR810L) {
+		break;
+	case ROUTER_BOARD_E1700:
+	case ROUTER_DIR810L:
 		insmod("compat");
 		insmod("mac80211");
 		/* load soc drivers */
@@ -180,7 +189,8 @@ void start_sysinit(void)
 		insmod("mt76x02-lib");
 		insmod("mt76x2-common");
 		insmod("mt76x2e");
-	} else {
+		break;
+	default:
 		insmod("compat");
 		insmod("mac80211");
 		/* load soc drivers */
@@ -254,6 +264,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan3", 2);
 		nvram_seti("sw_lan4", 3);
 #endif
+		break;
 	}
 	eval("ifconfig", "eth0", "up");
 
