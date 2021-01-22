@@ -193,7 +193,7 @@ obj-$(CONFIG_WDSWATCHDOG) += wdswatchdog
 obj-$(CONFIG_IPV6) += ipv6 dhcpv6
 obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_RADIOOFF) += radiooff
-obj-$(CONFIG_PHP) += zlib libzip libgd libpng libxml2 libmcrypt curl glib20 sqlite php8 zlib
+obj-$(CONFIG_PHP) += libffi zlib libzip libgd libpng libxml2 libmcrypt curl glib20 sqlite php8 zlib
 obj-$(CONFIG_NCURSES) += ncurses
 obj-$(CONFIG_IFTOP) += libpcap iftop
 obj-$(CONFIG_IPTRAF) += iptraf
@@ -211,7 +211,7 @@ obj-$(CONFIG_IPERF) += iperf
 obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_CHRONY) += chrony
 obj-$(CONFIG_GPSD) += ncurses gpsd
-obj-$(CONFIG_PHP5) += zlib glib20 php8
+obj-$(CONFIG_PHP5) += libffi zlib glib20 php8
 obj-$(CONFIG_FREERADIUS) += libpcap libtalloc freeradius3
 #obj-$(CONFIG_FREERADIUS3) += talloc freeradius3
 #obj-$(CONFIG_EAD) += ead
@@ -368,6 +368,7 @@ obj-$(CONFIG_HTOP) += ncurses libnl htop
 obj-$(CONFIG_IPSET) += libmnl ipset
 obj-$(CONFIG_OCTEON) += lmsensors
 obj-$(CONFIG_P7ZIP) += p7zip
+obj-$(CONFIG_MEMTESTER) += memtester
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
 endif
