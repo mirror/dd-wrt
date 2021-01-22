@@ -10,14 +10,14 @@
 # You don't need to edit these; change the contents of the conf-cc and conf-ld
 # files if you need to change the compile/link commands.  See the README for
 # more information.
-CC			= $(shell head -n 1 conf-cc)
-LD			= $(shell head -n 1 conf-ld)
+#CC			= $(shell head -n 1 conf-cc)
+#LD			= $(shell head -n 1 conf-ld)
 
 SOURCES		= memtester.c tests.c
 OBJECTS		= $(SOURCES:.c=.o)
 HEADERS		= memtester.h
 TARGETS     = *.o compile load auto-ccld.sh find-systype make-compile make-load systype extra-libs
-INSTALLPATH	= /usr/local
+INSTALLPATH	= /usr
 
 #
 # Targets
@@ -25,16 +25,14 @@ INSTALLPATH	= /usr/local
 all: memtester
 
 install: all
-	mkdir -m 755 -p $(INSTALLPATH)/bin
-	install -m 755 memtester $(INSTALLPATH)/bin/
-	mkdir -m 755 -p $(INSTALLPATH)/man/man8
-	gzip -c memtester.8 >memtester.8.gz ; install -m 644 memtester.8.gz $(INSTALLPATH)/man/man8/
+	mkdir -m 755 -p $(INSTALLDIR)/$(INSTALLPATH)/bin
+	install -m 755 memtester $(INSTALLDIR)/$(INSTALLPATH)/bin/
 
 auto-ccld.sh: \
 conf-cc conf-ld warn-auto.sh
 	( cat warn-auto.sh; \
-	echo CC=\'`head -1 conf-cc`\'; \
-	echo LD=\'`head -1 conf-ld`\' \
+	echo CC=$(CC); \
+	echo LD=$(CC) \
 	) > auto-ccld.sh
 
 compile: \
