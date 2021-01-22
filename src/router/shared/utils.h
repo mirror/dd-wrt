@@ -877,30 +877,30 @@ extern int find_pattern(const char *data, size_t dlen, const char *pattern, size
 extern int find_match_pattern(char *name, size_t mlen, const char *data, const char *pattern, char *def);
 
 struct ledconfig {
-	int power_gpio;
-	int beeper_gpio;
-	int diag_gpio;
-	int diag_gpio_disabled;
-	int dmz_gpio;
-	int connected_gpio;
-	int disconnected_gpio;
-	int bridge_gpio;
-	int vpn_gpio;
-	int ses_gpio;		// use for SES1 (Linksys), AOSS (Buffalo)
-	int ses2_gpio;
-	int wlan_gpio;		// wlan button led R7000
-	int wlan0_gpio;		// use this only if wlan led is not controlled by hardware!
-	int wlan1_gpio;
-	int wlan2_gpio;
-	int usb_gpio;
-	int usb_gpio1;
-	int sec_gpio;		// generic
-	int sec0_gpio;		// security leds, wrt600n
-	int sec1_gpio;
-	int usb_power;
-	int usb_power1;
-	int v1func;
-	int connblue;
+	unsigned short power_gpio;
+	unsigned short beeper_gpio;
+	unsigned short diag_gpio;
+	unsigned short diag_gpio_disabled;
+	unsigned short dmz_gpio;
+	unsigned short connected_gpio;
+	unsigned short disconnected_gpio;
+	unsigned short bridge_gpio;
+	unsigned short vpn_gpio;
+	unsigned short ses_gpio;		// use for SES1 (Linksys), AOSS (Buffalo)
+	unsigned short ses2_gpio;
+	unsigned short wlan_gpio;		// wlan button led R7000
+	unsigned short wlan0_gpio;		// use this only if wlan led is not controlled by hardware!
+	unsigned short wlan1_gpio;
+	unsigned short wlan2_gpio;
+	unsigned short usb_gpio;
+	unsigned short usb_gpio1;
+	unsigned short sec_gpio;		// generic
+	unsigned short sec0_gpio;		// security leds, wrt600n
+	unsigned short sec1_gpio;
+	unsigned short usb_power;
+	unsigned short usb_power1;
+	unsigned short v1func;
+	unsigned short connblue;
 
 };
 
