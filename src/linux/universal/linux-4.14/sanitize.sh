@@ -8,6 +8,7 @@ do
     echo "# CONFIG_EXFAT_FS is not set" >> .config
     sed -i 's/\CONFIG_IP_VS=m/# CONFIG_IP_VS is not set/g' .config	    
     sed -i 's/\CONFIG_USBIP_CORE=m/# CONFIG_USBIP_CORE is not set/g' .config	    
+    echo "# CONFIG_GPIO_ANTAIRA is not set" >> .config
 
     cp drivers/net/wireless/Kconfig.mt7621 drivers/net/wireless/Kconfig
 

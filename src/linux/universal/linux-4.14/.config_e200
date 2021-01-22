@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.14.172 Kernel Configuration
+# Linux/mips 4.14.216 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -918,6 +918,7 @@ CONFIG_BRIDGE=y
 CONFIG_BRIDGE_IGMP_SNOOPING=y
 # CONFIG_BRIDGE_VLAN_FILTERING is not set
 CONFIG_KERNEL_ARP_SPOOFING_PROTECT=y
+# CONFIG_BRIDGE_MRP is not set
 CONFIG_HAVE_NET_DSA=y
 # CONFIG_NET_DSA is not set
 CONFIG_VLAN_8021Q=y
@@ -1787,6 +1788,7 @@ CONFIG_SPI_OCTEON=y
 # CONFIG_SPI_LOOPBACK_TEST is not set
 # CONFIG_SPI_TLE62X0 is not set
 # CONFIG_SPI_SLAVE is not set
+# CONFIG_SPI_DYNAMIC is not set
 # CONFIG_SPMI is not set
 # CONFIG_HSI is not set
 # CONFIG_PPS is not set
@@ -1830,6 +1832,7 @@ CONFIG_GPIO_OCTEON=y
 #
 # MFD GPIO expanders
 #
+# CONFIG_GPIO_ANTAIRA is not set
 
 #
 # PCI GPIO expanders
@@ -3114,4 +3117,3 @@ CONFIG_SBITMAP=y
 # CONFIG_STRING_SELFTEST is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_BRIDGE_MRP is not set

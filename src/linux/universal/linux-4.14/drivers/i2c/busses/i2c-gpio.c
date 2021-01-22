@@ -44,7 +44,7 @@ static void i2c_gpio_setsda_val(void *data, int state)
 {
 	struct i2c_gpio_platform_data *pdata = data;
 
-	gpio_set_value(pdata->sda_pin, state);
+	gpio_set_value_cansleep(pdata->sda_pin, state);
 }
 
 /* Toggle SCL by changing the direction of the pin. */
@@ -68,21 +68,21 @@ static void i2c_gpio_setscl_val(void *data, int state)
 {
 	struct i2c_gpio_platform_data *pdata = data;
 
-	gpio_set_value(pdata->scl_pin, state);
+	gpio_set_value_cansleep(pdata->scl_pin, state);
 }
 
 static int i2c_gpio_getsda(void *data)
 {
 	struct i2c_gpio_platform_data *pdata = data;
 
-	return gpio_get_value(pdata->sda_pin);
+	return gpio_get_value_cansleep(pdata->sda_pin);
 }
 
 static int i2c_gpio_getscl(void *data)
 {
 	struct i2c_gpio_platform_data *pdata = data;
 
-	return gpio_get_value(pdata->scl_pin);
+	return gpio_get_value_cansleep(pdata->scl_pin);
 }
 
 static int of_i2c_gpio_get_pins(struct device_node *np,
@@ -174,6 +174,9 @@ static int i2c_gpio_probe(struct platform_device *pdev)
 	} else {
 		memcpy(pdata, dev_get_platdata(&pdev->dev), sizeof(*pdata));
 	}
+
+	if (gpiod_cansleep(gpio_to_desc(pdata->sda_pin)) || gpiod_cansleep(gpio_to_desc(pdata->scl_pin)))
+		dev_warn(&pdev->dev, "Slow GPIO pins might wreak havoc into I2C/SMBus bus timing");
 
 	if (pdata->sda_is_open_drain) {
 		gpio_direction_output(pdata->sda_pin, 1);
