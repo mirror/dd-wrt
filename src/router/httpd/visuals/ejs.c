@@ -2048,7 +2048,7 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html>\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 		  charset);
 #ifndef HAVE_MICRO
-	websWrite(wp, "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
+	websWrite(wp, "\t\t<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n\t\t<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
 #endif
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
