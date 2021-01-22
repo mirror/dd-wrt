@@ -43,6 +43,7 @@ static void getledconfig(struct ledconfig *cfg)
 	cfg->wlan2_gpio = 0xfff;
 	cfg->usb_gpio = 0xfff;
 	cfg->usb_gpio1 = 0xfff;
+	cfg->sec_gpio = 0xfff;	// generic
 	cfg->sec0_gpio = 0xfff;	// security leds, wrt600n
 	cfg->sec1_gpio = 0xfff;
 	cfg->usb_power = 0xfff;
@@ -556,7 +557,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio_disabled = 0x11f1;
 		cfg->usb_gpio = 0x11f6;
 		cfg->usb_gpio1 = 0x11f7;
-		cfg->sec0_gpio = 0x0011;
+		cfg->sec_gpio = 0x0011;
 		cfg->wlan_gpio = 0x1005;
 		break;
 	case ROUTER_DIR882:
@@ -1791,6 +1792,9 @@ int led_control(int type, int act)
 		break;
 	case LED_USB1:
 		use_gpio = cfg->usb_gpio1;
+		break;
+	case LED_SEC:
+		use_gpio = cfg->sec_gpio;
 		break;
 	case LED_SEC0:
 		use_gpio = cfg->sec0_gpio;

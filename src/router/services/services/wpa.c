@@ -327,6 +327,7 @@ static void stop_nas_process(void)
 
 	unlink("/tmp/.nas");
 
+	led_control(LED_SEC, LED_OFF);
 	led_control(LED_SEC0, LED_OFF);
 	led_control(LED_SEC1, LED_OFF);
 
