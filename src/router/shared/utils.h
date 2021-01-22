@@ -894,6 +894,7 @@ struct ledconfig {
 	int wlan2_gpio;
 	int usb_gpio;
 	int usb_gpio1;
+	int sec_gpio;		// generic
 	int sec0_gpio;		// security leds, wrt600n
 	int sec1_gpio;
 	int usb_power;
