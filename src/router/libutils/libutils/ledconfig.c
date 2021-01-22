@@ -548,12 +548,14 @@ static void getledconfig(struct ledconfig *cfg)
 //              cfg->ses_gpio = 0x100e;
 		break;
 	case ROUTER_R6800:
-//		cfg->connected_gpio = 0x1003;
-//		cfg->disconnected_gpio = 0x1004;
-//		cfg->diag_gpio = 0x1008;
-		cfg->power_gpio = 0x1010;
-//		cfg->usb_gpio = 0x100c;
-//		cfg->usb_gpio1 = 0x100e;
+//              cfg->connected_gpio = 0x1003;
+//              cfg->disconnected_gpio = 0x1004;
+		cfg->diag_gpio = 0x1008;
+		cfg->power_gpio = 0x11f1;
+		cfg->diag_gpio = 0x11f0;
+		cfg->diag_gpio_disabled = 0x11f1;
+		cfg->usb_gpio = 0x11f6;
+		cfg->usb_gpio1 = 0x11f7;
 		break;
 	case ROUTER_DIR882:
 		cfg->connected_gpio = 0x1003;
@@ -1552,8 +1554,8 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
-		cfg->diag_gpio = 0x00D4;	 //gpio 212 on i2c slave antaira-gpio
-		cfg->beeper_gpio= 0x00D7; //gpio 215 on i2c slave antaira-gpio
+		cfg->diag_gpio = 0x00D4;	//gpio 212 on i2c slave antaira-gpio
+		cfg->beeper_gpio = 0x00D7;	//gpio 215 on i2c slave antaira-gpio
 #endif
 		break;
 	case ROUTER_NETGEAR_R7800:

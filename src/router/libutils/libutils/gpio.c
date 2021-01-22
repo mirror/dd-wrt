@@ -1133,13 +1133,20 @@ int gpio_write_bit(int gpio, int setvalue)
 
 void set_gpio(int pin, int value)
 {
-	gpio_set_dir_out(pin);
-	gpio_write_bit(pin, value);
+	if (pin > 95) {
+		set_linux_gpio(pin, value);
+	} else {
+		gpio_set_dir_out(pin);
+		gpio_write_bit(pin, value);
+	}
 }
 
 int get_gpio(int pin)
 {
 	int value;
+	if (pin > 95)
+		get_linux_gpio(pin);
+
 	gpio_set_dir_in(pin);
 	gpio_read_bit(pin, &value);
 	return value;

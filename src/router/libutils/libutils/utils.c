@@ -248,7 +248,6 @@ const char *getifaddr(char *buf, char *ifname, int family, int linklocal)
 		dprintf("getifaddrs failed: %s\n", strerror(errno));
 		return NULL;
 	}
-	
 
 	for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
 		if ((ifa->ifa_addr == NULL) || (strncmp(ifa->ifa_name, ifname, IFNAMSIZ) != 0) || (ifa->ifa_addr->sa_family != family))
@@ -2233,7 +2232,7 @@ static void internal_sysctl_apply(char *path, void *priv, void (*callback)(char 
 			}
 
 			char fname[128];
-			char fval[128]={0};
+			char fval[128] = { 0 };
 			sprintf(fname, "%s/%s", path, entry->d_name);
 			struct stat sb;
 			stat(fname, &sb);
