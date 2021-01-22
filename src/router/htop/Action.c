@@ -104,7 +104,7 @@ static bool changePriority(MainPanel* panel, int delta) {
    return anyTagged;
 }
 
-static void addUserToVector(hkey_t key, void* userCast, void* panelCast) {
+static void addUserToVector(ht_key_t key, void* userCast, void* panelCast) {
    const char* user = userCast;
    Panel* panel = panelCast;
    Panel_add(panel, (Object*) ListItem_new(user, key));
@@ -162,9 +162,11 @@ Htop_Reaction Action_setSortKey(Settings* settings, ProcessField sortKey) {
    return HTOP_REFRESH | HTOP_SAVE_SETTINGS | HTOP_UPDATE_PANELHDR | HTOP_KEEP_FOLLOWING;
 }
 
-static Htop_Reaction sortBy(State* st) {
+// ----------------------------------------
+
+static Htop_Reaction actionSetSortColumn(State* st) {
    Htop_Reaction reaction = HTOP_OK;
-   Panel* sortPanel = Panel_new(0, 0, 0, 0, true, Class(ListItem), FunctionBar_newEnterEsc("Sort   ", "Cancel "));
+   Panel* sortPanel = Panel_new(0, 0, 0, 0, Class(ListItem), true, FunctionBar_newEnterEsc("Sort   ", "Cancel "));
    Panel_setHeader(sortPanel, "Sort by");
    ProcessField* fields = st->settings->fields;
    for (int i = 0; fields[i]; i++) {
@@ -187,12 +189,8 @@ static Htop_Reaction sortBy(State* st) {
    return reaction | HTOP_REFRESH | HTOP_REDRAW_BAR | HTOP_UPDATE_PANELHDR;
 }
 
-// ----------------------------------------
-
-static Htop_Reaction actionResize(State* st) {
-   clear();
-   Panel_resize(st->panel, COLS, LINES - (st->panel->y) - 1);
-   return HTOP_REDRAW_BAR;
+static Htop_Reaction actionSortByPID(State* st) {
+   return Action_setSortKey(st->settings, PID);
 }
 
 static Htop_Reaction actionSortByMemory(State* st) {
@@ -250,16 +248,6 @@ static Htop_Reaction actionIncSearch(State* st) {
    return HTOP_REFRESH | HTOP_KEEP_FOLLOWING;
 }
 
-static Htop_Reaction actionIncNext(State* st) {
-   IncSet_next(((MainPanel*)st->panel)->inc, INC_SEARCH, st->panel, (IncMode_GetPanelValue) MainPanel_getValue);
-   return HTOP_REFRESH | HTOP_KEEP_FOLLOWING;
-}
-
-static Htop_Reaction actionIncPrev(State* st) {
-   IncSet_prev(((MainPanel*)st->panel)->inc, INC_SEARCH, st->panel, (IncMode_GetPanelValue) MainPanel_getValue);
-   return HTOP_REFRESH | HTOP_KEEP_FOLLOWING;
-}
-
 static Htop_Reaction actionHigherPriority(State* st) {
    bool changed = changePriority((MainPanel*)st->panel, -1);
    return changed ? HTOP_REFRESH : HTOP_OK;
@@ -275,10 +263,6 @@ static Htop_Reaction actionInvertSortOrder(State* st) {
    if (st->pauseProcessUpdate)
       ProcessList_sort(st->pl);
    return HTOP_REFRESH | HTOP_SAVE_SETTINGS;
-}
-
-static Htop_Reaction actionSetSortColumn(State* st) {
-   return sortBy(st);
 }
 
 static Htop_Reaction actionExpandOrCollapse(State* st) {
@@ -341,7 +325,7 @@ static Htop_Reaction actionKill(State* st) {
    if (sgn) {
       if (sgn->key != 0) {
          Panel_setHeader(st->panel, "Sending...");
-         Panel_draw(st->panel, false, true, true);
+         Panel_draw(st->panel, false, true, true, State_hideFunctionBar(st));
          refresh();
          MainPanel_foreachProcess((MainPanel*)st->panel, Process_sendSignal, (Arg) { .i = sgn->key }, NULL);
          napms(500);
@@ -352,7 +336,7 @@ static Htop_Reaction actionKill(State* st) {
 }
 
 static Htop_Reaction actionFilterByUser(State* st) {
-   Panel* usersPanel = Panel_new(0, 0, 0, 0, true, Class(ListItem), FunctionBar_newEnterEsc("Show   ", "Cancel "));
+   Panel* usersPanel = Panel_new(0, 0, 0, 0, Class(ListItem), true, FunctionBar_newEnterEsc("Show   ", "Cancel "));
    Panel_setHeader(usersPanel, "Show processes of:");
    UsersTable_foreach(st->ut, addUserToVector, usersPanel);
    Vector_insertionSort(usersPanel->items);
@@ -462,7 +446,7 @@ static const struct {
    { .key = "      K: ", .info = "hide/show kernel threads" },
    { .key = "      F: ", .info = "cursor follows process" },
    { .key = "    + -: ", .info = "expand/collapse tree" },
-   { .key = "  P M T: ", .info = "sort by CPU%, MEM% or TIME" },
+   { .key = "N P M T: ", .info = "sort by PID, CPU%, MEM% or TIME" },
    { .key = "      I: ", .info = "invert sort order" },
    { .key = " F6 > .: ", .info = "select sort column" },
    { .key = NULL, .info = NULL }
@@ -563,24 +547,24 @@ static Htop_Reaction actionHelp(State* st) {
    int item;
    for (item = 0; helpLeft[item].key; item++) {
       attrset(CRT_colors[DEFAULT_COLOR]);
-      mvaddstr(line + item, 9,  helpLeft[item].info);
+      mvaddstr(line + item, 10, helpLeft[item].info);
       attrset(CRT_colors[HELP_BOLD]);
-      mvaddstr(line + item, 0,  helpLeft[item].key);
+      mvaddstr(line + item, 1,  helpLeft[item].key);
       if (String_eq(helpLeft[item].key, "      H: ")) {
          attrset(CRT_colors[PROCESS_THREAD]);
-         mvaddstr(line + item, 32, "threads");
+         mvaddstr(line + item, 33, "threads");
       } else if (String_eq(helpLeft[item].key, "      K: ")) {
          attrset(CRT_colors[PROCESS_THREAD]);
-         mvaddstr(line + item, 26, "threads");
+         mvaddstr(line + item, 27, "threads");
       }
    }
    int leftHelpItems = item;
 
    for (item = 0; helpRight[item].key; item++) {
       attrset(CRT_colors[HELP_BOLD]);
-      mvaddstr(line + item, 40, helpRight[item].key);
+      mvaddstr(line + item, 41, helpRight[item].key);
       attrset(CRT_colors[DEFAULT_COLOR]);
-      mvaddstr(line + item, 49, helpRight[item].info);
+      mvaddstr(line + item, 50, helpRight[item].info);
    }
    line += MAXIMUM(leftHelpItems, item);
    line++;
@@ -655,7 +639,7 @@ void Action_setBindings(Htop_Action* keys) {
    keys['I'] = actionInvertSortOrder;
    keys['K'] = actionToggleKernelThreads;
    keys['M'] = actionSortByMemory;
-   keys['N'] = actionIncPrev;
+   keys['N'] = actionSortByPID;
    keys['P'] = actionSortByCPU;
    keys['S'] = actionSetup;
    keys['T'] = actionSortByTime;
@@ -673,7 +657,6 @@ void Action_setBindings(Htop_Action* keys) {
    keys['k'] = actionKill;
    keys['l'] = actionLsof;
    keys['m'] = actionToggleMergedCommand;
-   keys['n'] = actionIncNext;
    keys['p'] = actionToggleProgramPath;
    keys['q'] = actionQuit;
    keys['s'] = actionStrace;
@@ -693,5 +676,4 @@ void Action_setBindings(Htop_Action* keys) {
    keys[KEY_F(10)] = actionQuit;
    keys[KEY_F(18)] = actionExpandCollapseOrSortColumn;
    keys[KEY_RECLICK] = actionExpandOrCollapse;
-   keys[KEY_RESIZE] = actionResize;
 }

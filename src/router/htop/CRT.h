@@ -22,6 +22,8 @@ typedef enum TreeStr_ {
    TREE_STR_TEND,
    TREE_STR_OPEN,
    TREE_STR_SHUT,
+   TREE_STR_ASC,
+   TREE_STR_DESC,
    LAST_TREE_STR
 } TreeStr;
 
@@ -57,6 +59,7 @@ typedef enum ColorElements_ {
    METER_VALUE_IOWRITE,
    METER_VALUE_NOTICE,
    METER_VALUE_OK,
+   METER_VALUE_WARN,
    LED_COLOR,
    UPTIME,
    BATTERY,

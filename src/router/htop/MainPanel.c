@@ -44,6 +44,11 @@ void MainPanel_pidSearch(MainPanel* this, int ch) {
    }
 }
 
+static const char* MainPanel_getValue(Panel* this, int i) {
+   const Process* p = (const Process*) Panel_get(this, i);
+   return Process_getCommand(p);
+}
+
 static HandlerResult MainPanel_eventHandler(Panel* super, int ch) {
    MainPanel* this = (MainPanel*) super;
 
@@ -51,7 +56,12 @@ static HandlerResult MainPanel_eventHandler(Panel* super, int ch) {
 
    Htop_Reaction reaction = HTOP_OK;
 
-   if (ch != ERR && ch != KEY_RESIZE)
+   /* Let supervising ScreenManager handle resize */
+   if (ch == KEY_RESIZE)
+      return IGNORED;
+
+   /* reset on every normal key */
+   if (ch != ERR)
       this->state->hideProcessSelection = false;
 
    if (EVENT_IS_HEADER_CLICK(ch)) {
@@ -72,7 +82,7 @@ static HandlerResult MainPanel_eventHandler(Panel* super, int ch) {
       reaction |= HTOP_RECALCULATE | HTOP_REDRAW_BAR | HTOP_SAVE_SETTINGS;
       result = HANDLED;
    } else if (ch != ERR && this->inc->active) {
-      bool filterChanged = IncSet_handleKey(this->inc, ch, super, (IncMode_GetPanelValue) MainPanel_getValue, NULL);
+      bool filterChanged = IncSet_handleKey(this->inc, ch, super, MainPanel_getValue, NULL);
       if (filterChanged) {
          this->state->pl->incFilter = IncSet_filter(this->inc);
          reaction = HTOP_REFRESH | HTOP_REDRAW_BAR;
@@ -102,7 +112,7 @@ static HandlerResult MainPanel_eventHandler(Panel* super, int ch) {
       MainPanel_updateTreeFunctions(this, this->state->settings->treeView);
    }
    if (reaction & HTOP_UPDATE_PANELHDR) {
-      ProcessList_printHeader(this->state->pl, Panel_getHeader(super));
+      result |= REDRAW;
    }
    if (reaction & HTOP_REFRESH) {
       result |= REFRESH;
@@ -131,11 +141,6 @@ int MainPanel_selectedPid(MainPanel* this) {
    return -1;
 }
 
-const char* MainPanel_getValue(MainPanel* this, int i) {
-   Process* p = (Process*) Panel_get((Panel*)this, i);
-   return Process_getCommand(p);
-}
-
 bool MainPanel_foreachProcess(MainPanel* this, MainPanel_ForeachProcessFn fn, Arg arg, bool* wasAnyTagged) {
    Panel* super = (Panel*) this;
    bool ok = true;
@@ -160,12 +165,22 @@ bool MainPanel_foreachProcess(MainPanel* this, MainPanel_ForeachProcessFn fn, Ar
    return ok;
 }
 
-static void MainPanel_drawFunctionBar(Panel* super) {
+static void MainPanel_drawFunctionBar(Panel* super, bool hideFunctionBar) {
    MainPanel* this = (MainPanel*) super;
+
+   // Do not hide active search and filter bar.
+   if (hideFunctionBar && !this->inc->active)
+      return;
+
    IncSet_drawBar(this->inc);
    if (this->state->pauseProcessUpdate) {
       FunctionBar_append("PAUSED", CRT_colors[PAUSED]);
    }
+}
+
+static void MainPanel_printHeader(Panel* super) {
+   MainPanel* this = (MainPanel*) super;
+   ProcessList_printHeader(this->state->pl, &super->header);
 }
 
 const PanelClass MainPanel_class = {
@@ -174,7 +189,8 @@ const PanelClass MainPanel_class = {
       .delete = MainPanel_delete
    },
    .eventHandler = MainPanel_eventHandler,
-   .drawFunctionBar = MainPanel_drawFunctionBar
+   .drawFunctionBar = MainPanel_drawFunctionBar,
+   .printHeader = MainPanel_printHeader
 };
 
 MainPanel* MainPanel_new() {

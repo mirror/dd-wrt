@@ -88,9 +88,9 @@ const ProcessFieldData Process_fields[LAST_PROCESSFIELD] = {
    [OOM] = { .name = "OOM", .title = " OOM ", .description = "OOM (Out-of-Memory) killer score", .flags = PROCESS_FLAG_LINUX_OOM, },
    [IO_PRIORITY] = { .name = "IO_PRIORITY", .title = "IO ", .description = "I/O priority", .flags = PROCESS_FLAG_LINUX_IOPRIO, },
 #ifdef HAVE_DELAYACCT
-   [PERCENT_CPU_DELAY] = { .name = "PERCENT_CPU_DELAY", .title = "CPUD% ", .description = "CPU delay %", .flags = 0, },
-   [PERCENT_IO_DELAY] = { .name = "PERCENT_IO_DELAY", .title = "IOD% ", .description = "Block I/O delay %", .flags = 0, },
-   [PERCENT_SWAP_DELAY] = { .name = "PERCENT_SWAP_DELAY", .title = "SWAPD% ", .description = "Swapin delay %", .flags = 0, },
+   [PERCENT_CPU_DELAY] = { .name = "PERCENT_CPU_DELAY", .title = "CPUD% ", .description = "CPU delay %", .flags = PROCESS_FLAG_LINUX_DELAYACCT, },
+   [PERCENT_IO_DELAY] = { .name = "PERCENT_IO_DELAY", .title = "IOD% ", .description = "Block I/O delay %", .flags = PROCESS_FLAG_LINUX_DELAYACCT, },
+   [PERCENT_SWAP_DELAY] = { .name = "PERCENT_SWAP_DELAY", .title = "SWAPD% ", .description = "Swapin delay %", .flags = PROCESS_FLAG_LINUX_DELAYACCT, },
 #endif
    [M_PSS] = { .name = "M_PSS", .title = "  PSS ", .description = "proportional set size, same as M_RESIDENT but each page is divided by the number of processes sharing it.", .flags = PROCESS_FLAG_LINUX_SMAPS, },
    [M_SWAP] = { .name = "M_SWAP", .title = " SWAP ", .description = "Size of the process's swapped pages", .flags = PROCESS_FLAG_LINUX_SMAPS, },
@@ -198,12 +198,11 @@ static bool findCommInCmdline(const char *comm, const char *cmdline, int cmdline
    /* Try to find procComm in tokenized cmdline - this might in rare cases
     * mis-identify a string or fail, if comm or cmdline had been unsuitably
     * modified by the process */
-   const char *token;
    const char *tokenBase;
    size_t tokenLen;
    const size_t commLen = strlen(comm);
 
-   for (token = cmdline + cmdlineBasenameOffset; *token; ) {
+   for (const char *token = cmdline + cmdlineBasenameOffset; *token; ) {
       for (tokenBase = token; *token && *token != '\n'; ++token) {
          if (*token == '/') {
             tokenBase = token + 1;
@@ -529,30 +528,30 @@ static void LinuxProcess_writeCommand(const Process* this, int attr, int baseAtt
       if (!lp->mergedCommand.separateComm && commStart == baseStart && highlightBaseName) {
          /* If it was matched with procExe's basename, make it bold if needed */
          if (commEnd > baseEnd) {
-            RichString_setAttrn(str, A_BOLD | baseAttr, baseStart, baseEnd - 1);
-            RichString_setAttrn(str, A_BOLD | commAttr, baseEnd, commEnd - 1);
+            RichString_setAttrn(str, A_BOLD | baseAttr, baseStart, baseEnd - baseStart);
+            RichString_setAttrn(str, A_BOLD | commAttr, baseEnd, commEnd - baseEnd);
          } else if (commEnd < baseEnd) {
-            RichString_setAttrn(str, A_BOLD | commAttr, commStart, commEnd - 1);
-            RichString_setAttrn(str, A_BOLD | baseAttr, commEnd, baseEnd - 1);
+            RichString_setAttrn(str, A_BOLD | commAttr, commStart, commEnd - commStart);
+            RichString_setAttrn(str, A_BOLD | baseAttr, commEnd, baseEnd - commEnd);
          } else {
             // Actually should be highlighted commAttr, but marked baseAttr to reduce visual noise
-            RichString_setAttrn(str, A_BOLD | baseAttr, commStart, commEnd - 1);
+            RichString_setAttrn(str, A_BOLD | baseAttr, commStart, commEnd - commStart);
          }
 
          baseStart = baseEnd;
       } else {
-         RichString_setAttrn(str, commAttr, commStart, commEnd - 1);
+         RichString_setAttrn(str, commAttr, commStart, commEnd - commStart);
       }
    }
 
    if (baseStart < baseEnd && highlightBaseName) {
-      RichString_setAttrn(str, baseAttr, baseStart, baseEnd - 1);
+      RichString_setAttrn(str, baseAttr, baseStart, baseEnd - baseStart);
    }
 
    if (mc->sep1)
-      RichString_setAttrn(str, CRT_colors[FAILED_READ], strStart + mc->sep1, strStart + mc->sep1);
+      RichString_setAttrn(str, CRT_colors[FAILED_READ], strStart + mc->sep1, 1);
    if (mc->sep2)
-      RichString_setAttrn(str, CRT_colors[FAILED_READ], strStart + mc->sep2, strStart + mc->sep2);
+      RichString_setAttrn(str, CRT_colors[FAILED_READ], strStart + mc->sep2, 1);
 }
 
 static void LinuxProcess_writeCommandField(const Process *this, RichString *str, char *buffer, int n, int attr) {
@@ -708,39 +707,46 @@ static void LinuxProcess_writeField(const Process* this, RichString* str, Proces
       return;
    }
    case PROC_COMM: {
+      const char* procComm;
       if (lp->procComm) {
          attr = CRT_colors[Process_isUserlandThread(this) ? PROCESS_THREAD_COMM : PROCESS_COMM];
-         /* 15 being (TASK_COMM_LEN - 1) */
-         xSnprintf(buffer, n, "%-15.15s ", lp->procComm);
+         procComm = lp->procComm;
       } else {
          attr = CRT_colors[PROCESS_SHADOW];
-         xSnprintf(buffer, n, "%-15.15s ", Process_isKernelThread(lp) ? kthreadID : "N/A");
+         procComm = Process_isKernelThread(lp) ? kthreadID : "N/A";
       }
-      break;
+      /* 15 being (TASK_COMM_LEN - 1) */
+      Process_printLeftAlignedField(str, attr, procComm, 15);
+      return;
    }
    case PROC_EXE: {
+      const char* procExe;
       if (lp->procExe) {
          attr = CRT_colors[Process_isUserlandThread(this) ? PROCESS_THREAD_BASENAME : PROCESS_BASENAME];
          if (lp->procExeDeleted)
             attr = CRT_colors[FAILED_READ];
-         xSnprintf(buffer, n, "%-15.15s ", lp->procExe + lp->procExeBasenameOffset);
+         procExe = lp->procExe + lp->procExeBasenameOffset;
       } else {
          attr = CRT_colors[PROCESS_SHADOW];
-         xSnprintf(buffer, n, "%-15.15s ", Process_isKernelThread(lp) ? kthreadID : "N/A");
+         procExe = Process_isKernelThread(lp) ? kthreadID : "N/A";
       }
-      break;
+      Process_printLeftAlignedField(str, attr, procExe, 15);
+      return;
    }
-   case CWD:
+   case CWD: {
+      const char* cwd;
       if (!lp->cwd) {
-         xSnprintf(buffer, n, "%-25s ", "N/A");
          attr = CRT_colors[PROCESS_SHADOW];
+         cwd = "N/A";
       } else if (String_startsWith(lp->cwd, "/proc/") && strstr(lp->cwd, " (deleted)") != NULL) {
-         xSnprintf(buffer, n, "%-25s ", "main thread terminated");
          attr = CRT_colors[PROCESS_SHADOW];
+         cwd = "main thread terminated";
       } else {
-         xSnprintf(buffer, n, "%-25.25s ", lp->cwd);
+         cwd = lp->cwd;
       }
-      break;
+      Process_printLeftAlignedField(str, attr, cwd, 25);
+      return;
+   }
    default:
       Process_writeField(this, str, field);
       return;
@@ -748,7 +754,7 @@ static void LinuxProcess_writeField(const Process* this, RichString* str, Proces
    RichString_appendWide(str, attr, buffer);
 }
 
-static long LinuxProcess_compareByKey(const Process* v1, const Process* v2, ProcessField key) {
+static int LinuxProcess_compareByKey(const Process* v1, const Process* v2, ProcessField key) {
    const LinuxProcess* p1 = (const LinuxProcess*)v1;
    const LinuxProcess* p2 = (const LinuxProcess*)v2;
 

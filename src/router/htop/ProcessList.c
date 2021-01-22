@@ -112,6 +112,13 @@ void ProcessList_printHeader(ProcessList* this, RichString* header) {
       }
 
       RichString_appendWide(header, color, alignedProcessFieldTitle(fields[i]));
+      if (key == fields[i] && RichString_getCharVal(*header, RichString_size(header) - 1) == ' ') {
+         header->chlen--;  // rewind to override space
+         RichString_appendnWide(header,
+                                CRT_colors[PANEL_SELECTION_FOCUS],
+                                CRT_treeStr[Settings_getActiveDirection(this->settings) == 1 ? TREE_STR_DESC : TREE_STR_ASC],
+                                1);
+      }
       if (COMM == fields[i] && settings->showMergedCommand) {
          RichString_appendAscii(header, color, "(merged)");
       }
@@ -141,7 +148,7 @@ void ProcessList_remove(ProcessList* this, Process* p) {
    Process* pp = Hashtable_remove(this->processTable, p->pid);
    assert(pp == p); (void)pp;
 
-   unsigned int pid = p->pid;
+   pid_t pid = p->pid;
    int idx = Vector_indexOf(this->processes, p, Process_pidCompare);
    assert(idx != -1);
 
@@ -149,7 +156,12 @@ void ProcessList_remove(ProcessList* this, Process* p) {
       Vector_remove(this->processes, idx);
    }
 
-   assert(Hashtable_get(this->processTable, pid) == NULL); (void)pid;
+   if (this->following != -1 && this->following == pid) {
+      this->following = -1;
+      Panel_setSelectionColor(this->panel, PANEL_SELECTION_FOCUS);
+   }
+
+   assert(Hashtable_get(this->processTable, pid) == NULL);
    assert(Hashtable_count(this->processTable) == Vector_count(this->processes));
 }
 
@@ -348,14 +360,14 @@ static void ProcessList_buildTreeBranch(ProcessList* this, pid_t pid, int level,
    Vector_delete(children);
 }
 
-static long ProcessList_treeProcessCompare(const void* v1, const void* v2) {
+static int ProcessList_treeProcessCompare(const void* v1, const void* v2) {
    const Process *p1 = (const Process*)v1;
    const Process *p2 = (const Process*)v2;
 
    return SPACESHIP_NUMBER(p1->tree_left, p2->tree_left);
 }
 
-static long ProcessList_treeProcessCompareByPID(const void* v1, const void* v2) {
+static int ProcessList_treeProcessCompareByPID(const void* v1, const void* v2) {
    const Process *p1 = (const Process*)v1;
    const Process *p2 = (const Process*)v2;
 
@@ -486,7 +498,6 @@ void ProcessList_rebuildPanel(ProcessList* this) {
    const char* incFilter = this->incFilter;
 
    int currPos = Panel_getSelectedIndex(this->panel);
-   pid_t currPid = this->following != -1 ? this->following : 0;
    int currScrollV = this->panel->scrollV;
 
    Panel_prune(this->panel);
@@ -502,7 +513,7 @@ void ProcessList_rebuildPanel(ProcessList* this) {
          continue;
 
       Panel_set(this->panel, idx, (Object*)p);
-      if ((this->following == -1 && idx == currPos) || (this->following != -1 && p->pid == currPid)) {
+      if ((this->following == -1 && idx == currPos) || (this->following != -1 && p->pid == this->following)) {
          Panel_setSelected(this->panel, idx);
          this->panel->scrollV = currScrollV;
       }
