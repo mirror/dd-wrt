@@ -241,7 +241,7 @@ void start_sysinit(void)
 		writestr("/sys/class/leds/orange:lan4/speed_mask", "0x4");
 
 		writestr("/sys/class/leds/white:wlan2g/trigger", "phy0tpt");
-		writestr("/sys/class/leds/white_wlan5g/trigger", "phy1tpt");
+		writestr("/sys/class/leds/white:wlan5g/trigger", "phy1tpt");
 		break;
 	case ROUTER_BOARD_E1700:
 	case ROUTER_DIR810L:
