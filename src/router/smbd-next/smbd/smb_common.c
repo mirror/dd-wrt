@@ -644,15 +644,9 @@ int ksmbd_override_fsids(struct ksmbd_work *work)
 	struct ksmbd_session *sess = work->sess;
 	struct ksmbd_share_config *share = work->tcon->share_conf;
 	struct cred *cred;
+	struct group_info *gi;
 	unsigned int uid;
 	unsigned int gid;
-
-	if (work->saved_cred_level) {
-		WARN_ON(work->saved_cred == NULL);
-		work->saved_cred_level++;
-		validate_process_creds();
-		return 0;
-	}
 
 	uid = user_uid(sess->user);
 	gid = user_gid(sess->user);
@@ -669,31 +663,35 @@ int ksmbd_override_fsids(struct ksmbd_work *work)
 
 	cred->fsuid = make_kuid(current_user_ns(), uid);
 	cred->fsgid = make_kgid(current_user_ns(), gid);
+
+	gi = groups_alloc(0);
+	if (!gi) {
+		abort_creds(cred);
+		return -ENOMEM;
+	}
+	set_groups(cred, gi);
+	put_group_info(gi);
+
 	if (!uid_eq(cred->fsuid, GLOBAL_ROOT_UID))
 		cred->cap_effective = cap_drop_fs_set(cred->cap_effective);
 
+	WARN_ON(work->saved_cred != NULL);
 	work->saved_cred = override_creds(cred);
 	if (!work->saved_cred) {
 		abort_creds(cred);
 		return -EINVAL;
 	}
-
-	work->saved_cred_level = 1;
 	return 0;
 }
 
 void ksmbd_revert_fsids(struct ksmbd_work *work)
 {
-	work->saved_cred_level--;
-	WARN_ON(work->saved_cred_level < 0);
-	if (!work->saved_cred_level) {
-		const struct cred *cred;
+	const struct cred *cred;
 
-		cred = current_cred();
-		revert_creds(work->saved_cred);
-		put_cred(cred);
-		work->saved_cred = NULL;
-	}
+	cred = current_cred();
+	revert_creds(work->saved_cred);
+	put_cred(cred);
+	work->saved_cred = NULL;
 }
 
 __le32 smb_map_generic_desired_access(__le32 daccess)

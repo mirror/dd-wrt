@@ -49,6 +49,11 @@ For reporting bugs and sending patches, please send the patches to the following
 
 or open issues/send PRs to [CIFSD](https://github.com/cifsd-team/cifsd).
 
+## linux-cifsd-devel mailing list subscription
+
+For subscribing to maling list, Insert your mail and info after accessing the following address:
+
+* https://sourceforge.net/projects/linux-cifsd/lists/linux-cifsd-devel
 
 ## Installing as a stand-alone module
 
