@@ -148,6 +148,28 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 4);
 		break;
 	case ROUTER_DIR882:
+		insmod("compat");
+		insmod("mac80211");
+		if (!nvram_match("no_mt76", "1")) {
+			insmod("mt76");
+			insmod("mt7615-common");
+			insmod("mt7615e");
+		}
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 6t");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+//              set_smp_affinity(20, 2);        // eth
+//              set_smp_affinity(22, 4);        //wifi1
+//              set_smp_affinity(23, 8);        // wifi2
+		nvram_seti("sw_cpuport", 6);
+		nvram_seti("sw_wan", 4);
+		nvram_seti("sw_lan1", 0);
+		nvram_seti("sw_lan2", 1);
+		nvram_seti("sw_lan3", 2);
+		nvram_seti("sw_lan4", 3);
+		break;
 	case ROUTER_R6800:
 		insmod("compat");
 		insmod("mac80211");
@@ -170,6 +192,56 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 1);
 		nvram_seti("sw_lan3", 2);
 		nvram_seti("sw_lan4", 3);
+
+		writestr("/sys/class/leds/white:wan/brightness", "0");
+		writestr("/sys/class/leds/white:lan1/brightness", "0");
+		writestr("/sys/class/leds/white:lan2/brightness", "0");
+		writestr("/sys/class/leds/white:lan3/brightness", "0");
+		writestr("/sys/class/leds/white:lan4/brightness", "0");
+
+		writestr("/sys/class/leds/orange:wan/brightness", "0");
+		writestr("/sys/class/leds/orange:lan1/brightness", "0");
+		writestr("/sys/class/leds/orange:lan2/brightness", "0");
+		writestr("/sys/class/leds/orange:lan3/brightness", "0");
+		writestr("/sys/class/leds/orange:lan4/brightness", "0");
+
+		writestr("/sys/class/leds/white:wan/trigger", "switch0");
+		writestr("/sys/class/leds/white:lan1/trigger", "switch0");
+		writestr("/sys/class/leds/white:lan2/trigger", "switch0");
+		writestr("/sys/class/leds/white:lan3/trigger", "switch0");
+		writestr("/sys/class/leds/white:lan4/trigger", "switch0");
+		writestr("/sys/class/leds/white:wan/port_mask", "0x10");
+		writestr("/sys/class/leds/white:lan1/port_mask", "0x8");
+		writestr("/sys/class/leds/white:lan2/port_mask", "0x4");
+		writestr("/sys/class/leds/white:lan3/port_mask", "0x2");
+		writestr("/sys/class/leds/white:lan4/port_mask", "0x1");
+
+		writestr("/sys/class/leds/white:wan/speed_mask", "0x8");
+		writestr("/sys/class/leds/white:lan1/speed_mask", "0x8");
+		writestr("/sys/class/leds/white:lan2/speed_mask", "0x8");
+		writestr("/sys/class/leds/white:lan3/speed_mask", "0x8");
+		writestr("/sys/class/leds/white:lan4/speed_mask", "0x8");
+
+		writestr("/sys/class/leds/orange:wan/trigger", "switch0");
+		writestr("/sys/class/leds/orange:lan1/trigger", "switch0");
+		writestr("/sys/class/leds/orange:lan2/trigger", "switch0");
+		writestr("/sys/class/leds/orange:lan3/trigger", "switch0");
+		writestr("/sys/class/leds/orange:lan4/trigger", "switch0");
+
+		writestr("/sys/class/leds/orange:wan/port_mask", "0x10");
+		writestr("/sys/class/leds/orange:lan1/port_mask", "0x8");
+		writestr("/sys/class/leds/orange:lan2/port_mask", "0x4");
+		writestr("/sys/class/leds/orange:lan3/port_mask", "0x2");
+		writestr("/sys/class/leds/orange:lan4/port_mask", "0x1");
+
+		writestr("/sys/class/leds/orange:wan/speed_mask", "0x4");
+		writestr("/sys/class/leds/orange:lan1/speed_mask", "0x4");
+		writestr("/sys/class/leds/orange:lan2/speed_mask", "0x4");
+		writestr("/sys/class/leds/orange:lan3/speed_mask", "0x4");
+		writestr("/sys/class/leds/orange:lan4/speed_mask", "0x4");
+
+		writestr("/sys/class/leds/white:wlan2g/trigger", "phy0tpt");
+		writestr("/sys/class/leds/white_wlan5g/trigger", "phy1tpt");
 		break;
 	case ROUTER_BOARD_E1700:
 	case ROUTER_DIR810L:
