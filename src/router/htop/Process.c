@@ -183,34 +183,34 @@ void Process_fillStarttimeBuffer(Process* this) {
 }
 
 static inline void Process_writeCommand(const Process* this, int attr, int baseattr, RichString* str) {
-   int start = RichString_size(str), finish = 0;
+   int start = RichString_size(str);
+   int len = 0;
    const char* comm = this->comm;
 
    if (this->settings->highlightBaseName || !this->settings->showProgramPath) {
-      int i, basename = 0;
-      for (i = 0; i < this->basenameOffset; i++) {
+      int basename = 0;
+      for (int i = 0; i < this->basenameOffset; i++) {
          if (comm[i] == '/') {
             basename = i + 1;
          } else if (comm[i] == ':') {
-            finish = i + 1;
+            len = i + 1;
             break;
          }
       }
-      if (!finish) {
+      if (len == 0) {
          if (this->settings->showProgramPath) {
             start += basename;
          } else {
             comm += basename;
          }
-         finish = this->basenameOffset - basename;
+         len = this->basenameOffset - basename;
       }
-      finish += start - 1;
    }
 
    RichString_appendWide(str, attr, comm);
 
    if (this->settings->highlightBaseName) {
-      RichString_setAttrn(str, baseattr, start, finish);
+      RichString_setAttrn(str, baseattr, start, len);
    }
 }
 
@@ -242,6 +242,11 @@ void Process_outputRate(RichString* str, char* buffer, size_t n, double rate, in
       int len = snprintf(buffer, n, "%7.2f T/s ", rate / ONE_T);
       RichString_appendnAscii(str, largeNumberColor, buffer, len);
    }
+}
+
+void Process_printLeftAlignedField(RichString* str, int attr, const char* content, unsigned int width) {
+   int c = RichString_appendnWide(str, attr, content, MINIMUM(width, strlen(content)));
+   RichString_appendChr(str, ' ', width + 1 - c);
 }
 
 void Process_writeField(const Process* this, RichString* str, ProcessField field) {
@@ -363,15 +368,13 @@ void Process_writeField(const Process* this, RichString* str, ProcessField field
    case USER: {
       if (Process_getuid != this->st_uid)
          attr = CRT_colors[PROCESS_SHADOW];
+
       if (this->user) {
-         xSnprintf(buffer, n, "%-9s ", this->user);
-      } else {
-         xSnprintf(buffer, n, "%-9d ", this->st_uid);
+         Process_printLeftAlignedField(str, attr, this->user, 9);
+         return;
       }
-      if (buffer[9] != '\0') {
-         buffer[9] = ' ';
-         buffer[10] = '\0';
-      }
+
+      xSnprintf(buffer, n, "%-9d ", this->st_uid);
       break;
    }
    default:
@@ -477,14 +480,14 @@ bool Process_sendSignal(Process* this, Arg sgn) {
    return ok;
 }
 
-long Process_pidCompare(const void* v1, const void* v2) {
+int Process_pidCompare(const void* v1, const void* v2) {
    const Process* p1 = (const Process*)v1;
    const Process* p2 = (const Process*)v2;
 
    return SPACESHIP_NUMBER(p1->pid, p2->pid);
 }
 
-long Process_compare(const void* v1, const void* v2) {
+int Process_compare(const void* v1, const void* v2) {
    const Process *p1, *p2;
    const Settings *settings = ((const Process*)v1)->settings;
 
@@ -498,7 +501,7 @@ long Process_compare(const void* v1, const void* v2) {
 
    ProcessField key = Settings_getActiveSortKey(settings);
 
-   long result = Process_compareByKey(p1, p2, key);
+   int result = Process_compareByKey(p1, p2, key);
 
    // Implement tie-breaker (needed to make tree mode more stable)
    if (!result)
@@ -507,7 +510,7 @@ long Process_compare(const void* v1, const void* v2) {
    return result;
 }
 
-long Process_compareByKey_Base(const Process* p1, const Process* p2, ProcessField key) {
+int Process_compareByKey_Base(const Process* p1, const Process* p2, ProcessField key) {
    int r;
 
    switch (key) {

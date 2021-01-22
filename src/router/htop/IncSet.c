@@ -29,9 +29,9 @@ void IncSet_reset(IncSet* this, IncType type) {
    IncMode_reset(&this->modes[type]);
 }
 
-static const char* const searchFunctions[] = {"Next  ", "Cancel ", " Search: ", NULL};
-static const char* const searchKeys[] = {"F3", "Esc", "  "};
-static const int searchEvents[] = {KEY_F(3), 27, ERR};
+static const char* const searchFunctions[] = {"Next  ", "Prev   ", "Cancel ", " Search: ", NULL};
+static const char* const searchKeys[] = {"F3", "S-F3", "Esc", "  "};
+static const int searchEvents[] = {KEY_F(3), KEY_F(15), 27, ERR};
 
 static inline void IncMode_initSearch(IncMode* search) {
    memset(search, 0, sizeof(IncMode));
@@ -133,14 +133,6 @@ static bool IncMode_find(IncMode* mode, Panel* panel, IncMode_GetPanelValue getP
    }
 }
 
-bool IncSet_next(IncSet* this, IncType type, Panel* panel, IncMode_GetPanelValue getPanelValue) {
-   return IncMode_find(&this->modes[type], panel, getPanelValue, 1);
-}
-
-bool IncSet_prev(IncSet* this, IncType type, Panel* panel, IncMode_GetPanelValue getPanelValue) {
-   return IncMode_find(&this->modes[type], panel, getPanelValue, -1);
-}
-
 bool IncSet_handleKey(IncSet* this, int ch, Panel* panel, IncMode_GetPanelValue getPanelValue, Vector* lines) {
    if (ch == ERR)
       return true;
@@ -149,11 +141,11 @@ bool IncSet_handleKey(IncSet* this, int ch, Panel* panel, IncMode_GetPanelValue 
    int size = Panel_size(panel);
    bool filterChanged = false;
    bool doSearch = true;
-   if (ch == KEY_F(3)) {
+   if (ch == KEY_F(3) || ch == KEY_F(15)) {
       if (size == 0)
          return true;
 
-      IncMode_find(mode, panel, getPanelValue, 1);
+      IncMode_find(mode, panel, getPanelValue, ch == KEY_F(3) ? 1 : -1);
       doSearch = false;
    } else if (0 < ch && ch < 255 && isprint((unsigned char)ch)) {
       if (mode->index < INCMODE_MAX) {
@@ -167,7 +159,7 @@ bool IncSet_handleKey(IncSet* this, int ch, Panel* panel, IncMode_GetPanelValue 
             }
          }
       }
-   } else if ((ch == KEY_BACKSPACE || ch == 127)) {
+   } else if (ch == KEY_BACKSPACE || ch == 127) {
       if (mode->index > 0) {
          mode->index--;
          mode->buffer[mode->index] = 0;
@@ -182,7 +174,7 @@ bool IncSet_handleKey(IncSet* this, int ch, Panel* panel, IncMode_GetPanelValue 
          doSearch = false;
       }
    } else if (ch == KEY_RESIZE) {
-      Panel_resize(panel, COLS, LINES - panel->y - 1);
+      doSearch = (mode->index > 0);
    } else {
       if (mode->isFilter) {
          filterChanged = true;

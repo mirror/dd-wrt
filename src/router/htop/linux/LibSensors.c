@@ -23,13 +23,15 @@ static void* dlopenHandle = NULL;
 
 int LibSensors_init(FILE* input) {
    if (!dlopenHandle) {
+      /* Find the unversioned libsensors.so (symlink) and prefer that, but Debian has .so.5 and Fedora .so.4 without
+         matching symlinks (unless people install the -dev packages) */
       dlopenHandle = dlopen("libsensors.so", RTLD_LAZY);
-      if (!dlopenHandle) {
-         /* Debian contains no unversioned .so in libsensors5, only in the -dev package, so work around that: */
+      if (!dlopenHandle)
          dlopenHandle = dlopen("libsensors.so.5", RTLD_LAZY);
-         if (!dlopenHandle)
-            goto dlfailure;
-      }
+      if (!dlopenHandle)
+         dlopenHandle = dlopen("libsensors.so.4", RTLD_LAZY);
+      if (!dlopenHandle)
+         goto dlfailure;
 
       /* Clear any errors */
       dlerror();
@@ -84,7 +86,10 @@ void LibSensors_getCPUTemperatures(CPUData* cpus, unsigned int cpuCount) {
    for (const sensors_chip_name *chip = sym_sensors_get_detected_chips(NULL, &n); chip; chip = sym_sensors_get_detected_chips(NULL, &n)) {
       char buffer[32];
       sym_sensors_snprintf_chip_name(buffer, sizeof(buffer), chip);
-      if (!String_startsWith(buffer, "coretemp") && !String_startsWith(buffer, "cpu_thermal"))
+      if (!String_startsWith(buffer, "coretemp") &&
+          !String_startsWith(buffer, "cpu_thermal") &&
+          !String_startsWith(buffer, "k10temp") &&
+          !String_startsWith(buffer, "zenpower"))
          continue;
 
       int m = 0;
@@ -101,6 +106,8 @@ void LibSensors_getCPUTemperatures(CPUData* cpus, unsigned int cpuCount) {
             tempId = 0;
          } else if (String_startsWith(label, "temp")) {
             /* Raspberry Pi has only temp1 */
+            tempId = 0;
+         } else if (String_startsWith(label, "Tdie")) {
             tempId = 0;
          } else if (String_startsWith(label, "Core ")) {
             tempId = 1 + atoi(label + strlen("Core "));

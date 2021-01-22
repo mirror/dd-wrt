@@ -103,7 +103,7 @@ static void LinuxProcessList_initTtyDrivers(LinuxProcessList* this) {
 
    int numDrivers = 0;
    int allocd = 10;
-   ttyDrivers = xMalloc(sizeof(TtyDriver) * allocd);
+   ttyDrivers = xMallocArray(allocd, sizeof(TtyDriver));
    char* at = buf;
    while (*at != '\0') {
       at = strchr(at, ' ');    // skip first token
@@ -137,7 +137,7 @@ static void LinuxProcessList_initTtyDrivers(LinuxProcessList* this) {
       numDrivers++;
       if (numDrivers == allocd) {
          allocd += 10;
-         ttyDrivers = xRealloc(ttyDrivers, sizeof(TtyDriver) * allocd);
+         ttyDrivers = xReallocArray(ttyDrivers, allocd, sizeof(TtyDriver));
       }
    }
    numDrivers++;
@@ -208,10 +208,6 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidMatchList, ui
 
    ProcessList_init(pl, Class(LinuxProcess), usersTable, pidMatchList, userId);
    LinuxProcessList_initTtyDrivers(this);
-
-   #ifdef HAVE_DELAYACCT
-   LinuxProcessList_initNetlinkSocket(this);
-   #endif
 
    // Initialize page size
    pageSize = sysconf(_SC_PAGESIZE);
@@ -489,7 +485,7 @@ static inline uint64_t fast_strtoull_hex(char **str, int maxlen) {
    return result;
 }
 
-static void LinuxProcessList_calcLibSize_helper(ATTR_UNUSED hkey_t key, void* value, void* data) {
+static void LinuxProcessList_calcLibSize_helper(ATTR_UNUSED ht_key_t key, void* value, void* data) {
    if (!data)
       return;
 
@@ -956,12 +952,19 @@ static int handleNetlinkMsg(struct nl_msg* nlmsg, void* linuxProcess) {
 static void LinuxProcessList_readDelayAcctData(LinuxProcessList* this, LinuxProcess* process) {
    struct nl_msg* msg;
 
+   if (!this->netlink_socket) {
+       LinuxProcessList_initNetlinkSocket(this);
+       if (!this->netlink_socket) {
+          goto delayacct_failure;
+       }
+   }
+
    if (nl_socket_modify_cb(this->netlink_socket, NL_CB_VALID, NL_CB_CUSTOM, handleNetlinkMsg, process) < 0) {
-      return;
+      goto delayacct_failure;
    }
 
    if (! (msg = nlmsg_alloc())) {
-      return;
+      goto delayacct_failure;
    }
 
    if (! genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, this->netlink_family, 0, NLM_F_REQUEST, TASKSTATS_CMD_GET, TASKSTATS_VERSION)) {
@@ -973,15 +976,19 @@ static void LinuxProcessList_readDelayAcctData(LinuxProcessList* this, LinuxProc
    }
 
    if (nl_send_sync(this->netlink_socket, msg) < 0) {
-      process->swapin_delay_percent = NAN;
-      process->blkio_delay_percent = NAN;
-      process->cpu_delay_percent = NAN;
-      return;
+      goto delayacct_failure;
    }
 
    if (nl_recvmsgs_default(this->netlink_socket) < 0) {
-      return;
+      goto delayacct_failure;
    }
+
+   return;
+
+delayacct_failure:
+   process->swapin_delay_percent = NAN;
+   process->blkio_delay_percent = NAN;
+   process->cpu_delay_percent = NAN;
 }
 
 #endif
@@ -1420,7 +1427,9 @@ static bool LinuxProcessList_recurseProcTree(LinuxProcessList* this, openat_arg_
       }
 
       #ifdef HAVE_DELAYACCT
-      LinuxProcessList_readDelayAcctData(this, lp);
+      if (settings->flags & PROCESS_FLAG_LINUX_DELAYACCT) {
+         LinuxProcessList_readDelayAcctData(this, lp);
+      }
       #endif
 
       if (settings->flags & PROCESS_FLAG_LINUX_CGROUP) {
@@ -1794,7 +1803,9 @@ static void scanCPUFreqencyFromCPUinfo(LinuxProcessList* this) {
          continue;
       } else if (
          (sscanf(buffer, "cpu MHz : %lf", &frequency) == 1) ||
-         (sscanf(buffer, "cpu MHz: %lf", &frequency) == 1)
+         (sscanf(buffer, "cpu MHz: %lf", &frequency) == 1) ||
+         (sscanf(buffer, "clock : %lfMHz", &frequency) == 1) ||
+         (sscanf(buffer, "clock: %lfMHz", &frequency) == 1)
       ) {
          if (cpuid < 0 || cpuid > (cpus - 1)) {
             continue;

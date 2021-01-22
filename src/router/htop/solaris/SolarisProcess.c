@@ -18,17 +18,6 @@ in the source distribution for its full text.
 #include <sys/syscall.h>
 
 
-const ProcessClass SolarisProcess_class = {
-   .super = {
-      .extends = Class(Process),
-      .display = Process_display,
-      .delete = Process_delete,
-      .compare = Process_compare
-   },
-   .writeField = SolarisProcess_writeField,
-   .compareByKey = SolarisProcess_compareByKey
-};
-
 const ProcessFieldData Process_fields[LAST_PROCESSFIELD] = {
    [0] = { .name = "", .title = NULL, .description = NULL, .flags = 0, },
    [PID] = { .name = "PID", .title = "PID", .description = "Process/thread ID", .flags = 0, .pidColumn = true, },
@@ -78,7 +67,7 @@ void Process_delete(Object* cast) {
    free(sp);
 }
 
-void SolarisProcess_writeField(const Process* this, RichString* str, ProcessField field) {
+static void SolarisProcess_writeField(const Process* this, RichString* str, ProcessField field) {
    const SolarisProcess* sp = (const SolarisProcess*) this;
    char buffer[256]; buffer[255] = '\0';
    int attr = CRT_colors[DEFAULT_COLOR];
@@ -90,7 +79,7 @@ void SolarisProcess_writeField(const Process* this, RichString* str, ProcessFiel
    case TASKID: xSnprintf(buffer, n, "%*d ", Process_pidDigits, sp->taskid); break;
    case POOLID: xSnprintf(buffer, n, "%*d ", Process_pidDigits, sp->poolid); break;
    case CONTID: xSnprintf(buffer, n, "%*d ", Process_pidDigits, sp->contid); break;
-   case ZONE: xSnprintf(buffer, n, "%-*s ", ZONENAME_MAX/4, sp->zname); break;
+   case ZONE: Process_printLeftAlignedField(str, attr, sp->zname ? sp->zname : "global", ZONENAME_MAX/4); return;
    case PID: xSnprintf(buffer, n, "%*d ", Process_pidDigits, sp->realpid); break;
    case PPID: xSnprintf(buffer, n, "%*d ", Process_pidDigits, sp->realppid); break;
    case LWPID: xSnprintf(buffer, n, "%*d ", Process_pidDigits, sp->lwpid); break;
@@ -101,7 +90,7 @@ void SolarisProcess_writeField(const Process* this, RichString* str, ProcessFiel
    RichString_appendWide(str, attr, buffer);
 }
 
-long SolarisProcess_compareByKey(const void* v1, const void* v2, ProcessField key) {
+static int SolarisProcess_compareByKey(const Process* v1, const Process* v2, ProcessField key) {
    const SolarisProcess* p1 = (const SolarisProcess*)v1;
    const SolarisProcess* p2 = (const SolarisProcess*)v2;
 
@@ -140,3 +129,14 @@ bool Process_isThread(const Process* this) {
       return 0;
    }
 }
+
+const ProcessClass SolarisProcess_class = {
+   .super = {
+      .extends = Class(Process),
+      .display = Process_display,
+      .delete = Process_delete,
+      .compare = Process_compare
+   },
+   .writeField = SolarisProcess_writeField,
+   .compareByKey = SolarisProcess_compareByKey
+};

@@ -49,8 +49,8 @@ static void printHelpFlag(void) {
          "-H --highlight-changes[=DELAY]  Highlight new and old processes\n"
          "-M --no-mouse                   Disable the mouse\n"
          "-p --pid=PID[,PID,PID...]       Show only the given PIDs\n"
-         "-s --sort-key=COLUMN            Sort by COLUMN (try --sort-key=help for a list)\n"
-         "-t --tree                       Show the tree view by default\n"
+         "-s --sort-key=COLUMN            Sort by COLUMN in list view (try --sort-key=help for a list)\n"
+         "-t --tree                       Show the tree view (can be combined with -s)\n"
          "-u --user[=USERNAME]            Show only processes for a given user (or $USER)\n"
          "-U --no-unicode                 Do not use unicode but plain ASCII\n"
          "-V --version                    Print version info\n"
@@ -93,7 +93,7 @@ static CommandLineSettings parseArguments(int argc, char** argv) {
       .highlightDelaySecs = -1,
    };
 
-   static struct option long_opts[] =
+   const struct option long_opts[] =
    {
       {"help",       no_argument,         0, 'h'},
       {"version",    no_argument,         0, 'V'},
@@ -204,6 +204,7 @@ static CommandLineSettings parseArguments(int argc, char** argv) {
          }
          case 'F': {
             assert(optarg);
+            free(flags.commFilter);
             flags.commFilter = xStrdup(optarg);
 
             break;
@@ -312,8 +313,6 @@ int main(int argc, char** argv) {
    ProcessList_setPanel(pl, (Panel*) panel);
 
    MainPanel_updateTreeFunctions(panel, settings->treeView);
-
-   ProcessList_printHeader(pl, Panel_getHeader((Panel*)panel));
 
    State state = {
       .settings = settings,
