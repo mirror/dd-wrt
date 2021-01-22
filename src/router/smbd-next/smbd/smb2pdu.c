@@ -3007,6 +3007,14 @@ int smb2_open(struct ksmbd_work *work)
 		need_truncate = 1;
 	}
 
+	/* fp should be searchable through ksmbd_inode.m_fp_list
+	 * after daccess, saccess, attrib_only, and stream are
+	 * initialized.
+	 */
+	write_lock(&fp->f_ci->m_lock);
+	list_add(&fp->node, &fp->f_ci->m_fp_list);
+	write_unlock(&fp->f_ci->m_lock);
+
 	generic_fillattr(d_inode(path.dentry), &stat);
 
 	/* Check delete pending among previous fp before oplock break */
@@ -5328,6 +5336,9 @@ int smb2_close(struct ksmbd_work *work)
 	struct smb2_close_rsp *rsp;
 	struct smb2_close_rsp *rsp_org;
 	struct ksmbd_conn *conn = work->conn;
+	struct ksmbd_file *fp;
+	struct inode *inode;
+	u64 time;
 	int err = 0;
 
 	rsp_org = RESPONSE_BUF(work);
@@ -5377,21 +5388,42 @@ int smb2_close(struct ksmbd_work *work)
 	}
 	ksmbd_debug(SMB, "volatile_id = %u\n", volatile_id);
 
-	err = ksmbd_close_fd(work, volatile_id);
-	if (err)
-		goto out;
-
 	rsp->StructureSize = cpu_to_le16(60);
-	rsp->Flags = 0;
 	rsp->Reserved = 0;
-	rsp->CreationTime = 0;
-	rsp->LastAccessTime = 0;
-	rsp->LastWriteTime = 0;
-	rsp->ChangeTime = 0;
-	rsp->AllocationSize = 0;
-	rsp->EndOfFile = 0;
-	rsp->Attributes = 0;
 
+	if (req->Flags == SMB2_CLOSE_FLAG_POSTQUERY_ATTRIB) {
+		fp = ksmbd_lookup_fd_fast(work, volatile_id);
+		if (!fp) {
+			err = -ENOENT;
+			goto out;
+		}
+
+		inode = FP_INODE(fp);
+		rsp->Flags = SMB2_CLOSE_FLAG_POSTQUERY_ATTRIB;
+		rsp->AllocationSize = S_ISDIR(inode->i_mode) ? 0 :
+			cpu_to_le64(inode->i_blocks << 9);
+		rsp->EndOfFile = cpu_to_le64(inode->i_size);
+		rsp->Attributes = fp->f_ci->m_fattr;
+		rsp->CreationTime = cpu_to_le64(fp->create_time);
+		time = ksmbd_UnixTimeToNT(inode->i_atime);
+		rsp->LastAccessTime = cpu_to_le64(time);
+		time = ksmbd_UnixTimeToNT(inode->i_mtime);
+		rsp->LastWriteTime = cpu_to_le64(time);
+		time = ksmbd_UnixTimeToNT(inode->i_ctime);
+		rsp->ChangeTime = cpu_to_le64(time);
+		ksmbd_fd_put(work, fp);
+	} else {
+		rsp->Flags = 0;
+		rsp->AllocationSize = 0;
+		rsp->EndOfFile = 0;
+		rsp->Attributes = 0;
+		rsp->CreationTime = 0;
+		rsp->LastAccessTime = 0;
+		rsp->LastWriteTime = 0;
+		rsp->ChangeTime = 0;
+	}
+
+	err = ksmbd_close_fd(work, volatile_id);
 out:
 	if (err) {
 		if (rsp->hdr.Status == 0)
@@ -7833,7 +7865,7 @@ static void smb20_oplock_break_ack(struct ksmbd_work *work)
 	}
 
 	if (opinfo->op_state == OPLOCK_STATE_NONE) {
-		ksmbd_err("unexpected oplock state 0x%x\n", opinfo->op_state);
+		ksmbd_debug(SMB, "unexpected oplock state 0x%x\n", opinfo->op_state);
 		rsp->hdr.Status = STATUS_UNSUCCESSFUL;
 		goto err_out;
 	}

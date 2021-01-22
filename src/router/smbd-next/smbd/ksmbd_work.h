@@ -48,7 +48,6 @@ struct ksmbd_work {
 	unsigned int                    compound_sid;
 
 	const struct cred		*saved_cred;
-	int				saved_cred_level;
 
 	/* Number of granted credits */
 	unsigned int			credits_granted;

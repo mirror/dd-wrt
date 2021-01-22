@@ -669,9 +669,15 @@ static void wait_for_break_ack(struct oplock_info *opinfo)
 	}
 }
 
-static int oplock_break_pending(struct oplock_info *opinfo)
+static void wake_up_oplock_break(struct oplock_info *opinfo)
+	clear_bit_unlock(0, &opinfo->pending_break);
+	/* memory barrier is needed for wake_up_bit() */
+	smp_mb__after_atomic();
+	wake_up_bit(&opinfo->pending_break, 0);
+}
+ 
+static int oplock_break_pending(struct oplock_info *opinfo, int req_op_level)
 {
-	int prev_op_level = opinfo->level;
 	int ret = 0;
 
 	while  (test_and_set_bit(0, &opinfo->pending_break)) {
@@ -695,8 +701,13 @@ static int oplock_break_pending(struct oplock_info *opinfo)
 
 		if (opinfo->op_state == OPLOCK_CLOSING)
 			return -ENOENT;
-		else if (!opinfo->is_lease && opinfo->level <= prev_op_level)
+		else if (!opinfo->is_lease && opinfo->level <= req_op_level)
 			return 1;
+	}
+
+	if (!opinfo->is_lease && opinfo->level <= req_op_level) {
+		wake_up_oplock_break(opinfo);
+		return 1;
 	}
 	return 0;
 }
@@ -704,13 +715,6 @@ static int oplock_break_pending(struct oplock_info *opinfo)
 #ifndef smp_mb__after_atomic
 #define smp_mb__after_atomic smp_mb__after_clear_bit
 #endif
-
-static void wake_up_oplock_break(struct oplock_info *opinfo)
-{
-	clear_bit_unlock(0, &opinfo->pending_break);
-	smp_mb__after_atomic();
-	wake_up_bit(&opinfo->pending_break, 0);
-}
 
 static inline int allocate_oplock_break_buf(struct ksmbd_work *work)
 {
@@ -1106,7 +1110,7 @@ static int oplock_break(struct oplock_info *brk_opinfo, int req_op_level)
 
 		atomic_inc(&brk_opinfo->breaking_cnt);
 
-		err = oplock_break_pending(brk_opinfo);
+		err = oplock_break_pending(brk_opinfo, req_op_level);
 		if (err)
 			return err < 0 ? err : 0;
 
@@ -1140,7 +1144,7 @@ static int oplock_break(struct oplock_info *brk_opinfo, int req_op_level)
 		else
 			atomic_dec(&brk_opinfo->breaking_cnt);
 	} else {
-		err = oplock_break_pending(brk_opinfo);
+		err = oplock_break_pending(brk_opinfo, req_op_level);
 		if (err)
 			return err < 0 ? err : 0;
 
@@ -1420,7 +1424,7 @@ int smb_grant_oplock(struct ksmbd_work *work,
 	}
 
 	list_add(&work->interim_entry, &prev_opinfo->interim_list);
-	err = oplock_break(prev_opinfo, req_op_level);
+	err = oplock_break(prev_opinfo, SMB2_OPLOCK_LEVEL_II);
 	opinfo_put(prev_opinfo);
 	if (err == -ENOENT)
 		goto set_lev;
