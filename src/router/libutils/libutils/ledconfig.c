@@ -556,6 +556,8 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio_disabled = 0x11f1;
 		cfg->usb_gpio = 0x11f6;
 		cfg->usb_gpio1 = 0x11f7;
+		cfg->sec0_gpio = 0x0011;
+		cfg->wlan_gpio = 0x1005;
 		break;
 	case ROUTER_DIR882:
 		cfg->connected_gpio = 0x1003;
