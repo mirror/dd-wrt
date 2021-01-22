@@ -2888,7 +2888,6 @@ int smb_read_andx(struct ksmbd_work *work)
 
 	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF) {
 		work->aux_payload_buf = ksmbd_find_buffer(count);
-		work->set_read_buf = true;
 	} else
 		work->aux_payload_buf = ksmbd_alloc_response(count);
 	if (!work->aux_payload_buf) {
