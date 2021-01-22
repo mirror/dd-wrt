@@ -26,7 +26,7 @@ InfoScreen* InfoScreen_init(InfoScreen* this, const Process* process, FunctionBa
    if (!bar) {
       bar = FunctionBar_new(InfoScreenFunctions, InfoScreenKeys, InfoScreenEvents);
    }
-   this->display = Panel_new(0, 1, COLS, height, false, Class(ListItem), bar);
+   this->display = Panel_new(0, 1, COLS, height, Class(ListItem), false, bar);
    this->inc = IncSet_new(bar);
    this->lines = Vector_new(this->display->items->type, true, DEFAULT_SIZE);
    Panel_setHeader(this->display, panelHeader);
@@ -54,9 +54,9 @@ void InfoScreen_drawTitled(InfoScreen* this, const char* fmt, ...) {
 
    attrset(CRT_colors[METER_TEXT]);
    mvhline(0, 0, ' ', COLS);
-   mvwprintw(stdscr, 0, 0, title);
+   mvaddstr(0, 0, title);
    attrset(CRT_colors[DEFAULT_COLOR]);
-   Panel_draw(this->display, true, true, true);
+   Panel_draw(this->display, true, true, true, false);
 
    IncSet_drawBar(this->inc);
 }
@@ -89,7 +89,7 @@ void InfoScreen_run(InfoScreen* this) {
    bool looping = true;
    while (looping) {
 
-      Panel_draw(panel, false, true, true);
+      Panel_draw(panel, false, true, true, false);
       IncSet_drawBar(this->inc);
 
       if (this->inc->active) {
