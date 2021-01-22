@@ -260,7 +260,7 @@ script:
  - sudo ./check generic/406
  - sudo ./check generic/412
  - sudo ./check generic/420
- - sudo ./check generic/422
+# - sudo ./check generic/422
  - sudo ./check generic/432
  - sudo ./check generic/433
  - sudo ./check generic/436

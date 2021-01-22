@@ -586,7 +586,7 @@ static int __open_id(struct ksmbd_file_table *ft,
 
 	idr_preload(GFP_KERNEL);
 	write_lock(&ft->lock);
-	ret = idr_alloc(ft->idr, fp, 0, INT_MAX, GFP_NOWAIT);
+	ret = idr_alloc_cyclic(ft->idr, fp, 0, INT_MAX, GFP_NOWAIT);
 	if (ret >= 0) {
 		id = ret;
 		ret = 0;
@@ -643,10 +643,6 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work,
 		ksmbd_free_file_struct(fp);
 		return ERR_PTR(ret);
 	}
-
-	write_lock(&fp->f_ci->m_lock);
-	list_add(&fp->node, &fp->f_ci->m_fp_list);
-	write_unlock(&fp->f_ci->m_lock);
 
 	atomic_inc(&work->conn->stats.open_files_count);
 	return fp;
