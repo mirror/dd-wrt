@@ -153,17 +153,17 @@ void __init mt7621_memory_detect(void)
 		if (!memcmp(dm, dm + size, sizeof(detect_magic)))
 			break;
 	}
-
-	if ((size == 256 * SZ_1M) &&
+	
+/*	if ((size == 256 * SZ_1M) &&
 	    (CPHYSADDR(dm + size) < MT7621_LOWMEM_MAX_SIZE) &&
 	    memcmp(dm, dm + size, sizeof(detect_magic))) {
 		add_memory_region(MT7621_LOWMEM_BASE, MT7621_LOWMEM_MAX_SIZE,
 				  BOOT_MEM_RAM);
 		add_memory_region(MT7621_HIGHMEM_BASE, MT7621_HIGHMEM_SIZE,
 				  BOOT_MEM_RAM);
-	} else {
+	} else {*/
 		add_memory_region(MT7621_LOWMEM_BASE, size, BOOT_MEM_RAM);
-	}
+//	}
 }
 
 void __init ralink_clk_init(void)
