@@ -143,7 +143,6 @@ while(!pthread_mutex_trylock(&mutex_unl)) { \
 
 #define unlock() pthread_mutex_unlock(&mutex_unl)
 
-
 #else
 #define lock()
 #define unlock()
@@ -275,7 +274,7 @@ int dd_timer_connect(timer_t timerid,	/* timer ID */
 		     int arg	/* user argument */
     )
 {
-	struct event *event =(struct event *)timerid;
+	struct event *event = (struct event *)timerid;
 
 	assert(routine != NULL);
 	event->func = routine;
@@ -530,7 +529,7 @@ static void alarm_handler(int i)
 			junk = end;
 		TIMERDBG("expected %d ms actual %d ms", event->expected_ms, ((end - event->start) / ((uclock_t) UCLOCKS_PER_SEC / 1000)));
 #endif
-		
+
 		unlock();
 		/* call the event callback function */
 		(*(event->func)) ((timer_t) event, (int)event->arg);
