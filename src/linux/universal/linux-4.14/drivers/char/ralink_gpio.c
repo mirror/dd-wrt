@@ -860,6 +860,7 @@ int __init ralink_gpio_init(void)
 #endif
 
 	//config these pins to gpio mode
+/*
 	gpiomode = le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
 #if !defined (CONFIG_RALINK_RT2880)
 	gpiomode &= ~0x1C;  //clear bit[2:4]UARTF_SHARE_MODE
@@ -872,13 +873,14 @@ int __init ralink_gpio_init(void)
 
 	//enable gpio interrupt
 	*(volatile u32 *)(RALINK_REG_INTENA) = cpu_to_le32(RALINK_INTCTL_PIO);
+*/
 	for (i = 0; i < RALINK_GPIO_NUMBER; i++) {
 		ralink_gpio_info[i].irq = i;
 		ralink_gpio_info[i].pid = 0;
 	}
 
 #ifdef CONFIG_RALINK_GPIO_LED
-	ralink_gpio_led_init_timer();
+//	ralink_gpio_led_init_timer();
 #endif
 #ifdef CONFIG_MTD_ESR6650
 	ralink_gpio_control(3,1); /* RX_SW pill high */
@@ -899,9 +901,9 @@ void __exit ralink_gpio_exit(void)
 #endif
 
 	//config these pins to normal mode
-	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_DFT;
+//	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_DFT;
 	//disable gpio interrupt
-	*(volatile u32 *)(RALINK_REG_INTDIS) = cpu_to_le32(RALINK_INTCTL_PIO);
+//	*(volatile u32 *)(RALINK_REG_INTDIS) = cpu_to_le32(RALINK_INTCTL_PIO);
 #ifdef CONFIG_RALINK_GPIO_LED
 	del_timer(&ralink_gpio_led_timer);
 #endif
