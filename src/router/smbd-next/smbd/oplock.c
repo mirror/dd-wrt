@@ -670,6 +670,7 @@ static void wait_for_break_ack(struct oplock_info *opinfo)
 }
 
 static void wake_up_oplock_break(struct oplock_info *opinfo)
+{
 	clear_bit_unlock(0, &opinfo->pending_break);
 	/* memory barrier is needed for wake_up_bit() */
 	smp_mb__after_atomic();
@@ -689,12 +690,6 @@ static int oplock_break_pending(struct oplock_info *opinfo, int req_op_level)
 		ret = wait_on_bit_timeout(&opinfo->pending_break, 0,
 				TASK_UNINTERRUPTIBLE, 60*HZ);
 #endif
-
-		/* Oplock break timeout */
-		if (ret && ret != -EINTR) {
-			ksmbd_err("oplock break pending timeout !!!!!, opinfo level : 0x%x, prev_op_level 0x%x\n", opinfo->level,prev_op_level);
-			return 1;
-		}
 
 		/* Not immediately break to none. */
 		opinfo->open_trunc = 0;
