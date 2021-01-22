@@ -71,7 +71,7 @@ void start_jffs2(void)
 			itworked = eval("erase", rwpart);
 			itworked = eval("flash_erase", dev, "0", "0");
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
-#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X)
+#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
 			itworked = eval("ubidetach", "-p", dev);
 			itworked = eval("mtd", "erase", dev);
 			itworked = eval("flash_erase", dev, "0", "0");
@@ -82,7 +82,7 @@ void start_jffs2(void)
 			itworked = eval("flash_erase", dev, "0", "0");
 #endif
 
-#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
+#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
 			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL, NULL);
 #else
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
@@ -95,7 +95,7 @@ void start_jffs2(void)
 			}
 
 		} else {
-#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
+#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
 			sprintf(dev, "/dev/mtd%d", mtd);
 			itworked = eval("ubiattach", "-p", dev);
 			itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL, NULL);

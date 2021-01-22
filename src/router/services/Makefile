@@ -171,6 +171,9 @@ endif
 ifeq ($(CONFIG_R9000),y)
 CFLAGS_EXTRA += -DHAVE_R9000
 endif
+ifeq ($(CONFIG_R6800),y)
+CFLAGS_EXTRA += -DHAVE_R6800
+endif
 ifeq ($(CONFIG_DNSSEC),y)
 CFLAGS_EXTRA += -DHAVE_DNSSEC
 endif
