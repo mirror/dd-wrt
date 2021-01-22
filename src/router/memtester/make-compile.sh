@@ -1,1 +1,1 @@
-echo exec "$CC" -c '${1+"$@"}'
+echo exec "$CC" -c '-DNEED_PRINTF ${1+"$@"}'
