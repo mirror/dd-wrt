@@ -89,7 +89,7 @@ export BASEOPT:=-Os
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
-export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=1004kc -fno-caller-saves -mno-branch-likely -fno-plt
+export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=1004kc -mllsc -fno-caller-saves -mno-branch-likely -fno-plt -fcommon
 endif
 ifeq ($(ARCH),arm)
 export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float
@@ -234,6 +234,10 @@ ifeq ($(CONFIG_DIR860),y)
 endif
 ifeq ($(CONFIG_DIR882),y)
 	cp $(LINUXDIR)/.config_mt7621_dir882 $(LINUXDIR)/.config
+	cp $(LINUXDIR)/drivers/net/wireless/Kconfig.dir882 $(LINUXDIR)/drivers/net/wireless/Kconfig
+endif
+ifeq ($(CONFIG_R6800),y)
+	cp $(LINUXDIR)/.config_mt7621_r6800 $(LINUXDIR)/.config
 	cp $(LINUXDIR)/drivers/net/wireless/Kconfig.dir882 $(LINUXDIR)/drivers/net/wireless/Kconfig
 endif
 	$(kernelfeatures)
@@ -398,6 +402,10 @@ endif
 endif
 endif
 endif
+ifeq ($(CONFIG_R6800),y)
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include -undef -D__DTS__ -o $(LINUXDIR)/dts/NETGEAR-R6800.dtb.tmp $(LINUXDIR)/dts/NETGEAR-R6800.dts
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/NETGEAR-R6800.dtb.tmp
+endif
 	patch-dtb $(LINUXDIR)/vmlinux-mt7620 $(LINUXDIR)/dts/MT7620a.dtb
 #	$(call CompressLzma,$(KDIR)/vmlinux-$(1)$(3),$(KDIR)/vmlinux-$(1)$(3).bin.lzma)
 endif
@@ -407,6 +415,40 @@ endif
 
 include common.mk
 
+r6800:
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-mt7620 $(ARCH)-uclibc/vmlinux.bin
+	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
+	make -C lzma-loader/mt7621 clean
+	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux.lzma
+	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-mt7621.uimage
+	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6800.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage >> $(ARCH)-uclibc/r6800.img
+	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=6144k count=1 conv=sync
+	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
+	cp tools/r6800/ubinize.cfg $(ARCH)-uclibc
+	cp $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/root.squashfs
+	cd $(ARCH)-uclibc && ../tools/r6800/ubinize -v -m 2048 -p 128KiB -E 5 -o root.squashfs.ubi ubinize.cfg && cd ..
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6800.img
+	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128k conv=sync
+	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800.img -b BZV -r A001 -v 0x0062 -f
+	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128 conv=sync
+	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
+	mv $(ARCH)-uclibc/r6800.img $(ARCH)-uclibc/r6800.bin
+	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6800.img $(ARCH)-uclibc/r6800.bin
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800.img -b BZV -r A001 -v 0x0062
+
+	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage >> $(ARCH)-uclibc/r6800-webflash.img
+	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=4096k count=1 conv=sync
+	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6800-webflash.img
+	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128k conv=sync
+	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800-webflash.img -b BZV -r A001 -v 0x0062 -f
+	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128 conv=sync
+	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6800-webflash.bin mipsel-uclibc/r6800-webflash.img
+ 	
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
 	install -d $(TARGETDIR)
@@ -558,7 +600,42 @@ endif
 ifeq ($(CONFIG_MT7620),y)
 	dd if=mipsel-uclibc/root-mt7620.uimage of=mipsel-uclibc/aligned-mt7620.uimage bs=4096 conv=sync
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7620.uimage
+ifeq ($(CONFIG_R6800),y)
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-mt7620 $(ARCH)-uclibc/vmlinux.bin
+	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
+	make -C lzma-loader/mt7621 clean
+	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux.lzma
+	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-mt7621.uimage
+	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6800.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage >> $(ARCH)-uclibc/r6800.img
+	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=6144k count=1 conv=sync
+	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
+	cp tools/r6800/ubinize.cfg $(ARCH)-uclibc
+	cp $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/root.squashfs
+	cd $(ARCH)-uclibc && ../tools/r6800/ubinize -v -m 2048 -p 128KiB -E 5 -o root.squashfs.ubi ubinize.cfg && cd ..
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6800.img
+	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128k conv=sync
+	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800.img -b BZV -r A001 -v 0x0062 -f
+	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128 conv=sync
+	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
+	mv $(ARCH)-uclibc/r6800.img $(ARCH)-uclibc/r6800.bin
+	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6800.img $(ARCH)-uclibc/r6800.bin
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800.img -b BZV -r A001 -v 0x0062
 
+
+
+	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage >> $(ARCH)-uclibc/r6800-webflash.img
+	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=4096k count=1 conv=sync
+	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6800-webflash.img
+	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128k conv=sync
+	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800-webflash.img -b BZV -r A001 -v 0x0062 -f
+	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128 conv=sync
+	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6800-webflash.bin mipsel-uclibc/r6800-webflash.img
+endif
 
 ifeq ($(CONFIG_DIR860),y)
 	lzma e $(TOP)/$(ARCH)-uclibc/vmlinus-mt7620 $(TOP)/$(ARCH)-uclibc/vmlinus-mt7620.lzma
