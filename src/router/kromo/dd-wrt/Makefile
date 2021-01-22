@@ -15,7 +15,7 @@ installwebfiles:
 	cp -a style $(INSTALLDIR)/www
 	
 ifeq ($(CONFIG_DIST),"micro")
-	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	rm -f $(INSTALLDIR)/www/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/dd-logo.png
 	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
@@ -40,7 +40,7 @@ ifneq ($(CONFIG_IPV6),y)
 endif
 
 ifeq ($(CONFIG_DIST),"micro-special")
-	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	rm -f $(INSTALLDIR)/www/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/dd-logo.png
 	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
@@ -246,7 +246,7 @@ ifeq ($(CONFIG_CORENET),y)
 	cp corenet/*.asp $(INSTALLDIR)/www/
 	cp corenet/common.js $(INSTALLDIR)/www
 #	cp ../bisi/*.asp $(INSTALLDIR)/www
-	cp -f corenet/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f corenet/favicon.ico $(INSTALLDIR)/www/favicon.ico
 endif
 
 ifdef ($(CONFIG_SEN),y)
@@ -424,7 +424,7 @@ ifeq ($(CONFIG_WIKINGS),y)
 	cp wikings/About.htm $(INSTALLDIR)/www
 	cp wikings/*.asp $(INSTALLDIR)/www
 	rm -f $(INSTALLDIR)/www/About.htm
-	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	rm -f $(INSTALLDIR)/www/favicon.ico
 endif
 ifeq ($(CONFIG_ESPOD),y)
 	mkdir $(INSTALLDIR)/www/style/espod
@@ -454,7 +454,7 @@ ifeq ($(CONFIG_NEXTMEDIA),y)
 	cp nextmedia/style.css $(INSTALLDIR)/www/style/nextmedia
 	cp nextmedia/images/* $(INSTALLDIR)/www/images
 	cp nextmedia/help/* $(INSTALLDIR)/www/help
-	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	rm -f $(INSTALLDIR)/www/favicon.ico
 endif
 ifeq ($(CONFIG_ALLNETWRT),y)
 	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png
@@ -478,7 +478,7 @@ ifeq ($(CONFIG_IMMERSIVE),y)
 	cp immersive/About.htm $(INSTALLDIR)/www
 	cp immersive/Status_Router.asp $(INSTALLDIR)/www
 	cp immersive/help/* $(INSTALLDIR)/www/help
-	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	rm -f $(INSTALLDIR)/www/favicon.ico
 endif
 ifeq ($(CONFIG_HDWIFI),y)
 	mkdir $(INSTALLDIR)/www/style/hdwifi
@@ -487,7 +487,7 @@ ifeq ($(CONFIG_HDWIFI),y)
 	cp hdwifi/About.htm $(INSTALLDIR)/www
 #	cp hdwifi/Status_Router.asp $(INSTALLDIR)/www
 #	cp hdwifi/help/* $(INSTALLDIR)/www/help
-#	rm -f $(INSTALLDIR)/www/images/favicon.ico
+#	rm -f $(INSTALLDIR)/www/favicon.ico
 endif
 ifeq ($(CONFIG_ONNET),y)
 	mkdir $(INSTALLDIR)/www/style/onnet
@@ -505,7 +505,7 @@ ifeq ($(CONFIG_ONNET),y)
 	cp onnet/About.htm $(INSTALLDIR)/www
 	cp onnet/help/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
   endif
-	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	rm -f $(INSTALLDIR)/www/favicon.ico
 	ls -l $(INSTALLDIR)/www/help/
 #	cp -fa onnet/files/* $(INSTALLDIR) || true
 
@@ -580,7 +580,7 @@ ifeq ($(CONFIG_MAKSAT_CORAL_ELEGANT),y)
 endif
 ifeq ($(CONFIG_TRIMAX),y)
 	cp -f trimax/logo.png $(INSTALLDIR)/www/style/logo.png
-	cp -f trimax/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f trimax/favicon.ico $(INSTALLDIR)/www/favicon.ico
 endif
 ifeq ($(CONFIG_CNC),y)
 	cp -f cnc/common.js $(INSTALLDIR)/www/common.js
@@ -593,7 +593,7 @@ ifeq ($(CONFIG_MAKSAT),y)
 	cp -f maksat/blank/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f maksat/blank/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f maksat/SuperChannel.asp $(INSTALLDIR)/www
-	cp -f maksat/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f maksat/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f maksat/blank/About.htm $(INSTALLDIR)/www/About.htm
 	cp -f maksat/help/HManagement.asp $(INSTALLDIR)/www/help/HManagement.asp
 	cp -f maksat/help/HServices.asp $(INSTALLDIR)/www/help/HServices.asp
@@ -605,7 +605,7 @@ ifeq ($(CONFIG_MAKSAT),y)
 	cp -f maksat/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f maksat/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f maksat/maksat_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
-	cp -f maksat/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f maksat/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f maksat/About.htm $(INSTALLDIR)/www/About.htm
 	cp -f maksat/help/HManagement.asp $(INSTALLDIR)/www/help/HManagement.asp
 	cp -f maksat/help/HServices.asp $(INSTALLDIR)/www/help/HServices.asp
@@ -623,7 +623,7 @@ ifeq ($(CONFIG_TMK),y)
 	cp -f kmt/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f kmt/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f kmt/kmt_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
-	cp -f kmt/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f kmt/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f kmt/About.htm $(INSTALLDIR)/www/About.htm
 	cp -f kmt/help/HManagement.asp $(INSTALLDIR)/www/help/HManagement.asp
 	cp -f kmt/help/HServices.asp $(INSTALLDIR)/www/help/HServices.asp
@@ -649,7 +649,7 @@ ifeq ($(CONFIG_BKM),y)
 	cp -f bkm/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f bkm/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f bkm/bkm_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
-	cp -f bkm/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f bkm/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f bkm/About.htm $(INSTALLDIR)/www/About.htm
 	cp -f bkm/help/HManagement.asp $(INSTALLDIR)/www/help/HManagement.asp
 	cp -f bkm/help/HServices.asp $(INSTALLDIR)/www/help/HServices.asp
@@ -705,7 +705,7 @@ ifeq ($(CONFIG_ERC),y)
 	cp erc/logo-help.png $(INSTALLDIR)/www/images/logo-help.png
 	cp -f erc/common.js $(INSTALLDIR)/www/common.js
 	cp -f erc/help/* $(INSTALLDIR)/www/help
-	cp -f erc/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f erc/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f erc/*.asp $(INSTALLDIR)/www/
 #copy extra scripts and whatever
 ifeq ($(CONFIG_CARAMBOLA),y)
@@ -744,7 +744,7 @@ ifeq ($(CONFIG_CARLSONWIRELESS),y)
 	cp -f carlsonwireless/dd-logo.png $(INSTALLDIR)/www/images/dd-logo.png
 	cp -f carlsonwireless/*.asp $(INSTALLDIR)/www
 	cp -f carlsonwireless/help/* $(INSTALLDIR)/www/help
-	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	rm -f $(INSTALLDIR)/www/favicon.ico
 	mkdir $(INSTALLDIR)/www/style/carlson
 	cp elegant/style.css $(INSTALLDIR)/www/style/carlson
 	cp elegant/style_ie.css $(INSTALLDIR)/www/style/carlson
@@ -825,7 +825,7 @@ ifeq ($(CONFIG_ALFA_BRANDING2),y)
 endif
 ifeq ($(CONFIG_ANTAIRA),y)
 	cp -f antaira/logo.png $(INSTALLDIR)/www/style
-	cp -f antaira/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f antaira/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f antaira/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
 	cp -f antaira/www/index.asp $(INSTALLDIR)/www/index.asp
 	sed -e 's/About\.htm/http:\/\/www.antaira.com/g' -e 's/DDWRT_About/Antaira_About/g' common.js >$(INSTALLDIR)/www/common.js
