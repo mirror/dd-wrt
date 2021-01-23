@@ -1024,6 +1024,14 @@ int internal_getRouterBrand()
 		setRouter("Netgear R6850");
 		return ROUTER_R6850;
 	}
+	if (!strcmp(modelstr, "R6260")) {
+		setRouter("Netgear R6260");
+		return ROUTER_R6850;
+	}
+	if (!strcmp(modelstr, "R6350")) {
+		setRouter("Netgear R6350");
+		return ROUTER_R6850;
+	}
 	//fallback
 	setRouter("Netgear R6800");
 	return ROUTER_R6800;
