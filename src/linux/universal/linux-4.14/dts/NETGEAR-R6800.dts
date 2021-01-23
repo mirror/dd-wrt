@@ -5,7 +5,7 @@
 
 
 / {
-	compatible = "ralink,mt7621-eval-board", "ralink,mt7621-soc";
+	compatible = "netgear,r6800", "mediatek,mt7621-soc";
 	model = "Netgear R6800";
 
 	chosen {
