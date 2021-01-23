@@ -64,15 +64,15 @@
 			reg = <0x600000 0x1c00000>;
 		};
 
+		partition@2f00000 {
+			label = "nvram";
+			reg = <0x2f00000 0x200000>;
+		};
+
 		factory: partition@2e00000 {
 			label = "factory";
 			reg = <0x2e00000 0x100000>;
 			read-only;
-		};
-
-		partition@2f00000 {
-			label = "nvram";
-			reg = <0x2f00000 0x200000>;
 		};
 
 		partition@3100000 {
