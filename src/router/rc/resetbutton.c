@@ -1136,6 +1136,9 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_R6800:
 		val = (get_gpio(18) << 18) | (get_gpio(12) << 12) | (get_gpio(14) << 14);
 		break;
+	case ROUTER_R6850:
+		val = (get_gpio(7) << 7) | (get_gpio(14) << 14);
+		break;
 	case ROUTER_BOARD_GW2380:
 	case ROUTER_BOARD_GW2388:
 	case ROUTER_BOARD_GW6400:
@@ -1469,6 +1472,9 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_R6800:
 		sesgpio = 0x112;
 		wifi24gpio = 0x10e;
+		break;
+	case ROUTER_R6850:
+		sesgpio = 0x107;
 		break;
 	case ROUTER_DIR860LB1:
 		sesgpio = 0x112;

@@ -98,7 +98,7 @@ void start_sysinit(void)
 	insmod("rt2880_wdt");
 	int brand = getRouterBrand();
 	FILE *in;
-	if (brand == ROUTER_R6800)
+	if (brand == ROUTER_R6800 || brand == ROUTER_R6850)
 		in = fopen("/dev/mtdblock/5", "rb");
 	else
 		in = fopen("/dev/mtdblock/2", "rb");
@@ -148,6 +148,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 4);
 		break;
 	case ROUTER_DIR882:
+	case ROUTER_R6850:
 		insmod("compat");
 		insmod("mac80211");
 		if (!nvram_match("no_mt76", "1")) {
