@@ -268,6 +268,10 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.mt7621 ndpi-netfilter
 	-$(MAKE) -f Makefile.mt7621 ndpi-netfilter-install
 endif
+ifeq ($(CONFIG_ZFS),y)
+	-$(MAKE) -f Makefile.mt7621 zfs
+	-$(MAKE) -f Makefile.mt7621 zfs-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.mt7621 smbd
 	-$(MAKE) -f Makefile.mt7621 smbd-install
@@ -768,10 +772,10 @@ endif
 
 
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7621_dir878.uimage
-	./tools/trx_n -m 30000000 -o mipsel-uclibc/dir878-a1-webflash.bin mipsel-uclibc/aligned-mt7621_dir878.uimage
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/dir878-a1-webflash.bin mipsel-uclibc/aligned-mt7621_dir878.uimage
 
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7621_dir882.uimage
-	./tools/trx_n -m 30000000 -o mipsel-uclibc/dir882-a1-webflash.bin mipsel-uclibc/aligned-mt7621_dir882.uimage
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/dir882-a1-webflash.bin mipsel-uclibc/aligned-mt7621_dir882.uimage
 
 
 ifeq ($(CONFIG_MT7620),y)
