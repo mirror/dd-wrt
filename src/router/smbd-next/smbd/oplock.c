@@ -669,6 +669,10 @@ static void wait_for_break_ack(struct oplock_info *opinfo)
 	}
 }
 
+#ifndef smp_mb__after_atomic
+#define smp_mb__after_atomic smp_mb__after_clear_bit
+#endif
+
 static void wake_up_oplock_break(struct oplock_info *opinfo)
 {
 	clear_bit_unlock(0, &opinfo->pending_break);
@@ -707,9 +711,6 @@ static int oplock_break_pending(struct oplock_info *opinfo, int req_op_level)
 	return 0;
 }
 
-#ifndef smp_mb__after_atomic
-#define smp_mb__after_atomic smp_mb__after_clear_bit
-#endif
 
 static inline int allocate_oplock_break_buf(struct ksmbd_work *work)
 {
