@@ -55,7 +55,7 @@
  * a non-zero errno on failure.
  */
 static int
-uiomove_iov(void *p, size_t n, enum uio_rw rw, struct uio *uio)
+zfs_uiomove_iov(void *p, size_t n, zfs_uio_rw_t rw, zfs_uio_t *uio)
 {
 	const struct iovec *iov = uio->uio_iov;
 	size_t skip = uio->uio_skip;
@@ -126,7 +126,7 @@ uiomove_iov(void *p, size_t n, enum uio_rw rw, struct uio *uio)
 }
 
 static int
-uiomove_bvec(void *p, size_t n, enum uio_rw rw, struct uio *uio)
+zfs_uiomove_bvec(void *p, size_t n, zfs_uio_rw_t rw, zfs_uio_t *uio)
 {
 	const struct bio_vec *bv = uio->uio_bvec;
 	size_t skip = uio->uio_skip;
@@ -160,7 +160,7 @@ uiomove_bvec(void *p, size_t n, enum uio_rw rw, struct uio *uio)
 
 #if defined(HAVE_VFS_IOV_ITER)
 static int
-uiomove_iter(void *p, size_t n, enum uio_rw rw, struct uio *uio,
+zfs_uiomove_iter(void *p, size_t n, zfs_uio_rw_t rw, zfs_uio_t *uio,
     boolean_t revert)
 {
 	size_t cnt = MIN(n, uio->uio_resid);
@@ -182,7 +182,7 @@ uiomove_iter(void *p, size_t n, enum uio_rw rw, struct uio *uio,
 		return (EFAULT);
 
 	/*
-	 * Revert advancing the uio_iter.  This is set by uiocopy()
+	 * Revert advancing the uio_iter.  This is set by zfs_uiocopy()
 	 * to avoid consuming the uio and its iov_iter structure.
 	 */
 	if (revert)
@@ -196,74 +196,107 @@ uiomove_iter(void *p, size_t n, enum uio_rw rw, struct uio *uio,
 #endif
 
 int
-uiomove(void *p, size_t n, enum uio_rw rw, struct uio *uio)
+zfs_uiomove(void *p, size_t n, zfs_uio_rw_t rw, zfs_uio_t *uio)
 {
 	if (uio->uio_segflg == UIO_BVEC)
-		return (uiomove_bvec(p, n, rw, uio));
+		return (zfs_uiomove_bvec(p, n, rw, uio));
 #if defined(HAVE_VFS_IOV_ITER)
 	else if (uio->uio_segflg == UIO_ITER)
-		return (uiomove_iter(p, n, rw, uio, B_FALSE));
+		return (zfs_uiomove_iter(p, n, rw, uio, B_FALSE));
 #endif
 	else
-		return (uiomove_iov(p, n, rw, uio));
+		return (zfs_uiomove_iov(p, n, rw, uio));
 }
-EXPORT_SYMBOL(uiomove);
-
-int
-uio_prefaultpages(ssize_t n, struct uio *uio)
-{
-	struct iov_iter iter, *iterp = NULL;
-
-#if defined(HAVE_IOV_ITER_FAULT_IN_READABLE)
-	if (uio->uio_segflg == UIO_USERSPACE) {
-		iterp = &iter;
-		iov_iter_init_compat(iterp, READ, uio->uio_iov,
-		    uio->uio_iovcnt, uio->uio_resid);
-#if defined(HAVE_VFS_IOV_ITER)
-	} else if (uio->uio_segflg == UIO_ITER) {
-		iterp = uio->uio_iter;
-#endif
-	}
-
-	if (iterp && iov_iter_fault_in_readable(iterp, n))
-		return (EFAULT);
-#endif
-	return (0);
-}
-EXPORT_SYMBOL(uio_prefaultpages);
+EXPORT_SYMBOL(zfs_uiomove);
 
 /*
- * The same as uiomove() but doesn't modify uio structure.
+ * Fault in the pages of the first n bytes specified by the uio structure.
+ * 1 byte in each page is touched and the uio struct is unmodified. Any
+ * error will terminate the process as this is only a best attempt to get
+ * the pages resident.
+ */
+int
+zfs_uio_prefaultpages(ssize_t n, zfs_uio_t *uio)
+{
+	if (uio->uio_segflg == UIO_SYSSPACE || uio->uio_segflg == UIO_BVEC) {
+		/* There's never a need to fault in kernel pages */
+		return (0);
+#if defined(HAVE_VFS_IOV_ITER)
+	} else if (uio->uio_segflg == UIO_ITER) {
+		/*
+		 * At least a Linux 4.9 kernel, iov_iter_fault_in_readable()
+		 * can be relied on to fault in user pages when referenced.
+		 */
+		if (iov_iter_fault_in_readable(uio->uio_iter, n))
+			return (EFAULT);
+#endif
+	} else {
+		/* Fault in all user pages */
+		ASSERT3S(uio->uio_segflg, ==, UIO_USERSPACE);
+		const struct iovec *iov = uio->uio_iov;
+		int iovcnt = uio->uio_iovcnt;
+		size_t skip = uio->uio_skip;
+		uint8_t tmp;
+		caddr_t p;
+
+		for (; n > 0 && iovcnt > 0; iov++, iovcnt--, skip = 0) {
+			ulong_t cnt = MIN(iov->iov_len - skip, n);
+			/* empty iov */
+			if (cnt == 0)
+				continue;
+			n -= cnt;
+			/* touch each page in this segment. */
+			p = iov->iov_base + skip;
+			while (cnt) {
+				if (get_user(tmp, (uint8_t *)p))
+					return (EFAULT);
+				ulong_t incr = MIN(cnt, PAGESIZE);
+				p += incr;
+				cnt -= incr;
+			}
+			/* touch the last byte in case it straddles a page. */
+			p--;
+			if (get_user(tmp, (uint8_t *)p))
+				return (EFAULT);
+		}
+	}
+
+	return (0);
+}
+EXPORT_SYMBOL(zfs_uio_prefaultpages);
+
+/*
+ * The same as zfs_uiomove() but doesn't modify uio structure.
  * return in cbytes how many bytes were copied.
  */
 int
-uiocopy(void *p, size_t n, enum uio_rw rw, struct uio *uio, size_t *cbytes)
+zfs_uiocopy(void *p, size_t n, zfs_uio_rw_t rw, zfs_uio_t *uio, size_t *cbytes)
 {
-	struct uio uio_copy;
+	zfs_uio_t uio_copy;
 	int ret;
 
-	bcopy(uio, &uio_copy, sizeof (struct uio));
+	bcopy(uio, &uio_copy, sizeof (zfs_uio_t));
 
 	if (uio->uio_segflg == UIO_BVEC)
-		ret = uiomove_bvec(p, n, rw, &uio_copy);
+		ret = zfs_uiomove_bvec(p, n, rw, &uio_copy);
 #if defined(HAVE_VFS_IOV_ITER)
 	else if (uio->uio_segflg == UIO_ITER)
-		ret = uiomove_iter(p, n, rw, &uio_copy, B_TRUE);
+		ret = zfs_uiomove_iter(p, n, rw, &uio_copy, B_TRUE);
 #endif
 	else
-		ret = uiomove_iov(p, n, rw, &uio_copy);
+		ret = zfs_uiomove_iov(p, n, rw, &uio_copy);
 
 	*cbytes = uio->uio_resid - uio_copy.uio_resid;
 
 	return (ret);
 }
-EXPORT_SYMBOL(uiocopy);
+EXPORT_SYMBOL(zfs_uiocopy);
 
 /*
  * Drop the next n chars out of *uio.
  */
 void
-uioskip(uio_t *uio, size_t n)
+zfs_uioskip(zfs_uio_t *uio, size_t n)
 {
 	if (n > uio->uio_resid)
 		return;
@@ -292,5 +325,6 @@ uioskip(uio_t *uio, size_t n)
 	uio->uio_loffset += n;
 	uio->uio_resid -= n;
 }
-EXPORT_SYMBOL(uioskip);
+EXPORT_SYMBOL(zfs_uioskip);
+
 #endif /* _KERNEL */
