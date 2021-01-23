@@ -415,13 +415,19 @@ ifeq ($(CONFIG_R6800),y)
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include -undef -D__DTS__ -o $(LINUXDIR)/dts/NETGEAR-R6350.dtb.tmp $(LINUXDIR)/dts/NETGEAR-R6350.dts
 	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a_6350.dtb $(LINUXDIR)/dts/NETGEAR-R6350.dtb.tmp
 
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include -undef -D__DTS__ -o $(LINUXDIR)/dts/NETGEAR-R6220.dtb.tmp $(LINUXDIR)/dts/NETGEAR-R6220.dts
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a_6220.dtb $(LINUXDIR)/dts/NETGEAR-R6220.dtb.tmp
+
+
 
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-r6850
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-r6260
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-r6350
+	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-r6220
 	patch-dtb $(LINUXDIR)/vmlinux-r6850 $(LINUXDIR)/dts/MT7620a_6850.dtb
 	patch-dtb $(LINUXDIR)/vmlinux-r6260 $(LINUXDIR)/dts/MT7620a_6260.dtb
 	patch-dtb $(LINUXDIR)/vmlinux-r6350 $(LINUXDIR)/dts/MT7620a_6350.dtb
+	patch-dtb $(LINUXDIR)/vmlinux-r6220 $(LINUXDIR)/dts/MT7620a_6220.dtb
 endif
 	patch-dtb $(LINUXDIR)/vmlinux-mt7620 $(LINUXDIR)/dts/MT7620a.dtb
 #	$(call CompressLzma,$(KDIR)/vmlinux-$(1)$(3),$(KDIR)/vmlinux-$(1)$(3).bin.lzma)
@@ -437,10 +443,12 @@ r6800:
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6850 $(ARCH)-uclibc/vmlinux-r6850.bin
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6260 $(ARCH)-uclibc/vmlinux-r6260.bin
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6350 $(ARCH)-uclibc/vmlinux-r6350.bin
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6220 $(ARCH)-uclibc/vmlinux-r6220.bin
 	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
 	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6850.bin $(ARCH)-uclibc/vmlinux-r6850.lzma
 	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6260.bin $(ARCH)-uclibc/vmlinux-r6260.lzma
 	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6350.bin $(ARCH)-uclibc/vmlinux-r6350.lzma
+	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6220.bin $(ARCH)-uclibc/vmlinux-r6220.lzma
 	make -C lzma-loader/mt7621 clean
 	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux.lzma
 	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-mt7621.uimage
@@ -457,22 +465,30 @@ r6800:
 	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux-r6350.lzma
 	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-r6350.uimage
 
+	make -C lzma-loader/mt7621 clean
+	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux-r6220.lzma
+	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-r6220.uimage
+
 	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6800.img
 	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6850.img
 	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6260.img
 	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6350.img
+	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6220.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage >> $(ARCH)-uclibc/r6800.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6850.uimage >> $(ARCH)-uclibc/r6850.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6260.uimage >> $(ARCH)-uclibc/r6260.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6350.uimage >> $(ARCH)-uclibc/r6350.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-r6220.uimage >> $(ARCH)-uclibc/r6220.img
 	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=6144k count=1 conv=sync
 	dd if=$(ARCH)-uclibc/r6850.img of=$(ARCH)-uclibc/r6850.img.tmp bs=6144k count=1 conv=sync
 	dd if=$(ARCH)-uclibc/r6260.img of=$(ARCH)-uclibc/r6260.img.tmp bs=6144k count=1 conv=sync
 	dd if=$(ARCH)-uclibc/r6350.img of=$(ARCH)-uclibc/r6350.img.tmp bs=6144k count=1 conv=sync
+	dd if=$(ARCH)-uclibc/r6220.img of=$(ARCH)-uclibc/r6220.img.tmp bs=6144k count=1 conv=sync
 	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
 	mv $(ARCH)-uclibc/r6850.img.tmp $(ARCH)-uclibc/r6850.img
 	mv $(ARCH)-uclibc/r6260.img.tmp $(ARCH)-uclibc/r6260.img
 	mv $(ARCH)-uclibc/r6350.img.tmp $(ARCH)-uclibc/r6350.img
+	mv $(ARCH)-uclibc/r6220.img.tmp $(ARCH)-uclibc/r6220.img
 	cp tools/r6800/ubinize.cfg $(ARCH)-uclibc
 	cp $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/root.squashfs
 	cd $(ARCH)-uclibc && ../tools/r6800/ubinize -v -m 2048 -p 128KiB -E 5 -o root.squashfs.ubi ubinize.cfg && cd ..
@@ -480,80 +496,99 @@ r6800:
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6850.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6260.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6350.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6220.img
 	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6850.img of=$(ARCH)-uclibc/r6850.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6260.img of=$(ARCH)-uclibc/r6260.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6350.img of=$(ARCH)-uclibc/r6350.img.tmp bs=128k conv=sync
+	dd if=$(ARCH)-uclibc/r6220.img of=$(ARCH)-uclibc/r6220.img.tmp bs=128k conv=sync
 	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
 	mv $(ARCH)-uclibc/r6850.img.tmp $(ARCH)-uclibc/r6850.img
 	mv $(ARCH)-uclibc/r6260.img.tmp $(ARCH)-uclibc/r6260.img
 	mv $(ARCH)-uclibc/r6350.img.tmp $(ARCH)-uclibc/r6350.img
+	mv $(ARCH)-uclibc/r6220.img.tmp $(ARCH)-uclibc/r6220.img
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800.img -b BZV -r A001 -v 0x0062 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6850.img -b CHJ -r A001 -v 0x0052 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6260.img -b CHJ -r A001 -v 0x0052 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350.img -b CHJ -r A001 -v 0x0052 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220.img -b AYA -r A001 -v 0x0086 -f
 	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6850.img of=$(ARCH)-uclibc/r6850.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6260.img of=$(ARCH)-uclibc/r6260.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6350.img of=$(ARCH)-uclibc/r6350.img.tmp bs=128 conv=sync
+	dd if=$(ARCH)-uclibc/r6220.img of=$(ARCH)-uclibc/r6220.img.tmp bs=128 conv=sync
 	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
 	mv $(ARCH)-uclibc/r6850.img.tmp $(ARCH)-uclibc/r6850.img
 	mv $(ARCH)-uclibc/r6260.img.tmp $(ARCH)-uclibc/r6260.img
 	mv $(ARCH)-uclibc/r6350.img.tmp $(ARCH)-uclibc/r6350.img
+	mv $(ARCH)-uclibc/r6220.img.tmp $(ARCH)-uclibc/r6220.img
 	mv $(ARCH)-uclibc/r6800.img $(ARCH)-uclibc/r6800.bin
 	mv $(ARCH)-uclibc/r6850.img $(ARCH)-uclibc/r6850.bin
 	mv $(ARCH)-uclibc/r6260.img $(ARCH)-uclibc/r6260.bin
 	mv $(ARCH)-uclibc/r6350.img $(ARCH)-uclibc/r6350.bin
+	mv $(ARCH)-uclibc/r6220.img $(ARCH)-uclibc/r6220.bin
 	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6800.img $(ARCH)-uclibc/r6800.bin
 	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6850.img $(ARCH)-uclibc/r6850.bin
 	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6260.img $(ARCH)-uclibc/r6260.bin
 	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6350.img $(ARCH)-uclibc/r6350.bin
+	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6220.img $(ARCH)-uclibc/r6220.bin
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800.img -b BZV -r A001 -v 0x0062
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6850.img -b CHJ -r A001 -v 0x0052
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6260.img -b CHJ -r A001 -v 0x0052
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350.img -b CHJ -r A001 -v 0x0052
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220.img -b AYA -r A001 -v 0x0086
 
 
 	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage > $(ARCH)-uclibc/r6800-webflash.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6850.uimage > $(ARCH)-uclibc/r6850-webflash.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6260.uimage > $(ARCH)-uclibc/r6260-webflash.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6350.uimage > $(ARCH)-uclibc/r6350-webflash.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-r6220.uimage > $(ARCH)-uclibc/r6220-webflash.img
 	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=4096k count=1 conv=sync
 	dd if=$(ARCH)-uclibc/r6850-webflash.img of=$(ARCH)-uclibc/r6850-webflash.img.tmp bs=4096k count=1 conv=sync
 	dd if=$(ARCH)-uclibc/r6260-webflash.img of=$(ARCH)-uclibc/r6260-webflash.img.tmp bs=4096k count=1 conv=sync
 	dd if=$(ARCH)-uclibc/r6350-webflash.img of=$(ARCH)-uclibc/r6350-webflash.img.tmp bs=4096k count=1 conv=sync
+	dd if=$(ARCH)-uclibc/r6220-webflash.img of=$(ARCH)-uclibc/r6220-webflash.img.tmp bs=4096k count=1 conv=sync
 	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
 	mv $(ARCH)-uclibc/r6850-webflash.img.tmp $(ARCH)-uclibc/r6850-webflash.img
 	mv $(ARCH)-uclibc/r6260-webflash.img.tmp $(ARCH)-uclibc/r6260-webflash.img
 	mv $(ARCH)-uclibc/r6350-webflash.img.tmp $(ARCH)-uclibc/r6350-webflash.img
+	mv $(ARCH)-uclibc/r6220-webflash.img.tmp $(ARCH)-uclibc/r6220-webflash.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6800-webflash.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6850-webflash.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6260-webflash.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6350-webflash.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6220-webflash.img
 	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6850-webflash.img of=$(ARCH)-uclibc/r6850-webflash.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6260-webflash.img of=$(ARCH)-uclibc/r6260-webflash.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6350-webflash.img of=$(ARCH)-uclibc/r6350-webflash.img.tmp bs=128k conv=sync
+	dd if=$(ARCH)-uclibc/r6220-webflash.img of=$(ARCH)-uclibc/r6220-webflash.img.tmp bs=128k conv=sync
 	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
 	mv $(ARCH)-uclibc/r6850-webflash.img.tmp $(ARCH)-uclibc/r6850-webflash.img
 	mv $(ARCH)-uclibc/r6260-webflash.img.tmp $(ARCH)-uclibc/r6260-webflash.img
 	mv $(ARCH)-uclibc/r6350-webflash.img.tmp $(ARCH)-uclibc/r6350-webflash.img
+	mv $(ARCH)-uclibc/r6220-webflash.img.tmp $(ARCH)-uclibc/r6220-webflash.img
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800-webflash.img -b BZV -r A001 -v 0x0062 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6850-webflash.img -b CHJ -r A001 -v 0x0052 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6260-webflash.img -b CHJ -r A001 -v 0x0052 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350-webflash.img -b CHJ -r A001 -v 0x0052 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220-webflash.img -b AYA -r A001 -v 0x0086 -f
 	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6850-webflash.img of=$(ARCH)-uclibc/r6850-webflash.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6260-webflash.img of=$(ARCH)-uclibc/r6260-webflash.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6350-webflash.img of=$(ARCH)-uclibc/r6350-webflash.img.tmp bs=128 conv=sync
+	dd if=$(ARCH)-uclibc/r6220-webflash.img of=$(ARCH)-uclibc/r6220-webflash.img.tmp bs=128 conv=sync
 	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
 	mv $(ARCH)-uclibc/r6850-webflash.img.tmp $(ARCH)-uclibc/r6850-webflash.img
 	mv $(ARCH)-uclibc/r6260-webflash.img.tmp $(ARCH)-uclibc/r6260-webflash.img
 	mv $(ARCH)-uclibc/r6350-webflash.img.tmp $(ARCH)-uclibc/r6350-webflash.img
+	mv $(ARCH)-uclibc/r6220-webflash.img.tmp $(ARCH)-uclibc/r6220-webflash.img
 	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6800-webflash.bin mipsel-uclibc/r6800-webflash.img
 	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6850-webflash.bin mipsel-uclibc/r6850-webflash.img
 	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6260-webflash.bin mipsel-uclibc/r6260-webflash.img
 	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6350-webflash.bin mipsel-uclibc/r6350-webflash.img
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6220-webflash.bin mipsel-uclibc/r6220-webflash.img
  	
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
@@ -709,8 +744,14 @@ ifeq ($(CONFIG_MT7620),y)
 ifeq ($(CONFIG_R6800),y)
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-mt7620 $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6850 $(ARCH)-uclibc/vmlinux-r6850.bin
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6260 $(ARCH)-uclibc/vmlinux-r6260.bin
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6350 $(ARCH)-uclibc/vmlinux-r6350.bin
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6220 $(ARCH)-uclibc/vmlinux-r6220.bin
 	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
 	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6850.bin $(ARCH)-uclibc/vmlinux-r6850.lzma
+	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6260.bin $(ARCH)-uclibc/vmlinux-r6260.lzma
+	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6350.bin $(ARCH)-uclibc/vmlinux-r6350.lzma
+	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6220.bin $(ARCH)-uclibc/vmlinux-r6220.lzma
 	make -C lzma-loader/mt7621 clean
 	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux.lzma
 	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-mt7621.uimage
@@ -719,58 +760,138 @@ ifeq ($(CONFIG_R6800),y)
 	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux-r6850.lzma
 	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-r6850.uimage
 
+	make -C lzma-loader/mt7621 clean
+	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux-r6260.lzma
+	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-r6260.uimage
+
+	make -C lzma-loader/mt7621 clean
+	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux-r6350.lzma
+	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-r6350.uimage
+
+	make -C lzma-loader/mt7621 clean
+	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux-r6220.lzma
+	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-r6220.uimage
+
 	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6800.img
 	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6850.img
+	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6260.img
+	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6350.img
+	dd if=/dev/zero bs=2048k count=1 > $(ARCH)-uclibc/r6220.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage >> $(ARCH)-uclibc/r6800.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6850.uimage >> $(ARCH)-uclibc/r6850.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-r6260.uimage >> $(ARCH)-uclibc/r6260.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-r6350.uimage >> $(ARCH)-uclibc/r6350.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-r6220.uimage >> $(ARCH)-uclibc/r6220.img
 	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=6144k count=1 conv=sync
 	dd if=$(ARCH)-uclibc/r6850.img of=$(ARCH)-uclibc/r6850.img.tmp bs=6144k count=1 conv=sync
+	dd if=$(ARCH)-uclibc/r6260.img of=$(ARCH)-uclibc/r6260.img.tmp bs=6144k count=1 conv=sync
+	dd if=$(ARCH)-uclibc/r6350.img of=$(ARCH)-uclibc/r6350.img.tmp bs=6144k count=1 conv=sync
+	dd if=$(ARCH)-uclibc/r6220.img of=$(ARCH)-uclibc/r6220.img.tmp bs=6144k count=1 conv=sync
 	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
 	mv $(ARCH)-uclibc/r6850.img.tmp $(ARCH)-uclibc/r6850.img
+	mv $(ARCH)-uclibc/r6260.img.tmp $(ARCH)-uclibc/r6260.img
+	mv $(ARCH)-uclibc/r6350.img.tmp $(ARCH)-uclibc/r6350.img
+	mv $(ARCH)-uclibc/r6220.img.tmp $(ARCH)-uclibc/r6220.img
 	cp tools/r6800/ubinize.cfg $(ARCH)-uclibc
 	cp $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/root.squashfs
 	cd $(ARCH)-uclibc && ../tools/r6800/ubinize -v -m 2048 -p 128KiB -E 5 -o root.squashfs.ubi ubinize.cfg && cd ..
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6800.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6850.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6260.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6350.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6220.img
 	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6850.img of=$(ARCH)-uclibc/r6850.img.tmp bs=128k conv=sync
+	dd if=$(ARCH)-uclibc/r6260.img of=$(ARCH)-uclibc/r6260.img.tmp bs=128k conv=sync
+	dd if=$(ARCH)-uclibc/r6350.img of=$(ARCH)-uclibc/r6350.img.tmp bs=128k conv=sync
+	dd if=$(ARCH)-uclibc/r6220.img of=$(ARCH)-uclibc/r6220.img.tmp bs=128k conv=sync
 	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
 	mv $(ARCH)-uclibc/r6850.img.tmp $(ARCH)-uclibc/r6850.img
+	mv $(ARCH)-uclibc/r6260.img.tmp $(ARCH)-uclibc/r6260.img
+	mv $(ARCH)-uclibc/r6350.img.tmp $(ARCH)-uclibc/r6350.img
+	mv $(ARCH)-uclibc/r6220.img.tmp $(ARCH)-uclibc/r6220.img
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800.img -b BZV -r A001 -v 0x0062 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6850.img -b CHJ -r A001 -v 0x0052 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6260.img -b CHJ -r A001 -v 0x0052 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350.img -b CHJ -r A001 -v 0x0052 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220.img -b AYA -r A001 -v 0x0086 -f
 	dd if=$(ARCH)-uclibc/r6800.img of=$(ARCH)-uclibc/r6800.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6850.img of=$(ARCH)-uclibc/r6850.img.tmp bs=128 conv=sync
+	dd if=$(ARCH)-uclibc/r6260.img of=$(ARCH)-uclibc/r6260.img.tmp bs=128 conv=sync
+	dd if=$(ARCH)-uclibc/r6350.img of=$(ARCH)-uclibc/r6350.img.tmp bs=128 conv=sync
+	dd if=$(ARCH)-uclibc/r6220.img of=$(ARCH)-uclibc/r6220.img.tmp bs=128 conv=sync
 	mv $(ARCH)-uclibc/r6800.img.tmp $(ARCH)-uclibc/r6800.img
 	mv $(ARCH)-uclibc/r6850.img.tmp $(ARCH)-uclibc/r6850.img
+	mv $(ARCH)-uclibc/r6260.img.tmp $(ARCH)-uclibc/r6260.img
+	mv $(ARCH)-uclibc/r6350.img.tmp $(ARCH)-uclibc/r6350.img
+	mv $(ARCH)-uclibc/r6220.img.tmp $(ARCH)-uclibc/r6220.img
 	mv $(ARCH)-uclibc/r6800.img $(ARCH)-uclibc/r6800.bin
 	mv $(ARCH)-uclibc/r6850.img $(ARCH)-uclibc/r6850.bin
+	mv $(ARCH)-uclibc/r6260.img $(ARCH)-uclibc/r6260.bin
+	mv $(ARCH)-uclibc/r6350.img $(ARCH)-uclibc/r6350.bin
+	mv $(ARCH)-uclibc/r6220.img $(ARCH)-uclibc/r6220.bin
 	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6800.img $(ARCH)-uclibc/r6800.bin
 	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6850.img $(ARCH)-uclibc/r6850.bin
+	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6260.img $(ARCH)-uclibc/r6260.bin
+	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6350.img $(ARCH)-uclibc/r6350.bin
+	zip -j -X --mtime="1611176422" $(ARCH)-uclibc/r6220.img $(ARCH)-uclibc/r6220.bin
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800.img -b BZV -r A001 -v 0x0062
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6850.img -b CHJ -r A001 -v 0x0052
-
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6260.img -b CHJ -r A001 -v 0x0052
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350.img -b CHJ -r A001 -v 0x0052
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220.img -b AYA -r A001 -v 0x0086
 
 
 	dd if=$(ARCH)-uclibc/root-lzmaloader-mt7621.uimage > $(ARCH)-uclibc/r6800-webflash.img
 	dd if=$(ARCH)-uclibc/root-lzmaloader-r6850.uimage > $(ARCH)-uclibc/r6850-webflash.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-r6260.uimage > $(ARCH)-uclibc/r6260-webflash.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-r6350.uimage > $(ARCH)-uclibc/r6350-webflash.img
+	dd if=$(ARCH)-uclibc/root-lzmaloader-r6220.uimage > $(ARCH)-uclibc/r6220-webflash.img
 	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=4096k count=1 conv=sync
 	dd if=$(ARCH)-uclibc/r6850-webflash.img of=$(ARCH)-uclibc/r6850-webflash.img.tmp bs=4096k count=1 conv=sync
+	dd if=$(ARCH)-uclibc/r6260-webflash.img of=$(ARCH)-uclibc/r6260-webflash.img.tmp bs=4096k count=1 conv=sync
+	dd if=$(ARCH)-uclibc/r6350-webflash.img of=$(ARCH)-uclibc/r6350-webflash.img.tmp bs=4096k count=1 conv=sync
+	dd if=$(ARCH)-uclibc/r6220-webflash.img of=$(ARCH)-uclibc/r6220-webflash.img.tmp bs=4096k count=1 conv=sync
 	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
 	mv $(ARCH)-uclibc/r6850-webflash.img.tmp $(ARCH)-uclibc/r6850-webflash.img
+	mv $(ARCH)-uclibc/r6260-webflash.img.tmp $(ARCH)-uclibc/r6260-webflash.img
+	mv $(ARCH)-uclibc/r6350-webflash.img.tmp $(ARCH)-uclibc/r6350-webflash.img
+	mv $(ARCH)-uclibc/r6220-webflash.img.tmp $(ARCH)-uclibc/r6220-webflash.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6800-webflash.img
 	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6850-webflash.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6260-webflash.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6350-webflash.img
+	cat $(ARCH)-uclibc/root.squashfs.ubi >> $(ARCH)-uclibc/r6220-webflash.img
 	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128k conv=sync
 	dd if=$(ARCH)-uclibc/r6850-webflash.img of=$(ARCH)-uclibc/r6850-webflash.img.tmp bs=128k conv=sync
+	dd if=$(ARCH)-uclibc/r6260-webflash.img of=$(ARCH)-uclibc/r6260-webflash.img.tmp bs=128k conv=sync
+	dd if=$(ARCH)-uclibc/r6350-webflash.img of=$(ARCH)-uclibc/r6350-webflash.img.tmp bs=128k conv=sync
+	dd if=$(ARCH)-uclibc/r6220-webflash.img of=$(ARCH)-uclibc/r6220-webflash.img.tmp bs=128k conv=sync
 	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
 	mv $(ARCH)-uclibc/r6850-webflash.img.tmp $(ARCH)-uclibc/r6850-webflash.img
+	mv $(ARCH)-uclibc/r6260-webflash.img.tmp $(ARCH)-uclibc/r6260-webflash.img
+	mv $(ARCH)-uclibc/r6350-webflash.img.tmp $(ARCH)-uclibc/r6350-webflash.img
+	mv $(ARCH)-uclibc/r6220-webflash.img.tmp $(ARCH)-uclibc/r6220-webflash.img
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6800-webflash.img -b BZV -r A001 -v 0x0062 -f
 	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6850-webflash.img -b CHJ -r A001 -v 0x0052 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6260-webflash.img -b CHJ -r A001 -v 0x0052 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6350-webflash.img -b CHJ -r A001 -v 0x0052 -f
+	tools/r6800/mksercommfw -i $(ARCH)-uclibc/r6220-webflash.img -b AYA -r A001 -v 0x0086 -f
 	dd if=$(ARCH)-uclibc/r6800-webflash.img of=$(ARCH)-uclibc/r6800-webflash.img.tmp bs=128 conv=sync
 	dd if=$(ARCH)-uclibc/r6850-webflash.img of=$(ARCH)-uclibc/r6850-webflash.img.tmp bs=128 conv=sync
+	dd if=$(ARCH)-uclibc/r6260-webflash.img of=$(ARCH)-uclibc/r6260-webflash.img.tmp bs=128 conv=sync
+	dd if=$(ARCH)-uclibc/r6350-webflash.img of=$(ARCH)-uclibc/r6350-webflash.img.tmp bs=128 conv=sync
+	dd if=$(ARCH)-uclibc/r6220-webflash.img of=$(ARCH)-uclibc/r6220-webflash.img.tmp bs=128 conv=sync
 	mv $(ARCH)-uclibc/r6800-webflash.img.tmp $(ARCH)-uclibc/r6800-webflash.img
 	mv $(ARCH)-uclibc/r6850-webflash.img.tmp $(ARCH)-uclibc/r6850-webflash.img
+	mv $(ARCH)-uclibc/r6260-webflash.img.tmp $(ARCH)-uclibc/r6260-webflash.img
+	mv $(ARCH)-uclibc/r6350-webflash.img.tmp $(ARCH)-uclibc/r6350-webflash.img
+	mv $(ARCH)-uclibc/r6220-webflash.img.tmp $(ARCH)-uclibc/r6220-webflash.img
 	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6800-webflash.bin mipsel-uclibc/r6800-webflash.img
 	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6850-webflash.bin mipsel-uclibc/r6850-webflash.img
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6260-webflash.bin mipsel-uclibc/r6260-webflash.img
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6350-webflash.bin mipsel-uclibc/r6350-webflash.img
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/r6220-webflash.bin mipsel-uclibc/r6220-webflash.img
 endif
 
 ifeq ($(CONFIG_DIR860),y)

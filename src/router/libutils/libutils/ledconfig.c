@@ -549,8 +549,6 @@ static void getledconfig(struct ledconfig *cfg)
 //              cfg->ses_gpio = 0x100e;
 		break;
 	case ROUTER_R6800:
-//              cfg->connected_gpio = 0x1003;
-//              cfg->disconnected_gpio = 0x1004;
 		cfg->diag_gpio = 0x1008;
 		cfg->power_gpio = 0x11f1;
 		cfg->diag_gpio = 0x11f0;
@@ -561,13 +559,20 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->wlan_gpio = 0x1005;
 		break;
 	case ROUTER_R6850:
-//              cfg->connected_gpio = 0x1003;
-//              cfg->disconnected_gpio = 0x1004;
 		cfg->power_gpio = 0x1012;
 		cfg->usb_gpio = 0x100f;
 		cfg->diag_gpio = 0x0012;
 		cfg->diag_gpio_disabled = 0x1012;
 		cfg->connected_gpio = 0x100d;
+		break;
+	case ROUTER_R6220:
+		cfg->power_gpio = 0x1012;
+		cfg->usb_gpio = 0x100f;
+		cfg->diag_gpio = 0x0012;
+		cfg->diag_gpio_disabled = 0x1012;
+		cfg->connected_gpio = 0x100d;
+		cfg->sec_gpio = 0x100c;
+		cfg->usb_power = 0x000a;
 		break;
 	case ROUTER_DIR882:
 		cfg->connected_gpio = 0x1003;
