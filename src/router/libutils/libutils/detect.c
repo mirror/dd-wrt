@@ -1006,6 +1006,25 @@ int internal_getRouterBrand()
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
 #elif HAVE_R6800
+	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
+	if (!fp) {
+		fprintf(stderr, "error opening device tree\n");
+		setRouter("Netgear R6800");
+		return ROUTER_R6800;
+	}
+	char vendorstr[32];
+	char modelstr[32];
+	fscanf(fp, "%s %s", &vendorstr[0], &modelstr[0]);
+	fclose(fp);
+	if (!strcmp(modelstr, "R6800")) {
+		setRouter("Netgear R6800");
+		return ROUTER_R6800;
+	}
+	if (!strcmp(modelstr, "R6850")) {
+		setRouter("Netgear R6850");
+		return ROUTER_R6850;
+	}
+	//fallback
 	setRouter("Netgear R6800");
 	return ROUTER_R6800;
 #elif HAVE_DIR860

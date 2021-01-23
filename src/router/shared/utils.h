@@ -781,6 +781,8 @@
 
 #define ROUTER_R6800 0x10b10c
 
+#define ROUTER_R6850 0x10b10e
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

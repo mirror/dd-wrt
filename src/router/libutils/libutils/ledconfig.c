@@ -560,6 +560,15 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->sec_gpio = 0x0011;
 		cfg->wlan_gpio = 0x1005;
 		break;
+	case ROUTER_R6850:
+//              cfg->connected_gpio = 0x1003;
+//              cfg->disconnected_gpio = 0x1004;
+		cfg->power_gpio = 0x1012;
+		cfg->usb_gpio = 0x100f;
+		cfg->diag_gpio = 0x0012;
+		cfg->diag_gpio_disabled = 0x1012;
+		cfg->connected_gpio = 0x100d;
+		break;
 	case ROUTER_DIR882:
 		cfg->connected_gpio = 0x1003;
 		cfg->disconnected_gpio = 0x1004;
