@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6007 | brainslayer | 2021-01-25 16:52:53 +0700 (Mon, 25 Jan 2021) | 1 line
+
+fix backport for newer kernel patches
+------------------------------------------------------------------------
 r6006 | brainslayer | 2021-01-22 15:28:52 +0700 (Fri, 22 Jan 2021) | 1 line
 
 remove install_headers. this isnt required for compiling the source
