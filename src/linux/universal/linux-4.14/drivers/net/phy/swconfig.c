@@ -36,7 +36,7 @@ MODULE_LICENSE("GPL");
 
 static int swdev_id;
 static struct list_head swdevs;
-static DEFINE_SPINLOCK(swdevs_lock);
+static DEFINE_MUTEX(swdevs_lock);
 struct swconfig_callback;
 
 struct swconfig_callback {
@@ -129,31 +129,6 @@ swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr,
 }
 
 static int
-swconfig_set_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
-{
-	if (val->port_vlan < 0)
-		return -EINVAL;
-
-	if (!dev->ops->set_reg_val)
-		return -EOPNOTSUPP;
-
-	return dev->ops->set_reg_val(dev, val->port_vlan, val->value.i);
-}
-
-static int
-swconfig_get_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
-{
-	if (val->port_vlan < 0)
-		return -EINVAL;
-
-	if (!dev->ops->get_reg_val)
-		return -EOPNOTSUPP;
-
-	return dev->ops->get_reg_val(dev, val->port_vlan, &val->value.i);
-}
-
-
-static int
 swconfig_set_link(struct switch_dev *dev, const struct switch_attr *attr,
 			struct switch_val *val)
 {
@@ -215,10 +190,6 @@ enum port_defaults {
 	PORT_LINK,
 };
 
-enum reg_defaults {
-	REG_VAL,
-};
-
 static struct switch_attr default_global[] = {
 	[GLOBAL_APPLY] = {
 		.type = SWITCH_TYPE_NOVAL,
@@ -261,16 +232,6 @@ static struct switch_attr default_vlan[] = {
 	},
 };
 
-static struct switch_attr default_reg[] = {
-	[REG_VAL] = {
-		.type = SWITCH_TYPE_INT,
-		.name = "val",
-		.description = "read/write value of switch register(debug use only)",
-		.set = swconfig_set_reg,
-		.get = swconfig_get_reg,
-	}
-};
-
 static const struct switch_attr *
 swconfig_find_attr_by_name(const struct switch_attrlist *alist,
 				const char *name)
@@ -291,16 +252,12 @@ static void swconfig_defaults_init(struct switch_dev *dev)
 	dev->def_global = 0;
 	dev->def_vlan = 0;
 	dev->def_port = 0;
-	dev->def_reg = 0;
 
 	if (ops->get_vlan_ports || ops->set_vlan_ports)
 		set_bit(VLAN_PORTS, &dev->def_vlan);
 
 	if (ops->get_port_pvid || ops->set_port_pvid)
 		set_bit(PORT_PVID, &dev->def_port);
-
-	if (ops->get_reg_val || ops->set_reg_val)
-		set_bit(REG_VAL, &dev->def_reg);
 
 	if (ops->get_port_link &&
 	    !swconfig_find_attr_by_name(&ops->attr_port, "link"))
@@ -312,6 +269,7 @@ static void swconfig_defaults_init(struct switch_dev *dev)
 }
 
 
+static struct genl_family switch_fam;
 
 static const struct nla_policy switch_policy[SWITCH_ATTR_MAX+1] = {
 	[SWITCH_ATTR_ID] = { .type = NLA_U32 },
@@ -338,13 +296,13 @@ static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
 static inline void
 swconfig_lock(void)
 {
-	spin_lock(&swdevs_lock);
+	mutex_lock(&swdevs_lock);
 }
 
 static inline void
 swconfig_unlock(void)
 {
-	spin_unlock(&swdevs_lock);
+	mutex_unlock(&swdevs_lock);
 }
 
 static struct switch_dev *
@@ -380,10 +338,6 @@ swconfig_put_dev(struct switch_dev *dev)
 {
 	mutex_unlock(&dev->sw_mutex);
 }
-
-
-static struct genl_family switch_fam;
-
 
 static int
 swconfig_dump_attr(struct swconfig_callback *cb, void *arg)
@@ -498,12 +452,6 @@ swconfig_list_attrs(struct sk_buff *skb, struct genl_info *info)
 		def_active = &dev->def_port;
 		n_def = ARRAY_SIZE(default_port);
 		break;
-	case SWITCH_CMD_LIST_REG:
-		alist = &dev->ops->attr_reg;
-		def_list = default_reg;
-		def_active = &dev->def_reg;
-		n_def = ARRAY_SIZE(default_reg);
-		break;
 	default:
 		WARN_ON(1);
 		goto out;
@@ -594,18 +542,6 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 		if (val->port_vlan >= dev->ports)
 			goto done;
 		break;
-	case SWITCH_CMD_SET_REG:
-	case SWITCH_CMD_GET_REG:
-		alist = &dev->ops->attr_reg;
-		def_list = default_reg;
-		def_active = &dev->def_reg;
-		n_def = ARRAY_SIZE(default_reg);
-		if (!info->attrs[SWITCH_ATTR_OP_REG])
-			goto done;
-		val->port_vlan = nla_get_u32(info->attrs[SWITCH_ATTR_OP_REG]);
-		if (val->port_vlan < 0)
-			goto done;
-		break;
 	default:
 		WARN_ON(1);
 		goto done;
@@ -655,13 +591,8 @@ swconfig_parse_ports(struct sk_buff *msg, struct nlattr *head,
 
 		port = &val->value.ports[val->len];
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
-		if (nla_parse_nested(tb, SWITCH_PORT_ATTR_MAX, nla,
-				port_policy))
-#else
 		if (nla_parse_nested(tb, SWITCH_PORT_ATTR_MAX, nla,
 				port_policy, NULL))
-#endif
 			return -EINVAL;
 
 		if (!tb[SWITCH_PORT_ID])
@@ -682,11 +613,7 @@ swconfig_parse_link(struct sk_buff *msg, struct nlattr *nla,
 {
 	struct nlattr *tb[SWITCH_LINK_ATTR_MAX + 1];
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
-	if (nla_parse_nested(tb, SWITCH_LINK_ATTR_MAX, nla, link_policy))
-#else
 	if (nla_parse_nested(tb, SWITCH_LINK_ATTR_MAX, nla, link_policy, NULL))
-#endif
 		return -EINVAL;
 
 	link->duplex = !!tb[SWITCH_LINK_FLAG_DUPLEX];
@@ -960,7 +887,7 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 	default:
 		pr_debug("invalid type in attribute\n");
 		err = -EINVAL;
-		goto error;
+		goto nla_put_failure;
 	}
 	genlmsg_end(msg, hdr);
 	err = msg->len;
@@ -1061,116 +988,58 @@ swconfig_done(struct netlink_callback *cb)
 	return 0;
 }
 
-
 static struct genl_ops swconfig_ops[] = {
 	{
 		.cmd = SWITCH_CMD_LIST_GLOBAL,
 		.doit = swconfig_list_attrs,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 	},
 	{
 		.cmd = SWITCH_CMD_LIST_VLAN,
 		.doit = swconfig_list_attrs,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 	},
 	{
 		.cmd = SWITCH_CMD_LIST_PORT,
 		.doit = swconfig_list_attrs,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
-	},
-	{
-		.cmd = SWITCH_CMD_LIST_REG,
-		.doit = swconfig_list_attrs,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 	},
 	{
 		.cmd = SWITCH_CMD_GET_GLOBAL,
 		.doit = swconfig_get_attr,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 	},
 	{
 		.cmd = SWITCH_CMD_GET_VLAN,
 		.doit = swconfig_get_attr,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 	},
 	{
 		.cmd = SWITCH_CMD_GET_PORT,
 		.doit = swconfig_get_attr,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
-	},
-	{
-		.cmd = SWITCH_CMD_GET_REG,
-		.doit = swconfig_get_attr,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 	},
 	{
 		.cmd = SWITCH_CMD_SET_GLOBAL,
 		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 	},
 	{
 		.cmd = SWITCH_CMD_SET_VLAN,
 		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 	},
 	{
 		.cmd = SWITCH_CMD_SET_PORT,
 		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
-	},
-	{
-		.cmd = SWITCH_CMD_SET_REG,
-		.doit = swconfig_set_attr,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 	},
 	{
 		.cmd = SWITCH_CMD_GET_SWITCH,
 		.dumpit = swconfig_dump_switches,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-		.policy = switch_policy,
-#endif
 		.done = swconfig_done,
 	}
 };
 
 static struct genl_family switch_fam = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
-	.id = GENL_ID_GENERATE,
-#endif
 	.name = "switch",
 	.hdrsize = 0,
 	.version = 1,
 	.maxattr = SWITCH_ATTR_MAX,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
-	.policy = switch_policy,
-#endif
 	.module = THIS_MODULE,
 	.ops = swconfig_ops,
 	.n_ops = ARRAY_SIZE(swconfig_ops),
@@ -1342,38 +1211,14 @@ switch_generic_set_link(struct switch_dev *dev, int port,
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(switch_generic_set_link);
 
 static int __init
 swconfig_init(void)
 {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0))
-	int err;
-	int i;
-#endif
 	INIT_LIST_HEAD(&swdevs);
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0))
-	err = genl_register_family(&switch_fam);
-	if (err)
-		return err;
 
-	for (i = 0; i < ARRAY_SIZE(swconfig_ops); i++) {
-		err = genl_register_ops(&switch_fam, &swconfig_ops[i]);
-		if (err)
-			goto unregister;
-	}
-	return 0;
-
-unregister:
-	genl_unregister_family(&switch_fam);
-	return err;
-#else
-	
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
-	return genl_register_family_with_ops(&switch_fam, swconfig_ops);
-#else
 	return genl_register_family(&switch_fam);
-#endif
-#endif
 }
 
 static void __exit
