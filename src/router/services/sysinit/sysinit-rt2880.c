@@ -218,6 +218,13 @@ void start_sysinit(void)
 		writestr("/sys/class/leds/white:lan3/port_mask", "0x2");
 		writestr("/sys/class/leds/white:lan4/port_mask", "0x1");
 
+
+		writestr("/sys/class/leds/white:wan/mode", "link");
+		writestr("/sys/class/leds/white:lan1/mode", "link");
+		writestr("/sys/class/leds/white:lan2/mode", "link");
+		writestr("/sys/class/leds/white:lan3/mode", "link");
+		writestr("/sys/class/leds/white:lan4/mode", "link");
+
 		writestr("/sys/class/leds/white:wan/speed_mask", "0x8");
 		writestr("/sys/class/leds/white:lan1/speed_mask", "0x8");
 		writestr("/sys/class/leds/white:lan2/speed_mask", "0x8");
@@ -236,14 +243,20 @@ void start_sysinit(void)
 		writestr("/sys/class/leds/orange:lan3/port_mask", "0x2");
 		writestr("/sys/class/leds/orange:lan4/port_mask", "0x1");
 
+		writestr("/sys/class/leds/orange:wan/mode", "link");
+		writestr("/sys/class/leds/orange:lan1/mode", "link");
+		writestr("/sys/class/leds/orange:lan2/mode", "link");
+		writestr("/sys/class/leds/orange:lan3/mode", "link");
+		writestr("/sys/class/leds/orange:lan4/mode", "link");
+
 		writestr("/sys/class/leds/orange:wan/speed_mask", "0x4");
 		writestr("/sys/class/leds/orange:lan1/speed_mask", "0x4");
 		writestr("/sys/class/leds/orange:lan2/speed_mask", "0x4");
 		writestr("/sys/class/leds/orange:lan3/speed_mask", "0x4");
 		writestr("/sys/class/leds/orange:lan4/speed_mask", "0x4");
 
-		writestr("/sys/class/leds/white:wlan2g/trigger", "phy0tpt");
-		writestr("/sys/class/leds/white:wlan5g/trigger", "phy1tpt");
+		writestr("/sys/class/leds/white:wlan2g/trigger", "phy0radio");
+		writestr("/sys/class/leds/white:wlan5g/trigger", "phy1radio");
 		break;
 	case ROUTER_BOARD_E1700:
 	case ROUTER_DIR810L:
