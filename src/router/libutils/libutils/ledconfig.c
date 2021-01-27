@@ -766,7 +766,7 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 #elif HAVE_ARCHERC7
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x1000e;
+		cfg->diag_gpio = 0x100e;
 		cfg->ses_gpio = 0x100f;
 		cfg->sec0_gpio = 0x100f;
 
