@@ -272,7 +272,7 @@ void mesh_params_main(int argc, char *argv[])
 
 static void setchanbw(char *wif, char *driver, int bw)
 {
-	sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/%s/bwmode", bw, wif, driver);
+	sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/%s/chanbw", bw, wif, driver);
 }
 
 void configure_single_ath9k(int count)
