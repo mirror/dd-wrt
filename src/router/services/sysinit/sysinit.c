@@ -3658,6 +3658,13 @@ void start_nvram(void)
 			GETENTRYBYIDX(hairpin, word, 3);
 			GETENTRYBYIDX(stp, word, 4);
 			GETENTRYBYIDX(pathcost, word, 5);
+			if (!hairpin)
+			    hairpin = "0";
+			if (!stp)
+			    stp = "1";
+			if (!pathcost)
+			    pathcost = "100";
+			    
 			char newname[64];
 			strcpy(newname, port);
 			if (!strncmp(port, "ath", 3))
