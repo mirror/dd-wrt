@@ -306,6 +306,13 @@ int bfd_session_enable(struct bfd_session *bs)
 		}
 	}
 
+	if (!vrf_is_backend_netns() && vrf && vrf->vrf_id != VRF_DEFAULT
+	    && !if_lookup_by_name(vrf->name, vrf->vrf_id)) {
+		zlog_err("session-enable: vrf interface %s not available yet",
+			 vrf->name);
+		return 0;
+	}
+
 	if (bs->key.ifname[0]) {
 		if (vrf)
 			ifp = if_lookup_by_name(bs->key.ifname, vrf->vrf_id);
@@ -1694,7 +1701,7 @@ struct bfd_session *bfd_key_lookup(struct bfd_key key)
 	inet_ntop(bs.key.family, &bs.key.peer, peer_buf,
 		  sizeof(peer_buf));
 	/* Handle cases where local-address is optional. */
-	if (bs.key.family == AF_INET) {
+	if (memcmp(&bs.key.local, &zero_addr, sizeof(bs.key.local))) {
 		memset(&bs.key.local, 0, sizeof(bs.key.local));
 		bsp = hash_lookup(bfd_key_hash, &bs);
 		if (bsp) {
