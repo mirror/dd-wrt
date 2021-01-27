@@ -675,7 +675,7 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 		state->mtu = vp->vp_integer;
 	}
 
-	if (conf->session_cache_enable) state->allow_session_resumption = true; /* otherwise it's false */
+	if (/*conf->session_cache_enable*/0) state->allow_session_resumption = true; /* otherwise it's false */
 
 	return state;
 }
@@ -3332,7 +3332,7 @@ post_ca:
 	/*
 	 *	Callbacks, etc. for session resumption.
 	 */
-	if (conf->session_cache_enable) {
+	if (/*conf->session_cache_enable*/0) {
 		/*
 		 *	Cache sessions on disk if requested.
 		 */
@@ -3402,7 +3402,7 @@ post_ca:
 	/*
 	 *	Setup session caching
 	 */
-	if (conf->session_cache_enable) {
+	if (/*conf->session_cache_enable*/0) {
 		/*
 		 *	Create a unique context Id per EAP-TLS configuration.
 		 */
