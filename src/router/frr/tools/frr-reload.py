@@ -202,6 +202,26 @@ ip forwarding
         for ligne in lines:
             self.dlines[ligne] = True
 
+def get_normalized_es_id(line):
+    """
+    The es-id or es-sys-mac need to be converted to lower case
+    """
+    sub_strs = ["evpn mh es-id", "evpn mh es-sys-mac"]
+    for sub_str in sub_strs:
+        obj = re.match(sub_str + " (?P<esi>\S*)", line)
+        if obj:
+            line = "%s %s" % (sub_str, obj.group("esi").lower())
+            break
+    return line
+
+def get_normalized_mac_ip_line(line):
+    if line.startswith("evpn mh es"):
+        return get_normalized_es_id(line)
+
+    if not "ipv6 add" in line:
+        return get_normalized_ipv6_line(line)
+
+    return line
 
 class Config(object):
 
@@ -232,11 +252,10 @@ class Config(object):
             # Compress duplicate whitespaces
             line = ' '.join(line.split())
 
-            if ":" in line and not "ipv6 add":
-                qv6_line = get_normalized_ipv6_line(line)
-                self.lines.append(qv6_line)
-            else:
-                self.lines.append(line)
+            if ":" in line:
+                line = get_normalized_mac_ip_line(line)
+
+            self.lines.append(line)
 
         self.load_contexts()
 
@@ -514,6 +533,18 @@ end
             if line.startswith('!') or line.startswith('#'):
                 continue
 
+            if (len(ctx_keys) == 2
+                and ctx_keys[0].startswith('bfd')
+                and ctx_keys[1].startswith('profile ')
+                and line == 'end'):
+                log.debug('LINE %-50s: popping from sub context, %-50s', line, ctx_keys)
+
+                if main_ctx_key:
+                    self.save_contexts(ctx_keys, current_context_lines)
+                    ctx_keys = copy.deepcopy(main_ctx_key)
+                    current_context_lines = []
+                    continue
+
             # one line contexts
             # there is one exception though: ldpd accepts a 'router-id' clause
             # as part of its 'mpls ldp' config context. If we are processing
@@ -628,6 +659,22 @@ end
                 current_context_lines = []
                 sub_main_ctx_key = copy.deepcopy(ctx_keys)
                 log.debug('LINE %-50s: entering sub-sub-context, append to ctx_keys', line)
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith('profile ')
+                and len(ctx_keys) == 1
+                and ctx_keys[0].startswith('bfd')
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                main_ctx_key = copy.deepcopy(ctx_keys)
+                log.debug(
+                    "LINE %-50s: entering BFD profile sub-context, append to ctx_keys",
+                    line
+                )
                 ctx_keys.append(line)
 
             else:

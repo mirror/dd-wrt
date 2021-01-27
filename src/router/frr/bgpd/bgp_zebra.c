@@ -1196,7 +1196,7 @@ void bgp_zebra_announce(struct bgp_dest *dest, const struct prefix *p,
 	int nh_othervrf = 0;
 	char buf_prefix[PREFIX_STRLEN];	/* filled in if we are debugging */
 	bool is_evpn;
-	int nh_updated;
+	bool nh_updated = false;
 	bool do_wt_ecmp;
 	uint64_t cum_bw = 0;
 
@@ -1386,11 +1386,21 @@ void bgp_zebra_announce(struct bgp_dest *dest, const struct prefix *p,
 			}
 			nexthop = bgp_path_info_to_ipv6_nexthop(mpinfo_cp,
 								&ifindex);
-			nh_updated = update_ipv6nh_for_route_install(
-					nh_othervrf, nh_othervrf ?
-					info->extra->bgp_orig : bgp,
-					nexthop, ifindex,
-					mpinfo, info, is_evpn, api_nh);
+
+			if (!nexthop)
+				nh_updated = update_ipv4nh_for_route_install(
+					nh_othervrf,
+					nh_othervrf ? info->extra->bgp_orig
+						    : bgp,
+					&mpinfo_cp->attr->nexthop,
+					mpinfo_cp->attr, is_evpn, api_nh);
+			else
+				nh_updated = update_ipv6nh_for_route_install(
+					nh_othervrf,
+					nh_othervrf ? info->extra->bgp_orig
+						    : bgp,
+					nexthop, ifindex, mpinfo, info, is_evpn,
+					api_nh);
 		}
 
 		/* Did we get proper nexthop info to update zebra? */
