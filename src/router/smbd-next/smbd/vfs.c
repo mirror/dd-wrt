@@ -1631,7 +1631,11 @@ struct posix_acl *ksmbd_vfs_posix_acl_alloc(int count, gfp_t flags)
 struct posix_acl *ksmbd_vfs_get_acl(struct inode *inode, int type)
 {
 #if IS_ENABLED(CONFIG_FS_POSIX_ACL)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+	return inode->i_op->get_acl(inode, type);
+#else
 	return get_acl(inode, type);
+#endif
 #else
 	return NULL;
 #endif
@@ -1642,6 +1646,7 @@ int ksmbd_vfs_set_posix_acl(struct inode *inode, int type,
 {
 #if IS_ENABLED(CONFIG_FS_POSIX_ACL)
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 4, 21)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
 	int ret;
 
 	if (!IS_POSIXACL(inode))
@@ -1660,6 +1665,9 @@ int ksmbd_vfs_set_posix_acl(struct inode *inode, int type,
 	if (ret)
 		return ret;
 	return inode->i_op->set_acl(inode, acl, type);
+#else
+	return -EOPNOTSUPP;
+#endif
 #else
 	return set_posix_acl(inode, type, acl);
 #endif
