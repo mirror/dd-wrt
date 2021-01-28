@@ -1,5 +1,0 @@
-#!/bin/sh -eu
-if [ -x /sbin/resolvconf ] ; then
-	/sbin/resolvconf -d lo.dnsmasq
-fi
-
