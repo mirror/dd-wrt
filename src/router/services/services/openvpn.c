@@ -134,9 +134,10 @@ void create_openvpnserverrules(FILE * fp)
 void start_openvpnserver(void)
 {
 	int jffs = 0;
-	char proto[16];
 	if (nvram_invmatchi("openvpn_enable", 1))
 		return;
+/* 	
+	char proto[16];
 	strcpy(proto, nvram_safe_get("openvpn_proto"));
 	if (!nvram_matchi("ipv6_enable", 1)) {
 		if (!strcmp(proto, "udp")) {
@@ -145,6 +146,7 @@ void start_openvpnserver(void)
 			strcpy(proto, "tcp4-server");
 		}
 	}
+ */	
 	insmod("tun");
 	update_timezone();
 	if ((freediskSpace("/jffs") > 16384)
@@ -219,7 +221,8 @@ void start_openvpnserver(void)
 			"management 127.0.0.1 14\n"
 			"management-log-cache 100\n"
 			"topology subnet\n"
-			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
+			//"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
+			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
 
 		//egc
 		char dcbuffer[128] = { 0 };
@@ -263,14 +266,13 @@ void start_openvpnserver(void)
 			fprintf(fp, "push \"redirect-gateway def1\"\n");
 		if (nvram_invmatchi("openvpn_tlscip", 0))
 			fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpn_tlscip"));
-		if (nvram_match("openvpn_proto", "udp"))
+		if (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp4") || nvram_match("openvpn_proto", "udp6"))
 			fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 		else		//TCP_NODELAY is generally a good latency optimization
 			fprintf(fp, "tcp-nodelay\n");
 		if (nvram_invmatch("openvpn_mtu", ""))
 			fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpn_mtu"));
-		if (nvram_invmatch("openvpn_fragment", "")
-		    && nvram_match("openvpn_proto", "udp")) {
+		if (nvram_invmatch("openvpn_fragment", "") && (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp4") || nvram_match("openvpn_proto", "udp6"))) {
 			fprintf(fp, "fragment %s\n", nvram_safe_get("openvpn_fragment"));
 			if (nvram_matchi("openvpn_mssfix", 1))
 				fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss   
@@ -469,6 +471,7 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/cert.p12", "openvpncl_pkcs12");
 	write_nvram("/tmp/openvpncl/static.key", "openvpncl_static");
 	chmod("/tmp/openvpn/client.key", 0600);
+/* 
 	char proto[16];
 	strcpy(proto, nvram_safe_get("openvpncl_proto"));
 	if (!nvram_matchi("ipv6_enable", 1)) {
@@ -478,6 +481,7 @@ void start_openvpn(void)
 			strcpy(proto, "tcp4-client");
 		}
 	}
+ */	
 	FILE *fp;
 	char ovpniface[10];
 #ifdef HAVE_ERC
@@ -516,7 +520,8 @@ void start_openvpn(void)
 		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
 #endif
 	fprintf(fp, "dev %s\n", ovpniface);
-	fprintf(fp, "proto %s\n", proto);
+	//fprintf(fp, "proto %s\n", proto);
+	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
 
@@ -561,8 +566,7 @@ void start_openvpn(void)
 		fprintf(fp, "tls-client\n");
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
-	if (nvram_invmatch("openvpncl_fragment", "")
-	    && nvram_match("openvpncl_proto", "udp")) {
+	if (nvram_invmatch("openvpncl_fragment", "") && (nvram_match("openvpncl_proto", "udp") || nvram_match("openvpncl_proto", "udp4") || nvram_match("openvpncl_proto", "udp6"))) {
 		fprintf(fp, "fragment %s\n", nvram_safe_get("openvpncl_fragment"));
 		if (nvram_matchi("openvpncl_mssfix", 1))
 			fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss   
@@ -571,7 +575,7 @@ void start_openvpn(void)
 	if (nvram_matchi("openvpncl_certtype", 1))
 //                fprintf(fp, "ns-cert-type server\n"); //egc: ns-cert-type deprecated and replaced by remote-cert-tls
 		fprintf(fp, "remote-cert-tls server\n");
-	if (nvram_match("openvpncl_proto", "udp"))
+	if (nvram_match("openvpncl_proto", "udp") || nvram_match("openvpncl_proto", "udp4") || nvram_match("openvpncl_proto", "udp6"))
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 //      if (nvram_match("openvpncl_tuntap", "tun"))
 //              fprintf(fp, "tun-ipv6\n");      //enable ipv6 support.
@@ -640,7 +644,7 @@ void start_openvpn(void)
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_matchi("openvpncl_bridge", 1)
 	    && nvram_matchi("openvpncl_nat", 0))
-		fprintf(fp, "brctl delif br0 %s\n" "ifconfig %s down\n");
+		fprintf(fp, "brctl delif br0 %s\n" "ifconfig %s down\n", ovpniface, ovpniface);
 	else if (nvram_match("openvpncl_tuntap", "tap")
 		 && *(nvram_safe_get("openvpncl_ip")))
 		fprintf(fp, "ifconfig $dev down\n");

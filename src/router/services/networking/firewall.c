@@ -2259,8 +2259,15 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 */
 #ifdef HAVE_OPENVPN
 	//check if ovpn server is running
+
 	if (nvram_matchi("openvpn_enable", 1)) {
-		save2file_A_input("-p %s --dport %s -j %s", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"), log_accept);
+		//char proto[16];
+		if (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp4")) {
+			save2file_A_input("-p udp --dport %s -j %s", nvram_safe_get("openvpn_port"), log_accept);
+		}
+		if (nvram_match("openvpn_proto", "tcp-server") || nvram_match("openvpn_proto", "tcp4-server")) {
+			save2file_A_input("-p tcp --dport %s -j %s", nvram_safe_get("openvpn_port"), log_accept);
+		}
 		if (nvram_match("openvpn_tuntap", "tun")) {
 //                      if (strlen(nvram_safe_get("openvpn_ccddef")) = 0) {
 			save2file_A_input("-i %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
