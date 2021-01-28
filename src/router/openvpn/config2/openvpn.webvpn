@@ -84,8 +84,12 @@
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_tunnel"); %></div>
 				<select name="openvpn_proto">
-				<option value="udp" <% nvram_selected("openvpn_proto","udp"); %>>UDP</option>
-				<option value="tcp-server" <% nvram_selected("openvpn_proto","tcp-server"); %>>TCP</option>
+				<option value="udp" <% nvram_selected("openvpn_proto","udp"); %>>udp</option>
+				<option value="udp4" <% nvram_selected("openvpn_proto","udp4"); %>>udp4</option>
+				<option value="udp6" <% nvram_selected("openvpn_proto","udp6"); %>>udp6</option>
+				<option value="tcp-server" <% nvram_selected("openvpn_proto","tcp-server"); %>>tcp</option>
+				<option value="tcp4-server" <% nvram_selected("openvpn_proto","tcp4-server"); %>>tcp4</option>
+				<option value="tcp6-server" <% nvram_selected("openvpn_proto","tcp6-server"); %>>tcp6</option>
 				</select>
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[

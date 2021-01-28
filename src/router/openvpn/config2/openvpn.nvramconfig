@@ -15,7 +15,7 @@
  "openvpn_pkcs12"  "Server PKSC12 Cert"  "NULL"   "FALSE" "0"
  "openvpn_static"  "OpenVPN Static Key"  "NULL"   "FALSE" "0"
  "openvpn_dh" "DH PEM" "NULL" "FALSE" "0"
- "openvpn_proto" "Tunnel Protocol" "CHOICE" "2" "udp" "tcp-server" "FALSE" "0"
+ "openvpn_proto" "Tunnel Protocol" "CHOICE" "6" "udp" "udp4" "udp6" "tcp-server" "tcp4-server" "tcp6-server" "FALSE" "0"
  "openvpn_onwan" "Start type" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_config" "Config" "NULL" "FALSE" "0"
  "openvpn_tlsauth" "Tlsauth" "NULL" "FALSE" "0"
