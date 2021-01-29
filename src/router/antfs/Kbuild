@@ -7,10 +7,10 @@ LIBNTFS_SRC := libntfs-3g
 # Iff $(src) is a relative path, prefix it with $(srctree)
 antfs_src = $(addprefix $(if $(filter-out /%,$(src)),$(srctree)/),$(src))
 
-GIT_CMD = git -C $(antfs_src)
-__avm_non_stable := $(shell $(GIT_CMD) rev-parse --abbrev-ref HEAD 2>/dev/null | grep -E '^(shared|p)/' || true)
-__avm_antfs_tag = $(shell $(GIT_CMD) describe --tags | grep -o '^[0-9.]*')
-__avm_antfs_commit = $(shell $(GIT_CMD) rev-parse --short HEAD)
+#GIT_CMD = git -C $(antfs_src)
+#__avm_non_stable := $(shell $(GIT_CMD) rev-parse --abbrev-ref HEAD 2>/dev/null | grep -E '^(shared|p)/' || true)
+#__avm_antfs_tag = $(shell $(GIT_CMD) describe --tags | grep -o '^[0-9.]*')
+#__avm_antfs_commit = $(shell $(GIT_CMD) rev-parse --short HEAD)
 
 ANTFS_LOGLEVEL_DEFAULT ?= $(if $(__avm_non_stable),ANTFS_LOGLEVEL_ERR_EXT,ANTFS_LOGLEVEL_ERR)
 ANTFS_VERSION ?= $(if $(__avm_non_stable),$(__avm_antfs_commit),$(__avm_antfs_tag))
