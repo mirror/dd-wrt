@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.240 Kernel Configuration
+# Linux/i386 4.9.241 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -4026,7 +4026,7 @@ CONFIG_FANOTIFY=y
 # CONFIG_QUOTA is not set
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
-CONFIG_FUSE_FS=m
+# CONFIG_FUSE_FS is not set
 # CONFIG_CUSE is not set
 # CONFIG_OVERLAY_FS is not set
 

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.234 Kernel Configuration
+# Linux/mips 4.9.241 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2139,4 +2139,3 @@ CONFIG_GENERIC_ATOMIC64=y
 CONFIG_SBITMAP=y
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_GPIO_ANTAIRA is not set

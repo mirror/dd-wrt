@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.234 Kernel Configuration
+# Linux/arm 4.9.241 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -3216,7 +3216,7 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_QUOTA is not set
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
-CONFIG_FUSE_FS=m
+# CONFIG_FUSE_FS is not set
 # CONFIG_CUSE is not set
 CONFIG_OVERLAY_FS=y
 
@@ -3742,4 +3742,3 @@ CONFIG_SG_POOL=y
 CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_SBITMAP=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_GPIO_ANTAIRA is not set

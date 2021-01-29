@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.9.234 Kernel Configuration
+# Linux/powerpc 4.9.241 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -2273,7 +2273,7 @@ CONFIG_FANOTIFY=y
 # CONFIG_QUOTA is not set
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
-CONFIG_FUSE_FS=m
+# CONFIG_FUSE_FS is not set
 # CONFIG_CUSE is not set
 # CONFIG_OVERLAY_FS is not set
 
@@ -2768,4 +2768,3 @@ CONFIG_CRYPTO_DEV_FSL_CAAM_RNG_API=m
 #
 # CONFIG_CRYPTODEV is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_GPIO_ANTAIRA is not set
