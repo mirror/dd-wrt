@@ -9,7 +9,9 @@ ntfs-3g:
 	$(MAKE) -C ntfs-3g all
 
 ntfs-3g-install:
-#	install -D ntfs-3g/src/ntfs-3g $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g
+ifeq ($(CONFIG_LEGACY_KERNEL),y)
+	install -D ntfs-3g/src/ntfs-3g $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g
+endif
 ifeq ($(CONFIG_NTFSPROGS),y)
 	install -D ntfs-3g/ntfsprogs/mkntfs $(INSTALLDIR)/ntfs-3g/usr/sbin/mkfs.ntfs
 endif
