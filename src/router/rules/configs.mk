@@ -139,7 +139,11 @@ obj-$(CONFIG_SAMBA3) += jansson
 obj-$(CONFIG_SAMBA4) += jansson
 endif
 obj-$(CONFIG_MINIDLNA) += jansson
+ifeq ($(CONFIG_LEGACY_KERNEL),y)
+obj-$(CONFIG_NTFS3G) += ntfs-3g
+else
 obj-$(CONFIG_NTFS3G) += antfs ntfs-3g
+endif
 obj-$(CONFIG_SPEEDTEST_CLI) += curl speedtest-cli zlib
 obj-$(CONFIG_RADAUTH) += radauth
 ifneq ($(CONFIG_FONERA),y)
