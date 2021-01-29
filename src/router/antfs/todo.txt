@@ -1,0 +1,108 @@
+NTFSAVM - A NTFS driver from AVM
+
+A list of things we have to take care of in the near and far future.
+
+
+# Work in progress (WIP):
+ * avm-pa direct-path (?)
+
+# Looky looky
+Lindent:
+    console: ../../scripts/Lindent <FILE>
+    gvim: :%!../../scripts/Lindent
+Checkpatch:
+    git ls-files | grep -Ee '\.[ch]$' | xargs -I{} -n1 ../../scripts/checkpatch.pl --file {} 2>/dev/null > checkpatch_errors
+
+
+# Tree of files of the NTFSAVM project:
+Legend:
+*  == will be removed
+-> == changes to
+
+File-tree:
+├── dir.c
+├── file.c
+├── inode.c
+├── Kconfig
+├── Makefile
+├── antfs.h
+├── super.c
+
+│   ├── ntfs-3g
+│   │   ├── acls.h
+│   │   ├── attrib.h
+│   │   ├── attrlist.h
+│   │   ├── bitmap.h
+│   │   ├── bootsect.h
+│   │   ├── cache.h
+│   │   ├── collate.h
+│   │   ├── compat.h
+│   │   ├── compress.h
+│   │   ├── debug.h
+│   │   ├── device.h
+│   │   ├── device_io.h
+│   │   ├── dir.h
+│   │   ├── ea.h
+│   │   ├── efs.h
+│   │   ├── endians.h
+│   │   ├── index.h
+│   │   ├── inode.h
+│   │   ├── ioctl.h
+│   │   ├── layout.h
+│   │   ├── lcnalloc.h
+│   │   ├── logfile.h
+│   │   ├── logging.h
+│   │   ├── mft.h
+│   │   ├── misc.h
+│   │   ├── mst.h
+│   │   ├── ntfs.h
+│   │   ├── ntfstime.h
+│   │   ├── object_id.h
+│   │   ├── param.h
+│   │   ├── random.h
+│   │   ├── realpath.h
+│   │   ├── reparse.h
+│   │   ├── runlist.h
+│   │   ├── security.h
+│   │   ├── support.h
+│   │   ├── types.h
+│   │   ├── unistr.h
+│   │   ├── volume.h
+│   │   └── xattrs.h
+
+├── libntfs-3g
+│   ├── acls.c
+│   ├── attrib.c
+│   ├── attrlist.c
+│   ├── bitmap.c
+│   ├── bootsect.c
+│   ├── cache.c
+│   ├── collate.c
+│   ├── compat.c
+│   ├── compress.c
+│   ├── debug.c
+│   ├── device.c
+│   ├── dir.c
+│   ├── ea.c
+│   ├── efs.c
+│   ├── index.c
+│   ├── inode.c
+│   ├── ioctl.c
+│   ├── lcnalloc.c
+│   ├── linux_io.c
+│   ├── logfile.c
+│   ├── logging.c
+│   ├── Makefile
+│   ├── mft.c
+│   ├── misc.c
+│   ├── mst.c
+│   ├── object_id.c
+│   ├── realpath.c
+│   ├── reparse.c
+│   ├── runlist.c
+│   ├── security.c
+│   ├── unistr.c
+│   ├── unix_io.c
+│   ├── volume.c
+│   ├── xattrs.c
+

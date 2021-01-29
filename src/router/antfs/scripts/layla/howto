@@ -1,0 +1,23 @@
+﻿ANTFS test setup
+
+Device:
+- Samsung T5 SDD 250GB
+- 7 partitions needed
+- each with a size of 20480 MB
+  > 1x filesystem: EXT, label: DATA
+  > 6x filesystem: NTFS, label: NTFS
+
+Files:
+- copy: files/image_ntfs_20gb.gz -> DATA/
+- copy: scripts/antfs_*.sh -> DATA/
+
+Suite excution order:
+1. antfs_ftp.lts
+2. antfs_files.lts
+3. antfs_concurrency.lts
+4. antfs_move.lts
+5. antfs_move.lts
+6. antfs_concurrency.lts
+7. antfs_files.lts
+8. antfs_remount.lts
+9. antfs_setup.lts
