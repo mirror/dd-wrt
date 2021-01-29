@@ -334,7 +334,7 @@ void start_raid(void)
 				sysprintf("mount -t vfat -o iocharset=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
-				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				sysprintf("mount -t antfs -o utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("zfs", "raidfs%d", i)) {
 				sysprintf("zpool import -a -d /dev");

@@ -309,7 +309,7 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 	/* lets start mounting */
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
-		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 	} else
 #endif
 	if (!strcmp(fs, "vfat") || !strcmp(fs, "exfat")) {
@@ -325,7 +325,7 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 	if (ret != 0) {		//give it another try
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
-			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+			ret = eval("/bin/mount", "-t", "antfs", "-o", "compression,direct_io,big_writes", path, mount_point);
 		} else
 #endif
 			ret = eval("/bin/mount", path, mount_point);	//guess fs

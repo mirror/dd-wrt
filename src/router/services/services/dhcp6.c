@@ -354,9 +354,9 @@ int dhcp6c_state_main(int argc, char **argv)
 
 		c |= nvram_change("ipv6_prefix", prefix);
 		if (c) {
-//			char loopback[128];
-//			sprintf(loopback, "%s/%d", prefix, r);
-//			eval("ip", "-6", "route", "unreachable", loopback, "dev", "lo");
+//                      char loopback[128];
+//                      sprintf(loopback, "%s/%d", prefix, r);
+//                      eval("ip", "-6", "route", "unreachable", loopback, "dev", "lo");
 		}
 	}
 
