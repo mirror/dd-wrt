@@ -152,8 +152,13 @@ void start_raid(void)
 		dd_loginfo("raid", "BTRFS modules successfully loaded\n");
 	}
 	if (ntfs) {
+#ifdef HAVE_LEGACY_KERNEL
 		insmod("fuse");
 		dd_loginfo("raid", "NTFS / FUSE modules successfully loaded\n");
+#else
+		insmod("antfs");
+		dd_loginfo("raid", "NTFS modules successfully loaded\n");
+#endif
 	}
 	if (xfs) {
 		insmod("xfs");
@@ -334,7 +339,11 @@ void start_raid(void)
 				sysprintf("mount -t vfat -o iocharset=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
+#ifdef HAVE_LEGACY_KERNEL
+				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+#else
 				sysprintf("mount -t antfs -o utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+#endif
 			}
 			if (nvram_nmatch("zfs", "raidfs%d", i)) {
 				sysprintf("zpool import -a -d /dev");
