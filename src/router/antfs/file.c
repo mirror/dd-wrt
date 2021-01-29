@@ -1259,7 +1259,11 @@ static ssize_t antfs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 		if (file->f_flags & O_APPEND) {
 #else
 		count = iov_iter_count(from);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+		if (file->f_flags & O_APPEND) {
+#else
 		if (iocb->ki_flags & IOCB_APPEND) {
+#endif
 #endif
 		/* case appending: we wanna start copying from the end of the
 		 * file -> rpos = file size
@@ -1315,7 +1319,12 @@ static ssize_t antfs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 		err = copy_from_iter(val + rpos, count, from);
 		if (err != count) {
 			antfs_log_error("Failed to copy data to buffer!");
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+			if (file->f_flags & O_APPEND) {
+#else
 			if (iocb->ki_flags & IOCB_APPEND) {
+
+#endif
 #endif
 				/* shrink back to original size, this should not
 				 * fail if nothing really bad happens!
