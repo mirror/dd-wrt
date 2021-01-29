@@ -847,7 +847,7 @@ void invalidate_inode_buffers(struct inode *inode)
 		spin_unlock(&buffer_mapping->private_lock);
 	}
 }
-
+EXPORT_SYMBOL(invalidate_inode_buffers);
 /*
  * Remove any clean buffers from the inode's buffer list.  This is called
  * when we're trying to free the inode itself.  Those buffers can pin it.
