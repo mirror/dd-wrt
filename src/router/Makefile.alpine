@@ -154,6 +154,10 @@ kernel:
 	-$(MAKE) -f Makefile.alpine batman-adv-install
 	-$(MAKE) -f Makefile.alpine ndpi-netfilter
 	-$(MAKE) -f Makefile.alpine ndpi-netfilter-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.alpine antfs
+	-$(MAKE) -f Makefile.alpine antfs-install
+endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.alpine zfs
 	-$(MAKE) -f Makefile.alpine zfs-install

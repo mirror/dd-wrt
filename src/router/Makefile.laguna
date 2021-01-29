@@ -185,6 +185,10 @@ endif
 	-$(MAKE) -f Makefile.laguna batman-adv-install
 	-$(MAKE) -f Makefile.laguna ndpi-netfilter
 	-$(MAKE) -f Makefile.laguna ndpi-netfilter-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.laguna antfs
+	-$(MAKE) -f Makefile.laguna antfs-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.laguna smbd
 	-$(MAKE) -f Makefile.laguna smbd-install
