@@ -1,0 +1,7 @@
+{
+  "phabricator.uri" : "http://phab.hulk.avm.de/",
+  "repository.callsign" : "ANTFS",
+  "arc.land.onto.default": "shared/avm/antfs/master",
+  "arc.feature.start.default": "origin/shared/avm/antfs/master",
+  "history.immutable": true
+}

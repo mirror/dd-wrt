@@ -1,0 +1,3664 @@
+{
+    "__class__": "TestSuite",
+    "creation_time": 1504170215.0690374,
+    "description": "",
+    "designer": [
+        "Jens Krieg",
+        "j.krieg@avm.de",
+        "7507",
+        "513"
+    ],
+    "execution_information": {
+        "client_managers": [],
+        "resource_manager": "",
+        "started": 0,
+        "submitted": 0
+    },
+    "file_information": {
+        "folder": "",
+        "host": "",
+        "name": ""
+    },
+    "last_access": 1504170215.0690374,
+    "live_events": {},
+    "modifiable": true,
+    "name": "ANTFS_Test-Setup",
+    "prepared": false,
+    "root_setup": {
+        "__class__": "LaylaModuleSetup",
+        "atomic": false,
+        "children": {
+            "c_A56zdEdbyO": {
+                "__class__": "LaylaModuleSetup",
+                "atomic": false,
+                "children": {},
+                "cls_meta": {
+                    "author": "Kevin Schneider",
+                    "description": "This module sends one command to the serial console.",
+                    "icon": "Settings",
+                    "module": "layla.layla_modules.serial_config_provider",
+                    "name": "SerialCommandConfigProvider",
+                    "style": [
+                        3132995327,
+                        3990094079
+                    ],
+                    "tags": [],
+                    "version": "0.1"
+                },
+                "config_dependencies": [],
+                "config_desc": {
+                    "command": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": "ls /",
+                        "description": "Sending the given command via serial to the F!Box",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "regex": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": "# ",
+                        "description": "The Regex to wait for. Indicates the end of the given command.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "timeout": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": "5",
+                        "description": "The time until the method shall wait",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": "[0-9]+",
+                        "static": false
+                    }
+                },
+                "dependencies": [],
+                "gui_meta": {
+                    "height": 75.0,
+                    "icon": "",
+                    "style": null,
+                    "width": 115.0,
+                    "x": 525.0,
+                    "y": 95.0
+                },
+                "inst_config": {
+                    "command": "/var/tmp/antfs_images.sh /var/media/ftp/DATA/image_ntfs_20gb.gz",
+                    "timeout": "10000"
+                },
+                "inst_id": "JfnA5oFGjN",
+                "inst_name": "SCPartitionRenew",
+                "inst_triggers": [
+                    {
+                        "__class__": "Trigger",
+                        "label": "serial_command_config",
+                        "src_method": "provide_command_configuration",
+                        "target": "YYBtSUY9eX",
+                        "target_method": "send_serial_command"
+                    }
+                ],
+                "provided_resources": {},
+                "published_events": [
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "exception",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 5,
+                        "label": "serial_command_config",
+                        "method": "provide_command_configuration",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "start() has been executed.",
+                        "event_type": 0,
+                        "label": "running",
+                        "method": "start",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "stop() has been executed.",
+                        "event_type": 0,
+                        "label": "stopped",
+                        "method": "stop",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "The modules configuration has been updated.",
+                        "event_type": 6,
+                        "label": "config_updated",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    }
+                ],
+                "published_routines": [
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "provide_command_configuration"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Stops module.",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "stop"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Update the module's configuration using the incomming event (must be of type TYPE_MODULE_CONFIG).",
+                        "direction_inward": null,
+                        "filters": [
+                            5
+                        ],
+                        "method": "update_module_config"
+                    }
+                ],
+                "required_resources": {},
+                "resource_dependencies": [],
+                "resource_provisions": [],
+                "test_id": "hZ9kZsGUAR"
+            },
+            "c_EuGjXmENzl": {
+                "__class__": "LaylaModuleSetup",
+                "atomic": false,
+                "children": {},
+                "cls_meta": {
+                    "author": "Kevin Schneider",
+                    "description": "This module sends one command to the serial console.",
+                    "icon": "Settings",
+                    "module": "layla.layla_modules.serial_config_provider",
+                    "name": "SerialCommandConfigProvider",
+                    "style": [
+                        3132995327,
+                        3990094079
+                    ],
+                    "tags": [],
+                    "version": "0.1"
+                },
+                "config_dependencies": [],
+                "config_desc": {
+                    "command": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": "ls /",
+                        "description": "Sending the given command via serial to the F!Box",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "regex": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": "# ",
+                        "description": "The Regex to wait for. Indicates the end of the given command.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "timeout": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": "5",
+                        "description": "The time until the method shall wait",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": "[0-9]+",
+                        "static": false
+                    }
+                },
+                "dependencies": [],
+                "gui_meta": {
+                    "height": 75.0,
+                    "icon": "",
+                    "style": null,
+                    "width": 115.0,
+                    "x": 525.0,
+                    "y": 5.0
+                },
+                "inst_config": {
+                    "command": "cp /var/media/ftp/DATA/antfs_*.sh /var/tmp"
+                },
+                "inst_id": "wCVj595PTd",
+                "inst_name": "SCCopyScripts",
+                "inst_triggers": [
+                    {
+                        "__class__": "Trigger",
+                        "label": "serial_command_config",
+                        "src_method": "provide_command_configuration",
+                        "target": "YYBtSUY9eX",
+                        "target_method": "send_serial_command"
+                    }
+                ],
+                "provided_resources": {},
+                "published_events": [
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "exception",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 5,
+                        "label": "serial_command_config",
+                        "method": "provide_command_configuration",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "start() has been executed.",
+                        "event_type": 0,
+                        "label": "running",
+                        "method": "start",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "stop() has been executed.",
+                        "event_type": 0,
+                        "label": "stopped",
+                        "method": "stop",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "The modules configuration has been updated.",
+                        "event_type": 6,
+                        "label": "config_updated",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    }
+                ],
+                "published_routines": [
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "provide_command_configuration"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Stops module.",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "stop"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Update the module's configuration using the incomming event (must be of type TYPE_MODULE_CONFIG).",
+                        "direction_inward": null,
+                        "filters": [
+                            5
+                        ],
+                        "method": "update_module_config"
+                    }
+                ],
+                "required_resources": {},
+                "resource_dependencies": [],
+                "resource_provisions": [],
+                "test_id": "hZ9kZsGUAR"
+            },
+            "c_Kwj55Wxrzn": {
+                "__class__": "LaylaModuleSetup",
+                "atomic": false,
+                "children": {},
+                "cls_meta": {
+                    "author": "Felix Goroncy, Kevin Schneider",
+                    "description": "Konfiguriert das Netzwerk innerhalb eines Linux Containers (LXC) f\u00fcr ein einzelnes Netzwerk-Interface.\nVerschiedene Einstellungen erlauben die Konfiguration via DHCP, statischer IP und manuellen Befehlen. Auch l\u00e4sst sich die MAC-Adresse des Interfaces einstellen, sowie die Netzwerkmaske und das default gateway.",
+                    "icon": "LanConnect",
+                    "module": "layla.layla_modules.network",
+                    "name": "NetworkModule",
+                    "style": [
+                        1318717183,
+                        3462136063
+                    ],
+                    "tags": [
+                        "linux_container",
+                        "network",
+                        "sip",
+                        "iperf",
+                        "ftp"
+                    ],
+                    "version": "0.1"
+                },
+                "config_dependencies": [],
+                "config_desc": {
+                    "address": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": "192.168.178.10",
+                        "description": "Statische IP Adresse (nur f\u00fcr 'method'='static').",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": true,
+                        "position": 1000,
+                        "regex": "^$|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{1,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))",
+                        "static": false
+                    },
+                    "default_gateway": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": null,
+                        "description": "Addresse des default gateways.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": true,
+                        "position": 1000,
+                        "regex": "^$|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{1,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))",
+                        "static": false
+                    },
+                    "mac": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": null,
+                        "description": "Setzen der MAC-Adresse auf angegebenen Wert.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": true,
+                        "position": 1000,
+                        "regex": "^$|[0-9a-fA-F]{2}([-:])[0-9a-fA-F]{2}(\\1[0-9a-fA-F]{2}){4}$",
+                        "static": false
+                    },
+                    "method": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [
+                            "dhcp",
+                            "static",
+                            "manual"
+                        ],
+                        "config_type": 1,
+                        "default": "dhcp",
+                        "description": "Methode mit der die IP Adresse ermittelt wird (dhcp, static, manual). 'static' erwartet die Angabe einer IP-Adresse mit Netzmaske; Bei 'manual' ist die Angabe von Shell-Kommandos in dem Parameter 'up' empfehlenswert.",
+                        "hidden": false,
+                        "hides": {
+                            "address": [
+                                "dhcp",
+                                "manual"
+                            ],
+                            "netmask": [
+                                "dhcp",
+                                "manual"
+                            ],
+                            "up": [
+                                "dhcp",
+                                "static"
+                            ]
+                        },
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": "dhcp|static|manual",
+                        "static": false
+                    },
+                    "netmask": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": null,
+                        "description": "Subnetzmaske zwischen 0 und 32 (nicht z.B. 255.255.255.0) Erforderlich f\u00fcr 'method'='static'",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": true,
+                        "position": 1000,
+                        "regex": "^$|^(?:(?:3[0-2])|(?:[1-2]?)[0-9])$|^(254|252|248|240|224|192|128)\\.0\\.0\\.0$|^255\\.(254|252|248|240|224|192|128|0)\\.0\\.0$|^255\\.255\\.(254|252|248|240|224|192|128|0)\\.0$|^255\\.255\\.255\\.(254|252|248|240|224|192|128|0)$",
+                        "static": false
+                    },
+                    "up": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": null,
+                        "description": "Auszuf\u00fchrende Shell-Kommandos f\u00fcr 'method'='manual'. ${DEV} verwenden um auf das Netzwerkdevice zuzugreifen.\nBsp.: 'ip addr add 10.0.0.1/8 dev ${DEV}'",
+                        "hidden": true,
+                        "hides": {},
+                        "link": null,
+                        "optional": true,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    }
+                },
+                "dependencies": [],
+                "gui_meta": {
+                    "height": 75.0,
+                    "icon": "",
+                    "style": null,
+                    "width": 125.0,
+                    "x": 335.0,
+                    "y": 5.0
+                },
+                "inst_config": {
+                    "method": "static",
+                    "netmask": "255.255.255.0"
+                },
+                "inst_id": "oZz8LuGt3j",
+                "inst_name": "NetworkModule",
+                "inst_triggers": [
+                    {
+                        "__class__": "Trigger",
+                        "label": "network_configured",
+                        "src_method": "setup_network",
+                        "target": "wCVj595PTd",
+                        "target_method": "provide_command_configuration"
+                    }
+                ],
+                "provided_resources": {
+                    "network": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.network.Network",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "Network",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "1j2eyLAoVG",
+                        "local_attr_descriptions": {
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "ipv4": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The IPv4 address of the corresponding interface",
+                                "group": null,
+                                "options": null,
+                                "regex": "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",
+                                "type": 0
+                            },
+                            "ipv6": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The IPv6 address of the corresponding interface",
+                                "group": null,
+                                "options": null,
+                                "regex": "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{1,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))",
+                                "type": 0
+                            },
+                            "netmask": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The IPv4-Netmask to be used for the IPv4 address",
+                                "group": null,
+                                "options": null,
+                                "regex": "^(?:(?:3[0-2])|(?:[1-2]?)[0-9])$|^(254|252|248|240|224|192|128)\\.0\\.0\\.0$|^255\\.(254|252|248|240|224|192|128|0)\\.0\\.0$|^255\\.255\\.(254|252|248|240|224|192|128|0)\\.0$|^255\\.255\\.255\\.(254|252|248|240|224|192|128|0)$",
+                                "type": 0
+                            },
+                            "prefix": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The IPv6-repfix to be used for the IPv6 address",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "route4": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "An additional route for the IPv4 address",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "route6": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "An additional route for the IPv6 address",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            }
+                        },
+                        "meta": {},
+                        "module_name": "layla.resources.network",
+                        "name": "Network",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "ipv4": null,
+                            "ipv6": null,
+                            "netmask": null,
+                            "prefix": null,
+                            "route4": null,
+                            "route6": null
+                        },
+                        "source_id": null,
+                        "type": 0
+                    }
+                },
+                "published_events": [
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "exception",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "The routine dealing with the output of commands running within the LXContainer has caused an exception.",
+                        "event_type": 2,
+                        "label": "parser_error",
+                        "method": "parse_line",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Das Netzwerk wurde konfiguriert.",
+                        "event_type": 2,
+                        "label": "network_configured",
+                        "method": "setup_network",
+                        "result_description": {
+                            "class": "NetworkResult",
+                            "keys": {
+                                "dev": "Der Name des Interfaces, welches verwendet wird.",
+                                "gateway": "IPv4-Adresse des verwendeten Gateways.",
+                                "ipv4": "IPv4-Adresse der verwendeten Schnittstelle",
+                                "ipv6": "IPv6-Adresse der verwendeten Schnittstelle",
+                                "link_state": "Ein Indikator f\u00fcr den aktuellen Status der verwendeten Netzwerkschnittstelle",
+                                "mac": "Die MAC-Adresse der verwendeten Schnittstelle",
+                                "netmask": "Netzwerkmaske; Findet nur in IPv4 Verwendung",
+                                "prefix": "IPv6-Pr\u00e4fix",
+                                "route4": "IPv4-Route des verwendeten IPv6-Netzwerks",
+                                "route6": "IPv6-Route des verwendeten IPv6-Netzwerk"
+                            },
+                            "module": "layla.results.network_result"
+                        }
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "setup_network",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "The LXContainer has not started yet.",
+                        "event_type": 2,
+                        "label": "container_error",
+                        "method": "signal_container_error",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "start() has been executed.",
+                        "event_type": 0,
+                        "label": "running",
+                        "method": "start",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "stop() has been executed.",
+                        "event_type": 0,
+                        "label": "stopped",
+                        "method": "stop",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "The modules configuration has been updated.",
+                        "event_type": 6,
+                        "label": "config_updated",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    }
+                ],
+                "published_routines": [
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Starte die Netzwerkkonfiguration. Dabei wird entweder DHCP, eine statische IP oder manuelle Befehle verwendet, abh\u00e4ngig von den Moduleinstellungen.",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "setup_network"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Stops module.",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "stop"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Update the module's configuration using the incomming event (must be of type TYPE_MODULE_CONFIG).",
+                        "direction_inward": null,
+                        "filters": [
+                            5
+                        ],
+                        "method": "update_module_config"
+                    }
+                ],
+                "required_resources": {
+                    "container_res": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.lx_container_resource.LXContainerResource",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "LXContainerResource",
+                        "consuming": null,
+                        "exclusivity": 0,
+                        "external": false,
+                        "id": "R6LoVq1wjf",
+                        "local_attr_descriptions": {
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            }
+                        },
+                        "meta": {},
+                        "module_name": "layla.resources.lx_container_resource",
+                        "name": "LXContainerResource",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {},
+                        "source_id": null,
+                        "type": 2
+                    },
+                    "netdev": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.network_device.NetworkDevice",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "NetworkDevice",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "IJcQN2AJcH",
+                        "local_attr_descriptions": {
+                            "endpoint": {
+                                "__class__": "AttrDesc",
+                                "default": 0,
+                                "description": "This is the FRITZ!Box's LAN/WAN-interface with which the host's netdev is connected to.",
+                                "group": null,
+                                "options": {
+                                    "FBox DSL": 10,
+                                    "FBox LAN beliebig": 7,
+                                    "FBox WAN": 8,
+                                    "FBox WLAN": 6,
+                                    "FBox eth beliebig": 5,
+                                    "FBox eth0": 0,
+                                    "FBox eth1": 1,
+                                    "FBox eth2": 2,
+                                    "FBox eth3": 3,
+                                    "FBox eth4": 4,
+                                    "Virtuelles Internet": 9
+                                },
+                                "regex": null,
+                                "type": 3
+                            },
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "interface": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is the interface name of the host's network device.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "link_name": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used for renaming the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "mac": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used to change the MAC-address of the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            }
+                        },
+                        "meta": {
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "module_name": "layla.resources.network_device",
+                        "name": "NetworkDevice",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "endpoint": 5,
+                            "interface": null,
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    }
+                },
+                "resource_dependencies": [],
+                "resource_provisions": [],
+                "test_id": "hZ9kZsGUAR"
+            },
+            "c_WOHA6X9sSv": {
+                "__class__": "LaylaModuleSetup",
+                "atomic": false,
+                "children": {},
+                "cls_meta": {
+                    "author": "unknown",
+                    "description": null,
+                    "icon": "RegEx",
+                    "module": "layla.layla_modules.regex",
+                    "name": "Regex",
+                    "style": [
+                        3298820351,
+                        775173887
+                    ],
+                    "tags": [],
+                    "version": "unknown"
+                },
+                "config_dependencies": [],
+                "config_desc": {
+                    "parameter": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": null,
+                        "description": "The module applies its regular expressions against the 'results' attribute named by this option in case of an inbound TYPE_MODULE_RESULT event or at the dictionaryentry in case of a TYPE_MODULE_CONFIG event.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "regex1": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": null,
+                        "description": "Regular expression that is matched against the input.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "regex2": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": null,
+                        "description": "Regular expression that is matched against the input.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "regex3": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": null,
+                        "description": "Regular expression that is matched against the input.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "regex4": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": null,
+                        "description": "Regular expression that is matched against the input.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    }
+                },
+                "dependencies": [],
+                "gui_meta": {
+                    "height": 75.0,
+                    "icon": "",
+                    "style": null,
+                    "width": 115.0,
+                    "x": 335.0,
+                    "y": 95.0
+                },
+                "inst_config": {
+                    "parameter": "command",
+                    "regex1": "cp.*antfs.*",
+                    "regex2": "/var/tmp/antfs_images.sh"
+                },
+                "inst_id": "aE0QVaiR98",
+                "inst_name": "Regex",
+                "inst_triggers": [
+                    {
+                        "__class__": "Trigger",
+                        "label": "match1",
+                        "src_method": "match_regular_expression",
+                        "target": "JfnA5oFGjN",
+                        "target_method": "provide_command_configuration"
+                    },
+                    {
+                        "__class__": "Trigger",
+                        "label": "match2",
+                        "src_method": "match_regular_expression",
+                        "target": "YYBtSUY9eX",
+                        "target_method": "stop"
+                    },
+                    {
+                        "__class__": "Trigger",
+                        "label": "error",
+                        "src_method": "backend",
+                        "target": "cjIaePRk59",
+                        "target_method": "stop"
+                    },
+                    {
+                        "__class__": "Trigger",
+                        "label": "invalid_event",
+                        "src_method": "match_regular_expression",
+                        "target": "cjIaePRk59",
+                        "target_method": "stop"
+                    }
+                ],
+                "provided_resources": {},
+                "published_events": [
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Throws result containing matched dictionary for regex1.",
+                        "event_type": 2,
+                        "label": "match1",
+                        "method": "match_regular_expression",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Throws result containing matched dictionary for regex2.",
+                        "event_type": 2,
+                        "label": "match2",
+                        "method": "match_regular_expression",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Throws result containing matched dictionary for regex3.",
+                        "event_type": 2,
+                        "label": "match3",
+                        "method": "match_regular_expression",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Throws result containing matched dictionary for regex4.",
+                        "event_type": 2,
+                        "label": "match4",
+                        "method": "match_regular_expression",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "invalid_event",
+                        "method": "match_regular_expression",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "start() has been executed.",
+                        "event_type": 0,
+                        "label": "running",
+                        "method": "start",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "stop() has been executed.",
+                        "event_type": 0,
+                        "label": "stopped",
+                        "method": "stop",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "The modules configuration has been updated.",
+                        "event_type": 6,
+                        "label": "config_updated",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    }
+                ],
+                "published_routines": [
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [
+                            2,
+                            5
+                        ],
+                        "method": "match_regular_expression"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Stops module.",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "stop"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Update the module's configuration using the incomming event (must be of type TYPE_MODULE_CONFIG).",
+                        "direction_inward": null,
+                        "filters": [
+                            5
+                        ],
+                        "method": "update_module_config"
+                    }
+                ],
+                "required_resources": {},
+                "resource_dependencies": [],
+                "resource_provisions": [],
+                "test_id": "hZ9kZsGUAR"
+            },
+            "c_ory6dCsjlm": {
+                "__class__": "LaylaModuleSetup",
+                "atomic": false,
+                "children": {},
+                "cls_meta": {
+                    "author": "Felix Goroncy",
+                    "description": null,
+                    "icon": "FritzBox",
+                    "module": "layla.layla_modules.fritzbox",
+                    "name": "FritzBoxModule",
+                    "style": [
+                        2910824703,
+                        1968208895
+                    ],
+                    "tags": [
+                        "dut"
+                    ],
+                    "version": "0.1"
+                },
+                "config_dependencies": [],
+                "config_desc": {
+                    "monitor_delay": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            120
+                        ],
+                        "config_options": [],
+                        "config_type": 4,
+                        "default": 5,
+                        "description": "",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": "[0-9]+",
+                        "static": false
+                    },
+                    "monitor_lines": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            100
+                        ],
+                        "config_options": [],
+                        "config_type": 4,
+                        "default": 20,
+                        "description": "",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": "[0-9]+",
+                        "static": false
+                    },
+                    "monitor_regex": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 3,
+                        "default": ".*",
+                        "description": "",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    }
+                },
+                "dependencies": [
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_ftpd",
+                                "yes"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "S6kk9xNfI1"
+                            ],
+                            "reaction": 1
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_ftpd",
+                                "no"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "S6kk9xNfI1"
+                            ],
+                            "reaction": 2
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_iperf",
+                                "yes"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "GoDEDswMnV"
+                            ],
+                            "reaction": 1
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_iperf",
+                                "no"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "GoDEDswMnV"
+                            ],
+                            "reaction": 2
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan0",
+                                "yes"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "yECkkh1wkY"
+                            ],
+                            "reaction": 1
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan0",
+                                "no"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "yECkkh1wkY"
+                            ],
+                            "reaction": 2
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan1",
+                                "yes"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "GH9mHViUYk"
+                            ],
+                            "reaction": 1
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan1",
+                                "no"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "GH9mHViUYk"
+                            ],
+                            "reaction": 2
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan2",
+                                "yes"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "12yx7QBEDS"
+                            ],
+                            "reaction": 1
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan2",
+                                "no"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "12yx7QBEDS"
+                            ],
+                            "reaction": 2
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan3",
+                                "yes"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "r0G2QOMwSB"
+                            ],
+                            "reaction": 1
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan3",
+                                "no"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "r0G2QOMwSB"
+                            ],
+                            "reaction": 2
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan4",
+                                "yes"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "yVGENXgEE6"
+                            ],
+                            "reaction": 1
+                        }
+                    },
+                    {
+                        "__class__": "Dependency",
+                        "cause": {
+                            "__class__": "Cause",
+                            "args": [
+                                "w2XVHmRvMp",
+                                "cap_lan4",
+                                "no"
+                            ],
+                            "cause": 0
+                        },
+                        "reaction": {
+                            "__class__": "Reaction",
+                            "args": [
+                                "yVGENXgEE6"
+                            ],
+                            "reaction": 2
+                        }
+                    }
+                ],
+                "gui_meta": {
+                    "height": 75.0,
+                    "icon": "",
+                    "style": null,
+                    "width": 115.0,
+                    "x": 755.0,
+                    "y": 5.0
+                },
+                "inst_config": {},
+                "inst_id": "YYBtSUY9eX",
+                "inst_name": "FritzBoxModule",
+                "inst_triggers": [
+                    {
+                        "__class__": "Trigger",
+                        "label": "serial_command_result",
+                        "src_method": "send_serial_command",
+                        "target": "3fPS5RCexI",
+                        "target_method": "check"
+                    },
+                    {
+                        "__class__": "Trigger",
+                        "label": "error",
+                        "src_method": "backend",
+                        "target": "cjIaePRk59",
+                        "target_method": "stop"
+                    }
+                ],
+                "provided_resources": {
+                    "dsl_res": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.network_device.NetworkDevice",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "NetworkDevice",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "C9Pk2AocGh",
+                        "local_attr_descriptions": {
+                            "endpoint": {
+                                "__class__": "AttrDesc",
+                                "default": 0,
+                                "description": "This is the FRITZ!Box's LAN/WAN-interface with which the host's netdev is connected to.",
+                                "group": null,
+                                "options": {
+                                    "FBox DSL": 10,
+                                    "FBox LAN beliebig": 7,
+                                    "FBox WAN": 8,
+                                    "FBox WLAN": 6,
+                                    "FBox eth beliebig": 5,
+                                    "FBox eth0": 0,
+                                    "FBox eth1": 1,
+                                    "FBox eth2": 2,
+                                    "FBox eth3": 3,
+                                    "FBox eth4": 4,
+                                    "Virtuelles Internet": 9
+                                },
+                                "regex": null,
+                                "type": 3
+                            },
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "interface": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is the interface name of the host's network device.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "link_name": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used for renaming the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "mac": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used to change the MAC-address of the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            }
+                        },
+                        "meta": {
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "module_name": "layla.resources.network_device",
+                        "name": "NetworkDevice",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "endpoint": 10,
+                            "interface": null,
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    },
+                    "ftp_service": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.services.FTPService",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "FTPService",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "S6kk9xNfI1",
+                        "local_attr_descriptions": {
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "ipv4": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The IPv4 address where this service is reachable",
+                                "group": null,
+                                "options": null,
+                                "regex": "^$|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",
+                                "type": 0
+                            },
+                            "ipv6": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The IPv6 address where this service is reachable",
+                                "group": null,
+                                "options": null,
+                                "regex": "^$|(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{1,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))",
+                                "type": 0
+                            },
+                            "password": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The password used to connect.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "port": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The port where this service is reachable",
+                                "group": null,
+                                "options": null,
+                                "regex": "^$|^6(?:[0-4][0-9]{3}|5(?:[0-4][0-9]{2}|5(?:[0-2][0-9]|3[0-5])))$|^(?:[1-5][0-9]{0,3}|[6-9][0-9]{0,2})?[0-9]$",
+                                "type": 0
+                            },
+                            "user": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The username used to connect.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[a-zA-Z0-9-_]",
+                                "type": 0
+                            }
+                        },
+                        "meta": {},
+                        "module_name": "layla.resources.services",
+                        "name": "FTPService",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "ipv4": null,
+                            "ipv6": null,
+                            "password": null,
+                            "port": null,
+                            "user": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    },
+                    "iperf_service": {
+                        "active": false,
+                        "class_hierarchy": [
+                            "layla.resources.services.IperfService",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "IperfService",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "GoDEDswMnV",
+                        "local_attr_descriptions": {
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "ipv4": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The IPv4 address where this service is reachable",
+                                "group": null,
+                                "options": null,
+                                "regex": "^$|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",
+                                "type": 0
+                            },
+                            "ipv6": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The IPv6 address where this service is reachable",
+                                "group": null,
+                                "options": null,
+                                "regex": "^$|(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{1,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))",
+                                "type": 0
+                            },
+                            "port": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The port where this service is reachable",
+                                "group": null,
+                                "options": null,
+                                "regex": "^$|^6(?:[0-4][0-9]{3}|5(?:[0-4][0-9]{2}|5(?:[0-2][0-9]|3[0-5])))$|^(?:[1-5][0-9]{0,3}|[6-9][0-9]{0,2})?[0-9]$",
+                                "type": 0
+                            }
+                        },
+                        "meta": {},
+                        "module_name": "layla.resources.services",
+                        "name": "IperfService",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "ipv4": null,
+                            "ipv6": null,
+                            "port": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    },
+                    "lan0_res": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.network_device.NetworkDevice",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "NetworkDevice",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "yECkkh1wkY",
+                        "local_attr_descriptions": {
+                            "endpoint": {
+                                "__class__": "AttrDesc",
+                                "default": 0,
+                                "description": "This is the FRITZ!Box's LAN/WAN-interface with which the host's netdev is connected to.",
+                                "group": null,
+                                "options": {
+                                    "FBox DSL": 10,
+                                    "FBox LAN beliebig": 7,
+                                    "FBox WAN": 8,
+                                    "FBox WLAN": 6,
+                                    "FBox eth beliebig": 5,
+                                    "FBox eth0": 0,
+                                    "FBox eth1": 1,
+                                    "FBox eth2": 2,
+                                    "FBox eth3": 3,
+                                    "FBox eth4": 4,
+                                    "Virtuelles Internet": 9
+                                },
+                                "regex": null,
+                                "type": 3
+                            },
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "interface": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is the interface name of the host's network device.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "link_name": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used for renaming the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "mac": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used to change the MAC-address of the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            }
+                        },
+                        "meta": {
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "module_name": "layla.resources.network_device",
+                        "name": "NetworkDevice",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "endpoint": 0,
+                            "interface": null,
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    },
+                    "lan1_res": {
+                        "active": false,
+                        "class_hierarchy": [
+                            "layla.resources.network_device.NetworkDevice",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "NetworkDevice",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "GH9mHViUYk",
+                        "local_attr_descriptions": {
+                            "endpoint": {
+                                "__class__": "AttrDesc",
+                                "default": 0,
+                                "description": "This is the FRITZ!Box's LAN/WAN-interface with which the host's netdev is connected to.",
+                                "group": null,
+                                "options": {
+                                    "FBox DSL": 10,
+                                    "FBox LAN beliebig": 7,
+                                    "FBox WAN": 8,
+                                    "FBox WLAN": 6,
+                                    "FBox eth beliebig": 5,
+                                    "FBox eth0": 0,
+                                    "FBox eth1": 1,
+                                    "FBox eth2": 2,
+                                    "FBox eth3": 3,
+                                    "FBox eth4": 4,
+                                    "Virtuelles Internet": 9
+                                },
+                                "regex": null,
+                                "type": 3
+                            },
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "interface": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is the interface name of the host's network device.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "link_name": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used for renaming the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "mac": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used to change the MAC-address of the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            }
+                        },
+                        "meta": {
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "module_name": "layla.resources.network_device",
+                        "name": "NetworkDevice",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "endpoint": 1,
+                            "interface": null,
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    },
+                    "lan2_res": {
+                        "active": false,
+                        "class_hierarchy": [
+                            "layla.resources.network_device.NetworkDevice",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "NetworkDevice",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "12yx7QBEDS",
+                        "local_attr_descriptions": {
+                            "endpoint": {
+                                "__class__": "AttrDesc",
+                                "default": 0,
+                                "description": "This is the FRITZ!Box's LAN/WAN-interface with which the host's netdev is connected to.",
+                                "group": null,
+                                "options": {
+                                    "FBox DSL": 10,
+                                    "FBox LAN beliebig": 7,
+                                    "FBox WAN": 8,
+                                    "FBox WLAN": 6,
+                                    "FBox eth beliebig": 5,
+                                    "FBox eth0": 0,
+                                    "FBox eth1": 1,
+                                    "FBox eth2": 2,
+                                    "FBox eth3": 3,
+                                    "FBox eth4": 4,
+                                    "Virtuelles Internet": 9
+                                },
+                                "regex": null,
+                                "type": 3
+                            },
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "interface": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is the interface name of the host's network device.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "link_name": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used for renaming the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "mac": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used to change the MAC-address of the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            }
+                        },
+                        "meta": {
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "module_name": "layla.resources.network_device",
+                        "name": "NetworkDevice",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "endpoint": 2,
+                            "interface": null,
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    },
+                    "lan3_res": {
+                        "active": false,
+                        "class_hierarchy": [
+                            "layla.resources.network_device.NetworkDevice",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "NetworkDevice",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "r0G2QOMwSB",
+                        "local_attr_descriptions": {
+                            "endpoint": {
+                                "__class__": "AttrDesc",
+                                "default": 0,
+                                "description": "This is the FRITZ!Box's LAN/WAN-interface with which the host's netdev is connected to.",
+                                "group": null,
+                                "options": {
+                                    "FBox DSL": 10,
+                                    "FBox LAN beliebig": 7,
+                                    "FBox WAN": 8,
+                                    "FBox WLAN": 6,
+                                    "FBox eth beliebig": 5,
+                                    "FBox eth0": 0,
+                                    "FBox eth1": 1,
+                                    "FBox eth2": 2,
+                                    "FBox eth3": 3,
+                                    "FBox eth4": 4,
+                                    "Virtuelles Internet": 9
+                                },
+                                "regex": null,
+                                "type": 3
+                            },
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "interface": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is the interface name of the host's network device.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "link_name": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used for renaming the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "mac": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used to change the MAC-address of the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            }
+                        },
+                        "meta": {
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "module_name": "layla.resources.network_device",
+                        "name": "NetworkDevice",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "endpoint": 3,
+                            "interface": null,
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    },
+                    "lan4_res": {
+                        "active": false,
+                        "class_hierarchy": [
+                            "layla.resources.network_device.NetworkDevice",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "NetworkDevice",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "yVGENXgEE6",
+                        "local_attr_descriptions": {
+                            "endpoint": {
+                                "__class__": "AttrDesc",
+                                "default": 0,
+                                "description": "This is the FRITZ!Box's LAN/WAN-interface with which the host's netdev is connected to.",
+                                "group": null,
+                                "options": {
+                                    "FBox DSL": 10,
+                                    "FBox LAN beliebig": 7,
+                                    "FBox WAN": 8,
+                                    "FBox WLAN": 6,
+                                    "FBox eth beliebig": 5,
+                                    "FBox eth0": 0,
+                                    "FBox eth1": 1,
+                                    "FBox eth2": 2,
+                                    "FBox eth3": 3,
+                                    "FBox eth4": 4,
+                                    "Virtuelles Internet": 9
+                                },
+                                "regex": null,
+                                "type": 3
+                            },
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "interface": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is the interface name of the host's network device.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "link_name": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used for renaming the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "mac": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used to change the MAC-address of the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            }
+                        },
+                        "meta": {
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "module_name": "layla.resources.network_device",
+                        "name": "NetworkDevice",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "endpoint": 4,
+                            "interface": null,
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    },
+                    "wan_res": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.network_device.NetworkDevice",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "NetworkDevice",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": false,
+                        "id": "PHpq4qF8IC",
+                        "local_attr_descriptions": {
+                            "endpoint": {
+                                "__class__": "AttrDesc",
+                                "default": 0,
+                                "description": "This is the FRITZ!Box's LAN/WAN-interface with which the host's netdev is connected to.",
+                                "group": null,
+                                "options": {
+                                    "FBox DSL": 10,
+                                    "FBox LAN beliebig": 7,
+                                    "FBox WAN": 8,
+                                    "FBox WLAN": 6,
+                                    "FBox eth beliebig": 5,
+                                    "FBox eth0": 0,
+                                    "FBox eth1": 1,
+                                    "FBox eth2": 2,
+                                    "FBox eth3": 3,
+                                    "FBox eth4": 4,
+                                    "Virtuelles Internet": 9
+                                },
+                                "regex": null,
+                                "type": 3
+                            },
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "interface": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is the interface name of the host's network device.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "link_name": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used for renaming the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "mac": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "This is a meta parameter and is used to change the MAC-address of the network interface inside an LXContainer.",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            }
+                        },
+                        "meta": {
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "module_name": "layla.resources.network_device",
+                        "name": "NetworkDevice",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "endpoint": 8,
+                            "interface": null,
+                            "link_name": null,
+                            "mac": null
+                        },
+                        "source_id": null,
+                        "type": null
+                    }
+                },
+                "published_events": [
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "exception",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "fritzbox_up",
+                        "method": "box_is_up",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "fritzbox_not_up",
+                        "method": "box_is_up",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "state_unknown",
+                        "method": "device",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "state_urlader",
+                        "method": "device",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "state_booting",
+                        "method": "device",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "state_on",
+                        "method": "device",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "state_shutting_down",
+                        "method": "device",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "state_system_off",
+                        "method": "device",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 2,
+                        "label": "iperf_service",
+                        "method": "device",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 2,
+                        "label": "ftp_service",
+                        "method": "device",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 2,
+                        "label": "image_downloaded",
+                        "method": "flash",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 2,
+                        "label": "image_transfered",
+                        "method": "flash",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 2,
+                        "label": "hard_reboot",
+                        "method": "flash",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 2,
+                        "label": "revision",
+                        "method": "flash",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "flash",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "serial_command_send",
+                        "method": "send_serial_command",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 2,
+                        "label": "serial_command_result",
+                        "method": "send_serial_command",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "start() has been executed.",
+                        "event_type": 0,
+                        "label": "running",
+                        "method": "start",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 2,
+                        "label": "serial_monitor",
+                        "method": "start_serial_monitor",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "serial_monitor_started",
+                        "method": "start_serial_monitor",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "start_serial_monitor",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "stop() has been executed.",
+                        "event_type": 0,
+                        "label": "stopped",
+                        "method": "stop",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "serial_monitor_stopped",
+                        "method": "stop_serial_monitor",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "stop_serial_monitor",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "power_off",
+                        "method": "switch_power_off",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 2,
+                        "label": "hard_reboot",
+                        "method": "switch_power_off_on",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "power_on",
+                        "method": "switch_power_on",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "The modules configuration has been updated.",
+                        "event_type": 6,
+                        "label": "config_updated",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "",
+                        "event_type": 0,
+                        "label": "fritzbox_up",
+                        "method": "wait_for_box",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "wait_for_box",
+                        "result_description": {}
+                    }
+                ],
+                "published_routines": [
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "box_is_up"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [
+                            5
+                        ],
+                        "method": "flash"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "send_serial_command"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "start_serial_monitor"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Stops module.",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "stop"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "stop_serial_monitor"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "switch_power_off"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "switch_power_off_on"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "switch_power_on"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Update the module's configuration using the incomming event (must be of type TYPE_MODULE_CONFIG).",
+                        "direction_inward": null,
+                        "filters": [
+                            5
+                        ],
+                        "method": "update_module_config"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "wait_for_box"
+                    }
+                ],
+                "required_resources": {
+                    "device_res": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "FritzProduct",
+                        "consuming": null,
+                        "exclusivity": 1,
+                        "external": true,
+                        "id": "w2XVHmRvMp",
+                        "local_attr_descriptions": {
+                            "cap_dsl": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_flash": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_ftpd": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_iperf": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_lan0": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_lan1": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_lan2": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_lan3": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_lan4": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_on_off": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_serial": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_wan": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "cap_wlan": {
+                                "__class__": "AttrDesc",
+                                "default": "no",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "yes",
+                                    "no"
+                                ],
+                                "regex": "yes|no",
+                                "type": 3
+                            },
+                            "dsl_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            },
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            },
+                            "ftpd_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            },
+                            "hw_version": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The hardware revision of the used FRITZ!Box",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "iperf_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            },
+                            "ipv4": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",
+                                "type": 0
+                            },
+                            "ipv6": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{1,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))",
+                                "type": 0
+                            },
+                            "lan0_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            },
+                            "lan1_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            },
+                            "lan2_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            },
+                            "lan3_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            },
+                            "lan4_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            },
+                            "model": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "The model number of the used FRITZ!Box",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 0
+                            },
+                            "product": {
+                                "__class__": "AttrDesc",
+                                "default": "fritzbox",
+                                "description": "",
+                                "group": null,
+                                "options": [
+                                    "fritzbox",
+                                    "fritzrepeater"
+                                ],
+                                "regex": null,
+                                "type": 5
+                            },
+                            "wan_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            },
+                            "wlan_details": {
+                                "__class__": "AttrDesc",
+                                "default": null,
+                                "description": "",
+                                "group": null,
+                                "options": null,
+                                "regex": null,
+                                "type": 5
+                            }
+                        },
+                        "meta": {},
+                        "module_name": "layla.resources.fritzproduct",
+                        "name": "FritzProduct",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "cap_dsl": "no",
+                            "cap_flash": "no",
+                            "cap_ftpd": "yes",
+                            "cap_iperf": "no",
+                            "cap_lan0": "yes",
+                            "cap_lan1": "no",
+                            "cap_lan2": "no",
+                            "cap_lan3": "no",
+                            "cap_lan4": "no",
+                            "cap_on_off": "yes",
+                            "cap_serial": "yes",
+                            "cap_wan": "no",
+                            "cap_wlan": "no",
+                            "dsl_details": null,
+                            "ftpd_details": null,
+                            "hw_version": null,
+                            "iperf_details": null,
+                            "ipv4": null,
+                            "ipv6": null,
+                            "lan0_details": null,
+                            "lan1_details": null,
+                            "lan2_details": null,
+                            "lan3_details": null,
+                            "lan4_details": null,
+                            "model": null,
+                            "product": "fritzbox",
+                            "wan_details": null,
+                            "wlan_details": null
+                        },
+                        "source_id": null,
+                        "type": 1
+                    }
+                },
+                "resource_dependencies": [],
+                "resource_provisions": [
+                    [
+                        "yECkkh1wkY",
+                        "IJcQN2AJcH"
+                    ]
+                ],
+                "test_id": "hZ9kZsGUAR"
+            },
+            "c_rgPgsRWvtm": {
+                "__class__": "LaylaModuleSetup",
+                "atomic": false,
+                "children": {},
+                "cls_meta": {
+                    "author": "Felix Goroncy",
+                    "description": "Dieses Modul bietet die M\u00f6glichkeit den Kontrollfluss eines laufenden Tests zu beeinflussen. Es stehen verschiedene Operationen zur Verf\u00fcgung um ein eingehendes Result- oder Config-Event zu bewerten. Handelt es sich um eine legitime Operation wird bei Zutreffen das 'true'- und bei Nichtzutreffen das 'false'-Event geworfen. Bei den Events handelt es sich um transparente Events, welche das eingegangene Event zur Weiterverwendung wieder ausgeben.",
+                    "icon": "Logic",
+                    "module": "layla.layla_modules.if_module",
+                    "name": "If",
+                    "style": [
+                        3298820351,
+                        775173887
+                    ],
+                    "tags": [
+                        "logic"
+                    ],
+                    "version": "0.1"
+                },
+                "config_dependencies": [],
+                "config_desc": {
+                    "compare_value": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": "",
+                        "description": "Der Wert, der zum Vergleich herangezogen werden soll. Im fall der 'exists' Operation spielt dieser Parameter keine Rolle.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "key": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [],
+                        "config_type": 0,
+                        "default": "string",
+                        "description": "In dem eingehenden Event wird nach dem hier ausgew\u00e4hlten Schl\u00fcssel gesucht. Die Operation wird dann auf dem hinter den Schl\u00fcssel hinterlegtem Wert durchgef\u00fchrt (Ausnahme 'exists'-Operation).",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": null,
+                        "static": false
+                    },
+                    "operation": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [
+                            "exists",
+                            "equals",
+                            "string equals",
+                            "not equals",
+                            "string not equals",
+                            "greater then",
+                            "less then",
+                            "string matches"
+                        ],
+                        "config_type": 1,
+                        "default": "exists",
+                        "description": "Beschreibt die logische Operation, die zwischen dem eingehenden und demunter 'compare_value' hinterlegtem Wert durchgef\u00fchrt werden soll.\nDabei gilt die Reihenfolge: <eingehender Wert> <Operation> <compare_value>.\n\n'exists': Testet, ob 'key' im eingehendem Result- oder Config-Event enthalten ist.\n'equals': Ist der Gleitkommawert hinter 'key' gleich dem in 'compare_value'?\n'string equals': Hier werden die jeweiligen str-Representationen verglichen.\n'not equals': Negiertes 'equals'.\n'string not equals': Negiertes 'string equals'\n'greater then': Ist der eingehende Float-Wert gr\u00f6\u00dfer als der hinterlegte?\n'less then': Ist der eingehende Float-Wert kleiner als der hinterlegte?\n'string matches': Erf\u00fcllt der eingehende Wert den hinterlegten regul\u00e4ren Ausdruck?",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": "exists|equals|string\\ equals|not\\ equals|string\\ not\\ equals|greater\\ then|less\\ then|string\\ matches",
+                        "static": false
+                    }
+                },
+                "dependencies": [],
+                "gui_meta": {
+                    "height": 75.0,
+                    "icon": "",
+                    "style": null,
+                    "width": 115.0,
+                    "x": 165.0,
+                    "y": 95.0
+                },
+                "inst_config": {
+                    "compare_value": "0",
+                    "key": "returncode",
+                    "operation": "equals"
+                },
+                "inst_id": "3fPS5RCexI",
+                "inst_name": "If",
+                "inst_triggers": [
+                    {
+                        "__class__": "Trigger",
+                        "label": "true",
+                        "src_method": "check",
+                        "target": "aE0QVaiR98",
+                        "target_method": "match_regular_expression"
+                    }
+                ],
+                "provided_resources": {},
+                "published_events": [
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "exception",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Das eingehende Event erf\u00fcllt die Bedingung",
+                        "event_type": 6,
+                        "label": "true",
+                        "method": "check",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Das eingehende Event erf\u00fcllt nicht die Bedingung",
+                        "event_type": 6,
+                        "label": "false",
+                        "method": "check",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Es ist ein Fehler bei der Auswertung aufgetreten",
+                        "event_type": 2,
+                        "label": "logic_error",
+                        "method": "check",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "start() has been executed.",
+                        "event_type": 0,
+                        "label": "running",
+                        "method": "start",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "stop() has been executed.",
+                        "event_type": 0,
+                        "label": "stopped",
+                        "method": "stop",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "The modules configuration has been updated.",
+                        "event_type": 6,
+                        "label": "config_updated",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    }
+                ],
+                "published_routines": [
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "F\u00fchrt die ausgew\u00e4hlte Operation auf dem eingegangenem Event und demebenfalls gew\u00e4hlten Vergleichswert aus.",
+                        "direction_inward": null,
+                        "filters": [
+                            2,
+                            5
+                        ],
+                        "method": "check"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Stops module.",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "stop"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Update the module's configuration using the incomming event (must be of type TYPE_MODULE_CONFIG).",
+                        "direction_inward": null,
+                        "filters": [
+                            5
+                        ],
+                        "method": "update_module_config"
+                    }
+                ],
+                "required_resources": {},
+                "resource_dependencies": [],
+                "resource_provisions": [],
+                "test_id": "hZ9kZsGUAR"
+            },
+            "c_yAINDw4m1W": {
+                "__class__": "LaylaModuleSetup",
+                "atomic": false,
+                "children": {},
+                "cls_meta": {
+                    "author": "Felix Goroncy",
+                    "description": "Bietet einen Linux Container (LXC) als Ressource f\u00fcr andere, LXC-abh\u00e4ngige Module.\nDamit der LXContainer genutzt werden kann, muss die Routine 'start_container()' aufgerufen werden. Sobal das Event 'container_started' geworfen wird, ist der Container einsatzbereit.",
+                    "icon": "LXC",
+                    "module": "layla.layla_modules.lx_container",
+                    "name": "LXContainer",
+                    "style": [
+                        1318717183,
+                        3462136063
+                    ],
+                    "tags": [
+                        "linux_container"
+                    ],
+                    "version": "0.1"
+                },
+                "config_dependencies": [],
+                "config_desc": {
+                    "log_commands": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [
+                            "yes",
+                            "no"
+                        ],
+                        "config_type": 1,
+                        "default": "yes",
+                        "description": "Schreibe Ausgaben von Containerkommandos in eine Log-Datai.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": "yes|no",
+                        "static": false
+                    },
+                    "publish_pulse_audio": {
+                        "__class__": "ConfigDesc",
+                        "bounds": [
+                            0,
+                            10
+                        ],
+                        "config_options": [
+                            "yes",
+                            "no"
+                        ],
+                        "config_type": 1,
+                        "default": "yes",
+                        "description": "Ver\u00f6ffentliche deine Audioger\u00e4te im Netzwerk.\nDiese Option ist notwendig f\u00fcr manche Tests, damit auf das Audiodevice deines Host-Rechners von innerhalb des Containers zugegriffen werden kann. Der SIP Klient (automatisierter Anrufer) ben\u00f6tigt diese Option zum Beispiel.",
+                        "hidden": false,
+                        "hides": {},
+                        "link": null,
+                        "optional": false,
+                        "position": 1000,
+                        "regex": "yes|no",
+                        "static": false
+                    }
+                },
+                "dependencies": [],
+                "gui_meta": {
+                    "height": 75.0,
+                    "icon": "",
+                    "style": null,
+                    "width": 115.0,
+                    "x": 165.0,
+                    "y": 5.0
+                },
+                "inst_config": {},
+                "inst_id": "P19yuc6ERd",
+                "inst_name": "LXContainer",
+                "inst_triggers": [
+                    {
+                        "__class__": "Trigger",
+                        "label": "container_started",
+                        "src_method": "start_container",
+                        "target": "oZz8LuGt3j",
+                        "target_method": "setup_network"
+                    }
+                ],
+                "provided_resources": {
+                    "container_res": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.lx_container_resource.LXContainerResource",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "LXContainerResource",
+                        "consuming": null,
+                        "exclusivity": 0,
+                        "external": false,
+                        "id": "PzPd8Wa1g3",
+                        "local_attr_descriptions": {
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            }
+                        },
+                        "meta": {},
+                        "module_name": "layla.resources.lx_container_resource",
+                        "name": "LXContainerResource",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {},
+                        "source_id": null,
+                        "type": 2
+                    }
+                },
+                "published_events": [
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "exception",
+                        "method": "backend",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "start() has been executed.",
+                        "event_type": 0,
+                        "label": "running",
+                        "method": "start",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Der Linux Container wurde erfolgreich gestartet.",
+                        "event_type": 0,
+                        "label": "container_started",
+                        "method": "start_container",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "Der Linux Container l\u00e4uft bereits. Der erneute Aufruf von 'start_container()' wird ignoriert.",
+                        "event_type": 0,
+                        "label": "container_already_running",
+                        "method": "start_container",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "start_container",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "stop() has been executed.",
+                        "event_type": 0,
+                        "label": "stopped",
+                        "method": "stop",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "The modules configuration has been updated.",
+                        "event_type": 6,
+                        "label": "config_updated",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    },
+                    {
+                        "__class__": "PublishedEvent",
+                        "description": "An error has occured.",
+                        "event_type": 2,
+                        "label": "error",
+                        "method": "update_module_config",
+                        "result_description": {}
+                    }
+                ],
+                "published_routines": [
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Startet den Linux Container und setzt die Container Ressource auf bereit.",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "start_container"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Stops module.",
+                        "direction_inward": null,
+                        "filters": [],
+                        "method": "stop"
+                    },
+                    {
+                        "__class__": "PublishedRoutine",
+                        "description": "Update the module's configuration using the incomming event (must be of type TYPE_MODULE_CONFIG).",
+                        "direction_inward": null,
+                        "filters": [
+                            5
+                        ],
+                        "method": "update_module_config"
+                    }
+                ],
+                "required_resources": {
+                    "container_info": {
+                        "active": true,
+                        "class_hierarchy": [
+                            "layla.resources.lx_container_resource.LXCConfigResource",
+                            "layla.resources.resource.Resource",
+                            "builtins.object"
+                        ],
+                        "class_name": "LXCConfigResource",
+                        "consuming": null,
+                        "exclusivity": 0,
+                        "external": true,
+                        "id": "pdY3ex1Khv",
+                        "local_attr_descriptions": {
+                            "exclusivity": {
+                                "__class__": "AttrDesc",
+                                "default": 1,
+                                "description": "Tells the resource manager how many resources can use a given provided resource or whether a requiring resource wants to have exclusive access.\n0: no limit\n>0: number of allowed connections.",
+                                "group": null,
+                                "options": null,
+                                "regex": "[0-9]+",
+                                "type": 1
+                            }
+                        },
+                        "meta": {},
+                        "module_name": "layla.resources.lx_container_resource",
+                        "name": "LXCConfigResource",
+                        "origin": null,
+                        "provided_to": {},
+                        "res_attributes": {
+                            "defines": []
+                        },
+                        "source_id": null,
+                        "type": 0
+                    }
+                },
+                "resource_dependencies": [],
+                "resource_provisions": [
+                    [
+                        "PzPd8Wa1g3",
+                        "R6LoVq1wjf"
+                    ]
+                ],
+                "test_id": "hZ9kZsGUAR"
+            }
+        },
+        "cls_meta": {
+            "description": "",
+            "icon": "",
+            "module": "layla.layla_module",
+            "name": "LaylaModule",
+            "style": "",
+            "tags": [],
+            "version": "0.1"
+        },
+        "config_dependencies": [],
+        "config_desc": {
+            "propagate_commands": {
+                "__class__": "ConfigDesc",
+                "bounds": [
+                    0,
+                    10
+                ],
+                "config_options": [
+                    "yes",
+                    "no"
+                ],
+                "config_type": 1,
+                "default": "yes",
+                "description": "Option to combine old, state driven framework with new, event driven one.\nIf active (default), start/stop commands are propagated to children automatically if not implemented otherwise by the layla module.",
+                "hidden": false,
+                "hides": {},
+                "link": null,
+                "optional": false,
+                "position": 1000,
+                "regex": "yes|no",
+                "static": false
+            }
+        },
+        "dependencies": [],
+        "gui_meta": {
+            "height": 0,
+            "icon": "",
+            "style": {
+                "stop_x": 1132.7109375,
+                "stop_y": 1.7890828450520804
+            },
+            "width": 0,
+            "x": 0,
+            "y": 0
+        },
+        "inst_config": {},
+        "inst_id": "cjIaePRk59",
+        "inst_name": "root",
+        "inst_triggers": [
+            {
+                "__class__": "Trigger",
+                "label": "running",
+                "src_method": "start",
+                "target": "P19yuc6ERd",
+                "target_method": "start_container"
+            }
+        ],
+        "provided_resources": {},
+        "published_events": [
+            {
+                "__class__": "PublishedEvent",
+                "description": "An error has occured.",
+                "event_type": 2,
+                "label": "error",
+                "method": "backend",
+                "result_description": {}
+            },
+            {
+                "__class__": "PublishedEvent",
+                "description": "start() has been executed.",
+                "event_type": 0,
+                "label": "running",
+                "method": "start",
+                "result_description": {}
+            },
+            {
+                "__class__": "PublishedEvent",
+                "description": "stop() has been executed.",
+                "event_type": 0,
+                "label": "stopped",
+                "method": "stop",
+                "result_description": {}
+            },
+            {
+                "__class__": "PublishedEvent",
+                "description": "The modules configuration has been updated.",
+                "event_type": 6,
+                "label": "config_updated",
+                "method": "update_module_config",
+                "result_description": {}
+            },
+            {
+                "__class__": "PublishedEvent",
+                "description": "An error has occured.",
+                "event_type": 2,
+                "label": "error",
+                "method": "update_module_config",
+                "result_description": {}
+            }
+        ],
+        "published_routines": [
+            {
+                "__class__": "PublishedRoutine",
+                "description": "Start module. Used in deprecated, state-driven approach.",
+                "direction_inward": null,
+                "filters": null,
+                "method": "start"
+            },
+            {
+                "__class__": "PublishedRoutine",
+                "description": "Stops module.",
+                "direction_inward": null,
+                "filters": null,
+                "method": "stop"
+            },
+            {
+                "__class__": "PublishedRoutine",
+                "description": "Update the module's configuration using the incomming event (must be of type TYPE_MODULE_CONFIG).",
+                "direction_inward": null,
+                "filters": null,
+                "method": "update_module_config"
+            }
+        ],
+        "required_resources": {},
+        "resource_dependencies": [],
+        "resource_provisions": [],
+        "test_id": "hZ9kZsGUAR"
+    },
+    "state": 0,
+    "test_id": "hZ9kZsGUAR",
+    "tester": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "used_client_managers": [],
+    "version": "0.1",
+    "whitelist": null
+}
