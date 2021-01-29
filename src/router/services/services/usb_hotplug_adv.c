@@ -252,8 +252,13 @@ void start_hotplug_block(void)
 static bool usb_load_modules(char *fs)
 {
 #ifdef HAVE_NTFS3G
-	if (!strcmp(fs, "ntfs"))
+	if (!strcmp(fs, "ntfs")) {
+#ifdef HAVE_LEGACY_KERNEL
 		insmod("fuse");
+#else
+		insmod("antfs");
+#endif
+	}
 #endif
 	if (!strcmp(fs, "ext2")) {
 		insmod("mbcache ext2");
@@ -309,7 +314,11 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 	/* lets start mounting */
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
+#ifdef HAVE_LEGACY_KERNEL
+		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+#else
 		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+#endif
 	} else
 #endif
 	if (!strcmp(fs, "vfat") || !strcmp(fs, "exfat")) {
@@ -325,7 +334,11 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 	if (ret != 0) {		//give it another try
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
+#ifdef HAVE_LEGACY_KERNEL
+			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+#else
 			ret = eval("/bin/mount", "-t", "antfs", "-o", "compression,direct_io,big_writes", path, mount_point);
+#endif
 		} else
 #endif
 			ret = eval("/bin/mount", path, mount_point);	//guess fs
