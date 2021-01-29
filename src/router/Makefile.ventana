@@ -182,6 +182,10 @@ kernel:
 	-$(MAKE) -f Makefile.ventana batman-adv-install
 	-$(MAKE) -f Makefile.ventana ndpi-netfilter
 	-$(MAKE) -f Makefile.ventana ndpi-netfilter-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.ventana antfs
+	-$(MAKE) -f Makefile.ventana antfs-install
+endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.ventana zfs
 	-$(MAKE) -f Makefile.ventana zfs-install

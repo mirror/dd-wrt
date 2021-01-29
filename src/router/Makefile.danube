@@ -197,6 +197,10 @@ endif
 	-$(MAKE) -f Makefile.danube batman-adv-install
 	-$(MAKE) -f Makefile.danube ndpi-netfilter
 	-$(MAKE) -f Makefile.danube ndpi-netfilter-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.danube antfs
+	-$(MAKE) -f Makefile.danube antfs-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.danube smbd
 	-$(MAKE) -f Makefile.danube smbd-install

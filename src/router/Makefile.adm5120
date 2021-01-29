@@ -179,6 +179,10 @@ endif
 	-$(MAKE) -f Makefile.adm5120 libutils
 	-$(MAKE) -f Makefile.adm5120 madwifi
 	-$(MAKE) -f Makefile.adm5120 madwifi-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.adm5120 antfs
+	-$(MAKE) -f Makefile.adm5120 antfs-install
+endif
 ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.adm5120 batman-adv
 	-$(MAKE) -f Makefile.adm5120 batman-adv-install

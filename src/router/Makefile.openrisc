@@ -166,6 +166,10 @@ kernel:
 	-$(MAKE) -f Makefile.openrisc batman-adv-install
 	-$(MAKE) -f Makefile.openrisc ndpi-netfilter
 	-$(MAKE) -f Makefile.openrisc ndpi-netfilter-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.openrisc antfs
+	-$(MAKE) -f Makefile.openrisc antfs-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.openrisc smbd
 	-$(MAKE) -f Makefile.openrisc smbd-install
