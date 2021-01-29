@@ -446,7 +446,9 @@ int antfs_inode_init(struct inode **inode_in, enum antfs_inode_init_mode create)
 	int err = 0;
 
 #if KERNEL_VERSION(4, 0, 0) > LINUX_VERSION_CODE
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 26, 0)
 	inode->i_data.backing_dev_info = inode->i_sb->s_bdi;
+#endif
 #endif
 	inode->i_ino = (loff_t)ni->mft_no;
 
@@ -464,21 +466,21 @@ int antfs_inode_init(struct inode **inode_in, enum antfs_inode_init_mode create)
 		inode->i_blocks = (ANTFS_NA(ni)->allocated_size + 511) >> 9;
 
 		if (ni->flags & FILE_ATTR_REPARSE_POINT) {
-			if (IS_ENABLED(CONFIG_ANTFS_SYMLINKS)) {
+			#ifdef CONFIG_ANTFS_SYMLINKS
 				/* - symlink with reparse point - */
 				inode->i_mode = S_IFLNK | sbi->umask;
 
 				antfs_inode_init_symlink(inode);
 				set_nlink(inode, le16_to_cpu(
 							ni->mrec->link_count));
-			} else {
+			#else
 				/* Don't support symlinks here. */
 				make_bad_inode(inode);
 				/* Shut up unlock_new_inode in iget_failed. */
 				inode->i_state |= I_NEW;
 				err = -EPERM;
 				goto out;
-			}
+			#endif
 		} else if (ni->mrec->flags & MFT_RECORD_IS_DIRECTORY) {
 			inode->i_mode = S_IFDIR | sbi->umask;
 			/* TODO: do we need to do this? */
@@ -539,6 +541,9 @@ int antfs_inode_init(struct inode **inode_in, enum antfs_inode_init_mode create)
 	/* This fails if we already have an inode with the same
 	 * i_ino and i_sb that is not I_FREEING or I_WILL_FREE.
 	 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+	insert_inode_hash(inode);
+#else
 	if (insert_inode_locked(inode) < 0) {
 		struct inode *c_inode = ilookup(inode->i_sb, inode->i_ino);
 		struct ntfs_inode *c_ni = c_inode ? ANTFS_NI(c_inode) : NULL;
@@ -630,7 +635,7 @@ int antfs_inode_init(struct inode **inode_in, enum antfs_inode_init_mode create)
 		}
 		goto out;
 	}
-
+#endif
 	unlock_new_inode(inode);
 
 out:

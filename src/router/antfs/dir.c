@@ -25,6 +25,9 @@
 #include <linux/sched.h>
 #include <linux/namei.h>
 #include <linux/slab.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0)
+#include <linux/writeback.h>
+#endif
 
 #include "misc.h"
 #include "dir.h"
@@ -1149,7 +1152,11 @@ static int antfs_setattr(struct dentry *entry, struct iattr *attr)
 			loff_t oldsize = inode->i_size;
 
 			i_size_write(inode, attr->ia_size);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0)
+			vmtruncate(inode, attr->ia_size);
+#else
 			truncate_pagecache(inode, oldsize, attr->ia_size);
+#endif
 		}
 #endif
 		if (mutex_lock_interruptible_nested(&ni->ni_lock,

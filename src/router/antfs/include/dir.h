@@ -30,6 +30,21 @@
 
 #define PATH_SEP '/'
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0)
+
+/**
+ * iget_failed - Mark an under-construction inode as dead and release it
+ * @inode: The inode to discard
+ *
+ * Mark an under-construction inode as dead and release it.
+ */
+static inline void iget_failed(struct inode *inode)
+{
+	make_bad_inode(inode);
+	unlock_new_inode(inode);
+	iput(inode);
+}
+#endif
 /*
  * The little endian Unicode strings $I30, $SII, $SDH, $O, $Q, $R
  * as a global constant.

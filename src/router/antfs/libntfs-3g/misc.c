@@ -61,6 +61,19 @@ void *ntfs_calloc(size_t size)
 	return p;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+static inline int is_vmalloc_addr(const void *x)
+{
+#ifdef CONFIG_MMU
+	unsigned long addr = (unsigned long)x;
+
+	return addr >= VMALLOC_START && addr < VMALLOC_END;
+#else
+	return 0;
+#endif
+}
+#endif
+
 void *ntfs_realloc(void *ptr, size_t size)
 {
 	if (is_vmalloc_addr(ptr)) {
