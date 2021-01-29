@@ -4944,10 +4944,18 @@ static int ntfs_data_attr_copy_non_resident(struct ntfs_attr *na,
 	if (unlikely(!page))
 		return -ENOMEM;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+	kaddr = kmap_atomic(page, KM_PTE0);
+#else
 	kaddr = kmap_atomic(page);
+#endif
 	memcpy(kaddr, (u8*)a + le16_to_cpu(a->value_offset), attr_size);
 	memset(kaddr + attr_size, 0, PAGE_SIZE - attr_size);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+	kunmap_atomic(kaddr, KM_PTE0);
+#else
 	kunmap_atomic(kaddr);
+#endif
 	flush_dcache_page(page);
 	SetPageUptodate(page);
 	unlock_page(page);

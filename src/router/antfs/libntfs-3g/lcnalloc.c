@@ -294,7 +294,11 @@ static int antfs_check_bh(struct ntfs_volume *vol, LCN lcn, LCN zone_end)
 			 * Therefore as a quickfix write at least the lcnbmp_bh
 			 * back at this point.
 			 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 26, 0)
+			ll_rw_block(SWRITE, 1, &vol->lcnbmp_bh);
+#else
 			write_dirty_buffer(vol->lcnbmp_bh, WRITE);
+#endif
 			brelse(vol->lcnbmp_bh);
 		}
 		vol->lcnbmp_bh = ntfs_load_bitmap_attr(vol, vol->lcnbmp_na,

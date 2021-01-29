@@ -30,8 +30,11 @@
 /* Forward declaration */
 struct ntfs_volume;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0)
+#include <asm/semaphore.h>
+#else
 #include <linux/semaphore.h>
-
+#endif
 #include "param.h"
 #include "types.h"
 #include "support.h"

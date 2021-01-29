@@ -97,7 +97,7 @@ struct runlist_element *ntfs_rl_realloc(struct runlist_element *rl,
 	struct runlist_element *new_rl;
 	int old_size_round, new_size_round;
 
-	BUILD_BUG_ON_NOT_POWER_OF_2(ANTFS_RL_CHUNKS);
+//	BUILD_BUG_ON_NOT_POWER_OF_2(ANTFS_RL_CHUNKS);
 	if (!new_count) {
 		ntfs_free(rl);
 		return NULL;

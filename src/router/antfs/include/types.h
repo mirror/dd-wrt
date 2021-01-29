@@ -29,6 +29,7 @@
 
 #include <linux/types.h>
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 0, 0)
 typedef uint8_t u8;		/* Unsigned types of an exact size */
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -38,6 +39,7 @@ typedef int8_t s8;		/* Signed types of an exact size */
 typedef int16_t s16;
 typedef int32_t s32;
 typedef int64_t s64;
+#endif
 
 typedef __le16 le16;
 typedef __le32 le32;

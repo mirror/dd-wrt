@@ -514,6 +514,16 @@ static int ntfs_device_unix_io_sync(struct ntfs_device *dev)
  *
  * Returns:
  */
+/*#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 26, 0)
+static int ntfs_device_unix_io_ioctl(struct ntfs_device *dev, int request,
+				     void *argp)
+{
+	struct block_device *bdev = dev->d_sb->s_bdev;
+
+	return blkdev_ioctl(bdev->bd_inode, mode, request, (unsigned long)argp);
+}
+
+#else
 static int ntfs_device_unix_io_ioctl(struct ntfs_device *dev, int request,
 				     void *argp)
 {
@@ -522,7 +532,7 @@ static int ntfs_device_unix_io_ioctl(struct ntfs_device *dev, int request,
 
 	return blkdev_ioctl(bdev, mode, request, (unsigned long)argp);
 }
-
+#endif*/
 /**
  * Device operations for working with unix style devices and files.
  */
@@ -536,5 +546,5 @@ struct ntfs_device_operations ntfs_device_unix_io_ops = {
 	.pwrite = ntfs_device_unix_io_pwrite,
 	.sync = ntfs_device_unix_io_sync,
 	.stat = NULL,
-	.ioctl = ntfs_device_unix_io_ioctl,
+//	.ioctl = ntfs_device_unix_io_ioctl,
 };
