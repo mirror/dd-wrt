@@ -146,7 +146,7 @@ void start_openvpnserver(void)
 			strcpy(proto, "tcp4-server");
 		}
 	}
- */	
+ */
 	insmod("tun");
 	update_timezone();
 	if ((freediskSpace("/jffs") > 16384)
@@ -215,14 +215,10 @@ void start_openvpnserver(void)
 	//be sure Chris old style config is still working
 	if (nvram_matchi("openvpn_switch", 1)) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
-		fprintf(fp, "keepalive 10 120\n"
-			"verb 3\n" "mute 3\n" "syslog\n"
-			"writepid /var/run/openvpnd.pid\n"
-			"management 127.0.0.1 14\n"
-			"management-log-cache 100\n"
-			"topology subnet\n"
+		fprintf(fp, "keepalive 10 120\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpnd.pid\n" "management 127.0.0.1 14\n" "management-log-cache 100\n" "topology subnet\n"
 			//"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
-			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
+			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_cipher"),
+			nvram_safe_get("openvpn_auth"));
 
 		//egc
 		char dcbuffer[128] = { 0 };
@@ -481,7 +477,7 @@ void start_openvpn(void)
 			strcpy(proto, "tcp4-client");
 		}
 	}
- */	
+ */
 	FILE *fp;
 	char ovpniface[10];
 #ifdef HAVE_ERC

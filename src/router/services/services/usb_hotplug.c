@@ -230,7 +230,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 		sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs"))
-		insmod("fuse");
+		insmod("antfs");
 #endif
 	if (!strcmp(fs, "ext2")) {
 		insmod("mbcache ext2");
@@ -267,7 +267,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 		mkdir("/tmp/mnt", 0700);
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
-		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 	} else
 #endif
 	if (!strcmp(fs, "vfat"))
@@ -278,7 +278,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 	if (ret != 0) {		//give it another try
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
-			ret = eval("ntfs-3g", "-o", "compression", path, mount_point);
+			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 		} else
 #endif
 			ret = eval("/bin/mount", path, mount_point);	//guess fs
