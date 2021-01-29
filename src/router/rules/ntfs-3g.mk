@@ -15,9 +15,7 @@ endif
 ifeq ($(CONFIG_NTFSPROGS),y)
 	install -D ntfs-3g/ntfsprogs/mkntfs $(INSTALLDIR)/ntfs-3g/usr/sbin/mkfs.ntfs
 endif
-#	install -D ntfs-3g/src/ntfs-3g.probe $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g.probe
-#	$(STRIP) $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g
-#	$(STRIP) $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g.probe
+	@true
 
 ntfs-3g-clean:
 	$(MAKE) -C ntfs-3g/fuse clean
