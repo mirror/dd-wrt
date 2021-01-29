@@ -9,12 +9,12 @@ ntfs-3g:
 	$(MAKE) -C ntfs-3g all
 
 ntfs-3g-install:
-	install -D ntfs-3g/src/ntfs-3g $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g
+#	install -D ntfs-3g/src/ntfs-3g $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g
 ifeq ($(CONFIG_NTFSPROGS),y)
 	install -D ntfs-3g/ntfsprogs/mkntfs $(INSTALLDIR)/ntfs-3g/usr/sbin/mkfs.ntfs
 endif
 #	install -D ntfs-3g/src/ntfs-3g.probe $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g.probe
-	$(STRIP) $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g
+#	$(STRIP) $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g
 #	$(STRIP) $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g.probe
 
 ntfs-3g-clean:
