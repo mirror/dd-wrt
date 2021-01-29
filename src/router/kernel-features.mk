@@ -55,10 +55,10 @@ define kernelfeatures
 		echo "# CONFIG_USER_NS is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_LEGACY_KERNEL)" = "y" ]; then \
-	if [ "$(CONFIG_NTFS3G)" = "y" ]; then \
-		sed -i 's/\# CONFIG_FUSE_FS is not set/CONFIG_FUSE_FS=m/g' $(LINUXDIR)/.config; \
-		echo "# CONFIG_CUSE is not set" >> $(LINUXDIR)/.config; \
-	fi
+		if [ "$(CONFIG_NTFS3G)" = "y" ]; then \
+			sed -i 's/\# CONFIG_FUSE_FS is not set/CONFIG_FUSE_FS=m/g' $(LINUXDIR)/.config; \
+			echo "# CONFIG_CUSE is not set" >> $(LINUXDIR)/.config; \
+		fi \
 	fi
 	if [ "$(CONFIG_SAMBA)" != "y" ]; then \
 		sed -i 's/\CONFIG_CIFS=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
