@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.9.234 Kernel Configuration
+# Linux/powerpc 4.9.241 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -3041,4 +3041,3 @@ CONFIG_CRYPTO_DEV_TALITOS=m
 #
 # CONFIG_CRYPTODEV is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_GPIO_ANTAIRA is not set
