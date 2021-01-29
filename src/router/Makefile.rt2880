@@ -275,6 +275,10 @@ endif
 	-$(MAKE) -f Makefile.rt2880 libutils
 #	-$(MAKE) -f Makefile.rt2880 madwifi
 #	-$(MAKE) -f Makefile.rt2880 madwifi-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.rt2880 antfs
+	-$(MAKE) -f Makefile.rt2880 antfs-install
+endif
 ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.rt2880 batman-adv
 	-$(MAKE) -f Makefile.rt2880 batman-adv-install

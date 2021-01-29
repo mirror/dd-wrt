@@ -698,6 +698,10 @@ endif
 	-$(MAKE) -f Makefile.pb42 libutils
 	-$(MAKE) -f Makefile.pb42 madwifi
 	-$(MAKE) -f Makefile.pb42 madwifi-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.pb42 antfs
+	-$(MAKE) -f Makefile.pb42 antfs-install
+endif
 ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.pb42 batman-adv
 	-$(MAKE) -f Makefile.pb42 batman-adv-install

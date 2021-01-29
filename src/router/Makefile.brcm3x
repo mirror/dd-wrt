@@ -216,6 +216,10 @@ endif
 #	-$(MAKE) -f Makefile.brcm3x madwifi-install
 #	-$(MAKE) -f Makefile.brcm3x emf
 #	-$(MAKE) -f Makefile.brcm3x emf-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.brcm3x antfs
+	-$(MAKE) -f Makefile.brcm3x antfs-install
+endif
 ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.brcm3x batman-adv
 	-$(MAKE) -f Makefile.brcm3x batman-adv-install

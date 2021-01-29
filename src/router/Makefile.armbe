@@ -212,6 +212,10 @@ endif
 	-$(MAKE) -f Makefile.armbe batman-adv-install
 	-$(MAKE) -f Makefile.armbe ndpi-netfilter
 	-$(MAKE) -f Makefile.armbe ndpi-netfilter-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.armbe antfs
+	-$(MAKE) -f Makefile.armbe antfs-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.armbe smbd
 	-$(MAKE) -f Makefile.armbe smbd-install

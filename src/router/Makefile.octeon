@@ -213,6 +213,10 @@ endif
 	-$(MAKE) -f Makefile.octeon libutils
 	-$(MAKE) -f Makefile.octeon madwifi
 	-$(MAKE) -f Makefile.octeon madwifi-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.octeon antfs
+	-$(MAKE) -f Makefile.octeon antfs-install
+endif
 ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.octeon batman-adv
 	-$(MAKE) -f Makefile.octeon batman-adv-install

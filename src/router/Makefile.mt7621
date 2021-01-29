@@ -260,6 +260,10 @@ endif
 	-$(MAKE) -f Makefile.mt7621 libutils
 #	-$(MAKE) -f Makefile.rt2880 madwifi
 #	-$(MAKE) -f Makefile.rt2880 madwifi-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.mt7621 antfs
+	-$(MAKE) -f Makefile.mt7621 antfs-install
+endif
 ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.mt7621 batman-adv
 	-$(MAKE) -f Makefile.mt7621 batman-adv-install

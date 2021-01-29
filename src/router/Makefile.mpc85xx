@@ -192,6 +192,10 @@ endif
 	-$(MAKE) -f Makefile.mpc85xx batman-adv-install
 	-$(MAKE) -f Makefile.mpc85xx ndpi-netfilter
 	-$(MAKE) -f Makefile.mpc85xx ndpi-netfilter-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.mpc85xx antfs
+	-$(MAKE) -f Makefile.mpc85xx antfs-install
+endif
 ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.mpc85xx smbd
 	-$(MAKE) -f Makefile.mpc85xx smbd-install

@@ -158,6 +158,10 @@ endif
 	-$(MAKE) -f Makefile.ipq806x batman-adv-install
 	-$(MAKE) -f Makefile.ipq806x ndpi-netfilter
 	-$(MAKE) -f Makefile.ipq806x ndpi-netfilter-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.ipq806x antfs
+	-$(MAKE) -f Makefile.ipq806x antfs-install
+endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.ipq806x zfs
 	-$(MAKE) -f Makefile.ipq806x zfs-install
