@@ -2,6 +2,11 @@ VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)
 KBUILD := $(LINUXDIR)
 
+CFLAGS_EXTRA += -I$(TOP)/antfs
+CFLAGS_EXTRA += -I$(TOP)/antfs/include
+
+CFLAGS_EXTRA += -DANTFS_LOGLEVEL_DEFAULT=ANTFS_LOGLEVEL_ERR
+CFLAGS_EXTRA += -DANTFS_VERSION="1.0" -DCONFIG_ANTFS_SYMLINKS=y
 
 
 Q ?= @
@@ -19,7 +24,7 @@ destination = $(DESTDIR)/usr/src/$(DKMS_NAME)-$(VERSION)
 default: antfs.ko
 
 antfs.ko: force
-	$(MAKE) -C $(KBUILD) M=$(CURDIR) modules $(MODULE_CONFIG)
+	$(MAKE) -C $(KBUILD) M=$(CURDIR) modules $(MODULE_CONFIG) EXTRA_CFLAGS="$(CFLAGS_EXTRA)"
 	$(call cmd_strip,$@)
 
 clean: force

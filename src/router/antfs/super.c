@@ -57,7 +57,15 @@ enum {
 	antfs_opt_umask,
 	antfs_opt_err
 };
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 26, 0)
+static match_table_t tokens = {
+	{antfs_opt_utf8, "utf8"},
+	{antfs_opt_uid, "uid=%u"},
+	{antfs_opt_gid, "gid=%u"},
+	{antfs_opt_umask, "umask=%u"},
+	{antfs_opt_err, NULL}
+};
+#else
 static const match_table_t tokens = {
 	{antfs_opt_utf8, "utf8"},
 	{antfs_opt_uid, "uid=%u"},
@@ -65,6 +73,7 @@ static const match_table_t tokens = {
 	{antfs_opt_umask, "umask=%u"},
 	{antfs_opt_err, NULL}
 };
+#endif
 
 /**
  * @brief free's all the allocated structures in the sbi and the sbi itself.
@@ -489,13 +498,20 @@ MODULE_ALIAS_FS("antfs");
  * after its creation with the essentials that have to be set up only once
  * in the lifetime of an inode.
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 26, 0)
+static void antfs_inode_init_once(void *foo, struct kmem_cache *cachep, unsigned long flags)
+{
+
+
+}
+#else
 static void antfs_inode_init_once(void *foo)
 {
 	struct inode *inode = foo;
 
 	inode_init_once(inode);
 }
-
+#endif
 /**
  * @brief init for the ntfs filesystem
  *
@@ -554,8 +570,7 @@ static int __init antfs_init(void)
 {
 	int err = 0;
 
-	pr_info("ANTFS Module: Version %s\n",
-		ANTFS_VERSION);
+	pr_info("ANTFS Module: Version 1.0\n");
 
 	err = antfs_fs_init();
 

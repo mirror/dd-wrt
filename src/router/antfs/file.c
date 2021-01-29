@@ -41,7 +41,9 @@
 #include "dir.h"
 #include "lcnalloc.h"
 #include "attrib.h"
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 26, 0)
+#define zero_user(pages, off, len)		zero_user_page(pages, off, len, KM_USER0);
+#endif
 /**
  * @brief Open a file
  *
@@ -82,7 +84,9 @@ int antfs_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 	struct ntfs_inode *ni = ANTFS_NI(inode);
 	int err;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 30)
+	err = file_fsync(filp, dentry, datasync);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	err = simple_fsync(filp, dentry, datasync);
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 1, 0)
 	err = generic_file_fsync(filp, datasync);
@@ -980,7 +984,9 @@ static void antfs_write_failed(struct address_space *mapping, loff_t to)
 	struct inode *inode = mapping->host;
 
 	if (to > inode->i_size) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0)
+		vmtruncate(inode, inode->i_size);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
 		truncate_pagecache(inode, to, inode->i_size);
 #else
 		truncate_pagecache(inode, inode->i_size);
@@ -1019,6 +1025,34 @@ static void antfs_write_failed(struct address_space *mapping, loff_t to)
  *       bytes back to disk! So even if we fail during the writing process, the
  *       vfs will repeat till it works!
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+static int antfs_prepare_write(struct file *file, struct page *page, unsigned offset, unsigned to)
+{
+	struct inode *inode = page->mapping->host;
+	struct ntfs_inode *ni = ANTFS_NI(inode);
+	int err = 0;
+
+	antfs_log_enter("inode %ld", inode->i_ino);
+
+	if (NInoTestAndSetWritePending(ni)) {
+		err = -EAGAIN;
+		goto out;
+	}
+	err = block_prepare_write(page, offset, to, antfs_get_block);
+	
+	if (err < 0) {
+		if (err != -ENOSPC)
+			antfs_log_error("Write_begin failed: %d", err);
+		antfs_write_failed(page->mapping, to);
+		NInoClearWritePending(ni);
+	}
+
+out:
+	antfs_log_leave("err: %d", err);
+	return err;
+
+}
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
 static int antfs_write_begin(struct file *filp, struct address_space *mapping,
 			     loff_t pos, unsigned len, unsigned flags,
@@ -1061,7 +1095,120 @@ out:
 	antfs_log_leave("err: %d", err);
 	return err;
 }
+#endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+static int antfs_commit_write(struct file *file, struct page *page,
+			     unsigned offset, unsigned to)
+
+{
+	struct inode *inode = page->mapping->host;
+	struct ntfs_inode *ni = ANTFS_NI(inode);
+	struct ntfs_attr *na = ANTFS_NA(ni);
+	struct ntfs_volume *vol = ni->vol;
+	bool got_buffer_exhole = false;
+	const loff_t ncluster_mask = ~((loff_t)vol->cluster_size - 1);
+	struct buffer_head *bh, *head = page_buffers(page);
+	s64 newsize;
+	int err;
+
+	antfs_log_enter("ino %lld; pos=0x%llx",
+			(long long)ni->mft_no,
+			(long long)offset);
+	err = generic_commit_write(file, page, offset, to);
+	if (err < 0) {
+		antfs_write_failed(page->mapping, to);
+		antfs_log_error("Write end failed!");
+		goto out_unlocked;
+	}
+
+	/* Test if we have BUFFER_ZERONEW flags here. This is a strong hint that
+	 * we may have to initialize a hole.
+	 */
+	if (mutex_lock_interruptible_nested(&ni->ni_lock, NI_MUTEX_NORMAL)) {
+		err = -ERESTARTSYS;
+		goto out_unlocked;
+	}
+
+	bh = head;
+	do {
+		if (test_clear_buffer_zeronew(bh)) {
+			got_buffer_exhole = true;
+			antfs_log_debug("Buffer zeronew@ %lld",
+					(long long)bh->b_blocknr);
+			break;
+		}
+		bh = bh->b_this_page;
+	} while (head != bh);
+
+	/* Initialize clusters with zero if needed. */
+	newsize = to;
+	if (offset >= na->initialized_size) {
+		/* If we wrote past initialized_size, we only need to
+		 * initialize the space before pos and nothing after.
+		 */
+		if ((offset & ncluster_mask) < na->initialized_size) {
+			/* We did not allocate new clusters. Initialize space
+			 * in current cluster up to pos.
+			 */
+			antfs_log_debug("Zero cluster 0?");
+			antfs_zero_cluster(ni, page, na->initialized_size, offset);
+		} else {
+			/*
+			 * Any previous clusters that need initialization?
+			 * Look through runlist.
+			 */
+			antfs_log_debug("Zero cluster 1?");
+			antfs_zero_clusters_on_rl(ni,
+					na->initialized_size,
+					offset & ncluster_mask);
+			/* Need to initialize start of the current cluster? */
+			antfs_zero_cluster(ni, page, offset & ncluster_mask, offset);
+		}
+	} else if (got_buffer_exhole) {
+		/* If we wrote in front of initialized_size and have buffers
+		 * marked as new we are writing into a former hole.
+		 * Have to zero the (w)hole thing around the part that was
+		 * written.
+		 */
+		antfs_log_debug("Zero cluster 2?");
+		antfs_zero_cluster(ni, page, offset & ncluster_mask, offset);
+		if (newsize & (vol->cluster_size - 1))
+			antfs_zero_cluster(ni, page, newsize,
+					(newsize & ncluster_mask) +
+					vol->cluster_size);
+	}
+
+	/* Last: Update initialized size and data_size. */
+	if (newsize > na->initialized_size)
+		na->initialized_size = newsize;
+
+	if (newsize > na->data_size) {
+		na->data_size = newsize;
+
+		if (na->type == AT_DATA
+				&& na->name == AT_UNNAMED) {
+			/* Set the inode dirty so it is written out
+			 * later.
+			 */
+			ntfs_inode_mark_dirty(na->ni);
+			NInoFileNameSetDirty(na->ni);
+		} else {
+			antfs_log_error("Got na not AT_DATA (0x%02x) and "
+					"AT_UNNAMED (??) for ino %lld",
+					(int)le32_to_cpu(na->type),
+					(long long)ni->mft_no);
+		}
+	}
+
+	mutex_unlock(&ni->ni_lock);
+out_unlocked:
+	NInoClearWritePending(ni);
+	/* Done! */
+	return err;
+}
+
+#else
 /**
  * @brief finishes up the writing of a block on a ntfs device
  *
@@ -1206,6 +1353,7 @@ out_unlocked:
 	/* Done! */
 	return err;
 }
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
 static ssize_t antfs_aio_write(struct kiocb *iocb, const struct iovec *_iov,
@@ -1528,7 +1676,9 @@ static const struct file_operations antfs_file_operations = {
 	.fsync = antfs_fsync,
 	.splice_read = generic_file_splice_read,
 	.splice_write = antfs_splice_write,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 26, 0)
 	.fallocate = antfs_file_fallocate,
+#endif
 };
 
 static const struct address_space_operations antfs_file_aops = {
@@ -1536,8 +1686,13 @@ static const struct address_space_operations antfs_file_aops = {
 	.readpages = antfs_readpages,
 	.writepage = antfs_writepage,
 	.writepages = antfs_writepages,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+	.prepare_write = antfs_prepare_write,
+	.commit_write = antfs_commit_write,
+#else
 	.write_begin = antfs_write_begin,
 	.write_end = antfs_write_end,
+#endif
 	.bmap = antfs_bmap,
 };
 

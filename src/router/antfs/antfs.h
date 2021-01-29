@@ -27,6 +27,14 @@ static inline long IS_ERR_OR_NULL(const void *ptr)
 #define ANTFS_LOGLEVEL_INFO	    5
 #define ANTFS_LOGLEVEL_DBG	    6
 
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0)
+static inline __printf(1, 2)
+int no_printk(const char *fmt, ...)
+{
+	return 0;
+}
+#endif
 #ifndef CONFIG_AVM_ENHANCED
 #define avm_logger_printk_ratelimited(logger, fmt, ...) \
 	no_printk(fmt, ##__VA_ARGS__)
@@ -42,7 +50,11 @@ static inline long IS_ERR_OR_NULL(const void *ptr)
 
 
 extern struct _logger_priv *global_logger;
-
+#ifndef pr_fmt
+#define pr_fmt(fmt) fmt
+#define pr_err(fmt, ...) \
+	printk(KERN_ERR pr_fmt(fmt), ##__VA_ARGS__)
+#endif
 #if (ANTFS_LOGLEVEL >= ANTFS_LOGLEVEL_ERR_EXT)
 #define antfs_pr_err(fmt, ...) pr_err(fmt, ##__VA_ARGS__)
 #define antfs_pr_warn(fmt, ...) pr_warn(fmt, ##__VA_ARGS__)
