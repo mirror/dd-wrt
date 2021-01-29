@@ -1555,7 +1555,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 			fprintf(fp, "group_mgmt_cipher=AES-128-CMAC\n");
 #endif
 	}
-	if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe) {
+	if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe || iswpa || iswpa2) {
 		fprintf(fp, "okc=1\n");
 	} else {
 		fprintf(fp, "okc=0\n");
