@@ -14,11 +14,11 @@
 #include <linux/socket.h>
 #include <linux/workqueue.h>
 
+#include "vfs_cache.h"
 #include "transport_ipc.h"
 #include "buffer_pool.h"
 #include "server.h"
 #include "smb_common.h"
-#include "vfs_cache.h"
 
 #include "mgmt/user_config.h"
 #include "mgmt/share_config.h"

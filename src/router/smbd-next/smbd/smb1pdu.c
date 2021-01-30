@@ -29,6 +29,7 @@
 #include "mgmt/share_config.h"
 #include "mgmt/tree_connect.h"
 #include "mgmt/user_session.h"
+#include "ndr.h"
 
 static int smb1_oplock_enable = false;
 
@@ -2579,30 +2580,36 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	else
 		rsp->CreateAction = cpu_to_le32(file_info);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+	if (stat.result_mask & STATX_BTIME)
+		fp->create_time = ksmbd_UnixTimeToNT(stat.btime);
+	else
+		fp->create_time = ksmbd_UnixTimeToNT(stat.ctime);
+#else
 	fp->create_time = ksmbd_UnixTimeToNT(stat.ctime);
+#endif
 	if (file_present) {
 		if (test_share_config_flag(tcon->share_conf,
 					   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-			char *create_time = NULL;
+			struct xattr_dos_attrib da;
 
-			err = ksmbd_vfs_getxattr(path.dentry,
-						XATTR_NAME_CREATION_TIME,
-						&create_time);
+			err = ksmbd_vfs_get_dos_attrib_xattr(path.dentry, &da);
 			if (err > 0)
-				fp->create_time = *((__u64 *)create_time);
-			ksmbd_free(create_time);
+				fp->create_time = da.create_time;
 			err = 0;
 		}
 	} else {
 		if (test_share_config_flag(tcon->share_conf,
 					   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-			err = ksmbd_vfs_setxattr(path.dentry,
-						 XATTR_NAME_CREATION_TIME,
-						 (void *)&fp->create_time,
-						 CREATIOM_TIME_LEN,
-						 0);
+			struct xattr_dos_attrib da = {0};
+
+			da.version = 3;
+			da.attr = smb_get_dos_attr(&stat);
+			da.create_time = fp->create_time;
+
+			err = ksmbd_vfs_set_dos_attrib_xattr(path.dentry, &da);
 			if (err)
-				ksmbd_debug(SMB, "failed to store creation time in EA\n");
+				ksmbd_debug(SMB, "failed to store creation time in xattr\n");
 			err = 0;
 		}
 	}
@@ -4052,14 +4059,11 @@ static int query_path_info(struct ksmbd_work *work)
 
 	if (test_share_config_flag(work->tcon->share_conf,
 				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-		char *ctime = NULL;
+		struct xattr_dos_attrib da;
 
-		rc = ksmbd_vfs_getxattr(path.dentry,
-					XATTR_NAME_CREATION_TIME,
-					&ctime);
+		rc = ksmbd_vfs_get_dos_attrib_xattr(path.dentry, &da);
 		if (rc > 0)
-			create_time = *((__u64 *)ctime);
-		ksmbd_free(ctime);
+			create_time = da.create_time;
 		rc = 0;
 	}
 
@@ -6487,7 +6491,15 @@ static int smb_set_alloc_size(struct ksmbd_work *work)
 	allocinfo =  (struct file_allocation_info *)
 		(((char *) &req->hdr.Protocol) + le16_to_cpu(req->DataOffset));
 	newsize = le64_to_cpu(allocinfo->AllocationSize);
-	err = ksmbd_vfs_getattr(work, (uint64_t)req->Fid, &stat);
+
+	fp = ksmbd_lookup_fd_fast(work, req->Fid);
+	if (!fp) {
+		ksmbd_err("failed to get filp for fid %u\n", req->Fid);
+		rsp->hdr.Status.CifsError = STATUS_FILE_CLOSED;
+		return -ENOENT;
+	}
+
+	err = ksmbd_vfs_getattr(&fp->filp->f_path, &stat);
 	if (err) {
 		rsp->hdr.Status.CifsError = STATUS_INVALID_PARAMETER;
 		return err;
@@ -6501,13 +6513,6 @@ static int smb_set_alloc_size(struct ksmbd_work *work)
 		newsize = div64_u64(newsize + alloc_roundup_size - 1,
 				alloc_roundup_size);
 		newsize *= alloc_roundup_size;
-	}
-
-	fp = ksmbd_lookup_fd_fast(work, req->Fid);
-	if (!fp) {
-		ksmbd_err("failed to get filp for fid %u\n", req->Fid);
-		rsp->hdr.Status.CifsError = STATUS_FILE_CLOSED;
-		return -ENOENT;
 	}
 
 	err = ksmbd_vfs_truncate(work, NULL, fp, newsize);
@@ -7356,19 +7361,22 @@ static int create_dir(struct ksmbd_work *work)
 	if (test_share_config_flag(work->tcon->share_conf,
 				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
 		__u64 ctime;
-		struct kstat stat;
 		struct path path;
+		struct xattr_dos_attrib da = {0};
 
 		err = ksmbd_vfs_kern_path(name, 0, &path, 1);
 		if (!err) {
-			generic_fillattr(d_inode(path.dentry), &stat);
-			ctime = ksmbd_UnixTimeToNT(stat.ctime);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+			ctime = ksmbd_UnixTimeToNT(current_time(path.dentry->d_inode));
+#else
+			ctime = ksmbd_UnixTimeToNT(CURRENT_TIME);
+#endif
 
-			err = ksmbd_vfs_setxattr(path.dentry,
-						 XATTR_NAME_CREATION_TIME,
-						 (void *)&ctime,
-						 CREATIOM_TIME_LEN,
-						 0);
+			da.version = 3;
+			da.attr = ATTR_DIRECTORY;
+			da.create_time = ctime;
+
+			err = ksmbd_vfs_set_dos_attrib_xattr(path.dentry, &da);
 			if (err)
 				ksmbd_debug(SMB, "failed to store creation time in EA\n");
 			path_put(&path);
@@ -7526,21 +7534,23 @@ int smb_mkdir(struct ksmbd_work *work)
 	if (test_share_config_flag(work->tcon->share_conf,
 				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
 		__u64 ctime;
-		struct kstat stat;
 		struct path path;
+		struct xattr_dos_attrib da = {0};
 
 		err = ksmbd_vfs_kern_path(name, 0, &path, 1);
 		if (!err) {
-			generic_fillattr(d_inode(path.dentry), &stat);
-			ctime = ksmbd_UnixTimeToNT(stat.ctime);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+			ctime = ksmbd_UnixTimeToNT(current_time(path.dentry->d_inode));
+#else
+			ctime = ksmbd_UnixTimeToNT(CURRENT_TIME);
+#endif
+			da.version = 3;
+			da.attr = ATTR_DIRECTORY;
+			da.create_time = ctime;
 
-			err = ksmbd_vfs_setxattr(path.dentry,
-						 XATTR_NAME_CREATION_TIME,
-						 (void *)&ctime,
-						 CREATIOM_TIME_LEN,
-						 0);
+			err = ksmbd_vfs_set_dos_attrib_xattr(path.dentry, &da);
 			if (err)
-				ksmbd_debug(SMB, "failed to store creation time in EA\n");
+				ksmbd_debug(SMB, "failed to store creation time in xattr\n");
 			path_put(&path);
 		}
 		err = 0;
@@ -8229,30 +8239,36 @@ int smb_open_andx(struct ksmbd_work *work)
 	if (oplock_rsp)
 		file_info |= SMBOPEN_LOCK_GRANTED;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+	if (stat.result_mask & STATX_BTIME)
+		fp->create_time = ksmbd_UnixTimeToNT(stat.btime);
+	else
+		fp->create_time = ksmbd_UnixTimeToNT(stat.ctime);
+#else
 	fp->create_time = ksmbd_UnixTimeToNT(stat.ctime);
+#endif
 	if (file_present) {
 		if (test_share_config_flag(work->tcon->share_conf,
 					   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-			char *create_time = NULL;
+			struct xattr_dos_attrib da;
 
-			err = ksmbd_vfs_getxattr(path.dentry,
-						 XATTR_NAME_CREATION_TIME,
-						 &create_time);
+			err = ksmbd_vfs_get_dos_attrib_xattr(path.dentry, &da);
 			if (err > 0)
-				fp->create_time = *((__u64 *)create_time);
-			ksmbd_free(create_time);
+				fp->create_time = da.create_time;
 			err = 0;
 		}
 	} else {
 		if (test_share_config_flag(work->tcon->share_conf,
-					   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-			err = ksmbd_vfs_setxattr(path.dentry,
-						 XATTR_NAME_CREATION_TIME,
-						 (void *)&fp->create_time,
-						 CREATIOM_TIME_LEN,
-						 0);
+					KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
+			struct xattr_dos_attrib da = {0};
+
+			da.version = 3;
+			da.attr = ATTR_NORMAL;
+			da.create_time = fp->create_time;
+
+			err = ksmbd_vfs_set_dos_attrib_xattr(path.dentry, &da);
 			if (err)
-				ksmbd_debug(SMB, "failed to store creation time in EA\n");
+				ksmbd_debug(SMB, "failed to store creation time in xattr\n");
 			err = 0;
 		}
 	}
