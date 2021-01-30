@@ -12,8 +12,7 @@
 #include <linux/namei.h>
 #include <linux/posix_acl.h>
 
-#include "glob.h"
-#include "vfs_cache.h"
+#include "mgmt/tree_connect.h"
 
 #define NUM_AUTHS (6)	/* number of authority fields */
 #define SID_MAX_SUB_AUTHORITIES (15) /* max number of sub authority fields */
@@ -101,6 +100,10 @@
 #define SID_STRING_BASE_SIZE (2 + 3 + 15 + 1)
 #define SID_STRING_SUBAUTH_SIZE (11) /* size of a single subauth string */
 
+#define DOMAIN_USER_RID_LE	cpu_to_le32(513)
+
+struct ksmbd_conn;
+
 struct smb_ntsd {
 	__le16 revision; /* revision level */
 	__le16 type;
@@ -134,14 +137,6 @@ struct smb_ace {
 	struct smb_sid sid; /* ie UUID of user or group who gets these perms */
 } __packed;
 
-struct smb_ntacl {
-	unsigned int crc32;
-	int size;
-	int type;
-	int num_aces;
-	struct smb_ace ace[];
-};
-
 struct smb_fattr {
 	kuid_t	cf_uid;
 	kgid_t	cf_gid;
@@ -149,7 +144,6 @@ struct smb_fattr {
 	__le32 daccess;
 	struct posix_acl *cf_acls;
 	struct posix_acl *cf_dacls;
-	struct smb_ntacl *ntacl;
 };
 
 struct posix_ace_state {
@@ -187,21 +181,22 @@ struct posix_acl_state {
 
 int parse_sec_desc(struct smb_ntsd *pntsd, int acl_len,
 		struct smb_fattr *fattr);
-int build_sec_desc(struct smb_ntsd *pntsd, int addition_info, __u32 *secdesclen,
-		struct smb_fattr *fattr);
+int build_sec_desc(struct smb_ntsd *pntsd, struct smb_ntsd *ppntsd,
+		int addition_info, __u32 *secdesclen, struct smb_fattr *fattr);
 int init_acl_state(struct posix_acl_state *state, int cnt);
 void free_acl_state(struct posix_acl_state *state);
 void posix_state_to_acl(struct posix_acl_state *state,
 		struct posix_acl_entry *pace);
 int compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid);
 bool smb_inherit_flags(int flags, bool is_dir);
-int smb_inherit_dacl(struct dentry *dentry, unsigned int uid, unsigned int gid);
-int smb_inherit_posix_acl(struct inode *inode, struct inode *parent_inode);
-int smb_check_perm_dacl(struct dentry *dentry, __le32 *pdaccess, int uid);
-int store_init_ntacl(struct dentry *dentry);
-int store_init_posix_acl(struct inode *inode);
-int set_info_sec(struct dentry *dentry, struct smb_ntsd *pntsd,
-		int ntsd_len, bool type_check);
+int smb_inherit_dacl(struct ksmbd_conn *conn, struct dentry *dentry,
+		unsigned int uid, unsigned int gid);
+int smb_check_perm_dacl(struct ksmbd_conn *conn, struct dentry *dentry,
+		__le32 *pdaccess, int uid);
+int store_init_posix_acl(struct inode *inode, umode_t perm);
+int set_info_sec(struct ksmbd_conn *conn, struct ksmbd_tree_connect *tcon,
+		struct dentry *dentry, struct smb_ntsd *pntsd, int ntsd_len,
+		bool type_check);
 void id_to_sid(unsigned int cid, uint sidtype, struct smb_sid *ssid);
 void ksmbd_init_domain(u32 *sub_auth);
 #endif /* _SMBACL_H */

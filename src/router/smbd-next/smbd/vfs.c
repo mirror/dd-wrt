@@ -33,6 +33,8 @@
 #include "vfs.h"
 #include "vfs_cache.h"
 #include "smbacl.h"
+#include "ndr.h"
+#include "auth.h"
 
 #include "time_wrappers.h"
 #include "smb_common.h"
@@ -584,60 +586,26 @@ out:
 	return err;
 }
 
-static void __fill_dentry_attributes(struct ksmbd_work *work,
-				     struct dentry *dentry,
-				     struct ksmbd_kstat *ksmbd_kstat)
+/**
+ * ksmbd_vfs_getattr() - vfs helper for smb getattr
+ * @work:	work
+ * @fid:	file id of open file
+ * @attrs:	inode attributes
+ *
+ * Return:	0 on success, otherwise error
+ */
+int ksmbd_vfs_getattr(struct path *path, struct kstat *stat)
 {
-	/*
-	 * set default value for the case that store dos attributes is not yes
-	 * or that acl is disable in server's filesystem and the config is yes.
-	 */
-	if (S_ISDIR(ksmbd_kstat->kstat->mode))
-		ksmbd_kstat->file_attributes = ATTR_DIRECTORY_LE;
-	else
-		ksmbd_kstat->file_attributes = ATTR_ARCHIVE_LE;
+	int err;
 
-	if (test_share_config_flag(work->tcon->share_conf,
-				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-		char *file_attribute = NULL;
-		int rc;
-
-		rc = ksmbd_vfs_getxattr(dentry,
-					XATTR_NAME_FILE_ATTRIBUTE,
-					&file_attribute);
-		if (rc > 0)
-			ksmbd_kstat->file_attributes =
-				*((__le32 *)file_attribute);
-		else
-			ksmbd_debug(VFS, "fail to fill file attributes.\n");
-		ksmbd_free(file_attribute);
-	}
-}
-
-static void __file_dentry_ctime(struct ksmbd_work *work,
-				struct dentry *dentry,
-				struct ksmbd_kstat *ksmbd_kstat)
-{
-	char *create_time = NULL;
-	int xattr_len;
-	u64 time;
-
-	/*
-	 * if "store dos attributes" conf is not yes,
-	 * create time = change time
-	 */
-	time = ksmbd_UnixTimeToNT(ksmbd_kstat->kstat->ctime);
-	ksmbd_kstat->create_time = time;
-
-	if (test_share_config_flag(work->tcon->share_conf,
-				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-		xattr_len = ksmbd_vfs_getxattr(dentry,
-					       XATTR_NAME_CREATION_TIME,
-					       &create_time);
-		if (xattr_len > 0)
-			ksmbd_kstat->create_time = *((u64 *)create_time);
-		ksmbd_free(create_time);
-	}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+	err = vfs_getattr(path, stat, STATX_BTIME, AT_STATX_SYNC_AS_STAT);
+#else
+	err = vfs_getattr(path, stat);
+#endif
+	if (err)
+		ksmbd_err("getattr failed, err %d\n", err);
+	return err;
 }
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
@@ -786,40 +754,6 @@ out:
 }
 
 /**
- * ksmbd_vfs_getattr() - vfs helper for smb getattr
- * @work:	work
- * @fid:	file id of open file
- * @attrs:	inode attributes
- *
- * Return:	0 on success, otherwise error
- */
-int ksmbd_vfs_getattr(struct ksmbd_work *work, uint64_t fid,
-		struct kstat *stat)
-{
-	struct file *filp;
-	struct ksmbd_file *fp;
-	int err;
-
-	fp = ksmbd_lookup_fd_fast(work, fid);
-	if (!fp) {
-		ksmbd_err("failed to get filp for fid %llu\n", fid);
-		return -ENOENT;
-	}
-
-	filp = fp->filp;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-	err = vfs_getattr(&filp->f_path, stat, STATX_BASIC_STATS,
-		AT_STATX_SYNC_AS_STAT);
-#else
-	err = vfs_getattr(&filp->f_path, stat);
-#endif
-	if (err)
-		ksmbd_err("getattr failed for fid %llu, err %d\n", fid, err);
-	ksmbd_fd_put(work, fp);
-	return err;
-}
-
-/**
  * ksmbd_vfs_symlink() - vfs helper for creating smb symlink
  * @name:	source file name
  * @symname:	symlink name
@@ -910,20 +844,6 @@ int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp)
 #endif
 }
 
-static void fill_file_attributes(struct ksmbd_work *work,
-				 struct path *path,
-				 struct ksmbd_kstat *ksmbd_kstat)
-{
-	__fill_dentry_attributes(work, path->dentry, ksmbd_kstat);
-}
-
-static void fill_create_time(struct ksmbd_work *work,
-			     struct path *path,
-			     struct ksmbd_kstat *ksmbd_kstat)
-{
-	__file_dentry_ctime(work, path->dentry, ksmbd_kstat);
-}
-
 int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 			   struct ksmbd_kstat *ksmbd_kstat,
 			   const char *de_name,
@@ -955,9 +875,7 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 		return -ENOMEM;
 	}
 
-	generic_fillattr(d_inode(path.dentry), ksmbd_kstat->kstat);
-	fill_create_time(work, &path, ksmbd_kstat);
-	fill_file_attributes(work, &path, ksmbd_kstat);
+	ksmbd_vfs_fill_dentry_attrs(work, path.dentry, ksmbd_kstat);
 	path_put(&path);
 	kfree(name);
 	return 0;
@@ -1578,45 +1496,243 @@ out:
 	return err;
 }
 
-int ksmbd_vfs_set_sd_xattr(struct dentry *dentry, char *sd_data)
+static struct xattr_smb_acl *ksmbd_vfs_make_xattr_posix_acl(struct inode *inode,
+		int acl_type)
 {
-	struct smb_ntacl *ntacl = (struct smb_ntacl *)sd_data;
-	int rc;
+	struct xattr_smb_acl *smb_acl = NULL;
+	struct posix_acl *posix_acls;
+	struct posix_acl_entry *pa_entry;
+	struct xattr_acl_entry *xa_entry;
+	int i;
 
-	if (!ntacl)
-		return 0;
+	posix_acls = ksmbd_vfs_get_acl(inode, acl_type);
+	if (!posix_acls)
+		return NULL;
 
-	ntacl->crc32 = crc32c(0, ntacl->ace, ntacl->size);
-	rc = ksmbd_vfs_setxattr(dentry, XATTR_NAME_SD, sd_data,
-			ntacl->size + sizeof(struct smb_ntacl), 0);
-	if (rc < 0)
-		ksmbd_err("Failed to store XATTR sd :%d\n", rc);
-	return 0;
+	smb_acl = kzalloc(sizeof(struct xattr_smb_acl) +
+			  sizeof(struct xattr_acl_entry) * posix_acls->a_count,
+			  GFP_KERNEL);
+	if (!smb_acl)
+		goto out;
+
+	smb_acl->count = posix_acls->a_count;
+	pa_entry = posix_acls->a_entries;
+	xa_entry = smb_acl->entries;
+	for (i = 0; i < posix_acls->a_count; i++, pa_entry++, xa_entry++) {
+		switch (pa_entry->e_tag) {
+		case ACL_USER:
+			xa_entry->type = SMB_ACL_USER;
+			xa_entry->uid = from_kuid(&init_user_ns, pa_entry->e_uid);
+			break;
+		case ACL_USER_OBJ:
+			xa_entry->type = SMB_ACL_USER_OBJ;
+			break;
+		case ACL_GROUP:
+			xa_entry->type = SMB_ACL_GROUP;
+			xa_entry->gid = from_kgid(&init_user_ns, pa_entry->e_gid);
+			break;
+		case ACL_GROUP_OBJ:
+			xa_entry->type = SMB_ACL_GROUP_OBJ;
+			break;
+		case ACL_OTHER:
+			xa_entry->type = SMB_ACL_OTHER;
+			break;
+		case ACL_MASK:
+			xa_entry->type = SMB_ACL_MASK;
+			break;
+		default:
+			ksmbd_err("unknown type : 0x%x\n", pa_entry->e_tag);
+			goto out;
+		}
+
+		if (pa_entry->e_perm & ACL_READ)
+			xa_entry->perm |= SMB_ACL_READ;
+		if (pa_entry->e_perm & ACL_WRITE)
+			xa_entry->perm |= SMB_ACL_WRITE;
+		if (pa_entry->e_perm & ACL_EXECUTE)
+			xa_entry->perm |= SMB_ACL_EXECUTE;
+	}
+out:
+	posix_acl_release(posix_acls);
+	return smb_acl;
 }
 
-struct smb_ntacl *ksmbd_vfs_get_sd_xattr(struct dentry *dentry)
+int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn, struct dentry *dentry,
+		struct smb_ntsd *pntsd, int len)
 {
-	struct smb_ntacl *ntacl = NULL;
-	char *attr = NULL, *sd_data = NULL;
 	int rc;
+	struct ndr sd_ndr = {0}, acl_ndr = {0};
+	struct xattr_ntacl acl = {0};
+	struct xattr_smb_acl *smb_acl, *def_smb_acl = NULL;
+	struct inode *inode = dentry->d_inode;
 
-	rc = ksmbd_vfs_getxattr(dentry, XATTR_NAME_SD, &attr);
-	if (rc > 0) {
-		sd_data = kzalloc(rc, GFP_KERNEL);
-		if (!sd_data)
-			return NULL;
+	acl.version = 4;
+	acl.hash_type = XATTR_SD_HASH_TYPE_SHA256;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+	acl.current_time = ksmbd_UnixTimeToNT(current_time(dentry->d_inode));
+#else
+	acl.current_time = ksmbd_UnixTimeToNT(CURRENT_TIME);
+#endif
 
-		memcpy(sd_data, attr, rc);
-		ntacl = (struct smb_ntacl *)sd_data;
-		if (ntacl->crc32 != crc32c(0, ntacl->ace, ntacl->size)) {
-			ksmbd_vfs_remove_sd_xattrs(dentry);
-			kfree(sd_data);
-			ntacl = NULL;
-		}
+	memcpy(acl.desc, "posix_acl", 9);
+	acl.desc_len = 10;
+
+	pntsd->osidoffset =
+		cpu_to_le32(le32_to_cpu(pntsd->osidoffset) + NDR_NTSD_OFFSETOF);
+	pntsd->gsidoffset =
+		cpu_to_le32(le32_to_cpu(pntsd->gsidoffset) + NDR_NTSD_OFFSETOF);
+	pntsd->dacloffset =
+		cpu_to_le32(le32_to_cpu(pntsd->dacloffset) + NDR_NTSD_OFFSETOF);
+
+	acl.sd_buf = (char *)pntsd;
+	acl.sd_size = len;
+
+	rc = ksmbd_gen_sd_hash(conn, acl.sd_buf, acl.sd_size, acl.hash);
+	if (rc) {
+		ksmbd_err("failed to generate hash for ndr acl\n");
+		return rc;
 	}
-	ksmbd_free(attr);
 
-	return ntacl;
+	smb_acl = ksmbd_vfs_make_xattr_posix_acl(dentry->d_inode, ACL_TYPE_ACCESS);
+	if (S_ISDIR(inode->i_mode))
+		def_smb_acl = ksmbd_vfs_make_xattr_posix_acl(dentry->d_inode,
+				ACL_TYPE_DEFAULT);
+
+	rc = ndr_encode_posix_acl(&acl_ndr, inode, smb_acl, def_smb_acl);
+	if (rc) {
+		ksmbd_err("failed to encode ndr to posix acl\n");
+		goto out;
+	}
+
+	rc = ksmbd_gen_sd_hash(conn, acl_ndr.data, acl_ndr.offset,
+			acl.posix_acl_hash);
+	if (rc) {
+		ksmbd_err("failed to generate hash for ndr acl\n");
+		goto out;
+	}
+
+	rc = ndr_encode_v4_ntacl(&sd_ndr, &acl);
+	if (rc) {
+		ksmbd_err("failed to encode ndr to posix acl\n");
+		goto out;
+	}
+
+	rc = ksmbd_vfs_setxattr(dentry, XATTR_NAME_SD, sd_ndr.data,
+			sd_ndr.offset, 0);
+	if (rc < 0)
+		ksmbd_err("Failed to store XATTR ntacl :%d\n", rc);
+
+	kfree(sd_ndr.data);
+out:
+	kfree(acl_ndr.data);
+	kfree(smb_acl);
+	kfree(def_smb_acl);
+	return rc;
+}
+
+int ksmbd_vfs_get_sd_xattr(struct ksmbd_conn *conn, struct dentry *dentry,
+		struct smb_ntsd **pntsd)
+{
+	int rc;
+	struct ndr n;
+
+	rc = ksmbd_vfs_getxattr(dentry, XATTR_NAME_SD, &n.data);
+	if (rc > 0) {
+		struct inode *inode = dentry->d_inode;
+		struct ndr acl_ndr = {0};
+		struct xattr_ntacl acl;
+		struct xattr_smb_acl *smb_acl = NULL, *def_smb_acl = NULL;
+		__u8 cmp_hash[XATTR_SD_HASH_SIZE] = {0};
+
+		n.length = rc;
+		rc = ndr_decode_v4_ntacl(&n, &acl);
+		if (rc)
+			return rc;
+
+		smb_acl = ksmbd_vfs_make_xattr_posix_acl(inode,
+				ACL_TYPE_ACCESS);
+		if (S_ISDIR(inode->i_mode))
+			def_smb_acl = ksmbd_vfs_make_xattr_posix_acl(inode,
+					ACL_TYPE_DEFAULT);
+
+		rc = ndr_encode_posix_acl(&acl_ndr, inode, smb_acl, def_smb_acl);
+		if (rc) {
+			ksmbd_err("failed to encode ndr to posix acl\n");
+			goto out;
+		}
+
+		rc = ksmbd_gen_sd_hash(conn, acl_ndr.data, acl_ndr.offset,
+				cmp_hash);
+		if (rc) {
+			ksmbd_err("failed to generate hash for ndr acl\n");
+			goto out;
+		}
+
+		if (memcmp(cmp_hash, acl.posix_acl_hash, XATTR_SD_HASH_SIZE)) {
+			ksmbd_err("hash value diff\n");
+			rc = -EINVAL;
+			goto out;
+		}
+
+		*pntsd = acl.sd_buf;
+		(*pntsd)->osidoffset =
+			cpu_to_le32(le32_to_cpu((*pntsd)->osidoffset) - NDR_NTSD_OFFSETOF);
+		(*pntsd)->gsidoffset =
+			cpu_to_le32(le32_to_cpu((*pntsd)->gsidoffset) - NDR_NTSD_OFFSETOF);
+		(*pntsd)->dacloffset =
+			cpu_to_le32(le32_to_cpu((*pntsd)->dacloffset) - NDR_NTSD_OFFSETOF);
+
+		rc = acl.sd_size;
+out:
+		kfree(n.data);
+		kfree(acl_ndr.data);
+		kfree(smb_acl);
+		kfree(def_smb_acl);
+	}
+
+	return rc;
+}
+
+int ksmbd_vfs_set_dos_attrib_xattr(struct dentry *dentry,
+		struct xattr_dos_attrib *da)
+{
+	struct ndr n;
+	int err;
+
+	err = ndr_encode_dos_attr(&n, da);
+	if (err)
+		return err;
+
+	err = ksmbd_vfs_setxattr(dentry,
+			XATTR_NAME_DOS_ATTRIBUTE,
+			(void *)n.data,
+			n.offset,
+			0);
+	if (err)
+		ksmbd_debug(SMB, "failed to store dos attribute in xattr\n");
+	kfree(n.data);
+
+	return err;
+}
+
+int ksmbd_vfs_get_dos_attrib_xattr(struct dentry *dentry,
+		struct xattr_dos_attrib *da)
+{
+	struct ndr n;
+	int err;
+
+	err = ksmbd_vfs_getxattr(dentry,
+			XATTR_NAME_DOS_ATTRIBUTE,
+			(char **)&n.data);
+	if (err > 0) {
+		n.length = err;
+		if (ndr_decode_dos_attr(&n, da))
+			err = -EINVAL;
+		ksmbd_free(n.data);
+	} else
+		ksmbd_debug(SMB, "failed to load dos attribute in xattr\n");
+
+	return err;
 }
 
 struct posix_acl *ksmbd_vfs_posix_acl_alloc(int count, gfp_t flags)
@@ -2206,9 +2322,35 @@ int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
 				struct dentry *dentry,
 				struct ksmbd_kstat *ksmbd_kstat)
 {
+	u64 time;
+	int rc;
+
 	generic_fillattr(d_inode(dentry), ksmbd_kstat->kstat);
-	__file_dentry_ctime(work, dentry, ksmbd_kstat);
-	__fill_dentry_attributes(work, dentry, ksmbd_kstat);
+
+	time = ksmbd_UnixTimeToNT(ksmbd_kstat->kstat->ctime);
+	ksmbd_kstat->create_time = time;
+
+	/*
+	 * set default value for the case that store dos attributes is not yes
+	 * or that acl is disable in server's filesystem and the config is yes.
+	 */
+	if (S_ISDIR(ksmbd_kstat->kstat->mode))
+		ksmbd_kstat->file_attributes = ATTR_DIRECTORY_LE;
+	else
+		ksmbd_kstat->file_attributes = ATTR_ARCHIVE_LE;
+
+	if (test_share_config_flag(work->tcon->share_conf,
+	    KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
+		struct xattr_dos_attrib da;
+
+		rc = ksmbd_vfs_get_dos_attrib_xattr(dentry, &da);
+		if (rc > 0) {
+			ksmbd_kstat->file_attributes = cpu_to_le32(da.attr);
+			ksmbd_kstat->create_time = da.create_time;
+		} else
+			ksmbd_debug(VFS, "fail to load dos attribute.\n");
+	}
+
 	return 0;
 }
 
@@ -2240,14 +2382,24 @@ out:
 
 int ksmbd_vfs_xattr_stream_name(char *stream_name,
 				char **xattr_stream_name,
-				size_t *xattr_stream_name_size)
+				size_t *xattr_stream_name_size,
+				int s_type)
 {
 	int stream_name_size;
 	char *xattr_stream_name_buf;
+	char *type;
+	int type_len;
+ 
+	if (s_type == DIR_STREAM)
+		type = ":$INDEX_ALLOCATION";
+	else
+		type = ":$DATA";
 
+	type_len = strlen(type);
 	stream_name_size = strlen(stream_name);
 	*xattr_stream_name_size = stream_name_size + XATTR_NAME_STREAM_LEN + 1;
-	xattr_stream_name_buf = kmalloc(*xattr_stream_name_size, GFP_KERNEL);
+	xattr_stream_name_buf = kmalloc(*xattr_stream_name_size + type_len,
+			GFP_KERNEL);
 	if (!xattr_stream_name_buf) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
@@ -2257,10 +2409,13 @@ int ksmbd_vfs_xattr_stream_name(char *stream_name,
 		XATTR_NAME_STREAM,
 		XATTR_NAME_STREAM_LEN);
 
-	if (stream_name_size)
+	if (stream_name_size) {
 		memcpy(&xattr_stream_name_buf[XATTR_NAME_STREAM_LEN],
 			stream_name,
 			stream_name_size);
+	}
+	memcpy(&xattr_stream_name_buf[*xattr_stream_name_size - 1], type, type_len);
+		*xattr_stream_name_size += type_len;
 
 	xattr_stream_name_buf[*xattr_stream_name_size - 1] = '\0';
 	*xattr_stream_name = xattr_stream_name_buf;
@@ -2272,30 +2427,6 @@ int ksmbd_vfs_xattr_stream_name(char *stream_name,
 extern long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
 		loff_t *opos, size_t len, unsigned int flags);
 #endif
-
-int ksmbd_vfs_xattr_sd(char *sd_data, char **xattr_sd, size_t *xattr_sd_size)
-{
-	int sd_size;
-	char *xattr_sd_buf;
-	struct smb_ntacl *acl = (struct smb_ntacl *)sd_data;
-
-	sd_size = sizeof(struct smb_ace)*acl->num_aces + 4;
-	*xattr_sd_size = sd_size + XATTR_NAME_SD_LEN + 1;
-	xattr_sd_buf = kmalloc(*xattr_sd_size, GFP_KERNEL);
-	if (!xattr_sd_buf)
-		return -ENOMEM;
-
-	memcpy(xattr_sd_buf, XATTR_NAME_SD, XATTR_NAME_SD_LEN);
-
-	if (sd_size)
-		memcpy(&xattr_sd_buf[XATTR_NAME_SD_LEN], sd_data,
-				sd_size);
-
-	xattr_sd_buf[*xattr_sd_size - 1] = '\0';
-	*xattr_sd = xattr_sd_buf;
-
-	return 0;
-}
 
 static int ksmbd_vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 				struct file *file_out, loff_t pos_out,
@@ -2443,4 +2574,77 @@ void ksmbd_vfs_posix_lock_unblock(struct file_lock *flock)
 #else
 	locks_delete_block(flock);
 #endif
+}
+
+int ksmbd_vfs_set_init_posix_acl(struct inode *inode)
+{
+	struct posix_acl_state acl_state;
+	struct posix_acl *acls;
+	int rc;
+
+	ksmbd_debug(SMB, "Set posix acls\n");
+	init_acl_state(&acl_state, 1);
+
+	/* Set default owner group */
+	acl_state.owner.allow = (inode->i_mode & 0700) >> 6;
+	acl_state.group.allow = (inode->i_mode & 0070) >> 3;
+	acl_state.other.allow = inode->i_mode & 0007;
+	acl_state.users->aces[acl_state.users->n].uid = inode->i_uid;
+	acl_state.users->aces[acl_state.users->n++].perms.allow =
+		acl_state.owner.allow;
+	acl_state.groups->aces[acl_state.groups->n].gid = inode->i_gid;
+	acl_state.groups->aces[acl_state.groups->n++].perms.allow =
+		acl_state.group.allow;
+	acl_state.mask.allow = 0x07;
+
+	acls = ksmbd_vfs_posix_acl_alloc(6, GFP_KERNEL);
+	if (!acls)
+		return -ENOMEM;
+	posix_state_to_acl(&acl_state, acls->a_entries);
+	rc = ksmbd_vfs_set_posix_acl(inode, ACL_TYPE_ACCESS, acls);
+	if (rc < 0)
+		ksmbd_debug(SMB, "Set posix acl(ACL_TYPE_ACCESS) failed, rc : %d\n",
+				rc);
+	else if (S_ISDIR(inode->i_mode)) {
+		posix_state_to_acl(&acl_state, acls->a_entries);
+		rc = ksmbd_vfs_set_posix_acl(inode, ACL_TYPE_DEFAULT, acls);
+		if (rc < 0)
+			ksmbd_debug(SMB, "Set posix acl(ACL_TYPE_DEFAULT) failed, rc : %d\n",
+					rc);
+	}
+	free_acl_state(&acl_state);
+	posix_acl_release(acls);
+	return rc;
+}
+
+int ksmbd_vfs_inherit_posix_acl(struct inode *inode, struct inode *parent_inode)
+{
+	struct posix_acl *acls;
+	struct posix_acl_entry *pace;
+	int rc, i;
+
+	acls = ksmbd_vfs_get_acl(parent_inode, ACL_TYPE_DEFAULT);
+	if (!acls)
+		return -ENOENT;
+	pace = acls->a_entries;
+
+	for (i = 0; i < acls->a_count; i++, pace++) {
+		if (pace->e_tag == ACL_MASK) {
+			pace->e_perm = 0x07;
+			break;
+		}
+	}
+
+	rc = ksmbd_vfs_set_posix_acl(inode, ACL_TYPE_ACCESS, acls);
+	if (rc < 0)
+		ksmbd_debug(SMB, "Set posix acl(ACL_TYPE_ACCESS) failed, rc : %d\n",
+				rc);
+	if (S_ISDIR(inode->i_mode)) {
+		rc = ksmbd_vfs_set_posix_acl(inode, ACL_TYPE_DEFAULT, acls);
+		if (rc < 0)
+			ksmbd_debug(SMB, "Set posix acl(ACL_TYPE_DEFAULT) failed, rc : %d\n",
+					rc);
+	}
+	posix_acl_release(acls);
+	return rc;
 }

@@ -36,6 +36,7 @@
 #include "mgmt/tree_connect.h"
 #include "mgmt/user_session.h"
 #include "mgmt/ksmbd_ida.h"
+#include "ndr.h"
 
 static void __wbuf(struct ksmbd_work *work, void **req, void **rsp)
 {
@@ -2275,12 +2276,12 @@ static noinline int smb2_set_stream_name_xattr(struct path *path,
 
 	rc = ksmbd_vfs_xattr_stream_name(stream_name,
 					 &xattr_stream_name,
-					 &xattr_stream_size);
+					 &xattr_stream_size,
+					 s_type);
 	if (rc)
 		return rc;
 
 	fp->stream.name = xattr_stream_name;
-	fp->stream.type = s_type;
 	fp->stream.size = xattr_stream_size;
 
 	/* Check if there is stream prefix in xattr space */
@@ -2321,11 +2322,8 @@ static int smb2_remove_smb_xattrs(struct dentry *dentry)
 
 		if (strncmp(name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN) &&
 			strncmp(&name[XATTR_USER_PREFIX_LEN],
-				CREATION_TIME_PREFIX,
-				CREATION_TIME_PREFIX_LEN) &&
-			strncmp(&name[XATTR_USER_PREFIX_LEN],
-				FILE_ATTRIBUTE_PREFIX,
-				FILE_ATTRIBUTE_PREFIX_LEN) &&
+				DOS_ATTRIBUTE_PREFIX,
+				DOS_ATTRIBUTE_PREFIX_LEN) &&
 			strncmp(&name[XATTR_USER_PREFIX_LEN],
 				STREAM_PREFIX,
 				STREAM_PREFIX_LEN))
@@ -2363,59 +2361,41 @@ static void smb2_new_xattrs(struct ksmbd_tree_connect *tcon,
 			    struct path *path,
 			    struct ksmbd_file *fp)
 {
+	struct xattr_dos_attrib da = {0};
 	int rc;
 
 	if (!test_share_config_flag(tcon->share_conf,
 				    KSMBD_SHARE_FLAG_STORE_DOS_ATTRS))
 		return;
 
-	rc = ksmbd_vfs_setxattr(path->dentry,
-				XATTR_NAME_FILE_ATTRIBUTE,
-				(void *)&fp->f_ci->m_fattr,
-				FILE_ATTRIBUTE_LEN,
-				0);
-	if (rc)
-		ksmbd_debug(SMB, "failed to store file attribute in EA\n");
+	da.version = 3;
+	da.attr = le32_to_cpu(fp->f_ci->m_fattr);
+	da.create_time = fp->create_time;
 
-	rc = ksmbd_vfs_setxattr(path->dentry,
-				XATTR_NAME_CREATION_TIME,
-				(void *)&fp->create_time,
-				CREATIOM_TIME_LEN,
-				0);
+	rc = ksmbd_vfs_set_dos_attrib_xattr(path->dentry, &da);
 	if (rc)
-		ksmbd_debug(SMB, "failed to store creation time in EA\n");
+		ksmbd_debug(SMB, "failed to store file attribute into xattr\n");
 }
 
 static void smb2_update_xattrs(struct ksmbd_tree_connect *tcon,
 			       struct path *path,
 			       struct ksmbd_file *fp)
 {
-	char *attr = NULL;
+	struct xattr_dos_attrib da;
 	int rc;
 
 	fp->f_ci->m_fattr &= ~(ATTR_HIDDEN_LE | ATTR_SYSTEM_LE);
 
-	/* get FileAttributes from XATTR_NAME_FILE_ATTRIBUTE */
+	/* get FileAttributes from XATTR_NAME_DOS_ATTRIBUTE */
 	if (!test_share_config_flag(tcon->share_conf,
 				   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS))
 		return;
 
-	rc = ksmbd_vfs_getxattr(path->dentry,
-				XATTR_NAME_FILE_ATTRIBUTE,
-				&attr);
-	if (rc > 0)
-		fp->f_ci->m_fattr = *((__le32 *)attr);
-
-	ksmbd_free(attr);
-
-	rc = ksmbd_vfs_getxattr(path->dentry,
-				XATTR_NAME_CREATION_TIME,
-				&attr);
-
-	if (rc > 0)
-		fp->create_time = *((__u64 *)attr);
-
-	ksmbd_free(attr);
+	rc = ksmbd_vfs_get_dos_attrib_xattr(path->dentry, &da);
+	if (rc > 0) {
+		fp->f_ci->m_fattr = cpu_to_le32(da.attr);
+		fp->create_time = da.create_time;
+	}
 }
 
 static int smb2_creat(struct ksmbd_work *work,
@@ -2459,8 +2439,8 @@ static int smb2_creat(struct ksmbd_work *work,
 	return 0;
 }
 
-static int smb2_create_sd_buffer(struct smb2_create_req *req,
-		struct dentry *dentry)
+static int smb2_create_sd_buffer(struct ksmbd_work *work,
+		struct smb2_create_req *req, struct dentry *dentry)
 {
 	struct create_context *context;
 	int rc = -ENOENT;
@@ -2476,7 +2456,7 @@ static int smb2_create_sd_buffer(struct smb2_create_req *req,
 		ksmbd_debug(SMB,
 			"Set ACLs using SMB2_CREATE_SD_BUFFER context\n");
 		sd_buf = (struct create_sd_buf_req *)context;
-		rc = set_info_sec(dentry, &sd_buf->ntsd,
+		rc = set_info_sec(work->conn, work->tcon, dentry, &sd_buf->ntsd,
 			le32_to_cpu(sd_buf->ccontext.DataLength), true);
 	}
 
@@ -2864,7 +2844,7 @@ int smb2_open(struct ksmbd_work *work)
 	daccess = smb_map_generic_desired_access(req->DesiredAccess);
 
 	if (file_present && !(req->CreateOptions & FILE_DELETE_ON_CLOSE_LE)) {
-		rc = smb_check_perm_dacl(path.dentry, &daccess,
+		rc = smb_check_perm_dacl(conn, path.dentry, &daccess,
 				sess->user->uid);
 		if (rc)
 			goto err_out;
@@ -2971,20 +2951,65 @@ int smb2_open(struct ksmbd_work *work)
 
 	/* Set default windows and posix acls if creating new file */
 	if (created) {
-		rc = smb_inherit_dacl(path.dentry, sess->user->uid,
-			sess->user->gid);
+		int posix_acl_rc;
+		struct inode *inode = path.dentry->d_inode;
+
+		posix_acl_rc = ksmbd_vfs_inherit_posix_acl(inode, path.dentry->d_parent->d_inode);
+		if (posix_acl_rc)
+			ksmbd_debug(SMB, "inherit posix acl failed : %d\n", posix_acl_rc);
+
+		if (test_share_config_flag(work->tcon->share_conf,
+		    KSMBD_SHARE_FLAG_ACL_XATTR)) {
+			rc = smb_inherit_dacl(conn, path.dentry, sess->user->uid,
+					sess->user->gid);
+		}
+
 		if (rc) {
-			rc = smb2_create_sd_buffer(req, path.dentry);
+			rc = smb2_create_sd_buffer(work, req, path.dentry);
 			if (rc) {
-				store_init_posix_acl(path.dentry->d_inode);
-				if (daccess & FILE_WRITE_DAC_LE)
-					store_init_ntacl(path.dentry);
+				if (posix_acl_rc)
+					ksmbd_vfs_set_init_posix_acl(inode);
+
+				if (test_share_config_flag(work->tcon->share_conf,
+					    KSMBD_SHARE_FLAG_ACL_XATTR)) {
+					struct smb_fattr fattr;
+					struct smb_ntsd *pntsd;
+					int pntsd_size, ace_num;
+
+					fattr.cf_uid = inode->i_uid;
+					fattr.cf_gid = inode->i_gid;
+					fattr.cf_mode = inode->i_mode;
+					fattr.cf_dacls = NULL;
+
+					fattr.cf_acls = ksmbd_vfs_get_acl(inode, ACL_TYPE_ACCESS);
+					ace_num = fattr.cf_acls->a_count;
+					if (S_ISDIR(inode->i_mode)) {
+						fattr.cf_dacls =
+							ksmbd_vfs_get_acl(inode, ACL_TYPE_DEFAULT);
+						ace_num += fattr.cf_dacls->a_count;
+					}
+
+					pntsd = kmalloc(sizeof(struct smb_ntsd) +
+							sizeof(struct smb_sid)*3 +
+							sizeof(struct smb_acl) +
+							sizeof(struct smb_ace)*ace_num*2,
+							GFP_KERNEL);
+					if (!pntsd)
+						goto err_out;
+
+					rc = build_sec_desc(pntsd, NULL,
+						OWNER_SECINFO | GROUP_SECINFO | DACL_SECINFO,
+						&pntsd_size, &fattr);
+					posix_acl_release(fattr.cf_acls);
+					posix_acl_release(fattr.cf_dacls);
+
+					rc = ksmbd_vfs_set_sd_xattr(conn,
+						path.dentry, pntsd, pntsd_size);
+					if (rc)
+						ksmbd_err("failed to store ntacl in xattr : %d\n",
+								rc);
+				}
 			}
-		} else {
-			rc = smb_inherit_posix_acl(path.dentry->d_inode,
-				path.dentry->d_parent->d_inode);
-			if (rc)
-				ksmbd_debug(SMB, "inherit posix acl failed : %d\n", rc);
 		}
 		rc = 0;
 	}
@@ -3015,7 +3040,11 @@ int smb2_open(struct ksmbd_work *work)
 	list_add(&fp->node, &fp->f_ci->m_fp_list);
 	write_unlock(&fp->f_ci->m_lock);
 
-	generic_fillattr(d_inode(path.dentry), &stat);
+	rc = ksmbd_vfs_getattr(&path, &stat);
+	if (rc) {
+		generic_fillattr(d_inode(path.dentry), &stat);
+		rc = 0;
+	}
 
 	/* Check delete pending among previous fp before oplock break */
 	if (ksmbd_inode_pending_delete(fp)) {
@@ -3101,16 +3130,14 @@ int smb2_open(struct ksmbd_work *work)
 		}
 	}
 
-	if (test_share_config_flag(work->tcon->share_conf,
-			KSMBD_SHARE_FLAG_STREAMS) &&
-		(file_info != FILE_OPENED) &&
-			!S_ISDIR(file_inode(filp)->i_mode)) {
-		/* Create default data stream in xattr */
-		ksmbd_vfs_setxattr(path.dentry, XATTR_NAME_STREAM,
-				   NULL, 0, 0);
-	}
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+	if (stat.result_mask & STATX_BTIME)
+		fp->create_time = ksmbd_UnixTimeToNT(stat.btime);
+	else
+		fp->create_time = ksmbd_UnixTimeToNT(stat.ctime);
+#else
 	fp->create_time = ksmbd_UnixTimeToNT(stat.ctime);
+#endif
 	if (req->FileAttributes || fp->f_ci->m_fattr == 0)
 		fp->f_ci->m_fattr = cpu_to_le32(smb2_get_dos_mode(&stat,
 			le32_to_cpu(req->FileAttributes)));
@@ -4247,10 +4274,6 @@ static int smb2_get_ea(struct ksmbd_work *work,
 		if (strncmp(name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN))
 			continue;
 
-		if (!strncmp(&name[XATTR_USER_PREFIX_LEN], CREATION_TIME_PREFIX,
-					CREATION_TIME_PREFIX_LEN))
-			continue;
-
 		if (!strncmp(&name[XATTR_USER_PREFIX_LEN], STREAM_PREFIX,
 					STREAM_PREFIX_LEN))
 			continue;
@@ -4261,7 +4284,7 @@ static int smb2_get_ea(struct ksmbd_work *work,
 			continue;
 
 		if (!strncmp(&name[XATTR_USER_PREFIX_LEN],
-			FILE_ATTRIBUTE_PREFIX, FILE_ATTRIBUTE_PREFIX_LEN))
+			DOS_ATTRIBUTE_PREFIX, DOS_ATTRIBUTE_PREFIX_LEN))
 			continue;
 
 		if (!strncmp(name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN))
@@ -4537,7 +4560,6 @@ static void get_file_stream_info(struct ksmbd_work *work,
 	struct ksmbd_conn *conn = work->conn;
 	struct smb2_file_stream_info *file_info;
 	char *stream_name, *xattr_list = NULL, *stream_buf;
-	char *stream_type;
 	struct kstat stat;
 	struct path *path = &fp->filp->f_path;
 	ssize_t xattr_list_len;
@@ -4545,26 +4567,6 @@ static void get_file_stream_info(struct ksmbd_work *work,
 
 	generic_fillattr(FP_INODE(fp), &stat);
 	file_info = (struct smb2_file_stream_info *)rsp->Buffer;
-
-	if (!test_share_config_flag(work->tcon->share_conf,
-			KSMBD_SHARE_FLAG_STREAMS)) {
-		file_info->NextEntryOffset = 0;
-		streamlen  = smbConvertToUTF16((__le16 *)file_info->StreamName,
-						"::$DATA",
-						7,
-						conn->local_nls,
-						0);
-
-		streamlen *= 2;
-		file_info->StreamNameLength = cpu_to_le32(streamlen);
-
-		file_info->StreamSize = S_ISDIR(stat.mode) ? 0 :
-					cpu_to_le64(stat.size);
-		file_info->StreamAllocationSize = S_ISDIR(stat.mode) ? 0 :
-					cpu_to_le64(stat.size);
-		nbytes = sizeof(struct smb2_file_stream_info) + streamlen;
-		goto out;
-	}
 
 	xattr_list_len = ksmbd_vfs_listxattr(path->dentry, &xattr_list);
 	if (xattr_list_len < 0) {
@@ -4589,23 +4591,14 @@ static void get_file_stream_info(struct ksmbd_work *work,
 				STREAM_PREFIX_LEN);
 		streamlen = stream_name_len;
 
-		if (fp->stream.type == 2) {
-			streamlen += 17;
-			stream_type = "$INDEX_ALLOCATION";
-		} else {
-			streamlen += 5;
-			stream_type = "$DATA";
-		}
-
-		/* plus :: size */
-		streamlen += 2;
+		/* plus : size */
+		streamlen += 1;
 		stream_buf = kmalloc(streamlen + 1, GFP_KERNEL);
 		if (!stream_buf)
 			break;
 
 		streamlen = snprintf(stream_buf, streamlen + 1,
-			":%s:%s", &stream_name[XATTR_NAME_STREAM_LEN],
-			stream_type);
+				":%s", &stream_name[XATTR_NAME_STREAM_LEN]);
 
 		file_info = (struct smb2_file_stream_info *)
 			&rsp->Buffer[nbytes];
@@ -4623,6 +4616,20 @@ static void get_file_stream_info(struct ksmbd_work *work,
 		next = sizeof(struct smb2_file_stream_info) + streamlen;
 		nbytes += next;
 		file_info->NextEntryOffset = cpu_to_le32(next);
+	}
+
+	if (nbytes) {
+		file_info = (struct smb2_file_stream_info *)
+			&rsp->Buffer[nbytes];
+		streamlen = smbConvertToUTF16((__le16 *)file_info->StreamName,
+			"::$DATA", 7, conn->local_nls, 0);
+		streamlen *= 2;
+		file_info->StreamNameLength = cpu_to_le32(streamlen);
+		file_info->StreamSize = S_ISDIR(stat.mode) ? 0 :
+			cpu_to_le64(stat.size);
+		file_info->StreamAllocationSize = S_ISDIR(stat.mode) ? 0 :
+			cpu_to_le64(stat.size);
+		nbytes += sizeof(struct smb2_file_stream_info) + streamlen;
 	}
 
 	/* last entry offset should be 0 */
@@ -5185,7 +5192,7 @@ static int smb2_get_info_sec(struct ksmbd_work *work,
 	void *rsp_org)
 {
 	struct ksmbd_file *fp;
-	struct smb_ntsd *pntsd = (struct smb_ntsd *)rsp->Buffer;
+	struct smb_ntsd *pntsd = (struct smb_ntsd *)rsp->Buffer, *ppntsd = NULL;
 	struct smb_fattr fattr = {{0}};
 	struct inode *inode;
 	__u32 secdesclen;
@@ -5221,12 +5228,14 @@ static int smb2_get_info_sec(struct ksmbd_work *work,
 	if (S_ISDIR(inode->i_mode))
 		fattr.cf_dacls = ksmbd_vfs_get_acl(inode, ACL_TYPE_DEFAULT);
 
-	fattr.ntacl = ksmbd_vfs_get_sd_xattr(fp->filp->f_path.dentry);
+	if (test_share_config_flag(work->tcon->share_conf,
+	    KSMBD_SHARE_FLAG_ACL_XATTR))
+		ksmbd_vfs_get_sd_xattr(work->conn, fp->filp->f_path.dentry, &ppntsd);
 
-	rc = build_sec_desc(pntsd, addition_info, &secdesclen, &fattr);
+	rc = build_sec_desc(pntsd, ppntsd, addition_info, &secdesclen, &fattr);
 	posix_acl_release(fattr.cf_acls);
 	posix_acl_release(fattr.cf_dacls);
-	kfree(fattr.ntacl);
+	kfree(ppntsd);
 	ksmbd_fd_put(work, fp);
 	if (rc)
 		return rc;
@@ -5521,7 +5530,8 @@ static int smb2_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 
 		rc = ksmbd_vfs_xattr_stream_name(stream_name,
 						 &xattr_stream_name,
-						 &xattr_stream_size);
+						 &xattr_stream_size,
+						 s_type);
 		if (rc)
 			goto out;
 
@@ -5682,21 +5692,8 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 	filp = fp->filp;
 	inode = file_inode(filp);
 
-	if (file_info->CreationTime) {
+	if (file_info->CreationTime)
 		fp->create_time = le64_to_cpu(file_info->CreationTime);
-		if (test_share_config_flag(share,
-					KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-			rc = ksmbd_vfs_setxattr(filp->f_path.dentry,
-						XATTR_NAME_CREATION_TIME,
-						(void *)&fp->create_time,
-						CREATIOM_TIME_LEN, 0);
-			if (rc) {
-				ksmbd_debug(SMB,
-					"failed to set creation time\n");
-				return -EINVAL;
-			}
-		}
-	}
 
 	if (file_info->LastAccessTime) {
 		attrs.ia_atime = ksmbd_NTtimeToUnix(file_info->LastAccessTime);
@@ -5716,27 +5713,27 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 	}
 
 	if (file_info->Attributes) {
-		struct kstat stat;
-
 		if (!S_ISDIR(inode->i_mode) &&
 				file_info->Attributes == ATTR_DIRECTORY_LE) {
 			ksmbd_err("can't change a file to a directory\n");
 			return -EINVAL;
 		}
-
-		generic_fillattr(inode, &stat);
 		fp->f_ci->m_fattr = file_info->Attributes;
-		if (test_share_config_flag(share,
-				KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-			rc = ksmbd_vfs_setxattr(filp->f_path.dentry,
-					XATTR_NAME_FILE_ATTRIBUTE,
-					(void *)&fp->f_ci->m_fattr,
-					FILE_ATTRIBUTE_LEN, 0);
-			if (rc)
-				ksmbd_debug(SMB,
-					"failed to store file attribute in EA\n");
-			rc = 0;
-		}
+	}
+
+	if (test_share_config_flag(share, KSMBD_SHARE_FLAG_STORE_DOS_ATTRS) &&
+	    (file_info->CreationTime || file_info->Attributes)) {
+		struct xattr_dos_attrib da = {0};
+
+		da.version = 3;
+		da.create_time = fp->create_time;
+		da.attr = le32_to_cpu(fp->f_ci->m_fattr);
+
+		rc = ksmbd_vfs_set_dos_attrib_xattr(filp->f_path.dentry, &da);
+		if (rc)
+			ksmbd_debug(SMB,
+				"failed to restore file attribute in EA\n");
+		rc = 0;
 	}
 
 	/*
@@ -6043,7 +6040,8 @@ static int smb2_set_info_sec(struct ksmbd_file *fp,
 
 	fp->saccess |= FILE_SHARE_DELETE_LE;
 
-	return set_info_sec(fp->filp->f_path.dentry, pntsd, buf_len, false);
+	return set_info_sec(fp->conn, fp->tcon, fp->filp->f_path.dentry, pntsd,
+			buf_len, false);
 }
 
 /**
@@ -7510,12 +7508,16 @@ static int fsctl_pipe_transceive(struct ksmbd_work *work, uint64_t id,
 			data_buf,
 			le32_to_cpu(req->InputCount));
 	if (rpc_resp) {
-		if (rpc_resp->flags == KSMBD_RPC_ENOTIMPLEMENTED) {
+		if (rpc_resp->flags == KSMBD_RPC_SOME_NOT_MAPPED) {
+			/*
+			 * set STATUS_SOME_NOT_MAPPED response
+			 * for unknown domain sid.
+			 */
+			rsp->hdr.Status = STATUS_SOME_NOT_MAPPED;
+		} else if (rpc_resp->flags == KSMBD_RPC_ENOTIMPLEMENTED) {
 			rsp->hdr.Status = STATUS_NOT_SUPPORTED;
 			goto out;
-		}
-
-		if (rpc_resp->flags != KSMBD_RPC_OK) {
+		} else if (rpc_resp->flags != KSMBD_RPC_OK) {
 			rsp->hdr.Status = STATUS_INVALID_PARAMETER;
 			goto out;
 		}
@@ -7559,14 +7561,19 @@ static inline int fsctl_set_sparse(struct ksmbd_work *work, uint64_t id,
 	if (fp->f_ci->m_fattr != old_fattr &&
 			test_share_config_flag(work->tcon->share_conf,
 				KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
-		ret = ksmbd_vfs_setxattr(fp->filp->f_path.dentry,
-				XATTR_NAME_FILE_ATTRIBUTE,
-				(void *)&fp->f_ci->m_fattr,
-				FILE_ATTRIBUTE_LEN, 0);
+		struct xattr_dos_attrib da;
+
+		ret = ksmbd_vfs_get_dos_attrib_xattr(fp->filp->f_path.dentry, &da);
+		if (ret <= 0)
+			goto out;
+
+		da.attr = le32_to_cpu(fp->f_ci->m_fattr);
+		ret = ksmbd_vfs_set_dos_attrib_xattr(fp->filp->f_path.dentry, &da);
 		if (ret)
 			fp->f_ci->m_fattr = old_fattr;
 	}
 
+out:
 	ksmbd_fd_put(work, fp);
 	return ret;
 }
