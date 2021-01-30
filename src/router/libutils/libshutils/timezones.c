@@ -76,7 +76,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Africa/Johannesburg", "SAST-2" }
 	,
-	{ "Africa/Juba", "EAT-3" }
+	{ "Africa/Juba", "CAT-2" }
 	,
 	{ "Africa/Kampala", "EAT-3" }
 	,
@@ -970,7 +970,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Europe/Vilnius", "EET-2EEST,M3.5.0/3,M10.5.0/4" }
 	,
-	{ "Europe/Volgograd", "<+04>-4" }
+	{ "Europe/Volgograd", "<+03>-3" }
 	,
 	{ "Europe/Warsaw", "CET-1CEST,M3.5.0,M10.5.0/3" }
 	,
