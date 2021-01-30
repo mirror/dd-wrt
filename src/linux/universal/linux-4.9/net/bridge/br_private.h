@@ -278,12 +278,13 @@ static inline struct net_bridge_port *br_port_get_rtnl(const struct net_device *
 struct net_bridge
 {
 	spinlock_t			lock;
-	struct list_head		port_list;
+	struct hlist_head		frame_type_list;
 	struct net_device		*dev;
 
 	struct pcpu_sw_netstats		__percpu *stats;
 	spinlock_t			hash_lock;
 	struct hlist_head		hash[BR_HASH_SIZE];
+	struct list_head		port_list;
 #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 	union {
 		struct rtable		fake_rtable;
@@ -378,7 +379,7 @@ struct net_bridge
 	u16				default_pvid;
 #endif
 #if IS_ENABLED(CONFIG_BRIDGE_MRP)
-	struct list_head		mrp_list;
+	struct hlist_head		mrp_list;
 #endif
 };
 
@@ -386,14 +387,14 @@ struct br_input_skb_cb {
 	struct net_device *brdev;
 
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
-	int igmp;
-	int mrouters_only;
+	u8 igmp;
+	u8 mrouters_only:1;
 #endif
 
-	bool proxyarp_replied;
+	u8 proxyarp_replied:1;
 
 #ifdef CONFIG_BRIDGE_VLAN_FILTERING
-	bool vlan_filtered;
+	u8 vlan_filtered:1;
 #endif
 
 #ifdef CONFIG_NET_SWITCHDEV
@@ -550,6 +551,16 @@ void br_manage_promisc(struct net_bridge *br);
 /* br_input.c */
 int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb);
 rx_handler_result_t br_handle_frame(struct sk_buff **pskb);
+
+struct br_frame_type {
+	__be16			type;
+	int			(*frame_handler)(struct net_bridge_port *port,
+						 struct sk_buff *skb);
+	struct hlist_node	list;
+};
+
+void br_add_frame(struct net_bridge *br, struct br_frame_type *ft);
+void br_del_frame(struct net_bridge *br, struct br_frame_type *ft);
 
 static inline bool br_rx_handler_check_rcu(const struct net_device *dev)
 {
@@ -1056,11 +1067,6 @@ static inline int br_mrp_parse(struct net_bridge *br, struct net_bridge_port *p,
 			       struct nlattr *attr, int cmd)
 {
 	return -EOPNOTSUPP;
-}
-
-static inline int br_mrp_process(struct net_bridge_port *p, struct sk_buff *skb)
-{
-	return 0;
 }
 
 static inline bool br_mrp_enabled(struct net_bridge *br)
