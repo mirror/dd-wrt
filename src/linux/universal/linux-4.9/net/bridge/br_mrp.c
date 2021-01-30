@@ -449,7 +449,7 @@ static void br_mrp_del_impl(struct net_bridge *br, struct br_mrp *mrp)
 	hlist_del_rcu(&mrp->list);
 	kfree_rcu(mrp, rcu);
 
-	if (list_empty(&br->mrp_list))
+	if (hlist_empty(&br->mrp_list))
 		br_del_frame(br, &mrp_frame_type);
 }
 
@@ -499,7 +499,7 @@ int br_mrp_add(struct net_bridge *br, struct br_mrp_instance *instance)
 	spin_unlock_bh(&br->lock);
 	rcu_assign_pointer(mrp->s_port, p);
 
-	if (list_empty(&br->mrp_list))
+	if (hlist_empty(&br->mrp_list))
 		br_add_frame(br, &mrp_frame_type);
 
 	INIT_DELAYED_WORK(&mrp->test_work, br_mrp_test_work_expired);
