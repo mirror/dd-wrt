@@ -1263,6 +1263,40 @@ out:
 	return rc;
 }
 
+int ksmbd_gen_sd_hash(struct ksmbd_conn *conn, char *sd_buf, int len,
+		__u8 *pi_hash)
+{
+	int rc = -1;
+	struct ksmbd_crypto_ctx *ctx = NULL;
+
+	ctx = ksmbd_crypto_ctx_find_sha256();
+	if (!ctx) {
+		ksmbd_debug(AUTH, "could not alloc sha256 rc %d\n", rc);
+		goto out;
+	}
+
+	rc = crypto_shash_init(CRYPTO_SHA256(ctx));
+	if (rc) {
+		ksmbd_debug(AUTH, "could not init shashn");
+		goto out;
+	}
+
+	rc = crypto_shash_update(CRYPTO_SHA256(ctx), sd_buf, len);
+	if (rc) {
+		ksmbd_debug(AUTH, "could not update with n\n");
+		goto out;
+	}
+
+	rc = crypto_shash_final(CRYPTO_SHA256(ctx), pi_hash);
+	if (rc) {
+		ksmbd_debug(AUTH, "Could not generate hash err : %d\n", rc);
+		goto out;
+	}
+out:
+	ksmbd_release_crypto_ctx(ctx);
+	return rc;
+}
+
 static int ksmbd_get_encryption_key(struct ksmbd_conn *conn,
 				    __u64 ses_id,
 				    int enc,

@@ -9,9 +9,9 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <asm/unaligned.h>
+#include "glob.h"
 #include "unicode.h"
 #include "uniupr.h"
-#include "glob.h"
 #include "smb_common.h"
 
 #ifdef CONFIG_SMB_INSECURE_SERVER

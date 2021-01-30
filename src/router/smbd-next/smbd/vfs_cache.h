@@ -6,6 +6,7 @@
 #ifndef __VFS_CACHE_H__
 #define __VFS_CACHE_H__
 
+#include <linux/version.h>
 #include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/rwsem.h>
@@ -50,7 +51,6 @@ struct ksmbd_lock {
 
 struct stream {
 	char *name;
-	int type;
 	ssize_t size;
 };
 

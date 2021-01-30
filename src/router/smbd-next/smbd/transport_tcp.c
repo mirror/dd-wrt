@@ -14,15 +14,21 @@
 #include "connection.h"
 #include "transport_tcp.h"
 
+#define IFACE_STATE_DOWN		(1 << 0)
+#define IFACE_STATE_CONFIGURED		(1 << 1)
+
 struct interface {
 	struct task_struct	*ksmbd_kthread;
 	struct socket		*ksmbd_socket;
 	struct list_head	entry;
 	char			*name;
 	struct mutex		sock_release_lock;
+	int			state;
 };
 
 static LIST_HEAD(iface_list);
+
+static int bind_additional_ifaces;
 
 struct tcp_transport {
 	struct ksmbd_transport		transport;
@@ -32,6 +38,9 @@ struct tcp_transport {
 };
 
 static struct ksmbd_transport_ops ksmbd_tcp_transport_ops;
+
+static void tcp_stop_kthread(struct task_struct *kthread);
+static struct interface *alloc_iface(char *ifname);
 
 #define KSMBD_TRANS(t)	(&(t)->transport)
 #define TCP_TRANS(t)	((struct tcp_transport *)container_of(t, \
@@ -525,6 +534,7 @@ static int create_socket(struct interface *iface)
 		ksmbd_err("Can't start ksmbd main kthread: %d\n", ret);
 		goto out_error;
 	}
+	iface->state = IFACE_STATE_CONFIGURED;
 
 	return 0;
 
@@ -534,21 +544,68 @@ out_error:
 	return ret;
 }
 
+static int ksmbd_netdev_event(struct notifier_block *nb, unsigned long event,
+				void *ptr)
+{
+	struct net_device *netdev = netdev_notifier_info_to_dev(ptr);
+	struct interface *iface;
+	int ret, found = 0;
+
+	switch (event) {
+	case NETDEV_UP:
+		if (netdev->priv_flags & IFF_BRIDGE_PORT)
+			return NOTIFY_OK;
+
+		list_for_each_entry(iface, &iface_list, entry) {
+			if (!strcmp(iface->name, netdev->name)) {
+				found = 1;
+				if (iface->state != IFACE_STATE_DOWN)
+					break;
+				ret = create_socket(iface);
+				if (ret)
+					return NOTIFY_OK;
+				break;
+			}
+		}
+		if (!found && bind_additional_ifaces) {
+			iface = alloc_iface(kstrdup(netdev->name, GFP_KERNEL));
+			if (!iface)
+				return NOTIFY_OK;
+			ret = create_socket(iface);
+			if (ret)
+				break;
+		}
+		break;
+	case NETDEV_DOWN:
+		list_for_each_entry(iface, &iface_list, entry) {
+			if (!strcmp(iface->name, netdev->name) &&
+			    iface->state == IFACE_STATE_CONFIGURED) {
+				tcp_stop_kthread(iface->ksmbd_kthread);
+				iface->ksmbd_kthread = NULL;
+				mutex_lock(&iface->sock_release_lock);
+				tcp_destroy_socket(iface->ksmbd_socket);
+				iface->ksmbd_socket = NULL;
+				mutex_unlock(&iface->sock_release_lock);
+
+				iface->state = IFACE_STATE_DOWN;
+				break;
+			}
+		}
+		break;
+ 	}
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block ksmbd_netdev_notifier = {
+	.notifier_call = ksmbd_netdev_event,
+};
+
 int ksmbd_tcp_init(void)
 {
-	struct interface *iface;
-	struct list_head *tmp;
-	int ret = 0;
+	register_netdevice_notifier(&ksmbd_netdev_notifier);
 
-	if (list_empty(&iface_list))
-		return 0;
-
-	list_for_each(tmp, &iface_list) {
-		iface = list_entry(tmp, struct interface, entry);
-		ret = create_socket(iface);
-	}
-
-	return ret;
+	return 0;
 }
 
 static void tcp_stop_kthread(struct task_struct *kthread)
@@ -567,55 +624,36 @@ void ksmbd_tcp_destroy(void)
 {
 	struct interface *iface, *tmp;
 
+	unregister_netdevice_notifier(&ksmbd_netdev_notifier);
 	list_for_each_entry_safe(iface, tmp, &iface_list, entry) {
 		list_del(&iface->entry);
-		tcp_stop_kthread(iface->ksmbd_kthread);
-		mutex_lock(&iface->sock_release_lock);
-		tcp_destroy_socket(iface->ksmbd_socket);
-		iface->ksmbd_socket = NULL;
-		mutex_unlock(&iface->sock_release_lock);
 		kfree(iface->name);
 		ksmbd_free(iface);
 	}
 }
 
-static bool iface_exists(const char *ifname)
-{
-	struct net_device *netdev;
-	bool ret = false;
 
-	rcu_read_lock();
-	netdev = dev_get_by_name_rcu(&init_net, ifname);
-	if (netdev) {
-		if (!(netdev->flags & IFF_UP))
-			ksmbd_err("Device %s is down\n", ifname);
-		else
-			ret = true;
-	}
-	rcu_read_unlock();
-	return ret;
-}
-
-static int alloc_iface(char *ifname)
+static struct interface *alloc_iface(char *ifname)
 {
 	struct interface *iface;
 
 	if (!ifname) {
 		printk(KERN_ERR "Bad Interface in %s:%d\n", __func__,__LINE__);
-		return -ENOMEM;
+		return NULL;
 	}
 
 	iface = ksmbd_zalloc(sizeof(struct interface));
 	if (!iface) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		kfree(ifname);
-		return -ENOMEM;
+		return NULL;
 	}
 
 	iface->name = ifname;
+	iface->state = IFACE_STATE_DOWN;
 	list_add(&iface->entry, &iface_list);
 	mutex_init(&iface->sock_release_lock);
-	return 0;
+	return iface;
 }
 
 int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
@@ -632,23 +670,20 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 			if (netdev->type != ARPHRD_ETHER || netdev->addr_len != ETH_ALEN ||
 			    !is_valid_ether_addr(netdev->dev_addr))
 				continue;
-			if (alloc_iface(kstrdup(netdev->name, GFP_KERNEL))) {
+			if (!alloc_iface(kstrdup(netdev->name, GFP_KERNEL))) {
 				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				return -ENOMEM;
 			}
 		}
 		rtnl_unlock();
+		bind_additional_ifaces = 1;
 		return 0;
 	}
 
 	while (ifc_list_sz > 0) {
-		if (iface_exists(ifc_list)) {
-			if (alloc_iface(kstrdup(ifc_list, GFP_KERNEL))){
-				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
-				return -ENOMEM;
-			}
-		} else {
-			ksmbd_err("Unknown interface: %s\n", ifc_list);
+		if (!alloc_iface(kstrdup(ifc_list, GFP_KERNEL))) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
+			return -ENOMEM;
 		}
 
 		sz = strlen(ifc_list);
@@ -658,6 +693,8 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 		ifc_list += sz + 1;
 		ifc_list_sz -= (sz + 1);
 	}
+
+	bind_additional_ifaces = 0;
 
 	return 0;
 }

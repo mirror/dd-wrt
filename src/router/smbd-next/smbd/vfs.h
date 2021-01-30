@@ -18,31 +18,77 @@ static inline bool d_is_symlink(const struct dentry *dentry) {
 	return dentry->d_inode->i_op->follow_link;
 }
 #endif
-/* CREATION TIME XATTR PREFIX */
-#define CREATION_TIME_PREFIX		"creation.time."
-#define CREATION_TIME_PREFIX_LEN	(sizeof(CREATION_TIME_PREFIX) - 1)
-#define CREATIOM_TIME_LEN		(sizeof(__u64))
-#define XATTR_NAME_CREATION_TIME	\
-				(XATTR_USER_PREFIX CREATION_TIME_PREFIX)
-#define XATTR_NAME_CREATION_TIME_LEN	(sizeof(XATTR_NAME_CREATION_TIME) - 1)
+#include "smbacl.h"
 
 /* STREAM XATTR PREFIX */
-#define STREAM_PREFIX			"stream."
+#define STREAM_PREFIX			"DosStream."
 #define STREAM_PREFIX_LEN		(sizeof(STREAM_PREFIX) - 1)
 #define XATTR_NAME_STREAM		(XATTR_USER_PREFIX STREAM_PREFIX)
 #define XATTR_NAME_STREAM_LEN		(sizeof(XATTR_NAME_STREAM) - 1)
 
-/* FILE ATTRIBUITE XATTR PREFIX */
-#define FILE_ATTRIBUTE_PREFIX		"file.attribute."
-#define FILE_ATTRIBUTE_PREFIX_LEN	(sizeof(FILE_ATTRIBUTE_PREFIX) - 1)
-#define FILE_ATTRIBUTE_LEN		(sizeof(__u32))
-#define XATTR_NAME_FILE_ATTRIBUTE	\
-		(XATTR_USER_PREFIX FILE_ATTRIBUTE_PREFIX)
-#define XATTR_NAME_FILE_ATTRIBUTE_LEN	\
-		(sizeof(XATTR_USER_PREFIX FILE_ATTRIBUTE_PREFIX) - 1)
+struct xattr_dos_attrib {
+	__u16	version;
+	__u32	flags;
+	__u32	attr;
+	__u32	ea_size;
+	__u64	size;
+	__u64	alloc_size;
+	__u64	create_time;
+	__u64	change_time;
+};
+
+/* DOS ATTRIBUITE XATTR PREFIX */
+#define DOS_ATTRIBUTE_PREFIX		"DOSATTRIB"
+#define DOS_ATTRIBUTE_PREFIX_LEN	(sizeof(DOS_ATTRIBUTE_PREFIX) - 1)
+#define XATTR_NAME_DOS_ATTRIBUTE	\
+		(XATTR_USER_PREFIX DOS_ATTRIBUTE_PREFIX)
+#define XATTR_NAME_DOS_ATTRIBUTE_LEN	\
+		(sizeof(XATTR_USER_PREFIX DOS_ATTRIBUTE_PREFIX) - 1)
+
+#define XATTR_SD_HASH_TYPE_SHA256	0x1
+#define XATTR_SD_HASH_SIZE		64
+
+#define SMB_ACL_READ			4
+#define SMB_ACL_WRITE			2
+#define SMB_ACL_EXECUTE			1
+
+enum {
+	SMB_ACL_TAG_INVALID = 0,
+	SMB_ACL_USER,
+	SMB_ACL_USER_OBJ,
+	SMB_ACL_GROUP,
+	SMB_ACL_GROUP_OBJ,
+	SMB_ACL_OTHER,
+	SMB_ACL_MASK
+};
+
+struct xattr_acl_entry {
+	int type;
+	uid_t uid;
+	gid_t gid;
+	mode_t perm;
+};
+
+struct xattr_smb_acl {
+	int count;
+	int next;
+	struct xattr_acl_entry entries[0];
+};
+
+struct xattr_ntacl {
+	__u16	version;
+	void	*sd_buf;
+	__u32	sd_size;
+	__u16	hash_type;
+	__u8	desc[10];
+	__u16	desc_len;
+	__u64	current_time;
+	__u8	hash[XATTR_SD_HASH_SIZE];
+	__u8	posix_acl_hash[XATTR_SD_HASH_SIZE];
+};
 
 /* SECURITY DESCRIPTOR XATTR PREFIX */
-#define SD_PREFIX			"sd."
+#define SD_PREFIX			"NTACL"
 #define SD_PREFIX_LEN	(sizeof(SD_PREFIX) - 1)
 #define XATTR_NAME_SD	\
 		(XATTR_SECURITY_PREFIX SD_PREFIX)
@@ -99,6 +145,7 @@ static inline bool d_is_symlink(const struct dentry *dentry) {
 
 struct ksmbd_work;
 struct ksmbd_file;
+struct ksmbd_conn;
 
 struct ksmbd_dir_info {
 	const char	*name;
@@ -157,9 +204,8 @@ int ksmbd_vfs_fsync(struct ksmbd_work *work, uint64_t fid, uint64_t p_id);
 int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name);
 int ksmbd_vfs_link(struct ksmbd_work *work,
 		const char *oldname, const char *newname);
+int ksmbd_vfs_getattr(struct path *path, struct kstat *stat);
 #ifdef CONFIG_SMB_INSECURE_SERVER
-int ksmbd_vfs_getattr(struct ksmbd_work *work, uint64_t fid,
-		struct kstat *stat);
 int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
 		uint64_t fid, struct iattr *attrs);
 int ksmbd_vfs_symlink(struct ksmbd_work *work,
@@ -219,8 +265,8 @@ int ksmbd_vfs_fsetxattr(struct ksmbd_work *work,
 
 int ksmbd_vfs_xattr_stream_name(char *stream_name,
 				char **xattr_stream_name,
-				size_t *xattr_stream_name_size);
-int ksmbd_vfs_xattr_sd(char *sd_data, char **xattr_sd, size_t *xattr_sd_size);
+				size_t *xattr_stream_name_size,
+				int s_type);
 
 int ksmbd_vfs_truncate_xattr(struct dentry *dentry, int wo_streams);
 int ksmbd_vfs_remove_xattr(struct dentry *dentry, char *attr_name);
@@ -260,11 +306,19 @@ void ksmbd_vfs_posix_lock_unblock(struct file_lock *flock);
 
 int ksmbd_vfs_remove_acl_xattrs(struct dentry *dentry);
 int ksmbd_vfs_remove_sd_xattrs(struct dentry *dentry);
-int ksmbd_vfs_set_sd_xattr(struct dentry *dentry, char *sd_data);
-struct smb_ntacl *ksmbd_vfs_get_sd_xattr(struct dentry *dentry);
+int ksmbd_vfs_set_sd_xattr(struct ksmbd_conn *conn, struct dentry *dentry,
+		struct smb_ntsd *pntsd, int len);
+int ksmbd_vfs_get_sd_xattr(struct ksmbd_conn *conn, struct dentry *dentry,
+		struct smb_ntsd **pntsd);
+int ksmbd_vfs_set_dos_attrib_xattr(struct dentry *dentry,
+		struct xattr_dos_attrib *da);
+int ksmbd_vfs_get_dos_attrib_xattr(struct dentry *dentry,
+		struct xattr_dos_attrib *da);
 struct posix_acl *ksmbd_vfs_posix_acl_alloc(int count, gfp_t flags);
 struct posix_acl *ksmbd_vfs_get_acl(struct inode *inode, int type);
 int ksmbd_vfs_set_posix_acl(struct inode *inode, int type,
 		struct posix_acl *acl);
-
+int ksmbd_vfs_set_init_posix_acl(struct inode *inode);
+int ksmbd_vfs_inherit_posix_acl(struct inode *inode,
+		struct inode *parent_inode);
 #endif /* __KSMBD_VFS_H__ */
