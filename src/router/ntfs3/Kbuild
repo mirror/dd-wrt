@@ -2,10 +2,12 @@
 #
 # Makefile for the ntfs3 filesystem support.
 #
+ccflags-y += -I$(src) -include compat.h
 
 obj-$(CONFIG_NTFS3_FS) += ntfs3.o
 
-ntfs3-y :=	attrib.o \
+ntfs3-y :=	compat.o \
+		attrib.o \
 		attrlist.o \
 		bitfunc.o \
 		bitmap.o \

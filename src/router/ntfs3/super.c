@@ -1341,7 +1341,7 @@ void ntfs_unmap_meta(struct super_block *sb, CLST lcn, CLST len)
 	sector_t devblock = (u64)lcn * sbi->blocks_per_cluster;
 	unsigned long blocks = (u64)len * sbi->blocks_per_cluster;
 	unsigned long cnt = 0;
-	unsigned long limit = global_zone_page_state(NR_FREE_PAGES)
+	unsigned long limit = nr_free_pages()
 			      << (PAGE_SHIFT - sb->s_blocksize_bits);
 
 	if (limit >= 0x2000)
@@ -1352,7 +1352,7 @@ void ntfs_unmap_meta(struct super_block *sb, CLST lcn, CLST len)
 		limit >>= 1;
 
 	while (blocks--) {
-		clean_bdev_aliases(bdev, devblock++, 1);
+		unmap_underlying_metadata(bdev, devblock++);
 		if (cnt++ >= limit) {
 			sync_blockdev(bdev);
 			cnt = 0;

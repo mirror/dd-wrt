@@ -484,8 +484,10 @@ out:
  *
  * inode_operations::atomic_open
  */
-static int ntfs_atomic_open(struct inode *dir, struct dentry *dentry,
-			    struct file *file, u32 flags, umode_t mode)
+static int
+ntfs_atomic_open(struct inode *dir, struct dentry *dentry,
+		 struct file *file, unsigned flags, umode_t mode,
+		 int *opened)
 {
 	int err;
 	bool excl = !!(flags & O_EXCL);
@@ -529,13 +531,13 @@ static int ntfs_atomic_open(struct inode *dir, struct dentry *dentry,
 		goto out2;
 	}
 
-	file->f_mode |= FMODE_CREATED;
+	*opened |= FILE_CREATED;
 
 	/*fnd contains tree's path to insert to*/
 	err = ntfs_create_inode(dir, dentry, uni, mode, 0, NULL, 0, excl, fnd,
 				&inode);
 	if (!err)
-		err = finish_open(file, dentry, ntfs_file_open);
+		err = finish_open(file, dentry, ntfs_file_open, opened);
 	dput(d);
 
 out2:

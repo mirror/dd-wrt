@@ -76,12 +76,19 @@ static long ntfs_compat_ioctl(struct file *filp, u32 cmd, unsigned long arg)
 /*
  * inode_operations::getattr
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int ntfs_getattr(const struct path *path, struct kstat *stat, u32 request_mask,
 		 u32 flags)
+#else
+int ntfs_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
+#endif
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	struct inode *inode = d_inode(path->dentry);
-	struct ntfs_inode *ni = ntfs_i(inode);
-
+#else
+	struct inode *inode = d_inode(dentry);;
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	if (is_compressed(ni))
 		stat->attributes |= STATX_ATTR_COMPRESSED;
 
@@ -89,11 +96,13 @@ int ntfs_getattr(const struct path *path, struct kstat *stat, u32 request_mask,
 		stat->attributes |= STATX_ATTR_ENCRYPTED;
 
 	stat->attributes_mask |= STATX_ATTR_COMPRESSED | STATX_ATTR_ENCRYPTED;
-
+#endif
 	generic_fillattr(inode, stat);
 
+#ifdef STATX_BTIME
 	stat->result_mask |= STATX_BTIME;
 	stat->btime = ni->i_crtime;
+#endif
 
 	return 0;
 }
@@ -1006,11 +1015,15 @@ static ssize_t ntfs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 		return -EOPNOTSUPP;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
 	if (!inode_trylock(inode)) {
 		if (iocb->ki_flags & IOCB_NOWAIT)
 			return -EAGAIN;
 		inode_lock(inode);
 	}
+#else
+	inode_lock(inode);
+#endif
 
 	ret = generic_write_checks(iocb, from);
 	if (ret <= 0)
