@@ -257,6 +257,7 @@ static bool usb_load_modules(char *fs)
 		insmod("fuse");
 #else
 		insmod("antfs");
+		insmod("ntfs3");
 #endif
 	}
 #endif
@@ -317,7 +318,11 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 #ifdef HAVE_LEGACY_KERNEL
 		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 #else
+#ifdef HAVE_NTFS3
+		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8", path, mount_point);
+#else
 		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+#endif
 #endif
 	} else
 #endif
@@ -337,7 +342,11 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 #ifdef HAVE_LEGACY_KERNEL
 			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 #else
-			ret = eval("/bin/mount", "-t", "antfs", "-o", "compression,direct_io,big_writes", path, mount_point);
+#ifdef HAVE_NTFS3
+		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8", path, mount_point);
+#else
+		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+#endif
 #endif
 		} else
 #endif
