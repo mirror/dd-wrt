@@ -1516,7 +1516,7 @@ new_bio:
 		}
 		if (bio) {
 			bio_chain(bio, new);
-			submit_bio(bio);
+			compat_submit_bio(bio);
 		}
 		bio = new;
 		bio_set_dev(bio, bdev);
@@ -1559,7 +1559,7 @@ new_bio:
 out:
 	if (bio) {
 		if (!err)
-			err = submit_bio_wait(bio);
+			err = compat_submit_bio_wait(bio);
 		bio_put(bio);
 	}
 	blk_finish_plug(&plug);
@@ -1616,7 +1616,7 @@ new_bio:
 		}
 		if (bio) {
 			bio_chain(bio, new);
-			submit_bio(bio);
+			compat_submit_bio(bio);
 		}
 		bio = new;
 		bio_set_dev(bio, bdev);
@@ -1638,7 +1638,7 @@ new_bio:
 
 	if (bio) {
 		if (!err)
-			err = submit_bio_wait(bio);
+			err = compat_submit_bio_wait(bio);
 		bio_put(bio);
 	}
 	blk_finish_plug(&plug);
