@@ -4,6 +4,12 @@
 #include <linux/swap.h>
 #include <linux/buffer_head.h>
 
+#ifndef SECTOR_SHIFT
+#define SECTOR_SHIFT 9
+#endif
+#ifndef SECTOR_SIZE
+#define SECTOR_SIZE (1 << SECTOR_SHIFT)
+#endif
 
 #ifndef PAGE_KERNEL_RO
 # define PAGE_KERNEL_RO PAGE_KERNEL
@@ -41,6 +47,11 @@ extern void __bitmap_clear(unsigned long *map, unsigned int start, int len);
 
 
 #define discard_new_inode unlock_new_inode
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
-//#define current_time(inode) CURRENT_TIME_SEC
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+#define bi_opf bi_rw
+#define REQ_OP_WRITE REQ_WRITE
+#define REQ_OP_READ READ
+#define compat_submit_bio(bio) submit_bio(WRITE, bio)
+#define compat_submit_bio_wait(bio) submit_bio_wait(WRITE, bio)
+#define current_time(inode) CURRENT_TIME_SEC
 #endif

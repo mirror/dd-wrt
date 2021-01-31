@@ -653,7 +653,13 @@ int ntfs3_setattr(struct dentry *dentry, struct iattr *attr)
 		ia_valid = attr->ia_valid;
 	}
 
+#if ((LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) && \
+		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 37))) || \
+		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
 	err = setattr_prepare(dentry, attr);
+#else
+	err = inode_change_ok(inode, attr);
+#endif
 	if (err)
 		goto out;
 
@@ -1047,8 +1053,11 @@ out:
 	inode_unlock(inode);
 
 	if (ret > 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+		ret = generic_write_sync(file, iocb->ki_pos - ret, ret);
+#else
 		ret = generic_write_sync(iocb, ret);
-
+#endif
 	return ret;
 }
 
