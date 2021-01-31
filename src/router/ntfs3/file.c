@@ -85,8 +85,9 @@ int ntfs_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	struct inode *inode = d_inode(path->dentry);
+	struct ntfs_inode *ni = ntfs_i(inode);
 #else
-	struct inode *inode = d_inode(dentry);;
+	struct inode *inode = d_inode(dentry);
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	if (is_compressed(ni))
