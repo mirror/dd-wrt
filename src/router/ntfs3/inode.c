@@ -695,9 +695,8 @@ static int ntfs_readpage(struct file *file, struct page *page)
 	return mpage_readpage(page, ntfs_get_block);
 }
 
-static void ntfs_readahead(struct readahead_control *rac)
+static int ntfs_readpages(struct file *file, struct address_space *mapping, struct list_head *pages, unsigned nr_pages)
 {
-	struct address_space *mapping = rac->mapping;
 	struct inode *inode = mapping->host;
 	struct ntfs_inode *ni = ntfs_i(inode);
 	u64 valid;
@@ -705,24 +704,22 @@ static void ntfs_readahead(struct readahead_control *rac)
 
 	if (is_resident(ni)) {
 		/* no readahead for resident */
-		return;
+		return 0;
 	}
 
 	if (is_compressed(ni)) {
 		/* no readahead for compressed */
-		return;
+		return 0;
 	}
 
 	valid = ni->i_valid;
-	pos = readahead_pos(rac);
 
-	if (valid < i_size_read(inode) && pos <= valid &&
-	    valid < pos + readahead_length(rac)) {
+	if (valid < i_size_read(inode)) {
 		/* range cross 'valid'. read it page by page */
-		return;
+		return 0;
 	}
 
-	mpage_readahead(rac, ntfs_get_block);
+	return mpage_readpages(mapping, pages, nr_pages, ntfs_get_block);
 }
 
 static int ntfs_get_block_direct_IO_R(struct inode *inode, sector_t iblock,
@@ -2036,7 +2033,7 @@ const struct inode_operations ntfs_link_inode_operations = {
 
 const struct address_space_operations ntfs_aops = {
 	.readpage = ntfs_readpage,
-	.readahead = ntfs_readahead,
+	.readpages = ntfs_readpages,
 	.writepage = ntfs_writepage,
 	.writepages = ntfs_writepages,
 	.write_begin = ntfs_write_begin,
@@ -2047,5 +2044,5 @@ const struct address_space_operations ntfs_aops = {
 
 const struct address_space_operations ntfs_aops_cmpr = {
 	.readpage = ntfs_readpage,
-	.readahead = ntfs_readahead,
+	.readpages = ntfs_readpages,
 };

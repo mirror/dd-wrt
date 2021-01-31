@@ -308,7 +308,7 @@ struct ntfs_inode {
 	 * Usually i_valid <= inode->i_size
 	 */
 	u64 i_valid;
-	struct timespec64 i_crtime;
+	struct timespec i_crtime;
 
 	struct mutex ni_lock;
 
@@ -442,8 +442,12 @@ bool dir_is_empty(struct inode *dir);
 extern const struct file_operations ntfs_dir_operations;
 
 /* globals from file.c*/
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int ntfs_getattr(const struct path *path, struct kstat *stat, u32 request_mask,
 		 u32 flags);
+#else
+int ntfs_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat);
+#endif
 void ntfs_sparse_cluster(struct inode *inode, struct page *page0, CLST vcn,
 			 CLST len);
 int ntfs_file_fsync(struct file *filp, loff_t start, loff_t end, int datasync);
@@ -866,7 +870,7 @@ static inline size_t bitmap_size(size_t bits)
  *
  * converts in-memory kernel timestamp into nt time
  */
-static inline __le64 kernel2nt(const struct timespec64 *ts)
+static inline __le64 kernel2nt(const struct timespec *ts)
 {
 	// 10^7 units of 100 nanoseconds one second
 	return cpu_to_le64(_100ns2seconds *
@@ -879,7 +883,7 @@ static inline __le64 kernel2nt(const struct timespec64 *ts)
  *
  * converts on-disk nt time into kernel timestamp
  */
-static inline void nt2kernel(const __le64 tm, struct timespec64 *ts)
+static inline void nt2kernel(const __le64 tm, struct timespec *ts)
 {
 	u64 t = le64_to_cpu(tm) - _100ns2seconds * SecondsToStartOf1970;
 
