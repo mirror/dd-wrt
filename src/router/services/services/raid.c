@@ -157,6 +157,7 @@ void start_raid(void)
 		dd_loginfo("raid", "NTFS / FUSE modules successfully loaded\n");
 #else
 		insmod("antfs");
+		insmod("ntfs3");
 		dd_loginfo("raid", "NTFS modules successfully loaded\n");
 #endif
 	}
@@ -342,7 +343,11 @@ void start_raid(void)
 #ifdef HAVE_LEGACY_KERNEL
 				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 #else
+#ifdef HAVE_NTFS3
+				sysprintf("mount -t ntfs3 -o nls=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+#else
 				sysprintf("mount -t antfs -o utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+#endif
 #endif
 			}
 			if (nvram_nmatch("zfs", "raidfs%d", i)) {

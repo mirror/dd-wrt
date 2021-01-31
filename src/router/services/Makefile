@@ -567,6 +567,9 @@ endif
 ifeq ($(CONFIG_NTFS3G),y)
 CFLAGS_EXTRA += -DHAVE_NTFS3G
 endif
+ifeq ($(CONFIG_NTFS3),y)
+CFLAGS_EXTRA += -DHAVE_NTFS3
+endif
 ifeq ($(CONFIG_VF803),y)
 CFLAGS_EXTRA += -DHAVE_VF803
 endif
