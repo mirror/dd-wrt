@@ -3190,6 +3190,7 @@ void load_drivers(int boot)
 #ifdef HAVE_NTFS3G
 		rmmod("fuse");
 		rmmod("antfs");
+		rmmod("ntfs3");
 #endif
 		led_control(USB_POWER, LED_OFF);
 		led_control(USB_POWER1, LED_OFF);

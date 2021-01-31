@@ -234,6 +234,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 		insmod("fuse");
 	#else
 		insmod("antfs");
+		insmod("ntfs3");
 	#endif
 	}
 #endif
@@ -275,7 +276,11 @@ static int usb_process_path(char *path, char *fs, char *target)
 	#ifdef HAVE_LEGACY_KERNEL
 		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 	#else
+#ifdef HAVE_NTFS3
+		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8", path, mount_point);
+#else
 		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+#endif
 	#endif
 	} else
 #endif
@@ -290,7 +295,11 @@ static int usb_process_path(char *path, char *fs, char *target)
 	#ifdef HAVE_LEGACY_KERNEL
 			ret = eval("ntfs-3g", "-o", "compression", path, mount_point);
 	#else
-			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);	
+#ifdef HAVE_NTFS3
+		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8", path, mount_point);
+#else
+		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+#endif
 	#endif
 		} else
 #endif
