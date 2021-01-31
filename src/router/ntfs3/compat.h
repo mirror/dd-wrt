@@ -2,6 +2,7 @@
 #include <linux/version.h>
 #include <linux/uio.h>
 #include <linux/swap.h>
+#include <linux/buffer_head.h>
 
 
 #ifndef PAGE_KERNEL_RO
@@ -20,6 +21,7 @@
 # define fallthrough                    do {} while (0)  /* fallthrough */
 #endif
 
+#ifndef SB_SYNCHRONOUS
 #define SB_SYNCHRONOUS MS_SYNCHRONOUS
 #define SB_ACTIVE MS_ACTIVE
 #define SB_NOATIME S_NOATIME
@@ -27,16 +29,16 @@
 #define SB_LAZYTIME MS_LAZYTIME
 #define SB_RDONLY ST_RDONLY
 #define SB_POSIXACL MS_POSIXACL
-
-extern void __bitmap_set(unsigned long *map, unsigned int start, int len);
-extern void __bitmap_clear(unsigned long *map, unsigned int start, int len);
 static inline bool sb_rdonly(const struct super_block *sb) { return sb->s_flags & MS_RDONLY; }
-
 static inline void
 bio_set_dev(struct bio *bio, struct block_device *bdev)
 {
 	bio->bi_bdev = bdev;
 }
+#endif
+extern void __bitmap_set(unsigned long *map, unsigned int start, int len);
+extern void __bitmap_clear(unsigned long *map, unsigned int start, int len);
+
 
 #define discard_new_inode unlock_new_inode
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)

@@ -1352,7 +1352,11 @@ void ntfs_unmap_meta(struct super_block *sb, CLST lcn, CLST len)
 		limit >>= 1;
 
 	while (blocks--) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+		clean_bdev_aliases(bdev, devblock++, 1);
+#else
 		unmap_underlying_metadata(bdev, devblock++);
+#endif		
 		if (cnt++ >= limit) {
 			sync_blockdev(bdev);
 			cnt = 0;
