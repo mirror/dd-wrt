@@ -13,7 +13,7 @@ sources += Makefile Kbuild Kconfig
 
 destination = $(DESTDIR)/usr/src/$(DKMS_NAME)-$(VERSION)
 
-default: ntfs3
+default: ntfs3.ko
 
 ntfs3.ko: force
 	$(MAKE) -C $(KBUILD) M=$(CURDIR) modules $(MODULE_CONFIG) EXTRA_CFLAGS="$(CFLAGS_EXTRA)"
