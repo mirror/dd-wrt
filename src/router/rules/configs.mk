@@ -142,7 +142,11 @@ obj-$(CONFIG_MINIDLNA) += jansson
 ifeq ($(CONFIG_LEGACY_KERNEL),y)
 obj-$(CONFIG_NTFS3G) += ntfs-3g
 else
+ifeq ($(CONFIG_NTFS3),y)
+obj-$(CONFIG_NTFS3G) += ntfs3 ntfs-3g
+else
 obj-$(CONFIG_NTFS3G) += antfs ntfs-3g
+endif
 endif
 obj-$(CONFIG_SPEEDTEST_CLI) += curl speedtest-cli zlib
 obj-$(CONFIG_RADAUTH) += radauth
