@@ -564,7 +564,11 @@ bool dir_is_empty(struct inode *dir)
 const struct file_operations ntfs_dir_operations = {
 	.llseek = generic_file_llseek,
 	.read = generic_read_dir,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+	.iterate = ntfs_readdir,
+#else
 	.iterate_shared = ntfs_readdir,
+#endif
 	.fsync = ntfs_file_fsync,
 	.open = ntfs_file_open,
 };
