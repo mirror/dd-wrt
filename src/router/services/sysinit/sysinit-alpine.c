@@ -290,7 +290,7 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "wlan0");
 	nvram_set("wl1_ifname", "wlan1");
-	nvram_set("clkfreq","2000");
+	nvram_set("clkfreq","1700");
 }
 
 void start_resetleds(void)
