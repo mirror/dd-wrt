@@ -25,15 +25,15 @@ CROSS_COMPILE   = mipsel-linux-uclibc-
 # Include the make variables (CC, etc...)
 #
 
-AS		= /opt/10.1.0/bin/$(CROSS_COMPILE)as
-LD		= /opt/10.1.0/bin/$(CROSS_COMPILE)ld
-CC		= /opt/10.1.0/bin/$(CROSS_COMPILE)gcc
+AS		= /opt/10.2.0/bin/$(CROSS_COMPILE)as
+LD		= /opt/10.2.0/bin/$(CROSS_COMPILE)ld
+CC		= /opt/10.2.0/bin/$(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
-AR		= /opt/10.1.0/bin/$(CROSS_COMPILE)ar
-NM		= /opt/10.1.0/bin/$(CROSS_COMPILE)nm
-STRIP		= /opt/10.1.0/bin/$(CROSS_COMPILE)strip
-OBJCOPY		= /opt/10.1.0/bin/$(CROSS_COMPILE)objcopy
-OBJDUMP		= /opt/10.1.0/bin/$(CROSS_COMPILE)objdump
+AR		= /opt/10.2.0/bin/$(CROSS_COMPILE)ar
+NM		= /opt/10.2.0/bin/$(CROSS_COMPILE)nm
+STRIP		= /opt/10.2.0/bin/$(CROSS_COMPILE)strip
+OBJCOPY		= /opt/10.2.0/bin/$(CROSS_COMPILE)objcopy
+OBJDUMP		= /opt/10.2.0/bin/$(CROSS_COMPILE)objdump
 MAKEFILES	= $(TOPDIR)/.config
 GENKSYMS	= /sbin/genksyms
 DEPMOD		= /sbin/depmod

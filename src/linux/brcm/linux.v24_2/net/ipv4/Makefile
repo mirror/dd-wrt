@@ -12,7 +12,7 @@
 
 O_TARGET := ipv4.o
 
-export-objs = ipip.o ip_gre.o
+export-objs = ipip.o ip_gre.o arp.o
 
 obj-y     := utils.o route.o inetpeer.o proc.o protocol.o \
 	     ip_input.o ip_fragment.o ip_forward.o ip_options.o \
