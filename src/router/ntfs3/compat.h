@@ -54,4 +54,7 @@ extern void __bitmap_clear(unsigned long *map, unsigned int start, int len);
 #define compat_submit_bio(bio) submit_bio(WRITE, bio)
 #define compat_submit_bio_wait(bio) submit_bio_wait(WRITE, bio)
 #define current_time(inode) CURRENT_TIME_SEC
+#else
+#define compat_submit_bio(bio) submit_bio(bio)
+#define compat_submit_bio_wait(bio) submit_bio_wait(bio)
 #endif
