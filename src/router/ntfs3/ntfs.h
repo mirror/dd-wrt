@@ -76,6 +76,7 @@ static_assert(sizeof(size_t) == 8);
 typedef u32 CLST;
 #endif
 
+#define SPARSE_LCN64   ((u64)-1)
 #define SPARSE_LCN     ((CLST)-1)
 #define RESIDENT_LCN   ((CLST)-2)
 #define COMPRESSED_LCN ((CLST)-3)

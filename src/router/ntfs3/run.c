@@ -386,7 +386,7 @@ requires_new_range:
 
 			WARN_ON(!is_mft && bytes > NTFS3_RUN_MAX_BYTES);
 
-			new_ptr = ntfs_alloc(bytes, 0);
+			new_ptr = ntfs_malloc(bytes);
 
 			if (!new_ptr)
 				return false;
@@ -575,12 +575,12 @@ bool run_get_entry(const struct runs_tree *run, size_t index, CLST *vcn,
  *
  * calculates the size of packed int64
  */
-static inline int run_packed_size(const s64 *n)
-{
 #ifdef __BIG_ENDIAN
-	const u8 *p = (const u8 *)n + sizeof(*n) - 1;
+static inline int run_packed_size(const s64 n)
+{
+	const u8 *p = (const u8 *)&n + sizeof(n) - 1;
 
-	if (*n >= 0) {
+	if (n >= 0) {
 		if (p[-7] || p[-6] || p[-5] || p[-4])
 			p -= 4;
 		if (p[-3] || p[-2])
@@ -600,11 +600,81 @@ static inline int run_packed_size(const s64 *n)
 		if (!(p[0] & 0x80))
 			p -= 1;
 	}
-	return (const u8 *)n + sizeof(*n) - p;
-#else
-	const u8 *p = (const u8 *)n;
+	return (const u8 *)n + sizeof(n) - p;
+}
 
-	if (*n >= 0) {
+/* full trusted function. It does not check 'size' for errors */
+static inline void run_pack_s64(u8 *run_buf, u8 size, s64 v)
+{
+	const u8 *p = (u8 *)&v;
+
+	switch (size) {
+	case 8:
+		run_buf[7] = p[0];
+		fallthrough;
+	case 7:
+		run_buf[6] = p[1];
+		fallthrough;
+	case 6:
+		run_buf[5] = p[2];
+		fallthrough;
+	case 5:
+		run_buf[4] = p[3];
+		fallthrough;
+	case 4:
+		run_buf[3] = p[4];
+		fallthrough;
+	case 3:
+		run_buf[2] = p[5];
+		fallthrough;
+	case 2:
+		run_buf[1] = p[6];
+		fallthrough;
+	case 1:
+		run_buf[0] = p[7];
+	}
+}
+
+/* full trusted function. It does not check 'size' for errors */
+static inline s64 run_unpack_s64(const u8 *run_buf, u8 size, s64 v)
+{
+	u8 *p = (u8 *)&v;
+
+	switch (size) {
+	case 8:
+		p[0] = run_buf[7];
+		fallthrough;
+	case 7:
+		p[1] = run_buf[6];
+		fallthrough;
+	case 6:
+		p[2] = run_buf[5];
+		fallthrough;
+	case 5:
+		p[3] = run_buf[4];
+		fallthrough;
+	case 4:
+		p[4] = run_buf[3];
+		fallthrough;
+	case 3:
+		p[5] = run_buf[2];
+		fallthrough;
+	case 2:
+		p[6] = run_buf[1];
+		fallthrough;
+	case 1:
+		p[7] = run_buf[0];
+	}
+	return v;
+}
+
+#else
+
+static inline int run_packed_size(const s64 n)
+{
+	const u8 *p = (const u8 *)&n;
+
+	if (n >= 0) {
 		if (p[7] || p[6] || p[5] || p[4])
 			p += 4;
 		if (p[3] || p[2])
@@ -625,9 +695,76 @@ static inline int run_packed_size(const s64 *n)
 			p += 1;
 	}
 
-	return 1 + p - (const u8 *)n;
-#endif
+	return 1 + p - (const u8 *)&n;
 }
+
+/* full trusted function. It does not check 'size' for errors */
+static inline void run_pack_s64(u8 *run_buf, u8 size, s64 v)
+{
+	const u8 *p = (u8 *)&v;
+
+	/* memcpy( run_buf, &v, size); is it faster? */
+	switch (size) {
+	case 8:
+		run_buf[7] = p[7];
+		fallthrough;
+	case 7:
+		run_buf[6] = p[6];
+		fallthrough;
+	case 6:
+		run_buf[5] = p[5];
+		fallthrough;
+	case 5:
+		run_buf[4] = p[4];
+		fallthrough;
+	case 4:
+		run_buf[3] = p[3];
+		fallthrough;
+	case 3:
+		run_buf[2] = p[2];
+		fallthrough;
+	case 2:
+		run_buf[1] = p[1];
+		fallthrough;
+	case 1:
+		run_buf[0] = p[0];
+	}
+}
+
+/* full trusted function. It does not check 'size' for errors */
+static inline s64 run_unpack_s64(const u8 *run_buf, u8 size, s64 v)
+{
+	u8 *p = (u8 *)&v;
+
+	/* memcpy( &v, run_buf, size); is it faster? */
+	switch (size) {
+	case 8:
+		p[7] = run_buf[7];
+		fallthrough;
+	case 7:
+		p[6] = run_buf[6];
+		fallthrough;
+	case 6:
+		p[5] = run_buf[5];
+		fallthrough;
+	case 5:
+		p[4] = run_buf[4];
+		fallthrough;
+	case 4:
+		p[3] = run_buf[3];
+		fallthrough;
+	case 3:
+		p[2] = run_buf[2];
+		fallthrough;
+	case 2:
+		p[1] = run_buf[1];
+		fallthrough;
+	case 1:
+		p[0] = run_buf[0];
+	}
+	return v;
+}
+#endif
 
 /*
  * run_pack
@@ -645,9 +782,8 @@ int run_pack(const struct runs_tree *run, CLST svcn, CLST len, u8 *run_buf,
 	int packed_size = 0;
 	size_t i;
 	bool ok;
-	s64 dlcn, len64;
-	int offset_size, size_size, t;
-	const u8 *p;
+	s64 dlcn;
+	int offset_size, size_size, tmp;
 
 	next_vcn = vcn = svcn;
 
@@ -665,156 +801,43 @@ int run_pack(const struct runs_tree *run, CLST svcn, CLST len, u8 *run_buf,
 		goto error;
 
 	for (;;) {
-		/* offset of current fragment relatively to previous fragment */
-		dlcn = 0;
 		next_vcn = vcn + len;
-
 		if (next_vcn > evcn1)
 			len = evcn1 - vcn;
 
-		/*
-		 * mirror of len, but signed, because run_packed_size()
-		 * works with signed int only
-		 */
-		len64 = len;
-
-		/* how much bytes is packed len64 */
-		size_size = run_packed_size(&len64);
+		/* how much bytes required to pack len */
+		size_size = run_packed_size(len);
 
 		/* offset_size - how much bytes is packed dlcn */
 		if (lcn == SPARSE_LCN) {
 			offset_size = 0;
+			dlcn = 0;
 		} else {
 			/* NOTE: lcn can be less than prev_lcn! */
 			dlcn = (s64)lcn - prev_lcn;
-			offset_size = run_packed_size(&dlcn);
+			offset_size = run_packed_size(dlcn);
 			prev_lcn = lcn;
 		}
 
-		t = run_buf_size - packed_size - 2 - offset_size;
-		if (t <= 0)
+		tmp = run_buf_size - packed_size - 2 - offset_size;
+		if (tmp <= 0)
 			goto out;
 
 		/* can we store this entire run */
-		if (t < size_size)
+		if (tmp < size_size)
 			goto out;
 
 		if (run_buf) {
-			p = (u8 *)&len64;
-
 			/* pack run header */
 			run_buf[0] = ((u8)(size_size | (offset_size << 4)));
 			run_buf += 1;
 
 			/* Pack the length of run */
-			switch (size_size) {
-#ifdef __BIG_ENDIAN
-			case 8:
-				run_buf[7] = p[0];
-				fallthrough;
-			case 7:
-				run_buf[6] = p[1];
-				fallthrough;
-			case 6:
-				run_buf[5] = p[2];
-				fallthrough;
-			case 5:
-				run_buf[4] = p[3];
-				fallthrough;
-			case 4:
-				run_buf[3] = p[4];
-				fallthrough;
-			case 3:
-				run_buf[2] = p[5];
-				fallthrough;
-			case 2:
-				run_buf[1] = p[6];
-				fallthrough;
-			case 1:
-				run_buf[0] = p[7];
-#else
-			case 8:
-				run_buf[7] = p[7];
-				fallthrough;
-			case 7:
-				run_buf[6] = p[6];
-				fallthrough;
-			case 6:
-				run_buf[5] = p[5];
-				fallthrough;
-			case 5:
-				run_buf[4] = p[4];
-				fallthrough;
-			case 4:
-				run_buf[3] = p[3];
-				fallthrough;
-			case 3:
-				run_buf[2] = p[2];
-				fallthrough;
-			case 2:
-				run_buf[1] = p[1];
-				fallthrough;
-			case 1:
-				run_buf[0] = p[0];
-#endif
-			}
+			run_pack_s64(run_buf, size_size, len);
 
 			run_buf += size_size;
-			p = (u8 *)&dlcn;
-
 			/* Pack the offset from previous lcn */
-			switch (offset_size) {
-#ifdef __BIG_ENDIAN
-			case 8:
-				run_buf[7] = p[0];
-				fallthrough;
-			case 7:
-				run_buf[6] = p[1];
-				fallthrough;
-			case 6:
-				run_buf[5] = p[2];
-				fallthrough;
-			case 5:
-				run_buf[4] = p[3];
-				fallthrough;
-			case 4:
-				run_buf[3] = p[4];
-				fallthrough;
-			case 3:
-				run_buf[2] = p[5];
-				fallthrough;
-			case 2:
-				run_buf[1] = p[6];
-				fallthrough;
-			case 1:
-				run_buf[0] = p[7];
-#else
-			case 8:
-				run_buf[7] = p[7];
-				fallthrough;
-			case 7:
-				run_buf[6] = p[6];
-				fallthrough;
-			case 6:
-				run_buf[5] = p[5];
-				fallthrough;
-			case 5:
-				run_buf[4] = p[4];
-				fallthrough;
-			case 4:
-				run_buf[3] = p[3];
-				fallthrough;
-			case 3:
-				run_buf[2] = p[2];
-				fallthrough;
-			case 2:
-				run_buf[1] = p[1];
-				fallthrough;
-			case 1:
-				run_buf[0] = p[0];
-#endif
-			}
-
+			run_pack_s64(run_buf, offset_size, dlcn);
 			run_buf += offset_size;
 		}
 
@@ -876,9 +899,7 @@ int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 		u8 size_size = *run_buf & 0xF;
 		/* offset_size - how much bytes is packed dlcn */
 		u8 offset_size = *run_buf++ >> 4;
-		u64 len = 0;
-		u8 *p = (u8 *)&len;
-		s64 dlcn;
+		u64 len;
 
 		if (!size_size)
 			break;
@@ -890,156 +911,60 @@ int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 		 * Large positive number requires to store 5 bytes
 		 * e.g.: 05 FF 7E FF FF 00 00 00
 		 */
-
-		switch (size_size) {
-		default:
-error:
+		if (size_size > 8)
 			return -EINVAL;
 
-#ifdef __BIG_ENDIAN
-		case 8:
-			p[0] = run_buf[7];
-			fallthrough;
-		case 7:
-			p[1] = run_buf[6];
-			fallthrough;
-		case 6:
-			p[2] = run_buf[5];
-			fallthrough;
-		case 5:
-			p[3] = run_buf[4];
-			fallthrough;
-		case 4:
-			p[4] = run_buf[3];
-			fallthrough;
-		case 3:
-			p[5] = run_buf[2];
-			fallthrough;
-		case 2:
-			p[6] = run_buf[1];
-			fallthrough;
-		case 1:
-			p[7] = run_buf[0];
-#else
-		case 8:
-			p[7] = run_buf[7];
-			fallthrough;
-		case 7:
-			p[6] = run_buf[6];
-			fallthrough;
-		case 6:
-			p[5] = run_buf[5];
-			fallthrough;
-		case 5:
-			p[4] = run_buf[4];
-			fallthrough;
-		case 4:
-			p[3] = run_buf[3];
-			fallthrough;
-		case 3:
-			p[2] = run_buf[2];
-			fallthrough;
-		case 2:
-			p[1] = run_buf[1];
-			fallthrough;
-		case 1:
-			p[0] = run_buf[0];
-#endif
-		}
-
+		len = run_unpack_s64(run_buf, size_size, 0);
 		/* skip size_size */
 		run_buf += size_size;
 
 		if (!len)
-			goto error;
+			return -EINVAL;
 
-		if (!offset_size) {
-			lcn = SPARSE_LCN;
-		} else {
-			/* Check sign */
+		if (!offset_size)
+			lcn = SPARSE_LCN64;
+		else if (offset_size <= 8) {
+			s64 dlcn;
+
+			/* initial value of dlcn is -1 or 0 */
 			dlcn = (run_buf[offset_size - 1] & 0x80) ? (s64)-1 : 0;
-
-			p = (u8 *)&dlcn;
-
-			switch (offset_size) {
-			default:
-				goto error;
-
-#ifdef __BIG_ENDIAN
-			case 8:
-				p[0] = run_buf[7];
-				fallthrough;
-			case 7:
-				p[1] = run_buf[6];
-				fallthrough;
-			case 6:
-				p[2] = run_buf[5];
-				fallthrough;
-			case 5:
-				p[3] = run_buf[4];
-				fallthrough;
-			case 4:
-				p[4] = run_buf[3];
-				fallthrough;
-			case 3:
-				p[5] = run_buf[2];
-				fallthrough;
-			case 2:
-				p[6] = run_buf[1];
-				fallthrough;
-			case 1:
-				p[7] = run_buf[0];
-#else
-			case 8:
-				p[7] = run_buf[7];
-				fallthrough;
-			case 7:
-				p[6] = run_buf[6];
-				fallthrough;
-			case 6:
-				p[5] = run_buf[5];
-				fallthrough;
-			case 5:
-				p[4] = run_buf[4];
-				fallthrough;
-			case 4:
-				p[3] = run_buf[3];
-				fallthrough;
-			case 3:
-				p[2] = run_buf[2];
-				fallthrough;
-			case 2:
-				p[1] = run_buf[1];
-				fallthrough;
-			case 1:
-				p[0] = run_buf[0];
-#endif
-			}
-
+			dlcn = run_unpack_s64(run_buf, offset_size, dlcn);
 			/* skip offset_size */
 			run_buf += offset_size;
+
+			if (!dlcn)
+				return -EINVAL;
 			lcn = prev_lcn + dlcn;
 			prev_lcn = lcn;
-		}
+		} else
+			return -EINVAL;
 
 		next_vcn = vcn64 + len;
 		/* check boundary */
 		if (next_vcn > evcn + 1)
-			goto error;
+			return -EINVAL;
 
 #ifndef NTFS3_64BIT_CLUSTER
-		if ((vcn64 >> 32)
-		    /* 0xffffffffffffffff is a valid 'lcn' */
-		    || (lcn + 1) > 0x100000000ull || (len >> 32)) {
-			goto error;
+		if (next_vcn > 0x100000000ull || (lcn + len) > 0x100000000ull) {
+			ntfs_err(
+				sbi->sb,
+				"This driver is compiled whitout NTFS3_64BIT_CLUSTER (like windows driver).\n"
+				"Volume contains 64 bits run: vcn %llx, lcn %llx, len %llx.\n"
+				"Activate NTFS3_64BIT_CLUSTER to process this case",
+				vcn64, lcn, len);
+			return -EOPNOTSUPP;
 		}
 #endif
+		if (lcn != SPARSE_LCN64 && lcn + len > sbi->used.bitmap.nbits) {
+			/* lcn range is out of volume */
+			return -EINVAL;
+		}
 
 		if (!run)
 			; /* called from check_attr(fslog.c) to check run */
 		else if (run == RUN_DEALLOCATE) {
 			/* called from ni_delete_all to free clusters without storing in run */
-			if (lcn != SPARSE_LCN)
+			if (lcn != SPARSE_LCN64)
 				mark_as_free_ex(sbi, lcn, len, true);
 		} else if (vcn64 >= vcn) {
 			if (!run_add_entry(run, vcn64, lcn, len, is_mft))
@@ -1052,17 +977,15 @@ error:
 				return -ENOMEM;
 		}
 
-		if (lcn != SPARSE_LCN && lcn + len > sbi->used.bitmap.nbits)
-			return -EINVAL;
-
 		vcn64 = next_vcn;
 	}
 
-	/* Check vcn consistency */
-	if (vcn64 == evcn + 1)
-		return run_buf - run_0;
+	if (vcn64 != evcn + 1) {
+		/* not expected length of unpacked runs */
+		return -EINVAL;
+	}
 
-	return -EINVAL;
+	return run_buf - run_0;
 }
 
 #ifdef NTFS3_CHECK_FREE_CLST
@@ -1169,84 +1092,27 @@ next:
  */
 int run_get_highest_vcn(CLST vcn, const u8 *run_buf, u64 *highest_vcn)
 {
-	const u8 *run = run_buf;
 	u64 vcn64 = vcn;
 	u8 size_size;
 
-	while ((size_size = *run & 0xF)) {
-		u8 offset_size = *run++ >> 4;
-		u64 len = 0;
-		u8 *p = (u8 *)&len;
+	while ((size_size = *run_buf & 0xF)) {
+		u8 offset_size = *run_buf++ >> 4;
+		u64 len;
 
-		switch (size_size) {
-		default:
-error:
+		if (size_size > 8 || offset_size > 8)
 			return -EINVAL;
 
-#ifdef __BIG_ENDIAN
-		case 8:
-			p[0] = run[7];
-			fallthrough;
-		case 7:
-			p[1] = run[6];
-			fallthrough;
-		case 6:
-			p[2] = run[5];
-			fallthrough;
-		case 5:
-			p[3] = run[4];
-			fallthrough;
-		case 4:
-			p[4] = run[3];
-			fallthrough;
-		case 3:
-			p[5] = run[2];
-			fallthrough;
-		case 2:
-			p[6] = run[1];
-			fallthrough;
-		case 1:
-			p[7] = run[0];
-#else
-		case 8:
-			p[7] = run[7];
-			fallthrough;
-		case 7:
-			p[6] = run[6];
-			fallthrough;
-		case 6:
-			p[5] = run[5];
-			fallthrough;
-		case 5:
-			p[4] = run[4];
-			fallthrough;
-		case 4:
-			p[3] = run[3];
-			fallthrough;
-		case 3:
-			p[2] = run[2];
-			fallthrough;
-		case 2:
-			p[1] = run[1];
-			fallthrough;
-		case 1:
-			p[0] = run[0];
-#endif
-		}
-
-		/* skip size_size */
-		run += size_size;
-
+		len = run_unpack_s64(run_buf, size_size, 0);
 		if (!len)
-			goto error;
+			return -EINVAL;
 
-		run += offset_size;
-
-#ifdef NTFS3_64BIT_CLUSTER
-		if ((vcn >> 32) || (len >> 32))
-			goto error;
-#endif
+		run_buf += size_size + offset_size;
 		vcn64 += len;
+
+#ifndef NTFS3_64BIT_CLUSTER
+		if (vcn64 > 0x100000000ull)
+			return -EINVAL;
+#endif
 	}
 
 	*highest_vcn = vcn64 - 1;

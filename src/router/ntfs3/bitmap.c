@@ -326,7 +326,7 @@ static void wnd_add_free_ext(struct wnd_bitmap *wnd, size_t bit, size_t len,
 		rb_erase(&e->count.node, &wnd->count_tree);
 		wnd->count -= 1;
 	} else {
-		e = e0 ? e0 : ntfs_alloc(sizeof(struct e_node), 0);
+		e = e0 ? e0 : ntfs_malloc(sizeof(struct e_node));
 		if (!e) {
 			wnd->uptodated = -1;
 			goto out;
@@ -466,7 +466,7 @@ static void wnd_remove_free_ext(struct wnd_bitmap *wnd, size_t bit, size_t len)
 		rb_erase(&e->count.node, &wnd->count_tree);
 		wnd->count -= 1;
 	} else {
-		e = ntfs_alloc(sizeof(struct e_node), 0);
+		e = ntfs_malloc(sizeof(struct e_node));
 		if (!e)
 			wnd->uptodated = -1;
 	}
@@ -536,14 +536,16 @@ static int wnd_rescan(struct wnd_bitmap *wnd)
 		}
 
 		if (!len) {
+			u32 off = vbo & sbi->cluster_mask;
+
 			if (!run_lookup_entry(&wnd->run, vbo >> cluster_bits,
 					      &lcn, &clen, NULL)) {
 				err = -ENOENT;
 				goto out;
 			}
 
-			lbo = (u64)lcn << cluster_bits;
-			len = (u64)clen << cluster_bits;
+			lbo = ((u64)lcn << cluster_bits) + off;
+			len = ((u64)clen << cluster_bits) - off;
 		}
 
 		bh = ntfs_bread(sb, lbo >> sb->s_blocksize_bits);
@@ -661,7 +663,7 @@ int wnd_init(struct wnd_bitmap *wnd, struct super_block *sb, size_t nbits)
 	if (wnd->nwnd <= ARRAY_SIZE(wnd->free_holder)) {
 		wnd->free_bits = wnd->free_holder;
 	} else {
-		wnd->free_bits = ntfs_alloc(wnd->nwnd * sizeof(u16), 1);
+		wnd->free_bits = ntfs_zalloc(wnd->nwnd * sizeof(u16));
 		if (!wnd->free_bits)
 			return -ENOMEM;
 	}
@@ -1336,7 +1338,7 @@ int wnd_extend(struct wnd_bitmap *wnd, size_t new_bits)
 		if (new_wnd <= ARRAY_SIZE(wnd->free_holder)) {
 			new_free = wnd->free_holder;
 		} else {
-			new_free = ntfs_alloc(new_wnd * sizeof(u16), 0);
+			new_free = ntfs_malloc(new_wnd * sizeof(u16));
 			if (!new_free)
 				return -ENOMEM;
 		}

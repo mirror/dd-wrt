@@ -509,7 +509,7 @@ ntfs_atomic_open(struct inode *dir, struct dentry *dentry,
 	ni_lock_dir(ni);
 
 	if (d_in_lookup(dentry)) {
-		fnd = fnd_get(&ntfs_i(dir)->dir);
+		fnd = fnd_get();
 		if (!fnd) {
 			err = -ENOMEM;
 			goto out1;

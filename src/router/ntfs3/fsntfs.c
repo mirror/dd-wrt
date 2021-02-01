@@ -307,7 +307,6 @@ int ntfs_loadlog_and_replay(struct ntfs_inode *ni, struct ntfs_sb_info *sbi)
 	sync_blockdev(sb->s_bdev);
 	invalidate_bdev(sb->s_bdev);
 
-	/* reinit MFT */
 	if (sbi->flags & NTFS_FLAGS_NEED_REPLAY) {
 		err = 0;
 		goto out;
@@ -1108,11 +1107,11 @@ int ntfs_sb_write_run(struct ntfs_sb_info *sbi, const struct runs_tree *run,
 	struct super_block *sb = sbi->sb;
 	u8 cluster_bits = sbi->cluster_bits;
 	u32 off = vbo & sbi->cluster_mask;
-	CLST lcn, clen;
+	CLST lcn, clen, vcn = vbo >> cluster_bits, vcn_next;
 	u64 lbo, len;
 	size_t idx;
 
-	if (!run_lookup_entry(run, vbo >> cluster_bits, &lcn, &clen, &idx))
+	if (!run_lookup_entry(run, vcn, &lcn, &clen, &idx))
 		return -ENOENT;
 
 	if (lcn == SPARSE_LCN)
@@ -1132,7 +1131,9 @@ int ntfs_sb_write_run(struct ntfs_sb_info *sbi, const struct runs_tree *run,
 		if (!bytes)
 			break;
 
-		if (!run_get_entry(run, ++idx, NULL, &lcn, &clen))
+		vcn_next = vcn + clen;
+		if (!run_get_entry(run, ++idx, &vcn, &lcn, &clen) ||
+		    vcn != vcn_next)
 			return -ENOENT;
 
 		if (lcn == SPARSE_LCN)
@@ -1141,8 +1142,8 @@ int ntfs_sb_write_run(struct ntfs_sb_info *sbi, const struct runs_tree *run,
 		if (buf)
 			buf = Add2Ptr(buf, op);
 
-		lbo = ((u64)lcn << cluster_bits) + off;
-		len = ((u64)clen << cluster_bits) - off;
+		lbo = ((u64)lcn << cluster_bits);
+		len = ((u64)clen << cluster_bits);
 	}
 
 	return 0;
@@ -1173,6 +1174,7 @@ int ntfs_read_run_nb(struct ntfs_sb_info *sbi, const struct runs_tree *run,
 	u8 cluster_bits = sbi->cluster_bits;
 	u32 off = vbo & sbi->cluster_mask;
 	u32 nbh = 0;
+	CLST vcn_next, vcn = vbo >> cluster_bits;
 	CLST lcn, clen;
 	u64 lbo, len;
 	size_t idx;
@@ -1188,8 +1190,7 @@ int ntfs_read_run_nb(struct ntfs_sb_info *sbi, const struct runs_tree *run,
 		/* use absolute boot's 'MFTCluster' to read record */
 		lbo = vbo + sbi->mft.lbo;
 		len = sbi->record_size;
-	} else if (!run_lookup_entry(run, vbo >> cluster_bits, &lcn, &clen,
-				     &idx)) {
+	} else if (!run_lookup_entry(run, vcn, &lcn, &clen, &idx)) {
 		err = -ENOENT;
 		goto out;
 	} else {
@@ -1248,7 +1249,9 @@ int ntfs_read_run_nb(struct ntfs_sb_info *sbi, const struct runs_tree *run,
 
 		} while (len32);
 
-		if (!run_get_entry(run, ++idx, NULL, &lcn, &clen)) {
+		vcn_next = vcn + clen;
+		if (!run_get_entry(run, ++idx, &vcn, &lcn, &clen) ||
+		    vcn != vcn_next) {
 			err = -ENOENT;
 			goto out;
 		}
@@ -1294,6 +1297,7 @@ int ntfs_get_bh(struct ntfs_sb_info *sbi, const struct runs_tree *run, u64 vbo,
 	struct super_block *sb = sbi->sb;
 	u32 blocksize = sb->s_blocksize;
 	u8 cluster_bits = sbi->cluster_bits;
+	CLST vcn_next, vcn = vbo >> cluster_bits;
 	u32 off;
 	u32 nbh = 0;
 	CLST lcn, clen;
@@ -1302,7 +1306,7 @@ int ntfs_get_bh(struct ntfs_sb_info *sbi, const struct runs_tree *run, u64 vbo,
 
 	nb->bytes = bytes;
 
-	if (!run_lookup_entry(run, vbo >> cluster_bits, &lcn, &clen, &idx)) {
+	if (!run_lookup_entry(run, vcn, &lcn, &clen, &idx)) {
 		err = -ENOENT;
 		goto out;
 	}
@@ -1359,7 +1363,9 @@ int ntfs_get_bh(struct ntfs_sb_info *sbi, const struct runs_tree *run, u64 vbo,
 			off = 0;
 		} while (len32);
 
-		if (!run_get_entry(run, ++idx, NULL, &lcn, &clen)) {
+		vcn_next = vcn + clen;
+		if (!run_get_entry(run, ++idx, &vcn, &lcn, &clen) ||
+		    vcn != vcn_next) {
 			err = -ENOENT;
 			goto out;
 		}
@@ -1480,7 +1486,7 @@ int ntfs_bio_pages(struct ntfs_sb_info *sbi, const struct runs_tree *run,
 	struct block_device *bdev = sb->s_bdev;
 	struct page *page;
 	u8 cluster_bits = sbi->cluster_bits;
-	CLST lcn, clen, vcn;
+	CLST lcn, clen, vcn, vcn_next;
 	u32 add, off, page_idx;
 	u64 lbo, len;
 	size_t run_idx;
@@ -1550,7 +1556,9 @@ new_bio:
 			lbo += add;
 		}
 
-		if (!run_get_entry(run, ++run_idx, &vcn, &lcn, &clen)) {
+		vcn_next = vcn + clen;
+		if (!run_get_entry(run, ++run_idx, &vcn, &lcn, &clen) ||
+		    vcn != vcn_next) {
 			err = -ENOENT;
 			goto out;
 		}
@@ -1908,7 +1916,7 @@ int ntfs_security_init(struct ntfs_sb_info *sbi)
 	if (err)
 		goto out;
 
-	fnd_sii = fnd_get(indx_sii);
+	fnd_sii = fnd_get();
 	if (!fnd_sii) {
 		err = -ENOMEM;
 		goto out;
@@ -1977,7 +1985,7 @@ int ntfs_get_security_by_id(struct ntfs_sb_info *sbi, __le32 security_id,
 
 	mutex_lock_nested(&ni->ni_lock, NTFS_INODE_MUTEX_SECURITY);
 
-	fnd_sii = fnd_get(indx);
+	fnd_sii = fnd_get();
 	if (!fnd_sii) {
 		err = -ENOMEM;
 		goto out;
@@ -2014,7 +2022,7 @@ int ntfs_get_security_by_id(struct ntfs_sb_info *sbi, __le32 security_id,
 
 	*size = t32 - SIZEOF_SECURITY_HDR;
 
-	p = ntfs_alloc(*size, 0);
+	p = ntfs_malloc(*size);
 	if (!p) {
 		err = -ENOMEM;
 		goto out;
@@ -2094,13 +2102,13 @@ int ntfs_insert_security(struct ntfs_sb_info *sbi,
 	*security_id = SECURITY_ID_INVALID;
 
 	/* Allocate a temporal buffer*/
-	d_security = ntfs_alloc(aligned_sec_size, 1);
+	d_security = ntfs_zalloc(aligned_sec_size);
 	if (!d_security)
 		return -ENOMEM;
 
 	mutex_lock_nested(&ni->ni_lock, NTFS_INODE_MUTEX_SECURITY);
 
-	fnd_sdh = fnd_get(indx_sdh);
+	fnd_sdh = fnd_get();
 	if (!fnd_sdh) {
 		err = -ENOMEM;
 		goto out;
@@ -2416,7 +2424,7 @@ int ntfs_remove_reparse(struct ntfs_sb_info *sbi, __le32 rtag,
 		goto out1;
 	}
 
-	fnd = fnd_get(indx);
+	fnd = fnd_get();
 	if (!fnd) {
 		err = -ENOMEM;
 		goto out1;
