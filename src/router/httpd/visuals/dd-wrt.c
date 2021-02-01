@@ -184,8 +184,8 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 	char *oclk = nvram_safe_get("overclocking");
 #if defined(HAVE_ALPINE)
 	if (!*oclk) {
-	    oclk = "2000";
-	    nvram_set("clkfreq","2000");
+	    oclk = "1700";
+	    nvram_set("clkfreq","1700");
 	}
 	c = alpine_clocks;
 #elif defined(HAVE_NORTHSTAR)
