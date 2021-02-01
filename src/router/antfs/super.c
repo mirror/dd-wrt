@@ -405,7 +405,7 @@ static int antfs_fill_super(struct super_block *sb, void *data, int silent)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0)
 	sb->s_flags &= ~MS_NOSEC;
 #endif
-	sb->s_flags |= MS_POSIXACL;
+	sb->s_flags |= MS_POSIXACL | MS_NOATIME | MS_NODIRATIME;
 
 	/* TODO: something to think about: do we set sb->s_max_links? */
 	sb->s_maxbytes = MAX_LFS_FILESIZE;
