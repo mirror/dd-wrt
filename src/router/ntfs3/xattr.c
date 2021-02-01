@@ -107,7 +107,7 @@ static int ntfs_read_ea(struct ntfs_inode *ni, struct EA_FULL **ea,
 		return -EINVAL;
 
 	/* Allocate memory for packed Ea */
-	ea_p = ntfs_alloc(size + add_bytes, 0);
+	ea_p = ntfs_malloc(size + add_bytes);
 	if (!ea_p)
 		return -ENOMEM;
 
@@ -355,7 +355,7 @@ static noinline int ntfs_set_ea(struct inode *inode, const char *name,
 		}
 
 		if (!ea_all) {
-			ea_all = ntfs_alloc(add, 1);
+			ea_all = ntfs_zalloc(add);
 			if (!ea_all) {
 				err = -ENOMEM;
 				goto out;
@@ -581,7 +581,7 @@ static noinline int ntfs_set_acl_ex(struct inode *inode, struct posix_acl *acl,
 		goto out;
 
 	size = posix_acl_xattr_size(acl->a_count);
-	value = ntfs_alloc(size, 0);
+	value = ntfs_malloc(size);
 	if (!value)
 		return -ENOMEM;
 

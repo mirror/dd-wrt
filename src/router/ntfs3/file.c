@@ -352,14 +352,6 @@ out:
 	return err;
 }
 
-/*
- * file_operations::fsync
- */
-int ntfs_file_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
-{
-	return generic_file_fsync(filp, start, end, datasync);
-}
-
 static int ntfs_extend(struct inode *inode, loff_t pos, size_t count,
 		       struct file *file)
 {
@@ -806,7 +798,7 @@ static ssize_t ntfs_compress_write(struct kiocb *iocb, struct iov_iter *from)
 		return -EOPNOTSUPP;
 	}
 
-	pages = ntfs_alloc(pages_per_frame * sizeof(struct page *), 0);
+	pages = ntfs_malloc(pages_per_frame * sizeof(struct page *));
 	if (!pages)
 		return -ENOMEM;
 
@@ -1156,7 +1148,7 @@ const struct file_operations ntfs_file_operations = {
 	.splice_read = generic_file_splice_read,
 	.mmap = ntfs_file_mmap,
 	.open = ntfs_file_open,
-	.fsync = ntfs_file_fsync,
+	.fsync = generic_file_fsync,
 	.splice_write = iter_file_splice_write,
 	.fallocate = ntfs_fallocate,
 	.release = ntfs_file_release,

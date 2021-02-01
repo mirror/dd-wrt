@@ -129,7 +129,7 @@ static int run_deallocate_ex(struct ntfs_sb_info *sbi, struct runs_tree *run,
 			     CLST vcn, CLST len, CLST *done, bool trim)
 {
 	int err = 0;
-	CLST vcn0 = vcn, lcn, clen, dn = 0;
+	CLST vcn_next, vcn0 = vcn, lcn, clen, dn = 0;
 	size_t idx;
 
 	if (!len)
@@ -160,7 +160,9 @@ failed:
 		if (!len)
 			break;
 
-		if (!run_get_entry(run, ++idx, &vcn, &lcn, &clen)) {
+		vcn_next = vcn + clen;
+		if (!run_get_entry(run, ++idx, &vcn, &lcn, &clen) ||
+		    vcn != vcn_next) {
 			// save memory - don't load entire run
 			goto failed;
 		}
@@ -1179,12 +1181,12 @@ int attr_load_runs_vcn(struct ntfs_inode *ni, enum ATTR_TYPE type,
 	return 0;
 }
 
-#ifdef CONFIG_NTFS3_LZX_XPRESS
 /*
  * load runs for given range [from to)
  */
-int attr_wof_load_runs_range(struct ntfs_inode *ni, struct runs_tree *run,
-			     u64 from, u64 to)
+int attr_load_runs_range(struct ntfs_inode *ni, enum ATTR_TYPE type,
+			 const __le16 *name, u8 name_len, struct runs_tree *run,
+			 u64 from, u64 to)
 {
 	struct ntfs_sb_info *sbi = ni->mi.sbi;
 	u8 cluster_bits = sbi->cluster_bits;
@@ -1195,8 +1197,7 @@ int attr_wof_load_runs_range(struct ntfs_inode *ni, struct runs_tree *run,
 
 	for (vcn = from >> cluster_bits; vcn <= vcn_last; vcn += clen) {
 		if (!run_lookup_entry(run, vcn, &lcn, &clen, NULL)) {
-			err = attr_load_runs_vcn(ni, ATTR_DATA, WOF_NAME,
-						 ARRAY_SIZE(WOF_NAME), run,
+			err = attr_load_runs_vcn(ni, type, name, name_len, run,
 						 vcn);
 			if (err)
 				return err;
@@ -1207,6 +1208,7 @@ int attr_wof_load_runs_range(struct ntfs_inode *ni, struct runs_tree *run,
 	return 0;
 }
 
+#ifdef CONFIG_NTFS3_LZX_XPRESS
 /*
  * attr_wof_frame_info
  *
@@ -1297,7 +1299,9 @@ int attr_wof_frame_info(struct ntfs_inode *ni, struct ATTRIB *attr,
 			u64 from = vbo[i] & ~(u64)(PAGE_SIZE - 1);
 			u64 to = min(from + PAGE_SIZE, wof_size);
 
-			err = attr_wof_load_runs_range(ni, run, from, to);
+			err = attr_load_runs_range(ni, ATTR_DATA, WOF_NAME,
+						   ARRAY_SIZE(WOF_NAME), run,
+						   from, to);
 			if (err)
 				goto out1;
 
@@ -1362,7 +1366,7 @@ int attr_is_frame_compressed(struct ntfs_inode *ni, struct ATTRIB *attr,
 {
 	int err;
 	u32 clst_frame;
-	CLST len, lcn, vcn, alen, slen, vcn1;
+	CLST clen, lcn, vcn, alen, slen, vcn_next;
 	size_t idx;
 	struct runs_tree *run;
 
@@ -1378,14 +1382,14 @@ int attr_is_frame_compressed(struct ntfs_inode *ni, struct ATTRIB *attr,
 	vcn = frame * clst_frame;
 	run = &ni->file.run;
 
-	if (!run_lookup_entry(run, vcn, &lcn, &len, &idx)) {
+	if (!run_lookup_entry(run, vcn, &lcn, &clen, &idx)) {
 		err = attr_load_runs_vcn(ni, attr->type, attr_name(attr),
 					 attr->name_len, run, vcn);
 		if (err)
 			return err;
 
-		if (!run_lookup_entry(run, vcn, &lcn, &len, &idx))
-			return -ENOENT;
+		if (!run_lookup_entry(run, vcn, &lcn, &clen, &idx))
+			return -EINVAL;
 	}
 
 	if (lcn == SPARSE_LCN) {
@@ -1393,7 +1397,7 @@ int attr_is_frame_compressed(struct ntfs_inode *ni, struct ATTRIB *attr,
 		return 0;
 	}
 
-	if (len >= clst_frame) {
+	if (clen >= clst_frame) {
 		/*
 		 * The frame is not compressed 'cause
 		 * it does not contain any sparse clusters
@@ -1404,30 +1408,30 @@ int attr_is_frame_compressed(struct ntfs_inode *ni, struct ATTRIB *attr,
 
 	alen = bytes_to_cluster(ni->mi.sbi, le64_to_cpu(attr->nres.alloc_size));
 	slen = 0;
-	*clst_data = len;
+	*clst_data = clen;
 
 	/*
 	 * The frame is compressed if *clst_data + slen >= clst_frame
 	 * Check next fragments
 	 */
-	while ((vcn += len) < alen) {
-		vcn1 = vcn;
+	while ((vcn += clen) < alen) {
+		vcn_next = vcn;
 
-		if (!run_get_entry(run, ++idx, &vcn, &lcn, &len) ||
-		    vcn1 != vcn) {
+		if (!run_get_entry(run, ++idx, &vcn, &lcn, &clen) ||
+		    vcn_next != vcn) {
 			err = attr_load_runs_vcn(ni, attr->type,
 						 attr_name(attr),
-						 attr->name_len, run, vcn1);
+						 attr->name_len, run, vcn_next);
 			if (err)
 				return err;
-			vcn = vcn1;
+			vcn = vcn_next;
 
-			if (!run_lookup_entry(run, vcn, &lcn, &len, &idx))
-				return -ENOENT;
+			if (!run_lookup_entry(run, vcn, &lcn, &clen, &idx))
+				return -EINVAL;
 		}
 
 		if (lcn == SPARSE_LCN) {
-			slen += len;
+			slen += clen;
 		} else {
 			if (slen) {
 				/*
@@ -1436,7 +1440,7 @@ int attr_is_frame_compressed(struct ntfs_inode *ni, struct ATTRIB *attr,
 				 */
 				return -EINVAL;
 			}
-			*clst_data += len;
+			*clst_data += clen;
 		}
 
 		if (*clst_data + slen >= clst_frame) {

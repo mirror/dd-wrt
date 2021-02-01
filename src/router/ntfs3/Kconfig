@@ -27,10 +27,11 @@ config NTFS3_LZX_XPRESS
 	depends on NTFS3_FS
 	help
 	  In Windows 10 one can use command "compact" to compress any files.
-	  4 possible variants of compression are: xpress4k, xpress8k, xpress16 and lzx.
-	  To read such "compacted" files say Y here.
+	  4 possible variants of compression are: xpress4k, xpress8k, xpress16k and lzx.
 
-config NTFS3_POSIX_ACL
+	  It is recommended to say Y here.
+
+config NTFS3_FS_POSIX_ACL
 	bool "NTFS POSIX Access Control Lists"
 	depends on NTFS3_FS
 	select FS_POSIX_ACL
@@ -39,3 +40,6 @@ config NTFS3_POSIX_ACL
 	  for users and groups beyond the standard owner/group/world scheme,
 	  and this option selects support for ACLs specifically for ntfs
 	  filesystems.
+	  NOTE: this is linux only feature. Windows will ignore these ACLs.
+
+	  If you don't know what Access Control Lists are, say N

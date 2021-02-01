@@ -75,13 +75,14 @@ int ntfs_utf16_to_nls(struct ntfs_sb_info *sbi, const struct le_str *uni,
 #define SURROGATE_PAIR	0x0000d800
 #define SURROGATE_LOW	0x00000400
 #define SURROGATE_BITS	0x000003ff
-// clang-format off
+// clang-format on
 
 /*
  * modified version of put_utf16 from fs/nls/nls_base.c
  * is sparse warnings free
  */
-static inline void put_utf16(wchar_t *s, unsigned int c, enum utf16_endian endian)
+static inline void put_utf16(wchar_t *s, unsigned int c,
+			     enum utf16_endian endian)
 {
 	static_assert(sizeof(wchar_t) == sizeof(__le16));
 	static_assert(sizeof(wchar_t) == sizeof(__be16));
@@ -178,8 +179,7 @@ int ntfs_nls_to_utf16(struct ntfs_sb_info *sbi, const u8 *name, u32 name_len,
 
 	if (!nls) {
 		/* utf8 -> utf16 */
-		ret = _utf8s_to_utf16s(name, name_len, endian, uname,
-					max_ulen);
+		ret = _utf8s_to_utf16s(name, name_len, endian, uname, max_ulen);
 		uni->len = ret;
 		return ret;
 	}
@@ -233,7 +233,7 @@ struct inode *dir_search_u(struct inode *dir, const struct cpu_str *uni,
 	struct ntfs_fnd *fnd_a = NULL;
 
 	if (!fnd) {
-		fnd_a = fnd_get(&ni->dir);
+		fnd_a = fnd_get();
 		if (!fnd_a) {
 			err = -ENOMEM;
 			goto out;
@@ -387,7 +387,22 @@ static int ntfs_readdir(struct file *file, struct dir_context *ctx)
 	if (!name)
 		return -ENOMEM;
 
-	ni_lock(ni);
+	if (!ni->mi_loaded && ni->attr_list.size) {
+		/*
+		 * directory inode is locked for read
+		 * load all subrecords to avoid 'write' access to 'ni' during
+		 * directory reading
+		 */
+		ni_lock(ni);
+		if (!ni->mi_loaded && ni->attr_list.size) {
+			err = ni_load_all_mi(ni);
+			if (!err)
+				ni->mi_loaded = true;
+		}
+		ni_unlock(ni);
+		if (err)
+			goto out;
+	}
 
 	root = indx_get_root(&ni->dir, ni, NULL, NULL);
 	if (!root) {
@@ -454,8 +469,6 @@ out:
 		err = 0;
 		ctx->pos = pos;
 	}
-
-	ni_unlock(ni);
 
 	return err;
 }
@@ -569,6 +582,6 @@ const struct file_operations ntfs_dir_operations = {
 #else
 	.iterate_shared = ntfs_readdir,
 #endif
-	.fsync = ntfs_file_fsync,
+	.fsync = generic_file_fsync,
 	.open = ntfs_file_open,
 };

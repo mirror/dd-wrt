@@ -26,16 +26,9 @@ static inline int compare_attr(const struct ATTRIB *left, enum ATTR_TYPE type,
 
 	/*
 	 * They have the same type code, so we have to compare the names.
-	 * First compare case insensitive
 	 */
-	diff = ntfs_cmp_names(attr_name(left), left->name_len, name, name_len,
-			      upcase);
-	if (diff)
-		return diff;
-
-	/* Second compare case sensitive */
 	return ntfs_cmp_names(attr_name(left), left->name_len, name, name_len,
-			      NULL);
+			      upcase, true);
 }
 
 /*
@@ -83,15 +76,18 @@ static __le16 mi_new_attt_id(struct mft_inode *mi)
 int mi_get(struct ntfs_sb_info *sbi, CLST rno, struct mft_inode **mi)
 {
 	int err;
-	struct mft_inode *m = ntfs_alloc(sizeof(struct mft_inode), 1);
+	struct mft_inode *m = ntfs_zalloc(sizeof(struct mft_inode));
 
 	if (!m)
 		return -ENOMEM;
 
 	err = mi_init(m, sbi, rno);
-	if (!err)
-		err = mi_read(m, false);
+	if (err) {
+		ntfs_free(m);
+		return err;
+	}
 
+	err = mi_read(m, false);
 	if (err) {
 		mi_put(m);
 		return err;
@@ -111,7 +107,7 @@ int mi_init(struct mft_inode *mi, struct ntfs_sb_info *sbi, CLST rno)
 {
 	mi->sbi = sbi;
 	mi->rno = rno;
-	mi->mrec = ntfs_alloc(sbi->record_size, 0);
+	mi->mrec = ntfs_malloc(sbi->record_size);
 	if (!mi->mrec)
 		return -ENOMEM;
 
@@ -207,27 +203,29 @@ struct ATTRIB *mi_enum_attr(struct mft_inode *mi, struct ATTRIB *attr)
 		off = le16_to_cpu(rec->attr_off);
 
 		if (used > total)
-			goto out;
+			return NULL;
 
 		if (off >= used || off < MFTRECORD_FIXUP_OFFSET_1 ||
 		    !IsDwordAligned(off)) {
-			goto out;
+			return NULL;
 		}
 
 		/* Skip non-resident records */
 		if (!is_rec_inuse(rec))
-			goto out;
+			return NULL;
 
 		attr = Add2Ptr(rec, off);
 	} else {
 		/* Check if input attr inside record */
 		off = PtrOffset(rec, attr);
 		if (off >= used)
-			goto out;
+			return NULL;
 
 		asize = le32_to_cpu(attr->size);
-		if (asize < SIZEOF_RESIDENT)
-			goto out;
+		if (asize < SIZEOF_RESIDENT) {
+			/* Impossible 'cause we should not return such attribute */
+			return NULL;
+		}
 
 		attr = Add2Ptr(attr, asize);
 		off += asize;
@@ -238,36 +236,36 @@ struct ATTRIB *mi_enum_attr(struct mft_inode *mi, struct ATTRIB *attr)
 	/* Can we use the first field (attr->type) */
 	if (off + 8 > used) {
 		static_assert(QuadAlign(sizeof(enum ATTR_TYPE)) == 8);
-		goto out;
-	}
-
-	if (attr->type == ATTR_END) {
-		if (used != off + 8)
-			goto out;
 		return NULL;
 	}
 
+	if (attr->type == ATTR_END) {
+		/* end of enumeration */
+		return NULL;
+	}
+
+	/* 0x100 is last known attribute for now*/
 	t32 = le32_to_cpu(attr->type);
 	if ((t32 & 0xf) || (t32 > 0x100))
-		goto out;
+		return NULL;
 
 	/* Check boundary */
 	if (off + asize > used)
-		goto out;
+		return NULL;
 
 	/* Check size of attribute */
 	if (!attr->non_res) {
 		if (asize < SIZEOF_RESIDENT)
-			goto out;
+			return NULL;
 
 		t16 = le16_to_cpu(attr->res.data_off);
 
 		if (t16 > asize)
-			goto out;
+			return NULL;
 
 		t32 = le32_to_cpu(attr->res.data_size);
 		if (t16 + t32 > asize)
-			goto out;
+			return NULL;
 
 		return attr;
 	}
@@ -276,22 +274,19 @@ struct ATTRIB *mi_enum_attr(struct mft_inode *mi, struct ATTRIB *attr)
 	if (attr->name_len &&
 	    le16_to_cpu(attr->name_off) + sizeof(short) * attr->name_len >
 		    le16_to_cpu(attr->nres.run_off)) {
-		goto out;
+		return NULL;
 	}
 
 	if (attr->nres.svcn || !is_attr_ext(attr)) {
 		if (asize + 8 < SIZEOF_NONRESIDENT)
-			goto out;
+			return NULL;
 
 		if (attr->nres.c_unit)
-			goto out;
+			return NULL;
 	} else if (asize + 8 < SIZEOF_NONRESIDENT_EX)
-		goto out;
+		return NULL;
 
 	return attr;
-
-out:
-	return NULL;
 }
 
 /*

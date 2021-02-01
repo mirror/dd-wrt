@@ -51,7 +51,7 @@ int ntfs_load_attr_list(struct ntfs_inode *ni, struct ATTRIB *attr)
 
 	if (!attr->non_res) {
 		lsize = le32_to_cpu(attr->res.data_size);
-		le = ntfs_alloc(al_aligned(lsize), 0);
+		le = ntfs_malloc(al_aligned(lsize));
 		if (!le) {
 			err = -ENOMEM;
 			goto out;
@@ -74,7 +74,7 @@ int ntfs_load_attr_list(struct ntfs_inode *ni, struct ATTRIB *attr)
 		if (err < 0)
 			goto out;
 
-		le = ntfs_alloc(al_aligned(lsize), 0);
+		le = ntfs_malloc(al_aligned(lsize));
 		if (!le) {
 			err = -ENOMEM;
 			goto out;
@@ -172,10 +172,9 @@ struct ATTR_LIST_ENTRY *al_find_ex(struct ntfs_inode *ni,
 
 	while ((le = al_enumerate(ni, le))) {
 		u64 le_vcn;
-		int diff;
+		int diff = le32_to_cpu(le->type) - type_in;
 
 		/* List entries are sorted by type, name and vcn */
-		diff = le32_to_cpu(le->type) - type_in;
 		if (diff < 0)
 			continue;
 
@@ -185,14 +184,24 @@ struct ATTR_LIST_ENTRY *al_find_ex(struct ntfs_inode *ni,
 		if (le->name_len != name_len)
 			continue;
 
-		if (name_len &&
-		    memcmp(le_name(le), name, name_len * sizeof(short)))
-			continue;
+		le_vcn = le64_to_cpu(le->vcn);
+		if (!le_vcn) {
+			/*
+			 * compare entry names only for entry with vcn == 0
+			 */
+			diff = ntfs_cmp_names(le_name(le), name_len, name,
+					      name_len, ni->mi.sbi->upcase,
+					      true);
+			if (diff < 0)
+				continue;
+
+			if (diff > 0)
+				return ret;
+		}
 
 		if (!vcn)
 			return le;
 
-		le_vcn = le64_to_cpu(le->vcn);
 		if (*vcn == le_vcn)
 			return le;
 
@@ -209,39 +218,44 @@ struct ATTR_LIST_ENTRY *al_find_ex(struct ntfs_inode *ni,
  * al_find_le_to_insert
  *
  * finds the first list entry which matches type, name and vcn
- * Returns NULL if not found
  */
-static struct ATTR_LIST_ENTRY *
-al_find_le_to_insert(struct ntfs_inode *ni, enum ATTR_TYPE type,
-		     const __le16 *name, u8 name_len, const CLST *vcn)
+static struct ATTR_LIST_ENTRY *al_find_le_to_insert(struct ntfs_inode *ni,
+						    enum ATTR_TYPE type,
+						    const __le16 *name,
+						    u8 name_len, CLST vcn)
 {
 	struct ATTR_LIST_ENTRY *le = NULL, *prev;
 	u32 type_in = le32_to_cpu(type);
-	int diff;
 
 	/* List entries are sorted by type, name, vcn */
-next:
-	le = al_enumerate(ni, prev = le);
-	if (!le)
-		goto out;
-	diff = le32_to_cpu(le->type) - type_in;
-	if (diff < 0)
-		goto next;
-	if (diff > 0)
-		goto out;
+	while ((le = al_enumerate(ni, prev = le))) {
+		int diff = le32_to_cpu(le->type) - type_in;
 
-	if (ntfs_cmp_names(name, name_len, le_name(le), le->name_len, NULL) > 0)
-		goto next;
+		if (diff < 0)
+			continue;
 
-	if (!vcn || *vcn > le64_to_cpu(le->vcn))
-		goto next;
+		if (diff > 0)
+			return le;
 
-out:
-	if (!le)
-		le = prev ? Add2Ptr(prev, le16_to_cpu(prev->size)) :
-			    ni->attr_list.le;
+		if (!le->vcn) {
+			/*
+			 * compare entry names only for entry with vcn == 0
+			 */
+			diff = ntfs_cmp_names(le_name(le), le->name_len, name,
+					      name_len, ni->mi.sbi->upcase,
+					      true);
+			if (diff < 0)
+				continue;
 
-	return le;
+			if (diff > 0)
+				return le;
+		}
+
+		if (le64_to_cpu(le->vcn) >= vcn)
+			return le;
+	}
+
+	return prev ? Add2Ptr(prev, le16_to_cpu(prev->size)) : ni->attr_list.le;
 }
 
 /*
@@ -272,11 +286,11 @@ int al_add_le(struct ntfs_inode *ni, enum ATTR_TYPE type, const __le16 *name,
 	new_asize = al_aligned(new_size);
 
 	/* Scan forward to the point at which the new le should be inserted. */
-	le = al_find_le_to_insert(ni, type, name, name_len, &svcn);
+	le = al_find_le_to_insert(ni, type, name, name_len, svcn);
 	off = PtrOffset(al->le, le);
 
 	if (new_size > asize) {
-		void *ptr = ntfs_alloc(new_asize, 0);
+		void *ptr = ntfs_malloc(new_asize);
 
 		if (!ptr)
 			return -ENOMEM;
@@ -368,49 +382,29 @@ bool al_delete_le(struct ntfs_inode *ni, enum ATTR_TYPE type, CLST vcn,
 
 	off = PtrOffset(al->le, le);
 
-	if (!ref)
-		goto del;
-
-	/*
-	 * The caller specified a segment reference, so we have to
-	 * scan through the matching entries until we find that segment
-	 * reference or we run of matching entries.
-	 */
 next:
-	if (off + sizeof(struct ATTR_LIST_ENTRY) > al->size)
-		goto del;
-	if (le->type != type)
-		goto del;
-	if (le->name_len != name_len)
-		goto del;
-	if (name_len &&
-	    memcmp(name, Add2Ptr(le, le->name_off), name_len * sizeof(short)))
-		goto del;
-	if (le64_to_cpu(le->vcn) != vcn)
-		goto del;
-	if (!memcmp(ref, &le->ref, sizeof(*ref)))
-		goto del;
-
-	off += le16_to_cpu(le->size);
-	le = Add2Ptr(al->le, off);
-	goto next;
-
-del:
-	/*
-	 * If we've gone off the end of the list, or if the type, name,
-	 * and vcn don't match, then we don't have any matching records.
-	 */
 	if (off >= al->size)
 		return false;
 	if (le->type != type)
 		return false;
 	if (le->name_len != name_len)
 		return false;
-	if (name_len &&
-	    memcmp(name, Add2Ptr(le, le->name_off), name_len * sizeof(short)))
+	if (name_len && ntfs_cmp_names(le_name(le), name_len, name, name_len,
+				       ni->mi.sbi->upcase, true))
 		return false;
 	if (le64_to_cpu(le->vcn) != vcn)
 		return false;
+
+	/*
+	 * The caller specified a segment reference, so we have to
+	 * scan through the matching entries until we find that segment
+	 * reference or we run of matching entries.
+	 */
+	if (ref && memcmp(ref, &le->ref, sizeof(*ref))) {
+		off += le16_to_cpu(le->size);
+		le = Add2Ptr(al->le, off);
+		goto next;
+	}
 
 	/* Save on stack the size of le */
 	size = le16_to_cpu(le->size);

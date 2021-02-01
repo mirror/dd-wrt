@@ -808,7 +808,7 @@ static inline struct RESTART_TABLE *init_rsttbl(u16 esize, u16 used)
 	u32 off;
 	u32 bytes = esize * used + sizeof(struct RESTART_TABLE);
 	u32 lf = sizeof(struct RESTART_TABLE) + (used - 1) * esize;
-	struct RESTART_TABLE *t = ntfs_alloc(bytes, 1);
+	struct RESTART_TABLE *t = ntfs_zalloc(bytes);
 
 	t->size = cpu_to_le16(esize);
 	t->used = cpu_to_le16(used);
@@ -1119,8 +1119,7 @@ struct restart_info {
 };
 
 static int read_log_page(struct ntfs_log *log, u32 vbo,
-			 struct RECORD_PAGE_HDR **buffer, bool allow_errors,
-			 bool ignore_usa_error, bool *usa_error)
+			 struct RECORD_PAGE_HDR **buffer, bool *usa_error)
 {
 	int err = 0;
 	u32 page_idx = vbo >> log->page_bits;
@@ -1136,7 +1135,7 @@ static int read_log_page(struct ntfs_log *log, u32 vbo,
 		return -EINVAL;
 
 	if (!*buffer) {
-		to_free = ntfs_alloc(bytes, 0);
+		to_free = ntfs_malloc(bytes);
 		if (!to_free)
 			return -ENOMEM;
 		*buffer = to_free;
@@ -1157,17 +1156,12 @@ static int read_log_page(struct ntfs_log *log, u32 vbo,
 
 	bBAAD = page_buf->rhdr.sign == NTFS_BAAD_SIGNATURE;
 
-	/* Check that the update sequence array for this page is valid */
-	if (bBAAD) {
-		/* If we don't allow errors, raise an error status */
-		if (!ignore_usa_error) {
-			err = -EINVAL;
-			goto out;
-		}
-	}
-
 	if (usa_error)
 		*usa_error = bBAAD;
+	/* Check that the update sequence array for this page is valid */
+	/* If we don't allow errors, raise an error status */
+	else if (bBAAD)
+		err = -EINVAL;
 
 out:
 	if (err && to_free) {
@@ -1187,9 +1181,8 @@ out:
 static int log_read_rst(struct ntfs_log *log, u32 l_size, bool first,
 			struct restart_info *info)
 {
-	int err;
 	u32 skip, vbo;
-	struct RESTART_HDR *r_page = ntfs_alloc(DefaultLogPageSize, 0);
+	struct RESTART_HDR *r_page = ntfs_malloc(DefaultLogPageSize);
 
 	if (!r_page)
 		return -ENOMEM;
@@ -1213,12 +1206,11 @@ static int log_read_rst(struct ntfs_log *log, u32 l_size, bool first,
 		struct RESTART_AREA *ra;
 
 		/* Read a page header at the current offset */
-		err = read_log_page(log, vbo,
-				    (struct RECORD_PAGE_HDR **)&r_page, true,
-				    true, &usa_error);
-
-		if (err)
+		if (read_log_page(log, vbo, (struct RECORD_PAGE_HDR **)&r_page,
+				  &usa_error)) {
+			/* ignore any errors */
 			continue;
+		}
 
 		/* exit if the signature is a log record page */
 		if (r_page->rhdr.sign == NTFS_RCRD_SIGNATURE) {
@@ -1267,17 +1259,17 @@ static int log_read_rst(struct ntfs_log *log, u32 l_size, bool first,
 		sys_page_size = le32_to_cpu(r_page->sys_page_size);
 		if (DefaultLogPageSize != sys_page_size) {
 			ntfs_free(r_page);
-			r_page = ntfs_alloc(sys_page_size, 1);
+			r_page = ntfs_zalloc(sys_page_size);
 			if (!r_page)
 				return -ENOMEM;
 
-			err = read_log_page(log, vbo,
-					    (struct RECORD_PAGE_HDR **)&r_page,
-					    true, true, &usa_error);
-
-			if (err) {
+			if (read_log_page(log, vbo,
+					  (struct RECORD_PAGE_HDR **)&r_page,
+					  &usa_error)) {
+				/* ignore any errors */
 				ntfs_free(r_page);
-				return err;
+				r_page = NULL;
+				continue;
 			}
 		}
 
@@ -1407,7 +1399,7 @@ static void log_create(struct ntfs_log *log, u32 l_size, const u64 last_lsn,
 static struct RESTART_AREA *log_create_ra(struct ntfs_log *log)
 {
 	struct CLIENT_REC *cr;
-	struct RESTART_AREA *ra = ntfs_alloc(log->restart_size, 1);
+	struct RESTART_AREA *ra = ntfs_zalloc(log->restart_size);
 
 	if (!ra)
 		return NULL;
@@ -1488,7 +1480,7 @@ static int next_log_lsn(struct ntfs_log *log, const struct LFS_RECORD_HDR *rh,
 		seq += 1;
 
 	/* log page header for this page */
-	err = read_log_page(log, hdr_off, &page, false, false, NULL);
+	err = read_log_page(log, hdr_off, &page, NULL);
 	if (err)
 		return err;
 
@@ -1644,7 +1636,7 @@ static int last_log_lsn(struct ntfs_log *log)
 		second_off = 0x12 * log->page_size;
 
 		// 0x10 == 0x12 - 0x2
-		page_bufs = ntfs_alloc(log->page_size * 0x10, 0);
+		page_bufs = ntfs_malloc(log->page_size * 0x10);
 		if (!page_bufs)
 			return -ENOMEM;
 	} else {
@@ -1654,8 +1646,7 @@ static int last_log_lsn(struct ntfs_log *log)
 
 next_tail:
 	/* Read second tail page (at pos 3/0x12000) */
-	if (read_log_page(log, second_off, &second_tail, true, true,
-			  &usa_error) ||
+	if (read_log_page(log, second_off, &second_tail, &usa_error) ||
 	    usa_error || second_tail->rhdr.sign != NTFS_RCRD_SIGNATURE) {
 		ntfs_free(second_tail);
 		second_tail = NULL;
@@ -1667,8 +1658,7 @@ next_tail:
 	}
 
 	/* Read first tail page (at pos 2/0x2000 ) */
-	if (read_log_page(log, final_off, &first_tail, true, true,
-			  &usa_error) ||
+	if (read_log_page(log, final_off, &first_tail, &usa_error) ||
 	    usa_error || first_tail->rhdr.sign != NTFS_RCRD_SIGNATURE) {
 		ntfs_free(first_tail);
 		first_tail = NULL;
@@ -1726,7 +1716,7 @@ next_tail:
 		best_page = second_tail;
 		this_off = second_file_off;
 	} else {
-		goto free_and_tail_read;
+		goto tail_read;
 	}
 
 	best_page_pos = le16_to_cpu(best_page->page_pos);
@@ -1771,7 +1761,6 @@ next_tail:
 			page_pos = page_cnt = 1;
 		}
 	} else {
-free_and_tail_read:
 		ntfs_free(first_tail);
 		ntfs_free(second_tail);
 		goto tail_read;
@@ -1814,8 +1803,8 @@ tail_read:
 
 next_page:
 	tail_page = NULL;
-	/* Read the next log page, allowing errors */
-	err = read_log_page(log, curpage_off, &page, true, true, &usa_error);
+	/* Read the next log page */
+	err = read_log_page(log, curpage_off, &page, &usa_error);
 
 	/* Compute the next log page offset the file */
 	nextpage_off = next_page_off(log, curpage_off);
@@ -2109,7 +2098,7 @@ next_test_page:
 	tst_page = NULL;
 
 	/* Walk through the file, reading log pages */
-	err = read_log_page(log, nextpage_off, &tst_page, 1, 1, &usa_error);
+	err = read_log_page(log, nextpage_off, &tst_page, &usa_error);
 
 	/*
 	 * If we get a USA error then assume that we correctly found
@@ -2167,8 +2156,7 @@ check_valid:
 	ntfs_free(tst_page);
 	tst_page = NULL;
 
-	err = read_log_page(log, nextpage_off, &tst_page, true, true,
-			    &usa_error);
+	err = read_log_page(log, nextpage_off, &tst_page, &usa_error);
 	if (!err && !usa_error &&
 	    check_subseq_log_page(log, tst_page, nextpage_off, expected_seq)) {
 		err = -EINVAL;
@@ -2200,7 +2188,7 @@ file_is_valid:
 			u64 off = hdr_file_off(log, tmp_page);
 
 			if (!page) {
-				page = ntfs_alloc(log->page_size, 0);
+				page = ntfs_malloc(log->page_size);
 				if (!page)
 					return -ENOMEM;
 			}
@@ -2275,6 +2263,7 @@ static int read_log_rec_buf(struct ntfs_log *log,
 	 * we continue to attempt to perform the read
 	 */
 	for (;;) {
+		bool usa_error;
 		u32 tail = log->page_size - off;
 
 		if (tail >= data_len)
@@ -2282,7 +2271,7 @@ static int read_log_rec_buf(struct ntfs_log *log,
 
 		data_len -= tail;
 
-		err = read_log_page(log, vbo, &ph, false, true, NULL);
+		err = read_log_page(log, vbo, &ph, &usa_error);
 		if (err)
 			goto out;
 
@@ -2347,7 +2336,7 @@ static int read_rst_area(struct ntfs_log *log, struct NTFS_RESTART **rst_,
 		return 0;
 
 	err = read_log_page(log, lsn_to_vbo(log, lsnc),
-			    (struct RECORD_PAGE_HDR **)&rh, false, false, NULL);
+			    (struct RECORD_PAGE_HDR **)&rh, NULL);
 	if (err)
 		return err;
 
@@ -2373,7 +2362,7 @@ static int read_rst_area(struct ntfs_log *log, struct NTFS_RESTART **rst_,
 		goto out;
 	}
 
-	rst = ntfs_alloc(len, 0);
+	rst = ntfs_malloc(len);
 	if (!rst) {
 		err = -ENOMEM;
 		goto out;
@@ -2403,8 +2392,7 @@ static int find_log_rec(struct ntfs_log *log, u64 lsn, struct lcb *lcb)
 	/* Read the record header for this lsn */
 	if (!rh) {
 		err = read_log_page(log, lsn_to_vbo(log, lsn),
-				    (struct RECORD_PAGE_HDR **)&rh, false,
-				    false, NULL);
+				    (struct RECORD_PAGE_HDR **)&rh, NULL);
 
 		lcb->lrh = rh;
 		if (err)
@@ -2433,7 +2421,7 @@ static int find_log_rec(struct ntfs_log *log, u64 lsn, struct lcb *lcb)
 	 * put a pointer to the log record the context block
 	 */
 	if (rh->flags & LOG_RECORD_MULTI_PAGE) {
-		void *lr = ntfs_alloc(len, 0);
+		void *lr = ntfs_malloc(len);
 
 		if (!lr)
 			return -ENOMEM;
@@ -2486,7 +2474,7 @@ static int read_log_rec_lcb(struct ntfs_log *log, u64 lsn, u32 ctx_mode,
 	if (!verify_client_lsn(log, cr, lsn))
 		return -EINVAL;
 
-	lcb = ntfs_alloc(sizeof(struct lcb), 1);
+	lcb = ntfs_zalloc(sizeof(struct lcb));
 	if (!lcb)
 		return -ENOMEM;
 	lcb->client = log->client_id;
@@ -2539,8 +2527,7 @@ static int find_client_next_lsn(struct ntfs_log *log, struct lcb *lcb, u64 *lsn)
 
 		hdr = NULL;
 		err = read_log_page(log, lsn_to_vbo(log, current_lsn),
-				    (struct RECORD_PAGE_HDR **)&hdr, false,
-				    false, NULL);
+				    (struct RECORD_PAGE_HDR **)&hdr, NULL);
 		if (err)
 			goto out;
 
@@ -2578,8 +2565,7 @@ check_undo_next:
 
 	hdr = NULL;
 	err = read_log_page(log, lsn_to_vbo(log, next_lsn),
-			    (struct RECORD_PAGE_HDR **)&hdr, false, false,
-			    NULL);
+			    (struct RECORD_PAGE_HDR **)&hdr, NULL);
 	if (err)
 		return err;
 	ntfs_free(lcb->lrh);
@@ -3004,7 +2990,7 @@ static struct ATTRIB *attr_create_nonres_log(struct ntfs_sb_info *sbi,
 	u32 asize = name_size +
 		    (is_ext ? SIZEOF_NONRESIDENT_EX : SIZEOF_NONRESIDENT);
 
-	attr = ntfs_alloc(asize, 1);
+	attr = ntfs_zalloc(asize);
 	if (!attr)
 		return NULL;
 
@@ -3103,7 +3089,7 @@ static int do_action(struct ntfs_log *log, struct OPEN_ATTR_ENRTY *oe,
 		if (inode) {
 			mi = &ntfs_i(inode)->mi;
 		} else if (op == InitializeFileRecordSegment) {
-			mi = ntfs_alloc(sizeof(struct mft_inode), 1);
+			mi = ntfs_zalloc(sizeof(struct mft_inode));
 			if (!mi)
 				return -ENOMEM;
 			err = mi_format_new(mi, sbi, rno, 0, false);
@@ -3198,7 +3184,7 @@ skip_load_parent:
 		if (attr->type == ATTR_ALLOC)
 			bytes = (bytes + 511) & ~511; // align
 
-		buffer_le = ntfs_alloc(bytes, 0);
+		buffer_le = ntfs_malloc(bytes);
 		if (!buffer_le)
 			return -ENOMEM;
 
@@ -3824,13 +3810,13 @@ int log_replay(struct ntfs_inode *ni)
 	if (!page_size)
 		return -EINVAL;
 
-	log = ntfs_alloc(sizeof(struct ntfs_log), 1);
+	log = ntfs_zalloc(sizeof(struct ntfs_log));
 	if (!log)
 		return -ENOMEM;
 
 	log->ni = ni;
 	log->l_size = l_size;
-	log->one_page_buf = ntfs_alloc(page_size, 0);
+	log->one_page_buf = ntfs_malloc(page_size);
 
 	if (!log->one_page_buf) {
 		err = -ENOMEM;
@@ -3886,8 +3872,9 @@ int log_replay(struct ntfs_inode *ni)
 
 	if (rst_info.chkdsk_was_run && page_size != rst_info.vbo) {
 		struct RECORD_PAGE_HDR *sp = NULL;
+		bool usa_error;
 
-		if (!read_log_page(log, page_size, &sp, true, true, NULL) &&
+		if (!read_log_page(log, page_size, &sp, &usa_error) &&
 		    sp->rhdr.sign == NTFS_CHKD_SIGNATURE) {
 			use_second_page = false;
 		}
@@ -4049,7 +4036,7 @@ find_oldest:
 
 	log->current_avail = current_log_avail(log);
 
-	ra = ntfs_alloc(log->restart_size, 1);
+	ra = ntfs_zalloc(log->restart_size);
 	if (!ra) {
 		err = -ENOMEM;
 		goto out;
@@ -4077,9 +4064,6 @@ find_oldest:
 
 	/* Now we need to walk through looking for the last lsn */
 	err = last_log_lsn(log);
-	if (err == -EROFS)
-		goto out;
-
 	if (err)
 		goto out;
 
@@ -4616,7 +4600,7 @@ copy_lcns:
 
 		t16 = le16_to_cpu(lrh->undo_len);
 		if (t16) {
-			oe->ptr = ntfs_alloc(t16, 0);
+			oe->ptr = ntfs_malloc(t16);
 			if (!oe->ptr) {
 				err = -ENOMEM;
 				goto out;
@@ -4721,7 +4705,7 @@ next_open_attribute:
 		goto next_dirty_page;
 	}
 
-	oa = ntfs_alloc(sizeof(struct OpenAttr), 1);
+	oa = ntfs_zalloc(sizeof(struct OpenAttr));
 	if (!oa) {
 		err = -ENOMEM;
 		goto out;
@@ -5128,7 +5112,7 @@ end_reply:
 	if (is_ro)
 		goto out;
 
-	rh = ntfs_alloc(log->page_size, 1);
+	rh = ntfs_zalloc(log->page_size);
 	if (!rh) {
 		err = -ENOMEM;
 		goto out;

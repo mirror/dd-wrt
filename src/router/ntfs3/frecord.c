@@ -400,7 +400,7 @@ bool ni_add_subrecord(struct ntfs_inode *ni, CLST rno, struct mft_inode **mi)
 {
 	struct mft_inode *m;
 
-	m = ntfs_alloc(sizeof(struct mft_inode), 1);
+	m = ntfs_zalloc(sizeof(struct mft_inode));
 	if (!m)
 		return false;
 
@@ -799,7 +799,7 @@ int ni_create_attr_list(struct ntfs_inode *ni)
 	 * Skip estimating exact memory requirement
 	 * Looks like one record_size is always enough
 	 */
-	le = ntfs_alloc(al_aligned(rs), 0);
+	le = ntfs_malloc(al_aligned(rs));
 	if (!le) {
 		err = -ENOMEM;
 		goto out;
@@ -1634,7 +1634,8 @@ next:
 	if (uni->len != fname->name_len)
 		goto next;
 
-	if (ntfs_cmp_names_cpu(uni, (struct le_str *)&fname->name_len, NULL))
+	if (ntfs_cmp_names_cpu(uni, (struct le_str *)&fname->name_len, NULL,
+			       false))
 		goto next;
 
 	return fname;
@@ -1795,7 +1796,7 @@ enum REPARSE_SIGN ni_parse_reparse(struct ntfs_inode *ni, struct ATTRIB *attr,
 		/*
 		 * WOF - Windows Overlay Filter - used to compress files with lzx/xpress
 		 * Unlike native NTFS file compression, the Windows Overlay Filter supports
-		 * only read operations. This means that it doesnï¿½t need to sector-align each
+		 * only read operations. This means that it doesn’t need to sector-align each
 		 * compressed chunk, so the compressed data can be packed more tightly together.
 		 * If you open the file for writing, the Windows Overlay Filter just decompresses
 		 * the entire file, turning it back into a plain file.
@@ -1873,7 +1874,7 @@ int ni_fiemap(struct ntfs_inode *ni, struct fiemap_extent_info *fieinfo,
 		run = &ni->dir.alloc_run;
 		attr = ni_find_attr(ni, NULL, NULL, ATTR_ALLOC, I30_NAME,
 				    ARRAY_SIZE(I30_NAME), NULL, NULL);
-		run_lock = NULL;
+		run_lock = &ni->dir.run_lock;
 	} else {
 		run = &ni->file.run;
 		attr = ni_find_attr(ni, NULL, NULL, ATTR_DATA, NULL, 0, NULL,
@@ -1907,36 +1908,30 @@ int ni_fiemap(struct ntfs_inode *ni, struct fiemap_extent_info *fieinfo,
 	if (end > alloc_size)
 		end = alloc_size;
 
-	if (run_lock)
-		down_read(run_lock);
+	down_read(run_lock);
 
 	while (vbo < end) {
 		if (idx == -1) {
 			ok = run_lookup_entry(run, vcn, &lcn, &clen, &idx);
 		} else {
-			CLST next_vcn = vcn;
+			CLST vcn_next = vcn;
 
-			ok = run_get_entry(run, ++idx, &vcn, &lcn, &clen);
-			if (ok && vcn != next_vcn) {
-				ok = false;
-				vcn = next_vcn;
-			}
+			ok = run_get_entry(run, ++idx, &vcn, &lcn, &clen) &&
+			     vcn == vcn_next;
+			if (!ok)
+				vcn = vcn_next;
 		}
 
 		if (!ok) {
-			if (run_lock) {
-				up_read(run_lock);
-				down_write(run_lock);
-			}
+			up_read(run_lock);
+			down_write(run_lock);
 
 			err = attr_load_runs_vcn(ni, attr->type,
 						 attr_name(attr),
 						 attr->name_len, run, vcn);
 
-			if (run_lock) {
-				up_write(run_lock);
-				down_read(run_lock);
-			}
+			up_write(run_lock);
+			down_read(run_lock);
 
 			if (err)
 				break;
@@ -2024,8 +2019,7 @@ int ni_fiemap(struct ntfs_inode *ni, struct fiemap_extent_info *fieinfo,
 		vbo += bytes;
 	}
 
-	if (run_lock)
-		up_read(run_lock);
+	up_read(run_lock);
 
 out:
 	return err;
@@ -2068,7 +2062,7 @@ int ni_readpage_cmpr(struct ntfs_inode *ni, struct page *page)
 	idx = (vbo - frame_vbo) >> PAGE_SHIFT;
 
 	pages_per_frame = frame_size >> PAGE_SHIFT;
-	pages = ntfs_alloc(pages_per_frame * sizeof(struct page *), 1);
+	pages = ntfs_zalloc(pages_per_frame * sizeof(struct page *));
 	if (!pages) {
 		err = -ENOMEM;
 		goto out;
@@ -2151,7 +2145,7 @@ int ni_decompress_file(struct ntfs_inode *ni)
 	frame_bits = ni_ext_compress_bits(ni);
 	frame_size = 1u << frame_bits;
 	pages_per_frame = frame_size >> PAGE_SHIFT;
-	pages = ntfs_alloc(pages_per_frame * sizeof(struct page *), 1);
+	pages = ntfs_zalloc(pages_per_frame * sizeof(struct page *));
 	if (!pages) {
 		err = -ENOMEM;
 		goto out;
@@ -2524,8 +2518,9 @@ int ni_read_frame(struct ntfs_inode *ni, u64 frame_vbo, struct page **pages,
 		}
 		vbo_disk = vbo_data;
 		/* load all runs to read [vbo_disk-vbo_to) */
-		err = attr_wof_load_runs_range(ni, run, vbo_disk,
-					       vbo_data + ondisk_size);
+		err = attr_load_runs_range(ni, ATTR_DATA, WOF_NAME,
+					   ARRAY_SIZE(WOF_NAME), run, vbo_disk,
+					   vbo_data + ondisk_size);
 		if (err)
 			goto out2;
 		npages_disk = (ondisk_size + (vbo_disk & (PAGE_SIZE - 1)) +
@@ -2577,7 +2572,7 @@ int ni_read_frame(struct ntfs_inode *ni, u64 frame_vbo, struct page **pages,
 		goto out1;
 	}
 
-	pages_disk = ntfs_alloc(npages_disk * sizeof(struct page *), 1);
+	pages_disk = ntfs_zalloc(npages_disk * sizeof(struct page *));
 	if (!pages_disk) {
 		err = -ENOMEM;
 		goto out2;
@@ -2722,7 +2717,7 @@ int ni_write_frame(struct ntfs_inode *ni, struct page **pages,
 		goto out;
 	}
 
-	pages_disk = ntfs_alloc(pages_per_frame * sizeof(struct page *), 1);
+	pages_disk = ntfs_zalloc(pages_per_frame * sizeof(struct page *));
 	if (!pages_disk) {
 		err = -ENOMEM;
 		goto out;

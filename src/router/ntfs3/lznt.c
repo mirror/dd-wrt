@@ -294,8 +294,8 @@ next:
  */
 struct lznt *get_lznt_ctx(int level)
 {
-	struct lznt *r = ntfs_alloc(
-		level ? offsetof(struct lznt, hash) : sizeof(struct lznt), 1);
+	struct lznt *r = ntfs_zalloc(level ? offsetof(struct lznt, hash) :
+					     sizeof(struct lznt));
 
 	if (r)
 		r->std = !level;

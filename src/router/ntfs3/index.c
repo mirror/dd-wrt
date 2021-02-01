@@ -34,8 +34,8 @@ static int cmp_fnames(const struct ATTR_FILE_NAME *f1, size_t l1,
 		      const struct ATTR_FILE_NAME *f2, size_t l2,
 		      const struct ntfs_sb_info *sbi)
 {
-	int diff;
 	u16 fsize2;
+	bool both_case;
 
 	if (l2 <= offsetof(struct ATTR_FILE_NAME, name))
 		return -1;
@@ -44,40 +44,20 @@ static int cmp_fnames(const struct ATTR_FILE_NAME *f1, size_t l1,
 	if (l2 < fsize2)
 		return -1;
 
+	both_case = f2->type != FILE_NAME_DOS /*&& !sbi->options.nocase*/;
 	if (!l1) {
 		const struct cpu_str *s1 = (struct cpu_str *)f1;
 		const struct le_str *s2 = (struct le_str *)&f2->name_len;
-
-		diff = ntfs_cmp_names_cpu(s1, s2, sbi->upcase);
-
-		if (diff)
-			return diff;
 
 		/*
 		 * If names are equal (case insensitive)
 		 * try to compare it case sensitive
 		 */
-		if (/*sbi->options.nocase || */ f2->type == FILE_NAME_DOS)
-			return 0;
-
-		return ntfs_cmp_names_cpu(s1, s2, NULL);
+		return ntfs_cmp_names_cpu(s1, s2, sbi->upcase, both_case);
 	}
 
-	diff = ntfs_cmp_names(f1->name, f1->name_len, f2->name, f2->name_len,
-			      sbi->upcase);
-
-	if (diff)
-		return diff;
-
-	/*
-	 * If names are equal (case insensitive)
-	 * try to compare it case sensitive
-	 */
-	if (/*sbi->options.nocase || */ f2->type == FILE_NAME_DOS)
-		return 0;
-
 	return ntfs_cmp_names(f1->name, f1->name_len, f2->name, f2->name_len,
-			      NULL);
+			      sbi->upcase, both_case);
 }
 
 /* $SII of $Secure and $Q of Quota */
@@ -356,13 +336,21 @@ static int indx_mark_free(struct ntfs_index *indx, struct ntfs_inode *ni,
 	return 0;
 }
 
-static int scan_nres_bitmap(struct ntfs_sb_info *sbi, struct ATTRIB *bitmap,
-			    struct runs_tree *run, size_t from,
+/*
+ * if ntfs_readdir calls this function (indx_used_bit -> scan_nres_bitmap),
+ * inode is shared locked and no ni_lock
+ * use rw_semaphore for read/write access to bitmap_run
+ */
+static int scan_nres_bitmap(struct ntfs_inode *ni, struct ATTRIB *bitmap,
+			    struct ntfs_index *indx, size_t from,
 			    bool (*fn)(const ulong *buf, u32 bit, u32 bits,
 				       size_t *ret),
 			    size_t *ret)
 {
+	struct ntfs_sb_info *sbi = ni->mi.sbi;
 	struct super_block *sb = sbi->sb;
+	struct runs_tree *run = &indx->bitmap_run;
+	struct rw_semaphore *lock = &indx->run_lock;
 	u32 nbits = sb->s_blocksize * 8;
 	u32 blocksize = sb->s_blocksize;
 	u64 valid_size = le64_to_cpu(bitmap->nres.valid_size);
@@ -372,9 +360,10 @@ static int scan_nres_bitmap(struct ntfs_sb_info *sbi, struct ATTRIB *bitmap,
 	sector_t blk = (vbo & sbi->cluster_mask) >> sb->s_blocksize_bits;
 	sector_t vblock = vbo >> sb->s_blocksize_bits;
 	sector_t blen, block;
-	CLST lcn, len;
+	CLST lcn, clen, vcn, vcn_next;
 	size_t idx;
 	struct buffer_head *bh;
+	bool ok;
 
 	*ret = MINUS_ONE_T;
 
@@ -382,19 +371,34 @@ static int scan_nres_bitmap(struct ntfs_sb_info *sbi, struct ATTRIB *bitmap,
 		return 0;
 
 	from &= nbits - 1;
+	vcn = vbo >> sbi->cluster_bits;
 
-	if (!run_lookup_entry(run, vbo >> sbi->cluster_bits, &lcn, &len,
-			      &idx)) {
-		return -ENOENT;
-	}
-
-	blen = (sector_t)len * sbi->blocks_per_cluster;
-	block = (sector_t)lcn * sbi->blocks_per_cluster;
+	down_read(lock);
+	ok = run_lookup_entry(run, vcn, &lcn, &clen, &idx);
+	up_read(lock);
 
 next_run:
-	for (; blk < blen; blk++, from = 0) {
-		bool ok;
+	if (!ok) {
+		int err;
+		const struct INDEX_NAMES *name = &s_index_names[indx->type];
 
+		down_write(lock);
+		err = attr_load_runs_vcn(ni, ATTR_BITMAP, name->name,
+					 name->name_len, run, vcn);
+		up_write(lock);
+		if (err)
+			return err;
+		down_read(lock);
+		ok = run_lookup_entry(run, vcn, &lcn, &clen, &idx);
+		up_read(lock);
+		if (!ok)
+			return -EINVAL;
+	}
+
+	blen = (sector_t)clen * sbi->blocks_per_cluster;
+	block = (sector_t)lcn * sbi->blocks_per_cluster;
+
+	for (; blk < blen; blk++, from = 0) {
 		bh = ntfs_bread(sb, block + blk);
 		if (!bh)
 			return -EIO;
@@ -426,13 +430,13 @@ next_run:
 			return 0;
 		}
 	}
-
-	if (!run_get_entry(run, ++idx, NULL, &lcn, &len))
-		return -ENOENT;
-
 	blk = 0;
-	blen = (sector_t)len * sbi->blocks_per_cluster;
-	block = (sector_t)lcn * sbi->blocks_per_cluster;
+	vcn_next = vcn + clen;
+	down_read(lock);
+	ok = run_get_entry(run, ++idx, &vcn, &lcn, &clen) && vcn == vcn_next;
+	if (!ok)
+		vcn = vcn_next;
+	up_read(lock);
 	goto next_run;
 }
 
@@ -458,6 +462,7 @@ static int indx_find_free(struct ntfs_index *indx, struct ntfs_inode *ni,
 	struct ATTRIB *b;
 	struct ATTR_LIST_ENTRY *le = NULL;
 	const struct INDEX_NAMES *in = &s_index_names[indx->type];
+	int err;
 
 	b = ni_find_attr(ni, NULL, &le, ATTR_BITMAP, in->name, in->name_len,
 			 NULL, NULL);
@@ -475,8 +480,7 @@ static int indx_find_free(struct ntfs_index *indx, struct ntfs_inode *ni,
 		if (pos < nbits)
 			*bit = pos;
 	} else {
-		int err = scan_nres_bitmap(ni->mi.sbi, b, &indx->bitmap_run, 0,
-					   &scan_for_free, bit);
+		err = scan_nres_bitmap(ni, b, indx, 0, &scan_for_free, bit);
 
 		if (err)
 			return err;
@@ -507,6 +511,7 @@ int indx_used_bit(struct ntfs_index *indx, struct ntfs_inode *ni, size_t *bit)
 	struct ATTR_LIST_ENTRY *le = NULL;
 	size_t from = *bit;
 	const struct INDEX_NAMES *in = &s_index_names[indx->type];
+	int err;
 
 	b = ni_find_attr(ni, NULL, &le, ATTR_BITMAP, in->name, in->name_len,
 			 NULL, NULL);
@@ -523,8 +528,7 @@ int indx_used_bit(struct ntfs_index *indx, struct ntfs_inode *ni, size_t *bit)
 		if (pos < nbits)
 			*bit = pos;
 	} else {
-		int err = scan_nres_bitmap(ni->mi.sbi, b, &indx->bitmap_run,
-					   from, &scan_for_used, bit);
+		err = scan_nres_bitmap(ni, b, indx, from, &scan_for_used, bit);
 		if (err)
 			return err;
 	}
@@ -641,24 +645,6 @@ static bool fnd_is_empty(struct ntfs_fnd *fnd)
 	return !fnd->de[fnd->level - 1];
 }
 
-struct ntfs_fnd *fnd_get(struct ntfs_index *indx)
-{
-	struct ntfs_fnd *fnd = ntfs_alloc(sizeof(struct ntfs_fnd), 1);
-
-	if (!fnd)
-		return NULL;
-
-	return fnd;
-}
-
-void fnd_put(struct ntfs_fnd *fnd)
-{
-	if (!fnd)
-		return;
-	fnd_clear(fnd);
-	ntfs_free(fnd);
-}
-
 /*
  * hdr_find_e
  *
@@ -687,7 +673,7 @@ static struct NTFS_DE *hdr_find_e(const struct ntfs_index *indx,
 	if (end > 0x10000)
 		goto next;
 
-	offs = ntfs_alloc(sizeof(u16) * nslots, 0);
+	offs = ntfs_malloc(sizeof(u16) * nslots);
 	if (!offs)
 		goto next;
 
@@ -709,7 +695,7 @@ next1:
 		u16 *ptr;
 		int new_slots = QuadAlign(2 * nslots);
 
-		ptr = ntfs_alloc(sizeof(u16) * new_slots, 0);
+		ptr = ntfs_malloc(sizeof(u16) * new_slots);
 		if (ptr)
 			memcpy(ptr, offs, sizeof(u16) * max_idx);
 		ntfs_free(offs);
@@ -919,8 +905,9 @@ int indx_init(struct ntfs_index *indx, struct ntfs_sb_info *sbi,
 		indx->vbn2vbo_bits = sbi->cluster_bits;
 	}
 
-	indx->cmp = get_cmp_func(root);
+	init_rwsem(&indx->run_lock);
 
+	indx->cmp = get_cmp_func(root);
 	return indx->cmp ? 0 : -EINVAL;
 }
 
@@ -938,11 +925,11 @@ static struct indx_node *indx_new(struct ntfs_index *indx,
 	u16 fn;
 	u32 eo;
 
-	r = ntfs_alloc(sizeof(struct indx_node), 1);
+	r = ntfs_zalloc(sizeof(struct indx_node));
 	if (!r)
 		return ERR_PTR(-ENOMEM);
 
-	index = ntfs_alloc(bytes, 1);
+	index = ntfs_zalloc(bytes);
 	if (!index) {
 		ntfs_free(r);
 		return ERR_PTR(-ENOMEM);
@@ -1013,18 +1000,25 @@ static int indx_write(struct ntfs_index *indx, struct ntfs_inode *ni,
 	return ntfs_write_bh(ni->mi.sbi, &ib->rhdr, &node->nb, sync);
 }
 
+/*
+ * if ntfs_readdir calls this function
+ * inode is shared locked and no ni_lock
+ * use rw_semaphore for read/write access to alloc_run
+ */
 int indx_read(struct ntfs_index *indx, struct ntfs_inode *ni, CLST vbn,
 	      struct indx_node **node)
 {
 	int err;
 	struct INDEX_BUFFER *ib;
+	struct runs_tree *run = &indx->alloc_run;
+	struct rw_semaphore *lock = &indx->run_lock;
 	u64 vbo = (u64)vbn << indx->vbn2vbo_bits;
 	u32 bytes = 1u << indx->index_bits;
 	struct indx_node *in = *node;
 	const struct INDEX_NAMES *name;
 
 	if (!in) {
-		in = ntfs_alloc(sizeof(struct indx_node), 1);
+		in = ntfs_zalloc(sizeof(struct indx_node));
 		if (!in)
 			return -ENOMEM;
 	} else {
@@ -1033,16 +1027,16 @@ int indx_read(struct ntfs_index *indx, struct ntfs_inode *ni, CLST vbn,
 
 	ib = in->index;
 	if (!ib) {
-		ib = ntfs_alloc(bytes, 0);
+		ib = ntfs_malloc(bytes);
 		if (!ib) {
 			err = -ENOMEM;
 			goto out;
 		}
 	}
 
-	err = ntfs_read_bh(ni->mi.sbi, &indx->alloc_run, vbo, &ib->rhdr, bytes,
-			   &in->nb);
-
+	down_read(lock);
+	err = ntfs_read_bh(ni->mi.sbi, run, vbo, &ib->rhdr, bytes, &in->nb);
+	up_read(lock);
 	if (!err)
 		goto ok;
 
@@ -1053,14 +1047,16 @@ int indx_read(struct ntfs_index *indx, struct ntfs_inode *ni, CLST vbn,
 		goto out;
 
 	name = &s_index_names[indx->type];
-	err = attr_load_runs_vcn(ni, ATTR_ALLOC, name->name, name->name_len,
-				 &indx->alloc_run,
-				 vbo >> ni->mi.sbi->cluster_bits);
+	down_write(lock);
+	err = attr_load_runs_range(ni, ATTR_ALLOC, name->name, name->name_len,
+				   run, vbo, vbo + bytes);
+	up_write(lock);
 	if (err)
 		goto out;
 
-	err = ntfs_read_bh(ni->mi.sbi, &indx->alloc_run, vbo, &ib->rhdr, bytes,
-			   &in->nb);
+	down_read(lock);
+	err = ntfs_read_bh(ni->mi.sbi, run, vbo, &ib->rhdr, bytes, &in->nb);
+	up_read(lock);
 	if (err == -E_NTFS_FIXUP)
 		goto ok;
 
@@ -1402,6 +1398,7 @@ static int indx_create_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
 	struct ATTRIB *bitmap;
 	struct ATTRIB *alloc;
 	u32 alloc_size = ntfs_up_cluster(sbi, 1u << indx->index_bits);
+	u32 bmp_size = QuadAlign(((alloc_size >> indx->index_bits) + 7) >> 3);
 	CLST len = alloc_size >> sbi->cluster_bits;
 	const struct INDEX_NAMES *in = &s_index_names[indx->type];
 	CLST alen;
@@ -1419,7 +1416,7 @@ static int indx_create_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
 	if (err)
 		goto out1;
 
-	err = ni_insert_resident(ni, QuadAlign(1), ATTR_BITMAP, in->name,
+	err = ni_insert_resident(ni, bmp_size, ATTR_BITMAP, in->name,
 				 in->name_len, &bitmap, NULL);
 	if (err)
 		goto out2;
@@ -1454,7 +1451,7 @@ static int indx_add_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
 	int err;
 	size_t bit;
 	u64 data_size, alloc_size;
-	u64 bpb, vbpb;
+	u64 bmp_size, bmp_size_v;
 	struct ATTRIB *bmp, *alloc;
 	struct mft_inode *mi;
 	const struct INDEX_NAMES *in = &s_index_names[indx->type];
@@ -1467,20 +1464,27 @@ static int indx_add_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
 		bmp = NULL;
 	} else {
 		if (bmp->non_res) {
-			bpb = le64_to_cpu(bmp->nres.data_size);
-			vbpb = le64_to_cpu(bmp->nres.valid_size);
+			bmp_size = le64_to_cpu(bmp->nres.data_size);
+			bmp_size_v = le64_to_cpu(bmp->nres.valid_size);
 		} else {
-			bpb = vbpb = le32_to_cpu(bmp->res.data_size);
+			bmp_size = bmp_size_v = le32_to_cpu(bmp->res.data_size);
 		}
+
+		bit = bmp_size << 3;
+	}
+
+	data_size = (u64)(bit + 1) << indx->index_bits;
+	alloc_size = ntfs_up_cluster(ni->mi.sbi, data_size);
+
+	if (bmp) {
+		u64 bits = ((alloc_size >> indx->index_bits) + 7) >> 3;
 
 		/* Increase bitmap */
 		err = attr_set_size(ni, ATTR_BITMAP, in->name, in->name_len,
-				    &indx->bitmap_run, QuadAlign(bpb + 8), NULL,
+				    &indx->bitmap_run, QuadAlign(bits), NULL,
 				    true, NULL);
 		if (err)
 			goto out1;
-
-		bit = bpb << 3;
 	}
 
 	alloc = ni_find_attr(ni, NULL, NULL, ATTR_ALLOC, in->name, in->name_len,
@@ -1490,9 +1494,6 @@ static int indx_add_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
 			goto out2;
 		goto out1;
 	}
-
-	data_size = (u64)(bit + 1) << indx->index_bits;
-	alloc_size = ntfs_up_cluster(ni->mi.sbi, data_size);
 
 	if (alloc_size > le64_to_cpu(alloc->nres.alloc_size)) {
 		/* Increase allocation */
@@ -1520,7 +1521,7 @@ static int indx_add_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
 out2:
 	/* Ops (no space?) */
 	attr_set_size(ni, ATTR_BITMAP, in->name, in->name_len,
-		      &indx->bitmap_run, bpb, &vbpb, false, NULL);
+		      &indx->bitmap_run, bmp_size, &bmp_size_v, false, NULL);
 
 out1:
 	return err;
@@ -1804,7 +1805,7 @@ indx_insert_into_buffer(struct ntfs_index *indx, struct ntfs_inode *ni,
 		return -EINVAL;
 
 	sp_size = le16_to_cpu(sp->size);
-	up_e = ntfs_alloc(sp_size + sizeof(u64), 0);
+	up_e = ntfs_malloc(sp_size + sizeof(u64));
 	if (!up_e)
 		return -ENOMEM;
 	memcpy(up_e, sp, sp_size);
@@ -1903,7 +1904,7 @@ int indx_insert_entry(struct ntfs_index *indx, struct ntfs_inode *ni,
 	struct INDEX_ROOT *root;
 
 	if (!fnd) {
-		fnd_a = fnd_get(indx);
+		fnd_a = fnd_get();
 		if (!fnd_a) {
 			err = -ENOMEM;
 			goto out1;
@@ -2041,8 +2042,7 @@ static int indx_shrink(struct ntfs_index *indx, struct ntfs_inode *ni,
 		if (bit >= nbits)
 			return 0;
 
-		err = scan_nres_bitmap(ni->mi.sbi, b, &indx->bitmap_run, bit,
-				       &scan_for_used, &used);
+		err = scan_nres_bitmap(ni, b, indx, bit, &scan_for_used, &used);
 		if (err)
 			return err;
 
@@ -2166,7 +2166,7 @@ static int indx_get_entry_to_replace(struct ntfs_index *indx,
 	n = fnd->nodes[level];
 	te = hdr_first_de(&n->index->ihdr);
 	/* Copy the candidate entry into the replacement entry buffer. */
-	re = ntfs_alloc(le16_to_cpu(te->size) + sizeof(u64), 0);
+	re = ntfs_malloc(le16_to_cpu(te->size) + sizeof(u64));
 	if (!re) {
 		err = -ENOMEM;
 		goto out;
@@ -2232,13 +2232,13 @@ int indx_delete_entry(struct ntfs_index *indx, struct ntfs_inode *ni,
 	size_t trim_bit;
 	const struct INDEX_NAMES *in;
 
-	fnd = fnd_get(indx);
+	fnd = fnd_get();
 	if (!fnd) {
 		err = -ENOMEM;
 		goto out2;
 	}
 
-	fnd2 = fnd_get(NULL);
+	fnd2 = fnd_get();
 	if (!fnd2) {
 		err = -ENOMEM;
 		goto out1;
@@ -2607,7 +2607,7 @@ int indx_update_dup(struct ntfs_inode *ni, struct ntfs_sb_info *sbi,
 	struct mft_inode *mi;
 	struct ntfs_index *indx = &ni->dir;
 
-	fnd = fnd_get(indx);
+	fnd = fnd_get();
 	if (!fnd) {
 		err = -ENOMEM;
 		goto out1;
