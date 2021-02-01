@@ -526,7 +526,12 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 	gfp_mask |= GFP_DMA;
 #endif
 
-	if (fragsz <= PAGE_SIZE && !(gfp_mask & (__GFP_WAIT | GFP_DMA))) {
+	/* If requested length is either too small or too big,
+	 * we use kmalloc() for skb->head allocation.
+	 */
+	if (length > SKB_WITH_OVERHEAD(1024) &&
+	    length <= SKB_WITH_OVERHEAD(PAGE_SIZE) &&
+	    !(gfp_mask & (__GFP_WAIT | GFP_DMA))) {
 		void *data;
 
 		if (sk_memalloc_socks())
