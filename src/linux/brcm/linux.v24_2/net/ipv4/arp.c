@@ -122,6 +122,12 @@ struct neigh_table *clip_tbl_hook;
 #include <asm/uaccess.h>
 
 #include <linux/netfilter_arp.h>
+#include <linux/typedefs.h>
+
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+int g_arp_spoofing_enable = 0;
+struct st_ip_mac_table szIPMac[MAX_ARP_SPOOFING_TABLE];
+#endif
 
 /*
  *	Interface to generic neighbour cache.
@@ -1284,6 +1290,52 @@ static void arp_format_pneigh_entry(struct seq_file *seq,
 		   dev ? dev->name : "*");
 }
 
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+int arp_spoofing_protect(struct sk_buff *skb)
+{
+	struct arphdr *arp;
+	unsigned char *arp_ptr;
+	unsigned char *sha;
+	u32 sip;
+	struct net_device *dev = skb->dev;
+	int i = 0;
+
+	arp = arp_hdr(skb);
+
+	/*
+ *	Extract fields
+ */
+	arp_ptr = (unsigned char *)(arp + 1);
+	sha	= arp_ptr;
+	arp_ptr += dev->addr_len;
+	memcpy(&sip, arp_ptr, 4);
+
+	for(i = 0;  i < MAX_ARP_SPOOFING_TABLE; i++) {
+		if(szIPMac[i].szIPaddr == 0) {
+			break;
+		}
+				
+		if(sip == szIPMac[i].szIPaddr) {
+			if(szIPMac[i].szMac[0]== *sha && szIPMac[i].szMac[1]== *(sha+1) &&
+				szIPMac[i].szMac[2]== *(sha+2) && szIPMac[i].szMac[3]== *(sha+3) &&
+				szIPMac[i].szMac[4]== *(sha+4) && szIPMac[i].szMac[5]== *(sha+5) ) {
+				return 0;
+			} else {
+				unsigned char *ip = (unsigned char*)&sip;
+				printk(KERN_ERR "arp spoofing detected ip=%d.%d.%d.%d mac is %02x:%02x:%02x:%02x:%02x:%02x but should be %02x:%02x:%02x:%02x:%02x:%02x\n", ip[0]&0xff,ip[1]&0xff,ip[2]&0xff,ip[3]&0xff,
+				szIPMac[i].szMac[0], szIPMac[i].szMac[1], szIPMac[i].szMac[2], szIPMac[i].szMac[3], szIPMac[i].szMac[4], szIPMac[i].szMac[5],
+				*sha, *(sha+1), *(sha+2), *(sha+3), *(sha+4), *(sha+5));
+				return 1;
+			}
+		}
+		
+	}
+	return 0;
+}
+
+EXPORT_SYMBOL(arp_spoofing_protect);
+#endif
+
 static int arp_seq_show(struct seq_file *seq, void *v)
 {
 	if (v == SEQ_START_TOKEN) {
@@ -1390,6 +1442,296 @@ static struct packet_type arp_packet_type = {
 	data:	(void*) 1, /* understand shared skbs */
 };
 
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+ssize_t arp_spoofing_enable_read(struct file *file,  char __user *buffer, size_t count,  loff_t *ppos)
+{
+	int iLen = 0;
+
+	sprintf(buffer, "%d\n",  g_arp_spoofing_enable);
+	iLen = strlen(buffer);
+
+	if (iLen <= *ppos)
+	{
+		return 0;
+	}
+	iLen -= *ppos;
+
+	*ppos += iLen;
+	
+	return iLen;
+
+}
+
+ssize_t arp_spoofing_enable_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
+{
+	char *buf = kmalloc(count, GFP_KERNEL);
+	unsigned long val;
+
+	if (buf) 
+	{
+		if (copy_from_user(buf, buffer, count))
+		{
+			kfree(buf);
+			return -EFAULT;
+		}
+
+		val = simple_strtoul(buf, NULL, 10);
+
+		g_arp_spoofing_enable = val;
+	}
+
+	if(NULL != buf)
+		kfree(buf);
+
+	return count;
+}
+
+ssize_t arp_spoofing_table_read(struct file *file,  char __user *buffer, size_t count,  loff_t *ppos)
+{
+	int iLen = 0;
+	int i = 0;
+	
+	for(i = 0;  i < MAX_ARP_SPOOFING_TABLE; i++)
+	{
+		if(szIPMac[i].szIPaddr != 0 )
+		{
+			iLen += sprintf(buffer+iLen, "szIPMAC[%d] %x %02x:%02x:%02x:%02x:%02x:%02x\n",  i,  szIPMac[i].szIPaddr, 
+				szIPMac[i].szMac[0], szIPMac[i].szMac[1], szIPMac[i].szMac[2], szIPMac[i].szMac[3], szIPMac[i].szMac[4], szIPMac[i].szMac[5]);
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	//iLen = strlen(buffer);
+
+	if (iLen <= *ppos)
+	{
+		return 0;
+	}
+	iLen -= *ppos;
+
+	*ppos += iLen;
+	
+	return iLen;
+
+}
+#define _U	0x01	/* upper */
+#define _L	0x02	/* lower */
+#define _D	0x04	/* digit */
+#define _C	0x08	/* cntrl */
+#define _P	0x10	/* punct */
+#define _S	0x20	/* white space (space/lf/tab) */
+#define _X	0x40	/* hex digit */
+#define _SP	0x80	/* hard space (0x20) */
+
+extern const unsigned char _ctype[];
+
+#define __ismask(x) (_ctype[(int)(unsigned char)(x)])
+
+#define isxdigit(c)	((__ismask(c)&(_D|_X)) != 0)
+#define isgraph(c)	((__ismask(c)&(_P|_U|_L|_D)) != 0)
+#define islower(c)	((__ismask(c)&(_L)) != 0)
+#define isprint(c)	((__ismask(c)&(_P|_U|_L|_D|_SP)) != 0)
+#define ispunct(c)	((__ismask(c)&(_P)) != 0)
+/* Note: isspace() must return false for %NUL-terminator */
+#define isspace(c)	((__ismask(c)&(_S)) != 0)
+#define isupper(c)	((__ismask(c)&(_U)) != 0)
+#define isxdigit(c)	((__ismask(c)&(_D|_X)) != 0)
+
+#define isascii(c) (((unsigned char)(c))<=0x7f)
+#define toascii(c) (((unsigned char)(c))&0x7f)
+
+static inline unsigned char __tolower(unsigned char c)
+{
+	if (isupper(c))
+		c -= 'A'-'a';
+	return c;
+}
+
+static inline unsigned char __toupper(unsigned char c)
+{
+	if (islower(c))
+		c -= 'a'-'A';
+	return c;
+}
+
+#define tolower(c) __tolower(c)
+#define toupper(c) __toupper(c)
+
+static int hex_to_bin(char ch)
+{
+	if ((ch >= '0') && (ch <= '9'))
+		return ch - '0';
+	ch = tolower(ch);
+	if ((ch >= 'a') && (ch <= 'f'))
+		return ch - 'a' + 10;
+	return -1;
+}
+
+static int mac_pton(const char *s, u8 *mac)
+{
+	int i;
+
+	/* XX:XX:XX:XX:XX:XX */
+	if (strlen(s) < 3 * ETH_ALEN - 1)
+		return FALSE;
+
+	/* Don't dirty result unless string is valid MAC. */
+	for (i = 0; i < ETH_ALEN; i++) {
+		if (!isxdigit(s[i * 3]) || !isxdigit(s[i * 3 + 1]))
+			return FALSE;
+		if (i != ETH_ALEN - 1 && s[i * 3 + 2] != ':')
+			return FALSE;
+	}
+	for (i = 0; i < ETH_ALEN; i++) {
+		mac[i] = (hex_to_bin(s[i * 3]) << 4) | hex_to_bin(s[i * 3 + 1]);
+	}
+	return TRUE;
+}
+
+ssize_t arp_spoofing_table_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
+{
+	char *buf = kmalloc(count + 1, GFP_KERNEL);
+	int i = 0;
+	char szAction[32] = { 0 };
+	char szIPaddr[32] = { 0 };
+	char szMac[32] = { 0 };
+	unsigned char szUCMac[ETH_ALEN] = { 0 };
+	u32 ui_ip;
+	int iFlag = 0;
+		
+	if (buf) 
+	{
+		if (copy_from_user(buf, buffer, count))
+		{
+			kfree(buf);
+			return -EFAULT;
+		}
+		memset(szIPaddr, 0, sizeof(szIPaddr));
+		memset(szMac, 0, sizeof(szMac));
+		
+		i = sscanf(buf, "%15s %15s %17s",  szAction, szIPaddr, szMac);
+
+		if(!strcmp(szAction, "ADD"))
+                {
+			if(3 != i)
+			{
+				goto exit;
+			}
+			ui_ip = in_aton(szIPaddr);
+		
+			if(0 == mac_pton(szMac, szUCMac))
+			{
+				goto exit;
+			}
+			
+			for(i = 0;  i < MAX_ARP_SPOOFING_TABLE; i++)
+			{
+				if(szIPMac[i].szIPaddr !=0 )
+				{
+					if(szIPMac[i].szIPaddr == ui_ip)
+					{
+						szIPMac[i].szMac[0] = szUCMac[0];
+						szIPMac[i].szMac[1] = szUCMac[1];
+						szIPMac[i].szMac[2] = szUCMac[2];
+						szIPMac[i].szMac[3] = szUCMac[3];
+						szIPMac[i].szMac[4] = szUCMac[4];
+						szIPMac[i].szMac[5] = szUCMac[5];
+						break;
+					}
+				}
+				else
+				{
+					szIPMac[i].szIPaddr = ui_ip;
+					szIPMac[i].szMac[0] = szUCMac[0];
+					szIPMac[i].szMac[1] = szUCMac[1];
+					szIPMac[i].szMac[2] = szUCMac[2];
+					szIPMac[i].szMac[3] = szUCMac[3];
+					szIPMac[i].szMac[4] = szUCMac[4];
+					szIPMac[i].szMac[5] = szUCMac[5];
+					break;
+				}
+			}
+		}
+		else if(!strcmp(szAction, "DEL"))
+		{
+			ui_ip = in_aton(szIPaddr);
+			
+			for(i = 0;  i < MAX_ARP_SPOOFING_TABLE-1; i++)
+			{
+				if(iFlag)
+				{
+					if(szIPMac[i+1].szIPaddr != 0)
+					{
+						szIPMac[i].szIPaddr = szIPMac[i+1].szIPaddr;
+						szIPMac[i].szMac[0] = szIPMac[i+1].szMac[0];
+						szIPMac[i].szMac[1] = szIPMac[i+1].szMac[1];
+						szIPMac[i].szMac[2] = szIPMac[i+1].szMac[2];
+						szIPMac[i].szMac[3] = szIPMac[i+1].szMac[3];
+						szIPMac[i].szMac[4] = szIPMac[i+1].szMac[4];
+						szIPMac[i].szMac[5] = szIPMac[i+1].szMac[5];
+					}
+					else
+					{
+						szIPMac[i].szIPaddr = 0;
+						szIPMac[i].szMac[0] = 0;
+						szIPMac[i].szMac[1] = 0;
+						szIPMac[i].szMac[2] = 0;
+						szIPMac[i].szMac[3] = 0;
+						szIPMac[i].szMac[4] = 0;
+						szIPMac[i].szMac[5] = 0;
+						break;
+					}
+				}
+				
+				
+				if(szIPMac[i].szIPaddr == ui_ip)
+				{
+					szIPMac[i].szIPaddr = szIPMac[i+1].szIPaddr;
+					szIPMac[i].szMac[0] = szIPMac[i+1].szMac[0];
+					szIPMac[i].szMac[1] = szIPMac[i+1].szMac[1];
+					szIPMac[i].szMac[2] = szIPMac[i+1].szMac[2];
+					szIPMac[i].szMac[3] = szIPMac[i+1].szMac[3];
+					szIPMac[i].szMac[4] = szIPMac[i+1].szMac[4];
+					szIPMac[i].szMac[5] = szIPMac[i+1].szMac[5];
+					iFlag = 1;
+				}
+			}
+		}
+		else if(!strcmp(szAction, "flush"))
+		{
+			for(i = 0;	i < MAX_ARP_SPOOFING_TABLE; i++)
+			{
+				szIPMac[i].szIPaddr = 0;
+				szIPMac[i].szMac[0] = 0;
+				szIPMac[i].szMac[1] = 0;
+				szIPMac[i].szMac[2] = 0;
+				szIPMac[i].szMac[3] = 0;
+				szIPMac[i].szMac[4] = 0;
+				szIPMac[i].szMac[5] = 0;
+			}
+		}
+						
+		kfree(buf);
+	}
+exit:
+
+	return count;
+}
+
+static struct file_operations arp_spoofing_enable_fops = {
+        .read = arp_spoofing_enable_read,
+        .write = arp_spoofing_enable_write,
+};
+
+static struct file_operations arp_spoofing_table_fops = {
+        .read = arp_spoofing_table_read,
+        .write = arp_spoofing_table_write,
+};
+#endif
+
 void __init arp_init (void)
 {
 	neigh_table_init(&arp_tbl);
@@ -1399,6 +1741,10 @@ void __init arp_init (void)
 #ifdef CONFIG_PROC_FS
 	if (!proc_net_fops_create("arp", S_IRUGO, &arp_seq_fops))
 		panic("unable to create arp proc entry");
+#endif
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+	proc_net_fops_create("arp_spoofing_enable", S_IRUGO, &arp_spoofing_enable_fops);
+	proc_net_fops_create("arp_spoofing_table", S_IRUGO, &arp_spoofing_table_fops);
 #endif
 #ifdef CONFIG_SYSCTL
 	neigh_sysctl_register(NULL, &arp_tbl.parms, NET_IPV4, NET_IPV4_NEIGH, "ipv4");
