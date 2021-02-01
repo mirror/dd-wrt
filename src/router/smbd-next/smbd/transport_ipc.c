@@ -64,7 +64,7 @@ struct ksmbd_ipc_msg {
 };
 
 #define KSMBD_IPC_MSG_PAYLOAD(m)					\
-	(void *)(((struct ksmbd_ipc_msg *)(m))->____payload)
+	((void *)(((struct ksmbd_ipc_msg *)(m))->____payload))
 
 struct ipc_msg_table_entry {
 	unsigned int		handle;

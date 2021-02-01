@@ -14,7 +14,7 @@
 #include "vfs_cache.h"
 #include "smberr.h"
 
-#define KSMBD_VERSION	"3.3.3"
+#define KSMBD_VERSION	"3.3.4"
 
 /* @FIXME clean up this code */
 
