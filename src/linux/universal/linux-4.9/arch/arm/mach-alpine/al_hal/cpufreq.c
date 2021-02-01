@@ -16,7 +16,7 @@
 #define AL_REG_FIELD_GET(reg, mask, shift)  (((reg) & (mask)) >> (shift))
 #define AL_SB_PBS_BASE		(AL_SB_BASE + 0xfd880000)
 #define AL_PBS_REGFILE_BASE	(AL_SB_PBS_BASE + 0x00028000)
-#define	AL_DEFAULT_CPUFREQ	2000000
+#define	AL_DEFAULT_CPUFREQ	1700000
 
 static struct cpufreq_frequency_table *ftbl;
 static struct al_pll_obj pll_obj;
