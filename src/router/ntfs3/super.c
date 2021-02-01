@@ -848,7 +848,7 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 
 	sbi->used.bitmap.nbits = clusters;
 
-	rec = ntfs_alloc(record_size, 1);
+	rec = ntfs_zalloc(record_size);
 	if (!rec) {
 		err = -ENOMEM;
 		goto out;
@@ -915,7 +915,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 
 	ref.high = 0;
 
-	sbi = ntfs_alloc(sizeof(struct ntfs_sb_info), true);
+	sbi = ntfs_zalloc(sizeof(struct ntfs_sb_info));
 	if (!sbi)
 		return -ENOMEM;
 
@@ -978,7 +978,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 	attr = ni_find_attr(ni, NULL, NULL, ATTR_LABEL, NULL, 0, NULL, NULL);
 
 	if (!attr) {
-		;
+		/* It is ok if no ATTR_LABEL */
 	} else if (!attr->non_res && !is_attr_ext(attr)) {
 		/* $AttrDef allows labels to be up to 128 symbols */
 		err = utf16s_to_utf8s(resident_data(attr),
@@ -1176,7 +1176,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 		goto out;
 	}
 	bytes = inode->i_size;
-	sbi->def_table = t = ntfs_alloc(bytes, 0);
+	sbi->def_table = t = ntfs_malloc(bytes);
 	if (!t) {
 		err = -ENOMEM;
 		goto out;
@@ -1238,7 +1238,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 		goto out;
 	}
 
-	sbi->upcase = upcase = ntfs_alloc(0x10000 * sizeof(short), 0);
+	sbi->upcase = upcase = ntfs_malloc(0x10000 * sizeof(short));
 	if (!upcase) {
 		err = -ENOMEM;
 		goto out;
@@ -1457,6 +1457,8 @@ static int __init init_ntfs_fs(void)
 	err = register_filesystem(&ntfs_fs_type);
 	if (!err)
 		return 0;
+
+	kmem_cache_destroy(ntfs_inode_cachep);
 
 failed:
 	return err;
