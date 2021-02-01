@@ -418,7 +418,12 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 	unsigned int fragsz = SKB_DATA_ALIGN(length + NET_SKB_PAD) +
 			      SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 
-	if (fragsz <= PAGE_SIZE && !(gfp_mask & (__GFP_WAIT | GFP_DMA))) {
+	/* If requested length is either too small or too big,
+	 * we use kmalloc() for skb->head allocation.
+	 */
+	if (length > SKB_WITH_OVERHEAD(1024) &&
+	    length <= SKB_WITH_OVERHEAD(PAGE_SIZE) &&
+	    !(gfp_mask & (__GFP_WAIT | GFP_DMA))) {
 		void *data = netdev_alloc_frag(fragsz);
 
 		if (likely(data)) {
