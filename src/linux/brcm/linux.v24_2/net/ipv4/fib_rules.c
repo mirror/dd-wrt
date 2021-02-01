@@ -321,7 +321,7 @@ static int fib_rule_match(struct fib_rule *r, const struct rt_key *key)
 #endif
 		    (r->r_ifindex && r->r_ifindex != key->iif))
 			ret = 0;
-
+	
 	return (r->r_flags & FIB_RULE_INVERT) ? !ret : ret;
 
 
@@ -331,16 +331,12 @@ int fib_lookup(const struct rt_key *key, struct fib_result *res)
 	int err;
 	struct fib_rule *r, *policy;
 	struct fib_table *tb;
-	int ret = 0;
-
-	u32 daddr = key->dst;
-	u32 saddr = key->src;
 
 FRprintk("Lookup: %u.%u.%u.%u <- %u.%u.%u.%u ",
 	NIPQUAD(key->dst), NIPQUAD(key->src));
 	read_lock(&fib_rules_lock);
 	for (r = fib_rules; r; r=r->r_next) {
-		if (!fib_rule_match(key, r))
+		if (!fib_rule_match(r, key))
 			continue;
 
 FRprintk("tb %d r %d ", r->r_table, r->r_action);
