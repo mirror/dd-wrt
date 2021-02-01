@@ -320,8 +320,8 @@ static struct device_info boards[] = {
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x10000},
-			{"os-image", 0x30000, 0x180000},	/* Stock: base 0x30000 size 0x100000 */
-			{"file-system", 0x1b0000, 0x620000},	/* Stock: base 0x130000 size 0x6a0000 */
+			{"os-image", 0x30000, 0x130000},	/* Stock: base 0x30000 size 0x100000 */
+			{"file-system", 0x160000, 0x670000},	/* Stock: base 0x130000 size 0x6a0000 */
 			{"user-config", 0x7d0000, 0x04000},
 			{"default-mac", 0x7e0000, 0x00100},
 			{"device-id", 0x7e0100, 0x00100},
@@ -874,7 +874,7 @@ static struct device_info boards[] = {
 			"{product_name:ARCHER A7,product_ver:5.0.0,special_id:52550000}\n" //RU
 			"{product_name:ARCHER A7,product_ver:5.0.0,special_id:54570000}\n", // TW
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = "soft_ver:1.2.0\n",
 
 		/**
 		    We use a bigger os-image partition than the stock images (and thus
@@ -923,7 +923,7 @@ static struct device_info boards[] = {
 			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:52550000}\n" //RU
 			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:54570000}\n", // TW
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = "soft_ver:1.2.0\n",
 
 		/**
 		    We use a bigger os-image partition than the stock images (and thus
