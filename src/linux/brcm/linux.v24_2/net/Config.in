@@ -10,6 +10,8 @@ fi
 
 tristate 'Netlink device emulation' CONFIG_NETLINK_DEV
 
+bool 'kernel arp spoofing protect' CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+
 bool 'Network packet filtering (replaces ipchains)' CONFIG_NETFILTER
 if [ "$CONFIG_NETFILTER" = "y" ]; then
    bool '  Network packet filtering debugging' CONFIG_NETFILTER_DEBUG

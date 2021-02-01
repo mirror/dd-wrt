@@ -147,4 +147,10 @@ struct arphdr
 
 };
 
+static inline struct arphdr *arp_hdr(const struct sk_buff *skb)
+{
+	return skb->nh.arph;
+}
+
+
 #endif	/* _LINUX_IF_ARP_H */

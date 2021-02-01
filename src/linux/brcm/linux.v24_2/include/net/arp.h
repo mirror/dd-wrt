@@ -5,6 +5,15 @@
 #include <linux/if_arp.h>
 #include <net/neighbour.h>
 
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+#define MAX_ARP_SPOOFING_TABLE 256
+struct st_ip_mac_table
+{
+	u32 szIPaddr;
+	unsigned char szMac[ETH_ALEN];
+};
+#endif
+
 #define HAVE_ARP_CREATE
 
 extern struct neigh_table arp_tbl;
@@ -28,5 +37,9 @@ extern struct sk_buff *arp_create(int type, int ptype, u32 dest_ip,
 extern void arp_xmit(struct sk_buff *skb);
 
 extern struct neigh_ops arp_broken_ops;
+
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+int arp_spoofing_protect(struct sk_buff *skb);
+#endif
 
 #endif	/* _ARP_H */

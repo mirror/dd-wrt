@@ -18,6 +18,7 @@
 #include <linux/inetdevice.h>
 #include <linux/skbuff.h>
 #include <linux/if_bridge.h>
+#include <linux/if_arp.h>
 #include <linux/netfilter_bridge.h>
 #include "br_private.h"
 
@@ -43,6 +44,35 @@ int br_dev_queue_push_xmit(struct sk_buff *skb)
 
 int br_forward_finish(struct sk_buff *skb)
 {
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+extern int g_arp_spoofing_enable;
+	struct net_device *dev;
+	struct in_device *in_dev;
+	struct arphdr *arp;
+
+	if(g_arp_spoofing_enable)
+	{
+		dev = skb->dev;
+		in_dev = __in_dev_get(dev);
+
+		if(NULL != in_dev)
+		{
+			if(htons(ETH_P_ARP) == skb->protocol && PACKET_OTHERHOST == skb->pkt_type)
+			{
+				arp = arp_hdr(skb);
+				if(arp->ar_op == htons(ARPOP_REPLY))
+				{
+					if(arp_spoofing_protect(skb))
+					{
+						kfree_skb(skb);
+						return NF_DROP;
+					}
+				}
+			}
+		}
+	}
+#endif
+
 	NF_HOOK(PF_BRIDGE, NF_BR_POST_ROUTING, skb, NULL, skb->dev,
 			br_dev_queue_push_xmit);
 
