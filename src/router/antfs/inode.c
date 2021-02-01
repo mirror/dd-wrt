@@ -744,6 +744,12 @@ static int antfs_show_options(struct seq_file *m, struct dentry *root)
 		seq_puts(m, ",utf8");
 	if (sbi->umask)
 		seq_printf(m, ",umask=%04o", sbi->umask);
+	if (sb->s_flags & MS_POSIXACL)
+		seq_puts(m, ",acl");
+	if (sb->s_flags & MS_NOATIME)
+		seq_puts(m, ",noatime");
+	if (sb->s_flags & MS_NODIRATIME)
+		seq_puts(m, ",nodiratime");
 	return 0;
 }
 
