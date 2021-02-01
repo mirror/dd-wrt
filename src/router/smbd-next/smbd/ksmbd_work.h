@@ -102,12 +102,12 @@ struct ksmbd_work {
 
 #define INIT_AUX_PAYLOAD(w)	((w)->aux_payload_buf = NULL)
 #define HAS_AUX_PAYLOAD(w)	((w)->aux_payload_sz != 0)
-#define AUX_PAYLOAD(w)		(void *)((w)->aux_payload_buf)
+#define AUX_PAYLOAD(w)		((void *)((w)->aux_payload_buf))
 #define AUX_PAYLOAD_SIZE(w)	((w)->aux_payload_sz)
 #define RESP_HDR_SIZE(w)	((w)->resp_hdr_sz)
 
 #define HAS_TRANSFORM_BUF(w)	((w)->tr_buf != NULL)
-#define TRANSFORM_BUF(w)	(void *)((w)->tr_buf)
+#define TRANSFORM_BUF(w)	((void *)((w)->tr_buf))
 
 struct ksmbd_work *ksmbd_alloc_work_struct(void);
 void ksmbd_free_work_struct(struct ksmbd_work *work);
