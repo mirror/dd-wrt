@@ -575,6 +575,8 @@ static int ntfs_show_options(struct seq_file *m, struct dentry *root)
 		seq_puts(m, ",acl");
 	if (sb->s_flags & SB_NOATIME)
 		seq_puts(m, ",noatime");
+	if (sb->s_flags & SB_NODIRATIME)
+		seq_puts(m, ",nodiratime");
 
 	return 0;
 }
