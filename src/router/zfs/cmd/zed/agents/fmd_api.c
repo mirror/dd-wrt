@@ -36,7 +36,7 @@
 
 #include <sys/types.h>
 #include <sys/fm/protocol.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 #include <signal.h>
 #include <strings.h>
 #include <time.h>
