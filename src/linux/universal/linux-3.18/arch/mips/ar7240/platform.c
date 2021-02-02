@@ -1832,7 +1832,7 @@ int __init ar7240_platform_init(void)
 
 //	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
-//	ath79_setup_ar934x_eth_rx_delay(3, 3);
+	ath79_setup_ar934x_eth_rx_delay(2, 2);
 
 	ar71xx_add_device_mdio(0, 0);	
 
@@ -1840,8 +1840,8 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
-//	ar71xx_eth0_pll_data.pll_100 = 0x00000101;
-//	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+	ar71xx_eth0_pll_data.pll_100 = 0x00000101;
+	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
 
 //	mdiobus_register_board_info(at803_mdio_info,
 //			ARRAY_SIZE(at803_mdio_info));
@@ -1856,6 +1856,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.phy_mask = BIT(4);
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	ar71xx_add_device_eth(1);*/
+	//#error "check"
     #elif CONFIG_UAPACPRO
 	ar71xx_add_device_mdio(0, 0);	
 
