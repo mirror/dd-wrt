@@ -1177,7 +1177,7 @@ void start_lan(void)
 	}
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 #ifdef HAVE_ONNET
-	if (nvram_match("wan_proto", "disabled")) {
+	if (getSTA() || getWET() || CANBRIDGE()) {
 		nvram_setz(lan_ifnames, "eth0 wlan0 wlan1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 2 3");
@@ -1246,7 +1246,7 @@ void start_lan(void)
 	}
 #ifdef HAVE_ONNET
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-	if (nvram_match("wan_proto", "disabled")) {
+	if (getSTA() || getWET() || CANBRIDGE()) {
 		nvram_setz(lan_ifnames, "eth0 wlan0");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 4 5");
@@ -1279,7 +1279,7 @@ void start_lan(void)
 	}
 #ifdef HAVE_ONNET
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-	if (nvram_match("wan_proto", "disabled")) {
+	if (getSTA() || getWET() || CANBRIDGE()) {
 		nvram_setz(lan_ifnames, "eth0 wlan0 wlan1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
@@ -1658,7 +1658,7 @@ void start_lan(void)
 #ifdef HAVE_TMK
 	if (brand == ROUTER_BOARD_NS5MXW) {
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
-		if (nvram_match("wan_proto", "disabled")) {
+		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 wlan0");
 			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 1 5");
@@ -1675,7 +1675,7 @@ void start_lan(void)
 		eval("swconfig", "dev", "eth0", "set", "apply");
 	} else if (brand == ROUTER_UBNT_NANOAC) {
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
-		if (nvram_match("wan_proto", "disabled")) {
+		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 wlan0");
 			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 2 3");
@@ -2124,6 +2124,12 @@ void start_lan(void)
 	char *eadline = NULL;
 
 #endif
+	char *wanstate = NULL;
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		wanstate = set_wan_state(0);
+	} else {
+		set_wan_state(1);
+	}
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
 		br_add_bridge(lan_ifname);
 		eval("ifconfig", lan_ifname, "promisc");
@@ -2403,6 +2409,9 @@ void start_lan(void)
 
 		}
 	}
+	if (wanstate)
+		br_add_interface(lan_ifname, wanstate);
+
 #ifdef HAVE_EAD
 	if (eadline && *eadline) {
 		sysprintf("ead %s -B", eadline);
