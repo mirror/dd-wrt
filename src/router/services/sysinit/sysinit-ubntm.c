@@ -329,7 +329,6 @@ char *set_wan_state(int state)
 			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
 			eval("swconfig", "dev", "eth0", "set", "apply");
 			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "add", "eth0", "1");
 			eval("vconfig", "add", "eth0", "2");
 		}
@@ -369,7 +368,6 @@ char *set_wan_state(int state)
 			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 3 4");
 			eval("swconfig", "dev", "eth0", "set", "apply");
 			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "rem", "vlan1");
 			eval("vconfig", "rem", "vlan2");
 			return "eth0";
