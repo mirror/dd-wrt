@@ -336,7 +336,7 @@ void start_check_qmi(void);
 void start_postnetwork(void);
 
 void runStartup(char *extension);
-
+char *set_wan_state(int state);
 void create_openvpnserverrules(FILE * fp);
 void create_openvpnrules(FILE * fp);
 #endif
