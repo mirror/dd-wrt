@@ -147,3 +147,8 @@ void enable_dtag_vlan(int enable)
 {
 
 }
+
+char *set_wan_state(int state)
+{
+	return NULL;
+}
