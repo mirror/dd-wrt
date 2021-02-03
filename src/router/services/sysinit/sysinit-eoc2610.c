@@ -20,7 +20,3 @@
  * $Id:
  */
 #include "sysinit-fonera.c"
-char *set_wan_state(int state)
-{
-	return NULL;
-}
