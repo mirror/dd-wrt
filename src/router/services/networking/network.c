@@ -1175,25 +1175,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("vlan2");
 	}
-	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-#ifdef HAVE_ONNET
-	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 wlan0 wlan1");
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 2 3");
-	} else {
-		nvram_setz(lan_ifnames, "vlan1 wlan0 wlan1");
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-	}
-#else
 	nvram_setz(lan_ifnames, "vlan1 wlan0 wlan1");
-	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
-	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-#endif
-	eval("swconfig", "dev", "eth0", "set", "apply");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1244,19 +1226,6 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("vlan1");
 	}
-#ifdef HAVE_ONNET
-	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 wlan0");
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 4 5");
-	} else {
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
-	}
-	eval("swconfig", "dev", "eth0", "set", "apply");
-#endif
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1277,19 +1246,6 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("vlan2");
 	}
-#ifdef HAVE_ONNET
-	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 wlan0 wlan1");
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
-	} else {
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-	}
-	eval("swconfig", "dev", "eth0", "set", "apply");
-#endif
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1655,45 +1611,6 @@ void start_lan(void)
 			PORTSETUPWAN("eth0");
 		}
 	}
-#ifdef HAVE_TMK
-	if (brand == ROUTER_BOARD_NS5MXW) {
-		eval("swconfig", "dev", "eth0", "set", "reset", "1");
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "eth0 wlan0");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 1 5");
-		} else {
-			nvram_setz(lan_ifnames, "vlan1 wlan0");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
-			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-			eval("vconfig", "add", "eth0", "1");
-			eval("vconfig", "add", "eth0", "2");
-		}
-		eval("swconfig", "dev", "eth0", "set", "apply");
-	} else if (brand == ROUTER_UBNT_NANOAC) {
-		eval("swconfig", "dev", "eth0", "set", "reset", "1");
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "eth0 wlan0");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 2 3");
-			eval("swconfig", "dev", "eth0", "set", "apply");
-			eval("ifconfig", "eth0", "up");
-		} else {
-			nvram_setz(lan_ifnames, "vlan1 wlan0");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-			eval("swconfig", "dev", "eth0", "set", "apply");
-			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-			eval("vconfig", "add", "eth0", "1");
-			eval("vconfig", "add", "eth0", "2");
-		}
-	}
-#endif
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
