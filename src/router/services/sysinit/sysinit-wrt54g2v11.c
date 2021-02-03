@@ -211,3 +211,8 @@ char *enable_dtag_vlan(int enable)
 	eval("swconfig", "dev", "eth0", "set", "apply");
 	return "eth0";
 }
+
+char *set_wan_state(int state)
+{
+	return NULL;
+}

@@ -98,7 +98,7 @@ void start_sysinit(void)
 	insmod("rt2880_wdt");
 	int brand = getRouterBrand();
 	FILE *in;
-	if (brand == ROUTER_R6800 || brand == ROUTER_R6850  || brand == ROUTER_R6220)
+	if (brand == ROUTER_R6800 || brand == ROUTER_R6850 || brand == ROUTER_R6220)
 		in = fopen("/dev/mtdblock/5", "rb");
 	else
 		in = fopen("/dev/mtdblock/2", "rb");
@@ -217,7 +217,6 @@ void start_sysinit(void)
 		writestr("/sys/class/leds/white:lan2/port_mask", "0x4");
 		writestr("/sys/class/leds/white:lan3/port_mask", "0x2");
 		writestr("/sys/class/leds/white:lan4/port_mask", "0x1");
-
 
 		writestr("/sys/class/leds/white:wan/mode", "link");
 		writestr("/sys/class/leds/white:lan1/mode", "link");
@@ -675,4 +674,9 @@ char *enable_dtag_vlan(int enable)
 	} else {
 		return "eth2";
 	}
+}
+
+char *set_wan_state(int state)
+{
+	return NULL;
 }

@@ -319,3 +319,8 @@ void start_fixboard(void)
 	}
 
 }
+
+char *set_wan_state(int state)
+{
+	return NULL;
+}

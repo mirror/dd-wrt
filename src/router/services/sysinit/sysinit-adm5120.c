@@ -342,3 +342,8 @@ char *enable_dtag_vlan(int enable)
 {
 	return "eth2";
 }
+
+char *set_wan_state(int state)
+{
+	return NULL;
+}

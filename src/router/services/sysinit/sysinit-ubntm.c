@@ -138,26 +138,6 @@ void start_sysinit(void)
 	switch (brand) {
 	case ROUTER_UBNT_UAPACPRO:
 	case ROUTER_UBNT_NANOAC:
-#ifdef HAVE_TMK
-		if (nvram_match("wan_proto", "disabled")) {
-			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
-			eval("swconfig", "dev", "eth0", "set", "apply");
-			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "add", "eth0", "1");
-		} else {
-			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-			eval("swconfig", "dev", "eth0", "set", "apply");
-			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-			eval("vconfig", "add", "eth0", "1");
-			eval("vconfig", "add", "eth0", "2");
-		}
-#else
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
@@ -167,28 +147,8 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
-#endif
 		break;
 	case ROUTER_BOARD_NS5MXW:
-#ifdef HAVE_TMK
-		if (nvram_match("wan_proto", "disabled")) {
-			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 5");
-			eval("swconfig", "dev", "eth0", "set", "apply");
-			eval("ifconfig", "eth0", "up");
-		} else {
-			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
-			eval("swconfig", "dev", "eth0", "set", "apply");
-			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-			eval("vconfig", "add", "eth0", "1");
-			eval("vconfig", "add", "eth0", "2");
-		}
-#else
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
@@ -198,7 +158,6 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
-#endif
 		char macaddr[32];
 		if (get_hwaddr("eth0", macaddr)) {
 			set_hwaddr("vlan1", macaddr);
@@ -345,6 +304,8 @@ int check_pmon_nv(void)
 {
 	return 0;
 }
+
+/* removes switch function if wan is disabled, so we can use vlan passthrough */
 
 char *set_wan_state(int state)
 {

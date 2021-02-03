@@ -290,7 +290,7 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "wlan0");
 	nvram_set("wl1_ifname", "wlan1");
-	nvram_set("clkfreq","1700");
+	nvram_set("clkfreq", "1700");
 }
 
 void start_resetleds(void)
@@ -323,14 +323,19 @@ void start_overclocking(void)
 {
 	char *oclock = nvram_safe_get("overclocking");
 	if (*oclock) {
-	    sysprintf("echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
-	    sysprintf("echo %s000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
+		sysprintf("echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf("echo %s000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
 	} else {
-	    sysprintf("echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf("echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
 	}
 }
 
 void enable_dtag_vlan(int enable)
 {
 
+}
+
+char *set_wan_state(int state)
+{
+	return NULL;
 }
