@@ -170,26 +170,11 @@ void start_sysinit(void)
 #elif defined (HAVE_XD3200)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 #ifndef HAVE_SR3200
-#ifdef HAVE_ONNET
-	if (nvram_match("wan_proto", "disabled")) {
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
-	} else {
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-	}
-#else
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-#endif
 #else
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -273,49 +258,19 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 #elif defined (HAVE_CPE880)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-#ifdef HAVE_ONNET
-	if (nvram_match("wan_proto", "disabled")) {
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 4 5");
-	} else {
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
-	}
-#else
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
-#endif
 	eval("swconfig", "dev", "eth0", "set", "apply");
 #elif defined (HAVE_MMS344)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-#ifdef HAVE_ONNET
-	if (nvram_match("wan_proto", "disabled")) {
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 2 3");
-	} else {
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-	}
-#else
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-#endif
 #elif defined (HAVE_WR1043V4)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -866,5 +821,99 @@ char *enable_dtag_vlan(int enable)
 
 char *set_wan_state(int state)
 {
+#if defined (HAVE_XD3200)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+#ifndef HAVE_SR3200
+	if (!state) {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("vconfig", "rem", "vlan1");
+		eval("vconfig", "rem", "vlan2");
+		return "eth0";
+	} else {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		return NULL;
+	}
+#else
+	if (!state) {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4 5");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("vconfig", "rem", "vlan1");
+		eval("vconfig", "rem", "vlan2");
+		return "eth0";
+	} else {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		return NULL;
+	}
+#endif
+#elif defined (HAVE_CPE880)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	if (!state) {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 4 5");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("vconfig", "rem", "vlan1");
+		eval("vconfig", "rem", "vlan2");
+		return "eth0";
+	} else {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		return NULL;
+	}
+#elif defined (HAVE_MMS344)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	if (!state) {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 2 3");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("vconfig", "rem", "vlan1");
+		eval("vconfig", "rem", "vlan2");
+		return "eth0";
+	} else {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		return NULL;
+	}
+#endif
 	return NULL;
 }
