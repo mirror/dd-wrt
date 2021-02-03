@@ -1,8 +1,8 @@
-#include <asm/pgtable.h>
 #include <linux/version.h>
 #include <linux/uio.h>
 #include <linux/swap.h>
 #include <linux/buffer_head.h>
+#include <asm/pgtable.h>
 
 #ifndef SECTOR_SHIFT
 #define SECTOR_SHIFT 9
