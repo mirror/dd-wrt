@@ -20,3 +20,7 @@
  * $Id:
  */
 #include "sysinit-ubntm.c"
+char *set_wan_state(int state)
+{
+	return NULL;
+}

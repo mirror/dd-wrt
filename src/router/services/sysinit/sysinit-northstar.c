@@ -6782,3 +6782,8 @@ void start_dtag(void)
 {
 	enable_dtag_vlan(1);
 }
+
+char *set_wan_state(int state)
+{
+	return NULL;
+}

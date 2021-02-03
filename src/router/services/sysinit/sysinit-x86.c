@@ -370,3 +370,7 @@ void enable_dtag_vlan(int enable)
 }
 
 #include "tools/recover.c"
+char *set_wan_state(int state)
+{
+	return NULL;
+}
