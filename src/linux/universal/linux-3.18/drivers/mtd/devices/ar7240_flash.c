@@ -104,7 +104,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 		if (ofs[i] == 0x27051956) {
 			if (ofs[i + 0x8000] == 0x27051956) {
 				printk(KERN_EMERG "uboot detected (MMS344 Quirk)\n");
-				return (i * 4) + 0x20000;	// uboot, lzma image		
+				return (i * 4) + 0x20000;	// uboot, lzma image            
 			}
 			printk(KERN_EMERG "uboot detected\n");
 			return i * 4;	// uboot, lzma image
@@ -199,7 +199,6 @@ static int ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len, size
 		return (0);
 	if (from + len > mtd->size)
 		return (-EINVAL);
-
 	if (from + len >= 16 << 20) {
 		ar7240_flash_spi_down();
 		preempt_disable();
@@ -227,28 +226,28 @@ static int ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len, size_
 
 static struct mtd_partition dir_parts[] = {
 #ifdef CONFIG_MTD_FLASH_16MB
-      {name: "RedBoot", offset: 0x30000, size:0x10000,},
+      { name: "RedBoot", offset: 0x30000, size:0x10000, },
 	//, mask_flags: MTD_WRITEABLE, },
-      {name: "linux", offset: 0x50000, size:0xf90000,},
+      { name: "linux", offset: 0x50000, size:0xf90000, },
 #elif CONFIG_MTD_FLASH_8MB
-      {name: "RedBoot", offset: 0x30000, size:0x10000,},
+      { name: "RedBoot", offset: 0x30000, size:0x10000, },
 	//, mask_flags: MTD_WRITEABLE, },
-      {name: "linux", offset: 0x50000, size:0x790000,},
+      { name: "linux", offset: 0x50000, size:0x790000, },
 #else
-      {name: "RedBoot", offset: 0, size:0x40000,},
+      { name: "RedBoot", offset: 0, size:0x40000, },
 	//, mask_flags: MTD_WRITEABLE, },
-      {name: "linux", offset: 0x40000, size:0x3a0000,},
+      { name: "linux", offset: 0x40000, size:0x3a0000, },
 #endif
-      {name: "rootfs", offset: 0x0, size:0x2b0000,},
+      { name: "rootfs", offset: 0x0, size:0x2b0000, },
 	//must be detected
-      {name: "ddwrt", offset: 0x0, size:0x2b0000,},
+      { name: "ddwrt", offset: 0x0, size:0x2b0000, },
 	//must be detected
-      {name: "nvram", offset: 0x3d0000, size:0x10000,},
-      {name: "board_config", offset: 0x3f0000, size:0x10000,},
-      {name: "fullflash", offset: 0x3f0000, size:0x10000,},
-      {name: "fullboot", offset: 0, size:0x30000,},
-      {name: "uboot-env", offset: 0x40000, size:0x10000,},
-      {name:NULL,},
+      { name: "nvram", offset: 0x3d0000, size:0x10000, },
+      { name: "board_config", offset: 0x3f0000, size:0x10000, },
+      { name: "fullflash", offset: 0x3f0000, size:0x10000, },
+      { name: "fullboot", offset: 0, size:0x30000, },
+      { name: "uboot-env", offset: 0x40000, size:0x10000, },
+      { name:NULL, },
 };
 
 struct fis_image_desc {
@@ -283,9 +282,9 @@ static int __init ar7240_flash_init(void)
 	init_MUTEX(&ar7240_flash_sem);
 
 #if defined(ATH_SST_FLASH)
-//	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x3);
-//	ar7240_reg_wr(AR7240_SPI_FS, 0);
-//	ar7240_spi_flash_unblock();
+//      ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x3);
+//      ar7240_reg_wr(AR7240_SPI_FS, 0);
+//      ar7240_spi_flash_unblock();
 #else
 #ifndef CONFIG_WASP_SUPPORT
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
@@ -380,9 +379,6 @@ static int __init ar7240_flash_init(void)
 				dir_parts[4].size = mtd->erasesize;
 #elif defined(CONFIG_ARCHERC7V4) || defined(CONFIG_WR1043V4) || defined(CONFIG_WR1043V5)
 				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 16);	//nvram
-				dir_parts[4].size = mtd->erasesize;
-#elif defined(CONFIG_NANOAC) || defined(CONFIG_UAPAC) || defined(CONFIG_UAPACPRO)
-				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 6);	//nvram
 				dir_parts[4].size = mtd->erasesize;
 #elif (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)) || defined(CONFIG_DIR862)
 				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 2);	//nvram
