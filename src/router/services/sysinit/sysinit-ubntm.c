@@ -346,6 +346,96 @@ int check_pmon_nv(void)
 	return 0;
 }
 
+char *set_wan_state(int state)
+{
+	int brand = getRouterBrand();
+	switch (brand) {
+	case ROUTER_UBNT_UAPACPRO:
+	case ROUTER_UBNT_NANOAC:
+		if (!state) {
+			eval("swconfig", "dev", "eth0", "set", "reset", "1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
+			eval("swconfig", "dev", "eth0", "set", "apply");
+			eval("ifconfig", "eth0", "up");
+			eval("vconfig", "rem", "vlan1");
+			eval("vconfig", "rem", "vlan2");
+			return "eth0";
+		} else {
+			eval("swconfig", "dev", "eth0", "set", "reset", "1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+			eval("swconfig", "dev", "eth0", "set", "apply");
+			eval("ifconfig", "eth0", "up");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", "eth0", "1");
+			eval("vconfig", "add", "eth0", "2");
+		}
+		return NULL;
+		break;
+	case ROUTER_BOARD_NS5MXW:
+		if (!state) {
+			eval("swconfig", "dev", "eth0", "set", "reset", "1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 5");
+			eval("swconfig", "dev", "eth0", "set", "apply");
+			eval("ifconfig", "eth0", "up");
+			eval("vconfig", "rem", "vlan1");
+			eval("vconfig", "rem", "vlan2");
+			return "eth0";
+		} else {
+			eval("swconfig", "dev", "eth0", "set", "reset", "1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+			eval("swconfig", "dev", "eth0", "set", "apply");
+			eval("ifconfig", "eth0", "up");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", "eth0", "1");
+			eval("vconfig", "add", "eth0", "2");
+		}
+		return NULL;
+		break;
+	default:
+#ifdef HAVE_SWCONFIG
+#ifdef HAVE_DAP3310
+		return NULL;
+#elif HAVE_DAP3410
+		if (!state) {
+			eval("swconfig", "dev", "eth0", "set", "reset", "1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 3 4");
+			eval("swconfig", "dev", "eth0", "set", "apply");
+			eval("ifconfig", "eth0", "up");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "rem", "vlan1");
+			eval("vconfig", "rem", "vlan2");
+			return "eth0";
+		} else {
+			eval("swconfig", "dev", "eth0", "set", "reset", "1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 3");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
+			eval("swconfig", "dev", "eth0", "set", "apply");
+			eval("ifconfig", "eth0", "up");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", "eth0", "1");
+			eval("vconfig", "add", "eth0", "2");
+		}
+#else
+		eval("swconfig", "dev", "eth1", "set", "reset", "1");
+		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
+		eval("swconfig", "dev", "eth1", "set", "apply");
+#endif
+#endif
+		return NULL;
+
+	}
+
+}
+
 void start_overclocking(void)
 {
 }
