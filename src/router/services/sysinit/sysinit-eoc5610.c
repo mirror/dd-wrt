@@ -20,7 +20,3 @@
  * $Id:
  */
 #include "sysinit-ls5.c"
-char *set_wan_state(int state)
-{
-	return NULL;
-}
