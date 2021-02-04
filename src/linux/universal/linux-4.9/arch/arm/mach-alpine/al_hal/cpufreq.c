@@ -17,6 +17,7 @@
 #define AL_SB_PBS_BASE		(AL_SB_BASE + 0xfd880000)
 #define AL_PBS_REGFILE_BASE	(AL_SB_PBS_BASE + 0x00028000)
 #define	AL_DEFAULT_CPUFREQ	1700000
+#define	AL_INIT_DEFAULT_CPUFREQ	2000000
 
 static struct cpufreq_frequency_table *ftbl;
 static struct al_pll_obj pll_obj;
@@ -136,10 +137,10 @@ static int alpine_cpufreq_init(struct cpufreq_policy *policy)
 	policy->cpuinfo.min_freq = min_freq; 
 	policy->min = min_freq;
 	policy->cpuinfo.max_freq = AL_DEFAULT_CPUFREQ;
-	policy->max = AL_DEFAULT_CPUFREQ;
+	policy->max = AL_INIT_DEFAULT_CPUFREQ;
 	err = al_pll_freq_get(&pll_obj, &freq, &ret);
 	if(err)
-		ret = AL_DEFAULT_CPUFREQ;
+		ret = AL_INIT_DEFAULT_CPUFREQ;
 	policy->cur = ret;
 //	policy->cpuinfo.transition_latency = 100000;
 	policy->cpuinfo.transition_latency = CPUFREQ_ETERNAL; // default latency in nanoseconds (we try to measure it to make sure)
