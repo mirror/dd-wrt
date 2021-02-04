@@ -59,6 +59,10 @@ static struct cpufreq_frequency_table *cpufreq_parse(int cpu)
 static int alpine_cpufreq_verify(struct cpufreq_policy *policy)
 {
 	unsigned int tmp;
+	if (!strcmp(policy->governor->name, "userspace"))
+		policy->max = max_scalable_frequency;
+	else
+		policy->max = AL_DEFAULT_CPUFREQ;
 
 	if (policy->max < policy->min) {
 		tmp = policy->max;
