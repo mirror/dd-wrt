@@ -1,5 +1,5 @@
 VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
-IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)
+IDIR := $(INSTALLDIR)/lib/modules/$(VERSION)
 KBUILD := $(LINUXDIR)
 
 CFLAGS_EXTRA += -I$(TOP)/antfs
