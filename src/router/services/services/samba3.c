@@ -155,7 +155,7 @@ void start_samba3(void)
 			"dead time = 15\n"	//
 			"getwd cache = yes\n"	//
 			"lpq cache time = 30\n"	//
-#ifdef defined(HAVE_SMBD) || defined(HAVE_SAMBA4)
+#if defined(HAVE_SMBD) || defined(HAVE_SAMBA4)
 			"server min protocol = %s\n"	//
 			"server max protocol = %s\n"	//
 #else
