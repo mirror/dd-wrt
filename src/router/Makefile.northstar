@@ -217,8 +217,8 @@ endif
 #	-$(MAKE) -f Makefile.northstar madwifi
 #	-$(MAKE) -f Makefile.northstar madwifi-install
 ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.northstar antfs
-	-$(MAKE) -f Makefile.northstar antfs-install
+	-$(MAKE) -f Makefile.northstar ntfs3
+	-$(MAKE) -f Makefile.northstar ntfs3-install
 endif
 ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.northstar batman-adv

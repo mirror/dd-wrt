@@ -184,8 +184,8 @@ endif
 	-$(MAKE) -f Makefile.x64 ndpi-netfilter
 	-$(MAKE) -f Makefile.x64 ndpi-netfilter-install
 ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.x64 antfs
-	-$(MAKE) -f Makefile.x64 antfs-install
+	-$(MAKE) -f Makefile.x64 ntfs3
+	-$(MAKE) -f Makefile.x64 ntfs3-install
 endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.x64 zfs
