@@ -253,11 +253,8 @@ static int _dns_add_qr_head(struct dns_data_context *data_context, char *domain,
 		return -1;
 	}
 
-	*((unsigned short *)(data_context->ptr)) = qtype;
-	data_context->ptr += 2;
-
-	*((unsigned short *)(data_context->ptr)) = qclass;
-	data_context->ptr += 2;
+	_dns_write_short(&data_context->ptr, qtype);
+	_dns_write_short(&data_context->ptr, qclass);
 
 	return 0;
 }
@@ -266,6 +263,10 @@ static int _dns_get_qr_head(struct dns_data_context *data_context, char *domain,
 {
 	int i;
 	int is_read_all = 0;
+
+	if (domain == NULL || data_context == NULL) {
+		return -1;
+	}
 	/* question head */
 	/* |domain         |
 	 * |qtype | qclass |
@@ -296,11 +297,8 @@ static int _dns_get_qr_head(struct dns_data_context *data_context, char *domain,
 		return -1;
 	}
 
-	*qtype = *((unsigned short *)(data_context->ptr));
-	data_context->ptr += 2;
-
-	*qclass = *((unsigned short *)(data_context->ptr));
-	data_context->ptr += 2;
+	*qtype = _dns_read_short(&data_context->ptr);
+	*qclass = _dns_read_short(&data_context->ptr);
 
 	return 0;
 }
@@ -325,11 +323,8 @@ static int _dns_add_rr_head(struct dns_data_context *data_context, char *domain,
 		return -1;
 	}
 
-	*((unsigned int *)(data_context->ptr)) = ttl;
-	data_context->ptr += 4;
-
-	*((unsigned short *)(data_context->ptr)) = rr_len;
-	data_context->ptr += 2;
+	_dns_write_int(&data_context->ptr, ttl);
+	_dns_write_short(&data_context->ptr, rr_len);
 
 	return 0;
 }
@@ -351,11 +346,8 @@ static int _dns_get_rr_head(struct dns_data_context *data_context, char *domain,
 		return -1;
 	}
 
-	*ttl = *((unsigned int *)(data_context->ptr));
-	data_context->ptr += 4;
-
-	*rr_len = *((unsigned short *)(data_context->ptr));
-	data_context->ptr += 2;
+	*ttl = _dns_read_int(&data_context->ptr);
+	*rr_len = _dns_read_short(&data_context->ptr);
 
 	return len;
 }
@@ -940,7 +932,7 @@ static int _dns_decode_domain(struct dns_context *context, char *output, int siz
 
 	/*[len]string[len]string...[0]0 */
 	while (1) {
-		if (ptr > context->data + context->maxsize || ptr < context->data || output_len >= size - 1 || ptr_jump > 4) {
+		if (ptr >= context->data + context->maxsize || ptr < context->data || output_len >= size - 1 || ptr_jump > 4) {
 			return -1;
 		}
 
@@ -1363,7 +1355,7 @@ static int _dns_decode_opt_ecs(struct dns_context *context, struct dns_opt_ecs *
 	len = (ecs->source_prefix / 8);
 	len += (ecs->source_prefix % 8 > 0) ? 1 : 0;
 
-	if (_dns_left_len(context) < len) {
+	if (_dns_left_len(context) < len || len > sizeof(ecs->addr)) {
 		return -1;
 	}
 
