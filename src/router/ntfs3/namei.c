@@ -248,9 +248,14 @@ static int ntfs_rmdir(struct inode *dir, struct dentry *dentry)
  *
  * inode_operations::rename
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static int ntfs_rename(struct inode *old_dir, struct dentry *old_dentry,
-		       struct inode *new_dir, struct dentry *new_dentry,
-		       u32 flags)
+		struct inode *new_dir, struct dentry *new_dentry,
+		unsigned int flags)
+#else
+static int ntfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+		struct inode *new_dir, struct dentry *new_dentry)
+#endif
 {
 	int err;
 	struct super_block *sb = old_dir->i_sb;
@@ -272,8 +277,10 @@ static int ntfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 		      1024);
 	static_assert(PATH_MAX >= 4 * 1024);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	if (flags & ~RENAME_NOREPLACE)
 		return -EINVAL;
+#endif
 
 	old_inode = d_inode(old_dentry);
 	new_inode = d_inode(new_dentry);
@@ -508,7 +515,11 @@ ntfs_atomic_open(struct inode *dir, struct dentry *dentry,
 
 	ni_lock_dir(ni);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+	if (d_unhashed(dentry)) {
+#else
 	if (d_in_lookup(dentry)) {
+#endif
 		fnd = fnd_get();
 		if (!fnd) {
 			err = -ENOMEM;

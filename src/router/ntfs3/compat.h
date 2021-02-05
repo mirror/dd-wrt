@@ -2,6 +2,7 @@
 #include <linux/uio.h>
 #include <linux/swap.h>
 #include <linux/buffer_head.h>
+#include <linux/slab.h>
 #include <asm/pgtable.h>
 
 #ifndef SECTOR_SHIFT
@@ -45,6 +46,9 @@ bio_set_dev(struct bio *bio, struct block_device *bdev)
 extern void __bitmap_set(unsigned long *map, unsigned int start, int len);
 extern void __bitmap_clear(unsigned long *map, unsigned int start, int len);
 
+#ifndef SLAB_ACCOUNT
+#define SLAB_ACCOUNT 0
+#endif
 
 #define discard_new_inode unlock_new_inode
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
@@ -54,6 +58,7 @@ extern void __bitmap_clear(unsigned long *map, unsigned int start, int len);
 #define compat_submit_bio(bio) submit_bio(WRITE, bio)
 #define compat_submit_bio_wait(bio) submit_bio_wait(WRITE, bio)
 #define current_time(inode) CURRENT_TIME_SEC
+#define ll_rw_block(rw, flags, nr, bh) ll_rw_block(rw, nr, bh)
 #else
 #define compat_submit_bio(bio) submit_bio(bio)
 #define compat_submit_bio_wait(bio) submit_bio_wait(bio)
