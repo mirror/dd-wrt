@@ -10,7 +10,6 @@
 #include <linux/compat.h>
 #include <linux/falloc.h>
 #include <linux/fiemap.h>
-#include <linux/msdos_fs.h> /* FAT_IOCTL_XXX */
 #include <linux/nls.h>
 
 #include "debug.h"
