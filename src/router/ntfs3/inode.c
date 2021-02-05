@@ -736,7 +736,12 @@ static int ntfs_get_block_direct_IO_W(struct inode *inode, sector_t iblock,
 				  bh_result, create, GET_BLOCK_DIRECT_IO_W);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
 static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+#else
+static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
+                             loff_t offset)
+#endif
 {
 	struct file *file = iocb->ki_filp;
 	struct address_space *mapping = file->f_mapping;
@@ -757,9 +762,14 @@ static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 		goto out;
 	}
 
-	ret = blockdev_direct_IO(iocb, inode, iter,
-				 wr ? ntfs_get_block_direct_IO_W :
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+	ret = blockdev_direct_IO(iocb, inode, iter, wr ? ntfs_get_block_direct_IO_W :
 				      ntfs_get_block_direct_IO_R);
+
+#else
+	ret = blockdev_direct_IO(iocb, inode, iter, offset, wr ? ntfs_get_block_direct_IO_W :
+				      ntfs_get_block_direct_IO_R);
+#endif
 	valid = ni->i_valid;
 	if (wr) {
 		if (ret <= 0)
@@ -791,8 +801,11 @@ static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 		if (uaddr == ~0ul)
 			goto fix_error;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+		npages = get_user_pages_unlocked(current, current->mm, uaddr, 1, &page, FOLL_WRITE);
+#else
 		npages = get_user_pages_unlocked(uaddr, 1, &page, FOLL_WRITE);
-
+#endif
 		if (npages <= 0)
 			goto fix_error;
 
@@ -1996,9 +2009,12 @@ out:
 	ntfs_free(to_free);
 	return err;
 }
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+static const char *ntfs_follow_link(struct dentry *de, void **cookie)
+#else
 static const char *ntfs_get_link(struct dentry *de, struct inode *inode,
 				 struct delayed_call *done)
+#endif
 {
 	int err;
 	char *ret;
@@ -2010,19 +2026,30 @@ static const char *ntfs_get_link(struct dentry *de, struct inode *inode,
 	if (!ret)
 		return ERR_PTR(-ENOMEM);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+	err = ntfs_readlink_hlp(d_inode(de), ret, PAGE_SIZE);
+#else
 	err = ntfs_readlink_hlp(inode, ret, PAGE_SIZE);
+#endif
 	if (err < 0) {
 		kfree(ret);
 		return ERR_PTR(err);
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+	return *cookie = ret;
+#else
 	set_delayed_call(done, kfree_link, ret);
-
 	return ret;
+#endif
 }
 
 const struct inode_operations ntfs_link_inode_operations = {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+	.follow_link = ntfs_follow_link,
+#else
 	.get_link = ntfs_get_link,
+#endif
 	.setattr = ntfs3_setattr,
 	.listxattr = ntfs_listxattr,
 	.permission = ntfs_permission,

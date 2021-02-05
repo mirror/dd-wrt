@@ -791,10 +791,18 @@ out:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+static int ntfs_getxattr(const struct xattr_handler *handler, struct dentry *de,
+			 const char *name, void *buffer,
+			 size_t size)
+{
+struct inode *inode = d_inode(de);
+#else
 static int ntfs_getxattr(const struct xattr_handler *handler, struct dentry *de,
 			 struct inode *inode, const char *name, void *buffer,
 			 size_t size)
 {
+#endif
 	int err;
 	struct ntfs_inode *ni = ntfs_i(inode);
 	size_t name_len = strlen(name);
@@ -911,11 +919,21 @@ out:
  *
  * inode_operations::setxattr
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+static noinline int ntfs_setxattr(const struct xattr_handler *handler,
+				  struct dentry *de,
+				  const char *name, const void *value,
+				  size_t size, int flags)
+{
+struct inode *inode = d_inode(de);
+#else
 static noinline int ntfs_setxattr(const struct xattr_handler *handler,
 				  struct dentry *de, struct inode *inode,
 				  const char *name, const void *value,
 				  size_t size, int flags)
+
 {
+#endif
 	int err = -EINVAL;
 	struct ntfs_inode *ni = ntfs_i(inode);
 	size_t name_len = strlen(name);
@@ -1054,10 +1072,29 @@ out:
 	return err;
 }
 
+	size_t (*list)(const struct xattr_handler *, struct dentry *dentry,
+		       char *list, size_t list_size, const char *name,
+		       size_t name_len);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+static size_t ntfs_xattr_user_list(const struct xattr_handler *handler, struct dentry *dentry,
+		       char *list, size_t list_size, const char *name,
+		       size_t name_len)
+{
+	size_t retlen = name_len + 1;
+
+	if (list && retlen <= list_size) {
+		strcpy(list, name);
+	}
+
+	return retlen;
+}
+#else
 static bool ntfs_xattr_user_list(struct dentry *dentry)
 {
 	return 1;
 }
+#endif
 
 static const struct xattr_handler ntfs_xattr_handler = {
 	.prefix = "",
