@@ -3,6 +3,7 @@
 #include <linux/swap.h>
 #include <linux/buffer_head.h>
 #include <linux/slab.h>
+#include <linux/msdos_fs.h>
 #include <asm/pgtable.h>
 
 #ifndef SECTOR_SHIFT

@@ -700,7 +700,6 @@ static int ntfs_readpages(struct file *file, struct address_space *mapping, stru
 	struct inode *inode = mapping->host;
 	struct ntfs_inode *ni = ntfs_i(inode);
 	u64 valid;
-	loff_t pos;
 
 	if (is_resident(ni)) {
 		/* no readahead for resident */
