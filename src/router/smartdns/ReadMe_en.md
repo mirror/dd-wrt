@@ -498,7 +498,7 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |bind|DNS listening port number|[::]:53|Support binding multiple ports<br>`IP:PORT`: server IP, port number. <br>`[-group]`: The DNS server group used when requesting. <br>`[-no-rule-addr]`: Skip the address rule. <br>`[-no-rule-nameserver]`: Skip the Nameserver rule. <br>`[-no-rule-ipset]`: Skip the Ipset rule. <br>`[-no-rule-soa]`: Skip address SOA(#) rules.<br>`[-no-dualstack-selection]`: Disable dualstack ip selection.<br>`[-no-speed-check]`: Disable speed measurement. <br>`[-no-cache]`: stop caching |bind :53
 |bind-tcp|TCP mode DNS listening port number|[::]:53|Support binding multiple ports<br>`IP:PORT`: server IP, port number. <br>`[-group]`: The DNS server group used when requesting. <br>`[-no-rule-addr]`: Skip the address rule. <br>`[-no-rule-nameserver]`: Skip the Nameserver rule. <br>`[-no-rule-ipset]`: Skip the Ipset rule. <br>`[-no-rule-soa]`: Skip address SOA(#) rules.<br>`[-no-dualstack-selection]`: Disable dualstack ip selection.<br>`[-no-speed-check]`: Disable speed measurement. <br>`[-no-cache]`: stop caching |bind-tcp :53
 |cache-size|Domain name result cache number|512|integer|cache-size 512
-|cache-persist|enable persist cache|no|[yes\|no]|cache-persist yes
+|cache-persist|enable persist cache|Auto: Enabled if the location of `cache-file` has more than 128MB of free space.|[yes\|no]|cache-persist yes
 |cache-file|cache persist file|/tmp/smartdns.cache|路径|cache-file /tmp/smartdns.cache
 |tcp-idle-time|TCP connection idle timeout|120|integer|tcp-idle-time 120
 |rr-ttl|Domain name TTL|Remote query result|number greater than 0|rr-ttl 600
@@ -522,7 +522,7 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |nameserver|To query domain with specific server group|None|nameserver /domain/[group\|-], `group` is the group name, `-` means ignore this rule, use the `-group` parameter in the related server|nameserver /www.example.com/office
 |ipset|Domain IPSet|None|ipset /domain/[ipset\|-], `-` for ignore|ipset /www.example.com/pass
 |ipset-timeout|ipset timeout enable|auto|[yes]|ipset-timeout yes
-|domain-rules|set domain rules|None|domain-rules /domain/ [-rules...]<br>`[-speed-check-mode]`: set speed check mode，same as parameter `speed-check-mode`<br>`[-address]`: same as  parameter `address` <br>`[-nameserver]`: same as parameter `nameserver`<br>`[-ipset]`: same as parameter `ipset`|domain-rules /www.example.com/ -speed-check-mode none
+|domain-rules|set domain rules|None|domain-rules /domain/ [-rules...]<br>`[-c\|-speed-check-mode]`: set speed check mode，same as parameter `speed-check-mode`<br>`[-a\|-address]`: same as  parameter `address` <br>`[-n\|-nameserver]`: same as parameter `nameserver`<br>`[-p\|-ipset]`: same as parameter `ipset`<br>`[-d\|-dualstack-ip-selection]`: same as parameter `dualstack-ip-selection`|domain-rules /www.example.com/ -speed-check-mode none
 |bogus-nxdomain|bogus IP address|None|[IP/subnet], Repeatable| bogus-nxdomain 1.2.3.4/16
 |ignore-ip|ignore ip address|None|[ip/subnet], Repeatable| ignore-ip 1.2.3.4/16
 |whitelist-ip|ip whitelist|None|[ip/subnet], Repeatable，When the filtering server responds IPs in the IP whitelist, only result in whitelist will be accepted| whitelist-ip 1.2.3.4/16

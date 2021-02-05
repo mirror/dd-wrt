@@ -2,7 +2,7 @@
 
 **[English](ReadMe_en.md)**
 
-![SmartDNS](doc/smartdns-banner.png)  
+![SmartDNS](https://github.com/pymumu/test/releases/download/blob/smartdns-banner.png)  
 SmartDNS是一个运行在本地的DNS服务器，SmartDNS接受本地客户端的DNS查询请求，从多个上游DNS服务器获取DNS查询结果，并将访问速度最快的结果返回给客户端，提高网络访问速度。
 同时支持指定特定域名IP地址，并高性匹配，达到过滤广告的效果。  
 与dnsmasq的all-servers不同，smartdns返回的是访问速度最快的解析结果。 (详细差异请看[FAQ](#faq))  
@@ -17,7 +17,7 @@ SmartDNS是一个运行在本地的DNS服务器，SmartDNS接受本地客户端�
 1. [使用](#使用)  
     1. [下载配套安装包](#下载配套安装包)
     1. [标准Linux系统安装](#标准linux系统安装树莓派x86_64系统)
-    1. [openwrt/LEDE](#openwrtlede)
+    1. [openwrt/LEDE](#openwrt)
     1. [华硕路由器原生固件/梅林固件](#华硕路由器原生固件梅林固件)
     1. [optware/entware](#optwareentware)
     1. [Windows 10 WSL安装/WSL ubuntu](#windows-10-wsl安装wsl-ubuntu)
@@ -117,7 +117,7 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
 
 ## 架构
 
-![Architecture](doc/architecture.png)
+![Architecture](https://github.com/pymumu/test/releases/download/blob/architecture.png)
 
 1. SmartDNS接收本地网络设备的DNS查询请求，如PC，手机的查询请求。  
 2. SmartDNS将查询请求发送到多个上游DNS服务器，可采用标准UDP查询，非标准端口UDP查询，及TCP查询。  
@@ -504,7 +504,7 @@ https://github.com/pymumu/smartdns/releases
 |bind|DNS监听端口号|[::]:53|可绑定多个端口<br>`IP:PORT`: 服务器IP，端口号。<br>`[-group]`: 请求时使用的DNS服务器组。<br>`[-no-rule-addr]`：跳过address规则。<br>`[-no-rule-nameserver]`：跳过Nameserver规则。<br>`[-no-rule-ipset]`：跳过Ipset规则。<br>`[no-rule-soa]`：跳过SOA(#)规则.<br>`[no-dualstack-selection]`：停用双栈测速。<br>`[-no-speed-check]`：停用测速。<br>`[-no-cache]`：停止缓存|bind :53
 |bind-tcp|TCP DNS监听端口号|[::]:53|可绑定多个端口<br>`IP:PORT`: 服务器IP，端口号。<br>`[-group]`: 请求时使用的DNS服务器组。<br>`[-no-rule-addr]`：跳过address规则。<br>`[-no-rule-nameserver]`：跳过Nameserver规则。<br>`[-no-rule-ipset]`：跳过Ipset规则。<br>`[no-rule-soa]`：跳过SOA(#)规则.<br>`[no-dualstack-selection]`：停用双栈测速。<br>`[-no-speed-check]`：停用测速。<br>`[-no-cache]`：停止缓存|bind-tcp :53
 |cache-size|域名结果缓存个数|512|数字|cache-size 512
-|cache-persist|是否持久化缓存|no|[yes\|no]|cache-persist yes
+|cache-persist|是否持久化缓存|自动<br>当 `cache-file` 所在的位置有超过 128MB 的可用空间时启用，否则禁用。|[yes\|no]|cache-persist yes
 |cache-file|缓存持久化文件路径|/tmp/smartdns.cache|路径|cache-file /tmp/smartdns.cache
 |tcp-idle-time|TCP链接空闲超时时间|120|数字|tcp-idle-time 120
 |rr-ttl|域名结果TTL|远程查询结果|大于0的数字|rr-ttl 600
@@ -528,7 +528,7 @@ https://github.com/pymumu/smartdns/releases
 |nameserver|指定域名使用server组解析|无|nameserver /domain/[group\|-], `group`为组名，`-`表示忽略此规则，配套server中的`-group`参数使用| nameserver /www.example.com/office
 |ipset|域名IPSET|None|ipset /domain/[ipset\|-], `-`表示忽略|ipset /www.example.com/pass
 |ipset-timeout|设置IPSET超时功能启用|auto|[yes]|ipset-timeout yes
-|domain-rules|设置域名规则|无|domain-rules /domain/ [-rules...]<br>`[-speed-check-mode]`: 测速模式，参考`speed-check-mode`配置<br>`[-address]`: 参考`address`配置<br>`[-nameserver]`: 参考`nameserver`配置<br>`[-ipset]`:参考`ipset`配置|domain-rules /www.example.com/ -speed-check-mode none
+|domain-rules|设置域名规则|无|domain-rules /domain/ [-rules...]<br>`[-c\|-speed-check-mode]`: 测速模式，参考`speed-check-mode`配置<br>`[-a\|-address]`: 参考`address`配置<br>`[-n\|-nameserver]`: 参考`nameserver`配置<br>`[-p\|-ipset]`:参考`ipset`配置<br>`[-d\|-dualstack-ip-selection]`: 参考`dualstack-ip-selection`|domain-rules /www.example.com/ -speed-check-mode none
 |bogus-nxdomain|假冒IP地址过滤|无|[ip/subnet]，可重复| bogus-nxdomain 1.2.3.4/16
 |ignore-ip|忽略IP地址|无|[ip/subnet]，可重复| ignore-ip 1.2.3.4/16
 |whitelist-ip|白名单IP地址|无|[ip/subnet]，可重复| whitelist-ip 1.2.3.4/16
@@ -664,11 +664,11 @@ smartdns包含了编译软件包的脚本，支持编译luci，debian，openwrt�
 
 ### Alipay 支付宝
 
-![alipay](doc/alipay_donate.jpg)
+![alipay](https://github.com/pymumu/test/releases/download/blob/alipay_donate.jpg)
 
 ### Wechat 微信
   
-![wechat](doc/wechat_donate.jpg)
+![wechat](https://github.com/pymumu/test/releases/download/blob/wechat_donate.jpg)
 
 ## 开源声明
 
