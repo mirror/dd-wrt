@@ -144,8 +144,8 @@ kernel:
 	-$(MAKE) -f Makefile.mvebu ndpi-netfilter
 	-$(MAKE) -f Makefile.mvebu ndpi-netfilter-install
 ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.mvebu antfs
-	-$(MAKE) -f Makefile.mvebu antfs-install
+	-$(MAKE) -f Makefile.mvebu ntfs3
+	-$(MAKE) -f Makefile.mvebu ntfs3-install
 endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.mvebu zfs

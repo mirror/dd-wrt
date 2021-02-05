@@ -214,8 +214,8 @@ endif
 	-$(MAKE) -f Makefile.octeon madwifi
 	-$(MAKE) -f Makefile.octeon madwifi-install
 ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.octeon antfs
-	-$(MAKE) -f Makefile.octeon antfs-install
+	-$(MAKE) -f Makefile.octeon ntfs3
+	-$(MAKE) -f Makefile.octeon ntfs3-install
 endif
 ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.octeon batman-adv
