@@ -1591,7 +1591,7 @@ int ntfs_create_inode(struct inode *dir,
 
 	inode->i_mode = mode;
 
-#ifdef CONFIG_NTFS3_FS_POSIX_ACL
+#ifdef CONFIG_FS_POSIX_ACL
 	if (!is_link && (sb->s_flags & SB_POSIXACL)) {
 		err = ntfs_init_acl(inode, dir);
 		if (err)
