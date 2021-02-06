@@ -1184,7 +1184,7 @@ out:
 	return ERR_PTR(err);
 }
 
-int ntfs_create_inode(struct user_namespace *mnt_userns, struct inode *dir,
+int ntfs_create_inode(struct inode *dir,
 		      struct dentry *dentry, const struct cpu_str *uni,
 		      umode_t mode, dev_t dev, const char *symname, u32 size,
 		      int excl, struct ntfs_fnd *fnd, struct inode **new_inode)

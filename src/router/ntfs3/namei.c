@@ -102,7 +102,7 @@ static struct dentry *ntfs_lookup(struct inode *dir, struct dentry *dentry,
  *
  * inode_operations::create
  */
-static int ntfs_create(struct user_namespace *mnt_userns, struct inode *dir,
+static int ntfs_create(struct inode *dir,
 		       struct dentry *dentry, umode_t mode, bool excl)
 {
 	int err;
@@ -111,7 +111,7 @@ static int ntfs_create(struct user_namespace *mnt_userns, struct inode *dir,
 
 	ni_lock_dir(ni);
 
-	err = ntfs_create_inode(mnt_userns, dir, dentry, NULL, S_IFREG | mode,
+	err = ntfs_create_inode(dir, dentry, NULL, S_IFREG | mode,
 				0, NULL, 0, excl, NULL, &inode);
 
 	ni_unlock(ni);
@@ -185,7 +185,7 @@ static int ntfs_unlink(struct inode *dir, struct dentry *dentry)
  *
  * inode_operations::symlink
  */
-static int ntfs_symlink(struct user_namespace *mnt_userns, struct inode *dir,
+static int ntfs_symlink(struct inode *dir,
 			struct dentry *dentry, const char *symname)
 {
 	int err;
@@ -195,7 +195,7 @@ static int ntfs_symlink(struct user_namespace *mnt_userns, struct inode *dir,
 
 	ni_lock_dir(ni);
 
-	err = ntfs_create_inode(mnt_userns, dir, dentry, NULL, S_IFLNK | 0777,
+	err = ntfs_create_inode(dir, dentry, NULL, S_IFLNK | 0777,
 				0, symname, size, 0, NULL, &inode);
 
 	ni_unlock(ni);
@@ -208,7 +208,7 @@ static int ntfs_symlink(struct user_namespace *mnt_userns, struct inode *dir,
  *
  * inode_operations::mkdir
  */
-static int ntfs_mkdir(struct user_namespace *mnt_userns, struct inode *dir,
+static int ntfs_mkdir(struct inode *dir,
 		      struct dentry *dentry, umode_t mode)
 {
 	int err;
@@ -217,7 +217,7 @@ static int ntfs_mkdir(struct user_namespace *mnt_userns, struct inode *dir,
 
 	ni_lock_dir(ni);
 
-	err = ntfs_create_inode(mnt_userns, dir, dentry, NULL, S_IFDIR | mode,
+	err = ntfs_create_inode(dir, dentry, NULL, S_IFDIR | mode,
 				0, NULL, -1, 0, NULL, &inode);
 
 	ni_unlock(ni);
@@ -547,7 +547,7 @@ ntfs_atomic_open(struct inode *dir, struct dentry *dentry,
 
 	/*fnd contains tree's path to insert to*/
 	/* TODO: init_user_ns? */
-	err = ntfs_create_inode(&init_user_ns, dir, dentry, uni, mode, 0, NULL,
+	err = ntfs_create_inode(dir, dentry, uni, mode, 0, NULL,
 				0, excl, fnd, &inode);
 	if (!err)
 		err = finish_open(file, dentry, ntfs_file_open, opened);

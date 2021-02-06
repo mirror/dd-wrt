@@ -626,7 +626,7 @@ out:
 /*
  * inode_operations::setattr
  */
-int ntfs3_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
+int ntfs3_setattr(struct dentry *dentry,
 		  struct iattr *attr)
 {
 	struct super_block *sb = dentry->d_sb;
@@ -676,10 +676,10 @@ int ntfs3_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
 		ni->ni_flags |= NI_FLAG_UPDATE_PARENT;
 	}
 
-	setattr_copy(mnt_userns, inode, attr);
+	setattr_copy(inode, attr);
 
 	if (mode != inode->i_mode) {
-		err = ntfs_acl_chmod(mnt_userns, inode);
+		err = ntfs_acl_chmod(inode);
 		if (err)
 			goto out;
 
