@@ -521,7 +521,6 @@ struct smb2_tree_disconnect_rsp {
 
 #define FILE_READ_DESIRED_ACCESS_LE	(FILE_READ_DATA_LE |		\
 					FILE_READ_EA_LE |		\
-					FILE_READ_ATTRIBUTES_LE |	\
 					FILE_GENERIC_READ_LE)
 #define FILE_WRITE_DESIRE_ACCESS_LE	(FILE_WRITE_DATA_LE |		\
 					FILE_APPEND_DATA_LE |		\

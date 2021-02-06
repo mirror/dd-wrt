@@ -1134,11 +1134,8 @@ int smb_check_perm_dacl(struct ksmbd_conn *conn, struct dentry *dentry,
 
 	ksmbd_debug(SMB, "check permission using windows acl\n");
 	acl_size = ksmbd_vfs_get_sd_xattr(conn, dentry, &pntsd);
-	if (acl_size <= 0 || (pntsd && !pntsd->dacloffset)) {
-		if (*pdaccess & FILE_MAXIMAL_ACCESS_LE)
-			*pdaccess = cpu_to_le32(GENERIC_ALL_FLAGS);
+	if (acl_size <= 0 || (pntsd && !pntsd->dacloffset))
 		return 0;
-	}
 
 	pdacl = (struct smb_acl *)((char *)pntsd + le32_to_cpu(pntsd->dacloffset));
 	if (!pdacl->num_aces) {
