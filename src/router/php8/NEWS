@@ -1,9 +1,78 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+04 Feb 2021, PHP 8.0.2
+
+- Core:
+  . Fixed bug #80523 (bogus parse error on >4GB source code). (Nikita)
+  . Fixed bug #80384 (filter buffers entire read until file closed). (Adam
+    Seitz, cmb)
+  . Fixed bug #80596 (Invalid union type TypeError in anonymous classes).
+    (Daniil Gentili)
+  . Fixed bug #80617 (GCC throws warning about type narrowing in
+    ZEND_TYPE_INIT_CODE). (Nikita)
+
+- BCMath:
+  . Fixed bug #80545 (bcadd('a', 'a') doesn't throw an exception).
+    (Jens de Nies)
+
+- Curl:
+  . Fixed bug #80595 (Resetting POSTFIELDS to empty array breaks request). (cmb)
+
+- Date:
+  . Fixed bug #80376 (last day of the month causes runway cpu usage). (Derick)
+
+- DOM:
+  . Fixed bug #80537 (Wrong parameter type in DOMElement::removeAttributeNode
+    stub). (Nikita)
+
+- Filter:
+  . Fixed bug #80584 (0x and 0X are considered valid hex numbers by
+    filter_var()). (girgias)
+
+- GMP:
+  . Fixed bug #80560 (Strings containing only a base prefix return 0 object).
+    (girgias)
+
+- Intl:
+  . Fixed bug #80644 (Missing resource causes subsequent get() calls to fail).
+    (Nikita)
+
+- MySQLi:
+  . Fixed bug #67983 (mysqlnd with MYSQLI_OPT_INT_AND_FLOAT_NATIVE fails to
+    interpret bit columns). (Nikita)
+  . Fixed bug #64638 (Fetching resultsets from stored procedure with cursor
+    fails). (Nikita)
+  . Fixed bug #72862 (segfault using prepared statements on stored procedures
+    that use a cursor). (Nikita)
+  . Fixed bug #77935 (Crash in mysqlnd_fetch_stmt_row_cursor when calling an SP
+    with a cursor). (Nikita)
+
+- ODBC:
+  . Fixed bug #80592 (all floats are the same in ODBC parameters). (cmb)
+
+- Opcache:
+  . Fixed bug #80422 (php_opcache.dll crashes when using Apache 2.4 with JIT).
+    (Dmitry)
+
+- PDO_Firebird:
+  . Fixed bug #80521 (Parameters with underscores no longer recognized). (cmb,
+    Simonov Denis)
+
+- Phar:
+  . Fixed bug #76929 (zip-based phar does not respect phar.require_hash).
+    (david at bamsoftware, cmb)
+  . Fixed bug #77565 (Incorrect locator detection in ZIP-based phars). (cmb)
+  . Fixed bug #69279 (Compressed ZIP Phar extractTo() creates garbage files).
+    (cmb)
+
+- Phpdbg:
+  . Reverted fix for bug #76813 (Access violation near NULL on source operand).
+    (cmb)
+
+- SOAP:
+  . Fixed bug #80672 (Null Dereference in SoapClient). (CVE-2021-21702) (cmb, Stas)
+
 07 Jan 2021, PHP 8.0.1
-
-
-17 Dec 2020, PHP 8.0.1RC1
 
 - Core:
   . Fixed bug #80345 (PHPIZE configuration has outdated PHP_RELEASE_VERSION).
@@ -28,6 +97,9 @@ PHP                                                                        NEWS
 
 - Intl:
   . Fixed bug #80425 (MessageFormatAdapter::getArgTypeList redefined). (Nikita)
+
+- OCI8
+  . Create Windows DLLs for Oracle Client 19c. (cmb)
 
 - Opcache:
   . Fixed bug #80404 (Incorrect range inference result when division results
@@ -84,9 +156,9 @@ PHP                                                                        NEWS
   . Fixed #62004 (SplFileObject: fgets after seek returns wrong line). (cmb)
 
 - Standard:
-  . Fixed bug #80366 (Return Value of zend_fstat() not Checked). (sagpant, cmb)
-  . Fixed bug #77423 (FILTER_VALIDATE_URL accepts URLs with invalid userinfo).
+  . Fixed bug #77423 (FILTER_VALIDATE_URL accepts URLs with invalid userinfo). 
     (CVE-2020-7071) (cmb)
+  . Fixed bug #80366 (Return Value of zend_fstat() not Checked). (sagpant, cmb)
 
 - Tidy:
   . Fixed bug #77594 (ob_tidyhandler is never reset). (cmb)
@@ -474,4 +546,3 @@ PHP                                                                        NEWS
   . Fixed bug #71417 (fread() does not report zlib.inflate errors). (cmb)
   . Fixed bug #78792 (zlib.output_compression disabled by Content-Type: image/).
     (cmb)
-
