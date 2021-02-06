@@ -367,6 +367,10 @@ static const char * const pdo_param_event_names[] =
 	"PDO_PARAM_EVT_NORMALIZE",
 };
 
+#ifndef PDO_USE_MYSQLND
+static unsigned char libmysql_false_buffer = 0;
+static unsigned char libmysql_true_buffer = 1;
+#endif
 
 static int pdo_mysql_stmt_param_hook(pdo_stmt_t *stmt, struct pdo_bound_param_data *param, enum pdo_param_event event_type) /* {{{ */
 {
@@ -503,6 +507,16 @@ static int pdo_mysql_stmt_param_hook(pdo_stmt_t *stmt, struct pdo_bound_param_da
 						*b->length = Z_STRLEN_P(parameter);
 						PDO_DBG_RETURN(1);
 
+					case IS_FALSE:
+						b->buffer_type = MYSQL_TYPE_TINY;
+						b->buffer = &libmysql_false_buffer;
+						PDO_DBG_RETURN(1);
+
+					case IS_TRUE:
+						b->buffer_type = MYSQL_TYPE_TINY;
+						b->buffer = &libmysql_true_buffer;
+						PDO_DBG_RETURN(1);
+
 					case IS_LONG:
 						b->buffer_type = MYSQL_TYPE_LONG;
 						b->buffer = &Z_LVAL_P(parameter);
@@ -619,7 +633,11 @@ static int pdo_mysql_stmt_describe(pdo_stmt_t *stmt, int colno) /* {{{ */
 		if (S->H->fetch_table_names) {
 			cols[i].name = strpprintf(0, "%s.%s", S->fields[i].table, S->fields[i].name);
 		} else {
+#ifdef PDO_USE_MYSQLND
+			cols[i].name = zend_string_copy(S->fields[i].sname);
+#else
 			cols[i].name = zend_string_init(S->fields[i].name, S->fields[i].name_length, 0);
+#endif
 		}
 
 		cols[i].precision = S->fields[i].decimals;
