@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
  *
- * Copyright (C) 2019-2020 Paragon Software GmbH, All rights reserved.
+ * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
  * on-disk ntfs structs
  */
@@ -792,7 +792,7 @@ struct INDEX_ROOT {
 	enum ATTR_TYPE type;	// 0x00: The type of attribute to index on
 	enum COLLATION_RULE rule; // 0x04: The rule
 	__le32 index_block_size;// 0x08: The size of index record
-	u8 index_block_clst;	// 0x0C: The number of clusters per index
+	u8 index_block_clst;	// 0x0C: The number of clusters or sectors per index
 	u8 res[3];
 	struct INDEX_HDR ihdr;	// 0x10:
 };

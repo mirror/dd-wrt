@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
  *
- * Copyright (C) 2019-2020 Paragon Software GmbH, All rights reserved.
+ * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
  */
 
@@ -68,7 +68,7 @@ struct ntfs_mount_options {
 
 /* TODO: use rb tree instead of array */
 struct runs_tree {
-	struct ntfs_run *runs_;
+	struct ntfs_run *runs;
 	size_t count; // Currently used size a ntfs_run storage.
 	size_t allocated; // Currently allocated ntfs_run storage size.
 };
@@ -98,8 +98,6 @@ struct wnd_bitmap {
 
 	struct runs_tree run;
 	size_t nbits;
-
-	u16 free_holder[8]; // holder for free_bits
 
 	size_t total_zeroes; // total number of free bits
 	u16 *free_bits; // free bits in each window
@@ -140,7 +138,7 @@ enum index_mutex_classed {
 	INDEX_MUTEX_TOTAL
 };
 
-/* This struct works with indexes */
+/* ntfs_index - allocation unit inside directory */
 struct ntfs_index {
 	struct runs_tree bitmap_run;
 	struct runs_tree alloc_run;
@@ -213,10 +211,15 @@ struct ntfs_sb_info {
 		u64 lbo, lbo2;
 		struct ntfs_inode *ni;
 		struct wnd_bitmap bitmap; // $MFT::Bitmap
-		ulong reserved_bitmap;
+		/*
+		 * MFT records [11-24) used to expand MFT itself
+		 * They always marked as used in $MFT::Bitmap
+		 * 'reserved_bitmap' contains real bitmap of these records
+		 */
+		ulong reserved_bitmap; // bitmap of used records [11 - 24)
 		size_t next_free; // The next record to allocate from
-		size_t used;
-		u32 recs_mirr; // Number of records MFTMirr
+		size_t used; // mft valid size in records
+		u32 recs_mirr; // Number of records in MFTMirr
 		u8 next_reserved;
 		u8 reserved_bitmap_inited;
 	} mft;
@@ -231,7 +234,7 @@ struct ntfs_sb_info {
 		u64 blocks; // in blocks
 		u64 ser_num;
 		struct ntfs_inode *ni;
-		__le16 flags; // see VOLUME_FLAG_XXX
+		__le16 flags; // cached current VOLUME_INFO::flags, VOLUME_FLAG_DIRTY
 		u8 major_ver;
 		u8 minor_ver;
 		char label[65];
@@ -644,10 +647,10 @@ int ntfs_sync_inode(struct inode *inode);
 int ntfs_flush_inodes(struct super_block *sb, struct inode *i1,
 		      struct inode *i2);
 int inode_write_data(struct inode *inode, const void *data, size_t bytes);
-int ntfs_create_inode(struct inode *dir, struct dentry *dentry,
-		      const struct cpu_str *uni, umode_t mode, dev_t dev,
-		      const char *symname, u32 size, int excl,
-		      struct ntfs_fnd *fnd, struct inode **new_inode);
+int ntfs_create_inode(struct user_namespace *mnt_userns, struct inode *dir,
+		      struct dentry *dentry, const struct cpu_str *uni,
+		      umode_t mode, dev_t dev, const char *symname, u32 size,
+		      int excl, struct ntfs_fnd *fnd, struct inode **new_inode);
 int ntfs_link_inode(struct inode *inode, struct dentry *dentry);
 int ntfs_unlink_inode(struct inode *dir, const struct dentry *dentry);
 void ntfs_evict_inode(struct inode *inode);
@@ -770,15 +773,18 @@ int ntfs_cmp_names_cpu(const struct cpu_str *uni1, const struct le_str *uni2,
 /* globals from xattr.c */
 #ifdef CONFIG_NTFS3_FS_POSIX_ACL
 struct posix_acl *ntfs_get_acl(struct inode *inode, int type);
-int ntfs_set_acl(struct inode *inode, struct posix_acl *acl, int type);
-int ntfs_init_acl(struct inode *inode, struct inode *dir);
+int ntfs_set_acl(struct user_namespace *mnt_userns, struct inode *inode,
+		 struct posix_acl *acl, int type);
+int ntfs_init_acl(struct user_namespace *mnt_userns, struct inode *inode,
+		  struct inode *dir);
 #else
 #define ntfs_get_acl NULL
 #define ntfs_set_acl NULL
 #endif
 
-int ntfs_acl_chmod(struct inode *inode);
-int ntfs_permission(struct inode *inode, int mask);
+int ntfs_acl_chmod(struct user_namespace *mnt_userns, struct inode *inode);
+int ntfs_permission(struct user_namespace *mnt_userns, struct inode *inode,
+		    int mask);
 ssize_t ntfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
 extern const struct xattr_handler *ntfs_xattr_handlers[];
 
@@ -841,7 +847,7 @@ static inline size_t wnd_zone_len(const struct wnd_bitmap *wnd)
 
 static inline void run_init(struct runs_tree *run)
 {
-	run->runs_ = NULL;
+	run->runs = NULL;
 	run->count = 0;
 	run->allocated = 0;
 }
@@ -853,14 +859,14 @@ static inline struct runs_tree *run_alloc(void)
 
 static inline void run_close(struct runs_tree *run)
 {
-	ntfs_free(run->runs_);
+	ntfs_vfree(run->runs);
 	memset(run, 0, sizeof(*run));
 }
 
 static inline void run_free(struct runs_tree *run)
 {
 	if (run) {
-		ntfs_free(run->runs_);
+		ntfs_vfree(run->runs);
 		ntfs_free(run);
 	}
 }

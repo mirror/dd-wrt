@@ -1,20 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  *
- * Copyright (C) 2019-2020 Paragon Software GmbH, All rights reserved.
+ * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
  *
  *                 terminology
  *
- * vcn - virtual cluster number - offset inside the file in clusters
- * vbo - virtual byte offset    - offset inside the file in bytes
- * lcn - logical cluster number - 0 based cluster in clusters heap
- * lbo - logical byte offset    - absolute position inside volume
- * run - maps vcn to lcn        - stored in attributes in packed form
- * attr - attribute segment     - std/name/data etc records inside MFT
- * mi  - mft inode              - one MFT record(usually 1024 bytes), consists of attributes
- * ni  - ntfs inode             - extends linux inode. consists of one or more mft inodes
+ * cluster - allocation unit     - 512,1K,2K,4K,...,2M
+ * vcn - virtual cluster number  - offset inside the file in clusters
+ * vbo - virtual byte offset     - offset inside the file in bytes
+ * lcn - logical cluster number  - 0 based cluster in clusters heap
+ * lbo - logical byte offset     - absolute position inside volume
+ * run - maps vcn to lcn         - stored in attributes in packed form
+ * attr - attribute segment      - std/name/data etc records inside MFT
+ * mi  - mft inode               - one MFT record(usually 1024 bytes or 4K), consists of attributes
+ * ni  - ntfs inode              - extends linux inode. consists of one or more mft inodes
+ * index - unit inside directory - 2K, 4K, <=page size, does not depend on cluster size
  *
+ * TODO: Implement
+ * https://docs.microsoft.com/en-us/windows/wsl/file-permissions
  */
 
 #include <linux/backing-dev.h>
@@ -468,7 +472,7 @@ static void init_once(void *foo)
 static noinline void put_ntfs(struct ntfs_sb_info *sbi)
 {
 	ntfs_free(sbi->new_rec);
-	ntfs_free(ntfs_put_shared(sbi->upcase));
+	ntfs_vfree(ntfs_put_shared(sbi->upcase));
 	ntfs_free(sbi->def_table);
 
 	wnd_close(&sbi->mft.bitmap);
@@ -540,13 +544,14 @@ static int ntfs_show_options(struct seq_file *m, struct dentry *root)
 	struct super_block *sb = root->d_sb;
 	struct ntfs_sb_info *sbi = sb->s_fs_info;
 	struct ntfs_mount_options *opts = &sbi->options;
+	struct user_namespace *user_ns = seq_user_ns(m);
 
 	if (opts->uid)
 		seq_printf(m, ",uid=%u",
-			   from_kuid_munged(&init_user_ns, opts->fs_uid));
+			   from_kuid_munged(user_ns, opts->fs_uid));
 	if (opts->gid)
 		seq_printf(m, ",gid=%u",
-			   from_kgid_munged(&init_user_ns, opts->fs_gid));
+			   from_kgid_munged(user_ns, opts->fs_gid));
 	if (opts->fmask)
 		seq_printf(m, ",fmask=%04o", ~opts->fs_fmask_inv);
 	if (opts->dmask)
@@ -1240,7 +1245,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 		goto out;
 	}
 
-	sbi->upcase = upcase = ntfs_malloc(0x10000 * sizeof(short));
+	sbi->upcase = upcase = ntfs_vmalloc(0x10000 * sizeof(short));
 	if (!upcase) {
 		err = -ENOMEM;
 		goto out;
@@ -1270,7 +1275,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 	shared = ntfs_set_shared(upcase, 0x10000 * sizeof(short));
 	if (shared && upcase != shared) {
 		sbi->upcase = shared;
-		ntfs_free(upcase);
+		ntfs_vfree(upcase);
 	}
 
 	iput(inode);
@@ -1426,27 +1431,6 @@ static int __init init_ntfs_fs(void)
 {
 	int err;
 
-#ifdef NTFS3_INDEX_BINARY_SEARCH
-	pr_notice("ntfs3: +index binary search\n");
-#endif
-
-#ifdef NTFS3_CHECK_FREE_CLST
-	pr_notice("ntfs3: +check free clusters\n");
-#endif
-
-#if NTFS_LINK_MAX < 0xffff
-	pr_notice("ntfs3: max link count %u\n", NTFS_LINK_MAX);
-#endif
-
-#ifdef NTFS3_64BIT_CLUSTER
-	pr_notice("ntfs3: 64 bits per cluster\n");
-#else
-	pr_notice("ntfs3: 32 bits per cluster\n");
-#endif
-#ifdef CONFIG_NTFS3_LZX_XPRESS
-	pr_notice("ntfs3: read-only lzx/xpress compression included\n");
-#endif
-
 	ntfs_inode_cachep = kmem_cache_create(
 		"ntfs_inode_cache", sizeof(struct ntfs_inode), 0,
 		(SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD | SLAB_ACCOUNT),
@@ -1478,6 +1462,21 @@ static void __exit exit_ntfs_fs(void)
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("ntfs3 filesystem");
+#ifdef NTFS3_INDEX_BINARY_SEARCH
+MODULE_INFO(behaviour, "index binary search");
+#endif
+#ifdef NTFS3_CHECK_FREE_CLST
+MODULE_INFO(behaviour, "hot fix free clusters");
+#endif
+#ifdef NTFS3_64BIT_CLUSTER
+MODULE_INFO(cluster, "64 bits per cluster");
+#else
+MODULE_INFO(cluster, "32 bits per cluster");
+#endif
+#ifdef CONFIG_NTFS3_LZX_XPRESS
+MODULE_INFO(compression, "read-only lzx/xpress compression included");
+#endif
+
 MODULE_AUTHOR("Konstantin Komarov");
 MODULE_ALIAS_FS("ntfs3");
 

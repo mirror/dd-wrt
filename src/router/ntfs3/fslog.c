@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  *
- * Copyright (C) 2019-2020 Paragon Software GmbH, All rights reserved.
+ * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
  */
 
@@ -1626,8 +1626,8 @@ static int last_log_lsn(struct ntfs_log *log)
 	struct RECORD_PAGE_HDR *first_tail = NULL;
 	struct RECORD_PAGE_HDR *second_tail = NULL;
 	struct RECORD_PAGE_HDR *tail_page = NULL;
-	struct RECORD_PAGE_HDR *second_tail_prev = NULL,
-			       *first_tail_prev = NULL;
+	struct RECORD_PAGE_HDR *second_tail_prev = NULL;
+	struct RECORD_PAGE_HDR *first_tail_prev = NULL;
 	struct RECORD_PAGE_HDR *page_bufs = NULL;
 	struct RECORD_PAGE_HDR *best_page;
 

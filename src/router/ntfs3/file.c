@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  *
- * Copyright (C) 2019-2020 Paragon Software GmbH, All rights reserved.
+ * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
  *  regular file handling primitives for ntfs-based filesystems
  */
@@ -626,7 +626,8 @@ out:
 /*
  * inode_operations::setattr
  */
-int ntfs3_setattr(struct dentry *dentry, struct iattr *attr)
+int ntfs3_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
+		  struct iattr *attr)
 {
 	struct super_block *sb = dentry->d_sb;
 	struct ntfs_sb_info *sbi = sb->s_fs_info;
@@ -675,10 +676,10 @@ int ntfs3_setattr(struct dentry *dentry, struct iattr *attr)
 		ni->ni_flags |= NI_FLAG_UPDATE_PARENT;
 	}
 
-	setattr_copy(inode, attr);
+	setattr_copy(mnt_userns, inode, attr);
 
 	if (mode != inode->i_mode) {
-		err = ntfs_acl_chmod(inode);
+		err = ntfs_acl_chmod(mnt_userns, inode);
 		if (err)
 			goto out;
 
