@@ -318,7 +318,7 @@ static noinline int ntfs_parse_options(struct super_block *sb, char *options,
 			opts->nohidden = 1;
 			break;
 		case Opt_acl:
-#ifdef CONFIG_NTFS3_FS_POSIX_ACL
+#ifdef CONFIG_FS_POSIX_ACL
 			sb->s_flags |= SB_POSIXACL;
 			break;
 #else

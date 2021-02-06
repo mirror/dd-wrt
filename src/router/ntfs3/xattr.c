@@ -472,10 +472,10 @@ out:
 	return err;
 }
 
-#ifdef CONFIG_NTFS3_FS_POSIX_ACL
+#ifdef CONFIG_FS_POSIX_ACL
 static inline void ntfs_posix_acl_release(struct posix_acl *acl)
 {
-	if (acl && refcount_dec_and_test(&acl->a_refcount))
+	if (acl && atomic_dec_and_test(&acl->a_refcount))
 		kfree(acl);
 }
 
@@ -528,7 +528,7 @@ static struct posix_acl *ntfs_get_acl_ex(struct inode *inode, int type,
 struct posix_acl *ntfs_get_acl(struct inode *inode, int type)
 {
 	/* TODO: init_user_ns? */
-	return ntfs_get_acl_ex(&init_user_ns, inode, type, 0);
+	return ntfs_get_acl_ex(inode, type, 0);
 }
 
 static noinline int ntfs_set_acl_ex(struct inode *inode, struct posix_acl *acl,
@@ -687,7 +687,7 @@ int ntfs_init_acl(struct inode *inode,
 	 */
 	inode->i_default_acl = NULL;
 
-	default_acl = ntfs_get_acl_ex(mnt_userns, dir, ACL_TYPE_DEFAULT, 1);
+	default_acl = ntfs_get_acl_ex(dir, ACL_TYPE_DEFAULT, 1);
 
 	if (!default_acl || default_acl == ERR_PTR(-EOPNOTSUPP)) {
 		inode->i_mode &= ~current_umask();
@@ -715,13 +715,13 @@ int ntfs_init_acl(struct inode *inode,
 	}
 
 	if (default_acl)
-		err = ntfs_set_acl_ex(mnt_userns, inode, default_acl,
+		err = ntfs_set_acl_ex(inode, default_acl,
 				      ACL_TYPE_DEFAULT, 1);
 
 	if (!acl)
 		inode->i_acl = NULL;
 	else if (!err)
-		err = ntfs_set_acl_ex(mnt_userns, inode, acl, ACL_TYPE_ACCESS,
+		err = ntfs_set_acl_ex(inode, acl, ACL_TYPE_ACCESS,
 				      1);
 
 	posix_acl_release(acl);
@@ -897,7 +897,7 @@ static int ntfs_getxattr(const struct xattr_handler *handler, struct dentry *de,
 		goto out;
 	}
 
-#ifdef CONFIG_NTFS3_FS_POSIX_ACL
+#ifdef CONFIG_FS_POSIX_ACL
 	if ((name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1 &&
 	     !memcmp(name, XATTR_NAME_POSIX_ACL_ACCESS,
 		     sizeof(XATTR_NAME_POSIX_ACL_ACCESS))) ||
@@ -906,7 +906,7 @@ static int ntfs_getxattr(const struct xattr_handler *handler, struct dentry *de,
 		     sizeof(XATTR_NAME_POSIX_ACL_DEFAULT)))) {
 		/* TODO: init_user_ns? */
 		err = ntfs_xattr_get_acl(
-			&init_user_ns, inode,
+			inode,
 			name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1 ?
 				ACL_TYPE_ACCESS :
 				ACL_TYPE_DEFAULT,
@@ -1056,7 +1056,7 @@ set_new_fa:
 		goto out;
 	}
 
-#ifdef CONFIG_NTFS3_FS_POSIX_ACL
+#ifdef CONFIG_FS_POSIX_ACL
 	if ((name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1 &&
 	     !memcmp(name, XATTR_NAME_POSIX_ACL_ACCESS,
 		     sizeof(XATTR_NAME_POSIX_ACL_ACCESS))) ||
@@ -1065,7 +1065,7 @@ set_new_fa:
 		     sizeof(XATTR_NAME_POSIX_ACL_DEFAULT)))) {
 		/* TODO: init_user_ns? */
 		err = ntfs_xattr_set_acl(
-			&init_user_ns, inode,
+			inode,
 			name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1 ?
 				ACL_TYPE_ACCESS :
 				ACL_TYPE_DEFAULT,
