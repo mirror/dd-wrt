@@ -508,7 +508,7 @@ static struct posix_acl *ntfs_get_acl_ex(struct inode *inode, int type,
 
 	/* Translate extended attribute to acl */
 	if (err > 0) {
-		acl = posix_acl_from_xattr(buf, err);
+		acl = posix_acl_from_xattr(&init_user_ns, buf, err);
 		if (!IS_ERR(acl))
 			set_cached_acl(inode, type, acl);
 	} else {
@@ -586,7 +586,7 @@ static noinline int ntfs_set_acl_ex(struct inode *inode, struct posix_acl *acl,
 	if (!value)
 		return -ENOMEM;
 
-	err = posix_acl_to_xattr(acl, value, size);
+	err = posix_acl_to_xattr(&init_user_ns, acl, value, size);
 	if (err)
 		goto out;
 
@@ -633,7 +633,7 @@ static int ntfs_xattr_get_acl(struct inode *inode, int type, void *buffer,
 	if (!acl)
 		return -ENODATA;
 
-	err = posix_acl_to_xattr(acl, buffer, size);
+	err = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
 	ntfs_posix_acl_release(acl);
 
 	return err;
@@ -655,7 +655,7 @@ static int ntfs_xattr_set_acl(struct inode *inode, int type, const void *value,
 	if (!value)
 		return 0;
 
-	acl = posix_acl_from_xattr(value, size);
+	acl = posix_acl_from_xattr(&init_user_ns, value, size);
 	if (IS_ERR(acl))
 		return PTR_ERR(acl);
 
