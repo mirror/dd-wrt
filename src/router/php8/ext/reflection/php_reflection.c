@@ -1802,7 +1802,7 @@ ZEND_METHOD(ReflectionFunctionAbstract, getStaticVariables)
 		}
 		ZEND_HASH_FOREACH_VAL(ht, val) {
 			if (UNEXPECTED(zval_update_constant_ex(val, fptr->common.scope) != SUCCESS)) {
-				return;
+				RETURN_THROWS();
 			}
 		} ZEND_HASH_FOREACH_END();
 		zend_hash_copy(Z_ARRVAL_P(return_value), ht, zval_add_ref);
@@ -4446,8 +4446,7 @@ ZEND_METHOD(ReflectionClass, getConstants)
 	array_init(return_value);
 	ZEND_HASH_FOREACH_STR_KEY_PTR(&ce->constants_table, key, constant) {
 		if (UNEXPECTED(zval_update_constant_ex(&constant->value, ce) != SUCCESS)) {
-			zend_array_destroy(Z_ARRVAL_P(return_value));
-			RETURN_NULL();
+			RETURN_THROWS();
 		}
 
 		if (Z_ACCESS_FLAGS(constant->value) & filter) {
@@ -4504,7 +4503,7 @@ ZEND_METHOD(ReflectionClass, getConstant)
 	GET_REFLECTION_OBJECT_PTR(ce);
 	ZEND_HASH_FOREACH_PTR(&ce->constants_table, c) {
 		if (UNEXPECTED(zval_update_constant_ex(&c->value, ce) != SUCCESS)) {
-			return;
+			RETURN_THROWS();
 		}
 	} ZEND_HASH_FOREACH_END();
 	if ((c = zend_hash_find_ptr(&ce->constants_table, name)) == NULL) {

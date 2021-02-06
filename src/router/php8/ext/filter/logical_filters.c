@@ -233,6 +233,9 @@ void php_filter_int(PHP_INPUT_FILTER_PARAM_DECL) /* {{{ */
 		p++; len--;
 		if (allow_hex && (*p == 'x' || *p == 'X')) {
 			p++; len--;
+			if (len == 0) {
+				RETURN_VALIDATION_FAILED
+			}
 			if (php_filter_parse_hex(p, len, &ctx_value) < 0) {
 				error = 1;
 			}
@@ -553,6 +556,22 @@ void php_filter_validate_domain(PHP_INPUT_FILTER_PARAM_DECL) /* {{{ */
 }
 /* }}} */
 
+static int is_userinfo_valid(zend_string *str)
+{
+	const char *valid = "-._~!$&'()*+,;=:";
+	const char *p = ZSTR_VAL(str);
+	while (p - ZSTR_VAL(str) < ZSTR_LEN(str)) {
+		if (isalpha(*p) || isdigit(*p) || strchr(valid, *p)) {
+			p++;
+		} else if (*p == '%' && p - ZSTR_VAL(str) <= ZSTR_LEN(str) - 3 && isdigit(*(p+1)) && isxdigit(*(p+2))) {
+			p += 3;
+		} else {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 void php_filter_validate_url(PHP_INPUT_FILTER_PARAM_DECL) /* {{{ */
 {
 	php_url *url;
@@ -608,6 +627,13 @@ bad_url:
 		php_url_free(url);
 		RETURN_VALIDATION_FAILED
 	}
+
+	if (url->user != NULL && !is_userinfo_valid(url->user)) {
+		php_url_free(url);
+		RETURN_VALIDATION_FAILED
+
+	}
+
 	php_url_free(url);
 }
 /* }}} */
