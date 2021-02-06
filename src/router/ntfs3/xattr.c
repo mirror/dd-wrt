@@ -660,7 +660,11 @@ static int ntfs_xattr_set_acl(struct inode *inode, int type, const void *value,
 		return PTR_ERR(acl);
 
 	if (acl) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+		err = posix_acl_valid(acl);
+#else
 		err = posix_acl_valid(sb->s_user_ns, acl);
+#endif
 		if (err)
 			goto release_and_out;
 	}
