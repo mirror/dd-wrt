@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  *
- * Copyright (C) 2019-2020 Paragon Software GmbH, All rights reserved.
+ * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
  */
 
@@ -46,7 +46,7 @@ bool run_lookup(const struct runs_tree *run, CLST vcn, size_t *index)
 	max_idx = run->count - 1;
 
 	/* Check boundary cases specially, 'cause they cover the often requests */
-	r = run->runs_;
+	r = run->runs;
 	if (vcn < r->vcn) {
 		*index = 0;
 		return false;
@@ -70,7 +70,7 @@ bool run_lookup(const struct runs_tree *run, CLST vcn, size_t *index)
 
 	do {
 		mid_idx = min_idx + ((max_idx - min_idx) >> 1);
-		r = run->runs_ + mid_idx;
+		r = run->runs + mid_idx;
 
 		if (vcn < r->vcn) {
 			max_idx = mid_idx - 1;
@@ -96,7 +96,7 @@ bool run_lookup(const struct runs_tree *run, CLST vcn, size_t *index)
 static void run_consolidate(struct runs_tree *run, size_t index)
 {
 	size_t i;
-	struct ntfs_run *r = run->runs_ + index;
+	struct ntfs_run *r = run->runs + index;
 
 	while (index + 1 < run->count) {
 		/*
@@ -172,8 +172,8 @@ bool run_is_mapped_full(const struct runs_tree *run, CLST svcn, CLST evcn)
 	if (!run_lookup(run, svcn, &i))
 		return false;
 
-	end = run->runs_ + run->count;
-	r = run->runs_ + i;
+	end = run->runs + run->count;
+	r = run->runs + i;
 
 	for (;;) {
 		next_vcn = r->vcn + r->len;
@@ -196,13 +196,13 @@ bool run_lookup_entry(const struct runs_tree *run, CLST vcn, CLST *lcn,
 	struct ntfs_run *r;
 
 	/* Fail immediately if nrun was not touched yet. */
-	if (!run->runs_)
+	if (!run->runs)
 		return false;
 
 	if (!run_lookup(run, vcn, &idx))
 		return false;
 
-	r = run->runs_ + idx;
+	r = run->runs + idx;
 
 	if (vcn >= r->vcn + r->len)
 		return false;
@@ -232,7 +232,7 @@ void run_truncate_head(struct runs_tree *run, CLST vcn)
 	struct ntfs_run *r;
 
 	if (run_lookup(run, vcn, &index)) {
-		r = run->runs_ + index;
+		r = run->runs + index;
 
 		if (vcn > r->vcn) {
 			CLST dlen = vcn - r->vcn;
@@ -246,14 +246,14 @@ void run_truncate_head(struct runs_tree *run, CLST vcn)
 		if (!index)
 			return;
 	}
-	r = run->runs_;
+	r = run->runs;
 	memmove(r, r + index, sizeof(*r) * (run->count - index));
 
 	run->count -= index;
 
 	if (!run->count) {
-		ntfs_free(run->runs_);
-		run->runs_ = NULL;
+		ntfs_vfree(run->runs);
+		run->runs = NULL;
 		run->allocated = 0;
 	}
 }
@@ -274,7 +274,7 @@ void run_truncate(struct runs_tree *run, CLST vcn)
 	 * then it will entirely be removed.
 	 */
 	if (run_lookup(run, vcn, &index)) {
-		struct ntfs_run *r = run->runs_ + index;
+		struct ntfs_run *r = run->runs + index;
 
 		r->len = vcn - r->vcn;
 
@@ -291,8 +291,8 @@ void run_truncate(struct runs_tree *run, CLST vcn)
 
 	/* Do not reallocate array 'runs'. Only free if possible */
 	if (!index) {
-		ntfs_free(run->runs_);
-		run->runs_ = NULL;
+		ntfs_vfree(run->runs);
+		run->runs = NULL;
 		run->allocated = 0;
 	}
 }
@@ -303,7 +303,7 @@ void run_truncate_around(struct runs_tree *run, CLST vcn)
 	run_truncate_head(run, vcn);
 
 	if (run->count >= NTFS3_RUN_MAX_BYTES / sizeof(struct ntfs_run) / 2)
-		run_truncate(run, (run->runs_ + (run->count >> 1))->vcn);
+		run_truncate(run, (run->runs + (run->count >> 1))->vcn);
 }
 
 /*
@@ -338,7 +338,7 @@ bool run_add_entry(struct runs_tree *run, CLST vcn, CLST lcn, CLST len,
 	 * existing range as my start point.
 	 */
 	if (!inrange && index > 0) {
-		struct ntfs_run *t = run->runs_ + index - 1;
+		struct ntfs_run *t = run->runs + index - 1;
 
 		if (t->vcn + t->len == vcn &&
 		    (t->lcn == SPARSE_LCN) == (lcn == SPARSE_LCN) &&
@@ -386,25 +386,25 @@ requires_new_range:
 
 			WARN_ON(!is_mft && bytes > NTFS3_RUN_MAX_BYTES);
 
-			new_ptr = ntfs_malloc(bytes);
+			new_ptr = ntfs_vmalloc(bytes);
 
 			if (!new_ptr)
 				return false;
 
 			r = new_ptr + index;
-			memcpy(new_ptr, run->runs_,
+			memcpy(new_ptr, run->runs,
 			       index * sizeof(struct ntfs_run));
-			memcpy(r + 1, run->runs_ + index,
+			memcpy(r + 1, run->runs + index,
 			       sizeof(struct ntfs_run) * (run->count - index));
 
-			ntfs_free(run->runs_);
-			run->runs_ = new_ptr;
+			ntfs_vfree(run->runs);
+			run->runs = new_ptr;
 			run->allocated = bytes;
 
 		} else {
 			size_t i = run->count - index;
 
-			r = run->runs_ + index;
+			r = run->runs + index;
 
 			/* memmove appears to be a bottle neck here... */
 			if (i > 0)
@@ -416,7 +416,7 @@ requires_new_range:
 		r->len = len;
 		run->count += 1;
 	} else {
-		r = run->runs_ + index;
+		r = run->runs + index;
 
 		/*
 		 * If one of ranges was not allocated
@@ -491,8 +491,8 @@ bool run_collapse_range(struct runs_tree *run, CLST vcn, CLST len)
 	if (WARN_ON(!run_lookup(run, vcn, &index)))
 		return true; /* should never be here */
 
-	e = run->runs_ + run->count;
-	r = run->runs_ + index;
+	e = run->runs + run->count;
+	r = run->runs + index;
 	end = vcn + len;
 
 	if (vcn > r->vcn) {
@@ -556,7 +556,7 @@ bool run_get_entry(const struct runs_tree *run, size_t index, CLST *vcn,
 	if (index >= run->count)
 		return false;
 
-	r = run->runs_ + index;
+	r = run->runs + index;
 
 	if (!r->len)
 		return false;

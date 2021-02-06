@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  *
- * Copyright (C) 2019-2020 Paragon Software GmbH, All rights reserved.
+ * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
  */
 
@@ -1184,10 +1184,10 @@ out:
 	return ERR_PTR(err);
 }
 
-int ntfs_create_inode(struct inode *dir, struct dentry *dentry,
-		      const struct cpu_str *uni, umode_t mode, dev_t dev,
-		      const char *symname, u32 size, int excl,
-		      struct ntfs_fnd *fnd, struct inode **new_inode)
+int ntfs_create_inode(struct user_namespace *mnt_userns, struct inode *dir,
+		      struct dentry *dentry, const struct cpu_str *uni,
+		      umode_t mode, dev_t dev, const char *symname, u32 size,
+		      int excl, struct ntfs_fnd *fnd, struct inode **new_inode)
 {
 	int err;
 	struct super_block *sb = dir->i_sb;
@@ -1227,6 +1227,13 @@ int ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 		/* use parent's directory attributes */
 		fa = dir_ni->std_fa | FILE_ATTRIBUTE_DIRECTORY |
 		     FILE_ATTRIBUTE_ARCHIVE;
+		/*
+		 * By default child directory inherits parent attributes
+		 * root directory is hidden + system
+		 * Make an exception for children in root
+		 */
+		if (dir->i_ino == MFT_REC_ROOT)
+			fa &= ~(FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
 	} else if (is_link) {
 		/* It is good idea that link should be the same type (file/dir) as target */
 		fa = FILE_ATTRIBUTE_REPARSE_POINT;
@@ -1586,7 +1593,7 @@ int ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 
 #ifdef CONFIG_NTFS3_FS_POSIX_ACL
 	if (!is_link && (sb->s_flags & SB_POSIXACL)) {
-		err = ntfs_init_acl(inode, dir);
+		err = ntfs_init_acl(mnt_userns, inode, dir);
 		if (err)
 			goto out6;
 	} else

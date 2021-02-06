@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  *
- * Copyright (C) 2019-2020 Paragon Software GmbH, All rights reserved.
+ * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
  */
 
@@ -108,8 +108,7 @@ void wnd_close(struct wnd_bitmap *wnd)
 {
 	struct rb_node *node, *next;
 
-	if (wnd->free_bits != wnd->free_holder)
-		ntfs_free(wnd->free_bits);
+	ntfs_free(wnd->free_bits);
 	run_close(&wnd->run);
 
 	node = rb_first(&wnd->start_tree);
@@ -660,13 +659,9 @@ int wnd_init(struct wnd_bitmap *wnd, struct super_block *sb, size_t nbits)
 	if (!wnd->bits_last)
 		wnd->bits_last = wbits;
 
-	if (wnd->nwnd <= ARRAY_SIZE(wnd->free_holder)) {
-		wnd->free_bits = wnd->free_holder;
-	} else {
-		wnd->free_bits = ntfs_zalloc(wnd->nwnd * sizeof(u16));
-		if (!wnd->free_bits)
-			return -ENOMEM;
-	}
+	wnd->free_bits = ntfs_zalloc(wnd->nwnd * sizeof(u16));
+	if (!wnd->free_bits)
+		return -ENOMEM;
 
 	err = wnd_rescan(wnd);
 	if (err)
@@ -1335,22 +1330,16 @@ int wnd_extend(struct wnd_bitmap *wnd, size_t new_bits)
 		new_last = wbits;
 
 	if (new_wnd != wnd->nwnd) {
-		if (new_wnd <= ARRAY_SIZE(wnd->free_holder)) {
-			new_free = wnd->free_holder;
-		} else {
-			new_free = ntfs_malloc(new_wnd * sizeof(u16));
-			if (!new_free)
-				return -ENOMEM;
-		}
+		new_free = ntfs_malloc(new_wnd * sizeof(u16));
+		if (!new_free)
+			return -ENOMEM;
 
 		if (new_free != wnd->free_bits)
 			memcpy(new_free, wnd->free_bits,
 			       wnd->nwnd * sizeof(short));
 		memset(new_free + wnd->nwnd, 0,
 		       (new_wnd - wnd->nwnd) * sizeof(short));
-		if (wnd->free_bits != wnd->free_holder)
-			ntfs_free(wnd->free_bits);
-
+		ntfs_free(wnd->free_bits);
 		wnd->free_bits = new_free;
 	}
 
