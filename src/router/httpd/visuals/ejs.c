@@ -2188,7 +2188,7 @@ EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 	if (nvram_match("ipv6_typ", "ipv6pd"))
 		ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 	if (!ipv6addr)
-		ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0); // try wan if all other fails	
+		ipv6addr = getifaddr(buf, get_wan_face(), AF_INET6, 0);	// try wan if all other fails   
 	if (ipv6addr)
 		websWrite(wp, "&nbsp;IPv6: %s", ipv6addr);
 #endif
@@ -2821,7 +2821,7 @@ EJ_VISIBLE void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", buf);
 }
 
-#if defined(HAVE_MICRO) // || defined(HAVE_80211AC)
+#if defined(HAVE_MICRO)		// || defined(HAVE_80211AC)
 
 EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 {
