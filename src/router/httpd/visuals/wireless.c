@@ -722,7 +722,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "</div>\n");
 		char sta[80];
 		sprintf(sta,"%s_mode",prefix);
-		if (nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
+		if (is_ap(prefix)) {
 		sprintf(var, "%s_wpa_strict_rekey", prefix);
 		showRadioDefaultOff(wp, "wpa.wpa_strict_rekey", var);
 		}
@@ -764,8 +764,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 	}
 #endif
 	if (show) {
-		if (nvram_nmatch("ap", "%s_mode", prefix)
-		    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
+		if (is_ap(prefix)) {
 			//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 #ifdef HAVE_80211W
 			if (is_mac80211(prefix) && strstr(akm, "wpa2") || strstr(akm, "psk2")) {

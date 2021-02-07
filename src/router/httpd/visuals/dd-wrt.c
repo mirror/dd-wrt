@@ -59,7 +59,7 @@
 
 #ifdef HAVE_OVERCLOCKING
 #ifdef HAVE_ALPINE
-static unsigned int alpine_clocks[] = {533, 800, 1200, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 0}; //i tested up to 2200, but it hard on the limit
+static unsigned int alpine_clocks[] = { 533, 800, 1200, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 0 };	//i tested up to 2200, but it hard on the limit
 #else
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
@@ -103,6 +103,13 @@ static void s_END(char *service, int line)
 
 #define END() s_END(__func__,__LINE__);
 #endif
+
+int is_ap(char *prefix)
+{
+	char ap[16];
+	sprintf(ap, "%s_mode", prefix);
+	return nvram_match(ap, "ap") || nvram_match(ap, "wdsap");
+}
 
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post)
 {
@@ -184,8 +191,8 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 	char *oclk = nvram_safe_get("overclocking");
 #if defined(HAVE_ALPINE)
 	if (!*oclk) {
-	    oclk = "1700";
-	    nvram_set("clkfreq","1700");
+		oclk = "1700";
+		nvram_set("clkfreq", "1700");
 	}
 	c = alpine_clocks;
 #elif defined(HAVE_NORTHSTAR)
@@ -234,7 +241,6 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 #endif
-
 
 	int cclk = atoi(oclk);
 
@@ -918,7 +924,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #if 0
 	if (has_wpa3(prefix)) {
 		if (!has_qtn(prefix)) {
-			if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
+			if (!primary || is_ap(prefix)) {
 				websWrite(wp, "<option value=\"owe\" %s>%s</option>\n", selmatch(var, "owe", "selected=\"selected\""), wpa_enc_label(buf, "owe"));
 			}
 		}
@@ -947,7 +953,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	}
 #endif
 	if (!has_qtn(prefix)) {
-		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
+		if (!primary || is_ap(prefix)) {
 #ifndef HAVE_MADWIFI
 			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), wpa_enc_label(buf, "wpa"));
 			websWrite(wp, "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""), wpa_enc_label(buf, "wpa2"));
@@ -1552,7 +1558,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 	sprintf(wl_net_mode, "%s_net_mode", prefix);
 	if (nvram_match(wl_net_mode, "disabled"))
 		return;
-	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
+	if (is_ap(prefix)
 	    || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh")) {
 		char wl_channel[16];
 		char wl_channel2[16];
@@ -2669,8 +2675,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 #ifdef HAVE_MADWIFI
 
-		if (nvram_nmatch("ap", "%s_mode", var)
-		    || nvram_nmatch("wdsap", "%s_mode", var)
+		if (is_ap(var)
 		    || nvram_nmatch("mesh", "%s_mode", var)
 		    || nvram_nmatch("infra", "%s_mode", var)) {
 			sprintf(power, "%s_maxassoc", var);
@@ -2689,7 +2694,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
 		websWrite(wp, "</div>\n");
 
-		if (is_mac80211(var) && (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))) {
+		if (is_mac80211(var) && is_ap(var)) {
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 			char signal[32];
 			sprintf(signal, "%s_connect", var);
@@ -2803,8 +2808,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			sprintf(ssid, "%s_ap_isolate", var);
 			showRadio(wp, "wl_adv.label11", ssid);
 #ifdef HAVE_MADWIFI
-			if (nvram_nmatch("ap", "%s_mode", var)
-			    || nvram_nmatch("wdsap", "%s_mode", var)
+			if (is_ap(var)
 			    || nvram_nmatch("mesh", "%s_mode", var)
 			    || nvram_nmatch("infra", "%s_mode", var)) {
 				sprintf(power, "%s_maxassoc", var);
@@ -3196,7 +3200,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
-	showRadio(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+	if (is_ap(prefix))
+		showRadio(wp, "wl_basic.disassoc_low_ack", wl_lowack);
 	if (has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -3538,7 +3543,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
-	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
+	if (is_ap(prefix)
 	    || nvram_match(wl_mode, "infra")
 	    || nvram_match(wl_mode, "mesh")
 	    )
@@ -3744,8 +3749,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
-	if (nvram_nmatch("ap", "%s_mode", prefix)
-	    || nvram_nmatch("wdsap", "%s_mode", prefix)
+	if (is_ap(prefix)
 	    || nvram_nmatch("infra", "%s_mode", prefix)
 	    || nvram_nmatch("mesh", "%s_mode", prefix)
 	    ) {
@@ -3756,7 +3760,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
-	if (is_mac80211(prefix) && (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))) {
+	if (is_mac80211(prefix) && is_ap(prefix)) {
 		char signal[32];
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 		sprintf(signal, "%s_connect", prefix);
@@ -3989,7 +3993,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 // test
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
-	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
+	if (is_ap(prefix)
 	    || nvram_match(wl_mode, "infra")
 	    || nvram_match(wl_mode, "mesh")
 	    )
@@ -4128,11 +4132,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	tf_webWriteESCNV(wp, wl_ssid);
 	websWrite(wp, "\" /></div>\n");
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
-	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
+	if (is_ap(prefix)
 	    || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "apsta")
 	    || nvram_match(wl_mode, "apstawet"))
 #else
-	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
+	if (is_ap(prefix)
 	    || nvram_match(wl_mode, "infra")
 	    || nvram_match(wl_mode, "mesh")
 	    )
@@ -4357,7 +4361,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
-	showRadio(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+	if (is_ap(prefix))
+		showRadio(wp, "wl_basic.disassoc_low_ack", wl_lowack);
 	if (has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -4608,8 +4613,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
-	if (nvram_nmatch("ap", "%s_mode", prefix)
-	    || nvram_nmatch("wdsap", "%s_mode", prefix)
+	if (is_ap(prefix)
 	    || nvram_nmatch("infra", "%s_mode", prefix)
 	    || nvram_nmatch("mesh", "%s_mode", prefix)
 	    ) {
@@ -4620,7 +4624,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
-	if (is_mac80211(prefix) && (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))) {
+	if (is_mac80211(prefix) && is_ap(prefix)) {
 		char signal[32];
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 		sprintf(signal, "%s_connect", prefix);
@@ -4867,7 +4871,7 @@ static int noad(const char *prefix)
 
 static int aponly(const char *prefix)
 {
-	return (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix));
+	return is_ap(prefix);
 }
 
 static int nomesh(const char *prefix)
