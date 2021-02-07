@@ -1228,6 +1228,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char ft[16];
 	char fstr[32];
 	char preamble[16];
+	char low_ack[16];
 	char uapsd[16];
 	FILE *fp = NULL;
 	char *ssid;
@@ -1261,6 +1262,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(ft, "%s_ft", ifname);
 	sprintf(mfp, "%s_mfp", ifname);
 	sprintf(preamble, "%s_preamble", ifname);
+	sprintf(preamble, "%s_d_lowack", ifname);
 	sprintf(uapsd, "%s_uapsd", ifname);
 	check_cryptomod(ifname);
 	if (nvram_match(akm, "8021X"))
@@ -1313,9 +1315,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (!vapid)
 		fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "0"));
 #ifdef HAVE_MVEBU
-	fprintf(fp, "disassoc_low_ack=0\n");
+	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack,"0"));
 #else
-	fprintf(fp, "disassoc_low_ack=1\n");
+	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack,"1"));
 #endif
 	char *mode = nvram_nget("%s_mode", ifname);
 	if (!strcmp(mode, "wdsap"))
