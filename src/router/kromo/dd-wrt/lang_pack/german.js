@@ -2569,6 +2569,7 @@ wl_basic.tor_anon="TOR Anonymisierung";
 wl_basic.country_settings="L&auml;ndereinstellungen";
 wl_basic.ldpc="LDPC (F&uumlr ESP8266 Abschalten)";
 wl_basic.uapsd="U-APSD (Automatisches Stromsparen)";
+wl_basic.disassoc_low_ack="Disassoc Low Ack";
 wl_basic.smps="Spatial Multiplex Power Save";
 wl_basic.add="Virtuellen AP Hinzuf&uuml;gen";
 wl_basic.airtime_policy="Airtime Stategie";

@@ -3019,6 +3019,7 @@ wl_basic.upper="upper";
 wl_basic.lower="lower";
 wl_basic.ldpc="LDPC (Disable for ESP8266)";
 wl_basic.uapsd="U-APSD (Automatic Power Save)";
+wl_basic.disassoc_low_ack="Disassoc Low Ack";
 wl_basic.smps="Spatial Multiplex Power Save";
 wl_basic.add="Add Virtual AP";
 wl_basic.airtime_policy="Airtime Policy";

@@ -2910,6 +2910,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_ff[16];
 	char wmm[32];
 	char wl_uapsd[16];
+	char wl_lowack[16];
 	char wl_ldpc[16];
 	char wl_smps[16];
 	char wl_isolate[32];
@@ -3184,6 +3185,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 	sprintf(wl_uapsd, "%s_uapsd", prefix);
+	sprintf(wl_lowack, "%s_d_lowack", prefix);
 	sprintf(wl_ldpc, "%s_ldpc", prefix);
 	if (has_ldpc(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
@@ -3194,6 +3196,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
+	showRadio(wp, "wl_basic.disassoc_low_ack", wl_lowack);
 	if (has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -3915,6 +3918,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 	sprintf(wl_uapsd, "%s_uapsd", prefix);
+	sprintf(wl_lowack, "%s_d_lowack", prefix);
 	sprintf(wl_ldpc, "%s_ldpc", prefix);
 	sprintf(wl_smps, "%s_smps", prefix);
 #if 0
@@ -4353,6 +4357,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
+	showRadio(wp, "wl_basic.disassoc_low_ack", wl_lowack);
 	if (has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
