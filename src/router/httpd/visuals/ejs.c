@@ -2509,7 +2509,7 @@ EJ_VISIBLE void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
 	m[5] = 0;
 	sprintf(var, "%s_mode", m);
 
-	if (nvram_match(var, "ap") || nvram_match(var, "wdsap")) {
+	if (is_ap(m)) {
 		showap = 1;	// "Clients"
 	} else {
 		showcli = 1;	// "Access Point"
