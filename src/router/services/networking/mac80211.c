@@ -1228,7 +1228,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char ft[16];
 	char fstr[32];
 	char preamble[16];
-	char low_ack[16];
+	char lowack[16];
 	char uapsd[16];
 	FILE *fp = NULL;
 	char *ssid;
@@ -1262,7 +1262,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(ft, "%s_ft", ifname);
 	sprintf(mfp, "%s_mfp", ifname);
 	sprintf(preamble, "%s_preamble", ifname);
-	sprintf(preamble, "%s_d_lowack", ifname);
+	sprintf(lowack, "%s_d_lowack", ifname);
 	sprintf(uapsd, "%s_uapsd", ifname);
 	check_cryptomod(ifname);
 	if (nvram_match(akm, "8021X"))
