@@ -891,6 +891,18 @@ char *set_wan_state(int state)
 		eval("vconfig", "add", "eth0", "2");
 		return NULL;
 	}
+#elif defined (HAVE_E355AC)
+#elif defined (HAVE_WR810N)
+#elif defined (HAVE_WR615N)
+#elif defined (HAVE_AP120C)
+#elif defined (HAVE_E380AC)
+#elif defined (HAVE_RAMBUTAN)
+#elif defined (HAVE_WR650AC)
+#elif defined (HAVE_JWAP606)
+#elif defined (HAVE_DAP3662)
+#elif defined (HAVE_DIR862)
+#elif defined (HAVE_ARCHERC25)
+#elif defined (HAVE_XD9531)
 #elif defined (HAVE_MMS344)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	if (!state) {
