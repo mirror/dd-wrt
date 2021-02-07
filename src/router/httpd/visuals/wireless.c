@@ -721,10 +721,10 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
 		websWrite(wp, "</div>\n");
 		char sta[80];
-		sprintf(sta,"%s_mode",prefix);
+		sprintf(sta, "%s_mode", prefix);
 		if (is_ap(prefix)) {
-		sprintf(var, "%s_wpa_strict_rekey", prefix);
-		showRadioDefaultOff(wp, "wpa.wpa_strict_rekey", var);
+			sprintf(var, "%s_wpa_strict_rekey", prefix);
+			showRadioDefaultOff(wp, "wpa.wpa_strict_rekey", var);
 		}
 	}
 #ifdef HAVE_80211R

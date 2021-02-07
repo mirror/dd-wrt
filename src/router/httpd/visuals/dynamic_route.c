@@ -193,7 +193,7 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t ** argv)
 		int d_oif = 0;
 		int d_lookup = 0;
 		int d_nat = 0;
-		foreach_delim(word, line, next," \t") {
+		foreach_delim(word, line, next, " \t") {
 			if (!field) {
 				strcpy(priority, word);
 				field++;
@@ -219,13 +219,13 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t ** argv)
 		}
 		char *p = strchr(priority, ':');
 		*p = 0;
-		if (iif[0] &&!strcmp(iif, nvram_safe_get("lan_ifname")))
+		if (iif[0] && !strcmp(iif, nvram_safe_get("lan_ifname")))
 			strcpy(iif, "LAN");
 		if (iif[0] && !strcmp(iif, nvram_safe_get("wan_ifname")))
 			strcpy(iif, "WAN");
 		if (oif[0] && !strcmp(oif, nvram_safe_get("lan_ifname")))
 			strcpy(oif, "LAN");
-		if (oif[0] &&!strcmp(oif, nvram_safe_get("wan_ifname")))
+		if (oif[0] && !strcmp(oif, nvram_safe_get("wan_ifname")))
 			strcpy(oif, "WAN");
 		websWrite(wp, "%c'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'\n", blank ? ' ' : ',', priority, not ? "!" : "", from, to, tos, fwmark, ipproto, sport, dport, getNetworkLabel(wp, iif),
 			  getNetworkLabel(wp, oif), lookup, nat);

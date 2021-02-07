@@ -3201,7 +3201,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
 	if (is_ap(prefix))
-		showRadio(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+#ifdef HAVE_MVEBU
+		showRadioDefaultOff(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+#else
+		showRadioDefaultOn(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+#endif
 	if (has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -4362,7 +4366,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
 	if (is_ap(prefix))
-		showRadio(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+#ifdef HAVE_MVEBU
+		showRadioDefaultOff(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+#else
+		showRadioDefaultOn(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+#endif
 	if (has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");

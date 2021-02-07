@@ -358,11 +358,11 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		GETENTRYBYIDX(stp, word, 4);
 		GETENTRYBYIDX(pathcost, word, 5);
 		if (!hairpin)
-		    hairpin ="0";
+			hairpin = "0";
 		if (!stp)
-		    stp ="1";
+			stp = "1";
 		if (!pathcost)
-		    pathcost ="100";
+			pathcost = "100";
 
 		show_bridgeifname(wp, finalbuffer, bufferif, count, tag, port, stp, prio, hairpin, pathcost);
 		count++;
