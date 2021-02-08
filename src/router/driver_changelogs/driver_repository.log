@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6044 | brainslayer | 2021-02-08 23:00:49 +0600 (Mon, 08 Feb 2021) | 1 line
+
+increase max stations to 64. we can do more but QCA9980 did not have that much ram as 9984. i will look if i can make a separate solution here
+------------------------------------------------------------------------
 r6043 | brainslayer | 2021-02-07 22:11:46 +0600 (Sun, 07 Feb 2021) | 1 line
 
 pm switch
