@@ -2083,9 +2083,9 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 
 static void do_fetchif(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
-	char line[256];
+	char line[512];
 	int i, llen;
-	char buffer[256];
+	char buffer[512];
 	char querybuffer[32];
 
 	char *query = strchr(url, '?');
