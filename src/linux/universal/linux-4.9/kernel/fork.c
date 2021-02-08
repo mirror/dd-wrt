@@ -1118,13 +1118,17 @@ static void mm_release(struct task_struct *tsk, struct mm_struct *mm)
 
 void exit_mm_release(struct task_struct *tsk, struct mm_struct *mm)
 {
+#ifdef CONFIG_FUTEX
 	futex_exit_release(tsk);
+#endif
 	mm_release(tsk, mm);
 }
 
 void exec_mm_release(struct task_struct *tsk, struct mm_struct *mm)
 {
+#ifdef CONFIG_FUTEX
 	futex_exec_release(tsk);
+#endif
 	mm_release(tsk, mm);
 }
 
