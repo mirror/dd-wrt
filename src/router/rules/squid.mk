@@ -75,6 +75,8 @@ squid-configure:
 	--enable-auth-basic="RADIUS" \
 	--enable-epoll \
 	--with-krb5-config=no \
+	--without-mit-krb5 \
+	--without-heimdal-krb5 \
 	--without-libxml2 \
 	--with-large-files \
 	--with-maxfd=4096 \
