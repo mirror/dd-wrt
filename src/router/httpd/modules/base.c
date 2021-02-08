@@ -994,6 +994,7 @@ enum {
 	SERVICE_RESTART,
 	SYS_RESTART,
 	REFRESH,
+	REFRESH_DELAY,
 };
 static struct gozila_action gozila_actions[] = {
 	/*
@@ -1010,7 +1011,7 @@ static struct gozila_action gozila_actions[] = {
 #endif
 	{ "WanMAC", "clone_mac", "", REFRESH, "clone_mac" },	// for cisco
 	// style
-	{ "DHCPTable", "delete", "", REFRESH, "delete_leases" },
+	{ "DHCPTable", "delete", "", REFRESH_DELAY, "delete_leases" },
 #ifdef HAVE_PPTPD
 	{ "DHCPTable", "deletepptp", "", REFRESH, "delete_pptp" },
 #endif
@@ -1343,6 +1344,11 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	} else if (action == RESTART) {
 		_sys_commit();
 		sys_restart();
+	} else if (action == REFRESH_DELAY) {
+		struct timespec tim, tim2;
+		tim.tv_sec = 1;
+		tim.tv_nsec = 0;
+		nanosleep(&tim, &tim2);
 	}
 
 	next_page = websGetVar(wp, "next_page", NULL);
