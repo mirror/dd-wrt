@@ -43,7 +43,7 @@ typedef struct JLSState{
     int run_index[3];
 }JLSState;
 
-extern const uint8_t ff_log2_run[32];
+extern const uint8_t ff_log2_run[41];
 
 /**
  * Calculate initial JPEG-LS parameters
