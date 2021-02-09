@@ -29,9 +29,9 @@ for p in `seq 0 $peers`
 		# oet${i}_aip_rten${p} #nvram variable to allow routing of Allowed IP's, 1=add route
 		if [[ $($nv get oet${i}_aip_rten${p}) -eq 1 ]] 
 		then 
-			#replace 0.0.0.0/ with 0.0.0.0/1,128.0.0.0/1
-			#for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g" | sed "s/,/ /g") ; do
-			for aip in $($nv get oet${i}_aip${p} | sed "s/,/ /g") ; do
+			#replace 0.0.0.0/0 with 0.0.0.0/1,128.0.0.0/1
+			for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g" | sed "s/,/ /g") ; do
+			#for aip in $($nv get oet${i}_aip${p} | sed "s/,/ /g") ; do
 				# check if PBR is set then skip default gateway
 				if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ] && [ $aip = 0.0.0.0/1 -o $aip = 128.0.0.0/1 -o $aip = 0.0.0.0/0 ] ; then
 					continue
@@ -124,7 +124,12 @@ if [[ ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then	# conside
 		# add to wg_get_dns to add when DNSMasq restarts
 		nvram_dns=${nvram_dns//$wgdns/}
 		nvram_dns="$wgdns $nvram_dns"
-		sed -i "1s/^/nameserver $wgdns\n/" /tmp/resolv.dnsmasq
+		if [[ -s /tmp/resolv.dnsmasq ]]; then
+			#is not empty insert else append
+			sed -i "1s/^/nameserver $wgdns\n/" /tmp/resolv.dnsmasq
+		else
+			echo -e "nameserver $wgdns" >> /tmp/resolv.dnsmasq
+		fi
 		echo "nameserver $wgdns" >> /tmp/resolv.dnsmasq_oet${i}
 	done
 	$nv set wg_get_dns="$nvram_dns"

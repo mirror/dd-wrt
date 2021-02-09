@@ -1,6 +1,6 @@
 #!/bin/sh
 # wait until directory is mounted and writable
-# usage: is-mounted /name-of directory
+# usage: is-mounted.sh /name-of directory
 # default is /jffs
 (
 DIR=$1
