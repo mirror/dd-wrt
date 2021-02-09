@@ -210,10 +210,10 @@ upnp_portmap_add
 	map->duration		= duration;
 	map->book_time		= time(0);
 
-	strcpy(map->remote_host,        remote_host);
-	strcpy(map->protocol,           protocol);
-	strcpy(map->internal_client,    internal_client);
-	strcpy(map->description,        description);
+	strlcpy(map->remote_host,        remote_host, sizeof(map->remote_host));
+	strlcpy(map->protocol,           protocol, sizeof(map->protocol));
+	strlcpy(map->internal_client,    internal_client, sizeof(map->internal_client));
+	strlcpy(map->description,        description, sizeof(map->description));
 
 	/* Set to NAT kernel */
 	if (map->enable)

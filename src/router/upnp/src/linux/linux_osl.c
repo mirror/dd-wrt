@@ -490,7 +490,7 @@ upnp_osl_wan_link_status()
 
 	/* Setup our control structures. */
 	memset(&ifr, 0, sizeof(ifr));
-	strcpy(ifr.ifr_name, devname);
+	strlcpy(ifr.ifr_name, devname, sizeof(ifr.ifr_name));
 
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -528,7 +528,7 @@ upnp_osl_wan_max_bitrates(unsigned long *rx, unsigned long *tx)
 
 	/* Setup our control structures. */
 	memset(&ifr, 0, sizeof(ifr));
-	strcpy(ifr.ifr_name, devname);
+	strlcpy(ifr.ifr_name, devname, sizeof(ifr.ifr_name));
 
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0);

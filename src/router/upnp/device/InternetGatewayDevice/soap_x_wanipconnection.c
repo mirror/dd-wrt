@@ -399,7 +399,7 @@ action_GetGenericPortMappingEntry
     if (!map) {
         return SOAP_INVALID_ARGS;
     }
-	strcpy(ARG_STR(out_NewRemoteHost), map->remote_host);
+    strcpy(ARG_STR(out_NewRemoteHost), map->remote_host);
     strcpy(ARG_STR(out_NewProtocol), map->protocol);
     strcpy(ARG_STR(out_NewInternalClient), map->internal_client);
     strcpy(ARG_STR(out_NewPortMappingDescription), map->description);
