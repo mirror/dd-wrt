@@ -382,7 +382,7 @@ ssdp_msearch(UPNP_CONTEXT *context)
 		/* uuid */
 		type = MSEARCH_UUID;
 		st += 5;
-		strcpy(name, st);
+		strlcpy(name, st, sizeof(name));
 	}
 	else {
 		/* check advertise_table for specify name. */
