@@ -92,7 +92,7 @@ statevar_SubnetMask
 	else
 		sprintf(name, "lan%d_netmask", ifid);
 
-	strcpy(UPNP_STR(value), nvram_safe_get(name));
+	strlcpy(UPNP_STR(value), nvram_safe_get(name), sizeof(UPNP_STR(value)));
 	return OK;
 }
 /* >> AUTO GENERATED FUNCTION */
@@ -119,7 +119,7 @@ statevar_IPRouters
 	else
 		sprintf(name, "lan%d_ipaddr", ifid);
 
-	strcpy(UPNP_STR(value), nvram_safe_get(name));
+	strlcpy(UPNP_STR(value), nvram_safe_get(name),sizeof(UPNP_STR(value)));
     return OK;
 }
 /* >> AUTO GENERATED FUNCTION */
@@ -160,7 +160,7 @@ statevar_DNSServers
 	dnslist = nvram_safe_get(name);
 
 	/* make token and rebuild the string with comma */
-	strcpy(buf, dnslist);
+	strlcpy(buf, dnslist, sizeof(buf));
 	
 	UPNP_STR(value)[0] = 0;
 	for (p = buf; ; p = 0) {
@@ -197,7 +197,7 @@ statevar_DomainName
 	UPNP_USE_HINT( UPNP_STR(value) )
 
 	/* << USER CODE START >> */
-	strcpy(UPNP_STR(value), nvram_safe_get("wan_domain"));
+	strlcpy(UPNP_STR(value), nvram_safe_get("wan_domain"),sizeof(UPNP_STR(value)));
     return OK;
 }
 /* >> AUTO GENERATED FUNCTION */
@@ -224,7 +224,7 @@ statevar_MinAddress
 	else
 		sprintf(name, "dhcp%d_start", ifid);
 
-	strcpy(UPNP_STR(value), nvram_safe_get(name));
+	strlcpy(UPNP_STR(value), nvram_safe_get(name),sizeof(UPNP_STR(value)));
     return OK;
 }
 /* >> AUTO GENERATED FUNCTION */
@@ -251,7 +251,7 @@ statevar_MaxAddress
 	else
 		sprintf(name, "dhcp%d_end", ifid);
 
-	strcpy(UPNP_STR(value), nvram_safe_get(name));
+	strlcpy(UPNP_STR(value), nvram_safe_get(name),sizeof(UPNP_STR(value)));
 	return OK;
 }
 /* >> AUTO GENERATED FUNCTION */

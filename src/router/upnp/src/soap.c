@@ -585,7 +585,7 @@ action_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 		}
 
 		temp->name = arg_name;
-		strcpy(temp->value.val.str, arg_value);
+		strlcpy(temp->value.val.str, arg_value, sizeof(temp->value.val.str));
 
 		/* append to in argument list */
 		temp->next = 0;
