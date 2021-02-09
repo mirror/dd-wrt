@@ -38,7 +38,7 @@ do
 			logger -p user.info "Enable WireGuard interface oet${i} on port $($nv get oet${i}_port)"
 			if [ -z "$($nv get oet${i}_mtu)" ]
 			then
-				overhead=40
+				overhead=60
 				if [ "$($nv get ipv6_enable)" == "1" ]
 				then
 					overhead=80
