@@ -117,7 +117,7 @@ sync_advertise_uuid(UPNP_DEVICE *device, char *new_uuid, char *name)
 
 	for (advertise = device->advertise_table; advertise->name; advertise++) {
 		if (strncmp(name, advertise->name, strlen(advertise->name)) == 0) {
-			strcpy(advertise->uuid, new_uuid);
+			strlcpy(advertise->uuid, new_uuid, sizeof(advertise->uuid));
 			break;
 		}
 	}

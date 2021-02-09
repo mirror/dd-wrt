@@ -95,7 +95,7 @@ upnp_ifinit(UPNP_CONTEXT *context, char *idxname)
 	/* Setup context */
 	strtok_r(idxname, "=", &name);
 
-	strcpy(ifp->ifname, name);
+	strlcpy(ifp->ifname, name, sizeof(ifp->ifname));
 	ifp->if_instance = atoi(idxname);
 
 	ifp->http_sock = -1;

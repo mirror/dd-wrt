@@ -223,7 +223,7 @@ translate_value(UPNP_CONTEXT *context, UPNP_VALUE *value)
 		len = upnp_base64_encode((unsigned char *)value->val.data,
 			value->len, (unsigned char *)context->head_buffer);
 		if (len > 0)
-			strcpy(buf, context->head_buffer);
+			strlcpy(buf, context->head_buffer, sizeof(value->val.str));
 		else
 			*buf = '\0';
 		break;
