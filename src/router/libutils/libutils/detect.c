@@ -1825,23 +1825,23 @@ int internal_getRouterBrand()
 #define UNLOCK_UAPV2 16
 	struct UBNTDEV dev[] = {
 		/* these AC devices are untested and not yet supported, its just the id definition for detection right now */
-		{ -1, "NanoBeam 5AC 16", 0xe9f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "NanoBeam 5AC Gen2", 0xe7fc, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "LiteBeam 5AC 23", 0xe8f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "LiteBeam 5AC Gen2", 0xe7f9, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "LiteBeam 5AC LR", 0xe7fe, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "LiteAP AC", 0xe8e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
-		{ -1, "LiteAP GPS", 0xe7fd, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
-		{ -1, "PowerBeam 5AC 300", 0xe6f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "PowerBeam 5AC 400", 0xe7f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "PowerBeam 5AC Gen2", 0xe3d6, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 10 },	//
-		{ -1, "PowerBeam 5AC X Gen2", 0xe3d9, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "ISO Station 5AC", 0xe7f7, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "ISO Station 5AC", 0xe6f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "NanoStation 5AC loco", 0xe7fa, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "NanoStation 5AC", 0xe7fb, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "Bullet AC", 0xe2c5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
-		{ -1, "Bullet AC IP67", 0xe2c7, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
+		{ -1, "NanoBeam 5AC 16", 0xe9f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "NanoBeam 5AC Gen2", 0xe7fc, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "LiteBeam 5AC 23", 0xe8f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "LiteBeam 5AC Gen2", 0xe7f9, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "LiteBeam 5AC LR", 0xe7fe, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "LiteAP AC", 0xe8e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 0 },	//
+		{ -1, "LiteAP GPS", 0xe7fd, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 0 },	//
+		{ -1, "PowerBeam 5AC 300", 0xe6f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "PowerBeam 5AC 400", 0xe7f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "PowerBeam 5AC Gen2", 0xe3d6, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 0 },	//
+		{ -1, "PowerBeam 5AC X Gen2", 0xe3d9, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "ISO Station 5AC", 0xe7f7, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "ISO Station 5AC", 0xe6f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "NanoStation 5AC loco", 0xe7fa, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "NanoStation 5AC", 0xe7fb, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "Bullet AC", 0xe2c5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
+		{ -1, "Bullet AC IP67", 0xe2c7, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 0 },	//
 		{ -1, "NanoBeam M2 XW", 0xe2c2, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
 		{ -1, "NanoBeam M5 XW", 0xe3e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 4 },	//
 		{ -1, "NanoBeam M2 XW", 0xe812, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 6 },	//
