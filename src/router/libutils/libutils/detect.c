@@ -1949,24 +1949,24 @@ int internal_getRouterBrand()
 		{ -1, "UniFi UAP-Mini", 0xe522, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10 },	//
 		{ -1, "UniFi UAP-Outdoor", 0xe532, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10 },	//
 		{ -1, "UniFi UAP-Outdoor 5G", 0xe515, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10 },	//
-		{ -1, "UniFi UAP-AC", 0xe902, 7, 7, 7, 7, ROUTER_BOARD_UNIFI, 0, 10 },	//
+		{ -1, "UniFi UAP-AC", 0xe902, 7, 7, 7, 7, ROUTER_BOARD_UNIFI, 0, 0 },	//
 		{ -1, "UniFi UAP-Outdoor+", 0xe562, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10 },	//
-		{ -1, "UniFi UAP-AC v2", 0xe912, 7, 7, 7, 7, ROUTER_BOARD_UNIFI, 0, 10 },	//
+		{ -1, "UniFi UAP-AC v2", 0xe912, 7, 7, 7, 7, ROUTER_BOARD_UNIFI, 0, 0 },	//
 		{ UNLOCK_UAPV2, "UniFi UAP v2", 0xe572, 3, 3, 0, 0, ROUTER_BOARD_UNIFI_V2, 0, 10 },	//
 		{ UNLOCK_UAPV2, "UniFi UAP-LR v2", 0xe582, 3, 3, 0, 0, ROUTER_BOARD_UNIFI_V2, 0, 10 },	//
-		{ -1, "UniFi UAP-AC-Lite", 0xe517, 3, 3, 3, 3, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UAP-AC-LR", 0xe527, 7, 7, 3, 3, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UAP-AC-Pro", 0xe537, 7, 7, 7, 7, ROUTER_UBNT_UAPACPRO, 0, 10 },	//
-		{ -1, "UniFi UAP-AC-EDU", 0xe547, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UAP-AC-MESH", 0xe557, 7, 7, 3, 3, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UAP-AC-MESH-Pro", 0xe567, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UAP-AC-InWall", 0xe587, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UAP-AC-InWall-Pro", 0xe592, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UAP-AC-HD", 0xe535, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi MeshXG", 0xe575, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UEMB-AC-AD", 0xe553, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UAP-nanoHD", 0xec20, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 10 },	//
-		{ -1, "UniFi UAP-HD-IW", 0xec22, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 10 },	//
+		{ -1, "UniFi UAP-AC-Lite", 0xe517, 3, 3, 3, 3, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UAP-AC-LR", 0xe527, 7, 7, 3, 3, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UAP-AC-Pro", 0xe537, 7, 7, 7, 7, ROUTER_UBNT_UAPACPRO, 0, 0 },	//
+		{ -1, "UniFi UAP-AC-EDU", 0xe547, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UAP-AC-MESH", 0xe557, 7, 7, 3, 3, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UAP-AC-MESH-Pro", 0xe567, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UAP-AC-InWall", 0xe587, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UAP-AC-InWall-Pro", 0xe592, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UAP-AC-HD", 0xe535, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi MeshXG", 0xe575, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UEMB-AC-AD", 0xe553, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UAP-nanoHD", 0xec20, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 0 },	//
+		{ -1, "UniFi UAP-HD-IW", 0xec22, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 0 },	//
 		{ -1, NULL, 0, 0, 0, 0, 0, 0 },	//
 	};
 
