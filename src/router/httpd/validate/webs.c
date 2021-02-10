@@ -2039,7 +2039,7 @@ void add_tunnel(webs_t wp)
 	default_set("ipaddr", "");
 	default_set("netmask", "");
 	default_seti("id", 1);
-	int overhead = nvram_matchi("ipv6_enable", 1) ? 80 : 40;
+	int overhead = nvram_matchi("ipv6_enable", 1) ? 80 : 60;
 	if (!nvram_match("wan_proto", "disabled"))
 		default_seti("mtu", atoi(nvram_safe_get("wan_mtu")) - overhead);
 	else
