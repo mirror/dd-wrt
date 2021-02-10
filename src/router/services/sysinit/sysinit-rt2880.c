@@ -156,6 +156,12 @@ void start_sysinit(void)
 			insmod("mt76");
 			insmod("mt7615-common");
 			insmod("mt7615e");
+			insmod("mt76x02-lib");
+			insmod("mt76x2-common");
+			insmod("mt76x2e");
+			insmod("mt76x0-common");
+			insmod("mt76x0e");
+			insmod("mt7603e");
 		}
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -179,6 +185,12 @@ void start_sysinit(void)
 			insmod("mt76");
 			insmod("mt7615-common");
 			insmod("mt7615e");
+    			insmod("mt76x02-lib");
+			insmod("mt76x2-common");
+			insmod("mt76x2e");
+			insmod("mt76x0-common");
+			insmod("mt76x0e");
+			insmod("mt7603e");
 		}
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
