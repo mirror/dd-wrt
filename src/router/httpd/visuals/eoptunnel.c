@@ -134,7 +134,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					int mtu = 1500;
 					if (!nvram_match("wan_proto", "disabled"))
 						mtu = nvram_geti("wan_mtu");
-					mtu -= nvram_matchi("ipv6_enable", 1) ? 80 : 40;
+					mtu -= nvram_matchi("ipv6_enable", 1) ? 80 : 60;
 					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%d\" />\n", temp, nvram_default_geti(temp, mtu));
 				}
 				websWrite(wp, "</div>\n");
