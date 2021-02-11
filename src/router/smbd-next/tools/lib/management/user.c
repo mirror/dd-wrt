@@ -107,7 +107,7 @@ static struct ksmbd_user *new_ksmbd_user(char *name, char *pwd)
 	if (!user)
 		return NULL;
 
-	pthread_rwlock_destroy(&user->update_lock);
+	pthread_rwlock_init(&user->update_lock, NULL);
 	user->name = name;
 	user->pass_b64 = pwd;
 	user->ref_count = 1;
