@@ -54,11 +54,13 @@ static int __usm_remove_user(struct ksmbd_user *user)
 struct ksmbd_user *get_ksmbd_user(struct ksmbd_user *user)
 {
 	pthread_rwlock_wrlock(&user->update_lock);
-	if (user->ref_count != 0)
+	if (user->ref_count != 0) {
+		pthread_rwlock_unlock(&user->update_lock);
 		user->ref_count++;
-	else
+	} else {
+		pthread_rwlock_unlock(&user->update_lock);
 		user = NULL;
-	pthread_rwlock_unlock(&user->update_lock);
+	}
 	return user;
 }
 
