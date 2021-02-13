@@ -21,7 +21,7 @@
 
 static inline void get_mi_ref(const struct mft_inode *mi, struct MFT_REF *ref)
 {
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	ref->low = cpu_to_le32(mi->rno);
 	ref->high = cpu_to_le16(mi->rno >> 32);
 #else

@@ -202,6 +202,7 @@ struct ntfs_sb_info {
 
 	struct ATTR_DEF_ENTRY *def_table; // attribute definition table
 	u32 def_entries;
+	u32 ea_max_size;
 
 	struct MFT_REC *new_rec;
 
