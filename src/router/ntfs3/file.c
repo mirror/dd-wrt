@@ -405,10 +405,8 @@ out:
 static int ntfs_truncate(struct inode *inode, loff_t new_size)
 {
 	struct super_block *sb = inode->i_sb;
-	struct ntfs_sb_info *sbi = sb->s_fs_info;
 	struct ntfs_inode *ni = ntfs_i(inode);
 	int err, dirty = 0;
-	u32 vcn;
 	u64 new_valid;
 
 	if (!S_ISREG(inode->i_mode))
@@ -424,7 +422,6 @@ static int ntfs_truncate(struct inode *inode, loff_t new_size)
 			return err;
 	}
 
-	vcn = bytes_to_cluster(sbi, new_size);
 	new_valid = ntfs_up_block(sb, min_t(u64, ni->i_valid, new_size));
 
 	ni_lock(ni);
@@ -593,7 +590,7 @@ static long ntfs_fallocate(struct file *file, int mode, loff_t vbo, loff_t len)
 				 * 1G of sparsed clusters + 1 cluster of data =>
 				 * valid_size == 1G + 1 cluster
 				 * fallocate(1G) will zero 1G and this can be very long
-				 * xfstest 016/086 will fail whithout 'ntfs_sparse_cluster'
+				 * xfstest 016/086 will fail without 'ntfs_sparse_cluster'
 				 */
 				/*ntfs_sparse_cluster(inode, NULL, vcn,
 				 *		    min(vcn_v - vcn, clen));

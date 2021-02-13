@@ -36,7 +36,7 @@
  * Logical and virtual cluster number
  * If needed, may be redefined to use 64 bit value
  */
-//#define NTFS3_64BIT_CLUSTER
+//#define CONFIG_NTFS3_64BIT_CLUSTER
 
 #define NTFS_LZNT_MAX_CLUSTER	4096
 #define NTFS_LZNT_CUNIT		4
@@ -69,7 +69,7 @@ struct le_str {
 
 static_assert(SECTOR_SHIFT == 9);
 
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 typedef u64 CLST;
 static_assert(sizeof(size_t) == 8);
 #else
@@ -187,7 +187,7 @@ static_assert(sizeof(__le64) == sizeof(struct MFT_REF));
 
 static inline CLST ino_get(const struct MFT_REF *ref)
 {
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	return le32_to_cpu(ref->low) | ((u64)le16_to_cpu(ref->high) << 32);
 #else
 	return le32_to_cpu(ref->low);
@@ -425,7 +425,7 @@ static inline bool is_attr_indexed(const struct ATTRIB *attr)
 	return !attr->non_res && (attr->res.flags & RESIDENT_FLAG_INDEXED);
 }
 
-static const inline __le16 *attr_name(const struct ATTRIB *attr)
+static inline __le16 const *attr_name(const struct ATTRIB *attr)
 {
 	return Add2Ptr(attr, le16_to_cpu(attr->name_off));
 }
@@ -542,7 +542,7 @@ static inline int le_cmp(const struct ATTR_LIST_ENTRY *le,
 		       le->name_len * sizeof(short)));
 }
 
-static const inline __le16 *le_name(const struct ATTR_LIST_ENTRY *le)
+static inline __le16 const *le_name(const struct ATTR_LIST_ENTRY *le)
 {
 	return Add2Ptr(le, le->name_off);
 }
@@ -1193,8 +1193,6 @@ struct EA_FULL {
 };
 
 static_assert(offsetof(struct EA_FULL, name) == 8);
-
-#define MAX_EA_DATA_SIZE (256 * 1024)
 
 #define ACL_REVISION 2
 

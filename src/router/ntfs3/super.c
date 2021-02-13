@@ -645,7 +645,7 @@ static struct inode *ntfs_export_get_inode(struct super_block *sb, u64 ino,
 	struct inode *inode;
 
 	ref.low = cpu_to_le32(ino);
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	ref.high = cpu_to_le16(ino >> 32);
 #else
 	ref.high = 0;
@@ -838,9 +838,9 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 	}
 
 	clusters = sbi->volume.size >> sbi->cluster_bits;
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 #if BITS_PER_LONG < 64
-#error "NTFS3_64BIT_CLUSTER incompatible in 32 bit OS"
+#error "CONFIG_NTFS3_64BIT_CLUSTER incompatible in 32 bit OS"
 #endif
 #else
 	/* 32 bits per cluster */
@@ -882,7 +882,7 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 	/* Maximum size for normal files */
 	sbi->maxbytes = (clusters << sbi->cluster_bits) - 1;
 
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	if (clusters >= (1ull << (64 - sbi->cluster_bits)))
 		sbi->maxbytes = -1;
 	sbi->maxbytes_sparse = -1;
@@ -934,7 +934,6 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_export_op = &ntfs_export_ops;
 	sb->s_time_gran = NTFS_TIME_GRAN; // 100 nsec
 	sb->s_xattr = ntfs_xattr_handlers;
-	sb->s_maxbytes = MAX_LFS_FILESIZE;
 
 	ratelimit_state_init(&sbi->msg_ratelimit, DEFAULT_RATELIMIT_INTERVAL,
 			     DEFAULT_RATELIMIT_BURST);
@@ -958,6 +957,12 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 				  bd_inode->i_size);
 	if (err)
 		goto out;
+
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
+	sb->s_maxbytes = MAX_LFS_FILESIZE;
+#else
+	sb->s_maxbytes = 0xFFFFFFFFull << sbi->cluster_bits;
+#endif
 
 	mutex_init(&sbi->compress.mtx_lznt);
 #ifdef CONFIG_NTFS3_LZX_XPRESS
@@ -1140,7 +1145,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 
 	ni = ntfs_i(inode);
 
-#ifndef NTFS3_64BIT_CLUSTER
+#ifndef CONFIG_NTFS3_64BIT_CLUSTER
 	if (inode->i_size >> 32) {
 		err = -EINVAL;
 		goto out;
@@ -1211,15 +1216,19 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 	sbi->def_entries = 1;
 	done = sizeof(struct ATTR_DEF_ENTRY);
 	sbi->reparse.max_size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
+	sbi->ea_max_size = 0x10000; /* default formater value */
 
 	while (done + sizeof(struct ATTR_DEF_ENTRY) <= bytes) {
 		u32 t32 = le32_to_cpu(t->type);
+		u64 sz = le64_to_cpu(t->max_sz);
 
 		if ((t32 & 0xF) || le32_to_cpu(t[-1].type) >= t32)
 			break;
 
 		if (t->type == ATTR_REPARSE)
-			sbi->reparse.max_size = le64_to_cpu(t->max_sz);
+			sbi->reparse.max_size = sz;
+		else if (t->type == ATTR_EA)
+			sbi->ea_max_size = sz;
 
 		done += sizeof(struct ATTR_DEF_ENTRY);
 		t += 1;
@@ -1431,6 +1440,22 @@ static int __init init_ntfs_fs(void)
 {
 	int err;
 
+	pr_notice("ntfs3: Index binary search\n");
+	pr_notice("ntfs3: Hot fix free clusters\n");
+	pr_notice("ntfs3: Max link count %u\n", NTFS_LINK_MAX);
+
+#ifdef CONFIG_NTFS3_FS_POSIX_ACL
+	pr_notice("ntfs3: Enabled Linux POSIX ACLs support\n");
+#endif
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
+	pr_notice("ntfs3: Activated 64 bits per cluster\n");
+#else
+	pr_notice("ntfs3: Activated 32 bits per cluster\n");
+#endif
+#ifdef CONFIG_NTFS3_LZX_XPRESS
+	pr_notice("ntfs3: Read-only lzx/xpress compression included\n");
+#endif
+
 	ntfs_inode_cachep = kmem_cache_create(
 		"ntfs_inode_cache", sizeof(struct ntfs_inode), 0,
 		(SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD | SLAB_ACCOUNT),
@@ -1461,20 +1486,19 @@ static void __exit exit_ntfs_fs(void)
 }
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("ntfs3 filesystem");
-#ifdef NTFS3_INDEX_BINARY_SEARCH
-MODULE_INFO(behaviour, "index binary search");
+MODULE_DESCRIPTION("ntfs3 read/write filesystem");
+MODULE_INFO(behaviour, "Index binary search");
+MODULE_INFO(behaviour, "Hot fix free clusters");
+#ifdef CONFIG_NTFS3_FS_POSIX_ACL
+MODULE_INFO(behaviour, "Enabled Linux POSIX ACLs support");
 #endif
-#ifdef NTFS3_CHECK_FREE_CLST
-MODULE_INFO(behaviour, "hot fix free clusters");
-#endif
-#ifdef NTFS3_64BIT_CLUSTER
-MODULE_INFO(cluster, "64 bits per cluster");
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
+MODULE_INFO(cluster, "Activated 64 bits per cluster");
 #else
-MODULE_INFO(cluster, "32 bits per cluster");
+MODULE_INFO(cluster, "Activated 32 bits per cluster");
 #endif
 #ifdef CONFIG_NTFS3_LZX_XPRESS
-MODULE_INFO(compression, "read-only lzx/xpress compression included");
+MODULE_INFO(compression, "Read-only lzx/xpress compression included");
 #endif
 
 MODULE_AUTHOR("Konstantin Komarov");

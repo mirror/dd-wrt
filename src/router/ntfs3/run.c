@@ -944,13 +944,13 @@ int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 		if (next_vcn > evcn + 1)
 			return -EINVAL;
 
-#ifndef NTFS3_64BIT_CLUSTER
+#ifndef CONFIG_NTFS3_64BIT_CLUSTER
 		if (next_vcn > 0x100000000ull || (lcn + len) > 0x100000000ull) {
 			ntfs_err(
 				sbi->sb,
-				"This driver is compiled whitout NTFS3_64BIT_CLUSTER (like windows driver).\n"
+				"This driver is compiled whitout CONFIG_NTFS3_64BIT_CLUSTER (like windows driver).\n"
 				"Volume contains 64 bits run: vcn %llx, lcn %llx, len %llx.\n"
-				"Activate NTFS3_64BIT_CLUSTER to process this case",
+				"Activate CONFIG_NTFS3_64BIT_CLUSTER to process this case",
 				vcn64, lcn, len);
 			return -EOPNOTSUPP;
 		}
@@ -1109,7 +1109,7 @@ int run_get_highest_vcn(CLST vcn, const u8 *run_buf, u64 *highest_vcn)
 		run_buf += size_size + offset_size;
 		vcn64 += len;
 
-#ifndef NTFS3_64BIT_CLUSTER
+#ifndef CONFIG_NTFS3_64BIT_CLUSTER
 		if (vcn64 > 0x100000000ull)
 			return -EINVAL;
 #endif
