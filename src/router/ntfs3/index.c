@@ -28,12 +28,14 @@ static const struct INDEX_NAMES {
  * if l1 != 0
  *   both names are little endian on-disk ATTR_FILE_NAME structs
  * else
- *   f1 - cpu_str, f2 - ATTR_FILE_NAME
+ *   key1 - cpu_str, key2 - ATTR_FILE_NAME
  */
-static int cmp_fnames(const struct ATTR_FILE_NAME *f1, size_t l1,
-		      const struct ATTR_FILE_NAME *f2, size_t l2,
-		      const struct ntfs_sb_info *sbi)
+static int cmp_fnames(const void *key1, size_t l1, const void *key2, size_t l2,
+		      const void *data)
 {
+	const struct ATTR_FILE_NAME *f2 = key2;
+	const struct ntfs_sb_info *sbi = data;
+	const struct ATTR_FILE_NAME *f1;
 	u16 fsize2;
 	bool both_case;
 
@@ -46,24 +48,27 @@ static int cmp_fnames(const struct ATTR_FILE_NAME *f1, size_t l1,
 
 	both_case = f2->type != FILE_NAME_DOS /*&& !sbi->options.nocase*/;
 	if (!l1) {
-		const struct cpu_str *s1 = (struct cpu_str *)f1;
 		const struct le_str *s2 = (struct le_str *)&f2->name_len;
 
 		/*
 		 * If names are equal (case insensitive)
 		 * try to compare it case sensitive
 		 */
-		return ntfs_cmp_names_cpu(s1, s2, sbi->upcase, both_case);
+		return ntfs_cmp_names_cpu(key1, s2, sbi->upcase, both_case);
 	}
 
+	f1 = key1;
 	return ntfs_cmp_names(f1->name, f1->name_len, f2->name, f2->name_len,
 			      sbi->upcase, both_case);
 }
 
 /* $SII of $Secure and $Q of Quota */
-static int cmp_uint(const u32 *k1, size_t l1, const u32 *k2, size_t l2,
-		    const void *p)
+static int cmp_uint(const void *key1, size_t l1, const void *key2, size_t l2,
+		    const void *data)
 {
+	const u32 *k1 = key1;
+	const u32 *k2 = key2;
+
 	if (l2 < sizeof(u32))
 		return -1;
 
@@ -75,9 +80,11 @@ static int cmp_uint(const u32 *k1, size_t l1, const u32 *k2, size_t l2,
 }
 
 /* $SDH of $Secure */
-static int cmp_sdh(const struct SECURITY_KEY *k1, size_t l1,
-		   const struct SECURITY_KEY *k2, size_t l2, const void *p)
+static int cmp_sdh(const void *key1, size_t l1, const void *key2, size_t l2,
+		   const void *data)
 {
+	const struct SECURITY_KEY *k1 = key1;
+	const struct SECURITY_KEY *k2 = key2;
 	u32 t1, t2;
 
 	if (l2 < sizeof(struct SECURITY_KEY))
@@ -93,7 +100,7 @@ static int cmp_sdh(const struct SECURITY_KEY *k1, size_t l1,
 		return 1;
 
 	/* Second value is security Id */
-	if (p) {
+	if (data) {
 		t1 = le32_to_cpu(k1->sec_id);
 		t2 = le32_to_cpu(k2->sec_id);
 		if (t1 < t2)
@@ -106,12 +113,14 @@ static int cmp_sdh(const struct SECURITY_KEY *k1, size_t l1,
 }
 
 /* $O of ObjId and "$R" for Reparse */
-static int cmp_uints(const __le32 *k1, size_t l1, const __le32 *k2, size_t l2,
-		     const void *p)
+static int cmp_uints(const void *key1, size_t l1, const void *key2, size_t l2,
+		     const void *data)
 {
+	const __le32 *k1 = key1;
+	const __le32 *k2 = key2;
 	size_t count;
 
-	if ((size_t)p == 1) {
+	if ((size_t)data == 1) {
 		/*
 		 * ni_delete_all -> ntfs_remove_reparse -> delete all with this reference
 		 * k1, k2 - pointers to REPARSE_KEY
@@ -153,16 +162,16 @@ static inline NTFS_CMP_FUNC get_cmp_func(const struct INDEX_ROOT *root)
 	switch (root->type) {
 	case ATTR_NAME:
 		if (root->rule == NTFS_COLLATION_TYPE_FILENAME)
-			return (NTFS_CMP_FUNC)&cmp_fnames;
+			return &cmp_fnames;
 		break;
 	case ATTR_ZERO:
 		switch (root->rule) {
 		case NTFS_COLLATION_TYPE_UINT:
-			return (NTFS_CMP_FUNC)&cmp_uint;
+			return &cmp_uint;
 		case NTFS_COLLATION_TYPE_SECURITY_HASH:
-			return (NTFS_CMP_FUNC)&cmp_sdh;
+			return &cmp_sdh;
 		case NTFS_COLLATION_TYPE_UINTS:
-			return (NTFS_CMP_FUNC)&cmp_uints;
+			return &cmp_uints;
 		default:
 			break;
 		}

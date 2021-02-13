@@ -29,7 +29,7 @@ int fill_name_de(struct ntfs_sb_info *sbi, void *buf, const struct qstr *name,
 	u16 data_size;
 	struct ATTR_FILE_NAME *fname = (struct ATTR_FILE_NAME *)(e + 1);
 
-#ifndef NTFS3_64BIT_CLUSTER
+#ifndef CONFIG_NTFS3_64BIT_CLUSTER
 	e->ref.high = fname->home.high = 0;
 #endif
 	if (uni) {
@@ -340,7 +340,7 @@ static int ntfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	ni_lock(old_ni);
 
 	old_name->home.low = cpu_to_le32(old_dir->i_ino);
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	old_name->home.high = cpu_to_le16(old_dir->i_ino >> 32);
 #endif
 	old_name->home.seq = old_dir_ni->mi.mrec->seq;
@@ -397,7 +397,7 @@ static int ntfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 	/* Add new name */
 	new_de->ref.low = cpu_to_le32(old_inode->i_ino);
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	new_de->ref.high = cpu_to_le16(old_inode->i_ino >> 32);
 	new_name->home.high = cpu_to_le16(new_dir->i_ino >> 32);
 #endif

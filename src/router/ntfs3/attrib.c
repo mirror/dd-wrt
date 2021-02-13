@@ -458,12 +458,12 @@ again:
 	is_ext = is_attr_ext(attr_b);
 
 again_1:
+	align = sbi->cluster_size;
+
 	if (is_ext) {
-		align = 1u << (attr_b->nres.c_unit + cluster_bits);
+		align <<= attr_b->nres.c_unit;
 		if (is_attr_sparsed(attr_b))
 			keep_prealloc = false;
-	} else {
-		align = sbi->cluster_size;
 	}
 
 	old_valid = le64_to_cpu(attr_b->nres.valid_size);
@@ -1720,7 +1720,7 @@ int attr_collapse_range(struct ntfs_inode *ni, u64 vbo, u64 bytes)
 
 	if (is_attr_ext(attr_b)) {
 		total_size = le64_to_cpu(attr_b->nres.total_size);
-		mask = (1u << (attr_b->nres.c_unit + sbi->cluster_bits)) - 1;
+		mask = (sbi->cluster_size << attr_b->nres.c_unit) - 1;
 	} else {
 		total_size = alloc_size;
 		mask = sbi->cluster_mask;

@@ -292,7 +292,7 @@ next_attr:
 		if (ino == MFT_REC_MFT) {
 			if (!attr->non_res)
 				goto out;
-#ifndef NTFS3_64BIT_CLUSTER
+#ifndef CONFIG_NTFS3_64BIT_CLUSTER
 			/* 0x20000000 = 2^32 / 8 */
 			if (le64_to_cpu(attr->nres.alloc_size) >= 0x20000000)
 				goto out;
@@ -465,15 +465,18 @@ out:
 }
 
 /* returns 1 if match */
-static int ntfs_test_inode(struct inode *inode, const struct MFT_REF *ref)
+static int ntfs_test_inode(struct inode *inode, void *data)
 {
+	struct MFT_REF *ref = data;
+
 	return ino_get(ref) == inode->i_ino;
 }
 
-static int ntfs_set_inode(struct inode *inode, const struct MFT_REF *ref)
+static int ntfs_set_inode(struct inode *inode, void *data)
 {
-	inode->i_ino = ino_get(ref);
+	const struct MFT_REF *ref = data;
 
+	inode->i_ino = ino_get(ref);
 	return 0;
 }
 
@@ -482,9 +485,7 @@ struct inode *ntfs_iget5(struct super_block *sb, const struct MFT_REF *ref,
 {
 	struct inode *inode;
 
-	inode = iget5_locked(sb, ino_get(ref),
-			     (int (*)(struct inode *, void *))ntfs_test_inode,
-			     (int (*)(struct inode *, void *))ntfs_set_inode,
+	inode = iget5_locked(sb, ino_get(ref), ntfs_test_inode, ntfs_set_inode,
 			     (void *)ref);
 	if (unlikely(!inode))
 		return ERR_PTR(-ENOMEM);
@@ -1356,7 +1357,7 @@ int ntfs_create_inode(struct inode *dir,
 	fname = (struct ATTR_FILE_NAME *)(new_de + 1);
 
 	new_de->ref.low = cpu_to_le32(ino);
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	new_de->ref.high = cpu_to_le16(ino >> 32);
 	fname->home.high = cpu_to_le16(dir->i_ino >> 32);
 #endif
@@ -1695,7 +1696,7 @@ int ntfs_link_inode(struct inode *inode, struct dentry *dentry)
 		goto out;
 
 	new_de->ref.low = cpu_to_le32(inode->i_ino);
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	new_de->ref.high = cpu_to_le16(inode->i_ino >> 32);
 	fname->home.high = cpu_to_le16(dir->i_ino >> 32);
 #endif
@@ -1781,7 +1782,7 @@ int ntfs_unlink_inode(struct inode *dir, const struct dentry *dentry)
 	ntfs_set_state(sbi, NTFS_DIRTY_DIRTY);
 
 	/* find name in record */
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	ref.low = cpu_to_le32(dir->i_ino & 0xffffffff);
 	ref.high = cpu_to_le16(dir->i_ino >> 32);
 #else
