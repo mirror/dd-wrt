@@ -2321,11 +2321,13 @@ static void multi_ap_process_assoc_resp(struct wpa_supplicant *wpa_s,
 		goto fail;
 	}
 
-	if (wpa_drv_set_4addr_mode(wpa_s, 1) < 0) {
-		wpa_printf(MSG_ERROR, "Failed to set 4addr mode");
-		goto fail;
+	if (wpa_s->enabled_4addr_mode == 0) {
+		if (wpa_drv_set_4addr_mode(wpa_s, 1) < 0) {
+			wpa_printf(MSG_ERROR, "Failed to set 4addr mode");
+			goto fail;
+		}
+		wpa_s->enabled_4addr_mode = 1;
 	}
-	wpa_s->enabled_4addr_mode = 1;
 	return;
 
 fail:
