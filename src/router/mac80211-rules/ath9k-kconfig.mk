@@ -207,9 +207,15 @@ endif
 endif
 ifeq ($(CONFIG_MT7620),y)
 	cat $(TOP)/mac80211-rules/configs/mt76xx.config >> $(MAC80211_PATH)/.config_temp
+ifeq ($(CONFIG_MT7915),y)
+	echo "CPTCFG_MT7915E=m" >> $(MAC80211_PATH)/.config_temp
+endif
 else
 ifeq ($(CONFIG_MT7615),y)
 	cat $(TOP)/mac80211-rules/configs/mt76xx.config >> $(MAC80211_PATH)/.config_temp
+endif
+ifeq ($(CONFIG_MT7915),y)
+	echo "CPTCFG_MT7915E=m" >> $(MAC80211_PATH)/.config_temp
 endif
 endif
 ifeq ($(CONFIG_X86),y)
@@ -447,6 +453,9 @@ ifeq ($(CONFIG_MT7603),y)
 endif
 ifeq ($(CONFIG_MT7663),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7663* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+endif
+ifeq ($(CONFIG_MT7915),y)
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7915* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 endif
 ifeq ($(CONFIG_X86),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mediatek
