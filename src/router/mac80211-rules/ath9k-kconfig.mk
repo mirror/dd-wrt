@@ -441,7 +441,13 @@ else
 endif
 endif
 endif
-
+ifeq ($(CONFIG_MT7603),y)
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7603* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7628* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+endif
+ifeq ($(CONFIG_MT7663),y)
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7663* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+endif
 ifeq ($(CONFIG_X86),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
