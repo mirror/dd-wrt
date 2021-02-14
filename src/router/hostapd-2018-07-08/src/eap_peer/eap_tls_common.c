@@ -190,6 +190,16 @@ static int eap_tls_params_from_conf(struct eap_sm *sm,
 		 */
 		params->flags |= TLS_CONN_DISABLE_TLSv1_3;
 	}
+	if (data->eap_type == EAP_TYPE_TLS) {
+		/* While the current EAP-TLS implementation is more or less
+		 * complete for TLS v1.3, there has been no interoperability
+		 * testing with other implementations, so disable for by default
+		 * for now until there has been chance to confirm that no
+		 * significant interoperability issues show up with TLS version
+		 * update.
+		 */
+		params->flags |= TLS_CONN_DISABLE_TLSv1_3;
+	}
 	if (phase2) {
 		wpa_printf(MSG_DEBUG, "TLS: using phase2 config options");
 		eap_tls_params_from_conf2(params, config);
