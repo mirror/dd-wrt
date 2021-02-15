@@ -48,7 +48,7 @@ do
 		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 ]]
 		then
 			$ipt -I FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
-			$ipt -I FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
+			#$ipt -I FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
 			$ipt -I INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
 		fi
 		if [ `$nv get oet${i}_proto` -eq 2 ]
