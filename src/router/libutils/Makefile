@@ -94,7 +94,7 @@ cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
 COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
 
-CFLAGS += $(MIPS16_OPT)
+CFLAGS += $(MIPS16_OPT) -g3
 
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
@@ -191,7 +191,7 @@ CFLAGS += -DHAVE_MT76
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ATH9KCFLAGS+= $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
-ATH9KCFLAGS	+= -fPIC $(call cc-option,-Werror=return-local-addr)
+ATH9KCFLAGS	+= -g3 -fPIC $(call cc-option,-Werror=return-local-addr)
 ATH9KOBJS += libwireless/wl_ath9k.o libwireless/mac80211info.o libwireless/mac80211regulatory.o libwireless/mac80211autochannel.o
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/include
