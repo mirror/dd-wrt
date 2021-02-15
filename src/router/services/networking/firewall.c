@@ -2272,7 +2272,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 //                      if (strlen(nvram_safe_get("openvpn_ccddef")) = 0) {
 			save2file_A_input("-i %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
 			save2file_A_forward("-i %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
-			save2file_A_forward("-o %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
+			//save2file_A_forward("-o %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
 //                      }
 		}
 	}
