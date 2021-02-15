@@ -2472,6 +2472,11 @@ static struct wifidevices wdevices[] = {
 	{ "Qualcomm Atheros QCA WIL6210 802.11ad", NONE, 0x1ae9, 0x0310, PCI_ANY, PCI_ANY, NULL },
 	{ "Marvell SD8887 802.11ac", CHANNELSURVEY, 0x02df, 0x9135, PCI_ANY, PCI_ANY, NULL },
 	{ "Mediatek MT7615E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7615, PCI_ANY, PCI_ANY, NULL },
+	{ "Mediatek MT7663 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7663, PCI_ANY, PCI_ANY, NULL },
+	{ "Mediatek MT7611 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7611, PCI_ANY, PCI_ANY, NULL },
+	{ "Mediatek MT7915E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7915, PCI_ANY, PCI_ANY, NULL },
+	{ "Mediatek MT7916E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7916, PCI_ANY, PCI_ANY, NULL },
+	{ "Mediatek MT7921E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7961, PCI_ANY, PCI_ANY, NULL },
 	{ "Mediatek MT7610E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7610, PCI_ANY, PCI_ANY, NULL },
 	{ "Mediatek MT7630E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7630, PCI_ANY, PCI_ANY, NULL },
 	{ "Mediatek MT7650E 802.11ac", QAM256 | CHANNELSURVEY, 0x14c3, 0x7650, PCI_ANY, PCI_ANY, NULL },
@@ -3458,6 +3463,20 @@ int is_mt7615(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+int is_mt7915(const char *prefix)
+{
+	INITVALUECACHE();
+	RETURNVALUE(devicecountbydriver(prefix, "pci:mt7915e"));
+	EXITVALUECACHE();
+	return ret;
+}
+int is_mt7921(const char *prefix)
+{
+	INITVALUECACHE();
+	RETURNVALUE(devicecountbydriver(prefix, "pci:mt7921e"));
+	EXITVALUECACHE();
+	return ret;
+}
 
 int is_mt7603(const char *prefix)
 {
@@ -3501,7 +3520,7 @@ int is_rt2880_pci(const char *prefix)
 
 int is_mt76(const char *prefix)
 {
-	return (is_mt7615(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix) || is_rt2880_pci(prefix) || is_rt2880_wmac(prefix));
+	return (is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix) || is_rt2880_pci(prefix) || is_rt2880_wmac(prefix));
 }
 #endif
 #ifdef HAVE_WPA3
@@ -3534,6 +3553,10 @@ int getmaxvaps(const char *prefix)
 	if (is_ath10k(prefix))
 		return 16;
 	if (is_mt7615(prefix))
+		return 16;
+	if (is_mt7915(prefix))
+		return 32;
+	if (is_mt7921(prefix))
 		return 4;
 	if (is_mt7603(prefix))
 		return 4;

@@ -1284,6 +1284,8 @@ static inline int is_mvebu(const char *prefix)
 #endif
 #ifdef HAVE_MT76
 extern int is_mt7615(const char *prefix);
+extern int is_mt7915(const char *prefix);
+extern int is_mt7921(const char *prefix);
 extern int is_mt7603(const char *prefix);
 extern int is_mt76x0(const char *prefix);
 extern int is_mt76x2(const char *prefix);
@@ -1302,6 +1304,14 @@ static inline int is_rt2880_pci(const char *prefix)
 }
 
 static inline int is_mt7615(const char *prefix)
+{
+	return 0;
+}
+static inline int is_mt7915(const char *prefix)
+{
+	return 0;
+}
+static inline int is_mt7921(const char *prefix)
 {
 	return 0;
 }

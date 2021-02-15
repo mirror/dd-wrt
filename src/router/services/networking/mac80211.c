@@ -303,6 +303,8 @@ void configure_single_ath9k(int count)
 	int isath5k = 0;
 	int isath10k = 0;
 	int ismt7615 = 0;
+	int ismt7915 = 0;
+	int ismt7921 = 0;
 	char *apm;
 	char isolate[32];
 	char primary[32] = { 0 };
@@ -314,6 +316,8 @@ void configure_single_ath9k(int count)
 	isath5k = is_ath5k(dev);
 	isath10k = is_ath10k(dev);
 	ismt7615 = is_mt7615(dev);
+	ismt7915 = is_mt7915(dev);
+	ismt7921 = is_mt7921(dev);
 	// sprintf(regdomain, "%s_regdomain", dev);
 	// country = nvram_default_get(regdomain, "US");
 	// sysprintf("iw reg set %s", getIsoName(country));
@@ -350,7 +354,7 @@ void configure_single_ath9k(int count)
 		bwmax = 40;
 	} else if (isath10k)
 		driver = "ath10k";
-	else if (ismt7615) {
+	else if (ismt7615 || ismt7915 || ismt7921) {
 		bwmin = 5;
 		driver = "mt76";
 	}
