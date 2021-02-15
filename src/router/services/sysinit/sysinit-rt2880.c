@@ -154,6 +154,7 @@ void start_sysinit(void)
 		insmod("mac80211");
 		if (!nvram_match("no_mt76", "1")) {
 			insmod("mt76");
+			insmod("mt76-connac-lib");
 			insmod("mt7615-common");
 			insmod("mt7615e");
 			insmod("mt76x02-lib");
@@ -183,6 +184,7 @@ void start_sysinit(void)
 		insmod("mac80211");
 		if (!nvram_match("no_mt76", "1")) {
 			insmod("mt76");
+			insmod("mt76-connac-lib");
 			insmod("mt7615-common");
 			insmod("mt7615e");
     			insmod("mt76x02-lib");
