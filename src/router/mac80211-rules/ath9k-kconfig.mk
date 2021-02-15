@@ -210,6 +210,9 @@ ifeq ($(CONFIG_MT7620),y)
 ifeq ($(CONFIG_MT7915),y)
 	echo "CPTCFG_MT7915E=m" >> $(MAC80211_PATH)/.config_temp
 endif
+ifeq ($(CONFIG_MT7921),y)
+	echo "CPTCFG_MT7921E=m" >> $(MAC80211_PATH)/.config_temp
+endif
 else
 ifeq ($(CONFIG_MT7615),y)
 	cat $(TOP)/mac80211-rules/configs/mt76xx.config >> $(MAC80211_PATH)/.config_temp
