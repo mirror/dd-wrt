@@ -2930,24 +2930,25 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_subf[32];
 	char wl_mubf[32];
 	char *chipset = getWifiDeviceName(prefix, NULL);
+	int maxvaps = getmaxvaps(prefix);
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	sprintf(wl_ssid, "%s_ssid", prefix);
 	// check the frequency capabilities;
 	if (has_ad(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[60\"+wl_basic.ghz+\" 802.11ad]%s%s\");</script>", chipset ? " - " : "", chipset ? chipset : "");
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[60\"+wl_basic.ghz+\" 802.11ad]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_5ghz(prefix) && has_ac(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/802.11ac]%s%s\");</script>", chipset ? " - " : "", chipset ? chipset : "");
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/802.11ac]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_5ghz(prefix) && has_ac(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"/802.11ac]%s%s\");</script>", chipset ? " - " : "", chipset ? chipset : "");
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"/802.11ac]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_5ghz(prefix) && has_2ghz(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"]%s%s\");</script>", chipset ? " - " : "", chipset ? chipset : "");
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_5ghz(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"]%s%s\")</script>", chipset ? " - " : "", chipset ? chipset : "");
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_ac(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\" \"+wl_basic.tbqam+\"]%s%s\")</script>", chipset ? " - " : "", chipset ? chipset : "");
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\" \"+wl_basic.tbqam+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"]%s%s\")</script>", chipset ? " - " : "", chipset ? chipset : "");
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else {
 		frequencies[0] = 0;
 	}
