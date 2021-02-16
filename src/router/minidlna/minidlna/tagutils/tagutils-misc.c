@@ -188,7 +188,9 @@ vc_scan(struct song_metadata *psong, const char *comment, const size_t length)
 
 	if(length > (sizeof(strbuf) - 1))
 	{
-		if( strncasecmp(comment, "LYRICS=", 7) != 0 )
+		if( strncasecmp(comment, "LYRICS=", 7) != 0 &&
+		    strncasecmp(comment, "coverart=", 9) != 0 &&
+		    strncasecmp(comment, "METADATA_BLOCK_PICTURE=", 23) != 0 )
 		{
 			const char *eq = strchr(comment, '=');
 			int len = 8;
