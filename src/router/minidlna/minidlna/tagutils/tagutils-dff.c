@@ -172,7 +172,7 @@ _get_dfffileinfo(char *file, struct song_metadata *psong)
 					count += 4;
 					cmprckDataSize = GET_DFF_INT64(propckData + count);
 					count += 8;
-					strncpy((char*)compressionType, (char*)propckData + count, 4);
+					memcpy(compressionType, propckData + count, 4);
 					count += cmprckDataSize;
 				}
 				else if (strncmp((char*)propckData + count, "ABSS", 4) == 0)

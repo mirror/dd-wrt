@@ -57,7 +57,7 @@
 
 #include <sqlite3.h>
 
-#define MINIDLNA_VERSION "1.2.1"
+#define MINIDLNA_VERSION "1.3.0"
 
 #ifdef NETGEAR
 # define SERVER_NAME "ReadyDLNA"
@@ -215,6 +215,7 @@ extern volatile uint32_t runtime_flags;
 
 extern const char *pidfilename;
 
+#define UUIDVALUE_MAX_LEN 42
 extern char uuidvalue[];
 
 #define MODELNAME_MAX_LEN 64

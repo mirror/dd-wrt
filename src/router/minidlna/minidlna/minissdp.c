@@ -145,7 +145,11 @@ OpenAndConfSSDPNotifySocket(struct lan_addr_s *iface)
 	int s;
 	unsigned char loopchar = 0;
 	uint8_t ttl = 4;
+#ifdef HAVE_STRUCT_IP_MREQN
+	struct ip_mreqn imr;
+#else
 	struct in_addr mc_if;
+#endif
 	struct sockaddr_in sockname;
 	
 	s = socket(PF_INET, SOCK_DGRAM, 0);
@@ -155,8 +159,6 @@ OpenAndConfSSDPNotifySocket(struct lan_addr_s *iface)
 		return -1;
 	}
 
-	mc_if.s_addr = iface->addr.s_addr;
-
 	if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loopchar, sizeof(loopchar)) < 0)
 	{
 		DPRINTF(E_ERROR, L_SSDP, "setsockopt(udp_notify, IP_MULTICAST_LOOP): %s\n", strerror(errno));
@@ -164,7 +166,14 @@ OpenAndConfSSDPNotifySocket(struct lan_addr_s *iface)
 		return -1;
 	}
 
-	if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, (char *)&mc_if, sizeof(mc_if)) < 0)
+#ifdef HAVE_STRUCT_IP_MREQN
+	imr.imr_address = iface->addr;
+	imr.imr_ifindex = iface->ifindex;
+	if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, &imr, sizeof(imr)) < 0)
+#else
+	mc_if = iface->addr;
+	if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, &mc_if, sizeof(mc_if)) < 0)
+#endif
 	{
 		DPRINTF(E_ERROR, L_SSDP, "setsockopt(udp_notify, IP_MULTICAST_IF): %s\n", strerror(errno));
 		close(s);
