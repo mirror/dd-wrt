@@ -87,6 +87,15 @@ struct client_type_s client_types[] =
 	  EUserAgent
 	},
 
+	/* Samsung Series [Q] TVs work wit milliseconds for bookmarks */
+	/* User-Agent: DLNADOC/1.50 SEC_HHP_[TV] Samsung Q7 Series (49)/1.0 */
+	{ ESamsungSeriesQ,
+	  FLAG_SAMSUNG | FLAG_DLNA | FLAG_NO_RESIZE | FLAG_SAMSUNG_DCM10 | FLAG_CAPTION_RES | FLAG_CONVERT_MS,
+	  "Samsung Series [Q]",
+	  "SEC_HHP_[TV] Samsung Q",
+	  EUserAgent
+	},
+
 	/* User-Agent: DLNADOC/1.50 SEC_HHP_[TV]UE40D7000/1.0 */
 	/* User-Agent: DLNADOC/1.50 SEC_HHP_ Family TV/1.0 */
 	/* USER-AGENT: DLNADOC/1.50 SEC_HHP_[TV] UE65JU7000/1.0 UPnP/1.0 */
@@ -161,7 +170,7 @@ struct client_type_s client_types[] =
 
 	/* USER-AGENT: Linux/2.6.35 UPnP/1.0 DLNADOC/1.50 INTEL_NMPR/2.0 LGE_DLNA_SDK/1.6.0 */
 	{ ELGNetCastDevice,
-	  FLAG_DLNA | FLAG_CAPTION_RES,
+	  FLAG_DLNA | FLAG_CAPTION_RES | FLAG_MIME_FLAC_FLAC,
 	  "LG",
 	  "LGE_DLNA_SDK/1.6.0",
 	  EUserAgent
@@ -169,7 +178,7 @@ struct client_type_s client_types[] =
 
 	/* User-Agent: Linux/2.6.31-1.0 UPnP/1.0 DLNADOC/1.50 INTEL_NMPR/2.0 LGE_DLNA_SDK/1.5.0 */
 	{ ELGDevice,
-	  FLAG_DLNA | FLAG_CAPTION_RES,
+	  FLAG_DLNA | FLAG_CAPTION_RES | FLAG_MIME_FLAC_FLAC,
 	  "LG",
 	  "LGE_DLNA_SDK",
 	  EUserAgent

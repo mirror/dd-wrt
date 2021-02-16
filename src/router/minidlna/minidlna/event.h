@@ -1,7 +1,7 @@
 #include "config.h"
 
-#ifdef HAVE_KQUEUE
 #include <sys/types.h>
+#ifdef HAVE_KQUEUE
 #include <sys/event.h>
 #endif
 

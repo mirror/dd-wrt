@@ -659,6 +659,10 @@ parse_sort_criteria(char *sortCriteria, int *error)
 		{
 			strcatf(&str, "d.ALBUM");
 		}
+		else if( strcasecmp(item, "path") == 0 )
+		{
+			strcatf(&str, "d.PATH");
+		}
 		else
 		{
 			DPRINTF(E_ERROR, L_HTTP, "Unhandled SortCriteria [%s]\n", item);
@@ -858,15 +862,17 @@ callback(void *args, int argc, char **argv, char **azColName)
 			}
 			else
 			{
-				DPRINTF(E_ERROR, L_HTTP, "UPnP SOAP response was too big, and realloc failed!\n");
-				return -1;
+				DPRINTF(E_ERROR, L_HTTP, "UPnP SOAP response truncated, realloc failed\n");
+				passed_args->flags |= RESPONSE_TRUNCATED;
+				return 1;
 			}
 #if MAX_RESPONSE_SIZE > 0
 		}
 		else
 		{
-			DPRINTF(E_ERROR, L_HTTP, "UPnP SOAP response cut short, to not exceed the max response size [%lld]!\n", (long long int)MAX_RESPONSE_SIZE);
-			return -1;
+			DPRINTF(E_ERROR, L_HTTP, "UPnP SOAP response would exceed the max response size [%lld], truncating\n", (long long int)MAX_RESPONSE_SIZE);
+			passed_args->flags |= RESPONSE_TRUNCATED;
+			return 1;
 		}
 #endif
 	}
@@ -1023,6 +1029,9 @@ callback(void *args, int argc, char **argv, char **azColName)
 				** so HH:MM:SS. But Kodi seems to be the only user of this tag, and it only works with a
 				** raw seconds value.
 				** If Kodi gets fixed, we can use duration_str(sec * 1000) here */
+				if( passed_args->flags & FLAG_CONVERT_MS ) {
+					sec *= 1000;
+				}
 				if( passed_args->filter & FILTER_UPNP_LASTPLAYBACKPOSITION )
 					ret = strcatf(str, "&lt;upnp:lastPlaybackPosition&gt;%d&lt;/upnp:lastPlaybackPosition&gt;",
 					              sec);
@@ -1487,12 +1496,19 @@ BrowseContentDirectory(struct upnphttp * h, const char * action)
 		DPRINTF(E_DEBUG, L_HTTP, "Browse SQL: %s\n", sql);
 		ret = sqlite3_exec(db, sql, callback, (void *) &args, &zErrMsg);
 	}
-	if( (ret != SQLITE_OK) && (zErrMsg != NULL) )
+	if( ret != SQLITE_OK )
 	{
-		DPRINTF(E_WARN, L_HTTP, "SQL error: %s\nBAD SQL: %s\n", zErrMsg, sql);
-		sqlite3_free(zErrMsg);
-		SoapError(h, 709, "Unsupported or invalid sort criteria");
-		goto browse_error;
+		if( args.flags & RESPONSE_TRUNCATED )
+		{
+			sqlite3_free(zErrMsg);
+		}
+		else
+		{
+			DPRINTF(E_WARN, L_HTTP, "SQL error: %s\nBAD SQL: %s\n", zErrMsg, sql);
+			sqlite3_free(zErrMsg);
+			SoapError(h, 709, "Unsupported or invalid sort criteria");
+			goto browse_error;
+		}
 	}
 	sqlite3_free(sql);
 	/* Does the object even exist? */
@@ -1945,9 +1961,10 @@ SearchContentDirectory(struct upnphttp * h, const char * action)
 	                      orderBy, StartingIndex, RequestedCount);
 	DPRINTF(E_DEBUG, L_HTTP, "Search SQL: %s\n", sql);
 	ret = sqlite3_exec(db, sql, callback, (void *) &args, &zErrMsg);
-	if( (ret != SQLITE_OK) && (zErrMsg != NULL) )
+	if( ret != SQLITE_OK )
 	{
-		DPRINTF(E_WARN, L_HTTP, "SQL error: %s\nBAD SQL: %s\n", zErrMsg, sql);
+		if( !(args.flags & RESPONSE_TRUNCATED) )
+			DPRINTF(E_WARN, L_HTTP, "SQL error: %s\nBAD SQL: %s\n", zErrMsg, sql);
 		sqlite3_free(zErrMsg);
 	}
 	sqlite3_free(sql);
@@ -2131,7 +2148,11 @@ static void UpdateObject(struct upnphttp * h, const char * action)
 		}
 		else if (strcmp(tag, "upnp:lastPlaybackPosition") == 0)
 		{
+
 			int sec = duration_sec(new);
+			if( h->req_client && (h->req_client->type->flags & FLAG_CONVERT_MS) ) {
+				sec /= 1000;
+			}
 			if (sec < 30)
 				sec = 0;
 			else
@@ -2245,6 +2266,9 @@ SamsungSetBookmark(struct upnphttp * h, const char * action)
 		in_magic_container(ObjectID, 0, &rid);
 		detailID = sql_get_int64_field(db, "SELECT DETAIL_ID from OBJECTS where OBJECT_ID = '%q'", rid);
 
+		if( h->req_client && (h->req_client->type->flags & FLAG_CONVERT_MS) ) {
+			sec /= 1000;
+		}
 		if ( sec < 30 )
 			sec = 0;
 		ret = sql_exec(db, "INSERT OR IGNORE into BOOKMARKS (ID, SEC)"
