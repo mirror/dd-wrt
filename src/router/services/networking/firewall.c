@@ -889,16 +889,16 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 			parse_ip_forward(ANT_IPF_POSTROUTING, wanface, nvram_safe_get("forward_ip"));
 #endif
 			save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
-		}
-		char *sr = nvram_safe_get("static_route");
-		foreach(word, sr, tmp) {
-			GETENTRYBYIDX(ipaddr, word, 0);
-			GETENTRYBYIDX(netmask, word, 1);
-			GETENTRYBYIDX(nat, word, 5);
-			if (nat && !strcmp(nat, "1")) {
-				save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", ipaddr, getmask(netmask), wanface, wanaddr);
-			}
+			char *sr = nvram_safe_get("static_route");
+			foreach(word, sr, tmp) {
+				GETENTRYBYIDX_DEL(ipaddr, word, 0, ":");
+				GETENTRYBYIDX_DEL(netmask, word, 1, ":");
+				GETENTRYBYIDX_DEL(nat, word, 5, ":");
+				if (ipaddr && netmask && nat && !strcmp(nat, "1")) {
+					save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", ipaddr, getmask(netmask), wanface, wanaddr);
+				}
 
+			}
 		}
 
 		char *wan_ifname_tun = nvram_safe_get("wan_ifname");
