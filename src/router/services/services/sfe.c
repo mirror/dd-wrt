@@ -34,6 +34,7 @@ void start_sfe(void)
 	insmod("shortcut-fe");
 	insmod("shortcut-fe-ipv6");
 	insmod("fast-classifier");
+	sysprintf("echo 1 > /sys/skip_to_bridge_ingress");
 	dd_loginfo("sfe", "shortcut forwarding engine successfully started\n");
 	return;
 }
