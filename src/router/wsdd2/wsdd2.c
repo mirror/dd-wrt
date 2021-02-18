@@ -293,7 +293,7 @@ static int open_ep(struct endpoint **epp, struct service *sv,
 		};
 		struct servent *se = getservbyname(sv->port_name,
 						servicename[sv->type]);
-		ep->port = se ? se->s_port : 0;
+		ep->port = se ? ntohs(se->s_port) : 0;
 		if (!ep->port)
 			ep->port = sv->port_num;
 		if (!ep->port) {
@@ -767,8 +767,8 @@ again:
 					ifaddr);
 
 				if (open_ep(&ep, sv, ifa)) {
-					syslog(LOG_USER | LOG_ERR, "error: %s: %s",
-						ep->service->name, ep->errstr);
+					syslog(LOG_USER | LOG_ERR, "error: %s: %s: %s",
+						ep->service->name, ep->errstr, strerror(ep->_errno));
 					free(ep);
 					continue;
 				} else if (ep->sock < 0)
