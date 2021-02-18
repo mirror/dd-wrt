@@ -12,8 +12,8 @@ DESTDIR		= $(INSTALLDIR)
 INSTALLPREFIX ?= $(PREFIX)/usr
 SBININSTALLDIR = $(INSTALLPREFIX)/sbin
 MANINSTALLDIR = $(INSTALLPREFIX)/share/man 
-CFLAGS		= $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
-LDFLAGS		= $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS		= $(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
+LDFLAGS		= $(COPTS) $(MIPS16_OPT) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 all: wsdd2
 
