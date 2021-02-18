@@ -86,6 +86,7 @@ static int do_ntp(void)		// called from ntp_main and
 	char *servers;
 	struct timeval now;
 	struct timeval then;
+	static int first = 1;
 
 	nvram_seti("ntp_success", 0);
 	if (!nvram_matchi("ntp_enable", 1))
@@ -116,6 +117,10 @@ static int do_ntp(void)		// called from ntp_main and
 		int seq;
 		for (seq = 1; seq <= NR_RULES; seq++)
 			sysprintf("/sbin/filter del %d", seq);	// for time scheduled filtering we need to reinitialize the tables here to prevent wrong timed triggers
+		if (first && nvram_match("sched_intime", "0")) {
+			first = 0;
+			eval("restart", "firewall");
+		}
 		sync_daemons();
 		nvram_seti("ntp_success", 1);
 		eval("restart", "process_monitor");
