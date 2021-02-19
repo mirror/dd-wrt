@@ -1036,6 +1036,10 @@ int internal_getRouterBrand()
 		setRouter("Netgear R6220");
 		return ROUTER_R6220;
 	}
+	if (!strcmp(modelstr, "WAC124")) {
+		setRouter("Netgear WAC124");
+		return ROUTER_R6850;
+	}
 	if (!strcmp(modelstr, "WNDR3700V5")) {
 		setRouter("Netgear WNDR3700V5");
 		return ROUTER_R6220;
