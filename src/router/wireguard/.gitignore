@@ -4,7 +4,7 @@ cscope.out
 *.dwo
 *.ko
 *.mod.c
-src/tools/wg
+*.a
 Module.symvers
 *.cmd
 .tmp_versions
@@ -19,4 +19,6 @@ src/tests/qemu/distfiles/
 *.id2
 *.nam
 *.til
-*.pro.user
+.cache.mk
+src/crypto/zinc/*/*.S
+src/wireguard.mod
