@@ -15,7 +15,7 @@ endif
 ARCH := $(firstword $(subst -, ,$(CBUILD)))
 
 # Set these from the environment to override
-KERNEL_VERSION ?= 5.5.14
+KERNEL_VERSION ?= 5.4.99
 KERNEL_VERSION := $(KERNEL_VERSION)$(if $(DEBUG_KERNEL),$(if $(findstring -debug,$(KERNEL_VERSION)),,-debug),)
 BUILD_PATH ?= $(PWD)/../../../qemu-build/$(ARCH)
 DISTFILES_PATH ?= $(PWD)/distfiles
@@ -276,7 +276,6 @@ $(KERNEL_PATH)/.installed: $(KERNEL_TAR)
 	sed -i '/jmp early_idt_handler$$/a .fill early_idt_handlers + i*9 - ., 1, 0xcc' $(KERNEL_PATH)/arch/x86/kernel/head_{64,32}.S || true
 	printf 'ifdef CONFIG_X86_64\nLDFLAGS += $$(call ld-option, -z max-page-size=0x200000)\nendif\n' >> $(KERNEL_PATH)/arch/x86/Makefile
 	sed -i 's/^Elf_Addr per_cpu_load_addr;$$/static \0/' $(KERNEL_PATH)/arch/x86/tools/relocs.c || true
-	sed -i 's/pages = generic_max_swapfile_size();/pages = IS_ENABLED(CONFIG_SWAP) ? generic_max_swapfile_size() : 0;/' $(KERNEL_PATH)/arch/x86/mm/init.c || true
 	if grep -qr UTS_UBUNTU_RELEASE_ABI $(KERNEL_PATH)/debian/rules.d; then echo 'KBUILD_CFLAGS += -DUTS_UBUNTU_RELEASE_ABI=0' >> $(KERNEL_PATH)/Makefile; fi
 	sed -i "/^if INET\$$/a source \"net/wireguard/Kconfig\"" $(KERNEL_PATH)/net/Kconfig
 	sed -i "/^obj-\$$(CONFIG_NETFILTER).*+=/a obj-\$$(CONFIG_WIREGUARD) += wireguard/" $(KERNEL_PATH)/net/Makefile

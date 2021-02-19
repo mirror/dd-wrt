@@ -9,7 +9,6 @@
 #include <linux/sched.h>
 #include <asm/simd.h>
 #if defined(CONFIG_X86_64)
-#include <linux/version.h>
 #include <asm/fpu/api.h>
 #elif defined(CONFIG_KERNEL_MODE_NEON)
 #include <asm/neon.h>
@@ -25,7 +24,7 @@ typedef enum {
 
 static inline void simd_get(simd_context_t *ctx)
 {
-	*ctx = !IS_ENABLED(CONFIG_PREEMPT_RT_BASE) && may_use_simd() ? HAVE_FULL_SIMD : HAVE_NO_SIMD;
+	*ctx = !IS_ENABLED(CONFIG_PREEMPT_RT) && !IS_ENABLED(CONFIG_PREEMPT_RT_BASE) && may_use_simd() ? HAVE_FULL_SIMD : HAVE_NO_SIMD;
 }
 
 static inline void simd_put(simd_context_t *ctx)
