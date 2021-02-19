@@ -845,6 +845,7 @@ struct smb_com_trans2_rsp {
 	struct trans2_resp t2;
 	__le16 ByteCount;
 	__u8 Pad;       /* may be three bytes? *//* followed by data area */
+	__u8 Buffer[0];
 } __packed;
 
 struct file_internal_info {

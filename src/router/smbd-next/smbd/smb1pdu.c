@@ -3837,7 +3837,7 @@ static int smb_readlink(struct ksmbd_work *work, struct path *path)
 	}
 	err = 0;
 
-	ptr = (char *)&rsp->Pad + 1;
+	ptr = (char *)&rsp->Buffer[0];
 	memset(ptr, 0, 4);
 	ptr += 4;
 
@@ -7900,7 +7900,7 @@ static __le32 smb_query_info_path(struct ksmbd_work *work,
 	struct ksmbd_share_config *share = work->tcon->share_conf;
 	struct path path;
 	char *name;
-	int err;
+	int err = 0;
 	unsigned int flags = LOOKUP_FOLLOW;
 
 	name = smb_get_name(share, req->FileName, PATH_MAX, work, false);
@@ -7910,26 +7910,31 @@ static __le32 smb_query_info_path(struct ksmbd_work *work,
 	if (!test_share_config_flag(share, KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS))
 		flags = 0;
 
-	if (ksmbd_override_fsids(work))
+	if (ksmbd_override_fsids(work)) {
+		smb_put_name(name);
 		return STATUS_NO_MEMORY;
+	}
 
 	err = ksmbd_vfs_kern_path(name, flags, &path, 0);
 	if (err) {
 		ksmbd_err("look up failed err %d\n", err);
-		smb_put_name(name);
 
 		if (!test_share_config_flag(share,
 			KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS)) {
-			if (d_is_symlink(path.dentry))
-				return STATUS_ACCESS_DENIED;
+			if (d_is_symlink(path.dentry)) {
+				err = STATUS_ACCESS_DENIED;
+				goto out;
+			}
 		}
-		return STATUS_OBJECT_NAME_NOT_FOUND;
+		err = STATUS_OBJECT_NAME_NOT_FOUND;
+		goto out;
 	}
 
 	generic_fillattr(d_inode(path.dentry), st);
+out:
 	ksmbd_revert_fsids(work);
 	smb_put_name(name);
-	return 0;
+	return err;
 }
 
 /**
