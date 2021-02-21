@@ -2911,6 +2911,7 @@ wl_basic.wdssta="WDS Station";
 wl_basic.wdssta_mtik="WDS Station (Mikrotik)";
 wl_basic.wdsap="WDS AP";
 wl_basic.mesh="Mesh / 802.11s";
+wl_basic.fw_type="Firmware Type";
 wl_basic.tdma="TDMA";
 wl_basic.mixed="Mixed";
 wl_basic.bft="Explicit Beamforming";
