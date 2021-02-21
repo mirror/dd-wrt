@@ -344,6 +344,16 @@ void configure_single_ath9k(int count)
 		sprintf(atf, "%s_atf", dev);
 		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
 	}
+	if (is_ath10k(dev)) {
+		char fwtype[32];
+		sprintf(fwtype, "%s_fwtype",dev);
+		if (nvram_default_match(fwtype, "vanilla","ddwrt"))
+			sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
+		else
+			sysprintf("echo > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
+		sysprintf("echo fw_reload > /sys/kernel/debug/ieee80211/phy1/ath10k/simulate_fw_crash");
+	}
+	
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
 	char *driver = "ath9k";
