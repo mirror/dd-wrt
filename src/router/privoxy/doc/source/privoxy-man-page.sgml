@@ -38,12 +38,12 @@
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
 <!entity authors SYSTEM "p-authors.sgml">
-<!entity p-version "3.0.28">
+<!entity p-version "3.0.31">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
 <!entity % p-text "IGNORE">           <!-- define we are not a text only doc -->
-<!entity % p-authors-formal "IGNORE"> <!-- exclude additional formating      -->
+<!entity % p-authors-formal "IGNORE"> <!-- exclude additional formatting      -->
 <!entity my-copy "(C)">               <!-- db2man barfs on copyright symbol  -->
 <!entity % seealso-extra "IGNORE">    <!-- for excluding sections of seealso -->
 ]>
@@ -54,7 +54,7 @@
 </refentryinfo>
 <refmeta>
  <refentrytitle>privoxy</refentrytitle>
- <manvolnum>1</manvolnum>
+ <manvolnum>8</manvolnum>
  <refmiscinfo>
   Privoxy &p-version;<![%p-not-stable;[ &p-status;]]>
  </refmiscinfo>

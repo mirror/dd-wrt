@@ -39,7 +39,7 @@ sub read_entries() {
         next unless $section_reached;
         next if /^\s*$/;
 
-        if (/^(\s*)-/) {
+        if (/^(\s*)- /) {
             my $indentation = length($1);
             if ($i > 1 and $entries[$i]{indentation} > $indentation) {
                 $entries[$i]{last_list_item} = 1;

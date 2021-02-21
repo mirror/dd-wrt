@@ -4,7 +4,7 @@
 <head>
   <title>Installation</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.28 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.31 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Introduction" href="introduction.html">
   <link rel="NEXT" title="What's New in this Release" href="whatsnew.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.28 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.31 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="introduction.html" accesskey="P">Prev</a></td>
@@ -68,24 +68,12 @@
         files.</p>
       </div>
       <div class="SECT3">
-        <h3 class="SECT3"><a name="INSTALLATION-OS2" id="INSTALLATION-OS2">2.1.3. OS/2</a></h3>
-        <p>First, make sure that no previous installations of <span class="APPLICATION">Junkbuster</span> and / or
-        <span class="APPLICATION">Privoxy</span> are left on your system. Check that no <span class=
-        "APPLICATION">Junkbuster</span> or <span class="APPLICATION">Privoxy</span> objects are in your startup
-        folder.</p>
-        <p>Then, just double-click the WarpIN self-installing archive, which will guide you through the installation
-        process. A shadow of the <span class="APPLICATION">Privoxy</span> executable will be placed in your startup
-        folder so it will start automatically whenever OS/2 starts.</p>
-        <p>The directory you choose to install <span class="APPLICATION">Privoxy</span> into will contain all of the
-        configuration files.</p>
-      </div>
-      <div class="SECT3">
-        <h3 class="SECT3"><a name="INSTALLATION-MAC" id="INSTALLATION-MAC">2.1.4. Mac OS X</a></h3>
+        <h3 class="SECT3"><a name="INSTALLATION-MAC" id="INSTALLATION-MAC">2.1.3. Mac OS X</a></h3>
         <p>Installation instructions for the OS X platform depend upon whether you downloaded a ready-built
         installation package (.pkg or .mpkg) or have downloaded the source code.</p>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="OS-X-INSTALL-FROM-PACKAGE" id="OS-X-INSTALL-FROM-PACKAGE">2.1.5. Installation from
+        <h4 class="SECT3"><a name="OS-X-INSTALL-FROM-PACKAGE" id="OS-X-INSTALL-FROM-PACKAGE">2.1.4. Installation from
         ready-built package</a></h4>
         <p>The downloaded file will either be a .pkg (for OS X 10.5 upwards) or a bzipped .mpkg file (for OS X 10.4).
         The former can be double-clicked as is and the installation will start; double-clicking the latter will unzip
@@ -101,7 +89,7 @@
         <p>To uninstall, run /Applications/Privoxy/uninstall.command as sudo from an administrator account.</p>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="OS-X-INSTALL-FROM-SOURCE" id="OS-X-INSTALL-FROM-SOURCE">2.1.6. Installation from
+        <h4 class="SECT3"><a name="OS-X-INSTALL-FROM-SOURCE" id="OS-X-INSTALL-FROM-SOURCE">2.1.5. Installation from
         source</a></h4>
         <p>To build and install the Privoxy source code on OS X you will need to obtain the macsetup module from the
         Privoxy Sourceforge CVS repository (refer to Sourceforge help for details of how to set up a CVS client to have
@@ -121,7 +109,7 @@
         <p>To uninstall, run the macsetup module's uninstall.sh as sudo from an administrator account.</p>
       </div>
       <div class="SECT3">
-        <h3 class="SECT3"><a name="INSTALLATION-FREEBSD" id="INSTALLATION-FREEBSD">2.1.7. FreeBSD</a></h3>
+        <h3 class="SECT3"><a name="INSTALLATION-FREEBSD" id="INSTALLATION-FREEBSD">2.1.6. FreeBSD</a></h3>
         <p>Privoxy is part of FreeBSD's Ports Collection, you can build and install it with <tt class="LITERAL">cd
         /usr/ports/www/privoxy; make install clean</tt>.</p>
       </div>
@@ -140,8 +128,8 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> tar xzvf privoxy-3.0.28-stable-src.tar.gz
- cd privoxy-3.0.28-stable</pre>
+            <pre class="SCREEN"> tar xzvf privoxy-3.0.31-stable-src.tar.gz
+ cd privoxy-3.0.31-stable</pre>
           </td>
         </tr>
       </table>
@@ -156,7 +144,7 @@
       </table>
       <p>This will create a directory named <tt class="FILENAME">&lt;root-dir&#62;/privoxy/</tt>, which will contain
       the source tree.</p>
-      <p>Note that source code in GIT is development quality, and may not be stable or well tested.</p>
+      <p>Note that source code in Git is development quality, and may not be stable or well tested.</p>
       <p>It is strongly recommended to not run <span class="APPLICATION">Privoxy</span> as root. You should
       configure/install/run <span class="APPLICATION">Privoxy</span> as an unprivileged user, preferably by creating a
       <span class="QUOTE">"privoxy"</span> user and group just for this purpose. See your local documentation for the
@@ -179,7 +167,7 @@
         </tr>
       </table>
       <p>Some binary packages may do this for you.</p>
-      <p>Then, to build from either unpacked tarball or CVS source:</p>
+      <p>Then, to build from either unpacked tarball or Git checkout:</p>
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>

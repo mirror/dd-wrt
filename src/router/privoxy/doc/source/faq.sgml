@@ -8,7 +8,7 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.28">
+<!entity p-version "3.0.31">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -25,7 +25,7 @@
 
  Purpose     :  FAQ
 
- Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2020 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  Based partially on the Internet Junkbuster FAQ originally written by and
@@ -69,7 +69,7 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2018 by
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2020 by
  <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
@@ -115,10 +115,6 @@ Hal.
  <ulink url="https://www.privoxy.org/">Privoxy</ulink>.
  It is not a substitute for the
  <ulink url="../user-manual/index.html"><citetitle>Privoxy User Manual</citetitle></ulink>.
-<!--
- This works, at least in some situtations:
- Test: <ulink url="privoxy-user-manual.pdf"><citetitle>User Manual</citetitle></ulink>.
--->
  </para>
 
 <!-- Include privoxy.sgml boilerplate: -->
@@ -160,9 +156,9 @@ me?</title>
   strengths is that it is highly configurable giving you the ability to
   completely personalize your installation. Being familiar with, or at least
   having an interest in learning about <ulink
-  url="http://en.wikipedia.org/wiki/Http">HTTP</ulink> and other networking
-  protocols, <ulink url="http://en.wikipedia.org/wiki/Html">HTML</ulink>, and
-  <ulink url="http://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
+  url="https://en.wikipedia.org/wiki/Http">HTTP</ulink> and other networking
+  protocols, <ulink url="https://en.wikipedia.org/wiki/Html">HTML</ulink>, and
+  <ulink url="https://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
   Expressions</quote></ulink>
   will be a big plus and will help you get the most out of &my-app;.
   A new installation just includes a very basic configuration. The user
@@ -172,9 +168,9 @@ me?</title>
  </para>
  <para>
   Much of <application>Privoxy's</application> configuration can be done
-  with a <ulink url="http://en.wikipedia.org/wiki/Web_browser">Web browser</ulink>.
+  with a <ulink url="https://en.wikipedia.org/wiki/Web_browser">Web browser</ulink>.
   But there are areas where configuration is done using a
-  <ulink url="http://en.wikipedia.org/wiki/Text_editors">text editor</ulink>
+  <ulink url="https://en.wikipedia.org/wiki/Text_editors">text editor</ulink>
   to edit configuration files. Also note that the web-based action editor
   doesn't use authentication and should only be enabled in environments
   where all clients with access to &my-app; listening port can be trusted.
@@ -184,13 +180,13 @@ me?</title>
 <sect2 renderas="sect3" id="proxymoron"><title>What is a <quote>proxy</quote>? How does
 Privoxy work? </title>
  <para>
-  A <ulink url="http://en.wikipedia.org/wiki/Proxy_server">web proxy</ulink>
+  A <ulink url="https://en.wikipedia.org/wiki/Proxy_server">web proxy</ulink>
   is a service, based on a software such as &my-app;, that clients
   (i.e. browsers) can use instead of connecting to web servers directly.
   The clients then ask the proxy to request objects (web pages, images, movies etc)
   on their behalf and to forward the data to the clients.
   It is a <quote>go-between</quote>. For details, see
-  <ulink url="http://en.wikipedia.org/wiki/Proxy_server">Wikipedia's proxy definition</ulink>.
+  <ulink url="https://en.wikipedia.org/wiki/Proxy_server">Wikipedia's proxy definition</ulink>.
  </para>
  <para>
   There are many reasons to use web proxies, such as security (firewalling),
@@ -265,7 +261,7 @@ from the old Junkbuster?</title>
  <application>Junkbuster</application> left off.
  <application>Privoxy</application> still blocks ads and banners,
  still manages <ulink
- url="http://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>, and still
+ url="https://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>, and still
  helps protect your privacy. But, most of these features have been enhanced,
  and many new ones have been added, all in the same vein.
  </para>
@@ -405,12 +401,11 @@ Privoxy. Why should I use Privoxy at all?</title>
 <sect2 renderas="sect3" id="license"><title>Is there is a license or fee? What about a
 warranty? Registration?</title>
  <para>
-  <application>Privoxy</application> is free software and licensed under the <ulink
-  url="http://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU General Public License (GPL) version 2</ulink>.
-  It is free to use, copy, modify or distribute as you wish under the terms of this
-  license.  Please see the <link linkend="copyright">Copyright</link> section for more
-  information on the license and copyright. Or the <filename>LICENSE</filename> file
-  that should be included.
+  <application>Privoxy</application> is free software.
+  It is free to use, copy, modify or distribute as you wish under the terms of its
+  license.
+  Please see the <link linkend="copyright">Copyright</link> section for more
+  information on the license and copyright.
  </para>
  <para>
   There is <emphasis>no warranty</emphasis> of any kind, expressed, implied or otherwise.
@@ -513,31 +508,6 @@ warranty? Registration?</title>
 </para>
 
 <para>
- You can also donate to Privoxy using a bank account or a "Paypal" address:
-</para>
-<literallayout>
- Name on account: <ulink url="https://www.zwiebelfreunde.de/">Zwiebelfreunde e.V.</ulink>
- IBAN: DE95430609671126825604
- BIC: GENODEM1GLS
- Bank: GLS Bank
-</literallayout>
-<literallayout>
- "Paypal" address: privoxy@zwiebelfreunde.de
-</literallayout>
-<para>
- Donations made through Zwiebelfreunde e.V. are tax-deductible in Germany
- and other countries that recognize German charitable clubs. Feel free to
- use the Subject field to provide a name to be credited and a list of TODO
- list items you are interested in the most. For example: Max Mustermann: #16, #1, #14.
-</para>
-
-<para>
- Note that donations made through Zwiebelfreunde e.V. currently can't be checked
- automatically so you may not get credited right away. The credits currently
- reflect donations received before 2016-01-14.
-</para>
-
-<para>
  If you have any questions regarding donations please mail to either the
  public user mailing list or, if it's a private matter, to
  <ulink url="mailto:fk@fabiankeil.de">Fabian Keil</ulink> (Privoxy's SPI liaison)
@@ -551,10 +521,10 @@ warranty? Registration?</title>
 </para>
 <variablelist>
  <varlistentry>
-  <term>Gold (10000 EUR/year)</term>
+  <term>Gold (12000 USD/year)</term>
   <listitem>
    <para>
-    Logo shown at the bottom of the
+    Logo or text link shown at the bottom of the
     <ulink url="https://www.privoxy.org/">Privoxy homepage</ulink>.
     Logo, link and self description on the
     <ulink url="https://www.privoxy.org/sponsors/">sponsor page</ulink>.
@@ -562,10 +532,10 @@ warranty? Registration?</title>
   </listitem>
  </varlistentry>
  <varlistentry>
-  <term>Silver (1000 EUR/year)</term>
+  <term>Silver (1200 USD/year)</term>
   <listitem>
    <para>
-    Logo shown randomly at the bottom of the
+    Logo or text link shown at the bottom of the
     <ulink url="https://www.privoxy.org/">Privoxy homepage</ulink>.
     Logo, link and self description on the
     <ulink url="https://www.privoxy.org/sponsors/">sponsor page</ulink>.
@@ -573,7 +543,7 @@ warranty? Registration?</title>
   </listitem>
  </varlistentry>
  <varlistentry>
-  <term>Bronze (500 EUR/year)</term>
+  <term>Bronze (600 USD/year)</term>
   <listitem>
    <para>
     Logo and link on the <ulink url="https://www.privoxy.org/sponsors/">sponsor page</ulink>.
@@ -587,13 +557,20 @@ warranty? Registration?</title>
  the links are being used.
 </para>
 <para>
+ Link targets are without path (<quote>https://www.example.org/</quote>
+ not <quote>https://www.example.org/seo/keyword/spam/</quote>).
+</para>
+<para>
  The details may change over time but changes will only affect new sponsors
  (or existing sponsors that explicitly agreed to the changes).
 </para>
 <para>
  If you want to become a sponsor, please contact
- <ulink url="mailto:fk@fabiankeil.de">Fabian Keil</ulink>.
- New sponsors are only accepted if no developer objects.
+ <ulink url="mailto:fk@fabiankeil.de">Fabian Keil</ulink>
+ and include the link target in the mail.
+ New sponsors are only accepted if no
+ <ulink url="../user-manual/copyright.html#AUTHORS">Privoxy team</ulink>
+ member objects.
 </para>
 
 </sect2>
@@ -682,7 +659,7 @@ special I have to do now?</title>
  <ulink url="../user-manual/startup.html">the User Manual for more
  details</ulink>. You should also flush your browser's memory and disk
  cache to get rid of any cached junk items, and remove any stored
- <ulink url="http://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>.
+ <ulink url="https://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>.
 </para>
 
 </sect2>
@@ -817,7 +794,7 @@ Privoxy is running and being used.</title>
  for single URLs, whole web sites, groups or parts thereof etc. Actions can also be
  grouped together and then applied to requests matching one or more patterns.
  There are many possible actions that might apply to any given site. As an example,
- if you are blocking <ulink url="http://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>
+ if you are blocking <ulink url="https://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>
  as one of your default actions, but need to accept cookies from a given site,
  you would need to define an exception for this site in one of your actions
  files, preferably in <filename>user.action</filename>.
@@ -859,7 +836,7 @@ way to do this?</title>
 </sect2>
 
 
-<sect2 renderas="sect3">
+<sect2 renderas="sect3" id="actionfile-differences">
 <title>There are several different <quote>actions</quote> files. What are
 the differences?</title>
 <para>
@@ -872,10 +849,9 @@ the differences?</title>
 <sect2 renderas="sect3" id="getupdates"><title>Where can I get updated Actions Files?</title>
  <para>
   Based on your feedback and the continuing development, updates of
-  <filename>default.action</filename> will be
-  made available from time to time on the <ulink
-  url="https://sourceforge.net/project/showfiles.php?group_id=11118">files section</ulink> of
-  our <ulink url="https://sourceforge.net/projects/ijbswa/">project page</ulink>.
+  <filename>default.action</filename> are available from
+  <ulink
+  url="https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob_plain;f=default.action.master;hb=HEAD">git</ulink>.
  </para>
 
  <para>
@@ -924,7 +900,7 @@ the differences?</title>
  <para>
   The default configuration shouldn't impact the usability of any of these services.
   It may, however, make all <ulink
- url="http://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>
+ url="https://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>
   temporary, so that your browser will forget your
   login credentials in between browser sessions. If you would like not to have to log
   in manually each time you access those websites, simply turn off all cookie handling
@@ -937,7 +913,7 @@ the differences?</title>
 .login.yahoo.com</screen>
  <para>
   These kinds of sites are often quite complex and heavy with
-  <ulink url="http://en.wikipedia.org/wiki/Javascript">Javascript</ulink> and
+  <ulink url="https://en.wikipedia.org/wiki/Javascript">Javascript</ulink> and
   thus <quote>fragile</quote>. So if <emphasis>still</emphasis> a problem,
   we have an <ulink
   url="../user-manual/actions-file.html#ALIASES">alias</ulink> just for such
@@ -1206,17 +1182,11 @@ instead of the checkerboard image. Why and how do I get rid of this?</title>
 <title>Can Privoxy run as a service
 on Win2K/NT/XP?</title>
 <para>
-<![%p-newstuff;[
- Yes. Version 3.0.5 introduces full <application>Windows</application> service
- functionality. See <ulink url="../user-manual/installation.html#INSTALLATION-PACK-WIN">
+ Yes. Full <application>Windows</application> service
+ functionality was introduced in <application>Privoxy</application> 3.0.5.
+ See <ulink url="../user-manual/installation.html#INSTALLATION-PACK-WIN">
  the <citetitle>User Manual</citetitle></ulink> for details on how to install and configure
  <application>Privoxy</application> as a service.
-</para>
-<para>
- Earlier ]]>3.x versions could run as a system service using <command>srvany.exe</command>.
- See the discussion at <ulink
- url="https://sourceforge.net/tracker/?func=detail&#38;atid=361118&#38;aid=485617&#38;group_id=11118">https://sourceforge.net/tracker/?func=detail&#38;atid=361118&#38;aid=485617&#38;group_id=11118</ulink>,
- for details, and a sample configuration.
 </para>
 </sect2>
 
@@ -1255,7 +1225,7 @@ and thus avoid individual browser configuration?</title>
  The whole idea of Privoxy is to modify client requests
  and server responses in all sorts of ways and therefore
  it's not a transparent proxy as described in
- <ulink url="http://tools.ietf.org/html/rfc2616">RFC 2616</ulink>.
+ <ulink url="https://tools.ietf.org/html/rfc2616">RFC 2616</ulink>.
 </para>
 <para>
  However, some people say <quote>transparent proxy</quote> when they
@@ -1321,7 +1291,8 @@ and thus avoid individual browser configuration?</title>
 <para>
  For a good discussion of some of the issues involved (including privacy and
  security issues), see
- <ulink url="https://sourceforge.net/tracker/?func=detail&#38;atid=211118&#38;aid=629518&#38;group_id=11118">https://sourceforge.net/tracker/?func=detail&#38;atid=211118&#38;aid=629518&#38;group_id=11118</ulink>.
+ <ulink url="https://sourceforge.net/p/ijbswa/support-requests/107/"
+  >https://sourceforge.net/p/ijbswa/support-requests/107/</ulink>.
 </para>
 </sect2>
 
@@ -1329,19 +1300,20 @@ and thus avoid individual browser configuration?</title>
 <title>I sometimes notice cookies sneaking through. How?</title>
 <para>
  <ulink
- url="http://en.wikipedia.org/wiki/Browser_cookie">Cookies</ulink> can be
+ url="https://en.wikipedia.org/wiki/Browser_cookie">Cookies</ulink> can be
  set in several ways. The classic method is via the
  <literal>Set-Cookie</literal> HTTP header. This is straightforward, and an
  easy one to manipulate, such as the &my-app; concept of
  <ulink url="../user-manual/actions-file.html#SESSION-COOKIES-ONLY">session-cookies-only</ulink>.
  There is also the possibility of using
-  <ulink url="http://en.wikipedia.org/wiki/Javascript">Javascript</ulink> to
+  <ulink url="https://en.wikipedia.org/wiki/Javascript">Javascript</ulink> to
  set cookies (&my-app; calls these <literal>content-cookies</literal>). This
  is trickier because the syntax can vary widely, and thus requires a certain
  amount of guesswork. It is not realistic to catch all of these short of
  disabling Javascript, which would break many sites. And lastly, if the
  cookies are embedded in a HTTPS/SSL secure session via Javascript, they are beyond
- <application>Privoxy's</application> reach.
+ <application>Privoxy's</application> reach unless you enable
+ <ulink url="../user-manual/actions-file.html#HTTPS-INSPECTION">https-inspection</ulink>.
 </para>
 <para>
  All in all, &my-app; can help manage cookies in general, can help minimize
@@ -1355,7 +1327,7 @@ and thus avoid individual browser configuration?</title>
 <para>
  No, in fact there are many beneficial uses of
  <ulink
- url="http://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>. Cookies are just a
+ url="https://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>. Cookies are just a
  method that browsers can use to store data between pages, or between browser
  sessions. Sometimes there is a good reason for this, and the user's life is a
  bit easier as a result. But there is a long history of some websites taking
@@ -1367,7 +1339,7 @@ and thus avoid individual browser configuration?</title>
 </para>
 <para>
   See the
-   <ulink url="http://en.wikipedia.org/wiki/Browser_cookie">Wikipedia cookie
+   <ulink url="https://en.wikipedia.org/wiki/Browser_cookie">Wikipedia cookie
   definition</ulink> for more.
 </para>
 </sect2>
@@ -1945,7 +1917,7 @@ speed up web browsing?</title>
 <para>
  No, it does not have this ability at all. You want something like
  <ulink url="http://www.squid-cache.org/">Squid</ulink> or
- <ulink url="http://www.pps.jussieu.fr/~jch/software/polipo/">Polipo</ulink> for this.
+ <ulink url="https://www.irif.fr/~jch//software/polipo/">Polipo</ulink> for this.
  And, yes, before you ask, <application>Privoxy</application> can co-exist
  with other kinds of proxies like <application>Squid</application>.
  See the <ulink url="../user-manual/config.html#FORWARDING">forwarding
@@ -1996,9 +1968,17 @@ ads used to be. Why?</title>
 <sect2 renderas="sect3" id="ssl">
 <title>How can Privoxy filter Secure (HTTPS) URLs?</title>
 <para>
- Since secure HTTP connections are encrypted SSL sessions between your browser
- and the secure site, and are meant to be reliably <emphasis>secure</emphasis>,
- there is little that <application>Privoxy</application> can do but hand the raw
+ If you enable
+ <ulink url="../user-manual/actions-file.html#HTTPS-INSPECTION">https-inspection</ulink>
+ <application>Privoxy</application> will impersonate the destination
+ server and can thus filter encrypted requests and responses as well.
+</para>
+<para>
+ Without
+ <ulink url="../user-manual/actions-file.html#HTTPS-INSPECTION">https-inspection</ulink>
+ secure HTTP connections are encrypted SSL sessions between your
+ browser and the secure site, and there is little
+ that <application>Privoxy</application> can do but hand the raw
  gibberish data though from one end to the other unprocessed.
 </para>
 <para>
@@ -2034,8 +2014,9 @@ ads used to be. Why?</title>
   for HTTPS.
 </para>
 <para>
-  Adding HTTP/2 support is on the TODO list but currently
-  nobody is known to work on it.
+  Adding HTTP/2 support is on the
+  <ulink url="https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob_plain;f=TODO;hb=HEAD">TODO</ulink>
+  list but currently nobody is known to work on it.
 </para>
 </sect2>
 
@@ -2713,7 +2694,7 @@ Why?</title>
 <para>
  Upgrading <application>Privoxy</application>, or going to the most recent
  <filename>default.action</filename> file available from <ulink
- url="https://sourceforge.net/project/showfiles.php?group_id=11118">SourceForge</ulink>
+ url="https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob_plain;f=default.action.master;hb=HEAD">git</ulink>
  might be worth a try, too.
 </para>
 </sect2>
@@ -2767,7 +2748,7 @@ Why?</title>
 </title>
 <para>
  <application>Privoxy</application> is attempting to disable malicious
-  <ulink url="http://en.wikipedia.org/wiki/Javascript">Javascript</ulink>
+  <ulink url="https://en.wikipedia.org/wiki/Javascript">Javascript</ulink>
   in this case, with the <literal>unsolicited-popups</literal>
  filter. <application>Privoxy</application> cannot tell very well
  <quote>good</quote> code snippets from <quote>bad</quote> code snippets.
@@ -2900,6 +2881,11 @@ browsing has slowed to a crawl. What gives? </title>
  section, and add <quote>127.0.0.1:0</quote> in the <quote>No Proxy for:</quote>
  field.
 </para>
+<para>
+ You can also prevent the problem by enabling
+ <ulink url="../user-manual/actions-file.html#HTTPS-INSPECTION">https-inspection</ulink>
+ in which case Privoxy's error messages are delivered encrypted.
+</para>
 </sect2>
 
 
@@ -2999,10 +2985,10 @@ browsing has slowed to a crawl. What gives? </title>
  this is not considered a Privoxy bug.
 </para>
 <para>
- To prevent the crashes you can rewrite your filter to use less ressources,
+ To prevent the crashes you can rewrite your filter to use less resources,
  increase the relevant memory limit or recompile pcre to use less stack space.
  For details please see the
- <ulink url="http://pcre.org/original/doc/html/pcrestack.html">pcrestack man page</ulink>
+ <ulink url="https://pcre.org/original/doc/html/pcrestack.html">pcrestack man page</ulink>
  and the documentation of your operating system.
 </para>
 </sect2>
@@ -3072,7 +3058,7 @@ C:\Privoxy></screen>
   </para>
 
  <!--   ~~~~~       New section      ~~~~~     -->
- <sect2><title>License</title>
+ <sect2 id="privoxy-license"><title>License</title>
  <!-- Include copyright.sgml: -->
   &license;
  <!-- end copyright -->
@@ -3080,7 +3066,7 @@ C:\Privoxy></screen>
  <!--  ~  End section  ~  -->
 
  <!--   ~~~~~       New section      ~~~~~     -->
- <sect2><title>History</title>
+ <sect2 id="history"><title>History</title>
  <!-- Include history.sgml -->
   &history;
  <!-- end -->

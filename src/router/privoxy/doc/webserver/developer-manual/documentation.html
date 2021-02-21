@@ -27,13 +27,13 @@
   <div class="SECT1">
     <h1 class="SECT1"><a name="DOCUMENTATION" id="DOCUMENTATION">3. Documentation Guidelines</a></h1>
     <p>All formal documents are maintained in Docbook SGML and located in the <samp class=
-    "COMPUTEROUTPUT">doc/source/*</samp> directory. You will need <a href="http://www.docbook.org" target=
+    "COMPUTEROUTPUT">doc/source/*</samp> directory. You will need <a href="https://www.docbook.org/" target=
     "_top">Docbook</a>, the Docbook DTD's and the Docbook modular stylesheets (or comparable alternatives), and either
     <span class="APPLICATION">jade</span> or <span class="APPLICATION">openjade</span> (recommended) installed in order
     to build docs from source. Currently there is <a href="../user-manual/index.html" target="_top"><i class=
     "CITETITLE">user-manual</i></a>, <a href="../faq/index.html" target="_top"><i class="CITETITLE">FAQ</i></a>, and,
     of course this, the <i class="CITETITLE">developer-manual</i> in this format. The <i class="CITETITLE">README</i>,
-    <i class="CITETITLE">AUTHORS</i>, <i class="CITETITLE">INSTALL</i>, <i class="CITETITLE">privoxy.1</i> (man page),
+    <i class="CITETITLE">AUTHORS</i>, <i class="CITETITLE">INSTALL</i>, <i class="CITETITLE">privoxy.8</i> (man page),
     and <i class="CITETITLE">config</i> files are also now maintained as Docbook SGML. These files, when built, in the
     top-level source directory are generated files! Also, the <span class="APPLICATION">Privoxy</span> <tt class=
     "FILENAME">index.html</tt> (and a variation on this file, <tt class="FILENAME">privoxy-index.html</tt>, meant for
@@ -42,9 +42,7 @@
     <p><tt class="FILENAME">config</tt> requires some special handling. The reason it is maintained this way is so that
     the extensive comments in the file mirror those in <i class="CITETITLE">user-manual</i>. But the conversion process
     requires going from SGML to HTML to text to special formatting required for the embedded comments. Some of this
-    does not survive so well. Especially some of the examples that are longer than 80 characters. The build process for
-    this file outputs to <tt class="FILENAME">config.new</tt>, which should be reviewed for errors and mis-formatting.
-    Once satisfied that it is correct, then it should be hand copied to <tt class="FILENAME">config</tt>.</p>
+    does not survive so well. Especially some of the examples that are longer than 80 characters.</p>
     <p>Other, less formal documents (e.g. <tt class="FILENAME">LICENSE</tt>) are maintained as plain text files in the
     top-level source directory.</p>
     <p>Packagers are encouraged to include this documentation. For those without the ability to build the docs locally,
@@ -59,11 +57,11 @@
     <p>How do you update the webserver (i.e. the pages on privoxy.org)?</p>
     <ol type="1">
       <li>
-        <p>First, build the docs by running <samp class="COMPUTEROUTPUT">make dok</samp>.</p>
+        <p>First, build the docs by running <samp class="COMPUTEROUTPUT">make dok dok-tidy</samp>.</p>
       </li>
       <li>
         <p>Run <samp class="COMPUTEROUTPUT">make webserver</samp> which copies all files from <samp class=
-        "COMPUTEROUTPUT">doc/webserver</samp> to the sourceforge webserver via scp.</p>
+        "COMPUTEROUTPUT">doc/webserver</samp> to the sourceforge webserver via ssh.</p>
       </li>
     </ol>
     <p>Finished docs should be occasionally submitted to Git (<tt class="FILENAME">doc/webserver/*/*.html</tt>) so that
@@ -209,7 +207,7 @@
       </ul>
     </div>
     <div class="SECT2">
-      <h2 class="SECT2"><a name="AEN203" id="AEN203">3.3. Privoxy Custom Entities</a></h2>
+      <h2 class="SECT2"><a name="CUSTOM-ENTITIES" id="CUSTOM-ENTITIES">3.3. Privoxy Custom Entities</a></h2>
       <p><span class="APPLICATION">Privoxy</span> documentation is using a number of customized <span class=
       "QUOTE">"entities"</span> to facilitate documentation maintenance.</p>
       <p>We are using a set of <span class="QUOTE">"boilerplate"</span> files with generic text, that is used by
@@ -238,7 +236,7 @@
             <tbody>
               <tr>
                 <td><span class="emphasis"><i class="EMPHASIS">p-version</i></span>: the <span class=
-                "APPLICATION">Privoxy</span> version string, e.g. <span class="QUOTE">"3.0.28"</span>.</td>
+                "APPLICATION">Privoxy</span> version string, e.g. <span class="QUOTE">"3.0.31"</span>.</td>
               </tr>
               <tr>
                 <td><span class="emphasis"><i class="EMPHASIS">p-status</i></span>: the project status, either

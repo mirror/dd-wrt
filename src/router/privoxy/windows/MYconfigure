@@ -118,6 +118,8 @@ echo "LDFLAGS=${LDFLAGS}"
              --enable-static-linking \
              --enable-strptime-sanity-checks \
              --disable-pthread  --disable-dynamic-pcre \
+             --enable-extended-statistics \
+             --enable-pcre-host-patterns \
              --with-docbook=yes
 
 #  -- done --

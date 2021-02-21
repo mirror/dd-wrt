@@ -43,6 +43,10 @@ include (in alphabetical order):
 
  Rustam Abdullaev
  Clint Adams
+ Andrew
+ Adriaan
+ Davide Alberani
+ Maxim Antonov
  Anatoly Arzhnikov
  Ken Arromdee
  Natxo Asenjo
@@ -53,6 +57,8 @@ include (in alphabetical order):
  Gergely Bor
  Francois Botha
  Reiner Buehl
+ Burberry
+ Calestyo
  Andrew J. Caines
  Clifford Caoile
  Edward Carrel
@@ -63,17 +69,22 @@ include (in alphabetical order):
  Billy Crook
  Frédéric Crozat
  Matthew Daley
+ David
  Michael T. Davis
  Markus Dittrich
  Mattes Dolak
  Matthias Drochner
+ Duc
+ Duncan
  Peter E.
  Florian Effenberger
  Markus Elfring
  Ryan Farmer
  Matthew Fischer
+ T Ford
  Dean Gaudet
  Stephen Gildea
+ Morton A. Goldberg
  John McGowan
  Danny Goossen
  Lizik Grelier
@@ -84,9 +95,12 @@ include (in alphabetical order):
  Tim H.
  Aaron Hamid
  Darel Henman
+ Mathias Homann
  Magnus Holmgren
  Eric M. Hopper
  Ralf Horstmann
+ Ho+ Ho+ Ho+
+ Nedžad Hrnjica
  Stefan Huehner
  Basil Hussain
  Peter Hyman
@@ -95,7 +109,11 @@ include (in alphabetical order):
  Julien Joubert
  Ralf Jungblut
  Petr Kadlec
+ Kacperdominik
+ Karsten
+ Kevin
  Robert Klemme
+ Max Khon
  Steven Kolins
  Korda
  Stefan Kurtz
@@ -104,6 +122,8 @@ include (in alphabetical order):
  Bert van Leeuwen
  Don Libes
  Paul Lieverse
+ Adele Lime
+ Aaron Linville
  Han Liu
  Toby Lyward
  Wil Mahan
@@ -111,40 +131,67 @@ include (in alphabetical order):
  Raphael Marichez
  Francois Marier
  Angelina Matson
+ Maynard
  Jonathan McKenzie
  David Mediavilla
  Raphael Moll
  J. Momberger
+ Peter Müller
  Mathew Murphy
  Amuro Namie
  Mark Nelson
+ Nettozahler
  Tobias Netzel
+ Omniture
+ Oliver
+ John Palkovic
+ Patrick
  Adam Piggott
  Petr Písar
+ Pribog
  Dan Price
+ Pwhk
  Roberto Ragusa
+ Rakista
  Félix Rauch
  Kai Raven
  Marvin Renich
+ Black Rider
  Chris John Riley
  Maynard Riley
+ Joshua Rogers
+ Ivan Romanov
  Andreas Rutkauskas
+ Sam
+ Saperski
  Bart Schelstraete
  Gregory Seidman
  Atman Sense
+ Mark Seward
+ Franz Schwartau
  Chung-chieh Shan
  Johan Sintorn
  Benjamin C. Wiley Sittler
+ DRS David Soft
  Simon South
  Dan Stahlke
+ Stefan
  Oliver Stoeneberg
+ Václav Švec
+ Endre Szabo
  Rick Sykes
+ Szotsaki
  Spinor S.
+ Tceverling
  Peter Thoenen
  Marc Thomas
  Martin Thomas
  Reuben Thomas
  Guybrush Threepwood
+ Tyrexionibus
+ Sam
+ Sam Varshavchik
+ Vaeinoe
  Joel Verhagen
  Bobby G. Vinyard
  Jochen Voss
@@ -154,12 +201,17 @@ include (in alphabetical order):
  Jörg Weinmann
  Darren Wiebe
  Anduin Withers
+ withoutname
  Eduard Wulff
+ Leo Wzukw
+ Wyrex
  Yang Xia
  Jarry Xu
  Oliver Yeoh
  Yossi Zahn
  Jamie Zawinski
+ Zepard
+ Radoslaw Zielinski
 
 Privoxy is based in part on code originally developed by Junkbusters Corp. and
 Anonymous Coders.
@@ -169,9 +221,8 @@ Privoxy heavily relies on Philip Hazel's PCRE.
 The code to filter compressed content makes use of zlib which is written by
 Jean-loup Gailly and Mark Adler.
 
-On systems that lack snprintf(), Privoxy is using a version written by Mark
-Martinec. On systems that lack strptime(), Privoxy is using the one from the
-GNU C Library written by Ulrich Drepper.
+On systems that lack strptime(), Privoxy is using the one from the GNU C
+Library written by Ulrich Drepper.
 
 If we've missed you off this list, please let us know!
 

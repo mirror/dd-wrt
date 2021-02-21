@@ -4,7 +4,7 @@
 <head>
   <title>Filter Files</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.28 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.31 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Actions Files" href="actions-file.html">
   <link rel="NEXT" title="Privoxy's Template Files" href="templates.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.28 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.31 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="actions-file.html" accesskey="P">Prev</a></td>
@@ -29,12 +29,13 @@
     <h1 class="SECT1"><a name="FILTER-FILE" id="FILTER-FILE">9. Filter Files</a></h1>
     <p>On-the-fly text substitutions need to be defined in a <span class="QUOTE">"filter file"</span>. Once defined,
     they can then be invoked as an <span class="QUOTE">"action"</span>.</p>
-    <p><span class="APPLICATION">Privoxy</span> supports three different pcrs-based filter actions: <tt class=
+    <p><span class="APPLICATION">Privoxy</span> supports four different pcrs-based filter actions: <tt class=
     "LITERAL"><a href="actions-file.html#FILTER">filter</a></tt> to rewrite the content that is send to the client,
     <tt class="LITERAL"><a href="actions-file.html#CLIENT-HEADER-FILTER">client-header-filter</a></tt> to rewrite
-    headers that are send by the client, and <tt class="LITERAL"><a href=
+    headers that are send by the client, <tt class="LITERAL"><a href=
     "actions-file.html#SERVER-HEADER-FILTER">server-header-filter</a></tt> to rewrite headers that are send by the
-    server.</p>
+    server, and <tt class="LITERAL"><a href="actions-file.html#CLIENT-BODY-FILTER">client-body-filter</a></tt> to
+    rewrite client request body.</p>
     <p><span class="APPLICATION">Privoxy</span> also supports two tagger actions: <tt class="LITERAL"><a href=
     "actions-file.html#CLIENT-HEADER-TAGGER">client-header-tagger</a></tt> and <tt class="LITERAL"><a href=
     "actions-file.html#SERVER-HEADER-TAGGER">server-header-tagger</a></tt>. Taggers and filters use the same syntax in
@@ -59,9 +60,9 @@
     <p>Just like the <a href="actions-file.html">actions files</a>, the filter file is organized in sections, which are
     called <span class="emphasis"><i class="EMPHASIS">filters</i></span> here. Each filter consists of a heading line,
     that starts with one of the <span class="emphasis"><i class="EMPHASIS">keywords</i></span> <tt class=
-    "LITERAL">FILTER:</tt>, <tt class="LITERAL">CLIENT-HEADER-FILTER:</tt> or <tt class=
-    "LITERAL">SERVER-HEADER-FILTER:</tt> followed by the filter's <span class="emphasis"><i class=
-    "EMPHASIS">name</i></span>, and a short (one line) <span class="emphasis"><i class=
+    "LITERAL">FILTER:</tt>, <tt class="LITERAL">CLIENT-HEADER-FILTER:</tt>, <tt class=
+    "LITERAL">SERVER-HEADER-FILTER:</tt> or <tt class="LITERAL">CLIENT-BODY-FILTER:</tt> followed by the filter's
+    <span class="emphasis"><i class="EMPHASIS">name</i></span>, and a short (one line) <span class="emphasis"><i class=
     "EMPHASIS">description</i></span> of what it does. Below that line come the <span class="emphasis"><i class=
     "EMPHASIS">jobs</i></span>, i.e. lines that define the actual text substitutions. By convention, the name of a
     filter should describe what the filter <span class="emphasis"><i class="EMPHASIS">eliminates</i></span>. The
@@ -96,7 +97,7 @@
     '&#60;' should be save, while '?' will sooner or later cause conflicts with $url.</p>
     <p>The non-standard option letter <tt class="LITERAL">T</tt> (trivial) prevents parsing for backreferences in the
     substitute. Use it if you want to include text like '$&#38;' in your substitute without quoting.</p>
-    <p>If you are new to <a href="http://en.wikipedia.org/wiki/Regular_expressions" target="_top"><span class=
+    <p>If you are new to <a href="https://en.wikipedia.org/wiki/Regular_expressions" target="_top"><span class=
     "QUOTE">"Regular Expressions"</span></a>, you might want to take a look at the <a href=
     "appendix.html#REGEX">Appendix on regular expressions</a>, and see the <a href=
     "http://perldoc.perl.org/perlre.html" target="_top">Perl manual</a> for <a href=

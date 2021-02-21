@@ -6,13 +6,14 @@ https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob_plain;f=TODO;hb=HEAD
 
 There's work in progress to fund development on these items using
 donations. If you want to donate, please have a look at:
-https://www.privoxy.org/faq/general.html#DONATE
+https://www.privoxy.org/donate
 
 1)  Add more regression tests. Filters should be tested automatically
     (variables too). Could probably reuse large parts of Privoxy-Filter-Test.
     Note that there is currently work in progress to leverage curl's
     test suite, patches have been submitted upstream:
-    http://curl.haxx.se/mail/lib-2014-06/0070.html
+    https://curl.se/mail/lib-2014-06/0070.html
+    https://curl.se/mail/lib-2021-01/0068.html
 
 3)  Fix some more XXX: comments.
 
@@ -48,19 +49,6 @@ https://www.privoxy.org/faq/general.html#DONATE
     Work in progress.
 
 12) Support pipelining for outgoing connections.
-
-14) Allow to filter POST parameters.
-
-16) Filter SSL encrypted content as well.
-
-    At the beginning we could use a unencrypted connection between
-    client and Privoxy, and use an encrypted connection between
-    Privoxy and the server.
-
-    This should be good enough for most of the content the
-    user would want to filter.
-
-    Interested donors: 2.
 
 19) enable-forward-fallback. Syntax? Suggested by K.R.
 
@@ -136,10 +124,6 @@ https://www.privoxy.org/faq/general.html#DONATE
 
     Interested donors: 1.
 
-54) Move away from CVS to a more modern revision control system.
-    The move to git is work in progress:
-    https://sourceforge.net/p/ijbswa/mailman/message/34994343/
-
 58) Move more template strings from the code into the actual templates.
 
 59) Import the German template translation.
@@ -162,8 +146,7 @@ https://www.privoxy.org/faq/general.html#DONATE
 
 66) Stop hard-coding the number of action and filter files.
 
-67) Clean up source code directory layout. Depends on 54 so
-    we don't lose the revision history.
+67) Clean up source code directory layout.
 
 68) Use standard make syntax so we don't depend on GNU make.
 
@@ -194,25 +177,6 @@ https://www.privoxy.org/faq/general.html#DONATE
 
 79) Evaluate pcre alternatives.
 
-80) Change FEATURE_EXTENDED_HOST_PATTERNS to support both
-    extended and vanilla host patterns at the same time.
-
-    Note that the requirement is to allow the user to decide
-    if the domain pattern should be interpreted as regex or
-    traditional host pattern and if it's not obvious that the
-    user made any decision, default to the latter.
-
-    Possible solutions would be:
-
-    1. An always-use-regex-domain-patterns config option
-    2. An enable-regex-domain-patterns-for-this-action-file option
-    3. An enable-regex-domain-patterns-for-this-action-file-until-the-user-says-otherwise option
-    4. A treat-the-domain-pattern-in-this-line-as-regex(-or-not) option
-    5. Combinations of the options above
-
-    With 2+4, 3+4 or 2+3+4 being the preferences until
-    further discussion.
-
 82) Detect if the system time goes back in time let the user
     know if it caused any connections to get closed.
 
@@ -223,9 +187,7 @@ https://www.privoxy.org/faq/general.html#DONATE
 86) Add a server-body-tagger action. This is trivial as as all the
     functionality required to do it already exists.
 
-87) Add a client-body-tagger action. This is less trivial as we currently
-    don't buffer client bodies. After 14) is implemented it would be
-    trivial, though.
+87) Add a client-body-tagger action. This, too, is trivial.
 
 88) Investigate if there's a Perl module that Privoxy-Regression-Test
     could optionally use to keep connections alive, preferably while
@@ -255,21 +217,11 @@ https://www.privoxy.org/faq/general.html#DONATE
     that makes sense. Like #93, this could be useful as a workaround
     for misconfigured setups.
 
-95) Support a non-standard client header in CONNECT requests that
-    contains the URL of the requested resource, which is then treated
-    like the request URL.
-
-    This way the client could opt-in for path-based blocking of https
-    requests. Given that the headers from the CONNECT request aren't
-    forwarded to the destination server, an unencrypted URL should be
-    acceptable if the client and Privoxy are running on the same system
-    or in a trusted environment.
-
 96) Filters should be easier to look up. Currently get_filter() has to
     go through all filters and skip the filter types the caller isn't
     interested in.
 
-98) When showing action section on the CGI pages, properly escape
+98) When showing action sections on the CGI pages, properly escape
     line breaks so they can be copy&pasted into action files without
     adjustments.
 
@@ -296,8 +248,6 @@ https://www.privoxy.org/faq/general.html#DONATE
      a separate function. Currently we mess with it in three different
      files, but only in w32log.c the tray icon is explicitly set.
      The logging is inconsistent as well. For details see #3525694.
-
-105) Add support for socks authentication.
 
 106) actionlist.h should be embedded in a way that causes less text
      segment bloat.
@@ -339,8 +289,6 @@ https://www.privoxy.org/faq/general.html#DONATE
 118) There should be "escaped" dynamic variables that are guaranteed
      not to break filters.
 
-119) Evaluate using pcre's jit mode.
-
 120) Add an option to limit pcre's recursion limit below the default.
      On some platforms the recursion limit doesn't prevent pcre from
      running out of stack space, causing the kernel to kill Privoxy
@@ -352,9 +300,6 @@ https://www.privoxy.org/faq/general.html#DONATE
      Interested donors: 1.
 
 122) Allow customized log messages.
-
-123) Evaluate if the voluntarily-disclose-session-keys option in Firefox
-     (and other browsers) can be leveraged. Probably depends on #16.
 
 124) Add support for the "lightweight OS capability and sandbox framework"
      Capsicum. http://www.cl.cam.ac.uk/research/security/capsicum/
@@ -396,8 +341,6 @@ https://www.privoxy.org/faq/general.html#DONATE
 
 136) Make builds reproducible.
 
-137) Add a (preferably vector-based) logo.
-
 138) Bring back the scripts to provide actions file feedback.
 
      Once upon a time (~2003) there were scripts on the webserver
@@ -410,9 +353,6 @@ https://www.privoxy.org/faq/general.html#DONATE
 140) Toggling Privoxy off currently also disables stuff that
      probably shouldn't be affected (such as actions like
      forward-override). Investigate and fix or document.
-
-141) Port Privoxy to CloudABI, which, despite the name, is actually
-     rather neat. https://github.com/NuxiNL/cloudlibc
 
 142) Remove or update the "internal" pcre version.
 
@@ -472,6 +412,84 @@ https://www.privoxy.org/faq/general.html#DONATE
      performance point of view, using a single thread should reduce Privoxy's
      memory footprint a bit which may be noticeable in case of multi-user setups
      with hundreds of idle connections.
+
+161) Properly support requests with chunked transfer-encoding with https inspection.
+
+162) When https inspecting, delete generated keys and certificates if
+     the connection to the destination could not be established.
+     Makes silly DoS attacks slightly more complicated.
+
+163) Use subdirectories in the certificate-directory to lower the number
+     of files per directory.
+
+164) Evaluate switching from pcreposix(3) to pcre's native api
+     for URL matching which allows to compile the patterns once
+     at load-time.
+
+165) Add a max-connections-per-client directive.
+
+166) Figure out how to ship Windows binaries with external libraries
+     like pcre and MbedTLS. Required for #142. Somewhat related:
+     https://lists.privoxy.org/pipermail/privoxy-devel/2020-November/000400.html
+
+167) Set up a public Privoxy-Filter-Test instance.
+
+168) Add a privacy policy.
+
+169) Preserve all relevant copyright and license statements in binary
+     packages we distribute.
+
+170) Serve the ca-cert-file through the CGI interface so client's
+     can conveniently import it (insecurely).
+
+171) Create a "view page using Privoxy" website where users can input
+     an URL and get a screenshot of a browser fetching the URL
+     through Privoxy.
+
+172) Create a public git repository for Privoxy-Filter-Test.
+
+173) Document Privoxy's governance model.
+
+174) Let the Tor Onion Service for the privoxy website
+     serve gitweb and the git repository as well.
+
+175) Add more screenshots to the documentation and website.
+
+176) Find a new fiduciary sponsor as a replacement for Zwiebelfreunde e.V.,
+     so that we can continue to receive tax-deductible donations in Europe.
+
+177) Support https-inspection for intercepted requests.
+
+178) Warn on http://config.privoxy.org/client-tags if a Tag name
+     has't at least one matching action section.
+
+179) Add a add-server-header{} action to add headers to the response
+     sent to the client (including responses generated by Privoxy itself).
+
+180) Add support for GnuTLS.
+
+181) Allow to upgrade an http request to https behind the
+     client's back using a client-header filter.
+
+182) Before enforcing the client-header-order, check that the
+     client headers actually need sorting. Should reduce log
+     messages and memory allocations.
+
+183) Properly deal with proxy responses that arrive in multiple pieces
+     when https inspecting while using a forwarding proxy.
+
+184) Add support for wolfSSL. Work in progress, expected to be
+     committed after the 3.0.30 release.
+
+185) The mbedTLS and OpenSSL versions of generate_host_certificate()
+     should only be called when necessary and the check should be
+     done without holding the certificate mutex.
+
+186) Privoxy should handle "OPTIONS *" requests properly.
+
+187) There should be a convenient way to see the versions of
+     the libraries Privoxy is using.
+
 ##########################################################################
 
 Hosting wish list (relevant for #53)
@@ -482,8 +500,7 @@ What we need:
 - Mailinglists (Mailman with public archives preferred)
 - Webspace (on a Unix-like OS that works with the webserver targets
   in GNUMakefile)
-- Source code repositories (currently CVS, but migrating away
-  from it is TODO #54 anyway and shouldn't be too much trouble)
+- Git repositories
 - Commit mails (preferably with unified diffs)
 
 (Unsorted) details to look at when evaluating hosters:

@@ -1,7 +1,7 @@
 ##########################################################################
 #
 # Written by and Copyright (C) 2002-2018 the Privoxy team.
-# http://www.privoxy.org/
+# https://www.privoxy.org/
 #
 # This script originally written by and Copyright (C) 2002
 # Jonathan Foster
@@ -159,13 +159,10 @@ $(DEST)/templates/%: $(SOURCE)/templates/% $(DEST)/templates
 
 doc: $(DEST)/AUTHORS.txt $(DEST)/README.txt $(DEST)/LICENSE.txt
 
-webdoc: $(DEST)/doc/developer-manual $(DEST)/doc/faq $(DEST)/doc/images $(DEST)/doc/user-manual
+webdoc: $(DEST)/doc/developer-manual $(DEST)/doc/faq $(DEST)/doc/user-manual
 	cp $(SOURCE)/doc/webserver/p_doc.css $(DEST)/doc
 	cp $(SOURCE)/doc/webserver/p_doc.css $(DEST)/doc/user-manual/
 
-
-$(DEST)/doc/gpl.html: $(SOURCE)/doc/gpl.html $(DEST)/doc
-	$(DOSFILTER) < $< > $@ 
 
 $(DEST)/doc/%.txt : $(SOURCE)/doc/text/%.txt $(DEST)/doc
 	$(DOSFILTER) < $< > $@ 
@@ -177,13 +174,11 @@ $(DEST)/doc/developer-manual: $(DEST)/doc $(SOURCE)/doc/webserver/developer-manu
 $(DEST)/doc/user-manual: $(DEST)/doc $(SOURCE)/doc/webserver/user-manual/index.html
 	test -d $(DEST)/doc/user-manual      || mkdir $(DEST)/doc/user-manual
 	cp    $(SOURCE)/doc/webserver/user-manual/*.html $(DEST)/doc/user-manual/
+	cp    $(SOURCE)/doc/webserver/user-manual/*.jpg  $(DEST)/doc/user-manual/
 
 $(DEST)/doc/faq: $(DEST)/doc $(SOURCE)/doc/webserver/faq/index.html
 	test -d $(DEST)/doc/faq              || mkdir $(DEST)/doc/faq
 	cp    $(SOURCE)/doc/webserver/faq/*.html $(DEST)/doc/faq/
-
-$(DEST)/doc/images: $(DEST)/doc
-	cp -r $(SOURCE)/doc/webserver/images/ $(DEST)/doc
 
 ##########################################################################
 # That's all, folks!

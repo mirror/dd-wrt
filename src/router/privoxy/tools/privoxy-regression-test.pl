@@ -17,7 +17,7 @@
 # - Document magic Expect Header values
 # - Internal fuzz support?
 #
-# Copyright (c) 2007-2016 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2021 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -38,7 +38,7 @@ use strict;
 use Getopt::Long;
 
 use constant {
-    PRT_VERSION => 'Privoxy-Regression-Test 0.7',
+    PRT_VERSION => 'Privoxy-Regression-Test 0.7.2',
  
     CURL => 'curl',
 
@@ -47,11 +47,13 @@ use constant {
     CLI_LOOPS     => 1,
     CLI_MAX_TIME  => 5,
     CLI_MIN_LEVEL => 0,
-    # XXX: why limit at all?
+    # The reason for a maximum test level is explained in the
+    # perldoc section TEST LEVELS near the end of this file.
     CLI_MAX_LEVEL => 100,
     CLI_FORKS     => 0,
     CLI_SLEEP_TIME => 0,
 
+    PRIVOXY_ADDRESS  => 'http://127.0.0.1:8118/',
     PRIVOXY_CGI_URL  => 'http://p.p/',
     FELLATIO_URL     => 'http://127.0.0.1:8080/',
     LEADING_LOG_DATE => 1,
@@ -83,15 +85,16 @@ use constant {
     REDIRECT_TEST       =>108,
 };
 
-sub init_our_variables () {
+sub init_our_variables() {
 
     our $leading_log_time = LEADING_LOG_TIME;
     our $leading_log_date = LEADING_LOG_DATE;
     our $privoxy_cgi_url  = PRIVOXY_CGI_URL;
     our $log_level = get_default_log_level();
+    our $proxy = defined $ENV{'http_proxy'} ? $ENV{'http_proxy'} : PRIVOXY_ADDRESS;
 }
 
-sub get_default_log_level () {
+sub get_default_log_level() {
     
     my $log_level = 0;
 
@@ -113,7 +116,7 @@ sub get_default_log_level () {
 #
 ############################################################################
 
-sub parse_tag ($) {
+sub parse_tag($) {
 
     my $tag = shift;
 
@@ -129,10 +132,10 @@ sub parse_tag ($) {
     return $tag;
 }
 
-sub check_for_forbidden_characters ($) {
+sub check_for_forbidden_characters($) {
 
     my $string = shift;
-    my $allowed = '[-=\dA-Za-z~{}:./();\t ,+@"_%?&*^]';
+    my $allowed = '[-=\dA-Za-z~{}\[\]:./();\t ,+@"_%?&*^|]';
 
     unless ($string =~ m/^$allowed*$/o) {
         my $forbidden = $string;
@@ -152,7 +155,7 @@ sub load_regression_tests() {
 
 # XXX: Contains a lot of code duplicated from load_action_files()
 #      that should be factored out.
-sub load_regression_tests_from_file ($) {
+sub load_regression_tests_from_file($) {
     my $action_file = shift;
 
     # initialized here
@@ -274,7 +277,7 @@ sub load_regression_tests_from_file ($) {
                 l(LL_FILE_LOADING, "Sticky actions: " . $sticky_actions);
                 $regression_tests[$si][$ri]{'sticky-actions'} = $sticky_actions;
             } else {
-                log_and_die("Sticky URL without Sticky Actions: $value");
+                log_and_die("Sticky URL without Sticky Actions in $action_file: $value");
             }
 
         } else {
@@ -297,7 +300,7 @@ sub load_regression_tests_from_file ($) {
 }
 
 
-sub load_regression_tests_through_privoxy () {
+sub load_regression_tests_through_privoxy() {
 
     our $privoxy_cgi_url;
     our @privoxy_config;
@@ -350,7 +353,7 @@ sub load_regression_tests_through_privoxy () {
     load_action_files(\@actionfiles);
 }
 
-sub token_starts_new_test ($) {
+sub token_starts_new_test($) {
 
     my $token = shift;
     my @new_test_directives = ('set header', 'fetch test',
@@ -364,7 +367,7 @@ sub token_starts_new_test ($) {
     return 0;
 }
 
-sub tokenize ($) {
+sub tokenize($) {
 
     my ($token, $value) = (undef, undef);
 
@@ -396,7 +399,7 @@ sub tokenize ($) {
     return ($token, $value);
 }
 
-sub enlist_new_test ($$$$$$) {
+sub enlist_new_test($$$$$$) {
 
     my ($regression_tests, $token, $value, $si, $ri, $number) = @_;
     my $type;
@@ -504,7 +507,7 @@ sub mark_matching_tests_for_skipping($) {
 
 # XXX: Shares a lot of code with load_regression_tests_from_file()
 #      that should be factored out.
-sub load_action_files ($) {
+sub load_action_files($) {
 
     # initialized here
     our %actions;
@@ -654,7 +657,7 @@ sub load_action_files ($) {
                     l(LL_FILE_LOADING, "Sticky actions: " . $sticky_actions);
                     $regression_tests[$si][$ri]{'sticky-actions'} = $sticky_actions;
                 } else {
-                    log_and_die("Sticky URL without Sticky Actions: $value");
+                    log_and_die("Sticky URL without Sticky Actions in $actionfile: $value");
                 }
 
             } else {
@@ -683,7 +686,7 @@ sub load_action_files ($) {
 ############################################################################
 
 # Fisher Yates shuffle from Perl's "How do I shuffle an array randomly?" FAQ
-sub fisher_yates_shuffle ($) {
+sub fisher_yates_shuffle($) {
     my $deck = shift;
     my $i = @$deck;
     while ($i--) {
@@ -692,7 +695,7 @@ sub fisher_yates_shuffle ($) {
     }
 }
 
-sub execute_regression_tests () {
+sub execute_regression_tests() {
 
     our @regression_tests;
     my $loops = get_cli_option('loops');
@@ -781,7 +784,7 @@ sub execute_regression_tests () {
     }
 }
 
-sub get_skip_reason ($) {
+sub get_skip_reason($) {
     my $test = shift;
     my $skip_reason = undef;
 
@@ -802,7 +805,7 @@ sub get_skip_reason ($) {
     return $skip_reason;
 }
 
-sub level_is_unacceptable ($) {
+sub level_is_unacceptable($) {
     my $level = shift;
     my $min_level = get_cli_option('min-level');
     my $max_level = get_cli_option('max-level');
@@ -831,7 +834,7 @@ sub level_is_unacceptable ($) {
     return $reason;
 }
 
-sub dependency_unsatisfied ($) {
+sub dependency_unsatisfied($) {
 
     my $level = shift;
     our %dependencies;
@@ -872,7 +875,7 @@ sub dependency_unsatisfied ($) {
     return $dependency_problem;
 }
 
-sub register_dependency ($$) {
+sub register_dependency($$) {
 
     my $level = shift;
     my $dependency = shift;
@@ -892,9 +895,11 @@ sub register_dependency ($$) {
     }
 }
 
-sub execute_method_test ($) {
+sub execute_method_test($) {
 
     my $test = shift;
+    our $privoxy_cgi_url;
+
     my $buffer_ref;
     my $status_code;
     my $method = $test->{'data'};
@@ -906,7 +911,7 @@ sub execute_method_test ($) {
     # Don't complain about the 'missing' body
     $curl_parameters .= '--head ' if ($method =~ /^HEAD$/i);
 
-    $curl_parameters .= PRIVOXY_CGI_URL;
+    $curl_parameters .= $privoxy_cgi_url;
 
     $buffer_ref = get_page_with_curl($curl_parameters);
     $status_code = get_status_code($buffer_ref);
@@ -914,7 +919,7 @@ sub execute_method_test ($) {
     return check_status_code_result($status_code, $expected_status_code);
 }
 
-sub execute_redirect_test ($) {
+sub execute_redirect_test($) {
 
     my $test = shift;
     my $buffer_ref;
@@ -959,9 +964,11 @@ sub execute_redirect_test ($) {
     return $success;
 }
 
-sub execute_dumb_fetch_test ($) {
+sub execute_dumb_fetch_test($) {
 
     my $test = shift;
+    our $privoxy_cgi_url;
+
     my $buffer_ref;
     my $status_code;
 
@@ -972,7 +979,7 @@ sub execute_dumb_fetch_test ($) {
         $curl_parameters .= '--request ' . quote($test->{method}) . ' ';
     }
     if ($test->{type} == TRUSTED_CGI_REQUEST) {
-        $curl_parameters .= '--referer ' . quote(PRIVOXY_CGI_URL) . ' ';
+        $curl_parameters .= '--referer ' . quote($privoxy_cgi_url) . ' ';
     }
 
     $curl_parameters .= quote($test->{'data'});
@@ -983,7 +990,7 @@ sub execute_dumb_fetch_test ($) {
     return check_status_code_result($status_code, $expected_status_code);
 }
 
-sub execute_block_test ($) {
+sub execute_block_test($) {
 
     my $test = shift;
     my $url = $test->{'data'};
@@ -992,7 +999,7 @@ sub execute_block_test ($) {
     return defined $final_results->{'+block'};
 }
 
-sub execute_sticky_actions_test ($) {
+sub execute_sticky_actions_test($) {
 
     my $test = shift;
     my $url = $test->{'data'};
@@ -1023,9 +1030,11 @@ sub execute_sticky_actions_test ($) {
     return $verified_actions == @sticky_actions;
 }
 
-sub get_final_results ($) {
+sub get_final_results($) {
 
     my $url = shift;
+    our $privoxy_cgi_url;
+
     my $curl_parameters = '';
     my %final_results = ();
     my $final_results_reached = 0;
@@ -1038,7 +1047,7 @@ sub get_final_results ($) {
     $url =~ s@:@%3A@g;
     $url =~ s@/@%2F@g;
 
-    $curl_parameters .= quote(PRIVOXY_CGI_URL . 'show-url-info?url=' . $url);
+    $curl_parameters .= quote($privoxy_cgi_url . 'show-url-info?url=' . $url);
 
     foreach (@{get_cgi_page_or_else($curl_parameters)}) {
 
@@ -1068,7 +1077,7 @@ sub get_final_results ($) {
     return \%final_results;
 }
 
-sub check_status_code_result ($$) {
+sub check_status_code_result($$) {
 
     my $status_code = shift;
     my $expected_status_code = shift;
@@ -1100,7 +1109,7 @@ sub check_status_code_result ($$) {
     return $result;
 }
 
-sub execute_client_header_regression_test ($) {
+sub execute_client_header_regression_test($) {
 
     my $test = shift;
     my $buffer_ref;
@@ -1113,7 +1122,7 @@ sub execute_client_header_regression_test ($) {
     return check_header_result($test, $header);
 }
 
-sub execute_server_header_regression_test ($) {
+sub execute_server_header_regression_test($) {
 
     my $test = shift;
     my $buffer_ref;
@@ -1126,12 +1135,12 @@ sub execute_server_header_regression_test ($) {
     return check_header_result($test, $header);
 }
 
-sub interpret_result ($) {
+sub interpret_result($) {
     my $success = shift;
     return $success ? "Success" : "Failure";
 }
 
-sub check_header_result ($$) {
+sub check_header_result($$) {
 
     my $test = shift;
     my $header = shift;
@@ -1183,7 +1192,7 @@ sub check_header_result ($$) {
     return $success;
 }
 
-sub get_header_name ($) {
+sub get_header_name($) {
 
     my $header = shift;
 
@@ -1192,7 +1201,7 @@ sub get_header_name ($) {
     return $header;
 }
 
-sub get_header ($$) {
+sub get_header($$) {
 
     our $filtered_request = '';
 
@@ -1252,7 +1261,7 @@ sub get_header ($$) {
     return $header;
 }
 
-sub get_server_header ($$) {
+sub get_server_header($$) {
 
     my $buffer_ref = shift;
     my $test = shift;
@@ -1290,12 +1299,22 @@ sub get_server_header ($$) {
     return $header;
 }
 
-sub get_status_code ($) {
+sub get_status_code($) {
 
     my $buffer_ref = shift;
+    our $privoxy_cgi_url;
+
+    my $skip_connection_established_response = $privoxy_cgi_url =~ m@^https://@;
     my @buffer = @{$buffer_ref}; 
 
     foreach (@buffer) {
+
+        if ($skip_connection_established_response) {
+
+            next if (m@^HTTP/1\.1 200 Connection established@);
+            next if (m@^\r\n$@);
+            $skip_connection_established_response = 0;
+        }
 
         if (/^HTTP\/\d\.\d (\d{3})/) {
 
@@ -1310,12 +1329,12 @@ sub get_status_code ($) {
     }
 }
 
-sub get_test_keys () {
+sub get_test_keys() {
     return ('tag', 'data', 'expect-header', 'ignore');
 }
 
 # XXX: incomplete
-sub test_content_as_string ($) {
+sub test_content_as_string($) {
 
     my $test = shift;
 
@@ -1356,7 +1375,7 @@ sub fuzz_header($) {
 #
 ############################################################################
 
-sub get_cgi_page_or_else ($) {
+sub get_cgi_page_or_else($) {
 
     my $cgi_url = shift;
     my $content_ref = get_page_with_curl($cgi_url);
@@ -1364,7 +1383,7 @@ sub get_cgi_page_or_else ($) {
 
     if (200 != $status_code) {
 
-        my $log_message = "Failed to fetch Privoxy CGI Page. " .
+        my $log_message = "Failed to fetch Privoxy CGI page '$cgi_url'. " .
                           "Received status code ". $status_code .
                           " while only 200 is acceptable.";
 
@@ -1383,7 +1402,7 @@ sub get_cgi_page_or_else ($) {
 }
 
 # XXX: misleading name
-sub get_show_request_with_curl ($) {
+sub get_show_request_with_curl($) {
 
     our $privoxy_cgi_url;
     my $test = shift;
@@ -1397,8 +1416,13 @@ sub get_show_request_with_curl ($) {
 
     # Enable the action to test
     $curl_parameters .= '-H \'X-Privoxy-Control: ' . $test->{'tag'} . '\' ';
-    # The header to filter
-    $curl_parameters .= '-H \'' . $header . '\' ';
+
+    # Add the header to filter
+    if ($privoxy_cgi_url =~ m@^https://@ and $header =~ m@^Host:@) {
+        $curl_parameters .= '--proxy-header \'' . $header . '\' ';
+    } else {
+        $curl_parameters .= '-H \'' . $header . '\' ';
+    }
 
     $curl_parameters .= ' ';
     $curl_parameters .= $privoxy_cgi_url;
@@ -1407,7 +1431,7 @@ sub get_show_request_with_curl ($) {
     return get_cgi_page_or_else($curl_parameters);
 }
 
-sub get_head_with_curl ($) {
+sub get_head_with_curl($) {
 
     our $fellatio_url = FELLATIO_URL;
     my $test = shift;
@@ -1426,7 +1450,7 @@ sub get_head_with_curl ($) {
     return get_page_with_curl($curl_parameters);
 }
 
-sub get_page_with_curl ($) {
+sub get_page_with_curl($) {
 
     our $proxy;
 
@@ -1452,6 +1476,8 @@ sub get_page_with_curl ($) {
     $curl_line .= " --user-agent '" . PRT_VERSION . "' ";
     # We aren't too patient
     $curl_line .= " --max-time '" . get_cli_option('max-time') . "' ";
+    # We don't want curl to treat "[]", "{}" etc. special
+    $curl_line .= " --globoff ";
 
     $curl_line .= $parameters;
     # XXX: still necessary?
@@ -1485,7 +1511,7 @@ sub get_page_with_curl ($) {
 #
 ############################################################################
 
-sub array_as_string ($) {
+sub array_as_string($) {
     my $array_ref = shift;
     my $string = '';
 
@@ -1496,13 +1522,13 @@ sub array_as_string ($) {
     return $string;
 }
 
-sub show_test ($) {
+sub show_test($) {
     my $test = shift;
     log_message('Test is:' . test_content_as_string($test));
 }
 
 # Conditional log
-sub l ($$) {
+sub l($$) {
     our $log_level;
     my $this_level = shift;
     my $message = shift;
@@ -1510,14 +1536,14 @@ sub l ($$) {
     log_message($message) if ($log_level & $this_level);
 }
 
-sub log_and_die ($) {
+sub log_and_die($) {
     my $message = shift;
 
     log_message('Oh noes. ' . $message . ' Fatal error. Exiting.');
     exit;
 }
 
-sub log_message ($) {
+sub log_message($) {
 
     my $message = shift;
 
@@ -1548,7 +1574,7 @@ sub log_message ($) {
     printf("%s\n", $message);
 }
 
-sub log_result ($$) {
+sub log_result($$) {
 
     our $filtered_request;
 
@@ -1630,16 +1656,16 @@ sub log_result ($$) {
     log_message($message) if (!$result or cli_option_is_set('verbose'));
 }
 
-sub quote ($) {
+sub quote($) {
     my $s = shift;
     return '\'' . $s . '\'';
 }
 
-sub print_version () {
+sub print_version() {
     printf PRT_VERSION . "\n";
 }
 
-sub list_test_types () {
+sub list_test_types() {
     my %test_types = (
         'Client header test'  => CLIENT_HEADER_TEST,
         'Server header test'  =>  2,
@@ -1657,9 +1683,10 @@ sub list_test_types () {
     }
 }
 
-sub help () {
+sub help() {
 
     our %cli_options;
+    our $privoxy_cgi_url;
 
     print_version();
 
@@ -1678,7 +1705,8 @@ Options and their default values if they have any:
     [--max-level $cli_options{'max-level'}]
     [--max-time $cli_options{'max-time'}]
     [--min-level $cli_options{'min-level'}]
-    [--privoxy-address]
+    [--privoxy-address $cli_options{'privoxy-address'}]
+    [--privoxy-cgi-prefix $privoxy_cgi_url]
     [--retries $cli_options{'retries'}]
     [--show-skipped-tests]
     [--shuffle-tests]
@@ -1700,10 +1728,11 @@ Try "perldoc $0" for more information
     exit(0);
 }
 
-sub init_cli_options () {
+sub init_cli_options() {
 
     our %cli_options;
     our $log_level;
+    our $proxy;
 
     $cli_options{'debug'}     = $log_level;
     $cli_options{'forks'}     = CLI_FORKS;
@@ -1713,16 +1742,19 @@ sub init_cli_options () {
     $cli_options{'min-level'} = CLI_MIN_LEVEL;
     $cli_options{'sleep-time'}= CLI_SLEEP_TIME;
     $cli_options{'retries'}   = CLI_RETRIES;
+    $cli_options{'privoxy-address'} = $proxy;
 }
 
-sub parse_cli_options () {
+sub parse_cli_options() {
 
     our %cli_options;
     our $log_level;
+    our $privoxy_cgi_url;
 
     init_cli_options();
 
     GetOptions (
+        'check-bad-ssl'      => \$cli_options{'check-bad-ssl'},
         'debug=i'            => \$cli_options{'debug'},
         'forks=i'            => \$cli_options{'forks'},
         'fuzzer-address=s'   => \$cli_options{'fuzzer-address'},
@@ -1736,6 +1768,7 @@ sub parse_cli_options () {
         'max-time=i'         => \$cli_options{'max-time'},
         'min-level=i'        => \$cli_options{'min-level'},
         'privoxy-address=s'  => \$cli_options{'privoxy-address'},
+        'privoxy-cgi-prefix=s' => \$privoxy_cgi_url, # XXX: Should use cli_options()
         'retries=i'          => \$cli_options{'retries'},
         'shuffle-tests'      => \$cli_options{'shuffle-tests'},
         'show-skipped-tests' => \$cli_options{'show-skipped-tests'},
@@ -1747,7 +1780,7 @@ sub parse_cli_options () {
     $log_level |= $cli_options{'debug'};
 }
 
-sub cli_option_is_set ($) {
+sub cli_option_is_set($) {
 
     our %cli_options;
     my $cli_option = shift;
@@ -1755,7 +1788,7 @@ sub cli_option_is_set ($) {
     return defined $cli_options{$cli_option};
 }
 
-sub get_cli_option ($) {
+sub get_cli_option($) {
 
     our %cli_options;
     my $cli_option = shift;
@@ -1796,11 +1829,55 @@ sub start_forks($) {
     }
 }
 
-sub main () {
+sub check_bad_ssl() {
+    my $failures = 0;
+    my @bad_ssl_urls_to_check = (
+        "https://expired.badssl.com/",
+        "https://wrong.host.badssl.com/",
+        "https://self-signed.badssl.com/",
+        "https://untrusted-root.badssl.com/",
+        "https://no-common-name.badssl.com/", # XXX: Certificate has expired ...
+        "https://no-subject.badssl.com/", # XXX: Certificate has expired ...
+        "https://incomplete-chain.badssl.com/",
+        );
+    # This is needed for get_status_code() to skip the
+    # status code from the "HTTP/1.1 200 Connection established"
+    # reply.
+    our $privoxy_cgi_url = "https://p.p/";
+
+    log_message("Requesting pages from badssl.com with various " .
+        "certificate problems. This will only work if Privoxy " .
+        "has been configured properly and can reach the Internet.");
+
+    foreach my $url_to_check (@bad_ssl_urls_to_check) {
+        my ($buffer_ref, $status_code);
+        log_message("Requesting $url_to_check");
+
+        $buffer_ref = get_page_with_curl($url_to_check);
+        $status_code = get_status_code($buffer_ref);
+
+        if (!check_status_code_result($status_code, "403")) {
+            $failures++;
+        }
+
+    }
+    if ($failures == 0) {
+        log_message("All requests resulted in status code 403 as expected.");
+    } else {
+        log_message("There were $failures requests that did not result in status code 403!");
+    }
+
+    return $failures;
+}
+
+sub main() {
 
     init_our_variables();
     parse_cli_options();
     init_proxy_settings('vanilla-proxy');
+    if (cli_option_is_set('check-bad-ssl')) {
+        exit check_bad_ssl();
+    }
     load_regression_tests();
     init_proxy_settings('fuzz-proxy');
     start_forks(get_cli_option('forks')) if cli_option_is_set('forks');
@@ -1815,11 +1892,11 @@ B<privoxy-regression-test> - A regression test "framework" for Privoxy.
 
 =head1 SYNOPSIS
 
-B<privoxy-regression-test> [B<--debug bitmask>] [B<--forks> forks]
+B<privoxy-regression-test> [B<--check-bad-ssl>] [B<--debug bitmask>] [B<--forks> forks]
 [B<--fuzzer-feeding>] [B<--fuzzer-feeding>] [B<--help>] [B<--level level>]
 [B<--local-test-file testfile>] [B<--loops count>] [B<--max-level max-level>]
 [B<--max-time max-time>] [B<--min-level min-level>] B<--privoxy-address proxy-address>
-[B<--retries retries>] [B<--test-number test-number>]
+B<--privoxy-cgi-prefix cgi-prefix> [B<--retries retries>] [B<--test-number test-number>]
 [B<--show-skipped-tests>] [B<--sleep-time> seconds] [B<--verbose>]
 [B<--version>]
 
@@ -1924,7 +2001,7 @@ is likely to get lost with the next update.
 
 Overwrite conditions are an alternative and can be added in any action
 file as long as the come after the test that is expected to fail.
-They causes all previous tests a matching the condition to be skipped.
+They cause all previous tests that match the condition to be skipped.
 
 It is recommended to put the overwrite condition below the custom Privoxy
 section that causes the expected test failure and before the custom test
@@ -1964,6 +2041,13 @@ directive is to make it more convenient to skip similar tests in
 a given file without having to remove or disable the tests completely.
 
 =head1 OPTIONS
+
+B<--check-bad-ssl> Instead of running the regression tests
+as described above, request pages from badssl.com with bad
+certificates to verify that Privoxy is detecting the
+certificate issues. Only works if Privoxy has been compiled
+with FEATURE_HTTPS_INSPECTION, has been configured properly
+and can reach the Internet.
 
 B<--debug bitmask> Add the bitmask provided as integer
 to the debug settings.
@@ -2015,8 +2099,23 @@ above or equal to the numerical B<min-level>.
 
 B<--privoxy-address proxy-address> Privoxy's listening address.
 If it's not set, the value of the environment variable http_proxy
-will be used. B<proxy-address> has to be specified in http_proxy
-syntax.
+will be used unless the variable isn't set in which case
+http://127.0.0.1:8118/ will be used. B<proxy-address> has to
+be specified in http_proxy syntax.
+
+B<--privoxy-cgi-prefix privoxy-cgi-prefix> The prefix to use when
+building URLs that are supposed to reach Privoxy's CGI interface.
+If it's not set, B<http://p.p/> is used, which is supposed to work
+with the default Privoxy configuration.
+If Privoxy has been built with B<FEATURE_HTTPS_INSPECTION> enabled,
+and if https inspection is activated with the B<+https-inspection>
+action, this option can be used with
+B<https://p.p/> provided the system running Privoxy-Regression-Test
+has been configured to trust the certificate used by Privoxy.
+Note that there are currently two tests in the official
+B<regression-tests.action> file that are expected to fail when
+using a B<privoxy-cgi-prefix> with B<https://> and aren't automatically
+skipped.
 
 B<--retries retries> Retry B<retries> times.
 
@@ -2088,7 +2187,7 @@ Privoxy-Regression-Test in a meaningful way.
 
 =head1 SEE ALSO
 
-privoxy(1) curl(1)
+privoxy(8) curl(1)
 
 =head1 AUTHOR
 

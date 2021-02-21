@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2020 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -55,7 +55,7 @@
   <member>
    <ulink url="https://sourceforge.net/projects/ijbswa/">https://sourceforge.net/projects/ijbswa/</ulink>,
    the Project Page for <application>Privoxy</application> on
-   <ulink url="http://sourceforge.net">SourceForge</ulink>.
+   <ulink url="https://sourceforge.net">SourceForge</ulink>.
   </member>
  </simplelist>
  <simplelist>
@@ -67,7 +67,8 @@
  </simplelist>
  <simplelist>
   <member>
-   <ulink url="https://sourceforge.net/tracker/?group_id=11118&amp;atid=460288">https://sourceforge.net/tracker/?group_id=11118&amp;atid=460288</ulink>, to submit <quote>misses</quote> and other
+   <ulink url="https://sourceforge.net/p/ijbswa/actionsfile-feedback/"
+    >https://sourceforge.net/p/ijbswa/actionsfile-feedback/</ulink>, to submit <quote>misses</quote> and other
    configuration related suggestions to the developers.
   </member>
  </simplelist>
@@ -81,7 +82,7 @@
  </simplelist>
  <simplelist>
   <member>
-   <ulink url="http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/">http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/</ulink>,
+   <ulink url="https://www.irif.fr/~jch/software/polipo/">https://www.irif.fr/~jch/software/polipo/</ulink>,
    <application>Polipo</application> is a caching proxy with advanced features
    like pipelining, multiplexing and caching of partial instances. In many setups
    it can be used as <application>Squid</application> replacement.

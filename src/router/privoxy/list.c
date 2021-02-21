@@ -5,7 +5,7 @@
  * Purpose     :  Declares functions to handle lists.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2007 members of the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -45,7 +45,7 @@
 #endif
 #include <string.h>
 
-#if !defined(_WIN32) && !defined(__OS2__)
+#if !defined(_WIN32)
 #include <unistd.h>
 #endif
 
@@ -130,7 +130,7 @@ void destroy_list (struct list *the_list)
  * Description :  Check that a string list is valid.  The intended
  *                usage is "assert(list_is_valid(the_list))".
  *                Currently this checks that "the_list->last"
- *                is correct, and that the list dosn't contain
+ *                is correct, and that the list doesn't contain
  *                circular references.  It is likely to crash if
  *                it's passed complete garbage.
  *
@@ -1120,7 +1120,7 @@ jb_err unmap(struct map *the_map, const char *name)
  *          2  :  name = name parameter to look for
  *
  * Returns     :  the value if found, else the empty string.
- *                Return value is alloced as part of the map, so
+ *                Return value is allocated as part of the map, so
  *                it is freed when the map is destroyed.  Caller
  *                must not free or modify it.
  *
