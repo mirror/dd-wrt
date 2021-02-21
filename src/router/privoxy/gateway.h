@@ -9,7 +9,7 @@
  *                proxy).  Also contains the list of gateway types.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2009 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -40,7 +40,7 @@ struct forward_spec;
 struct http_request;
 struct client_state;
 
-extern jb_socket forwarded_connect(const struct forward_spec * fwd,
+extern jb_socket forwarded_connect(const struct forward_spec *fwd,
                                    struct http_request *http,
                                    struct client_state *csp);
 

@@ -8,7 +8,7 @@
  *                on many platforms.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2017 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -56,9 +56,7 @@
 
 #else
 
-#ifndef __OS2__
 #include <unistd.h>
-#endif
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
@@ -67,18 +65,9 @@
 
 #ifndef __BEOS__
 #include <netinet/tcp.h>
-#ifndef __OS2__
 #include <arpa/inet.h>
-#endif
 #else
 #include <socket.h>
-#endif
-
-#if defined(__EMX__) || defined (__OS2__)
-#include <sys/select.h>  /* OS/2/EMX needs a little help with select */
-#ifdef __OS2__
-#include <nerrno.h>
-#endif
 #endif
 
 #endif
@@ -213,12 +202,12 @@ static jb_socket rfc2553_connect_to(const char *host, int portnum, struct client
    fd_set wfds;
    struct timeval timeout;
 #endif
-#if !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__)
+#if !defined(_WIN32) && !defined(__BEOS__)
    int   flags;
 #endif
    int connect_failed;
    /*
-    * XXX: Initializeing it here is only necessary
+    * XXX: Initializing it here is only necessary
     *      because not all situations are properly
     *      covered yet.
     */
@@ -254,10 +243,10 @@ static jb_socket rfc2553_connect_to(const char *host, int portnum, struct client
    {
       log_error(LOG_LEVEL_INFO,
          "Can not resolve %s: %s", host, gai_strerror(retval));
-      /* XXX: Should find a better way to propagate this error. */
-      errno = EINVAL;
       csp->error_message = strdup(gai_strerror(retval));
       csp->http->host_ip_addr_str = strdup("unknown");
+      /* XXX: Should find a better way to propagate this error. */
+      errno = EINVAL;
       return(JB_INVALID_SOCKET);
    }
 
@@ -271,11 +260,7 @@ static jb_socket rfc2553_connect_to(const char *host, int portnum, struct client
 
       if (block_acl(dst, csp))
       {
-#ifdef __OS2__
-         socket_error = errno = SOCEPERM;
-#else
          socket_error = errno = EPERM;
-#endif
          continue;
       }
 #endif /* def FEATURE_ACL */
@@ -320,26 +305,22 @@ static jb_socket rfc2553_connect_to(const char *host, int portnum, struct client
 
       set_no_delay_flag(fd);
 
-#if !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__)
+#if !defined(_WIN32) && !defined(__BEOS__)
       if ((flags = fcntl(fd, F_GETFL, 0)) != -1)
       {
          flags |= O_NDELAY;
          fcntl(fd, F_SETFL, flags);
       }
-#endif /* !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__) */
+#endif /* !defined(_WIN32) && !defined(__BEOS__) */
 
       connect_failed = 0;
       while (connect(fd, rp->ai_addr, rp->ai_addrlen) == JB_INVALID_SOCKET)
       {
-#ifdef __OS2__
-         errno = sock_errno();
-#endif /* __OS2__ */
-
 #ifdef _WIN32
          if (errno == WSAEINPROGRESS)
 #else /* ifndef _WIN32 */
          if (errno == EINPROGRESS)
-#endif /* ndef _WIN32 || __OS2__ */
+#endif /* ndef _WIN32 */
          {
             break;
          }
@@ -357,13 +338,13 @@ static jb_socket rfc2553_connect_to(const char *host, int portnum, struct client
          continue;
       }
 
-#if !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__)
+#if !defined(_WIN32) && !defined(__BEOS__)
       if (flags != -1)
       {
          flags &= ~O_NDELAY;
          fcntl(fd, F_SETFL, flags);
       }
-#endif /* !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__) */
+#endif /* !defined(_WIN32) && !defined(__BEOS__) */
 
 #ifdef HAVE_POLL
       poll_fd[0].fd = fd;
@@ -464,7 +445,7 @@ static jb_socket no_rfc2553_connect_to(const char *host, int portnum, struct cli
    fd_set wfds;
    struct timeval tv[1];
 #endif
-#if !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__)
+#if !defined(_WIN32) && !defined(__BEOS__)
    int   flags;
 #endif
 
@@ -489,11 +470,7 @@ static jb_socket no_rfc2553_connect_to(const char *host, int portnum, struct cli
 
    if (block_acl(dst, csp))
    {
-#ifdef __OS2__
-      errno = SOCEPERM;
-#else
       errno = EPERM;
-#endif
       return(JB_INVALID_SOCKET);
    }
 #endif /* def FEATURE_ACL */
@@ -540,7 +517,7 @@ static jb_socket no_rfc2553_connect_to(const char *host, int portnum, struct cli
 
    set_no_delay_flag(fd);
 
-#if !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__)
+#if !defined(_WIN32) && !defined(__BEOS__)
    if ((flags = fcntl(fd, F_GETFL, 0)) != -1)
    {
       flags |= O_NDELAY;
@@ -549,39 +526,33 @@ static jb_socket no_rfc2553_connect_to(const char *host, int portnum, struct cli
       mark_socket_for_close_on_execute(fd);
 #endif
    }
-#endif /* !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__) */
+#endif /* !defined(_WIN32) && !defined(__BEOS__) */
 
    while (connect(fd, (struct sockaddr *) & inaddr, sizeof inaddr) == JB_INVALID_SOCKET)
    {
 #ifdef _WIN32
       if (errno == WSAEINPROGRESS)
-#elif __OS2__
-      if (sock_errno() == EINPROGRESS)
 #else /* ifndef _WIN32 */
       if (errno == EINPROGRESS)
-#endif /* ndef _WIN32 || __OS2__ */
+#endif /* ndef _WIN32 */
       {
          break;
       }
 
-#ifdef __OS2__
-      if (sock_errno() != EINTR)
-#else
       if (errno != EINTR)
-#endif /* __OS2__ */
       {
          close_socket(fd);
          return(JB_INVALID_SOCKET);
       }
    }
 
-#if !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__)
+#if !defined(_WIN32) && !defined(__BEOS__)
    if (flags != -1)
    {
       flags &= ~O_NDELAY;
       fcntl(fd, F_SETFL, flags);
    }
-#endif /* !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__) */
+#endif /* !defined(_WIN32) && !defined(__BEOS__) */
 
 #ifdef HAVE_POLL
    poll_fd[0].fd = fd;
@@ -645,27 +616,6 @@ int write_socket(jb_socket fd, const char *buf, size_t len)
    return (send(fd, buf, (int)len, 0) != (int)len);
 #elif defined(__BEOS__)
    return (send(fd, buf, len, 0) != len);
-#elif defined(__OS2__)
-   /*
-    * Break the data up into SOCKET_SEND_MAX chunks for sending...
-    * OS/2 seemed to complain when the chunks were too large.
-    */
-#define SOCKET_SEND_MAX 65000
-   {
-      int send_len, send_rc = 0, i = 0;
-      while ((i < len) && (send_rc != -1))
-      {
-         if ((i + SOCKET_SEND_MAX) > len)
-            send_len = len - i;
-         else
-            send_len = SOCKET_SEND_MAX;
-         send_rc = send(fd,(char*)buf + i, send_len, 0);
-         if (send_rc == -1)
-            return 1;
-         i = i + send_len;
-      }
-      return 0;
-   }
 #else
    return (write(fd, buf, len) != len);
 #endif
@@ -763,7 +713,7 @@ int read_socket(jb_socket fd, char *buf, int len)
 
 #if defined(_WIN32)
    ret = recv(fd, buf, len, 0);
-#elif defined(__BEOS__) || defined(__OS2__)
+#elif defined(__BEOS__)
    ret = recv(fd, buf, (size_t)len, 0);
 #else
    ret = (int)read(fd, buf, (size_t)len);
@@ -810,12 +760,7 @@ int data_is_available(jb_socket fd, int seconds_to_wait)
    memset(&timeout, 0, sizeof(timeout));
    timeout.tv_sec = seconds_to_wait;
 
-#ifdef __OS2__
-   /* Copy and pasted from jcc.c ... */
-   memset(&rfds, 0, sizeof(fd_set));
-#else
    FD_ZERO(&rfds);
-#endif
    FD_SET(fd, &rfds);
 
    n = select(fd+1, &rfds, NULL, NULL, &timeout);
@@ -844,8 +789,6 @@ void close_socket(jb_socket fd)
 {
 #if defined(_WIN32) || defined(__BEOS__)
    closesocket(fd);
-#elif defined(__OS2__)
-   soclose(fd);
 #else
    close(fd);
 #endif
@@ -1068,6 +1011,10 @@ int bind_port(const char *hostnam, int portnum, int backlog, jb_socket *pfd)
    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(one));
 #endif /* ndef _WIN32 */
 
+#ifdef IP_FREEBIND
+   setsockopt(fd, IPPROTO_IP, IP_FREEBIND, (char *)&one, sizeof(one));
+#endif
+
 #ifdef HAVE_RFC2553
    if (bind(fd, rp->ai_addr, rp->ai_addrlen) < 0)
 #else
@@ -1166,7 +1113,7 @@ void get_host_information(jb_socket afd, char **ip_address, char **port,
    struct sockaddr_in server;
    struct hostent *host = NULL;
 #endif /* HAVE_RFC2553 */
-#if defined(_WIN32) || defined(__OS2__)
+#if defined(_WIN32)
    /* according to accept_connection() this fixes a warning. */
    int s_length, s_length_provided;
 #else
@@ -1318,8 +1265,8 @@ int accept_connection(struct client_state * csp, jb_socket fds[])
    struct sockaddr_in client;
 #endif
    jb_socket afd;
-#if defined(_WIN32) || defined(__OS2__)
-   /* Wierdness - fix a warning. */
+#if defined(_WIN32)
+   /* Weirdness - fix a warning. */
    int c_length;
 #else
    socklen_t c_length;
@@ -1493,7 +1440,7 @@ int accept_connection(struct client_state * csp, jb_socket fds[])
    {
       log_error(LOG_LEVEL_ERROR,
          "Server name (%s) and port number (%d) ASCII decimal representation"
-         "don't fit into %d bytes",
+         "don't fit into %lu bytes",
          host_addr, csp->config->hport[i], listen_addr_size);
       return 0;
    }

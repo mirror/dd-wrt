@@ -8,7 +8,7 @@
  *                printf-like fashion.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2009 members of the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -37,10 +37,9 @@
 
 /* Debug level for errors */
 
-/* XXX: Should be renamed. */
-#define LOG_LEVEL_GPC        0x0001
+#define LOG_LEVEL_REQUEST    0x0001
 #define LOG_LEVEL_CONNECT    0x0002
-#define LOG_LEVEL_IO         0x0004
+#define LOG_LEVEL_TAGGING    0x0004
 #define LOG_LEVEL_HEADER     0x0008
 #define LOG_LEVEL_WRITING    0x0010
 #ifdef FEATURE_FORCE_LOAD

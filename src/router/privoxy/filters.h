@@ -7,7 +7,7 @@
  * Purpose     :  Declares functions to parse/crunch headers and pages.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2010 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -84,14 +84,15 @@ extern const struct forward_spec *forward_url(struct client_state *csp,
  * Content modification
  */
 extern char *execute_content_filters(struct client_state *csp);
+extern char *execute_client_body_filters(struct client_state *csp, size_t *filtered_data_len);
 extern char *execute_single_pcrs_command(char *subject, const char *pcrs_command, int *hits);
 extern char *rewrite_url(char *old_url, const char *pcrs_command);
-extern char *get_last_url(char *subject, const char *redirect_mode);
 
 extern pcrs_job *compile_dynamic_pcrs_job_list(const struct client_state *csp, const struct re_filterfile_spec *b);
 
 extern int content_requires_filtering(struct client_state *csp);
 extern int content_filters_enabled(const struct current_action_spec *action);
+extern int client_body_filters_enabled(const struct current_action_spec *action);
 extern int filters_available(const struct client_state *csp);
 
 /*
@@ -102,6 +103,19 @@ extern struct http_response *direct_response(struct client_state *csp);
 #ifdef FUZZ
 extern char *gif_deanimate_response(struct client_state *csp);
 extern jb_err remove_chunked_transfer_coding(char *buffer, size_t *size);
+#endif
+
+#ifdef FEATURE_EXTENDED_STATISTICS
+extern void register_filter_for_statistics(const char *filter);
+extern void update_filter_statistics(const char *filter, int hits);
+extern void get_filter_statistics(const char *filter,
+                                  unsigned long long *executions,
+                                  unsigned long long *pages_modified,
+                                  unsigned long long *hits);
+
+extern void register_block_reason_for_statistics(const char *block_reason);
+extern void get_block_reason_count(const char *block_reason,
+                                   unsigned long long *count);
 #endif
 
 #endif /* ndef FILTERS_H_INCLUDED */

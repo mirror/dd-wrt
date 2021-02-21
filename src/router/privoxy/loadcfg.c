@@ -8,7 +8,7 @@
  *                variables it writes to.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2017 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -62,10 +62,8 @@
 
 #else /* ifndef _WIN32 */
 
-#ifndef __OS2__
 # include <unistd.h>
 # include <sys/wait.h>
-#endif
 # include <sys/time.h>
 # include <sys/stat.h>
 # include <signal.h>
@@ -121,10 +119,9 @@ static struct file_list *current_configfile = NULL;
 /*
  * This takes the "cryptic" hash of each keyword and aliases them to
  * something a little more readable.  This also makes changing the
- * hash values easier if they should change or the hash algorthm changes.
- * Use the included "hash" program to find out what the hash will be
- * for any string supplied on the command line.  (Or just put it in the
- * config file and read the number from the error message in the log).
+ * hash values easier if they should change or the hash algorithm changes.
+ * To find out the hash for a new directive put it in the config file
+ * and read the number from the error message in the log).
  *
  * Please keep this list sorted alphabetically (but with the Windows
  * console and GUI specific options last).
@@ -135,12 +132,19 @@ static struct file_list *current_configfile = NULL;
 #define hash_admin_address               4112573064U /* "admin-address" */
 #define hash_allow_cgi_request_crunching  258915987U /* "allow-cgi-request-crunching" */
 #define hash_buffer_limit                1881726070U /* "buffer-limit */
+#define hash_ca_cert_file                1622923720U /* "ca-cert-file" */
+#define hash_ca_directory                1623615670U /* "ca-directory" */
+#define hash_ca_key_file                 1184187891U /* "ca-key-file" */
+#define hash_ca_password                 1184543320U /* "ca-password" */
+#define hash_certificate_directory       1367994217U /* "certificate-directory" */
+#define hash_cipher_list                 1225729316U /* "cipher-list" */
 #define hash_client_header_order         2701453514U /* "client-header-order" */
 #define hash_client_specific_tag         3353703383U /* "client-specific-tag" */
 #define hash_client_tag_lifetime          647957580U /* "client-tag-lifetime" */
 #define hash_compression_level           2464423563U /* "compression-level" */
 #define hash_confdir                        1978389U /* "confdir" */
 #define hash_connection_sharing          1348841265U /* "connection-sharing" */
+#define hash_cors_allowed_origin         2769345637U /* "cors-allowed-origin" */
 #define hash_debug                            78263U /* "debug" */
 #define hash_default_server_timeout      2530089913U /* "default-server-timeout" */
 #define hash_deny_access                 1227333715U /* "deny-access" */
@@ -180,6 +184,7 @@ static struct file_list *current_configfile = NULL;
 #define hash_trust_info_url               430331967U /* "trust-info-url" */
 #define hash_trust_x_forwarded_for       2971537414U /* "trust-x-forwarded-for" */
 #define hash_trusted_cgi_referrer        4270883427U /* "trusted-cgi-referrer" */
+#define hash_trusted_cas_file            2679803024U /* "trusted-cas-files" */
 #define hash_trustfile                     56494766U /* "trustfile" */
 #define hash_usermanual                  1416668518U /* "user-manual" */
 #define hash_activity_animation          1817904738U /* "activity-animation" */
@@ -232,11 +237,9 @@ static void unload_configfile (void * data)
    while (cur_fwd != NULL)
    {
       struct forward_spec * next_fwd = cur_fwd->next;
-      free_pattern_spec(cur_fwd->url);
 
-      freez(cur_fwd->gateway_host);
-      freez(cur_fwd->forward_host);
-      free(cur_fwd);
+      unload_forward_spec(cur_fwd);
+
       cur_fwd = next_fwd;
    }
    config->forward = NULL;
@@ -266,10 +269,21 @@ static void unload_configfile (void * data)
    list_remove_all(config->ordered_client_headers);
 
    freez(config->admin_address);
+   freez(config->cors_allowed_origin);
    freez(config->proxy_info_url);
    freez(config->proxy_args);
    freez(config->usermanual);
    freez(config->trusted_cgi_referrer);
+
+#ifdef FEATURE_HTTPS_INSPECTION
+   freez(config->ca_password);
+   freez(config->ca_directory);
+   freez(config->ca_cert_file);
+   freez(config->ca_key_file);
+   freez(config->certificate_directory);
+   freez(config->cipher_list);
+   freez(config->trusted_cas_file);
+#endif
 
 #ifdef FEATURE_TRUST
    freez(config->trustfile);
@@ -567,7 +581,14 @@ struct configuration_spec * load_config(void)
    struct file_list *fs;
    unsigned long linenum = 0;
    int i;
-   char *logfile = NULL;
+   char *logfile          = NULL;
+#ifdef FEATURE_HTTPS_INSPECTION
+   char *ca_cert_file     = NULL;
+   char *ca_key_file      = NULL;
+   char *ca_directory     = NULL;
+   char *trusted_cas_file = NULL;
+   char *certificate_directory = NULL;
+#endif
 
    if (!check_file_changed(current_configfile, configfile, &fs))
    {
@@ -612,6 +633,15 @@ struct configuration_spec * load_config(void)
    config->usermanual                = strdup_or_die(USER_MANUAL_URL);
    config->proxy_args                = strdup_or_die("");
    config->forwarded_connect_retries = 0;
+#ifdef FEATURE_HTTPS_INSPECTION
+   config->ca_password               = strdup("");
+   ca_cert_file                      = strdup("cacert.crt");
+   ca_key_file                       = strdup("cakey.pem");
+   ca_directory                      = strdup("./CA");
+   trusted_cas_file                  = strdup("trustedCAs.pem");
+   certificate_directory             = strdup("./certs");
+#endif
+
 #ifdef FEATURE_CLIENT_TAGS
    config->client_tag_lifetime       = 60;
 #endif
@@ -647,6 +677,7 @@ struct configuration_spec * load_config(void)
    config->compression_level         = 1;
 #endif
    config->feature_flags            &= ~RUNTIME_FEATURE_TOLERATE_PIPELINING;
+   config->cors_allowed_origin       = NULL;
 
    configfp = fopen(configfile, "r");
    if (NULL == configfp)
@@ -880,6 +911,18 @@ struct configuration_spec * load_config(void)
             }
             break;
 #endif
+
+/* *************************************************************************
+ * cors-allowed-origin http://www.example.org
+ * *************************************************************************/
+         case hash_cors_allowed_origin :
+            /*
+             * We don't validate the specified referrer as
+             * it's only used for string comparison.
+             */
+            freez(config->cors_allowed_origin);
+            config->cors_allowed_origin = strdup_or_die(arg);
+            break;
 
 /* *************************************************************************
  * debug n
@@ -1149,8 +1192,9 @@ struct configuration_spec * load_config(void)
             if (strcmp(p, ".") != 0)
             {
                cur_fwd->forward_port = 8000;
-               parse_forwarder_address(p, &cur_fwd->forward_host,
-                  &cur_fwd->forward_port);
+               parse_forwarder_address(p,
+                  &cur_fwd->forward_host, &cur_fwd->forward_port,
+                  NULL, NULL);
             }
 
             /* Add to list. */
@@ -1199,8 +1243,9 @@ struct configuration_spec * load_config(void)
             if (strcmp(p, ".") != 0)
             {
                cur_fwd->gateway_port = 1080;
-               parse_forwarder_address(p, &cur_fwd->gateway_host,
-                  &cur_fwd->gateway_port);
+               parse_forwarder_address(p,
+                  &cur_fwd->gateway_host, &cur_fwd->gateway_port,
+                  NULL, NULL);
             }
 
             /* Parse the parent HTTP proxy host[:port] */
@@ -1209,8 +1254,9 @@ struct configuration_spec * load_config(void)
             if (strcmp(p, ".") != 0)
             {
                cur_fwd->forward_port = 8000;
-               parse_forwarder_address(p, &cur_fwd->forward_host,
-                  &cur_fwd->forward_port);
+               parse_forwarder_address(p,
+                  &cur_fwd->forward_host, &cur_fwd->forward_port,
+                  NULL, NULL);
             }
 
             /* Add to list. */
@@ -1273,12 +1319,13 @@ struct configuration_spec * load_config(void)
                break;
             }
 
-            /* Parse the SOCKS proxy host[:port] */
+            /* Parse the SOCKS proxy [user:pass@]host[:port] */
             p = vec[1];
 
             cur_fwd->gateway_port = 1080;
-            parse_forwarder_address(p, &cur_fwd->gateway_host,
-               &cur_fwd->gateway_port);
+            parse_forwarder_address(p,
+               &cur_fwd->gateway_host, &cur_fwd->gateway_port,
+               &cur_fwd->auth_username, &cur_fwd->auth_password);
 
             /* Parse the parent HTTP proxy host[:port] */
             p = vec[2];
@@ -1286,8 +1333,9 @@ struct configuration_spec * load_config(void)
             if (strcmp(p, ".") != 0)
             {
                cur_fwd->forward_port = 8000;
-               parse_forwarder_address(p, &cur_fwd->forward_host,
-                  &cur_fwd->forward_port);
+               parse_forwarder_address(p,
+                  &cur_fwd->forward_host, &cur_fwd->forward_port,
+                  NULL, NULL);
             }
 
             /* Add to list. */
@@ -1439,8 +1487,6 @@ struct configuration_spec * load_config(void)
              *
              * On platforms were we use poll() we don't have to enforce
              * an upper connection limit either.
-             *
-             * XXX: Do OS/2 etc. belong here as well?
              */
             if (max_client_connections < 1)
             {
@@ -1546,7 +1592,7 @@ struct configuration_spec * load_config(void)
             if (config->receive_buffer_size < BUFFER_SIZE)
             {
                log_error(LOG_LEVEL_INFO,
-                  "receive-buffer-size %d seems low and may cause problems."
+                  "receive-buffer-size %lu seems low and may cause problems."
                   "Consider setting it to at least %d.",
                   config->receive_buffer_size, BUFFER_SIZE);
             }
@@ -1682,6 +1728,98 @@ struct configuration_spec * load_config(void)
             freez(config->usermanual);
             config->usermanual = strdup_or_die(arg);
             break;
+
+#ifdef FEATURE_HTTPS_INSPECTION
+/* *************************************************************************
+ * ca private key file password
+ * *************************************************************************/
+         case hash_ca_password:
+            freez(config->ca_password);
+            config->ca_password = strdup(arg);
+            break;
+
+/* *************************************************************************
+ * ca-directory directory
+ * *************************************************************************/
+         case hash_ca_directory:
+            freez(ca_directory);
+            ca_directory = make_path(NULL, arg);
+
+            if (NULL == ca_directory)
+            {
+               log_error(LOG_LEVEL_FATAL, "Out of memory while creating ca dir path");
+            }
+
+            break;
+
+/* *************************************************************************
+ * ca cert file ca-cert-file
+ * In ca dir by default
+ * *************************************************************************/
+         case hash_ca_cert_file:
+            freez(ca_cert_file);
+            ca_cert_file = make_path(config->ca_directory, arg);
+
+            if (NULL == ca_cert_file)
+            {
+               log_error(LOG_LEVEL_FATAL, "Out of memory while creating ca certificate file path");
+            }
+
+            break;
+
+/* *************************************************************************
+ * ca key file ca-key-file
+ * In ca dir by default
+ * *************************************************************************/
+         case hash_ca_key_file:
+            freez(ca_key_file);
+            ca_key_file = make_path(config->ca_directory, arg);
+
+            if (NULL == ca_key_file)
+            {
+               log_error(LOG_LEVEL_FATAL, "Out of memory while creating ca key file path");
+            }
+
+            break;
+
+/* *************************************************************************
+ * certificate-directory directory
+ * *************************************************************************/
+         case hash_certificate_directory:
+            freez(certificate_directory);
+            certificate_directory = make_path(NULL, arg);
+
+            if (NULL == certificate_directory)
+            {
+               log_error(LOG_LEVEL_FATAL,
+                  "Out of memory while creating certificate directory path");
+            }
+
+            break;
+
+/* *************************************************************************
+ * cipher-list list-of-ciphers
+ * *************************************************************************/
+         case hash_cipher_list:
+            freez(config->cipher_list);
+            config->cipher_list = strdup_or_die(arg);
+
+            break;
+
+/* *************************************************************************
+ * trusted CAs file name trusted-cas-file
+ * *************************************************************************/
+         case hash_trusted_cas_file:
+            freez(trusted_cas_file);
+            trusted_cas_file = make_path(config->ca_directory, arg);
+
+            if (NULL == trusted_cas_file)
+            {
+               log_error(LOG_LEVEL_FATAL, "Out of memory while creating trusted CAs file path");
+            }
+
+            break;
+#endif
 
 /* *************************************************************************
  * Win32 Console options:
@@ -1858,6 +1996,30 @@ struct configuration_spec * load_config(void)
       }
    }
 
+#ifdef FEATURE_HTTPS_INSPECTION
+   /*
+    * Setting SSL parameters from loaded values into structures
+    */
+   freez(config->ca_directory);
+   config->ca_directory = make_path(NULL, ca_directory);
+   freez(ca_directory);
+
+   freez(config->ca_cert_file);
+   config->ca_cert_file = make_path(config->ca_directory, ca_cert_file);
+   freez(ca_cert_file);
+
+   freez(config->ca_key_file);
+   config->ca_key_file  = make_path(config->ca_directory, ca_key_file);
+   freez(ca_key_file);
+
+   freez(config->trusted_cas_file);
+   config->trusted_cas_file = make_path(config->ca_directory, trusted_cas_file);
+   freez(trusted_cas_file);
+
+   freez(config->certificate_directory);
+   config->certificate_directory = make_path(NULL, certificate_directory);
+   freez(certificate_directory);
+#endif
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
    if (config->default_server_timeout > config->keep_alive_timeout)
    {

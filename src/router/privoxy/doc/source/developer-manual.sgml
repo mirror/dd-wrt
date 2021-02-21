@@ -5,7 +5,7 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "3.0.28">
+<!entity p-version "3.0.31">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -19,7 +19,7 @@
 
  Purpose     :  developer manual
 
- Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -39,7 +39,7 @@
     <!-- Completely the wrong markup, but very little is allowed  -->
     <!-- in this part of an article. FIXME -->
       <ulink url="https://www.privoxy.org/user-manual/copyright.html">Copyright</ulink>
-      &my-copy; 2001-2018 by
+      &my-copy; 2001-2021 by
       <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
      </subscript>
     </pubdate>
@@ -110,8 +110,8 @@ Hal.
  -->
     <para>
      <application>Privoxy</application>, as an heir to
-     <application>Junkbuster</application>, is a Free Software project
-     and the code is licensed under the GNU General Public License version 2.
+     <application>Junkbuster</application>, is a <ulink
+      url="https://www.privoxy.org/user-manual/copyright.html">Free Software</ulink> project.
      As such, <application>Privoxy</application> development is potentially open
      to anyone who has the time, knowledge, and desire to contribute
      in any capacity. Our goals are simply to continue the mission,
@@ -128,13 +128,13 @@ Hal.
    <para>
     The first step is to join the <ulink
       url="https://lists.privoxy.org/mailman/listinfo/privoxy-devel">privoxy-devel mailing list</ulink>.
-    You can submit your ideas or, even better, patches. Patches are best
-    submitted to the Sourceforge tracker set up for this purpose, but
-    can be sent to the list for review too.
+    You can submit your ideas or, even better, patches.
+    Patches can also be submitted to the
+    <ulink url="https://sourceforge.net/p/ijbswa/patches/">Sourceforge patch tracker</ulink>.
    </para>
     <para>
-     You will also need to have a git package installed, which will
-     entail having ssh installed as well, in order to access the git repository.
+     You will also need to have a git package installed,
+     in order to access the git repository.
      Having the GNU build tools is also going to be important (particularly,
      autoconf and gmake).
     </para>
@@ -157,11 +157,17 @@ Hal.
 
     <sect2 id="gitaccess"><title>Access to Git</title>
       <para>
-        The project's Git repository is hosted at the
-        <ulink url="https://privoxy.org/">Privoxy site.</ulink>
-        The Git repository URL is
-        <literal>ssh://git@git.privoxy.org:23/git/privoxy.git</literal>,
-        the central repository is called <literal>privoxy</literal>, and the
+        The project's Git repository is hosted on the
+        <ulink url="https://www.privoxy.org/">Privoxy webserver</ulink>.
+        For Privoxy team members with push privileges the Git repository URL is
+        <literal>ssh://git@git.privoxy.org:23/git/privoxy.git</literal>.
+      </para>
+      <para>
+       Contributors without push privileges can
+       <quote>git clone https://www.privoxy.org/git/privoxy.git</quote>.
+      </para>
+      <para>
+        The central repository is called <literal>privoxy</literal>, and the
         source branch is called <literal>master</literal>. Subfolders exist
         within the project for target-dependent build and  packaging tools, each
         including the name of the target operating system in their name (e.g.
@@ -182,6 +188,60 @@ Hal.
        such changes are fully tested ought they be pushed back to the central
        repository master branch.
      </para>
+     <para>
+       Before pushing stuff, please rebase it on a current master so we get
+       an uncomplicated commit history. Avoid merges where possible.
+     </para>
+     <para>
+       Here's an example git sesssion that should result in a merge-free history:
+     </para>
+     <programlisting>
+fk@t520 ~/git/privoxy $git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+# Make sure you have the latest changes
+fk@t520 ~/git/privoxy $git pull
+Already up to date.
+# Create a local banch for changes
+fk@t520 ~/git/privoxy $git checkout -b local-branch
+Switched to a new branch 'local-branch'
+# Create some change
+fk@t520 ~/git/privoxy $gmake dok dok-tidy
+[...]
+# Review your change
+fk@t520 ~/git/privoxy $git diff
+[...]
+# Commit your changes if they look goood
+fk@t520 ~/git/privoxy $git commit -m "developer-manual: Regenerate" doc/webserver/
+[local-branch 1abb7316] developer-manual: Regenerate
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+# Review your commit
+fk@t520 ~/git/privoxy $git show
+[...]
+# Go to the master branch
+fk@t520 ~/git/privoxy $git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+# Make sure you are still in sync
+fk@t520 ~/git/privoxy $git pull
+[...]
+Already up to date.
+# Apply the commit you made to the local-branch
+fk@t520 ~/git/privoxy $git cherry-pick local-branch
+[master 046e85e2] developer-manual: Regenerate
+ Date: Tue Dec 15 05:10:07 2020 +0100
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+# Make sure the history looks as expected
+fk@t520 ~/git/privoxy $git log -p
+# Finally push your change to the Privoxy repository
+fk@t520 ~/git/privoxy $git push
+[...]
+# Go back to the local branch
+fk@t520 ~/git/privoxy $git checkout local-branch
+# Rebase on top of master and continue hacking
+fk@t520 ~/git/privoxy $git rebase master
+Successfully rebased and updated refs/heads/local-branch.
+</programlisting>
      <!--
      <para>
        Branches are used to fork a sub-development path from the main trunk.
@@ -259,8 +319,10 @@ Hal.
            <para>
             Note that near a major public release, we get more cautious.
             There is always the possibility to submit a patch to the <ulink
-            url="https://sourceforge.net/tracker/?atid=311118&amp;group_id=11118&amp;func=browse">patch
-            tracker</ulink> instead.
+            url="https://sourceforge.net/p/ijbswa/patches/">patch
+            tracker</ulink> or the <ulink
+             url="https://lists.privoxy.org/mailman/listinfo/privoxy-devel">privoxy-devel mailing list</ulink>
+            instead.
           </para>
          </listitem>
         </itemizedlist>
@@ -295,8 +357,8 @@ Hal.
           Alternately, proposed changes can be submitted as patches output by
           <literal>git format-patch</literal> to the privoxy-devel mailing list
           or alternatively to the patch tracker on Sourceforge:
-          <ulink url="https://sourceforge.net/tracker/?group_id=11118&#38;atid=311118">
-                      https://sourceforge.net/tracker/?group_id=11118&#38;atid=311118</ulink>.
+          <ulink url="https://sourceforge.net/p/ijbswa/patches/">
+                      https://sourceforge.net/p/ijbswa/patches/</ulink>.
           Then ask for peer review.
         </para>
        </listitem>
@@ -318,7 +380,7 @@ Hal.
   <para>
     All formal documents are maintained in Docbook SGML and located in the
     <computeroutput>doc/source/*</computeroutput> directory. You will need
-    <ulink url="http://www.docbook.org">Docbook</ulink>, the Docbook
+    <ulink url="https://www.docbook.org/">Docbook</ulink>, the Docbook
     DTD's and the Docbook modular stylesheets (or comparable alternatives),
     and either <application>jade</application> or
     <application>openjade</application> (recommended) installed in order to
@@ -328,7 +390,7 @@ Hal.
     course this, the <citetitle>developer-manual</citetitle> in this format.
     The <citetitle>README</citetitle>, <citetitle>AUTHORS</citetitle>,
     <citetitle>INSTALL</citetitle>,
-    <citetitle>privoxy.1</citetitle> (man page), and
+    <citetitle>privoxy.8</citetitle> (man page), and
     <citetitle>config</citetitle> files are also now maintained as Docbook
     SGML. These files, when built, in the top-level source directory are
     generated files! Also, the <application>Privoxy</application> <filename>index.html</filename> (and a
@@ -344,10 +406,6 @@ Hal.
      process requires going from SGML to HTML to text to special formatting
      required for the embedded comments. Some of this does not survive so
      well. Especially some of the examples that are longer than 80 characters.
-     The build process for this file outputs to <filename>config.new</filename>,
-     which should be reviewed for errors and mis-formatting. Once satisfied
-     that it is correct, then it should be hand copied to
-     <filename>config</filename>.
     </para>
     <para>
      Other, less formal documents (e.g. <filename>LICENSE</filename>) are
@@ -378,12 +436,12 @@ Hal.
      <orderedlist numeration="arabic">
       <listitem><para>
         First, build the docs by running <computeroutput>make
-        dok</computeroutput>.
+        dok dok-tidy</computeroutput>.
       </para></listitem>
       <listitem><para>
         Run <computeroutput>make webserver</computeroutput> which copies all
         files from <computeroutput>doc/webserver</computeroutput> to the
-        sourceforge webserver via scp.
+        sourceforge webserver via ssh.
       </para></listitem>
      </orderedlist>
 
@@ -609,7 +667,7 @@ Hal.
 
  <!--   ~~~~~       New section      ~~~~~     -->
 
- <sect2><title>Privoxy Custom Entities</title>
+ <sect2 id="custom-entities"><title>Privoxy Custom Entities</title>
  <para>
   <application>Privoxy</application> documentation is using
   a number of customized <quote>entities</quote> to facilitate
@@ -1965,6 +2023,49 @@ Install the rpm. Any error messages?
     <!-- XXX: Document how to write test reports and where to send them -->
 
     <!--   ~~~~~       New section      ~~~~~     -->
+    <sect2 id="privoxy-regression-test"><title>Testing with <application>Privoxy-Regression-Test</application></title>
+     <para>
+       If you compiled, packaged or merely installed Privoxy, it is recommended to run
+       <application>Privoxy-Regression-Test</application> to verify that at least
+       the tested parts of <application>Privoxy</application> are working as expected.
+     </para>
+     <para>
+       This is actually pretty easy. For details, please see
+       <command>perldoc privoxy-regression-test.pl</command>.
+     </para>
+     <para>
+      Here is an example of what <application>Privoxy-Regression-Test</application> can do for you:
+     </para>
+     <programlisting>
+# Run all the tests
+fk@t520 ~ $privoxy-regression-test.pl
+2020-12-14 12:16:32: Asking Privoxy for the number of action files available ...
+2020-12-14 12:16:32: Gathering regression tests from 9 action file(s) delivered by Privoxy 3.0.30.
+2020-12-14 12:16:32: Executing regression tests ...
+2020-12-14 12:16:41: Ooops. Expected removal but: 'Referer: https://p.p/' is still there.
+2020-12-14 12:16:41: Failure for test 785. Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-block}'
+2020-12-14 12:16:41: Ooops. Got: 'Referer: https://p.p/' while expecting: 'Referer: http://p.p/'
+2020-12-14 12:16:41: Failure for test 791. Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-forge}'
+2020-12-14 12:16:44: Executed 1087 regression tests. Skipped 115. 1085 successes, 2 failures.
+# Repeat one of the failing tests and get a curl command to quickly reproduce the problem
+# without causing too much log noise.
+fk@t520 ~ $privoxy-regression-test.pl --test-number 785 --verbose --debug 4
+2020-12-14 12:17:55: Asking Privoxy for the number of action files available ...
+[...]
+2020-12-14 12:17:56: Executing regression tests ...
+2020-12-14 12:17:56: Executing: curl --include  -H 'Proxy-Connection:'  -H 'Connection: close'  -s  -S  --user-agent 'Privoxy-Regression-Test 0.7.2'  --max-time '5'  --globoff  -H 'X-Privoxy-Control: hide-referrer{conditional-block}' -H 'Referer: https://p.p/'  http://p.p/show-request 2>&1
+2020-12-14 12:17:56: Ooops. Expected removal but: 'Referer: https://p.p/' is still there.
+2020-12-14 12:17:56: Failure for test 785 (0/13/5). Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-block}'
+2020-12-14 12:17:56: Executed 1 regression tests. Skipped 1201. 0 successes, 1 failures.
+     </programlisting>
+     <para>
+      Use the if the <command>--privoxy-address</command> option if the
+      http_proxy environment variable isn't configured and you don't want
+      to use the default (http://127.0.0.1:8118/).
+     </para>
+    </sect2>
+
+    <!--   ~~~~~       New section      ~~~~~     -->
     <sect2 id="fuzzing"><title>Fuzzing Privoxy</title>
      <para>
        To make fuzzing more convenient, Privoxy can be configured
@@ -2046,8 +2147,9 @@ $ afl-fuzz -i input/ -o output/ -f bla.filter -m none privoxy --fuzz filter bla.
 
     <para>
         The following programs are required to follow this process:
-        <filename>ncftpput</filename> (ncftp), <filename>scp, ssh</filename> (ssh),
-        <filename>gmake</filename> (GNU's version of make), autoconf, cvs.
+        <filename>ssh</filename>,
+        <filename>gmake</filename> (GNU's version of make), autoconf, git,
+        a web browser.
     </para>
 
     <sect2 id="versionnumbers">
@@ -2064,7 +2166,7 @@ $ afl-fuzz -i input/ -o output/ -f bla.filter -m none privoxy --fuzz filter bla.
               X, the version major, is rarely ever changed. It is increased by one if
               turning a development branch into stable substantially changes the functionality,
               user interface or configuration syntax. Majors 1 and 2 were
-              <application>Junkbuster</application>, and 3 will be the first stable
+              <application>Junkbuster</application>, and 3 is the first stable
               <application>Privoxy</application> release.
             </para>
           </listitem>
@@ -2194,7 +2296,7 @@ for-privoxy-version=3.0.11
        <programlisting>
   $ git tag
   #   to see the tags
-  $ git log [last release tag]..HEAD &gt; /tmp/log
+  $ git log [last release tag]..master &gt; /tmp/log
   #   get the commit log since the last release
   $ utils/makeChangeLog /tmp/log &gt; /tmp/change.log
   #   reformat the commit log
@@ -2264,15 +2366,15 @@ for-privoxy-version=3.0.11
          (this is in addition to the main <citetitle>User Manual</citetitle>
          link from the main page since we need to keep manuals for various
          versions available). The CGI pages will link to something like
-         <literal>http://privoxy.org/$(VERSION)/user-manual/</literal>. This
-         will need to be updated for each new release. There is no Makefile
-         target for this at this time!!! It needs to be done manually.
+         <literal>https://www.privoxy.org/$(VERSION)/user-manual/</literal>. This
+         needs to be updated for each new release and is done with the
+         <quote>webserver</quote> target.
        </para>
       </listitem>
       <listitem>
        <para>
         Tag all files in Git with the version number with
-        <quote><command>cvs tag v_X_Y_Z</command></quote>.
+        <quote><command>git tag -s v_X_Y_Z</command></quote>.
         Don't use vX_Y_Z, ver_X_Y_Z, v_X.Y.Z (won't work) etc.
        </para>
       </listitem>
@@ -2306,8 +2408,9 @@ for-privoxy-version=3.0.11
       <programlisting>
   mkdir dist # delete or choose different name if it already exists
   cd dist
-  cvs -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa login
-  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa export -r v_X_Y_Z current
+  git clone https://www.privoxy.org/git/privoxy.git
+  cd privoxy
+  git checkout v_X_Y_Z
 </programlisting>
 
     <para>
@@ -2388,9 +2491,7 @@ for-privoxy-version=3.0.11
           Also suggested: <filename>Developer Manual</filename>
           (doc/webserver/developer-manual) and <filename>ChangeLog</filename>
           (top-level directory). <filename>FAQ</filename> and the manuals are
-          HTML docs. There are also text versions in
-          <filename>doc/text/</filename> which could conceivably also be
-          included.
+          HTML docs.
         </para>
         <para>
          The documentation has been designed such that the manuals are linked
@@ -2420,7 +2521,8 @@ for-privoxy-version=3.0.11
       </listitem>
       <listitem>
        <para>
-        Other configuration files (<filename>default.action</filename> and
+        Other configuration files (<filename>default.action</filename>,
+        <filename>regression-tests.action</filename> and
         <filename>default.filter</filename>) should be installed as the new
         defaults, but all previously installed configuration files should be
         preserved as backups. This is just good manners :-) These files are
@@ -2455,10 +2557,9 @@ for-privoxy-version=3.0.11
       <para>
         First, <emphasis>make sure that you have freshly exported the right
         version into an empty directory</emphasis>. (See "Building and releasing
-        packages" above). Then run:
+        packages" above). Then run from that directory:
       </para>
         <programlisting>
-  cd current
   autoheader && autoconf && ./configure
 </programlisting>
       <para>
@@ -2467,147 +2568,6 @@ for-privoxy-version=3.0.11
         <programlisting>
   make tarball-dist
 </programlisting>
-      <para>
-        To upload the package to Sourceforge, simply issue
-      </para>
-        <programlisting>
-  make tarball-upload
-</programlisting>
-      <para>
-        Go to the displayed URL and release the file publicly on Sourceforge.
-        For the change log field, use the relevant section of the
-        <filename>ChangeLog</filename> file.
-      </para>
-    </sect3>
-
-    <sect3 id="newrelease-rpm"><title>SuSE, Conectiva or Red Hat RPM</title>
-      <para>
-        In following text, replace <replaceable class="parameter">dist</replaceable>
-        with either <quote>rh</quote> for Red Hat or <quote>suse</quote> for SuSE.
-      </para>
-      <para>
-        First, <emphasis>make sure that you have freshly exported the right
-        version into an empty directory</emphasis>. (See "Building and releasing
-        packages" above).
-      </para>
-      <para>
-        As the only exception to not changing anything after export from Git,
-        now examine the file <filename>privoxy-</filename><replaceable class="parameter">dist</replaceable><filename>.spec</filename>
-        and make sure that the version information and the RPM release number are
-        correct. The RPM release numbers for each version start at one. Hence it must
-        be reset to one if this is the first RPM for
-        <replaceable class="parameter">dist</replaceable> which is built from version
-        X.Y.Z. Check the
-        <ulink url="https://sourceforge.net/project/showfiles.php?group_id=11118">file
-        list</ulink> if unsure. Else, it must be set to the highest already available RPM
-        release number for that version plus one.
-      </para>
-      <para>
-        Then run:
-      </para>
-        <programlisting>
-  cd current
-  autoheader && autoconf && ./configure
-</programlisting>
-      <para>
-        Then do
-      </para>
-        <programlisting>
-  make <replaceable class="parameter">dist</replaceable>-dist
-</programlisting>
-      <para>
-        To upload the package to Sourceforge, simply issue
-      </para>
-        <programlisting>
-  make <replaceable class="parameter">dist</replaceable>-upload <replaceable class="parameter">rpm_packagerev</replaceable>
-</programlisting>
-      <para>
-        where <replaceable class="parameter">rpm_packagerev</replaceable> is the
-        RPM release number as determined above.
-        Go to the displayed URL and release the file publicly on Sourceforge.
-        Use the release notes and change log from the source tarball package.
-      </para>
-    </sect3>
-
-    <sect3 id="newrelease-os2"><title>OS/2</title>
-      <para>
-        First, <emphasis>make sure that you have freshly exported the right
-        version into an empty directory</emphasis>. (See "Building and releasing
-        packages" above). Then get the OS/2 Setup module:
-      </para>
-        <programlisting>
-  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co os2setup
-</programlisting>
-      <para>
-        You will need a mix of development tools.
-        The main compilation takes place with IBM Visual Age C++.
-        Some ancillary work takes place with GNU tools, available from
-        various sources like hobbes.nmsu.edu.
-        Specificially, you will need <filename>autoheader</filename>,
-        <filename>autoconf</filename> and <filename>sh</filename> tools.
-        The packaging takes place with WarpIN, available from various sources, including
-        its home page: <ulink url="http://www.xworkplace.org/">xworkplace</ulink>.
-      </para>
-      <para>
-        Change directory to the <filename>os2setup</filename> directory.
-        Edit the os2build.cmd file to set the final executable filename.
-        For example,
-      </para>
-        <programlisting>
-  installExeName='privoxyos2_setup_X.Y.Z.exe'
-</programlisting>
-      <para>
-        Next, edit the <filename>IJB.wis</filename> file so the release number matches
-        in the <filename>PACKAGEID</filename> section:
-      </para>
-        <programlisting>
-  PACKAGEID="Privoxy Team\Privoxy\Privoxy Package\X\Y\Z"
-</programlisting>
-      <para>
-        You're now ready to build.  Run:
-      </para>
-        <programlisting>
-  os2build
-</programlisting>
-      <para>
-         You will find the  WarpIN-installable executable in the
-        <filename>./files</filename> directory. Upload this anonymously to
-         <filename>uploads.sourceforge.net/incoming</filename>, create a release
-         for it, and you're done. Use the release notes and Change Log from the
-         source tarball package.
-      </para>
-    </sect3>
-
-    <sect3 id="newrelease-solaris"><title>Solaris</title>
-      <para>
-        Login to Sourceforge's compilefarm via ssh:
-      </para>
-        <programlisting>
-  ssh cf.sourceforge.net
-</programlisting>
-      <para>
-        Choose the right operating system (not the Debian one).
-        When logged in, <emphasis>make sure that you have freshly exported the right
-        version into an empty directory</emphasis>. (See "Building and releasing
-        packages" above). Then run:
-      </para>
-        <programlisting>
-  cd current
-  autoheader && autoconf && ./configure
-</programlisting>
-      <para>
-        Then run
-      </para>
-        <programlisting>
-  gmake solaris-dist
-</programlisting>
-      <para>
-        which creates a gzip'ed tar archive. Sadly, you cannot use <command>make
-        solaris-upload</command> on the Sourceforge machine (no ncftpput). You now have
-        to manually upload the archive to Sourceforge's ftp server and release
-        the file publicly. Use the release notes and Change Log from the
-        source tarball package.
-      </para>
     </sect3>
 
     <sect3 id="NEWRELEASE-WINDOWS"><title>Windows</title>
@@ -2660,30 +2620,171 @@ for-privoxy-version=3.0.11
 
     <sect3 id="newrelease-debian"><title>Debian</title>
       <para>
-        First, <emphasis>make sure that you have freshly exported the
-        right version into an empty directory</emphasis>. (See
-        "Building and releasing packages" above).  Then add a log
-        entry to <filename>debian/changelog</filename>, if it is not
-        already there, for example by running:
+       Using git-buildpackage we start with a clone of the last Debian version:
       </para>
-        <programlisting>
-  debchange -v &p-version;-&p-status;-1 "New upstream version"
+      <programlisting>
+  gbp clone https://salsa.debian.org/debian/privoxy.git
+  cd privoxy
 </programlisting>
       <para>
-        Then, run:
+       or if the repository is already there
       </para>
-        <programlisting>
-  dpkg-buildpackage -rfakeroot -us -uc -b
+      <programlisting>
+  cd privoxy
+  gbp pull
 </programlisting>
       <para>
-        This will create
-        <filename>../privoxy_&p-version;-&p-status;-1_i386.deb</filename>
-        which can be uploaded.  To upload the package to Sourceforge, simply
-        issue
+       Now import the newly released upstream tarball via debian/watch file:
       </para>
-        <programlisting>
-  make debian-upload
+      <programlisting>
+  gbp import-orig --uscan
 </programlisting>
+      <para>
+       Next update all Debian quilt patches to the new version:
+      </para>
+      <programlisting>
+  while quilt push; do quilt refresh; done
+</programlisting>
+      <para>
+       If some patch is no longer required (because it is already merged
+       upstream), it can be removed using
+      </para>
+      <programlisting>
+  quilt delete XX_patchname.patch
+  git rm debian/patches/XX_patchname.patch
+</programlisting>
+      <para>
+       If the patch needs modification, you can apply, edit and update it with
+      </para>
+      <programlisting>
+  quilt push -f
+  quilt edit some_file
+  quilt refresh
+</programlisting>
+      <para>
+       until
+      </para>
+      <programlisting>
+  while quilt push; do quilt refresh; done
+</programlisting>
+      <para>
+       succeeds. Then you can
+      </para>
+      <programlisting>
+  quilt pop -a
+</programlisting>
+      <para>
+       Now add a new entry to the debian/changelog representing the new
+       version:
+      </para>
+      <programlisting>
+  dch -v &p-version;-1
+</programlisting>
+      <para>
+       and describe what you did before and don't forget to git commit all
+       changes.
+      </para>
+      <para>
+       Now you can build the package on the local machine using
+      </para>
+      <programlisting>
+  gbp buildpackage -us -uc
+</programlisting>
+      <para>
+       You should check for warnings using
+      </para>
+      <programlisting>
+  lintian -iI ../build-area/privoxy_&p-version;-1_amd64.changes
+</programlisting>
+      <para>
+       Maybe rebuild the package in different defined cowbuilder environments
+       like
+      </para>
+      <programlisting>
+  sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_&p-version;-1.dsc
+</programlisting>
+      <para>
+       And try to run autopackage testing suite on the result:
+      </para>
+      <programlisting>
+  autopkgtest /var/cache/pbuilder/result/privoxy_&p-version;-1_amd64.changes -s -- schroot sid
+</programlisting>
+      <para>
+       Or just push the changes to salsa.debian.org, where a CI pipeline is
+       defined for the package, that builds and tests it.
+      </para>
+      <para>
+       If everything is okay, run cowbuilder with i386 and amd64 environments
+       for current Debian stable release and build
+       privoxy_&p-version;-1_i386.deb and privoxy_&p-version;-1_amd64.deb.
+       Then sign both files:
+      </para>
+      <programlisting>
+  gpg --detach-sign --armor privoxy_&p-version;-1_i386.deb
+  gpg --detach-sign --armor privoxy_&p-version;-1_amd64.deb
+</programlisting>
+      <para>
+       Create a README file containing the recent block from debian/changelog
+       and upload the two packages, the two signatures and the README to a
+       freshly created folder below
+       https://sourceforge.net/projects/ijbswa/files/Debian/
+      </para>
+
+      <sect4 id="snapshot-debian"><title>Debian GIT Snapshot</title>
+      <para>
+       For building just a git snapshot build the following workflow may be
+       useful.  First create a build environment, for this you may have to
+       run the following commands:
+      </para>
+      <programlisting>
+  sudo apt install build-essential devscripts
+  sudo apt-get build-dep privoxy
+</programlisting>
+      <para>
+       After this enter the checked out privoxy git tree and check that all
+       (new) build dependencies are met:
+      </para>
+      <programlisting>
+  dpkg-checkbuilddeps
+</programlisting>
+      <para>
+       If something is missing, just add it using
+      </para>
+      <programlisting>
+  sudo apt install foobar
+</programlisting>
+      <para>
+       Now you may update debian/changelog, especially the version number
+       using
+      </para>
+      <programlisting>
+  dch
+</programlisting>
+      <para>
+       and finally build the package:
+      </para>
+      <programlisting>
+  debuild -us -uc -b
+</programlisting>
+      <para>
+       If everything went okay, you may find the resulting Debian package in
+       the parent directory.
+      </para>
+      <para>
+       You may want to clean up the build tree using
+      </para>
+      <programlisting>
+  debian/rules clean
+</programlisting>
+      <para>
+       And maybe repair some artefacts using one or both of the following
+       commands:
+      </para>
+      <programlisting>
+  git reset --hard
+  git clean -fd
+</programlisting>
+    </sect4>
     </sect3>
 
     <sect3 id="newrelease-macosx"><title>Mac OS X</title>
@@ -2693,15 +2794,15 @@ for-privoxy-version=3.0.11
         packages" above).
       </para>
       <para>
-        There are three modules available in the Git repository for use on Mac
+        There are three modules available in the CVS repository backups for use on Mac
         OS X, though technically only two of them generate a release (the other
         can be used to install from source).
       </para>
       <sect4 id="OS-X-OSXPackageBuilder-module">
-      <title>OSXPackageBuilder module</title>
+      <title>OSXPackageBuilder module (Documentation out of date)</title>
         <para>
           The OSXPackageBuilder module generates OS X installer packages
-          supporting all Macs running OS X 10.4 and above. Obtain it from Git as
+          supporting all Macs running OS X 10.4 and above. Obtain it from CVS as
           follows into a folder parallel to the exported privoxy source:
         </para>
           <programlisting>
@@ -2721,14 +2822,14 @@ for-privoxy-version=3.0.11
         </para>
       </sect4>
       <sect4 id="OS-X-osxsetup-module">
-      <title>osxsetup module (DEPRECATED)</title>
+      <title>osxsetup module (DEPRECATED) (Documentation out of date)</title>
         <para>
           <emphasis>This module is deprecated since the installer it generates
           places all Privoxy files in one folder in a non-standard location, and
           supports only Intel Macs running OS X 10.6 or higher.</emphasis>
         </para>
         <para>
-          Check out the module from Git as follows into a folder parallel to the
+          Check out the module from CVS as follows into a folder parallel to the
           exported privoxy source:
         </para>
           <programlisting>
@@ -2766,13 +2867,13 @@ for-privoxy-version=3.0.11
         </para>
       </sect4>
       <sect4 id="OS-X-macsetup-module">
-      <title>macsetup module</title>
+      <title>macsetup module (Documentation out of date)</title>
         <para>
           The macsetup module is ideal if you wish to build and install Privoxy
           from source on a single machine.
         </para>
         <para>
-          Check out the module from Git as follows into a folder parallel to the
+          Check out the module from CVS as follows into a folder parallel to the
           exported privoxy source:
         </para>
           <programlisting>
@@ -2798,38 +2899,10 @@ for-privoxy-version=3.0.11
    <title>Uploading and Releasing Your Package</title>
     <para>
       After the package is ready, it is time to upload it
-      to SourceForge, and go through the release steps. The upload
-      is done via FTP:
-    </para>
-    <itemizedlist>
-     <listitem>
-      <para>
-        Upload to: <ulink url="ftp://upload.sourceforge.net/incoming">ftp://upload.sourceforge.net/incoming</ulink>
-      </para>
-     </listitem>
-     <listitem>
-      <para>
-       user: <literal>anonymous</literal>
-      </para>
-     </listitem>
-     <listitem>
-      <para>
-       password: <literal>ijbswa-developers@lists.sourceforge.net</literal>
-      </para>
-     </listitem>
-    </itemizedlist>
-    <para>
-     Or use the <command>make</command> targets as described above.
-    </para>
-    <para>
-     Once this done go to
-     <ulink url="https://sourceforge.net/project/admin/editpackages.php?group_id=11118">
-                 https://sourceforge.net/project/admin/editpackages.php?group_id=11118</ulink>,
-     making sure you are logged in. Find your target platform in the
-     second column, and click <literal>Add Release</literal>. You will
-     then need to create a new release for your package, using the format
-     of <literal>$VERSION ($CODE_STATUS)</literal>, e.g. <emphasis>&p-version;
-     (beta)</emphasis>.
+      and go through the release steps. The upload
+      is done at
+      <ulink url="https://sourceforge.net/projects/ijbswa/upload/">SourceForge</ulink>
+      after logging in.
     </para>
     <para>
      Now just follow the prompts. Be sure to add any appropriate Release
@@ -2856,9 +2929,9 @@ for-privoxy-version=3.0.11
       When all (or: most of the) packages have been uploaded and made available,
       send an email to the
       <ulink url="mailto:privoxy-announce@lists.privoxy.org">announce mailing
-      list</ulink>, Subject: "Version X.Y.Z available for download". Be sure to
+      list</ulink>, Subject: "Announcing Privoxy X.Y.Z $CODE_STATUS". Be sure to
       include the
-      <ulink url="https://sourceforge.net/project/showfiles.php?group_id=11118">
+      <ulink url="https://sourceforge.net/projects/ijbswa/files/">
       download location</ulink>, the release notes and the Changelog. Also, post an
       updated News item on the project page Sourceforge, and update the Home
       page and docs linked from the Home page (see below). Other news sites
@@ -2937,9 +3010,9 @@ for-privoxy-version=3.0.11
   make webserver
 </programlisting>
    <para>
-    This will do the upload to <ulink url="https://www.privoxy.org/">the
-    webserver</ulink> (www.privoxy.org) and ensure all files and directories
-    there are group writable.
+    This will do the upload to the SourceForge webserver (which is manually
+    syncronized with <ulink url="https://www.privoxy.org/">www.privoxy.org</ulink>)
+    and ensure all files and directories there are group writable.
    </para>
    <para>
     Please do <emphasis>NOT</emphasis> use any other means of transferring

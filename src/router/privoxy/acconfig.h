@@ -11,7 +11,7 @@
  *                getting ludicrously long with feature defines.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2014 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -125,7 +125,12 @@
 /*
  * Allow PCRE syntax in host patterns.
  */
-#undef FEATURE_EXTENDED_HOST_PATTERNS
+#undef FEATURE_PCRE_HOST_PATTERNS
+
+/*
+ * Gather extended statistics.
+ */
+#undef FEATURE_EXTENDED_STATISTICS
 
 /*
  * Allow filtering with scripts and programs.

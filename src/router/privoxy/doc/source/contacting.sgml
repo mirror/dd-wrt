@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2020 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -96,7 +96,7 @@
   <listitem>
    <para>
     Whether your version of <application>Privoxy</application> is one supplied
-    by the <application>Privoxy</application> developers via SourceForge,
+    by the <application>Privoxy</application> developers,
     or if you got your copy somewhere else.
    </para>
   </listitem>
@@ -129,7 +129,7 @@
     <literallayout>debug     1 # Log the destination for each request Privoxy let through.
             #   See also debug 1024.
 debug     2 # show each connection status
-debug     4 # show I/O status
+debug     4 # show tagging-related messages
 debug     8 # show header parsing
 debug   128 # debug redirects
 debug   256 # debug GIF de-animation
@@ -181,12 +181,6 @@ debug 65536 # Log applying actions</literallayout>
  Please don't bother to add an email address when using the tracker.
  If you prefer to communicate through email, just use one of the mailing
  lists directly.
-</para>
-
-<para>
- If you are new to reporting problems, you might be interested in
-  <ulink url="http://www.chiark.greenend.org.uk/~sgtatham/bugs.html"
-  >How to Report Bugs Effectively</ulink>.
 </para>
 
 <para>
@@ -263,8 +257,8 @@ debug 65536 # Log applying actions</literallayout>
  Please send feedback on ads that slipped through, innocent images that were
  blocked, sites that don't work properly, and other configuration related problem of
  <filename>default.action</filename> file, to
- <ulink url="https://sourceforge.net/tracker/?group_id=11118&amp;atid=460288">
- https://sourceforge.net/tracker/?group_id=11118&amp;atid=460288</ulink>,
+ <ulink url="https://sourceforge.net/p/ijbswa/actionsfile-feedback/"
+ >https://sourceforge.net/p/ijbswa/actionsfile-feedback/</ulink>,
  the Actions File Tracker.
 </para>
 
@@ -276,7 +270,7 @@ debug 65536 # Log applying actions</literallayout>
 <para>
   Before reporting bugs, please make sure that the bug has <emphasis>not already been submitted</emphasis>
   and observe the additional hints at the top of the <ulink
-  url="https://sourceforge.net/tracker/?func=add&amp;group_id=11118&amp;atid=111118">submit
+  url="https://sourceforge.net/p/ijbswa/bugs/">submit
   form</ulink>. If already submitted, please feel free to add any info to the
   original report that might help to solve the issue.
 </para>
@@ -309,14 +303,14 @@ including list archives, at:
 <ulink url="https://lists.privoxy.org/mailman/listinfo">https://lists.privoxy.org/mailman/listinfo</ulink>.
 The lists hosted on privoxy.org have been created in 2016, the previously-used
 lists hosted at SourceForge are deprecated but the archives may still be useful:
-<ulink url="https://sourceforge.net/mail/?group_id=11118">https://sourceforge.net/mail/?group_id=11118</ulink>.
+<ulink url="https://sourceforge.net/p/ijbswa/mailman/">https://sourceforge.net/p/ijbswa/mailman/</ulink>.
 </para>
 </sect2>
 
 <sect2 id="sf-trackers"><title>SourceForge support trackers</title>
 <para>
  The
- <ulink url="https://sourceforge.net/tracker/?group_id=11118&#38;atid=211118">SourceForge support trackers</ulink>
+ <ulink url="https://sourceforge.net/p/ijbswa/support-requests/">SourceForge support trackers</ulink>
  may be used as well, but have various technical problems that are unlikely to
  be fixed anytime soon. If you don't get a timely response, please try the
  mailing list as well.

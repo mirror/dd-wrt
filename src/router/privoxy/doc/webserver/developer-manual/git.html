@@ -31,9 +31,12 @@
     before accessing via Git.</p>
     <div class="SECT2">
       <h2 class="SECT2"><a name="GITACCESS" id="GITACCESS">2.1. Access to Git</a></h2>
-      <p>The project's Git repository is hosted at the <a href="https://privoxy.org/" target="_top">Privoxy site.</a>
-      The Git repository URL is <tt class="LITERAL">ssh://git@git.privoxy.org:23/git/privoxy.git</tt>, the central
-      repository is called <tt class="LITERAL">privoxy</tt>, and the source branch is called <tt class=
+      <p>The project's Git repository is hosted on the <a href="https://www.privoxy.org/" target="_top">Privoxy
+      webserver</a>. For Privoxy team members with push privileges the Git repository URL is <tt class=
+      "LITERAL">ssh://git@git.privoxy.org:23/git/privoxy.git</tt>.</p>
+      <p>Contributors without push privileges can <span class="QUOTE">"git clone
+      https://www.privoxy.org/git/privoxy.git"</span>.</p>
+      <p>The central repository is called <tt class="LITERAL">privoxy</tt>, and the source branch is called <tt class=
       "LITERAL">master</tt>. Subfolders exist within the project for target-dependent build and packaging tools, each
       including the name of the target operating system in their name (e.g. Windows, OSXPackageBuilder, debian). There
       is a webview of the Git hierarchy at <a href="https://www.privoxy.org/gitweb/?p=privoxy.git;a=tree" target=
@@ -45,6 +48,60 @@
       <p>Whilst the central repository contains only the master branch, developers are of course free to create
       branches in their local repositories as they develop features, fixes, or update the target-dependent tools. Only
       once such changes are fully tested ought they be pushed back to the central repository master branch.</p>
+      <p>Before pushing stuff, please rebase it on a current master so we get an uncomplicated commit history. Avoid
+      merges where possible.</p>
+      <p>Here's an example git sesssion that should result in a merge-free history:</p>
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class="PROGRAMLISTING">fk@t520 ~/git/privoxy $git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+# Make sure you have the latest changes
+fk@t520 ~/git/privoxy $git pull
+Already up to date.
+# Create a local banch for changes
+fk@t520 ~/git/privoxy $git checkout -b local-branch
+Switched to a new branch 'local-branch'
+# Create some change
+fk@t520 ~/git/privoxy $gmake dok dok-tidy
+[...]
+# Review your change
+fk@t520 ~/git/privoxy $git diff
+[...]
+# Commit your changes if they look goood
+fk@t520 ~/git/privoxy $git commit -m "developer-manual: Regenerate" doc/webserver/
+[local-branch 1abb7316] developer-manual: Regenerate
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+# Review your commit
+fk@t520 ~/git/privoxy $git show
+[...]
+# Go to the master branch
+fk@t520 ~/git/privoxy $git checkout master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+# Make sure you are still in sync
+fk@t520 ~/git/privoxy $git pull
+[...]
+Already up to date.
+# Apply the commit you made to the local-branch
+fk@t520 ~/git/privoxy $git cherry-pick local-branch
+[master 046e85e2] developer-manual: Regenerate
+ Date: Tue Dec 15 05:10:07 2020 +0100
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+# Make sure the history looks as expected
+fk@t520 ~/git/privoxy $git log -p
+# Finally push your change to the Privoxy repository
+fk@t520 ~/git/privoxy $git push
+[...]
+# Go back to the local branch
+fk@t520 ~/git/privoxy $git checkout local-branch
+# Rebase on top of master and continue hacking
+fk@t520 ~/git/privoxy $git rebase master
+Successfully rebased and updated refs/heads/local-branch.</pre>
+          </td>
+        </tr>
+      </table>
       <p>At one time there were two distinct branches: stable and unstable. The more drastic changes were to be in the
       unstable branch. These branches have now been merged to minimize time and effort of maintaining two branches.</p>
     </div>
@@ -78,8 +135,9 @@
         </li>
         <li>
           <p>Note that near a major public release, we get more cautious. There is always the possibility to submit a
-          patch to the <a href="https://sourceforge.net/tracker/?atid=311118&#38;group_id=11118&#38;func=browse"
-          target="_top">patch tracker</a> instead.</p>
+          patch to the <a href="https://sourceforge.net/p/ijbswa/patches/" target="_top">patch tracker</a> or the
+          <a href="https://lists.privoxy.org/mailman/listinfo/privoxy-devel" target="_top">privoxy-devel mailing
+          list</a> instead.</p>
         </li>
       </ul>
     </div>

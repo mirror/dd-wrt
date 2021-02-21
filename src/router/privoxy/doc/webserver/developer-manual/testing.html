@@ -70,7 +70,46 @@
       </ol>
     </div>
     <div class="SECT2">
-      <h2 class="SECT2"><a name="FUZZING" id="FUZZING">5.2. Fuzzing Privoxy</a></h2>
+      <h2 class="SECT2"><a name="PRIVOXY-REGRESSION-TEST" id="PRIVOXY-REGRESSION-TEST">5.2. Testing with <span class=
+      "APPLICATION">Privoxy-Regression-Test</span></a></h2>
+      <p>If you compiled, packaged or merely installed Privoxy, it is recommended to run <span class=
+      "APPLICATION">Privoxy-Regression-Test</span> to verify that at least the tested parts of <span class=
+      "APPLICATION">Privoxy</span> are working as expected.</p>
+      <p>This is actually pretty easy. For details, please see <b class="COMMAND">perldoc
+      privoxy-regression-test.pl</b>.</p>
+      <p>Here is an example of what <span class="APPLICATION">Privoxy-Regression-Test</span> can do for you:</p>
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class="PROGRAMLISTING"># Run all the tests
+fk@t520 ~ $privoxy-regression-test.pl
+2020-12-14 12:16:32: Asking Privoxy for the number of action files available ...
+2020-12-14 12:16:32: Gathering regression tests from 9 action file(s) delivered by Privoxy 3.0.30.
+2020-12-14 12:16:32: Executing regression tests ...
+2020-12-14 12:16:41: Ooops. Expected removal but: 'Referer: https://p.p/' is still there.
+2020-12-14 12:16:41: Failure for test 785. Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-block}'
+2020-12-14 12:16:41: Ooops. Got: 'Referer: https://p.p/' while expecting: 'Referer: http://p.p/'
+2020-12-14 12:16:41: Failure for test 791. Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-forge}'
+2020-12-14 12:16:44: Executed 1087 regression tests. Skipped 115. 1085 successes, 2 failures.
+# Repeat one of the failing tests and get a curl command to quickly reproduce the problem
+# without causing too much log noise.
+fk@t520 ~ $privoxy-regression-test.pl --test-number 785 --verbose --debug 4
+2020-12-14 12:17:55: Asking Privoxy for the number of action files available ...
+[...]
+2020-12-14 12:17:56: Executing regression tests ...
+2020-12-14 12:17:56: Executing: curl --include  -H 'Proxy-Connection:'  -H 'Connection: close'  -s  -S  --user-agent 'Privoxy-Regression-Test 0.7.2'  --max-time '5'  --globoff  -H 'X-Privoxy-Control: hide-referrer{conditional-block}' -H 'Referer: https://p.p/'  http://p.p/show-request 2&#62;&#38;1
+2020-12-14 12:17:56: Ooops. Expected removal but: 'Referer: https://p.p/' is still there.
+2020-12-14 12:17:56: Failure for test 785 (0/13/5). Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-block}'
+2020-12-14 12:17:56: Executed 1 regression tests. Skipped 1201. 0 successes, 1 failures.
+     </pre>
+          </td>
+        </tr>
+      </table>
+      <p>Use the if the <b class="COMMAND">--privoxy-address</b> option if the http_proxy environment variable isn't
+      configured and you don't want to use the default (http://127.0.0.1:8118/).</p>
+    </div>
+    <div class="SECT2">
+      <h2 class="SECT2"><a name="FUZZING" id="FUZZING">5.3. Fuzzing Privoxy</a></h2>
       <p>To make fuzzing more convenient, Privoxy can be configured with --enable-fuzz which will result in the --fuzz
       option becoming available.</p>
       <p>Example (tested on ElectroBSD):</p>

@@ -1,6 +1,6 @@
 # Note:  GNUmakefile is built automatically from GNUmakefile.in
 #
-# Written by and Copyright (C) 2001-2018 members of the
+# Written by and Copyright (C) 2001-2021 members of the
 # Privoxy team. https://www.privoxy.org/
 #
 # Based on the Internet Junkbuster originally written
@@ -32,7 +32,7 @@
 @SET_MAKE@
 
 #############################################################################
-# Version number (for RPM)
+# Version number
 #############################################################################
 
 VERSION_MAJOR = @VERSION_MAJOR@
@@ -42,7 +42,7 @@ CODE_STATUS   = @CODE_STATUS@
 VERSION       = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_POINT)
 SNAPVERSION   = $(VERSION)-$(shell date "+%Y%m%d")
 
-SOURCE_DATE_EPOCH = @SOURCE_DATE_EPOCH@
+SOURCE_DATE_EPOCH ?= @SOURCE_DATE_EPOCH@
 MTREE_SPEC_FILE = privoxy-$(VERSION)-$(CODE_STATUS).spec
 
 #############################################################################
@@ -59,8 +59,8 @@ exec_prefix  = @exec_prefix@
 CONF_BASE    = @sysconfdir@
 SBIN_DEST    = @sbindir@
 MAN_DIR      = @mandir@
-MAN_DEST     = $(MAN_DIR)/man1
-MAN_PAGE     = privoxy.1
+MAN_DEST     = $(MAN_DIR)/man8
+MAN_PAGE     = privoxy.8
 SHARE_DEST   = @datadir@
 DOC_DEST     = $(SHARE_DEST)/doc/privoxy
 VAR_DEST     = @localstatedir@
@@ -201,7 +201,7 @@ CONFIGS = 	config trust default.action match-all.action \
 CONFIG_FILES = $(CONFIGS) \
 		`find templates/ -type f | grep -v "CVS" | grep -v "\.\#" | grep -v ".*~" | grep -v ".cvsignore" | grep -v "TAGS" | sort`
 
-DOC_FILES = AUTHORS LICENSE README ChangeLog INSTALL \
+DOC_FILES = AUTHORS LICENSE LICENSE.GPLv3 README ChangeLog INSTALL \
 		`find doc/webserver/ -name "*.html" | grep -v "\(webserver\|team\)\/index\.html" | sort` \
 		`find doc/webserver/ -name "*.css" | sort` \
                 $(MAN_PAGE)
@@ -231,6 +231,18 @@ W32_HDRS  = @WIN_ONLY@w32log.h w32taskbar.h win32.h w32res.h w32svrapi.h
 W32_LIB   = @WIN_ONLY@-lwsock32 -lcomctl32
 W32_INIS  = @WIN_ONLY@config.txt trust.txt
 
+SSL_SRC      = @FEATURE_HTTPS_INSPECTION_ONLY@ssl_common.c
+SSL_OBJS     = @FEATURE_HTTPS_INSPECTION_ONLY@$(SSL_SRC:.c=.o)
+SSL_HDRS     = @FEATURE_HTTPS_INSPECTION_ONLY@$(SSL_SRC:.c=.h) project.h
+
+MBEDTLS_SRC      = @FEATURE_HTTPS_INSPECTION_ONLY_MBEDTLS@ssl.c
+MBEDTLS_OBJS     = @FEATURE_HTTPS_INSPECTION_ONLY_MBEDTLS@$(MBEDTLS_SRC:.c=.o)
+MBEDTLS_HDRS     = @FEATURE_HTTPS_INSPECTION_ONLY_MBEDTLS@$(MBEDTLS_SRC:.c=.h)
+
+OPENSSL_SRC      = @FEATURE_HTTPS_INSPECTION_ONLY_OPENSSL@openssl.c
+OPENSSL_OBJS     = @FEATURE_HTTPS_INSPECTION_ONLY_OPENSSL@$(OPENSSL_SRC:.c=.o)
+OPENSSL_HDRS     = @FEATURE_HTTPS_INSPECTION_ONLY_OPENSSL@$(OPENSSL_SRC:.c=.h)
+
 PCRS_SRC     = @STATIC_PCRS_ONLY@pcrs.c
 PCRS_OBJS    = @STATIC_PCRS_ONLY@$(PCRS_SRC:.c=.@OBJEXT@)
 PCRS_HDRS    = @STATIC_PCRS_ONLY@$(PCRS_SRC:.c=.h)
@@ -255,9 +267,9 @@ SOCKET_LIB   = @SOCKET_LIB@
 # PThreads library, if needed.
 PTHREAD_LIB  = @PTHREAD_ONLY@@PTHREAD_LIB@
 
-SRCS         = $(C_SRC) $(CLIENT_TAG_SRC) $(FUZZ_SRC) $(W32_SRC)  $(PCRS_SRC)  $(PCRE_SRC)  $(REGEX_SRC)
-OBJS         = $(C_OBJS) $(CLIENT_TAG_OBJS) $(FUZZ_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(PCRE_OBJS) $(REGEX_OBJS)
-HDRS         = $(C_HDRS) $(W32_HDRS) $(PCRS_HDRS) $(PCRE_OBJS) $(REGEX_HDRS)
+SRCS         = $(C_SRC) $(CLIENT_TAG_SRC) $(FUZZ_SRC) $(W32_SRC)  $(PCRS_SRC)  $(PCRE_SRC)  $(REGEX_SRC) $(SSL_SRC) $(MBEDTLS_SRC) $(OPENSSL_SRC)
+OBJS         = $(C_OBJS) $(CLIENT_TAG_OBJS) $(FUZZ_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(PCRE_OBJS) $(REGEX_OBJS) $(SSL_OBJS) $(MBEDTLS_OBJS) $(OPENSSL_OBJS)
+HDRS         = $(C_HDRS) $(W32_HDRS) $(PCRS_HDRS) $(PCRE_OBJS) $(REGEX_HDRS) $(SSL_HDRS) $(MBEDTLS_HDRS) $(OPENSSL_HDRS)
 LIBS         = @LIBS@ $(W32_LIB) $(SOCKET_LIB) $(PTHREAD_LIB)
 
 
@@ -433,7 +445,8 @@ tarball-dist: dist-check clean clobber
 
 	for i in `find . -type f -a -not \( -path "*/CVS*" -o -name ".*" \
 	-o -path "*/debian/*" -o -path "*/actions/*" -o -name "*.php" -o \
-	-name "PACKAGERS" -o -path "*.git/*" \) | sort`; do \
+	-name "PACKAGERS" -o -path "*.git/*" \
+	-o -path "*/doc/webserver/feeds*" \) | sort`; do \
 	   files="$$files privoxy-$(VERSION)-$(CODE_STATUS)/$$i"; \
 	done &&  \
 	cd .. && $(TAR) -cvhf privoxy-$(VERSION)-$(CODE_STATUS)-src.tar $$files ; \
@@ -449,7 +462,8 @@ mtree-spec:
 	$(ECHO) "#mtree 2.0" > $(MTREE_SPEC_FILE)
 	for i in `find . -type f -a -not \( -path "*/CVS*" -o -name ".*" \
 	-o -path "*/debian/*" -o -path "*/actions/*" -o -name "*.php" -o \
-	-name "PACKAGERS" -o -path "*.git/*" -o -name "*.spec" \) | env -i sort`; do \
+	-name "PACKAGERS" -o -path "*.git/*" -o -name "*.spec" \
+	-o -path "*/doc/webserver/feeds*" \) | env -i sort`; do \
 	   $(ECHO) "privoxy-$(VERSION)-$(CODE_STATUS)/$$i time=$(SOURCE_DATE_EPOCH) type=file uname=privoxy gname=privoxy mode=0555"; \
 	done >> $(MTREE_SPEC_FILE)
 	$(RM) ../privoxy-$(VERSION)-$(CODE_STATUS)
@@ -560,6 +574,7 @@ groff2html:
 dok-readme: dok-release
 	cd doc/source && $(DB_TXT)-notoc -V nochunks readme.sgml > tmp.html &&\
 	$(W3M_DUMP) tmp.html > ../../README ;\
+	$(PERL) -pi'' -e 's@doc/source/readme\.sgml@README@' ../../README;  \
 	$(DB_TXT)-notoc -V nochunks install.sgml > tmp.html &&\
 	$(W3M_DUMP) tmp.html > ../../INSTALL ;\
 	$(RM) tmp.*
@@ -574,7 +589,9 @@ dok-webserver:
 	s/<\/HEAD/\n<meta name=\"description\" content=\"Privoxy helps users to protect their privacy.\"><\/HEAD/;\
 	s/\.\d\. //;\
 	s/__copy/&copy;/;\
-	s@(<SUB)@<p style="text-align: center">\1@; s@(</SUB)@\1></p@' \
+	s@(<SUB)@<p style="text-align: center">\1@; s@(</SUB)@\1></p@;\
+	s@(Privoxy is a non-caching)@<img src="images/privoxy.png" align="right" alt="Privoxy logo">\n\1@; \
+	s@www.lalal.ai@<a href="https://www.lalal.ai/"><img src="images/sponsors/lalal.ai_logo.png" align="middle" alt="Vocal Remover by Lalal.ai"></a>\n@;' \
      doc/webserver/index.html && $(RM) doc/webserver/*.bak
 
 # privoxy-index.html for local documentation:
@@ -731,9 +748,9 @@ ssplit.@OBJEXT@:    ssplit.c    ssplit.h    config.h miscutil.h
 urlmatch.@OBJEXT@:  urlmatch.c  urlmatch.h  config.h $(PROJECT_H_DEPS) errlog.h miscutil.h ssplit.h
 client-tags.@OBJEXT@: client-tags.c client-tags.h config.h $(PROJECT_H_DEPS) errlog.h miscutil.h ssplit.h
 fuzz.@OBJEXT@: fuzz.c config.h $(PROJECT_H_DEPS) errlog.h miscutil.h ssplit.h
-
-# GNU regex
-gnu_regex.@OBJEXT@: gnu_regex.c gnu_regex.h config.h
+ssl.@OBJEXT@: ssl.c ssl.h ssl_common.h config.h $(PROJECT_H_DEPS) encode.h errlog.h jcc.h miscutil.h
+openssl.@OBJEXT@: openssl.c ssl.h ssl_common.h config.h $(PROJECT_H_DEPS) encode.h errlog.h jcc.h miscutil.h
+ssl_common.@OBJEXT@: ssl_common.c ssl.h ssl_common.h config.h $(PROJECT_H_DEPS) errlog.h miscutil.h
 
 # PCRS
 pcrs.@OBJEXT@: pcrs.c pcrs.h config.h @STATIC_PCRE_ONLY@pcre/pcre.h
@@ -768,7 +785,7 @@ clean:
 	$(RM) a.out $(OBJS) $(W32_FILES) $(W32_INIS) $(PROGRAM) default.action \
 		config.base config.tmp \
 		`find . \( -name TAGS -o -name tags \) -a -not -path "./.git/*"` \
-		`find . -name "*.orig" -a -not -name rc.privoxy.orig -a -not -path "./.git/*"`
+		`find . -name "*.orig" -a -not -path "./.git/*"`
 
 clean-editor-files:
 	$(RM) `find . -name "*~"`
@@ -777,7 +794,7 @@ clean-editor-files:
 
 clobber: clean-editor-files
 	$(RM) GNUmakefile configure config.h.in config.h config.cache config.status config.log logfile \
-              privoxy.log core *.tar.gz *.tar privoxy-cl.spec doc/source/ldp.dsl config.new
+              privoxy.log core *.tar.gz *.tar privoxy-cl.spec doc/source/ldp.dsl
 	$(RM) -r autom4te.cache
 
 #
@@ -861,7 +878,7 @@ install: CONF_DEST LOG_DEST PID_DEST check_doc GROUP_T
 		DOC=$(prefix)/doc/privoxy ;\
 	fi;\
 	$(MKDIR) $(DESTDIR)$$DOC $(DESTDIR)$$DOC/user-manual $(DESTDIR)$$DOC/faq $(DESTDIR)$$DOC/developer-manual \
-	     $(DESTDIR)$$DOC/man-page $(DESTDIR)$$DOC/images $(DESTDIR)$(MAN_DEST) ;\
+	     $(DESTDIR)$$DOC/man-page $(DESTDIR)$(MAN_DEST) ;\
 	if [ -d "$(DOK_WEB)" ]; then \
 		$(ECHO) Installing FAQ, Manual, and other docs to $(DESTDIR)$$DOC;\
           for i in user-manual developer-manual faq; do \
@@ -876,6 +893,7 @@ install: CONF_DEST LOG_DEST PID_DEST check_doc GROUP_T
 		$(INSTALL) $(INSTALL_T) $(DOK_WEB)/privoxy-index.html $(DESTDIR)$$DOC/index.html;\
 		$(INSTALL) $(INSTALL_T) AUTHORS $(DESTDIR)$$DOC;\
 		$(INSTALL) $(INSTALL_T) LICENSE $(DESTDIR)$$DOC;\
+		$(INSTALL) $(INSTALL_T) LICENSE.GPLv3 $(DESTDIR)$$DOC;\
 		$(INSTALL) $(INSTALL_T) README $(DESTDIR)$$DOC;\
 		$(INSTALL) $(INSTALL_T) ChangeLog $(DESTDIR)$$DOC;\
 		$(INSTALL) $(INSTALL_T) $(DOK_WEB)/p_doc.css $(DESTDIR)$$DOC;\
@@ -976,7 +994,7 @@ install: CONF_DEST LOG_DEST PID_DEST check_doc GROUP_T
 	$(CHMOD) $(RWD_MODE) $(DESTDIR)$(LOG_DEST)/logfile || exit 1 ;\
 	if [ "$(prefix)" = "/usr/local" ] || [ "$(prefix)" = "/usr" ]; then \
 		if [ -f /etc/slackware-version ] && [ -d /etc/rc.d/ ] && [ -w /etc/rc.d/ ] ; then \
-               $(SED) 's+%PROGRAM%+$(PROGRAM)+' slackware/rc.privoxy.orig | \
+               $(SED) 's+%PROGRAM%+$(PROGRAM)+' slackware/rc.privoxy.in | \
                $(SED) 's+%SBIN_DEST%+$(SBIN_DEST)+' | \
                $(SED) 's+%CONF_DEST%+$(CONF_DEST)+' | \
                $(SED) 's+%USER%+$(USER)+' | \
@@ -1002,7 +1020,6 @@ install: CONF_DEST LOG_DEST PID_DEST check_doc GROUP_T
 uninstall: CONF_DEST LOG_DEST PID_DEST check_doc
 	@$(ECHO) Starting Privoxy uninstallation
 	@# KILL privoxy if running
-	@# XXX: the chkconfig line may need a DESTDIR prefix.
 	-@test -f $(DESTDIR)$(PID_DEST)/privoxy.pid && $(ECHO) Stopping $(PROGRAM) &&\
          $(KILL) `$(CAT) $(DESTDIR)$(PID_DEST)/privoxy.pid` || :
 	-@test -f $(DESTDIR)/var/run/privoxy.pid && $(ECHO) Stopping $(PROGRAM) &&\
@@ -1022,8 +1039,8 @@ uninstall: CONF_DEST LOG_DEST PID_DEST check_doc
 		done ;\
 	fi
 	@$(ECHO) Removing $(PROGRAM) config files
-	-@for i in $(DESTDIR)$(CONFIGS); do \
-		test -f $(CONF_DEST)/$$i && $(ECHO) Removing $$i ;\
+	-@for i in $(CONFIGS); do \
+		test -f $(DESTDIR)$(CONF_DEST)/$$i && $(ECHO) Removing $$i ;\
 		$(RM) $(DESTDIR)$(CONF_DEST)/$$i $(DESTDIR)$(CONF_DEST)/$$i~ $(DESTDIR)$(CONF_DEST)/$$i.new ;\
 	done
 	-@test -d $(DESTDIR)$(CONF_DEST)/templates && $(RM) -r $(DESTDIR)$(CONF_DEST)/templates &&\

@@ -10,10 +10,11 @@
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
 <!entity GPLv2 SYSTEM "../../LICENSE">
+<!entity GPLv3 SYSTEM "../../LICENSE.GPLv3">
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "3.0.28">
+<!entity p-version "3.0.31">
 <!entity p-status "stable">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
 <!entity % p-not-stable "IGNORE">
@@ -34,7 +35,7 @@
 
  Purpose     :  user manual
 
- Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -53,7 +54,7 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2018 by
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2021 by
  <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
@@ -132,7 +133,7 @@ Hal.
 <para>
  In addition to the core
  features of ad blocking and
- <ulink url="http://en.wikipedia.org/wiki/Browser_cookie">cookie</ulink> management,
+ <ulink url="https://en.wikipedia.org/wiki/Browser_cookie">cookie</ulink> management,
  <application>Privoxy</application> provides many supplemental
  features<![%p-not-stable;[, some of them currently under development]]>,
  that give the end-user more control, more privacy and more freedom:
@@ -224,31 +225,6 @@ How to install the binary packages depends on your operating system:
  write to its log and configuration files.
 </para>
 
-</sect3>
-
-<!--   ~~~~~       New section      ~~~~~     -->
-<sect3 id="installation-os2"><title>OS/2</title>
-
-<para>
- First, make sure that no previous installations of
- <application>Junkbuster</application> and / or
- <application>Privoxy</application> are left on your
- system. Check that no <application>Junkbuster</application>
- or <application>Privoxy</application> objects are in
- your startup folder.
-</para>
-
-<para>
- Then, just double-click the WarpIN self-installing archive, which will
- guide you through the installation process. A shadow of the
- <application>Privoxy</application> executable will be placed in your
- startup folder so it will start automatically whenever OS/2 starts.
-</para>
-
-<para>
- The directory you choose to install <application>Privoxy</application>
- into will contain all of the configuration files.
-</para>
 </sect3>
 
 <!--   ~~~~~       New section      ~~~~~     -->
@@ -683,7 +659,7 @@ MAKENSIS = ./nsis/makensis.exe
  <listitem>
   <para>
    Set your browser to use <application>Privoxy</application> as HTTP and
-   HTTPS (SSL)  <ulink url="http://en.wikipedia.org/wiki/Proxy_server">proxy</ulink>
+   HTTPS (SSL)  <ulink url="https://en.wikipedia.org/wiki/Proxy_server">proxy</ulink>
    by setting the proxy configuration for address of
    <literal>127.0.0.1</literal> and port <literal>8118</literal>.
    <emphasis>DO NOT</emphasis> activate proxying for <literal>FTP</literal> or
@@ -696,7 +672,7 @@ MAKENSIS = ./nsis/makensis.exe
   <para>
     Flush your browser's disk and memory caches, to remove any cached ad images.
     If using <application>Privoxy</application> to manage
-    <ulink url="http://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>,
+    <ulink url="https://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>,
     you should remove any currently stored cookies too.
   </para>
  </listitem>
@@ -1049,7 +1025,7 @@ MAKENSIS = ./nsis/makensis.exe
  Before launching <application>Privoxy</application> for the first time, you
  will want to configure your browser(s) to use
  <application>Privoxy</application> as a HTTP and HTTPS (SSL)
- <ulink url="http://en.wikipedia.org/wiki/Proxy_server">proxy</ulink>. The default is
+ <ulink url="https://en.wikipedia.org/wiki/Proxy_server">proxy</ulink>. The default is
  127.0.0.1 (or localhost) for the proxy address, and port 8118 (earlier versions
  used port 8000). This is the one configuration step <emphasis>that must be done
 </emphasis>!
@@ -1061,13 +1037,13 @@ MAKENSIS = ./nsis/makensis.exe
 
  <!-- image of Mozilla Proxy configuration -->
   <figure pgwide="0" float="0"><title>Proxy Configuration Showing
-  Mozilla/Netscape HTTP and HTTPS (SSL) Settings</title>
+  Mozilla Firefox HTTP and HTTPS (SSL) Settings</title>
    <mediaobject>
      <imageobject>
       <imagedata  fileref="proxy_setup.jpg" format="jpg">
        </imageobject>
        <textobject>
-        <phrase>[ Screenshot of Mozilla Proxy Configuration ]</phrase>
+        <phrase>[ Screenshot of Mozilla Firefox Proxy Configuration ]</phrase>
       </textobject>
    </mediaobject>
   </figure>
@@ -1078,7 +1054,7 @@ MAKENSIS = ./nsis/makensis.exe
 </para>
 
 <literallayout>
- <guibutton>Tools</guibutton> -> <guibutton>Options</guibutton> ->  <guibutton>Advanced</guibutton> -> <guibutton>Network</guibutton> -><guibutton>Connection</guibutton> -> <guibutton>Settings</guibutton>
+ <guibutton>Edit</guibutton> -> <guibutton>Preferences</guibutton> ->  <guibutton>Network Settings</guibutton> -> <guibutton>Settings</guibutton>
 </literallayout>
 
 <para>
@@ -1135,7 +1111,7 @@ MAKENSIS = ./nsis/makensis.exe
 <para>
  After doing this, flush your browser's disk and memory caches to force a
  re-reading of all pages and to get rid of any ads that may be cached. Remove
- any <ulink url="http://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>,
+ any <ulink url="https://en.wikipedia.org/wiki/Browser_cookie">cookies</ulink>,
  if you want <application>Privoxy</application> to manage that. You are now
  ready to start enjoying the benefits of using
  <application>Privoxy</application>!
@@ -1214,16 +1190,6 @@ Example Unix startup command:
  a package manager, the package will probably contain a platform-specific
  script or configuration file to start <application>Privoxy</application>
  upon boot.
-</para>
-</sect2>
-
-<sect2 id="start-os2">
-<title>OS/2</title>
-<para>
- During installation, <application>Privoxy</application> is configured to
- start automatically when the system restarts. You can start it manually by
- double-clicking on the <application>Privoxy</application> icon in the
- <application>Privoxy</application> folder.
 </para>
 </sect2>
 
@@ -1517,7 +1483,7 @@ for details.
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&squf;&nbsp;&nbsp;<ulink url="http://config.privoxy.org/show-status">View & change the current configuration</ulink>
  </member>
  <member>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&squf;&nbsp;&nbsp;<ulink url="http://config.privoxy.org/show-version">View the source code version numbers</ulink>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&squf;&nbsp;&nbsp;<ulink url="http://config.privoxy.org/client-tags">View or toggle the tags that can be set based on the client's address</ulink>
  </member>
  <member>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&squf;&nbsp;&nbsp;<ulink url="http://config.privoxy.org/show-request">View the request headers.</ulink>
@@ -1576,7 +1542,7 @@ for details.
 <title>Configuration Files Overview</title>
 <para>
  For Unix, *BSD and GNU/Linux, all configuration files are located in
- <filename>/etc/privoxy/</filename> by default. For MS Windows and OS/2
+ <filename>/etc/privoxy/</filename> by default. For MS Windows
  these are all in the same directory as the
  <application>Privoxy</application> executable. <![%p-not-stable;[ The name
  and number of configuration files has changed from previous versions, and is
@@ -1594,7 +1560,7 @@ for details.
   <listitem>
    <para>
      The <link linkend="config">main configuration file</link> is named <filename>config</filename>
-     on GNU/Linux, Unix, BSD, and OS/2, and <filename>config.txt</filename>
+     on GNU/Linux, Unix, BSD, and <filename>config.txt</filename>
      on Windows. This is a required file.
    </para>
   </listitem>
@@ -1793,7 +1759,7 @@ for details.
     The default profiles, and their associated actions, as pre-defined in
     <filename>default.action</filename> are:
    </para>
-    <table frame=all><title>Default Configurations</title>
+    <table frame=all id="default-configurations"><title>Default Configurations</title>
     <tgroup cols=4 align=left colsep=1 rowsep=1>
     <colspec colname=c1>
     <colspec colname=c2>
@@ -2079,7 +2045,7 @@ for details.
  The pattern matching syntax is different for the host and path parts of
  the URL. The host part uses a simple globbing type matching technique,
  while the path part uses more flexible
- <ulink url="http://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
+ <ulink url="https://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
   Expressions</quote></ulink> (POSIX 1003.2).
 </para>
 <para>
@@ -2241,7 +2207,7 @@ for details.
  themselves. These work similarly to shell globbing type wild-cards:
  <quote>*</quote> represents zero or more arbitrary characters (this is
  equivalent to the
- <ulink url="http://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
+ <ulink url="https://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
  Expression</quote></ulink> based syntax of <quote>.*</quote>),
  <quote>?</quote>  represents any single character (this is equivalent to the
  regular expression syntax of a simple <quote>.</quote>), and you can define
@@ -2293,6 +2259,12 @@ for details.
  While flexible, this is not the sophistication of full regular expression based syntax.
 </para>
 
+<para>
+ When compiled with FEATURE_PCRE_HOST_PATTERNS patterns can be prefixed with
+ <quote>PCRE-HOST-PATTERN:</quote> in which case full regular expression
+ (PCRE) can be used for the host pattern as well.
+</para>
+
 </sect3>
 
 <!--  ~  End section  ~  -->
@@ -2303,7 +2275,7 @@ for details.
 
 <para>
  <application>Privoxy</application> uses <quote>modern</quote> POSIX 1003.2
-  <ulink url="http://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
+  <ulink url="https://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
   Expressions</quote></ulink> for matching the path portion (after the slash),
   and is thus more flexible.
 </para>
@@ -2961,6 +2933,21 @@ example.org/blocked-example-page</screen>
     back, for example to specify a Tor exit relay for certain requests.
    </para>
    <para>
+    Note that to change the destination host for
+    <link linkend="HTTPS-INSPECTION">https-inspected</link>
+    requests a protocol and host has to be added to the URI.
+   </para>
+   <para>
+    If <link linkend="HTTPS-INSPECTION">https inspection</link>
+    is enabled, the protocol can be downgraded from https to http
+    but upgrading a request from http to https is currently not
+    supported.
+   </para>
+   <para>
+    After detecting a rewrite, &my-app; does not update the actions
+    used for the request based on the new host.
+   </para>
+   <para>
     Please refer to the <link linkend="filter-file">filter file chapter</link>
     to learn which client-header filters are available by default, and how to
     create your own.
@@ -2975,6 +2962,83 @@ example.org/blocked-example-page</screen>
      <screen>
 # Hide Tor exit notation in Host and Referer Headers
 {+client-header-filter{hide-tor-exit-notation}}
+/
+</screen>
+  </listitem>
+ </varlistentry>
+
+</variablelist>
+</sect3>
+
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect3 renderas="sect4" id="client-body-filter">
+<title>client-body-filter</title>
+
+<variablelist>
+ <varlistentry>
+  <term>Typical use:</term>
+  <listitem>
+   <para>
+   Rewrite or remove client request body.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Effect:</term>
+  <listitem>
+   <para>
+    All request bodies to which this action applies are filtered on-the-fly through
+    the specified regular expression based substitutions.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Type:</term>
+  <!-- boolean, parameterized, Multi-value -->
+  <listitem>
+   <para>Multi-value.</para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Parameter:</term>
+  <listitem>
+   <para>
+    The name of a client-body filter, as defined in one of the
+    <link linkend="filter-file">filter files</link>.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    Please refer to the <link linkend="filter-file">filter file chapter</link>
+    to learn how to create your own client-body filters.
+   </para>
+   <para>
+    The distribution <filename>default.filter</filename> file contains a selection of
+    client-body filters for example purposes.
+   </para>
+   <para>
+    The amount of data that can be filtered is limited by the
+    <literal><link linkend="buffer-limit">buffer-limit</link></literal>
+    option in the main <link linkend="config">config file</link>. The
+    default is 4096 KB (4 Megs). Once this limit is exceeded, the whole
+    request body is passed through unfiltered.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Example usage (section):</term>
+  <listitem>
+     <screen>
+# Remove "test" everywhere in the request body
+{+client-body-filter{remove-test}}
 /
 </screen>
   </listitem>
@@ -3801,6 +3865,7 @@ problem-host.example.com</screen>
 </variablelist>
 </sect3>
 
+
 <!--   ~~~~~       New section      ~~~~~     -->
 <sect3 renderas="sect4" id="external-filter">
 <title>external-filter</title>
@@ -3986,7 +4051,7 @@ problem-host.example.com</screen>
     looks for the string <quote>http://</quote>, either in plain text
     (invalid but often used) or encoded as <quote>http%3a//</quote>.
     Some sites use their own URL encoding scheme, encrypt the address
-    of the target server or replace it with a database id. In theses cases
+    of the target server or replace it with a database id. In these cases
     <literal>fast-redirects</literal> is fooled and the request reaches the
     redirection server where it probably gets logged.
    </para>
@@ -4081,15 +4146,15 @@ problem-host.example.com</screen>
    <para>
    <quote>Rolling your own</quote>
     filters requires a knowledge of
-     <ulink url="http://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
+     <ulink url="https://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
      Expressions</quote></ulink> and
-      <ulink url="http://en.wikipedia.org/wiki/Html"><quote>HTML</quote></ulink>.
+      <ulink url="https://en.wikipedia.org/wiki/Html"><quote>HTML</quote></ulink>.
     This is very powerful feature, and potentially very intrusive.
     Filters should be used with caution, and where an equivalent
     <quote>action</quote> is not available.
    </para>
    <para>
-    The amount of data that can be filtered is limited to the
+    The amount of data that can be filtered is limited by the
     <literal><link linkend="buffer-limit">buffer-limit</link></literal>
     option in the main <link linkend="config">config file</link>. The
     default is 4096 KB (4 Megs). Once this limit is exceeded, the buffered
@@ -4234,9 +4299,17 @@ problem-host.example.com</screen>
    </para>
     <screen>+filter{no-ping}             # Removes non-standard ping attributes in &lt;a&gt; and &lt;area&gt; tags.</screen>
    <para>
+    <anchor id="filter-github">
+   </para>
+    <screen>+filter{github}              # Removes the annoying "Sign-Up" banner and the Cookie disclaimer.</screen>
+   <para>
     <anchor id="filter-google">
    </para>
     <screen>+filter{google}              # CSS-based block for Google text ads. Also removes a width limitation and the toolbar advertisement.</screen>
+   <para>
+    <anchor id="filter-imdb">
+   </para>
+    <screen>+filter{imdb}                # Removes some ads on IMDb.</screen>
    <para>
     <anchor id="filter-yahoo">
    </para>
@@ -4249,6 +4322,10 @@ problem-host.example.com</screen>
     <anchor id="filter-blogspot">
    </para>
     <screen>+filter{blogspot}            # Cleans up some Blogspot blogs. Read the fine print before using this.</screen>
+   <para>
+    <anchor id="filter-sourceforge">
+   </para>
+    <screen>+filter{sourceforge}         # Reduces the amount of ads for proprietary software on SourceForge.</screen>
   </listitem>
  </varlistentry>
 </variablelist>
@@ -5131,7 +5208,7 @@ new action
      More information on known user-agent strings can be found at
      <ulink url="http://www.user-agents.org/">http://www.user-agents.org/</ulink>
      and
-     <ulink url="http://en.wikipedia.org/wiki/User_agent">http://en.wikipedia.org/wiki/User_agent</ulink>.
+     <ulink url="https://en.wikipedia.org/wiki/User_agent">http://en.wikipedia.org/wiki/User_agent</ulink>.
    </para>
    </listitem>
  </varlistentry>
@@ -5139,7 +5216,155 @@ new action
  <varlistentry>
   <term>Example usage:</term>
   <listitem>
-     <screen>+hide-user-agent{Netscape 6.1 (X11; I; Linux 2.4.18 i686)}</screen>
+     <screen>+hide-user-agent{Mozilla/5.0 (X11; ElectroBSD i386; rv:78.0) Gecko/20100101 Firefox/78.0}</screen>
+  </listitem>
+ </varlistentry>
+</variablelist>
+</sect3>
+
+
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect3 renderas="sect4" id="https-inspection">
+<title>https-inspection</title>
+
+<variablelist>
+ <varlistentry>
+  <term>Typical use:</term>
+  <listitem>
+   <para>Filter encrypted requests and responses</para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Effect:</term>
+  <listitem>
+   <para>
+    Encrypted requests are decrypted, filtered and forwarded encrypted.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Type:</term>
+  <!-- boolean, parameterized, Multi-value -->
+  <listitem>
+   <para>Boolean.</para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Parameter:</term>
+  <listitem>
+   <para>
+    N/A
+   </para>
+  </listitem>
+ </varlistentry>
+
+<varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    This action allows &my-app; to filter encrypted requests and responses.
+    For this to work &my-app; has to generate a certificate and send it
+    to the client which has to accept it.
+   </para>
+   <para>
+    Before this works the directives in the
+    <literal><ulink url="config.html#HTTPS-INSPECTION-DIRECTIVES">HTTPS inspection section</ulink></literal>
+    of the config file have to be configured.
+   </para>
+   <para>
+    Note that the action has to be enabled based on the CONNECT
+    request which doesn't contain a path. Enabling it based on
+    a pattern with path doesn't work as the path is only seen
+    by &my-app; if the action is already enabled.
+   </para>
+   <para>
+    This is an experimental feature.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Example usage (section):</term>
+  <listitem>
+     <screen>{+https-inspection}
+www.example.com</screen>
+  </listitem>
+ </varlistentry>
+
+</variablelist>
+</sect3>
+
+
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect3 renderas="sect4" id="ignore-certificate-errors">
+<title>ignore-certificate-errors</title>
+
+<variablelist>
+ <varlistentry>
+  <term>Typical use:</term>
+  <listitem>
+   <para>Filter encrypted requests and responses without verifying the certificate</para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Effect:</term>
+  <listitem>
+   <para>
+    Encrypted requests are forwarded to sites without verifying the certificate.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Type:</term>
+  <!-- Boolean, Parameterized, Multi-value -->
+  <listitem>
+   <para>Boolean.</para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Parameter:</term>
+  <listitem>
+   <para>
+    N/A
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    When the
+    <link linkend="HTTPS-INSPECTION"><quote>+https-inspection</quote></link>
+    action is used &my-app; by default verifies that the remote site uses a valid
+    certificate.
+   </para>
+   <para>
+    If the certificate can't be validated by &my-app; the connection is aborted.
+   </para>
+   <para>
+    This action disables the certificate check so requests to sites
+    with certificates that can't be validated are allowed.
+   </para>
+   <para>
+    Note that enabling this action allows Man-in-the-middle attacks.
+   </para>
+   </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Example usage:</term>
+  <listitem>
+   <screen>
+    {+ignore-certificate-errors}
+    www.example.org
+   </screen>
   </listitem>
  </varlistentry>
 </variablelist>
@@ -5380,9 +5605,10 @@ new action
    <para>
     Note that some (rare) ill-configured sites don't handle requests for uncompressed
     documents correctly. Broken PHP applications tend to send an empty document body,
-    some IIS versions only send the beginning of the content. If you enable
-    <literal>prevent-compression</literal> per default, you might want to add
-    exceptions for those sites. See the example for how to do that.
+    some IIS versions only send the beginning of the content and some content delivery
+    networks let the connection time out.
+    If you enable <literal>prevent-compression</literal> per default, you might
+    want to add exceptions for those sites. See the example for how to do that.
    </para>
   </listitem>
  </varlistentry>
@@ -5630,6 +5856,10 @@ example.com/.*toChange=(?!bar)
 # Redirect Destination = https://www.illumos.org/issues/4974
 i[0-9][0-9][0-9][0-9]*/
 
+# Redirect requests for the old Tor Hidden Service of the Privoxy website to the new one
+{+redirect{s@^http://jvauzb4sb3bwlsnc.onion/@http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/@}}
+jvauzb4sb3bwlsnc.onion/
+
 # Redirect remote requests for this manual
 # to the local version delivered by Privoxy
 {+redirect{s@^http://www@http://config@}}
@@ -5802,6 +6032,63 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
 # <literal><link linkend="external-filter-syntax">silly example</link></literal>.
 {+external-filter{rotate-image} +force-text-mode}
 TAG:^image/
+</screen>
+  </listitem>
+ </varlistentry>
+
+</variablelist>
+</sect3>
+
+
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect3 renderas="sect4" id="suppress-tag">
+<title>suppress-tag</title>
+
+<variablelist>
+ <varlistentry>
+  <term>Typical use:</term>
+  <listitem>
+   <para>
+   Suppress client or server tag.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Effect:</term>
+  <listitem>
+   <para>
+    Server or client tags to which this action applies are not added to the request,
+    thus making all actions that are specific to these request tags inactive.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Type:</term>
+  <!-- boolean, parameterized, Multi-value -->
+  <listitem>
+   <para>Multi-value.</para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Parameter:</term>
+  <listitem>
+   <para>
+    The result tag of a server-header or client-header tagger, as defined in one of the
+    <link linkend="filter-file">filter files</link>.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Example usage (section):</term>
+  <listitem>
+     <screen>
+# Suppress tag produced by range-requests client-header tagger for requests coming from address 10.0.0.1
+{+suppress-tag{RANGE-REQUEST}}
+TAG:^IP-ADDRESS: 10\.0\.0\.1$
 </screen>
   </listitem>
  </varlistentry>
@@ -6702,13 +6989,15 @@ stupid-server.example.com/</screen>
 </para>
 
 <para>
- &my-app; supports three different pcrs-based filter actions:
+ &my-app; supports four different pcrs-based filter actions:
  <literal><link linkend="filter">filter</link></literal> to
  rewrite the content that is send to the client,
  <literal><link linkend="client-header-filter">client-header-filter</link></literal>
- to rewrite headers that are send by the client, and
+ to rewrite headers that are send by the client,
  <literal><link linkend="server-header-filter">server-header-filter</link></literal>
- to rewrite headers that are send by the server.
+ to rewrite headers that are send by the server, and
+ <literal><link linkend="client-body-filter">client-body-filter</link></literal>
+ to rewrite client request body.
 </para>
 
 <para>
@@ -6767,7 +7056,8 @@ stupid-server.example.com/</screen>
  filter file is organized in sections, which are called <emphasis>filters</emphasis>
  here. Each filter consists of a heading line, that starts with one of the
  <emphasis>keywords</emphasis> <literal>FILTER:</literal>,
- <literal>CLIENT-HEADER-FILTER:</literal> or <literal>SERVER-HEADER-FILTER:</literal>
+ <literal>CLIENT-HEADER-FILTER:</literal>, <literal>SERVER-HEADER-FILTER:</literal> or
+ <literal>CLIENT-BODY-FILTER:</literal>
  followed by the filter's <emphasis>name</emphasis>, and a short (one line)
  <emphasis>description</emphasis> of what it does. Below that line
  come the <emphasis>jobs</emphasis>, i.e. lines that define the actual
@@ -6834,7 +7124,7 @@ stupid-server.example.com/</screen>
 
 <para>
  If you are new to
-  <ulink url="http://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
+  <ulink url="https://en.wikipedia.org/wiki/Regular_expressions"><quote>Regular
   Expressions</quote></ulink>, you might want to take a look at
  the <link linkend="regex">Appendix on regular expressions</link>, and
  see the <ulink url="http://perldoc.perl.org/perlre.html">Perl
@@ -7330,7 +7620,7 @@ pre-defined filters for your convenience:
     sometimes appear on some pages, or user agents that don't correct for this on
     the fly.
 <!--
-    My version of Mozilla (ancient) shows litte square boxes for quote
+    My version of Mozilla (ancient) shows little square boxes for quote
     characters, and apostrophes on moronized pages. So many pages have this, I
     can read them fine now. HB 08/27/06
 -->
@@ -7721,16 +8011,37 @@ Requests</title>
 
 <para>
  <application>Privoxy</application> is free software; you can
- redistribute it and/or modify it under the terms of the
- <citetitle>GNU General Public License</citetitle>, version 2,
- as published by the Free Software Foundation and included in
- the next section.
+ redistribute and/or modify its source code under the terms
+ of the <citetitle>GNU General Public License</citetitle>
+ as published by the Free Software Foundation, either version 2
+ of the license, or (at your option) any later version.
+</para>
+
+<para>
+ The same is true for <application>Privoxy</application> binaries
+ unless they are linked with a
+ <ulink url="https://tls.mbed.org/">mbed TLS</ulink> version
+ that is licensed under the Apache 2.0 license in which
+ case you can redistribute and/or modify the <application>Privoxy</application>
+ binaries under the terms of the <citetitle>GNU General Public License</citetitle>
+ as published by the Free Software Foundation, either version 3
+ of the license, or (at your option) any later version.
+</para>
+
+<para>
+ Both licenses are included in the next section.
 </para>
 
 <!--   ~~~~~       New section      ~~~~~     -->
 <sect2 id="license"><title>License</title>
 
+<sect3 id="gplv2"><title>GNU General Public License version 2</title>
  <screen><![ RCDATA [ &GPLv2; ]]></screen>
+</sect3>
+
+<sect3 id="gplv3"><title>GNU General Public License version 3</title>
+ <screen><![ RCDATA [ &GPLv3; ]]></screen>
+</sect3>
 
 </sect2>
 <!--  ~  End section  ~  -->
@@ -8041,23 +8352,23 @@ Requests</title>
 
  <listitem>
   <para>
-    Show information about the current configuration, including viewing and
-    editing of actions files:
+    View and toggle client tags:
   </para>
    <blockquote>
    <para>
-    <ulink url="http://config.privoxy.org/show-status">http://config.privoxy.org/show-status</ulink>
+    <ulink url="http://config.privoxy.org/client-tags">http://config.privoxy.org/client-tags</ulink>
    </para>
   </blockquote>
  </listitem>
 
  <listitem>
   <para>
-    Show the source code version numbers:
+    Show information about the current configuration, including viewing and
+    editing of actions files:
   </para>
-  <blockquote>
+   <blockquote>
    <para>
-    <ulink url="http://config.privoxy.org/show-version">http://config.privoxy.org/show-version</ulink>
+    <ulink url="http://config.privoxy.org/show-status">http://config.privoxy.org/show-status</ulink>
    </para>
   </blockquote>
  </listitem>

@@ -18,7 +18,7 @@
  *                doing to provide that isolation.
  *
  * Copyright   :  Written by and Copyright (C) 2003 members of
- *                the Privoxy team.  http://www.privoxy.org/
+ *                the Privoxy team.  https://www.privoxy.org/
  *
  *                Written by and Copyright (C) 2003 Ian Cummings
  *                <ian_a_c@hotmail.com>

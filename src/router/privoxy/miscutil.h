@@ -10,7 +10,7 @@
  *                any other file.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2011 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -50,7 +50,7 @@ extern char *strdup_or_die(const char *str);
 extern void *malloc_or_die(size_t buffer_size);
 
 #if defined(unix)
-extern void write_pid_file(const char *pidfile);
+extern void write_pid_file(const char *pid_file);
 #endif /* unix */
 
 extern unsigned int hash_string(const char* s);
@@ -61,6 +61,7 @@ extern int strncmpic(const char *s1, const char *s2, size_t n);
 extern jb_err string_append(char **target_string, const char *text_to_append);
 extern jb_err string_join  (char **target_string,       char *text_to_append);
 extern char *string_toupper(const char *string);
+extern char *string_tolower(const char *string);
 extern void string_move(char *dst, char *src);
 
 extern char *chomp(char *string);
@@ -69,10 +70,6 @@ extern char *bindup(const char *string, size_t len);
 extern char *make_path(const char * dir, const char * file);
 
 long int pick_from_range(long int range);
-
-#ifndef HAVE_SNPRINTF
-extern int snprintf(char *, size_t, const char *, /*args*/ ...);
-#endif /* ndef HAVE_SNPRINTF */
 
 #if !defined(HAVE_TIMEGM) && defined(HAVE_TZSET) && defined(HAVE_PUTENV)
 time_t timegm(struct tm *tm);
@@ -92,6 +89,7 @@ size_t privoxy_strlcat(char *destination, const char *source, size_t size);
 #endif /* ndef HAVE_STRLCAT */
 
 extern int privoxy_millisleep(unsigned milliseconds);
+extern struct tm *privoxy_gmtime_r(const time_t *time_spec, struct tm *result);
 
 #if defined(__cplusplus)
 }

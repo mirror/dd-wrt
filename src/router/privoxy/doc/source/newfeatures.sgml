@@ -54,6 +54,12 @@
 
  <listitem>
   <para>
+     Supports https inspection which allows to filter https requests.
+  </para>
+ </listitem>
+
+ <listitem>
+  <para>
      Can be run as an "intercepting" proxy, which obviates the need to
      configure browsers individually.
   </para>

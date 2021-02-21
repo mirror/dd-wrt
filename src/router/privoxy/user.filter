@@ -1,19 +1,19 @@
 # ********************************************************************
-# 
+#
 #  File        :  user.filter
-# 
+#
 #  Purpose     :  Rules to process the content of web pages
-# 
-#  Copyright   :  Written by and Copyright (C) 2006-2008 the
-#                 Privoxy team. http://www.privoxy.org/
+#
+#  Copyright   :  Written by and Copyright (C) 2006-2020 the
+#                 Privoxy team. https://www.privoxy.org/
 #
 # We value your feedback. However, to provide you with the best support,
 # please note:
-#  
+#
 #  * Use the support forum to get help:
-#    http://sourceforge.net/tracker/?group_id=11118&atid=211118
+#    https://sourceforge.net/p/ijbswa/support-requests/
 #  * Submit bugs only thru our bug forum:
-#    http://sourceforge.net/tracker/?group_id=11118&atid=111118 
+#    https://sourceforge.net/p/ijbswa/bugs/
 #    Make sure that the bug has not already been submitted. Please try
 #    to verify that it is a Privoxy bug, and not a browser or site
 #    bug first. If you are using your own custom configuration, please
@@ -21,16 +21,14 @@
 #    related bug. And if not using the latest development snapshot,
 #    please try the latest one. Or even better, CVS sources.
 #  * Submit feature requests only thru our feature request forum:
-#    http://sourceforge.net/tracker/?atid=361118&group_id=11118&func=browse
-#      
-# For any other issues, feel free to use the mailing lists:
-# http://sourceforge.net/mail/?group_id=11118
-#    
+#    https://sourceforge.net/p/ijbswa/feature-requests/
+#
+# For any other issues, feel free to use the mailing lists.
 # Anyone interested in actively participating in development and related
 # discussions can join the appropriate mailing list here:
-# http://sourceforge.net/mail/?group_id=11118. Archives are available
+# https://lists.privoxy.org/mailman/listinfo Archives are available
 # here too.
-# 
+#
 #################################################################################
 #
 # Syntax:
@@ -52,7 +50,7 @@
 #
 # Note2: In addition to the Perl options gimsx, the following nonstandard
 # options are supported:
-# 
+#
 # 'U' turns the default to ungreedy matching.  Add ? to quantifiers to
 #     switch back to greedy.
 #
@@ -70,5 +68,5 @@
 #     escaping anything, therefore you also have to be careful not to chose
 #     delimiters that appear in the replacement text. For example '<' should
 #     be save, while '?' will sooner or later cause conflicts with $url.
-# 
+#
 #################################################################################

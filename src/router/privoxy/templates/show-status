@@ -44,17 +44,12 @@
 #  homepage:
 #    The URL of the Privoxy project, which maintains this software.
 #
-#  redirect-url:
-#    The URL to a script that will redirect to the Privoxy
-#    documentation for a given item
 #  invocation:
 #    The command line with which Privoxy was invoked
 #  options:
 #    The options read from the configfile, linked to their
 #    explanations, plus warnings if parsing acl or forward
 #    statements produced errors.
-#  sourceversions:
-#    A HTML-formatted list of the individual source file cvs versions
 #  defines:
 #    A HTML-formatted list of all conditional #defines used when
 #    Privoxy was compiled
@@ -91,15 +86,19 @@
 #      The percentage of blocked requests
 #  have-no-stats:
 #    There haven't any statistics been collected yet
-#  pcrs-support:
-#    Privoxy was compiled with pcrs support
+#  extended-statistics:
+#    Privoxy was compiled with extended statistiscs support.
+#    In this case the following symbols are available:
+#    block-reason-statistics:
+#      Table content of block reasons and how often they were used.
+#    filter-statistics:
+#      Table content of content filter statistics.
 #  trust-support:
 #    Privoxy was compiled with trust support
 #  actions-filenames:
 #    The path to the actions files.
 #  re-filter-filenames:
-#    The path to the re_filter files. Only available if
-#    pcrs-support is set
+#    The path to the re_filter files.
 #  trust-filename:
 #    The path to the trust file. Only available if
 #    trust-support is set
@@ -214,6 +213,25 @@
     </tr>
 <!-- if-statistics-end@ -->
 
+<!-- @if-extended-statistics-start -->
+    <tr>
+      <td class="box">
+        <h2>Block Reason Statistics:</h2>
+        <table summary="Statistics for block reasons" border="1">
+         <tr><th>Block reason</th><th>Count</th></tr>
+@block-reason-statistics@        </table>
+      </td>
+    </tr>
+    <tr>
+      <td class="box">
+        <h2>Content Filter Statistics:</h2>
+        <table summary="Statistics for content filters" border="1">
+         <tr><th>Filter name</th><th>Executions</th><th>Response bodies modified</th><th>Hits</th></tr>
+@filter-statistics@        </table>
+      </td>
+    </tr>
+<!-- if-extended-statistics-end@ -->
+
     <tr>
       <td class="box">
         <h2>Conditional #defines:</h2>
@@ -236,6 +254,11 @@
               <td><code>FEATURE_ACL</code></td>
               <td>@if-FEATURE_ACL-then@ Yes @else-not-FEATURE_ACL@ No @endif-FEATURE_ACL@</td>
               <td>Allows the use of an ACL to control access to Privoxy by IP address.</td>
+            </tr>
+            <tr>
+              <td><code>FEATURE_BROTLI</code></td>
+              <td>@if-FEATURE_BROTLI-then@ Yes @else-not-FEATURE_BROTLI@ No @endif-FEATURE_BROTLI@</td>
+              <td>Allows to decompress content with Brotli before filtering it. Requires external brotli library.</td>
             </tr>
             <tr>
               <td><code>FEATURE_CGI_EDIT_ACTIONS</code></td>
@@ -276,6 +299,19 @@
               </td>
             </tr>
             <tr>
+              <td><code>FEATURE_DYNAMIC_PCRE</code></td>
+              <td>@if-FEATURE_DYNAMIC_PCRE-then@ Yes @else-not-FEATURE_DYNAMIC_PCRE@ No @endif-FEATURE_DYNAMIC_PCRE@</td>
+              <td>Dynamically link to the PCRE library. This is set automatically
+               by <code>./configure</code> if you do not have libpcre installed.
+               Dynamically linking to an external libpcre is recommended as the one that is distributed
+               with Privoxy itself is outdated and lacks various features and bug-fixes you may be interested in.</td>
+            </tr>
+            <tr>
+              <td><code>FEATURE_EXTENDED_STATISTICS</code></td>
+              <td>@if-FEATURE_EXTENDED_STATISTICS-then@ Yes @else-not-FEATURE_EXTENDED_STATISTICS@ No @endif-FEATURE_EXTENDED_STATISTICS@</td>
+              <td>Gather statistics for block reasons and filter executions.</td>
+            </tr>
+            <tr>
               <td><code>FEATURE_EXTERNAL_FILTERS</code></td>
               <td>@if-FEATURE_EXTERNAL_FILTERS-then@ Yes @else-not-FEATURE_EXTERNAL_FILTERS@ No @endif-FEATURE_EXTERNAL_FILTERS@</td>
               <td>
@@ -285,14 +321,6 @@
               </td>
             </tr>
             <tr>
-              <td><code>FEATURE_DYNAMIC_PCRE</code></td>
-              <td>@if-FEATURE_DYNAMIC_PCRE-then@ Yes @else-not-FEATURE_DYNAMIC_PCRE@ No @endif-FEATURE_DYNAMIC_PCRE@</td>
-              <td>Dynamically link to the PCRE library. This is set automatically
-               by <code>./configure</code> if you do not have libpcre installed.
-               Dynamically linking to an external libpcre is recommended as the one that is distributed
-               with Privoxy itself is outdated and lacks various features and bug-fixes you may be interested in.</td>
-            </tr>
-            <tr>
               <td><code>FEATURE_FAST_REDIRECTS</code></td>
               <td>@if-FEATURE_FAST_REDIRECTS-then@ Yes @else-not-FEATURE_FAST_REDIRECTS@ No @endif-FEATURE_FAST_REDIRECTS@</td>
               <td>Allows the +fast-redirects action, to bypass redirect and logging scripts.</td>
@@ -300,13 +328,21 @@
             <tr>
               <td><code>FEATURE_FORCE_LOAD</code></td>
               <td>@if-FEATURE_FORCE_LOAD-then@ Yes @else-not-FEATURE_FORCE_LOAD@ No @endif-FEATURE_FORCE_LOAD@</td>
-              <td>Allows bypassing all filtering for a single page using the prefix
-                  <q><code>@force-prefix@</code></q>.</td>
+              <td>
+               Allows bypassing all blocking for a single page using the prefix
+               <q><code>@force-prefix@</code></q> provided blocks aren't enforced with the
+               <a href="@user-manual@config.html#ENFORCE-BLOCKS">enforce-blocks</a> directive.
+              </td>
             </tr>
             <tr>
               <td><code>FEATURE_GRACEFUL_TERMINATION</code></td>
               <td>@if-FEATURE_GRACEFUL_TERMINATION-then@ Yes @else-not-FEATURE_GRACEFUL_TERMINATION@ No @endif-FEATURE_GRACEFUL_TERMINATION@</td>
               <td>Allows to shutdown Privoxy through the web interface.</td>
+            </tr>
+            <tr>
+              <td><code>FEATURE_HTTPS_INSPECTION</code></td>
+              <td>@if-FEATURE_HTTPS_INSPECTION-then@ Yes @else-not-FEATURE_HTTPS_INSPECTION@ No @endif-FEATURE_HTTPS_INSPECTION@</td>
+              <td>Allows to intercept and filter HTTPS traffic. Experimental.</td>
             </tr>
             <tr>
               <td><code>FEATURE_IMAGE_BLOCKING</code></td>
@@ -325,6 +361,14 @@
               <td><code>FEATURE_NO_GIFS</code></td>
               <td>@if-FEATURE_NO_GIFS-then@ Yes @else-not-FEATURE_NO_GIFS@ No @endif-FEATURE_NO_GIFS@</td>
               <td>Use PNG instead of GIF for the built-in images.</td>
+            </tr>
+            <tr>
+              <td><code>FEATURE_PCRE_HOST_PATTERNS</code></td>
+              <td>@if-FEATURE_PCRE_HOST_PATTERNS-then@ Yes @else-not-FEATURE_PCRE_HOST_PATTERNS@ No @endif-FEATURE_PCRE_HOST_PATTERNS@</td>
+              <td>Allow to use extended host patterns and vanilla host patterns
+               at the same time by prefixing extended host patterns with
+               "PCRE-HOST-PATTERN:".
+              </td>
             </tr>
             <tr>
               <td><code>FEATURE_PTHREAD</code></td>
@@ -355,7 +399,7 @@
               <td><code>FEATURE_ZLIB</code></td>
               <td>@if-FEATURE_ZLIB-then@ Yes @else-not-FEATURE_ZLIB@ No @endif-FEATURE_ZLIB@</td>
               <td>Allows to decompress gzip and zlib compressed documents for filtering.
-                Requires external zlib library and hasn't been tested on all platforms.</td>
+                Requires external zlib library.</td>
             </tr>
           </table>
       </td>

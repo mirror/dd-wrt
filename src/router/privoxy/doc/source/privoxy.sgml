@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2020 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -33,7 +33,7 @@
 </para>
 
 <para>
- Privoxy is Free Software and licensed under the GNU GPLv2.
+ Privoxy is Free Software and licensed under the GNU GPLv2 or later.
 </para>
 
 <para>
@@ -47,14 +47,12 @@
  <itemizedlist>
   <listitem>
     <para>
-      <ulink url="https://www.privoxy.org/faq/general.html#PARTICIPATE">
-                  https://www.privoxy.org/faq/general.html#PARTICIPATE</ulink>
+      <ulink url="https://www.privoxy.org/participate">https://www.privoxy.org/participate</ulink>
     </para>
   </listitem>
   <listitem>
     <para>
-     <ulink url="https://www.privoxy.org/faq/general.html#DONATE">
-                 https://www.privoxy.org/faq/general.html#DONATE</ulink>
+      <ulink url="https://www.privoxy.org/donate">https://www.privoxy.org/donate</ulink>
     </para>
   </listitem>
  </itemizedlist>

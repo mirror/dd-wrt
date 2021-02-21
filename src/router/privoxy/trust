@@ -7,7 +7,7 @@
 #                 techniques).
 # 
 #  Copyright   :  Written by and Copyright
-#                 Privoxy team. http://www.privoxy.org/
+#                 Privoxy team. https://www.privoxy.org/
 #
 #                 Based on the Internet Junkbuster originally written
 #                 by and Copyright (C) 1997 Anonymous Coders and
@@ -17,24 +17,22 @@
 # please note:
 #  
 #  * Use the support forum to get help:
-#    http://sourceforge.net/tracker/?group_id=11118&atid=211118
+#    https://sourceforge.net/p/ijbswa/support-requests/
 #  * Submit bugs only thru our bug forum:
-#    http://sourceforge.net/tracker/?group_id=11118&atid=111118 
+#    https://sourceforge.net/p/ijbswa/bugs/
 #    Make sure that the bug has not already been submitted. Please try
 #    to verify that it is a Privoxy bug, and not a browser or site
 #    bug first. If you are using your own custom configuration, please
 #    try the stock configs to see if the problem is a configuration
 #    related bug. And if not using the latest development snapshot,
-#    please try the latest one. Or even better, CVS sources.
+#    please try the latest one. Or even better, git sources.
 #  * Submit feature requests only thru our feature request tracker:
-#    http://sourceforge.net/tracker/?atid=361118&group_id=11118&func=browse
+#    https://sourceforge.net/p/ijbswa/feature-requests/
 #      
-# For any other issues, feel free to use the mailing lists:
-# http://sourceforge.net/mail/?group_id=11118
-#    
+# For any other issues, feel free to use the mailing lists.
 # Anyone interested in actively participating in development and related
 # discussions can join the appropriate mailing list here:
-# http://sourceforge.net/mail/?group_id=11118. Archives are available
+# https://lists.privoxy.org/mailman/listinfo. Archives are available
 # here too.
 # 
 ######################################################################
@@ -47,7 +45,7 @@
 
 # Trustfiles are an experimental feature used for building "whitelists"
 # of "trusted" sites (versus the usual "blacklists" technique). For more
-# detail, see http://www.privoxy.org/user-manual/config.html#TRUSTFILE.
+# detail, see https://www.privoxy.org/user-manual/config.html#TRUSTFILE.
 
 # List trusted domains here. The default is to block any URL that is NOT
 # referenced. Access to trusted domains includes all paths within that

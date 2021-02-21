@@ -11,7 +11,7 @@
 ;
 ; Copyright:
 ;   Written by and Copyright (C) 2007-2009 the Privoxy team.
-;   http://www.privoxy.org/
+;   https://www.privoxy.org/
 ;
 ;   This script originally written by and Copyright (C) 2002
 ;   Jonathan Foster

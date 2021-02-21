@@ -5,7 +5,7 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.28">
+<!entity p-version "3.0.31">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -18,7 +18,7 @@
 
  Purpose     :  Index file of the project's homepage and also documentation index
                 
- Copyright (C) 2001-2018 Privoxy developers <privoxy-devel@lists.privoxy.org>
+ Copyright (C) 2001-2020 Privoxy developers <privoxy-devel@lists.privoxy.org>
  See LICENSE.
 
  ========================================================================
@@ -157,7 +157,7 @@
 <para>
  <subscript>
    The Privoxy website is also available as
-   <ulink url="http://jvauzb4sb3bwlsnc.onion/">Tor onion service</ulink>.
+   <ulink url="http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/">Tor onion service</ulink>.
  </subscript>
 </para>
 ]]>
@@ -172,19 +172,23 @@
 <!-- GNUMakefile is inserting this now -->
 <para>
  <subscript>
-  Copyright __copy 2001-2017 by Privoxy Developers
+  Copyright __copy 2001-2020 by Privoxy Developers
  </subscript>
 </para>
 
 <![%p-homepage;[
 <para>
  <subscript>
-   Hosting and development is funded in part by sponsors:
+  Hosting and development is funded in part by:
+ </subscript>
+ <subscript>
+  <!-- The GNUMakefile will turn this marker into an image link -->
+  www.lalal.ai
  </subscript>
 </para>
 <para>
  <subscript>
-  <ulink url="/faq/general.html#SPONSOR">Become a sponsor</ulink>
+  <ulink url="/sponsor">Become a sponsor</ulink>
  </subscript>
 </para>
 ]]>

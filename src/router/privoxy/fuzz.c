@@ -429,7 +429,7 @@ static int fuzz_gzip(struct client_state *csp, char *fuzz_input_file)
  * Function    :  fuzz_socks
  *
  * Description :  Treat the fuzzed input as a socks response.
- *                XXX: This is pretty useless as parsing socks repsonse
+ *                XXX: This is pretty useless as parsing socks response
  *                     is trivial.
  *
  * Parameters  :

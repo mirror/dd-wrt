@@ -5,7 +5,7 @@
  * Purpose     :  Declares functions to work with actions files
  *
  * Copyright   :  Written by and Copyright (C) 2001-2016 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -547,6 +547,12 @@ jb_err get_actions(char *line,
                         return JB_ERR_PARSE;
                      }
                   }
+#ifdef FEATURE_EXTENDED_STATISTICS
+                  if (0 == strcmpic(action->name, "+block"))
+                  {
+                     register_block_reason_for_statistics(value);
+                  }
+#endif
                   /* FIXME: should validate option string here */
                   freez (cur_action->string[action->index]);
                   cur_action->string[action->index] = strdup(value);
@@ -1109,6 +1115,10 @@ static const char *filter_type_to_string(enum filter_type filter_type)
    case FT_EXTERNAL_CONTENT_FILTER:
       return "external content filter";
 #endif
+   case FT_SUPPRESS_TAG:
+      return "suppress tag filter";
+   case FT_CLIENT_BODY_FILTER:
+      return "client body filter";
    case FT_INVALID_FILTER:
       return "invalid filter type";
    }
@@ -1179,7 +1189,8 @@ static int action_spec_is_valid(struct client_state *csp, const struct action_sp
       {ACTION_MULTI_CLIENT_HEADER_FILTER, FT_CLIENT_HEADER_FILTER},
       {ACTION_MULTI_SERVER_HEADER_FILTER, FT_SERVER_HEADER_FILTER},
       {ACTION_MULTI_CLIENT_HEADER_TAGGER, FT_CLIENT_HEADER_TAGGER},
-      {ACTION_MULTI_SERVER_HEADER_TAGGER, FT_SERVER_HEADER_TAGGER}
+      {ACTION_MULTI_SERVER_HEADER_TAGGER, FT_SERVER_HEADER_TAGGER},
+      {ACTION_MULTI_CLIENT_BODY_FILTER, FT_CLIENT_BODY_FILTER}
    };
    int errors = 0;
    int i;
@@ -1826,7 +1837,7 @@ char * actions_to_html(const struct client_state *csp,
  *
  * Function    :  current_actions_to_html
  *
- * Description :  Converts a curren action spec to a <br> separated HTML
+ * Description :  Converts a current action spec to a <br> separated HTML
  *                text in which each action is linked to its chapter in
  *                the user manual.
  *

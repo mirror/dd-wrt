@@ -1,14 +1,15 @@
 #############################################################################
 #
 # This is a configuration file for Privoxy-Regression-Test
-# (included in the source tarball's tools directory).
+# (included in the source tarball's tools directory and available at
+# https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob;f=tools/privoxy-regression-test.pl;hb=HEAD).
 #
-# After referencing it in your Privoxy configuration both Privoxy and
+# After referencing this file in your Privoxy configuration both Privoxy and
 # Privoxy-Regression-Test should be good to go.
 #
 #############################################################################
 #
-# Copyright (c) 2007-2018 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2020 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -25,7 +26,7 @@
 #############################################################################
 
 {{settings}}
-for-privoxy-version=3.0.27
+for-privoxy-version=3.0.29
 
 # Some dependencies Privoxy-Regression-Test should know about:
 #
@@ -46,6 +47,8 @@ for-privoxy-version=3.0.27
 # Level 22 needs = config line enable-proxy-authentication-forwarding\s+0
 # Level 23 needs = config line enable-proxy-authentication-forwarding\s+1
 # Level 24 needs = feature status FEATURE_CLIENT_TAGS Yes
+# Level 25 needs = feature status FEATURE_HTTPS_INSPECTION No
+# Level 26 needs = feature status FEATURE_PCRE_HOST_PATTERNS Yes
 
 #######################################################
 # Enable taggers to activate the tests on demand
@@ -105,7 +108,10 @@ TAG:^hide-accept-language\{block\}$
 # Set Header    = Referer: http://
 # Expect Header = REMOVAL
 #
-# Set Header    = Referer: https://p.p/
+# Set Header    = Referer: https://www.privoxy.org/
+# Expect Header = REMOVAL
+#
+# Set Header    = Referer: http://www.privoxy.org/
 # Expect Header = REMOVAL
 TAG:^hide-referrer\{conditional-block\}$
 
@@ -125,7 +131,10 @@ TAG:^hide-referrer\{conditional-block\}$
 # Set Header    = Referer: http://
 # Expect Header = Referer: http://p.p/
 #
-# Set Header    = Referer: https://p.p/
+# Set Header    = Referer: https://www.privoxy.org/
+# Expect Header = Referer: http://p.p/
+#
+# Set Header    = Referer: http://www.privoxy.org/
 # Expect Header = Referer: http://p.p/
 TAG:^hide-referrer\{conditional-forge\}$
 
@@ -208,6 +217,28 @@ TAG:^add-header\{X-Custom-Header: yes, please\}$
 # Set Header    = Referer: http://config.privoxy.org.ad356ef8e87a89e6c898b74500d58607ac691178.exit/foo/baaz.html
 # Expect Header = Referer: http://config.privoxy.org/foo/baaz.html
 TAG:^client-header-filter\{hide-tor-exit-notation\}$
+
+#######################################################
+# Test client-header-filter{no-brotli-accepted}.
+#######################################################
+
+{+client-header-filter{no-brotli-accepted}}
+# Set Header    = Accept-Encoding: gzip, deflate, br
+# Expect Header = Accept-Encoding: gzip, deflate
+#
+# Set Header    = Accept-Encoding: gzip, br, deflate
+# Expect Header = Accept-Encoding: gzip, deflate
+#
+# Set Header    = Accept-Encoding: br, gzip, deflate
+# Expect Header = Accept-Encoding: gzip, deflate
+#
+# Set Header    = Accept-Encoding: br
+# Expect Header = Accept-Encoding:
+#
+# Set Header    = Accept-Encoding: gzip, deflate
+# Expect Header = NO CHANGE
+#
+TAG:^client-header-filter\{no-brotli-accepted\}$
 
 #######################################################
 # Test crunch-client-header{}.
@@ -581,6 +612,11 @@ TAG:^Connection: close$
 TAG:^connection-sharing disabled$
 
 {}
+# XXX: This test is expected to fail when using "https://p.p/"
+#      as CGI prefix with https inspection enabled but can't
+#      yet be automatically skipped. By design connections aren't
+#      shared when using "https://" so Privoxy does not remove the
+#      header.
 # Set Header    = Connection: close
 # Expect Header = REMOVAL
 # Level = 16
@@ -599,6 +635,15 @@ TAG:^connection-sharing enabled$
 TAG:^No Host header$
 
 {}
+# XXX: This test is expected to fail when using "https://p.p/"
+#      as CGI prefix with https inspection enabled but can't
+#      yet be automatically skipped. The reason for the test
+#      failure is that Privoxy-Regression-Test only modifies
+#      the Host header for the CONNECT request, not for the
+#      actual request that follows. Changing that would not
+#      fix the test though as a modified Host header in the
+#      actual request would result in Privoxy attempting to
+#      connect to it.
 # Set Header    = Host: whatever.example.org
 # Expect Header = NO CHANGE
 TAG:^Host header other than the target host$
@@ -688,7 +733,7 @@ TAG:^Proxy-Authorization header forwarding$
 # Expect Status Code = 404
 # Level = 18
 # Fetch Test = http://p.p/die
-# Expect Status Code = 200
+# Expect Status Code = 403
 # Level = 19
 # Fetch Test = http://p.p/show-status
 # Fetch Test = http://config.privoxy.org/show-status?file=actions&index=0
@@ -722,48 +767,70 @@ TAG:^Proxy-Authorization header forwarding$
 # Expect Status Code = 403
 # Level = 21
 # Fetch Test = http://p.p/edit-actions
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/eaa
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/eau
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/ear
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/eal
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/eafu
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/eas
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/easa
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/easr
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/eass
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-for-url
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-list
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-submit
+# Expect Status Code = 403
 # Level = 12
+# Expect Status Code = 403
 # Fetch Test = http://p.p/edit-actions-url
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-url-form
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-add-url
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-add-url-form
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-remove-url
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-remove-url-form
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-section-add
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-section-remove
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/edit-actions-section-swap
+# Expect Status Code = 403
 # Level = 12
 # Fetch Test = http://p.p/error-favicon.ico
 # Fetch Test = http://p.p/favicon.ico
@@ -890,6 +957,7 @@ TAG:^Proxy-Authorization header forwarding$
 # Method Test = OPTIONS
 # Method Test = TRACE
 # Method Test = CONNECT
+# Level = 25
 # Method Test = PROPFIND
 # Method Test = PROPPATCH
 # Method Test = MOVE
@@ -1062,3 +1130,15 @@ redirect.example.net/
 # Redirected URL = http://redirect2.example.net/blafasel?x=http://redirected.example.net/&parameter1=part-of-the-redirected-url1&parameter2=part-of-the-redirected-url1
 # Redirect Destination = http://redirected.example.net/&parameter1=part-of-the-redirected-url1&parameter2=part-of-the-redirected-url1
 redirect2.example.net/
+
+{+delay-response{1}}
+# Fetch Test = http://config.privoxy.org/show-url-info?url=http%3A%2F%2Fwww.example.com%2Fprivoxy-test-delay-response
+config.privoxy.org/show-url-info\?url=http%3A%2F%2Fwww\.example\.com%2Fprivoxy-test-delay-response
+
+{+block{Block with pcre host pattern}}
+# Blocked URL = http://aaa.example.org/
+# Level = 26
+PCRE-HOST-PATTERN:^a{3}\.example\.org$
+# Blocked URL = http://bbb.example.org/
+# Level = 26
+PCRE-HOST-PATTERN:^(bbb|ccc|ddd)\.example\.org$

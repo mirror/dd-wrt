@@ -255,7 +255,7 @@
       <h3 class="SECT2"><a name="CACHING" id="CACHING">4.12. Can Privoxy act as a <span class="QUOTE">"caching"</span>
       proxy to speed up web browsing?</a></h3>
       <p>No, it does not have this ability at all. You want something like <a href="http://www.squid-cache.org/"
-      target="_top">Squid</a> or <a href="http://www.pps.jussieu.fr/~jch/software/polipo/" target="_top">Polipo</a> for
+      target="_top">Squid</a> or <a href="https://www.irif.fr/~jch//software/polipo/" target="_top">Polipo</a> for
       this. And, yes, before you ask, <span class="APPLICATION">Privoxy</span> can co-exist with other kinds of proxies
       like <span class="APPLICATION">Squid</span>. See the <a href="../user-manual/config.html#FORWARDING" target=
       "_top">forwarding chapter</a> in the <a href="../user-manual/index.html" target="_top">user manual</a> for
@@ -286,8 +286,11 @@
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="SSL" id="SSL">4.15. How can Privoxy filter Secure (HTTPS) URLs?</a></h3>
-      <p>Since secure HTTP connections are encrypted SSL sessions between your browser and the secure site, and are
-      meant to be reliably <span class="emphasis"><i class="EMPHASIS">secure</i></span>, there is little that
+      <p>If you enable <a href="../user-manual/actions-file.html#HTTPS-INSPECTION" target="_top">https-inspection</a>
+      <span class="APPLICATION">Privoxy</span> will impersonate the destination server and can thus filter encrypted
+      requests and responses as well.</p>
+      <p>Without <a href="../user-manual/actions-file.html#HTTPS-INSPECTION" target="_top">https-inspection</a> secure
+      HTTP connections are encrypted SSL sessions between your browser and the secure site, and there is little that
       <span class="APPLICATION">Privoxy</span> can do but hand the raw gibberish data though from one end to the other
       unprocessed.</p>
       <p>The only exception to this is blocking by host patterns, as the client needs to tell <span class=
@@ -307,7 +310,9 @@
       <h3 class="SECT2"><a name="HTTP2" id="HTTP2">4.16. Does Privoxy support HTTP/2?</a></h3>
       <p>Privoxy currently doesn't parse HTTP/2 but applications can tunnel HTTP/2 through Privoxy if Privoxy is
       configured to allow CONNECT requests (default) which are also used for HTTPS.</p>
-      <p>Adding HTTP/2 support is on the TODO list but currently nobody is known to work on it.</p>
+      <p>Adding HTTP/2 support is on the <a href=
+      "https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob_plain;f=TODO;hb=HEAD" target="_top">TODO</a> list but
+      currently nobody is known to work on it.</p>
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="SECURE" id="SECURE">4.17. Privoxy runs as a <span class="QUOTE">"server"</span>. How
@@ -465,7 +470,7 @@
           <tr>
             <td><a href="https://sourceforge.net/projects/ijbswa/" target=
             "_top">https://sourceforge.net/projects/ijbswa/</a>, the Project Page for <span class=
-            "APPLICATION">Privoxy</span> on <a href="http://sourceforge.net" target="_top">SourceForge</a>.</td>
+            "APPLICATION">Privoxy</span> on <a href="https://sourceforge.net" target="_top">SourceForge</a>.</td>
           </tr>
         </tbody>
       </table>
@@ -481,8 +486,8 @@
       <table border="0">
         <tbody>
           <tr>
-            <td><a href="https://sourceforge.net/tracker/?group_id=11118&#38;atid=460288" target=
-            "_top">https://sourceforge.net/tracker/?group_id=11118&amp;atid=460288</a>, to submit <span class=
+            <td><a href="https://sourceforge.net/p/ijbswa/actionsfile-feedback/" target=
+            "_top">https://sourceforge.net/p/ijbswa/actionsfile-feedback/</a>, to submit <span class=
             "QUOTE">"misses"</span> and other configuration related suggestions to the developers.</td>
           </tr>
         </tbody>
@@ -498,11 +503,10 @@
       <table border="0">
         <tbody>
           <tr>
-            <td><a href="http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/" target=
-            "_top">http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/</a>, <span class=
-            "APPLICATION">Polipo</span> is a caching proxy with advanced features like pipelining, multiplexing and
-            caching of partial instances. In many setups it can be used as <span class="APPLICATION">Squid</span>
-            replacement.</td>
+            <td><a href="https://www.irif.fr/~jch/software/polipo/" target=
+            "_top">https://www.irif.fr/~jch/software/polipo/</a>, <span class="APPLICATION">Polipo</span> is a caching
+            proxy with advanced features like pipelining, multiplexing and caching of partial instances. In many setups
+            it can be used as <span class="APPLICATION">Squid</span> replacement.</td>
           </tr>
         </tbody>
       </table>
