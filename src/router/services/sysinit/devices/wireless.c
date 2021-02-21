@@ -309,6 +309,14 @@ static void detect_wireless_devices(int mask)
 		nvram_default_get("ath10k_encap", "0");
 		if (!nvram_match("noath10k", "1")) {
 			insmod("ath");
+			nvram_unset("wlan0_fwtype_use");
+			nvram_unset("wlan1_fwtype_use");
+			nvram_unset("wlan2_fwtype_use");
+			nvram_unset("wlan3_fwtype_use");
+			nvram_unset("wlan4_fwtype_use");
+			nvram_unset("wlan5_fwtype_use");
+			nvram_unset("wlan6_fwtype_use");
+			nvram_unset("wlan7_fwtype_use");
 			if (nvram_match("ath10k_encap", "1"))
 				eval("insmod", "ath10k", "ethernetmode=1");
 			else
