@@ -43,6 +43,7 @@
 #  include <sys/types.h>
 #endif
 #include <sys/time.h>
+#include <limits.h>
 #ifdef USE_TCP_FASTOPEN
 #include <netinet/tcp.h>
 #endif
@@ -80,9 +81,6 @@
 
 /** number of queued TCP connections for listen() */
 #define TCP_BACKLOG 256 
-
-/** number of simultaneous requests a client can have */
-#define TCP_MAX_REQ_SIMULTANEOUS 32
 
 #ifndef THREADS_DISABLED
 /** lock on the counter of stream buffer memory */
@@ -533,7 +531,9 @@ create_udp_sock(int family, int socktype, struct sockaddr* addr,
 				return -1;
 			}
 		}
-#  elif defined(IP_DONTFRAG)
+#  elif defined(IP_DONTFRAG) && !defined(__APPLE__)
+		/* the IP_DONTFRAG option if defined in the 11.0 OSX headers,
+		 * but does not work on that version, so we exclude it */
 		int off = 0;
 		if (setsockopt(s, IPPROTO_IP, IP_DONTFRAG, 
 			&off, (socklen_t)sizeof(off)) < 0) {
@@ -1244,8 +1244,9 @@ struct listen_dnsport*
 listen_create(struct comm_base* base, struct listen_port* ports,
 	size_t bufsize, int tcp_accept_count, int tcp_idle_timeout,
 	int harden_large_queries, uint32_t http_max_streams,
-	char* http_endpoint, struct tcl_list* tcp_conn_limit, void* sslctx,
-	struct dt_env* dtenv, comm_point_callback_type* cb, void *cb_arg)
+	char* http_endpoint, int http_notls, struct tcl_list* tcp_conn_limit,
+	void* sslctx, struct dt_env* dtenv, comm_point_callback_type* cb,
+	void *cb_arg)
 {
 	struct listen_dnsport* front = (struct listen_dnsport*)
 		malloc(sizeof(struct listen_dnsport));
@@ -1295,15 +1296,19 @@ listen_create(struct comm_base* base, struct listen_port* ports,
 				http_max_streams, http_endpoint,
 				tcp_conn_limit, bufsize, front->udp_buff,
 				ports->ftype, cb, cb_arg);
-			cp->ssl = sslctx;
+			if(http_notls && ports->ftype == listen_type_http)
+				cp->ssl = NULL;
+			else
+				cp->ssl = sslctx;
 			if(ports->ftype == listen_type_http) {
-				if(!sslctx) {
-				log_warn("HTTPS port configured, but no TLS "
+				if(!sslctx && !http_notls) {
+				  log_warn("HTTPS port configured, but no TLS "
 					"tls-service-key or tls-service-pem "
 					"set");
 				}
 #ifndef HAVE_SSL_CTX_SET_ALPN_SELECT_CB
-				log_warn("Unbound is not compiled with an "
+				if(!http_notls)
+				  log_warn("Unbound is not compiled with an "
 					"OpenSSL version supporting ALPN "
 					" (OpenSSL >= 1.0.2). This is required "
 					"to use DNS-over-HTTPS");
@@ -1402,6 +1407,7 @@ static int
 resolve_ifa_name(struct ifaddrs *ifas, const char *search_ifa, char ***ip_addresses, int *ip_addresses_size)
 {
 	struct ifaddrs *ifa;
+	void *tmpbuf;
 	int last_ip_addresses_size = *ip_addresses_size;
 
 	for(ifa = ifas; ifa != NULL; ifa = ifa->ifa_next) {
@@ -1450,7 +1456,7 @@ resolve_ifa_name(struct ifaddrs *ifas, const char *search_ifa, char ***ip_addres
 				log_err("inet_ntop failed");
 				return 0;
 			}
-			if_indextoname(in6->sin6_scope_id,
+			(void)if_indextoname(in6->sin6_scope_id,
 				(char *)if_index_name);
 			if (strlen(if_index_name) != 0) {
 				snprintf(addr_buf, sizeof(addr_buf),
@@ -1466,10 +1472,12 @@ resolve_ifa_name(struct ifaddrs *ifas, const char *search_ifa, char ***ip_addres
 		}
 		verbose(4, "interface %s has address %s", search_ifa, addr_buf);
 
-		*ip_addresses = realloc(*ip_addresses, sizeof(char *) * (*ip_addresses_size + 1));
-		if(!*ip_addresses) {
+		tmpbuf = realloc(*ip_addresses, sizeof(char *) * (*ip_addresses_size + 1));
+		if(!tmpbuf) {
 			log_err("realloc failed: out of memory");
 			return 0;
+		} else {
+			*ip_addresses = tmpbuf;
 		}
 		(*ip_addresses)[*ip_addresses_size] = strdup(addr_buf);
 		if(!(*ip_addresses)[*ip_addresses_size]) {
@@ -1480,10 +1488,12 @@ resolve_ifa_name(struct ifaddrs *ifas, const char *search_ifa, char ***ip_addres
 	}
 
 	if (*ip_addresses_size == last_ip_addresses_size) {
-		*ip_addresses = realloc(*ip_addresses, sizeof(char *) * (*ip_addresses_size + 1));
-		if(!*ip_addresses) {
+		tmpbuf = realloc(*ip_addresses, sizeof(char *) * (*ip_addresses_size + 1));
+		if(!tmpbuf) {
 			log_err("realloc failed: out of memory");
 			return 0;
+		} else {
+			*ip_addresses = tmpbuf;
 		}
 		(*ip_addresses)[*ip_addresses_size] = strdup(search_ifa);
 		if(!(*ip_addresses)[*ip_addresses_size]) {
@@ -1804,20 +1814,19 @@ tcp_req_info_setup_listen(struct tcp_req_info* req)
 
 	if(!req->cp->tcp_is_reading)
 		wr = 1;
-	if(req->num_open_req + req->num_done_req < TCP_MAX_REQ_SIMULTANEOUS &&
-		!req->read_is_closed)
+	if(!req->read_is_closed)
 		rd = 1;
 	
 	if(wr) {
 		req->cp->tcp_is_reading = 0;
 		comm_point_stop_listening(req->cp);
 		comm_point_start_listening(req->cp, -1,
-			req->cp->tcp_timeout_msec);
+			adjusted_tcp_timeout(req->cp));
 	} else if(rd) {
 		req->cp->tcp_is_reading = 1;
 		comm_point_stop_listening(req->cp);
 		comm_point_start_listening(req->cp, -1,
-			req->cp->tcp_timeout_msec);
+			adjusted_tcp_timeout(req->cp));
 		/* and also read it (from SSL stack buffers), so
 		 * no event read event is expected since the remainder of
 		 * the TLS frame is sitting in the buffers. */
@@ -1825,7 +1834,7 @@ tcp_req_info_setup_listen(struct tcp_req_info* req)
 	} else {
 		comm_point_stop_listening(req->cp);
 		comm_point_start_listening(req->cp, -1,
-			req->cp->tcp_timeout_msec);
+			adjusted_tcp_timeout(req->cp));
 		comm_point_listen_for_rw(req->cp, 0, 0);
 	}
 }
@@ -1938,7 +1947,7 @@ tcp_req_info_handle_readdone(struct tcp_req_info* req)
 	send_it:
 		c->tcp_is_reading = 0;
 		comm_point_stop_listening(c);
-		comm_point_start_listening(c, -1, c->tcp_timeout_msec);
+		comm_point_start_listening(c, -1, adjusted_tcp_timeout(c));
 		return;
 	}
 	req->in_worker_handle = 0;
@@ -2056,7 +2065,7 @@ tcp_req_info_send_reply(struct tcp_req_info* req)
 		/* switch to listen to write events */
 		comm_point_stop_listening(req->cp);
 		comm_point_start_listening(req->cp, -1,
-			req->cp->tcp_timeout_msec);
+			adjusted_tcp_timeout(req->cp));
 		return;
 	}
 	/* queue up the answer behind the others already pending */
@@ -2177,9 +2186,10 @@ int http2_submit_dns_response(struct http2_session* h2_session)
 	int ret;
 	nghttp2_data_provider data_prd;
 	char status[4];
-	nghttp2_nv headers[2];
+	nghttp2_nv headers[3];
 	struct http2_stream* h2_stream = h2_session->c->h2_stream;
 	size_t rlen;
+	char rlen_str[32];
 
 	if(h2_stream->rbuffer) {
 		log_err("http2 submit response error: rbuffer already "
@@ -2198,6 +2208,8 @@ int http2_submit_dns_response(struct http2_session* h2_session)
 	}
 
 	rlen = sldns_buffer_remaining(h2_session->c->buffer);
+	snprintf(rlen_str, sizeof(rlen_str), "%u", (unsigned)rlen);
+
 	lock_basic_lock(&http2_response_buffer_count_lock);
 	if(http2_response_buffer_count + rlen > http2_response_buffer_max) {
 		lock_basic_unlock(&http2_response_buffer_count_lock);
@@ -2228,13 +2240,11 @@ int http2_submit_dns_response(struct http2_session* h2_session)
 	headers[1].valuelen = 23;
 	headers[1].flags = NGHTTP2_NV_FLAG_NONE;
 
-	/*TODO be nice and add the content-length header
 	headers[2].name = (uint8_t*)"content-length";
 	headers[2].namelen = 14;
-	headers[2].value = 
-	headers[2].valuelen = 
+	headers[2].value = (uint8_t*)rlen_str;
+	headers[2].valuelen = strlen(rlen_str);
 	headers[2].flags = NGHTTP2_NV_FLAG_NONE;
-	*/
 
 	sldns_buffer_write(h2_stream->rbuffer,
 		sldns_buffer_current(h2_session->c->buffer),
@@ -2244,7 +2254,7 @@ int http2_submit_dns_response(struct http2_session* h2_session)
 	data_prd.source.ptr = h2_session;
 	data_prd.read_callback = http2_submit_response_read_callback;
 	ret = nghttp2_submit_response(h2_session->session, h2_stream->stream_id,
-		headers, 2, &data_prd);
+		headers, 3, &data_prd);
 	if(ret) {
 		verbose(VERB_QUERY, "http2: set_stream_user_data failed, "
 			"error: %s", nghttp2_strerror(ret));
@@ -2783,7 +2793,7 @@ void http2_req_stream_clear(struct http2_stream* h2_stream)
 	}
 }
 
-nghttp2_session_callbacks* http2_req_callbacks_create()
+nghttp2_session_callbacks* http2_req_callbacks_create(void)
 {
 	nghttp2_session_callbacks *callbacks;
 	if(nghttp2_session_callbacks_new(&callbacks) == NGHTTP2_ERR_NOMEM) {
