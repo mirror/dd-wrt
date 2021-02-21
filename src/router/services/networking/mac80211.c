@@ -351,7 +351,7 @@ void configure_single_ath9k(int count)
 			sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
 		else
 			sysprintf("echo > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
-		sysprintf("echo fw_reload > /sys/kernel/debug/ieee80211/phy1/ath10k/simulate_fw_crash");
+		sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/phy1/ath10k/simulate_fw_crash");
 	}
 	
 	// set channelbw ht40 is also 20!
