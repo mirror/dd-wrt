@@ -1583,7 +1583,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		if (is_ath10k(prefix)) {
 			char fw_type[32];
 			sprintf(fw_type, "%s_fwtype", prefix);
-			char fw_names[] = { "DD-WRT", "VANILLA" };
+			char *fw_names[] = { "DD-WRT", "VANILLA" };
 			showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
 		}
 		struct wifi_channels *chan;
@@ -3031,7 +3031,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (is_ath10k(prefix)) {
 		char fw_type[32];
 		sprintf(fw_type, "%s_fwtype", prefix);
-		char fw_names[] = { "DD-WRT", "VANILLA" };
+		char *fw_names[] = { "DD-WRT", "VANILLA" };
 		showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
 	}
 
@@ -4306,7 +4306,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (is_ath10k(prefix)) {
 		char fw_type[32];
 		sprintf(fw_type, "%s_fwtype", prefix);
-		char fw_names[] = { "DD-WRT", "VANILLA" };
+		char *fw_names[] = { "DD-WRT", "VANILLA" };
 		showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
 	}
 #ifndef HAVE_NOCOUNTRYSEL
