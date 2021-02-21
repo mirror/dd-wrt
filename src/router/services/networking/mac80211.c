@@ -347,11 +347,11 @@ void configure_single_ath9k(int count)
 	if (is_ath10k(dev)) {
 		char fwtype[32];
 		sprintf(fwtype, "%s_fwtype",dev);
-		if (nvram_default_match(fwtype, "vanilla","ddwrt"))
-			sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
-		else
-			sysprintf("echo > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
-		sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/phy1/ath10k/simulate_fw_crash");
+//		if (nvram_default_match(fwtype, "vanilla","ddwrt"))
+//			sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
+//		else
+//			sysprintf("echo > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
+//		sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/phy1/ath10k/simulate_fw_crash");
 	}
 	
 	// set channelbw ht40 is also 20!
