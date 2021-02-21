@@ -170,7 +170,9 @@ config_create(void)
 	cfg->infra_cache_slabs = 4;
 	cfg->infra_cache_numhosts = 10000;
 	cfg->infra_cache_min_rtt = 50;
+	cfg->infra_keep_probing = 0;
 	cfg->delay_close = 0;
+	cfg->udp_connect = 1;
 	if(!(cfg->outgoing_avail_ports = (int*)calloc(65536, sizeof(int))))
 		goto error_exit;
 	init_outgoing_availports(cfg->outgoing_avail_ports, 65536);
@@ -218,7 +220,7 @@ config_create(void)
 	cfg->views = NULL;
 	cfg->acls = NULL;
 	cfg->tcp_connection_limits = NULL;
-	cfg->harden_short_bufsize = 0;
+	cfg->harden_short_bufsize = 1;
 	cfg->harden_large_queries = 0;
 	cfg->harden_glue = 1;
 	cfg->harden_dnssec_stripped = 1;
@@ -235,6 +237,9 @@ config_create(void)
 	cfg->hide_trustanchor = 0;
 	cfg->identity = NULL;
 	cfg->version = NULL;
+	cfg->nsid_cfg_str = NULL;
+	cfg->nsid = NULL;
+	cfg->nsid_len = 0;
 	cfg->auto_trust_anchor_file_list = NULL;
 	cfg->trust_anchor_file_list = NULL;
 	cfg->trust_anchor_list = NULL;
@@ -256,6 +261,7 @@ config_create(void)
 	cfg->serve_expired_ttl_reset = 0;
 	cfg->serve_expired_reply_ttl = 30;
 	cfg->serve_expired_client_timeout = 0;
+	cfg->serve_original_ttl = 0;
 	cfg->add_holddown = 30*24*3600;
 	cfg->del_holddown = 30*24*3600;
 	cfg->keep_missing = 366*24*3600; /* one year plus a little leeway */
@@ -321,8 +327,8 @@ config_create(void)
 	cfg->qname_minimisation_strict = 0;
 	cfg->shm_enable = 0;
 	cfg->shm_key = 11777;
-	cfg->edns_client_tags = NULL;
-	cfg->edns_client_tag_opcode = LDNS_EDNS_CLIENT_TAG;
+	cfg->edns_client_strings = NULL;
+	cfg->edns_client_string_opcode = 65001;
 	cfg->dnscrypt = 0;
 	cfg->dnscrypt_port = 0;
 	cfg->dnscrypt_provider = NULL;
@@ -333,6 +339,10 @@ config_create(void)
 	cfg->dnscrypt_shared_secret_cache_slabs = 4;
 	cfg->dnscrypt_nonce_cache_size = 4*1024*1024;
 	cfg->dnscrypt_nonce_cache_slabs = 4;
+	cfg->pad_responses = 1;
+	cfg->pad_responses_block_size = 468; /* from RFC8467 */
+	cfg->pad_queries = 1;
+	cfg->pad_queries_block_size = 128; /* from RFC8467 */
 #ifdef USE_IPSECMOD
 	cfg->ipsecmod_enabled = 1;
 	cfg->ipsecmod_ignore_bogus = 0;
@@ -386,6 +396,7 @@ struct config_file* config_create_forlib(void)
 	cfg->val_log_level = 2; /* to fill why_bogus with */
 	cfg->val_log_squelch = 1;
 	cfg->minimal_responses = 0;
+	cfg->harden_short_bufsize = 1;
 	return cfg;
 }
 
@@ -522,11 +533,12 @@ int config_set_option(struct config_file* cfg, const char* opt,
 	else S_STR("tls-ciphersuites:", tls_ciphersuites)
 	else S_YNO("tls-use-sni:", tls_use_sni)
 	else S_NUMBER_NONZERO("https-port:", https_port)
-	else S_STR("http-endpoint", http_endpoint)
-	else S_NUMBER_NONZERO("http-max-streams", http_max_streams)
-	else S_MEMSIZE("http-query-buffer-size", http_query_buffer_size)
-	else S_MEMSIZE("http-response-buffer-size", http_response_buffer_size)
-	else S_YNO("http-nodelay", http_nodelay)
+	else S_STR("http-endpoint:", http_endpoint)
+	else S_NUMBER_NONZERO("http-max-streams:", http_max_streams)
+	else S_MEMSIZE("http-query-buffer-size:", http_query_buffer_size)
+	else S_MEMSIZE("http-response-buffer-size:", http_response_buffer_size)
+	else S_YNO("http-nodelay:", http_nodelay)
+	else S_YNO("http-notls-downstream:", http_notls_downstream)
 	else S_YNO("interface-automatic:", if_automatic)
 	else S_YNO("use-systemd:", use_systemd)
 	else S_YNO("do-daemonize:", do_daemonize)
@@ -562,10 +574,12 @@ int config_set_option(struct config_file* cfg, const char* opt,
 	    IS_NUMBER_OR_ZERO; cfg->infra_cache_min_rtt = atoi(val);
 	    RTT_MIN_TIMEOUT=cfg->infra_cache_min_rtt;
 	}
+	else S_YNO("infra-keep-probing:", infra_keep_probing)
 	else S_NUMBER_OR_ZERO("infra-host-ttl:", host_ttl)
 	else S_POW2("infra-cache-slabs:", infra_cache_slabs)
 	else S_SIZET_NONZERO("infra-cache-numhosts:", infra_cache_numhosts)
 	else S_NUMBER_OR_ZERO("delay-close:", delay_close)
+	else S_YNO("udp-connect:", udp_connect)
 	else S_STR("chroot:", chrootdir)
 	else S_STR("username:", username)
 	else S_STR("directory:", directory)
@@ -575,6 +589,20 @@ int config_set_option(struct config_file* cfg, const char* opt,
 	else S_YNO("hide-trustanchor:", hide_trustanchor)
 	else S_STR("identity:", identity)
 	else S_STR("version:", version)
+	else if(strcmp(opt, "nsid:") == 0) {
+		free(cfg->nsid_cfg_str);
+		if (!(cfg->nsid_cfg_str = strdup(val)))
+			return 0;
+		/* Empty string is just validly unsetting nsid */
+		if (*val == 0) {
+			free(cfg->nsid);
+			cfg->nsid = NULL;
+			cfg->nsid_len = 0;
+			return 1;
+		}
+		cfg->nsid = cfg_parse_nsid(val, &cfg->nsid_len);
+		return cfg->nsid != NULL;
+	}
 	else S_STRLIST("root-hints:", root_hints)
 	else S_STR("target-fetch-policy:", target_fetch_policy)
 	else S_YNO("harden-glue:", harden_glue)
@@ -619,6 +647,7 @@ int config_set_option(struct config_file* cfg, const char* opt,
 	else if(strcmp(opt, "serve-expired-reply-ttl:") == 0)
 	{ IS_NUMBER_OR_ZERO; cfg->serve_expired_reply_ttl = atoi(val); SERVE_EXPIRED_REPLY_TTL=(time_t)cfg->serve_expired_reply_ttl;}
 	else S_NUMBER_OR_ZERO("serve-expired-client-timeout:", serve_expired_client_timeout)
+	else S_YNO("serve-original-ttl:", serve_original_ttl)
 	else S_STR("val-nsec3-keysize-iterations:", val_nsec3_key_iterations)
 	else S_UNSIGNED_OR_ZERO("add-holddown:", add_holddown)
 	else S_UNSIGNED_OR_ZERO("del-holddown:", del_holddown)
@@ -714,6 +743,10 @@ int config_set_option(struct config_file* cfg, const char* opt,
 	else S_NUMBER_OR_ZERO("fast-server-permil:", fast_server_permil)
 	else S_YNO("qname-minimisation:", qname_minimisation)
 	else S_YNO("qname-minimisation-strict:", qname_minimisation_strict)
+	else S_YNO("pad-responses:", pad_responses)
+	else S_SIZET_NONZERO("pad-responses-block-size:", pad_responses_block_size)
+	else S_YNO("pad-queries:", pad_queries)
+	else S_SIZET_NONZERO("pad-queries-block-size:", pad_queries_block_size)
 #ifdef USE_IPSECMOD
 	else S_YNO("ipsecmod-enabled:", ipsecmod_enabled)
 	else S_YNO("ipsecmod-ignore-bogus:", ipsecmod_ignore_bogus)
@@ -958,8 +991,10 @@ config_get_option(struct config_file* cfg, const char* opt,
 	else O_DEC(opt, "infra-host-ttl", host_ttl)
 	else O_DEC(opt, "infra-cache-slabs", infra_cache_slabs)
 	else O_DEC(opt, "infra-cache-min-rtt", infra_cache_min_rtt)
+	else O_YNO(opt, "infra-keep-probing", infra_keep_probing)
 	else O_MEM(opt, "infra-cache-numhosts", infra_cache_numhosts)
 	else O_UNS(opt, "delay-close", delay_close)
+	else O_YNO(opt, "udp-connect", udp_connect)
 	else O_YNO(opt, "do-ip4", do_ip4)
 	else O_YNO(opt, "do-ip6", do_ip6)
 	else O_YNO(opt, "do-udp", do_udp)
@@ -990,6 +1025,7 @@ config_get_option(struct config_file* cfg, const char* opt,
 	else O_MEM(opt, "http-query-buffer-size", http_query_buffer_size)
 	else O_MEM(opt, "http-response-buffer-size", http_response_buffer_size)
 	else O_YNO(opt, "http-nodelay", http_nodelay)
+	else O_YNO(opt, "http-notls-downstream", http_notls_downstream)
 	else O_YNO(opt, "use-systemd", use_systemd)
 	else O_YNO(opt, "do-daemonize", do_daemonize)
 	else O_STR(opt, "chroot", chrootdir)
@@ -1007,6 +1043,7 @@ config_get_option(struct config_file* cfg, const char* opt,
 	else O_YNO(opt, "hide-trustanchor", hide_trustanchor)
 	else O_STR(opt, "identity", identity)
 	else O_STR(opt, "version", version)
+	else O_STR(opt, "nsid", nsid_cfg_str)
 	else O_STR(opt, "target-fetch-policy", target_fetch_policy)
 	else O_YNO(opt, "harden-short-bufsize", harden_short_bufsize)
 	else O_YNO(opt, "harden-large-queries", harden_large_queries)
@@ -1031,6 +1068,7 @@ config_get_option(struct config_file* cfg, const char* opt,
 	else O_YNO(opt, "serve-expired-ttl-reset", serve_expired_ttl_reset)
 	else O_DEC(opt, "serve-expired-reply-ttl", serve_expired_reply_ttl)
 	else O_DEC(opt, "serve-expired-client-timeout", serve_expired_client_timeout)
+	else O_YNO(opt, "serve-original-ttl", serve_original_ttl)
 	else O_STR(opt, "val-nsec3-keysize-iterations",val_nsec3_key_iterations)
 	else O_UNS(opt, "add-holddown", add_holddown)
 	else O_UNS(opt, "del-holddown", del_holddown)
@@ -1150,7 +1188,11 @@ config_get_option(struct config_file* cfg, const char* opt,
 	else O_LS3(opt, "access-control-tag-action", acl_tag_actions)
 	else O_LS3(opt, "access-control-tag-data", acl_tag_datas)
 	else O_LS2(opt, "access-control-view", acl_view)
-	else O_LS2(opt, "edns-client-tags", edns_client_tags)
+	else O_YNO(opt, "pad-responses", pad_responses)
+	else O_DEC(opt, "pad-responses-block-size", pad_responses_block_size)
+	else O_YNO(opt, "pad-queries", pad_queries)
+	else O_DEC(opt, "pad-queries-block-size", pad_queries_block_size)
+	else O_LS2(opt, "edns-client-strings", edns_client_strings)
 #ifdef USE_IPSECMOD
 	else O_YNO(opt, "ipsecmod-enabled", ipsecmod_enabled)
 	else O_YNO(opt, "ipsecmod-ignore-bogus", ipsecmod_ignore_bogus)
@@ -1476,6 +1518,8 @@ config_delete(struct config_file* cfg)
 #endif
 	free(cfg->identity);
 	free(cfg->version);
+	free(cfg->nsid_cfg_str);
+	free(cfg->nsid);
 	free(cfg->module_conf);
 	free(cfg->outgoing_avail_ports);
 	config_delstrlist(cfg->caps_whitelist);
@@ -1521,7 +1565,7 @@ config_delete(struct config_file* cfg)
 	config_deldblstrlist(cfg->ratelimit_below_domain);
 	config_delstrlist(cfg->python_script);
 	config_delstrlist(cfg->dynlib_file);
-	config_deldblstrlist(cfg->edns_client_tags);
+	config_deldblstrlist(cfg->edns_client_strings);
 #ifdef USE_IPSECMOD
 	free(cfg->ipsecmod_hook);
 	config_delstrlist(cfg->ipsecmod_whitelist);
@@ -2014,6 +2058,38 @@ uint8_t* config_parse_taglist(struct config_file* cfg, char* str,
 	return taglist;
 }
 
+uint8_t* cfg_parse_nsid(const char* str, uint16_t* nsid_len)
+{
+	uint8_t* nsid = NULL;
+
+	if (strncasecmp(str, "ascii_", 6) == 0) {
+		if ((nsid = (uint8_t *)strdup(str + 6)))
+			*nsid_len = strlen(str + 6);
+
+	} else if (strlen(str) % 2) {
+		; /* hex string has even number of characters */
+	}
+
+	else if (*str && (nsid = calloc(1, strlen(str) / 2))) {
+		const char *ch;
+		uint8_t *dp;
+
+		for ( ch = str, dp = nsid
+		    ; isxdigit(ch[0]) && isxdigit(ch[1])
+		    ; ch += 2, dp++) {
+			*dp  = (uint8_t)sldns_hexdigit_to_int(ch[0]) * 16;
+			*dp += (uint8_t)sldns_hexdigit_to_int(ch[1]);
+		}
+		if (*ch) {
+			free(nsid);
+			nsid = NULL;
+		} else
+			*nsid_len = strlen(str) / 2;
+	}
+	return nsid;
+}
+
+
 char* config_taglist2str(struct config_file* cfg, uint8_t* taglist,
         size_t taglen)
 {
@@ -2056,6 +2132,7 @@ config_apply(struct config_file* config)
 	SERVE_EXPIRED = config->serve_expired;
 	SERVE_EXPIRED_TTL = (time_t)config->serve_expired_ttl;
 	SERVE_EXPIRED_REPLY_TTL = (time_t)config->serve_expired_reply_ttl;
+	SERVE_ORIGINAL_TTL = config->serve_original_ttl;
 	MAX_NEG_TTL = (time_t)config->max_negative_ttl;
 	RTT_MIN_TIMEOUT = config->infra_cache_min_rtt;
 	EDNS_ADVERTISED_SIZE = (uint16_t)config->edns_buffer_size;
