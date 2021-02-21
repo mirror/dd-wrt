@@ -346,14 +346,20 @@ void configure_single_ath9k(int count)
 	}
 	if (is_ath10k(dev)) {
 		char fwtype[32];
-		sprintf(fwtype, "%s_fwtype",dev);
-//		if (nvram_default_match(fwtype, "vanilla","ddwrt"))
-//			sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
-//		else
-//			sysprintf("echo > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
-//		sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/phy1/ath10k/simulate_fw_crash");
+		sprintf(fwtype, "%s_fwtype", dev);
+		char fwtype_use[32];
+		sprintf(fwtype_use, "%s_fwtype_use", dev);
+
+		if (!nvram_default_match(fwtype, nvram_default_get(fwtype_use, "ddwrt")), "ddwrt") {
+			nvram_set(fwtype_use, nvram_safe_get(fwtype));
+
+			if (nvram_match(fwtype, "vanilla"))
+				sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
+			else
+				sysprintf("echo > /sys/kernel/debug/ieee80211/phy1/ath10k/fw_post");
+			sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/phy1/ath10k/simulate_fw_crash");
+		}
 	}
-	
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
 	char *driver = "ath9k";
@@ -1329,9 +1335,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (!vapid)
 		fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "0"));
 #ifdef HAVE_MVEBU
-	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack,"0"));
+	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack, "0"));
 #else
-	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack,"1"));
+	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack, "1"));
 #endif
 	char *mode = nvram_nget("%s_mode", ifname);
 	if (!strcmp(mode, "wdsap"))
