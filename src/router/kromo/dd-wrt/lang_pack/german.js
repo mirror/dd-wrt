@@ -2611,6 +2611,7 @@ wl_basic.mesh_rann="Rann";
 wl_basic.mesh_active="Aktiv";
 wl_basic.mesh_deep="Tiefschlaf";
 wl_basic.mesh_light="Leichter Schlaf";
+wl_basic.fw_type="Firmware Typ";
 
 
 //help container

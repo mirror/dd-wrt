@@ -1580,6 +1580,12 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		else
 			websWrite(wp, "<select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
 #ifdef HAVE_MADWIFI
+		if (is_ath10k(prefix)) {
+			char fw_type[32];
+			sprintf(fw_type, "%s_fwtype", prefix);
+			char fw_names[] = { "DD-WRT", "VANILLA" };
+			showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
+		}
 		struct wifi_channels *chan;
 		char cn[128];
 		char fr[32];
@@ -2938,15 +2944,18 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_ad(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[60\"+wl_basic.ghz+\" 802.11ad]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_5ghz(prefix) && has_ac(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/802.11ac]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/802.11ac]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "",
+			chipset ? chipset : "", maxvaps);
 	} else if (has_5ghz(prefix) && has_ac(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"/802.11ac]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_5ghz(prefix) && has_2ghz(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "",
+			maxvaps);
 	} else if (has_5ghz(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_ac(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\" \"+wl_basic.tbqam+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\" \"+wl_basic.tbqam+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "",
+			maxvaps);
 	} else if (has_2ghz(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else {
@@ -3018,6 +3027,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif				// ! HAVE MAKSAT
+
+	if (is_ath10k(prefix)) {
+		char fw_type[32];
+		sprintf(fw_type, "%s_fwtype", prefix);
+		char fw_names[] = { "DD-WRT", "VANILLA" };
+		showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
+	}
+
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[32];
@@ -4285,6 +4302,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			mesh_radio(wp, prefix, "mesh_connected_to_as", 0);
 			websWrite(wp, "</fieldset>\n");
 		}
+	}
+	if (is_ath10k(prefix)) {
+		char fw_type[32];
+		sprintf(fw_type, "%s_fwtype", prefix);
+		char fw_names[] = { "DD-WRT", "VANILLA" };
+		showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
 	}
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
