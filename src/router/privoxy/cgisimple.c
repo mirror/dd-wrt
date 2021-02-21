@@ -5,8 +5,8 @@
  * Purpose     :  Simple CGIs to get information about Privoxy's
  *                status.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2017 the
- *                Privoxy team. http://www.privoxy.org/
+ * Copyright   :  Written by and Copyright (C) 2001-2020 the
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -260,7 +260,13 @@ jb_err cgi_show_request(struct client_state *csp,
    }
 
    if (map(exports, "processed-request", 1,
-         html_encode_and_free_original(list_to_text(csp->headers)), 0))
+         html_encode_and_free_original(
+#ifdef FEATURE_HTTPS_INSPECTION
+                                       csp->http->ssl ?
+                                       list_to_text(csp->https_headers) :
+#endif
+                                       list_to_text(csp->headers)
+                                       ), 0))
    {
       free_map(exports);
       return JB_ERR_MEMORY;
@@ -308,7 +314,7 @@ static void cgi_create_client_tag_form(char *form, size_t size,
    snprintf(form, size,
       "<form method=\"GET\" action=\""CGI_PREFIX"toggle-client-tag\" style=\"display: inline\">\n"
       " <input type=\"hidden\" name=\"tag\" value=\"%s\">\n"
-      " <input type=\"hidden\" name=\"toggle-state\" value=\"%u\">\n"
+      " <input type=\"hidden\" name=\"toggle-state\" value=\"%i\">\n"
       " <input type=\"hidden\" name=\"expires\" value=\"%u\">\n"
       " <input type=\"submit\" value=\"%s\">\n"
       "</form>", tag, toggle_state, !expires, button_name);
@@ -356,7 +362,7 @@ jb_err cgi_show_client_tags(struct client_state *csp,
    this_tag = csp->config->client_tags;
    if (this_tag->name == NULL)
    {
-      client_tag_status = strdup_or_die("<p>No tags available.</p>\n");
+      client_tag_status = strdup_or_die("<p>No tags have been configured.</p>\n");
    }
    else
    {
@@ -401,9 +407,10 @@ jb_err cgi_show_client_tags(struct client_state *csp,
    refresh_delay = get_next_tag_timeout_for_client(csp->client_address);
    if (refresh_delay != 0)
    {
-      snprintf(buf, sizeof(buf), "%d", csp->config->client_tag_lifetime);
+      snprintf(buf, sizeof(buf), "%u", csp->config->client_tag_lifetime);
       if (map(exports, "refresh-delay", 1, buf, 1))
       {
+         freez(client_tag_status);
          free_map(exports);
          return JB_ERR_MEMORY;
       }
@@ -413,6 +420,7 @@ jb_err cgi_show_client_tags(struct client_state *csp,
       err = map_block_killer(exports, "tags-expire");
       if (err != JB_ERR_OK)
       {
+         freez(client_tag_status);
          return err;
       }
    }
@@ -1031,6 +1039,142 @@ jb_err cgi_send_user_manual(struct client_state *csp,
 }
 
 
+#ifdef FEATURE_EXTENDED_STATISTICS
+/*********************************************************************
+ *
+ * Function    :  get_block_reason_statistics_table
+ *
+ * Description :  Produces the block reason statistic table content.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *
+ * Returns     :  Pointer to the HTML statistic table content or
+ *                NULL on out of memory
+ *
+ *********************************************************************/
+static char *get_block_reason_statistics_table(const struct client_state *csp)
+{
+   char buf[BUFFER_SIZE];
+   char *statistics;
+   int i;
+   struct file_list *fl;
+   jb_err err = JB_ERR_OK;
+
+   statistics = strdup_or_die("");
+
+   /* Run through all action files. */
+   for (i = 0; i < MAX_AF_FILES; i++)
+   {
+      struct url_actions *b;
+      struct action_spec *last_action = NULL;
+
+      if (((fl = csp->actions_list[i]) == NULL) || ((b = fl->f) == NULL))
+      {
+         /* Skip empty files */
+         continue;
+      }
+
+      /* Go through all the actions. */
+      for (b = b->next; NULL != b; b = b->next)
+      {
+         if (last_action == b->action)
+         {
+            continue;
+         }
+         if ((b->action->add & ACTION_BLOCK))
+         {
+            unsigned long long count;
+            const char *block_reason = b->action->string[ACTION_STRING_BLOCK];
+            const char *encoded_block_reason = html_encode(block_reason);
+
+            if (encoded_block_reason == NULL)
+            {
+               freez(statistics);
+               return NULL;
+            }
+            get_block_reason_count(block_reason, &count);
+            snprintf(buf, sizeof(buf),
+               "<tr><td>%s</td><td style=\"text-align: right\">%llu</td>\n",
+               encoded_block_reason, count);
+            freez(encoded_block_reason);
+
+            if (!err) err = string_append(&statistics, buf);
+         }
+         last_action = b->action;
+      }
+   }
+
+   return statistics;
+
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  get_filter_statistics_table
+ *
+ * Description :  Produces the filter statistic table content.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *
+ * Returns     :  Pointer to the HTML statistic table content or
+ *                NULL on out of memory
+ *
+ *********************************************************************/
+static char *get_filter_statistics_table(const struct client_state *csp)
+{
+   char buf[BUFFER_SIZE];
+   char *statistics;
+   int i;
+   struct file_list *fl;
+   struct re_filterfile_spec *b;
+   jb_err err = JB_ERR_OK;
+
+   statistics = strdup_or_die("");
+
+   for (i = 0; i < MAX_AF_FILES; i++)
+   {
+     fl = csp->rlist[i];
+     if ((NULL == fl) || (NULL == fl->f))
+     {
+        /*
+         * Either there are no filter files left or this
+         * filter file just contains no valid filters.
+         *
+         * Continue to be sure we don't miss valid filter
+         * files that are chained after empty or invalid ones.
+         */
+        continue;
+     }
+
+     for (b = fl->f; b != NULL; b = b->next)
+     {
+        if (b->type == FT_CONTENT_FILTER)
+        {
+           unsigned long long executions;
+           unsigned long long response_bodies_modified;
+           unsigned long long hits;
+
+           get_filter_statistics(b->name, &executions, &response_bodies_modified, &hits);
+           snprintf(buf, sizeof(buf),
+              "<tr><td>%s</td><td style=\"text-align: right\">%llu</td>"
+              "<td style=\"text-align: right\">%llu</td>"
+              "<td style=\"text-align: right\">%llu</td><tr>\n",
+              b->name, executions, response_bodies_modified, hits);
+
+           if (!err) err = string_append(&statistics, buf);
+        }
+     }
+   }
+
+   return statistics;
+
+}
+#endif /* def FEATURE_EXTENDED_STATISTICS */
+
+
 /*********************************************************************
  *
  * Function    :  cgi_show_status
@@ -1143,6 +1287,35 @@ jb_err cgi_show_status(struct client_state *csp,
    if (!err) err = map_block_killer(exports, "statistics");
 #endif /* ndef FEATURE_STATISTICS */
 
+#ifdef FEATURE_EXTENDED_STATISTICS
+   if (!err)
+   {
+      char *block_reason_statistics = get_block_reason_statistics_table(csp);
+      if (block_reason_statistics != NULL)
+      {
+         err = map(exports, "block-reason-statistics", 1, block_reason_statistics, 0);
+      }
+      else
+      {
+         err = map_block_killer(exports, "extended-statistics");
+      }
+   }
+   if (!err)
+   {
+      char *filter_statistics = get_filter_statistics_table(csp);
+      if (filter_statistics != NULL)
+      {
+         err = map(exports, "filter-statistics", 1, filter_statistics, 0);
+      }
+      else
+      {
+         err = map_block_killer(exports, "extended-statistics");
+      }
+   }
+#else /* ndef FEATURE_EXTENDED_STATISTICS */
+   if (!err) err = map_block_killer(exports, "extended-statistics");
+#endif /* def FEATURE_EXTENDED_STATISTICS */
+
    /*
     * List all action files in use, together with view and edit links,
     * except for standard.action, which should only be viewable. (Not
@@ -1183,13 +1356,14 @@ jb_err cgi_show_status(struct client_state *csp,
          if (!err) err = string_append(&s, "</td></tr>\n");
       }
    }
-   if (*s != '\0')
+   if (!err && *s != '\0')
    {
-      if (!err) err = map(exports, "actions-filenames", 1, s, 0);
+      err = map(exports, "actions-filenames", 1, s, 0);
    }
    else
    {
       if (!err) err = map(exports, "actions-filenames", 1, "<tr><td>None specified</td></tr>", 1);
+      freez(s);
    }
 
    /*
@@ -1209,14 +1383,15 @@ jb_err cgi_show_status(struct client_state *csp,
          if (!err) err = string_append(&s, "</td></tr>\n");
       }
    }
-   if (*s != '\0')
+   if (!err && *s != '\0')
    {
-      if (!err) err = map(exports, "re-filter-filenames", 1, s, 0);
+      err = map(exports, "re-filter-filenames", 1, s, 0);
    }
    else
    {
       if (!err) err = map(exports, "re-filter-filenames", 1, "<tr><td>None specified</td></tr>", 1);
       if (!err) err = map_block_killer(exports, "have-filterfile");
+      freez(s);
    }
 
 #ifdef FEATURE_TRUST
@@ -1365,7 +1540,7 @@ jb_err cgi_show_url_info(struct client_state *csp,
 
    if (url_param[0] == '\0')
    {
-      /* URL paramater not specified, display query form only. */
+      /* URL parameter not specified, display query form only. */
       free(url_param);
       if (map_block_killer(exports, "url-given")
         || map(exports, "url", 1, "", 1))
@@ -1438,11 +1613,14 @@ jb_err cgi_show_url_info(struct client_state *csp,
       }
 
       /*
-       * We have a warning about SSL paths.  Hide it for unencrypted sites.
+       * We have a warning about SSL paths. Hide it for unencrypted sites
+       * and unconditionally if https inspection is enabled.
        */
+#ifndef FEATURE_HTTPS_INSPECTION
       if (!url_to_query->ssl)
+#endif
       {
-         if (map_block_killer(exports, "https"))
+         if (map_block_killer(exports, "https-and-no-https-inspection"))
          {
             free_current_action(action);
             free_map(exports);
@@ -1714,7 +1892,7 @@ jb_err cgi_robots_txt(struct client_state *csp,
  *
  * Function    :  show_defines
  *
- * Description :  Add to a map the state od all conditional #defines
+ * Description :  Add to a map the state of all conditional #defines
  *                used when building
  *
  * Parameters  :
@@ -1753,6 +1931,14 @@ static jb_err show_defines(struct map *exports)
       {
          "FEATURE_ACL",
 #ifdef FEATURE_ACL
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_BROTLI",
+#ifdef FEATURE_BROTLI
          1,
 #else
          0,
@@ -1825,6 +2011,14 @@ static jb_err show_defines(struct map *exports)
       {
          "FEATURE_GRACEFUL_TERMINATION",
 #ifdef FEATURE_GRACEFUL_TERMINATION
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_HTTPS_INSPECTION",
+#ifdef FEATURE_HTTPS_INSPECTION
          1,
 #else
          0,
@@ -1905,6 +2099,22 @@ static jb_err show_defines(struct map *exports)
       {
          "FEATURE_DYNAMIC_PCRE",
 #ifdef FEATURE_DYNAMIC_PCRE
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_EXTENDED_STATISTICS",
+#ifdef FEATURE_EXTENDED_STATISTICS
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_PCRE_HOST_PATTERNS",
+#ifdef FEATURE_PCRE_HOST_PATTERNS
          1,
 #else
          0,

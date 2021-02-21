@@ -6,7 +6,7 @@
 #                particular section in an actions file.
 #
 #
-# Copyright   :  Written by and Copyright (C) 2001-2014 the
+# Copyright   :  Written by and Copyright (C) 2001-2020 the
 #                Privoxy team. https://www.privoxy.org/
 #
 #                Original Author: Copyright (C) 2001 Jonathan Foster
@@ -354,6 +354,19 @@ function show_limit_connect_opts(tf)
         id="change_x_forwarded_for_mode_add" @change-x-forwarded-for-param-add@><label
         for="change_x_forwarded_for_mode_add">Add the header.</label><br>
     </tr>
+    <tr class="bg1" align="left" valign="top">
+      <td class="en1">&nbsp;</td>
+      <td class="dis1" align="center" valign="middle"><input type="radio"
+        name="client_body_filter_all" id="client_body_filter_all_n" value="N" @client-body-filter-all-n@ ></td>
+      <td class="noc1" align="center" valign="middle"><input type="radio"
+        name="client_body_filter_all" id="client_body_filter_all_x" value="X" @client-body-filter-all-x@ ></td>
+      <td class="action"><a href="@user-manual@@actions-help-prefix@CLIENT-BODY-FILTER">client-body-filter</a> *</td>
+      <td>Filter the client request body.
+        You can use the radio buttons on this line to disable
+        all client-body filters applied by previous rules, and/or
+        you can enable or disable the filters individually below.</td>
+    </tr>
+@client-body-filter-params@
     <tr class="bg1" align="left" valign="top">
       <td class="en1">&nbsp;</td>
       <td class="dis1" align="center" valign="middle"><input type="radio"
@@ -957,6 +970,42 @@ function show_limit_connect_opts(tf)
         <input type="text" name="hide_user_agent_mode" size="40"
         value="@hide-user-agent-param@"></td>
     </tr>
+
+<!-- @if-https-inspection-start -->
+   <tr class="bg1" align="left" valign="top">
+      <td class="en1" align="center" valign="middle"><input type="radio"
+        name="https_inspection" value="Y" @https-inspection-y@
+        ></td>
+      <td class="dis1" align="center" valign="middle"><input type="radio"
+        name="https_inspection" value="N" @https-inspection-n@
+        ></td>
+      <td class="noc1" align="center" valign="middle"><input type="radio"
+        name="https_inspection" value="X" @https-inspection-x@
+        ></td>
+      <td class="action"><a href="@user-manual@@actions-help-prefix@HTTPS-INSPECTION">https-inspection</a></td>
+      <td>
+       Enable content and header filtering for https requests.
+     </td>
+    </tr>
+
+   <tr class="bg1" align="left" valign="top">
+      <td class="en1" align="center" valign="middle"><input type="radio"
+        name="ignore_certificate_errors" value="Y" @ignore-certificate-errors-y@
+        ></td>
+      <td class="dis1" align="center" valign="middle"><input type="radio"
+        name="ignore_certificate_errors" value="N" @ignore-certificate-errors-n@
+        ></td>
+      <td class="noc1" align="center" valign="middle"><input type="radio"
+        name="ignore_certificate_errors" value="X" @ignore-certificate-errors-x@
+        ></td>
+      <td class="action"><a href="@user-manual@@actions-help-prefix@IGNORE-CERTIFICATE-ERRORS">ignore-certificate-errors</a></td>
+      <td>
+       Don't verify certificates when forwarding encrypted requests.
+     </td>
+    </tr>
+
+<!-- if-https-inspection-end@ -->
+
     <tr class="bg1" align="left" valign="top">
       <td class="en1" align="center" valign="middle"><input type="radio"
         name="limit_connect" id="limit_connect_y" value="Y" @limit-connect-y@
@@ -1106,6 +1155,30 @@ function show_limit_connect_opts(tf)
         you can enable or disable the taggers individually below.</td>
     </tr>
 @server-header-tagger-params@
+@suppress-tag-params@
+    <tr class="bg1" align="left" valign="top">
+      <td class="en1" align="center" valign="middle"><input type="radio"
+        name="new_string_filter_r0" value="Y"
+        ></td>
+      <td class="dis1" align="center" valign="middle"><input type="radio"
+        name="new_string_filter_r0" value="N"
+        ></td>
+      <td class="noc1" align="center" valign="middle"><input type="radio"
+        name="new_string_filter_r0" value="X" checked
+        ></td>
+      <td class="action"><a href="@user-manual@@actions-help-prefix@SUPPRESS-TAG">suppress-tag</a></td>
+      <td>Suppress tag.</td>
+    </tr>
+    <tr class="bg1" align="left" valign="top" id="suppress-tag_opts">
+      <td class="en1">&nbsp;</td>
+      <td class="dis1">&nbsp;</td>
+      <td class="noc1">&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>Tag to suppress:<br>
+        <input type="hidden" name="new_string_filter_t0" value="U">
+        <input type="text" name="new_string_filter_n0" size="40" value="">
+      </td>
+    </tr>
     <tr class="bg1" align="left" valign="top">
       <td class="en1" align="center" valign="middle"><input type="radio"
         name="session_cookies_only" value="Y" @session-cookies-only-y@

@@ -8,7 +8,7 @@
  *                unload files that are no longer in use.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2014 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -46,7 +46,7 @@
 #include <ctype.h>
 #include <assert.h>
 
-#if !defined(_WIN32) && !defined(__OS2__)
+#if !defined(_WIN32)
 #include <unistd.h>
 #endif
 
@@ -112,7 +112,13 @@ void free_csp_resources(struct client_state *csp)
    free_http_request(csp->http);
 
    destroy_list(csp->headers);
+#ifdef FEATURE_HTTPS_INSPECTION
+   destroy_list(csp->https_headers);
+#endif
    destroy_list(csp->tags);
+#ifdef FEATURE_CLIENT_TAGS
+   destroy_list(csp->client_tags);
+#endif
 
    free_current_action(csp->action);
 }
@@ -998,6 +1004,8 @@ void unload_forward_spec(struct forward_spec *fwd)
    free_pattern_spec(fwd->url);
    freez(fwd->gateway_host);
    freez(fwd->forward_host);
+   freez(fwd->auth_username);
+   freez(fwd->auth_password);
    free(fwd);
 
    return;
@@ -1156,6 +1164,10 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
          new_filter = FT_EXTERNAL_CONTENT_FILTER;
       }
 #endif
+      else if (strncmp(buf, "CLIENT-BODY-FILTER:", 19) == 0)
+      {
+         new_filter = FT_CLIENT_BODY_FILTER;
+      }
 
       /*
        * If this is the head of a new filter block, make it a
@@ -1174,6 +1186,10 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
             new_bl->name = chomp(buf + 16);
          }
 #endif
+         else if (new_filter == FT_CLIENT_BODY_FILTER)
+         {
+            new_bl->name = chomp(buf + 19);
+         }
          else
          {
             new_bl->name = chomp(buf + 21);
@@ -1203,7 +1219,7 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
 
          /*
           * If this is the first filter block, chain it
-          * to the file_list rather than its (nonexistant)
+          * to the file_list rather than its (nonexistent)
           * predecessor
           */
          if (fs->f == NULL)
@@ -1218,7 +1234,9 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
          bl = new_bl;
 
          log_error(LOG_LEVEL_RE_FILTER, "Reading in filter \"%s\" (\"%s\")", bl->name, bl->description);
-
+#ifdef FEATURE_EXTENDED_STATISTICS
+         register_filter_for_statistics(bl->name);
+#endif
          freez(buf);
          continue;
       }
@@ -1230,7 +1248,7 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
          /* Save the code as "pattern", but do not compile anything. */
          if (bl->patterns->first != NULL)
          {
-            log_error(LOG_LEVEL_FATAL, "External filter '%s' contains several jobss. "
+            log_error(LOG_LEVEL_FATAL, "External filter '%s' contains several jobs. "
                "Did you forget to escape a line break?",
                bl->name);
          }
@@ -1315,7 +1333,8 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
       }
       else
       {
-         log_error(LOG_LEVEL_ERROR, "Ignoring job %s outside filter block in %s, line %d",
+         log_error(LOG_LEVEL_ERROR,
+            "Ignoring job %s outside filter block in %s, line %lu",
             buf, csp->config->re_filterfile[fileid], linenum);
       }
       freez(buf);

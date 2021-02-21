@@ -5,7 +5,7 @@
  * Purpose     :  Win32 User Interface initialization and message loop
  *
  * Copyright   :  Written by and Copyright (C) 2001-2002 members of
- *                the Privoxy team.  http://www.privoxy.org/
+ *                the Privoxy team.  https://www.privoxy.org/
  *
  *                Written by and Copyright (C) 1999 Adam Lock
  *                <locka@iol.ie>
@@ -65,10 +65,10 @@
  */
 const char win32_blurb[] =
 "Privoxy version " VERSION " for Windows\n"
-"Copyright (C) 2000-2010 the Privoxy Team (" HOME_PAGE_URL ")\n"
+"Copyright (C) 2000-2021 the Privoxy Team (" HOME_PAGE_URL ")\n"
 "Based on the Internet Junkbuster by Junkbusters Corp.\n"
 "This is free software; it may be used and copied under the\n"
-"GNU General Public License, version 2: http://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n"
+"GNU General Public License, version 2: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n"
 "This program comes with ABSOLUTELY NO WARRANTY OF ANY KIND.\n";
 
 #ifdef _WIN_CONSOLE
@@ -163,7 +163,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #if 0
    /*
     * Cheat in parsing the command line.  We only ever have at most one
-    * paramater, which may optionally be specified inside double quotes.
+    * parameter, which may optionally be specified inside double quotes.
     */
 
    if (lpCmdLine != NULL)

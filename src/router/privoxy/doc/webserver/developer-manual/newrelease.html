@@ -31,9 +31,8 @@
     important that great care is taken to ensure that everything runs fine, and not to introduce problems in the very
     last minute.</p>
     <p>So when releasing a new version, please adhere exactly to the procedure outlined in this chapter.</p>
-    <p>The following programs are required to follow this process: <tt class="FILENAME">ncftpput</tt> (ncftp),
-    <tt class="FILENAME">scp, ssh</tt> (ssh), <tt class="FILENAME">gmake</tt> (GNU's version of make), autoconf,
-    cvs.</p>
+    <p>The following programs are required to follow this process: <tt class="FILENAME">ssh</tt>, <tt class=
+    "FILENAME">gmake</tt> (GNU's version of make), autoconf, git, a web browser.</p>
     <div class="SECT2">
       <h2 class="SECT2"><a name="VERSIONNUMBERS" id="VERSIONNUMBERS">6.1. Version numbers</a></h2>
       <p>First you need to determine which version number the release will have. <span class=
@@ -43,7 +42,7 @@
         <li>
           <p>X, the version major, is rarely ever changed. It is increased by one if turning a development branch into
           stable substantially changes the functionality, user interface or configuration syntax. Majors 1 and 2 were
-          <span class="APPLICATION">Junkbuster</span>, and 3 will be the first stable <span class=
+          <span class="APPLICATION">Junkbuster</span>, and 3 is the first stable <span class=
           "APPLICATION">Privoxy</span> release.</p>
         </li>
         <li>
@@ -131,7 +130,7 @@ for-privoxy-version=3.0.11</pre>
               <td>
                 <pre class="PROGRAMLISTING">  $ git tag
   #   to see the tags
-  $ git log [last release tag]..HEAD &gt; /tmp/log
+  $ git log [last release tag]..master &gt; /tmp/log
   #   get the commit log since the last release
   $ utils/makeChangeLog /tmp/log &gt; /tmp/change.log
   #   reformat the commit log</pre>
@@ -198,12 +197,12 @@ for-privoxy-version=3.0.11</pre>
           is version sensitive, so that the user will get appropriate help for his/her release. So with each release a
           fresh version should be uploaded to the webserver (this is in addition to the main <i class="CITETITLE">User
           Manual</i> link from the main page since we need to keep manuals for various versions available). The CGI
-          pages will link to something like <tt class="LITERAL">http://privoxy.org/$(VERSION)/user-manual/</tt>. This
-          will need to be updated for each new release. There is no Makefile target for this at this time!!! It needs
-          to be done manually.</p>
+          pages will link to something like <tt class="LITERAL">https://www.privoxy.org/$(VERSION)/user-manual/</tt>.
+          This needs to be updated for each new release and is done with the <span class="QUOTE">"webserver"</span>
+          target.</p>
         </li>
         <li>
-          <p>Tag all files in Git with the version number with <span class="QUOTE">"<b class="COMMAND">cvs tag
+          <p>Tag all files in Git with the version number with <span class="QUOTE">"<b class="COMMAND">git tag -s
           v_X_Y_Z</b>"</span>. Don't use vX_Y_Z, ver_X_Y_Z, v_X.Y.Z (won't work) etc.</p>
         </li>
         <li>
@@ -227,8 +226,9 @@ for-privoxy-version=3.0.11</pre>
           <td>
             <pre class="PROGRAMLISTING">  mkdir dist # delete or choose different name if it already exists
   cd dist
-  cvs -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa login
-  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa export -r v_X_Y_Z current</pre>
+  git clone https://www.privoxy.org/git/privoxy.git
+  cd privoxy
+  git checkout v_X_Y_Z</pre>
           </td>
         </tr>
       </table>
@@ -308,8 +308,7 @@ for-privoxy-version=3.0.11</pre>
             </table>
             <p>Also suggested: <tt class="FILENAME">Developer Manual</tt> (doc/webserver/developer-manual) and
             <tt class="FILENAME">ChangeLog</tt> (top-level directory). <tt class="FILENAME">FAQ</tt> and the manuals
-            are HTML docs. There are also text versions in <tt class="FILENAME">doc/text/</tt> which could conceivably
-            also be included.</p>
+            are HTML docs.</p>
             <p>The documentation has been designed such that the manuals are linked to each other from parallel
             directories, and should be packaged that way. <tt class="FILENAME">privoxy-index.html</tt> can also be
             included and can serve as a focal point for docs and other links of interest (and possibly renamed to
@@ -327,10 +326,11 @@ for-privoxy-version=3.0.11</pre>
             should be left in tact as well.</p>
           </li>
           <li>
-            <p>Other configuration files (<tt class="FILENAME">default.action</tt> and <tt class=
-            "FILENAME">default.filter</tt>) should be installed as the new defaults, but all previously installed
-            configuration files should be preserved as backups. This is just good manners :-) These files are likely to
-            change between releases and contain important new features and bug fixes.</p>
+            <p>Other configuration files (<tt class="FILENAME">default.action</tt>, <tt class=
+            "FILENAME">regression-tests.action</tt> and <tt class="FILENAME">default.filter</tt>) should be installed
+            as the new defaults, but all previously installed configuration files should be preserved as backups. This
+            is just good manners :-) These files are likely to change between releases and contain important new
+            features and bug fixes.</p>
           </li>
           <li>
             <p>Please check platform specific notes in this doc, if you haven't done <span class=
@@ -348,12 +348,12 @@ for-privoxy-version=3.0.11</pre>
       <div class="SECT3">
         <h3 class="SECT3"><a name="NEWRELEASE-TARBALL" id="NEWRELEASE-TARBALL">6.3.2. Source Tarball</a></h3>
         <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that you have freshly exported the right version
-        into an empty directory</i></span>. (See "Building and releasing packages" above). Then run:</p>
+        into an empty directory</i></span>. (See "Building and releasing packages" above). Then run from that
+        directory:</p>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  cd current
-  autoheader &#38;&#38; autoconf &#38;&#38; ./configure</pre>
+              <pre class="PROGRAMLISTING">  autoheader &#38;&#38; autoconf &#38;&#38; ./configure</pre>
             </td>
           </tr>
         </table>
@@ -365,143 +365,9 @@ for-privoxy-version=3.0.11</pre>
             </td>
           </tr>
         </table>
-        <p>To upload the package to Sourceforge, simply issue</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  make tarball-upload</pre>
-            </td>
-          </tr>
-        </table>
-        <p>Go to the displayed URL and release the file publicly on Sourceforge. For the change log field, use the
-        relevant section of the <tt class="FILENAME">ChangeLog</tt> file.</p>
       </div>
       <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-RPM" id="NEWRELEASE-RPM">6.3.3. SuSE, Conectiva or Red Hat RPM</a></h3>
-        <p>In following text, replace <tt class="REPLACEABLE"><i>dist</i></tt> with either <span class=
-        "QUOTE">"rh"</span> for Red Hat or <span class="QUOTE">"suse"</span> for SuSE.</p>
-        <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that you have freshly exported the right version
-        into an empty directory</i></span>. (See "Building and releasing packages" above).</p>
-        <p>As the only exception to not changing anything after export from Git, now examine the file <tt class=
-        "FILENAME">privoxy-</tt><tt class="REPLACEABLE"><i>dist</i></tt><tt class="FILENAME">.spec</tt> and make sure
-        that the version information and the RPM release number are correct. The RPM release numbers for each version
-        start at one. Hence it must be reset to one if this is the first RPM for <tt class=
-        "REPLACEABLE"><i>dist</i></tt> which is built from version X.Y.Z. Check the <a href=
-        "https://sourceforge.net/project/showfiles.php?group_id=11118" target="_top">file list</a> if unsure. Else, it
-        must be set to the highest already available RPM release number for that version plus one.</p>
-        <p>Then run:</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  cd current
-  autoheader &#38;&#38; autoconf &#38;&#38; ./configure</pre>
-            </td>
-          </tr>
-        </table>
-        <p>Then do</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  make <tt class="REPLACEABLE"><i>dist</i></tt>-dist</pre>
-            </td>
-          </tr>
-        </table>
-        <p>To upload the package to Sourceforge, simply issue</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  make <tt class="REPLACEABLE"><i>dist</i></tt>-upload <tt class=
-              "REPLACEABLE"><i>rpm_packagerev</i></tt></pre>
-            </td>
-          </tr>
-        </table>
-        <p>where <tt class="REPLACEABLE"><i>rpm_packagerev</i></tt> is the RPM release number as determined above. Go
-        to the displayed URL and release the file publicly on Sourceforge. Use the release notes and change log from
-        the source tarball package.</p>
-      </div>
-      <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-OS2" id="NEWRELEASE-OS2">6.3.4. OS/2</a></h3>
-        <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that you have freshly exported the right version
-        into an empty directory</i></span>. (See "Building and releasing packages" above). Then get the OS/2 Setup
-        module:</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class=
-              "PROGRAMLISTING">  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co os2setup</pre>
-            </td>
-          </tr>
-        </table>
-        <p>You will need a mix of development tools. The main compilation takes place with IBM Visual Age C++. Some
-        ancillary work takes place with GNU tools, available from various sources like hobbes.nmsu.edu. Specificially,
-        you will need <tt class="FILENAME">autoheader</tt>, <tt class="FILENAME">autoconf</tt> and <tt class=
-        "FILENAME">sh</tt> tools. The packaging takes place with WarpIN, available from various sources, including its
-        home page: <a href="http://www.xworkplace.org/" target="_top">xworkplace</a>.</p>
-        <p>Change directory to the <tt class="FILENAME">os2setup</tt> directory. Edit the os2build.cmd file to set the
-        final executable filename. For example,</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  installExeName='privoxyos2_setup_X.Y.Z.exe'</pre>
-            </td>
-          </tr>
-        </table>
-        <p>Next, edit the <tt class="FILENAME">IJB.wis</tt> file so the release number matches in the <tt class=
-        "FILENAME">PACKAGEID</tt> section:</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  PACKAGEID="Privoxy Team\Privoxy\Privoxy Package\X\Y\Z"</pre>
-            </td>
-          </tr>
-        </table>
-        <p>You're now ready to build. Run:</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  os2build</pre>
-            </td>
-          </tr>
-        </table>
-        <p>You will find the WarpIN-installable executable in the <tt class="FILENAME">./files</tt> directory. Upload
-        this anonymously to <tt class="FILENAME">uploads.sourceforge.net/incoming</tt>, create a release for it, and
-        you're done. Use the release notes and Change Log from the source tarball package.</p>
-      </div>
-      <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-SOLARIS" id="NEWRELEASE-SOLARIS">6.3.5. Solaris</a></h3>
-        <p>Login to Sourceforge's compilefarm via ssh:</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  ssh cf.sourceforge.net</pre>
-            </td>
-          </tr>
-        </table>
-        <p>Choose the right operating system (not the Debian one). When logged in, <span class="emphasis"><i class=
-        "EMPHASIS">make sure that you have freshly exported the right version into an empty directory</i></span>. (See
-        "Building and releasing packages" above). Then run:</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  cd current
-  autoheader &#38;&#38; autoconf &#38;&#38; ./configure</pre>
-            </td>
-          </tr>
-        </table>
-        <p>Then run</p>
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">  gmake solaris-dist</pre>
-            </td>
-          </tr>
-        </table>
-        <p>which creates a gzip'ed tar archive. Sadly, you cannot use <b class="COMMAND">make solaris-upload</b> on the
-        Sourceforge machine (no ncftpput). You now have to manually upload the archive to Sourceforge's ftp server and
-        release the file publicly. Use the release notes and Change Log from the source tarball package.</p>
-      </div>
-      <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-WINDOWS" id="NEWRELEASE-WINDOWS">6.3.6. Windows</a></h3>
+        <h3 class="SECT3"><a name="NEWRELEASE-WINDOWS" id="NEWRELEASE-WINDOWS">6.3.3. Windows</a></h3>
         <p>Note that the docbook generated files might need some hand editing, so the Windows build makefile does not
         rebuild the docs.</p>
         <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that you have freshly exported the right version
@@ -534,46 +400,209 @@ for-privoxy-version=3.0.11</pre>
         package.</p>
       </div>
       <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-DEBIAN" id="NEWRELEASE-DEBIAN">6.3.7. Debian</a></h3>
-        <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that you have freshly exported the right version
-        into an empty directory</i></span>. (See "Building and releasing packages" above). Then add a log entry to
-        <tt class="FILENAME">debian/changelog</tt>, if it is not already there, for example by running:</p>
+        <h3 class="SECT3"><a name="NEWRELEASE-DEBIAN" id="NEWRELEASE-DEBIAN">6.3.4. Debian</a></h3>
+        <p>Using git-buildpackage we start with a clone of the last Debian version:</p>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  debchange -v 3.0.28-stable-1 "New upstream version"</pre>
+              <pre class="PROGRAMLISTING">  gbp clone https://salsa.debian.org/debian/privoxy.git
+  cd privoxy</pre>
             </td>
           </tr>
         </table>
-        <p>Then, run:</p>
+        <p>or if the repository is already there</p>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  dpkg-buildpackage -rfakeroot -us -uc -b</pre>
+              <pre class="PROGRAMLISTING">  cd privoxy
+  gbp pull</pre>
             </td>
           </tr>
         </table>
-        <p>This will create <tt class="FILENAME">../privoxy_3.0.28-stable-1_i386.deb</tt> which can be uploaded. To
-        upload the package to Sourceforge, simply issue</p>
+        <p>Now import the newly released upstream tarball via debian/watch file:</p>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  make debian-upload</pre>
+              <pre class="PROGRAMLISTING">  gbp import-orig --uscan</pre>
             </td>
           </tr>
         </table>
+        <p>Next update all Debian quilt patches to the new version:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  while quilt push; do quilt refresh; done</pre>
+            </td>
+          </tr>
+        </table>
+        <p>If some patch is no longer required (because it is already merged upstream), it can be removed using</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  quilt delete XX_patchname.patch
+  git rm debian/patches/XX_patchname.patch</pre>
+            </td>
+          </tr>
+        </table>
+        <p>If the patch needs modification, you can apply, edit and update it with</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  quilt push -f
+  quilt edit some_file
+  quilt refresh</pre>
+            </td>
+          </tr>
+        </table>
+        <p>until</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  while quilt push; do quilt refresh; done</pre>
+            </td>
+          </tr>
+        </table>
+        <p>succeeds. Then you can</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  quilt pop -a</pre>
+            </td>
+          </tr>
+        </table>
+        <p>Now add a new entry to the debian/changelog representing the new version:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  dch -v 3.0.31-1</pre>
+            </td>
+          </tr>
+        </table>
+        <p>and describe what you did before and don't forget to git commit all changes.</p>
+        <p>Now you can build the package on the local machine using</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  gbp buildpackage -us -uc</pre>
+            </td>
+          </tr>
+        </table>
+        <p>You should check for warnings using</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  lintian -iI ../build-area/privoxy_3.0.31-1_amd64.changes</pre>
+            </td>
+          </tr>
+        </table>
+        <p>Maybe rebuild the package in different defined cowbuilder environments like</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class=
+              "PROGRAMLISTING">  sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_3.0.31-1.dsc</pre>
+            </td>
+          </tr>
+        </table>
+        <p>And try to run autopackage testing suite on the result:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class=
+              "PROGRAMLISTING">  autopkgtest /var/cache/pbuilder/result/privoxy_3.0.31-1_amd64.changes -s -- schroot sid</pre>
+            </td>
+          </tr>
+        </table>
+        <p>Or just push the changes to salsa.debian.org, where a CI pipeline is defined for the package, that builds
+        and tests it.</p>
+        <p>If everything is okay, run cowbuilder with i386 and amd64 environments for current Debian stable release and
+        build privoxy_3.0.31-1_i386.deb and privoxy_3.0.31-1_amd64.deb. Then sign both files:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  gpg --detach-sign --armor privoxy_3.0.31-1_i386.deb
+  gpg --detach-sign --armor privoxy_3.0.31-1_amd64.deb</pre>
+            </td>
+          </tr>
+        </table>
+        <p>Create a README file containing the recent block from debian/changelog and upload the two packages, the two
+        signatures and the README to a freshly created folder below
+        https://sourceforge.net/projects/ijbswa/files/Debian/</p>
+        <div class="SECT4">
+          <h4 class="SECT4"><a name="SNAPSHOT-DEBIAN" id="SNAPSHOT-DEBIAN">6.3.4.1. Debian GIT Snapshot</a></h4>
+          <p>For building just a git snapshot build the following workflow may be useful. First create a build
+          environment, for this you may have to run the following commands:</p>
+          <table border="0" bgcolor="#E0E0E0" width="100%">
+            <tr>
+              <td>
+                <pre class="PROGRAMLISTING">  sudo apt install build-essential devscripts
+  sudo apt-get build-dep privoxy</pre>
+              </td>
+            </tr>
+          </table>
+          <p>After this enter the checked out privoxy git tree and check that all (new) build dependencies are met:</p>
+          <table border="0" bgcolor="#E0E0E0" width="100%">
+            <tr>
+              <td>
+                <pre class="PROGRAMLISTING">  dpkg-checkbuilddeps</pre>
+              </td>
+            </tr>
+          </table>
+          <p>If something is missing, just add it using</p>
+          <table border="0" bgcolor="#E0E0E0" width="100%">
+            <tr>
+              <td>
+                <pre class="PROGRAMLISTING">  sudo apt install foobar</pre>
+              </td>
+            </tr>
+          </table>
+          <p>Now you may update debian/changelog, especially the version number using</p>
+          <table border="0" bgcolor="#E0E0E0" width="100%">
+            <tr>
+              <td>
+                <pre class="PROGRAMLISTING">  dch</pre>
+              </td>
+            </tr>
+          </table>
+          <p>and finally build the package:</p>
+          <table border="0" bgcolor="#E0E0E0" width="100%">
+            <tr>
+              <td>
+                <pre class="PROGRAMLISTING">  debuild -us -uc -b</pre>
+              </td>
+            </tr>
+          </table>
+          <p>If everything went okay, you may find the resulting Debian package in the parent directory.</p>
+          <p>You may want to clean up the build tree using</p>
+          <table border="0" bgcolor="#E0E0E0" width="100%">
+            <tr>
+              <td>
+                <pre class="PROGRAMLISTING">  debian/rules clean</pre>
+              </td>
+            </tr>
+          </table>
+          <p>And maybe repair some artefacts using one or both of the following commands:</p>
+          <table border="0" bgcolor="#E0E0E0" width="100%">
+            <tr>
+              <td>
+                <pre class="PROGRAMLISTING">  git reset --hard
+  git clean -fd</pre>
+              </td>
+            </tr>
+          </table>
+        </div>
       </div>
       <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-MACOSX" id="NEWRELEASE-MACOSX">6.3.8. Mac OS X</a></h3>
+        <h3 class="SECT3"><a name="NEWRELEASE-MACOSX" id="NEWRELEASE-MACOSX">6.3.5. Mac OS X</a></h3>
         <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that you have freshly exported the right version
         into an empty directory</i></span>. (See "Building and releasing packages" above).</p>
-        <p>There are three modules available in the Git repository for use on Mac OS X, though technically only two of
-        them generate a release (the other can be used to install from source).</p>
+        <p>There are three modules available in the CVS repository backups for use on Mac OS X, though technically only
+        two of them generate a release (the other can be used to install from source).</p>
         <div class="SECT4">
-          <h4 class="SECT4"><a name="OS-X-OSXPACKAGEBUILDER-MODULE" id="OS-X-OSXPACKAGEBUILDER-MODULE">6.3.8.1.
-          OSXPackageBuilder module</a></h4>
+          <h4 class="SECT4"><a name="OS-X-OSXPACKAGEBUILDER-MODULE" id="OS-X-OSXPACKAGEBUILDER-MODULE">6.3.5.1.
+          OSXPackageBuilder module (Documentation out of date)</a></h4>
           <p>The OSXPackageBuilder module generates OS X installer packages supporting all Macs running OS X 10.4 and
-          above. Obtain it from Git as follows into a folder parallel to the exported privoxy source:</p>
+          above. Obtain it from CVS as follows into a folder parallel to the exported privoxy source:</p>
           <table border="0" bgcolor="#E0E0E0" width="100%">
             <tr>
               <td>
@@ -590,12 +619,12 @@ for-privoxy-version=3.0.11</pre>
           makes it clear which package is for whichversion of OS X.</p>
         </div>
         <div class="SECT4">
-          <h4 class="SECT4"><a name="OS-X-OSXSETUP-MODULE" id="OS-X-OSXSETUP-MODULE">6.3.8.2. osxsetup module
-          (DEPRECATED)</a></h4>
+          <h4 class="SECT4"><a name="OS-X-OSXSETUP-MODULE" id="OS-X-OSXSETUP-MODULE">6.3.5.2. osxsetup module
+          (DEPRECATED) (Documentation out of date)</a></h4>
           <p><span class="emphasis"><i class="EMPHASIS">This module is deprecated since the installer it generates
           places all Privoxy files in one folder in a non-standard location, and supports only Intel Macs running OS X
           10.6 or higher.</i></span></p>
-          <p>Check out the module from Git as follows into a folder parallel to the exported privoxy source:</p>
+          <p>Check out the module from CVS as follows into a folder parallel to the exported privoxy source:</p>
           <table border="0" bgcolor="#E0E0E0" width="100%">
             <tr>
               <td>
@@ -632,9 +661,10 @@ for-privoxy-version=3.0.11</pre>
           package supports.</p>
         </div>
         <div class="SECT4">
-          <h4 class="SECT4"><a name="OS-X-MACSETUP-MODULE" id="OS-X-MACSETUP-MODULE">6.3.8.3. macsetup module</a></h4>
+          <h4 class="SECT4"><a name="OS-X-MACSETUP-MODULE" id="OS-X-MACSETUP-MODULE">6.3.5.3. macsetup module
+          (Documentation out of date)</a></h4>
           <p>The macsetup module is ideal if you wish to build and install Privoxy from source on a single machine.</p>
-          <p>Check out the module from Git as follows into a folder parallel to the exported privoxy source:</p>
+          <p>Check out the module from CVS as follows into a folder parallel to the exported privoxy source:</p>
           <table border="0" bgcolor="#E0E0E0" width="100%">
             <tr>
               <td>
@@ -648,7 +678,7 @@ for-privoxy-version=3.0.11</pre>
         </div>
       </div>
       <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-FREEBSD" id="NEWRELEASE-FREEBSD">6.3.9. FreeBSD</a></h3>
+        <h3 class="SECT3"><a name="NEWRELEASE-FREEBSD" id="NEWRELEASE-FREEBSD">6.3.6. FreeBSD</a></h3>
         <p>Update the www/privoxy port and submit a diff upstream. For details see the <a href=
         "https://www.freebsd.org/doc/en_US.ISO8859-1/books/porters-handbook/" target="_top">FreeBSD Porter's
         Handbook</a>.</p>
@@ -656,26 +686,8 @@ for-privoxy-version=3.0.11</pre>
     </div>
     <div class="SECT2">
       <h2 class="SECT2"><a name="RELEASING" id="RELEASING">6.4. Uploading and Releasing Your Package</a></h2>
-      <p>After the package is ready, it is time to upload it to SourceForge, and go through the release steps. The
-      upload is done via FTP:</p>
-      <ul>
-        <li>
-          <p>Upload to: <a href="ftp://upload.sourceforge.net/incoming" target=
-          "_top">ftp://upload.sourceforge.net/incoming</a></p>
-        </li>
-        <li>
-          <p>user: <tt class="LITERAL">anonymous</tt></p>
-        </li>
-        <li>
-          <p>password: <tt class="LITERAL">ijbswa-developers@lists.sourceforge.net</tt></p>
-        </li>
-      </ul>
-      <p>Or use the <b class="COMMAND">make</b> targets as described above.</p>
-      <p>Once this done go to <a href="https://sourceforge.net/project/admin/editpackages.php?group_id=11118" target=
-      "_top">https://sourceforge.net/project/admin/editpackages.php?group_id=11118</a>, making sure you are logged in.
-      Find your target platform in the second column, and click <tt class="LITERAL">Add Release</tt>. You will then
-      need to create a new release for your package, using the format of <tt class="LITERAL">$VERSION
-      ($CODE_STATUS)</tt>, e.g. <span class="emphasis"><i class="EMPHASIS">3.0.28 (beta)</i></span>.</p>
+      <p>After the package is ready, it is time to upload it and go through the release steps. The upload is done at
+      <a href="https://sourceforge.net/projects/ijbswa/upload/" target="_top">SourceForge</a> after logging in.</p>
       <p>Now just follow the prompts. Be sure to add any appropriate Release notes. You should see your freshly
       uploaded packages in <span class="QUOTE">"Step 2. Add Files To This Release"</span>. Check the appropriate
       box(es). Remember at each step to hit the <span class="QUOTE">"Refresh/Submit"</span> buttons! You should now see
@@ -689,12 +701,11 @@ for-privoxy-version=3.0.11</pre>
     <div class="SECT2">
       <h2 class="SECT2"><a name="AFTERRELEASE" id="AFTERRELEASE">6.5. After the Release</a></h2>
       <p>When all (or: most of the) packages have been uploaded and made available, send an email to the <a href=
-      "mailto:privoxy-announce@lists.privoxy.org" target="_top">announce mailing list</a>, Subject: "Version X.Y.Z
-      available for download". Be sure to include the <a href=
-      "https://sourceforge.net/project/showfiles.php?group_id=11118" target="_top">download location</a>, the release
-      notes and the Changelog. Also, post an updated News item on the project page Sourceforge, and update the Home
-      page and docs linked from the Home page (see below). Other news sites and release oriented sites, such as
-      Freshmeat, should also be notified.</p>
+      "mailto:privoxy-announce@lists.privoxy.org" target="_top">announce mailing list</a>, Subject: "Announcing Privoxy
+      X.Y.Z $CODE_STATUS". Be sure to include the <a href="https://sourceforge.net/projects/ijbswa/files/" target=
+      "_top">download location</a>, the release notes and the Changelog. Also, post an updated News item on the project
+      page Sourceforge, and update the Home page and docs linked from the Home page (see below). Other news sites and
+      release oriented sites, such as Freshmeat, should also be notified.</p>
       <p>Then update the source code for the next version to be released:</p>
       <ul>
         <li>

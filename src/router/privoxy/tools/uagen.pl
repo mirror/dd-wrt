@@ -1,22 +1,23 @@
 #!/usr/bin/perl
 
 ##############################################################################################
-# uagen (http://www.fabiankeil.de/sourcecode/uagen/)
+# uagen (https://www.fabiankeil.de/sourcecode/uagen/)
 #
 # Generates a pseudo-random Firefox user agent and writes it into a Privoxy action file
 # and optionally into a Mozilla prefs file. For documentation see 'perldoc uagen(.pl)'.
 #
-# Examples (created with v1.0):
+# Examples (created with v1.2.2):
 #
-# Mozilla/5.0 (X11; U; NetBSD i386; en-US; rv:1.8.0.2) Gecko/20060421 Firefox/1.5.0.2
-# Mozilla/5.0 (Macintosh; U; Intel Mac OS X; en-CA; rv:1.8.0.2) Gecko/20060425 Firefox/1.5.0.2
-# Mozilla/5.0 (X11; U; SunOS i86pc; no-NO; rv:1.8.0.2) Gecko/20060420 Firefox/1.5.0.2
-# Mozilla/5.0 (X11; U; Linux x86_64; de-AT; rv:1.8.0.2) Gecko/20060422 Firefox/1.5.0.2
-# Mozilla/5.0 (X11; U; NetBSD i386; en-US; rv:1.8.0.2) Gecko/20060415 Firefox/1.5.0.2
-# Mozilla/5.0 (X11; U; OpenBSD sparc64; pl-PL; rv:1.8.0.2) Gecko/20060429 Firefox/1.5.0.2
-# Mozilla/5.0 (X11; U; Linux i686; en-CA; rv:1.8.0.2) Gecko/20060413 Firefox/1.5.0.2
+# Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
+# Mozilla/5.0 (Macintosh; PPC Mac OS X; rv:78.0) Gecko/20100101 Firefox/78.0
+# Mozilla/5.0 (X11; NetBSD i386; rv:78.0) Gecko/20100101 Firefox/78.0
+# Mozilla/5.0 (X11; OpenBSD alpha; rv:78.0) Gecko/20100101 Firefox/78.0
+# Mozilla/5.0 (X11; FreeBSD amd64; rv:78.0) Gecko/20100101 Firefox/78.0
+# Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
+# Mozilla/5.0 (X11; ElectroBSD amd64; rv:78.0) Gecko/20100101 Firefox/78.0
+# Mozilla/5.0 (X11; FreeBSD i386; rv:78.0) Gecko/20100101 Firefox/78.0
 #
-# Copyright (c) 2006-2011 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2006-2020 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -38,7 +39,7 @@ use Getopt::Long;
 
 use constant {
 
-   UAGEN_VERSION       => 'uagen 1.2.1',
+   UAGEN_VERSION       => 'uagen 1.2.2',
 
    UAGEN_LOGFILE       => '/var/log/uagen.log',
    ACTION_FILE         => '/etc/privoxy/user-agent.action',
@@ -50,7 +51,7 @@ use constant {
    SLEEPING_TIME       =>  5,
 
    # As of Firefox 4, the "Gecko token" has been frozen
-   # http://hacks.mozilla.org/2010/09/final-user-agent-string-for-firefox-4/
+   # https://hacks.mozilla.org/2010/09/final-user-agent-string-for-firefox-4/
    RANDOMIZE_RELEASE_DATE => 0,
 
    # These variables belong together. If you only change one of them, the generated
@@ -58,8 +59,8 @@ use constant {
    # are too lazy to check, but want to change them anyway, take the values you
    # see in the "Help/About Mozilla Firefox" menu.
 
-   BROWSER_VERSION                   => "17.0",
-   BROWSER_REVISION                  => '17.0',
+   BROWSER_VERSION                   => "78.0",
+   BROWSER_REVISION                  => '78.0',
    BROWSER_RELEASE_DATE              => '20100101',
 };
 
@@ -128,6 +129,12 @@ sub generate_language_settings() {
 sub generate_platform_and_os() {
 
     my %os_data = (
+        ElectroBSD => {
+            karma             => 1,
+            platform          => 'X11',
+            architectures     => [ 'i386', 'amd64' ],
+            order_is_inversed => 0,
+        },
         FreeBSD => {
             karma             => 1,
             platform          => 'X11',
@@ -317,8 +324,8 @@ sub write_prefs_file() {
 }
 
 sub VersionMessage() {
-    printf UAGEN_VERSION . "\n" . 'Copyright (C) 2006-2011 Fabian Keil <fk@fabiankeil.de> ' .
-        "\nhttp://www.fabiankeil.de/sourcecode/uagen/\n";
+    printf UAGEN_VERSION . "\n" . 'Copyright (C) 2006-2020 Fabian Keil <fk@fabiankeil.de> ' .
+        "\nhttps://www.fabiankeil.de/sourcecode/uagen/\n";
 }
 
 sub help() {
@@ -577,10 +584,8 @@ could look like this one:
 
 =head1 CAVEATS
 
-If the browser opens an encrypted connection, Privoxy can't inspect
-the content and the browser's headers reach the server unmodified.
-It is the user's job to use Privoxy's limit-connect action to make sure
-there are no encrypted connections to untrusted sites.
+Use the https-inspection action to make sure Privoxy can modify
+the browser's headers for encrypted traffic as well.
 
 Mozilla users can alter the browser's User-Agent with the
 B<--prefs-file> option. But note that the preference file is only read
@@ -596,15 +601,15 @@ Some parameters can't be specified at the command line.
 
 =head1 SEE ALSO
 
-privoxy(1)
+privoxy(8)
 
 =head1 AUTHOR
 
 Fabian Keil <fk@fabiankeil.de>
 
-http://www.fabiankeil.de/sourcecode/uagen/
+https://www.fabiankeil.de/sourcecode/uagen/
 
-http://www.fabiankeil.de/blog-surrogat/2006/01/26/firefox-user-agent-generator.html (German)
+https://www.fabiankeil.de/blog-surrogat/2006/01/26/firefox-user-agent-generator.html (German)
 
 =cut
 

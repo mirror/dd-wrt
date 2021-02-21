@@ -4,7 +4,7 @@
 <head>
   <title>The Main Configuration File</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.28 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.31 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Privoxy Configuration" href="configuration.html">
   <link rel="NEXT" title="Actions Files" href="actions-file.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.28 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.31 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="configuration.html" accesskey="P">Prev</a></td>
@@ -547,10 +547,10 @@
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="PROGRAMLISTING">  debug     1 # Log the destination for each request <span class=
-                    "APPLICATION">Privoxy</span> let through. See also debug 1024.
+                    <pre class=
+                    "PROGRAMLISTING">  debug     1 # Log the destination for each request. See also debug 1024.
   debug     2 # show each connection status
-  debug     4 # show I/O status
+  debug     4 # show tagging-related messages
   debug     8 # show header parsing
   debug    16 # log all data written to the network
   debug    32 # debug force feature
@@ -689,10 +689,13 @@
               <p>If the address for the hostname isn't already known on the system (for example because it's in
               /etc/hostname), this may result in DNS traffic.</p>
               <p>If the specified address isn't available on the system, or if the hostname can't be resolved,
-              <span class="APPLICATION">Privoxy</span> will fail to start.</p>
+              <span class="APPLICATION">Privoxy</span> will fail to start. On GNU/Linux, and other platforms that can
+              listen on not yet assigned IP addresses, Privoxy will start and will listen on the specified address
+              whenever the IP address is assigned to the system</p>
               <p>IPv6 addresses containing colons have to be quoted by brackets. They can only be used if <span class=
               "APPLICATION">Privoxy</span> has been compiled with IPv6 support. If you aren't sure if your version
-              supports it, have a look at <tt class="LITERAL">http://config.privoxy.org/show-status</tt>.</p>
+              supports it, have a look at <a href="http://config.privoxy.org/show-status" target=
+              "_top">http://config.privoxy.org/show-status</a>.</p>
               <p>Some operating systems will prefer IPv6 to IPv4 addresses even if the system has no IPv6 connectivity
               which is usually not expected by the user. Some even rely on DNS to resolve localhost which mean the
               "localhost" address used may not actually be local.</p>
@@ -916,7 +919,7 @@
               hides the <span class="QUOTE">"go there anyway"</span> link. If the user adds the force prefix by hand,
               it will not be accepted and the circumvention attempt is logged.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>enforce-blocks 1</p>
             </dd>
@@ -945,7 +948,7 @@
               destination part are optional.</p>
               <p>If your system implements <a href="http://tools.ietf.org/html/rfc3493" target="_top">RFC 3493</a>,
               then <tt class="REPLACEABLE"><i>src_addr</i></tt> and <tt class="REPLACEABLE"><i>dst_addr</i></tt> can be
-              IPv6 addresses delimeted by brackets, <tt class="REPLACEABLE"><i>port</i></tt> can be a number or a
+              IPv6 addresses delimited by brackets, <tt class="REPLACEABLE"><i>port</i></tt> can be a number or a
               service name, and <tt class="REPLACEABLE"><i>src_masklen</i></tt> and <tt class=
               "REPLACEABLE"><i>dst_masklen</i></tt> can be a number from 0 to 128.</p>
             </dd>
@@ -1154,6 +1157,8 @@
               <p>The <span class="QUOTE">"trusted-cgi-referer"</span> option can be used to add that page, or the whole
               domain, as trusted source so the resulting requests aren't rejected. Requests are accepted if the
               specified trusted-cgi-refer is the prefix of the Referer.</p>
+              <p>If the trusted source is supposed to access the CGI pages via JavaScript the <a href=
+              "config.html#CORS-ALLOWED-ORIGIN">cors-allowed-origin</a> option can be used.</p>
               <div class="WARNING">
                 <table class="WARNING" border="1" width="90%">
                   <tr>
@@ -1162,6 +1167,55 @@
                   <tr>
                     <td align="left">
                       <p>Declaring pages the admin doesn't control trustworthy may allow malicious third parties to
+                      modify Privoxy's internal state against the user's wishes and without the user's knowledge.</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="CORS-ALLOWED-ORIGIN" id="CORS-ALLOWED-ORIGIN">7.4.11. cors-allowed-origin</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+            <dd>
+              <p>A trusted website which can access <span class="APPLICATION">Privoxy</span>'s CGI pages through
+              JavaScript.</p>
+            </dd>
+            <dt>Type of value:</dt>
+            <dd>
+              <p>URL</p>
+            </dd>
+            <dt>Default value:</dt>
+            <dd>
+              <p>Unset</p>
+            </dd>
+            <dt>Effect if unset:</dt>
+            <dd>
+              <p>No external sites get access via cross-origin resource sharing.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>Modern browsers by default prevent cross-origin requests made via JavaScript to <span class=
+              "APPLICATION">Privoxy</span>'s CGI interface even if <span class="APPLICATION">Privoxy</span> would trust
+              the referer because it's white listed via the <a href=
+              "config.html#TRUSTED-CGI-REFERER">trusted-cgi-referer</a> directive.</p>
+              <p><a href="https://en.wikipedia.org/wiki/Cross-origin_resource_sharing" target="_top">Cross-origin
+              resource sharing (CORS)</a> is a mechanism to allow cross-origin requests.</p>
+              <p>The <span class="QUOTE">"cors-allowed-origin"</span> option can be used to specify a domain that is
+              allowed to make requests to Privoxy CGI interface via JavaScript. It is used in combination with the
+              <a href="config.html#TRUSTED-CGI-REFERER">trusted-cgi-referer</a> directive.</p>
+              <div class="WARNING">
+                <table class="WARNING" border="1" width="90%">
+                  <tr>
+                    <td align="center"><b>Warning</b></td>
+                  </tr>
+                  <tr>
+                    <td align="left">
+                      <p>Declaring domains the admin doesn't control trustworthy may allow malicious third parties to
                       modify Privoxy's internal state against the user's wishes and without the user's knowledge.</p>
                     </td>
                   </tr>
@@ -1279,7 +1333,8 @@
             </dd>
             <dt>Type of value:</dt>
             <dd>
-              <p><tt class="REPLACEABLE"><i>target_pattern</i></tt> <tt class=
+              <p><tt class="REPLACEABLE"><i>target_pattern</i></tt> [<tt class=
+              "REPLACEABLE"><i>user</i></tt>:<tt class="REPLACEABLE"><i>pass</i></tt>@]<tt class=
               "REPLACEABLE"><i>socks_proxy</i></tt>[:<tt class="REPLACEABLE"><i>port</i></tt>] <tt class=
               "REPLACEABLE"><i>http_parent</i></tt>[:<tt class="REPLACEABLE"><i>port</i></tt>]</p>
               <p>where <tt class="REPLACEABLE"><i>target_pattern</i></tt> is a <a href=
@@ -1289,7 +1344,8 @@
               IP addresses in dotted decimal notation or valid DNS names (<tt class=
               "REPLACEABLE"><i>http_parent</i></tt> may be <span class="QUOTE">"."</span> to denote <span class=
               "QUOTE">"no HTTP forwarding"</span>), and the optional <tt class="REPLACEABLE"><i>port</i></tt>
-              parameters are TCP ports, i.e. integer values from 1 to 65535</p>
+              parameters are TCP ports, i.e. integer values from 1 to 65535. <tt class="REPLACEABLE"><i>user</i></tt>
+              and <tt class="REPLACEABLE"><i>pass</i></tt> can be used for SOCKS5 authentication if required.</p>
             </dd>
             <dt>Default value:</dt>
             <dd>
@@ -1340,6 +1396,14 @@
                 <tr>
                   <td>
                     <pre class="SCREEN">  forward-socks4   /               socks-gw.example.com:1080  .</pre>
+                  </td>
+                </tr>
+              </table>
+              <p>To connect SOCKS5 proxy which requires username/password authentication:</p>
+              <table border="0" bgcolor="#E0E0E0" width="90%">
+                <tr>
+                  <td>
+                    <pre class="SCREEN">  forward-socks5   /               user:pass@socks-gw.example.com:1080  .</pre>
                   </td>
                 </tr>
               </table>
@@ -1484,7 +1548,7 @@
               you try again manually. Start with a small value and check Privoxy's logfile from time to time, to see
               how many retries are usually needed.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>forwarded-connect-retries 1</p>
             </dd>
@@ -1529,7 +1593,7 @@
               you may want to adjust the CGI templates to make sure they don't reference content from
               config.privoxy.org.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>accept-intercepted-requests 1</p>
             </dd>
@@ -1566,7 +1630,7 @@
               done without care.</p>
               <p>Don't enable this option unless you're sure that you really need it.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>allow-cgi-request-crunching 1</p>
             </dd>
@@ -1604,7 +1668,7 @@
               <p>If you don't notice any editing problems, there is no reason to enable this option, but if one of the
               submit buttons appears to be broken, you should give it a try.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>split-large-forms 1</p>
             </dd>
@@ -1651,7 +1715,7 @@
               increasing it to 300 seconds or even more if you think your browser can handle it. If your browser
               appears to be hanging, it probably can't.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>keep-alive-timeout 300</p>
             </dd>
@@ -1691,7 +1755,7 @@
               <p>If you are seeing problems with pages not properly loading, disabling this option could work around
               the problem.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>tolerate-pipelining 1</p>
             </dd>
@@ -1736,7 +1800,7 @@
               <p>This option has no effect if <span class="APPLICATION">Privoxy</span> has been compiled without
               keep-alive support.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>default-server-timeout 60</p>
             </dd>
@@ -1792,7 +1856,7 @@
               <p>This option should only be used by experienced users who understand the risks and can weight them
               against the benefits.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>connection-sharing 1</p>
             </dd>
@@ -1824,7 +1888,7 @@
               <p>The default is quite high and you probably want to reduce it. If you aren't using an occasionally slow
               proxy like Tor, reducing it to a few seconds should be fine.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>socket-timeout 300</p>
             </dd>
@@ -1877,7 +1941,7 @@
               reached. This will likely change in a future version, but currently this limit can't be increased without
               recompiling <span class="APPLICATION">Privoxy</span> with a different FD_SETSIZE limit.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>max-client-connections 256</p>
             </dd>
@@ -1907,9 +1971,9 @@
             <dt>Notes:</dt>
             <dd>
               <p>Under high load incoming connection may queue up before Privoxy gets around to serve them. The queue
-              length is limitted by the operating system. Once the queue is full, additional connections are dropped
+              length is limited by the operating system. Once the queue is full, additional connections are dropped
               before Privoxy can accept and serve them.</p>
-              <p>Increasing the queue length allows Privoxy to accept more incomming connections that arrive roughly at
+              <p>Increasing the queue length allows Privoxy to accept more incoming connections that arrive roughly at
               the same time.</p>
               <p>Note that Privoxy can only request a certain queue length, whether or not the requested length is
               actually used depends on the operating system which may use a different length instead.</p>
@@ -1919,7 +1983,7 @@
               <p>Effectively using a value above 128 usually requires changing the system configuration as well. On
               FreeBSD-based system the limit is controlled by the kern.ipc.soacceptqueue sysctl.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>listen-backlog 4096</p>
             </dd>
@@ -1959,7 +2023,7 @@
               "https://www.freebsd.org/cgi/man.cgi?query=accf_http" target="_top">accf_http(9) man page</a> to learn
               how to enable the support in the operating system.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <p>enable-accept-filter 1</p>
             </dd>
@@ -2116,7 +2180,8 @@
               headers will be emitted in the order given, headers whose name isn't explicitly specified are added at
               the end.</p>
               <p>Note that sorting headers in an uncommon way will make fingerprinting actually easier. Encrypted
-              headers are not affected by this directive.</p>
+              headers are not affected by this directive unless <tt class="LITERAL"><a href=
+              "actions-file.html#HTTPS-INSPECTION" target="_top">https-inspection</a></tt> is enabled.</p>
             </dd>
           </dl>
         </div>
@@ -2140,18 +2205,6 @@
             </dd>
             <dt>Notes:</dt>
             <dd>
-              <div class="WARNING">
-                <table class="WARNING" border="1" width="90%">
-                  <tr>
-                    <td align="center"><b>Warning</b></td>
-                  </tr>
-                  <tr>
-                    <td align="left">
-                      <p>This is an experimental feature. The syntax is likely to change in future versions.</p>
-                    </td>
-                  </tr>
-                </table>
-              </div>
               <p>Client-specific tags allow Privoxy admins to create different profiles and let the users chose which
               one they want without impacting other users.</p>
               <p>One use case is allowing users to circumvent certain blocks without having to allow them to circumvent
@@ -2169,7 +2222,7 @@
               <p>Clients can request tags to be set by using the CGI interface <a href=
               "http://config.privoxy.org/client-tags" target="_top">http://config.privoxy.org/client-tags</a>. The
               specific tag description is only used on the web page and should be phrased in away that the user
-              understand the effect of the tag.</p>
+              understands the effect of the tag.</p>
             </dd>
             <dt>Examples:</dt>
             <dd>
@@ -2179,7 +2232,12 @@
                     <pre class="SCREEN">    # Define a couple of tags, the described effect requires action sections
     # that are enabled based on CLIENT-TAG patterns.
     client-specific-tag circumvent-blocks Overrule blocks but do not affect other actions
-    disable-content-filters Disable content-filters but do not affect other actions</pre>
+    client-specific-tag disable-content-filters Disable content-filters but do not affect other actions
+    client-specific-tag overrule-redirects Overrule redirect sections
+    client-specific-tag allow-cookies Do not crunch cookies in either direction
+    client-specific-tag change-tor-socks-port Change forward-socks5 settings to use a different Tor socks port (and circuits)
+    client-specific-tag no-https-inspection Disable HTTPS inspection
+    client-specific-tag no-tls-verification Don't verify certificates when http-inspection is enabled</pre>
                   </td>
                 </tr>
               </table>
@@ -2205,25 +2263,13 @@
             </dd>
             <dt>Notes:</dt>
             <dd>
-              <div class="WARNING">
-                <table class="WARNING" border="1" width="90%">
-                  <tr>
-                    <td align="center"><b>Warning</b></td>
-                  </tr>
-                  <tr>
-                    <td align="left">
-                      <p>This is an experimental feature. The syntax is likely to change in future versions.</p>
-                    </td>
-                  </tr>
-                </table>
-              </div>
               <p>In case of some tags users may not want to enable them permanently, but only for a short amount of
               time, for example to circumvent a block that is the result of an overly-broad URL pattern.</p>
               <p>The CGI interface <a href="http://config.privoxy.org/client-tags" target=
               "_top">http://config.privoxy.org/client-tags</a> therefore provides a "enable this tag temporarily"
               option. If it is used, the tag will be set until the client-tag-lifetime is over.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
@@ -2256,18 +2302,6 @@
             </dd>
             <dt>Notes:</dt>
             <dd>
-              <div class="WARNING">
-                <table class="WARNING" border="1" width="90%">
-                  <tr>
-                    <td align="center"><b>Warning</b></td>
-                  </tr>
-                  <tr>
-                    <td align="left">
-                      <p>This is an experimental feature. The syntax is likely to change in future versions.</p>
-                    </td>
-                  </tr>
-                </table>
-              </div>
               <p>If clients reach Privoxy through another proxy, for example a load balancer, Privoxy can't tell the
               client's IP address from the connection. If multiple clients use the same proxy, they will share the same
               client tag settings which is usually not desired.</p>
@@ -2280,7 +2314,7 @@
               change the client tags for other clients or increase Privoxy's memory requirements by registering lots of
               client tag settings for clients that don't exist.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
@@ -2327,7 +2361,7 @@
               memory is (currently) cleared before using it, a buffer that is too large can actually reduce the
               throughput.</p>
             </dd>
-            <dt>Examples:</dt>
+            <dt>Example:</dt>
             <dd>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
@@ -2343,7 +2377,366 @@
       </div>
     </div>
     <div class="SECT2">
-      <h2 class="SECT2"><a name="WINDOWS-GUI" id="WINDOWS-GUI">7.7. Windows GUI Options</a></h2>
+      <h2 class="SECT2"><a name="HTTPS-INSPECTION-DIRECTIVES" id="HTTPS-INSPECTION-DIRECTIVES">7.7. HTTPS Inspection
+      (Experimental)</a></h2>
+      <p>HTTPS inspection allows to filter encrypted requests and responses. This is only supported when <span class=
+      "APPLICATION">Privoxy</span> has been built with FEATURE_HTTPS_INSPECTION. If you aren't sure if your version
+      supports it, have a look at <a href="http://config.privoxy.org/show-status" target=
+      "_top">http://config.privoxy.org/show-status</a>.</p>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="CA-DIRECTORY" id="CA-DIRECTORY">7.7.1. ca-directory</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+            <dd>
+              <p>Directory with the CA key, the CA certificate and the trusted CAs file.</p>
+            </dd>
+            <dt>Type of value:</dt>
+            <dd>
+              <p>Text</p>
+            </dd>
+            <dt>Default value:</dt>
+            <dd>
+              <p><span class="emphasis"><i class="EMPHASIS">Empty string</i></span></p>
+            </dd>
+            <dt>Effect if unset:</dt>
+            <dd>
+              <p>Default value is used.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>This directive specifies the directory where the CA key, the CA certificate and the trusted CAs file
+              are located.</p>
+              <p>The permissions should only let <span class="APPLICATION">Privoxy</span> and the <span class=
+              "APPLICATION">Privoxy</span> admin access the directory.</p>
+            </dd>
+            <dt>Example:</dt>
+            <dd>
+              <p>ca-directory /usr/local/etc/privoxy/CA</p>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="CA-CERT-FILE" id="CA-CERT-FILE">7.7.2. ca-cert-file</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+            <dd>
+              <p>The CA certificate file in ".crt" format.</p>
+            </dd>
+            <dt>Type of value:</dt>
+            <dd>
+              <p>Text</p>
+            </dd>
+            <dt>Default value:</dt>
+            <dd>
+              <p><span class="emphasis"><i class="EMPHASIS">cacert.crt</i></span></p>
+            </dd>
+            <dt>Effect if unset:</dt>
+            <dd>
+              <p>Default value is used.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>This directive specifies the name of the CA certificate file in ".crt" format.</p>
+              <p>The file is used by <span class="APPLICATION">Privoxy</span> to generate website certificates when
+              https inspection is enabled with the <tt class="LITERAL"><a href="actions-file.html#HTTPS-INSPECTION"
+              target="_top">https-inspection</a></tt> action.</p>
+              <p><span class="APPLICATION">Privoxy</span> clients should import the certificate so that they can
+              validate the generated certificates.</p>
+              <p>The file can be generated with: <b class="COMMAND">openssl req -new -x509 -extensions v3_ca -keyout
+              cakey.pem -out cacert.crt -days 3650</b></p>
+            </dd>
+            <dt>Example:</dt>
+            <dd>
+              <p>ca-cert-file root.crt</p>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="CA-KEY-FILE" id="CA-KEY-FILE">7.7.3. ca-key-file</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+            <dd>
+              <p>The CA key file in ".pem" format.</p>
+            </dd>
+            <dt>Type of value:</dt>
+            <dd>
+              <p>Text</p>
+            </dd>
+            <dt>Default value:</dt>
+            <dd>
+              <p><span class="emphasis"><i class="EMPHASIS">cacert.pem</i></span></p>
+            </dd>
+            <dt>Effect if unset:</dt>
+            <dd>
+              <p>Default value is used.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>This directive specifies the name of the CA key file in ".pem" format. The <a href="#CA-CERT-FILE"
+              target="_top">ca-cert-file section</a> contains a command to generate it.</p>
+              <p>The CA key is used by <span class="APPLICATION">Privoxy</span> to sign generated certificates.</p>
+              <p>Access to the key should be limited to Privoxy.</p>
+            </dd>
+            <dt>Example:</dt>
+            <dd>
+              <p>ca-key-file cakey.pem</p>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="CA-PASSWORD" id="CA-PASSWORD">7.7.4. ca-password</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+            <dd>
+              <p>The password for the CA keyfile.</p>
+            </dd>
+            <dt>Type of value:</dt>
+            <dd>
+              <p>Text</p>
+            </dd>
+            <dt>Default value:</dt>
+            <dd>
+              <p><span class="emphasis"><i class="EMPHASIS">Empty string</i></span></p>
+            </dd>
+            <dt>Effect if unset:</dt>
+            <dd>
+              <p>Default value is used.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>This directive specifies the password for the CA keyfile that is used when Privoxy generates
+              certificates for intercepted requests.</p>
+              <p>Note that the password is shown on the CGI page so don't reuse an important one.</p>
+            </dd>
+            <dt>Example:</dt>
+            <dd>
+              <p>ca-password blafasel</p>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="CERTIFICATE-DIRECTORY" id="CERTIFICATE-DIRECTORY">7.7.5.
+        certificate-directory</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+            <dd>
+              <p>Directory to save generated keys and certificates.</p>
+            </dd>
+            <dt>Type of value:</dt>
+            <dd>
+              <p>Text</p>
+            </dd>
+            <dt>Default value:</dt>
+            <dd>
+              <p><span class="emphasis"><i class="EMPHASIS">./certs</i></span></p>
+            </dd>
+            <dt>Effect if unset:</dt>
+            <dd>
+              <p>Default value is used.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>This directive specifies the directory where generated TLS/SSL keys and certificates are saved when
+              https inspection is enabled with the <tt class="LITERAL"><a href="actions-file.html#HTTPS-INSPECTION"
+              target="_top">https-inspection</a></tt> action.</p>
+              <p>The keys and certificates currently have to be deleted manually when changing the <a href=
+              "#CA-CERT-FILE" target="_top">ca-cert-file</a> and the <a href="#CA-CERT-KEY" target=
+              "_top">ca-cert-key</a>.</p>
+              <p>The permissions should only let <span class="APPLICATION">Privoxy</span> and the <span class=
+              "APPLICATION">Privoxy</span> admin access the directory.</p>
+              <div class="WARNING">
+                <table class="WARNING" border="1" width="90%">
+                  <tr>
+                    <td align="center"><b>Warning</b></td>
+                  </tr>
+                  <tr>
+                    <td align="left">
+                      <p><span class="APPLICATION">Privoxy</span> currently does not garbage-collect obsolete keys and
+                      certificates and does not keep track of how may keys and certificates exist.</p>
+                      <p><span class="APPLICATION">Privoxy</span> admins should monitor the size of the directory
+                      and/or make sure there is sufficient space available. A cron job to limit the number of keys and
+                      certificates to a certain number may be worth considering.</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </dd>
+            <dt>Example:</dt>
+            <dd>
+              <p>certificate-directory /usr/local/var/privoxy/certs</p>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="CIPHER-LIST" id="CIPHER-LIST">7.7.6. cipher-list</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+            <dd>
+              <p>A list of ciphers to use in TLS handshakes</p>
+            </dd>
+            <dt>Type of value:</dt>
+            <dd>
+              <p>Text</p>
+            </dd>
+            <dt>Default value:</dt>
+            <dd>
+              <p>None</p>
+            </dd>
+            <dt>Effect if unset:</dt>
+            <dd>
+              <p>A default value is inherited from the TLS library.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>This directive allows to specify a non-default list of ciphers to use in TLS handshakes with clients
+              and servers.</p>
+              <p>Ciphers are separated by colons. Which ciphers are supported depends on the TLS library. When using
+              OpenSSL, unsupported ciphers are skipped. When using MbedTLS they are rejected.</p>
+              <div class="WARNING">
+                <table class="WARNING" border="1" width="90%">
+                  <tr>
+                    <td align="center"><b>Warning</b></td>
+                  </tr>
+                  <tr>
+                    <td align="left">
+                      <p>Specifying an unusual cipher list makes fingerprinting easier. Note that the default list
+                      provided by the TLS library may be unusual when compared to the one used by modern browsers as
+                      well.</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </dd>
+            <dt>Examples:</dt>
+            <dd>
+              <table border="0" bgcolor="#E0E0E0" width="90%">
+                <tr>
+                  <td>
+                    <pre class="SCREEN">    # Explicitly set a couple of ciphers with names used by MbedTLS
+    cipher-list cipher-list TLS-ECDHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
+TLS-ECDHE-ECDSA-WITH-CHACHA20-POLY1305-SHA256:\
+TLS-DHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
+TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:\
+TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384:\
+TLS-ECDHE-ECDSA-WITH-AES-256-CCM:\
+TLS-ECDHE-ECDSA-WITH-AES-256-CCM-8:\
+TLS-ECDHE-ECDSA-WITH-AES-128-CCM:\
+TLS-ECDHE-ECDSA-WITH-AES-128-CCM-8:\
+TLS-ECDHE-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
+TLS-ECDHE-ECDSA-WITH-CAMELLIA-256-GCM-SHA384:\
+TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:\
+TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:\
+TLS-ECDHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
+TLS-ECDHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
+TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:\
+TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:\
+TLS-DHE-RSA-WITH-AES-256-CCM:\
+TLS-DHE-RSA-WITH-AES-256-CCM-8:\
+TLS-DHE-RSA-WITH-AES-128-CCM:\
+TLS-DHE-RSA-WITH-AES-128-CCM-8:\
+TLS-DHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
+TLS-DHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
+TLS-ECDH-RSA-WITH-AES-128-GCM-SHA256:\
+TLS-ECDH-RSA-WITH-AES-256-GCM-SHA384:\
+TLS-ECDH-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
+TLS-ECDH-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
+TLS-ECDH-ECDSA-WITH-AES-128-GCM-SHA256:\
+TLS-ECDH-ECDSA-WITH-AES-256-GCM-SHA384:\
+TLS-ECDH-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
+TLS-ECDH-ECDSA-WITH-CAMELLIA-256-GCM-SHA384
+   </pre>
+                  </td>
+                </tr>
+              </table>
+              <table border="0" bgcolor="#E0E0E0" width="90%">
+                <tr>
+                  <td>
+                    <pre class="SCREEN">    # Explicitly set a couple of ciphers with names used by OpenSSL
+cipher-list ECDHE-RSA-AES256-GCM-SHA384:\
+ECDHE-ECDSA-AES256-GCM-SHA384:\
+DH-DSS-AES256-GCM-SHA384:\
+DHE-DSS-AES256-GCM-SHA384:\
+DH-RSA-AES256-GCM-SHA384:\
+DHE-RSA-AES256-GCM-SHA384:\
+ECDH-RSA-AES256-GCM-SHA384:\
+ECDH-ECDSA-AES256-GCM-SHA384:\
+ECDHE-RSA-AES128-GCM-SHA256:\
+ECDHE-ECDSA-AES128-GCM-SHA256:\
+DH-DSS-AES128-GCM-SHA256:\
+DHE-DSS-AES128-GCM-SHA256:\
+DH-RSA-AES128-GCM-SHA256:\
+DHE-RSA-AES128-GCM-SHA256:\
+ECDH-RSA-AES128-GCM-SHA256:\
+ECDH-ECDSA-AES128-GCM-SHA256:\
+ECDHE-RSA-AES256-GCM-SHA384:\
+AES128-SHA
+   </pre>
+                  </td>
+                </tr>
+              </table>
+              <table border="0" bgcolor="#E0E0E0" width="90%">
+                <tr>
+                  <td>
+                    <pre class=
+                    "SCREEN">    # Use keywords instead of explicitly naming the ciphers (Does not work with MbedTLS)
+    cipher-list ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
+   </pre>
+                  </td>
+                </tr>
+              </table>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="TRUSTED-CAS-FILE" id="TRUSTED-CAS-FILE">7.7.7. trusted-cas-file</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+            <dd>
+              <p>The trusted CAs file in ".pem" format.</p>
+            </dd>
+            <dt>Type of value:</dt>
+            <dd>
+              <p>File name relative to ca-directory</p>
+            </dd>
+            <dt>Default value:</dt>
+            <dd>
+              <p><span class="emphasis"><i class="EMPHASIS">trustedCAs.pem</i></span></p>
+            </dd>
+            <dt>Effect if unset:</dt>
+            <dd>
+              <p>Default value is used.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>This directive specifies the trusted CAs file that is used when validating certificates for
+              intercepted TLS/SSL requests.</p>
+              <p>An example file can be downloaded from <a href="https://curl.se/ca/cacert.pem" target=
+              "_top">https://curl.se/ca/cacert.pem</a>. If you want to create the file yourself, please see: <a href=
+              "https://curl.se/docs/caextract.html" target="_top">https://curl.se/docs/caextract.html</a>.</p>
+            </dd>
+            <dt>Example:</dt>
+            <dd>
+              <p>trusted-cas-file trusted_cas_file.pem</p>
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="SECT2">
+      <h2 class="SECT2"><a name="WINDOWS-GUI" id="WINDOWS-GUI">7.8. Windows GUI Options</a></h2>
       <p><span class="APPLICATION">Privoxy</span> has a number of options specific to the Windows GUI
       interface:</p><a name="ACTIVITY-ANIMATION" id="ACTIVITY-ANIMATION"></a>
       <p>If <span class="QUOTE">"activity-animation"</span> is set to 1, the <span class="APPLICATION">Privoxy</span>

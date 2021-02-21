@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- Copyright (C) 2001-2018 the Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2020 the Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -25,9 +25,21 @@
 
 <para>
  <application>Privoxy</application> is free software; you can
- redistribute it and/or modify it under the terms of the
- <citetitle>GNU General Public License</citetitle>, version 2,
- as published by the Free Software Foundation.
+ redistribute and/or modify its source code under the terms
+ of the <citetitle>GNU General Public License</citetitle>
+ as published by the Free Software Foundation, either version 2
+ of the license, or (at your option) any later version.
+</para>
+
+<para>
+ The same is true for <application>Privoxy</application> binaries
+ unless they are linked with a
+ <ulink url="https://tls.mbed.org/">mbed TLS</ulink> version
+ that is licensed under the Apache 2.0 license in which
+ case you can redistribute and/or modify the <application>Privoxy</application>
+ binaries under the terms of the <citetitle>GNU General Public License</citetitle>
+ as published by the Free Software Foundation, either version 3
+ of the license, or (at your option) any later version.
 </para>
 
 <para>
@@ -38,4 +50,3 @@
  url="https://www.privoxy.org/user-manual/copyright.html#LICENSE">
  <citetitle>license</citetitle></ulink> for details.
 </para>
-

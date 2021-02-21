@@ -5,7 +5,7 @@
  * Purpose     :  A function to split a string at specified delimiters.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2012 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and

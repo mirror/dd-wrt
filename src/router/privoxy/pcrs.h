@@ -7,7 +7,28 @@
  *
  * Purpose     :  Header file for pcrs.c
  *
- * Copyright   :  see pcrs.c
+ * Copyright   :  Written and Copyright (C) 2000, 2001 by Andreas S. Oesterhelt
+ *                <andreas@oesterhelt.org>
+ *
+ *                Copyright (C) 2006, 2007 Fabian Keil <fk@fabiankeil.de>
+ *
+ *                This program is free software; you can redistribute it
+ *                and/or modify it under the terms of the GNU General
+ *                Public License as published by the Free Software
+ *                Foundation; either version 2 of the License, or (at
+ *                your option) any later version.
+ *
+ *                This program is distributed in the hope that it will
+ *                be useful, but WITHOUT ANY WARRANTY; without even the
+ *                implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *                PARTICULAR PURPOSE.  See the GNU General Public
+ *                License for more details.
+ *
+ *                The GNU General Public License should be included with
+ *                this file.  If not, you can view it at
+ *                http://www.gnu.org/copyleft/gpl.html
+ *                or write to the Free Software Foundation, Inc., 59
+ *                Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  *********************************************************************/
 
@@ -49,6 +70,7 @@
 #define PCRS_GLOBAL          1      /* Job should be applied globally, as with perl's g option */
 #define PCRS_TRIVIAL         2      /* Backreferences in the substitute are ignored */
 #define PCRS_SUCCESS         4      /* Job did previously match */
+#define PCRS_DYNAMIC         8      /* Job is dynamic (used to disable JIT compilation) */
 
 
 /*

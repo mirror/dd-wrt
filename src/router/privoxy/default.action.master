@@ -21,14 +21,14 @@
 #                 and enhancements are better placed in user.action,
 #                 the match-all section has been moved to match-all.action.
 #
-#  Copyright   :  Written by and Copyright (C) 2001-2018 the
+#  Copyright   :  Written by and Copyright (C) 2001-2020 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 # Feedback welcome, for details please have a look at:
 # https://www.privoxy.org/user-manual/contact.html
 #
-# The current development version of this file is located:
-# http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/default.action.master
+# The current development version of this file is located at:
+# https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob_plain;f=default.action.master;hb=HEAD
 #
 #############################################################################
 # Syntax
@@ -187,6 +187,7 @@
 #    Client-header filters predefined in the supplied default.filter include:
 #
 #     hide-tor-exit-notation: Removes the Tor exit node notation in Host and Referer headers.
+#     no-brotli-accepted:     Strips "br" from the Accept-Encoding header
 #     privoxy-control:        Removes X-Privoxy-Control headers.
 #
 # +client-header-tagger{string}
@@ -369,6 +370,14 @@
 #    Or to identify yourself explicitly as a Privoxy user:
 #      +hide-user-agent{Privoxy/1.0}
 #    (Don't change the version number from 1.0 - after all, why tell them?)
+#
+# +https-inspection
+#    Filter encrypted requests and responses.
+#    Requires FEATURE_HTTPS_INSPECTION.
+#
+# +ignore-certificate-errors
+#    Ignore certificate errors when the +https-inspection action
+#    is enabled. Requires FEATURE_HTTPS_INSPECTION.
 #
 # +limit-connect{portlist}
 #
@@ -693,6 +702,12 @@ adina*.
 adele*.
 # URL = http://adlibris.com/
 adlibris.
+# URL = http://www.adbshell.com/
+.adbshell.com
+# URL = http://adbinstaller.com/
+.adbinstaller.com/
+# URL = https://adainitiativedotorg.files.wordpress.com/2012/07/founders_laughing.png
+ada*.
 
 #############################################################################
 # Generic block patterns by path:
@@ -717,6 +732,10 @@ adlibris.
 # Blocked URL = http://bilder.augsburger-allgemeine.de/img/incoming/orig30444932/2560007661/DigiAd-Zeopexx-03072014.gif
 # Blocked URL = http://bilder.augsburger-allgemeine.de/img/incoming/orig30463337/9180008457/DigiAd-AugenblickOptik-04072014.gif
 /.*DigiAd
+# Blocked URL = http://web-t.9gag.com/piwik.php?e_c=PostImpression&e_a=ViewPostForOneSecond&e_n=Hot&e_v=1&idsite=7&rec=1&r=438977&h=14&m=13&s=9&url=https%3A%2F%2F9gag.com%2F&_id=780f7a6cf105beed&_idts=1600003135&_idvc=3&_idn=0&_refts=0&_viewts=1600255370&send_image=0&pdf=1&qt=0&realp=0&wma=0&dir=0&fla=0&java=0&gears=0&ag=0&cookie=1&res=1366x768&e_cvar=%7B%221%22%3A%5B%22PostKey%22%2C%22aR72ZBQ%22%5D%2C%222%22%3A%5B%22TriggeredPage%22%2C%22PostList%22%5D%2C%223%22%3A%5B%22TriggeredPageKey%22%2C%22Hot%22%5D%2C%224%22%3A%5B%22Position%22%2C%22343%22%5D%7D&_cvar=%7B%221%22%3A%5B%22AppVersion%22%2C%2200000%22%5D%7D&gt_ms=222
+# Blocked URL = http://piwik.peta.de/piwik.php?idsite=2
+# Blocked URL = http://www.attac.de/piwik/piwik.php?idsite=1
+/(.*/)?piwik\.php
 
 #############################################################################
 # Generic unblockers by path:
@@ -791,7 +810,7 @@ support./(.*/)?track
 #----------------------------------------------------------------------------
 # Misc Web-bugs, JS and just plain Junk. Images here aren't normal images.
 #----------------------------------------------------------------------------
-{+block{Might be a web-bug.} +handle-as-empty-document -handle-as-image}
+{+block{Might be a web-bug that isn't an image.} +handle-as-empty-document -handle-as-image}
 #MASTER# REMARKS: signature for user tracking nytimes, cnn.com,latimes.com and many others. 10/06/06
 /b/ss/.+
 #MASTER# BLOCK-REFERRER: http://www.thesun.co.uk/article/0,,11071-10784,00.html
@@ -905,8 +924,34 @@ oskar.tradera.com/
 #MASTER# BLOCK-REFERRER: http://www12.zippyshare.com/v/64444425/file.html
 # Blocked URL = http://www.adcash.com/script/java.php?option=rotateur&rotateur=146355
 .adcash.com/script/
+#MASTER# BLOCK-REFERRER: https://www.tagesschau.de/inland/wolfgang-clement-103.html
+# Blocked URL = http://de.ioam.de/tx.io?st=tagessch&cp=tagesschstat&pt=CP&ps=lin&er=N22&rf=&r2=&ur=www.tagesschau.de&xy=1366x768x24&lo=FR%2Fn.a.&cb=001e&i2=001e3e01eacf383955f7084ae&ep=1632541316&vr=416&id=7wvnfq&i3=nocookie&n1=27&dntt=0&lt=1601209524382&ev=&cs=oegxy9&mo=1&sr=71
+# Blocked URL = http://script.ioam.de/iam.js
+.ioam.de/
+# Blocked URL = http://t.vi-serve.com/?event=ERROR&page_url=https%3A%2F%2F9gag.com%2F&pub_id=576566800037402&channel_id=5ea98ccc02abaa4068798df6&placement_id=pltlhqRgj1oCSlyn51S&ad_unit_type=2&session_id=e4xr60mlvsol&focus=false&player=playerVI&pageLanguage=en&placement_w=0&placement_h=0&time_delta=20700&error_msg=script%20tag%20placed%20in%20non-displayed%20Element&playlist_pos=1&mobile=false&floating=false&cb=f43f
+t.vi-serve.com/
+# Blocked URL = http://pixel.inforsea.com/server/log
+pixel.inforsea.com/
+#MASTER# BLOCK-REFERRER: https://sourceforge.net/projects/ijbswa/
+# Blocked URL = https://fastlane.rubiconproject.com/a/api/fastlane.json?account_id=15680&site_id=103240&zone_id=610848%3B798260%3B798260&size_id=43&p_pos=atf%3B%3B&rf=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fijbswa%2F&tk_flint=pbjs_lite_v4.17.0&x_source.tid=40522aa9-945e-4ba8-afdb-eb311922e0c2%3B0ef5f4c2-e76b-485f-ae9a-63d0cbde6c70%3B597ee091-a937-48e9-9d4e-a7e352438484&p_screen_res=1366x768&rp_floor=0.01&rp_secure=1&slots=3&rand=0.25171689494748506
+fastlane.rubiconproject.com/
+#MASTER# BLOCK-REFERRER: https://sourceforge.net/projects/ijbswa/
+# Blocked URL = https://d.adroll.com/pixel/3QEU55AVURGVNFYKGPRLHU/EPGGWMNOENDCJMRYE2IIFV?adroll_fpc=7716c28221770b6a1ca7a1edb9ea0d6e-1607178137583&arrfrr=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fijbswa%2F&xid_ch=f&pv=98946957920.17203&cookie=&adroll_s_ref=https%3A//sourceforge.net/projects/ijbswa/&keyw=
+.adroll.com/
+#MASTER# BLOCK-REFERRER: https://sourceforge.net/projects/ijbswa/
+# Blocked URL = https://ml314.com/utsync.ashx?pub=&adv=&et=0&eid=771&ct=js&pi=&fp=&clid=&if=1&ps=&cl=&mlt=&data=&&cp=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fijbswa%2F&pv=1607178655249_inq1swkkq&bl=en-ca&cb=1438340&return=&ht=&d=&dc=&si=1607178395284_aog287pmk&cid=&s=1366x768&rp=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fijbswa%2F
+ml314.com/
+#MASTER# BLOCK-REFERRER: https://www.ksta.de/ratgeber/digital/plattform-moodle-streikt-viele-schueler-koennen-nicht-arbeiten---gebauer-weiss-von-nichts-37913640
+# Blocked URL = https://pp.lp4.io/pl?i=512735e9d9d93e5a24000000&ct=11.384&rt=1.012&pt=12.396&pvr=0&p=https%3A%2F%2Fwww.ksta.de%2Fratgeber%2Fdigital%2Fplattform-moodle-streikt-viele-schueler-koennen-nicht-arbeiten---gebauer-weiss-von-nichts-37913640&c=desktop&t=article&s=undefined&_r=1610366562920:4.7.6:20190614-142003
+pp.lp4.io/
+#MASTER# BLOCK-REFERRER: https://www.ksta.de/ratgeber/digital/plattform-moodle-streikt-viele-schueler-koennen-nicht-arbeiten---gebauer-weiss-von-nichts-37913640
+# Blocked URL = https://ih.adscale.de/map?ssl=1&format=video&gdpr=0&nut&uu=ace89aa78df247b3bb362c35ecfd6024
+ih.adscale.de/
+#MASTER# BLOCK-REFERRER: https://www.ksta.de/ratgeber/digital/plattform-moodle-streikt-viele-schueler-koennen-nicht-arbeiten---gebauer-weiss-von-nichts-37913640
+# Blocked URL = https://api.theadex.com/collector/v1/d/285/5184/cmframe/Lw0EHAiwAxA2GAIUhAK0AXaMBA?c=4248866896491805402
+api.theadex.com/
 
-{+block{Might be a web-bug.} -handle-as-empty-document +handle-as-image}
+{+block{Might be a web-bug that is an image.} -handle-as-empty-document +handle-as-image}
 #MASTER# BLOCK-REFERRER: http://versiontracker.com and many others. 10/20/06
 /(.*/)?__utm.gif\?
 #MASTER# BLOCK-REFERRER: http://washingpost.com and others 10/25/06
@@ -943,6 +988,29 @@ stats./.*\.gif\?
 go.idmnet.bbelements.com/please/showit/
 # Blocked URL = http://gm-link.com/tm_image.asp?c=12345&x=0&u=email@address.tld&orc.gif
 gm-link.com/
+# Blocked URL = https://collector.githubapp.com/github/page_view?dimensions[page]=https%3A%2F%2Fgithub.com%2Fopenbsd%2Fsrc%2Fblob%2F5ecdd0566b441ae0b99e73f410875e05dc0fa5b7%2Flib%2Flibc%2Finclude%2Fthread_private.h&dimensions[title]=src%2Fthread_private.h%20at%205ecdd0566b441ae0b99e73f410875e05dc0fa5b7%20%C2%B7%20openbsd%2Fsrc%20%C2%B7%20GitHub&dimensions[referrer]=https%3A%2F%2Fgithub.com%2Fopenbsd%2Fsrc%2Fsearch%3Fq%3D_MUTEX_LOCK%26unscoped_q%3D_MUTEX_LOCK&dimensions[user_agent]=Mozilla%2F5.0%20(X11%3B%20ElectroBSD%20amd64%3B%20rv%3A68.0)%20Gecko%2F20100101%20Firefox%2F68.0&dimensions[screen_resolution]=1366x768&dimensions[pixel_ratio]=1&dimensions[browser_resolution]=1362x636&dimensions[tz_seconds]=7200&dimensions[timestamp]=1591515169218&dimensions[referrer]=&dimensions[request_id]=22CA%3AE6F6%3A271ED2A%3A3839C5D%3A5EDB8295&dimensions[visitor_id]=5184934927058829974&dimensions[region_edge]=ams&dimensions[region_render]=ams&dimensions[user_id]=929183&dimensions[user_login]=openbsd&dimensions[repository_id]=66966208&dimensions[repository_nwo]=openbsd%2Fsrc&dimensions[repository_public]=true&dimensions[repository_is_fork]=false&dimensions[repository_network_root_id]=66966208&dimensions[repository_network_root_nwo]=openbsd%2Fsrc&dimensions[repository_explore_github_marketplace_ci_cta_shown]=false&&measures[performance_timing]=1-172-172-13996-12735-12426-12394-3858-172-172-172--13996-0---172-3853-3412-0--&&&dimensions[cid]=268614077.1591515169
+collector.githubapp.com/
+# Blocked URL = http://consentmanager.mgr.consensu.org/delivery/pixel.php?id=11319&did=0&cfdid=0&t=pv&h=https%3A%2F%2Fsourceforge.net%2Fp%2Fijbswa%2Ffeature-requests%2F535%2F&o=1591880198219&l=EN&lv=0&d=0&ct=14&e=&e2=&e3=&i=&sv=0&dv=0
+.consensu.org/delivery/pixel\.php
+# Blocked URL = https://srv-2020-08-22-20.pixel.parsely.com/plogger/?rand=1598128327825&plid=94157330&idsite=theverge.com&url=https%3A%2F%2Fwww.theverge.com%2F2020%2F8%2F21%2F21396316%2Fapple-wordpress-in-app-purchase-tax-update-store&urlref=&screen=1366x768%7C1366x768%7C24&data=%7B%7D&sid=1&surl=https%3A%2F%2Fwww.theverge.com%2F2020%2F8%2F21%2F21396316%2Fapple-wordpress-in-app-purchase-tax-update-store&sref=&sts=1598128167510&slts=0&date=Sat+Aug+22+2020+22%3A32%3A07+GMT%2B0200+(CEST)&action=heartbeat&inc=6&tt=140923&pvid=91707838&u=pid%3D72b66a2ec3c73c8fbf8c925f679fcbd9
+.pixel.parsely.com/
+# Blocked URL = http://t.9gag.com/img.gif?a=unique-viewed&v=v&ref=&lbl=&lblv=&p=d&e=aD4X2GG&u=&w=l&url=https%3A%2F%2F9gag.com%2F&referrer=&t=1600253599&
+t.9gag.com/img\.gif
+# Blocked URL = http://t.lto.connectaserver.de/t.php?ht=e&in=Verweildauer%7C%7CTimeOnPage%7C%7C1m%2030s&pp=https%3A%2F%2Fwww.lto.de%2Frecht%2Fhintergruende%2Fh%2Feugh-c62317-vorratsdatenspeicherung-internet-telefon-eu-staaten-sicherheit-terrorismus-datenschutz-speichern-deutschland-kinderpornographie%2F&sr=1366x768&vp=1362x676&cid=602d486b-9a75-4ea2-99d3-ebfb063e1be8&dt=Vorratsdatenspeicherung:%20Was%20bedeutet%20das%20EuGH-Urteil?&rf=&z=1602062648454
+.connectaserver.de/
+#MASTER# BLOCK-REFERRER: https://sourceforge.net/projects/ijbswa/
+# Blocked URL = https://analytics.slashdotmedia.com/sf.php?action_name=Privoxy%20download%20%7C%20SourceForge.net&idsite=39&rec=1&r=151583&h=15&m=33&s=42&url=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fijbswa%2F&urlref=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fijbswa%2F&_id=a1e65404b0c0c572&_idts=1607178131&_idvc=1&_idn=0&_refts=0&_viewts=1607178131&send_image=1&cookie=1&res=1366x768&dimension1=ijbswa&dimension2=pg_project&dimension3=1&gt_ms=357&pv_id=PDkFUz
+analytics.slashdotmedia.com/
+#MASTER# BLOCK-REFERRER: https://sourceforge.net/projects/ijbswa/
+# Blocked URL = https://tag.crsspxl.com/s2.html?d=2396&t=Privoxy%20download%20%7C%20SourceForge.net&u=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fijbswa%2F&b2=%20CategoriesWWW%2FHTTP%2C%20Firewalls%20LicenseGNU%20General%20Public%20License%20version%202.0%20(GPLv2)%2C%20ISC%20License%20%20%20%20%20%20%20
+tag.crsspxl.com/
+#MASTER# BLOCK-REFERRER: https://www.heise.de/news/Komplettausfall-Youtube-Gmail-und-andere-Google-Dienste-nicht-erreichbar-4989007.html
+# Blocked URL = https://eu-tlp03.kameleoon.com/visit.gif?lp=1&spt=1607679917743&p=c2l0...kNvdW50PTA%3D
+eu-tlp03.kameleoon.com/
+#MASTER# BLOCK-REFERRER: https://www.ksta.de/ratgeber/digital/plattform-moodle-streikt-viele-schueler-koennen-nicht-arbeiten---gebauer-weiss-von-nichts-37913640
+# Blocked = https://lb46.s400.meetrics.net/data?/3lBMFQ7WAUkzF3MGRuQAAASVAK56BBPbAAREA/BAGAAAACfVBMAACHBA6BACxBASCACjAArCACfAA3CACfAADDACxAAPDACQAAoDACiAAAEACiAAZEAChAAlEACyAA9EACRAAKFACgAAWFACiAAiFAC8DAKFACQAA9EACRAAxEACQAAlEACgAAZEACSAAoDACRAAPDACPAADDACRAAfCAChAASCACUBAGCACyEA6BACrEAGCAC/BASCACvRA3CACQAAoDACSAAAEACRAANEACQAAxEACSAAWFACRAA6FACPAAHGACSAAfGACOAAQHACRAAoHACSAANIACRAA+IACNAAiJACQAAfKACRAA4KACRAAcLACQAA1LACRAAZMACeAAlMAC1AAyMACDTABMACiAA1LACwAAoLACzAAcLACyAAQLACiAAELACgAA4KACSAArKACSAAfKACPAATKACSAAHKACPAAuJACQAAWJACSAAKJACRAABIACOAAoHACRAAQHACRAA3GACQAArGACiAAfGACJEArGACRAA3GACQAAEHACSAAQHACQAAcHACW/AoHACCBA0HACzAABIACRAANIACNAAxIACSAAKJACRAAiJACQAAuJACQAATKACRAAELACmAA1LACLAANMACSAAyMAChAAvNACQAAgOACRAA4OACPAAQPACTAABQACRAAmQACOAA+QACRAAKRACRAAjRACRAA7RACSAAHSACRAAgSACOAAsSACSAAETACQAARTAChAAdTACoCApTACeLA1TACRAABUACzBAOUAC4CAaUAPHYATVAhWAJAAAAPnAAPVAfWAGAAAARksFAQtjF/unwTA
+.s400.meetrics.net/
+
 
 #############################################################################
 # Site-specific block patterns;
@@ -1158,6 +1226,8 @@ static.criteo.com/
 static.*.criteo.net/
 cas.*.criteo.com/
 cas.criteo.com/
+# Blocked URL = https://trc-events.taboola.com/1301520/log/3/unip?en=pre_d_eng_tb&tos=382558&scd=49&ssd=1&est=1611317562537&ver=27&isls=true&src=i&invt=192000&tim=1611317945096&mrir=tto&vi=1611317562534&ref=https%3A%2F%2Fhtml.duckduckgo.com%2F&cv=20201217-8-RELEASE&item-url=https%3A%2F%2Fgenius.com%2FLords-of-acid-pussy-lyrics
+trc-events.taboola.com/
 
 
 #----------------------------------------------------------------------------
@@ -1496,6 +1566,8 @@ b.collective-media.net/
 #MASTER# BLOCK-REFERRER: http://www.heise.de/
 # Blocked URL = http://heise.ivwbox.de/2004/01/survey.js
 .ivwbox.de/
+# Blocked URL = https://pixel.wp.com/g.gif?v=ext&j=1%3A7.8&blog=44083982&post=2542&tz=1&srv=www.geeklan.co.uk&host=www.geeklan.co.uk&ref=&fcp=0&rand=0.34473017357614855
+pixel.wp.com/
 
 #----------------------------------------------------------------------------
 # Specific counters (see above for generic patterns)
@@ -1947,6 +2019,14 @@ adventofcode.com/
 msdn.microsoft.com/
 # URL = http://talks.golang.org/2013/advconc/gopherswrench.jpg
 .golang.org/
+# URL = http://adaway.org/
+adaway.org/
+# URL = https://belco24.de/bilder/banner/Bildschirmfoto%202018-08-21%20um%2015.20.01.png
+belco24.de/
+# URL = https://www.tagesschau.de/multimedia/bilder/banner-zak-kostopoulos-101~_v-mittel16x9.jpg
+.tagesschau.de/
+# URL = https://metrics.sr.ht/graph
+metrics.sr.ht/
 
 
 #############################################################################
@@ -2136,6 +2216,30 @@ yandex.ru/.*&retpath=http
 disqus.com/
 # URL = http://www.youtube.com/embed/blafasel?feature=oembed&enablejsapi=1&origin=http://www.example.com&wmode=opaque
 .youtube.com/.*origin=http
+# URL = https://oss-fuzz.com/login?dest=https%3A%2F%2Foss-fuzz.com%2Ftestcase-detail%2F5727799779524608
+#MASTER# REMARKS: Only match based on the host so the test works even without https-inspection enabled.
+oss-fuzz.com/
+# URL = https://sourcepoint.vice.com/mms/choice_select?choice_id=523912&requestUUID=a98ca09e-5c1f-4aa4-b28e-ab5b26150859-1591162630861&href=https%3A%2F%2Fwww.vice.com%2Fen_us%2Farticle%2F7kpb9a%2Fhow-to-protest-racist-violence-instead-of-posting-blackout-tuesday-square
+sourcepoint.vice.com/
+# URL = https://collector.githubapp.com/github/page_view?dimensions[page]=https%3A%2F%2Fgithub.com%2Fopenbsd%2Fsrc%2Fblob%2F5ecdd0566b441ae0b99e73f410875e05dc0fa5b7%2Flib%2Flibc%2Finclude%2Fthread_private.h&dimensions[title]=src%2Fthread_private.h%20at%205ecdd0566b441ae0b99e73f410875e05dc0fa5b7%20%C2%B7%20openbsd%2Fsrc%20%C2%B7%20GitHub&dimensions[referrer]=https%3A%2F%2Fgithub.com%2Fopenbsd%2Fsrc%2Fsearch%3Fq%3D_MUTEX_LOCK%26unscoped_q%3D_MUTEX_LOCK&dimensions[user_agent]=Mozilla%2F5.0%20(X11%3B%20ElectroBSD%20amd64%3B%20rv%3A68.0)%20Gecko%2F20100101%20Firefox%2F68.0&dimensions[screen_resolution]=1366x768&dimensions[pixel_ratio]=1&dimensions[browser_resolution]=1362x636&dimensions[tz_seconds]=7200&dimensions[timestamp]=1591515169218&dimensions[referrer]=&dimensions[request_id]=22CA%3AE6F6%3A271ED2A%3A3839C5D%3A5EDB8295&dimensions[visitor_id]=5184934927058829974&dimensions[region_edge]=ams&dimensions[region_render]=ams&dimensions[user_id]=929183&dimensions[user_login]=openbsd&dimensions[repository_id]=66966208&dimensions[repository_nwo]=openbsd%2Fsrc&dimensions[repository_public]=true&dimensions[repository_is_fork]=false&dimensions[repository_network_root_id]=66966208&dimensions[repository_network_root_nwo]=openbsd%2Fsrc&dimensions[repository_explore_github_marketplace_ci_cta_shown]=false&&measures[performance_timing]=1-172-172-13996-12735-12426-12394-3858-172-172-172--13996-0---172-3853-3412-0--&&&dimensions[cid]=268614077.1591515169
+collector.githubapp.com/
+# URL = https://consentmanager.mgr.consensu.org/delivery/pixel.php?id=11319&did=0&cfdid=0&t=pv&h=https%3A%2F%2Fsourceforge.net%2Fp%2Fijbswa%2Ffeature-requests%2F535%2F&o=1591880198219&l=EN&lv=0&d=0&ct=14&e=&e2=&e3=&i=&sv=0&dv=0
+.consensu.org/delivery/pixel\.php
+# URL = https://de.wikipedia.org/beacon/event?%7B%22event%22%3A%7B%22source_page_id%22%3A1501869%2C%22source_namespace%22%3A0%2C%22source_title%22%3A%22Primat%22%2C%22source_url%22%3A%22https%3A%2F%2Fde.wikipedia.org%2Fwiki%2FPrimat%22%2C%22page_title%22%3A%22Primaten%22%2C%22page_id%22%3A4022%2C%22page_namespace%22%3A0%7D%2C%22schema%22%3A%22VirtualPageView%22%2C%22webHost%22%3A%22de.wikipedia.org%22%2C%22wiki%22%3A%22dewiki%22%2C%22revision%22%3A17780078%7D;
+.wikipedia.org/
+# URL = http://platform.twitter.com/widgets/widget_iframe.2d7d9a6d04538bf11c7b23641e75738c.html?origin=https%3A%2F%2F9gag.com
+.twitter.com/.*origin=http
+# URL = http://issue.freebsdfoundation.org/html5_viewer/index.html?issue_id=673890&publication_id=&parentUrl=https%3A%2F%2Fissue.freebsdfoundation.org%2Fpublication%2F%3Fi%3D673890
+issue.freebsdfoundation.org/
+# URL = http://ltfl.librarything.com//forlibraries/widget_response.php?id=1477&isbns=9780062279194&divs=ltfl_tagbrowse%2Cltfl_related%2Cltfl_similars%2Cltfl_series%2Cltfl_awards&lccn=&oclc=&t=1602093207304&systype=zones&pagetype=full&catalog_url=https%3A%2F%2Fkatalog.stbib-koeln.de%2Falswww2.dll%2FAPS_PRESENT_BIB%3FStyle%3DPortal3%26SubStyle%3D%26Lang%3DGER%26ResponseEncoding%3Dutf-8%26no%3DT011006751%26Via%3DZ3950%26View%3DAnnotated%26Parent%3DObj_482831602093137%26SearchBrowseList%3DObj_482831602093137%26SearchBrowseListItem%3D71831%26BrowseList%3DObj_482831602093137%3FStyle%3DPortal3%26SubStyle%3D%26Lang%3DGER%26ResponseEncoding%3Dutf-8%26BrowseListItem%3D71831%26QueryObject%3DObj_482811602093136&title=Think%20like%20a%20freak&author=Levitt%2C%20Steven%20D.&accession=T011006751&locations=&widget_response_loaded_after=764&container_widthAAS={%22body%22:{%22cw%22:1350,%22ch%22:946},%22ltfl_tagbrowse%22:{%22cw%22:614,%22ch%22:0},%22ltfl_related%22:{%22cw%22:614,%22ch%22:0},%22ltfl_similars%22:{%22cw%22:614,%22ch%22:0},%22ltfl_series%22:{%22cw%22:614,%22ch%22:0},%22ltfl_awards%22:{%22cw%22:614,%22ch%22:0}}
+.librarything.com/
+# URL = https://secure.gravatar.com/avatar/9032194c044d0e96c3bdabba35aff1e9?r=pg&d=https%3A%2F%2Fa.fsdn.com%2Fallura%2Fnf%2F1607031117%2F_ew_%2Ftheme%2Fsftheme%2Fimages%2Fsandiego%2Ficons%2Fdefault-avatar.png
+# https://s.gravatar.com/avatar/dbf187b5b45c400649ed7f946e8f00d6?s=220&d=https%3A%2F%2Flegacy.gitbook.com%2Fassets%2Fimages%2Favatars%2Fuser.png
+.gravatar.com/
+# URL = https://cas.fsf.org/login?service=https%3A%2F%2Fdirectory.fsf.org%2Fwiki%3Ftitle%3DSpecial%3AUserLogin%26returnto%3DPrivoxy
+.fsf.org/
+# URL = https://consent2.ksta.de/wrapper/tcfv2/v1/gdpr/native-message?requestUUID=56b465b7-5da2-44f0-83aa-aa50687d364f&hasCsp=true&env=prod&consentLanguage=browserDefault&body=%7B%22accountId%22%3A995%2C%22requestUUID%22%3A%2256b465b7-5da2-44f0-83aa-aa50687d364f%22%2C%22propertyHref%22%3A%22https%3A%2F%2Fwww.ksta.de%2Fhtml%2Fdumont-consent%2Findex.html%3Fparam%3DeyJyZWRpcmVjdFVybCI6Ii9yYXRnZWJlci9kaWdpdGFsL3BsYXR0Zm9ybS1tb29kbGUtc3RyZWlrdC11bnphZWhsaWdlLXNjaHVlbGVyLWluLW5ydy1rb2VubmVuLWFtLW1vbnRhZy1uaWNodC1hcmJlaXRlbi0zNzkxMzY0MD9jYj0xNjEwMzY1Njc4NjY3IiwicmVmZXJyZXIiOiIifQ%3D%3D%22%2C%22euconsent%22%3Anull%2C%22meta%22%3A%22%7B%5C%22mmsCookies%5C%22%3A%5B%5C%22_sp_enable_dfp_personalized_ads%3Dfalse%3B%5C%22%5D%2C%5C%22resolved%5C%22%3Anull%7D%22%2C%22clientMMSOrigin%22%3A%22https%3A%2F%2Fconsent2.ksta.de%22%2C%22targetingParams%22%3A%22%7B%5C%22mode%5C%22%3A%5C%22dumont-consent-message%5C%22%7D%22%2C%22campaignEnv%22%3A%22prod%22%2C%22pubData%22%3A%7B%7D%7D
+.ksta.de/
 
 {+redirect{s@.*url=@http://@} -block}
 # Sticky Actions = +redirect -block

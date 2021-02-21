@@ -29,10 +29,6 @@
 
 <para>
  When building from a source tarball,
-<!-- no longer available ...
- <ulink url="http://cvs.sourceforge.net/cvstarballs/ijbswa-cvsroot.tar.gz">
- nightly CVS tarball</ulink>),
--->
  first unpack the source:
 </para>
 
@@ -56,7 +52,7 @@
 </para>
 
 <para>
- Note that source code in GIT is development quality, and may not be
+ Note that source code in Git is development quality, and may not be
  stable or well tested.
 </para>
 
@@ -94,7 +90,7 @@
 </para>
 
 <para>
- Then, to build from either unpacked tarball or CVS source:
+ Then, to build from either unpacked tarball or Git checkout:
 </para>
 
  <screen>

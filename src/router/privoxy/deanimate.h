@@ -12,7 +12,7 @@
  *
  *
  * Copyright   :  Written by and Copyright (C) 2001 - 2004 by the the
- *                SourceForge Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on ideas from the Image::DeAnim Perl module by
  *                Ken MacFarlane, <ksm+cpan@universal.dca.net>

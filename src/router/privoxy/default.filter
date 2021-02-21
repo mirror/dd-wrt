@@ -1,10 +1,10 @@
 #################################################################################
-# 
+#
 #  File        :  default.filter
-# 
+#
 #  Purpose     :  Rules to process the content of web pages
-# 
-#  Copyright   :  Written by and Copyright (C) 2001-2018 the
+#
+#  Copyright   :  Written by and Copyright (C) 2001-2021 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 #                 This program is free software; you can redistribute it
@@ -46,7 +46,7 @@
 #
 # Note2: In addition to the Perl options gimsx, the following nonstandard
 # options are supported:
-# 
+#
 # 'U' turns the default to ungreedy matching.  Add ? to quantifiers to
 #     switch back to greedy.
 #
@@ -64,7 +64,7 @@
 #     escaping anything, therefore you also have to be careful not to chose
 #     delimiters that appear in the replacement text. For example '<' should
 #     be save, while '?' will sooner or later cause conflicts with $url.
-# 
+#
 #################################################################################
 
 
@@ -83,7 +83,7 @@ FILTER: js-annoyances Get rid of particularly annoying JavaScript abuse.
 # but that would make them match only the first occurrence of
 # nasty-item in each <script>. We need nestable jobs!
 
-# Get rid of Javascript referrer tracking. 
+# Get rid of Javascript referrer tracking.
 # Test page: http://www.javascript-page.com/referrer.html
 #
 s|(?:\w+\.)+referrer|false.toString()|gisU
@@ -101,22 +101,21 @@ s/(?:(?:this|window)\.(?:default)?status)\s*=\s*\w*\s*;//ig
 s/(<body\s+[^>]*)onunload/$1never/siU
 s|(<script.*)window\.onunload(?=.*</script>)|$1never|sigU
 
-# If we allow window.open, we want normal window features: 
+# If we allow window.open, we want normal window features:
 # Test: http://www.htmlgoodies.com/beyond/notitle.html
 #
 s/(open\s*\([^\)]+resizable=)(["']?)(?:no|0)\2/$1$2yes$2/sigU
-s/(open\s*\([^\)]+location=)(["']?)(?:no|0)\2/$1$2yes$2/sigU 
-s/(open\s*\([^\)]+status=)(["']?)(?:no|0)\2/$1$2yes$2/sigU 
-s/(open\s*\([^\)]+scroll(?:ing|bars)=)(["']?)(?:no|0)\2/$1$2auto$2/sigU 
-s/(open\s*\([^\)]+menubar=)(["']?)(?:no|0)\2/$1$2yes$2/sigU 
-s/(open\s*\([^\)]+toolbar=)(["']?)(?:no|0)\2/$1$2yes$2/sigU 
-s/(open\s*\([^\)]+directories=)(["']?)(?:no|0)\2/$1$2yes$2/sigU 
+s/(open\s*\([^\)]+location=)(["']?)(?:no|0)\2/$1$2yes$2/sigU
+s/(open\s*\([^\)]+status=)(["']?)(?:no|0)\2/$1$2yes$2/sigU
+s/(open\s*\([^\)]+scroll(?:ing|bars)=)(["']?)(?:no|0)\2/$1$2auto$2/sigU
+s/(open\s*\([^\)]+menubar=)(["']?)(?:no|0)\2/$1$2yes$2/sigU
+s/(open\s*\([^\)]+toolbar=)(["']?)(?:no|0)\2/$1$2yes$2/sigU
+s/(open\s*\([^\)]+directories=)(["']?)(?:no|0)\2/$1$2yes$2/sigU
 s/(open\s*\([^\)]+fullscreen=)(["']?)(?:yes|1)\2/$1$2no$2/sigU
 s/(open\s*\([^\)]+always(?:raised|lowered)=)(["']?)(?:yes|1)\2/$1$2no$2/sigU
 s/(open\s*\([^\)]+z-?lock=)(["']?)(?:yes|1)\2/$1$2no$2/sigU
 s/(open\s*\([^\)]+hotkeys=)(["']?)(?:yes|1)\2/$1$2no$2/sigU
 s/(open\s*\([^\)]+titlebar=)(["']?)(?:no|0)\2/$1$2yes$2/sigU
-s/(open\s*\([^\)]+always(?:raised|lowered)=)(["']?)(?:yes|1)\2/$1$2no$2/sigU
 
 
 #################################################################################
@@ -141,8 +140,8 @@ FILTER: html-annoyances Get rid of particularly annoying HTML abuse.
 # New browser windows (if allowed -- see no-popups filter below) should be
 # resizeable and have a location and status bar
 #
-s/(<a\s+href[^>]+resizable=)(['"]?)(?:no|0)\2/$1$2yes$2/igU 
-s/(<a\s+href[^>]+location=)(['"]?)(?:no|0)\2/$1$2yes$2/igU 
+s/(<a\s+href[^>]+resizable=)(['"]?)(?:no|0)\2/$1$2yes$2/igU
+s/(<a\s+href[^>]+location=)(['"]?)(?:no|0)\2/$1$2yes$2/igU
 s/(<a\s+href[^>]+status=)(['"]?)(?:no|0)\2/$1$2yes$2/igU
 s/(<a\s+href[^>]+scrolling=)(['"]?)(?:no|0)\2/$1$2auto$2/igU
 s/(<a\s+href[^>]+menubar=)(['"]?)(?:no|0)\2/$1$2yes$2/igU
@@ -190,7 +189,7 @@ FILTER: unsolicited-popups Disable only unsolicited pop-up windows.
 
 s+([^'"]\s*<head.*>)(?=\s*[^'"])+$1<script>function PrivoxyWindowOpen(){return(null);}</script>+isU
 s@([^\w\s.]\s*)((?:map)?(window|this|parent)\.?)?open\s*\(@$1PrivoxyWindowOpen(@ig
-s+([^'"]\s*</html>)(?!\s*(\\n|'|"))+$1<script>function PrivoxyWindowOpen(a, b, c){return(window.open(a, b, c));}</script>+iU     
+s+([^'"]\s*</html>)(?!\s*(\\n|'|"))+$1<script>function PrivoxyWindowOpen(a, b, c){return(window.open(a, b, c));}</script>+iU
 
 
 ##################################################################################
@@ -318,7 +317,7 @@ s@<img[^>]*\s(?:width|height)\s*=\s*['"]?[01](?=\D)[^>]*\s(?:width|height)\s*=\s
 #################################################################################
 FILTER: tiny-textforms Extend those tiny textareas up to 40x80 and kill the hard wrap.
 
-s/(<textarea[^>]*?)(?:\s*(?:rows|cols)=(['"]?)\d+\2)+/$1 rows=$2\40$2 cols=$2\80$2/ig 
+s/(<textarea[^>]*?)(?:\s*(?:rows|cols)=(['"]?)\d+\2)+/$1 rows=$2\40$2 cols=$2\80$2/ig
 s/(<textarea[^>]*?)wrap=(['"]?)hard\2/$1/ig
 
 
@@ -342,7 +341,7 @@ s/(<frameset\s+[^>]*)framespacing=(['"]?)(no|0)\2/$1/igU
 s/(<frameset\s+[^>]*)frameborder=(['"]?)(no|0)\2/$1/igU
 s/(<frameset\s+[^>]*)border=(['"]?)(no|0)\2/$1/igU
 s/(<frame\s+[^>]*)noresize/$1/igU
-s/(<frame\s+[^>]*)frameborder=(['"]?)(no|0)\2/$1/igU 
+s/(<frame\s+[^>]*)frameborder=(['"]?)(no|0)\2/$1/igU
 s/(<frame\s+[^>]*)scrolling=(['"]?)(no|0)\2/$1/igU
 
 
@@ -358,11 +357,11 @@ s@<iframe.*</iframe>@<!-- iframe removed by Privoxy's iframe filter -->@Uisg
 
 #################################################################################
 #
-# demoronizer: Correct Microsoft's abuse of standardized character sets, which 
-#              leave the browser to (mis)-interpret unknown characters, with 
+# demoronizer: Correct Microsoft's abuse of standardized character sets, which
+#              leave the browser to (mis)-interpret unknown characters, with
 #              sometimes bizarre results on non-MS platforms.
 #
-# credit: ripped from the demoroniser.pl script by: 
+# credit: ripped from the demoroniser.pl script by:
 #         John Walker -- January 1998, http://www.fourmilab.ch/webtools/demoroniser
 #
 #################################################################################
@@ -412,7 +411,7 @@ s|<embed [^>]*(application/x-shockwave-flash\|\.swf).*>(.*</embed>)?|<!-- Squish
 #################################################################################
 FILTER: quicktime-kioskmode Make Quicktime movies saveable.
 
-s/(<embed\s+[^>]*)kioskmode\s*=\s*(["']?)true\2/$1/ig 
+s/(<embed\s+[^>]*)kioskmode\s*=\s*(["']?)true\2/$1/ig
 
 
 #################################################################################
@@ -457,37 +456,41 @@ FILTER: crude-parental Crude parental filtering. Note that this filter doesn't w
 # (Note #2: Is 'sex' a rude word?!)
 
 s%^.*(?<!middle)(?<!sus)(?<!es)sex.*$%<html><head><title>Blocked</title></head><body>\
-<h3>Blocked by Privoxy's crude-parental filter due to possible adult content.</h3></body></html>%is
+<h3>Blocked by <a href="http://p.p/">Privoxy's</a> crude-parental filter due to possible adult content.</h3></body></html>\n%is
 
-s+^.*warez.*$+<html><head><title>No Warez</title></head><body><h3>You're not searching for illegal stuff, are you?</h3></body></html>+is
+s+^.*warez.*$+<html><head><title>No Warez</title></head><body><h3>You're not searching for illegal stuff, are you?</h3></body></html>\n+is
 
 # Remove by description
-s/^.*\
+s@^.*\
 (?:(suck|lick|tongue|rub|fuck|fingering|finger|chicks?)\s*)?\
 (?:(her|your|my|hard|with|big|wet|tight|pink|hot|moist|young|teen)\s*)+\
 (dicks?|penis|cocks?|balls?|tits?|pussy|cunt|clit|ass|mouth).*$\
-/This page has been blocked by Privoxy's crude-parental content filter\
-/is
+@This page has been blocked by <a href="http://p.p/">Privoxy's</a> crude-parental \
+content filter based on the description.\n\
+@is
 
 #Remove by link text
-s/^.*\
+s@^.*\
 (download|broadband|view|watch|free|get|extreem)?\s*\
 (sex|xxx|porn|cumshot|fuck(ing|s)?|anal|ass|asian|adult|Amateur|org(y|ies)|close ups?|hand?job|nail(ed)?)+\s*\
 (movies?|pics?|videos?|dvds?|dvd's|links?).*$\
-/This page has been blocked by Privoxy's crude-parental content filter\
-/is
+@This page has been blocked by <a href="http://p.p/">Privoxy's</a> crude-parental \
+content filter based on link text.\n\
+@is
 
 #Remove by age disclaimer
-s/^.*\
+s@^.*\
 (models?|chicks?|girls?|women|persons)\s*\
 (who|are|were)+ (over|at least) (16|18|21) years (old|of age).*$\
-/This page has been blocked by Privoxy's crude-parental content filter\
-/is
+@This page has been blocked by <a href="http://p.p/">Privoxy's</a> crude-parental \
+content filter because of an age disclaimer.\n\
+@is
 
 #Remove by regulations
-s/^.*(Section 2257|18 U.?S.?C.? 2257).*$\
-/This page has been blocked by Privoxy's crude-parental content filter\
-/is 
+s@^.*(Section 2257|18 U.?S.?C.? 2257).*$\
+@This page has been blocked by <a href="http://p.p/">Privoxy's</a> crude-parental \
+content filter because of an regulations text.\n\
+@is
 
 
 #################################################################################
@@ -527,7 +530,7 @@ s%<script language="JavaScript">(window\.open|1;''\.concat)\("readme\.eml", null
 FILTER: site-specifics Cure for site-specific problems. Don't apply generally!
 
 # www.spiegel.de excludes X11 users from viewing Flash5 objects - shame.
-# Apply to: www.spiegel.de/static/js/flash-plugin.js 
+# Apply to: www.spiegel.de/static/js/flash-plugin.js
 #
 s/indexOf\("x11"\)/indexOf("x13")/
 
@@ -546,11 +549,11 @@ s|<a href="(.+?)">(?:Continue to message\|Weiter zu Nachricht)</a>|<meta http-eq
 # monster.com has two very similar gimmicks:
 #
 s|<input type="hidden" name="REDIRECT" value="(.+?)">|<meta http-equiv="refresh" content="0; URL=$1">|i
- 
-s|<IMG SRC="http://media.monster.com/mm/usen/my/no_thanks_211x40.gif".+?>|<meta http-equiv="refresh" content="0; URL=http://my.monster.com/resume.asp">|i 
+
+s|<IMG SRC="http://media.monster.com/mm/usen/my/no_thanks_211x40.gif".+?>|<meta http-equiv="refresh" content="0; URL=http://my.monster.com/resume.asp">|i
 
 # nytimes.com triggers popups through the onload handler of dummy images
-# to fool popup-blockers.  
+# to fool popup-blockers.
 #
 s|(<img [^>]*)onload|$1never|sig
 
@@ -563,11 +566,42 @@ s|<INPUT name="\d{2,4}" type="RADIO" value="3" |$0 checked|g
 #################################################################################
 #
 # no-ping: Removes non-standard ping attributes in <a> and <area> tags.
-#          
+#
 #################################################################################
 FILTER: no-ping Removes non-standard ping attributes in <a> and <area> tags.
 s@(<a(?:rea)?[^>]*?)\sping=(['"]?)([^"'>]+)\2([>\s]?)@\
 <strong style="color:white; background-color:red;" title="Privoxy removed ping target '$3'">PING!</strong>\n$1$4@ig
+
+#################################################################################
+#
+# allow-autocompletion: Changes autocomplete="off" on form and input fields
+#                       to "on" to allow autocompletion.
+#
+#################################################################################
+FILTER: allow-autocompletion Changes autocomplete="off" on form and input fields to "on" to allow autocompletion.
+
+s@(<(?:input|form|select|textarea)\s[^>]+autocomplete=)(['"]?)(?:off|0)\2@$1$2on$2@igsU
+
+#################################################################################
+#
+# github: Removes the annoying "Sign-Up" banner and the Cookie disclaimer.
+#
+#################################################################################
+FILTER: github Removes the annoying "Sign-Up" banner and the Cookie disclaimer.
+
+s@<signup-prompt.*</signup-prompt>@@Uis
+s@(<div) (class="hx_cookie-banner)@$1 style="display:none;" $2@
+
+#################################################################################
+#
+# imdb: Removes some ads on IMDb.
+#
+#################################################################################
+FILTER: imdb Removes some ads on IMDb.
+
+s@(<div id="top_ad_wrapper")@$1 style="display:none"@
+s@<iframe[^>]*id="top_ad"[^>]*>.*</iframe>@<!-- Iframe removed by Privoxy's imdb filter -->@
+s@<iframe[^>]*onload="doWithAds.call[^>]*></iframe>@<!-- Iframe removed by Privoxy's imdb filter -->@g
 
 #################################################################################
 #
@@ -686,6 +720,19 @@ s@<title(?:\s+type=\'text\')?>([^<]*)(?:\.\.\.)?\s*</title>\s*\
 
 #################################################################################
 #
+# sourceforge: Reduces the amount of ads for proprietary software on SourceForge.
+#
+#################################################################################
+FILTER: sourceforge Reduces the amount of ads for proprietary software on SourceForge.
+
+s@<div id="banner-sterling"@$0 style="display:none;"@
+s@<section id="nels"@$0 style="display:none;"@
+s@<aside class="m-wide-widget m-wide-projects-widget "@$0 style="display:none;"@
+s@<div id="newsletter-floating"@$0 style="display:none;"@
+s@<div class="sterling" id="banner-sterling"@$0 style="display:none;"@
+
+#################################################################################
+#
 # x-httpd-php-to-html: Changes the Content-Type header from
 #                      x-httpd-php to html. "Content-Type: x-httpd-php"
 #                      is set by clueless PHP users and causes many
@@ -742,6 +789,16 @@ s@^(Content-Type:)\s*(?:application|text)/(?:xhtml\+)?xml(;.*)?$@$1 text/html$2@
 CLIENT-HEADER-FILTER: hide-tor-exit-notation Removes the Tor exit node notation in Host and Referer headers.
 
 s@^((?:Referer|Host):\s*(?:https?://)?[^/]*)\.[^\./]*?\.exit@$1@i
+
+#################################################################################
+#
+# no-brotli-accepted: Strips "br" from the Accept-Encoding header as Privoxy
+#                     currently doesn't support Brotli.
+#
+#################################################################################
+CLIENT-HEADER-FILTER: no-brotli-accepted Strip "br" from Accept-Encoding header
+
+s@(^Accept-Encoding:.*?)(?:br, |, br|br)@$1@i
 
 #################################################################################
 #
@@ -896,3 +953,17 @@ s@^X-Privoxy-Control:\s*@@i
 SERVER-HEADER-FILTER: privoxy-control Removes X-Privoxy-Control headers.
 
 s@^X-Privoxy-Control:.*@@i
+
+#################################################################################
+#
+# client-body: Modify client request body
+#
+#################################################################################
+CLIENT-BODY-FILTER: remove-first-byte Removes the first byte from the request body
+s@^.@@
+
+CLIENT-BODY-FILTER: remove-test Removes "test" everywhere in the request body
+s@test@@g
+
+CLIENT-BODY-FILTER: overwrite-test-value Overwrites the value of the "test" variable with blafasel
+s@(test=)[^&\s]*@$1blafasel@g

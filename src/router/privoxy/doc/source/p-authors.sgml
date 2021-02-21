@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2020 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -15,7 +15,7 @@
 
  This file is included into:
 
-  privoxy.1
+  privoxy.8
   privoxy-man-page
   AUTHORS
   user-manual
@@ -77,6 +77,10 @@ Current Privoxy Team:
 <literallayout>
  Rustam Abdullaev
  Clint Adams
+ Andrew
+ Adriaan
+ Davide Alberani
+ Maxim Antonov
  Anatoly Arzhnikov
  Ken Arromdee
  Natxo Asenjo
@@ -87,6 +91,8 @@ Current Privoxy Team:
  Gergely Bor
  Francois Botha
  Reiner Buehl
+ Burberry
+ Calestyo
  Andrew J. Caines
  Clifford Caoile
  Edward Carrel
@@ -97,17 +103,22 @@ Current Privoxy Team:
  Billy Crook
  Fr&eacute;d&eacute;ric Crozat
  Matthew Daley
+ David
  Michael T. Davis
  Markus Dittrich
  Mattes Dolak
  Matthias Drochner
+ Duc
+ Duncan
  Peter E.
  Florian Effenberger
  Markus Elfring
  Ryan Farmer
  Matthew Fischer
+ T Ford
  Dean Gaudet
  Stephen Gildea
+ Morton A. Goldberg
  John McGowan
  Danny Goossen
  Lizik Grelier
@@ -118,9 +129,12 @@ Current Privoxy Team:
  Tim H.
  Aaron Hamid
  Darel Henman
+ Mathias Homann
  Magnus Holmgren
  Eric M. Hopper
  Ralf Horstmann
+ Ho+ Ho+ Ho+
+ Ned&zcaron;ad Hrnjica
  Stefan Huehner
  Basil Hussain
  Peter Hyman
@@ -129,7 +143,11 @@ Current Privoxy Team:
  Julien Joubert
  Ralf Jungblut
  Petr Kadlec
+ Kacperdominik
+ Karsten
+ Kevin
  Robert Klemme
+ Max Khon
  Steven Kolins
  Korda
  Stefan Kurtz
@@ -138,6 +156,8 @@ Current Privoxy Team:
  Bert van Leeuwen
  Don Libes
  Paul Lieverse
+ Adele Lime
+ Aaron Linville
  Han Liu
  Toby Lyward
  Wil Mahan
@@ -145,40 +165,67 @@ Current Privoxy Team:
  Raphael Marichez
  Francois Marier
  Angelina Matson
+ Maynard
  Jonathan McKenzie
  David Mediavilla
  Raphael Moll
  J. Momberger
+ Peter M&uuml;ller
  Mathew Murphy
  Amuro Namie
  Mark Nelson
+ Nettozahler
  Tobias Netzel
+ Omniture
+ Oliver
+ John Palkovic
+ Patrick
  Adam Piggott
  Petr P&iacute;sar
+ Pribog
  Dan Price
+ Pwhk
  Roberto Ragusa
+ Rakista
  F&eacute;lix Rauch
  Kai Raven
  Marvin Renich
+ Black Rider
  Chris John Riley
  Maynard Riley
+ Joshua Rogers
+ Ivan Romanov
  Andreas Rutkauskas
+ Sam
+ Saperski
  Bart Schelstraete
  Gregory Seidman
  Atman Sense
+ Mark Seward
+ Franz Schwartau
  Chung-chieh Shan
  Johan Sintorn
  Benjamin C. Wiley Sittler
+ DRS David Soft
  Simon South
  Dan Stahlke
+ Stefan
  Oliver Stoeneberg
+ V&aacute;clav &Scaron;vec
+ Endre Szabo
  Rick Sykes
+ Szotsaki
  Spinor S.
+ Tceverling
  Peter Thoenen
  Marc Thomas
  Martin Thomas
  Reuben Thomas
  Guybrush Threepwood
+ Tyrexionibus
+ Sam
+ Sam Varshavchik
+ Vaeinoe
  Joel Verhagen
  Bobby G. Vinyard
  Jochen Voss
@@ -188,12 +235,17 @@ Current Privoxy Team:
  J&ouml;rg Weinmann
  Darren Wiebe
  Anduin Withers
+ withoutname
  Eduard Wulff
+ Leo Wzukw
+ Wyrex
  Yang Xia
  Jarry Xu
  Oliver Yeoh
  Yossi Zahn
  Jamie Zawinski
+ Zepard
+ Radoslaw Zielinski
 </literallayout>
 
 <para>
@@ -211,9 +263,7 @@ Current Privoxy Team:
 </para>
 
 <para>
- On systems that lack snprintf(), Privoxy is using a version
- written by Mark Martinec. On systems that lack strptime(),
- Privoxy is using the one from the GNU C Library written
- by Ulrich Drepper.
+ On systems that lack strptime(), Privoxy is using the one from the
+ GNU C Library written by Ulrich Drepper.
 </para>
 ]]>

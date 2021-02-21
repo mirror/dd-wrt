@@ -41,7 +41,7 @@
       pattern</a> basis, i.e. for single URLs, whole web sites, groups or parts thereof etc. Actions can also be
       grouped together and then applied to requests matching one or more patterns. There are many possible actions that
       might apply to any given site. As an example, if you are blocking <a href=
-      "http://en.wikipedia.org/wiki/Browser_cookie" target="_top">cookies</a> as one of your default actions, but need
+      "https://en.wikipedia.org/wiki/Browser_cookie" target="_top">cookies</a> as one of your default actions, but need
       to accept cookies from a given site, you would need to define an exception for this site in one of your actions
       files, preferably in <tt class="FILENAME">user.action</tt>.</p>
     </div>
@@ -66,17 +66,17 @@
       "../user-manual/config.html#ENABLE-EDIT-ACTIONS" target="_top">enable-edit-actions</a>).</p>
     </div>
     <div class="SECT2">
-      <h3 class="SECT2"><a name="AEN417" id="AEN417">3.4. There are several different <span class=
-      "QUOTE">"actions"</span> files. What are the differences?</a></h3>
+      <h3 class="SECT2"><a name="ACTIONFILE-DIFFERENCES" id="ACTIONFILE-DIFFERENCES">3.4. There are several different
+      <span class="QUOTE">"actions"</span> files. What are the differences?</a></h3>
       <p>Please have a look at the <a href="../user-manual/actions-file.html" target="_top">the actions chapter</a> in
       the <a href="../user-manual/index.html" target="_top">User Manual</a> for a detailed explanation.</p>
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="GETUPDATES" id="GETUPDATES">3.5. Where can I get updated Actions Files?</a></h3>
-      <p>Based on your feedback and the continuing development, updates of <tt class="FILENAME">default.action</tt>
-      will be made available from time to time on the <a href=
-      "https://sourceforge.net/project/showfiles.php?group_id=11118" target="_top">files section</a> of our <a href=
-      "https://sourceforge.net/projects/ijbswa/" target="_top">project page</a>.</p>
+      <p>Based on your feedback and the continuing development, updates of <tt class="FILENAME">default.action</tt> are
+      available from <a href=
+      "https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob_plain;f=default.action.master;hb=HEAD" target=
+      "_top">git</a>.</p>
       <p>If you wish to receive an email notification whenever we release updates of <span class=
       "APPLICATION">Privoxy</span> or the actions file, <a href=
       "https://lists.privoxy.org/mailman/listinfo/privoxy-announce" target="_top">subscribe to our announce mailing
@@ -104,7 +104,7 @@
     <div class="SECT2">
       <h3 class="SECT2"><a name="YAHOO" id="YAHOO">3.8. How can I make my Yahoo/Hotmail/Gmail account work?</a></h3>
       <p>The default configuration shouldn't impact the usability of any of these services. It may, however, make all
-      <a href="http://en.wikipedia.org/wiki/Browser_cookie" target="_top">cookies</a> temporary, so that your browser
+      <a href="https://en.wikipedia.org/wiki/Browser_cookie" target="_top">cookies</a> temporary, so that your browser
       will forget your login credentials in between browser sessions. If you would like not to have to log in manually
       each time you access those websites, simply turn off all cookie handling for them in the <tt class=
       "FILENAME">user.action</tt> file. An example for yahoo might look like:</p>
@@ -121,7 +121,7 @@
           </td>
         </tr>
       </table>
-      <p>These kinds of sites are often quite complex and heavy with <a href="http://en.wikipedia.org/wiki/Javascript"
+      <p>These kinds of sites are often quite complex and heavy with <a href="https://en.wikipedia.org/wiki/Javascript"
       target="_top">Javascript</a> and thus <span class="QUOTE">"fragile"</span>. So if <span class=
       "emphasis"><i class="EMPHASIS">still</i></span> a problem, we have an <a href=
       "../user-manual/actions-file.html#ALIASES" target="_top">alias</a> just for such sticky situations:</p>
@@ -287,14 +287,10 @@
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="SRVANY" id="SRVANY">3.16. Can Privoxy run as a service on Win2K/NT/XP?</a></h3>
-      <p>Yes. Version 3.0.5 introduces full <span class="APPLICATION">Windows</span> service functionality. See
-      <a href="../user-manual/installation.html#INSTALLATION-PACK-WIN" target="_top">the <i class="CITETITLE">User
-      Manual</i></a> for details on how to install and configure <span class="APPLICATION">Privoxy</span> as a
-      service.</p>
-      <p>Earlier 3.x versions could run as a system service using <b class="COMMAND">srvany.exe</b>. See the discussion
-      at <a href="https://sourceforge.net/tracker/?func=detail&#38;atid=361118&#38;aid=485617&#38;group_id=11118"
-      target="_top">https://sourceforge.net/tracker/?func=detail&#38;atid=361118&#38;aid=485617&#38;group_id=11118</a>,
-      for details, and a sample configuration.</p>
+      <p>Yes. Full <span class="APPLICATION">Windows</span> service functionality was introduced in <span class=
+      "APPLICATION">Privoxy</span> 3.0.5. See <a href="../user-manual/installation.html#INSTALLATION-PACK-WIN" target=
+      "_top">the <i class="CITETITLE">User Manual</i></a> for details on how to install and configure <span class=
+      "APPLICATION">Privoxy</span> as a service.</p>
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="OTHERPROXY" id="OTHERPROXY">3.17. How can I make Privoxy work with other
@@ -315,7 +311,7 @@
       <h3 class="SECT2"><a name="TRANSPARENT" id="TRANSPARENT">3.19. Can Privoxy run as a <span class=
       "QUOTE">"transparent"</span> proxy?</a></h3>
       <p>The whole idea of Privoxy is to modify client requests and server responses in all sorts of ways and therefore
-      it's not a transparent proxy as described in <a href="http://tools.ietf.org/html/rfc2616" target="_top">RFC
+      it's not a transparent proxy as described in <a href="https://tools.ietf.org/html/rfc2616" target="_top">RFC
       2616</a>.</p>
       <p>However, some people say <span class="QUOTE">"transparent proxy"</span> when they mean <span class=
       "QUOTE">"intercepting proxy"</span>. If you are one of them, please read the <a href=
@@ -353,35 +349,36 @@
       "APPLICATION">Privoxy</span> to ever be able to distinguish between them (nor could any other proxy type
       application for that matter).</p>
       <p>For a good discussion of some of the issues involved (including privacy and security issues), see <a href=
-      "https://sourceforge.net/tracker/?func=detail&#38;atid=211118&#38;aid=629518&#38;group_id=11118" target=
-      "_top">https://sourceforge.net/tracker/?func=detail&#38;atid=211118&#38;aid=629518&#38;group_id=11118</a>.</p>
+      "https://sourceforge.net/p/ijbswa/support-requests/107/" target=
+      "_top">https://sourceforge.net/p/ijbswa/support-requests/107/</a>.</p>
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="SNEAKY-COOKIES" id="SNEAKY-COOKIES">3.23. I sometimes notice cookies sneaking through.
       How?</a></h3>
-      <p><a href="http://en.wikipedia.org/wiki/Browser_cookie" target="_top">Cookies</a> can be set in several ways.
+      <p><a href="https://en.wikipedia.org/wiki/Browser_cookie" target="_top">Cookies</a> can be set in several ways.
       The classic method is via the <tt class="LITERAL">Set-Cookie</tt> HTTP header. This is straightforward, and an
       easy one to manipulate, such as the <span class="APPLICATION">Privoxy</span> concept of <a href=
       "../user-manual/actions-file.html#SESSION-COOKIES-ONLY" target="_top">session-cookies-only</a>. There is also the
-      possibility of using <a href="http://en.wikipedia.org/wiki/Javascript" target="_top">Javascript</a> to set
+      possibility of using <a href="https://en.wikipedia.org/wiki/Javascript" target="_top">Javascript</a> to set
       cookies (<span class="APPLICATION">Privoxy</span> calls these <tt class="LITERAL">content-cookies</tt>). This is
       trickier because the syntax can vary widely, and thus requires a certain amount of guesswork. It is not realistic
       to catch all of these short of disabling Javascript, which would break many sites. And lastly, if the cookies are
       embedded in a HTTPS/SSL secure session via Javascript, they are beyond <span class="APPLICATION">Privoxy's</span>
-      reach.</p>
+      reach unless you enable <a href="../user-manual/actions-file.html#HTTPS-INSPECTION" target=
+      "_top">https-inspection</a>.</p>
       <p>All in all, <span class="APPLICATION">Privoxy</span> can help manage cookies in general, can help minimize the
       loss of privacy posed by cookies, but can't realistically stop all cookies.</p>
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="EVIL-COOKIES" id="EVIL-COOKIES">3.24. Are all cookies bad? Why?</a></h3>
-      <p>No, in fact there are many beneficial uses of <a href="http://en.wikipedia.org/wiki/Browser_cookie" target=
+      <p>No, in fact there are many beneficial uses of <a href="https://en.wikipedia.org/wiki/Browser_cookie" target=
       "_top">cookies</a>. Cookies are just a method that browsers can use to store data between pages, or between
       browser sessions. Sometimes there is a good reason for this, and the user's life is a bit easier as a result. But
       there is a long history of some websites taking advantage of this layer of trust, and using the data they glean
       from you and your browsing habits for their own purposes, and maybe to your potential detriment. Such sites are
       using you and storing their data on your system. That is why the privacy conscious watch from whom those cookies
       come, and why they really <span class="emphasis"><i class="EMPHASIS">need</i></span> to be there.</p>
-      <p>See the <a href="http://en.wikipedia.org/wiki/Browser_cookie" target="_top">Wikipedia cookie definition</a>
+      <p>See the <a href="https://en.wikipedia.org/wiki/Browser_cookie" target="_top">Wikipedia cookie definition</a>
       for more.</p>
     </div>
     <div class="SECT2">

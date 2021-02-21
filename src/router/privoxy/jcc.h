@@ -8,7 +8,7 @@
  *                the main connection-handling function.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2014 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -86,6 +86,11 @@ extern privoxy_mutex_t external_filter_mutex;
 extern privoxy_mutex_t client_tags_mutex;
 #endif
 
+#ifdef FEATURE_EXTENDED_STATISTICS
+extern privoxy_mutex_t filter_statistics_mutex;
+extern privoxy_mutex_t block_statistics_mutex;
+#endif
+
 #ifndef HAVE_GMTIME_R
 extern privoxy_mutex_t gmtime_mutex;
 #endif /* ndef HAVE_GMTIME_R */
@@ -101,6 +106,11 @@ extern privoxy_mutex_t resolver_mutex;
 #ifndef HAVE_RANDOM
 extern privoxy_mutex_t rand_mutex;
 #endif /* ndef HAVE_RANDOM */
+
+#ifdef FEATURE_HTTPS_INSPECTION
+extern privoxy_mutex_t certificate_mutex;
+extern privoxy_mutex_t ssl_init_mutex;
+#endif
 
 #endif /* FEATURE_PTHREAD */
 

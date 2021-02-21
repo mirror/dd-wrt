@@ -190,11 +190,11 @@
     </tr>
     <tr>
       <td class="box">
-<!-- @if-https-start -->
+<!-- @if-https-and-no-https-inspection-start -->
         <h2>NOTE:</h2>
         <p>This is a HTTPS URL, so the part after the "/" is ignored
           as Privoxy doesn't see the path for real HTTPS requests either.</p>
-<!-- if-https-end@ -->
+<!-- if-https-and-no-https-inspection-end@ -->
 <!-- if-valid-url-end@ -->
         <h2>Matches for <a href="@url@">@url@</a>:</h2>
         @matches@

@@ -280,8 +280,8 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&#38;si=Ua</pre>
       <p>Once the problem-causing filter is known, it can be fixed or disabled.</p>
       <p>Upgrading <span class="APPLICATION">Privoxy</span>, or going to the most recent <tt class=
       "FILENAME">default.action</tt> file available from <a href=
-      "https://sourceforge.net/project/showfiles.php?group_id=11118" target="_top">SourceForge</a> might be worth a
-      try, too.</p>
+      "https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob_plain;f=default.action.master;hb=HEAD" target=
+      "_top">git</a> might be worth a try, too.</p>
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="DEMORONIZER2" id="DEMORONIZER2">5.14. Why are binary files (such as images) corrupted
@@ -310,7 +310,7 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&#38;si=Ua</pre>
       <h3 class="SECT2"><a name="WINDOWOPEN" id="WINDOWOPEN">5.16. Why do I keep seeing <span class=
       "QUOTE">"PrivoxyWindowOpen()"</span> in raw source code?</a></h3>
       <p><span class="APPLICATION">Privoxy</span> is attempting to disable malicious <a href=
-      "http://en.wikipedia.org/wiki/Javascript" target="_top">Javascript</a> in this case, with the <tt class=
+      "https://en.wikipedia.org/wiki/Javascript" target="_top">Javascript</a> in this case, with the <tt class=
       "LITERAL">unsolicited-popups</tt> filter. <span class="APPLICATION">Privoxy</span> cannot tell very well
       <span class="QUOTE">"good"</span> code snippets from <span class="QUOTE">"bad"</span> code snippets.</p>
       <p>If you see this in HTML source, and the page displays without problems, then this is good, and likely some
@@ -392,6 +392,8 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&#38;si=Ua</pre>
       "QUOTE">"Preferences"</span>, click the <span class="QUOTE">"Settings"</span> button located on the <span class=
       "QUOTE">"Network"</span> tab in the <span class="QUOTE">"Advanced"</span> section, and add <span class=
       "QUOTE">"127.0.0.1:0"</span> in the <span class="QUOTE">"No Proxy for:"</span> field.</p>
+      <p>You can also prevent the problem by enabling <a href="../user-manual/actions-file.html#HTTPS-INSPECTION"
+      target="_top">https-inspection</a> in which case Privoxy's error messages are delivered encrypted.</p>
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="SE-LINUX" id="SE-LINUX">5.22. I get selinux error messages. How can I fix
@@ -446,9 +448,9 @@ Request: 66.70.21.80/scripts/click.php?hid=a71b9f6504b0c5681fa5&#38;si=Ua</pre>
       sufficient.</p>
       <p>Unless the problem occurs with the filters available in the default configuration, this is not considered a
       Privoxy bug.</p>
-      <p>To prevent the crashes you can rewrite your filter to use less ressources, increase the relevant memory limit
+      <p>To prevent the crashes you can rewrite your filter to use less resources, increase the relevant memory limit
       or recompile pcre to use less stack space. For details please see the <a href=
-      "http://pcre.org/original/doc/html/pcrestack.html" target="_top">pcrestack man page</a> and the documentation of
+      "https://pcre.org/original/doc/html/pcrestack.html" target="_top">pcrestack man page</a> and the documentation of
       your operating system.</p>
     </div>
     <div class="SECT2">

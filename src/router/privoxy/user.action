@@ -193,3 +193,12 @@ www.example.com/nasty-ads/sponsor.gif
 #
 #{+block{Facebook "like" and similar tracking URLs.}}
 #www.facebook.com/(extern|plugins)/(login_status|like(box)?|activity|fan)\.php
+
+######### Examples for SSL actions #########
+# Following section enables TLS/SSL filtering for all sites defined by pattern and requested by HTTPS.
+# {+https-inspection}
+# privoxy.org
+
+# Following section turns off certificate verification for all sites defined by pattern.
+# {+ignore-certificate-errors}
+# privoxy.org
