@@ -456,11 +456,9 @@ static int manager_process_init(void)
 		goto out;
 	}
 
-	if (generate_sub_auth()) {
-		pr_err("Failed to generate subauth for domain sid: %s\n",
+	if (generate_sub_auth())
+		pr_debug("Failed to generate subauth for domain sid: %s\n",
 				strerr(errno));
-		goto out;
-	}
 
 	worker_pid = start_worker_process(worker_process_init);
 	if (worker_pid < 0)

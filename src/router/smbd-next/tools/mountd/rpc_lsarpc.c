@@ -87,6 +87,7 @@ static int lsa_domain_account_rep(struct ksmbd_dcerpc *dce, char *domain_name)
 	ret |= ndr_write_int32(dce, dce->num_pointers); /* ref pointer for domain name*/
 	dce->num_pointers++;
 	ret |= ndr_write_int32(dce, dce->num_pointers); /* ref pointer for sid*/
+	return ret;
 }
 
 static int lsa_domain_account_data(struct ksmbd_dcerpc *dce, char *domain_name,

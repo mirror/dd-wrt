@@ -60,7 +60,6 @@ char *KSMBD_SHARE_CONF[KSMBD_SHARE_CONF_MAX] = {
 	"veto files",		/* 25 */
 	"inherit smack",
 	"inherit owner",
-	"streams",
 	"follow symlinks",
 };
 
@@ -567,19 +566,33 @@ static void process_group_kv(void *_v, unsigned long long _k, void *user_data)
 			clear_share_flag(share, KSMBD_SHARE_FLAG_INHERIT_OWNER);
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_STREAMS)) {
-		if (cp_get_group_kv_bool(v))
-			set_share_flag(share, KSMBD_SHARE_FLAG_STREAMS);
-		else
-			clear_share_flag(share, KSMBD_SHARE_FLAG_STREAMS);
-	}
-
 	if (shm_share_config(k, KSMBD_SHARE_CONF_FOLLOW_SYMLINKS)) {
 		if (cp_get_group_kv_bool(v))
 			set_share_flag(share, KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS);
 		else
 			clear_share_flag(share,
 				KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS);
+	}
+
+	if (shm_share_config(k, KSMBD_SHARE_CONF_VFS_OBJECTS)) {
+		char *p;
+		int i;
+		char **objects = cp_get_group_kv_list(v);
+
+		if (objects) {
+			clear_share_flag(share, KSMBD_SHARE_FLAG_ACL_XATTR);
+			clear_share_flag(share, KSMBD_SHARE_FLAG_STREAMS);
+			for (i = 0;  objects[i] != NULL; i++) {
+				p = cp_ltrim(objects[i]);
+				if (!p)
+					continue;
+				if (!strcmp(p, "acl_xattr"))
+					set_share_flag(share, KSMBD_SHARE_FLAG_ACL_XATTR);
+				else if (!strcmp(p, "streams_xattr"))
+					set_share_flag(share, KSMBD_SHARE_FLAG_STREAMS);
+			}
+			cp_group_kv_list_free(objects);
+		}
 	}
 }
 
