@@ -1462,12 +1462,13 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_BOARD_WHRG300N:
 	case ROUTER_ASUS_RTN10PLUS:
 	case ROUTER_TPLINK_ARCHERC9:
+	case ROUTER_TPLINK_ARCHERC8_V4:
 	case ROUTER_ASUS_RTN12:
 	case ROUTER_NETGEAR_WNR2000V2:
 		sesgpio = 0x100;
 		break;
 	case ROUTER_TPLINK_ARCHERC8:
-		sesgpio = 0x107;
+		sesgpio = 0x103;
 		break;
 	case ROUTER_TPLINK_ARCHERC3150:
 		sesgpio = 0x103;
