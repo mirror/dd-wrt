@@ -511,6 +511,8 @@ endif
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC9v2 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc9v2.bin
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC1900 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc1900.bin
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC8 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc8.bin
+	cd tools/tplink && ./mktplinkfw3 -B ARCHERC8v2 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc8_v2.bin
+	cd tools/tplink && ./mktplinkfw3 -B ARCHERC8v3 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc8_v3.bin
 
 	-./tools/safeloader/tplink-safeloader -B ARCHER-C9-V3 -V 1 -k tools/tplink/kernel.hdr0 -r $(ARCH)-uclibc/root.fs -o $(ARCH)-uclibc/tplink-ARCHER-C9-v3-firmware.bin
 #	-./tools/safeloader/tplink-safeloader -B ARCHER-C9-V3 -V 1 -S -k $(ARCH)-uclibc/kernel.hdr0 -r $(ARCH)-uclibc/root.fs -o $(ARCH)-uclibc/archerC9v3_tp_recovery.bin
