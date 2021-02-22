@@ -248,6 +248,32 @@ void free_image_partition(struct image_partition_entry entry) {
 }
 
 /** Generates the partition-table partition */
+struct image_partition_entry make_partition_table_v1(const struct flash_partition_entry *p) {
+	struct image_partition_entry entry = alloc_image_partition("partition-table", 0x800);
+
+	char *s = (char*)entry.data, *end = (char*)(s+entry.size);
+
+	*(s++) = 0x00;
+	*(s++) = 0x04;
+	*(s++) = 0x00;
+	*(s++) = 0x00;
+
+	size_t i;
+	for (i = 0; p[i].name; i++) {
+		size_t len = end-s;
+		size_t w = snprintf(s, len, "partition %s base 0x%05x size 0x%05x\n", p[i].name, p[i].base, p[i].size);
+
+		if (w > len-1)
+			error(1, 0, "flash partition table overflow?");
+
+		s += w;
+	}
+	*s=0;
+	memset(s+1, 0xff, end-s-1);
+
+	return entry;
+}
+
 struct image_partition_entry make_partition_table(const struct flash_partition_entry *p) {
 	struct image_partition_entry entry = alloc_image_partition("partition-table", 0x800);
 
@@ -492,7 +518,7 @@ static void do_cpe510(const char *support_list,int size,const char *cfe_name, co
 	struct image_partition_entry parts[7] = {};
 
 	
-	parts[0] = make_partition_table(cpe510_partitions);
+	parts[0] = make_partition_table_v1(cpe510_partitions);
 	parts[1] = read_file("fs-uboot", cfe_name, false);
 	parts[2] = read_file("os-image", kernel_image, false);
 	parts[3] = read_file("file-system", rootfs_image, add_jffs2_eof);
