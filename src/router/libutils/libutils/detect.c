@@ -280,10 +280,10 @@ int internal_getRouterBrand()
 #endif
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
-	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && boardnum == 1) {
-		setRouter("TP-Link Archer C9");
+	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && boardnum == 1 && nvram_match("reset_gpio","11")) {
+		setRouter("TP-Link Archer C8");
 
-		return ROUTER_TPLINK_ARCHERC9;
+		return ROUTER_TPLINK_ARCHERC8;
 	}
 
 	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1112") && boardnum == 1) {
