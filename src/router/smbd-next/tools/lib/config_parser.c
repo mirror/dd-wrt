@@ -686,6 +686,8 @@ static void default_global_group(void)
 {
 	global_conf.flags |= KSMBD_GLOBAL_FLAG_CACHE_TBUF;
 	global_conf.flags |= KSMBD_GLOBAL_FLAG_CACHE_RBUF;
+	global_conf.flags |= KSMBD_GLOBAL_FLAG_SMB2_LEASES;
+
 	/* The SPARSE_FILES file system capability flag is set by default */
 	global_conf.share_fake_fscaps = 64;
 }
