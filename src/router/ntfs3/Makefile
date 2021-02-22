@@ -11,6 +11,9 @@ sources += $(wildcard lib/*)
 sources += $(wildcard *.h *.c)
 sources += Makefile Kbuild Kconfig
 
+ccflags-$(CONFIG_NTFS3_LZX_XPRESS) += -DCONFIG_NTFS3_LZX_XPRESS
+ccflags-$(CONFIG_FS_POSIX_ACL) += -DCONFIG_NTFS3_FS_POSIX_ACL
+
 destination = $(DESTDIR)/usr/src/$(DKMS_NAME)-$(VERSION)
 
 default: ntfs3.ko

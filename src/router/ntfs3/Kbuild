@@ -3,6 +3,8 @@
 # Makefile for the ntfs3 filesystem support.
 #
 ccflags-y += -I$(src) -include compat.h
+ccflags-$(CONFIG_NTFS3_LZX_XPRESS) += -DCONFIG_NTFS3_LZX_XPRESS
+ccflags-$(CONFIG_FS_POSIX_ACL) += -DCONFIG_NTFS3_FS_POSIX_ACL
 
 obj-$(CONFIG_NTFS3_FS) += ntfs3.o
 
