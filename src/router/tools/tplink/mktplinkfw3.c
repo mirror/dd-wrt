@@ -183,7 +183,7 @@ static const unsigned char archerc1900_support_list[] =
 	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:43410000}\n" //CA
 	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:41550000}\n" //AU
 	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:52550000}\n" //RU
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:54570000}\n", // TW
+	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:54570000}\n" // TW
 	"\x00";
 
 static const unsigned char archerc8_support_list[] =
@@ -198,7 +198,7 @@ static const unsigned char archerc8_support_list[] =
 	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:43410000}\n" //CA
 	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:41550000}\n" //AU
 	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:52550000}\n" //RU
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:54570000}\n", // TW
+	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:54570000}\n" // TW
 	"\x00";
 
 static const unsigned char archerc8v2_support_list[] =
@@ -221,7 +221,7 @@ static const unsigned char archerc8v3_support_list[] =
 	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:43410000}\n" //CA
 	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:41550000}\n" //AU
 	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:52550000}\n" //RU
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:54570000}\n", // TW
+	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:54570000}\n" // TW
 	"\x00";
 
 static const unsigned char softversion[] =
