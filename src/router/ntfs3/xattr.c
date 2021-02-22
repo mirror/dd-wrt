@@ -466,7 +466,7 @@ out:
 	return err;
 }
 
-#ifdef CONFIG_FS_POSIX_ACL
+#ifdef CONFIG_NTFS3_FS_POSIX_ACL
 static inline void ntfs_posix_acl_release(struct posix_acl *acl)
 {
 	if (acl && atomic_dec_and_test(&acl->a_refcount))
@@ -885,7 +885,7 @@ static int ntfs_getxattr(const struct xattr_handler *handler, struct dentry *de,
 		goto out;
 	}
 
-#ifdef CONFIG_FS_POSIX_ACL
+#ifdef CONFIG_NTFS3_FS_POSIX_ACL
 	if ((name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1 &&
 	     !memcmp(name, XATTR_NAME_POSIX_ACL_ACCESS,
 		     sizeof(XATTR_NAME_POSIX_ACL_ACCESS))) ||
@@ -1025,7 +1025,7 @@ set_new_fa:
 		goto out;
 	}
 
-#ifdef CONFIG_FS_POSIX_ACL
+#ifdef CONFIG_NTFS3_FS_POSIX_ACL
 	if ((name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1 &&
 	     !memcmp(name, XATTR_NAME_POSIX_ACL_ACCESS,
 		     sizeof(XATTR_NAME_POSIX_ACL_ACCESS))) ||

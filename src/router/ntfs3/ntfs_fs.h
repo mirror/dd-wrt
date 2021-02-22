@@ -772,7 +772,7 @@ int ntfs_cmp_names_cpu(const struct cpu_str *uni1, const struct le_str *uni2,
 		       const u16 *upcase, bool bothcase);
 
 /* globals from xattr.c */
-#ifdef CONFIG_FS_POSIX_ACL
+#ifdef CONFIG_NTFS3_FS_POSIX_ACL
 struct posix_acl *ntfs_get_acl(struct inode *inode, int type);
 int ntfs_set_acl(struct inode *inode,
 		 struct posix_acl *acl, int type);
