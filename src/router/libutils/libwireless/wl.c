@@ -2370,6 +2370,7 @@ struct wifidevices {
 #define CHWIDTH_5_10_MHZ 0x20
 #define CHWIDTH_25_MHZ 0x40
 #define QAM256 0x80
+#define FWSWITCH 0x100
 
 #define PCI_ANY 0
 #ifdef HAVE_ATH5K
@@ -2457,15 +2458,15 @@ static struct wifidevices wdevices[] = {
 	{ "Atheros AR2425", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1b, PCI_ANY, PCI_ANY, NULL },
 	{ "Atheros AR5008", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1c, PCI_ANY, PCI_ANY, NULL },
 	{ "Atheros AR922x 802.11n", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1d, PCI_ANY, PCI_ANY, NULL },
-	{ "Qualcomm Atheros QCA988x 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x003c, PCI_ANY, PCI_ANY, NULL },
+	{ "Qualcomm Atheros QCA988x 802.11ac", FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x003c, PCI_ANY, PCI_ANY, NULL },
 	{ "Qualcomm Atheros QCA6174 802.11ac", QAM256 | CHANNELSURVEY, 0x168c, 0x003e, PCI_ANY, PCI_ANY, NULL },
-	{ "Qualcomm Atheros QCA99X0 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA, 0x168c, 0x0040, PCI_ANY, PCI_ANY, NULL },
+	{ "Qualcomm Atheros QCA99X0 802.11ac", FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA, 0x168c, 0x0040, PCI_ANY, PCI_ANY, NULL },
 	{ "Qualcomm Atheros QCA6164 802.11ac", QAM256 | CHANNELSURVEY, 0x168c, 0x0041, PCI_ANY, PCI_ANY, NULL },
 	{ "Qualcomm Atheros QCA9377 802.11ac", QAM256 | CHANNELSURVEY, 0x168c, 0x0042, PCI_ANY, PCI_ANY, NULL },
-	{ "Qualcomm Atheros QCA9984 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0046, PCI_ANY, PCI_ANY, NULL },
-	{ "Qualcomm Atheros QCA9887 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0050, PCI_ANY, PCI_ANY, NULL },
-	{ "Qualcomm Atheros QCA9888 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0056, PCI_ANY, PCI_ANY, NULL },
-	{ "Ubiquiti QCA9888 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x0777, 0x11ac, PCI_ANY, PCI_ANY, NULL },
+	{ "Qualcomm Atheros QCA9984 802.11ac", FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0046, PCI_ANY, PCI_ANY, NULL },
+	{ "Qualcomm Atheros QCA9887 802.11ac", FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0050, PCI_ANY, PCI_ANY, NULL },
+	{ "Qualcomm Atheros QCA9888 802.11ac", FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0056, PCI_ANY, PCI_ANY, NULL },
+	{ "Ubiquiti QCA9888 802.11ac", FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x0777, 0x11ac, PCI_ANY, PCI_ANY, NULL },
 	{ "Marvell 88W8964 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2b40, PCI_ANY, PCI_ANY, NULL },
 	{ "Marvell 88W8864 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2a55, PCI_ANY, PCI_ANY, NULL },
 	{ "Marvell 88W8897 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2b38, PCI_ANY, PCI_ANY, NULL },
@@ -3075,8 +3076,8 @@ static struct wifidevices wdevices[] = {
 	{ "Qualcomm Atheros QCA956x 802.11n WiSOC", CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "qca956x_wmac" },
 	{ "Atheros AR231X WiSOC", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar231x-wmac.0" },
 	{ "Atheros AR231X WiSOC", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar231x-wmac.1" },
-	{ "Qualcomm Atheros IPQ4019 802.11ac", CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "soc/a000000.wifi" },
-	{ "Qualcomm Atheros IPQ4019 802.11ac", CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "soc/a800000.wifi" },
+	{ "Qualcomm Atheros IPQ4019 802.11ac", FWSWITCH | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "soc/a000000.wifi" },
+	{ "Qualcomm Atheros IPQ4019 802.11ac", FWSWITCH | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "soc/a800000.wifi" },
 };
 
 char *getWifiDeviceName(const char *prefix, int *flags)
@@ -3220,19 +3221,42 @@ int has_beacon_limit(const char *prefix)
 	return flagcheck(prefix, BEACONVAP100, 0);
 }
 
+int has_fwswitch(const char *prefix)
+{
+	return flagcheck(prefix, FWSWITCH, 0);
+}
+
 int has_quarter(const char *prefix)
 {
-	return flagcheck(prefix, CHWIDTH_5_10_MHZ, 0);
+	int flag = flagcheck(prefix, CHWIDTH_5_10_MHZ, 0);
+	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
+		if (!nvram_nmatch("ddwrt", "%s_fwtype"))
+			return 0;
+	}
+
+	return flag;
 }
 
 int has_half(const char *prefix)
 {
-	return flagcheck(prefix, CHWIDTH_5_10_MHZ, 0);
+	int flag = flagcheck(prefix, CHWIDTH_5_10_MHZ, 0);
+	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
+		if (!nvram_nmatch("ddwrt", "%s_fwtype"))
+			return 0;
+	}
+
+	return flag;
 }
 
 int has_subquarter(const char *prefix)
 {
-	return flagcheck(prefix, CHWIDTH_25_MHZ, 0);
+	int flag = flagcheck(prefix, CHWIDTH_25_MHZ, 0);
+	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
+		if (!nvram_nmatch("ddwrt", "%s_fwtype"))
+			return 0;
+	}
+
+	return flag;
 }
 #endif
 
@@ -3463,6 +3487,7 @@ int is_mt7615(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+
 int is_mt7915(const char *prefix)
 {
 	INITVALUECACHE();
@@ -3470,6 +3495,7 @@ int is_mt7915(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+
 int is_mt7921(const char *prefix)
 {
 	INITVALUECACHE();
