@@ -86,6 +86,8 @@ static const uint8_t md5_salt[16] = {
 /** Vendor information for CPE210/220/510/520 */
 static const unsigned char cpe510_vendor[] = "\x00\x00\x00\x1f""CPE510(TP-LINK|UN|N300-5):1.0\r\n";
 
+/** Vendor information for 646*/
+static const unsigned char cpe646_vendor[] = "fw-type:Cloud\n";
 
 /**
     The flash partition table for CPE210/220/510/520
@@ -110,6 +112,38 @@ static const struct flash_partition_entry cpe510_partitions[] = {
 	{"default-config", 0xe80000, 0x10000},
 	{"user-config", 0xe90000, 0x50000},
 	{"log", 0xee0000, 0x100000},
+	{"radio_bk", 0xfe0000, 0x10000},
+	{"radio", 0xff0000, 0x10000},
+	{NULL, 0, 0}
+};
+
+/**
+    The flash partition table for 0646
+
+    It is the same as the one used by the stock images,
+    with one exception: The soft-version partition between
+    the os-image and the support-list has been removed
+    to get the same flash content after flashing factory and
+    sysupgrade.
+*/
+static const struct flash_partition_entry cpe646_partitions[] = {
+	{"factory-boot", 0x00000, 0x40000},
+	{"fs-uboot", 0x40000, 0x40000},
+	{"os-image", 0x80000, 0x200000},
+	{"file-system", 0x280000, 0xc80000},
+	{"default-mac", 0xf00000, 0x000200},
+	{"pin", 0xf00200, 0x00100},
+	{"device-id", 0xf00300, 0x00100},
+	{"product-info", 0xf10000, 0x006000},
+	{"soft-version", 0xf16000, 0x01000},
+	{"extra-para", 0xf17000, 0x01000},
+	{"support-list", 0xf18000, 0x008000},
+	{"profile", 0xf20000, 0x03000},
+	{"default-config", 0xf23000, 0x0d000},
+	{"user-config", 0xf30000, 0x40000},
+	{"qos-db", 0xf70000, 0x40000},
+	{"partition-table", 0xfb0000, 0x010000},
+	{"log", 0xfc0000, 0x20000},
 	{"radio_bk", 0xfe0000, 0x10000},
 	{"radio", 0xff0000, 0x10000},
 	{NULL, 0, 0}
@@ -150,8 +184,8 @@ static const unsigned char archerc8_support_list[] =
 	"\x00\x00\x00\x4b\x00\x00\x00\x00"
 	"SupportList:\n"
 	"{product_name:ArcherC8,"
-	"product_ver:1.0.0,"
-	"special_id:00000000}\n"
+	"product_ver:3.0.0,"
+	"special_id:55530000}\n"
 	"\x00";
 
 static const unsigned char archerc8v2_support_list[] =
@@ -162,9 +196,20 @@ static const unsigned char archerc8v2_support_list[] =
 	"special_id:00000000}"
 	"\x00";
 
+static const unsigned char archerc8v3_support_list[] =
+	"\x00\x00\x00\x4b\x00\x00\x00\x00"
+	"SupportList:\n"
+	"{product_name:ArcherC8,"
+	"product_ver:3.0.0,"
+	"special_id:55530000}\n"
+	"\x00";
+
 static const unsigned char softversion[] =
-	"\x00\x00\x00\x0c\x00\x00\x00\x00"
-	"\xff\x03\x11\x01\x20\x15\x10\x09\x00\x00\xef\xef\x00";
+	"soft_ver:1.1.2 Build 20180126 rel.58698\n"
+	"fw_id:4CC8BBF897C91ED05745C2A56463A481\x00";
+
+static const unsigned char extra_para[] =
+	"\x00\x00\x00\x02\x00\x00\x00\x00\x01\x00\x00";
 
 
 
@@ -189,7 +234,7 @@ struct image_partition_entry make_partition_table(const struct flash_partition_e
 	char *s = (char*)entry.data, *end = (char*)(s+entry.size);
 
 	*(s++) = 0x00;
-	*(s++) = 0x04;
+	*(s++) = 0x08;
 	*(s++) = 0x00;
 	*(s++) = 0x00;
 
@@ -219,6 +264,12 @@ struct image_partition_entry make_support_list(const unsigned char *support_list
 struct image_partition_entry make_softversion(const unsigned char *support_list, size_t len) {
 	struct image_partition_entry entry = alloc_image_partition("soft-version", len);
 	memcpy(entry.data, support_list, len);
+	return entry;
+}
+
+struct image_partition_entry make_extra_para(const unsigned char *extra_para, size_t len) {
+	struct image_partition_entry entry = alloc_image_partition("extra-para", len);
+	memcpy(entry.data, extra_para, len);
 	return entry;
 }
 
@@ -356,13 +407,14 @@ void * generate_factory_image(const unsigned char *vendor, size_t vendor_len, co
 	if (!image)
 		error(1, errno, "malloc");
 
-	image[0] = *len >> 24;
+	image[0] = *len >> 24;  //first 4, length of the firmware
 	image[1] = *len >> 16;
 	image[2] = *len >> 8;
 	image[3] = *len;
 
-//	memcpy(image+0x14, vendor, vendor_len);
-	memset(image+0x14, 0xff, 4096);
+	// memcpy(image+0x14, vendor, vendor_len);
+	// memset(image+0x14+vendor_len, 0xff, 4096);
+    memset(image+0x14, 0xff, 4096);
 
 	put_partitions(image + 0x1014, parts);
 	put_md5(image+0x04, image+0x14, *len-0x14);
@@ -449,6 +501,73 @@ static void do_cpe510(const char *support_list,int size,const char *cfe_name, co
 		free_image_partition(parts[i]);
 }
 
+/** Generates an image for 646 and writes it to a file ONLY SUPPORT sysupgrade*/
+static void do_cpe646(const char *support_list,int size,const char *cfe_name, const char *output, const char *kernel_image, const char *rootfs_image, bool add_jffs2_eof, bool sysupgrade) {
+	struct image_partition_entry parts[7] = {};
+
+	
+	parts[0] = make_partition_table(cpe646_partitions); //we're skipping fs-uboot and softversion here so 4 parts in total
+	// parts[1] = read_file("fs-uboot", cfe_name, false);
+	parts[1] = read_file("os-image", kernel_image, false);
+	parts[2] = read_file("file-system", rootfs_image, add_jffs2_eof);
+	parts[3] = make_extra_para(extra_para, sizeof(extra_para)-1);
+	parts[4] = make_support_list(support_list, size - 1);
+	size_t len;
+	void *image;
+	if (sysupgrade)
+		image = generate_sysupgrade_image(cpe646_partitions, parts, &len);
+	else
+		image = generate_factory_image(cpe646_vendor, sizeof(cpe646_vendor)-1, parts, &len);
+
+	FILE *file = fopen(output, "wb");
+	if (!file)
+		error(1, errno, "unable to open output file");
+
+	if (fwrite(image, len, 1, file) != 1)
+		error(1, 0, "unable to write output file");
+
+	fclose(file);
+
+	free(image);
+
+	size_t i;
+	for (i = 0; parts[i].name; i++)
+		free_image_partition(parts[i]);
+}
+
+/** Generates an image for 646 and writes it to a file ONLY SUPPORT sysupgrade*/
+static void do_cpe646_osonly(const char *support_list,int size,const char *cfe_name, const char *output, const char *kernel_image, const char *rootfs_image, bool add_jffs2_eof, bool sysupgrade) {
+	struct image_partition_entry parts[7] = {};
+
+	
+	parts[0] = make_partition_table(cpe646_partitions); //we're skipping fs-uboot and softversion here so 4 parts in total
+	// parts[1] = read_file("fs-uboot", cfe_name, false);
+	parts[1] = read_file("os-image", kernel_image, false);
+	// parts[2] = read_file("file-system", rootfs_image, add_jffs2_eof);
+	parts[2] = make_extra_para(extra_para, sizeof(extra_para)-1);
+	parts[3] = make_support_list(support_list, size - 1);
+	size_t len;
+	void *image;
+	if (sysupgrade)
+		image = generate_sysupgrade_image(cpe646_partitions, parts, &len);
+	else
+		image = generate_factory_image(cpe646_vendor, sizeof(cpe646_vendor)-1, parts, &len);
+
+	FILE *file = fopen(output, "wb");
+	if (!file)
+		error(1, errno, "unable to open output file");
+
+	if (fwrite(image, len, 1, file) != 1)
+		error(1, 0, "unable to write output file");
+
+	fclose(file);
+
+	free(image);
+
+	size_t i;
+	for (i = 0; parts[i].name; i++)
+		free_image_partition(parts[i]);
+}
 
 /** Usage output */
 void usage(const char *argv0) {
@@ -533,8 +652,13 @@ int main(int argc, char *argv[]) {
 		do_cpe510(archerc8_support_list,sizeof(archerc8_support_list), "archerc8_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "ARCHERC8v2") == 0)
 		do_cpe510(archerc8v2_support_list,sizeof(archerc8v2_support_list), "archerc8v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
+	else if (strcmp(board, "ARCHERC8v3") == 0)
+		do_cpe646(archerc8v3_support_list,sizeof(archerc8v3_support_list), "archerc8v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
+	else if (strcmp(board, "ARCHERC8v3os") == 0)
+		do_cpe646_osonly(archerc8v3_support_list,sizeof(archerc8v3_support_list), "archerc8v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else
 		error(1, 0, "unsupported board %s", board);
 
 	return 0;
 }
+
