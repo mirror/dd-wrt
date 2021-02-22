@@ -785,6 +785,8 @@
 
 #define ROUTER_R6220 0x10d10e
 
+#define ROUTER_TPLINK_ARCHERC8 0x10e10b
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
