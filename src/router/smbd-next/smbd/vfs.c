@@ -2614,7 +2614,9 @@ int ksmbd_vfs_set_init_posix_acl(struct inode *inode)
 	int rc;
 
 	ksmbd_debug(SMB, "Set posix acls\n");
-	init_acl_state(&acl_state, 1);
+	rc = init_acl_state(&acl_state, 1);
+	if (rc)
+		return rc;
 
 	/* Set default owner group */
 	acl_state.owner.allow = (inode->i_mode & 0700) >> 6;
@@ -2629,8 +2631,10 @@ int ksmbd_vfs_set_init_posix_acl(struct inode *inode)
 	acl_state.mask.allow = 0x07;
 
 	acls = ksmbd_vfs_posix_acl_alloc(6, GFP_KERNEL);
-	if (!acls)
+	if (!acls) {
+		free_acl_state(&acl_state);
 		return -ENOMEM;
+	}
 	posix_state_to_acl(&acl_state, acls->a_entries);
 	rc = ksmbd_vfs_set_posix_acl(inode, ACL_TYPE_ACCESS, acls);
 	if (rc < 0)
