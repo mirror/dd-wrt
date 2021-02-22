@@ -1400,6 +1400,17 @@ static void getledconfig(struct ledconfig *cfg)
 			cfg->disconnected_gpio = 0x1009;
 		}
 		break;
+	case ROUTER_TPLINK_ARCHERC8:
+		cfg->ses_gpio = 0x0006;
+//		cfg->usb_gpio = 0x0006;
+//		cfg->usb_gpio1 = 0x0007;
+//		cfg->disconnected_gpio = 0x000f;
+//		cfg->connected_gpio = 0x000e;
+//		cfg->power_gpio = 0x1012;
+//		cfg->diag_gpio = 0x0012;
+		cfg->usb_power = 0x000a;	// usb 3
+		cfg->usb_power1 = 0x0009;	// usb 2
+		break;
 	case ROUTER_TPLINK_ARCHERC9:
 		cfg->ses_gpio = 0x0002;
 		cfg->usb_gpio = 0x0006;

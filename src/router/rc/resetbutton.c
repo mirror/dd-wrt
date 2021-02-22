@@ -1466,6 +1466,9 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_NETGEAR_WNR2000V2:
 		sesgpio = 0x100;
 		break;
+	case ROUTER_TPLINK_ARCHERC8:
+		sesgpio = 0x107;
+		break;
 	case ROUTER_TPLINK_ARCHERC3150:
 		sesgpio = 0x103;
 		break;

@@ -2596,6 +2596,7 @@ void start_restore_defaults(void)
 	case ROUTER_ASUS_RTN18U:
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_TPLINK_ARCHERC9:
+	case ROUTER_TPLINK_ARCHERC8:
 	case ROUTER_TPLINK_ARCHERC3150:
 	case ROUTER_TPLINK_ARCHERC3200:
 		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
