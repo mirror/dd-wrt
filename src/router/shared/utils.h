@@ -1182,6 +1182,7 @@ extern int has_half(const char *prefix);
 extern int has_quarter(const char *prefix);
 extern int has_qam256(const char *prefix);
 extern int has_subquarter(const char *prefix);
+extern int has_fwswitch(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
 static inline int is_mac80211(const char *prefix)
@@ -1249,6 +1250,12 @@ static inline int has_subquarter(char *prefix)
 {
 	return 0;
 }
+
+static inline int has_fwswitch(char *prefix)
+{
+	return 0;
+}
+
 #endif
 #ifdef HAVE_ATH10K
 extern int is_ath10k(const char *prefix);
