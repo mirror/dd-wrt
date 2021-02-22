@@ -3022,12 +3022,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif				// ! HAVE MAKSAT
 
-		if (is_ath10k(prefix)) {
-			char fw_type[32];
-			sprintf(fw_type, "%s_fwtype", prefix);
-			char *fw_names[] = { "DD-WRT", "VANILLA" };
-			showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
-		}
+	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
+		char fw_type[32];
+		sprintf(fw_type, "%s_fwtype", prefix);
+		char *fw_names[] = { "DD-WRT", "VANILLA" };
+		showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
+	}
 
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
@@ -4297,12 +4297,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "</fieldset>\n");
 		}
 	}
-		if (is_ath10k(prefix)) {
-			char fw_type[32];
-			sprintf(fw_type, "%s_fwtype", prefix);
-			char *fw_names[] = { "DD-WRT", "VANILLA" };
-			showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
-		}
+	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
+		char fw_type[32];
+		sprintf(fw_type, "%s_fwtype", prefix);
+		char *fw_names[] = { "DD-WRT", "VANILLA" };
+		showOptionsNames(wp, "wl_basic.fw_type", fw_type, "ddwrt vanilla", fw_names, nvram_default_get(fw_type, "ddwrt"));
+	}
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[32];
