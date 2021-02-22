@@ -653,9 +653,9 @@ int main(int argc, char *argv[]) {
 	else if (strcmp(board, "ARCHERC8v2") == 0)
 		do_cpe510(archerc8v2_support_list,sizeof(archerc8v2_support_list), "archerc8v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "ARCHERC8v3") == 0)
-		do_cpe646(archerc8v3_support_list,sizeof(archerc8v3_support_list), "archerc8v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
+		do_cpe646(archerc8v3_support_list,sizeof(archerc8v3_support_list), "archerc8v3_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "ARCHERC8v3os") == 0)
-		do_cpe646_osonly(archerc8v3_support_list,sizeof(archerc8v3_support_list), "archerc8v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
+		do_cpe646_osonly(archerc8v3_support_list,sizeof(archerc8v3_support_list), "archerc8v3_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else
 		error(1, 0, "unsupported board %s", board);
 
