@@ -126,7 +126,8 @@ int tcm_handle_tree_connect(struct ksmbd_tree_connect_request *req,
 		goto out_error;
 	}
 
-	if (test_share_flag(share, KSMBD_SHARE_FLAG_GUEST_OK)) {
+	if ((req->account_flags & KSMBD_USER_FLAG_GUEST_ACCOUNT) &&
+	     test_share_flag(share, KSMBD_SHARE_FLAG_GUEST_OK)) {
 		pr_debug("treecon: net share permits guest login\n");
 		user = usm_lookup_user(share->guest_account);
 		if (user) {
@@ -141,10 +142,7 @@ int tcm_handle_tree_connect(struct ksmbd_tree_connect_request *req,
 		}
 	}
 
-	if (req->account_flags & KSMBD_USER_FLAG_GUEST_ACCOUNT)
-		user = usm_lookup_user(global_conf.guest_account);
-	else
-		user = usm_lookup_user(req->account);
+	user = usm_lookup_user(req->account);
 	if (!user) {
 		resp->status = KSMBD_TREE_CONN_STATUS_NO_USER;
 		pr_err("treecon: user account not found: %s\n", req->account);
