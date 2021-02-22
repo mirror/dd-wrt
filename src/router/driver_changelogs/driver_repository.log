@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6082 | brainslayer | 2021-02-22 19:37:00 +0600 (Mon, 22 Feb 2021) | 1 line
+
+wait for completion after firmware reload
+------------------------------------------------------------------------
 r6081 | brainslayer | 2021-02-22 17:18:00 +0600 (Mon, 22 Feb 2021) | 1 line
 
 show correct value in case qcache is enabled
