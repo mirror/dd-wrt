@@ -174,31 +174,22 @@ static const unsigned char archerc9v2_support_list[] =
 static const unsigned char archerc1900_support_list[] =
 	"\x00\x00\x00\x5a\x00\x00\x00\x00"
 	"SupportList:\n"
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:00000000}\n" // UNIVERSAL
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:55530000}\n" //US 
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:45550000}\n" //EU
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:4B520000}\n" //KR
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:42520000}\n" //BR
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:4A500000}\n" //JP
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:43410000}\n" //CA
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:41550000}\n" //AU
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:52550000}\n" //RU
-	"{product_name:ARCHERC1900,product_ver:1.0.0,special_id:54570000}\n" // TW
+	"{product_name:ArcherC1900,product_ver:1.0.0,language=US,special_id:55534100}\n" //US 
 	"\x00";
 
 static const unsigned char archerc8_support_list[] =
 	"\x00\x00\x00\x4b\x00\x00\x00\x00"
 	"SupportList:\n"
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:00000000}\n" // UNIVERSAL
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:55530000}\n" //US 
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:45550000}\n" //EU
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:4B520000}\n" //KR
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:42520000}\n" //BR
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:4A500000}\n" //JP
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:43410000}\n" //CA
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:41550000}\n" //AU
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:52550000}\n" //RU
-	"{product_name:ARCHERC8,product_ver:1.0.0,special_id:54570000}\n" // TW
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:00000000}\n" // UNIVERSAL
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:55530000}\n" //US 
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:45550000}\n" //EU
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:4B520000}\n" //KR
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:42520000}\n" //BR
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:4A500000}\n" //JP
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:43410000}\n" //CA
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:41550000}\n" //AU
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:52550000}\n" //RU
+	"{product_name:ArcherC8,product_ver:1.0.0,special_id:54570000}\n" // TW
 	"\x00";
 
 static const unsigned char archerc8v2_support_list[] =
@@ -212,16 +203,16 @@ static const unsigned char archerc8v2_support_list[] =
 static const unsigned char archerc8v3_support_list[] =
 	"\x00\x00\x00\x4b\x00\x00\x00\x00"
 	"SupportList:\n"
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:00000000}\n" // UNIVERSAL
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:55530000}\n" //US 
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:45550000}\n" //EU
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:4B520000}\n" //KR
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:42520000}\n" //BR
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:4A500000}\n" //JP
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:43410000}\n" //CA
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:41550000}\n" //AU
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:52550000}\n" //RU
-	"{product_name:ARCHERC8,product_ver:3.0.0,special_id:54570000}\n" // TW
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:00000000}\n" // UNIVERSAL
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:55530000}\n" //US 
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:45550000}\n" //EU
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:4B520000}\n" //KR
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:42520000}\n" //BR
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:4A500000}\n" //JP
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:43410000}\n" //CA
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:41550000}\n" //AU
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:52550000}\n" //RU
+	"{product_name:ArcherC8,product_ver:3.0.0,special_id:54570000}\n" // TW
 	"\x00";
 
 static const unsigned char softversion[] =
