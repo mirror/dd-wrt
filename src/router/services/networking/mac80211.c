@@ -353,7 +353,6 @@ void configure_single_ath9k(int count)
 			else
 				sysprintf("echo > /sys/kernel/debug/ieee80211/%s/ath10k/fw_post", wif);
 			sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/%s/ath10k/simulate_fw_crash", wif);
-			sleep(1);
 		}
 	}
 	if (has_airtime_fairness(dev)) {
