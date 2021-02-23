@@ -340,10 +340,6 @@ void configure_single_ath9k(int count)
 	if (!strcmp(netmode, "disabled"))
 		return;
 
-	if (has_airtime_fairness(dev)) {
-		sprintf(atf, "%s_atf", dev);
-		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
-	}
 	if (is_ath10k(dev)) {
 		char fwtype[32];
 		sprintf(fwtype, "%s_fwtype", dev);
@@ -359,6 +355,10 @@ void configure_single_ath9k(int count)
 			sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/%s/ath10k/simulate_fw_crash", wif);
 			sleep(1);
 		}
+	}
+	if (has_airtime_fairness(dev)) {
+		sprintf(atf, "%s_atf", dev);
+		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
 	}
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
