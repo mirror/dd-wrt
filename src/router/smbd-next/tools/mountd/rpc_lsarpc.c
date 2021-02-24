@@ -7,7 +7,6 @@
 
 #include <memory.h>
 #include <endian.h>
-#include <glib.h>
 #include <pwd.h>
 #include <errno.h>
 #include <linux/ksmbd_server.h>
@@ -30,15 +29,18 @@
 
 #define LSA_POLICY_INFO_ACCOUNT_DOMAIN	5
 
-static GHashTable	*ph_table;
-static GRWLock		ph_table_lock;
-static gchar		*domain_name;
-
+static struct LIST	*ph_table;
+static pthread_rwlock_t ph_table_lock;
+static char		*domain_name;
+static unsigned int toid(unsigned char *handle) {
+	unsigned int *id = (unsigned int *)handle;
+	return *id;
+}
 static void lsarpc_ph_free(struct policy_handle *ph)
 {
-	g_rw_lock_writer_lock(&ph_table_lock);
-	g_hash_table_remove(ph_table, &(ph->handle));
-	g_rw_lock_writer_unlock(&ph_table_lock);
+	pthread_rwlock_wrlock(&ph_table_lock);
+	list_remove(&ph_table, toid(ph->handle));
+	pthread_rwlock_unlock(&ph_table_lock);
 
 	free(ph);
 }
@@ -47,9 +49,9 @@ static struct policy_handle *lsarpc_ph_lookup(unsigned char *handle)
 {
 	struct policy_handle *ph;
 
-	g_rw_lock_reader_lock(&ph_table_lock);
-	ph = g_hash_table_lookup(ph_table, handle);
-	g_rw_lock_reader_unlock(&ph_table_lock);
+	pthread_rwlock_rdlock(&ph_table_lock);
+	ph = list_get(&ph_table, toid(handle));
+	pthread_rwlock_unlock(&ph_table_lock);
 
 	return ph;
 }
@@ -65,9 +67,9 @@ static struct policy_handle *lsarpc_ph_alloc(unsigned int id)
 
 	id++;
 	memcpy(ph->handle, &id, sizeof(unsigned int));
-	g_rw_lock_writer_lock(&ph_table_lock);
-	ret = g_hash_table_insert(ph_table, &(ph->handle), ph);
-	g_rw_lock_writer_unlock(&ph_table_lock);
+	pthread_rwlock_wrlock(&ph_table_lock);
+	ret = list_add(&ph_table, ph, id);
+	pthread_rwlock_unlock(&ph_table_lock);
 
 	if (!ret) {
 		lsarpc_ph_free(ph);
@@ -198,10 +200,12 @@ static int lsarpc_query_info_policy_return(struct ksmbd_rpc_pipe *pipe)
 
 static int __lsarpc_entry_processed(struct ksmbd_rpc_pipe *pipe, int i)
 {
-	gpointer entry;
+	void *entry;
 
-	entry = g_array_index(pipe->entries, gpointer, i);
-	pipe->entries = g_array_remove_index(pipe->entries, i);
+	entry = list_get(&pipe->entries, i);
+	list_remove_dec(&pipe->entries, i);
+	pipe->num_entries--;
+	pipe->num_processed++;
 	free(entry);
 	return 0;
 }
@@ -241,8 +245,7 @@ static int lsarpc_lookup_sid2_invoke(struct ksmbd_rpc_pipe *pipe)
 		ni->index = i + 1;
 		if (set_domain_name(&ni->sid, ni->domain_str, &ni->type))
 			ni->index = -1;
-
-		pipe->entries = g_array_append_val(pipe->entries, ni);
+		list_append(&pipe->entries, ni);
 		pipe->num_entries++;
 	}
 
@@ -273,8 +276,7 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 		struct lsarpc_names_info *ni;
 		int len;
 
-		ni = (struct lsarpc_names_info *)g_array_index(pipe->entries,
-				gpointer, i);
+		ni = (struct lsarpc_names_info *)list_get(&pipe->entries, i);
 		if (ni->type == -1)
 			rc = KSMBD_RPC_SOME_NOT_MAPPED;
 		lsa_domain_account_rep(dce, ni->domain_str);
@@ -283,8 +285,7 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 	for (i = 0; i < pipe->num_entries; i++) {
 		struct lsarpc_names_info *ni;
 
-		ni = (struct lsarpc_names_info *)g_array_index(pipe->entries,
-				gpointer, i);
+		ni = (struct lsarpc_names_info *)list_get(&pipe->entries, i);
 		lsa_domain_account_data(dce, ni->domain_str, &ni->sid);
 	}
 
@@ -298,8 +299,7 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 		struct lsarpc_names_info *ni;
 		size_t len;
 
-		ni = (struct lsarpc_names_info *)g_array_index(pipe->entries,
-				gpointer, i);
+		ni = (struct lsarpc_names_info *)list_get(&pipe->entries, i);
 		ndr_write_int16(dce, ni->type); // sid type
 		ndr_write_int16(dce, 0);
 		if (ni->user)
@@ -318,8 +318,7 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 		struct lsarpc_names_info *ni;
 		char *username = "None";
 
-		ni = (struct lsarpc_names_info *)g_array_index(pipe->entries,
-				gpointer, i);
+		ni = (struct lsarpc_names_info *)list_get(&pipe->entries, i);
 		if (ni->user)
 			username = ni->user->name;
 		ndr_write_string(dce, username); // username
@@ -364,7 +363,7 @@ static int lsarpc_lookup_names3_invoke(struct ksmbd_rpc_pipe *pipe)
 		ni->user = usm_lookup_user(name);
 		if (!ni->user)
 			break;
-		pipe->entries = g_array_append_val(pipe->entries, ni);
+		list_append(&pipe->entries, ni);
 		pipe->num_entries++;
 		smb_init_domain_sid(&ni->sid);
 	}
@@ -415,8 +414,7 @@ static int lsarpc_lookup_names3_return(struct ksmbd_rpc_pipe *pipe)
 	for (i = 0; i < pipe->num_entries; i++) {
 		struct lsarpc_names_info *ni;
 
-		ni = (struct lsarpc_names_info *)g_array_index(pipe->entries,
-				gpointer, i);
+		ni = (struct lsarpc_names_info *)list_get(&pipe->entries, i);
 		ni->sid.sub_auth[ni->sid.num_subauth++] = ni->user->uid;
 		ndr_write_int32(dce, ni->sid.num_subauth); // sid auth count
 		smb_write_sid(dce, &ni->sid); // sid
@@ -550,14 +548,15 @@ int rpc_lsarpc_write_request(struct ksmbd_rpc_pipe *pipe)
 int rpc_lsarpc_init(void)
 {
 	char domain_string[NAME_MAX];
+	pthread_rwlock_init(&ph_table_lock, NULL);
 
 	/*
 	 * ksmbd supports the standalone server and
 	 * uses the hostname as the domain name.
 	 */
 	gethostname(domain_string, NAME_MAX);
-	domain_name = g_ascii_strup(domain_string, strlen(domain_string));
-	ph_table = g_hash_table_new(g_str_hash, g_str_equal);
+	domain_name = strup(domain_string);
+	list_init(&ph_table);
 	if (!ph_table)
 		return -ENOMEM;
 	return 0;
@@ -565,8 +564,8 @@ int rpc_lsarpc_init(void)
 
 void rpc_lsarpc_destroy(void)
 {
-	g_free(domain_name);
+	free(domain_name);
 	if (ph_table)
-		g_hash_table_destroy(ph_table);
-	g_rw_lock_clear(&ph_table_lock);
+		list_clear(&ph_table);
+	pthread_rwlock_destroy(&ph_table_lock);
 }
