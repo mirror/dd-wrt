@@ -5770,7 +5770,10 @@ void nassrv_save(webs_t wp)
 		sprintf(var, "smbshare_mp_%d", c);
 		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_subdir_%d", c);
-		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
+		char *subdir =  json_string(websGetVar(wp, var, ""));
+		if (*subdir == '/')
+		    subdir++;
+		json_object_set_new(entry, "sd", subdir);
 		sprintf(var, "smbshare_label_%d", c);
 		json_object_set_new(entry, "label", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_public_%d", c);
