@@ -441,7 +441,7 @@ MAINTAINERCLEANFILES = \
 
 SUBDIRS = doxygen
 dist_doc_DATA = \
-	management-notes.txt
+	management-notes.txt gui-notes.txt
 
 dist_noinst_DATA = README.plugins interactive-service-notes.rst \
 	openvpn.8.rst man-sections/advanced-options.rst \
@@ -468,7 +468,7 @@ dist_noinst_DATA = README.plugins interactive-service-notes.rst \
 @HAVE_PYDOCUTILS_TRUE@CLEANFILES = \
 @HAVE_PYDOCUTILS_TRUE@	 openvpn.8 openvpn.8.html
 
-@HAVE_PYDOCUTILS_TRUE@@WIN32_FALSE@dist_man_MANS = openvpn.8
+@WIN32_FALSE@dist_man_MANS = openvpn.8
 all: all-recursive
 
 .SUFFIXES:
