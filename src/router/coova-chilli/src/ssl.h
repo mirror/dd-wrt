@@ -48,6 +48,8 @@ typedef struct {
 #include <time.h>
 #include <string.h>
 
+#define OPENSSL_NO_ENGINE
+#include <cyassl/options.h>
 #include <cyassl/ssl.h>
 #include <cyassl/openssl/bio.h>
 #include <cyassl/openssl/crypto.h>

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([coova-chilli],[1.4],[https://github.com/coova/coova-chilli/issues])
+AC_INIT([coova-chilli],[1.6],[https://github.com/coova/coova-chilli/issues])
 AC_CONFIG_SRCDIR([src/chilli.c])
 
 AM_INIT_AUTOMAKE
@@ -397,7 +397,7 @@ AC_ARG_WITH([cyassl],
  [AS_HELP_STRING([--with-cyassl], [enable support for cyassl])],[],[with_cyassl=no])
 
 AS_IF([test x"$with_cyassl" != xno],
-  [AC_CHECK_LIB([cyassl], [CyaSSL_Init],
+  [AC_CHECK_LIB([cyassl], [wolfSSL_Init],
               [AC_SUBST([LIBSSL], ["-lcyassl"])
                AC_DEFINE([HAVE_CYASSL], [1],
                          [Define if you have cyassl])
@@ -830,18 +830,14 @@ fi
 AM_CONDITIONAL(WITH_CONFIG, [test x"$enable_config" = xyes])
 
 AC_SUBST(sysconfdir)
-AC_CONFIG_FILES([Makefile 
-		 bstring/Makefile 
+AC_CONFIG_FILES([Makefile
+		 bstring/Makefile
 		 conf/Makefile
-		 debian/Makefile
-		 distro/Makefile
 		 doc/Makefile
 		 json/Makefile
 		 miniportal/Makefile
-		 src/Makefile 
-		 src/mssl/Makefile 
-		 www/Makefile 
-		 distro/suse/coova-chilli.spec
-		 distro/redhat/coova-chilli.spec])
+		 src/Makefile
+		 src/mssl/Makefile
+		 www/Makefile])
 
 AC_OUTPUT

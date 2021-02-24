@@ -5765,8 +5765,10 @@ int chilli_acct_fromsub(struct app_conn_t *appconn,
       /*
        *  Change to garden accounting.
        */
+#ifdef ENABLE_GARDENACCOUNTING
       if (_options.nousergardendata)
 	is_garden = 1;
+#endif
 #ifdef ENABLE_LEAKYBUCKET
       do_bw = 0;
       if (_options.debug)
@@ -5892,8 +5894,10 @@ int chilli_acct_tosub(struct app_conn_t *appconn,
       /*
        *  Change to garden accounting.
        */
+#ifdef ENABLE_GARDENACCOUNTING
       if (_options.nousergardendata)
 	is_garden = 1;
+#endif
 #ifdef ENABLE_LEAKYBUCKET
       do_bw = 0;
 #endif
