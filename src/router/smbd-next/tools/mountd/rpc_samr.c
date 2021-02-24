@@ -7,8 +7,8 @@
 
 #include <memory.h>
 #include <endian.h>
-#include <glib.h>
 #include <errno.h>
+#include <limits.h>
 #include <linux/ksmbd_server.h>
 
 #include <management/user.h>
@@ -29,17 +29,17 @@
 #define SAMR_OPNUM_GET_ALIAS_MEMBERSHIP	16
 #define SAMR_OPNUM_CLOSE		1
 
-static GHashTable	*ch_table;
-static GRWLock		ch_table_lock;
-static GArray		*domain_entries;
-static gchar		*domain_name;
+static struct LIST	*ch_table;
+static pthread_rwlock_t	ch_table_lock;
+static struct LIST	*domain_entries;
+static char		*domain_name;
 static int		num_domain_entries;
 
 static void samr_ch_free(struct connect_handle *ch)
 {
-	g_rw_lock_writer_lock(&ch_table_lock);
-	g_hash_table_remove(ch_table, &(ch->handle));
-	g_rw_lock_writer_unlock(&ch_table_lock);
+	pthread_rwlock_wrlock(&ch_table_lock);
+	list_remove(&ch_table, toid(ch->handle));
+	pthread_rwlock_unlock(&ch_table_lock);
 
 	free(ch);
 }
@@ -48,9 +48,9 @@ static struct connect_handle *samr_ch_lookup(unsigned char *handle)
 {
 	struct connect_handle *ch;
 
-	g_rw_lock_reader_lock(&ch_table_lock);
-	ch = g_hash_table_lookup(ch_table, handle);
-	g_rw_lock_reader_unlock(&ch_table_lock);
+	pthread_rwlock_rdlock(&ch_table_lock);
+	ch = list_get(&ch_table, toid(handle));
+	pthread_rwlock_unlock(&ch_table_lock);
 
 	return ch;
 }
@@ -67,9 +67,9 @@ static struct connect_handle *samr_ch_alloc(unsigned int id)
 	id++;
 	memcpy(ch->handle, &id, sizeof(unsigned int));
 	ch->refcount++;
-	g_rw_lock_writer_lock(&ch_table_lock);
-	ret = g_hash_table_insert(ch_table, &(ch->handle), ch);
-	g_rw_lock_writer_unlock(&ch_table_lock);
+	pthread_rwlock_wrlock(&ch_table_lock);
+	ret = list_add(&ch_table, ch, id);
+	pthread_rwlock_unlock(&ch_table_lock);
 
 	if (!ret) {
 		samr_ch_free(ch);
@@ -127,11 +127,11 @@ int samr_ndr_write_domain_array(struct ksmbd_rpc_pipe *pipe)
 	int i, ret = 0;
 
 	for (i = 0; i < num_domain_entries; i++) {
-		gpointer entry;
+		void * entry;
 		size_t name_len;
 
 		ret = ndr_write_int32(dce, i);
-		entry = g_array_index(domain_entries, gpointer, i);
+		entry = list_get(&domain_entries, i);
 		name_len = strlen((char *)entry);
 		ret |= ndr_write_int16(dce, name_len*2);
 		ret |= ndr_write_int16(dce, name_len*2);
@@ -142,9 +142,9 @@ int samr_ndr_write_domain_array(struct ksmbd_rpc_pipe *pipe)
 	}
 
 	for (i = 0; i < num_domain_entries; i++) {
-		gpointer entry;
+		void * entry;
 
-		entry = g_array_index(domain_entries,  gpointer, i);
+		entry = list_get(&domain_entries, i);
 		ret |= ndr_write_string(dce, (char *)entry);
 	}
 
@@ -206,9 +206,9 @@ static int samr_lookup_domain_return(struct ksmbd_rpc_pipe *pipe)
 	ndr_write_int32(dce, 4);
 
 	for (i = 0; i < num_domain_entries; i++) {
-		gpointer entry;
+		void * entry;
 
-		entry = g_array_index(domain_entries, gpointer, i);
+		entry = list_get(&domain_entries, i);
 		if (!strcmp(STR_VAL(dce->sm_req.name), (char *)entry)) {
 			smb_init_domain_sid(&sid);
 			smb_write_sid(dce, &sid);
@@ -741,8 +741,7 @@ static int rpc_samr_add_domain_entry(char *name)
 	domain_string = strdup(name);
 	if (!domain_string)
 		return KSMBD_RPC_ENOMEM;
-
-	domain_entries = g_array_append_val(domain_entries, domain_string);
+	list_append(&domain_entries, domain_string);
 	num_domain_entries++;
 
 	return 0;
@@ -750,39 +749,40 @@ static int rpc_samr_add_domain_entry(char *name)
 
 static void rpc_samr_remove_domain_entry(unsigned int eidx)
 {
-	gpointer entry;
+	void * entry;
 
-	entry = g_array_index(domain_entries, gpointer, eidx);
-	domain_entries = g_array_remove_index(domain_entries, eidx);
+	entry = list_get(&domain_entries, eidx);
+	list_remove_dec(&domain_entries, eidx);
 	free(entry);
 }
 
-static void domain_entry_free(void *v)
+static void domain_entry_free(void *s, unsigned long long id, void *user_data)
 {
-	char **entry = v;
-
+	char **entry = s;
 	free(*entry);
+	free(s);
 }
 
 int rpc_samr_init(void)
 {
 	char hostname[NAME_MAX];
+	pthread_rwlock_init(&ch_table_lock, NULL);
 
-	ch_table = g_hash_table_new(g_str_hash, g_str_equal);
+	list_init(&ch_table);
 	if (!ch_table)
 		return -ENOMEM;
-	domain_entries = g_array_new(0, 0, sizeof(void *));
+	list_init(&domain_entries);
 	if (!domain_entries)
 		return -ENOMEM;
 
-	g_array_set_clear_func(domain_entries, domain_entry_free);
+//	g_array_set_clear_func(domain_entries, domain_entry_free);
 
 	/*
 	 * ksmbd supports the standalone server and
 	 * uses the hostname as the domain name.
 	 */
 	gethostname(hostname, NAME_MAX);
-	domain_name = g_ascii_strup(hostname, strlen(hostname));
+	domain_name = strup(hostname);
 	rpc_samr_add_domain_entry(domain_name);
 	rpc_samr_add_domain_entry("Builtin");
 	return 0;
@@ -791,9 +791,12 @@ int rpc_samr_init(void)
 void rpc_samr_destroy(void)
 {
 	if (ch_table)
-		g_hash_table_destroy(ch_table);
-	g_rw_lock_clear(&ch_table_lock);
+		list_clear(&ch_table);
+	pthread_rwlock_destroy(&ch_table_lock);
 	num_domain_entries = 0;
-	g_free(domain_name);
-	g_array_free(domain_entries, 1);
+	free(domain_name);
+	if (domain_entries) {
+		list_foreach(&domain_entries, domain_entry_free, NULL);
+		list_clear(&domain_entries);
+	}
 }
