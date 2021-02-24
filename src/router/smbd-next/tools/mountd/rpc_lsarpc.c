@@ -32,10 +32,6 @@
 static struct LIST	*ph_table;
 static pthread_rwlock_t ph_table_lock;
 static char		*domain_name;
-static unsigned int toid(unsigned char *handle) {
-	unsigned int *id = (unsigned int *)handle;
-	return *id;
-}
 static void lsarpc_ph_free(struct policy_handle *ph)
 {
 	pthread_rwlock_wrlock(&ph_table_lock);
