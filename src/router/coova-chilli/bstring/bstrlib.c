@@ -114,7 +114,7 @@ balloc(bstring b, int olen)
 retry:
 			x = realloc(b->data, len);
 			if (x == NULL) {
-				/* Since we failed, try mallocating the tighest
+				/* Since we failed, try mallocating the tightest
 				 * possible mallocation
 				 */
 				len = olen;

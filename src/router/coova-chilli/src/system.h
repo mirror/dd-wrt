@@ -111,6 +111,7 @@
 
 #ifdef HAVE_SYS_SYSINFO_H
 #include <sys/sysinfo.h>
+#define _LINUX_SYSINFO_H
 #else
 #ifdef HAVE_LINUX_SYSINFO_H
 #define _LINUX_KERNEL_H
