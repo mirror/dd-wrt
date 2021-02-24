@@ -1118,7 +1118,6 @@ static int schedule_by_tod(FILE * cfd, int seq)
 
 	if (strcmp(todvalue, "") == 0) { 
 		save2file_A("lan2wan -j grp_%d", seq); // in case nvram is crap
-		nvram_set("sched_intime","1");
 		return 0;
 	}
 
@@ -1141,7 +1140,6 @@ static int schedule_by_tod(FILE * cfd, int seq)
 	 */
 	if (!sched) {
 		save2file_A("lan2wan -j grp_%d", seq);
-		nvram_set("sched_intime","1");
 		return 1;
 	}
 
@@ -1212,10 +1210,8 @@ static int schedule_by_tod(FILE * cfd, int seq)
 	DEBUG("intime=%d\n", intime);
 	if (intime) {
 		save2file_A("lan2wan -j grp_%d", seq);
-		nvram_set("sched_intime","1");
 		return 1;
 	}
-	nvram_set("sched_intime","0");
 	return 0;
 }
 
