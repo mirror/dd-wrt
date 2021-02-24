@@ -35,7 +35,6 @@
 #define MD5Update MD5_Update
 #define MD5Final MD5_Final
 
-typedef struct CYASSL_MD5_CTX MD5_CTX;
 #else
 
 struct MD5Context {
