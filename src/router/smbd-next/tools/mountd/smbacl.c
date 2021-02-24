@@ -147,6 +147,17 @@ static void smb_sid_to_string(char *domain, struct smb_sid *sid)
 	}
 }
 
+char *strup(char *src)
+{
+	int i;
+	src = strdup(src);
+	if (!src)
+	    return NULL;
+	for (i=0;i<strlen(src);i++)
+		src[i] = toupper(src[i]);
+	return src;
+}
+
 int set_domain_name(struct smb_sid *sid, char *domain, int *type)
 {
 	int ret = 0;
@@ -157,12 +168,9 @@ int set_domain_name(struct smb_sid *sid, char *domain, int *type)
 	    !memcmp(&sid->sub_auth[1], global_conf.gen_subauth,
 		    sizeof(__u32) * 3)) {
 		gethostname(domain_string, NAME_MAX);
-		domain_name = strdup(domain_string);
+		domain_name = strup(domain_string);
 		if (!domain_name)
 			return -ENOMEM;
-		int i;
-		for (i=0;i<strlen(domain_name);i++)
-		    domain_name[i] = toupper(domain_name[i]);
 		strcpy(domain, domain_name);
 		free(domain_name);
 		*type = SID_TYPE_USER;
@@ -174,12 +182,9 @@ int set_domain_name(struct smb_sid *sid, char *domain, int *type)
 		*type = SID_TYPE_GROUP;
 	} else {
 		smb_sid_to_string(domain_string, sid);
-		domain_name = strdup(domain_string);
+		domain_name = strup(domain_string);
 		if (!domain_name)
 			return -ENOMEM;
-		int i;
-		for (i=0;i<strlen(domain_name);i++)
-		    domain_name[i] = toupper(domain_name[i]);
 		strcpy(domain, domain_name);
 		free(domain_name);
 		*type = SID_TYPE_UNKNOWN;
