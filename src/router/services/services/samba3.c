@@ -191,7 +191,7 @@ void start_samba3(void)
 			if (*cs->label) {
 				fprintf(fp, "[%s]\n", cs->label);
 				char *sd = cs->sd;
-				if (sd[0] == '/')
+				if (*sd == '/')
 					sd++;	// kill leading slash if there is any
 
 #ifdef HAVE_SMBD
