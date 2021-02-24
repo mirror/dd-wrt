@@ -5736,10 +5736,18 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 
 	if (file_info->Attributes) {
 		if (!S_ISDIR(inode->i_mode) &&
-				file_info->Attributes == ATTR_DIRECTORY_LE) {
+				file_info->Attributes & ATTR_DIRECTORY_LE) {
 			ksmbd_err("can't change a file to a directory\n");
 			return -EINVAL;
 		}
+
+		if (S_ISDIR(inode->i_mode) &&
+				(file_info->Attributes & ATTR_NORMAL_LE ||
+				 file_info->Attributes & ATTR_ARCHIVE_LE)) {
+			ksmbd_err("can't change a directory to a file\n");
+			return -EINVAL;
+		}
+
 		fp->f_ci->m_fattr = file_info->Attributes;
 	}
 
