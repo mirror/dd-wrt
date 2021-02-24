@@ -22,6 +22,7 @@ struct policy_handle {
 };
 
 struct lsarpc_names_info {
+	unsigned int index;
 	int type;
 	char domain_str[NAME_MAX];
 	struct smb_sid sid;
