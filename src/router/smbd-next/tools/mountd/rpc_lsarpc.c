@@ -7,6 +7,7 @@
 
 #include <memory.h>
 #include <endian.h>
+#include <glib.h>
 #include <pwd.h>
 #include <errno.h>
 #include <linux/ksmbd_server.h>
@@ -237,16 +238,9 @@ static int lsarpc_lookup_sid2_invoke(struct ksmbd_rpc_pipe *pipe)
 		if (passwd)
 			ni->user = usm_lookup_user(passwd->pw_name);
 
-		/*
-		 * SID TYPE USER : 0x1
-		 * SID TYPE GRIUP : 0x2
-		 */
-		ni->type = i + 1;
-
-		if (set_domain_name(&ni->sid, ni->domain_str, ni->type)) {
-			free(ni);
-			continue;
-		}
+		ni->index = i + 1;
+		if (set_domain_name(&ni->sid, ni->domain_str, &ni->type))
+			ni->index = -1;
 
 		pipe->entries = g_array_append_val(pipe->entries, ni);
 		pipe->num_entries++;
@@ -260,7 +254,7 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 	struct policy_handle *ph;
-	int i;
+	int i, rc = KSMBD_RPC_OK;
 
 	ph = lsarpc_ph_lookup(dce->lr_req.handle);
 	if (!ph)
@@ -281,6 +275,8 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 
 		ni = (struct lsarpc_names_info *)g_array_index(pipe->entries,
 				gpointer, i);
+		if (ni->type == -1)
+			rc = KSMBD_RPC_SOME_NOT_MAPPED;
 		lsa_domain_account_rep(dce, ni->domain_str);
 	}
 
@@ -314,7 +310,7 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 		ndr_write_int16(dce, len*2); // size
 		dce->num_pointers++; // ref pointer
 		ndr_write_int32(dce, dce->num_pointers);
-		ndr_write_int32(dce, i); // sid index
+		ndr_write_int32(dce, ni->index); // sid index
 		ndr_write_int32(dce, 0); // unknown
 	}
 
@@ -336,7 +332,7 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 		pipe->num_entries = 0;
 	}
 
-	return KSMBD_RPC_OK;
+	return rc;
 }
 
 static int lsarpc_lookup_names3_invoke(struct ksmbd_rpc_pipe *pipe)

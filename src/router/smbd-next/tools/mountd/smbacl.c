@@ -116,27 +116,44 @@ int smb_compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid)
 	return 0; /* sids compare/match */
 }
 
-int set_domain_name(struct smb_sid *sid, char *domain, int sid_type)
+int set_domain_name(struct smb_sid *sid, char *domain, int *type)
 {
 	int ret = 0;
+	char domain_string[NAME_MAX] = {0};
+	gchar *domain_name;
 
-	if (!smb_compare_sids(sid, &sid_domain)) {
-		char domain_string[NAME_MAX];
-		char *domain_name;
-
+	if (!smb_compare_sids(sid, &sid_domain) &&
+	    !memcmp(&sid->sub_auth[1], global_conf.gen_subauth,
+		    sizeof(__u32) * 3)) {
 		gethostname(domain_string, NAME_MAX);
 		domain_name = strdup(domain_string);
+		if (!domain_name)
+			return -ENOMEM;
 		int i;
-		for (i=0;i<strlen(domain_string);i++)
-		    domain_name[i] = toupper(domain_string[i]);
+		for (i=0;i<strlen(domain_name);i++)
+		    domain_name[i] = toupper(domain_name[i]);
 		strcpy(domain, domain_name);
 		free(domain_name);
-	} else if (sid_type == SID_TYPE_USER)
+		*type = SID_TYPE_USER;
+	} else if (!smb_compare_sids(sid, &sid_unix_users)) {
 		strcpy(domain, "Unix User");
-	else if (sid_type == SID_TYPE_GROUP)
+		*type = SID_TYPE_USER;
+	} else if (!smb_compare_sids(sid, &sid_unix_groups)) {
 		strcpy(domain, "Unix Group");
-	else
+		*type = SID_TYPE_GROUP;
+	} else {
+		smb_sid_to_string(domain_string, sid);
+		domain_name = strdup(domain_string);
+		if (!domain_name)
+			return -ENOMEM;
+		int i;
+		for (i=0;i<strlen(domain_name);i++)
+		    domain_name[i] = toupper(domain_name[i]);
+		strcpy(domain, domain_name);
+		free(domain_name);
+		*type = SID_TYPE_UNKNOWN;
 		ret = -ENOENT;
+	}
 	return ret;
 }
 
