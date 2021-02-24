@@ -77,4 +77,9 @@ void smb_copy_sid(struct smb_sid *dst, const struct smb_sid *src);
 int smb_compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid);
 int build_sec_desc(struct ksmbd_dcerpc *dce, __u32 *secdesclen, int rid);
 int set_domain_name(struct smb_sid *sid, char *domain, int *type);
+static unsigned int toid(unsigned char *handle) {
+	unsigned int *id = (unsigned int *)handle;
+	return *id;
+}
+char *strup(char *src);
 #endif /* __KSMBD_SMBACL_H__ */
