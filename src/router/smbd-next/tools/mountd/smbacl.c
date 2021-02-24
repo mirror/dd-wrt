@@ -151,7 +151,7 @@ int set_domain_name(struct smb_sid *sid, char *domain, int *type)
 {
 	int ret = 0;
 	char domain_string[NAME_MAX] = {0};
-	gchar *domain_name;
+	char *domain_name;
 
 	if (!smb_compare_sids(sid, &sid_domain) &&
 	    !memcmp(&sid->sub_auth[1], global_conf.gen_subauth,
