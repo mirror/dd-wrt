@@ -18,6 +18,14 @@ static const struct smb_sid sid_domain = {1, 1, {0, 0, 0, 0, 0, 5},
 static const struct smb_sid sid_everyone = {
 	1, 1, {0, 0, 0, 0, 0, 1}, {0} };
 
+/* S-1-22-1 Unmapped Unix users */
+static const struct smb_sid sid_unix_users = {1, 1, {0, 0, 0, 0, 0, 22},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
+
+/* S-1-22-2 Unmapped Unix groups */
+static const struct smb_sid sid_unix_groups = { 1, 1, {0, 0, 0, 0, 0, 22},
+	{2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
+
 /* security id for local group */
 static const struct smb_sid sid_local_group = {
 	1, 1, {0, 0, 0, 0, 0, 5}, {32} };
