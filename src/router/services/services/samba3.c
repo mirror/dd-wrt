@@ -192,10 +192,10 @@ void start_samba3(void)
 				fprintf(fp, "[%s]\n", cs->label);
 #ifdef HAVE_SMBD
 				fprintf(fp, "comment = %s\n", cs->label);
-				fprintf(fp, "path = %s/%s\n", cs->mp, cs->sd);
+				fprintf(fp, "path = %s%s%s\n", cs->mp, strlen(cs->sd) ? "/" : "", cs->sd);
 #else
 				fprintf(fp, "comment = \"%s\"\n", cs->label);
-				fprintf(fp, "path = \"%s/%s\"\n", cs->mp, cs->sd);
+				fprintf(fp, "path = \"%s%s%s\"\n", cs->mp, strlen(cs->sd) ? "/" : "", cs->sd);
 #endif
 				fprintf(fp, "read only = %s\n", !strcmp(cs->access_perms, "ro") ? "yes" : "no");
 				fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "yes" : "no");
