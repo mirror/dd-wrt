@@ -190,12 +190,16 @@ void start_samba3(void)
 			}
 			if (*cs->label) {
 				fprintf(fp, "[%s]\n", cs->label);
+				char *sd = cs->sd;
+				if (sd[0] == '/')
+					sd++;	// kill leading slash if there is any
+
 #ifdef HAVE_SMBD
 				fprintf(fp, "comment = %s\n", cs->label);
-				fprintf(fp, "path = %s%s%s\n", cs->mp, strlen(cs->sd) ? "/" : "", cs->sd);
+				fprintf(fp, "path = %s%s%s\n", cs->mp, strlen(sd) ? "/" : "", sd);
 #else
 				fprintf(fp, "comment = \"%s\"\n", cs->label);
-				fprintf(fp, "path = \"%s%s%s\"\n", cs->mp, strlen(cs->sd) ? "/" : "", cs->sd);
+				fprintf(fp, "path = \"%s%s%s\"\n", cs->mp, strlen(sd) ? "/" : "", sd);
 #endif
 				fprintf(fp, "read only = %s\n", !strcmp(cs->access_perms, "ro") ? "yes" : "no");
 				fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "yes" : "no");
