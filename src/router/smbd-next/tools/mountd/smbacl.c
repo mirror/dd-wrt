@@ -124,6 +124,29 @@ int smb_compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid)
 	return 0; /* sids compare/match */
 }
 
+static void smb_sid_to_string(char *domain, struct smb_sid *sid)
+{
+	char str[PATH_MAX];
+	int i, domain_len = 0, len;
+
+	strncpy(domain, "S-", 2);
+	domain_len += 2;
+	len = sprintf(str, "%i", (int)sid->revision);
+	strncpy(&domain[domain_len], str, len);
+	domain_len += len;
+	domain[domain_len++] = '-';
+	len = sprintf(str, "%i", (int)sid->authority[5]);
+	strncpy(&domain[domain_len], str, len);
+	domain_len += len;
+
+	for (i = 0; i < sid->num_subauth; i++) {
+		domain[domain_len++] = '-';
+		len = sprintf(str, "%u", sid->sub_auth[i]);
+		strncpy(&domain[domain_len], str, len);
+		domain_len += len;
+	}
+}
+
 int set_domain_name(struct smb_sid *sid, char *domain, int *type)
 {
 	int ret = 0;
