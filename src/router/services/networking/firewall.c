@@ -1116,8 +1116,8 @@ static int schedule_by_tod(FILE * cfd, int seq)
 	 */
 	todvalue = nvram_nget("filter_tod%d", seq);
 
-	if (strcmp(todvalue, "") == 0) { 
-		save2file_A("lan2wan -j grp_%d", seq); // in case nvram is crap
+	if (strcmp(todvalue, "") == 0) {
+		save2file_A("lan2wan -j grp_%d", seq);	// in case nvram is crap
 		return 0;
 	}
 
@@ -1960,17 +1960,26 @@ static void lan2wan_chains(char *lan_cclass)
 	}
 }
 
-#ifndef HAVE_MICRO
-#include <pthread.h>
-static pthread_mutex_t mutex_unl = PTHREAD_MUTEX_INITIALIZER;
-static char *lastlock;
-static char *lastunlock;
-#define lock() pthread_mutex_lock(&mutex_unl)
-#define unlock() pthread_mutex_unlock(&mutex_unl)
-#else
-#define lock()
-#define unlock()
-#endif
+static void lock()
+{
+	int cnt = 0;
+      retry:;
+	FILE *in = fopen("/tmp/.fw_lock", "rb");
+	if (in) {
+		fclose(in);
+		if (cnt == 10)
+			goto ex;
+		sleep(1);
+		cnt++;
+		goto retry;
+	}
+      ex:;
+	in = fopen("/tmp/.fw_lock", "wb");
+	putc('L', in);
+	fclose(in);
+}
+
+#define unlock() eval("rm","-f","/tmp/.fw_lock")
 
 /*
  *
