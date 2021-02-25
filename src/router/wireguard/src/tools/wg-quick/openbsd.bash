@@ -8,6 +8,7 @@ set -e -o pipefail
 shopt -s extglob
 export LC_ALL=C
 
+exec 3>&2
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"
 export PATH="${SELF%/*}:$PATH"
 
@@ -16,6 +17,7 @@ INTERFACE=""
 ADDRESSES=( )
 MTU=""
 DNS=( )
+DNS_SEARCH=( )
 TABLE=""
 PRE_UP=( )
 POST_UP=( )
@@ -27,7 +29,7 @@ PROGRAM="${0##*/}"
 ARGS=( "$@" )
 
 cmd() {
-	echo "[#] $*" >&2
+	echo "[#] $*" >&3
 	"$@"
 }
 
@@ -56,7 +58,9 @@ parse_options() {
 			case "$key" in
 			Address) ADDRESSES+=( ${value//,/ } ); continue ;;
 			MTU) MTU="$value"; continue ;;
-			DNS) DNS+=( ${value//,/ } ); continue ;;
+			DNS) for v in ${value//,/ }; do
+				[[ $v =~ (^[0-9.]+$)|(^.*:.*$) ]] && DNS+=( $v ) || DNS_SEARCH+=( $v )
+			done; continue ;;
 			Table) TABLE="$value"; continue ;;
 			PreUp) PRE_UP+=( "$value" ); continue ;;
 			PreDown) PRE_DOWN+=( "$value" ); continue ;;
@@ -84,23 +88,33 @@ auto_su() {
 
 
 get_real_interface() {
-	local interface diff
-	wg show interfaces >/dev/null
-	[[ -f "/var/run/wireguard/$INTERFACE.name" ]] || return 1
-	interface="$(< "/var/run/wireguard/$INTERFACE.name")"
-	[[ -n $interface && -S "/var/run/wireguard/$interface.sock" ]] || return 1
-	diff=$(( $(stat -f %m "/var/run/wireguard/$interface.sock" 2>/dev/null || echo 200) - $(stat -f %m "/var/run/wireguard/$INTERFACE.name" 2>/dev/null || echo 100) ))
-	[[ $diff -ge 2 || $diff -le -2 ]] && return 1
-	REAL_INTERFACE="$interface"
-	echo "[+] Interface for $INTERFACE is $REAL_INTERFACE" >&2
-	return 0
+	local interface line
+	while IFS= read -r line; do
+		if [[ $line =~ ^([a-z]+[0-9]+):\ .+ ]]; then
+			interface="${BASH_REMATCH[1]}"
+			continue
+		fi
+		if [[ $interface == wg* && $line =~ ^\	description:\ wg-quick:\ (.+) && ${BASH_REMATCH[1]} == "$INTERFACE" ]]; then
+			REAL_INTERFACE="$interface"
+			return 0
+		fi
+	done < <(ifconfig)
+	return 1
 }
 
 add_if() {
-	export WG_TUN_NAME_FILE="/var/run/wireguard/$INTERFACE.name"
-	mkdir -p "/var/run/wireguard/"
-	cmd "${WG_QUICK_USERSPACE_IMPLEMENTATION:-wireguard-go}" tun
-	get_real_interface
+	while true; do
+		local -A existing_ifs="( $(wg show interfaces | sed 's/\([^ ]*\)/[\1]=1/g') )"
+		local index ret
+		for ((index=0; index <= 2147483647; ++index)); do [[ -v existing_ifs[wg$index] ]] || break; done
+		if ret="$(cmd ifconfig wg$index create description "wg-quick: $INTERFACE" 2>&1)"; then
+			REAL_INTERFACE="wg$index"
+			return 0
+		fi
+		[[ $ret == *"ifconfig: SIOCIFCREATE: File exists"* ]] && continue
+		echo "$ret" >&3
+		return 1
+	done
 }
 
 del_routes() {
@@ -130,8 +144,7 @@ del_routes() {
 
 del_if() {
 	unset_dns
-	[[ -z $REAL_INTERFACE ]] || cmd rm -f "/var/run/wireguard/$REAL_INTERFACE.sock"
-	cmd rm -f "/var/run/wireguard/$INTERFACE.name"
+	[[ -n $REAL_INTERFACE ]] && cmd ifconfig $REAL_INTERFACE destroy
 }
 
 up_if() {
@@ -270,7 +283,9 @@ set_dns() {
 	[[ ${#DNS[@]} -gt 0 ]] || return 0
 	# TODO: this is a horrible way of doing it. Has OpenBSD no resolvconf?
 	cmd cp /etc/resolv.conf "/etc/resolv.conf.wg-quick-backup.$INTERFACE"
-	cmd printf 'nameserver %s\n' "${DNS[@]}" > /etc/resolv.conf
+	{ cmd printf 'nameserver %s\n' "${DNS[@]}"
+	  [[ ${#DNS_SEARCH[@]} -eq 0 ]] || cmd printf 'search %s\n' "${DNS_SEARCH[*]}"
+	} > /etc/resolv.conf
 }
 
 unset_dns() {
@@ -409,9 +424,7 @@ cmd_up() {
 }
 
 cmd_down() {
-	if ! get_real_interface || [[ " $(wg show interfaces) " != *" $REAL_INTERFACE "* ]]; then
-		die "\`$INTERFACE' is not a WireGuard interface"
-	fi
+	get_real_interface || die "\`$INTERFACE' is not a WireGuard interface"
 	execute_hooks "${PRE_DOWN[@]}"
 	[[ $SAVE_CONFIG -eq 0 ]] || save_config
 	del_if
@@ -420,9 +433,7 @@ cmd_down() {
 }
 
 cmd_save() {
-	if ! get_real_interface || [[ " $(wg show interfaces) " != *" $REAL_INTERFACE "* ]]; then
-		die "\`$INTERFACE' is not a WireGuard interface"
-	fi
+	get_real_interface || die "\`$INTERFACE' is not a WireGuard interface"
 	save_config
 }
 
