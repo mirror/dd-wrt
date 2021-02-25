@@ -379,8 +379,13 @@ ifneq ($(CONFIG_QCA9888),y)
 endif
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0 && ln -s /tmp/ath10k-board.bin board.bin 
+ifeq ($(CONFIG_R9000),y)
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0000:01:00.0.bin && ln -s /tmp/board1.bin pre-cal-pci-0001:03:00.0.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/board2.bin pre-cal-pci-0001:04:00.0.bin 
+else
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0000:01:00.0.bin && ln -s /tmp/board1.bin pre-cal-pci-0000:01:00.0.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/board2.bin pre-cal-pci-0001:01:00.0.bin 
+endif
 ifeq ($(CONFIG_QCA9887),y)
 	rm -f $(INSTALLDIR)/ath9k/lib/ath10k/board.bin
 ifeq ($(CONFIG_ARCHERC25),y)
