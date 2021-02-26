@@ -103,6 +103,7 @@ void start_samba3(void)
 	mkdir("/var/cache", 0700);
 	mkdir("/var/cache/samba", 0700);
 	eval("touch", "/var/samba/smbpasswd");
+	eval("smbpasswd", "nobody", "nobody");
 	if (nvram_matchi("samba3_advanced", 1)) {
 		write_nvram("/tmp/smb.conf", "samba3_conf");
 	} else {
