@@ -104,6 +104,10 @@ void start_samba3(void)
 	mkdir("/var/cache/samba", 0700);
 	eval("touch", "/var/samba/smbpasswd");
 	eval("smbpasswd", "nobody", "nobody");
+#ifdef HAVE_SMBD
+	eval("ksmbd.adduser", "-a", "nobody", "-p", "nobody", "-i", "/tmp/smb.db");
+	eval("ksmbd.adduser", "-u", "nobody", "-p", "nobody", "-i", "/tmp/smb.db");
+#endif
 	if (nvram_matchi("samba3_advanced", 1)) {
 		write_nvram("/tmp/smb.conf", "samba3_conf");
 	} else {
