@@ -49,7 +49,7 @@ int tcm_handle_tree_connect(struct ksmbd_tree_connect_request *req,
 
 	if (sm_check_sessions_capacity(req->session_id)) {
 		resp->status = KSMBD_TREE_CONN_STATUS_TOO_MANY_SESSIONS;
-		pr_debug("treecon: Too many active sessions %d\n",
+		pr_err("treecon: Too many active sessions %d\n",
 			 req->session_id);
 		goto out_error;
 	}
@@ -76,7 +76,7 @@ int tcm_handle_tree_connect(struct ksmbd_tree_connect_request *req,
 
 	if (shm_open_connection(share)) {
 		resp->status = KSMBD_TREE_CONN_STATUS_TOO_MANY_CONNS;
-		pr_debug("treecon: Too many connections to a net share\n");
+		pr_err("treecon: Too many connections to a net share\n");
 		goto out_error;
 	}
 
@@ -107,7 +107,7 @@ int tcm_handle_tree_connect(struct ksmbd_tree_connect_request *req,
 
 		if (req->account_flags & KSMBD_USER_FLAG_GUEST_ACCOUNT
 			&& deny) {
-			pr_debug("treecon: deny. Restricted session\n");
+			pr_err("treecon: deny. Restricted session\n");
 			resp->status = KSMBD_TREE_CONN_STATUS_ERROR;
 			goto out_error;
 		}
@@ -117,11 +117,11 @@ int tcm_handle_tree_connect(struct ksmbd_tree_connect_request *req,
 	      req->account_flags & KSMBD_USER_FLAG_GUEST_ACCOUNT) &&
 	    !test_share_flag(share, KSMBD_SHARE_FLAG_PIPE) &&
 	    !test_share_flag(share, KSMBD_SHARE_FLAG_GUEST_OK)) {
-		pr_debug("treecon: deny. Not allow guest\n");
+		pr_err("treecon: deny. Not allow guest\n");
 		if (req->account_flags & KSMBD_USER_FLAG_BAD_PASSWORD)
-			pr_debug("bad password\n");
+			pr_err("bad password\n");
 		if (req->account_flags & KSMBD_USER_FLAG_GUEST_ACCOUNT)
-			pr_debug("uses guest account\n");
+			pr_err("uses guest account\n");
 		resp->status = KSMBD_TREE_CONN_STATUS_ERROR;
 		goto out_error;
 	}
@@ -140,6 +140,7 @@ int tcm_handle_tree_connect(struct ksmbd_tree_connect_request *req,
 			set_conn_flag(conn, KSMBD_TREE_CONN_FLAG_GUEST_ACCOUNT);
 			goto bind;
 		}
+		goto bind;
 	}
 
 	user = usm_lookup_user(req->account);
