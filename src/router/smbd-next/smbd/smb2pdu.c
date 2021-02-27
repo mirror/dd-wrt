@@ -5744,19 +5744,13 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 
 	if (file_info->Attributes) {
 		if (!S_ISDIR(inode->i_mode) &&
-				file_info->Attributes & ATTR_DIRECTORY_LE) {
+				file_info->Attributes == ATTR_DIRECTORY_LE) {
 			ksmbd_err("can't change a file to a directory\n");
 			return -EINVAL;
 		}
 
-		if (S_ISDIR(inode->i_mode) &&
-				(file_info->Attributes & ATTR_NORMAL_LE ||
-				 file_info->Attributes & ATTR_ARCHIVE_LE)) {
-			ksmbd_err("can't change a directory to a file\n");
-			return -EINVAL;
-		}
-
-		fp->f_ci->m_fattr = file_info->Attributes;
+		if (!(S_ISDIR(inode->i_mode) && file_info->Attributes == ATTR_NORMAL_LE))
+			fp->f_ci->m_fattr = file_info->Attributes;
 	}
 
 	if (test_share_config_flag(share, KSMBD_SHARE_FLAG_STORE_DOS_ATTRS) &&
@@ -5785,14 +5779,9 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 	attrs.ia_valid |= ATTR_CTIME;
 
 	if (attrs.ia_valid) {
-#if ((LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) && \
-		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 37))) || \
-		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
 		struct dentry *dentry = filp->f_path.dentry;
 		struct inode *inode = d_inode(dentry);
-#else
-		struct inode *inode = FP_INODE(fp);
-#endif
+
 		if (IS_IMMUTABLE(inode) || IS_APPEND(inode))
 			return -EACCES;
 
@@ -5806,8 +5795,21 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 		if (rc)
 			return -EINVAL;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
+		inode_lock(inode);
 		setattr_copy(inode, &attrs);
-		mark_inode_dirty(inode);
+		attrs.ia_valid &= ~ATTR_CTIME;
+		rc = notify_change(dentry, &attrs, NULL);
+		inode_unlock(inode);
+#else
+		mutex_lock(&inode->i_mutex);
+		setattr_copy(inode, &attrs);
+		attrs.ia_valid &= ~ATTR_CTIME;
+		rc = notify_change(dentry, &attrs, NULL);
+		mutex_unlock(&inode->i_mutex);
+#endif
+		if (rc)
+			return -EINVAL;
 	}
 	return 0;
 }
