@@ -140,7 +140,7 @@ int tcm_handle_tree_connect(struct ksmbd_tree_connect_request *req,
 			set_conn_flag(conn, KSMBD_TREE_CONN_FLAG_GUEST_ACCOUNT);
 			goto bind;
 		}
-		pr_err("treeconn: guest login requested, but no local guess account found\n");
+		pr_err("treeconn: guest login requested, but no local guest account found\n");
 	}
 
 	user = usm_lookup_user(req->account);
