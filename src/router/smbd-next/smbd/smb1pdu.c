@@ -2603,7 +2603,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 					   KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
 			struct xattr_dos_attrib da = {0};
 
-			da.version = 3;
+			da.version = 4;
 			da.attr = smb_get_dos_attr(&stat);
 			da.create_time = fp->create_time;
 
@@ -7372,9 +7372,11 @@ static int create_dir(struct ksmbd_work *work)
 			ctime = ksmbd_UnixTimeToNT(CURRENT_TIME);
 #endif
 
-			da.version = 3;
+			da.version = 4;
 			da.attr = ATTR_DIRECTORY;
-			da.create_time = ctime;
+			da.itime = da.create_time = ctime;
+			da.flags = XATTR_DOSINFO_ATTRIB | XATTR_DOSINFO_CREATE_TIME |
+				XATTR_DOSINFO_ITIME;
 
 			err = ksmbd_vfs_set_dos_attrib_xattr(path.dentry, &da);
 			if (err)
@@ -7544,9 +7546,11 @@ int smb_mkdir(struct ksmbd_work *work)
 #else
 			ctime = ksmbd_UnixTimeToNT(CURRENT_TIME);
 #endif
-			da.version = 3;
+			da.version = 4;
 			da.attr = ATTR_DIRECTORY;
-			da.create_time = ctime;
+			da.itime = da.create_time = ctime;
+			da.flags = XATTR_DOSINFO_ATTRIB | XATTR_DOSINFO_CREATE_TIME |
+				XATTR_DOSINFO_ITIME;
 
 			err = ksmbd_vfs_set_dos_attrib_xattr(path.dentry, &da);
 			if (err)
@@ -8258,8 +8262,10 @@ int smb_open_andx(struct ksmbd_work *work)
 			struct xattr_dos_attrib da;
 
 			err = ksmbd_vfs_get_dos_attrib_xattr(path.dentry, &da);
-			if (err > 0)
+			if (err > 0) {
 				fp->create_time = da.create_time;
+				fp->itime = da.itime;
+			}
 			err = 0;
 		}
 	} else {
@@ -8267,9 +8273,11 @@ int smb_open_andx(struct ksmbd_work *work)
 					KSMBD_SHARE_FLAG_STORE_DOS_ATTRS)) {
 			struct xattr_dos_attrib da = {0};
 
-			da.version = 3;
+			da.version = 4;
 			da.attr = ATTR_NORMAL;
-			da.create_time = fp->create_time;
+			da.itime = da.create_time = fp->create_time;
+			da.flags = XATTR_DOSINFO_ATTRIB | XATTR_DOSINFO_CREATE_TIME |
+				XATTR_DOSINFO_ITIME;
 
 			err = ksmbd_vfs_set_dos_attrib_xattr(path.dentry, &da);
 			if (err)

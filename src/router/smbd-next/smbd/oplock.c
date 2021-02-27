@@ -1400,7 +1400,8 @@ int smb_grant_oplock(struct ksmbd_work *work,
 		}
 	}
 	prev_opinfo = opinfo_get_list(ci);
-	if (!prev_opinfo)
+	if (!prev_opinfo ||
+	    (prev_opinfo->level == SMB2_OPLOCK_LEVEL_NONE && lctx))
 		goto set_lev;
 	prev_op_has_lease = prev_opinfo->is_lease;
 	if (prev_op_has_lease)
