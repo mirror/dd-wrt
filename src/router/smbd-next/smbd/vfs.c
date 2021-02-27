@@ -235,7 +235,6 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work,
 
 	dentry = kern_path_create(AT_FDCWD, name, &path, LOOKUP_DIRECTORY);
 	if (IS_ERR(dentry)) {
-		ksmbd_revert_fsids(work);
 		err = PTR_ERR(dentry);
 		if (err != -EEXIST)
 			ksmbd_debug(VFS, "path create failed for %s, err %d\n",

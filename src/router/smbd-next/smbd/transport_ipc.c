@@ -656,7 +656,11 @@ int ksmbd_ipc_logout_request(const char *account)
 
 	msg->type = KSMBD_EVENT_LOGOUT_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
-	memcpy(req->account, account, KSMBD_REQ_MAX_ACCOUNT_NAME_SZ - 1);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
+	strlcpy(req->account, account, KSMBD_REQ_MAX_ACCOUNT_NAME_SZ);
+#else
+	strscpy(req->account, account, KSMBD_REQ_MAX_ACCOUNT_NAME_SZ);
+#endif
 
 	ret = ipc_msg_send(msg);
 	ipc_msg_free(msg);

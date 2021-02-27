@@ -89,6 +89,7 @@ struct ksmbd_file {
 	__le32				coption;
 	__le32				cdoption;
 	__u64				create_time;
+	__u64				itime;
 
 	bool				is_durable;
 	bool				is_resilient;
