@@ -755,15 +755,13 @@ int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
 	err = notify_change(dentry, attrs, NULL);
 	inode_unlock(inode);
 #else
+	mutex_lock(&inode->i_mutex);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	mutex_lock(&inode->i_mutex);
 	err = notify_change(dentry, attrs);
-	mutex_unlock(&inode->i_mutex);
 #else
-	mutex_lock(&inode->i_mutex);
 	err = notify_change(dentry, attrs, NULL);
-	mutex_unlock(&inode->i_mutex);
 #endif
+	mutex_unlock(&inode->i_mutex);
 #endif
 
 	if (update_size)
