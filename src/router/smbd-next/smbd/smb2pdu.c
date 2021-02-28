@@ -5805,7 +5805,11 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 		mutex_lock(&inode->i_mutex);
 		setattr_copy(inode, &attrs);
 		attrs.ia_valid &= ~ATTR_CTIME;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+		rc = notify_change(dentry, &attrs);
+#else
 		rc = notify_change(dentry, &attrs, NULL);
+#endif
 		mutex_unlock(&inode->i_mutex);
 #endif
 		if (rc)
