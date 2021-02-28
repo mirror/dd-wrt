@@ -1147,14 +1147,18 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 	airbag_printf("\n");
 
 	{
-		const int size = 32;
+#if defined(__x86_64__) || defined(__i386__)
+		const int size = 128;
+#else
+		const int size = 64;
+#endif
 		void *buffer[size];
 		int repeat[size];
 		airbag_printf("%sBacktrace:\n", section);
 		int nptrs = airbag_walkstack(buffer, repeat, size, uc);
 		for (i = 0; i < nptrs; ++i) {
 			airbag_symbol(buffer[i]);
-			if (repeat[i])
+			if (i < size && repeat[i])
 				airbag_printf(" (called %u times)", repeat[i] + 1);
 			airbag_printf("\n");
 		}
