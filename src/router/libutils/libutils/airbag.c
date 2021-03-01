@@ -1114,6 +1114,17 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 		name[sizeof(name) - 1] = 0;
 #ifdef SYS_gettid
 		airbag_printf("Thread %u: %s\n", syscall(SYS_gettid), name);
+		char line[256];
+		char pid[64];
+		sprintf(pid, "/proc/%u/maps");
+		FILE *fp = fopen(pid, "rb");
+		if (fp) {
+			airbaf_printf("maps:\n");
+			while (!feof(fp) && fgets(line, sizeof(line) - 1, fp)) {
+				airbag_printf("%s\n", line);
+			}
+			fclose(fp);
+		}
 #else
 		airbag_printf("Thread: %s\n", name);
 #endif
