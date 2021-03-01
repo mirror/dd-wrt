@@ -151,8 +151,8 @@ int ntfs_fix_post_read(struct NTFS_RECORD_HEADER *rhdr, size_t bytes,
 	u16 sample, fo, fn;
 
 	fo = le16_to_cpu(rhdr->fix_off);
-	fn = simple ? ((bytes >> SECTOR_SHIFT) + 1) :
-		      le16_to_cpu(rhdr->fix_num);
+	fn = simple ? ((bytes >> SECTOR_SHIFT) + 1)
+		    : le16_to_cpu(rhdr->fix_num);
 
 	/* Check errors */
 	if ((fo & 1) || fo + fn * sizeof(short) > SECTOR_SIZE || !fn-- ||
@@ -1738,8 +1738,15 @@ static bool is_acl_valid(const struct ACL *acl, u32 len)
 	u32 i;
 	u16 ace_count, ace_size;
 
-	if (acl->AclRevision != ACL_REVISION)
+	if (acl->AclRevision != ACL_REVISION &&
+	    acl->AclRevision != ACL_REVISION_DS) {
+		/*
+		 * This value should be ACL_REVISION, unless the ACL contains an
+		 * object-specific ACE, in which case this value must be ACL_REVISION_DS.
+		 * All ACEs in an ACL must be at the same revision level.
+		 */
 		return false;
+	}
 
 	if (acl->Sbz1)
 		return false;
@@ -1751,7 +1758,6 @@ static bool is_acl_valid(const struct ACL *acl, u32 len)
 		return false;
 
 	len -= sizeof(struct ACL);
-
 	ace = (struct ACE_HEADER *)&acl[1];
 	ace_count = le16_to_cpu(acl->AceCount);
 
@@ -1764,7 +1770,6 @@ static bool is_acl_valid(const struct ACL *acl, u32 len)
 			return false;
 
 		len -= ace_size;
-
 		ace = Add2Ptr(ace, ace_size);
 	}
 

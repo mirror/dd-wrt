@@ -433,9 +433,9 @@ requires_new_range:
 			should_add_tail = Tovcn < r->len;
 
 			if (should_add_tail) {
-				tail_lcn = r->lcn == SPARSE_LCN ?
-						   SPARSE_LCN :
-						   (r->lcn + Tovcn);
+				tail_lcn = r->lcn == SPARSE_LCN
+						   ? SPARSE_LCN
+						   : (r->lcn + Tovcn);
 				tail_vcn = r->vcn + Tovcn;
 				tail_len = r->len - Tovcn;
 			}
@@ -1007,7 +1007,7 @@ int run_unpack_ex(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 	struct wnd_bitmap *wnd;
 
 	ret = run_unpack(run, sbi, ino, svcn, evcn, vcn, run_buf, run_buf_size);
-	if (ret < 0)
+	if (ret <= 0)
 		return ret;
 
 	if (!sbi->used.bitmap.sb || !run || run == RUN_DEALLOCATE)
@@ -1022,8 +1022,6 @@ int run_unpack_ex(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 	for (ok = run_lookup_entry(run, vcn, &lcn, &len, &index);
 	     next_vcn <= evcn;
 	     ok = run_get_entry(run, ++index, &vcn, &lcn, &len)) {
-		CLST real_free, i;
-
 		if (!ok || next_vcn != vcn)
 			return -EINVAL;
 
@@ -1035,7 +1033,6 @@ int run_unpack_ex(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 		if (sbi->flags & NTFS_FLAGS_NEED_REPLAY)
 			continue;
 
-next:
 		down_read_nested(&wnd->rw_lock, BITMAP_MUTEX_CLUSTERS);
 		/* Check for free blocks */
 		ok = wnd_is_used(wnd, lcn, len);
@@ -1043,40 +1040,33 @@ next:
 		if (ok)
 			continue;
 
+		/* Looks like volume is corrupted */
 		ntfs_set_state(sbi, NTFS_DIRTY_ERROR);
 
-		if (!down_write_trylock(&wnd->rw_lock))
-			continue;
+		if (down_write_trylock(&wnd->rw_lock)) {
+			/* mark all zero bits as used in range [lcn, lcn+len) */
+			CLST i, lcn_f = 0, len_f = 0;
 
-		/* Find first free */
-		real_free = len;
-		while (real_free && !wnd_is_free(wnd, lcn, 1)) {
-			lcn += 1;
-			real_free -= 1;
-		}
+			err = 0;
+			for (i = 0; i < len; i++) {
+				if (wnd_is_free(wnd, lcn + i, 1)) {
+					if (!len_f)
+						lcn_f = lcn + i;
+					len_f += 1;
+				} else if (len_f) {
+					err = wnd_set_used(wnd, lcn_f, len_f);
+					len_f = 0;
+					if (err)
+						break;
+				}
+			}
 
-		if (!real_free) {
+			if (len_f)
+				err = wnd_set_used(wnd, lcn_f, len_f);
+
 			up_write(&wnd->rw_lock);
-			continue;
-		}
-
-		/* Find total free */
-		i = 1;
-		while (i < real_free && wnd_is_free(wnd, lcn + i, 1))
-			i += 1;
-
-		real_free = i;
-
-		err = wnd_set_used(wnd, lcn, real_free);
-		up_write(&wnd->rw_lock);
-
-		if (err)
-			return err;
-
-		if (len != real_free) {
-			len -= real_free + 1;
-			lcn += real_free + 1;
-			goto next;
+			if (err)
+				return err;
 		}
 	}
 
