@@ -1119,7 +1119,7 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 		sprintf(pid, "/proc/%u/maps");
 		FILE *fp = fopen(pid, "rb");
 		if (fp) {
-			airbaf_printf("maps:\n");
+			airbag_printf("maps:\n");
 			while (!feof(fp) && fgets(line, sizeof(line) - 1, fp)) {
 				airbag_printf("%s\n", line);
 			}
