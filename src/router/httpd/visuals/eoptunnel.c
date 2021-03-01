@@ -315,7 +315,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						{
 							show_caption(wp, "label", "eoip.wireguard_peer", NULL);
 							websWrite(wp,
-								  "<input size=\"20\" maxlength=\"20\" name=\"%s\" value=\"%s\" />:<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n\n",
+								  "<input size=\"20\" maxlength=\"48\" name=\"%s\" value=\"%s\" />:<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n\n",
 								  temp, nvram_safe_get(temp), temp2, nvram_safe_get(temp2));
 						}
 						websWrite(wp, "</div>\n");
