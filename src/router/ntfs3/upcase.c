@@ -54,10 +54,8 @@ case_insentive:
 			return diff2;
 	}
 
-	if (bothcase && diff1)
-		return diff1;
-
-	return l1 - l2;
+	diff2 = l1 - l2;
+	return diff2 ? diff2 : diff1;
 }
 
 int ntfs_cmp_names_cpu(const struct cpu_str *uni1, const struct le_str *uni2,
@@ -93,8 +91,6 @@ case_insentive:
 			return diff2;
 	}
 
-	if (bothcase && diff1)
-		return diff1;
-
-	return l1 - l2;
+	diff2 = l1 - l2;
+	return diff2 ? diff2 : diff1;
 }

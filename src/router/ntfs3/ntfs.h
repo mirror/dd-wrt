@@ -1194,7 +1194,8 @@ struct EA_FULL {
 
 static_assert(offsetof(struct EA_FULL, name) == 8);
 
-#define ACL_REVISION 2
+#define ACL_REVISION	2
+#define ACL_REVISION_DS 4
 
 #define SE_SELF_RELATIVE cpu_to_le16(0x8000)
 
