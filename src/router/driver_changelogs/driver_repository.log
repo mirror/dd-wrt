@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6106 | brainslayer | 2021-03-02 01:40:14 +0700 (Tue, 02 Mar 2021) | 1 line
+
+tx streams expect masks and not count of streams, correct this
+------------------------------------------------------------------------
 r6105 | brainslayer | 2021-03-01 23:37:49 +0700 (Mon, 01 Mar 2021) | 1 line
 
 fix stream caps for qam256
