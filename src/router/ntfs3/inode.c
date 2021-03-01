@@ -243,8 +243,8 @@ next_attr:
 		if (!attr->nres.alloc_size)
 			goto next_attr;
 
-		run = ino == MFT_REC_BITMAP ? &sbi->used.bitmap.run :
-					      &ni->file.run;
+		run = ino == MFT_REC_BITMAP ? &sbi->used.bitmap.run
+					    : &ni->file.run;
 		break;
 
 	case ATTR_ROOT:
@@ -271,9 +271,9 @@ next_attr:
 		if (err)
 			goto out;
 
-		mode = sb->s_root ?
-			       (S_IFDIR | (0777 & sbi->options.fs_dmask_inv)) :
-			       (S_IFDIR | 0777);
+		mode = sb->s_root
+			       ? (S_IFDIR | (0777 & sbi->options.fs_dmask_inv))
+			       : (S_IFDIR | 0777);
 		goto next_attr;
 
 	case ATTR_ALLOC:
@@ -763,12 +763,12 @@ static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
-	ret = blockdev_direct_IO(iocb, inode, iter, wr ? ntfs_get_block_direct_IO_W :
-				      ntfs_get_block_direct_IO_R);
-
+	ret = blockdev_direct_IO(iocb, inode, iter,
+				 wr ? ntfs_get_block_direct_IO_W
+				    : ntfs_get_block_direct_IO_R);
 #else
 	ret = blockdev_direct_IO(iocb, inode, iter, offset, wr ? ntfs_get_block_direct_IO_W :
-				      ntfs_get_block_direct_IO_R);
+ 				      ntfs_get_block_direct_IO_R);
 #endif
 	valid = ni->i_valid;
 	if (wr) {
@@ -1565,10 +1565,9 @@ int ntfs_create_inode(struct inode *dir,
 
 	/* Fill vfs inode fields */
 	inode->i_uid = sbi->options.uid ? sbi->options.fs_uid : current_fsuid();
-	inode->i_gid =
-		sbi->options.gid ?
-			sbi->options.fs_gid :
-			(dir->i_mode & S_ISGID) ? dir->i_gid : current_fsgid();
+	inode->i_gid = sbi->options.gid		 ? sbi->options.fs_gid
+		       : (dir->i_mode & S_ISGID) ? dir->i_gid
+						 : current_fsgid();
 	inode->i_generation = le16_to_cpu(rec->seq);
 
 	dir->i_mtime = dir->i_ctime = inode->i_atime;
@@ -1776,7 +1775,7 @@ int ntfs_unlink_inode(struct inode *dir, const struct dentry *dentry)
 	err = ntfs_nls_to_utf16(sbi, name->name, name->len, uni, NTFS_NAME_LEN,
 				UTF16_HOST_ENDIAN);
 	if (err < 0)
-		goto out4;
+		goto out2;
 
 	/*mark rw ntfs as dirty. it will be cleared at umount*/
 	ntfs_set_state(sbi, NTFS_DIRTY_DIRTY);
@@ -1803,7 +1802,7 @@ int ntfs_unlink_inode(struct inode *dir, const struct dentry *dentry)
 	err = indx_delete_entry(indx, dir_ni, fname, fname_full_size(fname),
 				sbi);
 	if (err)
-		goto out4;
+		goto out3;
 
 	/* Then remove name from mft */
 	ni_remove_attr_le(ni, attr_from_name(fname), le);
@@ -1818,15 +1817,14 @@ int ntfs_unlink_inode(struct inode *dir, const struct dentry *dentry)
 			err = indx_delete_entry(indx, dir_ni, fname,
 						fname_full_size(fname), sbi);
 			if (err)
-				goto out4;
+				goto out3;
 
 			ni_remove_attr_le(ni, attr_from_name(fname), le);
 
 			le16_add_cpu(&ni->mi.mrec->hard_links, -1);
 		}
 	}
-
-out4:
+out3:
 	switch (err) {
 	case 0:
 		drop_nlink(inode);
@@ -1844,7 +1842,7 @@ out4:
 	if (inode->i_nlink)
 		mark_inode_dirty(inode);
 
-out3:
+out2:
 	__putname(uni);
 out1:
 	ni_unlock(ni);

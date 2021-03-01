@@ -235,8 +235,8 @@ void ntfs_sparse_cluster(struct inode *inode, struct page *page0, CLST vcn,
 			continue;
 
 		page_off = (loff_t)idx << PAGE_SHIFT;
-		to = (page_off + PAGE_SIZE) > end ? (end - page_off) :
-						    PAGE_SIZE;
+		to = (page_off + PAGE_SIZE) > end ? (end - page_off)
+						  : PAGE_SIZE;
 		partial = false;
 
 		if ((from || PAGE_SIZE != to) &&
@@ -1035,8 +1035,8 @@ static ssize_t ntfs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	if (ret)
 		goto out;
 
-	ret = is_compressed(ni) ? ntfs_compress_write(iocb, from) :
-				  __generic_file_write_iter(iocb, from);
+	ret = is_compressed(ni) ? ntfs_compress_write(iocb, from)
+				: __generic_file_write_iter(iocb, from);
 
 out:
 	inode_unlock(inode);

@@ -22,7 +22,7 @@
 int ntfs_utf16_to_nls(struct ntfs_sb_info *sbi, const struct le_str *uni,
 		      u8 *buf, int buf_len)
 {
-	int ret, uni_len;
+	int ret, uni_len, warn;
 	const __le16 *ip;
 	u8 *op;
 	struct nls_table *nls = sbi->options.nls;
@@ -40,10 +40,12 @@ int ntfs_utf16_to_nls(struct ntfs_sb_info *sbi, const struct le_str *uni,
 	ip = uni->name;
 	op = buf;
 	uni_len = uni->len;
+	warn = 0;
 
 	while (uni_len--) {
 		u16 ec;
 		int charlen;
+		char dump[5];
 
 		if (buf_len < NLS_MAX_CHARSET_SIZE) {
 			ntfs_warn(sbi->sb,
@@ -57,12 +59,21 @@ int ntfs_utf16_to_nls(struct ntfs_sb_info *sbi, const struct le_str *uni,
 		if (charlen > 0) {
 			op += charlen;
 			buf_len -= charlen;
-		} else {
-			*op++ = ':';
-			op = hex_byte_pack(op, ec >> 8);
-			op = hex_byte_pack(op, ec);
-			buf_len -= 5;
+			continue;
 		}
+
+		*op++ = '_';
+		buf_len -= 1;
+		if (warn)
+			continue;
+
+		warn = 1;
+		hex_byte_pack(&dump[0], ec >> 8);
+		hex_byte_pack(&dump[2], ec);
+		dump[4] = 0;
+
+		ntfs_err(sbi->sb, "failed to convert \"%s\" to %s", dump,
+			 nls->charset);
 	}
 
 	*op = '\0';

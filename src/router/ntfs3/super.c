@@ -704,9 +704,9 @@ static u32 format_size_gb(const u64 bytes, u32 *mb)
 
 static u32 true_sectors_per_clst(const struct NTFS_BOOT *boot)
 {
-	return boot->sectors_per_clusters <= 0x80 ?
-		       boot->sectors_per_clusters :
-		       (1u << (0 - boot->sectors_per_clusters));
+	return boot->sectors_per_clusters <= 0x80
+		       ? boot->sectors_per_clusters
+		       : (1u << (0 - boot->sectors_per_clusters));
 }
 
 /* inits internal info from on-disk boot sector*/
@@ -802,10 +802,10 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 
 	sbi->cluster_mask = sbi->cluster_size - 1;
 	sbi->cluster_mask_inv = ~(u64)sbi->cluster_mask;
-	sbi->record_size = record_size = boot->record_size < 0 ?
-						 1 << (-boot->record_size) :
-						 (u32)boot->record_size
-							 << sbi->cluster_bits;
+	sbi->record_size = record_size = boot->record_size < 0
+						 ? 1 << (-boot->record_size)
+						 : (u32)boot->record_size
+							   << sbi->cluster_bits;
 
 	if (record_size > MAXIMUM_BYTES_PER_MFT)
 		goto out;
@@ -818,9 +818,9 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 		QuadAlign(((record_size >> SECTOR_SHIFT) * sizeof(short))) -
 		QuadAlign(sizeof(enum ATTR_TYPE));
 
-	sbi->index_size = boot->index_size < 0 ?
-				  1u << (-boot->index_size) :
-				  (u32)boot->index_size << sbi->cluster_bits;
+	sbi->index_size = boot->index_size < 0
+				  ? 1u << (-boot->index_size)
+				  : (u32)boot->index_size << sbi->cluster_bits;
 
 	sbi->volume.ser_num = le64_to_cpu(boot->serial_num);
 	sbi->volume.size = sectors << sbi->sector_bits;

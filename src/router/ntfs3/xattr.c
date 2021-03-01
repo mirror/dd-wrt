@@ -26,8 +26,8 @@
 static inline size_t unpacked_ea_size(const struct EA_FULL *ea)
 {
 	return !ea->size ? DwordAlign(offsetof(struct EA_FULL, name) + 1 +
-				      ea->name_len + le16_to_cpu(ea->elength)) :
-			   le32_to_cpu(ea->size);
+				      ea->name_len + le16_to_cpu(ea->elength))
+			 : le32_to_cpu(ea->size);
 }
 
 static inline size_t packed_ea_size(const struct EA_FULL *ea)
@@ -895,9 +895,9 @@ static int ntfs_getxattr(const struct xattr_handler *handler, struct dentry *de,
 		/* TODO: init_user_ns? */
 		err = ntfs_xattr_get_acl(
 			inode,
-			name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1 ?
-				ACL_TYPE_ACCESS :
-				ACL_TYPE_DEFAULT,
+			name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1
+				? ACL_TYPE_ACCESS
+				: ACL_TYPE_DEFAULT,
 			buffer, size);
 		goto out;
 	}
@@ -1035,9 +1035,9 @@ set_new_fa:
 		/* TODO: init_user_ns? */
 		err = ntfs_xattr_set_acl(
 			inode,
-			name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1 ?
-				ACL_TYPE_ACCESS :
-				ACL_TYPE_DEFAULT,
+			name_len == sizeof(XATTR_NAME_POSIX_ACL_ACCESS) - 1
+				? ACL_TYPE_ACCESS
+				: ACL_TYPE_DEFAULT,
 			value, size);
 		goto out;
 	}
