@@ -1107,6 +1107,8 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 			airbag_printf(" due to %s (%x).\n", faultReason, si->si_code);
 		}
 	}
+		if (postinfo)
+			airbag_printf("Postinfo: %s\n", postinfo);
 #ifdef __linux__
 	{
 		char name[17];
@@ -1129,8 +1131,6 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 #else
 		airbag_printf("Thread: %s\n", name);
 #endif
-		if (postinfo)
-			airbag_printf("Postinfo: %s\n", postinfo);
 	}
 #endif
 
