@@ -1108,11 +1108,11 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 			airbag_printf(" due to %s (%x).\n", faultReason, si->si_code);
 		}
 	}
-	for (i=postinfoindex+1;i<16;i++) {
+	for (i=postindex+1;i<16;i++) {
 		if (postinfo[i])
 			airbag_printf("Postinfo: %s\n", postinfo[i]);		
 	}
-	for (i=0;i<postinfoindex;i++) {
+	for (i=0;i<postindex;i++) {
 		if (postinfo[i])
 			airbag_printf("Postinfo: %s\n", postinfo[i]);		
 	}
