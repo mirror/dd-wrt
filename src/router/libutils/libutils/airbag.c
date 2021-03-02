@@ -418,7 +418,8 @@ static int is_lost_conn(int e)
 #define SOCK_CLOEXEC   02000000
 #define SOCK_NONBLOCK  04000
 #endif
-static char *postinfo = NULL;
+static int postindex = -1;
+static char *postinfo[16] = NULL;
 static void slog(int priority, const char *message)
 {
 	char *buf;
@@ -1107,8 +1108,10 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 			airbag_printf(" due to %s (%x).\n", faultReason, si->si_code);
 		}
 	}
-		if (postinfo)
-			airbag_printf("Postinfo: %s\n", postinfo);
+	for (i=0;i<16;i++) {
+		if (postinfo[i])
+			airbag_printf("Postinfo: %s\n", postinfo[i]);		
+	}
 #ifdef __linux__
 	{
 		char name[17];
@@ -1124,7 +1127,7 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 		if (fp) {
 			airbag_printf("maps:\n");
 			while (!feof(fp) && fgets(line, sizeof(line) - 1, fp)) {
-				airbag_printf("%s\n", line);
+				airbag_printf("%s", line);
 			}
 			fclose(fp);
 		}
@@ -1377,7 +1380,9 @@ AIRBAG_EXPORT void airbag_deinit()
 	deinitCrashHandlers();
 }
 void airbag_setpostinfo(char *string) {
-	postinfo = string;
+	postindex++;
+	postindex = postindex % 16;
+	postinfo[postindex] = string;
 }
 #else
 void airbag_setpostinfo(char *string) {
