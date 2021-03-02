@@ -3231,7 +3231,7 @@ int has_quarter(const char *prefix)
 {
 	int flag = flagcheck(prefix, CHWIDTH_5_10_MHZ, 0);
 	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
-		if (!nvram_nmatch("ddwrt", "%s_fwtype"))
+		if (!nvram_nmatch("ddwrt", "%s_fwtype", prefix))
 			return 0;
 	}
 
@@ -3242,7 +3242,7 @@ int has_half(const char *prefix)
 {
 	int flag = flagcheck(prefix, CHWIDTH_5_10_MHZ, 0);
 	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
-		if (!nvram_nmatch("ddwrt", "%s_fwtype"))
+		if (!nvram_nmatch("ddwrt", "%s_fwtype", prefix))
 			return 0;
 	}
 
@@ -3253,7 +3253,7 @@ int has_subquarter(const char *prefix)
 {
 	int flag = flagcheck(prefix, CHWIDTH_25_MHZ, 0);
 	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
-		if (!nvram_nmatch("ddwrt", "%s_fwtype"))
+		if (!nvram_nmatch("ddwrt", "%s_fwtype", prefix))
 			return 0;
 	}
 
