@@ -806,6 +806,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 {
 	struct timeval before, after, r;
 
+	airbag_setpostinfo(name);
 	if (nvram_matchi("httpd_debug", 1)) {
 		fprintf(stderr, "call_ej %s", name);
 		int i = 0;
