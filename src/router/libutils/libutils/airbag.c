@@ -482,27 +482,6 @@ static int airbag_printf(char *fmt, ...)
 	return size;
 }
 
-static int airbag_puts(char *str)
-{
-	static char *ss_buffer = NULL;
-
-	if (!size || size < 0)
-		return 0;
-	if (!ss_buffer) {
-		ss_buffer = strdup(str);
-	} else {
-		ss_buffer = realloc(ss_buffer, strlen(ss_buffer) + strlen(str) + 1);
-		strcat(ss_buffer, str);
-	}
-	if (strchr(ss_buffer, '\n')) {
-		slog(LOG_ERR, ss_buffer);
-		fputs(ss_buffer, stderr);
-		free(ss_buffer);
-		ss_buffer = NULL;
-	}
-	return size;
-}
-
 static const char *demangle(const char *mangled)
 {
 	if (!mangled)
@@ -1134,10 +1113,11 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 		prctl(PR_GET_NAME, (unsigned long)name, 0, 0, 0);
 		name[sizeof(name) - 1] = 0;
 #ifdef SYS_gettid
-		airbag_printf("Thread %u: %s\n", syscall(SYS_gettid), name);
+		unsigned int thread = syscall(SYS_gettid);
+		airbag_printf("Thread %u: %s\n", thread, name);
 		char line[256];
 		char pid[64];
-		sprintf(pid, "/proc/%u/maps");
+		sprintf(pid, "/proc/%u/maps", thread);
 		FILE *fp = fopen(pid, "rb");
 		if (fp) {
 			airbag_printf("maps:\n");
