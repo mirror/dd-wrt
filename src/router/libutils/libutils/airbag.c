@@ -418,7 +418,7 @@ static int is_lost_conn(int e)
 #define SOCK_CLOEXEC   02000000
 #define SOCK_NONBLOCK  04000
 #endif
-
+static char *postinfo = NULL;
 static void slog(int priority, const char *message)
 {
 	char *buf;
@@ -476,6 +476,27 @@ static int airbag_printf(char *fmt, ...)
 	if (strchr(ss_buffer, '\n')) {
 		slog(LOG_ERR, ss_buffer);
 		fprintf(stderr, "%s", ss_buffer);
+		free(ss_buffer);
+		ss_buffer = NULL;
+	}
+	return size;
+}
+
+static int airbag_puts(char *str)
+{
+	static char *ss_buffer = NULL;
+
+	if (!size || size < 0)
+		return 0;
+	if (!ss_buffer) {
+		ss_buffer = strdup(str);
+	} else {
+		ss_buffer = realloc(ss_buffer, strlen(ss_buffer) + strlen(str) + 1);
+		strcat(ss_buffer, str);
+	}
+	if (strchr(ss_buffer, '\n')) {
+		slog(LOG_ERR, ss_buffer);
+		fputs(ss_buffer, stderr);
 		free(ss_buffer);
 		ss_buffer = NULL;
 	}
@@ -1128,6 +1149,8 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 #else
 		airbag_printf("Thread: %s\n", name);
 #endif
+		if (postinfo)
+			airbag_printf("Postinfo: %s\n", postinfo);
 	}
 #endif
 
@@ -1373,7 +1396,14 @@ AIRBAG_EXPORT void airbag_deinit()
 {
 	deinitCrashHandlers();
 }
+void airbag_setpostinfo(char *string) {
+	postinfo = string;
+}
 #else
+void airbag_setpostinfo(char *string) {
+
+
+}
 int airbag_init(void)
 {
 }
