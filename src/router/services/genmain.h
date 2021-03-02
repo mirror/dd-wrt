@@ -160,6 +160,7 @@ int check_arguments(int argc, char *argv[])
 	int i;
 	if (argc > 3 && !strcmp(argv[3], "-f"))
 		force = 1;
+	airbag_setpostinfo(argv[1]);
 	for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
 		if (!strcmp(functiontable[i].name, argv[1])) {
 			deps_func = functiontable[i].deps;
