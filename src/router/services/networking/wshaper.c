@@ -1103,10 +1103,7 @@ void stop_wshaper(void)
 			eval("tc", "qdisc", "del", "dev", var, "root");
 		}
 	}
-#ifndef TEST
-	stop_firewall();
-	start_firewall();
-#endif
+
 	// don't let packages pass to iptables without ebtables loaded
 	writeprocsysnet("bridge/bridge-nf-call-arptables", "0");
 	writeprocsysnet("bridge/bridge-nf-call-ip6tables", "0");
