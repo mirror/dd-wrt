@@ -34,7 +34,7 @@
 
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp, int *eof);
-static int wfprintf(webs_t fp, char *fmt, ...);
+size_t websWrite(webs_t wp, char *fmt, ...);
 static size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
@@ -496,11 +496,11 @@ static void send_error(webs_t conn_fp, int status, char *title, char *extra_head
 	vasprintf(&text, fmt, args);
 	va_end(args);
 	dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
-	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
+	// jimmy, https, 8/4/2003, fprintf -> websWrite, fflush -> wfflush
 	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
-	(void)wfprintf(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
-	(void)wfprintf(conn_fp, "%s\n", text);
-	(void)wfprintf(conn_fp, "</BODY></HTML>\n");
+	(void)websWrite(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
+	(void)websWrite(conn_fp, "%s\n", text);
+	(void)websWrite(conn_fp, "</BODY></HTML>\n");
 	(void)wfflush(conn_fp);
 	free(text);
 }
@@ -510,21 +510,21 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 	time_t now;
 	char timebuf[100];
 
-	wfprintf(conn_fp, "%s %d %s\r\n", PROTOCOL, status, title);
+	websWrite(conn_fp, "%s %d %s\r\n", PROTOCOL, status, title);
 	if (mime_type != NULL)
-		wfprintf(conn_fp, "Content-Type: %s\r\n", mime_type);
+		websWrite(conn_fp, "Content-Type: %s\r\n", mime_type);
 
-	wfprintf(conn_fp, "Server: %s\r\n", SERVER_NAME);
+	websWrite(conn_fp, "Server: %s\r\n", SERVER_NAME);
 	now = time(NULL);
 	strftime(timebuf, sizeof(timebuf), RFC1123FMT, gmtime(&now));
-	wfprintf(conn_fp, "Date: %s\r\n", timebuf);
-	wfprintf(conn_fp, "Connection: close\r\n");
+	websWrite(conn_fp, "Date: %s\r\n", timebuf);
+	websWrite(conn_fp, "Connection: close\r\n");
 	if (nocache) {
-		wfprintf(conn_fp, "Cache-Control: no-store, no-cache, must-revalidate\r\n");
-		wfprintf(conn_fp, "Cache-Control: post-check=0, pre-check=0\r\n");
-		wfprintf(conn_fp, "Pragma: no-cache\r\n");
+		websWrite(conn_fp, "Cache-Control: no-store, no-cache, must-revalidate\r\n");
+		websWrite(conn_fp, "Cache-Control: post-check=0, pre-check=0\r\n");
+		websWrite(conn_fp, "Pragma: no-cache\r\n");
 	} else {
-		wfprintf(conn_fp, "Cache-Control: private, max-age=600\r\n");
+		websWrite(conn_fp, "Cache-Control: private, max-age=600\r\n");
 	}
 	if (attach_file) {
 		int i, len = strlen(attach_file);
@@ -540,14 +540,14 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 			}
 		}
 		newname[cnt++] = 0;
-		wfprintf(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", newname);
+		websWrite(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", newname);
 		free(newname);
 	}
 	if (extra_header != NULL && *extra_header)
-		wfprintf(conn_fp, "%s\r\n", extra_header);
+		websWrite(conn_fp, "%s\r\n", extra_header);
 	if (length != -1)
-		wfprintf(conn_fp, "Content-Length: %ld\r\n", length);
-	wfprintf(conn_fp, "\r\n");
+		websWrite(conn_fp, "Content-Length: %ld\r\n", length);
+	websWrite(conn_fp, "\r\n");
 }
 
 /* Base-64 decoding.  This represents binary data as printable ASCII
@@ -1970,7 +1970,7 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 
 int wfputs(char *buf, webs_t wp)
 {
-
+	airbag_setpostinfo(buf);
 	FILE *fp = wp->fp;
 	int ret;
 	if (DO_SSL(wp)) {
@@ -1991,42 +1991,14 @@ int wfputs(char *buf, webs_t wp)
 	return ret;
 }
 
-static int wfprintf(webs_t wp, char *fmt, ...)
-{
-
-	FILE *fp = wp->fp;
-	va_list args;
-	char *buf;
-	int ret;
-
-	va_start(args, fmt);
-	vasprintf(&buf, fmt, args);
-	if (DO_SSL(wp)) {
-#ifdef HAVE_OPENSSL
-
-		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
-#elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_printf(fp, "%s", buf);
-#elif defined(HAVE_POLARSSL)
-		fprintf(stderr, "ssl write buf %d\n", strlen(buf));
-		ret = ssl_write((ssl_context *) fp, buf, strlen(buf));
-#endif
-	} else
-		ret = fprintf(fp, "%s", buf);
-	free(buf);
-	va_end(args);
-
-	return ret;
-}
-
 size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 {
-
 	char *buf;
 	int ret;
 	if (!wp)
 		return -1;
 
+	airbag_setpostinfo(fmt);
 	FILE *fp = wp->fp;
 
 	vasprintf(&buf, fmt, args);

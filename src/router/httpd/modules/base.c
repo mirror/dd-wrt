@@ -75,7 +75,6 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 static int do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary);
 int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 char *wfgets(char *buf, int len, webs_t fp, int *eof);
-int wfprintf(webs_t fp, char *fmt, ...);
 size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 int wfclose(webs_t fp);
