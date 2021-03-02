@@ -76,9 +76,6 @@ extern "C" {
 
 	void airbag_setpostinfo(char *string);
 
-
-}
-
 #ifdef __cplusplus
 }
 #endif
