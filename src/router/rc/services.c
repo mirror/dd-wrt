@@ -490,6 +490,7 @@ static void handle_index(void)
 
 	start_service_f("radio_timer");
 	restart("firewall");
+	restart_f("wshaper");
 	// httpd will not
 	// accept connection
 	// anymore on wan/lan 
@@ -628,6 +629,7 @@ static void handle_hotspot(void)
 #endif
 
 	restart("firewall");
+	restart_f("wshaper");
 #ifdef HAVE_ZEROIP
 	FORK(eval("/etc/config/shat.startup"));
 #endif
@@ -1000,6 +1002,7 @@ static void handle_routing(void)
 	stop_service("zebra");
 #endif
 	restart("firewall");
+	restart_f("wshaper");
 	start_service_force_f("set_routes");
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
