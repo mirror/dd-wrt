@@ -336,50 +336,50 @@ void addvhtcaps(char *prefix, FILE * fp)
 		(7 << IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT)
 
 	unsigned int mask;
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
-	char *netmode = nvram_nget("%s_net_mode", prefix);
-	if (has_ac(prefix) && (!strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "mixed"))) {
-		char shortgi[32];
-		sprintf(shortgi, "%s_shortgi", prefix);
-		char mubf[32];
-		sprintf(mubf, "%s_mubf", prefix);
-		char subf[32];
-		sprintf(subf, "%s_subf", prefix);
-		char cbw[32];
-		sprintf(cbw, "%s_channelbw", prefix);
-		mask = 0;
-		if (nvram_default_matchi(subf, 0, 0)) {
-			mask |= IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE;
-			mask |= IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE;
-			mask |= IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK;
-			mask |= IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK;
-		}
-		if (nvram_default_matchi(mubf, 0, 0)) {
-			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE;
-			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE;
-		}
+	if (is_mt7615(prefix) || is_ath10k(prefix) || is_brcmfmac(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix)) {
+		char *netmode = nvram_nget("%s_net_mode", prefix);
+		if (has_ac(prefix) && (!strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "mixed"))) {
+			char shortgi[32];
+			sprintf(shortgi, "%s_shortgi", prefix);
+			char mubf[32];
+			sprintf(mubf, "%s_mubf", prefix);
+			char subf[32];
+			sprintf(subf, "%s_subf", prefix);
+			char cbw[32];
+			sprintf(cbw, "%s_channelbw", prefix);
+			mask = 0;
+			if (nvram_default_matchi(subf, 0, 0)) {
+				mask |= IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE;
+				mask |= IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE;
+				mask |= IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK;
+				mask |= IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK;
+			}
+			if (nvram_default_matchi(mubf, 0, 0)) {
+				mask |= IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE;
+				mask |= IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE;
+			}
 
-		if (nvram_default_matchi(shortgi, 0, 1)) {
-			mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
-			mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
-		}
-		int bw = atoi(nvram_safe_get(cbw));
-		if (bw > 0 && bw != 8080 && bw != 2040) {
-			if (bw < 160) {
-				mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
-				mask |= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ;
-				mask |= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
-			}
-			if (bw < 80) {
+			if (nvram_default_matchi(shortgi, 0, 1)) {
 				mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
+				mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
 			}
-		}
-		if (mask) {
-			fprintf(fp, "\tvht_capa=0\n");
-			fprintf(fp, "\tvht_capa_mask=%d\n", mask);
+			int bw = atoi(nvram_safe_get(cbw));
+			if (bw > 0 && bw != 8080 && bw != 2040) {
+				if (bw < 160) {
+					mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
+					mask |= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ;
+					mask |= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
+				}
+				if (bw < 80) {
+					mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
+				}
+			}
+			if (mask) {
+				fprintf(fp, "\tvht_capa=0\n");
+				fprintf(fp, "\tvht_capa_mask=%d\n", mask);
+			}
 		}
 	}
-#endif
 #ifdef HAVE_ATH9K
 	if (is_mac80211(prefix)) {
 		char shortgi[32];
