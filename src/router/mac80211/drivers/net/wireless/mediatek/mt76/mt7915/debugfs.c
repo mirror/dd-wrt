@@ -381,6 +381,47 @@ mt7915_read_rate_txpower(struct seq_file *s, void *data)
 	return 0;
 }
 
+static ssize_t read_file_chan_bw(struct file *file, char __user *user_buf,
+			     size_t count, loff_t *ppos)
+{
+	struct mt7915_dev *dev = file->private_data;
+	char buf[32];
+	unsigned int len;
+
+	len = sprintf(buf, "0x%08x\n", dev->phy.mt76->channelwidth);
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+
+
+static ssize_t write_file_chan_bw(struct file *file, const char __user *user_buf,
+			     size_t count, loff_t *ppos)
+{
+	struct mt7915_dev *dev = file->private_data;
+	unsigned long chan_bw;
+	char buf[32];
+	ssize_t len;
+
+	len = min(count, sizeof(buf) - 1);
+	if (copy_from_user(buf, user_buf, len))
+		return -EFAULT;
+
+	buf[len] = '\0';
+	if (kstrtoul(buf, 0, &chan_bw))
+		return -EINVAL;
+		
+	dev->phy.mt76->channelwidth = chan_bw;
+
+	return count;
+}
+
+static const struct file_operations fops_chanbw = {
+	.read = read_file_chan_bw,
+	.write = write_file_chan_bw,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
 static ssize_t read_file_turboqam(struct file *file, char __user *user_buf,
 			     size_t count, loff_t *ppos)
 {
@@ -459,6 +500,8 @@ int mt7915_init_debugfs(struct mt7915_dev *dev)
 	debugfs_create_devm_seqfile(dev->mt76.dev, "txpower_sku", dir,
 				    mt7915_read_rate_txpower);
 	debugfs_create_file("turboqam", S_IRUSR | S_IWUSR, dir, dev, &fops_turboqam);
+	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, dir,
+			    dev, &fops_chanbw);
 
 	return 0;
 }

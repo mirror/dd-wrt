@@ -21,6 +21,20 @@ mt7615_radar_pattern_set(void *data, u64 val)
 DEFINE_DEBUGFS_ATTRIBUTE(fops_radar_pattern, NULL,
 			 mt7615_radar_pattern_set, "%lld\n");
 
+static int mt7615_config(void *data, u64 val)
+{
+	struct mt7615_dev *dev = data;
+	int ret;
+
+	mt7615_mutex_acquire(dev);
+	ret = mt76_connac_mcu_chip_config(&dev->mt76);
+	mt7615_mutex_release(dev);
+
+	return ret;
+}
+
+DEFINE_DEBUGFS_ATTRIBUTE(fops_config, NULL, mt7615_config, "%lld\n");
+
 static int
 mt7615_scs_set(void *data, u64 val)
 {
@@ -385,7 +399,7 @@ static ssize_t read_file_chan_bw(struct file *file, char __user *user_buf,
 	char buf[32];
 	unsigned int len;
 
-	len = sprintf(buf, "0x%08x\n", dev->phy.channelwidth);
+	len = sprintf(buf, "0x%08x\n", dev->phy.mt76->channelwidth);
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
 
@@ -406,7 +420,7 @@ static ssize_t write_file_chan_bw(struct file *file, const char __user *user_buf
 	if (kstrtoul(buf, 0, &chan_bw))
 		return -EINVAL;
 		
-	dev->phy.channelwidth = chan_bw;
+	dev->phy.mt76->channelwidth = chan_bw;
 
 	return count;
 }
@@ -619,8 +633,13 @@ int mt7615_init_debugfs(struct mt7615_dev *dev)
 	debugfs_create_u32("rf_regidx", 0600, dir, &dev->debugfs_rf_reg);
 	debugfs_create_file_unsafe("rf_regval", 0600, dir, dev,
 				   &fops_rf_reg);
+	if (is_mt7663(&dev->mt76))
+		debugfs_create_file("chip_config", 0600, dir, dev,
+				    &fops_config);
 	debugfs_create_file("turboqam", S_IRUSR | S_IWUSR, dir,
 			    dev, &fops_turboqam);
+	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, dir,
+			    dev, &fops_chanbw);
 	if (mt76_is_sdio(&dev->mt76))
 		debugfs_create_devm_seqfile(dev->mt76.dev, "sched-quota", dir,
 					    mt7663s_sched_quota_read);

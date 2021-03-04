@@ -10,6 +10,7 @@
 #include <linux/etherdevice.h>
 #include "mt7615.h"
 #include "mac.h"
+#include "mcu.h"
 #include "eeprom.h"
 
 static void
@@ -96,7 +97,7 @@ mt7615_mac_init(struct mt7615_dev *dev)
 		 MT_TMAC_CTCR0_INS_DDLMT_VHT_SMPDU_EN |
 		 MT_TMAC_CTCR0_INS_DDLMT_EN);
 
-	mt7615_mcu_set_rts_thresh(&dev->phy, 0x92b);
+	mt76_connac_mcu_set_rts_thresh(&dev->mt76, 0x92b, 0);
 	mt7615_mac_set_scs(&dev->phy, true);
 
 	mt76_rmw(dev, MT_AGG_SCR, MT_AGG_SCR_NLNAV_MID_PTEC_DIS,
@@ -115,10 +116,10 @@ mt7615_mac_init(struct mt7615_dev *dev)
 	mt76_set(dev, MT_WF_RMAC_MIB_TIME0, MT_WF_RMAC_MIB_RXTIME_EN);
 	mt76_set(dev, MT_WF_RMAC_MIB_AIRTIME0, MT_WF_RMAC_MIB_RXTIME_EN);
 
-	/* disable hdr translation and hw AMSDU */
 	mt76_wr(dev, MT_DMA_DCR0,
 		FIELD_PREP(MT_DMA_DCR0_MAX_RX_LEN, 3072) |
-		MT_DMA_DCR0_RX_VEC_DROP);
+		MT_DMA_DCR0_RX_VEC_DROP | MT_DMA_DCR0_DAMSDU_EN |
+		MT_DMA_DCR0_RX_HDR_TRANS_EN);
 	/* disable TDLS filtering */
 	mt76_clear(dev, MT_WF_PFCR, MT_WF_PFCR_TDLS_EN);
 	mt76_set(dev, MT_WF_MIB_SCR0, MT_MIB_SCR0_AGG_CNT_RANGE_EN);
@@ -128,6 +129,7 @@ mt7615_mac_init(struct mt7615_dev *dev)
 	} else {
 		mt7615_init_mac_chain(dev, 1);
 	}
+	mt7615_mcu_set_rx_hdr_trans_blacklist(dev);
 }
 
 static void
@@ -321,7 +323,8 @@ mt7615_regd_notifier(struct wiphy *wiphy,
 
 	if (chandef->chan->flags & IEEE80211_CHAN_RADAR)
 		mt7615_dfs_init_radar_detector(phy);
-	mt7615_mcu_set_channel_domain(phy);
+	if (mt7615_firmware_offload(phy->dev))
+		mt76_connac_mcu_set_channel_domain(mphy);
 
 	mt7615_mutex_release(dev);
 }
@@ -336,6 +339,7 @@ mt7615_init_wiphy(struct ieee80211_hw *hw)
 	hw->max_rates = 3;
 	hw->max_report_rates = 7;
 	hw->max_rate_tries = 11;
+	hw->netdev_features = NETIF_F_RXCSUM;
 
 	phy->slottime = 9;
 
@@ -351,11 +355,12 @@ mt7615_init_wiphy(struct ieee80211_hw *hw)
 	}
 	wiphy->reg_notifier = mt7615_regd_notifier;
 
-	wiphy->max_sched_scan_plan_interval = MT7615_MAX_SCHED_SCAN_INTERVAL;
+	wiphy->max_sched_scan_plan_interval =
+		MT76_CONNAC_MAX_SCHED_SCAN_INTERVAL;
 	wiphy->max_sched_scan_ie_len = IEEE80211_MAX_DATA_LEN;
-	wiphy->max_scan_ie_len = MT7615_SCAN_IE_LEN;
-	wiphy->max_sched_scan_ssids = MT7615_MAX_SCHED_SCAN_SSID;
-	wiphy->max_match_sets = MT7615_MAX_SCAN_MATCH;
+	wiphy->max_scan_ie_len = MT76_CONNAC_SCAN_IE_LEN;
+	wiphy->max_sched_scan_ssids = MT76_CONNAC_MAX_SCHED_SCAN_SSID;
+	wiphy->max_match_sets = MT76_CONNAC_MAX_SCAN_MATCH;
 	wiphy->max_sched_scan_reqs = 1;
 	wiphy->max_scan_ssids = 4;
 
@@ -365,11 +370,13 @@ mt7615_init_wiphy(struct ieee80211_hw *hw)
 	ieee80211_hw_set(hw, SINGLE_SCAN_ON_ALL_BANDS);
 	ieee80211_hw_set(hw, TX_STATUS_NO_AMPDU_LEN);
 	ieee80211_hw_set(hw, WANT_MONITOR_VIF);
+	ieee80211_hw_set(hw, SUPPORTS_RX_DECAP_OFFLOAD);
 
 	if (is_mt7615(&phy->dev->mt76))
 		hw->max_tx_fragments = MT_TXP_MAX_BUF_NUM;
 	else
 		hw->max_tx_fragments = MT_HW_TXP_MAX_BUF_NUM;
+
 }
 
 static void
@@ -385,7 +392,7 @@ mt7615_cap_dbdc_enable(struct mt7615_dev *dev)
 	dev->mphy.chainmask = dev->mphy.antenna_mask;
 	dev->mphy.hw->wiphy->available_antennas_rx = dev->mphy.chainmask;
 	dev->mphy.hw->wiphy->available_antennas_tx = dev->mphy.chainmask;
-	mt76_set_stream_caps(&dev->mphy, true);
+	mt76_set_stream_caps(&dev->mphy, true, dev->mt76.turboqam);
 }
 
 static void
@@ -398,7 +405,7 @@ mt7615_cap_dbdc_disable(struct mt7615_dev *dev)
 	dev->mphy.chainmask = dev->chainmask;
 	dev->mphy.hw->wiphy->available_antennas_rx = dev->chainmask;
 	dev->mphy.hw->wiphy->available_antennas_tx = dev->chainmask;
-	mt76_set_stream_caps(&dev->mphy, true);
+	mt76_set_stream_caps(&dev->mphy, true, dev->mt76.turboqam);
 }
 
 int mt7615_register_ext_phy(struct mt7615_dev *dev)
@@ -426,7 +433,6 @@ int mt7615_register_ext_phy(struct mt7615_dev *dev)
 	phy->mt76 = mphy;
 	mphy->chainmask = dev->chainmask & ~dev->mphy.chainmask;
 	mphy->antenna_mask = BIT(hweight8(mphy->chainmask)) - 1;
-	mt7615_init_wiphy(mphy->hw);
 
 	INIT_DELAYED_WORK(&mphy->mac_work, mt7615_mac_work);
 	INIT_DELAYED_WORK(&phy->scan_work, mt7615_scan_work);
@@ -450,6 +456,11 @@ int mt7615_register_ext_phy(struct mt7615_dev *dev)
 
 	/* second phy can only handle 5 GHz */
 	mphy->cap.has_5ghz = true;
+	mt7615_init_wiphy(mphy->hw);
+	mphy->sband_5g.sband.ht_cap.cap |= IEEE80211_HT_CAP_LDPC_CODING;
+	mphy->sband_5g.sband.vht_cap.cap |=
+			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991 |
+			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
 
 	/* mt7615 second phy shares the same hw queues with the primary one */
 	for (i = 0; i <= MT_TXQ_PSD ; i++)
@@ -493,7 +504,9 @@ void mt7615_init_device(struct mt7615_dev *dev)
 	set_bit(MT76_STATE_PM, &dev->mphy.state);
 	INIT_DELAYED_WORK(&dev->mphy.mac_work, mt7615_mac_work);
 	INIT_DELAYED_WORK(&dev->phy.scan_work, mt7615_scan_work);
+//	INIT_DELAYED_WORK(&dev->coredump.work, mt7615_coredump_work);
 	skb_queue_head_init(&dev->phy.scan_event_list);
+	skb_queue_head_init(&dev->coredump.msg_list);
 	INIT_LIST_HEAD(&dev->sta_poll_list);
 	spin_lock_init(&dev->sta_poll_lock);
 	init_waitqueue_head(&dev->reset_wait);
@@ -505,14 +518,16 @@ void mt7615_init_device(struct mt7615_dev *dev)
 
 	mt7615_init_wiphy(hw);
 	dev->pm.idle_timeout = MT7615_PM_TIMEOUT;
-	dev->mphy.sband_2g.sband.ht_cap.cap |= IEEE80211_HT_CAP_LDPC_CODING;
-	dev->mphy.sband_2g.sband.vht_cap.cap |=
-			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
-			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
-	dev->mphy.sband_5g.sband.ht_cap.cap |= IEEE80211_HT_CAP_LDPC_CODING;
-	dev->mphy.sband_5g.sband.vht_cap.cap |=
-			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991 |
-			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
+	phy->mt76->sband_2g.sband.ht_cap.cap |=
+		IEEE80211_HT_CAP_LDPC_CODING;
+	phy->mt76->sband_2g.sband.vht_cap.cap |=
+		IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991 |
+		IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
+	phy->mt76->sband_5g.sband.ht_cap.cap |=
+		IEEE80211_HT_CAP_LDPC_CODING;
+	phy->mt76->sband_5g.sband.vht_cap.cap |=
+		IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991 |
+		IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
 	mt7615_cap_dbdc_disable(dev);
 	dev->phy.dfs_state = -1;
 

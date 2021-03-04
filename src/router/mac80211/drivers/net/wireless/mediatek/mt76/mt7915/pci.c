@@ -103,11 +103,13 @@ static irqreturn_t mt7915_irq_handler(int irq, void *dev_instance)
 	intr &= dev->mt76.mmio.irqmask;
 	mt76_wr(dev, MT_INT_SOURCE_CSR, intr);
 
-	intr1 = mt76_rr(dev, MT_INT1_SOURCE_CSR);
-	intr1 &= dev->mt76.mmio.irqmask;
-	mt76_wr(dev, MT_INT1_SOURCE_CSR, intr1);
+	if (dev->hif2) {
+		intr1 = mt76_rr(dev, MT_INT1_SOURCE_CSR);
+		intr1 &= dev->mt76.mmio.irqmask;
+		mt76_wr(dev, MT_INT1_SOURCE_CSR, intr1);
 
-	intr |= intr1;
+		intr |= intr1;
+	}
 
 	if (!test_bit(MT76_STATE_INITIALIZED, &dev->mphy.state))
 		return IRQ_NONE;
@@ -156,11 +158,19 @@ static void mt7915_pci_init_hif2(struct mt7915_dev *dev)
 {
 	struct mt7915_hif *hif;
 
+	dev->hif_idx = ++hif_idx;
+	if (!pci_get_device(PCI_VENDOR_ID_MEDIATEK, 0x7916, NULL))
+		return;
+
+	mt76_wr(dev, MT_PCIE_RECOG_ID, dev->hif_idx | MT_PCIE_RECOG_ID_SEM);
+
 	hif = mt7915_pci_get_hif2(dev);
 	if (!hif)
 		return;
 
 	dev->hif2 = hif;
+
+	mt76_wr(dev, MT_INT1_MASK_CSR, 0);
 
 	if (devm_request_irq(dev->mt76.dev, hif->irq, mt7915_irq_handler,
 			     IRQF_SHARED, KBUILD_MODNAME "-hif", dev)) {
@@ -262,7 +272,6 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 	dev_dbg(mdev->dev, "ASIC revision: %04x\n", mdev->rev);
 
 	mt76_wr(dev, MT_INT_MASK_CSR, 0);
-	mt76_wr(dev, MT_INT1_MASK_CSR, 0);
 
 	/* master switch of PCIe tnterrupt enable */
 	mt7915_l1_wr(dev, MT_PCIE_MAC_INT_ENABLE, 0xff);
@@ -271,9 +280,6 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 			       IRQF_SHARED, KBUILD_MODNAME, dev);
 	if (ret)
 		goto error;
-
-	dev->hif_idx = ++hif_idx;
-	mt76_wr(dev, MT_PCIE_RECOG_ID, dev->hif_idx | MT_PCIE_RECOG_ID_SEM);
 
 	mt7915_pci_init_hif2(dev);
 

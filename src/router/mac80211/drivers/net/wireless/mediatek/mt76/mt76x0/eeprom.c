@@ -54,6 +54,15 @@ static void mt76x0_set_chip_cap(struct mt76x02_dev *dev)
 	dev_dbg(dev->mt76.dev, "2GHz %d 5GHz %d\n",
 		dev->mphy.cap.has_2ghz, dev->mphy.cap.has_5ghz);
 
+	if (dev->mt76.disable_2ghz) {
+	    printk(KERN_INFO "no 2 ghz\n");
+	    dev->mphy.cap.has_2ghz = false;
+	}
+	if (dev->mt76.disable_5ghz) {
+	    printk(KERN_INFO "no 5 ghz\n");
+	    dev->mphy.cap.has_5ghz = false;
+	}
+
 	if (dev->no_2ghz) {
 		dev->mphy.cap.has_2ghz = false;
 		dev_dbg(dev->mt76.dev, "mask out 2GHz support\n");

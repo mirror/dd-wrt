@@ -5,6 +5,7 @@ config MT7615_COMMON
 config MT7615E
 	tristate "MediaTek MT7615E and MT7663E (PCIe) support"
 	select MT7615_COMMON
+	select MT76_CONNAC_LIB
 	depends on MAC80211
 	help
 	  This adds support for MT7615-based wireless PCIe devices,

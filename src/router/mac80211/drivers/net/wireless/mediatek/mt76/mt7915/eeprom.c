@@ -69,11 +69,15 @@ void mt7915_eeprom_parse_band_config(struct mt7915_phy *phy)
 		phy->mt76->cap.has_5ghz = true;
 		break;
 	}
+	if (dev->mt76.disable_2ghz)
+	    dev->mphy.cap.has_2ghz = false;
+	if (dev->mt76.disable_5ghz)
+	    dev->mphy.cap.has_5ghz = false;
 }
 
 static void mt7915_eeprom_parse_hw_cap(struct mt7915_dev *dev)
 {
-	u8 nss, *eeprom = dev->mt76.eeprom.data;
+	u8 nss, nss_band, *eeprom = dev->mt76.eeprom.data;
 
 	mt7915_eeprom_parse_band_config(&dev->phy);
 
@@ -82,16 +86,20 @@ static void mt7915_eeprom_parse_hw_cap(struct mt7915_dev *dev)
 	if (!nss || nss > 4)
 		nss = 4;
 
-	dev->chainmask = BIT(nss) - 1;
+	nss_band = nss;
 
 	if (dev->dbdc_support) {
-		nss = FIELD_GET(MT_EE_WIFI_CONF3_TX_PATH_B0,
-				eeprom[MT_EE_WIFI_CONF + 3]);
-		if (!nss || nss > 2)
-			nss = 2;
+		nss_band = FIELD_GET(MT_EE_WIFI_CONF3_TX_PATH_B0,
+				     eeprom[MT_EE_WIFI_CONF + 3]);
+		if (!nss_band || nss_band > 2)
+			nss_band = 2;
+
+		if (nss_band >= nss)
+			nss = 4;
 	}
 
-	dev->mphy.antenna_mask = BIT(nss) - 1;
+	dev->chainmask = BIT(nss) - 1;
+	dev->mphy.antenna_mask = BIT(nss_band) - 1;
 	dev->mphy.chainmask = dev->mphy.antenna_mask;
 }
 

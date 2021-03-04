@@ -34,14 +34,14 @@ static int mt7915_start(struct ieee80211_hw *hw)
 
 	if (!running) {
 		mt7915_mcu_set_pm(dev, 0, 0);
-		mt7915_mcu_set_mac(dev, 0, true, false);
+		mt7915_mcu_set_mac(dev, 0, true, true);
 		mt7915_mcu_set_scs(dev, 0, true);
 		mt7915_mac_enable_nf(dev, 0);
 	}
 
 	if (phy != &dev->phy) {
 		mt7915_mcu_set_pm(dev, 1, 0);
-		mt7915_mcu_set_mac(dev, 1, true, false);
+		mt7915_mcu_set_mac(dev, 1, true, true);
 		mt7915_mcu_set_scs(dev, 1, true);
 		mt7915_mac_enable_nf(dev, 1);
 	}
@@ -161,7 +161,7 @@ static int mt7915_add_interface(struct ieee80211_hw *hw,
 	    is_zero_ether_addr(vif->addr))
 		phy->monitor_vif = vif;
 
-	mvif->idx = ffs(~phy->mt76->vif_mask) - 1;
+	mvif->idx = ffs(~dev->mt76.vif_mask) - 1;
 	if (mvif->idx >= MT7915_MAX_INTERFACES) {
 		ret = -ENOSPC;
 		goto out;
@@ -186,11 +186,10 @@ static int mt7915_add_interface(struct ieee80211_hw *hw,
 	if (ret)
 		goto out;
 
-	phy->mt76->vif_mask |= BIT(mvif->idx);
+	dev->mt76.vif_mask |= BIT(mvif->idx);
 	phy->omac_mask |= BIT_ULL(mvif->omac_idx);
 
-	idx = MT7915_WTBL_RESERVED - mvif->idx -
-	      ext_phy * MT7915_MAX_INTERFACES / 2;
+	idx = MT7915_WTBL_RESERVED - mvif->idx;
 
 	INIT_LIST_HEAD(&mvif->sta.rc_list);
 	INIT_LIST_HEAD(&mvif->sta.stats_list);
@@ -242,7 +241,7 @@ static void mt7915_remove_interface(struct ieee80211_hw *hw,
 	rcu_assign_pointer(dev->mt76.wcid[idx], NULL);
 
 	mutex_lock(&dev->mt76.mutex);
-	phy->mt76->vif_mask &= ~BIT(mvif->idx);
+	dev->mt76.vif_mask &= ~BIT(mvif->idx);
 	phy->omac_mask &= ~BIT_ULL(mvif->omac_idx);
 	mutex_unlock(&dev->mt76.mutex);
 
@@ -817,7 +816,7 @@ mt7915_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
 	}
 	phy->mt76->chainmask = tx_ant;
 
-	mt76_set_stream_caps(phy->mt76, true);
+	mt76_set_stream_caps(phy->mt76, true, dev->mt76.turboqam);
 	mt7915_set_stream_vht_txbf_caps(phy);
 	mt7915_set_stream_he_caps(phy);
 
@@ -889,6 +888,22 @@ static void mt7915_sta_set_4addr(struct ieee80211_hw *hw,
 	mt7915_mcu_sta_update_hdr_trans(dev, vif, sta);
 }
 
+static void mt7915_sta_set_decap_offload(struct ieee80211_hw *hw,
+				 struct ieee80211_vif *vif,
+				 struct ieee80211_sta *sta,
+				 bool enabled)
+{
+	struct mt7915_dev *dev = mt7915_hw_dev(hw);
+	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
+
+	if (enabled)
+		set_bit(MT_WCID_FLAG_HDR_TRANS, &msta->wcid.flags);
+	else
+		clear_bit(MT_WCID_FLAG_HDR_TRANS, &msta->wcid.flags);
+
+	mt7915_mcu_sta_update_hdr_trans(dev, vif, sta);
+}
+
 const struct ieee80211_ops mt7915_ops = {
 	.tx = mt7915_tx,
 	.start = mt7915_start,
@@ -921,6 +936,7 @@ const struct ieee80211_ops mt7915_ops = {
 	.set_coverage_class = mt7915_set_coverage_class,
 	.sta_statistics = mt7915_sta_statistics,
 	.sta_set_4addr = mt7915_sta_set_4addr,
+	.sta_set_decap_offload = mt7915_sta_set_decap_offload,
 	CFG80211_TESTMODE_CMD(mt76_testmode_cmd)
 	CFG80211_TESTMODE_DUMP(mt76_testmode_dump)
 #ifdef CPTCFG_MAC80211_DEBUGFS

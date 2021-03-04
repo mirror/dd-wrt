@@ -183,5 +183,14 @@ int mt7603_eeprom_init(struct mt7603_dev *dev)
 
 	mt76_eeprom_override(&dev->mphy);
 
+	if (dev->mt76.disable_2ghz) {
+	    printk(KERN_INFO "no 2ghz\n");
+	    dev->mphy.cap.has_2ghz = false;
+	}
+	if (dev->mt76.disable_5ghz) {
+	    printk(KERN_INFO "no 5ghz\n");
+	    dev->mphy.cap.has_5ghz = false;
+	}
+
 	return 0;
 }
