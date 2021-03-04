@@ -85,6 +85,11 @@ void mt76x02_eeprom_parse_hw_cap(struct mt76x02_dev *dev)
 		dev->mphy.cap.has_5ghz = true;
 		break;
 	}
+	if (dev->mt76.disable_2ghz)
+	    dev->mphy.cap.has_2ghz = false;
+	if (dev->mt76.disable_5ghz)
+	    dev->mphy.cap.has_5ghz = false;
+
 }
 EXPORT_SYMBOL_GPL(mt76x02_eeprom_parse_hw_cap);
 
