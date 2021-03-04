@@ -200,6 +200,7 @@ enum mt76_wcid_flags {
 	MT_WCID_FLAG_CHECK_PS,
 	MT_WCID_FLAG_PS,
 	MT_WCID_FLAG_4ADDR,
+	MT_WCID_FLAG_HDR_TRANS,
 };
 
 #define MT76_N_WCIDS 288
@@ -225,6 +226,7 @@ struct mt76_wcid {
 
 	u16 idx;
 	u8 hw_key_idx;
+	u8 hw_key_idx2;
 
 	u8 sta:1;
 	u8 ext_phy:1;
@@ -503,7 +505,7 @@ struct mt76_rx_status {
 
 	u8 ext_phy:1;
 	u8 aggr:1;
-	u8 tid;
+	u8 qos_ctl;
 	u16 seqno;
 
 	u16 freq;
@@ -511,6 +513,7 @@ struct mt76_rx_status {
 	u8 enc_flags;
 	u8 encoding:2, bw:3, he_ru:3;
 	u8 he_gi:2, he_dcm:1;
+	u8 amsdu:1, first_amsdu:1, last_amsdu:1;
 	u8 rate_idx;
 	u8 nss;
 	u8 band;
@@ -565,6 +568,14 @@ struct mt76_testmode_data {
 	} rx_stats;
 };
 
+struct mt76_vif {
+	u8 idx;
+	u8 omac_idx;
+	u8 band_idx;
+	u8 wmm_idx;
+	u8 scan_seq_num;
+};
+
 struct mt76_phy {
 	struct ieee80211_hw *hw;
 	struct mt76_dev *dev;
@@ -586,11 +597,10 @@ struct mt76_phy {
 
 	u8 macaddr[ETH_ALEN];
 
-	u32 vif_mask;
-
 	int txpower_cur;
 	u8 antenna_mask;
 	u16 chainmask;
+	u8 channelwidth;
 
 #ifdef CPTCFG_NL80211_TESTMODE
 	struct mt76_testmode_data test;
@@ -604,7 +614,9 @@ struct mt76_dev {
 	struct mt76_phy phy; /* must be first */
 
 	struct mt76_phy *phy2;
-
+	bool disable_2ghz;
+	bool disable_5ghz;
+	
 	bool turboqam;
 	struct ieee80211_hw *hw;
 	const u32 *cipher_suites;
@@ -612,7 +624,7 @@ struct mt76_dev {
 
 	spinlock_t lock;
 	spinlock_t cc_lock;
-
+	
 	u32 cur_cc_bss_rx;
 
 	struct mt76_rx_status rx_ampdu_status;
@@ -632,6 +644,11 @@ struct mt76_dev {
 	spinlock_t rx_lock;
 	struct napi_struct napi[__MT_RXQ_MAX];
 	struct sk_buff_head rx_skb[__MT_RXQ_MAX];
+	struct {
+		struct sk_buff *head;
+		struct sk_buff **tail;
+		u16 seqno;
+	} rx_amsdu[__MT_RXQ_MAX];
 
 	struct list_head txwi_cache;
 	struct mt76_queue *q_mcu[__MT_MCUQ_MAX];
@@ -647,6 +664,8 @@ struct mt76_dev {
 
 	u32 wcid_mask[DIV_ROUND_UP(MT76_N_WCIDS, 32)];
 	u32 wcid_phy_mask[DIV_ROUND_UP(MT76_N_WCIDS, 32)];
+
+	u32 vif_mask;
 
 	struct mt76_wcid global_wcid;
 	struct mt76_wcid __rcu *wcid[MT76_N_WCIDS];
@@ -1006,7 +1025,7 @@ void mt76_update_survey(struct mt76_dev *dev);
 void mt76_update_survey_active_time(struct mt76_phy *phy, ktime_t time);
 int mt76_get_survey(struct ieee80211_hw *hw, int idx,
 		    struct survey_info *survey);
-void mt76_set_stream_caps(struct mt76_phy *phy, bool vht);
+void mt76_set_stream_caps(struct mt76_phy *phy, bool vht, bool turboqam);
 
 int mt76_rx_aggr_start(struct mt76_dev *dev, struct mt76_wcid *wcid, u8 tid,
 		       u16 ssn, u16 size);

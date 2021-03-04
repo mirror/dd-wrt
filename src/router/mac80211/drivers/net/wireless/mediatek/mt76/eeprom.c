@@ -15,7 +15,7 @@ static int mt76_get_of_eeprom(struct mt76_dev *dev, int len)
 	struct device_node *np = dev->dev->of_node;
 	struct mtd_info *mtd;
 	const __be32 *list;
-	const char *part, *file;
+	const char *part, *file, *disable_2ghz, *disable_5ghz;
 	phandle phandle;
 	int offset = 0;
 	int size;
@@ -27,6 +27,16 @@ static int mt76_get_of_eeprom(struct mt76_dev *dev, int len)
 
 	if (!np)
 		return -ENOENT;
+	disable_2ghz = of_get_property(np, "mediatek,disable_2ghz", NULL);
+	disable_5ghz = of_get_property(np, "mediatek,disable_5ghz", NULL);
+	if (disable_2ghz) {
+	    printk(KERN_INFO "disable 2 ghz range\n");
+	    dev->disable_2ghz = true;
+	}
+	if (disable_5ghz) {
+	    printk(KERN_INFO "disable 5 ghz range\n");
+	    dev->disable_5ghz = true;
+	}
 
 	file = of_get_property(np, "mediatek,file", NULL);
 	if (file) {
