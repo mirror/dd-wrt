@@ -808,6 +808,9 @@ config BACKPORTED_MT7601U
 config BACKPORTED_MT76_CORE
 	tristate
 	default MT76_CORE
+config BACKPORTED_MT76_CONNAC_LIB
+	tristate
+	default MT76_CONNAC_LIB
 config BACKPORTED_MT76_LEDS
 	tristate
 	default MT76_LEDS
@@ -847,6 +850,9 @@ config BACKPORTED_MT7615_COMMON
 config BACKPORTED_MT7615E
 	tristate
 	default MT7615E
+config BACKPORTED_MT7621E
+	tristate
+	default MT7621E
 config BACKPORTED_MT7622_WMAC
 	tristate
 	default MT7622_WMAC
@@ -856,6 +862,9 @@ config BACKPORTED_MT7663U
 config BACKPORTED_MT7915E
 	tristate
 	default MT7915E
+config BACKPORTED_MT7921E
+	tristate
+	default MT7921E
 config BACKPORTED_WLAN_VENDOR_RALINK
 	tristate
 	default WLAN_VENDOR_RALINK
