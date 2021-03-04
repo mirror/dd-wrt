@@ -8,6 +8,10 @@
 	compatible = "netgear,r6850", "mediatek,mt7621-soc";
 	model = "Netgear R6850";
 
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
 	chosen {
 		bootargs = "console=ttyS0,57600";
 	};

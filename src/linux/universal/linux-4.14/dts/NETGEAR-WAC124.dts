@@ -8,6 +8,10 @@
 	compatible = "netgear,wac124", "mediatek,mt7621-soc";
 	model = "Netgear WAC124";
 
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
 	chosen {
 		bootargs = "console=ttyS0,57600";
 	};
@@ -97,8 +101,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
 		mediatek,disable_5ghz = <1>;
+		mediatek,mtd-eeprom = <&factory 0x0>;
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
