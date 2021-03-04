@@ -1556,12 +1556,27 @@ int ieee80211_txq_setup_flows(struct ieee80211_local *local)
 	if (!supp_vht)
 		fq->memory_limit = 4 << 20; /* 4M */
 	else
-		fq->memory_limit = 32 << 20; /* 4M */
+		fq->memory_limit = 32 << 20; /* 32M */
 #elif defined(CONFIG_ARCH_CNS3XXX)
 	if (!supp_vht)
 		fq->memory_limit = 4 << 20; /* 4M */
 	else
-		fq->memory_limit = 32 << 20; /* 4M */
+		fq->memory_limit = 32 << 20; /* 32M */
+#elif defined(CONFIG_UBNTXW)
+	if (!supp_vht)
+		fq->memory_limit = 1 << 20; /* 1M */
+	else
+		fq->memory_limit = 4 << 20; /* 4M */
+#elif defined(CONFIG_ARCHERC7)
+	if (!supp_vht)
+		fq->memory_limit = 4 << 20; /* 4M */
+	else
+		fq->memory_limit = 16 << 20; /* 16M */
+#elif defined(CONFIG_SOC_MT7621)
+	if (!supp_vht)
+		fq->memory_limit = 4 << 20; /* 4M */
+	else
+		fq->memory_limit = 16 << 20; /* 16M */
 #elif (defined(CONFIG_MIPS) && !defined(CONFIG_64BIT)) || defined(CONFIG_ARCH_IXP4XX)
 	if (!supp_vht)
 		fq->memory_limit = 1 << 18; /* 256kb */
@@ -1570,6 +1585,7 @@ int ieee80211_txq_setup_flows(struct ieee80211_local *local)
 #else
 	fq->memory_limit = 4 << 20; /* 4 MBytes */
 #endif
+	printk(KERN_INFO "%s: set limit to %d bytes\n", __func__, fq->memory_limit);
 
 	codel_params_init(&local->cparams);
 	local->cparams.interval = MS2TIME(100);
