@@ -362,6 +362,8 @@ static int fq_init(struct fq *fq, int flows_cnt)
 	fq->limit = 8192;
 #if defined(CONFIG_X86) || defined(CONFIG_ALPINE) || defined(CONFIG_ARCH_QCOM) || defined(CONFIG_SOC_IMX6)
 	fq->memory_limit = 32 << 20; /* 32 MBytes */
+#elif defined(CONFIG_UBNTXW)
+	fq->memory_limit = 4 << 20; /* 16 MBytes */
 #elif defined(CONFIG_ARCH_CNS3XXX)
 	fq->memory_limit = 16 << 20; /* 16 MBytes */
 #elif defined(CONFIG_ARCH_IXP4XX)
@@ -371,6 +373,7 @@ static int fq_init(struct fq *fq, int flows_cnt)
 #else
 	fq->memory_limit = 4 << 20; /* 4 MBytes */
 #endif
+	printk(KERN_INFO "initialize fq_codel with %d bytes memory limit\n", fq->memory_limit);
 
 	fq->flows = kvcalloc(fq->flows_cnt, sizeof(fq->flows[0]), GFP_KERNEL);
 	if (!fq->flows)
