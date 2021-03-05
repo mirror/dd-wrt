@@ -219,9 +219,7 @@ void start_splashd(void)
 	insmod("ipt_mark ipt_mac xt_mark xt_mac");
 	stop_firewall();	// evil
 	stop_wland();
-	stop_wshaper();
 	start_firewall();
-	start_wshaper();
 	start_wland();
 
 	mk_nocat_conf();
@@ -249,9 +247,7 @@ void stop_splashd(void)
 		eval("/usr/libexec/nocat/clear.fw");
 		stop_firewall();	// evil
 		stop_wland();
-		stop_wshaper();
 		start_firewall();
-		start_wshaper();
 		start_wland();
 		cprintf("done\n");
 	}
