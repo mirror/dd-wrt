@@ -330,8 +330,7 @@ void start_openvpnserver(void)
 	}
 	if (nvram_matchi("wshaper_enable", 1)) {
 		fprintf(fp, "startservice set_routes -f\n");
-		fprintf(fp, "startservice firewall -f\n");
-		fprintf(fp, "startservice wshaper -f\n");
+		fprintf(fp, "restart firewall\n");
 		fprintf(fp, "sleep 5\n");
 	}
 	create_openvpnserverrules(fp);
@@ -618,8 +617,7 @@ void start_openvpn(void)
 	}
 	if (nvram_matchi("wshaper_enable", 1)) {
 		fprintf(fp, "startservice set_routes -f\n");
-		fprintf(fp, "startservice firewall -f\n");
-		fprintf(fp, "startservice wshaper -f\n");
+		fprintf(fp, "restart firewall\n");
 		fprintf(fp, "sleep 5\n");
 	}
 	create_openvpnrules(fp);
