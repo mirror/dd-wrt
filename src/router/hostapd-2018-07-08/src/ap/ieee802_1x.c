@@ -1952,7 +1952,7 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 			}else if (ret>1)
 			{
 			wpa_printf(MSG_DEBUG, "bandwidth rule change detected, flush table and reset it to new values! (status %d)\n",ret);			
-			system("restart_f wshaper");
+			system("restart_f priv_wshaper");
 			}	    
 		    os_free(up);
 		    os_free(down);
