@@ -162,7 +162,6 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("olsrd");
 #endif
 
-	start_service_f("wshaper");
 	start_service_f("wland");
 #ifndef HAVE_MICRO
 	start_service_f("cron");
@@ -367,7 +366,6 @@ static int stop_services_main(int argc, char **argv)
 	stop_service_f("wol");
 #endif
 	stop_service_f("wland");
-	stop_service_f("wshaper");
 
 #ifdef HAVE_PPTPD
 	stop_service_f("pptpd");
@@ -490,7 +488,6 @@ static void handle_index(void)
 
 	start_service_f("radio_timer");
 	restart("firewall");
-	restart_f("wshaper");
 	// httpd will not
 	// accept connection
 	// anymore on wan/lan 
@@ -629,7 +626,6 @@ static void handle_hotspot(void)
 #endif
 
 	restart("firewall");
-	restart_f("wshaper");
 #ifdef HAVE_ZEROIP
 	FORK(eval("/etc/config/shat.startup"));
 #endif
@@ -738,7 +734,6 @@ static void handle_services(void)
 		start_service_force_f("sshd");
 #endif
 	restart("firewall");
-	restart_f("wshaper");
 #ifdef HAVE_VNCREPEATER
 	restart_f("vncrepeater");
 #endif
@@ -810,7 +805,6 @@ static void handle_nassrv(void)
 	start_service_f("transmission");
 #endif
 	restart("firewall");
-	restart_f("wshaper");
 
 }
 
@@ -873,7 +867,6 @@ static void handle_management(void)
 #endif
 	restart("firewall");
 	stop_service("wland");
-	restart_f("wshaper");
 	start_service_f("wland");
 	restart_fdelay("httpd", 2);
 #ifdef HAVE_NOCAT
@@ -978,7 +971,6 @@ static void handle_filters(void)
 #endif
 	restart("firewall");
 	stop_service("wland");
-	restart_f("wshaper");
 	start_service_f("wland");
 #ifndef HAVE_MICRO
 	start_service_f("cron");
@@ -1002,7 +994,6 @@ static void handle_routing(void)
 	stop_service("zebra");
 #endif
 	restart("firewall");
-	restart_f("wshaper");
 	start_service_force_f("set_routes");
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
@@ -1040,7 +1031,6 @@ static void handle_forward(void)
 {
 
 	stop_service("wland");
-	stop_service("wshaper");
 #ifdef HAVE_UPNP
 //    stop_service( "upnp");
 #endif
@@ -1048,7 +1038,6 @@ static void handle_forward(void)
 #ifdef HAVE_UPNP
 //    start_service( "upnp");
 #endif
-	start_service_f("wshaper");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
@@ -1060,7 +1049,6 @@ static void handle_forward(void)
 static void handle_qos(void)
 {
 
-	restart_f("wshaper");
 	restart_f("wland");
 #ifdef HAVE_NOCAT
 	restart_f("splashd");
@@ -1084,7 +1072,6 @@ static void handle_forwardupnp(void)
 	start_service_f("upnp");
 #endif
 	stop_service("wland");
-	restart_f("wshaper");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
@@ -1429,7 +1416,6 @@ static void handle_usbdrivers(void)
 static void handle_eop(void)
 {
 	restart("firewall");
-	restart_f("wshaper");
 }
 #endif
 static struct SERVICES services_def[] = {
