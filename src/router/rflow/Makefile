@@ -44,9 +44,9 @@ IPCAD_OBJS+= genhash.o			# General hashing
 #IPCAD_OBJS+= sigintr.o
 
 all: ${TARGETS}
+	install -D config/rflow.webservices httpd/ej_temp/rflow.webservices
 
 rflow: ${IPCAD_OBJS}
-	install -D config/rflow.webservices httpd/ej_temp/rflow.webservices
 	${CC} ${CFLAGS} -o $@ ${IPCAD_OBJS} ${LDFLAGS} ${LIBS}
 
 .SUFFIXES:
