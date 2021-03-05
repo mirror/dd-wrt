@@ -3427,7 +3427,7 @@ void start_firewall(void)
 	eval("wrtbwmon", "setup", "/tmp/bw.db");
 //#endif
 #endif
-	static_start_wshaper();
+	start_qos();
 	unlock();
 }
 
@@ -3443,7 +3443,7 @@ void stop_firewall6(void)
 void stop_firewall(void)
 {
 	lock();
-	static_stop_wshaper();
+	stop_qos();
 	eval("iptables", "-t", "raw", "-F");
 //      stop_anchorfree();
 	/*
