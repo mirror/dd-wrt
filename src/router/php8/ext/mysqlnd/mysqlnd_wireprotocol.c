@@ -1204,8 +1204,9 @@ php_mysqlnd_rset_field_read(MYSQLND_CONN_DATA * conn, void * _packet)
 		DBG_RETURN(PASS);
 	} else if (EODATA_MARKER == *p && packet->header.size < 8) {
 		/* Premature EOF. That should be COM_FIELD_LIST. But we don't support COM_FIELD_LIST anymore, thus this should not happen */
-		DBG_INF("Premature EOF. That should be COM_FIELD_LIST");
-		DBG_RETURN(PASS);
+		DBG_ERR("Premature EOF. That should be COM_FIELD_LIST");
+		php_error_docref(NULL, E_WARNING, "Premature EOF in result field metadata");
+		DBG_RETURN(FAIL);
 	}
 
 	meta = packet->metadata;
@@ -1667,7 +1668,7 @@ php_mysqlnd_rowp_read_text_protocol_aux(MYSQLND_ROW_BUFFER * row_buffer, zval * 
 				zend_uchar save = *(p + len);
 				/* We have to make it ASCIIZ temporarily */
 				*(p + len) = '\0';
-				ZVAL_DOUBLE(current_field, atof((char *) p));
+				ZVAL_DOUBLE(current_field, zend_strtod((char *) p, NULL));
 				*(p + len) = save;
 			}
 #endif /* MYSQLND_STRING_TO_INT_CONVERSION */
