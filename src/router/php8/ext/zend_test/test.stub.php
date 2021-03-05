@@ -4,6 +4,11 @@
 
 namespace {
 
+interface _ZendTestInterface
+{
+}
+
+/** @alias _ZendTestClassAlias */
 class _ZendTestClass {
     public static function is_object(): int {}
 
@@ -13,8 +18,16 @@ class _ZendTestClass {
     public function returnsStatic(): static {}
 }
 
+class _ZendTestChildClass extends _ZendTestClass
+{
+}
+
 trait _ZendTestTrait {
     public function testMethod(): bool {}
+}
+
+final class ZendTestAttribute {
+
 }
 
 function zend_test_array_return(): array {}
@@ -61,5 +74,11 @@ namespace ZendTestNS2 {
 class Foo {
     public function method(): void {}
 }
+
+}
+
+namespace ZendTestNS2\ZendSubNS {
+
+function namespaced_func(): bool {}
 
 }

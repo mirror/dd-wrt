@@ -1144,7 +1144,7 @@ static zend_always_inline zend_bool zend_internal_call_should_throw(zend_functio
 
 static ZEND_COLD void zend_internal_call_arginfo_violation(zend_function *fbc)
 {
-	zend_error(E_CORE_ERROR, "Arginfo / zpp mismatch during call of %s%s%s()",
+	zend_error(E_ERROR, "Arginfo / zpp mismatch during call of %s%s%s()",
 		fbc->common.scope ? ZSTR_VAL(fbc->common.scope->name) : "",
 		fbc->common.scope ? "::" : "",
 		ZSTR_VAL(fbc->common.function_name));
@@ -3396,12 +3396,13 @@ ZEND_API void execute_internal(zend_execute_data *execute_data, zval *return_val
 
 ZEND_API void zend_clean_and_cache_symbol_table(zend_array *symbol_table) /* {{{ */
 {
+	/* Clean before putting into the cache, since clean could call dtors,
+	 * which could use the cached hash. Also do this before the check for
+	 * available cache slots, as those may be used by a dtor as well. */
+	zend_symtable_clean(symbol_table);
 	if (EG(symtable_cache_ptr) >= EG(symtable_cache_limit)) {
 		zend_array_destroy(symbol_table);
 	} else {
-		/* clean before putting into the cache, since clean
-		   could call dtors, which could use cached hash */
-		zend_symtable_clean(symbol_table);
 		*(EG(symtable_cache_ptr)++) = symbol_table;
 	}
 }
@@ -4224,7 +4225,7 @@ static zend_never_inline zend_op_array* ZEND_FASTCALL zend_include_or_eval(zval 
 already_compiled:
 						new_op_array = ZEND_FAKE_OP_ARRAY;
 					}
-				} else {
+				} else if (!EG(exception)) {
 					zend_message_dispatcher(
 						(type == ZEND_INCLUDE_ONCE) ?
 							ZMSG_FAILED_INCLUDE_FOPEN : ZMSG_FAILED_REQUIRE_FOPEN,
