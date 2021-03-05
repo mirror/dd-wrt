@@ -275,7 +275,6 @@ void run_pptp(int status)
 	stop_wland();
 	stop_firewall();
 	start_firewall();
-	start_wshaper();
 	start_wland();
 	cprintf("done\n");
 	return;

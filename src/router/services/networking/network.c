@@ -2875,7 +2875,6 @@ void run_wan(int status)
 	}
 
 	start_firewall();	// start firewall once, to fix problem with rules which should exist even before wan is up
-	start_wshaper();
 	// wan test mode
 	if (nvram_matchi("wan_testmode", 1)) {
 		status = 0;	// avoid redialing
@@ -4113,7 +4112,6 @@ void run_wan(int status)
 			route_del(wan_iface, 0, "0.0.0.0", nvram_safe_get("pptp_wan_gateway_static"), "0.0.0.0");
 
 			start_firewall();
-			start_wshaper();
 			run_pppoe_dual(status);
 		}
 	} else
@@ -4682,8 +4680,6 @@ void wan_done(char *wan_ifname)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	stop_zebra();
 #endif
-	// stop_cron ();
-	stop_wshaper();
 	cprintf("start zebra\n");
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_zebra();
@@ -4900,7 +4896,6 @@ void wan_done(char *wan_ifname)
 	 * Start firewall 
 	 */
 	start_firewall();
-	start_wshaper();
 	if (nvram_matchi("ipv6_enable", 1) && nvram_match("ipv6_typ", "ipv6in4")) {
 #ifdef HAVE_CURL
 		eval("/usr/bin/curl", "-s", "-k", nvram_safe_get("ipv6_tun_upd_url"), "-o", "/tmp/tunnelstat");

@@ -3417,7 +3417,6 @@ void start_firewall(void)
 	if (nvram_match("sfe", "1"))
 		start_sfe();
 #endif
-	unlock();
 	cprintf("ready");
 	cprintf("done\n");
 #ifdef HAVE_SYSCTL_EDIT
@@ -3428,6 +3427,8 @@ void start_firewall(void)
 	eval("wrtbwmon", "setup", "/tmp/bw.db");
 //#endif
 #endif
+	static_start_wshaper();
+	unlock();
 }
 
 #ifdef HAVE_IPV6
@@ -3442,6 +3443,7 @@ void stop_firewall6(void)
 void stop_firewall(void)
 {
 	lock();
+	static_stop_wshaper();
 	eval("iptables", "-t", "raw", "-F");
 //      stop_anchorfree();
 	/*
