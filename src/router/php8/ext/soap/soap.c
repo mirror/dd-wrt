@@ -693,7 +693,7 @@ PHP_METHOD(SoapVar, __construct)
 	char *stype = NULL, *ns = NULL, *name = NULL, *namens = NULL;
 	size_t stype_len = 0, ns_len = 0, name_len = 0, namens_len = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z!l!|ssss", &data, &type, &type_is_null, &stype, &stype_len, &ns, &ns_len, &name, &name_len, &namens, &namens_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z!l!|s!s!s!s!", &data, &type, &type_is_null, &stype, &stype_len, &ns, &ns_len, &name, &name_len, &namens, &namens_len) == FAILURE) {
 		RETURN_THROWS();
 	}
 
@@ -2215,13 +2215,9 @@ static int do_request(zval *this_ptr, xmlDoc *request, char *location, char *act
 
 		ZVAL_STRINGL(&func,"__doRequest",sizeof("__doRequest")-1);
 		ZVAL_STRINGL(&params[0], buf, buf_size);
-		if (location == NULL) {
-			ZVAL_NULL(&params[1]);
-		} else {
-			ZVAL_STRING(&params[1], location);
-		}
+		ZVAL_STRING(&params[1], location);
 		if (action == NULL) {
-			ZVAL_NULL(&params[2]);
+			ZVAL_EMPTY_STRING(&params[2]);
 		} else {
 			ZVAL_STRING(&params[2], action);
 		}
@@ -2371,6 +2367,7 @@ static void do_soap_call(zend_execute_data *execute_data,
 
 				if (location == NULL) {
 					location = binding->location;
+					ZEND_ASSERT(location);
 				}
 				if (binding->bindingType == BINDING_SOAP) {
 					sdlSoapBindingFunctionPtr fnb = (sdlSoapBindingFunctionPtr)fn->bindingAttributes;
@@ -2886,7 +2883,7 @@ PHP_METHOD(SoapClient, __setLocation)
 	zval *tmp;
 	zval *this_ptr = ZEND_THIS;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|s", &location, &location_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|s!", &location, &location_len) == FAILURE) {
 		RETURN_THROWS();
 	}
 

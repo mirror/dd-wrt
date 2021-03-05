@@ -3878,6 +3878,7 @@ zend_result zend_compile_func_cufa(znode *result, zend_ast_list *args, zend_stri
 		zend_string *name = zend_resolve_function_name(orig_name, args->child[1]->child[0]->attr, &is_fully_qualified);
 
 		if (zend_string_equals_literal_ci(name, "array_slice")
+	     && !zend_args_contain_unpack_or_named(list)
 		 && list->children == 3
 		 && list->child[1]->kind == ZEND_AST_ZVAL) {
 			zval *zv = zend_ast_get_zval(list->child[1]);
@@ -4891,15 +4892,26 @@ void zend_compile_break_continue(zend_ast *ast) /* {{{ */
 
 		if (CG(context).brk_cont_array[cur].is_switch) {
 			if (depth == 1) {
-				zend_error(E_WARNING,
-					"\"continue\" targeting switch is equivalent to \"break\". " \
-					"Did you mean to use \"continue " ZEND_LONG_FMT "\"?",
-					depth + 1);
+				if (CG(context).brk_cont_array[cur].parent == -1) {
+					zend_error(E_WARNING,
+						"\"continue\" targeting switch is equivalent to \"break\"");
+				} else {
+					zend_error(E_WARNING,
+						"\"continue\" targeting switch is equivalent to \"break\". " \
+						"Did you mean to use \"continue " ZEND_LONG_FMT "\"?",
+						depth + 1);
+				}
 			} else {
-				zend_error(E_WARNING,
-					"\"continue " ZEND_LONG_FMT "\" targeting switch is equivalent to \"break " ZEND_LONG_FMT "\". " \
-					"Did you mean to use \"continue " ZEND_LONG_FMT "\"?",
-					depth, depth, depth + 1);
+				if (CG(context).brk_cont_array[cur].parent == -1) {
+					zend_error(E_WARNING,
+						"\"continue " ZEND_LONG_FMT "\" targeting switch is equivalent to \"break " ZEND_LONG_FMT "\"",
+						depth, depth);
+				} else {
+					zend_error(E_WARNING,
+						"\"continue " ZEND_LONG_FMT "\" targeting switch is equivalent to \"break " ZEND_LONG_FMT "\". " \
+						"Did you mean to use \"continue " ZEND_LONG_FMT "\"?",
+						depth, depth, depth + 1);
+				}
 			}
 		}
 	}

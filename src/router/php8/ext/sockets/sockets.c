@@ -446,6 +446,7 @@ static PHP_MINIT_FUNCTION(sockets)
 	socket_object_handlers.get_constructor = socket_get_constructor;
 	socket_object_handlers.clone_obj = NULL;
 	socket_object_handlers.get_gc = socket_get_gc;
+	socket_object_handlers.compare = zend_objects_not_comparable;
 
 	zend_class_entry ce_address_info;
 	INIT_CLASS_ENTRY(ce_address_info, "AddressInfo", class_AddressInfo_methods);
@@ -460,6 +461,7 @@ static PHP_MINIT_FUNCTION(sockets)
 	address_info_object_handlers.free_obj = address_info_free_obj;
 	address_info_object_handlers.get_constructor = address_info_get_constructor;
 	address_info_object_handlers.clone_obj = NULL;
+	address_info_object_handlers.compare = zend_objects_not_comparable;
 
 	REGISTER_LONG_CONSTANT("AF_UNIX",		AF_UNIX,		CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("AF_INET",		AF_INET,		CONST_CS | CONST_PERSISTENT);

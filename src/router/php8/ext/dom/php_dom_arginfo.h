@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 7cba1a7a34cc4789871faf44fc4794a48db26e61 */
+ * Stub hash: a4767d6ea60859c8897f681fb69d6f73b1f50471 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(arginfo_dom_import_simplexml, 0, 1, DOMElement, 1)
 	ZEND_ARG_TYPE_INFO(0, node, IS_OBJECT, 0)
@@ -106,7 +106,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_class_DOMImplementation_createDocumentType, 0, 0,
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_DOMImplementation_createDocument, 0, 0, 0)
-	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, namespace, IS_STRING, 0, "\"\"")
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, namespace, IS_STRING, 1, "null")
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, qualifiedName, IS_STRING, 0, "\"\"")
 	ZEND_ARG_OBJ_INFO_WITH_DEFAULT_VALUE(0, doctype, DOMDocumentType, 1, "null")
 ZEND_END_ARG_INFO()
@@ -184,10 +184,7 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_DOMElement_getElementsByTagName arginfo_class_DOMElement_getAttribute
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_class_DOMElement_getElementsByTagNameNS, 0, 0, 2)
-	ZEND_ARG_TYPE_INFO(0, namespace, IS_STRING, 0)
-	ZEND_ARG_TYPE_INFO(0, localName, IS_STRING, 0)
-ZEND_END_ARG_INFO()
+#define arginfo_class_DOMElement_getElementsByTagNameNS arginfo_class_DOMElement_getAttributeNS
 
 #define arginfo_class_DOMElement_hasAttribute arginfo_class_DOMElement_getAttribute
 
@@ -292,7 +289,7 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_DOMDocument_getElementsByTagName arginfo_class_DOMElement_getAttribute
 
-#define arginfo_class_DOMDocument_getElementsByTagNameNS arginfo_class_DOMElement_getElementsByTagNameNS
+#define arginfo_class_DOMDocument_getElementsByTagNameNS arginfo_class_DOMElement_getAttributeNS
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_DOMDocument_importNode, 0, 0, 1)
 	ZEND_ARG_OBJ_INFO(0, node, DOMNode, 0)
@@ -645,6 +642,11 @@ static const zend_function_entry class_DOMNode_methods[] = {
 	ZEND_ME(DOMNode, normalize, arginfo_class_DOMNode_normalize, ZEND_ACC_PUBLIC)
 	ZEND_ME(DOMNode, removeChild, arginfo_class_DOMNode_removeChild, ZEND_ACC_PUBLIC)
 	ZEND_ME(DOMNode, replaceChild, arginfo_class_DOMNode_replaceChild, ZEND_ACC_PUBLIC)
+	ZEND_FE_END
+};
+
+
+static const zend_function_entry class_DOMNameSpaceNode_methods[] = {
 	ZEND_FE_END
 };
 

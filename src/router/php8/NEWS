@@ -1,6 +1,61 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-04 Feb 2021, PHP 8.0.2
+04 Mar 2021, PHP 8.0.3
+
+- Core:
+  . Fixed #80706 (mail(): Headers after Bcc headers may be ignored). (cmb)
+
+- DOM:
+  . Fixed bug #80600 (DOMChildNode::remove() doesn't work on CharacterData
+    nodes). (beberlei)
+
+- Gettext:
+  . Fixed bug #53251 (bindtextdomain with null dir doesn't return old value).
+    (cmb)
+
+- MySQLnd:
+  . Fixed bug #78680 (mysqlnd's mysql_clear_password does not transmit
+    null-terminated password). (Daniel Black)
+  . Fixed bug #80713 (SegFault when disabling ATTR_EMULATE_PREPARES and
+    MySQL 8.0). (Nikita)
+
+- MySQLi:
+  . Fixed bug #74779 (x() and y() truncating floats to integers). (cmb)
+
+- Opcache:
+  . Fixed bug #80634 (write_property handler of internal classes is skipped on
+    preloaded JITted code). (Dmitry)
+  . Fixed bug #80682 (opcache doesn't honour pcre.jit option). (Remi)
+  . Fixed bug #80742 (Opcache JIT makes some boolean logic unexpectedly be
+    true). (Dmitry)
+  . Fixed bug #80745 (JIT produces Assert failure and UNKNOWN:0 var_dumps in
+    code involving bitshifts). (Dmitry)
+
+- OpenSSL:
+  . Fixed bug #80747 (Providing RSA key size < 512 generates key that crash
+    PHP). (Nikita)
+
+- Phar:
+  . Fixed bug #75850 (Unclear error message wrt. __halt_compiler() w/o
+    semicolon) (cmb)
+  . Fixed bug #70091 (Phar does not mark UTF-8 filenames in ZIP archives). (cmb)
+  . Fixed bug #53467 (Phar cannot compress large archives). (cmb, lserni)
+
+- Socket:
+  . Fixed bug #80723 (Different sockets compare as equal (regression in 8.0)).
+    (Nikita)
+
+- SPL:
+  . Fixed bug#80719 (Iterating after failed ArrayObject::setIteratorClass()
+    causes Segmentation fault). (Nikita)
+
+- Standard:
+  . Fixed bug #80654 (file_get_contents() maxlen fails above (2**31)-1 bytes).
+    (cmb)
+  . Fixed bug #80718 (ext/standard/dl.c fallback code path with syntax error).
+    (Nikita)
+
+21 Jan 2021, PHP 8.0.2
 
 - Core:
   . Fixed bug #80523 (bogus parse error on >4GB source code). (Nikita)
@@ -68,9 +123,6 @@ PHP                                                                        NEWS
 - Phpdbg:
   . Reverted fix for bug #76813 (Access violation near NULL on source operand).
     (cmb)
-
-- SOAP:
-  . Fixed bug #80672 (Null Dereference in SoapClient). (CVE-2021-21702) (cmb, Stas)
 
 07 Jan 2021, PHP 8.0.1
 
@@ -156,7 +208,7 @@ PHP                                                                        NEWS
   . Fixed #62004 (SplFileObject: fgets after seek returns wrong line). (cmb)
 
 - Standard:
-  . Fixed bug #77423 (FILTER_VALIDATE_URL accepts URLs with invalid userinfo). 
+  . Fixed bug #77423 (FILTER_VALIDATE_URL accepts URLs with invalid userinfo).
     (CVE-2020-7071) (cmb)
   . Fixed bug #80366 (Return Value of zend_fstat() not Checked). (sagpant, cmb)
 
@@ -546,3 +598,4 @@ PHP                                                                        NEWS
   . Fixed bug #71417 (fread() does not report zlib.inflate errors). (cmb)
   . Fixed bug #78792 (zlib.output_compression disabled by Content-Type: image/).
     (cmb)
+
