@@ -905,7 +905,7 @@ static int svqos_iptables(void)
 }
 #endif
 
-void static_start_wshaper(void)
+void start_qos(void)
 {
 //      int ret = 0;
 	int dl;
@@ -1026,7 +1026,7 @@ void static_start_wshaper(void)
 	return;
 }
 
-void static_stop_wshaper(void)
+void stop_qos(void)
 {
 	//if imq is not available we don't have to run 
 	DIR *dir = opendir("/proc/sys/net/ipv4/conf/imq0");
