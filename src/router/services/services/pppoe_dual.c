@@ -79,7 +79,6 @@
 #include <wlutils.h>
 #include <utils.h>
 #include <rc.h>
-//#include "ledcontrol.h"
 #include <cy_conf.h>
 #include <utils.h>
 #include <nvparse.h>

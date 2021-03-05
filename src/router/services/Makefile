@@ -100,7 +100,7 @@ HCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libi
 HCFLAGS  += -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/include -I$(LINUXDIR)/brcm/shared/bcmwifi/include  -I$(LINUXDIR)/brcm/$(ARCH)/wl/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 
 
-OBJS = init.o services.o network.o firewall.o mssid.o wshaper.o ddns.o devinit.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o defaults.o \
+OBJS = init.o services.o network.o firewall.o mssid.o qos.o ddns.o devinit.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o defaults.o \
        igmp.o wpa.o vlantagging.o httpd.o setuserpw.o gpio.o mask.o reset_defaults.o vpn.o cron.o syslog.o redial.o	\
        pppoe_dual.o pppoe.o pptpclient.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o processmanager.o utils.o iptable.o conntrack.o raid.o
 
@@ -920,7 +920,7 @@ ifneq ($(CONFIG_NOWIFI),y)
 
 ATH9KCFLAGS+= $(COPTS) -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KOBJS += mac80211.o site_survey_mac80211.o
-ATH9KFILES += networking/mac80211.c tools/site_survey_mac80211.c
+ATH9KFILES += networking/wifi/mac80211.c tools/site_survey_mac80211.c
 ATH9KCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(TOP)/shared
 ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 ifeq ($(CONFIG_MT76),y)
@@ -1693,7 +1693,7 @@ OBJS += ipvs.o
 endif
 
 ifeq ($(CONFIG_WSHAPER),y)
-OBJS += wshaper.o
+OBJS += qos.o
 CFLAGS_EXTRA += -DHAVE_WSHAPER
 endif
 
@@ -1901,7 +1901,7 @@ CFLAGS_EXTRA += $(DD_CFLAGS)
 CFLAGS += $(CFLAGS_EXTRA) $(MAD_FLAGS)
 HCFLAGS += $(CFLAGS_EXTRA)
 
-vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/shared $(SRCBASE)/rts/src
+vpath %.c sysinit sysinit/switchlib services tools networking networking/wifi networking/generic utils $(TOP)/shared $(SRCBASE)/rts/src
 
 %.o : %.c
 	@echo "[CC] $@"
@@ -1926,8 +1926,8 @@ endif
     
 clean:
 	rm -f *.o *.a *.so services_main
-	rm -f *.c~ services/*.c~ networking/*.c~ tools/*.c~ sysinit/*.c~
-	rm -f *.h~ services/*.h~ networking/*.h~ tools/*.h~ sysinit/*.h~
+	rm -f *.c~ services/*.c~ networking/wifi/*.c~ networking/generic/*.c~ tools/*.c~ sysinit/*.c~
+	rm -f *.h~ services/*.h~ networking/wifi/*.h~ networking/generic/*.h~ tools/*.h~ sysinit/*.h~
 
 install: all
 	install -d $(INSTALLDIR)/services/sbin

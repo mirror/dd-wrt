@@ -67,7 +67,6 @@
 
 #include <glob.h>
 #include <revision.h>
-// #include <ledcontrol.h>
 
 #define WL_IOCTL(name, cmd, buf, len) (ret = wl_ioctl((name), (cmd), (buf), (len)))
 
