@@ -124,6 +124,8 @@ extern void start_wland(void);
 extern void stop_wland(void);
 extern void start_firewall(void);
 extern void stop_firewall(void);
+extern void static_start_wshaper(void);
+extern void static_stop_wshaper(void);
 
 #ifdef HAVE_MULTICAST
 extern void start_igmprt(void);

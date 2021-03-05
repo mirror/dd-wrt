@@ -688,10 +688,6 @@ void stop_openvpn(void)
 {
 	nvram_unset("openvpn_get_dns");
 	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
-/*              if (nvram_matchi("wshaper_enable",1)) {disable wshaper, causes fw race condition
-                        stop_wshaper();
-                        start_wshaper();
-                }*/
 		//remove ebtables rules on shutdown
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
 		unlink("/tmp/openvpncl/ca.crt");
@@ -723,10 +719,6 @@ void stop_openvpn_wandone(void)
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
 	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
-/*              if (nvram_matchi("wshaper_enable",1)) {disable wshaper, causes fw race condition
-                        stop_wshaper();
-                        start_wshaper();
-                }*/
 		//remove ebtables rules on shutdown     
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
 		unlink("/tmp/openvpncl/ca.crt");

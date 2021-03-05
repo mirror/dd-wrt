@@ -301,7 +301,6 @@ static int bound(void)
 		dns_to_resolv();
 		start_firewall();
 		stop_wland();
-		start_wshaper();
 		start_wland();
 		start_heartbeat_boot();
 		stop_unbound();
@@ -383,7 +382,6 @@ static int bound(void)
 		route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");
 
 		start_firewall();
-		start_wshaper();
 		start_l2tp_boot();
 	}
 #endif
@@ -404,7 +402,6 @@ static int bound(void)
 		 */
 
 		start_firewall();
-		start_wshaper();
 		run_pppoe_dual(BOOT);
 	}
 #endif

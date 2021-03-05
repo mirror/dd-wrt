@@ -905,7 +905,7 @@ static int svqos_iptables(void)
 }
 #endif
 
-void start_wshaper(void)
+void static_start_wshaper(void)
 {
 //      int ret = 0;
 	int dl;
@@ -921,8 +921,6 @@ void start_wshaper(void)
 		writeprocsysnet("core/default_qdisc", "sfq");
 
 	wshaper_dev = nvram_safe_get("wshaper_dev");
-
-	stop_wshaper();
 
 	if (!nvram_matchi("wshaper_enable", 1)) {
 #ifdef HAVE_SFE
@@ -1028,7 +1026,7 @@ void start_wshaper(void)
 	return;
 }
 
-void stop_wshaper(void)
+void static_stop_wshaper(void)
 {
 	//if imq is not available we don't have to run 
 	DIR *dir = opendir("/proc/sys/net/ipv4/conf/imq0");
