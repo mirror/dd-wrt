@@ -1,7 +1,7 @@
 
 ntfs-3g:
 	CC="$(CC)" \
-	CFLAGS="$(COPTS)  $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) -DNEED_PRINTF -DDEBUG  $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -26,8 +26,8 @@ ntfs-3g-configure:
 			--target=$(ARCH)-linux \
 			--host=$(ARCH) \
 			CC="$(CC)" \
-			CXXFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
-			CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			CXXFLAGS="$(COPTS) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
+			CFLAGS="$(COPTS) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			LDFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections"
 	make -C ntfs-3g/fuse
 	cd ntfs-3g && ./configure --prefix=/usr \
@@ -37,6 +37,6 @@ ntfs-3g-configure:
 			CC="$(CC)" \
 			FUSE_MODULE_CFLAGS="-D_FILE_OFFSET_BITS=64 -I$(TOP)/ntfs-3g/fuse/include" \
 			FUSE_MODULE_LIBS="-pthread -L$(TOP)/ntfs-3g/fuse/lib/.libs -lfuse -lrt -ldl" \
-			CXXFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
-			CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			CXXFLAGS="$(COPTS) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
+			CFLAGS="$(COPTS) $(MIPS16_OPT)  -DNEED_PRINTF -DDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			LDFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections"

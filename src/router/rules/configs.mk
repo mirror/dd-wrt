@@ -372,6 +372,7 @@ obj-$(CONFIG_SMARTDNS) += smartdns
 obj-$(CONFIG_NGINX) += pcre openssl zlib nginx
 obj-$(CONFIG_X86) += yukon bootconfig lmsensors
 obj-$(CONFIG_MRP) += mrp
+obj-$(CONFIG_CFM) += cfm
 obj-$(CONFIG_HTOP) += ncurses libnl htop
 obj-$(CONFIG_IPSET) += libmnl ipset
 obj-$(CONFIG_OCTEON) += lmsensors
