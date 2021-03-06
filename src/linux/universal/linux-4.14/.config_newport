@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.14.216 Kernel Configuration
+# Linux/arm64 4.14.223 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -1029,6 +1029,7 @@ CONFIG_BRIDGE_IGMP_SNOOPING=y
 # CONFIG_BRIDGE_VLAN_FILTERING is not set
 CONFIG_KERNEL_ARP_SPOOFING_PROTECT=y
 # CONFIG_BRIDGE_MRP is not set
+# CONFIG_BRIDGE_CFM is not set
 CONFIG_HAVE_NET_DSA=y
 # CONFIG_NET_DSA is not set
 CONFIG_VLAN_8021Q=y
@@ -3294,7 +3295,6 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
 # CONFIG_FUSE_FS is not set
-# CONFIG_CUSE is not set
 CONFIG_OVERLAY_FS=y
 # CONFIG_OVERLAY_FS_REDIRECT_DIR is not set
 # CONFIG_OVERLAY_FS_INDEX is not set
