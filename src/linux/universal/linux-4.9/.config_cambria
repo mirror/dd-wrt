@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.241 Kernel Configuration
+# Linux/arm 4.9.259 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -848,6 +848,7 @@ CONFIG_BRIDGE_IGMP_SNOOPING=y
 # CONFIG_BRIDGE_VLAN_FILTERING is not set
 CONFIG_KERNEL_ARP_SPOOFING_PROTECT=y
 # CONFIG_BRIDGE_MRP is not set
+# CONFIG_BRIDGE_CFM is not set
 CONFIG_HAVE_NET_DSA=y
 # CONFIG_NET_DSA is not set
 CONFIG_VLAN_8021Q=y
@@ -2681,7 +2682,6 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
 # CONFIG_FUSE_FS is not set
-# CONFIG_CUSE is not set
 # CONFIG_OVERLAY_FS is not set
 
 #
