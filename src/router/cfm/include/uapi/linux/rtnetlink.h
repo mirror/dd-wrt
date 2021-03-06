@@ -2,6 +2,7 @@
 #ifndef _UAPI__LINUX_RTNETLINK_H
 #define _UAPI__LINUX_RTNETLINK_H
 
+#include <sys/socket.h>
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <linux/if_link.h>
@@ -412,6 +413,8 @@ struct rtnexthop {
 #define RTNH_LENGTH(len) (RTNH_ALIGN(sizeof(struct rtnexthop)) + (len))
 #define RTNH_SPACE(len)	RTNH_ALIGN(RTNH_LENGTH(len))
 #define RTNH_DATA(rtnh)   ((struct rtattr*)(((char*)(rtnh)) + RTNH_LENGTH(0)))
+
+typedef unsigned short __kernel_sa_family_t;
 
 /* RTA_VIA */
 struct rtvia {
