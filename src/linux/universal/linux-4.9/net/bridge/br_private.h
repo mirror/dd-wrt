@@ -42,7 +42,7 @@ struct netlink_ext_ack {
 } while (0)
 
 #define NL_SET_ERR_MSG_MOD(extack, msg)			\
-	NL_SET_ERR_MSG((extack), KBUILD_MODNAME ": " msg)
+	printk(KERN_ERR KBUILD_MODNAME ": " msg);
 
 #define BR_HASH_BITS 8
 #define BR_HASH_SIZE (1 << BR_HASH_BITS)
