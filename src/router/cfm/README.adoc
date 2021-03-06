@@ -1,0 +1,106 @@
+# Connectivity Fault Management(CFM)
+
+Connectivity Fault Management (CFM) is defined in 802.1Q section 12.14.
+The primary CFM protocol shims are called Maintenance Points (MPs).
+A MP can be either a MEP or a MHF. Currently only MEP is supported.
+
+## CFM
+
+This application is used to configure the kernel via netlink interface to implement CFM protocols and listening on CFM kernel notifications.
+This is the first proposal of implementing a subset of the standard. It supports only untagged port Down-MEP and only the CCM functionallity.
+
+## Dependencies
+
+It depends on the following libs Linux 5.8, 'libnl', 'libev' and 'libmnl'
+
+## Build
+
+```bash
+mkdir build
+cd build
+cmake ..
+make -j12
+```
+
+## Usage
+
+If you want CFM notifications from kernel to print status the CFM server must be started. Using the command
+
+```bash
+cfm_server &
+```
+
+If the kernel doesn’t support CFM, then the server will print an error message and will exit. It is required for the kernel to be compiled with the config CONFIG_BRIDGE_CFM.
+
+Before configuring any MEP instance on a port it is required to create a bridge and add the port to the bridge.
+
+```bash
+ip link set dev eth0 up
+ip link set dev eth1 up
+ip link set dev eth2 up
+ip link set dev eth3 up
+ip link add name br0 type bridge
+ip link set dev eth0 master br0
+ip link set dev eth1 master br0
+ip link set dev eth2 master br0
+ip link set dev eth3 master br0
+ip link set dev br0 up
+```
+
+Now that the bridge is created, it is possible to add an MEP instance to the bridge. The client will communicate with the kernel via netlink interface.
+
+Create a MEP instance:
+```bash
+    cfm mep-create bridge <bridge> instance <instance> domain <domain> direction <direction>  port <port>
+    bridge: br0 instance: 1 domain: port direction: down port: eth0
+```
+
+Delete a MEP instance:
+```bash
+    cfm mep-delete bridge <bridge> instance <instance>
+    bridge: br0 instance: 1
+```
+
+Configure a MEP instance:
+```bash
+    cfm mep-config bridge <bridge> instance <instance> mac <mac> level <level> mepid <mepid>
+    bridge: br0 instance: 1 mac: 00:00:00:00:00:11 level: 7 mepid: 10
+```
+
+Configure the CC protocol:
+```bash
+    cfm cc-config bridge <bridge> instance <instance> enable <enable> interval <interval> maid-name <name>
+    bridge: br0 instance: 1 enable 1 interval: 1s maid-name: ABCDEFGHIJ
+```
+
+Configure adding a peer MEP:
+```bash
+    cfm cc-peer bridge <bridge> instance <instance> remove <remove> mepid <mepid>
+    bridge: br0 instance: 1 remove 0 mepid: 8
+```
+
+Configure transmission of CCM frames:
+```bash
+    cfm cc-ccm-tx bridge <bridge> instance <instance> dmac <dmac> sequence <sequence> period <period>
+                  iftlv <iftlv> iftlv-value <iftlv-value>
+                  porttlv <porttlv> porttlv-value <porttlv-value>
+    bridge: br0 instance: 1 dmac 00:00:00:00:00:22 sequence: 1 period: 10 iftlv: 1 iftlv-value: 100 porttlv: 1 porttlv-value: 200
+```
+
+Configure the RDI to insert in transmission of CCM frames:
+```bash
+    cfm cc-rdi bridge <bridge> instance <instance> rdi <rdi>
+    bridge: br0 instance: 1 rdi 1
+```
+
+Show the CFM MEP configuration:
+```bash
+    cfm mep-config-show bridge <bridge>"
+    bridge: br0
+```
+
+Show the CFM MEP status:
+```bash
+    cfm mep-status-show bridge <bridge>"
+    bridge: br0
+```
