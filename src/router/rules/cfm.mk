@@ -11,14 +11,14 @@ CFM_EXTRA_LDFLAGS=$(LDLTO)
 
 
 cfm-configure:
-	-make -C mrp/ev clean
-	cd mrp/ev && . ./autogen.sh
-	cd mrp/ev && ./configure --prefix=/usr --disable-shared --enable-static --host=$(ARCH)-linux \
+	-make -C cfm/ev clean
+	cd cfm/ev && . ./autogen.sh
+	cd cfm/ev && ./configure --prefix=/usr --disable-shared --enable-static --host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-	make -C mrp/ev
+	make -C cfm/ev
 	rm -f $(TOP)/cfm/CMakeCache.txt
 	$(call CMakeClean,$(CFM_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(CFM_PKG_BUILD_DIR),$(CFM_STAGING_DIR),$(CFM_CMAKE_OPTIONS),$(CFM_EXTRA_CFLAGS),$(CFM_EXTRA_LDFLAGS),.) 
