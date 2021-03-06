@@ -33,6 +33,12 @@
 #ifndef SOL_NETLINK
 #define SOL_NETLINK 270
 #endif
+#define NETLINK_SOCK_DIAG	4	/* socket monitoring				*/
+#define NLM_F_DUMP_INTR		0x10	/* Dump was inconsistent due to sequence change */
+#define NETLINK_LISTEN_ALL_NSID		8
+struct netconfmsg {
+	__u8	ncm_family;
+};
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -204,6 +210,7 @@ int rtnl_open_byproto(struct rtnl_handle *rth, unsigned int subscriptions,
 	}
 
 	/* Older kernels may no support extended ACK reporting */
+#define NETLINK_EXT_ACK			11
 	setsockopt(rth->fd, SOL_NETLINK, NETLINK_EXT_ACK,
 		   &one, sizeof(one));
 
