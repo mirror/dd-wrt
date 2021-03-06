@@ -1,7 +1,7 @@
 
 ntfs-3g:
 	CC="$(CC)" \
-	CFLAGS="$(COPTS) -DNEED_PRINTF -DDEBUG  $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) -DNEED_PRINTF $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
