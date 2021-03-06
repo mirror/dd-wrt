@@ -36,10 +36,6 @@ static void run_openvpn(char *prg, char *path)
 {
 	char *conf;
 	asprintf(&conf, "/tmp/%s/openvpn.conf", path);
-	/*char *routeup;
-	   asprintf(&routeup, "/tmp/%s/route-up.sh", path);
-	   char *routedown;
-	   asprintf(&routedown, "/tmp/%s/route-down.sh", path); */
 	if (nvram_matchi("use_crypto", 1)) {
 		insmod("cryptodev");
 		eval(prg, "--config", conf, "--daemon", "--engine", "cryptodev");
@@ -47,8 +43,6 @@ static void run_openvpn(char *prg, char *path)
 		rmmod("cryptodev");
 		eval(prg, "--config", conf, "--daemon");
 	}
-	/*free(routedown);
-	   free(routeup); */
 	free(conf);
 }
 
@@ -83,7 +77,6 @@ void create_openvpnrules(FILE * fp)
 		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
 		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
 		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
-		//fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ system(\"nvram set openvpn_get_dns=\"$3) }'\n");
 		fprintf(fp, "nvram set openvpn_get_dns=\"$(env | grep 'dhcp-option DNS' | awk '{ printf \"\%%s \",$3 }')\"\n");
 		//egc route only pushed DNS servers and not client set DNS servers
 		fprintf(fp,
@@ -91,8 +84,6 @@ void create_openvpnrules(FILE * fp)
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
-//              fprintf(fp, "ip route flush table 10\n");
-//              fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n" "\t ip rule add from $IP table 10\n" "done\n"); //egc: deleted and replaced by next line
 		fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//;/^$/d' \"/tmp/openvpncl/policy_ips\" | while read IP; do [[ \"$IP\" == [0-9]* ]] && IP=\"from $IP\"; ip rule add table 10 $IP; done\n");
 /*              if (nvram_match("openvpncl_tuntap", "tap"))
                         fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n"); //needs investigation cause in TAP mode no gateway is received
@@ -104,6 +95,7 @@ void create_openvpnrules(FILE * fp)
 		}
 		fprintf(fp, "ip route flush cache\n" "echo $ifconfig_remote >>/tmp/gateway.txt\n" "echo $route_vpn_gateway >>/tmp/gateway.txt\n" "echo $ifconfig_local >>/tmp/gateway.txt\n");
 	}
+	fprintf(fp, "exit 0\n");  //to prevent exit 2 fall through when DNS route is already made by provider
 }
 
 void create_openvpnserverrules(FILE * fp)
@@ -136,17 +128,6 @@ void start_openvpnserver(void)
 	int jffs = 0;
 	if (nvram_invmatchi("openvpn_enable", 1))
 		return;
-/* 	
-	char proto[16];
-	strcpy(proto, nvram_safe_get("openvpn_proto"));
-	if (!nvram_matchi("ipv6_enable", 1)) {
-		if (!strcmp(proto, "udp")) {
-			strcpy(proto, "udp4");
-		} else {
-			strcpy(proto, "tcp4-server");
-		}
-	}
- */
 	insmod("tun");
 	update_timezone();
 	if ((freediskSpace("/jffs") > 16384)
@@ -216,10 +197,8 @@ void start_openvpnserver(void)
 	if (nvram_matchi("openvpn_switch", 1)) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
 		fprintf(fp, "keepalive 10 120\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpnd.pid\n" "management 127.0.0.1 14\n" "management-log-cache 100\n" "topology subnet\n"
-			//"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
 			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_cipher"),
 			nvram_safe_get("openvpn_auth"));
-
 		//egc
 		char dcbuffer[128] = { 0 };
 		char *dc1 = nvram_safe_get("openvpn_dc1");
@@ -386,7 +365,6 @@ void start_openvpnserver(void)
 //      eval("stopservice", "wshaper"); disable wshaper, causes fw race condition
 //      eval("startservice", "wshaper");
 }
-
 void stop_openvpnserver(void)
 {
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
@@ -466,17 +444,6 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/cert.p12", "openvpncl_pkcs12");
 	write_nvram("/tmp/openvpncl/static.key", "openvpncl_static");
 	chmod("/tmp/openvpn/client.key", 0600);
-/* 
-	char proto[16];
-	strcpy(proto, nvram_safe_get("openvpncl_proto"));
-	if (!nvram_matchi("ipv6_enable", 1)) {
-		if (!strcmp(proto, "udp")) {
-			strcpy(proto, "udp4");
-		} else {
-			strcpy(proto, "tcp4-client");
-		}
-	}
- */
 	FILE *fp;
 	char ovpniface[10];
 #ifdef HAVE_ERC
@@ -515,7 +482,6 @@ void start_openvpn(void)
 		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
 #endif
 	fprintf(fp, "dev %s\n", ovpniface);
-	//fprintf(fp, "proto %s\n", proto);
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
@@ -568,7 +534,6 @@ void start_openvpn(void)
 	} else
 		fprintf(fp, "mtu-disc yes\n");
 	if (nvram_matchi("openvpncl_certtype", 1))
-//                fprintf(fp, "ns-cert-type server\n"); //egc: ns-cert-type deprecated and replaced by remote-cert-tls
 		fprintf(fp, "remote-cert-tls server\n");
 	if (nvram_match("openvpncl_proto", "udp") || nvram_match("openvpncl_proto", "udp4") || nvram_match("openvpncl_proto", "udp6"))
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
@@ -673,8 +638,6 @@ void start_openvpn(void)
                         "then rmmod ebtable_nat\n" "\t rmmod ebtables\n", ovpniface, ovpniface);
                 } */
 	fclose(fp);
-
-	//eval("iptables", "-I", "INPUT", "-p", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", "--dport", nvram_safe_get("openvpn_port"), "-j", "ACCEPT");  //egc can be removed
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
