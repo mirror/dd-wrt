@@ -43,7 +43,7 @@ static int br_mrp_instance_parse(struct net_bridge *br, struct nlattr *attr,
 	if (!tb[IFLA_BRIDGE_MRP_INSTANCE_RING_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_INSTANCE_P_IFINDEX] ||
 	    !tb[IFLA_BRIDGE_MRP_INSTANCE_S_IFINDEX]) {
-		NL_SET_ERR_NSG_MOD(extack, 
+		NL_SET_ERR_MSG_MOD(extack, 
 				   "Missing attribute: RING_ID or P_IFINDEX or S_IFINDEX");
 		return -EINVAL;
 	}
@@ -85,7 +85,7 @@ static int br_mrp_port_state_parse(struct net_bridge_port *p,
 		return err;
 
 	if (!tb[IFLA_BRIDGE_MRP_PORT_STATE_STATE]) {
-		NL_SET_ERR_NSG_MOD(extack,  "Missing attribute: STATE");
+		NL_SET_ERR_MSG_MOD(extack,  "Missing attribute: STATE");
 		return -EINVAL;
 	}
 
@@ -113,7 +113,7 @@ static int br_mrp_port_role_parse(struct net_bridge_port *p,
 		return err;
 
 	if (!tb[IFLA_BRIDGE_MRP_PORT_ROLE_ROLE]) {
-		NL_SET_ERR_NSG_MOD(extack,  "Missing attribute: ROLE");
+		NL_SET_ERR_MSG_MOD(extack,  "Missing attribute: ROLE");
 		return -EINVAL;
 	}
 
@@ -142,7 +142,7 @@ static int br_mrp_ring_state_parse(struct net_bridge *br, struct nlattr *attr)
 
 	if (!tb[IFLA_BRIDGE_MRP_RING_STATE_RING_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_RING_STATE_STATE]) {
-		NL_SET_ERR_NSG_MOD(extack, 
+		NL_SET_ERR_MSG_MOD(extack, 
 				   "Missing attribute: RING_ID or STATE");
 		return -EINVAL;
 	}
@@ -175,7 +175,7 @@ static int br_mrp_ring_role_parse(struct net_bridge *br, struct nlattr *attr)
 
 	if (!tb[IFLA_BRIDGE_MRP_RING_ROLE_RING_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_RING_ROLE_ROLE]) {
-		NL_SET_ERR_NSG_MOD(extack, 
+		NL_SET_ERR_MSG_MOD(extack, 
 				   "Missing attribute: RING_ID or ROLE");
 		return -EINVAL;
 	}
@@ -213,7 +213,7 @@ static int br_mrp_start_test_parse(struct net_bridge *br, struct nlattr *attr)
 	    !tb[IFLA_BRIDGE_MRP_START_TEST_INTERVAL] ||
 	    !tb[IFLA_BRIDGE_MRP_START_TEST_MAX_MISS] ||
 	    !tb[IFLA_BRIDGE_MRP_START_TEST_PERIOD]) {
-		NL_SET_ERR_NSG_MOD(extack, 
+		NL_SET_ERR_MSG_MOD(extack, 
 				   "Missing attribute: RING_ID or INTERVAL or MAX_MISS or PERIOD");
 		return -EINVAL;
 	}
@@ -253,7 +253,7 @@ static int br_mrp_in_state_parse(struct net_bridge *br, struct nlattr *attr)
 
 	if (!tb[IFLA_BRIDGE_MRP_IN_STATE_IN_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_IN_STATE_STATE]) {
-		NL_SET_ERR_NSG_MOD(extack, 
+		NL_SET_ERR_MSG_MOD(extack, 
 				   "Missing attribute: IN_ID or STATE");
 		return -EINVAL;
 	}
@@ -290,7 +290,7 @@ static int br_mrp_in_role_parse(struct net_bridge *br, struct nlattr *attr)
 	    !tb[IFLA_BRIDGE_MRP_IN_ROLE_IN_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_IN_ROLE_I_IFINDEX] ||
 	    !tb[IFLA_BRIDGE_MRP_IN_ROLE_ROLE]) {
-		NL_SET_ERR_NSG_MOD(extack, 
+		NL_SET_ERR_MSG_MOD(extack, 
 				   "Missing attribute: RING_ID or ROLE or IN_ID or I_IFINDEX");
 		return -EINVAL;
 	}
@@ -330,7 +330,7 @@ static int br_mrp_start_in_test_parse(struct net_bridge *br,
 	    !tb[IFLA_BRIDGE_MRP_START_IN_TEST_INTERVAL] ||
 	    !tb[IFLA_BRIDGE_MRP_START_IN_TEST_MAX_MISS] ||
 	    !tb[IFLA_BRIDGE_MRP_START_IN_TEST_PERIOD]) {
-		NL_SET_ERR_NSG_MOD(extack, 
+		NL_SET_ERR_MSG_MOD(extack, 
 				   "Missing attribute: RING_ID or INTERVAL or MAX_MISS or PERIOD");
 		return -EINVAL;
 	}
