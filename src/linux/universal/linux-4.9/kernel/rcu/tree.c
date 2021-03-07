@@ -3211,7 +3211,7 @@ void call_rcu_sched(struct rcu_head *head, rcu_callback_t func)
 {
 	__call_rcu(head, func, &rcu_sched_state, -1, 0);
 }
-EXPORT_SYMBOL_GPL(call_rcu_sched);
+EXPORT_SYMBOL(call_rcu_sched);
 
 /*
  * Queue an RCU callback for invocation after a quicker grace period.
