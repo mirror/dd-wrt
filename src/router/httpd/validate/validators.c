@@ -98,13 +98,15 @@ int ISASCII(char *value, int flag)
 	return tag;		// don't check for japan version
 #endif
 
-	if (!strcmp(value, "")) {
+	if (!*value) {
 		if (flag)
-			return 0;	// null
+			return FALSE;	// null
 		else
-			return 1;
+			return TRUE;
 	}
-
+	if (strpbrk(value, "'\"´`")) {	// filter some unwanted characters
+		return FALSE;
+	}
 	for (i = 0; *(value + i); i++) {
 		if (!isascii(*(value + i))) {
 			tag = FALSE;
