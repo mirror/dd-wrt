@@ -82,7 +82,7 @@ EJ_VISIBLE void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 	// calc # of services
 	// no_svcs = strspn(qos_svcs,"|");
 
-	while ((qos_svcs = strpbrk(qos_svcs, "|"))) {
+	while ((qos_svcs = strchr(qos_svcs, '|'))) {
 		no_svcs++;
 		qos_svcs++;
 		realno++;
@@ -151,8 +151,9 @@ EJ_VISIBLE void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td>%llu</td>", counts[c++]);
 		}
 		websWrite(wp, "</tr>\n");
-		qos_svcs = strpbrk(++qos_svcs, "|");
-		qos_svcs++;
+		qos_svcs = strchr(++qos_svcs, '|');
+		if (qos_svcs)
+			qos_svcs++;
 
 	}
 	if (counts)
@@ -168,7 +169,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 	int no_ips = 0, i = 0;
 
 	// calc # of ips
-	while ((qos_ips = strpbrk(qos_ips, "|"))) {
+	while ((qos_ips = strchr(qos_ips, '|'))) {
 		no_ips++;
 		qos_ips++;
 	}
@@ -252,8 +253,9 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 																					  "10") == 0 ? "selected=\\\"selected\\\"" : "",
 			  strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
-		qos_ips = strpbrk(++qos_ips, "|");
-		qos_ips++;
+		qos_ips = strchr(++qos_ips, '|');
+		if (qos_ips)
+			qos_ips++;
 
 	}
 
@@ -267,7 +269,7 @@ EJ_VISIBLE void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 	int no_ips = 0, i = 0;
 
 	// calc # of ips
-	while ((qos_ips = strpbrk(qos_ips, "|"))) {
+	while ((qos_ips = strchr(qos_ips, '|'))) {
 		no_ips++;
 		qos_ips++;
 	}
@@ -333,7 +335,9 @@ EJ_VISIBLE void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 																							       "40") ==
 			  0 ? "selected=\\\"selected\\\"" : "");
 
-		qos_ips = strpbrk(++qos_ips, "|");
+		qos_ips = strchr(++qos_ips, '|');
+		if (qos_ips)
+			qos_ips++;
 		qos_ips++;
 
 	}
@@ -348,7 +352,7 @@ EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 	int no_macs = 0, i = 0;
 
 	// calc # of ips
-	while ((qos_macs = strpbrk(qos_macs, "|"))) {
+	while ((qos_macs = strchr(qos_macs, '|'))) {
 		no_macs++;
 		qos_macs++;
 	}
@@ -412,8 +416,9 @@ EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 																							       "40") ==
 			  0 ? "selected=\\\"selected\\\"" : "");
 
-		qos_macs = strpbrk(++qos_macs, "|");
-		qos_macs++;
+		qos_macs = strchr(++qos_macs, '|');
+		if (qos_macs)
+			qos_macs++;
 
 	}
 
