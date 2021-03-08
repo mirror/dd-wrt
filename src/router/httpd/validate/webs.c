@@ -3020,7 +3020,8 @@ static char *vapsettings[] = {
 	"rxchain_pwrsave_enable", "sae_key", "scanlist", "security_mode", "security_mode_akm", "shortgi", "shortslot", "smps", "ssid", "sta_retry_time", "stay", "stbc_rx", "stbc_tx", "strikes", "subf", "tkip", "tls",
 	"tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "tpc_db", "ttls", "ttls8021xaddopt", "ttls8021xanon",
 	"ttls8021xca", "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "fwtype", "txant", "txantenna", "txbf", "txbf_bfe_cap", "txbf_bfr_cap", "txbf_imp", "txchain", "txchain_pwrsave_enable", "txpwr",
-	"txpwrdbm", "txpwrusr", "txq", "uapsd", "d_lowack", "ldpc", "unit", "vifs", "vlan_prio_mode", "wchannel", "wds", "wds0", "wds0_if", "wds1", "wds10_desc", "wds10_enable", "wds10_hwaddr", "wds10_if", "wds10_ipaddr",
+	"txpwrdbm", "txpwrusr", "txq", "uapsd", "d_lowack", "ldpc", "unit", "vifs", "vlan_prio_mode", "wchannel", "wds", "wds0", "wds0_if", "wds1", "wds10_desc", "wds10_enable", "wds10_hwaddr", "wds10_if",
+	    "wds10_ipaddr",
 	"wds10_netmask", "wds10_ospf", "wds1_desc", "wds1_enable", "wds1_hwaddr", "wds1_if", "wds1_ipaddr", "wds1_netmask", "wds1_ospf", "wds2", "wds2_desc", "wds2_enable", "wds2_hwaddr", "wds2_if", "wds2_ipaddr",
 	"wds2_netmask", "wds2_ospf", "wds3", "wds3_desc", "wds3_enable", "wds3_hwaddr", "wds3_if", "wds3_ipaddr", "wds3_netmask", "wds3_ospf", "wds4", "wds4_desc", "wds4_enable", "wds4_hwaddr", "wds4_if",
 	"wds4_ipaddr", "wds4_netmask", "wds4_ospf", "wds5", "wds5_desc", "wds5_enable", "wds5_hwaddr", "wds5_if", "wds5_ipaddr", "wds5_netmask", "wds5_ospf", "wds6", "wds6_desc", "wds6_enable", "wds6_hwaddr",
@@ -3028,7 +3029,7 @@ static char *vapsettings[] = {
 	"wds8_hwaddr", "wds8_if", "wds8_ipaddr", "wds8_netmask", "wds8_ospf", "wds9", "wds9_desc", "wds9_enable", "wds9_hwaddr", "wds9_if", "wds9_ipaddr", "wds9_netmask", "wds9_ospf", "web_filter", "wep", "wep_bit",
 	"wep_buf", "wme", "wme_ap_be", "wme_ap_bk", "wme_ap_vi", "wme_ap_vo", "wme_apsd", "wme_no_ack", "wme_sta_be", "wme_sta_bk", "wme_sta_vi", "wme_sta_vo", "wme_txp_be", "wme_txp_bk", "wme_txp_vi", "wme_txp_vo",
 	"wmf_bss_enable", "wmf_igmpq_filter", "wmf_mdata_sendup", "wmf_ucast_upnp", "wmf_ucigmp_query", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_strict_rekey", "wpa_psk",
-	    "xr", "at_policy",
+	"xr", "at_policy",
 	"at_weight", "at_limit", "mesh_fwding", "mesh_retry_timeout", "mesh_confirm_timeout", "mesh_holding_timeout", "mesh_max_peer_links", "mesh_max_retries", "mesh_ttl", "mesh_element_ttl",
 	"mesh_auto_open_plinks", "mesh_hwmp_max_preq_retries", "mesh_path_refresh_time", "mesh_min_discovery_timeout", "mesh_hwmp_active_path_timeout", "mesh_hwmp_preq_min_interval",
 	"mesh_hwmp_net_diameter_traversal_time",
@@ -5770,9 +5771,9 @@ void nassrv_save(webs_t wp)
 		sprintf(var, "smbshare_mp_%d", c);
 		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_subdir_%d", c);
-		char *subdir =  json_string(websGetVar(wp, var, ""));
+		char *subdir = json_string(websGetVar(wp, var, ""));
 		if (*subdir == '/')
-		    subdir++;
+			subdir++;
 		json_object_set_new(entry, "sd", subdir);
 		sprintf(var, "smbshare_label_%d", c);
 		json_object_set_new(entry, "label", json_string(websGetVar(wp, var, "")));
