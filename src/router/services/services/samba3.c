@@ -147,7 +147,7 @@ void start_samba3(void)
 			"workgroup = %s\n"	//
 			"bind interfaces only = yes\n"	//
 			"guest account = nobody\n"	//
-			"map to guest = Bad User\n"	//
+			"map to guest = never\n"	//
 			"smb passwd file = /var/samba/smbpasswd\n"	//
 			"private dir = /var/samba\n"	//
 			"passdb backend = smbpasswd\n"	//
