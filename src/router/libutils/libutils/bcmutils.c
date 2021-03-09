@@ -1979,7 +1979,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 			match = 0;
 			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)]; v++) {
 				if (*(old_name + i) == v->ch) {
-					if (strlen(new_name) + strlen(v->string) > size) {	// avoid overflow
+					if (strlen(new_name) + strlen(v->string) + 1 > size) {	// avoid overflow
 						cprintf("%s(): overflow\n", __FUNCTION__);
 						new_name[strlen(new_name)] = '\0';
 						return 1;
