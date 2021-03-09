@@ -165,6 +165,8 @@ int main(int argc, char *argv[])
 		}
 		if (feof(fp))
 			break;
+		if (!strcmp(proto, "tcp") && strcmp(state, "ESTABLISHED"))
+			continue;
 		if (!strcmp(proto, "tcp")) {	//tcp has one field more
 			addEntry(&list, &src[4], &dport[6], 1);	//add connection per port
 			addEntry(&total, &src[4], "0", 1);	//add connection to total statistic
