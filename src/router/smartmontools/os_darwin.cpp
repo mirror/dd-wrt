@@ -1,7 +1,7 @@
 /*
  * os_darwin.cpp
  *
- * Home page of code is: http://www.smartmontools.org
+ * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2004-8 Geoffrey Keating <geoffk@geoffk.org>
  * Copyright (C) 2014 Alex Samorukov <samm@os2.kiev.ua>
@@ -38,7 +38,7 @@
 
 #define ARGUSED(x) ((void)(x))
 // Needed by '-V' option (CVS versioning) of smartd/smartctl
-const char *os_darwin_cpp_cvsid="$Id: os_darwin.cpp 4831 2018-11-09 07:18:23Z samm2 $" \
+const char *os_darwin_cpp_cvsid="$Id: os_darwin.cpp 5089 2020-10-06 15:31:47Z chrfranke $" \
 ATACMDS_H_CVSID CONFIG_H_CVSID OS_DARWIN_H_CVSID SCSICMDS_H_CVSID UTILITY_H_CVSID;
 
 // examples for smartctl
@@ -65,7 +65,7 @@ static struct {
   IONVMeSMARTInterface **smartIfNVMe;
 } devices[20];
 
-const char * dev_darwin_cpp_cvsid = "$Id: os_darwin.cpp 4831 2018-11-09 07:18:23Z samm2 $"
+const char * dev_darwin_cpp_cvsid = "$Id: os_darwin.cpp 5089 2020-10-06 15:31:47Z chrfranke $"
   DEV_INTERFACE_H_CVSID;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -83,7 +83,7 @@ public:
     : smart_device(never_called),
       m_fd(-1), m_mode(mode) { }
 
-  virtual ~darwin_smart_device() throw();
+  virtual ~darwin_smart_device();
 
   virtual bool is_open() const;
 
@@ -102,7 +102,7 @@ private:
 };
 
 
-darwin_smart_device::~darwin_smart_device() throw()
+darwin_smart_device::~darwin_smart_device()
 {
   if (m_fd >= 0)
     darwin_smart_device::close();
@@ -560,17 +560,19 @@ bool darwin_nvme_device::nvme_pass_through(const nvme_cmd_in & in, nvme_cmd_out 
   if (! ifp)
     return false;
   smartIfNVMe = *ifp;
-  // currently only GetIdentifyData and SMARTReadData are supported
+  // currently only GetIdentifyData and GetLogPage are supported
   switch (in.opcode) {
     case smartmontools::nvme_admin_identify:
-      err = smartIfNVMe->GetIdentifyData(ifp, (struct nvme_id_ctrl *) in.buffer, in.nsid); // FIXME
+      err = smartIfNVMe->GetIdentifyData(ifp, (struct nvme_id_ctrl *) in.buffer, in.nsid);
+      if (err)
+        return set_err(ENOSYS, "GetIdentifyData failed: system=0x%x, sub=0x%x, code=%d",
+          err_get_system(err), err_get_sub(err), err_get_code(err));
       break;
     case smartmontools::nvme_admin_get_log_page:
-       if(page == 0x02)
-         err = smartIfNVMe->SMARTReadData(ifp, (struct nvme_smart_log *) in.buffer);
-       else /* GetLogPage() is not working yet */
-         return set_err(ENOSYS, "NVMe admin command:0x%02x/page:0x%02x is not supported",
-          in.opcode, page);
+      err = smartIfNVMe->GetLogPage(ifp, in.buffer, page, in.size / 4 - 1);
+      if (err)
+        return set_err(ENOSYS, "GetLogPage failed: system=0x%x, sub=0x%x, code=%d",
+          err_get_system(err), err_get_sub(err), err_get_code(err));
       break;
     default:
       return set_err(ENOSYS, "NVMe admin command 0x%02x is not supported", in.opcode);

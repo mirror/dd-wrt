@@ -5,7 +5,7 @@
  *
  * Copyright (C) 2002-11 Bruce Allen
  * Copyright (C) 2000 Michael Cornwell <cornwell@acm.org>
- * Copyright (C) 2003-19 Douglas Gilbert <dgilbert@interlog.com>
+ * Copyright (C) 2003-20 Douglas Gilbert <dgilbert@interlog.com>
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -30,7 +30,7 @@
 
 #define GBUF_SIZE 65532
 
-const char * scsiprint_c_cvsid = "$Id: scsiprint.cpp 5014 2019-12-29 13:14:34Z chrfranke $"
+const char * scsiprint_c_cvsid = "$Id: scsiprint.cpp 5131 2020-12-15 21:30:33Z dpgilbert $"
                                  SCSIPRINT_H_CVSID;
 
 
@@ -118,8 +118,10 @@ static void
 scsiGetSupportedLogPages(scsi_device * device)
 {
     bool got_subpages = false;
-    int k, bump, err, payload_len, num_unreported, num_unreported_spg;
-    int payload_len_pg0_0 = 0;
+    int k, bump, err, resp_len, num_unreported, num_unreported_spg;
+    int resp_len_pg0_0 = 0;
+    int resp_len_pg0_ff = 0;    /* in SPC-4, response length of supported
+                                 * log pages _and_ log subpages */
     const uint8_t * up;
     uint8_t sup_lpgs[LOG_RESP_LEN];
 
@@ -143,7 +145,7 @@ scsiGetSupportedLogPages(scsi_device * device)
                (scsi_version <= SCSI_VERSION_HIGHEST)) {
         /* unclear what code T10 will choose for SPC-6 */
         memcpy(sup_lpgs, gBuf, LOG_RESP_LEN);
-        payload_len_pg0_0 = sup_lpgs[3];
+        resp_len_pg0_0 = sup_lpgs[3];
         if ((err = scsiLogSense(device, SUPPORTED_LPAGES, SUPP_SPAGE_L_SPAGE,
                                 gBuf, LOG_RESP_LONG_LEN,
                                 -1 /* just single not double fetch */))) {
@@ -160,33 +162,38 @@ scsiGetSupportedLogPages(scsi_device * device)
                 if (scsi_debugmode > 0)
                     pout("%s supported subpages is bad SPF=%u SUBPG=%u\n",
                          logSenRspStr, !! (0x40 & gBuf[0]), gBuf[2]);
-            } else
+            } else {
+                resp_len_pg0_ff = sg_get_unaligned_be16(gBuf + 2);
                 got_subpages = true;
+            }
         }
-    } else
+    } else {
         memcpy(sup_lpgs, gBuf, LOG_RESP_LEN);
+        resp_len_pg0_0 = sup_lpgs[3];
+    }
 
     if (got_subpages) {
-        payload_len = sg_get_unaligned_be16(gBuf + 2);
-        if (payload_len <= payload_len_pg0_0) {
+        resp_len = sg_get_unaligned_be16(gBuf + 2);
+        if (resp_len_pg0_ff <= resp_len_pg0_0) {
             /* something is rotten ....., ignore SUPP_SPAGE_L_SPAGE */
-            payload_len = payload_len_pg0_0;
+            resp_len = resp_len_pg0_0;
             bump = 1;
             up = sup_lpgs + LOGPAGEHDRSIZE;
             got_subpages = false;
             (void)got_subpages; // not yet used below, suppress warning
         } else {
+            resp_len = resp_len_pg0_ff;
             bump = 2;
             up = gBuf + LOGPAGEHDRSIZE;
         }
     } else {
-        payload_len = payload_len_pg0_0;
+        resp_len = resp_len_pg0_0;
         bump = 1;
         up = sup_lpgs + LOGPAGEHDRSIZE;
     }
 
     num_unreported_spg = 0;
-    for (num_unreported = 0, k = 0; k < payload_len; k += bump, up += bump) {
+    for (num_unreported = 0, k = 0; k < resp_len; k += bump, up += bump) {
         uint8_t pg_num = 0x3f & up[0];
         uint8_t sub_pg_num = (0x40 & up[0]) ? up[1] : 0;
 
@@ -478,12 +485,10 @@ scsiGetStartStopData(scsi_device * device)
 static void
 scsiPrintPendingDefectsLPage(scsi_device * device)
 {
-    int num, pl, pc, err;
-    uint32_t count;
-    const uint8_t * bp;
     static const char * pDefStr = "Pending Defects";
     static const char * jname = "pending_defects";
 
+    int err;
     if ((err = scsiLogSense(device, BACKGROUND_RESULTS_LPAGE,
                             PEND_DEFECTS_L_SPAGE, gBuf, LOG_RESP_LONG_LEN,
                             0))) {
@@ -499,17 +504,18 @@ scsiPrintPendingDefectsLPage(scsi_device * device)
         print_off();
         return;
     }
-    num = sg_get_unaligned_be16(gBuf + 2);
+    int num = sg_get_unaligned_be16(gBuf + 2);
     if (num > LOG_RESP_LONG_LEN) {
         print_on();
         pout("%s %s too long\n", pDefStr, logSenRspStr);
         print_off();
         return;
     }
-    bp = gBuf + 4;
+    const uint8_t * bp = gBuf + 4;
     while (num > 3) {
-        pc = sg_get_unaligned_be16(bp + 0);
-        pl = bp[3] + 4;
+        int pc = sg_get_unaligned_be16(bp + 0);
+        int pl = bp[3] + 4;
+        uint32_t count;
         switch (pc) {
         case 0x0:
             printf("  Pending defect count:");
@@ -637,7 +643,7 @@ scsiPrintGrownDefectListLen(scsi_device * device)
                  "number of elements]\n\n", dl_len);
         else {
             jout("Elements in grown defect list: %u\n\n", dl_len / div);
-            jglb["scsi_grown_defect_list"] = dl_len;
+            jglb["scsi_grown_defect_list"] = dl_len / div;
         }
     }
 }
@@ -780,7 +786,7 @@ scsiPrintSeagateFactoryLPage(scsi_device * device)
         pl = ucp[3] + 4;
         good = 0;
         switch (pc) {
-        case 0: pout("  number of hours powered up");
+        case 0: jout("  number of hours powered up");
             good = 1;
             break;
         case 8: pout("  number of minutes until next internal SMART test");
@@ -804,7 +810,7 @@ scsiPrintSeagateFactoryLPage(scsi_device * device)
             }
             ull = sg_get_unaligned_be(k, xp + 0);
             if (0 == pc) {
-                pout(" = %.2f\n", ull / 60.0 );
+                jout(" = %.2f\n", ull / 60.0 );
                 jglb["power_on_time"]["hours"] = ull / 60;
                 jglb["power_on_time"]["minutes"] = ull % 60;
             }
@@ -981,7 +987,6 @@ scsiPrintSelfTest(scsi_device * device)
     int noheader = 1;
     int retval = 0;
     uint8_t * ucp;
-    uint64_t ull;
     struct scsi_sense_disect sense_info;
     static const char * hname = "Self-test";
 
@@ -1093,7 +1098,7 @@ scsiPrintSelfTest(scsi_device * device)
             pout("   %5d", n);
 
         // construct 8-byte integer address of first failure
-        ull = sg_get_unaligned_be64(ucp + 8);
+        uint64_t ull = sg_get_unaligned_be64(ucp + 8);
         bool is_all_ffs = all_ffs(ucp + 8, 8);
         // print Address of First Failure, if sensible
         if ((! is_all_ffs) && (res > 0) && (res < 0xf)) {
@@ -1155,12 +1160,14 @@ static const char * reassign_status[] = {
 // Returns 0 if ok else FAIL* bitmask. Note can have a status entry
 // and up to 2048 events (although would hope to have less). May set
 // FAILLOG if serious errors detected (in the future).
+// When only_pow_time is true only print "Accumulated power on time"
+// data, if available.
 static int
-scsiPrintBackgroundResults(scsi_device * device)
+scsiPrintBackgroundResults(scsi_device * device, bool only_pow_time)
 {
+    bool noheader = true;
+    bool firstresult = true;
     int num, j, m, err, truncated;
-    int noheader = 1;
-    int firstresult = 1;
     int retval = 0;
     uint8_t * ucp;
     static const char * hname = "Background scan results";
@@ -1181,9 +1188,12 @@ scsiPrintBackgroundResults(scsi_device * device)
     // compute page length
     num = sg_get_unaligned_be16(gBuf + 2) + 4;
     if (num < 20) {
-        print_on();
-        pout("%s %s length is %d, no scan status\n", hname, logSenStr, num);
-        print_off();
+        if (! only_pow_time) {
+            print_on();
+            pout("%s %s length is %d, no scan status\n", hname, logSenStr,
+                 num);
+            print_off();
+        }
         return FAILSMART;
     }
     truncated = (num > LOG_RESP_LONG_LEN) ? num : 0;
@@ -1198,24 +1208,35 @@ scsiPrintBackgroundResults(scsi_device * device)
         switch (pc) {
         case 0:
             if (noheader) {
-                noheader = 0;
-                pout("%s log\n", hname);
+                noheader = false;
+                if (! only_pow_time)
+                    pout("%s log\n", hname);
             }
-            pout("  Status: ");
+            if (! only_pow_time)
+                pout("  Status: ");
             if ((pl < 16) || (num < 16)) {
-                pout("\n");
+                if (! only_pow_time)
+                    pout("\n");
                 break;
             }
             j = ucp[9];
-            if (j < (int)(sizeof(bms_status) / sizeof(bms_status[0])))
-                pout("%s\n", bms_status[j]);
-            else
-                pout("unknown [0x%x] background scan status value\n", j);
+            if (! only_pow_time) {
+                if (j < (int)(sizeof(bms_status) / sizeof(bms_status[0])))
+                    pout("%s\n", bms_status[j]);
+                else
+                    pout("unknown [0x%x] background scan status value\n", j);
+            }
             j = sg_get_unaligned_be32(ucp + 4);
-            pout("    Accumulated power on time, hours:minutes %d:%02d "
-                 "[%d minutes]\n", (j / 60), (j % 60), j);
+            jout("%sAccumulated power on time, hours:minutes %d:%02d",
+                 (only_pow_time ? "" : "    "), (j / 60), (j % 60));
+            if (only_pow_time)
+                jout("\n");
+            else
+                jout(" [%d minutes]\n", j);
             jglb["power_on_time"]["hours"] = j / 60;
             jglb["power_on_time"]["minutes"] = j % 60;
+            if (only_pow_time)
+                break;
             pout("    Number of background scans performed: %d,  ",
                  sg_get_unaligned_be16(ucp + 10));
             pout("scan progress: %.2f%%\n",
@@ -1225,9 +1246,12 @@ scsiPrintBackgroundResults(scsi_device * device)
             break;
         default:
             if (noheader) {
-                noheader = 0;
-                pout("\n%s log\n", hname);
+                noheader = false;
+                if (! only_pow_time)
+                    pout("\n%s log\n", hname);
             }
+            if (only_pow_time)
+                break;
             if (firstresult) {
                 firstresult = 0;
                 pout("\n   #  when        lba(hex)    [sk,asc,ascq]    "
@@ -1255,10 +1279,11 @@ scsiPrintBackgroundResults(scsi_device * device)
         num -= pl;
         ucp += pl;
     }
-    if (truncated)
+    if (truncated && (! only_pow_time))
         pout(" >>>> log truncated, fetched %d of %d available "
              "bytes\n", LOG_RESP_LONG_LEN, truncated);
-    pout("\n");
+    if (! only_pow_time)
+        pout("\n");
     return retval;
 }
 
@@ -1327,14 +1352,11 @@ scsiPrintSSMedia(scsi_device * device)
 static int
 scsiPrintFormatStatus(scsi_device * device)
 {
-    bool is_count;
     int k, num, err, truncated;
     int retval = 0;
     uint64_t ull;
     uint8_t * ucp;
     uint8_t * xp;
-    const char * jout_str;
-    const char * jglb_str;
     static const char * hname = "Format Status";
     static const char * jname = "format_status";
 
@@ -1369,9 +1391,9 @@ scsiPrintFormatStatus(scsi_device * device)
         // pcb = ucp[2];
         int pl = ucp[3] + 4;
 
-        is_count = true;
-        jout_str = "";
-        jglb_str = "x";
+        bool is_count = true;
+        const char * jout_str = "";
+        const char * jglb_str = "x";
         switch (pc) {
         case 0:
             if (scsi_debugmode > 1) {
@@ -2281,7 +2303,6 @@ scsiPrintMain(scsi_device * device, const scsi_print_options & options)
     struct scsi_sense_disect sense_info;
     bool is_disk;
     bool is_tape;
-
     bool any_output = options.drive_info;
 
     if (supported_vpd_pages_p) {
@@ -2289,6 +2310,81 @@ scsiPrintMain(scsi_device * device, const scsi_print_options & options)
         supported_vpd_pages_p = NULL;
     }
     supported_vpd_pages_p = new supported_vpd_pages(device);
+
+// Enable -n option for SCSI Drives
+    const char * powername = NULL;
+    bool powerchg = false;
+
+    if (options.powermode) {
+        unsigned char powerlimit = 0xff;
+
+        scsiRequestSense(device, &sense_info) ;
+        if (sense_info.asc == 0x5E) {
+            int     powermode = sense_info.ascq ;
+
+            // 5Eh/00h  DZTPRO A  K    LOW POWER CONDITION ON
+            // 5Eh/01h  DZTPRO A  K    IDLE CONDITION ACTIVATED BY TIMER
+            // 5Eh/02h  DZTPRO A  K    STANDBY CONDITION ACTIVATED BY TIMER
+            // 5Eh/03h  DZTPRO A  K    IDLE CONDITION ACTIVATED BY COMMAND
+            // 5Eh/04h  DZTPRO A  K    STANDBY CONDITION ACTIVATED BY COMMAND
+            // 5Eh/05h  DZTPRO A  K    IDLE_B CONDITION ACTIVATED BY TIMER
+            // 5Eh/06h  DZTPRO A  K    IDLE_B CONDITION ACTIVATED BY COMMAND
+            // 5Eh/07h  DZTPRO A  K    IDLE_C CONDITION ACTIVATED BY TIMER
+            // 5Eh/08h  DZTPRO A  K    IDLE_C CONDITION ACTIVATED BY COMMAND
+            // 5Eh/09h  DZTPRO A  K    STANDBY_Y CONDITION ACTIVATED BY TIMER
+            // 5Eh/0Ah  DZTPRO A  K    STANDBY_Y CONDITION ACTIVATED BY COMMAND
+            // 5Eh/41h           B     POWER STATE CHANGE TO ACTIVE
+            // 5Eh/42h           B     POWER STATE CHANGE TO IDLE
+            // 5Eh/43h           B     POWER STATE CHANGE TO STANDBY
+            // 5Eh/45h           B     POWER STATE CHANGE TO SLEEP
+            // 5Eh/47h           BK    POWER STATE CHANGE TO DEVICE CONTROL
+
+            switch (powermode) {
+            case -1:
+               if (device->is_syscall_unsup()) {
+                   pout("CHECK POWER MODE not implemented, ignoring -n option\n"); break;
+                }
+                powername = "SLEEP";   powerlimit = 2;
+                break;
+
+            case 0x00: // LOW POWER CONDITION ON
+                powername = "LOW POWER"; powerlimit = 2; break;
+            case 0x01: // IDLE CONDITION ACTIVATED BY TIMER
+                powername = "IDLE BY TIMER"; powerlimit = 4; break;
+            case 0x02: // STANDBY CONDITION ACTIVATED BY TIMER
+                powername = "STANDBY BY TIMER";    powerlimit = 2; break;
+            case 0x03: // IDLE CONDITION ACTIVATED BY COMMAND
+                powername = "IDLE BY COMMAND";  powerlimit = 4; break;
+            case 0x04: // STANDBY CONDITION ACTIVATED BY COMMAND
+                powername = "STANDBY BY COMMAND";  powerlimit = 2; break;
+            case 0x05: // IDLE_B CONDITION ACTIVATED BY TIMER
+                powername = "IDLE BY TIMER";  powerlimit = 4; break;
+            case 0x06: // IDLE_B CONDITION ACTIVATED BY COMMAND
+                powername = "IDLE_ BY COMMAND";  powerlimit = 4; break;
+            case 0x07: // IDLE_C CONDITION ACTIVATED BY TIMER
+                powername = "IDLE_C BY TIMER";  powerlimit = 4; break;
+            case 0x08: // IDLE_C CONDITION ACTIVATED BY COMMAND
+                powername = "IDLE_C BY COMMAND";  powerlimit = 4; break;  
+            case 0x09: // STANDBY_Y CONDITION ACTIVATED BY TIMER
+                powername = "STANDBY_Y BY TIMER";    powerlimit = 2; break;
+            case 0x0A: // STANDBY_Y CONDITION ACTIVATED BY COMMAND
+                powername = "STANDBY_Y BY COMMAND";  powerlimit = 2; break;
+
+            default:
+                pout("CHECK POWER MODE returned unknown value 0x%02x, "
+                     "ignoring -n option\n", powermode);
+                break;
+            }
+            if (powername) {
+                if (options.powermode >= powerlimit) {
+                    jinf("Device is in %s mode, exit(%d)\n", powername, options.powerexit);
+                    return options.powerexit;
+                }
+                powerchg = (powermode != 0xff);
+            }
+        } else
+            powername = "ACTIVE";
+    }
 
     res = scsiGetDriveInfo(device, &peripheral_type, options.drive_info);
     if (res) {
@@ -2317,11 +2413,14 @@ scsiPrintMain(scsi_device * device, const scsi_print_options & options)
                      res ? "Unavailable" : // error
                      !wce ? "Disabled" : "Enabled");
         }
-    } else
         any_output = true;
+    }
 
-    if (options.drive_info)
+    if (options.drive_info) {
+        if (powername)   // Print power condition if requested -n (nocheck)
+            pout("Power mode %s       %s\n", (powerchg?"was:":"is: "), powername);
         pout("\n");
+    }
 
     // START OF THE ENABLE/DISABLE SECTION OF THE CODE
     if (options.smart_disable           || options.smart_enable ||
@@ -2440,6 +2539,15 @@ scsiPrintMain(scsi_device * device, const scsi_print_options & options)
             scsiGetSupportedLogPages(device);
         if (gTempLPage)
             scsiPrintTemp(device);
+        // in the 'smartctl -A' case only want: "Accumulated power on time"
+        if ((! options.smart_background_log) && is_disk) {
+            res = 0;
+            if (gBackgroundResultsLPage)
+                res = scsiPrintBackgroundResults(device, true);
+        }
+        any_output = true;
+    }
+    if (options.smart_vendor_attrib) {
         if (gStartStopLPage)
             scsiGetStartStopData(device);
         if (is_disk) {
@@ -2481,7 +2589,7 @@ scsiPrintMain(scsi_device * device, const scsi_print_options & options)
             scsiGetSupportedLogPages(device);
         res = 0;
         if (gBackgroundResultsLPage)
-            res = scsiPrintBackgroundResults(device);
+            res = scsiPrintBackgroundResults(device, false);
         else {
             pout("Device does not support Background scan results logging\n");
             failuretest(OPTIONAL_CMD, returnval|=FAILSMART);
@@ -2559,6 +2667,27 @@ scsiPrintMain(scsi_device * device, const scsi_print_options & options)
             return returnval | FAILSMART;
         any_output = true;
     }
+
+    if (options.set_standby == 1) {
+        if (scsiSetPowerCondition(device, SCSI_POW_COND_ACTIVE)) {
+            pout("SCSI SSU(ACTIVE) command failed: %s\n",
+                 device->get_errmsg());
+            returnval |= FAILSMART;
+        } else
+            pout("Device placed in ACTIVE mode\n");
+    } else if (options.set_standby > 1) {
+        pout("SCSI SSU(STANDBY) with timeout not supported yet\n");
+        returnval |= FAILSMART;
+    } else if (options.set_standby_now) {
+        if (scsiSetPowerCondition(device, SCSI_POW_COND_STANDBY)) {
+            pout("SCSI STANDBY command failed: %s\n", device->get_errmsg());
+            returnval |= FAILSMART;
+        } else
+            pout("Device placed in STANDBY mode\n");
+    }
+
+    if (!any_output && powername) // Output power mode if -n (nocheck)
+        pout("Device is in %s mode\n", powername);
 
     if (!any_output)
         pout("SCSI device successfully opened\n\nUse 'smartctl -a' (or '-x') "
