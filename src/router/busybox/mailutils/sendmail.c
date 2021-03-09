@@ -219,7 +219,7 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 {
 	unsigned opts;
 	char *opt_connect;
-	char *domain;
+	char *domain = "DD-WRT";
 	char *opt_from = NULL;
 	char *s;
 	llist_t *list = NULL;
@@ -349,7 +349,7 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	usleep(500*1000);
-	if (strlen(domain)==0)
+	if (!domain || !*domain)
 	    domain="DD-WRT";
 
 	// we should start with modern EHLO
