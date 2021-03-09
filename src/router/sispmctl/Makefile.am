@@ -2,5 +2,10 @@ SUBDIRS = src man
 
 ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST = \
-	COPYING examples/60-sispmctl.rules examples/sispmctl.service
+exampledir = $(docdir)/examples
+
+dist_example_DATA= \
+	examples/60-sispmctl.rules examples/sispmctl.service
+
+dist_doc_DATA = \
+	README.md COPYING
