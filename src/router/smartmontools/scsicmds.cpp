@@ -36,7 +36,7 @@
 #include "utility.h"
 #include "sg_unaligned.h"
 
-const char *scsicmds_c_cvsid="$Id: scsicmds.cpp 5013 2019-12-29 13:13:06Z chrfranke $"
+const char *scsicmds_c_cvsid="$Id: scsicmds.cpp 5131 2020-12-15 21:30:33Z dpgilbert $"
   SCSICMDS_H_CVSID;
 
 static const char * logSenStr = "Log Sense";
@@ -150,15 +150,12 @@ dStrHex(const uint8_t * up, int len, int no_ascii)
 bool
 is_scsi_cdb(const uint8_t * cdbp, int clen)
 {
-    int ilen, sa;
-    uint8_t opcode;
-    uint8_t top3bits;
-
     if (clen < 6)
         return false;
-    opcode = cdbp[0];
-    top3bits = opcode >> 5;
+    uint8_t opcode = cdbp[0];
+    uint8_t top3bits = opcode >> 5;
     if (0x3 == top3bits) {      /* Opcodes 0x60 to 0x7f */
+        int ilen, sa;
         if ((clen < 12) || (clen % 4))
             return false;       /* must be modulo 4 and 12 or more bytes */
         switch (opcode) {
@@ -932,7 +929,7 @@ scsiRequestSense(scsi_device * device, struct scsi_sense_disect * sense_info)
     uint8_t cdb[6];
     uint8_t sense[32];
     uint8_t buff[18];
-    int sz_buff = sizeof(buff);
+    const int sz_buff = sizeof(buff);
 
     memset(&io_hdr, 0, sizeof(io_hdr));
     memset(cdb, 0, sizeof(cdb));
@@ -998,6 +995,47 @@ scsiRequestSense(scsi_device * device, struct scsi_sense_disect * sense_info)
           return 0;
       }
     }
+    return 0;
+}
+
+/* Send Start Stop Unit command with power_condition setting and
+ * Power condition command. Returns 0 if ok, anything else major problem.
+ * If power_cond is 0, treat as SSU(START) as that is better than
+ * SSU(STOP) which would be the case if byte 4 of the cdb was zero.
+ * Ref: SBC-4 revision 22, section 4.20 SSU and power conditions. 
+ *
+ * SCSI_POW_COND_ACTIVE                   0x1
+ * SCSI_POW_COND_IDLE                     0x2
+ * SCSI_POW_COND_STANDBY                  0x3
+ *
+ */
+
+int
+scsiSetPowerCondition(scsi_device * device, int power_cond, int pcond_modifier)
+{
+    struct scsi_cmnd_io io_hdr;
+    uint8_t cdb[6];
+    uint8_t sense[32];
+
+    memset(&io_hdr, 0, sizeof(io_hdr));
+    memset(cdb, 0, sizeof(cdb));
+    io_hdr.dxfer_dir = DXFER_NONE;
+    cdb[0] = START_STOP_UNIT;
+    /* IMMED bit (cdb[1] = 0x1) not set, therefore will wait */
+    if (power_cond > 0) {
+        cdb[3] = pcond_modifier & 0xf;
+        cdb[4] = power_cond << 4;
+    } else
+	cdb[4] = 0x1;	/* START */
+    io_hdr.cmnd = cdb;
+    io_hdr.cmnd_len = sizeof(cdb);
+    io_hdr.sensep = sense;
+    io_hdr.max_sense_len = sizeof(sense);
+    io_hdr.timeout = SCSI_TIMEOUT_DEFAULT;
+
+    if (!device->scsi_pass_through(&io_hdr))
+        return -device->get_errno();
+
     return 0;
 }
 
@@ -1279,16 +1317,13 @@ scsiGetSize(scsi_device * device, bool avoid_rcap16,
                 return 0;
             try_12 = true;
         } else {        /* rcap16 succeeded */
-            bool prot_en;
-            uint8_t  p_type;
-
             ret_val = sg_get_unaligned_be64(rc16resp + 0) + 1;
             lb_size = sg_get_unaligned_be32(rc16resp + 8);
             if (srrp) {         /* writes to all fields */
                 srrp->num_lblocks = ret_val;
                 srrp->lb_size = lb_size;
-                prot_en = !!(0x1 & rc16resp[12]);
-                p_type = ((rc16resp[12] >> 1) & 0x7);
+                bool prot_en = !!(0x1 & rc16resp[12]);
+                uint8_t p_type = ((rc16resp[12] >> 1) & 0x7);
                 srrp->prot_type = prot_en ? (1 + p_type) : 0;
                 srrp->p_i_exp = ((rc16resp[13] >> 4) & 0xf);
                 srrp->lb_p_pb_exp = (rc16resp[13] & 0xf);

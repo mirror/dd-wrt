@@ -21,9 +21,6 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
-/* Define to 1 if you have the <ddk/ntdddisk.h> header file. */
-#undef HAVE_DDK_NTDDDISK_H
-
 /* Define to 1 if you have the <dev/ata/atavar.h> header file. */
 #undef HAVE_DEV_ATA_ATAVAR_H
 
@@ -69,9 +66,6 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
-
-/* Define to 1 if you have the <ntdddisk.h> header file. */
-#undef HAVE_NTDDDISK_H
 
 /* Define to 1 if you have the `regcomp' function. */
 #undef HAVE_REGCOMP
@@ -120,9 +114,6 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
-
-/* Define to 1 if the `snprintf' function is sane. */
-#undef HAVE_WORKING_SNPRINTF
 
 /* Define to 1 if the system has the type `__int128'. */
 #undef HAVE___INT128

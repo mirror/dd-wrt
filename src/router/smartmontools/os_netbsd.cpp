@@ -1,7 +1,7 @@
 /*
  * os_netbsd.cpp
  *
- * Home page of code is: http://www.smartmontools.org
+ * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2003-8 Sergey Svishchev
  * Copyright (C) 2016 Kimihiro Nonaka
@@ -25,7 +25,7 @@
 // based on "sys/dev/ic/nvmeio.h" from NetBSD kernel sources
 #include "netbsd_nvme_ioctl.h" // NVME_PASSTHROUGH_CMD, nvme_completion_is_error
 
-const char * os_netbsd_cpp_cvsid = "$Id: os_netbsd.cpp 4919 2019-06-12 20:29:55Z chrfranke $"
+const char * os_netbsd_cpp_cvsid = "$Id: os_netbsd.cpp 5089 2020-10-06 15:31:47Z chrfranke $"
   OS_NETBSD_H_CVSID;
 
 #define ARGUSED(x) ((void)(x))
@@ -52,7 +52,7 @@ public:
     : smart_device(never_called),
       m_fd(-1) { }
 
-  virtual ~netbsd_smart_device() throw();
+  virtual ~netbsd_smart_device();
 
   virtual bool is_open() const;
 
@@ -72,7 +72,7 @@ private:
   int m_fd; ///< filedesc, -1 if not open.
 };
 
-netbsd_smart_device::~netbsd_smart_device() throw()
+netbsd_smart_device::~netbsd_smart_device()
 {
   if (m_fd >= 0)
     os_netbsd::netbsd_smart_device::close();
@@ -168,7 +168,7 @@ bool netbsd_ata_device::ata_pass_through(const ata_cmd_in & in, ata_cmd_out & ou
   struct atareq req;
   memset(&req, 0, sizeof(req));
 
-  req.timeout = 1000;
+  req.timeout = SCSI_TIMEOUT_DEFAULT * 1000;
   req.command = in.in_regs.command;
   req.features = in.in_regs.features;
   req.sec_count = in.in_regs.sector_count;

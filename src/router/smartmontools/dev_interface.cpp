@@ -3,7 +3,7 @@
  *
  * Home page of code is: https://www.smartmontools.org
  *
- * Copyright (C) 2008-19 Christian Franke
+ * Copyright (C) 2008-20 Christian Franke
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -11,7 +11,6 @@
 #include "config.h"
 
 #include "dev_interface.h"
-#include "dev_intelliprop.h"
 #include "dev_tunnelled.h"
 #include "atacmds.h" // ATA_SMART_CMD/STATUS
 #include "scsicmds.h" // scsi_cmnd_io
@@ -19,6 +18,7 @@
 
 #include <errno.h>
 #include <stdarg.h>
+#include <stdlib.h> // realpath()
 #include <stdexcept>
 
 #if defined(HAVE_GETTIMEOFDAY)
@@ -27,7 +27,7 @@
 #include <sys/timeb.h>
 #endif
 
-const char * dev_interface_cpp_cvsid = "$Id: dev_interface.cpp 4979 2019-11-24 18:19:24Z chrfranke $"
+const char * dev_interface_cpp_cvsid = "$Id: dev_interface.cpp 5115 2020-11-09 22:07:22Z chrfranke $"
   DEV_INTERFACE_H_CVSID;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ smart_device::smart_device(do_not_use_in_implementation_classes)
   throw std::logic_error("smart_device: wrong constructor called in implementation class");
 }
 
-smart_device::~smart_device() throw()
+smart_device::~smart_device()
 {
   s_num_objects--;
 }
@@ -253,7 +253,7 @@ tunnelled_device_base::tunnelled_device_base(smart_device * tunnel_dev)
 {
 }
 
-tunnelled_device_base::~tunnelled_device_base() throw()
+tunnelled_device_base::~tunnelled_device_base()
 {
   delete m_tunnel_base_dev;
 }
@@ -310,7 +310,8 @@ std::string smart_interface::get_valid_dev_types_str()
   std::string s =
     "ata, scsi[+TYPE], nvme[,NSID], sat[,auto][,N][+TYPE], usbcypress[,X], "
     "usbjmicron[,p][,x][,N], usbprolific, usbsunplus, sntjmicron[,NSID], "
-    "intelliprop,N[+TYPE], jmb39x,N[,sLBA][,force][+TYPE]";
+    "sntrealtek, intelliprop,N[+TYPE], jmb39x[-q],N[,sLBA][,force][+TYPE], "
+    "jms56x,N[,sLBA][,force][+TYPE]";
   // append custom
   std::string s2 = get_valid_custom_dev_types_str();
   if (!s2.empty()) {
@@ -389,6 +390,38 @@ const char * smart_interface::get_msg_for_errno(int no)
   return strerror(no);
 }
 
+std::string smart_interface::get_unique_dev_name(const char * name, const char * type) const
+{
+  std::string unique_name;
+#if defined(HAVE_UNISTD_H) && !defined(_WIN32) && !defined(__OS2__)
+  char * p = realpath(name, (char *)0); // nullptr requires POSIX.1.2008 compatibility
+  if (p) {
+    unique_name = p;
+    free(p);
+  }
+  else
+#endif
+    unique_name = name;
+
+  if (*type && is_raid_dev_type(type)) {
+    // -d TYPE options must match if RAID drive number is specified
+    unique_name += " ["; unique_name += type; unique_name += ']';
+  }
+  return unique_name;
+}
+
+bool smart_interface::is_raid_dev_type(const char * type) const
+{
+  if (!strchr(type, ','))
+    return false;
+  if (str_starts_with(type, "sat,"))
+    return false;
+  int i;
+  if (sscanf(type, "%*[^,],%d", &i) != 1)
+    return false;
+  return true;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Default device factory
@@ -426,7 +459,7 @@ smart_device * smart_interface::get_smart_device(const char * name, const char *
     }
     dev = get_nvme_device(name, type, nsid);
   }
-
+  // TODO: Unify handling of '-d TYPE...+BASETYPE...'
   else if (  (str_starts_with(type, "sat") && (!type[3] || strchr(",+", type[3])))
            || str_starts_with(type, "scsi+")
            || str_starts_with(type, "usb")                                        ) {
@@ -461,7 +494,7 @@ smart_device * smart_interface::get_smart_device(const char * name, const char *
     return get_snt_device(type, basedev.release()->to_scsi());
   }
 
-  else if (str_starts_with(type, "jmb39x")) {
+  else if (str_starts_with(type, "jmb39x") || str_starts_with(type, "jms56x")) {
     // Split "jmb39x...+base..." -> ("jmb39x...", "base...")
     unsigned jmblen = strcspn(type, "+");
     std::string jmbtype(type, jmblen);
@@ -479,14 +512,10 @@ smart_device * smart_interface::get_smart_device(const char * name, const char *
   }
 
   else if (str_starts_with(type, "intelliprop")) {
-    // Parse "intelliprop,N[+base...]"
-    unsigned phydrive = ~0; int n = -1; char c = 0;
-    sscanf(type, "intelliprop,%u%n%c", &phydrive, &n, &c);
-    if (!((n == (int)strlen(type) || c == '+') && phydrive <= 3)) {
-      set_err(EINVAL, "Option '-d intelliprop,N' requires N between 0 and 3");
-      return 0;
-    }
-    const char * basetype = (type[n] ? type + n + 1 : "");
+    // Split "intelliprop...+base..." -> ("intelliprop...", "base...")
+    unsigned itllen = strcspn(type, "+");
+    std::string itltype(type, itllen);
+    const char * basetype = (type[itllen] ? type+itllen+1 : "");
     // Recurse to allocate base device, default is standard ATA
     if (!*basetype)
       basetype = "ata";
@@ -500,7 +529,7 @@ smart_device * smart_interface::get_smart_device(const char * name, const char *
       set_err(EINVAL, "Type '%s': Device type '%s' is not ATA", type, basetype);
       return 0;
     }
-    return get_intelliprop_device(this, phydrive, basedev.release()->to_ata());
+    return get_intelliprop_device(itltype.c_str(), basedev.release()->to_ata());
   }
 
   else {

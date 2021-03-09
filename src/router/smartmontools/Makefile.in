@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 #
-# $Id: Makefile.am 4979 2019-11-24 18:19:24Z chrfranke $
+# $Id: Makefile.am 5036 2020-03-01 17:18:01Z chrfranke $
 #
 
 
@@ -212,18 +212,17 @@ PROGRAMS = $(sbin_PROGRAMS)
 am__smartctl_SOURCES_DIST = smartctl.cpp smartctl.h atacmdnames.cpp \
 	atacmdnames.h atacmds.cpp atacmds.h ataidentify.cpp \
 	ataidentify.h ataprint.cpp ataprint.h dev_ata_cmd_set.cpp \
-	dev_ata_cmd_set.h dev_intelliprop.cpp dev_intelliprop.h \
-	dev_interface.cpp dev_interface.h dev_jmb39x_raid.cpp \
-	dev_tunnelled.h drivedb.h json.cpp json.h knowndrives.cpp \
-	knowndrives.h nvmecmds.cpp nvmecmds.h nvmeprint.cpp \
-	nvmeprint.h scsicmds.cpp scsicmds.h scsiata.cpp scsinvme.cpp \
-	scsiprint.cpp scsiprint.h static_assert.h utility.cpp \
-	utility.h sg_unaligned.h os_win32/popen_win32.cpp \
-	os_win32/popen.h getopt/getopt.c getopt/getopt.h \
-	getopt/getopt1.c getopt/getopt_int.h getopt/bits/getopt_core.h \
-	getopt/bits/getopt_ext.h regex/regex.c regex/regex.h \
-	regex/regex_internal.h csmisas.h os_win32/wmiquery.cpp \
-	os_win32/wmiquery.h
+	dev_ata_cmd_set.h dev_intelliprop.cpp dev_interface.cpp \
+	dev_interface.h dev_jmb39x_raid.cpp dev_tunnelled.h drivedb.h \
+	json.cpp json.h knowndrives.cpp knowndrives.h nvmecmds.cpp \
+	nvmecmds.h nvmeprint.cpp nvmeprint.h scsicmds.cpp scsicmds.h \
+	scsiata.cpp scsinvme.cpp scsiprint.cpp scsiprint.h \
+	static_assert.h utility.cpp utility.h sg_unaligned.h \
+	os_win32/popen_win32.cpp os_win32/popen.h getopt/getopt.c \
+	getopt/getopt.h getopt/getopt1.c getopt/getopt_int.h \
+	getopt/bits/getopt_core.h getopt/bits/getopt_ext.h \
+	regex/regex.c regex/regex.h regex/regex_internal.h csmisas.h \
+	os_win32/wmiquery.cpp os_win32/wmiquery.h
 @OS_WIN32_MINGW_TRUE@am__objects_1 = popen_win32.$(OBJEXT)
 @NEED_GETOPT_LONG_TRUE@am__objects_2 = getopt.$(OBJEXT) \
 @NEED_GETOPT_LONG_TRUE@	getopt1.$(OBJEXT)
@@ -250,18 +249,18 @@ smartctl_OBJECTS = $(am_smartctl_OBJECTS)
 am__DEPENDENCIES_1 =
 am__smartd_SOURCES_DIST = smartd.cpp atacmdnames.cpp atacmdnames.h \
 	atacmds.cpp atacmds.h dev_ata_cmd_set.cpp dev_ata_cmd_set.h \
-	dev_intelliprop.cpp dev_intelliprop.h dev_interface.cpp \
-	dev_interface.h dev_jmb39x_raid.cpp dev_tunnelled.h drivedb.h \
-	knowndrives.cpp knowndrives.h nvmecmds.cpp nvmecmds.h \
-	scsicmds.cpp scsicmds.h scsiata.cpp scsinvme.cpp \
-	static_assert.h utility.cpp utility.h sg_unaligned.h \
-	os_win32/daemon_win32.cpp os_win32/daemon_win32.h \
-	os_win32/popen_win32.cpp os_win32/popen.h \
-	os_win32/syslog_win32.cpp os_win32/syslog.h getopt/getopt.c \
-	getopt/getopt.h getopt/getopt1.c getopt/getopt_int.h \
-	getopt/bits/getopt_core.h getopt/bits/getopt_ext.h \
-	regex/regex.c regex/regex.h regex/regex_internal.h csmisas.h \
-	os_win32/wmiquery.cpp os_win32/wmiquery.h
+	dev_intelliprop.cpp dev_interface.cpp dev_interface.h \
+	dev_jmb39x_raid.cpp dev_tunnelled.h drivedb.h knowndrives.cpp \
+	knowndrives.h nvmecmds.cpp nvmecmds.h scsicmds.cpp scsicmds.h \
+	scsiata.cpp scsinvme.cpp static_assert.h utility.cpp utility.h \
+	sg_unaligned.h os_win32/daemon_win32.cpp \
+	os_win32/daemon_win32.h os_win32/popen_win32.cpp \
+	os_win32/popen.h os_win32/syslog_win32.cpp os_win32/syslog.h \
+	getopt/getopt.c getopt/getopt.h getopt/getopt1.c \
+	getopt/getopt_int.h getopt/bits/getopt_core.h \
+	getopt/bits/getopt_ext.h regex/regex.c regex/regex.h \
+	regex/regex_internal.h csmisas.h os_win32/wmiquery.cpp \
+	os_win32/wmiquery.h
 @OS_WIN32_MINGW_TRUE@am__objects_5 = daemon_win32.$(OBJEXT) \
 @OS_WIN32_MINGW_TRUE@	popen_win32.$(OBJEXT) \
 @OS_WIN32_MINGW_TRUE@	syslog_win32.$(OBJEXT)
@@ -603,14 +602,14 @@ AM_CPPFLAGS = -DBUILD_INFO='$(BUILD_INFO)' \
 smartctl_SOURCES = smartctl.cpp smartctl.h atacmdnames.cpp \
 	atacmdnames.h atacmds.cpp atacmds.h ataidentify.cpp \
 	ataidentify.h ataprint.cpp ataprint.h dev_ata_cmd_set.cpp \
-	dev_ata_cmd_set.h dev_intelliprop.cpp dev_intelliprop.h \
-	dev_interface.cpp dev_interface.h dev_jmb39x_raid.cpp \
-	dev_tunnelled.h drivedb.h json.cpp json.h knowndrives.cpp \
-	knowndrives.h nvmecmds.cpp nvmecmds.h nvmeprint.cpp \
-	nvmeprint.h scsicmds.cpp scsicmds.h scsiata.cpp scsinvme.cpp \
-	scsiprint.cpp scsiprint.h static_assert.h utility.cpp \
-	utility.h sg_unaligned.h $(am__append_7) $(am__append_13) \
-	$(am__append_15) $(am__append_19)
+	dev_ata_cmd_set.h dev_intelliprop.cpp dev_interface.cpp \
+	dev_interface.h dev_jmb39x_raid.cpp dev_tunnelled.h drivedb.h \
+	json.cpp json.h knowndrives.cpp knowndrives.h nvmecmds.cpp \
+	nvmecmds.h nvmeprint.cpp nvmeprint.h scsicmds.cpp scsicmds.h \
+	scsiata.cpp scsinvme.cpp scsiprint.cpp scsiprint.h \
+	static_assert.h utility.cpp utility.h sg_unaligned.h \
+	$(am__append_7) $(am__append_13) $(am__append_15) \
+	$(am__append_19)
 smartctl_LDADD = $(os_deps) $(os_libs) $(am__append_8) \
 	$(am__append_21)
 smartctl_DEPENDENCIES = $(os_deps) $(am__append_9)
@@ -623,13 +622,12 @@ EXTRA_smartctl_SOURCES = os_darwin.cpp os_darwin.h os_linux.cpp \
 	dev_legacy.cpp linux_nvme_ioctl.h megaraid.h $(am__append_17)
 smartd_SOURCES = smartd.cpp atacmdnames.cpp atacmdnames.h atacmds.cpp \
 	atacmds.h dev_ata_cmd_set.cpp dev_ata_cmd_set.h \
-	dev_intelliprop.cpp dev_intelliprop.h dev_interface.cpp \
-	dev_interface.h dev_jmb39x_raid.cpp dev_tunnelled.h drivedb.h \
-	knowndrives.cpp knowndrives.h nvmecmds.cpp nvmecmds.h \
-	scsicmds.cpp scsicmds.h scsiata.cpp scsinvme.cpp \
-	static_assert.h utility.cpp utility.h sg_unaligned.h \
-	$(am__append_10) $(am__append_14) $(am__append_16) \
-	$(am__append_20)
+	dev_intelliprop.cpp dev_interface.cpp dev_interface.h \
+	dev_jmb39x_raid.cpp dev_tunnelled.h drivedb.h knowndrives.cpp \
+	knowndrives.h nvmecmds.cpp nvmecmds.h scsicmds.cpp scsicmds.h \
+	scsiata.cpp scsinvme.cpp static_assert.h utility.cpp utility.h \
+	sg_unaligned.h $(am__append_10) $(am__append_14) \
+	$(am__append_16) $(am__append_20)
 smartd_LDADD = $(os_deps) $(os_libs) $(CAPNG_LDADD) $(SYSTEMD_LDADD) \
 	$(am__append_11) $(am__append_22)
 smartd_DEPENDENCIES = $(os_deps) $(am__append_12)
@@ -2391,7 +2389,7 @@ cppcheck.txt: $(smartctl_SOURCES) $(EXTRA_smartctl_SOURCES) \
 
 @OS_WIN32_MINGW_TRUE@$(srcdir)/os_win32/vc$(vcver)/config.h: config.h Makefile
 @OS_WIN32_MINGW_TRUE@	sed -e '1i/* os_win32/vc$(vcver)/config.h.  Generated from config.h by Makefile.  */' \
-@OS_WIN32_MINGW_TRUE@	    -e 's,^#define HAVE_\(ATTR_PACKED\|GETTIMEOFDAY\|[DK_]*NTDDDISK_H\|LONG_DOUBLE_WIDER\|STRINGS_H\|UNISTD_H\) 1$$,/* #undef HAVE_\1 */ /* VC$(vcver) */,' \
+@OS_WIN32_MINGW_TRUE@	    -e 's,^#define HAVE_\(ATTR_PACKED\|GETTIMEOFDAY\|LONG_DOUBLE_WIDER\|STRINGS_H\|UNISTD_H\) 1$$,/* #undef HAVE_\1 */ /* VC$(vcver) */,' \
 @OS_WIN32_MINGW_TRUE@	    -e 's,^\(#define SMARTMONTOOLS_BUILD_HOST "[^-]*\)[^"]*,\1-pc-w32vc$(vcver),' $< > $@
 
 @OS_WIN32_MINGW_TRUE@$(srcdir)/os_win32/vc$(vcver)/svnversion.h: svnversion.h

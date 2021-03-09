@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 #
-# $Id: Makefile.am 4979 2019-11-24 18:19:24Z chrfranke $
+# $Id: Makefile.am 5036 2020-03-01 17:18:01Z chrfranke $
 #
 
 @SET_MAKE@
@@ -60,7 +60,6 @@ libsmart_la_SOURCES = \
         dev_ata_cmd_set.cpp \
         dev_ata_cmd_set.h \
         dev_intelliprop.cpp \
-        dev_intelliprop.h \
         dev_interface.cpp \
         dev_interface.h \
         dev_jmb39x_raid.cpp \
@@ -977,7 +976,7 @@ config-vc$(vcver): $(CONFIG_VC_FILES)
 
 $(srcdir)/os_win32/vc$(vcver)/config.h: config.h Makefile
 	sed -e '1i/* os_win32/vc$(vcver)/config.h.  Generated from config.h by Makefile.  */' \
-	    -e 's,^#define HAVE_\(ATTR_PACKED\|GETTIMEOFDAY\|[DK_]*NTDDDISK_H\|LONG_DOUBLE_WIDER\|STRINGS_H\|UNISTD_H\) 1$$,/* #undef HAVE_\1 */ /* VC$(vcver) */,' \
+	    -e 's,^#define HAVE_\(ATTR_PACKED\|GETTIMEOFDAY\|LONG_DOUBLE_WIDER\|STRINGS_H\|UNISTD_H\) 1$$,/* #undef HAVE_\1 */ /* VC$(vcver) */,' \
 	    -e 's,^\(#define SMARTMONTOOLS_BUILD_HOST "[^-]*\)[^"]*,\1-pc-w32vc$(vcver),' $< > $@
 
 $(srcdir)/os_win32/vc$(vcver)/svnversion.h: svnversion.h
