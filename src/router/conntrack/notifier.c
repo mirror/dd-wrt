@@ -20,7 +20,6 @@
  * $Id:
  */
 
-
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -39,8 +38,8 @@ typedef struct linkedlist {
 void addEntry(struct linkedlist *list, char *name, char *port, int value)
 {
 	struct linkedlist *first = list;
-	if (nvram_match("wan_ipaddr",name)) // silently ignore the wan ip
-	    return;
+	if (nvram_match("wan_ipaddr", name))	// silently ignore the wan ip
+		return;
 	int p = atoi(port);
 	if (list == NULL)
 		return;
@@ -50,8 +49,7 @@ void addEntry(struct linkedlist *list, char *name, char *port, int value)
 			return;
 		} else {
 			if (first->next == NULL) {
-				struct linkedlist *next =
-				    malloc(sizeof(struct linkedlist));
+				struct linkedlist *next = malloc(sizeof(struct linkedlist));
 				next->name = strdup(name);
 				next->value = value;
 				next->port = p;
@@ -94,40 +92,38 @@ void send_email(struct linkedlist *list, char *source, int value)
 
 	char *user = nvram_safe_get("warn_user");
 	char *pass = nvram_safe_get("warn_pass");
-	
+
 	FILE *fp;
-	
+
 	static char command[256];
 
-	
 	fp = fopen("/tmp/warn_mail", "w");
-	
-	if( fp != NULL )
-	{
+
+	if (fp != NULL) {
 		fprintf(fp, "From: %s\n", fromfull);
 		fprintf(fp, "Subject: DD-WRT: user %s reached connection limit\n\n", source);
 		fprintf(fp, "ip %s has %d open connections\n", source, value);
-		
+
 		while (1) {
 			if (!strcmp(list->name, source)) {
 				fprintf(fp, "%d open connections on port %d\n", list->value, list->port);
 			}
 			list = list->next;
 			if (list == NULL)
-			    break;
+				break;
 		}
-		fprintf(fp,"\r\n\r\n");
-		
-		if (strlen(user) > 0){
+		fprintf(fp, "\r\n\r\n");
+
+		if (strlen(user) > 0) {
 			sprintf(command, "sendmail -S %s -f %s -au %s -ap %s %s -d %s < /tmp/warn_mail", server, from, user, pass, to, domain);
-		}else{
+		} else {
 			sprintf(command, "sendmail -S %s -f %s  %s -d %s < /tmp/warn_mail", server, from, to, domain);
 		}
-		
+
 		fclose(fp);
-		
+
 		system(command);
-		
+
 		unlink("/tmp/warn_mail");
 	}
 
@@ -161,17 +157,17 @@ int main(int argc, char *argv[])
 		char dst[64];
 		char sport[64];
 		char dport[64];
-		if (nf) { //nf_conntrack has 2 fields more
-			fscanf(fp,"%*s %*s %s %*s %*s %s %s %s %s %s",proto,state,src,dst,sport,dport);
+		if (nf) {	//nf_conntrack has 2 fields more
+			fscanf(fp, "%*s %*s %s %*s %*s %s %s %s %s %s", proto, state, src, dst, sport, dport);
 		} else {
-			fscanf(fp,"%s %*s %*s %s %s %s %s %s",proto,state,src,dst,sport,dport);
+			fscanf(fp, "%s %*s %*s %s %s %s %s %s", proto, state, src, dst, sport, dport);
 
 		}
 		if (feof(fp))
 			break;
-		if (!strcmp(proto, "tcp")) { //tcp has one field more
-			addEntry(&list, &src[4], &dport[6], 1); //add connection per port
-			addEntry(&total, &src[4], "0", 1);      //add connection to total statistic
+		if (!strcmp(proto, "tcp")) {	//tcp has one field more
+			addEntry(&list, &src[4], &dport[6], 1);	//add connection per port
+			addEntry(&total, &src[4], "0", 1);	//add connection to total statistic
 		} else {
 			addEntry(&list, &state[4], &sport[6], 1);
 			addEntry(&total, &state[4], "0", 1);
