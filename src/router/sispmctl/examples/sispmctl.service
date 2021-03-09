@@ -20,10 +20,29 @@ After=network-online.target
 WantedBy=multi-user.target
 
 [Service]
+CapabilityBoundingSet=
+LockPersonality=true
+MemoryDenyWriteExecute=true
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateUsers=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+RemoveIPC=true
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+UMask=177
+
 User=sispmctl
 Group=sispmctl
 Type=forking
-WorkingDirectory=/
 ExecStart=/usr/local/bin/sispmctl -p 2638 -l
 SyslogIdentifier=sispmctl
 Restart=always

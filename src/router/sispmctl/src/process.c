@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <unistd.h>
 #include <usb.h>
 #include "config.h"
 #include "sispm_ctl.h"
@@ -63,6 +64,8 @@ static void unauthorized(int out)
 {
 	char xbuffer[BSIZE + 2];
 
+	/* Sleep here to make password guessing more expensive */
+	usleep(2000000);
 	sprintf(xbuffer,
 		"HTTP/1.1 401 Unauthorized\nServer: SisPM\n"
 		"WWW-Authenticate: Basic realm=\"SisPM\n\""

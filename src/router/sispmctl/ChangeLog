@@ -1,14 +1,30 @@
+12 Aug 2020 - 4.8
+	Sleep two seconds upon wrong webserver password.
+	Improve parameter checks.
+
+10 Apr 2020 - 4.7
+	Support scheduling on EG-PMS2
+	Step up security in systemd service definition
+
+01 Apr 2020 - 4.6
+	Add option to specify powerstrip by USB Bus:Device
+	Improve stability of webserver
+
 11 Mar 2020 - 4.5
 	Provide basic authentication.
 	Provide new skin 3.
+
 10 Mar 2020 - 4.4
 	Provide new skin 2.
+
 09 Mar 2020 - 4.3
 	Fix files truncated by webserver.
 	Provide larget on and off buttons.
 	Wait for udev service before starting sispmctl service.
+
 22 May 2019 - 4.2
 	Fix a buffer overrun in the webserver.
+
 18 Nov 2018 - 4.1
 	Add support for Gembird EG-PMS2 with idVendor=04b4, idProduct=fd15.
 	Display version number in web server.

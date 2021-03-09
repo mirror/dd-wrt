@@ -43,7 +43,8 @@ pkgdata3_DATA = \
 endif
 
 libsispmctl_la_SOURCES = \
-	process.c sispm_ctl.c nethelp.c socket.c sispm_ctl.h nethelp.h socket.h
+	process.c sispm_ctl.c nethelp.c schedule.c socket.c \
+	sispm_ctl.h nethelp.h socket.h
 
 sispmctl_SOURCES = main.c
 
