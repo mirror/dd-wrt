@@ -152,6 +152,7 @@ static void print_usage(char *name)
 		"   'm'   - get power supply status outlet(s) on/off\n"
 		"   'd'   - apply to device 'n'\n"
 		"   'D'   - apply to device with given serial number\n"
+		"   'U'   - apply to device connected to USB Bus:Device\n"
 		"   'n'   - show result numerically\n"
 		"   'q'   - quiet mode, no explanations - but errors\n"
 		"   'a'   - get schedule for outlet\n"
@@ -202,7 +203,7 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 		bindaddr = BINDADDR;
 #endif
 
-	while ((c = getopt(argc, argv, "i:o:f:t:a:A:b:g:m:lLqvh?nsd:D:u:p:")) != -1) {
+	while ((c = getopt(argc, argv, "i:o:f:t:a:A:b:g:m:lLqvh?nsd:D:u:p:U:")) != -1) {
 		if (count == 0) {
 			switch (c) {
 			case '?':
@@ -218,9 +219,8 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 				exit(1);
 			}
 		}
-		if (c == 'o' || c == 'f' || c == 'g' || c == 't' || c == 'a' || c == 'A' || c == 'm') {
-			if ((strncmp(optarg, "all", strlen("all")) == 0)
-			    || (atoi(optarg) == 7)) {
+		if (strchr("ofgtaAm", c)) {
+			if (!strncmp(optarg, "all", strlen("all"))) {
 				//use all outlets
 				from = 1;
 				upto = 4;
@@ -235,20 +235,21 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 		} else {
 			from = upto = 0;
 		}
-		if (c == 'o' || c == 'f' || c == 'g' || c == 'b' || c == 't' || c == 'a' || c == 'A' || c == 'm') {	//we need a device handle for these commands
+		if (strchr("ofgbtaAm", c)) {	//we need a device handle for these commands
 			/* get device-handle/-id if it wasn't done already */
 			if (udev == NULL) {
 				udev = get_handle(dev[devnum]);
 				if (udev == NULL) {
 					fprintf(stderr, "No access to Gembird #%d USB device %s\n", devnum, dev[devnum]->filename);
 					exit(1);
-				} else if (verbose)
+				} else if (verbose) {
 					printf("Accessing Gembird #%d USB device %s\n", devnum, dev[devnum]->filename);
+				}
 				id = get_id(dev[devnum]);
 			}
 		}
 #ifdef WEBLESS
-		if (c == 'l' || c == 'L' || c == 'i' || c == 'p' || c == 'u') {
+		if (strchr("lLipu", c)) {
 			fprintf(stderr, "Application was compiled without web-interface. " "Feature not available.\n");
 			exit(-100);
 		}
@@ -338,6 +339,31 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 					exit(-8);
 				}
 				break;
+			case 'U':	// by USB Bus:Device
+				for (j = 0; j < count; ++j) {
+					char tmp[8194];
+					sprintf(tmp, "%s:%s", dev[j]->bus->dirname, dev[j]->filename);
+
+					if (debug)
+						fprintf(stderr, "now comparing %s and %s\n", tmp, optarg);
+					if (strcasecmp(tmp, optarg) == 0) {
+						if (udev != NULL) {
+							usb_close(udev);
+							udev = NULL;
+						}
+						devnum = j;
+						break;
+					}
+				}
+				if (devnum != j) {
+					fprintf(stderr, "No device at USB Bus:Device %s found.\n" "Terminating\n", optarg);
+					if (udev != NULL) {
+						usb_close(udev);
+						udev = NULL;
+					}
+					exit(-8);
+				}
+				break;
 			case 'o':
 				outlet = check_outlet_number(id, i);
 				sispm_switch_on(udev, id, outlet);
@@ -396,8 +422,7 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 						}
 						switch (opt) {
 						case 'd':
-							plan.actions[actionNo + 1].switchOn = (strcmp(optarg, "on")
-											       == 0 ? 1 : 0);
+							plan.actions[actionNo + 1].switchOn = !strcmp(optarg, "on");
 							break;
 						case 'a':
 							plan.actions[actionNo].timeForNext = atol(optarg);
@@ -489,6 +514,10 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 				break;
 			case 'u':
 				homedir = strdup(optarg);
+				if (homedir[0] != '/') {
+					fprintf(stderr, "'%s' is not an absolute path\n", homedir);
+					exit(EXIT_FAILURE);
+				}
 				if (verbose)
 					printf("Web pages come from \"%s\".\n", homedir);
 				break;
@@ -522,14 +551,17 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 				numeric = 2 - numeric;
 				break;
 			case 'b':
-				if (strncmp(optarg, "on", strlen("on")) == 0) {
+				if (!strncmp(optarg, "on", strlen("on"))) {
 					sispm_buzzer_on(udev);
 					if (verbose)
 						printf("Turned buzzer %s\n", onoff[1 + numeric]);
-				} else if (strncmp(optarg, "off", strlen("off")) == 0) {
+				} else if (!strncmp(optarg, "off", strlen("off"))) {
 					sispm_buzzer_off(udev);
 					if (verbose)
-						printf("Turned buzzer %s\n", onoff[0 + numeric]);
+						printf("Turned buzzer %s\n", onoff[numeric]);
+				} else {
+					fprintf(stderr, "Unknown option: -b %s\nTerminating\n", optarg);
+					exit(-7);
 				}
 				break;
 			case 'v':
@@ -540,20 +572,20 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 				print_usage(argv[0]);
 				exit(1);
 			default:
-				fprintf(stderr, "Unknown Option: %c(%x)\nTerminating\n", c, c);
+				fprintf(stderr, "Unknown option: %c(%x)\nTerminating\n", c, c);
 				exit(-7);
 			}
 		}		// loop through devices
 	}			// loop through options
 
-	if (udev != NULL) {
+	if (udev) {
 		usb_close(udev);
 		udev = NULL;
 	}
 	return;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
 	struct usb_bus *bus;
 	struct usb_device *dev, *usbdev[MAXGEMBIRD], *usbdevtemp;
@@ -561,7 +593,7 @@ int main(int argc, char **argv)
 	int count = 0, found = 0, i = 1;
 
 #ifndef MSG_NOSIGNAL
-	(void)signal(SIGPIPE, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
 #endif
 
 	memset(usbdev, 0, sizeof(usbdev));

@@ -1,10 +1,10 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH sispmctl 1 "Feb 2020" Linux "User Manuals"
+.TH sispmctl 1 "Apr 2020" Linux "User Manuals"
 
 .SH NAME
-sispmctl \- Gembird Silver Shield PM ConTroL program
+sispmctl \- manage EnerGenie and Gembird USB controlled power strips
 
 .SH SYNOPSIS
 .BI "sispmctl " \-s
@@ -29,11 +29,16 @@ sispmctl \- Gembird Silver Shield PM ConTroL program
 
 .SH DESCRIPTION
 .B sispmctl
-is a tool to switch the USB controlled outlets of Gembird Silver Shield PM.
-It is known by many names, e.g. Revolt Power Switch.
+is a tool to switch the outlets of USB controlled powerstrips. Supported models
+include:
+.TP
+EnerGenie
+EG-PM, EG-PMS, EG-PM2, EG-PMS2
+.TP
+Gembird Silver Shield
+MSIS-PM, SIS-PM, SIS-PMS
 .P
-It is coded in C and uses the usb specific library (LibUSB).
-This allows you a portable and fast solution.
+The tool requires the libusb 0.1 userspace USB programming library.
 
 .SH OPTIONS
 .IP \-h
@@ -68,6 +73,8 @@ Use not the first but the given device in the sequence of detected devices,
 starting with "0" for the first device (see scan option)
 .IP \-D
 Same as \-d, but choose by serial number (see scan option)
+.IP \-U
+Same as \-d, but choose by USB Bus:Device the device is connected to (e.g. 001:003)
 .IP \-n
 do not print "ON" and "OFF", but "1" and "0" instead
 .IP \-q

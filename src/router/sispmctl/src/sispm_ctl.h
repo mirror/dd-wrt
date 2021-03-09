@@ -27,6 +27,8 @@
 #ifndef SISPM_CTL_H
 #define SISPM_CTL_H
 
+#include <usb.h>
+
 #define MAXGEMBIRD                      32
 #define MAXANSWER                       8192
 
@@ -137,5 +139,8 @@ extern int verbose;
 extern char *homedir;
 /* Base64 encoded user:password */
 extern char *secret;
+
+int pms2_schedule_to_buffer(const struct plannif *schedule, unsigned char *buffer);
+void pms2_buffer_to_schedule(const unsigned char *buffer, struct plannif *schedule);
 
 #endif
