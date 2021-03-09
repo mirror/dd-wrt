@@ -1,7 +1,7 @@
 /*
  * scsicmds.h
  *
- * Home page of code is: http://www.smartmontools.org
+ * Home page of code is: https://www.smartmontools.org
  *
  * Copyright (C) 2002-8 Bruce Allen
  * Copyright (C) 2000 Michael Cornwell <cornwell@acm.org>
@@ -19,7 +19,7 @@
 #ifndef SCSICMDS_H_
 #define SCSICMDS_H_
 
-#define SCSICMDS_H_CVSID "$Id: scsicmds.h 4842 2018-12-02 16:07:26Z chrfranke $\n"
+#define SCSICMDS_H_CVSID "$Id: scsicmds.h 5131 2020-12-15 21:30:33Z dpgilbert $\n"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,7 +69,7 @@
 #ifndef READ_DEFECT_12
 #define READ_DEFECT_12  0xb7
 #endif
-#ifndef START_STOP_UNIT
+#ifndef START_STOP_UNIT		/* SSU */
 #define START_STOP_UNIT  0x1b
 #endif
 #ifndef REPORT_LUNS
@@ -335,6 +335,11 @@ Documentation, see http://www.storage.ibm.com/techsup/hddtech/prodspecs.htm */
 #define SCSI_DIAG_FG_EXTENDED_SELF_TEST 0x06
 #define SCSI_DIAG_ABORT_SELF_TEST       0x04
 
+/* Defines for power_cond in scsiSetPowerCondition() (SSU command) */
+#define SCSI_POW_COND_ACTIVE            0x1
+#define SCSI_POW_COND_IDLE              0x2
+#define SCSI_POW_COND_STANDBY           0x3
+
 
 /* SCSI command timeout values (units are seconds) */
 #define SCSI_TIMEOUT_DEFAULT    60  // should be longer than the spin up time
@@ -355,12 +360,8 @@ class supported_vpd_pages
 {
 public:
     explicit supported_vpd_pages(scsi_device * device);
-    ~supported_vpd_pages() { num_valid = 0; }
 
     bool is_supported(int vpd_page_num) const;
-
-    /* Returns 0 or less for VPD pages not supported or error */
-    int num_pages() const { return num_valid; }
 
 private:
     int num_valid;      /* 0 or less for invalid */
@@ -432,6 +433,9 @@ int scsiModePageOffset(const uint8_t * resp, int len, int modese_len);
 
 int scsiRequestSense(scsi_device * device,
                      struct scsi_sense_disect * sense_info);
+
+int scsiSetPowerCondition(scsi_device * device, int power_cond,
+                          int pcond_modifier = 0);
 
 int scsiSendDiagnostic(scsi_device * device, int functioncode, uint8_t *pBuf,
                        int bufLen);

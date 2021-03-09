@@ -3,7 +3,7 @@
  *
  * Home page of code is: https://www.smartmontools.org
  *
- * Copyright (C) 2008-19 Christian Franke
+ * Copyright (C) 2008-20 Christian Franke
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -11,7 +11,7 @@
 #ifndef DEV_INTERFACE_H
 #define DEV_INTERFACE_H
 
-#define DEV_INTERFACE_H_CVSID "$Id: dev_interface.h 4979 2019-11-24 18:19:24Z chrfranke $\n"
+#define DEV_INTERFACE_H_CVSID "$Id: dev_interface.h 5114 2020-11-09 21:53:58Z chrfranke $\n"
 
 #include "utility.h"
 
@@ -75,7 +75,7 @@ protected:
   explicit smart_device(do_not_use_in_implementation_classes);
 
 public:
-  virtual ~smart_device() throw();
+  virtual ~smart_device();
 
 // Attributes
 public:
@@ -716,7 +716,7 @@ public:
     : m_dev(dev), m_base_dev(base_dev) { }
 
   /// Destructor deletes device object.
-  ~any_device_auto_ptr() throw()
+  ~any_device_auto_ptr()
     { reset(); }
 
   /// Assign a new pointer.
@@ -801,7 +801,7 @@ public:
   smart_device_list()
     { }
 
-  ~smart_device_list() throw()
+  ~smart_device_list()
     {
       for (unsigned i = 0; i < m_list.size(); i++)
         delete m_list[i];
@@ -881,7 +881,7 @@ public:
   smart_interface()
     { }
 
-  virtual ~smart_interface() throw()
+  virtual ~smart_interface()
     { }
 
   /// Return info string about build host and/or OS version.
@@ -978,6 +978,16 @@ public:
   virtual bool scan_smart_devices(smart_device_list & devlist,
     const smart_devtype_list & types, const char * pattern = 0);
 
+  /// Return unique device name which is (only) suitable for duplicate detection.
+  /// Default implementation resolves symlinks on POSIX systems and appends
+  /// " [type]" if is_raid_dev_type(type)' returns true.
+  virtual std::string get_unique_dev_name(const char * name, const char * type) const;
+
+  /// Return true if the 'type' string contains a RAID drive number.
+  /// Default implementation returns true if 'type' starts with '[^,]+,[0-9]'
+  /// but not with 'sat,'.
+  virtual bool is_raid_dev_type(const char * type) const;
+
 protected:
   /// Return standard ATA device.
   virtual ata_device * get_ata_device(const char * name, const char * type) = 0;
@@ -1020,6 +1030,10 @@ protected:
   /// Override only if platform needs special handling.
   virtual nvme_device * get_snt_device(const char * type, scsi_device * scsidev);
   //{ implemented in scsinvme.cpp }
+
+  /// Return filter for Intelliprop controllers.
+  virtual ata_device * get_intelliprop_device(const char * type, ata_device * atadev);
+  //{ implemented in dev_intelliprop.cpp }
 
   /// Return JMB93x->ATA filter.
   /// Device 'smartdev' is used for ATA or SCSI R/W access.

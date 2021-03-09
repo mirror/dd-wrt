@@ -3,17 +3,17 @@
 #
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.60])
-AC_INIT([smartmontools], [7.1], [smartmontools-support@listi.jpberlin.de])
+AC_INIT([smartmontools], [7.2], [smartmontools-support@listi.jpberlin.de])
 AM_INIT_AUTOMAKE([1.10 foreign])
 LT_INIT
 LT_LIB_M
 
 # Version of drive database branch
-smartmontools_drivedb_version=7.0
+smartmontools_drivedb_version=7.2
 
-smartmontools_cvs_tag=`echo '$Id: configure.ac 5022 2019-12-30 15:00:49Z chrfranke $'`
-smartmontools_release_date=2019-12-30
-smartmontools_release_time="15:00:11 UTC"
+smartmontools_cvs_tag=`echo '$Id: configure.ac 5155 2020-12-30 16:49:18Z chrfranke $'`
+smartmontools_release_date=2020-12-30
+smartmontools_release_time="16:48:30 UTC"
 
 AC_DEFINE_UNQUOTED(SMARTMONTOOLS_CONFIGURE_ARGS, "$ac_configure_args",             [smartmontools Configure Arguments])
 AC_DEFINE_UNQUOTED(SMARTMONTOOLS_RELEASE_DATE,   "$smartmontools_release_date",    [smartmontools Release Date])
@@ -22,7 +22,7 @@ AC_DEFINE_UNQUOTED(CONFIG_H_CVSID,               "$smartmontools_cvs_tag",      
 AC_DEFINE_UNQUOTED(PACKAGE_HOMEPAGE,             "https://www.smartmontools.org/", [smartmontools Home Page])
 
 AC_CONFIG_SRCDIR([smartctl.cpp])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 AM_MAINTAINER_MODE
 
@@ -68,11 +68,8 @@ AC_MSG_CHECKING([whether this is a build from SVN])
 is_svn_build=no
 svn_deps=
 if test -f "$srcdir/.svn/wc.db"; then
-  # SVN 1.7, 1.8 working copy
+  # SVN >= 1.7 working copy
   svn_deps='${srcdir}/.svn/wc.db'
-elif test -f "${srcdir}/.svn/entries"; then
-  # SVN <= 1.6 working copy (SVN 1.7 has empty entries file)
-  svn_deps='${srcdir}/.svn/entries'
 fi
 if test -n "$svn_deps"; then
   is_svn_build=unknown
@@ -113,12 +110,6 @@ case "$host" in
     ;;
   *-*-netbsd*|*-*-openbsd*)
     AC_CHECK_HEADERS([dev/ata/atavar.h])
-    ;;
-  *-*-cygwin*|*-*-mingw*)
-    # Check for Windows DDK header files
-    AC_CHECK_HEADERS([ntdddisk.h ddk/ntdddisk.h], [], [], [AC_INCLUDES_DEFAULT
-#include <windows.h>
-])
     ;;
 esac
 
@@ -392,6 +383,7 @@ AC_ARG_WITH(nvme-devicescan,
   [AS_HELP_STRING([--with-nvme-devicescan@<:@=yes|no@:>@],
     [Include NVMe devices in smartd DEVICESCAN [Linux,Windows:yes;Others:no]])])
 
+# TODO: Remove after smartmontools 7.3
 AC_ARG_WITH(solaris-sparc-ata,
   [AS_HELP_STRING([--with-solaris-sparc-ata@<:@=yes|no@:>@],
     [Enable legacy ATA support on Solaris SPARC (requires os_solaris_ata.s from SVN repository) [no]])])
@@ -424,20 +416,10 @@ Please send info about your system to $PACKAGE_BUGREPORT.])) ;;
   *) AC_MSG_ERROR([Invalid option '--with-signal-func=$with_signal_func']) ;;
 esac
 
-# TODO: Remove after smartmontools 6.7
-AC_ARG_WITH(working-snprintf,
-  [AS_HELP_STRING([--with-working-snprintf@<:@=yes|no@:>@],
-    [Function snprintf() handles output truncation as specified by C99 [yes]])],
-  [], [with_working_snprintf=yes])
-
-if test "$with_working_snprintf" = "yes"; then
-  AC_DEFINE(HAVE_WORKING_SNPRINTF, 1, [Define to 1 if the `snprintf' function is sane.]) dnl `vim syntax
-fi
-
-case "$with_working_snprintf:$host_os: $CPPFLAGS $CXXFLAGS" in
-  yes:mingw*:*\ -[[DU]]__USE_MINGW_ANSI_STDIO*)
+case "$host_os: $CPPFLAGS $CXXFLAGS" in
+  mingw*:*\ -[[DU]]__USE_MINGW_ANSI_STDIO*)
     ;;
-  yes:mingw*:*)
+  mingw*:*)
     # Older MinGW (4.6.3) do not properly define PRI?64 if __USE_MINGW_ANSI_STDIO is set.
     # Newer MinGW (4.9.1) set __USE_MINGW_ANSI_STDIO in first C++ include which may be too late.
     # Set __USE_MINGW_ANSI_STDIO always and fail if not fully supported.
@@ -457,7 +439,7 @@ case "$with_working_snprintf:$host_os: $CPPFLAGS $CXXFLAGS" in
     if test "$result" != "yes"; then
       AC_MSG_ERROR([
 This version of $CXX does not support __USE_MINGW_ANSI_STDIO.
-Use option '--without-working-snprintf' to skip this check.
+Use option 'CPPFLAGS=-U__USE_MINGW_ANSI_STDIO' to skip this check.
 Please send info about your system to $PACKAGE_BUGREPORT.
 ])
     fi
@@ -599,6 +581,17 @@ else
 fi
 AM_CONDITIONAL(NEED_REGEX, [test "$need_regex" = "yes"])
 
+# TODO: Remove after smartmontools 7.2
+AC_ARG_WITH(working-snprintf,
+  [AS_HELP_STRING([--with-working-snprintf], [(removed)])],
+  [ if test "$withval" != "yes"; then
+      AC_MSG_ERROR([
+The option '--without-working-snprintf' is no longer supported.
+If you still need support for pre-C99 snprintf(), please inform
+$PACKAGE_BUGREPORT.
+])
+    fi])
+
 AC_SUBST(releaseversion,['${PACKAGE}-${VERSION}'])
 AC_SUBST(smartmontools_release_date)
 AC_SUBST(smartmontools_release_time)
@@ -607,7 +600,7 @@ AC_SUBST(smartmontools_release_time)
 os_libs=
 os_dltools='curl wget lynx svn'
 os_mailer=mail
-os_hostname="'hostname'"
+os_hostname="'hostname' 'uname -n'"
 os_dnsdomainname=
 os_nisdomainname="'domainname'"
 os_darwin=no
@@ -662,7 +655,7 @@ case "${host}" in
   *-*-cygwin*)
     os_deps='os_win32.o dev_areca.o'
     os_mailer='email'
-    os_hostname="'hostname' 'echo "'"${HOSTNAME?unset}"'"'"
+    os_hostname="'hostname' 'uname -n' 'echo "'"${HOSTNAME?unset}"'"'"
     os_dnsdomainname="'dnsdomainname' 'hostname -d' 'echo "'"${USERDNSDOMAIN?unset}"'"'"
     os_nisdomainname=
     os_win32=yes
@@ -775,7 +768,7 @@ if test "$GXX" = "yes"; then
     AC_MSG_CHECKING([whether $CXX supports $option])
     save_CXXFLAGS=$CXXFLAGS
     CXXFLAGS="$CXXFLAGS $option"
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM()], [res=yes], [res=no; CXXFLAGS=$save_CXXFLAGS])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM()], [res=yes], [res=no; CXXFLAGS=$save_CXXFLAGS])
     AC_MSG_RESULT([$res])
   done
 else
@@ -972,12 +965,20 @@ Use option '--without-nvme-devicescan' to suppress this warning.
 ])  ;;
 esac
 
-# TODO: Remove after smartmontools 6.7
-if test "$with_working_snprintf" != "yes"; then
+# TODO: Remove after smartmontools 7.2
+if test -n "$with_working_snprintf"; then
   AC_MSG_WARN([
-The option '--without-working-snprintf' is deprecated and will be removed
-in a future version of smartmontools.  If you still need support for
-pre-C99 snprintf(), please inform $PACKAGE_BUGREPORT.
+The option '--with-working-snprintf' is no longer needed and will be
+removed in a future version of smartmontools.
+])
+fi
+
+# TODO: Remove after smartmontools 7.3
+if test -n "$with_solaris_sparc_ata"; then
+  AC_MSG_WARN([
+The option '--with-solaris-sparc-ata' is deprecated and will be
+removed in a future version of smartmontools.  If this option is
+still needed, please inform $PACKAGE_BUGREPORT.
 ])
 fi
 

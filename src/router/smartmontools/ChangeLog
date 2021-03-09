@@ -1,4 +1,472 @@
-$Id: ChangeLog 5022 2019-12-30 15:00:49Z chrfranke $
+$Id: ChangeLog 5155 2020-12-30 16:49:18Z chrfranke $
+
+2020-12-30  Christian Franke  <franke@computer.org>
+
+	smartmontools 7.2
+
+2020-12-30  Christian Franke  <franke@computer.org>
+
+	configure.ac, update-smart-drivedb.in: Use RELEASE_7_2_DRIVEDB for
+	drivedb.h updates.
+
+	Create new branch RELEASE_7_2_DRIVEDB.
+
+2020-12-29  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Micron 5100 Pro / 52x0 / 5300 SSDs: 5300HC.
+	- Samsung based SSDs: PM871 MZY* (#1384), 870 QVO (#1388).
+	- Silicon Motion based SSDs: ADATA IMSS332 (#1399),
+	  ADATA SU650NS38 (#1386), JAJS600M1TB (#1414), NFN025SA31T.
+	- Silicon Motion based OEM SSDs: Dogfish,
+	  Intenso portable (GH issues/81, GH pull/82),
+	  Intenso Sata III (#1412), KingDian S280 (#1402).
+	- SK hynix SATA SSDs: SC300 (#1407).
+	- Hitachi Travelstar 5K500.B: *SA02 (#1408).
+	- Fix '-v' comments.  Remove trailing whitespace.
+
+	scsinvme.cpp: Realtek: Limit NVMe log transfer size to 512 bytes.
+
+2020-12-21  Christian Franke  <franke@computer.org>
+
+	smartctl.8.in: Add EXPERIMENTAL notes for SCSI variants of
+	'-n POWERMODE' and '-s standby,...'.  Fix syntax.
+
+	update-smart-drivedb.in: Add 'Accept-Encoding' HTTP header when
+	curl is used.  This avoids caching problems with svn URL.
+
+	update-smart-drivedb.in: Print output of 'gpg --import' if '-v' is
+	specified.
+
+	update-smart-drivedb.in: Extend expiration year of current database
+	signing key from 2020 to 2025 (#1278).
+
+2020-12-20  Christian Franke  <franke@computer.org>
+
+	configure.ac: Use AC_CONFIG_HEADERS instead of obsolete
+	AC_CONFIG_HEADER.  This silences a warning from new autoconf 2.70.
+	Print 'deprecated' warning for '--with-solaris-sparc-ata'.
+
+	drivedb.h:
+	- Intel X25-E SSDs: IBM OEM (#1401).
+	- Seagate BarraCuda 3.5: 12TB
+	- Seagate Exos X16: 10TB (#1406, GH issues/63), 12TB.
+	- Seagate Archive HDD: Rename to ...(SMR) (#1392).
+	- Seagate BarraCuda, Enterprise Capacity, Exos, IronWolf:
+	  Add attributes 18, 200.
+	- Seagate IronWolf Pro 125 SSDs (#1396).
+	- Unify indentation.
+
+2020-12-15  Douglas Gilbert  <dgilbert@interlog.com>
+
+	smartctl: expand -s option with standby,now and standby,off (or
+	standby,0) to include SCSI. Modified code from Simon Fairweather
+	found in github pull #72. As per my 20201205 patch, this
+	area (i.e. SCSI power conditions including START and STOP) needs
+	to be revisited; leave that until after the 7.2 release.
+
+2020-12-14  Alex Samorukov  <samm@os2.kiev.ua>
+
+	drivedb.h: add Sony HD-E1B (#1410)
+
+2020-12-12  Alex Samorukov  <samm@os2.kiev.ua>
+
+	Add automake 1.16.2 to the list of tested versions
+	os_freebsd.cpp: number of minor patches from Christian Franke
+
+2020-12-05  Douglas Gilbert  <dgilbert@interlog.com>
+
+	smartctl: expand -n option to include SCSI. Code from Simon
+	Fairweather. Still thinking about how to handle SCSI "stopped"
+	state which requires the user to send a SCSI command to restart.
+
+2020-12-04  Christian Franke  <franke@computer.org>
+
+	nvmeprint.cpp: Print Log Page Attributes.  Print NVMe 1.4 features.
+
+	nvmecmds.cpp, nvmecmds.h, nvmeprint.cpp: Fix check for LPO support.
+
+2020-12-03  Christian Franke  <franke@computer.org>
+
+	nvmeprint.cpp: Print NVMe version.
+
+	nvmecmds.cpp, nvmecmds.h, nvmeprint.cpp: Limit NVMe log transfer size
+	to one page.  This should fix device or kernel crashes on '-l error'
+	if log has more than 64 entries (#1404, Debian Bug 947803).
+
+	nvmeprint.cpp: Read only requested number of entries from NVMe
+	Error Information Log.
+
+2020-11-23  Christian Franke  <franke@computer.org>
+
+	smartd.cpp: Allow to specify a delay limit for staggered self-tests.
+	smartd.conf.5.in: Document new functionality.
+
+2020-11-21  Christian Franke  <franke@computer.org>
+
+	smartd.cpp: Add staggered self-tests (#310).
+	smartd.conf.5.in: Document new functionality.
+
+2020-11-17  Dmitriy Potapov <atomsk+oss@google.com>
+
+	smartd.cpp: Don't write attrlog when device is skipped due to idle or
+	standby mode, or if attributes were not read for any other reason
+	(GH pull/75).
+
+2020-11-09  Christian Franke  <franke@computer.org>
+
+	smartd.cpp: Resolve symlinks before device names are checked for
+	duplicates (#1390).
+	dev_interface.cpp, dev_interface.h: Add 'get_unique_dev_name()'
+	and 'is_raid_dev_type()' to support platform specific modifications.
+	smartd.conf.5.in: Document new functionality.
+
+2020-11-07  Christian Franke  <franke@computer.org>
+
+	json.cpp, json.h: Add YAML support.
+	smartctl.cpp: Add '--json=y' option.
+	smartctl.8.in: Document new option.
+
+	smartctl.8.in, smartd.conf.5.in: Remove EXPERIMENTAL notes for
+	features added before 7.0.
+	update-smart-drivedb.8.in: Add missing EXPERIMENTAL note.
+
+2020-11-01  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Phison Driven SSDs: KINGSTON OM4P0S3* (#1374), OMSP0S3* (#1375).
+	- InnoDisk iCF 9000 / 1SE2 Cards: Rename entry. Add 1SE2 H (#1351).
+	- Marvell based SanDisk SSDs: 2TB SDSSDH3 (GH issues/67, GH pull/69),
+	  WD Blue SSD WDS100T2B0A (#1378).
+	- SanDisk based SSDs: SDSA6GM*.
+	- Toshiba 2.5" HDD MK..76GSX/GS001A (GH pull/58).
+	- Toshiba L200 (CMR), Toshiba L200 (SMR) (#1228, patch from #1377).
+	- Western Digital Blue: Apple OEM (#1385).
+	- Western Digital Scorpio Blue Serial ATA: 320 GB (patch from #888).
+
+	os_win32.cpp: Decode Windows 10 20H2 and Server 2004, 20H2
+	build numbers.
+
+2020-10-29  Alex Samorukov  <samm@os2.kiev.ua>
+
+	os_freebsd.cpp: skip SCSI subenclosure devices on scan (#1299)
+
+2020-10-24  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- HGST Travelstar Z5K1000: *B*610 variant.
+	- Hitachi Travelstar 7K320: HITACHI*SA60 variant (#983).
+	- Hitachi/HGST Deskstar 5K4000: Rename entry. Add HGST (#1060).
+	- HGST Deskstar NAS: 8TB.
+	- Hitachi/HGST Ultrastar 5K3000 (#1055).
+	- Hitachi Ultrastar 7K3000: Variant without vendor name (#1361).
+	- Hitachi/HGST Ultrastar 7K4000: Variant without vendor name (#1361).
+	- HGST Ultrastar HC310/320 (#1157, #1365).
+
+2020-10-19  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- ATP SATA III aMLC M.2 2242 SSD (based on patch from #1366).
+	- Silicon Motion based OEM SSDs: TCSUNBOW X3 (#1349),
+	  KingDian S370 (#1350), LDLC (#1353), Lenovo.
+	- SSSTC ER2 GD/CD Series SSDs (based on patch from #1376).
+
+2020-10-15  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Apacer SSDs (based on patch from #1202).
+	- Crucial/Micron MX500 SSDs (FW <= M3CR032): Remove entry (#1227).
+	- Crucial/Micron Client SSDs: Rename entry. Fix name of attribute 127.
+	  This prevents false 'Currently unreadable (pending) sectors' warnings
+	  from smartd (#1227, #1294, #1311, #1336).
+	- Intel 730 and DC S35x0/3610/3700 Series SSDs: *H* variant (#1363).
+	- Samsung based SSDs: 883 DCT (#1373).
+
+	os_win32.cpp: Fix removal of trailing blanks.
+	Silence misleading -Wstring-compare warning from g++ 10.2.0
+	(GCC Bugzilla 97336).
+
+2020-10-09  Christian Franke  <franke@computer.org>
+
+	scsiprint.cpp: Don't print 'Accumulated power on time' if no
+	option is specified (GH issues/65, regression from r5075).
+	Fix setting of 'any_output' (regression from r4188).
+
+	Based on patch from GH pull/66.
+
+2020-10-06  Christian Franke  <franke@computer.org>
+
+	Remove all occurrences of the throw() specifier.
+	This specifier is deprecated since C++11.
+
+2020-09-27  Christian Franke  <franke@computer.org>
+
+	update-smart-drivedb.in: Add '--branch' option.
+	Select signing key accordingly.
+	update-smart-drivedb.8.in: Document new option.
+
+2020-09-20  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Crucial/Micron BX/MX1/2/3/500, M5/600, 11/1300 SSDs: BX500 2TB,
+	  1100 with version suffix (#1178), 1300 without prefix (#1369).
+	- Micron 5100 Pro / 52x0 / 5300 SSDs: Add attribute 246.
+	- Phison Driven SSDs: Kingston A400 M.2 (#1362),
+	  Kingston OCP0S3* (#1370), Kingston OM8P0* (#1371).
+	- Kingston SSDNow UV400/500: UV500 M.2 (#1347).
+	- SAMSUNG SpinPoint N3U-3 (USB): Rename.
+	- USB: Samsung S1 Mini (0x04e8:0x2f06) (Debian Bug 964032).
+
+2020-09-19  Christian Franke  <franke@computer.org>
+
+	ataprint.cpp: Report unavailable TRIM command only for SSDs.
+
+2020-08-23  Christian Franke  <franke@computer.org>
+
+	drivedb.h: DEFAULT entry: Limit attribute 231 (Temperature_Celsius)
+	to HDDs.  Various SSDs use this attribute for a different purpose.
+
+	drivedb.h:
+	- Micron 5100 Pro / 52x0 / 5300 SSDs: Rename, add 5210 (#1356),
+	  5300 *TDT variant (#1355)
+	- Phison Driven SSDs: SSD Smartbuy 64GB and other sizes (#1359)
+	- Indilinx Barefoot_2/Everest/Martini based SSDs: OCZ-OCTANE (#1360)
+	- Marvell based SanDisk SSDs: Ultra 3D 4TB (#1358)
+	- Silicon Motion based SSDs: ACPI SED2QII-LP, Transcend 230
+	- Western Digital Gold: WD102KRYZ (#1357)
+
+2020-08-22  Christian Franke  <franke@computer.org>
+
+	smartd.service.in: Don't start smartd in virtualized environments
+	(GH issues/62).
+
+2020-08-22  Marko Hauptvogel  <marko.hauptvogel@googlemail.com>
+
+	smartd.service.in: Remove obsolete 'StandardOutput=syslog'.
+
+2020-07-11  Christian Franke  <franke@computer.org>
+
+	scsiprint.cpp: Add JSON values 'power_on_time.{hours,minutes}' to
+	'smartctl -a' output.  Add missing pout() -> jout() replacements.
+
+2020-07-10  Douglas Gilbert  <dgilbert@interlog.com>
+
+	scsiprint.cpp: Add "Accumulated power on time" entry to
+	  'smartctl -a' output. Previously this was only output
+	  when the '-x' option was given, together with other
+	  fields in the Background scan results log page. Now
+	  with the '-a' option "Accumulated power on time" is
+	  printed just before the "Manufactured in week ..." line.
+
+2020-07-06  Douglas Gilbert  <dgilbert@interlog.com>
+
+	scsiprint.cpp: Attempted fix to tickets 1272, 1331 and 1346
+	  The difficulty is handling SCSI log _sub_-pages that hold
+	  info about SSDs and newer hard drives, against older 
+	  devices (20 year old disks?) that do many and varied
+	  things when asked to list supported sub-pages. Add a
+	  heuristic and change some naming.
+
+2020-06-24  Alex Samorukov  <samm@os2.kiev.ua>
+
+	os_darwin.cpp: Fix NVMe log support, handle error codes,
+	  remove SMARTReadData call
+	os_darwin.h: Cleanup, remove all private functions
+
+2020-06-23  Harry Mallon  <hjmallon@gmail.com>
+
+	os_darwin.cpp, os_darwin.h: Add support for NVMe logs.
+	smartctl.8.in: Update related documentation.
+
+2020-06-20  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Crucial/Micron BX/MX1/2/3/500, M5/600, 11/1300 SSDs: Rename,
+	  add 1300
+	- Plextor M3/M5/M6/M7 Series SSDs: Rename, *M6G variant, *M7CV (#991)
+	- Silicon Motion based SSDs: ADATA SU650 (#1243), ADATA SU655
+	- Seagate IronWolf Pro: 16TB (#1341)
+	- USB: Toshiba (0x0930:0xa002)
+	- USB: ADATA HD330 (0x125f:0xa83a)
+	- USB: AkiTio NT2 (0x2ce5:0x0014)
+
+	os_solaris.cpp: Suggest '-d sat' if '-d ata' is specified.
+
+2020-06-18  Christian Franke  <franke@computer.org>
+
+	scsiprint.cpp: Fix JSON value 'scsi_grown_defect_list'.
+
+	Thanks to Ryan Allgaier for the bug report.
+
+2020-06-05  Alex Samorukov  <samm@os2.kiev.ua>
+
+	os_netbsd.cpp: fix timeout handling
+	os_openbsd.cpp (based on Marek Benc GH request):
+	- Migrate to the new API (#102)
+	- Fix for the ATA registries on the BE arc (GH PR #56)
+	- Fix timeout handling (GH PR #56)
+
+2020-06-01  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Crucial/Micron MX500 SSDs: Detect firmware <= M3CR032 (#1336)
+	- Micron 5100 Pro / 5200 / 5300 SSDs: Rename, add 5300 (#1326)
+	- Phison Driven SSDs: Corsair Force LE200
+	- JMicron/Maxiotek based SSDs: Rename, add KingSpec NT
+	- Plextor M3/M5/M6 Series SSDs: *M6V variant
+	- Seagate IronWolf: *VN001 variant (GH pull/55)
+	- WD Blue / Red / Green SSDs: Rename, add WD Red SA500 (#1321)
+	- Western Digital Blue Mobile: re-add WD10JPZX (removed in r5054)
+	- USB: OWC Mercury Elite Pro Quad (0x1e91:0xa4a7) (patch from #1337)
+
+	os_win32.cpp: Decode Windows 10 2004 build number.
+
+2020-05-25  Christian Franke  <franke@computer.org>
+
+	ataprint.cpp: Print TRIM Command support info.
+	Print Zoned Device Capabilities if reported.
+	May also be useful to detect SMR HDDs (#1313).
+
+2020-05-24  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Phison Driven SSDs: GIGABYTE GP-GSTFS31,
+	  KINGSTON DC450R/DC500M/DC500R 7.68TB (#1329), PNY CS900 (#1281)
+	- Intel 320 Series SSDs: HP OEM (#1332)
+	- JMicron based SSDs: ADATA SP600NS34 (GH pull/53),
+	  ADATA OEM IM2S3138E* (#1298)
+	- Plextor M3/M5/M6 Series SSDs: allow extra space (#1293)
+	- Samsung based SSDs: 860 EVO 4TB, 850/860 PRO 2/4TB (#1316)
+	- Marvell based SanDisk SSDs: SDSSDA-*
+	- Silicon Motion based SSDs: Corsair Force LX (#1320)
+	- WD Blue and Green SSDs: WDBNCE* (#1129)
+
+	drivedb.h: Add separate entries for WDC SMR drives (#1313).
+	- Western Digital Blue (SMR)
+	- Western Digital Black (SMR)
+	- Western Digital Red: Move WD60EFAX to ...
+	- Western Digital Red (SMR): ... here, add 2TB, 3TB, 4TB
+	- Western Digital Blue Mobile: Move  WD[12]0SPZX to ...
+	- Western Digital Blue Mobile (SMR): ... here
+
+2020-04-23  Christian Franke  <franke@computer.org>
+
+	drivedb.h: USB: Realtek RTL9210 (0x0bda:0x9210)
+
+	scsinvme.cpp: Add '-d sntrealtek' device type for Realtek RTL9210
+	USB to NVMe bridges (#1315).
+	dev_interface.cpp: Update help text.
+	smartctl.8.in, smartd.conf.5.in: Document new option.
+
+	Thanks to Plugable Support for providing a NVMe enclosure.
+
+2020-04-05  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Crucial/Micron MX500 SSDs: Detect also older firmware (#1311)
+	- Silicon Motion based SSDs: Add attributes 159 and 231 (#1304)
+	- Seagate BarraCuda 3.5: Rename, merge entries,
+	  add ST2000DM008 (#1179, #1252, #1286), ST10000DM0004
+	- Seagate Exos X14: ST12000NM0538 (#1256)
+	- Seagate Exos X16 (#1291, #1301)
+	- Seagate Skyhawk (#1039)
+
+2020-04-04  Christian Franke  <franke@computer.org>
+
+	dev_jmb39x_raid.cpp: Add '-d jms56x,...' device type for protocol
+	variant used by JMS562 USB to SATA RAID bridges (#1314).
+	dev_interface.cpp: Parse '-d jms56x*[+TYPE]' option, update help text.
+	smartctl.8.in, smartd.conf.5.in: Document new option.
+
+2020-03-29  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Western Digital Ultrastar He10/12: Rename, add He12
+	  (#1308, GH issues/51)
+	- Western Digital Ultrastar DC HC530 (#1257)
+	- Western Digital Green: WD5000AZRX (#1072)
+	- Western Digital Red: WD120EMFZ (GH issues/49)
+	- Western Digital Purple: WD*PURZ, WD80PUZX (#1057)
+	- Western Digital Gold: WD6003FRYZ
+	- Western Digital Blue Mobile: Rename, re-add WD10JPVX
+	  (removed in r4991)
+	- Western Digital Elements / My Passport (USB, AF):
+	  WD10SMZW (#1088), WD50NDZW
+
+2020-03-28  Christian Franke  <franke@computer.org>
+
+	drivedb.h:
+	- Crucial/Micron BX/MX1/2/3/500, M5/600, 1100 SSDs: CT1000BX500SSD1,
+	  MTFDDAK* (#1276)
+	- Kingston SSDNow UV400/500: Rename, add UV500 (#1126)
+	- Silicon Motion based SSDs: KingDian S100/200, Kingdian S280 1TB,
+	  Kingston KC600 (#1304), Transcend MTS420S (#1280),
+	  Transcend 360S (#1282)
+	- Seagate IronWolf Pro: ST4000NE001
+	- Western Digital RE3 Serial ATA: WD*BYS-* variant
+	- Western Digital Gold: WD4003FRYZ (#1289), WD8004FRYZ (#1287)
+	- USB: 0x0860:0x0001 (#1295)
+	- USB: JMicron (0x152d:0x1337) (#1296)
+	- USB: Corsair SSD & HDD Cloning Kit (0x0984:0x0301) (#1307)
+
+2020-03-25  Christian Franke  <franke@computer.org>
+
+	smartd.cpp: Set 'SMARTD_DEVICETYPE=auto' if DEVICESCAN is used
+	without '-d TYPE' directive (GH issues/52).
+
+2020-03-05  Christian Franke  <franke@computer.org>
+
+	Silence some cppcheck 1.85 warnings.
+	nvmeprint.cpp,  smartd.cpp: knownConditionTrueFalse.
+	scsicmds.cpp, scsiprint.cpp: variableScope.
+	scsicmds.h: Remove unused function supported_vpd_pages::num_pages().
+
+	cppcheck.sh: Remove no longer used HAVE_*NTDDDISK_H defines.
+
+2020-03-01  Christian Franke  <franke@computer.org>
+
+	dev_intelliprop.cpp, dev_interface.cpp, dev_interface.h: Move option
+	parsing to get_intelliprop_device().  Move this function to class
+	smart_interface.
+	dev_intelliprop.h: Remove file.
+	Makefile.am, os_win32/vc14/smart*.vcxproj*: Remove old file.
+
+	configure.ac: Fail if '--without-working-snprintf' is specified.
+	utility.cpp, utility.h: Remove support for pre-C99 snprintf().
+
+	os_win32.cpp: Remove backward compatibility fixes for include files
+	of very old versions of Cygwin, MinGW and MSVC.
+	configure.ac, Makefile.am: Remove check for DDK include files.
+
+2020-02-25  Christian Franke  <franke@computer.org>
+
+	Silence some warnings from g++ 9.2:
+	atacmds.cpp: -Waddress-of-packed-member.
+	os_win32.cpp: -Wcast-function-type.
+	smartd.cpp: -Wformat-truncation.
+
+2020-02-25  Fabrice Fontaine  <fontaine.fabrice@gmail.com>
+
+	configure.ac: fix stack-protector detection.
+	Use AC_LINK_IFELSE instead of AC_COMPILE_IFELSE to check for
+	stack-protector availability as some compilers could missed the
+	needed library (-lssp or -lssp_nonshared) at linking step.
+
+2020-01-11  Christian Franke  <franke@computer.org>
+
+	dev_jmb39x_raid.cpp: Add '-d jmb39x-q,...' device type for JMB39x
+	protocol variant used by QNAP-TR004 NAS (#1283).
+	dev_interface.cpp: Update help text.
+	smartctl.8.in, smartd.conf.5.in: Document '-q' suffix.
+
+2020-01-02  Christian Franke  <franke@computer.org>
+
+	configure.ac: Use 'uname -n' if 'hostname' is not available
+	(GH PR 44).  Remove check for SVN < 1.7.
+
+2020-01-01  Christian Franke  <franke@computer.org>
+
+	Happy New Year!  Update copyright year in version info.
 
 2019-12-30  Christian Franke  <franke@computer.org>
 

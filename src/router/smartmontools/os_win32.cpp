@@ -3,7 +3,7 @@
  *
  * Home page of code is: https://www.smartmontools.org
  *
- * Copyright (C) 2004-19 Christian Franke
+ * Copyright (C) 2004-20 Christian Franke
  *
  * Original AACRaid code:
  *  Copyright (C) 2015    Nidhi Malhotra <nidhi.malhotra@pmcs.com>
@@ -43,31 +43,9 @@ extern unsigned char failuretest_permissive;
 #endif
 
 #include <stddef.h> // offsetof()
-#include <io.h> // access()
 
-// WIN32_LEAN_AND_MEAN may be required to prevent inclusion of <winioctl.h>
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
-#if HAVE_NTDDDISK_H
-// i686-pc-cygwin, i686-w64-mingw32, x86_64-w64-mingw32
-// (Missing: FILE_DEVICE_SCSI)
-#include <devioctl.h>
-#include <ntdddisk.h>
-#include <ntddscsi.h>
-#include <ntddstor.h>
-#elif HAVE_DDK_NTDDDISK_H
-// older i686-pc-cygwin, i686-pc-mingw32, i586-mingw32msvc
-// (Missing: IOCTL_IDE_PASS_THROUGH, IOCTL_ATA_PASS_THROUGH, FILE_DEVICE_SCSI)
-#include <ddk/ntdddisk.h>
-#include <ddk/ntddscsi.h>
-#include <ddk/ntddstor.h>
-#else
-// MSVC10, older MinGW
-// (Missing: IOCTL_SCSI_MINIPORT_*)
-#include <ntddscsi.h>
-#include <winioctl.h>
-#endif
+#include <ntddscsi.h> // IOCTL_ATA_PASS_THROUGH, IOCTL_SCSI_PASS_THROUGH, ...
 
 #ifndef _WIN32
 // csmisas.h and aacraid.h require _WIN32 but w32api-headers no longer define it on Cygwin
@@ -94,7 +72,7 @@ extern unsigned char failuretest_permissive;
 #define strnicmp strncasecmp
 #endif
 
-const char * os_win32_cpp_cvsid = "$Id: os_win32.cpp 5021 2019-12-29 15:28:32Z chrfranke $";
+const char * os_win32_cpp_cvsid = "$Id: os_win32.cpp 5105 2020-11-01 13:41:36Z chrfranke $";
 
 /////////////////////////////////////////////////////////////////////////////
 // Windows I/O-controls, some declarations are missing in the include files
@@ -136,35 +114,6 @@ STATIC_ASSERT(sizeof(ATA_PASS_THROUGH) == 12+1);
 
 // ATA PASS THROUGH (Win2003, XP SP2)
 
-#ifndef IOCTL_ATA_PASS_THROUGH
-
-#define IOCTL_ATA_PASS_THROUGH \
-  CTL_CODE(IOCTL_SCSI_BASE, 0x040B, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
-
-typedef struct _ATA_PASS_THROUGH_EX {
-  USHORT Length;
-  USHORT AtaFlags;
-  UCHAR PathId;
-  UCHAR TargetId;
-  UCHAR Lun;
-  UCHAR ReservedAsUchar;
-  ULONG DataTransferLength;
-  ULONG TimeOutValue;
-  ULONG ReservedAsUlong;
-  ULONG_PTR DataBufferOffset;
-  UCHAR PreviousTaskFile[8];
-  UCHAR CurrentTaskFile[8];
-} ATA_PASS_THROUGH_EX;
-
-#define ATA_FLAGS_DRDY_REQUIRED 0x01
-#define ATA_FLAGS_DATA_IN       0x02
-#define ATA_FLAGS_DATA_OUT      0x04
-#define ATA_FLAGS_48BIT_COMMAND 0x08
-#define ATA_FLAGS_USE_DMA       0x10
-#define ATA_FLAGS_NO_MULTIPLE   0x20 // Vista
-
-#endif // IOCTL_ATA_PASS_THROUGH
-
 STATIC_ASSERT(IOCTL_ATA_PASS_THROUGH == 0x04d02c);
 STATIC_ASSERT(sizeof(ATA_PASS_THROUGH_EX) == SELECT_WIN_32_64(40, 48));
 
@@ -202,56 +151,11 @@ STATIC_ASSERT(sizeof(SCSI_PASS_THROUGH_DIRECT) == SELECT_WIN_32_64(44, 56));
 #endif // IOCTL_SCSI_MINIPORT_SMART_VERSION
 
 STATIC_ASSERT(IOCTL_SCSI_MINIPORT == 0x04d008);
+STATIC_ASSERT(IOCTL_SCSI_MINIPORT_SMART_VERSION == 0x1b0500);
 STATIC_ASSERT(sizeof(SRB_IO_CONTROL) == 28);
 
 
 // IOCTL_STORAGE_QUERY_PROPERTY
-
-#ifndef IOCTL_STORAGE_QUERY_PROPERTY
-
-#define IOCTL_STORAGE_QUERY_PROPERTY \
-  CTL_CODE(IOCTL_STORAGE_BASE, 0x0500, METHOD_BUFFERED, FILE_ANY_ACCESS)
-
-typedef struct _STORAGE_DEVICE_DESCRIPTOR {
-  ULONG Version;
-  ULONG Size;
-  UCHAR DeviceType;
-  UCHAR DeviceTypeModifier;
-  BOOLEAN RemovableMedia;
-  BOOLEAN CommandQueueing;
-  ULONG VendorIdOffset;
-  ULONG ProductIdOffset;
-  ULONG ProductRevisionOffset;
-  ULONG SerialNumberOffset;
-  STORAGE_BUS_TYPE BusType;
-  ULONG RawPropertiesLength;
-  UCHAR RawDeviceProperties[1];
-} STORAGE_DEVICE_DESCRIPTOR;
-
-typedef enum _STORAGE_QUERY_TYPE {
-  PropertyStandardQuery = 0,
-  PropertyExistsQuery,
-  PropertyMaskQuery,
-  PropertyQueryMaxDefined
-} STORAGE_QUERY_TYPE;
-
-typedef enum _STORAGE_PROPERTY_ID {
-  StorageDeviceProperty = 0,
-  StorageAdapterProperty,
-  StorageDeviceIdProperty,
-  StorageDeviceUniqueIdProperty,
-  StorageDeviceWriteCacheProperty,
-  StorageMiniportProperty,
-  StorageAccessAlignmentProperty
-} STORAGE_PROPERTY_ID;
-
-typedef struct _STORAGE_PROPERTY_QUERY {
-  STORAGE_PROPERTY_ID PropertyId;
-  STORAGE_QUERY_TYPE QueryType;
-  UCHAR AdditionalParameters[1];
-} STORAGE_PROPERTY_QUERY;
-
-#endif // IOCTL_STORAGE_QUERY_PROPERTY
 
 STATIC_ASSERT(IOCTL_STORAGE_QUERY_PROPERTY == 0x002d1400);
 STATIC_ASSERT(sizeof(STORAGE_DEVICE_DESCRIPTOR) == 36+1+3);
@@ -452,7 +356,7 @@ public:
       m_fh(INVALID_HANDLE_VALUE)
     { }
 
-  virtual ~win_smart_device() throw();
+  virtual ~win_smart_device();
 
   virtual bool is_open() const;
 
@@ -474,7 +378,7 @@ private:
 
 // Common routines for devices with HANDLEs
 
-win_smart_device::~win_smart_device() throw()
+win_smart_device::~win_smart_device()
 {
   if (m_fh != INVALID_HANDLE_VALUE)
     ::CloseHandle(m_fh);
@@ -1177,10 +1081,11 @@ static int get_identify_from_device_property(HANDLE hdevice, ata_identify_device
   }
 
   if (data.desc.ProductIdOffset) {
-    while (i > 1 && model[i-2] == ' ') // Keep last blank from VendorId
+    // Keep only first trailing blank after VendorId
+    while (i > 0 && model[i-1] == ' ' && (i < 2 || model[i-2] == ' '))
       i--;
     // Ignore VendorId "ATA"
-    if (i <= 4 && !strncmp(model, "ATA", 3) && (i == 3 || model[3] == ' '))
+    if (i <= 4 && !memcmp(model, "ATA", 3) && (i == 3 || model[3] == ' '))
       i = 0;
     for (unsigned j = 0; i < sizeof(model)-1 && data.raw[data.desc.ProductIdOffset+j]; i++, j++)
       model[i] = data.raw[data.desc.ProductIdOffset+j];
@@ -1415,7 +1320,7 @@ class win_ata_device
 public:
   win_ata_device(smart_interface * intf, const char * dev_name, const char * req_type);
 
-  virtual ~win_ata_device() throw();
+  virtual ~win_ata_device();
 
   virtual bool open();
 
@@ -1453,7 +1358,7 @@ win_ata_device::win_ata_device(smart_interface * intf, const char * dev_name, co
 {
 }
 
-win_ata_device::~win_ata_device() throw()
+win_ata_device::~win_ata_device()
 {
 }
 
@@ -2392,7 +2297,7 @@ public:
   win_csmi_device(smart_interface * intf, const char * dev_name,
     const char * req_type);
 
-  virtual ~win_csmi_device() throw();
+  virtual ~win_csmi_device();
 
   virtual bool open();
 
@@ -2421,7 +2326,7 @@ win_csmi_device::win_csmi_device(smart_interface * intf, const char * dev_name,
 {
 }
 
-win_csmi_device::~win_csmi_device() throw()
+win_csmi_device::~win_csmi_device()
 {
   if (m_fh != INVALID_HANDLE_VALUE)
     CloseHandle(m_fh);
@@ -3429,7 +3334,7 @@ public /*extends*/ win_smart_device
 public:
   win_aacraid_device(smart_interface *intf, const char *dev_name,unsigned int ctrnum, unsigned int target, unsigned int lun);
 
-  virtual ~win_aacraid_device() throw();
+  virtual ~win_aacraid_device();
 
   virtual bool open();
 
@@ -3458,7 +3363,7 @@ win_aacraid_device::win_aacraid_device(smart_interface * intf,
   set_info().dev_type  = strprintf("aacraid,%d,%d,%d", m_ctrnum, m_lun, m_target);
 }
 
-win_aacraid_device::~win_aacraid_device() throw()
+win_aacraid_device::~win_aacraid_device()
 {
 }
 
@@ -4033,7 +3938,7 @@ private:
 static bool is_wow64()
 {
   BOOL (WINAPI * IsWow64Process_p)(HANDLE, PBOOL) =
-    (BOOL (WINAPI *)(HANDLE, PBOOL))
+    (BOOL (WINAPI *)(HANDLE, PBOOL))(void *)
     GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsWow64Process");
   if (!IsWow64Process_p)
     return false;
@@ -4058,7 +3963,7 @@ std::string win_smart_interface::get_os_version_str()
   // Starting with Windows 8.1, GetVersionEx() does no longer report the
   // actual OS version.  RtlGetVersion() is not affected.
   LONG /*NTSTATUS*/ (WINAPI /*NTAPI*/ * RtlGetVersion_p)(LPOSVERSIONINFOEXW) =
-    (LONG (WINAPI *)(LPOSVERSIONINFOEXW))
+    (LONG (WINAPI *)(LPOSVERSIONINFOEXW))(void *)
     GetProcAddress(GetModuleHandleA("ntdll.dll"), "RtlGetVersion");
 
   OSVERSIONINFOEXW vi; memset(&vi, 0, sizeof(vi));
@@ -4100,6 +4005,8 @@ std::string win_smart_interface::get_os_version_str()
           case 17763:   w = "w10-1809"; break;
           case 18362:   w = "w10-1903"; break;
           case 18363:   w = "w10-1909"; break;
+          case 19041:   w = "w10-2004"; break;
+          case 19042:   w = "w10-20H2"; break;
           default:      w = "w10";
                         build = vi.dwBuildNumber; break;
         } break;
@@ -4111,6 +4018,8 @@ std::string win_smart_interface::get_os_version_str()
           case 17763:   w = "2019";      break;
           case 18362:   w = "2019-1903"; break;
           case 18363:   w = "2019-1909"; break;
+          case 19041:   w = "2019-2004"; break;
+          case 19042:   w = "2019-20H2"; break;
           default:      w = (vi.dwBuildNumber < 17763
                           ? "2016"
                           : "2019");
@@ -4761,7 +4670,8 @@ void smart_interface::init()
   {
     // Remove "." from DLL search path if supported
     // to prevent DLL preloading attacks
-    BOOL (WINAPI * SetDllDirectoryA_p)(LPCSTR) = (BOOL (WINAPI *)(LPCSTR))
+    BOOL (WINAPI * SetDllDirectoryA_p)(LPCSTR) =
+      (BOOL (WINAPI *)(LPCSTR))(void *)
       GetProcAddress(GetModuleHandleA("kernel32.dll"), "SetDllDirectoryA");
     if (SetDllDirectoryA_p)
       SetDllDirectoryA_p("");
