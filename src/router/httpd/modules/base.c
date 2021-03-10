@@ -179,6 +179,18 @@ struct SIMPLEVAL {
 	int args;
 };
 
+static void checkError(FILE * in, char *name, int line)
+{
+	while (!feof(in)) {
+		unsigned char c = getc(in);
+		if (c == 0xa)
+			break;
+		if (c == 0x20 || c == '\t')
+			continue;
+		dd_syslog(LOG_ERR, "Error in FILE %s on line %d, this may lead to strange effects like non working save actions\n", name, line);
+	}
+}
+
 static struct variable **variables;
 void Initnvramtab()
 {
@@ -187,6 +199,7 @@ void Initnvramtab()
 	FILE *in;
 	int varcount = 0, len, i;
 	char *tmpstr;
+	int line;
 	struct variable *tmp;
 	static struct SIMPLEVAL simpleval[] = {
 		{ "WMEPARAM", "validate_wl_wme_params", 0 },
@@ -275,8 +288,9 @@ void Initnvramtab()
 			if (endswith(entry->d_name, ".nvramconfig")) {
 				asprintf(&buf, "%s/%s", directories[idx], entry->d_name);
 				in = fopen(buf, "rb");
-				free(buf);
+				line = 0;
 				if (in == NULL) {
+					free(buf);
 					return;
 				}
 				while (1) {
@@ -353,6 +367,7 @@ void Initnvramtab()
 					}
 					free(tmpstr);
 					skipFileString(in);	// todo: remove it
+					checkError(in, buf, line++);
 					// tmpstr = getFileString (in);
 					// tmp->ezc_flags = atoi (tmpstr);
 					// free (tmpstr);
@@ -361,6 +376,7 @@ void Initnvramtab()
 					variables[varcount++] = tmp;
 					variables[varcount] = NULL;
 				}
+				free(buf);
 				fclose(in);
 			}
 		}
