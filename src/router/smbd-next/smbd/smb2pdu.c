@@ -2799,7 +2799,11 @@ int smb2_open(struct ksmbd_work *work)
 		rc = 0;
 	} else {
 		file_present = true;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+		generic_fillattr(&init_user_ns, d_inode(path.dentry), &stat);
+#else
 		generic_fillattr(d_inode(path.dentry), &stat);
+#endif
 	}
 	if (stream_name) {
 		if (req->CreateOptions & FILE_DIRECTORY_FILE_LE) {
@@ -3066,7 +3070,11 @@ int smb2_open(struct ksmbd_work *work)
 
 	rc = ksmbd_vfs_getattr(&path, &stat);
 	if (rc) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+		generic_fillattr(&init_user_ns, d_inode(path.dentry), &stat);
+#else
 		generic_fillattr(d_inode(path.dentry), &stat);
+#endif
 		rc = 0;
 	}
 
@@ -3194,7 +3202,11 @@ int smb2_open(struct ksmbd_work *work)
 	}
 
 reconnected:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, FP_INODE(fp), &stat);
+#else
 	generic_fillattr(FP_INODE(fp), &stat);
+#endif
 
 	rsp->StructureSize = cpu_to_le16(89);
 	rcu_read_lock();
@@ -3897,9 +3909,6 @@ static int __query_dir(struct dir_context *ctx,
 	/* dot and dotdot entries are already reserved */
 	if (!strcmp(".", name) || !strcmp("..", name))
 		return 0;
-	/* Hide backup files, e.g. ~$file.doc */
-	if (!strncmp("~$", name, 2))
-		return 0;
 	if (ksmbd_share_veto_filename(priv->work->tcon->share_conf, name))
 		return 0;
 	if (!match_pattern(name, priv->search_pattern))
@@ -3979,9 +3988,15 @@ int smb2_query_dir(struct ksmbd_work *work)
 		goto err_out2;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	if (!(dir_fp->daccess & FILE_LIST_DIRECTORY_LE) ||
+			inode_permission(&init_user_ns, file_inode(dir_fp->filp),
+			MAY_READ | MAY_EXEC)) {
+#else
 	if (!(dir_fp->daccess & FILE_LIST_DIRECTORY_LE) ||
 			inode_permission(file_inode(dir_fp->filp),
 			MAY_READ | MAY_EXEC)) {
+#endif
 		ksmbd_err("no right to enumerate directory (%s)\n",
 			FP_FILENAME(dir_fp));
 		rc = -EACCES;
@@ -4416,8 +4431,11 @@ static int get_file_basic_info(struct smb2_query_info_rsp *rsp,
 	}
 
 	basic_info = (struct smb2_file_all_info *)rsp->Buffer;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, FP_INODE(fp), &stat);
+#else
 	generic_fillattr(FP_INODE(fp), &stat);
-
+#endif
 	basic_info->CreationTime = cpu_to_le64(fp->create_time);
 	time = ksmbd_UnixTimeToNT(stat.atime);
 	basic_info->LastAccessTime = cpu_to_le64(time);
@@ -4461,7 +4479,11 @@ static void get_file_standard_info(struct smb2_query_info_rsp *rsp,
 	struct kstat stat;
 
 	inode = FP_INODE(fp);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, inode, &stat);
+#else
 	generic_fillattr(inode, &stat);
+#endif
 
 	sinfo = (struct smb2_file_standard_info *)rsp->Buffer;
 	delete_pending = ksmbd_inode_pending_delete(fp);
@@ -4518,7 +4540,11 @@ static int get_file_all_info(struct ksmbd_work *work,
 	}
 
 	inode = FP_INODE(fp);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, inode, &stat);
+#else
 	generic_fillattr(inode, &stat);
+#endif
 
 	ksmbd_debug(SMB, "filename = %s\n", filename);
 	delete_pending = ksmbd_inode_pending_delete(fp);
@@ -4595,7 +4621,11 @@ static void get_file_stream_info(struct ksmbd_work *work,
 	ssize_t xattr_list_len;
 	int nbytes = 0, streamlen, stream_name_len, next, idx = 0;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, FP_INODE(fp), &stat);
+#else
 	generic_fillattr(FP_INODE(fp), &stat);
+#endif
 	file_info = (struct smb2_file_stream_info *)rsp->Buffer;
 
 	xattr_list_len = ksmbd_vfs_listxattr(path->dentry, &xattr_list);
@@ -4678,7 +4708,11 @@ static void get_file_internal_info(struct smb2_query_info_rsp *rsp,
 	struct smb2_file_internal_info *file_info;
 	struct kstat stat;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, FP_INODE(fp), &stat);
+#else
 	generic_fillattr(FP_INODE(fp), &stat);
+#endif
 	file_info = (struct smb2_file_internal_info *)rsp->Buffer;
 	file_info->IndexNumber = cpu_to_le64(stat.ino);
 	rsp->OutputBufferLength =
@@ -4704,7 +4738,11 @@ static int get_file_network_open_info(struct smb2_query_info_rsp *rsp,
 	file_info = (struct smb2_file_ntwrk_info *)rsp->Buffer;
 
 	inode = FP_INODE(fp);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, inode, &stat);
+#else
 	generic_fillattr(inode, &stat);
+#endif
 
 	file_info->CreationTime = cpu_to_le64(fp->create_time);
 	time = ksmbd_UnixTimeToNT(stat.atime);
@@ -4769,7 +4807,11 @@ static void get_file_compression_info(struct smb2_query_info_rsp *rsp,
 	struct smb2_file_comp_info *file_info;
 	struct kstat stat;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, FP_INODE(fp), &stat);
+#else
 	generic_fillattr(FP_INODE(fp), &stat);
+#endif
 
 	file_info = (struct smb2_file_comp_info *)rsp->Buffer;
 	file_info->CompressedFileSize = cpu_to_le64(stat.blocks << 9);
@@ -5788,7 +5830,11 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 #if ((LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) && \
 		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 37))) || \
 		(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0))
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+		rc = setattr_prepare(&init_user_ns, dentry, &attrs);
+#else
 		rc = setattr_prepare(dentry, &attrs);
+#endif
 #else
 		rc = inode_change_ok(inode, &attrs);
 #endif
@@ -5797,9 +5843,17 @@ static int set_file_basic_info(struct ksmbd_file *fp,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 		inode_lock(inode);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+		setattr_copy(&init_user_ns, inode, &attrs);
+#else
 		setattr_copy(inode, &attrs);
+#endif
 		attrs.ia_valid &= ~ATTR_CTIME;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+		rc = notify_change(&init_user_ns, dentry, &attrs, NULL);
+#else
 		rc = notify_change(dentry, &attrs, NULL);
+#endif
 		inode_unlock(inode);
 #else
 		mutex_lock(&inode->i_mutex);
