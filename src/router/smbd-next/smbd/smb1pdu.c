@@ -6004,8 +6004,13 @@ static int find_first(struct ksmbd_work *work)
 				dirpath, rc);
 		goto err_out;
 	} else {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+		if (inode_permission(&init_user_ns, d_inode(path.dentry),
+					MAY_READ | MAY_EXEC)) {
+#else
 		if (inode_permission(d_inode(path.dentry),
 					MAY_READ | MAY_EXEC)) {
+#endif
 			rc = -EACCES;
 			rsp_hdr->Status.CifsError = STATUS_ACCESS_DENIED;
 			goto err_out;
@@ -6706,7 +6711,11 @@ static int query_file_info(struct ksmbd_work *work)
 		goto err_out;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, FP_INODE(fp), &st);
+#else
 	generic_fillattr(FP_INODE(fp), &st);
+#endif
 
 	switch (le16_to_cpu(req_params->InformationLevel)) {
 
@@ -7646,7 +7655,11 @@ int smb_checkdir(struct ksmbd_work *work)
 		}
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, d_inode(path.dentry), &stat);
+#else
 	generic_fillattr(d_inode(path.dentry), &stat);
+#endif
 
 	if (!S_ISDIR(stat.mode)) {
 		rsp->hdr.Status.CifsError = STATUS_NOT_A_DIRECTORY;
@@ -7934,7 +7947,11 @@ static __le32 smb_query_info_path(struct ksmbd_work *work,
 		goto out;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, d_inode(path.dentry), st);
+#else
 	generic_fillattr(d_inode(path.dentry), st);
+#endif
 out:
 	ksmbd_revert_fsids(work);
 	smb_put_name(name);
@@ -8141,7 +8158,11 @@ int smb_open_andx(struct ksmbd_work *work)
 		}
 		file_present = false;
 	} else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+		generic_fillattr(&init_user_ns, d_inode(path.dentry), &stat);
+#else
 		generic_fillattr(d_inode(path.dentry), &stat);
+#endif
 
 	oplock_flags = le16_to_cpu(req->OpenFlags) &
 		(REQ_OPLOCK | REQ_BATCHOPLOCK);
@@ -8183,7 +8204,11 @@ int smb_open_andx(struct ksmbd_work *work)
 			ksmbd_err("cannot get linux path, err = %d\n", err);
 			goto out;
 		}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+		generic_fillattr(&init_user_ns, d_inode(path.dentry), &stat);
+#else
 		generic_fillattr(d_inode(path.dentry), &stat);
+#endif
 	} else if (file_present && ksmbd_vfs_inode_permission(path.dentry,
 			open_flags & O_ACCMODE, false)) {
 		err = -EACCES;
@@ -8389,7 +8414,11 @@ int smb_setattr(struct ksmbd_work *work)
 		err = 0;
 		goto out;
 	}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(&init_user_ns, d_inode(path.dentry), &stat);
+#else
 	generic_fillattr(d_inode(path.dentry), &stat);
+#endif
 	path_put(&path);
 	attrs.ia_valid = 0;
 	attrs.ia_mode = 0;

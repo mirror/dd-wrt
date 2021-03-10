@@ -75,8 +75,17 @@ static void lease_del_list(struct oplock_info *opinfo)
 {
 	struct lease_table *lb = opinfo->o_lease->l_lb;
 
+	if (!lb)
+		return;
+
 	spin_lock(&lb->lb_lock);
-	list_del_rcu(&opinfo->lease_entry);
+	if (list_empty(&opinfo->lease_entry)) {
+		spin_unlock(&lb->lb_lock);
+		return;
+	}
+
+	list_del_init(&opinfo->lease_entry);
+	opinfo->o_lease->l_lb = NULL;
 	spin_unlock(&lb->lb_lock);
 }
 
@@ -183,8 +192,11 @@ static void opinfo_del(struct oplock_info *opinfo)
 {
 	struct ksmbd_inode *ci = opinfo->o_fp->f_ci;
 
-	if (opinfo->is_lease)
+	if (opinfo->is_lease) {
+		write_lock(&lease_list_lock);
 		lease_del_list(opinfo);
+		write_unlock(&lease_list_lock);
+	}
 	write_lock(&ci->m_lock);
 	list_del_rcu(&opinfo->op_entry);
 	write_unlock(&ci->m_lock);
