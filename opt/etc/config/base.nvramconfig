@@ -352,7 +352,7 @@
  "l2tp_encrypt"  "MPPE Encryption"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "hb_server_ip"  "Heart Beat Server"  "MERGEIPADDRS" "TRUE" "0"
  "os_server"  "OS Server"  "NULL" "TRUE" "0"
- "stats_server"  "Stats Server"  "NULL"  "TRUE" "0"  EZC_SUPPORT
+ "stats_server"  "Stats Server"  "NULL"  "TRUE" "0"
  "ezc_enable"  "EZConfig"  "CHOICE" "2"  "0"  "1"  "FALSE" "3"
  "wl_afterburner"  "AfterBurner Technology"  "CHOICE" "3"  "on"  "off"  "auto"  "FALSE" "3"
  "routing_bgp_neighbor_ip" "bgp ip" "MERGEIPADDRS" "FALSE" "0"
