@@ -181,13 +181,17 @@ struct SIMPLEVAL {
 
 static void checkError(FILE * in, char *name, int line)
 {
+	int showonce = 0;
 	while (!feof(in)) {
-		unsigned char c = getc(in);
-		if (c == 0xa)
+		int c = getc(in);
+		if (c == EOF || c == 0xa)
 			break;
 		if (c == 0x20 || c == '\t')
 			continue;
-		dd_syslog(LOG_ERR, "Error in FILE %s on line %d, this may lead to strange effects like non working save actions\n", name, line);
+		if (!showonce) {
+			showonce = 1;
+			dd_syslog(LOG_ERR, "Error in FILE %s on line %d, this may lead to strange effects like non working save actions\n", name, line);
+		}
 	}
 }
 
