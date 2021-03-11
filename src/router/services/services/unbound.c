@@ -99,20 +99,21 @@ static void unbound_config(void)
 	}
 	fprintf(fp, "access-control: 127.0.0.0/8 allow\n");
 	fprintf(fp, "access-control: %s/%d allow\n", lan_ip, getmask(lan_mask));
-	char vifs[256];
-	getIfLists(vifs, 256);
-	char var[256], *wordlist, *next;
-	foreach(var, vifs, next) {
-		if (strcmp(get_wan_face(), var)
-		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
-			char *ipaddr = nvram_nget("%s_ipaddr", var);
-			char *netmask = nvram_nget("%s_netmask", var);
-			if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
-				fprintf(fp, "access-control: %s/%d allow\n", ipaddr, getmask(netmask));
+	if (port == 53) {
+		char vifs[256];
+		getIfLists(vifs, 256);
+		char var[256], *wordlist, *next;
+		foreach(var, vifs, next) {
+			if (strcmp(get_wan_face(), var)
+			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+				char *ipaddr = nvram_nget("%s_ipaddr", var);
+				char *netmask = nvram_nget("%s_netmask", var);
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
+					fprintf(fp, "access-control: %s/%d allow\n", ipaddr, getmask(netmask));
 
+			}
 		}
 	}
-
 	FILE *in = fopen("/etc/hosts", "rb");
 	char ip[32];
 	char name[128];
