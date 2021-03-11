@@ -10,7 +10,7 @@
  "dtag_vlan8" "DTAG VDSL VLAN 8 support" "CHOICE" "2" "0" "1" "FALSE" "0"
  "dtag_bng" "DTAG BNG support" "CHOICE" "2" "0" "1" "FALSE" "0"
  "wan_proto"  "WAN Protocol"  "CHOICE" "9" "disabled"  "dhcp"  "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat"  "3g"  "iphone"  "FALSE" "3"
- "ntp_server"  "NTP Server" "NULL" "TRUE" "0"    //not use 
+ "ntp_server"  "NTP Server" "NULL" "TRUE" "0"
  "ntp_mode"  "NTP Mode"  "CHOICE"  "2" "manual" "auto"  "TRUE" "0"
  "time_zone"  "Time Zone"  "NULL" "TRUE" "0"
  "ppp_username"  "Username"  "NAME"  "63"  "FALSE" "0"
@@ -19,7 +19,7 @@
  "ppp_demand"  "Connect on Demand"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "ppp_idletime"  "Max Idle Time"  "RANGE"  "0"  "9999"  "FALSE" "0"
  "ppp_redialperiod"  "Redial Period"  "RANGE"  "1"  "9999"  "FALSE" "0"
- "ppp_service"  "Service Name"  "NAME"  "63"  "TRUE" "3"  	//2003-03-19 by honor
+ "ppp_service"  "Service Name"  "NAME"  "63"  "TRUE" "3"
  "ppp_static"  "Enable /Disable Static IP"  "CHOICE" "2" "0"  "1"  "TRUE" "0"
  "ppp_compression"  " "  "CHOICE" "2" "0"  "1"  "TRUE" "0"
  "ppp_mppe"  "Mppe parameters"  "NAME"  "63"  "TRUE" "3"
@@ -201,7 +201,7 @@
  "wl_crypto"  "Crypto Mode"  "CHOICE" "4"  "off" "tkip" "aes" "tkip+aes"  "FALSE" "3"
  "wl_auth"  "Authentication Mode"  "WLAUTH"  "0"  "1"  "FALSE" "0"
  "wl_macmode1"  "MAC Restrict Mode"  "MACMODE"  "FALSE" "0"
- "wl_radio"  "Radio Enable"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"   //from 11.9
+ "wl_radio"  "Radio Enable"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "wl_mac_list"  "Filter MAC Address" "WLHWADDRS"  "FALSE" "0"
  "wl0_mac_list"  "Filter MAC Address" "WLHWADDRS"  "FALSE" "0"
  "wl1_mac_list"  "Filter MAC Address" "WLHWADDRS"  "FALSE" "0"
