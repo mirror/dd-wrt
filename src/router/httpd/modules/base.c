@@ -2141,11 +2141,13 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 	/* eat first two lines */
 	fgets(line, sizeof(line), in);
 	fgets(line, sizeof(line), in);
-
+	int restlen = (sizeof(buffer) - strbuffer) - 1;
 	while (fgets(line, sizeof(line), in) != NULL) {
 		if (!strstr(line, "mon.") && strstr(line, querybuffer)) {
 			llen = strlen(line);
 			if (llen) {
+				if (llen > restlen)
+				    llen = restlen;
 				memcpy(&buffer[strbuffer], line, llen);
 				strbuffer += llen;
 			}
