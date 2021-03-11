@@ -273,6 +273,7 @@ void Initnvramtab()
 		{ "WLGMODE", "validate_wl_gmode", -1 },
 		{ "WLNETMODE", "validate_wl_net_mode", -1 },
 		{ "AUTHMODE", "validate_auth_mode", -1 },
+		{ "SECURITYMODE", "validate_auth_mode", -1 },
 		{ NULL, NULL },
 	};
 
