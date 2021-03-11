@@ -190,7 +190,7 @@ static void checkError(FILE * in, char *name, int line)
 			continue;
 		if (!showonce) {
 			showonce = 1;
-			dd_syslog(LOG_ERR, "Error in FILE %s on line %d, this may lead to strange effects like non working save actions\n", name, line);
+			dd_syslog(LOG_ERR, "Error in FILE %s on line %d, this may lead to strange effects like non working save actions\n", name, line + 1);
 		}
 	}
 }
