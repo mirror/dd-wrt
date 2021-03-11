@@ -625,6 +625,19 @@ void start_dnsmasq(void)
 #endif
 
 		}
+		char vifs[256];
+		getIfLists(vifs, 256);
+		char var[256], *wordlist, *next;
+		foreach(var, vifs, next) {
+			if (strcmp(get_wan_face(), var)
+			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+				char *ipaddr = nvram_nget("%s_ipaddr", var);
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
+					fprintf(fp, ",%s", ipaddr);
+
+			}
+		}
+
 		if (nvram_exists("dnsmasq_addlisten")) {
 			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addlisten"));
 		}
@@ -632,6 +645,18 @@ void start_dnsmasq(void)
 		fprintf(fp, "interface=");
 		if (canlan()) {
 			fprintf(fp, "%s", nvram_safe_get("lan_ifname"));
+		}
+		char vifs[256];
+		getIfLists(vifs, 256);
+		char var[256], *wordlist, *next;
+		foreach(var, vifs, next) {
+			if (strcmp(get_wan_face(), var)
+			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+				char *ipaddr = nvram_nget("%s_ipaddr", var);
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
+					fprintf(fp, ",%s", var);
+
+			}
 		}
 		if (nvram_exists("dnsmasq_addif")) {
 			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addif"));
