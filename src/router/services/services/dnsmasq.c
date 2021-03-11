@@ -663,6 +663,7 @@ void start_dnsmasq(void)
 		}
 	}
 	int mdhcpcount = 0;
+	/* this is usally not required anymore since we add all interfaces with valid ip addresses anyway before */
 	if (nvram_exists("mdhcpd_count")) {
 		char *word = calloc(128, 1);
 		mdhcpcount = nvram_geti("mdhcpd_count");
