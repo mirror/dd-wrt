@@ -88,8 +88,10 @@ EJ_VISIBLE void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 		realno++;
 		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", name, type, data, level) < 4)
 			continue;
-		if (!strcmp(type, "both") || !strcmp(type, "udp") || !strcmp(type, "tcp"))
+		if (!strcmp(type, "udp") || !strcmp(type, "tcp"))
 			realno++;
+		if (!strcmp(type, "both"))
+			realno += 3;
 	}
 
 	// write HTML data
@@ -144,7 +146,10 @@ EJ_VISIBLE void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 																					  "20") ==
 			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 #endif
-		if (!strcmp(type, "both") || !strcmp(type, "udp") || !strcmp(type, "tcp")) {
+		if (!strcmp(type, "both")) {
+			websWrite(wp, "<td>%llu</td>", counts[c] + counts[c + 1] + counts[c + 2] + counts[c + 3]);
+			c += 4;
+		} else if (!strcmp(type, "udp") || !strcmp(type, "tcp")) {
 			websWrite(wp, "<td>%llu</td>", counts[c] + counts[c + 1]);
 			c += 2;
 		} else {
