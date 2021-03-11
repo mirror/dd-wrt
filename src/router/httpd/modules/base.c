@@ -2112,7 +2112,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 	char line[512];
 	int i, llen;
 	char buffer[512];
-	char querybuffer[32];
+	char querybuffer[64];
 
 	char *query = strchr(url, '?');
 
