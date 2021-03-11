@@ -2120,7 +2120,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 		return;
 	query++;
 
-	snprintf(querybuffer, sizeof(querybuffer) -1, "%s:", query);
+	snprintf(querybuffer, sizeof(querybuffer) - 1, "%s:", query);
 
 	int strbuffer = 0;
 	time_t tm;

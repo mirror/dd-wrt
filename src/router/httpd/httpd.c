@@ -530,6 +530,10 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 		int i, len = strlen(attach_file);
 		int cnt = 0;
 		char *newname = malloc((len * 3) + 1);
+		if (!newname) {
+		    dd_syslog(LOG_ERR, "out of memory in %s / attach_file\n", __func__);
+		    return;
+		}
 		for (i = 0; i < len; i++) {
 			if (attach_file[i] == ' ') {
 				newname[cnt++] = '%';
@@ -1204,6 +1208,7 @@ static void *handle_request(void *arg)
 	int file_found = 1;
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (match(handler->pattern, file)) {
+			airbag_setpostinfo(handler->pattern);
 #ifdef HAVE_REGISTER
 			if (conn_fp->isregistered)
 #endif
