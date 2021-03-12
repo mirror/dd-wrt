@@ -280,6 +280,9 @@ endif
 ifeq ($(CONFIG_IPQ806X),y)
 CFLAGS += -DHAVE_IPQ806X
 endif
+ifeq ($(CONFIG_QCA4019),y)
+CFLAGS += -DHAVE_QCA4019
+endif
 ifeq ($(CONFIG_HABANERO),y)
 CFLAGS += -DHAVE_HABANERO -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
 endif
