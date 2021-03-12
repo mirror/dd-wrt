@@ -1242,20 +1242,20 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		return;
 #endif
 	char psk[32];
-	char akm[16];
-	char mfp[16];
-	char ft[16];
+	char akm[32];
+	char mfp[32];
+	char ft[32];
 	char fstr[32];
-	char preamble[16];
-	char lowack[16];
-	char uapsd[16];
+	char preamble[32];
+	char lowack[32];
+	char uapsd[32];
 	FILE *fp = NULL;
 	char *ssid;
-	char nssid[16];
+	char nssid[32];
 	char maxassoc[32];
 	char ifname[10];
 	int isrepeater = 0;
-	unsigned char hwbuff[16];
+	unsigned char hwbuff[32];
 	char macaddr[32];
 	char *types;
 	char *debug;
