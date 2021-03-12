@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Roku-5.x">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac,mp3" context="streaming">
+      <Setting name="BreakNonKeyframes" value="true" />
+      <Setting name="HlsElideExtXStart" value="true" />
+    </VideoProfile>
+    <VideoProfile protocol="http" container="mkv" codec="h264" audioCodec="aac,mp3,mp2,pcm,flac" subtitleCodec="srt" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4,mkv" codec="h264,mpeg4" audioCodec="aac,mp3,flac" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg,gif,png" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.refFrames" value="8" />
+        <UpperBound name="video.bitDepth" value="8" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac,mp3,mp2,pcm,flac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+        <LowerBound name="audio.samplingRate" value="22050" />
+      </Limitations>
+    </VideoAudioCodec>
+    <VideoAudioCodec name="ac3">
+      <Limitations>
+        <LowerBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+    <MusicCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </MusicCodec>
+  </CodecProfiles>
+</Client>

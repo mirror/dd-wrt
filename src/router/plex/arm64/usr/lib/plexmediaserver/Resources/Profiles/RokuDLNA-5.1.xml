@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="RokuDLNA-5.1">
+  <!-- Roku Network Streaming Player -->
+  <!-- Author: Dale Luck, Roku, Inc. -->
+  <!-- Version: 1.0.0.5 2014/1/14 YMD -->
+  <Identification>
+    <Header name="User-Agent" substring="Roku/DVP-5." />
+  </Identification>
+  <TranscodeTargets>
+    <VideoProfile container="mpegts" audioCodec="aac" codec="h264" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac,mp3,mp2,pcm" />
+    <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="aac,mp3,mp2,pcm" />
+    <VideoProfile container="mov" codec="h264,mpeg4" audioCodec="aac,mp3,mp2,pcm" />
+    <VideoProfile container="mpeg" codec="h264,mpeg4" audioCodec="aac,mp3,mp2,pcm"  />
+    <VideoProfile container="mkv" codec="h264,mpeg4" audioCodec="aac,mp3,mp2,pcm,flac" />
+    <MusicProfile container="mp3" codec="mp2,mp3" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="flac" codec="flac" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice" />
+    <MusicProfile container="wav" codec="pcm" />
+    <PhotoProfile container="jpeg,png,gif" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.bitrate" value="12000" />
+        <UpperBound name="video.refFrames" value="8" />
+        <UpperBound name="video.bitDepth" value="8" />
+        <NotMatch name="video.scanType" value="interlaced" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="*">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <PhotoContainer name="*">
+      <Limitations>
+        <UpperBound name="media.width" value="1280" isRequired="true" />
+        <UpperBound name="media.height" value="720" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+  <DlnaMediaProfiles>
+    <DlnaMusicProfile container="wav" mimeType="audio/wav" />
+  </DlnaMediaProfiles>
+</Client>

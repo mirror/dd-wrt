@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="tvOS">
+  <!-- Author: Plex Inc. -->
+  <!-- This profile is used by A8-based tvOS devices -->
+  <Settings>
+    <Setting name="DirectPlayStreamSelection" value="true" />
+    <Setting name="StreamUnselectedIncompatibleAudioStreams" value="true" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac,eac3,ac3,mp3" subtitleCodec="eia_608_embedded" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+    <SubtitleProfile protocol="hls" container="webvtt" subtitleCodec="webvtt"/>
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="aac,ac3,eac3" subtitleCodec="mov_text,tx3g,ttxt,text" />
+    <!-- Since tvOS may have issues direct playing mov/eac3 it has its own profile  -->
+    <VideoProfile container="mov" codec="h264,mpeg4" audioCodec="aac,ac3" subtitleCodec="mov_text,tx3g,ttxt,text" />
+    <!-- Allow Direct Play of HLS content  -->
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="mp4" codec="aac" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.bitDepth" value="8" />
+        <NotMatch name="video.separateFields" value="1" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+</Client>

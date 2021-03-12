@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Plex Media Server
+GenericName=Media Server
+Comment=Manage your Plex Media
+Exec=x-www-browser http://localhost:32400/web
+Icon=plexmediaserver
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Video;Player;

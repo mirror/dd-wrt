@@ -1,0 +1,7 @@
+
+<combine class="TV_Show">
+    <sources>
+        <agent>com.plexapp.agents.none</agent>
+        <agent>com.plexapp.agents.localmedia</agent>
+    </sources>
+</combine>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Plexamp">
+  <TranscodeTargets>
+    <MusicProfile container="mkv" codec="opus" />
+  </TranscodeTargets>
+</Client>

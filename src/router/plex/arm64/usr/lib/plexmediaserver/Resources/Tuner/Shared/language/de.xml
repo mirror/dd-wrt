@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<language id="DE" name="Deutsch">
+  <IDS_SERVER_UNKNOWN_DEVICE_NAME value="Unbekannt"/>
+  <IDS_SERVER_CHANNEL_SCAN_PROVIDERS value="Anbieter Sendersuchlauf"/>
+  <IDS_SERVER_AVAILABLE_NETWORKS value="Verfügbare Netzwerke"/>
+  <IDS_SERVER_TV_FAVORITES_NAME value="TV"/>
+  <IDS_SERVER_RADIO_FAVORITES_NAME value="Radio"/>
+  <IDS_SERVER_MANUAL_FASTSCAN_NAME value="DVB-C Netzwerk Suchlauf"/>
+  <IDS_SERVER_MANUAL_FASTSCAN_DESC value="Netzwerk Suchlauf mit eigenen Parameter durchführen"/>
+  <IDS_SERVER_LNB_PARAM_NAME value="LNB"/>
+  <IDS_SERVER_DISEQC_PARAM_NAME value="Diseqc"/>
+  <IDS_SERVER_FREQ_KHZ_PARAM_NAME value="Frequenz, KHz"/>
+  <IDS_SERVER_SR_PARAM_NAME value="Symbol Rate"/>
+  <IDS_SERVER_MODULATION_PARAM_NAME value="Modulation"/>
+  <IDS_SERVER_MOD_QAM64_PARAM_NAME value="QAM64"/>
+  <IDS_SERVER_MOD_QAM128_PARAM_NAME value="QAM128"/>
+  <IDS_SERVER_MOD_QAM256_PARAM_NAME value="QAM256"/>
+  <IDS_SERVER_REGULAR_SCAN_NAME value="Normaler Suchlauf"/>
+  <IDS_SERVER_NETWORK_SCAN_NAME value="Netzwerk Suchlauf"/>
+  <IDS_SERVER_STANDARD_UNKNOWN_NAME value="Unbekannt"/>
+  <IDS_SERVER_STANDARD_DVBT_NAME value="Terrestrisch (DVB-T/T2)"/>
+  <IDS_SERVER_STANDARD_DVBC_NAME value="Digitales Kabel (DVB-C)"/>
+  <IDS_SERVER_STANDARD_DVBS_NAME value="Satellit (DVB-S/S2)"/>
+  <IDS_SERVER_STANDARD_ATSC_NAME value="OTA (ATSC)"/>
+  <IDS_SERVER_STANDARD_CQAM_NAME value="ClearQAM"/>
+</language>

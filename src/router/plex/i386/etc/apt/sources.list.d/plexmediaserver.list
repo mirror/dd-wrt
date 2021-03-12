@@ -1,0 +1,3 @@
+# When enabling this repo please remember to add the PlexPublic.Key into the apt setup.
+# wget -q https://downloads.plex.tv/plex-keys/PlexSign.key -O - | sudo apt-key add -
+#deb https://downloads.plex.tv/repo/deb/ public main

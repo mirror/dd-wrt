@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Xbox 360 App">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac" context="streaming" />
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac,ac3,eac3" context="static" />
+    <MusicProfile protocol="hls" container="mpegts" codec="mp3" context="streaming" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4,mov" codec="h264,mpeg4" audioCodec="aac,ac3,eac3,pcm" />
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac,ac3,eac3,mp2,pcm" />
+    <VideoProfile container="asf" codec="wmv2,wmv3,vc1" audioCodec="wmav2,wmapro,wmavoice" />
+    <VideoProfile container="avi" codec="mpeg4,msmpeg4v3,mjpeg" audioCodec="ac3,eac3,mp2,pcm" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+    <VideoAudioCodec name="ac3, eac3">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <TranscodeTargetProfiles>
+    <VideoTranscodeTarget protocol="*" context="all">
+      <VideoCodec name="*">
+        <Limitations>
+          <UpperBound name="video.bitDepth" value="8" />
+        </Limitations>
+      </VideoCodec>
+    </VideoTranscodeTarget>
+  </TranscodeTargetProfiles>
+</Client>
