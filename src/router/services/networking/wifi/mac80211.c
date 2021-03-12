@@ -284,18 +284,18 @@ void configure_single_ath9k(int count)
 	char dev[10];
 	char wif[10];
 	int phy_idx = get_ath9k_phy_idx(count);
-	char wl[16];
+	char wl[32];
 	char bw[32];
-	char channel[16];
-	char ssid[16];
-	char net[16];
-	char atf[16];
-	char wifivifs[16];
-	char broadcast[16];
+	char channel[32];
+	char ssid[32];
+	char net[32];
+	char atf[32];
+	char wifivifs[32];
+	char broadcast[32];
 	char sens[32];
-	char basedev[16];
+	char basedev[32];
 	char diversity[32];
-	char athmac[16];
+	char athmac[32];
 	char wl_poll[32];
 	char rxantenna[32];
 	char txantenna[32];
@@ -308,7 +308,7 @@ void configure_single_ath9k(int count)
 	char *apm;
 	char isolate[32];
 	char primary[32] = { 0 };
-	char regdomain[16];
+	char regdomain[32];
 	char *country;
 	int isadhoc = 0;
 
@@ -467,7 +467,7 @@ void configure_single_ath9k(int count)
 		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtikwds", "on");
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "mesh")) {
-		char akm[16];
+		char akm[32];
 		sprintf(akm, "%s_akm", dev);
 		int iht, channeloffset;
 		get_channeloffset(dev, &iht, &channeloffset);
@@ -499,7 +499,7 @@ void configure_single_ath9k(int count)
 
 		strcpy(primary, dev);
 	} else {
-		char akm[16];
+		char akm[32];
 		sprintf(akm, "%s_akm", dev);
 		eval("iw", wif, "interface", "add", dev, "type", "ibss");
 		isadhoc = 1;
@@ -576,7 +576,7 @@ void configure_single_ath9k(int count)
 		    && nvram_invmatch(clonename, "")) {
 			set_hwaddr(dev, nvram_safe_get(clonename));
 		}
-//              char akm[16];
+//              char akm[32];
 //              sprintf(akm, "%s_akm", dev);
 //              if (strcmp(apm, "infra") || nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
 		setupSupplicant_ath9k(dev, NULL, isadhoc);
@@ -604,7 +604,7 @@ void configure_single_ath9k(int count)
 					sysprintf("iw %s interface add %s type managed", wif, var);
 				setupHostAP_ath9k(dev, isfirst, counter, 0);
 			} else {
-				char akm[16];
+				char akm[32];
 				sprintf(akm, "%s_akm", var);
 				if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
 					sysprintf("iw %s interface add %s type mp", wif, var);
@@ -672,9 +672,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	int channel = 0;
 	int channel2 = 0;
 	int freq = 0;
-	char nfreq[16];
+	char nfreq[32];
 	int freq2 = 0;
-	char nfreq2[16];
+	char nfreq2[32];
 	int i = 0;
 	char *caps;
 	int isath5k = is_ath5k(prefix);
@@ -801,7 +801,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	} else {
 		ht = "HT20";
 	}
-	char regdomain[16];
+	char regdomain[32];
 	sprintf(regdomain, "%s_regdomain", prefix);
 
 	if (isrepeater) {
@@ -1368,7 +1368,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (!has_ad(maininterface) && !is_brcmfmac(maininterface)) {
 		fprintf(fp, "bssid=%s\n", macaddr);
 	}
-	char vathmac[16];
+	char vathmac[32];
 	sprintf(vathmac, "%s_hwaddr", ifname);
 	nvram_set(vathmac, macaddr);
 	fprintf(stderr, "setup %s %s\n", ifname, macaddr);
@@ -1673,8 +1673,8 @@ static char *makescanlist(char *prefix, char *value)
 
 static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, int isadhoc, int ismesh)
 {
-	char nfreq[16];
-	char nfreq2[16];
+	char nfreq[32];
+	char nfreq2[32];
 	char fwd[32];
 	char ht[5];
 	char sb[32];
@@ -1748,11 +1748,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	if (!isregistered())
 		return;
 #endif
-	char akm[16];
+	char akm[32];
 	int i;
 	char mcr[32];
-	char ft[16];
-	char mfp[16];
+	char ft[32];
+	char mfp[32];
 	char *mrate;
 	char eapol[32];
 	sprintf(eapol, "%s_eapol_version", prefix);
@@ -1779,7 +1779,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	check_cryptomod(prefix);
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
 		char fstr[32];
-		char psk[16];
+		char psk[32];
 		if (!strncmp(prefix, "wlan0", 4))
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(prefix, "wlan1", 4))
@@ -1966,7 +1966,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fclose(fp);
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
 		char fstr[32];
-		char psk[16];
+		char psk[32];
 		if (nvram_match(akm, "wep")) {
 			if (!strncmp(prefix, "wlan0", 4))
 				led_control(LED_SEC0, LED_ON);
@@ -2053,15 +2053,15 @@ void ath9k_start_supplicant(int count, char *prefix)
 	char dev[10];
 	char power[32];
 	char *apm, *vifs;
-	char wl[16];
+	char wl[32];
 	char ctrliface[32] = "";
-	char wifivifs[16];
+	char wifivifs[32];
 	char tmp[256];
 	char *background = "-B";
 	int debug;
-	char subinterface[16];
-	char net[16];
-	char wmode[16];
+	char subinterface[32];
+	char net[32];
+	char wmode[32];
 	int ctrlifneeded = 0;
 	char wif[10];
 	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
