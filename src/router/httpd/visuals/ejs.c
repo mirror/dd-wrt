@@ -972,6 +972,31 @@ EJ_VISIBLE void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+#ifdef HAVE_ANTAIRA
+EJ_VISIBLE void ej_show_forward_ip(webs_t wp, int argc, char_t ** argv)
+{
+	int i;
+	char *count;
+	int c = 0;
+
+	count = nvram_safe_get("forwardip_entries");
+	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
+		websWrite(wp, "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
+	}
+	for (i = 0; i < c; i++) {
+		websWrite(wp, "<tr><td>\n<input maxlength=\"12\" size=\"10\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		ip_forward(wp, "name", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"", i);
+		ip_forward(wp, "src", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"dest%d\" value=\"", i);
+		ip_forward(wp, "dest", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+		ip_forward(wp, "enable", i);
+		websWrite(wp, " /></td>\n</tr>\n");
+	}
+}
+#endif
+
 EJ_VISIBLE void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
@@ -1551,7 +1576,11 @@ static struct menucontext *init_menu(webs_t wp)
 		{ "Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Speedchecker.asp", "", "" },	//
 		{ "Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", "", "" },	//
 		{ "Filters.asp", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+#ifdef HAVE_ANTAIRA
+		{ "ForwardSpec.asp", "Forward.asp", "ForwardIP.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", "" },	//
+#elif
 		{ "ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", "", "" },	//
+#endif
 		{ "Management.asp", "Alive.asp", "Sysctl.asp", "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "", "" },	//
 		{ "Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Syslog.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp" }	//
 	};
@@ -1574,7 +1603,11 @@ static struct menucontext *init_menu(webs_t wp)
 		{ "services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesSpeedchecker", "", "" },	//
 		{ "security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", "", "" },	// 
 		{ "accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+#ifdef HAVE_ANTAIRA
+		{ "applications", "applicationspforwarding", "applicationsprforwarding", "applicationsipforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", "" },	//
+#elif
 		{ "applications", "applicationspforwarding", "applicationsprforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", "", "" },	//
+#endif
 		{ "admin", "adminManagement", "adminAlive", "adminSysctl", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", "" },	//
 		{ "statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP" }	//
 	};

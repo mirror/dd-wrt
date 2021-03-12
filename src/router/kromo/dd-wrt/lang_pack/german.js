@@ -737,6 +737,12 @@ pforward.to="Nach Port";
 
 hpforward.right2="Um gewisse Programme auf Ihren Rechner nutzen zu k&ouml;nnen, kann es n&ouml;tig sein, dass spezielle Ports ge&ouml;ffnet und weitergeleitet werden m&uuml;ssen. Programme welche Serverrollen inne haben, aber auch manche Onlinespiele sind davon betroffen. Aus Sicherheitsgr&uuml;nden sollen nur jene Ports weitergeleitet werden, welche unbedingt n&ouml;tig sind.";
 
+pforwardip.h2="IP Weiterleitung - 1:1 NAT";
+pforwardip.legend="Weiterleitungen";
+pforwardip.name="Name";
+pforwardip.src="Quell IP";
+pforwardip.dest="Ziel IP";
+
 // ** USB.asp **//
 
 usb.titl="USB";
