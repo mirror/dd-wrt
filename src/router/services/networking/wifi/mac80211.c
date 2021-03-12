@@ -1315,21 +1315,18 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		usebw = 160;
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
-	if (has_qam256(ifname) && has_2ghz(ifname) && usebw < 80) {
-		if (nvram_nmatch("1", "%s_turbo_qam", ifname)) {
-/*			char mubf[32];
-			sprintf(mubf, "%s_mubf", maininterface);
-			char subf[32];
-			sprintf(subf, "%s_subf", maininterface);
-			char *caps = mac80211_get_vhtcaps(maininterface, 0, 0, 0, 0, nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));*/
+	if (isfirst && has_qam256(ifname) && has_2ghz(ifname) && usebw < 80) {
+		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
 			char *caps = mac80211_get_vhtcaps(maininterface, 0, 0, 0, 0, 0, 0);
 			fprintf(fp, "vht_capab=%s\n", caps);
 			fprintf(fp, "ieee80211ac=1\n");
-			//fprintf(fp, "require_vht=1\n");
-			fprintf(fp, "vendor_vht=1\n");
 			free(caps);
 		}
-
+	}
+	if (has_qam256(ifname) && has_2ghz(ifname) && usebw < 80) {
+		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
+			fprintf(fp, "vendor_vht=1\n");
+		}
 	}
 	if (!vapid)
 		fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "0"));
