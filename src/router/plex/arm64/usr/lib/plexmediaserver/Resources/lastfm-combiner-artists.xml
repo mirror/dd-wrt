@@ -1,0 +1,8 @@
+
+<combine class="Artist">
+    <sources>
+        <agent>com.plexapp.agents.localmedia</agent>
+        <agent>com.plexapp.agents.lastfm</agent>
+        <agent>com.plexapp.agents.htbackdrops</agent>
+    </sources>
+</combine>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="cloudSync">
+  <!-- Author: Plex, Inc. -->
+  <!-- TODO(schuyler): Flesh this out. -->
+  <TranscodeTargets>
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac" context="static" />
+    <!--
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac" context="static" />
+    -->
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg,gif,bmp,png" />
+  </DirectPlayProfiles>
+  <ContainerProfiles>
+    <VideoContainer name="mp4">
+      <Limitations>
+        <Match name="part.optimizedForStreaming" value="1" isRequired="true" />
+      </Limitations>
+    </VideoContainer>
+  </ContainerProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <NotMatch name="video.anamorphic" value="1" />
+        <NotMatch name="video.hasScalingMatrix" value="1" />
+        <UpperBound name="video.bitDepth" value="8" />
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.level" value="40" />
+        <UpperBound name="video.refFrames" value="5" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+    <MusicCodec name="mp3">
+      <Limitations>
+        <UpperBound name="audio.bitrate" value="320" />
+        <UpperBound name="audio.channels" value="2" />
+        <Match name="audio.samplingRate" list="32000|44100|48000" />
+      </Limitations>
+    </MusicCodec>
+  </CodecProfiles>
+</Client>

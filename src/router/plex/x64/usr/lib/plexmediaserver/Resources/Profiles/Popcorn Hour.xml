@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Popcorn Hour">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac" context="streaming">
+      <Setting name="VideoEncodeFlags" value="-x264opts cabac=0" />
+      <Setting name="SubtitleSize" value="100" />
+    </VideoProfile>
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4,mov" codec="h264,mpeg4" audioCodec="aac" />
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac,ac3,eac3,mp3,mp2,pcm" />
+    <VideoProfile container="asf,wmv" codec="wmv3,vc1" audioCodec="wmav2,wmapro" />
+    <VideoProfile container="avi" codec="mpeg4,msmpeg4v3" audioCodec="mp3,ac3,eac3,mp2,pcm" />
+    <VideoProfile container="mkv" codec="h264" audioCodec="aac,mp3,ac3,eac3,mp2,pcm" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="flac" codec="flac" />
+    <MusicProfile container="ogg" codec="vorbis" />
+    <MusicProfile container="wma" codec="wmav2" />
+    <MusicProfile container="wav" codec="flac,pcm" />
+    <PhotoProfile container="jpeg,gif,bmp,png" />
+  </DirectPlayProfiles>
+  <ContainerProfiles>
+    <VideoContainer name="mp4">
+      <Limitations>
+        <Match name="part.optimizedForStreaming" value="1" isRequired="true" />
+      </Limitations>
+    </VideoContainer>
+  </ContainerProfiles>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <NotMatch name="video.anamorphic" value="1" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+    <MusicCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </MusicCodec>
+  </CodecProfiles>
+</Client>

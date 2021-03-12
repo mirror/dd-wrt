@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="PlayStation 4 App">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" videoCodec="h264" audioCodec="aac" context="streaming" >
+        <Setting name="BreakNonKeyframes" value="true" />
+    </VideoProfile>
+    <VideoProfile protocol="dash" container="mp4" videoCodec="h264" audioCodec="aac" context="streaming" >
+        <Setting name="BreakNonKeyframes" value="true" />
+    </VideoProfile>
+    <MusicProfile protocol="hls" container="mpegts" videoCodec="h264" audioCodec="aac" context="streaming" />
+    <MusicProfile protocol="dash" container="mp4" videoCodec="h264" audioCodec="aac" context="streaming" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac" />
+    <MusicProfile container="mp4" codec="aac" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <LowerBound name="video.width" value="50" isRequired="true" />
+        <LowerBound name="video.height" value="50" isRequired="true" />
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.bitDepth" value="8" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+        <LowerBound name="audio.bitrate" value="96" />
+        <UpperBound name="audio.bitrate" value="256" />
+        <LowerBound name="audio.samplingRate" value="32000" />
+        <UpperBound name="audio.samplingRate" value="48000" />
+        <Match name="audio.samplingRate" list="32000|44100|48000" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+</Client>

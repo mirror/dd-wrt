@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Samsung Tizen">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac,mp2,mp3,ac3,eac3" context="streaming">
+      <Setting name="BreakNonKeyframes" value="true" />
+      <Setting name="IncludeMapInEmptyVTT" value="true" />
+    </VideoProfile>
+    <MusicProfile container="mp3" codec="mp3"/>
+    <PhotoProfile container="jpeg"/>
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="aac,ac3,mp3,pcm" subtitleFormat="srt,smi"/>
+    <VideoProfile container="asf" codec="wmv3,wmv3,vc1" audioCodec="wmav2,wmav2,wmapro,wmavoice,pcm" subtitleFormat="srt,smi"/>
+    <VideoProfile container="avi" codec="h264,mpeg4,mjpeg" audioCodec="mp3,ac3,dca,pcm" subtitleFormat="srt,smi"/>
+    <VideoProfile container="mkv" codec="h264,mpeg4,mjpeg,mpeg2video,vc1" audioCodec="mp2,mp3,ac3,dca,aac,pcm,vorbis" subtitleFormat="srt,smi"/>
+    <VideoProfile container="mpeg" codec="h264,mpeg1video,mpeg2video" audioCodec="mp2,mp3,ac3,aac,pcm" subtitleFormat="srt,smi"/>
+    <VideoProfile container="flv" codec="h264" audioCodec="aac,ac3,mp3,pcm" subtitleFormat="srt,smi"/>
+    <VideoProfile container="mpegts" codec="h264,mpeg2video,vc1" audioCodec="mp2,mp3,ac3,dca,pcm" subtitleFormat="srt,smi"/>
+    <VideoProfile container="3gpp" codec="h264,mpeg4" audioCodec="aac"/>
+    <MusicProfile container="mp4" codec="aac"/>
+    <MusicProfile container="mp3" codec="mp3"/>
+    <PhotoProfile container="jpeg,gif,bmp,png"/>
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoAudioCodec name="ac3,wmav2,dca,aac,mp3">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6"/>
+      </Limitations>
+    </VideoAudioCodec>
+    <MusicCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2"/>
+      </Limitations>
+    </MusicCodec>
+  </CodecProfiles>
+</Client>

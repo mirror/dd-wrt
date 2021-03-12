@@ -1,0 +1,8 @@
+
+<combine class="TV_Show">
+    <sources>
+        <agent>com.plexapp.agents.localmedia</agent>
+        <agent>com.plexapp.agents.thetvdb</agent>
+        <agent>com.plexapp.agents.plexthememusic</agent>
+    </sources>
+</combine>

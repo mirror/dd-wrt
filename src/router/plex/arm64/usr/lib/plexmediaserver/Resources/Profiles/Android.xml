@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Android">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac" context="streaming" />
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac" context="static" />
+    <MusicProfile container="mp3" codec="mp3" id="StereoMusicTranscodeProfile" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="aac" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="flac" codec="flac" />
+    <MusicProfile container="ogg" codec="vorbis" />
+    <PhotoProfile container="jpeg,gif,bmp,png" />
+  </DirectPlayProfiles>
+  <ContainerProfiles>
+    <VideoContainer name="mp4">
+      <Limitations>
+        <Match name="part.optimizedForStreaming" value="1" />
+      </Limitations>
+    </VideoContainer>
+  </ContainerProfiles>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <NotMatch name="video.anamorphic" value="1" />
+      </Limitations>
+    </VideoCodec>
+    <VideoCodec name="h264">
+      <Limitations>
+        <Match name="video.profile" list="baseline|main|high" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+</Client>

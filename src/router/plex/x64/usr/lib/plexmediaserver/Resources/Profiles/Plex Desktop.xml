@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Plex Desktop">
+  <!-- Author: Plex Inc. -->
+  <Settings>
+    <Setting name="DirectPlayStreamSelection" value="true" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile protocol="http" container="mkv" videoCodec="h264,hevc,*" audioCodec="opus,vorbis,flac,*" subtitleCodec="ass,pgs,vobsub,*" context="streaming">
+      <Setting name="CopyMatroskaAttachments" value="true" />
+    </VideoProfile>
+    <VideoProfile protocol="http" container="mkv" videoCodec="h264,hevc,*" audioCodec="opus,vorbis,flac,*" subtitleCodec="ass,pgs,vobsub,*" context="static">
+      <Setting name="CopyMatroskaAttachments" value="true" />
+    </VideoProfile>
+    <MusicProfile container="mkv" audioCodec="opus,flac,*" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+</Client>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Panasonic Viera 3D TV">
+  <!-- Author: Cecil Coupe -->
+  <!-- http://service.us.panasonic.com/OPERMANPDF/TCP42ST30.PDF -->
+  <Identification>
+    <Header name="User-Agent" substring="Panasonic MIL DLNA" />
+    <DeviceDescription>
+      <Manufacturer substring="Panasonic" />
+      <FriendlyName substring="VIERA" />
+    </DeviceDescription>
+  </Identification>
+  <Settings>
+    <Setting name="TimelineBufferOffset" value="10" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile container="mpegts" codec="h264" audioCodec="ac3,aac,mp3" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />  <!-- Not 100% sure about this; other media servers use wav/lpcm -->
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mpeg" codec="mpeg2video,mpeg4" audioCodec="ac3,mp3" />
+    <VideoProfile container="mkv" codec="h264" audioCodec="aac,ac3,mp3,pcm" />
+    <VideoProfile container="mpegts" codec="h264" audioCodec="ac3,aac,mp3" />
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac,ac3,mp3,pcm" />
+    <VideoProfile container="mov" codec="h264" audioCodec="aac,pcm" />
+    <VideoProfile container="avi" codec="mpeg4" audioCodec="pcm" />
+    <VideoProfile container="flv" codec="h264" audioCodec="aac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="mp4" codec="aac" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.bitDepth" value="8" />
+      </Limitations>
+    </VideoCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <PhotoContainer name="*">
+      <Limitations>
+        <UpperBound name="media.width" value="1920" isRequired="true" />
+        <UpperBound name="media.height" value="1080" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+</Client>

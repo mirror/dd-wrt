@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Xbox One">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <VideoProfile protocol="dash" container="mp4" codec="h264" audioCodec="ac3,aac" context="streaming" />
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="ac3,aac" context="streaming" />
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac,ac3,eac3,mp3" context="static" />
+    <MusicProfile protocol="dash" container="mp4" audioCodec="ac3,aac" context="streaming" />
+    <PhotoProfile container="jpeg" />
+    <SubtitleProfile container="ass" codec="ass" context="all" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4" codec="h264,hevc,mpeg4,vc1,wmv3" audioCodec="aac,ac3,eac3,mp3" />
+    <VideoProfile container="mkv" codec="h264,hevc,mpeg4,msmpeg4v2,msmpeg4v3,vc1,vp9,wmv3" audioCodec="aac,ac3,mp3,pcm,flac,alac" />
+    <VideoProfile container="mpegts" codec="h264,mpeg2video" audioCodec="aac,ac3,mp2" />
+    <VideoProfile container="avi" codec="mpeg4,msmpeg4,msmpeg4v2,msmpeg4v3,vc1,wmv3" audioCodec="aac,ac3,mp3" />
+    <VideoProfile container="mov" codec="h264" audioCodec="aac" />
+    <VideoProfile container="asf" codec="vc1,wmv2" audioCodec="wmav2" />
+    <MusicProfile container="mp4" codec="aac,alac" />
+    <MusicProfile container="mp3" codec="mp2,mp3" />
+    <MusicProfile container="mp2" codec="mp1,mp2" />
+    <MusicProfile container="wav" codec="pcm" />
+    <MusicProfile container="flac" codec="flac" />
+    <MusicProfile container="asf" codec="wmav2" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="*">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+        <Match name="audio.samplingRate" list="32000|44100|48000" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <TranscodeTargetProfiles>
+    <VideoTranscodeTarget protocol="*" context="all">
+      <VideoCodec name="h264">
+        <Limitations>
+          <UpperBound name="video.bitDepth" value="8" />
+        </Limitations>
+      </VideoCodec>
+    </VideoTranscodeTarget>
+  </TranscodeTargetProfiles>
+</Client>

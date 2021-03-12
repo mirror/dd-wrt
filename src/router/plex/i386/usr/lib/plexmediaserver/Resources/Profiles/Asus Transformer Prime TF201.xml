@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Asus Transformer Prime TF201">
+  <!-- Author: XeboZone -->
+  <!-- http://dlcdnet.asus.com/pub/ASUS/EeePAD/TF201/TF201_MANUAL_en_20111206.pdf -->
+  <!-- http://www.nvidia.com/object/tegra-3-processor.html -->
+  <!-- Supported Video (User Manual): H.263, H.264, MPEG-4,VC-1/WMV,VP8 -->
+  <!-- Supported Audio (User Manual): AAC LC/LTP, HE-AACv1(AAC+), HE-AACv2(enhanced AAC+), AMR-NB, AMR-WB, MP3, FLAC, MIDI, PCM/WAVE, Vorbis, WAV alaw-mu-law, WAV linear PCM, WMA10, WMA Lossless, WMA Pro LBR -->
+  <!-- Additional Supported Video (NVidia Tegra 3): MPEG2, DivX4/5, XviD HT, Theora, VP8, WMV, Sorenson Spark, Read Video, VP6 -->
+  <!-- Additional Supported Audio (NVidia Tegra 3): BSAC (Mpeg-4 audio), Mpeg-2 Audio, WMA 9 -->
+  <!-- TODO - mkv with h264:aac lags? mpegts with h264 video is supported; I couldn't test which audio codecs are supported in this container. -->
+  <Identification>
+    <Header name="User-Agent" substring="Transformer Prime TF201" />
+  </Identification>
+  <TranscodeTargets>
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac,mp3" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <!-- There should be more supported formats. The TEGRA3 can play a lot, but these are the ones I've tested... and the most common -->
+    <VideoProfile container="avi" codec="mpeg4" audioCodec="mp2,mp3" />
+    <VideoProfile container="mp4" codec="mpeg4,h264" audioCodec="aac,mp3" />
+    <VideoProfile container="mov" codec="h264" audioCodec="aac,mp3" />
+    <VideoProfile container="mkv" codec="h264" audioCodec="aac,mp3" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="flac" codec="flac" />
+    <MusicProfile container="wav" codec="pcm" />
+    <MusicProfile container="ogg" codec="vorbis" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice,wmalossless" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <PhotoContainer name="*">
+      <Limitations>
+        <UpperBound name="media.width" value="1920" isRequired="true" />
+        <UpperBound name="media.height" value="1080" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+</Client>

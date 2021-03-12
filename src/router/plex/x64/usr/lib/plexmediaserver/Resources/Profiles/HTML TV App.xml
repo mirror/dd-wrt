@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="HTML TV App">
+  <!--
+   Author: Plex Inc.
+   History:
+    0.9.12.0:  First release. Included HLS and DASH MusicProfile with videoCodec.
+    0.9.12.2:  HTTP protocol support added for VideoProfile and MusicProfile with videoCodec.
+  -->
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" videoCodec="h264" audioCodec="aac" context="streaming">
+      <Setting name="BreakNonKeyframes" value="true" />
+    </VideoProfile>
+    <VideoProfile protocol="dash" container="mp4" videoCodec="h264" audioCodec="aac" context="streaming" />
+    <VideoProfile protocol="http" container="mkv" codec="h264" audioCodec="aac" context="streaming" />
+
+    <MusicProfile protocol="hls" container="mpegts" videoCodec="h264" audioCodec="aac" context="streaming" />
+    <MusicProfile protocol="dash" container="mp4" videoCodec="h264" audioCodec="aac" context="streaming" />
+    <MusicProfile protocol="http" container="mkv" videoCodec="h264" audioCodec="aac" context="streaming" />
+
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.bitDepth" value="8" />
+      </Limitations>
+    </VideoCodec>
+  </CodecProfiles>
+</Client>

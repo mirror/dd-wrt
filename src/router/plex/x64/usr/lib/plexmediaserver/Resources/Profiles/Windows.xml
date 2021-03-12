@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Windows">
+  <!-- Author: Plex Inc. -->
+  <!-- cf http://blogs.msdn.com/b/b8/archive/2012/06/08/building-a-rich-and-extensible-media-platform.aspx
+       cf http://msdn.microsoft.com/en-us/library/windows/apps/hh986969.aspx -->
+  <Settings>
+    <Setting name="DirectPlayStreamSelection" value="true" />
+    <Setting name="StreamUnselectedIncompatibleAudioStreams" value="true" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac,mp3" context="streaming" />
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac,ac3,eac3" context="static" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4,mov" codec="h264,mpeg4,msmpeg4,msmpeg4v2" audioCodec="aac,ac3,eac3,mp3" />
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac,ac3,eac3,mp3,mp2,pcm" />
+    <VideoProfile container="asf" codec="wmv2,wmv3,vc1" audioCodec="wmav2,wmapro,wmavoice" />
+    <VideoProfile container="avi" codec="mpeg4,msmpeg4v2,msmpeg4,msmpeg4v3,mjpeg" audioCodec="mp3,ac3,eac3,mp2,pcm" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice" />
+    <MusicProfile container="mp4,aac" codec="aac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="wav" codec="pcm" />
+    <PhotoProfile container="jpeg,png,gif,bmp" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <!-- Windows doesn't appear to play 10-bit h264 -->
+        <UpperBound name="video.bitDepth" value="8" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+        <NotMatch name="audio.profile" value="main" />
+        <UpperBound name="audio.samplingRate" value="48000" />
+      </Limitations>
+    </VideoAudioCodec>
+    <MusicCodec name="aac">
+      <Limitations>
+        <NotMatch name="audio.profile" value="main" />
+        <UpperBound name="audio.samplingRate" value="48000" />
+      </Limitations>
+    </MusicCodec>
+  </CodecProfiles>
+</Client>

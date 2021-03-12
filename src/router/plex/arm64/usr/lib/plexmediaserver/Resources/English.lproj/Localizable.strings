@@ -1,0 +1,93 @@
+/* General */
+"ServerStarting"                            = "Starting";
+"Library"                                   = "Library";
+
+"QuitDialogTitle"                           = "Are you sure you want to quit?";
+"QuitDialogMessage"                         = "If you quit the Plex Media Server, none of your Plex clients will be able to access your media. Are you sure you want to continue?";
+"QuitDialogConfirmButtonText"               = "Quit";
+"QuitDialogCancelButtonText"                = "Cancel";
+
+"VersionString"                             = "Version %s";
+
+"UpdateLibraryMenuItem"                     = "Update Libraries";
+"UpdatingLibraryMenuItem"                   = "Updating Libraries...";
+
+
+/* Media manager window */
+"GettingStartedGroupTitle"                  = "Getting Started";
+"LibrarySectionsGroupTitle"                 = "Library Sections";
+"SmartFoldersGroupTitle"                    = "Smart Folders";
+"OnlineContentGroupTitle"                   = "Online Content";
+
+"AddingSectionsItemTitle"                   = "Adding Library Sections";
+
+"SectionInfoTextNoneForType1"               = "No movies";
+"SectionInfoTextSingleForType1"             = "1 movie";
+"SectionInfoTextMultipleForType1"           = "%d movies";
+
+"SectionInfoTextNoneForType2"               = "No TV shows";
+"SectionInfoTextSingleForType2"             = "1 TV show";
+"SectionInfoTextMultipleForType2"           = "%d TV shows";
+
+"SectionInfoTextNoneForType8"               = "No Artists";
+"SectionInfoTextSingleForType8"             = "1 Artist";
+"SectionInfoTextMultipleForType8"           = "%d Artists";
+
+"SectionInfoTextNoneForType13"               = "No Photos";
+"SectionInfoTextSingleForType13"             = "1 Photo";
+"SectionInfoTextMultipleForType13"           = "%d Photos";
+
+"SectionLastUpdatedToday"                   = "Last updated today at %@";
+"SectionLastUpdatedYesterday"               = "Last updated yesterday at %@";
+"SectionLastUpdatedOnDate"                  = "Last updated on %@ at %@";
+
+"ItemLastRefreshedToday"                    = "Last refreshed today at %@";
+"ItemLastRefreshedYesterday"                = "Last refreshed yesterday at %@";
+"ItemLastRefreshedOnDate"                   = "Last refreshed on %@ at %@";
+
+
+/* Match picker sheet */
+"MatchPickerDescriptiveTextForType1"        = "Select the correct movie from the list below:";
+"MatchPickerDescriptiveTextForType2"        = "Select the correct TV show from the list below:";
+"MatchPickerDescriptiveTextForType8"        = "Select the correct artist from the list below:";
+
+"MatchPickerSelectButtonTitleForType1"      = "Select Movie";
+"MatchPickerSelectButtonTitleForType2"      = "Select TV Show";
+"MatchPickerSelectButtonTitleForType8"      = "Select Artist";
+
+
+/* Image picker sheet */
+"ImagePickerIconMessageText"                = "Choose an icon for the %@ section";
+"ImagePickerIconConfirmText"                = "Set Icon";
+"ImagePickerArtMessageText"                 = "Choose a background image for the %@ section";
+"ImagePickerArtConfirmText"                 = "Set Image";
+
+
+/* Section settings sheet */
+"SectionSettingsNoNameProvided"             = "You need to provide a section name";
+"SectionSettingsNoFoldersAdded"             = "You need to add at least one folder";
+"SectionSettingsAddButtonTitle"             = "Add Section";
+"SectionSettingsUpdateButtonTitle"          = "Update Section";
+
+"RemoveSectionConfirmButtonTitle"           = "Remove Section";
+"RemoveSectionCancelButtonTitle"            = "Cancel";
+"RemoveSectionAlertText"                    = "Are you sure you want to remove the section named \"%@\"?";
+"RemoveSectionAlertInfoText"                = "Any content in this section will no longer be available in your library. The files on your computer will not be removed.";
+
+"RemoveCollectionConfirmButtonTitle"        = "Remove Collection";
+"RemoveCollectionCancelButtonTitle"         = "Cancel";
+"RemoveCollectionAlertText"                 = "Are you sure you want to remove the collection named \"%@\"?";
+"RemoveCollectionAlertInfoText"             = "The collection will be removed. The media inside the collection will not be touched.";
+
+"EmptyTrashConfirmButtonTitle"              = "Empty Trash";
+"EmptyTrashCancelButtonTitle"               = "Cancel";
+"EmptyTrashAlertText"                       = "Are you sure you want to empty the trash in \"%@\"?.";
+"EmptyTrashAlertInfoText"                   = "All deleted items will be permanently removed from your library. No files on your computer will be removed.";
+
+/* Agent settings window */
+"AgentSettingsLoadingText"                  = "Loading metadata agent details";
+"AgentSettingsDescriptiveText"              = "Select which additional agents should contribute to metadata from %@, and drag them to change the order of preference."; 
+
+"NoAgentsDialogTitle"                       = "No metadata agents found";
+"NoAgentsDialogMessage"                     = "Please ensure you have installed at least one metadata agent. If you have, you may need to restart the media server.";
+"NoAgentsDialogButtonText"                  = "OK";

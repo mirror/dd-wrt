@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="ZP">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <MusicProfile container="mp3" codec="mp3" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="mp3" codec="mp3,mp2" />
+    <MusicProfile container="flac" codec="flac" />
+    <MusicProfile container="ogg" codec="vorbis" />
+    <MusicProfile container="asf" codec="wmav2" />
+  </DirectPlayProfiles>
+  <ContainerProfiles>
+    <MusicContainer name="mp4">
+      <Limitations>
+        <Match name="part.optimizedForStreaming" value="1" isRequired="true" />
+      </Limitations>
+    </MusicContainer>
+  </ContainerProfiles>
+  <CodecProfiles>
+    <MusicCodec name="*">
+      <Limitations>
+        <UpperBound name="audio.samplingRate" value="48000" />
+        <LowerBound name="audio.samplingRate" value="8000" />
+        <Match name="audio.samplingRate" list="8000|11025|16000|22050|24000|32000|44100|48000" />
+        <UpperBound name="audio.channels" value="2" />
+        <UpperBound name="audio.bitDepth" value="16" />
+        <UpperBound name="audio.bitrate" value="1411" />
+      </Limitations>
+    </MusicCodec>
+    <MusicCodec name="wmav2">
+      <Limitations>
+        <UpperBound name="audio.bitrate" value="355" />
+      </Limitations>
+    </MusicCodec>
+    <MusicCodec name="mp3,aac,vorbis">
+      <Limitations>
+        <UpperBound name="audio.bitrate" value="320" />
+      </Limitations>
+    </MusicCodec>
+  </CodecProfiles>
+</Client>

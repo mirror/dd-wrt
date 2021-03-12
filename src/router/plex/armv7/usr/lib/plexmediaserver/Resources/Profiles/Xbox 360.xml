@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Xbox 360">
+  <!-- Author: Plex Inc. -->
+  <!-- http://support.xbox.com/en-US/xbox-360/settings-and-initial-setup/watch-dvds-movies -->
+  <Identification>
+    <Header name="User-Agent" substring="Xbox" />
+    <Header name="User-Agent" substring="Xenon" />
+  </Identification>
+  <DeviceDescription>
+    <ModelName>Windows Media Player Sharing</ModelName>
+    <ModelNumber>12.0</ModelNumber>
+    <ModelUrl>http://www.microsoft.com/</ModelUrl>
+    <Manufacturer>Microsoft Corporation</Manufacturer>
+    <ManufacturerUrl>http://www.microsoft.com/</ManufacturerUrl>
+    <X-DlnaDoc>DMS-1.50</X-DlnaDoc>
+    <X-DlnaCap />
+  </DeviceDescription>
+  <Settings>
+    <Setting name="OnlyPlainVideoItems" value="true" />
+    <Setting name="OnlyStorageFolders" value="true" />
+    <Setting name="TimelineBufferOffset" value="40" />
+    <Setting name="RandomAccessDataModel" value="limited" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile container="asf" codec="wmv2" audioCodec="wmav2" context="streaming">
+      <Setting name="TranscodeSeekOffering" value="bytes" />
+      <Setting name="EstimateContentLength" value="true" />
+    </VideoProfile>
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="avi" codec="mpeg4" audioCodec="ac3,mp3" />
+    <VideoProfile container="avi" codec="h264" audioCodec="aac" />
+    <VideoProfile container="mp4,mov" codec="h264,mpeg4" audioCodec="aac,ac3" />
+    <VideoProfile container="asf" codec="wmv2,wmv3,vc1" audioCodec="wmav2,wmapro" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="mpeg4">
+      <Limitations>
+        <UpperBound name="video.width" value="1280" isRequired="true" />
+        <UpperBound name="video.height" value="720" isRequired="true" />
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="5120" />
+      </Limitations>
+    </VideoCodec>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.bitrate" value="10240" />
+        <UpperBound name="video.level" value="41" />
+      </Limitations>
+    </VideoCodec>
+    <VideoCodec name="wmv2,wmv3,vc1">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <!-- FPS upper bound takes care of requirement that advanced profile level be <= 3 -->
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="15360" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="ac3,wmav2,wmapro">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+      </Limitations>
+    </VideoAudioCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+        <Match name="audio.profile" value="lc" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <VideoContainer name="mp4,mov">
+      <Limitations>
+        <!-- Microsoft doesn't document this, but it appears to be true -->
+        <Match name="part.has64bitOffsets" value="0" />
+      </Limitations>
+    </VideoContainer>
+    <PhotoContainer name="*">
+      <Limitations>
+        <UpperBound name="media.width" value="1920" isRequired="true" />
+        <UpperBound name="media.height" value="1080" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+  <DlnaMediaProfiles>
+    <DlnaVideoProfile container="avi" mimeType="video/avi" />
+  </DlnaMediaProfiles>
+</Client>

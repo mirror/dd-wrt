@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Plex Home Theater">
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac,mp3" context="streaming" />
+    <VideoProfile protocol="http" container="mkv" codec="h264" audioCodec="aac,mp3" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <!-- Lots of stuff here, we can't list them all... -->
+  <DirectPlayProfiles>
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoAudioCodec name="mp3">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+    <MusicCodec name="mp3">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </MusicCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+      </Limitations>
+    </VideoAudioCodec>
+    <VideoAudioCodec name="ac3">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+</Client>

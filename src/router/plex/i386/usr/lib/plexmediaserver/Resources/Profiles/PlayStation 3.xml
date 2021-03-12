@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="PlayStation 3">
+  <!-- Author: Plex Inc. -->
+  <!-- http://manuals.playstation.net/document/en/ps3/current/video/filetypes.html -->
+  <!-- https://support.us.playstation.com/app/answers/detail/a_id/351/~/supported-music-and-audio-formats -->
+  <!-- That list doesn't seem complete or accurate though... -->
+  <Identification>
+    <Header name="User-Agent" substring="PLAYSTATION 3" />
+    <Header name="X-AV-Client-Info" substring="PLAYSTATION 3" />
+  </Identification>
+  <DeviceDescription>
+    <X-DlnaDoc>DMS-1.50</X-DlnaDoc>
+    <X-DlnaCap />
+    <Sony-AggregationFlags>10</Sony-AggregationFlags>
+  </DeviceDescription>
+  <TranscodeTargets>
+    <!-- In the old days, the PS3 would sometimes fail to play remuxed ac3, often in the middle of a video. We're hoping that's fixed now -->
+    <VideoProfile container="mpegts" codec="h264" audioCodec="mp3,aac,ac3" context="streaming" />
+    <MusicProfile container="s16be" codec="pcm_s16be">
+      <!-- aka LPCM -->
+      <!-- Transcoding to mp3 sort of works, but only if we lie to the PS3 and tell it we're not actually transcoding.
+           Then it accepts the metadata, but issues byte-range requests, which we ignore thanks to IgnoreTranscodeByteRangeRequests.
+           Then playback inexplicably fails at various points through the track.  It *might* work if we knew the content-length precisely,
+           but we don't.  We mostly do for LPCM, so LPCM it is. -->
+      <Setting name="EstimateContentLength" value="true" />
+    </MusicProfile>
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <Settings>
+    <Setting name="AlbumArtPN" value="JPEG_TN" />
+    <Setting name="EmitSinglePhotoResource" value="true" />
+  </Settings>
+  <DirectPlayProfiles>
+    <VideoProfile container="avi" codec="mpeg4" audioCodec="mp2,mp3" />
+    <VideoProfile container="mpegts" codec="mpeg1video,mpeg2video,h264" audioCodec="ac3,mp2,mp3,aac" />
+    <VideoProfile container="mpeg" codec="mpeg1video,mpeg2video" audioCodec="mp2" />
+    <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="aac,ac3" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice" />
+    <MusicProfile container="wav" codec="pcm" />
+    <PhotoProfile container="jpeg,png,gif,bmp,tiff" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="15360" />
+        <UpperBound name="video.level" value="41" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="ac3">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+        <UpperBound name="audio.bitrate" value="640" />
+      </Limitations>
+    </VideoAudioCodec>
+    <VideoAudioCodec name="wmapro">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <!-- The PS3 appears to be quite happy direct playing 6-channel aac -->
+        <NotMatch name="audio.profile" substring="he-aac" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <PhotoContainer name="*">
+      <Limitations>
+        <UpperBound name="media.width" value="1920" isRequired="true" />
+        <UpperBound name="media.height" value="1080" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+  <TranscodeTargetProfiles>
+    <!-- Transcoding to aac or remuxing it only works if it's stereo. Otherwise video plays without audio -->
+    <VideoTranscodeTarget protocol="http" context="streaming">
+      <VideoAudioCodec name="aac">
+        <Limitations>
+          <UpperBound name="audio.channels" value="2" />
+        </Limitations>
+      </VideoAudioCodec>
+    </VideoTranscodeTarget>
+  </TranscodeTargetProfiles>
+  <DlnaMediaProfiles>
+    <!-- PS3 will play AVI, but likes to see this mime type -->
+    <DlnaVideoProfile container="avi" mimeType="video/divx" pn="AVI" />
+    <DlnaVideoProfile container="mp4,mov" videoCodec="*" audioCodec="aac" mimeType="video/mp4" pn="" />
+    <DlnaMusicProfile container="wav" mimeType="audio/wav" />
+  </DlnaMediaProfiles>
+</Client>
