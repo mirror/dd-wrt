@@ -454,10 +454,10 @@ bmenu.vpn="VPN Passthrough";
 bmenu.accrestriction="Access Restrictions";
 bmenu.webaccess="WAN Access";
 
-
 bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Port Range Forwarding";
 bmenu.applicationspforwarding="Port Forwarding";
+bmenu.applicationsipforwarding="IP Forwarding (1:1 NAT)";
 bmenu.applicationsptriggering="Port Triggering";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
@@ -813,6 +813,14 @@ hpforward.page6="<dd>Enter the number of the external port (the port number seen
 hpforward.page7="<dd>Enter the IP Address of the PC running the application.</dd>";
 hpforward.page8="<dd>Enter the number of the internal port (the port number used by the application).</dd>";
 hpforward.page9="<dd>Click the <i>Enable</i> checkbox to enable port forwarding for the application.</dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click the <i>Cancel Changes</i> button to cancel your unsaved changes.<br /><br /><div class=\"note\"><h4>Note</h4><div>Remember to save your changes before adding another forwarding rule.</div></div></dd>";
+
+// ** IP Forward - 1:1 NAT **//
+var pforwardip=new Object();
+pforwardip.h2="IP Forward - 1:1 NAT";
+pforwardip.legend="Forwards";
+pforwardip.name="Name";
+pforwardip.src="Source IP";
+pforwardip.dest="Destination IP";
 
 // ** USB.asp **//
 var usb=new Object();

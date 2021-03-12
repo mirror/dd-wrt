@@ -185,6 +185,43 @@ void port_forward_spec(webs_t wp, char *type, int which)
 		websWrite(wp, "");
 }
 
+#ifdef HAVE_ANTAIRA
+void ip_forward(webs_t wp, char *type, int which)
+{
+	char word[256];
+	char *next, *wordlist;
+	char new_name[200];
+
+	wordlist = nvram_safe_get("forward_ip");
+
+	foreach(word, wordlist, next) {
+		if (which-- == 0) {
+			GETENTRYBYIDX(name, word, 0);
+			GETENTRYBYIDX(enable, word, 1);
+			GETENTRYBYIDX(src, word, 2);
+			GETENTRYBYIDX(dest, word, 3);
+			if (!name || !enable || !src || !dest)
+				continue;
+
+			if (!strcmp(type, "name")) {
+				httpd_filter_name(name, new_name, sizeof(new_name), GET);
+				websWrite(wp, "%s", new_name);
+			} else if (!strcmp(type, "src")) {
+				websWrite(wp, "%s", src);
+			} else if (!strcmp(type, "dest")) {
+				websWrite(wp, "%s", dest);
+			} else if (!strcmp(type, "enable")) {
+				if (!strcmp(enable, "on"))
+					websWrite(wp, "checked=\"checked\"");
+				else
+					websWrite(wp, "");
+			}
+			return;
+		}
+	}
+}
+#endif
+
 /*
  * Example: name:on:both:1000-2000>3000-4000 
  */
