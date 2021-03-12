@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Sony Bravia 2011">
+  <!-- Author: Yardco -->
+  <!-- http://esupport.sony.com/US/perl/support-info.pl?info_id=799&mdl=KDL55EX720 -->
+  <Identification>
+    <Header name="X-AV-Client-Info" regex=".*KDL-\d{2}([A-Z]X\d2\d|CX400).*" />
+    <DeviceDescription>
+      <Manufacturer substring="Sony" />
+      <FriendlyName regex="KDL-\d{2}([A-Z]X\d2\d|CX400).*" />
+    </DeviceDescription>
+  </Identification>
+  <DeviceDescription>
+    <ModelName>Windows Media Player Sharing</ModelName>
+    <ModelNumber>3.0</ModelNumber>
+    <ModelUrl>http://www.microsoft.com/</ModelUrl>
+    <Manufacturer>Microsoft Corporation</Manufacturer>
+    <ManufacturerUrl>http://www.microsoft.com/</ManufacturerUrl>
+    <X-DlnaCap />
+    <Sony-AggregationFlags>10</Sony-AggregationFlags>
+  </DeviceDescription>
+  <Settings>
+    <Setting name="AlbumArtPN" value="JPEG_TN" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac,mp3,ac3" context="streaming">
+      <Setting name="MpegtsM2tsMode" value="true" />
+    </VideoProfile>
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg">
+      <Setting name="ChromaSubsampling" value="4:2:2" />
+    </PhotoProfile>
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mpegts" codec="h264" audioCodec="ac3,aac,mp3" />
+    <VideoProfile container="mpegts" codec="mpeg2video" audioCodec="mp3,mp2" />
+    <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="ac3,aac,mp3,mp2" />
+    <VideoProfile container="mpeg" codec="mpeg2video,mpeg1video" audioCodec="mp3,mp2" />
+    <VideoProfile container="asf" codec="wmv2,wmv3,vc1" audioCodec="wmav2,wmapro,wmavoice" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+      </Limitations>
+    </VideoCodec>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="20000" />
+        <UpperBound name="video.level" value="41" />
+      </Limitations>
+    </VideoCodec>
+    <VideoCodec name="mpeg2video">
+      <Limitations>
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="20000" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="ac3">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+      </Limitations>
+    </VideoAudioCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+        <NotMatch name="audio.profile" substring="he-aac" /><!-- No he-aac -->
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <PhotoContainer name="*">
+      <Limitations>
+        <UpperBound name="media.width" value="1920" isRequired="true" />
+        <UpperBound name="media.height" value="1080" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+  <DlnaMediaProfiles>
+    <!-- These are from the Serviio profile. Thanks, Serviio -->
+    <DlnaVideoProfile container="mpegts" codec="h264" audioCodec="ac3,aac,mp3" pn="AVC_TS_HD_24_AC3_T,AVC_TS_HD_50_AC3_T,AVC_TS_HD_60_AC3_T,AVC_TS_HD_EU_T" mimeType="video/vnd.dlna.mpeg-tts">
+      <Limitations>
+        <Match name="video.packetLength" value="192" isRequired="true" />
+        <Match name="video.timeStamp" value="1" isRequired="true" />
+      </Limitations>
+    </DlnaVideoProfile>
+    <DlnaVideoProfile container="mpegts" codec="h264" audioCodec="ac3,aac,mp3" pn="AVC_TS_HD_24_AC3_ISO,AVC_TS_HD_50_AC3_ISO,AVC_TS_HD_60_AC3_ISO,AVC_TS_HD_EU_ISO" mimeType="video/mpeg">
+      <Limitations>
+        <Match name="video.packetLength" value="188" isRequired="true" />
+      </Limitations>
+    </DlnaVideoProfile>
+    <DlnaVideoProfile container="mpegts" codec="h264" audioCodec="ac3,aac,mp3" pn="AVC_TS_HD_24_AC3,AVC_TS_HD_50_AC3,AVC_TS_HD_60_AC3,AVC_TS_HD_EU" mimeType="video/vnd.dlna.mpeg-tts" />
+    <DlnaVideoProfile container="mpegts" codec="mpeg2video" pn="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" mimeType="video/vnd.dlna.mpeg-tts" />
+    <!-- These are inferred from the earlier PMS Bravia profile -->
+    <DlnaVideoProfile container="mpeg" codec="mpeg1video,mpeg2video" pn="MPEG_PS_NTSC,MPEG_PS_PAL" mimeType="video/mpeg" />
+    <DlnaVideoProfile container="mpeg" codec="mpeg1video,mpeg2video" pn="MPEG_PS_NTSC,MPEG_PS_PAL" mimeType="video/mpeg" />
+    <DlnaVideoProfile container="mpeg" codec="mpeg1video,mpeg2video" pn="MPEG_PS_NTSC,MPEG_PS_PAL" mimeType="video/mpeg" />
+    <!-- TODO - if necessary, remap WMABASE to WMA_BASE and WMAFULL to WMA_FULL-->
+  </DlnaMediaProfiles>
+</Client>

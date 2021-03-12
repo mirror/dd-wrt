@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Universal Recording">
+  <!-- Author: Plex, Inc. -->
+  <Settings>
+    <Setting name="DirectPlayStreamSelection" value="true" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile container="mpegts" videoCodec="h264,*" audioCodec="opus,*" subtitleCodec="dvb_subtitle,*" context="static" protocol="http" />
+    <VideoProfile container="mpegts" videoCodec="h264,*" audioCodec="opus,*" subtitleCodec="dvb_subtitle,*" context="static" protocol="hls">
+      <Setting name="BreakNonKeyframes" value="true" />
+    </VideoProfile>
+    <MusicProfile container="mp3" codec="mp3" context="static" />
+  </TranscodeTargets>
+</Client>

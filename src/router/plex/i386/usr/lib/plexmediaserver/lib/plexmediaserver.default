@@ -1,0 +1,25 @@
+# default Environment for Plex Media Server
+# Uncomment and edit variables below as desired
+
+# The number of plugins that can run at the same time
+#export PLEX_MEDIA_SERVER_MAX_PLUGIN_PROCS=6
+
+# Limit the stack size
+#export PLEX_MEDIA_SERVER_MAX_STACK_SIZE=3000
+
+# Where Plex should store the transcodes
+#export TMPDIR=/tmp
+
+# Where Plex keeps its metadata
+#export PLEX_MEDIA_SERVER_APPLICATION_SUPPORT_DIR="/var/lib/plexmediaserver/Library/Application Support"
+
+# the user that PMS should run as, defaults to 'plex'
+# note that if you change this you might need to move
+# the Application Support directory to not lose your
+# media library (match what is in /etc/passwd)
+# (plex_media_server_user has been retired in favor of plex_user on Debian)
+#export PLEX_MEDIA_SERVER_USER=plex
+
+# Uncomment this to use syslog for logging instead of
+# sending logs to Plex Media Server.log
+#export PLEX_MEDIA_SERVER_USE_SYSLOG=true

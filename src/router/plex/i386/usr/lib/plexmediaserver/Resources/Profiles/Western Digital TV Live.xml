@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Western Digital TV Live">
+  <!-- Author: Plex Inc. -->
+  <!-- http://www.wdc.com/wdproducts/library/UM/ENG/4779-705035.pdf -->
+  <!-- Model number tested: WDBAAN0000NBK -->
+  <Identification>
+    <Header name="User-Agent" substring="alphanetworks" />
+    <Header name="User-Agent" substring="ALPHA Networks" />
+  </Identification>
+  <Settings>
+    <Setting name="TimelineBufferOffset" value="5" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac,mp3,ac3,dca" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="avi" codec="mpeg1video,mpeg2video,mpeg4,h264,vc1" audioCodec="ac3,dca,mp2,mp3,pcm" />
+    <VideoProfile container="mpeg" codec="mpeg1video,mpeg2video" audioCodec="ac3,dca,mp2,mp3,pcm" />
+    <VideoProfile container="mkv" codec="mpeg1video,mpeg2video,mpeg4,h264,vc1" audioCodec="ac3,dca,aac,mp2,mp3,pcm" />
+    <VideoProfile container="mpegts" codec="mpeg1video,mpeg2video,h264,vc1" audioCodec="ac3,dca,mp2,mp3" />
+    <VideoProfile container="mp4,mov" codec="h264,mpeg4" audioCodec="ac3,aac,mp2,mp3" />
+    <VideoProfile container="asf" codec="vc1" audioCodec="wmav2,wmapro" />
+    <VideoProfile container="asf" codec="mpeg2video" audioCodec="mp2,ac3" /> <!-- dvr-ms -->
+    <MusicProfile container="mp3" codec="mp2,mp3" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="flac" codec="flac" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice" />
+    <MusicProfile container="ogg" codec="vorbis" />
+    <PhotoProfile container="jpeg,png,gif,bmp,tiff" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.level" value="41" />
+      </Limitations>
+    </VideoCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <PhotoContainer name="*">
+      <Limitations>
+        <UpperBound name="media.width" value="1920" isRequired="true" />
+        <UpperBound name="media.height" value="1080" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+  <DlnaMediaProfiles>
+    <!-- Always setting the PN to this makes the difference between the device rejecting the format and playing it -->
+    <DlnaVideoProfile container="mpegts" pn="MPEG_TS_SD_NA" />
+  </DlnaMediaProfiles>
+</Client>

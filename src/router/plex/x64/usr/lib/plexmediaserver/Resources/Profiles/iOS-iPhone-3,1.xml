@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="iOS-iPhone-3,1">
+  <!-- Author: Plex Inc. -->
+  <!-- This profile is used by A4-based iOS devices (iPad (1st Generation), iPod touch (4th Generation), and iPhone 4 (GSM & CDMA)) -->
+  <TranscodeTargets>
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac" context="static" />
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac,mp3" context="streaming">
+      <Setting name="HlsExtraMultiChannelAudioStream" value="ac3" />
+    </VideoProfile>
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="aac,mp3" subtitleCodec="mov_text,tx3g,ttxt,text" />
+    <!-- Since iOS can't direct play mov/*/mp3 it has its own profile  -->
+    <VideoProfile container="mov" codec="h264,mpeg4" audioCodec="aac" subtitleCodec="mov_text,tx3g,ttxt,text" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1280" isRequired="true" />
+        <UpperBound name="video.height" value="720" isRequired="true" />
+        <UpperBound name="video.bitDepth" value="8" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+</Client>

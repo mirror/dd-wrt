@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf8'?>
+<combine class="Artist">
+  <sources>
+    <agent>com.plexapp.agents.localmedia</agent>
+    <agent>com.plexapp.agents.plexmusic</agent>
+  </sources>
+</combine>

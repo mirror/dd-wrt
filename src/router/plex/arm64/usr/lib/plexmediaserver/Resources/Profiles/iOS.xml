@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="iOS">
+  <!-- Author: Plex Inc. -->
+  <!-- This profile is used by A5 and higher devices (starting with iPhone 4S and iPad 3) -->
+  <Settings>
+    <Setting name="DirectPlayStreamSelection" value="true" />
+    <Setting name="StreamUnselectedIncompatibleAudioStreams" value="true" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac" subtitleCodec="mov_text" context="static" />
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac,mp3" subtitleCodec="eia_608_embedded" context="streaming">
+      <Setting name="HlsExtraMultiChannelAudioStream" value="ac3" />
+    </VideoProfile>
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+    <SubtitleProfile protocol="hls" container="webvtt" subtitleCodec="webvtt"/>
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4,mov" codec="h264,mpeg4" audioCodec="aac" subtitleCodec="mov_text,tx3g,ttxt,text" />
+    <!-- Allow Direct Play of HLS content  -->
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="mp4" codec="alac" />
+    <MusicProfile container="flac" codec="flac" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.bitDepth" value="8" />
+        <NotMatch name="video.separateFields" value="1" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="*">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" onlyTranscodes="true" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+</Client>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Microsoft Edge">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac,ac3,eac3,mp3" context="streaming" />
+    <VideoProfile protocol="dash" container="mp4" codec="h264" audioCodec="aac" context="streaming">
+      <Setting name="ForceTranscodesForLive" value="true" />
+      <!-- <Setting name="BreakNonKeyframes" value="true" /> -->
+    </VideoProfile>
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+    <SubtitleProfile container="ass" codec="ass" context="all" />
+  </TranscodeTargets>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+        <UpperBound name="video.bitDepth" value="8" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="*">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <!-- When transcoding a multi-channel audio stream inside a video transcode, downmix the audio stream to stereo. -->
+  <TranscodeTargetProfiles>
+    <VideoTranscodeTarget protocol="*" context="streaming">
+      <VideoAudioCodec name="*">
+        <Limitations>
+          <UpperBound name="audio.channels" value="2" onlyTranscodes="true" />
+        </Limitations>
+      </VideoAudioCodec>
+    </VideoTranscodeTarget>
+  </TranscodeTargetProfiles>
+</Client>

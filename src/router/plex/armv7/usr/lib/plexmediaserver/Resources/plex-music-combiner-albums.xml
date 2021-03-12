@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf8'?>
+<combine class="Album">
+  <sources>
+    <agent>tv.plex.agents.music</agent>
+    <agent>com.plexapp.agents.localmedia</agent>
+    <agent>com.plexapp.agents.lyricfind</agent>
+  </sources>
+</combine>

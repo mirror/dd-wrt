@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Windows 10 Mobile">
+  <!-- Author: Plex Inc. -->
+  <!-- cf http://blogs.msdn.com/b/b8/archive/2012/06/08/building-a-rich-and-extensible-media-platform.aspx
+       cf https://msdn.microsoft.com/en-us/library/windows/apps/mt282148.aspx -->
+  <Settings>
+    <Setting name="DirectPlayStreamSelection" value="true" />
+    <Setting name="StreamUnselectedIncompatibleAudioStreams" value="true" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac,mp3" context="streaming" />
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac,mp3" context="static" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+    <SubtitleProfile container="webvtt" subtitleCodec="webvtt"/>
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mkv" codec="mpeg4,msmpeg4,hevc,h264,vc1" audioCodec="aac,mp3,flac,pcm" /> <!-- Even though FLAC isn't documented as working inside a MKV container, it does -->
+    <VideoProfile container="mp4" codec="mpeg4,msmpeg4,hevc,h264,vc1,mjpeg" audioCodec="aac,mp3" />
+    <VideoProfile container="mov" codec="mpeg4,msmpeg4,hevc,h264,vc1,mjpeg" audioCodec="aac,mp3,pcm" />
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac,mp3,mp2,pcm" />
+    <VideoProfile container="avi" codec="mpeg4,msmpeg4,h264,vc1,mjpeg" audioCodec="mp3,mp2,pcm" />
+    <MusicProfile container="asf" codec="wmav1,wmav2,wmav3,wmapro" />
+    <MusicProfile container="mp4" codec="aac,alac" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="aac" codec="aac" />
+    <MusicProfile container="flac" codec="flac" />
+    <MusicProfile container="wav" codec="pcm" />
+    <PhotoProfile container="jpeg,png,gif,bmp" />
+    <SubtitleProfile container="webvtt" subtitleCodec="webvtt"/>
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+        <UpperBound name="video.bitrate" value="40000" />
+      </Limitations>
+    </VideoCodec>
+    <VideoCodec name="h264">
+      <Limitations>
+        <!-- Windows doesn't appear to play 10-bit h264 -->
+        <UpperBound name="video.bitDepth" value="8" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+        <NotMatch name="audio.profile" value="main" />
+        <UpperBound name="audio.samplingRate" value="48000" />
+      </Limitations>
+    </VideoAudioCodec>
+    <MusicCodec name="aac">
+      <Limitations>
+        <NotMatch name="audio.profile" value="main" />
+        <UpperBound name="audio.samplingRate" value="48000" />
+      </Limitations>
+    </MusicCodec>
+  </CodecProfiles>
+</Client>

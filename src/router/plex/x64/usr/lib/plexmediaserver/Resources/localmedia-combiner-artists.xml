@@ -1,0 +1,6 @@
+
+<combine class="Artist">
+    <sources>
+        <agent>com.plexapp.agents.localmedia</agent>
+    </sources>
+</combine>

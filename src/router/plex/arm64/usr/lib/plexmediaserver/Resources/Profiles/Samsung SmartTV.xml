@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Samsung SmartTV">
+  <!-- Author: holzi -->
+  <!-- http://www.samsungdforum.com/Guide/View/Developer_Documentation/Technical_Notes/Player/Detailed_player_specification -->
+  <Identification>
+    <DeviceDescription>
+      <ModelUrl substring="samsung.com" />
+    </DeviceDescription>
+  </Identification>
+  <Settings>
+    <Setting name="EmitAlbumArtResources" value="true" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac,mp3,ac3" context="streaming" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="asf" codec="h264,mpeg4,mjpeg" audioCodec="mp3,ac3,wmav2,wmapro,wmavoice" />
+    <VideoProfile container="avi" codec="h264,mpeg4,mjpeg" audioCodec="mp3,ac3,dca" />
+    <VideoProfile container="mkv" codec="h264,mpeg4,mjpeg" audioCodec="mp3,ac3,dca,aac" />
+    <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="mp3,aac,ac3" />
+    <VideoProfile container="3gpp" codec="h264,mpeg4" audioCodec="aac" />
+    <VideoProfile container="mpeg" codec="mpeg1video,mpeg2video,h264" audioCodec="ac3,mp2,mp3,aac" />
+    <VideoProfile container="mpegts" codec="mpeg2video,h264,vc1" audioCodec="aac,mp3,ac3" />
+    <VideoProfile container="asf" codec="wmv2,wmv3" audioCodec="wmav2,wmavoice" />
+    <PhotoProfile container="jpeg" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="mpeg2video">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="30720" />
+      </Limitations>
+    </VideoCodec>
+    <VideoCodec name="mpeg4">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="8192" />
+      </Limitations>
+    </VideoCodec>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="37500" />
+        <UpperBound name="video.level" value="41" />
+      </Limitations>
+    </VideoCodec>
+    <VideoCodec name="wmv2,wmv3,vc1">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="25600" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="ac3,wmav2,dca,aac,mp3">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <PhotoContainer name="jpeg">
+      <Limitations>
+        <UpperBound name="media.width" value="1920" isRequired="true" />
+        <UpperBound name="media.height" value="1080" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+  <DlnaMediaProfiles>
+    <DlnaVideoProfile container="mkv" pn="" mimeType="video/x-mkv" />
+  </DlnaMediaProfiles>
+</Client>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Konvergo">
+  <TranscodeTargets>
+    <VideoProfile protocol="http" container="mkv" codec="h264" audioCodec="opus,vorbis,flac" subtitleCodec="ass,pgs,vobsub,*" context="streaming">
+      <Setting name="CopyMatroskaAttachments" value="true" />
+    </VideoProfile>
+    <MusicProfile container="mkv" codec="opus" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+</Client>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Sony Streaming Player">
+  <!-- Author: Plex Inc. -->
+  <!-- http://www.docs.sony.com/release/SMP-N200_NX20.pdf -->
+  <Identification>
+    <Header name="X-AV-Client-Info" regex="cn=&quot;Sony Corporation&quot;;.*mn=&quot;Media Player" />
+  </Identification>
+  <TranscodeTargets>
+    <VideoProfile container="mpegts" codec="h264" audioCodec="aac" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="avi" codec="mpeg4" audioCodec="mp2,mp3" />
+    <VideoProfile container="mkv" codec="h264,mpeg4" audioCodec="aac,ac3,mp2,mp3,pcm" />
+    <VideoProfile container="mp4" codec="h264,mpeg2video,mpeg4" audioCodec="aac,ac3,mp2,mp3" />
+    <VideoProfile container="mpeg" codec="mpeg1video,mpeg2video" audioCodec="mp2" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice" />
+    <MusicProfile container="wav" codec="pcm" />
+    <PhotoProfile container="jpeg,png,gif,bmp,tiff" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.bitrate" value="15360" />
+        <UpperBound name="video.level" value="41" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="ac3">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+        <UpperBound name="audio.bitrate" value="640" />
+      </Limitations>
+    </VideoAudioCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <PhotoContainer name="*">
+      <Limitations>
+        <UpperBound name="media.width" value="1920" isRequired="true" />
+        <UpperBound name="media.height" value="1080" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+</Client>

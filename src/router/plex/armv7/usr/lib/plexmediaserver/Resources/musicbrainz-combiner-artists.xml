@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf8'?>
+<combine class="Artist">
+  <sources>
+    <agent>org.musicbrainz.agents.music</agent>
+    <agent>com.plexapp.agents.localmedia</agent>
+  </sources>
+</combine>

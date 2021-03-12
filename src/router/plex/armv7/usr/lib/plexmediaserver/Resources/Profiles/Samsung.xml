@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Samsung">
+    <!-- Author: Plex Inc. -->
+    <TranscodeTargets>
+        <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="ac3" context="streaming">
+            <Setting name="VideoEncodeFlags" value="-x264opts ref=4:bframes=2:cabac=1"/>
+        </VideoProfile>
+        <SubtitleProfile container="srt" codec="srt" context="all" />
+        <MusicProfile container="mp3" codec="mp3"/>
+        <PhotoProfile container="jpeg"/>
+    </TranscodeTargets>
+    <DirectPlayProfiles>
+        <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="aac,ac3,eac3,mp3,pcm" subtitleCodec="srt,ssa,ass"/>
+        <VideoProfile container="asf" codec="wmv3,wmv3,vc1" audioCodec="wmav2,wmav2,wmapro,wmavoice,pcm" subtitleCodec="srt,ssa,ass"/>
+        <VideoProfile container="avi" codec="h264,msmpeg4v3,mpeg4,mjpeg" audioCodec="mp3,ac3,eac3,dca,pcm" subtitleCodec="srt,ssa,ass"/>
+        <VideoProfile container="mkv" codec="h264,mpeg4,mjpeg,mpeg2video,vc1,hevc" audioCodec="mp2,mp3,ac3,eac3,dca,aac,pcm,vorbis" subtitleCodec="srt,smi,ssa,ass,subrip"/>
+        <VideoProfile container="mpeg" codec="h264,mpeg1video,mpeg2video" audioCodec="mp2,mp3,ac3,eac3,aac,pcm" subtitleCodec="srt,ssa,ass"/>
+        <VideoProfile container="flv" codec="h264" audioCodec="aac,ac3,eac3,mp3,pcm" subtitleCodec="srt,ssa,ass"/>
+        <VideoProfile container="mpegts" codec="h264,mpeg2video,vc1" audioCodec="mp2,mp3,ac3,eac3,dca,pcm" subtitleCodec="srt,ssa,ass"/>
+        <VideoProfile container="wtv" codec="mpeg2video" audioCodec="ac3,eac3,aac,pcm"/>
+        <VideoProfile container="3gpp" codec="h264,mpeg4" audioCodec="aac,he-aac"/>
+        <MusicProfile container="mp4" codec="aac"/>
+        <MusicProfile container="mp3" codec="mp3"/>
+        <MusicProfile container="flac" codec="flac" />
+        <MusicProfile container="wma" codec="wmav2" />
+        <MusicProfile container="asf" codec="wmav2" />
+        <MusicProfile container="wav" codec="flac,pcm" />
+        <PhotoProfile container="jpeg,gif,bmp,png"/>
+    </DirectPlayProfiles>
+    <CodecProfiles>
+        <VideoAudioCodec name="ac3,wmav2,dca,aac,mp3">
+            <Limitations>
+                <UpperBound name="audio.channels" value="6"/>
+            </Limitations>
+        </VideoAudioCodec>
+        <MusicCodec name="aac">
+            <Limitations>
+                <UpperBound name="audio.channels" value="2"/>
+            </Limitations>
+        </MusicCodec>
+        <MusicCodec name="mp3">
+            <Limitations>
+                <UpperBound name="audio.bitrate" value="320"/>
+                <UpperBound name="audio.channels" value="2"/>
+            </Limitations>
+        </MusicCodec>
+    </CodecProfiles>
+</Client>

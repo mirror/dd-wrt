@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Wii U">
+  <!-- Author: Plex Inc. -->
+  <TranscodeTargets>
+    <VideoProfile protocol="hls" container="mpegts" codec="h264" audioCodec="aac" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+    <SubtitleProfile container="ass" codec="ass" context="all" />
+  </TranscodeTargets>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+        <UpperBound name="video.width" value="1920" isRequired="true" />
+        <UpperBound name="video.height" value="1080" isRequired="true" />
+        <UpperBound name="video.bitDepth" value="8" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="*">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+</Client>

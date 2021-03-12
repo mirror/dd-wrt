@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<language id="UK" name="Українська">
+  <IDS_SERVER_UNKNOWN_DEVICE_NAME value="Невiдомий пристрiй"/>
+  <IDS_SERVER_CHANNEL_SCAN_PROVIDERS value="Провайдери телевiзiйних каналiв"/>
+  <IDS_SERVER_AVAILABLE_NETWORKS value="Наявнi мережi"/>
+  <IDS_SERVER_TV_FAVORITES_NAME value="ТБ"/>
+  <IDS_SERVER_RADIO_FAVORITES_NAME value="Радiо"/>
+  <IDS_SERVER_MANUAL_FASTSCAN_NAME value="DVB-C мережевий пошук"/>
+  <IDS_SERVER_MANUAL_FASTSCAN_DESC value="Мережевий пошук з параметрами, що задаються користувачем"/>
+  <IDS_SERVER_LNB_PARAM_NAME value="ЛНБ"/>
+  <IDS_SERVER_DISEQC_PARAM_NAME value="Diseqc"/>
+  <IDS_SERVER_FREQ_KHZ_PARAM_NAME value="Частота, КГц"/>
+  <IDS_SERVER_SR_PARAM_NAME value="Символьна швидкiсть"/>
+  <IDS_SERVER_MODULATION_PARAM_NAME value="Модуляцiя"/>
+  <IDS_SERVER_MOD_QAM64_PARAM_NAME value="QAM64"/>
+  <IDS_SERVER_MOD_QAM128_PARAM_NAME value="QAM128"/>
+  <IDS_SERVER_MOD_QAM256_PARAM_NAME value="QAM256"/>
+  <IDS_SERVER_REGULAR_SCAN_NAME value="Звичайний пошук"/>
+  <IDS_SERVER_NETWORK_SCAN_NAME value="Мережевий пошук"/>
+  <IDS_SERVER_STANDARD_UNKNOWN_NAME value="Невiдомий стандарт"/>
+  <IDS_SERVER_STANDARD_DVBT_NAME value="Антена (DVB-T/T2)"/>
+  <IDS_SERVER_STANDARD_DVBC_NAME value="Кабель (DVB-C)"/>
+  <IDS_SERVER_STANDARD_DVBS_NAME value="Супутник (DVB-S/S2)"/>
+  <IDS_SERVER_STANDARD_ATSC_NAME value="OTA (ATSC)"/>
+  <IDS_SERVER_STANDARD_CQAM_NAME value="ClearQAM"/>
+</language>

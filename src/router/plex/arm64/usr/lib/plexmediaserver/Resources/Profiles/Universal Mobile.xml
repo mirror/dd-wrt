@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Universal Mobile">
+  <!-- Author: Plex, Inc. -->
+  <Settings>
+    <Setting name="DirectPlayStreamSelection" value="true" />
+  </Settings>
+  <TranscodeTargets>
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac" context="static" />
+    <SubtitleProfile container="srt" codec="srt" context="static" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mp4" codec="h264" audioCodec="aac" />
+    <SubtitleProfile container="srt" codec="srt" />
+  </DirectPlayProfiles>
+  <ContainerProfiles>
+    <VideoContainer name="mp4">
+      <Limitations>
+        <Match name="part.optimizedForStreaming" value="1" isRequired="true" />
+      </Limitations>
+    </VideoContainer>
+  </ContainerProfiles>
+  <CodecProfiles>
+    <VideoCodec name="h264">
+      <Limitations>
+        <NotMatch name="video.anamorphic" value="1" />
+        <NotMatch name="video.hasScalingMatrix" value="1" />
+        <UpperBound name="video.bitDepth" value="8" />
+        <UpperBound name="video.frameRate" value="30" />
+        <UpperBound name="video.level" value="40" />
+        <UpperBound name="video.refFrames" value="5" />
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="aac">
+      <Limitations>
+        <UpperBound name="audio.channels" value="2" />
+      </Limitations>
+    </VideoAudioCodec>
+  </CodecProfiles>
+</Client>

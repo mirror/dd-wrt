@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Client name="Roku-5000X-6.0">
+  <!-- Roku TV -->
+  <!-- Author: Dale Luck, Roku, Inc. -->
+  <!-- Version: 1.0.0.0 2014/8/21 YMD -->
+  <Identification>
+    <Header name="User-Agent" substring="Roku/5000X" />
+  </Identification>
+  <TranscodeTargets>
+    <VideoProfile container="mpegts" audioCodec="aac" codec="h264" context="streaming" />
+    <MusicProfile container="mp3" codec="mp3" />
+    <PhotoProfile container="jpeg" />
+  </TranscodeTargets>
+  <DirectPlayProfiles>
+    <VideoProfile container="mpegts" codec="mpeg1video,mpeg2video,h264,mpeg4" audioCodec="ac3,aac,mp3,mp2" />
+    <VideoProfile container="mp4" codec="mpeg1video,mpeg2video,h264,mpeg4" audioCodec="ac3,aac,mp3,mp2" />
+    <VideoProfile container="mov" codec="mpeg1video,mpeg2video,h264,mpeg4" audioCodec="ac3,aac,mp3,mp2" />
+    <VideoProfile container="mpeg" codec="h264,mpeg4" audioCodec="ac3,aac,mp3,mp2"  />
+    <VideoProfile container="mkv" codec="mpeg1video,mpeg2video,h264,mpeg4" audioCodec="ac3,aac,mp3,mp2,pcm,flac" />
+    <VideoProfile container="flv" codec="mpeg1video,mpeg2video,h264,mpeg4" audioCodec="ac3,aac,mp3,mp2,pcm,flac" />
+    <VideoProfile container="asf" codec="mpeg1video,mpeg2video,h264,mpeg4" audioCodec="ac3,aac,mp3,mp2,pcm,flac,wmav2,wmapro,wmavoice" />
+    <MusicProfile container="mp3" codec="mp2,mp3" />
+    <MusicProfile container="ac3" codec="ac3" />
+    <MusicProfile container="mp4" codec="aac" />
+    <MusicProfile container="flac" codec="flac" />
+    <MusicProfile container="asf" codec="wmav2,wmapro,wmavoice,ac3" />
+    <MusicProfile container="wav" codec="pcm" />
+    <PhotoProfile container="jpeg,png,gif" />
+  </DirectPlayProfiles>
+  <CodecProfiles>
+    <VideoCodec name="*">
+      <Limitations>
+      </Limitations>
+    </VideoCodec>
+    <VideoAudioCodec name="*">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+      </Limitations>
+    </VideoAudioCodec>
+    <MusicCodec name="*">
+      <Limitations>
+        <UpperBound name="audio.channels" value="6" />
+      </Limitations>
+    </MusicCodec>
+  </CodecProfiles>
+  <ContainerProfiles>
+    <PhotoContainer name="*">
+      <Limitations>
+        <UpperBound name="media.width" value="1280" isRequired="true" />
+        <UpperBound name="media.height" value="720" isRequired="true" />
+      </Limitations>
+    </PhotoContainer>
+  </ContainerProfiles>
+  <DlnaMediaProfiles>
+    <DlnaMusicProfile container="wav" mimeType="audio/wav" />
+  </DlnaMediaProfiles>
+</Client>
