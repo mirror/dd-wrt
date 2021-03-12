@@ -132,6 +132,8 @@ EJ_VISIBLE void del_tunnel(webs_t wp);
 EJ_VISIBLE void tunnel_save(webs_t wp);
 EJ_VISIBLE void forwardspec_add(webs_t wp);
 EJ_VISIBLE void forwardspec_remove(webs_t wp);
+EJ_VISIBLE void forwardip_add(webs_t wp);
+EJ_VISIBLE void forwardip_remove(webs_t wp);
 EJ_VISIBLE void trigger_add(webs_t wp);
 EJ_VISIBLE void trigger_remove(webs_t wp);
 EJ_VISIBLE void save_services_port(webs_t wp);
@@ -663,6 +665,10 @@ extern void validate_userlist(webs_t wp, char *value, struct variable *v);
 #endif
 extern void forwardspec_add(webs_t wp);
 extern void forwardspec_remove(webs_t wp);
+#ifdef HAVE_ANTAIRA
+extern void forwardip_add(webs_t wp);
+extern void forwardip_remove(webs_t wp);
+#endif
 extern void trigger_add(webs_t wp);
 extern void trigger_remove(webs_t wp);
 

@@ -73,6 +73,7 @@ void validate_filter_port(webs_t wp, char *value, struct variable *v);
 void validate_filter_web(webs_t wp, char *value, struct variable *v);
 void validate_forward_proto(webs_t wp, char *value, struct variable *v);
 void validate_forward_spec(webs_t wp, char *value, struct variable *v);
+void validate_forward_ip(webs_t wp, char *value, struct variable *v);
 void validate_hwaddr(webs_t wp, char *value, struct variable *v);
 void validate_hwaddrs(webs_t wp, char *value, struct variable *v);
 void validate_ipaddr(webs_t wp, char *value, struct variable *v);
@@ -462,6 +463,7 @@ static struct callmap validate_map[] = {
 	{ "validate_filter_web", &validate_filter_web },
 	{ "validate_forward_proto", &validate_forward_proto },
 	{ "validate_forward_spec", &validate_forward_spec },
+	{ "validate_forward_ip", &validate_forward_ip },
 	{ "validate_hwaddr", &validate_hwaddr },
 	{ "validate_hwaddrs", &validate_hwaddrs },
 	{ "validate_ipaddr", &validate_ipaddr },
@@ -643,6 +645,10 @@ static struct callmap gozila_map[] = {
 #endif
 	{ "forwardspec_add", &forwardspec_add },
 	{ "forwardspec_remove", &forwardspec_remove },
+#ifdef HAVE_ANTAIRA
+	{ "forwardip_add", &forwardip_add },
+	{ "forwardip_remove", &forwardip_remove },
+#endif
 	{ "trigger_add", &trigger_add },
 	{ "trigger_remove", &trigger_remove },
 	{ "save_services_port", &save_services_port },

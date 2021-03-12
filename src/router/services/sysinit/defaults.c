@@ -3082,6 +3082,9 @@ struct nvram_param srouter_defaults[] = {
 
 	{ "forward_entries", "0" },
 	{ "forwardspec_entries", "0" },
+#ifdef HAVE_ANTAIRA
+	{ "forwardip_entries", "0" },
+#endif
 	{ "trigger_entries", "0" },
 #ifdef HAVE_SKYTRON
 	{ "sip_port", "5060" },

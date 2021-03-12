@@ -827,7 +827,8 @@ ifeq ($(CONFIG_ANTAIRA),y)
 	cp -f antaira/logo.png $(INSTALLDIR)/www/style
 	cp -f antaira/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f antaira/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
-	cp -f antaira/www/index.asp $(INSTALLDIR)/www/index.asp
+#	cp -f antaira/www/index.asp $(INSTALLDIR)/www/index.asp
+	cp -f antaira/www/* $(INSTALLDIR)/www/
 	sed -e 's/About\.htm/http:\/\/www.antaira.com/g' -e 's/DDWRT_About/Antaira_About/g' common.js >$(INSTALLDIR)/www/common.js
 	sed -e 's/DD-WRT \/ NewMedia-NET GmbH/Antaira Technologies/g' SuperChannel.asp >$(INSTALLDIR)/www/SuperChannel.asp
 	sed -e 's/<br>Powered by DD-WRT//g' Wiviz_Survey.asp >$(INSTALLDIR)/www/Wiviz_Survey.asp

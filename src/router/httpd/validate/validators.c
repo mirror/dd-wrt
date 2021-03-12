@@ -1526,6 +1526,87 @@ EJ_VISIBLE void validate_forward_proto(webs_t wp, char *value, struct variable *
 	free(buf);
 }
 
+#ifdef HAVE_ANTAIRA
+/*
+ * Example: name:[on|off]:src:dest
+ */
+void validate_forward_ip(webs_t wp, char *value, struct variable *v)
+{
+	char *buf, *cur;
+	int count, sof, i = 0, error = 0;
+	struct variable forward_proto_variables[] = {
+	      { argv:ARGV("12") },
+		{ NULL },
+	}, *which;
+
+	buf = nvram_safe_get("forwardip_entries");
+	if (buf == NULL || *(buf) == 0)
+		return;
+	count = atoi(buf);
+	sof = (count * 128) + 1;
+	buf = (char *)safe_malloc(sof);
+	cur = buf;
+	buf[0] = 0;
+
+	for (i = 0; i < count; i++) {
+		char forward_name[] = "nameXXX";
+		char forward_src[] = "srcXXX";
+		char forward_dest[] = "destXXX";
+		char forward_enable[] = "enableXXX";
+		char *name = "", new_name[200] = "", *src = "", *dest = "", *enable = "";
+
+		snprintf(forward_name, sizeof(forward_name), "name%d", i);
+		snprintf(forward_src, sizeof(forward_src), "src%d", i);
+		snprintf(forward_dest, sizeof(forward_dest), "dest%d", i);
+		snprintf(forward_enable, sizeof(forward_enable), "enable%d", i);
+
+		name = websGetVar(wp, forward_name, "");
+		src = websGetVar(wp, forward_src, NULL);
+		dest = websGetVar(wp, forward_dest, NULL);
+		enable = websGetVar(wp, forward_enable, "off");
+
+		if (!*src && !*dest)
+			continue;
+		if (!strcmp(src, "0") || !strcmp(src, ""))
+			continue;
+		if ((!strcmp(dest, "0") || !strcmp(dest, "")))
+			continue;
+
+		/*
+		 * check name 
+		 */
+		if (strcmp(name, "")) {
+			if (!valid_name(wp, name, &which[0])) {
+				continue;
+			} else {
+				httpd_filter_name(name, new_name, sizeof(new_name), SET);
+			}
+		}
+		/*
+		 * check ip address 
+		 */
+
+		if (!*src || !*dest) {
+			error = 1;
+			// websWrite(wp, "Invalid <b>%s</b> : must specify a
+			// ip<br>",which[4].longname);
+			continue;
+		}
+
+		if (sv_valid_ipaddr(src) && sv_valid_ipaddr(dest)) {
+			cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%s", cur == buf ? "" : " ", new_name, enable, src, dest);
+		} else {
+			error = 1;
+			continue;
+		}
+
+	}
+	if (!error)
+		nvram_set(v->name, buf);
+	free(buf);
+}
+#endif
+
 /*
  * Example: name:[on|off]:[tcp|udp|both]:8000:80>100 
  */
