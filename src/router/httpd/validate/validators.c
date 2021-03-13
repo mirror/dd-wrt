@@ -1526,7 +1526,6 @@ EJ_VISIBLE void validate_forward_proto(webs_t wp, char *value, struct variable *
 	free(buf);
 }
 
-#ifdef HAVE_ANTAIRA
 /*
  * Example: name:[on|off]:src:dest
  */
@@ -1605,7 +1604,6 @@ void validate_forward_ip(webs_t wp, char *value, struct variable *v)
 		nvram_set(v->name, buf);
 	free(buf);
 }
-#endif
 
 /*
  * Example: name:[on|off]:[tcp|udp|both]:8000:80>100 
