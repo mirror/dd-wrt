@@ -476,6 +476,7 @@ static int write_main(int argc, char *argv[])
 	stop_service("upnp");
 	stop_service("freeradius");
 	stop_service("transmission");
+	stop_service("plex");
 	killall("process_monitor", SIGTERM);
 	killall("wdswatchdog.sh", SIGTERM);
 	killall("schedulerb.sh", SIGTERM);

@@ -64,6 +64,13 @@ static int check_transmission(void)
 	return !search_process("transmissiond", 1);
 }
 
+static int check_plex(void)
+{
+	if (nvram_match("plex_enable", "0"))	// todo: add upstream 
+		return 0;
+	return !search_process("Plex Media Server", 1);
+}
+
 static int check_ddns(void)
 {
 	if (nvram_match("wan_proto", "disabled") || !*(get_wan_face()))	// todo: add upstream 
@@ -128,6 +135,9 @@ struct mon mons[] = {
 #endif
 #ifdef HAVE_TRANSMISSION
 	{ "transmission", M_LAN, "transmission_enable", "1", NULL, NULL, &check_transmission },
+#endif
+#ifdef HAVE_PLEX
+	{ "Plex Media Server", M_LAN, "plex_enable", "1", NULL, NULL, &check_plex },
 #endif
 #ifdef HAVE_ERC
 #ifdef HAVE_OPENVPN

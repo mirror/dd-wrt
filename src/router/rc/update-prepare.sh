@@ -99,6 +99,7 @@ killall resetbutton
 killall cron
 stopservice snmp
 stopservice transmission
+stopservice plex
 stopservice freeradius
 stopservice pppoeserver
 stopservice upnp

@@ -139,6 +139,9 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_TRANSMISSION
 	start_service_f("transmission");
 #endif
+#ifdef HAVE_PLEX
+	start_service_f("plex");
+#endif
 #ifdef HAVE_TFTP
 	start_service_f("tftpd");
 #endif
@@ -335,6 +338,9 @@ static int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_TRANSMISSION
 	stop_service_f("transmission");
+#endif
+#ifdef HAVE_PLEX
+	stop_service_f("plex");
 #endif
 #ifdef HAVE_PRIVOXY
 	stop_service_f("privoxy");
@@ -762,6 +768,9 @@ static void handle_nassrv(void)
 #ifdef HAVE_TRANSMISSION
 	stop_service_f("transmission");
 #endif
+#ifdef HAVE_PLEX
+	stop_service_f("plex");
+#endif
 #ifdef HAVE_MINIDLNA
 	stop_service_f("dlna");
 #endif
@@ -803,6 +812,9 @@ static void handle_nassrv(void)
 #endif
 #ifdef HAVE_TRANSMISSION
 	start_service_f("transmission");
+#endif
+#ifdef HAVE_PLEX
+	start_service_f("plex");
 #endif
 	restart("firewall");
 
