@@ -810,6 +810,8 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.samba3_enable, 'samba3config', <% nvem("samba3_enable", "1", "1", "0"); %> == 1);
 	if (document.setup.transmission_enable)
 		show_layer_ext(document.setup.transmission_enable, 'transmissionconfig', <% nvem("transmission_enable", "1", "1", "0"); %> == 1);
+	if (document.setup.plex_enable)
+		show_layer_ext(document.setup.plex_enable, 'plexconfig', <% nvem("plex_enable", "1", "1", "0"); %> == 1);
 	//show_layer_ext(document.setup.samba3_pub, 'samba3pub', <% nvem("samba3_pub", "1", "1", "0"); %> == 1);
 	if (document.setup.samba3_advanced)
 		show_layer_ext(document.setup.samba3_advanced, 'samba3advanced', <% nvem("samba3_advanced", "1", "1", "0"); %> == 1);
