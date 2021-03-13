@@ -1,1 +1,2 @@
  "plex_enable"  "plex Daemon"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
+ "plex_appdir"  "plex application support dir" "NULL" "FALSE" "0"

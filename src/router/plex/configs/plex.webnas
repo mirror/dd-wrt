@@ -2,7 +2,13 @@
 	<legend><% tran("service.plex_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.plex_srv"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="plex_enable" <% nvc("plex_enable","1"); %> <% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="plex_enable" <% nvc("plex_enable","0"); %> <% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="plex_enable" <% nvc("plex_enable","1"); %> onclick="show_layer_ext(this, 'plexconfig', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="plex_enable" <% nvc("plex_enable","0"); %> onclick="show_layer_ext(this, 'plexconfig', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="plexconfig">	
+		<div class="setting">
+			<div class="label"><% tran("service.plex_appdir"); %></div>
+			<input size="25" maxlength="128" class="text" name="plex_appdir" value="<% nvg("plex_appdir"); %>" />
+		</div>
 	</div>
 </fieldset><br/>
