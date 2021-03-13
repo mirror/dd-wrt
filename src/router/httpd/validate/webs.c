@@ -2613,7 +2613,6 @@ void forwardspec_add(webs_t wp)
 	macro_add("forwardspec_entries");
 }
 
-#ifdef HAVE_ANTAIRA
 void forwardip_remove(webs_t wp)
 {
 	macro_rem("forwardip_entries", "forward_ip");
@@ -2623,7 +2622,6 @@ void forwardip_add(webs_t wp)
 {
 	macro_add("forwardip_entries");
 }
-#endif
 
 void trigger_remove(webs_t wp)
 {
