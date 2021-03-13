@@ -2122,6 +2122,7 @@ service.transmission_whitelist="Whitelist IP's";
 
 service.plex_legend="Media Server";
 service.plex_srv="Plex Media Server";
+service.plex_appdir="Plex Application Support Directory";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
