@@ -185,7 +185,6 @@ void port_forward_spec(webs_t wp, char *type, int which)
 		websWrite(wp, "");
 }
 
-#ifdef HAVE_ANTAIRA
 void ip_forward(webs_t wp, char *type, int which)
 {
 	char word[256];
@@ -220,7 +219,6 @@ void ip_forward(webs_t wp, char *type, int which)
 		}
 	}
 }
-#endif
 
 /*
  * Example: name:on:both:1000-2000>3000-4000 

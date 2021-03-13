@@ -972,7 +972,6 @@ EJ_VISIBLE void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-#ifdef HAVE_ANTAIRA
 EJ_VISIBLE void ej_show_forward_ip(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
@@ -995,7 +994,6 @@ EJ_VISIBLE void ej_show_forward_ip(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, " /></td>\n</tr>\n");
 	}
 }
-#endif
 
 EJ_VISIBLE void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 {

@@ -248,9 +248,7 @@ void Initnvramtab()
 		{ "WLHWADDRS", "validate_wl_hwaddrs", 0 },
 		{ "FORWARDPROTO", "validate_forward_proto", 0 },
 		{ "FORWARDSPEC", "validate_forward_spec", 0 },
-#ifdef HAVE_ANTAIRA
 		{ "FORWARDIP", "validate_forward_ip", 0 },
-#endif
 		{ "PORTTRIGGER", "validate_port_trigger", 0 },
 		{ "HWADDR", "validate_hwaddr", 0 },
 		{ "HWADDRS", "validate_hwaddrs", 0 },
@@ -1231,10 +1229,8 @@ static struct gozila_action gozila_actions[] = {
 	{ "ForwardSpec", "add_forward_spec", "", REFRESH, "forwardspec_add" },
 	{ "ForwardSpec", "remove_forward_spec", "", REFRESH,
 	 "forwardspec_remove" },
-#ifdef HAVE_ANTAIRA
 	{ "ForwardIP", "add_forward_ip", "", REFRESH, "forwardip_add" },
 	{ "ForwardIP", "remove_forward_ip", "", REFRESH, "forwardip_remove" },
-#endif
 	{ "Triggering", "add_trigger", "", REFRESH, "trigger_add" },
 	{ "Triggering", "remove_trigger", "", REFRESH, "trigger_remove" },
 	{ "Port_Services", "save_services", "filters", REFRESH,
@@ -1401,6 +1397,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		do_ej(METHOD_GET, NULL, path, wp);	// refresh
 
 #ifdef HAVE_ANTAIRA
+	// @markus. this is wrong here, it works as a hack but structural it should use handlers
 	if (!strcmp(submit_type, "browser_date")) {
 		int d = websGetVari(wp, "browser_ts", 0);
 		if (d != 0) {
