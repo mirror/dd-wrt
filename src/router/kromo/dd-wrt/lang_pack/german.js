@@ -1817,6 +1817,9 @@ service.transmission_style="Webinterface Stil";
 service.transmission_rpc="Webinterface Port";
 service.transmission_whitelist="Erlaubte IP's";
 
+service.plex_legend="Medien Server";
+service.plex_srv="Plex Medien Server";
+
 // ** eop-tunnel.asp **//
 
 eoip.titl="Tunnels";
