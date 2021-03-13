@@ -112,6 +112,9 @@ void start_raid(void)
 #ifdef HAVE_TRANSMISSION
 		eval("stopservice", "transmission");
 #endif
+#ifdef HAVE_PLEX
+		eval("stopservice", "plex");
+#endif
 		eval("stopservice", "run_rc_usb");
 	}
 	if (md) {
@@ -395,6 +398,9 @@ void start_raid(void)
 #endif
 #ifdef HAVE_TRANSMISSION
 		eval("restart_f", "transmission");
+#endif
+#ifdef HAVE_PLEX
+		eval("restart_f", "plex");
 #endif
 		eval("startservice", "run_rc_usb", "-f");
 	}

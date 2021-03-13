@@ -3638,6 +3638,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "transmission_rpc", "9091" },
 	{ "transmission_style", "transmission-web-control" },
 #endif
+#ifdef HAVE_PLEX
+	{ "plex_enable", "0" },
+#endif
 #ifdef HAVE_MACTELNET
 	{ "mactelnetd_enable", "0" },
 #endif

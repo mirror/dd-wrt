@@ -3128,6 +3128,9 @@ void load_drivers(int boot)
 #ifdef HAVE_TRANSMISSION
 		eval("stopservice", "transmission");
 #endif
+#ifdef HAVE_PLEX
+		eval("stopservice", "plex");
+#endif
 		sysprintf("umount /%s", nvram_default_get("usb_mntpoint", "mnt"));
 		rmmod("phy-qcom-hsusb");
 		rmmod("phy-qcom-ssusb");
@@ -3208,6 +3211,9 @@ void load_drivers(int boot)
 #endif
 #ifdef HAVE_TRANSMISSION
 		eval("startservice_f", "transmission");
+#endif
+#ifdef HAVE_PLEX
+		eval("startservice_f", "plex");
 #endif
 
 	}
