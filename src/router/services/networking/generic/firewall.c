@@ -616,8 +616,6 @@ static void parse_spec_forward(char *wanaddr, char *wordlist)
 	}
 }
 
-#ifdef HAVE_ANTAIRA
-
 #define ANT_IPF_PREROUTING  0
 #define ANT_IPF_POSTROUTING 1
 
@@ -666,7 +664,6 @@ static void parse_ip_forward(int mode, char *wanface, char *wordlist)
 		create_ip_forward(mode, wanface, src, dest);
 	}
 }
-#endif
 
 static void nat_prerouting_bridged(char *wanface, char *vifs)
 {
@@ -839,9 +836,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		/*
 		 * Port forwarding 
 		 */
-#ifdef HAVE_ANTAIRA
 		parse_ip_forward(ANT_IPF_PREROUTING, wanface, nvram_safe_get("forward_ip"));
-#endif
 
 #ifdef HAVE_UPNP
 		parse_upnp_forward(wanface, wanaddr, lan_cclass);
@@ -885,9 +880,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		}
 		if (*wanface && wanactive(wanaddr)
 		    && !nvram_matchi("br0_nat", 0)) {
-#ifdef HAVE_ANTAIRA
 			parse_ip_forward(ANT_IPF_POSTROUTING, wanface, nvram_safe_get("forward_ip"));
-#endif
 			save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
 			char *sr = nvram_safe_get("static_route");
 			foreach(word, sr, tmp) {
