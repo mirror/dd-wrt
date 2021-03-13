@@ -73,6 +73,9 @@ static bool usb_stopservices()
 #ifdef HAVE_TRANSMISSION
 	eval("stopservice", "transmission");
 #endif
+#ifdef HAVE_PLEX
+	eval("stopservice", "plex");
+#endif
 	eval("stopservice", "run_rc_usb");
 	return 0;
 }
@@ -91,6 +94,9 @@ static bool usb_startservices()
 #endif
 #ifdef HAVE_TRANSMISSION
 	eval("startservice", "transmission", "-f");
+#endif
+#ifdef HAVE_PLEX
+	eval("startservice", "plex", "-f");
 #endif
 	eval("startservice", "run_rc_usb", "-f");
 	return 0;
