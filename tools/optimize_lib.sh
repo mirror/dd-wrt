@@ -16,15 +16,15 @@ INSTALLLIB=$6
 MAP=${DIR}/.map
 SYM=${DIR}/.sybmols
 UNR=${DIR}/.unresolved
-find $SEARCHDIR -name .svn -exec rm -rf {} +
-BINARIES=`find $SEARCHDIR -path $SEARCHDIR/lib -prune -o -type f -print | file -f - | grep ELF | cut -d':' -f1`
+find "$SEARCHDIR" -name .svn -exec rm -rf {} +
+BINARIES=`find "$SEARCHDIR" -path "$SEARCHDIR/lib" -prune -o -type f -print | file -f - | grep ELF | cut -d':' -f1`
 
-if [ ! -f ${DIR}/${LIB_SO} ] ; then
+if [ ! -f "${DIR}/${LIB_SO}" ] ; then
 	echo "Cann't find ${DIR}/${LIB_SO}";
 	exit 0;
 fi
 
-if [ ! -f ${DIR}/${LIB_A} ] ; then
+if [ ! -f "${DIR}/${LIB_A}" ] ; then
 	echo "Cann't find ${DIR}/${LIB_A}";
 	exit 0;
 fi
@@ -32,12 +32,19 @@ fi
 rm -f $MAP
 rm -f $SYM
 rm -f $UNR
+rm -f $UNR.tmp
 
-$NM -o --defined-only --no-sort ${DIR}/${LIB_SO} | cut -d' ' -f3 > $MAP
-$NM --dynamic -u --no-sort $BINARIES | sort -u > $UNR
+$NM -o --defined-only --no-sort "${DIR}/${LIB_SO}" | cut -d' ' -f3 > $MAP
+for bin in $BINARIES ; do 
+	$NM --dynamic -u --no-sort "$bin" >> $UNR
+done
+cp $UNR $UNR.tmp
+sort -u $UNR.tmp > $UNR
+
+echo done
 
 if [ ! -z $7 ] ; then
-	for symbol in `cat $UNR` ; do 
+	for symbol in `cat $UNR` ; do
 		if grep -q "^$symbol" $MAP ; then echo "-Wl,-u,$symbol" >> $SYM ;
 	fi ; done 
 else
@@ -48,15 +55,16 @@ fi
 if ls $SYM ; then
 	if [ ! -z $7 ] ; then
 		echo "link with arguments"
-		xargs -t $CC -shared -o ${DIR}/${LIB_SO_M} ${DIR}/${LIB_A} `cat $7`< $SYM ;
+		echo xargs -t $CC -shared -o "${DIR}/${LIB_SO_M}" "${DIR}/${LIB_A}" `cat $7`< $SYM ;
+		xargs -t $CC -shared -o "${DIR}/${LIB_SO_M}" "${DIR}/${LIB_A}" `cat $7`< $SYM ;
 	else
 		echo "link with no arguments"
-		xargs -t $LD -shared -o ${DIR}/${LIB_SO_M} ${DIR}/${LIB_A} < $SYM ;
+		xargs -t $LD -shared -o "${DIR}/${LIB_SO_M}" "${DIR}/${LIB_A}" < $SYM ;
 	fi
 fi
 
-if [ "a$INSTALLLIB" != "a" -a -f ${DIR}/${LIB_SO_M} ] ; then
-	echo install ${DIR}/${LIB_SO_M} $INSTALLLIB
-	install ${DIR}/${LIB_SO_M} $INSTALLLIB
+if [ "a$INSTALLLIB" != "a" -a -f "${DIR}/${LIB_SO_M}" ] ; then
+	echo install "${DIR}/${LIB_SO_M}" $INSTALLLIB
+	install "${DIR}/${LIB_SO_M}" $INSTALLLIB
 	$STRIP $INSTALLLIB
 fi
