@@ -13,5 +13,6 @@ clean:
 
 install:
 	install -d $(INSTALLDIR)
-	cp -rvf $(PLATFORM) $(INSTALLDIR)
+	cp -rvf $(PLATFORM)/usr $(INSTALLDIR)
+	rm -rf $(INSTALLDIR)/usr/share
 
