@@ -2,11 +2,9 @@
 nv=/usr/sbin/nvram
 ipt=/usr/sbin/iptables
 tunnels=`$nv get oet_tunnels`
-
 #WAN_IF="$(ip route | awk '/^default/{print $NF}')"
 WAN_IF=$(get_wanface)
 FW_STATE="-m state --state NEW"
-
 for i in `seq 1 $tunnels`
 do
 	if test -e "/tmp/oet/pid/${i}.pid"
@@ -48,13 +46,11 @@ do
 		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 ]]
 		then
 			$ipt -I FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
-			#$ipt -I FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
 			$ipt -I INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
 		fi
 		if [ `$nv get oet${i}_proto` -eq 2 ]
 		then
 			insmod xt_addrtype
-			$ipt -I INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT 2>&1 > /dev/null
 			if [ `$nv get oet${i}_mit` -eq 1 ]
 			then
 				$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP
@@ -63,7 +59,6 @@ do
 			# Controlled by nvram parameter oet${i}_natout
 			if [[ $($nv get oet${i}_natout) -eq 1 ]]
 			then
-				# $ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to-source $($nv get oet${i}_ipaddr) 2>&1 > /dev/null
 				$ipt -t nat -I POSTROUTING -o oet${i} -j MASQUERADE 2>&1 > /dev/null
 			fi
 			#egc: killswitch controled by nvram parameter oet${i}_killswitch
@@ -74,7 +69,6 @@ do
 					logger -p user.info "WireGuard Killswitch on PBR activated for oet${i}"
 					# create firewall chain for blocked IPs
 					$ipt -N $FW_CHAIN
-
 					echo $($nv get oet${i}_pbr), | while read -d ',' line; do  	# added "," so that last entry is read
 						line=$(echo $line | sed -e 's/^[[:space:]]*//')
 						if [ ${line:0:1} = "#" ]; then
@@ -90,7 +84,6 @@ do
 							;;
 						esac
 					done
-
 					# begin blocking: force LAN->WAN traffic through firewall chain for inspection
 					$ipt -I FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN
 				else
@@ -101,12 +94,13 @@ do
 				fi
 			fi
 			#end kill switch
-			
-			#New Inbound opening of firewall for site-to-site, remove line 48- 53
+			#New Inbound opening of firewall for site-to-site
 			if [[ $($nv get oet${i}_firewallin) -eq 0 ]]
 			then
+				echo "$ipt -D INPUT -i $(get_wanface) -p udp --dport $($nv get oet${i}_port) -j ACCEPT" >> $WGDELRT
 				echo "$ipt -D FORWARD -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
 				echo "$ipt -D INPUT -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
+				$ipt -I INPUT -i $(get_wanface) -p udp --dport $($nv get oet${i}_port) -j ACCEPT > /dev/null 2>&1
 				$ipt -I FORWARD -i oet${i} $FW_STATE -j ACCEPT > /dev/null 2>&1
 				$ipt -I INPUT -i oet${i} $FW_STATE -j ACCEPT > /dev/null 2>&1
 				logger -p user.info "WireGuard Inbound Firewall deactivated on oet${i}"

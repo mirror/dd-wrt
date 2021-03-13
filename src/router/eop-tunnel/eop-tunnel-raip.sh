@@ -4,12 +4,17 @@ i=$1
 #make sure WG/router is up and ready wait for date and start of dnsmasq or if tunnel is pingable
 ##sleep 35
 # default sleep time
+
+# debug todo check if nvram get ntp_succes and/or ntp_done can be used to see if time is set
+#logger -p user.info "WireGuard debug st start of time check: ntp_success: $(nvram get ntp_success); ntp_done:$(nvram get ntp_done) "
+
 MINTIME=$($nv get wg_mintime)
 [[ -z $MINTIME ]] && MINTIME=1
 sleep $MINTIME
 MAXTIME=$($nv get wg_maxtime) #0 = no maxtime
-[[ -z $MAXTIME ]] && MAXTIME=80
+[[ -z $MAXTIME ]] && MAXTIME=90
 SLEEPCT=$MINTIME
+#while [[ $(nvram get ntp_done) -ne 1 ]]; do
 while [[ $(date +%Y) -lt 2019 ]]; do
 	sleep 2
 	SLEEPCT=$((SLEEPCT+2)) 
@@ -23,6 +28,9 @@ else
 	logger -p user.info "WireGuard waited $SLEEPCT seconds to set routes for oet${i}"
 fi
 
+# debug
+#logger -p user.info "WireGuard debug at end of time check: ntp_success: $(nvram get ntp_success); ntp_done:$(nvram get ntp_done) "
+
 peers=$((`$nv get oet${i}_peers` - 1))
 for p in `seq 0 $peers`
 	do
@@ -32,11 +40,15 @@ for p in `seq 0 $peers`
 			#replace 0.0.0.0/0 with 0.0.0.0/1,128.0.0.0/1
 			for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g" | sed "s/,/ /g") ; do
 			#for aip in $($nv get oet${i}_aip${p} | sed "s/,/ /g") ; do
-				# check if PBR is set then skip default gateway
-				if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ] && [ $aip = 0.0.0.0/1 -o $aip = 128.0.0.0/1 -o $aip = 0.0.0.0/0 ] ; then
-					continue
+				# check if PBR is set then skip default gateway, if default route without endpoint then warning
+				if [[ ! -z "$(echo $aip |  grep -e '/0\|/1')" ]]; then
+					if [ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]; then
+						continue
+					elif [ $($nv get oet${i}_endpoint${p}) -eq 0 ]; then
+						logger -p user.info "WireGuard WARNING default route detected without endpoint for peer $($nv get oet${i}_namep${p}) in tunnel oet${i}, consult the manual!"
+					fi
 				fi
-				logger -p user.info "route $aip added via oet${i}" #debug
+				logger -p user.info "WireGuard route $aip added via oet${i}"
 				ip route add $aip dev oet${i} >/dev/null 2>&1
 			done
 		fi			
