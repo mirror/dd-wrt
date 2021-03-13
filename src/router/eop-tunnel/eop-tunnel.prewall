@@ -81,7 +81,7 @@ do
 				fi
 				if [ `$nv get oet${i}_endpoint${p}` -eq 1 ]
 				then
-					logger -p user.info "Establish WireGuard tunnel with peer endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
+					logger -p user.info "Establishing WireGuard tunnel with peer endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 					ENDPOINTARG1="endpoint"
 					ENDPOINTARG2="$($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 					#egc On WAP's wan_gateway is 0.0.0.0 and wan_proto=disabled use lan_gateway
@@ -89,6 +89,7 @@ do
 					[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
 					#[[ $GATEWAY = "0.0.0.0" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
 					route add -host $($nv get oet${i}_rem${p}) gw $GATEWAY dev $(get_wanface) 2>&1 > /dev/null
+					logger -p user.info "WireGuard setting route for oet${i} to endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p}) via $GATEWAY dev $(get_wanface)"
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
 				#rm -f /tmp/wireguard/oet${i}_psk${p}
@@ -100,12 +101,19 @@ do
 			then
 				for ipaddrmask in $($nv get oet${i}_ipaddrmask | sed "s/,/ /g") ; do
 					ip addr add $ipaddrmask dev oet${i} 2>&1 > /dev/null
-					logger -p user.info "Wireguard $ipaddrmask added to oet${i}" #debug 
-					#set ip address and netmask for backwards compatibility only for IPv4
+					logger -p user.info "WireGuard $ipaddrmask added to oet${i}"
+					# set ip address and netmask for backwards compatibility only for IPv4
 					case $ipaddrmask in
 					  *.*)
 						IPADDR=${ipaddrmask%%/*}
-						mask="${ipaddrmask#*/}"
+						#mask="${ipaddrmask#*/}"
+						# error handling if netmask is not specified
+						if [[ -z "${ipaddrmask##*/[0-3]*}" ]] ;then
+							mask="${ipaddrmask#*/}"
+						else  # no valid mask specified
+							logger -p user.info "WireGuard no valid tunnel address for oet${i}: $ipaddrmask, assume /32"
+							mask=32
+						fi
 						set -- $(( 5 - ($mask / 8) )) 255 255 255 255 $(( (255 << (8 - ($mask % 8))) & 255 )) 0 0 0
 						[ $1 -gt 1 ] && shift $1 || shift
 						NETMASK=${1-0}.${2-0}.${3-0}.${4-0}
