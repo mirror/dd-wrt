@@ -30,7 +30,7 @@
 
 char *plex_deps(void)
 {
-	return "plex_enable";
+	return "plex_enable plex_appdir";
 }
 
 char *plex_proc(void)
@@ -40,7 +40,7 @@ char *plex_proc(void)
 
 void start_plex(void)
 {
-	char *plex_argv[] = { "/usr/lib/plexmediaserver/lib/run.sh", NULL };
+	char *plex_argv[] = { "/usr/lib/plexmediaserver/lib/run.sh", nvram_safe_get("plex_appdir"), NULL };
 	stop_plex();
 
 	if (!nvram_invmatchi("plex_enable", 0))
