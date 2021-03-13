@@ -1595,6 +1595,10 @@ ifeq ($(CONFIG_TELNET),y)
 CFLAGS_EXTRA += -DHAVE_TELNET
 OBJS += telnet.o
 endif
+ifeq ($(CONFIG_PLEX),y)
+CFLAGS_EXTRA += -DHAVE_PLEX
+OBJS += plex.o
+endif
 ifeq ($(CONFIG_MACTELNET),y)
 CFLAGS_EXTRA += -DHAVE_MACTELNET
 OBJS += mactelnet.o
