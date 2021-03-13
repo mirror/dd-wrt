@@ -2120,6 +2120,9 @@ service.transmission_style="Web UI Style";
 service.transmission_rpc="Web UI Port";
 service.transmission_whitelist="Whitelist IP's";
 
+service.plex_legend="Media Server";
+service.plex_srv="Plex Media Server";
+
 // ** eop-tunnel.asp **//
 var eoip=new Object();
 eoip.titl="Tunnels";
