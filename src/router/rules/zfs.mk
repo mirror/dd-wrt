@@ -5,6 +5,7 @@ zfs-configure: libtirpc-configure libtirpc libudev openssl zlib
 		--prefix=/usr \
 		--libdir=/usr/lib \
 		--host=$(ARCH)-linux \
+		--disable-pyzfs \
 		CC="$(CC) -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CFLAGS="-I$(TOP)/zlib -I$(TOP)/util-linux/include  -I$(TOP)/util-linux/libblkid/src -I$(TOP)/util-linux/libuuid/src    -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/openssl/include  -I$(TOP)/libudev/src/libudev -D_GNU_SOURCE" \
 		LDFLAGS="-L$(TOP)/zlib  -L$(TOP)/util-linux/.libs -L$(TOP)/libtirpc/src/.libs -L$(TOP)/zfs/lib/libuutil/.libs -L$(TOP)/openssl -L$(TOP)/libudev/src/libudev/.libs" \
