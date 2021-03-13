@@ -645,10 +645,8 @@ static struct callmap gozila_map[] = {
 #endif
 	{ "forwardspec_add", &forwardspec_add },
 	{ "forwardspec_remove", &forwardspec_remove },
-#ifdef HAVE_ANTAIRA
 	{ "forwardip_add", &forwardip_add },
 	{ "forwardip_remove", &forwardip_remove },
-#endif
 	{ "trigger_add", &trigger_add },
 	{ "trigger_remove", &trigger_remove },
 	{ "save_services_port", &save_services_port },
