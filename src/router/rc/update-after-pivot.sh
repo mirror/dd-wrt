@@ -61,7 +61,7 @@ echo 3 > /proc/sys/vm/drop_caches
 if [ x$3 = x1 ]
 then
 	sleep 10
-	reboot
+	busybox reboot
 	sleep 20
 	echo b > /proc/sysrq-trigger
 fi
