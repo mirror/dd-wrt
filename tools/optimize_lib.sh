@@ -17,7 +17,7 @@ MAP=${DIR}/.map
 SYM=${DIR}/.sybmols
 UNR=${DIR}/.unresolved
 find "$SEARCHDIR" -name .svn -exec rm -rf {} +
-BINARIES=`find "$SEARCHDIR" -path "$SEARCHDIR/lib" -prune -o -type f -print | file -f - | grep ELF | cut -d':' -f1`
+BINARIES=`find "$SEARCHDIR" -path "$SEARCHDIR/lib" -prune -o -type f -printf '%p\n' | file -f - | grep ELF | cut -d':' -f1|awk '{print $0; printf ":"}'`
 
 if [ ! -f "${DIR}/${LIB_SO}" ] ; then
 	echo "Cann't find ${DIR}/${LIB_SO}";
@@ -35,7 +35,9 @@ rm -f $UNR
 rm -f $UNR.tmp
 
 $NM -o --defined-only --no-sort "${DIR}/${LIB_SO}" | cut -d' ' -f3 > $MAP
+IFS=":"
 for bin in $BINARIES ; do 
+	bin=`echo $bin|awk '{ print substr( $0, 1, length($0) ) }'`
 	$NM --dynamic -u --no-sort "$bin" >> $UNR
 done
 cp $UNR $UNR.tmp
