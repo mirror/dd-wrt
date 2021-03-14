@@ -45,6 +45,7 @@ sort -u $UNR.tmp > $UNR
 
 echo done
 
+IFS=" "
 if [ ! -z $7 ] ; then
 	for symbol in `cat $UNR` ; do
 		if grep -q "^$symbol" $MAP ; then echo "-Wl,-u,$symbol" >> $SYM ;
@@ -57,7 +58,6 @@ fi
 if ls $SYM ; then
 	if [ ! -z $7 ] ; then
 		echo "link with arguments"
-		echo xargs -t $CC -shared -o "${DIR}/${LIB_SO_M}" "${DIR}/${LIB_A}" `cat $7`< $SYM ;
 		xargs -t $CC -shared -o "${DIR}/${LIB_SO_M}" "${DIR}/${LIB_A}" `cat $7`< $SYM ;
 	else
 		echo "link with no arguments"
