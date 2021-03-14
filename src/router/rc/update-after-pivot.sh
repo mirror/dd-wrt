@@ -26,15 +26,15 @@ then
 	echo "relocate nvram"
 	/usr/sbin/writetool ${FIFO} ${MTDPART} 
 	echo "write first time"
-	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
+	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
 	echo "sync"
 	sync
 	echo "write second time"
-	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
+	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
 	echo "sync"
 	sync
 	echo "write third time"
-	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
+	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
 	echo "sync"
 	sync
 else
