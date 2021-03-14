@@ -26,17 +26,17 @@ then
 	echo "relocate nvram"
 	/usr/sbin/writetool ${FIFO} ${MTDPART} 
 	echo "write first time"
-	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
+	busybox dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
 	echo "sync"
-	sync
+	busybox sync
 	echo "write second time"
 	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
 	echo "sync"
-	sync
+	busybox sync
 	echo "write third time"
-	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
+	busybox dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync seek=1 skip=1
 	echo "sync"
-	sync
+	busybox sync
 else
 	write ${FIFO} ${MTDPART}
 fi
@@ -46,22 +46,22 @@ busybox hdparm -f ${MTDPART}
 # flush drive cache
 hdparm -F ${MTDPART}
 busybox hdparm -F ${MTDPART}
-sync
-sync
-sync
+busybox sync
+busybox sync
+busybox sync
 # flush buffer cache
 hdparm -f ${MTDPART}
 busybox hdparm -f ${MTDPART}
 # flush drive cache
 hdparm -F ${MTDPART}
 busybox hdparm -F ${MTDPART}
-echo 1 > /proc/sys/vm/drop_caches
-echo 2 > /proc/sys/vm/drop_caches
-echo 3 > /proc/sys/vm/drop_caches
+busybox echo 1 > /proc/sys/vm/drop_caches
+busybox echo 2 > /proc/sys/vm/drop_caches
+busybox echo 3 > /proc/sys/vm/drop_caches
 if [ x$3 = x1 ]
 then
-	sleep 10
+	busybox sleep 10
 	busybox reboot
-	sleep 20
-	echo b > /proc/sysrq-trigger
+	busybox sleep 20
+	busybox echo b > /proc/sysrq-trigger
 fi
