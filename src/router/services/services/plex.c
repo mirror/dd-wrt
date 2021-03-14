@@ -55,7 +55,8 @@ void start_plex(void)
 
 void stop_plex(void)
 {
-	stop_process("Plex Media Server", "daemon");
+	stop_process("Plex Media Serv", "daemon");
+	stop_process("Plex Tuner Serv", "daemon");
 	nvram_delstates(plex_deps());
 	cprintf("done\n");
 	return;
