@@ -273,9 +273,9 @@ void start_sysinit(void)
 	modprobe("pc87427");
 	modprobe("pcf8591");
 	modprobe("powr1220");
+	modprobe("sch56xx-common");
 	modprobe("sch5627");
 	modprobe("sch5636");
-	modprobe("sch56xx-common");
 	modprobe("sht15");
 	modprobe("sht21");
 	modprobe("sht3x");
