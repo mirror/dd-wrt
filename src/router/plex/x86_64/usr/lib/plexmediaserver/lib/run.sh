@@ -42,7 +42,7 @@ Running=$(ps | grep 'Plex Media Server'| grep -v grep | wc -l)
 
 
     # PlexUser's HOME directory is the default location. Supersede if specified
-    PlexAppSuppDir="/jffs/plex/Library/Application Support"
+    PlexAppSuppDir="$1/Library/Application Support"
     mkdir -p "$PlexAppSuppDir"
 
     # Check TempDir
