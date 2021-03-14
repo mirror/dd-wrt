@@ -48,10 +48,12 @@ echo done
 IFS=" "
 if [ ! -z $7 ] ; then
 	for symbol in `cat $UNR` ; do
+		symbol=`echo $symbol|awk '{ print substr( $0, 1, length($0) ) }'`
 		if grep -q "^$symbol" $MAP ; then echo "-Wl,-u,$symbol" >> $SYM ;
 	fi ; done 
 else
 	for symbol in `cat $UNR` ; do 
+		symbol=`echo $symbol|awk '{ print substr( $0, 1, length($0) ) }'`
 		if grep -q "^$symbol" $MAP ; then echo "-u $symbol" >> $SYM ;
 	fi ; done 
 fi
