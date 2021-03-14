@@ -6,7 +6,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
 endif
 
 all:
-	install -D configs/plex.webnas httpd/ej_temp/07plex.webnas
+	install -D configs/plex.webnas $(TOP)/httpd/ej_temp/07plex.webnas
 	@true
 
 clean:
