@@ -619,14 +619,13 @@ static void parse_spec_forward(char *wanaddr, char *wordlist)
 #define ANT_IPF_PREROUTING  0
 #define ANT_IPF_POSTROUTING 1
 
-static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *dest_ip)
+static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *dest_ip, int cnt)
 {
 	char buff[256];
-	static int cnt = 0;
 
 	if (mode == ANT_IPF_PREROUTING) {
 		snprintf(buff, sizeof(buff), "%s:%d", wan_iface, cnt++);
-		eval("ifconfig", buff, src_ip, "netmask", "255.255.255.0", "up");
+		eval("ifconfig", buff, src_ip, "netmask", "255.255.255.255", "up");
 
 		save2file_A_prerouting("-i %s -d %s -j DNAT --to-destination %s", wan_iface, src_ip, dest_ip);
 
@@ -649,6 +648,7 @@ static void parse_ip_forward(int mode, char *wanface, char *wordlist)
 	 * name:enale:src:dest
 	 * name:enale:src:dest
 	 */
+	int cnt = 0;
 	foreach(var, wordlist, next) {
 		GETENTRYBYIDX(name, var, 0);
 		GETENTRYBYIDX(enable, var, 1);
@@ -661,7 +661,7 @@ static void parse_ip_forward(int mode, char *wanface, char *wordlist)
 		if (strcmp(enable, "off") == 0)
 			continue;
 
-		create_ip_forward(mode, wanface, src, dest);
+		create_ip_forward(mode, wanface, src, dest, cnt++);
 	}
 }
 
