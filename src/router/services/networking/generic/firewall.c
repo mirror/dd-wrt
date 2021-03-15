@@ -2231,9 +2231,11 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	if (nvram_matchi("pptpd_enable", 1)) {
 		if (nvram_matchi("limit_pptp", 1)) {
 			save2file_A_input("-i %s -p tcp --dport %d -j logbrute", wanface, PPTP_PORT);
-			save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);
+	/*
+			save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);  //this rule is probabaly duplicate of line 2272 and can thus be removed
 		} else {
-			save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);
+			save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);  //this rule is probabaly duplicate of line 2272 and can thus be removed
+	*/
 		}
 	}
 #endif
@@ -2242,8 +2244,8 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	if (nvram_matchi("pptpd_enable", 1)
 	    || nvram_matchi("pptpd_client_enable", 1)
 	    || nvram_match("wan_proto", "pptp")) {
-		save2file_A_input("-p tcp --dport %d -j %s", PPTP_PORT, log_accept);
-		save2file_A_input("-p 47 -j %s", log_accept);
+		save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);
+		save2file_A_input("-i %s -p 47 -j %s", wanface, log_accept);
 		if (nvram_matchi("pptpd_lockdown", 1)) {
 			save2file_A_input("-i %s -p udp --sport 67 --dport 68 -j %s", lanface, log_accept);
 			save2file_A_input("-i %s -j %s", lanface, log_drop);
@@ -2284,10 +2286,10 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	if (nvram_matchi("openvpn_enable", 1)) {
 		//char proto[16];
 		if (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp4")) {
-			save2file_A_input("-p udp --dport %s -j %s", nvram_safe_get("openvpn_port"), log_accept);
+			save2file_A_input("-i %s -p udp --dport %s -j %s", wanface, nvram_safe_get("openvpn_port"), log_accept);
 		}
 		if (nvram_match("openvpn_proto", "tcp-server") || nvram_match("openvpn_proto", "tcp4-server")) {
-			save2file_A_input("-p tcp --dport %s -j %s", nvram_safe_get("openvpn_port"), log_accept);
+			save2file_A_input("-i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("openvpn_port"), log_accept);
 		}
 		if (nvram_match("openvpn_tuntap", "tun")) {
 //                      if (strlen(nvram_safe_get("openvpn_ccddef")) = 0) {
@@ -2301,19 +2303,23 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	if (wanactive(wanaddr)) {
 		if (nvram_invmatchi("dr_wan_rx", 0))
 			save2file_A_input("-p udp -i %s --dport %d -j %s", wanface, RIP_PORT, log_accept);
-		else
+		/*else
 			save2file_A_input("-p udp -i %s --dport %d -j %s", wanface, RIP_PORT, log_drop);
+		*/
 	}
 	if (nvram_invmatchi("dr_lan_rx", 0))
 		save2file_A_input("-p udp -i %s --dport %d -j %s", lanface, RIP_PORT, log_accept);
-	else
+	/*else
 		save2file_A_input("-p udp -i %s --dport %d -j %s", lanface, RIP_PORT, log_drop);
+	*/
 	iflist = nvram_safe_get("no_route_if");
 	foreach(buff, iflist, next) {
 		save2file_A_input("-p udp -i %s --dport %d -j %s", buff, RIP_PORT, log_drop);
 	}
-
+	/* is this rule necessary?? perhaps that is why the drop rules are there but they do not take other interfaces like tun/oet into account so removed 16-03-2021
 	save2file_A_input("-p udp --dport %d -j %s", RIP_PORT, log_accept);
+	*/
+	
 	/*
 	 * end lonewolf mods 
 	 */
@@ -2322,18 +2328,18 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 */
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1))
-		save2file_A_input("-p 41 -j %s", log_accept);
+		save2file_A_input("-i %s -p 41 -j %s", wanface, log_accept);
 #endif
 	/*
 	 * Sveasoft mod - accept OSPF protocol broadcasts 
 	 */
 	if (nvram_match("wk_mode", "ospf"))
-		save2file_A_input("-p ospf -j %s", log_accept);
+		save2file_A_input("-i %s -p ospf -j %s", wanface, log_accept);
 	if (nvram_match("wk_mode", "bgp"))
-		save2file_A_input("-p tcp --dport 179 -j %s", log_accept);
+		save2file_A_input("-i %s -p tcp --dport 179 -j %s", wanface, log_accept);
 #ifdef HAVE_OLSRD
 	if (nvram_match("wk_mode", "olsr"))
-		save2file_A_input("-p udp --dport 698 -j %s", log_accept);
+		save2file_A_input("-i %s -p udp --dport 698 -j %s", wanface, log_accept);
 #endif
 	/*
 	 * Sveasoft mod - default for br1/separate subnet WDS type 
@@ -2354,7 +2360,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 * port to make sure that it's redirected from WAN 
 	 */
 	if (remotemanage) {
-		save2file_A_input("-p tcp -d %s --dport %d -j %s", nvram_safe_get("lan_ipaddr"), web_lanport, log_accept);
+		save2file_A_input("-i %s -p tcp -d %s --dport %d -j %s", wanface, nvram_safe_get("lan_ipaddr"), web_lanport, log_accept);
 	}
 #ifdef HAVE_SSHD
 	/*
@@ -2362,7 +2368,6 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 */
 #ifndef HAVE_MICRO
 	if (remotessh) {
-
 		if (nvram_matchi("limit_ssh", 1))
 			save2file_A_input("-i %s -p tcp -d %s --dport %s -j logbrute", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"));
 	}
@@ -2402,7 +2407,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	/*
 	 * IGMP query from WAN interface 
 	 */
-	save2file_A_input("-p igmp -j %s", doMultiCast() == 0 ? log_drop : log_accept);
+	save2file_A_input("-i %s -p igmp -j %s", wanface, doMultiCast() == 0 ? log_drop : log_accept);
 #ifdef HAVE_UDPXY
 	if (wanactive(wanaddr) && nvram_matchi("udpxy_enable", 1) && nvram_exists("tvnicfrom"))
 		save2file_A_input("-i %s -p udp -d %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
@@ -2421,7 +2426,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 * Remote Upgrade 
 	 */
 	if (nvram_matchi("remote_upgrade", 1))
-		save2file_A_input("-p udp --dport %d -j %s", TFTP_PORT, log_accept);
+		save2file_A_input("-i %s -p udp --dport %d -j %s", wanface, TFTP_PORT, log_accept);
 #endif
 #ifdef HAVE_MILKFISH
 	if (*wanface && nvram_matchi("milkfish_enabled", 1))
@@ -2447,7 +2452,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 * Ident request backs by telnet or IRC server 
 	 */
 	if (nvram_matchi("block_ident", 0) || nvram_match("filter", "off"))
-		save2file_A_input("-p tcp --dport %d -j %s", IDENT_PORT, log_accept);
+		save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, IDENT_PORT, log_accept);
 	/*
 	 * Filter known SPI state 
 	 */
