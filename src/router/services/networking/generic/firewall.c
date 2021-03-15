@@ -639,10 +639,10 @@ static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *des
 	}
 }
 
-static void parse_ip_forward(int mode, char *wanface, char *wordlist)
+static void parse_ip_forward(int mode, char *wanface)
 {
+	char *wordlist = nvram_safe_get("forward_ip");
 	char var[256], *next;
-	char buff[256];
 
 	/*
 	 * name:enale:src:dest
@@ -663,6 +663,24 @@ static void parse_ip_forward(int mode, char *wanface, char *wordlist)
 
 		create_ip_forward(mode, wanface, src, dest, cnt++);
 	}
+}
+
+static void destroy_ip_forward(void)
+{
+	char *wordlist = nvram_safe_get("forward_ip");
+	char var[256], *next;
+	char buff[256];
+
+	/*
+	 * name:enale:src:dest
+	 * name:enale:src:dest
+	 */
+	int cnt = 0;
+	foreach(var, wordlist, next) {
+		snprintf(buff, sizeof(buff), "%s:%d", wan_iface, cnt++);
+		eval("ifconfig", buff, "0.0.0.0");
+	}
+
 }
 
 static void nat_prerouting_bridged(char *wanface, char *vifs)
@@ -836,7 +854,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		/*
 		 * Port forwarding 
 		 */
-		parse_ip_forward(ANT_IPF_PREROUTING, wanface, nvram_safe_get("forward_ip"));
+		parse_ip_forward(ANT_IPF_PREROUTING, wanface);
 
 #ifdef HAVE_UPNP
 		parse_upnp_forward(wanface, wanaddr, lan_cclass);
@@ -880,7 +898,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		}
 		if (*wanface && wanactive(wanaddr)
 		    && !nvram_matchi("br0_nat", 0)) {
-			parse_ip_forward(ANT_IPF_POSTROUTING, wanface, nvram_safe_get("forward_ip"));
+			parse_ip_forward(ANT_IPF_POSTROUTING, wanface);
 			save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
 			char *sr = nvram_safe_get("static_route");
 			foreach(word, sr, tmp) {
@@ -3467,6 +3485,7 @@ void stop_firewall(void)
 		rmmod("ipt_mac");
 		rmmod("xt_mac");
 	}
+	destroy_ip_forward();
 	cprintf("done\n");
 #ifdef HAVE_IPV6
 	stop_firewall6();
