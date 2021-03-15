@@ -665,7 +665,7 @@ static void parse_ip_forward(int mode, char *wanface)
 	}
 }
 
-static void destroy_ip_forward(void)
+static void destroy_ip_forward(char *wan_iface)
 {
 	char *wordlist = nvram_safe_get("forward_ip");
 	char var[256], *next;
@@ -3485,7 +3485,7 @@ void stop_firewall(void)
 		rmmod("ipt_mac");
 		rmmod("xt_mac");
 	}
-	destroy_ip_forward();
+	destroy_ip_forward(get_wan_face());
 	cprintf("done\n");
 #ifdef HAVE_IPV6
 	stop_firewall6();
