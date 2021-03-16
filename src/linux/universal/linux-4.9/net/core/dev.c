@@ -5150,7 +5150,6 @@ void __napi_complete(struct napi_struct *n)
 	list_del_init(&n->poll_list);
 	smp_mb__before_atomic();
 	clear_bit(NAPI_STATE_SCHED, &n->state);
-	clear_bit(NAPI_STATE_SCHED_THREADED, &n->state);
 }
 EXPORT_SYMBOL(__napi_complete);
 
@@ -5185,6 +5184,7 @@ void napi_complete_done(struct napi_struct *n, int work_done)
 		__napi_complete(n);
 		local_irq_restore(flags);
 	}
+	clear_bit(NAPI_STATE_SCHED_THREADED, &n->state);
 }
 EXPORT_SYMBOL(napi_complete_done);
 
@@ -5579,7 +5579,6 @@ static int napi_threaded_poll(void *data)
 			__napi_poll(napi, &repoll);
 			netpoll_poll_unlock(have);
 
-			__kfree_skb_flush();
 			local_bh_enable();
 
 			if (!repoll)
