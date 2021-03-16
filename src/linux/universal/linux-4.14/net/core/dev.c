@@ -5892,6 +5892,7 @@ static int napi_thread_wait(struct napi_struct *napi)
 		}
 
 		schedule();
+		woken = true;
 		set_current_state(TASK_INTERRUPTIBLE);
 	}
 	__set_current_state(TASK_RUNNING);
