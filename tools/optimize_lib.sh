@@ -37,7 +37,7 @@ rm -f $UNR.tmp
 $NM -o --defined-only --no-sort "${DIR}/${LIB_SO}" | cut -d' ' -f3 > $MAP
 IFS=":"
 for bin in $BINARIES ; do 
-	bin=`echo $bin|awk '{ print substr( $0, 1, length($0) ) }'`
+	bin=${bin%$'\n'}
 	$NM --dynamic -u --no-sort "$bin" >> $UNR
 done
 cp $UNR $UNR.tmp
@@ -48,12 +48,12 @@ echo done
 IFS=" "
 if [ ! -z $7 ] ; then
 	for symbol in `cat $UNR` ; do
-		symbol=`echo $symbol|awk '{ print substr( $0, 1, length($0) ) }'`
+		symbol=${symbol%$'\n'}
 		if grep -q "^$symbol" $MAP ; then echo "-Wl,-u,$symbol" >> $SYM ;
 	fi ; done 
 else
 	for symbol in `cat $UNR` ; do 
-		symbol=`echo $symbol|awk '{ print substr( $0, 1, length($0) ) }'`
+		symbol=${symbol%$'\n'}
 		if grep -q "^$symbol" $MAP ; then echo "-u $symbol" >> $SYM ;
 	fi ; done 
 fi
