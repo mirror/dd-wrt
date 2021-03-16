@@ -2480,6 +2480,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 #ifdef HAVE_MADWIFI
 	char wmm[32];
+	char uapsd[32];
 	char wl_protmode[32];
 #endif
 	sprintf(vif, "%s_vifs", prefix);
@@ -2658,6 +2659,10 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			showRadioDefaultOn(wp, "wl_adv.label18", wmm);
 		else
 			showRadio(wp, "wl_adv.label18", wmm);
+		sprintf(uapsd, "%s_uapsd", var);
+		if (has_uapsd(prefix)) {
+			showRadio(wp, "wl_basic.uapsd", uapsd);
+		}
 #endif
 
 #endif				// end BUFFALO
@@ -2913,10 +2918,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_comp[32];
 	char wl_ff[16];
 	char wmm[32];
-	char wl_uapsd[16];
-	char wl_lowack[16];
-	char wl_ldpc[16];
-	char wl_smps[16];
+	char wl_uapsd[32];
+	char wl_lowack[32];
+	char wl_ldpc[32];
+	char wl_smps[32];
 	char wl_isolate[32];
 	char wl_intmit[32];
 	char wl_qboost[32];
