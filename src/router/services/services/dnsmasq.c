@@ -46,8 +46,17 @@ static void add_server(FILE * fp, char *server)
 {
 	fprintf(fp, "server=/%s/\n", server);
 }
+static void add_ubnt_telemetry(FILE * fp)
+{
+	static unsigned char *servers[] = {
+		"trace.svc.ui.com"
+	};
+	int i;
+	for (i = 0; i < sizeof(servers) / sizeof(char *); i++)
+		add_server(fp, servers[i]);
+}
 
-static void add_telemetry(FILE * fp)
+static void add_ms_telemetry(FILE * fp)
 {
 	static unsigned char *servers[] = {
 		"a.ads1.msn.com",
@@ -920,8 +929,10 @@ void start_dnsmasq(void)
 #endif
 	if (!strstr(addoptions, "cache-size="))
 		fprintf(fp, "cache-size=%d\n", nvram_default_geti("dnsmasq_cachesize", 1500));
-	if (nvram_matchi("dnsmasq_telemetry", 1))
-		add_telemetry(fp);
+	if (nvram_matchi("dnsmasq_ms_telemetry", 1))
+		add_ms_telemetry(fp);
+	if (nvram_matchi("dnsmasq_ubnt_telemetry", 1))
+		add_ubnt_telemetry(fp);
 	/*
 	 * Additional options 
 	 */
