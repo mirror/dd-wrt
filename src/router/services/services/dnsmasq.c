@@ -51,7 +51,10 @@ static void add_ubnt_telemetry(FILE * fp)
 	static unsigned char *servers[] = {
 		"trace.svc.ui.com",
 		"trace.dev.svc.ui.com",
-		"trace.stg.svc.ui.com"
+		"trace.stg.svc.ui.com",
+		"crash-report-service.svc.ui.com",
+		"crash-report-service.stg.svc.ui.com",
+		"crash-report-service.dev.svc.ui.com",
 	};
 	int i;
 	for (i = 0; i < sizeof(servers) / sizeof(char *); i++)
