@@ -1,4 +1,0 @@
-#!/bin/sh
-FILE=$KERNEL_DIR/include/linux/netfilter_ipv6/ip6t_REJECT.h
-# True if REJECT is applied.
-[ -f $FILE ] && grep IP6T_ICMP6_NO_ROUTE 2>&1 >/dev/null $FILE && echo REJECT
