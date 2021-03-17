@@ -1407,7 +1407,15 @@ struct TELEMETRY {
 	unsigned char ip3;
 	unsigned char ip4;
 };
-static struct TELEMETRY telemetry[] = {
+
+static struct TELEMETRY ubnt_telemetry[] = {
+	{ 54, 202, 181, 132 },
+	{ 52, 43, 249, 150 },
+	{ 52, 34, 106, 102 },
+	{ 34, 215, 113, 32 },
+};
+
+static struct TELEMETRY ms_telemetry[] = {
 	{ 13, 64, 90, 137 },	//13,64,90,137
 	{ 13, 66, 56, 243 },	//13,66,56,243
 	{ 13, 68, 31, 193 },	//13,68,31,193
@@ -1655,8 +1663,13 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			if (!strcmp(realname, "windows-telemetry")) {
 				nvram_seti("dnsmasq_telemetry", 1);
 				int i;
-				for (i = 0; i < sizeof(telemetry) / sizeof(telemetry[0]); i++)
-					save2file_A("advgrp_%d -d %d.%d.%d.%d -j %s", seq, telemetry[i].ip1, telemetry[i].ip2, telemetry[i].ip3, telemetry[i].ip4, log_drop);
+				for (i = 0; i < sizeof(ms_telemetry) / sizeof(ms_telemetry[0]); i++)
+					save2file_A("advgrp_%d -d %d.%d.%d.%d -j %s", seq, ms_telemetry[i].ip1, ms_telemetry[i].ip2, ms_telemetry[i].ip3, ms_telemetry[i].ip4, log_drop);
+			}
+			if (!strcmp(realname, "ubnt-telemetry")) {
+				int i;
+				for (i = 0; i < sizeof(ubnt_telemetry) / sizeof(ubnt_telemetry[0]); i++)
+					save2file_A("advgrp_%d -d %d.%d.%d.%d -j %s", seq, ubnt_telemetry[i].ip1, ubnt_telemetry[i].ip2, ubnt_telemetry[i].ip3, ubnt_telemetry[i].ip4, log_drop);
 			} else if (!strcmp(protocol, "l7")) {
 				int i;
 
@@ -1971,7 +1984,7 @@ static void lan2wan_chains(char *lan_cclass)
 	}
 }
 
-static void lock()
+static void lock(void)
 {
 	int cnt = 0;
       retry:;
@@ -2231,11 +2244,11 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	if (nvram_matchi("pptpd_enable", 1)) {
 		if (nvram_matchi("limit_pptp", 1)) {
 			save2file_A_input("-i %s -p tcp --dport %d -j logbrute", wanface, PPTP_PORT);
-	/*
-			save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);  //this rule is probabaly duplicate of line 2272 and can thus be removed
-		} else {
-			save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);  //this rule is probabaly duplicate of line 2272 and can thus be removed
-	*/
+			/*
+			   save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);  //this rule is probabaly duplicate of line 2272 and can thus be removed
+			   } else {
+			   save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);  //this rule is probabaly duplicate of line 2272 and can thus be removed
+			 */
 		}
 	}
 #endif
@@ -2304,22 +2317,22 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 		if (nvram_invmatchi("dr_wan_rx", 0))
 			save2file_A_input("-p udp -i %s --dport %d -j %s", wanface, RIP_PORT, log_accept);
 		/*else
-			save2file_A_input("-p udp -i %s --dport %d -j %s", wanface, RIP_PORT, log_drop);
-		*/
+		   save2file_A_input("-p udp -i %s --dport %d -j %s", wanface, RIP_PORT, log_drop);
+		 */
 	}
 	if (nvram_invmatchi("dr_lan_rx", 0))
 		save2file_A_input("-p udp -i %s --dport %d -j %s", lanface, RIP_PORT, log_accept);
 	/*else
-		save2file_A_input("-p udp -i %s --dport %d -j %s", lanface, RIP_PORT, log_drop);
-	*/
+	   save2file_A_input("-p udp -i %s --dport %d -j %s", lanface, RIP_PORT, log_drop);
+	 */
 	iflist = nvram_safe_get("no_route_if");
 	foreach(buff, iflist, next) {
 		save2file_A_input("-p udp -i %s --dport %d -j %s", buff, RIP_PORT, log_drop);
 	}
 	/* is this rule necessary?? perhaps that is why the drop rules are there but they do not take other interfaces like tun/oet into account so removed 16-03-2021
-	save2file_A_input("-p udp --dport %d -j %s", RIP_PORT, log_accept);
-	*/
-	
+	   save2file_A_input("-p udp --dport %d -j %s", RIP_PORT, log_accept);
+	 */
+
 	/*
 	 * end lonewolf mods 
 	 */
