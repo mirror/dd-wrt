@@ -504,6 +504,9 @@ l7filters filters_list[] = {
 	{ "tvuplayer", NDPI_ONLY },
 	{ "twitch", NDPI_ONLY },
 	{ "twitter", NDPI_ONLY },
+#endif
+	{ "ubnt-telemetry", L7_ONLY },
+#ifdef HAVE_OPENDPI
 	{ "ubntac2", NDPI_ONLY },
 	{ "ubuntuone", NDPI_ONLY },
 	{ "unencrypted_jabber", NDPI_ONLY },
