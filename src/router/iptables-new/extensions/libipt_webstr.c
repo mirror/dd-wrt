@@ -56,6 +56,8 @@ static void init(struct xt_entry_match *m)
 {
 }
 
+#undef BM_MAX_NLEN
+#define BM_MAX_NLEN 1024
 static void
 parse_string(const unsigned char *s, struct ipt_webstr_info *info)
 {	
