@@ -1,3 +1,0 @@
-#!/bin/sh
-# True if psd is applied.
-[ -f $KERNEL_DIR/include/linux/netfilter_ipv4/ipt_psd.h ] && echo psd

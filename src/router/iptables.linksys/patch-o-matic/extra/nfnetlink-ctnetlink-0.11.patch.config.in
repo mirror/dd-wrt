@@ -1,3 +1,0 @@
-comment '  IP: Netfilter Configuration'
-
-tristate 'Netfilter netlink interface' CONFIG_IP_NF_NETLINK
