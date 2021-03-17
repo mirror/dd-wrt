@@ -58,6 +58,8 @@ init(struct ipt_entry_match *m, unsigned int *nfcache)
 	*nfcache |= NFC_UNKNOWN;
 }
 
+#undef BM_MAX_NLEN
+#define BM_MAX_NLEN 1024
 static void
 parse_string(const unsigned char *s, struct ipt_webstr_info *info)
 {	
