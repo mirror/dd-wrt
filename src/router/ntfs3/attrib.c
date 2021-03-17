@@ -831,7 +831,7 @@ int attr_data_get_block(struct ntfs_inode *ni, CLST vcn, CLST clen, CLST *lcn,
 	struct ATTR_LIST_ENTRY *le, *le_b;
 	struct mft_inode *mi, *mi_b;
 	CLST hint, svcn, to_alloc, evcn1, next_svcn, asize, end;
-	u64 new_size, total_size;
+	u64 total_size;
 	u32 clst_per_frame;
 	bool ok;
 
@@ -855,7 +855,6 @@ int attr_data_get_block(struct ntfs_inode *ni, CLST vcn, CLST clen, CLST *lcn,
 
 	sbi = ni->mi.sbi;
 	cluster_bits = sbi->cluster_bits;
-	new_size = ((u64)vcn + clen) << cluster_bits;
 
 	ni_lock(ni);
 	down_write(&ni->file.run_lock);
@@ -923,7 +922,6 @@ int attr_data_get_block(struct ntfs_inode *ni, CLST vcn, CLST clen, CLST *lcn,
 
 		if (ok && clen > *len) {
 			clen = *len;
-			new_size = ((u64)vcn + clen) << cluster_bits;
 			to_alloc = (clen + clst_per_frame - 1) &
 				   ~(clst_per_frame - 1);
 		}

@@ -702,7 +702,7 @@ static inline bool mi_is_ref(const struct mft_inode *mi,
 	if (ref->seq != mi->mrec->seq)
 		return false;
 
-#ifdef NTFS3_64BIT_CLUSTER
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
 	return le16_to_cpu(ref->high) == (mi->rno >> 32);
 #else
 	return !ref->high;
@@ -744,7 +744,9 @@ void *ntfs_put_shared(void *ptr);
 void ntfs_unmap_meta(struct super_block *sb, CLST lcn, CLST len);
 int ntfs_discard(struct ntfs_sb_info *sbi, CLST Lcn, CLST Len);
 
-/* globals from ubitmap.c*/
+/* globals from bitmap.c*/
+int __init ntfs3_init_bitmap(void);
+void ntfs3_exit_bitmap(void);
 void wnd_close(struct wnd_bitmap *wnd);
 static inline size_t wnd_zeroes(const struct wnd_bitmap *wnd)
 {
