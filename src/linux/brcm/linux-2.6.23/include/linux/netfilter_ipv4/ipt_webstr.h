@@ -1,7 +1,7 @@
 #ifndef _IPT_WEBSTR_H
 #define _IPT_WEBSTR_H
 
-#define BM_MAX_NLEN 256
+#define BM_MAX_NLEN 1024
 #define BM_MAX_HLEN 1024
 
 #define BLK_JAVA		0x01
