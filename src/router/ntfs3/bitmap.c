@@ -3,6 +3,11 @@
  *
  * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
+ * This code builds two trees of free clusters extents.
+ * Trees are sorted by start of extent and by length of extent.
+ * NTFS_MAX_WND_EXTENTS defines the maximum number of elements in trees.
+ * In extreme case code reads on-disk bitmap to find free clusters
+ *
  */
 
 #include <linux/blkdev.h>
@@ -13,6 +18,11 @@
 #include "debug.h"
 #include "ntfs.h"
 #include "ntfs_fs.h"
+
+/*
+ * Maximum number of extents in tree.
+ */
+#define NTFS_MAX_WND_EXTENTS (32u * 1024u)
 
 struct rb_node_key {
 	struct rb_node node;
@@ -30,6 +40,21 @@ struct e_node {
 static int wnd_rescan(struct wnd_bitmap *wnd);
 static struct buffer_head *wnd_map(struct wnd_bitmap *wnd, size_t iw);
 static bool wnd_is_free_hlp(struct wnd_bitmap *wnd, size_t bit, size_t bits);
+
+static struct kmem_cache *ntfs_enode_cachep;
+
+int __init ntfs3_init_bitmap(void)
+{
+	ntfs_enode_cachep =
+		kmem_cache_create("ntfs3_enode_cache", sizeof(struct e_node), 0,
+				  SLAB_RECLAIM_ACCOUNT, NULL);
+	return ntfs_enode_cachep ? 0 : -ENOMEM;
+}
+
+void ntfs3_exit_bitmap(void)
+{
+	kmem_cache_destroy(ntfs_enode_cachep);
+}
 
 static inline u32 wnd_bits(const struct wnd_bitmap *wnd, size_t i)
 {
@@ -102,7 +127,7 @@ static size_t wnd_scan(const ulong *buf, size_t wbit, u32 wpos, u32 wend,
 /*
  * wnd_close
  *
- *
+ * Frees all resources
  */
 void wnd_close(struct wnd_bitmap *wnd)
 {
@@ -116,7 +141,8 @@ void wnd_close(struct wnd_bitmap *wnd)
 	while (node) {
 		next = rb_next(node);
 		rb_erase(node, &wnd->start_tree);
-		ntfs_free(rb_entry(node, struct e_node, start.node));
+		kmem_cache_free(ntfs_enode_cachep,
+				rb_entry(node, struct e_node, start.node));
 		node = next;
 	}
 }
@@ -181,7 +207,7 @@ static inline bool rb_insert_count(struct rb_root *root, struct e_node *e)
 /*
  * inline bool rb_insert_start
  *
- * Helper function to insert special kind of 'count' tree
+ * Helper function to insert special kind of 'start' tree
  */
 static inline bool rb_insert_start(struct rb_root *root, struct e_node *e)
 {
@@ -209,8 +235,6 @@ static inline bool rb_insert_start(struct rb_root *root, struct e_node *e)
 	rb_insert_color(&e->start.node, root);
 	return true;
 }
-
-#define NTFS_MAX_WND_EXTENTS (32u * 1024u)
 
 /*
  * wnd_add_free_ext
@@ -271,7 +295,7 @@ static void wnd_add_free_ext(struct wnd_bitmap *wnd, size_t bit, size_t len,
 			if (!e0)
 				e0 = e;
 			else
-				ntfs_free(e);
+				kmem_cache_free(ntfs_enode_cachep, e);
 		}
 
 		if (wnd->uptodated != 1) {
@@ -301,7 +325,7 @@ static void wnd_add_free_ext(struct wnd_bitmap *wnd, size_t bit, size_t len,
 	/* Insert new fragment */
 	if (wnd->count >= NTFS_MAX_WND_EXTENTS) {
 		if (e0)
-			ntfs_free(e0);
+			kmem_cache_free(ntfs_enode_cachep, e0);
 
 		wnd->uptodated = -1;
 
@@ -325,7 +349,7 @@ static void wnd_add_free_ext(struct wnd_bitmap *wnd, size_t bit, size_t len,
 		rb_erase(&e->count.node, &wnd->count_tree);
 		wnd->count -= 1;
 	} else {
-		e = e0 ? e0 : ntfs_malloc(sizeof(struct e_node));
+		e = e0 ? e0 : kmem_cache_alloc(ntfs_enode_cachep, GFP_ATOMIC);
 		if (!e) {
 			wnd->uptodated = -1;
 			goto out;
@@ -404,7 +428,7 @@ static void wnd_remove_free_ext(struct wnd_bitmap *wnd, size_t bit, size_t len)
 			rb_erase(&e3->start.node, &wnd->start_tree);
 			rb_erase(&e3->count.node, &wnd->count_tree);
 			wnd->count -= 1;
-			ntfs_free(e3);
+			kmem_cache_free(ntfs_enode_cachep, e3);
 		}
 		if (!bmax)
 			return;
@@ -440,7 +464,7 @@ static void wnd_remove_free_ext(struct wnd_bitmap *wnd, size_t bit, size_t len)
 			rb_erase(&e->start.node, &wnd->start_tree);
 			rb_erase(&e->count.node, &wnd->count_tree);
 			wnd->count -= 1;
-			ntfs_free(e);
+			kmem_cache_free(ntfs_enode_cachep, e);
 		}
 		goto out;
 	}
@@ -465,7 +489,7 @@ static void wnd_remove_free_ext(struct wnd_bitmap *wnd, size_t bit, size_t len)
 		rb_erase(&e->count.node, &wnd->count_tree);
 		wnd->count -= 1;
 	} else {
-		e = ntfs_malloc(sizeof(struct e_node));
+		e = kmem_cache_alloc(ntfs_enode_cachep, GFP_ATOMIC);
 		if (!e)
 			wnd->uptodated = -1;
 	}

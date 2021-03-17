@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2019-2021 Paragon Software GmbH, All rights reserved.
  *
+ * TODO: try to use extents tree (instead of array)
  */
 
 #include <linux/blkdev.h>
@@ -600,7 +601,7 @@ static inline int run_packed_size(const s64 n)
 		if (!(p[0] & 0x80))
 			p -= 1;
 	}
-	return (const u8 *)n + sizeof(n) - p;
+	return (const u8 *)&n + sizeof(n) - p;
 }
 
 /* full trusted function. It does not check 'size' for errors */
