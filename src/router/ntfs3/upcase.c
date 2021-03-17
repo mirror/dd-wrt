@@ -24,7 +24,16 @@ static inline u16 upcase_unicode_char(const u16 *upcase, u16 chr)
 	return upcase[chr];
 }
 
-/* Thanks Kari Argillander <kari.argillander@gmail.com> for idea and implementation 'bothcase' */
+/*
+ * Thanks Kari Argillander <kari.argillander@gmail.com> for idea and implementation 'bothcase'
+ *
+ * Straigth way to compare names:
+ * - case insensitive
+ * - if name equals and 'bothcases' then
+ * - case sensitive
+ * 'Straigth way' code scans input names twice in worst case
+ * Optimized code scans input names only once
+ */
 int ntfs_cmp_names(const __le16 *s1, size_t l1, const __le16 *s2, size_t l2,
 		   const u16 *upcase, bool bothcase)
 {

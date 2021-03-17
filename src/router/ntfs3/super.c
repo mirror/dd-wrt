@@ -1456,22 +1456,28 @@ static int __init init_ntfs_fs(void)
 	pr_notice("ntfs3: Read-only lzx/xpress compression included\n");
 #endif
 
+	err = ntfs3_init_bitmap();
+	if (err)
+		return err;
+
 	ntfs_inode_cachep = kmem_cache_create(
 		"ntfs_inode_cache", sizeof(struct ntfs_inode), 0,
 		(SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD | SLAB_ACCOUNT),
 		init_once);
 	if (!ntfs_inode_cachep) {
 		err = -ENOMEM;
-		goto failed;
+		goto out1;
 	}
 
 	err = register_filesystem(&ntfs_fs_type);
-	if (!err)
-		return 0;
+	if (err)
+		goto out;
 
+	return 0;
+out:
 	kmem_cache_destroy(ntfs_inode_cachep);
-
-failed:
+out1:
+	ntfs3_exit_bitmap();
 	return err;
 }
 
@@ -1483,6 +1489,7 @@ static void __exit exit_ntfs_fs(void)
 	}
 
 	unregister_filesystem(&ntfs_fs_type);
+	ntfs3_exit_bitmap();
 }
 
 MODULE_LICENSE("GPL");

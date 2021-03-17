@@ -101,8 +101,8 @@ out:
 /*
  * al_enumerate
  *
- * Returns the next list le
- * if le is NULL then returns the first le
+ * Returns the next list 'le'
+ * if 'le' is NULL then returns the first 'le'
  */
 struct ATTR_LIST_ENTRY *al_enumerate(struct ntfs_inode *ni,
 				     struct ATTR_LIST_ENTRY *le)
@@ -115,7 +115,7 @@ struct ATTR_LIST_ENTRY *al_enumerate(struct ntfs_inode *ni,
 	} else {
 		sz = le16_to_cpu(le->size);
 		if (sz < sizeof(struct ATTR_LIST_ENTRY)) {
-			/* Impossible 'cause we should not return such le */
+			/* Impossible 'cause we should not return such 'le' */
 			return NULL;
 		}
 		le = Add2Ptr(le, sz);
@@ -130,7 +130,7 @@ struct ATTR_LIST_ENTRY *al_enumerate(struct ntfs_inode *ni,
 
 	sz = le16_to_cpu(le->size);
 
-	/* Check le for errors */
+	/* Check 'le' for errors */
 	if (sz < sizeof(struct ATTR_LIST_ENTRY) ||
 	    off + sz > ni->attr_list.size ||
 	    sz < le->name_off + le->name_len * sizeof(short)) {
@@ -143,7 +143,7 @@ struct ATTR_LIST_ENTRY *al_enumerate(struct ntfs_inode *ni,
 /*
  * al_find_le
  *
- * finds the first le in the list which matches type, name and vcn
+ * finds the first 'le' in the list which matches type, name and vcn
  * Returns NULL if not found
  */
 struct ATTR_LIST_ENTRY *al_find_le(struct ntfs_inode *ni,
@@ -159,7 +159,7 @@ struct ATTR_LIST_ENTRY *al_find_le(struct ntfs_inode *ni,
 /*
  * al_find_ex
  *
- * finds the first le in the list which matches type, name and vcn
+ * finds the first 'le' in the list which matches type, name and vcn
  * Returns NULL if not found
  */
 struct ATTR_LIST_ENTRY *al_find_ex(struct ntfs_inode *ni,
@@ -277,15 +277,14 @@ int al_add_le(struct ntfs_inode *ni, enum ATTR_TYPE type, const __le16 *name,
 	typeof(ni->attr_list) *al = &ni->attr_list;
 
 	/*
-	 * Compute the size of the new le and the new length of the
-	 * list with al le added.
+	 * Compute the size of the new 'le'
 	 */
 	sz = le_size(name_len);
 	new_size = al->size + sz;
 	asize = al_aligned(al->size);
 	new_asize = al_aligned(new_size);
 
-	/* Scan forward to the point at which the new le should be inserted. */
+	/* Scan forward to the point at which the new 'le' should be inserted. */
 	le = al_find_le_to_insert(ni, type, name, name_len, svcn);
 	off = PtrOffset(al->le, le);
 
@@ -349,7 +348,7 @@ bool al_remove_le(struct ntfs_inode *ni, struct ATTR_LIST_ENTRY *le)
 	if (!al_is_valid_le(ni, le))
 		return false;
 
-	/* Save on stack the size of le */
+	/* Save on stack the size of 'le' */
 	size = le16_to_cpu(le->size);
 	off = PtrOffset(al->le, le);
 
@@ -364,7 +363,7 @@ bool al_remove_le(struct ntfs_inode *ni, struct ATTR_LIST_ENTRY *le)
 /*
  * al_delete_le
  *
- * deletes from the list the first le which matches its parameters.
+ * deletes from the list the first 'le' which matches its parameters.
  */
 bool al_delete_le(struct ntfs_inode *ni, enum ATTR_TYPE type, CLST vcn,
 		  const __le16 *name, size_t name_len,
@@ -375,7 +374,7 @@ bool al_delete_le(struct ntfs_inode *ni, enum ATTR_TYPE type, CLST vcn,
 	size_t off;
 	typeof(ni->attr_list) *al = &ni->attr_list;
 
-	/* Scan forward to the first le that matches the input */
+	/* Scan forward to the first 'le' that matches the input */
 	le = al_find_ex(ni, NULL, type, name, name_len, &vcn);
 	if (!le)
 		return false;
@@ -406,9 +405,9 @@ next:
 		goto next;
 	}
 
-	/* Save on stack the size of le */
+	/* Save on stack the size of 'le' */
 	size = le16_to_cpu(le->size);
-	/* Delete the le. */
+	/* Delete 'le'. */
 	memmove(le, Add2Ptr(le, size), al->size - (off + size));
 
 	al->size -= size;

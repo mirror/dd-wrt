@@ -551,7 +551,7 @@ int indx_used_bit(struct ntfs_index *indx, struct ntfs_inode *ni, size_t *bit)
  * be split.
  * NOTE: This function should never return 'END' entry NULL returns on error
  */
-static const inline struct NTFS_DE *hdr_find_split(const struct INDEX_HDR *hdr)
+static inline const struct NTFS_DE *hdr_find_split(const struct INDEX_HDR *hdr)
 {
 	size_t o;
 	const struct NTFS_DE *e = hdr_first_de(hdr);
@@ -582,7 +582,7 @@ static const inline struct NTFS_DE *hdr_find_split(const struct INDEX_HDR *hdr)
  * inserts some entries at the beginning of the buffer.
  * It is used to insert entries into a newly-created buffer.
  */
-static const inline struct NTFS_DE *
+static inline const struct NTFS_DE *
 hdr_insert_head(struct INDEX_HDR *hdr, const void *ins, u32 ins_bytes)
 {
 	u32 to_move;
@@ -1462,7 +1462,7 @@ static int indx_add_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
 {
 	int err;
 	size_t bit;
-	u64 data_size, alloc_size;
+	u64 data_size;
 	u64 bmp_size, bmp_size_v;
 	struct ATTRIB *bmp, *alloc;
 	struct mft_inode *mi;
@@ -1486,7 +1486,6 @@ static int indx_add_allocate(struct ntfs_index *indx, struct ntfs_inode *ni,
 	}
 
 	data_size = (u64)(bit + 1) << indx->index_bits;
-	alloc_size = ntfs_up_cluster(ni->mi.sbi, data_size);
 
 	if (bmp) {
 		/* Increase bitmap */
@@ -1549,10 +1548,9 @@ static int indx_insert_into_root(struct ntfs_index *indx, struct ntfs_inode *ni,
 	CLST new_vbn;
 	__le64 *sub_vbn, t_vbn;
 	u16 new_de_size;
-	u32 hdr_used, hdr_total, asize, used, aoff, to_move;
+	u32 hdr_used, hdr_total, asize, used, to_move;
 	u32 root_size, new_root_size;
 	struct ntfs_sb_info *sbi;
-	char *next;
 	int ds_root;
 	struct INDEX_ROOT *root, *a_root = NULL;
 
@@ -1568,13 +1566,11 @@ static int indx_insert_into_root(struct ntfs_index *indx, struct ntfs_inode *ni,
 	hdr = &root->ihdr;
 	sbi = ni->mi.sbi;
 	rec = mi->mrec;
-	aoff = PtrOffset(rec, attr);
 	used = le32_to_cpu(rec->used);
 	new_de_size = le16_to_cpu(new_de->size);
 	hdr_used = le32_to_cpu(hdr->used);
 	hdr_total = le32_to_cpu(hdr->total);
 	asize = le32_to_cpu(attr->size);
-	next = Add2Ptr(attr, asize);
 	root_size = le32_to_cpu(attr->res.data_size);
 
 	ds_root = new_de_size + hdr_used - hdr_total;
