@@ -1605,6 +1605,8 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	 */
 	// services = fw_get_filter_services ();
 	// //nvram_safe_get("filter_services");
+	nvram_seti("dnsmasq_ms_telemetry", 0);
+	nvram_seti("dnsmasq_ubnt_telemetry", 0);
 
 	services = fw_get_filter_services();
 
@@ -1661,12 +1663,13 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 				save2file_A("advgrp_%d -p icmp -j %s", seq, log_drop);
 			nvram_seti("dnsmasq_telemetry", 0);
 			if (!strcmp(realname, "windows-telemetry")) {
-				nvram_seti("dnsmasq_telemetry", 1);
+				nvram_seti("dnsmasq_ms_telemetry", 1);
 				int i;
 				for (i = 0; i < sizeof(ms_telemetry) / sizeof(ms_telemetry[0]); i++)
 					save2file_A("advgrp_%d -d %d.%d.%d.%d -j %s", seq, ms_telemetry[i].ip1, ms_telemetry[i].ip2, ms_telemetry[i].ip3, ms_telemetry[i].ip4, log_drop);
 			}
 			if (!strcmp(realname, "ubnt-telemetry")) {
+				nvram_seti("dnsmasq_ubnt_telemetry", 1);
 				int i;
 				for (i = 0; i < sizeof(ubnt_telemetry) / sizeof(ubnt_telemetry[0]); i++)
 					save2file_A("advgrp_%d -d %d.%d.%d.%d -j %s", seq, ubnt_telemetry[i].ip1, ubnt_telemetry[i].ip2, ubnt_telemetry[i].ip3, ubnt_telemetry[i].ip4, log_drop);
