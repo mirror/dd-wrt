@@ -1,0 +1,75 @@
+#
+#  Plex Extension Framework
+#  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
+#
+
+from common_records import Person
+
+class Photo(MetadataModel):
+  xml_tag = 'Photo'
+  xml_attributes = dict(type = 'photo')
+  
+  title                     = Template.String()
+  year                      = Template.Integer()
+  originally_available_at   = Template.Date()
+  studio                    = Template.String()
+  tagline                   = Template.String()
+  summary                   = Template.String()
+  trivia                    = Template.String()
+  quotes                    = Template.String()
+  content_rating            = Template.String()
+  content_rating_age        = Template.Integer()
+  writers                   = Template.Set(Person())
+  directors                 = Template.Set(Person())
+  producers                 = Template.Set(Person())
+  roles                     = Template.Set(Person())
+  countries                 = Template.Set(Template.String())
+  
+  # Interface settings
+  writers.xml_tag           = 'Writer'
+  directors.xml_tag         = 'Director'
+  producers.xml_tag         = 'Producer'
+  roles.xml_tag             = 'Role'
+  countries.xml_tag         = 'Country'
+  
+  thumb                     = Template.String()
+  thumb.is_synthetic
+  
+  art_url                   = Template.String()
+  art_url.is_synthetic
+  art_url.synthetic_name    = 'art'
+  
+  
+class PhotoAlbum(MetadataModel):
+  xml_tag = 'Directory'
+  xml_attributes = dict(type = 'photoalbum')
+  
+  title                     = Template.String()
+  year                      = Template.Integer()
+  originally_available_at   = Template.Date()
+  studio                    = Template.String()
+  tagline                   = Template.String()
+  summary                   = Template.String()
+  trivia                    = Template.String()
+  quotes                    = Template.String()
+  content_rating            = Template.String()
+  content_rating_age        = Template.Integer()
+  writers                   = Template.Set(Person())
+  directors                 = Template.Set(Person())
+  producers                 = Template.Set(Person())
+  roles                     = Template.Set(Person())
+  countries                 = Template.Set(Template.String())
+  
+  # Interface settings
+  writers.xml_tag           = 'Writer'
+  directors.xml_tag         = 'Director'
+  producers.xml_tag         = 'Producer'
+  roles.xml_tag             = 'Role'
+  countries.xml_tag         = 'Country'
+  
+  thumb                     = Template.String()
+  thumb.is_synthetic
+  
+  art_url                   = Template.String()
+  art_url.is_synthetic
+  art_url.synthetic_name    = 'art'
