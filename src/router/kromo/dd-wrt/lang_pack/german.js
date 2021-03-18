@@ -2468,6 +2468,7 @@ wl_adv.strikes="Anzahl erlaubter niedriger Signale";
 
 wl_adv.bgscan="Hintergrund Scan";
 wl_adv.bgscan_mode="Modus";
+wl_adv.bgscan_simple="Einfach";
 wl_adv.bgscan_short_int="Kurzer Interval";
 wl_adv.bgscan_threshold="Signal Schwellenwert";
 wl_adv.bgscan_long_int="Langer Interval";
