@@ -1429,7 +1429,7 @@ void show_bgscan_options(webs_t wp, char *prefix)
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.bgscan)</script></legend>");
 	sprintf(signal, "%s_bgscan_mode", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
-	char *modes[] = { "Off", "Simple" };
+	char *modes[] = { tran_string("share.off"), tran_string("wl_adv.bgscan_simple") };
 	showOptionsNames(wp, "wl_adv.bgscan_mode", signal, "off simple", modes, nvram_default_get(signal, "off"));
 	websWrite(wp, "</div>\n");
 	sprintf(signal, "%s_bgscan_short_int", prefix);
