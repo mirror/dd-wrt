@@ -111,6 +111,13 @@ int is_ap(char *prefix)
 	return nvram_match(ap, "ap") || nvram_match(ap, "wdsap");
 }
 
+int is_supplicant(char *prefix)
+{
+	char sta[16];
+	sprintf(sta, "%s_mode", prefix);
+	return nvram_match(sta, "sta") || nvram_match(sta, "wdssta") || nvram_match(sta, "wdssta_mtik") || nvram_match(sta, "mesh");
+}
+
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post)
 {
 	char *buf;
@@ -1416,6 +1423,33 @@ void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char 
 	websWrite(wp, "</div>\n");
 }
 
+void show_bgscan_options(webs_t wp, char *prefix)
+{
+	char signal[32];
+	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.bgscan)</script></legend>");
+	sprintf(signal, "%s_bgscan_mode", prefix);
+	websWrite(wp, "<div class=\"setting\">\n");
+	char *modes[] = { "Off", "Simple" };
+	showOptionsNames(wp, "wl_adv.bgscan_mode", signal, "off simple", modes, nvram_default_get(signal, "off"));
+	websWrite(wp, "</div>\n");
+	sprintf(signal, "%s_bgscan_short_int", prefix);
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wl_adv.bgscan_short_int", NULL);
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n", signal, nvram_default_get(signal, "30"));
+	websWrite(wp, "</div>\n");
+	sprintf(signal, "%s_bgscan_threshold", prefix);
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wl_adv.bgscan_threshold", NULL);
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-45"));
+	websWrite(wp, "</div>\n");
+	sprintf(signal, "%s_bgscan_long_int", prefix);
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wl_adv.bgscan_long_int", NULL);
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n", signal, nvram_default_get(signal, "300"));
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</fieldset>\n");
+}
+
 #ifdef HAVE_USB
 EJ_VISIBLE void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 {
@@ -2699,34 +2733,40 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
 		websWrite(wp, "</div>\n");
 
-		if (is_mac80211(var) && is_ap(var)) {
-			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
-			char signal[32];
-			sprintf(signal, "%s_connect", var);
-			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_adv.connect", NULL);
-			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
-			websWrite(wp, "</div>\n");
+		if (is_mac80211(var)) {
+			if (is_ap(var)) {
+				websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
+				char signal[32];
+				sprintf(signal, "%s_connect", var);
+				websWrite(wp, "<div class=\"setting\">\n");
+				show_caption(wp, "label", "wl_adv.connect", NULL);
+				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal,
+					  nvram_default_get(signal, "-128"));
+				websWrite(wp, "</div>\n");
 
-			sprintf(signal, "%s_stay", var);
-			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_adv.stay", NULL);
-			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
-			websWrite(wp, "</div>\n");
+				sprintf(signal, "%s_stay", var);
+				websWrite(wp, "<div class=\"setting\">\n");
+				show_caption(wp, "label", "wl_adv.stay", NULL);
+				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
+				websWrite(wp, "</div>\n");
 
-			sprintf(signal, "%s_poll_time", var);
-			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_adv.poll_time", NULL);
-			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "10"));
-			websWrite(wp, "</div>\n");
+				sprintf(signal, "%s_poll_time", var);
+				websWrite(wp, "<div class=\"setting\">\n");
+				show_caption(wp, "label", "wl_adv.poll_time", NULL);
+				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n", signal,
+					  nvram_default_get(signal, "10"));
+				websWrite(wp, "</div>\n");
 
-			sprintf(signal, "%s_strikes", var);
-			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_adv.strikes", NULL);
-			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
-			websWrite(wp, "</div>\n");
+				sprintf(signal, "%s_strikes", var);
+				websWrite(wp, "<div class=\"setting\">\n");
+				show_caption(wp, "label", "wl_adv.strikes", NULL);
+				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
+				websWrite(wp, "</div>\n");
 
-			websWrite(wp, "</fieldset>\n");
+				websWrite(wp, "</fieldset>\n");
+			} else if (is_supplicant(var)) {
+				show_bgscan_options(wp, var);
+			}
 		}
 #endif
 
@@ -3781,30 +3821,34 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
-	if (is_mac80211(prefix) && is_ap(prefix)) {
-		char signal[32];
-		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
-		sprintf(signal, "%s_connect", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_adv.connect", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
-		websWrite(wp, "</div>\n");
-		sprintf(signal, "%s_stay", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_adv.stay", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
-		websWrite(wp, "</div>\n");
-		sprintf(signal, "%s_poll_time", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_adv.poll_time", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "10"));
-		websWrite(wp, "</div>\n");
-		sprintf(signal, "%s_strikes", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_adv.strikes", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "</fieldset>\n");
+	if (is_mac80211(prefix)) {
+		if (is_ap(prefix)) {
+			char signal[32];
+			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
+			sprintf(signal, "%s_connect", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_adv.connect", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
+			websWrite(wp, "</div>\n");
+			sprintf(signal, "%s_stay", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_adv.stay", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
+			websWrite(wp, "</div>\n");
+			sprintf(signal, "%s_poll_time", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_adv.poll_time", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "10"));
+			websWrite(wp, "</div>\n");
+			sprintf(signal, "%s_strikes", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_adv.strikes", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
+			websWrite(wp, "</div>\n");
+			websWrite(wp, "</fieldset>\n");
+		} else if (is_supplicant(prefix)) {
+			show_bgscan_options(wp, prefix);
+		}
 	}
 
 	showbridgesettings(wp, prefix, 1, 1);
@@ -4655,30 +4699,35 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
-	if (is_mac80211(prefix) && is_ap(prefix)) {
-		char signal[32];
-		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
-		sprintf(signal, "%s_connect", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_adv.connect", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
-		websWrite(wp, "</div>\n");
-		sprintf(signal, "%s_stay", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_adv.stay", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
-		websWrite(wp, "</div>\n");
-		sprintf(signal, "%s_poll_time", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_adv.poll_time", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "10"));
-		websWrite(wp, "</div>\n");
-		sprintf(signal, "%s_strikes", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_adv.strikes", NULL);
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "</fieldset>\n");
+	if (is_mac80211(prefix)) {
+		if (is_ap(prefix)) {
+			char signal[32];
+			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
+			sprintf(signal, "%s_connect", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_adv.connect", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
+			websWrite(wp, "</div>\n");
+			sprintf(signal, "%s_stay", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_adv.stay", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
+			websWrite(wp, "</div>\n");
+			sprintf(signal, "%s_poll_time", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_adv.poll_time", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "10"));
+			websWrite(wp, "</div>\n");
+			sprintf(signal, "%s_strikes", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			show_caption(wp, "label", "wl_adv.strikes", NULL);
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
+			websWrite(wp, "</div>\n");
+			websWrite(wp, "</fieldset>\n");
+		} else if (is_supplicant(prefix)) {
+			show_bgscan_options(wp, prefix);
+		}
+
 	}
 
 	showbridgesettings(wp, prefix, 1, 1);
