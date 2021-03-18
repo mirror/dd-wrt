@@ -841,6 +841,19 @@ struct nvram_param srouter_defaults[] = {
 	{ "wl_txstreams", "0" },	/* 802.11n Tx Streams 0, 0 is invalid, WLCONF will
 					 * change it to a radio appropriate default
 					 */
+
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
+#ifdef HAVE_UNIWIP
+	{ "wlan0_bgscan_mode", "simple" },
+	{ "wlan1_bgscan_mode", "simple" },
+	{ "wlan2_bgscan_mode", "simple" },
+#else
+	{ "wlan0_bgscan_mode", "off" },
+	{ "wlan1_bgscan_mode", "off" },
+	{ "wlan2_bgscan_mode", "off" },
+#endif
+#endif
+
 #ifdef HAVE_80211AC
 	{ "wl0_wmf_bss_enable", "0" },	/* 0= off 1= on */
 	{ "wl1_wmf_bss_enable", "0" },

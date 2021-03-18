@@ -3031,7 +3031,7 @@ static char *vapsettings[] = {
 	"tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "tpc_db", "ttls", "ttls8021xaddopt", "ttls8021xanon",
 	"ttls8021xca", "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "fwtype", "txant", "txantenna", "txbf", "txbf_bfe_cap", "txbf_bfr_cap", "txbf_imp", "txchain", "txchain_pwrsave_enable", "txpwr",
 	"txpwrdbm", "txpwrusr", "txq", "uapsd", "d_lowack", "ldpc", "unit", "vifs", "vlan_prio_mode", "wchannel", "wds", "wds0", "wds0_if", "wds1", "wds10_desc", "wds10_enable", "wds10_hwaddr", "wds10_if",
-	    "wds10_ipaddr",
+	"wds10_ipaddr",
 	"wds10_netmask", "wds10_ospf", "wds1_desc", "wds1_enable", "wds1_hwaddr", "wds1_if", "wds1_ipaddr", "wds1_netmask", "wds1_ospf", "wds2", "wds2_desc", "wds2_enable", "wds2_hwaddr", "wds2_if", "wds2_ipaddr",
 	"wds2_netmask", "wds2_ospf", "wds3", "wds3_desc", "wds3_enable", "wds3_hwaddr", "wds3_if", "wds3_ipaddr", "wds3_netmask", "wds3_ospf", "wds4", "wds4_desc", "wds4_enable", "wds4_hwaddr", "wds4_if",
 	"wds4_ipaddr", "wds4_netmask", "wds4_ospf", "wds5", "wds5_desc", "wds5_enable", "wds5_hwaddr", "wds5_if", "wds5_ipaddr", "wds5_netmask", "wds5_ospf", "wds6", "wds6_desc", "wds6_enable", "wds6_hwaddr",
@@ -3044,7 +3044,8 @@ static char *vapsettings[] = {
 	"mesh_auto_open_plinks", "mesh_hwmp_max_preq_retries", "mesh_path_refresh_time", "mesh_min_discovery_timeout", "mesh_hwmp_active_path_timeout", "mesh_hwmp_preq_min_interval",
 	"mesh_hwmp_net_diameter_traversal_time",
 	"mesh_hwmp_rootmode", "mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor", "mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
-	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout"
+	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout",
+	"bgscan_mode", "bgscan_short_int", "bgscan_threshold", "bgscan_long_int"
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
@@ -4568,6 +4569,11 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "stay", prefix);
 	copytonv_prefix(wp, "poll_time", prefix);
 	copytonv_prefix(wp, "strikes", prefix);
+	copytonv_prefix(wp, "bgscan_mode", prefix);
+	copytonv_prefix(wp, "bgscan_short_int", prefix);
+	copytonv_prefix(wp, "bgscan_threshold", prefix);
+	copytonv_prefix(wp, "bgscan_long_int", prefix);
+
 #endif
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
 	copytonv_prefix(wp, "subf", prefix);

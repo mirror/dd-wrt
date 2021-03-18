@@ -1833,9 +1833,27 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tscan_freq=%s\n", scanlist);
 			free(scanlist);
 		}
-#ifdef HAVE_UNIWIP
-		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
-#endif
+
+		int bgscan_short_int;
+		int bgscan_threshold;
+		int bgscan_long_int;
+
+		if (nvram_nmatch("simple", "%s_bgscan_mode", prefix)) {
+			bgscan_short_int = nvram_ngeti("%s_bgscan_short_int", prefix);
+			bgscan_threshold = nvram_ngeti("%s_bgscan_threshold", prefix);
+			bgscan_long_int = nvram_ngeti("%s_bgscan_long_int", prefix);
+
+			if (!bgscan_short_int || bgscan_short_int == 0)
+				bgscan_short_int = 30;
+			if (!bgscan_threshold || bgscan_threshold == 0)
+				bgscan_threshold = -45;
+			if (!bgscan_long_int || bgscan_long_int == 0)
+				bgscan_long_int = 300;
+			fprintf(fp, "\tbgscan=\"simple:%d:%d:%d\"\n", bgscan_short_int, bgscan_threshold, bgscan_long_int);
+		}
+//#ifdef HAVE_UNIWIP
+//              fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
+//#endif
 		// fprintf (fp, "\tmode=0\n");
 		fprintf(fp, "\tkey_mgmt=");
 		if (ispsk2 || ispsk)

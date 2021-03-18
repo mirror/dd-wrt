@@ -2826,7 +2826,11 @@ wl_adv.stay="Minimum Signal for connection";
 wl_adv.poll_time="Poll Time for signal lookup";
 wl_adv.strikes="Amount of allowed low signals";
 
-
+wl_adv.bgscan="Bgscan";
+wl_adv.bgscan_mode="Mode";
+wl_adv.bgscan_short_int="Short interval";
+wl_adv.bgscan_threshold="Signal threshold";
+wl_adv.bgscan_long_int="Long interval";
 
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
