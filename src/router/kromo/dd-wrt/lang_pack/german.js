@@ -2466,6 +2466,12 @@ wl_adv.stay="Minimum Signal f&uuml;r Verbindung";
 wl_adv.poll_time="Interval f&uuml;r Analyse";
 wl_adv.strikes="Anzahl erlaubter niedriger Signale";
 
+wl_adv.bgscan="Hintergrund Scan";
+wl_adv.bgscan_mode="Modus";
+wl_adv.bgscan_short_int="Kurzer Interval";
+wl_adv.bgscan_threshold="Signal Schwellenwert";
+wl_adv.bgscan_long_int="Langer Interval";
+
 //help container
 
 hwl_adv.right2="Sie k&ouml;nnen Auto oder Shared Key w&auml;hlen. Die Shared Key Authentifizierung ist wesentlich sicherer, allerdings muss dazu jedes Ger&auml;t in Ihrem Netzwerk diesen Betriebsmodus unterst&uuml;tzen.";
