@@ -485,7 +485,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 			break;
 
 		if (strcmp(dev, interface)) {
-			if (!nvram_nmatch("sta", "%s_mode", dev) && !nvram_nmatch("wdssta", "%s_mode", dev)) {
+			if (!nvram_nmatch("sta", "%s_mode", dev) && !nvram_nmatch("wdssta", "%s_mode", dev) && !nvram_nmatch("wdssta_mtik", "%s_mode", dev)) {
 				if (nvram_nmatch("0", "%s_channel", dev)) {
 					struct wifi_interface *intf = wifi_getfreq(dev);
 					if (intf)
