@@ -355,6 +355,12 @@ static bool match(const struct sk_buff *skb, struct xt_action_param *par)
 		    found = 1;
 		    goto match_ret;
 		}
+		vicelen = sizeof(".jar") - 1;
+		if (strnicmp(htinfo->url + htinfo->urllen - vicelen, ".jar", vicelen) == 0) {
+		    SPARQ_LOG("%s: MATCH....java\n", __FUNCTION__);
+		    found = 1;
+		    goto match_ret;
+		}
 	    }
 	    if (opt & BLK_ACTIVE){
 		vicelen = sizeof(".ocx") - 1;
