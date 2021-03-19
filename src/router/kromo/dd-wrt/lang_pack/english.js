@@ -2829,6 +2829,7 @@ wl_adv.strikes="Amount of allowed low signals";
 wl_adv.bgscan="Background Scan";
 wl_adv.bgscan_mode="Mode";
 wl_adv.bgscan_simple="Simple";
+wl_adv.bgscan_learn="Learn";
 wl_adv.bgscan_short_int="Short interval";
 wl_adv.bgscan_threshold="Signal threshold";
 wl_adv.bgscan_long_int="Long interval";
