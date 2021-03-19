@@ -1325,6 +1325,7 @@ management.web_sysinfo="Enable Info Site";
 management.web_sysinfopass="Info Site Password Protection";
 management.web_sysinfomasq="Info Site MAC Masking";
 management.boot_legend="Boot Wait";
+management.poeswitch="POE Switch";
 management.boot_srv="Boot Wait";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
