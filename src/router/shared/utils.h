@@ -909,12 +909,12 @@ struct ledconfig {
 	unsigned short usb_power1;
 	unsigned short v1func;
 	unsigned short connblue;
-
+	unsigned short poe_gpio;
 };
 
 extern int led_control(int type, int act);
 enum { LED_POWER, LED_DIAG, LED_DIAG_DISABLED, LED_DMZ, LED_CONNECTED, LED_DISCONNECTED, LED_BRIDGE, LED_VPN,
-	LED_SES, LED_SES2, LED_WLAN, LED_WLAN0, LED_WLAN1, LED_WLAN2, LED_USB, LED_USB1, LED_SEC, LED_SEC0, LED_SEC1, USB_POWER, USB_POWER1, BEEPER
+	LED_SES, LED_SES2, LED_WLAN, LED_WLAN0, LED_WLAN1, LED_WLAN2, LED_USB, LED_USB1, LED_SEC, LED_SEC0, LED_SEC1, USB_POWER, USB_POWER1, BEEPER, POE_GPIO
 };
 enum { LED_ON, LED_OFF, LED_FLASH };
 
