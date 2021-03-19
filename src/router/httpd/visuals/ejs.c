@@ -564,6 +564,11 @@ static int rule_afterburner(char *name)
 
 }
 
+static int rule_poeswitch(char *name)
+{
+	return led_control(POE_GPIO, GPIO_CHECK);
+}
+
 #include <linux/version.h>
 #define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 
@@ -695,6 +700,7 @@ static struct defrule s_conditions[] = {
 	{ "HAVE_EXT_IPROUTE", NULL },
 #endif
 #endif
+	{ "POESWITCH", rule_poeswitch },
 	{ NULL, NULL }
 };
 
