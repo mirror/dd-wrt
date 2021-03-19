@@ -76,16 +76,16 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->connected_gpio = 0x000d;
 		break;
 	case ROUTER_UBNT_NANOAC:
-		cfg->poe_gpio= 0x0003;
+		cfg->poe_gpio = 0x0003;
 		break;
 	case ROUTER_BOARD_NS2M:
-		cfg->poe_gpio= 0x0008;
+		cfg->poe_gpio = 0x0008;
 		break;
 	case ROUTER_BOARD_NS5M:
-		cfg->poe_gpio= 0x0008;
+		cfg->poe_gpio = 0x0008;
 		break;
 	case ROUTER_BOARD_NS5MXW:
-		cfg->poe_gpio= 0x0002;
+		cfg->poe_gpio = 0x0002;
 		break;
 	case ROUTER_UBNT_UAPAC:
 	case ROUTER_UBNT_UAPACPRO:
@@ -1417,11 +1417,11 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->ses_gpio = 0x0006;
 		cfg->usb_gpio = 0x0002;
 		cfg->diag_gpio = 0x1004;
-//		cfg->usb_gpio1 = 0x0007;
-//		cfg->disconnected_gpio = 0x000f;
+//              cfg->usb_gpio1 = 0x0007;
+//              cfg->disconnected_gpio = 0x000f;
 		cfg->connected_gpio = 0x0008;
 		cfg->power_gpio = 0x0004;
-//		cfg->diag_gpio = 0x0012;
+//              cfg->diag_gpio = 0x0012;
 		cfg->usb_power = 0x000a;	// usb 3
 		cfg->usb_power1 = 0x0009;	// usb 2
 		break;
@@ -1856,7 +1856,12 @@ int led_control(int type, int act)
 		use_gpio = cfg->sec1_gpio;
 		break;
 	}
-
+	if (act == GPIO_CHECK) {
+		if ((use_gpio & 0xfff) != 0xfff)
+			return 1;
+		else
+			return 0;
+	}
 	if ((use_gpio & 0xfff) != 0xfff) {
 		int gpio_value = use_gpio & 0xfff;
 		int enable = (use_gpio & 0x1000) == 0 ? 1 : 0;
