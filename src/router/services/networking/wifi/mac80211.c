@@ -1834,14 +1834,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			free(scanlist);
 		}
 
-		int bgscan_short_int;
-		int bgscan_threshold;
-		int bgscan_long_int;
-
-		if (nvram_nmatch("simple", "%s_bgscan_mode", prefix)) {
-			bgscan_short_int = nvram_ngeti("%s_bgscan_short_int", prefix);
-			bgscan_threshold = nvram_ngeti("%s_bgscan_threshold", prefix);
-			bgscan_long_int = nvram_ngeti("%s_bgscan_long_int", prefix);
+		if (nvram_nmatch("simple", "%s_bgscan_mode", prefix) || nvram_nmatch("learn", "%s_bgscan_mode", prefix)) {
+			int bgscan_short_int = nvram_ngeti("%s_bgscan_short_int", prefix);
+			int bgscan_threshold = nvram_ngeti("%s_bgscan_threshold", prefix);
+			int bgscan_long_int = nvram_ngeti("%s_bgscan_long_int", prefix);
 
 			if (!bgscan_short_int || bgscan_short_int == 0)
 				bgscan_short_int = 30;
@@ -1849,7 +1845,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				bgscan_threshold = -45;
 			if (!bgscan_long_int || bgscan_long_int == 0)
 				bgscan_long_int = 300;
-			fprintf(fp, "\tbgscan=\"simple:%d:%d:%d\"\n", bgscan_short_int, bgscan_threshold, bgscan_long_int);
+			if (nvram_nmatch("simple", "%s_bgscan_mode", prefix))
+				fprintf(fp, "\tbgscan=\"simple:%d:%d:%d\"\n", bgscan_short_int, bgscan_threshold, bgscan_long_int);
+			else {
+				char db[32];
+				sprintf(db, "/tmp/%s_bgscan.db", prefix);
+				fprintf(fp, "\tbgscan=\"learn:%d:%d:%d:%s\"\n", bgscan_short_int, bgscan_threshold, bgscan_long_int, db);
+			}
+
 		}
 //#ifdef HAVE_UNIWIP
 //              fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
