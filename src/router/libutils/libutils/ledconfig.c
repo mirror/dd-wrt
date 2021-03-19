@@ -26,28 +26,29 @@
 static void getledconfig(struct ledconfig *cfg)
 {
 
-	cfg->power_gpio = 0xfff;
-	cfg->beeper_gpio = 0xfff;
-	cfg->diag_gpio = 0xfff;
-	cfg->diag_gpio_disabled = 0xfff;
-	cfg->dmz_gpio = 0xfff;
-	cfg->connected_gpio = 0xfff;
-	cfg->disconnected_gpio = 0xfff;
-	cfg->bridge_gpio = 0xfff;
-	cfg->vpn_gpio = 0xfff;
-	cfg->ses_gpio = 0xfff;	// use for SES1 (Linksys), AOSS (Buffalo)
-	cfg->ses2_gpio = 0xfff;
-	cfg->wlan_gpio = 0xfff;	// wlan button led R7000
-	cfg->wlan0_gpio = 0xfff;	// use this only if wlan led is not controlled by hardware!
-	cfg->wlan1_gpio = 0xfff;
-	cfg->wlan2_gpio = 0xfff;
-	cfg->usb_gpio = 0xfff;
-	cfg->usb_gpio1 = 0xfff;
-	cfg->sec_gpio = 0xfff;	// generic
-	cfg->sec0_gpio = 0xfff;	// security leds, wrt600n
-	cfg->sec1_gpio = 0xfff;
-	cfg->usb_power = 0xfff;
-	cfg->usb_power1 = 0xfff;
+	cfg->power_gpio = 0xffff;
+	cfg->beeper_gpio = 0xffff;
+	cfg->diag_gpio = 0xffff;
+	cfg->diag_gpio_disabled = 0xffff;
+	cfg->dmz_gpio = 0xffff;
+	cfg->connected_gpio = 0xffff;
+	cfg->disconnected_gpio = 0xffff;
+	cfg->bridge_gpio = 0xffff;
+	cfg->vpn_gpio = 0xffff;
+	cfg->ses_gpio = 0xffff;	// use for SES1 (Linksys), AOSS (Buffalo)
+	cfg->ses2_gpio = 0xffff;
+	cfg->wlan_gpio = 0xffff;	// wlan button led R7000
+	cfg->wlan0_gpio = 0xffff;	// use this only if wlan led is not controlled by hardware!
+	cfg->wlan1_gpio = 0xffff;
+	cfg->wlan2_gpio = 0xffff;
+	cfg->usb_gpio = 0xffff;
+	cfg->usb_gpio1 = 0xffff;
+	cfg->sec_gpio = 0xffff;	// generic
+	cfg->sec0_gpio = 0xffff;	// security leds, wrt600n
+	cfg->sec1_gpio = 0xffff;
+	cfg->usb_power = 0xffff;
+	cfg->usb_power1 = 0xffff;
+	cfg->poe_gpio = 0xffff;
 	cfg->v1func = 0;
 	cfg->connblue = nvram_matchi("connblue", 1) ? 1 : 0;
 
@@ -73,6 +74,18 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_BOARD_UNIFI_V2:
 		cfg->connected_gpio = 0x000d;
+		break;
+	case ROUTER_UBNT_NANOAC:
+		cfg->poe_gpio= 0x0003;
+		break;
+	case ROUTER_BOARD_NS2M:
+		cfg->poe_gpio= 0x0008;
+		break;
+	case ROUTER_BOARD_NS5M:
+		cfg->poe_gpio= 0x0008;
+		break;
+	case ROUTER_BOARD_NS5MXW:
+		cfg->poe_gpio= 0x0002;
 		break;
 	case ROUTER_UBNT_UAPAC:
 	case ROUTER_UBNT_UAPACPRO:
@@ -1757,6 +1770,9 @@ int led_control(int type, int act)
 	}
 
 	switch (type) {
+	case POE_GPIO:
+		use_gpio = cfg->poe_gpio;
+		break;
 	case LED_POWER:
 		use_gpio = cfg->power_gpio;
 		break;
