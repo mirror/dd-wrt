@@ -214,7 +214,7 @@ void start_sysinit(void)
 	if (nvram_matchi("ubnt_power", 1))
 		led_control(POE_GPIO, LED_ON);
 	} else {
-		led_control(POE_GPIO, LED_OFF)
+		led_control(POE_GPIO, LED_OFF);
 	}
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
