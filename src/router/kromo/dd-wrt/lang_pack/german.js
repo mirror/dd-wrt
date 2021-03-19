@@ -1146,6 +1146,7 @@ management.web_sysinfo="Infoseite einschalten";
 management.web_sysinfopass="Kennwortschutz Infoseite";
 management.web_sysinfomasq="MAC-Maskierung Infoseite";
 management.boot_legend="Beim Booten warten";
+management.poeswitch="POE Schalter";
 management.boot_srv="Beim Booten warten";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
