@@ -465,7 +465,7 @@ int tty_establish_ppp (int tty_fd)
  *
  * generic_establish_ppp - Turn the fd into a ppp interface.
  */
-int generic_establish_ppp (int fd)
+int PPP_VISIBLE generic_establish_ppp (int fd)
 {
     int x;
 
@@ -611,7 +611,7 @@ flushfailed:
  * operation, and reconnect the ppp unit to the loopback if in demand
  * mode.  This shouldn't call die() because it's called from die().
  */
-void generic_disestablish_ppp(int dev_fd)
+void PPP_VISIBLE generic_disestablish_ppp(int dev_fd)
 {
     if (new_style_driver) {
 	close(ppp_fd);
@@ -1221,7 +1221,7 @@ get_loop_output(void)
 /*
  * netif_set_mtu - set the MTU on the PPP network interface.
  */
-void
+void PPP_VISIBLE
 netif_set_mtu(int unit, int mtu)
 {
     struct ifreq ifr;

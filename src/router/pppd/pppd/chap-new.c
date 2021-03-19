@@ -47,7 +47,7 @@
 int chap_mdtype_all = MDTYPE_ALL;
 
 /* Hook for a plugin to validate CHAP challenge */
-int (*chap_verify_hook)(char *name, char *ourname, int id,
+int PPP_VISIBLE (*chap_verify_hook)(char *name, char *ourname, int id,
 			struct chap_digest_type *digest,
 			unsigned char *challenge, unsigned char *response,
 			char *message, int message_space) = NULL;

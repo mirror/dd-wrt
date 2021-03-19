@@ -121,7 +121,7 @@ strlcat(dest, src, len)
  * Doesn't do floating-point formats.
  * Returns the number of chars put into buf.
  */
-int
+int PPP_VISIBLE
 slprintf __V((char *buf, int buflen, char *fmt, ...))
 {
     va_list args;
@@ -518,7 +518,7 @@ static char *linep;		/* current pointer within line */
 static int llevel;		/* level for logging */
 
 void
-init_pr_log(prefix, level)
+PPP_VISIBLE init_pr_log(prefix, level)
      const char *prefix;
      int level;
 {
@@ -530,7 +530,7 @@ init_pr_log(prefix, level)
 	llevel = level;
 }
 
-void
+void PPP_VISIBLE
 end_pr_log()
 {
 	if (linep != line) {
@@ -542,7 +542,7 @@ end_pr_log()
 /*
  * pr_log - printer routine for outputting to syslog
  */
-void
+void PPP_VISIBLE
 pr_log __V((void *arg, char *fmt, ...))
 {
 	int l, n;

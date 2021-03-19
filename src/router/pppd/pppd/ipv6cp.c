@@ -187,8 +187,8 @@ void (*ipv6_up_hook) __P((void)) = NULL;
 void (*ipv6_down_hook) __P((void)) = NULL;
 
 /* Notifiers for when IPCPv6 goes up and down */
-struct notifier *ipv6_up_notifier = NULL;
-struct notifier *ipv6_down_notifier = NULL;
+struct notifier PPP_VISIBLE *ipv6_up_notifier = NULL;
+struct notifier PPP_VISIBLE *ipv6_down_notifier = NULL;
 
 /*
  * Callbacks for fsm code.  (CI = Configuration Information)

@@ -176,10 +176,10 @@ struct protent ccp_protent = {
 };
 
 fsm ccp_fsm[NUM_PPP];
-ccp_options ccp_wantoptions[NUM_PPP];	/* what to request the peer to use */
+ccp_options ccp_wantoptions[NUM_PPP] PPP_VISIBLE;	/* what to request the peer to use */
 ccp_options ccp_gotoptions[NUM_PPP];	/* what the peer agreed to do */
-ccp_options ccp_allowoptions[NUM_PPP];	/* what we'll agree to do */
-ccp_options ccp_hisoptions[NUM_PPP];	/* what we agreed to do */
+ccp_options PPP_VISIBLE ccp_allowoptions[NUM_PPP];	/* what we'll agree to do */
+ccp_options PPP_VISIBLE ccp_hisoptions[NUM_PPP];	/* what we agreed to do */
 
 /*
  * Callbacks for fsm code.
