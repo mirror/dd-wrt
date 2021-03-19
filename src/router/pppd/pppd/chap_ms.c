@@ -120,9 +120,9 @@ bool	ms_lanman = 0;    	/* Use LanMan password instead of NT */
 #endif
 
 #ifdef MPPE
-u_char mppe_send_key[MPPE_MAX_KEY_LEN];
-u_char mppe_recv_key[MPPE_MAX_KEY_LEN];
-int mppe_keys_set = 0;		/* Have the MPPE keys been set? */
+u_char PPP_VISIBLE mppe_send_key[MPPE_MAX_KEY_LEN];
+u_char mppe_recv_key[MPPE_MAX_KEY_LEN] PPP_VISIBLE;
+int PPP_VISIBLE mppe_keys_set = 0;		/* Have the MPPE keys been set? */
 
 #ifdef DEBUGMPPEKEY
 /* For MPPE debug */
@@ -721,7 +721,7 @@ GenerateAuthenticatorResponsePlain
  * Set mppe_xxxx_key from the NTPasswordHashHash.
  * RFC 2548 (RADIUS support) requires us to export this function (ugh).
  */
-void
+void PPP_VISIBLE
 mppe_set_keys(u_char *rchallenge, u_char PasswordHashHash[MD4_SIGNATURE_SIZE])
 {
     SHA1_CTX	sha1Context;
@@ -947,7 +947,7 @@ ChapMS2(u_char *rchallenge, u_char *PeerChallenge,
 /*
  * Set MPPE options from plugins.
  */
-void
+void PPP_VISIBLE
 set_mppe_enc_types(int policy, int types)
 {
     /* Early exit for unknown policies. */

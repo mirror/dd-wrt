@@ -90,27 +90,27 @@ struct option_value {
 /*
  * Option variables and default values.
  */
-int	debug = 0;		/* Debug flag */
+int	PPP_VISIBLE debug = 0;		/* Debug flag */
 int	kdebugflag = 0;		/* Tell kernel to print debug messages */
 int	default_device = 1;	/* Using /dev/tty or equivalent */
-char	devnam[MAXPATHLEN];	/* Device name */
+char	PPP_VISIBLE devnam[MAXPATHLEN];	/* Device name */
 bool	nodetach = 0;		/* Don't detach from controlling tty */
 bool	updetach = 0;		/* Detach once link is up */
 bool	master_detach;		/* Detach when we're (only) multilink master */
 #ifdef SYSTEMD
 bool	up_sdnotify = 0;	/* Notify systemd once link is up */
 #endif
-int	maxconnect = 0;		/* Maximum connect time */
+int	PPP_VISIBLE maxconnect = 0;		/* Maximum connect time */
 char	user[MAXNAMELEN];	/* Username for PAP */
 char	passwd[MAXSECRETLEN];	/* Password for PAP */
 bool	persist = 0;		/* Reopen link after it goes down */
 char	our_name[MAXNAMELEN];	/* Our name for authentication purposes */
 bool	demand = 0;		/* do dial-on-demand */
-char	*ipparam = NULL;	/* Extra parameter for ip up/down scripts */
+char	PPP_VISIBLE *ipparam = NULL;	/* Extra parameter for ip up/down scripts */
 char	*chapseccustom = NULL;	/* Custom chap-secrets file */
 char	*papseccustom = NULL;	/* Custom pap-secrets file */
 char	*srpseccustom = NULL;	/* Custom pap-secrets file */
-int	idle_time_limit = 0;	/* Disconnect if idle for this many seconds */
+int	PPP_VISIBLE idle_time_limit = 0;	/* Disconnect if idle for this many seconds */
 int	holdoff = 30;		/* # seconds to pause before reconnecting */
 bool	holdoff_specified;	/* true if a holdoff value has been given */
 int	log_to_fd = 1;		/* send log messages to this fd too */
@@ -137,8 +137,8 @@ struct userenv *userenv_list;	/* user environment variables */
 int	dfl_route_metric = -1;	/* metric of the default route to set over the PPP link */
 
 #ifdef MAXOCTETS
-unsigned int  maxoctets = 0;    /* default - no limit */
-int maxoctets_dir = 0;       /* default - sum of traffic */
+unsigned int  PPP_VISIBLE maxoctets = 0;    /* default - no limit */
+int PPP_VISIBLE maxoctets_dir = 0;       /* default - sum of traffic */
 int maxoctets_timeout = 1;   /* default 1 second */ 
 #endif
 
@@ -463,7 +463,7 @@ parse_args(argc, argv)
  * options_from_file - Read a string of options from a file,
  * and interpret them.
  */
-int
+int PPP_VISIBLE
 options_from_file(filename, must_exist, check_prot, priv)
     char *filename;
     int must_exist;
@@ -936,7 +936,7 @@ n_arguments(opt)
 /*
  * add_options - add a list of options to the set we grok.
  */
-void
+void PPP_VISIBLE
 add_options(opt)
     option_t *opt;
 {
@@ -1469,7 +1469,7 @@ number_option(str, valp, base)
  * the base is assumed to be 0, and *valp is not changed
  * if there is an error.
  */
-int
+int PPP_VISIBLE
 int_option(str, valp)
     char *str;
     int *valp;
