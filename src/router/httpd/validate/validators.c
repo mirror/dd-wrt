@@ -1765,15 +1765,15 @@ EJ_VISIBLE void validate_dynamic_route(webs_t wp, char *value, struct variable *
 		nvram_seti("dr_wan_tx", 0);
 		nvram_seti("dr_wan_rx", 0);
 	} else if (atoi(dr_setting) == 1) {
-		nvram_set("dr_lan_tx", "1 2");
-		nvram_set("dr_lan_rx", "1 2");
-		nvram_seti("dr_wan_tx", 0);
-		nvram_seti("dr_wan_rx", 0);
-	} else if (atoi(dr_setting) == 2) {
 		nvram_seti("dr_lan_tx", 0);
 		nvram_seti("dr_lan_rx", 0);
 		nvram_set("dr_wan_tx", "1 2");
 		nvram_set("dr_wan_rx", "1 2");
+	} else if (atoi(dr_setting) == 2) {
+		nvram_set("dr_lan_tx", "1 2");
+		nvram_set("dr_lan_rx", "1 2");
+		nvram_seti("dr_wan_tx", 0);
+		nvram_seti("dr_wan_rx", 0);
 	} else if (atoi(dr_setting) == 3) {
 		nvram_set("dr_lan_tx", "1 2");
 		nvram_set("dr_lan_rx", "1 2");
