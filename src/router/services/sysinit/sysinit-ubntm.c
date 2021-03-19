@@ -212,7 +212,7 @@ void start_sysinit(void)
 #endif
 	}
 	/* ubnt has a hardware fault as it seems, so the power bridge feature can break the hardware which causes endless reboot loops. we keep it disabled here. devices which are already broken will work again then */
-	if (nvram_matchi("ubnt_power", 1)) {
+	if (nvram_default_matchi("ubnt_power", 1, 0)) {
 		led_control(POE_GPIO, LED_ON);
 	} else {
 		led_control(POE_GPIO, LED_OFF);
