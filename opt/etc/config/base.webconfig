@@ -115,6 +115,17 @@
             <input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,254,'IP')" value="<% nvram_list("remote_ip", "1"); %>" name="remote_ip_4" />	
 		</div>
 	</fieldset><br />
+
+<% ifndef("POESWITCH", "<!--"); %>
+	<fieldset>
+		<legend><% tran("management.poeswitch"); %></legend>
+		<div class="setting">
+			<div class="label"><% tran("management.poeswitch"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="ubnt_power" <% nvram_checked("ubnt_power","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="ubnt_power" <% nvram_checked("ubnt_power","0"); %> /><% tran("share.disable"); %>
+		</div>
+	</fieldset><br />
+<% ifndef("POESWITCH", "-->"); %>
 	
 	<% nvram_match("boot_wait_web","0","<!--"); %>
 	<fieldset>
