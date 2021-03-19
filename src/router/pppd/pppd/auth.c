@@ -143,7 +143,7 @@ static struct permitted_ip *addresses[NUM_PPP];
 static struct wordlist *noauth_addrs;
 
 /* Remote telephone number, if available */
-char remote_number[MAXNAMELEN];
+char PPP_VISIBLE remote_number[MAXNAMELEN];
 
 /* Wordlist giving remote telephone numbers which may connect. */
 static struct wordlist *permitted_numbers;
@@ -167,10 +167,10 @@ static bool default_auth;
 int (*idle_time_hook) __P((struct ppp_idle *)) = NULL;
 
 /* Hook for a plugin to say whether we can possibly authenticate any peer */
-int (*pap_check_hook) __P((void)) = NULL;
+int PPP_VISIBLE (*pap_check_hook) __P((void)) = NULL;
 
 /* Hook for a plugin to check the PAP user and password */
-int (*pap_auth_hook) __P((char *user, char *passwd, char **msgp,
+int PPP_VISIBLE (*pap_auth_hook) __P((char *user, char *passwd, char **msgp,
 			  struct wordlist **paddrs,
 			  struct wordlist **popts)) = NULL;
 
@@ -181,7 +181,7 @@ void (*pap_logout_hook) __P((void)) = NULL;
 int (*pap_passwd_hook) __P((char *user, char *passwd)) = NULL;
 
 /* Hook for a plugin to say if we can possibly authenticate a peer using CHAP */
-int (*chap_check_hook) __P((void)) = NULL;
+int PPP_VISIBLE (*chap_check_hook) __P((void)) = NULL;
 
 /* Hook for a plugin to get the CHAP password for authenticating us */
 int (*chap_passwd_hook) __P((char *user, char *passwd)) = NULL;
@@ -191,7 +191,7 @@ int (*chap_passwd_hook) __P((char *user, char *passwd)) = NULL;
 int (*null_auth_hook) __P((struct wordlist **paddrs,
 			   struct wordlist **popts)) = NULL;
 
-int (*allowed_address_hook) __P((u_int32_t addr)) = NULL;
+int PPP_VISIBLE (*allowed_address_hook)  __P((u_int32_t addr)) = NULL;
 
 #ifdef HAVE_MULTILINK
 /* Hook for plugin to hear when an interface joins a multilink bundle */
@@ -2048,7 +2048,7 @@ ip_addr_check(addr, addrs)
  * to use, such as an address in the loopback net or a multicast address.
  * addr is in network byte order.
  */
-int
+int PPP_VISIBLE
 bad_ip_adrs(addr)
     u_int32_t addr;
 {

@@ -63,10 +63,10 @@
 
 
 /* global vars */
-ipcp_options ipcp_wantoptions[NUM_PPP];	/* Options that we want to request */
+ipcp_options PPP_VISIBLE ipcp_wantoptions[NUM_PPP];	/* Options that we want to request */
 ipcp_options ipcp_gotoptions[NUM_PPP];	/* Options that peer ack'd */
-ipcp_options ipcp_allowoptions[NUM_PPP]; /* Options we allow peer to request */
-ipcp_options ipcp_hisoptions[NUM_PPP];	/* Options that we ack'd */
+ipcp_options PPP_VISIBLE ipcp_allowoptions[NUM_PPP]; /* Options we allow peer to request */
+ipcp_options PPP_VISIBLE ipcp_hisoptions[NUM_PPP];	/* Options that we ack'd */
 
 u_int32_t netmask = 0;		/* IP netmask to set on interface */
 
@@ -80,11 +80,11 @@ void (*ip_up_hook) __P((void)) = NULL;
 void (*ip_down_hook) __P((void)) = NULL;
 
 /* Hook for a plugin to choose the remote IP address */
-void (*ip_choose_hook) __P((u_int32_t *)) = NULL;
+void PPP_VISIBLE (*ip_choose_hook) __P((u_int32_t *)) = NULL;
 
 /* Notifiers for when IPCP goes up and down */
-struct notifier *ip_up_notifier = NULL;
-struct notifier *ip_down_notifier = NULL;
+struct notifier PPP_VISIBLE *ip_up_notifier = NULL;
+struct notifier PPP_VISIBLE *ip_down_notifier = NULL;
 
 /* local vars */
 static int default_route_set[NUM_PPP];	/* Have set up a default route */

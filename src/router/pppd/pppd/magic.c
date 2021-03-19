@@ -76,7 +76,7 @@ magic_init(void)
 /*
  * magic - Returns the next magic number.
  */
-u_int32_t
+u_int32_t PPP_VISIBLE
 magic(void)
 {
     return (u_int32_t) mrand48();

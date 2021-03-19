@@ -190,9 +190,9 @@ static option_t lcp_option_list[] = {
 
 /* global vars */
 fsm lcp_fsm[NUM_PPP];			/* LCP fsm structure (global)*/
-lcp_options lcp_wantoptions[NUM_PPP];	/* Options that we want to request */
+lcp_options PPP_VISIBLE lcp_wantoptions[NUM_PPP];	/* Options that we want to request */
 lcp_options lcp_gotoptions[NUM_PPP];	/* Options that peer ack'd */
-lcp_options lcp_allowoptions[NUM_PPP];	/* Options we allow peer to request */
+lcp_options PPP_VISIBLE lcp_allowoptions[NUM_PPP];	/* Options we allow peer to request */
 lcp_options lcp_hisoptions[NUM_PPP];	/* Options that we ack'd */
 
 static int lcp_echos_pending = 0;	/* Number of outstanding echo msgs */

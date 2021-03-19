@@ -123,20 +123,20 @@
 
 
 /* interface vars */
-char ifname[MAXIFNAMELEN];	/* Interface name */
-int ifunit;			/* Interface unit number */
+char PPP_VISIBLE ifname[MAXIFNAMELEN];	/* Interface name */
+int PPP_VISIBLE ifunit;			/* Interface unit number */
 
-struct channel *the_channel;
+struct channel PPP_VISIBLE *the_channel;
 
 char *progname;			/* Name of this program */
-char hostname[MAXNAMELEN];	/* Our hostname */
+char PPP_VISIBLE hostname[MAXNAMELEN];	/* Our hostname */
 static char pidfilename[MAXPATHLEN];	/* name of pid file */
 static char linkpidfile[MAXPATHLEN];	/* name of linkname pid file */
-char ppp_devnam[MAXPATHLEN];	/* name of PPP tty (maybe ttypx) */
+char PPP_VISIBLE ppp_devnam[MAXPATHLEN];	/* name of PPP tty (maybe ttypx) */
 uid_t uid;			/* Our real user-id */
 struct notifier *pidchange = NULL;
 struct notifier *phasechange = NULL;
-struct notifier *exitnotify = NULL;
+struct notifier PPP_VISIBLE *exitnotify = NULL;
 struct notifier *sigreceived = NULL;
 struct notifier *fork_notifier = NULL;
 
@@ -144,11 +144,11 @@ int hungup;			/* terminal has been hung up */
 int privileged;			/* we're running as real uid root */
 int need_holdoff;		/* need holdoff period before restarting */
 int detached;			/* have detached from terminal */
-volatile int status;		/* exit status for pppd */
+volatile int PPP_VISIBLE status;		/* exit status for pppd */
 int unsuccess;			/* # unsuccessful connection attempts */
 int do_callback;		/* != 0 if we should do callback next */
 int doing_callback;		/* != 0 if we are doing callback */
-int ppp_session_number;		/* Session number, for channels with such a
+int PPP_VISIBLE ppp_session_number;		/* Session number, for channels with such a
 				   concept (eg PPPoE) */
 int childwait_done;		/* have timed out waiting for children */
 
@@ -160,8 +160,8 @@ char db_key[32];
 
 int (*holdoff_hook) __P((void)) = NULL;
 int (*new_phase_hook) __P((int)) = NULL;
-void (*snoop_recv_hook) __P((unsigned char *p, int len)) = NULL;
-void (*snoop_send_hook) __P((unsigned char *p, int len)) = NULL;
+void PPP_VISIBLE (*snoop_recv_hook) __P((unsigned char *p, int len)) = NULL;
+void PPP_VISIBLE (*snoop_send_hook) __P((unsigned char *p, int len)) = NULL;
 
 static int conn_running;	/* we have a [dis]connector running */
 static int fd_loop;		/* fd for getting demand-dial packets */
@@ -203,11 +203,11 @@ int ngroups;			/* How many groups valid in groups */
 static struct timeval start_time;	/* Time when link was started. */
 
 static struct pppd_stats old_link_stats;
-struct pppd_stats link_stats;
-unsigned link_connect_time;
-int link_stats_valid;
+struct pppd_stats PPP_VISIBLE link_stats;
+unsigned PPP_VISIBLE link_connect_time;
+int PPP_VISIBLE link_stats_valid;
 
-int error_count;
+int PPP_VISIBLE error_count;
 
 bool bundle_eof;
 bool bundle_terminating;
@@ -1210,7 +1210,7 @@ new_phase(p)
 /*
  * die - clean up state and exit with the specified status.
  */
-void
+void PPP_VISIBLE
 die(status)
     int status;
 {
@@ -1274,7 +1274,7 @@ reset_link_stats(u)
 /*
  * update_link_stats - get stats at link termination.
  */
-void
+void PPP_VISIBLE
 update_link_stats(u)
     int u;
 {
@@ -1383,7 +1383,7 @@ timeout(func, arg, secs, usecs)
 /*
  * untimeout - Unschedule a timeout.
  */
-void
+void PPP_VISIBLE
 untimeout(func, arg)
     void (*func) __P((void *));
     void *arg;
@@ -2030,7 +2030,7 @@ reap_kids()
 /*
  * add_notifier - add a new function to be called when something happens.
  */
-void
+void PPP_VISIBLE
 add_notifier(notif, func, arg)
     struct notifier **notif;
     notify_func func;
@@ -2087,7 +2087,7 @@ notify(notif, val)
 /*
  * novm - log an error message saying we ran out of memory, and die.
  */
-void
+void PPP_VISIBLE
 novm(msg)
     char *msg;
 {
@@ -2098,7 +2098,7 @@ novm(msg)
  * script_setenv - set an environment variable value to be used
  * for scripts that we run (e.g. ip-up, auth-up, etc.)
  */
-void
+void PPP_VISIBLE
 script_setenv(var, value, iskey)
     char *var, *value;
     int iskey;

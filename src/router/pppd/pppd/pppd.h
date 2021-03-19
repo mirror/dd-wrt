@@ -123,6 +123,8 @@ typedef struct {
 	short int winner;
 } option_t;
 
+#define PPP_VISIBLE __attribute__((used)) __attribute__((__visibility__("default")))
+
 /* Values for flags */
 #define OPT_VALUE	0xff	/* mask for presupplied value */
 #define OPT_HEX		0x100	/* int option is in hex */
