@@ -309,6 +309,8 @@ endif
 ifeq ($(CONFIG_MAC80211_ATH9K_HTC),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
 	-cp $(MAC80211_PATH)/ath10k-firmware-*/htc_*.fw $(INSTALLDIR)/ath9k/lib/firmware
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath9k_htc
+	-cp $(MAC80211_PATH)/ath10k-firmware-*/ath9k_htc/* $(INSTALLDIR)/ath9k/lib/firmware/ath9k_htc
 endif
 ifeq ($(CONFIG_MAC80211_RTL8192CU),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
