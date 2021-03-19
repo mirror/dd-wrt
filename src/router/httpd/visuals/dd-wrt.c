@@ -1431,7 +1431,7 @@ void show_bgscan_options(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"setting\">\n");
 	char buf1[128];
 	char buf2[128];
-	char *modes[] = { tran_string(buf1, "share.off"), tran_string(buf2, "wl_adv.bgscan_simple") };
+	char *modes[] = { "\" + share.off +\"", "\" + wl_adv.bgscan_simple + \"" };
 	showOptionsNames(wp, "wl_adv.bgscan_mode", signal, "off simple", modes, nvram_default_get(signal, "off"));
 	websWrite(wp, "</div>\n");
 	sprintf(signal, "%s_bgscan_short_int", prefix);
