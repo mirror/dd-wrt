@@ -3756,8 +3756,9 @@ dirty_vol:
  *
  * this function is called during mount operation
  * it replays log and empties it
+ * initialized is set false if logfile contains '-1'
  */
-int log_replay(struct ntfs_inode *ni)
+int log_replay(struct ntfs_inode *ni, bool *initialized)
 {
 	int err;
 	struct ntfs_sb_info *sbi = ni->mi.sbi;
@@ -3829,6 +3830,9 @@ int log_replay(struct ntfs_inode *ni)
 	err = log_read_rst(log, l_size, true, &rst_info);
 	if (err)
 		goto out;
+
+	/* remember 'initialized' */
+	*initialized = rst_info.initialized;
 
 	if (!rst_info.restart) {
 		if (rst_info.initialized) {
