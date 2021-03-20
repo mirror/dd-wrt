@@ -391,17 +391,13 @@ static int ntfs_remount(struct super_block *sb, int *flags, char *data)
 	if (err)
 		goto restore_opts;
 
-	ro_rw = 0;
-	if (sb_rdonly(sb) && !(*flags & SB_RDONLY)) {
-		/* ro -> rw */
-		ro_rw = 1;
-		if (sbi->flags & NTFS_FLAGS_NEED_REPLAY) {
-			ntfs_warn(
-				sb,
-				"Couldn't remount rw because journal is not replayed. Please umount/remount instead\n");
-			err = -EINVAL;
-			goto restore_opts;
-		}
+	ro_rw = sb_rdonly(sb) && !(*flags & SB_RDONLY);
+	if (ro_rw && (sbi->flags & NTFS_FLAGS_NEED_REPLAY)) {
+		ntfs_warn(
+			sb,
+			"Couldn't remount rw because journal is not replayed. Please umount/remount instead\n");
+		err = -EINVAL;
+		goto restore_opts;
 	}
 
 	sync_filesystem(sb);
