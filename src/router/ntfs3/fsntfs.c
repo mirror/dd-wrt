@@ -258,6 +258,7 @@ int ntfs_loadlog_and_replay(struct ntfs_inode *ni, struct ntfs_sb_info *sbi)
 	int err = 0;
 	struct super_block *sb = sbi->sb;
 	struct inode *inode = &ni->vfs_inode;
+	bool initialized = false;
 	struct MFT_REF ref;
 
 	/* Check for 4GB */
@@ -297,9 +298,10 @@ int ntfs_loadlog_and_replay(struct ntfs_inode *ni, struct ntfs_sb_info *sbi)
 
 	sbi->mft.ni = ntfs_i(inode);
 
+	/* LogFile should not contains attribute list */
 	err = ni_load_all_mi(sbi->mft.ni);
 	if (!err)
-		err = log_replay(ni);
+		err = log_replay(ni, &initialized);
 
 	iput(inode);
 	sbi->mft.ni = NULL;
@@ -312,9 +314,10 @@ int ntfs_loadlog_and_replay(struct ntfs_inode *ni, struct ntfs_sb_info *sbi)
 		goto out;
 	}
 
-	if (sb_rdonly(sb))
+	if (sb_rdonly(sb) || !initialized)
 		goto out;
 
+	/* fill LogFile by '-1' if it is initialized */
 	err = ntfs_bio_fill_1(sbi, &ni->file.run);
 
 out:

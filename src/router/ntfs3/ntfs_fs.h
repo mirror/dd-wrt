@@ -528,7 +528,7 @@ int ni_write_frame(struct ntfs_inode *ni, struct page **pages,
 		   u32 pages_per_frame);
 
 /* globals from fslog.c */
-int log_replay(struct ntfs_inode *ni);
+int log_replay(struct ntfs_inode *ni, bool *initialized);
 
 /* globals from fsntfs.c */
 bool ntfs_fix_pre_write(struct NTFS_RECORD_HEADER *rhdr, size_t bytes);
