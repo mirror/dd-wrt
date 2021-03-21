@@ -358,8 +358,10 @@ static int samr_query_user_info_return(struct ksmbd_rpc_pipe *pipe)
 	strcat(home_dir, ch->user->name);
 
 	profile_path = calloc(1, home_dir_len + strlen("profile"));
-	if (!profile_path)
+	if (!profile_path) {
+		free(home_dir);
 		return KSMBD_RPC_ENOMEM;
+	}
 
 	/* Make Profile path string */
 	strcat(profile_path, "\\\\");
@@ -785,6 +787,7 @@ int rpc_samr_init(void)
 	domain_name = strup(hostname);
 	rpc_samr_add_domain_entry(domain_name);
 	rpc_samr_add_domain_entry("Builtin");
+	g_rw_lock_init(&ch_table_lock);
 	return 0;
 }
 
