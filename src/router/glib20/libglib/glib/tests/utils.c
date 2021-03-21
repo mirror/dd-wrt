@@ -21,7 +21,9 @@
  * Author: Matthias Clasen
  */
 
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
 #define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
 
 #include "glib.h"
 #include "glib-private.h"
@@ -29,6 +31,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#ifdef G_OS_UNIX
+#include <sys/utsname.h>
+#endif
+#ifdef G_OS_WIN32
+#include <windows.h>
+#endif
 
 static gboolean
 strv_check (const gchar * const *strv, ...)
@@ -336,6 +344,42 @@ test_codeset2 (void)
 }
 
 static void
+test_console_charset (void)
+{
+  const gchar *c1;
+  const gchar *c2;
+
+#ifdef G_OS_WIN32
+  /* store current environment and unset $LANG to make sure it does not interfere */
+  const unsigned int initial_cp = GetConsoleOutputCP ();
+  gchar *initial_lang = g_strdup (g_getenv ("LANG"));
+  g_unsetenv ("LANG");
+
+  /* set console output codepage to something specific (ISO-8859-1 aka CP28591) and query it */
+  SetConsoleOutputCP (28591);
+  g_get_console_charset (&c1);
+  g_assert_cmpstr (c1, ==, "ISO-8859-1");
+
+  /* set $LANG to something specific (should override the console output codepage) and query it */
+  g_setenv ("LANG", "de_DE.ISO-8859-15@euro", TRUE);
+  g_get_console_charset (&c2);
+  g_assert_cmpstr (c2, ==, "ISO-8859-15");
+
+  /* reset environment */
+  if (initial_cp)
+    SetConsoleOutputCP (initial_cp);
+  if (initial_lang)
+    g_setenv ("LANG", initial_lang, TRUE);
+  g_free (initial_lang);
+#else
+  g_get_charset (&c1);
+  g_get_console_charset (&c2);
+
+  g_assert_cmpstr (c1, ==, c2);
+#endif
+}
+
+static void
 test_basename (void)
 {
   const gchar *path = "/path/to/a/file/deep/down.sh";
@@ -478,6 +522,39 @@ test_desktop_special_dir (void)
   g_assert (dir2 != NULL);
 }
 
+static void
+test_os_info (void)
+{
+  gchar *name;
+  gchar *contents = NULL;
+#ifdef G_OS_UNIX
+  struct utsname info;
+#endif
+
+  /* Whether this is implemented or not, it must not crash */
+  name = g_get_os_info (G_OS_INFO_KEY_NAME);
+  g_test_message ("%s: %s",
+                  G_OS_INFO_KEY_NAME,
+                  name == NULL ? "(null)" : name);
+
+#if defined (G_OS_WIN32) || defined (__APPLE__)
+  /* These OSs have a special case so NAME should always succeed */
+  g_assert_nonnull (name);
+#elif defined (G_OS_UNIX)
+  if (g_file_get_contents ("/etc/os-release", &contents, NULL, NULL) ||
+      g_file_get_contents ("/usr/lib/os-release", &contents, NULL, NULL) ||
+      uname (&info) == 0)
+    g_assert_nonnull (name);
+  else
+    g_test_skip ("os-release(5) API not implemented on this platform");
+#else
+  g_test_skip ("g_get_os_info() not supported on this platform");
+#endif
+
+  g_free (name);
+  g_free (contents);
+}
+
 static gboolean
 source_test (gpointer data)
 {
@@ -531,6 +608,32 @@ test_clear_pointer_cast (void)
   g_clear_pointer (&hash_table, (void (*) (GHashTable *)) g_hash_table_destroy);
 
   g_assert_null (hash_table);
+}
+
+/* Test that the macro version of g_clear_pointer() only evaluates its argument
+ * once, just like the function version would. */
+static void
+test_clear_pointer_side_effects (void)
+{
+  gchar **my_string_array, **i;
+
+  my_string_array = g_new0 (gchar*, 3);
+  my_string_array[0] = g_strdup ("hello");
+  my_string_array[1] = g_strdup ("there");
+  my_string_array[2] = NULL;
+
+  i = my_string_array;
+
+  g_clear_pointer (i++, g_free);
+
+  g_assert_true (i == &my_string_array[1]);
+  g_assert_null (my_string_array[0]);
+  g_assert_nonnull (my_string_array[1]);
+  g_assert_null (my_string_array[2]);
+
+  g_free (my_string_array[1]);
+  g_free (my_string_array[2]);
+  g_free (my_string_array);
 }
 
 static int obj_count;
@@ -629,6 +732,84 @@ test_check_setuid (void)
   g_assert (!res);
 }
 
+/* Test the defined integer limits are correct, as some compilers have had
+ * problems with signed/unsigned conversion in the past. These limits should not
+ * vary between platforms, compilers or architectures.
+ *
+ * Use string comparisons to avoid the same systematic problems with unary minus
+ * application in C++. See https://gitlab.gnome.org/GNOME/glib/issues/1663. */
+static void
+test_int_limits (void)
+{
+  gchar *str = NULL;
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/1663");
+
+  str = g_strdup_printf ("%d %d %u\n"
+                         "%" G_GINT16_FORMAT " %" G_GINT16_FORMAT " %" G_GUINT16_FORMAT "\n"
+                         "%" G_GINT32_FORMAT " %" G_GINT32_FORMAT " %" G_GUINT32_FORMAT "\n"
+                         "%" G_GINT64_FORMAT " %" G_GINT64_FORMAT " %" G_GUINT64_FORMAT "\n",
+                         G_MININT8, G_MAXINT8, G_MAXUINT8,
+                         G_MININT16, G_MAXINT16, G_MAXUINT16,
+                         G_MININT32, G_MAXINT32, G_MAXUINT32,
+                         G_MININT64, G_MAXINT64, G_MAXUINT64);
+
+  g_assert_cmpstr (str, ==,
+                   "-128 127 255\n"
+                   "-32768 32767 65535\n"
+                   "-2147483648 2147483647 4294967295\n"
+                   "-9223372036854775808 9223372036854775807 18446744073709551615\n");
+  g_free (str);
+}
+
+static void
+test_clear_list (void)
+{
+    GList *list = NULL;
+
+    g_clear_list (&list, NULL);
+    g_assert_null (list);
+
+    list = g_list_prepend (list, "test");
+    g_assert_nonnull (list);
+
+    g_clear_list (&list, NULL);
+    g_assert_null (list);
+
+    g_clear_list (&list, g_free);
+    g_assert_null (list);
+
+    list = g_list_prepend (list, g_malloc (16));
+    g_assert_nonnull (list);
+
+    g_clear_list (&list, g_free);
+    g_assert_null (list);
+}
+
+static void
+test_clear_slist (void)
+{
+    GSList *slist = NULL;
+
+    g_clear_slist (&slist, NULL);
+    g_assert_null (slist);
+
+    slist = g_slist_prepend (slist, "test");
+    g_assert_nonnull (slist);
+
+    g_clear_slist (&slist, NULL);
+    g_assert_null (slist);
+
+    g_clear_slist (&slist, g_free);
+    g_assert_null (slist);
+
+    slist = g_slist_prepend (slist, g_malloc (16));
+    g_assert_nonnull (slist);
+
+    g_clear_slist (&slist, g_free);
+    g_assert_null (slist);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -661,6 +842,7 @@ main (int   argc,
   g_test_add_func ("/utils/debug", test_debug);
   g_test_add_func ("/utils/codeset", test_codeset);
   g_test_add_func ("/utils/codeset2", test_codeset2);
+  g_test_add_func ("/utils/console-charset", test_console_charset);
   g_test_add_func ("/utils/basename", test_basename);
   g_test_add_func ("/utils/gettext", test_gettext);
   g_test_add_func ("/utils/username", test_username);
@@ -671,14 +853,19 @@ main (int   argc,
 #endif
   g_test_add_func ("/utils/specialdir", test_special_dir);
   g_test_add_func ("/utils/specialdir/desktop", test_desktop_special_dir);
+  g_test_add_func ("/utils/os-info", test_os_info);
   g_test_add_func ("/utils/clear-pointer", test_clear_pointer);
   g_test_add_func ("/utils/clear-pointer-cast", test_clear_pointer_cast);
+  g_test_add_func ("/utils/clear-pointer/side-effects", test_clear_pointer_side_effects);
   g_test_add_func ("/utils/take-pointer", test_take_pointer);
   g_test_add_func ("/utils/clear-source", test_clear_source);
   g_test_add_func ("/utils/misc-mem", test_misc_mem);
   g_test_add_func ("/utils/nullify", test_nullify);
   g_test_add_func ("/utils/atexit", test_atexit);
   g_test_add_func ("/utils/check-setuid", test_check_setuid);
+  g_test_add_func ("/utils/int-limits", test_int_limits);
+  g_test_add_func ("/utils/clear-list", test_clear_list);
+  g_test_add_func ("/utils/clear-slist", test_clear_slist);
 
   return g_test_run ();
 }

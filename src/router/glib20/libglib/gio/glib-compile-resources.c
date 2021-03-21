@@ -43,10 +43,7 @@
 #include "gvdb/gvdb-builder.h"
 
 #include "gconstructor_as_data.h"
-
-#ifdef G_OS_WIN32
 #include "glib/glib-private.h"
-#endif
 
 typedef struct
 {
@@ -479,11 +476,14 @@ end_element (GMarkupParseContext  *context,
 	      g_set_error (error, G_MARKUP_ERROR, G_MARKUP_ERROR_INVALID_CONTENT,
 			   _("Error compressing file %s"),
 			   real_file);
-	      goto cleanup;
+              g_object_unref (compressor);
+              g_object_unref (out);
+              g_object_unref (out2);
+              goto cleanup;
 	    }
 
 	  g_free (data->content);
-	  data->content_size = g_memory_output_stream_get_size (G_MEMORY_OUTPUT_STREAM (out));
+	  data->content_size = g_memory_output_stream_get_data_size (G_MEMORY_OUTPUT_STREAM (out));
 	  data->content = g_memory_output_stream_steal_data (G_MEMORY_OUTPUT_STREAM (out));
 
 	  g_object_unref (compressor);
@@ -550,7 +550,7 @@ parse_resource_file (const gchar *filename,
                      gboolean     collect_data,
                      GHashTable  *files)
 {
-  GMarkupParser parser = { start_element, end_element, text };
+  GMarkupParser parser = { start_element, end_element, text, NULL, NULL };
   ParseState state = { 0, };
   GMarkupParseContext *context;
   GError *error = NULL;
@@ -725,6 +725,7 @@ main (int argc, char **argv)
   gboolean generate_header = FALSE;
   gboolean manual_register = FALSE;
   gboolean internal = FALSE;
+  gboolean external_data = FALSE;
   gboolean generate_dependencies = FALSE;
   gboolean generate_phony_targets = FALSE;
   char *dependency_file = NULL;
@@ -744,6 +745,7 @@ main (int argc, char **argv)
     { "generate-phony-targets", 0, 0, G_OPTION_ARG_NONE, &generate_phony_targets, N_("Include phony targets in the generated dependency file"), NULL },
     { "manual-register", 0, 0, G_OPTION_ARG_NONE, &manual_register, N_("Don’t automatically create and register resource"), NULL },
     { "internal", 0, 0, G_OPTION_ARG_NONE, &internal, N_("Don’t export functions; declare them G_GNUC_INTERNAL"), NULL },
+    { "external-data", 0, 0, G_OPTION_ARG_NONE, &external_data, N_("Don’t embed resource data in the C file; assume it's linked externally instead"), NULL },
     { "c-name", 0, 0, G_OPTION_ARG_STRING, &c_name, N_("C identifier name used for the generated source code"), NULL },
     { NULL }
   };
@@ -752,7 +754,7 @@ main (int argc, char **argv)
   gchar *tmp;
 #endif
 
-  setlocale (LC_ALL, "");
+  setlocale (LC_ALL, GLIB_DEFAULT_LOCALE);
   textdomain (GETTEXT_PACKAGE);
 
 #ifdef G_OS_WIN32
@@ -990,13 +992,14 @@ main (int argc, char **argv)
 	    {
 	      const char *first = G_CSET_A_2_Z G_CSET_a_2_z "_";
 	      const char *rest = G_CSET_A_2_Z G_CSET_a_2_z G_CSET_DIGITS "_";
-	      if (strchr ((i == 0) ? first : rest, base[i]) != NULL)
+	      if (strchr ((s->len == 0) ? first : rest, base[i]) != NULL)
 		g_string_append_c (s, base[i]);
 	      else if (base[i] == '-')
 		g_string_append_c (s, '_');
 
 	    }
 
+	  g_free (base);
 	  c_name = g_string_free (s, FALSE);
 	}
     }
@@ -1058,6 +1061,7 @@ main (int argc, char **argv)
       guint8 *data;
       gsize data_size;
       gsize i;
+      const char *export = "G_MODULE_EXPORT";
 
       if (!g_file_get_contents (binary_target, (char **)&data,
 				&data_size, NULL))
@@ -1078,6 +1082,9 @@ main (int argc, char **argv)
 	  return 1;
 	}
 
+      if (internal)
+        export = "G_GNUC_INTERNAL";
+
       g_fprintf (file,
 	       "#include <gio/gio.h>\n"
 	       "\n"
@@ -1086,49 +1093,87 @@ main (int argc, char **argv)
 	       "#else\n"
 	       "# define SECTION\n"
 	       "#endif\n"
-	       "\n"
-	       "static const SECTION union { const guint8 data[%"G_GSIZE_FORMAT"]; const double alignment; void * const ptr;}  %s_resource_data = { {\n",
-	       c_name_no_underscores, data_size, c_name);
+	       "\n",
+	       c_name_no_underscores);
 
-      for (i = 0; i < data_size; i++) {
-	if (i % 8 == 0)
-	  g_fprintf (file, "  ");
-	g_fprintf (file, "0x%2.2x", (int)data[i]);
-	if (i != data_size - 1)
-	  g_fprintf (file, ", ");
-	if ((i % 8 == 7) || (i == data_size - 1))
-	  g_fprintf (file, "\n");
-      }
+      if (external_data)
+        {
+          g_fprintf (file,
+                     "extern const SECTION union { const guint8 data[%"G_GSIZE_FORMAT"]; const double alignment; void * const ptr;}  %s_resource_data;"
+                     "\n",
+                     data_size, c_name);
+        }
+      else
+        {
+          /* For Visual Studio builds: Avoid surpassing the 65535-character limit for a string, GitLab issue #1580 */
+          g_fprintf (file, "#ifdef _MSC_VER\n");
+          g_fprintf (file,
+                     "static const SECTION union { const guint8 data[%"G_GSIZE_FORMAT"]; const double alignment; void * const ptr;}  %s_resource_data = { {\n",
+                     data_size + 1 /* nul terminator */, c_name);
 
-      g_fprintf (file, "} };\n");
+          for (i = 0; i < data_size; i++)
+            {
+              if (i % 16 == 0)
+                g_fprintf (file, "  ");
+              g_fprintf (file, "0%3.3o", (int)data[i]);
+              if (i != data_size - 1)
+                g_fprintf (file, ", ");
+              if (i % 16 == 15 || i == data_size - 1)
+                g_fprintf (file, "\n");
+            }
+
+          g_fprintf (file, "} };\n");
+
+          /* For other compilers, use the long string approach */
+          g_fprintf (file, "#else /* _MSC_VER */\n");
+          g_fprintf (file,
+                     "static const SECTION union { const guint8 data[%"G_GSIZE_FORMAT"]; const double alignment; void * const ptr;}  %s_resource_data = {\n  \"",
+                     data_size + 1 /* nul terminator */, c_name);
+
+          for (i = 0; i < data_size; i++)
+            {
+              g_fprintf (file, "\\%3.3o", (int)data[i]);
+              if (i % 16 == 15)
+                g_fprintf (file, "\"\n  \"");
+            }
+
+          g_fprintf (file, "\" };\n");
+          g_fprintf (file, "#endif /* !_MSC_VER */\n");
+        }
 
       g_fprintf (file,
 	       "\n"
-	       "static GStaticResource static_resource = { %s_resource_data.data, sizeof (%s_resource_data.data), NULL, NULL, NULL };\n"
-	       "%s GResource *%s_get_resource (void);\n"
+	       "static GStaticResource static_resource = { %s_resource_data.data, sizeof (%s_resource_data.data)%s, NULL, NULL, NULL };\n"
+	       "\n"
+	       "%s\n"
+	       "GResource *%s_get_resource (void);\n"
 	       "GResource *%s_get_resource (void)\n"
 	       "{\n"
 	       "  return g_static_resource_get_resource (&static_resource);\n"
 	       "}\n",
-	       c_name, c_name, linkage, c_name, c_name);
+	       c_name, c_name, (external_data ? "" : " - 1 /* nul terminator */"),
+	       export, c_name, c_name);
 
 
       if (manual_register)
 	{
 	  g_fprintf (file,
 		   "\n"
-		   "%s void %s_unregister_resource (void);\n"
+		   "%s\n"
+		   "void %s_unregister_resource (void);\n"
 		   "void %s_unregister_resource (void)\n"
 		   "{\n"
 		   "  g_static_resource_fini (&static_resource);\n"
 		   "}\n"
 		   "\n"
-		   "%s void %s_register_resource (void);\n"
+		   "%s\n"
+		   "void %s_register_resource (void);\n"
 		   "void %s_register_resource (void)\n"
 		   "{\n"
 		   "  g_static_resource_init (&static_resource);\n"
 		   "}\n",
-		   linkage, c_name, c_name, linkage, c_name, c_name);
+		   export, c_name, c_name,
+		   export, c_name, c_name);
 	}
       else
 	{

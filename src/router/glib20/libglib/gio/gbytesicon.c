@@ -146,8 +146,11 @@ g_bytes_icon_init (GBytesIcon *bytes)
  *
  * Creates a new icon for a bytes.
  *
+ * This cannot fail, but loading and interpreting the bytes may fail later on
+ * (for example, if g_loadable_icon_load() is called) if the image is invalid.
+ *
  * Returns: (transfer full) (type GBytesIcon): a #GIcon for the given
- *   @bytes, or %NULL on error.
+ *   @bytes.
  *
  * Since: 2.38
  **/
@@ -165,7 +168,7 @@ g_bytes_icon_new (GBytes *bytes)
  *
  * Gets the #GBytes associated with the given @icon.
  *
- * Returns: (transfer none): a #GBytes, or %NULL.
+ * Returns: (transfer none): a #GBytes.
  *
  * Since: 2.38
  **/

@@ -411,7 +411,66 @@ debugging information. This option is mutually exclusive with the
 </variablelist>
 </refsect1>
 
-<refsect1><title>Using glib-genmarshal with Autotools</title>
+<refsect1><title>Using <command>glib-genmarshal</command> with Meson</title>
+<para>
+Meson supports generating closure marshallers using <command>glib-genmarshal</command>
+out of the box in its "gnome" module.
+</para>
+
+<para>
+In your <filename>meson.build</filename> file you will typically call the
+<literal>gnome.genmarshal()</literal> method with the source list of marshallers
+to generate:
+</para>
+<informalexample><programlisting>
+gnome = import('gnome')
+marshal_files = gnome.genmarshal('marshal',
+  sources: 'marshal.list',
+  internal: true,
+)
+</programlisting></informalexample>
+<para>
+The <literal>marshal_files</literal> variable will contain an array of two elements
+in the following order:
+</para>
+<itemizedlist>
+  <listitem><para>a build target for the source file</para></listitem>
+  <listitem><para>a build target for the header file</para></listitem>
+</itemizedlist>
+<para>
+You should use the returned objects to provide a dependency on every other
+build target that references the source or header file; for instance, if you
+are using the source to build a library:
+</para>
+<informalexample><programlisting>
+mainlib = library('project',
+  sources: project_sources + marshal_files,
+  ...
+)
+</programlisting></informalexample>
+<para>
+Additionally, if you are including the generated header file inside a build
+target that depends on the library you just built, you must ensure that the
+internal dependency includes the generated header as a required source file:
+</para>
+<informalexample><programlisting>
+mainlib_dep = declare_dependency(sources: marshal_files[1], link_with: mainlib)
+</programlisting></informalexample>
+<para>
+You should not include the generated source file as well, otherwise it will
+be built separately for every target that depends on it, causing build
+failures. To know more about why all this is required, please refer to the
+<ulink url="https://mesonbuild.com/FAQ.html#how-do-i-tell-meson-that-my-sources-use-generated-headers">
+corresponding Meson FAQ entry</ulink>.
+</para>
+<para>
+For more information on how to use the method, see the
+<ulink url="https://mesonbuild.com/Gnome-module.html#gnomegenmarshal">Meson
+documentation for <literal>gnome.genmarshal()</literal></ulink>.
+</para>
+</refsect1>
+
+<refsect1><title>Using <command>glib-genmarshal</command> with Autotools</title>
 <para>
 In order to use <command>glib-genmarshal</command> in your project when using
 Autotools as the build system, you will first need to modify your

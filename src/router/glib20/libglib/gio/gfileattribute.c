@@ -38,7 +38,7 @@
  *
  * Keys are strings that contain a key namespace and a key name, separated
  * by a colon, e.g. "namespace::keyname". Namespaces are included to sort
- * key-value pairs by namespaces for relevance. Keys can be retrived
+ * key-value pairs by namespaces for relevance. Keys can be retrieved
  * using wildcards, e.g. "standard::*" will return all of the keys in the
  * "standard" namespace.
  *
@@ -274,8 +274,8 @@ valid_char (char c)
 static char *
 escape_byte_string (const char *str)
 {
-  size_t len;
-  int num_invalid, i;
+  size_t i, len;
+  int num_invalid;
   char *escaped_val, *p;
   unsigned char c;
   const char hex_digits[] = "0123456789abcdef";
@@ -917,7 +917,7 @@ g_file_attribute_info_list_bsearch (GFileAttributeInfoList *list,
 /**
  * g_file_attribute_info_list_lookup:
  * @list: a #GFileAttributeInfoList.
- * @name: the name of the attribute to lookup.
+ * @name: the name of the attribute to look up.
  *
  * Gets the file attribute with the name @name from @list.
  *

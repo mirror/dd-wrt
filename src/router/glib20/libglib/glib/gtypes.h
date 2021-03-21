@@ -58,19 +58,45 @@ typedef float   gfloat;
 typedef double  gdouble;
 
 /* Define min and max constants for the fixed size numerical types */
-#define G_MININT8	((gint8) -0x80)
+/**
+ * G_MININT8: (value -128)
+ *
+ * The minimum value which can be held in a #gint8.
+ *
+ * Since: 2.4
+ */
+#define G_MININT8	((gint8) (-G_MAXINT8 - 1))
 #define G_MAXINT8	((gint8)  0x7f)
 #define G_MAXUINT8	((guint8) 0xff)
 
-#define G_MININT16	((gint16) -0x8000)
+/**
+ * G_MININT16: (value -32768)
+ *
+ * The minimum value which can be held in a #gint16.
+ *
+ * Since: 2.4
+ */
+#define G_MININT16	((gint16) (-G_MAXINT16 - 1))
 #define G_MAXINT16	((gint16)  0x7fff)
 #define G_MAXUINT16	((guint16) 0xffff)
 
-#define G_MININT32	((gint32) -0x80000000)
+/**
+ * G_MININT32: (value -2147483648)
+ *
+ * The minimum value which can be held in a #gint32.
+ *
+ * Since: 2.4
+ */
+#define G_MININT32	((gint32) (-G_MAXINT32 - 1))
 #define G_MAXINT32	((gint32)  0x7fffffff)
 #define G_MAXUINT32	((guint32) 0xffffffff)
 
-#define G_MININT64	((gint64) G_GINT64_CONSTANT(-0x8000000000000000))
+/**
+ * G_MININT64: (value -9223372036854775808)
+ *
+ * The minimum value which can be held in a #gint64.
+ */
+#define G_MININT64	((gint64) (-G_MAXINT64 - G_GINT64_CONSTANT(1)))
 #define G_MAXINT64	G_GINT64_CONSTANT(0x7fffffffffffffff)
 #define G_MAXUINT64	G_GUINT64_CONSTANT(0xffffffffffffffff)
 
@@ -92,6 +118,20 @@ typedef void            (*GHFunc)               (gpointer       key,
                                                  gpointer       value,
                                                  gpointer       user_data);
 
+/**
+ * GCopyFunc:
+ * @src: (not nullable): A pointer to the data which should be copied
+ * @data: Additional data
+ *
+ * A function of this signature is used to copy the node data
+ * when doing a deep-copy of a tree.
+ *
+ * Returns: (not nullable): A pointer to the copy
+ *
+ * Since: 2.4
+ */
+typedef gpointer	(*GCopyFunc)            (gconstpointer  src,
+                                                 gpointer       data);
 /**
  * GFreeFunc:
  * @data: a data pointer
@@ -502,16 +542,16 @@ union _GDoubleIEEE754
 #error unknown ENDIAN type
 #endif /* !G_LITTLE_ENDIAN && !G_BIG_ENDIAN */
 
-typedef struct _GTimeVal                GTimeVal;
+typedef struct _GTimeVal GTimeVal GLIB_DEPRECATED_TYPE_IN_2_62_FOR(GDateTime);
 
 struct _GTimeVal
 {
   glong tv_sec;
   glong tv_usec;
-};
+} GLIB_DEPRECATED_TYPE_IN_2_62_FOR(GDateTime);
 
-typedef gint            grefcount;
-typedef volatile gint   gatomicrefcount;
+typedef gint grefcount;
+typedef gint gatomicrefcount;  /* should be accessed only using atomics */
 
 G_END_DECLS
 
@@ -525,7 +565,7 @@ G_END_DECLS
 #    else /* !GLIB_STATIC_COMPILATION */
 #      ifdef GLIB_COMPILATION
 #        ifdef DLL_EXPORT
-#          define GLIB_VAR __declspec(dllexport)
+#          define GLIB_VAR extern __declspec(dllexport)
 #        else /* !DLL_EXPORT */
 #          define GLIB_VAR extern
 #        endif /* !DLL_EXPORT */

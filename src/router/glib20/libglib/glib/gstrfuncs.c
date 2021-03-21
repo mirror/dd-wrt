@@ -35,6 +35,7 @@
 #include <string.h>
 #include <locale.h>
 #include <errno.h>
+#include <garray.h>
 #include <ctype.h>              /* For tolower() */
 
 #ifdef HAVE_XLOCALE_H
@@ -379,10 +380,45 @@ g_strdup (const gchar *str)
  *
  * Returns: a pointer to the newly-allocated copy of the memory, or %NULL if @mem
  *  is %NULL.
+ * Deprecated: 2.68: Use g_memdup2() instead, as it accepts a #gsize argument
+ *     for @byte_size, avoiding the possibility of overflow in a #gsize → #guint
+ *     conversion
  */
 gpointer
 g_memdup (gconstpointer mem,
           guint         byte_size)
+{
+  gpointer new_mem;
+
+  if (mem && byte_size != 0)
+    {
+      new_mem = g_malloc (byte_size);
+      memcpy (new_mem, mem, byte_size);
+    }
+  else
+    new_mem = NULL;
+
+  return new_mem;
+}
+
+/**
+ * g_memdup2:
+ * @mem: (nullable): the memory to copy.
+ * @byte_size: the number of bytes to copy.
+ *
+ * Allocates @byte_size bytes of memory, and copies @byte_size bytes into it
+ * from @mem. If @mem is %NULL it returns %NULL.
+ *
+ * This replaces g_memdup(), which was prone to integer overflows when
+ * converting the argument from a #gsize to a #guint.
+ *
+ * Returns: (nullable): a pointer to the newly-allocated copy of the memory,
+ *    or %NULL if @mem is %NULL.
+ * Since: 2.68
+ */
+gpointer
+g_memdup2 (gconstpointer mem,
+           gsize         byte_size)
 {
   gpointer new_mem;
 
@@ -491,7 +527,7 @@ g_stpcpy (gchar       *dest,
 
 /**
  * g_strdup_vprintf:
- * @format: a standard printf() format string, but notice
+ * @format: (not nullable): a standard printf() format string, but notice
  *     [string precision pitfalls][string-precision]
  * @args: the list of parameters to insert into the format string
  *
@@ -499,6 +535,10 @@ g_stpcpy (gchar       *dest,
  * calculates the maximum space required and allocates memory to hold
  * the result. The returned string should be freed with g_free() when
  * no longer needed.
+ *
+ * The returned string is guaranteed to be non-NULL, unless @format
+ * contains `%lc` or `%ls` conversions, which can fail if no multibyte
+ * representation is available for the given character.
  *
  * See also g_vasprintf(), which offers the same functionality, but
  * additionally returns the length of the allocated string.
@@ -518,7 +558,7 @@ g_strdup_vprintf (const gchar *format,
 
 /**
  * g_strdup_printf:
- * @format: a standard printf() format string, but notice
+ * @format: (not nullable): a standard printf() format string, but notice
  *     [string precision pitfalls][string-precision]
  * @...: the parameters to insert into the format string
  *
@@ -526,6 +566,10 @@ g_strdup_vprintf (const gchar *format,
  * calculates the maximum space required and allocates memory to hold
  * the result. The returned string should be freed with g_free() when no
  * longer needed.
+ *
+ * The returned string is guaranteed to be non-NULL, unless @format
+ * contains `%lc` or `%ls` conversions, which can fail if no multibyte
+ * representation is available for the given character.
  *
  * Returns: a newly-allocated string holding the result
  */
@@ -1140,6 +1184,11 @@ g_parse_long_long (const gchar  *nptr,
  * changing the current locale, since that would not be
  * thread-safe.
  *
+ * Note that input with a leading minus sign (`-`) is accepted, and will return
+ * the negation of the parsed number, unless that would overflow a #guint64.
+ * Critically, this means you cannot assume that a short fixed length input will
+ * never result in a low return value, as the input could have a leading `-`.
+ *
  * This function is typically used when reading configuration
  * files or other non-user input that should be locale independent.
  * To handle input from the user you should normally use the
@@ -1297,7 +1346,7 @@ g_strerror (gint errnum)
       g_strlcpy (buf, strerror (errnum), sizeof (buf));
       msg = buf;
 #endif
-      if (!g_get_charset (NULL))
+      if (!g_get_console_charset (NULL))
         {
           msg = g_locale_to_utf8 (msg, -1, NULL, NULL, &error);
           if (error)
@@ -1337,7 +1386,7 @@ g_strsignal (gint signum)
 
 #ifdef HAVE_STRSIGNAL
   msg = strsignal (signum);
-  if (!g_get_charset (NULL))
+  if (!g_get_console_charset (NULL))
     msg = tofree = g_locale_to_utf8 (msg, -1, NULL, NULL, NULL);
 #endif
 
@@ -1575,7 +1624,7 @@ g_ascii_strup (const gchar *str,
 gboolean
 g_str_is_ascii (const gchar *str)
 {
-  gint i;
+  gsize i;
 
   for (i = 0; str[i]; i++)
     if (str[i] & 0x80)
@@ -1755,7 +1804,7 @@ g_ascii_digit_value (gchar c)
  * g_ascii_xdigit_value:
  * @c: an ASCII character.
  *
- * Determines the numeric value of a character as a hexidecimal
+ * Determines the numeric value of a character as a hexadecimal
  * digit. Differs from g_unichar_xdigit_value() because it takes
  * a char, so there's no worry about sign extension if characters
  * are signed.
@@ -1983,8 +2032,15 @@ g_strncasecmp (const gchar *s1,
  * changed to the @new_delimiter character. Modifies @string in place,
  * and returns @string itself, not a copy. The return value is to
  * allow nesting such as
- * |[<!-- language="C" --> 
+ * |[<!-- language="C" -->
  *   g_ascii_strup (g_strdelimit (str, "abc", '?'))
+ * ]|
+ *
+ * In order to modify a copy, you may use `g_strdup()`:
+ * |[<!-- language="C" -->
+ *   reformatted = g_strdelimit (g_strdup (const_str), "abc", '?');
+ *   ...
+ *   g_free (reformatted);
  * ]|
  *
  * Returns: @string
@@ -2020,8 +2076,15 @@ g_strdelimit (gchar       *string,
  * replaces the character with @substitutor. Modifies @string in place,
  * and return @string itself, not a copy. The return value is to allow
  * nesting such as
- * |[<!-- language="C" --> 
+ * |[<!-- language="C" -->
  *   g_ascii_strup (g_strcanon (str, "abc", '?'))
+ * ]|
+ *
+ * In order to modify a copy, you may use `g_strdup()`:
+ * |[<!-- language="C" -->
+ *   reformatted = g_strcanon (g_strdup (const_str), "abc", '?');
+ *   ...
+ *   g_free (reformatted);
  * ]|
  *
  * Returns: @string
@@ -2312,7 +2375,7 @@ g_strchomp (gchar *string)
  *
  * As a special case, the result of splitting the empty string "" is an empty
  * vector, not a vector containing a single string. The reason for this
- * special case is that being able to represent a empty vector is typically
+ * special case is that being able to represent an empty vector is typically
  * more useful than consistent handling of empty elements. If you do need
  * to represent empty elements, you'll need to check for the empty string
  * before calling g_strsplit().
@@ -2325,10 +2388,9 @@ g_strsplit (const gchar *string,
             const gchar *delimiter,
             gint         max_tokens)
 {
-  GSList *string_list = NULL, *slist;
-  gchar **str_array, *s;
-  guint n = 0;
+  char *s;
   const gchar *remainder;
+  GPtrArray *string_list;
 
   g_return_val_if_fail (string != NULL, NULL);
   g_return_val_if_fail (delimiter != NULL, NULL);
@@ -2337,6 +2399,7 @@ g_strsplit (const gchar *string,
   if (max_tokens < 1)
     max_tokens = G_MAXINT;
 
+  string_list = g_ptr_array_new ();
   remainder = string;
   s = strstr (remainder, delimiter);
   if (s)
@@ -2348,35 +2411,25 @@ g_strsplit (const gchar *string,
           gsize len;
 
           len = s - remainder;
-          string_list = g_slist_prepend (string_list,
-                                         g_strndup (remainder, len));
-          n++;
+          g_ptr_array_add (string_list, g_strndup (remainder, len));
           remainder = s + delimiter_len;
           s = strstr (remainder, delimiter);
         }
     }
   if (*string)
-    {
-      n++;
-      string_list = g_slist_prepend (string_list, g_strdup (remainder));
-    }
+    g_ptr_array_add (string_list, g_strdup (remainder));
 
-  str_array = g_new (gchar*, n + 1);
+  g_ptr_array_add (string_list, NULL);
 
-  str_array[n--] = NULL;
-  for (slist = string_list; slist; slist = slist->next)
-    str_array[n--] = slist->data;
-
-  g_slist_free (string_list);
-
-  return str_array;
+  return (char **) g_ptr_array_free (string_list, FALSE);
 }
 
 /**
  * g_strsplit_set:
  * @string: The string to be tokenized
  * @delimiters: A nul-terminated string containing bytes that are used
- *     to split the string.
+ *     to split the string (it can accept an empty string, which will result
+ *     in no string splitting).
  * @max_tokens: The maximum number of tokens to split @string into.
  *     If this is less than 1, the string is split completely
  *
@@ -2394,7 +2447,7 @@ g_strsplit (const gchar *string,
  *
  * As a special case, the result of splitting the empty string "" is an empty
  * vector, not a vector containing a single string. The reason for this
- * special case is that being able to represent a empty vector is typically
+ * special case is that being able to represent an empty vector is typically
  * more useful than consistent handling of empty elements. If you do need
  * to represent empty elements, you'll need to check for the empty string
  * before calling g_strsplit_set().
@@ -2412,7 +2465,7 @@ g_strsplit_set (const gchar *string,
                 const gchar *delimiters,
                 gint         max_tokens)
 {
-  gboolean delim_table[256];
+  guint8 delim_table[256]; /* 1 = index is a separator; 0 otherwise */
   GSList *tokens, *list;
   gint n_tokens;
   const gchar *s;
@@ -2433,6 +2486,9 @@ g_strsplit_set (const gchar *string,
       return result;
     }
 
+  /* Check if each character in @string is a separator, by indexing by the
+   * character value into the @delim_table, which has value 1 stored at an index
+   * if that index is a separator. */
   memset (delim_table, FALSE, sizeof (delim_table));
   for (s = delimiters; *s != '\0'; ++s)
     delim_table[*(guchar *)s] = TRUE;
@@ -2491,7 +2547,7 @@ g_strfreev (gchar **str_array)
 {
   if (str_array)
     {
-      int i;
+      gsize i;
 
       for (i = 0; str_array[i] != NULL; i++)
         g_free (str_array[i]);
@@ -2516,7 +2572,7 @@ g_strdupv (gchar **str_array)
 {
   if (str_array)
     {
-      gint i;
+      gsize i;
       gchar **retval;
 
       i = 0;
@@ -2570,7 +2626,7 @@ g_strjoinv (const gchar  *separator,
 
   if (*str_array)
     {
-      gint i;
+      gsize i;
       gsize len;
       gsize separator_len;
 
@@ -2668,10 +2724,9 @@ g_strjoin (const gchar *separator,
 
 /**
  * g_strstr_len:
- * @haystack: a string
- * @haystack_len: the maximum length of @haystack. Note that -1 is
- *     a valid length, if @haystack is nul-terminated, meaning it will
- *     search through the whole string.
+ * @haystack: a nul-terminated string
+ * @haystack_len: the maximum length of @haystack in bytes. A length of -1
+ *     can be used to mean "search the entire string", like `strstr()`.
  * @needle: the string to search for
  *
  * Searches the string @haystack for the first occurrence
@@ -2695,13 +2750,14 @@ g_strstr_len (const gchar *haystack,
     {
       const gchar *p = haystack;
       gsize needle_len = strlen (needle);
+      gsize haystack_len_unsigned = haystack_len;
       const gchar *end;
       gsize i;
 
       if (needle_len == 0)
         return (gchar *)haystack;
 
-      if (haystack_len < needle_len)
+      if (haystack_len_unsigned < needle_len)
         return NULL;
 
       end = haystack + haystack_len - needle_len;
@@ -2774,7 +2830,8 @@ g_strrstr (const gchar *haystack,
 /**
  * g_strrstr_len:
  * @haystack: a nul-terminated string
- * @haystack_len: the maximum length of @haystack
+ * @haystack_len: the maximum length of @haystack in bytes. A length of -1
+ *     can be used to mean "search the entire string", like g_strrstr().
  * @needle: the nul-terminated string to search for
  *
  * Searches the string @haystack for the last occurrence
@@ -3176,6 +3233,40 @@ g_strv_contains (const gchar * const *strv,
   return FALSE;
 }
 
+/**
+ * g_strv_equal:
+ * @strv1: a %NULL-terminated array of strings
+ * @strv2: another %NULL-terminated array of strings
+ *
+ * Checks if @strv1 and @strv2 contain exactly the same elements in exactly the
+ * same order. Elements are compared using g_str_equal(). To match independently
+ * of order, sort the arrays first (using g_qsort_with_data() or similar).
+ *
+ * Two empty arrays are considered equal. Neither @strv1 not @strv2 may be
+ * %NULL.
+ *
+ * Returns: %TRUE if @strv1 and @strv2 are equal
+ * Since: 2.60
+ */
+gboolean
+g_strv_equal (const gchar * const *strv1,
+              const gchar * const *strv2)
+{
+  g_return_val_if_fail (strv1 != NULL, FALSE);
+  g_return_val_if_fail (strv2 != NULL, FALSE);
+
+  if (strv1 == strv2)
+    return TRUE;
+
+  for (; *strv1 != NULL && *strv2 != NULL; strv1++, strv2++)
+    {
+      if (!g_str_equal (*strv1, *strv2))
+        return FALSE;
+    }
+
+  return (*strv1 == NULL && *strv2 == NULL);
+}
+
 static gboolean
 str_has_sign (const gchar *str)
 {
@@ -3304,7 +3395,8 @@ g_ascii_string_to_signed (const gchar  *str,
  * @base that is within inclusive bounds limited by @min and @max. If
  * this is true, then the converted number is stored in @out_num. An
  * empty string is not a valid input. A string with leading or
- * trailing whitespace is also an invalid input.
+ * trailing whitespace is also an invalid input. A string with a leading sign
+ * (`-` or `+`) is not a valid input for the unsigned parser.
  *
  * @base can be between 2 and 36 inclusive. Hexadecimal numbers must
  * not be prefixed with "0x" or "0X". Such a problem does not exist

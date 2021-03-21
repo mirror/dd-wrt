@@ -224,7 +224,7 @@ g_action_change_state (GAction  *action,
  * The return value (if non-%NULL) should be freed with
  * g_variant_unref() when it is no longer required.
  *
- * Returns: (transfer full): the current state of the action
+ * Returns: (nullable) (transfer full): the current state of the action
  *
  * Since: 2.28
  **/
@@ -403,7 +403,7 @@ g_action_activate (GAction  *action,
 
 /**
  * g_action_name_is_valid:
- * @action_name: an potential action name
+ * @action_name: a potential action name
  *
  * Checks if @action_name is valid.
  *

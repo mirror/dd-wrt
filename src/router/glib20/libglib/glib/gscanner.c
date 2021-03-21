@@ -341,6 +341,7 @@ static const GScannerConfig g_scanner_config_template =
   FALSE			/* symbol_2_token */,
   FALSE			/* scope_0_fallback */,
   FALSE			/* store_int64 */,
+  0    			/* padding_dummy */
 };
 
 
@@ -1377,7 +1378,7 @@ g_scanner_unexp_token (GScanner		*scanner,
 	  _g_snprintf (token_string, token_string_len, "(unknown) token <%d>", scanner->token);
 	  break;
 	}
-      /* fall through */
+      G_GNUC_FALLTHROUGH;
     case G_TOKEN_SYMBOL:
       if (expected_token == G_TOKEN_SYMBOL ||
 	  (scanner->config->symbol_2_token &&
@@ -1522,7 +1523,7 @@ g_scanner_unexp_token (GScanner		*scanner,
 	  _g_snprintf (expected_string, expected_string_len, "(unknown) token <%d>", expected_token);
 	  break;
 	}
-      /* fall through */
+      G_GNUC_FALLTHROUGH;
     case G_TOKEN_SYMBOL:
       need_valid = (scanner->token == G_TOKEN_SYMBOL ||
 		    (scanner->config->symbol_2_token &&
@@ -1532,7 +1533,7 @@ g_scanner_unexp_token (GScanner		*scanner,
 		   "%s%s",
 		   need_valid ? "valid " : "",
 		   symbol_spec);
-      /* FIXME: should we attempt to lookup the symbol_name for symbol_2_token? */
+      /* FIXME: should we attempt to look up the symbol_name for symbol_2_token? */
       break;
     case G_TOKEN_CHAR:
       _g_snprintf (expected_string, expected_string_len, "%scharacter",
@@ -1695,17 +1696,19 @@ g_scanner_get_token_i (GScanner	*scanner,
       scanner->config->int_2_float)
     {
       *token_p = G_TOKEN_FLOAT;
+
+      /* Have to assign through a temporary variable to avoid undefined behaviour
+       * by copying between potentially-overlapping union members. */
       if (scanner->config->store_int64)
         {
-#ifdef _MSC_VER
-          /* work around error C2520, see gvaluetransform.c */
-          value_p->v_float = (__int64)value_p->v_int64;
-#else
-          value_p->v_float = value_p->v_int64;
-#endif
+          gint64 temp = value_p->v_int64;
+          value_p->v_float = temp;
         }
       else
-	value_p->v_float = value_p->v_int;
+        {
+          gint temp = value_p->v_int;
+          value_p->v_float = temp;
+        }
     }
   
   errno = 0;
@@ -1959,7 +1962,7 @@ g_scanner_get_token_ll	(GScanner	*scanner,
 	    }
 	  else
 	    ch = '0';
-	  /* fall through */
+          G_GNUC_FALLTHROUGH;
 	case '1':
 	case '2':
 	case '3':

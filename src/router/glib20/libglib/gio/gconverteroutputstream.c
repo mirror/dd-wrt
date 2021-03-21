@@ -485,7 +485,7 @@ write_internal (GOutputStream  *stream,
 
 	  if (converted_bytes > 0)
 	    {
-	      /* We got an conversion error, but we did convert some bytes before
+	      /* We got a conversion error, but we did convert some bytes before
 		 that, so handle those before reporting the error */
 	      g_error_free (my_error);
 	      break;
@@ -505,7 +505,7 @@ write_internal (GOutputStream  *stream,
 	      return count; /* consume everything */
 	    }
 
-	  /* Converted no data and got an normal error, return it */
+	  /* Converted no data and got a normal error, return it */
 	  g_propagate_error (error, my_error);
 	  return -1;
 	}
@@ -595,7 +595,7 @@ g_converter_output_stream_flush (GOutputStream  *stream,
 	  if (!is_closing &&
 	      res == G_CONVERTER_FLUSHED)
 	    {
-	      /* Should not have retured FLUSHED with input left */
+	      /* Should not have returned FLUSHED with input left */
 	      g_assert (buffer_data_size (&priv->output_buffer) == 0);
 	      flushed = TRUE;
 	    }

@@ -95,7 +95,7 @@ g_bytes_new (gconstpointer data,
 {
   g_return_val_if_fail (data != NULL || size == 0, NULL);
 
-  return g_bytes_new_take (g_memdup (data, size), size);
+  return g_bytes_new_take (g_memdup2 (data, size), size);
 }
 
 /**
@@ -365,7 +365,7 @@ g_bytes_equal (gconstpointer bytes1,
   g_return_val_if_fail (bytes2 != NULL, FALSE);
 
   return b1->size == b2->size &&
-         memcmp (b1->data, b2->data, b1->size) == 0;
+         (b1->size == 0 || memcmp (b1->data, b2->data, b1->size) == 0);
 }
 
 /**
@@ -403,10 +403,18 @@ g_bytes_hash (gconstpointer bytes)
  *
  * Compares the two #GBytes values.
  *
- * This function can be used to sort GBytes instances in lexographical order.
+ * This function can be used to sort GBytes instances in lexicographical order.
  *
- * Returns: a negative value if bytes2 is lesser, a positive value if bytes2 is
- *          greater, and zero if bytes2 is equal to bytes1
+ * If @bytes1 and @bytes2 have different length but the shorter one is a
+ * prefix of the longer one then the shorter one is considered to be less than
+ * the longer one. Otherwise the first byte where both differ is used for
+ * comparison. If @bytes1 has a smaller value at that position it is
+ * considered less, otherwise greater than @bytes2.
+ *
+ * Returns: a negative value if @bytes1 is less than @bytes2, a positive value
+ *          if @bytes1 is greater than @bytes2, and zero if @bytes1 is equal to
+ *          @bytes2
+ *
  *
  * Since: 2.32
  */
@@ -491,7 +499,7 @@ g_bytes_unref_to_data (GBytes *bytes,
        * Copy: Non g_malloc (or compatible) allocator, or static memory,
        * so we have to copy, and then unref.
        */
-      result = g_memdup (bytes->data, bytes->size);
+      result = g_memdup2 (bytes->data, bytes->size);
       *size = bytes->size;
       g_bytes_unref (bytes);
     }
@@ -510,6 +518,10 @@ g_bytes_unref_to_data (GBytes *bytes,
  * if this was the last reference to bytes and bytes was created with
  * g_bytes_new(), g_bytes_new_take() or g_byte_array_free_to_bytes(). In all
  * other cases the data is copied.
+ *
+ * Do not use it if @bytes contains more than %G_MAXUINT
+ * bytes. #GByteArray stores the length of its data in #guint, which
+ * may be shorter than #gsize, that @bytes is using.
  *
  * Returns: (transfer full): a new mutable #GByteArray containing the same byte data
  *

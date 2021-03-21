@@ -113,7 +113,7 @@ _g_enum_types_init (void)
   static const GTypeFundamentalInfo finfo = {
     G_TYPE_FLAG_CLASSED | G_TYPE_FLAG_DERIVABLE,
   };
-  GType type;
+  GType type G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
   
   g_return_if_fail (initialized == FALSE);
   initialized = TRUE;
@@ -152,7 +152,10 @@ value_flags_enum_collect_value (GValue      *value,
 				GTypeCValue *collect_values,
 				guint        collect_flags)
 {
-  value->data[0].v_long = collect_values[0].v_int;
+  if (G_VALUE_HOLDS_ENUM (value))
+    value->data[0].v_long = collect_values[0].v_int;
+  else
+    value->data[0].v_ulong = (guint) collect_values[0].v_int;
 
   return NULL;
 }
@@ -164,10 +167,9 @@ value_flags_enum_lcopy_value (const GValue *value,
 			      guint         collect_flags)
 {
   gint *int_p = collect_values[0].v_pointer;
-  
-  if (!int_p)
-    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
-  
+
+  g_return_val_if_fail (int_p != NULL, g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value)));
+
   *int_p = value->data[0].v_long;
   
   return NULL;
@@ -390,7 +392,7 @@ g_flags_class_init (GFlagsClass *class,
  *
  * Looks up a #GEnumValue by name.
  *
- * Returns: (transfer none): the #GEnumValue with name @name,
+ * Returns: (transfer none) (nullable): the #GEnumValue with name @name,
  *          or %NULL if the enumeration doesn't have a member
  *          with that name
  */
@@ -420,7 +422,7 @@ g_enum_get_value_by_name (GEnumClass  *enum_class,
  *
  * Looks up a #GFlagsValue by name.
  *
- * Returns: (transfer none): the #GFlagsValue with name @name,
+ * Returns: (transfer none) (nullable): the #GFlagsValue with name @name,
  *          or %NULL if there is no flag with that name
  */
 GFlagsValue*
@@ -449,7 +451,7 @@ g_flags_get_value_by_name (GFlagsClass *flags_class,
  *
  * Looks up a #GEnumValue by nickname.
  *
- * Returns: (transfer none): the #GEnumValue with nickname @nick,
+ * Returns: (transfer none) (nullable): the #GEnumValue with nickname @nick,
  *          or %NULL if the enumeration doesn't have a member
  *          with that nickname
  */
@@ -479,7 +481,7 @@ g_enum_get_value_by_nick (GEnumClass  *enum_class,
  *
  * Looks up a #GFlagsValue by nickname.
  *
- * Returns: (transfer none): the #GFlagsValue with nickname @nick,
+ * Returns: (transfer none) (nullable): the #GFlagsValue with nickname @nick,
  *          or %NULL if there is no flag with that nickname
  */
 GFlagsValue*
@@ -508,7 +510,7 @@ g_flags_get_value_by_nick (GFlagsClass *flags_class,
  *
  * Returns the #GEnumValue for a value.
  *
- * Returns: (transfer none): the #GEnumValue for @value, or %NULL
+ * Returns: (transfer none) (nullable): the #GEnumValue for @value, or %NULL
  *          if @value is not a member of the enumeration
  */
 GEnumValue*
@@ -536,7 +538,7 @@ g_enum_get_value (GEnumClass *enum_class,
  *
  * Returns the first #GFlagsValue which is set in @value.
  *
- * Returns: (transfer none): the first #GFlagsValue which is set in
+ * Returns: (transfer none) (nullable): the first #GFlagsValue which is set in
  *          @value, or %NULL if none is set
  */
 GFlagsValue*

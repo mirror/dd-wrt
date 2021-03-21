@@ -423,58 +423,9 @@ g_union_volume_monitor_remove_monitor (GUnionVolumeMonitor *union_monitor,
 static GType
 get_default_native_class (gpointer data)
 {
-  GNativeVolumeMonitorClass *klass, *native_class, **native_class_out;
-  const char *use_this;
-  GIOExtensionPoint *ep;
-  GIOExtension *extension;
-  GList *l;
-
-  native_class_out = data;
-  
-  use_this = g_getenv ("GIO_USE_VOLUME_MONITOR");
-  
-  /* Ensure vfs in modules loaded */
-  _g_io_modules_ensure_loaded ();
-
-  ep = g_io_extension_point_lookup (G_NATIVE_VOLUME_MONITOR_EXTENSION_POINT_NAME);
-
-  native_class = NULL;
-  if (use_this)
-    {
-      extension = g_io_extension_point_get_extension_by_name (ep, use_this);
-      if (extension)
-	{
-	  klass = G_NATIVE_VOLUME_MONITOR_CLASS (g_io_extension_ref_class (extension));
-	  if (G_VOLUME_MONITOR_CLASS (klass)->is_supported())
-	    native_class = klass;
-	  else
-	    g_type_class_unref (klass);
-	}
-    }
-
-  if (native_class == NULL)
-    {
-      for (l = g_io_extension_point_get_extensions (ep); l != NULL; l = l->next)
-	{
-	  extension = l->data;
-	  klass = G_NATIVE_VOLUME_MONITOR_CLASS (g_io_extension_ref_class (extension));
-	  if (G_VOLUME_MONITOR_CLASS (klass)->is_supported())
-	    {
-	      native_class = klass;
-	      break;
-	    }
-	  else
-	    g_type_class_unref (klass);
-	}
-    }
- 
-  if (native_class)
-    {
-      *native_class_out = native_class;
-      return G_TYPE_FROM_CLASS (native_class);
-    }
-  else
-    return G_TYPE_INVALID;
+  return _g_io_module_get_default_type (G_NATIVE_VOLUME_MONITOR_EXTENSION_POINT_NAME,
+                                        "GIO_USE_VOLUME_MONITOR",
+                                        G_STRUCT_OFFSET (GVolumeMonitorClass, is_supported));
 }
 
 /* We return the class, with a ref taken.
@@ -595,7 +546,7 @@ _g_mount_get_for_mount_path (const gchar  *mount_path,
 
   /* TODO: How do we know this succeeded? Keep in mind that the native
    *       volume monitor may fail (e.g. not being able to connect to
-   *       hald). Is the get_mount_for_mount_path() method allowed to
+   *       udisks). Is the get_mount_for_mount_path() method allowed to
    *       return NULL? Seems like it is ... probably the method needs
    *       to take a boolean and write if it succeeds or not.. Messy.
    *       Very messy.
@@ -621,7 +572,7 @@ _g_mount_get_for_mount_path (const gchar  *mount_path,
  * also listen for the "removed" signal on the returned object
  * and give up its reference when handling that signal
  * 
- * Similary, if implementing g_volume_monitor_adopt_orphan_mount(),
+ * Similarly, if implementing g_volume_monitor_adopt_orphan_mount(),
  * the implementor must take a reference to @mount and return it in
  * its g_volume_get_mount() implemented. Also, the implementor must
  * listen for the "unmounted" signal on @mount and give up its

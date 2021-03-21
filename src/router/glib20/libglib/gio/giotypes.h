@@ -194,7 +194,7 @@ typedef struct _GSocketListener                             GSocketListener;
 /**
  * GSocketService:
  *
- * A helper class for handling accepting incomming connections in the
+ * A helper class for handling accepting incoming connections in the
  * glib mainloop.
  *
  * Since: 2.22
@@ -335,7 +335,7 @@ typedef gboolean (* GFileReadMoreCallback) (const char *file_contents,
  * final async result would be reported).
  *
  * @current_size is in the same units as requested by the operation (see
- * %G_FILE_DISK_USAGE_APPARENT_SIZE).
+ * %G_FILE_MEASURE_APPARENT_SIZE).
  *
  * The frequency of the updates is implementation defined, but is
  * ideally about once every 200ms.

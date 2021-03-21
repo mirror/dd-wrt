@@ -31,6 +31,7 @@
 #include "gdbusutils.h"
 #include "gioenumtypes.h"
 #include "gcredentials.h"
+#include "gcredentialsprivate.h"
 #include "gdbusprivate.h"
 #include "giostream.h"
 #include "gdatainputstream.h"
@@ -923,6 +924,7 @@ _g_dbus_auth_run_server (GDBusAuth              *auth,
                          GDBusAuthObserver      *observer,
                          const gchar            *guid,
                          gboolean                allow_anonymous,
+                         gboolean                require_same_user,
                          GDBusCapabilityFlags    offered_capabilities,
                          GDBusCapabilityFlags   *out_negotiated_capabilities,
                          GCredentials          **out_received_credentials,
@@ -940,6 +942,7 @@ _g_dbus_auth_run_server (GDBusAuth              *auth,
   gchar *s;
   GDBusCapabilityFlags negotiated_capabilities;
   GCredentials *credentials;
+  GCredentials *own_credentials = NULL;
 
   debug_print ("SERVER: initiating");
 
@@ -969,9 +972,31 @@ _g_dbus_auth_run_server (GDBusAuth              *auth,
 
   g_data_input_stream_set_newline_type (dis, G_DATA_STREAM_NEWLINE_TYPE_CR_LF);
 
-  /* first read the NUL-byte */
+  /* read the NUL-byte, possibly with credentials attached */
 #ifdef G_OS_UNIX
-  if (G_IS_UNIX_CONNECTION (auth->priv->stream))
+#ifndef G_CREDENTIALS_PREFER_MESSAGE_PASSING
+  if (G_IS_SOCKET_CONNECTION (auth->priv->stream))
+    {
+      GSocket *sock = g_socket_connection_get_socket (G_SOCKET_CONNECTION (auth->priv->stream));
+
+      local_error = NULL;
+      credentials = g_socket_get_credentials (sock, &local_error);
+
+      if (credentials == NULL && !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED))
+        {
+          g_propagate_error (error, local_error);
+          goto out;
+        }
+      else
+        {
+          /* Clear the error indicator, so we can retry with
+           * g_unix_connection_receive_credentials() if necessary */
+          g_clear_error (&local_error);
+        }
+    }
+#endif
+
+  if (credentials == NULL && G_IS_UNIX_CONNECTION (auth->priv->stream))
     {
       local_error = NULL;
       credentials = g_unix_connection_receive_credentials (G_UNIX_CONNECTION (auth->priv->stream),
@@ -1015,6 +1040,8 @@ _g_dbus_auth_run_server (GDBusAuth              *auth,
     {
       debug_print ("SERVER: didn't receive any credentials");
     }
+
+  own_credentials = g_credentials_new ();
 
   state = SERVER_STATE_WAITING_FOR_AUTH;
   while (TRUE)
@@ -1132,10 +1159,21 @@ _g_dbus_auth_run_server (GDBusAuth              *auth,
                   switch (_g_dbus_auth_mechanism_server_get_state (mech))
                     {
                     case G_DBUS_AUTH_MECHANISM_STATE_ACCEPTED:
-                      if (observer != NULL &&
-                          !g_dbus_auth_observer_authorize_authenticated_peer (observer,
-                                                                              auth->priv->stream,
-                                                                              credentials))
+                      if (require_same_user &&
+                          (credentials == NULL ||
+                           !g_credentials_is_same_user (credentials, own_credentials, NULL)))
+                        {
+                          /* disconnect */
+                          g_set_error_literal (error,
+                                               G_IO_ERROR,
+                                               G_IO_ERROR_FAILED,
+                                               _("User IDs must be the same for peer and server"));
+                          goto out;
+                        }
+                      else if (observer != NULL &&
+                               !g_dbus_auth_observer_authorize_authenticated_peer (observer,
+                                                                                   auth->priv->stream,
+                                                                                   credentials))
                         {
                           /* disconnect */
                           g_set_error_literal (error,
@@ -1272,9 +1310,9 @@ _g_dbus_auth_run_server (GDBusAuth              *auth,
                                                     &line_length,
                                                     cancellable,
                                                     error);
-          debug_print ("SERVER: WaitingForBegin, read '%s'", line);
           if (line == NULL)
             goto out;
+          debug_print ("SERVER: WaitingForBegin, read '%s'", line);
           if (g_strcmp0 (line, "BEGIN") == 0)
             {
               /* YAY, done! */
@@ -1325,12 +1363,10 @@ _g_dbus_auth_run_server (GDBusAuth              *auth,
                        "Not implemented (server)");
 
  out:
-  if (mech != NULL)
-    g_object_unref (mech);
-  if (dis != NULL)
-    g_object_unref (dis);
-  if (dos != NULL)
-    g_object_unref (dos);
+  g_clear_object (&mech);
+  g_clear_object (&dis);
+  g_clear_object (&dos);
+  g_clear_object (&own_credentials);
 
   /* ensure return value is FALSE if error is set */
   if (error != NULL && *error != NULL)

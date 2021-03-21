@@ -190,7 +190,7 @@ g_http_proxy_connect (GProxy         *proxy,
   GOutputStream *out;
   gchar *buffer = NULL;
   gsize buffer_length;
-  gssize bytes_read;
+  gsize bytes_read;
   gboolean has_cred;
   GIOStream *tlsconn = NULL;
 
@@ -239,12 +239,15 @@ g_http_proxy_connect (GProxy         *proxy,
    */
   do
     {
+      gssize signed_nread;
       gsize nread;
 
-      nread = g_input_stream_read (in, buffer + bytes_read, 1, cancellable, error);
-      if (nread == -1)
+      signed_nread =
+          g_input_stream_read (in, buffer + bytes_read, 1, cancellable, error);
+      if (signed_nread == -1)
         goto error;
 
+      nread = signed_nread;
       if (nread == 0)
         break;
 
@@ -252,6 +255,17 @@ g_http_proxy_connect (GProxy         *proxy,
 
       if (bytes_read == buffer_length)
         {
+          /* HTTP specifications does not defines any upper limit for
+           * headers. But, the most usual size used seems to be 8KB.
+           * Yet, the biggest we found was Tomcat's HTTP headers whose
+           * size is 48K. So, for a reasonable error margin, let's accept
+           * a header with a twice as large size but no more: 96KB */
+          if (buffer_length > 98304)
+            {
+              g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_PROXY_FAILED,
+                                   _("HTTP proxy response too big"));
+              goto error;
+            }
           buffer_length = 2 * buffer_length;
           buffer = g_realloc (buffer, buffer_length);
         }

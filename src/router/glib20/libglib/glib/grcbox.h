@@ -24,6 +24,11 @@
 
 #include <glib/gmem.h>
 
+#if defined(glib_typeof_2_68) && GLIB_VERSION_MIN_REQUIRED >= GLIB_VERSION_2_68
+/* for glib_typeof */
+#include <type_traits>
+#endif
+
 G_BEGIN_DECLS
 
 GLIB_AVAILABLE_IN_2_58
@@ -32,7 +37,7 @@ GLIB_AVAILABLE_IN_2_58
 gpointer        g_rc_box_alloc0                 (gsize           block_size) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
 GLIB_AVAILABLE_IN_2_58
 gpointer        g_rc_box_dup                    (gsize           block_size,
-                                                 gconstpointer   mem_block) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
+                                                 gconstpointer   mem_block) G_GNUC_ALLOC_SIZE(1);
 GLIB_AVAILABLE_IN_2_58
 gpointer        g_rc_box_acquire                (gpointer        mem_block);
 GLIB_AVAILABLE_IN_2_58
@@ -50,7 +55,7 @@ GLIB_AVAILABLE_IN_2_58
 gpointer        g_atomic_rc_box_alloc0          (gsize           block_size) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
 GLIB_AVAILABLE_IN_2_58
 gpointer        g_atomic_rc_box_dup             (gsize           block_size,
-                                                 gconstpointer   mem_block) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
+                                                 gconstpointer   mem_block) G_GNUC_ALLOC_SIZE(1);
 GLIB_AVAILABLE_IN_2_58
 gpointer        g_atomic_rc_box_acquire         (gpointer        mem_block);
 GLIB_AVAILABLE_IN_2_58
@@ -71,18 +76,18 @@ gsize           g_atomic_rc_box_get_size        (gpointer        mem_block);
 #define g_atomic_rc_box_new0(type) \
   ((type *) g_atomic_rc_box_alloc0 (sizeof (type)))
 
-#ifdef g_has_typeof
+#if defined(glib_typeof) && (!defined(glib_typeof_2_68) || GLIB_VERSION_MIN_REQUIRED >= GLIB_VERSION_2_68)
 /* Type check to avoid assigning references to different types */
-# define g_rc_box_acquire(mem_block) \
-  ((__typeof__(mem_block)) (g_rc_box_acquire) (mem_block))
-# define g_atomic_rc_box_acquire(mem_block) \
-  ((__typeof__(mem_block)) (g_atomic_rc_box_acquire) (mem_block))
+#define g_rc_box_acquire(mem_block) \
+  ((glib_typeof (mem_block)) (g_rc_box_acquire) (mem_block))
+#define g_atomic_rc_box_acquire(mem_block) \
+  ((glib_typeof (mem_block)) (g_atomic_rc_box_acquire) (mem_block))
 
 /* Type check to avoid duplicating data to different types */
-# define g_rc_box_dup(block_size,mem_block) \
-  ((__typeof__(mem_block)) (g_rc_box_dup) (block_size,mem_block))
-# define g_atomic_rc_box_dup(block_size,mem_block) \
-  ((__typeof__(mem_block)) (g_atomic_rc_box_dup) (block_size,mem_block))
+#define g_rc_box_dup(block_size, mem_block) \
+  ((glib_typeof (mem_block)) (g_rc_box_dup) (block_size, mem_block))
+#define g_atomic_rc_box_dup(block_size, mem_block) \
+  ((glib_typeof (mem_block)) (g_atomic_rc_box_dup) (block_size, mem_block))
 #endif
 
 G_END_DECLS

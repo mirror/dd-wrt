@@ -87,7 +87,7 @@ test_object_finalize (GObject *gobject)
 
   /* When the ref_count of an object is zero it is still
    * possible to notify the property, but it should do
-   * nothing and silenty quit (bug #705570)
+   * nothing and silently quit (bug #705570)
    */
   g_object_notify (gobject, "foo");
   g_object_notify_by_pspec (gobject, properties[PROP_BAR]);
@@ -223,54 +223,54 @@ typedef struct {
 static void
 on_notify (GObject           *gobject,
            GParamSpec        *pspec,
-           TestNotifyClosure *clos)
+           TestNotifyClosure *closure)
 {
-  g_assert (clos->pspec == pspec);
-  g_assert_cmpstr (clos->name, ==, pspec->name);
-  clos->fired = TRUE;
+  g_assert (closure->pspec == pspec);
+  g_assert_cmpstr (closure->name, ==, pspec->name);
+  closure->fired = TRUE;
 }
 
 static void
 properties_notify (void)
 {
   TestObject *obj = g_object_new (test_object_get_type (), NULL);
-  TestNotifyClosure clos;
+  TestNotifyClosure closure;
 
   g_assert (properties[PROP_FOO] != NULL);
   g_assert (properties[PROP_QUUX] != NULL);
-  g_signal_connect (obj, "notify", G_CALLBACK (on_notify), &clos);
+  g_signal_connect (obj, "notify", G_CALLBACK (on_notify), &closure);
 
-  clos.name = "foo";
-  clos.pspec = properties[PROP_FOO];
+  closure.name = "foo";
+  closure.pspec = properties[PROP_FOO];
 
-  clos.fired = FALSE;
+  closure.fired = FALSE;
   g_object_set (obj, "foo", 47, NULL);
-  g_assert (clos.fired);
+  g_assert (closure.fired);
 
-  clos.name = "baz";
-  clos.pspec = properties[PROP_BAZ];
+  closure.name = "baz";
+  closure.pspec = properties[PROP_BAZ];
 
-  clos.fired = FALSE;
+  closure.fired = FALSE;
   g_object_set (obj, "baz", "something new", NULL);
-  g_assert (clos.fired);
+  g_assert (closure.fired);
 
   /* baz lacks explicit notify, so we will see this twice */
-  clos.fired = FALSE;
+  closure.fired = FALSE;
   g_object_set (obj, "baz", "something new", NULL);
-  g_assert (clos.fired);
+  g_assert (closure.fired);
 
   /* quux on the other hand, ... */
-  clos.name = "quux";
-  clos.pspec = properties[PROP_QUUX];
+  closure.name = "quux";
+  closure.pspec = properties[PROP_QUUX];
 
-  clos.fired = FALSE;
+  closure.fired = FALSE;
   g_object_set (obj, "quux", "something new", NULL);
-  g_assert (clos.fired);
+  g_assert (closure.fired);
 
   /* no change; no notify */
-  clos.fired = FALSE;
+  closure.fired = FALSE;
   g_object_set (obj, "quux", "something new", NULL);
-  g_assert (!clos.fired);
+  g_assert (!closure.fired);
 
 
   g_object_unref (obj);
@@ -542,6 +542,51 @@ properties_testv_getv (void)
 }
 
 static void
+properties_get_property (void)
+{
+  TestObject *test_obj;
+  struct {
+    const char *name;
+    GType gtype;
+    GValue value;
+  } test_props[] = {
+    { "foo", G_TYPE_INT, G_VALUE_INIT },
+    { "bar", G_TYPE_INVALID, G_VALUE_INIT },
+    { "bar", G_TYPE_STRING, G_VALUE_INIT },
+  };
+  gsize i;
+
+  g_test_summary ("g_object_get_property() accepts uninitialized, "
+                  "initialized, and transformable values");
+
+  for (i = 0; i < G_N_ELEMENTS (test_props); i++)
+    {
+      if (test_props[i].gtype != G_TYPE_INVALID)
+        g_value_init (&(test_props[i].value), test_props[i].gtype);
+    }
+
+  test_obj = (TestObject *) g_object_new_with_properties (test_object_get_type (), 0, NULL, NULL);
+
+  g_test_message ("Test g_object_get_property with an initialized value");
+  g_object_get_property (G_OBJECT (test_obj), test_props[0].name, &(test_props[0].value));
+  g_assert_cmpint (g_value_get_int (&(test_props[0].value)), ==, 42);
+
+  g_test_message ("Test g_object_get_property with an uninitialized value");
+  g_object_get_property (G_OBJECT (test_obj), test_props[1].name, &(test_props[1].value));
+  g_assert_true (g_value_get_boolean (&(test_props[1].value)));
+
+  g_test_message ("Test g_object_get_property with a transformable value");
+  g_object_get_property (G_OBJECT (test_obj), test_props[2].name, &(test_props[2].value));
+  g_assert_true (G_VALUE_HOLDS_STRING (&(test_props[2].value)));
+  g_assert_cmpstr (g_value_get_string (&(test_props[2].value)), ==, "TRUE");
+
+  for (i = 0; i < G_N_ELEMENTS (test_props); i++)
+    g_value_unset (&(test_props[i].value));
+
+  g_object_unref (test_obj);
+}
+
+static void
 properties_testv_notify_queue (void)
 {
   TestObject *test_obj;
@@ -599,6 +644,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/properties/notify", properties_notify);
   g_test_add_func ("/properties/notify-queue", properties_notify_queue);
   g_test_add_func ("/properties/construct", properties_construct);
+  g_test_add_func ("/properties/get-property", properties_get_property);
 
   g_test_add_func ("/properties/testv_with_no_properties",
       properties_testv_with_no_properties);

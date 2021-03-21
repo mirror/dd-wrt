@@ -60,7 +60,9 @@ enum
   PROP_CERTIFICATE_PEM,
   PROP_PRIVATE_KEY,
   PROP_PRIVATE_KEY_PEM,
-  PROP_ISSUER
+  PROP_ISSUER,
+  PROP_PKCS11_URI,
+  PROP_PRIVATE_KEY_PKCS11_URI,
 };
 
 static void
@@ -74,7 +76,16 @@ g_tls_certificate_get_property (GObject    *object,
 				GValue     *value,
 				GParamSpec *pspec)
 {
-  G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+  switch (prop_id)
+    {
+    case PROP_PKCS11_URI:
+    case PROP_PRIVATE_KEY_PKCS11_URI:
+      /* Subclasses must override this property but this allows older backends to not fatally error */
+      g_value_set_static_string (value, NULL);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
 }
 
 static void
@@ -83,7 +94,15 @@ g_tls_certificate_set_property (GObject      *object,
 				const GValue *value,
 				GParamSpec   *pspec)
 {
-  G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+  switch (prop_id)
+    {
+    case PROP_PKCS11_URI:
+    case PROP_PRIVATE_KEY_PKCS11_URI:
+      /* Subclasses must override this property but this allows older backends to not fatally error */
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
 }
 
 static void
@@ -193,6 +212,42 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
 							G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GTlsCertificate:pkcs11-uri: (nullable)
+   *
+   * A URI referencing the PKCS \#11 objects containing an X.509 certificate
+   * and optionally a private key.
+   *
+   * If %NULL the certificate is either not backed by PKCS \#11 or the
+   * #GTlsBackend does not support PKCS \#11.
+   *
+   * Since: 2.68
+   */
+  g_object_class_install_property (gobject_class, PROP_PKCS11_URI,
+                                   g_param_spec_string ("pkcs11-uri",
+                                                        P_("PKCS #11 URI"),
+                                                        P_("The PKCS #11 URI"),
+                                                        NULL,
+                                                        G_PARAM_READWRITE |
+                                                          G_PARAM_CONSTRUCT_ONLY |
+                                                          G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GTlsCertificate:private-key-pkcs11-uri: (nullable)
+   *
+   * A URI referencing a PKCS \#11 object containing a private key.
+   *
+   * Since: 2.68
+   */
+  g_object_class_install_property (gobject_class, PROP_PRIVATE_KEY_PKCS11_URI,
+                                   g_param_spec_string ("private-key-pkcs11-uri",
+                                                        P_("PKCS #11 URI"),
+                                                        P_("The PKCS #11 URI for a private key"),
+                                                        NULL,
+                                                        G_PARAM_READWRITE |
+                                                          G_PARAM_CONSTRUCT_ONLY |
+                                                          G_PARAM_STATIC_STRINGS));
 }
 
 static GTlsCertificate *
@@ -218,12 +273,11 @@ g_tls_certificate_new_internal (const gchar      *certificate_pem,
 
 #define PEM_CERTIFICATE_HEADER     "-----BEGIN CERTIFICATE-----"
 #define PEM_CERTIFICATE_FOOTER     "-----END CERTIFICATE-----"
-#define PEM_PKCS1_PRIVKEY_HEADER   "-----BEGIN RSA PRIVATE KEY-----"
-#define PEM_PKCS1_PRIVKEY_FOOTER   "-----END RSA PRIVATE KEY-----"
-#define PEM_PKCS8_PRIVKEY_HEADER   "-----BEGIN PRIVATE KEY-----"
-#define PEM_PKCS8_PRIVKEY_FOOTER   "-----END PRIVATE KEY-----"
+#define PEM_PRIVKEY_HEADER_BEGIN   "-----BEGIN "
+#define PEM_PRIVKEY_HEADER_END     "PRIVATE KEY-----"
+#define PEM_PRIVKEY_FOOTER_BEGIN   "-----END "
+#define PEM_PRIVKEY_FOOTER_END     "PRIVATE KEY-----"
 #define PEM_PKCS8_ENCRYPTED_HEADER "-----BEGIN ENCRYPTED PRIVATE KEY-----"
-#define PEM_PKCS8_ENCRYPTED_FOOTER "-----END ENCRYPTED PRIVATE KEY-----"
 
 static gchar *
 parse_private_key (const gchar *data,
@@ -231,45 +285,47 @@ parse_private_key (const gchar *data,
 		   gboolean required,
 		   GError **error)
 {
-  const gchar *start, *end, *footer;
+  const gchar *header_start = NULL, *header_end, *footer_start = NULL, *footer_end;
 
-  start = g_strstr_len (data, data_len, PEM_PKCS1_PRIVKEY_HEADER);
-  if (start)
-    footer = PEM_PKCS1_PRIVKEY_FOOTER;
-  else
+  header_end = g_strstr_len (data, data_len, PEM_PRIVKEY_HEADER_END);
+  if (header_end)
+    header_start = g_strrstr_len (data, header_end - data, PEM_PRIVKEY_HEADER_BEGIN);
+
+  if (!header_start)
     {
-      start = g_strstr_len (data, data_len, PEM_PKCS8_PRIVKEY_HEADER);
-      if (start)
-	footer = PEM_PKCS8_PRIVKEY_FOOTER;
-      else
-	{
-	  start = g_strstr_len (data, data_len, PEM_PKCS8_ENCRYPTED_HEADER);
-	  if (start)
-	    {
-	      g_set_error_literal (error, G_TLS_ERROR, G_TLS_ERROR_BAD_CERTIFICATE,
-				   _("Cannot decrypt PEM-encoded private key"));
-	    }
-	  else if (required)
-	    {
-	      g_set_error_literal (error, G_TLS_ERROR, G_TLS_ERROR_BAD_CERTIFICATE,
-				   _("No PEM-encoded private key found"));
-	    }
-	  return NULL;
-	}
+      if (required)
+	g_set_error_literal (error, G_TLS_ERROR, G_TLS_ERROR_BAD_CERTIFICATE,
+			     _("No PEM-encoded private key found"));
+
+      return NULL;
     }
 
-  end = g_strstr_len (start, data_len - (data - start), footer);
-  if (!end)
+  header_end += strlen (PEM_PRIVKEY_HEADER_END);
+
+  if (strncmp (header_start, PEM_PKCS8_ENCRYPTED_HEADER, header_end - header_start) == 0)
+    {
+      g_set_error_literal (error, G_TLS_ERROR, G_TLS_ERROR_BAD_CERTIFICATE,
+			   _("Cannot decrypt PEM-encoded private key"));
+      return NULL;
+    }
+
+  footer_end = g_strstr_len (header_end, data_len - (header_end - data), PEM_PRIVKEY_FOOTER_END);
+  if (footer_end)
+    footer_start = g_strrstr_len (header_end, footer_end - header_end, PEM_PRIVKEY_FOOTER_BEGIN);
+
+  if (!footer_start)
     {
       g_set_error_literal (error, G_TLS_ERROR, G_TLS_ERROR_BAD_CERTIFICATE,
 			   _("Could not parse PEM-encoded private key"));
       return NULL;
     }
-  end += strlen (footer);
-  while (*end == '\r' || *end == '\n')
-    end++;
 
-  return g_strndup (start, end - start);
+  footer_end += strlen (PEM_PRIVKEY_FOOTER_END);
+
+  while (*footer_end == '\r' || *footer_end == '\n')
+    footer_end++;
+
+  return g_strndup (header_start, footer_end - header_start);
 }
 
 
@@ -591,6 +647,77 @@ g_tls_certificate_new_from_files (const gchar  *cert_file,
 }
 
 /**
+ * g_tls_certificate_new_from_pkcs11_uris:
+ * @pkcs11_uri: A PKCS \#11 URI
+ * @private_key_pkcs11_uri: (nullable): A PKCS \#11 URI
+ * @error: #GError for error reporting, or %NULL to ignore.
+ *
+ * Creates a #GTlsCertificate from a PKCS \#11 URI.
+ *
+ * An example @pkcs11_uri would be `pkcs11:model=Model;manufacturer=Manufacture;serial=1;token=My%20Client%20Certificate;id=%01`
+ *
+ * Where the token’s layout is:
+ *
+ * ```
+ * Object 0:
+ *   URL: pkcs11:model=Model;manufacturer=Manufacture;serial=1;token=My%20Client%20Certificate;id=%01;object=private%20key;type=private
+ *   Type: Private key (RSA-2048)
+ *   ID: 01
+ *
+ * Object 1:
+ *   URL: pkcs11:model=Model;manufacturer=Manufacture;serial=1;token=My%20Client%20Certificate;id=%01;object=Certificate%20for%20Authentication;type=cert
+ *   Type: X.509 Certificate (RSA-2048)
+ *   ID: 01
+ * ```
+ *
+ * In this case the certificate and private key would both be detected and used as expected.
+ * @pkcs_uri may also just reference an X.509 certificate object and then optionally
+ * @private_key_pkcs11_uri allows using a private key exposed under a different URI.
+ *
+ * Note that the private key is not accessed until usage and may fail or require a PIN later.
+ *
+ * Returns: (transfer full): the new certificate, or %NULL on error
+ *
+ * Since: 2.68
+ */
+GTlsCertificate *
+g_tls_certificate_new_from_pkcs11_uris (const gchar  *pkcs11_uri,
+                                        const gchar  *private_key_pkcs11_uri,
+                                        GError      **error)
+{
+  GObject *cert;
+  GTlsBackend *backend;
+
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+  g_return_val_if_fail (pkcs11_uri, NULL);
+
+  backend = g_tls_backend_get_default ();
+
+  cert = g_initable_new (g_tls_backend_get_certificate_type (backend),
+                         NULL, error,
+                         "pkcs11-uri", pkcs11_uri,
+                         "private-key-pkcs11-uri", private_key_pkcs11_uri,
+                         NULL);
+
+  if (cert != NULL)
+    {
+      gchar *objects_uri;
+
+      /* Old implementations might not override this property */
+      g_object_get (cert, "pkcs11-uri", &objects_uri, NULL);
+      if (objects_uri == NULL)
+        {
+          g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED, _("This GTlsBackend does not support creating PKCS #11 certificates"));
+          g_object_unref (cert);
+          return NULL;
+        }
+      g_free (objects_uri);
+    }
+
+  return G_TLS_CERTIFICATE (cert);
+}
+
+/**
  * g_tls_certificate_list_new_from_file:
  * @file: (type filename): file containing PEM-encoded certificates to import
  * @error: #GError for error reporting, or %NULL to ignore.
@@ -657,7 +784,7 @@ g_tls_certificate_list_new_from_file (const gchar  *file,
  *
  * Gets the #GTlsCertificate representing @cert's issuer, if known
  *
- * Returns: (transfer none): The certificate of @cert's issuer,
+ * Returns: (nullable) (transfer none): The certificate of @cert's issuer,
  * or %NULL if @cert is self-signed or signed with an unknown
  * certificate.
  *

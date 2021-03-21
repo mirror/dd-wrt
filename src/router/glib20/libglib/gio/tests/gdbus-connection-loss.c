@@ -53,7 +53,7 @@ on_timeout (gpointer user_data)
 {
   /* tear down bus */
   session_bus_stop ();
-  return FALSE; /* remove source */
+  return G_SOURCE_REMOVE;
 }
 
 static void
@@ -124,21 +124,22 @@ main (int   argc,
   g_assert (g_spawn_command_line_async (path, NULL));
   g_free (path);
 
-  ensure_gdbus_testserver_up ();
-
   /* Create the connection in the main thread */
   error = NULL;
   c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
   g_assert_no_error (error);
   g_assert (c != NULL);
 
+  ensure_gdbus_testserver_up (c, NULL);
+
   g_test_add_func ("/gdbus/connection-loss", test_connection_loss);
 
   ret = g_test_run();
 
+  g_object_unref (c);
+
   session_bus_down ();
 
-  g_object_unref (c);
   g_main_loop_unref (loop);
 
   return ret;

@@ -297,6 +297,24 @@ typedef gsize GType;
  */
 #define G_TYPE_OPTION_GROUP (g_option_group_get_type ())
 
+/**
+ * G_TYPE_URI:
+ *
+ * The #GType for a boxed type holding a #GUri.
+ *
+ * Since: 2.66
+ */
+#define G_TYPE_URI (g_uri_get_type ())
+
+/**
+ * G_TYPE_TREE:
+ *
+ * The #GType for #GTree.
+ *
+ * Since: 2.68
+ */
+#define G_TYPE_TREE (g_tree_get_type ())
+
 GLIB_AVAILABLE_IN_ALL
 GType   g_date_get_type            (void) G_GNUC_CONST;
 GLIB_AVAILABLE_IN_ALL
@@ -353,6 +371,10 @@ GLIB_AVAILABLE_IN_2_40
 GType   g_mapped_file_get_type (void) G_GNUC_CONST;
 GLIB_AVAILABLE_IN_2_44
 GType   g_option_group_get_type    (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_66
+GType   g_uri_get_type             (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_68
+GType   g_tree_get_type            (void) G_GNUC_CONST;
 
 GLIB_DEPRECATED_FOR('G_TYPE_VARIANT')
 GType   g_variant_get_gtype        (void) G_GNUC_CONST;

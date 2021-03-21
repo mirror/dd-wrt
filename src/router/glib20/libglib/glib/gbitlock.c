@@ -88,7 +88,7 @@ g_futex_wait (const volatile gint *address,
  * Nominally, wakes one thread that is blocked in g_futex_wait() on
  * @address (if any thread is currently waiting).
  *
- * As mentioned in the documention for g_futex_wait(), spurious
+ * As mentioned in the documentation for g_futex_wait(), spurious
  * wakeups may occur.  As such, this call may result in more than one
  * thread being woken up.
  */
@@ -224,7 +224,7 @@ g_bit_lock (volatile gint *address,
     guint mask = 1u << lock_bit;
     guint v;
 
-    v = g_atomic_int_get (address);
+    v = (guint) g_atomic_int_get (address);
     if (v & mask)
       {
         guint class = ((gsize) address) % G_N_ELEMENTS (g_bit_lock_contended);
@@ -322,10 +322,10 @@ g_bit_unlock (volatile gint *address,
               gint           lock_bit)
 {
 #ifdef USE_ASM_GOTO
-  asm volatile ("lock btr %1, (%0)"
-                : /* no output */
-                : "r" (address), "r" (lock_bit)
-                : "cc", "memory");
+  __asm__ volatile ("lock btr %1, (%0)"
+                    : /* no output */
+                    : "r" (address), "r" (lock_bit)
+                    : "cc", "memory");
 #else
   guint mask = 1u << lock_bit;
 
@@ -405,12 +405,12 @@ void
   {
 #ifdef USE_ASM_GOTO
  retry:
-    asm volatile goto ("lock bts %1, (%0)\n"
-                       "jc %l[contended]"
-                       : /* no output */
-                       : "r" (address), "r" ((gsize) lock_bit)
-                       : "cc", "memory"
-                       : contended);
+    __asm__ volatile goto ("lock bts %1, (%0)\n"
+                           "jc %l[contended]"
+                           : /* no output */
+                           : "r" (address), "r" ((gsize) lock_bit)
+                           : "cc", "memory"
+                           : contended);
     return;
 
  contended:
@@ -477,12 +477,12 @@ gboolean
 #ifdef USE_ASM_GOTO
     gboolean result;
 
-    asm volatile ("lock bts %2, (%1)\n"
-                  "setnc %%al\n"
-                  "movzx %%al, %0"
-                  : "=r" (result)
-                  : "r" (address), "r" ((gsize) lock_bit)
-                  : "cc", "memory");
+    __asm__ volatile ("lock bts %2, (%1)\n"
+                      "setnc %%al\n"
+                      "movzx %%al, %0"
+                      : "=r" (result)
+                      : "r" (address), "r" ((gsize) lock_bit)
+                      : "cc", "memory");
 
     return result;
 #else
@@ -520,10 +520,10 @@ void
 
   {
 #ifdef USE_ASM_GOTO
-    asm volatile ("lock btr %1, (%0)"
-                  : /* no output */
-                  : "r" (address), "r" ((gsize) lock_bit)
-                  : "cc", "memory");
+    __asm__ volatile ("lock btr %1, (%0)"
+                      : /* no output */
+                      : "r" (address), "r" ((gsize) lock_bit)
+                      : "cc", "memory");
 #else
     volatile gsize *pointer_address = address;
     gsize mask = 1u << lock_bit;

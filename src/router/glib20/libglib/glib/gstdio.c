@@ -19,7 +19,9 @@
 #include "config.h"
 #include "glibconfig.h"
 
-#define G_STDIO_NO_WRAP_ON_UNIX
+/* Don’t redefine (for example) g_open() to open(), since we actually want to
+ * define g_open() in this file and export it as a symbol. See gstdio.h. */
+#define G_STDIO_WRAP_ON_UNIX
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,6 +38,7 @@
 #include <direct.h>
 #include <io.h>
 #include <sys/utime.h>
+#include <stdlib.h> /* for MB_CUR_MAX */
 #else
 #include <utime.h>
 #include <errno.h>
@@ -99,21 +102,34 @@ w32_error_to_errno (DWORD error_code)
     case ERROR_ACCESS_DENIED:
       return EACCES;
       break;
-    case ERROR_INVALID_HANDLE:
-      return EBADF;
+    case ERROR_ALREADY_EXISTS:
+    case ERROR_FILE_EXISTS:
+      return EEXIST;
+    case ERROR_FILE_NOT_FOUND:
+      return ENOENT;
       break;
     case ERROR_INVALID_FUNCTION:
       return EFAULT;
       break;
-    case ERROR_FILE_NOT_FOUND:
-      return ENOENT;
+    case ERROR_INVALID_HANDLE:
+      return EBADF;
       break;
-    case ERROR_PATH_NOT_FOUND:
-      return ENOENT; /* or ELOOP, or ENAMETOOLONG */
+    case ERROR_INVALID_PARAMETER:
+      return EINVAL;
+      break;
+    case ERROR_LOCK_VIOLATION:
+    case ERROR_SHARING_VIOLATION:
+      return EACCES;
       break;
     case ERROR_NOT_ENOUGH_MEMORY:
     case ERROR_OUTOFMEMORY:
       return ENOMEM;
+      break;
+    case ERROR_NOT_SAME_DEVICE:
+      return EXDEV;
+      break;
+    case ERROR_PATH_NOT_FOUND:
+      return ENOENT; /* or ELOOP, or ENAMETOOLONG */
       break;
     default:
       return EIO;
@@ -121,67 +137,493 @@ w32_error_to_errno (DWORD error_code)
     }
 }
 
+#include "gstdio-private.c"
+
+/* Windows implementation of fopen() does not accept modes such as
+ * "wb+". The 'b' needs to be appended to "w+", i.e. "w+b". Note
+ * that otherwise these 2 modes are supposed to be aliases, hence
+ * swappable at will. TODO: Is this still true?
+ */
+static void
+_g_win32_fix_mode (wchar_t *mode)
+{
+  wchar_t *ptr;
+  wchar_t temp;
+
+  ptr = wcschr (mode, L'+');
+  if (ptr != NULL && (ptr - mode) > 1)
+    {
+      temp = mode[1];
+      mode[1] = *ptr;
+      *ptr = temp;
+    }
+}
+
+/* From
+ * https://support.microsoft.com/en-ca/help/167296/how-to-convert-a-unix-time-t-to-a-win32-filetime-or-systemtime
+ * FT = UT * 10000000 + 116444736000000000.
+ * Therefore:
+ * UT = (FT - 116444736000000000) / 10000000.
+ * Converts FILETIME to unix epoch time in form
+ * of a signed 64-bit integer (can be negative).
+ *
+ * The function that does the reverse can be found in
+ * gio/glocalfileinfo.c.
+ */
+static gint64
+_g_win32_filetime_to_unix_time (const FILETIME *ft,
+                                gint32         *nsec)
+{
+  gint64 result;
+  /* 1 unit of FILETIME is 100ns */
+  const gint64 hundreds_of_usec_per_sec = 10000000;
+  /* The difference between January 1, 1601 UTC (FILETIME epoch) and UNIX epoch
+   * in hundreds of nanoseconds.
+   */
+  const gint64 filetime_unix_epoch_offset = 116444736000000000;
+
+  result = ((gint64) ft->dwLowDateTime) | (((gint64) ft->dwHighDateTime) << 32);
+  result -= filetime_unix_epoch_offset;
+
+  if (nsec)
+    *nsec = (result % hundreds_of_usec_per_sec) * 100;
+
+  return result / hundreds_of_usec_per_sec;
+}
+
+#  ifdef _MSC_VER
+#    ifndef S_IXUSR
+#      define _S_IRUSR _S_IREAD
+#      define _S_IWUSR _S_IWRITE
+#      define _S_IXUSR _S_IEXEC
+#      define S_IRUSR _S_IRUSR
+#      define S_IWUSR _S_IWUSR
+#      define S_IXUSR _S_IXUSR
+#      define S_IRGRP (S_IRUSR >> 3)
+#      define S_IWGRP (S_IWUSR >> 3)
+#      define S_IXGRP (S_IXUSR >> 3)
+#      define S_IROTH (S_IRGRP >> 3)
+#      define S_IWOTH (S_IWGRP >> 3)
+#      define S_IXOTH (S_IXGRP >> 3)
+#    endif
+#    ifndef S_ISDIR
+#      define S_ISDIR(m) (((m) & _S_IFMT) == _S_IFDIR)
+#    endif
+#  endif
+
+/* Uses filename and BHFI to fill a stat64 structure.
+ * Tries to reproduce the behaviour and quirks of MS C runtime stat().
+ */
+static int
+_g_win32_fill_statbuf_from_handle_info (const wchar_t                    *filename,
+                                        const wchar_t                    *filename_target,
+                                        const BY_HANDLE_FILE_INFORMATION *handle_info,
+                                        struct __stat64                  *statbuf)
+{
+  wchar_t drive_letter_w = 0;
+  size_t drive_letter_size = MB_CUR_MAX;
+  char *drive_letter = _alloca (drive_letter_size);
+
+  /* If filename (target or link) is absolute,
+   * then use the drive letter from it as-is.
+   */
+  if (filename_target != NULL &&
+      filename_target[0] != L'\0' &&
+      filename_target[1] == L':')
+    drive_letter_w = filename_target[0];
+  else if (filename[0] != L'\0' &&
+           filename[1] == L':')
+    drive_letter_w = filename[0];
+
+  if (drive_letter_w > 0 &&
+      iswalpha (drive_letter_w) &&
+      iswascii (drive_letter_w) &&
+      wctomb (drive_letter, drive_letter_w) == 1)
+    statbuf->st_dev = toupper (drive_letter[0]) - 'A'; /* 0 means A: drive */
+  else
+    /* Otherwise use the PWD drive.
+     * Return value of 0 gives us 0 - 1 = -1,
+     * which is the "no idea" value for st_dev.
+     */
+    statbuf->st_dev = _getdrive () - 1;
+
+  statbuf->st_rdev = statbuf->st_dev;
+  /* Theoretically, it's possible to set it for ext-FS. No idea how.
+   * Meaningless for all filesystems that Windows normally uses.
+   */
+  statbuf->st_ino = 0;
+  statbuf->st_mode = 0;
+
+  if ((handle_info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)
+    statbuf->st_mode |= S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH;
+  else
+    statbuf->st_mode |= S_IFREG;
+  /* No idea what S_IFCHR means here. */
+  /* S_IFIFO is not even mentioned in MSDN */
+  /* S_IFBLK is also not mentioned */
+
+  /* The aim here is to reproduce MS stat() behaviour,
+   * even if it's braindead.
+   */
+  statbuf->st_mode |= S_IRUSR | S_IRGRP | S_IROTH;
+  if ((handle_info->dwFileAttributes & FILE_ATTRIBUTE_READONLY) != FILE_ATTRIBUTE_READONLY)
+    statbuf->st_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
+
+  if (!S_ISDIR (statbuf->st_mode))
+    {
+      const wchar_t *name;
+      const wchar_t *dot = NULL;
+
+      if (filename_target != NULL)
+        name = filename_target;
+      else
+        name = filename;
+
+      do
+        {
+          wchar_t *last_dot = wcschr (name, L'.');
+          if (last_dot == NULL)
+            break;
+          dot = last_dot;
+          name = &last_dot[1];
+        }
+      while (TRUE);
+
+      if ((dot != NULL &&
+          (wcsicmp (dot, L".exe") == 0 ||
+           wcsicmp (dot, L".com") == 0 ||
+           wcsicmp (dot, L".bat") == 0 ||
+           wcsicmp (dot, L".cmd") == 0)))
+        statbuf->st_mode |= S_IXUSR | S_IXGRP | S_IXOTH;
+    }
+
+  statbuf->st_nlink = handle_info->nNumberOfLinks;
+  statbuf->st_uid = statbuf->st_gid = 0;
+  statbuf->st_size = (((guint64) handle_info->nFileSizeHigh) << 32) | handle_info->nFileSizeLow;
+  statbuf->st_ctime = _g_win32_filetime_to_unix_time (&handle_info->ftCreationTime, NULL);
+  statbuf->st_mtime = _g_win32_filetime_to_unix_time (&handle_info->ftLastWriteTime, NULL);
+  statbuf->st_atime = _g_win32_filetime_to_unix_time (&handle_info->ftLastAccessTime, NULL);
+
+  return 0;
+}
+
+/* Fills our private stat-like structure using data from
+ * a normal stat64 struct, BHFI, FSI and a reparse tag.
+ */
+static void
+_g_win32_fill_privatestat (const struct __stat64            *statbuf,
+                           const BY_HANDLE_FILE_INFORMATION *handle_info,
+                           const FILE_STANDARD_INFO         *std_info,
+                           DWORD                             reparse_tag,
+                           GWin32PrivateStat                *buf)
+{
+  buf->st_dev = statbuf->st_dev;
+  buf->st_ino = statbuf->st_ino;
+  buf->st_mode = statbuf->st_mode;
+  buf->volume_serial = handle_info->dwVolumeSerialNumber;
+  buf->file_index = (((guint64) handle_info->nFileIndexHigh) << 32) | handle_info->nFileIndexLow;
+  buf->attributes = handle_info->dwFileAttributes;
+  buf->st_nlink = handle_info->nNumberOfLinks;
+  buf->st_size = (((guint64) handle_info->nFileSizeHigh) << 32) | handle_info->nFileSizeLow;
+  buf->allocated_size = std_info->AllocationSize.QuadPart;
+
+  buf->reparse_tag = reparse_tag;
+
+  buf->st_ctim.tv_sec = _g_win32_filetime_to_unix_time (&handle_info->ftCreationTime, &buf->st_ctim.tv_nsec);
+  buf->st_mtim.tv_sec = _g_win32_filetime_to_unix_time (&handle_info->ftLastWriteTime, &buf->st_mtim.tv_nsec);
+  buf->st_atim.tv_sec = _g_win32_filetime_to_unix_time (&handle_info->ftLastAccessTime, &buf->st_atim.tv_nsec);
+}
+
+/* Read the link data from a symlink/mountpoint represented
+ * by the handle. Also reads reparse tag.
+ * @reparse_tag receives the tag. Can be %NULL if @buf or @alloc_buf
+ *              is non-NULL.
+ * @buf receives the link data. Can be %NULL if reparse_tag is non-%NULL.
+ *      Mutually-exclusive with @alloc_buf.
+ * @buf_size is the size of the @buf, in bytes.
+ * @alloc_buf points to a location where internally-allocated buffer
+ *            pointer will be written. That buffer receives the
+ *            link data. Mutually-exclusive with @buf.
+ * @terminate ensures that the buffer is NUL-terminated if
+ *            it isn't already. Note that this can erase useful
+ *            data if @buf is provided and @buf_size is too small.
+ *            Specifically, with @buf_size <= 2 the buffer will
+ *            receive an empty string, even if there is some
+ *            data in the reparse point.
+ * The contents of @buf or @alloc_buf are presented as-is - could
+ * be non-NUL-terminated (unless @terminate is %TRUE) or even malformed.
+ * Returns the number of bytes (!) placed into @buf or @alloc_buf,
+ * including NUL-terminator (if any).
+ *
+ * Returned value of 0 means that there's no recognizable data in the
+ * reparse point. @alloc_buf will not be allocated in that case,
+ * and @buf will be left unmodified.
+ *
+ * If @buf and @alloc_buf are %NULL, returns 0 to indicate success.
+ * Returns -1 to indicate an error, sets errno.
+ */
+static int
+_g_win32_readlink_handle_raw (HANDLE      h,
+                              DWORD      *reparse_tag,
+                              gunichar2  *buf,
+                              gsize       buf_size,
+                              gunichar2 **alloc_buf,
+                              gboolean    terminate)
+{
+  DWORD error_code;
+  DWORD returned_bytes = 0;
+  BYTE *data;
+  gsize to_copy;
+  /* This is 16k. It's impossible to make DeviceIoControl() tell us
+   * the required size. NtFsControlFile() does have such a feature,
+   * but for some reason it doesn't work with CreateFile()-returned handles.
+   * The only alternative is to repeatedly call DeviceIoControl()
+   * with bigger and bigger buffers, until it succeeds.
+   * We choose to sacrifice stack space for speed.
+   */
+  BYTE max_buffer[sizeof (REPARSE_DATA_BUFFER) + MAXIMUM_REPARSE_DATA_BUFFER_SIZE] = {0,};
+  DWORD max_buffer_size = sizeof (REPARSE_DATA_BUFFER) + MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
+  REPARSE_DATA_BUFFER *rep_buf;
+
+  g_return_val_if_fail ((buf != NULL || alloc_buf != NULL || reparse_tag != NULL) &&
+                        (buf == NULL || alloc_buf == NULL),
+                        -1);
+
+  if (!DeviceIoControl (h, FSCTL_GET_REPARSE_POINT, NULL, 0,
+                        max_buffer,
+                        max_buffer_size,
+                        &returned_bytes, NULL))
+    {
+      error_code = GetLastError ();
+      errno = w32_error_to_errno (error_code);
+      return -1;
+    }
+
+  rep_buf = (REPARSE_DATA_BUFFER *) max_buffer;
+
+  if (reparse_tag != NULL)
+    *reparse_tag = rep_buf->ReparseTag;
+
+  if (buf == NULL && alloc_buf == NULL)
+    return 0;
+
+  if (rep_buf->ReparseTag == IO_REPARSE_TAG_SYMLINK)
+    {
+      data = &((BYTE *) rep_buf->SymbolicLinkReparseBuffer.PathBuffer)[rep_buf->SymbolicLinkReparseBuffer.SubstituteNameOffset];
+
+      to_copy = rep_buf->SymbolicLinkReparseBuffer.SubstituteNameLength;
+    }
+  else if (rep_buf->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
+    {
+      data = &((BYTE *) rep_buf->MountPointReparseBuffer.PathBuffer)[rep_buf->MountPointReparseBuffer.SubstituteNameOffset];
+
+      to_copy = rep_buf->MountPointReparseBuffer.SubstituteNameLength;
+    }
+  else
+    to_copy = 0;
+
+  return _g_win32_copy_and_maybe_terminate (data, to_copy, buf, buf_size, alloc_buf, terminate);
+}
+
+/* Read the link data from a symlink/mountpoint represented
+ * by the @filename.
+ * @filename is the name of the file.
+ * @reparse_tag receives the tag. Can be %NULL if @buf or @alloc_buf
+ *              is non-%NULL.
+ * @buf receives the link data. Mutually-exclusive with @alloc_buf.
+ * @buf_size is the size of the @buf, in bytes.
+ * @alloc_buf points to a location where internally-allocated buffer
+ *            pointer will be written. That buffer receives the
+ *            link data. Mutually-exclusive with @buf.
+ * @terminate ensures that the buffer is NUL-terminated if
+ *            it isn't already
+ * The contents of @buf or @alloc_buf are presented as-is - could
+ * be non-NUL-terminated (unless @terminate is TRUE) or even malformed.
+ * Returns the number of bytes (!) placed into @buf or @alloc_buf.
+ * Returned value of 0 means that there's no recognizable data in the
+ * reparse point. @alloc_buf will not be allocated in that case,
+ * and @buf will be left unmodified.
+ * If @buf and @alloc_buf are %NULL, returns 0 to indicate success.
+ * Returns -1 to indicate an error, sets errno.
+ */
+static int
+_g_win32_readlink_utf16_raw (const gunichar2  *filename,
+                             DWORD            *reparse_tag,
+                             gunichar2        *buf,
+                             gsize             buf_size,
+                             gunichar2       **alloc_buf,
+                             gboolean          terminate)
+{
+  HANDLE h;
+  DWORD attributes;
+  DWORD to_copy;
+  DWORD error_code;
+
+  if ((attributes = GetFileAttributesW (filename)) == 0)
+    {
+      error_code = GetLastError ();
+      errno = w32_error_to_errno (error_code);
+      return -1;
+    }
+
+  if ((attributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+
+  /* To read symlink target we need to open the file as a reparse
+   * point and use DeviceIoControl() on it.
+   */
+  h = CreateFileW (filename,
+                   FILE_READ_EA,
+                   FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
+                   NULL, OPEN_EXISTING,
+                   FILE_ATTRIBUTE_NORMAL
+                   | FILE_FLAG_OPEN_REPARSE_POINT
+                   | (attributes & FILE_ATTRIBUTE_DIRECTORY ? FILE_FLAG_BACKUP_SEMANTICS : 0),
+                   NULL);
+
+  if (h == INVALID_HANDLE_VALUE)
+    {
+      error_code = GetLastError ();
+      errno = w32_error_to_errno (error_code);
+      return -1;
+    }
+
+  to_copy = _g_win32_readlink_handle_raw (h, reparse_tag, buf, buf_size, alloc_buf, terminate);
+
+  CloseHandle (h);
+
+  return to_copy;
+}
+
+/* Read the link data from a symlink/mountpoint represented
+ * by a UTF-16 filename or a file handle.
+ * @filename is the name of the file. Mutually-exclusive with @file_handle.
+ * @file_handle is the handle of the file. Mutually-exclusive with @filename.
+ * @reparse_tag receives the tag. Can be %NULL if @buf or @alloc_buf
+ *              is non-%NULL.
+ * @buf receives the link data. Mutually-exclusive with @alloc_buf.
+ * @buf_size is the size of the @buf, in bytes.
+ * @alloc_buf points to a location where internally-allocated buffer
+ *            pointer will be written. That buffer receives the
+ *            link data. Mutually-exclusive with @buf.
+ * @terminate ensures that the buffer is NUL-terminated if
+ *            it isn't already
+ * The contents of @buf or @alloc_buf are adjusted
+ * (extended or nt object manager prefix is stripped),
+ * but otherwise they are presented as-is - could be non-NUL-terminated
+ * (unless @terminate is TRUE) or even malformed.
+ * Returns the number of bytes (!) placed into @buf or @alloc_buf.
+ * Returned value of 0 means that there's no recognizable data in the
+ * reparse point. @alloc_buf will not be allocated in that case,
+ * and @buf will be left unmodified.
+ * Returns -1 to indicate an error, sets errno.
+ */
+static int
+_g_win32_readlink_utf16_handle (const gunichar2  *filename,
+                                HANDLE            file_handle,
+                                DWORD            *reparse_tag,
+                                gunichar2        *buf,
+                                gsize             buf_size,
+                                gunichar2       **alloc_buf,
+                                gboolean          terminate)
+{
+  int   result;
+  gsize string_size;
+
+  g_return_val_if_fail ((buf != NULL || alloc_buf != NULL || reparse_tag != NULL) &&
+                        (filename != NULL || file_handle != NULL) &&
+                        (buf == NULL || alloc_buf == NULL) &&
+                        (filename == NULL || file_handle == NULL),
+                        -1);
+
+  if (filename)
+    result = _g_win32_readlink_utf16_raw (filename, reparse_tag, buf, buf_size, alloc_buf, terminate);
+  else
+    result = _g_win32_readlink_handle_raw (file_handle, reparse_tag, buf, buf_size, alloc_buf, terminate);
+
+  if (result <= 0)
+    return result;
+
+  /* Ensure that output is a multiple of sizeof (gunichar2),
+   * cutting any trailing partial gunichar2, if present.
+   */
+  result -= result % sizeof (gunichar2);
+
+  if (result <= 0)
+    return result;
+
+  /* DeviceIoControl () tends to return filenames as NT Object Manager
+   * names , i.e. "\\??\\C:\\foo\\bar".
+   * Remove the leading 4-byte "\\??\\" prefix, as glib (as well as many W32 API
+   * functions) is unprepared to deal with it. Unless it has no 'x:' drive
+   * letter part after the prefix, in which case we leave everything
+   * as-is, because the path could be "\\??\\Volume{GUID}" - stripping
+   * the prefix will allow it to be confused with relative links
+   * targeting "Volume{GUID}".
+   */
+  string_size = result / sizeof (gunichar2);
+  _g_win32_strip_extended_ntobjm_prefix (buf ? buf : *alloc_buf, &string_size);
+
+  return string_size * sizeof (gunichar2);
+}
+
+/* Works like stat() or lstat(), depending on the value of @for_symlink,
+ * but accepts filename in UTF-16 and fills our custom stat structure.
+ * The @filename must not have trailing slashes.
+ */
 static int
 _g_win32_stat_utf16_no_trailing_slashes (const gunichar2    *filename,
-                                         int                 fd,
                                          GWin32PrivateStat  *buf,
                                          gboolean            for_symlink)
 {
-  HANDLE file_handle;
-  gboolean succeeded_so_far;
-  DWORD error_code;
   struct __stat64 statbuf;
   BY_HANDLE_FILE_INFORMATION handle_info;
   FILE_STANDARD_INFO std_info;
-  WIN32_FIND_DATAW finddata;
-  DWORD immediate_attributes;
   gboolean is_symlink = FALSE;
-  gboolean is_directory;
-  DWORD open_flags;
   wchar_t *filename_target = NULL;
-  int result;
+  DWORD immediate_attributes;
+  DWORD open_flags;
+  gboolean is_directory;
+  DWORD reparse_tag = 0;
+  DWORD error_code;
+  BOOL succeeded_so_far;
+  HANDLE file_handle;
 
-  if (fd < 0)
+  immediate_attributes = GetFileAttributesW (filename);
+
+  if (immediate_attributes == INVALID_FILE_ATTRIBUTES)
     {
-      immediate_attributes = GetFileAttributesW (filename);
+      error_code = GetLastError ();
+      errno = w32_error_to_errno (error_code);
 
-      if (immediate_attributes == INVALID_FILE_ATTRIBUTES)
-        {
-          error_code = GetLastError ();
-          errno = w32_error_to_errno (error_code);
-
-          return -1;
-        }
-
-      is_symlink = (immediate_attributes & FILE_ATTRIBUTE_REPARSE_POINT) == FILE_ATTRIBUTE_REPARSE_POINT;
-      is_directory = (immediate_attributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY;
-
-      open_flags = FILE_ATTRIBUTE_NORMAL;
-
-      if (for_symlink && is_symlink)
-        open_flags |= FILE_FLAG_OPEN_REPARSE_POINT;
-
-      if (is_directory)
-        open_flags |= FILE_FLAG_BACKUP_SEMANTICS;
-
-      file_handle = CreateFileW (filename, FILE_READ_ATTRIBUTES,
-                                 FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                                 open_flags,
-                                 NULL);
-
-      if (file_handle == INVALID_HANDLE_VALUE)
-        {
-          error_code = GetLastError ();
-          errno = w32_error_to_errno (error_code);
-          return -1;
-        }
+      return -1;
     }
-  else
-    {
-      file_handle = (HANDLE) _get_osfhandle (fd);
 
-      if (file_handle == INVALID_HANDLE_VALUE)
-        return -1;
+  is_symlink = (immediate_attributes & FILE_ATTRIBUTE_REPARSE_POINT) == FILE_ATTRIBUTE_REPARSE_POINT;
+  is_directory = (immediate_attributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY;
+
+  open_flags = FILE_ATTRIBUTE_NORMAL;
+
+  if (for_symlink && is_symlink)
+    open_flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+
+  if (is_directory)
+    open_flags |= FILE_FLAG_BACKUP_SEMANTICS;
+
+  file_handle = CreateFileW (filename, FILE_READ_ATTRIBUTES | FILE_READ_EA,
+                             FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
+                             NULL, OPEN_EXISTING,
+                             open_flags,
+                             NULL);
+
+  if (file_handle == INVALID_HANDLE_VALUE)
+    {
+      error_code = GetLastError ();
+      errno = w32_error_to_errno (error_code);
+      return -1;
     }
 
   succeeded_so_far = GetFileInformationByHandle (file_handle,
@@ -199,113 +641,76 @@ _g_win32_stat_utf16_no_trailing_slashes (const gunichar2    *filename,
 
   if (!succeeded_so_far)
     {
-      if (fd < 0)
-        CloseHandle (file_handle);
+      CloseHandle (file_handle);
       errno = w32_error_to_errno (error_code);
       return -1;
     }
 
   /* It's tempting to use GetFileInformationByHandleEx(FileAttributeTagInfo),
    * but it always reports that the ReparseTag is 0.
+   * We already have a handle open for symlink, use that.
+   * For the target we have to specify a filename, and the function
+   * will open another handle internally.
    */
-  if (fd < 0)
+  if (is_symlink &&
+      _g_win32_readlink_utf16_handle (for_symlink ? NULL : filename,
+                                      for_symlink ? file_handle : NULL,
+                                      &reparse_tag,
+                                      NULL, 0,
+                                      for_symlink ? NULL : &filename_target,
+                                      TRUE) < 0)
     {
-      memset (&finddata, 0, sizeof (finddata));
-
-      if (handle_info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-        {
-          HANDLE tmp = FindFirstFileW (filename,
-                                       &finddata);
-
-          if (tmp == INVALID_HANDLE_VALUE)
-            {
-              error_code = GetLastError ();
-              errno = w32_error_to_errno (error_code);
-              CloseHandle (file_handle);
-              return -1;
-            }
-
-          FindClose (tmp);
-        }
-
-      if (is_symlink && !for_symlink)
-        {
-          /* If filename is a symlink, _wstat64 obtains information about
-           * the symlink (except that st_size will be 0).
-           * To get information about the target we need to resolve
-           * the symlink first. And we need _wstat64() to get st_dev,
-           * it's a bother to try finding it ourselves.
-           */
-          DWORD filename_target_len;
-          DWORD new_len;
-
-          /* Just in case, give it a real memory location instead of NULL */
-          new_len = GetFinalPathNameByHandleW (file_handle,
-                                               (wchar_t *) &filename_target_len,
-                                               0,
-                                               FILE_NAME_NORMALIZED);
-
-#define SANE_LIMIT 1024 * 10
-          if (new_len >= SANE_LIMIT)
-#undef SANE_LIMIT
-            {
-              new_len = 0;
-              error_code = ERROR_BUFFER_OVERFLOW;
-            }
-          else if (new_len == 0)
-            {
-              error_code = GetLastError ();
-            }
-
-          if (new_len > 0)
-            {
-              const wchar_t *extended_prefix = L"\\\\?\\";
-              const gsize    extended_prefix_len = wcslen (extended_prefix);
-              const gsize    extended_prefix_len_bytes = sizeof (wchar_t) * extended_prefix_len;
-
-              /* Pretend that new_len doesn't count the terminating NUL char,
-               * and ask for a bit more space than is needed.
-               */
-              filename_target_len = new_len + 5;
-              filename_target = g_malloc (filename_target_len * sizeof (wchar_t));
-
-              new_len = GetFinalPathNameByHandleW (file_handle,
-                                                   filename_target,
-                                                   filename_target_len,
-                                                   FILE_NAME_NORMALIZED);
-
-              /* filename_target_len is already larger than needed,
-               * new_len should be smaller than that, even if the size
-               * is off by 1 for some reason.
-               */
-              if (new_len >= filename_target_len - 1)
-                {
-                  new_len = 0;
-                  error_code = ERROR_BUFFER_OVERFLOW;
-                  g_clear_pointer (&filename_target, g_free);
-                }
-              /* GetFinalPathNameByHandle() is documented to return extended paths,
-               * strip the extended prefix.
-               */
-              else if (new_len > extended_prefix_len &&
-                       memcmp (filename_target, extended_prefix, extended_prefix_len_bytes) == 0)
-                {
-                  new_len -= extended_prefix_len;
-                  memmove (filename_target,
-                           filename_target + extended_prefix_len,
-                           (new_len + 1) * sizeof (wchar_t));
-                }
-            }
-
-          if (new_len == 0)
-            succeeded_so_far = FALSE;
-        }
-
       CloseHandle (file_handle);
+      return -1;
     }
-  /* else if fd >= 0 the file_handle was obtained via _get_osfhandle()
-   * and must not be closed, it is owned by fd.
-   */
+
+  CloseHandle (file_handle);
+
+  _g_win32_fill_statbuf_from_handle_info (filename,
+                                          filename_target,
+                                          &handle_info,
+                                          &statbuf);
+  g_free (filename_target);
+  _g_win32_fill_privatestat (&statbuf,
+                             &handle_info,
+                             &std_info,
+                             reparse_tag,
+                             buf);
+
+  return 0;
+}
+
+/* Works like fstat(), but fills our custom stat structure. */
+static int
+_g_win32_stat_fd (int                 fd,
+                  GWin32PrivateStat  *buf)
+{
+  HANDLE file_handle;
+  gboolean succeeded_so_far;
+  DWORD error_code;
+  struct __stat64 statbuf;
+  BY_HANDLE_FILE_INFORMATION handle_info;
+  FILE_STANDARD_INFO std_info;
+  DWORD reparse_tag = 0;
+  gboolean is_symlink = FALSE;
+
+  file_handle = (HANDLE) _get_osfhandle (fd);
+
+  if (file_handle == INVALID_HANDLE_VALUE)
+    return -1;
+
+  succeeded_so_far = GetFileInformationByHandle (file_handle,
+                                                 &handle_info);
+  error_code = GetLastError ();
+
+  if (succeeded_so_far)
+    {
+      succeeded_so_far = GetFileInformationByHandleEx (file_handle,
+                                                       FileStandardInfo,
+                                                       &std_info,
+                                                       sizeof (std_info));
+      error_code = GetLastError ();
+    }
 
   if (!succeeded_so_far)
     {
@@ -313,49 +718,27 @@ _g_win32_stat_utf16_no_trailing_slashes (const gunichar2    *filename,
       return -1;
     }
 
-  if (fd < 0)
-    result = _wstat64 (filename_target != NULL ? filename_target : filename, &statbuf);
-  else
-    result = _fstat64 (fd, &statbuf);
+  is_symlink = (handle_info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) == FILE_ATTRIBUTE_REPARSE_POINT;
 
-  if (result != 0)
-    {
-      int errsv = errno;
+  if (is_symlink &&
+      _g_win32_readlink_handle_raw (file_handle, &reparse_tag, NULL, 0, NULL, FALSE) < 0)
+    return -1;
 
-      g_free (filename_target);
-      errno = errsv;
+  if (_fstat64 (fd, &statbuf) != 0)
+    return -1;
 
-      return -1;
-    }
-
-  g_free (filename_target);
-
-  buf->st_dev = statbuf.st_dev;
-  buf->st_mode = statbuf.st_mode;
-  buf->volume_serial = handle_info.dwVolumeSerialNumber;
-  buf->file_index = (((guint64) handle_info.nFileIndexHigh) << 32) | handle_info.nFileIndexLow;
-  /* Note that immediate_attributes is for the symlink
-   * (if it's a symlink), while handle_info contains info
-   * about the symlink or the target, depending on the flags
-   * we used earlier.
-   */
-  buf->attributes = handle_info.dwFileAttributes;
-  buf->st_nlink = handle_info.nNumberOfLinks;
-  buf->st_size = (((guint64) handle_info.nFileSizeHigh) << 32) | handle_info.nFileSizeLow;
-  buf->allocated_size = std_info.AllocationSize.QuadPart;
-
-  if (fd < 0 && buf->attributes & FILE_ATTRIBUTE_REPARSE_POINT)
-    buf->reparse_tag = finddata.dwReserved0;
-  else
-    buf->reparse_tag = 0;
-
-  buf->st_ctime = statbuf.st_ctime;
-  buf->st_atime = statbuf.st_atime;
-  buf->st_mtime = statbuf.st_mtime;
+  _g_win32_fill_privatestat (&statbuf,
+                             &handle_info,
+                             &std_info,
+                             reparse_tag,
+                             buf);
 
   return 0;
 }
 
+/* Works like stat() or lstat(), depending on the value of @for_symlink,
+ * but accepts filename in UTF-8 and fills our custom stat structure.
+ */
 static int
 _g_win32_stat_utf8 (const gchar       *filename,
                     GWin32PrivateStat *buf,
@@ -388,13 +771,16 @@ _g_win32_stat_utf8 (const gchar       *filename,
       return -1;
     }
 
-  result = _g_win32_stat_utf16_no_trailing_slashes (wfilename, -1, buf, for_symlink);
+  result = _g_win32_stat_utf16_no_trailing_slashes (wfilename, buf, for_symlink);
 
   g_free (wfilename);
 
   return result;
 }
 
+/* Works like stat(), but accepts filename in UTF-8
+ * and fills our custom stat structure.
+ */
 int
 g_win32_stat_utf8 (const gchar       *filename,
                    GWin32PrivateStat *buf)
@@ -402,6 +788,9 @@ g_win32_stat_utf8 (const gchar       *filename,
   return _g_win32_stat_utf8 (filename, buf, FALSE);
 }
 
+/* Works like lstat(), but accepts filename in UTF-8
+ * and fills our custom stat structure.
+ */
 int
 g_win32_lstat_utf8 (const gchar       *filename,
                     GWin32PrivateStat *buf)
@@ -409,168 +798,64 @@ g_win32_lstat_utf8 (const gchar       *filename,
   return _g_win32_stat_utf8 (filename, buf, TRUE);
 }
 
+/* Works like fstat(), but accepts filename in UTF-8
+ * and fills our custom stat structure.
+ */
 int
 g_win32_fstat (int                fd,
                GWin32PrivateStat *buf)
 {
-  return _g_win32_stat_utf16_no_trailing_slashes (NULL, fd, buf, FALSE);
+  return _g_win32_stat_fd (fd, buf);
 }
 
-static int
-_g_win32_readlink_utf16_raw (const gunichar2 *filename,
-                             gunichar2       *buf,
-                             gsize            buf_size)
-{
-  DWORD returned_bytes;
-  BYTE returned_data[MAXIMUM_REPARSE_DATA_BUFFER_SIZE]; /* This is 16k, by the way */
-  HANDLE h;
-  DWORD attributes;
-  REPARSE_DATA_BUFFER *rep_buf;
-  DWORD to_copy;
-  DWORD error_code;
-
-  if (buf_size > G_MAXSIZE / sizeof (wchar_t))
-    {
-      /* "buf_size * sizeof (wchar_t)" overflows */
-      errno = EFAULT;
-      return -1;
-    }
-
-  if ((attributes = GetFileAttributesW (filename)) == 0)
-    {
-      error_code = GetLastError ();
-      errno = w32_error_to_errno (error_code);
-      return -1;
-    }
-
-  if ((attributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
-    {
-      errno = EINVAL;
-      return -1;
-    }
-
-  /* To read symlink target we need to open the file as a reparse
-   * point and use DeviceIoControl() on it.
-   */
-  h = CreateFileW (filename,
-                   FILE_READ_ATTRIBUTES | SYNCHRONIZE | GENERIC_READ,
-                   FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                   FILE_ATTRIBUTE_NORMAL
-                   | FILE_FLAG_OPEN_REPARSE_POINT
-                   | (attributes & FILE_ATTRIBUTE_DIRECTORY ? FILE_FLAG_BACKUP_SEMANTICS : 0),
-                   NULL);
-
-  if (h == INVALID_HANDLE_VALUE)
-    {
-      error_code = GetLastError ();
-      errno = w32_error_to_errno (error_code);
-      return -1;
-    }
-
-  if (!DeviceIoControl (h, FSCTL_GET_REPARSE_POINT, NULL, 0,
-                        returned_data, MAXIMUM_REPARSE_DATA_BUFFER_SIZE,
-                        &returned_bytes, NULL))
-    {
-      error_code = GetLastError ();
-      errno = w32_error_to_errno (error_code);
-      CloseHandle (h);
-      return -1;
-    }
-
-  rep_buf = (REPARSE_DATA_BUFFER *) returned_data;
-  to_copy = 0;
-
-  if (rep_buf->ReparseTag == IO_REPARSE_TAG_SYMLINK)
-    {
-      to_copy = rep_buf->SymbolicLinkReparseBuffer.SubstituteNameLength;
-
-      if (to_copy > buf_size * sizeof (wchar_t))
-        to_copy = buf_size * sizeof (wchar_t);
-
-      memcpy (buf,
-              &((BYTE *) rep_buf->SymbolicLinkReparseBuffer.PathBuffer)[rep_buf->SymbolicLinkReparseBuffer.SubstituteNameOffset],
-              to_copy);
-    }
-  else if (rep_buf->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
-    {
-      to_copy = rep_buf->MountPointReparseBuffer.SubstituteNameLength;
-
-      if (to_copy > buf_size * sizeof (wchar_t))
-        to_copy = buf_size * sizeof (wchar_t);
-
-      memcpy (buf,
-              &((BYTE *) rep_buf->MountPointReparseBuffer.PathBuffer)[rep_buf->MountPointReparseBuffer.SubstituteNameOffset],
-              to_copy);
-    }
-
-  CloseHandle (h);
-
-  return to_copy;
-}
-
-static int
-_g_win32_readlink_utf16 (const gunichar2 *filename,
-                         gunichar2       *buf,
-                         gsize            buf_size)
-{
-  const wchar_t *ntobjm_prefix = L"\\??\\";
-  const gsize    ntobjm_prefix_len_unichar2 = wcslen (ntobjm_prefix);
-  const gsize    ntobjm_prefix_len_bytes = sizeof (gunichar2) * ntobjm_prefix_len_unichar2;
-  int            result = _g_win32_readlink_utf16_raw (filename, buf, buf_size);
-
-  if (result <= 0)
-    return result;
-
-  /* Ensure that output is a multiple of sizeof (gunichar2),
-   * cutting any trailing partial gunichar2, if present.
-   */
-  result -= result % sizeof (gunichar2);
-
-  if (result <= 0)
-    return result;
-
-  /* DeviceIoControl () tends to return filenames as NT Object Manager
-   * names , i.e. "\\??\\C:\\foo\\bar".
-   * Remove the leading 4-byte \??\ prefix, as glib (as well as many W32 API
-   * functions) is unprepared to deal with it.
-   */
-  if (result > ntobjm_prefix_len_bytes &&
-      memcmp (buf, ntobjm_prefix, ntobjm_prefix_len_bytes) == 0)
-    {
-      result -= ntobjm_prefix_len_bytes;
-      memmove (buf, buf + ntobjm_prefix_len_unichar2, result);
-    }
-
-  return result;
-}
-
-static gchar *
-_g_win32_get_mode_alias (const gchar *mode)
-{
-  gchar *alias;
-
-  alias = g_strdup (mode);
-  if (strlen (mode) > 2 && mode[2] == '+')
-    {
-      /* Windows implementation of fopen() does not accept modes such as
-       * "wb+". The 'b' needs to be appended to "w+", i.e. "w+b". Note
-       * that otherwise these 2 modes are supposed to be aliases, hence
-       * swappable at will.
-       */
-      alias[1] = '+';
-      alias[2] = mode[1];
-    }
-
-  return alias;
-}
-
+/**
+ * g_win32_readlink_utf8:
+ * @filename: (type filename): a pathname in UTF-8
+ * @buf: (array length=buf_size) : a buffer to receive the reparse point
+ *                                 target path. Mutually-exclusive
+ *                                 with @alloc_buf.
+ * @buf_size: size of the @buf, in bytes
+ * @alloc_buf: points to a location where internally-allocated buffer
+ *             pointer will be written. That buffer receives the
+ *             link data. Mutually-exclusive with @buf.
+ * @terminate: ensures that the buffer is NUL-terminated if
+ *             it isn't already. If %FALSE, the returned string
+ *             might not be NUL-terminated (depends entirely on
+ *             what the contents of the filesystem are).
+ *
+ * Tries to read the reparse point indicated by @filename, filling
+ * @buf or @alloc_buf with the path that the reparse point redirects to.
+ * The path will be UTF-8-encoded, and an extended path prefix
+ * or a NT object manager prefix will be removed from it, if
+ * possible, but otherwise the path is returned as-is. Specifically,
+ * it could be a "\\\\Volume{GUID}\\" path. It also might use
+ * backslashes as path separators.
+ *
+ * Returns: -1 on error (sets errno), 0 if there's no (recognizable)
+ * path in the reparse point (@alloc_buf will not be allocated in that case,
+ * and @buf will be left unmodified),
+ * or the number of bytes placed into @buf otherwise,
+ * including NUL-terminator (if present or if @terminate is TRUE).
+ * The buffer returned via @alloc_buf should be freed with g_free().
+ *
+ * Since: 2.60
+ */
 int
-g_win32_readlink_utf8 (const gchar *filename,
-                       gchar       *buf,
-                       gsize        buf_size)
+g_win32_readlink_utf8 (const gchar  *filename,
+                       gchar        *buf,
+                       gsize         buf_size,
+                       gchar       **alloc_buf,
+                       gboolean      terminate)
 {
   wchar_t *wfilename;
   int result;
+  wchar_t *buf_utf16;
+  glong tmp_len;
+  gchar *tmp;
+
+  g_return_val_if_fail ((buf != NULL || alloc_buf != NULL) &&
+                        (buf == NULL || alloc_buf == NULL),
+                        -1);
 
   wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
 
@@ -580,39 +865,41 @@ g_win32_readlink_utf8 (const gchar *filename,
       return -1;
     }
 
-  result = _g_win32_readlink_utf16 (wfilename, (gunichar2 *) buf, buf_size);
+  result = _g_win32_readlink_utf16_handle (wfilename, NULL, NULL,
+                                           NULL, 0, &buf_utf16, terminate);
 
   g_free (wfilename);
 
-  if (result > 0)
+  if (result <= 0)
+    return result;
+
+  tmp = g_utf16_to_utf8 (buf_utf16,
+                         result / sizeof (gunichar2),
+                         NULL,
+                         &tmp_len,
+                         NULL);
+
+  g_free (buf_utf16);
+
+  if (tmp == NULL)
     {
-      glong tmp_len;
-      gchar *tmp = g_utf16_to_utf8 ((const gunichar2 *) buf,
-                                    result / sizeof (gunichar2),
-                                    NULL,
-                                    &tmp_len,
-                                    NULL);
-
-      if (tmp == NULL)
-        {
-          errno = EINVAL;
-          return -1;
-        }
-
-      if (tmp_len > buf_size - 1)
-        tmp_len = buf_size - 1;
-
-      memcpy (buf, tmp, tmp_len);
-      /* readlink() doesn't NUL-terminate, but we do.
-       * To be compliant, however, we return the
-       * number of bytes without the NUL-terminator.
-       */
-      buf[tmp_len] = '\0';
-      result = tmp_len;
-      g_free (tmp);
+      errno = EINVAL;
+      return -1;
     }
 
-  return result;
+  if (alloc_buf)
+    {
+      *alloc_buf = tmp;
+      return tmp_len;
+    }
+
+  if (tmp_len > buf_size)
+    tmp_len = buf_size;
+
+  memcpy (buf, tmp, tmp_len);
+  g_free (tmp);
+
+  return tmp_len;
 }
 
 #endif
@@ -890,20 +1177,7 @@ g_rename (const gchar *oldfilename,
   else
     {
       retval = -1;
-      switch (GetLastError ())
-	{
-#define CASE(a,b) case ERROR_##a: save_errno = b; break
-	  CASE (FILE_NOT_FOUND, ENOENT);
-	  CASE (PATH_NOT_FOUND, ENOENT);
-	  CASE (ACCESS_DENIED, EACCES);
-	  CASE (NOT_SAME_DEVICE, EXDEV);
-	  CASE (LOCK_VIOLATION, EACCES);
-	  CASE (SHARING_VIOLATION, EACCES);
-	  CASE (FILE_EXISTS, EEXIST);
-	  CASE (ALREADY_EXISTS, EEXIST);
-#undef CASE
-	default: save_errno = EIO;
-	}
+      save_errno = w32_error_to_errno (GetLastError ());
     }
 
   g_free (woldfilename);
@@ -1057,9 +1331,9 @@ g_stat (const gchar *filename,
   buf->st_gid = w32_buf.st_gid;
   buf->st_rdev = w32_buf.st_dev;
   buf->st_size = w32_buf.st_size;
-  buf->st_atime = w32_buf.st_atime;
-  buf->st_mtime = w32_buf.st_mtime;
-  buf->st_ctime = w32_buf.st_ctime;
+  buf->st_atime = w32_buf.st_atim.tv_sec;
+  buf->st_mtime = w32_buf.st_mtim.tv_sec;
+  buf->st_ctime = w32_buf.st_ctim.tv_sec;
 
   return retval;
 #else
@@ -1106,9 +1380,9 @@ g_lstat (const gchar *filename,
   buf->st_gid = w32_buf.st_gid;
   buf->st_rdev = w32_buf.st_dev;
   buf->st_size = w32_buf.st_size;
-  buf->st_atime = w32_buf.st_atime;
-  buf->st_mtime = w32_buf.st_mtime;
-  buf->st_ctime = w32_buf.st_ctime;
+  buf->st_atime = w32_buf.st_atim.tv_sec;
+  buf->st_mtime = w32_buf.st_mtim.tv_sec;
+  buf->st_ctime = w32_buf.st_ctim.tv_sec;
 
   return retval;
 #else
@@ -1264,19 +1538,24 @@ g_rmdir (const gchar *filename)
  *     (UTF-8 on Windows)
  * @mode: a string describing the mode in which the file should be opened
  *
- * A wrapper for the stdio fopen() function. The fopen() function
+ * A wrapper for the stdio `fopen()` function. The `fopen()` function
  * opens a file and associates a new stream with it.
  * 
  * Because file descriptors are specific to the C library on Windows,
- * and a file descriptor is part of the FILE struct, the FILE* returned
+ * and a file descriptor is part of the `FILE` struct, the `FILE*` returned
  * by this function makes sense only to functions in the same C library.
  * Thus if the GLib-using code uses a different C library than GLib does,
  * the FILE* returned by this function cannot be passed to C library
- * functions like fprintf() or fread().
+ * functions like `fprintf()` or `fread()`.
  *
- * See your C library manual for more details about fopen().
+ * See your C library manual for more details about `fopen()`.
  *
- * Returns: A FILE* if the file was successfully opened, or %NULL if
+ * As `close()` and `fclose()` are part of the C library, this implies that it is
+ * currently impossible to close a file if the application C library and the C library
+ * used by GLib are different. Convenience functions like g_file_set_contents_full()
+ * avoid this problem.
+ *
+ * Returns: A `FILE*` if the file was successfully opened, or %NULL if
  *     an error occurred
  * 
  * Since: 2.6
@@ -1288,7 +1567,6 @@ g_fopen (const gchar *filename,
 #ifdef G_OS_WIN32
   wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
   wchar_t *wmode;
-  gchar   *mode2;
   FILE *retval;
   int save_errno;
 
@@ -1298,9 +1576,7 @@ g_fopen (const gchar *filename,
       return NULL;
     }
 
-  mode2 = _g_win32_get_mode_alias (mode);
-  wmode = g_utf8_to_utf16 (mode2, -1, NULL, NULL, NULL);
-  g_free (mode2);
+  wmode = g_utf8_to_utf16 (mode, -1, NULL, NULL, NULL);
 
   if (wmode == NULL)
     {
@@ -1309,6 +1585,7 @@ g_fopen (const gchar *filename,
       return NULL;
     }
 
+  _g_win32_fix_mode (wmode);
   retval = _wfopen (wfilename, wmode);
   save_errno = errno;
 
@@ -1347,7 +1624,6 @@ g_freopen (const gchar *filename,
 #ifdef G_OS_WIN32
   wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
   wchar_t *wmode;
-  gchar   *mode2;
   FILE *retval;
   int save_errno;
 
@@ -1357,9 +1633,7 @@ g_freopen (const gchar *filename,
       return NULL;
     }
 
-  mode2 = _g_win32_get_mode_alias (mode);
-  wmode = g_utf8_to_utf16 (mode2, -1, NULL, NULL, NULL);
-  g_free (mode2);
+  wmode = g_utf8_to_utf16 (mode, -1, NULL, NULL, NULL);
 
   if (wmode == NULL)
     {
@@ -1367,7 +1641,8 @@ g_freopen (const gchar *filename,
       errno = EINVAL;
       return NULL;
     }
-  
+
+  _g_win32_fix_mode (wmode);
   retval = _wfreopen (wfilename, wmode, stream);
   save_errno = errno;
 
@@ -1378,6 +1653,44 @@ g_freopen (const gchar *filename,
   return retval;
 #else
   return freopen (filename, mode, stream);
+#endif
+}
+
+/**
+ * g_fsync:
+ * @fd: a file descriptor
+ *
+ * A wrapper for the POSIX `fsync()` function. On Windows, `_commit()` will be
+ * used. On macOS, `fcntl(F_FULLFSYNC)` will be used.
+ * The `fsync()` function is used to synchronize a file's in-core
+ * state with that of the disk.
+ *
+ * This wrapper will handle retrying on `EINTR`.
+ *
+ * See the C library manual for more details about fsync().
+ *
+ * Returns: 0 on success, or -1 if an error occurred.
+ * The return value can be used exactly like the return value from fsync().
+ *
+ * Since: 2.64
+ */
+gint
+g_fsync (gint fd)
+{
+#ifdef G_OS_WIN32
+  return _commit (fd);
+#elif defined(HAVE_FSYNC) || defined(HAVE_FCNTL_F_FULLFSYNC)
+  int retval;
+  do
+#ifdef HAVE_FCNTL_F_FULLFSYNC
+    retval = fcntl (fd, F_FULLFSYNC, 0);
+#else
+    retval = fsync (fd);
+#endif
+  while (G_UNLIKELY (retval < 0 && errno == EINTR));
+  return retval;
+#else
+  return 0;
 #endif
 }
 
@@ -1469,4 +1782,3 @@ g_close (gint       fd,
     }
   return TRUE;
 }
-

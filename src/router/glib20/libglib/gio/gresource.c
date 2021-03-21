@@ -32,6 +32,8 @@
 #include <gio/gzlibdecompressor.h>
 #include <gio/gconverterinputstream.h>
 
+#include "glib-private.h"
+
 struct _GResource
 {
   int ref_count;
@@ -76,12 +78,23 @@ G_DEFINE_BOXED_TYPE (GResource, g_resource, g_resource_ref, g_resource_unref)
  * the xmllint executable, or xmllint must be in the `PATH`; otherwise
  * the preprocessing step is skipped.
  *
- * `to-pixdata` which will use the gdk-pixbuf-pixdata command to convert
- * images to the GdkPixdata format, which allows you to create pixbufs directly using the data inside
- * the resource file, rather than an (uncompressed) copy if it. For this, the gdk-pixbuf-pixdata
- * program must be in the PATH, or the `GDK_PIXBUF_PIXDATA` environment variable must be
- * set to the full path to the gdk-pixbuf-pixdata executable; otherwise the resource compiler will
- * abort.
+ * `to-pixdata` (deprecated since gdk-pixbuf 2.32) which will use the
+ * `gdk-pixbuf-pixdata` command to convert images to the #GdkPixdata format,
+ * which allows you to create pixbufs directly using the data inside the
+ * resource file, rather than an (uncompressed) copy of it. For this, the
+ * `gdk-pixbuf-pixdata` program must be in the `PATH`, or the
+ * `GDK_PIXBUF_PIXDATA` environment variable must be set to the full path to the
+ * `gdk-pixbuf-pixdata` executable; otherwise the resource compiler will abort.
+ * `to-pixdata` has been deprecated since gdk-pixbuf 2.32, as #GResource
+ * supports embedding modern image formats just as well. Instead of using it,
+ * embed a PNG or SVG file in your #GResource.
+ *
+ * `json-stripblanks` which will use the `json-glib-format` command to strip
+ * ignorable whitespace from the JSON file. For this to work, the
+ * `JSON_GLIB_FORMAT` environment variable must be set to the full path to the
+ * `json-glib-format` executable, or it must be in the `PATH`;
+ * otherwise the preprocessing step is skipped. In addition, at least version
+ * 1.6 of `json-glib-format` is required.
  *
  * Resource files will be exported in the GResource namespace using the
  * combination of the given `prefix` and the filename from the `file` element.
@@ -151,8 +164,8 @@ G_DEFINE_BOXED_TYPE (GResource, g_resource, g_resource_ref, g_resource_unref)
  * When debugging a program or testing a change to an installed version, it is often useful to be able to
  * replace resources in the program or library, without recompiling, for debugging or quick hacking and testing
  * purposes. Since GLib 2.50, it is possible to use the `G_RESOURCE_OVERLAYS` environment variable to selectively overlay
- * resources with replacements from the filesystem.  It is a colon-separated list of substitutions to perform
- * during resource lookups.
+ * resources with replacements from the filesystem.  It is a %G_SEARCHPATH_SEPARATOR-separated list of substitutions to perform
+ * during resource lookups. It is ignored when running in a setuid process.
  *
  * A substitution has the form
  *
@@ -285,6 +298,27 @@ enumerate_overlay_dir (const gchar *candidate,
   return FALSE;
 }
 
+typedef struct {
+  gsize size;
+  guint32 flags;
+} InfoData;
+
+static gboolean
+get_overlay_info (const gchar *candidate,
+                  gpointer     user_data)
+{
+  InfoData *info = user_data;
+  GStatBuf buf;
+
+  if (g_stat (candidate, &buf) < 0)
+    return FALSE;
+
+  info->size = buf.st_size;
+  info->flags = G_RESOURCE_FLAGS_NONE;
+
+  return TRUE;
+}
+
 static gboolean
 g_resource_find_overlay (const gchar    *path,
                          CheckCandidate  check,
@@ -302,16 +336,19 @@ g_resource_find_overlay (const gchar    *path,
 
   if (g_once_init_enter (&overlay_dirs))
     {
+      gboolean is_setuid = GLIB_PRIVATE_CALL (g_check_setuid) ();
       const gchar * const *result;
       const gchar *envvar;
 
-      envvar = g_getenv ("G_RESOURCE_OVERLAYS");
+      /* Don’t load overlays if setuid, as they could allow reading privileged
+       * files. */
+      envvar = !is_setuid ? g_getenv ("G_RESOURCE_OVERLAYS") : NULL;
       if (envvar != NULL)
         {
           gchar **parts;
           gint i, j;
 
-          parts = g_strsplit (envvar, ":", 0);
+          parts = g_strsplit (envvar, G_SEARCHPATH_SEPARATOR_S, 0);
 
           /* Sanity check the parts, dropping those that are invalid.
            * 'i' may grow faster than 'j'.
@@ -357,9 +394,9 @@ g_resource_find_overlay (const gchar    *path,
                   continue;
                 }
 
-              if (eq[1] != '/')
+              if (!g_path_is_absolute (eq + 1))
                 {
-                  g_critical ("G_RESOURCE_OVERLAYS segment '%s' lacks leading '/' after '='.  Ignoring", part);
+                  g_critical ("G_RESOURCE_OVERLAYS segment '%s' does not have an absolute path after '='.  Ignoring", part);
                   g_free (part);
                   continue;
                 }
@@ -489,7 +526,7 @@ g_resource_unref (GResource *resource)
 {
   if (g_atomic_int_dec_and_test (&resource->ref_count))
     {
-      gvdb_table_unref (resource->table);
+      gvdb_table_free (resource->table);
       g_free (resource);
     }
 }
@@ -512,6 +549,19 @@ g_resource_new_from_table (GvdbTable *table)
   return resource;
 }
 
+static void
+g_resource_error_from_gvdb_table_error (GError **g_resource_error,
+                                        GError  *gvdb_table_error  /* (transfer full) */)
+{
+  if (g_error_matches (gvdb_table_error, G_FILE_ERROR, G_FILE_ERROR_INVAL))
+    g_set_error_literal (g_resource_error,
+                         G_RESOURCE_ERROR, G_RESOURCE_ERROR_INTERNAL,
+                         gvdb_table_error->message);
+  else
+    g_propagate_error (g_resource_error, g_steal_pointer (&gvdb_table_error));
+  g_clear_error (&gvdb_table_error);
+}
+
 /**
  * g_resource_new_from_data:
  * @data: A #GBytes
@@ -528,6 +578,8 @@ g_resource_new_from_table (GvdbTable *table)
  * Otherwise this function will internally create a copy of the memory since
  * GLib 2.56, or in older versions fail and exit the process.
  *
+ * If @data is empty or corrupt, %G_RESOURCE_ERROR_INTERNAL will be returned.
+ *
  * Returns: (transfer full): a new #GResource, or %NULL on error
  *
  * Since: 2.32
@@ -538,6 +590,7 @@ g_resource_new_from_data (GBytes  *data,
 {
   GvdbTable *table;
   gboolean unref_data = FALSE;
+  GError *local_error = NULL;
 
   if (((guintptr) g_bytes_get_data (data, NULL)) % sizeof (gpointer) != 0)
     {
@@ -546,19 +599,16 @@ g_resource_new_from_data (GBytes  *data,
       unref_data = TRUE;
     }
 
-  table = gvdb_table_new_from_data (g_bytes_get_data (data, NULL),
-                                    g_bytes_get_size (data),
-                                    TRUE,
-                                    g_bytes_ref (data),
-                                    (GvdbRefFunc)g_bytes_ref,
-                                    (GDestroyNotify)g_bytes_unref,
-                                    error);
+  table = gvdb_table_new_from_bytes (data, TRUE, &local_error);
 
   if (unref_data)
     g_bytes_unref (data);
 
   if (table == NULL)
-    return NULL;
+    {
+      g_resource_error_from_gvdb_table_error (error, g_steal_pointer (&local_error));
+      return NULL;
+    }
 
   return g_resource_new_from_table (table);
 }
@@ -574,6 +624,11 @@ g_resource_new_from_data (GBytes  *data,
  * If you want to use this resource in the global resource namespace you need
  * to register it with g_resources_register().
  *
+ * If @filename is empty or the data in it is corrupt,
+ * %G_RESOURCE_ERROR_INTERNAL will be returned. If @filename doesn’t exist, or
+ * there is an error in reading it, an error from g_mapped_file_new() will be
+ * returned.
+ *
  * Returns: (transfer full): a new #GResource, or %NULL on error
  *
  * Since: 2.32
@@ -583,10 +638,14 @@ g_resource_load (const gchar  *filename,
                  GError      **error)
 {
   GvdbTable *table;
+  GError *local_error = NULL;
 
-  table = gvdb_table_new (filename, FALSE, error);
+  table = gvdb_table_new (filename, FALSE, &local_error);
   if (table == NULL)
-    return NULL;
+    {
+      g_resource_error_from_gvdb_table_error (error, g_steal_pointer (&local_error));
+      return NULL;
+    }
 
   return g_resource_new_from_table (table);
 }
@@ -750,7 +809,9 @@ g_resource_lookup_data (GResource             *resource,
   if (!do_lookup (resource, path, lookup_flags, &size, &flags, &data, &data_size, error))
     return NULL;
 
-  if (flags & G_RESOURCE_FLAGS_COMPRESSED)
+  if (size == 0)
+    return g_bytes_new_with_free_func ("", 0, (GDestroyNotify) g_resource_unref, g_resource_ref (resource));
+  else if (flags & G_RESOURCE_FLAGS_COMPRESSED)
     {
       char *uncompressed, *d;
       const char *s;
@@ -877,9 +938,10 @@ g_resource_enumerate_children (GResource             *resource,
 
   if (*path == 0)
     {
-      g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
-                   _("The resource at “%s” does not exist"),
-                   path);
+      if (error)
+        g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                     _("The resource at “%s” does not exist"),
+                     path);
       return NULL;
     }
 
@@ -916,9 +978,10 @@ g_resource_enumerate_children (GResource             *resource,
 
   if (children == NULL)
     {
-      g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
-                   _("The resource at “%s” does not exist"),
-                   path);
+      if (error)
+        g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                     _("The resource at “%s” does not exist"),
+                     path);
       return NULL;
     }
 
@@ -1185,9 +1248,10 @@ g_resources_enumerate_children (const gchar           *path,
 
   if (hash == NULL)
     {
-      g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
-                   _("The resource at “%s” does not exist"),
-                   path);
+      if (error)
+        g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                     _("The resource at “%s” does not exist"),
+                     path);
       return NULL;
     }
   else
@@ -1229,6 +1293,17 @@ g_resources_get_info (const gchar           *path,
   gboolean res = FALSE;
   GList *l;
   gboolean r_res;
+  InfoData info;
+
+  if (g_resource_find_overlay (path, get_overlay_info, &info))
+    {
+      if (size)
+        *size = info.size;
+      if (flags)
+        *flags = info.flags;
+
+      return TRUE;
+    }
 
   register_lazy_static_resources ();
 
@@ -1335,7 +1410,7 @@ register_lazy_static_resources (void)
 void
 g_static_resource_init (GStaticResource *static_resource)
 {
-  gpointer next;
+  GStaticResource *next;
 
   do
     {

@@ -31,6 +31,9 @@
 #ifdef HAVE_LIBELF
 #include <libelf.h>
 #include <gelf.h>
+#endif
+
+#ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
 
@@ -38,8 +41,10 @@
 #include <glib/gstdio.h>
 #include <gi18n.h>
 
-#ifdef G_OS_WIN32
 #include "glib/glib-private.h"
+
+#if defined(HAVE_LIBELF) && defined(HAVE_MMAP)
+#define USE_LIBELF
 #endif
 
 /* GResource functions {{{1 */
@@ -133,7 +138,7 @@ extract_resource (GResource   *resource,
 
 /* Elf functions {{{1 */
 
-#ifdef HAVE_LIBELF
+#ifdef USE_LIBELF
 
 static Elf *
 get_elf (const gchar *file,
@@ -353,7 +358,7 @@ print_section_name (GElf_Shdr   *shdr,
   return TRUE;
 }
 
-#endif /* HAVE_LIBELF */
+#endif /* USE_LIBELF */
 
   /* Toplevel commands {{{1 */
 
@@ -365,7 +370,7 @@ cmd_sections (const gchar *file,
 {
   GResource *resource;
 
-#ifdef HAVE_LIBELF
+#ifdef USE_LIBELF
 
   Elf *elf;
   gint fd;
@@ -388,7 +393,7 @@ cmd_sections (const gchar *file,
   else
     {
       g_printerr ("Don't know how to handle %s\n", file);
-#ifndef HAVE_LIBELF
+#ifndef USE_LIBELF
       g_printerr ("gresource is built without elf support\n");
 #endif
     }
@@ -402,7 +407,7 @@ cmd_list (const gchar *file,
 {
   GResource *resource;
 
-#ifdef HAVE_LIBELF
+#ifdef USE_LIBELF
   Elf *elf;
   int fd;
 
@@ -424,7 +429,7 @@ cmd_list (const gchar *file,
   else
     {
       g_printerr ("Don't know how to handle %s\n", file);
-#ifndef HAVE_LIBELF
+#ifndef USE_LIBELF
       g_printerr ("gresource is built without elf support\n");
 #endif
     }
@@ -438,7 +443,7 @@ cmd_extract (const gchar *file,
 {
   GResource *resource;
 
-#ifdef HAVE_LIBELF
+#ifdef USE_LIBELF
 
   Elf *elf;
   int fd;
@@ -461,7 +466,7 @@ cmd_extract (const gchar *file,
   else
     {
       g_printerr ("Don't know how to handle %s\n", file);
-#ifndef HAVE_LIBELF
+#ifndef USE_LIBELF
       g_printerr ("gresource is built without elf support\n");
 #endif
     }
@@ -603,7 +608,7 @@ main (int argc, char *argv[])
   gchar *tmp;
 #endif
 
-  setlocale (LC_ALL, "");
+  setlocale (LC_ALL, GLIB_DEFAULT_LOCALE);
   textdomain (GETTEXT_PACKAGE);
 
 #ifdef G_OS_WIN32

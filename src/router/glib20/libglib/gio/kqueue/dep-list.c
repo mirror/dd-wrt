@@ -231,7 +231,7 @@ error:
  * 
  * @param[in,out] before A pointer to a pointer to a list. Will contain items
  *     which were not found in the 'after' list.
- * @param[in,out] after  A pointer to a pointer to a list. Will containt items
+ * @param[in,out] after  A pointer to a pointer to a list. Will contain items
  *     which were not found in the 'before' list.
  **/
 void
@@ -356,12 +356,12 @@ G_STMT_START {                                                          \
  * Detect and notify about moves in the watched directory.
  *
  * A move is what happens when you rename a file in a directory, and
- * a new name is unique, i.e. you didnt overwrite any existing files
+ * a new name is unique, i.e. you didn't overwrite any existing files
  * with this one.
  *
  * @param[in,out] removed  A list of the removed files in the directory.
  * @param[in,out] added    A list of the added files of the directory.
- * @param[in]     cbs      A pointer to #traverse_cbs, an user-defined set of 
+ * @param[in]     cbs      A pointer to #traverse_cbs, a user-defined set of 
  *     traverse callbacks.
  * @param[in]     udata    A pointer to the user-defined data.
  * @return 0 if no files were renamed, >0 otherwise.
@@ -387,7 +387,7 @@ dl_detect_moves (dep_list           **removed,
 /**
  * Detect and notify about replacements in the watched directory.
  *
- * Consider you are watching a directory foo with the folloing files
+ * Consider you are watching a directory foo with the following files
  * insinde:
  *
  *    foo/bar
@@ -402,7 +402,7 @@ dl_detect_moves (dep_list           **removed,
  *
  * @param[in,out] removed  A list of the removed files in the directory.
  * @param[in,out] current  A list with the current contents of the directory.
- * @param[in]     cbs      A pointer to #traverse_cbs, an user-defined set of 
+ * @param[in]     cbs      A pointer to #traverse_cbs, a user-defined set of 
  *     traverse callbacks.
  * @param[in]     udata    A pointer to the user-defined data.
  * @return 0 if no files were renamed, >0 otherwise.
@@ -447,7 +447,7 @@ dl_detect_replacements (dep_list           **removed,
  *
  * @param[in,out] previous A list with the previous contents of the directory.
  * @param[in,out] current  A list with the current contents of the directory.
- * @param[in]     cbs      A pointer to #traverse_cbs, an user-defined set of 
+ * @param[in]     cbs      A pointer to #traverse_cbs, a user-defined set of 
  *     traverse callbacks.
  * @param[in]     udata    A pointer to the user-defined data.
  * @return 0 if no files were renamed, >0 otherwise.
@@ -534,4 +534,3 @@ dl_calculate (dep_list           *before,
     dl_shallow_free (pre);
     dl_shallow_free (was);
 }
-

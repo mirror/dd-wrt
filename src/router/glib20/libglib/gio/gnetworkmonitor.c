@@ -68,7 +68,7 @@
  */
 
 G_DEFINE_INTERFACE_WITH_CODE (GNetworkMonitor, g_network_monitor, G_TYPE_OBJECT,
-                              g_type_interface_add_prerequisite (g_define_type_id, G_TYPE_INITABLE);)
+                              g_type_interface_add_prerequisite (g_define_type_id, G_TYPE_INITABLE))
 
 
 enum {
@@ -77,22 +77,33 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+static GNetworkMonitor *network_monitor_default_singleton = NULL;  /* (owned) (atomic) */
 
 /**
  * g_network_monitor_get_default:
  *
  * Gets the default #GNetworkMonitor for the system.
  *
- * Returns: (transfer none): a #GNetworkMonitor
+ * Returns: (not nullable) (transfer none): a #GNetworkMonitor, which will be
+ *     a dummy object if no network monitor is available
  *
  * Since: 2.32
  */
 GNetworkMonitor *
 g_network_monitor_get_default (void)
 {
-  return _g_io_module_get_default (G_NETWORK_MONITOR_EXTENSION_POINT_NAME,
-                                   "GIO_USE_NETWORK_MONITOR",
-                                   NULL);
+  if (g_once_init_enter (&network_monitor_default_singleton))
+    {
+      GNetworkMonitor *singleton;
+
+      singleton = _g_io_module_get_default (G_NETWORK_MONITOR_EXTENSION_POINT_NAME,
+                                            "GIO_USE_NETWORK_MONITOR",
+                                            NULL);
+
+      g_once_init_leave (&network_monitor_default_singleton, singleton);
+    }
+
+  return network_monitor_default_singleton;
 }
 
 /**
@@ -321,7 +332,7 @@ g_network_monitor_default_init (GNetworkMonitorInterface *iface)
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (GNetworkMonitorInterface, network_changed),
                   NULL, NULL,
-                  g_cclosure_marshal_VOID__BOOLEAN,
+                  NULL,
                   G_TYPE_NONE, 1,
                   G_TYPE_BOOLEAN);
 

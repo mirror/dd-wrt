@@ -25,6 +25,7 @@
 
 #include "glib-unix.h"
 #include <string.h>
+#include <pwd.h>
 
 static void
 test_pipe (void)
@@ -245,6 +246,90 @@ test_sighup_nested (void)
   g_main_loop_unref (mainloop);
 }
 
+static gboolean
+on_sigwinch_received (gpointer data)
+{
+  GMainLoop *loop = (GMainLoop *) data;
+
+  sig_counter ++;
+
+  if (sig_counter == 1)
+    kill (getpid (), SIGWINCH);
+  else if (sig_counter == 2)
+    g_main_loop_quit (loop);
+  else if (sig_counter > 2)
+    g_assert_not_reached ();
+
+  /* Increase the time window in which an issue could happen. */
+  g_usleep (G_USEC_PER_SEC);
+
+  return G_SOURCE_CONTINUE;
+}
+
+static void
+test_callback_after_signal (void)
+{
+  /* Checks that user signal callback is invoked *after* receiving a signal.
+   * In other words a new signal is never merged with the one being currently
+   * dispatched or whose dispatch had already finished. */
+
+  GMainLoop *mainloop;
+  GMainContext *context;
+  GSource *source;
+
+  sig_counter = 0;
+
+  context = g_main_context_new ();
+  mainloop = g_main_loop_new (context, FALSE);
+
+  source = g_unix_signal_source_new (SIGWINCH);
+  g_source_set_callback (source, on_sigwinch_received, mainloop, NULL);
+  g_source_attach (source, context);
+  g_source_unref (source);
+
+  g_assert_cmpint (sig_counter, ==, 0);
+  kill (getpid (), SIGWINCH);
+  g_main_loop_run (mainloop);
+  g_assert_cmpint (sig_counter, ==, 2);
+
+  g_main_loop_unref (mainloop);
+  g_main_context_unref (context);
+}
+
+static void
+test_get_passwd_entry_root (void)
+{
+  struct passwd *pwd;
+  GError *local_error = NULL;
+
+  g_test_summary ("Tests that g_unix_get_passwd_entry() works for a "
+                  "known-existing username.");
+
+  pwd = g_unix_get_passwd_entry ("root", &local_error);
+  g_assert_no_error (local_error);
+
+  g_assert_cmpstr (pwd->pw_name, ==, "root");
+  g_assert_cmpuint (pwd->pw_uid, ==, 0);
+
+  g_free (pwd);
+}
+
+static void
+test_get_passwd_entry_nonexistent (void)
+{
+  struct passwd *pwd;
+  GError *local_error = NULL;
+
+  g_test_summary ("Tests that g_unix_get_passwd_entry() returns an error for a "
+                  "nonexistent username.");
+
+  pwd = g_unix_get_passwd_entry ("thisusernamedoesntexist", &local_error);
+  g_assert_error (local_error, G_UNIX_ERROR, 0);
+  g_assert_null (pwd);
+
+  g_clear_error (&local_error);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -259,6 +344,9 @@ main (int   argc,
   g_test_add_func ("/glib-unix/sighup_again", test_sighup);
   g_test_add_func ("/glib-unix/sighup_add_remove", test_sighup_add_remove);
   g_test_add_func ("/glib-unix/sighup_nested", test_sighup_nested);
+  g_test_add_func ("/glib-unix/callback_after_signal", test_callback_after_signal);
+  g_test_add_func ("/glib-unix/get-passwd-entry/root", test_get_passwd_entry_root);
+  g_test_add_func ("/glib-unix/get-passwd-entry/nonexistent", test_get_passwd_entry_nonexistent);
 
   return g_test_run();
 }

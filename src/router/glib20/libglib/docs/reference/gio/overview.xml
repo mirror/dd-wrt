@@ -112,7 +112,7 @@
           <listitem><para>network connectivity monitoring</para></listitem>
        </varlistentry>
     </variablelist>
-    There is support for connecting to <link linkend="http://www.freedesktop.org/wiki/Software/dbus">D-Bus</link>,
+    There is support for connecting to <ulink url="http://www.freedesktop.org/wiki/Software/dbus">D-Bus</ulink>,
     sending and receiving messages, owning and watching bus names,
     and making objects available on the bus:
     <variablelist>
@@ -281,7 +281,7 @@ be careful. GIO has extension points whose implementations get loaded
 from modules (executable code in shared objects), which could allow
 an attacker to sneak his own code into your application by tricking it
 into loading the code as a module. However, GIO will never load modules
-from your home directory except when explictly asked to do so via an
+from your home directory except when explicitly asked to do so via an
 environment variable.
 </para>
 
@@ -370,7 +370,10 @@ Gvfs is also heavily distributed and relies on a session bus to be present.
         The #GVfs implementation for local files that is included in GIO
         has the name "local", the implementation in the gvfs module has
         the name "gvfs".  Most commonly, system software will set this to "local"
-	to avoid having `GFile` APIs perform unnecessary DBus calls.
+        to avoid having `GFile` APIs perform unnecessary D-Bus calls.
+      </para><para>
+        The special value <literal>help</literal> can be used to print a list of
+        available implementations to standard output.
       </para>
     </formalpara>
 
@@ -390,6 +393,9 @@ Gvfs is also heavily distributed and relies on a session bus to be present.
         in GIO on Linux has the name "inotify", others that are built
         are built as modules (depending on the platform) are called
         "fam" and "fen".
+      </para><para>
+        The special value <literal>help</literal> can be used to print a list of
+        available implementations to standard output.
       </para>
     </formalpara>
 
@@ -402,6 +408,9 @@ Gvfs is also heavily distributed and relies on a session bus to be present.
         The #GVolumeMonitor implementation for local files that is included
         in GIO has the name "unix", the udisks2-based implementation in the
         gvfs module has the name "udisks2".
+      </para><para>
+        The special value <literal>help</literal> can be used to print a list of
+        available implementations to standard output.
       </para>
     </formalpara>
 
@@ -413,6 +422,9 @@ Gvfs is also heavily distributed and relies on a session bus to be present.
         implementation to override the default for debugging purposes.
         GIO does not include a #GTlsBackend implementation, the gnutls-based
         implementation in the glib-networking module has the name "gnutls".
+      </para><para>
+        The special value <literal>help</literal> can be used to print a list of
+        available implementations to standard output.
       </para>
     </formalpara>
 
@@ -424,6 +436,9 @@ Gvfs is also heavily distributed and relies on a session bus to be present.
 	modules from this alternate directory instead of the directory
 	built into GIO. This is useful when running tests, for example.
       </para>
+      <para>
+        This environment variable is ignored when running in a setuid program.
+      </para>
     </formalpara>
 
     <formalpara>
@@ -434,6 +449,9 @@ Gvfs is also heavily distributed and relies on a session bus to be present.
         paths separated by a colon, GIO will attempt to load
         additional modules from within the path.
       </para>
+      <para>
+        This environment variable is ignored when running in a setuid program.
+      </para>
     </formalpara>
 
     <formalpara>
@@ -443,7 +461,10 @@ Gvfs is also heavily distributed and relies on a session bus to be present.
         This variable can be set to the name of a #GSettingsBackend
         implementation to override the default for debugging purposes.
         The memory-based implementation that is included in GIO has
-        the name "memory", the one in dconf has the name "dconf-settings".
+        the name "memory", the one in dconf has the name "dconf".
+      </para><para>
+        The special value <literal>help</literal> can be used to print a list of
+        available implementations to standard output.
       </para>
     </formalpara>
 
@@ -451,10 +472,9 @@ Gvfs is also heavily distributed and relies on a session bus to be present.
       <title><envar>GSETTINGS_SCHEMA_DIR</envar></title>
 
       <para>
-        This variable can be set to the name of a directory that is
-        considered in addition to the <filename>glib-2.0/schemas</filename>
-        subdirectories of the XDG system data dirs when looking
-        for compiled schemas for #GSettings.
+        This variable can be set to the names of directories to consider when looking for compiled schemas for #GSettings,
+        in addition to the <filename>glib-2.0/schemas</filename>
+        subdirectories of the XDG system data dirs. To specify multiple directories, use <constant>G_SEARCHPATH_SEPARATOR_S</constant> as a separator.
       </para>
     </formalpara>
 

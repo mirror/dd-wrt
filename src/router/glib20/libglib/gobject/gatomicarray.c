@@ -17,13 +17,14 @@
 
 #include "config.h"
 
+#include "../glib/gvalgrind.h"
 #include <string.h>
 
 #include "gatomicarray.h"
 
 /* A GAtomicArray is a growable, mutable array of data
  * generally of the form of a header of a specific size and
- * then a array of items of a fixed size.
+ * then an array of items of a fixed size.
  *
  * It is possible to do lock-less read transactions from the
  * array without any protection against other reads or writes,
@@ -77,6 +78,11 @@ freelist_alloc (gsize size, gboolean reuse)
   mem = g_slice_alloc (real_size);
   mem = ((char *) mem) + sizeof (gsize);
   G_ATOMIC_ARRAY_DATA_SIZE (mem) = size;
+
+#if ENABLE_VALGRIND
+  VALGRIND_MALLOCLIKE_BLOCK (mem, real_size - sizeof (gsize), FALSE, FALSE);
+#endif
+
   return mem;
 }
 

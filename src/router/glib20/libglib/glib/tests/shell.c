@@ -68,21 +68,6 @@ static CmdlineTest cmdline_tests[] =
   {"foo '/bar/summer'\\''09 tours.pdf'", 2, {"foo", "/bar/summer'09 tours.pdf", NULL}, -1}
 };
 
-static gboolean
-strv_equal (gchar **a, gchar **b)
-{
-  gint i;
-
-  if (g_strv_length (a) != g_strv_length (b))
-    return FALSE;
-
-  for (i = 0; a[i]; i++)
-    if (g_strcmp0 (a[i], b[i]) != 0)
-      return FALSE;
-
-  return TRUE;
-}
-
 static void
 do_cmdline_test (gconstpointer d)
 {
@@ -99,7 +84,7 @@ do_cmdline_test (gconstpointer d)
     {
       g_assert (res);
       g_assert_cmpint (argc, ==, test->argc);
-      g_assert (strv_equal (argv, (gchar **)test->argv));
+      g_assert (g_strv_equal ((const gchar * const *) argv, (const gchar * const *) test->argv));
       g_assert_no_error (err);
     }
   else
@@ -201,28 +186,28 @@ do_unquote_test (gconstpointer d)
 int
 main (int   argc, char *argv[])
 {
-  gint i;
+  gsize i;
   gchar *path;
 
   g_test_init (&argc, &argv, NULL);
 
   for (i = 0; i < G_N_ELEMENTS (cmdline_tests); i++)
     {
-      path = g_strdup_printf ("/shell/cmdline/%d", i);
+      path = g_strdup_printf ("/shell/cmdline/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &cmdline_tests[i], do_cmdline_test);
       g_free (path);
     }
 
   for (i = 0; i < G_N_ELEMENTS (quote_tests); i++)
     {
-      path = g_strdup_printf ("/shell/quote/%d", i);
+      path = g_strdup_printf ("/shell/quote/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &quote_tests[i], do_quote_test);
       g_free (path);
     }
 
   for (i = 0; i < G_N_ELEMENTS (unquote_tests); i++)
     {
-      path = g_strdup_printf ("/shell/unquote/%d", i);
+      path = g_strdup_printf ("/shell/unquote/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &unquote_tests[i], do_unquote_test);
       g_free (path);
     }

@@ -85,9 +85,16 @@ g_type_plugin_get_type (void)
   if (!type_plugin_type)
     {
       const GTypeInfo type_plugin_info = {
-	sizeof (GTypePluginClass),
-	NULL,           /* base_init */
-	NULL,           /* base_finalize */
+        sizeof (GTypePluginClass),
+        NULL,           /* base_init */
+        NULL,           /* base_finalize */
+        0,              /* class_init */
+        NULL,           /* class_destroy */
+        NULL,           /* class_data */
+        0,              /* instance_size */
+        0,              /* n_preallocs */
+        NULL,           /* instance_init */
+        NULL,           /* value_table */
       };
       
       type_plugin_type = g_type_register_static (G_TYPE_INTERFACE, g_intern_static_string ("GTypePlugin"), &type_plugin_info, 0);
@@ -167,7 +174,7 @@ g_type_plugin_complete_type_info (GTypePlugin     *plugin,
 /**
  * g_type_plugin_complete_interface_info:
  * @plugin: the #GTypePlugin
- * @instance_type: the #GType of an instantiable type to which the interface
+ * @instance_type: the #GType of an instantiatable type to which the interface
  *  is added
  * @interface_type: the #GType of the interface whose info is completed
  * @info: the #GInterfaceInfo to fill in

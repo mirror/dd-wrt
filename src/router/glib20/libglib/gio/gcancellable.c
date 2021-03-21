@@ -43,7 +43,9 @@ enum {
 
 struct _GCancellablePrivate
 {
-  guint cancelled : 1;
+  /* Atomic so that g_cancellable_is_cancelled does not require holding the mutex. */
+  gboolean cancelled;
+  /* Access to fields below is protected by cancellable_mutex. */
   guint cancelled_running : 1;
   guint cancelled_running_waiting : 1;
 
@@ -139,7 +141,7 @@ g_cancellable_class_init (GCancellableClass *klass)
 		  G_SIGNAL_RUN_LAST,
 		  G_STRUCT_OFFSET (GCancellableClass, cancelled),
 		  NULL, NULL,
-		  g_cclosure_marshal_VOID__VOID,
+		  NULL,
 		  G_TYPE_NONE, 0);
   
 }
@@ -269,12 +271,12 @@ g_cancellable_reset (GCancellable *cancellable)
       g_cond_wait (&cancellable_cond, &cancellable_mutex);
     }
 
-  if (priv->cancelled)
+  if (g_atomic_int_get (&priv->cancelled))
     {
       if (priv->wakeup)
         GLIB_PRIVATE_CALL (g_wakeup_acknowledge) (priv->wakeup);
 
-      priv->cancelled = FALSE;
+      g_atomic_int_set (&priv->cancelled, FALSE);
     }
 
   g_mutex_unlock (&cancellable_mutex);
@@ -292,7 +294,7 @@ g_cancellable_reset (GCancellable *cancellable)
 gboolean
 g_cancellable_is_cancelled (GCancellable *cancellable)
 {
-  return cancellable != NULL && cancellable->priv->cancelled;
+  return cancellable != NULL && g_atomic_int_get (&cancellable->priv->cancelled);
 }
 
 /**
@@ -339,13 +341,16 @@ g_cancellable_set_error_if_cancelled (GCancellable  *cancellable,
  *
  * See also g_cancellable_make_pollfd().
  *
- * Returns: A valid file descriptor. %-1 if the file descriptor 
+ * Returns: A valid file descriptor. `-1` if the file descriptor
  * is not supported, or on errors. 
  **/
 int
 g_cancellable_get_fd (GCancellable *cancellable)
 {
   GPollFD pollfd;
+#ifndef G_OS_WIN32
+  gboolean retval G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
+#endif
 
   if (cancellable == NULL)
 	  return -1;
@@ -353,7 +358,8 @@ g_cancellable_get_fd (GCancellable *cancellable)
 #ifdef G_OS_WIN32
   pollfd.fd = -1;
 #else
-  g_cancellable_make_pollfd (cancellable, &pollfd);
+  retval = g_cancellable_make_pollfd (cancellable, &pollfd);
+  g_assert (retval);
 #endif
 
   return pollfd.fd;
@@ -404,7 +410,7 @@ g_cancellable_make_pollfd (GCancellable *cancellable, GPollFD *pollfd)
     {
       cancellable->priv->wakeup = GLIB_PRIVATE_CALL (g_wakeup_new) ();
 
-      if (cancellable->priv->cancelled)
+      if (g_atomic_int_get (&cancellable->priv->cancelled))
         GLIB_PRIVATE_CALL (g_wakeup_signal) (cancellable->priv->wakeup);
     }
 
@@ -440,11 +446,11 @@ g_cancellable_release_fd (GCancellable *cancellable)
     return;
 
   g_return_if_fail (G_IS_CANCELLABLE (cancellable));
-  g_return_if_fail (cancellable->priv->fd_refcount > 0);
 
   priv = cancellable->priv;
 
   g_mutex_lock (&cancellable_mutex);
+  g_assert (priv->fd_refcount > 0);
 
   priv->fd_refcount--;
   if (priv->fd_refcount == 0)
@@ -482,21 +488,20 @@ g_cancellable_cancel (GCancellable *cancellable)
 {
   GCancellablePrivate *priv;
 
-  if (cancellable == NULL ||
-      cancellable->priv->cancelled)
+  if (cancellable == NULL || g_cancellable_is_cancelled (cancellable))
     return;
 
   priv = cancellable->priv;
 
   g_mutex_lock (&cancellable_mutex);
 
-  if (priv->cancelled)
+  if (g_atomic_int_get (&priv->cancelled))
     {
       g_mutex_unlock (&cancellable_mutex);
       return;
     }
 
-  priv->cancelled = TRUE;
+  g_atomic_int_set (&priv->cancelled, TRUE);
   priv->cancelled_running = TRUE;
 
   if (priv->wakeup)
@@ -562,7 +567,7 @@ g_cancellable_connect (GCancellable   *cancellable,
 
   g_mutex_lock (&cancellable_mutex);
 
-  if (cancellable->priv->cancelled)
+  if (g_atomic_int_get (&cancellable->priv->cancelled))
     {
       void (*_callback) (GCancellable *cancellable,
                          gpointer      user_data);
@@ -641,28 +646,47 @@ typedef struct {
   GSource       source;
 
   GCancellable *cancellable;
-  guint         cancelled_handler;
+  gulong        cancelled_handler;
+  /* Protected by cancellable_mutex: */
+  gboolean      resurrected_during_cancellation;
 } GCancellableSource;
 
 /*
- * We can't guarantee that the source still has references, so we are
- * relying on the fact that g_source_set_ready_time() no longer makes
- * assertions about the reference count - the source might be in the
- * window between last-unref and finalize, during which its refcount
- * is officially 0. However, we *can* guarantee that it's OK to
- * dereference it in a limited way, because we know we haven't yet reached
- * cancellable_source_finalize() - if we had, then we would have waited
- * for signal emission to finish, then disconnected the signal handler
- * under the lock.
- * See https://bugzilla.gnome.org/show_bug.cgi?id=791754
+ * The reference count of the GSource might be 0 at this point but it is not
+ * finalized yet and its dispose function did not run yet, or otherwise we
+ * would have disconnected the signal handler already and due to the signal
+ * emission lock it would be impossible to call the signal handler at that
+ * point. That is: at this point we either have a fully valid GSource, or
+ * it's not disposed or finalized yet and we can still resurrect it as needed.
+ *
+ * As such we first ensure that we have a strong reference to the GSource in
+ * here before calling any other GSource API.
  */
 static void
 cancellable_source_cancelled (GCancellable *cancellable,
 			      gpointer      user_data)
 {
   GSource *source = user_data;
+  GCancellableSource *cancellable_source = (GCancellableSource *) source;
 
+  g_mutex_lock (&cancellable_mutex);
+
+  /* Drop the reference added in cancellable_source_dispose(); see the comment there.
+   * The reference must be dropped after unlocking @cancellable_mutex since
+   * it could be the final reference, and the dispose function takes
+   * @cancellable_mutex. */
+  if (cancellable_source->resurrected_during_cancellation)
+    {
+      cancellable_source->resurrected_during_cancellation = FALSE;
+      g_mutex_unlock (&cancellable_mutex);
+      g_source_unref (source);
+      return;
+    }
+
+  g_source_ref (source);
+  g_mutex_unlock (&cancellable_mutex);
   g_source_set_ready_time (source, 0);
+  g_source_unref (source);
 }
 
 static gboolean
@@ -678,16 +702,41 @@ cancellable_source_dispatch (GSource     *source,
 }
 
 static void
-cancellable_source_finalize (GSource *source)
+cancellable_source_dispose (GSource *source)
 {
   GCancellableSource *cancellable_source = (GCancellableSource *)source;
 
+  g_mutex_lock (&cancellable_mutex);
+
   if (cancellable_source->cancellable)
     {
-      g_cancellable_disconnect (cancellable_source->cancellable,
-                                cancellable_source->cancelled_handler);
-      g_object_unref (cancellable_source->cancellable);
+      if (cancellable_source->cancellable->priv->cancelled_running)
+        {
+          /* There can be a race here: if thread A has called
+           * g_cancellable_cancel() and has got as far as committing to call
+           * cancellable_source_cancelled(), then thread B drops the final
+           * ref on the GCancellableSource before g_source_ref() is called in
+           * cancellable_source_cancelled(), then cancellable_source_dispose()
+           * will run through and the GCancellableSource will be finalised
+           * before cancellable_source_cancelled() gets to g_source_ref(). It
+           * will then be left in a state where it’s committed to using a
+           * dangling GCancellableSource pointer.
+           *
+           * Eliminate that race by resurrecting the #GSource temporarily, and
+           * then dropping that reference in cancellable_source_cancelled(),
+           * which should be guaranteed to fire because we’re inside a
+           * @cancelled_running block.
+           */
+          g_source_ref (source);
+          cancellable_source->resurrected_during_cancellation = TRUE;
+        }
+
+      g_clear_signal_handler (&cancellable_source->cancelled_handler,
+                              cancellable_source->cancellable);
+      g_clear_object (&cancellable_source->cancellable);
     }
+
+  g_mutex_unlock (&cancellable_mutex);
 }
 
 static gboolean
@@ -719,12 +768,13 @@ static GSourceFuncs cancellable_source_funcs =
   NULL,
   NULL,
   cancellable_source_dispatch,
-  cancellable_source_finalize,
+  NULL,
   (GSourceFunc)cancellable_source_closure_callback,
+  NULL,
 };
 
 /**
- * g_cancellable_source_new: (skip)
+ * g_cancellable_source_new:
  * @cancellable: (nullable): a #GCancellable, or %NULL
  *
  * Creates a source that triggers if @cancellable is cancelled and
@@ -749,6 +799,7 @@ g_cancellable_source_new (GCancellable *cancellable)
 
   source = g_source_new (&cancellable_source_funcs, sizeof (GCancellableSource));
   g_source_set_name (source, "GCancellable");
+  g_source_set_dispose_function (source, cancellable_source_dispose);
   cancellable_source = (GCancellableSource *)source;
 
   if (cancellable)

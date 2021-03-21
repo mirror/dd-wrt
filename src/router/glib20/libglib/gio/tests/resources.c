@@ -18,8 +18,16 @@
 
 #include <string.h>
 #include <gio/gio.h>
+#include <glibconfig.h>
 #include "gconstructor.h"
 #include "test_resources2.h"
+#include "digit_test_resources.h"
+
+#ifdef _MSC_VER
+# define MODULE_FILENAME_PREFIX ""
+#else
+# define MODULE_FILENAME_PREFIX "lib"
+#endif
 
 static void
 test_resource (GResource *resource)
@@ -61,6 +69,15 @@ test_resource (GResource *resource)
   g_assert_cmpuint (flags, ==, G_RESOURCE_FLAGS_COMPRESSED);
 
   found = g_resource_get_info (resource,
+                               "/empty.txt",
+                               G_RESOURCE_LOOKUP_FLAGS_NONE,
+                               &size, &flags, &error);
+  g_assert_true (found);
+  g_assert_no_error (error);
+  g_assert_cmpint (size, ==, 0);
+  g_assert_cmpuint (flags, ==, G_RESOURCE_FLAGS_COMPRESSED);
+
+  found = g_resource_get_info (resource,
 			       "/a_prefix/test2.txt",
 			       G_RESOURCE_LOOKUP_FLAGS_NONE,
 			       &size, &flags, &error);
@@ -97,6 +114,14 @@ test_resource (GResource *resource)
   g_assert_no_error (error);
   g_bytes_unref (data);
 
+  data = g_resource_lookup_data (resource,
+                                 "/empty.txt",
+                                 G_RESOURCE_LOOKUP_FLAGS_NONE,
+                                 &error);
+  g_assert_cmpuint (g_bytes_get_size (data), ==, 0);
+  g_assert_no_error (error);
+  g_bytes_unref (data);
+
   for (i = 0; i < G_N_ELEMENTS (not_found_paths); i++)
     {
       in = g_resource_open_stream (resource,
@@ -123,6 +148,24 @@ test_resource (GResource *resource)
   g_assert_cmpint (size, ==, 6);
   buffer[size] = 0;
   g_assert_cmpstr (buffer, ==, "test1\n");
+
+  g_input_stream_close (in, NULL, &error);
+  g_assert_no_error (error);
+  g_clear_object (&in);
+
+  in = g_resource_open_stream (resource,
+                               "/empty.txt",
+                               G_RESOURCE_LOOKUP_FLAGS_NONE,
+                               &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (in);
+
+  success = g_input_stream_read_all (in, buffer, sizeof (buffer) - 1,
+                                     &size,
+                                     NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (success);
+  g_assert_cmpint (size, ==, 0);
 
   g_input_stream_close (in, NULL, &error);
   g_assert_no_error (error);
@@ -317,6 +360,45 @@ test_resource_data_unaligned (void)
   g_resource_unref (resource);
 }
 
+/* Test error handling for corrupt GResource files (specifically, a corrupt
+ * GVDB header). */
+static void
+test_resource_data_corrupt (void)
+{
+  /* A GVDB header is 6 guint32s, and requires a magic number in the first two
+   * guint32s. A set of zero bytes of a greater length is considered corrupt. */
+  static const guint8 data[sizeof (guint32) * 7] = { 0, };
+  GBytes *bytes = NULL;
+  GResource *resource = NULL;
+  GError *local_error = NULL;
+
+  bytes = g_bytes_new_static (data, sizeof (data));
+  resource = g_resource_new_from_data (bytes, &local_error);
+  g_bytes_unref (bytes);
+  g_assert_error (local_error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_INTERNAL);
+  g_assert_null (resource);
+
+  g_clear_error (&local_error);
+}
+
+/* Test handling for empty GResource files. They should also be treated as
+ * corrupt. */
+static void
+test_resource_data_empty (void)
+{
+  GBytes *bytes = NULL;
+  GResource *resource = NULL;
+  GError *local_error = NULL;
+
+  bytes = g_bytes_new_static (NULL, 0);
+  resource = g_resource_new_from_data (bytes, &local_error);
+  g_bytes_unref (bytes);
+  g_assert_error (local_error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_INTERNAL);
+  g_assert_null (resource);
+
+  g_clear_error (&local_error);
+}
+
 static void
 test_resource_registered (void)
 {
@@ -349,6 +431,14 @@ test_resource_registered (void)
   g_assert (found);
   g_assert_no_error (error);
   g_assert_cmpint (size, ==, 6);
+  g_assert (flags == (G_RESOURCE_FLAGS_COMPRESSED));
+
+  found = g_resources_get_info ("/empty.txt",
+                                G_RESOURCE_LOOKUP_FLAGS_NONE,
+                                &size, &flags, &error);
+  g_assert_no_error (error);
+  g_assert_true (found);
+  g_assert_cmpint (size, ==, 0);
   g_assert (flags == (G_RESOURCE_FLAGS_COMPRESSED));
 
   found = g_resources_get_info ("/a_prefix/test2.txt",
@@ -388,6 +478,30 @@ test_resource_registered (void)
   g_assert_cmpint (size, ==, 6);
   buffer[size] = 0;
   g_assert_cmpstr (buffer, ==, "test1\n");
+
+  g_input_stream_close (in, NULL, &error);
+  g_assert_no_error (error);
+  g_clear_object (&in);
+
+  data = g_resources_lookup_data ("/empty.txt",
+                                  G_RESOURCE_LOOKUP_FLAGS_NONE,
+                                  &error);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_bytes_get_size (data), ==, 0);
+  g_bytes_unref (data);
+
+  in = g_resources_open_stream ("/empty.txt",
+                                G_RESOURCE_LOOKUP_FLAGS_NONE,
+                                &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (in);
+
+  success = g_input_stream_read_all (in, buffer, sizeof (buffer) - 1,
+                                     &size,
+                                     NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (success);
+  g_assert_cmpint (size, ==, 0);
 
   g_input_stream_close (in, NULL, &error);
   g_assert_no_error (error);
@@ -519,6 +633,75 @@ test_resource_manual2 (void)
   g_resource_unref (resource);
 }
 
+/* Test building resources with external data option,
+ * where data is linked in as binary instead of compiled in.
+ * Checks if resources are automatically registered and
+ * data can be found and read. */
+static void
+test_resource_binary_linked (void)
+{
+  #ifndef __linux__
+  g_test_skip ("--external-data test only works on Linux");
+  return;
+  #else /* if __linux__ */
+  GError *error = NULL;
+  gboolean found;
+  gsize size;
+  guint32 flags;
+  GBytes *data;
+
+  found = g_resources_get_info ("/binary_linked/test1.txt",
+				G_RESOURCE_LOOKUP_FLAGS_NONE,
+				&size, &flags, &error);
+  g_assert_true (found);
+  g_assert_no_error (error);
+  g_assert_cmpint (size, ==, 6);
+  g_assert_cmpuint (flags, ==, 0);
+
+  data = g_resources_lookup_data ("/binary_linked/test1.txt",
+				  G_RESOURCE_LOOKUP_FLAGS_NONE,
+				  &error);
+  g_assert_nonnull (data);
+  g_assert_no_error (error);
+  size = g_bytes_get_size (data);
+  g_assert_cmpint (size, ==, 6);
+  g_assert_cmpstr (g_bytes_get_data (data, NULL), ==, "test1\n");
+  g_bytes_unref (data);
+  #endif /* if __linux__ */
+}
+
+/* Test resource whose xml file starts with more than one digit
+ * and where no explicit c-name is given
+ * Checks if resources are successfully registered and
+ * data can be found and read. */
+static void
+test_resource_digits (void)
+{
+  GError *error = NULL;
+  gboolean found;
+  gsize size;
+  guint32 flags;
+  GBytes *data;
+
+  found = g_resources_get_info ("/digit_test/test1.txt",
+				G_RESOURCE_LOOKUP_FLAGS_NONE,
+				&size, &flags, &error);
+  g_assert_true (found);
+  g_assert_no_error (error);
+  g_assert_cmpint (size, ==, 6);
+  g_assert_cmpuint (flags, ==, 0);
+
+  data = g_resources_lookup_data ("/digit_test/test1.txt",
+				  G_RESOURCE_LOOKUP_FLAGS_NONE,
+				  &error);
+  g_assert_nonnull (data);
+  g_assert_no_error (error);
+  size = g_bytes_get_size (data);
+  g_assert_cmpint (size, ==, 6);
+  g_assert_cmpstr (g_bytes_get_data (data, NULL), ==, "test1\n");
+  g_bytes_unref (data);
+}
+
 static void
 test_resource_module (void)
 {
@@ -529,10 +712,18 @@ test_resource_module (void)
   GBytes *data;
   GError *error;
 
+#ifdef GLIB_STATIC_COMPILATION
+  /* The resource module is statically linked with a separate copy
+   * of a GLib so g_static_resource_init won't work as expected. */
+  g_test_skip ("Resource modules aren't supported in static builds.");
+  return;
+#endif
+
   if (g_module_supported ())
     {
-      /* For in-tree, this will find the .la file and use it to get to the .so in .libs/ */
-      module = g_io_module_new (g_test_get_filename (G_TEST_BUILT, "libresourceplugin",  NULL));
+      module = g_io_module_new (g_test_get_filename (G_TEST_BUILT,
+                                                     MODULE_FILENAME_PREFIX "resourceplugin",
+                                                     NULL));
 
       error = NULL;
 
@@ -603,7 +794,6 @@ test_uri_query_info (void)
   g_resources_register (resource);
 
   file = g_file_new_for_uri ("resource://" "/a_prefix/test2-alias.txt");
-
   info = g_file_query_info (file, "*", 0, NULL, &error);
   g_assert_no_error (error);
 
@@ -773,6 +963,81 @@ test_uri_file (void)
   g_resource_unref (resource);
 }
 
+static void
+test_resource_64k (void)
+{
+  GError *error = NULL;
+  gboolean found;
+  gsize size;
+  guint32 flags;
+  GBytes *data;
+  gchar **tokens;
+
+  found = g_resources_get_info ("/big_prefix/gresource-big-test.txt",
+				G_RESOURCE_LOOKUP_FLAGS_NONE,
+				&size, &flags, &error);
+  g_assert_true (found);
+  g_assert_no_error (error);
+
+  /* Check size: 100 of all lower case letters + newline char +
+   *             100 all upper case letters + newline char +
+   *             100 of all numbers between 0 to 9 + newline char
+   *             (for 12 iterations)
+   */
+
+  g_assert_cmpint (size, ==, (26 + 26 + 10) * (100 + 1) * 12);
+  g_assert_cmpuint (flags, ==, 0);
+  data = g_resources_lookup_data ("/big_prefix/gresource-big-test.txt",
+				  G_RESOURCE_LOOKUP_FLAGS_NONE,
+				  &error);
+  g_assert_nonnull (data);
+  g_assert_no_error (error);
+  size = g_bytes_get_size (data);
+
+  g_assert_cmpint (size, ==, (26 + 26 + 10) * (100 + 1) * 12);
+  tokens = g_strsplit ((const gchar *) g_bytes_get_data (data, NULL), "\n", -1);
+
+  /* check tokens[x] == entry at gresource-big-test.txt's line, where x = line - 1 */
+  g_assert_cmpstr (tokens[0], ==, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+  g_assert_cmpstr (tokens[27], ==, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
+  g_assert_cmpstr (tokens[183], ==, "7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777");
+  g_assert_cmpstr (tokens[600], ==, "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ");
+  g_assert_cmpstr (tokens[742], ==, "8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888");
+  g_strfreev (tokens);
+  g_bytes_unref (data);
+}
+
+/* Check that g_resources_get_info() respects G_RESOURCE_OVERLAYS */
+static void
+test_overlay (void)
+{
+  if (g_test_subprocess ())
+    {
+       GError *error = NULL;
+       gboolean res;
+       gsize size;
+       char *overlay;
+       char *path;
+
+       path = g_test_build_filename (G_TEST_DIST, "test1.overlay", NULL);
+       overlay = g_strconcat ("/auto_loaded/test1.txt=", path, NULL);
+
+       g_setenv ("G_RESOURCE_OVERLAYS", overlay, TRUE);
+       res = g_resources_get_info ("/auto_loaded/test1.txt", 0, &size, NULL, &error);
+       g_assert_true (res);
+       g_assert_no_error (error);
+       /* test1.txt is 6 bytes, test1.overlay is 23 */
+       g_assert_cmpint (size, ==, 23);
+
+       g_free (overlay);
+       g_free (path);
+
+       return;
+    }
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_INHERIT_STDERR);
+  g_test_trap_assert_passed ();
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -780,11 +1045,14 @@ main (int   argc,
   g_test_init (&argc, &argv, NULL);
 
   _g_test2_register_resource ();
+  _digit_test_register_resource ();
 
   g_test_add_func ("/resource/file", test_resource_file);
   g_test_add_func ("/resource/file-path", test_resource_file_path);
   g_test_add_func ("/resource/data", test_resource_data);
   g_test_add_func ("/resource/data_unaligned", test_resource_data_unaligned);
+  g_test_add_func ("/resource/data-corrupt", test_resource_data_corrupt);
+  g_test_add_func ("/resource/data-empty", test_resource_data_empty);
   g_test_add_func ("/resource/registered", test_resource_registered);
   g_test_add_func ("/resource/manual", test_resource_manual);
   g_test_add_func ("/resource/manual2", test_resource_manual2);
@@ -792,9 +1060,13 @@ main (int   argc,
   g_test_add_func ("/resource/automatic", test_resource_automatic);
   /* This only uses automatic resources too, so it tests the constructors and destructors */
   g_test_add_func ("/resource/module", test_resource_module);
+  g_test_add_func ("/resource/binary-linked", test_resource_binary_linked);
 #endif
   g_test_add_func ("/resource/uri/query-info", test_uri_query_info);
   g_test_add_func ("/resource/uri/file", test_uri_file);
+  g_test_add_func ("/resource/64k", test_resource_64k);
+  g_test_add_func ("/resource/overlay", test_overlay);
+  g_test_add_func ("/resource/digits", test_resource_digits);
 
   return g_test_run();
 }

@@ -232,8 +232,12 @@ thumbnail_verify (const char     *thumbnail_path,
     return FALSE;
 
   expected_info.uri = file_uri;
-  expected_info.mtime = (guint64) file_stat_buf->st_mtime;
-  expected_info.size = file_stat_buf->st_size;
+#ifdef G_OS_WIN32
+  expected_info.mtime = (guint64) file_stat_buf->st_mtim.tv_sec;
+#else
+  expected_info.mtime = _g_stat_mtime (file_stat_buf);
+#endif
+  expected_info.size = _g_stat_size (file_stat_buf);
 
   file = g_mapped_file_new (thumbnail_path, FALSE, NULL);
   if (file)

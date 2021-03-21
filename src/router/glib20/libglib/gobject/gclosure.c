@@ -98,7 +98,7 @@
 
 typedef union {
   GClosure closure;
-  volatile gint vint;
+  gint vint;
 } ClosureInt;
 
 #define CHANGE_FIELD(_closure, _field, _OP, _value, _must_set, _SET_OLD, _SET_NEW)      \
@@ -556,7 +556,7 @@ g_closure_ref (GClosure *closure)
 
 /**
  * g_closure_invalidate:
- * @closure: GClosure to invalidate
+ * @closure: #GClosure to invalidate
  *
  * Sets a flag on the closure to indicate that its calling
  * environment has become invalid, and thus causes any future
@@ -659,7 +659,7 @@ g_closure_unref (GClosure *closure)
  * g_source_set_closure (source, g_cclosure_new (cb_func, cb_data));
  * ]|
  *
- * Generally, this function is used together with g_closure_ref(). Ane example
+ * Generally, this function is used together with g_closure_ref(). An example
  * of storing a closure for later notification looks like:
  * |[<!-- language="C" --> 
  * static GClosure *notify_closure = NULL;
@@ -690,7 +690,7 @@ g_closure_sink (GClosure *closure)
   /* floating is basically a kludge to avoid creating closures
    * with a ref_count of 0. so the initial ref_count a closure has
    * is unowned. with invoking g_closure_sink() code may
-   * indicate that it takes over that intiial ref_count.
+   * indicate that it takes over that initial ref_count.
    */
   if (closure->floating)
     {
@@ -936,6 +936,8 @@ _g_closure_set_va_marshal (GClosure       *closure,
  * Creates a new closure which invokes @callback_func with @user_data as
  * the last parameter.
  *
+ * @destroy_data will be called as a finalize notifier on the #GClosure.
+ *
  * Returns: (transfer none): a floating reference to a new #GCClosure
  */
 GClosure*
@@ -963,6 +965,8 @@ g_cclosure_new (GCallback      callback_func,
  *
  * Creates a new closure which invokes @callback_func with @user_data as
  * the first parameter.
+ *
+ * @destroy_data will be called as a finalize notifier on the #GClosure.
  *
  * Returns: (transfer none): a floating reference to a new #GCClosure
  */
@@ -1254,8 +1258,12 @@ static void
 value_from_ffi_type (GValue *gvalue, gpointer *value)
 {
   ffi_arg *int_val = (ffi_arg*) value;
+  GType type;
 
-  switch (g_type_fundamental (G_VALUE_TYPE (gvalue)))
+  type = G_VALUE_TYPE (gvalue);
+
+restart:
+  switch (g_type_fundamental (type))
     {
     case G_TYPE_INT:
       g_value_set_int (gvalue, (gint) *int_val);
@@ -1314,9 +1322,15 @@ value_from_ffi_type (GValue *gvalue, gpointer *value)
     case G_TYPE_VARIANT:
       g_value_take_variant (gvalue, *(gpointer*)value);
       break;
+    case G_TYPE_INTERFACE:
+      type = g_type_interface_instantiatable_prerequisite (type);
+      if (type)
+        goto restart;
+      G_GNUC_FALLTHROUGH;
     default:
-      g_warning ("value_from_ffi_type: Unsupported fundamental type: %s",
-                g_type_name (g_type_fundamental (G_VALUE_TYPE (gvalue))));
+      g_warning ("value_from_ffi_type: Unsupported fundamental type %s for type %s",
+                 g_type_name (g_type_fundamental (G_VALUE_TYPE (gvalue))),
+                 g_type_name (G_VALUE_TYPE (gvalue)));
     }
 }
 

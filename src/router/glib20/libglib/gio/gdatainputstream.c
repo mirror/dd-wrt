@@ -310,7 +310,7 @@ read_data (GDataInputStream  *stream,
   res = g_input_stream_read (G_INPUT_STREAM (stream),
 			     buffer, size,
 			     NULL, NULL);
-  g_warn_if_fail (res == size);
+  g_warn_if_fail (res >= 0 && (gsize) res == size);
   return TRUE;
 }
 
@@ -323,7 +323,7 @@ read_data (GDataInputStream  *stream,
  * 
  * Reads an unsigned 8-bit/1-byte value from @stream.
  *
- * Returns: an unsigned 8-bit/1-byte value read from the @stream or %0 
+ * Returns: an unsigned 8-bit/1-byte value read from the @stream or `0`
  * if an error occurred.
  **/
 guchar
@@ -353,7 +353,7 @@ g_data_input_stream_read_byte (GDataInputStream  *stream,
  * In order to get the correct byte order for this read operation, 
  * see g_data_input_stream_get_byte_order() and g_data_input_stream_set_byte_order().
  * 
- * Returns: a signed 16-bit/2-byte value read from @stream or %0 if 
+ * Returns: a signed 16-bit/2-byte value read from @stream or `0` if
  * an error occurred.
  **/
 gint16
@@ -397,7 +397,7 @@ g_data_input_stream_read_int16 (GDataInputStream  *stream,
  * In order to get the correct byte order for this read operation, 
  * see g_data_input_stream_get_byte_order() and g_data_input_stream_set_byte_order(). 
  * 
- * Returns: an unsigned 16-bit/2-byte value read from the @stream or %0 if 
+ * Returns: an unsigned 16-bit/2-byte value read from the @stream or `0` if
  * an error occurred. 
  **/
 guint16
@@ -445,7 +445,7 @@ g_data_input_stream_read_uint16 (GDataInputStream  *stream,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. 
  *   
- * Returns: a signed 32-bit/4-byte value read from the @stream or %0 if 
+ * Returns: a signed 32-bit/4-byte value read from the @stream or `0` if
  * an error occurred. 
  **/
 gint32
@@ -493,7 +493,7 @@ g_data_input_stream_read_int32 (GDataInputStream  *stream,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. 
  * 
- * Returns: an unsigned 32-bit/4-byte value read from the @stream or %0 if 
+ * Returns: an unsigned 32-bit/4-byte value read from the @stream or `0` if
  * an error occurred. 
  **/
 guint32
@@ -541,7 +541,7 @@ g_data_input_stream_read_uint32 (GDataInputStream  *stream,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. 
  * 
- * Returns: a signed 64-bit/8-byte value read from @stream or %0 if 
+ * Returns: a signed 64-bit/8-byte value read from @stream or `0` if
  * an error occurred.  
  **/
 gint64
@@ -589,7 +589,7 @@ g_data_input_stream_read_int64 (GDataInputStream  *stream,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. 
  * 
- * Returns: an unsigned 64-bit/8-byte read from @stream or %0 if 
+ * Returns: an unsigned 64-bit/8-byte read from @stream or `0` if
  * an error occurred. 
  **/
 guint64
@@ -631,7 +631,7 @@ scan_for_newline (GDataInputStream *stream,
   GDataInputStreamPrivate *priv;
   const char *buffer;
   gsize start, end, peeked;
-  int i;
+  gsize i;
   gssize found_pos;
   int newline_len;
   gsize available, checked;
@@ -856,12 +856,12 @@ static gssize
 scan_for_chars (GDataInputStream *stream,
 		gsize            *checked_out,
 		const char       *stop_chars,
-                gssize            stop_chars_len)
+                gsize             stop_chars_len)
 {
   GBufferedInputStream *bstream;
   const char *buffer;
   gsize start, end, peeked;
-  int i;
+  gsize i;
   gsize available, checked;
   const char *stop_char;
   const char *stop_end;
@@ -936,7 +936,7 @@ g_data_input_stream_read_until (GDataInputStream  *stream,
   /* If we're not at end of stream then we have a stop_char to consume. */
   if (result != NULL && g_buffered_input_stream_get_available (bstream) > 0)
     {
-      gsize res;
+      gsize res G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
       gchar b;
 
       res = g_input_stream_read (G_INPUT_STREAM (stream), &b, 1, NULL, NULL);
@@ -952,7 +952,7 @@ typedef struct
   gsize checked;
 
   gchar *stop_chars;
-  gssize stop_chars_len;
+  gsize stop_chars_len;
   gsize length;
 } GDataInputStreamReadData;
 
@@ -1078,12 +1078,17 @@ g_data_input_stream_read_async (GDataInputStream    *stream,
 {
   GDataInputStreamReadData *data;
   GTask *task;
+  gsize stop_chars_len_unsigned;
 
   data = g_slice_new0 (GDataInputStreamReadData);
-  if (stop_chars_len == -1)
-    stop_chars_len = strlen (stop_chars);
-  data->stop_chars = g_memdup (stop_chars, stop_chars_len);
-  data->stop_chars_len = stop_chars_len;
+
+  if (stop_chars_len < 0)
+    stop_chars_len_unsigned = strlen (stop_chars);
+  else
+    stop_chars_len_unsigned = (gsize) stop_chars_len;
+
+  data->stop_chars = g_memdup2 (stop_chars, stop_chars_len_unsigned);
+  data->stop_chars_len = stop_chars_len_unsigned;
   data->last_saw_cr = FALSE;
 
   task = g_task_new (stream, cancellable, callback, user_data);
@@ -1338,17 +1343,20 @@ g_data_input_stream_read_upto (GDataInputStream  *stream,
   gssize found_pos;
   gssize res;
   char *data_until;
+  gsize stop_chars_len_unsigned;
 
   g_return_val_if_fail (G_IS_DATA_INPUT_STREAM (stream), NULL);
 
   if (stop_chars_len < 0)
-    stop_chars_len = strlen (stop_chars);
+    stop_chars_len_unsigned = strlen (stop_chars);
+  else
+    stop_chars_len_unsigned = (gsize) stop_chars_len;
 
   bstream = G_BUFFERED_INPUT_STREAM (stream);
 
   checked = 0;
 
-  while ((found_pos = scan_for_chars (stream, &checked, stop_chars, stop_chars_len)) == -1)
+  while ((found_pos = scan_for_chars (stream, &checked, stop_chars, stop_chars_len_unsigned)) == -1)
     {
       if (g_buffered_input_stream_get_available (bstream) ==
           g_buffered_input_stream_get_buffer_size (bstream))

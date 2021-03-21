@@ -65,7 +65,7 @@ g_dbus_object_default_init (GDBusObjectIface *iface)
                 G_STRUCT_OFFSET (GDBusObjectIface, interface_added),
                 NULL,
                 NULL,
-                g_cclosure_marshal_VOID__OBJECT,
+                NULL,
                 G_TYPE_NONE,
                 1,
                 G_TYPE_DBUS_INTERFACE);
@@ -85,7 +85,7 @@ g_dbus_object_default_init (GDBusObjectIface *iface)
                 G_STRUCT_OFFSET (GDBusObjectIface, interface_removed),
                 NULL,
                 NULL,
-                g_cclosure_marshal_VOID__OBJECT,
+                NULL,
                 G_TYPE_NONE,
                 1,
                 G_TYPE_DBUS_INTERFACE);
@@ -137,7 +137,7 @@ g_dbus_object_get_interfaces (GDBusObject *object)
  * Gets the D-Bus interface with name @interface_name associated with
  * @object, if any.
  *
- * Returns: (transfer full): %NULL if not found, otherwise a
+ * Returns: (nullable) (transfer full): %NULL if not found, otherwise a
  *   #GDBusInterface that must be freed with g_object_unref().
  *
  * Since: 2.30

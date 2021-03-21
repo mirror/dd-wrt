@@ -398,8 +398,138 @@ my_traverse (gpointer key,
 }
 
 static void
+binary_tree_bound (GTree *tree,
+                   char   c,
+                   char   expected,
+                   int    lower)
+{
+  GTreeNode *node;
+
+  if (lower)
+    node = g_tree_lower_bound (tree, &c);
+  else
+    node = g_tree_upper_bound (tree, &c);
+
+  if (g_test_verbose ())
+    g_printerr ("%c %s: ", c, lower ? "lower" : "upper");
+
+  if (!node)
+    {
+      if (!g_tree_nnodes (tree))
+        {
+          if (g_test_verbose ())
+            g_printerr ("empty tree");
+        }
+      else
+        {
+          GTreeNode *last = g_tree_node_last (tree);
+
+          g_assert (last);
+          if (g_test_verbose ())
+            g_printerr ("past end last %c",
+                        *(char *) g_tree_node_key (last));
+        }
+      g_assert (expected == '\x00');
+    }
+  else
+    {
+      GTreeNode *begin = g_tree_node_first (tree);
+      GTreeNode *last = g_tree_node_last (tree);
+      GTreeNode *prev = g_tree_node_previous (node);
+      GTreeNode *next = g_tree_node_next (node);
+
+      g_assert (expected != '\x00');
+      g_assert (expected == *(char *) g_tree_node_key (node));
+
+      if (g_test_verbose ())
+        g_printerr ("%c", *(char *) g_tree_node_key (node));
+
+      if (node != begin)
+        {
+          g_assert (prev);
+          if (g_test_verbose ())
+            g_printerr (" prev %c", *(char *) g_tree_node_key (prev));
+        }
+      else
+        {
+          g_assert (!prev);
+          if (g_test_verbose ())
+            g_printerr (" no prev, it's the first one");
+        }
+
+      if (node != last)
+        {
+          g_assert (next);
+          if (g_test_verbose ())
+            g_printerr (" next %c", *(char *) g_tree_node_key (next));
+        }
+      else
+        {
+          g_assert (!next);
+          if (g_test_verbose ())
+            g_printerr (" no next, it's the last one");
+        }
+    }
+
+  if (g_test_verbose ())
+    g_printerr ("\n");
+}
+
+static void
+binary_tree_bounds (GTree *tree,
+                    char   c,
+                    int    mode)
+{
+  char expectedl, expectedu;
+  char first = mode == 0 ? '0' : mode == 1 ? 'A' : 'z';
+
+  g_assert (mode >= 0 && mode <= 3);
+
+  if (c < first)
+    expectedl = first;
+  else if (c > 'z')
+    expectedl = '\x00';
+  else
+    expectedl = c;
+
+  if (c < first)
+    expectedu = first;
+  else if (c >= 'z')
+    expectedu = '\x00';
+  else
+    expectedu = c == '9' ? 'A' : c == 'Z' ? 'a' : c + 1;
+
+  if (mode == 3)
+    {
+      expectedl = '\x00';
+      expectedu = '\x00';
+    }
+
+  binary_tree_bound (tree, c, expectedl, 1);
+  binary_tree_bound (tree, c, expectedu, 0);
+}
+
+static void
+binary_tree_bounds_test (GTree *tree,
+                         int    mode)
+{
+  binary_tree_bounds (tree, 'a', mode);
+  binary_tree_bounds (tree, 'A', mode);
+  binary_tree_bounds (tree, 'z', mode);
+  binary_tree_bounds (tree, 'Z', mode);
+  binary_tree_bounds (tree, 'Y', mode);
+  binary_tree_bounds (tree, '0', mode);
+  binary_tree_bounds (tree, '9', mode);
+  binary_tree_bounds (tree, '0' - 1, mode);
+  binary_tree_bounds (tree, 'z' + 1, mode);
+  binary_tree_bounds (tree, '0' - 2, mode);
+  binary_tree_bounds (tree, 'z' + 2, mode);
+}
+
+static void
 binary_tree_test (void)
 {
+  GQueue queue = G_QUEUE_INIT;
   GTree *tree;
   char chars[62];
   guint i, j;
@@ -409,41 +539,84 @@ binary_tree_test (void)
   for (j = 0; j < 10; j++, i++)
     {
       chars[i] = '0' + j;
-      g_tree_insert (tree, &chars[i], &chars[i]);
+      g_queue_push_tail (&queue, &chars[i]);
     }
   for (j = 0; j < 26; j++, i++)
     {
       chars[i] = 'A' + j;
-      g_tree_insert (tree, &chars[i], &chars[i]);
+      g_queue_push_tail (&queue, &chars[i]);
     }
   for (j = 0; j < 26; j++, i++)
     {
       chars[i] = 'a' + j;
-      g_tree_insert (tree, &chars[i], &chars[i]);
+      g_queue_push_tail (&queue, &chars[i]);
     }
 
-  g_assert_cmpint (g_tree_nnodes (tree), ==, 10 + 26 + 26);
-  g_assert_cmpint (g_tree_height (tree), ==, 6);
+  if (g_test_verbose ())
+    g_printerr ("tree insert: ");
+  while (!g_queue_is_empty (&queue))
+    {
+      gint32 which = g_random_int_range (0, g_queue_get_length (&queue));
+      gpointer elem = g_queue_pop_nth (&queue, which);
+      GTreeNode *node;
 
-  if (g_test_verbose())
+      if (g_test_verbose ())
+        g_printerr ("%c ", *(char *) elem);
+
+      node = g_tree_insert_node (tree, elem, elem);
+      g_assert (g_tree_node_key (node) == elem);
+      g_assert (g_tree_node_value (node) == elem);
+    }
+  if (g_test_verbose ())
+    g_printerr ("\n");
+
+  g_assert_cmpint (g_tree_nnodes (tree), ==, 10 + 26 + 26);
+  g_assert_cmpint (g_tree_height (tree), >=, 6);
+  g_assert_cmpint (g_tree_height (tree), <=, 8);
+
+  if (g_test_verbose ())
     {
       g_printerr ("tree: ");
       g_tree_foreach (tree, my_traverse, NULL);
       g_printerr ("\n");
     }
+
+  binary_tree_bounds_test (tree, 0);
 
   for (i = 0; i < 10; i++)
     g_tree_remove (tree, &chars[i]);
 
   g_assert_cmpint (g_tree_nnodes (tree), ==, 26 + 26);
-  g_assert_cmpint (g_tree_height (tree), ==, 6);
+  g_assert_cmpint (g_tree_height (tree), >=, 6);
+  g_assert_cmpint (g_tree_height (tree), <=, 8);
 
-  if (g_test_verbose())
+  if (g_test_verbose ())
     {
       g_printerr ("tree: ");
       g_tree_foreach (tree, my_traverse, NULL);
       g_printerr ("\n");
     }
+
+  binary_tree_bounds_test (tree, 1);
+
+  for (i = 10; i < 10 + 26 + 26 - 1; i++)
+    g_tree_remove (tree, &chars[i]);
+
+  if (g_test_verbose ())
+    {
+      g_printerr ("tree: ");
+      g_tree_foreach (tree, my_traverse, NULL);
+      g_printerr ("\n");
+    }
+
+  binary_tree_bounds_test (tree, 2);
+
+  g_tree_remove (tree, &chars[10 + 26 + 26 - 1]);
+
+  if (g_test_verbose ())
+    g_printerr ("empty tree\n");
+
+  binary_tree_bounds_test (tree, 3);
 
   g_tree_unref (tree);
 }
@@ -572,6 +745,26 @@ log_warning_error_tests (void)
                          "*g_print*assertion*failed*");
   g_print (NULL);
   g_test_assert_expected_messages ();
+}
+
+static void
+log_warning_rate_limited_tests (void)
+{
+#if defined(G_HAVE_ISO_VARARGS) || defined(G_HAVE_GNUC_VARARGS)
+  int i;
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                         "*harmless single warning 1*");
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                         "*harmless single warning 2*");
+  for (i = 0; i < 10; i++)
+    g_warning_once ("harmless single warning 1");
+  for (i = 0; i < 10; i++)
+    g_warning_once ("harmless single warning 2");
+  g_test_assert_expected_messages ();
+#else
+  g_test_skip ("Variadic macro support not available");
+#endif
 }
 
 static void
@@ -843,6 +1036,7 @@ test_paths (void)
     gchar *relative_path;
     gchar *canonical_path;
   } canonicalize_filename_checks[] = {
+#ifndef G_OS_WIN32
     { "/etc", "../usr/share", "/usr/share" },
     { "/", "/foo/bar", "/foo/bar" },
     { "/usr/bin", "../../foo/bar", "/foo/bar" },
@@ -857,7 +1051,22 @@ test_paths (void)
     { "///triple/slash", ".", "/triple/slash" },
     { "//double/slash", ".", "//double/slash" },
     { "/cwd/../with/./complexities/", "./hello", "/with/complexities/hello" },
-#ifdef G_OS_WIN32
+#else
+    { "/etc", "../usr/share", "\\usr\\share" },
+    { "/", "/foo/bar", "\\foo\\bar" },
+    { "/usr/bin", "../../foo/bar", "\\foo\\bar" },
+    { "/", "../../foo/bar", "\\foo\\bar" },
+    { "/double//dash", "../../foo/bar", "\\foo\\bar" },
+    { "/usr/share/foo", ".././././bar", "\\usr\\share\\bar" },
+    { "/foo/bar", "../bar/./.././bar", "\\foo\\bar" },
+    { "/test///dir", "../../././foo/bar", "\\foo\\bar" },
+    { "/test///dir", "../../././/foo///bar", "\\foo\\bar" },
+    { "/etc", "///triple/slash", "\\triple\\slash" },
+    { "/etc", "//double/slash", "//double/slash" },
+    { "///triple/slash", ".", "\\triple\\slash" },
+    { "//double/slash", ".", "//double/slash\\" },
+    { "/cwd/../with/./complexities/", "./hello", "\\with\\complexities\\hello" },
+
     { "\\etc", "..\\usr\\share", "\\usr\\share" },
     { "\\", "\\foo\\bar", "\\foo\\bar" },
     { "\\usr\\bin", "..\\..\\foo\\bar", "\\foo\\bar" },
@@ -870,8 +1079,8 @@ test_paths (void)
     { "\\etc", "\\\\\\triple\\slash", "\\triple\\slash" },
     { "\\etc", "\\\\double\\slash", "\\\\double\\slash" },
     { "\\\\\\triple\\slash", ".", "\\triple\\slash" },
-    { "\\\\double\\slash", ".", "\\\\double\\slash" },
-    { "\\cwd\\..\\with\\.\\complexities\\", ".\\hello", "\\cwd\\with\\complexities\\hello" },
+    { "\\\\double\\slash", ".", "\\\\double\\slash\\" },
+    { "\\cwd\\..\\with\\.\\complexities\\", ".\\hello", "\\with\\complexities\\hello" },
 #endif
   };
   const guint n_canonicalize_filename_checks = G_N_ELEMENTS (canonicalize_filename_checks);
@@ -1153,10 +1362,11 @@ hash_table_tests (void)
   g_hash_table_destroy (hash_table);
 }
 
-#ifndef G_DISABLE_DEPRECATED
 static void
 relation_test (void)
 {
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
   GRelation *relation = g_relation_new (2);
   GTuples *tuples;
   gint data [1024];
@@ -1225,8 +1435,9 @@ relation_test (void)
   g_relation_destroy (relation);
 
   relation = NULL;
+
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
-#endif
 
 static void
 gstring_tests (void)
@@ -1621,10 +1832,11 @@ various_string_tests (void)
   /* g_debug (argv[0]); */
 }
 
-#ifndef G_DISABLE_DEPRECATED
 static void
 test_mem_chunks (void)
 {
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
   GMemChunk *mem_chunk = g_mem_chunk_new ("test mem chunk", 50, 100, G_ALLOC_AND_FREE);
   gchar *mem[10000];
   guint i;
@@ -1639,8 +1851,9 @@ test_mem_chunks (void)
     g_mem_chunk_free (mem_chunk, mem[i]);
 
   g_mem_chunk_destroy (mem_chunk);
+
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
-#endif
 
 int
 main (int   argc,
@@ -1658,16 +1871,13 @@ main (int   argc,
   g_test_add_func ("/testglib/GTree", binary_tree_test);
   g_test_add_func ("/testglib/Arrays", test_arrays);
   g_test_add_func ("/testglib/GHashTable", hash_table_tests);
-#ifndef G_DISABLE_DEPRECATED
   g_test_add_func ("/testglib/Relation (deprecated)", relation_test);
-#endif
   g_test_add_func ("/testglib/File Paths", test_paths);
   g_test_add_func ("/testglib/File Functions", test_file_functions);
   g_test_add_func ("/testglib/Parse Debug Strings", test_g_parse_debug_string);
-#ifndef G_DISABLE_DEPRECATED
   g_test_add_func ("/testglib/GMemChunk (deprecated)", test_mem_chunks);
-#endif
   g_test_add_func ("/testglib/Warnings & Errors", log_warning_error_tests);
+  g_test_add_func ("/testglib/Warnings (rate limited)", log_warning_rate_limited_tests);
   g_test_add_func ("/testglib/Timers (slow)", timer_tests);
 
   return g_test_run();

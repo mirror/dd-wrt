@@ -75,6 +75,7 @@ gio/gio-tool.c
 gio/gio-tool-cat.c
 gio/gio-tool-copy.c
 gio/gio-tool-info.c
+gio/gio-tool-launch.c
 gio/gio-tool-list.c
 gio/gio-tool-mime.c
 gio/gio-tool-mkdir.c
@@ -88,6 +89,7 @@ gio/gio-tool-save.c
 gio/gio-tool-set.c
 gio/gio-tool-trash.c
 gio/gio-tool-tree.c
+gio/gkeyfilesettingsbackend.c
 gio/glib-compile-resources.c
 gio/glib-compile-schemas.c
 gio/glistmodel.c
@@ -100,6 +102,7 @@ gio/glocalfilemonitor.c
 gio/glocalfileoutputstream.c
 gio/glocalvfs.c
 gio/gmemoryinputstream.c
+gio/gmemorymonitor.c
 gio/gmemoryoutputstream.c
 gio/gmenumodel.c
 gio/gmount.c
@@ -194,6 +197,7 @@ glib/gshell.c
 glib/gspawn.c
 glib/gspawn-win32.c
 glib/gstrfuncs.c
+glib/guri.c
 glib/gutf8.c
 glib/gutils.c
 glib/guuid.c

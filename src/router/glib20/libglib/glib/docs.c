@@ -64,6 +64,15 @@
  * A standard boolean type.
  * Variables of this type should only contain the value
  * %TRUE or %FALSE.
+ *
+ * Never directly compare the contents of a #gboolean variable with the values
+ * %TRUE or %FALSE. Use `if (condition)` to check a #gboolean is "true", instead
+ * of `if (condition == TRUE)`. Likewise use `if (!condition)` to check a
+ * #gboolean is "false".
+ *
+ * There is no validation when assigning to a #gboolean variable and so it could
+ * contain any value represented by a #gint. This is why the use of `if
+ * (condition)` is recommended. All non-zero values in C evaluate to "true".
  */
 
 /**
@@ -200,14 +209,6 @@
  */
 
 /**
- * G_MININT8:
- *
- * The minimum value which can be held in a #gint8.
- *
- * Since: 2.4
- */
-
-/**
  * G_MAXINT8:
  *
  * The maximum value which can be held in a #gint8.
@@ -239,14 +240,6 @@
  *
  * To print or scan values of this type, use
  * %G_GINT16_MODIFIER and/or %G_GINT16_FORMAT.
- */
-
-/**
- * G_MININT16:
- *
- * The minimum value which can be held in a #gint16.
- *
- * Since: 2.4
  */
 
 /**
@@ -329,14 +322,6 @@
  */
 
 /**
- * G_MININT32:
- *
- * The minimum value which can be held in a #gint32.
- *
- * Since: 2.4
- */
-
-/**
  * G_MAXINT32:
  *
  * The maximum value which can be held in a #gint32.
@@ -396,12 +381,6 @@
  *
  * To print or scan values of this type, use
  * %G_GINT64_MODIFIER and/or %G_GINT64_FORMAT.
- */
-
-/**
- * G_MININT64:
- *
- * The minimum value which can be held in a #gint64.
  */
 
 /**
@@ -1841,22 +1820,6 @@
  */
 
 /**
- * G_CONST_RETURN:
- *
- * If %G_DISABLE_CONST_RETURNS is defined, this macro expands
- * to nothing. By default, the macro expands to const. The macro
- * can be used in place of const for functions that return a value
- * that should not be modified. The purpose of this macro is to allow
- * us to turn on const for returned constant strings by default, while
- * allowing programmers who find that annoying to turn it off. This macro
- * should only be used for return values and for "out" parameters, it
- * doesn't make sense for "in" parameters.
- *
- * Deprecated: 2.30: API providers should replace all existing uses with
- * const and API consumers should adjust their code accordingly
- */
-
-/**
  * G_N_ELEMENTS:
  * @arr: the array
  *
@@ -1865,7 +1828,7 @@
  * macro will not work on an array allocated on the heap, only static
  * arrays or arrays on the stack.
  */
- 
+
 /* Miscellaneous Macros {{{1 */
 
 /**
@@ -1875,20 +1838,6 @@
  *
  * These macros provide more specialized features which are not
  * needed so often by application programmers.
- */
-
-/**
- * G_INLINE_FUNC:
- *
- * This macro used to be used to conditionally define inline functions
- * in a compatible way before this feature was supported in all
- * compilers.  These days, GLib requires inlining support from the
- * compiler, so your GLib-using programs can safely assume that the
- * "inline" keywork works properly.
- *
- * Never use this macro anymore.  Just say "static inline".
- *
- * Deprecated: 2.48: Use "static inline" instead
  */
 
 /**
@@ -2030,7 +1979,7 @@
  * @major: major version to check against
  * @minor: minor version to check against
  *
- * Expands to a a check for a compiler with __GNUC__ defined and a version
+ * Expands to a check for a compiler with __GNUC__ defined and a version
  * greater than or equal to the major and minor numbers provided. For example,
  * the following would only match on compilers such as GCC 4.8 or newer.
  *
@@ -2040,143 +1989,6 @@
  * ]|
  *
  * Since: 2.42
- */
-
-/**
- * G_GNUC_CONST:
- *
- * Expands to the GNU C const function attribute if the compiler is gcc.
- * Declaring a function as const enables better optimization of calls to
- * the function. A const function doesn't examine any values except its
- * parameters, and has no effects except its return value.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * A function that has pointer arguments and examines the data pointed to
- * must not be declared const. Likewise, a function that calls a non-const
- * function usually must not be const. It doesn't make sense for a const
- * function to return void.
- */
-
-/**
- * G_GNUC_PURE:
- *
- * Expands to the GNU C pure function attribute if the compiler is gcc.
- * Declaring a function as pure enables better optimization of calls to
- * the function. A pure function has no effects except its return value
- * and the return value depends only on the parameters and/or global
- * variables.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- */
-
-/**
- * G_GNUC_NO_INLINE:
- *
- * Expands to the GNU C `noinline` function attribute if the compiler is gcc.
- * If the compiler is not gcc, this macro expands to nothing.
- *
- * Declaring a function as `noinline` prevents the function from being
- * considered for inlining.
- *
- * The attribute may be placed before the declaration, right before the
- * `static` keyword.
- *
- * See the
- * [GNU C documentation](https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-noinline-function-attribute)
- * for more details.
- *
- * Since: 2.58
- */
-
-/**
- * G_GNUC_MALLOC:
- *
- * Expands to the GNU C malloc function attribute if the compiler is gcc.
- * Declaring a function as malloc enables better optimization of the function.
- * A function can have the malloc attribute if it returns a pointer which is
- * guaranteed to not alias with any other pointer when the function returns
- * (in practice, this means newly allocated memory).
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.6
- */
-
-/**
- * G_GNUC_ALLOC_SIZE:
- * @x: the index of the argument specifying the allocation size
- *
- * Expands to the GNU C alloc_size function attribute if the compiler
- * is a new enough gcc. This attribute tells the compiler that the
- * function returns a pointer to memory of a size that is specified
- * by the @xth function parameter.
- *
- * Place the attribute after the function declaration, just before the
- * semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.18
- */
-
-/**
- * G_GNUC_ALLOC_SIZE2:
- * @x: the index of the argument specifying one factor of the allocation size
- * @y: the index of the argument specifying the second factor of the allocation size
- *
- * Expands to the GNU C alloc_size function attribute if the compiler is a
- * new enough gcc. This attribute tells the compiler that the function returns
- * a pointer to memory of a size that is specified by the product of two
- * function parameters.
- *
- * Place the attribute after the function declaration, just before the
- * semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.18
- */
-
-/**
- * G_GNUC_DEPRECATED:
- *
- * Expands to the GNU C deprecated attribute if the compiler is gcc.
- * It can be used to mark typedefs, variables and functions as deprecated.
- * When called with the `-Wdeprecated-declarations` option,
- * gcc will generate warnings when deprecated interfaces are used.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.2
- */
-
-/**
- * G_GNUC_DEPRECATED_FOR:
- * @f: the intended replacement for the deprecated symbol,
- *     such as the name of a function
- *
- * Like %G_GNUC_DEPRECATED, but names the intended replacement for the
- * deprecated symbol if the version of gcc in use is new enough to support
- * custom deprecation messages.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Note that if @f is a macro, it will be expanded in the warning message.
- * You can enclose it in quotes to prevent this. (The quotes will show up
- * in the warning, but it's better than showing the macro expansion.)
- *
- * Since: 2.26
  */
 
 /**
@@ -2193,7 +2005,54 @@
  * has any effect.)
  *
  * This macro can be used either inside or outside of a function body,
- * but must appear on a line by itself.
+ * but must appear on a line by itself. Both this macro and the corresponding
+ * %G_GNUC_END_IGNORE_DEPRECATIONS are considered statements, so they
+ * should not be used around branching or loop conditions; for instance,
+ * this use is invalid:
+ *
+ * |[<!-- language="C" -->
+ *   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+ *   if (check == some_deprecated_function ())
+ *   G_GNUC_END_IGNORE_DEPRECATIONS
+ *     {
+ *       do_something ();
+ *     }
+ * ]|
+ *
+ * and you should move the deprecated section outside the condition
+ *
+ * |[<!-- language="C" -->
+ *
+ *   // Solution A
+ *   some_data_t *res;
+ *
+ *   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+ *   res = some_deprecated_function ();
+ *   G_GNUC_END_IGNORE_DEPRECATIONS
+ *
+ *   if (check == res)
+ *     {
+ *       do_something ();
+ *     }
+ *
+ *   // Solution B
+ *   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+ *   if (check == some_deprecated_function ())
+ *     {
+ *       do_something ();
+ *     }
+ *   G_GNUC_END_IGNORE_DEPRECATIONS
+ * ]|
+ *
+ * |[<!-- language="C" --
+ * static void
+ * test_deprecated_function (void)
+ * {
+ *   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+ *   g_assert_cmpint (my_mistake (), ==, 42);
+ *   G_GNUC_END_IGNORE_DEPRECATIONS
+ * }
+ * ]|
  *
  * Since: 2.32
  */
@@ -2219,6 +2078,11 @@
  * meant to be portable across different compilers and must be placed
  * before the function declaration.
  *
+ * |[<!-- language="C" --
+ * G_DEPRECATED
+ * int my_mistake (void);
+ * ]|
+ *
  * Since: 2.32
  */
 
@@ -2230,6 +2094,11 @@
  * functions declarations as deprecated. Unlike %G_GNUC_DEPRECATED_FOR, it
  * is meant to be portable across different compilers and must be placed
  * before the function declaration.
+ *
+ * |[<!-- language="C" --
+ * G_DEPRECATED_FOR(my_replacement)
+ * int my_mistake (void);
+ * ]|
  *
  * Since: 2.32
  */
@@ -2252,163 +2121,6 @@
  * A macro that should be defined before including the glib.h header.
  * If it is defined, no compiler warnings will be produced for uses
  * of deprecated GLib APIs.
- */
-
-/**
- * G_GNUC_NORETURN:
- *
- * Expands to the GNU C noreturn function attribute if the compiler is gcc.
- * It is used for declaring functions which never return. It enables
- * optimization of the function, and avoids possible compiler warnings.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- */
-
-/**
- * G_GNUC_UNUSED:
- *
- * Expands to the GNU C unused function attribute if the compiler is gcc.
- * It is used for declaring functions and arguments which may never be used.
- * It avoids possible compiler warnings.
- *
- * For functions, place the attribute after the declaration, just before the
- * semicolon. For arguments, place the attribute at the beginning of the
- * argument declaration.
- *
- * |[<!-- language="C" -->
- * void my_unused_function (G_GNUC_UNUSED gint unused_argument,
- *                          gint other_argument) G_GNUC_UNUSED;
- * ]|
- *
- * See the GNU C documentation for more details.
- */
-
-/**
- * G_GNUC_PRINTF:
- * @format_idx: the index of the argument corresponding to the
- *     format string (the arguments are numbered from 1)
- * @arg_idx: the index of the first of the format arguments, or 0 if
- *     there are no format arguments
- *
- * Expands to the GNU C format function attribute if the compiler is gcc.
- * This is used for declaring functions which take a variable number of
- * arguments, with the same syntax as printf(). It allows the compiler
- * to type-check the arguments passed to the function.
- *
- * Place the attribute after the function declaration, just before the
- * semicolon.
- *
- * See the
- * [GNU C documentation](https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-Wformat-3288)
- * for more details.
- *
- * |[<!-- language="C" -->
- * gint g_snprintf (gchar  *string,
- *                  gulong       n,
- *                  gchar const *format,
- *                  ...) G_GNUC_PRINTF (3, 4);
- * ]|
- */
-
-/**
- * G_GNUC_SCANF:
- * @format_idx: the index of the argument corresponding to
- *     the format string (the arguments are numbered from 1)
- * @arg_idx: the index of the first of the format arguments, or 0 if
- *     there are no format arguments
- *
- * Expands to the GNU C format function attribute if the compiler is gcc.
- * This is used for declaring functions which take a variable number of
- * arguments, with the same syntax as scanf(). It allows the compiler
- * to type-check the arguments passed to the function.
- *
- * See the
- * [GNU C documentation](https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-Wformat-3288)
- * for details.
- */
-
-/**
- * G_GNUC_FORMAT:
- * @arg_idx: the index of the argument
- *
- * Expands to the GNU C format_arg function attribute if the compiler
- * is gcc. This function attribute specifies that a function takes a
- * format string for a printf(), scanf(), strftime() or strfmon() style
- * function and modifies it, so that the result can be passed to a printf(),
- * scanf(), strftime() or strfmon() style function (with the remaining
- * arguments to the format function the same as they would have been
- * for the unmodified string).
- *
- * Place the attribute after the function declaration, just before the
- * semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * |[<!-- language="C" -->
- * gchar *g_dgettext (gchar *domain_name, gchar *msgid) G_GNUC_FORMAT (2);
- * ]|
- */
-
-/**
- * G_GNUC_NULL_TERMINATED:
- *
- * Expands to the GNU C sentinel function attribute if the compiler is gcc.
- * This function attribute only applies to variadic functions and instructs
- * the compiler to check that the argument list is terminated with an
- * explicit %NULL.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.8
- */
-
-/**
- * G_GNUC_WARN_UNUSED_RESULT:
- *
- * Expands to the GNU C warn_unused_result function attribute if the compiler
- * is gcc. This function attribute makes the compiler emit a warning if the
- * result of a function call is ignored.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.10
- */
-
-/**
- * G_GNUC_FUNCTION:
- *
- * Expands to "" on all modern compilers, and to  __FUNCTION__ on gcc
- * version 2.x. Don't use it.
- *
- * Deprecated: 2.16: Use G_STRFUNC() instead
- */
-
-/**
- * G_GNUC_PRETTY_FUNCTION:
- *
- * Expands to "" on all modern compilers, and to __PRETTY_FUNCTION__
- * on gcc version 2.x. Don't use it.
- *
- * Deprecated: 2.16: Use G_STRFUNC() instead
- */
-
-/**
- * G_GNUC_NO_INSTRUMENT:
- *
- * Expands to the GNU C no_instrument_function function attribute if the
- * compiler is gcc. Functions with this attribute will not be instrumented
- * for profiling, when the compiler is called with the
- * `-finstrument-functions` option.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
  */
 
 /**
@@ -2437,18 +2149,6 @@
  * ]|
  *
  * Since: 2.6
- */
-
-/**
- * G_GNUC_MAY_ALIAS:
- *
- * Expands to the GNU C may_alias type attribute if the compiler is gcc.
- * Types with this attribute will not be subjected to type-based alias
- * analysis, but are assumed to alias with any other type, just like char.
- *
- * See the GNU C documentation for details.
- *
- * Since: 2.14
  */
 
 /**
@@ -2515,6 +2215,8 @@
  *
  * The variable is cleaned up in a way appropriate to its type when the
  * variable goes out of scope.  The type must support this.
+ * The way to clean up the type must have been defined using one of the macros
+ * G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC() or G_DEFINE_AUTO_CLEANUP_FREE_FUNC().
  *
  * This feature is only supported on GCC and clang.  This macro is not
  * defined on other compilers and should not be used in programs that
@@ -2527,7 +2229,7 @@
  * This macro can be used to avoid having to do explicit cleanups of
  * local variables when exiting functions.  It often vastly simplifies
  * handling of error conditions, removing the need for various tricks
- * such as 'goto out' or repeating of cleanup code.  It is also helpful
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
  * for non-error cases.
  *
  * Consider the following example:
@@ -2554,8 +2256,8 @@
  * }
  * ]|
  *
- * You must initialize the variable in some way -- either by use of an
- * initialiser or by ensuring that an _init function will be called on
+ * You must initialize the variable in some way — either by use of an
+ * initialiser or by ensuring that an `_init` function will be called on
  * it unconditionally before it goes out of scope.
  *
  * Since: 2.44
@@ -2569,6 +2271,8 @@
  *
  * The variable is cleaned up in a way appropriate to its type when the
  * variable goes out of scope.  The type must support this.
+ * The way to clean up the type must have been defined using the macro
+ * G_DEFINE_AUTOPTR_CLEANUP_FUNC().
  *
  * This feature is only supported on GCC and clang.  This macro is not
  * defined on other compilers and should not be used in programs that
@@ -2576,12 +2280,12 @@
  *
  * This is meant to be used to declare pointers to types with cleanup
  * functions.  The type of the variable is a pointer to @TypeName.  You
- * must not add your own '*'.
+ * must not add your own `*`.
  *
  * This macro can be used to avoid having to do explicit cleanups of
  * local variables when exiting functions.  It often vastly simplifies
  * handling of error conditions, removing the need for various tricks
- * such as 'goto out' or repeating of cleanup code.  It is also helpful
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
  * for non-error cases.
  *
  * Consider the following example:
@@ -2611,7 +2315,7 @@
  * }
  * ]|
  *
- * You must initialise the variable in some way -- either by use of an
+ * You must initialise the variable in some way — either by use of an
  * initialiser or by ensuring that it is assigned to unconditionally
  * before it goes out of scope.
  *
@@ -2633,7 +2337,7 @@
  * This means it's useful for any type that is returned from
  * g_malloc().
  *
- * Otherwise, this macro has similar constraints as g_autoptr() - only
+ * Otherwise, this macro has similar constraints as g_autoptr(): only
  * supported on GCC and clang, the variable must be initialized, etc.
  *
  * |[
@@ -2668,13 +2372,13 @@
  * are intended to be portable to those compilers.
  *
  * This is meant to be used to declare lists of a type with a cleanup
- * function.  The type of the variable is a GList *.  You
- * must not add your own '*'.
+ * function.  The type of the variable is a `GList *`.  You
+ * must not add your own `*`.
  *
  * This macro can be used to avoid having to do explicit cleanups of
  * local variables when exiting functions.  It often vastly simplifies
  * handling of error conditions, removing the need for various tricks
- * such as 'goto out' or repeating of cleanup code.  It is also helpful
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
  * for non-error cases.
  *
  * See also g_autoslist(), g_autoptr() and g_steal_pointer().
@@ -2696,19 +2400,48 @@
  * are intended to be portable to those compilers.
  *
  * This is meant to be used to declare lists of a type with a cleanup
- * function.  The type of the variable is a GSList *.  You
- * must not add your own '*'.
+ * function.  The type of the variable is a `GSList *`.  You
+ * must not add your own `*`.
  *
  * This macro can be used to avoid having to do explicit cleanups of
  * local variables when exiting functions.  It often vastly simplifies
  * handling of error conditions, removing the need for various tricks
- * such as 'goto out' or repeating of cleanup code.  It is also helpful
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
  * for non-error cases.
  *
  * See also g_autolist(), g_autoptr() and g_steal_pointer().
  *
  * Since: 2.56
  */
+
+/**
+ * g_autoqueue:
+ * @TypeName: a supported variable type
+ *
+ * Helper to declare a double-ended queue variable with automatic deep cleanup.
+ *
+ * The queue is deeply freed, in a way appropriate to the specified type, when the
+ * variable goes out of scope.  The type must support this.
+ *
+ * This feature is only supported on GCC and clang.  This macro is not
+ * defined on other compilers and should not be used in programs that
+ * are intended to be portable to those compilers.
+ *
+ * This is meant to be used to declare queues of a type with a cleanup
+ * function.  The type of the variable is a `GQueue *`.  You
+ * must not add your own `*`.
+ *
+ * This macro can be used to avoid having to do explicit cleanups of
+ * local variables when exiting functions.  It often vastly simplifies
+ * handling of error conditions, removing the need for various tricks
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
+ * for non-error cases.
+ *
+ * See also g_autolist(), g_autoptr() and g_steal_pointer().
+ *
+ * Since: 2.62
+ */
+
 
 /**
  * G_DEFINE_AUTOPTR_CLEANUP_FUNC:
@@ -2720,7 +2453,7 @@
  * The function will not be called if the variable to be cleaned up
  * contains %NULL.
  *
- * This will typically be the _free() or _unref() function for the given
+ * This will typically be the `_free()` or `_unref()` function for the given
  * type.
  *
  * With this definition, it will be possible to use g_autoptr() with
@@ -2743,7 +2476,7 @@
  *
  * Defines the appropriate cleanup function for a type.
  *
- * This will typically be the _clear() function for the given type.
+ * This will typically be the `_clear()` function for the given type.
  *
  * With this definition, it will be possible to use g_auto() with
  * @TypeName.
@@ -2775,7 +2508,7 @@
  * and file descriptors.
  *
  * @none specifies the "none" value for the type in question.  It is
- * probably something like %NULL or -1.  If the variable is found to
+ * probably something like %NULL or `-1`.  If the variable is found to
  * contain this value then the free function will not be called.
  *
  * |[
@@ -2786,6 +2519,54 @@
  * where cleanup is not supported.
  *
  * Since: 2.44
+ */
+
+/* Warnings and Assertions {{{1 */
+
+/**
+ * SECTION:warnings
+ * @title: Warnings and Assertions
+ * @short_description: warnings and assertions to use in runtime code
+ *
+ * GLib defines several warning functions and assertions which can be used to
+ * warn of programmer errors when calling functions, and print error messages
+ * from command line programs.
+ *
+ * The g_return_if_fail(), g_return_val_if_fail(), g_return_if_reached() and
+ * g_return_val_if_reached() macros are intended as pre-condition assertions, to
+ * be used at the top of a public function to check that the function’s
+ * arguments are acceptable. Any failure of such a pre-condition assertion is
+ * considered a programming error on the part of the caller of the public API,
+ * and the program is considered to be in an undefined state afterwards. They
+ * are similar to the libc assert() function, but provide more context on
+ * failures.
+ *
+ * For example:
+ * |[<!-- language="C" -->
+ * gboolean
+ * g_dtls_connection_shutdown (GDtlsConnection  *conn,
+ *                             gboolean          shutdown_read,
+ *                             gboolean          shutdown_write,
+ *                             GCancellable     *cancellable,
+ *                             GError          **error)
+ * {
+ *   // local variable declarations
+ *
+ *   g_return_val_if_fail (G_IS_DTLS_CONNECTION (conn), FALSE);
+ *   g_return_val_if_fail (cancellable == NULL || G_IS_CANCELLABLE (cancellable), FALSE);
+ *   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+ *
+ *   // function body
+ *
+ *   return return_val;
+ * }
+ * ]|
+ *
+ * g_print(), g_printerr() and g_set_print_handler() are intended to be used for
+ * output from command line applications, since they output to standard output
+ * and standard error by default — whereas functions like g_message() and
+ * g_log() may be redirected to special purpose message windows, files, or the
+ * system journal.
  */
 
 /* Windows Compatibility Functions {{{1 */

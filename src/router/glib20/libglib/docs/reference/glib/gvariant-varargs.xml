@@ -532,8 +532,8 @@ value4 = g_variant_new ("x", G_GINT64_CONSTANT (998877665544332211));
     <link linkend='gchar'>gchar</link> *)</code> and makes a copy of it.
     <link linkend='NULL:CAPS'><literal>NULL</literal></link> is not a valid string; use
     <link linkend='gvariant-format-strings-maybe-types'>maybe types</link> to encode that.  If the '<literal>o</literal>' or
-    '<literal>g</literal>' characters are used, care must be taken to ensure that the passed string is a valid DBus
-    object path or DBus type signature, respectively.
+    '<literal>g</literal>' characters are used, care must be taken to ensure that the passed string is a valid D-Bus
+    object path or D-Bus type signature, respectively.
    </para>
    <para>
     Upon encounting '<literal>s</literal>', '<literal>o</literal>' or '<literal>g</literal>', <link
@@ -690,7 +690,7 @@ g_variant_unref (value);]]></programlisting></informalexample>
     <link linkend='g-variant-get'><function>g_variant_get()</function></link> returns (by reference) a
     non-<link linkend='NULL:CAPS'><literal>NULL</literal></link> pointer.  When any of these format strings are
     prefixed with an '<literal>m</literal>', the type of arguments that are collected does not change in any way, but
-    <link linkend='NULL:CAPS'><literal>NULL</literal></link> becomes a permissable value, to indicate the Nothing case.
+    <link linkend='NULL:CAPS'><literal>NULL</literal></link> becomes a permissible value, to indicate the Nothing case.
    </para>
    <para>
     Note that the "special exception" introduced in the array section for constructing empty arrays is ignored

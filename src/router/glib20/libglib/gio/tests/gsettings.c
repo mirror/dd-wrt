@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <locale.h>
 #include <libintl.h>
+#include <unistd.h>
+#include <sys/types.h>
 #include <gio/gio.h>
 #include <gstdio.h>
 #define G_SETTINGS_ENABLE_BACKEND
@@ -15,6 +17,31 @@ static gboolean backend_set;
 /* These tests rely on the schemas in org.gtk.test.gschema.xml
  * to be compiled and installed in the same directory.
  */
+
+typedef struct
+{
+  gchar *tmp_dir;
+} Fixture;
+
+static void
+setup (Fixture       *fixture,
+       gconstpointer  user_data)
+{
+  GError *error = NULL;
+
+  fixture->tmp_dir = g_dir_make_tmp ("gio-test-gsettings_XXXXXX", &error);
+  g_assert_no_error (error);
+
+  g_test_message ("Using temporary directory: %s", fixture->tmp_dir);
+}
+
+static void
+teardown (Fixture       *fixture,
+          gconstpointer  user_data)
+{
+  g_assert_no_errno (g_rmdir (fixture->tmp_dir));
+  g_clear_pointer (&fixture->tmp_dir, g_free);
+}
 
 static void
 check_and_free (GVariant    *value,
@@ -53,10 +80,10 @@ test_basic (void)
                 "delay-apply", &delay_apply,
                 NULL);
   g_assert_cmpstr (str, ==, "org.gtk.test");
-  g_assert (b != NULL);
+  g_assert_nonnull (b);
   g_assert_cmpstr (path, ==, "/tests/");
-  g_assert (!has_unapplied);
-  g_assert (!delay_apply);
+  g_assert_false (has_unapplied);
+  g_assert_false (delay_apply);
   g_free (str);
   g_object_unref (b);
   g_free (path);
@@ -114,7 +141,7 @@ test_unknown_key (void)
       settings = g_settings_new ("org.gtk.test");
       value = g_settings_get_value (settings, "no_such_key");
 
-      g_assert (value == NULL);
+      g_assert_null (value);
 
       g_object_unref (settings);
       return;
@@ -139,7 +166,7 @@ test_no_schema (void)
 
       settings = g_settings_new ("no.such.schema");
 
-      g_assert (settings == NULL);
+      g_assert_null (settings);
       return;
     }
   g_test_trap_subprocess (NULL, 0, 0);
@@ -168,7 +195,7 @@ test_wrong_type (void)
   g_settings_get (settings, "greeting", "o", &str);
   g_test_assert_expected_messages ();
 
-  g_assert (str == NULL);
+  g_assert_null (str);
 
   g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
                          "*expects type 's'*");
@@ -358,28 +385,28 @@ test_complex_types (void)
 
   g_settings_get (settings, "test-array", "ai", &iter);
   g_assert_cmpint (g_variant_iter_n_children (iter), ==, 6);
-  g_assert (g_variant_iter_next (iter, "i", &i1));
+  g_assert_true (g_variant_iter_next (iter, "i", &i1));
   g_assert_cmpint (i1, ==, 0);
-  g_assert (g_variant_iter_next (iter, "i", &i1));
+  g_assert_true (g_variant_iter_next (iter, "i", &i1));
   g_assert_cmpint (i1, ==, 1);
-  g_assert (g_variant_iter_next (iter, "i", &i1));
+  g_assert_true (g_variant_iter_next (iter, "i", &i1));
   g_assert_cmpint (i1, ==, 2);
-  g_assert (g_variant_iter_next (iter, "i", &i1));
+  g_assert_true (g_variant_iter_next (iter, "i", &i1));
   g_assert_cmpint (i1, ==, 3);
-  g_assert (g_variant_iter_next (iter, "i", &i1));
+  g_assert_true (g_variant_iter_next (iter, "i", &i1));
   g_assert_cmpint (i1, ==, 4);
-  g_assert (g_variant_iter_next (iter, "i", &i1));
+  g_assert_true (g_variant_iter_next (iter, "i", &i1));
   g_assert_cmpint (i1, ==, 5);
-  g_assert (!g_variant_iter_next (iter, "i", &i1));
+  g_assert_false (g_variant_iter_next (iter, "i", &i1));
   g_variant_iter_free (iter);
 
   g_settings_get (settings, "test-dict", "a{sau}", &iter);
   g_assert_cmpint (g_variant_iter_n_children (iter), ==, 2);
-  g_assert (g_variant_iter_next (iter, "{&s@au}", &s, &v));
+  g_assert_true (g_variant_iter_next (iter, "{&s@au}", &s, &v));
   g_assert_cmpstr (s, ==, "AC");
   g_assert_cmpstr ((char *)g_variant_get_type (v), ==, "au");
   g_variant_unref (v);
-  g_assert (g_variant_iter_next (iter, "{&s@au}", &s, &v));
+  g_assert_true (g_variant_iter_next (iter, "{&s@au}", &s, &v));
   g_assert_cmpstr (s, ==, "IV");
   g_assert_cmpstr ((char *)g_variant_get_type (v), ==, "au");
   g_variant_unref (v);
@@ -420,14 +447,14 @@ test_changes (void)
   changed_cb_called = FALSE;
 
   g_settings_set (settings, "greeting", "s", "new greeting");
-  g_assert (changed_cb_called);
+  g_assert_true (changed_cb_called);
 
   settings2 = g_settings_new ("org.gtk.test");
 
   changed_cb_called = FALSE;
 
   g_settings_set (settings2, "greeting", "s", "hi");
-  g_assert (changed_cb_called);
+  g_assert_true (changed_cb_called);
 
   g_object_unref (settings2);
   g_object_unref (settings);
@@ -479,11 +506,29 @@ test_delay_apply (void)
 
   g_settings_set (settings, "greeting", "s", "greetings from test_delay_apply");
 
-  g_assert (changed_cb_called);
-  g_assert (!changed_cb_called2);
+  g_assert_true (changed_cb_called);
+  g_assert_false (changed_cb_called2);
+
+  /* Try resetting the key and ensure a notification is emitted on the delayed #GSettings object. */
+  changed_cb_called = FALSE;
+  changed_cb_called2 = FALSE;
+
+  g_settings_reset (settings, "greeting");
+
+  g_assert_true (changed_cb_called);
+  g_assert_false (changed_cb_called2);
+
+  /* Locally change the greeting again. */
+  changed_cb_called = FALSE;
+  changed_cb_called2 = FALSE;
+
+  g_settings_set (settings, "greeting", "s", "greetings from test_delay_apply");
+
+  g_assert_true (changed_cb_called);
+  g_assert_false (changed_cb_called2);
 
   writable = g_settings_is_writable (settings, "greeting");
-  g_assert (writable);
+  g_assert_true (writable);
 
   g_settings_get (settings, "greeting", "s", &str);
   g_assert_cmpstr (str, ==, "greetings from test_delay_apply");
@@ -500,16 +545,16 @@ test_delay_apply (void)
   g_free (str);
   str = NULL;
 
-  g_assert (g_settings_get_has_unapplied (settings));
-  g_assert (!g_settings_get_has_unapplied (settings2));
+  g_assert_true (g_settings_get_has_unapplied (settings));
+  g_assert_false (g_settings_get_has_unapplied (settings2));
 
   changed_cb_called = FALSE;
   changed_cb_called2 = FALSE;
 
   g_settings_apply (settings);
 
-  g_assert (!changed_cb_called);
-  g_assert (changed_cb_called2);
+  g_assert_false (changed_cb_called);
+  g_assert_true (changed_cb_called2);
 
   g_settings_get (settings, "greeting", "s", &str);
   g_assert_cmpstr (str, ==, "greetings from test_delay_apply");
@@ -521,8 +566,8 @@ test_delay_apply (void)
   g_free (str);
   str = NULL;
 
-  g_assert (!g_settings_get_has_unapplied (settings));
-  g_assert (!g_settings_get_has_unapplied (settings2));
+  g_assert_false (g_settings_get_has_unapplied (settings));
+  g_assert_false (g_settings_get_has_unapplied (settings2));
 
   g_settings_reset (settings, "greeting");
   g_settings_apply (settings);
@@ -568,11 +613,11 @@ test_delay_revert (void)
   g_free (str);
   str = NULL;
 
-  g_assert (g_settings_get_has_unapplied (settings));
+  g_assert_true (g_settings_get_has_unapplied (settings));
 
   g_settings_revert (settings);
 
-  g_assert (!g_settings_get_has_unapplied (settings));
+  g_assert_false (g_settings_get_has_unapplied (settings));
 
   g_settings_get (settings, "greeting", "s", &str);
   g_assert_cmpstr (str, ==, "top o' the morning");
@@ -603,13 +648,13 @@ test_delay_child (void)
   settings = g_settings_new ("org.gtk.test");
   g_settings_delay (settings);
   g_object_get (settings, "delay-apply", &delay, NULL);
-  g_assert (delay);
+  g_assert_true (delay);
 
   child = g_settings_get_child (settings, "basic-types");
-  g_assert (child != NULL);
+  g_assert_nonnull (child);
 
   g_object_get (child, "delay-apply", &delay, NULL);
-  g_assert (!delay);
+  g_assert_false (delay);
 
   g_settings_get (child, "test-byte", "y", &byte);
   g_assert_cmpuint (byte, ==, 36);
@@ -634,10 +679,10 @@ keys_changed_cb (GSettings    *settings,
 
   g_assert_cmpint (n_keys, ==, 2);
 
-  g_assert ((keys[0] == g_quark_from_static_string ("greeting") &&
-             keys[1] == g_quark_from_static_string ("farewell")) ||
-            (keys[1] == g_quark_from_static_string ("greeting") &&
-             keys[0] == g_quark_from_static_string ("farewell")));
+  g_assert_true ((keys[0] == g_quark_from_static_string ("greeting") &&
+                  keys[1] == g_quark_from_static_string ("farewell")) ||
+                 (keys[1] == g_quark_from_static_string ("greeting") &&
+                  keys[0] == g_quark_from_static_string ("farewell")));
 
   g_settings_get (settings, "greeting", "s", &str);
   g_assert_cmpstr (str, ==, "greetings from test_atomic");
@@ -1015,7 +1060,7 @@ test_object_set_property (GObject      *object,
 static GType
 test_enum_get_type (void)
 {
-  static volatile gsize define_type_id = 0;
+  static gsize define_type_id = 0;
 
   if (g_once_init_enter (&define_type_id))
     {
@@ -1037,7 +1082,7 @@ test_enum_get_type (void)
 static GType
 test_flags_get_type (void)
 {
-  static volatile gsize define_type_id = 0;
+  static gsize define_type_id = 0;
 
   if (g_once_init_enter (&define_type_id))
     {
@@ -1297,7 +1342,7 @@ test_simple_binding (void)
   g_free (s);
   g_settings_set_strv (settings, "strv", NULL);
   g_object_get (obj, "strv", &strv, NULL);
-  g_assert (strv != NULL);
+  g_assert_nonnull (strv);
   g_assert_cmpint (g_strv_length (strv), ==, 0);
   g_strfreev (strv);
 
@@ -1401,14 +1446,14 @@ test_bind_writable (void)
   g_settings_bind_writable (settings, "int", obj, "bool", FALSE);
 
   g_object_get (obj, "bool", &b, NULL);
-  g_assert (b);
+  g_assert_true (b);
 
   g_settings_unbind (obj, "bool");
 
   g_settings_bind_writable (settings, "int", obj, "bool", TRUE);
 
   g_object_get (obj, "bool", &b, NULL);
-  g_assert (!b);
+  g_assert_false (b);
 
   g_object_unref (obj);
   g_object_unref (settings);
@@ -1695,11 +1740,20 @@ key_changed_cb (GSettings *settings, const gchar *key, gpointer data)
   (*b) = TRUE;
 }
 
+typedef struct
+{
+  const gchar *path;
+  const gchar *root_group;
+  const gchar *keyfile_group;
+  const gchar *root_path;
+} KeyfileTestData;
+
 /*
  * Test that using a keyfile works
  */
 static void
-test_keyfile (void)
+test_keyfile (Fixture       *fixture,
+              gconstpointer  user_data)
 {
   GSettingsBackend *kf_backend;
   GSettings *settings;
@@ -1710,11 +1764,11 @@ test_keyfile (void)
   gchar *data;
   gsize len;
   gboolean called = FALSE;
+  gchar *keyfile_path = NULL, *store_path = NULL;
 
-  g_remove ("keyfile/gsettings.store");
-  g_rmdir ("keyfile");
-
-  kf_backend = g_keyfile_settings_backend_new ("keyfile/gsettings.store", "/", "root");
+  keyfile_path = g_build_filename (fixture->tmp_dir, "keyfile", NULL);
+  store_path = g_build_filename (keyfile_path, "gsettings.store", NULL);
+  kf_backend = g_keyfile_settings_backend_new (store_path, "/", "root");
   settings = g_settings_new_with_backend ("org.gtk.test", kf_backend);
   g_object_unref (kf_backend);
 
@@ -1724,7 +1778,7 @@ test_keyfile (void)
   g_free (str);
 
   writable = g_settings_is_writable (settings, "greeting");
-  g_assert (writable);
+  g_assert_true (writable);
   g_settings_set (settings, "greeting", "s", "see if this works");
 
   str = g_settings_get_string (settings, "greeting");
@@ -1736,7 +1790,7 @@ test_keyfile (void)
   g_settings_apply (settings);
 
   keyfile = g_key_file_new ();
-  g_assert (g_key_file_load_from_file (keyfile, "keyfile/gsettings.store", 0, NULL));
+  g_assert_true (g_key_file_load_from_file (keyfile, store_path, 0, NULL));
 
   str = g_key_file_get_string (keyfile, "tests", "greeting", NULL);
   g_assert_cmpstr (str, ==, "'see if this works'");
@@ -1750,17 +1804,17 @@ test_keyfile (void)
   g_settings_reset (settings, "greeting");
   g_settings_apply (settings);
   keyfile = g_key_file_new ();
-  g_assert (g_key_file_load_from_file (keyfile, "keyfile/gsettings.store", 0, NULL));
+  g_assert_true (g_key_file_load_from_file (keyfile, store_path, 0, NULL));
 
   str = g_key_file_get_string (keyfile, "tests", "greeting", NULL);
-  g_assert (str == NULL);
+  g_assert_null (str);
 
   called = FALSE;
   g_signal_connect (settings, "changed::greeting", G_CALLBACK (key_changed_cb), &called);
 
   g_key_file_set_string (keyfile, "tests", "greeting", "'howdy'");
   data = g_key_file_to_data (keyfile, &len, NULL);
-  g_file_set_contents ("keyfile/gsettings.store", data, len, &error);
+  g_file_set_contents (store_path, data, len, &error);
   g_assert_no_error (error);
   while (!called)
     g_main_context_iteration (NULL, FALSE);
@@ -1770,24 +1824,201 @@ test_keyfile (void)
   g_assert_cmpstr (str, ==, "howdy");
   g_free (str);
 
-  g_settings_set (settings, "farewell", "s", "cheerio");
-  
+  /* Now check setting a string without quotes */
   called = FALSE;
-  g_signal_connect (settings, "writable-changed::greeting", G_CALLBACK (key_changed_cb), &called);
+  g_signal_connect (settings, "changed::greeting", G_CALLBACK (key_changed_cb), &called);
 
-  g_chmod ("keyfile", 0500);
+  g_key_file_set_string (keyfile, "tests", "greeting", "he\"l🤗uń");
+  g_free (data);
+  data = g_key_file_to_data (keyfile, &len, NULL);
+  g_file_set_contents (store_path, data, len, &error);
+  g_assert_no_error (error);
   while (!called)
     g_main_context_iteration (NULL, FALSE);
   g_signal_handlers_disconnect_by_func (settings, key_changed_cb, &called);
 
-  writable = g_settings_is_writable (settings, "greeting");
-  g_assert (!writable);
+  str = g_settings_get_string (settings, "greeting");
+  g_assert_cmpstr (str, ==, "he\"l🤗uń");
+  g_free (str);
+
+  g_settings_set (settings, "farewell", "s", "cheerio");
+
+  /* Check that empty keys/groups are not allowed. */
+  g_assert_false (g_settings_is_writable (settings, ""));
+  g_assert_false (g_settings_is_writable (settings, "/"));
+
+  /* When executing as root, changing the mode of the keyfile will have
+   * no effect on the writability of the settings.
+   */
+  if (geteuid () != 0)
+    {
+      called = FALSE;
+      g_signal_connect (settings, "writable-changed::greeting",
+                        G_CALLBACK (key_changed_cb), &called);
+
+      g_assert_no_errno (g_chmod (keyfile_path, 0500));
+      while (!called)
+        g_main_context_iteration (NULL, FALSE);
+      g_signal_handlers_disconnect_by_func (settings, key_changed_cb, &called);
+
+      writable = g_settings_is_writable (settings, "greeting");
+      g_assert_false (writable);
+    }
 
   g_key_file_free (keyfile);
   g_free (data);
 
   g_object_unref (settings);
-  g_chmod ("keyfile", 0777);
+
+  /* Clean up the temporary directory. */
+  g_assert_no_errno (g_chmod (keyfile_path, 0777));
+  g_assert_no_errno (g_remove (store_path));
+  g_assert_no_errno (g_rmdir (keyfile_path));
+  g_free (store_path);
+  g_free (keyfile_path);
+}
+
+/*
+ * Test that using a keyfile works with a schema with no path set.
+ */
+static void
+test_keyfile_no_path (Fixture       *fixture,
+                      gconstpointer  user_data)
+{
+  const KeyfileTestData *test_data = user_data;
+  GSettingsBackend *kf_backend;
+  GSettings *settings;
+  GKeyFile *keyfile;
+  gboolean writable;
+  gchar *key = NULL;
+  GError *error = NULL;
+  gchar *keyfile_path = NULL, *store_path = NULL;
+
+  keyfile_path = g_build_filename (fixture->tmp_dir, "keyfile", NULL);
+  store_path = g_build_filename (keyfile_path, "gsettings.store", NULL);
+  kf_backend = g_keyfile_settings_backend_new (store_path, test_data->root_path, test_data->root_group);
+  settings = g_settings_new_with_backend_and_path ("org.gtk.test.no-path", kf_backend, test_data->path);
+  g_object_unref (kf_backend);
+
+  g_settings_reset (settings, "test-boolean");
+  g_assert_true (g_settings_get_boolean (settings, "test-boolean"));
+
+  writable = g_settings_is_writable (settings, "test-boolean");
+  g_assert_true (writable);
+  g_settings_set (settings, "test-boolean", "b", FALSE);
+
+  g_assert_false (g_settings_get_boolean (settings, "test-boolean"));
+
+  g_settings_delay (settings);
+  g_settings_set (settings, "test-boolean", "b", TRUE);
+  g_settings_apply (settings);
+
+  keyfile = g_key_file_new ();
+  g_assert_true (g_key_file_load_from_file (keyfile, store_path, 0, NULL));
+
+  g_assert_true (g_key_file_get_boolean (keyfile, test_data->keyfile_group, "test-boolean", NULL));
+
+  g_key_file_free (keyfile);
+
+  g_settings_reset (settings, "test-boolean");
+  g_settings_apply (settings);
+  keyfile = g_key_file_new ();
+  g_assert_true (g_key_file_load_from_file (keyfile, store_path, 0, NULL));
+
+  g_assert_false (g_key_file_get_string (keyfile, test_data->keyfile_group, "test-boolean", &error));
+  g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND);
+  g_clear_error (&error);
+
+  /* Check that empty keys/groups are not allowed. */
+  g_assert_false (g_settings_is_writable (settings, ""));
+  g_assert_false (g_settings_is_writable (settings, "/"));
+
+  /* Keys which ghost the root group name are not allowed. This can only be
+   * tested when the path is `/` as otherwise it acts as a prefix and prevents
+   * any ghosting. */
+  if (g_str_equal (test_data->path, "/"))
+    {
+      key = g_strdup_printf ("%s/%s", test_data->root_group, "");
+      g_assert_false (g_settings_is_writable (settings, key));
+      g_free (key);
+
+      key = g_strdup_printf ("%s/%s", test_data->root_group, "/");
+      g_assert_false (g_settings_is_writable (settings, key));
+      g_free (key);
+
+      key = g_strdup_printf ("%s/%s", test_data->root_group, "test-boolean");
+      g_assert_false (g_settings_is_writable (settings, key));
+      g_free (key);
+    }
+
+  g_key_file_free (keyfile);
+  g_object_unref (settings);
+
+  /* Clean up the temporary directory. */
+  g_assert_no_errno (g_chmod (keyfile_path, 0777));
+  g_assert_no_errno (g_remove (store_path));
+  g_assert_no_errno (g_rmdir (keyfile_path));
+  g_free (store_path);
+  g_free (keyfile_path);
+}
+
+/*
+ * Test that a keyfile rejects writes to keys outside its root path.
+ */
+static void
+test_keyfile_outside_root_path (Fixture       *fixture,
+                                gconstpointer  user_data)
+{
+  GSettingsBackend *kf_backend;
+  GSettings *settings;
+  gchar *keyfile_path = NULL, *store_path = NULL;
+
+  keyfile_path = g_build_filename (fixture->tmp_dir, "keyfile", NULL);
+  store_path = g_build_filename (keyfile_path, "gsettings.store", NULL);
+  kf_backend = g_keyfile_settings_backend_new (store_path, "/tests/basic-types/", "root");
+  settings = g_settings_new_with_backend_and_path ("org.gtk.test.no-path", kf_backend, "/tests/");
+  g_object_unref (kf_backend);
+
+  g_assert_false (g_settings_is_writable (settings, "test-boolean"));
+
+  g_object_unref (settings);
+
+  /* Clean up the temporary directory. The keyfile probably doesn’t exist, so
+   * don’t error on failure. */
+  g_remove (store_path);
+  g_assert_no_errno (g_rmdir (keyfile_path));
+  g_free (store_path);
+  g_free (keyfile_path);
+}
+
+/*
+ * Test that a keyfile rejects writes to keys in the root if no root group is set.
+ */
+static void
+test_keyfile_no_root_group (Fixture       *fixture,
+                            gconstpointer  user_data)
+{
+  GSettingsBackend *kf_backend;
+  GSettings *settings;
+  gchar *keyfile_path = NULL, *store_path = NULL;
+
+  keyfile_path = g_build_filename (fixture->tmp_dir, "keyfile", NULL);
+  store_path = g_build_filename (keyfile_path, "gsettings.store", NULL);
+  kf_backend = g_keyfile_settings_backend_new (store_path, "/", NULL);
+  settings = g_settings_new_with_backend_and_path ("org.gtk.test.no-path", kf_backend, "/");
+  g_object_unref (kf_backend);
+
+  g_assert_false (g_settings_is_writable (settings, "test-boolean"));
+  g_assert_true (g_settings_is_writable (settings, "child/test-boolean"));
+
+  g_object_unref (settings);
+
+  /* Clean up the temporary directory. The keyfile probably doesn’t exist, so
+   * don’t error on failure. */
+  g_remove (store_path);
+  g_assert_no_errno (g_rmdir (keyfile_path));
+  g_free (store_path);
+  g_free (keyfile_path);
 }
 
 /* Test that getting child schemas works
@@ -1810,7 +2041,7 @@ test_child_schema (void)
 
   settings = g_settings_new ("org.gtk.test");
   child = g_settings_get_child (settings, "basic-types");
-  g_assert (child != NULL);
+  g_assert_nonnull (child);
 
   g_settings_get (child, "test-byte", "y", &byte);
   g_assert_cmpint (byte, ==, 36);
@@ -1834,7 +2065,7 @@ test_strinfo (void)
     "\0\0\0\xff";
   const guint32 *strinfo = (guint32 *) array;
   guint length = sizeof array / 4;
-  guint result;
+  guint result = 0;
 
   {
     /* build it and compare */
@@ -1843,7 +2074,7 @@ test_strinfo (void)
     builder = g_string_new (NULL);
     strinfo_builder_append_item (builder, "foo", 1);
     strinfo_builder_append_item (builder, "bar", 2);
-    g_assert (strinfo_builder_append_alias (builder, "baz", "bar"));
+    g_assert_true (strinfo_builder_append_alias (builder, "baz", "bar"));
     g_assert_cmpmem (builder->str, builder->len, strinfo, length * 4);
     g_string_free (builder, TRUE);
   }
@@ -1857,22 +2088,22 @@ test_strinfo (void)
   g_assert_cmpstr (strinfo_string_from_alias (strinfo, length, "quux"),
                    ==, NULL);
 
-  g_assert (strinfo_enum_from_string (strinfo, length, "foo", &result));
+  g_assert_true (strinfo_enum_from_string (strinfo, length, "foo", &result));
   g_assert_cmpint (result, ==, 1);
-  g_assert (strinfo_enum_from_string (strinfo, length, "bar", &result));
+  g_assert_true (strinfo_enum_from_string (strinfo, length, "bar", &result));
   g_assert_cmpint (result, ==, 2);
-  g_assert (!strinfo_enum_from_string (strinfo, length, "baz", &result));
-  g_assert (!strinfo_enum_from_string (strinfo, length, "quux", &result));
+  g_assert_false (strinfo_enum_from_string (strinfo, length, "baz", &result));
+  g_assert_false (strinfo_enum_from_string (strinfo, length, "quux", &result));
 
   g_assert_cmpstr (strinfo_string_from_enum (strinfo, length, 0), ==, NULL);
   g_assert_cmpstr (strinfo_string_from_enum (strinfo, length, 1), ==, "foo");
   g_assert_cmpstr (strinfo_string_from_enum (strinfo, length, 2), ==, "bar");
   g_assert_cmpstr (strinfo_string_from_enum (strinfo, length, 3), ==, NULL);
 
-  g_assert (strinfo_is_string_valid (strinfo, length, "foo"));
-  g_assert (strinfo_is_string_valid (strinfo, length, "bar"));
-  g_assert (!strinfo_is_string_valid (strinfo, length, "baz"));
-  g_assert (!strinfo_is_string_valid (strinfo, length, "quux"));
+  g_assert_true (strinfo_is_string_valid (strinfo, length, "foo"));
+  g_assert_true (strinfo_is_string_valid (strinfo, length, "bar"));
+  g_assert_false (strinfo_is_string_valid (strinfo, length, "baz"));
+  g_assert_false (strinfo_is_string_valid (strinfo, length, "quux"));
 }
 
 static void
@@ -2135,13 +2366,13 @@ test_range (void)
 
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   value = g_variant_new_int32 (1);
-  g_assert (!g_settings_range_check (settings, "val", value));
+  g_assert_false (g_settings_range_check (settings, "val", value));
   g_variant_unref (value);
   value = g_variant_new_int32 (33);
-  g_assert (g_settings_range_check (settings, "val", value));
+  g_assert_true (g_settings_range_check (settings, "val", value));
   g_variant_unref (value);
   value = g_variant_new_int32 (45);
-  g_assert (!g_settings_range_check (settings, "val", value));
+  g_assert_false (g_settings_range_check (settings, "val", value));
   g_variant_unref (value);
 G_GNUC_END_IGNORE_DEPRECATIONS
 
@@ -2207,8 +2438,8 @@ test_list_items (void)
   children = g_settings_list_children (settings);
   keys = g_settings_schema_list_keys (schema);
 
-  g_assert (strv_set_equal (children, "basic-types", "complex-types", "localized", NULL));
-  g_assert (strv_set_equal (keys, "greeting", "farewell", NULL));
+  g_assert_true (strv_set_equal (children, "basic-types", "complex-types", "localized", NULL));
+  g_assert_true (strv_set_equal (keys, "greeting", "farewell", NULL));
 
   g_strfreev (children);
   g_strfreev (keys);
@@ -2228,26 +2459,26 @@ G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   schemas = g_settings_list_schemas ();
 G_GNUC_END_IGNORE_DEPRECATIONS
 
-  g_assert (strv_set_equal ((gchar **)relocs,
-                            "org.gtk.test.no-path",
-                            "org.gtk.test.extends.base",
-                            "org.gtk.test.extends.extended",
-                            NULL));
+  g_assert_true (strv_set_equal ((gchar **)relocs,
+                                 "org.gtk.test.no-path",
+                                 "org.gtk.test.extends.base",
+                                 "org.gtk.test.extends.extended",
+                                 NULL));
 
-  g_assert (strv_set_equal ((gchar **)schemas,
-                            "org.gtk.test",
-                            "org.gtk.test.basic-types",
-                            "org.gtk.test.complex-types",
-                            "org.gtk.test.localized",
-                            "org.gtk.test.binding",
-                            "org.gtk.test.enums",
-                            "org.gtk.test.enums.direct",
-                            "org.gtk.test.range",
-                            "org.gtk.test.range.direct",
-                            "org.gtk.test.mapped",
-                            "org.gtk.test.descriptions",
-                            "org.gtk.test.per-desktop",
-                            NULL));
+  g_assert_true (strv_set_equal ((gchar **)schemas,
+                                 "org.gtk.test",
+                                 "org.gtk.test.basic-types",
+                                 "org.gtk.test.complex-types",
+                                 "org.gtk.test.localized",
+                                 "org.gtk.test.binding",
+                                 "org.gtk.test.enums",
+                                 "org.gtk.test.enums.direct",
+                                 "org.gtk.test.range",
+                                 "org.gtk.test.range.direct",
+                                 "org.gtk.test.mapped",
+                                 "org.gtk.test.descriptions",
+                                 "org.gtk.test.per-desktop",
+                                 NULL));
 }
 
 static gboolean
@@ -2277,7 +2508,7 @@ map_func (GVariant *value,
     }
   else
     {
-      g_assert (value == NULL);
+      g_assert_null (value);
       *result = g_variant_new_int32 (5);
       return TRUE;
     }
@@ -2349,70 +2580,83 @@ test_schema_source (void)
   /* make sure it fails properly */
   parent = g_settings_schema_source_get_default ();
   source = g_settings_schema_source_new_from_directory ("/path/that/does/not/exist", parent,  TRUE, &error);
-  g_assert (source == NULL);
+  g_assert_null (source);
   g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT);
+  g_clear_error (&error);
+
+  /* Test error handling of corrupt compiled files. */
+  source = g_settings_schema_source_new_from_directory ("schema-source-corrupt", parent, TRUE, &error);
+  g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_INVAL);
+  g_assert_null (source);
+  g_clear_error (&error);
+
+  /* Test error handling of empty compiled files. */
+  source = g_settings_schema_source_new_from_directory ("schema-source-empty", parent, TRUE, &error);
+  g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_INVAL);
+  g_assert_null (source);
   g_clear_error (&error);
 
   /* create a source with the parent */
   source = g_settings_schema_source_new_from_directory ("schema-source", parent, TRUE, &error);
   g_assert_no_error (error);
-  g_assert (source != NULL);
+  g_assert_nonnull (source);
 
   /* check recursive lookups are working */
   schema = g_settings_schema_source_lookup (source, "org.gtk.test", TRUE);
-  g_assert (schema != NULL);
+  g_assert_nonnull (schema);
   g_settings_schema_unref (schema);
 
   /* check recursive lookups for non-existent schemas */
   schema = g_settings_schema_source_lookup (source, "org.gtk.doesnotexist", TRUE);
-  g_assert (schema == NULL);
+  g_assert_null (schema);
 
   /* check non-recursive for schema that only exists in lower layers */
   schema = g_settings_schema_source_lookup (source, "org.gtk.test", FALSE);
-  g_assert (schema == NULL);
+  g_assert_null (schema);
 
   /* check non-recursive lookup for non-existent */
   schema = g_settings_schema_source_lookup (source, "org.gtk.doesnotexist", FALSE);
-  g_assert (schema == NULL);
+  g_assert_null (schema);
 
   /* check non-recursive for schema that exists in toplevel */
   schema = g_settings_schema_source_lookup (source, "org.gtk.schemasourcecheck", FALSE);
-  g_assert (schema != NULL);
+  g_assert_nonnull (schema);
   g_settings_schema_unref (schema);
 
   /* check recursive for schema that exists in toplevel */
   schema = g_settings_schema_source_lookup (source, "org.gtk.schemasourcecheck", TRUE);
-  g_assert (schema != NULL);
+  g_assert_nonnull (schema);
 
   /* try to use it for something */
   settings = g_settings_new_full (schema, backend, g_settings_schema_get_path (schema));
   g_settings_schema_unref (schema);
   enabled = FALSE;
   g_settings_get (settings, "enabled", "b", &enabled);
-  g_assert (enabled);
+  g_assert_true (enabled);
   g_object_unref (settings);
 
   g_settings_schema_source_unref (source);
 
   /* try again, but with no parent */
   source = g_settings_schema_source_new_from_directory ("schema-source", NULL, FALSE, NULL);
-  g_assert (source != NULL);
+  g_assert_nonnull (source);
 
   /* should not find it this time, even if recursive... */
   schema = g_settings_schema_source_lookup (source, "org.gtk.test", FALSE);
-  g_assert (schema == NULL);
+  g_assert_null (schema);
   schema = g_settings_schema_source_lookup (source, "org.gtk.test", TRUE);
-  g_assert (schema == NULL);
+  g_assert_null (schema);
 
   /* should still find our own... */
   schema = g_settings_schema_source_lookup (source, "org.gtk.schemasourcecheck", TRUE);
-  g_assert (schema != NULL);
+  g_assert_nonnull (schema);
   g_settings_schema_unref (schema);
   schema = g_settings_schema_source_lookup (source, "org.gtk.schemasourcecheck", FALSE);
-  g_assert (schema != NULL);
+  g_assert_nonnull (schema);
   g_settings_schema_unref (schema);
 
   g_settings_schema_source_unref (source);
+  g_object_unref (backend);
 }
 
 static void
@@ -2421,14 +2665,14 @@ test_schema_list_keys (void)
   gchar                 **keys;
   GSettingsSchemaSource  *src    = g_settings_schema_source_get_default ();
   GSettingsSchema        *schema = g_settings_schema_source_lookup (src, "org.gtk.test", TRUE);
-  g_assert (schema != NULL);
+  g_assert_nonnull (schema);
 
   keys = g_settings_schema_list_keys (schema);
 
-  g_assert (strv_set_equal ((gchar **)keys,
-                            "greeting",
-                            "farewell",
-                            NULL));
+  g_assert_true (strv_set_equal ((gchar **)keys,
+                                 "greeting",
+                                 "farewell",
+                                 NULL));
 
   g_strfreev (keys);
   g_settings_schema_unref (schema);
@@ -2458,27 +2702,27 @@ test_actions (void)
   c1 = c2 = c3 = FALSE;
   g_settings_set_string (settings, "test-string", "hello world");
   check_and_free (g_action_get_state (string), "'hello world'");
-  g_assert (c1 && c2 && !c3);
+  g_assert_true (c1 && c2 && !c3);
   c1 = c2 = c3 = FALSE;
 
   g_action_activate (string, g_variant_new_string ("hihi"));
   check_and_free (g_settings_get_value (settings, "test-string"), "'hihi'");
-  g_assert (c1 && c2 && !c3);
+  g_assert_true (c1 && c2 && !c3);
   c1 = c2 = c3 = FALSE;
 
   g_action_change_state (string, g_variant_new_string ("kthxbye"));
   check_and_free (g_settings_get_value (settings, "test-string"), "'kthxbye'");
-  g_assert (c1 && c2 && !c3);
+  g_assert_true (c1 && c2 && !c3);
   c1 = c2 = c3 = FALSE;
 
   g_action_change_state (toggle, g_variant_new_boolean (TRUE));
-  g_assert (g_settings_get_boolean (settings, "test-boolean"));
-  g_assert (c1 && !c2 && c3);
+  g_assert_true (g_settings_get_boolean (settings, "test-boolean"));
+  g_assert_true (c1 && !c2 && c3);
   c1 = c2 = c3 = FALSE;
 
   g_action_activate (toggle, NULL);
-  g_assert (!g_settings_get_boolean (settings, "test-boolean"));
-  g_assert (c1 && !c2 && c3);
+  g_assert_false (g_settings_get_boolean (settings, "test-boolean"));
+  g_assert_true (c1 && !c2 && c3);
 
   g_object_get (string,
                 "name", &name,
@@ -2489,9 +2733,9 @@ test_actions (void)
                 NULL);
 
   g_assert_cmpstr (name, ==, "test-string");
-  g_assert (g_variant_type_equal (param_type, G_VARIANT_TYPE_STRING));
-  g_assert (enabled);
-  g_assert (g_variant_type_equal (state_type, G_VARIANT_TYPE_STRING));
+  g_assert_true (g_variant_type_equal (param_type, G_VARIANT_TYPE_STRING));
+  g_assert_true (enabled);
+  g_assert_true (g_variant_type_equal (state_type, G_VARIANT_TYPE_STRING));
   g_assert_cmpstr (g_variant_get_string (state, NULL), ==, "kthxbye");
 
   g_free (name);
@@ -2528,7 +2772,7 @@ test_null_backend (void)
   g_free (str);
 
   writable = g_settings_is_writable (settings, "greeting");
-  g_assert (!writable);
+  g_assert_false (writable);
 
   g_settings_reset (settings, "greeting");
 
@@ -2549,7 +2793,7 @@ test_memory_backend (void)
   GSettingsBackend *backend;
 
   backend = g_memory_settings_backend_new ();
-  g_assert (G_IS_SETTINGS_BACKEND (backend));
+  g_assert_true (G_IS_SETTINGS_BACKEND (backend));
   g_object_unref (backend);
 }
 
@@ -2604,7 +2848,7 @@ test_default_value (void)
   g_settings_schema_unref (schema);
   g_settings_schema_key_ref (key);
 
-  g_assert (g_variant_type_equal (g_settings_schema_key_get_value_type (key), G_VARIANT_TYPE_STRING));
+  g_assert_true (g_variant_type_equal (g_settings_schema_key_get_value_type (key), G_VARIANT_TYPE_STRING));
 
   v = g_settings_schema_key_get_default_value (key);
   str = g_variant_get_string (v, NULL);
@@ -2742,7 +2986,7 @@ test_extended_schema (void)
   settings = g_settings_new_with_path ("org.gtk.test.extends.extended", "/test/extendes/");
   g_object_get (settings, "settings-schema", &schema, NULL);
   keys = g_settings_schema_list_keys (schema);
-  g_assert (strv_set_equal (keys, "int32", "string", "another-int32", NULL));
+  g_assert_true (strv_set_equal (keys, "int32", "string", "another-int32", NULL));
   g_strfreev (keys);
   g_object_unref (settings);
   g_settings_schema_unref (schema);
@@ -2755,6 +2999,14 @@ main (int argc, char *argv[])
   gchar *override_text;
   gchar *enums;
   gint result;
+  const KeyfileTestData keyfile_test_data_explicit_path = { "/tests/", "root", "tests", "/" };
+  const KeyfileTestData keyfile_test_data_empty_path = { "/", "root", "root", "/" };
+  const KeyfileTestData keyfile_test_data_long_path = {
+    "/tests/path/is/very/long/and/this/makes/some/comparisons/take/a/different/branch/",
+    "root",
+    "tests/path/is/very/long/and/this/makes/some/comparisons/take/a/different/branch",
+    "/"
+  };
 
 /* Meson build sets this */
 #ifdef TEST_LOCALE_PATH
@@ -2770,6 +3022,12 @@ main (int argc, char *argv[])
 
   if (!g_test_subprocess ())
     {
+      GError *local_error = NULL;
+      /* A GVDB header is 6 guint32s, and requires a magic number in the first
+       * two guint32s. A set of zero bytes of a greater length is considered
+       * corrupt. */
+      const guint8 gschemas_compiled_corrupt[sizeof (guint32) * 7] = { 0, };
+
       backend_set = g_getenv ("GSETTINGS_BACKEND") != NULL;
 
       g_setenv ("XDG_DATA_DIRS", ".", TRUE);
@@ -2780,47 +3038,54 @@ main (int argc, char *argv[])
       if (!backend_set)
         g_setenv ("GSETTINGS_BACKEND", "memory", TRUE);
 
-/* Meson build defines this, autotools build does not */
-#ifndef GLIB_MKENUMS
-#define GLIB_MKENUMS "../../gobject/glib-mkenums"
-#endif
-
       g_remove ("org.gtk.test.enums.xml");
-      g_assert (g_spawn_command_line_sync (GLIB_MKENUMS " "
-                                           "--template " SRCDIR "/enums.xml.template "
-                                           SRCDIR "/testenum.h",
-                                           &enums, NULL, &result, NULL));
-      g_assert (result == 0);
-      g_assert (g_file_set_contents ("org.gtk.test.enums.xml", enums, -1, NULL));
+      /* #GLIB_MKENUMS is defined in meson.build */
+      g_assert_true (g_spawn_command_line_sync (GLIB_MKENUMS " "
+                                                "--template " SRCDIR "/enums.xml.template "
+                                                SRCDIR "/testenum.h",
+                                                &enums, NULL, &result, NULL));
+      g_assert_cmpint (result, ==, 0);
+      g_assert_true (g_file_set_contents ("org.gtk.test.enums.xml", enums, -1, NULL));
       g_free (enums);
 
-      g_assert (g_file_get_contents (SRCDIR "/org.gtk.test.gschema.xml.orig", &schema_text, NULL, NULL));
-      g_assert (g_file_set_contents ("org.gtk.test.gschema.xml", schema_text, -1, NULL));
+      g_assert_true (g_file_get_contents (SRCDIR "/org.gtk.test.gschema.xml.orig", &schema_text, NULL, NULL));
+      g_assert_true (g_file_set_contents ("org.gtk.test.gschema.xml", schema_text, -1, NULL));
       g_free (schema_text);
 
-      g_assert (g_file_get_contents (SRCDIR "/org.gtk.test.gschema.override.orig", &override_text, NULL, NULL));
-      g_assert (g_file_set_contents ("org.gtk.test.gschema.override", override_text, -1, NULL));
+      g_assert_true (g_file_get_contents (SRCDIR "/org.gtk.test.gschema.override.orig", &override_text, NULL, NULL));
+      g_assert_true (g_file_set_contents ("org.gtk.test.gschema.override", override_text, -1, NULL));
       g_free (override_text);
 
-/* Meson build defines this, autotools build does not */
-#ifndef GLIB_COMPILE_SCHEMAS
-#define GLIB_COMPILE_SCHEMAS "../glib-compile-schemas"
-#endif
-
       g_remove ("gschemas.compiled");
-      g_assert (g_spawn_command_line_sync (GLIB_COMPILE_SCHEMAS " --targetdir=. "
-                                           "--schema-file=org.gtk.test.enums.xml "
-                                           "--schema-file=org.gtk.test.gschema.xml "
-                                           "--override-file=org.gtk.test.gschema.override",
-                                           NULL, NULL, &result, NULL));
-      g_assert (result == 0);
+      /* #GLIB_COMPILE_SCHEMAS is defined in meson.build */
+      g_assert_true (g_spawn_command_line_sync (GLIB_COMPILE_SCHEMAS " --targetdir=. "
+                                                "--schema-file=org.gtk.test.enums.xml "
+                                                "--schema-file=org.gtk.test.gschema.xml "
+                                                "--override-file=org.gtk.test.gschema.override",
+                                                NULL, NULL, &result, NULL));
+      g_assert_cmpint (result, ==, 0);
 
       g_remove ("schema-source/gschemas.compiled");
       g_mkdir ("schema-source", 0777);
-      g_assert (g_spawn_command_line_sync (GLIB_COMPILE_SCHEMAS " --targetdir=schema-source "
-                                           "--schema-file=" SRCDIR "/org.gtk.schemasourcecheck.gschema.xml",
-                                           NULL, NULL, &result, NULL));
-      g_assert (result == 0);
+      g_assert_true (g_spawn_command_line_sync (GLIB_COMPILE_SCHEMAS " --targetdir=schema-source "
+                                                "--schema-file=" SRCDIR "/org.gtk.schemasourcecheck.gschema.xml",
+                                                NULL, NULL, &result, NULL));
+      g_assert_cmpint (result, ==, 0);
+
+      g_remove ("schema-source-corrupt/gschemas.compiled");
+      g_mkdir ("schema-source-corrupt", 0777);
+      g_file_set_contents ("schema-source-corrupt/gschemas.compiled",
+                           (const gchar *) gschemas_compiled_corrupt,
+                           sizeof (gschemas_compiled_corrupt),
+                           &local_error);
+      g_assert_no_error (local_error);
+
+      g_remove ("schema-source-empty/gschemas.compiled");
+      g_mkdir ("schema-source-empty", 0777);
+      g_file_set_contents ("schema-source-empty/gschemas.compiled",
+                           "", 0,
+                           &local_error);
+      g_assert_no_error (local_error);
    }
 
   g_test_add_func ("/gsettings/basic", test_basic);
@@ -2864,7 +3129,12 @@ main (int argc, char *argv[])
       g_test_add_func ("/gsettings/no-write-binding/subprocess/pass", test_no_write_binding_pass);
     }
 
-  g_test_add_func ("/gsettings/keyfile", test_keyfile);
+  g_test_add ("/gsettings/keyfile", Fixture, NULL, setup, test_keyfile, teardown);
+  g_test_add ("/gsettings/keyfile/explicit-path", Fixture, &keyfile_test_data_explicit_path, setup, test_keyfile_no_path, teardown);
+  g_test_add ("/gsettings/keyfile/empty-path", Fixture, &keyfile_test_data_empty_path, setup, test_keyfile_no_path, teardown);
+  g_test_add ("/gsettings/keyfile/long-path", Fixture, &keyfile_test_data_long_path, setup, test_keyfile_no_path, teardown);
+  g_test_add ("/gsettings/keyfile/outside-root-path", Fixture, NULL, setup, test_keyfile_outside_root_path, teardown);
+  g_test_add ("/gsettings/keyfile/no-root-group", Fixture, NULL, setup, test_keyfile_no_root_group, teardown);
   g_test_add_func ("/gsettings/child-schema", test_child_schema);
   g_test_add_func ("/gsettings/strinfo", test_strinfo);
   g_test_add_func ("/gsettings/enums", test_enums);
@@ -2898,6 +3168,20 @@ main (int argc, char *argv[])
   result = g_test_run ();
 
   g_settings_sync ();
+
+  /* FIXME: Due to the way #GSettings objects can be used without specifying a
+   * backend, the default backend is leaked. In order to be able to run this
+   * test under valgrind and get meaningful checking for real leaks, use this
+   * hack to drop the final reference to the default #GSettingsBackend.
+   *
+   * This should not be used in production code. */
+    {
+      GSettingsBackend *backend;
+
+      backend = g_settings_backend_get_default ();
+      g_object_unref (backend);  /* reference from the *_get_default() call */
+      g_assert_finalize_object (backend);  /* singleton reference owned by GLib */
+    }
 
   return result;
 }

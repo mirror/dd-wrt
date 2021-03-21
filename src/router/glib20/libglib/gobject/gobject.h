@@ -28,6 +28,11 @@
 #include        <gobject/gsignal.h>
 #include        <gobject/gboxed.h>
 
+#if defined(glib_typeof_2_68) && GLIB_VERSION_MIN_REQUIRED >= GLIB_VERSION_2_68
+/* for glib_typeof */
+#include <type_traits>
+#endif
+
 G_BEGIN_DECLS
 
 /* --- type macros --- */
@@ -227,11 +232,11 @@ typedef void (*GObjectFinalizeFunc)     (GObject      *object);
 /**
  * GWeakNotify:
  * @data: data that was provided when the weak reference was established
- * @where_the_object_was: the object being finalized
+ * @where_the_object_was: the object being disposed
  * 
  * A #GWeakNotify function can be added to an object as a callback that gets
  * triggered when the object is finalized. Since the object is already being
- * finalized when the #GWeakNotify is called, there's not much you could do 
+ * disposed when the #GWeakNotify is called, there's not much you could do 
  * with the object, apart from e.g. using its address as hash-index or the like. 
  */
 typedef void (*GWeakNotify)		(gpointer      data,
@@ -247,7 +252,7 @@ struct  _GObject
   GTypeInstance  g_type_instance;
   
   /*< private >*/
-  volatile guint ref_count;
+  guint          ref_count;  /* (atomic) */
   GData         *qdata;
 };
 /**
@@ -320,7 +325,7 @@ struct  _GObjectClass
   GSList      *construct_properties;
 
   /*< public >*/
-  /* seldom overidden */
+  /* seldom overridden */
   GObject*   (*constructor)     (GType                  type,
                                  guint                  n_construct_properties,
                                  GObjectConstructParam *construct_properties);
@@ -335,7 +340,7 @@ struct  _GObjectClass
                                          GParamSpec     *pspec);
   void       (*dispose)			(GObject        *object);
   void       (*finalize)		(GObject        *object);
-  /* seldom overidden */
+  /* seldom overridden */
   void       (*dispatch_properties_changed) (GObject      *object,
 					     guint	   n_pspecs,
 					     GParamSpec  **pspecs);
@@ -424,10 +429,16 @@ GObject*    g_object_new_with_properties      (GType           object_type,
                                                guint           n_properties,
                                                const char     *names[],
                                                const GValue    values[]);
+
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
 GLIB_DEPRECATED_IN_2_54_FOR(g_object_new_with_properties)
 gpointer    g_object_newv		      (GType           object_type,
 					       guint	       n_parameters,
 					       GParameter     *parameters);
+
+G_GNUC_END_IGNORE_DEPRECATIONS
+
 GLIB_AVAILABLE_IN_ALL
 GObject*    g_object_new_valist               (GType           object_type,
 					       const gchar    *first_property_name,
@@ -507,10 +518,10 @@ GLIB_AVAILABLE_IN_ALL
 void        g_object_remove_weak_pointer      (GObject        *object, 
                                                gpointer       *weak_pointer_location);
 
-#if defined(g_has_typeof) && GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_56
+#if defined(glib_typeof) && GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_56 && (!defined(glib_typeof_2_68) || GLIB_VERSION_MIN_REQUIRED >= GLIB_VERSION_2_68)
 /* Make reference APIs type safe with macros */
-#define g_object_ref(Obj)      ((__typeof__(Obj)) (g_object_ref) (Obj))
-#define g_object_ref_sink(Obj) ((__typeof__(Obj)) (g_object_ref_sink) (Obj))
+#define g_object_ref(Obj) ((glib_typeof (Obj)) (g_object_ref) (Obj))
+#define g_object_ref_sink(Obj) ((glib_typeof (Obj)) (g_object_ref_sink) (Obj))
 #endif
 
 /**
@@ -673,16 +684,16 @@ void    g_clear_object (GObject **object_ptr);
 
 /**
  * g_set_object: (skip)
- * @object_ptr: a pointer to a #GObject reference
+ * @object_ptr: (inout) (not optional) (nullable): a pointer to a #GObject reference
  * @new_object: (nullable) (transfer none): a pointer to the new #GObject to
- *   assign to it, or %NULL to clear the pointer
+ *   assign to @object_ptr, or %NULL to clear the pointer
  *
  * Updates a #GObject pointer to refer to @new_object. It increments the
  * reference count of @new_object (if non-%NULL), decrements the reference
  * count of the current value of @object_ptr (if non-%NULL), and assigns
  * @new_object to @object_ptr. The assignment is not atomic.
  *
- * @object_ptr must not be %NULL.
+ * @object_ptr must not be %NULL, but can point to a %NULL value.
  *
  * A macro is also included that allows this function to be used without
  * pointer casts. The function itself is static inline, so its address may vary
@@ -732,11 +743,62 @@ static inline gboolean
   return TRUE;
 }
 
+/* We need GCC for __extension__, which we need to sort out strict aliasing of @object_ptr */
+#if defined(__GNUC__)
+
+#define g_set_object(object_ptr, new_object) \
+  (G_GNUC_EXTENSION ({ \
+    G_STATIC_ASSERT (sizeof *(object_ptr) == sizeof (new_object)); \
+    /* Only one access, please; work around type aliasing */ \
+    union { char *in; GObject **out; } _object_ptr; \
+    _object_ptr.in = (char *) (object_ptr); \
+    /* Check types match */ \
+    (void) (0 ? *(object_ptr) = (new_object), FALSE : FALSE); \
+    (g_set_object) (_object_ptr.out, (GObject *) new_object); \
+  })) \
+  GLIB_AVAILABLE_MACRO_IN_2_44
+
+#else  /* if !defined(__GNUC__) */
+
 #define g_set_object(object_ptr, new_object) \
  (/* Check types match. */ \
   0 ? *(object_ptr) = (new_object), FALSE : \
   (g_set_object) ((GObject **) (object_ptr), (GObject *) (new_object)) \
  )
+
+#endif  /* !defined(__GNUC__) */
+
+/**
+ * g_assert_finalize_object: (skip)
+ * @object: (transfer full) (type GObject.Object): an object
+ *
+ * Assert that @object is non-%NULL, then release one reference to it with
+ * g_object_unref() and assert that it has been finalized (i.e. that there
+ * are no more references).
+ *
+ * If assertions are disabled via `G_DISABLE_ASSERT`,
+ * this macro just calls g_object_unref() without any further checks.
+ *
+ * This macro should only be used in regression tests.
+ *
+ * Since: 2.62
+ */
+static inline void
+(g_assert_finalize_object) (GObject *object)
+{
+  gpointer weak_pointer = object;
+
+  g_assert_true (G_IS_OBJECT (weak_pointer));
+  g_object_add_weak_pointer (object, &weak_pointer);
+  g_object_unref (weak_pointer);
+  g_assert_null (weak_pointer);
+}
+
+#ifdef G_DISABLE_ASSERT
+#define g_assert_finalize_object(object) g_object_unref (object)
+#else
+#define g_assert_finalize_object(object) (g_assert_finalize_object ((GObject *) object))
+#endif
 
 /**
  * g_clear_weak_pointer: (skip)
@@ -781,7 +843,7 @@ static inline void
  *
  * Updates a pointer to weakly refer to @new_object. It assigns @new_object
  * to @weak_pointer_location and ensures that @weak_pointer_location will
- * automaticaly be set to %NULL if @new_object gets destroyed. The assignment
+ * automatically be set to %NULL if @new_object gets destroyed. The assignment
  * is not atomic. The weak reference is not thread-safe, see
  * g_object_add_weak_pointer() for details.
  *
