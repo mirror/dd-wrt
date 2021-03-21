@@ -68,6 +68,9 @@ endif
 
 
 glib20-configure: libffi zlib util-linux
+	ln -f -s ${shell which $(CROSS_COMPILE)gcc} ${shell which $(CROSS_COMPILE)gcc-ar}
+	ln -f -s ${shell which $(CROSS_COMPILE)gcc} ${shell which $(CROSS_COMPILE)gcc-ranlib}
+	ln -f -s ${shell which $(CROSS_COMPILE)gcc} ${shell which $(CROSS_COMPILE)gcc-nm}
 	echo "[binaries]" > $(TOP)/glib20/libglib/cross.txt
 	echo c = \'$(subst ccache ,,$(CC))\' >> $(TOP)/glib20/libglib/cross.txt
 	echo cpp = \'$(subst ccache ,,$(CXX))\' >> $(TOP)/glib20/libglib/cross.txt
