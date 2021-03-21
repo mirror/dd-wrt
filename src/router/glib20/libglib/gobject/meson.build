@@ -125,7 +125,7 @@ libgobject = library('gobject-2.0',
   darwin_versions : darwin_versions,
   install : true,
   include_directories : [configinc],
-  dependencies : [libffi_dep, libglib_dep],
+  dependencies : [libglib_dep],
   c_args : ['-DG_LOG_DOMAIN="GLib-GObject"', '-DGOBJECT_COMPILATION'] + glib_hidden_visibility_args,
   link_args : glib_link_flags,
 )
