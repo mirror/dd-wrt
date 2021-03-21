@@ -100,7 +100,7 @@ installed_tests_template = files('template.test.in')
 installed_tests_template_tap = files('template-tap.test.in')
 
 # Don’t build the tests unless we can run them (either natively, in an exe wrapper, or by installing them for later use)
-build_tests = get_option('tests') and (not meson.is_cross_build() or (meson.is_cross_build() and meson.has_exe_wrapper()) or installed_tests_enabled)
+build_tests = false
 
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
 
@@ -944,7 +944,7 @@ if host_system == 'windows' and (cc.get_id() == 'msvc' or cc.get_id() == 'clang-
   glib_conf.set('HAVE_C99_SNPRINTF', false)
   glib_conf.set('HAVE_C99_VSNPRINTF', false)
   glib_conf.set('HAVE_UNIX98_PRINTF', false)
-elif not cc_can_run and host_system in ['ios', 'darwin']
+elif true
   # All these are true when compiling natively on macOS, so we should use good
   # defaults when building for iOS and tvOS.
   glib_conf.set('HAVE_C99_SNPRINTF', true)
@@ -2038,8 +2038,8 @@ endif
 # FIXME: glib-gettext.m4 has much more checks to detect broken/uncompatible
 # implementations. This could be extended if issues are found in some platforms.
 libintl_deps = []
-if cc.has_function('ngettext')
-  have_bind_textdomain_codeset = cc.has_function('bind_textdomain_codeset')
+if true
+  have_bind_textdomain_codeset = cc.has_function('bind_textdomain_codeset', prefix :'#include <libintl.h>')
 else
   # First just find the bare library.
   libintl = cc.find_library('intl', required : false)
@@ -2220,15 +2220,9 @@ endif
 
 glib_conf.set('HAVE_PROC_SELF_CMDLINE', have_proc_self_cmdline)
 
-python = import('python').find_installation('python3')
+python = 'python3'
 # used for '#!/usr/bin/env <name>'
 python_name = 'python3'
-
-python_version = python.language_version()
-python_version_req = '>=3.5'
-if not python_version.version_compare(python_version_req)
-  error('Requires Python @0@, @1@ found.'.format(python_version_req, python_version))
-endif
 
 # Determine which user environment-dependent files that we want to install
 have_bash = find_program('bash', required : false).found() # For completion scripts
