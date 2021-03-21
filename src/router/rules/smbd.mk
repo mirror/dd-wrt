@@ -26,11 +26,11 @@ smbd: libnl
 
 smbd-install:
 	$(MAKE) -C smbd-next/smbd install
-	$(MAKE) -C smbd-next/tools install DESTDIR=$(INSTALLDIR)/smbd
+	$(MAKE) -C smbd-next/tools-glib install DESTDIR=$(INSTALLDIR)/smbd
 	rm -rf $(INSTALLDIR)/smbd/usr/lib
-	cd $(INSTALLDIR)/smbd-glib/usr/sbin && ln -sf smbd_multicall ksmbd.mountd
-	cd $(INSTALLDIR)/smbd-glib/usr/sbin && ln -sf smbd_multicall ksmbd.adduser
-	cd $(INSTALLDIR)/smbd-glib/usr/sbin && ln -sf smbd_multicall ksmbd.addshare
+	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.mountd
+	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.adduser
+	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.addshare
 
 	install -D smbd-next/config/samba_ksmbd.webnas $(INSTALLDIR)/smbd/etc/config/02samba_ksmbd.webnas
 	install -D smbd-next/config/samba_ksmbd.nvramconfig $(INSTALLDIR)/smbd/etc/config/samba_ksmbd.nvramconfig
