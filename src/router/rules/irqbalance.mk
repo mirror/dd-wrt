@@ -1,8 +1,4 @@
 irqbalance-configure:
-	$(MAKE) -C zlib
-	$(MAKE) -C libffi
-	$(MAKE) -C glib20/gettext all
-	$(MAKE) -C glib20/libglib all
 	cd irqbalance && ./autogen.sh
 	cd irqbalance && ./configure --disable-numa --prefix=/usr \
 		--with-libcap_ng=no \
@@ -11,14 +7,12 @@ irqbalance-configure:
 		--enable-static=glib2 \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
-		GLIB2_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
-		GLIB2_LIBS="$(TOP)/glib20/libglib/glib/.libs/libglib-2.0.a" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections"
+		GLIB2_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib -L$(INSTALLDIR)/util-linux/usr/lib" \
+		GLIB2_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF" \
+		LDFLAGS="$(LDLTO)"
 
 irqbalance: zlib libffi
-	$(MAKE) -C glib20/gettext all
-	$(MAKE) -C glib20/libglib all
 	$(MAKE) -C irqbalance
 
 irqbalance-clean: 
