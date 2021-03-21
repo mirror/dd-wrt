@@ -553,7 +553,6 @@ int rpc_lsarpc_init(void)
 	list_init(&ph_table);
 	if (!ph_table)
 		return -ENOMEM;
-	g_rw_lock_init(&ph_table_lock);
 	return 0;
 }
 
