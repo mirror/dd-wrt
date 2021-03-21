@@ -487,7 +487,7 @@ static int smb_direct_check_recvmsg(struct smb_direct_recvmsg *recvmsg)
 		struct smb2_hdr *hdr = (struct smb2_hdr *) (recvmsg->packet
 				+ le32_to_cpu(req->data_offset) - 4);
 		ksmbd_debug(RDMA,
-				"CreditGranted: %u, CreditRequested: %u, DataLength: %u, RemaingDataLength: %u, SMB: %x, Command: %u\n",
+				"CreditGranted: %u, CreditRequested: %u, DataLength: %u, RemainingDataLength: %u, SMB: %x, Command: %u\n",
 				le16_to_cpu(req->credits_granted),
 				le16_to_cpu(req->credits_requested),
 				req->data_length, req->remaining_data_length,
@@ -999,9 +999,9 @@ static int smb_direct_create_header(struct smb_direct_transport *t,
 	int ret;
 
 	sendmsg = smb_direct_alloc_sendmsg(t);
-	if (!sendmsg) {
+	if (IS_ERR(sendmsg)) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
-		return -ENOMEM;
+		return PTR_ERR(sendmsg);
 	}
 
 	/* Fill in the packet header */
@@ -1169,6 +1169,7 @@ static int smb_direct_post_send_data(struct smb_direct_transport *t,
 				sg, SMB_DIRECT_MAX_SEND_SGES-1, DMA_TO_DEVICE);
 		if (sg_cnt <= 0) {
 			ksmbd_err("failed to map buffer\n");
+			ret = -ENOMEM;
 			goto err;
 		} else if (sg_cnt + msg->num_sge > SMB_DIRECT_MAX_SEND_SGES-1) {
 			ksmbd_err("buffer not fitted into sges\n");

@@ -22,20 +22,22 @@
  * TODO : implement consideration about DOS_DOT, DOS_QM and DOS_STAR
  *
  * @string:	string to compare with a pattern
+ * @len:	string length
  * @pattern:	pattern string which might include wildcard '*' and '?'
  *
  * Return:	0 if pattern matched with the string, otherwise non zero value
  */
-int match_pattern(const char *str, const char *pattern)
+int match_pattern(const char *str, size_t len, const char *pattern)
 {
 	const char *s = str;
 	const char *p = pattern;
 	bool star = false;
 
-	while (*s) {
+	while (*s && len) {
 		switch (*p) {
 		case '?':
 			s++;
+			len--;
 			p++;
 			break;
 		case '*':
@@ -48,6 +50,7 @@ int match_pattern(const char *str, const char *pattern)
 		default:
 			if (tolower(*s) == tolower(*p)) {
 				s++;
+				len--;
 				p++;
 			} else {
 				if (!star)
@@ -90,7 +93,7 @@ int ksmbd_validate_filename(char *filename)
 
 		filename++;
 		if (!is_char_allowed(c)) {
-			ksmbd_err("File name validation failed: 0x%x\n", c);
+			ksmbd_debug(VFS, "File name validation failed: 0x%x\n", c);
 			return -ENOENT;
 		}
 	}
@@ -223,12 +226,12 @@ void ksmbd_conv_path_to_windows(char *path)
 }
 
 /**
- * extract_sharename() - get share name from tree connect request
+ * ksmbd_extract_sharename() - get share name from tree connect request
  * @treename:	buffer containing tree name and share name
  *
  * Return:      share name on success, otherwise error
  */
-char *extract_sharename(char *treename)
+char *ksmbd_extract_sharename(char *treename)
 {
 	char *name = treename;
 	char *dst;

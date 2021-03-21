@@ -11,7 +11,6 @@
 #include "server.h"
 #include "misc.h"
 #include "smbstatus.h"
-/* @FIXME */
 #include "connection.h"
 #include "ksmbd_work.h"
 #include "mgmt/user_session.h"
@@ -134,8 +133,8 @@ int ksmbd_lookup_protocol_idx(char *str)
 }
 
 /**
- * check_message() - check for valid smb2 request header
- * @buf:       smb2 header to be checked
+ * ksmbd_verify_smb_message() - check for valid smb2 request header
+ * @work:	smb work
  *
  * check for valid smb signature and packet direction(request/response)
  *
@@ -161,9 +160,8 @@ int ksmbd_verify_smb_message(struct ksmbd_work *work)
 }
 
 /**
- * is_smb_request() - check for valid smb request type
+ * ksmbd_smb_request() - check for valid smb request type
  * @conn:	connection instance
- * @type:	smb request type
  *
  * Return:      true on success, otherwise false
  */
@@ -289,14 +287,16 @@ int ksmbd_negotiate_smb_dialect(void *buf)
 int ksmbd_init_smb_server(struct ksmbd_work *work)
 {
 	struct ksmbd_conn *conn = work->conn;
+#ifdef CONFIG_SMB_INSECURE_SERVER
 	void *buf = REQUEST_BUF(work);
 	__le32 proto;
+#endif
 
 	if (conn->need_neg == false)
 		return 0;
 
-	proto = *(__le32 *)((struct smb_hdr *)buf)->Protocol;
 #ifdef CONFIG_SMB_INSECURE_SERVER
+	proto = *(__le32 *)((struct smb_hdr *)buf)->Protocol;
 	if (proto == SMB1_PROTO_NUMBER)
 		init_smb1_server(conn);
 	else
@@ -341,7 +341,8 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work,
 				d_info->name_len = 2;
 			}
 
-			if (!match_pattern(d_info->name, search_pattern)) {
+			if (!match_pattern(d_info->name, d_info->name_len,
+					search_pattern)) {
 				dir->dot_dotdot[i] = 1;
 				continue;
 			}

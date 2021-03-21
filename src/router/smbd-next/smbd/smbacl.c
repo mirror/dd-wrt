@@ -389,7 +389,8 @@ static void parse_dacl(struct smb_acl *pdacl, char *end_of_acl,
 		return;
 
 	/* validate that we do not go past end of acl */
-	if (end_of_acl < (char *)pdacl + le16_to_cpu(pdacl->size)) {
+	if (end_of_acl <= (char *)pdacl ||
+	    end_of_acl < (char *)pdacl + le16_to_cpu(pdacl->size)) {
 		ksmbd_err("ACL too small to parse DACL\n");
 		return;
 	}
@@ -520,7 +521,7 @@ static void parse_dacl(struct smb_acl *pdacl, char *end_of_acl,
 			fattr->cf_gid;
 		acl_state.groups->aces[acl_state.groups->n++].perms.allow =
 			(mode & 0070) >> 3;
-		default_acl_state.group.allow = mode & 0070 >> 3;
+		default_acl_state.group.allow = (mode & 0070) >> 3;
 		default_acl_state.groups->aces[default_acl_state.groups->n].gid =
 			fattr->cf_gid;
 		default_acl_state.groups->aces[default_acl_state.groups->n++].perms.allow =
@@ -783,7 +784,7 @@ int parse_sec_desc(struct smb_ntsd *pntsd, int acl_len,
 	struct smb_acl *dacl_ptr; /* no need for SACL ptr */
 	char *end_of_acl = ((char *)pntsd) + acl_len;
 	__u32 dacloffset;
-	int total_ace_size = 0, pntsd_type;
+	int pntsd_type;
 
 	if (pntsd == NULL)
 		return -EIO;
@@ -800,12 +801,7 @@ int parse_sec_desc(struct smb_ntsd *pntsd, int acl_len,
 		 le32_to_cpu(pntsd->gsidoffset),
 		 le32_to_cpu(pntsd->sacloffset), dacloffset);
 
-	if (dacloffset && dacl_ptr)
-		total_ace_size =
-			le16_to_cpu(dacl_ptr->size) - sizeof(struct smb_acl);
-
 	pntsd_type = le16_to_cpu(pntsd->type);
-
 	if (!(pntsd_type & DACL_PRESENT)) {
 		ksmbd_debug(SMB, "DACL_PRESENT in DACL type is not set\n");
 		return rc;
@@ -1131,13 +1127,28 @@ int smb_check_perm_dacl(struct ksmbd_conn *conn, struct dentry *dentry,
 	struct smb_ace *others_ace = NULL;
 	struct posix_acl_entry *pa_entry;
 	unsigned int sid_type = SIDOWNER;
+	char *end_of_acl;
 
 	ksmbd_debug(SMB, "check permission using windows acl\n");
 	acl_size = ksmbd_vfs_get_sd_xattr(conn, dentry, &pntsd);
-	if (acl_size <= 0 || (pntsd && !pntsd->dacloffset))
+	if (acl_size <= 0 || !pntsd || !pntsd->dacloffset) {
+		kfree(pntsd);
 		return 0;
+	}
 
 	pdacl = (struct smb_acl *)((char *)pntsd + le32_to_cpu(pntsd->dacloffset));
+	end_of_acl = ((char *)pntsd) + acl_size;
+	if (end_of_acl <= (char *)pdacl) {
+		kfree(pntsd);
+		return 0;
+	}
+
+	if (end_of_acl < (char *)pdacl + le16_to_cpu(pdacl->size) ||
+	    le16_to_cpu(pdacl->size) < sizeof(struct smb_acl)) {
+		kfree(pntsd);
+		return 0;
+	}
+
 	if (!pdacl->num_aces) {
 		if (!(le16_to_cpu(pdacl->size) - sizeof(struct smb_acl)) &&
 		    *pdaccess & ~(FILE_READ_CONTROL_LE | FILE_WRITE_DAC_LE)) {
@@ -1156,6 +1167,8 @@ int smb_check_perm_dacl(struct ksmbd_conn *conn, struct dentry *dentry,
 		for (i = 0; i < le32_to_cpu(pdacl->num_aces); i++) {
 			granted |= le32_to_cpu(ace->access_req);
 			ace = (struct smb_ace *) ((char *)ace + le16_to_cpu(ace->size));
+			if (end_of_acl < (char *)ace)
+				goto err_out;
 		}
 
 		if (!pdacl->num_aces)
@@ -1177,6 +1190,8 @@ int smb_check_perm_dacl(struct ksmbd_conn *conn, struct dentry *dentry,
 			others_ace = ace;
 
 		ace = (struct smb_ace *) ((char *)ace + le16_to_cpu(ace->size));
+		if (end_of_acl < (char *)ace)
+			goto err_out;
 	}
 
 	if (*pdaccess & FILE_MAXIMAL_ACCESS_LE && found) {
