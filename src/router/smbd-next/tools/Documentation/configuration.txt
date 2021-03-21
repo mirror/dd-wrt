@@ -128,13 +128,13 @@ Define ksmbd configuration parameters list.
 	- write ok  (default: no)
 	- writeable (default: no)
 		Inverted synonym for read only.
-	- store dos attributes (default: no)
+	- store dos attributes (default: yes)
 		If this parameter is set ksmbd attempts to first read DOS
 		attributes (SYSTEM, HIDDEN, ARCHIVE or READ-ONLY) from a
 		filesystem extended attribute, before mapping DOS attributes
 		to UNIX permission bits (such as occurs with map hidden and
 		map readonly).
-	- oplocks (default: no)
+	- oplocks (default: yes)
 		This boolean option tells ksmbd whether to issue oplocks
 		(opportunistic locks) to file open requests on this share.
 	- create mask (default: 0744)

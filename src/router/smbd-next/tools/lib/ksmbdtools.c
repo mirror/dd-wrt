@@ -669,7 +669,7 @@ char *ascii_strdown(char *str, size_t len)
 	return result;
 }
 
-void notify_ksmbd_daemon(void)
+static void send_signal_to_ksmbd_daemon(int signo)
 {
 	char manager_pid[10] = { 0, };
 	int pid = 0;
@@ -689,10 +689,20 @@ void notify_ksmbd_daemon(void)
 
 	pid = strtol(manager_pid, NULL, 10);
 
-	pr_debug("Send SIGHUP to pid %d\n", pid);
-	if (kill(pid, SIGHUP))
+	pr_debug("Send %d to pid %d\n", signo, pid);
+	if (kill(pid, signo))
 		pr_debug("Unable to send signal to pid %d: %s\n",
 			 pid, strerr(errno));
+}
+
+void notify_ksmbd_daemon(void)
+{
+	send_signal_to_ksmbd_daemon(SIGHUP);
+}
+
+void terminate_ksmbd_daemon(void)
+{
+	send_signal_to_ksmbd_daemon(SIGTERM);
 }
 
 int test_file_access(char *conf)

@@ -200,8 +200,6 @@ static int __lsarpc_entry_processed(struct ksmbd_rpc_pipe *pipe, int i)
 
 	entry = list_get(&pipe->entries, i);
 	list_remove_dec(&pipe->entries, i);
-	pipe->num_entries--;
-	pipe->num_processed++;
 	free(entry);
 	return 0;
 }
@@ -343,7 +341,7 @@ static int lsarpc_lookup_names3_invoke(struct ksmbd_rpc_pipe *pipe)
 
 	for (i = 0; i < num_names; i++) {
 		struct lsarpc_names_info *ni;
-		char *name;
+		char *name = NULL;
 
 		ni = malloc(sizeof(struct lsarpc_names_info));
 		if (!ni)
@@ -555,6 +553,7 @@ int rpc_lsarpc_init(void)
 	list_init(&ph_table);
 	if (!ph_table)
 		return -ENOMEM;
+	g_rw_lock_init(&ph_table_lock);
 	return 0;
 }
 
