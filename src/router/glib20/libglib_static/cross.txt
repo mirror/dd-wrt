@@ -1,0 +1,19 @@
+[binaries]
+c = 'x86_64-linux-uclibc-gcc'
+cpp = 'x86_64-linux-uclibc-g++'
+ar = 'x86_64-linux-uclibc-gcc-ar'
+strip = 'x86_64-linux-uclibc-strip'
+nm = 'x86_64-linux-uclibc-nm'
+[built-in options]
+c_args = '-O2 -pipe -fno-caller-saves -D_FILE_OFFSET_BITS=64 -fno-plt -fcommon -I/home/seg/DEV/x86_64/src/router/libffi/x86_64-pc-linux-gnu/include -I/home/seg/DEV/x86_64/src/router/zlib'
+c_link_args = ' -L/home/seg/DEV/x86_64/src/router/libffi/x86_64-pc-linux-gnu/.libs -lffi -L/home/seg/DEV/x86_64/src/router/zlib -lz'
+cpp_args = '-O2 -pipe -fno-caller-saves -D_FILE_OFFSET_BITS=64 -fno-plt -fcommon -I/home/seg/DEV/x86_64/src/router/libffi/x86_64-pc-linux-gnu/include -I/home/seg/DEV/x86_64/src/router/zlib'
+cpp_link_args = ' -L/home/seg/DEV/x86_64/src/router/libffi/x86_64-pc-linux-gnu/.libs -lffi -L/home/seg/DEV/x86_64/src/router/zlib -lz'
+prefix = '/usr'
+[host_machin]
+system = 'linux'
+cpu_family = 'x86_64'
+cpu = 'generic'
+endian = 'little'
+[properties]
+needs_exe_wrapper = true
