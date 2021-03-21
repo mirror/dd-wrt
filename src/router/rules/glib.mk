@@ -1,3 +1,61 @@
+GLIB_COMP_ARGS= \
+	-Ddefault_library=both \
+	-Diconv=libc \
+	-Dselinux=disabled \
+	-Dlibmount=disabled \
+	-Dinternal_pcre=true \
+	-Dman=false \
+	-Ddtrace=false \
+	-Dsystemtap=false \
+	-Dgtk_doc=false \
+	-Dbsymbolic_functions=true \
+	-Dforce_posix_threads=true \
+	-Dfam=false \
+	-Dinstalled_tests=false \
+	-Dnls=disabled \
+	-Doss_fuzz=disabled \
+	-Dglib_assert=false \
+	-Dglib_checks=false
+
+GLIB_MESON_HOST_ARGS += $(GLIB_COMP_ARGS) -Dxattr=false
+GLIB_MESON_ARGS += $(GLIB_COMP_ARGS) -Dxattr=true -Db_lto=true
+
+ifeq ($(ARCH),arm)
+MESON_ARCH:="arm"
+MESON_ENDIAN:="little"
+endif
+ifeq ($(ARCH),aarch64)
+MESON_ARCH:="aarch64"
+MESON_ENDIAN:="little"
+endif
+ifeq ($(ARCH),armeb)
+MESON_ARCH:="arm"
+MESON_ENDIAN:="big"
+endif
+ifeq ($(ARCH),i386)
+MESON_ARCH:="x86"
+MESON_ENDIAN:="little"
+endif
+ifeq ($(ARCH),x86_64)
+MESON_ARCH:="x86_64"
+MESON_ENDIAN:="little"
+endif
+ifeq ($(ARCH),mips)
+MESON_ARCH:="mips"
+MESON_ENDIAN:="big"
+endif
+ifeq ($(ARCH),mips64)
+MESON_ARCH:="mips64"
+MESON_ENDIAN:="big"
+endif
+ifeq ($(ARCH),mipsel)
+MESON_ARCH:="mips"
+MESON_ENDIAN:="little"
+endif
+ifeq ($(ARCH),powerpc)
+MESON_ARCH:="ppc"
+MESON_ENDIAN:="big"
+endif
 ifeq ($(ARCH),i386)
 	export SUBARCH:=pc
 else
@@ -10,6 +68,28 @@ endif
 
 
 glib20-configure: libffi zlib util-linux
+	echo "[binaries]" > $(TOP)/glib20/libglib/cross.txt
+	echo c = \'$(subst ccache ,,$(CC))\' >> $(TOP)/glib20/libglib/cross.txt
+	echo cpp = \'$(subst ccache ,,$(CXX))\' >> $(TOP)/glib20/libglib/cross.txt
+	echo ar = \'$(AR)\' >> $(TOP)/glib20/libglib/cross.txt
+	echo strip = \'$(STRIP)\' >> $(TOP)/glib20/libglib/cross.txt
+	echo nm = \'$(NM)\' >> $(TOP)/glib20/libglib/cross.txt
+	echo [built-in options] >> $(TOP)/glib20/libglib/cross.txt
+	echo c_args = \'$(CFLAGS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib\' >> $(TOP)/glib20/libglib/cross.txt
+	echo c_link_args = \'$(LDFLAGS) -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz\' >> $(TOP)/glib20/libglib/cross.txt
+	echo cpp_args = \'$(CFLAGS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib\' >> $(TOP)/glib20/libglib/cross.txt
+	echo cpp_link_args = \'$(LDFLAGS) -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz\' >> $(TOP)/glib20/libglib/cross.txt
+	echo prefix = \'/usr\' >> $(TOP)/glib20/libglib/cross.txt
+	echo [host_machin] >> $(TOP)/glib20/libglib/cross.txt
+	echo system = \'linux\' >> $(TOP)/glib20/libglib/cross.txt
+	echo cpu_family = \'$(MESON_ARCH)\' >> $(TOP)/glib20/libglib/cross.txt
+	echo cpu = \'generic\' >> $(TOP)/glib20/libglib/cross.txt
+	echo endian = \'$(MESON_ENDIAN)\' >> $(TOP)/glib20/libglib/cross.txt
+	echo [properties] >> $(TOP)/glib20/libglib/cross.txt
+	echo needs_exe_wrapper = true >> $(TOP)/glib20/libglib/cross.txt
+
+
+
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
@@ -29,18 +109,12 @@ glib20-configure: libffi zlib util-linux
 	cd glib20/gettext && ./autogen.sh
 	cd glib20/gettext && ./configure --enable-static --disable-shared --host=$(ARCH)-linux  LDFLAGS="$(COPTS) $(LTO) -std=gnu89 $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc"
 	$(MAKE) -C glib20/gettext clean all
+	rm -rf $(TOP)/glib20/libglib/build
+	export CPPFLAGS="$(COPTS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib" && \
+	export CFLAGS="$(COPTS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib" && \
+	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz" && \
+	cd $(TOP)/glib20/libglib && meson setup --buildtype=plain --prefix=/usr --cross-file $(TOP)/glib20/libglib/cross.txt $(GLIB_MESON_ARGS) build
 
-	-cd glib20/libglib && ./autogen.sh
-	cd glib20/libglib && ./configure --enable-shared --enable-static --disable-fam --with-libiconv=gnu --disable-libelf --with-pcre=internal --disable-libmount --enable-debug=no --disable-selinux --disable-man --host=$(ARCH)-linux  CFLAGS="$(COPTS) $(LTO) -std=gnu89  -DNVALGRIND=1 $(MIPS16_OPT) -D_GNU_SOURCE=1  -I$(TOP)/zlib -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include  -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/glib20/gettext/.libs -L$(TOP)/glib20/libglib/gmodule/.libs   -L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib -pthread -lpthread -lz" --disable-modular-tests \
-	LIBFFI_CFLAGS="-I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include" \
-	LIBFFI_LIBS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi" \
-	ZLIB_CFLAGS="-I$(TOP)/zlib" \
-	ZLIB_LIBS="-L$(TOP)/zlib -lz" \
-	AR_FLAGS="cru $(LTOPLUGIN)" \
-	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
-	glib_cv_stack_grows=no glib_cv_uscore=no ac_cv_func_mmap_fixed_mapped=yes ac_cv_func_posix_getpwuid_r=yes ac_cv_func_posix_getgrgid_r=yes
-
-	$(MAKE) -C glib20/libglib clean all
 
 glib20: libffi zlib util-linux util-linux-install
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
@@ -58,7 +132,13 @@ glib20: libffi zlib util-linux util-linux-install
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	$(MAKE) -C glib20/gettext all
-	$(MAKE) -C glib20/libglib all
+
+
+	export CPPFLAGS="$(COPTS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib" && \
+	export CFLAGS="$(COPTS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib" && \
+	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz" && \
+	cd $(TOP)/glib20/libglib && ninja -C build
+
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
@@ -95,24 +175,34 @@ endif
 
 glib20-clean:
 	$(MAKE) -C glib20/gettext clean
-	$(MAKE) -C glib20/libglib clean
+	cd $(TOP)/glib20/libglib && ninja -C build clean
 
 glib20-install:
-	install -D glib20/libglib/glib/.libs/libglib-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libglib-2.0.so.0
-ifeq ($(CONFIG_MC),y)
-	install -D glib20/libglib/gmodule/.libs/libgmodule-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgmodule-2.0.so.0
+	$(MAKE) -C glib20/gettext clean
+	export DESTDIR=$(INSTALLDIR)/glib20 && \
+	cd $(TOP)/glib20/libglib && ninja -C build install
+	rm -rf $(INSTALLDIR)/usr/bin
+	rm -rf $(INSTALLDIR)/usr/include
+	rm -rf $(INSTALLDIR)/usr/share
+	rm -rf $(INSTALLDIR)/usr/lib/glib-2.0
+	rm -rf $(INSTALLDIR)/usr/lib/pkgconfig
+
+
+#	install -D glib20/libglib/glib/.libs/libglib-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libglib-2.0.so.0
+ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_LIBMBIM),y)
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libgmodule-2.0*
 endif
-ifeq ($(CONFIG_LIBQMI),y)
-	install -D glib20/libglib/gmodule/.libs/libgmodule-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgmodule-2.0.so.0
-	install -D glib20/libglib/gthread/.libs/libgthread-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgthread-2.0.so.0
-	install -D glib20/libglib/gobject/.libs/libgobject-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgobject-2.0.so.0
-	install -D glib20/libglib/gio/.libs/libgio-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgio-2.0.so.0
 endif
-ifeq ($(CONFIG_LIBMBIM),y)
-	install -D glib20/libglib/gmodule/.libs/libgmodule-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgmodule-2.0.so.0
-	install -D glib20/libglib/gthread/.libs/libgthread-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgthread-2.0.so.0
-	install -D glib20/libglib/gobject/.libs/libgobject-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgobject-2.0.so.0
-	install -D glib20/libglib/gio/.libs/libgio-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgio-2.0.so.0
+endif
+
+ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_LIBMBIM),y)
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libgthread*
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libgobject*
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libgio*
+endif
 endif
 	-install -D glib20/gettext/gettext-runtime/intl/.libs/libintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libintl.so.8
 	-install -D glib20/gettext/gettext-runtime/intl/.libs/libgnuintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libgnuintl.so.8
