@@ -17,8 +17,28 @@ GLIB_COMP_ARGS= \
 	-Dglib_assert=false \
 	-Dglib_checks=false
 
+GLIB_STATIC_COMP_ARGS= \
+	-Diconv=libc \
+	-Dselinux=disabled \
+	-Dlibmount=disabled \
+	-Dinternal_pcre=true \
+	-Dman=false \
+	-Ddtrace=false \
+	-Dsystemtap=false \
+	-Dgtk_doc=false \
+	-Dbsymbolic_functions=true \
+	-Dforce_posix_threads=true \
+	-Dfam=false \
+	-Dinstalled_tests=false \
+	-Dnls=disabled \
+	-Doss_fuzz=disabled \
+	-Dglib_assert=false \
+	-Dglib_checks=false
+
 GLIB_MESON_HOST_ARGS += $(GLIB_COMP_ARGS) -Dxattr=false
 GLIB_MESON_ARGS += $(GLIB_COMP_ARGS) -Dxattr=true -Db_lto=true
+GLIB_STATIC_MESON_HOST_ARGS += $(GLIB_STATIC_COMP_ARGS) -Dxattr=false
+GLIB_STATIC_MESON_ARGS += $(GLIB_STATIC_COMP_ARGS) -Dxattr=true -Db_lto=true
 
 ifeq ($(ARCH),arm)
 MESON_ARCH:="arm"
@@ -68,9 +88,9 @@ endif
 
 
 glib20-configure: libffi zlib util-linux
-	ln -f -s ${shell which $(CROSS_COMPILE)gcc} ${shell which $(CROSS_COMPILE)gcc-ar}
-	ln -f -s ${shell which $(CROSS_COMPILE)gcc} ${shell which $(CROSS_COMPILE)gcc-ranlib}
-	ln -f -s ${shell which $(CROSS_COMPILE)gcc} ${shell which $(CROSS_COMPILE)gcc-nm}
+	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-ar} ${shell which $(CROSS_COMPILE)gcc-ar}
+	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-ranlib} ${shell which $(CROSS_COMPILE)gcc-ranlib}
+	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-nm} ${shell which $(CROSS_COMPILE)gcc-nm}
 	echo "[binaries]" > $(TOP)/glib20/libglib/cross.txt
 	echo c = \'$(subst ccache ,,$(CC))\' >> $(TOP)/glib20/libglib/cross.txt
 	echo cpp = \'$(subst ccache ,,$(CXX))\' >> $(TOP)/glib20/libglib/cross.txt
@@ -123,8 +143,20 @@ glib20-configure: libffi zlib util-linux
 	cd $(TOP)/glib20/libglib && ninja -C build
 	export DESTDIR=$(TOP)/_staging && \
 	cd $(TOP)/glib20/libglib && ninja -C build install
+
+
+	rm -rf $(TOP)/glib20/libglib_static/build
+	export CPPFLAGS="$(COPTS) $(LTO) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	export CFLAGS="$(COPTS) $(LTO) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	cd $(TOP)/glib20/libglib_static && meson setup --buildtype=plain --prefix=/usr --default-library static --cross-file $(TOP)/glib20/libglib/cross.txt $(GLIB_STATIC_MESON_ARGS) build
+	export CPPFLAGS="$(COPTS) $(LTO) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	export CFLAGS="$(COPTS) $(LTO) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
+	cd $(TOP)/glib20/libglib_static && ninja -C build
+
 	export DESTDIR=$(TOP)/_staging_static && \
-	cd $(TOP)/glib20/libglib && ninja -C build install
+	cd $(TOP)/glib20/libglib_static && ninja -C build install
 	rm -rf $(TOP)/_staging_static/usr/lib/*.so*
 
 glib20: libffi zlib util-linux util-linux-install
