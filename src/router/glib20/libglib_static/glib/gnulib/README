@@ -1,0 +1,87 @@
+The files
+ 
+ asnprintf.c 
+ printf-args.c
+ printf-args.h
+ printf-parse.c
+ printf-parse.h
+ vasnprintf.c
+ vasnprintf.h
+
+are taken from the vasnprintf module of the GNUlib package, which can
+be found at: 
+
+ http://www.gnu.org/software/gnulib/
+
+All files have been modified to include g-gnulib.h. 
+
+vasnprintf.c has also been modified to include support for long long 
+printing if the system printf doesn't. This code is protected by 
+#ifndef HAVE_LONG_LONG_FORMAT.
+
+Code has been added to printf-args.[ch], printf-parse.c and vasnprintf.c
+to support printing of __int64 values with the I64 format modifier. This
+is protected by #ifdef HAVE_INT64_AND_I64.
+
+The files
+
+ printf.h 
+ printf.c
+ g-gnulib.h
+
+have been written by me. printf.[hc] contain implementations of the  
+remaining functions in the printf family based on vasnprintf. 
+g-gnulib.h is included by all source files in order to move all
+exported functions to the _g_gnulib namespace, replace malloc by
+g_malloc and make sure that snprintf is only used if it implements 
+C99 return value semantics. 
+
+Matthias Clasen
+November 1, 2003
+
+To update:
+* Create an empty directory, put a configure.ac file into it.
+* Run gnulib-tool --lgpl=2 --import --lib=libgnu --source-base=lib \
+  --m4-base=m4 --doc-base=doc --tests-base=tests --aux-dir=. \
+  --no-conditional-dependencies --no-libtool --macro-prefix=gl \
+  isnand-nolibm isnanf-nolibm isnanl-nolibm printf-frexpl \
+  signbit vasnprintf
+* Then pick out the files that are already in glib/gnulib subdirectory
+  (the rest of the files are not needed):
+
+asnprintf.c
+c++defs.h
+float+.h
+fpucw.h
+gnulib_math.h.in (rename from math.in.h)
+isnan.c
+isnand.c
+isnand-nolibm.h
+isnanf.c
+isnanf-nolibm.h
+isnanl.c
+isnanl-nolibm.h
+printf-args.c
+printf-args.h
+printf-frexp.c
+printf-frexp.h
+printf-frexpl.c
+printf-frexpl.h
+printf-parse.c
+printf-parse.h
+signbitd.c
+signbitf.c
+signbitl.c
+vasnprintf.c
+vasnprintf.h
+verify.h
+xsize.h
+
+* Then look at the glib-gnulib.patch and re-introduce custom glib changes
+  contained in that patch.
+* If gnulib_math.h.in got some new @variables@, these will have to be
+  somehow set in meson.build, otherwise meson would warn about them
+  at configure stage
+
+LRN
+June 06, 2018
