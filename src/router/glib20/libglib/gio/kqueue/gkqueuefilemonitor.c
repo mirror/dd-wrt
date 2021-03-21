@@ -75,7 +75,7 @@ typedef GLocalFileMonitorClass GKqueueFileMonitorClass;
  *
  * To distinguish between a directory monitor and a regular file monitor, check
  * whether sub_file is NULL. */
-typedef struct _GKqueueFileMonitor
+struct _GKqueueFileMonitor
 {
   GLocalFileMonitor parent_instance;
 
@@ -85,7 +85,7 @@ typedef struct _GKqueueFileMonitor
   GFileMonitor *fallback;
   GFile *fbfile;
 #endif
-} GKqueueFileMonitor;
+};
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -107,7 +107,7 @@ G_DEFINE_TYPE_WITH_CODE (GKqueueFileMonitor, g_kqueue_file_monitor, G_TYPE_LOCAL
 static inline unsigned int
 note_all (void)
 {
-  unsigned int notes = NOTE_DELETE | NOTE_WRITE | NOTE_EXTEND | NOTE_ATTRIB | NOTE_RENAME;
+  unsigned int notes = NOTE_DELETE | NOTE_WRITE | NOTE_EXTEND | NOTE_ATTRIB | NOTE_RENAME | NOTE_REVOKE;
 #ifdef NOTE_TRUNCATE
   notes |= NOTE_TRUNCATE;
 #endif
@@ -122,7 +122,7 @@ static gboolean g_kqueue_file_monitor_is_supported (void);
 
 static kqueue_sub	*_kqsub_new (gchar *, gchar *, GKqueueFileMonitor *, GFileMonitorSource *);
 static void		 _kqsub_free (kqueue_sub *);
-static gboolean		 _kqsub_cancel (kqueue_sub *);
+static void		 _kqsub_cancel (kqueue_sub *);
 
 
 #ifndef O_EVTONLY
@@ -265,7 +265,7 @@ g_kqueue_file_monitor_start (GLocalFileMonitor *local_monitor,
   /* For a directory monitor, create a subscription object anyway.
    * It will be used for directory diff calculation routines. 
    * Wait, directory diff in a GKqueueFileMonitor?
-   * Yes, it is. When a file monitor is started on an non-existent
+   * Yes, it is. When a file monitor is started on a non-existent
    * file, GIO uses a GKqueueFileMonitor object for that. If a directory
    * will be created under that path, GKqueueFileMonitor will have to
    * handle the directory notifications. */
@@ -354,7 +354,7 @@ g_kqueue_file_monitor_callback (gint fd, GIOCondition condition, gpointer user_d
              * rescan of missing files immediately so we don't have to wait for
              * 4 seconds for discovering missing files. We pass the sub_file
              * corresponding to the GKqueueFileMonitor to 'check_this_sub_only'
-             * argument to prevent _km_scan_missing from emiting 'CREATED'
+             * argument to prevent _km_scan_missing from emitting 'CREATED'
              * events because _kh_dir_diff will do it for us. */
             if (sub->mon->sub_file != NULL && sub->mon->sub_file->fd == -1)
               _km_scan_missing (sub->mon->sub_file);
@@ -547,7 +547,7 @@ _kqsub_free (kqueue_sub *sub)
   g_slice_free (kqueue_sub, sub);
 }
 
-static gboolean
+static void
 _kqsub_cancel (kqueue_sub *sub)
 {
   /* WARNING: Before calling this function, you must hold a lock on kq_lock
@@ -563,7 +563,6 @@ _kqsub_cancel (kqueue_sub *sub)
       if (kevent (kq_queue, &ev, 1, NULL, 0, NULL) == -1)
         {
           g_warning ("Unable to remove event for %s: %s", sub->filename, g_strerror (errno));
-          return FALSE;
         }
       close (sub->fd);
       sub->fd = -1;
@@ -576,8 +575,6 @@ _kqsub_cancel (kqueue_sub *sub)
       dl_free (sub->deps);
       sub->deps = NULL;
     }
-
-  return TRUE;
 }
 
 gboolean

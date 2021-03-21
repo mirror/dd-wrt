@@ -26,7 +26,9 @@
 #undef G_LOG_DOMAIN
 
 /* We are testing some deprecated APIs here */
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
 #define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -331,7 +333,7 @@ static void
 test_tree_traverse (void)
 {
   GTree *tree;
-  gint i;
+  gsize i;
   TraverseData orders[] = {
     { G_IN_ORDER,   -1, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" },
     { G_IN_ORDER,    1, "0" },
@@ -463,4 +465,3 @@ main (int argc, char *argv[])
 
   return g_test_run ();
 }
-

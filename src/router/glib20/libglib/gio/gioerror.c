@@ -107,6 +107,12 @@ g_io_error_from_errno (gint err_no)
       break;
 #endif
 
+#ifdef ENXIO
+    case ENXIO:
+      return G_IO_ERROR_NOT_REGULAR_FILE;
+      break;
+#endif
+
 #ifdef EROFS
     case EROFS:
       return G_IO_ERROR_READ_ONLY;
@@ -272,6 +278,12 @@ g_io_error_from_errno (gint err_no)
       break;
 #endif
 
+#ifdef ENOTSOCK
+    case ENOTSOCK:
+      return G_IO_ERROR_INVALID_ARGUMENT;
+      break;
+#endif
+
     default:
       return G_IO_ERROR_FAILED;
       break;
@@ -337,6 +349,7 @@ g_io_error_from_win32_error (gint error_code)
       return G_IO_ERROR_NOT_SUPPORTED;
 
     case WSAECONNRESET:
+    case WSAENETRESET:
     case WSAESHUTDOWN:
       return G_IO_ERROR_CONNECTION_CLOSED;
 

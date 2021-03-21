@@ -89,6 +89,11 @@ GLIB_AVAILABLE_IN_2_36
 gboolean         g_desktop_app_info_get_boolean       (GDesktopAppInfo *info,
                                                        const char      *key);
 
+GLIB_AVAILABLE_IN_2_60
+gchar **         g_desktop_app_info_get_string_list (GDesktopAppInfo *info,
+                                                     const char      *key,
+                                                     gsize           *length);
+
 GLIB_AVAILABLE_IN_2_38
 const gchar * const *   g_desktop_app_info_list_actions                 (GDesktopAppInfo   *info);
 
@@ -101,22 +106,21 @@ GLIB_AVAILABLE_IN_2_38
 gchar *                 g_desktop_app_info_get_action_name              (GDesktopAppInfo   *info,
                                                                          const gchar       *action_name);
 
-#ifndef G_DISABLE_DEPRECATED
-
-#define G_TYPE_DESKTOP_APP_INFO_LOOKUP           (g_desktop_app_info_lookup_get_type ())
-#define G_DESKTOP_APP_INFO_LOOKUP(obj)           (G_TYPE_CHECK_INSTANCE_CAST ((obj), G_TYPE_DESKTOP_APP_INFO_LOOKUP, GDesktopAppInfoLookup))
-#define G_IS_DESKTOP_APP_INFO_LOOKUP(obj)	 (G_TYPE_CHECK_INSTANCE_TYPE ((obj), G_TYPE_DESKTOP_APP_INFO_LOOKUP))
-#define G_DESKTOP_APP_INFO_LOOKUP_GET_IFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), G_TYPE_DESKTOP_APP_INFO_LOOKUP, GDesktopAppInfoLookupIface))
+#define G_TYPE_DESKTOP_APP_INFO_LOOKUP           (g_desktop_app_info_lookup_get_type ()) GLIB_DEPRECATED_MACRO_IN_2_28
+#define G_DESKTOP_APP_INFO_LOOKUP(obj)           (G_TYPE_CHECK_INSTANCE_CAST ((obj), G_TYPE_DESKTOP_APP_INFO_LOOKUP, GDesktopAppInfoLookup)) GLIB_DEPRECATED_MACRO_IN_2_28
+#define G_IS_DESKTOP_APP_INFO_LOOKUP(obj)	 (G_TYPE_CHECK_INSTANCE_TYPE ((obj), G_TYPE_DESKTOP_APP_INFO_LOOKUP)) GLIB_DEPRECATED_MACRO_IN_2_28
+#define G_DESKTOP_APP_INFO_LOOKUP_GET_IFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), G_TYPE_DESKTOP_APP_INFO_LOOKUP, GDesktopAppInfoLookupIface)) GLIB_DEPRECATED_MACRO_IN_2_28
 
 /**
  * G_DESKTOP_APP_INFO_LOOKUP_EXTENSION_POINT_NAME:
  *
  * Extension point for default handler to URI association. See
  * [Extending GIO][extending-gio].
+ *
+ * Deprecated: 2.28: The #GDesktopAppInfoLookup interface is deprecated and
+ *    unused by GIO.
  */
-#define G_DESKTOP_APP_INFO_LOOKUP_EXTENSION_POINT_NAME "gio-desktop-app-info-lookup"
-
-#endif /* G_DISABLE_DEPRECATED */
+#define G_DESKTOP_APP_INFO_LOOKUP_EXTENSION_POINT_NAME "gio-desktop-app-info-lookup" GLIB_DEPRECATED_MACRO_IN_2_28
 
 /**
  * GDesktopAppInfoLookupIface:

@@ -8,6 +8,7 @@
 #include "glib.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <locale.h>
 #include <time.h>
@@ -133,10 +134,13 @@ int main(int argc, char** argv)
   g_date_set_julian(d, 1);
   TEST("GDate's \"Julian\" epoch's first day is valid", g_date_valid(d));
 
+#ifndef G_OS_WIN32
   g_date_strftime(buf,100,"Our \"Julian\" epoch begins on a %A, in the month of %B, %x\n",
 		  d);
   g_print("%s", buf);
-
+#else
+  g_print ("But Windows FILETIME does not support dates before Jan 1 1601, so we can't strftime() the beginning of the \"Julian\" epoch.\n");
+#endif
   g_date_set_dmy(d, 10, 1, 2000);
 
   g_date_strftime(buf,100,"%x", d);
@@ -503,7 +507,5 @@ g_print ("testing %d years\n", n_check_years);
   
   g_print("\n%u tests passed, %u failed\n",passed, notpassed);
 
-  return 0;
+  return (notpassed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-

@@ -221,7 +221,7 @@ g_shell_quote (const gchar *unquoted_string)
    */
   while (*p)
     {
-      /* Replace literal ' with a close ', a \', and a open ' */
+      /* Replace literal ' with a close ', a \', and an open ' */
       if (*p == '\'')
         g_string_append (dest, "'\\''");
       else
@@ -523,7 +523,7 @@ tokenize_command_line (const gchar *command_line,
               ensure_token (&current_token);
               g_string_append_c (current_token, *p);
 
-              /* FALL THRU */
+              G_GNUC_FALLTHROUGH;
             case '\\':
               current_quote = *p;
               break;

@@ -1,6 +1,8 @@
 #include <gio/gio.h>
 #include <string.h>
 
+#include "glib/glib-private.h"
+
 #define g_assert_content_type_equals(s1, s2) 			\
   do { 								\
     const char *__s1 = (s1), *__s2 = (s2); 			\
@@ -16,6 +18,9 @@
 static void
 test_guess (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#else
   gchar *res;
   gchar *expected;
   gchar *existing_directory;
@@ -39,7 +44,7 @@ test_guess (void)
   g_free (existing_directory);
   expected = g_content_type_from_mime_type ("inode/directory");
   g_assert_content_type_equals (expected, res);
-  g_assert (uncertain);
+  g_assert_true (uncertain);
   g_free (res);
   g_free (expected);
 
@@ -52,7 +57,7 @@ test_guess (void)
   res = g_content_type_guess ("foo.txt", data, sizeof (data) - 1, &uncertain);
   expected = g_content_type_from_mime_type ("text/plain");
   g_assert_content_type_equals (expected, res);
-  g_assert (!uncertain);
+  g_assert_false (uncertain);
   g_free (res);
   g_free (expected);
 
@@ -61,21 +66,21 @@ test_guess (void)
   res = g_content_type_guess ("foo", data, sizeof (data) - 1, &uncertain);
   expected = g_content_type_from_mime_type ("text/plain");
   g_assert_content_type_equals (expected, res);
-  g_assert (!uncertain);
+  g_assert_false (uncertain);
   g_free (res);
   g_free (expected);
 
   res = g_content_type_guess ("foo.desktop", data, sizeof (data) - 1, &uncertain);
   expected = g_content_type_from_mime_type ("application/x-desktop");
   g_assert_content_type_equals (expected, res);
-  g_assert (!uncertain);
+  g_assert_false (uncertain);
   g_free (res);
   g_free (expected);
 
   res = g_content_type_guess (NULL, data, sizeof (data) - 1, &uncertain);
   expected = g_content_type_from_mime_type ("application/x-desktop");
   g_assert_content_type_equals (expected, res);
-  g_assert (!uncertain);
+  g_assert_false (uncertain);
   g_free (res);
   g_free (expected);
 
@@ -84,14 +89,14 @@ test_guess (void)
   res = g_content_type_guess ("test.pot", (guchar *)"ABC abc", 7, &uncertain);
   expected = g_content_type_from_mime_type ("text/x-gettext-translation-template");
   g_assert_content_type_equals (expected, res);
-  g_assert (!uncertain);
+  g_assert_false (uncertain);
   g_free (res);
   g_free (expected);
 
   res = g_content_type_guess ("test.pot", (guchar *)"msgid \"", 7, &uncertain);
   expected = g_content_type_from_mime_type ("text/x-gettext-translation-template");
   g_assert_content_type_equals (expected, res);
-  g_assert (!uncertain);
+  g_assert_false (uncertain);
   g_free (res);
   g_free (expected);
 
@@ -107,7 +112,7 @@ test_guess (void)
   res = g_content_type_guess ("test.otf", (guchar *)"OTTO", 4, &uncertain);
   expected = g_content_type_from_mime_type ("application/x-font-otf");
   g_assert_content_type_equals (expected, res);
-  g_assert (!uncertain);
+  g_assert_false (uncertain);
   g_free (res);
   g_free (expected);
 #endif
@@ -115,39 +120,56 @@ test_guess (void)
   res = g_content_type_guess (NULL, (guchar *)"%!PS-Adobe-2.0 EPSF-1.2", 23, &uncertain);
   expected = g_content_type_from_mime_type ("image/x-eps");
   g_assert_content_type_equals (expected, res);
-  g_assert (!uncertain);
+  g_assert_false (uncertain);
   g_free (res);
   g_free (expected);
+
+  /* The data below would be detected as a valid content type, but shouldn’t be read at all. */
+  res = g_content_type_guess (NULL, (guchar *)"%!PS-Adobe-2.0 EPSF-1.2", 0, &uncertain);
+  expected = g_content_type_from_mime_type ("application/x-zerosize");
+  g_assert_content_type_equals (expected, res);
+  g_assert_false (uncertain);
+  g_free (res);
+  g_free (expected);
+#endif
 }
 
 static void
 test_unknown (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#else
   gchar *unknown;
   gchar *str;
 
   unknown = g_content_type_from_mime_type ("application/octet-stream");
-  g_assert (g_content_type_is_unknown (unknown));
+  g_assert_true (g_content_type_is_unknown (unknown));
   str = g_content_type_get_mime_type (unknown);
   g_assert_cmpstr (str, ==, "application/octet-stream");
   g_free (str);
   g_free (unknown);
+#endif
 }
 
 static void
 test_subtype (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#else
   gchar *plain;
   gchar *xml;
 
   plain = g_content_type_from_mime_type ("text/plain");
   xml = g_content_type_from_mime_type ("application/xml");
 
-  g_assert (g_content_type_is_a (xml, plain));
-  g_assert (g_content_type_is_mime_type (xml, "text/plain"));
+  g_assert_true (g_content_type_is_a (xml, plain));
+  g_assert_true (g_content_type_is_mime_type (xml, "text/plain"));
 
   g_free (plain);
   g_free (xml);
+#endif
 }
 
 static gint
@@ -161,6 +183,10 @@ find_mime (gconstpointer a, gconstpointer b)
 static void
 test_list (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+  (void) find_mime;
+#else
   GList *types;
   gchar *plain;
   gchar *xml;
@@ -175,69 +201,81 @@ test_list (void)
 
   types = g_content_types_get_registered ();
 
-  g_assert (g_list_length (types) > 1);
+  g_assert_cmpuint (g_list_length (types), >, 1);
 
   /* just check that some types are in the list */
-  g_assert (g_list_find_custom (types, plain, find_mime) != NULL);
-  g_assert (g_list_find_custom (types, xml, find_mime) != NULL);
+  g_assert_nonnull (g_list_find_custom (types, plain, find_mime));
+  g_assert_nonnull (g_list_find_custom (types, xml, find_mime));
 
   g_list_free_full (types, g_free);
 
   g_free (plain);
   g_free (xml);
+#endif
 }
 
 static void
 test_executable (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#else
   gchar *type;
 
   type = g_content_type_from_mime_type ("application/x-executable");
-  g_assert (g_content_type_can_be_executable (type));
+  g_assert_true (g_content_type_can_be_executable (type));
   g_free (type);
 
   type = g_content_type_from_mime_type ("text/plain");
-  g_assert (g_content_type_can_be_executable (type));
+  g_assert_true (g_content_type_can_be_executable (type));
   g_free (type);
 
   type = g_content_type_from_mime_type ("image/png");
-  g_assert (!g_content_type_can_be_executable (type));
+  g_assert_false (g_content_type_can_be_executable (type));
   g_free (type);
+#endif
 }
 
 static void
 test_description (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#else
   gchar *type;
   gchar *desc;
 
   type = g_content_type_from_mime_type ("text/plain");
   desc = g_content_type_get_description (type);
-  g_assert (desc != NULL);
+  g_assert_nonnull (desc);
 
   g_free (desc);
   g_free (type);
+#endif
 }
 
 static void
 test_icon (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#else
   gchar *type;
   GIcon *icon;
 
   type = g_content_type_from_mime_type ("text/plain");
   icon = g_content_type_get_icon (type);
-  g_assert (G_IS_ICON (icon));
+  g_assert_true (G_IS_ICON (icon));
   if (G_IS_THEMED_ICON (icon))
     {
       const gchar *const *names;
 
       names = g_themed_icon_get_names (G_THEMED_ICON (icon));
 #ifdef __APPLE__
-      g_assert (g_strv_contains (names, "text-*"));
+      g_assert_true (g_strv_contains (names, "text-*"));
 #else
-      g_assert (g_strv_contains (names, "text-plain"));
-      g_assert (g_strv_contains (names, "text-x-generic"));
+      g_assert_true (g_strv_contains (names, "text-plain"));
+      g_assert_true (g_strv_contains (names, "text-x-generic"));
 #endif
     }
   g_object_unref (icon);
@@ -245,44 +283,47 @@ test_icon (void)
 
   type = g_content_type_from_mime_type ("application/rtf");
   icon = g_content_type_get_icon (type);
-  g_assert (G_IS_ICON (icon));
+  g_assert_true (G_IS_ICON (icon));
   if (G_IS_THEMED_ICON (icon))
     {
       const gchar *const *names;
 
       names = g_themed_icon_get_names (G_THEMED_ICON (icon));
-      g_assert (g_strv_contains (names, "application-rtf"));
+      g_assert_true (g_strv_contains (names, "application-rtf"));
 #ifndef __APPLE__
-      g_assert (g_strv_contains (names, "x-office-document"));
+      g_assert_true (g_strv_contains (names, "x-office-document"));
 #endif
     }
   g_object_unref (icon);
   g_free (type);
+#endif
 }
 
 static void
 test_symbolic_icon (void)
 {
-#ifndef G_OS_WIN32
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#elif !defined(G_OS_WIN32)
   gchar *type;
   GIcon *icon;
 
   type = g_content_type_from_mime_type ("text/plain");
   icon = g_content_type_get_symbolic_icon (type);
-  g_assert (G_IS_ICON (icon));
+  g_assert_true (G_IS_ICON (icon));
   if (G_IS_THEMED_ICON (icon))
     {
       const gchar *const *names;
 
       names = g_themed_icon_get_names (G_THEMED_ICON (icon));
 #ifdef __APPLE__
-      g_assert (g_strv_contains (names, "text-*-symbolic"));
-      g_assert (g_strv_contains (names, "text-*"));
+      g_assert_true (g_strv_contains (names, "text-*-symbolic"));
+      g_assert_true (g_strv_contains (names, "text-*"));
 #else
-      g_assert (g_strv_contains (names, "text-plain-symbolic"));
-      g_assert (g_strv_contains (names, "text-x-generic-symbolic"));
-      g_assert (g_strv_contains (names, "text-plain"));
-      g_assert (g_strv_contains (names, "text-x-generic"));
+      g_assert_true (g_strv_contains (names, "text-plain-symbolic"));
+      g_assert_true (g_strv_contains (names, "text-x-generic-symbolic"));
+      g_assert_true (g_strv_contains (names, "text-plain"));
+      g_assert_true (g_strv_contains (names, "text-x-generic"));
 #endif
     }
   g_object_unref (icon);
@@ -290,17 +331,17 @@ test_symbolic_icon (void)
 
   type = g_content_type_from_mime_type ("application/rtf");
   icon = g_content_type_get_symbolic_icon (type);
-  g_assert (G_IS_ICON (icon));
+  g_assert_true (G_IS_ICON (icon));
   if (G_IS_THEMED_ICON (icon))
     {
       const gchar *const *names;
 
       names = g_themed_icon_get_names (G_THEMED_ICON (icon));
-      g_assert (g_strv_contains (names, "application-rtf-symbolic"));
-      g_assert (g_strv_contains (names, "application-rtf"));
+      g_assert_true (g_strv_contains (names, "application-rtf-symbolic"));
+      g_assert_true (g_strv_contains (names, "application-rtf"));
 #ifndef __APPLE__
-      g_assert (g_strv_contains (names, "x-office-document-symbolic"));
-      g_assert (g_strv_contains (names, "x-office-document"));
+      g_assert_true (g_strv_contains (names, "x-office-document-symbolic"));
+      g_assert_true (g_strv_contains (names, "x-office-document"));
 #endif
     }
   g_object_unref (icon);
@@ -311,6 +352,9 @@ test_symbolic_icon (void)
 static void
 test_tree (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#else
   const gchar *tests[] = {
     "x-content/image-dcf",
     "x-content/unix-software",
@@ -335,11 +379,15 @@ test_tree (void)
       g_strfreev (types);
       g_object_unref (file);
    }
+#endif
 }
 
 static void
 test_type_is_a_special_case (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#else
   gboolean res;
 
   g_test_bug ("782311");
@@ -351,11 +399,15 @@ test_type_is_a_special_case (void)
   res = g_content_type_is_a ("anything", "application/octet-stream");
   g_assert_true (res);
 #endif
+#endif
 }
 
 static void
 test_guess_svg_from_data (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#else
   const gchar svgfilecontent[] = "<svg  xmlns=\"http://www.w3.org/2000/svg\"\
       xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\
     <rect x=\"10\" y=\"10\" height=\"100\" width=\"100\"\n\
@@ -374,12 +426,15 @@ test_guess_svg_from_data (void)
 #endif
   g_assert_false (uncertain);
   g_free (res);
+#endif
 }
 
 static void
 test_mime_from_content (void)
 {
-#ifdef __APPLE__
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks xdgmime internal data, see glib#2310");
+#elif defined(__APPLE__)
   gchar *mime_type;
   mime_type = g_content_type_get_mime_type ("com.microsoft.bmp");
   g_assert_cmpstr (mime_type, ==, "image/bmp");

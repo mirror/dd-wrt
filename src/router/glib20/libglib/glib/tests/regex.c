@@ -712,6 +712,7 @@ test_fetch_all (gconstpointer d)
   l_exp = data->expected;
   for (i = 0; l_exp != NULL; i++, l_exp = g_slist_next (l_exp))
     {
+      g_assert_nonnull (matches);
       g_assert_cmpstr (l_exp->data, ==, matches[i]);
     }
 
@@ -800,6 +801,7 @@ test_split_simple (gconstpointer d)
   l_exp = data->expected;
   for (i = 0; l_exp != NULL; i++, l_exp = g_slist_next (l_exp))
     {
+      g_assert_nonnull (tokens);
       g_assert_cmpstr (l_exp->data, ==, tokens[i]);
     }
 
@@ -883,6 +885,7 @@ test_split_full (gconstpointer d)
   l_exp = data->expected;
   for (i = 0; l_exp != NULL; i++, l_exp = g_slist_next (l_exp))
     {
+      g_assert_nonnull (tokens);
       g_assert_cmpstr (l_exp->data, ==, tokens[i]);
     }
 
@@ -915,6 +918,7 @@ test_split (gconstpointer d)
   l_exp = data->expected;
   for (i = 0; l_exp != NULL; i++, l_exp = g_slist_next (l_exp))
     {
+      g_assert_nonnull (tokens);
       g_assert_cmpstr (l_exp->data, ==, tokens[i]);
     }
 
@@ -1301,8 +1305,7 @@ test_match_all (gconstpointer d)
   GMatchInfo *match_info;
   GSList *l_exp;
   gboolean match_ok;
-  gint match_count;
-  gint i;
+  guint i, match_count;
 
   regex = g_regex_new (data->pattern, 0, 0, NULL);
   match_ok = g_regex_match_all (regex, data->string, 0, &match_info);
@@ -1313,6 +1316,7 @@ test_match_all (gconstpointer d)
     g_assert (match_ok);
 
   match_count = g_match_info_get_match_count (match_info);
+  g_assert_cmpint (match_count, >=, 0);
 
   if (match_count != g_slist_length (data->expected))
     {
@@ -1327,7 +1331,7 @@ test_match_all (gconstpointer d)
 
           matched_string = g_match_info_fetch (match_info, i);
           g_match_info_fetch_pos (match_info, i, &start, &end);
-          g_message ("%d. %d-%d '%s'", i, start, end, matched_string);
+          g_message ("%u. %d-%d '%s'", i, start, end, matched_string);
           g_free (matched_string);
         }
 
@@ -1338,11 +1342,11 @@ test_match_all (gconstpointer d)
         {
           Match *exp = l_exp->data;
 
-          g_message ("%d. %d-%d '%s'", i, exp->start, exp->end, exp->string);
+          g_message ("%u. %d-%d '%s'", i, exp->start, exp->end, exp->string);
           i++;
         }
 
-      g_error ("match_count not as expected: %d != %d",
+      g_error ("match_count not as expected: %u != %d",
           match_count, g_slist_length (data->expected));
     }
 
@@ -2321,7 +2325,7 @@ main (int argc, char *argv[])
   TEST_NEW_FAIL ("(*:0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEFG)XX", 0, G_REGEX_ERROR_NAME_TOO_LONG);
   TEST_NEW_FAIL ("\\u0100", G_REGEX_RAW | G_REGEX_JAVASCRIPT_COMPAT, G_REGEX_ERROR_CHARACTER_VALUE_TOO_LARGE);
 
-  /* These errors can't really be tested sanely:
+  /* These errors can't really be tested easily:
    * G_REGEX_ERROR_EXPRESSION_TOO_LARGE
    * G_REGEX_ERROR_MEMORY_ERROR
    * G_REGEX_ERROR_SUBPATTERN_NAME_TOO_LONG

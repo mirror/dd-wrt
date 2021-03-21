@@ -93,7 +93,8 @@ static GType test_module_get_type (void)
 	NULL,
 	sizeof (TestModule),
 	0,
-	(GInstanceInitFunc)NULL
+        (GInstanceInitFunc)NULL,
+        NULL,
       };
     object_type = g_type_register_static (G_TYPE_TYPE_MODULE, "TestModule", &object_info, 0);
   }
@@ -166,7 +167,7 @@ static gpointer
 ref_unref_thread (gpointer data)
 {
   gint i;
-  /* first, syncronize with other threads,
+  /* first, synchronize with other threads,
    */
   if (g_test_verbose())
     g_printerr ("WAITING!\n");

@@ -50,7 +50,7 @@
 
 typedef struct {
   gchar        *name;
-  gint          length;
+  gsize          length;
   gushort       port;
 } GSimpleProxyResolverDomain;
 
@@ -259,7 +259,8 @@ ignore_host (GSimpleProxyResolver *resolver,
   GSimpleProxyResolverPrivate *priv = resolver->priv;
   gchar *ascii_host = NULL;
   gboolean ignore = FALSE;
-  gint i, length, offset;
+  gsize offset, length;
+  guint i;
 
   if (priv->ignore_ips)
     {
@@ -297,6 +298,9 @@ ignore_host (GSimpleProxyResolver *resolver,
 	{
 	  GSimpleProxyResolverDomain *domain = &priv->ignore_domains[i];
 
+          if (domain->length > length)
+            continue;
+
 	  offset = length - domain->length;
 	  if ((domain->port == 0 || domain->port == port) &&
 	      (offset == 0 || (offset > 0 && host[offset - 1] == '.')) &&
@@ -327,10 +331,11 @@ g_simple_proxy_resolver_lookup (GProxyResolver  *proxy_resolver,
   if (priv->ignore_ips || priv->ignore_domains)
     {
       gchar *host = NULL;
-      gushort port;
+      gint port;
 
-      if (_g_uri_parse_authority (uri, &host, &port, NULL, NULL) &&
-          ignore_host (resolver, host, port))
+      if (g_uri_split_network (uri, G_URI_FLAGS_NONE, NULL,
+                               &host, &port, NULL) &&
+          ignore_host (resolver, host, port > 0 ? port : 0))
         proxy = "direct://";
 
       g_free (host);

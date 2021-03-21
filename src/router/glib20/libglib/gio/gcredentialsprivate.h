@@ -22,6 +22,85 @@
 #include "gio/gcredentials.h"
 #include "gio/gnetworking.h"
 
+/*
+ * G_CREDENTIALS_SUPPORTED:
+ *
+ * Defined to 1 if GCredentials works.
+ */
+#undef G_CREDENTIALS_SUPPORTED
+
+/*
+ * G_CREDENTIALS_USE_LINUX_UCRED, etc.:
+ *
+ * Defined to 1 if GCredentials uses Linux `struct ucred`, etc.
+ */
+#undef G_CREDENTIALS_USE_LINUX_UCRED
+#undef G_CREDENTIALS_USE_FREEBSD_CMSGCRED
+#undef G_CREDENTIALS_USE_NETBSD_UNPCBID
+#undef G_CREDENTIALS_USE_OPENBSD_SOCKPEERCRED
+#undef G_CREDENTIALS_USE_SOLARIS_UCRED
+#undef G_CREDENTIALS_USE_APPLE_XUCRED
+
+/*
+ * G_CREDENTIALS_NATIVE_TYPE:
+ *
+ * Defined to one of G_CREDENTIALS_TYPE_LINUX_UCRED, etc.
+ */
+#undef G_CREDENTIALS_NATIVE_TYPE
+
+/*
+ * G_CREDENTIALS_NATIVE_SIZE:
+ *
+ * Defined to the size of the %G_CREDENTIALS_NATIVE_TYPE
+ */
+#undef G_CREDENTIALS_NATIVE_SIZE
+
+/*
+ * G_CREDENTIALS_UNIX_CREDENTIALS_MESSAGE_SUPPORTED:
+ *
+ * Defined to 1 if we have a message-passing API in which credentials
+ * are attached to a particular message, such as `SCM_CREDENTIALS` on Linux
+ * or `SCM_CREDS` on FreeBSD.
+ */
+#undef G_CREDENTIALS_UNIX_CREDENTIALS_MESSAGE_SUPPORTED
+
+/*
+ * G_CREDENTIALS_SOCKET_GET_CREDENTIALS_SUPPORTED:
+ *
+ * Defined to 1 if we have a `getsockopt()`-style API in which one end of
+ * a socket connection can directly query the credentials of the process
+ * that initiated the other end, such as `getsockopt SO_PEERCRED` on Linux
+ * or `getpeereid()` on multiple operating systems.
+ */
+#undef G_CREDENTIALS_SOCKET_GET_CREDENTIALS_SUPPORTED
+
+/*
+ * G_CREDENTIALS_SPOOFING_SUPPORTED:
+ *
+ * Defined to 1 if privileged processes can spoof their credentials when
+ * using the message-passing API.
+ */
+#undef G_CREDENTIALS_SPOOFING_SUPPORTED
+
+/*
+ * G_CREDENTIALS_PREFER_MESSAGE_PASSING:
+ *
+ * Defined to 1 if the data structure transferred by the message-passing
+ * API is strictly more informative than the one transferred by the
+ * `getsockopt()`-style API, and hence should be preferred, even for
+ * protocols like D-Bus that are defined in terms of the credentials of
+ * the (process that opened the) socket, as opposed to the credentials
+ * of an individual message.
+ */
+#undef G_CREDENTIALS_PREFER_MESSAGE_PASSING
+
+/*
+ * G_CREDENTIALS_HAS_PID:
+ *
+ * Defined to 1 if the %G_CREDENTIALS_NATIVE_TYPE contains the process ID.
+ */
+#undef G_CREDENTIALS_HAS_PID
+
 #ifdef __linux__
 #define G_CREDENTIALS_SUPPORTED 1
 #define G_CREDENTIALS_USE_LINUX_UCRED 1
@@ -30,6 +109,7 @@
 #define G_CREDENTIALS_UNIX_CREDENTIALS_MESSAGE_SUPPORTED 1
 #define G_CREDENTIALS_SOCKET_GET_CREDENTIALS_SUPPORTED 1
 #define G_CREDENTIALS_SPOOFING_SUPPORTED 1
+#define G_CREDENTIALS_HAS_PID 1
 
 #elif defined(__FreeBSD__)                                  || \
       defined(__FreeBSD_kernel__) /* Debian GNU/kFreeBSD */ || \
@@ -41,6 +121,13 @@
 #define G_CREDENTIALS_NATIVE_SIZE (sizeof (struct cmsgcred))
 #define G_CREDENTIALS_UNIX_CREDENTIALS_MESSAGE_SUPPORTED 1
 #define G_CREDENTIALS_SPOOFING_SUPPORTED 1
+/* GLib doesn't implement it yet, but FreeBSD's getsockopt()-style API
+ * is getpeereid(), which is not as informative as struct cmsgcred -
+ * it does not tell us the PID. As a result, libdbus prefers to use
+ * SCM_CREDS, and if we implement getpeereid() in future, we should
+ * do the same. */
+#define G_CREDENTIALS_PREFER_MESSAGE_PASSING 1
+#define G_CREDENTIALS_HAS_PID 1
 
 #elif defined(__NetBSD__)
 #define G_CREDENTIALS_SUPPORTED 1
@@ -49,6 +136,7 @@
 #define G_CREDENTIALS_NATIVE_SIZE (sizeof (struct unpcbid))
 /* #undef G_CREDENTIALS_UNIX_CREDENTIALS_MESSAGE_SUPPORTED */
 #define G_CREDENTIALS_SPOOFING_SUPPORTED 1
+#define G_CREDENTIALS_HAS_PID 1
 
 #elif defined(__OpenBSD__)
 #define G_CREDENTIALS_SUPPORTED 1
@@ -57,6 +145,7 @@
 #define G_CREDENTIALS_NATIVE_SIZE (sizeof (struct sockpeercred))
 #define G_CREDENTIALS_SOCKET_GET_CREDENTIALS_SUPPORTED 1
 #define G_CREDENTIALS_SPOOFING_SUPPORTED 1
+#define G_CREDENTIALS_HAS_PID 1
 
 #elif defined(__sun__) || defined(__illumos__) || defined (__OpenSolaris_kernel__)
 #include <ucred.h>
@@ -66,6 +155,18 @@
 #define G_CREDENTIALS_NATIVE_SIZE (ucred_size ())
 #define G_CREDENTIALS_UNIX_CREDENTIALS_MESSAGE_SUPPORTED 1
 #define G_CREDENTIALS_SOCKET_GET_CREDENTIALS_SUPPORTED 1
+#define G_CREDENTIALS_HAS_PID 1
+
+#elif defined(__APPLE__)
+#include <sys/ucred.h>
+#define G_CREDENTIALS_SUPPORTED 1
+#define G_CREDENTIALS_USE_APPLE_XUCRED 1
+#define G_CREDENTIALS_NATIVE_TYPE G_CREDENTIALS_TYPE_APPLE_XUCRED
+#define G_CREDENTIALS_NATIVE_SIZE (sizeof (struct xucred))
+#undef G_CREDENTIALS_UNIX_CREDENTIALS_MESSAGE_SUPPORTED
+#define G_CREDENTIALS_SOCKET_GET_CREDENTIALS_SUPPORTED 1
+#define G_CREDENTIALS_SPOOFING_SUPPORTED 1
+#define G_CREDENTIALS_HAS_PID 0
 
 #endif
 

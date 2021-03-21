@@ -22,6 +22,7 @@
 #include "gmenumodel.h"
 
 #include "glibintl.h"
+#include "gmarshal-internal.h"
 
 /**
  * SECTION:gmenumodel
@@ -308,7 +309,7 @@ g_menu_model_real_iterate_item_attributes (GMenuModel *model,
   else
     {
       g_critical ("GMenuModel implementation '%s' doesn't override iterate_item_attributes() "
-                  "and fails to return sane values from get_item_attributes()",
+                  "and fails to return valid values from get_item_attributes()",
                   G_OBJECT_TYPE_NAME (model));
       result = NULL;
     }
@@ -372,7 +373,7 @@ g_menu_model_real_iterate_item_links (GMenuModel *model,
   else
     {
       g_critical ("GMenuModel implementation '%s' doesn't override iterate_item_links() "
-                  "and fails to return sane values from get_item_links()",
+                  "and fails to return valid values from get_item_links()",
                   G_OBJECT_TYPE_NAME (model));
       result = NULL;
     }
@@ -428,7 +429,7 @@ g_menu_model_class_init (GMenuModelClass *class)
    * @removed: the number of items removed
    * @added: the number of items added
    *
-   * Emitted when a change has occured to the menu.
+   * Emitted when a change has occurred to the menu.
    *
    * The only changes that can occur to a menu is that items are removed
    * or added.  Items may not change (except by being removed and added
@@ -452,8 +453,12 @@ g_menu_model_class_init (GMenuModelClass *class)
   g_menu_model_items_changed_signal =
     g_signal_new (I_("items-changed"), G_TYPE_MENU_MODEL,
                   G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-                  g_cclosure_marshal_generic, G_TYPE_NONE,
+                  _g_cclosure_marshal_VOID__INT_INT_INT,
+                  G_TYPE_NONE,
                   3, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT);
+  g_signal_set_va_marshaller (g_menu_model_items_changed_signal,
+                              G_TYPE_FROM_CLASS (class),
+                              _g_cclosure_marshal_VOID__INT_INT_INTv);
 }
 
 /**
@@ -536,7 +541,7 @@ g_menu_model_iterate_item_attributes (GMenuModel *model,
  * If the attribute does not exist, or does not match the expected type
  * then %NULL is returned.
  *
- * Returns: (transfer full): the value of the attribute
+ * Returns: (nullable) (transfer full): the value of the attribute
  *
  * Since: 2.32
  */
@@ -643,7 +648,7 @@ g_menu_model_iterate_item_links (GMenuModel *model,
  * If the link exists, the linked #GMenuModel is returned.  If the link
  * does not exist, %NULL is returned.
  *
- * Returns: (transfer full): the linked #GMenuModel, or %NULL
+ * Returns: (nullable) (transfer full): the linked #GMenuModel, or %NULL
  *
  * Since: 2.32
  */

@@ -49,7 +49,7 @@ test_connection_flush_on_timeout (gpointer user_data)
   guint iteration = GPOINTER_TO_UINT (user_data);
   g_printerr ("Timeout waiting 1000 msec on iteration %d\n", iteration);
   g_assert_not_reached ();
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 static void
@@ -86,17 +86,25 @@ test_connection_flush (void)
       gboolean ret;
       gint exit_status;
       guint timeout_mainloop_id;
+      gchar *flush_helper_stdout = NULL;
+      gchar *flush_helper_stderr = NULL;
 
       error = NULL;
       ret = g_spawn_command_line_sync (flush_helper,
-                                       NULL, /* stdout */
-                                       NULL, /* stderr */
+                                       &flush_helper_stdout,
+                                       &flush_helper_stderr,
                                        &exit_status,
-                                       &error);
+                                       &error) &&
+            g_spawn_check_exit_status (exit_status, &error);
+      if (!ret)
+          g_test_message ("Child process ‘%s’ failed. stdout:\n%s\nstderr:\n%s",
+                          flush_helper, flush_helper_stdout, flush_helper_stderr);
+
+      g_free (flush_helper_stdout);
+      g_free (flush_helper_stderr);
+
       g_assert_no_error (error);
-      g_spawn_check_exit_status (exit_status, &error);
-      g_assert_no_error (error);
-      g_assert (ret);
+      g_assert_true (ret);
 
       timeout_mainloop_id = g_timeout_add (1000, test_connection_flush_on_timeout, GUINT_TO_POINTER (n));
       g_main_loop_run (loop);
@@ -125,7 +133,7 @@ large_message_timeout_cb (gpointer data)
 
   g_error ("Error: timeout waiting for dbus name to appear");
 
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 static void

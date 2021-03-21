@@ -117,7 +117,7 @@ typedef enum {
 
 /**
  * GFileAttributeType:
- * @G_FILE_ATTRIBUTE_TYPE_INVALID: indicates an invalid or uninitalized type.
+ * @G_FILE_ATTRIBUTE_TYPE_INVALID: indicates an invalid or uninitialized type.
  * @G_FILE_ATTRIBUTE_TYPE_STRING: a null terminated UTF8 string.
  * @G_FILE_ATTRIBUTE_TYPE_BYTE_STRING: a zero terminated string of non-zero bytes.
  * @G_FILE_ATTRIBUTE_TYPE_BOOLEAN: a boolean value.
@@ -199,7 +199,9 @@ typedef enum {
  *    rather than a "save new version of" replace operation.
  *    You can think of it as "unlink destination" before
  *    writing to it, although the implementation may not
- *    be exactly like that. Since 2.20
+ *    be exactly like that. This flag can only be used with
+ *    g_file_replace() and its variants, including g_file_replace_contents().
+ *    Since 2.20
  *
  * Flags used when an operation may create a file.
  */
@@ -361,6 +363,15 @@ typedef enum {
  * @G_FILE_TYPE_MOUNTABLE: File is a mountable location.
  *
  * Indicates the file's on-disk type.
+ *
+ * On Windows systems a file will never have %G_FILE_TYPE_SYMBOLIC_LINK type;
+ * use #GFileInfo and %G_FILE_ATTRIBUTE_STANDARD_IS_SYMLINK to determine
+ * whether a file is a symlink or not. This is due to the fact that NTFS does
+ * not have a single filesystem object type for symbolic links - it has
+ * files that symlink to files, and directories that symlink to directories.
+ * #GFileType enumeration cannot precisely represent this important distinction,
+ * which is why all Windows symlinks will continue to be reported as
+ * %G_FILE_TYPE_REGULAR or %G_FILE_TYPE_DIRECTORY.
  **/
 typedef enum {
   G_FILE_TYPE_UNKNOWN = 0,
@@ -512,6 +523,9 @@ typedef enum {
  * ]|
  * but should instead treat all unrecognized error codes the same as
  * #G_IO_ERROR_FAILED.
+ *
+ * See also #GPollableReturn for a cheaper way of returning
+ * %G_IO_ERROR_WOULD_BLOCK to callers without allocating a #GError.
  **/
 typedef enum {
   G_IO_ERROR_FAILED,
@@ -703,11 +717,11 @@ typedef enum {
 
 /**
  * GResolverRecordType:
- * @G_RESOLVER_RECORD_SRV: lookup DNS SRV records for a domain
- * @G_RESOLVER_RECORD_MX: lookup DNS MX records for a domain
- * @G_RESOLVER_RECORD_TXT: lookup DNS TXT records for a name
- * @G_RESOLVER_RECORD_SOA: lookup DNS SOA records for a zone
- * @G_RESOLVER_RECORD_NS: lookup DNS NS records for a domain
+ * @G_RESOLVER_RECORD_SRV: look up DNS SRV records for a domain
+ * @G_RESOLVER_RECORD_MX: look up DNS MX records for a domain
+ * @G_RESOLVER_RECORD_TXT: look up DNS TXT records for a name
+ * @G_RESOLVER_RECORD_SOA: look up DNS SOA records for a zone
+ * @G_RESOLVER_RECORD_NS: look up DNS NS records for a domain
  *
  * The type of record that g_resolver_lookup_records() or
  * g_resolver_lookup_records_async() should retrieve. The records are returned
@@ -715,24 +729,30 @@ typedef enum {
  * the variant tuples returned.
  *
  * %G_RESOLVER_RECORD_SRV records are returned as variants with the signature
- * '(qqqs)', containing a guint16 with the priority, a guint16 with the
- * weight, a guint16 with the port, and a string of the hostname.
+ * `(qqqs)`, containing a `guint16` with the priority, a `guint16` with the
+ * weight, a `guint16` with the port, and a string of the hostname.
  *
  * %G_RESOLVER_RECORD_MX records are returned as variants with the signature
- * '(qs)', representing a guint16 with the preference, and a string containing
+ * `(qs)`, representing a `guint16` with the preference, and a string containing
  * the mail exchanger hostname.
  *
  * %G_RESOLVER_RECORD_TXT records are returned as variants with the signature
- * '(as)', representing an array of the strings in the text record.
+ * `(as)`, representing an array of the strings in the text record. Note: Most TXT
+ * records only contain a single string, but
+ * [RFC 1035](https://tools.ietf.org/html/rfc1035#section-3.3.14) does allow a
+ * record to contain multiple strings. The RFC which defines the interpretation
+ * of a specific TXT record will likely require concatenation of multiple
+ * strings if they are present, as with
+ * [RFC 7208](https://tools.ietf.org/html/rfc7208#section-3.3).
  *
  * %G_RESOLVER_RECORD_SOA records are returned as variants with the signature
- * '(ssuuuuu)', representing a string containing the primary name server, a
- * string containing the administrator, the serial as a guint32, the refresh
- * interval as guint32, the retry interval as a guint32, the expire timeout
- * as a guint32, and the ttl as a guint32.
+ * `(ssuuuuu)`, representing a string containing the primary name server, a
+ * string containing the administrator, the serial as a `guint32`, the refresh
+ * interval as a `guint32`, the retry interval as a `guint32`, the expire timeout
+ * as a `guint32`, and the TTL as a `guint32`.
  *
  * %G_RESOLVER_RECORD_NS records are returned as variants with the signature
- * '(s)', representing a string of the hostname of the name server.
+ * `(s)`, representing a string of the hostname of the name server.
  *
  * Since: 2.34
  */
@@ -1186,6 +1206,8 @@ typedef enum
  * message bus. This means that the Hello() method will be invoked as part of the connection setup.
  * @G_DBUS_CONNECTION_FLAGS_DELAY_MESSAGE_PROCESSING: If set, processing of D-Bus messages is
  * delayed until g_dbus_connection_start_message_processing() is called.
+ * @G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER: When authenticating
+ * as a server, require the UID of the peer to be the same as the UID of the server. (Since: 2.68)
  *
  * Flags used when creating a new #GDBusConnection.
  *
@@ -1197,7 +1219,8 @@ typedef enum {
   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_SERVER = (1<<1),
   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS = (1<<2),
   G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION = (1<<3),
-  G_DBUS_CONNECTION_FLAGS_DELAY_MESSAGE_PROCESSING = (1<<4)
+  G_DBUS_CONNECTION_FLAGS_DELAY_MESSAGE_PROCESSING = (1<<4),
+  G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER GLIB_AVAILABLE_ENUMERATOR_IN_2_68 = (1<<5)
 } GDBusConnectionFlags;
 
 /**
@@ -1348,6 +1371,8 @@ typedef enum
  * details).
  * @G_DBUS_SERVER_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS: Allow the anonymous
  * authentication method.
+ * @G_DBUS_SERVER_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER: Require the UID of the
+ * peer to be the same as the UID of the server when authenticating. (Since: 2.68)
  *
  * Flags used when creating a #GDBusServer.
  *
@@ -1357,7 +1382,8 @@ typedef enum
 {
   G_DBUS_SERVER_FLAGS_NONE = 0,
   G_DBUS_SERVER_FLAGS_RUN_IN_THREAD = (1<<0),
-  G_DBUS_SERVER_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS = (1<<1)
+  G_DBUS_SERVER_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS = (1<<1),
+  G_DBUS_SERVER_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER GLIB_AVAILABLE_ENUMERATOR_IN_2_68 = (1<<2)
 } GDBusServerFlags;
 
 /**
@@ -1405,11 +1431,12 @@ typedef enum
 /**
  * GCredentialsType:
  * @G_CREDENTIALS_TYPE_INVALID: Indicates an invalid native credential type.
- * @G_CREDENTIALS_TYPE_LINUX_UCRED: The native credentials type is a struct ucred.
- * @G_CREDENTIALS_TYPE_FREEBSD_CMSGCRED: The native credentials type is a struct cmsgcred.
- * @G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED: The native credentials type is a struct sockpeercred. Added in 2.30.
- * @G_CREDENTIALS_TYPE_SOLARIS_UCRED: The native credentials type is a ucred_t. Added in 2.40.
- * @G_CREDENTIALS_TYPE_NETBSD_UNPCBID: The native credentials type is a struct unpcbid.
+ * @G_CREDENTIALS_TYPE_LINUX_UCRED: The native credentials type is a `struct ucred`.
+ * @G_CREDENTIALS_TYPE_FREEBSD_CMSGCRED: The native credentials type is a `struct cmsgcred`.
+ * @G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED: The native credentials type is a `struct sockpeercred`. Added in 2.30.
+ * @G_CREDENTIALS_TYPE_SOLARIS_UCRED: The native credentials type is a `ucred_t`. Added in 2.40.
+ * @G_CREDENTIALS_TYPE_NETBSD_UNPCBID: The native credentials type is a `struct unpcbid`. Added in 2.42.
+ * @G_CREDENTIALS_TYPE_APPLE_XUCRED: The native credentials type is a `struct xucred`. Added in 2.66.
  *
  * Enumeration describing different kinds of native credential types.
  *
@@ -1422,7 +1449,8 @@ typedef enum
   G_CREDENTIALS_TYPE_FREEBSD_CMSGCRED,
   G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED,
   G_CREDENTIALS_TYPE_SOLARIS_UCRED,
-  G_CREDENTIALS_TYPE_NETBSD_UNPCBID
+  G_CREDENTIALS_TYPE_NETBSD_UNPCBID,
+  G_CREDENTIALS_TYPE_APPLE_XUCRED,
 } GCredentialsType;
 
 /**
@@ -1474,6 +1502,11 @@ typedef enum
  * @G_APPLICATION_CAN_OVERRIDE_APP_ID: Allow users to override the
  *     application ID from the command line with `--gapplication-app-id`.
  *     Since: 2.48
+ * @G_APPLICATION_ALLOW_REPLACEMENT: Allow another instance to take over
+ *     the bus name. Since: 2.60
+ * @G_APPLICATION_REPLACE: Take over from another instance. This flag is
+ *     usually set by passing `--gapplication-replace` on the commandline.
+ *     Since: 2.60
  *
  * Flags used to define the behaviour of a #GApplication.
  *
@@ -1491,14 +1524,17 @@ typedef enum
 
   G_APPLICATION_NON_UNIQUE =           (1 << 5),
 
-  G_APPLICATION_CAN_OVERRIDE_APP_ID =  (1 << 6)
+  G_APPLICATION_CAN_OVERRIDE_APP_ID =  (1 << 6),
+  G_APPLICATION_ALLOW_REPLACEMENT   =  (1 << 7),
+  G_APPLICATION_REPLACE             =  (1 << 8)
 } GApplicationFlags;
 
 /**
  * GTlsError:
  * @G_TLS_ERROR_UNAVAILABLE: No TLS provider is available
  * @G_TLS_ERROR_MISC: Miscellaneous TLS error
- * @G_TLS_ERROR_BAD_CERTIFICATE: A certificate could not be parsed
+ * @G_TLS_ERROR_BAD_CERTIFICATE: The certificate presented could not
+ *   be parsed or failed validation.
  * @G_TLS_ERROR_NOT_TLS: The TLS handshake failed because the
  *   peer does not seem to be a TLS server.
  * @G_TLS_ERROR_HANDSHAKE: The TLS handshake failed because the
@@ -1509,6 +1545,9 @@ typedef enum
  * @G_TLS_ERROR_EOF: The TLS connection was closed without proper
  *   notice, which may indicate an attack. See
  *   g_tls_connection_set_require_close_notify().
+ * @G_TLS_ERROR_INAPPROPRIATE_FALLBACK: The TLS handshake failed
+ *   because the client sent the fallback SCSV, indicating a protocol
+ *   downgrade attack. Since: 2.60
  *
  * An error code used with %G_TLS_ERROR in a #GError returned from a
  * TLS-related routine.
@@ -1522,7 +1561,8 @@ typedef enum {
   G_TLS_ERROR_NOT_TLS,
   G_TLS_ERROR_HANDSHAKE,
   G_TLS_ERROR_CERTIFICATE_REQUIRED,
-  G_TLS_ERROR_EOF
+  G_TLS_ERROR_EOF,
+  G_TLS_ERROR_INAPPROPRIATE_FALLBACK
 } GTlsError;
 
 /**
@@ -1580,6 +1620,61 @@ typedef enum {
 } GTlsAuthenticationMode;
 
 /**
+ * GTlsChannelBindingType:
+ * @G_TLS_CHANNEL_BINDING_TLS_UNIQUE:
+ *    [`tls-unique`](https://tools.ietf.org/html/rfc5929#section-3) binding
+ *    type
+ * @G_TLS_CHANNEL_BINDING_TLS_SERVER_END_POINT:
+ *    [`tls-server-end-point`](https://tools.ietf.org/html/rfc5929#section-4)
+ *    binding type
+ *
+ * The type of TLS channel binding data to retrieve from #GTlsConnection
+ * or #GDtlsConnection, as documented by RFC 5929. The
+ * [`tls-unique-for-telnet`](https://tools.ietf.org/html/rfc5929#section-5)
+ * binding type is not currently implemented.
+ *
+ * Since: 2.66
+ */
+GLIB_AVAILABLE_TYPE_IN_2_66
+typedef enum {
+  G_TLS_CHANNEL_BINDING_TLS_UNIQUE,
+  G_TLS_CHANNEL_BINDING_TLS_SERVER_END_POINT
+} GTlsChannelBindingType;
+
+/**
+ * GTlsChannelBindingError:
+ * @G_TLS_CHANNEL_BINDING_ERROR_NOT_IMPLEMENTED: Either entire binding
+ *    retrieval facility or specific binding type is not implemented in the
+ *    TLS backend.
+ * @G_TLS_CHANNEL_BINDING_ERROR_INVALID_STATE: The handshake is not yet
+ *    complete on the connection which is a strong requirement for any existing
+ *    binding type.
+ * @G_TLS_CHANNEL_BINDING_ERROR_NOT_AVAILABLE: Handshake is complete but
+ *    binding data is not available. That normally indicates the TLS
+ *    implementation failed to provide the binding data. For example, some
+ *    implementations do not provide a peer certificate for resumed connections.
+ * @G_TLS_CHANNEL_BINDING_ERROR_NOT_SUPPORTED: Binding type is not supported
+ *    on the current connection. This error could be triggered when requesting
+ *    `tls-server-end-point` binding data for a certificate which has no hash
+ *    function or uses multiple hash functions.
+ * @G_TLS_CHANNEL_BINDING_ERROR_GENERAL_ERROR: Any other backend error
+ *    preventing binding data retrieval.
+ *
+ * An error code used with %G_TLS_CHANNEL_BINDING_ERROR in a #GError to
+ * indicate a TLS channel binding retrieval error.
+ *
+ * Since: 2.66
+ */
+GLIB_AVAILABLE_TYPE_IN_2_66
+typedef enum {
+  G_TLS_CHANNEL_BINDING_ERROR_NOT_IMPLEMENTED,
+  G_TLS_CHANNEL_BINDING_ERROR_INVALID_STATE,
+  G_TLS_CHANNEL_BINDING_ERROR_NOT_AVAILABLE,
+  G_TLS_CHANNEL_BINDING_ERROR_NOT_SUPPORTED,
+  G_TLS_CHANNEL_BINDING_ERROR_GENERAL_ERROR
+} GTlsChannelBindingError;
+
+/**
  * GTlsRehandshakeMode:
  * @G_TLS_REHANDSHAKE_NEVER: Never allow rehandshaking
  * @G_TLS_REHANDSHAKE_SAFELY: Allow safe rehandshaking only
@@ -1589,12 +1684,16 @@ typedef enum {
  * g_tls_connection_set_rehandshake_mode().
  *
  * Since: 2.28
+ *
+ * Deprecated: 2.60. Changing the rehandshake mode is no longer
+ *   required for compatibility. Also, rehandshaking has been removed
+ *   from the TLS protocol in TLS 1.3.
  */
 typedef enum {
   G_TLS_REHANDSHAKE_NEVER,
   G_TLS_REHANDSHAKE_SAFELY,
   G_TLS_REHANDSHAKE_UNSAFELY
-} GTlsRehandshakeMode;
+} GTlsRehandshakeMode GLIB_DEPRECATED_TYPE_IN_2_60;
 
 /**
  * GTlsPasswordFlags:
@@ -1905,6 +2004,59 @@ typedef enum {
   G_NETWORK_CONNECTIVITY_PORTAL      = 3,
   G_NETWORK_CONNECTIVITY_FULL        = 4
 } GNetworkConnectivity;
+
+/**
+ * GPollableReturn:
+ * @G_POLLABLE_RETURN_FAILED: Generic error condition for when an operation fails.
+ * @G_POLLABLE_RETURN_OK: The operation was successfully finished.
+ * @G_POLLABLE_RETURN_WOULD_BLOCK: The operation would block.
+ *
+ * Return value for various IO operations that signal errors via the
+ * return value and not necessarily via a #GError.
+ *
+ * This enum exists to be able to return errors to callers without having to
+ * allocate a #GError. Allocating #GErrors can be quite expensive for
+ * regularly happening errors like %G_IO_ERROR_WOULD_BLOCK.
+ *
+ * In case of %G_POLLABLE_RETURN_FAILED a #GError should be set for the
+ * operation to give details about the error that happened.
+ *
+ * Since: 2.60
+ */
+typedef enum {
+  G_POLLABLE_RETURN_FAILED       = 0,
+  G_POLLABLE_RETURN_OK           = 1,
+  G_POLLABLE_RETURN_WOULD_BLOCK  = -G_IO_ERROR_WOULD_BLOCK
+} GPollableReturn;
+
+/**
+ * GMemoryMonitorWarningLevel:
+ * @G_MEMORY_MONITOR_WARNING_LEVEL_LOW: Memory on the device is low, processes
+ *   should free up unneeded resources (for example, in-memory caches) so they can
+ *   be used elsewhere.
+ * @G_MEMORY_MONITOR_WARNING_LEVEL_MEDIUM: Same as @G_MEMORY_MONITOR_WARNING_LEVEL_LOW
+ *   but the device has even less free memory, so processes should try harder to free
+ *   up unneeded resources. If your process does not need to stay running, it is a
+ *   good time for it to quit.
+ * @G_MEMORY_MONITOR_WARNING_LEVEL_CRITICAL: The system will soon start terminating
+ *   processes to reclaim memory, including background processes.
+ *
+ * Memory availability warning levels.
+ *
+ * Note that because new values might be added, it is recommended that applications check
+ * #GMemoryMonitorWarningLevel as ranges, for example:
+ * |[<!-- language="C" -->
+ * if (warning_level > G_MEMORY_MONITOR_WARNING_LEVEL_LOW)
+ *   drop_caches ();
+ * ]|
+ *
+ * Since: 2.64
+ */
+typedef enum {
+  G_MEMORY_MONITOR_WARNING_LEVEL_LOW      = 50,
+  G_MEMORY_MONITOR_WARNING_LEVEL_MEDIUM   = 100,
+  G_MEMORY_MONITOR_WARNING_LEVEL_CRITICAL = 255
+} GMemoryMonitorWarningLevel;
 
 G_END_DECLS
 

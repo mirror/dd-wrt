@@ -35,9 +35,23 @@
  * The implementations of the Unicode functions in GLib are based
  * on the Unicode Character Data tables, which are available from
  * [www.unicode.org](http://www.unicode.org/).
- * GLib 2.8 supports Unicode 4.0, GLib 2.10 supports Unicode 4.1,
- * GLib 2.12 supports Unicode 5.0, GLib 2.16.3 supports Unicode 5.1,
- * GLib 2.30 supports Unicode 6.0.
+ *
+ *  * Unicode 4.0 was added in GLib 2.8
+ *  * Unicode 4.1 was added in GLib 2.10
+ *  * Unicode 5.0 was added in GLib 2.12
+ *  * Unicode 5.1 was added in GLib 2.16.3
+ *  * Unicode 6.0 was added in GLib 2.30
+ *  * Unicode 6.1 was added in GLib 2.32
+ *  * Unicode 6.2 was added in GLib 2.36
+ *  * Unicode 6.3 was added in GLib 2.40
+ *  * Unicode 7.0 was added in GLib 2.42
+ *  * Unicode 8.0 was added in GLib 2.48
+ *  * Unicode 9.0 was added in GLib 2.50.1
+ *  * Unicode 10.0 was added in GLib 2.54
+ *  * Unicode 11.10 was added in GLib 2.58
+ *  * Unicode 12.0 was added in GLib 2.62
+ *  * Unicode 12.1 was added in GLib 2.62
+ *  * Unicode 13.0 was added in GLib 2.66
  */
 
 #include "config.h"
@@ -443,6 +457,7 @@ _g_utf8_normalize_wc (const gchar    *str,
     {
       g_unicode_canonical_ordering (wc_buffer + last_start, n_wc - last_start);
       last_start = n_wc;
+      (void) last_start;
     }
 	  
   wc_buffer[n_wc] = 0;
@@ -521,9 +536,9 @@ _g_utf8_normalize_wc (const gchar    *str,
  * a legacy encoding or pass it to a system with
  * less capable Unicode handling.
  *
- * Returns: a newly allocated string, that is the
- *   normalized form of @str, or %NULL if @str is not
- *   valid UTF-8.
+ * Returns: (nullable): a newly allocated string, that
+ *   is the normalized form of @str, or %NULL if @str
+ *   is not valid UTF-8.
  **/
 gchar *
 g_utf8_normalize (const gchar    *str,
@@ -571,8 +586,8 @@ decompose_hangul_step (gunichar  ch,
 /**
  * g_unichar_decompose:
  * @ch: a Unicode character
- * @a: return location for the first component of @ch
- * @b: return location for the second component of @ch
+ * @a: (out) (not optional): return location for the first component of @ch
+ * @b: (out) (not optional): return location for the second component of @ch
  *
  * Performs a single decomposition step of the
  * Unicode canonical decomposition algorithm.
@@ -646,7 +661,7 @@ g_unichar_decompose (gunichar  ch,
  * g_unichar_compose:
  * @a: a Unicode character
  * @b: a Unicode character
- * @ch: return location for the composed character
+ * @ch: (out) (not optional): return location for the composed character
  *
  * Performs a single composition step of the
  * Unicode canonical composition algorithm.
@@ -685,7 +700,7 @@ g_unichar_compose (gunichar  a,
  * g_unichar_fully_decompose:
  * @ch: a Unicode character.
  * @compat: whether perform canonical or compatibility decomposition
- * @result: (nullable): location to store decomposed result, or %NULL
+ * @result: (optional) (out caller-allocates): location to store decomposed result, or %NULL
  * @result_len: length of @result
  *
  * Computes the canonical or compatibility decomposition of a

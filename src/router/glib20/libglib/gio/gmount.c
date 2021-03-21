@@ -78,7 +78,7 @@ g_mount_default_init (GMountInterface *iface)
                 G_SIGNAL_RUN_LAST,
                 G_STRUCT_OFFSET (GMountIface, changed),
                 NULL, NULL,
-                g_cclosure_marshal_VOID__VOID,
+                NULL,
                 G_TYPE_NONE, 0);
 
   /**
@@ -95,7 +95,7 @@ g_mount_default_init (GMountInterface *iface)
                 G_SIGNAL_RUN_LAST,
                 G_STRUCT_OFFSET (GMountIface, unmounted),
                 NULL, NULL,
-                g_cclosure_marshal_VOID__VOID,
+                NULL,
                 G_TYPE_NONE, 0);
   /**
    * GMount::pre-unmount:
@@ -114,7 +114,7 @@ g_mount_default_init (GMountInterface *iface)
                 G_SIGNAL_RUN_LAST,
                 G_STRUCT_OFFSET (GMountIface, pre_unmount),
                 NULL, NULL,
-                g_cclosure_marshal_VOID__VOID,
+                NULL,
                 G_TYPE_NONE, 0);
 }
 
@@ -865,7 +865,7 @@ g_mount_guess_content_type_finish (GMount        *mount,
  * [shared-mime-info](http://www.freedesktop.org/wiki/Specifications/shared-mime-info-spec)
  * specification for more on x-content types.
  *
- * This is an synchronous operation and as such may block doing IO;
+ * This is a synchronous operation and as such may block doing IO;
  * see g_mount_guess_content_type() for the asynchronous version.
  *
  * Returns: (transfer full) (element-type utf8): a %NULL-terminated array of content types or %NULL on error.

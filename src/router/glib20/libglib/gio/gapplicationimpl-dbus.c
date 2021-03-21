@@ -43,7 +43,7 @@
 #include "gunixfdlist.h"
 #endif
 
-/* DBus Interface definition {{{1 */
+/* D-Bus Interface definition {{{1 */
 
 /* For documentation of these interfaces, see
  * https://wiki.gnome.org/Projects/GLib/GApplication/DBusAPI
@@ -111,6 +111,7 @@ struct _GApplicationImpl
   GDBusConnection *session_bus;
   GActionGroup    *exported_actions;
   const gchar     *bus_name;
+  guint            name_lost_signal;
 
   gchar           *object_path;
   guint            object_id;
@@ -327,6 +328,25 @@ application_path_from_appid (const gchar *appid)
   return appid_path;
 }
 
+static void g_application_impl_stop_primary (GApplicationImpl *impl);
+
+static void
+name_lost (GDBusConnection *bus,
+           const char      *sender_name,
+           const char      *object_path,
+           const char      *interface_name,
+           const char      *signal_name,
+           GVariant        *parameters,
+           gpointer         user_data)
+{
+  GApplicationImpl *impl = user_data;
+  gboolean handled;
+
+  impl->primary = FALSE;
+  g_application_impl_stop_primary (impl);
+  g_signal_emit_by_name (impl->app, "name-lost", &handled);
+}
+
 /* Attempt to become the primary instance.
  *
  * Returns %TRUE if everything went OK, regardless of if we became the
@@ -341,14 +361,18 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
                                     GCancellable      *cancellable,
                                     GError           **error)
 {
-  const static GDBusInterfaceVTable vtable = {
+  static const GDBusInterfaceVTable vtable = {
     g_application_impl_method_call,
     g_application_impl_get_property,
-    NULL /* set_property */
+    NULL, /* set_property */
+    { 0 }
   };
   GApplicationClass *app_class = G_APPLICATION_GET_CLASS (impl->app);
+  GBusNameOwnerFlags name_owner_flags;
+  GApplicationFlags app_flags;
   GVariant *reply;
   guint32 rval;
+  GError *local_error = NULL;
 
   if (org_gtk_Application == NULL)
     {
@@ -408,8 +432,14 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
   if (!app_class->dbus_register (impl->app,
                                  impl->session_bus,
                                  impl->object_path,
-                                 error))
-    return FALSE;
+                                 &local_error))
+    {
+      g_return_val_if_fail (local_error != NULL, FALSE);
+      g_propagate_error (error, g_steal_pointer (&local_error));
+      return FALSE;
+    }
+
+  g_return_val_if_fail (local_error == NULL, FALSE);
 
   if (impl->bus_name == NULL)
     {
@@ -426,10 +456,34 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
    * the well-known name and fall back to remote mode (!is_primary)
    * in the case that we can't do that.
    */
-  /* DBUS_NAME_FLAG_DO_NOT_QUEUE: 0x4 */
-  reply = g_dbus_connection_call_sync (impl->session_bus, "org.freedesktop.DBus", "/org/freedesktop/DBus",
-                                       "org.freedesktop.DBus", "RequestName",
-                                       g_variant_new ("(su)", impl->bus_name, 0x4), G_VARIANT_TYPE ("(u)"),
+  name_owner_flags = G_BUS_NAME_OWNER_FLAGS_DO_NOT_QUEUE;
+  app_flags = g_application_get_flags (impl->app);
+
+  if (app_flags & G_APPLICATION_ALLOW_REPLACEMENT)
+    {
+      impl->name_lost_signal = g_dbus_connection_signal_subscribe (impl->session_bus,
+                                                                   "org.freedesktop.DBus",
+                                                                   "org.freedesktop.DBus",
+                                                                   "NameLost",
+                                                                   "/org/freedesktop/DBus",
+                                                                   impl->bus_name,
+                                                                   G_DBUS_SIGNAL_FLAGS_NONE,
+                                                                   name_lost,
+                                                                   impl,
+                                                                   NULL);
+
+      name_owner_flags |= G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT;
+    }
+  if (app_flags & G_APPLICATION_REPLACE)
+    name_owner_flags |= G_BUS_NAME_OWNER_FLAGS_REPLACE;
+
+  reply = g_dbus_connection_call_sync (impl->session_bus,
+                                       "org.freedesktop.DBus",
+                                       "/org/freedesktop/DBus",
+                                       "org.freedesktop.DBus",
+                                       "RequestName",
+                                       g_variant_new ("(su)", impl->bus_name, name_owner_flags),
+                                       G_VARIANT_TYPE ("(u)"),
                                        0, -1, cancellable, error);
 
   if (reply == NULL)
@@ -440,6 +494,12 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
 
   /* DBUS_REQUEST_NAME_REPLY_EXISTS: 3 */
   impl->primary = (rval != 3);
+
+  if (!impl->primary && impl->name_lost_signal)
+    {
+      g_dbus_connection_signal_unsubscribe (impl->session_bus, impl->name_lost_signal);
+      impl->name_lost_signal = 0;
+    }
 
   return TRUE;
 }
@@ -481,6 +541,12 @@ g_application_impl_stop_primary (GApplicationImpl *impl)
     {
       g_dbus_connection_unexport_action_group (impl->session_bus, impl->actions_id);
       impl->actions_id = 0;
+    }
+
+  if (impl->name_lost_signal)
+    {
+      g_dbus_connection_signal_unsubscribe (impl->session_bus, impl->name_lost_signal);
+      impl->name_lost_signal = 0;
     }
 
   if (impl->primary && impl->bus_name)
@@ -582,7 +648,7 @@ g_application_impl_register (GApplication        *application,
 
   /* We are non-primary.  Try to get the primary's list of actions.
    * This also serves as a mechanism to ensure that the primary exists
-   * (ie: DBus service files installed correctly, etc).
+   * (ie: D-Bus service files installed correctly, etc).
    */
   actions = g_dbus_action_group_get (impl->session_bus, impl->bus_name, impl->object_path);
   if (!g_dbus_action_group_sync (actions, cancellable, error))
@@ -710,13 +776,13 @@ g_application_impl_command_line (GApplicationImpl    *impl,
                                  const gchar * const *arguments,
                                  GVariant            *platform_data)
 {
-  const static GDBusInterfaceVTable vtable = {
-    g_application_impl_cmdline_method_call
+  static const GDBusInterfaceVTable vtable = {
+    g_application_impl_cmdline_method_call, NULL, NULL, { 0 }
   };
   const gchar *object_path = "/org/gtk/Application/CommandLine";
   GMainContext *context;
   CommandLineData data;
-  guint object_id;
+  guint object_id G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
 
   context = g_main_context_new ();
   data.loop = g_main_loop_new (context, FALSE);

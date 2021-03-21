@@ -80,7 +80,7 @@ typedef struct _GVariantTypeInfo GVariantTypeInfo;
  *
  * The constants in this structure are used as follows:
  *
- * First, among the array of offets contained in the tuple, 'i' is the
+ * First, among the array of offsets contained in the tuple, 'i' is the
  * index of the offset that refers to the end of the variable-sized item
  * preceding the item of interest.  If no variable-sized items precede
  * this item, then 'i' will be -1.
@@ -130,6 +130,8 @@ GLIB_AVAILABLE_IN_ALL
 void                            g_variant_type_info_query               (GVariantTypeInfo   *typeinfo,
                                                                          guint              *alignment,
                                                                          gsize              *size);
+GLIB_AVAILABLE_IN_2_60
+gsize                           g_variant_type_info_query_depth         (GVariantTypeInfo   *typeinfo);
 
 /* array */
 GLIB_AVAILABLE_IN_ALL

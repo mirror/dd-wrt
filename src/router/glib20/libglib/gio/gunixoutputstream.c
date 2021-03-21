@@ -20,12 +20,10 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
-#include <fcntl.h>
+#include <sys/uio.h>
 
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -36,6 +34,8 @@
 #include "gasynchelper.h"
 #include "gfiledescriptorbased.h"
 #include "glibintl.h"
+#include "gioprivate.h"
+#include "giounix-private.h"
 
 
 /**
@@ -64,7 +64,7 @@ enum {
 struct _GUnixOutputStreamPrivate {
   int fd;
   guint close_fd : 1;
-  guint is_pipe_or_socket : 1;
+  guint can_poll : 1;
 };
 
 static void g_unix_output_stream_pollable_iface_init (GPollableOutputStreamInterface *iface);
@@ -91,22 +91,25 @@ static gssize   g_unix_output_stream_write        (GOutputStream        *stream,
 						   gsize                 count,
 						   GCancellable         *cancellable,
 						   GError              **error);
-static gboolean g_unix_output_stream_close        (GOutputStream        *stream,
+static gboolean g_unix_output_stream_writev       (GOutputStream        *stream,
+						   const GOutputVector  *vectors,
+						   gsize                 n_vectors,
+						   gsize                *bytes_written,
 						   GCancellable         *cancellable,
 						   GError              **error);
-static void     g_unix_output_stream_close_async  (GOutputStream        *stream,
-						   int                   io_priority,
+static gboolean g_unix_output_stream_close        (GOutputStream        *stream,
 						   GCancellable         *cancellable,
-						   GAsyncReadyCallback   callback,
-						   gpointer              data);
-static gboolean g_unix_output_stream_close_finish (GOutputStream        *stream,
-						   GAsyncResult         *result,
 						   GError              **error);
 
 static gboolean g_unix_output_stream_pollable_can_poll      (GPollableOutputStream *stream);
 static gboolean g_unix_output_stream_pollable_is_writable   (GPollableOutputStream *stream);
 static GSource *g_unix_output_stream_pollable_create_source (GPollableOutputStream *stream,
 							     GCancellable         *cancellable);
+static GPollableReturn g_unix_output_stream_pollable_writev_nonblocking (GPollableOutputStream  *stream,
+									 const GOutputVector    *vectors,
+									 gsize                   n_vectors,
+									 gsize                  *bytes_written,
+									 GError                **error);
 
 static void
 g_unix_output_stream_class_init (GUnixOutputStreamClass *klass)
@@ -118,9 +121,8 @@ g_unix_output_stream_class_init (GUnixOutputStreamClass *klass)
   gobject_class->set_property = g_unix_output_stream_set_property;
 
   stream_class->write_fn = g_unix_output_stream_write;
+  stream_class->writev_fn = g_unix_output_stream_writev;
   stream_class->close_fn = g_unix_output_stream_close;
-  stream_class->close_async = g_unix_output_stream_close_async;
-  stream_class->close_finish = g_unix_output_stream_close_finish;
 
    /**
    * GUnixOutputStream:fd:
@@ -159,6 +161,7 @@ g_unix_output_stream_pollable_iface_init (GPollableOutputStreamInterface *iface)
   iface->can_poll = g_unix_output_stream_pollable_can_poll;
   iface->is_writable = g_unix_output_stream_pollable_is_writable;
   iface->create_source = g_unix_output_stream_pollable_create_source;
+  iface->writev_nonblocking = g_unix_output_stream_pollable_writev_nonblocking;
 }
 
 static void
@@ -181,10 +184,7 @@ g_unix_output_stream_set_property (GObject         *object,
     {
     case PROP_FD:
       unix_stream->priv->fd = g_value_get_int (value);
-      if (lseek (unix_stream->priv->fd, 0, SEEK_CUR) == -1 && errno == ESPIPE)
-	unix_stream->priv->is_pipe_or_socket = TRUE;
-      else
-	unix_stream->priv->is_pipe_or_socket = FALSE;
+      unix_stream->priv->can_poll = _g_fd_is_pollable (unix_stream->priv->fd);
       break;
     case PROP_CLOSE_FD:
       unix_stream->priv->close_fd = g_value_get_boolean (value);
@@ -325,19 +325,18 @@ g_unix_output_stream_write (GOutputStream  *stream,
   GUnixOutputStream *unix_stream;
   gssize res = -1;
   GPollFD poll_fds[2];
-  int nfds;
+  int nfds = 0;
   int poll_ret;
 
   unix_stream = G_UNIX_OUTPUT_STREAM (stream);
 
   poll_fds[0].fd = unix_stream->priv->fd;
   poll_fds[0].events = G_IO_OUT;
+  nfds++;
 
-  if (unix_stream->priv->is_pipe_or_socket &&
+  if (unix_stream->priv->can_poll &&
       g_cancellable_make_pollfd (cancellable, &poll_fds[1]))
-    nfds = 2;
-  else
-    nfds = 1;
+    nfds++;
 
   while (1)
     {
@@ -387,6 +386,116 @@ g_unix_output_stream_write (GOutputStream  *stream,
   return res;
 }
 
+/* Macro to check if struct iovec and GOutputVector have the same ABI */
+#define G_OUTPUT_VECTOR_IS_IOVEC (sizeof (struct iovec) == sizeof (GOutputVector) && \
+      G_SIZEOF_MEMBER (struct iovec, iov_base) == G_SIZEOF_MEMBER (GOutputVector, buffer) && \
+      G_STRUCT_OFFSET (struct iovec, iov_base) == G_STRUCT_OFFSET (GOutputVector, buffer) && \
+      G_SIZEOF_MEMBER (struct iovec, iov_len) == G_SIZEOF_MEMBER (GOutputVector, size) && \
+      G_STRUCT_OFFSET (struct iovec, iov_len) == G_STRUCT_OFFSET (GOutputVector, size))
+
+static gboolean
+g_unix_output_stream_writev (GOutputStream        *stream,
+			     const GOutputVector  *vectors,
+			     gsize                 n_vectors,
+			     gsize                *bytes_written,
+			     GCancellable         *cancellable,
+			     GError              **error)
+{
+  GUnixOutputStream *unix_stream;
+  gssize res = -1;
+  GPollFD poll_fds[2];
+  int nfds = 0;
+  int poll_ret;
+  struct iovec *iov;
+
+  if (bytes_written)
+    *bytes_written = 0;
+
+  /* Clamp the number of vectors if more given than we can write in one go.
+   * The caller has to handle short writes anyway.
+   */
+  if (n_vectors > G_IOV_MAX)
+    n_vectors = G_IOV_MAX;
+
+  unix_stream = G_UNIX_OUTPUT_STREAM (stream);
+
+  if (G_OUTPUT_VECTOR_IS_IOVEC)
+    {
+      /* ABI is compatible */
+      iov = (struct iovec *) vectors;
+    }
+  else
+    {
+      gsize i;
+
+      /* ABI is incompatible */
+      iov = g_newa (struct iovec, n_vectors);
+      for (i = 0; i < n_vectors; i++)
+        {
+          iov[i].iov_base = (void *)vectors[i].buffer;
+          iov[i].iov_len = vectors[i].size;
+        }
+    }
+
+  poll_fds[0].fd = unix_stream->priv->fd;
+  poll_fds[0].events = G_IO_OUT;
+  nfds++;
+
+  if (unix_stream->priv->can_poll &&
+      g_cancellable_make_pollfd (cancellable, &poll_fds[1]))
+    nfds++;
+
+  while (1)
+    {
+      int errsv;
+
+      poll_fds[0].revents = poll_fds[1].revents = 0;
+      do
+        {
+          poll_ret = g_poll (poll_fds, nfds, -1);
+          errsv = errno;
+        }
+      while (poll_ret == -1 && errsv == EINTR);
+
+      if (poll_ret == -1)
+	{
+	  g_set_error (error, G_IO_ERROR,
+		       g_io_error_from_errno (errsv),
+		       _("Error writing to file descriptor: %s"),
+		       g_strerror (errsv));
+	  break;
+	}
+
+      if (g_cancellable_set_error_if_cancelled (cancellable, error))
+	break;
+
+      if (!poll_fds[0].revents)
+	continue;
+
+      res = writev (unix_stream->priv->fd, iov, n_vectors);
+      errsv = errno;
+      if (res == -1)
+	{
+	  if (errsv == EINTR || errsv == EAGAIN)
+	    continue;
+
+	  g_set_error (error, G_IO_ERROR,
+		       g_io_error_from_errno (errsv),
+		       _("Error writing to file descriptor: %s"),
+		       g_strerror (errsv));
+	}
+
+      if (bytes_written)
+        *bytes_written = res;
+
+      break;
+    }
+
+  if (nfds == 2)
+    g_cancellable_release_fd (cancellable);
+  return res != -1;
+}
+
 static gboolean
 g_unix_output_stream_close (GOutputStream  *stream,
 			    GCancellable   *cancellable,
@@ -415,41 +524,10 @@ g_unix_output_stream_close (GOutputStream  *stream,
   return res != -1;
 }
 
-static void
-g_unix_output_stream_close_async (GOutputStream       *stream,
-				  int                  io_priority,
-				  GCancellable        *cancellable,
-				  GAsyncReadyCallback  callback,
-				  gpointer             user_data)
-{
-  GTask *task;
-  GError *error = NULL;
-
-  task = g_task_new (stream, cancellable, callback, user_data);
-  g_task_set_source_tag (task, g_unix_output_stream_close_async);
-  g_task_set_priority (task, io_priority);
-
-  if (g_unix_output_stream_close (stream, cancellable, &error))
-    g_task_return_boolean (task, TRUE);
-  else
-    g_task_return_error (task, error);
-  g_object_unref (task);
-}
-
-static gboolean
-g_unix_output_stream_close_finish (GOutputStream  *stream,
-				   GAsyncResult   *result,
-				   GError        **error)
-{
-  g_return_val_if_fail (g_task_is_valid (result, stream), FALSE);
-
-  return g_task_propagate_boolean (G_TASK (result), error);
-}
-
 static gboolean
 g_unix_output_stream_pollable_can_poll (GPollableOutputStream *stream)
 {
-  return G_UNIX_OUTPUT_STREAM (stream)->priv->is_pipe_or_socket;
+  return G_UNIX_OUTPUT_STREAM (stream)->priv->can_poll;
 }
 
 static gboolean
@@ -493,4 +571,71 @@ g_unix_output_stream_pollable_create_source (GPollableOutputStream *stream,
     }
 
   return pollable_source;
+}
+
+static GPollableReturn
+g_unix_output_stream_pollable_writev_nonblocking (GPollableOutputStream  *stream,
+						  const GOutputVector    *vectors,
+						  gsize                   n_vectors,
+						  gsize                  *bytes_written,
+						  GError                **error)
+{
+  GUnixOutputStream *unix_stream = G_UNIX_OUTPUT_STREAM (stream);
+  struct iovec *iov;
+  gssize res = -1;
+
+  if (!g_pollable_output_stream_is_writable (stream))
+    {
+      *bytes_written = 0;
+      return G_POLLABLE_RETURN_WOULD_BLOCK;
+    }
+
+  /* Clamp the number of vectors if more given than we can write in one go.
+   * The caller has to handle short writes anyway.
+   */
+  if (n_vectors > G_IOV_MAX)
+    n_vectors = G_IOV_MAX;
+
+  if (G_OUTPUT_VECTOR_IS_IOVEC)
+    {
+      /* ABI is compatible */
+      iov = (struct iovec *) vectors;
+    }
+  else
+    {
+      gsize i;
+
+      /* ABI is incompatible */
+      iov = g_newa (struct iovec, n_vectors);
+      for (i = 0; i < n_vectors; i++)
+        {
+          iov[i].iov_base = (void *)vectors[i].buffer;
+          iov[i].iov_len = vectors[i].size;
+        }
+    }
+
+  while (1)
+    {
+      int errsv;
+
+      res = writev (unix_stream->priv->fd, iov, n_vectors);
+      errsv = errno;
+      if (res == -1)
+	{
+	  if (errsv == EINTR)
+	    continue;
+
+	  g_set_error (error, G_IO_ERROR,
+		       g_io_error_from_errno (errsv),
+		       _("Error writing to file descriptor: %s"),
+		       g_strerror (errsv));
+	}
+
+      if (bytes_written)
+        *bytes_written = res;
+
+      break;
+    }
+
+  return res != -1 ? G_POLLABLE_RETURN_OK : G_POLLABLE_RETURN_FAILED;
 }

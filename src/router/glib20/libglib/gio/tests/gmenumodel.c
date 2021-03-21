@@ -5,6 +5,8 @@
 
 #include "gdbus-sessionbus.h"
 
+#include "glib/glib-private.h"
+
 static gboolean
 time_out (gpointer unused G_GNUC_UNUSED)
 {
@@ -752,11 +754,11 @@ typedef struct
   GDBusServer *server;
 
   GThread *service_thread;
+  /* Protects server_connection and service_loop. */
   GMutex service_loop_lock;
   GCond service_loop_cond;
 
   GMainLoop *service_loop;
-  GMainLoop *loop;
 } PeerConnection;
 
 static gboolean
@@ -766,9 +768,10 @@ on_new_connection (GDBusServer *server,
 {
   PeerConnection *data = user_data;
 
+  g_mutex_lock (&data->service_loop_lock);
   data->server_connection = g_object_ref (connection);
-
-  g_main_loop_quit (data->loop);
+  g_cond_broadcast (&data->service_loop_cond);
+  g_mutex_unlock (&data->service_loop_lock);
 
   return TRUE;
 }
@@ -797,6 +800,15 @@ await_service_loop (PeerConnection *data)
 {
   g_mutex_lock (&data->service_loop_lock);
   while (data->service_loop == NULL)
+    g_cond_wait (&data->service_loop_cond, &data->service_loop_lock);
+  g_mutex_unlock (&data->service_loop_lock);
+}
+
+static void
+await_server_connection (PeerConnection *data)
+{
+  g_mutex_lock (&data->service_loop_lock);
+  while (data->server_connection == NULL)
     g_cond_wait (&data->service_loop_cond, &data->service_loop_lock);
   g_mutex_unlock (&data->service_loop_lock);
 }
@@ -874,7 +886,6 @@ peer_connection_up (PeerConnection *data)
   GError *error;
 
   memset (data, '\0', sizeof (PeerConnection));
-  data->loop = g_main_loop_new (NULL, FALSE);
 
   g_mutex_init (&data->service_loop_lock);
   g_cond_init (&data->service_loop_cond);
@@ -897,8 +908,7 @@ peer_connection_up (PeerConnection *data)
                                             &error);
   g_assert_no_error (error);
   g_assert (data->client_connection != NULL);
-  while (data->server_connection == NULL)
-    g_main_loop_run (data->loop);
+  await_server_connection (data);
 }
 
 static void
@@ -915,8 +925,6 @@ peer_connection_down (PeerConnection *data)
 
   g_mutex_clear (&data->service_loop_lock);
   g_cond_clear (&data->service_loop_cond);
-
-  g_main_loop_unref (data->loop);
 }
 
 struct roundtrip_state
@@ -1006,11 +1014,17 @@ test_dbus_roundtrip (void)
 static void
 test_dbus_peer_roundtrip (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks a GCancellableSource, see glib#2313");
+  (void) peer_connection_up;
+  (void) peer_connection_down;
+#else
   PeerConnection peer;
 
   peer_connection_up (&peer);
   do_roundtrip (peer.server_connection, peer.client_connection);
   peer_connection_down (&peer);
+#endif
 }
 
 static gint items_changed_count;
@@ -1139,11 +1153,17 @@ test_dbus_subscriptions (void)
 static void
 test_dbus_peer_subscriptions (void)
 {
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks a GCancellableSource, see glib#2313");
+  (void) peer_connection_up;
+  (void) peer_connection_down;
+#else
   PeerConnection peer;
 
   peer_connection_up (&peer);
   do_subscriptions (peer.server_connection, peer.client_connection);
   peer_connection_down (&peer);
+#endif
 }
 
 static gpointer
@@ -1159,6 +1179,8 @@ do_modify (gpointer data)
     {
       random_menu_change (menu, rand);
     }
+
+  g_rand_free (rand);
 
   return NULL;
 }
@@ -1201,9 +1223,11 @@ test_dbus_threaded (void)
 
   for (i = 0; i < 10; i++)
     {
-      menu[i] = random_menu_new (g_rand_new_with_seed (g_test_rand_int ()), 2);
+      GRand *rand = g_rand_new_with_seed (g_test_rand_int ());
+      menu[i] = random_menu_new (rand, 2);
       call[i] = g_thread_new ("call", do_modify, menu[i]);
       export[i] = g_thread_new ("export", do_export, menu[i]);
+      g_rand_free (rand);
     }
 
   for (i = 0; i < 10; i++)

@@ -189,7 +189,7 @@ foo_set_property (GDBusConnection       *connection,
                G_DBUS_ERROR,
                G_DBUS_ERROR_SPAWN_FILE_INVALID,
                "Returning some error instead of writing the value '%s' to the property '%s'",
-               property_name, s);
+               s, property_name);
   g_free (s);
   return FALSE;
 }
@@ -337,6 +337,22 @@ introspect_callback (GDBusProxy   *proxy,
   g_main_loop_quit (loop);
 }
 
+static gint
+compare_strings (gconstpointer a,
+                 gconstpointer b)
+{
+  const gchar *sa = *(const gchar **) a;
+  const gchar *sb = *(const gchar **) b;
+
+  /* Array terminator must sort last */
+  if (sa == NULL)
+    return 1;
+  if (sb == NULL)
+    return -1;
+
+  return strcmp (sa, sb);
+}
+
 static gchar **
 get_nodes_at (GDBusConnection  *c,
               const gchar      *object_path)
@@ -389,6 +405,9 @@ get_nodes_at (GDBusConnection  *c,
   g_object_unref (proxy);
   g_free (xml_data);
   g_dbus_node_info_unref (node_info);
+
+  /* Nodes are semantically unordered; sort array so tests can rely on order */
+  g_ptr_array_sort (p, compare_strings);
 
   return (gchar **) g_ptr_array_free (p, FALSE);
 }
@@ -652,7 +671,7 @@ subtree_introspect (GDBusConnection       *connection,
       g_assert_not_reached ();
     }
 
-  return g_memdup (interfaces, 2 * sizeof (void *));
+  return g_memdup2 (interfaces, 2 * sizeof (void *));
 }
 
 static const GDBusInterfaceVTable *
@@ -708,7 +727,7 @@ dynamic_subtree_introspect (GDBusConnection       *connection,
 {
   const GDBusInterfaceInfo *interfaces[2] = { &dyna_interface_info, NULL };
 
-  return g_memdup (interfaces, 2 * sizeof (void *));
+  return g_memdup2 (interfaces, 2 * sizeof (void *));
 }
 
 static const GDBusInterfaceVTable *
@@ -908,7 +927,7 @@ test_dispatch_thread_func (gpointer user_data)
     {
       /* _with_closures variant doesn't support customizing error data. */
       g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_FILE_INVALID);
-      g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.Spawn.FileInvalid: Returning some error instead of writing the value 'NotReadable' to the property ''But Writable you are!''");
+      g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.Spawn.FileInvalid: Returning some error instead of writing the value ''But Writable you are!'' to the property 'NotReadable'");
     }
   g_assert (error != NULL && error->domain == G_DBUS_ERROR);
   g_error_free (error);
@@ -1240,9 +1259,9 @@ test_object_registration (void)
   nodes = get_nodes_at (c, "/foo/dyna");
   g_assert (nodes != NULL);
   g_assert_cmpint (g_strv_length (nodes), ==, 3);
-  g_assert_cmpstr (nodes[0], ==, "lol");
-  g_assert_cmpstr (nodes[1], ==, "cat");
-  g_assert_cmpstr (nodes[2], ==, "cheezburger");
+  g_assert_cmpstr (nodes[0], ==, "cat");
+  g_assert_cmpstr (nodes[1], ==, "cheezburger");
+  g_assert_cmpstr (nodes[2], ==, "lol");
   g_strfreev (nodes);
   g_assert_cmpint (count_interfaces (c, "/foo/dyna/lol"), ==, 4);
   g_assert_cmpint (count_interfaces (c, "/foo/dyna/cat"), ==, 4);
@@ -1253,14 +1272,14 @@ test_object_registration (void)
   nodes = get_nodes_at (c, "/foo/dyna");
   g_assert (nodes != NULL);
   g_assert_cmpint (g_strv_length (nodes), ==, 4);
-  g_assert_cmpstr (nodes[0], ==, "lol");
-  g_assert_cmpstr (nodes[1], ==, "cat");
-  g_assert_cmpstr (nodes[2], ==, "cheezburger");
-  g_assert_cmpstr (nodes[3], ==, "dynamicallycreated");
+  g_assert_cmpstr (nodes[0], ==, "cat");
+  g_assert_cmpstr (nodes[1], ==, "cheezburger");
+  g_assert_cmpstr (nodes[2], ==, "dynamicallycreated");
+  g_assert_cmpstr (nodes[3], ==, "lol");
   g_strfreev (nodes);
   g_assert_cmpint (count_interfaces (c, "/foo/dyna/dynamicallycreated"), ==, 4);
 
-  /* now check that the object hierarachy is properly generated... yes, it's a bit
+  /* now check that the object hierarchy is properly generated... yes, it's a bit
    * perverse that we round-trip to the bus to introspect ourselves ;-)
    */
   nodes = get_nodes_at (c, "/");

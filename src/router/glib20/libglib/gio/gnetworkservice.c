@@ -52,7 +52,7 @@
  * address families.
  *
  * See #GSrvTarget for more information about SRV records, and see
- * #GSocketConnectable for and example of using the connectable
+ * #GSocketConnectable for an example of using the connectable
  * interface.
  */
 
@@ -318,7 +318,7 @@ g_network_service_get_domain (GNetworkService *srv)
  * g_network_service_get_scheme:
  * @srv: a #GNetworkService
  *
- * Get's the URI scheme used to resolve proxies. By default, the service name
+ * Gets the URI scheme used to resolve proxies. By default, the service name
  * is used as scheme.
  *
  * Returns: @srv's scheme name
@@ -465,10 +465,14 @@ g_network_service_address_enumerator_next (GSocketAddressEnumerator  *enumerator
               continue;
             }
 
-          uri = _g_uri_from_authority (g_network_service_get_scheme (srv_enum->srv),
-                                       hostname,
-                                       g_srv_target_get_port (target),
-                                       NULL);
+          uri = g_uri_join (G_URI_FLAGS_NONE,
+                            g_network_service_get_scheme (srv_enum->srv),
+                            NULL,
+                            hostname,
+                            g_srv_target_get_port (target),
+                            "",
+                            NULL,
+                            NULL);
           g_free (hostname);
 
           addr = g_network_address_parse_uri (uri,

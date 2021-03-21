@@ -121,7 +121,7 @@ test_auth_on_timeout (gpointer user_data)
 {
   g_error ("Timeout waiting for client");
   g_assert_not_reached ();
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 
@@ -310,4 +310,3 @@ main (int   argc,
 
   return ret;
 }
-

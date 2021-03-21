@@ -22,6 +22,8 @@
 
 static GType _g_test_tls_certificate_get_type (void);
 static GType _g_test_tls_connection_get_type (void);
+static GTlsDatabase * _g_test_tls_backend_get_default_database (GTlsBackend * backend);
+static GType _g_test_tls_database_get_type (void);
 
 struct _GTestTlsBackend {
   GObject parent_instance;
@@ -57,6 +59,28 @@ g_test_tls_backend_iface_init (GTlsBackendInterface *iface)
   iface->get_certificate_type = _g_test_tls_certificate_get_type;
   iface->get_client_connection_type = _g_test_tls_connection_get_type;
   iface->get_server_connection_type = _g_test_tls_connection_get_type;
+  iface->get_dtls_client_connection_type = _g_test_tls_connection_get_type;
+  iface->get_dtls_server_connection_type = _g_test_tls_connection_get_type;
+  iface->get_default_database = _g_test_tls_backend_get_default_database;
+  iface->get_file_database_type = _g_test_tls_database_get_type;
+}
+
+static GTlsDatabase *
+_g_test_tls_backend_get_default_database (GTlsBackend * backend)
+{
+  static GTlsDatabase *default_db;
+  GError *error = NULL;
+
+  if (!default_db)
+    {
+      default_db = g_initable_new (_g_test_tls_database_get_type (),
+                                   NULL,
+                                   &error,
+                                   NULL);
+      g_assert_no_error (error);
+    }
+
+  return default_db;
 }
 
 /* Test certificate type */
@@ -69,6 +93,8 @@ struct _GTestTlsCertificate {
   gchar *key_pem;
   gchar *cert_pem;
   GTlsCertificate *issuer;
+  gchar *pkcs11_uri;
+  gchar *private_key_pkcs11_uri;
 };
 
 struct _GTestTlsCertificateClass {
@@ -77,13 +103,13 @@ struct _GTestTlsCertificateClass {
 
 enum
 {
-  PROP_CERTIFICATE_0,
-
-  PROP_CERT_CERTIFICATE,
+  PROP_CERT_CERTIFICATE = 1,
   PROP_CERT_CERTIFICATE_PEM,
   PROP_CERT_PRIVATE_KEY,
   PROP_CERT_PRIVATE_KEY_PEM,
-  PROP_CERT_ISSUER
+  PROP_CERT_ISSUER,
+  PROP_CERT_PKCS11_URI,
+  PROP_CERT_PRIVATE_KEY_PKCS11_URI,
 };
 
 static void g_test_tls_certificate_initable_iface_init (GInitableIface *iface);
@@ -121,6 +147,15 @@ g_test_tls_certificate_get_property (GObject    *object,
     case PROP_CERT_ISSUER:
       g_value_set_object (value, cert->issuer);
       break;
+    case PROP_CERT_PKCS11_URI:
+      /* This test value simulates a backend that ignores the value
+         because it is unsupported */
+      if (g_strcmp0 (cert->pkcs11_uri, "unsupported") != 0)
+        g_value_set_string (value, cert->pkcs11_uri);
+      break;
+    case PROP_CERT_PRIVATE_KEY_PKCS11_URI:
+      g_value_set_string (value, cert->private_key_pkcs11_uri);
+      break;
     default:
       g_assert_not_reached ();
       break;
@@ -146,6 +181,12 @@ g_test_tls_certificate_set_property (GObject      *object,
     case PROP_CERT_ISSUER:
       cert->issuer = g_value_dup_object (value);
       break;
+    case PROP_CERT_PKCS11_URI:
+      cert->pkcs11_uri = g_value_dup_string (value);
+      break;
+    case PROP_CERT_PRIVATE_KEY_PKCS11_URI:
+      cert->private_key_pkcs11_uri = g_value_dup_string (value);
+      break;
     case PROP_CERT_CERTIFICATE:
     case PROP_CERT_PRIVATE_KEY:
       /* ignore */
@@ -163,7 +204,11 @@ g_test_tls_certificate_finalize (GObject *object)
 
   g_free (cert->cert_pem);
   g_free (cert->key_pem);
+  g_free (cert->pkcs11_uri);
+  g_free (cert->private_key_pkcs11_uri);
   g_clear_object (&cert->issuer);
+
+  G_OBJECT_CLASS (g_test_tls_certificate_parent_class)->finalize (object);
 }
 
 static void
@@ -183,6 +228,8 @@ g_test_tls_certificate_class_init (GTestTlsCertificateClass *test_class)
   g_object_class_override_property (gobject_class, PROP_CERT_PRIVATE_KEY, "private-key");
   g_object_class_override_property (gobject_class, PROP_CERT_PRIVATE_KEY_PEM, "private-key-pem");
   g_object_class_override_property (gobject_class, PROP_CERT_ISSUER, "issuer");
+  g_object_class_override_property (gobject_class, PROP_CERT_PKCS11_URI, "pkcs11-uri");
+  g_object_class_override_property (gobject_class, PROP_CERT_PRIVATE_KEY_PKCS11_URI, "private-key-pkcs11-uri");
 }
 
 static void
@@ -222,9 +269,8 @@ struct _GTestTlsConnectionClass {
 
 enum
 {
-  PROP_CONNECTION_0,
-
-  PROP_CONN_BASE_IO_STREAM,
+  PROP_CONN_BASE_IO_STREAM = 1,
+  PROP_CONN_BASE_SOCKET,
   PROP_CONN_USE_SYSTEM_CERTDB,
   PROP_CONN_REQUIRE_CLOSE_NOTIFY,
   PROP_CONN_REHANDSHAKE_MODE,
@@ -244,6 +290,8 @@ static void g_test_tls_connection_initable_iface_init (GInitableIface *iface);
 G_DEFINE_TYPE_WITH_CODE (GTestTlsConnection, g_test_tls_connection, G_TYPE_TLS_CONNECTION,
 			 G_IMPLEMENT_INTERFACE (G_TYPE_TLS_CLIENT_CONNECTION, NULL)
 			 G_IMPLEMENT_INTERFACE (G_TYPE_TLS_SERVER_CONNECTION, NULL)
+                         G_IMPLEMENT_INTERFACE (G_TYPE_DATAGRAM_BASED, NULL)
+			 G_IMPLEMENT_INTERFACE (G_TYPE_DTLS_CONNECTION, NULL)
 			 G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
 						g_test_tls_connection_initable_iface_init))
 
@@ -288,6 +336,7 @@ g_test_tls_connection_class_init (GTestTlsConnectionClass *connection_class)
   io_stream_class->close_fn = g_test_tls_connection_close;
 
   g_object_class_override_property (gobject_class, PROP_CONN_BASE_IO_STREAM, "base-io-stream");
+  g_object_class_override_property (gobject_class, PROP_CONN_BASE_SOCKET, "base-socket");
   g_object_class_override_property (gobject_class, PROP_CONN_USE_SYSTEM_CERTDB, "use-system-certdb");
   g_object_class_override_property (gobject_class, PROP_CONN_REQUIRE_CLOSE_NOTIFY, "require-close-notify");
   g_object_class_override_property (gobject_class, PROP_CONN_REHANDSHAKE_MODE, "rehandshake-mode");
@@ -326,4 +375,118 @@ const gchar *
 g_test_tls_connection_get_private_key_pem (GTlsCertificate *cert)
 {
   return ((GTestTlsCertificate *)cert)->key_pem;
+}
+
+/* Test database type */
+
+typedef struct _GTestTlsDatabase      GTestTlsDatabase;
+typedef struct _GTestTlsDatabaseClass GTestTlsDatabaseClass;
+
+struct _GTestTlsDatabase {
+  GTlsDatabase parent_instance;
+  gchar *anchors;
+};
+
+struct _GTestTlsDatabaseClass {
+  GTlsDatabaseClass parent_class;
+};
+
+enum
+{
+  PROP_DATABASE_ANCHORS = 1,
+};
+
+static void g_test_tls_database_initable_iface_init (GInitableIface *iface);
+static void g_test_tls_file_database_file_database_interface_init (GInitableIface *iface);
+
+#define g_test_tls_database_get_type _g_test_tls_database_get_type
+G_DEFINE_TYPE_WITH_CODE (GTestTlsDatabase, g_test_tls_database, G_TYPE_TLS_DATABASE,
+			 G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+						g_test_tls_database_initable_iface_init);
+			 G_IMPLEMENT_INTERFACE (G_TYPE_TLS_FILE_DATABASE,
+						g_test_tls_file_database_file_database_interface_init))
+
+static void
+g_test_tls_database_get_property (GObject    *object,
+                                  guint       prop_id,
+                                  GValue     *value,
+                                  GParamSpec *pspec)
+{
+  GTestTlsDatabase *db = (GTestTlsDatabase *) object;
+
+  switch (prop_id)
+    {
+    case PROP_DATABASE_ANCHORS:
+      g_value_set_string (value, db->anchors);
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+    }
+}
+
+static void
+g_test_tls_database_set_property (GObject      *object,
+                                  guint         prop_id,
+                                  const GValue *value,
+                                  GParamSpec   *pspec)
+{
+  GTestTlsDatabase *db = (GTestTlsDatabase *) object;
+
+  switch (prop_id)
+    {
+    case PROP_DATABASE_ANCHORS:
+      g_free (db->anchors);
+      db->anchors = g_value_dup_string (value);
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+    }
+}
+
+static void
+g_test_tls_database_finalize (GObject *object)
+{
+  GTestTlsDatabase *db = (GTestTlsDatabase *) object;
+
+  g_free (db->anchors);
+
+  G_OBJECT_CLASS (g_test_tls_database_parent_class)->finalize (object);
+}
+
+static void
+g_test_tls_database_class_init (GTestTlsDatabaseClass *test_class)
+{
+  GObjectClass *gobject_class = G_OBJECT_CLASS (test_class);
+
+  gobject_class->get_property = g_test_tls_database_get_property;
+  gobject_class->set_property = g_test_tls_database_set_property;
+  gobject_class->finalize = g_test_tls_database_finalize;
+
+  g_object_class_override_property (gobject_class, PROP_DATABASE_ANCHORS, "anchors");
+}
+
+static void
+g_test_tls_database_init (GTestTlsDatabase *database)
+{
+}
+
+static gboolean
+g_test_tls_database_initable_init (GInitable       *initable,
+                                   GCancellable    *cancellable,
+                                   GError         **error)
+{
+  return TRUE;
+}
+
+static void
+g_test_tls_file_database_file_database_interface_init (GInitableIface *iface)
+{
+}
+
+static void
+g_test_tls_database_initable_iface_init (GInitableIface  *iface)
+{
+  iface->init = g_test_tls_database_initable_init;
 }

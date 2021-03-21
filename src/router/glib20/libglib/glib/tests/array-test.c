@@ -23,7 +23,6 @@
  */
 
 #undef G_DISABLE_ASSERT
-#undef G_LOG_DOMAIN
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,6 +138,57 @@ array_new_zero_terminated (void)
   out_str = g_array_free (garray, FALSE);
   g_assert_cmpstr (out_str, ==, "hello");
   g_free (out_str);
+}
+
+/* Check g_array_steal() function */
+static void
+array_steal (void)
+{
+  const guint array_size = 10000;
+  GArray *garray;
+  gint *adata;
+  guint i;
+  gsize len, past_len;
+
+  garray = g_array_new (FALSE, FALSE, sizeof (gint));
+  adata = (gint *) g_array_steal (garray, NULL);
+  g_assert_null (adata);
+
+  adata = (gint *) g_array_steal (garray, &len);
+  g_assert_null (adata);
+  g_assert_cmpint (len, ==, 0);
+
+  for (i = 0; i < array_size; i++)
+    g_array_append_val (garray, i);
+
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpint (g_array_index (garray, gint, i), ==, i);
+
+
+  past_len = garray->len;
+  adata = (gint *) g_array_steal (garray, &len);
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpint (adata[i], ==, i);
+
+  g_assert_cmpint (past_len, ==, len);
+  g_assert_cmpint (garray->len, ==, 0);
+
+  g_array_append_val (garray, i);
+
+  g_assert_cmpint (adata[0], ==, 0);
+  g_assert_cmpint (g_array_index (garray, gint, 0), ==, array_size);
+  g_assert_cmpint (garray->len, ==, 1);
+
+  g_array_remove_index (garray, 0);
+
+  for (i = 0; i < array_size; i++)
+    g_array_append_val (garray, i);
+
+  g_assert_cmpint (garray->len, ==, array_size);
+  g_assert_cmpmem (adata, array_size * sizeof (gint),
+                   garray->data, array_size * sizeof (gint));
+  g_free (adata);
+  g_array_free (garray, TRUE);
 }
 
 /* Check that g_array_append_val() works correctly for various #GArray
@@ -316,7 +366,7 @@ array_remove_index (gconstpointer test_data)
 {
   const ArrayTestData *config = test_data;
   GArray *garray;
-  gint i;
+  guint i;
   gint prev, cur;
 
   garray = g_array_new (config->zero_terminated, config->clear_, sizeof (gint));
@@ -353,7 +403,7 @@ array_remove_index_fast (gconstpointer test_data)
 {
   const ArrayTestData *config = test_data;
   GArray *garray;
-  gint i;
+  guint i;
   gint prev, cur;
 
   garray = g_array_new (config->zero_terminated, config->clear_, sizeof (gint));
@@ -393,7 +443,7 @@ array_remove_range (gconstpointer test_data)
 {
   const ArrayTestData *config = test_data;
   GArray *garray;
-  gint i;
+  guint i;
   gint prev, cur;
 
   garray = g_array_new (config->zero_terminated, config->clear_, sizeof (gint));
@@ -467,6 +517,59 @@ int_compare (gconstpointer p1, gconstpointer p2)
   return *i1 - *i2;
 }
 
+static void
+array_copy (gconstpointer test_data)
+{
+  GArray *array, *array_copy;
+  gsize i;
+  const ArrayTestData *config = test_data;
+  const gsize array_size = 100;
+
+  /* Testing degenerated cases */
+  if (g_test_undefined ())
+    {
+      g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                             "*assertion*!= NULL*");
+      array = g_array_copy (NULL);
+      g_test_assert_expected_messages ();
+
+      g_assert_null (array);
+    }
+
+  /* Testing simple copy */
+  array = g_array_new (config->zero_terminated, config->clear_, sizeof (gint));
+
+  for (i = 0; i < array_size; i++)
+    g_array_append_val (array, i);
+
+  array_copy = g_array_copy (array);
+
+  /* Check internal data */
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint (g_array_index (array, gint, i), ==,
+                      g_array_index (array_copy, gint, i));
+
+  /* Check internal parameters ('zero_terminated' flag) */
+  if (config->zero_terminated)
+    {
+      const gint *data = (const gint *) array_copy->data;
+      g_assert_cmpint (data[array_copy->len], ==, 0);
+    }
+
+  /* Check internal parameters ('clear' flag) */
+  if (config->clear_)
+    {
+      guint old_length = array_copy->len;
+      g_array_set_size (array_copy, old_length + 5);
+      for (i = old_length; i < old_length + 5; i++)
+        g_assert_cmpint (g_array_index (array_copy, gint, i), ==, 0);
+    }
+
+  /* Clean-up */
+  g_array_unref (array);
+  g_array_unref (array_copy);
+}
+
 static int
 int_compare_data (gconstpointer p1, gconstpointer p2, gpointer data)
 {
@@ -483,10 +586,14 @@ array_sort (gconstpointer test_data)
 {
   const ArrayTestData *config = test_data;
   GArray *garray;
-  gint i;
+  guint i;
   gint prev, cur;
 
   garray = g_array_new (config->zero_terminated, config->clear_, sizeof (gint));
+
+  /* Sort empty array */
+  g_array_sort (garray, int_compare);
+
   for (i = 0; i < 10000; i++)
     {
       cur = g_random_int_range (0, 10000);
@@ -515,10 +622,14 @@ array_sort_with_data (gconstpointer test_data)
 {
   const ArrayTestData *config = test_data;
   GArray *garray;
-  gint i;
+  guint i;
   gint prev, cur;
 
   garray = g_array_new (config->zero_terminated, config->clear_, sizeof (gint));
+
+  /* Sort empty array */
+  g_array_sort_with_data (garray, int_compare_data, NULL);
+
   for (i = 0; i < 10000; i++)
     {
       cur = g_random_int_range (0, 10000);
@@ -575,6 +686,206 @@ array_clear_func (void)
 
   g_array_free (garray, TRUE);
   g_assert_cmpint (num_clear_func_invocations, ==, 10);
+}
+
+/* Defining a comparison function for testing g_array_binary_search() */
+static gint
+cmpint (gconstpointer a, gconstpointer b)
+{
+  const gint *_a = a;
+  const gint *_b = b;
+
+  return *_a - *_b;
+}
+
+/* Testing g_array_binary_search() function */
+static void
+test_array_binary_search (void)
+{
+  GArray *garray;
+  guint i, matched_index;
+
+  if (g_test_undefined ())
+    {
+      /* Testing degenerated cases */
+      garray = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+      g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                             "*assertion*!= NULL*");
+      g_assert_false (g_array_binary_search (NULL, &i, cmpint, NULL));
+      g_test_assert_expected_messages ();
+
+      g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                             "*assertion*!= NULL*");
+      g_assert_false (g_array_binary_search (garray, &i, NULL, NULL));
+      g_test_assert_expected_messages ();
+      g_array_free (garray, TRUE);
+    }
+
+  /* Testing array of size 0 */
+  garray = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+
+  i = 1;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  g_array_free (garray, TRUE);
+
+  /* Testing array of size 1 */
+  garray = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+  i = 1;
+  g_array_append_val (garray, i);
+
+  g_assert_true (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  i = 0;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  i = 2;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  g_array_free (garray, TRUE);
+
+  /* Testing array of size 2 */
+  garray = g_array_sized_new (FALSE, FALSE, sizeof (guint), 2);
+  for (i = 1; i < 3; i++)
+    g_array_append_val (garray, i);
+
+  for (i = 1; i < 3; i++)
+    g_assert_true (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  i = 0;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  i = 4;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  g_array_free (garray, TRUE);
+
+  /* Testing array of size 3 */
+  garray = g_array_sized_new (FALSE, FALSE, sizeof (guint), 3);
+  for (i = 1; i < 4; i++)
+    g_array_append_val (garray, i);
+
+  for (i = 1; i < 4; i++)
+    g_assert_true (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  i = 0;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  i = 5;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  g_array_free (garray, TRUE);
+
+  /* Testing array of size 10000 */
+  garray = g_array_sized_new (FALSE, FALSE, sizeof (guint), 10000);
+
+  for (i = 1; i < 10001; i++)
+    g_array_append_val (garray, i);
+
+  for (i = 1; i < 10001; i++)
+    g_assert_true (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  for (i = 1; i < 10001; i++)
+    {
+      g_assert_true (g_array_binary_search (garray, &i, cmpint, &matched_index));
+      g_assert_cmpint (i, ==, matched_index + 1);
+    }
+
+  /* Testing negative result */
+  i = 0;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, &matched_index));
+
+  i = 10002;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, &matched_index));
+
+  g_array_free (garray, TRUE);
+
+  /* Test for a not-found element in the middle of the array. */
+  garray = g_array_sized_new (FALSE, FALSE, sizeof (guint), 3);
+  for (i = 1; i < 10; i += 2)
+    g_array_append_val (garray, i);
+
+  i = 0;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  i = 2;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  i = 10;
+  g_assert_false (g_array_binary_search (garray, &i, cmpint, NULL));
+
+  g_array_free (garray, TRUE);
+}
+
+static void
+test_array_copy_sized (void)
+{
+  GArray *array1 = NULL, *array2 = NULL, *array3 = NULL;
+  int val = 5;
+
+  g_test_summary ("Test that copying a newly-allocated sized array works.");
+
+  array1 = g_array_sized_new (FALSE, FALSE, sizeof (int), 1);
+  array2 = g_array_copy (array1);
+
+  g_assert_cmpuint (array2->len, ==, array1->len);
+
+  g_array_append_val (array1, val);
+  array3 = g_array_copy (array1);
+
+  g_assert_cmpuint (array3->len, ==, array1->len);
+  g_assert_cmpuint (g_array_index (array3, int, 0), ==, g_array_index (array1, int, 0));
+  g_assert_cmpuint (array3->len, ==, 1);
+  g_assert_cmpuint (g_array_index (array3, int, 0), ==, val);
+
+  g_array_unref (array3);
+  g_array_unref (array2);
+  g_array_unref (array1);
+}
+
+/* Check g_ptr_array_steal() function */
+static void
+pointer_array_steal (void)
+{
+  const guint array_size = 10000;
+  GPtrArray *gparray;
+  gpointer *pdata;
+  guint i;
+  gsize len, past_len;
+
+  gparray = g_ptr_array_new ();
+  pdata = g_ptr_array_steal (gparray, NULL);
+  g_assert_null (pdata);
+
+  pdata = g_ptr_array_steal (gparray, &len);
+  g_assert_null (pdata);
+  g_assert_cmpint (len, ==, 0);
+
+  for (i = 0; i < array_size; i++)
+    g_ptr_array_add (gparray, GINT_TO_POINTER (i));
+
+  past_len = gparray->len;
+  pdata = g_ptr_array_steal (gparray, &len);
+  g_assert_cmpint (gparray->len, ==, 0);
+  g_assert_cmpint (past_len, ==, len);
+  g_ptr_array_add (gparray, GINT_TO_POINTER (10));
+
+  g_assert_cmpint ((gsize) pdata[0], ==, (gsize) GINT_TO_POINTER (0));
+  g_assert_cmpint ((gsize) g_ptr_array_index (gparray, 0), ==,
+                   (gsize) GINT_TO_POINTER (10));
+  g_assert_cmpint (gparray->len, ==, 1);
+
+  g_ptr_array_remove_index (gparray, 0);
+
+  for (i = 0; i < array_size; i++)
+    g_ptr_array_add (gparray, GINT_TO_POINTER (i));
+  g_assert_cmpmem (pdata, array_size * sizeof (gpointer),
+                   gparray->pdata, array_size * sizeof (gpointer));
+  g_free (pdata);
+
+  g_ptr_array_free (gparray, TRUE);
 }
 
 static void
@@ -746,6 +1057,264 @@ pointer_array_free_func (void)
   g_assert_cmpint (num_free_func_invocations, ==, 0);
 }
 
+static gpointer
+ptr_array_copy_func (gconstpointer src, gpointer userdata)
+{
+  gsize *dst = g_malloc (sizeof (gsize));
+  *dst = *((gsize *) src);
+  return dst;
+}
+
+/* Test the g_ptr_array_copy() function */
+static void
+pointer_array_copy (void)
+{
+  GPtrArray *ptr_array, *ptr_array2;
+  gsize i;
+  const gsize array_size = 100;
+  gsize *array_test = g_malloc (array_size * sizeof (gsize));
+
+  g_test_summary ("Check all normal behaviour of stealing elements from one "
+                  "array to append to another, covering different array sizes "
+                  "and element copy functions");
+
+  if (g_test_undefined ())
+    {
+      /* Testing degenerated cases */
+      g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                             "*assertion*!= NULL*");
+      ptr_array = g_ptr_array_copy (NULL, NULL, NULL);
+      g_test_assert_expected_messages ();
+      g_assert_cmpuint ((gsize) ptr_array, ==, (gsize) NULL);
+    }
+
+  /* Initializing array_test */
+  for (i = 0; i < array_size; i++)
+    array_test[i] = i;
+
+  /* Test copy an empty array */
+  ptr_array = g_ptr_array_sized_new (0);
+  ptr_array2 = g_ptr_array_copy (ptr_array, NULL, NULL);
+
+  g_assert_cmpuint (ptr_array2->len, ==, ptr_array->len);
+
+  g_ptr_array_unref (ptr_array);
+  g_ptr_array_unref (ptr_array2);
+
+  /* Test simple copy */
+  ptr_array = g_ptr_array_sized_new (array_size);
+
+  for (i = 0; i < array_size; i++)
+    g_ptr_array_add (ptr_array, &array_test[i]);
+
+  ptr_array2 = g_ptr_array_copy (ptr_array, NULL, NULL);
+
+  g_assert_cmpuint (ptr_array2->len, ==, ptr_array->len);
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint (*((gsize *) g_ptr_array_index (ptr_array2, i)), ==, i);
+
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint ((gsize) g_ptr_array_index (ptr_array, i), ==,
+                      (gsize) g_ptr_array_index (ptr_array2, i));
+
+  g_ptr_array_free (ptr_array2, TRUE);
+
+  /* Test copy through GCopyFunc */
+  ptr_array2 = g_ptr_array_copy (ptr_array, ptr_array_copy_func, NULL);
+  g_ptr_array_set_free_func (ptr_array2, g_free);
+
+  g_assert_cmpuint (ptr_array2->len, ==, ptr_array->len);
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint (*((gsize *) g_ptr_array_index (ptr_array2, i)), ==, i);
+
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint ((gsize) g_ptr_array_index (ptr_array, i), !=,
+                      (gsize) g_ptr_array_index (ptr_array2, i));
+
+  g_ptr_array_free (ptr_array2, TRUE);
+
+  /* Final cleanup */
+  g_ptr_array_free (ptr_array, TRUE);
+  g_free (array_test);
+}
+
+/* Test the g_ptr_array_extend() function */
+static void
+pointer_array_extend (void)
+{
+  GPtrArray *ptr_array, *ptr_array2;
+  gsize i;
+  const gsize array_size = 100;
+  gsize *array_test = g_malloc (array_size * sizeof (gsize));
+
+  if (g_test_undefined ())
+    {
+      /* Testing degenerated cases */
+      ptr_array = g_ptr_array_sized_new (0);
+      g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                             "*assertion*!= NULL*");
+      g_ptr_array_extend (NULL, ptr_array, NULL, NULL);
+      g_test_assert_expected_messages ();
+
+      g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                             "*assertion*!= NULL*");
+      g_ptr_array_extend (ptr_array, NULL, NULL, NULL);
+      g_test_assert_expected_messages ();
+
+      g_ptr_array_unref (ptr_array);
+    }
+
+  /* Initializing array_test */
+  for (i = 0; i < array_size; i++)
+    array_test[i] = i;
+
+  /* Testing extend with array of size zero */
+  ptr_array = g_ptr_array_sized_new (0);
+  ptr_array2 = g_ptr_array_sized_new (0);
+
+  g_ptr_array_extend (ptr_array, ptr_array2, NULL, NULL);
+
+  g_assert_cmpuint (ptr_array->len, ==, 0);
+  g_assert_cmpuint (ptr_array2->len, ==, 0);
+
+  g_ptr_array_unref (ptr_array);
+  g_ptr_array_unref (ptr_array2);
+
+  /* Testing extend an array of size zero */
+  ptr_array = g_ptr_array_sized_new (array_size);
+  ptr_array2 = g_ptr_array_sized_new (0);
+
+  for (i = 0; i < array_size; i++)
+    {
+      g_ptr_array_add (ptr_array, &array_test[i]);
+    }
+
+  g_ptr_array_extend (ptr_array, ptr_array2, NULL, NULL);
+
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint (*((gsize *) g_ptr_array_index (ptr_array, i)), ==, i);
+
+  g_ptr_array_unref (ptr_array);
+  g_ptr_array_unref (ptr_array2);
+
+  /* Testing extend an array of size zero */
+  ptr_array = g_ptr_array_sized_new (0);
+  ptr_array2 = g_ptr_array_sized_new (array_size);
+
+  for (i = 0; i < array_size; i++)
+    {
+      g_ptr_array_add (ptr_array2, &array_test[i]);
+    }
+
+  g_ptr_array_extend (ptr_array, ptr_array2, NULL, NULL);
+
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint (*((gsize *) g_ptr_array_index (ptr_array, i)), ==, i);
+
+  g_ptr_array_unref (ptr_array);
+  g_ptr_array_unref (ptr_array2);
+
+  /* Testing simple extend */
+  ptr_array = g_ptr_array_sized_new (array_size / 2);
+  ptr_array2 = g_ptr_array_sized_new (array_size / 2);
+
+  for (i = 0; i < array_size / 2; i++)
+    {
+      g_ptr_array_add (ptr_array, &array_test[i]);
+      g_ptr_array_add (ptr_array2, &array_test[i + (array_size / 2)]);
+    }
+
+  g_ptr_array_extend (ptr_array, ptr_array2, NULL, NULL);
+
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint (*((gsize *) g_ptr_array_index (ptr_array, i)), ==, i);
+
+  g_ptr_array_unref (ptr_array);
+  g_ptr_array_unref (ptr_array2);
+
+  /* Testing extend with GCopyFunc */
+  ptr_array = g_ptr_array_sized_new (array_size / 2);
+  ptr_array2 = g_ptr_array_sized_new (array_size / 2);
+
+  for (i = 0; i < array_size / 2; i++)
+    {
+      g_ptr_array_add (ptr_array, &array_test[i]);
+      g_ptr_array_add (ptr_array2, &array_test[i + (array_size / 2)]);
+    }
+
+  g_ptr_array_extend (ptr_array, ptr_array2, ptr_array_copy_func, NULL);
+
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint (*((gsize *) g_ptr_array_index (ptr_array, i)), ==, i);
+
+  /* Clean-up memory */
+  for (i = array_size / 2; i < array_size; i++)
+    g_free (g_ptr_array_index (ptr_array, i));
+
+  g_ptr_array_unref (ptr_array);
+  g_ptr_array_unref (ptr_array2);
+  g_free (array_test);
+}
+
+/* Test the g_ptr_array_extend_and_steal() function */
+static void
+pointer_array_extend_and_steal (void)
+{
+  GPtrArray *ptr_array, *ptr_array2, *ptr_array3;
+  gsize i;
+  const gsize array_size = 100;
+  gsize *array_test = g_malloc (array_size * sizeof (gsize));
+
+  /* Initializing array_test */
+  for (i = 0; i < array_size; i++)
+    array_test[i] = i;
+
+  /* Testing simple extend_and_steal() */
+  ptr_array = g_ptr_array_sized_new (array_size / 2);
+  ptr_array2 = g_ptr_array_sized_new (array_size / 2);
+
+  for (i = 0; i < array_size / 2; i++)
+    {
+      g_ptr_array_add (ptr_array, &array_test[i]);
+      g_ptr_array_add (ptr_array2, &array_test[i + (array_size / 2)]);
+    }
+
+  g_ptr_array_extend_and_steal (ptr_array, ptr_array2);
+
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint (*((gsize *) g_ptr_array_index (ptr_array, i)), ==, i);
+
+  g_ptr_array_free (ptr_array, TRUE);
+
+  /* Testing extend_and_steal() with a pending reference to stolen array */
+  ptr_array = g_ptr_array_sized_new (array_size / 2);
+  ptr_array2 = g_ptr_array_sized_new (array_size / 2);
+
+  for (i = 0; i < array_size / 2; i++)
+    {
+      g_ptr_array_add (ptr_array, &array_test[i]);
+      g_ptr_array_add (ptr_array2, &array_test[i + (array_size / 2)]);
+    }
+
+  ptr_array3 = g_ptr_array_ref (ptr_array2);
+
+  g_ptr_array_extend_and_steal (ptr_array, ptr_array2);
+
+  for (i = 0; i < array_size; i++)
+    g_assert_cmpuint (*((gsize *) g_ptr_array_index (ptr_array, i)), ==, i);
+
+  g_assert_cmpuint (ptr_array3->len, ==, 0);
+  g_assert_null (ptr_array3->pdata);
+
+  g_ptr_array_add (ptr_array2, NULL);
+
+  g_ptr_array_free (ptr_array, TRUE);
+  g_ptr_array_free (ptr_array3, TRUE);
+
+  /* Final memory clean-up */
+  g_free (array_test);
+}
+
 static gint
 ptr_compare (gconstpointer p1, gconstpointer p2)
 {
@@ -773,6 +1342,10 @@ pointer_array_sort (void)
   gint prev, cur;
 
   gparray = g_ptr_array_new ();
+
+  /* Sort empty array */
+  g_ptr_array_sort (gparray, ptr_compare);
+
   for (i = 0; i < 10000; i++)
     {
       val = g_random_int_range (0, 10000);
@@ -792,6 +1365,150 @@ pointer_array_sort (void)
   g_ptr_array_free (gparray, TRUE);
 }
 
+/* Please keep pointer_array_sort_example() in sync with the doc-comment
+ * of g_ptr_array_sort() */
+
+typedef struct
+{
+  gchar *name;
+  gint size;
+} FileListEntry;
+
+static void
+file_list_entry_free (gpointer p)
+{
+  FileListEntry *entry = p;
+
+  g_free (entry->name);
+  g_free (entry);
+}
+
+static gint
+sort_filelist (gconstpointer a, gconstpointer b)
+{
+   const FileListEntry *entry1 = *((FileListEntry **) a);
+   const FileListEntry *entry2 = *((FileListEntry **) b);
+
+   return g_ascii_strcasecmp (entry1->name, entry2->name);
+}
+
+static void
+pointer_array_sort_example (void)
+{
+  GPtrArray *file_list = NULL;
+  FileListEntry *entry;
+
+  g_test_summary ("Check that the doc-comment for g_ptr_array_sort() is correct");
+
+  file_list = g_ptr_array_new_with_free_func (file_list_entry_free);
+
+  entry = g_new0 (FileListEntry, 1);
+  entry->name = g_strdup ("README");
+  entry->size = 42;
+  g_ptr_array_add (file_list, g_steal_pointer (&entry));
+
+  entry = g_new0 (FileListEntry, 1);
+  entry->name = g_strdup ("empty");
+  entry->size = 0;
+  g_ptr_array_add (file_list, g_steal_pointer (&entry));
+
+  entry = g_new0 (FileListEntry, 1);
+  entry->name = g_strdup ("aardvark");
+  entry->size = 23;
+  g_ptr_array_add (file_list, g_steal_pointer (&entry));
+
+  g_ptr_array_sort (file_list, sort_filelist);
+
+  g_assert_cmpuint (file_list->len, ==, 3);
+  entry = g_ptr_array_index (file_list, 0);
+  g_assert_cmpstr (entry->name, ==, "aardvark");
+  entry = g_ptr_array_index (file_list, 1);
+  g_assert_cmpstr (entry->name, ==, "empty");
+  entry = g_ptr_array_index (file_list, 2);
+  g_assert_cmpstr (entry->name, ==, "README");
+
+  g_ptr_array_unref (file_list);
+}
+
+/* Please keep pointer_array_sort_with_data_example() in sync with the
+ * doc-comment of g_ptr_array_sort_with_data() */
+
+typedef enum { SORT_NAME, SORT_SIZE } SortMode;
+
+static gint
+sort_filelist_how (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+  gint order;
+  const SortMode sort_mode = GPOINTER_TO_INT (user_data);
+  const FileListEntry *entry1 = *((FileListEntry **) a);
+  const FileListEntry *entry2 = *((FileListEntry **) b);
+
+  switch (sort_mode)
+    {
+    case SORT_NAME:
+      order = g_ascii_strcasecmp (entry1->name, entry2->name);
+      break;
+    case SORT_SIZE:
+      order = entry1->size - entry2->size;
+      break;
+    default:
+      order = 0;
+      break;
+    }
+  return order;
+}
+
+static void
+pointer_array_sort_with_data_example (void)
+{
+  GPtrArray *file_list = NULL;
+  FileListEntry *entry;
+  SortMode sort_mode;
+
+  g_test_summary ("Check that the doc-comment for g_ptr_array_sort_with_data() is correct");
+
+  file_list = g_ptr_array_new_with_free_func (file_list_entry_free);
+
+  entry = g_new0 (FileListEntry, 1);
+  entry->name = g_strdup ("README");
+  entry->size = 42;
+  g_ptr_array_add (file_list, g_steal_pointer (&entry));
+
+  entry = g_new0 (FileListEntry, 1);
+  entry->name = g_strdup ("empty");
+  entry->size = 0;
+  g_ptr_array_add (file_list, g_steal_pointer (&entry));
+
+  entry = g_new0 (FileListEntry, 1);
+  entry->name = g_strdup ("aardvark");
+  entry->size = 23;
+  g_ptr_array_add (file_list, g_steal_pointer (&entry));
+
+  sort_mode = SORT_NAME;
+  g_ptr_array_sort_with_data (file_list, sort_filelist_how, GINT_TO_POINTER (sort_mode));
+
+  g_assert_cmpuint (file_list->len, ==, 3);
+  entry = g_ptr_array_index (file_list, 0);
+  g_assert_cmpstr (entry->name, ==, "aardvark");
+  entry = g_ptr_array_index (file_list, 1);
+  g_assert_cmpstr (entry->name, ==, "empty");
+  entry = g_ptr_array_index (file_list, 2);
+  g_assert_cmpstr (entry->name, ==, "README");
+
+  sort_mode = SORT_SIZE;
+  g_ptr_array_sort_with_data (file_list, sort_filelist_how, GINT_TO_POINTER (sort_mode));
+
+  g_assert_cmpuint (file_list->len, ==, 3);
+  entry = g_ptr_array_index (file_list, 0);
+  g_assert_cmpstr (entry->name, ==, "empty");
+  entry = g_ptr_array_index (file_list, 1);
+  g_assert_cmpstr (entry->name, ==, "aardvark");
+  entry = g_ptr_array_index (file_list, 2);
+  g_assert_cmpstr (entry->name, ==, "README");
+
+  g_ptr_array_unref (file_list);
+}
+
 static void
 pointer_array_sort_with_data (void)
 {
@@ -800,6 +1517,10 @@ pointer_array_sort_with_data (void)
   gint prev, cur;
 
   gparray = g_ptr_array_new ();
+
+  /* Sort empty array */
+  g_ptr_array_sort_with_data (gparray, ptr_compare_data, NULL);
+
   for (i = 0; i < 10000; i++)
     g_ptr_array_add (gparray, GINT_TO_POINTER (g_random_int_range (0, 10000)));
 
@@ -879,7 +1600,7 @@ steal_destroy_notify (gpointer data)
 /* Test that g_ptr_array_steal_index() and g_ptr_array_steal_index_fast() can
  * remove elements from a pointer array without the #GDestroyNotify being called. */
 static void
-pointer_array_steal (void)
+pointer_array_steal_index (void)
 {
   guint i1 = 0, i2 = 0, i3 = 0, i4 = 0;
   gpointer out1, out2;
@@ -920,6 +1641,41 @@ pointer_array_steal (void)
   g_assert_cmpuint (i2, ==, 0);
   g_assert_cmpuint (i3, ==, 1);
   g_assert_cmpuint (i4, ==, 1);
+}
+
+static void
+byte_array_steal (void)
+{
+  const guint array_size = 10000;
+  GByteArray *gbarray;
+  guint8 *bdata;
+  guint i;
+  gsize len, past_len;
+
+  gbarray = g_byte_array_new ();
+  bdata = g_byte_array_steal (gbarray, NULL);
+  g_assert_cmpint ((gsize) bdata, ==, (gsize) gbarray->data);
+  g_free (bdata);
+
+  for (i = 0; i < array_size; i++)
+    g_byte_array_append (gbarray, (guint8 *) "abcd", 4);
+
+  past_len = gbarray->len;
+  bdata = g_byte_array_steal (gbarray, &len);
+
+  g_assert_cmpint (len, ==, past_len);
+  g_assert_cmpint (gbarray->len, ==, 0);
+
+  g_byte_array_append (gbarray, (guint8 *) "@", 1);
+
+  g_assert_cmpint (bdata[0], ==, 'a');
+  g_assert_cmpint (gbarray->data[0], ==, '@');
+  g_assert_cmpint (gbarray->len, ==, 1);
+
+  g_byte_array_remove_index (gbarray, 0);
+
+  g_free (bdata);
+  g_byte_array_free (gbarray, TRUE);
 }
 
 static void
@@ -1119,7 +1875,7 @@ static void
 byte_array_sort (void)
 {
   GByteArray *gbarray;
-  gint i;
+  guint i;
   guint8 val;
   guint8 prev, cur;
 
@@ -1147,7 +1903,7 @@ static void
 byte_array_sort_with_data (void)
 {
   GByteArray *gbarray;
-  gint i;
+  guint i;
   guint8 val;
   guint8 prev, cur;
 
@@ -1177,7 +1933,7 @@ byte_array_new_take (void)
   GByteArray *gbarray;
   guint8 *data;
 
-  data = g_memdup ("woooweeewow", 11);
+  data = g_memdup2 ("woooweeewow", 11);
   gbarray = g_byte_array_new_take (data, 11);
   g_assert (gbarray->data == data);
   g_assert_cmpuint (gbarray->len, ==, 11);
@@ -1240,7 +1996,10 @@ main (int argc, char *argv[])
   /* array tests */
   g_test_add_func ("/array/new/zero-terminated", array_new_zero_terminated);
   g_test_add_func ("/array/ref-count", array_ref_count);
+  g_test_add_func ("/array/steal", array_steal);
   g_test_add_func ("/array/clear-func", array_clear_func);
+  g_test_add_func ("/array/binary-search", test_array_binary_search);
+  g_test_add_func ("/array/copy-sized", test_array_copy_sized);
 
   for (i = 0; i < G_N_ELEMENTS (array_configurations); i++)
     {
@@ -1253,6 +2012,7 @@ main (int argc, char *argv[])
       add_array_test ("/array/remove-index", &array_configurations[i], array_remove_index);
       add_array_test ("/array/remove-index-fast", &array_configurations[i], array_remove_index_fast);
       add_array_test ("/array/remove-range", &array_configurations[i], array_remove_range);
+      add_array_test ("/array/copy", &array_configurations[i], array_copy);
       add_array_test ("/array/sort", &array_configurations[i], array_sort);
       add_array_test ("/array/sort-with-data", &array_configurations[i], array_sort_with_data);
     }
@@ -1262,13 +2022,20 @@ main (int argc, char *argv[])
   g_test_add_func ("/pointerarray/insert", pointer_array_insert);
   g_test_add_func ("/pointerarray/ref-count", pointer_array_ref_count);
   g_test_add_func ("/pointerarray/free-func", pointer_array_free_func);
+  g_test_add_func ("/pointerarray/array_copy", pointer_array_copy);
+  g_test_add_func ("/pointerarray/array_extend", pointer_array_extend);
+  g_test_add_func ("/pointerarray/array_extend_and_steal", pointer_array_extend_and_steal);
   g_test_add_func ("/pointerarray/sort", pointer_array_sort);
+  g_test_add_func ("/pointerarray/sort/example", pointer_array_sort_example);
   g_test_add_func ("/pointerarray/sort-with-data", pointer_array_sort_with_data);
+  g_test_add_func ("/pointerarray/sort-with-data/example", pointer_array_sort_with_data_example);
   g_test_add_func ("/pointerarray/find/empty", pointer_array_find_empty);
   g_test_add_func ("/pointerarray/find/non-empty", pointer_array_find_non_empty);
   g_test_add_func ("/pointerarray/steal", pointer_array_steal);
+  g_test_add_func ("/pointerarray/steal_index", pointer_array_steal_index);
 
   /* byte arrays */
+  g_test_add_func ("/bytearray/steal", byte_array_steal);
   g_test_add_func ("/bytearray/append", byte_array_append);
   g_test_add_func ("/bytearray/prepend", byte_array_prepend);
   g_test_add_func ("/bytearray/remove", byte_array_remove);
@@ -1282,4 +2049,3 @@ main (int argc, char *argv[])
 
   return g_test_run ();
 }
-

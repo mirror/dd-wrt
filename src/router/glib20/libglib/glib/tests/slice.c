@@ -107,7 +107,7 @@ thread_allocate (gpointer data)
   gint b;
   gint size;
   gpointer p;
-  volatile gpointer *loc;
+  gpointer *loc;  /* (atomic) */
 
   for (i = 0; i < 10000; i++)
     {
@@ -137,7 +137,7 @@ test_allocate (void)
 {
   GThread *threads[30];
   gint size;
-  gint i;
+  gsize i;
 
   for (i = 0; i < 30; i++)
     for (size = 1; size <= 4096; size++)

@@ -67,15 +67,14 @@ on_weak_notify_timeout (gpointer user_data)
 }
 
 static gboolean
-dispose_on_idle (gpointer object)
+unref_on_idle (gpointer object)
 {
-  g_object_run_dispose (object);
   g_object_unref (object);
   return FALSE;
 }
 
 static gboolean
-_g_object_dispose_and_wait_weak_notify (gpointer object)
+_g_object_unref_and_wait_weak_notify (gpointer object)
 {
   WeakNotifyData data;
   guint timeout_id;
@@ -85,9 +84,10 @@ _g_object_dispose_and_wait_weak_notify (gpointer object)
 
   g_object_weak_ref (object, (GWeakNotify) g_main_loop_quit, data.loop);
 
-  /* Drop the ref in an idle callback, this is to make sure the mainloop
-   * is already running when weak notify happens */
-  g_idle_add (dispose_on_idle, object);
+  /* Drop the strong ref held by the caller in an idle callback. This is to
+   * make sure the mainloop is already running when weak notify happens (when
+   * all other strong ref holders have dropped theirs). */
+  g_idle_add (unref_on_idle, object);
 
   /* Make sure we don't block forever */
   timeout_id = g_timeout_add (30 * 1000, on_weak_notify_timeout, &data);
@@ -179,7 +179,7 @@ watch_parent (gint fd)
       if (num_events == 0)
         continue;
 
-      if (fds[0].revents == G_IO_HUP)
+      if (fds[0].revents & G_IO_HUP)
         {
           /* Parent quit, cleanup the mess and exit */
           for (n = 0; n < pids_to_kill->len; n++)
@@ -251,6 +251,16 @@ watcher_init (void)
           g_assert_not_reached ();
         }
 
+      /* flush streams to avoid buffers being duplicated in the child and
+       * flushed by both the child and parent later
+       *
+       * FIXME: This is a workaround for the fact that watch_parent() uses
+       * non-async-signal-safe API. See
+       * https://gitlab.gnome.org/GNOME/glib/-/issues/2322#note_1034330
+       */
+      fflush (stdout);
+      fflush (stderr);
+
       switch (fork ())
         {
         case -1:
@@ -282,10 +292,13 @@ watcher_send_command (const gchar *command)
 {
   GIOChannel *channel;
   GError *error = NULL;
+  GIOStatus status;
 
   channel = watcher_init ();
 
-  g_io_channel_write_chars (channel, command, -1, NULL, &error);
+  do
+   status = g_io_channel_write_chars (channel, command, -1, NULL, &error);
+  while (status == G_IO_STATUS_AGAIN);
   g_assert_no_error (error);
 
   g_io_channel_flush (channel, &error);
@@ -573,7 +586,9 @@ write_config_file (GTestDBus *self)
       "</busconfig>\n");
 
   close (fd);
-  g_file_set_contents (path, contents->str, contents->len, &error);
+  g_file_set_contents_full (path, contents->str, contents->len,
+                            G_FILE_SET_CONTENTS_NONE,
+                            0600, &error);
   g_assert_no_error (error);
 
   g_string_free (contents, TRUE);
@@ -604,11 +619,12 @@ start_daemon (GTestDBus *self)
   g_spawn_async_with_pipes (NULL,
                             (gchar **) argv,
                             NULL,
-#ifdef G_OS_WIN32
                             /* We Need this to get the pid returned on win32 */
                             G_SPAWN_DO_NOT_REAP_CHILD |
-#endif
-                            G_SPAWN_SEARCH_PATH,
+                            G_SPAWN_SEARCH_PATH |
+                            /* dbus-daemon will not abuse our descriptors, and
+                             * passing this means we can use posix_spawn() for speed */
+                            G_SPAWN_LEAVE_DESCRIPTORS_OPEN,
                             NULL,
                             NULL,
                             &self->priv->bus_pid,
@@ -801,7 +817,7 @@ g_test_dbus_stop (GTestDBus *self)
  * Stop the session bus started by g_test_dbus_up().
  *
  * This will wait for the singleton returned by g_bus_get() or g_bus_get_sync()
- * is destroyed. This is done to ensure that the next unit test won't get a
+ * to be destroyed. This is done to ensure that the next unit test won't get a
  * leaked singleton from this test.
  */
 void
@@ -820,7 +836,7 @@ g_test_dbus_down (GTestDBus *self)
     stop_daemon (self);
 
   if (connection != NULL)
-    _g_object_dispose_and_wait_weak_notify (connection);
+    _g_object_unref_and_wait_weak_notify (connection);
 
   g_test_dbus_unset ();
   _g_bus_forget_singleton (G_BUS_TYPE_SESSION);

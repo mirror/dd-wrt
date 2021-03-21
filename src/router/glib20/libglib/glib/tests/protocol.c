@@ -122,9 +122,9 @@ test_message (void)
           (gchar*)argv0,
           NULL,
           "--GTestSubprocess",
-          "-p", "/glib/testing/protocol/debug",
-          "-p", "/glib/testing/protocol/message",
           "-p", "/glib/testing/protocol/gtest-message",
+          "-p", "/glib/testing/protocol/message",
+          "-p", "/glib/testing/protocol/debug",
           NULL
   };
   GTestLogBuffer* tlb;
@@ -162,7 +162,11 @@ test_message (void)
   tlb = g_test_log_buffer_new ();
   loop = g_main_loop_new (NULL, FALSE);
 
+#ifdef G_OS_WIN32
+  channel = g_io_channel_win32_new_fd (pipes[0]);
+#else
   channel = g_io_channel_unix_new (pipes[0]);
+#endif
   g_io_channel_set_close_on_unref (channel, TRUE);
   g_io_channel_set_encoding (channel, NULL, NULL);
   g_io_channel_set_buffered (channel, FALSE);
@@ -242,7 +246,7 @@ test_error (void)
           "/glib/testing/protocol/critical",
           "/glib/testing/protocol/error"
   };
-  gint i;
+  gsize i;
   int             messages = 0;
 
   for (i = 0; i < G_N_ELEMENTS (tests); i++)
@@ -285,7 +289,11 @@ test_error (void)
       tlb = g_test_log_buffer_new ();
       loop = g_main_loop_new (NULL, FALSE);
 
+#ifdef G_OS_WIN32
+      channel = g_io_channel_win32_new_fd (pipes[0]);
+#else
       channel = g_io_channel_unix_new (pipes[0]);
+#endif
       g_io_channel_set_close_on_unref (channel, TRUE);
       g_io_channel_set_encoding (channel, NULL, NULL);
       g_io_channel_set_buffered (channel, FALSE);

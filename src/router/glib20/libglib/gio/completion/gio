@@ -22,7 +22,8 @@
 
 # Check whether the suggestions have common prefix (i.e. suggestions won't be
 # shown and prefix will be completed first)
-__has_common_prefix() {
+__gio_has_common_prefix() {
+    local i
     for (( i = 1; i < ${#COMPREPLY[@]}; i++ )); do
         if [[ "${COMPREPLY[i-1]:${#cur}:1}" != "${COMPREPLY[i]:${#cur}:1}" ]]; then
             return 1 # False
@@ -43,28 +44,29 @@ __gio_location() {
     if [[ $cur =~ "/"$ ]]; then
         dir="$cur"
     elif [[ $cur =~ "/" ]]; then
-        dir="$(dirname "$cur")/"
+        # Subtract basename because dirname cmd doesn't work well with schemes
+        dir=${cur%$(basename "$cur")}
     fi
 
-    # List daemon mounts, just if dir is not specified, or looks like scheme
-    local mounts=()
-    if [[ $dir == "" ]] || [[ $dir =~ ":"$ && ! $dir =~ "/" ]]; then
-        while IFS=$'\n' read mount; do
-            # Do not care about local mounts
-            [[ "$mount" =~ ^"file:" ]] && continue
+    # List volumes and mounts
+    local mounts=( )
+    local mount
+    while IFS=$'\n' read mount; do
+        # Do not care about local mounts
+        [[ "$mount" =~ ^"file:" ]] && continue
 
-            # Use only matching mounts
-            [[ "$mount" =~ ^"$cur" && "$mount" != "$cur" ]] && mounts+=("$mount")
-        done < <(gio mount -l | sed -n -r 's/^ *Mount\([0-9]+\): .* -> (.*)$/\1/p')
-    fi
+        # Use only matching mounts
+        [[ "$mount" =~ ^"$cur" && "$mount" != "$cur" ]] && mounts+=("$mount")
+    done < <(gio mount -li | sed -n -r 's/^ *(default_location|activation_root)=(.*)$/\2/p' | sort -u)
 
     # Workaround to unescape dir name (e.g. "\ " -> " ")
-    declare -a tmp="( ${dir} )"
-    unescaped_dir="${tmp[0]}"
+    local -a tmp="( ${dir} )"
+    local unescaped_dir="${tmp[0]}"
 
     # List files
     local files=()
     local names=()
+    local name size type
     while IFS=$'\t' read name size type; do
         # Escape name properly
         local escaped_name="$(printf "%q" "$name")"
@@ -76,7 +78,7 @@ __gio_location() {
             escaped_name="$escaped_name "
         fi
 
-        path="$dir$escaped_name"
+        local path="$dir$escaped_name"
 
         # Use only matching paths
         if [[ "$path" =~ ^"$cur" ]]; then
@@ -88,10 +90,10 @@ __gio_location() {
     COMPREPLY=("${files[@]}" "${mounts[@]}")
 
     # Workaround to show suggestions as basenames only
-    if ! __has_common_prefix; then
+    if ! __gio_has_common_prefix; then
         COMPREPLY=("${mounts[@]} ${names[@]}")
 
-        # Workaround to prevent overwritting suggestions, it adds empty
+        # Workaround to prevent overwriting suggestions, it adds empty
         # suggestion, otherwise names with colons will be corrupted
         COMPREPLY+=(" ")
 
@@ -106,7 +108,7 @@ __gio_location() {
 __gio() {
     # Complete subcommands
     if (( ${COMP_CWORD} == 1 )); then
-        COMPREPLY=($(compgen -W "help version cat copy info list mime mkdir monitor mount move open rename save set trash tree" -- "${COMP_WORDS[1]}"))
+        COMPREPLY=($(compgen -W "help version cat copy info launch list mime mkdir monitor mount move open rename remove save set trash tree" -- "${COMP_WORDS[1]}"))
         compopt +o nospace
         return 0
     fi

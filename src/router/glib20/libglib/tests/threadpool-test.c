@@ -295,6 +295,7 @@ test_thread_sort (gboolean sort)
 
   g_assert (g_thread_pool_get_max_threads (pool) == max_threads);
   g_assert (g_thread_pool_get_num_threads (pool) == g_thread_pool_get_max_threads (pool));
+  g_thread_pool_free (pool, TRUE, TRUE);
 }
 
 static void
@@ -414,7 +415,7 @@ test_check_start_and_stop (gpointer user_data)
     }
 
     run_next = FALSE;
-    return TRUE;
+    return continue_timeout;
   }
 
   if (test_number == 3) {

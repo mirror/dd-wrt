@@ -126,7 +126,7 @@ g_dummy_file_get_basename (GFile *file)
   
   if (dummy->decoded_uri)
     return g_path_get_basename (dummy->decoded_uri->path);
-  return g_strdup (dummy->text_uri);
+  return NULL;
 }
 
 static char *
@@ -482,7 +482,7 @@ unescape_string (const gchar *escaped_string,
     }
   
   *out = '\0';
-  g_warn_if_fail (out - result <= strlen (escaped_string));
+  g_warn_if_fail ((gsize) (out - result) <= strlen (escaped_string));
   return result;
 }
 

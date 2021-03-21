@@ -27,6 +27,7 @@
 #include <gio/gdummyfile.h>
 #include <sys/types.h>
 #ifdef G_OS_UNIX
+#include "glib-unix.h"
 #include <pwd.h>
 #endif
 #include <string.h>
@@ -79,7 +80,10 @@ static GFile *
 g_local_vfs_get_file_for_path (GVfs       *vfs,
                                const char *path)
 {
-  return _g_local_file_new (path);
+  if (*path == '\0')
+    return _g_dummy_file_new (path);
+  else
+    return _g_local_file_new (path);
 }
 
 static GFile *
@@ -160,15 +164,17 @@ g_local_vfs_parse_name (GVfs       *vfs,
               struct passwd *passwd_file_entry;
               char *user_name;
 
-	      user_name = g_strndup (user_start, user_end - user_start);
-	      passwd_file_entry = getpwnam (user_name);
-	      g_free (user_name);
-	      
-	      if (passwd_file_entry != NULL &&
-		  passwd_file_entry->pw_dir != NULL)
-		user_prefix = g_strdup (passwd_file_entry->pw_dir);
-	      else
-		user_prefix = g_strdup (g_get_home_dir ());
+              user_name = g_strndup (user_start, user_end - user_start);
+              passwd_file_entry = g_unix_get_passwd_entry (user_name, NULL);
+              g_free (user_name);
+
+              if (passwd_file_entry != NULL &&
+                  passwd_file_entry->pw_dir != NULL)
+                user_prefix = g_strdup (passwd_file_entry->pw_dir);
+              else
+                user_prefix = g_strdup (g_get_home_dir ());
+
+              g_free (passwd_file_entry);
 	    }
 #else
 	  user_prefix = g_strdup (g_get_home_dir ());

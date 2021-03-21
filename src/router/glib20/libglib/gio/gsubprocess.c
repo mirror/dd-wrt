@@ -179,160 +179,6 @@ enum
   N_PROPS
 };
 
-#ifdef G_OS_UNIX
-typedef struct
-{
-  gint                 fds[3];
-  GSpawnChildSetupFunc child_setup_func;
-  gpointer             child_setup_data;
-  GArray              *basic_fd_assignments;
-  GArray              *needdup_fd_assignments;
-} ChildData;
-
-static void
-unset_cloexec (int fd)
-{
-  int flags;
-  int result;
-
-  flags = fcntl (fd, F_GETFD, 0);
-
-  if (flags != -1)
-    {
-      int errsv;
-      flags &= (~FD_CLOEXEC);
-      do
-        {
-          result = fcntl (fd, F_SETFD, flags);
-          errsv = errno;
-        }
-      while (result == -1 && errsv == EINTR);
-    }
-}
-
-static int
-dupfd_cloexec (int parent_fd)
-{
-  int fd, errsv;
-#ifdef F_DUPFD_CLOEXEC
-  do
-    {
-      fd = fcntl (parent_fd, F_DUPFD_CLOEXEC, 3);
-      errsv = errno;
-    }
-  while (fd == -1 && errsv == EINTR);
-#else
-  /* OS X Snow Lion and earlier don't have F_DUPFD_CLOEXEC:
-   * https://bugzilla.gnome.org/show_bug.cgi?id=710962
-   */
-  int result, flags;
-  do
-    {
-      fd = fcntl (parent_fd, F_DUPFD, 3);
-      errsv = errno;
-    }
-  while (fd == -1 && errsv == EINTR);
-  flags = fcntl (fd, F_GETFD, 0);
-  if (flags != -1)
-    {
-      flags |= FD_CLOEXEC;
-      do
-        {
-          result = fcntl (fd, F_SETFD, flags);
-          errsv = errno;
-        }
-      while (result == -1 && errsv == EINTR);
-    }
-#endif
-  return fd;
-}
-
-/*
- * Based on code derived from
- * gnome-terminal:src/terminal-screen.c:terminal_screen_child_setup(),
- * used under the LGPLv2+ with permission from author.
- */
-static void
-child_setup (gpointer user_data)
-{
-  ChildData *child_data = user_data;
-  gint i;
-  gint result;
-  int errsv;
-
-  /* We're on the child side now.  "Rename" the file descriptors in
-   * child_data.fds[] to stdin/stdout/stderr.
-   *
-   * We don't close the originals.  It's possible that the originals
-   * should not be closed and if they should be closed then they should
-   * have been created O_CLOEXEC.
-   */
-  for (i = 0; i < 3; i++)
-    if (child_data->fds[i] != -1 && child_data->fds[i] != i)
-      {
-        do
-          {
-            result = dup2 (child_data->fds[i], i);
-            errsv = errno;
-          }
-        while (result == -1 && errsv == EINTR);
-      }
-
-  /* Basic fd assignments we can just unset FD_CLOEXEC */
-  if (child_data->basic_fd_assignments)
-    {
-      for (i = 0; i < child_data->basic_fd_assignments->len; i++)
-        {
-          gint fd = g_array_index (child_data->basic_fd_assignments, int, i);
-
-          unset_cloexec (fd);
-        }
-    }
-
-  /* If we're doing remapping fd assignments, we need to handle
-   * the case where the user has specified e.g.:
-   * 5 -> 4, 4 -> 6
-   *
-   * We do this by duping the source fds temporarily.
-   */ 
-  if (child_data->needdup_fd_assignments)
-    {
-      for (i = 0; i < child_data->needdup_fd_assignments->len; i += 2)
-        {
-          gint parent_fd = g_array_index (child_data->needdup_fd_assignments, int, i);
-          gint new_parent_fd;
-
-          new_parent_fd = dupfd_cloexec (parent_fd);
-
-          g_array_index (child_data->needdup_fd_assignments, int, i) = new_parent_fd;
-        }
-      for (i = 0; i < child_data->needdup_fd_assignments->len; i += 2)
-        {
-          gint parent_fd = g_array_index (child_data->needdup_fd_assignments, int, i);
-          gint child_fd = g_array_index (child_data->needdup_fd_assignments, int, i+1);
-
-          if (parent_fd == child_fd)
-            {
-              unset_cloexec (parent_fd);
-            }
-          else
-            {
-              do
-                {
-                  result = dup2 (parent_fd, child_fd);
-                  errsv = errno;
-                }
-              while (result == -1 && errsv == EINTR);
-              (void) close (parent_fd);
-            }
-        }
-    }
-
-  if (child_data->child_setup_func)
-    child_data->child_setup_func (child_data->child_setup_data);
-}
-#endif
-
 static GInputStream *
 platform_input_stream_from_spawn_fd (gint fd)
 {
@@ -450,12 +296,12 @@ initable_init (GInitable     *initable,
                GError       **error)
 {
   GSubprocess *self = G_SUBPROCESS (initable);
-#ifdef G_OS_UNIX
-  ChildData child_data = { { -1, -1, -1 }, 0 };
-#endif
   gint *pipe_ptrs[3] = { NULL, NULL, NULL };
   gint pipe_fds[3] = { -1, -1, -1 };
   gint close_fds[3] = { -1, -1, -1 };
+#ifdef G_OS_UNIX
+  gint stdin_fd = -1, stdout_fd = -1, stderr_fd = -1;
+#endif
   GSpawnFlags spawn_flags = 0;
   gboolean success = FALSE;
   gint i;
@@ -480,11 +326,11 @@ initable_init (GInitable     *initable,
   else if (self->launcher)
     {
       if (self->launcher->stdin_fd != -1)
-        child_data.fds[0] = self->launcher->stdin_fd;
+        stdin_fd = self->launcher->stdin_fd;
       else if (self->launcher->stdin_path != NULL)
         {
-          child_data.fds[0] = close_fds[0] = unix_open_file (self->launcher->stdin_path, O_RDONLY, error);
-          if (child_data.fds[0] == -1)
+          stdin_fd = close_fds[0] = unix_open_file (self->launcher->stdin_path, O_RDONLY, error);
+          if (stdin_fd == -1)
             goto out;
         }
     }
@@ -499,11 +345,11 @@ initable_init (GInitable     *initable,
   else if (self->launcher)
     {
       if (self->launcher->stdout_fd != -1)
-        child_data.fds[1] = self->launcher->stdout_fd;
+        stdout_fd = self->launcher->stdout_fd;
       else if (self->launcher->stdout_path != NULL)
         {
-          child_data.fds[1] = close_fds[1] = unix_open_file (self->launcher->stdout_path, O_CREAT | O_WRONLY, error);
-          if (child_data.fds[1] == -1)
+          stdout_fd = close_fds[1] = unix_open_file (self->launcher->stdout_path, O_CREAT | O_WRONLY, error);
+          if (stdout_fd == -1)
             goto out;
         }
     }
@@ -516,26 +362,18 @@ initable_init (GInitable     *initable,
     pipe_ptrs[2] = &pipe_fds[2];
 #ifdef G_OS_UNIX
   else if (self->flags & G_SUBPROCESS_FLAGS_STDERR_MERGE)
-    /* This will work because stderr gets setup after stdout. */
-    child_data.fds[2] = 1;
+    /* This will work because stderr gets set up after stdout. */
+    stderr_fd = 1;
   else if (self->launcher)
     {
       if (self->launcher->stderr_fd != -1)
-        child_data.fds[2] = self->launcher->stderr_fd;
+        stderr_fd = self->launcher->stderr_fd;
       else if (self->launcher->stderr_path != NULL)
         {
-          child_data.fds[2] = close_fds[2] = unix_open_file (self->launcher->stderr_path, O_CREAT | O_WRONLY, error);
-          if (child_data.fds[2] == -1)
+          stderr_fd = close_fds[2] = unix_open_file (self->launcher->stderr_path, O_CREAT | O_WRONLY, error);
+          if (stderr_fd == -1)
             goto out;
         }
-    }
-#endif
-
-#ifdef G_OS_UNIX
-  if (self->launcher)
-    {
-      child_data.basic_fd_assignments = self->launcher->basic_fd_assignments;
-      child_data.needdup_fd_assignments = self->launcher->needdup_fd_assignments;
     }
 #endif
 
@@ -554,28 +392,30 @@ initable_init (GInitable     *initable,
   spawn_flags |= G_SPAWN_DO_NOT_REAP_CHILD;
   spawn_flags |= G_SPAWN_CLOEXEC_PIPES;
 
+  success = g_spawn_async_with_pipes_and_fds (self->launcher ? self->launcher->cwd : NULL,
+                                              (const gchar * const *) self->argv,
+                                              (const gchar * const *) (self->launcher ? self->launcher->envp : NULL),
+                                              spawn_flags,
 #ifdef G_OS_UNIX
-  child_data.child_setup_func = self->launcher ? self->launcher->child_setup_func : NULL;
-  child_data.child_setup_data = self->launcher ? self->launcher->child_setup_user_data : NULL;
-#endif
-
-  success = g_spawn_async_with_pipes (self->launcher ? self->launcher->cwd : NULL,
-                                      self->argv,
-                                      self->launcher ? self->launcher->envp : NULL,
-                                      spawn_flags,
-#ifdef G_OS_UNIX
-                                      child_setup, &child_data,
+                                              self->launcher ? self->launcher->child_setup_func : NULL,
+                                              self->launcher ? self->launcher->child_setup_user_data : NULL,
+                                              stdin_fd, stdout_fd, stderr_fd,
+                                              self->launcher ? (const gint *) self->launcher->source_fds->data : NULL,
+                                              self->launcher ? (const gint *) self->launcher->target_fds->data : NULL,
+                                              self->launcher ? self->launcher->source_fds->len : 0,
 #else
-                                      NULL, NULL,
+                                              NULL, NULL,
+                                              -1, -1, -1,
+                                              NULL, NULL, 0,
 #endif
-                                      &self->pid,
-                                      pipe_ptrs[0], pipe_ptrs[1], pipe_ptrs[2],
-                                      error);
+                                              &self->pid,
+                                              pipe_ptrs[0], pipe_ptrs[1], pipe_ptrs[2],
+                                              error);
   g_assert (success == (self->pid != 0));
 
   {
     guint64 identifier;
-    gint s;
+    gint s G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
 
 #ifdef G_OS_WIN32
     identifier = (guint64) GetProcessId (self->pid);
@@ -584,7 +424,7 @@ initable_init (GInitable     *initable,
 #endif
 
     s = g_snprintf (self->identifier, sizeof self->identifier, "%"G_GUINT64_FORMAT, identifier);
-    g_assert (0 < s && s < sizeof self->identifier);
+    g_assert (0 < s && (gsize) s < sizeof self->identifier);
   }
 
   /* Start attempting to reap the child immediately */
@@ -749,6 +589,11 @@ g_subprocess_newv (const gchar * const  *argv,
  *
  * On UNIX, returns the process ID as a decimal string.
  * On Windows, returns the result of GetProcessId() also as a string.
+ * If the subprocess has terminated, this will return %NULL.
+ *
+ * Returns: (nullable): the subprocess identifier, or %NULL if the subprocess
+ *    has terminated
+ * Since: 2.40
  */
 const gchar *
 g_subprocess_get_identifier (GSubprocess *subprocess)
@@ -768,10 +613,10 @@ g_subprocess_get_identifier (GSubprocess *subprocess)
  * Gets the #GOutputStream that you can write to in order to give data
  * to the stdin of @subprocess.
  *
- * The process must have been created with
- * %G_SUBPROCESS_FLAGS_STDIN_PIPE.
+ * The process must have been created with %G_SUBPROCESS_FLAGS_STDIN_PIPE and
+ * not %G_SUBPROCESS_FLAGS_STDIN_INHERIT, otherwise %NULL will be returned.
  *
- * Returns: (transfer none): the stdout pipe
+ * Returns: (nullable) (transfer none): the stdout pipe
  *
  * Since: 2.40
  **/
@@ -779,7 +624,6 @@ GOutputStream *
 g_subprocess_get_stdin_pipe (GSubprocess *subprocess)
 {
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), NULL);
-  g_return_val_if_fail (subprocess->stdin_pipe, NULL);
 
   return subprocess->stdin_pipe;
 }
@@ -791,10 +635,10 @@ g_subprocess_get_stdin_pipe (GSubprocess *subprocess)
  * Gets the #GInputStream from which to read the stdout output of
  * @subprocess.
  *
- * The process must have been created with
- * %G_SUBPROCESS_FLAGS_STDOUT_PIPE.
+ * The process must have been created with %G_SUBPROCESS_FLAGS_STDOUT_PIPE,
+ * otherwise %NULL will be returned.
  *
- * Returns: (transfer none): the stdout pipe
+ * Returns: (nullable) (transfer none): the stdout pipe
  *
  * Since: 2.40
  **/
@@ -802,7 +646,6 @@ GInputStream *
 g_subprocess_get_stdout_pipe (GSubprocess *subprocess)
 {
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), NULL);
-  g_return_val_if_fail (subprocess->stdout_pipe, NULL);
 
   return subprocess->stdout_pipe;
 }
@@ -814,10 +657,10 @@ g_subprocess_get_stdout_pipe (GSubprocess *subprocess)
  * Gets the #GInputStream from which to read the stderr output of
  * @subprocess.
  *
- * The process must have been created with
- * %G_SUBPROCESS_FLAGS_STDERR_PIPE.
+ * The process must have been created with %G_SUBPROCESS_FLAGS_STDERR_PIPE,
+ * otherwise %NULL will be returned.
  *
- * Returns: (transfer none): the stderr pipe
+ * Returns: (nullable) (transfer none): the stderr pipe
  *
  * Since: 2.40
  **/
@@ -825,7 +668,6 @@ GInputStream *
 g_subprocess_get_stderr_pipe (GSubprocess *subprocess)
 {
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), NULL);
-  g_return_val_if_fail (subprocess->stderr_pipe, NULL);
 
   return subprocess->stderr_pipe;
 }
@@ -1528,7 +1370,8 @@ g_subprocess_communicate_made_progress (GObject      *source_object,
 }
 
 static gboolean
-g_subprocess_communicate_cancelled (gpointer user_data)
+g_subprocess_communicate_cancelled (GCancellable *cancellable,
+                                    gpointer      user_data)
 {
   CommunicateState *state = user_data;
 
@@ -1580,13 +1423,32 @@ g_subprocess_communicate_internal (GSubprocess         *subprocess,
     {
       state->cancellable_source = g_cancellable_source_new (cancellable);
       /* No ref held here, but we unref the source from state's free function */
-      g_source_set_callback (state->cancellable_source, g_subprocess_communicate_cancelled, state, NULL);
+      g_source_set_callback (state->cancellable_source,
+                             G_SOURCE_FUNC (g_subprocess_communicate_cancelled),
+                             state, NULL);
       g_source_attach (state->cancellable_source, g_main_context_get_thread_default ());
     }
 
   if (subprocess->stdin_pipe)
     {
       g_assert (stdin_buf != NULL);
+
+#ifdef G_OS_UNIX
+      /* We're doing async writes to the pipe, and the async write mechanism assumes
+       * that streams polling as writable do SOME progress (possibly partial) and then
+       * stop, but never block.
+       *
+       * However, for blocking pipes, unix will return writable if there is *any* space left
+       * but still block until the full buffer size is available before returning from write.
+       * So, to avoid async blocking on the main loop we make this non-blocking here.
+       *
+       * It should be safe to change the fd because we're the only user at this point as
+       * per the g_subprocess_communicate() docs, and all the code called by this function
+       * properly handles non-blocking fds.
+       */
+      g_unix_set_fd_nonblocking (g_unix_output_stream_get_fd (G_UNIX_OUTPUT_STREAM (subprocess->stdin_pipe)), TRUE, NULL);
+#endif
+
       state->stdin_buf = g_memory_input_stream_new_from_bytes (stdin_buf);
       g_output_stream_splice_async (subprocess->stdin_pipe, (GInputStream*)state->stdin_buf,
                                     G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE | G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
@@ -1781,6 +1643,9 @@ g_subprocess_communicate_finish (GSubprocess   *subprocess,
  *
  * Like g_subprocess_communicate(), but validates the output of the
  * process as UTF-8, and returns it as a regular NUL terminated string.
+ *
+ * On error, @stdout_buf and @stderr_buf will be set to undefined values and
+ * should not be used.
  */
 gboolean
 g_subprocess_communicate_utf8 (GSubprocess   *subprocess,
@@ -1865,6 +1730,7 @@ communicate_result_validate_utf8 (const char            *stream_name,
       if (!g_utf8_validate (*return_location, -1, &end))
         {
           g_free (*return_location);
+          *return_location = NULL;
           g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
                        "Invalid UTF-8 in child %s at offset %lu",
                        stream_name,
@@ -1897,6 +1763,7 @@ g_subprocess_communicate_utf8_finish (GSubprocess   *subprocess,
 {
   gboolean ret = FALSE;
   CommunicateState *state;
+  gchar *local_stdout_buf = NULL, *local_stderr_buf = NULL;
 
   g_return_val_if_fail (G_IS_SUBPROCESS (subprocess), FALSE);
   g_return_val_if_fail (g_task_is_valid (result, subprocess), FALSE);
@@ -1910,11 +1777,11 @@ g_subprocess_communicate_utf8_finish (GSubprocess   *subprocess,
 
   /* TODO - validate UTF-8 while streaming, rather than all at once.
    */
-  if (!communicate_result_validate_utf8 ("stdout", stdout_buf,
+  if (!communicate_result_validate_utf8 ("stdout", &local_stdout_buf,
                                          state->stdout_buf,
                                          error))
     goto out;
-  if (!communicate_result_validate_utf8 ("stderr", stderr_buf,
+  if (!communicate_result_validate_utf8 ("stderr", &local_stderr_buf,
                                          state->stderr_buf,
                                          error))
     goto out;
@@ -1922,5 +1789,14 @@ g_subprocess_communicate_utf8_finish (GSubprocess   *subprocess,
   ret = TRUE;
  out:
   g_object_unref (result);
+
+  if (ret && stdout_buf != NULL)
+    *stdout_buf = g_steal_pointer (&local_stdout_buf);
+  if (ret && stderr_buf != NULL)
+    *stderr_buf = g_steal_pointer (&local_stderr_buf);
+
+  g_free (local_stderr_buf);
+  g_free (local_stdout_buf);
+
   return ret;
 }

@@ -30,6 +30,9 @@
 #include <glib.h>
 #include "inotify-kernel.h"
 #include <sys/inotify.h>
+#ifdef HAVE_SYS_FILIO_H
+#include <sys/filio.h>
+#endif
 #include <glib/glib-unix.h>
 
 #include "glib-private.h"
@@ -335,7 +338,7 @@ ik_source_dispatch (GSource     *source,
    * when the timeout is reached on an unpaired move (if any).
    *
    * If the last event was uninteresting then we will wake up after the
-   * shorter of the boredom sleep or any timeout for a unpaired move.
+   * shorter of the boredom sleep or any timeout for an unpaired move.
    */
   if (interesting)
     {
@@ -369,8 +372,8 @@ ik_source_new (gboolean (* callback) (ik_event_t *event))
 {
   static GSourceFuncs source_funcs = {
     NULL, NULL,
-    ik_source_dispatch
-    /* should have a finalize, but it will never happen */
+    ik_source_dispatch,
+    NULL, NULL, NULL
   };
   InotifyKernelSource *iks;
   GSource *source;
