@@ -90,7 +90,7 @@ char *ksmbd_work_group(void)
 
 /**
  * check_conn_state() - check state of server thread connection
- * @ksmbd_work:     smb work containing server thread information
+ * @work:     smb work containing server thread information
  *
  * Return:	0 on valid connection, otherwise 1 to reconnect
  */
@@ -105,8 +105,6 @@ static inline int check_conn_state(struct ksmbd_work *work)
 	}
 	return 0;
 }
-
-/* @FIXME what a mess... god help. */
 
 #define TCP_HANDLER_CONTINUE	0
 #define TCP_HANDLER_ABORT	1
@@ -254,7 +252,7 @@ send:
 
 /**
  * handle_ksmbd_work() - process pending smb work requests
- * @ksmbd_work:	smb work containing request command buffer
+ * @wk:	smb work containing request command buffer
  *
  * called by kworker threads to processing remaining smb work requests
  */
@@ -627,7 +625,7 @@ error:
 }
 
 /**
- * exit_smb_server() - shutdown forker thread and free memory at module exit
+ * ksmbd_server_exit() - shutdown forker thread and free memory at module exit
  */
 static void __exit ksmbd_server_exit(void)
 {
@@ -640,7 +638,6 @@ MODULE_VERSION(KSMBD_VERSION);
 MODULE_DESCRIPTION("Linux kernel CIFS/SMB SERVER");
 MODULE_LICENSE("GPL");
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
-MODULE_SOFTDEP("pre: arc4");
 MODULE_SOFTDEP("pre: ecb");
 MODULE_SOFTDEP("pre: hmac");
 MODULE_SOFTDEP("pre: md4");
