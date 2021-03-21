@@ -97,7 +97,11 @@ static int sanity_check_share_name_simple(char *name)
 	return -EINVAL;
 }
 
+#ifdef MULTICALL
+int smbshareadd_main(int argc, char *argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
 	int ret = EXIT_FAILURE;
 	char *smbconf = PATH_SMBCONF;
