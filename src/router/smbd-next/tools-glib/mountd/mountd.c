@@ -522,7 +522,11 @@ static struct option opts[] = {
 	{NULL,		0,			NULL,	 0  }
 };
 
+#ifdef MULTICALL
+int ksmbd_main(int argc, char *argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
 	int systemd_service = 0;
 	int c;
