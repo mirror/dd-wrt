@@ -9,8 +9,6 @@
 
 #define MAX_CIFS_HDR_SIZE 0x58
 
-/* @FIXME rework this code */
-
 #define SMB1_CLIENT_GUID_SIZE		(16)
 #define SMB1_MAX_MPX_COUNT		10
 #define SMB1_MAX_VCS			1

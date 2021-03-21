@@ -456,7 +456,7 @@ int smb_tree_connect_andx(struct ksmbd_work *work)
 		status.ret = KSMBD_TREE_CONN_STATUS_ERROR;
 		goto out_err;
 	}
-	name = extract_sharename(treename);
+	name = ksmbd_extract_sharename(treename);
 	if (IS_ERR(name)) {
 		status.ret = KSMBD_TREE_CONN_STATUS_ERROR;
 		goto out_err;
@@ -6154,7 +6154,7 @@ static int find_first(struct ksmbd_work *work)
 			continue;
 		}
 
-		if (match_pattern(d_info.name, srch_ptr)) {
+		if (match_pattern(d_info.name, d_info.name_len, srch_ptr)) {
 			rc = smb_populate_readdir_entry(conn,
 				le16_to_cpu(req_params->InformationLevel),
 				&d_info,
