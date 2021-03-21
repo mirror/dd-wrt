@@ -2008,7 +2008,7 @@ if host_system == 'windows'
 endif
 
 libm = cc.find_library('m', required : false)
-libffi_dep = dependency('libffi', version : '>= 3.0.0', fallback : ['libffi', 'ffi_dep'])
+# libffi_dep = dependency('libffi', version : '>= 3.0.0', fallback : ['libffi', 'ffi_dep'])
 
 if get_option('wrap_mode') == 'forcefallback'
   # Respects "wrap_mode=forcefallback" option
