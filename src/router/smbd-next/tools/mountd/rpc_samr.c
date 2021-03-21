@@ -787,7 +787,6 @@ int rpc_samr_init(void)
 	domain_name = strup(hostname);
 	rpc_samr_add_domain_entry(domain_name);
 	rpc_samr_add_domain_entry("Builtin");
-	g_rw_lock_init(&ch_table_lock);
 	return 0;
 }
 
