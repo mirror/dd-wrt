@@ -111,7 +111,7 @@ glib20-configure:
 	echo cpu_family = \'$(MESON_ARCH)\' >> $(TOP)/glib20/libglib/cross.txt
 	echo cpu = \'generic\' >> $(TOP)/glib20/libglib/cross.txt
 	echo endian = \'$(MESON_ENDIAN)\' >> $(TOP)/glib20/libglib/cross.txt
-	echo [properties] >> $(TOP)/glib20/libglib/cross.txt
+	echo "[properties]" >> $(TOP)/glib20/libglib/cross.txt
 	echo needs_exe_wrapper = true >> $(TOP)/glib20/libglib/cross.txt
 
 
