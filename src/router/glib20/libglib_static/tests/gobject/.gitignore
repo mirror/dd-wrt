@@ -1,0 +1,15 @@
+accumulator
+defaultiface
+dynamictype
+gvalue-test
+ifacecheck
+ifaceinherit
+ifaceinit
+ifaceproperties
+override
+paramspec-test
+performance
+performance-threaded
+references
+signals
+singleton
