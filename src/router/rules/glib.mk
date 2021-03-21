@@ -8,12 +8,13 @@ GLIB_COMP_ARGS= \
 	-Ddtrace=false \
 	-Dsystemtap=false \
 	-Dgtk_doc=false \
-	-Dbsymbolic_functions=true \
+	-Dbsymbolic_functions=false \
 	-Dforce_posix_threads=true \
 	-Dfam=false \
 	-Dinstalled_tests=false \
 	-Dnls=disabled \
 	-Doss_fuzz=disabled \
+	-Ddtrace=false \
 	-Dglib_assert=false \
 	-Dglib_checks=false
 
@@ -26,11 +27,12 @@ GLIB_STATIC_COMP_ARGS= \
 	-Ddtrace=false \
 	-Dsystemtap=false \
 	-Dgtk_doc=false \
-	-Dbsymbolic_functions=true \
+	-Dbsymbolic_functions=false \
 	-Dforce_posix_threads=true \
 	-Dfam=false \
 	-Dinstalled_tests=false \
 	-Dnls=disabled \
+	-Ddtrace=false \
 	-Doss_fuzz=disabled \
 	-Dglib_assert=false \
 	-Dglib_checks=false
@@ -145,18 +147,18 @@ glib20-configure: libffi zlib util-linux
 	cd $(TOP)/glib20/libglib && ninja -C build install
 
 
-	rm -rf $(TOP)/glib20/libglib_static/build
+	rm -rf $(TOP)/glib20/libglib/build_static
 	export CPPFLAGS="$(COPTS) $(LTO) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
 	export CFLAGS="$(COPTS) $(LTO) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
 	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
-	cd $(TOP)/glib20/libglib_static && meson setup --buildtype=plain --prefix=/usr --default-library static --cross-file $(TOP)/glib20/libglib/cross.txt $(GLIB_STATIC_MESON_ARGS) build
+	cd $(TOP)/glib20/libglib && meson setup --buildtype=plain --prefix=/usr --default-library static --cross-file $(TOP)/glib20/libglib/cross.txt $(GLIB_STATIC_MESON_ARGS) build_static
 	export CPPFLAGS="$(COPTS) $(LTO) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
 	export CFLAGS="$(COPTS) $(LTO) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
 	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz -ffunction-sections -fdata-sections -Wl,--gc-sections" && \
-	cd $(TOP)/glib20/libglib_static && ninja -C build
+	cd $(TOP)/glib20/libglib && ninja -C build_static
 
 	export DESTDIR=$(TOP)/_staging_static && \
-	cd $(TOP)/glib20/libglib_static && ninja -C build install
+	cd $(TOP)/glib20/libglib && ninja -C build_static install
 	rm -rf $(TOP)/_staging_static/usr/lib/*.so*
 
 glib20: libffi zlib util-linux util-linux-install
