@@ -71,7 +71,7 @@ glib20-configure: libffi zlib util-linux
 	echo "[binaries]" > $(TOP)/glib20/libglib/cross.txt
 	echo c = \'$(subst ccache ,,$(CC))\' >> $(TOP)/glib20/libglib/cross.txt
 	echo cpp = \'$(subst ccache ,,$(CXX))\' >> $(TOP)/glib20/libglib/cross.txt
-	echo ar = \'$(AR)\' >> $(TOP)/glib20/libglib/cross.txt
+	echo ar = \'$(subst ccache ,,$(CC))-ar\' >> $(TOP)/glib20/libglib/cross.txt
 	echo strip = \'$(STRIP)\' >> $(TOP)/glib20/libglib/cross.txt
 	echo nm = \'$(NM)\' >> $(TOP)/glib20/libglib/cross.txt
 	echo [built-in options] >> $(TOP)/glib20/libglib/cross.txt
@@ -114,7 +114,15 @@ glib20-configure: libffi zlib util-linux
 	export CFLAGS="$(COPTS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib" && \
 	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz" && \
 	cd $(TOP)/glib20/libglib && meson setup --buildtype=plain --prefix=/usr --cross-file $(TOP)/glib20/libglib/cross.txt $(GLIB_MESON_ARGS) build
-
+	export CPPFLAGS="$(COPTS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib" && \
+	export CFLAGS="$(COPTS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib" && \
+	export LDFLAGS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz" && \
+	cd $(TOP)/glib20/libglib && ninja -C build
+	export DESTDIR=$(TOP)/_staging && \
+	cd $(TOP)/glib20/libglib && ninja -C build install
+	export DESTDIR=$(TOP)/_staging_static && \
+	cd $(TOP)/glib20/libglib && ninja -C build install
+	rm -rf $(TOP)/_staging_static/usr/lib/*.so*
 
 glib20: libffi zlib util-linux util-linux-install
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
@@ -204,6 +212,7 @@ ifneq ($(CONFIG_LIBMBIM),y)
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libgio*
 endif
 endif
+	rm -f $(INSTALLDIR)/glib20/usr/lib/*.a
 	-install -D glib20/gettext/gettext-runtime/intl/.libs/libintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libintl.so.8
 	-install -D glib20/gettext/gettext-runtime/intl/.libs/libgnuintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libgnuintl.so.8
 #	install -D glib20/gettext/gettext-runtime/libasprintf/.libs/libasprintf.so.0 $(INSTALLDIR)/glib20/usr/lib/libasprintf.so.0
