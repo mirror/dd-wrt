@@ -65,6 +65,7 @@ g_type_default_interface_unref
 g_type_children
 g_type_interfaces
 g_type_interface_prerequisites
+g_type_interface_instantiatable_prerequisite
 g_type_set_qdata
 g_type_get_qdata
 g_type_query
@@ -322,6 +323,9 @@ g_weak_ref_clear
 g_weak_ref_get
 g_weak_ref_set
 
+<SUBSECTION Testing>
+g_assert_finalize_object
+
 <SUBSECTION Standard>
 G_INITIALLY_UNOWNED
 G_INITIALLY_UNOWNED_CLASS
@@ -405,6 +409,8 @@ G_TYPE_SOURCE
 G_TYPE_POLLFD
 G_TYPE_THREAD
 G_TYPE_OPTION_GROUP
+G_TYPE_URI
+G_TYPE_TREE
 
 <SUBSECTION Standard>
 G_TYPE_IS_BOXED
@@ -438,6 +444,8 @@ g_mapped_file_get_type
 g_markup_parse_context_get_type
 g_thread_get_type
 g_option_group_get_type
+g_uri_get_type
+g_tree_get_type
 </SECTION>
 
 <SECTION>
@@ -518,6 +526,7 @@ g_param_value_defaults
 g_param_value_validate
 g_param_value_convert
 g_param_values_cmp
+g_param_spec_is_valid_name
 g_param_spec_get_name
 g_param_spec_get_name_quark
 g_param_spec_get_nick
@@ -680,6 +689,8 @@ G_IS_PARAM_SPEC_STRING
 G_PARAM_SPEC_STRING
 G_VALUE_HOLDS_STRING
 G_TYPE_PARAM_STRING
+G_VALUE_IS_INTERNED_STRING
+G_VALUE_INTERNED_STRING
 GParamSpecString
 gchararray
 g_param_spec_string
@@ -689,6 +700,7 @@ g_value_take_string
 g_value_set_string_take_ownership
 g_value_get_string
 g_value_dup_string
+g_value_set_interned_string
 
 <SUBSECTION GParamSpec>
 G_IS_PARAM_SPEC_PARAM
@@ -856,11 +868,13 @@ g_signal_override_class_handler
 g_signal_chain_from_overridden_handler
 g_signal_add_emission_hook
 g_signal_remove_emission_hook
+g_signal_is_valid_name
 g_signal_parse_name
 g_signal_get_invocation_hint
 g_signal_type_cclosure_new
 g_signal_accumulator_first_wins
 g_signal_accumulator_true_handled
+g_clear_signal_handler
 <SUBSECTION Private>
 g_signal_handlers_destroy
 </SECTION>
@@ -964,8 +978,10 @@ g_io_condition_get_type
 GBinding
 GBindingFlags
 g_binding_get_source
+g_binding_dup_source
 g_binding_get_source_property
 g_binding_get_target
+g_binding_dup_target
 g_binding_get_target_property
 g_binding_get_flags
 g_binding_unbind

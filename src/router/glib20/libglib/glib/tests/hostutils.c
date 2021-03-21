@@ -69,7 +69,23 @@ static const gint num_non_round_trip_names = G_N_ELEMENTS (non_round_trip_names)
 static const gchar *bad_names[] = {
   "disallowed\xef\xbf\xbd" "character",
   "non-utf\x88",
-  "xn--mixed-\xc3\xbcp"
+  "xn--mixed-\xc3\xbcp",
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong",
 };
 static const gint num_bad_names = G_N_ELEMENTS (bad_names);
 
@@ -81,7 +97,7 @@ test_to_ascii (void)
 
   for (i = 0; i < num_idn_test_domains; i++)
     {
-      g_assert (g_hostname_is_non_ascii (idn_test_domains[i].unicode_name));
+      g_assert_true (g_hostname_is_non_ascii (idn_test_domains[i].unicode_name));
       ascii = g_hostname_to_ascii (idn_test_domains[i].unicode_name);
       g_assert_cmpstr (idn_test_domains[i].ascii_name, ==, ascii);
       g_free (ascii);
@@ -94,14 +110,14 @@ test_to_ascii (void)
   for (i = 0; i < num_non_round_trip_names; i++)
     {
       if (non_round_trip_names[i].orig_is_unicode)
-	g_assert (g_hostname_is_non_ascii (non_round_trip_names[i].orig_name));
+        g_assert_true (g_hostname_is_non_ascii (non_round_trip_names[i].orig_name));
       else
-	g_assert (!g_hostname_is_non_ascii (non_round_trip_names[i].orig_name));
+        g_assert_true (!g_hostname_is_non_ascii (non_round_trip_names[i].orig_name));
 
       if (non_round_trip_names[i].ascii_is_encoded)
-	g_assert (g_hostname_is_ascii_encoded (non_round_trip_names[i].ascii_name));
+        g_assert_true (g_hostname_is_ascii_encoded (non_round_trip_names[i].ascii_name));
       else
-	g_assert (!g_hostname_is_ascii_encoded (non_round_trip_names[i].ascii_name));
+        g_assert_true (!g_hostname_is_ascii_encoded (non_round_trip_names[i].ascii_name));
 
       ascii = g_hostname_to_ascii (non_round_trip_names[i].orig_name);
       g_assert_cmpstr (non_round_trip_names[i].ascii_name, ==, ascii);
@@ -127,7 +143,7 @@ test_to_unicode (void)
 
   for (i = 0; i < num_idn_test_domains; i++)
     {
-      g_assert (g_hostname_is_ascii_encoded (idn_test_domains[i].ascii_name));
+      g_assert_true (g_hostname_is_ascii_encoded (idn_test_domains[i].ascii_name));
       unicode = g_hostname_to_unicode (idn_test_domains[i].ascii_name);
       g_assert_cmpstr (idn_test_domains[i].unicode_name, ==, unicode);
       g_free (unicode);
@@ -207,6 +223,11 @@ static const struct {
   { "0123::123.45.67.89", TRUE },
   { "::123.45.67.89", TRUE },
 
+  /* accept zone-id from rfc6874 */
+  { "0123:4567:89AB:cdef:3210:7654:ba98:FeDc%zoneid0", TRUE },
+  { "fe80::dead:beef%zonÉid0%weird", TRUE },
+  { "fe80::dead:beef%", FALSE },
+
   /* Contain non-hex chars */
   { "012x:4567:89AB:cdef:3210:7654:ba98:FeDc", FALSE },
   { "0123:45x7:89AB:cdef:3210:7654:ba98:FeDc", FALSE },
@@ -260,7 +281,6 @@ static const struct {
   { "0123:4567:89AB:cdef:3210:7654::123.45.67.89", FALSE },
   { "0123:4567:89AB:cdef:123.45.67.89", FALSE },
   { "0123:4567:89AB:cdef:3210:123.45.67.89:FeDc", FALSE },
-
 
   /* IPv4 tests */
 

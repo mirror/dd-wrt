@@ -18,6 +18,7 @@
 
 #include <gio/gio.h>
 
+#include <gio/gcredentialsprivate.h>
 #ifdef G_OS_UNIX
 #include <errno.h>
 #include <sys/wait.h>
@@ -140,7 +141,11 @@ create_server_full (GSocketFamily   family,
     {
       g_socket_set_option (data->server, IPPROTO_IPV6, IPV6_V6ONLY, FALSE, NULL);
       if (!g_socket_speaks_ipv4 (data->server))
-        goto error;
+        {
+          g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               "IPv6-only server cannot speak IPv4");
+          goto error;
+        }
     }
 #endif
 
@@ -342,6 +347,7 @@ test_ip_async (GSocketFamily family)
       g_clear_error (&error);
       return;
     }
+  g_assert_nonnull (data);
 
   addr = g_socket_get_local_address (data->server, &error);
   g_assert_no_error (error);
@@ -757,7 +763,12 @@ test_ip_sync_dgram (GSocketFamily family)
     m[1].address = NULL;
     m[2].address = NULL;
     len = g_socket_send_messages (client, m, G_N_ELEMENTS (m), 0, NULL, &error);
+    /* This error code may vary between platforms and over time; it is not guaranteed API: */
+#ifndef G_OS_WIN32
     g_assert_error (error, G_IO_ERROR, G_IO_ERROR_FAILED);
+#else
+    g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED);
+#endif
     g_clear_error (&error);
     g_assert_cmpint (len, ==, -1);
 
@@ -824,6 +835,10 @@ test_ip_sync_dgram_timeouts (GSocketFamily family)
   GCancellable *cancellable = NULL;
   GThread *cancellable_thread = NULL;
   gssize len;
+#ifdef G_OS_WIN32
+  GInetAddress *iaddr;
+  GSocketAddress *addr;
+#endif
 
   client = g_socket_new (family,
                          G_SOCKET_TYPE_DATAGRAM,
@@ -834,6 +849,16 @@ test_ip_sync_dgram_timeouts (GSocketFamily family)
   g_assert_cmpint (g_socket_get_family (client), ==, family);
   g_assert_cmpint (g_socket_get_socket_type (client), ==, G_SOCKET_TYPE_DATAGRAM);
   g_assert_cmpint (g_socket_get_protocol (client), ==, G_SOCKET_PROTOCOL_DEFAULT);
+
+#ifdef G_OS_WIN32
+  /* Winsock can't recv() on unbound udp socket */
+  iaddr = g_inet_address_new_loopback (family);
+  addr = g_inet_socket_address_new (iaddr, 0);
+  g_object_unref (iaddr);
+  g_socket_bind (client, addr, TRUE, &error);
+  g_object_unref (addr);
+  g_assert_no_error (error);
+#endif
 
   /* No overall timeout: test the per-operation timeouts instead. */
   g_socket_set_timeout (client, 0);
@@ -1110,6 +1135,12 @@ test_timed_wait (void)
   GSocketAddress *addr;
   gint64 start_time;
   gint poll_duration;
+
+  if (!g_test_thorough ())
+    {
+      g_test_skip ("Not running timing heavy test");
+      return;
+    }
 
   data = create_server (G_SOCKET_FAMILY_IPV4, echo_server_thread, FALSE, &error);
   if (error != NULL)
@@ -1583,7 +1614,7 @@ test_get_available (gconstpointer user_data)
   GError *err = NULL;
   GSocket *listener, *server, *client;
   GInetAddress *addr;
-  GSocketAddress *saddr;
+  GSocketAddress *saddr, *boundaddr;
   gchar data[] = "0123456789abcdef";
   gchar buf[34];
   gssize nread;
@@ -1616,8 +1647,13 @@ test_get_available (gconstpointer user_data)
   g_object_unref (saddr);
   g_object_unref (addr);
 
-  saddr = g_socket_get_local_address (listener, &err);
+  boundaddr = g_socket_get_local_address (listener, &err);
   g_assert_no_error (err);
+
+  addr = g_inet_address_new_loopback (G_SOCKET_FAMILY_IPV4);
+  saddr = g_inet_socket_address_new (addr, g_inet_socket_address_get_port (G_INET_SOCKET_ADDRESS (boundaddr)));
+  g_object_unref (addr);
+  g_object_unref (boundaddr);
 
   if (socket_type == G_SOCKET_TYPE_STREAM)
     {
@@ -1709,6 +1745,392 @@ test_get_available (gconstpointer user_data)
   g_object_unref (client);
 }
 
+typedef struct {
+  GInputStream *is;
+  GOutputStream *os;
+  const guint8 *write_data;
+  guint8 *read_data;
+} TestReadWriteData;
+
+static gpointer
+test_read_write_write_thread (gpointer user_data)
+{
+  TestReadWriteData *data = user_data;
+  gsize bytes_written;
+  GError *error = NULL;
+  gboolean res;
+
+  res = g_output_stream_write_all (data->os, data->write_data, 1024, &bytes_written, NULL, &error);
+  g_assert_true (res);
+  g_assert_no_error (error);
+  g_assert_cmpint (bytes_written, ==, 1024);
+
+  return NULL;
+}
+
+static gpointer
+test_read_write_read_thread (gpointer user_data)
+{
+  TestReadWriteData *data = user_data;
+  gsize bytes_read;
+  GError *error = NULL;
+  gboolean res;
+
+  res = g_input_stream_read_all (data->is, data->read_data, 1024, &bytes_read, NULL, &error);
+  g_assert_true (res);
+  g_assert_no_error (error);
+  g_assert_cmpint (bytes_read, ==, 1024);
+
+  return NULL;
+}
+
+static gpointer
+test_read_write_writev_thread (gpointer user_data)
+{
+  TestReadWriteData *data = user_data;
+  gsize bytes_written;
+  GError *error = NULL;
+  gboolean res;
+  GOutputVector vectors[3];
+
+  vectors[0].buffer = data->write_data;
+  vectors[0].size = 256;
+  vectors[1].buffer = data->write_data + 256;
+  vectors[1].size = 256;
+  vectors[2].buffer = data->write_data + 512;
+  vectors[2].size = 512;
+
+  res = g_output_stream_writev_all (data->os, vectors, G_N_ELEMENTS (vectors), &bytes_written, NULL, &error);
+  g_assert_true (res);
+  g_assert_no_error (error);
+  g_assert_cmpint (bytes_written, ==, 1024);
+
+  return NULL;
+}
+
+/* test if normal read/write/writev via the GSocket*Streams works on TCP sockets */
+static void
+test_read_write (gconstpointer user_data)
+{
+  gboolean writev = GPOINTER_TO_INT (user_data);
+  GError *err = NULL;
+  GSocket *listener, *server, *client;
+  GInetAddress *addr;
+  GSocketAddress *saddr, *boundaddr;
+  TestReadWriteData data;
+  guint8 data_write[1024], data_read[1024];
+  GSocketConnection *server_stream, *client_stream;
+  GThread *write_thread, *read_thread;
+  guint i;
+
+  listener = g_socket_new (G_SOCKET_FAMILY_IPV4,
+                           G_SOCKET_TYPE_STREAM,
+                           G_SOCKET_PROTOCOL_DEFAULT,
+                           &err);
+  g_assert_no_error (err);
+  g_assert (G_IS_SOCKET (listener));
+
+  client = g_socket_new (G_SOCKET_FAMILY_IPV4,
+                         G_SOCKET_TYPE_STREAM,
+                         G_SOCKET_PROTOCOL_DEFAULT,
+                         &err);
+  g_assert_no_error (err);
+  g_assert (G_IS_SOCKET (client));
+
+  addr = g_inet_address_new_any (G_SOCKET_FAMILY_IPV4);
+  saddr = g_inet_socket_address_new (addr, 0);
+
+  g_socket_bind (listener, saddr, TRUE, &err);
+  g_assert_no_error (err);
+  g_object_unref (saddr);
+  g_object_unref (addr);
+
+  boundaddr = g_socket_get_local_address (listener, &err);
+  g_assert_no_error (err);
+
+  g_socket_listen (listener, &err);
+  g_assert_no_error (err);
+
+  addr = g_inet_address_new_loopback (G_SOCKET_FAMILY_IPV4);
+  saddr = g_inet_socket_address_new (addr, g_inet_socket_address_get_port (G_INET_SOCKET_ADDRESS (boundaddr)));
+  g_object_unref (addr);
+  g_object_unref (boundaddr);
+
+  g_socket_connect (client, saddr, NULL, &err);
+  g_assert_no_error (err);
+
+  server = g_socket_accept (listener, NULL, &err);
+  g_assert_no_error (err);
+  g_socket_set_blocking (server, FALSE);
+  g_object_unref (listener);
+
+  server_stream = g_socket_connection_factory_create_connection (server);
+  g_assert_nonnull (server_stream);
+  client_stream = g_socket_connection_factory_create_connection (client);
+  g_assert_nonnull (client_stream);
+
+  for (i = 0; i < sizeof (data_write); i++)
+    data_write[i] = i;
+
+  data.is = g_io_stream_get_input_stream (G_IO_STREAM (server_stream));
+  data.os = g_io_stream_get_output_stream (G_IO_STREAM (client_stream));
+  data.read_data = data_read;
+  data.write_data = data_write;
+
+  if (writev)
+    write_thread = g_thread_new ("writer", test_read_write_writev_thread, &data);
+  else
+    write_thread = g_thread_new ("writer", test_read_write_write_thread, &data);
+  read_thread = g_thread_new ("reader", test_read_write_read_thread, &data);
+
+  g_thread_join (write_thread);
+  g_thread_join (read_thread);
+
+  g_assert_cmpmem (data_write, sizeof data_write, data_read, sizeof data_read);
+
+  g_socket_close (server, &err);
+  g_assert_no_error (err);
+
+  g_object_unref (server_stream);
+  g_object_unref (client_stream);
+
+  g_object_unref (saddr);
+  g_object_unref (server);
+  g_object_unref (client);
+}
+
+#ifdef SO_NOSIGPIPE
+static void
+test_nosigpipe (void)
+{
+  GSocket *sock;
+  GError *error = NULL;
+  gint value;
+
+  sock = g_socket_new (AF_INET,
+                       G_SOCKET_TYPE_STREAM,
+                       G_SOCKET_PROTOCOL_DEFAULT,
+                       &error);
+  g_assert_no_error (error);
+
+  g_socket_get_option (sock, SOL_SOCKET, SO_NOSIGPIPE, &value, &error);
+  g_assert_no_error (error);
+  g_assert_true (value);
+
+  g_object_unref (sock);
+}
+#endif
+
+#if G_CREDENTIALS_SUPPORTED
+static gpointer client_setup_thread (gpointer user_data);
+
+static void
+test_credentials_tcp_client (void)
+{
+  const GSocketFamily family = G_SOCKET_FAMILY_IPV4;
+  IPTestData *data;
+  GError *error = NULL;
+  GSocket *client;
+  GSocketAddress *addr;
+  GCredentials *creds;
+
+  data = create_server (family, echo_server_thread, FALSE, &error);
+  if (error != NULL)
+    {
+      gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
+      g_test_skip (message);
+      g_free (message);
+      g_clear_error (&error);
+      return;
+    }
+
+  addr = g_socket_get_local_address (data->server, &error);
+  g_assert_no_error (error);
+
+  client = g_socket_new (family,
+			 G_SOCKET_TYPE_STREAM,
+			 G_SOCKET_PROTOCOL_DEFAULT,
+			 &error);
+  g_assert_no_error (error);
+
+  g_socket_set_blocking (client, TRUE);
+  g_socket_set_timeout (client, 1);
+
+  g_socket_connect (client, addr, NULL, &error);
+  g_assert_no_error (error);
+  g_object_unref (addr);
+
+  creds = g_socket_get_credentials (client, &error);
+  if (creds != NULL)
+    {
+      gchar *str = g_credentials_to_string (creds);
+      g_print ("Supported on this OS: %s\n", str);
+      g_free (str);
+      g_clear_object (&creds);
+    }
+  else
+    {
+      g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+      g_print ("Unsupported on this OS: %s\n", error->message);
+      g_clear_error (&error);
+    }
+
+  g_socket_close (client, &error);
+  g_assert_no_error (error);
+
+  g_thread_join (data->thread);
+
+  g_socket_close (data->server, &error);
+  g_assert_no_error (error);
+
+  g_object_unref (data->server);
+  g_object_unref (client);
+
+  g_slice_free (IPTestData, data);
+}
+
+static void
+test_credentials_tcp_server (void)
+{
+  const GSocketFamily family = G_SOCKET_FAMILY_IPV4;
+  IPTestData *data;
+  GSocket *server;
+  GError *error = NULL;
+  GSocketAddress *addr = NULL;
+  GInetAddress *iaddr = NULL;
+  GSocket *sock = NULL;
+  GCredentials *creds;
+
+  data = g_slice_new0 (IPTestData);
+  data->family = family;
+  data->server = server = g_socket_new (family,
+					G_SOCKET_TYPE_STREAM,
+					G_SOCKET_PROTOCOL_DEFAULT,
+					&error);
+  if (error != NULL)
+    goto skip;
+
+  g_socket_set_blocking (server, TRUE);
+
+  iaddr = g_inet_address_new_loopback (family);
+  addr = g_inet_socket_address_new (iaddr, 0);
+
+  if (!g_socket_bind (server, addr, TRUE, &error))
+    goto skip;
+
+  if (!g_socket_listen (server, &error))
+    goto skip;
+
+  data->thread = g_thread_new ("client", client_setup_thread, data);
+
+  sock = g_socket_accept (server, NULL, &error);
+  g_assert_no_error (error);
+
+  creds = g_socket_get_credentials (sock, &error);
+  if (creds != NULL)
+    {
+      gchar *str = g_credentials_to_string (creds);
+      g_print ("Supported on this OS: %s\n", str);
+      g_free (str);
+      g_clear_object (&creds);
+    }
+  else
+    {
+      g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+      g_print ("Unsupported on this OS: %s\n", error->message);
+      g_clear_error (&error);
+    }
+
+  goto beach;
+
+skip:
+  {
+    gchar *message = g_strdup_printf ("Failed to create server: %s", error->message);
+    g_test_skip (message);
+    g_free (message);
+
+    goto beach;
+  }
+beach:
+  {
+    g_clear_error (&error);
+
+    g_clear_object (&sock);
+    g_clear_object (&addr);
+    g_clear_object (&iaddr);
+
+    g_clear_pointer (&data->thread, g_thread_join);
+    g_clear_object (&data->server);
+    g_clear_object (&data->client);
+
+    g_slice_free (IPTestData, data);
+  }
+}
+
+static gpointer
+client_setup_thread (gpointer user_data)
+{
+  IPTestData *data = user_data;
+  GSocketAddress *addr;
+  GSocket *client;
+  GError *error = NULL;
+
+  addr = g_socket_get_local_address (data->server, &error);
+  g_assert_no_error (error);
+
+  data->client = client = g_socket_new (data->family,
+					G_SOCKET_TYPE_STREAM,
+					G_SOCKET_PROTOCOL_DEFAULT,
+					&error);
+  g_assert_no_error (error);
+
+  g_socket_set_blocking (client, TRUE);
+  g_socket_set_timeout (client, 1);
+
+  g_socket_connect (client, addr, NULL, &error);
+  g_assert_no_error (error);
+
+  g_object_unref (addr);
+
+  return NULL;
+}
+
+#ifdef G_OS_UNIX
+static void
+test_credentials_unix_socketpair (void)
+{
+  gint fds[2];
+  gint status;
+  GSocket *sock;
+  GError *error = NULL;
+  GCredentials *creds;
+
+  status = socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
+  g_assert_cmpint (status, ==, 0);
+
+  sock = g_socket_new_from_fd (fds[0], &error);
+
+  creds = g_socket_get_credentials (sock, &error);
+  if (creds != NULL)
+    {
+      gchar *str = g_credentials_to_string (creds);
+      g_print ("Supported on this OS: %s\n", str);
+      g_free (str);
+      g_clear_object (&creds);
+    }
+  else
+    {
+      g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+      g_print ("Unsupported on this OS: %s\n", error->message);
+      g_clear_error (&error);
+    }
+
+  g_object_unref (sock);
+  close (fds[1]);
+}
+#endif
+#endif
+
 int
 main (int   argc,
       char *argv[])
@@ -1761,7 +2183,20 @@ main (int   argc,
                         test_get_available);
   g_test_add_data_func ("/socket/get_available/stream", GUINT_TO_POINTER (G_SOCKET_TYPE_STREAM),
                         test_get_available);
+  g_test_add_data_func ("/socket/read_write", GUINT_TO_POINTER (FALSE),
+                        test_read_write);
+  g_test_add_data_func ("/socket/read_writev", GUINT_TO_POINTER (TRUE),
+                        test_read_write);
+#ifdef SO_NOSIGPIPE
+  g_test_add_func ("/socket/nosigpipe", test_nosigpipe);
+#endif
+#if G_CREDENTIALS_SUPPORTED
+  g_test_add_func ("/socket/credentials/tcp_client", test_credentials_tcp_client);
+  g_test_add_func ("/socket/credentials/tcp_server", test_credentials_tcp_server);
+#ifdef G_OS_UNIX
+  g_test_add_func ("/socket/credentials/unix_socketpair", test_credentials_unix_socketpair);
+#endif
+#endif
 
   return g_test_run();
 }
-

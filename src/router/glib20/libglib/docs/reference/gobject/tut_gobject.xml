@@ -12,7 +12,7 @@
   </para>
 
   <para>
-    <link linkend="GObject"><type>GObject</type></link> is a fundamental classed instantiable type. It implements:
+    <link linkend="GObject"><type>GObject</type></link> is a fundamental classed instantiatable type. It implements:
     <itemizedlist>
       <listitem><para>Memory management with reference counting</para></listitem>
       <listitem><para>Construction/Destruction of instances</para></listitem>
@@ -65,6 +65,8 @@ struct _ViewerFile
   GObject parent_instance;
 
   /* instance members */
+  gchar *filename;
+  guint zoom_level;
 };
 
 /* will create viewer_file_get_type and set viewer_file_parent_class */
@@ -81,11 +83,24 @@ viewer_file_constructed (GObject *obj)
 }
 
 static void
+viewer_file_finalize (GObject *obj)
+{
+  ViewerFile *self = VIEWER_FILE (obj);
+
+  g_free (self->filename);
+
+  /* Always chain up to the parent finalize function to complete object
+   * destruction. */
+  G_OBJECT_CLASS (viewer_file_parent_class)-&gt;finalize (obj);
+}
+
+static void
 viewer_file_class_init (ViewerFileClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class-&gt;constructed = viewer_file_constructed;
+  object_class-&gt;finalize = viewer_file_finalize;
 }
 
 static void
@@ -265,7 +280,7 @@ ViewerFile *file = g_object_new (VIEWER_TYPE_FILE, NULL);
       <para>
         The reference count is initialized to one by 
         <function><link linkend="g-object-new">g_object_new</link></function> which means that the caller
-        is currently the sole owner of the newly-created reference.
+        is currently the sole owner of the newly-created reference. (If the object is derived from <link linkend="GInitiallyUnowned"><type>GInitiallyUnowned</type></link>, this reference count is <link linkend="floating-ref">floating</link>.)
         When the reference count reaches zero, that is, 
         when <function><link linkend="g-object-unref">g_object_unref</link></function> is called by the last client holding
         a reference to the object, the <emphasis>dispose</emphasis> and the 
@@ -278,8 +293,8 @@ ViewerFile *file = g_object_new (VIEWER_TYPE_FILE, NULL);
         one of the <function>g_type_register_*</function> functions), the object's instance 
         memory will be freed or returned to the object pool for this type.
         Once the object has been freed, if it was the last instance of the type, the type's class
-        will be destroyed as described in <xref linkend="gtype-instantiable-classed"/> and 
-          <xref linkend="gtype-non-instantiable-classed"/>.
+        will be destroyed as described in <xref linkend="gtype-instantiatable-classed"/> and
+          <xref linkend="gtype-non-instantiatable-classed"/>.
       </para>
 
       <para>
@@ -465,12 +480,12 @@ ViewerFile *file = g_object_new (VIEWER_TYPE_FILE, NULL);
 /* Implementation                               */
 /************************************************/
 
-enum
+typedef enum
 {
   PROP_FILENAME = 1,
   PROP_ZOOM_LEVEL,
   N_PROPERTIES
-};
+} ViewerFileProperty;
 
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
@@ -482,17 +497,17 @@ viewer_file_set_property (GObject      *object,
 {
   ViewerFile *self = VIEWER_FILE (object);
 
-  switch (property_id)
+  switch ((ViewerFileProperty) property_id)
     {
     case PROP_FILENAME:
-      g_free (self-&gt;priv-&gt;filename);
-      self-&gt;priv-&gt;filename = g_value_dup_string (value);
-      g_print ("filename: %s\n", self-&gt;priv-&gt;filename);
+      g_free (self-&gt;filename);
+      self-&gt;filename = g_value_dup_string (value);
+      g_print ("filename: %s\n", self-&gt;filename);
       break;
 
     case PROP_ZOOM_LEVEL:
-      self-&gt;priv-&gt;zoom_level = g_value_get_uint (value);
-      g_print ("zoom level: &percnt;u\n", self-&gt;priv-&gt;zoom_level);
+      self-&gt;zoom_level = g_value_get_uint (value);
+      g_print ("zoom level: &percnt;u\n", self-&gt;zoom_level);
       break;
 
     default:
@@ -510,14 +525,14 @@ viewer_file_get_property (GObject    *object,
 {
   ViewerFile *self = VIEWER_FILE (object);
 
-  switch (property_id)
+  switch ((ViewerFileProperty) property_id)
     {
     case PROP_FILENAME:
-      g_value_set_string (value, self-&gt;priv-&gt;filename);
+      g_value_set_string (value, self-&gt;filename);
       break;
 
     case PROP_ZOOM_LEVEL:
-      g_value_set_uint (value, self-&gt;priv-&gt;zoom_level);
+      g_value_set_uint (value, self-&gt;zoom_level);
       break;
 
     default:

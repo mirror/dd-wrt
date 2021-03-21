@@ -81,7 +81,7 @@
     <xi:include href="xml/timers.xml" />
     <xi:include href="xml/spawn.xml" />
     <xi:include href="xml/fileutils.xml" />
-    <xi:include href="xml/gurifuncs.xml" />
+    <xi:include href="xml/guri.xml" />
     <xi:include href="xml/ghostutils.xml" />
     <xi:include href="xml/shell.xml" />
     <xi:include href="xml/option.xml" />
@@ -136,6 +136,10 @@
   <chapter id="tools">
     <title>GLib Tools</title>
     <xi:include href="glib-gettextize.xml" />
+  </chapter>
+
+  <chapter id="deprecated-tools">
+    <title>Deprecated Tools</title>
     <xi:include href="gtester.xml" />
     <xi:include href="gtester-report.xml" />
   </chapter>
@@ -263,6 +267,26 @@
   <index id="api-index-2-58" role="2.58">
     <title>Index of new symbols in 2.58</title>
     <xi:include href="xml/api-index-2.58.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-60" role="2.60">
+    <title>Index of new symbols in 2.60</title>
+    <xi:include href="xml/api-index-2.60.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-62" role="2.62">
+    <title>Index of new symbols in 2.62</title>
+    <xi:include href="xml/api-index-2.62.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-64" role="2.64">
+    <title>Index of new symbols in 2.64</title>
+    <xi:include href="xml/api-index-2.64.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-66" role="2.66">
+    <title>Index of new symbols in 2.66</title>
+    <xi:include href="xml/api-index-2.66.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-68" role="2.68">
+    <title>Index of new symbols in 2.68</title>
+    <xi:include href="xml/api-index-2.68.xml"><xi:fallback /></xi:include>
   </index>
 
   <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>

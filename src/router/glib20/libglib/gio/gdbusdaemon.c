@@ -170,6 +170,7 @@ name_new (GDBusDaemon *daemon, const char *str)
 static Name *
 name_ref (Name *name)
 {
+  g_assert (name->refcount > 0);
   name->refcount++;
   return name;
 }
@@ -177,6 +178,7 @@ name_ref (Name *name)
 static void
 name_unref (Name *name)
 {
+  g_assert (name->refcount > 0);
   if (--name->refcount == 0)
     {
       g_hash_table_remove (name->daemon->names, name->name);
@@ -208,7 +210,8 @@ is_key (const char *key_start, const char *key_end, const char *value)
 {
   gsize len = strlen (value);
 
-  if (len != key_end - key_start)
+  g_assert (key_end >= key_start);
+  if (len != (gsize) (key_end - key_start))
     return FALSE;
 
   return strncmp (key_start, value, len) == 0;
@@ -358,7 +361,7 @@ match_new (const char *str)
   MatchElement element;
   gboolean eavesdrop;
   GDBusMessageType type;
-  int i;
+  gsize i;
 
   eavesdrop = FALSE;
   type = G_DBUS_MESSAGE_TYPE_INVALID;
@@ -1463,10 +1466,11 @@ filter_function (GDBusConnection *connection,
 		 gpointer         user_data)
 {
   Client *client = user_data;
-  const char *types[] = {"invalid", "method_call", "method_return", "error", "signal" };
 
   if (0)
-    g_printerr ("%s%s %s %d(%d) sender: %s destination: %s %s %s.%s\n",
+    {
+      const char *types[] = {"invalid", "method_call", "method_return", "error", "signal" };
+      g_printerr ("%s%s %s %d(%d) sender: %s destination: %s %s %s.%s\n",
 		client->id,
 		incoming? "->" : "<-",
 		types[g_dbus_message_get_message_type (message)],
@@ -1477,6 +1481,7 @@ filter_function (GDBusConnection *connection,
 		g_dbus_message_get_path (message),
 		g_dbus_message_get_interface (message),
 		g_dbus_message_get_member (message));
+    }
 
   if (incoming)
     {
@@ -1493,16 +1498,21 @@ filter_function (GDBusConnection *connection,
     }
   else
     {
+      if (g_dbus_message_get_sender (message) == NULL ||
+          g_dbus_message_get_destination (message) == NULL)
+        {
+          message = copy_if_locked (message);
+          if (message == NULL)
+            {
+              g_warning ("Failed to copy outgoing message");
+              return NULL;
+            }
+        }
+
       if (g_dbus_message_get_sender (message) == NULL)
-	{
-	  message = copy_if_locked (message);
-	  g_dbus_message_set_sender (message, DBUS_SERVICE_NAME);
-	}
+        g_dbus_message_set_sender (message, DBUS_SERVICE_NAME);
       if (g_dbus_message_get_destination (message) == NULL)
-	{
-	  message = copy_if_locked (message);
-	  g_dbus_message_set_destination (message, client->id);
-	}
+        g_dbus_message_set_destination (message, client->id);
     }
 
   return message;
@@ -1526,26 +1536,6 @@ on_new_connection (GDBusServer *server,
   client_new (daemon, connection);
 
   return TRUE;
-}
-
-static gboolean
-on_authorize_authenticated_peer (GDBusAuthObserver *observer,
-				 GIOStream         *stream,
-				 GCredentials      *credentials,
-				 gpointer           user_data)
-{
-  gboolean authorized = TRUE;
-
-  if (credentials != NULL)
-    {
-      GCredentials *own_credentials;
-
-      own_credentials = g_credentials_new ();
-      authorized = g_credentials_is_same_user (credentials, own_credentials, NULL);
-      g_object_unref (own_credentials);
-    }
-
-  return authorized;
 }
 
 static void
@@ -1597,7 +1587,6 @@ initable_init (GInitable     *initable,
 	       GError       **error)
 {
   GDBusDaemon *daemon = G_DBUS_DAEMON (initable);
-  GDBusAuthObserver *observer;
   GDBusServerFlags flags;
 
   flags = G_DBUS_SERVER_FLAGS_NONE;
@@ -1611,24 +1600,23 @@ initable_init (GInitable     *initable,
 	  daemon->tmpdir = g_dir_make_tmp ("gdbus-daemon-XXXXXX", NULL);
 	  daemon->address = g_strdup_printf ("unix:tmpdir=%s", daemon->tmpdir);
 	}
+      flags |= G_DBUS_SERVER_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER;
 #else
+      /* Don’t require authentication on Windows as that hasn’t been
+       * implemented yet. */
       daemon->address = g_strdup ("nonce-tcp:");
       flags |= G_DBUS_SERVER_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS;
 #endif
     }
 
-  observer = g_dbus_auth_observer_new ();
   daemon->server = g_dbus_server_new_sync (daemon->address,
 					   flags,
 					   daemon->guid,
-					   observer,
+					   NULL,
 					   cancellable,
 					   error);
   if (daemon->server == NULL)
-    {
-      g_object_unref (observer);
-      return FALSE;
-    }
+    return FALSE;
 
 
   g_dbus_server_start (daemon->server);
@@ -1636,12 +1624,6 @@ initable_init (GInitable     *initable,
   g_signal_connect (daemon->server, "new-connection",
 		    G_CALLBACK (on_new_connection),
 		    daemon);
-  g_signal_connect (observer,
-		    "authorize-authenticated-peer",
-		    G_CALLBACK (on_authorize_authenticated_peer),
-		    daemon);
-
-  g_object_unref (observer);
 
   return TRUE;
 }
@@ -1701,7 +1683,7 @@ g_dbus_daemon_class_init (GDBusDaemonClass *klass)
 		  G_SIGNAL_RUN_LAST,
 		  0,
 		  NULL, NULL,
-		  g_cclosure_marshal_VOID__VOID,
+		  NULL,
 		  G_TYPE_NONE, 0);
 
   g_object_class_install_property (gobject_class,

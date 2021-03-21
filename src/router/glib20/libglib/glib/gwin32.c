@@ -107,12 +107,15 @@ g_win32_ftruncate (gint  fd,
 gchar *
 g_win32_getlocale (void)
 {
+  gchar *result;
   LCID lcid;
   LANGID langid;
-  gchar *ev;
+  const gchar *ev;
   gint primary, sub;
-  char iso639[10];
-  char iso3166[10];
+  WCHAR iso639[10];
+  gchar *iso639_utf8;
+  WCHAR iso3166[10];
+  gchar *iso3166_utf8;
   const gchar *script = NULL;
 
   /* Let the user override the system settings through environment
@@ -120,15 +123,15 @@ g_win32_getlocale (void)
    * since GTK+ 2.10.7 setting either LC_ALL or LANG also sets the
    * Win32 locale and C library locale through code in gtkmain.c.
    */
-  if (((ev = getenv ("LC_ALL")) != NULL && ev[0] != '\0')
-      || ((ev = getenv ("LC_MESSAGES")) != NULL && ev[0] != '\0')
-      || ((ev = getenv ("LANG")) != NULL && ev[0] != '\0'))
+  if (((ev = g_getenv ("LC_ALL")) != NULL && ev[0] != '\0')
+      || ((ev = g_getenv ("LC_MESSAGES")) != NULL && ev[0] != '\0')
+      || ((ev = g_getenv ("LANG")) != NULL && ev[0] != '\0'))
     return g_strdup (ev);
 
   lcid = GetThreadLocale ();
 
-  if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME, iso639, sizeof (iso639)) ||
-      !GetLocaleInfo (lcid, LOCALE_SISO3166CTRYNAME, iso3166, sizeof (iso3166)))
+  if (!GetLocaleInfoW (lcid, LOCALE_SISO639LANGNAME, iso639, sizeof (iso639)) ||
+      !GetLocaleInfoW (lcid, LOCALE_SISO3166CTRYNAME, iso3166, sizeof (iso3166)))
     return g_strdup ("C");
   
   /* Strip off the sorting rules, keep only the language part.  */
@@ -173,7 +176,16 @@ g_win32_getlocale (void)
 	}
       break;
     }
-  return g_strconcat (iso639, "_", iso3166, script, NULL);
+
+  iso639_utf8 = g_utf16_to_utf8 (iso639, -1, NULL, NULL, NULL);
+  iso3166_utf8 = g_utf16_to_utf8 (iso3166, -1, NULL, NULL, NULL);
+
+  result = g_strconcat (iso639_utf8, "_", iso3166_utf8, script, NULL);
+
+  g_free (iso3166_utf8);
+  g_free (iso639_utf8);
+
+  return result;
 }
 
 /**
@@ -386,7 +398,7 @@ get_package_directory_from_module (const gchar *module_name)
  * installations of different versions of some GLib-using library, or
  * GLib itself, is desirable for various reasons.
  *
- * For this reason it is recommeded to always pass %NULL as
+ * For this reason it is recommended to always pass %NULL as
  * @package to this function, to avoid the temptation to use the
  * Registry. In version 2.20 of GLib the @package parameter
  * will be ignored and this function won't look in the Registry at all.
@@ -624,7 +636,7 @@ g_win32_get_windows_version (void)
  * gettext initialization.
  */
 static gchar *
-special_wchar_to_locale_enoding (wchar_t *wstring)
+special_wchar_to_locale_encoding (wchar_t *wstring)
 {
   int sizeof_output;
   int wctmb_result;
@@ -701,7 +713,7 @@ g_win32_locale_filename_from_utf8 (const gchar *utf8filename)
   if (wname == NULL)
     return NULL;
 
-  retval = special_wchar_to_locale_enoding (wname);
+  retval = special_wchar_to_locale_encoding (wname);
 
   if (retval == NULL)
     {
@@ -709,7 +721,7 @@ g_win32_locale_filename_from_utf8 (const gchar *utf8filename)
       wchar_t wshortname[MAX_PATH + 1];
 
       if (GetShortPathNameW (wname, wshortname, G_N_ELEMENTS (wshortname)))
-        retval = special_wchar_to_locale_enoding (wshortname);
+        retval = special_wchar_to_locale_encoding (wshortname);
     }
 
   g_free (wname);
@@ -1016,6 +1028,221 @@ g_console_win32_init (void)
 
       _close (new_fd);
     }
+}
+
+/* This is a handle to the Vectored Exception Handler that
+ * we install on library initialization. If installed correctly,
+ * it will be non-NULL. Only used to later de-install the handler
+ * on library de-initialization.
+ */
+static void *WinVEH_handle = NULL;
+
+#include "gwin32-private.c"
+
+/* Handles exceptions (useful for debugging).
+ * Issues a DebugBreak() call if the process is being debugged (not really
+ * useful - if the process is being debugged, this handler won't be invoked
+ * anyway). If it is not, runs a debugger from G_DEBUGGER env var,
+ * substituting first %p in it for PID, and the first %e for the event handle -
+ * that event should be set once the debugger attaches itself (otherwise the
+ * only way out of WaitForSingleObject() is to time out after 1 minute).
+ * For example, G_DEBUGGER can be set to the following command:
+ * ```
+ * gdb.exe -ex "attach %p" -ex "signal-event %e" -ex "bt" -ex "c"
+ * ```
+ * This will make GDB attach to the process, signal the event (GDB must be
+ * recent enough for the signal-event command to be available),
+ * show the backtrace and resume execution, which should make it catch
+ * the exception when Windows re-raises it again.
+ * The command line can't be longer than MAX_PATH (260 characters).
+ *
+ * This function will only stop (and run a debugger) on the following exceptions:
+ * * EXCEPTION_ACCESS_VIOLATION
+ * * EXCEPTION_STACK_OVERFLOW
+ * * EXCEPTION_ILLEGAL_INSTRUCTION
+ * To make it stop at other exceptions one should set the G_VEH_CATCH
+ * environment variable to a list of comma-separated hexadecimal numbers,
+ * where each number is the code of an exception that should be caught.
+ * This is done to prevent GLib from breaking when Windows uses
+ * exceptions to shuttle information (SetThreadName(), OutputDebugString())
+ * or for control flow.
+ *
+ * This function deliberately avoids calling any GLib code.
+ */
+static LONG __stdcall
+g_win32_veh_handler (PEXCEPTION_POINTERS ExceptionInfo)
+{
+  EXCEPTION_RECORD    *er;
+  char                 debugger[MAX_PATH + 1];
+  WCHAR               *debugger_utf16;
+  const char          *debugger_env = NULL;
+  const char          *catch_list;
+  gboolean             catch = FALSE;
+  STARTUPINFOW         si;
+  PROCESS_INFORMATION  pi;
+  HANDLE               event;
+  SECURITY_ATTRIBUTES  sa;
+
+  if (ExceptionInfo == NULL ||
+      ExceptionInfo->ExceptionRecord == NULL ||
+      IsDebuggerPresent ())
+    return EXCEPTION_CONTINUE_SEARCH;
+
+  er = ExceptionInfo->ExceptionRecord;
+
+  switch (er->ExceptionCode)
+    {
+    case EXCEPTION_ACCESS_VIOLATION:
+    case EXCEPTION_STACK_OVERFLOW:
+    case EXCEPTION_ILLEGAL_INSTRUCTION:
+      break;
+    default:
+      catch_list = g_getenv ("G_VEH_CATCH");
+
+      while (!catch &&
+             catch_list != NULL &&
+             catch_list[0] != 0)
+        {
+          unsigned long  catch_code;
+          char          *end;
+          errno = 0;
+          catch_code = strtoul (catch_list, &end, 16);
+          if (errno != NO_ERROR)
+            break;
+          catch_list = end;
+          if (catch_list != NULL && catch_list[0] == ',')
+            catch_list++;
+          if (catch_code == er->ExceptionCode)
+            catch = TRUE;
+        }
+
+      if (catch)
+        break;
+
+      return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+  fprintf_s (stderr,
+             "Exception code=0x%lx flags=0x%lx at 0x%p",
+             er->ExceptionCode,
+             er->ExceptionFlags,
+             er->ExceptionAddress);
+
+  switch (er->ExceptionCode)
+    {
+    case EXCEPTION_ACCESS_VIOLATION:
+      fprintf_s (stderr,
+                 ". Access violation - attempting to %s at address 0x%p\n",
+                 er->ExceptionInformation[0] == 0 ? "read data" :
+                 er->ExceptionInformation[0] == 1 ? "write data" :
+                 er->ExceptionInformation[0] == 8 ? "execute data" :
+                 "do something bad",
+                 (void *) er->ExceptionInformation[1]);
+      break;
+    case EXCEPTION_IN_PAGE_ERROR:
+      fprintf_s (stderr,
+                 ". Page access violation - attempting to %s at address 0x%p with status %Ix\n",
+                 er->ExceptionInformation[0] == 0 ? "read from an inaccessible page" :
+                 er->ExceptionInformation[0] == 1 ? "write to an inaccessible page" :
+                 er->ExceptionInformation[0] == 8 ? "execute data in page" :
+                 "do something bad with a page",
+                 (void *) er->ExceptionInformation[1],
+                 er->ExceptionInformation[2]);
+      break;
+    default:
+      fprintf_s (stderr, "\n");
+      break;
+    }
+
+  fflush (stderr);
+
+  debugger_env = g_getenv ("G_DEBUGGER");
+
+  if (debugger_env == NULL)
+    return EXCEPTION_CONTINUE_SEARCH;
+
+  /* Create an inheritable event */
+  memset (&si, 0, sizeof (si));
+  memset (&pi, 0, sizeof (pi));
+  memset (&sa, 0, sizeof (sa));
+  si.cb = sizeof (si);
+  sa.nLength = sizeof (sa);
+  sa.bInheritHandle = TRUE;
+  event = CreateEvent (&sa, FALSE, FALSE, NULL);
+
+  /* Put process ID and event handle into debugger commandline */
+  if (!_g_win32_subst_pid_and_event (debugger, G_N_ELEMENTS (debugger),
+                                     debugger_env, GetCurrentProcessId (),
+                                     (guintptr) event))
+    {
+      CloseHandle (event);
+      return EXCEPTION_CONTINUE_SEARCH;
+    }
+  debugger[MAX_PATH] = '\0';
+
+  debugger_utf16 = g_utf8_to_utf16 (debugger, -1, NULL, NULL, NULL);
+
+  /* Run the debugger */
+  if (0 != CreateProcessW (NULL,
+                           debugger_utf16,
+                           NULL,
+                           NULL,
+                           TRUE,
+                           g_getenv ("G_DEBUGGER_OLD_CONSOLE") != NULL ? 0 : CREATE_NEW_CONSOLE,
+                           NULL,
+                           NULL,
+                           &si,
+                           &pi))
+    {
+      CloseHandle (pi.hProcess);
+      CloseHandle (pi.hThread);
+      /* If successful, wait for 60 seconds on the event
+       * we passed. The debugger should signal that event.
+       * 60 second limit is here to prevent us from hanging
+       * up forever in case the debugger does not support
+       * event signalling.
+       */
+      WaitForSingleObject (event, 60000);
+    }
+
+  g_free (debugger_utf16);
+
+  CloseHandle (event);
+
+  /* Now the debugger is present, and we can try
+   * resuming execution, re-triggering the exception,
+   * which will be caught by debugger this time around.
+   */
+  if (IsDebuggerPresent ())
+    return EXCEPTION_CONTINUE_EXECUTION;
+
+  return EXCEPTION_CONTINUE_SEARCH;
+}
+
+void
+g_crash_handler_win32_init (void)
+{
+  if (WinVEH_handle != NULL)
+    return;
+
+  /* Do not register an exception handler if we're not supposed to catch any
+   * exceptions. Exception handlers are considered dangerous to use, and can
+   * break advanced exception handling such as in CLRs like C# or other managed
+   * code. See: https://blogs.msdn.microsoft.com/jmstall/2006/05/24/beware-of-the-vectored-exception-handler-and-managed-code/
+   */
+  if (g_getenv ("G_DEBUGGER") == NULL && g_getenv("G_VEH_CATCH") == NULL)
+    return;
+
+  WinVEH_handle = AddVectoredExceptionHandler (0, &g_win32_veh_handler);
+}
+
+void
+g_crash_handler_win32_deinit (void)
+{
+  if (WinVEH_handle != NULL)
+    RemoveVectoredExceptionHandler (WinVEH_handle);
+
+  WinVEH_handle = NULL;
 }
 
 #endif

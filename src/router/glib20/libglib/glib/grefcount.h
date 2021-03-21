@@ -23,8 +23,8 @@
 #error "Only <glib.h> can be included directly."
 #endif
 
+#include <glib/gatomic.h>
 #include <glib/gtypes.h>
-#include "gatomic.h"
 
 G_BEGIN_DECLS
 
@@ -92,7 +92,7 @@ gboolean        g_atomic_ref_count_compare      (gatomicrefcount *arc,
   (G_GNUC_EXTENSION ({ \
     G_STATIC_ASSERT (sizeof *(rc) == sizeof (gatomicrefcount)); \
     (void) (0 ? *(rc) ^ *(rc) : 1); \
-    g_atomic_int_set ((rc), 1); \
+    *(rc) = 1; \
   }))
 
 # define g_atomic_ref_count_inc(rc) \

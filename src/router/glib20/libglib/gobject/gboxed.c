@@ -20,7 +20,9 @@
 #include <string.h>
 
 /* for GValueArray */
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
 #define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
 
 #include "gboxed.h"
 #include "gclosure.h"
@@ -37,13 +39,24 @@
  * @see_also: #GParamSpecBoxed, g_param_spec_boxed()
  * @title: Boxed Types
  *
- * GBoxed is a generic wrapper mechanism for arbitrary C structures. The only
- * thing the type system needs to know about the structures is how to copy and
- * free them, beyond that they are treated as opaque chunks of memory.
+ * #GBoxed is a generic wrapper mechanism for arbitrary C structures. The only
+ * thing the type system needs to know about the structures is how to copy them
+ * (a #GBoxedCopyFunc) and how to free them (a #GBoxedFreeFunc) — beyond that
+ * they are treated as opaque chunks of memory.
  *
  * Boxed types are useful for simple value-holder structures like rectangles or
- * points. They can also be used for wrapping structures defined in non-GObject
- * based libraries.
+ * points. They can also be used for wrapping structures defined in non-#GObject
+ * based libraries. They allow arbitrary structures to be handled in a uniform
+ * way, allowing uniform copying (or referencing) and freeing (or unreferencing)
+ * of them, and uniform representation of the type of the contained structure.
+ * In turn, this allows any type which can be boxed to be set as the data in a
+ * #GValue, which allows for polymorphic handling of a much wider range of data
+ * types, and hence usage of such types as #GObject property values.
+ *
+ * #GBoxed is designed so that reference counted types can be boxed. Use the
+ * type’s ‘ref’ function as the #GBoxedCopyFunc, and its ‘unref’ function as the
+ * #GBoxedFreeFunc. For example, for #GBytes, the #GBoxedCopyFunc is
+ * g_bytes_ref(), and the #GBoxedFreeFunc is g_bytes_unref().
  */
 
 static inline void              /* keep this function in sync with gvalue.c */
@@ -100,7 +113,7 @@ _g_boxed_type_init (void)
     NULL,                       /* value_table */
   };
   const GTypeFundamentalInfo finfo = { G_TYPE_FLAG_DERIVABLE, };
-  GType type;
+  GType type G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
 
   /* G_TYPE_BOXED
    */
@@ -132,6 +145,7 @@ G_DEFINE_BOXED_TYPE (GArray, g_array, g_array_ref, g_array_unref)
 G_DEFINE_BOXED_TYPE (GPtrArray, g_ptr_array,g_ptr_array_ref, g_ptr_array_unref)
 G_DEFINE_BOXED_TYPE (GByteArray, g_byte_array, g_byte_array_ref, g_byte_array_unref)
 G_DEFINE_BOXED_TYPE (GBytes, g_bytes, g_bytes_ref, g_bytes_unref)
+G_DEFINE_BOXED_TYPE (GTree, g_tree, g_tree_ref, g_tree_unref)
 
 G_DEFINE_BOXED_TYPE (GRegex, g_regex, g_regex_ref, g_regex_unref)
 G_DEFINE_BOXED_TYPE (GMatchInfo, g_match_info, g_match_info_ref, g_match_info_unref)
@@ -158,6 +172,7 @@ G_DEFINE_BOXED_TYPE (GMarkupParseContext, g_markup_parse_context, g_markup_parse
 
 G_DEFINE_BOXED_TYPE (GThread, g_thread, g_thread_ref, g_thread_unref)
 G_DEFINE_BOXED_TYPE (GChecksum, g_checksum, g_checksum_copy, g_checksum_free)
+G_DEFINE_BOXED_TYPE (GUri, g_uri, g_uri_ref, g_uri_unref)
 
 G_DEFINE_BOXED_TYPE (GOptionGroup, g_option_group, g_option_group_ref, g_option_group_unref)
 
@@ -165,19 +180,19 @@ G_DEFINE_BOXED_TYPE (GOptionGroup, g_option_group, g_option_group_ref, g_option_
 GType
 g_strv_get_type (void)
 {
-  static volatile gsize g_define_type_id__volatile = 0;
+  static gsize static_g_define_type_id = 0;
 
-  if (g_once_init_enter (&g_define_type_id__volatile))
+  if (g_once_init_enter (&static_g_define_type_id))
     {
       GType g_define_type_id =
         g_boxed_type_register_static (g_intern_static_string ("GStrv"),
                                       (GBoxedCopyFunc) g_strdupv,
                                       (GBoxedFreeFunc) g_strfreev);
 
-      g_once_init_leave (&g_define_type_id__volatile, g_define_type_id);
+      g_once_init_leave (&static_g_define_type_id, g_define_type_id);
     }
 
-  return g_define_type_id__volatile;
+  return static_g_define_type_id;
 }
 
 GType
@@ -245,8 +260,7 @@ boxed_proxy_lcopy_value (const GValue *value,
 {
   gpointer *boxed_p = collect_values[0].v_pointer;
 
-  if (!boxed_p)
-    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+  g_return_val_if_fail (boxed_p != NULL, g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value)));
 
   if (!value->data[0].v_pointer)
     *boxed_p = NULL;
@@ -335,8 +349,7 @@ g_boxed_copy (GType         boxed_type,
   g_return_val_if_fail (src_boxed != NULL, NULL);
 
   value_table = g_type_value_table_peek (boxed_type);
-  if (!value_table)
-    g_return_val_if_fail (G_TYPE_IS_VALUE_TYPE (boxed_type), NULL);
+  g_assert (value_table != NULL);
 
   /* check if our proxying implementation is used, we can short-cut here */
   if (value_table->value_copy == boxed_proxy_value_copy)
@@ -393,8 +406,7 @@ g_boxed_free (GType    boxed_type,
   g_return_if_fail (boxed != NULL);
 
   value_table = g_type_value_table_peek (boxed_type);
-  if (!value_table)
-    g_return_if_fail (G_TYPE_IS_VALUE_TYPE (boxed_type));
+  g_assert (value_table != NULL);
 
   /* check if our proxying implementation is used, we can short-cut here */
   if (value_table->value_free == boxed_proxy_value_free)
@@ -528,8 +540,8 @@ g_value_set_boxed_take_ownership (GValue       *value,
  * @v_boxed: (nullable): duplicated unowned boxed value to be set
  *
  * Sets the contents of a %G_TYPE_BOXED derived #GValue to @v_boxed
- * and takes over the ownership of the callers reference to @v_boxed;
- * the caller doesn't have to unref it any more.
+ * and takes over the ownership of the caller’s reference to @v_boxed;
+ * the caller doesn’t have to unref it any more.
  *
  * Since: 2.4
  */

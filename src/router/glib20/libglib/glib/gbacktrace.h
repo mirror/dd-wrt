@@ -47,8 +47,11 @@ void g_on_error_stack_trace (const gchar *prg_name);
  *
  * Inserts a breakpoint instruction into the code.
  *
- * On x86 and alpha systems this is implemented as a soft interrupt
+ * On architectures which support it, this is implemented as a soft interrupt
  * and on other architectures it raises a `SIGTRAP` signal.
+ *
+ * `SIGTRAP` is used rather than abort() to allow breakpoints to be skipped past
+ * in a debugger if they are not the desired target of debugging.
  */
 #if (defined (__i386__) || defined (__x86_64__)) && defined (__GNUC__) && __GNUC__ >= 2
 #  define G_BREAKPOINT()        G_STMT_START{ __asm__ __volatile__ ("int $03"); }G_STMT_END
@@ -58,7 +61,7 @@ void g_on_error_stack_trace (const gchar *prg_name);
 #  define G_BREAKPOINT()        G_STMT_START{ __debugbreak(); }G_STMT_END
 #elif defined (__alpha__) && !defined(__osf__) && defined (__GNUC__) && __GNUC__ >= 2
 #  define G_BREAKPOINT()        G_STMT_START{ __asm__ __volatile__ ("bpt"); }G_STMT_END
-#elif defined (__APPLE__)
+#elif defined (__APPLE__) || (defined(_WIN32) && (defined(__clang__) || defined(__GNUC__)))
 #  define G_BREAKPOINT()        G_STMT_START{ __builtin_trap(); }G_STMT_END
 #else   /* !__i386__ && !__alpha__ */
 #  define G_BREAKPOINT()        G_STMT_START{ raise (SIGTRAP); }G_STMT_END

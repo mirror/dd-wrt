@@ -37,6 +37,13 @@
 #include "gwin32.h"
 #endif
 
+#define G_UNICHAR_FULLWIDTH_A 0xff21
+#define G_UNICHAR_FULLWIDTH_I 0xff29
+#define G_UNICHAR_FULLWIDTH_J 0xff2a
+#define G_UNICHAR_FULLWIDTH_F 0xff26
+#define G_UNICHAR_FULLWIDTH_a 0xff41
+#define G_UNICHAR_FULLWIDTH_f 0xff46
+
 #define ATTR_TABLE(Page) (((Page) <= G_UNICODE_LAST_PAGE_PART1) \
                           ? attr_table_part1[Page] \
                           : attr_table_part2[(Page) - 0xe00])
@@ -355,16 +362,18 @@ g_unichar_istitle (gunichar c)
  * g_unichar_isxdigit:
  * @c: a Unicode character.
  * 
- * Determines if a character is a hexidecimal digit.
+ * Determines if a character is a hexadecimal digit.
  * 
  * Returns: %TRUE if the character is a hexadecimal digit
  **/
 gboolean
 g_unichar_isxdigit (gunichar c)
 {
-  return ((c >= 'a' && c <= 'f')
-	  || (c >= 'A' && c <= 'F')
-	  || (TYPE (c) == G_UNICODE_DECIMAL_NUMBER));
+  return ((c >= 'a' && c <= 'f') ||
+          (c >= 'A' && c <= 'F') ||
+          (c >= G_UNICHAR_FULLWIDTH_a && c <= G_UNICHAR_FULLWIDTH_f) ||
+          (c >= G_UNICHAR_FULLWIDTH_A && c <= G_UNICHAR_FULLWIDTH_F) ||
+          (TYPE (c) == G_UNICODE_DECIMAL_NUMBER));
 }
 
 /**
@@ -526,7 +535,7 @@ g_unichar_iswide_cjk (gunichar c)
  * Converts a character to uppercase.
  * 
  * Returns: the result of converting @c to uppercase.
- *               If @c is not an lowercase or titlecase character,
+ *               If @c is not a lowercase or titlecase character,
  *               or has no upper case equivalent @c is returned unchanged.
  **/
 gunichar
@@ -614,13 +623,19 @@ gunichar
 g_unichar_totitle (gunichar c)
 {
   unsigned int i;
+
+  /* We handle U+0000 explicitly because some elements in
+   * title_table[i][1] may be null. */
+  if (c == 0)
+    return c;
+
   for (i = 0; i < G_N_ELEMENTS (title_table); ++i)
     {
       if (title_table[i][0] == c || title_table[i][1] == c
 	  || title_table[i][2] == c)
 	return title_table[i][0];
     }
-    
+
   if (TYPE (c) == G_UNICODE_LOWERCASE_LETTER)
     return g_unichar_toupper (c);
 
@@ -649,7 +664,7 @@ g_unichar_digit_value (gunichar c)
  * g_unichar_xdigit_value:
  * @c: a Unicode character
  *
- * Determines the numeric value of a character as a hexidecimal
+ * Determines the numeric value of a character as a hexadecimal
  * digit.
  *
  * Returns: If @c is a hex digit (according to
@@ -662,6 +677,10 @@ g_unichar_xdigit_value (gunichar c)
     return c - 'A' + 10;
   if (c >= 'a' && c <= 'f')
     return c - 'a' + 10;
+  if (c >= G_UNICHAR_FULLWIDTH_A && c <= G_UNICHAR_FULLWIDTH_F)
+    return c - G_UNICHAR_FULLWIDTH_A + 10;
+  if (c >= G_UNICHAR_FULLWIDTH_a && c <= G_UNICHAR_FULLWIDTH_f)
+    return c - G_UNICHAR_FULLWIDTH_a + 10;
   if (TYPE (c) == G_UNICODE_DECIMAL_NUMBER)
     return ATTTABLE (c >> 8, c & 0xff);
   return -1;
@@ -968,13 +987,18 @@ real_tolower (const gchar *str,
       last = p;
       p = g_utf8_next_char (p);
 
-      if (locale_type == LOCALE_TURKIC && c == 'I')
-	{
-          if (g_utf8_get_char (p) == 0x0307)
+      if (locale_type == LOCALE_TURKIC && (c == 'I' || c == 0x130 ||
+                                           c == G_UNICHAR_FULLWIDTH_I))
+        {
+          gboolean combining_dot = (c == 'I' || c == G_UNICHAR_FULLWIDTH_I) &&
+                                   g_utf8_get_char (p) == 0x0307;
+          if (combining_dot || c == 0x130)
             {
-              /* I + COMBINING DOT ABOVE => i (U+0069) */
-              len += g_unichar_to_utf8 (0x0069, out_buffer ? out_buffer + len : NULL); 
-              p = g_utf8_next_char (p);
+              /* I + COMBINING DOT ABOVE => i (U+0069)
+               * LATIN CAPITAL LETTER I WITH DOT ABOVE => i (U+0069) */
+              len += g_unichar_to_utf8 (0x0069, out_buffer ? out_buffer + len : NULL);
+              if (combining_dot)
+                p = g_utf8_next_char (p);
             }
           else
             {
@@ -1004,7 +1028,8 @@ real_tolower (const gchar *str,
             }
         }
       else if (locale_type == LOCALE_LITHUANIAN && 
-               (c == 'I' || c == 'J' || c == 0x012e) && 
+               (c == 'I' || c == G_UNICHAR_FULLWIDTH_I ||
+                c == 'J' || c == G_UNICHAR_FULLWIDTH_J || c == 0x012e) &&
                has_more_above (p))
         {
           len += g_unichar_to_utf8 (g_unichar_tolower (c), out_buffer ? out_buffer + len : NULL); 
@@ -1404,7 +1429,7 @@ static const guint32 iso15924_tags[] =
     PACK ('S','i','n','d'), /* G_UNICODE_SCRIPT_KHUDAWADI */
     PACK ('L','i','n','a'), /* G_UNICODE_SCRIPT_LINEAR_A */
     PACK ('M','a','h','j'), /* G_UNICODE_SCRIPT_MAHAJANI */
-    PACK ('M','a','n','u'), /* G_UNICODE_SCRIPT_MANICHAEAN */
+    PACK ('M','a','n','i'), /* G_UNICODE_SCRIPT_MANICHAEAN */
     PACK ('M','e','n','d'), /* G_UNICODE_SCRIPT_MENDE_KIKAKUI */
     PACK ('M','o','d','i'), /* G_UNICODE_SCRIPT_MODI */
     PACK ('M','r','o','o'), /* G_UNICODE_SCRIPT_MRO */
@@ -1449,6 +1474,18 @@ static const guint32 iso15924_tags[] =
     PACK ('M','e','d','f'), /* G_UNICODE_SCRIPT_MEDEFAIDRIN */
     PACK ('S','o','g','o'), /* G_UNICODE_SCRIPT_OLD_SOGDIAN */
     PACK ('S','o','g','d'), /* G_UNICODE_SCRIPT_SOGDIAN */
+
+  /* Unicode 12.0 additions */
+    PACK ('E','l','y','m'), /* G_UNICODE_SCRIPT_ELYMAIC */
+    PACK ('N','a','n','d'), /* G_UNICODE_SCRIPT_NANDINAGARI */
+    PACK ('H','m','n','p'), /* G_UNICODE_SCRIPT_NYIAKENG_PUACHUE_HMONG */
+    PACK ('W','c','h','o'), /* G_UNICODE_SCRIPT_WANCHO */
+
+  /* Unicode 13.0 additions */
+    PACK ('C', 'h', 'r', 's'), /* G_UNICODE_SCRIPT_CHORASMIAN */
+    PACK ('D', 'i', 'a', 'k'), /* G_UNICODE_SCRIPT_DIVES_AKURU */
+    PACK ('K', 'i', 't', 's'), /* G_UNICODE_SCRIPT_KHITAN_SMALL_SCRIPT */
+    PACK ('Y', 'e', 'z', 'i'), /* G_UNICODE_SCRIPT_YEZIDI */
 #undef PACK
 };
 

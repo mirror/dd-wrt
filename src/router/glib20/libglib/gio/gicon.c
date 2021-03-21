@@ -138,7 +138,7 @@ g_icon_to_string_tokenized (GIcon *icon, GString *s)
   GPtrArray *tokens;
   gint version;
   GIconIface *icon_iface;
-  int i;
+  guint i;
 
   g_return_val_if_fail (icon != NULL, FALSE);
   g_return_val_if_fail (G_IS_ICON (icon), FALSE);
@@ -199,8 +199,8 @@ g_icon_to_string_tokenized (GIcon *icon, GString *s)
  *   native, the returned string is the result of g_file_get_uri()
  *   (such as `sftp://path/to/my%20icon.png`).
  * 
- * - If @icon is a #GThemedIcon with exactly one name, the encoding is
- *    simply the name (such as `network-server`).
+ * - If @icon is a #GThemedIcon with exactly one name and no fallbacks,
+ *   the encoding is simply the name (such as `network-server`).
  *
  * Virtual: to_tokens
  * Returns: (nullable): An allocated NUL-terminated UTF8 string or
@@ -237,15 +237,23 @@ g_icon_to_string (GIcon *icon)
     }
   else if (G_IS_THEMED_ICON (icon))
     {
-      const char * const *names;
+      char     **names                 = NULL;
+      gboolean   use_default_fallbacks = FALSE;
 
-      names = g_themed_icon_get_names (G_THEMED_ICON (icon));
+      g_object_get (G_OBJECT (icon),
+                    "names",                 &names,
+                    "use-default-fallbacks", &use_default_fallbacks,
+                    NULL);
+      /* Themed icon initialized with a single name and no fallbacks. */
       if (names != NULL &&
 	  names[0] != NULL &&
 	  names[0][0] != '.' && /* Allowing icons starting with dot would break G_ICON_SERIALIZATION_MAGIC0 */
 	  g_utf8_validate (names[0], -1, NULL) && /* Only return utf8 strings */
-	  names[1] == NULL)
+          names[1] == NULL &&
+          ! use_default_fallbacks)
 	ret = g_strdup (names[0]);
+
+      g_strfreev (names);
     }
 
   if (ret == NULL)
@@ -550,11 +558,11 @@ g_icon_deserialize_emblemed (GVariant *value)
 
 /**
  * g_icon_deserialize:
- * @value: a #GVariant created with g_icon_serialize()
+ * @value: (transfer none): a #GVariant created with g_icon_serialize()
  *
  * Deserializes a #GIcon previously serialized using g_icon_serialize().
  *
- * Returns: (transfer full): a #GIcon, or %NULL when deserialization fails.
+ * Returns: (nullable) (transfer full): a #GIcon, or %NULL when deserialization fails.
  *
  * Since: 2.38
  */
@@ -645,7 +653,7 @@ g_icon_deserialize (GVariant *value)
  * makes sense to transfer the #GVariant between processes on the same machine,
  * (as opposed to over the network), and within the same file system namespace.
  *
- * Returns: (transfer full): a #GVariant, or %NULL when serialization fails.
+ * Returns: (nullable) (transfer full): a #GVariant, or %NULL when serialization fails. The #GVariant will not be floating.
  *
  * Since: 2.38
  */

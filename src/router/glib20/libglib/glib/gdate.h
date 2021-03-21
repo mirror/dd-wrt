@@ -45,7 +45,7 @@ G_BEGIN_DECLS
  * Pennington <hp@pobox.com>
  */
 
-typedef gint32  GTime;
+typedef gint32  GTime GLIB_DEPRECATED_TYPE_IN_2_62_FOR(GDateTime);
 typedef guint16 GDateYear;
 typedef guint8  GDateDay;   /* day of the month */
 typedef struct _GDate GDate;
@@ -178,7 +178,7 @@ GLIB_AVAILABLE_IN_ALL
 guint        g_date_get_iso8601_week_of_year (const GDate *date);
 
 /* If you create a static date struct you need to clear it to get it
- * in a sane state before use. You can clear a whole array at
+ * in a safe state before use. You can clear a whole array at
  * once with the ndates argument.
  */
 GLIB_AVAILABLE_IN_ALL
@@ -195,14 +195,14 @@ void         g_date_set_parse             (GDate       *date,
 GLIB_AVAILABLE_IN_ALL
 void         g_date_set_time_t            (GDate       *date,
 					   time_t       timet);
-GLIB_AVAILABLE_IN_ALL
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+GLIB_DEPRECATED_IN_2_62_FOR(g_date_set_time_t)
 void         g_date_set_time_val          (GDate       *date,
 					   GTimeVal    *timeval);
-#ifndef G_DISABLE_DEPRECATED
 GLIB_DEPRECATED_FOR(g_date_set_time_t)
 void         g_date_set_time              (GDate       *date,
                                            GTime        time_);
-#endif
+G_GNUC_END_IGNORE_DEPRECATIONS
 GLIB_AVAILABLE_IN_ALL
 void         g_date_set_month             (GDate       *date,
                                            GDateMonth   month);
@@ -290,21 +290,17 @@ gsize        g_date_strftime              (gchar       *s,
                                            const gchar *format,
                                            const GDate *date);
 
-#ifndef G_DISABLE_DEPRECATED
-
-#define g_date_weekday 			g_date_get_weekday
-#define g_date_month 			g_date_get_month
-#define g_date_year 			g_date_get_year
-#define g_date_day 			g_date_get_day
-#define g_date_julian 			g_date_get_julian
-#define g_date_day_of_year 		g_date_get_day_of_year
-#define g_date_monday_week_of_year 	g_date_get_monday_week_of_year
-#define g_date_sunday_week_of_year 	g_date_get_sunday_week_of_year
-#define g_date_days_in_month 		g_date_get_days_in_month
-#define g_date_monday_weeks_in_year 	g_date_get_monday_weeks_in_year
-#define g_date_sunday_weeks_in_year	g_date_get_sunday_weeks_in_year
-
-#endif /* G_DISABLE_DEPRECATED */
+#define g_date_weekday 			g_date_get_weekday GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_weekday)
+#define g_date_month 			g_date_get_month GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_month)
+#define g_date_year 			g_date_get_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_year)
+#define g_date_day 			g_date_get_day GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_day)
+#define g_date_julian 			g_date_get_julian GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_julian)
+#define g_date_day_of_year 		g_date_get_day_of_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_day_of_year)
+#define g_date_monday_week_of_year 	g_date_get_monday_week_of_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_monday_week_of_year)
+#define g_date_sunday_week_of_year 	g_date_get_sunday_week_of_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_sunday_week_of_year)
+#define g_date_days_in_month 		g_date_get_days_in_month GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_days_in_month)
+#define g_date_monday_weeks_in_year 	g_date_get_monday_weeks_in_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_monday_weeks_in_year)
+#define g_date_sunday_weeks_in_year	g_date_get_sunday_weeks_in_year GLIB_DEPRECATED_MACRO_IN_2_26_FOR(g_date_get_sunday_weeks_in_year)
 
 G_END_DECLS
 

@@ -98,7 +98,7 @@
 //#define TRACE
 
 /* GSettings' limit */
-#define MAX_KEY_NAME_LENGTH   32
+#define MAX_KEY_NAME_LENGTH   128
 
 /* Testing (on Windows XP SP3) shows that WaitForMultipleObjects fails with
  * "The parameter is incorrect" after 64 watches. We need one for the
@@ -201,7 +201,7 @@ trace (const char *format,
  * equivalent function for g_warning because none of the registry errors can
  * result from programmer error (Microsoft programmers don't count), instead
  * they will mostly occur from people messing with the registry by hand. */
-static void
+static void G_GNUC_PRINTF (2, 3)
 g_message_win32_error (DWORD        result_code,
                        const gchar *format,
                       ...)
@@ -312,7 +312,7 @@ handle_read_error (LONG         result,
 {
   /* file not found means key value not set, this isn't an error for us. */
   if (result != ERROR_FILE_NOT_FOUND)
-    g_message_win32_error (result, "Unable to query value %s/%s: %s.\n",
+    g_message_win32_error (result, "Unable to query value %s/%s",
                            path_name, value_name);
 }
 
@@ -408,7 +408,7 @@ registry_cache_add_item (GNode         *parent,
   item->block_count = 0;
   item->readable = FALSE;
 
-  trace ("\treg cache: adding %s to %s\n",
+  trace ("\tregistry cache: adding %s to %s\n",
          name, ((RegistryCacheItem *)parent->data)->name);
 
   cache_node = g_node_new (item);
@@ -745,7 +745,7 @@ registry_cache_update_node (GNode        *cache_node,
 }
 
 /* Blocking notifications is a useful optimisation. When a change is made
- * through GSettings we update the cache manually, but a notifcation is
+ * through GSettings we update the cache manually, but a notification is
  * triggered as well. This function is also used for nested notifications,
  * eg. if /test and /test/foo are watched, and /test/foo/value is changed then
  * we will get notified both for /test/foo and /test and it is helpful to block

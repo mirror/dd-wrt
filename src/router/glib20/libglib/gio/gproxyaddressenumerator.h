@@ -40,7 +40,7 @@ G_BEGIN_DECLS
  * GProxyAddressEnumerator:
  *
  * A subclass of #GSocketAddressEnumerator that takes another address
- * enumerator and wraps its results in #GProxyAddresses as
+ * enumerator and wraps each of its results in a #GProxyAddress as
  * directed by the default #GProxyResolver.
  */
 
@@ -49,12 +49,19 @@ typedef struct _GProxyAddressEnumeratorPrivate GProxyAddressEnumeratorPrivate;
 
 struct _GProxyAddressEnumerator
 {
+  /*< private >*/
   GSocketAddressEnumerator parent_instance;
   GProxyAddressEnumeratorPrivate *priv;
 };
 
+/**
+ * GProxyAddressEnumeratorClass:
+ *
+ * Class structure for #GProxyAddressEnumerator.
+ */
 struct _GProxyAddressEnumeratorClass
 {
+  /*< private >*/
   GSocketAddressEnumeratorClass parent_class;
 
   void (*_g_reserved1) (void);

@@ -8,6 +8,8 @@ if get_option('gtk_doc')
     'gbsearcharray.h',
     'glib-private.h',
     'gmoduleconf.h',
+    'grcboxprivate.h',
+    'gstdioprivate.h',
     'gthreadprivate.h',
     'gunibreak.h',
     'gunicomp.h',
@@ -20,6 +22,7 @@ if get_option('gtk_doc')
     'gprintfint.h',
     'gmirroringtable.h',
     'gscripttable.h',
+    'gtrace-private.h',
     'glib-mirroring-tab',
     'gnulib',
     'pcre',
@@ -34,62 +37,9 @@ if get_option('gtk_doc')
     'glib-init.h',
     'gconstructor.h',
     'valgrind.h',
+    'gutilsprivate.h',
     'gvalgrind.h',
-  ]
-
-  ignore_decorators = [
-    'GLIB_VAR',
-    'G_GNUC_INTERNAL',
-    'G_GNUC_WARN_UNUSED_RESULT',
-    'GLIB_AVAILABLE_IN_ALL',
-    'GLIB_AVAILABLE_IN_2_26',
-    'GLIB_AVAILABLE_IN_2_28',
-    'GLIB_AVAILABLE_IN_2_30',
-    'GLIB_AVAILABLE_IN_2_32',
-    'GLIB_AVAILABLE_IN_2_34',
-    'GLIB_AVAILABLE_IN_2_36',
-    'GLIB_AVAILABLE_IN_2_38',
-    'GLIB_AVAILABLE_IN_2_40',
-    'GLIB_AVAILABLE_IN_2_42',
-    'GLIB_AVAILABLE_IN_2_44',
-    'GLIB_AVAILABLE_IN_2_46',
-    'GLIB_AVAILABLE_IN_2_48',
-    'GLIB_AVAILABLE_IN_2_50',
-    'GLIB_AVAILABLE_IN_2_52',
-    'GLIB_AVAILABLE_IN_2_54',
-    'GLIB_AVAILABLE_IN_2_56',
-    'GLIB_DEPRECATED_IN_2_26',
-    'GLIB_DEPRECATED_IN_2_26_FOR',
-    'GLIB_DEPRECATED_IN_2_28',
-    'GLIB_DEPRECATED_IN_2_28_FOR',
-    'GLIB_DEPRECATED_IN_2_30',
-    'GLIB_DEPRECATED_IN_2_30_FOR',
-    'GLIB_DEPRECATED_IN_2_32',
-    'GLIB_DEPRECATED_IN_2_32_FOR',
-    'GLIB_DEPRECATED_IN_2_34',
-    'GLIB_DEPRECATED_IN_2_34_FOR',
-    'GLIB_DEPRECATED_IN_2_36',
-    'GLIB_DEPRECATED_IN_2_36_FOR',
-    'GLIB_DEPRECATED_IN_2_38',
-    'GLIB_DEPRECATED_IN_2_38_FOR',
-    'GLIB_DEPRECATED_IN_2_40',
-    'GLIB_DEPRECATED_IN_2_40_FOR',
-    'GLIB_DEPRECATED_IN_2_42',
-    'GLIB_DEPRECATED_IN_2_42_FOR',
-    'GLIB_DEPRECATED_IN_2_44',
-    'GLIB_DEPRECATED_IN_2_44_FOR',
-    'GLIB_DEPRECATED_IN_2_46',
-    'GLIB_DEPRECATED_IN_2_46_FOR',
-    'GLIB_DEPRECATED_IN_2_48',
-    'GLIB_DEPRECATED_IN_2_48_FOR',
-    'GLIB_DEPRECATED_IN_2_50',
-    'GLIB_DEPRECATED_IN_2_50_FOR',
-    'GLIB_DEPRECATED_IN_2_52',
-    'GLIB_DEPRECATED_IN_2_52_FOR',
-    'GLIB_DEPRECATED_IN_2_54',
-    'GLIB_DEPRECATED_IN_2_54_FOR',
-    'GLIB_DEPRECATED_IN_2_56',
-    'GLIB_DEPRECATED_IN_2_56_FOR',
+    'dirent.h',
   ]
 
   docpath = join_paths(glib_datadir, 'gtk-doc', 'html')
@@ -107,9 +57,7 @@ if get_option('gtk_doc')
                mode : 'none',
                src_dir : [ 'glib', 'gmodule' ],
                dependencies : libglib_dep,
-               scan_args : [
-                 '--deprecated-guards=G_DISABLE_DEPRECATED',
-                 '--ignore-decorators=' + '|'.join(ignore_decorators),
+               scan_args : gtkdoc_common_scan_args + [
                  '--ignore-headers=' + ' '.join(ignore_headers),
                ],
                content_files : [
@@ -140,9 +88,9 @@ if get_option('gtk_doc')
                ],
                fixxref_args: [
                  '--html-dir=' + docpath,
-                 # TODO: gobject/gio extra dirs
                ],
-               install: true)
+               install: true,
+               check: true)
 endif
 
 if get_option('man')

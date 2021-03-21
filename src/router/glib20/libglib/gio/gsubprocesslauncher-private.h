@@ -42,8 +42,9 @@ struct _GSubprocessLauncher
   gint stderr_fd;
   gchar *stderr_path;
 
-  GArray *basic_fd_assignments;
-  GArray *needdup_fd_assignments;
+  GArray *source_fds;  /* GSubprocessLauncher has ownership of the FD elements */
+  GArray *target_fds;  /* always the same length as source_fds; elements are just integers and not FDs in this process */
+  gboolean closed_fd;
 
   GSpawnChildSetupFunc child_setup_func;
   gpointer child_setup_user_data;

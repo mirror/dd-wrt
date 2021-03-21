@@ -291,22 +291,22 @@ gchar *
 g_dbus_generate_guid (void)
 {
   GString *s;
-  GTimeVal now;
   guint32 r1;
   guint32 r2;
   guint32 r3;
+  gint64 now_us;
 
   s = g_string_new (NULL);
 
   r1 = g_random_int ();
   r2 = g_random_int ();
   r3 = g_random_int ();
-  g_get_current_time (&now);
+  now_us = g_get_real_time ();
 
   g_string_append_printf (s, "%08x", r1);
   g_string_append_printf (s, "%08x", r2);
   g_string_append_printf (s, "%08x", r3);
-  g_string_append_printf (s, "%08x", (guint32) now.tv_sec);
+  g_string_append_printf (s, "%08x", (guint32) (now_us / G_USEC_PER_SEC));
 
   return g_string_free (s, FALSE);
 }
@@ -533,9 +533,9 @@ g_dbus_gvariant_to_gvalue (GVariant  *value,
  * See the g_dbus_gvariant_to_gvalue() function for how to convert a
  * #GVariant to a #GValue.
  *
- * Returns: A #GVariant (never floating) of #GVariantType @type holding
- *     the data from @gvalue or %NULL in case of failure. Free with
- *     g_variant_unref().
+ * Returns: (transfer full): A #GVariant (never floating) of
+ *     #GVariantType @type holding the data from @gvalue or an empty #GVariant
+ *     in case of failure. Free with g_variant_unref().
  *
  * Since: 2.30
  */
@@ -692,4 +692,128 @@ g_dbus_gvalue_to_gvariant (const GValue       *gvalue,
   g_assert (!g_variant_is_floating (ret));
 
   return ret;
+}
+
+/**
+ * g_dbus_escape_object_path_bytestring:
+ * @bytes: (array zero-terminated=1) (element-type guint8): the string of bytes to escape
+ *
+ * Escapes @bytes for use in a D-Bus object path component.
+ * @bytes is an array of zero or more nonzero bytes in an
+ * unspecified encoding, followed by a single zero byte.
+ *
+ * The escaping method consists of replacing all non-alphanumeric
+ * characters (see g_ascii_isalnum()) with their hexadecimal value
+ * preceded by an underscore (`_`). For example:
+ * `foo.bar.baz` will become `foo_2ebar_2ebaz`.
+ *
+ * This method is appropriate to use when the input is nearly
+ * a valid object path component but is not when your input
+ * is far from being a valid object path component.
+ * Other escaping algorithms are also valid to use with
+ * D-Bus object paths.
+ *
+ * This can be reversed with g_dbus_unescape_object_path().
+ *
+ * Returns: an escaped version of @bytes. Free with g_free().
+ *
+ * Since: 2.68
+ *
+ */
+gchar *
+g_dbus_escape_object_path_bytestring (const guint8 *bytes)
+{
+  GString *escaped;
+  const guint8 *p;
+
+  g_return_val_if_fail (bytes != NULL, NULL);
+
+  if (*bytes == '\0')
+    return g_strdup ("_");
+
+  escaped = g_string_new (NULL);
+  for (p = bytes; *p; p++)
+    {
+      if (g_ascii_isalnum (*p))
+        g_string_append_c (escaped, *p);
+      else
+        g_string_append_printf (escaped, "_%02x", *p);
+    }
+
+  return g_string_free (escaped, FALSE);
+}
+
+/**
+ * g_dbus_escape_object_path:
+ * @s: the string to escape
+ *
+ * This is a language binding friendly version of g_dbus_escape_object_path_bytestring().
+ *
+ * Returns: an escaped version of @s. Free with g_free().
+ *
+ * Since: 2.68
+ */
+gchar *
+g_dbus_escape_object_path (const gchar *s)
+{
+  return (gchar *) g_dbus_escape_object_path_bytestring ((const guint8 *) s);
+}
+
+/**
+ * g_dbus_unescape_object_path:
+ * @s: the string to unescape
+ *
+ * Unescapes an string that was previously escaped with
+ * g_dbus_escape_object_path(). If the string is in a format that could
+ * not have been returned by g_dbus_escape_object_path(), this function
+ * returns %NULL.
+ *
+ * Encoding alphanumeric characters which do not need to be
+ * encoded is not allowed (e.g `_63` is not valid, the string
+ * should contain `c` instead).
+ *
+ * Returns: (array zero-terminated=1) (element-type guint8) (nullable): an
+ *   unescaped version of @s, or %NULL if @s is not a string returned
+ *   from g_dbus_escape_object_path(). Free with g_free().
+ *
+ * Since: 2.68
+ */
+guint8 *
+g_dbus_unescape_object_path (const gchar *s)
+{
+  GString *unescaped;
+  const gchar *p;
+
+  g_return_val_if_fail (s != NULL, NULL);
+
+  if (g_str_equal (s, "_"))
+    return (guint8 *) g_strdup ("");
+
+  unescaped = g_string_new (NULL);
+  for (p = s; *p; p++)
+    {
+      gint hi, lo;
+
+      if (g_ascii_isalnum (*p))
+        {
+          g_string_append_c (unescaped, *p);
+        }
+      else if (*p == '_' &&
+               ((hi = g_ascii_xdigit_value (p[1])) >= 0) &&
+               ((lo = g_ascii_xdigit_value (p[2])) >= 0) &&
+               (hi || lo) &&                      /* \0 is not allowed */
+               !g_ascii_isalnum ((hi << 4) | lo)) /* alnums must not be encoded */
+        {
+          g_string_append_c (unescaped, (hi << 4) | lo);
+          p += 2;
+        }
+      else
+        {
+          /* the string was not encoded correctly */
+          g_string_free (unescaped, TRUE);
+          return NULL;
+        }
+    }
+
+  return (guint8 *) g_string_free (unescaped, FALSE);
 }

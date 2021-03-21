@@ -22,7 +22,9 @@
 #include <gio/gio.h>
 
 #include <string.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <dbus/dbus.h>
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -512,9 +514,8 @@ get_body_signature (GVariant *value)
 }
 
 /* If @value is floating, this assumes ownership. */
-static void
-check_serialization (GVariant *value,
-                     const gchar *expected_dbus_1_output)
+static gchar *
+get_and_check_serialization (GVariant *value)
 {
   guchar *blob;
   gsize blob_size;
@@ -523,8 +524,8 @@ check_serialization (GVariant *value,
   GDBusMessage *recovered_message;
   GError *error;
   DBusError dbus_error;
-  gchar *s;
-  gchar *s1;
+  gchar *last_serialization = NULL;
+  gchar *s = NULL;
   guint n;
 
   message = g_dbus_message_new ();
@@ -596,9 +597,6 @@ check_serialization (GVariant *value,
       s = dbus_1_message_print (dbus_1_message);
       dbus_message_unref (dbus_1_message);
 
-      g_assert_cmpstr (s, ==, expected_dbus_1_output);
-      g_free (s);
-
       /* Then serialize back and check that the body is identical */
 
       error = NULL;
@@ -616,27 +614,37 @@ check_serialization (GVariant *value,
       else
         {
           g_assert (g_dbus_message_get_body (recovered_message) != NULL);
-          if (!g_variant_equal (g_dbus_message_get_body (recovered_message), value))
-            {
-              s = g_variant_print (g_dbus_message_get_body (recovered_message), TRUE);
-              s1 = g_variant_print (value, TRUE);
-              g_printerr ("Recovered value:\n%s\ndoes not match given value\n%s\n",
-                          s,
-                          s1);
-              g_free (s);
-              g_free (s1);
-              g_assert_not_reached ();
-            }
+          g_assert_cmpvariant (g_dbus_message_get_body (recovered_message), value);
         }
       g_object_unref (recovered_message);
       g_free (blob);
+
+      if (last_serialization != NULL)
+        {
+          g_assert_cmpstr (last_serialization, ==, s);
+          g_free (last_serialization);
+        }
+
+      last_serialization = g_steal_pointer (&s);
     }
 
   g_object_unref (message);
+
+  return g_steal_pointer (&last_serialization);
+}
+
+/* If @value is floating, this assumes ownership. */
+static void
+check_serialization (GVariant *value,
+                     const gchar *expected_dbus_1_output)
+{
+  gchar *s = get_and_check_serialization (value);
+  g_assert_cmpstr (s, ==, expected_dbus_1_output);
+  g_free (s);
 }
 
 static void
-message_serialize_basic (void)
+test_message_serialize_basic (void)
 {
   check_serialization (NULL, "");
 
@@ -670,10 +678,12 @@ message_serialize_basic (void)
 /* ---------------------------------------------------------------------------------------------------- */
 
 static void
-message_serialize_complex (void)
+test_message_serialize_complex (void)
 {
   GError *error;
   GVariant *value;
+  guint i;
+  gchar *serialization = NULL;
 
   error = NULL;
 
@@ -733,6 +743,37 @@ message_serialize_complex (void)
                        "    unix-fd: (not extracted)\n");
   g_variant_unref (value);
 #endif
+
+  /* Deep nesting of variants (just below the recursion limit). */
+  value = g_variant_new_string ("buried");
+  for (i = 0; i < 64; i++)
+    value = g_variant_new_variant (value);
+  value = g_variant_new_tuple (&value, 1);
+
+  serialization = get_and_check_serialization (value);
+  g_assert_nonnull (serialization);
+  g_assert_true (g_str_has_prefix (serialization,
+                                   "value 0:   variant:\n"
+                                   "    variant:\n"
+                                   "      variant:\n"));
+  g_free (serialization);
+
+  /* Deep nesting of arrays and structs (just below the recursion limit).
+   * See https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-marshaling-signature */
+  value = g_variant_new_string ("hello");
+  for (i = 0; i < 32; i++)
+    value = g_variant_new_tuple (&value, 1);
+  for (i = 0; i < 32; i++)
+    value = g_variant_new_array (NULL, &value, 1);
+  value = g_variant_new_tuple (&value, 1);
+
+  serialization = get_and_check_serialization (value);
+  g_assert_nonnull (serialization);
+  g_assert_true (g_str_has_prefix (serialization,
+                                   "value 0:   array:\n"
+                                   "    array:\n"
+                                   "      array:\n"));
+  g_free (serialization);
 }
 
 
@@ -758,7 +799,7 @@ replace (char       *blob,
 }
 
 static void
-message_serialize_invalid (void)
+test_message_serialize_invalid (void)
 {
   guint n;
 
@@ -851,11 +892,11 @@ message_serialize_invalid (void)
 /* ---------------------------------------------------------------------------------------------------- */
 
 static void
-message_serialize_header_checks (void)
+test_message_serialize_header_checks (void)
 {
   GDBusMessage *message;
   GDBusMessage *reply;
-  GError *error;
+  GError *error = NULL;
   guchar *blob;
   gsize blob_size;
 
@@ -863,13 +904,26 @@ message_serialize_header_checks (void)
    * check we can't serialize messages with INVALID type
    */
   message = g_dbus_message_new ();
-  error = NULL;
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: type is INVALID");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   g_object_unref (message);
+
+  /*
+   * check that we can't serialize messages with SIGNATURE set to a non-signature-typed value
+   */
+  message = g_dbus_message_new_signal ("/the/path", "The.Interface", "TheMember");
+  g_dbus_message_set_header (message, G_DBUS_MESSAGE_HEADER_FIELD_SIGNATURE, g_variant_new_boolean (FALSE));
+  blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
+
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
+  g_assert_cmpstr (error->message, ==, "Signature header found but is not of type signature");
+  g_assert_null (blob);
+
+  g_clear_error (&error);
+  g_clear_object (&message);
 
   /*
    * check we can't serialize signal messages with INTERFACE, PATH or MEMBER unset / set to reserved value
@@ -878,50 +932,45 @@ message_serialize_header_checks (void)
   /* ----- */
   /* interface NULL => error */
   g_dbus_message_set_interface (message, NULL);
-  error = NULL;
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: SIGNAL message: PATH, INTERFACE or MEMBER header field is missing");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   /* interface reserved value => error */
   g_dbus_message_set_interface (message, "org.freedesktop.DBus.Local");
-  error = NULL;
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: SIGNAL message: The INTERFACE header field is using the reserved value org.freedesktop.DBus.Local");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   /* reset interface */
   g_dbus_message_set_interface (message, "The.Interface");
   /* ----- */
   /* path NULL => error */
   g_dbus_message_set_path (message, NULL);
-  error = NULL;
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: SIGNAL message: PATH, INTERFACE or MEMBER header field is missing");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   /* path reserved value => error */
   g_dbus_message_set_path (message, "/org/freedesktop/DBus/Local");
-  error = NULL;
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: SIGNAL message: The PATH header field is using the reserved value /org/freedesktop/DBus/Local");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   /* reset path */
   g_dbus_message_set_path (message, "/the/path");
   /* ----- */
   /* member NULL => error */
   g_dbus_message_set_member (message, NULL);
-  error = NULL;
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: SIGNAL message: PATH, INTERFACE or MEMBER header field is missing");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   /* reset member */
   g_dbus_message_set_member (message, "TheMember");
   /* ----- */
@@ -935,23 +984,21 @@ message_serialize_header_checks (void)
   /* ----- */
   /* path NULL => error */
   g_dbus_message_set_path (message, NULL);
-  error = NULL;
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: METHOD_CALL message: PATH or MEMBER header field is missing");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   /* reset path */
   g_dbus_message_set_path (message, "/the/path");
   /* ----- */
   /* member NULL => error */
   g_dbus_message_set_member (message, NULL);
-  error = NULL;
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: METHOD_CALL message: PATH or MEMBER header field is missing");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   /* reset member */
   g_dbus_message_set_member (message, "TheMember");
   /* ----- */
@@ -967,34 +1014,31 @@ message_serialize_header_checks (void)
   reply = g_dbus_message_new_method_reply (message);
   g_assert_cmpint (g_dbus_message_get_reply_serial (reply), ==, 42);
   g_dbus_message_set_header (reply, G_DBUS_MESSAGE_HEADER_FIELD_REPLY_SERIAL, NULL);
-  error = NULL;
   blob = g_dbus_message_to_blob (reply, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: METHOD_RETURN message: REPLY_SERIAL header field is missing");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   g_object_unref (reply);
   /* method error - first nuke ERROR_NAME, then REPLY_SERIAL */
   reply = g_dbus_message_new_method_error (message, "Some.Error.Name", "the message");
   g_assert_cmpint (g_dbus_message_get_reply_serial (reply), ==, 42);
   /* nuke ERROR_NAME */
   g_dbus_message_set_error_name (reply, NULL);
-  error = NULL;
   blob = g_dbus_message_to_blob (reply, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: ERROR message: REPLY_SERIAL or ERROR_NAME header field is missing");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   /* reset ERROR_NAME */
   g_dbus_message_set_error_name (reply, "Some.Error.Name");
   /* nuke REPLY_SERIAL */
   g_dbus_message_set_header (reply, G_DBUS_MESSAGE_HEADER_FIELD_REPLY_SERIAL, NULL);
-  error = NULL;
   blob = g_dbus_message_to_blob (reply, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
   g_assert_cmpstr (error->message, ==, "Cannot serialize message: ERROR message: REPLY_SERIAL or ERROR_NAME header field is missing");
-  g_error_free (error);
-  g_assert (blob == NULL);
+  g_clear_error (&error);
+  g_assert_null (blob);
   g_object_unref (reply);
   g_object_unref (message);
 }
@@ -1002,7 +1046,7 @@ message_serialize_header_checks (void)
 /* ---------------------------------------------------------------------------------------------------- */
 
 static void
-message_parse_empty_arrays_of_arrays (void)
+test_message_parse_empty_arrays_of_arrays (void)
 {
   GVariant *body;
   GError *error = NULL;
@@ -1058,7 +1102,7 @@ message_parse_empty_arrays_of_arrays (void)
 /* ---------------------------------------------------------------------------------------------------- */
 
 static void
-test_double_array (void)
+test_message_serialize_double_array (void)
 {
   GVariantBuilder builder;
   GVariant *body;
@@ -1081,6 +1125,353 @@ test_double_array (void)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* Test that an invalid header in a D-Bus message (specifically, with a type
+ * which doesn’t match what’s expected for the given header) is gracefully
+ * handled with an error rather than a crash. */
+static void
+test_message_parse_non_signature_header (void)
+{
+  const guint8 data[] = {
+    'l',  /* little-endian byte order */
+    0x02,  /* message type (method return) */
+    0x00,  /* message flags (none) */
+    0x01,  /* major protocol version */
+    0x00, 0x00, 0x00, 0x00,  /* body length (in bytes) */
+    0x00, 0x00, 0x00, 0xbc,  /* message serial */
+    /* a{yv} of header fields:
+     * (things start to be invalid below here) */
+    0x10, 0x00, 0x00, 0x00,  /* array length (in bytes), must be a multiple of 8 */
+      0x08, /* array key (SIGNATURE) */
+      /* Variant array value: */
+      0x04, /* signature length */
+      'd', 0x00, 0x00, 'F',  /* signature (invalid) */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload missing) */
+      /* alignment padding before the next header array element, as structs must
+       * be 8-aligned: */
+      0x00,
+      0x05,  /* array key (REPLY_SERIAL, required for method return messages) */
+      /* Variant array value: */
+      0x01,  /* signature length */
+      'u',  /* one complete type */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload) */
+      0x00, 0x01, 0x02, 0x03,
+    /* (message body is zero-length) */
+  };
+  gsize size = sizeof (data);
+  GDBusMessage *message = NULL;
+  GError *local_error = NULL;
+
+  message = g_dbus_message_new_from_blob ((guchar *) data, size,
+                                          G_DBUS_CAPABILITY_FLAGS_NONE,
+                                          &local_error);
+  g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
+  g_assert_null (message);
+
+  g_clear_error (&local_error);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+/* Test that an invalid header in a D-Bus message (specifically, containing a
+ * variant with an empty type signature) is gracefully handled with an error
+ * rather than a crash. */
+static void
+test_message_parse_empty_signature_header (void)
+{
+  const guint8 data[] = {
+    'l',  /* little-endian byte order */
+    0x02,  /* message type (method return) */
+    0x00,  /* message flags (none) */
+    0x01,  /* major protocol version */
+    0x00, 0x00, 0x00, 0x00,  /* body length (in bytes) */
+    0x20, 0x20, 0x20, 0x20,  /* message serial */
+    /* a{yv} of header fields:
+     * (things start to be invalid below here) */
+    0x10, 0x00, 0x00, 0x00,  /* array length (in bytes), must be a multiple of 8 */
+      0x20, /* array key (this is not currently a valid header field) */
+      /* Variant array value: */
+      0x00, /* signature length */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload missing) */
+      /* alignment padding before the next header array element, as structs must
+       * be 8-aligned: */
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x05,  /* array key (REPLY_SERIAL, required for method return messages) */
+      /* Variant array value: */
+      0x01,  /* signature length */
+      'u',  /* one complete type */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload) */
+      0x00, 0x01, 0x02, 0x03,
+    /* (message body is zero-length) */
+  };
+  gsize size = sizeof (data);
+  GDBusMessage *message = NULL;
+  GError *local_error = NULL;
+
+  message = g_dbus_message_new_from_blob ((guchar *) data, size,
+                                          G_DBUS_CAPABILITY_FLAGS_NONE,
+                                          &local_error);
+  g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
+  g_assert_null (message);
+
+  g_clear_error (&local_error);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+/* Test that an invalid header in a D-Bus message (specifically, containing a
+ * variant with a type signature containing multiple complete types) is
+ * gracefully handled with an error rather than a crash. */
+static void
+test_message_parse_multiple_signature_header (void)
+{
+  const guint8 data[] = {
+    'l',  /* little-endian byte order */
+    0x02,  /* message type (method return) */
+    0x00,  /* message flags (none) */
+    0x01,  /* major protocol version */
+    0x00, 0x00, 0x00, 0x00,  /* body length (in bytes) */
+    0x20, 0x20, 0x20, 0x20,  /* message serial */
+    /* a{yv} of header fields:
+     * (things start to be invalid below here) */
+    0x10, 0x00, 0x00, 0x00,  /* array length (in bytes), must be a multiple of 8 */
+      0x20, /* array key (this is not currently a valid header field) */
+      /* Variant array value: */
+      0x02, /* signature length */
+      'b', 'b',  /* two complete types */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload missing) */
+      /* alignment padding before the next header array element, as structs must
+       * be 8-aligned: */
+      0x00, 0x00, 0x00,
+      0x05,  /* array key (REPLY_SERIAL, required for method return messages) */
+      /* Variant array value: */
+      0x01,  /* signature length */
+      'u',  /* one complete type */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload) */
+      0x00, 0x01, 0x02, 0x03,
+    /* (message body is zero-length) */
+  };
+  gsize size = sizeof (data);
+  GDBusMessage *message = NULL;
+  GError *local_error = NULL;
+
+  message = g_dbus_message_new_from_blob ((guchar *) data, size,
+                                          G_DBUS_CAPABILITY_FLAGS_NONE,
+                                          &local_error);
+  g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
+  g_assert_null (message);
+
+  g_clear_error (&local_error);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+/* Test that an invalid header in a D-Bus message (specifically, containing a
+ * variant with a valid type signature that is too long to be a valid
+ * #GVariantType due to exceeding the array nesting limits) is gracefully
+ * handled with an error rather than a crash. */
+static void
+test_message_parse_over_long_signature_header (void)
+{
+  const guint8 data[] = {
+    'l',  /* little-endian byte order */
+    0x02,  /* message type (method return) */
+    0x00,  /* message flags (none) */
+    0x01,  /* major protocol version */
+    0x00, 0x00, 0x00, 0x00,  /* body length (in bytes) */
+    0x20, 0x20, 0x20, 0x20,  /* message serial */
+    /* a{yv} of header fields:
+     * (things start to be invalid below here) */
+    0xa0, 0x00, 0x00, 0x00,  /* array length (in bytes), must be a multiple of 8 */
+      0x08,  /* array key (SIGNATURE) */
+      /* Variant array value: */
+      0x04,  /* signature length */
+      'g', 0x00, 0x20, 0x20,  /* one complete type plus some rubbish */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload) */
+      /* Critically, this contains 128 nested ‘a’s, which exceeds
+       * %G_VARIANT_MAX_RECURSION_DEPTH. */
+      0xec,
+      'a', 'b', 'g', 'd', 'u', 'd', 'd', 'd', 'd', 'd', 'd', 'd',
+      'd', 'd', 'd',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',
+      'v',
+      /* first header length is a multiple of 8 so no padding is needed */
+      0x05,  /* array key (REPLY_SERIAL, required for method return messages) */
+      /* Variant array value: */
+      0x01,  /* signature length */
+      'u',  /* one complete type */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload) */
+      0x00, 0x01, 0x02, 0x03,
+    /* (message body is zero-length) */
+  };
+  gsize size = sizeof (data);
+  GDBusMessage *message = NULL;
+  GError *local_error = NULL;
+
+  message = g_dbus_message_new_from_blob ((guchar *) data, size,
+                                          G_DBUS_CAPABILITY_FLAGS_NONE,
+                                          &local_error);
+  g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
+  g_assert_null (message);
+
+  g_clear_error (&local_error);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+/* Test that an invalid header in a D-Bus message (specifically, containing too
+ * many levels of nested variant) is gracefully handled with an error rather
+ * than a crash. */
+static void
+test_message_parse_deep_header_nesting (void)
+{
+  const guint8 data[] = {
+    'l',  /* little-endian byte order */
+    0x02,  /* message type (method return) */
+    0x00,  /* message flags (none) */
+    0x01,  /* major protocol version */
+    0x00, 0x00, 0x00, 0x00,  /* body length (in bytes) */
+    0x20, 0x20, 0x20, 0x20,  /* message serial */
+    /* a{yv} of header fields:
+     * (things start to be invalid below here) */
+    0xd0, 0x00, 0x00, 0x00,  /* array length (in bytes), must be a multiple of 8 */
+      0x20,  /* array key (this is not currently a valid header field) */
+      /* Variant array value: */
+      0x01,  /* signature length */
+      'v',  /* one complete type */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload) */
+      /* Critically, this contains 64 nested variants (minus two for the
+       * ‘arbitrary valid content’ below, but ignoring two for the `a{yv}`
+       * above), which in total exceeds %G_DBUS_MAX_TYPE_DEPTH. */
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+      /* Some arbitrary valid content inside the innermost variant: */
+      0x01, 'y', 0x00, 0xcc,
+      /* no padding needed as this header element length is a multiple of 8 */
+      0x05,  /* array key (REPLY_SERIAL, required for method return messages) */
+      /* Variant array value: */
+      0x01,  /* signature length */
+      'u',  /* one complete type */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload) */
+      0x00, 0x01, 0x02, 0x03,
+    /* (message body is zero-length) */
+  };
+  gsize size = sizeof (data);
+  GDBusMessage *message = NULL;
+  GError *local_error = NULL;
+
+  message = g_dbus_message_new_from_blob ((guchar *) data, size,
+                                          G_DBUS_CAPABILITY_FLAGS_NONE,
+                                          &local_error);
+  g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
+  g_assert_null (message);
+
+  g_clear_error (&local_error);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+/* Test that an invalid body in a D-Bus message (specifically, containing too
+ * many levels of nested variant) is gracefully handled with an error rather
+ * than a crash. The set of bytes here are a modified version of the bytes from
+ * test_message_parse_deep_header_nesting(). */
+static void
+test_message_parse_deep_body_nesting (void)
+{
+  const guint8 data[] = {
+    'l',  /* little-endian byte order */
+    0x02,  /* message type (method return) */
+    0x00,  /* message flags (none) */
+    0x01,  /* major protocol version */
+    0xc4, 0x00, 0x00, 0x00,  /* body length (in bytes) */
+    0x20, 0x20, 0x20, 0x20,  /* message serial */
+    /* a{yv} of header fields: */
+    0x10, 0x00, 0x00, 0x00,  /* array length (in bytes), must be a multiple of 8 */
+      0x08,  /* array key (SIGNATURE) */
+      /* Variant array value: */
+      0x01,  /* signature length */
+      'g',  /* one complete type */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload) */
+      0x01, 'v', 0x00,
+      /* alignment padding before the next header array element, as structs must
+       * be 8-aligned: */
+      0x00,
+      0x05,  /* array key (REPLY_SERIAL, required for method return messages) */
+      /* Variant array value: */
+      0x01,  /* signature length */
+      'u',  /* one complete type */
+      0x00,  /* nul terminator */
+      /* (Variant array value payload) */
+      0x00, 0x01, 0x02, 0x03,
+    /* Message body: over 64 levels of nested variant, which is not valid: */
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00, 0x01, 'v', 0x00,
+    /* Some arbitrary valid content inside the innermost variant: */
+    0x01, 'y', 0x00, 0xcc,
+  };
+  gsize size = sizeof (data);
+  GDBusMessage *message = NULL;
+  GError *local_error = NULL;
+
+  message = g_dbus_message_new_from_blob ((guchar *) data, size,
+                                          G_DBUS_CAPABILITY_FLAGS_NONE,
+                                          &local_error);
+  g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
+  g_assert_null (message);
+
+  g_clear_error (&local_error);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
 int
 main (int   argc,
       char *argv[])
@@ -1091,16 +1482,31 @@ main (int   argc,
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("https://bugzilla.gnome.org/show_bug.cgi?id=");
 
-  g_test_add_func ("/gdbus/message-serialize-basic", message_serialize_basic);
-  g_test_add_func ("/gdbus/message-serialize-complex", message_serialize_complex);
-  g_test_add_func ("/gdbus/message-serialize-invalid", message_serialize_invalid);
-  g_test_add_func ("/gdbus/message-serialize-header-checks", message_serialize_header_checks);
+  g_test_add_func ("/gdbus/message-serialize/basic",
+                   test_message_serialize_basic);
+  g_test_add_func ("/gdbus/message-serialize/complex",
+                   test_message_serialize_complex);
+  g_test_add_func ("/gdbus/message-serialize/invalid",
+                   test_message_serialize_invalid);
+  g_test_add_func ("/gdbus/message-serialize/header-checks",
+                   test_message_serialize_header_checks);
+  g_test_add_func ("/gdbus/message-serialize/double-array",
+                   test_message_serialize_double_array);
 
-  g_test_add_func ("/gdbus/message-parse-empty-arrays-of-arrays",
-      message_parse_empty_arrays_of_arrays);
-
-  g_test_add_func ("/gdbus/message-serialize/double-array", test_double_array);
+  g_test_add_func ("/gdbus/message-parse/empty-arrays-of-arrays",
+                   test_message_parse_empty_arrays_of_arrays);
+  g_test_add_func ("/gdbus/message-parse/non-signature-header",
+                   test_message_parse_non_signature_header);
+  g_test_add_func ("/gdbus/message-parse/empty-signature-header",
+                   test_message_parse_empty_signature_header);
+  g_test_add_func ("/gdbus/message-parse/multiple-signature-header",
+                   test_message_parse_multiple_signature_header);
+  g_test_add_func ("/gdbus/message-parse/over-long-signature-header",
+                   test_message_parse_over_long_signature_header);
+  g_test_add_func ("/gdbus/message-parse/deep-header-nesting",
+                   test_message_parse_deep_header_nesting);
+  g_test_add_func ("/gdbus/message-parse/deep-body-nesting",
+                   test_message_parse_deep_body_nesting);
 
   return g_test_run();
 }
-

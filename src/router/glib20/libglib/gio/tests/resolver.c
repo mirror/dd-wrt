@@ -40,7 +40,7 @@ static gboolean synchronous = FALSE;
 static guint connectable_count = 0;
 static GResolverRecordType record_type = 0;
 
-static void G_GNUC_NORETURN
+static G_NORETURN void
 usage (void)
 {
 	fprintf (stderr, "Usage: resolver [-s] [hostname | IP | service/protocol/domain ] ...\n");
@@ -49,7 +49,7 @@ usage (void)
 	fprintf (stderr, "       Use -s to do synchronous lookups.\n");
 	fprintf (stderr, "       Use -c NUMBER (and only a single resolvable argument) to test GSocketConnectable.\n");
 	fprintf (stderr, "       The given NUMBER determines how many times the connectable will be enumerated.\n");
-	fprintf (stderr, "       Use -t with MX, TXT, NS or SOA to lookup DNS records of those types.\n");
+	fprintf (stderr, "       Use -t with MX, TXT, NS or SOA to look up DNS records of those types.\n");
 	exit (1);
 }
 
@@ -222,6 +222,7 @@ print_resolved_txt (const char *rrname,
           for (i = 0; contents[i] != NULL; i++)
             printf ("%s\n", contents[i]);
           g_variant_unref (t->data);
+          g_free (contents);
         }
       g_list_free (records);
     }
@@ -739,6 +740,7 @@ main (int argc, char **argv)
   g_source_remove (watch);
 #endif
   g_object_unref (cancellable);
+  g_option_context_free (context);
 
   return 0;
 }

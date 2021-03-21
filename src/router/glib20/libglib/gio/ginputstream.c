@@ -127,8 +127,8 @@ g_input_stream_init (GInputStream *stream)
 /**
  * g_input_stream_read:
  * @stream: a #GInputStream.
- * @buffer: (array length=count) (element-type guint8): a buffer to
- *     read data into (which should be at least count bytes long).
+ * @buffer: (array length=count) (element-type guint8) (out caller-allocates):
+ *     a buffer to read data into (which should be at least count bytes long).
  * @count: the number of bytes that will be read from the stream
  * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @error: location to store the error occurring, or %NULL to ignore
@@ -208,8 +208,8 @@ g_input_stream_read  (GInputStream  *stream,
 /**
  * g_input_stream_read_all:
  * @stream: a #GInputStream.
- * @buffer: (array length=count) (element-type guint8): a buffer to
- *     read data into (which should be at least count bytes long).
+ * @buffer: (array length=count) (element-type guint8) (out caller-allocates):
+ *     a buffer to read data into (which should be at least count bytes long).
  * @count: the number of bytes that will be read from the stream
  * @bytes_read: (out): location to store the number of bytes that was read from the stream
  * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
@@ -411,12 +411,41 @@ g_input_stream_real_skip (GInputStream  *stream,
 
   if (G_IS_SEEKABLE (stream) && g_seekable_can_seek (G_SEEKABLE (stream)))
     {
+      GSeekable *seekable = G_SEEKABLE (stream);
+      goffset start, end;
+      gboolean success;
+
+      /* g_seekable_seek() may try to set pending itself */
+      stream->priv->pending = FALSE;
+
+      start = g_seekable_tell (seekable);
+
       if (g_seekable_seek (G_SEEKABLE (stream),
-			   count,
-			   G_SEEK_CUR,
-			   cancellable,
-			   NULL))
-	return count;
+                           0,
+                           G_SEEK_END,
+                           cancellable,
+                           NULL))
+        {
+          end = g_seekable_tell (seekable);
+          g_assert (end >= start);
+          if (start > G_MAXSIZE - count || start + count > end)
+            {
+              stream->priv->pending = TRUE;
+              return end - start;
+            }
+
+          success = g_seekable_seek (G_SEEKABLE (stream),
+                                     start + count,
+                                     G_SEEK_SET,
+                                     cancellable,
+                                     error);
+          stream->priv->pending = TRUE;
+
+          if (success)
+            return count;
+          else
+            return -1;
+        }
     }
 
   /* If not seekable, or seek failed, fall back to reading data: */
@@ -550,8 +579,8 @@ async_ready_close_callback_wrapper (GObject      *source_object,
 /**
  * g_input_stream_read_async:
  * @stream: A #GInputStream.
- * @buffer: (array length=count) (element-type guint8): a buffer to
- *     read data into (which should be at least count bytes long).
+ * @buffer: (array length=count) (element-type guint8) (out caller-allocates):
+ *     a buffer to read data into (which should be at least count bytes long).
  * @count: the number of bytes that will be read from the stream
  * @io_priority: the [I/O priority][io-priority]
  * of the request. 
@@ -742,8 +771,8 @@ read_all_async_thread (GTask        *task,
 /**
  * g_input_stream_read_all_async:
  * @stream: A #GInputStream
- * @buffer: (array length=count) (element-type guint8): a buffer to
- *     read data into (which should be at least count bytes long)
+ * @buffer: (array length=count) (element-type guint8) (out caller-allocates):
+ *     a buffer to read data into (which should be at least count bytes long)
  * @count: the number of bytes that will be read from the stream
  * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
@@ -1045,7 +1074,7 @@ g_input_stream_skip_async (GInputStream        *stream,
  * 
  * Finishes a stream skip operation.
  * 
- * Returns: the size of the bytes skipped, or %-1 on error.
+ * Returns: the size of the bytes skipped, or `-1` on error.
  **/
 gssize
 g_input_stream_skip_finish (GInputStream  *stream,

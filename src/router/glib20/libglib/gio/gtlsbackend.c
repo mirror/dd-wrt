@@ -21,6 +21,7 @@
 #include "glib.h"
 
 #include "gtlsbackend.h"
+#include "gtlsdatabase.h"
 #include "gdummytlsbackend.h"
 #include "gioenumtypes.h"
 #include "giomodule-priv.h"
@@ -84,25 +85,41 @@
 
 G_DEFINE_INTERFACE (GTlsBackend, g_tls_backend, G_TYPE_OBJECT)
 
+static GTlsDatabase *default_database;
+G_LOCK_DEFINE_STATIC (default_database_lock);
+
 static void
 g_tls_backend_default_init (GTlsBackendInterface *iface)
 {
 }
+
+static GTlsBackend *tls_backend_default_singleton = NULL;  /* (owned) (atomic) */
 
 /**
  * g_tls_backend_get_default:
  *
  * Gets the default #GTlsBackend for the system.
  *
- * Returns: (transfer none): a #GTlsBackend
+ * Returns: (not nullable) (transfer none): a #GTlsBackend, which will be a
+ *     dummy object if no TLS backend is available
  *
  * Since: 2.28
  */
 GTlsBackend *
 g_tls_backend_get_default (void)
 {
-  return _g_io_module_get_default (G_TLS_BACKEND_EXTENSION_POINT_NAME,
-				   "GIO_USE_TLS", NULL);
+  if (g_once_init_enter (&tls_backend_default_singleton))
+    {
+      GTlsBackend *singleton;
+
+      singleton = _g_io_module_get_default (G_TLS_BACKEND_EXTENSION_POINT_NAME,
+                                            "GIO_USE_TLS",
+                                            NULL);
+
+      g_once_init_leave (&tls_backend_default_singleton, singleton);
+    }
+
+  return tls_backend_default_singleton;
 }
 
 /**
@@ -161,13 +178,50 @@ g_tls_backend_supports_dtls (GTlsBackend *backend)
 GTlsDatabase *
 g_tls_backend_get_default_database (GTlsBackend *backend)
 {
+  GTlsDatabase *db;
+
   g_return_val_if_fail (G_IS_TLS_BACKEND (backend), NULL);
 
   /* This method was added later, so accept the (remote) possibility it can be NULL */
   if (!G_TLS_BACKEND_GET_INTERFACE (backend)->get_default_database)
     return NULL;
 
-  return G_TLS_BACKEND_GET_INTERFACE (backend)->get_default_database (backend);
+  G_LOCK (default_database_lock);
+
+  if (!default_database)
+    default_database = G_TLS_BACKEND_GET_INTERFACE (backend)->get_default_database (backend);
+  db = default_database ? g_object_ref (default_database) : NULL;
+  G_UNLOCK (default_database_lock);
+
+  return db;
+}
+
+/**
+ * g_tls_backend_set_default_database:
+ * @backend: the #GTlsBackend
+ * @database: (nullable): the #GTlsDatabase
+ *
+ * Set the default #GTlsDatabase used to verify TLS connections
+ *
+ * Any subsequent call to g_tls_backend_get_default_database() will return
+ * the database set in this call.  Existing databases and connections are not
+ * modified.
+ *
+ * Setting a %NULL default database will reset to using the system default
+ * database as if g_tls_backend_set_default_database() had never been called.
+ *
+ * Since: 2.60
+ */
+void
+g_tls_backend_set_default_database (GTlsBackend  *backend,
+                                    GTlsDatabase *database)
+{
+  g_return_if_fail (G_IS_TLS_BACKEND (backend));
+  g_return_if_fail (database == NULL || G_IS_TLS_DATABASE (database));
+
+  G_LOCK (default_database_lock);
+  g_set_object (&default_database, database);
+  G_UNLOCK (default_database_lock);
 }
 
 /**

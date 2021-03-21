@@ -119,7 +119,10 @@ typedef gboolean (*GSignalAccumulator)	(GSignalInvocationHint *ihint,
  * @G_SIGNAL_DEPRECATED: The signal is deprecated and will be removed
  *   in a future version. A warning will be generated if it is connected while
  *   running with G_ENABLE_DIAGNOSTIC=1.  Since 2.32.
- * 
+ * @G_SIGNAL_ACCUMULATOR_FIRST_RUN: Only used in #GSignalAccumulator accumulator
+ *   functions for the #GSignalInvocationHint::run_type field to mark the first
+ *   call to the accumulator function for a signal emission.  Since 2.68.
+ *
  * The signal flags are used to specify a signal's behaviour, the overall
  * signal description outlines how especially the RUN flags control the
  * stages of a signal emission.
@@ -134,7 +137,9 @@ typedef enum
   G_SIGNAL_ACTION	= 1 << 5,
   G_SIGNAL_NO_HOOKS	= 1 << 6,
   G_SIGNAL_MUST_COLLECT = 1 << 7,
-  G_SIGNAL_DEPRECATED   = 1 << 8
+  G_SIGNAL_DEPRECATED   = 1 << 8,
+  /* normal signal flags until 1 << 16 */
+  G_SIGNAL_ACCUMULATOR_FIRST_RUN    = 1 << 17,
 } GSignalFlags;
 /**
  * G_SIGNAL_FLAGS_MASK:
@@ -160,11 +165,11 @@ typedef enum
 /**
  * GSignalMatchType:
  * @G_SIGNAL_MATCH_ID: The signal id must be equal.
- * @G_SIGNAL_MATCH_DETAIL: The signal detail be equal.
+ * @G_SIGNAL_MATCH_DETAIL: The signal detail must be equal.
  * @G_SIGNAL_MATCH_CLOSURE: The closure must be the same.
  * @G_SIGNAL_MATCH_FUNC: The C closure callback must be the same.
  * @G_SIGNAL_MATCH_DATA: The closure data must be the same.
- * @G_SIGNAL_MATCH_UNBLOCKED: Only unblocked signals may matched.
+ * @G_SIGNAL_MATCH_UNBLOCKED: Only unblocked signals may be matched.
  * 
  * The match types specify what g_signal_handlers_block_matched(),
  * g_signal_handlers_unblock_matched() and g_signal_handlers_disconnect_matched()
@@ -215,7 +220,9 @@ typedef enum
  * @detail: The detail passed on for this emission
  * @run_type: The stage the signal emission is currently in, this
  *  field will contain one of %G_SIGNAL_RUN_FIRST,
- *  %G_SIGNAL_RUN_LAST or %G_SIGNAL_RUN_CLEANUP.
+ *  %G_SIGNAL_RUN_LAST or %G_SIGNAL_RUN_CLEANUP and %G_SIGNAL_ACCUMULATOR_FIRST_RUN.
+ *  %G_SIGNAL_ACCUMULATOR_FIRST_RUN is only set for the first run of the accumulator
+ *  function for a signal emission.
  * 
  * The #GSignalInvocationHint structure is used to pass on additional information
  * to callbacks during a signal emission.
@@ -338,6 +345,8 @@ void                  g_signal_query        (guint               signal_id,
 GLIB_AVAILABLE_IN_ALL
 guint*                g_signal_list_ids     (GType               itype,
 					     guint              *n_ids);
+GLIB_AVAILABLE_IN_2_66
+gboolean              g_signal_is_valid_name (const gchar      *name);
 GLIB_AVAILABLE_IN_ALL
 gboolean	      g_signal_parse_name   (const gchar	*detailed_signal,
 					     GType		 itype,
@@ -436,6 +445,23 @@ guint	 g_signal_handlers_disconnect_matched (gpointer		  instance,
 					       gpointer		  func,
 					       gpointer		  data);
 
+GLIB_AVAILABLE_IN_2_62
+void	 g_clear_signal_handler		      (gulong            *handler_id_ptr,
+					       gpointer           instance);
+
+#define  g_clear_signal_handler(handler_id_ptr, instance)           \
+  G_STMT_START {                                                    \
+    gpointer const _instance      = (instance);                     \
+    gulong *const _handler_id_ptr = (handler_id_ptr);               \
+    const gulong _handler_id      = *_handler_id_ptr;               \
+                                                                    \
+    if (_handler_id > 0)                                            \
+      {                                                             \
+        *_handler_id_ptr = 0;                                       \
+        g_signal_handler_disconnect (_instance, _handler_id);       \
+      }                                                             \
+  } G_STMT_END                                                      \
+  GLIB_AVAILABLE_MACRO_IN_2_62
 
 /* --- overriding and chaining --- */
 GLIB_AVAILABLE_IN_ALL

@@ -1,4 +1,5 @@
 if get_option('gtk_doc')
+  subdir('gdbus-object-manager-example')
   subdir('xml')
 
   ignore_headers = [
@@ -28,6 +29,7 @@ if get_option('gtk_doc')
     'gdbusdaemon.h',
     'gdbusprivate.h',
     'gdelayedsettingsbackend.h',
+    'gdocumentportal.h',
     'gdummyfile.h',
     'gdummyproxyresolver.h',
     'gdummytlsbackend.h',
@@ -37,6 +39,9 @@ if get_option('gtk_doc')
     'giomodule-priv.h',
     'gioprivate.h',
     'giowin32-priv.h',
+    'gio_probes.h',
+    'gio_trace.h',
+    'gio-tool.h',
     'glocaldirectorymonitor.h',
     'glocalfileenumerator.h',
     'glocalfile.h',
@@ -46,6 +51,8 @@ if get_option('gtk_doc')
     'glocalfilemonitor.h',
     'glocalfileoutputstream.h',
     'glocalvfs.h',
+    'gmemorymonitordbus.h',
+    'gmemorymonitorportal.h',
     'gmountprivate.h',
     'gnativevolumemonitor.h',
     'gnetworkingprivate.h',
@@ -55,7 +62,9 @@ if get_option('gtk_doc')
     'gnetworkmonitorportal.h',
     'gnotificationbackend.h',
     'gnotification-private.h',
+    'gopenuriportal.h',
     'gpollfilemonitor.h',
+    'gportalsupport.h',
     'gproxyresolverportal.h',
     'gregistrysettingsbackend.h',
     'gresourcefile.h',
@@ -69,19 +78,29 @@ if get_option('gtk_doc')
     'gsocks5proxy.h',
     'gsubprocesslauncher-private.h',
     'gthreadedresolver.h',
+    'gtrashportal.h',
     'gunionvolumemonitor.h',
     'gunixmount.h',
     'gunixresolver.h',
     'gunixvolume.h',
     'gunixvolumemonitor.h',
+    'gwin32networkmonitor.h',
+    'gwin32api-application-activation-manager.h',
+    'gwin32api-iterator.h',
+    'gwin32api-misc.h',
+    'gwin32api-package.h',
+    'gwin32api-storage.h',
     'gwin32appinfo.h',
+    'gwin32file-sync-stream.h',
     'gwin32mount.h',
-    'gwin32registrykey.h',
+    'gwin32packageparser.h',
     'gwin32resolver.h',
     'gwin32volumemonitor.h',
     'thumbnail-verify.h',
     'xdp-dbus.h',
   ]
+
+  sections_files = files('gio-sections-common.txt')
 
   if host_system == 'windows'
     ignore_headers += [
@@ -97,6 +116,8 @@ if get_option('gtk_doc')
       'gdesktopappinfo.h',
       'gosxappinfo.h',
     ]
+    sections_files += files('gio-sections-win32.txt')
+    platform_file = files('gio-docs-win32.xml')
   else
     if glib_have_cocoa
       ignore_headers += ['gdesktopappinfo.h']
@@ -105,70 +126,19 @@ if get_option('gtk_doc')
     endif
 
     ignore_headers += [
-      'gwin32networkmonitor.h',
       'gwin32inputstream.h',
       'gwin32outputstream.h',
+      'gwin32registrykey.h',
     ]
+    platform_file = files('gio-docs-unix.xml')
   endif
 
-  ignore_decorators = [
-    'GLIB_VAR',
-    'G_GNUC_INTERNAL',
-    'G_GNUC_WARN_UNUSED_RESULT',
-    'GLIB_AVAILABLE_IN_ALL',
-    'GLIB_AVAILABLE_IN_2_26',
-    'GLIB_AVAILABLE_IN_2_28',
-    'GLIB_AVAILABLE_IN_2_30',
-    'GLIB_AVAILABLE_IN_2_32',
-    'GLIB_AVAILABLE_IN_2_34',
-    'GLIB_AVAILABLE_IN_2_36',
-    'GLIB_AVAILABLE_IN_2_38',
-    'GLIB_AVAILABLE_IN_2_40',
-    'GLIB_AVAILABLE_IN_2_42',
-    'GLIB_AVAILABLE_IN_2_44',
-    'GLIB_AVAILABLE_IN_2_46',
-    'GLIB_AVAILABLE_IN_2_48',
-    'GLIB_AVAILABLE_IN_2_50',
-    'GLIB_AVAILABLE_IN_2_52',
-    'GLIB_AVAILABLE_IN_2_54',
-    'GLIB_AVAILABLE_IN_2_56',
-    'GLIB_DEPRECATED_IN_2_26',
-    'GLIB_DEPRECATED_IN_2_26_FOR',
-    'GLIB_DEPRECATED_IN_2_28',
-    'GLIB_DEPRECATED_IN_2_28_FOR',
-    'GLIB_DEPRECATED_IN_2_30',
-    'GLIB_DEPRECATED_IN_2_30_FOR',
-    'GLIB_DEPRECATED_IN_2_32',
-    'GLIB_DEPRECATED_IN_2_32_FOR',
-    'GLIB_DEPRECATED_IN_2_34',
-    'GLIB_DEPRECATED_IN_2_34_FOR',
-    'GLIB_DEPRECATED_IN_2_36',
-    'GLIB_DEPRECATED_IN_2_36_FOR',
-    'GLIB_DEPRECATED_IN_2_38',
-    'GLIB_DEPRECATED_IN_2_38_FOR',
-    'GLIB_DEPRECATED_IN_2_40',
-    'GLIB_DEPRECATED_IN_2_40_FOR',
-    'GLIB_DEPRECATED_IN_2_42',
-    'GLIB_DEPRECATED_IN_2_42_FOR',
-    'GLIB_DEPRECATED_IN_2_44',
-    'GLIB_DEPRECATED_IN_2_44_FOR',
-    'GLIB_DEPRECATED_IN_2_46',
-    'GLIB_DEPRECATED_IN_2_46_FOR',
-    'GLIB_DEPRECATED_IN_2_48',
-    'GLIB_DEPRECATED_IN_2_48_FOR',
-    'GLIB_DEPRECATED_IN_2_50',
-    'GLIB_DEPRECATED_IN_2_50_FOR',
-    'GLIB_DEPRECATED_IN_2_52',
-    'GLIB_DEPRECATED_IN_2_52_FOR',
-    'GLIB_DEPRECATED_IN_2_54',
-    'GLIB_DEPRECATED_IN_2_54_FOR',
-    'GLIB_DEPRECATED_IN_2_56',
-    'GLIB_DEPRECATED_IN_2_56_FOR',
+  ignore_sources = [
+    'kqueue',
+    'tests',
+    'gdbus-daemon-generated.c',
+    'xdp-dbus.c',
   ]
-
-  # FIXME: More win32 headers were added to fix building gio-scan
-
-  # FIXME: ExampleAnimal docs aren't built
 
   docpath = join_paths(glib_datadir, 'gtk-doc', 'html')
   version_conf = configuration_data()
@@ -179,33 +149,60 @@ if get_option('gtk_doc')
     configuration: version_conf
   )
 
+  # FIXME: configure_file() does not support more than one file in input
+  # argument. If input argument is omitted then meson checks that all items in
+  # the command array are strings. But if we have an input then extra files
+  # can be passed in command array.
+  # See https://github.com/mesonbuild/meson/issues/5893
+  concat_files_helper = find_program('concat-files-helper.py')
+  configure_file(
+    output : 'gio-sections.txt',
+    input : sections_files[0],
+    command : [concat_files_helper, '@OUTPUT@'] + sections_files,
+  )
+
+  configure_file(
+    output : 'gio-docs-platform.xml',
+    input : platform_file,
+    copy : true,
+  )
+
+  content_files = [
+    'overview.xml',
+    'migrating-posix.xml',
+    'migrating-gnome-vfs.xml',
+    'migrating-gconf.xml',
+    'migrating-gdbus.xml',
+    'gio-querymodules.xml',
+    'glib-compile-schemas.xml',
+    'glib-compile-resources.xml',
+    'gapplication.xml',
+    'gsettings.xml',
+    'gresource.xml',
+    'gdbus.xml',
+    'gdbus-codegen.xml',
+  ]
+
+  content_files += [
+    gdbus_example_objectmanager_xml,
+    gdbus_example_objectmanager_sources,
+    gdbus_object_manager_example_doc
+  ]
+
   gnome.gtkdoc('gio',
     main_xml : 'gio-docs.xml',
     namespace : 'g',
     mode : 'none',
     dependencies : [libgio_dep, libgobject_dep, libglib_dep],
     src_dir : 'gio',
-    scan_args : [
+    scan_args : gtkdoc_common_scan_args + [
       '--rebuild-types',
-      '--deprecated-guards=G_DISABLE_DEPRECATED',
-      '--ignore-decorators=' + '|'.join(ignore_decorators),
       '--ignore-headers=' + ' '.join(ignore_headers),
     ],
-    content_files : [
-      'overview.xml',
-      'migrating-posix.xml',
-      'migrating-gnome-vfs.xml',
-      'migrating-gconf.xml',
-      'migrating-gdbus.xml',
-      'gio-querymodules.xml',
-      'glib-compile-schemas.xml',
-      'glib-compile-resources.xml',
-      'gapplication.xml',
-      'gsettings.xml',
-      'gresource.xml',
-      'gdbus.xml',
-      'gdbus-codegen.xml',
+    mkdb_args : [
+      '--ignore-files=' + ' '.join(ignore_sources),
     ],
+    content_files : content_files,
     expand_content_files : [
       'overview.xml',
       'migrating-posix.xml',
@@ -221,10 +218,11 @@ if get_option('gtk_doc')
     ],
     fixxref_args: [
       '--html-dir=' + docpath,
-      '--extra-dir=' + join_paths(meson.current_build_dir(), '../glib/html'),
-      '--extra-dir=' + join_paths(meson.current_build_dir(), '../gobject/html'),
+      '--extra-dir=' + join_paths('gio', '..', 'glib', 'html'),
+      '--extra-dir=' + join_paths('gio', '..', 'gobject', 'html'),
     ],
-    install: true
+    install: true,
+    check: true,
   )
 endif
 

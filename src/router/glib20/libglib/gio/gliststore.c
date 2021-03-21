@@ -55,6 +55,7 @@ struct _GListStore
   /* cache */
   guint last_position;
   GSequenceIter *last_iter;
+  gboolean last_position_valid;
 };
 
 enum
@@ -79,7 +80,8 @@ g_list_store_items_changed (GListStore *store,
   if (position <= store->last_position)
     {
       store->last_iter = NULL;
-      store->last_position = -1u;
+      store->last_position = 0;
+      store->last_position_valid = FALSE;
     }
 
   g_list_model_items_changed (G_LIST_MODEL (store), position, removed, added);
@@ -125,10 +127,8 @@ g_list_store_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_ITEM_TYPE: /* construct-only */
+      g_assert (g_type_is_a (g_value_get_gtype (value), G_TYPE_OBJECT));
       store->item_type = g_value_get_gtype (value);
-      if (!g_type_is_a (store->item_type, G_TYPE_OBJECT))
-        g_critical ("GListStore cannot store items of type '%s'. Items must be GObjects.",
-                    g_type_name (store->item_type));
       break;
 
     default:
@@ -181,11 +181,11 @@ g_list_store_get_item (GListModel *list,
   GListStore *store = G_LIST_STORE (list);
   GSequenceIter *it = NULL;
 
-  if (store->last_position != -1u)
+  if (store->last_position_valid)
     {
-      if (store->last_position == position + 1)
+      if (position < G_MAXUINT && store->last_position == position + 1)
         it = g_sequence_iter_prev (store->last_iter);
-      else if (store->last_position == position - 1)
+      else if (position > 0 && store->last_position == position - 1)
         it = g_sequence_iter_next (store->last_iter);
       else if (store->last_position == position)
         it = store->last_iter;
@@ -196,6 +196,7 @@ g_list_store_get_item (GListModel *list,
 
   store->last_iter = it;
   store->last_position = position;
+  store->last_position_valid = TRUE;
 
   if (g_sequence_iter_is_end (it))
     return NULL;
@@ -215,7 +216,8 @@ static void
 g_list_store_init (GListStore *store)
 {
   store->items = g_sequence_new (g_object_unref);
-  store->last_position = -1u;
+  store->last_position = 0;
+  store->last_position_valid = FALSE;
 }
 
 /**
@@ -267,7 +269,7 @@ g_list_store_insert (GListStore *store,
 
   g_return_if_fail (G_IS_LIST_STORE (store));
   g_return_if_fail (g_type_is_a (G_OBJECT_TYPE (item), store->item_type));
-  g_return_if_fail (position <= g_sequence_get_length (store->items));
+  g_return_if_fail (position <= (guint) g_sequence_get_length (store->items));
 
   it = g_sequence_get_iter_at_pos (store->items, position);
   g_sequence_insert_before (it, g_object_ref (item));
@@ -475,7 +477,7 @@ g_list_store_splice (GListStore *store,
 
   if (n_additions)
     {
-      gint i;
+      guint i;
 
       for (i = 0; i < n_additions; i++)
         {
@@ -486,10 +488,92 @@ g_list_store_splice (GListStore *store,
               return;
             }
 
-          it = g_sequence_insert_before (it, g_object_ref (additions[i]));
-          it = g_sequence_iter_next (it);
+          g_sequence_insert_before (it, g_object_ref (additions[i]));
         }
     }
 
   g_list_store_items_changed (store, position, n_removals, n_additions);
+}
+
+/**
+ * g_list_store_find_with_equal_func:
+ * @store: a #GListStore
+ * @item: (type GObject): an item
+ * @equal_func: (scope call): A custom equality check function
+ * @position: (out) (optional): the first position of @item, if it was found.
+ *
+ * Looks up the given @item in the list store by looping over the items and
+ * comparing them with @compare_func until the first occurrence of @item which
+ * matches. If @item was not found, then @position will not be set, and this
+ * method will return %FALSE.
+ *
+ * Returns: Whether @store contains @item. If it was found, @position will be
+ * set to the position where @item occurred for the first time.
+ *
+ * Since: 2.64
+ */
+gboolean
+g_list_store_find_with_equal_func (GListStore *store,
+                                   gpointer    item,
+                                   GEqualFunc  equal_func,
+                                   guint      *position)
+{
+  GSequenceIter *iter, *begin, *end;
+
+  g_return_val_if_fail (G_IS_LIST_STORE (store), FALSE);
+  g_return_val_if_fail (g_type_is_a (G_OBJECT_TYPE (item), store->item_type),
+                        FALSE);
+  g_return_val_if_fail (equal_func != NULL, FALSE);
+
+  /* NOTE: We can't use g_sequence_lookup() or g_sequence_search(), because we
+   * can't assume the sequence is sorted. */
+  begin = g_sequence_get_begin_iter (store->items);
+  end = g_sequence_get_end_iter (store->items);
+
+  iter = begin;
+  while (iter != end)
+    {
+      gpointer iter_item;
+
+      iter_item = g_sequence_get (iter);
+      if (equal_func (iter_item, item))
+        {
+          if (position)
+            *position = g_sequence_iter_get_position (iter);
+          return TRUE;
+        }
+
+      iter = g_sequence_iter_next (iter);
+    }
+
+  return FALSE;
+}
+
+/**
+ * g_list_store_find:
+ * @store: a #GListStore
+ * @item: (type GObject): an item
+ * @position: (out) (optional): the first position of @item, if it was found.
+ *
+ * Looks up the given @item in the list store by looping over the items until
+ * the first occurrence of @item. If @item was not found, then @position will
+ * not be set, and this method will return %FALSE.
+ *
+ * If you need to compare the two items with a custom comparison function, use
+ * g_list_store_find_with_equal_func() with a custom #GEqualFunc instead.
+ *
+ * Returns: Whether @store contains @item. If it was found, @position will be
+ * set to the position where @item occurred for the first time.
+ *
+ * Since: 2.64
+ */
+gboolean
+g_list_store_find (GListStore *store,
+                   gpointer    item,
+                   guint      *position)
+{
+  return g_list_store_find_with_equal_func (store,
+                                            item,
+                                            g_direct_equal,
+                                            position);
 }

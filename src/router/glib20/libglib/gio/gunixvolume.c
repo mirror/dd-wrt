@@ -274,6 +274,7 @@ eject_mount_done (GObject      *source,
   GTask *task = user_data;
   GError *error = NULL;
   gchar *stderr_str;
+  GUnixVolume *unix_volume;
 
   if (!g_subprocess_communicate_utf8_finish (subprocess, result, NULL, &stderr_str, &error))
     {
@@ -286,8 +287,12 @@ eject_mount_done (GObject      *source,
         /* ...but bad exit code */
         g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_FAILED, "%s", stderr_str);
       else
-        /* ...and successful exit code */
-        g_task_return_boolean (task, TRUE);
+        {
+          /* ...and successful exit code */
+          unix_volume = G_UNIX_VOLUME (g_task_get_source_object (task));
+          _g_unix_volume_monitor_update (G_UNIX_VOLUME_MONITOR (unix_volume->volume_monitor));
+          g_task_return_boolean (task, TRUE);
+        }
 
       g_free (stderr_str);
     }
@@ -300,7 +305,8 @@ eject_mount_do (GVolume              *volume,
                 GCancellable         *cancellable,
                 GAsyncReadyCallback   callback,
                 gpointer              user_data,
-                const gchar * const  *argv)
+                const gchar * const  *argv,
+                const gchar          *task_name)
 {
   GSubprocess *subprocess;
   GError *error = NULL;
@@ -308,6 +314,7 @@ eject_mount_do (GVolume              *volume,
 
   task = g_task_new (volume, cancellable, callback, user_data);
   g_task_set_source_tag (task, eject_mount_do);
+  g_task_set_name (task, task_name);
 
   if (g_task_return_error_if_cancelled (task))
     {
@@ -339,7 +346,7 @@ g_unix_volume_mount (GVolume            *volume,
   else
     argv[1] = unix_volume->device_path;
 
-  eject_mount_do (volume, cancellable, callback, user_data, argv);
+  eject_mount_do (volume, cancellable, callback, user_data, argv, "[gio] mount volume");
 }
 
 static gboolean
@@ -364,7 +371,7 @@ g_unix_volume_eject (GVolume             *volume,
 
   argv[1] = unix_volume->device_path;
 
-  eject_mount_do (volume, cancellable, callback, user_data, argv);
+  eject_mount_do (volume, cancellable, callback, user_data, argv, "[gio] eject volume");
 }
 
 static gboolean

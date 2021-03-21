@@ -26,6 +26,7 @@
 #include <glib/gthread.h>
 #include <glib/gslice.h>
 #include <glib/ghash.h>
+#include <glib/grefcount.h>
 
 /* < private >
  * GVariantTypeInfo:
@@ -76,7 +77,7 @@ typedef struct
   GVariantTypeInfo info;
 
   gchar *type_string;
-  gint ref_count;
+  gatomicrefcount ref_count;
 } ContainerInfo;
 
 /* For 'array' and 'maybe' types, we store some extra information on the
@@ -107,10 +108,10 @@ typedef struct
 
 /* Hard-code the base types in a constant array */
 static const GVariantTypeInfo g_variant_type_info_basic_table[24] = {
-#define fixed_aligned(x)  x, x - 1
-#define not_a_type             0,
-#define unaligned         0, 0
-#define aligned(x)        0, x - 1
+#define fixed_aligned(x)  x, x - 1, 0
+#define not_a_type        0,     0, 0
+#define unaligned         0,     0, 0
+#define aligned(x)        0, x - 1, 0
   /* 'b' */ { fixed_aligned(1) },   /* boolean */
   /* 'c' */ { not_a_type },
   /* 'd' */ { fixed_aligned(8) },   /* double */
@@ -156,6 +157,7 @@ static void
 g_variant_type_info_check (const GVariantTypeInfo *info,
                            char                    container_class)
 {
+#ifndef G_DISABLE_ASSERT
   g_assert (!container_class || info->container_class == container_class);
 
   /* alignment can only be one of these */
@@ -167,7 +169,7 @@ g_variant_type_info_check (const GVariantTypeInfo *info,
       ContainerInfo *container = (ContainerInfo *) info;
 
       /* extra checks for containers */
-      g_assert_cmpint (container->ref_count, >, 0);
+      g_assert (!g_atomic_ref_count_compare (&container->ref_count, 0));
       g_assert (container->type_string != NULL);
     }
   else
@@ -184,6 +186,7 @@ g_variant_type_info_check (const GVariantTypeInfo *info,
       g_assert (0 <= index && index < 24);
       g_assert (g_variant_type_info_basic_chars[index][0] != ' ');
     }
+#endif  /* !G_DISABLE_ASSERT */
 }
 
 /* < private >
@@ -220,8 +223,8 @@ g_variant_type_info_get_type_string (GVariantTypeInfo *info)
 /* < private >
  * g_variant_type_info_query:
  * @info: a #GVariantTypeInfo
- * @alignment: (nullable): the location to store the alignment, or %NULL
- * @fixed_size: (nullable): the location to store the fixed size, or %NULL
+ * @alignment: (out) (optional): the location to store the alignment, or %NULL
+ * @fixed_size: (out) (optional): the location to store the fixed size, or %NULL
  *
  * Queries @info to determine the alignment requirements and fixed size
  * (if any) of the type.
@@ -249,6 +252,31 @@ g_variant_type_info_query (GVariantTypeInfo *info,
 
   if (fixed_size)
     *fixed_size = info->fixed_size;
+}
+
+/* < private >
+ * g_variant_type_info_query_depth:
+ * @info: a #GVariantTypeInfo
+ *
+ * Queries @info to determine the depth of the type.
+ *
+ * See g_variant_type_string_get_depth_() for more details.
+ *
+ * Returns: depth of @info
+ * Since: 2.60
+ */
+gsize
+g_variant_type_info_query_depth (GVariantTypeInfo *info)
+{
+  g_variant_type_info_check (info, 0);
+
+  if (info->container_class)
+    {
+      ContainerInfo *container = (ContainerInfo *) info;
+      return g_variant_type_string_get_depth_ (container->type_string);
+    }
+
+  return 1;
 }
 
 /* == array == */
@@ -304,8 +332,8 @@ g_variant_type_info_element (GVariantTypeInfo *info)
 /* < private >
  * g_variant_type_query_element:
  * @info: a #GVariantTypeInfo for an array or maybe type
- * @alignment: (nullable): the location to store the alignment, or %NULL
- * @fixed_size: (nullable): the location to store the fixed size, or %NULL
+ * @alignment: (out) (optional): the location to store the alignment, or %NULL
+ * @fixed_size: (out) (optional): the location to store the fixed size, or %NULL
  *
  * Returns the alignment requires and fixed size (if any) for the
  * element type of the array.  This call is a convenience wrapper around
@@ -334,7 +362,7 @@ static void
 tuple_info_free (GVariantTypeInfo *info)
 {
   TupleInfo *tuple_info;
-  gint i;
+  gsize i;
 
   g_assert (info->container_class == GV_TUPLE_INFO_CLASS);
   tuple_info = (TupleInfo *) info;
@@ -518,7 +546,7 @@ tuple_align (gsize offset,
  *
  * Imagine we want to find the start of the "i" in the type "(su(qx)ni)".
  * That's a string followed by a uint32, then a tuple containing a
- * uint16 and a int64, then an int16, then our "i".  In order to get to
+ * uint16 and an int64, then an int16, then our "i".  In order to get to
  * our "i" we:
  *
  * Start at the end of the string, align to 4 (for the uint32), add 4.
@@ -612,7 +640,7 @@ tuple_set_base_info (TupleInfo *info)
        * offsets are stored and the last item is fixed-sized too (since
        * an offset is never stored for the last item).
        */
-      if (m->i == -1 && m->type_info->fixed_size)
+      if (m->i == (gsize) -1 && m->type_info->fixed_size)
         /* in that case, the fixed size can be found by finding the
          * start of the last item (in the usual way) and adding its
          * fixed size.
@@ -632,7 +660,7 @@ tuple_set_base_info (TupleInfo *info)
     {
       /* the empty tuple: '()'.
        *
-       * has a size of 1 and an no alignment requirement.
+       * has a size of 1 and a no alignment requirement.
        *
        * It has a size of 1 (not 0) for two practical reasons:
        *
@@ -763,7 +791,7 @@ g_variant_type_info_get (const GVariantType *type)
 
           info = (GVariantTypeInfo *) container;
           container->type_string = type_string;
-          container->ref_count = 1;
+          g_atomic_ref_count_init (&container->ref_count);
 
           g_hash_table_insert (g_variant_type_info_table, type_string, info);
           type_string = NULL;
@@ -809,8 +837,7 @@ g_variant_type_info_ref (GVariantTypeInfo *info)
     {
       ContainerInfo *container = (ContainerInfo *) info;
 
-      g_assert_cmpint (container->ref_count, >, 0);
-      g_atomic_int_inc (&container->ref_count);
+      g_atomic_ref_count_inc (&container->ref_count);
     }
 
   return info;
@@ -833,7 +860,7 @@ g_variant_type_info_unref (GVariantTypeInfo *info)
       ContainerInfo *container = (ContainerInfo *) info;
 
       g_rec_mutex_lock (&g_variant_type_info_lock);
-      if (g_atomic_int_dec_and_test (&container->ref_count))
+      if (g_atomic_ref_count_dec (&container->ref_count))
         {
           g_hash_table_remove (g_variant_type_info_table,
                                container->type_string);

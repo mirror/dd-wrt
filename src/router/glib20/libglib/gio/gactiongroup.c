@@ -21,6 +21,7 @@
 #include "gactiongroup.h"
 #include "gaction.h"
 #include "glibintl.h"
+#include "gmarshal-internal.h"
 
 /**
  * SECTION:gactiongroup
@@ -260,7 +261,7 @@ g_action_group_default_init (GActionGroupInterface *iface)
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   G_STRUCT_OFFSET (GActionGroupInterface, action_added),
                   NULL, NULL,
-                  g_cclosure_marshal_VOID__STRING,
+                  NULL,
                   G_TYPE_NONE, 1,
                   G_TYPE_STRING);
 
@@ -281,7 +282,7 @@ g_action_group_default_init (GActionGroupInterface *iface)
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   G_STRUCT_OFFSET (GActionGroupInterface, action_removed),
                   NULL, NULL,
-                  g_cclosure_marshal_VOID__STRING,
+                  NULL,
                   G_TYPE_NONE, 1,
                   G_TYPE_STRING);
 
@@ -303,10 +304,13 @@ g_action_group_default_init (GActionGroupInterface *iface)
                   G_STRUCT_OFFSET (GActionGroupInterface,
                                    action_enabled_changed),
                   NULL, NULL,
-                  NULL,
+                  _g_cclosure_marshal_VOID__STRING_BOOLEAN,
                   G_TYPE_NONE, 2,
                   G_TYPE_STRING,
                   G_TYPE_BOOLEAN);
+  g_signal_set_va_marshaller (g_action_group_signals[SIGNAL_ACTION_ENABLED_CHANGED],
+                              G_TYPE_FROM_INTERFACE (iface),
+                              _g_cclosure_marshal_VOID__STRING_BOOLEANv);
 
   /**
    * GActionGroup::action-state-changed:
@@ -327,10 +331,13 @@ g_action_group_default_init (GActionGroupInterface *iface)
                   G_STRUCT_OFFSET (GActionGroupInterface,
                                    action_state_changed),
                   NULL, NULL,
-                  NULL,
+                  _g_cclosure_marshal_VOID__STRING_VARIANT,
                   G_TYPE_NONE, 2,
                   G_TYPE_STRING,
                   G_TYPE_VARIANT);
+  g_signal_set_va_marshaller (g_action_group_signals[SIGNAL_ACTION_STATE_CHANGED],
+                              G_TYPE_FROM_INTERFACE (iface),
+                              _g_cclosure_marshal_VOID__STRING_VARIANTv);
 }
 
 /**
@@ -522,7 +529,7 @@ g_action_group_get_action_enabled (GActionGroup *action_group,
  * The return value (if non-%NULL) should be freed with
  * g_variant_unref() when it is no longer required.
  *
- * Returns: (nullable): the current state of the action
+ * Returns: (nullable) (transfer full): the current state of the action
  *
  * Since: 2.28
  **/
@@ -581,6 +588,33 @@ g_action_group_change_action_state (GActionGroup *action_group,
  * parameter must be given as @parameter.  If the action is expecting no
  * parameters then @parameter must be %NULL.  See
  * g_action_group_get_action_parameter_type().
+ *
+ * If the #GActionGroup implementation supports asynchronous remote
+ * activation over D-Bus, this call may return before the relevant
+ * D-Bus traffic has been sent, or any replies have been received. In
+ * order to block on such asynchronous activation calls,
+ * g_dbus_connection_flush() should be called prior to the code, which
+ * depends on the result of the action activation. Without flushing
+ * the D-Bus connection, there is no guarantee that the action would
+ * have been activated.
+ *
+ * The following code which runs in a remote app instance, shows an
+ * example of a "quit" action being activated on the primary app
+ * instance over D-Bus. Here g_dbus_connection_flush() is called
+ * before `exit()`. Without g_dbus_connection_flush(), the "quit" action
+ * may fail to be activated on the primary instance.
+ *
+ * |[<!-- language="C" -->
+ * // call "quit" action on primary instance
+ * g_action_group_activate_action (G_ACTION_GROUP (app), "quit", NULL);
+ *
+ * // make sure the action is activated now
+ * g_dbus_connection_flush (...);
+ *
+ * g_debug ("application has been terminated. exiting.");
+ *
+ * exit (0);
+ * ]|
  *
  * Since: 2.28
  **/

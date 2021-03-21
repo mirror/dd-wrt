@@ -56,7 +56,7 @@ typedef enum
 
 typedef struct
 {
-  volatile gint             ref_count;
+  gint                      ref_count;  /* (atomic) */
   guint                     id;
   gchar                    *name;
   GBusNameWatcherFlags      flags;
@@ -78,7 +78,7 @@ typedef struct
 } Client;
 
 /* Must be accessed atomically. */
-static volatile guint next_global_id = 1;
+static guint next_global_id = 1;  /* (atomic) */
 
 /* Must be accessed with @lock held. */
 static GHashTable *map_id_to_client = NULL;
@@ -148,6 +148,11 @@ call_handler_data_free (CallHandlerData *data)
 static void
 actually_do_call (Client *client, GDBusConnection *connection, const gchar *name_owner, CallType call_type)
 {
+  /* The client might have been cancelled (g_bus_unwatch_name()) while we were
+   * sitting in the #GMainContext dispatch queue. */
+  if (client->cancelled)
+    return;
+
   switch (call_type)
     {
     case CALL_TYPE_NAME_APPEARED:
@@ -234,13 +239,12 @@ call_appeared_handler (Client *client)
 }
 
 static void
-call_vanished_handler (Client  *client,
-                       gboolean ignore_cancelled)
+call_vanished_handler (Client *client)
 {
   if (client->previous_call != PREVIOUS_CALL_VANISHED)
     {
       client->previous_call = PREVIOUS_CALL_VANISHED;
-      if (((!client->cancelled) || ignore_cancelled) && client->name_vanished_handler != NULL)
+      if (!client->cancelled && client->name_vanished_handler != NULL)
         {
           do_call (client, CALL_TYPE_NAME_VANISHED);
         }
@@ -296,7 +300,7 @@ on_connection_disconnected (GDBusConnection *connection,
   client->name_owner_changed_subscription_id = 0;
   client->connection = NULL;
 
-  call_vanished_handler (client, FALSE);
+  call_vanished_handler (client);
 
   client_unref (client);
 }
@@ -345,7 +349,7 @@ on_name_owner_changed (GDBusConnection *connection,
     {
       g_free (client->name_owner);
       client->name_owner = NULL;
-      call_vanished_handler (client, FALSE);
+      call_vanished_handler (client);
     }
 
   if (new_owner != NULL && strlen (new_owner) > 0)
@@ -390,7 +394,7 @@ get_name_owner_cb (GObject      *source_object,
     }
   else
     {
-      call_vanished_handler (client, FALSE);
+      call_vanished_handler (client);
     }
 
   client->initialized = TRUE;
@@ -450,7 +454,7 @@ start_service_by_name_cb (GObject      *source_object,
       else
         {
           g_warning ("Unexpected reply %d from StartServiceByName() method", start_service_result);
-          call_vanished_handler (client, FALSE);
+          call_vanished_handler (client);
           client->initialized = TRUE;
         }
     }
@@ -529,7 +533,7 @@ connection_get_cb (GObject      *source_object,
   client->connection = g_bus_get_finish (res, NULL);
   if (client->connection == NULL)
     {
-      call_vanished_handler (client, FALSE);
+      call_vanished_handler (client);
       goto out;
     }
 
@@ -553,7 +557,7 @@ connection_get_cb (GObject      *source_object,
  *
  * Starts watching @name on the bus specified by @bus_type and calls
  * @name_appeared_handler and @name_vanished_handler when the name is
- * known to have a owner respectively known to lose its
+ * known to have an owner respectively known to lose its
  * owner. Callbacks will be invoked in the
  * [thread-default main context][g-main-context-push-thread-default]
  * of the thread you are calling this function from.
@@ -581,7 +585,7 @@ connection_get_cb (GObject      *source_object,
  * @name_appeared_handler and destroy them again (if any) in
  * @name_vanished_handler.
  *
- * Returns: An identifier (never 0) that an be used with
+ * Returns: An identifier (never 0) that can be used with
  * g_bus_unwatch_name() to stop watching the name.
  *
  * Since: 2.26
@@ -603,7 +607,7 @@ g_bus_watch_name (GBusType                  bus_type,
 
   client = g_new0 (Client, 1);
   client->ref_count = 1;
-  client->id = g_atomic_int_add (&next_global_id, 1); /* TODO: uh oh, handle overflow */
+  client->id = (guint) g_atomic_int_add (&next_global_id, 1); /* TODO: uh oh, handle overflow */
   client->name = g_strdup (name);
   client->flags = flags;
   client->name_appeared_handler = name_appeared_handler;
@@ -643,7 +647,7 @@ g_bus_watch_name (GBusType                  bus_type,
  * Like g_bus_watch_name() but takes a #GDBusConnection instead of a
  * #GBusType.
  *
- * Returns: An identifier (never 0) that an be used with
+ * Returns: An identifier (never 0) that can be used with
  * g_bus_unwatch_name() to stop watching the name.
  *
  * Since: 2.26
@@ -665,7 +669,7 @@ guint g_bus_watch_name_on_connection (GDBusConnection          *connection,
 
   client = g_new0 (Client, 1);
   client->ref_count = 1;
-  client->id = g_atomic_int_add (&next_global_id, 1); /* TODO: uh oh, handle overflow */
+  client->id = (guint) g_atomic_int_add (&next_global_id, 1); /* TODO: uh oh, handle overflow */
   client->name = g_strdup (name);
   client->flags = flags;
   client->name_appeared_handler = name_appeared_handler;
@@ -793,7 +797,7 @@ bus_watch_name_free_func (gpointer user_data)
  * Version of g_bus_watch_name() using closures instead of callbacks for
  * easier binding in other languages.
  *
- * Returns: An identifier (never 0) that an be used with
+ * Returns: An identifier (never 0) that can be used with
  * g_bus_unwatch_name() to stop watching the name.
  *
  * Since: 2.26
@@ -827,7 +831,7 @@ g_bus_watch_name_with_closures (GBusType                 bus_type,
  * Version of g_bus_watch_name_on_connection() using closures instead of callbacks for
  * easier binding in other languages.
  *
- * Returns: An identifier (never 0) that an be used with
+ * Returns: An identifier (never 0) that can be used with
  * g_bus_unwatch_name() to stop watching the name.
  *
  * Since: 2.26
@@ -853,6 +857,13 @@ guint g_bus_watch_name_on_connection_with_closures (
  * @watcher_id: An identifier obtained from g_bus_watch_name()
  *
  * Stops watching a name.
+ *
+ * Note that there may still be D-Bus traffic to process (relating to watching
+ * and unwatching the name) in the current thread-default #GMainContext after
+ * this function has returned. You should continue to iterate the #GMainContext
+ * until the #GDestroyNotify function passed to g_bus_watch_name() is called, in
+ * order to avoid memory leaks through callbacks queued on the #GMainContext
+ * after it’s stopped being iterated.
  *
  * Since: 2.26
  */

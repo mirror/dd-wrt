@@ -204,6 +204,8 @@ g_delayed_settings_backend_reset (GSettingsBackend *backend,
   g_tree_insert (delayed->priv->delayed, g_strdup (key), NULL);
   g_mutex_unlock (&delayed->priv->lock);
 
+  g_settings_backend_changed (backend, key, origin_tag);
+
   if (was_empty)
     g_delayed_settings_backend_notify_unapplied (delayed);
 }
@@ -401,7 +403,7 @@ delayed_backend_path_writable_changed (GObject          *target,
 
   if (n_keys > 0)
     {
-      CheckPrefixState state = { path, g_new (const gchar *, n_keys) };
+      CheckPrefixState state = { path, g_new (const gchar *, n_keys), 0 };
       gsize i;
 
       /* collect a list of possibly-affected keys (ie: matching the path) */

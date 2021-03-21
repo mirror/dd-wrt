@@ -107,7 +107,8 @@ GSourceFuncs g_io_watch_funcs = {
   g_io_unix_prepare,
   g_io_unix_check,
   g_io_unix_dispatch,
-  g_io_unix_finalize
+  g_io_unix_finalize,
+  NULL, NULL
 };
 
 static GIOFuncs unix_channel_funcs = {
@@ -490,7 +491,7 @@ g_io_channel_new_file (const gchar *filename,
             mode_num |= MODE_PLUS;
             break;
           }
-        /* Fall through */
+        G_GNUC_FALLTHROUGH;
       default:
         g_warning ("Invalid GIOFileMode %s.", mode);
         return NULL;
