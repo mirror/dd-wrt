@@ -94,24 +94,24 @@ glib20-configure: libffi zlib util-linux
 	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-ranlib} ${shell which $(CROSS_COMPILE)gcc}-ranlib
 	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-nm} ${shell which $(CROSS_COMPILE)gcc}-nm
 	echo "[binaries]" > $(TOP)/glib20/libglib/cross.txt
-	echo c = \'$(subst ccache ,,$(CC))\' >> $(TOP)/glib20/libglib/cross.txt
-	echo cpp = \'$(subst ccache ,,$(CXX))\' >> $(TOP)/glib20/libglib/cross.txt
-	echo ar = \'$(subst ccache ,,$(CC))-ar\' >> $(TOP)/glib20/libglib/cross.txt
-	echo strip = \'$(STRIP)\' >> $(TOP)/glib20/libglib/cross.txt
-	echo nm = \'$(NM)\' >> $(TOP)/glib20/libglib/cross.txt
-	echo [built-in options] >> $(TOP)/glib20/libglib/cross.txt
-	echo c_args = \'$(CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib\' >> $(TOP)/glib20/libglib/cross.txt
-	echo c_link_args = \'$(LDFLAGS) -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz\' >> $(TOP)/glib20/libglib/cross.txt
-	echo cpp_args = \'$(CFLAGS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib\' >> $(TOP)/glib20/libglib/cross.txt
-	echo cpp_link_args = \'$(LDFLAGS) -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz\' >> $(TOP)/glib20/libglib/cross.txt
-	echo prefix = \'/usr\' >> $(TOP)/glib20/libglib/cross.txt
-	echo [host_machin] >> $(TOP)/glib20/libglib/cross.txt
-	echo system = \'linux\' >> $(TOP)/glib20/libglib/cross.txt
-	echo cpu_family = \'$(MESON_ARCH)\' >> $(TOP)/glib20/libglib/cross.txt
-	echo cpu = \'generic\' >> $(TOP)/glib20/libglib/cross.txt
-	echo endian = \'$(MESON_ENDIAN)\' >> $(TOP)/glib20/libglib/cross.txt
+	echo "c = '$(subst ccache ,,$(CC))'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "cpp = '$(subst ccache ,,$(CXX))'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "ar = '$(subst ccache ,,$(CC))-ar'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "strip = '$(STRIP)'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "nm = '$(NM)'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "[built-in options]" >> $(TOP)/glib20/libglib/cross.txt
+	echo "c_args = '$(CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "c_link_args = '$(LDFLAGS) -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "cpp_args = '$(CFLAGS) -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include -I$(TOP)/zlib'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "cpp_link_args = '$(LDFLAGS) -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/zlib -lz'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "prefix = '/usr'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "[host_machine]" >> $(TOP)/glib20/libglib/cross.txt
+	echo "system = 'linux'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "cpu_family = '$(MESON_ARCH)'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "cpu = 'generic'" >> $(TOP)/glib20/libglib/cross.txt
+	echo "endian = '$(MESON_ENDIAN)'" >> $(TOP)/glib20/libglib/cross.txt
 	echo "[properties]" >> $(TOP)/glib20/libglib/cross.txt
-	echo needs_exe_wrapper = true >> $(TOP)/glib20/libglib/cross.txt
+	echo "needs_exe_wrapper = true" >> $(TOP)/glib20/libglib/cross.txt
 
 
 
