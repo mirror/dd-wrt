@@ -67,6 +67,10 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_BOARD_NS5M:
 		cfg->diag_gpio = 0x100d;
 		break;
+#else
+	case ROUTER_BOARD_NS5M:
+		cfg->poe_gpio = 0x0008;
+		break;
 #endif
 	case ROUTER_BOARD_UNIFI:
 		cfg->ses_gpio = 0x0001;
@@ -79,9 +83,6 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->poe_gpio = 0x0003;
 		break;
 	case ROUTER_BOARD_NS2M:
-		cfg->poe_gpio = 0x0008;
-		break;
-	case ROUTER_BOARD_NS5M:
 		cfg->poe_gpio = 0x0008;
 		break;
 	case ROUTER_BOARD_NS5MXW:
