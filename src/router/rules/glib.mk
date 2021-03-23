@@ -226,11 +226,11 @@ glib20-install:
 	$(MAKE) -C glib20/gettext clean
 	export DESTDIR=$(INSTALLDIR)/glib20 && \
 	cd $(TOP)/glib20/libglib && ninja -C build install
-	rm -rf $(INSTALLDIR)/usr/bin
-	rm -rf $(INSTALLDIR)/usr/include
-	rm -rf $(INSTALLDIR)/usr/share
-	rm -rf $(INSTALLDIR)/usr/lib/glib-2.0
-	rm -rf $(INSTALLDIR)/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/glib20/usr/bin
+	rm -rf $(INSTALLDIR)/glib20/usr/include
+	rm -rf $(INSTALLDIR)/glib20/usr/share
+	rm -rf $(INSTALLDIR)/glib20/usr/lib/glib-2.0
+	rm -rf $(INSTALLDIR)/glib20/usr/lib/pkgconfig
 
 
 #	install -D glib20/libglib/glib/.libs/libglib-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libglib-2.0.so.0
