@@ -107,7 +107,7 @@ extern int ksmbd_health_status;
 #define PR_INFO		1
 #define PR_DEBUG	2
 
-static int log_level = PR_INFO;
+static int log_level = PR_DEBUG;
 
 #define PR_LOGGER_STDIO         0
 #define PR_LOGGER_SYSLOG        1
@@ -133,8 +133,13 @@ extern void pr_logger_init(int flags);
 					##__VA_ARGS__);			\
 	} while (0)
 
+#ifdef HAVE_DEBUG
+
 #define pr_debug(f, ...)	\
 	pr_log(PR_DEBUG, PRDEBUG f, ##__VA_ARGS__)
+#else
+#define pr_debug(f, ...) do {} while (0)
+#endif
 #define pr_info(f, ...)	\
 	pr_log(PR_INFO, PRINF f, ##__VA_ARGS__)
 #define pr_err(f, ...)	\
