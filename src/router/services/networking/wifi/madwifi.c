@@ -1307,7 +1307,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	char mfp[16];
 	char ft[16];
 	char tmp[256];
-	char rekey[16];
+	char rekey[32];
 	char *debug;
 	char *types;
 	char eapol[32];
