@@ -90,7 +90,7 @@ static int consensus_nf_pad_single_onion;
  * for every single connection, every second.
  */
 void
-channelpadding_new_consensus_params(networkstatus_t *ns)
+channelpadding_new_consensus_params(const networkstatus_t *ns)
 {
 #define DFLT_NETFLOW_INACTIVE_KEEPALIVE_LOW 1500
 #define DFLT_NETFLOW_INACTIVE_KEEPALIVE_HIGH 9500
@@ -265,7 +265,7 @@ channelpadding_update_padding_for_channel(channel_t *chan,
     log_fn_ratelim(&relay_limit,LOG_PROTOCOL_WARN,LD_PROTOCOL,
            "Got a PADDING_NEGOTIATE from relay at %s (%s). "
            "This should not happen.",
-           chan->get_remote_descr(chan, 0),
+           channel_describe_peer(chan),
            hex_str(chan->identity_digest, DIGEST_LEN));
     return -1;
   }
@@ -399,7 +399,7 @@ channelpadding_send_padding_cell_for_callback(channel_t *chan)
         "Sending netflow keepalive on %"PRIu64" to %s (%s) after "
         "%"PRId64" ms. Delta %"PRId64"ms",
         (chan->global_identifier),
-        safe_str_client(chan->get_remote_descr(chan, 0)),
+        safe_str_client(channel_describe_peer(chan)),
         safe_str_client(hex_str(chan->identity_digest, DIGEST_LEN)),
         (monotime_coarse_diff_msec(&chan->timestamp_xfer,&now)),
         (

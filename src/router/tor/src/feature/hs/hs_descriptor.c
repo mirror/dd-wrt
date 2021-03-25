@@ -55,6 +55,7 @@
 /* For unit tests.*/
 #define HS_DESCRIPTOR_PRIVATE
 
+#include <stdbool.h>
 #include "core/or/or.h"
 #include "app/config/config.h"
 #include "trunnel/ed25519_cert.h" /* Trunnel interface. */
@@ -185,7 +186,7 @@ build_mac(const uint8_t *mac_key, size_t mac_key_len,
   crypto_digest_free(digest);
 }
 
-/** Using a secret data and a given decriptor object, build the secret
+/** Using a secret data and a given descriptor object, build the secret
  * input needed for the KDF.
  *
  * secret_input = SECRET_DATA | subcredential | INT_8(revision_counter)
@@ -404,7 +405,7 @@ encode_enc_key(const hs_desc_intro_point_t *ip)
   tor_assert(ip);
 
   /* Base64 encode the encryption key for the "enc-key" field. */
-  curve25519_public_to_base64(key_b64, &ip->enc_key);
+  curve25519_public_to_base64(key_b64, &ip->enc_key, true);
   if (tor_cert_encode_ed22519(ip->enc_key_cert, &encoded_cert) < 0) {
     goto done;
   }
@@ -430,7 +431,7 @@ encode_onion_key(const hs_desc_intro_point_t *ip)
   tor_assert(ip);
 
   /* Base64 encode the encryption key for the "onion-key" field. */
-  curve25519_public_to_base64(key_b64, &ip->onion_key);
+  curve25519_public_to_base64(key_b64, &ip->onion_key, true);
   tor_asprintf(&encoded, "%s ntor %s", str_ip_onion_key, key_b64);
 
   return encoded;
@@ -813,7 +814,7 @@ get_outer_encrypted_layer_plaintext(const hs_descriptor_t *desc,
     tor_assert(!fast_mem_is_zero((char *) ephemeral_pubkey->public_key,
                                 CURVE25519_PUBKEY_LEN));
 
-    curve25519_public_to_base64(ephemeral_key_base64, ephemeral_pubkey);
+    curve25519_public_to_base64(ephemeral_key_base64, ephemeral_pubkey, true);
     smartlist_add_asprintf(lines, "%s %s\n",
                            str_desc_auth_key, ephemeral_key_base64);
 
@@ -1406,7 +1407,7 @@ build_descriptor_cookie_keys(const hs_subcredential_t *subcredential,
 }
 
 /** Decrypt the descriptor cookie given the descriptor, the auth client,
- * and the client secret key. On sucess, return 0 and a newly allocated
+ * and the client secret key. On success, return 0 and a newly allocated
  * descriptor cookie descriptor_cookie_out. On error or if the client id
  * is invalid, return -1 and descriptor_cookie_out is set to
  * NULL. */
@@ -1432,7 +1433,7 @@ decrypt_descriptor_cookie(const hs_descriptor_t *desc,
   tor_assert(!fast_mem_is_zero((char *) desc->subcredential.subcred,
                                DIGEST256_LEN));
 
-  /* Catch potential code-flow cases of an unitialized private key sneaking
+  /* Catch potential code-flow cases of an uninitialized private key sneaking
    * into this function. */
   if (BUG(fast_mem_is_zero((char *)client_auth_sk, sizeof(*client_auth_sk)))) {
     goto done;
@@ -1447,7 +1448,7 @@ decrypt_descriptor_cookie(const hs_descriptor_t *desc,
   tor_assert(keystream_length > 0);
 
   /* If the client id of auth client is not the same as the calculcated
-   * client id, it means that this auth client is invaild according to the
+   * client id, it means that this auth client is invalid according to the
    * client secret key client_auth_sk. */
   if (tor_memneq(client->client_id, keystream, HS_DESC_CLIENT_ID_LEN)) {
     goto done;
@@ -1480,7 +1481,7 @@ decrypt_descriptor_cookie(const hs_descriptor_t *desc,
  *  the descriptor object <b>desc</b> and <b>descriptor_cookie</b>
  *  to generate the right decryption keys; set <b>decrypted_out</b> to
  *  the plaintext. If <b>is_superencrypted_layer</b> is set, this is
- *  the outter encrypted layer of the descriptor.
+ *  the outer encrypted layer of the descriptor.
  *
  * On any error case, including an empty output, return 0 and set
  * *<b>decrypted_out</b> to NULL.
@@ -2002,7 +2003,7 @@ desc_sig_is_valid(const char *b64_sig,
   /* Signature length check. */
   if (strlen(b64_sig) != ED25519_SIG_BASE64_LEN) {
     log_warn(LD_REND, "Service descriptor has an invalid signature length."
-                      "Exptected %d but got %lu",
+                      "Expected %d but got %lu",
              ED25519_SIG_BASE64_LEN, (unsigned long) strlen(b64_sig));
     goto err;
   }

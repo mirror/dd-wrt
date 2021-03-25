@@ -17,6 +17,7 @@
 #include "core/mainloop/mainloop.h"
 #include "core/or/channeltls.h"
 #include "core/or/circuitlist.h"
+#include "core/or/circuitstats.h"
 #include "core/or/command.h"
 #include "core/or/connection_edge.h"
 #include "core/or/connection_or.h"
@@ -141,6 +142,64 @@ clear_circ_bw_fields(void)
   SMARTLIST_FOREACH_END(circ);
 }
 
+/* Helper to emit the BUILDTIMEOUT_SET circuit build time event */
+void
+cbt_control_event_buildtimeout_set(const circuit_build_times_t *cbt,
+                                   buildtimeout_set_event_t type)
+{
+  char *args = NULL;
+  double qnt;
+  double timeout_rate = 0.0;
+  double close_rate = 0.0;
+
+  switch (type) {
+    case BUILDTIMEOUT_SET_EVENT_RESET:
+    case BUILDTIMEOUT_SET_EVENT_SUSPENDED:
+    case BUILDTIMEOUT_SET_EVENT_DISCARD:
+      qnt = 1.0;
+      break;
+    case BUILDTIMEOUT_SET_EVENT_COMPUTED:
+    case BUILDTIMEOUT_SET_EVENT_RESUME:
+    default:
+      qnt = circuit_build_times_quantile_cutoff();
+      break;
+  }
+
+  /* The timeout rate is the ratio of the timeout count over
+   * the total number of circuits attempted. The total number of
+   * circuits is (timeouts+succeeded), since every circuit
+   * either succeeds, or times out. "Closed" circuits are
+   * MEASURE_TIMEOUT circuits whose measurement period expired.
+   * All MEASURE_TIMEOUT circuits are counted in the timeouts stat
+   * before transitioning to MEASURE_TIMEOUT (in
+   * circuit_build_times_mark_circ_as_measurement_only()).
+   * MEASURE_TIMEOUT circuits that succeed are *not* counted as
+   * "succeeded". See circuit_build_times_handle_completed_hop().
+   *
+   * We cast the denominator
+   * to promote it to double before the addition, to avoid int32
+   * overflow. */
+  const double total_circuits =
+    ((double)cbt->num_circ_timeouts) + cbt->num_circ_succeeded;
+  if (total_circuits >= 1.0) {
+    timeout_rate = cbt->num_circ_timeouts / total_circuits;
+    close_rate = cbt->num_circ_closed / total_circuits;
+  }
+
+  tor_asprintf(&args, "TOTAL_TIMES=%lu "
+               "TIMEOUT_MS=%lu XM=%lu ALPHA=%f CUTOFF_QUANTILE=%f "
+               "TIMEOUT_RATE=%f CLOSE_MS=%lu CLOSE_RATE=%f",
+               (unsigned long)cbt->total_build_times,
+               (unsigned long)cbt->timeout_ms,
+               (unsigned long)cbt->Xm, cbt->alpha, qnt,
+               timeout_rate,
+               (unsigned long)cbt->close_ms,
+               close_rate);
+
+  control_event_buildtimeout_set(type, args);
+
+  tor_free(args);
+}
 /** Set <b>global_event_mask*</b> to the bitwise OR of each live control
  * connection's event_mask field. */
 void
@@ -759,6 +818,7 @@ control_event_stream_status(entry_connection_t *conn, stream_status_event_t tp,
     case STREAM_EVENT_NEW_RESOLVE: status = "NEWRESOLVE"; break;
     case STREAM_EVENT_FAILED_RETRIABLE: status = "DETACHED"; break;
     case STREAM_EVENT_REMAP: status = "REMAP"; break;
+    case STREAM_EVENT_CONTROLLER_WAIT: status = "CONTROLLER_WAIT"; break;
     default:
       log_warn(LD_BUG, "Unrecognized status code %d", (int)tp);
       return 0;
@@ -1292,6 +1352,27 @@ enable_control_logging(void)
     tor_assert(0);
 }
 
+/** Remove newline and carriage-return characters from @a msg, replacing them
+ * with spaces, and discarding any that appear at the end of the message */
+void
+control_logmsg_strip_newlines(char *msg)
+{
+  char *cp;
+  for (cp = msg; *cp; ++cp) {
+    if (*cp == '\r' || *cp == '\n') {
+      *cp = ' ';
+    }
+  }
+  if (cp == msg)
+    return;
+  /* Remove trailing spaces */
+  for (--cp; *cp == ' '; --cp) {
+    *cp = '\0';
+    if (cp == msg)
+      break;
+  }
+}
+
 /** We got a log message: tell any interested control connections. */
 void
 control_event_logmsg(int severity, log_domain_mask_t domain, const char *msg)
@@ -1320,11 +1401,8 @@ control_event_logmsg(int severity, log_domain_mask_t domain, const char *msg)
     char *b = NULL;
     const char *s;
     if (strchr(msg, '\n')) {
-      char *cp;
       b = tor_strdup(msg);
-      for (cp = b; *cp; ++cp)
-        if (*cp == '\r' || *cp == '\n')
-          *cp = ' ';
+      control_logmsg_strip_newlines(b);
     }
     switch (severity) {
       case LOG_DEBUG: s = "DEBUG"; break;

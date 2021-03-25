@@ -342,7 +342,7 @@ entry_guard_get_pathbias_state(entry_guard_t *guard)
 
 HANDLE_IMPL(entry_guard, entry_guard_t, ATTR_UNUSED STATIC)
 
-/** Return an interval betweeen 'now' and 'max_backdate' seconds in the past,
+/** Return an interval between 'now' and 'max_backdate' seconds in the past,
  * chosen uniformly at random.  We use this before recording persistent
  * dates, so that we aren't leaking exactly when we recorded it.
  */
@@ -804,6 +804,9 @@ get_sampled_guard_for_bridge(guard_selection_t *gs,
   entry_guard_t *guard;
   if (BUG(!addrport))
     return NULL; // LCOV_EXCL_LINE
+  if (bridge_has_invalid_transport(bridge)) {
+    return NULL;
+  }
   guard = get_sampled_guard_by_bridge_addr(gs, addrport);
   if (! guard || (id && tor_memneq(id, guard->identity, DIGEST_LEN)))
     return NULL;
@@ -1466,7 +1469,7 @@ node_passes_guard_filter(const or_options_t *options,
       !routerset_contains_node(options->EntryNodes, node))
     return 0;
 
-  if (!fascist_firewall_allows_node(node, FIREWALL_OR_CONNECTION, 0))
+  if (!reachable_addr_allows_node(node, FIREWALL_OR_CONNECTION, 0))
     return 0;
 
   if (node_is_a_configured_bridge(node))
@@ -1492,7 +1495,7 @@ bridge_passes_guard_filter(const or_options_t *options,
   /* Ignore entrynodes */
   const tor_addr_port_t *addrport = bridge_get_addr_port(bridge);
 
-  if (!fascist_firewall_allows_address_addr(&addrport->addr,
+  if (!reachable_addr_allows_addr(&addrport->addr,
                                             addrport->port,
                                             FIREWALL_OR_CONNECTION,
                                             0, 0))
@@ -1554,7 +1557,7 @@ guard_in_node_family(const entry_guard_t *guard, const node_t *node)
     if (get_options()->EnforceDistinctSubnets && guard->bridge_addr) {
       tor_addr_t node_addr;
       node_get_addr(node, &node_addr);
-      if (addrs_in_same_network_family(&node_addr,
+      if (router_addrs_in_same_network(&node_addr,
                                        &guard->bridge_addr->addr)) {
         return 1;
       }
@@ -1576,12 +1579,12 @@ guard_create_exit_restriction(const uint8_t *exit_id)
 }
 
 /** If we have fewer than this many possible usable guards, don't set
- * MD-availability-based restrictions: we might blacklist all of them. */
+ * MD-availability-based restrictions: we might denylist all of them. */
 #define MIN_GUARDS_FOR_MD_RESTRICTION 10
 
 /** Return true if we should set md dirserver restrictions. We might not want
  *  to set those if our guard options are too restricted, since we don't want
- *  to blacklist all of them. */
+ *  to denylist all of them. */
 static int
 should_set_md_dirserver_restriction(void)
 {
@@ -2317,7 +2320,7 @@ entry_guards_note_guard_success(guard_selection_t *gs,
       break;
     default:
       tor_assert_nonfatal_unreached();
-      FALLTHROUGH;
+      FALLTHROUGH_UNLESS_ALL_BUGS_ARE_FATAL;
     case GUARD_CIRC_STATE_USABLE_IF_NO_BETTER_GUARD:
       if (guard->is_primary) {
         /* XXXX #20832 -- I don't actually like this logic. It seems to make
@@ -3359,7 +3362,7 @@ get_guard_state_for_bridge_desc_fetch(const char *digest)
   }
 
   /* Update the guard last_tried_to_connect time since it's checked by the
-   * guard susbsystem. */
+   * guard subsystem. */
   guard->last_tried_to_connect = approx_time();
 
   /* Create the guard state */

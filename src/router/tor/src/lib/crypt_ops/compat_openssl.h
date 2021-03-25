@@ -32,13 +32,9 @@
 #define OPENSSL_1_1_API
 #endif /* OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,1,0) && ... */
 
-#ifndef OPENSSL_VERSION
-#define OPENSSL_VERSION SSLEAY_VERSION
-#endif
-
 #ifndef OPENSSL_1_1_API
 #define OpenSSL_version(v) SSLeay_version(v)
-#define OpenSSL_version_num() SSLeay()
+#define tor_OpenSSL_version_num() SSLeay()
 #define RAND_OpenSSL() RAND_SSLeay()
 #define STATE_IS_SW_SERVER_HELLO(st)       \
   (((st) == SSL3_ST_SW_SRVR_HELLO_A) ||    \
@@ -46,6 +42,7 @@
 #define OSSL_HANDSHAKE_STATE int
 #define CONST_IF_OPENSSL_1_1_API
 #else /* defined(OPENSSL_1_1_API) */
+#define tor_OpenSSL_version_num() OpenSSL_version_num()
 #define STATE_IS_SW_SERVER_HELLO(st) \
   ((st) == TLS_ST_SW_SRVR_HELLO)
 #define CONST_IF_OPENSSL_1_1_API const
@@ -54,4 +51,3 @@
 #endif /* defined(ENABLE_OPENSSL) */
 
 #endif /* !defined(TOR_COMPAT_OPENSSL_H) */
-

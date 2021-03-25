@@ -16,6 +16,7 @@
 #include "core/or/circuitbuild.h"
 #include "core/or/circuitlist.h"
 #include "core/or/circuituse.h"
+#include "core/or/extendinfo.h"
 #include "core/or/policies.h"
 #include "core/or/relay.h"
 #include "core/or/crypt_path.h"
@@ -670,7 +671,7 @@ rend_service_prune_list_impl_(void)
                                         ocirc->build_state->chosen_exit)),
              safe_str_client(rend_data_get_address(ocirc->rend_data)));
     /* Reason is FINISHED because service has been removed and thus the
-     * circuit is considered old/uneeded. */
+     * circuit is considered old/unneeded. */
     circuit_mark_for_close(TO_CIRCUIT(ocirc), END_CIRC_REASON_FINISHED);
   }
   smartlist_free(surviving_services);
@@ -1553,7 +1554,7 @@ rend_service_load_keys(rend_service_t *s)
   fname = rend_service_path(s, hostname_fname);
 
   tor_snprintf(buf, sizeof(buf),"%s.onion\n", s->service_id);
-  if (write_str_to_file(fname,buf,0)<0) {
+  if (write_str_to_file_if_not_equal(fname, buf)) {
     log_warn(LD_CONFIG, "Could not write onion address to hostname file.");
     goto err;
   }
@@ -1848,10 +1849,13 @@ rend_service_use_direct_connection(const or_options_t* options,
                                    const extend_info_t* ei)
 {
   /* We'll connect directly all reachable addresses, whether preferred or not.
-   * The prefer_ipv6 argument to fascist_firewall_allows_address_addr is
+   * The prefer_ipv6 argument to reachable_addr_allows_addr is
    * ignored, because pref_only is 0. */
+  const tor_addr_port_t *ap = extend_info_get_orport(ei, AF_INET);
+  if (!ap)
+    return 0;
   return (rend_service_allow_non_anonymous_connection(options) &&
-          fascist_firewall_allows_address_addr(&ei->addr, ei->port,
+          reachable_addr_allows_addr(&ap->addr, ap->port,
                                                FIREWALL_OR_CONNECTION, 0, 0));
 }
 
@@ -1863,7 +1867,7 @@ rend_service_use_direct_connection_node(const or_options_t* options,
   /* We'll connect directly all reachable addresses, whether preferred or not.
    */
   return (rend_service_allow_non_anonymous_connection(options) &&
-          fascist_firewall_allows_node(node, FIREWALL_OR_CONNECTION, 0));
+          reachable_addr_allows_node(node, FIREWALL_OR_CONNECTION, 0));
 }
 
 /******
@@ -2280,7 +2284,8 @@ find_rp_for_intro(const rend_intro_cell_t *intro,
   /* Make sure the RP we are being asked to connect to is _not_ a private
    * address unless it's allowed. Let's avoid to build a circuit to our
    * second middle node and fail right after when extending to the RP. */
-  if (!extend_info_addr_is_allowed(&rp->addr)) {
+  const tor_addr_port_t *orport = extend_info_get_orport(rp, AF_INET);
+  if (! orport || !extend_info_addr_is_allowed(&orport->addr)) {
     if (err_msg_out) {
       tor_asprintf(&err_msg,
                    "Relay IP in INTRODUCE2 cell is private address.");
@@ -2549,9 +2554,11 @@ rend_service_parse_intro_for_v2(
     goto err;
   }
 
-  extend_info = tor_malloc_zero(sizeof(extend_info_t));
-  tor_addr_from_ipv4n(&extend_info->addr, get_uint32(buf + 1));
-  extend_info->port = ntohs(get_uint16(buf + 5));
+  extend_info = extend_info_new(NULL, NULL, NULL, NULL, NULL, NULL, 0);
+  tor_addr_t addr;
+  tor_addr_from_ipv4n(&addr, get_uint32(buf + 1));
+  uint16_t port = ntohs(get_uint16(buf + 5));
+  extend_info_add_orport(extend_info, &addr, port);
   memcpy(extend_info->identity_digest, buf + 7, DIGEST_LEN);
   extend_info->nickname[0] = '$';
   base16_encode(extend_info->nickname + 1, sizeof(extend_info->nickname) - 1,
@@ -3733,7 +3740,7 @@ directory_post_to_hs_dir(rend_service_descriptor_t *renddesc,
       rend_data_free(rend_data);
       base32_encode(desc_id_base32, sizeof(desc_id_base32),
                     desc->desc_id, DIGEST_LEN);
-      hs_dir_ip = tor_dup_ip(hs_dir->addr);
+      hs_dir_ip = tor_addr_to_str_dup(&hs_dir->ipv4_addr);
       if (hs_dir_ip) {
         log_info(LD_REND, "Launching upload for v2 descriptor for "
                           "service '%s' with descriptor ID '%s' with validity "
@@ -3744,7 +3751,7 @@ directory_post_to_hs_dir(rend_service_descriptor_t *renddesc,
                  seconds_valid,
                  hs_dir->nickname,
                  hs_dir_ip,
-                 hs_dir->or_port);
+                 hs_dir->ipv4_orport);
         tor_free(hs_dir_ip);
       }
 
@@ -3839,6 +3846,9 @@ upload_service_descriptor(rend_service_t *service)
       rend_get_service_id(service->desc->pk, serviceid);
       if (get_options()->PublishHidServDescriptors) {
         /* Post the current descriptors to the hidden service directories. */
+        /* This log message is used by Chutney as part of its bootstrap
+         * detection mechanism. Please don't change without first checking
+         * Chutney. */
         log_info(LD_REND, "Launching upload for hidden service %s",
                      serviceid);
         directory_post_to_hs_dir(service->desc, descs, NULL, serviceid,
@@ -4128,7 +4138,7 @@ rend_consider_services_intro_points(time_t now)
      * list of the service. */
     unsigned int n_intro_points_to_open;
     /* Have an unsigned len so we can use it to compare values else gcc is
-     * not happy with unmatching signed comparaison. */
+     * not happy with unmatching signed comparison. */
     unsigned int intro_nodes_len;
     /* Different service are allowed to have the same introduction point as
      * long as they are on different circuit thus why we clear this list. */
@@ -4174,7 +4184,7 @@ rend_consider_services_intro_points(time_t now)
       intro->circuit_retries++;
     } SMARTLIST_FOREACH_END(intro);
 
-    /* Avoid mismatched signed comparaison below. */
+    /* Avoid mismatched signed comparison below. */
     intro_nodes_len = (unsigned int) smartlist_len(service->intro_nodes);
 
     /* Quiescent state, we have more or the equal amount of wanted node for
@@ -4264,7 +4274,7 @@ rend_consider_services_intro_points(time_t now)
         log_warn(LD_REND, "Error launching circuit to node %s for service %s.",
                  safe_str_client(extend_info_describe(intro->extend_info)),
                  safe_str_client(service->service_id));
-        /* This funcion will be called again by the main loop so this intro
+        /* This function will be called again by the main loop so this intro
          * point without a intro circuit will be retried on or removed after
          * a maximum number of attempts. */
       }

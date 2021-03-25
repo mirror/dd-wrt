@@ -203,7 +203,7 @@ update_socket_info_impl, (socket_table_ent_t *ent))
   tor_assert(ent);
   tor_assert(ent->chan);
   const tor_socket_t sock =
-    TO_CONN(BASE_CHAN_TO_TLS((channel_t *) ent->chan)->conn)->s;
+    TO_CONN(CONST_BASE_CHAN_TO_TLS(ent->chan)->conn)->s;
   struct tcp_info tcp;
   socklen_t tcp_info_len = sizeof(tcp);
 
@@ -445,6 +445,11 @@ update_socket_written(socket_table_t *table, channel_t *chan, size_t bytes)
  * one cell for each and bouncing back and forth. This KIST impl avoids that
  * by only writing a channel's outbuf to the kernel if it has 8 cells or more
  * in it.
+ *
+ * Note: The number 8 has been picked for no particular reasons except that it
+ * is 4096 bytes which is a common number for buffering. A TLS record can hold
+ * up to 16KiB thus using 8 cells means that a relay will at most send a TLS
+ * record of 4KiB or 1/4 of the maximum capacity of a TLS record.
  */
 MOCK_IMPL(int, channel_should_write_to_kernel,
           (outbuf_table_t *table, channel_t *chan))

@@ -15,7 +15,6 @@
 #include "lib/net/address.h"
 #include "lib/container/bloomfilt.h"
 #include "lib/crypt_ops/crypto_rand.h"
-#include "siphash.h"
 
 /** Wrap our hash function to have the signature that the bloom filter
  * needs. */

@@ -274,7 +274,7 @@ control_event_bootstrap_problem(const char *warn, const char *reason,
   const char *recommendation = "ignore";
   int severity;
   char *or_id = NULL, *hostaddr = NULL;
-  or_connection_t *or_conn = NULL;
+  const or_connection_t *or_conn = NULL;
 
   /* bootstrap_percent must not be in "undefined" state here. */
   tor_assert(status >= 0);
@@ -301,7 +301,7 @@ control_event_bootstrap_problem(const char *warn, const char *reason,
 
   if (conn && conn->type == CONN_TYPE_OR) {
     /* XXX TO_OR_CONN can't deal with const */
-    or_conn = TO_OR_CONN((connection_t *)conn);
+    or_conn = CONST_TO_OR_CONN(conn);
     or_id = tor_strdup(hex_str(or_conn->identity_digest, DIGEST_LEN));
   } else {
     or_id = tor_strdup("?");
@@ -347,6 +347,18 @@ control_event_bootstrap_prob_or, (const char *warn, int reason,
                                   or_connection_t *or_conn))
 {
   int dowarn = 0;
+
+  if (! or_conn->potentially_used_for_bootstrapping) {
+    /* We never decided that this channel was a good match for one of our
+     * origin_circuit_t objects.  That means that we probably launched it
+     * for somebody else, most likely in response to an EXTEND cell.
+     *
+     * Since EXTEND cells can contain arbitrarily broken descriptions of
+     * relays, a failure on this connection here won't necessarily indicate a
+     * bootstrapping problem.
+     */
+    return;
+  }
 
   if (or_conn->have_noted_bootstrap_problem)
     return;

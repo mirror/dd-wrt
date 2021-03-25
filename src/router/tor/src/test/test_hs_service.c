@@ -54,6 +54,7 @@
 #include "feature/hs/hs_ob.h"
 #include "feature/hs/hs_cell.h"
 #include "feature/hs/hs_intropoint.h"
+#include "feature/hs/hs_metrics.h"
 #include "feature/hs/hs_service.h"
 #include "feature/nodelist/networkstatus.h"
 #include "feature/nodelist/nodelist.h"
@@ -83,16 +84,18 @@
 static networkstatus_t mock_ns;
 
 static networkstatus_t *
-mock_networkstatus_get_live_consensus(time_t now)
+mock_networkstatus_get_reasonably_live_consensus(time_t now, int flavor)
 {
   (void) now;
+  (void) flavor;
   return &mock_ns;
 }
 
 static networkstatus_t *
-mock_networkstatus_get_live_consensus_null(time_t now)
+mock_networkstatus_get_reasonably_live_consensus_null(time_t now, int flavor)
 {
   (void) now;
+  (void) flavor;
   return NULL;
 }
 
@@ -158,7 +161,7 @@ mock_router_have_minimum_dir_info_false(void)
 }
 
 /* Helper: from a set of options in conf, configure a service which will add
- * it to the staging list of the HS subsytem. */
+ * it to the staging list of the HS subsystem. */
 static int
 helper_config_service(const char *conf)
 {
@@ -664,6 +667,7 @@ test_access_service(void *arg)
   tt_mem_op(query, OP_EQ, s, sizeof(hs_service_t));
   /* Remove service, check if it actually works and then put it back. */
   remove_service(global_map, s);
+  hs_metrics_service_free(s);
   tt_int_op(get_hs_service_map_size(), OP_EQ, 0);
   query = find_service(global_map, &s->keys.identity_pk);
   tt_ptr_op(query, OP_EQ, NULL);
@@ -673,6 +677,7 @@ test_access_service(void *arg)
   tt_int_op(ret, OP_EQ, 0);
   tt_int_op(get_hs_service_map_size(), OP_EQ, 1);
   /* Twice should fail. */
+  hs_metrics_service_free(s); /* Avoid BUG() on metrics init. */
   ret = register_service(global_map, s);
   tt_int_op(ret, OP_EQ, -1);
   /* Remove service from map so we don't double free on cleanup. */
@@ -775,7 +780,7 @@ mock_node_get_by_id(const char *digest)
 {
   (void) digest;
   memset(mock_node.identity, 'A', DIGEST_LEN);
-  /* Only return the matchin identity of As */
+  /* Only return the matching identity of As */
   if (!tor_memcmp(mock_node.identity, digest, DIGEST_LEN)) {
     return &mock_node;
   }
@@ -1375,8 +1380,8 @@ test_rotate_descriptors(void *arg)
   hs_init();
   MOCK(get_or_state, get_or_state_replacement);
   MOCK(circuit_mark_for_close_, mock_circuit_mark_for_close);
-  MOCK(networkstatus_get_live_consensus,
-       mock_networkstatus_get_live_consensus);
+  MOCK(networkstatus_get_reasonably_live_consensus,
+       mock_networkstatus_get_reasonably_live_consensus);
 
   /* Descriptor rotation happens with a consensus with a new SRV. */
 
@@ -1464,7 +1469,7 @@ test_rotate_descriptors(void *arg)
   hs_free_all();
   UNMOCK(get_or_state);
   UNMOCK(circuit_mark_for_close_);
-  UNMOCK(networkstatus_get_live_consensus);
+  UNMOCK(networkstatus_get_reasonably_live_consensus);
 }
 
 /** Test building descriptors: picking intro points, setting up their link
@@ -1484,8 +1489,8 @@ test_build_update_descriptors(void *arg)
 
   MOCK(get_or_state,
        get_or_state_replacement);
-  MOCK(networkstatus_get_live_consensus,
-       mock_networkstatus_get_live_consensus);
+  MOCK(networkstatus_get_reasonably_live_consensus,
+       mock_networkstatus_get_reasonably_live_consensus);
 
   dummy_state = or_state_new();
 
@@ -1545,14 +1550,12 @@ test_build_update_descriptors(void *arg)
 
   /* Now, we'll setup a node_t. */
   {
-    tor_addr_t ipv4_addr;
     curve25519_secret_key_t curve25519_secret_key;
 
     memset(&ri, 0, sizeof(routerinfo_t));
 
-    tor_addr_parse(&ipv4_addr, "127.0.0.1");
-    ri.addr = tor_addr_to_ipv4h(&ipv4_addr);
-    ri.or_port = 1337;
+    tor_addr_parse(&ri.ipv4_addr, "127.0.0.1");
+    ri.ipv4_orport = 1337;
     ri.purpose = ROUTER_PURPOSE_GENERAL;
     /* Ugly yes but we never free the "ri" object so this just makes things
      * easier. */
@@ -1619,7 +1622,7 @@ test_build_update_descriptors(void *arg)
   /* We won't test the service IP object because there is a specific test
    * already for this but we'll make sure that the state is coherent.*/
 
-  /* Three link specifiers are mandatoy so make sure we do have them. */
+  /* Three link specifiers are mandatory so make sure we do have them. */
   tt_int_op(smartlist_len(ip_cur->base.link_specifiers), OP_EQ, 3);
   /* Make sure we have a valid encryption keypair generated when we pick an
    * intro point in the update process. */
@@ -1715,8 +1718,8 @@ test_build_descriptors(void *arg)
 
   MOCK(get_or_state,
        get_or_state_replacement);
-  MOCK(networkstatus_get_live_consensus,
-       mock_networkstatus_get_live_consensus);
+  MOCK(networkstatus_get_reasonably_live_consensus,
+       mock_networkstatus_get_reasonably_live_consensus);
 
   dummy_state = or_state_new();
 
@@ -1816,8 +1819,8 @@ test_upload_descriptors(void *arg)
   hs_init();
   MOCK(get_or_state,
        get_or_state_replacement);
-  MOCK(networkstatus_get_live_consensus,
-       mock_networkstatus_get_live_consensus);
+  MOCK(networkstatus_get_reasonably_live_consensus,
+       mock_networkstatus_get_reasonably_live_consensus);
 
   dummy_state = or_state_new();
 
@@ -2553,8 +2556,8 @@ test_cannot_upload_descriptors(void *arg)
   hs_init();
   MOCK(get_or_state,
        get_or_state_replacement);
-  MOCK(networkstatus_get_live_consensus,
-       mock_networkstatus_get_live_consensus);
+  MOCK(networkstatus_get_reasonably_live_consensus,
+       mock_networkstatus_get_reasonably_live_consensus);
 
   dummy_state = or_state_new();
 
@@ -2630,17 +2633,17 @@ test_cannot_upload_descriptors(void *arg)
 
   /* 4. Testing missing live consensus. */
   {
-    MOCK(networkstatus_get_live_consensus,
-         mock_networkstatus_get_live_consensus_null);
+    MOCK(networkstatus_get_reasonably_live_consensus,
+         mock_networkstatus_get_reasonably_live_consensus_null);
     setup_full_capture_of_logs(LOG_INFO);
     run_upload_descriptor_event(now);
     expect_log_msg_containing(
       "Service [scrubbed] can't upload its current descriptor: "
-      "No live consensus");
+      "No reasonably live consensus");
     teardown_capture_of_logs();
     /* Reset. */
-    MOCK(networkstatus_get_live_consensus,
-         mock_networkstatus_get_live_consensus);
+    MOCK(networkstatus_get_reasonably_live_consensus,
+         mock_networkstatus_get_reasonably_live_consensus);
   }
 
   /* 5. Test missing minimum directory information. */
@@ -2679,7 +2682,7 @@ test_cannot_upload_descriptors(void *arg)
  done:
   hs_free_all();
   UNMOCK(count_desc_circuit_established);
-  UNMOCK(networkstatus_get_live_consensus);
+  UNMOCK(networkstatus_get_reasonably_live_consensus);
   UNMOCK(get_or_state);
 }
 

@@ -764,6 +764,15 @@ tor_addr_is_v4(const tor_addr_t *addr)
   return 0; /* Not IPv4 - unknown family or a full-blood IPv6 address */
 }
 
+/** Determine whether an address <b>addr</b> is an IPv6 (AF_INET6). Return
+ * true if so else false. */
+int
+tor_addr_is_v6(const tor_addr_t *addr)
+{
+  tor_assert(addr);
+  return (tor_addr_family(addr) == AF_INET6);
+}
+
 /** Determine whether an address <b>addr</b> is null, either all zeroes or
  *  belonging to family AF_UNSPEC.
  */
@@ -1217,20 +1226,28 @@ fmt_addr32(uint32_t addr)
   return buf;
 }
 
-/** Return a string representing the family of <b>addr</b>.
+/** Like fmt_addrport(), but takes <b>addr</b> as a host-order IPv4
+ * addresses. Also not thread-safe, also clobbers its return buffer on
+ * repeated calls. */
+const char *
+fmt_addr32_port(uint32_t addr, uint16_t port)
+{
+  static char buf[INET_NTOA_BUF_LEN + 6];
+  snprintf(buf, sizeof(buf), "%s:%u", fmt_addr32(addr), port);
+  return buf;
+}
+
+/** Return a string representing <b>family</b>.
  *
  * This string is a string constant, and must not be freed.
  * This function is thread-safe.
  */
 const char *
-fmt_addr_family(const tor_addr_t *addr)
+fmt_af_family(sa_family_t family)
 {
   static int default_bug_once = 0;
 
-  IF_BUG_ONCE(!addr)
-    return "NULL pointer";
-
-  switch (tor_addr_family(addr)) {
+  switch (family) {
     case AF_INET6:
       return "IPv6";
     case AF_INET:
@@ -1242,12 +1259,26 @@ fmt_addr_family(const tor_addr_t *addr)
     default:
       if (!default_bug_once) {
         log_warn(LD_BUG, "Called with unknown address family %d",
-                 (int)tor_addr_family(addr));
+                 (int)family);
         default_bug_once = 1;
       }
       return "unknown";
   }
   //return "(unreachable code)";
+}
+
+/** Return a string representing the family of <b>addr</b>.
+ *
+ * This string is a string constant, and must not be freed.
+ * This function is thread-safe.
+ */
+const char *
+fmt_addr_family(const tor_addr_t *addr)
+{
+  IF_BUG_ONCE(!addr)
+    return "NULL pointer";
+
+  return fmt_af_family(tor_addr_family(addr));
 }
 
 /** Convert the string in <b>src</b> to a tor_addr_t <b>addr</b>.  The string
@@ -1700,8 +1731,8 @@ get_interface_address6,(int severity, sa_family_t family, tor_addr_t *addr))
   /* Get a list of public or internal IPs in arbitrary order */
   addrs = get_interface_address6_list(severity, family, 1);
 
-  /* Find the first non-internal address, or the last internal address
-   * Ideally, we want the default route, see #12377 for details */
+  /* Find the first non-internal address, or the last internal address.
+   * Ideally, we want the default route; see #12377 for details. */
   SMARTLIST_FOREACH_BEGIN(addrs, tor_addr_t *, a) {
     tor_addr_copy(addr, a);
     const bool is_internal = tor_addr_is_internal(a, 0);
@@ -2083,7 +2114,19 @@ tor_addr_port_eq(const tor_addr_port_t *a,
   return tor_addr_eq(&a->addr, &b->addr) && a->port == b->port;
 }
 
-/** Return true if <b>string</b> represents a valid IPv4 adddress in
+/**
+ * Copy a tor_addr_port_t from @a source to @a dest.
+ **/
+void
+tor_addr_port_copy(tor_addr_port_t *dest,
+                   const tor_addr_port_t *source)
+{
+  tor_assert(dest);
+  tor_assert(source);
+  memcpy(dest, source, sizeof(tor_addr_port_t));
+}
+
+/** Return true if <b>string</b> represents a valid IPv4 address in
  * 'a.b.c.d' form.
  */
 int

@@ -33,12 +33,19 @@ connection_t *test_conn_get_connection(uint8_t state,
                                        uint8_t type, uint8_t purpose);
 or_options_t *helper_parse_options(const char *conf);
 
+int create_test_directory_structure(const char *parent_dir);
+
 extern const char TEST_DESCRIPTORS[];
 
 void *helper_setup_pubsub(const struct testcase_t *);
 int helper_cleanup_pubsub(const struct testcase_t *, void *);
 
 extern const struct testcase_setup_t helper_pubsub_setup;
+
+origin_circuit_t *new_test_origin_circuit(bool has_opened,
+                                          struct timeval circ_start_time,
+                                          int path_len,
+                                          extend_info_t **ei_list);
 
 #endif /* !defined(TOR_TEST_HELPERS_H) */
 
