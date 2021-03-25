@@ -61,13 +61,29 @@
 #include <sys/stat.h>
 #endif
 
-/** Convert a connection_t* to an control_connection_t*; assert if the cast is
- * invalid. */
+/**
+ * Cast a `connection_t *` to a `control_connection_t *`.
+ *
+ * Exit with an assertion failure if the input is not a
+ * `control_connection_t`.
+ **/
 control_connection_t *
 TO_CONTROL_CONN(connection_t *c)
 {
   tor_assert(c->magic == CONTROL_CONNECTION_MAGIC);
   return DOWNCAST(control_connection_t, c);
+}
+
+/**
+ * Cast a `const connection_t *` to a `const control_connection_t *`.
+ *
+ * Exit with an assertion failure if the input is not a
+ * `control_connection_t`.
+ **/
+const control_connection_t *
+CONST_TO_CONTROL_CONN(const connection_t *c)
+{
+  return TO_CONTROL_CONN((connection_t*)c);
 }
 
 /** Create and add a new controller connection on <b>sock</b>.  If
@@ -264,7 +280,7 @@ is_valid_initial_command(control_connection_t *conn, const char *cmd)
 #define MAX_COMMAND_LINE_LENGTH (1024*1024)
 
 /** Wrapper around peek_buf_has_control0 command: presents the same
- * interface as that underlying functions, but takes a connection_t intead of
+ * interface as that underlying functions, but takes a connection_t instead of
  * a buf_t.
  */
 static int

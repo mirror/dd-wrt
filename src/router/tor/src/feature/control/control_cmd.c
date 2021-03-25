@@ -20,6 +20,8 @@
 #include "core/or/circuitlist.h"
 #include "core/or/circuituse.h"
 #include "core/or/connection_edge.h"
+#include "core/or/circuitstats.h"
+#include "core/or/extendinfo.h"
 #include "feature/client/addressmap.h"
 #include "feature/client/dnsserv.h"
 #include "feature/client/entrynodes.h"
@@ -54,6 +56,8 @@
 #include "feature/rend/rend_authorized_client_st.h"
 #include "feature/rend/rend_encoded_v2_service_descriptor_st.h"
 #include "feature/rend/rend_service_descriptor_st.h"
+
+#include "src/app/config/statefile.h"
 
 static int control_setconf_helper(control_connection_t *conn,
                                   const control_cmd_args_t *args,
@@ -977,8 +981,7 @@ handle_control_attachstream(control_connection_t *conn,
     edge_conn->end_reason = 0;
     if (tmpcirc)
       circuit_detach_stream(tmpcirc, edge_conn);
-    CONNECTION_AP_EXPECT_NONPENDING(ap_conn);
-    TO_CONN(edge_conn)->state = AP_CONN_STATE_CONTROLLER_WAIT;
+    connection_entry_set_controller_wait(ap_conn);
   }
 
   if (circ && (circ->base_.state != CIRCUIT_STATE_OPEN)) {
@@ -1392,6 +1395,34 @@ handle_control_dropguards(control_connection_t *conn,
 
   remove_all_entry_guards();
   send_control_done(conn);
+
+  return 0;
+}
+
+static const control_cmd_syntax_t droptimeouts_syntax = {
+  .max_args = 0,
+};
+
+/** Implementation for the DROPTIMEOUTS command. */
+static int
+handle_control_droptimeouts(control_connection_t *conn,
+                          const control_cmd_args_t *args)
+{
+  (void) args; /* We don't take arguments. */
+
+  static int have_warned = 0;
+  if (! have_warned) {
+    log_warn(LD_CONTROL, "DROPTIMEOUTS is dangerous; make sure you understand "
+             "the risks before using it. It may be removed in a future "
+             "version of Tor.");
+    have_warned = 1;
+  }
+
+  circuit_build_times_reset(get_circuit_build_times_mutable());
+  send_control_done(conn);
+  or_state_mark_dirty(get_or_state(), 0);
+  cbt_control_event_buildtimeout_set(get_circuit_build_times(),
+                                     BUILDTIMEOUT_SET_EVENT_RESET);
 
   return 0;
 }
@@ -2331,6 +2362,7 @@ static const control_cmd_def_t CONTROL_COMMANDS[] =
   ONE_LINE(protocolinfo, 0),
   ONE_LINE(authchallenge, CMD_FL_WIPE),
   ONE_LINE(dropguards, 0),
+  ONE_LINE(droptimeouts, 0),
   ONE_LINE(hsfetch, 0),
   MULTLINE(hspost, 0),
   ONE_LINE(add_onion, CMD_FL_WIPE),

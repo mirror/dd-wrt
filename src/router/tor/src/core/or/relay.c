@@ -56,6 +56,7 @@
 #include "core/or/circuitlist.h"
 #include "core/or/circuituse.h"
 #include "core/or/circuitpadding.h"
+#include "core/or/extendinfo.h"
 #include "lib/compress/compress.h"
 #include "app/config/config.h"
 #include "core/mainloop/connection.h"
@@ -82,6 +83,7 @@
 #include "feature/nodelist/describe.h"
 #include "feature/nodelist/routerlist.h"
 #include "core/or/scheduler.h"
+#include "feature/hs/hs_metrics.h"
 
 #include "core/or/cell_st.h"
 #include "core/or/cell_queue_st.h"
@@ -1686,6 +1688,13 @@ handle_relay_cell_command(cell_t *cell, circuit_t *circ,
       /* Total all valid application bytes delivered */
       if (CIRCUIT_IS_ORIGIN(circ) && rh->length > 0) {
         circuit_read_valid_data(TO_ORIGIN_CIRCUIT(circ), rh->length);
+      }
+
+      /* For onion service connection, update the metrics. */
+      if (conn->hs_ident) {
+        hs_metrics_app_write_bytes(&conn->hs_ident->identity_pk,
+                                   conn->hs_ident->orig_virtual_port,
+                                   rh->length);
       }
 
       stats_n_data_bytes_received += rh->length;

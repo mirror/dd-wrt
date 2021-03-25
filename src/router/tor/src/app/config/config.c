@@ -27,7 +27,7 @@
  *   <li>The option_vars_ array below in this module, which configures
  *       the names of the torrc options, their types, their multiplicities,
  *       and their mappings to fields in or_options_t.
- *   <li>The manual in doc/tor.1.txt, to document what the new option
+ *   <li>The manual in doc/man/tor.1.txt, to document what the new option
  *       is, and how it works.
  * </ul>
  *
@@ -91,6 +91,7 @@
 #include "feature/dirclient/dirclient_modes.h"
 #include "feature/hibernate/hibernate.h"
 #include "feature/hs/hs_config.h"
+#include "feature/metrics/metrics.h"
 #include "feature/nodelist/dirlist.h"
 #include "feature/nodelist/networkstatus.h"
 #include "feature/nodelist/nickname.h"
@@ -140,6 +141,7 @@
 
 #include "lib/meminfo/meminfo.h"
 #include "lib/osinfo/uname.h"
+#include "lib/osinfo/libc.h"
 #include "lib/process/daemon.h"
 #include "lib/process/pidfile.h"
 #include "lib/process/restrict.h"
@@ -313,7 +315,8 @@ static const config_var_t option_vars_[] = {
   V(AccountingMax,               MEMUNIT,  "0 bytes"),
   VAR("AccountingRule",          STRING,   AccountingRule_option,  "max"),
   V(AccountingStart,             STRING,   NULL),
-  V(Address,                     STRING,   NULL),
+  V(Address,                     LINELIST, NULL),
+  V(AddressDisableIPv6,          BOOL,     "0"),
   OBSOLETE("AllowDotExit"),
   OBSOLETE("AllowInvalidNodes"),
   V(AllowNonRFC953Hostnames,     BOOL,     "0"),
@@ -323,6 +326,7 @@ static const config_var_t option_vars_[] = {
   V(AlternateDirAuthority,       LINELIST, NULL),
   OBSOLETE("AlternateHSAuthority"),
   V(AssumeReachable,             BOOL,     "0"),
+  V(AssumeReachableIPv6,         AUTOBOOL, "auto"),
   OBSOLETE("AuthDirBadDir"),
   OBSOLETE("AuthDirBadDirCCs"),
   V(AuthDirBadExit,              LINELIST, NULL),
@@ -545,7 +549,7 @@ static const config_var_t option_vars_[] = {
   V(LogTimeGranularity,          MSEC_INTERVAL, "1 second"),
   V(TruncateLogFile,             BOOL,     "0"),
   V_IMMUTABLE(SyslogIdentityTag, STRING,   NULL),
-  V_IMMUTABLE(AndroidIdentityTag,STRING,   NULL),
+  OBSOLETE("AndroidIdentityTag"),
   V(LongLivedPorts,              CSV,
         "21,22,706,1863,5050,5190,5222,5223,6523,6667,6697,8300"),
   VAR("MapAddress",              LINELIST, AddressMap,           NULL),
@@ -557,6 +561,8 @@ static const config_var_t option_vars_[] = {
   OBSOLETE("MaxOnionsPending"),
   V(MaxOnionQueueDelay,          MSEC_INTERVAL, "1750 msec"),
   V(MaxUnparseableDescSizeToLog, MEMUNIT, "10 MB"),
+  VPORT(MetricsPort),
+  V(MetricsPortPolicy,           LINELIST, NULL),
   VAR("MyFamily",                LINELIST, MyFamily_lines,       NULL),
   V(NewCircuitPeriod,            INTERVAL, "30 seconds"),
   OBSOLETE("NamingAuthoritativeDirectory"),
@@ -577,6 +583,7 @@ static const config_var_t option_vars_[] = {
   V(OutboundBindAddress,         LINELIST,   NULL),
   V(OutboundBindAddressOR,       LINELIST,   NULL),
   V(OutboundBindAddressExit,     LINELIST,   NULL),
+  V(OutboundBindAddressPT,       LINELIST,   NULL),
 
   OBSOLETE("PathBiasDisableRate"),
   V(PathBiasCircThreshold,       INT,      "-1"),
@@ -606,7 +613,7 @@ static const config_var_t option_vars_[] = {
   V(TestingAuthKeySlop,              INTERVAL, "3 hours"),
   V(TestingSigningKeySlop,           INTERVAL, "1 day"),
 
-  V(OptimisticData,              AUTOBOOL, "auto"),
+  OBSOLETE("OptimisticData"),
   OBSOLETE("PortForwarding"),
   OBSOLETE("PortForwardingHelper"),
   OBSOLETE("PreferTunneledDirConns"),
@@ -1511,7 +1518,7 @@ compute_group_readable_flag(const char *datadir,
      * the datadirectory */
     return datadir_gr;
   } else {
-    /* The directores are different, so we default to "not group-readable" */
+    /* The directories are different, so we default to "not group-readable" */
     return 0;
   }
 }
@@ -1735,8 +1742,8 @@ options_rollback_listener_transaction(listener_transaction_t *xn)
 
   SMARTLIST_FOREACH(xn->new_listeners, connection_t *, conn,
   {
-    log_notice(LD_NET, "Closing partially-constructed %s on %s:%d",
-               conn_type_to_string(conn->type), conn->address, conn->port);
+    log_notice(LD_NET, "Closing partially-constructed %s",
+               connection_describe(conn));
     connection_close_immediate(conn);
     connection_mark_for_close(conn);
   });
@@ -2101,6 +2108,16 @@ options_act,(const or_options_t *old_options))
              "in a non-anonymous mode. It will provide NO ANONYMITY.");
   }
 
+  /* 31851: OutboundBindAddressExit is relay-only */
+  if (parse_outbound_addresses(options, 0, &msg) < 0) {
+    // LCOV_EXCL_START
+    log_warn(LD_BUG, "Failed parsing previously validated outbound "
+             "bind addresses: %s", msg);
+    tor_free(msg);
+    return -1;
+    // LCOV_EXCL_STOP
+  }
+
   if (options->Bridges) {
     mark_bridge_list();
     for (cl = options->Bridges; cl; cl = cl->next) {
@@ -2260,16 +2277,6 @@ options_act,(const or_options_t *old_options))
                      http_authenticator, strlen(http_authenticator),
                      DIGEST_SHA256);
     tor_free(http_authenticator);
-  }
-
-  /* 31851: OutboundBindAddressExit is relay-only */
-  if (parse_outbound_addresses(options, 0, &msg) < 0) {
-    // LCOV_EXCL_START
-    log_warn(LD_BUG, "Failed parsing previously validated outbound "
-             "bind addresses: %s", msg);
-    tor_free(msg);
-    return -1;
-    // LCOV_EXCL_STOP
   }
 
   config_maybe_load_geoip_files_(options, old_options);
@@ -2465,6 +2472,8 @@ static const struct {
   { .name="--key-expiration",
     .takes_argument=ARGUMENT_OPTIONAL,
     .command=CMD_KEY_EXPIRATION },
+  { .name="--format",
+    .takes_argument=ARGUMENT_NECESSARY },
   { .name="--newpass" },
   { .name="--no-passphrase" },
   { .name="--passphrase-fd",
@@ -2722,6 +2731,140 @@ list_enabled_modules(void)
   // test variants in test_parseconf.sh to no useful purpose.
 }
 
+/** Prints compile-time and runtime library versions. */
+static void
+print_library_versions(void)
+{
+  printf("Tor version %s. \n", get_version());
+  printf("Library versions\tCompiled\t\tRuntime\n");
+  printf("Libevent\t\t%-15s\t\t%s\n",
+                    tor_libevent_get_header_version_str(),
+                    tor_libevent_get_version_str());
+#ifdef ENABLE_OPENSSL
+  printf("OpenSSL \t\t%-15s\t\t%s\n",
+                     crypto_openssl_get_header_version_str(),
+                     crypto_openssl_get_version_str());
+#endif
+#ifdef ENABLE_NSS
+  printf("NSS \t\t%-15s\t\t%s\n",
+                crypto_nss_get_header_version_str(),
+                crypto_nss_get_version_str());
+#endif
+  if (tor_compress_supports_method(ZLIB_METHOD)) {
+    printf("Zlib    \t\t%-15s\t\t%s\n",
+                      tor_compress_version_str(ZLIB_METHOD),
+                      tor_compress_header_version_str(ZLIB_METHOD));
+  }
+  if (tor_compress_supports_method(LZMA_METHOD)) {
+    printf("Liblzma \t\t%-15s\t\t%s\n",
+                      tor_compress_version_str(LZMA_METHOD),
+                      tor_compress_header_version_str(LZMA_METHOD));
+  }
+  if (tor_compress_supports_method(ZSTD_METHOD)) {
+    printf("Libzstd \t\t%-15s\t\t%s\n",
+                      tor_compress_version_str(ZSTD_METHOD),
+                      tor_compress_header_version_str(ZSTD_METHOD));
+  }
+  if (tor_libc_get_name()) {
+    printf("%-7s \t\t%-15s\t\t%s\n",
+           tor_libc_get_name(),
+           tor_libc_get_header_version_str(),
+           tor_libc_get_version_str());
+  }
+  //TODO: Hex versions?
+}
+
+/** Handles the --no-passphrase command line option. */
+static int
+handle_cmdline_no_passphrase(tor_cmdline_mode_t command)
+{
+  if (command == CMD_KEYGEN) {
+    get_options_mutable()->keygen_force_passphrase = FORCE_PASSPHRASE_OFF;
+    return 0;
+  } else {
+    log_err(LD_CONFIG, "--no-passphrase specified without --keygen!");
+    return -1;
+  }
+}
+
+/** Handles the --format command line option. */
+static int
+handle_cmdline_format(tor_cmdline_mode_t command, const char *value)
+{
+  if (command == CMD_KEY_EXPIRATION) {
+    // keep the same order as enum key_expiration_format
+    const char *formats[] = { "iso8601", "timestamp" };
+    int format = -1;
+    for (unsigned i = 0; i < ARRAY_LENGTH(formats); i++) {
+      if (!strcmp(value, formats[i])) {
+        format = i;
+        break;
+      }
+    }
+
+    if (format < 0) {
+      log_err(LD_CONFIG, "Invalid --format value %s", escaped(value));
+      return -1;
+    } else {
+      get_options_mutable()->key_expiration_format = format;
+    }
+    return 0;
+  } else {
+    log_err(LD_CONFIG, "--format specified without --key-expiration!");
+    return -1;
+  }
+}
+
+/** Handles the --newpass command line option. */
+static int
+handle_cmdline_newpass(tor_cmdline_mode_t command)
+{
+  if (command == CMD_KEYGEN) {
+    get_options_mutable()->change_key_passphrase = 1;
+    return 0;
+  } else {
+    log_err(LD_CONFIG, "--newpass specified without --keygen!");
+    return -1;
+  }
+}
+
+/** Handles the --passphrase-fd command line option. */
+static int
+handle_cmdline_passphrase_fd(tor_cmdline_mode_t command, const char *value)
+{
+  if (get_options()->keygen_force_passphrase == FORCE_PASSPHRASE_OFF) {
+    log_err(LD_CONFIG, "--no-passphrase specified with --passphrase-fd!");
+    return -1;
+  } else if (command != CMD_KEYGEN) {
+    log_err(LD_CONFIG, "--passphrase-fd specified without --keygen!");
+    return -1;
+  } else {
+    int ok = 1;
+    long fd = tor_parse_long(value, 10, 0, INT_MAX, &ok, NULL);
+    if (fd < 0 || ok == 0) {
+      log_err(LD_CONFIG, "Invalid --passphrase-fd value %s", escaped(value));
+      return -1;
+    }
+    get_options_mutable()->keygen_passphrase_fd = (int)fd;
+    get_options_mutable()->use_keygen_passphrase_fd = 1;
+    get_options_mutable()->keygen_force_passphrase = FORCE_PASSPHRASE_ON;
+    return 0;
+  }
+}
+
+/** Handles the --master-key command line option. */
+static int
+handle_cmdline_master_key(tor_cmdline_mode_t command, const char *value)
+{
+  if (command != CMD_KEYGEN) {
+    log_err(LD_CONFIG, "--master-key without --keygen!");
+    return -1;
+  } else {
+    get_options_mutable()->master_key_fname = tor_strdup(value);
+    return 0;
+  }
+}
+
 /* Return true if <b>options</b> is using the default authorities, and false
  * if any authority-related option has been overridden. */
 int
@@ -2769,10 +2912,6 @@ options_dump(const or_options_t *options, int how_to_dump)
   switch (how_to_dump) {
     case OPTIONS_DUMP_MINIMAL:
       use_defaults = global_default_options;
-      minimal = 1;
-      break;
-    case OPTIONS_DUMP_DEFAULTS:
-      use_defaults = NULL;
       minimal = 1;
       break;
     case OPTIONS_DUMP_ALL:
@@ -3229,6 +3368,10 @@ options_validate_cb(const void *old_options_, void *options_, char **msg)
     REJECT("TokenBucketRefillInterval must be between 1 and 1000 inclusive.");
   }
 
+  if (options->AssumeReachable && options->AssumeReachableIPv6 == 0) {
+    REJECT("Cannot set AssumeReachable 1 and AssumeReachableIPv6 0.");
+  }
+
   if (options->ExcludeExitNodes || options->ExcludeNodes) {
     options->ExcludeExitNodesUnion_ = routerset_new();
     routerset_union(options->ExcludeExitNodesUnion_,options->ExcludeExitNodes);
@@ -3453,7 +3596,7 @@ options_validate_cb(const void *old_options_, void *options_, char **msg)
              "configured. This is bad because it's very easy to locate your "
              "entry guard which can then lead to the deanonymization of your "
              "hidden service -- for more details, see "
-             "https://trac.torproject.org/projects/tor/ticket/14917. "
+             "https://bugs.torproject.org/tpo/core/tor/14917. "
              "For this reason, the use of one EntryNodes with an hidden "
              "service is prohibited until a better solution is found.");
     return -1;
@@ -3470,7 +3613,7 @@ options_validate_cb(const void *old_options_, void *options_, char **msg)
              "be harmful to the service anonymity. Because of this, we "
              "recommend you either don't do that or make sure you know what "
              "you are doing. For more details, please look at "
-             "https://trac.torproject.org/projects/tor/ticket/21155.");
+             "https://bugs.torproject.org/tpo/core/tor/21155.");
   }
 
   /* Single Onion Services: non-anonymous hidden services */
@@ -4045,7 +4188,7 @@ options_check_transition_cb(const void *old_,
     if (! CFG_EQ_INT(old, new_val, opt))           \
       BAD_CHANGE_TO(opt," with Sandbox active")
 
-    SB_NOCHANGE_STR(Address);
+    SB_NOCHANGE_LINELIST(Address);
     SB_NOCHANGE_STR(ServerDNSResolvConfFile);
     SB_NOCHANGE_STR(DirPortFrontPage);
     SB_NOCHANGE_STR(CookieAuthFile);
@@ -4351,37 +4494,7 @@ options_init_from_torrc(int argc, char **argv)
   }
 
   if (config_line_find(cmdline_only_options, "--library-versions")) {
-    printf("Tor version %s. \n", get_version());
-    printf("Library versions\tCompiled\t\tRuntime\n");
-    printf("Libevent\t\t%-15s\t\t%s\n",
-                      tor_libevent_get_header_version_str(),
-                      tor_libevent_get_version_str());
-#ifdef ENABLE_OPENSSL
-    printf("OpenSSL \t\t%-15s\t\t%s\n",
-                      crypto_openssl_get_header_version_str(),
-                      crypto_openssl_get_version_str());
-#endif
-#ifdef ENABLE_NSS
-    printf("NSS \t\t%-15s\t\t%s\n",
-           crypto_nss_get_header_version_str(),
-           crypto_nss_get_version_str());
-#endif
-    if (tor_compress_supports_method(ZLIB_METHOD)) {
-      printf("Zlib    \t\t%-15s\t\t%s\n",
-                        tor_compress_version_str(ZLIB_METHOD),
-                        tor_compress_header_version_str(ZLIB_METHOD));
-    }
-    if (tor_compress_supports_method(LZMA_METHOD)) {
-      printf("Liblzma \t\t%-15s\t\t%s\n",
-                        tor_compress_version_str(LZMA_METHOD),
-                        tor_compress_header_version_str(LZMA_METHOD));
-    }
-    if (tor_compress_supports_method(ZSTD_METHOD)) {
-      printf("Libzstd \t\t%-15s\t\t%s\n",
-                        tor_compress_version_str(ZSTD_METHOD),
-                        tor_compress_header_version_str(ZSTD_METHOD));
-    }
-    //TODO: Hex versions?
+    print_library_versions();
     return 1;
   }
 
@@ -4395,10 +4508,7 @@ options_init_from_torrc(int argc, char **argv)
     cf = tor_strdup("");
   } else {
     cf_defaults = load_torrc_from_disk(cmdline_only_options, 1);
-
-    const config_line_t *f_line = config_line_find(cmdline_only_options,
-                                                   "-f");
-
+    const config_line_t *f_line = config_line_find(cmdline_only_options, "-f");
     const int read_torrc_from_stdin =
     (f_line != NULL && strcmp(f_line->value, "-") == 0);
 
@@ -4419,74 +4529,54 @@ options_init_from_torrc(int argc, char **argv)
 
   retval = options_init_from_string(cf_defaults, cf, command, command_arg,
                                     &errmsg);
-
   if (retval < 0)
     goto err;
 
   if (config_line_find(cmdline_only_options, "--no-passphrase")) {
-    if (command == CMD_KEYGEN) {
-      get_options_mutable()->keygen_force_passphrase = FORCE_PASSPHRASE_OFF;
-    } else {
-      log_err(LD_CONFIG, "--no-passphrase specified without --keygen!");
+    if (handle_cmdline_no_passphrase(command) < 0) {
       retval = -1;
       goto err;
     }
+  }
+
+  const config_line_t *format_line = config_line_find(cmdline_only_options,
+                                                      "--format");
+  if (format_line) {
+    if (handle_cmdline_format(command, format_line->value) < 0) {
+      retval = -1;
+      goto err;
+    }
+  } else {
+    get_options_mutable()->key_expiration_format =
+      KEY_EXPIRATION_FORMAT_ISO8601;
   }
 
   if (config_line_find(cmdline_only_options, "--newpass")) {
-    if (command == CMD_KEYGEN) {
-      get_options_mutable()->change_key_passphrase = 1;
-    } else {
-      log_err(LD_CONFIG, "--newpass specified without --keygen!");
+    if (handle_cmdline_newpass(command) < 0) {
       retval = -1;
       goto err;
     }
   }
 
-  {
-    const config_line_t *fd_line = config_line_find(cmdline_only_options,
-                                                    "--passphrase-fd");
-    if (fd_line) {
-      if (get_options()->keygen_force_passphrase == FORCE_PASSPHRASE_OFF) {
-        log_err(LD_CONFIG, "--no-passphrase specified with --passphrase-fd!");
-        retval = -1;
-        goto err;
-      } else if (command != CMD_KEYGEN) {
-        log_err(LD_CONFIG, "--passphrase-fd specified without --keygen!");
-        retval = -1;
-        goto err;
-      } else {
-        const char *v = fd_line->value;
-        int ok = 1;
-        long fd = tor_parse_long(v, 10, 0, INT_MAX, &ok, NULL);
-        if (fd < 0 || ok == 0) {
-          log_err(LD_CONFIG, "Invalid --passphrase-fd value %s", escaped(v));
-          retval = -1;
-          goto err;
-        }
-        get_options_mutable()->keygen_passphrase_fd = (int)fd;
-        get_options_mutable()->use_keygen_passphrase_fd = 1;
-        get_options_mutable()->keygen_force_passphrase = FORCE_PASSPHRASE_ON;
-      }
+  const config_line_t *fd_line = config_line_find(cmdline_only_options,
+                                                  "--passphrase-fd");
+  if (fd_line) {
+    if (handle_cmdline_passphrase_fd(command, fd_line->value) < 0) {
+      retval = -1;
+      goto err;
     }
   }
 
-  {
-    const config_line_t *key_line = config_line_find(cmdline_only_options,
-                                                     "--master-key");
-    if (key_line) {
-      if (command != CMD_KEYGEN) {
-        log_err(LD_CONFIG, "--master-key without --keygen!");
-        retval = -1;
-        goto err;
-      } else {
-        get_options_mutable()->master_key_fname = tor_strdup(key_line->value);
-      }
+  const config_line_t *key_line = config_line_find(cmdline_only_options,
+                                                   "--master-key");
+  if (key_line) {
+    if (handle_cmdline_master_key(command, key_line->value) < 0) {
+      retval = -1;
+      goto err;
     }
   }
 
  err:
-
   tor_free(cf);
   tor_free(cf_defaults);
   if (errmsg) {
@@ -4848,15 +4938,19 @@ options_init_logs(const or_options_t *old_options, const or_options_t *options,
         goto cleanup;
       }
 
+      /* We added this workaround in 0.4.5.x; we can remove it in 0.4.6 or
+       * later */
       if (!strcasecmp(smartlist_get(elts, 0), "android")) {
-#ifdef HAVE_ANDROID_LOG_H
+#ifdef HAVE_SYSLOG_H
+        log_warn(LD_CONFIG, "The android logging API is no longer supported;"
+                            " adding a syslog instead. The 'android' logging "
+                            " type will no longer work in the future.");
         if (!validate_only) {
-          add_android_log(severity, options->AndroidIdentityTag);
+          add_syslog_log(severity, options->SyslogIdentityTag);
         }
 #else
-        log_warn(LD_CONFIG, "Android logging is not supported"
-                            " on this system. Sorry.");
-#endif /* defined(HAVE_ANDROID_LOG_H) */
+        log_warn(LD_CONFIG, "The android logging API is no longer supported.");
+#endif
         goto cleanup;
       }
     }
@@ -5778,9 +5872,9 @@ warn_client_dns_cache(const char *option, int disabling)
     return;
 
   warn_deprecated_option(option,
-      "Client-side DNS cacheing enables a wide variety of route-"
+      "Client-side DNS caching enables a wide variety of route-"
       "capture attacks. If a single bad exit node lies to you about "
-      "an IP address, cacheing that address would make you visit "
+      "an IP address, caching that address would make you visit "
       "an address of the attacker's choice every time you connected "
       "to your destination.");
 }
@@ -5839,6 +5933,14 @@ port_parse_config(smartlist_t *out,
   int got_zero_port=0, got_nonzero_port=0;
   char *unix_socket_path = NULL;
   port_cfg_t *cfg = NULL;
+  bool addr_is_explicit = false;
+  tor_addr_t default_addr = TOR_ADDR_NULL;
+
+  /* Parse default address. This can fail for Unix socket so the default_addr
+   * will simply be made UNSPEC. */
+  if (defaultaddr) {
+    tor_addr_parse(&default_addr, defaultaddr);
+  }
 
   /* If there's no FooPort, then maybe make a default one. */
   if (! ports) {
@@ -5915,8 +6017,7 @@ port_parse_config(smartlist_t *out,
         port = 1;
     } else if (!strcasecmp(addrport, "auto")) {
       port = CFG_AUTO_PORT;
-      int af = tor_addr_parse(&addr, defaultaddr);
-      tor_assert(af >= 0);
+      tor_addr_copy(&addr, &default_addr);
     } else if (!strcasecmpend(addrport, ":auto")) {
       char *addrtmp = tor_strndup(addrport, strlen(addrport)-5);
       port = CFG_AUTO_PORT;
@@ -5932,14 +6033,15 @@ port_parse_config(smartlist_t *out,
          "9050" might be a valid address. */
       port = (int) tor_parse_long(addrport, 10, 0, 65535, &ok, NULL);
       if (ok) {
-        int af = tor_addr_parse(&addr, defaultaddr);
-        tor_assert(af >= 0);
+        tor_addr_copy(&addr, &default_addr);
+        addr_is_explicit = false;
       } else if (tor_addr_port_lookup(addrport, &addr, &ptmp) == 0) {
         if (ptmp == 0) {
           log_warn(LD_CONFIG, "%sPort line has address but no port", portname);
           goto err;
         }
         port = ptmp;
+        addr_is_explicit = true;
       } else {
         log_warn(LD_CONFIG, "Couldn't parse address %s for %sPort",
                  escaped(addrport), portname);
@@ -5950,6 +6052,7 @@ port_parse_config(smartlist_t *out,
     /* Default port_cfg_t object initialization */
     cfg = port_cfg_new(unix_socket_path ? strlen(unix_socket_path) : 0);
 
+    cfg->explicit_addr = addr_is_explicit;
     if (unix_socket_path && default_to_group_writable)
       cfg->is_group_writable = 1;
 
@@ -5992,15 +6095,25 @@ port_parse_config(smartlist_t *out,
       }
       if (cfg->server_cfg.bind_ipv4_only &&
           tor_addr_family(&addr) != AF_INET) {
-        log_warn(LD_CONFIG, "Could not interpret %sPort address as IPv4",
-                 portname);
-        goto err;
+        if (cfg->explicit_addr) {
+          log_warn(LD_CONFIG, "Could not interpret %sPort address as IPv4",
+                   portname);
+          goto err;
+        }
+        /* This ORPort is IPv4Only but the default address is IPv6, ignore it
+         * since this will be configured with an IPv4 default address. */
+        goto ignore;
       }
       if (cfg->server_cfg.bind_ipv6_only &&
           tor_addr_family(&addr) != AF_INET6) {
-        log_warn(LD_CONFIG, "Could not interpret %sPort address as IPv6",
-                 portname);
-        goto err;
+        if (cfg->explicit_addr) {
+          log_warn(LD_CONFIG, "Could not interpret %sPort address as IPv6",
+                   portname);
+          goto err;
+        }
+        /* This ORPort is IPv6Only but the default address is IPv4, ignore it
+         * since this will be configured with an IPv6 default address. */
+        goto ignore;
       }
     } else {
       /* This is a client port; parse isolation options */
@@ -6213,9 +6326,10 @@ port_parse_config(smartlist_t *out,
       smartlist_add(out, cfg);
       /* out owns cfg now, don't re-use or free it */
       cfg = NULL;
-    } else {
-      tor_free(cfg);
     }
+
+ ignore:
+    tor_free(cfg);
     SMARTLIST_FOREACH(elts, char *, cp, tor_free(cp));
     smartlist_clear(elts);
     tor_free(addrport);
@@ -6343,6 +6457,10 @@ parse_ports(or_options_t *options, int validate_only,
     *msg = tor_strdup("Invalid HTTPTunnelPort configuration");
     goto err;
   }
+  if (metrics_parse_ports(options, ports, msg) < 0) {
+    goto err;
+  }
+
   {
     unsigned control_port_flags = CL_PORT_NO_STREAM_OPTIONS |
       CL_PORT_WARN_NONLOCAL;
@@ -6512,48 +6630,57 @@ get_first_listener_addrport_string(int listener_type)
   return NULL;
 }
 
+/** Find and return the first configured advertised `port_cfg_t` of type @a
+ * listener_type in @a address_family. */
+static const port_cfg_t *
+portconf_get_first_advertised(int listener_type, int address_family)
+{
+  const port_cfg_t *first_port = NULL;
+  const port_cfg_t *first_port_explicit_addr = NULL;
+
+  if (address_family == AF_UNSPEC)
+    return NULL;
+
+  const smartlist_t *conf_ports = get_configured_ports();
+  SMARTLIST_FOREACH_BEGIN(conf_ports, const port_cfg_t *, cfg) {
+    if (cfg->type == listener_type && !cfg->server_cfg.no_advertise) {
+      if ((address_family == AF_INET && port_binds_ipv4(cfg)) ||
+          (address_family == AF_INET6 && port_binds_ipv6(cfg))) {
+        if (cfg->explicit_addr && !first_port_explicit_addr) {
+          first_port_explicit_addr = cfg;
+        } else if (!first_port) {
+          first_port = cfg;
+        }
+      }
+    }
+  } SMARTLIST_FOREACH_END(cfg);
+
+  /* Prefer the port with the explicit address if any. */
+  return (first_port_explicit_addr) ? first_port_explicit_addr : first_port;
+}
+
 /** Return the first advertised port of type <b>listener_type</b> in
  * <b>address_family</b>. Returns 0 when no port is found, and when passed
  * AF_UNSPEC. */
 int
-get_first_advertised_port_by_type_af(int listener_type, int address_family)
+portconf_get_first_advertised_port(int listener_type, int address_family)
 {
-  if (address_family == AF_UNSPEC)
-    return 0;
+  const port_cfg_t *cfg;
+  cfg = portconf_get_first_advertised(listener_type, address_family);
 
-  const smartlist_t *conf_ports = get_configured_ports();
-  SMARTLIST_FOREACH_BEGIN(conf_ports, const port_cfg_t *, cfg) {
-    if (cfg->type == listener_type &&
-        !cfg->server_cfg.no_advertise) {
-      if ((address_family == AF_INET && port_binds_ipv4(cfg)) ||
-          (address_family == AF_INET6 && port_binds_ipv6(cfg))) {
-        return cfg->port;
-      }
-    }
-  } SMARTLIST_FOREACH_END(cfg);
-  return 0;
+  return cfg ? cfg->port : 0;
 }
 
 /** Return the first advertised address of type <b>listener_type</b> in
  * <b>address_family</b>. Returns NULL if there is no advertised address,
  * and when passed AF_UNSPEC. */
 const tor_addr_t *
-get_first_advertised_addr_by_type_af(int listener_type, int address_family)
+portconf_get_first_advertised_addr(int listener_type, int address_family)
 {
-  if (address_family == AF_UNSPEC)
-    return NULL;
-  if (!configured_ports)
-    return NULL;
-  SMARTLIST_FOREACH_BEGIN(configured_ports, const port_cfg_t *, cfg) {
-    if (cfg->type == listener_type &&
-        !cfg->server_cfg.no_advertise) {
-      if ((address_family == AF_INET && port_binds_ipv4(cfg)) ||
-          (address_family == AF_INET6 && port_binds_ipv6(cfg))) {
-        return &cfg->addr;
-      }
-    }
-  } SMARTLIST_FOREACH_END(cfg);
-  return NULL;
+  const port_cfg_t *cfg;
+  cfg = portconf_get_first_advertised(listener_type, address_family);
+
+  return cfg ? &cfg->addr : NULL;
 }
 
 /** Return 1 if a port exists of type <b>listener_type</b> on <b>addr</b> and
@@ -6883,7 +7010,7 @@ options_get_dir_fname2_suffix,(const or_options_t *options,
   return fname;
 }
 
-/** Check wether the data directory has a private subdirectory
+/** Check whether the data directory has a private subdirectory
  * <b>subdir</b>. If not, try to create it. Return 0 on success,
  * -1 otherwise. */
 int
@@ -7066,7 +7193,8 @@ parse_outbound_address_lines(const config_line_t *lines, outbound_addr_t type,
                      "configured: %s",
                      family==AF_INET?" IPv4":(family==AF_INET6?" IPv6":""),
                      type==OUTBOUND_ADDR_OR?" OR":
-                     (type==OUTBOUND_ADDR_EXIT?" exit":""), lines->value);
+                     (type==OUTBOUND_ADDR_EXIT?" exit":
+                     (type==OUTBOUND_ADDR_PT?" PT":"")), lines->value);
       return -1;
     }
     lines = lines->next;
@@ -7089,7 +7217,7 @@ parse_outbound_addresses(or_options_t *options, int validate_only, char **msg)
   }
 
   if (parse_outbound_address_lines(options->OutboundBindAddress,
-                                   OUTBOUND_ADDR_EXIT_AND_OR, options,
+                                   OUTBOUND_ADDR_ANY, options,
                                    validate_only, msg) < 0) {
     goto err;
   }
@@ -7103,6 +7231,12 @@ parse_outbound_addresses(or_options_t *options, int validate_only, char **msg)
   if (parse_outbound_address_lines(options->OutboundBindAddressExit,
                                    OUTBOUND_ADDR_EXIT, options, validate_only,
                                    msg)  < 0) {
+    goto err;
+  }
+
+  if (parse_outbound_address_lines(options->OutboundBindAddressPT,
+                                   OUTBOUND_ADDR_PT, options, validate_only,
+                                   msg) < 0) {
     goto err;
   }
 

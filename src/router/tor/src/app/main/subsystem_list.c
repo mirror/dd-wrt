@@ -26,10 +26,13 @@
 #include "lib/thread/thread_sys.h"
 #include "lib/time/time_sys.h"
 #include "lib/tls/tortls_sys.h"
+#include "lib/trace/trace_sys.h"
 #include "lib/wallclock/wallclock_sys.h"
 #include "lib/evloop/evloop_sys.h"
 
 #include "feature/dirauth/dirauth_sys.h"
+#include "feature/hs/hs_sys.h"
+#include "feature/metrics/metrics_sys.h"
 #include "feature/relay/relay_sys.h"
 
 #include <stddef.h>
@@ -47,6 +50,8 @@ const subsys_fns_t *tor_subsystems[] = {
   &sys_logging,
   &sys_threads,
 
+  &sys_tracing,
+
   &sys_time,
 
   &sys_crypto,
@@ -61,10 +66,12 @@ const subsys_fns_t *tor_subsystems[] = {
   &sys_or,
 
   &sys_relay,
+  &sys_hs,
 
   &sys_btrack,
 
   &sys_dirauth,
+  &sys_metrics,
 };
 
 const unsigned n_tor_subsystems = ARRAY_LENGTH(tor_subsystems);

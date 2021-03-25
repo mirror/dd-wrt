@@ -4,6 +4,7 @@
 /* See LICENSE for licensing information */
 
 #define DIRVOTE_PRIVATE
+
 #include "core/or/or.h"
 #include "app/config/config.h"
 #include "app/config/resolve_addr.h"
@@ -225,7 +226,6 @@ format_networkstatus_vote(crypto_pk_t *private_signing_key,
   smartlist_t *chunks = smartlist_new();
   char fingerprint[FINGERPRINT_LEN+1];
   char digest[DIGEST_LEN];
-  uint32_t addr;
   char *protocols_lines = NULL;
   char *client_versions_line = NULL, *server_versions_line = NULL;
   char *shared_random_vote_str = NULL;
@@ -236,8 +236,6 @@ format_networkstatus_vote(crypto_pk_t *private_signing_key,
   tor_assert(v3_ns->type == NS_TYPE_VOTE || v3_ns->type == NS_TYPE_OPINION);
 
   voter = smartlist_get(v3_ns->voters, 0);
-
-  addr = voter->addr;
 
   base16_encode(fingerprint, sizeof(fingerprint),
                 v3_ns->cert->cache_info.identity_digest, DIGEST_LEN);
@@ -322,7 +320,7 @@ format_networkstatus_vote(crypto_pk_t *private_signing_key,
       tor_free(digest_algo_b64_digest_bw_file);
     }
 
-    const char *ip_str = fmt_addr32(addr);
+    const char *ip_str = fmt_addr(&voter->ipv4_addr);
 
     if (ip_str[0]) {
       smartlist_add_asprintf(chunks,
@@ -358,7 +356,7 @@ format_networkstatus_vote(crypto_pk_t *private_signing_key,
                    bw_headers_line ? bw_headers_line : "",
                    bw_file_digest ? bw_file_digest: "",
                    voter->nickname, fingerprint, voter->address,
-                   ip_str, voter->dir_port, voter->or_port,
+                   ip_str, voter->ipv4_dirport, voter->ipv4_orport,
                    voter->contact,
                    shared_random_vote_str ?
                              shared_random_vote_str : "");
@@ -636,9 +634,12 @@ compare_vote_rs(const vote_routerstatus_t *a, const vote_routerstatus_t *b)
   if ((r = strcmp(b->status.nickname, a->status.nickname)))
     return r;
 
-  CMP_FIELD(unsigned, int, addr);
-  CMP_FIELD(unsigned, int, or_port);
-  CMP_FIELD(unsigned, int, dir_port);
+  if ((r = tor_addr_compare(&a->status.ipv4_addr, &b->status.ipv4_addr,
+                            CMP_EXACT))) {
+    return r;
+  }
+  CMP_FIELD(unsigned, int, ipv4_orport);
+  CMP_FIELD(unsigned, int, ipv4_dirport);
 
   return 0;
 }
@@ -1740,9 +1741,9 @@ networkstatus_compute_consensus(smartlist_t *votes,
       smartlist_add_asprintf(chunks,
                    "dir-source %s%s %s %s %s %d %d\n",
                    voter->nickname, e->is_legacy ? "-legacy" : "",
-                   fingerprint, voter->address, fmt_addr32(voter->addr),
-                   voter->dir_port,
-                   voter->or_port);
+                   fingerprint, voter->address, fmt_addr(&voter->ipv4_addr),
+                   voter->ipv4_dirport,
+                   voter->ipv4_orport);
       if (! e->is_legacy) {
         smartlist_add_asprintf(chunks,
                      "contact %s\n"
@@ -2039,10 +2040,10 @@ networkstatus_compute_consensus(smartlist_t *votes,
       memcpy(rs_out.identity_digest, current_rsa_id, DIGEST_LEN);
       memcpy(rs_out.descriptor_digest, rs->status.descriptor_digest,
              DIGEST_LEN);
-      rs_out.addr = rs->status.addr;
+      tor_addr_copy(&rs_out.ipv4_addr, &rs->status.ipv4_addr);
       rs_out.published_on = rs->status.published_on;
-      rs_out.dir_port = rs->status.dir_port;
-      rs_out.or_port = rs->status.or_port;
+      rs_out.ipv4_dirport = rs->status.ipv4_dirport;
+      rs_out.ipv4_orport = rs->status.ipv4_orport;
       tor_addr_copy(&rs_out.ipv6_addr, &alt_orport.addr);
       rs_out.ipv6_orport = alt_orport.port;
       rs_out.has_bandwidth = 0;
@@ -2974,7 +2975,7 @@ dirvote_perform_vote(void)
   if (!contents)
     return -1;
 
-  pending_vote = dirvote_add_vote(contents, 0, &msg, &status);
+  pending_vote = dirvote_add_vote(contents, 0, "self", &msg, &status);
   tor_free(contents);
   if (!pending_vote) {
     log_warn(LD_DIR, "Couldn't store my own vote! (I told myself, '%s'.)",
@@ -3168,6 +3169,7 @@ add_new_cert_if_needed(const struct authority_cert_t *cert)
  * only) */
 pending_vote_t *
 dirvote_add_vote(const char *vote_body, time_t time_posted,
+                 const char *where_from,
                  const char **msg_out, int *status_out)
 {
   networkstatus_t *vote;
@@ -3225,6 +3227,14 @@ dirvote_add_vote(const char *vote_body, time_t time_posted,
     goto err;
   }
 
+  if (time_posted) { /* they sent it to me via a POST */
+    log_notice(LD_DIR, "%s posted a vote to me from %s.",
+               vi->nickname, where_from);
+  } else { /* I imported this one myself */
+    log_notice(LD_DIR, "Retrieved %s's vote from %s.",
+               vi->nickname, where_from);
+  }
+
   /* Check if we received it, as a post, after the cutoff when we
    * start asking other dir auths for it. If we do, the best plan
    * is to discard it, because using it greatly increases the chances
@@ -3234,10 +3244,10 @@ dirvote_add_vote(const char *vote_body, time_t time_posted,
     char tbuf1[ISO_TIME_LEN+1], tbuf2[ISO_TIME_LEN+1];
     format_iso_time(tbuf1, time_posted);
     format_iso_time(tbuf2, voting_schedule.fetch_missing_votes);
-    log_warn(LD_DIR, "Rejecting posted vote from %s received at %s; "
+    log_warn(LD_DIR, "Rejecting %s's posted vote from %s received at %s; "
              "our cutoff for received votes is %s. Check your clock, "
              "CPU load, and network load. Also check the authority that "
-             "posted the vote.", vi->address, tbuf1, tbuf2);
+             "posted the vote.", vi->nickname, vi->address, tbuf1, tbuf2);
     *msg_out = "Posted vote received too late, would be dangerous to count it";
     goto err;
   }
@@ -3253,8 +3263,8 @@ dirvote_add_vote(const char *vote_body, time_t time_posted,
         networkstatus_voter_info_t *vi_old = get_voter(v->vote);
         if (fast_memeq(vi_old->vote_digest, vi->vote_digest, DIGEST_LEN)) {
           /* Ah, it's the same vote. Not a problem. */
-          log_info(LD_DIR, "Discarding a vote we already have (from %s).",
-                   vi->address);
+          log_notice(LD_DIR, "Discarding a vote we already have (from %s).",
+                     vi->address);
           if (*status_out < 200)
             *status_out = 200;
           goto discard;
@@ -3277,6 +3287,8 @@ dirvote_add_vote(const char *vote_body, time_t time_posted,
             *msg_out = "OK";
           return v;
         } else {
+          log_notice(LD_DIR, "Discarding vote from %s because we have "
+                     "a newer one already.", vi->address);
           *msg_out = "Already have a newer pending vote";
           goto err;
         }
@@ -3461,6 +3473,15 @@ dirvote_compute_consensuses(void)
       pending[flav].body = consensus_body;
       pending[flav].consensus = consensus;
       n_generated++;
+
+      /* Write it out to disk too, for dir auth debugging purposes */
+      {
+        char *filename;
+        tor_asprintf(&filename, "my-consensus-%s", flavor_name);
+        write_str_to_file(get_datadir_fname(filename), consensus_body, 0);
+        tor_free(filename);
+      }
+
       consensus_body = NULL;
       consensus = NULL;
     }
@@ -3576,7 +3597,7 @@ dirvote_add_signatures_to_pending_consensus(
       strlen(pc->body) + strlen(new_signatures) + 1;
     pc->body = tor_realloc(pc->body, new_consensus_len);
     dst_end = pc->body + new_consensus_len;
-    dst = strstr(pc->body, "directory-signature ");
+    dst = (char *) find_str_at_start_of_line(pc->body, "directory-signature ");
     tor_assert(dst);
     strlcpy(dst, new_signatures, dst_end-dst);
 
@@ -3848,11 +3869,10 @@ dirvote_create_microdescriptor(const routerinfo_t *ri, int consensus_method)
   smartlist_add_asprintf(chunks, "onion-key\n%s", key);
 
   if (ri->onion_curve25519_pkey) {
-    char kbuf[128];
-    base64_encode(kbuf, sizeof(kbuf),
-                  (const char*)ri->onion_curve25519_pkey->public_key,
-                  CURVE25519_PUBKEY_LEN, BASE64_ENCODE_MULTILINE);
-    smartlist_add_asprintf(chunks, "ntor-onion-key %s", kbuf);
+    char kbuf[CURVE25519_BASE64_PADDED_LEN + 1];
+    bool add_padding = (consensus_method < MIN_METHOD_FOR_UNPADDED_NTOR_KEY);
+    curve25519_public_to_base64(kbuf, ri->onion_curve25519_pkey, add_padding);
+    smartlist_add_asprintf(chunks, "ntor-onion-key %s\n", kbuf);
   }
 
   if (family) {
@@ -3963,6 +3983,8 @@ static const struct consensus_method_range_t {
   {MIN_SUPPORTED_CONSENSUS_METHOD,
    MIN_METHOD_FOR_CANONICAL_FAMILIES_IN_MICRODESCS - 1},
   {MIN_METHOD_FOR_CANONICAL_FAMILIES_IN_MICRODESCS,
+   MIN_METHOD_FOR_UNPADDED_NTOR_KEY - 1},
+  {MIN_METHOD_FOR_UNPADDED_NTOR_KEY,
    MAX_SUPPORTED_CONSENSUS_METHOD},
   {-1, -1}
 };
@@ -4176,8 +4198,8 @@ dirvote_dirreq_get_status_vote(const char *url, smartlist_t *items,
 
 /** Get the best estimate of a router's bandwidth for dirauth purposes,
  * preferring measured to advertised values if available. */
-static uint32_t
-dirserv_get_bandwidth_for_router_kb(const routerinfo_t *ri)
+MOCK_IMPL(uint32_t,dirserv_get_bandwidth_for_router_kb,
+        (const routerinfo_t *ri))
 {
   uint32_t bw_kb = 0;
   /*
@@ -4206,31 +4228,72 @@ dirserv_get_bandwidth_for_router_kb(const routerinfo_t *ri)
   return bw_kb;
 }
 
-/** Helper for sorting: compares two routerinfos first by address, and then by
- * descending order of "usefulness".  (An authority is more useful than a
- * non-authority; a running router is more useful than a non-running router;
- * and a router with more bandwidth is more useful than one with less.)
+/**
+ * Helper: compare the address of family `family` in `a` with the address in
+ * `b`.  The family must be one of `AF_INET` and `AF_INET6`.
  **/
 static int
-compare_routerinfo_by_ip_and_bw_(const void **a, const void **b)
+compare_routerinfo_addrs_by_family(const routerinfo_t *a,
+                                   const routerinfo_t *b,
+                                   int family)
 {
-  routerinfo_t *first = *(routerinfo_t **)a, *second = *(routerinfo_t **)b;
+  const tor_addr_t *addr1 = (family==AF_INET) ? &a->ipv4_addr : &a->ipv6_addr;
+  const tor_addr_t *addr2 = (family==AF_INET) ? &b->ipv4_addr : &b->ipv6_addr;
+  return tor_addr_compare(addr1, addr2, CMP_EXACT);
+}
+
+/** Helper for sorting: compares two ipv4 routerinfos first by ipv4 address,
+ * and then by descending order of "usefulness"
+ * (see compare_routerinfo_usefulness)
+ **/
+STATIC int
+compare_routerinfo_by_ipv4(const void **a, const void **b)
+{
+  const routerinfo_t *first = *(const routerinfo_t **)a;
+  const routerinfo_t *second = *(const routerinfo_t **)b;
+  int comparison = compare_routerinfo_addrs_by_family(first, second, AF_INET);
+  if (comparison == 0) {
+    // If addresses are equal, use other comparison criteria
+    return compare_routerinfo_usefulness(first, second);
+  } else {
+    return comparison;
+  }
+}
+
+/** Helper for sorting: compares two ipv6 routerinfos first by ipv6 address,
+ * and then by descending order of "usefulness"
+ * (see compare_routerinfo_usefulness)
+ **/
+STATIC int
+compare_routerinfo_by_ipv6(const void **a, const void **b)
+{
+  const routerinfo_t *first = *(const routerinfo_t **)a;
+  const routerinfo_t *second = *(const routerinfo_t **)b;
+  int comparison = compare_routerinfo_addrs_by_family(first, second, AF_INET6);
+  // If addresses are equal, use other comparison criteria
+  if (comparison == 0)
+    return compare_routerinfo_usefulness(first, second);
+  else
+    return comparison;
+}
+
+/**
+* Compare routerinfos by descending order of "usefulness" :
+* An authority is more useful than a non-authority; a running router is
+* more useful than a non-running router; and a router with more bandwidth
+* is more useful than one with less.
+**/
+STATIC int
+compare_routerinfo_usefulness(const routerinfo_t *first,
+                              const routerinfo_t *second)
+{
   int first_is_auth, second_is_auth;
-  uint32_t bw_kb_first, bw_kb_second;
   const node_t *node_first, *node_second;
   int first_is_running, second_is_running;
-
-  /* we return -1 if first should appear before second... that is,
-   * if first is a better router. */
-  if (first->addr < second->addr)
-    return -1;
-  else if (first->addr > second->addr)
-    return 1;
-
+  uint32_t bw_kb_first, bw_kb_second;
   /* Potentially, this next bit could cause k n lg n memeq calls.  But in
    * reality, we will almost never get here, since addresses will usually be
    * different. */
-
   first_is_auth =
     router_digest_is_trusted_dir(first->cache_info.identity_digest);
   second_is_auth =
@@ -4245,7 +4308,6 @@ compare_routerinfo_by_ip_and_bw_(const void **a, const void **b)
   node_second = node_get_by_id(second->cache_info.identity_digest);
   first_is_running = node_first && node_first->is_running;
   second_is_running = node_second && node_second->is_running;
-
   if (first_is_running && !second_is_running)
     return -1;
   else if (!first_is_running && second_is_running)
@@ -4266,41 +4328,89 @@ compare_routerinfo_by_ip_and_bw_(const void **a, const void **b)
                      DIGEST_LEN);
 }
 
-/** Given a list of routerinfo_t in <b>routers</b>, return a new digestmap_t
- * whose keys are the identity digests of those routers that we're going to
- * exclude for Sybil-like appearance. */
-static digestmap_t *
-get_possible_sybil_list(const smartlist_t *routers)
+/** Given a list of routerinfo_t in <b>routers</b> that all use the same
+ * IP version, specified in <b>family</b>, return a new digestmap_t whose keys
+ * are the identity digests of those routers that we're going to exclude for
+ * Sybil-like appearance.
+ */
+STATIC digestmap_t *
+get_sybil_list_by_ip_version(const smartlist_t *routers, sa_family_t family)
 {
   const dirauth_options_t *options = dirauth_get_options();
-  digestmap_t *omit_as_sybil;
+  digestmap_t *omit_as_sybil = digestmap_new();
   smartlist_t *routers_by_ip = smartlist_new();
-  uint32_t last_addr;
-  int addr_count;
+  int addr_count = 0;
+  routerinfo_t *last_ri = NULL;
   /* Allow at most this number of Tor servers on a single IP address, ... */
   int max_with_same_addr = options->AuthDirMaxServersPerAddr;
   if (max_with_same_addr <= 0)
     max_with_same_addr = INT_MAX;
 
   smartlist_add_all(routers_by_ip, routers);
-  smartlist_sort(routers_by_ip, compare_routerinfo_by_ip_and_bw_);
-  omit_as_sybil = digestmap_new();
+  if (family == AF_INET6)
+    smartlist_sort(routers_by_ip, compare_routerinfo_by_ipv6);
+  else
+    smartlist_sort(routers_by_ip, compare_routerinfo_by_ipv4);
 
-  last_addr = 0;
-  addr_count = 0;
   SMARTLIST_FOREACH_BEGIN(routers_by_ip, routerinfo_t *, ri) {
-    if (last_addr != ri->addr) {
-      last_addr = ri->addr;
+    bool addrs_equal;
+    if (last_ri)
+      addrs_equal = !compare_routerinfo_addrs_by_family(last_ri, ri, family);
+    else
+      addrs_equal = false;
+
+    if (! addrs_equal) {
+      last_ri = ri;
       addr_count = 1;
     } else if (++addr_count > max_with_same_addr) {
       digestmap_set(omit_as_sybil, ri->cache_info.identity_digest, ri);
     }
   } SMARTLIST_FOREACH_END(ri);
-
   smartlist_free(routers_by_ip);
   return omit_as_sybil;
 }
 
+/** Given a list of routerinfo_t in <b>routers</b>, return a new digestmap_t
+ * whose keys are the identity digests of those routers that we're going to
+ * exclude for Sybil-like appearance. */
+STATIC digestmap_t *
+get_all_possible_sybil(const smartlist_t *routers)
+{
+  smartlist_t  *routers_ipv6, *routers_ipv4;
+  routers_ipv6 = smartlist_new();
+  routers_ipv4 = smartlist_new();
+  digestmap_t *omit_as_sybil_ipv4;
+  digestmap_t *omit_as_sybil_ipv6;
+  digestmap_t *omit_as_sybil = digestmap_new();
+  // Sort the routers in two lists depending on their IP version
+  SMARTLIST_FOREACH_BEGIN(routers, routerinfo_t *, ri) {
+    // If the router has an IPv6 address
+    if (tor_addr_family(&(ri->ipv6_addr)) == AF_INET6) {
+      smartlist_add(routers_ipv6, ri);
+    }
+    // If the router has an IPv4 address
+    if (tor_addr_family(&(ri->ipv4_addr)) == AF_INET) {
+      smartlist_add(routers_ipv4, ri);
+    }
+  } SMARTLIST_FOREACH_END(ri);
+  omit_as_sybil_ipv4 = get_sybil_list_by_ip_version(routers_ipv4, AF_INET);
+  omit_as_sybil_ipv6 = get_sybil_list_by_ip_version(routers_ipv6, AF_INET6);
+
+  // Add all possible sybils to the common digestmap
+  DIGESTMAP_FOREACH (omit_as_sybil_ipv4, sybil_id, routerinfo_t *, ri) {
+    digestmap_set(omit_as_sybil, ri->cache_info.identity_digest, ri);
+  } DIGESTMAP_FOREACH_END;
+  DIGESTMAP_FOREACH (omit_as_sybil_ipv6, sybil_id, routerinfo_t *, ri) {
+    digestmap_set(omit_as_sybil, ri->cache_info.identity_digest, ri);
+  } DIGESTMAP_FOREACH_END;
+  // Clean the temp variables
+  smartlist_free(routers_ipv4);
+  smartlist_free(routers_ipv6);
+  digestmap_free(omit_as_sybil_ipv4, NULL);
+  digestmap_free(omit_as_sybil_ipv6, NULL);
+  // Return the digestmap: it now contains all the possible sybils
+  return omit_as_sybil;
+}
 /** Given a platform string as in a routerinfo_t (possibly null), return a
  * newly allocated version string for a networkstatus document, or NULL if the
  * platform doesn't give a Tor version. */
@@ -4463,7 +4573,7 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
   const or_options_t *options = get_options();
   const dirauth_options_t *d_options = dirauth_get_options();
   networkstatus_t *v3_out = NULL;
-  uint32_t addr;
+  tor_addr_t addr;
   char *hostname = NULL, *client_versions = NULL, *server_versions = NULL;
   const char *contact;
   smartlist_t *routers, *routerstatuses;
@@ -4475,7 +4585,6 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
   time_t cutoff = now - ROUTER_MAX_AGE_TO_PUBLISH;
   networkstatus_voter_info_t *voter = NULL;
   vote_timing_t timing;
-  digestmap_t *omit_as_sybil = NULL;
   const int vote_on_reachability = running_long_enough_to_decide_unreachable();
   smartlist_t *microdescriptors = NULL;
   smartlist_t *bw_file_headers = NULL;
@@ -4492,13 +4601,13 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
     log_err(LD_BUG, "Error computing identity key digest");
     return NULL;
   }
-  if (resolve_my_address(LOG_WARN, options, &addr, NULL, &hostname)<0) {
+  if (!find_my_address(options, AF_INET, LOG_WARN, &addr, NULL, &hostname)) {
     log_warn(LD_NET, "Couldn't resolve my hostname");
     return NULL;
   }
   if (!hostname || !strchr(hostname, '.')) {
     tor_free(hostname);
-    hostname = tor_dup_ip(addr);
+    hostname = tor_addr_to_str_dup(&addr);
   }
 
   if (!hostname) {
@@ -4545,19 +4654,16 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
   routers_make_ed_keys_unique(routers);
   /* After this point, don't use rl->routers; use 'routers' instead. */
   routers_sort_by_identity(routers);
-  omit_as_sybil = get_possible_sybil_list(routers);
-
-  DIGESTMAP_FOREACH(omit_as_sybil, sybil_id, void *, ignore) {
-    (void) ignore;
+  /* Get a digestmap of possible sybil routers, IPv4 or IPv6 */
+  digestmap_t *omit_as_sybil = get_all_possible_sybil(routers);
+  DIGESTMAP_FOREACH (omit_as_sybil, sybil_id, void *, ignore) {
+    (void)ignore;
     rep_hist_make_router_pessimal(sybil_id, now);
-  } DIGESTMAP_FOREACH_END;
-
+  } DIGESTMAP_FOREACH_END
   /* Count how many have measured bandwidths so we know how to assign flags;
    * this must come before dirserv_compute_performance_thresholds() */
   dirserv_count_measured_bws(routers);
-
   dirserv_compute_performance_thresholds(omit_as_sybil);
-
   routerstatuses = smartlist_new();
   microdescriptors = smartlist_new();
 
@@ -4565,7 +4671,7 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
     /* If it has a protover list and contains a protocol name greater than
      * MAX_PROTOCOL_NAME_LENGTH, skip it. */
     if (ri->protocol_list &&
-        protover_contains_long_protocol_names(ri->protocol_list)) {
+        protover_list_is_invalid(ri->protocol_list)) {
       continue;
     }
     if (ri->cache_info.published_on >= cutoff) {
@@ -4585,7 +4691,6 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
                ri->cache_info.signing_key_cert->signing_key.pubkey,
                ED25519_PUBKEY_LEN);
       }
-
       if (digestmap_get(omit_as_sybil, ri->cache_info.identity_digest))
         clear_status_flags_on_sybil(rs);
 
@@ -4725,9 +4830,9 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
   memcpy(voter->identity_digest, identity_digest, DIGEST_LEN);
   voter->sigs = smartlist_new();
   voter->address = hostname;
-  voter->addr = addr;
-  voter->dir_port = router_get_advertised_dir_port(options, 0);
-  voter->or_port = router_get_advertised_or_port(options);
+  tor_addr_copy(&voter->ipv4_addr, &addr);
+  voter->ipv4_dirport = routerconf_find_dir_port(options, 0);
+  voter->ipv4_orport = routerconf_find_or_port(options, AF_INET);
   voter->contact = tor_strdup(contact);
   if (options->V3AuthUseLegacyKey) {
     authority_cert_t *c = get_my_v3_legacy_cert();

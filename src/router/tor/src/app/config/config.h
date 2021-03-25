@@ -58,8 +58,7 @@ setopt_err_t options_trial_assign(struct config_line_t *list, unsigned flags,
 void options_init(or_options_t *options);
 
 #define OPTIONS_DUMP_MINIMAL 1
-#define OPTIONS_DUMP_DEFAULTS 2
-#define OPTIONS_DUMP_ALL 3
+#define OPTIONS_DUMP_ALL 2
 char *options_dump(const or_options_t *options, int how_to_dump);
 int options_init_from_torrc(int argc, char **argv);
 setopt_err_t options_init_from_string(const char *cf_defaults, const char *cf,
@@ -160,13 +159,11 @@ int get_num_cpus(const or_options_t *options);
 MOCK_DECL(const smartlist_t *,get_configured_ports,(void));
 int port_binds_ipv4(const port_cfg_t *port);
 int port_binds_ipv6(const port_cfg_t *port);
-int get_first_advertised_port_by_type_af(int listener_type,
-                                         int address_family);
-#define get_primary_or_port() \
-  (get_first_advertised_port_by_type_af(CONN_TYPE_OR_LISTENER, AF_INET))
-#define get_primary_dir_port() \
-  (get_first_advertised_port_by_type_af(CONN_TYPE_DIR_LISTENER, AF_INET))
-const tor_addr_t *get_first_advertised_addr_by_type_af(int listener_type,
+int portconf_get_first_advertised_port(int listener_type,
+                                       int address_family);
+#define portconf_get_primary_dir_port() \
+  (portconf_get_first_advertised_port(CONN_TYPE_DIR_LISTENER, AF_INET))
+const tor_addr_t *portconf_get_first_advertised_addr(int listener_type,
                                                        int address_family);
 int port_exists_by_type_addr_port(int listener_type, const tor_addr_t *addr,
                                   int port, int check_wildcard);

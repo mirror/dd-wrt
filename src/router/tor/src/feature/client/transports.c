@@ -16,7 +16,7 @@
  * managed proxies that are still unconfigured.
  *
  * In every run_scheduled_event() tick, we attempt to launch and then
- * configure the unconfiged managed proxies, using the configuration
+ * configure the unconfigured managed proxies, using the configuration
  * protocol defined in the 180_pluggable_transport.txt proposal. A
  * managed proxy might need several ticks to get fully configured.
  *
@@ -71,7 +71,7 @@
  *
  * We then start parsing torrc again.
  *
- * Everytime we encounter a transport line using a managed proxy that
+ * Every time we encounter a transport line using a managed proxy that
  * was around before the config read, we cleanse that proxy from the
  * removal mark.  We also toggle the <b>check_if_restarts_needed</b>
  * flag, so that on the next <b>pt_configure_remaining_proxies</b>
@@ -367,6 +367,28 @@ static smartlist_t *managed_proxy_list = NULL;
 static int unconfigured_proxies_n = 0;
 /** Boolean: True iff we might need to restart some proxies. */
 static int check_if_restarts_needed = 0;
+
+/** Return true iff we have a managed_proxy_t in the global list is for the
+ * given transport name. */
+bool
+managed_proxy_has_transport(const char *transport_name)
+{
+  tor_assert(transport_name);
+
+  if (!managed_proxy_list) {
+    return false;
+  }
+
+  SMARTLIST_FOREACH_BEGIN(managed_proxy_list, const managed_proxy_t *, mp) {
+    SMARTLIST_FOREACH_BEGIN(mp->transports_to_launch, const char *, name) {
+      if (!strcasecmp(name, transport_name)) {
+        return true;
+      }
+    } SMARTLIST_FOREACH_END(name);
+  } SMARTLIST_FOREACH_END(mp);
+
+  return false;
+}
 
 /** Return true if there are still unconfigured managed proxies, or proxies
  * that need restarting. */
@@ -1447,6 +1469,37 @@ create_managed_proxy_environment(const managed_proxy_t *mp)
    */
   smartlist_add_asprintf(envs, "TOR_PT_EXIT_ON_STDIN_CLOSE=1");
 
+  /* Specify which IPv4 and IPv6 addresses the PT should make its outgoing
+   * connections from. See: https://bugs.torproject.org/5304 for more
+   * information about this. */
+  {
+    /* Set TOR_PT_OUTBOUND_BIND_ADDRESS_V4. */
+    const tor_addr_t *ipv4_addr = managed_proxy_outbound_address(options,
+                                                                 AF_INET);
+
+    /* managed_proxy_outbound_address() only returns a non-NULL value if
+     * tor_addr_is_null() was false, which means we don't have to check that
+     * here. */
+    if (ipv4_addr) {
+      char *ipv4_addr_str = tor_addr_to_str_dup(ipv4_addr);
+      smartlist_add_asprintf(envs,
+                             "TOR_PT_OUTBOUND_BIND_ADDRESS_V4=%s",
+                             ipv4_addr_str);
+      tor_free(ipv4_addr_str);
+    }
+
+    /* Set TOR_PT_OUTBOUND_BIND_ADDRESS_V6. */
+    const tor_addr_t *ipv6_addr = managed_proxy_outbound_address(options,
+                                                                 AF_INET6);
+    if (ipv6_addr) {
+      char *ipv6_addr_str = tor_addr_to_str_dup(ipv6_addr);
+      smartlist_add_asprintf(envs,
+                             "TOR_PT_OUTBOUND_BIND_ADDRESS_V6=[%s]",
+                             ipv6_addr_str);
+      tor_free(ipv6_addr_str);
+    }
+  }
+
   SMARTLIST_FOREACH_BEGIN(envs, const char *, env_var) {
     set_environment_variable_in_smartlist(merged_env_vars, env_var,
                                           tor_free_, 1);
@@ -1643,17 +1696,26 @@ pt_get_extra_info_descriptor_string(void)
 
     SMARTLIST_FOREACH_BEGIN(mp->transports, const transport_t *, t) {
       char *transport_args = NULL;
+      const char *addrport = NULL;
 
       /* If the transport proxy returned "0.0.0.0" as its address, and
        * we know our external IP address, use it. Otherwise, use the
        * returned address. */
-      const char *addrport = NULL;
-      uint32_t external_ip_address = 0;
-      if (tor_addr_is_null(&t->addr) &&
-          router_pick_published_address(get_options(),
-                                        &external_ip_address, 0) >= 0) {
+      if (tor_addr_is_null(&t->addr)) {
         tor_addr_t addr;
-        tor_addr_from_ipv4h(&addr, external_ip_address);
+        /* Attempt to find the IPv4 and then attempt to find the IPv6 if we
+         * can't find it. */
+        bool found = relay_find_addr_to_publish(get_options(), AF_INET,
+                                                RELAY_FIND_ADDR_NO_FLAG,
+                                                &addr);
+        if (!found) {
+          found = relay_find_addr_to_publish(get_options(), AF_INET6,
+                                             RELAY_FIND_ADDR_NO_FLAG, &addr);
+        }
+        if (!found) {
+          log_err(LD_PT, "Unable to find address for transport %s", t->name);
+          continue;
+        }
         addrport = fmt_addrport(&addr, t->port);
       } else {
         addrport = fmt_addrport(&t->addr, t->port);
@@ -1909,4 +1971,47 @@ managed_proxy_severity_parse(const char *severity)
     return LOG_ERR;
 
   return -1;
+}
+
+/** Return the outbound address from the given <b>family</b>. Returns NULL if
+ * the user haven't specified a specific outbound address in either
+ * OutboundBindAddress or OutboundBindAddressPT. */
+STATIC const tor_addr_t *
+managed_proxy_outbound_address(const or_options_t *options, sa_family_t family)
+{
+  tor_assert(options);
+
+  const tor_addr_t *address = NULL;
+  int family_index;
+
+  switch (family) {
+  case AF_INET:
+    family_index = 0;
+    break;
+  case AF_INET6:
+    family_index = 1;
+    break;
+  default:
+    /* LCOV_EXCL_START */
+    tor_assert_unreached();
+    return NULL;
+    /* LCOV_EXCL_STOP */
+  }
+
+  /* We start by checking if the user specified an address in
+   * OutboundBindAddressPT. */
+  address = &options->OutboundBindAddresses[OUTBOUND_ADDR_PT][family_index];
+
+  if (! tor_addr_is_null(address))
+    return address;
+
+  /* We fallback to check if the user specified an address in
+   * OutboundBindAddress. */
+  address = &options->OutboundBindAddresses[OUTBOUND_ADDR_ANY][family_index];
+
+  if (! tor_addr_is_null(address))
+    return address;
+
+  /* The user have not specified a preference for outgoing connections. */
+  return NULL;
 }

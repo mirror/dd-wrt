@@ -54,6 +54,7 @@ else
 # Only do this when coverage is not on, since it invokes lots of code
 # in a kind of unpredictable way.
 TESTSCRIPTS += src/test/test_rebind.sh
+TESTSCRIPTS += src/test/test_include.sh
 endif
 endif
 
@@ -96,7 +97,7 @@ TEST_CHUTNEY_FLAVORS_IPV6_MIXED = mixed+hs-v23-ipv6
 # TEST_EXTENSIONS = .sh
 # SH_LOG_COMPILER = $(SHELL)
 
-#noinst_PROGRAMS+= src/test/bench
+noinst_PROGRAMS+= src/test/bench
 if UNITTESTS_ENABLED
 noinst_PROGRAMS+= \
 	src/test/test \
@@ -170,6 +171,7 @@ src_test_test_SOURCES += \
 	src/test/test_crypto_rng.c \
 	src/test/test_data.c \
 	src/test/test_dir.c \
+	src/test/test_dirvote.c \
 	src/test/test_dir_common.c \
 	src/test/test_dir_handle_get.c \
 	src/test/test_dispatch.c \
@@ -193,11 +195,13 @@ src_test_test_SOURCES += \
 	src/test/test_hs_cache.c \
 	src/test/test_hs_descriptor.c \
 	src/test/test_hs_dos.c \
+	src/test/test_hs_metrics.c \
 	src/test/test_introduce.c \
 	src/test/test_keypin.c \
 	src/test/test_link_handshake.c \
 	src/test/test_logging.c \
 	src/test/test_mainloop.c \
+	src/test/test_metrics.c \
 	src/test/test_microdesc.c \
 	src/test/test_namemap.c \
 	src/test/test_netinfo.c \
@@ -233,6 +237,7 @@ src_test_test_SOURCES += \
 	src/test/test_sendme.c \
 	src/test/test_shared_random.c \
 	src/test/test_socks.c \
+	src/test/test_statefile.c \
 	src/test/test_stats.c \
 	src/test/test_status.c \
 	src/test/test_storagedir.c \
@@ -287,8 +292,8 @@ src_test_test_CFLAGS = $(AM_CFLAGS) $(TEST_CFLAGS)
 
 src_test_test_CPPFLAGS= $(src_test_AM_CPPFLAGS) $(TEST_CPPFLAGS)
 
-#src_test_bench_SOURCES = \
-#	src/test/bench.c
+src_test_bench_SOURCES = \
+	src/test/bench.c
 
 src_test_test_workqueue_SOURCES = \
 	src/test/test_workqueue.c
@@ -304,18 +309,17 @@ src_test_test_switch_id_LDADD = \
 	$(TOR_UTIL_TESTING_LIBS) \
 	$(rust_ldadd) \
 	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ \
-	@TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_USERENV@ \
-	@TOR_LZMA_LIBS@ @TOR_ZSTD_LIBS@
-
+	@TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_SHLWAPI@ @TOR_LIB_USERENV@ \
+	@TOR_LZMA_LIBS@ @TOR_ZSTD_LIBS@ @TOR_TRACE_LIBS@
 src_test_test_LDFLAGS = @TOR_LDFLAGS_zlib@ $(TOR_LDFLAGS_CRYPTLIB) \
 	@TOR_LDFLAGS_libevent@
 src_test_test_LDADD = \
-	$(TOR_INTERNAL_TESTING_LIBS) \
+	src/test/libtor-testing.a \
 	$(rust_ldadd) \
 	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ @TOR_LIBEVENT_LIBS@ \
-	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
+	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_SHLWAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
 	@CURVE25519_LIBS@ \
-	@TOR_SYSTEMD_LIBS@ @TOR_LZMA_LIBS@ @TOR_ZSTD_LIBS@
+	@TOR_SYSTEMD_LIBS@ @TOR_LZMA_LIBS@ @TOR_ZSTD_LIBS@ @TOR_TRACE_LIBS@
 
 src_test_test_slow_CPPFLAGS = $(src_test_test_CPPFLAGS)
 src_test_test_slow_CFLAGS = $(src_test_test_CFLAGS)
@@ -336,25 +340,25 @@ src_test_test_memwipe_LDADD = $(src_test_test_LDADD)
 # successfully with the libraries built with them.
 src_test_test_memwipe_LDFLAGS = $(src_test_test_LDFLAGS) @CFLAGS_BUGTRAP@
 
-#src_test_bench_LDFLAGS = @TOR_LDFLAGS_zlib@ $(TOR_LDFLAGS_CRYPTLIB) \
-#	@TOR_LDFLAGS_libevent@
-#src_test_bench_LDADD = \
-#	$(TOR_INTERNAL_LIBS) \
-#	$(rust_ldadd) \
-#	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ @TOR_LIBEVENT_LIBS@ \
-#	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
-#	@CURVE25519_LIBS@ \
-#	@TOR_SYSTEMD_LIBS@ @TOR_LZMA_LIBS@ @TOR_ZSTD_LIBS@
+src_test_bench_LDFLAGS = @TOR_LDFLAGS_zlib@ $(TOR_LDFLAGS_CRYPTLIB) \
+	@TOR_LDFLAGS_libevent@
+src_test_bench_LDADD = \
+        libtor.a \
+	$(rust_ldadd) \
+	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ @TOR_LIBEVENT_LIBS@ \
+	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_SHLWAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
+	@CURVE25519_LIBS@ \
+	@TOR_SYSTEMD_LIBS@ @TOR_LZMA_LIBS@ @TOR_ZSTD_LIBS@ @TOR_TRACE_LIBS@
 
 src_test_test_workqueue_LDFLAGS = @TOR_LDFLAGS_zlib@ $(TOR_LDFLAGS_CRYPTLIB) \
 	@TOR_LDFLAGS_libevent@
 src_test_test_workqueue_LDADD = \
-	$(TOR_INTERNAL_TESTING_LIBS) \
+        src/test/libtor-testing.a \
 	$(rust_ldadd) \
 	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ @TOR_LIBEVENT_LIBS@ \
-	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
+	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_SHLWAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
 	@CURVE25519_LIBS@ \
-	@TOR_LZMA_LIBS@ @TOR_ZSTD_LIBS@
+	@TOR_LZMA_LIBS@ @TOR_ZSTD_LIBS@ @TOR_TRACE_LIBS@
 
 src_test_test_timers_CPPFLAGS = $(src_test_test_CPPFLAGS)
 src_test_test_timers_CFLAGS = $(src_test_test_CFLAGS)
@@ -364,9 +368,9 @@ src_test_test_timers_LDADD = \
 	$(TOR_UTIL_TESTING_LIBS) \
 	$(rust_ldadd) \
 	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ @TOR_LIBEVENT_LIBS@ \
-	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
+	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_SHLWAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
 	@CURVE25519_LIBS@ \
-	@TOR_LZMA_LIBS@
+	@TOR_LZMA_LIBS@ @TOR_TRACE_LIBS@
 src_test_test_timers_LDFLAGS = $(src_test_test_LDFLAGS)
 
 # ADD_C_FILE: INSERT HEADERS HERE.
@@ -393,27 +397,28 @@ noinst_HEADERS+= \
 	src/test/test_hs_descriptor.inc \
 	src/test/vote_descriptors.inc
 
-#noinst_PROGRAMS+= src/test/test-ntor-cl
-#noinst_PROGRAMS+= src/test/test-hs-ntor-cl
-#src_test_test_ntor_cl_SOURCES  = src/test/test_ntor_cl.c
-#src_test_test_ntor_cl_LDFLAGS = @TOR_LDFLAGS_zlib@ $(TOR_LDFLAGS_CRYPTLIB)
-#src_test_test_ntor_cl_LDADD = \
-#	$(TOR_INTERNAL_LIBS) \
-#	$(rust_ldadd) \
-#	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ \
-#	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
-#	@CURVE25519_LIBS@ @TOR_LZMA_LIBS@
-#src_test_test_ntor_cl_AM_CPPFLAGS =	       \
-#	$(AM_CPPFLAGS)
+noinst_PROGRAMS+= src/test/test-ntor-cl
+noinst_PROGRAMS+= src/test/test-hs-ntor-cl
+src_test_test_ntor_cl_SOURCES  = src/test/test_ntor_cl.c
+src_test_test_ntor_cl_LDFLAGS = @TOR_LDFLAGS_zlib@ $(TOR_LDFLAGS_CRYPTLIB)
+src_test_test_ntor_cl_LDADD = \
+	libtor.a \
+	$(rust_ldadd) \
+	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ \
+	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_SHLWAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
+	@CURVE25519_LIBS@ @TOR_LZMA_LIBS@ @TOR_TRACE_LIBS@
+src_test_test_ntor_cl_AM_CPPFLAGS =	       \
+	$(AM_CPPFLAGS)
 
-#src_test_test_hs_ntor_cl_SOURCES  = src/test/test_hs_ntor_cl.c
-#src_test_test_hs_ntor_cl_LDFLAGS = @TOR_LDFLAGS_zlib@ $(TOR_LDFLAGS_CRYPTLIB)
-#src_test_test_hs_ntor_cl_LDADD = \
-#	$(TOR_INTERNAL_LIBS) \
-#	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ \
-#	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_GDI@ @CURVE25519_LIBS@
-#src_test_test_hs_ntor_cl_AM_CPPFLAGS =	       \
-#	$(AM_CPPFLAGS)
+src_test_test_hs_ntor_cl_SOURCES  = src/test/test_hs_ntor_cl.c
+src_test_test_hs_ntor_cl_LDFLAGS = @TOR_LDFLAGS_zlib@ $(TOR_LDFLAGS_CRYPTLIB)
+src_test_test_hs_ntor_cl_LDADD = \
+	libtor.a \
+	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ \
+	$(TOR_LIBS_CRYPTLIB) @TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_SHLWAPI@ @TOR_LIB_GDI@ \
+        @CURVE25519_LIBS@ @TOR_TRACE_LIBS@
+src_test_test_hs_ntor_cl_AM_CPPFLAGS =	       \
+	$(AM_CPPFLAGS)
 
 
 if UNITTESTS_ENABLED
@@ -423,7 +428,8 @@ src_test_test_bt_cl_LDADD = \
 	$(TOR_UTIL_TESTING_LIBS) \
 	$(rust_ldadd) \
 	@TOR_LIB_MATH@ \
-	@TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@
+	@TOR_LIB_WS32@ @TOR_LIB_IPHLPAPI@ @TOR_LIB_SHLWAPI@ @TOR_LIB_GDI@ @TOR_LIB_USERENV@ \
+        @TOR_TRACE_LIBS@
 src_test_test_bt_cl_CFLAGS = $(AM_CFLAGS) $(TEST_CFLAGS)
 src_test_test_bt_cl_CPPFLAGS= $(src_test_AM_CPPFLAGS) $(TEST_CPPFLAGS)
 endif
@@ -438,6 +444,8 @@ EXTRA_DIST += \
 	src/test/slownacl_curve25519.py \
 	src/test/test_rebind.sh \
 	src/test/test_rebind.py \
+	src/test/test_include.sh \
+	src/test/test_include.py \
 	src/test/zero_length_keys.sh \
 	scripts/maint/run_check_subsystem_order.sh \
 	src/test/rust_supp.txt \

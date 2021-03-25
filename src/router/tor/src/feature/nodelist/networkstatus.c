@@ -471,8 +471,8 @@ networkstatus_check_document_signature(const networkstatus_t *consensus,
                  DIGEST_LEN))
     return -1;
 
-  if (authority_cert_is_blacklisted(cert)) {
-    /* We implement blacklisting for authority signing keys by treating
+  if (authority_cert_is_denylisted(cert)) {
+    /* We implement denylisting for authority signing keys by treating
      * all their signatures as always bad. That way we don't get into
      * crazy loops of dropping and re-fetching signatures. */
     log_warn(LD_DIR, "Ignoring a consensus signature made with deprecated"
@@ -608,25 +608,25 @@ networkstatus_check_consensus_signature(networkstatus_t *consensus,
     SMARTLIST_FOREACH(unrecognized, networkstatus_voter_info_t *, voter,
       {
         tor_log(severity, LD_DIR, "Consensus includes unrecognized authority "
-                 "'%s' at %s:%d (contact %s; identity %s)",
-                 voter->nickname, voter->address, (int)voter->dir_port,
+                 "'%s' at %s:%" PRIu16 " (contact %s; identity %s)",
+                 voter->nickname, voter->address, voter->ipv4_dirport,
                  voter->contact?voter->contact:"n/a",
                  hex_str(voter->identity_digest, DIGEST_LEN));
       });
     SMARTLIST_FOREACH(need_certs_from, networkstatus_voter_info_t *, voter,
       {
         tor_log(severity, LD_DIR, "Looks like we need to download a new "
-                 "certificate from authority '%s' at %s:%d (contact %s; "
-                 "identity %s)",
-                 voter->nickname, voter->address, (int)voter->dir_port,
+                 "certificate from authority '%s' at %s:%" PRIu16
+                 " (contact %s; identity %s)",
+                 voter->nickname, voter->address, voter->ipv4_dirport,
                  voter->contact?voter->contact:"n/a",
                  hex_str(voter->identity_digest, DIGEST_LEN));
       });
     SMARTLIST_FOREACH(missing_authorities, dir_server_t *, ds,
       {
         tor_log(severity, LD_DIR, "Consensus does not include configured "
-                 "authority '%s' at %s:%d (identity %s)",
-                 ds->nickname, ds->address, (int)ds->dir_port,
+                 "authority '%s' at %s:%" PRIu16 " (identity %s)",
+                 ds->nickname, ds->address, ds->ipv4_dirport,
                  hex_str(ds->v3_identity_digest, DIGEST_LEN));
       });
     {
@@ -1594,9 +1594,9 @@ routerstatus_has_visibly_changed(const routerstatus_t *a,
 
   return strcmp(a->nickname, b->nickname) ||
          fast_memneq(a->descriptor_digest, b->descriptor_digest, DIGEST_LEN) ||
-         a->addr != b->addr ||
-         a->or_port != b->or_port ||
-         a->dir_port != b->dir_port ||
+         !tor_addr_eq(&a->ipv4_addr, &b->ipv4_addr) ||
+         a->ipv4_orport != b->ipv4_orport ||
+         a->ipv4_dirport != b->ipv4_dirport ||
          a->is_authority != b->is_authority ||
          a->is_exit != b->is_exit ||
          a->is_stable != b->is_stable ||
@@ -1670,7 +1670,35 @@ notify_before_networkstatus_changes(const networkstatus_t *old_c,
 static void
 notify_after_networkstatus_changes(void)
 {
+  const networkstatus_t *c = networkstatus_get_latest_consensus();
+  const or_options_t *options = get_options();
+  const time_t now = approx_time();
+
   scheduler_notify_networkstatus_changed();
+
+  /* The "current" consensus has just been set and it is a usable flavor so
+   * the first thing we need to do is recalculate the voting schedule static
+   * object so we can use the timings in there needed by some subsystems
+   * such as hidden service and shared random. */
+  dirauth_sched_recalculate_timing(options, now);
+  reschedule_dirvote(options);
+
+  nodelist_set_consensus(c);
+
+  update_consensus_networkstatus_fetch_time(now);
+
+  /* Change the cell EWMA settings */
+  cmux_ewma_set_options(options, c);
+
+  /* XXXX this call might be unnecessary here: can changing the
+   * current consensus really alter our view of any OR's rate limits? */
+  connection_or_update_token_buckets(get_connection_array(), options);
+
+  circuit_build_times_new_consensus_params(
+                                 get_circuit_build_times_mutable(), c);
+  channelpadding_new_consensus_params(c);
+  circpad_new_consensus_params(c);
+  router_new_consensus_params(c);
 }
 
 /** Copy all the ancillary information (like router download status and so on)
@@ -2115,29 +2143,6 @@ networkstatus_set_current_consensus(const char *consensus,
     /* Notify that we just changed the consensus so the current global value
      * can be looked at. */
     notify_after_networkstatus_changes();
-
-    /* The "current" consensus has just been set and it is a usable flavor so
-     * the first thing we need to do is recalculate the voting schedule static
-     * object so we can use the timings in there needed by some subsystems
-     * such as hidden service and shared random. */
-    dirauth_sched_recalculate_timing(options, now);
-    reschedule_dirvote(options);
-
-    nodelist_set_consensus(c);
-
-    update_consensus_networkstatus_fetch_time(now);
-
-    /* Change the cell EWMA settings */
-    cmux_ewma_set_options(options, c);
-
-    /* XXXX this call might be unnecessary here: can changing the
-     * current consensus really alter our view of any OR's rate limits? */
-    connection_or_update_token_buckets(get_connection_array(), options);
-
-    circuit_build_times_new_consensus_params(
-                               get_circuit_build_times_mutable(), c);
-    channelpadding_new_consensus_params(c);
-    circpad_new_consensus_params(c);
   }
 
   /* Reset the failure count only if this consensus is actually valid. */
@@ -2387,10 +2392,10 @@ set_routerstatus_from_routerinfo(routerstatus_t *rs,
   memcpy(rs->identity_digest, node->identity, DIGEST_LEN);
   memcpy(rs->descriptor_digest, ri->cache_info.signed_descriptor_digest,
          DIGEST_LEN);
-  rs->addr = ri->addr;
+  tor_addr_copy(&rs->ipv4_addr, &ri->ipv4_addr);
   strlcpy(rs->nickname, ri->nickname, sizeof(rs->nickname));
-  rs->or_port = ri->or_port;
-  rs->dir_port = ri->dir_port;
+  rs->ipv4_orport = ri->ipv4_orport;
+  rs->ipv4_dirport = ri->ipv4_dirport;
   rs->is_v2_dir = ri->supports_tunnelled_dir_requests;
 
   tor_addr_copy(&rs->ipv6_addr, &ri->ipv6_addr);
@@ -2439,7 +2444,12 @@ networkstatus_getinfo_by_purpose(const char *purpose_string, time_t now)
   return answer;
 }
 
-/* DOCDOC get_net_param_from_list */
+/**
+ * Search through a smartlist of "key=int32" strings for a value beginning
+ * with "param_name=". If one is found, clip it to be between min_val and
+ * max_val inclusive and return it.  If one is not found, return
+ * default_val.
+ ***/
 static int32_t
 get_net_param_from_list(smartlist_t *net_params, const char *param_name,
                         int32_t default_val, int32_t min_val, int32_t max_val)
@@ -2713,6 +2723,13 @@ networkstatus_check_required_protocols(const networkstatus_t *ns,
   const bool consensus_postdates_this_release =
     ns->valid_after >= tor_get_approx_release_date();
 
+  if (! consensus_postdates_this_release) {
+    // We can't meaningfully warn about this case: This consensus is from
+    // before we were released, so whatever is says about required or
+    // recommended versions may no longer be true.
+    return 0;
+  }
+
   tor_assert(warning_out);
 
   if (client_mode) {
@@ -2730,7 +2747,7 @@ networkstatus_check_required_protocols(const networkstatus_t *ns,
                  "%s on the Tor network. The missing protocols are: %s",
                  func, missing);
     tor_free(missing);
-    return consensus_postdates_this_release ? 1 : 0;
+    return 1;
   }
 
   if (! protover_all_supported(recommended, &missing)) {

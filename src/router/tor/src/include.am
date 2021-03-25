@@ -22,10 +22,11 @@ include src/lib/intmath/include.am
 include src/lib/llharden/include.am
 include src/lib/lock/include.am
 include src/lib/log/include.am
+include src/lib/malloc/include.am
 include src/lib/math/include.am
 include src/lib/memarea/include.am
 include src/lib/meminfo/include.am
-include src/lib/malloc/include.am
+include src/lib/metrics/include.am
 include src/lib/net/include.am
 include src/lib/osinfo/include.am
 include src/lib/process/include.am
@@ -72,6 +73,7 @@ include src/feature/hibernate/include.am
 include src/feature/hs_common/include.am
 include src/feature/hs/include.am
 include src/feature/keymgt/include.am
+include src/feature/metrics/include.am
 include src/feature/nodelist/include.am
 include src/feature/relay/include.am
 include src/feature/rend/include.am
@@ -84,8 +86,6 @@ include src/core/include.am
 include src/app/include.am
 
 include src/rust/include.am
-include src/test/include.am
 include src/tools/include.am
 include src/win32/include.am
 include src/config/include.am
-include src/test/fuzz/include.am

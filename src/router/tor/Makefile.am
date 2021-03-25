@@ -14,6 +14,7 @@ CLEANFILES=
 TESTS=
 noinst_PROGRAMS=
 DISTCLEANFILES=
+MOSTLYCLEANFILES=
 bin_SCRIPTS=
 AM_CPPFLAGS=\
 	-I$(top_srcdir)/src \
@@ -72,7 +73,8 @@ TOR_UTIL_LIBS = \
 	src/lib/libtor-version.a \
 	src/lib/libtor-llharden.a \
 	src/lib/libtor-intmath.a \
-	src/lib/libtor-ctime.a
+	src/lib/libtor-ctime.a \
+	src/lib/libtor-metrics.a
 
 # Variants of the above for linking the testing variant of tor (for coverage
 # and tests)
@@ -107,7 +109,8 @@ TOR_UTIL_TESTING_LIBS = \
 	src/lib/libtor-version-testing.a \
 	src/lib/libtor-llharden-testing.a \
 	src/lib/libtor-intmath.a \
-	src/lib/libtor-ctime-testing.a
+	src/lib/libtor-ctime-testing.a \
+	src/lib/libtor-metrics-testing.a
 endif
 
 # Internal crypto libraries used in Tor
@@ -137,6 +140,14 @@ TOR_INTERNAL_LIBS = \
 	src/trunnel/libor-trunnel.a \
 	src/lib/libtor-trace.a
 
+libtor.a: $(TOR_INTERNAL_LIBS)
+	$(AM_V_AR) export AR="$(AR)"; \
+	export ARFLAGS="$(ARFLAGS)"; \
+	export RANLIB="$(RANLIB)"; \
+	$(top_srcdir)/scripts/build/combine_libs libtor.a $(TOR_INTERNAL_LIBS)
+
+MOSTLYCLEANFILES += libtor.a
+
 # Variants of the above for linking the testing variant of tor (for coverage
 # and tests)
 if UNITTESTS_ENABLED
@@ -148,6 +159,14 @@ TOR_INTERNAL_TESTING_LIBS = \
 	$(TOR_UTIL_TESTING_LIBS) \
 	src/trunnel/libor-trunnel-testing.a \
 	src/lib/libtor-trace.a
+
+src/test/libtor-testing.a: $(TOR_INTERNAL_TESTING_LIBS)
+	$(AM_V_AR) export AR="$(AR)"; \
+	export ARFLAGS="$(ARFLAGS)"; \
+	export RANLIB="$(RANLIB)"; \
+	$(top_srcdir)/scripts/build/combine_libs src/test/libtor-testing.a $(TOR_INTERNAL_TESTING_LIBS)
+
+MOSTLYCLEANFILES += src/test/libtor-testing.a
 endif
 
 TOR_LDFLAGS_CRYPTLIB=@TOR_LDFLAGS_openssl@
@@ -175,6 +194,7 @@ EXTRA_DIST+= \
 	Makefile.nmake							\
 	README								\
 	ReleaseNotes							\
+	scripts/build/combine_libs					\
 	scripts/maint/checkIncludes.py					\
 	scripts/maint/checkSpace.pl					\
 	scripts/maint/checkSpaceTest.sh					\
@@ -275,7 +295,6 @@ check-local:					\
 	check-spaces				\
 	check-changes				\
 	check-includes				\
-	check-best-practices			\
 	shellcheck
 
 # test-network requires a copy of Chutney in $CHUTNEY_PATH.
@@ -702,7 +721,21 @@ show-distdir-core:
 	  file $(distdir)/_build/core; fi
 
 show-libs:
-	@echo $(TOR_INTERNAL_LIBS)
+	@echo libtor.a
 
 show-testing-libs:
-	@echo $(TOR_INTERNAL_TESTING_LIBS)
+	@echo src/test/libtor-testing.a
+
+# Note here that we hardcode this -j2 because if the user would pass too many
+# cores, bear actually chockes and dies :S. For this to work, a make clean
+# needs to be done else bear will miss some compile flags.
+lsp:
+	@if test -x "`which bear 2>&1;true`"; then \
+		echo "Generating LSP compile_commands.json. Might take few minutes..."; \
+		$(MAKE) clean 2>&1 >/dev/null; \
+		bear >/dev/null 2>&1 -- $(MAKE) -j2 2>&1 >/dev/null; \
+		echo "Generating .ccls file..."; \
+		./scripts/maint/gen_ccls_file.sh \
+	else \
+		echo "No bear command found. On debian, apt install bear"; \
+	fi

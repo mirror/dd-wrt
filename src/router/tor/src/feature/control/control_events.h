@@ -36,7 +36,8 @@ typedef enum stream_status_event_t {
   STREAM_EVENT_NEW          = 5,
   STREAM_EVENT_NEW_RESOLVE  = 6,
   STREAM_EVENT_FAILED_RETRIABLE = 7,
-  STREAM_EVENT_REMAP        = 8
+  STREAM_EVENT_REMAP        = 8,
+  STREAM_EVENT_CONTROLLER_WAIT = 9
 } stream_status_event_t;
 
 /** Used to indicate the type of a buildtime event */
@@ -223,6 +224,10 @@ void control_event_hs_descriptor_content(const char *onion_address,
                                          const char *desc_id,
                                          const char *hsdir_fp,
                                          const char *content);
+void cbt_control_event_buildtimeout_set(const circuit_build_times_t *cbt,
+                                        buildtimeout_set_event_t type);
+
+int control_event_enter_controller_wait(void);
 
 void control_events_free_all(void);
 
@@ -335,6 +340,8 @@ struct control_event_t {
 };
 
 extern const struct control_event_t control_event_table[];
+
+void control_logmsg_strip_newlines(char *msg);
 
 #ifdef TOR_UNIT_TESTS
 MOCK_DECL(STATIC void,

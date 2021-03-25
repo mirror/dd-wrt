@@ -37,7 +37,7 @@ STATIC digestmap_t *rend_cache_v2_dir = NULL;
  * or discard a new descriptor we just fetched. Here is a description of the
  * cache behavior.
  *
- * Everytime tor discards an IP (ex: receives a NACK), we add an entry to
+ * Every time tor discards an IP (ex: receives a NACK), we add an entry to
  * this cache noting the identity digest of the IP and it's failure type for
  * the service ID. The reason we indexed this cache by service ID is to
  * differentiate errors that can occur only for a specific service like a
@@ -257,7 +257,7 @@ rend_cache_free_all(void)
 /** Remove all entries that re REND_CACHE_FAILURE_MAX_AGE old. This is
  * called every second.
  *
- * We have to clean these regurlarly else if for whatever reasons an hidden
+ * We have to clean these regularly else if for whatever reasons an hidden
  * service goes offline and a client tries to connect to it during that
  * time, a failure entry is created and the client will be unable to connect
  * for a while even though the service has return online.  */
@@ -340,8 +340,9 @@ rend_cache_failure_purge(void)
 
 /** Lookup the rend failure cache using a relay identity digest in
  * <b>identity</b> which has DIGEST_LEN bytes and service ID <b>service_id</b>
- * which is a null-terminated string. If found, the intro failure is set in
- * <b>intro_entry</b> else it stays untouched. Return 1 iff found else 0. */
+ * which is a null-terminated string. If @a intro_entry is provided, then it
+ * is set to the entry on success, and to NULL on failure.
+ * Return 1 iff found else 0. */
 STATIC int
 cache_failure_intro_lookup(const uint8_t *identity, const char *service_id,
                            rend_cache_failure_intro_t **intro_entry)
