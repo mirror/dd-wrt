@@ -29,7 +29,7 @@ for input in "$@"; do
 done
 
 cd "$TMPDIR" >/dev/null
-#echo "${AR:-ar}" "${ARFLAGS:-cru}" library.tmp.a ./*/**
-"${AR:-ar}" "${ARFLAGS:-cru}" library.tmp.a ./*/**
-"${RANLIB:-ranlib}" library.tmp.a
+#echo "${AR:-ar}" ${ARFLAGS:-cru} library.tmp.a ./*/**
+"${AR:-ar}" ${ARFLAGS:-cru} library.tmp.a ./*/**
+${RANLIB:-ranlib} library.tmp.a
 mv -f library.tmp.a "$TARGET"
