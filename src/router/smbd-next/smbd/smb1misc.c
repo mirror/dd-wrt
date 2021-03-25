@@ -239,8 +239,8 @@ static int smb1_get_data_len(struct smb_hdr *hdr)
 
 int ksmbd_smb1_check_message(struct ksmbd_work *work)
 {
-	struct smb_hdr *hdr = (struct smb_hdr *)REQUEST_BUF(work);
-	char *buf = REQUEST_BUF(work);
+	struct smb_hdr *hdr = (struct smb_hdr *)work->request_buf;
+	char *buf = work->request_buf;
 	int command = hdr->Command;
 	__u32 clc_len;  /* calculated length */
 	__u32 len = get_rfc1002_len(buf);

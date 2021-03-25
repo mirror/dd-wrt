@@ -925,7 +925,7 @@ int ksmbd_ipc_init(void)
 	if (ret) {
 		ksmbd_err("Failed to register SMBD netlink interface %d\n",
 				ret);
-		return ret;
+		goto cancel_work;
 	}
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 	for (i = 0; i < ARRAY_SIZE(ksmbd_genl_ops); i++) {
@@ -936,7 +936,14 @@ int ksmbd_ipc_init(void)
 	ida = ksmbd_ida_alloc();
 	if (!ida) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto unregister;
 	}
 	return 0;
+
+unregister:
+	genl_unregister_family(&ksmbd_genl_family);
+cancel_work:
+	cancel_delayed_work_sync(&ipc_timer_work);
+	return ret;
 }
