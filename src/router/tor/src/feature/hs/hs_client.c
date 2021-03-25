@@ -16,6 +16,7 @@
 #include "core/or/circuitlist.h"
 #include "core/or/circuituse.h"
 #include "core/or/connection_edge.h"
+#include "core/or/extendinfo.h"
 #include "core/or/reasons.h"
 #include "feature/client/circpathbias.h"
 #include "feature/dirclient/dirclient.h"
@@ -29,6 +30,7 @@
 #include "feature/hs/hs_descriptor.h"
 #include "feature/hs/hs_ident.h"
 #include "feature/nodelist/describe.h"
+#include "feature/nodelist/microdesc.h"
 #include "feature/nodelist/networkstatus.h"
 #include "feature/nodelist/nodelist.h"
 #include "feature/nodelist/routerset.h"
@@ -328,7 +330,7 @@ retry_all_socks_conn_waiting_for_desc(void)
        * a descriptor but we do have it in the cache.
        *
        * This can happen is tor comes back from suspend where it previously
-       * had the descriptor but the intro points were not usuable. Once it
+       * had the descriptor but the intro points were not usable. Once it
        * came back to life, the intro point failure cache was cleaned up and
        * thus the descriptor became usable again leaving us in this code path.
        *
@@ -1302,9 +1304,10 @@ can_client_refetch_desc(const ed25519_public_key_t *identity_pk,
     goto cannot;
   }
 
-  /* Without a live consensus we can't do any client actions. It is needed to
-   * compute the hashring for a service. */
-  if (!networkstatus_get_live_consensus(approx_time())) {
+  /* Without a usable consensus we can't do any client actions. It is needed
+   * to compute the hashring for a service. */
+  if (!networkstatus_get_reasonably_live_consensus(approx_time(),
+                                         usable_consensus_flavor())) {
     log_info(LD_REND, "Can't fetch descriptor for service %s because we "
                       "are missing a live consensus. Stalling connection.",
              safe_str_client(ed25519_fmt(identity_pk)));
@@ -1559,9 +1562,9 @@ client_dir_fetch_unexpected(dir_connection_t *dir_conn, const char *reason,
 
   log_warn(LD_REND, "Fetching v3 hidden service descriptor failed: "
                     "http status %d (%s) response unexpected from HSDir "
-                    "server '%s:%d'. Retrying at another directory.",
-           status_code, escaped(reason), TO_CONN(dir_conn)->address,
-           TO_CONN(dir_conn)->port);
+                    "server %s'. Retrying at another directory.",
+           status_code, escaped(reason),
+           connection_describe_peer(TO_CONN(dir_conn)));
   /* Fire control port FAILED event. */
   hs_control_desc_event_failed(dir_conn->hs_ident, dir_conn->identity_digest,
                                "UNEXPECTED");
@@ -1755,7 +1758,7 @@ remove_client_auth_creds_file(const char *filename)
     goto end;
   }
 
-  log_warn(LD_REND, "Successfuly removed client auth file (%s).",
+  log_warn(LD_REND, "Successfully removed client auth file (%s).",
            creds_file_path);
 
  end:

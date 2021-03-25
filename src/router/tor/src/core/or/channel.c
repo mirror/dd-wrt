@@ -32,7 +32,7 @@
  *
  * NOTE: For now, the separation between channels and specialized channels
  * (like channeltls) is not that well defined. So the channeltls layer calls
- * channel_process_cell() which originally comes from the connection subsytem.
+ * channel_process_cell() which originally comes from the connection subsystem.
  * This should be hopefully be fixed with #23993.
  *
  * For *outbound* cells, the entry point is: channel_write_packed_cell().
@@ -83,13 +83,6 @@
 #include "lib/time/compat_time.h"
 
 #include "core/or/cell_queue_st.h"
-
-/* Static function prototypes */
-
-static bool channel_matches_target_addr_for_extend(
-                                          channel_t *chan,
-                                          const tor_addr_t *target_ipv4_addr,
-                                          const tor_addr_t *target_ipv6_addr);
 
 /* Global lists of channels */
 
@@ -878,6 +871,8 @@ channel_init(channel_t *chan)
 
   /* Channel is not in the scheduler heap. */
   chan->sched_heap_idx = -1;
+
+  tor_addr_make_unspec(&chan->addr_according_to_peer);
 }
 
 /**
@@ -2392,7 +2387,7 @@ channel_is_better(channel_t *a, channel_t *b)
  * Get a channel to extend a circuit.
  *
  * Given the desired relay identity, pick a suitable channel to extend a
- * circuit to the target IPv4 or IPv6 address requsted by the client. Search
+ * circuit to the target IPv4 or IPv6 address requested by the client. Search
  * for an existing channel for the requested endpoint. Make sure the channel
  * is usable for new circuits, and matches one of the target addresses.
  *
@@ -2400,12 +2395,16 @@ channel_is_better(channel_t *a, channel_t *b)
  * *msg_out to a message describing the channel's state and our next action,
  * and set *launch_out to a boolean indicated whether the caller should try to
  * launch a new channel with channel_connect().
+ *
+ * If `for_origin_circ` is set, mark the channel as interesting for origin
+ * circuits, and therefore interesting for our bootstrapping reports.
  */
 MOCK_IMPL(channel_t *,
 channel_get_for_extend,(const char *rsa_id_digest,
                         const ed25519_public_key_t *ed_id,
                         const tor_addr_t *target_ipv4_addr,
                         const tor_addr_t *target_ipv6_addr,
+                        bool for_origin_circ,
                         const char **msg_out,
                         int *launch_out))
 {
@@ -2445,8 +2444,15 @@ channel_get_for_extend,(const char *rsa_id_digest,
     if (!CHANNEL_IS_OPEN(chan)) {
       /* If the address matches, don't launch a new connection for this
        * circuit. */
-      if (matches_target)
+      if (matches_target) {
         ++n_inprogress_goodaddr;
+        if (for_origin_circ) {
+          /* We were looking for a connection for an origin circuit; this one
+           * matches, so we'll note that we decided to use it for an origin
+           * circuit. */
+          channel_mark_as_used_for_origin_circuit(chan);
+        }
+      }
       continue;
     }
 
@@ -2573,7 +2579,7 @@ channel_dump_statistics, (channel_t *chan, int severity))
   /* Handle remote address and descriptions */
   have_remote_addr = channel_get_addr_if_possible(chan, &remote_addr);
   if (have_remote_addr) {
-    char *actual = tor_strdup(channel_get_actual_remote_descr(chan));
+    char *actual = tor_strdup(channel_describe_peer(chan));
     remote_addr_str = tor_addr_to_str_dup(&remote_addr);
     tor_log(severity, LD_GENERAL,
         " * Channel %"PRIu64 " says its remote address"
@@ -2581,18 +2587,18 @@ channel_dump_statistics, (channel_t *chan, int severity))
         "actual description of \"%s\"",
         (chan->global_identifier),
         safe_str(remote_addr_str),
-        safe_str(channel_get_canonical_remote_descr(chan)),
+        safe_str(channel_describe_peer(chan)),
         safe_str(actual));
     tor_free(remote_addr_str);
     tor_free(actual);
   } else {
-    char *actual = tor_strdup(channel_get_actual_remote_descr(chan));
+    char *actual = tor_strdup(channel_describe_peer(chan));
     tor_log(severity, LD_GENERAL,
         " * Channel %"PRIu64 " does not know its remote "
         "address, but gives a canonical description of \"%s\" and an "
         "actual description of \"%s\"",
         (chan->global_identifier),
-        channel_get_canonical_remote_descr(chan),
+        channel_describe_peer(chan),
         actual);
     tor_free(actual);
   }
@@ -2798,75 +2804,41 @@ channel_listener_dump_transport_statistics(channel_listener_t *chan_l,
 }
 
 /**
- * Return text description of the remote endpoint.
- *
- * This function return a test provided by the lower layer of the remote
- * endpoint for this channel; it should specify the actual address connected
- * to/from.
- *
- * Subsequent calls to channel_get_{actual,canonical}_remote_{address,descr}
- * may invalidate the return value from this function.
- */
-const char *
-channel_get_actual_remote_descr(channel_t *chan)
-{
-  tor_assert(chan);
-  tor_assert(chan->get_remote_descr);
-
-  /* Param 1 indicates the actual description */
-  return chan->get_remote_descr(chan, GRD_FLAG_ORIGINAL);
-}
-
-/**
- * Return the text address of the remote endpoint.
- *
- * Subsequent calls to channel_get_{actual,canonical}_remote_{address,descr}
- * may invalidate the return value from this function.
- */
-const char *
-channel_get_actual_remote_address(channel_t *chan)
-{
-  /* Param 1 indicates the actual description */
-  return chan->get_remote_descr(chan, GRD_FLAG_ORIGINAL|GRD_FLAG_ADDR_ONLY);
-}
-
-/**
  * Return text description of the remote endpoint canonical address.
  *
- * This function return a test provided by the lower layer of the remote
- * endpoint for this channel; it should use the known canonical address for
- * this OR's identity digest if possible.
+ * This function returns a human-readable string for logging; nothing
+ * should parse it or rely on a particular format.
  *
- * Subsequent calls to channel_get_{actual,canonical}_remote_{address,descr}
- * may invalidate the return value from this function.
+ * Subsequent calls to this function may invalidate its return value.
  */
 MOCK_IMPL(const char *,
-channel_get_canonical_remote_descr,(channel_t *chan))
+channel_describe_peer,(channel_t *chan))
 {
   tor_assert(chan);
-  tor_assert(chan->get_remote_descr);
+  tor_assert(chan->describe_peer);
 
-  /* Param 0 indicates the canonicalized description */
-  return chan->get_remote_descr(chan, 0);
+  return chan->describe_peer(chan);
 }
 
 /**
- * Get remote address if possible.
+ * Get the remote address for this channel, if possible.
  *
  * Write the remote address out to a tor_addr_t if the underlying transport
  * supports this operation, and return 1.  Return 0 if the underlying transport
  * doesn't let us do this.
+ *
+ * Always returns the "real" address of the peer -- the one we're connected to
+ * on the internet.
  */
 MOCK_IMPL(int,
-channel_get_addr_if_possible,(channel_t *chan, tor_addr_t *addr_out))
+channel_get_addr_if_possible,(const channel_t *chan,
+                              tor_addr_t *addr_out))
 {
   tor_assert(chan);
   tor_assert(addr_out);
+  tor_assert(chan->get_remote_addr);
 
-  if (chan->get_remote_addr)
-    return chan->get_remote_addr(chan, addr_out);
-  /* Else no support, method not implemented */
-  else return 0;
+  return chan->get_remote_addr(chan, addr_out);
 }
 
 /**
@@ -3290,6 +3262,9 @@ channel_when_last_xmit(channel_t *chan)
  *
  * This function calls the lower layer and asks if this channel matches a
  * given extend_info_t.
+ *
+ * NOTE that this function only checks for an address/port match, and should
+ * be used only when no identity is available.
  */
 int
 channel_matches_extend_info(channel_t *chan, extend_info_t *extend_info)
@@ -3311,7 +3286,7 @@ channel_matches_extend_info(channel_t *chan, extend_info_t *extend_info)
  * This function calls into the lower layer and asks if this channel thinks
  * it matches the target addresses for circuit extension purposes.
  */
-static bool
+STATIC bool
 channel_matches_target_addr_for_extend(channel_t *chan,
                                        const tor_addr_t *target_ipv4_addr,
                                        const tor_addr_t *target_ipv6_addr)

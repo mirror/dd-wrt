@@ -6,7 +6,7 @@
 /* All assert failures are fatal */
 #undef ALL_BUGS_ARE_FATAL
 
-/* # for 0.4.4.6 Approximate date when this software was released. (Updated
+/* # for 0.4.5.7 Approximate date when this software was released. (Updated
    when the version changes.) */
 #undef APPROX_RELEASE_DATE
 
@@ -57,9 +57,6 @@
 
 /* Define to 1 if you have the `accept4' function. */
 #undef HAVE_ACCEPT4
-
-/* Define to 1 if you have the <android/log.h> header file. */
-#undef HAVE_ANDROID_LOG_H
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
@@ -134,9 +131,6 @@
 /* Define to 1 if you have the `EVP_PBE_scrypt' function. */
 #undef HAVE_EVP_PBE_SCRYPT
 
-/* Define to 1 if you have the `EVP_sha3_256' function. */
-#undef HAVE_EVP_SHA3_256
-
 /* Define to 1 if you have the `evutil_secure_rng_add_bytes' function. */
 #undef HAVE_EVUTIL_SECURE_RNG_ADD_BYTES
 
@@ -192,9 +186,6 @@
 /* Define to 1 if you have the `getline' function. */
 #undef HAVE_GETLINE
 
-/* Define to 1 if you have the `getpass' function. */
-#undef HAVE_GETPASS
-
 /* Define to 1 if you have the `getresgid' function. */
 #undef HAVE_GETRESGID
 
@@ -210,6 +201,12 @@
 /* Define to 1 if you have the `get_current_dir_name' function. */
 #undef HAVE_GET_CURRENT_DIR_NAME
 
+/* Define to 1 if you have the `glob' function. */
+#undef HAVE_GLOB
+
+/* Define to 1 if you have the <glob.h> header file. */
+#undef HAVE_GLOB_H
+
 /* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
 
@@ -221,9 +218,6 @@
 
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
-
-/* Define to 1 if you have the `htonll' function. */
-#undef HAVE_HTONLL
 
 /* Define to 1 if you have the <ifaddrs.h> header file. */
 #undef HAVE_IFADDRS_H
@@ -277,6 +271,9 @@
 /* Define to 1 if you have the `lround' function. */
 #undef HAVE_LROUND
 
+/* Define to 1 if you have the <lttng/tracepoint.h> header file. */
+#undef HAVE_LTTNG_TRACEPOINT_H
+
 /* Have LZMA */
 #undef HAVE_LZMA
 
@@ -301,17 +298,8 @@
 /* Define to 1 if you have the `madvise' function. */
 #undef HAVE_MADVISE
 
-/* Define to 1 if you have the `mallinfo' function. */
-#undef HAVE_MALLINFO
-
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
-
-/* Define to 1 if you have the <malloc/malloc.h> header file. */
-#undef HAVE_MALLOC_MALLOC_H
-
-/* Define to 1 if you have the <malloc_np.h> header file. */
-#undef HAVE_MALLOC_NP_H
 
 /* Define to 1 if you have the `memmem' function. */
 #undef HAVE_MEMMEM
@@ -564,6 +552,9 @@
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
 
+/* Define to 1 if you have the <sys/sdt.h> header file. */
+#undef HAVE_SYS_SDT_H
+
 /* Define to 1 if you have the <sys/select.h> header file. */
 #undef HAVE_SYS_SELECT_H
 
@@ -581,9 +572,6 @@
 
 /* Define to 1 if you have the <sys/sysctl.h> header file. */
 #undef HAVE_SYS_SYSCTL_H
-
-/* Define to 1 if you have the <sys/syslimits.h> header file. */
-#undef HAVE_SYS_SYSLIMITS_H
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 #undef HAVE_SYS_TIME_H
@@ -611,6 +599,9 @@
 
 /* Define to 1 if you have the `TLS_method' function. */
 #undef HAVE_TLS_METHOD
+
+/* Compiled with tracing support */
+#undef HAVE_TRACING
 
 /* Define to 1 if you have the `truncate' function. */
 #undef HAVE_TRUNCATE
@@ -662,6 +653,9 @@
 
 /* Define to 1 iff memset(0) sets pointers to NULL */
 #undef NULL_REP_IS_ZERO_BYTES
+
+/* disable openssl deprecated-function warnings */
+#undef OPENSSL_SUPPRESS_DEPRECATED
 
 /* Name of package */
 #undef PACKAGE
@@ -741,9 +735,6 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Compile the event tracing instrumentation */
-#undef TOR_EVENT_TRACING_ENABLED
-
 /* Compile with Android specific features enabled */
 #undef USE_ANDROID
 
@@ -753,9 +744,6 @@
 
 /* Defined if we should use a curve25519 from nacl */
 #undef USE_CURVE25519_NACL
-
-/* Tracing framework to log debug */
-#undef USE_EVENT_TRACING_DEBUG
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
@@ -778,6 +766,15 @@
 # undef __EXTENSIONS__
 #endif
 
+
+/* Tracepoints to log debug */
+#undef USE_TRACING_INSTRUMENTATION_LOG_DEBUG
+
+/* Using LTTng instrumentation */
+#undef USE_TRACING_INSTRUMENTATION_LTTNG
+
+/* Using USDT instrumentation */
+#undef USE_TRACING_INSTRUMENTATION_USDT
 
 /* "Define to enable transparent proxy support" */
 #undef USE_TRANSPARENT
@@ -826,14 +823,14 @@
 
 
 #ifdef _WIN32
-/* Defined to access windows functions and definitions for >=WinXP */
+/* Defined to access windows functions and definitions for >=WinVista */
 # ifndef WINVER
-#  define WINVER 0x0501
+#  define WINVER 0x0600
 # endif
 
-/* Defined to access _other_ windows functions and definitions for >=WinXP */
+/* Defined to access _other_ windows functions and definitions for >=WinVista */
 # ifndef _WIN32_WINNT
-#  define _WIN32_WINNT 0x0501
+#  define _WIN32_WINNT 0x0600
 # endif
 
 /* Defined to avoid including some windows headers as part of Windows.h */

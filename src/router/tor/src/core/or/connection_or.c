@@ -99,13 +99,27 @@ static void connection_or_check_canonicity(or_connection_t *conn,
 
 /**************************************************************/
 
-/** Convert a connection_t* to an or_connection_t*; assert if the cast is
- * invalid. */
+/**
+ * Cast a `connection_t *` to an `or_connection_t *`.
+ *
+ * Exit with an assertion failure if the input is not an `or_connnection_t`.
+ **/
 or_connection_t *
 TO_OR_CONN(connection_t *c)
 {
   tor_assert(c->magic == OR_CONNECTION_MAGIC);
   return DOWNCAST(or_connection_t, c);
+}
+
+/**
+ * Cast a `const connection_t *` to a `const or_connection_t *`.
+ *
+ * Exit with an assertion failure if the input is not an `or_connnection_t`.
+ **/
+const or_connection_t *
+CONST_TO_OR_CONN(const connection_t *c)
+{
+  return TO_OR_CONN((connection_t *)c);
 }
 
 /** Clear clear conn->identity_digest and update other data
@@ -151,9 +165,9 @@ connection_or_set_identity_digest(or_connection_t *conn,
   if (conn->chan)
     chan = TLS_CHAN_TO_BASE(conn->chan);
 
-  log_info(LD_HANDSHAKE, "Set identity digest for %p (%s): %s %s.",
+  log_info(LD_HANDSHAKE, "Set identity digest for %s at %p: %s %s.",
+           connection_describe(TO_CONN(conn)),
            conn,
-           escaped_safe_str(conn->base_.address),
            hex_str(rsa_digest, DIGEST_LEN),
            ed25519_fmt(ed_id));
   log_info(LD_HANDSHAKE, "   (Previously: %s %s)",
@@ -191,6 +205,26 @@ connection_or_set_identity_digest(or_connection_t *conn,
   /* Deal with channels */
   if (chan)
     channel_set_identity_digest(chan, rsa_digest, ed_id);
+}
+
+/**
+ * Return the Ed25519 identity of the peer for this connection (if any).
+ *
+ * Note that this ID may not be the _actual_ identity for the peer if
+ * authentication is not complete.
+ **/
+const struct ed25519_public_key_t *
+connection_or_get_alleged_ed25519_id(const or_connection_t *conn)
+{
+  if (conn && conn->chan) {
+    const channel_t *chan = NULL;
+    chan = TLS_CHAN_TO_BASE(conn->chan);
+    if (!ed25519_public_key_is_zero(&chan->ed25519_identity)) {
+      return &chan->ed25519_identity;
+    }
+  }
+
+  return NULL;
 }
 
 /**************************************************************/
@@ -380,7 +414,7 @@ connection_or_state_publish(const or_connection_t *conn, uint8_t state)
  * be notified.
  */
 
-MOCK_IMPL(STATIC void,
+MOCK_IMPL(void,
 connection_or_change_state,(or_connection_t *conn, uint8_t state))
 {
   tor_assert(conn);
@@ -532,11 +566,6 @@ connection_or_reached_eof(or_connection_t *conn)
 int
 connection_or_process_inbuf(or_connection_t *conn)
 {
-  /** Don't let the inbuf of a nonopen OR connection grow beyond this many
-   * bytes: it's either a broken client, a non-Tor client, or a DOS
-   * attempt. */
-#define MAX_OR_INBUF_WHEN_NONOPEN 0
-
   int ret = 0;
   tor_assert(conn);
 
@@ -547,6 +576,15 @@ connection_or_process_inbuf(or_connection_t *conn)
       /* start TLS after handshake completion, or deal with error */
       if (ret == 1) {
         tor_assert(TO_CONN(conn)->proxy_state == PROXY_CONNECTED);
+        if (buf_datalen(conn->base_.inbuf) != 0) {
+          log_fn(LOG_PROTOCOL_WARN, LD_NET, "Found leftover (%d bytes) "
+                 "when transitioning from PROXY_HANDSHAKING state on %s: "
+                 "closing.",
+                 (int)buf_datalen(conn->base_.inbuf),
+                 connection_describe(TO_CONN(conn)));
+          connection_or_close_for_error(conn, 0);
+          return -1;
+        }
         if (connection_tls_start_handshake(conn, 0) < 0)
           ret = -1;
         /* Touch the channel's active timestamp if there is one */
@@ -567,19 +605,15 @@ connection_or_process_inbuf(or_connection_t *conn)
       break; /* don't do anything */
   }
 
-  /* This check was necessary with 0.2.2, when the TLS_SERVER_RENEGOTIATING
-   * check would otherwise just let data accumulate.  It serves no purpose
-   * in 0.2.3.
-   *
-   * XXXX Remove this check once we verify that the above paragraph is
-   * 100% true. */
-  if (buf_datalen(conn->base_.inbuf) > MAX_OR_INBUF_WHEN_NONOPEN) {
-    log_fn(LOG_PROTOCOL_WARN, LD_NET, "Accumulated too much data (%d bytes) "
-           "on nonopen OR connection %s %s:%u in state %s; closing.",
+  /* This check makes sure that we don't have any data on the inbuf if we're
+   * doing our TLS handshake: if we did, they were probably put there by a
+   * SOCKS proxy trying to trick us into accepting unauthenticated data.
+   */
+  if (buf_datalen(conn->base_.inbuf) != 0) {
+    log_fn(LOG_PROTOCOL_WARN, LD_NET, "Accumulated data (%d bytes) "
+           "on non-open %s; closing.",
            (int)buf_datalen(conn->base_.inbuf),
-           connection_or_nonopen_was_started_here(conn) ? "to" : "from",
-           conn->base_.address, conn->base_.port,
-           conn_state_to_string(conn->base_.type, conn->base_.state));
+           connection_describe(TO_CONN(conn)));
     connection_or_close_for_error(conn, 0);
     ret = -1;
   }
@@ -691,8 +725,8 @@ connection_or_finished_connecting(or_connection_t *or_conn)
   conn = TO_CONN(or_conn);
   tor_assert(conn->state == OR_CONN_STATE_CONNECTING);
 
-  log_debug(LD_HANDSHAKE,"OR connect() to router at %s:%u finished.",
-            conn->address,conn->port);
+  log_debug(LD_HANDSHAKE,"connect finished for %s",
+            connection_describe(conn));
 
   if (proxy_type != PROXY_NONE) {
     /* start proxy handshake */
@@ -881,7 +915,9 @@ connection_or_init_conn_from_address(or_connection_t *conn,
 
   conn->base_.port = port;
   tor_addr_copy(&conn->base_.addr, addr);
-  tor_addr_copy(&conn->real_addr, addr);
+  if (! conn->base_.address) {
+    conn->base_.address = tor_strdup(fmt_addr(addr));
+  }
 
   connection_or_check_canonicity(conn, started_here);
 }
@@ -893,9 +929,10 @@ connection_or_init_conn_from_address(or_connection_t *conn,
 static void
 connection_or_check_canonicity(or_connection_t *conn, int started_here)
 {
+  (void) started_here;
+
   const char *id_digest = conn->identity_digest;
   const ed25519_public_key_t *ed_id = NULL;
-  const tor_addr_t *addr = &conn->real_addr;
   if (conn->chan)
     ed_id = & TLS_CHAN_TO_BASE(conn->chan)->ed25519_identity;
 
@@ -924,34 +961,17 @@ connection_or_check_canonicity(or_connection_t *conn, int started_here)
     } else {
       node_ap = &node_ipv6_ap;
     }
-    if (!started_here) {
-      /* Override the addr/port, so our log messages will make sense.
-       * This is dangerous, since if we ever try looking up a conn by
-       * its actual addr/port, we won't remember. Careful! */
-      /* XXXX arma: this is stupid, and it's the reason we need real_addr
-       * to track is_canonical properly.  What requires it? */
-      /* XXXX <arma> i believe the reason we did this, originally, is because
-       * we wanted to log what OR a connection was to, and if we logged the
-       * right IP address and port 56244, that wouldn't be as helpful. now we
-       * log the "right" port too, so we know if it's moria1 or moria2.
-       */
-      /* See #33898 for a ticket that resolves this technical debt. */
-      tor_addr_copy(&conn->base_.addr, &node_ap->addr);
-      conn->base_.port = node_ap->port;
-    }
+    /* Remember the canonical addr/port so our log messages will make
+       sense. */
+    tor_addr_port_copy(&conn->canonical_orport, node_ap);
     tor_free(conn->nickname);
     conn->nickname = tor_strdup(node_get_nickname(r));
-    tor_free(conn->base_.address);
-    conn->base_.address = tor_addr_to_str_dup(&node_ap->addr);
   } else {
     tor_free(conn->nickname);
     conn->nickname = tor_malloc(HEX_DIGEST_LEN+2);
     conn->nickname[0] = '$';
     base16_encode(conn->nickname+1, HEX_DIGEST_LEN+1,
                   conn->identity_digest, DIGEST_LEN);
-
-    tor_free(conn->base_.address);
-    conn->base_.address = tor_addr_to_str_dup(addr);
   }
 
   /*
@@ -1010,9 +1030,10 @@ connection_or_single_set_badness_(time_t now,
       or_conn->base_.timestamp_created + TIME_BEFORE_OR_CONN_IS_TOO_OLD
         < now) {
     log_info(LD_OR,
-             "Marking OR conn to %s:%d as too old for new circuits "
+             "Marking %s as too old for new circuits "
              "(fd "TOR_SOCKET_T_FORMAT", %d secs old).",
-             or_conn->base_.address, or_conn->base_.port, or_conn->base_.s,
+             connection_describe(TO_CONN(or_conn)),
+             or_conn->base_.s,
              (int)(now - or_conn->base_.timestamp_created));
     connection_or_mark_bad_for_new_circs(or_conn);
   }
@@ -1077,10 +1098,11 @@ connection_or_group_set_badness_(smartlist_t *group, int force)
       /* We have at least one open canonical connection to this router,
        * and this one is open but not canonical.  Mark it bad. */
       log_info(LD_OR,
-               "Marking OR conn to %s:%d as unsuitable for new circuits: "
+               "Marking %s unsuitable for new circuits: "
                "(fd "TOR_SOCKET_T_FORMAT", %d secs old).  It is not "
                "canonical, and we have another connection to that OR that is.",
-               or_conn->base_.address, or_conn->base_.port, or_conn->base_.s,
+               connection_describe(TO_CONN(or_conn)),
+               or_conn->base_.s,
                (int)(now - or_conn->base_.timestamp_created));
       connection_or_mark_bad_for_new_circs(or_conn);
       continue;
@@ -1121,22 +1143,24 @@ connection_or_group_set_badness_(smartlist_t *group, int force)
       /* This isn't the best conn, _and_ the best conn is better than it */
       if (best->is_canonical) {
         log_info(LD_OR,
-                 "Marking OR conn to %s:%d as unsuitable for new circuits: "
+                 "Marking %s as unsuitable for new circuits: "
                  "(fd "TOR_SOCKET_T_FORMAT", %d secs old). "
                  "We have a better canonical one "
                  "(fd "TOR_SOCKET_T_FORMAT"; %d secs old).",
-                 or_conn->base_.address, or_conn->base_.port, or_conn->base_.s,
+                 connection_describe(TO_CONN(or_conn)),
+                 or_conn->base_.s,
                  (int)(now - or_conn->base_.timestamp_created),
                  best->base_.s, (int)(now - best->base_.timestamp_created));
         connection_or_mark_bad_for_new_circs(or_conn);
-      } else if (!tor_addr_compare(&or_conn->real_addr,
-                                   &best->real_addr, CMP_EXACT)) {
+      } else if (tor_addr_eq(&TO_CONN(or_conn)->addr,
+                             &TO_CONN(best)->addr)) {
         log_info(LD_OR,
-                 "Marking OR conn to %s:%d as unsuitable for new circuits: "
+                 "Marking %s unsuitable for new circuits: "
                  "(fd "TOR_SOCKET_T_FORMAT", %d secs old).  We have a better "
                  "one with the "
                  "same address (fd "TOR_SOCKET_T_FORMAT"; %d secs old).",
-                 or_conn->base_.address, or_conn->base_.port, or_conn->base_.s,
+                 connection_describe(TO_CONN(or_conn)),
+                 or_conn->base_.s,
                  (int)(now - or_conn->base_.timestamp_created),
                  best->base_.s, (int)(now - best->base_.timestamp_created));
         connection_or_mark_bad_for_new_circs(or_conn);
@@ -1160,7 +1184,7 @@ static time_t or_connect_failure_map_next_cleanup_ts = 0;
  * port.
  *
  * We need to identify a connection failure with these three values because we
- * want to avoid to wrongfully blacklist a relay if someone is trying to
+ * want to avoid to wrongfully block a relay if someone is trying to
  * extend to a known identity digest but with the wrong IP/port. For instance,
  * it can happen if a relay changed its port but the client still has an old
  * descriptor with the old port. We want to stop connecting to that
@@ -1259,7 +1283,7 @@ static or_connect_failure_entry_t *
 or_connect_failure_new(const or_connection_t *or_conn)
 {
   or_connect_failure_entry_t *ocf = tor_malloc_zero(sizeof(*ocf));
-  or_connect_failure_init(or_conn->identity_digest, &or_conn->real_addr,
+  or_connect_failure_init(or_conn->identity_digest, &TO_CONN(or_conn)->addr,
                           TO_CONN(or_conn)->port, ocf);
   return ocf;
 }
@@ -1464,10 +1488,9 @@ connection_or_connect, (const tor_addr_t *_addr, uint16_t port,
    * that is we haven't had a failure earlier. This is to avoid to try to
    * constantly connect to relays that we think are not reachable. */
   if (!should_connect_to_relay(conn)) {
-    log_info(LD_GENERAL, "Can't connect to identity %s at %s:%u because we "
+    log_info(LD_GENERAL, "Can't connect to %s because we "
                          "failed earlier. Refusing.",
-             hex_str(id_digest, DIGEST_LEN), fmt_addr(&TO_CONN(conn)->addr),
-             TO_CONN(conn)->port);
+             connection_describe_peer(TO_CONN(conn)));
     connection_free_(TO_CONN(conn));
     return NULL;
   }
@@ -1507,7 +1530,7 @@ connection_or_connect, (const tor_addr_t *_addr, uint16_t port,
                "transport proxy supporting '%s'. This can happen if you "
                "haven't provided a ClientTransportPlugin line, or if "
                "your pluggable transport proxy stopped running.",
-               fmt_addrport(&TO_CONN(conn)->addr, TO_CONN(conn)->port),
+               connection_describe_peer(TO_CONN(conn)),
                transport_name, transport_name);
 
       control_event_bootstrap_prob_or(
@@ -1516,9 +1539,9 @@ connection_or_connect, (const tor_addr_t *_addr, uint16_t port,
                                 conn);
 
     } else {
-      log_warn(LD_GENERAL, "Tried to connect to '%s' through a proxy, but "
+      log_warn(LD_GENERAL, "Tried to connect to %s through a proxy, but "
                "the proxy address could not be found.",
-               fmt_addrport(&TO_CONN(conn)->addr, TO_CONN(conn)->port));
+               connection_describe_peer(TO_CONN(conn)));
     }
 
     connection_free_(TO_CONN(conn));
@@ -1638,8 +1661,8 @@ connection_tls_start_handshake,(or_connection_t *conn, int receiving))
     log_warn(LD_BUG,"tor_tls_new failed. Closing.");
     return -1;
   }
-  tor_tls_set_logged_address(conn->tls, // XXX client and relay?
-      escaped_safe_str(conn->base_.address));
+  tor_tls_set_logged_address(conn->tls,
+                             connection_describe_peer(TO_CONN(conn)));
 
   connection_start_reading(TO_CONN(conn));
   log_debug(LD_HANDSHAKE,"starting TLS handshake on fd "TOR_SOCKET_T_FORMAT,
@@ -1786,18 +1809,15 @@ connection_or_check_valid_tls_handshake(or_connection_t *conn,
   crypto_pk_t *identity_rcvd=NULL;
   const or_options_t *options = get_options();
   int severity = server_mode(options) ? LOG_PROTOCOL_WARN : LOG_WARN;
-  const char *safe_address =
-    started_here ? conn->base_.address :
-                   safe_str_client(conn->base_.address);
   const char *conn_type = started_here ? "outgoing" : "incoming";
   int has_cert = 0;
 
   check_no_tls_errors();
   has_cert = tor_tls_peer_has_cert(conn->tls);
   if (started_here && !has_cert) {
-    log_info(LD_HANDSHAKE,"Tried connecting to router at %s:%d, but it didn't "
+    log_info(LD_HANDSHAKE,"Tried connecting to router at %s, but it didn't "
              "send a cert! Closing.",
-             safe_address, conn->base_.port);
+             connection_describe_peer(TO_CONN(conn)));
     return -1;
   } else if (!has_cert) {
     log_debug(LD_HANDSHAKE,"Got incoming connection with no certificate. "
@@ -1809,9 +1829,9 @@ connection_or_check_valid_tls_handshake(or_connection_t *conn,
     int v = tor_tls_verify(started_here?severity:LOG_INFO,
                            conn->tls, &identity_rcvd);
     if (started_here && v<0) {
-      log_fn(severity,LD_HANDSHAKE,"Tried connecting to router at %s:%d: It"
+      log_fn(severity,LD_HANDSHAKE,"Tried connecting to router at %s: It"
              " has a cert but it's invalid. Closing.",
-             safe_address, conn->base_.port);
+             connection_describe_peer(TO_CONN(conn)));
         return -1;
     } else if (v<0) {
       log_info(LD_HANDSHAKE,"Incoming connection gave us an invalid cert "
@@ -1819,7 +1839,8 @@ connection_or_check_valid_tls_handshake(or_connection_t *conn,
     } else {
       log_debug(LD_HANDSHAKE,
                 "The certificate seems to be valid on %s connection "
-                "with %s:%d", conn_type, safe_address, conn->base_.port);
+                "with %s", conn_type,
+                connection_describe_peer(TO_CONN(conn)));
     }
     check_no_tls_errors();
   }
@@ -1891,9 +1912,9 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
   const int expected_ed_key =
     ! ed25519_public_key_is_zero(&chan->ed25519_identity);
 
-  log_info(LD_HANDSHAKE, "learned peer id for %p (%s): %s, %s",
+  log_info(LD_HANDSHAKE, "learned peer id for %s at %p: %s, %s",
+           connection_describe(TO_CONN(conn)),
            conn,
-           safe_str_client(conn->base_.address),
            hex_str((const char*)rsa_peer_id, DIGEST_LEN),
            ed25519_fmt(ed_peer_id));
 
@@ -1907,9 +1928,9 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
     conn->nickname[0] = '$';
     base16_encode(conn->nickname+1, HEX_DIGEST_LEN+1,
                   conn->identity_digest, DIGEST_LEN);
-    log_info(LD_HANDSHAKE, "Connected to router %s at %s:%d without knowing "
-                    "its key. Hoping for the best.",
-                    conn->nickname, conn->base_.address, conn->base_.port);
+    log_info(LD_HANDSHAKE, "Connected to router at %s without knowing "
+             "its key. Hoping for the best.",
+             connection_describe_peer(TO_CONN(conn)));
     /* if it's a bridge and we didn't know its identity fingerprint, now
      * we do -- remember it for future attempts. */
     learned_router_identity(&conn->base_.addr, conn->base_.port,
@@ -1983,9 +2004,9 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
     }
 
     log_fn(severity, LD_HANDSHAKE,
-           "Tried connecting to router at %s:%d, but RSA + ed25519 identity "
+           "Tried connecting to router at %s, but RSA + ed25519 identity "
            "keys were not as expected: wanted %s + %s but got %s + %s.%s",
-           conn->base_.address, conn->base_.port,
+           connection_describe_peer(TO_CONN(conn)),
            expected_rsa, expected_ed, seen_rsa, seen_ed, extra_log);
 
     /* Tell the new guard API about the channel failure */
@@ -2012,9 +2033,14 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
     /* If we learned an identity for this connection, then we might have
      * just discovered it to be canonical. */
     connection_or_check_canonicity(conn, conn->handshake_state->started_here);
+    if (conn->tls)
+      tor_tls_set_logged_address(conn->tls,
+                                 connection_describe_peer(TO_CONN(conn)));
   }
 
   if (authdir_mode_tests_reachability(options)) {
+    // We don't want to use canonical_orport here -- we want the address
+    // that we really used.
     dirserv_orconn_tls_done(&conn->base_.addr, conn->base_.port,
                             (const char*)rsa_peer_id, ed_peer_id);
   }
@@ -2057,11 +2083,10 @@ connection_tls_finish_handshake(or_connection_t *conn)
 
   tor_assert(!started_here);
 
-  log_debug(LD_HANDSHAKE,"%s tls handshake on %p with %s done, using "
+  log_debug(LD_HANDSHAKE,"%s tls handshake on %s done, using "
             "ciphersuite %s. verifying.",
             started_here?"outgoing":"incoming",
-            conn,
-            safe_str_client(conn->base_.address),
+            connection_describe_peer(TO_CONN(conn)),
             tor_tls_get_ciphersuite_name(conn->tls));
 
   if (connection_or_check_valid_tls_handshake(conn, started_here,
@@ -2493,11 +2518,9 @@ connection_or_send_netinfo,(or_connection_t *conn))
     netinfo_cell_set_timestamp(netinfo_cell, (uint32_t)now);
 
   /* Their address. */
-  const tor_addr_t *remote_tor_addr =
-    !tor_addr_is_null(&conn->real_addr) ? &conn->real_addr : &conn->base_.addr;
-  /* We use &conn->real_addr below, unless it hasn't yet been set. If it
-   * hasn't yet been set, we know that base_.addr hasn't been tampered with
-   * yet either. */
+  const tor_addr_t *remote_tor_addr = &TO_CONN(conn)->addr;
+  /* We can safely use TO_CONN(conn)->addr here, since we no longer replace
+   * it with a canonical address. */
   netinfo_addr_t *their_addr = netinfo_addr_from_tor_addr(remote_tor_addr);
 
   netinfo_cell_set_other_addr(netinfo_cell, their_addr);
@@ -2507,14 +2530,11 @@ connection_or_send_netinfo,(or_connection_t *conn))
    * is an outgoing connection, act like a normal client and omit it. */
   if ((public_server_mode(get_options()) || !conn->is_outgoing) &&
       (me = router_get_my_routerinfo())) {
-    tor_addr_t my_addr;
-    tor_addr_from_ipv4h(&my_addr, me->addr);
-
     uint8_t n_my_addrs = 1 + !tor_addr_is_null(&me->ipv6_addr);
     netinfo_cell_set_n_my_addrs(netinfo_cell, n_my_addrs);
 
     netinfo_cell_add_my_addrs(netinfo_cell,
-                              netinfo_addr_from_tor_addr(&my_addr));
+                              netinfo_addr_from_tor_addr(&me->ipv4_addr));
 
     if (!tor_addr_is_null(&me->ipv6_addr)) {
       netinfo_cell_add_my_addrs(netinfo_cell,

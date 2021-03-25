@@ -16,6 +16,10 @@
 /* For packed_cell stuff */
 #define RELAY_PRIVATE
 #include "core/or/relay.h"
+/* For channel_tls_t object and private functions. */
+#define CHANNEL_OBJECT_PRIVATE
+#define CHANNELTLS_PRIVATE
+#include "core/or/channeltls.h"
 /* For init/free stuff */
 #include "core/or/scheduler.h"
 #include "feature/nodelist/networkstatus.h"
@@ -25,6 +29,8 @@
 #include "core/or/origin_circuit_st.h"
 #include "feature/nodelist/routerstatus_st.h"
 #include "core/or/var_cell_st.h"
+#include "core/or/or_connection_st.h"
+#include "lib/net/inaddr.h"
 
 /* Test suite stuff */
 #include "test/log_test_helpers.h"
@@ -156,13 +162,20 @@ chan_test_finish_close(channel_t *ch)
 }
 
 static const char *
-chan_test_get_remote_descr(channel_t *ch, int flags)
+chan_test_describe_peer(const channel_t *ch)
 {
   tt_assert(ch);
-  tt_int_op(flags & ~(GRD_FLAG_ORIGINAL | GRD_FLAG_ADDR_ONLY), OP_EQ, 0);
 
  done:
   return "Fake channel for unit tests; no real endpoint";
+}
+
+static int
+chan_test_get_remote_addr(const channel_t *ch, tor_addr_t *out)
+{
+  (void)ch;
+  tor_addr_from_ipv4h(out, 0x7f000001);
+  return 1;
 }
 
 static int
@@ -261,7 +274,8 @@ new_fake_channel(void)
 
   chan->close = chan_test_close;
   chan->num_cells_writeable = chan_test_num_cells_writeable;
-  chan->get_remote_descr = chan_test_get_remote_descr;
+  chan->describe_peer = chan_test_describe_peer;
+  chan->get_remote_addr = chan_test_get_remote_addr;
   chan->write_packed_cell = chan_test_write_packed_cell;
   chan->write_var_cell = chan_test_write_var_cell;
   chan->state = CHANNEL_STATE_OPEN;
@@ -715,7 +729,7 @@ test_channel_inbound_cell(void *arg)
   tt_int_op(chan->reason_for_closing, OP_EQ, CHANNEL_CLOSE_REQUESTED);
   tt_int_op(test_close_called, OP_EQ, old_count + 1);
 
-  /* This closes the channe so it calls in the scheduler, make sure of it. */
+  /* This closes the channel so it calls in the scheduler, make sure of it. */
   old_count = test_releases_count;
   chan_test_finish_close(chan);
   tt_int_op(test_releases_count, OP_EQ, old_count + 1);
@@ -1368,7 +1382,7 @@ test_channel_for_extend(void *arg)
 
   /* The expected result is chan2 because it is older than chan1. */
   ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan2);
   tt_int_op(launch, OP_EQ, 0);
@@ -1377,7 +1391,7 @@ test_channel_for_extend(void *arg)
   /* Switch that around from previous test. */
   chan2->timestamp_created = chan1->timestamp_created + 1;
   ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan1);
   tt_int_op(launch, OP_EQ, 0);
@@ -1387,7 +1401,7 @@ test_channel_for_extend(void *arg)
    * channel 2 should be picked due to how channel_is_better() works. */
   chan2->timestamp_created = chan1->timestamp_created;
   ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan1);
   tt_int_op(launch, OP_EQ, 0);
@@ -1399,7 +1413,7 @@ test_channel_for_extend(void *arg)
   /* Condemned the older channel. */
   chan1->state = CHANNEL_STATE_CLOSING;
   ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan2);
   tt_int_op(launch, OP_EQ, 0);
@@ -1409,7 +1423,7 @@ test_channel_for_extend(void *arg)
   /* Make the older channel a client one. */
   channel_mark_client(chan1);
   ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan2);
   tt_int_op(launch, OP_EQ, 0);
@@ -1421,7 +1435,7 @@ test_channel_for_extend(void *arg)
   memset(&dumb_ed_id, 0, sizeof(dumb_ed_id));
   ret_chan = channel_get_for_extend(digest, &dumb_ed_id,
                                     &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(!ret_chan);
   tt_str_op(msg, OP_EQ, "Not connected. Connecting.");
   tt_int_op(launch, OP_EQ, 1);
@@ -1431,7 +1445,7 @@ test_channel_for_extend(void *arg)
   chan1->state = CHANNEL_STATE_OPENING;
   chan2->state = CHANNEL_STATE_OPENING;
   ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(!ret_chan);
   tt_str_op(msg, OP_EQ, "Connection in progress; waiting.");
   tt_int_op(launch, OP_EQ, 0);
@@ -1441,7 +1455,7 @@ test_channel_for_extend(void *arg)
   /* Mark channel 1 as bad for circuits. */
   channel_mark_bad_for_new_circs(chan1);
   ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan2);
   tt_int_op(launch, OP_EQ, 0);
@@ -1452,7 +1466,7 @@ test_channel_for_extend(void *arg)
   channel_mark_bad_for_new_circs(chan1);
   channel_mark_bad_for_new_circs(chan2);
   ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(!ret_chan);
   tt_str_op(msg, OP_EQ, "Connections all too old, or too non-canonical. "
                         " Launching a new one.");
@@ -1464,7 +1478,7 @@ test_channel_for_extend(void *arg)
   test_chan_should_be_canonical = 0;
   test_chan_should_match_target = 0;
   ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
-                                    &msg, &launch);
+                                    false, &msg, &launch);
   tt_assert(!ret_chan);
   tt_str_op(msg, OP_EQ, "Connections all too old, or too non-canonical. "
                         " Launching a new one.");
@@ -1535,6 +1549,54 @@ test_channel_listener(void *arg)
   channel_free_all();
 }
 
+#define TEST_SETUP_MATCHES_ADDR(orcon, addr, src, rv) STMT_BEGIN \
+    rv = tor_inet_pton(addr.family, src, &addr.addr); \
+    tt_int_op(rv, OP_EQ, 1); \
+    orcon->base_.addr = addr; \
+  STMT_END;
+
+#define TEST_MATCHES_ADDR(chan, addr4, addr6, rv, exp) STMT_BEGIN       \
+    rv = channel_matches_target_addr_for_extend(chan, addr4, addr6);    \
+    tt_int_op(rv, OP_EQ, exp); \
+  STMT_END;
+
+static void
+test_channel_matches_target_addr_for_extend(void *arg)
+{
+  (void) arg;
+
+  channel_tls_t *tlschan = tor_malloc_zero(sizeof(*tlschan));
+  or_connection_t *orcon = tor_malloc_zero(sizeof(*orcon));
+  channel_t *chan = &(tlschan->base_);
+  tor_addr_t addr;
+  int rv;
+
+  tlschan->conn = orcon;
+  channel_tls_common_init(tlschan);
+
+  /* Test for IPv4 addresses. */
+  addr.family = AF_INET;
+  TEST_SETUP_MATCHES_ADDR(orcon, addr, "1.2.3.4", rv);
+  TEST_MATCHES_ADDR(chan, &addr, NULL, rv, 1);
+
+  tor_inet_pton(addr.family, "2.5.3.4", &addr.addr);
+  TEST_MATCHES_ADDR(chan, &addr, NULL, rv, 0);
+
+  /* Test for IPv6 addresses. */
+  addr.family = AF_INET6;
+  TEST_SETUP_MATCHES_ADDR(orcon, addr, "3:4:7:1:9:8:09:10", rv);
+  TEST_MATCHES_ADDR(chan, NULL, &addr, rv, 1);
+
+  tor_inet_pton(addr.family, "::", &addr.addr);
+  TEST_MATCHES_ADDR(chan, NULL, &addr, rv, 0);
+
+ done:
+  circuitmux_clear_policy(chan->cmux);
+  circuitmux_free(chan->cmux);
+  tor_free(orcon);
+  tor_free(tlschan);
+}
+
 struct testcase_t channel_tests[] = {
   { "inbound_cell", test_channel_inbound_cell, TT_FORK,
     NULL, NULL },
@@ -1555,6 +1617,8 @@ struct testcase_t channel_tests[] = {
   { "get_channel_for_extend", test_channel_for_extend, TT_FORK,
     NULL, NULL },
   { "listener", test_channel_listener, TT_FORK,
+    NULL, NULL },
+  { "matches_target", test_channel_matches_target_addr_for_extend, TT_FORK,
     NULL, NULL },
   END_OF_TESTCASES
 };

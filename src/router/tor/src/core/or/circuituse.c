@@ -37,7 +37,9 @@
 #include "core/or/circuituse.h"
 #include "core/or/circuitpadding.h"
 #include "core/or/connection_edge.h"
+#include "core/or/extendinfo.h"
 #include "core/or/policies.h"
+#include "core/or/trace_probes_circuit.h"
 #include "feature/client/addressmap.h"
 #include "feature/client/bridges.h"
 #include "feature/client/circpathbias.h"
@@ -62,6 +64,7 @@
 #include "feature/stats/predict_ports.h"
 #include "lib/math/fp.h"
 #include "lib/time/tvdiff.h"
+#include "lib/trace/events.h"
 
 #include "core/or/cpath_build_state_st.h"
 #include "feature/dircommon/dir_connection_st.h"
@@ -202,8 +205,8 @@ circuit_is_acceptable(const origin_circuit_t *origin_circ,
           const int family = tor_addr_parse(&addr,
                                             conn->socks_request->address);
           if (family < 0 ||
-              !tor_addr_eq(&build_state->chosen_exit->addr, &addr) ||
-              build_state->chosen_exit->port != conn->socks_request->port)
+              !extend_info_has_orport(build_state->chosen_exit, &addr,
+                                      conn->socks_request->port))
             return 0;
         }
       }
@@ -816,7 +819,7 @@ circuit_expire_building(void)
       log_info(LD_CIRC,
                "Abandoning circ %u %s:%u (state %d,%d:%s, purpose %d, "
                "len %d)", TO_ORIGIN_CIRCUIT(victim)->global_identifier,
-               channel_get_canonical_remote_descr(victim->n_chan),
+               channel_describe_peer(victim->n_chan),
                (unsigned)victim->n_circ_id,
                TO_ORIGIN_CIRCUIT(victim)->has_opened,
                victim->state, circuit_state_to_string(victim->state),
@@ -837,6 +840,7 @@ circuit_expire_building(void)
                  -1);
 
     circuit_log_path(LOG_INFO,LD_CIRC,TO_ORIGIN_CIRCUIT(victim));
+    tor_trace(TR_SUBSYS(circuit), TR_EV(timeout), TO_ORIGIN_CIRCUIT(victim));
     if (victim->purpose == CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT)
       circuit_mark_for_close(victim, END_CIRC_REASON_MEASUREMENT_EXPIRED);
     else
@@ -1500,8 +1504,11 @@ circuit_expire_old_circuits_clientside(void)
                 circ->purpose);
       /* Don't do this magic for testing circuits. Their death is governed
        * by circuit_expire_building */
-      if (circ->purpose != CIRCUIT_PURPOSE_PATH_BIAS_TESTING)
+      if (circ->purpose != CIRCUIT_PURPOSE_PATH_BIAS_TESTING) {
+        tor_trace(TR_SUBSYS(circuit), TR_EV(idle_timeout),
+                  TO_ORIGIN_CIRCUIT(circ));
         circuit_mark_for_close(circ, END_CIRC_REASON_FINISHED);
+      }
     } else if (!circ->timestamp_dirty && circ->state == CIRCUIT_STATE_OPEN) {
       if (timercmp(&circ->timestamp_began, &cutoff, OP_LT)) {
         if (circ->purpose == CIRCUIT_PURPOSE_C_GENERAL ||
@@ -1520,6 +1527,8 @@ circuit_expire_old_circuits_clientside(void)
                     " that has been unused for %ld msec.",
                    TO_ORIGIN_CIRCUIT(circ)->global_identifier,
                    tv_mdiff(&circ->timestamp_began, &now));
+          tor_trace(TR_SUBSYS(circuit), TR_EV(idle_timeout),
+                    TO_ORIGIN_CIRCUIT(circ));
           circuit_mark_for_close(circ, END_CIRC_REASON_FINISHED);
         } else if (!TO_ORIGIN_CIRCUIT(circ)->is_ancient) {
           /* Server-side rend joined circuits can end up really old, because
@@ -1642,11 +1651,12 @@ static void
 circuit_testing_opened(origin_circuit_t *circ)
 {
   if (have_performed_bandwidth_test ||
-      !check_whether_orport_reachable(get_options())) {
+      !router_orport_seems_reachable(get_options(), AF_INET)) {
     /* either we've already done everything we want with testing circuits,
-     * or this testing circuit became open due to a fluke, e.g. we picked
-     * a last hop where we already had the connection open due to an
-     * outgoing local circuit. */
+     * OR this IPv4 testing circuit became open due to a fluke, e.g. we picked
+     * a last hop where we already had the connection open due to a
+     * outgoing local circuit, OR this is an IPv6 self-test circuit, not
+     * a bandwidth test circuit. */
     circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_AT_ORIGIN);
   } else if (circuit_enough_testing_circs()) {
     router_perform_bandwidth_test(NUM_PARALLEL_TESTING_CIRCS, time(NULL));
@@ -1660,7 +1670,8 @@ static void
 circuit_testing_failed(origin_circuit_t *circ, int at_last_hop)
 {
   const or_options_t *options = get_options();
-  if (server_mode(options) && check_whether_orport_reachable(options))
+  if (server_mode(options) &&
+      router_all_orports_seem_reachable(options))
     return;
 
   log_info(LD_GENERAL,
@@ -1681,6 +1692,7 @@ circuit_testing_failed(origin_circuit_t *circ, int at_last_hop)
 void
 circuit_has_opened(origin_circuit_t *circ)
 {
+  tor_trace(TR_SUBSYS(circuit), TR_EV(opened), circ);
   circuit_event_status(circ, CIRC_EVENT_BUILT, 0);
 
   /* Remember that this circuit has finished building. Now if we start
@@ -1846,7 +1858,7 @@ circuit_build_failed(origin_circuit_t *circ)
                "from the first hop (%s). I'm going to try to rotate to a "
                "better connection.",
                TO_CIRCUIT(circ)->n_circ_id, circ->global_identifier,
-               channel_get_canonical_remote_descr(n_chan));
+               channel_describe_peer(n_chan));
       n_chan->is_bad_for_new_circs = 1;
     } else {
       log_info(LD_OR,
@@ -1979,7 +1991,7 @@ circuit_purpose_is_hidden_service(uint8_t purpose)
   return 0;
 }
 
-/** Retrun true iff the given circuit is an HS client circuit. */
+/** Return true iff the given circuit is an HS client circuit. */
 bool
 circuit_purpose_is_hs_client(const uint8_t purpose)
 {
@@ -1987,7 +1999,7 @@ circuit_purpose_is_hs_client(const uint8_t purpose)
           purpose <= CIRCUIT_PURPOSE_C_HS_MAX_);
 }
 
-/** Retrun true iff the given circuit is an HS service circuit. */
+/** Return true iff the given circuit is an HS service circuit. */
 bool
 circuit_purpose_is_hs_service(const uint8_t purpose)
 {
@@ -1995,14 +2007,14 @@ circuit_purpose_is_hs_service(const uint8_t purpose)
           purpose <= CIRCUIT_PURPOSE_S_HS_MAX_);
 }
 
-/** Retrun true iff the given circuit is an HS Vanguards circuit. */
+/** Return true iff the given circuit is an HS Vanguards circuit. */
 bool
 circuit_purpose_is_hs_vanguards(const uint8_t purpose)
 {
   return (purpose == CIRCUIT_PURPOSE_HS_VANGUARDS);
 }
 
-/** Retrun true iff the given circuit is an HS v2 circuit. */
+/** Return true iff the given circuit is an HS v2 circuit. */
 bool
 circuit_is_hs_v2(const circuit_t *circ)
 {
@@ -2010,7 +2022,7 @@ circuit_is_hs_v2(const circuit_t *circ)
           (CONST_TO_ORIGIN_CIRCUIT(circ)->rend_data != NULL));
 }
 
-/** Retrun true iff the given circuit is an HS v3 circuit. */
+/** Return true iff the given circuit is an HS v3 circuit. */
 bool
 circuit_is_hs_v3(const circuit_t *circ)
 {
@@ -2092,11 +2104,18 @@ circuit_should_cannibalize_to_build(uint8_t purpose_to_build,
 }
 
 /** Launch a new circuit with purpose <b>purpose</b> and exit node
- * <b>extend_info</b> (or NULL to select a random exit node).  If flags
- * contains CIRCLAUNCH_NEED_UPTIME, choose among routers with high uptime.  If
- * CIRCLAUNCH_NEED_CAPACITY is set, choose among routers with high bandwidth.
- * If CIRCLAUNCH_IS_INTERNAL is true, the last hop need not be an exit node.
- * If CIRCLAUNCH_ONEHOP_TUNNEL is set, the circuit will have only one hop.
+ * <b>extend_info</b> (or NULL to select a random exit node).
+ *
+ * If flags contains:
+ *  - CIRCLAUNCH_ONEHOP_TUNNEL: the circuit will have only one hop;
+ *  - CIRCLAUNCH_NEED_UPTIME: choose routers with high uptime;
+ *  - CIRCLAUNCH_NEED_CAPACITY: choose routers with high bandwidth;
+ *  - CIRCLAUNCH_IS_IPV6_SELFTEST: the second-last hop must support IPv6
+ *                                 extends;
+ *  - CIRCLAUNCH_IS_INTERNAL: the last hop need not be an exit node;
+ *  - CIRCLAUNCH_IS_V3_RP: the last hop must support v3 onion service
+ *                         rendezvous.
+ *
  * Return the newly allocated circuit on success, or NULL on failure. */
 origin_circuit_t *
 circuit_launch_by_extend_info(uint8_t purpose,
@@ -2195,6 +2214,8 @@ circuit_launch_by_extend_info(uint8_t purpose,
           tor_fragile_assert();
           return NULL;
       }
+
+      tor_trace(TR_SUBSYS(circuit), TR_EV(cannibalized), circ);
       return circ;
     }
   }
@@ -2611,22 +2632,6 @@ cpath_is_on_circuit(origin_circuit_t *circ, crypt_path_t *crypt_path)
   return 0;
 }
 
-/** Return true iff client-side optimistic data is supported. */
-static int
-optimistic_data_enabled(void)
-{
-  const or_options_t *options = get_options();
-  if (options->OptimisticData < 0) {
-    /* Note: this default was 0 before #18815 was merged. We can't take the
-     * parameter out of the consensus until versions before that are all
-     * obsolete. */
-    const int32_t enabled =
-      networkstatus_get_param(NULL, "UseOptimisticData", /*default*/ 1, 0, 1);
-    return (int)enabled;
-  }
-  return options->OptimisticData;
-}
-
 /** Attach the AP stream <b>apconn</b> to circ's linked list of
  * p_streams. Also set apconn's cpath_layer to <b>cpath</b>, or to the last
  * hop in circ's cpath if <b>cpath</b> is NULL.
@@ -2679,17 +2684,17 @@ link_apconn_to_circ(entry_connection_t *apconn, origin_circuit_t *circ,
     exitnode = node_get_by_id(cpath->extend_info->identity_digest);
 
   /* See if we can use optimistic data on this circuit */
-  if (optimistic_data_enabled() &&
-      (circ->base_.purpose == CIRCUIT_PURPOSE_C_GENERAL ||
-       circ->base_.purpose == CIRCUIT_PURPOSE_C_HSDIR_GET ||
-       circ->base_.purpose == CIRCUIT_PURPOSE_S_HSDIR_POST ||
-       circ->base_.purpose == CIRCUIT_PURPOSE_C_REND_JOINED))
+  if (circ->base_.purpose == CIRCUIT_PURPOSE_C_GENERAL ||
+      circ->base_.purpose == CIRCUIT_PURPOSE_C_HSDIR_GET ||
+      circ->base_.purpose == CIRCUIT_PURPOSE_S_HSDIR_POST ||
+      circ->base_.purpose == CIRCUIT_PURPOSE_C_REND_JOINED)
     apconn->may_use_optimistic_data = 1;
   else
     apconn->may_use_optimistic_data = 0;
   log_info(LD_APP, "Looks like completed circuit to %s %s allow "
            "optimistic data for connection to %s",
-           circ->base_.purpose == CIRCUIT_PURPOSE_C_GENERAL ?
+           (circ->base_.purpose == CIRCUIT_PURPOSE_C_GENERAL ||
+            circ->base_.purpose == CIRCUIT_PURPOSE_CONTROLLER) ?
              /* node_describe() does the right thing if exitnode is NULL */
              safe_str_client(node_describe(exitnode)) :
              "hidden service",
@@ -3126,6 +3131,8 @@ circuit_change_purpose(circuit_t *circ, uint8_t new_purpose)
 
   old_purpose = circ->purpose;
   circ->purpose = new_purpose;
+  tor_trace(TR_SUBSYS(circuit), TR_EV(change_purpose), circ, old_purpose,
+            new_purpose);
 
   if (CIRCUIT_IS_ORIGIN(circ)) {
     control_event_circuit_purpose_changed(TO_ORIGIN_CIRCUIT(circ),

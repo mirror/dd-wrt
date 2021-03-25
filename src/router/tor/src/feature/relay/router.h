@@ -65,14 +65,13 @@ int init_keys_client(void);
 
 uint16_t router_get_active_listener_port_by_type_af(int listener_type,
                                                     sa_family_t family);
-uint16_t router_get_advertised_or_port(const or_options_t *options);
-void router_get_advertised_ipv6_or_ap(const or_options_t *options,
+void routerconf_find_ipv6_or_ap(const or_options_t *options,
                                       tor_addr_port_t *ipv6_ap_out);
-bool router_has_advertised_ipv6_orport(const or_options_t *options);
+bool routerconf_has_ipv6_orport(const or_options_t *options);
 MOCK_DECL(bool, router_can_extend_over_ipv6,(const or_options_t *options));
-uint16_t router_get_advertised_or_port_by_af(const or_options_t *options,
-                                             sa_family_t family);
-uint16_t router_get_advertised_dir_port(const or_options_t *options,
+uint16_t routerconf_find_or_port(const or_options_t *options,
+                                       sa_family_t family);
+uint16_t routerconf_find_dir_port(const or_options_t *options,
                                         uint16_t dirport);
 
 int router_should_advertise_dirport(const or_options_t *options,
@@ -81,9 +80,12 @@ int router_should_advertise_dirport(const or_options_t *options,
 void consider_publishable_server(int force);
 int should_refuse_unknown_exits(const or_options_t *options);
 
+void router_new_consensus_params(const networkstatus_t *);
 void router_upload_dir_desc_to_dirservers(int force);
 void mark_my_descriptor_dirty_if_too_old(time_t now);
 void mark_my_descriptor_dirty(const char *reason);
+void mark_my_descriptor_if_omit_ipv6_changes(const char *reason,
+                                               bool omit_ipv6);
 void check_descriptor_bandwidth_changed(time_t now);
 void check_descriptor_ipaddress_changed(time_t now);
 int router_has_bandwidth_to_be_dirserver(const or_options_t *options);
@@ -98,8 +100,9 @@ int router_digest_is_me(const char *digest);
 const uint8_t *router_get_my_id_digest(void);
 int router_extrainfo_digest_is_me(const char *digest);
 int router_is_me(const routerinfo_t *router);
+bool router_addr_is_my_published_addr(const tor_addr_t *addr);
 int router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e);
-int router_rebuild_descriptor(int force);
+bool router_rebuild_descriptor(int force);
 char *router_dump_router_to_string(routerinfo_t *router,
                              const crypto_pk_t *ident_key,
                              const crypto_pk_t *tap_key,
@@ -124,8 +127,10 @@ void router_free_all(void);
 #ifdef ROUTER_PRIVATE
 /* Used only by router.c and the unit tests */
 STATIC void get_platform_str(char *platform, size_t len);
-STATIC int router_write_fingerprint(int hashed);
+STATIC int router_write_fingerprint(int hashed, int ed25519_identity);
 STATIC smartlist_t *get_my_declared_family(const or_options_t *options);
+STATIC int load_stats_file(const char *filename, const char *ts_tag,
+                           time_t now, char **out);
 
 #ifdef TOR_UNIT_TESTS
 extern time_t desc_clean_since;

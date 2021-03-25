@@ -204,6 +204,8 @@ static int filter_nopar_gen[] = {
 #ifdef __NR__llseek
     SCMP_SYS(_llseek),
 #endif
+    // glob uses this..
+    SCMP_SYS(lstat),
     SCMP_SYS(mkdir),
     SCMP_SYS(mlockall),
 #ifdef __NR_mmap
@@ -307,6 +309,8 @@ static int filter_nopar_gen[] = {
   seccomp_rule_add((ctx),(act),(call),3,(f1),(f2),(f3))
 #define seccomp_rule_add_4(ctx,act,call,f1,f2,f3,f4)      \
   seccomp_rule_add((ctx),(act),(call),4,(f1),(f2),(f3),(f4))
+
+static const char *sandbox_get_interned_string(const char *str);
 
 /**
  * Function responsible for setting up the rt_sigaction syscall for
@@ -997,7 +1001,7 @@ sb_epoll_ctl(scmp_filter_ctx ctx, sandbox_cfg_t *filter)
  * the seccomp filter sandbox.
  *
  * NOTE: if multiple filters need to be added, the PR_SECCOMP parameter needs
- * to be whitelisted in this function.
+ * to be allowlisted in this function.
  */
 static int
 sb_prctl(scmp_filter_ctx ctx, sandbox_cfg_t *filter)
@@ -1222,8 +1226,41 @@ static sandbox_filter_func_t filter_func[] = {
     sb_kill
 };
 
+/**
+ * Return the interned (and hopefully sandbox-permitted) string equal
+ * to @a str.
+ *
+ * Return NULL if `str` is NULL, or `str` is not an interned string.
+ **/
 const char *
 sandbox_intern_string(const char *str)
+{
+  const char *interned = sandbox_get_interned_string(str);
+
+  if (sandbox_active && str != NULL && interned == NULL) {
+    log_warn(LD_BUG, "No interned sandbox parameter found for %s", str);
+  }
+
+  return interned ? interned : str;
+}
+
+/**
+ * Return true if the sandbox is running and we are missing an interned string
+ * equal to @a str.
+ */
+bool
+sandbox_interned_string_is_missing(const char *str)
+{
+  return sandbox_active && sandbox_get_interned_string(str) == NULL;
+}
+
+/**
+ * Try to find and return the interned string equal to @a str.
+ *
+ * If there is no such string, return NULL.
+ **/
+static const char *
+sandbox_get_interned_string(const char *str)
 {
   sandbox_cfg_t *elem;
 
@@ -1243,9 +1280,7 @@ sandbox_intern_string(const char *str)
     }
   }
 
-  if (sandbox_active)
-    log_warn(LD_BUG, "No interned sandbox parameter found for %s", str);
-  return str;
+  return NULL;
 }
 
 /* DOCDOC */

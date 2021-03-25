@@ -16,6 +16,7 @@
 #include "core/or/policies.h"
 #include "core/or/relay.h"
 #include "core/or/crypt_path.h"
+#include "core/or/extendinfo.h"
 #include "feature/client/circpathbias.h"
 #include "feature/hs/hs_cell.h"
 #include "feature/hs/hs_circuit.h"
@@ -23,6 +24,7 @@
 #include "feature/hs/hs_circuitmap.h"
 #include "feature/hs/hs_client.h"
 #include "feature/hs/hs_ident.h"
+#include "feature/hs/hs_metrics.h"
 #include "feature/hs/hs_service.h"
 #include "feature/nodelist/describe.h"
 #include "feature/nodelist/nodelist.h"
@@ -428,6 +430,9 @@ launch_rendezvous_point_circuit,(const hs_service_t *service,
              safe_str_client(service->onion_address));
     goto end;
   }
+  /* Update metrics with this new rendezvous circuit launched. */
+  hs_metrics_new_rdv(&service->keys.identity_pk);
+
   log_info(LD_REND, "Rendezvous circuit launched to %s with cookie %s "
                     "for %s service %s",
            safe_str_client(extend_info_describe(info)),
@@ -812,7 +817,7 @@ hs_circ_service_intro_has_opened(hs_service_t *service,
   tor_assert(desc);
   tor_assert(circ);
 
-  /* Cound opened circuits that have sent ESTABLISH_INTRO cells or are already
+  /* Count opened circuits that have sent ESTABLISH_INTRO cells or are already
    * established introduction circuits */
   num_intro_circ = count_opened_desc_intro_point_circuits(service, desc);
   num_needed_circ = service->config.num_intro_points;
@@ -1309,6 +1314,12 @@ hs_circ_cleanup_on_close(circuit_t *circ)
 
   if (circuit_purpose_is_hs_client(circ->purpose)) {
     cleanup_on_close_client_circ(circ);
+  }
+
+  if (circuit_purpose_is_hs_service(circ->purpose)) {
+    if (circuit_is_hs_v3(circ)) {
+      hs_service_circuit_cleanup_on_close(circ);
+    }
   }
 
   /* On close, we simply remove it from the circuit map. It can not be used

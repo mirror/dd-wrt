@@ -95,6 +95,7 @@ static inline uint32_t tor_addr_to_ipv4n(const tor_addr_t *a);
 static inline uint32_t tor_addr_to_ipv4h(const tor_addr_t *a);
 static inline uint32_t tor_addr_to_mapped_ipv4h(const tor_addr_t *a);
 static inline sa_family_t tor_addr_family(const tor_addr_t *a);
+static inline bool tor_addr_is_unspec(const tor_addr_t *a);
 static inline const struct in_addr *tor_addr_to_in(const tor_addr_t *a);
 static inline int tor_addr_eq_ipv4h(const tor_addr_t *a, uint32_t u);
 
@@ -188,6 +189,15 @@ tor_addr_family(const tor_addr_t *a)
   return a->family;
 }
 
+/**
+ * Return true if the address @a is in the UNSPEC family.
+ **/
+static inline bool
+tor_addr_is_unspec(const tor_addr_t *a)
+{
+  return a->family == AF_UNSPEC;
+}
+
 /** Return an in_addr* equivalent to <b>a</b>, or NULL if <b>a</b> is not
  * an IPv4 address. */
 static inline const struct in_addr *
@@ -214,7 +224,7 @@ tor_addr_eq_ipv4h(const tor_addr_t *a, uint32_t u)
 #define TOR_ADDR_BUF_LEN 48
 
 /** Length of a buffer containing an IP address along with a port number and
- * a seperating colon.
+ * a separating colon.
  *
  * This allows enough space for
  *   "[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]:12345",
@@ -236,6 +246,8 @@ const char *fmt_addr_impl(const tor_addr_t *addr, int decorate);
 const char *fmt_addrport(const tor_addr_t *addr, uint16_t port);
 #define fmt_addrport_ap(ap) fmt_addrport(&(ap)->addr, (ap)->port)
 const char *fmt_addr32(uint32_t addr);
+const char *fmt_addr32_port(uint32_t addr, uint16_t port);
+const char *fmt_af_family(sa_family_t family);
 const char *fmt_addr_family(const tor_addr_t *addr);
 
 MOCK_DECL(int,get_interface_address6,(int severity, sa_family_t family,
@@ -272,6 +284,7 @@ struct sipkey;
 uint64_t tor_addr_keyed_hash(const struct sipkey *key, const tor_addr_t *addr);
 
 int tor_addr_is_v4(const tor_addr_t *addr);
+int tor_addr_is_v6(const tor_addr_t *addr);
 int tor_addr_is_internal_(const tor_addr_t *ip, int for_listening,
                           const char *filename, int lineno);
 #define tor_addr_is_internal(addr, for_listening) \
@@ -381,6 +394,7 @@ get_interface_address_list(int severity, int include_internal)
 tor_addr_port_t *tor_addr_port_new(const tor_addr_t *addr, uint16_t port);
 int tor_addr_port_eq(const tor_addr_port_t *a,
                      const tor_addr_port_t *b);
+void tor_addr_port_copy(tor_addr_port_t *dest, const tor_addr_port_t *source);
 
 int string_is_valid_dest(const char *string);
 int string_is_valid_nonrfc_hostname(const char *string);
