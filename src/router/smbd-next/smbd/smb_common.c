@@ -142,7 +142,7 @@ int ksmbd_lookup_protocol_idx(char *str)
  */
 int ksmbd_verify_smb_message(struct ksmbd_work *work)
 {
-	struct smb2_hdr *smb2_hdr = REQUEST_BUF(work);
+	struct smb2_hdr *smb2_hdr = work->request_buf;
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	if (smb2_hdr->ProtocolId == SMB2_PROTO_NUMBER) {
@@ -288,7 +288,7 @@ int ksmbd_init_smb_server(struct ksmbd_work *work)
 {
 	struct ksmbd_conn *conn = work->conn;
 #ifdef CONFIG_SMB_INSECURE_SERVER
-	void *buf = REQUEST_BUF(work);
+	void *buf = work->request_buf;
 	__le32 proto;
 #endif
 
@@ -461,7 +461,7 @@ static int __smb2_negotiate(struct ksmbd_conn *conn)
 #ifndef CONFIG_SMB_INSECURE_SERVER
 static int smb_handle_negotiate(struct ksmbd_work *work)
 {
-	struct smb_negotiate_rsp *neg_rsp = RESPONSE_BUF(work);
+	struct smb_negotiate_rsp *neg_rsp = work->response_buf;
 
 	ksmbd_debug(SMB, "Unsupported SMB protocol\n");
 	neg_rsp->hdr.Status.CifsError = STATUS_INVALID_LOGON_TYPE;
@@ -474,11 +474,11 @@ int ksmbd_smb_negotiate_common(struct ksmbd_work *work, unsigned int command)
 	struct ksmbd_conn *conn = work->conn;
 	int ret;
 
-	conn->dialect = ksmbd_negotiate_smb_dialect(REQUEST_BUF(work));
+	conn->dialect = ksmbd_negotiate_smb_dialect(work->request_buf);
 	ksmbd_debug(SMB, "conn->dialect 0x%x\n", conn->dialect);
 
 	if (command == SMB2_NEGOTIATE_HE) {
-		struct smb2_hdr *smb2_hdr = REQUEST_BUF(work);
+		struct smb2_hdr *smb2_hdr = work->request_buf;
 
 		if (smb2_hdr->ProtocolId != SMB2_PROTO_NUMBER) {
 			ksmbd_debug(SMB, "Downgrade to SMB1 negotiation\n");
