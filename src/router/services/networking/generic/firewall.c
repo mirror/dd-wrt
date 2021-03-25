@@ -3158,7 +3158,7 @@ void start_firewall(void)
 	lock();
 #ifdef HAVE_SFE
 	if (nvram_match("sfe", "1"))
-		start_sfe();
+		stop_sfe();
 #endif
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
