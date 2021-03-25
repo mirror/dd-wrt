@@ -465,7 +465,7 @@ int ksmbd_vfs_read(struct ksmbd_work *work,
 	mm_segment_t old_fs;
 #endif
 
-	rbuf = AUX_PAYLOAD(work);
+	rbuf = work->aux_payload_buf;
 	filp = fp->filp;
 	inode = d_inode(filp->f_path.dentry);
 	if (S_ISDIR(inode->i_mode))
