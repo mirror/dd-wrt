@@ -3386,6 +3386,7 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x0034, quirk_no_bus_reset);
  * PCIe bridge has forced link speed to 2.5 GT/s via PCI_EXP_LNKCTL2 register.
  */
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x003c, quirk_no_bus_reset_and_no_retrain_link);
+DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_UBNT, 0x11ac, quirk_no_bus_reset_and_no_retrain_link);
 
 
 static void quirk_no_pm_reset(struct pci_dev *dev)
