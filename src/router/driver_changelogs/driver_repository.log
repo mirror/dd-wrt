@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6149 | brainslayer | 2021-03-27 12:59:06 +0700 (Sat, 27 Mar 2021) | 1 line
+
+disable turboqam for 2.4 ghz on mwlwifi, seem to be unreliable 
+------------------------------------------------------------------------
+r6148 | brainslayer | 2021-03-27 12:56:55 +0700 (Sat, 27 Mar 2021) | 1 line
+
+disable turboqam for 2.4 ghz on mwlwifi, seem to be unreliable 
+------------------------------------------------------------------------
 r6147 | brainslayer | 2021-03-23 02:06:03 +0700 (Tue, 23 Mar 2021) | 1 line
 
 toolchain fix
