@@ -16,6 +16,7 @@ miniupnpc-install:
 
 tor-configure: openssl xz zstd libevent zlib
 	cd tor && libtoolize -ci --force 
+	cd tor && aclocal
 	cd tor && autoreconf -fi 
 	cd tor && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --disable-systemd --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	--disable-asciidoc \
