@@ -1071,6 +1071,7 @@ static void handle_qos(void)
 	start_service_f("openvpnserver");
 	start_service_f("openvpn");
 #endif
+	restart("firewall");
 }
 
 static void handle_forwardupnp(void)
