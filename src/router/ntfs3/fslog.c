@@ -984,7 +984,7 @@ skip_looking:
 #define NTFSLOG_NO_OLDEST_LSN 0x00000020
 
 /*
- * Helper struct to work with NTFS $LogFile
+ * Helper struct to work with NTFS LogFile
  */
 struct ntfs_log {
 	struct ntfs_inode *ni;
@@ -3803,9 +3803,11 @@ int log_replay(struct ntfs_inode *ni, bool *initialized)
 	u32 t32;
 
 	/* Get the size of page. NOTE: To replay we can use default page */
-	page_size = norm_file_page(PAGE_SIZE, &l_size,
-				   PAGE_SIZE >= DefaultLogPageSize &&
-					   PAGE_SIZE <= DefaultLogPageSize * 2);
+#if PAGE_SIZE >= DefaultLogPageSize && PAGE_SIZE <= DefaultLogPageSize * 2
+	page_size = norm_file_page(PAGE_SIZE, &l_size, true);
+#else
+	page_size = norm_file_page(PAGE_SIZE, &l_size, false);
+#endif
 	if (!page_size)
 		return -EINVAL;
 
@@ -4082,7 +4084,7 @@ process_log:
 	case 0x20000:
 		break;
 	default:
-		ntfs_warn(sbi->sb, "$LogFile version %d.%d is not supported",
+		ntfs_warn(sbi->sb, "\x24LogFile version %d.%d is not supported",
 			  log->major_ver, log->minor_ver);
 		err = -EOPNOTSUPP;
 		log->set_dirty = true;
