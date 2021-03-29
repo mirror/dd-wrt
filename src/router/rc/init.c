@@ -484,9 +484,14 @@ int main(int argc, char **argv)
 	dd_loginfo("init", "starting devinit\n");
 	start_service("devinit");	//init /dev /proc etc.
 	int failcnt = nvram_geti("boot_fails");
-	if (!failcnt)
+	if (nvram_match("no_bootfails", "1")) {
+		failcnt = 0;
+	} else if (!failcnt) {
 		dd_loginfo("init", "no previous bootfails detected! (all ok)");
-	else {
+		failcnt++;
+		nvram_seti("boot_fails", failcnt);
+		nvram_commit();
+	} else {
 		if (failcnt < 5)
 			dd_loginfo("init", "boot failed %d times, will reset after 5 attempts\n", failcnt++);
 		if (failcnt > 5)
@@ -577,7 +582,6 @@ int main(int argc, char **argv)
 			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 			update_timezone();
 			start_service_force("init_start");
-			failcnt = nvram_geti("boot_fails");
 			if (failcnt) {
 				// all went well, reset to zero
 				nvram_seti("boot_fails", 0);
