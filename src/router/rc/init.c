@@ -501,6 +501,14 @@ int main(int argc, char **argv)
 			nvram_clear();
 			nvram_seti("boot_last_fail", failcnt);
 			nvram_seti("boot_fails", failcnt);
+			if (!nvram_match("boot_fail_open", "1")) {
+				// to avoid security breaches by controling the main fuse of a building, we disable wifi by default
+				nvram_set("wlan0_net_mode", "disabled");
+				nvram_set("wlan1_net_mode", "disabled");
+				nvram_set("wl_net_mode", "disabled");
+				nvram_set("wl0_net_mode", "disabled");
+				nvram_set("wl1_net_mode", "disabled");
+			}
 			nvram_commit();
 			kill(1, SIGTERM);
 			sleep(20);
