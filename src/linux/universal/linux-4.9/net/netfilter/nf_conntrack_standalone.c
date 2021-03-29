@@ -482,14 +482,9 @@ static int
 nf_conntrack_flush_sysctl(struct ctl_table *table, int write,
 			 void __user *buffer, size_t *lenp, loff_t *ppos)
 {
-	int ret;
-
-	ret = proc_dointvec(table, write, buffer, lenp, ppos);
-	if (ret < 0 || !write)
-		return ret;
-
+	printk(KERN_INFO "flush conntrack\n");
 	nf_conntrack_flush();
-	return ret;
+	return 0;
 }
 
 static struct ctl_table_header *nf_ct_netfilter_header;
