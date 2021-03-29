@@ -1750,6 +1750,8 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	int vlan_supp = check_vlan_support();
 	if (getRouterBrand() == ROUTER_UBNT_UNIFIAC)
 		vlan_supp = 1;
+	if (getRouterBrand() == ROUTER_UBNT_NANOAC)
+		vlan_supp = 1;
 
 #ifdef HAVE_SPUTNIK_APD
 	int sputnik = nvram_matchi("apd_enable", 1);
