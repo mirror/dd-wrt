@@ -470,8 +470,41 @@ int main(int argc, char **argv)
 	initlcd();
 	cprintf("first message\n");
 	lcdmessage("System Start");
+
+	writeproc("/proc/sys/kernel/sysrq", "1");
+	signal_init();
+	signal(SIGHUP, rc_signal);
+	signal(SIGUSR1, rc_signal);	// Start single service from WEB, by
+	// honor
+	signal(SIGUSR2, rc_signal);
+	signal(SIGINT, rc_signal);
+	signal(SIGALRM, rc_signal);
+	sigemptyset(&sigset);
+
 	dd_loginfo("init", "starting devinit\n");
 	start_service("devinit");	//init /dev /proc etc.
+	int failcnt = nvram_geti("boot_fails");
+	if (!failcnt)
+		dd_loginfo("init", "no previous bootfails detected! (all ok)");
+	else {
+		if (failcnt < 5)
+			dd_loginfo("init", "boot failed %d times, will reset after 5 attempts\n", failcnt++);
+		if (failcnt > 5)
+			dd_loginfo("init", "boot still failed after reset. hopeless. do not alter count anymore\n");
+		if (failcnt == 5) {
+			dd_loginfo("init", "boot failed %d times, do reset and reboot\n", failcnt++);
+			nvram_clear();
+			nvram_seti("boot_fails", failcnt);
+			nvram_commit();
+			kill(1, SIGTERM);
+			sleep(20);
+			return -1;
+		}
+		if (failcnt < 5) {
+			nvram_seti("boot_fails", failcnt);
+			nvram_commit();
+		}
+	}
 	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("sysinit");
 #ifndef HAVE_MICRO
@@ -482,15 +515,6 @@ int main(int argc, char **argv)
 	/* 
 	 * Setup signal handlers 
 	 */
-	writeproc("/proc/sys/kernel/sysrq", "1");
-	signal_init();
-	signal(SIGHUP, rc_signal);
-	signal(SIGUSR1, rc_signal);	// Start single service from WEB, by
-	// honor
-	signal(SIGUSR2, rc_signal);
-	signal(SIGINT, rc_signal);
-	signal(SIGALRM, rc_signal);
-	sigemptyset(&sigset);
 
 	start_service("post_sysinit");
 
@@ -553,6 +577,13 @@ int main(int argc, char **argv)
 			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 			update_timezone();
 			start_service_force("init_start");
+			failcnt = nvram_geti("boot_fails");
+			if (failcnt) {
+				// all went well, reset to zero
+				nvram_seti("boot_fails", 0);
+				nvram_commit();
+			}
+
 			/* 
 			 * Fall through 
 			 */
