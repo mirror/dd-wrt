@@ -154,7 +154,7 @@ struct ntfs_index {
 	u8 type; // index_mutex_classed
 };
 
-/* Set when $LogFile is replaying */
+/* Set when LogFile is replaying */
 #define NTFS_FLAGS_LOG_REPLAYING 0x00000008
 
 /* Set when we changed first MFT's which copy must be updated in $MftMirr */
@@ -648,10 +648,10 @@ int ntfs_sync_inode(struct inode *inode);
 int ntfs_flush_inodes(struct super_block *sb, struct inode *i1,
 		      struct inode *i2);
 int inode_write_data(struct inode *inode, const void *data, size_t bytes);
-int ntfs_create_inode(struct inode *dir,
-		      struct dentry *dentry, const struct cpu_str *uni,
-		      umode_t mode, dev_t dev, const char *symname, u32 size,
-		      int excl, struct ntfs_fnd *fnd, struct inode **new_inode);
+struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
+				const struct cpu_str *uni, umode_t mode,
+				dev_t dev, const char *symname, u32 size,
+				int excl, struct ntfs_fnd *fnd);
 int ntfs_link_inode(struct inode *inode, struct dentry *dentry);
 int ntfs_unlink_inode(struct inode *dir, const struct dentry *dentry);
 void ntfs_evict_inode(struct inode *inode);
@@ -707,6 +707,17 @@ static inline bool mi_is_ref(const struct mft_inode *mi,
 #else
 	return !ref->high;
 #endif
+}
+
+static inline void mi_get_ref(const struct mft_inode *mi, struct MFT_REF *ref)
+{
+	ref->low = cpu_to_le32(mi->rno);
+#ifdef CONFIG_NTFS3_64BIT_CLUSTER
+	ref->high = cpu_to_le16(mi->rno >> 32);
+#else
+	ref->high = 0;
+#endif
+	ref->seq = mi->mrec->seq;
 }
 
 /* globals from run.c */

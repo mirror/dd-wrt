@@ -582,8 +582,8 @@ static const struct NTFS_DE *hdr_find_split(const struct INDEX_HDR *hdr)
  * inserts some entries at the beginning of the buffer.
  * It is used to insert entries into a newly-created buffer.
  */
-static const struct NTFS_DE *
-hdr_insert_head(struct INDEX_HDR *hdr, const void *ins, u32 ins_bytes)
+static const struct NTFS_DE *hdr_insert_head(struct INDEX_HDR *hdr,
+					     const void *ins, u32 ins_bytes)
 {
 	u32 to_move;
 	struct NTFS_DE *e = hdr_first_de(hdr);

@@ -1185,10 +1185,10 @@ out:
 	return ERR_PTR(err);
 }
 
-int ntfs_create_inode(struct inode *dir,
-		      struct dentry *dentry, const struct cpu_str *uni,
-		      umode_t mode, dev_t dev, const char *symname, u32 size,
-		      int excl, struct ntfs_fnd *fnd, struct inode **new_inode)
+struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
+				const struct cpu_str *uni, umode_t mode,
+				dev_t dev, const char *symname, u32 size,
+				int excl, struct ntfs_fnd *fnd)
 {
 	int err;
 	struct super_block *sb = dir->i_sb;
@@ -1218,11 +1218,11 @@ int ntfs_create_inode(struct inode *dir,
 		     S_ISSOCK(mode);
 
 	if (is_sp)
-		return -EOPNOTSUPP;
+		return ERR_PTR(-EOPNOTSUPP);
 
 	dir_root = indx_get_root(&dir_ni->dir, dir_ni, NULL, NULL);
 	if (!dir_root)
-		return -EINVAL;
+		return ERR_PTR(-EINVAL);
 
 	if (is_dir) {
 		/* use parent's directory attributes */
@@ -1354,18 +1354,10 @@ int ntfs_create_inode(struct inode *dir,
 	if (err)
 		goto out4;
 
+	mi_get_ref(&ni->mi, &new_de->ref);
+
 	fname = (struct ATTR_FILE_NAME *)(new_de + 1);
-
-	new_de->ref.low = cpu_to_le32(ino);
-#ifdef CONFIG_NTFS3_64BIT_CLUSTER
-	new_de->ref.high = cpu_to_le16(ino >> 32);
-	fname->home.high = cpu_to_le16(dir->i_ino >> 32);
-#endif
-	new_de->ref.seq = rec->seq;
-
-	fname->home.low = cpu_to_le32(dir->i_ino & 0xffffffff);
-	fname->home.seq = dir_ni->mi.mrec->seq;
-
+	mi_get_ref(&dir_ni->mi, &fname->home);
 	fname->dup.cr_time = fname->dup.m_time = fname->dup.c_time =
 		fname->dup.a_time = std5->cr_time;
 	fname->dup.alloc_size = fname->dup.data_size = 0;
@@ -1647,12 +1639,11 @@ out2:
 
 out1:
 	if (err)
-		return err;
+		return ERR_PTR(err);
 
 	unlock_new_inode(inode);
 
-	*new_inode = inode;
-	return 0;
+	return inode;
 }
 
 int ntfs_link_inode(struct inode *inode, struct dentry *dentry)
@@ -1688,22 +1679,14 @@ int ntfs_link_inode(struct inode *inode, struct dentry *dentry)
 		goto out;
 
 	key_size = le16_to_cpu(new_de->key_size);
-	fname = (struct ATTR_FILE_NAME *)(new_de + 1);
-
 	err = ni_insert_resident(ni, key_size, ATTR_NAME, NULL, 0, &attr, NULL);
 	if (err)
 		goto out;
 
-	new_de->ref.low = cpu_to_le32(inode->i_ino);
-#ifdef CONFIG_NTFS3_64BIT_CLUSTER
-	new_de->ref.high = cpu_to_le16(inode->i_ino >> 32);
-	fname->home.high = cpu_to_le16(dir->i_ino >> 32);
-#endif
-	new_de->ref.seq = ni->mi.mrec->seq;
+	mi_get_ref(&ni->mi, &new_de->ref);
 
-	fname->home.low = cpu_to_le32(dir->i_ino & 0xffffffff);
-	fname->home.seq = dir_ni->mi.mrec->seq;
-
+	fname = (struct ATTR_FILE_NAME *)(new_de + 1);
+	mi_get_ref(&dir_ni->mi, &fname->home);
 	fname->dup.cr_time = fname->dup.m_time = fname->dup.c_time =
 		fname->dup.a_time = kernel2nt(&inode->i_ctime);
 	fname->dup.alloc_size = fname->dup.data_size = 0;
@@ -1781,14 +1764,7 @@ int ntfs_unlink_inode(struct inode *dir, const struct dentry *dentry)
 	ntfs_set_state(sbi, NTFS_DIRTY_DIRTY);
 
 	/* find name in record */
-#ifdef CONFIG_NTFS3_64BIT_CLUSTER
-	ref.low = cpu_to_le32(dir->i_ino & 0xffffffff);
-	ref.high = cpu_to_le16(dir->i_ino >> 32);
-#else
-	ref.low = cpu_to_le32(dir->i_ino & 0xffffffff);
-	ref.high = 0;
-#endif
-	ref.seq = dir_ni->mi.mrec->seq;
+	mi_get_ref(&dir_ni->mi, &ref);
 
 	le = NULL;
 	fname = ni_fname_name(ni, uni, &ref, &le);
