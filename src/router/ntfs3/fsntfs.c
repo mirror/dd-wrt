@@ -257,13 +257,13 @@ int ntfs_loadlog_and_replay(struct ntfs_inode *ni, struct ntfs_sb_info *sbi)
 {
 	int err = 0;
 	struct super_block *sb = sbi->sb;
-	struct inode *inode = &ni->vfs_inode;
 	bool initialized = false;
 	struct MFT_REF ref;
+	struct inode *inode;
 
 	/* Check for 4GB */
-	if (inode->i_size >= 0x100000000ull) {
-		ntfs_err(sb, "$LogFile is too big");
+	if (ni->vfs_inode.i_size >= 0x100000000ull) {
+		ntfs_err(sb, "\x24LogFile is too big");
 		err = -EINVAL;
 		goto out;
 	}
@@ -1184,7 +1184,7 @@ int ntfs_read_run_nb(struct ntfs_sb_info *sbi, const struct runs_tree *run,
 	struct buffer_head *bh;
 
 	if (!run) {
-		/* first reading of $Volume + $MFTMirr + $LogFile goes here*/
+		/* first reading of $Volume + $MFTMirr + LogFile goes here*/
 		if (vbo > MFT_REC_VOL * sbi->record_size) {
 			err = -ENOENT;
 			goto out;

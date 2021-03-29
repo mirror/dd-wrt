@@ -19,18 +19,6 @@
 #include "lib/lib.h"
 #endif
 
-static inline void get_mi_ref(const struct mft_inode *mi, struct MFT_REF *ref)
-{
-#ifdef CONFIG_NTFS3_64BIT_CLUSTER
-	ref->low = cpu_to_le32(mi->rno);
-	ref->high = cpu_to_le16(mi->rno >> 32);
-#else
-	ref->low = cpu_to_le32(mi->rno);
-	ref->high = 0;
-#endif
-	ref->seq = mi->mrec->seq;
-}
-
 static struct mft_inode *ni_ins_mi(struct ntfs_inode *ni, struct rb_root *tree,
 				   CLST ino, struct rb_node *ins)
 {
@@ -409,7 +397,7 @@ bool ni_add_subrecord(struct ntfs_inode *ni, CLST rno, struct mft_inode **mi)
 		return false;
 	}
 
-	get_mi_ref(&ni->mi, &m->mrec->parent_ref);
+	mi_get_ref(&ni->mi, &m->mrec->parent_ref);
 
 	ni_add_mi(ni, m);
 	*mi = m;
@@ -502,7 +490,7 @@ static struct ATTRIB *ni_ins_new_attr(struct ntfs_inode *ni,
 	bool le_added = false;
 	struct MFT_REF ref;
 
-	get_mi_ref(mi, &ref);
+	mi_get_ref(mi, &ref);
 
 	if (type != ATTR_LIST && !le && ni->attr_list.size) {
 		err = al_add_le(ni, type, name, name_len, svcn, cpu_to_le16(-1),
@@ -703,7 +691,7 @@ static int ni_try_remove_attr_list(struct ntfs_inode *ni)
 
 	/* free space in primary record without attribute list */
 	free = sbi->record_size - le32_to_cpu(ni->mi.mrec->used) + asize;
-	get_mi_ref(&ni->mi, &ref);
+	mi_get_ref(&ni->mi, &ref);
 
 	le = NULL;
 	while ((le = al_enumerate(ni, le))) {
@@ -805,7 +793,7 @@ int ni_create_attr_list(struct ntfs_inode *ni)
 		goto out;
 	}
 
-	get_mi_ref(&ni->mi, &le->ref);
+	mi_get_ref(&ni->mi, &le->ref);
 	ni->attr_list.le = le;
 
 	attr = NULL;
@@ -871,7 +859,7 @@ int ni_create_attr_list(struct ntfs_inode *ni)
 				      b->name_len, asize, name_off);
 		WARN_ON(!attr);
 
-		get_mi_ref(mi, &le_b[nb]->ref);
+		mi_get_ref(mi, &le_b[nb]->ref);
 		le_b[nb]->id = attr->id;
 
 		/* copy all except id */
@@ -1335,7 +1323,7 @@ int ni_expand_list(struct ntfs_inode *ni)
 	bool is_mft = ni->mi.rno == MFT_REC_MFT;
 	struct MFT_REF ref;
 
-	get_mi_ref(&ni->mi, &ref);
+	mi_get_ref(&ni->mi, &ref);
 	le = NULL;
 
 	while ((le = al_enumerate(ni, le))) {
@@ -1545,7 +1533,7 @@ int ni_delete_all(struct ntfs_inode *ni)
 		if (!nt3 || attr->name_len) {
 			;
 		} else if (attr->type == ATTR_REPARSE) {
-			get_mi_ref(&ni->mi, &ref);
+			mi_get_ref(&ni->mi, &ref);
 			ntfs_remove_reparse(sbi, 0, &ref);
 		} else if (attr->type == ATTR_ID && !attr->non_res &&
 			   le32_to_cpu(attr->res.data_size) >=
@@ -2225,7 +2213,7 @@ remove_wof:
 		if (attr->type == ATTR_REPARSE) {
 			struct MFT_REF ref;
 
-			get_mi_ref(&ni->mi, &ref);
+			mi_get_ref(&ni->mi, &ref);
 			ntfs_remove_reparse(sbi, 0, &ref);
 		}
 

@@ -105,18 +105,17 @@ static struct dentry *ntfs_lookup(struct inode *dir, struct dentry *dentry,
 static int ntfs_create(struct inode *dir,
 		       struct dentry *dentry, umode_t mode, bool excl)
 {
-	int err;
 	struct ntfs_inode *ni = ntfs_i(dir);
 	struct inode *inode;
 
 	ni_lock_dir(ni);
 
-	err = ntfs_create_inode(dir, dentry, NULL, S_IFREG | mode,
-				0, NULL, 0, excl, NULL, &inode);
+	inode = ntfs_create_inode(dir, dentry, NULL, S_IFREG | mode,
+				  0, NULL, 0, excl, NULL);
 
 	ni_unlock(ni);
 
-	return err;
+	return IS_ERR(inode) ? PTR_ERR(inode) : 0;
 }
 
 /*
@@ -188,19 +187,18 @@ static int ntfs_unlink(struct inode *dir, struct dentry *dentry)
 static int ntfs_symlink(struct inode *dir,
 			struct dentry *dentry, const char *symname)
 {
-	int err;
 	u32 size = strlen(symname);
 	struct inode *inode;
 	struct ntfs_inode *ni = ntfs_i(dir);
 
 	ni_lock_dir(ni);
 
-	err = ntfs_create_inode(dir, dentry, NULL, S_IFLNK | 0777,
-				0, symname, size, 0, NULL, &inode);
+	inode = ntfs_create_inode(dir, dentry, NULL, S_IFLNK | 0777,
+				  0, symname, size, 0, NULL);
 
 	ni_unlock(ni);
 
-	return err;
+	return IS_ERR(inode) ? PTR_ERR(inode) : 0;
 }
 
 /*
@@ -211,18 +209,17 @@ static int ntfs_symlink(struct inode *dir,
 static int ntfs_mkdir(struct inode *dir,
 		      struct dentry *dentry, umode_t mode)
 {
-	int err;
 	struct inode *inode;
 	struct ntfs_inode *ni = ntfs_i(dir);
 
 	ni_lock_dir(ni);
 
-	err = ntfs_create_inode(dir, dentry, NULL, S_IFDIR | mode,
-				0, NULL, -1, 0, NULL, &inode);
+	inode = ntfs_create_inode(dir, dentry, NULL, S_IFDIR | mode,
+				  0, NULL, -1, 0, NULL);
 
 	ni_unlock(ni);
 
-	return err;
+	return IS_ERR(inode) ? PTR_ERR(inode) : 0;
 }
 
 /*
@@ -339,11 +336,7 @@ static int ntfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	ni_lock_dir(old_dir_ni);
 	ni_lock(old_ni);
 
-	old_name->home.low = cpu_to_le32(old_dir->i_ino);
-#ifdef CONFIG_NTFS3_64BIT_CLUSTER
-	old_name->home.high = cpu_to_le16(old_dir->i_ino >> 32);
-#endif
-	old_name->home.seq = old_dir_ni->mi.mrec->seq;
+	mi_get_ref(&old_dir_ni->mi, &old_name->home);
 
 	/*get pointer to file_name in mft*/
 	fname = ni_fname_name(old_ni, (struct cpu_str *)&old_name->name_len,
@@ -396,15 +389,8 @@ static int ntfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	}
 
 	/* Add new name */
-	new_de->ref.low = cpu_to_le32(old_inode->i_ino);
-#ifdef CONFIG_NTFS3_64BIT_CLUSTER
-	new_de->ref.high = cpu_to_le16(old_inode->i_ino >> 32);
-	new_name->home.high = cpu_to_le16(new_dir->i_ino >> 32);
-#endif
-	new_de->ref.seq = old_ni->mi.mrec->seq;
-
-	new_name->home.low = cpu_to_le32(new_dir->i_ino);
-	new_name->home.seq = ntfs_i(new_dir)->mi.mrec->seq;
+	mi_get_ref(&old_ni->mi, &new_de->ref);
+	mi_get_ref(&ntfs_i(new_dir)->mi, &new_name->home);
 
 	new_de_key_size = le16_to_cpu(new_de->key_size);
 
@@ -547,10 +533,10 @@ ntfs_atomic_open(struct inode *dir, struct dentry *dentry,
 
 	/*fnd contains tree's path to insert to*/
 	/* TODO: init_user_ns? */
-	err = ntfs_create_inode(dir, dentry, uni, mode, 0, NULL,
-				0, excl, fnd, &inode);
-	if (!err)
-		err = finish_open(file, dentry, ntfs_file_open, opened);
+	inode = ntfs_create_inode(dir, dentry, uni, mode, 0,
+				  NULL, 0, excl, fnd);
+	err = IS_ERR(inode) ? PTR_ERR(inode)
+			    : finish_open(file, dentry, ntfs_file_open, opened);
 	dput(d);
 
 out2:
