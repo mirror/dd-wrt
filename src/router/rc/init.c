@@ -499,6 +499,7 @@ int main(int argc, char **argv)
 		if (failcnt == 5) {
 			dd_loginfo("init", "boot failed %d times, do reset and reboot\n", failcnt++);
 			nvram_clear();
+			nvram_seti("boot_last_fail", failcnt);
 			nvram_seti("boot_fails", failcnt);
 			nvram_commit();
 			kill(1, SIGTERM);
@@ -506,6 +507,7 @@ int main(int argc, char **argv)
 			return -1;
 		}
 		if (failcnt < 5) {
+			nvram_seti("boot_last_fail", failcnt);
 			nvram_seti("boot_fails", failcnt);
 			nvram_commit();
 		}
