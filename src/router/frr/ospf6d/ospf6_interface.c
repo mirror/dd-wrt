@@ -248,6 +248,7 @@ void ospf6_interface_delete(struct ospf6_interface *oi)
 	THREAD_OFF(oi->thread_send_lsupdate);
 	THREAD_OFF(oi->thread_send_lsack);
 	THREAD_OFF(oi->thread_sso);
+	THREAD_OFF(oi->thread_wait_timer);
 
 	ospf6_lsdb_remove_all(oi->lsdb);
 	ospf6_lsdb_remove_all(oi->lsupdate_list);
@@ -302,6 +303,7 @@ void ospf6_interface_disable(struct ospf6_interface *oi)
 	THREAD_OFF(oi->thread_link_lsa);
 	THREAD_OFF(oi->thread_intra_prefix_lsa);
 	THREAD_OFF(oi->thread_as_extern_lsa);
+	THREAD_OFF(oi->thread_wait_timer);
 }
 
 static struct in6_addr *
@@ -785,7 +787,7 @@ int interface_up(struct thread *thread)
 	else {
 		ospf6_interface_state_change(OSPF6_INTERFACE_WAITING, oi);
 		thread_add_timer(master, wait_timer, oi, oi->dead_interval,
-				 NULL);
+				 &oi->thread_wait_timer);
 	}
 
 	return 0;
@@ -1154,6 +1156,12 @@ DEFUN (show_ipv6_ospf6_interface_ifname_prefix,
 		return CMD_WARNING;
 	}
 
+	if (CHECK_FLAG(oi->flag, OSPF6_INTERFACE_DISABLE)) {
+		vty_out(vty, "Interface %s not attached to area\n",
+			argv[idx_ifname]->arg);
+		return CMD_WARNING;
+	}
+
 	ospf6_route_table_show(vty, idx_prefix, argc, argv,
 			       oi->route_connected);
 
@@ -1185,7 +1193,7 @@ DEFUN (show_ipv6_ospf6_interface_prefix,
 
 	FOR_ALL_INTERFACES (vrf, ifp) {
 		oi = (struct ospf6_interface *)ifp->info;
-		if (oi == NULL)
+		if (oi == NULL || CHECK_FLAG(oi->flag, OSPF6_INTERFACE_DISABLE))
 			continue;
 
 		ospf6_route_table_show(vty, idx_prefix, argc, argv,
@@ -1325,12 +1333,11 @@ DEFUN (ipv6_ospf6_cost,
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
+	SET_FLAG(oi->flag, OSPF6_INTERFACE_NOAUTOCOST);
 	if (oi->cost == lcost)
 		return CMD_SUCCESS;
 
 	oi->cost = lcost;
-	SET_FLAG(oi->flag, OSPF6_INTERFACE_NOAUTOCOST);
-
 	ospf6_interface_force_recalculate_cost(oi);
 
 	return CMD_SUCCESS;
@@ -1679,8 +1686,11 @@ DEFUN (no_ipv6_ospf6_passive,
 	UNSET_FLAG(oi->flag, OSPF6_INTERFACE_PASSIVE);
 	THREAD_OFF(oi->thread_send_hello);
 	THREAD_OFF(oi->thread_sso);
-	thread_add_event(master, ospf6_hello_send, oi, 0,
-			 &oi->thread_send_hello);
+
+	/* don't send hellos over loopback interface */
+	if (!if_is_loopback(oi->interface))
+		thread_add_event(master, ospf6_hello_send, oi, 0,
+				 &oi->thread_send_hello);
 
 	return CMD_SUCCESS;
 }
