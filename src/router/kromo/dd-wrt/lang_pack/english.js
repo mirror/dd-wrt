@@ -1436,7 +1436,8 @@ management.l1tf="L1TF Mitigation";
 management.nospec_store_bypass_disable="Speculative Store Bypass Mitigation";
 management.tsx_async_abort="TSX Async Abort Mitigation";
 management.nopti="Page Table Isolation";
-
+management.bootfail="Reset after 5 Bootfails";
+management.boot_fail_open="Open Wifi after Bootfail";
 //help container
 var hmanagement=new Object();
 hmanagement.right1="Auto-Refresh:";
