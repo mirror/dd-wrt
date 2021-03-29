@@ -1815,7 +1815,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(nvram_matchi("info_passwd", 0))
+	if (nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1823,7 +1823,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(!wp->isregistered)
+	if (!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -2115,7 +2115,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 {
 	char line[512];
 	int i, llen;
-	char buffer[512];
+	char *buffer;
 	char querybuffer[64];
 
 	char *query = strchr(url, '?');
@@ -2133,7 +2133,8 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 	time(&tm);
 	localtime_r(&tm, &tm_time);
 	char *date_fmt = "%a %b %e %H:%M:%S %Z %Y";
-
+	int baselen = 64;
+	buffer = malloc(baselen);
 	strftime(buffer, 200, date_fmt, &tm_time);
 	strbuffer = strlen(buffer);
 	buffer[strbuffer++] = '\n';
@@ -2143,15 +2144,14 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 		return;
 
 	/* eat first two lines */
-	fgets(line, sizeof(line), in);
-	fgets(line, sizeof(line), in);
-	int restlen = (sizeof(buffer) - strbuffer) - 1;
-	while (fgets(line, sizeof(line), in) != NULL) {
+	fgets(line, sizeof(line) - 1, in);
+	fgets(line, sizeof(line) - 1, in);
+	while (fgets(line, sizeof(line) - 1, in) != NULL) {
 		if (!strstr(line, "mon.") && strstr(line, querybuffer)) {
 			llen = strlen(line);
 			if (llen) {
-				if (llen > restlen)
-					llen = restlen;
+				baselen += llen;
+				buffer = realloc(buffer, baselen + 1);
 				memcpy(&buffer[strbuffer], line, llen);
 				strbuffer += llen;
 			}
@@ -2162,6 +2162,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 
 	buffer[strbuffer] = 0;
 	websWrite(stream, "%s", buffer);
+	free(buffer);
 }
 
 static char *getLanguageName()
