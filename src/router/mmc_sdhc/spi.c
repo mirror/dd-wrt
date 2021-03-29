@@ -721,7 +721,7 @@ static INLINE unsigned char spi_mmc_write_multi_o(unsigned int addr, unsigned ch
 	// write data block 
 	for (i = 0; i < 512; i++) {
 	    spi_io_v_o(*p);
-	    *p++;
+	    *p = *p + 1;
 	}
 
 	// write dummy crc (2 bytes)
