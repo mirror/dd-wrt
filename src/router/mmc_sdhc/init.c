@@ -183,7 +183,7 @@ static int init_card_mm(struct card_info *c) {
     } else {
 	
 	// High Capacity - Use Sec_Count from extended CSD
-	Blocks = ((ext_csd[296] << 24) | (ext_csd[297] << 16) | (ext_csd[298] << 8) | csd[299]);
+	Blocks = ((ext_csd[296] << 24) | (ext_csd[297] << 16) | (ext_csd[298] << 8) | ext_csd[299]);
     }
 
     // Fill in card structure
