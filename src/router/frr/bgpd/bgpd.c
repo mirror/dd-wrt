@@ -2081,7 +2081,7 @@ int peer_activate(struct peer *peer, afi_t afi, safi_t safi)
 
 	/* If this is the first peer to be activated for this
 	 * afi/labeled-unicast recalc bestpaths to trigger label allocation */
-	if (safi == SAFI_LABELED_UNICAST
+	if (ret != BGP_ERR_PEER_SAFI_CONFLICT && safi == SAFI_LABELED_UNICAST
 	    && !bgp->allocate_mpls_labels[afi][SAFI_UNICAST]) {
 
 		if (BGP_DEBUG(zebra, ZEBRA))
@@ -5060,8 +5060,8 @@ int peer_timers_set(struct peer *peer, uint32_t keepalive, uint32_t holdtime)
 
 		/* Set flag and configuration on peer-group member. */
 		SET_FLAG(member->flags, PEER_FLAG_TIMER);
-		PEER_ATTR_INHERIT(peer, peer->group, holdtime);
-		PEER_ATTR_INHERIT(peer, peer->group, keepalive);
+		PEER_ATTR_INHERIT(member, peer->group, holdtime);
+		PEER_ATTR_INHERIT(member, peer->group, keepalive);
 	}
 
 	return 0;
