@@ -44,6 +44,11 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	if (nvram_exists("sw_lan6"))
 		lanports = 6;
 
+	if (getRouterBrand() == ROUTER_UBNT_UNIFIAC)
+		lan_ports=1;
+	if (getRouterBrand() == ROUTER_UBNT_NANOAC)
+		lan_ports=2;
+
 	for (i = 0; i < 22; i++)
 		for (j = 0; j < lanports + 2; j++)
 			vlans[i][j] = -1;
