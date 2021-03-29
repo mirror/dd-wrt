@@ -1,0 +1,3514 @@
+diff -urpN frr/.git/FETCH_HEAD frr.new/.git/FETCH_HEAD
+diff -urpN frr/.git/HEAD frr.new/.git/HEAD
+Binary files frr/.git/index and frr.new/.git/index differ
+diff -urpN frr/.git/logs/HEAD frr.new/.git/logs/HEAD
+diff -urpN frr/.git/logs/refs/remotes/origin/master frr.new/.git/logs/refs/remotes/origin/master
+diff -urpN frr/.git/logs/refs/remotes/origin/stable/7.5 frr.new/.git/logs/refs/remotes/origin/stable/7.5
+Binary files frr/.git/objects/pack/pack-6b1bfd62b42299a9f1a041cd0151fffb2194de8b.idx and frr.new/.git/objects/pack/pack-6b1bfd62b42299a9f1a041cd0151fffb2194de8b.idx differ
+Binary files frr/.git/objects/pack/pack-6b1bfd62b42299a9f1a041cd0151fffb2194de8b.pack and frr.new/.git/objects/pack/pack-6b1bfd62b42299a9f1a041cd0151fffb2194de8b.pack differ
+diff -urpN frr/.git/refs/remotes/origin/master frr.new/.git/refs/remotes/origin/master
+diff -urpN frr/.git/refs/remotes/origin/stable/7.5 frr.new/.git/refs/remotes/origin/stable/7.5
+diff -urpN frr/.git/refs/tags/frr-7.5.1 frr.new/.git/refs/tags/frr-7.5.1
+diff -urpN frr/bfdd/bfd.c frr.new/bfdd/bfd.c
+--- frr/bfdd/bfd.c	2021-01-27 21:24:28.827988861 +0700
++++ frr.new/bfdd/bfd.c	2021-03-29 19:34:17.924708135 +0700
+@@ -85,7 +85,7 @@ struct bfd_profile *bfd_profile_lookup(c
+ 
+ static void bfd_profile_set_default(struct bfd_profile *bp)
+ {
+-	bp->admin_shutdown = true;
++	bp->admin_shutdown = false;
+ 	bp->detection_multiplier = BFD_DEFDETECTMULT;
+ 	bp->echo_mode = false;
+ 	bp->passive = false;
+@@ -206,7 +206,7 @@ void bfd_session_apply(struct bfd_sessio
+ 		bfd_set_passive_mode(bs, bs->peer_profile.passive);
+ 
+ 	/* Toggle 'no shutdown' if default value. */
+-	if (bs->peer_profile.admin_shutdown)
++	if (bs->peer_profile.admin_shutdown == false)
+ 		bfd_set_shutdown(bs, bp->admin_shutdown);
+ 	else
+ 		bfd_set_shutdown(bs, bs->peer_profile.admin_shutdown);
+@@ -478,8 +478,10 @@ void ptm_bfd_echo_stop(struct bfd_sessio
+ void ptm_bfd_echo_start(struct bfd_session *bfd)
+ {
+ 	bfd->echo_detect_TO = (bfd->remote_detect_mult * bfd->echo_xmt_TO);
+-	if (bfd->echo_detect_TO > 0)
++	if (bfd->echo_detect_TO > 0) {
++		bfd_echo_recvtimer_update(bfd);
+ 		ptm_bfd_echo_xmt_TO(bfd);
++	}
+ }
+ 
+ void ptm_bfd_sess_up(struct bfd_session *bfd)
+@@ -1233,12 +1235,12 @@ void bs_final_handler(struct bfd_session
+ 	 * TODO: support sending/counting more packets inside detection
+ 	 * timeout.
+ 	 */
+-	if (bs->remote_timers.required_min_rx > bs->timers.desired_min_tx)
++	if (bs->timers.required_min_rx > bs->remote_timers.desired_min_tx)
+ 		bs->detect_TO = bs->remote_detect_mult
+-				* bs->remote_timers.required_min_rx;
++				* bs->timers.required_min_rx;
+ 	else
+ 		bs->detect_TO = bs->remote_detect_mult
+-				* bs->timers.desired_min_tx;
++				* bs->remote_timers.desired_min_tx;
+ 
+ 	/* Apply new receive timer immediately. */
+ 	bfd_recvtimer_update(bs);
+@@ -1633,15 +1635,54 @@ static bool bfd_id_hash_cmp(const void *
+ static unsigned int bfd_key_hash_do(const void *p)
+ {
+ 	const struct bfd_session *bs = p;
++	struct bfd_key key = bs->key;
++
++	/*
++	 * Local address and interface name are optional and
++	 * can be filled any time after session creation.
++	 * Hash key should not depend on these fields.
++	 */
++	memset(&key.local, 0, sizeof(key.local));
++	memset(key.ifname, 0, sizeof(key.ifname));
+ 
+-	return jhash(&bs->key, sizeof(bs->key), 0);
++	return jhash(&key, sizeof(key), 0);
+ }
+ 
+ static bool bfd_key_hash_cmp(const void *n1, const void *n2)
+ {
+ 	const struct bfd_session *bs1 = n1, *bs2 = n2;
+ 
+-	return memcmp(&bs1->key, &bs2->key, sizeof(bs1->key)) == 0;
++	if (bs1->key.family != bs2->key.family)
++		return false;
++	if (bs1->key.mhop != bs2->key.mhop)
++		return false;
++	if (memcmp(&bs1->key.peer, &bs2->key.peer, sizeof(bs1->key.peer)))
++		return false;
++	if (memcmp(bs1->key.vrfname, bs2->key.vrfname,
++		   sizeof(bs1->key.vrfname)))
++		return false;
++
++	/*
++	 * Local address is optional and can be empty.
++	 * If both addresses are not empty and different,
++	 * then the keys are different.
++	 */
++	if (memcmp(&bs1->key.local, &zero_addr, sizeof(bs1->key.local))
++	    && memcmp(&bs2->key.local, &zero_addr, sizeof(bs2->key.local))
++	    && memcmp(&bs1->key.local, &bs2->key.local, sizeof(bs1->key.local)))
++		return false;
++
++	/*
++	 * Interface name is optional and can be empty.
++	 * If both names are not empty and different,
++	 * then the keys are different.
++	 */
++	if (bs1->key.ifname[0] && bs2->key.ifname[0]
++	    && memcmp(bs1->key.ifname, bs2->key.ifname,
++		      sizeof(bs1->key.ifname)))
++		return false;
++
++	return true;
+ }
+ 
+ 
+@@ -1659,117 +1700,13 @@ struct bfd_session *bfd_id_lookup(uint32
+ 	return hash_lookup(bfd_id_hash, &bs);
+ }
+ 
+-struct bfd_key_walk_partial_lookup {
+-	struct bfd_session *given;
+-	struct bfd_session *result;
+-};
+-
+-/* ignore some parameters */
+-static int bfd_key_lookup_ignore_partial_walker(struct hash_bucket *b,
+-						void *data)
+-{
+-	struct bfd_key_walk_partial_lookup *ctx =
+-		(struct bfd_key_walk_partial_lookup *)data;
+-	struct bfd_session *given = ctx->given;
+-	struct bfd_session *parsed = b->data;
+-
+-	if (given->key.family != parsed->key.family)
+-		return HASHWALK_CONTINUE;
+-	if (given->key.mhop != parsed->key.mhop)
+-		return HASHWALK_CONTINUE;
+-	if (memcmp(&given->key.peer, &parsed->key.peer,
+-		   sizeof(struct in6_addr)))
+-		return HASHWALK_CONTINUE;
+-	if (memcmp(given->key.vrfname, parsed->key.vrfname, MAXNAMELEN))
+-		return HASHWALK_CONTINUE;
+-	ctx->result = parsed;
+-	/* ignore localaddr or interface */
+-	return HASHWALK_ABORT;
+-}
+-
+ struct bfd_session *bfd_key_lookup(struct bfd_key key)
+ {
+-	struct bfd_session bs, *bsp;
+-	struct bfd_key_walk_partial_lookup ctx;
+-	char peer_buf[INET6_ADDRSTRLEN];
+-
+-	bs.key = key;
+-	bsp = hash_lookup(bfd_key_hash, &bs);
+-	if (bsp)
+-		return bsp;
+-
+-	inet_ntop(bs.key.family, &bs.key.peer, peer_buf,
+-		  sizeof(peer_buf));
+-	/* Handle cases where local-address is optional. */
+-	if (memcmp(&bs.key.local, &zero_addr, sizeof(bs.key.local))) {
+-		memset(&bs.key.local, 0, sizeof(bs.key.local));
+-		bsp = hash_lookup(bfd_key_hash, &bs);
+-		if (bsp) {
+-			if (bglobal.debug_peer_event) {
+-				char addr_buf[INET6_ADDRSTRLEN];
+-				inet_ntop(bs.key.family, &key.local, addr_buf,
+-					  sizeof(addr_buf));
+-				zlog_debug(
+-					" peer %s found, but loc-addr %s ignored",
+-					peer_buf, addr_buf);
+-			}
+-			return bsp;
+-		}
+-	}
++	struct bfd_session bs;
+ 
+ 	bs.key = key;
+-	/* Handle cases where ifname is optional. */
+-	if (bs.key.ifname[0]) {
+-		memset(bs.key.ifname, 0, sizeof(bs.key.ifname));
+-		bsp = hash_lookup(bfd_key_hash, &bs);
+-		if (bsp) {
+-			if (bglobal.debug_peer_event)
+-				zlog_debug(" peer %s found, but ifp %s ignored",
+-					   peer_buf, key.ifname);
+-			return bsp;
+-		}
+-	}
+ 
+-	/* Handle cases where local-address and ifname are optional. */
+-	if (bs.key.family == AF_INET) {
+-		memset(&bs.key.local, 0, sizeof(bs.key.local));
+-		bsp = hash_lookup(bfd_key_hash, &bs);
+-		if (bsp) {
+-			if (bglobal.debug_peer_event) {
+-				char addr_buf[INET6_ADDRSTRLEN];
+-				inet_ntop(bs.key.family, &bs.key.local,
+-					  addr_buf, sizeof(addr_buf));
+-				zlog_debug(
+-					" peer %s found, but ifp %s and loc-addr %s ignored",
+-					peer_buf, key.ifname, addr_buf);
+-			}
+-			return bsp;
+-		}
+-	}
+-	bs.key = key;
+-
+-	/* Handle case where a context more complex ctx is present.
+-	 * input has no iface nor local-address, but a context may
+-	 * exist.
+-	 *
+-	 * Only applies to IPv4, because IPv6 requires either
+-	 * local-address or interface.
+-	 */
+-	if (!bs.key.mhop && bs.key.family == AF_INET) {
+-		ctx.result = NULL;
+-		ctx.given = &bs;
+-		hash_walk(bfd_key_hash, &bfd_key_lookup_ignore_partial_walker,
+-			  &ctx);
+-		/* change key */
+-		if (ctx.result) {
+-			bsp = ctx.result;
+-			if (bglobal.debug_peer_event)
+-				zlog_debug(
+-					" peer %s found, but ifp and/or loc-addr params ignored",
+-					peer_buf);
+-		}
+-	}
+-	return bsp;
++	return hash_lookup(bfd_key_hash, &bs);
+ }
+ 
+ /*
+@@ -1793,16 +1730,11 @@ struct bfd_session *bfd_id_delete(uint32
+ 
+ struct bfd_session *bfd_key_delete(struct bfd_key key)
+ {
+-	struct bfd_session bs, *bsp;
++	struct bfd_session bs;
+ 
+ 	bs.key = key;
+-	bsp = hash_lookup(bfd_key_hash, &bs);
+-	if (bsp == NULL && key.ifname[0]) {
+-		memset(bs.key.ifname, 0, sizeof(bs.key.ifname));
+-		bsp = hash_lookup(bfd_key_hash, &bs);
+-	}
+ 
+-	return hash_release(bfd_key_hash, bsp);
++	return hash_release(bfd_key_hash, &bs);
+ }
+ 
+ /* Iteration functions. */
+diff -urpN frr/bfdd/bfd_packet.c frr.new/bfdd/bfd_packet.c
+--- frr/bfdd/bfd_packet.c	2021-01-27 21:24:28.827988861 +0700
++++ frr.new/bfdd/bfd_packet.c	2021-03-29 19:34:17.924708135 +0700
+@@ -165,7 +165,7 @@ void ptm_bfd_echo_snd(struct bfd_session
+ 		salen = sizeof(sin6);
+ 	} else {
+ 		sd = bvrf->bg_echo;
+-		memset(&sin6, 0, sizeof(sin6));
++		memset(&sin, 0, sizeof(sin));
+ 		sin.sin_family = AF_INET;
+ 		memcpy(&sin.sin_addr, &bfd->key.peer, sizeof(sin.sin_addr));
+ 		sin.sin_port = htons(BFD_DEF_ECHO_PORT);
+diff -urpN frr/bfdd/bfdd_cli.c frr.new/bfdd/bfdd_cli.c
+--- frr/bfdd/bfdd_cli.c	2021-01-27 21:24:28.827988861 +0700
++++ frr.new/bfdd/bfdd_cli.c	2021-03-29 19:34:17.924708135 +0700
+@@ -51,6 +51,17 @@
+ /*
+  * Prototypes.
+  */
++static bool
++bfd_cli_is_single_hop(struct vty *vty)
++{
++	return strstr(VTY_CURR_XPATH, "/single-hop") != NULL;
++}
++
++static bool
++bfd_cli_is_profile(struct vty *vty)
++{
++	return strstr(VTY_CURR_XPATH, "/bfd/profile") != NULL;
++}
+ 
+ /*
+  * Functions.
+@@ -112,10 +123,14 @@ DEFPY_YANG_NOSH(
+ 	char source_str[INET6_ADDRSTRLEN + 32];
+ 	char xpath[XPATH_MAXLEN], xpath_srcaddr[XPATH_MAXLEN + 32];
+ 
+-	if (multihop)
++	if (multihop) {
++		if (!local_address_str) {
++			vty_out(vty, "%% local-address is required when using multihop\n");
++			return CMD_WARNING_CONFIG_FAILED;
++		}
+ 		snprintf(source_str, sizeof(source_str), "[source-addr='%s']",
+ 			 local_address_str);
+-	else
++	} else
+ 		source_str[0] = 0;
+ 
+ 	slen = snprintf(xpath, sizeof(xpath),
+@@ -259,7 +274,7 @@ void bfd_cli_show_shutdown(struct vty *v
+ 			   bool show_defaults)
+ {
+ 	if (show_defaults)
+-		vty_out(vty, "  shutdown\n");
++		vty_out(vty, "  no shutdown\n");
+ 	else
+ 		vty_out(vty, "  %sshutdown\n",
+ 			yang_dnode_get_bool(dnode, NULL) ? "" : "no ");
+@@ -293,6 +308,11 @@ DEFPY_YANG(
+ 	"Expect packets with at least this TTL\n"
+ 	"Minimum TTL expected\n")
+ {
++	if (bfd_cli_is_single_hop(vty)) {
++		vty_out(vty, "%% Minimum TTL is only available for multi hop sessions.\n");
++		return CMD_WARNING_CONFIG_FAILED;
++	}
++
+ 	if (no)
+ 		nb_cli_enqueue_change(vty, "./minimum-ttl", NB_OP_DESTROY,
+ 				      NULL);
+@@ -408,6 +428,11 @@ DEFPY_YANG(
+ 	NO_STR
+ 	"Configure echo mode\n")
+ {
++	if (!bfd_cli_is_profile(vty) && !bfd_cli_is_single_hop(vty)) {
++		vty_out(vty, "%% Echo mode is only available for single hop sessions.\n");
++		return CMD_WARNING_CONFIG_FAILED;
++	}
++
+ 	nb_cli_enqueue_change(vty, "./echo-mode", NB_OP_MODIFY,
+ 			      no ? "false" : "true");
+ 	return nb_cli_apply_changes(vty, NULL);
+@@ -431,6 +456,11 @@ DEFPY_YANG(
+ {
+ 	char value[32];
+ 
++	if (!bfd_cli_is_profile(vty) && !bfd_cli_is_single_hop(vty)) {
++		vty_out(vty, "%% Echo mode is only available for single hop sessions.\n");
++		return CMD_WARNING_CONFIG_FAILED;
++	}
++
+ 	snprintf(value, sizeof(value), "%ld", interval * 1000);
+ 	nb_cli_enqueue_change(vty, "./desired-echo-transmission-interval",
+ 			      NB_OP_MODIFY, value);
+diff -urpN frr/bfdd/bfdd_vty.c frr.new/bfdd/bfdd_vty.c
+--- frr/bfdd/bfdd_vty.c	2021-01-27 21:24:28.827988861 +0700
++++ frr.new/bfdd/bfdd_vty.c	2021-03-29 19:34:17.924708135 +0700
+@@ -808,7 +808,7 @@ static int bfd_configure_peer(struct bfd
+ 	memset(bpc, 0, sizeof(*bpc));
+ 
+ 	/* Defaults */
+-	bpc->bpc_shutdown = true;
++	bpc->bpc_shutdown = false;
+ 	bpc->bpc_detectmultiplier = BPC_DEF_DETECTMULTIPLIER;
+ 	bpc->bpc_recvinterval = BPC_DEF_RECEIVEINTERVAL;
+ 	bpc->bpc_txinterval = BPC_DEF_TRANSMITINTERVAL;
+diff -urpN frr/bfdd/ptm_adapter.c frr.new/bfdd/ptm_adapter.c
+--- frr/bfdd/ptm_adapter.c	2021-01-27 21:24:28.827988861 +0700
++++ frr.new/bfdd/ptm_adapter.c	2021-03-29 19:34:17.924708135 +0700
+@@ -470,9 +470,6 @@ static void bfdd_dest_register(struct st
+ 					"ptm-add-dest: failed to create BFD session");
+ 			return;
+ 		}
+-
+-		/* Protocol created peers are 'no shutdown' by default. */
+-		bs->peer_profile.admin_shutdown = false;
+ 	} else {
+ 		/*
+ 		 * BFD session was already created, we are just updating the
+@@ -681,11 +678,15 @@ static void bfdd_sessions_disable_interf
+ 
+ 	TAILQ_FOREACH(bso, &bglobal.bg_obslist, bso_entry) {
+ 		bs = bso->bso_bs;
+-		if (strcmp(ifp->name, bs->key.ifname))
++
++		if (bs->ifp != ifp)
+ 			continue;
++
+ 		/* Skip disabled sessions. */
+-		if (bs->sock == -1)
++		if (bs->sock == -1) {
++			bs->ifp = NULL;
+ 			continue;
++		}
+ 
+ 		bfd_session_disable(bs);
+ 
+diff -urpN frr/bgpd/bgp_bmp.c frr.new/bgpd/bgp_bmp.c
+--- frr/bgpd/bgp_bmp.c	2021-01-27 21:24:28.837988728 +0700
++++ frr.new/bgpd/bgp_bmp.c	2021-03-29 19:34:17.924708135 +0700
+@@ -434,10 +434,19 @@ static struct stream *bmp_peerstate(stru
+ 		case PEER_DOWN_CLOSE_SESSION:
+ 			type = BMP_PEERDOWN_REMOTE_CLOSE;
+ 			break;
++		case PEER_DOWN_WAITING_NHT:
++			type = BMP_PEERDOWN_LOCAL_FSM;
++			stream_putw(s, BGP_FSM_TcpConnectionFails);
++			break;
++		/*
++		 * TODO: Map remaining PEER_DOWN_* reasons to RFC event codes.
++		 * TODO: Implement BMP_PEERDOWN_LOCAL_NOTIFY.
++		 *
++		 * See RFC7854 ss. 4.9
++		 */
+ 		default:
+-			type = BMP_PEERDOWN_LOCAL_NOTIFY;
+-			stream_put(s, peer->last_reset_cause,
+-					peer->last_reset_cause_size);
++			type = BMP_PEERDOWN_LOCAL_FSM;
++			stream_putw(s, BMP_PEER_DOWN_NO_RELEVANT_EVENT_CODE);
+ 			break;
+ 		}
+ 		stream_putc_at(s, type_pos, type);
+diff -urpN frr/bgpd/bgp_bmp.h frr.new/bgpd/bgp_bmp.h
+--- frr/bgpd/bgp_bmp.h	2021-01-27 21:24:28.837988728 +0700
++++ frr.new/bgpd/bgp_bmp.h	2021-03-29 19:34:17.924708135 +0700
+@@ -269,6 +269,8 @@ struct bmp_bgp_peer {
+ /* per struct bgp * data */
+ PREDECL_HASH(bmp_bgph)
+ 
++#define BMP_PEER_DOWN_NO_RELEVANT_EVENT_CODE 0x00
++
+ struct bmp_bgp {
+ 	struct bmp_bgph_item bbi;
+ 
+diff -urpN frr/bgpd/bgp_io.c frr.new/bgpd/bgp_io.c
+--- frr/bgpd/bgp_io.c	2021-01-27 21:24:28.837988728 +0700
++++ frr.new/bgpd/bgp_io.c	2021-03-29 19:34:17.924708135 +0700
+@@ -44,7 +44,7 @@
+ 
+ /* forward declarations */
+ static uint16_t bgp_write(struct peer *);
+-static uint16_t bgp_read(struct peer *);
++static uint16_t bgp_read(struct peer *peer, int *code_p);
+ static int bgp_process_writes(struct thread *);
+ static int bgp_process_reads(struct thread *);
+ static bool validate_header(struct peer *);
+@@ -175,6 +175,7 @@ static int bgp_process_reads(struct thre
+ 	bool fatal = false;		// whether fatal error occurred
+ 	bool added_pkt = false;		// whether we pushed onto ->ibuf
+ 	/* clang-format on */
++	int code;
+ 
+ 	peer = THREAD_ARG(thread);
+ 
+@@ -184,7 +185,7 @@ static int bgp_process_reads(struct thre
+ 	struct frr_pthread *fpt = bgp_pth_io;
+ 
+ 	frr_with_mutex(&peer->io_mtx) {
+-		status = bgp_read(peer);
++		status = bgp_read(peer, &code);
+ 	}
+ 
+ 	/* error checking phase */
+@@ -197,6 +198,12 @@ static int bgp_process_reads(struct thre
+ 		/* problem; tear down session */
+ 		more = false;
+ 		fatal = true;
++
++		/* Handle the error in the main pthread, include the
++		 * specific state change from 'bgp_read'.
++		 */
++		thread_add_event(bm->master, bgp_packet_process_error,
++				 peer, code, NULL);
+ 	}
+ 
+ 	while (more) {
+@@ -230,6 +237,7 @@ static int bgp_process_reads(struct thre
+ 		 */
+ 		if (ringbuf_remain(ibw) >= pktsize) {
+ 			struct stream *pkt = stream_new(pktsize);
++
+ 			assert(STREAM_WRITEABLE(pkt) == pktsize);
+ 			assert(ringbuf_get(ibw, pkt->data, pktsize) == pktsize);
+ 			stream_set_endp(pkt, pktsize);
+@@ -442,7 +450,7 @@ done : {
+  *
+  * @return status flag (see top-of-file)
+  */
+-static uint16_t bgp_read(struct peer *peer)
++static uint16_t bgp_read(struct peer *peer, int *code_p)
+ {
+ 	size_t readsize; // how many bytes we want to read
+ 	ssize_t nbytes;  // how many bytes we actually read
+@@ -455,43 +463,28 @@ static uint16_t bgp_read(struct peer *pe
+ 	/* EAGAIN or EWOULDBLOCK; come back later */
+ 	if (nbytes < 0 && ERRNO_IO_RETRY(errno)) {
+ 		SET_FLAG(status, BGP_IO_TRANS_ERR);
+-		/* Fatal error; tear down session */
+ 	} else if (nbytes < 0) {
++		/* Fatal error; tear down session */
+ 		flog_err(EC_BGP_UPDATE_RCV,
+ 			 "%s [Error] bgp_read_packet error: %s", peer->host,
+ 			 safe_strerror(errno));
+ 
+-		if (peer->status == Established) {
+-			if ((CHECK_FLAG(peer->flags, PEER_FLAG_GRACEFUL_RESTART)
+-			     || CHECK_FLAG(peer->flags,
+-					   PEER_FLAG_GRACEFUL_RESTART_HELPER))
+-			    && CHECK_FLAG(peer->sflags, PEER_STATUS_NSF_MODE)) {
+-				peer->last_reset = PEER_DOWN_NSF_CLOSE_SESSION;
+-				SET_FLAG(peer->sflags, PEER_STATUS_NSF_WAIT);
+-			} else
+-				peer->last_reset = PEER_DOWN_CLOSE_SESSION;
+-		}
++		/* Handle the error in the main pthread. */
++		if (code_p)
++			*code_p = TCP_fatal_error;
+ 
+-		BGP_EVENT_ADD(peer, TCP_fatal_error);
+ 		SET_FLAG(status, BGP_IO_FATAL_ERR);
+-		/* Received EOF / TCP session closed */
++
+ 	} else if (nbytes == 0) {
++		/* Received EOF / TCP session closed */
+ 		if (bgp_debug_neighbor_events(peer))
+ 			zlog_debug("%s [Event] BGP connection closed fd %d",
+ 				   peer->host, peer->fd);
+ 
+-		if (peer->status == Established) {
+-			if ((CHECK_FLAG(peer->flags, PEER_FLAG_GRACEFUL_RESTART)
+-			     || CHECK_FLAG(peer->flags,
+-					   PEER_FLAG_GRACEFUL_RESTART_HELPER))
+-			    && CHECK_FLAG(peer->sflags, PEER_STATUS_NSF_MODE)) {
+-				peer->last_reset = PEER_DOWN_NSF_CLOSE_SESSION;
+-				SET_FLAG(peer->sflags, PEER_STATUS_NSF_WAIT);
+-			} else
+-				peer->last_reset = PEER_DOWN_CLOSE_SESSION;
+-		}
++		/* Handle the error in the main pthread. */
++		if (code_p)
++			*code_p = TCP_connection_closed;
+ 
+-		BGP_EVENT_ADD(peer, TCP_connection_closed);
+ 		SET_FLAG(status, BGP_IO_FATAL_ERR);
+ 	} else {
+ 		assert(ringbuf_put(peer->ibuf_work, ibw, nbytes)
+diff -urpN frr/bgpd/bgp_mplsvpn.c frr.new/bgpd/bgp_mplsvpn.c
+--- frr/bgpd/bgp_mplsvpn.c	2021-01-27 21:24:28.837988728 +0700
++++ frr.new/bgpd/bgp_mplsvpn.c	2021-03-29 19:34:17.924708135 +0700
+@@ -265,7 +265,7 @@ int bgp_nlri_parse_vpn(struct peer *peer
+ 	if (STREAM_READABLE(data) != 0) {
+ 		flog_err(
+ 			EC_BGP_UPDATE_RCV,
+-			"%s [Error] Update packet error / VPN (%td data remaining after parsing)",
++			"%s [Error] Update packet error / VPN (%zu data remaining after parsing)",
+ 			peer->host, STREAM_READABLE(data));
+ 		return BGP_NLRI_PARSE_ERROR_PACKET_LENGTH;
+ 	}
+diff -urpN frr/bgpd/bgp_nht.c frr.new/bgpd/bgp_nht.c
+--- frr/bgpd/bgp_nht.c	2021-01-27 21:24:28.837988728 +0700
++++ frr.new/bgpd/bgp_nht.c	2021-03-29 19:34:17.924708135 +0700
+@@ -834,9 +834,17 @@ static void evaluate_paths(struct bgp_ne
+ 	if (peer) {
+ 		int valid_nexthops = bgp_isvalid_nexthop(bnc);
+ 
+-		if (valid_nexthops)
+-			peer->last_reset = PEER_DOWN_WAITING_OPEN;
+-		else
++		if (valid_nexthops) {
++			/*
++			 * Peering cannot occur across a blackhole nexthop
++			 */
++			if (bnc->nexthop_num == 1 && bnc->nexthop
++			    && bnc->nexthop->type == NEXTHOP_TYPE_BLACKHOLE) {
++				peer->last_reset = PEER_DOWN_WAITING_NHT;
++				valid_nexthops = 0;
++			} else
++				peer->last_reset = PEER_DOWN_WAITING_OPEN;
++		} else
+ 			peer->last_reset = PEER_DOWN_WAITING_NHT;
+ 
+ 		if (!CHECK_FLAG(bnc->flags, BGP_NEXTHOP_PEER_NOTIFIED)) {
+diff -urpN frr/bgpd/bgp_packet.c frr.new/bgpd/bgp_packet.c
+--- frr/bgpd/bgp_packet.c	2021-01-27 21:24:28.837988728 +0700
++++ frr.new/bgpd/bgp_packet.c	2021-03-29 19:34:17.924708135 +0700
+@@ -1806,6 +1806,7 @@ static int bgp_notify_receive(struct pee
+ 	bgp_notify.subcode = stream_getc(peer->curr);
+ 	bgp_notify.length = size - 2;
+ 	bgp_notify.data = NULL;
++	bgp_notify.raw_data = NULL;
+ 
+ 	/* Preserv notify code and sub code. */
+ 	peer->notify.code = bgp_notify.code;
+@@ -2487,3 +2488,37 @@ void bgp_send_delayed_eor(struct bgp *bg
+ 	for (ALL_LIST_ELEMENTS(bgp->peer, node, nnode, peer))
+ 		bgp_write_proceed_actions(peer);
+ }
++
++/*
++ * Task callback to handle socket error encountered in the io pthread. We avoid
++ * having the io pthread try to enqueue fsm events or mess with the peer
++ * struct.
++ */
++int bgp_packet_process_error(struct thread *thread)
++{
++	struct peer *peer;
++	int code;
++
++	peer = THREAD_ARG(thread);
++	code = THREAD_VAL(thread);
++
++	if (bgp_debug_neighbor_events(peer))
++		zlog_debug("%s [Event] BGP error %d on fd %d",
++			   peer->host, peer->fd, code);
++
++	/* Closed connection or error on the socket */
++	if (peer->status == Established) {
++		if ((CHECK_FLAG(peer->flags, PEER_FLAG_GRACEFUL_RESTART)
++		     || CHECK_FLAG(peer->flags,
++				   PEER_FLAG_GRACEFUL_RESTART_HELPER))
++		    && CHECK_FLAG(peer->sflags, PEER_STATUS_NSF_MODE)) {
++			peer->last_reset = PEER_DOWN_NSF_CLOSE_SESSION;
++			SET_FLAG(peer->sflags, PEER_STATUS_NSF_WAIT);
++		} else
++			peer->last_reset = PEER_DOWN_CLOSE_SESSION;
++	}
++
++	bgp_event_update(peer, code);
++
++	return 0;
++}
+diff -urpN frr/bgpd/bgp_packet.h frr.new/bgpd/bgp_packet.h
+--- frr/bgpd/bgp_packet.h	2021-01-27 21:24:28.837988728 +0700
++++ frr.new/bgpd/bgp_packet.h	2021-03-29 19:34:17.924708135 +0700
+@@ -82,4 +82,8 @@ extern int bgp_generate_updgrp_packets(s
+ extern int bgp_process_packet(struct thread *);
+ 
+ extern void bgp_send_delayed_eor(struct bgp *bgp);
++
++/* Task callback to handle socket error encountered in the io pthread */
++int bgp_packet_process_error(struct thread *thread);
++
+ #endif /* _QUAGGA_BGP_PACKET_H */
+diff -urpN frr/bgpd/bgp_route.c frr.new/bgpd/bgp_route.c
+--- frr/bgpd/bgp_route.c	2021-01-27 21:24:28.837988728 +0700
++++ frr.new/bgpd/bgp_route.c	2021-03-29 19:34:17.924708135 +0700
+@@ -11559,6 +11559,9 @@ static int bgp_table_stats_walker(struct
+ 	case AFI_IP6:
+ 		space = IPV6_MAX_BITLEN;
+ 		break;
++	case AFI_L2VPN:
++		space = EVPN_ROUTE_PREFIXLEN;
++		break;
+ 	default:
+ 		return 0;
+ 	}
+diff -urpN frr/bgpd/bgp_vty.c frr.new/bgpd/bgp_vty.c
+--- frr/bgpd/bgp_vty.c	2021-01-27 21:24:28.847988590 +0700
++++ frr.new/bgpd/bgp_vty.c	2021-03-29 19:34:17.924708135 +0700
+@@ -723,7 +723,7 @@ int bgp_vty_return(struct vty *vty, int
+ 		str = "Operation not allowed on a directly connected neighbor";
+ 		break;
+ 	case BGP_ERR_PEER_SAFI_CONFLICT:
+-		str = GR_INVALID;
++		str = "Cannot activate peer for both 'ipv4 unicast' and 'ipv4 labeled-unicast'";
+ 		break;
+ 	case BGP_ERR_GR_INVALID_CMD:
+ 		str = "The Graceful Restart command used is not valid at this moment.";
+@@ -1312,8 +1312,26 @@ DEFUN (no_router_bgp,
+ 			struct bgp *tmp_bgp;
+ 
+ 			for (ALL_LIST_ELEMENTS_RO(bm->bgp, node, tmp_bgp)) {
+-				if (tmp_bgp->inst_type
+-				    == BGP_INSTANCE_TYPE_VRF) {
++				if (tmp_bgp->inst_type != BGP_INSTANCE_TYPE_VRF)
++					continue;
++				if (CHECK_FLAG(tmp_bgp->af_flags[AFI_IP][SAFI_UNICAST],
++					       BGP_CONFIG_MPLSVPN_TO_VRF_IMPORT) ||
++				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP6][SAFI_UNICAST],
++					       BGP_CONFIG_MPLSVPN_TO_VRF_IMPORT) ||
++				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP][SAFI_UNICAST],
++					       BGP_CONFIG_VRF_TO_MPLSVPN_EXPORT) ||
++				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP6][SAFI_UNICAST],
++					       BGP_CONFIG_VRF_TO_MPLSVPN_EXPORT) ||
++				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP][SAFI_UNICAST],
++					       BGP_CONFIG_VRF_TO_VRF_EXPORT) ||
++				    CHECK_FLAG(tmp_bgp->af_flags[AFI_IP6][SAFI_UNICAST],
++					       BGP_CONFIG_VRF_TO_VRF_EXPORT) ||
++				    (bgp == bgp_get_evpn() &&
++				    (CHECK_FLAG(tmp_bgp->af_flags[AFI_L2VPN][SAFI_EVPN],
++						BGP_L2VPN_EVPN_ADVERTISE_IPV4_UNICAST) ||
++				     CHECK_FLAG(tmp_bgp->af_flags[AFI_L2VPN][SAFI_EVPN],
++						BGP_L2VPN_EVPN_ADVERTISE_IPV6_UNICAST))) ||
++				    (tmp_bgp->vnihash && hashcount(tmp_bgp->vnihash))) {
+ 					vty_out(vty,
+ 						"%% Cannot delete default BGP instance. Dependent VRF instances exist\n");
+ 					return CMD_WARNING_CONFIG_FAILED;
+@@ -4411,7 +4429,7 @@ ALIAS_HIDDEN(neighbor_set_peer_group, ne
+ 
+ DEFUN (no_neighbor_set_peer_group,
+        no_neighbor_set_peer_group_cmd,
+-       "no neighbor <A.B.C.D|X:X::X:X|WORD> peer-group PGNAME",
++       "no neighbor <A.B.C.D|X:X::X:X|WORD> peer-group [PGNAME]",
+        NO_STR
+        NEIGHBOR_STR
+        NEIGHBOR_ADDR_STR2
+@@ -4420,21 +4438,13 @@ DEFUN (no_neighbor_set_peer_group,
+ {
+ 	VTY_DECLVAR_CONTEXT(bgp, bgp);
+ 	int idx_peer = 2;
+-	int idx_word = 4;
+ 	int ret;
+ 	struct peer *peer;
+-	struct peer_group *group;
+ 
+ 	peer = peer_lookup_vty(vty, argv[idx_peer]->arg);
+ 	if (!peer)
+ 		return CMD_WARNING_CONFIG_FAILED;
+ 
+-	group = peer_group_lookup(bgp, argv[idx_word]->arg);
+-	if (!group) {
+-		vty_out(vty, "%% Configure the peer-group first\n");
+-		return CMD_WARNING_CONFIG_FAILED;
+-	}
+-
+ 	if (CHECK_FLAG(peer->flags, PEER_FLAG_CAPABILITY_ENHE))
+ 		bgp_zebra_terminate_radv(peer->bgp, peer);
+ 
+@@ -4445,7 +4455,7 @@ DEFUN (no_neighbor_set_peer_group,
+ }
+ 
+ ALIAS_HIDDEN(no_neighbor_set_peer_group, no_neighbor_set_peer_group_hidden_cmd,
+-	     "no neighbor <A.B.C.D|X:X::X:X|WORD> peer-group PGNAME",
++	     "no neighbor <A.B.C.D|X:X::X:X|WORD> peer-group [PGNAME]",
+ 	     NO_STR NEIGHBOR_STR NEIGHBOR_ADDR_STR2
+ 	     "Member of the peer-group\n"
+ 	     "Peer-group name\n")
+diff -urpN frr/bgpd/bgp_zebra.c frr.new/bgpd/bgp_zebra.c
+--- frr/bgpd/bgp_zebra.c	2021-01-27 21:24:28.847988590 +0700
++++ frr.new/bgpd/bgp_zebra.c	2021-03-29 19:34:17.924708135 +0700
+@@ -911,6 +911,7 @@ bgp_path_info_to_ipv6_nexthop(struct bgp
+ 			/* Workaround for Cisco's nexthop bug.  */
+ 			if (IN6_IS_ADDR_UNSPECIFIED(
+ 				    &path->attr->mp_nexthop_global)
++			    && path->peer->su_remote
+ 			    && path->peer->su_remote->sa.sa_family
+ 				       == AF_INET6) {
+ 				nexthop =
+diff -urpN frr/bgpd/bgpd.c frr.new/bgpd/bgpd.c
+--- frr/bgpd/bgpd.c	2021-02-13 12:09:54.049742773 +0700
++++ frr.new/bgpd/bgpd.c	2021-03-29 19:34:17.924708135 +0700
+@@ -2081,7 +2081,7 @@ int peer_activate(struct peer *peer, afi
+ 
+ 	/* If this is the first peer to be activated for this
+ 	 * afi/labeled-unicast recalc bestpaths to trigger label allocation */
+-	if (safi == SAFI_LABELED_UNICAST
++	if (ret != BGP_ERR_PEER_SAFI_CONFLICT && safi == SAFI_LABELED_UNICAST
+ 	    && !bgp->allocate_mpls_labels[afi][SAFI_UNICAST]) {
+ 
+ 		if (BGP_DEBUG(zebra, ZEBRA))
+@@ -5060,8 +5060,8 @@ int peer_timers_set(struct peer *peer, u
+ 
+ 		/* Set flag and configuration on peer-group member. */
+ 		SET_FLAG(member->flags, PEER_FLAG_TIMER);
+-		PEER_ATTR_INHERIT(peer, peer->group, holdtime);
+-		PEER_ATTR_INHERIT(peer, peer->group, keepalive);
++		PEER_ATTR_INHERIT(member, peer->group, holdtime);
++		PEER_ATTR_INHERIT(member, peer->group, keepalive);
+ 	}
+ 
+ 	return 0;
+diff -urpN frr/bgpd/bgpd.h frr.new/bgpd/bgpd.h
+--- frr/bgpd/bgpd.h	2021-01-27 21:24:28.847988590 +0700
++++ frr.new/bgpd/bgpd.h	2021-03-29 19:34:17.924708135 +0700
+@@ -866,7 +866,47 @@ struct bgp_peer_gr {
+ 	bgp_peer_gr_action_ptr action_fun;
+ };
+ 
+-/* BGP finite state machine events.  */
++/*
++ * BGP FSM event codes, per RFC 4271 ss. 8.1
++ */
++enum bgp_fsm_rfc_codes {
++	BGP_FSM_ManualStart = 1,
++	BGP_FSM_ManualStop = 2,
++	BGP_FSM_AutomaticStart = 3,
++	BGP_FSM_ManualStart_with_PassiveTcpEstablishment = 4,
++	BGP_FSM_AutomaticStart_with_PassiveTcpEstablishment = 5,
++	BGP_FSM_AutomaticStart_with_DampPeerOscillations = 6,
++	BGP_FSM_AutomaticStart_with_DampPeerOscillations_and_PassiveTcpEstablishment =
++		7,
++	BGP_FSM_AutomaticStop = 8,
++	BGP_FSM_ConnectRetryTimer_Expires = 9,
++	BGP_FSM_HoldTimer_Expires = 10,
++	BGP_FSM_KeepaliveTimer_Expires = 11,
++	BGP_FSM_DelayOpenTimer_Expires = 12,
++	BGP_FSM_IdleHoldTimer_Expires = 13,
++	BGP_FSM_TcpConnection_Valid = 14,
++	BGP_FSM_Tcp_CR_Invalid = 15,
++	BGP_FSM_Tcp_CR_Acked = 16,
++	BGP_FSM_TcpConnectionConfirmed = 17,
++	BGP_FSM_TcpConnectionFails = 18,
++	BGP_FSM_BGPOpen = 19,
++	BGP_FSM_BGPOpen_with_DelayOpenTimer_running = 20,
++	BGP_FSM_BGPHeaderErr = 21,
++	BGP_FSM_BGPOpenMsgErr = 22,
++	BGP_FSM_OpenCollisionDump = 23,
++	BGP_FSM_NotifMsgVerErr = 24,
++	BGP_FSM_NotifMsg = 25,
++	BGP_FSM_KeepAliveMsg = 26,
++	BGP_FSM_UpdateMsg = 27,
++	BGP_FSM_UpdateMsgErr = 28
++};
++
++/*
++ * BGP finite state machine events
++ *
++ * Note: these do not correspond to RFC-defined event codes. Those are
++ * defined elsewhere.
++ */
+ enum bgp_fsm_events {
+ 	BGP_Start = 1,
+ 	BGP_Stop,
+diff -urpN frr/changelog-auto.in frr.new/changelog-auto.in
+--- frr/changelog-auto.in	2021-01-27 21:24:28.857988452 +0700
++++ frr.new/changelog-auto.in	2021-03-29 19:34:17.924708135 +0700
+@@ -4,7 +4,93 @@ frr (@VERSION@-0) UNRELEASED; urgency=me
+     remove and replace when creating releases!
+     (tools/tarsource.sh will handle this)
+ 
+- -- FRRouting-Dev <dev@lists.frrouting.org>  Wed, 3 Nov 2020 23:10:00 +0200
++ -- FRRouting-Dev <dev@lists.frrouting.org>  Thu, 4 Mar 2021 00:10:00 +0100
++
++frr (7.5.1-0) RELEASED; urgency=medium
++  BABEL
++    Fix connected route leak on change
++  BFD
++    Session lookup was sometimes wrong
++    Memory leak and handling cleanups
++    In some situations handle vrf appropriately when receiving packets
++  BGP
++    Peer Group Inheritance Fixes
++    Dissallow attempt to peer peers reachable via blackholes
++    Send BMP down message when reachability fails
++    Cleanup handling of aggregator data when the AGG AS is 0
++    Handle `neighbor <peer-group allowas-in` config changes properly
++    Properly parse community and lcommunity values in some circumstances
++    Allow peer-groups to configure `ttl-security hops`
++    Prevent v6 routes with v4 nexthops from being installed
++    Allow `default-originate` to be cleared from a peer group
++    Fix evpn route-map vni filter at origin
++    local routes were using non-default distance
++    Properly track if the nexthop was updated in some circumstances
++    Cleanup `show running` when running bgp with `-e X` values
++    Various Memory leaks in show commands
++    Properly withdraw exported routes when deleting a VRF
++    Avoid resetting ebgp-multihop if peer setting is the same as peer-group
++    Properly encode flowspec rules to zebra in some rare circumstances
++    Generate statistics for routes in bgp when we have exactly 1 route
++    Properly apply route-map for the default-originate command
++  EIGRP
++    Properly set MTU for eigrp packets sent
++    Various memory leaks and using uninited data fixes
++  ISIS
++    When last area address is removed, resign if we were the DR
++    Various memory leaks and using uninited data fixes
++  LDP
++    Various memory leaks and using uninited data fixes
++  NHRP
++    Use onlink routes when prefix == nh
++    Shortcut routes are installed with proper nexthop
++  OSPF
++    Prevent duplicate packet read in multiple vrf situation
++    Fix area removal at interface level
++    Restore Point to MultiPoint interface types
++    Correctly handle MTU change on startup
++    Multi Instance initialization sometimes was not successful
++    NSSA translate-always was not working properly
++  OSPFv3
++    Don't send hellos on loopback interfaces
++    Handle ECMP better when a sub-path is removed
++    Memory leak and handling fixes
++    Fix Link LSA not updating when router priority is modified
++    Some output from show commands was wrong
++    Intra area remote connected prefixes sometimes not installed
++  PBR
++    Various memory leaks and using uninited data fixes
++  PIM
++    SGRpt prune received during prune didn't override holdtime
++    Various memory leaks and using uninited data fixes
++  STATIC
++    Fix VRF and usage on startup in some instances
++    Tableid was being mishandled in some cases
++  VTYSH
++    Disable bracketed paste in readline.
++  WATCHFRR
++    Various memory leaks and using uninited data fixes
++  ZEBRA
++    Always install blackhole routes using kernel routes instead of nexthops
++    Various memory leaks and using uninited data fixes
++    Dissallow resolution to duplicate nexthops that created infinite nexthops
++    Apply the route-map delay-timer globally
++    Some routes were stuck in Queued state when using the FPM
++    Better handle vrf creation when using namespaces
++    Set NUD_NOARP on sticky mac entries in addtion to NTF_STICKY
++    Allow `set src X` to work on startup
++  FRR Library
++    Fix a variety of memory leaks
++    Fix VRF Creation in some instances
++    RPKI context editing was not properly handled in reload situations
++    routemap code was not properly handling modification of CLI in some instances
++  SNAPCRAFT
++    Update to using rtrlib 0.7.0
++    Fix passthrough path for Libyang 1.x
++  ALPINE
++    Remove old docker deps
++
++ -- FRRouting-Dev <dev@lists.frrouting.org>  Wed, 3 Mar 2021 23:56:00 +0100
+ 
+ frr (7.5-0) RELEASED; urgency=medium
+   BFD
+diff -urpN frr/configure.ac frr.new/configure.ac
+--- frr/configure.ac	2021-01-27 21:24:28.857988452 +0700
++++ frr.new/configure.ac	2021-03-29 19:34:17.924708135 +0700
+@@ -7,7 +7,7 @@
+ ##
+ AC_PREREQ([2.60])
+ 
+-AC_INIT([frr], [7.5], [https://github.com/frrouting/frr/issues])
++AC_INIT([frr], [7.5.1], [https://github.com/frrouting/frr/issues])
+ PACKAGE_URL="https://frrouting.org/"
+ AC_SUBST([PACKAGE_URL])
+ PACKAGE_FULLNAME="FRRouting"
+diff -urpN frr/doc/developer/building-frr-for-centos7.rst frr.new/doc/developer/building-frr-for-centos7.rst
+--- frr/doc/developer/building-frr-for-centos7.rst	2021-01-27 21:24:28.857988452 +0700
++++ frr.new/doc/developer/building-frr-for-centos7.rst	2021-03-29 19:34:17.924708135 +0700
+@@ -14,14 +14,20 @@ CentOS 7 restrictions:
+ Install required packages
+ -------------------------
+ 
++Add EPEL Repository:
++
++::
++
++    sudo yum -y install epel-release
++
+ Add packages:
+ 
+ ::
+ 
+-    sudo yum install git autoconf automake libtool make \
++    sudo yum install git autoconf automake libtool make cmake \
+       readline-devel texinfo net-snmp-devel groff pkgconfig \
+       json-c-devel pam-devel bison flex pytest c-ares-devel \
+-      python-devel systemd-devel python-sphinx libcap-devel
++      python3-devel systemd-devel python3-sphinx libcap-devel
+ 
+ .. include:: building-libyang.rst
+ 
+diff -urpN frr/doc/developer/building-frr-for-ubuntu2004.rst frr.new/doc/developer/building-frr-for-ubuntu2004.rst
+--- frr/doc/developer/building-frr-for-ubuntu2004.rst	2021-01-27 21:24:28.857988452 +0700
++++ frr.new/doc/developer/building-frr-for-ubuntu2004.rst	2021-03-29 19:34:17.924708135 +0700
+@@ -27,7 +27,7 @@ ubuntu apt repositories; in order to ins
+ 
+ .. code-block:: shell
+ 
+-   curl https://bootstrap.pypa.io/get-pip.py --output get-pip.py
++   curl https://bootstrap.pypa.io/2.7/get-pip.py --output get-pip.py
+    sudo python2 ./get-pip.py
+ 
+    # And verify the installation
+diff -urpN frr/doc/developer/packaging-redhat.rst frr.new/doc/developer/packaging-redhat.rst
+--- frr/doc/developer/packaging-redhat.rst	2021-01-27 21:24:28.857988452 +0700
++++ frr.new/doc/developer/packaging-redhat.rst	2021-03-29 19:34:17.924708135 +0700
+@@ -40,11 +40,17 @@ Tested on CentOS 6, CentOS 7, CentOS 8 a
+    You should enable ``PowerTools`` repo if using CentOS 8 which
+    is disabled by default.
+ 
+-4. Checkout FRR::
++4. Add librtr-devel. Install librtr-devel from rpm.frrouting.org
++   repository (See https://rpm.frrouting.org to add repository
++   if it's not yet added)
++
++      yum install librtr-devel
++
++5. Checkout FRR::
+ 
+       git clone https://github.com/frrouting/frr.git frr
+ 
+-5. Run Bootstrap and make distribution tar.gz::
++6. Run Bootstrap and make distribution tar.gz::
+ 
+       cd frr
+       ./bootstrap.sh
+@@ -56,7 +62,7 @@ Tested on CentOS 6, CentOS 7, CentOS 8 a
+       The only ``configure`` option respected when building RPMs is
+       ``--with-pkg-extra-version``.
+ 
+-6. Create RPM directory structure and populate with sources::
++7. Create RPM directory structure and populate with sources::
+ 
+      mkdir rpmbuild
+      mkdir rpmbuild/SOURCES
+@@ -64,7 +70,7 @@ Tested on CentOS 6, CentOS 7, CentOS 8 a
+      cp redhat/*.spec rpmbuild/SPECS/
+      cp frr*.tar.gz rpmbuild/SOURCES/
+ 
+-7. Edit :file:`rpm/SPECS/frr.spec` with configuration as needed.
++8. Edit :file:`rpm/SPECS/frr.spec` with configuration as needed.
+ 
+    Look at the beginning of the file and adjust the following parameters to
+    enable or disable features as required::
+@@ -89,7 +95,7 @@ Tested on CentOS 6, CentOS 7, CentOS 8 a
+       %{!?with_pimd:          %global  with_pimd          1 }
+       %{!?with_rpki:          %global  with_rpki          0 }
+ 
+-8. Build the RPM::
++9. Build the RPM::
+ 
+       rpmbuild --define "_topdir `pwd`/rpmbuild" -ba rpmbuild/SPECS/frr.spec
+ 
+diff -urpN frr/doc/user/bgp.rst frr.new/doc/user/bgp.rst
+--- frr/doc/user/bgp.rst	2021-01-27 21:24:28.867988313 +0700
++++ frr.new/doc/user/bgp.rst	2021-03-29 19:34:17.924708135 +0700
+@@ -415,10 +415,14 @@ Require policy on EBGP
+ .. clicmd:: [no] bgp ebgp-requires-policy
+ 
+    This command requires incoming and outgoing filters to be applied
+-   for eBGP sessions. Without the incoming filter, no routes will be
+-   accepted. Without the outgoing filter, no routes will be announced.
++   for eBGP sessions as part of RFC-8212 compliance. Without the incoming
++   filter, no routes will be accepted. Without the outgoing filter, no
++   routes will be announced.
+ 
+-   This is enabled by default.
++   This is enabled by default for the traditional configuration and
++   turned off by default for datacenter configuration.
++
++   When you enable/disable this option you MUST clear the session.
+ 
+    When the incoming or outgoing filter is missing you will see
+    "(Policy)" sign under ``show bgp summary``:
+@@ -437,6 +441,22 @@ Require policy on EBGP
+       192.168.0.2     4      65002         8        10        0    0    0 00:03:09            5 (Policy)
+       fe80:1::2222    4      65002         9        11        0    0    0 00:03:09     (Policy) (Policy)
+ 
++   Additionally a `show bgp neighbor` command would indicate in the `For address family:`
++   block that:
++
++   .. code-block:: frr
++
++      exit1# show bgp neighbor
++      ...
++      For address family: IPv4 Unicast
++       Update group 1, subgroup 1
++       Packet Queue length 0
++       Inbound soft reconfiguration allowed
++       Community attribute sent to this neighbor(all)
++       Inbound updates discarded due to missing policy
++       Outbound updates discarded due to missing policy
++       0 accepted prefixes
++
+ Reject routes with AS_SET or AS_CONFED_SET types
+ ------------------------------------------------
+ 
+diff -urpN frr/docker/alpine/Dockerfile frr.new/docker/alpine/Dockerfile
+--- frr/docker/alpine/Dockerfile	2021-01-27 21:24:28.867988313 +0700
++++ frr.new/docker/alpine/Dockerfile	2021-03-29 19:34:17.924708135 +0700
+@@ -1,10 +1,9 @@
+ # This stage builds a dist tarball from the source
+-FROM alpine:edge as source-builder
++FROM alpine:latest as source-builder
+ 
+ RUN mkdir -p /src/alpine
+ COPY alpine/APKBUILD.in /src/alpine
+ RUN source /src/alpine/APKBUILD.in \
+-	&& echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
+ 	&& apk add \
+ 		--no-cache \
+ 		--update-cache \
+@@ -22,10 +21,9 @@ RUN cd /src \
+ 	&& make dist
+ 
+ # This stage builds an apk from the dist tarball
+-FROM alpine:edge as alpine-builder
++FROM alpine:latest as alpine-builder
+ # Don't use nocache here so that abuild can use the cache
+-RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
+-	&& apk add \
++RUN apk add \
+ 		--update-cache \
+ 		abuild \
+ 		alpine-conf \
+@@ -46,11 +44,10 @@ RUN cd /dist \
+ 	&& abuild -r -P /pkgs/apk
+ 
+ # This stage installs frr from the apk
+-FROM alpine:edge
++FROM alpine:latest
+ RUN mkdir -p /pkgs/apk
+ COPY --from=alpine-builder /pkgs/apk/ /pkgs/apk/
+-RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
+-	&& apk add \
++RUN apk add \
+ 		--no-cache \
+ 		--update-cache \
+ 		tini \
+diff -urpN frr/docker/centos-7/Dockerfile frr.new/docker/centos-7/Dockerfile
+--- frr/docker/centos-7/Dockerfile	2021-01-27 21:24:28.867988313 +0700
++++ frr.new/docker/centos-7/Dockerfile	2021-03-29 19:34:17.924708135 +0700
+@@ -5,8 +5,8 @@ RUN yum install -y rpm-build autoconf au
+         readline-devel texinfo net-snmp-devel groff pkgconfig \
+         json-c-devel pam-devel bison flex pytest c-ares-devel \
+         python3-devel python3-sphinx systemd-devel libcap-devel \
+-        https://ci1.netdef.org/artifact/LIBYANG-YANGRELEASE/shared/build-10/CentOS-7-x86_64-Packages/libyang-0.16.111-0.x86_64.rpm \
+-        https://ci1.netdef.org/artifact/LIBYANG-YANGRELEASE/shared/build-10/CentOS-7-x86_64-Packages/libyang-devel-0.16.111-0.x86_64.rpm \
++        https://ci1.netdef.org/artifact/LIBYANG-LY1REL/shared/build-4/CentOS-7-x86_64-Packages/libyang1-1.0.184-0.x86_64.rpm \
++        https://ci1.netdef.org/artifact/LIBYANG-LY1REL/shared/build-4/CentOS-7-x86_64-Packages/libyang-devel-1.0.184-0.x86_64.rpm \
+         https://ci1.netdef.org/artifact/RPKI-RTRLIB/shared/build-110/CentOS-7-x86_64-Packages/librtr-0.7.0-1.el7.centos.x86_64.rpm \
+         https://ci1.netdef.org/artifact/RPKI-RTRLIB/shared/build-110/CentOS-7-x86_64-Packages/librtr-devel-0.7.0-1.el7.centos.x86_64.rpm
+ 
+@@ -32,7 +32,7 @@ RUN echo '%_smp_mflags %( echo "-j$(/usr
+ # This stage installs frr from the rpm
+ FROM centos:centos7
+ RUN mkdir -p /pkgs/rpm \
+-    && yum install -y https://ci1.netdef.org/artifact/LIBYANG-YANGRELEASE/shared/build-10/CentOS-7-x86_64-Packages/libyang-0.16.111-0.x86_64.rpm \
++    && yum install -y https://ci1.netdef.org/artifact/LIBYANG-LY1REL/shared/build-4/CentOS-7-x86_64-Packages/libyang1-1.0.184-0.x86_64.rpm \
+         https://ci1.netdef.org/artifact/RPKI-RTRLIB/shared/build-110/CentOS-7-x86_64-Packages/librtr-0.7.0-1.el7.centos.x86_64.rpm
+ 
+ COPY --from=centos-7-builder /rpmbuild/RPMS/ /pkgs/rpm/
+diff -urpN frr/docker/centos-8/Dockerfile frr.new/docker/centos-8/Dockerfile
+--- frr/docker/centos-8/Dockerfile	2021-01-27 21:24:28.867988313 +0700
++++ frr.new/docker/centos-8/Dockerfile	2021-03-29 19:34:17.924708135 +0700
+@@ -1,17 +1,15 @@
+ # This stage builds an rpm from the source
+ FROM centos:centos8 as centos-8-builder
+ 
+-RUN dnf install --enablerepo=PowerTools -y rpm-build git autoconf pcre-devel \
++RUN dnf install --enablerepo=powertools -y rpm-build git autoconf pcre-devel \
+         automake libtool make readline-devel texinfo net-snmp-devel pkgconfig \
+-        groff pkgconfig json-c-devel pam-devel bison flex python2-pytest \
+-        c-ares-devel python2-devel systemd-devel libcap-devel platform-python-devel \
+-        https://ci1.netdef.org/artifact/LIBYANG-YANGRELEASE/shared/build-10/CentOS-7-x86_64-Packages/libyang-0.16.111-0.x86_64.rpm \
+-        https://ci1.netdef.org/artifact/LIBYANG-YANGRELEASE/shared/build-10/CentOS-7-x86_64-Packages/libyang-devel-0.16.111-0.x86_64.rpm \
++        groff pkgconfig json-c-devel pam-devel bison flex python3-pytest \
++        c-ares-devel python3-devel python3-sphinx systemd-devel libcap-devel platform-python-devel \
++        https://ci1.netdef.org/artifact/LIBYANG-LY1REL/shared/build-4/CentOS-8-x86_64-Packages/libyang1-1.0.184-0.x86_64.rpm \
++        https://ci1.netdef.org/artifact/LIBYANG-LY1REL/shared/build-4/CentOS-8-x86_64-Packages/libyang-devel-1.0.184-0.x86_64.rpm \
+         https://ci1.netdef.org/artifact/RPKI-RTRLIB/shared/build-110/CentOS-7-x86_64-Packages/librtr-0.7.0-1.el7.centos.x86_64.rpm \
+         https://ci1.netdef.org/artifact/RPKI-RTRLIB/shared/build-110/CentOS-7-x86_64-Packages/librtr-devel-0.7.0-1.el7.centos.x86_64.rpm
+ 
+-RUN pip2 install sphinx
+-
+ COPY . /src
+ 
+ ARG PKGVER
+@@ -35,7 +33,7 @@ RUN echo '%_smp_mflags %( echo "-j$(/usr
+ # This stage installs frr from the rpm
+ FROM centos:centos8
+ RUN mkdir -p /pkgs/rpm \
+-    && yum install -y https://ci1.netdef.org/artifact/LIBYANG-YANGRELEASE/shared/build-10/CentOS-7-x86_64-Packages/libyang-0.16.111-0.x86_64.rpm \
++    && yum install -y https://ci1.netdef.org/artifact/LIBYANG-LY1REL/shared/build-4/CentOS-8-x86_64-Packages/libyang1-1.0.184-0.x86_64.rpm \
+         https://ci1.netdef.org/artifact/RPKI-RTRLIB/shared/build-110/CentOS-7-x86_64-Packages/librtr-0.7.0-1.el7.centos.x86_64.rpm
+ 
+ COPY --from=centos-8-builder /rpmbuild/RPMS/ /pkgs/rpm/
+diff -urpN frr/eigrpd/eigrp_cli.c frr.new/eigrpd/eigrp_cli.c
+--- frr/eigrpd/eigrp_cli.c	2021-01-27 21:24:28.867988313 +0700
++++ frr.new/eigrpd/eigrp_cli.c	2021-03-29 19:34:17.924708135 +0700
+@@ -670,7 +670,7 @@ DEFPY_YANG(
+ 		 as_str);
+ 	nb_cli_enqueue_change(vty, xpath, NB_OP_CREATE, NULL);
+ 
+-	snprintf(xpath_auth, sizeof(xpath_auth), "%s/summarize-address", xpath);
++	snprintf(xpath_auth, sizeof(xpath_auth), "%s/summarize-addresses", xpath);
+ 	nb_cli_enqueue_change(vty, xpath_auth, NB_OP_CREATE, prefix_str);
+ 
+ 	return nb_cli_apply_changes(vty, NULL);
+@@ -693,7 +693,7 @@ DEFPY_YANG(
+ 		 as_str);
+ 	nb_cli_enqueue_change(vty, xpath, NB_OP_CREATE, NULL);
+ 
+-	snprintf(xpath_auth, sizeof(xpath_auth), "%s/summarize-address", xpath);
++	snprintf(xpath_auth, sizeof(xpath_auth), "%s/summarize-addresses", xpath);
+ 	nb_cli_enqueue_change(vty, xpath_auth, NB_OP_DESTROY, prefix_str);
+ 
+ 	return nb_cli_apply_changes(vty, NULL);
+@@ -702,12 +702,12 @@ DEFPY_YANG(
+ void eigrp_cli_show_summarize_address(struct vty *vty, struct lyd_node *dnode,
+ 				      bool show_defaults)
+ {
+-	const struct eigrp_interface *eif = nb_running_get_entry(dnode, NULL,
+-								 true);
++	const struct lyd_node *instance = yang_dnode_get_parent(dnode, "instance");
++	uint16_t asn = yang_dnode_get_uint16(instance, "./asn");
+ 	const char *summarize_address = yang_dnode_get_string(dnode, NULL);
+ 
+-	vty_out(vty, " ip summary-address eigrp %d %s\n",
+-		eif->eigrp->AS, summarize_address);
++	vty_out(vty, " ip summary-address eigrp %d %s\n", asn,
++		summarize_address);
+ }
+ 
+ /*
+@@ -766,12 +766,11 @@ DEFPY_YANG(
+ void eigrp_cli_show_authentication(struct vty *vty, struct lyd_node *dnode,
+ 				   bool show_defaults)
+ {
+-	const struct eigrp_interface *eif = nb_running_get_entry(dnode, NULL,
+-								 true);
++	const struct lyd_node *instance = yang_dnode_get_parent(dnode, "instance");
++	uint16_t asn = yang_dnode_get_uint16(instance, "./asn");
+ 	const char *crypt = yang_dnode_get_string(dnode, NULL);
+ 
+-	vty_out(vty, " ip authentication mode eigrp %d %s\n",
+-		eif->eigrp->AS, crypt);
++	vty_out(vty, " ip authentication mode eigrp %d %s\n", asn, crypt);
+ }
+ 
+ /*
+@@ -826,12 +825,12 @@ DEFPY_YANG(
+ void eigrp_cli_show_keychain(struct vty *vty, struct lyd_node *dnode,
+ 			     bool show_defaults)
+ {
+-	const struct eigrp_interface *eif = nb_running_get_entry(dnode, NULL,
+-								 true);
++	const struct lyd_node *instance = yang_dnode_get_parent(dnode, "instance");
++	uint16_t asn = yang_dnode_get_uint16(instance, "./asn");
+ 	const char *keychain = yang_dnode_get_string(dnode, NULL);
+ 
+-	vty_out(vty, " ip authentication key-chain eigrp %d %s\n",
+-		eif->eigrp->AS, keychain);
++	vty_out(vty, " ip authentication key-chain eigrp %d %s\n", asn,
++		keychain);
+ }
+ 
+ 
+diff -urpN frr/eigrpd/eigrp_interface.c frr.new/eigrpd/eigrp_interface.c
+--- frr/eigrpd/eigrp_interface.c	2021-01-27 21:24:28.867988313 +0700
++++ frr.new/eigrpd/eigrp_interface.c	2021-03-29 19:34:17.924708135 +0700
+@@ -227,6 +227,20 @@ void eigrp_del_if_params(struct eigrp_if
+ 		free(eip->auth_keychain);
+ }
+ 
++/*
++ * Set the network byte order of the 3 bytes we send
++ * of the mtu of the link.
++ */
++static void eigrp_mtu_convert(struct eigrp_metrics *metric, uint32_t host_mtu)
++{
++	uint32_t network_mtu = htonl(host_mtu);
++	uint8_t *nm = (uint8_t *)&network_mtu;
++
++	metric->mtu[0] = nm[1];
++	metric->mtu[1] = nm[2];
++	metric->mtu[2] = nm[3];
++}
++
+ int eigrp_if_up(struct eigrp_interface *ei)
+ {
+ 	struct eigrp_prefix_entry *pe;
+@@ -254,9 +268,7 @@ int eigrp_if_up(struct eigrp_interface *
+ 	metric.delay = eigrp_delay_to_scaled(ei->params.delay);
+ 	metric.load = ei->params.load;
+ 	metric.reliability = ei->params.reliability;
+-	metric.mtu[0] = 0xDC;
+-	metric.mtu[1] = 0x05;
+-	metric.mtu[2] = 0x00;
++	eigrp_mtu_convert(&metric, ei->ifp->mtu);
+ 	metric.hop_count = 0;
+ 	metric.flags = 0;
+ 	metric.tag = 0;
+diff -urpN frr/eigrpd/eigrp_structs.h frr.new/eigrpd/eigrp_structs.h
+--- frr/eigrpd/eigrp_structs.h	2021-01-27 21:24:28.867988313 +0700
++++ frr.new/eigrpd/eigrp_structs.h	2021-03-29 19:34:17.924708135 +0700
+@@ -60,7 +60,7 @@ struct eigrp_master {
+ struct eigrp_metrics {
+ 	uint32_t delay;
+ 	uint32_t bandwidth;
+-	unsigned char mtu[3];
++	uint8_t mtu[3];
+ 	uint8_t hop_count;
+ 	uint8_t reliability;
+ 	uint8_t load;
+diff -urpN frr/eigrpd/eigrp_topology.c frr.new/eigrpd/eigrp_topology.c
+--- frr/eigrpd/eigrp_topology.c	2021-01-27 21:24:28.867988313 +0700
++++ frr.new/eigrpd/eigrp_topology.c	2021-03-29 19:34:17.924708135 +0700
+@@ -508,6 +508,7 @@ void eigrp_topology_neighbor_down(struct
+ 			if (entry->adv_router != nbr)
+ 				continue;
+ 
++			memset(&msg, 0, sizeof(msg));
+ 			msg.metrics.delay = EIGRP_MAX_METRIC;
+ 			msg.packet_type = EIGRP_OPC_UPDATE;
+ 			msg.eigrp = eigrp;
+diff -urpN frr/isisd/isis_bfd.c frr.new/isisd/isis_bfd.c
+--- frr/isisd/isis_bfd.c	2021-01-27 21:24:28.877988175 +0700
++++ frr.new/isisd/isis_bfd.c	2021-03-29 19:34:17.924708135 +0700
+@@ -146,11 +146,11 @@ static void bfd_adj_event(struct isis_ad
+ static int isis_bfd_interface_dest_update(ZAPI_CALLBACK_ARGS)
+ {
+ 	struct interface *ifp;
+-	struct prefix dst_ip;
++	struct prefix dst_ip, src_ip;
+ 	int status;
+ 
+-	ifp = bfd_get_peer_info(zclient->ibuf, &dst_ip, NULL, &status,
+-				NULL, vrf_id);
++	ifp = bfd_get_peer_info(zclient->ibuf, &dst_ip, &src_ip, &status, NULL,
++				vrf_id);
+ 	if (!ifp || (dst_ip.family != AF_INET && dst_ip.family != AF_INET6))
+ 		return 0;
+ 
+diff -urpN frr/isisd/isis_cli.c frr.new/isisd/isis_cli.c
+--- frr/isisd/isis_cli.c	2021-01-27 21:24:28.877988175 +0700
++++ frr.new/isisd/isis_cli.c	2021-03-29 19:34:17.924708135 +0700
+@@ -136,10 +136,10 @@ void cli_show_router_isis(struct vty *vt
+ 	vrf = yang_dnode_get_string(dnode, "./vrf");
+ 
+ 	vty_out(vty, "!\n");
+-	vty_out(vty, "router isis %s ",
++	vty_out(vty, "router isis %s",
+ 		yang_dnode_get_string(dnode, "./area-tag"));
+ 	if (!strmatch(vrf, VRF_DEFAULT_NAME))
+-		vty_out(vty, "vrf %s", yang_dnode_get_string(dnode, "./vrf"));
++		vty_out(vty, " vrf %s", yang_dnode_get_string(dnode, "./vrf"));
+ 	vty_out(vty, "\n");
+ }
+ 
+@@ -392,10 +392,10 @@ void cli_show_ip_isis_ipv4(struct vty *v
+ 
+ 	if (!yang_dnode_get_bool(dnode, NULL))
+ 		vty_out(vty, " no");
+-	vty_out(vty, " ip router isis %s ",
++	vty_out(vty, " ip router isis %s",
+ 		yang_dnode_get_string(dnode, "../area-tag"));
+ 	if (!strmatch(vrf, VRF_DEFAULT_NAME))
+-		vty_out(vty, "vrf %s", vrf);
++		vty_out(vty, " vrf %s", vrf);
+ 	vty_out(vty, "\n");
+ }
+ 
+@@ -408,10 +408,10 @@ void cli_show_ip_isis_ipv6(struct vty *v
+ 
+ 	if (!yang_dnode_get_bool(dnode, NULL))
+ 		vty_out(vty, " no");
+-	vty_out(vty, " ipv6 router isis %s ",
++	vty_out(vty, " ipv6 router isis %s",
+ 		yang_dnode_get_string(dnode, "../area-tag"));
+ 	if (!strmatch(vrf, VRF_DEFAULT_NAME))
+-		vty_out(vty, "vrf %s", vrf);
++		vty_out(vty, " vrf %s", vrf);
+ 	vty_out(vty, "\n");
+ }
+ 
+diff -urpN frr/isisd/isis_lsp.c frr.new/isisd/isis_lsp.c
+--- frr/isisd/isis_lsp.c	2021-01-27 21:24:28.877988175 +0700
++++ frr.new/isisd/isis_lsp.c	2021-03-29 19:34:17.924708135 +0700
+@@ -1475,7 +1475,7 @@ int _lsp_regenerate_schedule(struct isis
+ 
+ 			if (area->bfd_signalled_down) {
+ 				sched_debug(
+-					"ISIS (%s): Scheduling immediately due to BDF 'down' message.",
++					"ISIS (%s): Scheduling immediately due to BFD 'down' message.",
+ 					area->area_tag);
+ 				area->bfd_signalled_down = false;
+ 				area->bfd_force_spf_refresh = true;
+diff -urpN frr/lib/bfd.c frr.new/lib/bfd.c
+--- frr/lib/bfd.c	2021-01-27 21:24:28.877988175 +0700
++++ frr.new/lib/bfd.c	2021-03-29 19:34:17.924708135 +0700
+@@ -224,6 +224,17 @@ struct interface *bfd_get_peer_info(stru
+ 	int plen;
+ 	int local_remote_cbit;
+ 
++	/*
++	 * If the ifindex lookup fails the
++	 * rest of the data in the stream is
++	 * not read.  All examples of this function
++	 * call immediately use the dp->family which
++	 * is not good.  Ensure we are not using
++	 * random data
++	 */
++	memset(dp, 0, sizeof(*dp));
++	memset(sp, 0, sizeof(*sp));
++
+ 	/* Get interface index. */
+ 	ifindex = stream_getl(s);
+ 
+@@ -249,13 +260,12 @@ struct interface *bfd_get_peer_info(stru
+ 	/* Get BFD status. */
+ 	*status = stream_getl(s);
+ 
+-	if (sp) {
+-		sp->family = stream_getc(s);
++	sp->family = stream_getc(s);
++
++	plen = prefix_blen(sp);
++	stream_get(&sp->u.prefix, s, plen);
++	sp->prefixlen = stream_getc(s);
+ 
+-		plen = prefix_blen(sp);
+-		stream_get(&sp->u.prefix, s, plen);
+-		sp->prefixlen = stream_getc(s);
+-	}
+ 	local_remote_cbit = stream_getc(s);
+ 	if (remote_cbit)
+ 		*remote_cbit = local_remote_cbit;
+diff -urpN frr/lib/clippy.c frr.new/lib/clippy.c
+--- frr/lib/clippy.c	2021-01-27 21:24:28.887988037 +0700
++++ frr.new/lib/clippy.c	2021-03-29 19:34:17.924708135 +0700
+@@ -51,7 +51,8 @@ int main(int argc, char **argv)
+ #if PY_VERSION_HEX >= 0x03040000 /* 3.4 */
+ 	Py_SetStandardStreamEncoding("UTF-8", NULL);
+ #endif
+-	Py_SetProgramName(wconv(argv[0]));
++	wchar_t *name = wconv(argv[0]);
++	Py_SetProgramName(name);
+ 	PyImport_AppendInittab("_clippy", command_py_init);
+ 
+ 	Py_Initialize();
+@@ -67,6 +68,8 @@ int main(int argc, char **argv)
+ 		fp = fopen(pyfile, "r");
+ 		if (!fp) {
+ 			fprintf(stderr, "%s: %s\n", pyfile, strerror(errno));
++
++			free(name);
+ 			return 1;
+ 		}
+ 	} else {
+@@ -85,6 +88,8 @@ int main(int argc, char **argv)
+ 	if (PyRun_AnyFile(fp, pyfile)) {
+ 		if (PyErr_Occurred())
+ 			PyErr_Print();
++
++		free(name);
+ 		return 1;
+ 	}
+ 	Py_Finalize();
+@@ -93,6 +98,7 @@ int main(int argc, char **argv)
+ 	for (int i = 1; i < argc; i++)
+ 		free(wargv[i - 1]);
+ #endif
++	free(name);
+ 	free(wargv);
+ 	return 0;
+ }
+diff -urpN frr/lib/defun_lex.l frr.new/lib/defun_lex.l
+--- frr/lib/defun_lex.l	2021-01-27 21:24:28.887988037 +0700
++++ frr.new/lib/defun_lex.l	2021-03-29 19:34:17.924708135 +0700
+@@ -80,6 +80,8 @@ static void extendbuf(char **what, const
+ }
+ #define extend(x) extendbuf(&value, x)
+ 
++#ifndef __clang_analyzer__
++
+ %}
+ 
+ ID		[A-Za-z0-9_]+
+@@ -157,6 +159,8 @@ SPECIAL		[(),]
+ 
+ %%
+ 
++#endif /* __clang_analyzer__ */
++
+ static int yylex_clr(char **retbuf)
+ {
+ 	int rv = def_yylex();
+diff -urpN frr/lib/filter_cli.c frr.new/lib/filter_cli.c
+--- frr/lib/filter_cli.c	2021-01-27 21:24:28.887988037 +0700
++++ frr.new/lib/filter_cli.c	2021-03-29 19:34:17.924708135 +0700
+@@ -259,7 +259,7 @@ DEFPY_YANG(
+ 
+ 	/* Access-list must exist before entries. */
+ 	if (yang_dnode_exists(running_config->dnode, xpath) == false)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	/* Use access-list data structure to fetch sequence. */
+ 	dnode = yang_dnode_get(running_config->dnode, xpath);
+@@ -268,7 +268,7 @@ DEFPY_YANG(
+ 				 mask_str ? mask_str : CISCO_HOST_WILDCARD_MASK,
+ 				 NULL, NULL);
+ 	if (sseq == -1)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	snprintfrr(xpath_entry, sizeof(xpath_entry),
+ 		   "%s/entry[sequence='%" PRId64 "']", xpath, sseq);
+@@ -436,7 +436,7 @@ DEFPY_YANG(
+ 
+ 	/* Access-list must exist before entries. */
+ 	if (yang_dnode_exists(running_config->dnode, xpath) == false)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	/* Use access-list data structure to fetch sequence. */
+ 	dnode = yang_dnode_get(running_config->dnode, xpath);
+@@ -469,7 +469,7 @@ DEFPY_YANG(
+ 				"0.0.0.0", CISCO_ANY_WILDCARD_MASK);
+ 	}
+ 	if (sseq == -1)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	snprintfrr(xpath_entry, sizeof(xpath_entry),
+ 		   "%s/entry[sequence='%" PRId64 "']", xpath, sseq);
+@@ -588,7 +588,7 @@ DEFPY_YANG(
+ 
+ 	/* Access-list must exist before entries. */
+ 	if (yang_dnode_exists(running_config->dnode, xpath) == false)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	/* Use access-list data structure to fetch sequence. */
+ 	dnode = yang_dnode_get(running_config->dnode, xpath);
+@@ -601,7 +601,7 @@ DEFPY_YANG(
+ 		sseq = acl_zebra_get_seq(acl, action, (struct prefix *)prefix,
+ 					 exact);
+ 	if (sseq == -1)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	snprintfrr(xpath_entry, sizeof(xpath_entry),
+ 		   "%s/entry[sequence='%" PRId64 "']", xpath, sseq);
+@@ -786,7 +786,7 @@ DEFPY_YANG(
+ 
+ 	/* Access-list must exist before entries. */
+ 	if (yang_dnode_exists(running_config->dnode, xpath) == false)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	/* Use access-list data structure to fetch sequence. */
+ 	dnode = yang_dnode_get(running_config->dnode, xpath);
+@@ -799,7 +799,7 @@ DEFPY_YANG(
+ 		sseq = acl_zebra_get_seq(acl, action, (struct prefix *)prefix,
+ 					 exact);
+ 	if (sseq == -1)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	snprintfrr(xpath_entry, sizeof(xpath_entry),
+ 		   "%s/entry[sequence='%" PRId64 "']", xpath, sseq);
+@@ -979,7 +979,7 @@ DEFPY_YANG(
+ 
+ 	/* Access-list must exist before entries. */
+ 	if (yang_dnode_exists(running_config->dnode, xpath) == false)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	/* Use access-list data structure to fetch sequence. */
+ 	dnode = yang_dnode_get(running_config->dnode, xpath);
+@@ -992,7 +992,7 @@ DEFPY_YANG(
+ 		sseq = acl_zebra_get_seq(acl, action, (struct prefix *)prefix,
+ 					 false);
+ 	if (sseq == -1)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	snprintfrr(xpath_entry, sizeof(xpath_entry),
+ 		   "%s/entry[sequence='%" PRId64 "']", xpath, sseq);
+@@ -1277,7 +1277,7 @@ static int plist_remove(struct vty *vty,
+ 
+ 	/* Access-list must exist before entries. */
+ 	if (yang_dnode_exists(running_config->dnode, xpath) == false)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	/* Use access-list data structure to fetch sequence. */
+ 	assert(action != NULL);
+@@ -1290,7 +1290,7 @@ static int plist_remove(struct vty *vty,
+ 	pl = nb_running_get_entry(dnode, NULL, true);
+ 	pentry = prefix_list_entry_lookup(pl, p, plt, -1, le, ge);
+ 	if (pentry == NULL)
+-		return CMD_WARNING;
++		return CMD_WARNING_CONFIG_FAILED;
+ 
+ 	snprintfrr(xpath_entry, sizeof(xpath_entry),
+ 		   "%s/entry[sequence='%" PRId64 "']", xpath, pentry->seq);
+diff -urpN frr/lib/log.c frr.new/lib/log.c
+--- frr/lib/log.c	2021-01-27 21:24:28.887988037 +0700
++++ frr.new/lib/log.c	2021-03-29 19:34:17.924708135 +0700
+@@ -179,6 +179,9 @@ void zlog_backtrace_sigsafe(int priority
+ 	unw_word_t ip, off, sp;
+ 	Dl_info dlinfo;
+ 
++	memset(&uc, 0, sizeof(uc));
++	memset(&cursor, 0, sizeof(cursor));
++
+ 	unw_getcontext(&uc);
+ 	unw_init_local(&cursor, &uc);
+ 	while (unw_step(&cursor) > 0) {
+diff -urpN frr/lib/nexthop.c frr.new/lib/nexthop.c
+--- frr/lib/nexthop.c	2021-01-27 21:24:28.887988037 +0700
++++ frr.new/lib/nexthop.c	2021-03-29 19:34:17.924708135 +0700
+@@ -776,6 +776,16 @@ static ssize_t printfrr_nh(char *buf, si
+ 	const char *s, *v_is = "", *v_via = "", *v_viaif = "via ";
+ 	ssize_t ret = 3;
+ 
++	/* NULL-check */
++	if (nexthop == NULL) {
++		if (fmt[2] == 'v' && fmt[3] == 'v')
++			ret++;
++
++		strlcpy(buf, "NULL", bsz);
++
++		return ret;
++	}
++
+ 	switch (fmt[2]) {
+ 	case 'v':
+ 		if (fmt[3] == 'v') {
+diff -urpN frr/lib/northbound.c frr.new/lib/northbound.c
+--- frr/lib/northbound.c	2021-01-27 21:24:28.887988037 +0700
++++ frr.new/lib/northbound.c	2021-03-29 19:34:17.924708135 +0700
+@@ -182,6 +182,25 @@ struct nb_node *nb_node_find(const char
+ 	return snode->priv;
+ }
+ 
++void nb_node_set_dependency_cbs(const char *dependency_xpath,
++				const char *dependant_xpath,
++				struct nb_dependency_callbacks *cbs)
++{
++	struct nb_node *dependency = nb_node_find(dependency_xpath);
++	struct nb_node *dependant = nb_node_find(dependant_xpath);
++
++	if (!dependency || !dependant)
++		return;
++
++	dependency->dep_cbs.get_dependant_xpath = cbs->get_dependant_xpath;
++	dependant->dep_cbs.get_dependency_xpath = cbs->get_dependency_xpath;
++}
++
++bool nb_node_has_dependency(struct nb_node *node)
++{
++	return node->dep_cbs.get_dependency_xpath != NULL;
++}
++
+ static int nb_node_validate_cb(const struct nb_node *nb_node,
+ 			       enum nb_operation operation,
+ 			       int callback_implemented, bool optional)
+@@ -527,8 +546,9 @@ int nb_candidate_edit(struct nb_config *
+ 		      const struct yang_data *previous,
+ 		      const struct yang_data *data)
+ {
+-	struct lyd_node *dnode;
++	struct lyd_node *dnode, *dep_dnode;
+ 	char xpath_edit[XPATH_MAXLEN];
++	char dep_xpath[XPATH_MAXLEN];
+ 
+ 	/* Use special notation for leaf-lists (RFC 6020, section 9.13.5). */
+ 	if (nb_node->snode->nodetype == LYS_LEAFLIST)
+@@ -544,9 +564,33 @@ int nb_candidate_edit(struct nb_config *
+ 		dnode = lyd_new_path(candidate->dnode, ly_native_ctx,
+ 				     xpath_edit, (void *)data->value, 0,
+ 				     LYD_PATH_OPT_UPDATE);
+-		if (!dnode && ly_errno) {
+-			flog_warn(EC_LIB_LIBYANG, "%s: lyd_new_path() failed",
+-				  __func__);
++		if (dnode) {
++			/*
++			 * create dependency
++			 *
++			 * dnode returned by the lyd_new_path may be from a
++			 * different schema, so we need to update the nb_node
++			 */
++			nb_node = dnode->schema->priv;
++			if (nb_node->dep_cbs.get_dependency_xpath) {
++				nb_node->dep_cbs.get_dependency_xpath(
++					dnode, dep_xpath);
++
++				ly_errno = 0;
++				dep_dnode = lyd_new_path(candidate->dnode,
++							 ly_native_ctx,
++							 dep_xpath, NULL, 0,
++							 LYD_PATH_OPT_UPDATE);
++				if (!dep_dnode && ly_errno) {
++					flog_warn(EC_LIB_LIBYANG,
++						  "%s: lyd_new_path(%s) failed",
++						  __func__, dep_xpath);
++					return NB_ERR;
++				}
++			}
++		} else if (ly_errno) {
++			flog_warn(EC_LIB_LIBYANG, "%s: lyd_new_path(%s) failed",
++				  __func__, xpath_edit);
+ 			return NB_ERR;
+ 		}
+ 		break;
+@@ -558,6 +602,14 @@ int nb_candidate_edit(struct nb_config *
+ 			 * whether to ignore it or not.
+ 			 */
+ 			return NB_ERR_NOT_FOUND;
++		/* destroy dependant */
++		if (nb_node->dep_cbs.get_dependant_xpath) {
++			nb_node->dep_cbs.get_dependant_xpath(dnode, dep_xpath);
++
++			dep_dnode = yang_dnode_get(candidate->dnode, dep_xpath);
++			if (dep_dnode)
++				lyd_free(dep_dnode);
++		}
+ 		lyd_free(dnode);
+ 		break;
+ 	case NB_OP_MOVE:
+@@ -1757,6 +1809,16 @@ int nb_oper_data_iterate(const char *xpa
+ 
+ 		/* Find the list entry pointer. */
+ 		nn = dn->schema->priv;
++		if (!nn->cbs.lookup_entry) {
++			flog_warn(
++				EC_LIB_NB_OPERATIONAL_DATA,
++				"%s: data path doesn't support iteration over operational data: %s",
++				__func__, xpath);
++			list_delete(&list_dnodes);
++			yang_dnode_free(dnode);
++			return NB_ERR;
++		}
++
+ 		list_entry =
+ 			nb_callback_lookup_entry(nn, list_entry, &list_keys);
+ 		if (list_entry == NULL) {
+diff -urpN frr/lib/northbound.h frr.new/lib/northbound.h
+--- frr/lib/northbound.h	2021-01-27 21:24:28.887988037 +0700
++++ frr.new/lib/northbound.h	2021-03-29 19:34:17.924708135 +0700
+@@ -503,6 +503,11 @@ struct nb_callbacks {
+ 	void (*cli_show_end)(struct vty *vty, struct lyd_node *dnode);
+ };
+ 
++struct nb_dependency_callbacks {
++	void (*get_dependant_xpath)(const struct lyd_node *dnode, char *xpath);
++	void (*get_dependency_xpath)(const struct lyd_node *dnode, char *xpath);
++};
++
+ /*
+  * Northbound-specific data that is allocated for each schema node of the native
+  * YANG modules.
+@@ -517,6 +522,8 @@ struct nb_node {
+ 	/* Priority - lower priorities are processed first. */
+ 	uint32_t priority;
+ 
++	struct nb_dependency_callbacks dep_cbs;
++
+ 	/* Callbacks implemented for this node. */
+ 	struct nb_callbacks cbs;
+ 
+@@ -712,6 +719,12 @@ void nb_nodes_delete(void);
+  */
+ extern struct nb_node *nb_node_find(const char *xpath);
+ 
++extern void nb_node_set_dependency_cbs(const char *dependency_xpath,
++				       const char *dependant_xpath,
++				       struct nb_dependency_callbacks *cbs);
++
++bool nb_node_has_dependency(struct nb_node *node);
++
+ /*
+  * Create a new northbound configuration.
+  *
+diff -urpN frr/lib/northbound_cli.c frr.new/lib/northbound_cli.c
+--- frr/lib/northbound_cli.c	2021-01-27 21:24:28.887988037 +0700
++++ frr.new/lib/northbound_cli.c	2021-03-29 19:34:17.924708135 +0700
+@@ -595,7 +595,19 @@ void nb_cli_show_dnode_cmds(struct vty *
+ 				(*nb_node->cbs.cli_show_end)(vty, parent);
+ 		}
+ 
++		/*
++		 * There is a possible path in this macro that ends up
++		 * dereferencing child->parent->parent. We just null checked
++		 * child->parent by checking (ly_iter_next_up(child) != NULL)
++		 * above.
++		 *
++		 * I am not sure whether it is possible for the other
++		 * conditions within this macro guarding the problem
++		 * dereference to be satisfied when child->parent == NULL.
++		 */
++#ifndef __clang_analyzer__
+ 		LY_TREE_DFS_END(root, next, child);
++#endif
+ 	}
+ }
+ 
+diff -urpN frr/lib/plist.c frr.new/lib/plist.c
+--- frr/lib/plist.c	2021-01-27 21:24:28.887988037 +0700
++++ frr.new/lib/plist.c	2021-03-29 19:34:17.924708135 +0700
+@@ -684,6 +684,7 @@ void prefix_list_entry_update_start(stru
+ 	if (pl->head || pl->tail || pl->desc)
+ 		pl->master->recent = pl;
+ 
++	ple->next_best = NULL;
+ 	ple->installed = false;
+ }
+ 
+diff -urpN frr/lib/routing_nb.h frr.new/lib/routing_nb.h
+--- frr/lib/routing_nb.h	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/lib/routing_nb.h	2021-03-29 19:34:17.924708135 +0700
+@@ -15,10 +15,17 @@ int routing_control_plane_protocols_cont
+ #define FRR_ROUTING_KEY_XPATH                                                  \
+ 	"/frr-routing:routing/control-plane-protocols/"                        \
+ 	"control-plane-protocol[type='%s'][name='%s'][vrf='%s']"
++
++#define FRR_ROUTING_KEY_XPATH_VRF                                              \
++	"/frr-routing:routing/control-plane-protocols/"                        \
++	"control-plane-protocol[vrf='%s']"
++
+ /*
+  * callbacks for routing to handle configuration events
+  * based on the control plane protocol
+  */
+ DECLARE_HOOK(routing_conf_event, (struct nb_cb_create_args *args), (args))
+ 
++void routing_control_plane_protocols_register_vrf_dependency(void);
++
+ #endif /* _FRR_ROUTING_NB_H_ */
+diff -urpN frr/lib/routing_nb_config.c frr.new/lib/routing_nb_config.c
+--- frr/lib/routing_nb_config.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/lib/routing_nb_config.c	2021-03-29 19:34:17.924708135 +0700
+@@ -45,15 +45,21 @@ int routing_control_plane_protocols_cont
+ 	case NB_EV_ABORT:
+ 		break;
+ 	case NB_EV_APPLY:
+-		vrfname = yang_dnode_get_string(args->dnode, "./vrf");
+-		vrf = vrf_lookup_by_name(vrfname);
+-		vrf = vrf ? vrf : vrf_get(VRF_UNKNOWN, vrfname);
+-		if (!vrf) {
+-			flog_warn(EC_LIB_NB_CB_CONFIG_APPLY,
+-				  "vrf creation %s failed", vrfname);
+-			return NB_ERR;
++		/*
++		 * If the daemon relies on the VRF pointer stored in this
++		 * dnode, then it should register the dependency between this
++		 * module and the VRF module using
++		 * routing_control_plane_protocols_register_vrf_dependency.
++		 * If such dependency is not registered, then nothing is
++		 * stored in the dnode. If the dependency is registered,
++		 * find the vrf and store the pointer.
++		 */
++		if (nb_node_has_dependency(args->dnode->schema->priv)) {
++			vrfname = yang_dnode_get_string(args->dnode, "./vrf");
++			vrf = vrf_lookup_by_name(vrfname);
++			assert(vrf);
++			nb_running_set_entry(args->dnode, vrf);
+ 		}
+-		nb_running_set_entry(args->dnode, vrf);
+ 		break;
+ 	};
+ 
+@@ -63,12 +69,45 @@ int routing_control_plane_protocols_cont
+ int routing_control_plane_protocols_control_plane_protocol_destroy(
+ 	struct nb_cb_destroy_args *args)
+ {
+-	struct vrf *vrf __attribute__((unused));
+-
+ 	if (args->event != NB_EV_APPLY)
+ 		return NB_OK;
+ 
+-	vrf = nb_running_unset_entry(args->dnode);
++	/*
++	 * If dependency on VRF module is registered, then VRF
++	 * pointer was stored and must be cleared.
++	 */
++	if (nb_node_has_dependency(args->dnode->schema->priv))
++		nb_running_unset_entry(args->dnode);
+ 
+ 	return NB_OK;
+ }
++
++static void vrf_to_control_plane_protocol(const struct lyd_node *dnode,
++					  char *xpath)
++{
++	const char *vrf;
++
++	vrf = yang_dnode_get_string(dnode, "./name");
++
++	snprintf(xpath, XPATH_MAXLEN, FRR_ROUTING_KEY_XPATH_VRF, vrf);
++}
++
++static void control_plane_protocol_to_vrf(const struct lyd_node *dnode,
++					  char *xpath)
++{
++	const char *vrf;
++
++	vrf = yang_dnode_get_string(dnode, "./vrf");
++
++	snprintf(xpath, XPATH_MAXLEN, FRR_VRF_KEY_XPATH, vrf);
++}
++
++void routing_control_plane_protocols_register_vrf_dependency(void)
++{
++	struct nb_dependency_callbacks cbs;
++
++	cbs.get_dependant_xpath = vrf_to_control_plane_protocol;
++	cbs.get_dependency_xpath = control_plane_protocol_to_vrf;
++
++	nb_node_set_dependency_cbs(FRR_VRF_XPATH, FRR_ROUTING_XPATH, &cbs);
++}
+diff -urpN frr/lib/sigevent.c frr.new/lib/sigevent.c
+--- frr/lib/sigevent.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/lib/sigevent.c	2021-03-29 19:34:17.924708135 +0700
+@@ -63,6 +63,33 @@ static void quagga_signal_handler(int si
+ 	sigmaster.caught = 1;
+ }
+ 
++/*
++ * Check whether any signals have been received and are pending. This is done
++ * with the application's key signals blocked. The complete set of signals
++ * is returned in 'setp', so the caller can restore them when appropriate.
++ * If there are pending signals, returns 'true', 'false' otherwise.
++ */
++bool frr_sigevent_check(sigset_t *setp)
++{
++	sigset_t blocked;
++	int i;
++	bool ret;
++
++	sigemptyset(setp);
++	sigemptyset(&blocked);
++
++	/* Set up mask of application's signals */
++	for (i = 0; i < sigmaster.sigc; i++)
++		sigaddset(&blocked, sigmaster.signals[i].signal);
++
++	pthread_sigmask(SIG_BLOCK, &blocked, setp);
++
++	/* Now that the application's signals are blocked, test. */
++	ret = (sigmaster.caught != 0);
++
++	return ret;
++}
++
+ /* check if signals have been caught and run appropriate handlers */
+ int quagga_sigevent_process(void)
+ {
+diff -urpN frr/lib/sigevent.h frr.new/lib/sigevent.h
+--- frr/lib/sigevent.h	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/lib/sigevent.h	2021-03-29 19:34:17.924708135 +0700
+@@ -48,6 +48,15 @@ struct quagga_signal_t {
+ extern void signal_init(struct thread_master *m, int sigc,
+ 			struct quagga_signal_t *signals);
+ 
++
++/*
++ * Check whether any signals have been received and are pending. This is done
++ * with the application's key signals blocked. The complete set of signals
++ * is returned in 'setp', so the caller can restore them when appropriate.
++ * If there are pending signals, returns 'true', 'false' otherwise.
++ */
++bool frr_sigevent_check(sigset_t *setp);
++
+ /* check whether there are signals to handle, process any found */
+ extern int quagga_sigevent_process(void);
+ 
+diff -urpN frr/lib/thread.c frr.new/lib/thread.c
+--- frr/lib/thread.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/lib/thread.c	2021-03-29 19:34:17.924708135 +0700
+@@ -723,9 +723,13 @@ static void thread_free(struct thread_ma
+ 	XFREE(MTYPE_THREAD, thread);
+ }
+ 
+-static int fd_poll(struct thread_master *m, struct pollfd *pfds, nfds_t pfdsize,
+-		   nfds_t count, const struct timeval *timer_wait)
++static int fd_poll(struct thread_master *m, const struct timeval *timer_wait,
++		   bool *eintr_p)
+ {
++	sigset_t origsigs;
++	unsigned char trash[64];
++	nfds_t count = m->handler.copycount;
++
+ 	/*
+ 	 * If timer_wait is null here, that means poll() should block
+ 	 * indefinitely, unless the thread_master has overridden it by setting
+@@ -756,15 +760,58 @@ static int fd_poll(struct thread_master
+ 	rcu_assert_read_unlocked();
+ 
+ 	/* add poll pipe poker */
+-	assert(count + 1 < pfdsize);
+-	pfds[count].fd = m->io_pipe[0];
+-	pfds[count].events = POLLIN;
+-	pfds[count].revents = 0x00;
++	assert(count + 1 < m->handler.pfdsize);
++	m->handler.copy[count].fd = m->io_pipe[0];
++	m->handler.copy[count].events = POLLIN;
++	m->handler.copy[count].revents = 0x00;
++
++	/* We need to deal with a signal-handling race here: we
++	 * don't want to miss a crucial signal, such as SIGTERM or SIGINT,
++	 * that may arrive just before we enter poll(). We will block the
++	 * key signals, then check whether any have arrived - if so, we return
++	 * before calling poll(). If not, we'll re-enable the signals
++	 * in the ppoll() call.
++	 */
++
++	sigemptyset(&origsigs);
++	if (m->handle_signals) {
++		/* Main pthread that handles the app signals */
++		if (frr_sigevent_check(&origsigs)) {
++			/* Signal to process - restore signal mask and return */
++			pthread_sigmask(SIG_SETMASK, &origsigs, NULL);
++			num = -1;
++			*eintr_p = true;
++			goto done;
++		}
++	} else {
++		/* Don't make any changes for the non-main pthreads */
++		pthread_sigmask(SIG_SETMASK, NULL, &origsigs);
++	}
+ 
+-	num = poll(pfds, count + 1, timeout);
++#if defined(HAVE_PPOLL)
++	struct timespec ts, *tsp;
+ 
+-	unsigned char trash[64];
+-	if (num > 0 && pfds[count].revents != 0 && num--)
++	if (timeout >= 0) {
++		ts.tv_sec = timeout / 1000;
++		ts.tv_nsec = (timeout % 1000) * 1000000;
++		tsp = &ts;
++	} else
++		tsp = NULL;
++
++	num = ppoll(m->handler.copy, count + 1, tsp, &origsigs);
++	pthread_sigmask(SIG_SETMASK, &origsigs, NULL);
++#else
++	/* Not ideal - there is a race after we restore the signal mask */
++	pthread_sigmask(SIG_SETMASK, &origsigs, NULL);
++	num = poll(m->handler.copy, count + 1, timeout);
++#endif
++
++done:
++
++	if (num < 0 && errno == EINTR)
++		*eintr_p = true;
++
++	if (num > 0 && m->handler.copy[count].revents != 0 && num--)
+ 		while (read(m->io_pipe[0], &trash, sizeof(trash)) > 0)
+ 			;
+ 
+@@ -1391,7 +1438,7 @@ struct thread *thread_fetch(struct threa
+ 	struct timeval zerotime = {0, 0};
+ 	struct timeval tv;
+ 	struct timeval *tw = NULL;
+-
++	bool eintr_p = false;
+ 	int num = 0;
+ 
+ 	do {
+@@ -1463,14 +1510,14 @@ struct thread *thread_fetch(struct threa
+ 
+ 		pthread_mutex_unlock(&m->mtx);
+ 		{
+-			num = fd_poll(m, m->handler.copy, m->handler.pfdsize,
+-				      m->handler.copycount, tw);
++			eintr_p = false;
++			num = fd_poll(m, tw, &eintr_p);
+ 		}
+ 		pthread_mutex_lock(&m->mtx);
+ 
+ 		/* Handle any errors received in poll() */
+ 		if (num < 0) {
+-			if (errno == EINTR) {
++			if (eintr_p) {
+ 				pthread_mutex_unlock(&m->mtx);
+ 				/* loop around to signal handler */
+ 				continue;
+@@ -1656,3 +1703,49 @@ void funcname_thread_execute(struct thre
+ 	/* Give back or free thread. */
+ 	thread_add_unuse(m, thread);
+ }
++
++/* Debug signal mask - if 'sigs' is NULL, use current effective mask. */
++void debug_signals(const sigset_t *sigs)
++{
++	int i, found;
++	sigset_t tmpsigs;
++	char buf[300];
++
++	/*
++	 * We're only looking at the non-realtime signals here, so we need
++	 * some limit value. Platform differences mean at some point we just
++	 * need to pick a reasonable value.
++	 */
++#if defined SIGRTMIN
++#  define LAST_SIGNAL SIGRTMIN
++#else
++#  define LAST_SIGNAL 32
++#endif
++
++
++	if (sigs == NULL) {
++		sigemptyset(&tmpsigs);
++		pthread_sigmask(SIG_BLOCK, NULL, &tmpsigs);
++		sigs = &tmpsigs;
++	}
++
++	found = 0;
++	buf[0] = '\0';
++
++	for (i = 0; i < LAST_SIGNAL; i++) {
++		char tmp[20];
++
++		if (sigismember(sigs, i) > 0) {
++			if (found > 0)
++				strlcat(buf, ",", sizeof(buf));
++			snprintf(tmp, sizeof(tmp), "%d", i);
++			strlcat(buf, tmp, sizeof(buf));
++			found++;
++		}
++	}
++
++	if (found == 0)
++		snprintf(buf, sizeof(buf), "<none>");
++
++	zlog_debug("%s: %s", __func__, buf);
++}
+diff -urpN frr/lib/thread.h frr.new/lib/thread.h
+--- frr/lib/thread.h	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/lib/thread.h	2021-03-29 19:34:17.924708135 +0700
+@@ -233,6 +233,9 @@ extern pthread_key_t thread_current;
+ extern char *thread_timer_to_hhmmss(char *buf, int buf_size,
+ 		struct thread *t_timer);
+ 
++/* Debug signal mask */
++void debug_signals(const sigset_t *sigs);
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff -urpN frr/lib/vrf.c frr.new/lib/vrf.c
+--- frr/lib/vrf.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/lib/vrf.c	2021-03-29 19:34:17.924708135 +0700
+@@ -639,8 +639,8 @@ int vrf_handler_create(struct vty *vty,
+ 	}
+ 
+ 	if (vty) {
+-		snprintf(xpath_list, sizeof(xpath_list),
+-			 "/frr-vrf:lib/vrf[name='%s']", vrfname);
++		snprintf(xpath_list, sizeof(xpath_list), FRR_VRF_KEY_XPATH,
++			 vrfname);
+ 
+ 		nb_cli_enqueue_change(vty, xpath_list, NB_OP_CREATE, NULL);
+ 		ret = nb_cli_apply_changes(vty, xpath_list);
+@@ -774,8 +774,7 @@ DEFUN_YANG (no_vrf,
+ 		return CMD_WARNING_CONFIG_FAILED;
+ 	}
+ 
+-	snprintf(xpath_list, sizeof(xpath_list), "/frr-vrf:lib/vrf[name='%s']",
+-		 vrfname);
++	snprintf(xpath_list, sizeof(xpath_list), FRR_VRF_KEY_XPATH, vrfname);
+ 
+ 	nb_cli_enqueue_change(vty, xpath_list, NB_OP_DESTROY, NULL);
+ 	return nb_cli_apply_changes(vty, xpath_list);
+@@ -1064,6 +1063,7 @@ static int lib_vrf_create(struct nb_cb_c
+ 
+ 	vrfp = vrf_get(VRF_UNKNOWN, vrfname);
+ 
++	vrf_set_user_cfged(vrfp);
+ 	nb_running_set_entry(args->dnode, vrfp);
+ 
+ 	return NB_OK;
+@@ -1089,7 +1089,7 @@ static int lib_vrf_destroy(struct nb_cb_
+ 		vrfp = nb_running_unset_entry(args->dnode);
+ 
+ 		/* Clear configured flag and invoke delete. */
+-		UNSET_FLAG(vrfp->status, VRF_CONFIGURED);
++		vrf_reset_user_cfged(vrfp);
+ 		vrf_delete(vrfp);
+ 		break;
+ 	}
+diff -urpN frr/lib/vrf.h frr.new/lib/vrf.h
+--- frr/lib/vrf.h	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/lib/vrf.h	2021-03-29 19:34:17.924708135 +0700
+@@ -52,6 +52,9 @@ enum { IFLA_VRF_UNSPEC, IFLA_VRF_TABLE,
+ #define VRF_ALL_CMD_HELP_STR    "Specify the VRF\nAll VRFs\n"
+ #define VRF_FULL_CMD_HELP_STR   "Specify the VRF\nThe VRF name\nAll VRFs\n"
+ 
++#define FRR_VRF_XPATH "/frr-vrf:lib/vrf"
++#define FRR_VRF_KEY_XPATH "/frr-vrf:lib/vrf[name='%s']"
++
+ /*
+  * Pass some OS specific data up through
+  * to the daemons
+diff -urpN frr/nhrpd/nhrp_route.c frr.new/nhrpd/nhrp_route.c
+--- frr/nhrpd/nhrp_route.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/nhrpd/nhrp_route.c	2021-03-29 19:34:17.924708135 +0700
+@@ -99,6 +99,7 @@ void nhrp_route_announce(int add, enum n
+ {
+ 	struct zapi_route api;
+ 	struct zapi_nexthop *api_nh;
++	union sockunion *nexthop_ref = (union sockunion *)nexthop;
+ 
+ 	if (zclient->sock < 0)
+ 		return;
+@@ -134,8 +135,14 @@ void nhrp_route_announce(int add, enum n
+ 
+ 	switch (api.prefix.family) {
+ 	case AF_INET:
+-		if (nexthop) {
+-			api_nh->gate.ipv4 = nexthop->sin.sin_addr;
++		if (api.prefix.prefixlen == IPV4_MAX_BITLEN &&
++		    nexthop_ref &&
++		    memcmp(&nexthop_ref->sin.sin_addr, &api.prefix.u.prefix4,
++			   sizeof(struct in_addr)) == 0) {
++			nexthop_ref = NULL;
++		}
++		if (nexthop_ref) {
++			api_nh->gate.ipv4 = nexthop_ref->sin.sin_addr;
+ 			api_nh->type = NEXTHOP_TYPE_IPV4;
+ 		}
+ 		if (ifp) {
+@@ -147,8 +154,14 @@ void nhrp_route_announce(int add, enum n
+ 		}
+ 		break;
+ 	case AF_INET6:
+-		if (nexthop) {
+-			api_nh->gate.ipv6 = nexthop->sin6.sin6_addr;
++		if (api.prefix.prefixlen == IPV6_MAX_BITLEN &&
++		    nexthop_ref &&
++		    memcmp(&nexthop_ref->sin6.sin6_addr, &api.prefix.u.prefix6,
++			   sizeof(struct in6_addr)) == 0) {
++			nexthop_ref = NULL;
++		}
++		if (nexthop_ref) {
++			api_nh->gate.ipv6 = nexthop_ref->sin6.sin6_addr;
+ 			api_nh->type = NEXTHOP_TYPE_IPV6;
+ 		}
+ 		if (ifp) {
+@@ -172,9 +185,10 @@ void nhrp_route_announce(int add, enum n
+ 		zlog_debug(
+ 			"Zebra send: route %s %s nexthop %s metric %u count %d dev %s",
+ 			add ? "add" : "del", buf[0],
+-			nexthop ? inet_ntop(api.prefix.family, &api_nh->gate,
+-					    buf[1], sizeof(buf[1]))
+-				: "<onlink>",
++			nexthop_ref ? inet_ntop(api.prefix.family,
++						&api_nh->gate,
++						buf[1], sizeof(buf[1]))
++			: "<onlink>",
+ 			api.metric, api.nexthop_num, ifp ? ifp->name : "none");
+ 	}
+ 
+diff -urpN frr/nhrpd/nhrp_shortcut.c frr.new/nhrpd/nhrp_shortcut.c
+--- frr/nhrpd/nhrp_shortcut.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/nhrpd/nhrp_shortcut.c	2021-03-29 19:34:17.924708135 +0700
+@@ -54,20 +54,26 @@ static void nhrp_shortcut_cache_notify(s
+ 				       unsigned long cmd)
+ {
+ 	char buf[PREFIX_STRLEN];
++	char buf2[PREFIX_STRLEN];
+ 
+ 	struct nhrp_shortcut *s =
+ 		container_of(n, struct nhrp_shortcut, cache_notifier);
++	struct nhrp_cache *c = s->cache;
+ 
++	if (c)
++		sockunion2str(&c->remote_addr, buf2, sizeof(buf2));
++	else
++		snprintf(buf2, sizeof(buf2), "(unspec)");
+ 	switch (cmd) {
+ 	case NOTIFY_CACHE_UP:
+ 		if (!s->route_installed) {
+ 			debugf(NHRP_DEBUG_ROUTE,
+-			       "Shortcut: route install %s nh (unspec) dev %s",
+-			       prefix2str(s->p, buf, sizeof(buf)),
+-			       s->cache->ifp->name);
++			       "Shortcut: route install %s nh %s dev %s",
++			       prefix2str(s->p, buf, sizeof(buf)), buf2,
++			       c && c->ifp ? c->ifp->name : "<unk>");
+ 
+-			nhrp_route_announce(1, s->type, s->p, s->cache->ifp,
+-					    NULL, 0);
++			nhrp_route_announce(1, s->type, s->p, c ? c->ifp : NULL,
++					    c ? &c->remote_addr : NULL, 0);
+ 			s->route_installed = 1;
+ 		}
+ 		break;
+diff -urpN frr/ospf6d/ospf6_abr.c frr.new/ospf6d/ospf6_abr.c
+--- frr/ospf6d/ospf6_abr.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/ospf6d/ospf6_abr.c	2021-03-29 19:34:17.924708135 +0700
+@@ -793,6 +793,10 @@ void ospf6_abr_old_route_remove(struct o
+ 				struct ospf6_route *old,
+ 				struct ospf6_route_table *table)
+ {
++	if (IS_OSPF6_DEBUG_ABR)
++		zlog_debug("%s: route %pFX, paths %d", __func__, &old->prefix,
++			   listcount(old->paths));
++
+ 	if (listcount(old->paths) > 1) {
+ 		struct listnode *anode, *anext, *nnode, *rnode, *rnext;
+ 		struct ospf6_path *o_path;
+@@ -802,13 +806,15 @@ void ospf6_abr_old_route_remove(struct o
+ 
+ 		for (ALL_LIST_ELEMENTS(old->paths, anode, anext, o_path)) {
+ 			if (o_path->origin.adv_router != lsa->header->adv_router
+-			    && o_path->origin.id != lsa->header->id)
++			    || o_path->origin.id != lsa->header->id)
+ 				continue;
+ 			for (ALL_LIST_ELEMENTS_RO(o_path->nh_list, nnode, nh)) {
+ 				for (ALL_LIST_ELEMENTS(old->nh_list,
+ 							rnode, rnext, rnh)) {
+ 					if (!ospf6_nexthop_is_same(rnh, nh))
+ 						continue;
++					if (IS_OSPF6_DEBUG_ABR)
++						zlog_debug("deleted nexthop");
+ 					listnode_delete(old->nh_list, rnh);
+ 					ospf6_nexthop_delete(rnh);
+ 				}
+@@ -875,14 +881,16 @@ void ospf6_abr_examin_summary(struct osp
+ 	bool old_entry_updated = false;
+ 	struct ospf6_path *path, *o_path, *ecmp_path;
+ 	struct listnode *anode;
++	bool add_route = false;
+ 
+ 	memset(&prefix, 0, sizeof(prefix));
+ 
+ 	if (lsa->header->type == htons(OSPF6_LSTYPE_INTER_PREFIX)) {
+ 		if (IS_OSPF6_DEBUG_EXAMIN(INTER_PREFIX)) {
+ 			is_debug++;
+-			zlog_debug("%s: Examin %s in area %s", __func__,
+-				   lsa->name, oa->name);
++			zlog_debug("%s: LSA %s age %d in area %s", __func__,
++				   lsa->name, ospf6_lsa_age_current(lsa),
++				   oa->name);
+ 		}
+ 
+ 		prefix_lsa =
+@@ -901,8 +909,9 @@ void ospf6_abr_examin_summary(struct osp
+ 	} else if (lsa->header->type == htons(OSPF6_LSTYPE_INTER_ROUTER)) {
+ 		if (IS_OSPF6_DEBUG_EXAMIN(INTER_ROUTER)) {
+ 			is_debug++;
+-			zlog_debug("%s: Examin %s in area %s", __func__,
+-				   lsa->name, oa->name);
++			zlog_debug("%s: LSA %s age %d in area %s", __func__,
++				   lsa->name, ospf6_lsa_age_current(lsa),
++				   oa->name);
+ 		}
+ 
+ 		router_lsa =
+@@ -926,8 +935,12 @@ void ospf6_abr_examin_summary(struct osp
+ 
+ 	/* Find existing route */
+ 	route = ospf6_route_lookup(&prefix, table);
+-	if (route)
++	if (route) {
+ 		ospf6_route_lock(route);
++		if (is_debug)
++			zlog_debug("%s: route %pFX, paths %d", __func__,
++				   &prefix, listcount(route->paths));
++	}
+ 	while (route && ospf6_route_is_prefix(&prefix, route)) {
+ 		if (route->path.area_id == oa->area_id
+ 		    && route->path.origin.type == lsa->header->type
+@@ -980,6 +993,7 @@ void ospf6_abr_examin_summary(struct osp
+ 		return;
+ 	}
+ 
++
+ 	/* (2) if the LSA is self-originated, ignore */
+ 	if (lsa->header->adv_router == oa->ospf6->router_id) {
+ 		if (is_debug)
+@@ -1054,8 +1068,8 @@ void ospf6_abr_examin_summary(struct osp
+ 	    || !CHECK_FLAG(abr_entry->path.router_bits, OSPF6_ROUTER_BIT_B)) {
+ 		if (is_debug)
+ 			zlog_debug(
+-				"%s: ABR router entry does not exist, ignore",
+-				__func__);
++				"%s: ABR router entry %pFX does not exist, ignore",
++				__func__, &abr_prefix);
+ 		if (old) {
+ 			if (old->type == OSPF6_DEST_TYPE_ROUTER &&
+ 			    oa->intra_brouter_calc) {
+@@ -1068,7 +1082,7 @@ void ospf6_abr_examin_summary(struct osp
+ 					zlog_debug(
+ 						"%s: remove old entry: %s %p ",
+ 						__func__, buf, (void *)old);
+-				ospf6_route_remove(old, table);
++				ospf6_abr_old_route_remove(lsa, old, table);
+ 			}
+ 		}
+ 		return;
+@@ -1132,7 +1146,11 @@ void ospf6_abr_examin_summary(struct osp
+ 	   are identical.
+ 	*/
+ 	old = ospf6_route_lookup(&prefix, table);
+-
++	if (old) {
++		if (is_debug)
++			zlog_debug("%s: found old route %pFX, paths %d",
++				   __func__, &prefix, listcount(old->paths));
++	}
+ 	for (old_route = old; old_route; old_route = old_route->next) {
+ 		if (!ospf6_route_is_same(old_route, route) ||
+ 			(old_route->type != route->type) ||
+@@ -1216,7 +1234,7 @@ void ospf6_abr_examin_summary(struct osp
+ 				"%s: Update route: %s %p old cost %u new cost %u nh %u",
+ 				__func__, buf, (void *)old_route,
+ 				old_route->path.cost, route->path.cost,
+-				listcount(route->nh_list));
++				listcount(old_route->nh_list));
+ 
+ 		/* For Inter-Prefix route: Update RIB/FIB,
+ 		 * For Inter-Router trigger summary update
+@@ -1229,10 +1247,19 @@ void ospf6_abr_examin_summary(struct osp
+ 		break;
+ 	}
+ 
++	/* If the old entry is not updated and old entry not found or old entry
++	 * does not match with the new entry then add the new route
++	 */
+ 	if (old_entry_updated == false) {
++		if ((old == NULL) || (old->type != route->type)
++		    || (old->path.type != route->path.type))
++			add_route = true;
++	}
++
++	if (add_route) {
+ 		if (is_debug) {
+ 			zlog_debug(
+-				"%s: Install route: %s cost %u nh %u adv_router %pI4",
++				"%s: Install new route: %s cost %u nh %u adv_router %pI4",
+ 				__func__, buf, route->path.cost,
+ 				listcount(route->nh_list),
+ 				&route->path.origin.adv_router);
+diff -urpN frr/ospf6d/ospf6_asbr.c frr.new/ospf6d/ospf6_asbr.c
+--- frr/ospf6d/ospf6_asbr.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/ospf6d/ospf6_asbr.c	2021-03-29 19:34:17.924708135 +0700
+@@ -206,7 +206,7 @@ static route_tag_t ospf6_as_external_lsa
+ void ospf6_asbr_update_route_ecmp_path(struct ospf6_route *old,
+ 				       struct ospf6_route *route)
+ {
+-	struct ospf6_route *old_route;
++	struct ospf6_route *old_route, *next_route;
+ 	struct ospf6_path *ecmp_path, *o_path = NULL;
+ 	struct listnode *anode, *anext;
+ 	struct listnode *nnode, *rnode, *rnext;
+@@ -217,9 +217,11 @@ void ospf6_asbr_update_route_ecmp_path(s
+ 	/* check for old entry match with new route origin,
+ 	 * delete old entry.
+ 	 */
+-	for (old_route = old; old_route; old_route = old_route->next) {
++	for (old_route = old; old_route; old_route = next_route) {
+ 		bool route_updated = false;
+ 
++		next_route = old_route->next;
++
+ 		if (!ospf6_route_is_same(old_route, route)
+ 		    || (old_route->path.type != route->path.type))
+ 			continue;
+@@ -312,6 +314,8 @@ void ospf6_asbr_update_route_ecmp_path(s
+ 						old_route->path.cost,
+ 						route->path.cost);
+ 				}
++				if (old == old_route)
++					old = next_route;
+ 				ospf6_route_remove(old_route,
+ 						   ospf6->route_table);
+ 			}
+diff -urpN frr/ospf6d/ospf6_interface.c frr.new/ospf6d/ospf6_interface.c
+--- frr/ospf6d/ospf6_interface.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/ospf6d/ospf6_interface.c	2021-03-29 19:34:17.924708135 +0700
+@@ -248,6 +248,7 @@ void ospf6_interface_delete(struct ospf6
+ 	THREAD_OFF(oi->thread_send_lsupdate);
+ 	THREAD_OFF(oi->thread_send_lsack);
+ 	THREAD_OFF(oi->thread_sso);
++	THREAD_OFF(oi->thread_wait_timer);
+ 
+ 	ospf6_lsdb_remove_all(oi->lsdb);
+ 	ospf6_lsdb_remove_all(oi->lsupdate_list);
+@@ -302,6 +303,7 @@ void ospf6_interface_disable(struct ospf
+ 	THREAD_OFF(oi->thread_link_lsa);
+ 	THREAD_OFF(oi->thread_intra_prefix_lsa);
+ 	THREAD_OFF(oi->thread_as_extern_lsa);
++	THREAD_OFF(oi->thread_wait_timer);
+ }
+ 
+ static struct in6_addr *
+@@ -785,7 +787,7 @@ int interface_up(struct thread *thread)
+ 	else {
+ 		ospf6_interface_state_change(OSPF6_INTERFACE_WAITING, oi);
+ 		thread_add_timer(master, wait_timer, oi, oi->dead_interval,
+-				 NULL);
++				 &oi->thread_wait_timer);
+ 	}
+ 
+ 	return 0;
+@@ -1154,6 +1156,12 @@ DEFUN (show_ipv6_ospf6_interface_ifname_
+ 		return CMD_WARNING;
+ 	}
+ 
++	if (CHECK_FLAG(oi->flag, OSPF6_INTERFACE_DISABLE)) {
++		vty_out(vty, "Interface %s not attached to area\n",
++			argv[idx_ifname]->arg);
++		return CMD_WARNING;
++	}
++
+ 	ospf6_route_table_show(vty, idx_prefix, argc, argv,
+ 			       oi->route_connected);
+ 
+@@ -1185,7 +1193,7 @@ DEFUN (show_ipv6_ospf6_interface_prefix,
+ 
+ 	FOR_ALL_INTERFACES (vrf, ifp) {
+ 		oi = (struct ospf6_interface *)ifp->info;
+-		if (oi == NULL)
++		if (oi == NULL || CHECK_FLAG(oi->flag, OSPF6_INTERFACE_DISABLE))
+ 			continue;
+ 
+ 		ospf6_route_table_show(vty, idx_prefix, argc, argv,
+@@ -1325,12 +1333,11 @@ DEFUN (ipv6_ospf6_cost,
+ 		return CMD_WARNING_CONFIG_FAILED;
+ 	}
+ 
++	SET_FLAG(oi->flag, OSPF6_INTERFACE_NOAUTOCOST);
+ 	if (oi->cost == lcost)
+ 		return CMD_SUCCESS;
+ 
+ 	oi->cost = lcost;
+-	SET_FLAG(oi->flag, OSPF6_INTERFACE_NOAUTOCOST);
+-
+ 	ospf6_interface_force_recalculate_cost(oi);
+ 
+ 	return CMD_SUCCESS;
+@@ -1679,8 +1686,11 @@ DEFUN (no_ipv6_ospf6_passive,
+ 	UNSET_FLAG(oi->flag, OSPF6_INTERFACE_PASSIVE);
+ 	THREAD_OFF(oi->thread_send_hello);
+ 	THREAD_OFF(oi->thread_sso);
+-	thread_add_event(master, ospf6_hello_send, oi, 0,
+-			 &oi->thread_send_hello);
++
++	/* don't send hellos over loopback interface */
++	if (!if_is_loopback(oi->interface))
++		thread_add_event(master, ospf6_hello_send, oi, 0,
++				 &oi->thread_send_hello);
+ 
+ 	return CMD_SUCCESS;
+ }
+diff -urpN frr/ospf6d/ospf6_interface.h frr.new/ospf6d/ospf6_interface.h
+--- frr/ospf6d/ospf6_interface.h	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/ospf6d/ospf6_interface.h	2021-03-29 19:34:17.924708135 +0700
+@@ -111,6 +111,7 @@ struct ospf6_interface {
+ 	struct thread *thread_link_lsa;
+ 	struct thread *thread_intra_prefix_lsa;
+ 	struct thread *thread_as_extern_lsa;
++	struct thread *thread_wait_timer;
+ 
+ 	struct ospf6_route_table *route_connected;
+ 
+diff -urpN frr/ospf6d/ospf6_intra.c frr.new/ospf6d/ospf6_intra.c
+--- frr/ospf6d/ospf6_intra.c	2021-01-27 21:24:28.897987899 +0700
++++ frr.new/ospf6d/ospf6_intra.c	2021-03-29 19:34:17.924708135 +0700
+@@ -76,7 +76,8 @@ static char *ospf6_router_lsa_get_nbr_id
+ 				  *)(start
+ 				     + pos * (sizeof(struct
+ 						     ospf6_router_lsdesc)));
+-		if ((char *)lsdesc < end) {
++		if ((char *)lsdesc + sizeof(struct ospf6_router_lsdesc)
++		    <= end) {
+ 			if (buf && (buflen > INET_ADDRSTRLEN * 2)) {
+ 				inet_ntop(AF_INET,
+ 					  &lsdesc->neighbor_interface_id, buf1,
+@@ -84,12 +85,13 @@ static char *ospf6_router_lsa_get_nbr_id
+ 				inet_ntop(AF_INET, &lsdesc->neighbor_router_id,
+ 					  buf2, sizeof(buf2));
+ 				sprintf(buf, "%s/%s", buf2, buf1);
++
++				return buf;
+ 			}
+-		} else
+-			return NULL;
++		}
+ 	}
+ 
+-	return buf;
++	return NULL;
+ }
+ 
+ static int ospf6_router_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
+@@ -411,14 +413,15 @@ static char *ospf6_network_lsa_get_ar_id
+ 
+ 		if ((current + sizeof(struct ospf6_network_lsdesc)) <= end) {
+ 			lsdesc = (struct ospf6_network_lsdesc *)current;
+-			if (buf)
++			if (buf) {
+ 				inet_ntop(AF_INET, &lsdesc->router_id, buf,
+ 					  buflen);
+-		} else
+-			return NULL;
++				return buf;
++			}
++		}
+ 	}
+ 
+-	return (buf);
++	return NULL;
+ }
+ 
+ static int ospf6_network_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
+@@ -602,7 +605,7 @@ static char *ospf6_link_lsa_get_prefix_s
+ 		end = (char *)lsa->header + ntohs(lsa->header->length);
+ 		current = start;
+ 
+-		do {
++		while (current + sizeof(struct ospf6_prefix) <= end) {
+ 			prefix = (struct ospf6_prefix *)current;
+ 			if (prefix->prefix_length == 0
+ 			    || current + OSPF6_PREFIX_SIZE(prefix) > end) {
+@@ -620,7 +623,7 @@ static char *ospf6_link_lsa_get_prefix_s
+ 				inet_ntop(AF_INET6, &in6, buf, buflen);
+ 				return (buf);
+ 			}
+-		} while (current <= end);
++		}
+ 	}
+ 	return NULL;
+ }
+@@ -803,7 +806,7 @@ static char *ospf6_intra_prefix_lsa_get_
+ 		end = (char *)lsa->header + ntohs(lsa->header->length);
+ 		current = start;
+ 
+-		do {
++		while (current + sizeof(struct ospf6_prefix) <= end) {
+ 			prefix = (struct ospf6_prefix *)current;
+ 			if (prefix->prefix_length == 0
+ 			    || current + OSPF6_PREFIX_SIZE(prefix) > end) {
+@@ -823,9 +826,9 @@ static char *ospf6_intra_prefix_lsa_get_
+ 					prefix->prefix_length);
+ 				return (buf);
+ 			}
+-		} while (current <= end);
++		}
+ 	}
+-	return (buf);
++	return NULL;
+ }
+ 
+ static int ospf6_intra_prefix_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
+@@ -1344,6 +1347,8 @@ static void ospf6_intra_prefix_update_ro
+ 			g_route->path.origin.id = h_path->origin.id;
+ 			g_route->path.origin.adv_router =
+ 				h_path->origin.adv_router;
++			if (nroute)
++				ospf6_route_unlock(nroute);
+ 			break;
+ 		}
+ 	}
+diff -urpN frr/ospf6d/ospf6_top.c frr.new/ospf6d/ospf6_top.c
+--- frr/ospf6d/ospf6_top.c	2021-01-27 21:24:28.907987760 +0700
++++ frr.new/ospf6d/ospf6_top.c	2021-03-29 19:34:17.924708135 +0700
+@@ -735,7 +735,8 @@ DEFUN (no_ospf6_interface_area,
+ 
+ 	/* Verify Area */
+ 	if (oi->area == NULL) {
+-		vty_out(vty, "No such Area-ID: %s\n", argv[idx_ipv4]->arg);
++		vty_out(vty, "%s not attached to area %s\n",
++			oi->interface->name, oi->area->name);
+ 		return CMD_SUCCESS;
+ 	}
+ 
+@@ -756,7 +757,6 @@ DEFUN (no_ospf6_interface_area,
+ 		UNSET_FLAG(oa->flag, OSPF6_AREA_ENABLE);
+ 		ospf6_abr_disable_area(oa);
+ 	}
+-	ospf6_interface_delete(oi);
+ 
+ 	return CMD_SUCCESS;
+ }
+diff -urpN frr/ospfd/ospf_bfd.c frr.new/ospfd/ospf_bfd.c
+--- frr/ospfd/ospf_bfd.c	2021-01-27 21:24:28.907987760 +0700
++++ frr.new/ospfd/ospf_bfd.c	2021-03-29 19:34:17.924708135 +0700
+@@ -205,14 +205,14 @@ static int ospf_bfd_interface_dest_updat
+ 	struct ospf_neighbor *nbr = NULL;
+ 	struct route_node *node;
+ 	struct route_node *n_node;
+-	struct prefix p;
++	struct prefix p, src_p;
+ 	int status;
+ 	int old_status;
+ 	struct bfd_info *bfd_info;
+ 	struct timeval tv;
+ 
+-	ifp = bfd_get_peer_info(zclient->ibuf, &p, NULL, &status,
+-				NULL, vrf_id);
++	ifp = bfd_get_peer_info(zclient->ibuf, &p, &src_p, &status, NULL,
++				vrf_id);
+ 
+ 	if ((ifp == NULL) || (p.family != AF_INET))
+ 		return 0;
+diff -urpN frr/ospfd/ospf_packet.c frr.new/ospfd/ospf_packet.c
+--- frr/ospfd/ospf_packet.c	2021-01-27 21:24:28.907987760 +0700
++++ frr.new/ospfd/ospf_packet.c	2021-03-29 19:34:17.924708135 +0700
+@@ -2981,6 +2981,16 @@ static enum ospf_read_return_enum ospf_r
+ 		}
+ 	}
+ 
++	if (ospf->vrf_id == VRF_DEFAULT && ospf->vrf_id != ifp->vrf_id) {
++		/*
++		 * We may have a situation where l3mdev_accept == 1
++		 * let's just kindly drop the packet and move on.
++		 * ospf really really really does not like when
++		 * we receive the same packet multiple times.
++		 */
++		return OSPF_READ_CONTINUE;
++	}
++
+ 	/* Self-originated packet should be discarded silently. */
+ 	if (ospf_if_lookup_by_local_addr(ospf, NULL, iph->ip_src)) {
+ 		if (IS_DEBUG_OSPF_PACKET(0, RECV)) {
+diff -urpN frr/pimd/pim_bfd.c frr.new/pimd/pim_bfd.c
+--- frr/pimd/pim_bfd.c	2021-01-27 21:24:28.917987627 +0700
++++ frr.new/pimd/pim_bfd.c	2021-03-29 19:34:17.924708135 +0700
+@@ -217,7 +217,7 @@ static int pim_bfd_interface_dest_update
+ {
+ 	struct interface *ifp = NULL;
+ 	struct pim_interface *pim_ifp = NULL;
+-	struct prefix p;
++	struct prefix p, src_p;
+ 	int status;
+ 	char msg[100];
+ 	int old_status;
+@@ -227,8 +227,8 @@ static int pim_bfd_interface_dest_update
+ 	struct listnode *neigh_nextnode = NULL;
+ 	struct pim_neighbor *neigh = NULL;
+ 
+-	ifp = bfd_get_peer_info(zclient->ibuf, &p, NULL, &status,
+-				NULL, vrf_id);
++	ifp = bfd_get_peer_info(zclient->ibuf, &p, &src_p, &status, NULL,
++				vrf_id);
+ 
+ 	if ((ifp == NULL) || (p.family != AF_INET))
+ 		return 0;
+diff -urpN frr/pimd/pim_ifchannel.c frr.new/pimd/pim_ifchannel.c
+--- frr/pimd/pim_ifchannel.c	2021-01-27 21:24:28.917987627 +0700
++++ frr.new/pimd/pim_ifchannel.c	2021-03-29 19:34:17.934708150 +0700
+@@ -710,6 +710,21 @@ static int on_ifjoin_prune_pending_timer
+ 
+ 				pim_jp_agg_single_upstream_send(&parent->rpf,
+ 								parent, true);
++				/*
++				 * SGRpt prune pending expiry has to install
++				 * SG entry with empty olist to drop the SG
++				 * traffic incase no other intf exists.
++				 * On that scenario, SG entry wouldn't have
++				 * got installed until Prune pending timer
++				 * expired. So install now.
++				 */
++				pim_channel_del_oif(
++					ch->upstream->channel_oil, ifp,
++					PIM_OIF_FLAG_PROTO_STAR, __func__);
++				if (!ch->upstream->channel_oil->installed)
++					pim_upstream_mroute_add(
++						ch->upstream->channel_oil,
++						__PRETTY_FUNCTION__);
+ 			}
+ 		}
+ 		/* from here ch may have been deleted */
+@@ -1057,6 +1072,24 @@ void pim_ifchannel_prune(struct interfac
+ 	case PIM_IFJOIN_PRUNE:
+ 		if (source_flags & PIM_ENCODE_RPT_BIT) {
+ 			THREAD_OFF(ch->t_ifjoin_prune_pending_timer);
++			/*
++			 * While in Prune State, Receive SGRpt Prune.
++			 * RFC 7761 Sec 4.5.3:
++			 * The (S,G,rpt) downstream state machine on interface I
++			 * remains in Prune state.  The Expiry Timer (ET) is
++			 * restarted and is then set to the maximum of its
++			 * current value and the HoldTime from the triggering
++			 * Join/Prune message.
++			 */
++			if (ch->t_ifjoin_expiry_timer) {
++				unsigned long rem = thread_timer_remain_second(
++					ch->t_ifjoin_expiry_timer);
++
++				if (rem > holdtime)
++					return;
++				THREAD_OFF(ch->t_ifjoin_expiry_timer);
++			}
++
+ 			thread_add_timer(router->master, on_ifjoin_expiry_timer,
+ 					 ch, holdtime,
+ 					 &ch->t_ifjoin_expiry_timer);
+diff -urpN frr/pimd/pim_instance.c frr.new/pimd/pim_instance.c
+--- frr/pimd/pim_instance.c	2021-01-27 21:24:28.917987627 +0700
++++ frr.new/pimd/pim_instance.c	2021-03-29 19:34:17.934708150 +0700
+@@ -71,6 +71,8 @@ static void pim_instance_terminate(struc
+ 
+ 	XFREE(MTYPE_PIM_PLIST_NAME, pim->spt.plist);
+ 	XFREE(MTYPE_PIM_PLIST_NAME, pim->register_plist);
++
++	pim->vrf = NULL;
+ 	XFREE(MTYPE_PIM_PIM_INSTANCE, pim);
+ }
+ 
+@@ -153,10 +155,16 @@ static int pim_vrf_delete(struct vrf *vr
+ {
+ 	struct pim_instance *pim = vrf->info;
+ 
++	if (!pim)
++		return 0;
++
+ 	zlog_debug("VRF Deletion: %s(%u)", vrf->name, vrf->vrf_id);
+ 
+ 	pim_ssmpingd_destroy(pim);
+ 	pim_instance_terminate(pim);
++
++	vrf->info = NULL;
++
+ 	return 0;
+ }
+ 
+diff -urpN frr/redhat/frr.spec.in frr.new/redhat/frr.spec.in
+--- frr/redhat/frr.spec.in	2021-01-27 21:24:28.927987489 +0700
++++ frr.new/redhat/frr.spec.in	2021-03-29 19:34:17.934708150 +0700
+@@ -758,7 +758,91 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr
+ 
+ 
+ %changelog
+-* Tue Nov 2 2020 Donald Sharp <sharpd@nvidia.com> - 7.5
++* Wed Mar  3 2021 Martin Winter <mwinter@opensourcerouting.org> - 7.5.1
++- BABEL:
++-    Fix connected route leak on change
++- BFD:
++-    Session lookup was sometimes wrong
++-    Memory leak and handling cleanups
++-    In some situations handle vrf appropriately when receiving packets
++- BGP:
++-    Peer Group Inheritance Fixes
++-    Dissallow attempt to peer peers reachable via blackholes
++-    Send BMP down message when reachability fails
++-    Cleanup handling of aggregator data when the AGG AS is 0
++-    Handle `neighbor <peer-group allowas-in` config changes properly
++-    Properly parse community and lcommunity values in some circumstances
++-    Allow peer-groups to configure `ttl-security hops`
++-    Prevent v6 routes with v4 nexthops from being installed
++-    Allow `default-originate` to be cleared from a peer group
++-    Fix evpn route-map vni filter at origin
++-    local routes were using non-default distance
++-    Properly track if the nexthop was updated in some circumstances
++-    Cleanup `show running` when running bgp with `-e X` values
++-    Various Memory leaks in show commands
++-    Properly withdraw exported routes when deleting a VRF
++-    Avoid resetting ebgp-multihop if peer setting is the same as peer-group
++-    Properly encode flowspec rules to zebra in some rare circumstances
++-    Generate statistics for routes in bgp when we have exactly 1 route
++-    Properly apply route-map for the default-originate command
++- EIGRP:
++-    Properly set MTU for eigrp packets sent
++-    Various memory leaks and using uninited data fixes
++- ISIS:
++-    When last area address is removed, resign if we were the DR
++-    Various memory leaks and using uninited data fixes
++- LDP:
++-    Various memory leaks and using uninited data fixes
++- NHRP:
++-    Use onlink routes when prefix == nh
++-    Shortcut routes are installed with proper nexthop
++- OSPF:
++-    Prevent duplicate packet read in multiple vrf situation
++-    Fix area removal at interface level
++-    Restore Point to MultiPoint interface types
++-    Correctly handle MTU change on startup
++-    Multi Instance initialization sometimes was not successful
++-    NSSA translate-always was not working properly
++- OSPFv3:
++-    Don't send hellos on loopback interfaces
++-    Handle ECMP better when a sub-path is removed
++-    Memory leak and handling fixes
++-    Fix Link LSA not updating when router priority is modified
++-    Some output from show commands was wrong
++-    Intra area remote connected prefixes sometimes not installed
++- PBR:
++-    Various memory leaks and using uninited data fixes
++- PIM:
++-    SGRpt prune received during prune didn't override holdtime
++-    Various memory leaks and using uninited data fixes
++- STATIC:
++-    Fix VRF and usage on startup in some instances
++-    Tableid was being mishandled in some cases
++- VTYSH:
++-    Disable bracketed paste in readline.
++- WATCHFRR:
++-    Various memory leaks and using uninited data fixes
++- ZEBRA:
++-    Always install blackhole routes using kernel routes instead of nexthops
++-    Various memory leaks and using uninited data fixes
++-    Dissallow resolution to duplicate nexthops that created infinite nexthops
++-    Apply the route-map delay-timer globally
++-    Some routes were stuck in Queued state when using the FPM
++-    Better handle vrf creation when using namespaces
++-    Set NUD_NOARP on sticky mac entries in addtion to NTF_STICKY
++-    Allow `set src X` to work on startup
++- FRR Library:
++-    Fix a variety of memory leaks
++-    Fix VRF Creation in some instances
++-    RPKI context editing was not properly handled in reload situations
++-    routemap code was not properly handling modification of CLI in some instances
++- SNAPCRAFT:
++-    Update to using rtrlib 0.7.0
++-    Fix passthrough path for Libyang 1.x
++- ALPINE:
++-    Remove old docker deps
++
++* Mon Nov  2 2020 Donald Sharp <sharpd@nvidia.com> - 7.5
+ - BFD
+ - 	Profile support
+ - 	Minimum ttl support
+diff -urpN frr/staticd/static_main.c frr.new/staticd/static_main.c
+--- frr/staticd/static_main.c	2021-01-27 21:24:28.927987489 +0700
++++ frr.new/staticd/static_main.c	2021-03-29 19:34:17.934708150 +0700
+@@ -164,6 +164,8 @@ int main(int argc, char **argv, char **e
+ 	hook_register(routing_conf_event,
+ 		      routing_control_plane_protocols_name_validate);
+ 
++	routing_control_plane_protocols_register_vrf_dependency();
++
+ 	snprintf(backup_config_file, sizeof(backup_config_file),
+ 		 "%s/zebra.conf", frr_sysconfdir);
+ 	staticd_di.backup_config_file = backup_config_file;
+diff -urpN frr/staticd/static_nb_config.c frr.new/staticd/static_nb_config.c
+--- frr/staticd/static_nb_config.c	2021-01-27 21:24:28.927987489 +0700
++++ frr.new/staticd/static_nb_config.c	2021-03-29 19:34:17.934708150 +0700
+@@ -140,7 +140,7 @@ static bool static_nexthop_create(struct
+ 		pn = nb_running_get_entry(args->dnode, NULL, true);
+ 		rn = nb_running_get_entry(rn_dnode, NULL, true);
+ 
+-		if (!static_add_nexthop_validate(info->svrf, nh_type, &ipaddr))
++		if (!static_add_nexthop_validate(nh_vrf, nh_type, &ipaddr))
+ 			flog_warn(
+ 				EC_LIB_NB_CB_CONFIG_VALIDATE,
+ 				"Warning!! Local connected address is configured as Gateway IP((%s))",
+@@ -148,18 +148,6 @@ static bool static_nexthop_create(struct
+ 						      "./gateway"));
+ 		nh = static_add_nexthop(rn, pn, info->safi, info->svrf, nh_type,
+ 					&ipaddr, ifname, nh_vrf, 0);
+-		if (!nh) {
+-			char buf[SRCDEST2STR_BUFFER];
+-
+-			flog_warn(
+-				EC_LIB_NB_CB_CONFIG_APPLY,
+-				"%s : nh [%d:%s:%s:%s] nexthop creation failed",
+-				srcdest_rnode2str(rn, buf, sizeof(buf)),
+-				nh_type, ifname,
+-				yang_dnode_get_string(args->dnode, "./gateway"),
+-				nh_vrf);
+-			return NB_ERR;
+-		}
+ 		nb_running_set_entry(args->dnode, nh);
+ 		break;
+ 	}
+diff -urpN frr/staticd/static_routes.c frr.new/staticd/static_routes.c
+--- frr/staticd/static_routes.c	2021-01-27 21:24:28.927987489 +0700
++++ frr.new/staticd/static_routes.c	2021-03-29 19:34:17.934708150 +0700
+@@ -135,20 +135,26 @@ void static_del_route(struct route_node
+ 		vrf_reset_user_cfged(svrf->vrf);
+ }
+ 
+-bool static_add_nexthop_validate(struct static_vrf *svrf, static_types type,
++bool static_add_nexthop_validate(const char *nh_vrf_name, static_types type,
+ 				 struct ipaddr *ipaddr)
+ {
++	struct vrf *vrf;
++
++	vrf = vrf_lookup_by_name(nh_vrf_name);
++	if (!vrf)
++		return true;
++
+ 	switch (type) {
+ 	case STATIC_IPV4_GATEWAY:
+ 	case STATIC_IPV4_GATEWAY_IFNAME:
+ 		if (if_lookup_exact_address(&ipaddr->ipaddr_v4, AF_INET,
+-					    svrf->vrf->vrf_id))
++					    vrf->vrf_id))
+ 			return false;
+ 		break;
+ 	case STATIC_IPV6_GATEWAY:
+ 	case STATIC_IPV6_GATEWAY_IFNAME:
+ 		if (if_lookup_exact_address(&ipaddr->ipaddr_v6, AF_INET6,
+-					    svrf->vrf->vrf_id))
++					    vrf->vrf_id))
+ 			return false;
+ 		break;
+ 	default:
+@@ -211,10 +217,7 @@ static_add_nexthop(struct route_node *rn
+ 
+ 	route_lock_node(rn);
+ 
+-	nh_svrf = static_vty_get_unknown_vrf(nh_vrf);
+-
+-	if (!nh_svrf)
+-		return NULL;
++	nh_svrf = static_vrf_lookup_by_name(nh_vrf);
+ 
+ 	/* Make new static route structure. */
+ 	nh = XCALLOC(MTYPE_STATIC_NEXTHOP, sizeof(struct static_nexthop));
+@@ -222,8 +225,8 @@ static_add_nexthop(struct route_node *rn
+ 	nh->type = type;
+ 	nh->color = color;
+ 
+-	nh->nh_vrf_id = nh_svrf->vrf->vrf_id;
+-	strlcpy(nh->nh_vrfname, nh_svrf->vrf->name, sizeof(nh->nh_vrfname));
++	nh->nh_vrf_id = nh_svrf ? nh_svrf->vrf->vrf_id : VRF_UNKNOWN;
++	strlcpy(nh->nh_vrfname, nh_vrf, sizeof(nh->nh_vrfname));
+ 
+ 	if (ifname)
+ 		strlcpy(nh->ifname, ifname, sizeof(nh->ifname));
+@@ -258,7 +261,7 @@ static_add_nexthop(struct route_node *rn
+ 	}
+ 	static_nexthop_list_add_after(&(pn->nexthop_list), cp, nh);
+ 
+-	if (nh_svrf->vrf->vrf_id == VRF_UNKNOWN)
++	if (nh->nh_vrf_id == VRF_UNKNOWN)
+ 		return nh;
+ 
+ 	/* check whether interface exists in system & install if it does */
+@@ -268,7 +271,7 @@ static_add_nexthop(struct route_node *rn
+ 		break;
+ 	case STATIC_IPV4_GATEWAY_IFNAME:
+ 	case STATIC_IPV6_GATEWAY_IFNAME:
+-		ifp = if_lookup_by_name(ifname, nh_svrf->vrf->vrf_id);
++		ifp = if_lookup_by_name(ifname, nh->nh_vrf_id);
+ 		if (ifp && ifp->ifindex != IFINDEX_INTERNAL)
+ 			nh->ifindex = ifp->ifindex;
+ 		else
+@@ -281,7 +284,7 @@ static_add_nexthop(struct route_node *rn
+ 		nh->bh_type = STATIC_BLACKHOLE_NULL;
+ 		break;
+ 	case STATIC_IFNAME:
+-		ifp = if_lookup_by_name(ifname, nh_svrf->vrf->vrf_id);
++		ifp = if_lookup_by_name(ifname, nh->nh_vrf_id);
+ 		if (ifp && ifp->ifindex != IFINDEX_INTERNAL) {
+ 			nh->ifindex = ifp->ifindex;
+ 		} else
+@@ -299,15 +302,9 @@ void static_install_nexthop(struct route
+ 			    struct static_vrf *svrf, const char *ifname,
+ 			    static_types type, const char *nh_vrf)
+ {
+-	struct static_vrf *nh_svrf;
+ 	struct interface *ifp;
+ 
+-	nh_svrf = static_vty_get_unknown_vrf(nh_vrf);
+-
+-	if (!nh_svrf)
+-		return;
+-
+-	if (nh_svrf->vrf->vrf_id == VRF_UNKNOWN)
++	if (nh->nh_vrf_id == VRF_UNKNOWN)
+ 		return;
+ 
+ 	/* check whether interface exists in system & install if it does */
+@@ -326,7 +323,7 @@ void static_install_nexthop(struct route
+ 		static_install_path(rn, pn, safi, svrf);
+ 		break;
+ 	case STATIC_IFNAME:
+-		ifp = if_lookup_by_name(ifname, nh_svrf->vrf->vrf_id);
++		ifp = if_lookup_by_name(ifname, nh->nh_vrf_id);
+ 		if (ifp && ifp->ifindex != IFINDEX_INTERNAL)
+ 			static_install_path(rn, pn, safi, svrf);
+ 
+@@ -338,13 +335,9 @@ int static_delete_nexthop(struct route_n
+ 			  safi_t safi, struct static_vrf *svrf,
+ 			  struct static_nexthop *nh)
+ {
+-	struct static_vrf *nh_svrf;
+-
+-	nh_svrf = static_vrf_lookup_by_name(nh->nh_vrfname);
+-
+ 	static_nexthop_list_del(&(pn->nexthop_list), nh);
+ 
+-	if (nh_svrf->vrf->vrf_id == VRF_UNKNOWN)
++	if (nh->nh_vrf_id == VRF_UNKNOWN)
+ 		goto EXIT;
+ 
+ 	static_zebra_nht_register(rn, nh, false);
+@@ -502,6 +495,8 @@ static void static_enable_vrf(struct sta
+ 					else
+ 						continue;
+ 				}
++				if (nh->nh_vrf_id == VRF_UNKNOWN)
++					continue;
+ 				static_install_path(rn, pn, safi, svrf);
+ 			}
+ 		}
+diff -urpN frr/staticd/static_routes.h frr.new/staticd/static_routes.h
+--- frr/staticd/static_routes.h	2021-01-27 21:24:28.927987489 +0700
++++ frr.new/staticd/static_routes.h	2021-03-29 19:34:17.934708150 +0700
+@@ -192,7 +192,7 @@ extern void static_del_path(struct route
+ 			    safi_t safi, struct static_vrf *svrf);
+ 
+ extern void static_get_nh_type(static_types stype, char *type, size_t size);
+-extern bool static_add_nexthop_validate(struct static_vrf *svrf,
++extern bool static_add_nexthop_validate(const char *nh_vrf_name,
+ 					static_types type,
+ 					struct ipaddr *ipaddr);
+ extern struct stable_info *static_get_stable_info(struct route_node *rn);
+diff -urpN frr/staticd/static_vrf.c frr.new/staticd/static_vrf.c
+--- frr/staticd/static_vrf.c	2021-01-27 21:24:28.927987489 +0700
++++ frr.new/staticd/static_vrf.c	2021-03-29 19:34:17.934708150 +0700
+@@ -263,25 +263,3 @@ void static_vrf_terminate(void)
+ {
+ 	vrf_terminate();
+ }
+-
+-struct static_vrf *static_vty_get_unknown_vrf(const char *vrf_name)
+-{
+-	struct static_vrf *svrf;
+-	struct vrf *vrf;
+-
+-	svrf = static_vrf_lookup_by_name(vrf_name);
+-
+-	if (svrf)
+-		return svrf;
+-
+-	vrf = vrf_get(VRF_UNKNOWN, vrf_name);
+-	if (!vrf)
+-		return NULL;
+-	svrf = vrf->info;
+-	if (!svrf)
+-		return NULL;
+-	/* Mark as having FRR configuration */
+-	vrf_set_user_cfged(vrf);
+-
+-	return svrf;
+-}
+diff -urpN frr/staticd/static_vrf.h frr.new/staticd/static_vrf.h
+--- frr/staticd/static_vrf.h	2021-01-27 21:24:28.927987489 +0700
++++ frr.new/staticd/static_vrf.h	2021-03-29 19:34:17.934708150 +0700
+@@ -45,5 +45,4 @@ struct route_table *static_vrf_static_ta
+ 					    struct static_vrf *svrf);
+ extern void static_vrf_terminate(void);
+ 
+-struct static_vrf *static_vty_get_unknown_vrf(const char *vrf_name);
+ #endif
+diff -urpN frr/tools/frr-reload.py frr.new/tools/frr-reload.py
+--- frr/tools/frr-reload.py	2021-01-27 21:24:28.977986798 +0700
++++ frr.new/tools/frr-reload.py	2021-03-29 19:34:17.934708150 +0700
+@@ -573,6 +573,16 @@ end
+                 ctx_keys = []
+                 current_context_lines = []
+ 
++            elif line == "exit" and ctx_keys[0].startswith("rpki"):
++                self.save_contexts(ctx_keys, current_context_lines)
++                log.debug("LINE %-50s: exiting old context, %-50s", line, ctx_keys)
++
++                # Start a new context
++                new_ctx = True
++                main_ctx_key = []
++                ctx_keys = []
++                current_context_lines = []
++
+             elif line == "exit-vrf":
+                 self.save_contexts(ctx_keys, current_context_lines)
+                 current_context_lines.append(line)
+diff -urpN frr/vtysh/vtysh.c frr.new/vtysh/vtysh.c
+--- frr/vtysh/vtysh.c	2021-01-27 21:24:28.977986798 +0700
++++ frr.new/vtysh/vtysh.c	2021-03-29 19:34:17.934708150 +0700
+@@ -3714,10 +3714,16 @@ static char *vtysh_completion_entry_func
+ void vtysh_readline_init(void)
+ {
+ 	/* readline related settings. */
++	char *disable_bracketed_paste =
++		XSTRDUP(MTYPE_TMP, "set enable-bracketed-paste off");
++
+ 	rl_initialize();
++	rl_parse_and_bind(disable_bracketed_paste);
+ 	rl_bind_key('?', (rl_command_func_t *)vtysh_rl_describe);
+ 	rl_completion_entry_function = vtysh_completion_entry_function;
+ 	rl_attempted_completion_function = new_completion;
++
++	XFREE(MTYPE_TMP, disable_bracketed_paste);
+ }
+ 
+ char *vtysh_prompt(void)
+diff -urpN frr/watchfrr/watchfrr.c frr.new/watchfrr/watchfrr.c
+--- frr/watchfrr/watchfrr.c	2021-01-27 21:24:28.987986659 +0700
++++ frr.new/watchfrr/watchfrr.c	2021-03-29 19:34:17.934708150 +0700
+@@ -1082,6 +1082,9 @@ static int valid_command(const char *cmd
+ {
+ 	char *p;
+ 
++	if (cmd == NULL)
++		return 0;
++
+ 	return ((p = strchr(cmd, '%')) != NULL) && (*(p + 1) == 's')
+ 	       && !strchr(p + 1, '%');
+ }
+@@ -1416,7 +1419,7 @@ int main(int argc, char **argv)
+ 		} break;
+ 		case OPTION_NETNS:
+ 			netns_en = true;
+-			if (strchr(optarg, '/')) {
++			if (optarg && strchr(optarg, '/')) {
+ 				fprintf(stderr,
+ 					"invalid network namespace name \"%s\" (may not contain slashes)\n",
+ 					optarg);
+diff -urpN frr/yang/frr-bfdd.yang frr.new/yang/frr-bfdd.yang
+--- frr/yang/frr-bfdd.yang	2021-01-27 21:24:28.987986659 +0700
++++ frr.new/yang/frr-bfdd.yang	2021-03-29 19:34:17.934708150 +0700
+@@ -182,7 +182,7 @@ module frr-bfdd {
+ 
+     leaf administrative-down {
+       type boolean;
+-      default true;
++      default false;
+       description "Disables or enables the session administratively";
+     }
+ 
+diff -urpN frr/zebra/kernel_netlink.c frr.new/zebra/kernel_netlink.c
+--- frr/zebra/kernel_netlink.c	2021-01-27 21:24:28.987986659 +0700
++++ frr.new/zebra/kernel_netlink.c	2021-03-29 19:34:17.934708150 +0700
+@@ -383,7 +383,7 @@ static int netlink_information_fetch(str
+ 		 * it to be sent up to us
+ 		 */
+ 		flog_err(EC_ZEBRA_UNKNOWN_NLMSG,
+-			 "Unknown netlink nlmsg_type %s(%d) vrf %u\n",
++			 "Unknown netlink nlmsg_type %s(%d) vrf %u",
+ 			 nl_msg_type_to_str(h->nlmsg_type), h->nlmsg_type,
+ 			 ns_id);
+ 		break;
+@@ -485,7 +485,7 @@ static void netlink_install_filter(int s
+ 
+ 	if (setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, &prog, sizeof(prog))
+ 	    < 0)
+-		flog_err_sys(EC_LIB_SOCKET, "Can't install socket filter: %s\n",
++		flog_err_sys(EC_LIB_SOCKET, "Can't install socket filter: %s",
+ 			     safe_strerror(errno));
+ }
+ 
+@@ -1115,9 +1115,11 @@ static int nl_batch_read_resp(struct nl_
+ 		 * associated with any dplane context object.
+ 		 */
+ 		if (ctx == NULL) {
+-			zlog_debug(
+-				"%s: skipping unassociated response, seq number %d NS %u",
+-				__func__, h->nlmsg_seq, bth->zns->ns_id);
++			if (IS_ZEBRA_DEBUG_KERNEL)
++				zlog_debug(
++					"%s: skipping unassociated response, seq number %d NS %u",
++					__func__, h->nlmsg_seq,
++					bth->zns->ns_id);
+ 			continue;
+ 		}
+ 
+@@ -1128,8 +1130,9 @@ static int nl_batch_read_resp(struct nl_
+ 				dplane_ctx_set_status(
+ 					ctx, ZEBRA_DPLANE_REQUEST_FAILURE);
+ 
+-			zlog_debug("%s: netlink error message seq=%d ",
+-				   __func__, h->nlmsg_seq);
++			if (IS_ZEBRA_DEBUG_KERNEL)
++				zlog_debug("%s: netlink error message seq=%d",
++					   __func__, h->nlmsg_seq);
+ 			continue;
+ 		}
+ 
+@@ -1138,9 +1141,11 @@ static int nl_batch_read_resp(struct nl_
+ 		 * the error and instead received some other message in an
+ 		 * unexpected way.
+ 		 */
+-		zlog_debug("%s: ignoring message type 0x%04x(%s) NS %u",
+-			   __func__, h->nlmsg_type,
+-			   nl_msg_type_to_str(h->nlmsg_type), bth->zns->ns_id);
++		if (IS_ZEBRA_DEBUG_KERNEL)
++			zlog_debug("%s: ignoring message type 0x%04x(%s) NS %u",
++				   __func__, h->nlmsg_type,
++				   nl_msg_type_to_str(h->nlmsg_type),
++				   bth->zns->ns_id);
+ 	}
+ 
+ 	return 0;
+@@ -1501,7 +1506,7 @@ void kernel_init(struct zebra_ns *zns)
+ 
+ void kernel_terminate(struct zebra_ns *zns, bool complete)
+ {
+-	THREAD_READ_OFF(zns->t_netlink);
++	THREAD_OFF(zns->t_netlink);
+ 
+ 	if (zns->netlink.sock >= 0) {
+ 		close(zns->netlink.sock);
+diff -urpN frr/zebra/rt_netlink.c frr.new/zebra/rt_netlink.c
+--- frr/zebra/rt_netlink.c	2021-01-27 21:24:28.987986659 +0700
++++ frr.new/zebra/rt_netlink.c	2021-03-29 19:34:17.934708150 +0700
+@@ -268,8 +268,8 @@ static inline int proto2zebra(int proto,
+ 		proto = ZEBRA_ROUTE_BGP;
+ 		break;
+ 	case RTPROT_OSPF:
+-		proto = (family == AFI_IP) ? ZEBRA_ROUTE_OSPF
+-					   : ZEBRA_ROUTE_OSPF6;
++		proto = (family == AF_INET) ? ZEBRA_ROUTE_OSPF
++					    : ZEBRA_ROUTE_OSPF6;
+ 		break;
+ 	case RTPROT_ISIS:
+ 		proto = ZEBRA_ROUTE_ISIS;
+@@ -1743,6 +1743,33 @@ ssize_t netlink_route_multipath_msg_enco
+ 		nl_attr_nest_end(&req->n, nest);
+ 	}
+ 
++	/*
++	 * Always install blackhole routes without using nexthops, because of
++	 * the following kernel problems:
++	 * 1. Kernel nexthops don't suport unreachable/prohibit route types.
++	 * 2. Blackhole kernel nexthops are deleted when loopback is down.
++	 */
++	nexthop = dplane_ctx_get_ng(ctx)->nexthop;
++	if (nexthop) {
++		if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_RECURSIVE))
++			nexthop = nexthop->resolved;
++
++		if (nexthop->type == NEXTHOP_TYPE_BLACKHOLE) {
++			switch (nexthop->bh_type) {
++			case BLACKHOLE_ADMINPROHIB:
++				req->r.rtm_type = RTN_PROHIBIT;
++				break;
++			case BLACKHOLE_REJECT:
++				req->r.rtm_type = RTN_UNREACHABLE;
++				break;
++			default:
++				req->r.rtm_type = RTN_BLACKHOLE;
++				break;
++			}
++			return NLMSG_ALIGN(req->n.nlmsg_len);
++		}
++	}
++
+ 	if ((!fpm && kernel_nexthops_supported()) || (fpm && force_nhg)) {
+ 		/* Kernel supports nexthop objects */
+ 		if (IS_ZEBRA_DEBUG_KERNEL)
+@@ -1793,27 +1820,6 @@ ssize_t netlink_route_multipath_msg_enco
+ 	if (nexthop_num == 1) {
+ 		nexthop_num = 0;
+ 		for (ALL_NEXTHOPS_PTR(dplane_ctx_get_ng(ctx), nexthop)) {
+-			/*
+-			 * So we want to cover 2 types of blackhole
+-			 * routes here:
+-			 * 1) A normal blackhole route( ala from a static
+-			 *    install.
+-			 * 2) A recursively resolved blackhole route
+-			 */
+-			if (nexthop->type == NEXTHOP_TYPE_BLACKHOLE) {
+-				switch (nexthop->bh_type) {
+-				case BLACKHOLE_ADMINPROHIB:
+-					req->r.rtm_type = RTN_PROHIBIT;
+-					break;
+-				case BLACKHOLE_REJECT:
+-					req->r.rtm_type = RTN_UNREACHABLE;
+-					break;
+-				default:
+-					req->r.rtm_type = RTN_BLACKHOLE;
+-					break;
+-				}
+-				return NLMSG_ALIGN(req->n.nlmsg_len);
+-			}
+ 			if (CHECK_FLAG(nexthop->flags,
+ 				       NEXTHOP_FLAG_RECURSIVE)) {
+ 
+diff -urpN frr/zebra/zapi_msg.c frr.new/zebra/zapi_msg.c
+--- frr/zebra/zapi_msg.c	2021-01-27 21:24:28.987986659 +0700
++++ frr.new/zebra/zapi_msg.c	2021-03-29 19:34:17.934708150 +0700
+@@ -102,6 +102,7 @@ static void zserv_encode_vrf(struct stre
+ 	struct vrf_data data;
+ 	const char *netns_name = zvrf_ns_name(zvrf);
+ 
++	memset(&data, 0, sizeof(data));
+ 	data.l.table_id = zvrf->table_id;
+ 
+ 	if (netns_name)
+diff -urpN frr/zebra/zebra_nb.h frr.new/zebra/zebra_nb.h
+--- frr/zebra/zebra_nb.h	2021-01-27 21:24:28.997986526 +0700
++++ frr.new/zebra/zebra_nb.h	2021-03-29 19:34:17.934708150 +0700
+@@ -201,19 +201,6 @@ lib_vrf_zebra_ribs_rib_route_nexthop_gro
+ 	struct nb_cb_get_next_args *args);
+ int lib_vrf_zebra_ribs_rib_route_nexthop_group_frr_nexthops_nexthop_get_keys(
+ 	struct nb_cb_get_keys_args *args);
+-int lib_vrf_zebra_ribs_rib_create(struct nb_cb_create_args *args);
+-int lib_vrf_zebra_ribs_rib_destroy(struct nb_cb_destroy_args *args);
+-const void *lib_vrf_zebra_ribs_rib_get_next(struct nb_cb_get_next_args *args);
+-int lib_vrf_zebra_ribs_rib_get_keys(struct nb_cb_get_keys_args *args);
+-const void *
+-lib_vrf_zebra_ribs_rib_lookup_entry(struct nb_cb_lookup_entry_args *args);
+-const void *
+-lib_vrf_zebra_ribs_rib_route_get_next(struct nb_cb_get_next_args *args);
+-int lib_vrf_zebra_ribs_rib_route_get_keys(struct nb_cb_get_keys_args *args);
+-const void *
+-lib_vrf_zebra_ribs_rib_route_lookup_entry(struct nb_cb_lookup_entry_args *args);
+-struct yang_data *
+-lib_vrf_zebra_ribs_rib_route_prefix_get_elem(struct nb_cb_get_elem_args *args);
+ const void *lib_vrf_zebra_ribs_rib_route_route_entry_get_next(
+ 	struct nb_cb_get_next_args *args);
+ int lib_vrf_zebra_ribs_rib_route_route_entry_get_keys(
+diff -urpN frr/zebra/zebra_nhg.c frr.new/zebra/zebra_nhg.c
+--- frr/zebra/zebra_nhg.c	2021-01-27 21:24:28.997986526 +0700
++++ frr.new/zebra/zebra_nhg.c	2021-03-29 19:34:17.934708150 +0700
+@@ -1754,6 +1754,10 @@ static bool nexthop_valid_resolve(const
+ 	if (!CHECK_FLAG(resolved->flags, NEXTHOP_FLAG_ACTIVE))
+ 		return false;
+ 
++	/* Must not be duplicate */
++	if (CHECK_FLAG(resolved->flags, NEXTHOP_FLAG_DUPLICATE))
++		return false;
++
+ 	switch (nexthop->type) {
+ 	case NEXTHOP_TYPE_IPV4_IFINDEX:
+ 	case NEXTHOP_TYPE_IPV6_IFINDEX:
+diff -urpN frr/zebra/zebra_vty.c frr.new/zebra/zebra_vty.c
+--- frr/zebra/zebra_vty.c	2021-01-27 21:24:28.997986526 +0700
++++ frr.new/zebra/zebra_vty.c	2021-03-29 19:34:17.934708150 +0700
+@@ -2376,10 +2376,8 @@ DEFUN (default_vrf_vni_mapping,
+        "VNI-ID\n"
+        "Prefix routes only \n")
+ {
+-	int ret = 0;
+-	char err[ERR_STR_SZ];
++	char xpath[XPATH_MAXLEN];
+ 	struct zebra_vrf *zvrf = NULL;
+-	vni_t vni = strtoul(argv[1]->arg, NULL, 10);
+ 	int filter = 0;
+ 
+ 	zvrf = vrf_info_lookup(VRF_DEFAULT);
+@@ -2389,25 +2387,35 @@ DEFUN (default_vrf_vni_mapping,
+ 	if (argc == 3)
+ 		filter = 1;
+ 
+-	ret = zebra_vxlan_process_vrf_vni_cmd(zvrf, vni, err, ERR_STR_SZ,
+-					      filter, 1);
+-	if (ret != 0) {
+-		vty_out(vty, "%s\n", err);
+-		return CMD_WARNING;
++	snprintf(xpath, sizeof(xpath), FRR_VRF_KEY_XPATH "/frr-zebra:zebra",
++		 VRF_DEFAULT_NAME);
++	nb_cli_enqueue_change(vty, xpath, NB_OP_CREATE, NULL);
++
++	snprintf(xpath, sizeof(xpath),
++		 FRR_VRF_KEY_XPATH "/frr-zebra:zebra/l3vni-id",
++		 VRF_DEFAULT_NAME);
++	nb_cli_enqueue_change(vty, xpath, NB_OP_MODIFY, argv[1]->arg);
++
++	if (filter) {
++		snprintf(xpath, sizeof(xpath),
++			 FRR_VRF_KEY_XPATH "/frr-zebra:zebra/prefix-only",
++			 VRF_DEFAULT_NAME);
++		nb_cli_enqueue_change(vty, xpath, NB_OP_MODIFY, "true");
+ 	}
+ 
+-	return CMD_SUCCESS;
++	return nb_cli_apply_changes(vty, NULL);
+ }
+ 
+ DEFUN (no_default_vrf_vni_mapping,
+        no_default_vrf_vni_mapping_cmd,
+-       "no vni " CMD_VNI_RANGE,
++       "no vni " CMD_VNI_RANGE "[prefix-routes-only]",
+        NO_STR
+        "VNI corresponding to DEFAULT VRF\n"
+-       "VNI-ID")
++       "VNI-ID\n"
++       "Prefix routes only \n")
+ {
+-	int ret = 0;
+-	char err[ERR_STR_SZ];
++	char xpath[XPATH_MAXLEN];
++	int filter = 0;
+ 	vni_t vni = strtoul(argv[2]->arg, NULL, 10);
+ 	struct zebra_vrf *zvrf = NULL;
+ 
+@@ -2415,13 +2423,32 @@ DEFUN (no_default_vrf_vni_mapping,
+ 	if (!zvrf)
+ 		return CMD_WARNING;
+ 
+-	ret = zebra_vxlan_process_vrf_vni_cmd(zvrf, vni, err, ERR_STR_SZ, 0, 0);
+-	if (ret != 0) {
+-		vty_out(vty, "%s\n", err);
++	if (argc == 4)
++		filter = 1;
++
++	if (zvrf->l3vni != vni) {
++		vty_out(vty, "VNI %d doesn't exist in VRF: %s \n", vni,
++			zvrf->vrf->name);
+ 		return CMD_WARNING;
+ 	}
+ 
+-	return CMD_SUCCESS;
++	snprintf(xpath, sizeof(xpath),
++		 FRR_VRF_KEY_XPATH "/frr-zebra:zebra/l3vni-id",
++		 VRF_DEFAULT_NAME);
++	nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, argv[2]->arg);
++
++	if (filter) {
++		snprintf(xpath, sizeof(xpath),
++			 FRR_VRF_KEY_XPATH "/frr-zebra:zebra/prefix-only",
++			 VRF_DEFAULT_NAME);
++		nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, "true");
++	}
++
++	snprintf(xpath, sizeof(xpath), FRR_VRF_KEY_XPATH "/frr-zebra:zebra",
++		 VRF_DEFAULT_NAME);
++	nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, NULL);
++
++	return nb_cli_apply_changes(vty, NULL);
+ }
+ 
+ DEFUN (vrf_vni_mapping,
+@@ -2449,9 +2476,7 @@ DEFUN (vrf_vni_mapping,
+ 		nb_cli_enqueue_change(vty, "./frr-zebra:zebra/prefix-only",
+ 				      NB_OP_MODIFY, "true");
+ 
+-	nb_cli_apply_changes(vty, NULL);
+-
+-	return CMD_SUCCESS;
++	return nb_cli_apply_changes(vty, NULL);
+ }
+ 
+ DEFUN (no_vrf_vni_mapping,
+@@ -2488,9 +2513,7 @@ DEFUN (no_vrf_vni_mapping,
+ 
+ 	nb_cli_enqueue_change(vty, "./frr-zebra:zebra", NB_OP_DESTROY, NULL);
+ 
+-	nb_cli_apply_changes(vty, NULL);
+-
+-	return CMD_SUCCESS;
++	return nb_cli_apply_changes(vty, NULL);
+ }
+ 
+ /* show vrf */
