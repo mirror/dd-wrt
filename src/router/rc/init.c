@@ -498,6 +498,9 @@ int main(int argc, char **argv)
 			dd_loginfo("init", "boot still failed after reset. hopeless. do not alter count anymore\n");
 		if (failcnt == 5) {
 			dd_loginfo("init", "boot failed %d times, do reset and reboot\n", failcnt++);
+			char *ip = nvram_safe_get("lan_ipaddr");
+			char *nm = nvram_safe_get("lan_netmask");
+			char *gw = nvram_safe_get("lan_gateway");
 			nvram_clear();
 			nvram_seti("boot_last_fail", failcnt);
 			nvram_seti("boot_fails", failcnt);
@@ -508,6 +511,12 @@ int main(int argc, char **argv)
 				nvram_set("wl_net_mode", "disabled");
 				nvram_set("wl0_net_mode", "disabled");
 				nvram_set("wl1_net_mode", "disabled");
+
+			}
+			if (nvram_match("boot_fail_keepip", "1")) {
+				nvram_set("lan_ipaddr", ip);
+				nvram_set("lan_netmask", nm);
+				nvram_set("lan_gateway", gw);
 			}
 			nvram_commit();
 			kill(1, SIGTERM);
