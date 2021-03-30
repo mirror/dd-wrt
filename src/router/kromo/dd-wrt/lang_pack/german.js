@@ -1180,6 +1180,7 @@ management.ipv6_dhcp6s_conf="Dhcp6s Konfiguration";
 management.ipv6_tun_end_ipv4="Tunnel Endpunkt IPv4 Addresse";
 management.ipv6_tun_client_addr="Tunnel Client IPv6 Addresse";
 management.ipv6_tun_upd_url="Tunnel Update URL";
+management.bootfail_handling="Bootfehler Behandlung";
 management.bootfail="Reset nach 5 Bootfehlern";
 management.boot_fail_open="Offenes WLAN nach Bootfehler";
 management.boot_fail_keepip="IP nach Bootfehler behalten";
