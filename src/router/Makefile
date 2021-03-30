@@ -454,7 +454,9 @@ endif
 endif
 endif
 ifneq ($(CONFIG_E2FSPROGS),y)
+ifneq ($(CONFIG_MMC),y)
 	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/ext2*
+endif
 endif
 ifeq ($(CONFIG_DIST),"mini")
 	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/cifs*
