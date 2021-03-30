@@ -68,12 +68,14 @@ struct u64_stats_sync {
 };
 
 
+#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
+#define u64_stats_init(syncp)	seqcount_init(&(syncp)->seq)
+#else
 static inline void u64_stats_init(struct u64_stats_sync *syncp)
 {
-#if !defined(CONFIG_ARCH_LONG_LONG_ATOMIC) && BITS_PER_LONG==32 && defined(CONFIG_SMP)
 	seqcount_init(&syncp->seq);
-#endif
 }
+#endif
 
 static inline void u64_stats_update_begin(struct u64_stats_sync *syncp)
 {
