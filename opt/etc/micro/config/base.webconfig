@@ -248,7 +248,7 @@
 			</div>
 		</fieldset><br />
 		<fieldset>
-			<legend><% tran("management.bootfail"); %></legend>
+			<legend><% tran("management.bootfail_handling"); %></legend>
 			<div class="setting">
 				<div class="label"><% tran("management.bootfail"); %></div>
 				<input class="spaceradio" type="radio" name="no_bootfails" value="0" <% nvram_checked("no_bootfails", "0"); %> /><% tran("share.enable"); %>&nbsp;
