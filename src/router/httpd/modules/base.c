@@ -1815,7 +1815,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (nvram_matchi("info_passwd", 0))
+	if(nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1823,7 +1823,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (!wp->isregistered)
+	if(!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -2117,7 +2117,8 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 	int i, llen;
 	char *buffer;
 	char querybuffer[64];
-
+	if (!url)
+		return;		// unlikely
 	char *query = strchr(url, '?');
 
 	if (query == NULL || *(query) == 0)
@@ -2144,9 +2145,16 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 		return;
 
 	/* eat first two lines */
+	if (feof(in))
+		return;
 	fgets(line, sizeof(line) - 1, in);
+	if (feof(in))
+		return;
 	fgets(line, sizeof(line) - 1, in);
-	while (fgets(line, sizeof(line) - 1, in) != NULL) {
+	if (feof(in))
+		return;
+	memset(line, 0, sizeof(line));
+	while (!feof(in) && (fgets(line, sizeof(line) - 1, in) != NULL)) {
 		if (!strstr(line, "mon.") && strstr(line, querybuffer)) {
 			llen = strlen(line);
 			if (llen) {
@@ -2157,6 +2165,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 			}
 			break;
 		}
+		memset(line, 0, sizeof(line));
 	}
 	fclose(in);
 
