@@ -20,3 +20,6 @@
  * $Id:
  */
 #include "sysinit-fonera.c"
+void start_devinit_arch(void)
+{
+}

@@ -20,3 +20,6 @@
  * $Id:
  */
 #include "sysinit-ls5.c"
+void start_devinit_arch(void)
+{
+}

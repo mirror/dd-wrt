@@ -929,3 +929,7 @@ char *set_wan_state(int state)
 #endif
 	return NULL;
 }
+
+void start_devinit_arch(void)
+{
+}
