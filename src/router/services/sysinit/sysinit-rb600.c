@@ -63,37 +63,6 @@ void start_sysinit(void)
 	/*
 	 * Setup console 
 	 */
-#ifndef HAVE_WDR4900
-	//recover nvram if available
-	char dev[64];
-	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
-	if (in == NULL) {
-		fprintf(stderr, "recover broken nvram\n");
-		sprintf(dev, "/dev/sda");
-		int size = nvram_size();
-		in = fopen(dev, "rb");
-		fseeko(in, 0, SEEK_END);
-		off_t mtdlen = ftello(in);
-		fseeko(in, mtdlen - (size + 65536), SEEK_SET);
-		unsigned char *mem = malloc(size);
-		fread(mem, size, 1, in);
-		fclose(in);
-		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
-			fprintf(stderr, "found recovery\n");
-			in = fopen("/usr/local/nvram/nvram.bin", "wb");
-			if (in != NULL) {
-				fwrite(mem, size, 1, in);
-				fclose(in);
-				eval("sync");
-				sleep(5);
-				eval("event", "5", "1", "15");
-			}
-		}
-		free(mem);
-	} else {
-		fclose(in);
-	}
-#endif
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
 	cprintf("sysinit() get router\n");
