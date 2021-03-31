@@ -3396,11 +3396,6 @@ static void quirk_no_bus_reset(struct pci_dev *dev)
 	dev->dev_flags |= PCI_DEV_FLAGS_NO_BUS_RESET;
 }
 
-static void quirk_no_bus_reset_and_no_retrain_link(struct pci_dev *dev)
-{
-	dev->dev_flags |= PCI_DEV_FLAGS_NO_BUS_RESET | PCI_DEV_FLAGS_NO_RETRAIN_LINK_WHEN_NOT_GEN1;
-}
-
 /*
  * Some Atheros AR9xxx and QCA988x chips do not behave after a bus reset.
  * The device will throw a Link Down error on AER-capable systems and
@@ -3410,19 +3405,9 @@ static void quirk_no_bus_reset_and_no_retrain_link(struct pci_dev *dev)
  */
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x0030, quirk_no_bus_reset);
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x0032, quirk_no_bus_reset);
+DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x003c, quirk_no_bus_reset);
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x0033, quirk_no_bus_reset);
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x0034, quirk_no_bus_reset);
-
-/*
- * Atheros QCA9880 and QCA9890 chips do not behave after a bus reset and also
- * after retrain link when PCIe bridge is not in GEN1 mode at 2.5 GT/s speed.
- * The device will throw a Link Down error and config space is not accessible
- * again. Retrain link can be called only when using GEN1 PCIe bridge or when
- * PCIe bridge has forced link speed to 2.5 GT/s via PCI_EXP_LNKCTL2 register.
- */
-DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x003c, quirk_no_bus_reset_and_no_retrain_link);
-DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_UBNT, 0x11ac, quirk_no_bus_reset_and_no_retrain_link);
-
 
 static void quirk_no_pm_reset(struct pci_dev *dev)
 {
