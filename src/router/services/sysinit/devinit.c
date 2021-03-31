@@ -213,5 +213,65 @@ void start_devinit(void)
 		eval("irqbalance", "-t", "10");
 	}
 #endif
+#ifdef HAVE_X86
+	char dev[64];
+	char *disk = getdisc();
+
+	if (disk == NULL) {
+		fprintf(stderr, "no valid dd-wrt partition found, calling shell");
+		eval("/bin/sh");
+		exit(0);
+	}
+
+	FILE *in = fopen("/usr/local/nvram/nvram.db", "rb");
+
+	if (in != NULL) {
+		fclose(in);
+		mkdir("/tmp/nvram", 0700);
+		eval("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
+		eval("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+		eval("/usr/sbin/convertnvram");
+		nvram_commit();
+		unlink("/etc/nvram/nvram.db");
+		unlink("/etc/nvram/offsets.db");
+	}
+	sprintf(dev, "/dev/%s", disk);
+	eval("hdparm", "-W", "0", dev);
+	eval("sdparm", "-s", "WCE", "-S", dev);
+	eval("sdparm", "-c", "WCE", "-S", dev);
+
+	//recover nvram if available
+	in = fopen("/usr/local/nvram/nvram.bin", "rb");
+	if (in == NULL) {
+		fprintf(stderr, "recover broken nvram\n");
+		int size = nvram_size();
+		in = fopen(dev, "rb");
+		fseeko(in, 0, SEEK_END);
+		off_t mtdlen = ftello(in);
+		fseeko(in, mtdlen - (size + 65536), SEEK_SET);
+		unsigned char *mem = malloc(size);
+		fread(mem, size, 1, in);
+		fclose(in);
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
+			fprintf(stderr, "found recovery\n");
+			in = fopen("/usr/local/nvram/nvram.bin", "wb");
+			if (in != NULL) {
+				fwrite(mem, size, 1, in);
+				fclose(in);
+				eval("sync");
+				eval("mount", "-o", "remount,ro", "/usr/local");
+				eval("mount", "-o", "remount,ro", "/");
+				eval("hdparm", "-f", dev);
+				eval("hdparm", "-F", dev);
+				sleep(5);
+				writeproc("/proc/sysrq-trigger", "b");
+			}
+		}
+		free(mem);
+	} else {
+		fclose(in);
+	}
+
+#endif
 	fprintf(stderr, "done\n");
 }
