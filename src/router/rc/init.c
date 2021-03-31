@@ -451,6 +451,8 @@ int do_timer(void)
 
 static int noconsole = 0;
 
+#ifndef HAVE_X86
+// this code cannot work yet on x86 since nvram is non operational at startup. we need to fix the x86 nvram code first
 static void reset_bootfails(void)
 {
 	int failcnt = nvram_geti("boot_fails");
@@ -517,7 +519,17 @@ static void check_bootfails(void)
 	}
 
 }
+#else
+static void reset_bootfails(void)
+{
 
+}
+
+static void check_bootfails(void)
+{
+
+}
+#endif
 /* 
  * Main loop 
  */
