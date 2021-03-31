@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2021 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ERROR: El URL solicitado no se ha podido obetener</title>
+<style type="text/css"><!-- 
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ERROR</h1>
+<h2>El URL solicitado no se ha podido recuperar</h2>
+</div>
+<hr>
+
+<div id="content">
+<p>Se encontró el siguiente error al intentar recuperar la dirección URL: <a href="%U">%U</a></p>
+
+<blockquote id="data">
+<pre>Conflicto en el host URI</pre>
+</blockquote>
+
+<p>Esto significa que el nombre de dominio al que intenta acceder aparentemente ya no existe en el equipo desde el que se inicio la solicitud</p>
+
+<p>Algunos problemas posibles son:</p>
+<ul>
+<li>Es posible que el dominio se haya movido recientemente. Intentar de nuevo lo resolverá.</li>
+<li>El sitio web puede requerir una versión local basada en el país. Usar los servidores de DNS de tu ISP pueden resolver esto. </li>
+</ul>
+
+<p>El administrador del cach&eacute; es <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Generado %T por %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

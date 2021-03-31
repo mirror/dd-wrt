@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<meta type="copyright" content="Copyright (C) 1996-2021 The Squid Software Foundation and contributors">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Configuración del Navegador de Internet</title>
+<style type="text/css"><!--
+ %l
+
+body
+:lang(fa) { direction: rtl; font-size: 100%; font-family: Tahoma, Roya, sans-serif; float: right; }
+:lang(he) { direction: rtl; }
+ --></style>
+</head><body id="%c">
+<div id="titles">
+<h1>ERROR</h1>
+<h2>Configuración del Navegador de Internet</h2>
+</div>
+<hr>
+
+<div id="content">
+<blockquote id="error">
+<p>La configuración del Navegador de Internet necesita ser corregida para usar esta red.</p>
+</blockquote>
+
+<p>Como encontrar estas configuraciones en tu navegador:</p>
+
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Herramientas -&gt; Opciones -&gt; Avanzado -&gt; Red -&gt; Ajustes de conexión</li>
+<li>Seleccione Detectar preferencias automáticamente</li>
+</ul>
+</div>
+
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Herramientas -&gt; Opciones de Internet  -&gt; Conexión -&gt; Preferencias de RED -&gt;Proxy</li>
+<li>Selecciona la opción Detección Automática de Proxy</li>
+</ul>
+</div>
+
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Herramientas -&gt; Opciones -&gt; Avanzado -&gt; Red -&gt; Servidores Proxy</li>
+<li>Selecciona la opción Usar Configuración automática de Proxy</li>
+</ul>
+</div>
+
+<p>El administrador del cach&eacute; es <a href="mailto:%w%W">%w</a>.</p>
+<br>
+</div>
+
+<hr>
+<div id="footer">
+<p>Generado %T por %h (%s)</p>
+<!-- %c -->
+</div>
+</body></html>

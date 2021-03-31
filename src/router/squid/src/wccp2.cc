@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -584,7 +584,9 @@ wccp2_update_md5_security(char *password, char *ptr, char *packet, int len)
 
     SquidMD5Init(&M);
 
-    SquidMD5Update(&M, pwd, sizeof(pwd));
+    static_assert(sizeof(pwd) - 1 == 8, "WCCP2 password has exactly 8 (padded) octets, excluding storage-terminating NUL");
+
+    SquidMD5Update(&M, pwd, sizeof(pwd) - 1);
 
     SquidMD5Update(&M, packet, len);
 
@@ -638,7 +640,9 @@ wccp2_check_security(struct wccp2_service_list_t *srv, char *security, char *pac
 
     SquidMD5Init(&M);
 
-    SquidMD5Update(&M, pwd, sizeof(pwd));
+    static_assert(sizeof(pwd) - 1 == 8, "WCCP2 password has exactly 8 (padded) octets, excluding storage-terminating NUL");
+
+    SquidMD5Update(&M, pwd, sizeof(pwd) - 1);
 
     SquidMD5Update(&M, packet, len);
 
