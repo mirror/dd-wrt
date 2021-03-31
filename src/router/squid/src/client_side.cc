@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -2169,42 +2169,19 @@ clientLifetimeTimeout(const CommTimeoutCbParams &io)
     ClientHttpRequest *http = static_cast<ClientHttpRequest *>(io.data);
     debugs(33, DBG_IMPORTANT, "WARNING: Closing client connection due to lifetime timeout");
     debugs(33, DBG_IMPORTANT, "\t" << http->uri);
-    http->logType.err.timedout = true;
+    if (const auto conn = http->getConn())
+        conn->pipeline.terminateAll(ETIMEDOUT);
     if (Comm::IsConnOpen(io.conn))
         io.conn->close();
 }
 
 ConnStateData::ConnStateData(const MasterXaction::Pointer &xact) :
     AsyncJob("ConnStateData"), // kids overwrite
-    Server(xact),
-    bodyParser(nullptr),
+    Server(xact)
 #if USE_OPENSSL
-    sslBumpMode(Ssl::bumpEnd),
-    tlsParser(Security::HandshakeParser::fromClient),
+    , tlsParser(Security::HandshakeParser::fromClient)
 #endif
-    needProxyProtocolHeader_(false),
-#if USE_OPENSSL
-    switchedToHttps_(false),
-    parsingTlsHandshake(false),
-    parsedBumpedRequestCount(0),
-    tlsConnectPort(0),
-    sslServerBump(NULL),
-    signAlgorithm(Ssl::algSignTrusted),
-#endif
-    stoppedSending_(NULL),
-    stoppedReceiving_(NULL)
 {
-    flags.readMore = true; // kids may overwrite
-    flags.swanSang = false;
-
-    pinning.host = NULL;
-    pinning.port = -1;
-    pinning.pinned = false;
-    pinning.auth = false;
-    pinning.zeroReply = false;
-    pinning.peerAccessDenied = false;
-    pinning.peer = NULL;
-
     // store the details required for creating more MasterXaction objects as new requests come in
     log_addr = xact->tcpClient->remote;
     log_addr.applyClientMask(Config.Addrs.client_netmask);
