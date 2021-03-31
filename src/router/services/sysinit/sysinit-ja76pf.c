@@ -156,3 +156,7 @@ char *set_wan_state(int state)
 {
 	return NULL;
 }
+
+void start_devinit_arch(void)
+{
+}

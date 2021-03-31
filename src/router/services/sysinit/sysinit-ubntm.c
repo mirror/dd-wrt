@@ -405,3 +405,7 @@ char *enable_dtag_vlan(int enable)
 {
 	return "eth0";
 }
+
+void start_devinit_arch(void)
+{
+}

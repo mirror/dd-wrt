@@ -50,6 +50,9 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <linux/sockios.h>
+
+void start_devinit_arch();
+
 #ifdef HAVE_OPENRISC
 static void install_sdcard(void)
 {
@@ -371,5 +374,6 @@ void start_devinit(void)
 #ifdef HAVE_OPENRISC
 	install_sdcard();
 #endif
+	start_devinit_arch();
 	fprintf(stderr, "done\n");
 }
