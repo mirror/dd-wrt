@@ -187,7 +187,7 @@ void start_sysinit(void)
 			insmod("mt76-connac-lib");
 			insmod("mt7615-common");
 			insmod("mt7615e");
-    			insmod("mt76x02-lib");
+			insmod("mt76x02-lib");
 			insmod("mt76x2-common");
 			insmod("mt76x2e");
 			insmod("mt76x0-common");
