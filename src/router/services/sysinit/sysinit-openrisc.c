@@ -55,7 +55,6 @@
 
 #define sys_reboot() eval("startservice","run_rc_shutdown"); eval("sync"); eval("event","3","1","15")
 
-
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
