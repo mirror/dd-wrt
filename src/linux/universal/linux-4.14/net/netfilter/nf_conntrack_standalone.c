@@ -623,7 +623,6 @@ nf_conntrack_flush_sysctl(struct ctl_table *table, int write,
 			 void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
-	printk(KERN_INFO "flush conntrack\n");
 	ret = proc_dointvec(table, write, buffer, lenp, ppos);
 	nf_conntrack_flush();
 	return ret;
