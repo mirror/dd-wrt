@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -293,6 +293,9 @@ public:
     void closeForReading(const sfileno fileno);
     /// same as closeForReading() but also frees the entry if it is unlocked
     void closeForReadingAndFreeIdle(const sfileno fileno);
+
+    /// openForReading() but creates a new entry if there is no old one
+    const Anchor *openOrCreateForReading(const cache_key *, sfileno &, const StoreEntry &);
 
     /// writeable slice within an entry chain created by openForWriting()
     Slice &writeableSlice(const AnchorId anchorId, const SliceId sliceId);
