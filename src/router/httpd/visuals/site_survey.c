@@ -315,9 +315,15 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf));
+				if (site_survey_lists[i].extcap & 0x4)
+					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf));
+				else
+					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf));
 			} else {
-				sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf));
+				if (site_survey_lists[i].extcap & 0x4)
+					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf));
+				else
+					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf));
 			}
 
 		} else if (site_survey_lists[i].channel & 0x2000) {
