@@ -111,26 +111,26 @@ void start_devinit(void)
 #endif
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	fprintf(stderr, "waiting for hotplug\n");
-	char dev[64];
-	char *disc = getdisc();
+	char s_dev[64];
+	char *s_disc = getdisc();
 
-	if (disc == NULL) {
+	if (s_disc == NULL) {
 		fprintf(stderr, "no valid dd-wrt partition found, calling shell\n");
 		eval("/bin/sh");
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
 	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-	if (strlen(disc) == 7)	//mmcblk0
-		sprintf(dev, "/dev/%sp3", disc);
+	if (strlen(s_disc) == 7)	//mmcblk0
+		sprintf(s_dev, "/dev/%sp3", s_disc);
 	else
-		sprintf(dev, "/dev/%s3", disc);
+		sprintf(s_dev, "/dev/%s3", s_disc);
 	insmod("jbd2");
 	insmod("mbcache");
 	insmod("crc16");
 	insmod("ext4");
-	if (mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL)) {
-		eval("mkfs.ext4", "-F", "-b", " 1024", dev);
-		mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL);
+	if (mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL, NULL)) {
+		eval("mkfs.ext4", "-F", "-b", " 1024", s_dev);
+		mount(s_dev, "/usr/local", "ext4", MS_MGC_VAL, NULL);
 	}
 	mkdir("/usr/local", 0700);
 	mkdir("/usr/local/nvram", 0700);
