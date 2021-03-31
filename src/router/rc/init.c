@@ -451,38 +451,19 @@ int do_timer(void)
 
 static int noconsole = 0;
 
-/* 
- * Main loop 
- */
-int main(int argc, char **argv)
+static void reset_bootfails(void)
 {
-	sigset_t sigset;
-	pid_t shell_pid = 0;
+	int failcnt = nvram_geti("boot_fails");
+	if (failcnt) {
+		// all went well, reset to zero
+		nvram_seti("boot_fails", 0);
+		nvram_commit();
+	}
 
-	/* 
-	 * Basic initialization 
-	 */
-#ifdef HAVE_MICRO
-	if (console_init())
-		noconsole = 1;
-#endif
-	cprintf("init lcd\n");
-	initlcd();
-	cprintf("first message\n");
-	lcdmessage("System Start");
+}
 
-	writeproc("/proc/sys/kernel/sysrq", "1");
-	signal_init();
-	signal(SIGHUP, rc_signal);
-	signal(SIGUSR1, rc_signal);	// Start single service from WEB, by
-	// honor
-	signal(SIGUSR2, rc_signal);
-	signal(SIGINT, rc_signal);
-	signal(SIGALRM, rc_signal);
-	sigemptyset(&sigset);
-
-	dd_loginfo("init", "starting devinit\n");
-	start_service("devinit");	//init /dev /proc etc.
+static void check_bootfails(void)
+{
 	int failcnt = nvram_geti("boot_fails");
 	if (nvram_match("no_bootfails", "1")) {
 		failcnt = 0;
@@ -534,6 +515,42 @@ int main(int argc, char **argv)
 			nvram_commit();
 		}
 	}
+
+}
+
+/* 
+ * Main loop 
+ */
+int main(int argc, char **argv)
+{
+	sigset_t sigset;
+	pid_t shell_pid = 0;
+
+	/* 
+	 * Basic initialization 
+	 */
+#ifdef HAVE_MICRO
+	if (console_init())
+		noconsole = 1;
+#endif
+	cprintf("init lcd\n");
+	initlcd();
+	cprintf("first message\n");
+	lcdmessage("System Start");
+
+	writeproc("/proc/sys/kernel/sysrq", "1");
+	signal_init();
+	signal(SIGHUP, rc_signal);
+	signal(SIGUSR1, rc_signal);	// Start single service from WEB, by
+	// honor
+	signal(SIGUSR2, rc_signal);
+	signal(SIGINT, rc_signal);
+	signal(SIGALRM, rc_signal);
+	sigemptyset(&sigset);
+
+	dd_loginfo("init", "starting devinit\n");
+	start_service("devinit");	//init /dev /proc etc.
+	check_bootfails();
 	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("sysinit");
 #ifndef HAVE_MICRO
@@ -606,11 +623,7 @@ int main(int argc, char **argv)
 			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 			update_timezone();
 			start_service_force("init_start");
-			if (failcnt) {
-				// all went well, reset to zero
-				nvram_seti("boot_fails", 0);
-				nvram_commit();
-			}
+			reset_bootfails();
 
 			/* 
 			 * Fall through 
