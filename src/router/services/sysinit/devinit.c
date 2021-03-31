@@ -50,7 +50,71 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <linux/sockios.h>
-
+#ifdef HAVE_OPENRISC
+static void install_sdcard(void)
+{
+	mkdir("/usr/local", 0700);
+	mkdir("/usr/local/nvram", 0700);
+	FILE *fp = fopen("/boot/.installed", "rb");
+	if (fp != NULL)		// already locally installed?
+	{
+		fclose(fp);
+		return;
+	}
+	sleep(10);		//give some time until sd is up
+	fprintf(stderr, "check if secondary device is available\n");
+	fp = fopen("/dev/sda", "rb");
+	if (fp == NULL)		// no cf disc installed or no sd card. doesnt matter, we exit if no secondary device is in
+	{
+		fclose(fp);
+		return;
+	}
+	fclose(fp);
+	fprintf(stderr, "installing firmware to internal SD Card\n");
+	mkdir("/tmp/install", 0700);
+	int check = mount("/dev/sda", "/tmp/install", "ext4", MS_MGC_VAL,
+			  NULL);
+	if (check != 0) {
+		fprintf(stderr, "device isnt formated, use EXT2\n");
+		fp = fopen("/dev/sda", "rb");
+		fseeko(fp, 0, SEEK_END);
+		off_t size = ftello(fp);
+		size -= 65536 * 16;
+		size /= 4096;
+		char newsize[32];
+		sprintf(newsize, "%d", size);
+		eval("mkfs.ext4", "-b", "4096", "-N", "65536", "-L", "dd-wrt", "/dev/sda", newsize);
+		mount("/dev/sda", "/tmp/install", "ext4", MS_MGC_VAL, NULL);
+	}
+	fprintf(stderr, "copy files to SD Card\n");
+	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin", "/tmp/install/usr/local/nvram/nvram.bak");
+	eval("cp", "-R", "-d", "-f", "/boot", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/bin", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/etc", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/jffs", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/lib", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/mmc", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/mnt", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/opt", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/sbin", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/usr", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/www", "/tmp/install");
+	eval("cp", "-R", "-d", "-f", "/var", "/tmp/install");
+	eval("mv", "-f", "/tmp/install/usr/local/nvram/nvram.bak", "/tmp/install/usr/local/nvram/nvram.bin");
+	mkdir("/tmp/install/dev", 0700);
+	mkdir("/tmp/install/sys", 0700);
+	mkdir("/tmp/install/proc", 0700);
+	mkdir("/tmp/install/tmp", 0700);
+	sysprintf("echo \"blank\" > /tmp/install/boot/.installed");
+	sysprintf("echo \"mem=59M root=/dev/sda\" > /tmp/install/boot/kparam");
+	eval("umount", "/tmp/install");
+	eval("sync");
+	fprintf(stderr, "signal installation complete\n");
+	set_gpio(4, 1);
+	sleep(1);
+	set_gpio(4, 0);
+}
+#endif
 void start_devinit(void)
 {
 	unlink("/etc/nvram/.lock");
@@ -273,7 +337,7 @@ void start_devinit(void)
 	}
 
 #endif
-#ifdef HAVE_RB600
+#if defined(HAVE_RB600) || defined(HAVE_NEWPORT) && !defined(HAVE_WDR4900)
 	//recover nvram if available
 	char dev[64];
 	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
@@ -303,6 +367,9 @@ void start_devinit(void)
 	} else {
 		fclose(in);
 	}
+#endif
+#ifdef HAVE_OPENRISC
+	install_sdcard();
 #endif
 	fprintf(stderr, "done\n");
 }
