@@ -74,7 +74,6 @@ struct u64_stats_sync {
 #else
 static inline void u64_stats_init(struct u64_stats_sync *syncp)
 {
-	seqcount_init(&syncp->seq);
 }
 #endif
 
