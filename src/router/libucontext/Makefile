@@ -1,6 +1,6 @@
 SCDOC := scdoc
 
-ARCH := $(shell uname -m)
+#ARCH := $(shell uname -m)
 ifeq ($(ARCH),$(filter $(ARCH),i386 i686))
 	override ARCH = x86
 endif
