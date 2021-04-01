@@ -172,10 +172,12 @@ clean: libucontext_obj_clean
 clean: check_clean
 clean: docs_clean
 
+configure: all
+
 install: all
-	install -D -m755 ${LIBUCONTEXT_NAME} ${INSTALLDIR}${LIBUCONTEXT_PATH}
+#	install -D -m755 ${LIBUCONTEXT_NAME} ${INSTALLDIR}${LIBUCONTEXT_PATH}
 #	install -D -m664 ${LIBUCONTEXT_STATIC_NAME} ${INSTALLDIR}${LIBUCONTEXT_STATIC_PATH}
-	ln -sf ${LIBUCONTEXT_SONAME} ${INSTALLDIR}${LIBDIR}/${LIBUCONTEXT_NAME}
+#	ln -sf ${LIBUCONTEXT_SONAME} ${INSTALLDIR}${LIBDIR}/${LIBUCONTEXT_NAME}
 #	for i in ${LIBUCONTEXT_HEADERS}; do \
 #		destfn=$$(echo $$i | sed s:include/::g); \
 #		install -D -m644 $$i ${INSTALLDIR}${INCLUDEDIR}/$$destfn; \
@@ -185,6 +187,7 @@ install: all
 #		install -D -m755 ${LIBUCONTEXT_POSIX_NAME} ${INSTALLDIR}${LIBUCONTEXT_POSIX_PATH}; \
 #		install -D -m644 ${LIBUCONTEXT_POSIX_STATIC_NAME} ${INSTALLDIR}${LIBUCONTEXT_POSIX_STATIC_PATH}; \
 #	fi
+	@true
 
 install_docs: docs
 	install -D -m644 doc/libucontext.3 ${INSTALLDIR}/usr/share/man/man3/libucontext.3
