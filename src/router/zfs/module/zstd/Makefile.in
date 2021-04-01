@@ -21,7 +21,8 @@ ccflags-y += -O3
 $(obj)/lib/zstd.o: c_flags += -fno-tree-vectorize
 
 # SSE register return with SSE disabled if -march=znverX is passed
-$(obj)/lib/zstd.o: c_flags += -D_SHAINTRIN_H_INCLUDED
+$(obj)/lib/zstd.o: c_flags += -D_SHAINTRIN_H_INCLUDED -DZSTD_HAVE_WEAK_SYMBOLS=0
+
 
 # Disable aarch64 neon SIMD instructions for kernel mode
 $(obj)/lib/zstd.o: c_flags += -include $(zstd_include)/aarch64_compat.h -include $(zstd_include)/zstd_compat_wrapper.h -Wp,-w

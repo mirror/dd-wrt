@@ -8444,7 +8444,6 @@ void ZSTD_trace_decompress_end(
 /**** skipping file: compiler.h ****/
 
 #if ZSTD_TRACE && ZSTD_HAVE_WEAK_SYMBOLS
-
 ZSTD_WEAK_ATTR ZSTD_TraceCtx ZSTD_trace_compress_begin(ZSTD_CCtx const* cctx)
 {
     (void)cctx;
