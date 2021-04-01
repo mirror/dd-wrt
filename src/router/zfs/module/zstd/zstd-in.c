@@ -59,6 +59,7 @@
 #include "common/fse_decompress.c"
 #include "common/pool.c"
 #include "common/zstd_common.c"
+#include "common/zstd_trace.c"
 
 #include "compress/fse_compress.c"
 #include "compress/hist.c"
