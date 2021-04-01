@@ -13,6 +13,15 @@ endif
 ifeq ($(ARCH),$(filter $(ARCH),armv7l))
 	override ARCH = arm
 endif
+ifeq ($(ARCH),$(filter $(ARCH),armeb))
+	override ARCH = arm
+endif
+ifeq ($(ARCH),$(filter $(ARCH),mipsel))
+	override ARCH = mips
+endif
+ifeq ($(ARCH),$(filter $(ARCH),powerpc))
+	override ARCH = ppc
+endif
 
 LIBDIR := /usr/lib
 INCLUDEDIR := /usr/include
