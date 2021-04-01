@@ -1,0 +1,8 @@
+libdir=@LIBUCONTEXT_LIBDIR@
+includedir=@LIBUCONTEXT_INCLUDEDIR@
+
+Name: libucontext
+Version: @LIBUCONTEXT_VERSION@
+Description: ucontext library implementation (standalone)
+Libs: -L${libdir} -lucontext
+Cflags: -I${includedir}

@@ -1,0 +1,4 @@
+option('freestanding', type : 'boolean', value : false,
+       description: 'Do not use system headers')
+option('export_unprefixed', type : 'boolean', value : true,
+       description: 'Export POSIX 2004 ucontext names as alises')
