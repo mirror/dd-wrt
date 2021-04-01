@@ -495,3 +495,5 @@
 #define	ZSTD_ldm_skipRawSeqStoreBytes zfs_ZSTD_ldm_skipRawSeqStoreBytes
 #define	FSE_buildDTable_wksp zfs_FSE_buildDTable_wksp
 #define	ZSTD_mergeBlockDelimiters zfs_ZSTD_mergeBlockDelimiters
+#define ZSTD_CCtx_trace zfs_ZSTD_CCtx_trace
+#define ZSTD_writeSkippableFrame zfs_ZSTD_writeSkippableFrame
