@@ -20,6 +20,3 @@
  * $Id:
  */
 #include "sysinit-wrt400.c"
-void start_devinit_arch(void)
-{
-}

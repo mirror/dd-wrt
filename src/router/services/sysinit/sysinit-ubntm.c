@@ -147,6 +147,13 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
+		nvram_seti("sw_cpuport", 0);
+		nvram_seti("sw_wan", -1);
+		nvram_seti("sw_lan1", 2);
+		nvram_seti("sw_lan2", 3);
+		nvram_default_geti("port0vlans", 1);
+		nvram_default_geti("port1vlans", 2);
+
 		break;
 	case ROUTER_BOARD_NS5MXW:
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
@@ -211,11 +218,12 @@ void start_sysinit(void)
 #endif
 #endif
 	}
+	led_control(POE_GPIO, LED_OFF);
 	/* ubnt has a hardware fault as it seems, so the power bridge feature can break the hardware which causes endless reboot loops. we keep it disabled here. devices which are already broken will work again then */
 	if (nvram_default_matchi("ubnt_power", 1, 0)) {
-		led_control(POE_GPIO, LED_ON);
-	} else {
 		led_control(POE_GPIO, LED_OFF);
+	} else {
+		led_control(POE_GPIO, LED_ON);
 	}
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
