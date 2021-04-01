@@ -14,10 +14,10 @@ ifeq ($(ARCH),$(filter $(ARCH),armv7l))
 	override ARCH = arm
 endif
 
-LIBDIR := /lib
+LIBDIR := /usr/lib
 INCLUDEDIR := /usr/include
 PKGCONFIGDIR := /usr/lib/pkgconfig
-CFLAGS := -ggdb3 -O2 -Wall
+CFLAGS := $(COPTS)
 CPPFLAGS := -Iinclude -Iarch/${ARCH} -Iarch/common
 EXPORT_UNPREFIXED := yes
 FREESTANDING := no
@@ -164,23 +164,23 @@ clean: check_clean
 clean: docs_clean
 
 install: all
-	install -D -m755 ${LIBUCONTEXT_NAME} ${DESTDIR}${LIBUCONTEXT_PATH}
-	install -D -m664 ${LIBUCONTEXT_STATIC_NAME} ${DESTDIR}${LIBUCONTEXT_STATIC_PATH}
-	ln -sf ${LIBUCONTEXT_SONAME} ${DESTDIR}${LIBDIR}/${LIBUCONTEXT_NAME}
-	for i in ${LIBUCONTEXT_HEADERS}; do \
-		destfn=$$(echo $$i | sed s:include/::g); \
-		install -D -m644 $$i ${DESTDIR}${INCLUDEDIR}/$$destfn; \
-	done
-	install -D -m644 ${LIBUCONTEXT_PC} ${DESTDIR}${PKGCONFIGDIR}/${LIBUCONTEXT_PC}
-	if [ -n ${LIBUCONTEXT_POSIX_NAME} ]; then \
-		install -D -m755 ${LIBUCONTEXT_POSIX_NAME} ${DESTDIR}${LIBUCONTEXT_POSIX_PATH}; \
-		install -D -m644 ${LIBUCONTEXT_POSIX_STATIC_NAME} ${DESTDIR}${LIBUCONTEXT_POSIX_STATIC_PATH}; \
-	fi
+	install -D -m755 ${LIBUCONTEXT_NAME} ${INSTALLDIR}${LIBUCONTEXT_PATH}
+#	install -D -m664 ${LIBUCONTEXT_STATIC_NAME} ${INSTALLDIR}${LIBUCONTEXT_STATIC_PATH}
+	ln -sf ${LIBUCONTEXT_SONAME} ${INSTALLDIR}${LIBDIR}/${LIBUCONTEXT_NAME}
+#	for i in ${LIBUCONTEXT_HEADERS}; do \
+#		destfn=$$(echo $$i | sed s:include/::g); \
+#		install -D -m644 $$i ${INSTALLDIR}${INCLUDEDIR}/$$destfn; \
+#	done
+#	install -D -m644 ${LIBUCONTEXT_PC} ${INSTALLDIR}${PKGCONFIGDIR}/${LIBUCONTEXT_PC}
+#	if [ -n ${LIBUCONTEXT_POSIX_NAME} ]; then \
+#		install -D -m755 ${LIBUCONTEXT_POSIX_NAME} ${INSTALLDIR}${LIBUCONTEXT_POSIX_PATH}; \
+#		install -D -m644 ${LIBUCONTEXT_POSIX_STATIC_NAME} ${INSTALLDIR}${LIBUCONTEXT_POSIX_STATIC_PATH}; \
+#	fi
 
 install_docs: docs
-	install -D -m644 doc/libucontext.3 ${DESTDIR}/usr/share/man/man3/libucontext.3
+	install -D -m644 doc/libucontext.3 ${INSTALLDIR}/usr/share/man/man3/libucontext.3
 	for i in ${MANPAGES_SYMLINKS_3}; do \
-		ln -s libucontext.3 ${DESTDIR}/usr/share/man/man3/$$i; \
+		ln -s libucontext.3 ${INSTALLDIR}/usr/share/man/man3/$$i; \
 	done
 
 ifneq (${FREESTANDING},yes)
