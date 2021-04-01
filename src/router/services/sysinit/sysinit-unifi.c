@@ -20,6 +20,3 @@
  * $Id:
  */
 #include "sysinit-ubntm.c"
-void start_devinit_arch(void)
-{
-}
