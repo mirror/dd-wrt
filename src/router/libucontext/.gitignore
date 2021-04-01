@@ -1,0 +1,16 @@
+include/libucontext/bits.h
+*.o
+examples/cooperative_threading
+test_libucontext
+test_libucontext_posix
+test_libucontext_bare_posixabi
+libucontext.a
+libucontext.so
+libucontext.so.*
+libucontext_posix.a
+libucontext_posix.so
+libucontext_posix.so.*
+libucontext.pc
+*.tar.xz
+core
+*.core
