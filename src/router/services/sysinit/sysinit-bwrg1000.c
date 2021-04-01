@@ -1,7 +1,7 @@
 /*
- * sysinit-fonera.c
+ * sysinit-bwrg1000.c
  *
- * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,4 +19,4 @@
  *
  * $Id:
  */
-#include "sysinit-ls5.c"
+#include "sysinit-ls2.c"

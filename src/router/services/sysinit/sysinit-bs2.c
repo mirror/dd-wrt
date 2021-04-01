@@ -19,4 +19,4 @@
  *
  * $Id:
  */
-#include "sysinit-ls5.c"
+#include "sysinit-ls2.c"
