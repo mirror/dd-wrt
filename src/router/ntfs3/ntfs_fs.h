@@ -21,7 +21,12 @@
 
 /* sbi->flags */
 #define NTFS_FLAGS_NODISCARD		0x00000001
+/* Set when LogFile is replaying */
+#define NTFS_FLAGS_LOG_REPLAYING	0x00000008
+/* Set when we changed first MFT's which copy must be updated in $MftMirr */
+#define NTFS_FLAGS_MFTMIRR		0x00001000
 #define NTFS_FLAGS_NEED_REPLAY		0x04000000
+
 
 /* ni->ni_flags */
 /*
@@ -153,12 +158,6 @@ struct ntfs_index {
 	u8 vbn2vbo_bits; // index_block_size < cluster? 9 : cluster_bits
 	u8 type; // index_mutex_classed
 };
-
-/* Set when LogFile is replaying */
-#define NTFS_FLAGS_LOG_REPLAYING 0x00000008
-
-/* Set when we changed first MFT's which copy must be updated in $MftMirr */
-#define NTFS_FLAGS_MFTMIRR 0x00001000
 
 /* Minimum mft zone */
 #define NTFS_MIN_MFT_ZONE 100
@@ -543,7 +542,7 @@ int ntfs_look_for_free_space(struct ntfs_sb_info *sbi, CLST lcn, CLST len,
 			     enum ALLOCATE_OPT opt);
 int ntfs_look_free_mft(struct ntfs_sb_info *sbi, CLST *rno, bool mft,
 		       struct ntfs_inode *ni, struct mft_inode **mi);
-void ntfs_mark_rec_free(struct ntfs_sb_info *sbi, CLST nRecord);
+void ntfs_mark_rec_free(struct ntfs_sb_info *sbi, CLST rno);
 int ntfs_clear_mft_tail(struct ntfs_sb_info *sbi, size_t from, size_t to);
 int ntfs_refresh_zone(struct ntfs_sb_info *sbi);
 int ntfs_update_mftmirr(struct ntfs_sb_info *sbi, int wait);
@@ -958,9 +957,8 @@ static inline u64 bytes_to_block(const struct super_block *sb, u64 size)
 static inline struct buffer_head *ntfs_bread(struct super_block *sb,
 					     sector_t block)
 {
-	struct buffer_head *bh;
+	struct buffer_head *bh = sb_bread(sb, block);
 
-	bh = sb_bread(sb, block);
 	if (bh)
 		return bh;
 

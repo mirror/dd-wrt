@@ -35,7 +35,7 @@ struct RESTART_HDR {
 	__le16 ra_off;        // 0x18:
 	__le16 minor_ver;     // 0x1A:
 	__le16 major_ver;     // 0x1C:
-	__le16 fixups[1];
+	__le16 fixups[];
 };
 
 #define LFS_NO_CLIENT 0xffff
@@ -69,7 +69,7 @@ struct RESTART_AREA {
 	__le16 data_off;       // 0x26: log page data length
 	__le32 open_log_count; // 0x28:
 	__le32 align[5];       // 0x2C:
-	struct CLIENT_REC clients[1]; // 0x40:
+	struct CLIENT_REC clients[]; // 0x40:
 };
 
 struct LOG_REC_HDR {
@@ -86,10 +86,10 @@ struct LOG_REC_HDR {
 	__le16 cluster_off;  // 0x14:
 	__le16 reserved;     // 0x16:
 	__le64 target_vcn;   // 0x18:
-	__le64 page_lcns[1]; // 0x20:
+	__le64 page_lcns[];  // 0x20:
 };
 
-static_assert(sizeof(struct LOG_REC_HDR) == 0x28);
+static_assert(sizeof(struct LOG_REC_HDR) == 0x20);
 
 #define RESTART_ENTRY_ALLOCATED    0xFFFFFFFF
 #define RESTART_ENTRY_ALLOCATED_LE cpu_to_le32(0xFFFFFFFF)
@@ -110,7 +110,7 @@ static_assert(sizeof(struct RESTART_TABLE) == 0x18);
 struct ATTR_NAME_ENTRY {
 	__le16 off; // offset in the Open attribute Table
 	__le16 name_bytes;
-	__le16 name[1];
+	__le16 name[];
 };
 
 struct OPEN_ATTR_ENRTY {
@@ -157,10 +157,10 @@ struct DIR_PAGE_ENTRY {
 	__le32 lcns_follow;  // 0x0C:
 	__le64 vcn;          // 0x10:  Vcn of dirty page
 	__le64 oldest_lsn;   // 0x18:
-	__le64 page_lcns[1]; // 0x20:
+	__le64 page_lcns[];  // 0x20:
 };
 
-static_assert(sizeof(struct DIR_PAGE_ENTRY) == 0x28);
+static_assert(sizeof(struct DIR_PAGE_ENTRY) == 0x20);
 
 /* 32 bit version of 'struct DIR_PAGE_ENTRY' */
 struct DIR_PAGE_ENTRY_32 {
@@ -392,8 +392,7 @@ static inline u32 lrh_length(const struct LOG_REC_HDR *lr)
 {
 	u16 t16 = le16_to_cpu(lr->lcns_follow);
 
-	return t16 > 1 ? sizeof(struct LOG_REC_HDR) + (t16 - 1) * sizeof(u64)
-		       : sizeof(struct LOG_REC_HDR);
+	return struct_size(lr, page_lcns, max_t(u16, 1, t16));
 }
 
 struct lcb {
@@ -1370,8 +1369,7 @@ static void log_create(struct ntfs_log *log, u32 l_size, const u64 last_lsn,
 		offsetof(struct RESTART_HDR, fixups) +
 		sizeof(short) * ((log->sys_page_size >> SECTOR_SHIFT) + 1));
 	log->restart_size = log->sys_page_size - log->ra_off;
-	log->ra_size = offsetof(struct RESTART_AREA, clients) +
-		       sizeof(struct CLIENT_REC);
+	log->ra_size = struct_size(log->ra, clients, 1);
 	log->current_openlog_count = open_log_count;
 
 	/*
@@ -3047,9 +3045,11 @@ static int do_action(struct ntfs_log *log, struct OPEN_ATTR_ENRTY *oe,
 	struct ATTR_FILE_NAME *fname;
 	struct OpenAttr *oa, *oa2;
 	u32 nsize, t32, asize, used, esize, bmp_off, bmp_bits;
-	u16 t16, id, id2;
+	u16 id, id2;
 	u32 record_size = sbi->record_size;
 	u64 t64;
+	u16 roff = le16_to_cpu(lrh->record_off);
+	u16 aoff = le16_to_cpu(lrh->attr_off);
 	u64 lco = 0;
 	u64 cbo = (u64)le16_to_cpu(lrh->cluster_off) << SECTOR_SHIFT;
 	u64 tvo = le64_to_cpu(lrh->target_vcn) << sbi->cluster_bits;
@@ -3081,7 +3081,6 @@ static int do_action(struct ntfs_log *log, struct OPEN_ATTR_ENRTY *oe,
 	case UpdateFileNameRoot:
 	case UpdateRecordDataRoot:
 	case ZeroEndOfFileRecord:
-
 		rno = vbo >> sbi->record_bits;
 		inode = ilookup(sbi->sb, rno);
 		if (inode) {
@@ -3111,7 +3110,7 @@ static int do_action(struct ntfs_log *log, struct OPEN_ATTR_ENRTY *oe,
 				goto out;
 			if (!check_file_record(rec, NULL, sbi))
 				goto dirty_vol;
-			attr = Add2Ptr(rec, le16_to_cpu(lrh->record_off));
+			attr = Add2Ptr(rec, roff);
 		}
 
 		if (is_rec_base(rec) || InitializeFileRecordSegment == op) {
@@ -3144,7 +3143,7 @@ static int do_action(struct ntfs_log *log, struct OPEN_ATTR_ENRTY *oe,
 			inode = inode_parent;
 			mi = mi2_child;
 			rec = mi2_child->mrec;
-			attr = Add2Ptr(rec, le16_to_cpu(lrh->record_off));
+			attr = Add2Ptr(rec, roff);
 		}
 
 skip_load_parent:
@@ -3164,7 +3163,6 @@ skip_load_parent:
 	case SetBitsInNonresidentBitMap:
 	case ClearBitsInNonresidentBitMap:
 	case UpdateRecordDataAllocation:
-
 		attr = oa->attr;
 		bytes = UpdateNonresidentValue == op ? dlen : 0;
 		lco = (u64)le16_to_cpu(lrh->lcns_follow) << sbi->cluster_bits;
@@ -3178,7 +3176,7 @@ skip_load_parent:
 		if (!bytes)
 			bytes = lco - cbo;
 
-		bytes += le16_to_cpu(lrh->record_off);
+		bytes += roff;
 		if (attr->type == ATTR_ALLOC)
 			bytes = (bytes + 511) & ~511; // align
 
@@ -3202,11 +3200,10 @@ skip_load_parent:
 	/* Big switch to do operation */
 	switch (op) {
 	case InitializeFileRecordSegment:
-		t16 = le16_to_cpu(lrh->record_off);
-		if (t16 + dlen > record_size)
+		if (roff + dlen > record_size)
 			goto dirty_vol;
 
-		memcpy(Add2Ptr(rec, t16), data, dlen);
+		memcpy(Add2Ptr(rec, roff), data, dlen);
 		mi->dirty = true;
 		break;
 
@@ -3218,13 +3215,11 @@ skip_load_parent:
 
 	case WriteEndOfFileRecordSegment:
 		attr2 = (struct ATTRIB *)data;
-		t16 = le16_to_cpu(lrh->record_off);
-
-		if (!check_if_attr(rec, lrh) || t16 + dlen > record_size)
+		if (!check_if_attr(rec, lrh) || roff + dlen > record_size)
 			goto dirty_vol;
 
 		memmove(attr, attr2, dlen);
-		rec->used = cpu_to_le32(QuadAlign(t16 + dlen));
+		rec->used = cpu_to_le32(QuadAlign(roff + dlen));
 
 		mi->dirty = true;
 		break;
@@ -3233,7 +3228,6 @@ skip_load_parent:
 		attr2 = (struct ATTRIB *)data;
 		asize = le32_to_cpu(attr2->size);
 		used = le32_to_cpu(rec->used);
-		t16 = le16_to_cpu(lrh->record_off);
 
 		if (!check_if_attr(rec, lrh) || dlen < SIZEOF_RESIDENT ||
 		    !IsQuadAligned(asize) ||
@@ -3242,7 +3236,7 @@ skip_load_parent:
 			goto dirty_vol;
 		}
 
-		memmove(Add2Ptr(attr, asize), attr, used - t16);
+		memmove(Add2Ptr(attr, asize), attr, used - roff);
 		memcpy(attr, attr2, asize);
 
 		rec->used = cpu_to_le32(used + asize);
@@ -3270,7 +3264,6 @@ skip_load_parent:
 	case DeleteAttribute:
 		asize = le32_to_cpu(attr->size);
 		used = le32_to_cpu(rec->used);
-		t16 = le16_to_cpu(lrh->record_off);
 
 		if (!check_if_attr(rec, lrh))
 			goto dirty_vol;
@@ -3279,14 +3272,13 @@ skip_load_parent:
 		if (is_attr_indexed(attr))
 			le16_add_cpu(&rec->hard_links, -1);
 
-		memmove(attr, Add2Ptr(attr, asize), used - t16);
+		memmove(attr, Add2Ptr(attr, asize), used - asize - roff);
 
 		mi->dirty = true;
 		break;
 
 	case UpdateResidentValue:
-		t16 = le16_to_cpu(lrh->attr_off);
-		nsize = t16 + dlen;
+		nsize = aoff + dlen;
 
 		if (!check_if_attr(rec, lrh))
 			goto dirty_vol;
@@ -3307,7 +3299,7 @@ skip_load_parent:
 		data_off = le16_to_cpu(attr->res.data_off);
 
 		if (nsize < asize) {
-			memmove(Add2Ptr(attr, t16), data, dlen);
+			memmove(Add2Ptr(attr, aoff), data, dlen);
 			data = NULL; // To skip below memmove
 		}
 
@@ -3316,11 +3308,11 @@ skip_load_parent:
 
 		rec->used = cpu_to_le32(used + nsize - asize);
 		attr->size = cpu_to_le32(nsize);
-		attr->res.data_size = cpu_to_le32(t16 + dlen - data_off);
+		attr->res.data_size = cpu_to_le32(aoff + dlen - data_off);
 
 move_data:
 		if (data)
-			memmove(Add2Ptr(attr, t16), data, dlen);
+			memmove(Add2Ptr(attr, aoff), data, dlen);
 
 		oa2 = find_loaded_attr(log, attr, rno_base);
 		if (oa2) {
@@ -3338,13 +3330,12 @@ move_data:
 		break;
 
 	case UpdateMappingPairs:
-		t16 = le16_to_cpu(lrh->attr_off);
-		nsize = t16 + dlen;
+		nsize = aoff + dlen;
 		asize = le32_to_cpu(attr->size);
 		used = le32_to_cpu(rec->used);
 
 		if (!check_if_attr(rec, lrh) || !attr->non_res ||
-		    t16 < le16_to_cpu(attr->nres.run_off) || t16 > asize ||
+		    aoff < le16_to_cpu(attr->nres.run_off) || aoff > asize ||
 		    (nsize > asize && nsize - asize > record_size - used)) {
 			goto dirty_vol;
 		}
@@ -3355,7 +3346,7 @@ move_data:
 			used - le16_to_cpu(lrh->record_off) - asize);
 		rec->used = cpu_to_le32(used + nsize - asize);
 		attr->size = cpu_to_le32(nsize);
-		memmove(Add2Ptr(attr, t16), data, dlen);
+		memmove(Add2Ptr(attr, aoff), data, dlen);
 
 		if (run_get_highest_vcn(le64_to_cpu(attr->nres.svcn),
 					attr_run(attr), &t64)) {
@@ -3372,7 +3363,6 @@ move_data:
 
 	case SetNewAttributeSizes:
 		new_sz = data;
-
 		if (!check_if_attr(rec, lrh) || !attr->non_res)
 			goto dirty_vol;
 
@@ -3496,8 +3486,7 @@ move_data:
 		break;
 
 	case ZeroEndOfFileRecord:
-		t16 = le16_to_cpu(lrh->record_off);
-		if (t16 + dlen > record_size)
+		if (roff + dlen > record_size)
 			goto dirty_vol;
 
 		memset(attr, 0, dlen);
@@ -3505,12 +3494,10 @@ move_data:
 		break;
 
 	case UpdateNonresidentValue:
-		t16 = le16_to_cpu(lrh->record_off);
-
-		if (lco < cbo + t16 + dlen)
+		if (lco < cbo + roff + dlen)
 			goto dirty_vol;
 
-		memcpy(Add2Ptr(buffer_le, t16), data, dlen);
+		memcpy(Add2Ptr(buffer_le, roff), data, dlen);
 
 		a_dirty = true;
 		if (attr->type == ATTR_ALLOC)
@@ -3518,13 +3505,11 @@ move_data:
 		break;
 
 	case AddIndexEntryAllocation:
-		t16 = le16_to_cpu(lrh->record_off);
-		ib = Add2Ptr(buffer_le, t16);
+		ib = Add2Ptr(buffer_le, roff);
 		hdr = &ib->ihdr;
 		e = data;
 		esize = le16_to_cpu(e->size);
-		t16 = le16_to_cpu(lrh->attr_off);
-		e1 = Add2Ptr(ib, t16);
+		e1 = Add2Ptr(ib, aoff);
 
 		if (is_baad(&ib->rhdr))
 			goto dirty_vol;
@@ -3534,7 +3519,7 @@ move_data:
 		used = le32_to_cpu(hdr->used);
 
 		if (!check_index_buffer(ib, bytes) ||
-		    !check_if_alloc_index(hdr, t16) ||
+		    !check_if_alloc_index(hdr, aoff) ||
 		    Add2Ptr(e, esize) > Add2Ptr(lrh, rec_len) ||
 		    used + esize > le32_to_cpu(hdr->total)) {
 			goto dirty_vol;
@@ -3552,11 +3537,9 @@ move_data:
 		break;
 
 	case DeleteIndexEntryAllocation:
-		t16 = le16_to_cpu(lrh->record_off);
-		ib = Add2Ptr(buffer_le, t16);
+		ib = Add2Ptr(buffer_le, roff);
 		hdr = &ib->ihdr;
-		t16 = le16_to_cpu(lrh->attr_off);
-		e = Add2Ptr(ib, t16);
+		e = Add2Ptr(ib, aoff);
 		esize = le16_to_cpu(e->size);
 
 		if (is_baad(&ib->rhdr))
@@ -3565,7 +3548,7 @@ move_data:
 			goto out;
 
 		if (!check_index_buffer(ib, bytes) ||
-		    !check_if_alloc_index(hdr, t16)) {
+		    !check_if_alloc_index(hdr, aoff)) {
 			goto dirty_vol;
 		}
 
@@ -3583,20 +3566,18 @@ move_data:
 		break;
 
 	case WriteEndOfIndexBuffer:
-		t16 = le16_to_cpu(lrh->record_off);
-		ib = Add2Ptr(buffer_le, t16);
+		ib = Add2Ptr(buffer_le, roff);
 		hdr = &ib->ihdr;
-		t16 = le16_to_cpu(lrh->attr_off);
-		e = Add2Ptr(ib, t16);
+		e = Add2Ptr(ib, aoff);
 
 		if (is_baad(&ib->rhdr))
 			goto dirty_vol;
 		if (!check_lsn(&ib->rhdr, rlsn))
 			goto out;
 		if (!check_index_buffer(ib, bytes) ||
-		    !check_if_alloc_index(hdr, t16) ||
-		    t16 + dlen > offsetof(struct INDEX_BUFFER, ihdr) +
-					 le32_to_cpu(hdr->total)) {
+		    !check_if_alloc_index(hdr, aoff) ||
+		    aoff + dlen > offsetof(struct INDEX_BUFFER, ihdr) +
+					  le32_to_cpu(hdr->total)) {
 			goto dirty_vol;
 		}
 
@@ -3608,11 +3589,9 @@ move_data:
 		break;
 
 	case SetIndexEntryVcnAllocation:
-		t16 = le16_to_cpu(lrh->record_off);
-		ib = Add2Ptr(buffer_le, t16);
+		ib = Add2Ptr(buffer_le, roff);
 		hdr = &ib->ihdr;
-		t16 = le16_to_cpu(lrh->attr_off);
-		e = Add2Ptr(ib, t16);
+		e = Add2Ptr(ib, aoff);
 
 		if (is_baad(&ib->rhdr))
 			goto dirty_vol;
@@ -3620,7 +3599,7 @@ move_data:
 		if (!check_lsn(&ib->rhdr, rlsn))
 			goto out;
 		if (!check_index_buffer(ib, bytes) ||
-		    !check_if_alloc_index(hdr, t16)) {
+		    !check_if_alloc_index(hdr, aoff)) {
 			goto dirty_vol;
 		}
 
@@ -3631,11 +3610,9 @@ move_data:
 		break;
 
 	case UpdateFileNameAllocation:
-		t16 = le16_to_cpu(lrh->record_off);
-		ib = Add2Ptr(buffer_le, t16);
+		ib = Add2Ptr(buffer_le, roff);
 		hdr = &ib->ihdr;
-		t16 = le16_to_cpu(lrh->attr_off);
-		e = Add2Ptr(ib, t16);
+		e = Add2Ptr(ib, aoff);
 
 		if (is_baad(&ib->rhdr))
 			goto dirty_vol;
@@ -3643,7 +3620,7 @@ move_data:
 		if (!check_lsn(&ib->rhdr, rlsn))
 			goto out;
 		if (!check_index_buffer(ib, bytes) ||
-		    !check_if_alloc_index(hdr, t16)) {
+		    !check_if_alloc_index(hdr, aoff)) {
 			goto dirty_vol;
 		}
 
@@ -3658,14 +3635,13 @@ move_data:
 		bmp_off =
 			le32_to_cpu(((struct BITMAP_RANGE *)data)->bitmap_off);
 		bmp_bits = le32_to_cpu(((struct BITMAP_RANGE *)data)->bits);
-		t16 = le16_to_cpu(lrh->record_off);
 
 		if (cbo + (bmp_off + 7) / 8 > lco ||
 		    cbo + ((bmp_off + bmp_bits + 7) / 8) > lco) {
 			goto dirty_vol;
 		}
 
-		__bitmap_set(Add2Ptr(buffer_le, t16), bmp_off, bmp_bits);
+		__bitmap_set(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
 		a_dirty = true;
 		break;
 
@@ -3673,23 +3649,20 @@ move_data:
 		bmp_off =
 			le32_to_cpu(((struct BITMAP_RANGE *)data)->bitmap_off);
 		bmp_bits = le32_to_cpu(((struct BITMAP_RANGE *)data)->bits);
-		t16 = le16_to_cpu(lrh->record_off);
 
 		if (cbo + (bmp_off + 7) / 8 > lco ||
 		    cbo + ((bmp_off + bmp_bits + 7) / 8) > lco) {
 			goto dirty_vol;
 		}
 
-		__bitmap_clear(Add2Ptr(buffer_le, t16), bmp_off, bmp_bits);
+		__bitmap_clear(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
 		a_dirty = true;
 		break;
 
 	case UpdateRecordDataAllocation:
-		t16 = le16_to_cpu(lrh->record_off);
-		ib = Add2Ptr(buffer_le, t16);
+		ib = Add2Ptr(buffer_le, roff);
 		hdr = &ib->ihdr;
-		t16 = le16_to_cpu(lrh->attr_off);
-		e = Add2Ptr(ib, t16);
+		e = Add2Ptr(ib, aoff);
 
 		if (is_baad(&ib->rhdr))
 			goto dirty_vol;
@@ -3697,7 +3670,7 @@ move_data:
 		if (!check_lsn(&ib->rhdr, rlsn))
 			goto out;
 		if (!check_index_buffer(ib, bytes) ||
-		    !check_if_alloc_index(hdr, t16)) {
+		    !check_if_alloc_index(hdr, aoff)) {
 			goto dirty_vol;
 		}
 
@@ -3720,9 +3693,7 @@ move_data:
 			ib->rhdr.lsn = t64;
 	}
 
-	if (inode) {
-		err = _ni_write_inode(inode, 0);
-	} else if (mi && mi->dirty) {
+	if (mi && mi->dirty) {
 		err = mi_write(mi, 0);
 		if (err)
 			goto out;
@@ -4495,14 +4466,13 @@ next_log_record_analyze:
 		 * which wrote the checkpoint, possibly creating the table
 		 */
 		if (dptbl) {
-			t32 = 1 + (le16_to_cpu(dptbl->size) -
-				   sizeof(struct DIR_PAGE_ENTRY)) /
-					  sizeof(u64);
+			t32 = (le16_to_cpu(dptbl->size) -
+			       sizeof(struct DIR_PAGE_ENTRY)) /
+			      sizeof(u64);
 		} else {
 			t32 = log->clst_per_page;
 			ntfs_free(dptbl);
-			dptbl = init_rsttbl(sizeof(struct DIR_PAGE_ENTRY) +
-						    (t32 - 1) * sizeof(u64),
+			dptbl = init_rsttbl(struct_size(dp, page_lcns, t32),
 					    32);
 			if (!dptbl) {
 				err = -ENOMEM;
@@ -5096,6 +5066,9 @@ read_next_log_undo_action:
 
 	if (rec_lsn)
 		goto undo_action_next;
+
+	lcb_put(lcb);
+	lcb = NULL;
 
 commit_undo:
 	free_rsttbl_idx(trtbl, log->transaction_id);
