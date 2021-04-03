@@ -25,16 +25,17 @@
 
 static inline size_t unpacked_ea_size(const struct EA_FULL *ea)
 {
-	return !ea->size ? DwordAlign(offsetof(struct EA_FULL, name) + 1 +
-				      ea->name_len + le16_to_cpu(ea->elength))
-			 : le32_to_cpu(ea->size);
+	return ea->size ? le32_to_cpu(ea->size)
+			: DwordAlign(struct_size(
+				  ea, name,
+				  1 + ea->name_len + le16_to_cpu(ea->elength)));
 }
 
 static inline size_t packed_ea_size(const struct EA_FULL *ea)
 {
-	return offsetof(struct EA_FULL, name) + 1 -
-	       offsetof(struct EA_FULL, flags) + ea->name_len +
-	       le16_to_cpu(ea->elength);
+	return struct_size(ea, name,
+			   1 + ea->name_len + le16_to_cpu(ea->elength)) -
+	       offsetof(struct EA_FULL, flags);
 }
 
 /*
@@ -151,17 +152,19 @@ out:
  *
  * copy a list of xattrs names into the buffer
  * provided, or compute the buffer size required
+ *
+ * Returns a negative error number on failure, or the number of bytes
+ * used / required on success.
  */
-static int ntfs_list_ea(struct ntfs_inode *ni, char *buffer,
-			size_t bytes_per_buffer, size_t *bytes)
+static ssize_t ntfs_list_ea(struct ntfs_inode *ni, char *buffer,
+			    size_t bytes_per_buffer)
 {
 	const struct EA_INFO *info;
 	struct EA_FULL *ea_all = NULL;
 	const struct EA_FULL *ea;
 	u32 off, size;
 	int err;
-
-	*bytes = 0;
+	size_t ret;
 
 	err = ntfs_read_ea(ni, &ea_all, 0, &info);
 	if (err)
@@ -173,25 +176,25 @@ static int ntfs_list_ea(struct ntfs_inode *ni, char *buffer,
 	size = le32_to_cpu(info->size);
 
 	/* Enumerate all xattrs */
-	for (off = 0; off < size; off += unpacked_ea_size(ea)) {
+	for (ret = 0, off = 0; off < size; off += unpacked_ea_size(ea)) {
 		ea = Add2Ptr(ea_all, off);
 
 		if (buffer) {
-			if (*bytes + ea->name_len + 1 > bytes_per_buffer) {
+			if (ret + ea->name_len + 1 > bytes_per_buffer) {
 				err = -ERANGE;
 				goto out;
 			}
 
-			memcpy(buffer + *bytes, ea->name, ea->name_len);
-			buffer[*bytes + ea->name_len] = 0;
+			memcpy(buffer + ret, ea->name, ea->name_len);
+			buffer[ret + ea->name_len] = 0;
 		}
 
-		*bytes += ea->name_len + 1;
+		ret += ea->name_len + 1;
 	}
 
 out:
 	ntfs_free(ea_all);
-	return err;
+	return err ? err : ret;
 }
 
 static int ntfs_get_ea(struct inode *inode, const char *name, size_t name_len,
@@ -286,8 +289,7 @@ static noinline int ntfs_set_ea(struct inode *inode, const char *name,
 		goto out;
 	}
 
-	add = DwordAlign(offsetof(struct EA_FULL, name) + 1 + name_len +
-			 val_size);
+	add = DwordAlign(struct_size(ea_all, name, 1 + name_len + val_size));
 
 	err = ntfs_read_ea(ni, &ea_all, add, &info);
 	if (err)
@@ -444,17 +446,15 @@ update_ea:
 		mi->dirty = true;
 	}
 
+	/* Check if we delete the last xattr */
+	if (size)
+		ni->ni_flags |= NI_FLAG_EA;
+	else
+		ni->ni_flags &= ~NI_FLAG_EA;
+
 	if (ea_info.size_pack != size_pack)
 		ni->ni_flags |= NI_FLAG_UPDATE_PARENT;
 	mark_inode_dirty(&ni->vfs_inode);
-
-	/* Check if we delete the last xattr */
-	if (val_size || flags != XATTR_REPLACE ||
-	    ntfs_list_ea(ni, NULL, 0, &val_size) || val_size) {
-		ni->ni_flags |= NI_FLAG_EA;
-	} else {
-		ni->ni_flags &= ~NI_FLAG_EA;
-	}
 
 out:
 	if (!locked)
@@ -780,23 +780,19 @@ ssize_t ntfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
 {
 	struct inode *inode = d_inode(dentry);
 	struct ntfs_inode *ni = ntfs_i(inode);
-	ssize_t ret = -1;
-	int err;
+	ssize_t ret;
 
 	if (!(ni->ni_flags & NI_FLAG_EA)) {
-		ret = 0;
-		goto out;
+		/* no xattr in file */
+		return 0;
 	}
 
 	ni_lock(ni);
 
-	err = ntfs_list_ea(ni, buffer, size, (size_t *)&ret);
+	ret = ntfs_list_ea(ni, buffer, size);
 
 	ni_unlock(ni);
 
-	if (err)
-		ret = err;
-out:
 	return ret;
 }
 
@@ -1069,7 +1065,7 @@ static size_t ntfs_xattr_user_list(const struct xattr_handler *handler, struct d
 #else
 static bool ntfs_xattr_user_list(struct dentry *dentry)
 {
-	return 1;
+	return true;
 }
 #endif
 

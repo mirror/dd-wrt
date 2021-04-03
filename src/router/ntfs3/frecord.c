@@ -647,7 +647,7 @@ static int ni_repack(struct ntfs_inode *ni)
 	}
 
 	if (err) {
-		ntfs_inode_warn(&ni->vfs_inode, "there is a problem");
+		ntfs_inode_warn(&ni->vfs_inode, "repack problem");
 		ntfs_set_state(sbi, NTFS_DIRTY_ERROR);
 
 		/* Pack loaded but not packed runs */
