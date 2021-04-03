@@ -26,9 +26,14 @@
 #define DEBUG_HTTPD 1
 #define DEBUG_SERVICE 2
 
+
 extern void dd_debug(int target, const char *fmt, ...);
 
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
 extern int debug_ready(void);
+#else
+#define debug_ready() (1)
+#endif
 
 /*
  * Reads file and returns contents
