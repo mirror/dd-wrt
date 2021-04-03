@@ -451,7 +451,6 @@ int do_timer(void)
 
 static int noconsole = 0;
 
-#if 1 //ndef HAVE_X86
 // this code cannot work yet on x86 since nvram is non operational at startup. we need to fix the x86 nvram code first
 static void reset_bootfails(void)
 {
@@ -519,17 +518,7 @@ static void check_bootfails(void)
 	}
 
 }
-#else
-static void reset_bootfails(void)
-{
 
-}
-
-static void check_bootfails(void)
-{
-
-}
-#endif
 /* 
  * Main loop 
  */
@@ -563,6 +552,11 @@ int main(int argc, char **argv)
 	dd_loginfo("init", "starting devinit\n");
 	start_service("devinit");	//init /dev /proc etc.
 	check_bootfails();
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
+	FILE *out = fopen("/tmp/.nvram_done", "wb");
+	putc(1, out);
+	fclose(out);
+#endif
 	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("sysinit");
 #ifndef HAVE_MICRO

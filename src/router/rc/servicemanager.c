@@ -54,19 +54,12 @@ static int _STOPPED(const int method, const char *name)
 	FILE *fp = fopen(fname, "rb");
 	if (fp) {
 		fclose(fp);
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
-		if (method == STOP) {
-			if (stops_running)
-				(*stops_running)--;
-		}
-#else
 		dd_debug(DEBUG_SERVICE, "calling %s_%s not required!\n", method ? "stop" : "start", name);
 
 		if (method == STOP) {
 			if (stops_running)
 				(*stops_running)--;
 		}
-#endif
 
 		return 1;
 	}
@@ -105,9 +98,7 @@ static int handle_service(const int method, const char *name, int force)
 			RELEASESTOPPED(START);
 		STOPPED();
 	}
-#if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 	dd_debug(DEBUG_SERVICE, "%s:%s_%s", __func__, method_name, name);
-#endif
 	// lcdmessaged("Starting Service",name);
 	char service[64];
 
@@ -132,12 +123,11 @@ static int handle_service(const int method, const char *name, int force)
 		if (stops_running)
 			(*stops_running)--;
 	}
-#if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 	if (stops_running)
 		dd_debug(DEBUG_SERVICE, "calling done %s_%s (pending stops %d)\n", method_name, name, *stops_running);
 	else
 		dd_debug(DEBUG_SERVICE, "calling done %s_%s\n", method_name, name);
-#endif
+
 	return ret;
 }
 
@@ -226,10 +216,9 @@ static int stop_running_main(int argc, char **argv)
 {
 	int dead = 0;
 	while (stops_running != NULL && stop_running() && dead < 100) {
-#if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
-		if (nvram_matchi("service_debugrunnings", 1))
+		if (debug_ready() && nvram_matchi("service_debugrunnings", 1))
 			dd_loginfo("servicemanager", "%s: dead: %d running %d\n", __func__, dead, *stops_running);
-#endif
+
 		if (dead == 0)
 			dd_loginfo("servicemanager", "waiting for services to finish (%d)...\n", *stops_running);
 		usleep(100 * 1000);

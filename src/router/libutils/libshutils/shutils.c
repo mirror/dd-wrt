@@ -40,6 +40,21 @@
 #include <shutils.h>
 #include <utils.h>
 
+int debug_ready(void)
+{
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
+	if (!f_exists("/tmp/.nvram_done"))
+		return 0;
+#endif
+	return 1;
+}
+
+static int console_debug(void)
+{
+
+	return debug_ready() && nvram_matchi("console_debug", 1);
+}
+
 /*
  * Reads file and returns contents
  * @param       fd      file descriptor
@@ -128,14 +143,12 @@ static void flog(const char *fmt, ...)
 int system2(char *command)
 {
 
-#if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
-
-	dd_debug(DEBUG_CONSOLE, "%s:%s\n", __func__, command);
-	if (nvram_match("debug_delay", "1")) {
-		sleep(1);
+	if (debug_ready()) {
+		dd_debug(DEBUG_CONSOLE, "%s:%s\n", __func__, command);
+		if (nvram_match("debug_delay", "1")) {
+			sleep(1);
+		}
 	}
-#endif
-
 #ifndef HAVE_SILENCE
 	fprintf(stderr, "system: %s\n", command);
 #endif
@@ -159,6 +172,8 @@ void dd_debug(int target, const char *fmt, ...)
 {
 	char *varbuf;
 	va_list args;
+	if (!debug_ready())
+		return;
 	if (target == DEBUG_CONSOLE && !nvram_match("console_debug", "1"))
 		return;
 	if (target == DEBUG_HTTPD && !nvram_match("httpd_debug", "1"))
@@ -288,9 +303,8 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 	// if (debugfp==NULL)
 	// debugfp = fopen("/tmp/evallog.log","wb");
 	// char buf[254] = "";
-#if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
 
-	if (nvram_matchi("console_debug", 1)) {
+	if (console_debug()) {
 		int i = 0;
 		char buf[256] = { 0 };
 		if (argv[i])
@@ -302,6 +316,9 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 		dd_syslog(LOG_INFO, "%s:%s", __func__, buf);
 		fprintf(stderr, "\n");
 		flog("\n");
+		if (nvram_match("debug_delay", "1")) {
+			sleep(1);
+		}
 	}
 #ifndef HAVE_SILENCE
 	int i = 0;
@@ -311,13 +328,6 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 	}
 	fprintf(stderr, "\n");
 
-#endif
-#endif
-#if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
-
-	if (nvram_match("debug_delay", "1")) {
-		sleep(1);
-	}
 #endif
 
 	switch (pid = fork()) {
