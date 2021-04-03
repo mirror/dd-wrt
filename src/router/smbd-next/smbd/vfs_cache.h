@@ -231,11 +231,9 @@ enum KSMBD_INODE_STATUS {
 };
 
 int ksmbd_query_inode_status(struct inode *inode);
-
 bool ksmbd_inode_pending_delete(struct ksmbd_file *fp);
 void ksmbd_set_inode_pending_delete(struct ksmbd_file *fp);
 void ksmbd_clear_inode_pending_delete(struct ksmbd_file *fp);
-
 void ksmbd_fd_set_delete_on_close(struct ksmbd_file *fp,
 				  int file_info);
 #endif /* __VFS_CACHE_H__ */

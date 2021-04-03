@@ -112,6 +112,8 @@ static struct wm *wm_alloc(size_t sz)
 	struct wm *wm;
 	size_t alloc_sz = sz + sizeof(struct wm);
 
+	if (sz > SIZE_MAX - sizeof(struct wm))
+		return NULL;
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
  	wm = __alloc(alloc_sz, GFP_KERNEL);
 #else

@@ -18,7 +18,6 @@
 #include "vfs.h"
 #include "misc.h"
 
-#include "time_wrappers.h"
 #include "auth.h"
 #include "asn1.h"
 #include "server.h"
@@ -605,7 +604,7 @@ static void smb_put_name(void *name)
  */
 static char *
 smb_get_name(struct ksmbd_share_config *share, const char *src,
-	     const int maxlen, struct ksmbd_work *work, bool converted)
+		const int maxlen, struct ksmbd_work *work, bool converted)
 {
 	struct smb_hdr *req_hdr = (struct smb_hdr *)work->request_buf;
 	struct smb_hdr *rsp_hdr = (struct smb_hdr *)work->response_buf;
@@ -678,7 +677,7 @@ smb_get_name(struct ksmbd_share_config *share, const char *src,
  * Return:	pointer to dir name string on success, otherwise error ptr
  */
 static char *smb_get_dir_name(struct ksmbd_share_config *share, const char *src,
-	const int maxlen, struct ksmbd_work *work, char **srch_ptr)
+		const int maxlen, struct ksmbd_work *work, char **srch_ptr)
 {
 	struct smb_hdr *req_hdr = (struct smb_hdr *)work->request_buf;
 	struct smb_hdr *rsp_hdr = (struct smb_hdr *)work->response_buf;
@@ -1035,8 +1034,8 @@ out_err:
 }
 
 static int build_sess_rsp_extsec(struct ksmbd_session *sess,
-	struct smb_com_session_setup_req *req,
-	struct smb_com_session_setup_resp *rsp)
+		struct smb_com_session_setup_req *req,
+		struct smb_com_session_setup_resp *rsp)
 {
 	struct ksmbd_conn *conn = sess->conn;
 	struct negotiate_message *negblob;
@@ -3440,10 +3439,10 @@ static void unix_to_dos_time(struct timespec64 ts, __le16 *time, __le16 *date)
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static void cifs_convert_ace(struct posix_acl_xattr_entry *ace,
-			     struct cifs_posix_ace *cifs_ace)
+		struct cifs_posix_ace *cifs_ace)
 #else
 static void cifs_convert_ace(posix_acl_xattr_entry *ace,
-			     struct cifs_posix_ace *cifs_ace)
+		struct cifs_posix_ace *cifs_ace)
 #endif
 {
 	/* u8 cifs fields do not need le conversion */
@@ -3464,7 +3463,7 @@ static void cifs_convert_ace(posix_acl_xattr_entry *ace,
  * Return:	size of convert ace xattr on success, otherwise error
  */
 static int cifs_copy_posix_acl(char *trgt, char *src, const int buflen,
-			       const int acl_type, const int size_of_data_area)
+		const int acl_type, const int size_of_data_area)
 {
 	int size =  0;
 	int i;
@@ -3535,10 +3534,10 @@ static int cifs_copy_posix_acl(char *trgt, char *src, const int buflen,
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static __u16 convert_ace_to_cifs_ace(struct cifs_posix_ace *cifs_ace,
-			     const struct posix_acl_xattr_entry *local_ace)
+		const struct posix_acl_xattr_entry *local_ace)
 #else
 static __u16 convert_ace_to_cifs_ace(struct cifs_posix_ace *cifs_ace,
-			     const posix_acl_xattr_entry *local_ace)
+		const posix_acl_xattr_entry *local_ace)
 #endif
 {
 	__u16 rc = 0; /* 0 = ACL converted ok */
@@ -3567,7 +3566,7 @@ static __u16 convert_ace_to_cifs_ace(struct cifs_posix_ace *cifs_ace,
  * Return:	0 on success, otherwise error
  */
 static __u16 ACL_to_cifs_posix(char *parm_data, const char *pACL,
-			       const int buflen, const int acl_type)
+		const int buflen, const int acl_type)
 {
 	__u16 rc = 0;
 	struct cifs_posix_acl *cifs_acl = (struct cifs_posix_acl *)parm_data;
@@ -4515,7 +4514,7 @@ static int set_fs_info(struct ksmbd_work *work)
 	int info_level = le16_to_cpu(req->InformationLevel);
 
 	switch (info_level) {
-	uint64_t client_cap;
+	u64 client_cap;
 
 	case SMB_SET_CIFS_UNIX_INFO:
 		ksmbd_debug(SMB, "SMB_SET_CIFS_UNIX_INFO\n");
@@ -5666,10 +5665,8 @@ static int readdir_info_level_struct_sz(int info_level)
  *
  * Return:	0 on success, otherwise error
  */
-static int smb_populate_readdir_entry(struct ksmbd_conn *conn,
-				      int info_level,
-				      struct ksmbd_dir_info *d_info,
-				      struct ksmbd_kstat *ksmbd_kstat)
+static int smb_populate_readdir_entry(struct ksmbd_conn *conn, int info_level,
+		struct ksmbd_dir_info *d_info, struct ksmbd_kstat *ksmbd_kstat)
 {
 	int next_entry_offset;
 	char *conv_name;
@@ -6990,7 +6987,7 @@ static int smb_set_unix_fileinfo(struct ksmbd_work *work)
 	if (err)
 		goto out;
 
-	err = ksmbd_vfs_setattr(work, NULL, (uint64_t)req->Fid, &attrs);
+	err = ksmbd_vfs_setattr(work, NULL, (u64)req->Fid, &attrs);
 	if (err)
 		goto out;
 
@@ -7139,7 +7136,7 @@ static int smb_set_time_fileinfo(struct ksmbd_work *work)
 	if (!attrs.ia_valid)
 		goto done;
 
-	err = ksmbd_vfs_setattr(work, NULL, (uint64_t)req->Fid, &attrs);
+	err = ksmbd_vfs_setattr(work, NULL, (u64)req->Fid, &attrs);
 	if (err) {
 		rsp->hdr.Status.CifsError = STATUS_INVALID_PARAMETER;
 		return err;
@@ -7904,14 +7901,13 @@ int smb_nt_rename(struct ksmbd_work *work)
 }
 
 static __le32 smb_query_info_pipe(struct ksmbd_share_config *share,
-			       struct kstat *st)
+		struct kstat *st)
 {
 	st->mode = S_IFDIR;
 	return 0;
 }
 
-static __le32 smb_query_info_path(struct ksmbd_work *work,
-			       struct kstat *st)
+static __le32 smb_query_info_path(struct ksmbd_work *work, struct kstat *st)
 {
 	struct smb_com_query_information_req *req = work->request_buf;
 	struct ksmbd_share_config *share = work->tcon->share_conf;
