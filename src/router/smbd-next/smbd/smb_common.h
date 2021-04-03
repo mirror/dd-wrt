@@ -43,7 +43,7 @@
 #define SMB311_PROT_ID		0x0311
 #define BAD_PROT_ID		0xFFFF
 
-#define SMB_ECHO_INTERVAL	(60*HZ)
+#define SMB_ECHO_INTERVAL	(60 * HZ)
 
 #define CIFS_DEFAULT_IOSIZE	(64 * 1024)
 #define MAX_CIFS_SMALL_BUFFER_SIZE 448 /* big enough for most */
@@ -490,8 +490,6 @@ struct smb_version_cmds {
 	int (*proc)(struct ksmbd_work *swork);
 };
 
-
-
 int ksmbd_min_protocol(void);
 int ksmbd_max_protocol(void);
 
@@ -543,4 +541,25 @@ static inline void inc_rfc1001_len(void *buf, int count)
 {
 	be32_add_cpu((__be32 *)buf, count);
 }
+
+#define NTFS_TIME_OFFSET	((u64)(369 * 365 + 89) * 24 * 3600 * 10000000)
+
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
+struct timespec ksmbd_NTtimeToUnix(__le64 ntutc);
+#else
+struct timespec64 ksmbd_NTtimeToUnix(__le64 ntutc);
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
+#define KSMBD_TIME_TO_TM	time64_to_tm
+#else
+#define KSMBD_TIME_TO_TM	time_to_tm
+#endif
+
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
+inline u64 ksmbd_UnixTimeToNT(struct timespec t);
+#else
+inline u64 ksmbd_UnixTimeToNT(struct timespec64 t);
+#endif
+inline long long ksmbd_systime(void);
 #endif /* __SMB_COMMON_H__ */

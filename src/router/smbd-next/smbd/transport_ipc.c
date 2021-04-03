@@ -75,8 +75,7 @@ struct ipc_msg_table_entry {
 static struct delayed_work ipc_timer_work;
 
 static int handle_startup_event(struct sk_buff *skb, struct genl_info *info);
-static int handle_unsupported_event(struct sk_buff *skb,
-				    struct genl_info *info);
+static int handle_unsupported_event(struct sk_buff *skb, struct genl_info *info);
 static int handle_generic_event(struct sk_buff *skb, struct genl_info *info);
 static int ksmbd_ipc_heartbeat_request(void);
 
@@ -397,8 +396,7 @@ out:
 	return ret;
 }
 
-static int handle_unsupported_event(struct sk_buff *skb,
-				    struct genl_info *info)
+static int handle_unsupported_event(struct sk_buff *skb, struct genl_info *info)
 {
 	ksmbd_err("Unknown IPC event: %d, ignore.\n", info->genlhdr->cmd);
 	return -EINVAL;
@@ -467,8 +465,7 @@ out:
 	return ret;
 }
 
-static void *ipc_msg_send_request(struct ksmbd_ipc_msg *msg,
-				  unsigned int handle)
+static void *ipc_msg_send_request(struct ksmbd_ipc_msg *msg, unsigned int handle)
 {
 	struct ipc_msg_table_entry entry;
 	int ret;
@@ -568,9 +565,9 @@ ksmbd_ipc_spnego_authen_request(const char *spnego_blob, int blob_len)
 
 struct ksmbd_tree_connect_response *
 ksmbd_ipc_tree_connect_request(struct ksmbd_session *sess,
-			       struct ksmbd_share_config *share,
-			       struct ksmbd_tree_connect *tree_conn,
-			       struct sockaddr *peer_addr)
+		struct ksmbd_share_config *share,
+		struct ksmbd_tree_connect *tree_conn,
+		struct sockaddr *peer_addr)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_tree_connect_request *req;
@@ -614,7 +611,7 @@ ksmbd_ipc_tree_connect_request(struct ksmbd_session *sess,
 }
 
 int ksmbd_ipc_tree_disconnect_request(unsigned long long session_id,
-				      unsigned long long connect_id)
+		unsigned long long connect_id)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_tree_disconnect_request *req;
@@ -693,8 +690,7 @@ ksmbd_ipc_share_config_request(const char *name)
 	return resp;
 }
 
-struct ksmbd_rpc_command *ksmbd_rpc_open(struct ksmbd_session *sess,
-					 int handle)
+struct ksmbd_rpc_command *ksmbd_rpc_open(struct ksmbd_session *sess, int handle)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_rpc_command *req;
@@ -716,8 +712,7 @@ struct ksmbd_rpc_command *ksmbd_rpc_open(struct ksmbd_session *sess,
 	return resp;
 }
 
-struct ksmbd_rpc_command *ksmbd_rpc_close(struct ksmbd_session *sess,
-					  int handle)
+struct ksmbd_rpc_command *ksmbd_rpc_close(struct ksmbd_session *sess, int handle)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_rpc_command *req;
@@ -739,10 +734,8 @@ struct ksmbd_rpc_command *ksmbd_rpc_close(struct ksmbd_session *sess,
 	return resp;
 }
 
-struct ksmbd_rpc_command *ksmbd_rpc_write(struct ksmbd_session *sess,
-					  int handle,
-					  void *payload,
-					  size_t payload_sz)
+struct ksmbd_rpc_command *ksmbd_rpc_write(struct ksmbd_session *sess, int handle,
+		void *payload, size_t payload_sz)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_rpc_command *req;
@@ -766,8 +759,7 @@ struct ksmbd_rpc_command *ksmbd_rpc_write(struct ksmbd_session *sess,
 	return resp;
 }
 
-struct ksmbd_rpc_command *ksmbd_rpc_read(struct ksmbd_session *sess,
-					 int handle)
+struct ksmbd_rpc_command *ksmbd_rpc_read(struct ksmbd_session *sess, int handle)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_rpc_command *req;
@@ -790,10 +782,8 @@ struct ksmbd_rpc_command *ksmbd_rpc_read(struct ksmbd_session *sess,
 	return resp;
 }
 
-struct ksmbd_rpc_command *ksmbd_rpc_ioctl(struct ksmbd_session *sess,
-					  int handle,
-					  void *payload,
-					  size_t payload_sz)
+struct ksmbd_rpc_command *ksmbd_rpc_ioctl(struct ksmbd_session *sess, int handle,
+		void *payload, size_t payload_sz)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_rpc_command *req;
@@ -817,9 +807,8 @@ struct ksmbd_rpc_command *ksmbd_rpc_ioctl(struct ksmbd_session *sess,
 	return resp;
 }
 
-struct ksmbd_rpc_command *ksmbd_rpc_rap(struct ksmbd_session *sess,
-					void *payload,
-					size_t payload_sz)
+struct ksmbd_rpc_command *ksmbd_rpc_rap(struct ksmbd_session *sess, void *payload,
+		size_t payload_sz)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_rpc_command *req;
