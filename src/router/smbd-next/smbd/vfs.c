@@ -188,13 +188,33 @@ int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode)
 #else
 	err = vfs_create(d_inode(path.dentry), dentry, mode, true);
 #endif
-	if (!err) {
+	if (err)
+		goto out;
+	else if (d_unhashed(dentry)) {
+		struct dentry *d;
+
+		d = lookup_one_len(dentry->d_name.name,
+			       dentry->d_parent,
+			       dentry->d_name.len);
+		if (IS_ERR(d)) {
+			err = PTR_ERR(d);
+			goto out;
+		}
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
+		if (unlikely(d_is_negative(d))) {
+			dput(d);
+			err = -ENOENT;
+			goto out;
+		}
+#endif
 		ksmbd_vfs_inherit_owner(work, d_inode(path.dentry),
-			d_inode(dentry));
-	} else {
-		ksmbd_err("File(%s): creation failed (err:%d)\n", name, err);
+			d_inode(d));
+		dput(d);
 	}
+out:
 	done_path_create(&path, dentry);
+	if (err)
+		ksmbd_err("mkdir(%s): creation failed (err:%d)\n", name, err);
 	return err;
 }
 
