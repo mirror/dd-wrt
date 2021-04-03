@@ -28,6 +28,8 @@
 
 extern void dd_debug(int target, const char *fmt, ...);
 
+extern int debug_ready(void);
+
 /*
  * Reads file and returns contents
  * @param       path    path to file

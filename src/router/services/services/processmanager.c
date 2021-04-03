@@ -31,7 +31,7 @@ static int _stop_process(char *name, char *desc, int hard)
 {
 	if (!desc)
 		desc = name;
-	if (nvram_matchi("console_debug", 1))
+	if (debug_ready() && nvram_matchi("console_debug", 1))
 		dd_loginfo(name, "%s trying to stop\n", desc);
 
 	if (pidof(name) > 0) {
