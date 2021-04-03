@@ -4,6 +4,7 @@
 #include <linux/buffer_head.h>
 #include <linux/slab.h>
 #include <linux/msdos_fs.h>
+#include <linux/overflow.h>
 #include <asm/pgtable.h>
 
 #ifndef SECTOR_SHIFT
@@ -63,4 +64,11 @@ extern void __bitmap_clear(unsigned long *map, unsigned int start, int len);
 #else
 #define compat_submit_bio(bio) submit_bio(bio)
 #define compat_submit_bio_wait(bio) submit_bio_wait(bio)
+#endif
+
+#ifndef struct_size
+#define struct_size(p, member, count)					\
+	__ab_c_size(count,						\
+		    sizeof(*(p)->member) + __must_be_array((p)->member),\
+		    sizeof(*(p)))
 #endif
