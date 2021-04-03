@@ -40,14 +40,15 @@
 #include <shutils.h>
 #include <utils.h>
 
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
+
 int debug_ready(void)
 {
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
 	if (!f_exists("/tmp/.nvram_done"))
 		return 0;
-#endif
 	return 1;
 }
+#endif
 
 static int console_debug(void)
 {
