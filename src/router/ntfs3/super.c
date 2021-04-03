@@ -82,26 +82,24 @@ void ntfs_inode_printk(struct inode *inode, const char *fmt, ...)
 	if (!___ratelimit(&sbi->msg_ratelimit, "ntfs3"))
 		return;
 
-	if (atomic_dec_and_test(&s_name_buf_cnt)) {
-		/* use static allocated buffer */
-		name = s_name_buf;
-	} else {
-		name = kmalloc(sizeof(s_name_buf), GFP_NOFS);
-	}
+	/* use static allocated buffer, if possible */
+	name = atomic_dec_and_test(&s_name_buf_cnt)
+		       ? s_name_buf
+		       : kmalloc(sizeof(s_name_buf), GFP_NOFS);
 
 	if (name) {
-		struct dentry *dentry = d_find_alias(inode);
+		struct dentry *de = d_find_alias(inode);
 		const u32 name_len = ARRAY_SIZE(s_name_buf) - 1;
 
-		if (dentry) {
-			spin_lock(&dentry->d_lock);
-			snprintf(name, name_len, "%s", dentry->d_name.name);
-			spin_unlock(&dentry->d_lock);
-			dput(dentry);
+		if (de) {
+			spin_lock(&de->d_lock);
+			snprintf(name, name_len, " \"%s\"", de->d_name.name);
+			spin_unlock(&de->d_lock);
 			name[name_len] = 0; /* to be sure*/
 		} else {
 			name[0] = 0;
 		}
+		dput(de); /* cocci warns if placed in branch "if (de)" */
 	}
 
 	va_start(args, fmt);
@@ -110,7 +108,7 @@ void ntfs_inode_printk(struct inode *inode, const char *fmt, ...)
 	vaf.fmt = printk_skip_level(fmt);
 	vaf.va = &args;
 
-	printk("%c%cntfs3: %s: ino=%lx, \"%s\" %pV\n", KERN_SOH_ASCII, level,
+	printk("%c%cntfs3: %s: ino=%lx,%s %pV\n", KERN_SOH_ASCII, level,
 	       sb->s_id, inode->i_ino, name ? name : "", &vaf);
 
 	va_end(args);

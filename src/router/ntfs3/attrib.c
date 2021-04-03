@@ -1724,11 +1724,10 @@ int attr_collapse_range(struct ntfs_inode *ni, u64 vbo, u64 bytes)
 		mask = sbi->cluster_mask;
 	}
 
-	if (vbo & mask)
+	if ((vbo & mask) || (bytes & mask)) {
+		/* allow to collapse only cluster aligned ranges */
 		return -EINVAL;
-
-	if (bytes & mask)
-		return -EINVAL;
+	}
 
 	if (vbo > data_size)
 		return -EINVAL;

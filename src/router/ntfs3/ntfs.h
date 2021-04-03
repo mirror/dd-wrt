@@ -64,7 +64,7 @@ struct cpu_str {
 struct le_str {
 	u8 len;
 	u8 unused;
-	__le16 name[1];
+	__le16 name[];
 };
 
 static_assert(SECTOR_SHIFT == 9);
@@ -285,7 +285,7 @@ struct MFT_REC {
 
 	__le16 res;		// 0x2A: High part of mft record?
 	__le32 mft_record;	// 0x2C: Current mft record number
-	__le16 fixups[1];	// 0x30:
+	__le16 fixups[];	// 0x30:
 };
 
 #define MFTRECORD_FIXUP_OFFSET_1 offsetof(struct MFT_REC, res)
@@ -572,7 +572,7 @@ struct ATTR_FILE_NAME {
 	struct NTFS_DUP_INFO dup;// 0x08
 	u8 name_len;		// 0x40: File name length in words
 	u8 type;		// 0x41: File name type
-	__le16 name[1];		// 0x42: File name
+	__le16 name[];		// 0x42: File name
 };
 
 static_assert(sizeof(((struct ATTR_FILE_NAME *)NULL)->dup) == 0x38);
@@ -587,6 +587,7 @@ static inline struct ATTRIB *attr_from_name(struct ATTR_FILE_NAME *fname)
 
 static inline u16 fname_full_size(const struct ATTR_FILE_NAME *fname)
 {
+	// don't return struct_size(fname, name, fname->name_len);
 	return offsetof(struct ATTR_FILE_NAME, name) +
 	       fname->name_len * sizeof(short);
 }
@@ -1137,7 +1138,7 @@ struct REPARSE_DATA_BUFFER {
 			__le16 SubstituteNameLength; // 0x0A
 			__le16 PrintNameOffset;      // 0x0C
 			__le16 PrintNameLength;      // 0x0E
-			__le16 PathBuffer[1];	     // 0x10
+			__le16 PathBuffer[];	     // 0x10
 		} MountPointReparseBuffer;
 
 		// If ReparseTag == 0xA000000C (IO_REPARSE_TAG_SYMLINK)
@@ -1149,7 +1150,7 @@ struct REPARSE_DATA_BUFFER {
 			__le16 PrintNameLength;      // 0x0E
 			// 0-absolute path 1- relative path, SYMLINK_FLAG_RELATIVE
 			__le32 Flags;		     // 0x10
-			__le16 PathBuffer[1];	     // 0x14
+			__le16 PathBuffer[];	     // 0x14
 		} SymbolicLinkReparseBuffer;
 
 		// If ReparseTag == 0x80000017U
@@ -1189,7 +1190,7 @@ struct EA_FULL {
 	u8 flags;		// 0x04
 	u8 name_len;		// 0x05
 	__le16 elength;		// 0x06
-	u8 name[1];		// 0x08
+	u8 name[];		// 0x08
 };
 
 static_assert(offsetof(struct EA_FULL, name) == 8);
@@ -1230,7 +1231,7 @@ struct SID {
 	u8 Revision;
 	u8 SubAuthorityCount;
 	u8 IdentifierAuthority[6];
-	__le32 SubAuthority[1];
+	__le32 SubAuthority[];
 };
 static_assert(offsetof(struct SID, SubAuthority) == 8);
 
