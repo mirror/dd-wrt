@@ -416,4 +416,9 @@ extern void init_cma_reserved_pageblock(struct page *page);
 
 #endif
 
+static inline bool gfpflags_allow_blocking(const gfp_t gfp_flags)
+{
+	return (bool __force)(gfp_flags & __GFP_WAIT);
+}
+
 #endif /* __LINUX_GFP_H */
