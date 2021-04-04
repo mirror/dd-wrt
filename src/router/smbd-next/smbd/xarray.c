@@ -304,8 +304,14 @@ bool xas_nomem(struct xa_state *xas, gfp_t gfp)
 		xas_destroy(xas);
 		return false;
 	}
+#ifdef __GFP_ACCOUNT
 	if (xas->xa->xa_flags & XA_FLAGS_ACCOUNT)
 		gfp |= __GFP_ACCOUNT;
+#else
+	if (!(xas->xa->xa_flags & XA_FLAGS_ACCOUNT))
+		gfp |= __GFP_NOACCOUNT;
+#endif
+
 	xas->xa_alloc = kmem_cache_alloc(radix_tree_node_cachep, gfp);
 	if (!xas->xa_alloc)
 		return false;
@@ -334,8 +340,13 @@ static bool __xas_nomem(struct xa_state *xas, gfp_t gfp)
 		xas_destroy(xas);
 		return false;
 	}
+#ifdef __GFP_ACCOUNT
 	if (xas->xa->xa_flags & XA_FLAGS_ACCOUNT)
 		gfp |= __GFP_ACCOUNT;
+#else
+	if (!(xas->xa->xa_flags & XA_FLAGS_ACCOUNT))
+		gfp |= __GFP_NOACCOUNT;
+#endif
 	if (gfpflags_allow_blocking(gfp)) {
 		xas_unlock_type(xas, lock_type);
 		xas->xa_alloc = kmem_cache_alloc(radix_tree_node_cachep, gfp);
