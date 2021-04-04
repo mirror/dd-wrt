@@ -119,17 +119,6 @@ static struct ksmbd_session *sm_lookup_session(unsigned long long id)
 	return sess;
 }
 
-static int sm_insert_session(struct ksmbd_session *sess)
-{
-	int ret;
-
-	g_rw_lock_writer_lock(&sessions_table_lock);
-	ret = g_hash_table_insert(sessions_table, &(sess->id), sess);
-	g_rw_lock_writer_unlock(&sessions_table_lock);
-
-	return ret;
-}
-
 int sm_handle_tree_connect(unsigned long long id,
 			   struct ksmbd_user *user,
 			   struct ksmbd_tree_conn *tree_conn)
