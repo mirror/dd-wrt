@@ -45,7 +45,8 @@ static unsigned long height_to_maxindex[RADIX_TREE_MAX_PATH + 1] __read_mostly;
 /*
  * Radix tree node cache.
  */
-static struct kmem_cache *radix_tree_node_cachep;
+struct kmem_cache *radix_tree_node_cachep;
+EXPORT_SYMBOL(radix_tree_node_cachep);
 
 /*
  * The radix tree is variable-height, so an insert operation not only has
@@ -214,7 +215,7 @@ radix_tree_node_alloc(struct radix_tree_root *root)
 	return ret;
 }
 
-static void radix_tree_node_rcu_free(struct rcu_head *head)
+void radix_tree_node_rcu_free(struct rcu_head *head)
 {
 	struct radix_tree_node *node =
 			container_of(head, struct radix_tree_node, rcu_head);
@@ -233,6 +234,7 @@ static void radix_tree_node_rcu_free(struct rcu_head *head)
 
 	kmem_cache_free(radix_tree_node_cachep, node);
 }
+EXPORT_SYMBOL(radix_tree_node_rcu_free);
 
 static inline void
 radix_tree_node_free(struct radix_tree_node *node)
