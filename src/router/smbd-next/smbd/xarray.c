@@ -383,8 +383,13 @@ static void *xas_alloc(struct xa_state *xas, unsigned int shift)
 	} else {
 		gfp_t gfp = GFP_NOWAIT | __GFP_NOWARN;
 
+#ifdef __GFP_ACCOUNT
 		if (xas->xa->xa_flags & XA_FLAGS_ACCOUNT)
 			gfp |= __GFP_ACCOUNT;
+#else
+		if (!(xas->xa->xa_flags & XA_FLAGS_ACCOUNT))
+			gfp |= __GFP_NOACCOUNT;
+#endif
 
 		node = kmem_cache_alloc(radix_tree_node_cachep, gfp);
 		if (!node) {
