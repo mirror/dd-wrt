@@ -1565,6 +1565,12 @@ int __init ar7240_platform_init(void)
     #elif CONFIG_E355AC
     #elif CONFIG_WR650AC	
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
+
+
+    #elif CONFIG_POWERBEAMAC_GEN2
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
+	ath79_setup_ar934x_eth_rx_delay(3, 3);
+
     #elif CONFIG_NANOAC
     #elif CONFIG_UAPAC
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII | (3 << QCA955X_ETH_CFG_RXD_DELAY_SHIFT) | (3 << QCA955X_ETH_CFG_RDV_DELAY_SHIFT));
@@ -1815,20 +1821,23 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_POWERBEAMAC_GEN2
+	mdiobus_register_board_info(ubnt_rocket_m_ti_mdio_info,
+			ARRAY_SIZE(ubnt_rocket_m_ti_mdio_info));
+
+	ar71xx_add_device_mdio(0, ~BIT(4));	
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_data.phy_mask = BIT(4);
+	ar71xx_eth0_pll_data.pll_1000 = 0x02000000;
+	ar71xx_eth0_pll_data.pll_100 = 0x00000101;
+	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+	ar71xx_add_device_eth(0);
+    
+    
+    
     #elif CONFIG_NANOAC
-/*	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
-	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
-
-	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 |
-	       AR934X_ETH_CFG_MII_GMAC0 |
-	       AR934X_ETH_CFG_GMII_GMAC0 |
-	       AR934X_ETH_CFG_SW_ONLY_MODE |
-	       AR934X_ETH_CFG_SW_PHY_SWAP);
-	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
-
-	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
-	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
-	iounmap(base);*/
 
 //	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
