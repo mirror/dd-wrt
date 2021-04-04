@@ -53,7 +53,6 @@ char *KSMBD_SHARE_CONF[KSMBD_SHARE_CONF_MAX] = {
 	"hosts deny",
 	"max connections",
 	"veto files",				/* 25 */
-	"inherit smack",
 	"inherit owner",
 	"follow symlinks",
 	"vfs objects",
@@ -544,13 +543,6 @@ static void process_group_kv(gpointer _k, gpointer _v, gpointer user_data)
 			make_veto_list(share);
 		}
 		return;
-	}
-
-	if (shm_share_config(k, KSMBD_SHARE_CONF_INHERIT_SMACK)) {
-		if (cp_get_group_kv_bool(v))
-			set_share_flag(share, KSMBD_SHARE_FLAG_INHERIT_SMACK);
-		else
-			clear_share_flag(share,	KSMBD_SHARE_FLAG_INHERIT_SMACK);
 	}
 
 	if (shm_share_config(k, KSMBD_SHARE_CONF_INHERIT_OWNER)) {
