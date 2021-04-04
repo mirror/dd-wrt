@@ -44,7 +44,7 @@
  * D-cache misses and lots more wasted cycles than we'll ever
  * possibly gain from saving instructions.
  */
-#define AG71XX_NAPI_WEIGHT	64
+#define AG71XX_NAPI_WEIGHT	32
 #define AG71XX_OOM_REFILL	(1 + HZ/10)
 
 #define AG71XX_INT_ERR	(AG71XX_INT_RX_BE | AG71XX_INT_TX_BE)
@@ -59,11 +59,11 @@
 #define AG71XX_TX_RING_SPLIT		512
 #define AG71XX_TX_RING_DS_PER_PKT	DIV_ROUND_UP(AG71XX_TX_MTU_LEN, \
 						     AG71XX_TX_RING_SPLIT)
-#define AG71XX_TX_RING_SIZE_DEFAULT	256
-#define AG71XX_RX_RING_SIZE_DEFAULT	512
+#define AG71XX_TX_RING_SIZE_DEFAULT	128
+#define AG71XX_RX_RING_SIZE_DEFAULT	256
 
-#define AG71XX_TX_RING_SIZE_MAX		256
-#define AG71XX_RX_RING_SIZE_MAX		512
+#define AG71XX_TX_RING_SIZE_MAX		128
+#define AG71XX_RX_RING_SIZE_MAX		256
 
 #ifdef CONFIG_AG934X_DEBUG
 #define DBG(fmt, args...)	pr_debug(fmt, ## args)

@@ -338,6 +338,9 @@ config XWLOCO
 config XWM400
 	bool "nanobridge xw M400"
 	depends on UBNTXW
+config POWERBEAMAC_GEN2
+	bool "support for POWERBEAMAC GEN2"
+	depends on UBNTXW
 config NANOAC
 	bool "support for NANO AC"
 	depends on UBNTXW
