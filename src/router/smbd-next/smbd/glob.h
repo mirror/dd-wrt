@@ -9,17 +9,18 @@
 
 #include <linux/ctype.h>
 #include <linux/version.h>
+#include <linux/mm.h>
+#include <linux/vmalloc.h>
 
 #include "unicode.h"
 #include "vfs_cache.h"
 #include "smberr.h"
 
-#define KSMBD_VERSION	"3.3.7"
+#define KSMBD_VERSION	"3.3.8"
 
 /* @FIXME clean up this code */
 
 extern int ksmbd_debug_types;
-extern int ksmbd_caseless_search;
 
 #define DATA_STREAM	1
 #define DIR_STREAM	2
@@ -68,4 +69,5 @@ extern int ksmbd_caseless_search;
 /* ksmbd misc functions */
 extern void ntstatus_to_dos(__le32 ntstatus, __u8 *eclass, __le16 *ecode);
 #endif
+
 #endif /* __KSMBD_GLOB_H */

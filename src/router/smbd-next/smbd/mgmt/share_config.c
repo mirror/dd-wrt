@@ -10,6 +10,7 @@
 #include <linux/parser.h>
 #include <linux/namei.h>
 #include <linux/sched.h>
+#include <linux/mm.h>
 
 #include "share_config.h"
 #include "user_config.h"
@@ -92,21 +93,17 @@ static int parse_veto_list(struct ksmbd_share_config *share,
 	while (veto_list_sz > 0) {
 		struct ksmbd_veto_pattern *p;
 
-
 		sz = strlen(veto_list);
 		if (!sz)
 			break;
 
-		p = ksmbd_zalloc(sizeof(struct ksmbd_veto_pattern));
-		if (!p) {
-			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
+		p = kzalloc(sizeof(struct ksmbd_veto_pattern), GFP_KERNEL);
+		if (!p)
 			return -ENOMEM;
-		}
 
 		p->pattern = kstrdup(veto_list, GFP_KERNEL);
 		if (!p->pattern) {
-			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
-			ksmbd_free(p);
+			kfree(p);
 			return -ENOMEM;
 		}
 
@@ -133,7 +130,7 @@ static struct ksmbd_share_config *share_config_request(char *name)
 	if (resp->flags == KSMBD_SHARE_FLAG_INVALID)
 		goto out;
 
-	share = ksmbd_zalloc(sizeof(struct ksmbd_share_config));
+	share = kzalloc(sizeof(struct ksmbd_share_config), GFP_KERNEL);
 	if (!share)
 		goto out;
 
@@ -214,47 +211,6 @@ struct ksmbd_share_config *ksmbd_share_config_get(char *name)
 		return share;
 	return share_config_request(name);
 }
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
-static bool match_wildcard(const char *pattern, const char *str)
-{
-	const char *s = str;
-	const char *p = pattern;
-	bool star = false;
-
-	while (*s) {
-		switch (*p) {
-		case '?':
-			s++;
-			p++;
-			break;
-		case '*':
-			star = true;
-			str = s;
-			if (!*++p)
-				return true;
-			pattern = p;
-			break;
-		default:
-			if (*s == *p) {
-				s++;
-				p++;
-			} else {
-				if (!star)
-					return false;
-				str++;
-				s = str;
-				p = pattern;
-			}
-			break;
-		}
-	}
-
-	if (*p == '*')
-		++p;
-	return !*p;
-}
-#endif
 
 bool ksmbd_share_veto_filename(struct ksmbd_share_config *share,
 			       const char *filename)
