@@ -102,6 +102,8 @@ do
 	    echo CONFIG_WA7510=y >> .config
 	    echo CONFIG_NANOAC=y >> .config
 	    echo CONFIG_WDR4900V2=y >> .config
+	    echo CONFIG_ARCHERC25=y >> .config
+	    echo CONFIG_POWERBEAMAC_GEN2=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR710=y/ /g' .config	    
@@ -156,6 +158,8 @@ do
 	    sed -i 's/\CONFIG_WA7510=y/ /g' .config	    
 	    sed -i 's/\CONFIG_NANOAC=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WDR4900V2=y/ /g' .config	    
+	    sed -i 's/\CONFIG_ARCHERC25=y/ /g' .config	    
+	    sed -i 's/\CONFIG_POWERBEAMAC_GEN2=y/ /g' .config	    
     fi
     sed -i 's/\# CONFIG_EXFAT_FS is not set/ /g' .config	    
     cp .config $i

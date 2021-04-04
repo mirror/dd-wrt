@@ -629,7 +629,11 @@ endif
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os) -fno-caller-saves $(call cc-disable-warning,maybe-uninitialized,)
 else
+ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3
+KBUILD_CFLAGS	+= -O3 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
+else
 KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
+endif
 endif
 
 ifdef CONFIG_BCM47XX
