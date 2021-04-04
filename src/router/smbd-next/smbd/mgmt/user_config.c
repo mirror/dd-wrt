@@ -4,6 +4,7 @@
  */
 
 #include <linux/slab.h>
+#include <linux/mm.h>
 
 #include "user_config.h"
 #include "../buffer_pool.h"
@@ -31,7 +32,7 @@ struct ksmbd_user *ksmbd_alloc_user(struct ksmbd_login_response *resp)
 {
 	struct ksmbd_user *user = NULL;
 
-	user = ksmbd_zalloc(sizeof(struct ksmbd_user));
+	user = kmalloc(sizeof(struct ksmbd_user), GFP_KERNEL);
 	if (!user)
 		return NULL;
 
@@ -40,14 +41,14 @@ struct ksmbd_user *ksmbd_alloc_user(struct ksmbd_login_response *resp)
 	user->gid = resp->gid;
 	user->uid = resp->uid;
 	user->passkey_sz = resp->hash_sz;
-	user->passkey = ksmbd_zalloc(resp->hash_sz);
+	user->passkey = kmalloc(resp->hash_sz, GFP_KERNEL);
 	if (user->passkey)
 		memcpy(user->passkey, resp->hash, resp->hash_sz);
 
 	if (!user->name || !user->passkey) {
 		kfree(user->name);
-		ksmbd_free(user->passkey);
-		ksmbd_free(user);
+		kfree(user->passkey);
+		kfree(user);
 		user = NULL;
 	}
 	return user;
@@ -57,8 +58,8 @@ void ksmbd_free_user(struct ksmbd_user *user)
 {
 	ksmbd_ipc_logout_request(user->name);
 	kfree(user->name);
-	ksmbd_free(user->passkey);
-	ksmbd_free(user);
+	kfree(user->passkey);
+	kfree(user);
 }
 
 int ksmbd_anonymous_user(struct ksmbd_user *user)

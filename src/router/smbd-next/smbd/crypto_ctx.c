@@ -157,7 +157,7 @@ static struct blkcipher_desc *alloc_blk_desc(int id)
 
 static struct ksmbd_crypto_ctx *ctx_alloc(void)
 {
-	return ksmbd_zalloc(sizeof(struct ksmbd_crypto_ctx));
+	return kzalloc(sizeof(struct ksmbd_crypto_ctx), GFP_KERNEL);
 }
 
 static void ctx_free(struct ksmbd_crypto_ctx *ctx)
@@ -172,7 +172,7 @@ static void ctx_free(struct ksmbd_crypto_ctx *ctx)
 	for (i = 0; i < CRYPTO_BLK_MAX; i++)
 		free_blk(ctx->blk_desc[i]);
 #endif
-	ksmbd_free(ctx);
+	kfree(ctx);
 }
 
 static struct ksmbd_crypto_ctx *ksmbd_find_crypto_ctx(void)
