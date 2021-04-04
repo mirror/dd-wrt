@@ -194,10 +194,6 @@ Define ksmbd configuration parameters list.
 		The ownership for new files and directories should be controlled
 		by the ownership of the parent directory.
 		Valid options are yes or no.
-	- inherit smack (default: no)
-		This parameter can be used to ensure that if smack label exist
-		on parent directories.
-		Valid options are yes or no.
 	- force create mode (default: 0)
 		This parameter specifies a set of UNIX mode bit permissions
 		that will always be set on a file created by ksmbd.
