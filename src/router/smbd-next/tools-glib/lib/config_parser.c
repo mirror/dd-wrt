@@ -634,15 +634,17 @@ static void groups_callback(gpointer _k, gpointer _v, gpointer flags)
 
 static int cp_add_ipc_share(void)
 {
-	char *comment = NULL;
+	char *comment = NULL, *guest = NULL;
 	int ret = 0;
 
 	if (g_hash_table_lookup(parser.groups, "ipc$"))
 		return 0;
 
 	comment = g_strdup("comment = IPC share");
+	guest = g_strdup("guest ok = yes");
 	ret = add_new_group("[IPC$]");
 	ret |= add_group_key_value(comment);
+	ret |= add_group_key_value(guest);
 	if (ret) {
 		pr_err("Unable to add IPC$ share\n");
 		ret = -EINVAL;
@@ -652,6 +654,7 @@ static int cp_add_ipc_share(void)
 
 out:
 	g_free(comment);
+	g_free(guest);
 	return ret;
 }
 
