@@ -9,13 +9,6 @@
 #include <linux/slab.h>
 #include <linux/idr.h>
 
-struct ksmbd_ida {
-	struct ida	map;
-};
-
-struct ksmbd_ida *ksmbd_ida_alloc(void);
-void ksmbd_ida_free(struct ksmbd_ida *ida);
-
 /*
  * 2.2.1.6.7 TID Generation
  *    The value 0xFFFF MUST NOT be used as a valid TID. All other
@@ -24,9 +17,9 @@ void ksmbd_ida_free(struct ksmbd_ida *ida);
  *    depending upon the context in which it is used.
  */
 #ifdef CONFIG_SMB_INSECURE_SERVER
-int ksmbd_acquire_smb1_tid(struct ksmbd_ida *ida);
+int ksmbd_acquire_smb1_tid(struct ida *ida);
 #endif
-int ksmbd_acquire_smb2_tid(struct ksmbd_ida *ida);
+int ksmbd_acquire_smb2_tid(struct ida *ida);
 
 /*
  * 2.2.1.6.8 UID Generation
@@ -36,12 +29,12 @@ int ksmbd_acquire_smb2_tid(struct ksmbd_ida *ida);
  *    zero (0x0000), are valid.
  */
 #ifdef CONFIG_SMB_INSECURE_SERVER
-int ksmbd_acquire_smb1_uid(struct ksmbd_ida *ida);
+int ksmbd_acquire_smb1_uid(struct ida *ida);
 #endif
-int ksmbd_acquire_smb2_uid(struct ksmbd_ida *ida);
-int ksmbd_acquire_async_msg_id(struct ksmbd_ida *ida);
+int ksmbd_acquire_smb2_uid(struct ida *ida);
+int ksmbd_acquire_async_msg_id(struct ida *ida);
 
-int ksmbd_acquire_id(struct ksmbd_ida *ida);
+int ksmbd_acquire_id(struct ida *ida);
 
-void ksmbd_release_id(struct ksmbd_ida *ida, int id);
+void ksmbd_release_id(struct ida *ida, int id);
 #endif /* __KSMBD_IDA_MANAGEMENT_H__ */
