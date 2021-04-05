@@ -51,7 +51,7 @@ void ksmbd_free_work_struct(struct ksmbd_work *work)
 	ksmbd_free_response(work->tr_buf);
 	ksmbd_free_request(work->request_buf);
 	if (work->async_id)
-		ksmbd_release_id(work->conn->async_ida, work->async_id);
+		ksmbd_release_id(&work->conn->async_ida, work->async_id);
 	kmem_cache_free(work_cache, work);
 }
 
