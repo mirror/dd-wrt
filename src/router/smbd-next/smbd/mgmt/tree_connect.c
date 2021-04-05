@@ -31,7 +31,7 @@ ksmbd_tree_conn_connect(struct ksmbd_session *sess, char *share_name)
 	if (!sc)
 		return status;
 
-	tree_conn = kzalloc(sizeof(struct ksmbd_tree_connect), GFP_KERNEL);
+	tree_conn = ksmbd_zalloc(sizeof(struct ksmbd_tree_connect));
 	if (!tree_conn) {
 		status.ret = -ENOMEM;
 		goto out_error;
@@ -75,7 +75,7 @@ out_error:
 	if (tree_conn)
 		ksmbd_release_tree_conn_id(sess, tree_conn->id);
 	ksmbd_share_config_put(sc);
-	kfree(tree_conn);
+	ksmbd_free(tree_conn);
 	ksmbd_free(resp);
 	return status;
 }
