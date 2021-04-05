@@ -22,7 +22,7 @@ ksmbd-y :=	unicode.o auth.o vfs.o vfs_cache.o \
 		buffer_pool.o transport_tcp.o transport_ipc.o server.o \
 		connection.o crypto_ctx.o ksmbd_work.o smbacl.o ndr.o
 
-ksmbd-y +=	smb2pdu.o smb2ops.o smb2misc.o asn1.o xarray.o
+ksmbd-y +=	smb2pdu.o smb2ops.o smb2misc.o asn1.o
 ksmbd-$(CONFIG_SMB_INSECURE_SERVER) += smb1pdu.o smb1ops.o smb1misc.o
 ksmbd-$(CONFIG_SMB_SERVER_SMBDIRECT) += transport_rdma.o
 #else
