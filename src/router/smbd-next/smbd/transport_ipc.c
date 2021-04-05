@@ -35,7 +35,7 @@ static DEFINE_HASHTABLE(ipc_msg_table, IPC_MSG_HASH_BITS);
 static DECLARE_RWSEM(ipc_msg_table_lock);
 static DEFINE_MUTEX(startup_lock);
 
-static struct ksmbd_ida *ida;
+static DEFINE_IDA(ipc_ida);
 
 static unsigned int ksmbd_tools_pid = 0;
 
@@ -254,7 +254,7 @@ static void ipc_msg_free(struct ksmbd_ipc_msg *msg)
 static void ipc_msg_handle_free(int handle)
 {
 	if (handle >= 0)
-		ksmbd_release_id(ida, handle);
+		ksmbd_release_id(&ipc_ida, handle);
 }
 
 static int handle_response(int type, void *payload, size_t sz)
@@ -526,7 +526,7 @@ struct ksmbd_login_response *ksmbd_ipc_login_request(const char *account)
 
 	msg->type = KSMBD_EVENT_LOGIN_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
-	req->handle = ksmbd_acquire_id(ida);
+	req->handle = ksmbd_acquire_id(&ipc_ida);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
 	strlcpy(req->account, account, KSMBD_REQ_MAX_ACCOUNT_NAME_SZ);
 #else
@@ -553,7 +553,7 @@ ksmbd_ipc_spnego_authen_request(const char *spnego_blob, int blob_len)
 
 	msg->type = KSMBD_EVENT_SPNEGO_AUTHEN_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
-	req->handle = ksmbd_acquire_id(ida);
+	req->handle = ksmbd_acquire_id(&ipc_ida);
 	req->spnego_blob_len = blob_len;
 	memcpy(req->spnego_blob, spnego_blob, blob_len);
 
@@ -586,7 +586,7 @@ ksmbd_ipc_tree_connect_request(struct ksmbd_session *sess,
 	msg->type = KSMBD_EVENT_TREE_CONNECT_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
 
-	req->handle = ksmbd_acquire_id(ida);
+	req->handle = ksmbd_acquire_id(&ipc_ida);
 	req->account_flags = sess->user->flags;
 	req->session_id = sess->id;
 	req->connect_id = tree_conn->id;
@@ -677,7 +677,7 @@ ksmbd_ipc_share_config_request(const char *name)
 
 	msg->type = KSMBD_EVENT_SHARE_CONFIG_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
-	req->handle = ksmbd_acquire_id(ida);
+	req->handle = ksmbd_acquire_id(&ipc_ida);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
 	strlcpy(req->share_name, name, KSMBD_REQ_MAX_SHARE_NAME);
 #else
@@ -820,7 +820,7 @@ struct ksmbd_rpc_command *ksmbd_rpc_rap(struct ksmbd_session *sess, void *payloa
 
 	msg->type = KSMBD_EVENT_RPC_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
-	req->handle = ksmbd_acquire_id(ida);
+	req->handle = ksmbd_acquire_id(&ipc_ida);
 	req->flags = rpc_context_flags(sess);
 	req->flags |= KSMBD_RPC_RAP_METHOD;
 	req->payload_sz = payload_sz;
@@ -877,18 +877,17 @@ static void ipc_timer_heartbeat(struct work_struct *w)
 
 int ksmbd_ipc_id_alloc(void)
 {
-	return ksmbd_acquire_id(ida);
+	return ksmbd_acquire_id(&ipc_ida);
 }
 
 void ksmbd_rpc_id_free(int handle)
 {
-	ksmbd_release_id(ida, handle);
+	ksmbd_release_id(&ipc_ida, handle);
 }
 
 void ksmbd_ipc_release(void)
 {
 	cancel_delayed_work_sync(&ipc_timer_work);
-	ksmbd_ida_free(ida);
 	genl_unregister_family(&ksmbd_genl_family);
 }
 
@@ -902,7 +901,7 @@ void ksmbd_ipc_soft_reset(void)
 
 int ksmbd_ipc_init(void)
 {
-	int ret;
+	int ret = 0;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 	int i;
 #endif
@@ -914,7 +913,7 @@ int ksmbd_ipc_init(void)
 	if (ret) {
 		ksmbd_err("Failed to register SMBD netlink interface %d\n",
 				ret);
-		goto cancel_work;
+		cancel_delayed_work_sync(&ipc_timer_work);
 	}
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 	for (i = 0; i < ARRAY_SIZE(ksmbd_genl_ops); i++) {
@@ -922,17 +921,5 @@ int ksmbd_ipc_init(void)
 				&ksmbd_genl_ops[i]);
 	}
 #endif
-	ida = ksmbd_ida_alloc();
-	if (!ida) {
-		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
-		ret = -ENOMEM;
-		goto unregister;
-	}
-	return 0;
-
-unregister:
-	genl_unregister_family(&ksmbd_genl_family);
-cancel_work:
-	cancel_delayed_work_sync(&ipc_timer_work);
 	return ret;
 }
