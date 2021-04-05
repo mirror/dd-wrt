@@ -97,13 +97,14 @@ static int parse_veto_list(struct ksmbd_share_config *share,
 		if (!sz)
 			break;
 
-		p = kzalloc(sizeof(struct ksmbd_veto_pattern), GFP_KERNEL);
+		p = ksmbd_zalloc(sizeof(struct ksmbd_veto_pattern));
 		if (!p)
 			return -ENOMEM;
 
 		p->pattern = kstrdup(veto_list, GFP_KERNEL);
 		if (!p->pattern) {
-			kfree(p);
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
+			ksmbd_free(p);
 			return -ENOMEM;
 		}
 
@@ -130,7 +131,7 @@ static struct ksmbd_share_config *share_config_request(char *name)
 	if (resp->flags == KSMBD_SHARE_FLAG_INVALID)
 		goto out;
 
-	share = kzalloc(sizeof(struct ksmbd_share_config), GFP_KERNEL);
+	share = ksmbd_zalloc(sizeof(struct ksmbd_share_config));
 	if (!share)
 		goto out;
 

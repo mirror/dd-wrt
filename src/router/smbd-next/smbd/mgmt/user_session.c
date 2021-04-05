@@ -55,7 +55,7 @@ static void __session_rpc_close(struct ksmbd_session *sess,
 
 	ksmbd_free(resp);
 	ksmbd_rpc_id_free(entry->id);
-	kfree(entry);
+	ksmbd_free(entry);
 }
 
 static void ksmbd_session_rpc_clear_list(struct ksmbd_session *sess)
@@ -103,7 +103,7 @@ int ksmbd_session_rpc_open(struct ksmbd_session *sess, char *rpc_name)
 	if (!method)
 		return -EINVAL;
 
-	entry = kzalloc(sizeof(struct ksmbd_session_rpc), GFP_KERNEL);
+	entry = ksmbd_zalloc(sizeof(struct ksmbd_session_rpc));
 	if (!entry)
 		return -EINVAL;
 
@@ -121,7 +121,7 @@ int ksmbd_session_rpc_open(struct ksmbd_session *sess, char *rpc_name)
 	return entry->id;
 error:
 	list_del(&entry->list);
-	kfree(entry);
+	ksmbd_free(entry);
 	return -EINVAL;
 }
 
@@ -174,7 +174,7 @@ void ksmbd_session_destroy(struct ksmbd_session *sess)
 	free_channel_list(sess);
 	kfree(sess->Preauth_HashValue);
 	ksmbd_release_id(&session_ida, sess->id);
-	kfree(sess);
+	ksmbd_free(sess);
 }
 
 static struct ksmbd_session *__session_lookup(unsigned long long id)
