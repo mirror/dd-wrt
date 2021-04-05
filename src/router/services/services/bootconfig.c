@@ -78,10 +78,14 @@ void start_bootconfig(void)
 		sprintf(dev, "/dev/%s1", disc);
 	eval("mount", "-t", "ext2", dev, "/boot");
 	FILE *in = fopen("/boot/boot/grub/menu.lst", "rb");
+	if (!in)
+		return;
 	char serial[64];
 	fscanf(in, "%s", serial);
 	fclose(in);
 	FILE *out = fopen("/boot/boot/grub/menu.lst", "wb");
+	if (!out)
+		return;
 	char *vga = " fbcon=nodefer vga=0x305";
 	if (!strncmp(serial, "serial", 6)) {
 		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
