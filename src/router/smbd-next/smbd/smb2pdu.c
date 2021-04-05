@@ -105,7 +105,7 @@ int smb2_get_ksmbd_tcon(struct ksmbd_work *work)
 		return 0;
 	}
 
-	if (xa_empty(&work->sess->tree_conns)) {
+	if (list_empty(&work->sess->tree_conn_list)) {
 		ksmbd_debug(SMB, "NO tree connected\n");
 		return -1;
 	}

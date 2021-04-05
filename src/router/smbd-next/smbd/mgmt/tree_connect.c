@@ -5,8 +5,6 @@
 
 #include <linux/list.h>
 #include <linux/slab.h>
-#include <linux/version.h>
-#include <linux/xarray.h>
 
 #include "../buffer_pool.h"
 #include "../transport_ipc.h"
@@ -62,12 +60,7 @@ ksmbd_tree_conn_connect(struct ksmbd_session *sess, char *share_name)
 	tree_conn->share_conf = sc;
 	status.tree_conn = tree_conn;
 
-	ret = xa_err(xa_store(&sess->tree_conns, tree_conn->id, tree_conn,
-			GFP_KERNEL));
-	if (ret) {
-		status.ret = -ENOMEM;
-		goto out_error;
-	}
+	list_add(&tree_conn->list, &sess->tree_conn_list);
 	ksmbd_free(resp);
 	return status;
 
@@ -87,7 +80,7 @@ int ksmbd_tree_conn_disconnect(struct ksmbd_session *sess,
 
 	ret = ksmbd_ipc_tree_disconnect_request(sess->id, tree_conn->id);
 	ksmbd_release_tree_conn_id(sess, tree_conn->id);
-	xa_erase(&sess->tree_conns, tree_conn->id);
+	list_del(&tree_conn->list);
 	ksmbd_share_config_put(tree_conn->share_conf);
 	kfree(tree_conn);
 	return ret;
@@ -96,7 +89,15 @@ int ksmbd_tree_conn_disconnect(struct ksmbd_session *sess,
 struct ksmbd_tree_connect *ksmbd_tree_conn_lookup(struct ksmbd_session *sess,
 						  unsigned int id)
 {
-	return xa_load(&sess->tree_conns, id);
+	struct ksmbd_tree_connect *tree_conn;
+	struct list_head *tmp;
+
+	list_for_each(tmp, &sess->tree_conn_list) {
+		tree_conn = list_entry(tmp, struct ksmbd_tree_connect, list);
+		if (tree_conn->id == id)
+			return tree_conn;
+	}
+	return NULL;
 }
 
 struct ksmbd_share_config *ksmbd_tree_conn_share(struct ksmbd_session *sess,
@@ -113,11 +114,12 @@ struct ksmbd_share_config *ksmbd_tree_conn_share(struct ksmbd_session *sess,
 int ksmbd_tree_conn_session_logoff(struct ksmbd_session *sess)
 {
 	int ret = 0;
-	struct ksmbd_tree_connect *tc;
-	unsigned long id;
-
-	xa_for_each(&sess->tree_conns, id, tc)
+	while (!list_empty(&sess->tree_conn_list)) {
+		struct ksmbd_tree_connect *tc;
+		tc = list_entry(sess->tree_conn_list.next,
+				struct ksmbd_tree_connect,
+				list);
 		ret |= ksmbd_tree_conn_disconnect(sess, tc);
-	xa_destroy(&sess->tree_conns);
+	}
 	return ret;
 }
