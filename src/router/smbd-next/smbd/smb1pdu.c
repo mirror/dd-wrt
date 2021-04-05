@@ -288,7 +288,7 @@ int smb_get_ksmbd_tcon(struct ksmbd_work *work)
 	struct smb_hdr *req_hdr = (struct smb_hdr *)work->request_buf;
 	int tree_id;
 
-	if (xa_empty(&work->sess->tree_conns)) {
+	if (list_empty(&work->sess->tree_conn_list)) {
 		ksmbd_debug(SMB, "NO tree connected\n");
 		return 0;
 	}
@@ -576,7 +576,7 @@ out_err:
 	}
 
 	/* Clean session if there is no tree attached */
-	if (!sess || xa_empty(&work->sess->tree_conns))
+ 	if (!sess || list_empty(&work->sess->tree_conn_list))
 		ksmbd_conn_set_exiting(work);
 	inc_rfc1001_len(rsp_hdr, (7 * 2 + le16_to_cpu(rsp->ByteCount) +
 		extra_byte));
