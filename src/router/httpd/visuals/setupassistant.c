@@ -225,9 +225,7 @@ char *ej_get_sas_stage(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_visible_css(webs_t wp, int argc, char_t ** argv)
 {
-	if (!strcmp(nvram_selget(wp, argv[0]), argv[1])) {
-		websWrite(wp, "");
-	} else {
+	if (strcmp(nvram_selget(wp, argv[0]), argv[1])) {
 		websWrite(wp, "display: none;");
 	}
 }
