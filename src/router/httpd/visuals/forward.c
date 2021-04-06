@@ -128,9 +128,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "udp"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "udp"))
 						websWrite(wp, "checked=\"checked\"");
 				}
 				break;
@@ -139,9 +137,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "tcp"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "tcp"))
 						websWrite(wp, "checked=\"checked\"");
 				}
 				break;
@@ -150,9 +146,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "udp"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "udp"))
 						websWrite(wp, "selected=\"selected\"");
 				}
 				break;
@@ -161,9 +155,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "tcp"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "tcp"))
 						websWrite(wp, "selected=\"selected\"");
 				}
 				break;
@@ -174,8 +166,6 @@ void port_forward_table(webs_t wp, char *type, int which)
 						continue;
 					if (!strcmp(proto, "both"))
 						websWrite(wp, "selected=\\\"selected\\\"");
-					else
-						websWrite(wp, "");
 				}
 				break;
 			case IP:
@@ -193,22 +183,24 @@ void port_forward_table(webs_t wp, char *type, int which)
 						continue;
 					if (!strcmp(enable, "on"))
 						websWrite(wp, "checked=\"checked\"");
-					else
-						websWrite(wp, "");
 				}
 				break;
 			}
 			return;
 		}
 	}
-	if (!strcmp(type, "from") || !strcmp(type, "to"))
+	switch (t) {
+	case FROM:
+	case TO:
 		websWrite(wp, "0");
-	else if (!strcmp(type, "ip"))
+		break;
+	case IP:
 		websWrite(wp, "0.0.0.0");
-	else if (!strcmp(type, "sel_both"))
+		break;
+	case SEL_BOTH:
 		websWrite(wp, "selected=\\\"selected\\\"");
-	else
-		websWrite(wp, "");
+	}
+
 }
 
 void port_forward_spec(webs_t wp, char *type, int which)
@@ -255,10 +247,8 @@ void port_forward_spec(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "udp")
-					    || !strcmp(proto, "both"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "udp")
+					    && strcmp(proto, "both"))
 						websWrite(wp, "checked=\"checked\"");
 				}
 				break;
@@ -267,10 +257,8 @@ void port_forward_spec(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "tcp")
-					    || !strcmp(proto, "both"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "tcp")
+					    && strcmp(proto, "both"))
 						websWrite(wp, "checked=\"checked\"");
 				}
 				break;
@@ -279,10 +267,8 @@ void port_forward_spec(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "udp")
-					    || !strcmp(proto, "both"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "udp")
+					    && strcmp(proto, "both"))
 						websWrite(wp, "selected=\"selected\"");
 				}
 				break;
@@ -291,10 +277,8 @@ void port_forward_spec(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "tcp")
-					    || !strcmp(proto, "both"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "tcp")
+					    && strcmp(proto, "both"))
 						websWrite(wp, "selected=\"selected\"");
 				}
 				break;
@@ -305,8 +289,6 @@ void port_forward_spec(webs_t wp, char *type, int which)
 						continue;
 					if (!strcmp(proto, "both"))
 						websWrite(wp, "selected=\\\"selected\\\"");
-					else
-						websWrite(wp, "");
 				}
 				break;
 			case IP:
@@ -332,24 +314,23 @@ void port_forward_spec(webs_t wp, char *type, int which)
 						continue;
 					if (!strcmp(enable, "on"))
 						websWrite(wp, "checked=\"checked\"");
-					else
-						websWrite(wp, "");
 				}
 				break;
 			}
 			return;
 		}
 	}
-	if (!strcmp(type, "from") || !strcmp(type, "to"))
+	switch (t) {
+	case FROM:
+	case TO:
 		websWrite(wp, "0");
-	else if (!strcmp(type, "ip"))
+		break;
+	case IP:
 		websWrite(wp, "0.0.0.0");
-	else if (!strcmp(type, "src"))
-		websWrite(wp, "");
-	else if (!strcmp(type, "sel_both"))
+		break;
+	case SEL_BOTH:
 		websWrite(wp, "selected=\\\"selected\\\"");
-	else
-		websWrite(wp, "");
+	}
 }
 
 void ip_forward(webs_t wp, char *type, int which)
@@ -396,8 +377,6 @@ void ip_forward(webs_t wp, char *type, int which)
 						continue;
 					if (!strcmp(enable, "on"))
 						websWrite(wp, "checked=\"checked\"");
-					else
-						websWrite(wp, "");
 				}
 				break;
 			}
@@ -440,8 +419,6 @@ void port_trigger_table(webs_t wp, char *type, int which)
 						continue;
 					if (!strcmp(enable, "on"))
 						websWrite(wp, "checked=\\\"checked\\\"");
-					else
-						websWrite(wp, "");
 				}
 				break;
 			case SEL_TCP:
@@ -449,10 +426,8 @@ void port_trigger_table(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "udp")
-					    || !strcmp(proto, "both"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "udp")
+					    && strcmp(proto, "both"))
 						websWrite(wp, "selected=\"selected\"");
 				}
 				break;
@@ -461,10 +436,8 @@ void port_trigger_table(webs_t wp, char *type, int which)
 					GETENTRYBYIDX(proto, word, 2);
 					if (!proto)
 						continue;
-					if (!strcmp(proto, "tcp")
-					    || !strcmp(proto, "both"))
-						websWrite(wp, "");
-					else
+					if (strcmp(proto, "tcp")
+					    && strcmp(proto, "both"))
 						websWrite(wp, "selected=\"selected\"");
 				}
 				break;
@@ -475,8 +448,6 @@ void port_trigger_table(webs_t wp, char *type, int which)
 						continue;
 					if (!strcmp(proto, "both"))
 						websWrite(wp, "selected=\\\"selected\\\"");
-					else
-						websWrite(wp, "");
 				}
 				break;
 			case I_FROM:
@@ -517,9 +488,7 @@ void port_trigger_table(webs_t wp, char *type, int which)
 			return;
 		}
 	}
-	if (!strcmp(type, "name"))
-		websWrite(wp, "");
-	else
+	if (t != NAME)
 		websWrite(wp, "0");
 	return;
 }
