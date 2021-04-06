@@ -74,9 +74,9 @@ static int name_to_type(char *type)
 	if (!strcmp(type, "to"))
 		return TO;
 	if (!strcmp(type, "udp"))
-		return FROM;
+		return UDP;
 	if (!strcmp(type, "tcp"))
-		return TO;
+		return TCP;
 	if (!strcmp(type, "ip"))
 		return IP;
 	return -1;
