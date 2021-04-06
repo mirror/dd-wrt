@@ -60,16 +60,12 @@ static void show_chaps_table(webs_t wp, char *type, int which)
 			else if (!strcmp(type, "enable")) {
 				if (!strcmp(enable, "on"))
 					websWrite(wp, "checked=\"checked\"");
-				else
-					websWrite(wp, "");
 			}
 			return;
 		}
 	}
 	if (!strcmp(type, "ip"))
 		websWrite(wp, "0.0.0.0");
-	else
-		websWrite(wp, "");
 
 }
 
