@@ -36,11 +36,26 @@ libucontext_makecontext(libucontext_ucontext_t *ucp, void (*func)(), int argc, .
 	sp -= stack_args + 2;
 	sp = (libucontext_greg_t *) ((uintptr_t) sp & -16L);
 
+#ifdef __UCLIBC__
+	ucp->uc_mcontext.uc_regs->gregs[REG_NIP]  = (uintptr_t) func;
+	ucp->uc_mcontext.uc_regs->gregs[REG_LNK]  = (uintptr_t) &libucontext_trampoline;
+	ucp->uc_mcontext.uc_regs->gregs[REG_R31]  = (uintptr_t) ucp->uc_link;
+	ucp->uc_mcontext.uc_regs->gregs[REG_SP]   = (uintptr_t) sp;
+	sp[0] = 0;
+
+	va_start(va, argc);
+
+	for (i = 0; i < argc; i++) {
+		if (i < 8)
+			ucp->uc_mcontext.uc_regs->gregs[i + 3] = va_arg (va, libucontext_greg_t);
+		else
+			sp[i-8 + 2] = va_arg (va, libucontext_greg_t);
+	}
+#else
 	ucp->uc_mcontext.gregs[REG_NIP]  = (uintptr_t) func;
 	ucp->uc_mcontext.gregs[REG_LNK]  = (uintptr_t) &libucontext_trampoline;
 	ucp->uc_mcontext.gregs[REG_R31]  = (uintptr_t) ucp->uc_link;
 	ucp->uc_mcontext.gregs[REG_SP]   = (uintptr_t) sp;
-
 	sp[0] = 0;
 
 	va_start(va, argc);
@@ -51,6 +66,7 @@ libucontext_makecontext(libucontext_ucontext_t *ucp, void (*func)(), int argc, .
 		else
 			sp[i-8 + 2] = va_arg (va, libucontext_greg_t);
 	}
+#endif
 
 	va_end(va);
 }
