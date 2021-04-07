@@ -920,13 +920,17 @@ ifneq ($(CONFIG_NOWIFI),y)
 
 ATH9KCFLAGS+= $(COPTS) -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KOBJS += mac80211.o site_survey_mac80211.o
+
 ATH9KFILES += networking/wifi/mac80211.c tools/site_survey_mac80211.c
 ATH9KCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(TOP)/shared
 ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 ifeq ($(CONFIG_MT76),y)
 ATH9KCFLAGS += -DHAVE_MT76
 endif
-
+ifeq ($(CONFIG_ATH10K),y)
+ATH9KOBJS += dumper.o
+ATH9KFILES += tools/dumper.c
+endif
 ifeq ($(CONFIG_UNIWIP),y)
 ATH9KCFLAGS += -DHAVE_UNIWIP
 endif
