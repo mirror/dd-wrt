@@ -13,11 +13,11 @@ static void dumprom(int dev, char *target)
 		if (!in)
 			return;
 		fprintf(in, "0x%x", i);
-		fprintf(out, "read %X\n", i);
+		fprintf(stdout, "read %X\n", i);
 		fclose(in);
-		in = fopen(value, "wb");
+		in = fopen(value, "rb");
 		unsigned int a, v;
-		fscanf(in, "0x%08x:%08x", &a, &v);
+		fscanf(in, "0x%08x:0x%08x", &a, &v);
 		fwrite(&v, 4, 1, out);
 		fclose(in);
 	}
