@@ -971,6 +971,11 @@ static int tcp_v6_conn_request(struct sock *sk, struct sk_buff *skb)
 	if (!ipv6_unicast_destination(skb))
 		goto drop;
 
+	if (ipv6_addr_v4mapped(&ipv6_hdr(skb)->saddr)) {
+		IP6_INC_STATS_BH(sock_net(sk), NULL, IPSTATS_MIB_INHDRERRORS);
+		return 0;
+	}
+
 	if (inet_csk_reqsk_queue_is_full(sk) && !isn) {
 		want_cookie = tcp_syn_flood_action(sk, skb, "TCPv6");
 		if (!want_cookie)
