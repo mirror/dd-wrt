@@ -18,7 +18,11 @@ static void dumprom(int dev, char *target)
 		in = fopen(value, "rb");
 		unsigned int a, v;
 		fscanf(in, "0x%08x:0x%08x", &a, &v);
-		fwrite(&v, 4, 1, out);
+		putc(v &0xff,out);
+		putc((v >> 8) & 0xff,out);
+		putc((v >> 16) & 0xff,out);
+		putc(v >> 24,out);
+//		fwrite(&v, 4, 1, out);
 		fclose(in);
 	}
 	fclose(out);
