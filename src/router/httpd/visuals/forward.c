@@ -117,7 +117,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 				break;
 			case TO:
 				{
-					GETENTRYBYIDX(to, word, 5);
+					GETENTRYBYIDX(to, word, 4);
 					if (!to)
 						continue;
 					websWrite(wp, "%s", to);
@@ -170,7 +170,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 				break;
 			case IP:
 				{
-					GETENTRYBYIDX(ip, word, 4);
+					GETENTRYBYIDX(ip, word, 5);
 					if (!ip)
 						continue;
 					websWrite(wp, "%s", ip);
