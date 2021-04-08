@@ -99,7 +99,11 @@ int ksmbd_vfs_inode_permission(struct dentry *dentry, int acc_mode, bool delete)
 		struct dentry *child, *parent;
 
 		parent = dget_parent(dentry);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 		inode_lock_nested(d_inode(parent), I_MUTEX_PARENT);
+#else
+		mutex_lock_nested(&d_inode(parent)->i_mutex, I_MUTEX_PARENT);
+#endif
 		child = lookup_one_len(dentry->d_name.name, parent,
 				dentry->d_name.len);
 		if (IS_ERR(child)) {
@@ -123,7 +127,11 @@ int ksmbd_vfs_inode_permission(struct dentry *dentry, int acc_mode, bool delete)
 			goto out_lock;
 		}
 out_lock:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 		inode_unlock(d_inode(parent));
+#else
+		mutex_unlock(&d_inode(parent)->i_mutex);
+#endif
 		dput(parent);
 	}
 	return ret;
@@ -161,7 +169,11 @@ int ksmbd_vfs_query_maximal_access(struct dentry *dentry, __le32 *daccess)
 		*daccess |= FILE_EXECUTE_LE;
 
 	parent = dget_parent(dentry);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_lock_nested(d_inode(parent), I_MUTEX_PARENT);
+#else
+	mutex_lock_nested(&d_inode(parent)->i_mutex, I_MUTEX_PARENT);
+#endif
 	child = lookup_one_len(dentry->d_name.name, parent,
 			dentry->d_name.len);
 	if (IS_ERR(child)) {
@@ -184,7 +196,11 @@ int ksmbd_vfs_query_maximal_access(struct dentry *dentry, __le32 *daccess)
 		*daccess |= FILE_DELETE_LE;
 
 out_lock:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_unlock(d_inode(parent));
+#else
+	mutex_unlock(&d_inode(parent)->i_mutex);
+#endif
 	dput(parent);
 	return ret;
 }
