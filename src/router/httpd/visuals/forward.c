@@ -356,7 +356,7 @@ void ip_forward(webs_t wp, char *type, int which)
 				break;
 			case SRC:
 				{
-					GETENTRYBYIDX(src, word, 0);
+					GETENTRYBYIDX(src, word, 2);
 					if (!src)
 						continue;
 					websWrite(wp, "%s", src);
@@ -364,7 +364,7 @@ void ip_forward(webs_t wp, char *type, int which)
 				break;
 			case DEST:
 				{
-					GETENTRYBYIDX(dest, word, 0);
+					GETENTRYBYIDX(dest, word, 3);
 					if (!dest)
 						continue;
 					websWrite(wp, "%s", dest);
@@ -372,7 +372,7 @@ void ip_forward(webs_t wp, char *type, int which)
 				break;
 			case ENABLE:
 				{
-					GETENTRYBYIDX(enable, word, 0);
+					GETENTRYBYIDX(enable, word, 1);
 					if (!enable)
 						continue;
 					if (!strcmp(enable, "on"))
