@@ -2416,14 +2416,15 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 			goto out;
 		}
 	} else {
-		if (file_present && ksmbd_vfs_inode_permission(path.dentry,
-				open_flags & O_ACCMODE, false)) {
-			err = -EACCES;
-			goto free_path;
-		}
+		if (file_present) {
+			err = ksmbd_vfs_inode_permission(path.dentry,
+					open_flags & O_ACCMODE, false);
+			if (err)
+				goto free_path;
 
-		if (file_present && S_ISFIFO(stat.mode))
-			open_flags |= O_NONBLOCK;
+			if (S_ISFIFO(stat.mode))
+				open_flags |= O_NONBLOCK;
+		}
 
 		if (req->CreateOptions & FILE_WRITE_THROUGH_LE)
 			open_flags |= O_SYNC;
@@ -4956,10 +4957,11 @@ static int smb_posix_open(struct ksmbd_work *work)
 			ksmbd_err("cannot get linux path, err = %d\n", err);
 			goto out;
 		}
-	} else if (file_present && ksmbd_vfs_inode_permission(path.dentry,
-					posix_open_flags & O_ACCMODE, false)) {
-		err = -EACCES;
-		goto free_path;
+	} else if (file_present) {
+		err = ksmbd_vfs_inode_permission(path.dentry,
+				posix_open_flags & O_ACCMODE, false);
+		if (err)
+			goto free_path;
 	}
 
 	fp = ksmbd_vfs_dentry_open(work, &path, posix_open_flags,
@@ -5681,15 +5683,15 @@ static int smb_populate_readdir_entry(struct ksmbd_conn *conn, int info_level,
 						conn->local_nls,
 						&conv_len);
 	if (!conv_name)
-		return 0;
+		return -ENOMEM;
 
 	next_entry_offset = ALIGN(struct_sz - 1 + conv_len,
 				  KSMBD_DIR_INFO_ALIGNMENT);
 
 	if (next_entry_offset > d_info->out_buf_len) {
 		kfree(conv_name);
-		d_info->out_buf_len = -1;
-		return 0;
+		d_info->out_buf_len = 0;
+		return -ENOSPC;
 	}
 
 	switch (info_level) {
@@ -5856,7 +5858,9 @@ static int smb_populate_readdir_entry(struct ksmbd_conn *conn, int info_level,
 		finfo->ResumeKey = 0;
 		unix_info = (struct file_unix_basic_info *)((char *)finfo + 8);
 		init_unix_info(unix_info, ksmbd_kstat->kstat);
-		memcpy(finfo->FileName, conv_name, conv_len);
+		/* include null terminator */
+		memcpy(finfo->FileName, conv_name, conv_len + 2);
+		next_entry_offset += 2;
 		finfo->NextEntryOffset = cpu_to_le32(next_entry_offset);
 		memset((char *)finfo + struct_sz - 1 + conv_len,
 			'\0',
@@ -6140,10 +6144,6 @@ static int find_first(struct ksmbd_work *work)
 
 		if (!strncmp(de->name, ".", de->namelen) ||
 			!strncmp(de->name, "..", de->namelen))
-			continue;
-
-		/* Hide backup files, e.g. ~$file.doc */
-		if (!strncmp("~$", d_info.name, 2))
 			continue;
 
 		if (ksmbd_share_veto_filename(share, d_info.name)) {
@@ -8205,10 +8205,11 @@ int smb_open_andx(struct ksmbd_work *work)
 #else
 		generic_fillattr(d_inode(path.dentry), &stat);
 #endif
-	} else if (file_present && ksmbd_vfs_inode_permission(path.dentry,
-			open_flags & O_ACCMODE, false)) {
-		err = -EACCES;
-		goto free_path;
+	} else if (file_present) {
+		err = ksmbd_vfs_inode_permission(path.dentry,
+				open_flags & O_ACCMODE, false);
+		if (err)
+			goto free_path;
 	}
 
 	err = ksmbd_query_inode_status(d_inode(path.dentry->d_parent));
