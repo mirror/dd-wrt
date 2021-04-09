@@ -167,3 +167,14 @@ USER           ||
   ksmbd.adduser ---------------|
 
 ```
+
+## Performance
+
+1. ksmbd vs samba performance comparison using iozone (Linux Client)
+<br/><br/><img src="https://github.com/cifsd-team/cifsd-perf/blob/master/4k_read-write_performance.PNG"  width="850" height="450">
+
+2. ksmbd vs samba performance comparison using fileop (Linux Client)
+<br/><br/><img src="https://github.com/cifsd-team/cifsd-perf/blob/master/Fileop_throughput_Performance.PNG"  width="850" height="450">
+
+3. ksmbd vs samba performance comparison using CrystalDiskMark (Windows Client)
+<br/><br/>![CrystalDiskMark](https://github.com/cifsd-team/cifsd-perf/blob/master/CrystalDiskMark_Performance.JPG)
