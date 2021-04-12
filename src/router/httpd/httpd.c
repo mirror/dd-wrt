@@ -42,7 +42,6 @@ static int wfflush(webs_t fp);
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
 
-
 int wfputs(char *buf, webs_t fp);
 #endif
 #endif
@@ -150,7 +149,6 @@ FILE *debout;
 #define CERT_FILE "/etc/cert.pem"
 #define KEY_FILE "/etc/key.pem"
 #endif
-
 
 #ifdef HAVE_POLARSSL
 static int my_ciphers[] = {
@@ -479,12 +477,7 @@ static void send_authenticate(webs_t conn_fp)
 {
 	char *header;
 	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
-	send_error(conn_fp, 401, "Unauthorized", header,
-#if defined(HAVE_BUFFALO) && defined(HAVE_IAS)
-		   "Authorization required. please note that the default username is \"admin\" in all newer releases");
-#else
-		   "Authorization required. please note that the default username is \"root\" in all newer releases");
-#endif
+	send_error(conn_fp, 401, "Unauthorized", header, "Authorization required. Wrong username and/or password!");
 	free(header);
 }
 
@@ -531,8 +524,8 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 		int cnt = 0;
 		char *newname = malloc((len * 3) + 1);
 		if (!newname) {
-		    dd_syslog(LOG_ERR, "out of memory in %s / attach_file\n", __func__);
-		    return;
+			dd_syslog(LOG_ERR, "out of memory in %s / attach_file\n", __func__);
+			return;
 		}
 		for (i = 0; i < len; i++) {
 			if (attach_file[i] == ' ') {
@@ -1469,7 +1462,7 @@ int main(int argc, char **argv)
 	webenv.live_translate = _live_translate;
 	webenv.GOZILA_GET = _GOZILA_GET;
 	webenv.validate_cgi = _validate_cgi;*/
-//	global_vars.env = &webenv;
+//      global_vars.env = &webenv;
 	CRYPT_MUTEX_INIT(&crypt_mutex, NULL);
 	SEM_INIT(&semaphore, 0, HTTP_MAXCONN);
 	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
