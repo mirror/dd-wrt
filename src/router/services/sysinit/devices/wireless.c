@@ -293,6 +293,10 @@ static void detect_wireless_devices(int mask)
 #endif
 				if (!detectchange(NULL))
 					rmmod("ath9k");
+					
+				eval("insmod", "ath9k_htc");
+				if (!detectchange(NULL))
+					rmmod("ath9k_htc");
 			}
 			if (!totalwifi)
 				rmmod("ath");
