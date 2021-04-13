@@ -47,15 +47,15 @@ extern BIO *bio_err;
 
 typedef struct {
 //persistent
-	int generate_key;
-	int clone_wan_mac;
-	int filter_id;
-	int day_all, week0, week1, week2, week3, week4, week5, week6;
-	int start_week, end_week;
-	int time_all, start_hour, start_min, start_time, end_hour, end_min, end_time;
-	int tod_data_null;
-	int nv_count;
-	struct wl_client_mac wl_client_macs[MAX_LEASES];
+	volatile int generate_key;
+	volatile int clone_wan_mac;
+	volatile int filter_id;
+	volatile int day_all, week0, week1, week2, week3, week4, week5, week6;
+	volatile int start_week, end_week;
+	volatile int time_all, start_hour, start_min, start_time, end_hour, end_min, end_time;
+	volatile int tod_data_null;
+	volatile int nv_count;
+	volatile struct wl_client_mac wl_client_macs[MAX_LEASES];
 } persistent_vars;
 
 typedef struct {
