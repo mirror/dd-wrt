@@ -41,17 +41,13 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 {
 #ifndef ANTI_FLASH
 	fprintf(stderr, "do post\n");
-#ifndef HAVE_NEW_UPGRADE
 	if (stream->upgrade_ret)
 		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
 	else
 		do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
-#endif
 	fprintf(stderr, "websdone\n");
 
-#ifndef HAVE_NEW_UPGRADE
 	websDone(stream, 200);
-#endif
 	fprintf(stderr, "reboot\n");
 
 	/*
