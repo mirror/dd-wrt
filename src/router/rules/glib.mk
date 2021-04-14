@@ -1,6 +1,10 @@
 GLIB_COMP_ARGS= \
 	-Ddefault_library=both \
 	-Diconv=libc \
+	-Dsysprof=disabled \
+	-Dtests=false \
+	-Dglib_debug=disabled \
+	-Dlifelf=disabled \
 	-Dselinux=disabled \
 	-Dlibmount=disabled \
 	-Dinternal_pcre=true \
@@ -20,6 +24,10 @@ GLIB_COMP_ARGS= \
 
 GLIB_STATIC_COMP_ARGS= \
 	-Diconv=libc \
+	-Dsysprof=disabled \
+	-Dtests=false \
+	-Dglib_debug=disabled \
+	-Dlifelf=disabled \
 	-Dselinux=disabled \
 	-Dlibmount=disabled \
 	-Dinternal_pcre=true \
