@@ -541,48 +541,4 @@ static inline void inc_rfc1001_len(void *buf, int count)
 {
 	be32_add_cpu((__be32 *)buf, count);
 }
-
-#define NTFS_TIME_OFFSET	((u64)(369 * 365 + 89) * 24 * 3600 * 10000000)
-
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
-struct timespec ksmbd_NTtimeToUnix(__le64 ntutc);
-#else
-struct timespec64 ksmbd_NTtimeToUnix(__le64 ntutc);
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
-#define KSMBD_TIME_TO_TM	time64_to_tm
-#else
-#define KSMBD_TIME_TO_TM	time_to_tm
-#endif
-
-/* Convert the Unix UTC into NT UTC. */
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
-static inline u64 ksmbd_UnixTimeToNT(struct timespec t)
-#else
-static inline u64 ksmbd_UnixTimeToNT(struct timespec64 t)
-#endif
-{
-	/* Convert to 100ns intervals and then add the NTFS time offset. */
-	return (u64)t.tv_sec * 10000000 + t.tv_nsec / 100 + NTFS_TIME_OFFSET;
-}
-
-static inline long long ksmbd_systime(void)
-{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	struct timespec		ts;
-
-	getnstimeofday(&ts);
-	return ksmbd_UnixTimeToNT(ts);
-#else
-	struct timespec64	ts;
-
-	ktime_get_real_ts64(&ts);
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
-	return ksmbd_UnixTimeToNT(timespec64_to_timespec(ts));
-#else
-	return ksmbd_UnixTimeToNT(ts);
-#endif
-#endif
-}
 #endif /* __SMB_COMMON_H__ */

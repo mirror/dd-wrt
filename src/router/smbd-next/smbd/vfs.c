@@ -35,6 +35,7 @@
 #include "smbacl.h"
 #include "ndr.h"
 #include "auth.h"
+#include "misc.h"
 
 #include "smb_common.h"
 #include "mgmt/share_config.h"
