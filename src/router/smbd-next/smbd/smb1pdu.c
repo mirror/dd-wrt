@@ -29,6 +29,7 @@
 #include "mgmt/tree_connect.h"
 #include "mgmt/user_session.h"
 #include "ndr.h"
+#include "smberr.h"
 
 static int smb1_oplock_enable = false;
 
@@ -584,16 +585,6 @@ out_err:
 }
 
 /**
- * smb_put_name() - free memory allocated for filename
- * @name:	filename pointer to be freed
- */
-static void smb_put_name(void *name)
-{
-	if (!IS_ERR(name))
-		kfree(name);
-}
-
-/**
  * smb_get_name() - convert filename on smb packet to char string
  * @src:	source filename, mostly in unicode format
  * @maxlen:	maxlen of src string to be used for parsing
@@ -651,7 +642,7 @@ smb_get_name(struct ksmbd_share_config *share, const char *src,
 	}
 
 	if (ksmbd_validate_filename(unixname) < 0) {
-		smb_put_name(unixname);
+		kfree(unixname);
 		return ERR_PTR(-ENOENT);
 	}
 
@@ -659,7 +650,7 @@ smb_get_name(struct ksmbd_share_config *share, const char *src,
 		ksmbd_debug(SMB,
 			"file(%s) open is not allowed by setting as veto file\n",
 				unixname);
-		smb_put_name(unixname);
+		kfree(unixname);
 		return ERR_PTR(-ENOENT);
 	}
 
@@ -735,7 +726,7 @@ static char *smb_get_dir_name(struct ksmbd_share_config *share, const char *src,
 	}
 
 	if (ksmbd_validate_filename(unixname) < 0) {
-		smb_put_name(unixname);
+		kfree(unixname);
 		return ERR_PTR(-ENOENT);
 	}
 
@@ -743,7 +734,7 @@ static char *smb_get_dir_name(struct ksmbd_share_config *share, const char *src,
 		ksmbd_debug(SMB,
 			"file(%s) open is not allowed by setting as veto file\n",
 				unixname);
-		smb_put_name(unixname);
+		kfree(unixname);
 		return ERR_PTR(-ENOENT);
 	}
 
@@ -798,6 +789,7 @@ int smb_rename(struct ksmbd_work *work)
 		rsp->hdr.Status.CifsError =
 			STATUS_OBJECT_NAME_INVALID;
 		rc = PTR_ERR(abs_newname);
+		abs_newname = NULL;
 		goto out;
 	}
 
@@ -826,8 +818,8 @@ int smb_rename(struct ksmbd_work *work)
 	rsp->hdr.WordCount = 0;
 	rsp->ByteCount = 0;
 out:
-	smb_put_name(abs_oldname);
-	smb_put_name(abs_newname);
+	kfree(abs_oldname);
+	kfree(abs_newname);
 	return rc;
 }
 
@@ -2066,7 +2058,7 @@ resp_out:
 	inc_rfc1001_len(&rsp->hdr, 10 * 2 + le16_to_cpu(rsp->ByteCount));
 
 out:
-	smb_put_name(name);
+	kfree(name);
 	return ret;
 }
 
@@ -2310,8 +2302,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	if (IS_ERR(conv_name)) {
 		rsp->hdr.Status.CifsError =
 			STATUS_OBJECT_NAME_INVALID;
-		err = PTR_ERR(conv_name);
-		goto out1;
+		return PTR_ERR(conv_name);
 	}
 
 	if (!test_share_config_flag(share, KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS))
@@ -2368,6 +2359,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 				STATUS_OBJECT_NAME_COLLISION;
 
 		memset(&rsp->hdr.WordCount, 0, 3);
+		kfree(conv_name);
 
 		goto free_path;
 	}
@@ -2385,6 +2377,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 				STATUS_NOT_A_DIRECTORY;
 
 		memset(&rsp->hdr.WordCount, 0, 3);
+		kfree(conv_name);
 
 		goto free_path;
 	}
@@ -2410,6 +2403,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 				rsp->hdr.Status.CifsError =
 					STATUS_OBJECT_NAME_COLLISION;
 			memset(&rsp->hdr.WordCount, 0, 3);
+			kfree(conv_name);
 			goto free_path;
 		} else {
 			err = -ENOENT;
@@ -2494,6 +2488,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 				   file_present);
 	if (IS_ERR(fp)) {
 		err = PTR_ERR(fp);
+		fp = NULL;
 		goto free_path;
 	}
 	fp->filename = conv_name;
@@ -2692,8 +2687,12 @@ out1:
 			STATUS_UNEXPECTED_IO_ERROR;
 	}
 
-	if (err && fp)
-		ksmbd_close_fd(work, fp->volatile_id);
+	if (err) {
+		if (fp)
+			ksmbd_close_fd(work, fp->volatile_id);
+		else
+			kfree(conv_name);
+	}
 
 	if (!rsp->hdr.WordCount)
 		return err;
@@ -3782,7 +3781,7 @@ static int smb_set_acl(struct ksmbd_work *work)
 out:
 	if (buf)
 		vfree(buf);
-	smb_put_name(fname);
+	kfree(fname);
 	return rc;
 }
 
@@ -4021,7 +4020,7 @@ static int query_path_info(struct ksmbd_work *work)
 		flags = 0;
 
 	if (ksmbd_override_fsids(work)) {
-		smb_put_name(name);
+		kfree(name);
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
@@ -4470,7 +4469,7 @@ err_out:
 	path_put(&path);
 out:
 	ksmbd_revert_fsids(work);
-	smb_put_name(name);
+	kfree(name);
 	return rc;
 }
 
@@ -4859,7 +4858,7 @@ static int smb_posix_open(struct ksmbd_work *work)
 
 	if (ksmbd_override_fsids(work)) {
 		pSMB_rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
-		smb_put_name(name);
+		kfree(name);
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
@@ -4968,6 +4967,7 @@ static int smb_posix_open(struct ksmbd_work *work)
 			0, file_present);
 	if (IS_ERR(fp)) {
 		err = PTR_ERR(fp);
+		fp = NULL;
 		goto free_path;
 	}
 	fp->filename = name;
@@ -5085,8 +5085,12 @@ out:
 			STATUS_UNEXPECTED_IO_ERROR;
 	}
 
-	if (err && fp)
-		ksmbd_close_fd(work, fp->volatile_id);
+	if (err) {
+		if (fp)
+			ksmbd_close_fd(work, fp->volatile_id);
+		else
+			kfree(name);
+	}
 	ksmbd_revert_fsids(work);
 	return err;
 }
@@ -5152,7 +5156,7 @@ out:
 	if (rc)
 		rsp->hdr.Status.CifsError = STATUS_UNEXPECTED_IO_ERROR;
 
-	smb_put_name(name);
+	kfree(name);
 	return rc;
 }
 
@@ -5228,7 +5232,7 @@ done:
 	rsp->ByteCount = cpu_to_le16(3);
 	inc_rfc1001_len(&rsp->hdr, rsp->hdr.WordCount * 2 + 3);
 
-	smb_put_name(name);
+	kfree(name);
 	return 0;
 }
 
@@ -5286,7 +5290,7 @@ static int smb_set_unix_pathinfo(struct ksmbd_work *work)
 	inc_rfc1001_len(&rsp->hdr, rsp->hdr.WordCount * 2 + 3);
 
 out:
-	smb_put_name(name);
+	kfree(name);
 	if (err) {
 		rsp->hdr.Status.CifsError = STATUS_INVALID_PARAMETER;
 		return err;
@@ -5325,8 +5329,10 @@ static int smb_set_ea(struct ksmbd_work *work)
 	ea = (struct fea *)eabuf->list;
 
 	for (i = 0; list_len >= 0 && ea->name_len != 0; i++, list_len -= next) {
-		if (ea->name_len > (XATTR_NAME_MAX - XATTR_USER_PREFIX_LEN))
-			return -EINVAL;
+		if (ea->name_len > (XATTR_NAME_MAX - XATTR_USER_PREFIX_LEN)) {
+			rc = -EINVAL;
+			goto out;
+		}
 
 		next = ea->name_len + le16_to_cpu(ea->value_len) + 4;
 
@@ -5379,7 +5385,7 @@ static int smb_set_ea(struct ksmbd_work *work)
 	inc_rfc1001_len(&rsp->hdr, rsp->hdr.WordCount * 2 + 3);
 
 out:
-	smb_put_name(fname);
+	kfree(fname);
 	return rc;
 }
 
@@ -5413,7 +5419,7 @@ static int smb_set_file_size_pinfo(struct ksmbd_work *work)
 	rc = ksmbd_vfs_truncate(work, name, NULL, newsize);
 	if (rc) {
 		rsp->hdr.Status.CifsError = STATUS_INVALID_PARAMETER;
-		return rc;
+		goto out;
 	}
 	ksmbd_debug(SMB, "%s truncated to newsize %lld\n",
 			name, newsize);
@@ -5435,8 +5441,9 @@ static int smb_set_file_size_pinfo(struct ksmbd_work *work)
 	rsp->ByteCount = cpu_to_le16(3);
 	inc_rfc1001_len(&rsp->hdr, rsp->hdr.WordCount * 2 + 3);
 
-	smb_put_name(name);
-	return 0;
+out:
+	kfree(name);
+	return rc;
 }
 
 /**
@@ -5465,6 +5472,7 @@ static int smb_creat_hardlink(struct ksmbd_work *work)
 	oldname = smb_get_name(share, oldname_offset, PATH_MAX, work, false);
 	if (IS_ERR(oldname)) {
 		err = PTR_ERR(oldname);
+		oldname = NULL;
 		goto out;
 	}
 	ksmbd_debug(SMB, "oldname %s, newname %s\n", oldname, newname);
@@ -5494,8 +5502,8 @@ static int smb_creat_hardlink(struct ksmbd_work *work)
 	rsp->ByteCount = cpu_to_le16(3);
 	inc_rfc1001_len(&rsp->hdr, rsp->hdr.WordCount * 2 + 3);
 out:
-	smb_put_name(newname);
-	smb_put_name(oldname);
+	kfree(newname);
+	kfree(oldname);
 	return err;
 }
 
@@ -5526,7 +5534,7 @@ static int smb_creat_symlink(struct ksmbd_work *work)
 	name = smb_strndup_from_utf16(name_offset, PATH_MAX, is_unicode,
 			work->conn->local_nls);
 	if (IS_ERR(name)) {
-		smb_put_name(symname);
+		kfree(symname);
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 		return PTR_ERR(name);
 	}
@@ -5559,7 +5567,7 @@ static int smb_creat_symlink(struct ksmbd_work *work)
 	rsp->ByteCount = cpu_to_le16(3);
 	inc_rfc1001_len(&rsp->hdr, rsp->hdr.WordCount * 2 + 3);
 	kfree(name);
-	smb_put_name(symname);
+	kfree(symname);
 	return err;
 }
 
@@ -7342,7 +7350,7 @@ static int create_dir(struct ksmbd_work *work)
 	}
 
 	if (ksmbd_override_fsids(work)) {
-		smb_put_name(name);
+		kfree(name);
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 		return -ENOMEM;
 	}
@@ -7395,7 +7403,7 @@ static int create_dir(struct ksmbd_work *work)
 out:
 	memset(&rsp->hdr.WordCount, 0, 3);
 	ksmbd_revert_fsids(work);
-	smb_put_name(name);
+	kfree(name);
 	return err;
 }
 
@@ -7513,7 +7521,7 @@ int smb_mkdir(struct ksmbd_work *work)
 	}
 
 	if (ksmbd_override_fsids(work)) {
-		smb_put_name(name);
+		kfree(name);
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 		return -ENOMEM;
 	}
@@ -7568,7 +7576,7 @@ int smb_mkdir(struct ksmbd_work *work)
 
 out:
 	ksmbd_revert_fsids(work);
-	smb_put_name(name);
+	kfree(name);
 	return err;
 }
 
@@ -7647,7 +7655,7 @@ int smb_checkdir(struct ksmbd_work *work)
 				STATUS_OBJECT_PATH_SYNTAX_BAD;
 				break;
 			}
-			smb_put_name(name);
+			kfree(name);
 			return err;
 		}
 	}
@@ -7668,7 +7676,7 @@ int smb_checkdir(struct ksmbd_work *work)
 	}
 
 	path_put(&path);
-	smb_put_name(name);
+	kfree(name);
 	return err;
 }
 
@@ -7739,7 +7747,7 @@ int smb_rmdir(struct ksmbd_work *work)
 		rsp->ByteCount = 0;
 	}
 
-	smb_put_name(name);
+	kfree(name);
 	return err;
 }
 
@@ -7796,7 +7804,7 @@ int smb_unlink(struct ksmbd_work *work)
 	}
 
 	ksmbd_fd_put(work, fp);
-	smb_put_name(name);
+	kfree(name);
 	return err;
 }
 
@@ -7882,7 +7890,7 @@ int smb_nt_rename(struct ksmbd_work *work)
 	if (IS_ERR(newname)) {
 		rsp->hdr.Status.CifsError =
 			STATUS_OBJECT_NAME_INVALID;
-		smb_put_name(oldname);
+		kfree(oldname);
 		return PTR_ERR(newname);
 	}
 	ksmbd_debug(SMB, "oldname %s, newname %s, oldname_len %d, unicode %d\n",
@@ -7895,8 +7903,8 @@ int smb_nt_rename(struct ksmbd_work *work)
 	else if (err < 0)
 		rsp->hdr.Status.CifsError = STATUS_NOT_SAME_DEVICE;
 
-	smb_put_name(newname);
-	smb_put_name(oldname);
+	kfree(newname);
+	kfree(oldname);
 	return err;
 }
 
@@ -7924,7 +7932,7 @@ static __le32 smb_query_info_path(struct ksmbd_work *work, struct kstat *st)
 		flags = 0;
 
 	if (ksmbd_override_fsids(work)) {
-		smb_put_name(name);
+		kfree(name);
 		return STATUS_NO_MEMORY;
 	}
 
@@ -7950,7 +7958,7 @@ static __le32 smb_query_info_path(struct ksmbd_work *work, struct kstat *st)
 #endif
 out:
 	ksmbd_revert_fsids(work);
-	smb_put_name(name);
+	kfree(name);
 	return err;
 }
 
@@ -8138,7 +8146,7 @@ int smb_open_andx(struct ksmbd_work *work)
 		flags = 0;
 
 	if (ksmbd_override_fsids(work)) {
-		smb_put_name(name);
+		kfree(name);
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
@@ -8359,8 +8367,12 @@ out:
 				STATUS_UNEXPECTED_IO_ERROR;
 	}
 
-	if (err && fp)
-		ksmbd_close_fd(work, fp->volatile_id);
+	if (err) {
+		if (fp)
+			ksmbd_close_fd(work, fp->volatile_id);
+		else
+			kfree(name);
+	}
 
 	if (!rsp->hdr.WordCount)
 		return err;
@@ -8442,7 +8454,7 @@ int smb_setattr(struct ksmbd_work *work)
 	rsp->ByteCount = 0;
 
 out:
-	smb_put_name(name);
+	kfree(name);
 	if (err) {
 		rsp->hdr.Status.CifsError = STATUS_INVALID_PARAMETER;
 		return err;
