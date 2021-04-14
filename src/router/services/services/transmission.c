@@ -288,7 +288,7 @@ void start_transmission(void)
 
 void stop_transmission(void)
 {
-	stop_process("transmissiond", "daemon");
+	stop_process_timeout("transmissiond", "daemon", 10);
 	nvram_delstates(transmission_deps());
 }
 
