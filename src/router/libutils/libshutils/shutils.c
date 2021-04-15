@@ -141,6 +141,7 @@ static void flog(const char *fmt, ...)
 	}
 }
 
+#undef system // prevent circular dependency
 int dd_system(char *command)
 {
 
@@ -161,7 +162,7 @@ int sysprintf(const char *fmt, ...)
 	va_start(args, (char *)fmt);
 	vasprintf(&varbuf, fmt, args);
 	va_end(args);
-	int ret = system2(varbuf);
+	int ret = dd_system(varbuf);
 	free(varbuf);
 	return ret;
 }
