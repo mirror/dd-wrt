@@ -168,6 +168,10 @@
 					<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_fw" <% nvc("openvpncl_fw","1"); %> />
 				</div>
 			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_killswitch"); %></div>
+				<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_killswitch" <% nvc("openvpncl_killswitch","1"); %> />
+			</div>
 			<div id="idnat">
 				<div class="setting">
 					<div class="label"><% tran("service.vpn_bridge"); %></div>
