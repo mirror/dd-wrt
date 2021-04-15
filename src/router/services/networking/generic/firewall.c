@@ -2560,6 +2560,20 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 			filter_host_url = 1;
 		}
 	}
+
+#ifdef HAVE_OPENVPN
+	//OpenvPN client killswitch only when enabled
+	if (nvram_matchi("openvpncl_enable", 1)) {
+		// if (nvram_matchi("openvpncl_killswitch", 1)) {
+		if (nvram_matchi("openvpncl_killswitch", 1) && ( *(nvram_safe_get("openvpncl_route")) == 0 || strncmp((nvram_safe_get("openvpncl_route")),"#",1) == 0 ) ) {
+				//save2file_A_forward("-i br+ -o %s -j %s", wanface, log_drop);
+				//save2file_A_forward("-i br+ -o %s -m state --state NEW -j %s", wanface, log_drop);
+				save2file_A_forward("-o %s -j %s", wanface, log_drop);
+				dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled via Firewall");
+		}
+	}
+#endif
+
 	if (!filter_host_url)
 		save2file_A_forward("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
 

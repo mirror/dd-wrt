@@ -1918,6 +1918,7 @@ service.vpn_tls_auth="TLS Auth";
 service.vpn_dc1="First Data Cipher";
 service.vpn_dc2="Second Data Cipher";
 service.vpn_dc3="Third Data Cipher";
+service.vpn_killswitch="Killswitch";
 
 //help page
 var hservice=new Object();

@@ -46,6 +46,81 @@ static void run_openvpn(char *prg, char *path)
 	free(conf);
 }
 
+int cleanup_pbr (char *tablenr) {
+	//clean up
+	char cmd[256] = { 0 };
+	eval("ip", "route", "flush", "table", tablenr);
+	eval("ip", "route", "flush", "table", "9");
+	
+	//eval("while", "ip", "rule", "delete", "from", "0/0", "to", "0/0", "table", tablenr2, ";", "do", "true", ";", "done");  //does not work revert to system()
+	sprintf(cmd, "while ip rule delete from 0/0 to 0/0 table %s; do true; done", tablenr);
+	system(cmd);
+	return 0;
+}
+
+void setroute_pbr(char *tablenr) {
+
+	cleanup_pbr(tablenr);  //probably not necessary as openvpn restarts it will clean up
+
+	char *curline = nvram_safe_get("openvpncl_route");
+	char cmd[256] = { 0 };
+
+	if (nvram_matchi("openvpncl_killswitch", 1)) {
+		eval("ip", "route", "add", "prohibit", "default", "table", tablenr);
+		dd_loginfo("openvpn", "PBR killswitch is active using: %s", curline);
+		// need table with a number below table 10 with default gateway to let OpenVPN get default route, possible bug where OpenVPN uses default route from lowest table but not from main table
+		eval("ip", "route", "add", "default", "via", nvram_safe_get("wan_gateway"), "table", "9");
+	} else {
+		eval("ip", "route", "add", "default", "via", nvram_safe_get("wan_gateway"), "table", tablenr);
+		dd_loginfo("openvpn", "PBR is active but NO killwitch: %s", curline);
+	}
+	//add other routes from main table
+	sprintf(cmd, "ip route show | grep -Ev '^default |^0.0.0.0/1 |^128.0.0.0/1 ' | while read route; do ip route add $route table %s >/dev/null 2>&1; done", tablenr);
+	dd_loginfo("openvpn", "routingcommand: %s\n", cmd);
+	system(cmd);
+
+	while(curline)
+	{
+		char *nextLine = strchr(curline, '\n');
+		size_t curlinelen = nextLine ? ((unsigned)(nextLine-curline)) : strlen(curline);
+		char *tempstr = (char *) malloc(curlinelen+1);
+		char iprule[128]= { 0 };
+		char *piprule;
+		if (tempstr) {
+			memcpy(tempstr, curline, curlinelen);
+			tempstr[curlinelen] = '\0';  // NUL-terminate!
+			//dd_loginfo("openvpn", "tempstr= [%s]\n", tempstr);
+			// check if line starts with a # skip
+			if (tempstr[0] == '#' ) {
+				dd_loginfo("openvpn", "Skip line starting with #: %s\n", tempstr);
+			} else {
+				// add from if starting with digit
+				if (isdigit(tempstr[0])) {
+					dd_loginfo("openvpn", "String started with digit added from for backwards compatiblitiy: %s\n", tempstr);
+					strcpy(iprule, "from ");
+				}
+				strcat(iprule, tempstr);
+				if ((piprule=strchr(iprule, '#'))) {
+					piprule[0]='\0';
+				} else if ((piprule=strchr(iprule, '\r'))) {
+					piprule[0]='\0';
+				}
+				if (*iprule) {
+					//dd_loginfo("openvpn","iprule final=[%s]\n", iprule);
+					//eval("ip", "rule", "add", iprule, "table", "10");	//does not work revert to system()
+					sprintf(cmd, "ip rule add %s table %s", iprule, tablenr );
+					dd_loginfo("openvpn", "PBR systemcommand: %s\n", cmd);
+					system(cmd);
+				}
+			}
+		free(tempstr);
+		} else { 
+			dd_loginfo("openvpn", "malloc() failed in creating PBR!?\n");
+		}
+		curline = nextLine ? (nextLine+1) : NULL;
+	}
+}
+
 void create_openvpnrules(FILE * fp)
 {
 	fprintf(fp, "[[ ! -z \"$ifconfig_netmask\" ]] && vpn_netmask=\"/$ifconfig_netmask\"\n");
@@ -82,16 +157,18 @@ void create_openvpnrules(FILE * fp)
 		fprintf(fp,
 			"env | grep 'dhcp-option DNS' | awk '{print $NF}' | while read vpn_dns; do grep -q \"^dhcp-option DNS $vpn_dns\" /tmp/openvpncl/openvpn.conf || ip route add $vpn_dns via $route_vpn_gateway dev $dev 2> /dev/null; done\n");
 	}
-	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
+	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")),"#",1) != 0 ) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
-		fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//;/^$/d' \"/tmp/openvpncl/policy_ips\" | while read IP; do [[ \"$IP\" == [0-9]* ]] && IP=\"from $IP\"; ip rule add table 10 $IP; done\n");
+		//fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//;/^$/d' \"/tmp/openvpncl/policy_ips\" | while read IP; do [[ \"$IP\" == [0-9]* ]] && IP=\"from $IP\"; ip rule add table 10 $IP; done\n");  //rules added in setroute_pbr
 /*              if (nvram_match("openvpncl_tuntap", "tap"))
                         fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n"); //needs investigation cause in TAP mode no gateway is received
                 else */
-		if (!nvram_match("openvpncl_tuntap", "tap")) {
-			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
-			// Consider adding local routes to alternate PBR routing table by egc
-			fprintf(fp, "ip route show | grep -Ev '^default |^0.0.0.0/1 |^128.0.0.0/1 ' | while read route; do\n" "\t ip route add $route table 10\n" "done\n");
+		if (!nvram_match("openvpncl_tuntap", "tap") ) {
+			//fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
+			fprintf(fp, "ip route add 0.0.0.0/1 via $route_vpn_gateway table 10\n");
+			fprintf(fp, "ip route add 128.0.0.0/1 via $route_vpn_gateway table 10\n");
+			//Adding local routes to alternate PBR routing table by egc
+			fprintf(fp, "ip route show | grep -Ev '^default |^0.0.0.0/1 |^128.0.0.0/1 ' | while read route; do\n" "\t ip route add $route table 10 >/dev/null 2>&1\n" "done\n");
 		}
 		fprintf(fp, "ip route flush cache\n" "echo $ifconfig_remote >>/tmp/gateway.txt\n" "echo $route_vpn_gateway >>/tmp/gateway.txt\n" "echo $ifconfig_local >>/tmp/gateway.txt\n");
 	}
@@ -444,6 +521,27 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/cert.p12", "openvpncl_pkcs12");
 	write_nvram("/tmp/openvpncl/static.key", "openvpncl_static");
 	chmod("/tmp/openvpn/client.key", 0600);
+
+	//Start PBR routing and general killswitch if appropriate
+	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")),"#",1) != 0) {
+	dd_loginfo("openvpn", "PBR is not empty or does not start with a # now using setroute_pbr(): %s\n", nvram_safe_get("openvpncl_route") );
+	setroute_pbr("10");
+	} else if ( nvram_matchi("openvpncl_killswitch", 1) ) {  //if no PBR and killswitch active, activate general killswitch
+		dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled from OpenVPN ");
+		//eval("restart" , "firewall");
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
+		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
+		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
+		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
+		eval("iptables", "-I", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
+		//consider restarting SFE to drop existing connections e.g. eval("restart", "sfe"); or: stop_sfe(); start_sfe();
+		if (nvram_match("sfe", "1")) {
+			stop_sfe();
+			start_sfe();
+		}
+	}
+
 	FILE *fp;
 	char ovpniface[10];
 #ifdef HAVE_ERC
@@ -516,7 +614,7 @@ void start_openvpn(void)
 			fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
 				nvram_safe_get("openvpncl_lzo"));
 	}
-	if (*(nvram_safe_get("openvpncl_route"))) {	//policy routing: we need redirect-gw so we get gw info
+	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")),"#",1) != 0 ) {	//policy routing: we need redirect-gw so we get gw info
 		fprintf(fp, "redirect-private def1\n");
 		if (nvram_invmatch("openvpncl_tuntap", "tun"))
 			fprintf(fp, "ifconfig-noexec\n");
@@ -618,8 +716,10 @@ void start_openvpn(void)
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
+		fprintf(fp, "if [[ \"$(nvram get openvpncl_enable)\" == '0' || \"$(nvram get openvpncl_killswitch)\" == '0' ]]; then\n");
 		fprintf(fp, "ip route flush table 10\n");
 		fprintf(fp, "while ip rule delete from 0/0 to 0/0 table 10; do true; done\n");	//egc: added to delete ip rules
+		fprintf(fp, "ip route flush cache\n" "fi\n");
 	}
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && cp -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq && nvram unset openvpn_get_dns\n");
@@ -628,6 +728,7 @@ void start_openvpn(void)
 		fprintf(fp, "[[ ! -z \"$ifconfig_netmask\" ]] && vpn_netmask=\"/$ifconfig_netmask\"\n");
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
 	}
+	fprintf(fp, "exit 0\n");
 /*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
                 && nvram_match("openvpncl_tuntap", "tap")
                 && nvram_matchi("openvpncl_bridge",1)) {
@@ -661,6 +762,13 @@ void stop_openvpn(void)
 		unlink("/tmp/openvpncl/route-up.sh");
 		unlink("/tmp/openvpncl/route-down.sh");
 		unlink("/tmp/openvpncl_fw.sh");	//remove created firewall rules to prevent used by Firewall if VPN is down
+		// remove pbr table
+		cleanup_pbr ("10");
+		//remove kill switch
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
+		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
+		dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 2 using wanface %s", get_wan_face());
 	}
 }
 
@@ -692,6 +800,13 @@ void stop_openvpn_wandone(void)
 		unlink("/tmp/openvpncl/route-up.sh");
 		unlink("/tmp/openvpncl/route-down.sh");
 		unlink("/tmp/openvpncl_fw.sh");
+		// remove pbr table
+		cleanup_pbr ("10");
+		//remove kill switch
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
+		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
+		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
+		dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 3 using wanface %s", get_wan_face());
 	}
 }
 #endif

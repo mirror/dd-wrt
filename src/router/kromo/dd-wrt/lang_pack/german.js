@@ -1660,6 +1660,7 @@ service.vpn_tls_btn="TLS Schl&uuml;ssel Auswahl";
 service.vpn_dc1="Erste Data Cipher";
 service.vpn_dc1="Zweite Data Cipher";
 service.vpn_dc1="Dritte Data Cipher";
+service.vpn_killswitch="Killswitch";
 
 //help container
 hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden das Standartgateways durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
