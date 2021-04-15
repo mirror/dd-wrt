@@ -113,10 +113,10 @@ void setroute_pbr(char *tablenr)
 				}
 				if (*iprule) {
 					//dd_loginfo("openvpn","iprule final=[%s]\n", iprule);
-					eval("ip", "rule", "add", iprule, "table", tablenr);
-//                                      sprintf(cmd, "ip rule add %s table %s", iprule, tablenr );
+//                                      eval("ip", "rule", "add", iprule, "table", tablenr);
+					sprintf(cmd, "ip rule add %s table %s", iprule, tablenr);
 //                                      dd_loginfo("openvpn", "PBR systemcommand: %s\n", cmd);
-//                                      system(cmd);
+					sysprintf(cmd);
 				}
 			}
 			free(tempstr);
