@@ -83,8 +83,7 @@ void setroute_pbr(char *tablenr)
 	}
 	//add other routes from main table
 	sprintf(cmd, "ip route show | grep -Ev '^default |^0.0.0.0/1 |^128.0.0.0/1 ' | while read route; do ip route add $route table %s >/dev/null 2>&1; done", tablenr);
-	dd_loginfo("openvpn", "routingcommand: %s\n", cmd);
-	system(cmd);
+	sysprintf(cmd);
 
 	while (curline) {
 		char *nextLine = strchr(curline, '\n');
@@ -112,11 +111,7 @@ void setroute_pbr(char *tablenr)
 					piprule[0] = '\0';
 				}
 				if (*iprule) {
-					//dd_loginfo("openvpn","iprule final=[%s]\n", iprule);
-//                                      eval("ip", "rule", "add", iprule, "table", tablenr);
-					sprintf(cmd, "ip rule add %s table %s", iprule, tablenr);
-//                                      dd_loginfo("openvpn", "PBR systemcommand: %s\n", cmd);
-					sysprintf(cmd);
+					sysprintf("ip rule add %s table %s", iprule, tablenr);
 				}
 			}
 			free(tempstr);
