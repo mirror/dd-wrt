@@ -142,7 +142,8 @@ static void flog(const char *fmt, ...)
 }
 
 #undef system // prevent circular dependency
-int dd_system(char *command)
+
+int dd_system(const char *command)
 {
 
 	if (debug_ready()) {
