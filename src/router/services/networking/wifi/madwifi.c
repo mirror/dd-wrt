@@ -154,7 +154,7 @@ static int getMaxPower(char *ifname)
 	char buf[128];
 
 	sprintf(buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power", ifname);
-	system2(buf);
+	system(buf);
 	FILE *in = fopen("/tmp/.power", "rb");
 
 	if (in == NULL)

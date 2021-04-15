@@ -167,7 +167,7 @@ void start_sysinit(void)
 	insmod("ixp400th");
 	fprintf(stderr, "load IXP Core Driver\n");
 	insmod("ixp400");
-//      system2("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+//      system("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
 	fprintf(stderr, "load IXP Ethernet Driver\n");
 	insmod("ixp400_eth");
 	fprintf(stderr, "initialize Ethernet\n");
@@ -181,8 +181,8 @@ void start_sysinit(void)
 	// insmod("ixp4xx", "init_crypto=0");
 #else
 	// eval ("mknod", "/dev/IxNpe","c","10","184");
-	system2("cat /usr/lib/firmware/NPE-B > /dev/misc/ixp4xx_ucode");
-	system2("cat /usr/lib/firmware/NPE-C > /dev/misc/ixp4xx_ucode");
+	system("cat /usr/lib/firmware/NPE-B > /dev/misc/ixp4xx_ucode");
+	system("cat /usr/lib/firmware/NPE-C > /dev/misc/ixp4xx_ucode");
 #endif
 
 	// insmod("ath_pci", "rfkill=0", "autocreate=none");

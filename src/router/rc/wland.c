@@ -53,7 +53,7 @@ static int do_ap_watchdog(void)
 	static time_t last;
 	int interval = nvram_geti("apwatchdog_interval") > WLAND_INTERVAL ? nvram_geti("apwatchdog_interval") : WLAND_INTERVAL;
 
-	system2("wl assoclist 2>&1 > /tmp/.assoclist");
+	system("wl assoclist 2>&1 > /tmp/.assoclist");
 	stat("/tmp/.assoclist", &s);
 	unlink("/tmp/.assoclist");
 
@@ -425,7 +425,7 @@ static void do_client_check(void)
 
 	char com[64];
 	sprintf(com, "wl -i %s assoc 2>&1 > /tmp/.xassocx", ifname);
-	system2(com);
+	system(com);
 
 	if ((fp = fopen("/tmp/.xassocx", "r")) == NULL)
 		return;

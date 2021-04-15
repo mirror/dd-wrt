@@ -231,7 +231,7 @@ static inline int is_in_bridge(char *interface)
 	if (!interface)
 		return 0;
 
-	system2("brctl show > /tmp/bridges");
+	system("brctl show > /tmp/bridges");
 
 	fd = fopen("/tmp/bridges", "r");
 	if (fd != NULL) {
@@ -736,7 +736,7 @@ static int svqos_iptables(void)
 //                              eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", "tap+", "-j", "VPN_OUT");
 //                      }
 //              }
-//              //system2("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
+//              //system("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
 //
 //              char *qos_vpn = nvram_safe_get("svqos_vpns");
 //              insmod("xt_dscp");

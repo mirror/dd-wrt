@@ -233,7 +233,7 @@ int active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *v
 			// if (strcmp (mode, "ap"))
 			// snprintf (cmd, sizeof (cmd), "wl -i %s noise >> %s", iface,
 			// RSSI_TMP);
-			// system2 (cmd); // get RSSI value for mac
+			// system (cmd); // get RSSI value for mac
 
 			fp2 = popen(cmd, "r");
 			if (fp2) {
