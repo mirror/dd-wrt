@@ -57,7 +57,7 @@ void start_sysinit(void)
 	 * /proc 
 	 */
 	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	system2("/etc/convert");
+	system("/etc/convert");
 	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
 	cprintf("sysinit() tmp\n");
 
@@ -109,10 +109,10 @@ void start_sysinit(void)
 	insmod("cast5");
 	insmod("crypto_null");
 
-	system2("/etc/kendin");
+	system("/etc/kendin");
 	insmod("ixp400th");
 	insmod("ixp400");
-	system2("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+	system("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
 	insmod("ixp400_eth");
 	insmod("ocf");
 	insmod("cryptodev");

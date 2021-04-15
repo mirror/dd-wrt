@@ -76,7 +76,7 @@ void start_sysinit(void)
 #if 1
 	insmod("ixp400th");
 	insmod("ixp400");
-	system2("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+	system("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
 	insmod("ixp400_eth");
 	eval("ifconfig", "ixp0", "0.0.0.0", "up");
 	eval("ifconfig", "ixp1", "0.0.0.0", "up");
@@ -85,8 +85,8 @@ void start_sysinit(void)
 	// insmod("ixp4xx", "init_crypto=0");
 #else
 	// eval ("mknod", "/dev/IxNpe","c","10","184");
-	system2("cat /usr/lib/firmware/NPE-B > /dev/misc/ixp4xx_ucode");
-	system2("cat /usr/lib/firmware/NPE-C > /dev/misc/ixp4xx_ucode");
+	system("cat /usr/lib/firmware/NPE-B > /dev/misc/ixp4xx_ucode");
+	system("cat /usr/lib/firmware/NPE-C > /dev/misc/ixp4xx_ucode");
 #endif
 
 	detect_wireless_devices(RADIO_ALL);

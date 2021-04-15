@@ -448,7 +448,7 @@ void hotspotsys_config(void)
 		sprintf(sendid,
 			"/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&operator=%s\\&location=%s\\&remotekey=%s",
 			nvram_safe_get("hotss_operatorid"), nvram_safe_get("hotss_locationid"), nvram_safe_get("hotss_remotekey"));
-		system2(sendid);
+		system(sendid);
 	}
 
 	if (!(fp = fopen("/tmp/chilli/hotss.conf", "w"))) {
