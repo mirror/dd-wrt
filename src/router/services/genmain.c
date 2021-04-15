@@ -24,6 +24,30 @@
 #include <string.h>
 
 char **syms;
+
+int strc(char *s1, char *s2)
+{
+	int i;
+	if (!strncmp(s1, "start_",6))
+		s1 = s1 + 6;
+	if (!strncmp(s1, "stop_",5))
+		s1 = s1 + 5;
+	if (!strncmp(s2, "start_",6))
+		s2 = s2 + 6;
+	if (!strncmp(s2, "stop_",5))
+		s2 = s2 + 5;
+
+	int len = strlen(s1);
+	int len2 = strlen(s2);
+	if (len2 < len)
+		len = len2;
+	for (i = 0; i < len; i++) {
+		if (s1[i] != s2[i])
+			return s1[i] - s2[i];
+	}
+	return 0;
+}
+
 void readsymbols(void)
 {
 	char addr[64];
@@ -47,6 +71,18 @@ void readsymbols(void)
 		}
 	}
 	syms[cnt] = NULL;
+	int i, a;
+	for (a = 0; a < cnt; a++) {
+		for (i = 0; i < cnt - 1; i++) {
+			int r = strc(syms[i], syms[i + 1]);
+			if (r > 0) {
+				char *b = syms[i + 1];
+				syms[i + 1] = syms[i];
+				syms[i] = b;
+			}
+
+		}
+	}
 }
 
 int sym(char *name, char *prefix, char *postfix)
