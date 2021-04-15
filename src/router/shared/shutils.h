@@ -120,7 +120,7 @@ extern char *ether_etoa(const char *e, char *a);
 extern int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_buf_len);
 extern int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_buf_len);
 
-extern int system2(char *command);
+extern int dd_system(char *command);
 extern int sysprintf(const char *fmt, ...);
 extern int f_exists(const char *path);	// note: anything but a directory
 
@@ -145,6 +145,7 @@ extern void *dd_malloc(size_t len);
 #define malloc(len) dd_malloc(len)
 #define sprintf(output,format,args...) dd_sprintf(output, format, ## args)
 #define snprintf(output,len,format,args...) dd_snprintf(output, len,format, ## args)
+#define system(cmd) dd_system(cmd)
 #endif
 
 #ifdef MEMDEBUG
