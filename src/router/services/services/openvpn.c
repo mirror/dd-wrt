@@ -46,21 +46,27 @@ static void run_openvpn(char *prg, char *path)
 	free(conf);
 }
 
-int cleanup_pbr (char *tablenr) {
+int cleanup_pbr(char *tablenr)
+{
 	//clean up
 	char cmd[256] = { 0 };
 	eval("ip", "route", "flush", "table", tablenr);
 	eval("ip", "route", "flush", "table", "9");
-	
+
 	//eval("while", "ip", "rule", "delete", "from", "0/0", "to", "0/0", "table", tablenr2, ";", "do", "true", ";", "done");  //does not work revert to system()
-	sprintf(cmd, "while ip rule delete from 0/0 to 0/0 table %s; do true; done", tablenr);
-	system(cmd);
+	while (!eval("ip", "rule", "delete", "from", "0/0", "to", "0/0", "table", tablenr)) {
+
+	}
+
+//      sprintf(cmd, "while ip rule delete from 0/0 to 0/0 table %s; do true; done", tablenr);
+//      system(cmd);
 	return 0;
 }
 
-void setroute_pbr(char *tablenr) {
+void setroute_pbr(char *tablenr)
+{
 
-	cleanup_pbr(tablenr);  //probably not necessary as openvpn restarts it will clean up
+	cleanup_pbr(tablenr);	//probably not necessary as openvpn restarts it will clean up
 
 	char *curline = nvram_safe_get("openvpncl_route");
 	char cmd[256] = { 0 };
@@ -79,19 +85,18 @@ void setroute_pbr(char *tablenr) {
 	dd_loginfo("openvpn", "routingcommand: %s\n", cmd);
 	system(cmd);
 
-	while(curline)
-	{
+	while (curline) {
 		char *nextLine = strchr(curline, '\n');
-		size_t curlinelen = nextLine ? ((unsigned)(nextLine-curline)) : strlen(curline);
-		char *tempstr = (char *) malloc(curlinelen+1);
-		char iprule[128]= { 0 };
+		size_t curlinelen = nextLine ? ((unsigned)(nextLine - curline)) : strlen(curline);
+		char *tempstr = (char *)malloc(curlinelen + 1);
+		char iprule[128] = { 0 };
 		char *piprule;
 		if (tempstr) {
 			memcpy(tempstr, curline, curlinelen);
-			tempstr[curlinelen] = '\0';  // NUL-terminate!
+			tempstr[curlinelen] = '\0';	// NUL-terminate!
 			//dd_loginfo("openvpn", "tempstr= [%s]\n", tempstr);
 			// check if line starts with a # skip
-			if (tempstr[0] == '#' ) {
+			if (tempstr[0] == '#') {
 				dd_loginfo("openvpn", "Skip line starting with #: %s\n", tempstr);
 			} else {
 				// add from if starting with digit
@@ -100,24 +105,24 @@ void setroute_pbr(char *tablenr) {
 					strcpy(iprule, "from ");
 				}
 				strcat(iprule, tempstr);
-				if ((piprule=strchr(iprule, '#'))) {
-					piprule[0]='\0';
-				} else if ((piprule=strchr(iprule, '\r'))) {
-					piprule[0]='\0';
+				if ((piprule = strchr(iprule, '#'))) {
+					piprule[0] = '\0';
+				} else if ((piprule = strchr(iprule, '\r'))) {
+					piprule[0] = '\0';
 				}
 				if (*iprule) {
 					//dd_loginfo("openvpn","iprule final=[%s]\n", iprule);
-					//eval("ip", "rule", "add", iprule, "table", "10");	//does not work revert to system()
-					sprintf(cmd, "ip rule add %s table %s", iprule, tablenr );
-					dd_loginfo("openvpn", "PBR systemcommand: %s\n", cmd);
-					system(cmd);
+					eval("ip", "rule", "add", iprule, "table", tablenr);
+//                                      sprintf(cmd, "ip rule add %s table %s", iprule, tablenr );
+//                                      dd_loginfo("openvpn", "PBR systemcommand: %s\n", cmd);
+//                                      system(cmd);
 				}
 			}
-		free(tempstr);
-		} else { 
+			free(tempstr);
+		} else {
 			dd_loginfo("openvpn", "malloc() failed in creating PBR!?\n");
 		}
-		curline = nextLine ? (nextLine+1) : NULL;
+		curline = nextLine ? (nextLine + 1) : NULL;
 	}
 }
 
@@ -157,13 +162,13 @@ void create_openvpnrules(FILE * fp)
 		fprintf(fp,
 			"env | grep 'dhcp-option DNS' | awk '{print $NF}' | while read vpn_dns; do grep -q \"^dhcp-option DNS $vpn_dns\" /tmp/openvpncl/openvpn.conf || ip route add $vpn_dns via $route_vpn_gateway dev $dev 2> /dev/null; done\n");
 	}
-	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")),"#",1) != 0 ) {	//policy based routing
+	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")), "#", 1) != 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		//fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//;/^$/d' \"/tmp/openvpncl/policy_ips\" | while read IP; do [[ \"$IP\" == [0-9]* ]] && IP=\"from $IP\"; ip rule add table 10 $IP; done\n");  //rules added in setroute_pbr
 /*              if (nvram_match("openvpncl_tuntap", "tap"))
                         fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n"); //needs investigation cause in TAP mode no gateway is received
                 else */
-		if (!nvram_match("openvpncl_tuntap", "tap") ) {
+		if (!nvram_match("openvpncl_tuntap", "tap")) {
 			//fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
 			fprintf(fp, "ip route add 0.0.0.0/1 via $route_vpn_gateway table 10\n");
 			fprintf(fp, "ip route add 128.0.0.0/1 via $route_vpn_gateway table 10\n");
@@ -172,7 +177,7 @@ void create_openvpnrules(FILE * fp)
 		}
 		fprintf(fp, "ip route flush cache\n" "echo $ifconfig_remote >>/tmp/gateway.txt\n" "echo $route_vpn_gateway >>/tmp/gateway.txt\n" "echo $ifconfig_local >>/tmp/gateway.txt\n");
 	}
-	fprintf(fp, "exit 0\n");  //to prevent exit 2 fall through when DNS route is already made by provider
+	fprintf(fp, "exit 0\n");	//to prevent exit 2 fall through when DNS route is already made by provider
 }
 
 void create_openvpnserverrules(FILE * fp)
@@ -442,6 +447,7 @@ void start_openvpnserver(void)
 //      eval("stopservice", "wshaper"); disable wshaper, causes fw race condition
 //      eval("startservice", "wshaper");
 }
+
 void stop_openvpnserver(void)
 {
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
@@ -523,10 +529,10 @@ void start_openvpn(void)
 	chmod("/tmp/openvpn/client.key", 0600);
 
 	//Start PBR routing and general killswitch if appropriate
-	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")),"#",1) != 0) {
-	dd_loginfo("openvpn", "PBR is not empty or does not start with a # now using setroute_pbr(): %s\n", nvram_safe_get("openvpncl_route") );
-	setroute_pbr("10");
-	} else if ( nvram_matchi("openvpncl_killswitch", 1) ) {  //if no PBR and killswitch active, activate general killswitch
+	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")), "#", 1) != 0) {
+		dd_loginfo("openvpn", "PBR is not empty or does not start with a # now using setroute_pbr(): %s\n", nvram_safe_get("openvpncl_route"));
+		setroute_pbr("10");
+	} else if (nvram_matchi("openvpncl_killswitch", 1)) {	//if no PBR and killswitch active, activate general killswitch
 		dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled from OpenVPN ");
 		//eval("restart" , "firewall");
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
@@ -614,7 +620,7 @@ void start_openvpn(void)
 			fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
 				nvram_safe_get("openvpncl_lzo"));
 	}
-	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")),"#",1) != 0 ) {	//policy routing: we need redirect-gw so we get gw info
+	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")), "#", 1) != 0) {	//policy routing: we need redirect-gw so we get gw info
 		fprintf(fp, "redirect-private def1\n");
 		if (nvram_invmatch("openvpncl_tuntap", "tun"))
 			fprintf(fp, "ifconfig-noexec\n");
@@ -763,7 +769,7 @@ void stop_openvpn(void)
 		unlink("/tmp/openvpncl/route-down.sh");
 		unlink("/tmp/openvpncl_fw.sh");	//remove created firewall rules to prevent used by Firewall if VPN is down
 		// remove pbr table
-		cleanup_pbr ("10");
+		cleanup_pbr("10");
 		//remove kill switch
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
@@ -801,7 +807,7 @@ void stop_openvpn_wandone(void)
 		unlink("/tmp/openvpncl/route-down.sh");
 		unlink("/tmp/openvpncl_fw.sh");
 		// remove pbr table
-		cleanup_pbr ("10");
+		cleanup_pbr("10");
 		//remove kill switch
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-j", "DROP");
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", get_wan_face(), "-m", "state", "--state", "NEW", "-j", "DROP");
