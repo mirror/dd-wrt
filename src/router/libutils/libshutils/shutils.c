@@ -141,7 +141,7 @@ static void flog(const char *fmt, ...)
 	}
 }
 
-int system2(char *command)
+int dd_system(char *command)
 {
 
 	if (debug_ready()) {
@@ -150,9 +150,6 @@ int system2(char *command)
 			sleep(1);
 		}
 	}
-#ifndef HAVE_SILENCE
-	fprintf(stderr, "system: %s\n", command);
-#endif
 	return system(command);
 }
 
