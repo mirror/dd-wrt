@@ -89,6 +89,10 @@ int main(int argc, char *argv[])
 			i++;
 			continue;
 		}
+		if (!strcmp(syms[i], "stop_process_timeout")) {
+			i++;
+			continue;
+		}
 		if (!strcmp(syms[i], "stop_process_hard")) {
 			i++;
 			continue;
@@ -157,6 +161,10 @@ int main(int argc, char *argv[])
 			}
 		} else if (!strncmp(syms[i], "stop_", 5)) {
 			if (!strcmp(syms[i], "stop_process")) {
+				i++;
+				continue;
+			}
+			if (!strcmp(syms[i], "stop_process_timeout")) {
 				i++;
 				continue;
 			}
@@ -272,6 +280,10 @@ int main(int argc, char *argv[])
 			i++;
 			continue;
 		}
+		if (!strcmp(syms[i], "stop_process_timeout")) {
+			i++;
+			continue;
+		}
 		if (!strcmp(syms[i], "stop_process_hard")) {
 			i++;
 			continue;
@@ -287,6 +299,10 @@ int main(int argc, char *argv[])
 	while (syms[i]) {
 		fprintf(stdout, "process restart %s\n", syms[i]);
 		if (!strcmp(syms[i], "stop_process")) {
+			i++;
+			continue;
+		}
+		if (!strcmp(syms[i], "stop_process_timeout")) {
 			i++;
 			continue;
 		}
