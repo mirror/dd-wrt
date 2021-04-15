@@ -127,7 +127,7 @@ int site_survey_main(int argc, char *argv[])
 	unsigned char *cp;
 	int len;
 
-	system2("airoscan-ng wifi0");
+	system("airoscan-ng wifi0");
 	len = do80211priv("wlan0", IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof(buf));
 
 	if (len == -1)

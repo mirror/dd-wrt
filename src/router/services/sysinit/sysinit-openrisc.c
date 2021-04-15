@@ -97,7 +97,7 @@ void start_sysinit(void)
 
 	detect_wireless_devices(RADIO_ALL);
 
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	system("echo 1 >/proc/sys/dev/wifi0/softled");
 
 	/*
 	 * Set a sane date 

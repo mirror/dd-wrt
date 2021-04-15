@@ -233,7 +233,7 @@ void start_splashd(void)
 	fprintf(fp, "splashd >> /var/log/nocat.log 2>&1 &\n");
 	fclose(fp);
 	chmod("/tmp/start_splashd.sh", 0700);
-	system2("/tmp/start_splashd.sh&");
+	system("/tmp/start_splashd.sh&");
 	dd_loginfo("splashd", "nocatsplash daemon successfully started\n");
 
 	cprintf("done\n");
