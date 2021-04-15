@@ -49,13 +49,14 @@ static void run_openvpn(char *prg, char *path)
 int cleanup_pbr(char *tablenr)
 {
 	//clean up
+	int limit = 20;
 	char cmd[256] = { 0 };
 	eval("ip", "route", "flush", "table", tablenr);
 	eval("ip", "route", "flush", "table", "9");
 
 	//eval("while", "ip", "rule", "delete", "from", "0/0", "to", "0/0", "table", tablenr2, ";", "do", "true", ";", "done");  //does not work revert to system()
-	while (!eval("ip", "rule", "delete", "from", "0/0", "to", "0/0", "table", tablenr)) {
-
+	while (limit > 0 && !eval("ip", "rule", "delete", "from", "0/0", "to", "0/0", "table", tablenr)) {
+		limit--;
 	}
 
 //      sprintf(cmd, "while ip rule delete from 0/0 to 0/0 table %s; do true; done", tablenr);
