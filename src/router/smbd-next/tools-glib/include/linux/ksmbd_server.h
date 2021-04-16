@@ -33,7 +33,6 @@ struct ksmbd_heartbeat {
 #define KSMBD_GLOBAL_FLAG_CACHE_TBUF		(1 << 1)
 #define KSMBD_GLOBAL_FLAG_CACHE_RBUF		(1 << 2)
 #define KSMBD_GLOBAL_FLAG_SMB3_ENCRYPTION	(1 << 3)
-#define KSMBD_GLOBAL_FLAG_DURABLE_HANDLE	(1 << 4)
 
 struct ksmbd_startup_request {
 	__u32	flags;
