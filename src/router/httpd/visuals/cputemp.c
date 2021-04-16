@@ -96,7 +96,7 @@ int getCoreTemp(char *p, int *ridx)
 				continue;
 			char name[64];
 			fscanf(fp, "%s", name);
-			if (!strncmp(name, "Core", 4)) {
+			if (!strncmp(name, "Core", 4) || !strncmp(name, "acpitz", 6)) {
 				fclose(fp);
 				sprintf(p, "/sys/class/hwmon/hwmon%d", idx);
 				*ridx = tidx;
