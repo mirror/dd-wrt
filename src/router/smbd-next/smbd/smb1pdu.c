@@ -2876,12 +2876,17 @@ int smb_read_andx(struct ksmbd_work *work)
 	 * not supported. If it is 0xFFFF, it is set to a too large value
 	 * and a read fail occurs. If it is 0xFFFF, limit it to not set
 	 * the value.
+	 *
+	 * [MS-SMB] 3.2.4.4.1:
+	 * If the CAP_LARGE_READX bit is set in
+	 * Client.Connection.ServerCapabilities, then the client is allowed to
+	 * issue a read of a size larger than Client.Connection.MaxBufferSize
+	 * using an SMB_COM_READ_ANDX request.
 	 */
 	if (conn->vals->capabilities & CAP_LARGE_READ_X &&
 		le32_to_cpu(req->MaxCountHigh) < 0xFFFF)
 		count |= le32_to_cpu(req->MaxCountHigh) << 16;
-
-	if (count > CIFS_DEFAULT_IOSIZE) {
+	else if (count > CIFS_DEFAULT_IOSIZE) {
 		ksmbd_debug(SMB, "read size(%zu) exceeds max size(%u)\n",
 				count, CIFS_DEFAULT_IOSIZE);
 		ksmbd_debug(SMB, "limiting read size to max size(%u)\n",
@@ -3110,11 +3115,16 @@ int smb_write_andx(struct ksmbd_work *work)
 
 	writethrough = (le16_to_cpu(req->WriteMode) == 1);
 
+	/*
+	 * [MS-SMB] 3.3.5.8:
+	 * If CAP_LARGE_WRITEX is set in Server.Connection.ClientCapabilities,
+	 * then it is possible that the count of bytes to be written is larger
+	 * than the server's MaxBufferSize
+	 */
 	count = le16_to_cpu(req->DataLengthLow);
 	if (conn->vals->capabilities & CAP_LARGE_WRITE_X)
 		count |= (le16_to_cpu(req->DataLengthHigh) << 16);
-
-	if (count > CIFS_DEFAULT_IOSIZE) {
+	else if (count > CIFS_DEFAULT_IOSIZE) {
 		ksmbd_debug(SMB, "write size(%zu) exceeds max size(%u)\n",
 				count, CIFS_DEFAULT_IOSIZE);
 		ksmbd_debug(SMB, "limiting write size to max size(%u)\n",
@@ -7381,7 +7391,7 @@ static int create_dir(struct ksmbd_work *work)
 		err = ksmbd_vfs_kern_path(name, 0, &path, 1);
 		if (!err) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
-			ctime = ksmbd_UnixTimeToNT(current_time(path.dentry->d_inode));
+			ctime = ksmbd_UnixTimeToNT(current_time(d_inode(path.dentry)));
 #else
 			ctime = ksmbd_UnixTimeToNT(CURRENT_TIME);
 #endif
@@ -7556,7 +7566,7 @@ int smb_mkdir(struct ksmbd_work *work)
 		err = ksmbd_vfs_kern_path(name, 0, &path, 1);
 		if (!err) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
-			ctime = ksmbd_UnixTimeToNT(current_time(path.dentry->d_inode));
+			ctime = ksmbd_UnixTimeToNT(current_time(d_inode(path.dentry)));
 #else
 			ctime = ksmbd_UnixTimeToNT(CURRENT_TIME);
 #endif
