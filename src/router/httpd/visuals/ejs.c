@@ -2118,6 +2118,8 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	char *style = nvram_safe_get("router_style");
 	char *style_dark = nvram_safe_get("router_style_dark");
 	static char *charset = NULL;
+	if (!*style)
+		style = "elegant";
 	if (!charset)
 		charset = strdup(live_translate(wp, "lang_charset.set"));
 
