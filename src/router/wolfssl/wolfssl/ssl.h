@@ -1697,7 +1697,6 @@ enum {
     WOLFSSL_CRL_CHECK    = 2,
 };
 
-#if 1 //def OPENSSL_EXTRA
 /* Separated out from other enums because of size */
 enum {
     SSL_OP_MICROSOFT_SESS_ID_BUG                  = 0x00000001,
