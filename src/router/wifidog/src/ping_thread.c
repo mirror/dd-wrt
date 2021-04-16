@@ -171,14 +171,14 @@ ping(void)
              VERSION, auth_server->authserv_hostname);
 
     char *res;
-#ifdef USE_CYASSL
+#ifdef USE_WOLFSSL
     if (auth_server->authserv_use_ssl) {
         res = https_get(sockfd, request, auth_server->authserv_hostname);
     } else {
         res = http_get(sockfd, request);
     }
 #endif
-#ifndef USE_CYASSL
+#ifndef USE_WOLFSSL
     res = http_get(sockfd, request);
 #endif
     if (NULL == res) {

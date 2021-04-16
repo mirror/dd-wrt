@@ -116,14 +116,14 @@ auth_server_request(t_authresponse * authresponse, const char *request_type, con
     free(safe_token);
 
     char *res;
-#ifdef USE_CYASSL
+#ifdef USE_WOLFSSL
     if (auth_server->authserv_use_ssl) {
         res = https_get(sockfd, buf, auth_server->authserv_hostname);
     } else {
         res = http_get(sockfd, buf);
     }
 #endif
-#ifndef USE_CYASSL
+#ifndef USE_WOLFSSL
     res = http_get(sockfd, buf);
 #endif
     if (NULL == res) {
@@ -297,7 +297,7 @@ _connect_auth_server(int level)
          * Connect to it
          */
         int port = 0;
-#ifdef USE_CYASSL
+#ifdef USE_WOLFSSL
         if (auth_server->authserv_use_ssl) {
             debug(LOG_DEBUG, "Level %d: Connecting to SSL auth server %s:%d", level, hostname,
                   auth_server->authserv_ssl_port);
@@ -308,7 +308,7 @@ _connect_auth_server(int level)
             port = htons(auth_server->authserv_http_port);
         }
 #endif
-#ifndef USE_CYASSL
+#ifndef USE_WOLFSSL
         debug(LOG_DEBUG, "Level %d: Connecting to auth server %s:%d", level, hostname, auth_server->authserv_http_port);
         port = htons(auth_server->authserv_http_port);
 #endif
