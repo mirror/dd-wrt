@@ -519,21 +519,21 @@ static int SocketSend(int sockFd, char* buf, int sz)
     }
     return sent;
 }
-#ifdef WOLFSSL_DTLS
+#if defined(WOLFSSL_DTLS) && !defined(NO_WOLFSSL_SERVER)
 static int ReceiveFrom(WOLFSSL *ssl, int sd, char *buf, int sz)
 {
     int recvd;
     int dtls_timeout = wolfSSL_dtls_get_current_timeout(ssl);
     struct sockaddr peer;
-    socklen_t peerSz;
-    
+    socklen_t peerSz = 0;
+
     if (DoneHandShake) dtls_timeout = 0;
 
     if (!wolfSSL_get_using_nonblock(ssl)) {
         struct timeval timeout;
         XMEMSET(&timeout, 0, sizeof(timeout));
         timeout.tv_sec = dtls_timeout;
-    
+
         if (setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout,
                        sizeof(timeout)) != 0) {
                 printf("setsockopt rcvtimeo failed\n");
@@ -543,7 +543,7 @@ static int ReceiveFrom(WOLFSSL *ssl, int sd, char *buf, int sz)
     recvd = (int)recvfrom(sd, buf, sz, 0, (SOCKADDR*)&peer, &peerSz);
 
     if (recvd < 0) {
-         
+
         if (errno == SOCKET_EWOULDBLOCK || errno == SOCKET_EAGAIN) {
             if (wolfSSL_dtls_get_using_nonblock(ssl)) {
                 return WOLFSSL_CBIO_ERR_WANT_READ;
@@ -573,8 +573,10 @@ static int ReceiveFrom(WOLFSSL *ssl, int sd, char *buf, int sz)
 
     return recvd;
 }
+#endif /* WOLFSSL_DTLS && !NO_WOLFSSL_SERVER */
 
-static int SendTo(int sd, char *buf, int sz, const struct sockaddr *peer, 
+#if defined(WOLFSSL_DTLS) && !defined(NO_WOLFSSL_CLIENT)
+static int SendTo(int sd, char *buf, int sz, const struct sockaddr *peer,
                   socklen_t peerSz)
 {
     int sent;
@@ -610,7 +612,7 @@ static int myDoneHsCb(WOLFSSL* ssl, void* user_ctx)
     DoneHandShake = 1;
     return 1;
 }
-#endif
+#endif /* WOLFSSL_DTLS && !NO_WOLFSSL_CLIENT */
 
 #ifndef NO_WOLFSSL_SERVER
 static int ServerSend(WOLFSSL* ssl, char* buf, int sz, void* ctx)
@@ -621,11 +623,11 @@ static int ServerSend(WOLFSSL* ssl, char* buf, int sz, void* ctx)
     if (info->useLocalMem)
         return ServerMemSend(info, buf, sz);
 #endif
-#ifdef WOLFSSL_DTLS
+#if defined(WOLFSSL_DTLS) && !defined(NO_WOLFSSL_CLIENT)
     if (info->doDTLS) {
-        return SendTo(info->server.sockFd, buf, sz, 
+        return SendTo(info->server.sockFd, buf, sz,
             (const struct sockaddr*)&info->clientAddr, sizeof(info->clientAddr));
-    } else 
+    } else
 #endif
         return SocketSend(info->server.sockFd, buf, sz);
 }
@@ -657,9 +659,9 @@ static int ClientSend(WOLFSSL* ssl, char* buf, int sz, void* ctx)
 #endif
 #ifdef WOLFSSL_DTLS
     if (info->doDTLS) {
-        return SendTo(info->client.sockFd, buf, sz, 
+        return SendTo(info->client.sockFd, buf, sz,
             (const struct sockaddr*)&info->serverAddr, sizeof(info->serverAddr));
-    } else 
+    } else
 #endif
         return SocketSend(info->client.sockFd, buf, sz);
 }
@@ -671,10 +673,10 @@ static int ClientRecv(WOLFSSL* ssl, char* buf, int sz, void* ctx)
     if (info->useLocalMem)
         return ClientMemRecv(info, buf, sz);
 #endif
-#ifdef WOLFSSL_DTLS
+#if defined(WOLFSSL_DTLS) && !defined(NO_WOLFSSL_SERVER)
     if (info->doDTLS) {
         return ReceiveFrom(ssl, info->client.sockFd, buf, sz);
-    } else 
+    } else
 #endif
         return SocketRecv(info->client.sockFd, buf, sz);
 }
@@ -732,14 +734,14 @@ static int SetupSocketAndConnect(info_t* info, const char* host,
 
 #ifdef WOLFSSL_DTLS
     if (info->doDTLS) {
-        /* Create the SOCK_DGRAM socket type is implemented on the User 
+        /* Create the SOCK_DGRAM socket type is implemented on the User
         *  Datagram Protocol/Internet Protocol(UDP/IP protocol).*/
         if ((info->client.sockFd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
             printf("ERROR: failed to create the SOCK_DGRAM socket\n");
             return -1;
         }
         XMEMCPY(&info->serverAddr, &servAddr, sizeof(servAddr));
-    } else { 
+    } else {
 #endif
     /* Create a socket that uses an Internet IPv4 address,
      * Sets the socket to be stream based (TCP),
@@ -790,7 +792,7 @@ static int bench_tls_client(info_t* info)
     if(info->doDTLS) {
         if (tls13) return WOLFSSL_SUCCESS;
         cli_ctx = wolfSSL_CTX_new(wolfDTLSv1_2_client_method());
-    } else 
+    } else
 #endif
 #ifdef WOLFSSL_TLS13
     if (tls13)
@@ -887,7 +889,7 @@ static int bench_tls_client(info_t* info)
 
 #ifdef WOLFSSL_DTLS
         if (info->doDTLS) {
-            ret = wolfSSL_dtls_set_peer(cli_ssl, &info->serverAddr, 
+            ret = wolfSSL_dtls_set_peer(cli_ssl, &info->serverAddr,
                                                     sizeof(info->serverAddr));
             if (ret != WOLFSSL_SUCCESS) {
                 printf("error setting dtls peer\n");
@@ -904,7 +906,7 @@ static int bench_tls_client(info_t* info)
         wolfSSL_SetIOWriteCtx(cli_ssl, info);
 
 #if defined(HAVE_PTHREAD) && defined(WOLFSSL_DTLS)
-        /* synchronize with server */ 
+        /* synchronize with server */
         if (info->doDTLS && !info->clientOrserverOnly) {
             pthread_mutex_lock(&info->dtls_mutex);
             if (info->serverReady != 1) {
@@ -1081,7 +1083,7 @@ static int SetupSocketAndListen(int* listenFd, word32 port, int doDTLS)
 #ifdef WOLFSSL_DTLS
     if (doDTLS) {
         /* Create a socket that is implemented on the User Datagram Protocol/
-        * Interet Protocol(UDP/IP protocol). */ 
+        * Interet Protocol(UDP/IP protocol). */
         if((*listenFd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
             printf("ERROR: failed to create the socket\n");
             return -1;
@@ -1147,7 +1149,7 @@ static int SocketWaitClient(info_t* info)
             MSG_PEEK, (struct sockaddr*)&clientAddr, &size);
         if (connd < -1) {
             printf("ERROR: failed to accept the connection\n");
-            return -1; 
+            return -1;
         }
         XMEMCPY(&info->clientAddr, &clientAddr, sizeof(clientAddr));
         info->server.sockFd = info->listenFd;
@@ -1193,7 +1195,7 @@ static int bench_tls_server(info_t* info)
     if(info->doDTLS) {
         if(tls13) return WOLFSSL_SUCCESS;
         srv_ctx = wolfSSL_CTX_new(wolfDTLSv1_2_server_method());
-    } else { 
+    } else {
 #endif
 #ifdef WOLFSSL_TLS13
     if (tls13)
@@ -1283,7 +1285,7 @@ static int bench_tls_server(info_t* info)
             ret = SocketWaitClient(info);
         #ifdef BENCH_USE_NONBLOCK
             if (ret == -2) {
-                sleep(0);
+                XSLEEP_MS(0);
                 continue;
             }
         #endif
@@ -1299,7 +1301,7 @@ static int bench_tls_server(info_t* info)
         }
 #ifdef WOLFSSL_DTLS
         if (info->doDTLS) {
-            ret = wolfSSL_dtls_set_peer(srv_ssl, &info->clientAddr, 
+            ret = wolfSSL_dtls_set_peer(srv_ssl, &info->clientAddr,
                         sizeof(info->clientAddr));
             if (ret != WOLFSSL_SUCCESS) {
                 printf("error setting dtls peer\n");
@@ -1403,7 +1405,7 @@ static int bench_tls_server(info_t* info)
 #ifdef WOLFSSL_DTLS
         if (info->doDTLS) {
             SetupSocketAndListen(&info->listenFd, info->port, info->doDTLS);
-        }   
+        }
 #endif
 
     }
@@ -1570,9 +1572,11 @@ int bench_tls(void* args)
     int argLocalMem = 0;
     int listenFd = -1;
 #endif
+#if defined(WOLFSSL_DTLS) && !defined(NO_WOLFSSL_SERVER)
+    int option_p = 0;
+#endif
 #ifdef WOLFSSL_DTLS
     int doDTLS = 0;
-    int option_p = 0;
 #endif
     if (args != NULL) {
         argc = ((func_args*)args)->argc;
@@ -1631,7 +1635,7 @@ int bench_tls(void* args)
                     Usage();
                     ret = MY_EX_USAGE; goto exit;
                 }
-            #ifdef WOLFSSL_DTLS
+            #if defined(WOLFSSL_DTLS) && !defined(NO_WOLFSSL_SERVER)
                 option_p = 1;
             #endif
                 break;
@@ -1726,7 +1730,7 @@ int bench_tls(void* args)
     }
 #endif
 
-#ifdef WOLFSSL_DTLS
+#if defined(WOLFSSL_DTLS) && !defined(NO_WOLFSSL_SERVER)
     if (doDTLS) {
         if (argLocalMem) {
             printf("tls_bench hasn't yet supported DTLS with local memory.\n");
@@ -1827,7 +1831,7 @@ int bench_tls(void* args)
                     info = &theadInfo[i];
                     if (!info->to_client.done || !info->to_server.done) {
                         doShutdown = 0;
-                        sleep(1); /* Allow other threads to run */
+                        XSLEEP_MS(1000); /* Allow other threads to run */
                     }
 
                 }

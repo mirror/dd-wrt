@@ -190,6 +190,7 @@ void wc_PKCS12_free(WC_PKCS12* pkcs12)
 }
 
 
+/* return 0 on success */
 static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
                           word32* idx, int maxIdx)
 {
@@ -226,9 +227,9 @@ static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
         freeSafe(safe, pkcs12->heap);
         return ASN_PARSE_E;
     }
-    if ((ret = GetLength(input, &localIdx, &size, maxIdx)) <= 0) {
+    if (GetLength(input, &localIdx, &size, maxIdx) <= 0) {
         freeSafe(safe, pkcs12->heap);
-        return ret;
+        return ASN_PARSE_E;
     }
 
     switch (oid) {
@@ -249,9 +250,9 @@ static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
                 freeSafe(safe, pkcs12->heap);
                 return ASN_PARSE_E;
             }
-            if ((ret = GetLength(input, &localIdx, &size, maxIdx)) <= 0) {
+            if (GetLength(input, &localIdx, &size, maxIdx) <= 0) {
                 freeSafe(safe, pkcs12->heap);
-                return ret;
+                return ASN_PARSE_E;
             }
 
             break;
@@ -350,7 +351,8 @@ static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
 }
 
 
-/* optional mac data */
+/* parse optional mac data
+ * return 0 on success */
 static int GetSignData(WC_PKCS12* pkcs12, const byte* mem, word32* idx,
                        word32 totalSz)
 {
@@ -364,9 +366,9 @@ static int GetSignData(WC_PKCS12* pkcs12, const byte* mem, word32* idx,
      *      DigestAlgorithmIdentifier
      *      Digest
      */
-    if ((ret = GetSequence(mem, &curIdx, &size, totalSz)) <= 0) {
+    if (GetSequence(mem, &curIdx, &size, totalSz) <= 0) {
         WOLFSSL_MSG("Failed to get PKCS12 sequence");
-        return ret;
+        return ASN_PARSE_E;
     }
 
 #ifdef WOLFSSL_DEBUG_PKCS12
@@ -403,9 +405,9 @@ static int GetSignData(WC_PKCS12* pkcs12, const byte* mem, word32* idx,
         return ASN_PARSE_E;
     }
 
-    if ((ret = GetLength(mem, &curIdx, &size, totalSz)) <= 0) {
+    if (GetLength(mem, &curIdx, &size, totalSz) <= 0) {
         XFREE(mac, pkcs12->heap, DYNAMIC_TYPE_PKCS);
-        return ret;
+        return ASN_PARSE_E;
     }
     mac->digestSz = size;
     mac->digest = (byte*)XMALLOC(mac->digestSz, pkcs12->heap,
@@ -463,7 +465,7 @@ static int GetSignData(WC_PKCS12* pkcs12, const byte* mem, word32* idx,
     mac->itt = WC_PKCS12_MAC_DEFAULT;
     if (curIdx < totalSz) {
         int number = 0;
-        if ((ret = GetShortInt(mem, &curIdx, &number, totalSz)) >= 0) {
+        if (GetShortInt(mem, &curIdx, &number, totalSz) >= 0) {
             /* found a iteration value */
             mac->itt = number;
         }
@@ -567,7 +569,6 @@ static int wc_PKCS12_create_mac(WC_PKCS12* pkcs12, byte* data, word32 dataSz,
     return kLen; /* same as digest size */
 }
 
-
 /* check mac on pkcs12, pkcs12->mac has been sanity checked before entering *
  * returns the result of comparison, success is 0 */
 static int wc_PKCS12_verify(WC_PKCS12* pkcs12, byte* data, word32 dataSz,
@@ -611,6 +612,15 @@ static int wc_PKCS12_verify(WC_PKCS12* pkcs12, byte* data, word32 dataSz,
     return XMEMCMP(digest, mac->digest, mac->digestSz);
 }
 
+int wc_PKCS12_verify_ex(WC_PKCS12* pkcs12, const byte* psw, word32 pswSz)
+{
+    if (pkcs12 == NULL || pkcs12->safe == NULL) {
+        return BAD_FUNC_ARG;
+    }
+    return wc_PKCS12_verify(pkcs12, pkcs12->safe->data, pkcs12->safe->dataSz,
+            psw, pswSz);
+}
+
 
 /* Convert DER format stored in der buffer to WC_PKCS12 struct
  * Puts the raw contents of Content Info into structure without completely
@@ -628,16 +638,16 @@ int wc_d2i_PKCS12(const byte* der, word32 derSz, WC_PKCS12* pkcs12)
     int size    = 0;
     int version = 0;
 
-    WOLFSSL_ENTER("wolfSSL_d2i_PKCS12_bio");
+    WOLFSSL_ENTER("wolfSSL_d2i_PKCS12");
 
     if (der == NULL || pkcs12 == NULL) {
         return BAD_FUNC_ARG;
     }
 
     totalSz = derSz;
-    if ((ret = GetSequence(der, &idx, &size, totalSz)) <= 0) {
+    if (GetSequence(der, &idx, &size, totalSz) <= 0) {
         WOLFSSL_MSG("Failed to get PKCS12 sequence");
-        return ret;
+        return ASN_PARSE_E;
     }
 
     /* get version */
@@ -938,7 +948,7 @@ static void freeDecCertList(WC_DerCertList** list, byte** pkey, word32* pkeySz,
 
         InitDecodedCert(&DeCert, current->buffer, current->bufferSz, heap);
         if (ParseCertRelative(&DeCert, CERT_TYPE, NO_VERIFY, NULL) == 0) {
-            if (wc_CheckPrivateKey(*pkey, *pkeySz, &DeCert) == 1) {
+            if (wc_CheckPrivateKeyCert(*pkey, *pkeySz, &DeCert) == 1) {
                 WOLFSSL_MSG("Key Pair found");
                 *cert = current->buffer;
                 *certSz = current->bufferSz;
@@ -1006,6 +1016,7 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
                                pkcs12->safe->dataSz, (byte*)psw, pswSz)) != 0) {
             WOLFSSL_MSG("PKCS12 Bad MAC on verify");
             WOLFSSL_LEAVE("wc_PKCS12_parse verify ", ret);
+            (void)ret;
             return MAC_CMP_FAILED_E;
         }
     }
@@ -1097,7 +1108,7 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
             if (tag != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
                 ERROR_OUT(ASN_PARSE_E, exit_pk12par);
             }
-            if ((ret = GetLength(data, &idx, &size, ci->dataSz)) <= 0) {
+            if (GetLength(data, &idx, &size, ci->dataSz) <= 0) {
                 ERROR_OUT(ASN_PARSE_E, exit_pk12par);
             }
 
@@ -2120,6 +2131,7 @@ static byte* PKCS12_create_cert_content(WC_PKCS12* pkcs12, int nidCert,
     XFREE(certBuf, heap, DYNAMIC_TYPE_TMP_BUFFER);
     if (ret < 0) {
         WOLFSSL_LEAVE("wc_PKCS12_create()", ret);
+        XFREE(certCi, heap, DYNAMIC_TYPE_TMP_BUFFER);
         return NULL;
     }
     *certCiSz = ret;
@@ -2242,7 +2254,7 @@ WC_PKCS12* wc_PKCS12_create(char* pass, word32 passSz, char* name,
 
     WOLFSSL_ENTER("wc_PKCS12_create()");
 
-    if ((ret = wc_InitRng_ex(&rng, heap, INVALID_DEVID)) != 0) {
+    if (wc_InitRng_ex(&rng, heap, INVALID_DEVID) != 0) {
         return NULL;
     }
 
@@ -2256,6 +2268,7 @@ WC_PKCS12* wc_PKCS12_create(char* pass, word32 passSz, char* name,
         wc_PKCS12_free(pkcs12);
         wc_FreeRng(&rng);
         WOLFSSL_LEAVE("wc_PKCS12_create", ret);
+        (void)ret;
         return NULL;
     }
 
@@ -2337,7 +2350,7 @@ WC_PKCS12* wc_PKCS12_create(char* pass, word32 passSz, char* name,
             return NULL;
         }
 
-        if ((ret = wc_RNG_GenerateBlock(&rng, mac->salt, mac->saltSz)) != 0) {
+        if (wc_RNG_GenerateBlock(&rng, mac->salt, mac->saltSz) != 0) {
             WOLFSSL_MSG("Error generating random salt");
             wc_PKCS12_free(pkcs12);
             wc_FreeRng(&rng);

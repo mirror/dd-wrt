@@ -81,6 +81,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfSSLv23_method(void);
     \sa wolfTLSv1_server_method
     \sa wolfTLSv1_1_server_method
     \sa wolfTLSv1_2_server_method
+    \sa wolfTLSv1_3_server_method
     \sa wolfDTLSv1_server_method
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
@@ -124,6 +125,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfSSLv3_server_method(void);
     \sa wolfTLSv1_client_method
     \sa wolfTLSv1_1_client_method
     \sa wolfTLSv1_2_client_method
+    \sa wolfTLSv1_3_client_method
     \sa wolfDTLSv1_client_method
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
@@ -166,6 +168,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfSSLv3_client_method(void);
     \sa wolfSSLv3_server_method
     \sa wolfTLSv1_1_server_method
     \sa wolfTLSv1_2_server_method
+    \sa wolfTLSv1_3_server_method
     \sa wolfDTLSv1_server_method
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
@@ -208,6 +211,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_server_method(void);
     \sa wolfSSLv3_client_method
     \sa wolfTLSv1_1_client_method
     \sa wolfTLSv1_2_client_method
+    \sa wolfTLSv1_3_client_method
     \sa wolfDTLSv1_client_method
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
@@ -250,6 +254,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_client_method(void);
     \sa wolfSSLv3_server_method
     \sa wolfTLSv1_server_method
     \sa wolfTLSv1_2_server_method
+    \sa wolfTLSv1_3_server_method
     \sa wolfDTLSv1_server_method
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
@@ -292,6 +297,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_1_server_method(void);
     \sa wolfSSLv3_client_method
     \sa wolfTLSv1_client_method
     \sa wolfTLSv1_2_client_method
+    \sa wolfTLSv1_3_client_method
     \sa wolfDTLSv1_client_method
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
@@ -334,6 +340,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_1_client_method(void);
     \sa wolfSSLv3_server_method
     \sa wolfTLSv1_server_method
     \sa wolfTLSv1_1_server_method
+    \sa wolfTLSv1_3_server_method
     \sa wolfDTLSv1_server_method
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
@@ -376,6 +383,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_2_server_method(void);
     \sa wolfSSLv3_client_method
     \sa wolfTLSv1_client_method
     \sa wolfTLSv1_1_client_method
+    \sa wolfTLSv1_3_client_method
     \sa wolfDTLSv1_client_method
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
@@ -419,6 +427,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_2_client_method(void);
     \sa wolfTLSv1_client_method
     \sa wolfTLSv1_1_client_method
     \sa wolfTLSv1_2_client_method
+    \sa wolfTLSv1_3_client_method
     \sa wolfSSLv23_client_method
     \sa wolfSSL_CTX_new
 */
@@ -461,6 +470,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfDTLSv1_client_method(void);
     \sa wolfTLSv1_server_method
     \sa wolfTLSv1_1_server_method
     \sa wolfTLSv1_2_server_method
+    \sa wolfTLSv1_3_server_method
     \sa wolfSSLv23_server_method
     \sa wolfSSL_CTX_new
 */
@@ -1949,55 +1959,6 @@ WOLFSSL_API int  wolfSSL_peek(WOLFSSL*, void*, int);
 WOLFSSL_API int  wolfSSL_accept(WOLFSSL*);
 
 /*!
-    \brief This function is called on the client side and initiates an
-    SSL/TLS handshake with a server.  When this function is called, the
-    underlying communication channel has already been set up.
-    wolfSSL_connect() works with both blocking and non-blocking I/O.
-    When the underlying I/O is non-blocking, wolfSSL_connect() will return
-    when the underlying I/O could not satisfy the needs of wolfSSL_connect
-    to continue the handshake.  In this case, a call to wolfSSL_get_error()
-    will yield either SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE. The
-    calling process must then repeat the call to wolfSSL_connect() when
-    the underlying I/O is ready and wolfSSL will pick up where it left off.
-    When using a non-blocking socket, nothing needs to be done, but select()
-    can be used to check for the required condition. If the underlying I/O is
-    blocking, wolfSSL_connect() will only return once the handshake has been
-    finished or an error occurred. wolfSSL takes a different approach to
-    certificate verification than OpenSSL does.  The default policy for the
-    client is to verify the server, this means that if you don't load CAs to
-    verify the server you'll get a connect error, unable to verify (-155). It
-    you want to mimic OpenSSL behavior of having SSL_connect succeed even if
-    verifying the server fails and reducing security you can do this by
-    calling: SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, 0); before calling
-    SSL_new();  Though it's not recommended.
-
-    \return SSL_SUCCESS upon success.
-    \return SSL_FATAL_ERROR will be returned if an error occurred.  To get a
-    more detailed error code, call wolfSSL_get_error().
-
-    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
-
-    _Example_
-    \code
-    int ret = 0;
-    int err = 0;
-    WOLFSSL* ssl;
-    char buffer[80];
-    ...
-
-    ret = wolfSSL_connect(ssl);
-    if (ret != SSL_SUCCESS) {
-        err = wolfSSL_get_error(ssl, ret);
-        printf(“error = %d, %s\n”, err, wolfSSL_ERR_error_string(err, buffer));
-    }
-    \endcode
-
-    \sa wolfSSL_get_error
-    \sa wolfSSL_accept
-*/
-WOLFSSL_API int  wolfSSL_connect_TLSv13(WOLFSSL*);
-
-/*!
     \ingroup Setup
 
     \brief This function frees an allocated WOLFSSL_CTX object.  This
@@ -2379,7 +2340,7 @@ WOLFSSL_API void       wolfSSL_flush_sessions(WOLFSSL_CTX*, long);
     \brief This function associates the client session with the server id.
     If the newSession flag is on, an existing session won’t be reused.
 
-    \return SSL_SUCCESS returned if the finction executed without error.
+    \return SSL_SUCCESS returned if the function executed without error.
     \return BAD_FUNC_ARG returned if the WOLFSSL struct or id parameter
     is NULL or if len is not greater than zero.
 
@@ -2400,7 +2361,7 @@ WOLFSSL_API void       wolfSSL_flush_sessions(WOLFSSL_CTX*, long);
     …
     int ret = wolfSSL_SetServerID(ssl, id, len, newSession);
 
-    if(ret){
+    if (ret == WOLFSSL_SUCCESS) {
 	    // The Id was successfully set
     }
     \endcode
@@ -2697,6 +2658,75 @@ WOLFSSL_API void wolfSSL_load_error_strings(void);
     \sa wolfSSL_Cleanup
 */
 WOLFSSL_API int  wolfSSL_library_init(void);
+
+/*!
+    \brief This function sets the Device Id at the WOLFSSL session level.
+
+    \return WOLFSSL_SUCCESS upon success.
+    \return BAD_FUNC_ARG if ssl is NULL.
+
+    \param ssl pointer to a SSL object, created with wolfSSL_new().
+    \param devId ID to use with async hardware
+
+    _Example_
+    \code
+    WOLFSSL* ssl;
+    int DevId = -2;
+
+    wolfSSL_SetDevId(ssl, devId);
+
+    \endcode
+
+    \sa wolfSSL_CTX_SetDevId
+    \sa wolfSSL_CTX_GetDevId
+*/
+WOLFSSL_API int wolfSSL_SetDevId(WOLFSSL* ssl, int devId);
+
+/*!
+    \brief This function sets the Device Id at the WOLFSSL_CTX context level.
+
+    \return WOLFSSL_SUCCESS upon success.
+    \return BAD_FUNC_ARG if ssl is NULL.
+
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param devId ID to use with async hardware
+
+    _Example_
+    \code
+    WOLFSSL_CTX* ctx;
+    int DevId = -2;
+
+    wolfSSL_CTX_SetDevId(ctx, devId);
+
+    \endcode
+
+    \sa wolfSSL_SetDevId
+    \sa wolfSSL_CTX_GetDevId
+*/
+WOLFSSL_API int wolfSSL_CTX_SetDevId(WOLFSSL_CTX* ctx, int devId);
+
+/*!
+    \brief This function retrieves the Device Id.
+
+    \return devId upon success.
+    \return INVALID_DEVID if both ssl and ctx are NULL.
+
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param ssl pointer to a SSL object, created with wolfSSL_new().
+
+    _Example_
+    \code
+    WOLFSSL_CTX* ctx;
+
+    wolfSSL_CTX_GetDevId(ctx, ssl);
+
+    \endcode
+
+    \sa wolfSSL_SetDevId
+    \sa wolfSSL_CTX_SetDevId
+
+*/
+WOLFSSL_API int wolfSSL_CTX_GetDevId(WOLFSSL_CTX* ctx, WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -3773,7 +3803,7 @@ WOLFSSL_API WOLFSSL_SESSION* wolfSSL_get1_session(WOLFSSL* ssl);
 
     \brief The wolfSSLv23_client_method() function is used to indicate that
     the application is a client and will support the highest protocol
-    version supported by the server between SSL 3.0 - TLS 1.2.  This function
+    version supported by the server between SSL 3.0 - TLS 1.3.  This function
     allocates memory for and initializes a new WOLFSSL_METHOD structure
     to be used when creating the SSL/TLS context with wolfSSL_CTX_new().
     Both wolfSSL clients and servers have robust version downgrade capability.
@@ -3784,7 +3814,7 @@ WOLFSSL_API WOLFSSL_SESSION* wolfSSL_get1_session(WOLFSSL* ssl);
     To resolve this issue, a client that uses the wolfSSLv23_client_method()
     function will use the highest protocol version supported by the server and
     downgrade to SSLv3 if needed. In this case, the client will be able to
-    connect to a server running SSLv3 - TLSv1.2.
+    connect to a server running SSLv3 - TLSv1.3.
 
     \return pointer upon success a pointer to a WOLFSSL_METHOD.
     \return Failure If memory allocation fails when calling XMALLOC,
@@ -3810,6 +3840,7 @@ WOLFSSL_API WOLFSSL_SESSION* wolfSSL_get1_session(WOLFSSL* ssl);
     \sa wolfTLSv1_client_method
     \sa wolfTLSv1_1_client_method
     \sa wolfTLSv1_2_client_method
+    \sa wolfTLSv1_3_client_method
     \sa wolfDTLSv1_client_method
     \sa wolfSSL_CTX_new
 */
@@ -4424,6 +4455,31 @@ WOLFSSL_API int wolfSSL_X509_NAME_get_text_by_NID(
 WOLFSSL_API int wolfSSL_X509_get_signature_type(WOLFSSL_X509*);
 
 /*!
+    \brief This function frees a WOLFSSL_X509 structure.
+
+
+    \param x509 a pointer to the WOLFSSL_X509 struct.
+
+    _Example_
+    \code
+    WOLFSSL_X509* x509 = (WOLFSSL_X509*)XMALOC(sizeof(WOLFSSL_X509), NULL,
+    DYNAMIC_TYPE_X509) ;
+
+    wolfSSL_X509_free(x509);
+
+    \endcode
+
+    \sa wolfSSL_X509_get_signature
+    \sa wolfSSL_X509_version
+    \sa wolfSSL_X509_get_der
+    \sa wolfSSL_X509_get_serial_number
+    \sa wolfSSL_X509_notBefore
+    \sa wolfSSL_X509_notAfter
+
+*/
+WOLFSSL_API void wolfSSL_X509_free(WOLFSSL_X509* x509);
+
+/*!
     \ingroup CertsKeys
 
     \brief Gets the X509 signature and stores it in the buffer.
@@ -4537,6 +4593,67 @@ WOLFSSL_API WOLFSSL_STACK* wolfSSL_X509_STORE_CTX_get_chain(
 */
 WOLFSSL_API int wolfSSL_X509_STORE_set_flags(WOLFSSL_X509_STORE* store,
                                                             unsigned long flag);
+
+/*!
+    \ingroup CertsKeys
+
+    \brief This function the certificate "not before" validity encoded as
+    a byte array.
+
+
+    \return NULL returned if the WOLFSSL_X509 structure is NULL.
+    \return byte is returned that contains the notBeforeData.
+
+    \param x509 pointer to a WOLFSSL_X509 structure.
+
+    _Example_
+    \code
+    WOLFSSL_X509* x509 = (WOLFSSL_X509*)XMALLOC(sizeof(WOLFSSL_X509), NULL,
+							DYNAMIC_TYPE_X509);
+    ...
+    byte* notBeforeData = wolfSSL_X509_notBefore(x509);
+
+
+    \endcode
+
+    \sa wolfSSL_X509_get_signature
+    \sa wolfSSL_X509_version
+    \sa wolfSSL_X509_get_der
+    \sa wolfSSL_X509_get_serial_number
+    \sa wolfSSL_X509_notAfter
+    \sa wolfSSL_X509_free
+*/
+WOLFSSL_API const byte* wolfSSL_X509_notBefore(WOLFSSL_X509* x509);
+
+/*!
+    \ingroup CertsKeys
+
+    \brief This function the certificate "not after" validity encoded as
+    a byte array.
+
+    \return NULL returned if the WOLFSSL_X509 structure is NULL.
+    \return byte is returned that contains the notAfterData.
+
+    \param x509 pointer to a WOLFSSL_X509 structure.
+
+    _Example_
+    \code
+    WOLFSSL_X509* x509 = (WOLFSSL_X509*)XMALLOC(sizeof(WOLFSSL_X509), NULL,
+							DYNAMIC_TYPE_X509);
+    ...
+    byte* notAfterData = wolfSSL_X509_notAfter(x509);
+
+
+    \endcode
+
+    \sa wolfSSL_X509_get_signature
+    \sa wolfSSL_X509_version
+    \sa wolfSSL_X509_get_der
+    \sa wolfSSL_X509_get_serial_number
+    \sa wolfSSL_X509_notBefore
+    \sa wolfSSL_X509_free
+*/
+WOLFSSL_API const byte* wolfSSL_X509_notAfter(WOLFSSL_X509* x509);
 
 /*!
     \ingroup Setup
@@ -5162,6 +5279,61 @@ WOLFSSL_API void wolfSSL_CTX_set_psk_server_callback(WOLFSSL_CTX*,
 WOLFSSL_API void wolfSSL_set_psk_server_callback(WOLFSSL*,
                                                     wc_psk_server_callback);
 
+
+/*!
+    \brief Sets a PSK user context in the WOLFSSL structure options member.
+
+    \return WOLFSSL_SUCCESS or WOLFSSL_FAILURE
+
+    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param psk_ctx void pointer to user PSK context
+
+    \sa wolfSSL_get_psk_callback_ctx
+    \sa wolfSSL_CTX_set_psk_callback_ctx
+    \sa wolfSSL_CTX_get_psk_callback_ctx
+*/
+WOLFSSL_API int wolfSSL_set_psk_callback_ctx(WOLFSSL* ssl, void* psk_ctx);
+
+/*!
+    \brief Sets a PSK user context in the WOLFSSL_CTX structure.
+
+    \return WOLFSSL_SUCCESS or WOLFSSL_FAILURE
+
+    \param ctx a pointer to a WOLFSSL_CTX structure, created using wolfSSL_CTX_new().
+    \param psk_ctx void pointer to user PSK context
+
+    \sa wolfSSL_set_psk_callback_ctx
+    \sa wolfSSL_get_psk_callback_ctx
+    \sa wolfSSL_CTX_get_psk_callback_ctx
+*/
+WOLFSSL_API int wolfSSL_CTX_set_psk_callback_ctx(WOLFSSL_CTX* ctx, void* psk_ctx);
+
+/*!
+    \brief Get a PSK user context in the WOLFSSL structure options member.
+
+    \return void pointer to user PSK context
+
+    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    \sa wolfSSL_set_psk_callback_ctx
+    \sa wolfSSL_CTX_set_psk_callback_ctx
+    \sa wolfSSL_CTX_get_psk_callback_ctx
+*/
+WOLFSSL_API void* wolfSSL_get_psk_callback_ctx(WOLFSSL* ssl);
+
+/*!
+    \brief Get a PSK user context in the WOLFSSL_CTX structure.
+
+    \return void pointer to user PSK context
+
+    \param ctx a pointer to a WOLFSSL_CTX structure, created using wolfSSL_CTX_new().
+
+    \sa wolfSSL_CTX_set_psk_callback_ctx
+    \sa wolfSSL_set_psk_callback_ctx
+    \sa wolfSSL_get_psk_callback_ctx
+*/
+WOLFSSL_API void* wolfSSL_CTX_get_psk_callback_ctx(WOLFSSL_CTX* ctx);
+
 /*!
     \ingroup Setup
 
@@ -5199,7 +5371,7 @@ WOLFSSL_API int wolfSSL_CTX_allow_anon_cipher(WOLFSSL_CTX*);
 
     \brief The wolfSSLv23_server_method() function is used to indicate
     that the application is a server and will support clients connecting
-    with protocol version from SSL 3.0 - TLS 1.2.  This function allocates
+    with protocol version from SSL 3.0 - TLS 1.3.  This function allocates
     memory for and initializes a new WOLFSSL_METHOD structure to be used when
     creating the SSL/TLS context with wolfSSL_CTX_new().
 
@@ -5229,6 +5401,7 @@ WOLFSSL_API int wolfSSL_CTX_allow_anon_cipher(WOLFSSL_CTX*);
     \sa wolfTLSv1_server_method
     \sa wolfTLSv1_1_server_method
     \sa wolfTLSv1_2_server_method
+    \sa wolfTLSv1_3_server_method
     \sa wolfDTLSv1_server_method
     \sa wolfSSL_CTX_new
 */
@@ -7548,6 +7721,27 @@ WOLFSSL_API void wolfSSL_SetFuzzerCb(WOLFSSL* ssl, CallbackFuzzer cbf, void* fCt
 WOLFSSL_API int   wolfSSL_DTLS_SetCookieSecret(WOLFSSL*,
                                                const unsigned char*,
                                                unsigned int);
+
+/*!
+    \brief This function retrieves the random number.
+
+    \return rng upon success.
+    \return NULL if ssl is NULL.
+
+    \param ssl pointer to a SSL object, created with wolfSSL_new().
+
+    _Example_
+    \code
+    WOLFSSL* ssl;
+
+    wolfSSL_GetRNG(ssl);
+
+    \endcode
+
+    \sa  wolfSSL_CTX_new_rng
+
+*/
+WOLFSSL_API WC_RNG* wolfSSL_GetRNG(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -9918,7 +10112,7 @@ WOLFSSL_API void wolfSSL_FreeArrays(WOLFSSL*);
     ClientHello + SNI with either ServerHello + blank SNI or alert fatal in
     case of SNI mismatch.
 
-    \return SSL_SUCCESS upon success.
+    \return WOLFSSL_SUCCESS upon success.
     \return BAD_FUNC_ARG is the error that will be returned in one of these
     cases: ssl is NULL, data is NULL, type is a unknown value. (see below)
     \return MEMORY_E is the error returned when there is not enough memory.
@@ -9943,8 +10137,8 @@ WOLFSSL_API void wolfSSL_FreeArrays(WOLFSSL*);
         // ssl creation failed
     }
     ret = wolfSSL_UseSNI(ssl, WOLFSSL_SNI_HOST_NAME, "www.yassl.com",
-    strlen("www.yassl.com"));
-    if (ret != 0) {
+        strlen("www.yassl.com"));
+    if (ret != WOLFSSL_SUCCESS) {
         // sni usage failed
     }
     \endcode
@@ -9962,7 +10156,7 @@ WOLFSSL_API int wolfSSL_UseSNI(WOLFSSL* ssl, unsigned char type,
     clients and wolfSSL servers will respond ClientHello + SNI with either
     ServerHello + blank SNI or alert fatal in case of SNI mismatch.
 
-    \return SSL_SUCCESS upon success.
+    \return WOLFSSL_SUCCESS upon success.
     \return BAD_FUNC_ARG is the error that will be returned in one of these
     cases: ctx is NULL, data is NULL, type is a unknown value. (see below)
     \return MEMORY_E is the error returned when there is not enough memory.
@@ -9982,8 +10176,8 @@ WOLFSSL_API int wolfSSL_UseSNI(WOLFSSL* ssl, unsigned char type,
         // context creation failed
     }
     ret = wolfSSL_CTX_UseSNI(ctx, WOLFSSL_SNI_HOST_NAME, "www.yassl.com",
-    strlen("www.yassl.com"));
-    if (ret != 0) {
+        strlen("www.yassl.com"));
+    if (ret != WOLFSSL_SUCCESS) {
         // sni usage failed
     }
     \endcode
@@ -10029,11 +10223,11 @@ WOLFSSL_API int wolfSSL_CTX_UseSNI(WOLFSSL_CTX* ctx, unsigned char type,
         // ssl creation failed
     }
     ret = wolfSSL_UseSNI(ssl, 0, "www.yassl.com", strlen("www.yassl.com"));
-    if (ret != 0) {
+    if (ret != WOLFSSL_SUCCESS) {
         // sni usage failed
     }
     wolfSSL_SNI_SetOptions(ssl, WOLFSSL_SNI_HOST_NAME,
-    WOLFSSL_SNI_CONTINUE_ON_MISMATCH);
+        WOLFSSL_SNI_CONTINUE_ON_MISMATCH);
     \endcode
 
     \sa wolfSSL_new
@@ -10074,7 +10268,7 @@ WOLFSSL_API void wolfSSL_SNI_SetOptions(WOLFSSL* ssl, unsigned char type,
        // context creation failed
     }
     ret = wolfSSL_CTX_UseSNI(ctx, 0, "www.yassl.com", strlen("www.yassl.com"));
-    if (ret != 0) {
+    if (ret != WOLFSSL_SUCCESS) {
         // sni usage failed
     }
     wolfSSL_CTX_SNI_SetOptions(ctx, WOLFSSL_SNI_HOST_NAME,
@@ -10094,7 +10288,7 @@ WOLFSSL_API void wolfSSL_CTX_SNI_SetOptions(WOLFSSL_CTX* ctx,
     by the client to start a session. It does not requires context or session
     setup to retrieve the SNI.
 
-    \return SSL_SUCCESS upon success.
+    \return WOLFSSL_SUCCESS upon success.
     \return BAD_FUNC_ARG is the error that will be returned in one of this
     cases: buffer is NULL, bufferSz <= 0, sni is NULL, inOutSz is NULL or <= 0
     \return BUFFER_ERROR is the error returned when there is a malformed
@@ -10117,7 +10311,7 @@ WOLFSSL_API void wolfSSL_CTX_SNI_SetOptions(WOLFSSL_CTX* ctx,
     int           length       = 32;
     // read Client Hello to buffer...
     ret = wolfSSL_SNI_GetFromBuffer(buffer, sizeof(buffer), 0, result, &length));
-    if (ret != SSL_SUCCESS) {
+    if (ret != WOLFSSL_SUCCESS) {
         // sni retrieve failed
     }
     \endcode
@@ -10186,7 +10380,7 @@ WOLFSSL_API unsigned char wolfSSL_SNI_Status(WOLFSSL* ssl, unsigned char type);
         // ssl creation failed
     }
     ret = wolfSSL_UseSNI(ssl, 0, "www.yassl.com", strlen("www.yassl.com"));
-    if (ret != 0) {
+    if (ret != WOLFSSL_SUCCESS) {
         // sni usage failed
     }
     if (wolfSSL_accept(ssl) == SSL_SUCCESS) {
@@ -10206,7 +10400,7 @@ WOLFSSL_API unsigned short wolfSSL_SNI_GetRequest(WOLFSSL *ssl,
 
     \brief Setup ALPN use for a wolfSSL session.
 
-    \return SSL_SUCCESS: upon success.
+    \return WOLFSSL_SUCCESS: upon success.
     \return BAD_FUNC_ARG Returned if ssl or protocol_name_list
     is null or protocol_name_listSz is too large or options
     contain something not supported.
@@ -10231,8 +10425,8 @@ WOLFSSL_API unsigned short wolfSSL_SNI_GetRequest(WOLFSSL *ssl,
 
     char alpn_list[] = {};
 
-    if(wolfSSL_UseALPN(ssl, alpn_list, sizeof(alpn_list),
-    WOLFSSL_APN_FAILED_ON_MISMATCH) != SSL_SUCCESS)
+    if (wolfSSL_UseALPN(ssl, alpn_list, sizeof(alpn_list),
+        WOLFSSL_APN_FAILED_ON_MISMATCH) != WOLFSSL_SUCCESS)
     {
        // Error setting session ticket
     }
@@ -12346,3 +12540,1215 @@ wolfSSL takes a different approach to certificate verification than OpenSSL does
     \sa wolfSSL_accept
 */
 int  wolfSSL_connect(WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is called on the server side to indicate that a
+    HelloRetryRequest message must contain a Cookie.
+    The Cookie holds a hash of the current transcript so that another server
+    process can handle the ClientHello in reply.
+    The secret is used when generting the integrity check on the Cookie data.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param [in] secret a pointer to a buffer holding the secret.
+    Passing NULL indicates to generate a new random secret.
+    \param [in] secretSz Size of the secret in bytes.
+    Passing 0 indicates to use the default size: WC_SHA256_DIGEST_SIZE (or WC_SHA_DIGEST_SIZE when SHA-256 not available).
+
+    \return BAD_FUNC_ARG if ssl is NULL or not using TLS v1.3.
+    \return SIDE_ERROR if called with a client.
+    \return WOLFSSL_SUCCESS if succesful.
+    \return MEMORY_ERROR if allocating dynamic memory for storing secret failed.
+    \return Another -ve value on internal error.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    char secret[32];
+    ...
+    ret = wolfSSL__send_hrr_cookie(ssl, secret, sizeof(secret));
+    if (ret != WOLFSSL_SUCCESS) {
+        // failed to set use of Cookie and secret
+    }
+    \endcode
+
+    \sa wolfSSL_new
+*/
+WOLFSSL_API int  wolfSSL_send_hrr_cookie(WOLFSSL* ssl,
+    const unsigned char* secret, unsigned int secretSz);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is called on the server to stop it from sending
+    a resumption session ticket once the handshake is complete.
+
+    \param [in,out] ctx a pointer to a WOLFSSL_CTX structure, created
+    with wolfSSL_CTX_new().
+
+    \return BAD_FUNC_ARG if ctx is NULL or not using TLS v1.3.
+    \return SIDE_ERROR if called with a client.
+    \return 0 if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL_CTX* ctx;
+    ...
+    ret = wolfSSL_CTX_no_ticket_TLSv13(ctx);
+    if (ret != 0) {
+        // failed to set no ticket
+    }
+    \endcode
+
+    \sa wolfSSL_no_ticket_TLSv13
+*/
+WOLFSSL_API int  wolfSSL_CTX_no_ticket_TLSv13(WOLFSSL_CTX* ctx);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is called on the server to stop it from sending
+    a resumption session ticket once the handshake is complete.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    \return BAD_FUNC_ARG if ssl is NULL or not using TLS v1.3.
+    \return SIDE_ERROR if called with a client.
+    \return 0 if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    ...
+    ret = wolfSSL_no_ticket_TLSv13(ssl);
+    if (ret != 0) {
+        // failed to set no ticket
+    }
+    \endcode
+
+    \sa wolfSSL_CTX_no_ticket_TLSv13
+*/
+WOLFSSL_API int  wolfSSL_no_ticket_TLSv13(WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is called on a TLS v1.3 wolfSSL context to disallow
+    Diffie-Hellman (DH) style key exchanges when handshakes are using
+    pre-shared keys for authentication.
+
+    \param [in,out] ctx a pointer to a WOLFSSL_CTX structure, created
+    with wolfSSL_CTX_new().
+
+    \return BAD_FUNC_ARG if ctx is NULL or not using TLS v1.3.
+    \return 0 if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL_CTX* ctx;
+    ...
+    ret = wolfSSL_CTX_no_dhe_psk(ctx);
+    if (ret != 0) {
+        // failed to set no DHE for PSK handshakes
+    }
+    \endcode
+
+    \sa wolfSSL_no_dhe_psk
+*/
+WOLFSSL_API int  wolfSSL_CTX_no_dhe_psk(WOLFSSL_CTX* ctx);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is called on a TLS v1.3 client or server wolfSSL to
+    disallow Diffie-Hellman (DH) style key exchanges when handshakes are using
+    pre-shared keys for authentication.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    \return BAD_FUNC_ARG if ssl is NULL or not using TLS v1.3.
+    \return 0 if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    ...
+    ret = wolfSSL_no_dhe_psk(ssl);
+    if (ret != 0) {
+        // failed to set no DHE for PSK handshakes
+    }
+    \endcode
+
+    \sa wolfSSL_CTX_no_dhe_psk
+*/
+WOLFSSL_API int  wolfSSL_no_dhe_psk(WOLFSSL* ssl);
+
+/*!
+    \ingroup IO
+
+    \brief This function is called on a TLS v1.3 client or server wolfSSL to
+    force the rollover of keys. A KeyUpdate message is sent to the peer and
+    new keys are calculated for encryption. The peer will send back a KeyUpdate
+    message and the new decryption keys wil then be calculated.
+    This function can only be called after a handshake has been completed.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    \return BAD_FUNC_ARG if ssl is NULL or not using TLS v1.3.
+    \return WANT_WRITE if the writing is not ready.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    ...
+    ret = wolfSSL_update_keys(ssl);
+    if (ret == WANT_WRITE) {
+        // need to call again when I/O ready
+    }
+    else if (ret != WOLFSSL_SUCCESS) {
+        // failed to send key update
+    }
+    \endcode
+
+    \sa wolfSSL_write
+*/
+WOLFSSL_API int  wolfSSL_update_keys(WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is called on a TLS v1.3 client wolfSSL context to allow
+    a client certifcate to be sent post handshake upon request from server.
+    This is useful when connecting to a web server that has some pages that
+    require client authentication and others that don't.
+
+    \param [in,out] ctx a pointer to a WOLFSSL_CTX structure, created
+    with wolfSSL_CTX_new().
+
+    \return BAD_FUNC_ARG if ctx is NULL or not using TLS v1.3.
+    \return SIDE_ERROR if called with a server.
+    \return 0 if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL_CTX* ctx;
+    ...
+    ret = wolfSSL_allow_post_handshake_auth(ctx);
+    if (ret != 0) {
+        // failed to allow post handshake authentication
+    }
+    \endcode
+
+    \sa wolfSSL_allow_post_handshake_auth
+    \sa wolfSSL_request_certificate
+*/
+WOLFSSL_API int  wolfSSL_CTX_allow_post_handshake_auth(WOLFSSL_CTX* ctx);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is called on a TLS v1.3 client wolfSSL to allow
+    a client certifcate to be sent post handshake upon request from server.
+    A Post-Handshake Client Authentication extension is sent in the ClientHello.
+    This is useful when connecting to a web server that has some pages that
+    require client authentication and others that don't.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    \return BAD_FUNC_ARG if ssl is NULL or not using TLS v1.3.
+    \return SIDE_ERROR if called with a server.
+    \return 0 if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    ...
+    ret = wolfSSL_allow_post_handshake_auth(ssl);
+    if (ret != 0) {
+        // failed to allow post handshake authentication
+    }
+    \endcode
+
+    \sa wolfSSL_CTX_allow_post_handshake_auth
+    \sa wolfSSL_request_certificate
+*/
+WOLFSSL_API int  wolfSSL_allow_post_handshake_auth(WOLFSSL* ssl);
+
+/*!
+    \ingroup IO
+
+    \brief This function requests a client certificate from the TLS v1.3 client.
+    This is useful when a web server is serving some pages that require client
+    authentication and others that don't.
+    A maximum of 256 requests can be sent on a connection.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    \return BAD_FUNC_ARG if ssl is NULL or not using TLS v1.3.
+    \return WANT_WRITE if the writing is not ready.
+    \return SIDE_ERROR if called with a client.
+    \return NOT_READY_ERROR if called when the handshake is not finished.
+    \return POST_HAND_AUTH_ERROR if posthandshake authentication is disallowed.
+    \return MEMORY_E if dynamic memory allocation fails.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    ...
+    ret = wolfSSL_request_certificate(ssl);
+    if (ret == WANT_WRITE) {
+        // need to call again when I/O ready
+    }
+    else if (ret != WOLFSSL_SUCCESS) {
+        // failed to request a client certificate
+    }
+    \endcode
+
+    \sa wolfSSL_allow_post_handshake_auth
+    \sa wolfSSL_write
+*/
+WOLFSSL_API int  wolfSSL_request_certificate(WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the list of elliptic curve groups to allow on
+    a wolfSSL context in order of preference.
+    The list is a null-terminated text string, and a colon-delimited list.
+    Call this function to set the key exchange elliptic curve parameters to
+    use with the TLS v1.3 connections.
+
+    \param [in,out] ctx a pointer to a WOLFSSL_CTX structure, created
+    with wolfSSL_CTX_new().
+    \param [in] list a string that is a colon-delimited list of elliptic curve
+    groups.
+
+    \return WOLFSSL_FAILURE if pointer parameters are NULL, there are more than
+    WOLFSSL_MAX_GROUP_COUNT groups, a group name is not recognized or not
+    using TLS v1.3.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL_CTX* ctx;
+    const char* list = "P-384:P-256";
+    ...
+    ret = wolfSSL_CTX_set1_groups_list(ctx, list);
+    if (ret != WOLFSSL_SUCCESS) {
+        // failed to set group list
+    }
+    \endcode
+
+    \sa wolfSSL_set1_groups_list
+    \sa wolfSSL_CTX_set_groups
+    \sa wolfSSL_set_groups
+    \sa wolfSSL_UseKeyShare
+    \sa wolfSSL_preferred_group
+*/
+WOLFSSL_API int  wolfSSL_CTX_set1_groups_list(WOLFSSL_CTX *ctx, char *list);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the list of elliptic curve groups to allow on
+    a wolfSSL in order of preference.
+    The list is a null-terminated text string, and a colon-delimited list.
+    Call this function to set the key exchange elliptic curve parameters to
+    use with the TLS v1.3 connections.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param [in] list a string that is a colon separated list of key exchange
+    groups.
+
+    \return WOLFSSL_FAILURE if pointer parameters are NULL, there are more than
+    WOLFSSL_MAX_GROUP_COUNT groups, a group name is not recognized or not
+    using TLS v1.3.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    const char* list = "P-384:P-256";
+    ...
+    ret = wolfSSL_CTX_set1_groups_list(ssl, list);
+    if (ret != WOLFSSL_SUCCESS) {
+        // failed to set group list
+    }
+    \endcode
+
+    \sa wolfSSL_CTX_set1_groups_list
+    \sa wolfSSL_CTX_set_groups
+    \sa wolfSSL_set_groups
+    \sa wolfSSL_UseKeyShare
+    \sa wolfSSL_preferred_group
+*/
+WOLFSSL_API int  wolfSSL_set1_groups_list(WOLFSSL *ssl, char *list);
+
+/*!
+    \ingroup TLS
+
+    \brief This function returns the key exchange group the client prefers to
+    use in the TLS v1.3 handshake.
+    Call this function to after a handshake is complete to determine which
+    group the server prefers so that this information can be used in future
+    connections to pre-generate a key pair for key exchange.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    \return BAD_FUNC_ARG if ssl is NULL or not using TLS v1.3.
+    \return SIDE_ERROR if called with a server.
+    \return NOT_READY_ERROR if called before handshake is complete.
+    \return Group identifier if successful.
+
+    _Example_
+    \code
+    int ret;
+    int group;
+    WOLFSSL* ssl;
+    ...
+    ret = wolfSSL_CTX_set1_groups_list(ssl)
+    if (ret < 0) {
+        // failed to get group
+    }
+    group = ret;
+    \endcode
+
+    \sa wolfSSL_UseKeyShare
+    \sa wolfSSL_CTX_set_groups
+    \sa wolfSSL_set_groups
+    \sa wolfSSL_CTX_set1_groups_list
+    \sa wolfSSL_set1_groups_list
+*/
+WOLFSSL_API int  wolfSSL_preferred_group(WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the list of elliptic curve groups to allow on
+    a wolfSSL context in order of preference.
+    The list is an array of group identifiers with the number of identifiers
+    specified in count.
+    Call this function to set the key exchange elliptic curve parameters to
+    use with the TLS v1.3 connections.
+
+    \param [in,out] ctx a pointer to a WOLFSSL_CTX structure, created
+    with wolfSSL_CTX_new().
+    \param [in] groups a list of key exhange groups by identifier.
+    \param [in] count the number of key exchange groups in groups.
+
+    \return BAD_FUNC_ARG if a pointer parameter is null, the number of groups
+    exceeds WOLFSSL_MAX_GROUP_COUNT or not using TLS v1.3.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL_CTX* ctx;
+    int* groups = { WOLFSSL_ECC_X25519, WOLFSSL_ECC_SECP256R1 };
+    int count = 2;
+    ...
+    ret = wolfSSL_CTX_set1_groups_list(ctx, groups, count);
+    if (ret != WOLFSSL_SUCCESS) {
+        // failed to set group list
+    }
+    \endcode
+
+    \sa wolfSSL_set_groups
+    \sa wolfSSL_UseKeyShare
+    \sa wolfSSL_CTX_set_groups
+    \sa wolfSSL_set_groups
+    \sa wolfSSL_CTX_set1_groups_list
+    \sa wolfSSL_set1_groups_list
+    \sa wolfSSL_preferred_group
+*/
+WOLFSSL_API int  wolfSSL_CTX_set_groups(WOLFSSL_CTX* ctx, int* groups,
+    int count);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the list of elliptic curve groups to allow on
+    a wolfSSL.
+    The list is an array of group identifiers with the number of identifiers
+    specified in count.
+    Call this function to set the key exchange elliptic curve parameters to
+    use with the TLS v1.3 connections.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param [in] groups a list of key exhange groups by identifier.
+    \param [in] count the number of key exchange groups in groups.
+
+    \return BAD_FUNC_ARG if a pointer parameter is null, the number of groups
+    exceeds WOLFSSL_MAX_GROUP_COUNT or not using TLS v1.3.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    int* groups = { WOLFSSL_ECC_X25519, WOLFSSL_ECC_SECP256R1 };
+    int count = 2;
+    ...
+    ret = wolfSSL_set1_groups_list(ssl, groups, count);
+    if (ret != WOLFSSL_SUCCESS) {
+        // failed to set group list
+    }
+    \endcode
+
+    \sa wolfSSL_CTX_set_groups
+    \sa wolfSSL_UseKeyShare
+    \sa wolfSSL_CTX_set_groups
+    \sa wolfSSL_set_groups
+    \sa wolfSSL_CTX_set1_groups_list
+    \sa wolfSSL_set1_groups_list
+    \sa wolfSSL_preferred_group
+*/
+WOLFSSL_API int  wolfSSL_set_groups(WOLFSSL* ssl, int* groups, int count);
+
+/*!
+    \ingroup IO
+
+    \brief This function is called on the client side and initiates a
+    TLS v1.3 handshake with a server.  When this function is called, the
+    underlying communication channel has already been set up.
+    wolfSSL_connect() works with both blocking and non-blocking I/O.
+    When the underlying I/O is non-blocking, wolfSSL_connect() will return
+    when the underlying I/O could not satisfy the needs of wolfSSL_connect
+    to continue the handshake.  In this case, a call to wolfSSL_get_error()
+    will yield either SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE. The
+    calling process must then repeat the call to wolfSSL_connect() when
+    the underlying I/O is ready and wolfSSL will pick up where it left off.
+    When using a non-blocking socket, nothing needs to be done, but select()
+    can be used to check for the required condition. If the underlying I/O is
+    blocking, wolfSSL_connect() will only return once the handshake has been
+    finished or an error occurred. wolfSSL takes a different approach to
+    certificate verification than OpenSSL does.  The default policy for the
+    client is to verify the server, this means that if you don't load CAs to
+    verify the server you'll get a connect error, unable to verify (-155). It
+    you want to mimic OpenSSL behavior of having SSL_connect succeed even if
+    verifying the server fails and reducing security you can do this by
+    calling: SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, 0); before calling
+    SSL_new();  Though it's not recommended.
+
+    \return SSL_SUCCESS upon success.
+    \return SSL_FATAL_ERROR will be returned if an error occurred.  To get a
+    more detailed error code, call wolfSSL_get_error().
+
+    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    _Example_
+    \code
+    int ret = 0;
+    int err = 0;
+    WOLFSSL* ssl;
+    char buffer[80];
+    ...
+
+    ret = wolfSSL_connect_TLSv13(ssl);
+    if (ret != SSL_SUCCESS) {
+        err = wolfSSL_get_error(ssl, ret);
+        printf(“error = %d, %s\n”, err, wolfSSL_ERR_error_string(err, buffer));
+    }
+    \endcode
+
+    \sa wolfSSL_get_error
+    \sa wolfSSL_connect
+    \sa wolfSSL_accept_TLSv13
+    \sa wolfSSL_accept
+*/
+WOLFSSL_API int  wolfSSL_connect_TLSv13(WOLFSSL*);
+
+/*!
+    \ingroup IO
+
+    \brief This function is called on the server side and waits for a SSL/TLS
+    client to initiate the SSL/TLS handshake.  When this function is called,
+    the underlying communication channel has already been set up.
+    wolfSSL_accept() works with both blocking and non-blocking I/O.
+    When the underlying I/O is non-blocking, wolfSSL_accept() will return
+    when the underlying I/O could not satisfy the needs of wolfSSL_accept
+    to continue the handshake.  In this case, a call to wolfSSL_get_error()
+    will yield either SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE.
+    The calling process must then repeat the call to wolfSSL_accept when
+    data is available to read and wolfSSL will pick up where it left off.
+    When using a non-blocking socket, nothing needs to be done, but select()
+    can be used to check for the required condition. If the underlying I/O
+    is blocking, wolfSSL_accept() will only return once the handshake has
+    been finished or an error occurred.
+    Call this function when expecting a TLS v1.3 connection though older
+    version ClientHello messages are supported.
+
+    \return SSL_SUCCESS upon success.
+    \return SSL_FATAL_ERROR will be returned if an error occurred. To get a
+    more detailed error code, call wolfSSL_get_error().
+
+    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    _Example_
+    \code
+    int ret = 0;
+    int err = 0;
+    WOLFSSL* ssl;
+    char buffer[80];
+    ...
+
+    ret = wolfSSL_accept_TLSv13(ssl);
+    if (ret != SSL_SUCCESS) {
+        err = wolfSSL_get_error(ssl, ret);
+        printf(“error = %d, %s\n”, err, wolfSSL_ERR_error_string(err, buffer));
+    }
+    \endcode
+
+    \sa wolfSSL_get_error
+    \sa wolfSSL_connect_TLSv13
+    \sa wolfSSL_connect
+    \sa wolfSSL_accept_TLSv13
+    \sa wolfSSL_accept
+*/
+WOLFSSL_API wolfSSL_accept_TLSv13(WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the maximum amount of early data that will be
+    accepted by a TLS v1.3 server using the wolfSSL context.
+    Call this function to limit the amount of early data to process to mitigate
+    replay attacks. Early data is protected by keys derived from those of the
+    connection that the session ticket was sent and therefore will be the same
+    every time a session ticket is used in resumption.
+    The value is included in the session ticket for resumption.
+    A value of zero indicates no early data is to be sent by client using
+    session tickets.
+    It is recommended that the number of early data bytes be kept as low as
+    practically possible in the application.
+
+    \param [in,out] ctx a pointer to a WOLFSSL_CTX structure, created
+    with wolfSSL_CTX_new().
+    \param [in] sz the amount of early data to accept in bytes.
+
+    \return BAD_FUNC_ARG if ctx is NULL or not using TLS v1.3.
+    \return SIDE_ERROR if called with a client.
+    \return 0 if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL_CTX* ctx;
+    ...
+    ret = wolfSSL_CTX_set_max_early_data(ctx, 128);
+    if (ret != WOLFSSL_SUCCESS) {
+        // failed to set group list
+    }
+    \endcode
+
+    \sa wolfSSL_set_max_early_data
+    \sa wolfSSL_write_early_data
+    \sa wolfSSL_read_early_data
+*/
+WOLFSSL_API int  wolfSSL_CTX_set_max_early_data(WOLFSSL_CTX* ctx,
+    unsigned int sz);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the maximum amount of early data that will be
+    accepted by a TLS v1.3 server using the wolfSSL context.
+    Call this function to limit the amount of early data to process to mitigate
+    replay attacks. Early data is protected by keys derived from those of the
+    connection that the session ticket was sent and therefore will be the same
+    every time a session ticket is used in resumption.
+    The value is included in the session ticket for resumption.
+    A value of zero indicates no early data is to be sent by client using
+    session tickets.
+    It is recommended that the number of early data bytes be kept as low as
+    practically possible in the application.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param [in] sz the amount of early data to accept from client in bytes.
+
+    \return BAD_FUNC_ARG if ssl is NULL or not using TLS v1.3.
+    \return SIDE_ERROR if called with a client.
+    \return 0 if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    ...
+    ret = wolfSSL_set_max_early_data(ssl, 128);
+    if (ret != WOLFSSL_SUCCESS) {
+        // failed to set group list
+    }
+    \endcode
+
+    \sa wolfSSL_CTX_set_max_early_data
+    \sa wolfSSL_write_early_data
+    \sa wolfSSL_read_early_data
+*/
+WOLFSSL_API int  wolfSSL_set_max_early_data(WOLFSSL* ssl, unsigned int sz);
+
+/*!
+    \ingroup IO
+
+    \brief This function writes early data to the server on resumption.
+    Call this function instead of wolfSSL_connect() or wolfSSL_connect_TLSv13()
+    to connect to the server and send the data in the handshake.
+    This function is only used with clients.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param [in] data the buffer holding the early data to write to server.
+    \param [in] sz the amount of early data to write in bytes.
+    \param [out] outSz the amount of early data written in bytes.
+
+    \return BAD_FUNC_ARG if a pointer parameter is NULL, sz is less than 0 or
+    not using TLSv1.3.
+    \return SIDE_ERROR if called with a server.
+    \return WOLFSSL_FATAL_ERROR if the connection is not made.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret = 0;
+    int err = 0;
+    WOLFSSL* ssl;
+    byte earlyData[] = { early data };
+    int outSz;
+    char buffer[80];
+    ...
+
+    ret = wolfSSL_write_early_data(ssl, earlyData, sizeof(earlyData), &outSz);
+    if (ret != WOLFSSL_SUCCESS) {
+        err = wolfSSL_get_error(ssl, ret);
+        printf(“error = %d, %s\n”, err, wolfSSL_ERR_error_string(err, buffer));
+        goto err_label;
+    }
+    if (outSz < sizeof(earlyData)) {
+        // not all early data was sent
+    }
+    ret = wolfSSL_connect_TLSv13(ssl);
+    if (ret != SSL_SUCCESS) {
+        err = wolfSSL_get_error(ssl, ret);
+        printf(“error = %d, %s\n”, err, wolfSSL_ERR_error_string(err, buffer));
+    }
+    \endcode
+
+    \sa wolfSSL_read_early_data
+    \sa wolfSSL_connect
+    \sa wolfSSL_connect_TLSv13
+*/
+WOLFSSL_API int  wolfSSL_write_early_data(OLFSSL* ssl, const void* data,
+    int sz, int* outSz);
+
+/*!
+    \ingroup IO
+
+    \brief This function reads any early data from a client on resumption.
+    Call this function instead of wolfSSL_accept() or wolfSSL_accept_TLSv13()
+    to accept a client and read any early data in the handshake.
+    If there is no early data than the handshake will be processed as normal.
+    This function is only used with servers.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param [out] data a buffer to hold the early data read from client.
+    \param [in] sz size of the buffer in bytes.
+    \param [out] outSz number of bytes of early data read.
+
+    \return BAD_FUNC_ARG if a pointer parameter is NULL, sz is less than 0 or
+    not using TLSv1.3.
+    \return SIDE_ERROR if called with a client.
+    \return WOLFSSL_FATAL_ERROR if accepting a connection fails.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret = 0;
+    int err = 0;
+    WOLFSSL* ssl;
+    byte earlyData[128];
+    int outSz;
+    char buffer[80];
+    ...
+
+    ret = wolfSSL_read_early_data(ssl, earlyData, sizeof(earlyData), &outSz);
+    if (ret != SSL_SUCCESS) {
+        err = wolfSSL_get_error(ssl, ret);
+        printf(“error = %d, %s\n”, err, wolfSSL_ERR_error_string(err, buffer));
+    }
+    if (outSz > 0) {
+        // early data available
+    }
+    ret = wolfSSL_accept_TLSv13(ssl);
+    if (ret != SSL_SUCCESS) {
+        err = wolfSSL_get_error(ssl, ret);
+        printf(“error = %d, %s\n”, err, wolfSSL_ERR_error_string(err, buffer));
+    }
+    \endcode
+
+    \sa wolfSSL_write_early_data
+    \sa wolfSSL_accept
+    \sa wolfSSL_accept_TLSv13
+*/
+WOLFSSL_API int  wolfSSL_read_early_data(WOLFSSL* ssl, void* data, int sz,
+    int* outSz);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the Pre-Shared Key (PSK) client side callback
+    for TLS v1.3 connections.
+    The callback is used to find a PSK identity and return its key and
+    the name of the cipher to use for the handshake.
+    The function sets the client_psk_tls13_cb member of the
+    WOLFSSL_CTX structure.
+
+    \param [in,out] ctx a pointer to a WOLFSSL_CTX structure, created
+    with wolfSSL_CTX_new().
+    \param [in] cb a Pre-Shared Key (PSK) callback for a TLS 1.3 client.
+
+    _Example_
+    \code
+    WOLFSSL_CTX* ctx;
+    ...
+    wolfSSL_CTX_set_psk_client_tls13_callback(ctx, my_psk_client_tls13_cb);
+    \endcode
+
+    \sa wolfSSL_set_psk_client_tls13_callback
+    \sa wolfSSL_CTX_set_psk_server_tls13_callback
+    \sa wolfSSL_set_psk_server_tls13_callback
+*/
+WOLFSSL_API void wolfSSL_CTX_set_psk_client_tls13_callback(WOLFSSL_CTX* ctx,
+    wc_psk_client_tls13_callback cb);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the Pre-Shared Key (PSK) client side callback
+    for TLS v1.3 connections.
+    The callback is used to find a PSK identity and return its key and
+    the name of the cipher to use for the handshake.
+    The function sets the client_psk_tls13_cb member of the options field in
+    WOLFSSL structure.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param [in] cb a Pre-Shared Key (PSK) callback for a TLS 1.3 client.
+
+    _Example_
+    \code
+    WOLFSSL* ssl;
+    ...
+    wolfSSL_set_psk_client_tls13_callback(ssl, my_psk_client_tls13_cb);
+    \endcode
+
+    \sa wolfSSL_CTX_set_psk_client_tls13_callback
+    \sa wolfSSL_CTX_set_psk_server_tls13_callback
+    \sa wolfSSL_set_psk_server_tls13_callback
+*/
+WOLFSSL_API void wolfSSL_set_psk_client_tls13_callback(WOLFSSL* ssl,
+    wc_psk_client_tls13_callback cb);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the Pre-Shared Key (PSK) server side callback
+    for TLS v1.3 connections.
+    The callback is used to find a PSK identity and return its key and
+    the name of the cipher to use for the handshake.
+    The function sets the server_psk_tls13_cb member of the
+    WOLFSSL_CTX structure.
+
+    \param [in,out] ctx a pointer to a WOLFSSL_CTX structure, created
+    with wolfSSL_CTX_new().
+    \param [in] cb a Pre-Shared Key (PSK) callback for a TLS 1.3 server.
+
+    _Example_
+    \code
+    WOLFSSL_CTX* ctx;
+    ...
+    wolfSSL_CTX_set_psk_server_tls13_callback(ctx, my_psk_client_tls13_cb);
+    \endcode
+
+    \sa wolfSSL_CTX_set_psk_client_tls13_callback
+    \sa wolfSSL_set_psk_client_tls13_callback
+    \sa wolfSSL_set_psk_server_tls13_callback
+*/
+WOLFSSL_API void wolfSSL_CTX_set_psk_server_tls13_callback(WOLFSSL_CTX* ctx,
+    wc_psk_server_tls13_callback cb);
+
+/*!
+    \ingroup Setup
+
+    \brief This function sets the Pre-Shared Key (PSK) server side callback
+    for TLS v1.3 connections.
+    The callback is used to find a PSK identity and return its key and
+    the name of the cipher to use for the handshake.
+    The function sets the server_psk_tls13_cb member of the options field in
+    WOLFSSL structure.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param [in] cb a Pre-Shared Key (PSK) callback for a TLS 1.3 server.
+
+    _Example_
+    \code
+    WOLFSSL* ssl;
+    ...
+    wolfSSL_set_psk_server_tls13_callback(ssl, my_psk_server_tls13_cb);
+    \endcode
+
+    \sa wolfSSL_CTX_set_psk_client_tls13_callback
+    \sa wolfSSL_set_psk_client_tls13_callback
+    \sa wolfSSL_CTX_set_psk_server_tls13_callback
+*/
+WOLFSSL_API void wolfSSL_set_psk_server_tls13_callback(WOLFSSL* ssl,
+    wc_psk_server_tls13_callback cb);
+
+/*!
+    \ingroup Setup
+
+    \brief This function creates a key share entry from the group including
+    generating a key pair.
+    The KeyShare extension contains all the generated public keys for key
+    exchange. If this function is called, then only the groups specified will
+    be included.
+    Call this function when a preferred group has been previously established
+    for the server.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param [in] group a key exchange group identifier.
+
+    \return BAD_FUNC_ARG if ssl is NULL.
+    \return MEMORY_E when dynamic memory allocation fails.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    ...
+    ret = wolfSSL_UseKeyShare(ssl, WOLFSSL_ECC_X25519);
+    if (ret != WOLFSSL_SUCCESS) {
+        // failed to set key share
+    }
+    \endcode
+
+    \sa wolfSSL_preferred_group
+    \sa wolfSSL_CTX_set1_groups_list
+    \sa wolfSSL_set1_groups_list
+    \sa wolfSSL_CTX_set_groups
+    \sa wolfSSL_set_groups
+    \sa wolfSSL_NoKeyShares
+*/
+WOLFSSL_API int wolfSSL_UseKeyShare(WOLFSSL* ssl, word16 group);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is called to ensure no key shares are sent in the
+    ClientHello. This will force the server to respond with a HelloRetryRequest
+    if a key exchange is required in the handshake.
+    Call this function when the expected key exchange group is not known and
+    to avoid the generation of keys unnecessarily.
+    Note that an extra round-trip will be required to complete the handshake
+    when a key exchange is required.
+
+    \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+
+    \return BAD_FUNC_ARG if ssl is NULL.
+    \return SIDE_ERROR if called with a server.
+    \return WOLFSSL_SUCCESS if successful.
+
+    _Example_
+    \code
+    int ret;
+    WOLFSSL* ssl;
+    ...
+    ret = wolfSSL_NoKeyShares(ssl);
+    if (ret != WOLFSSL_SUCCESS) {
+        // failed to set no key shares
+    }
+    \endcode
+
+    \sa wolfSSL_UseKeyShare
+*/
+WOLFSSL_API int wolfSSL_NoKeyShares(WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is used to indicate
+    that the application is a server and will only support the TLS 1.3
+    protocol. This function allocates memory for and initializes a new
+    wolfSSL_METHOD structure to be used when creating the SSL/TLS context
+    with wolfSSL_CTX_new().
+
+    \param [in] heap a pointer to a buffer that the static memory allocator will use during dynamic memory allocation.
+
+    \return If successful, the call will return a pointer to the newly
+    created WOLFSSL_METHOD structure.
+    \return FAIL If memory allocation fails when calling XMALLOC, the failure
+    value of the underlying malloc() implementation will be returned
+    (typically NULL with errno will be set to ENOMEM).
+
+    _Example_
+    \code
+    #include <wolfssl/ssl.h>
+
+    WOLFSSL_METHOD* method;
+    WOLFSSL_CTX* ctx;
+
+    method = wolfTLSv1_3_server_method_ex(NULL);
+    if (method == NULL) {
+        // unable to get method
+    }
+
+    ctx = wolfSSL_CTX_new(method);
+    ...
+    \endcode
+
+    \sa wolfSSLv3_server_method
+    \sa wolfTLSv1_server_method
+    \sa wolfTLSv1_1_server_method
+    \sa wolfTLSv1_2_server_method
+    \sa wolfTLSv1_3_server_method
+    \sa wolfDTLSv1_server_method
+    \sa wolfSSLv23_server_method
+    \sa wolfSSL_CTX_new
+*/
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_server_method_ex(void* heap);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is used to indicate
+    that the application is a client and will only support the TLS 1.3
+    protocol. This function allocates memory for and initializes a new
+    wolfSSL_METHOD structure to be used when creating the SSL/TLS context
+    with wolfSSL_CTX_new().
+
+    \param [in] heap a pointer to a buffer that the static memory allocator will use during dynamic memory allocation.
+
+    \return If successful, the call will return a pointer to the newly
+    created WOLFSSL_METHOD structure.
+    \return FAIL If memory allocation fails when calling XMALLOC, the failure
+    value of the underlying malloc() implementation will be returned
+    (typically NULL with errno will be set to ENOMEM).
+
+    _Example_
+    \code
+    #include <wolfssl/ssl.h>
+
+    WOLFSSL_METHOD* method;
+    WOLFSSL_CTX* ctx;
+
+    method = wolfTLSv1_3_client_method_ex(NULL);
+    if (method == NULL) {
+        // unable to get method
+    }
+
+    ctx = wolfSSL_CTX_new(method);
+    ...
+    \endcode
+
+    \sa wolfSSLv3_client_method
+    \sa wolfTLSv1_client_method
+    \sa wolfTLSv1_1_client_method
+    \sa wolfTLSv1_2_client_method
+    \sa wolfTLSv1_3_client_method
+    \sa wolfDTLSv1_client_method
+    \sa wolfSSLv23_client_method
+    \sa wolfSSL_CTX_new
+*/
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_client_method_ex(void* heap);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is used to indicate
+    that the application is a server and will only support the TLS 1.3
+    protocol. This function allocates memory for and initializes a new
+    wolfSSL_METHOD structure to be used when creating the SSL/TLS context
+    with wolfSSL_CTX_new().
+
+    \return If successful, the call will return a pointer to the newly
+    created WOLFSSL_METHOD structure.
+    \return FAIL If memory allocation fails when calling XMALLOC, the failure
+    value of the underlying malloc() implementation will be returned
+    (typically NULL with errno will be set to ENOMEM).
+
+    _Example_
+    \code
+    #include <wolfssl/ssl.h>
+
+    WOLFSSL_METHOD* method;
+    WOLFSSL_CTX* ctx;
+
+    method = wolfTLSv1_3_server_method();
+    if (method == NULL) {
+        // unable to get method
+    }
+
+    ctx = wolfSSL_CTX_new(method);
+    ...
+    \endcode
+
+    \sa wolfSSLv3_server_method
+    \sa wolfTLSv1_server_method
+    \sa wolfTLSv1_1_server_method
+    \sa wolfTLSv1_2_server_method
+    \sa wolfTLSv1_3_server_method_ex
+    \sa wolfDTLSv1_server_method
+    \sa wolfSSLv23_server_method
+    \sa wolfSSL_CTX_new
+*/
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_server_method(void);
+
+/*!
+    \ingroup Setup
+
+    \brief This function is used to indicate
+    that the application is a client and will only support the TLS 1.3
+    protocol. This function allocates memory for and initializes a new
+    wolfSSL_METHOD structure to be used when creating the SSL/TLS context
+    with wolfSSL_CTX_new().
+
+    \return If successful, the call will return a pointer to the newly
+    created WOLFSSL_METHOD structure.
+    \return FAIL If memory allocation fails when calling XMALLOC, the failure
+    value of the underlying malloc() implementation will be returned
+    (typically NULL with errno will be set to ENOMEM).
+
+    _Example_
+    \code
+    #include <wolfssl/ssl.h>
+
+    WOLFSSL_METHOD* method;
+    WOLFSSL_CTX* ctx;
+
+    method = wolfTLSv1_3_client_method();
+    if (method == NULL) {
+        // unable to get method
+    }
+
+    ctx = wolfSSL_CTX_new(method);
+    ...
+    \endcode
+
+    \sa wolfSSLv3_client_method
+    \sa wolfTLSv1_client_method
+    \sa wolfTLSv1_1_client_method
+    \sa wolfTLSv1_2_client_method
+    \sa wolfTLSv1_3_client_method_ex
+    \sa wolfDTLSv1_client_method
+    \sa wolfSSLv23_client_method
+    \sa wolfSSL_CTX_new
+*/
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_client_method(void);
+
+/*!
+    \ingroup Setup
+
+    \brief This function returns a WOLFSSL_METHOD similar to
+    wolfTLSv1_3_client_method except that it is not determined
+    which side yet (server/client).
+
+    \param [in] heap a pointer to a buffer that the static memory allocator will use during dynamic memory allocation.
+
+    \return WOLFSSL_METHOD On successful creations returns a WOLFSSL_METHOD
+    pointer
+    \return NULL Null if memory allocation error or failure to create method
+
+    _Example_
+    \code
+    WOLFSSL* ctx;
+    ctx  = wolfSSL_CTX_new(wolfTLSv1_3_method_ex(NULL));
+    // check ret value
+    \endcode
+
+    \sa wolfSSL_new
+    \sa wolfSSL_free
+*/
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_method_ex(void* heap);
+
+/*!
+    \ingroup Setup
+
+    \brief This function returns a WOLFSSL_METHOD similar to
+    wolfTLSv1_3_client_method except that it is not determined
+    which side yet (server/client).
+
+    \return WOLFSSL_METHOD On successful creations returns a WOLFSSL_METHOD
+    pointer
+    \return NULL Null if memory allocation error or failure to create method
+
+    _Example_
+    \code
+    WOLFSSL* ctx;
+    ctx  = wolfSSL_CTX_new(wolfTLSv1_3_method());
+    // check ret value
+    \endcode
+
+    \sa wolfSSL_new
+    \sa wolfSSL_free
+*/
+WOLFSSL_API WOLFSSL_METHOD *wolfTLSv1_3_method(void);
+
+/*!
+ \ingroup SSL
+ \brief This function sets a fixed / static ephemeral key for testing only
+ \return 0 Key loaded successfully
+ \param ctx A WOLFSSL_CTX context pointer
+ \param keyAlgo enum wc_PkType like WC_PK_TYPE_DH and WC_PK_TYPE_ECDH
+ \param key key file path (if keySz == 0) or actual key buffer (PEM or ASN.1)
+ \param keySz key size (should be 0 for "key" arg is file path)
+ \param format WOLFSSL_FILETYPE_ASN1 or WOLFSSL_FILETYPE_PEM
+ */
+WOLFSSL_API int wolfSSL_CTX_set_ephemeral_key(WOLFSSL_CTX* ctx, int keyAlgo, const char* key, unsigned int keySz, int format);
+
+/*!
+ \ingroup SSL
+ \brief This function sets a fixed / static ephemeral key for testing only
+ \return 0 Key loaded successfully
+ \param ssl A WOLFSSL object pointer
+ \param keyAlgo enum wc_PkType like WC_PK_TYPE_DH and WC_PK_TYPE_ECDH
+ \param key key file path (if keySz == 0) or actual key buffer (PEM or ASN.1)
+ \param keySz key size (should be 0 for "key" arg is file path)
+ \param format WOLFSSL_FILETYPE_ASN1 or WOLFSSL_FILETYPE_PEM
+ */
+WOLFSSL_API int wolfSSL_set_ephemeral_key(WOLFSSL* ssl, int keyAlgo, const char* key, unsigned int keySz, int format);
+
+/*!
+ \ingroup SSL
+ \brief Sign a message with the chosen message digest, padding, and RSA key
+ \return WOLFSSL_SUCCESS on success and WOLFSSL_FAILURE on error
+ \param type      Hash NID
+ \param m         Message to sign. Most likely this will be the digest of
+                  the message to sign
+ \param mLen      Length of message to sign
+ \param sigRet    Output buffer
+ \param sigLen    On Input: length of sigRet buffer
+                  On Output: length of data written to sigRet
+ \param rsa       RSA key used to sign the input
+ \param flag      1: Output the signature
+                  0: Output the value that the unpadded signature should be
+                     compared to. Note: for RSA_PKCS1_PSS_PADDING the
+                     wc_RsaPSS_CheckPadding_ex function should be used to check
+                     the output of a *Verify* function.
+ \param padding   Padding to use. Only RSA_PKCS1_PSS_PADDING and
+                  RSA_PKCS1_PADDING are currently supported for signing.
+ */
+WOLFSSL_API int wolfSSL_RSA_sign_generic_padding(int type, const unsigned char* m,
+                               unsigned int mLen, unsigned char* sigRet,
+                               unsigned int* sigLen, WOLFSSL_RSA*, int, int);

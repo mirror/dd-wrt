@@ -24,7 +24,7 @@
     #include <config.h>
 #endif
 
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/wc_port.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 
 #ifndef NO_HMAC
@@ -1014,10 +1014,33 @@ int  wc_HmacInit_Id(Hmac* hmac, unsigned char* id, int len, void* heap,
         ret = BUFFER_E;
 
     if (ret == 0)
-        ret  = wc_HmacInit(hmac, heap, devId);
+        ret = wc_HmacInit(hmac, heap, devId);
     if (ret == 0) {
         XMEMCPY(hmac->id, id, len);
         hmac->idLen = len;
+    }
+
+    return ret;
+}
+
+int wc_HmacInit_Label(Hmac* hmac, const char* label, void* heap, int devId)
+{
+    int ret = 0;
+    int labelLen = 0;
+
+    if (hmac == NULL || label == NULL)
+        ret = BAD_FUNC_ARG;
+    if (ret == 0) {
+        labelLen = (int)XSTRLEN(label);
+        if (labelLen == 0 || labelLen > HMAC_MAX_LABEL_LEN)
+            ret = BUFFER_E;
+    }
+
+    if (ret == 0)
+        ret  = wc_HmacInit(hmac, heap, devId);
+    if (ret == 0) {
+        XMEMCPY(hmac->label, label, labelLen);
+        hmac->labelLen = labelLen;
     }
 
     return ret;
@@ -1216,9 +1239,16 @@ int wolfSSL_GetHmacMaxSize(void)
         word32 hashSz = wc_HmacSizeByType(type);
         byte   n = 0x1;
 
+        /* RFC 5869 states that the length of output keying material in
+           octets must be L <= 255*HashLen or N = ceil(L/HashLen) */
+
+        if (out == NULL || ((outSz/hashSz) + ((outSz % hashSz) != 0)) > 255)
+            return BAD_FUNC_ARG;
+
         ret = wc_HmacInit(&myHmac, NULL, INVALID_DEVID);
         if (ret != 0)
             return ret;
+
 
         while (outIdx < outSz) {
             int    tmpSz = (n == 1) ? 0 : hashSz;
