@@ -24,7 +24,8 @@ else
 endif
 
 wifidog-clean:
-	if test -e "wifidog/Makefile"; then make -C wifidog clean; fi
+	if test -e "wifidog/ssl/Makefile"; then make -C wifidog/ssl clean; fi
+	if test -e "wifidog/nossl/Makefile"; then make -C wifidog/nossl clean; fi
 	@true
 
 wifidog-install:
