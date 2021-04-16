@@ -620,15 +620,6 @@ static void global_group_kv(void *_v, unsigned long long id, void *user_data)
 		return;
 	}
 
-	if (!cp_key_cmp(_k, "durable handle")) {
-		if (cp_get_group_kv_bool(_v))
-			global_conf.flags |= KSMBD_GLOBAL_FLAG_DURABLE_HANDLE;
-		else
-			global_conf.flags &= ~KSMBD_GLOBAL_FLAG_DURABLE_HANDLE;
-
-		return;
-	}
-
 	if (!cp_key_cmp(_k, "share:fake_fscaps")) {
 		global_conf.share_fake_fscaps = cp_get_group_kv_long(_v);
 		return;
