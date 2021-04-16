@@ -17,6 +17,7 @@ ifeq ($(CONFIG_TIEXTRA2),y)
 	install -D private/telkom/mwifidog.webhotspot httpd/ej_temp/5wifidogm.webhotspot
 endif
 ifeq ($(CONFIG_OPENSSL),y)
+	make -C wolfssl/minimal
 	$(MAKE) -j 4 -C wifidog/ssl
 else
 	$(MAKE) -j 4 -C wifidog/nossl
