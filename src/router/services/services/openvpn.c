@@ -538,10 +538,12 @@ void start_openvpn(void)
 		eval("iptables", "-D", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
 		eval("iptables", "-I", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
 		//consider restarting SFE to drop existing connections e.g. eval("restart", "sfe"); or: stop_sfe(); start_sfe();
+#ifdef HAVE_SFE
 		if (nvram_match("sfe", "1")) {
 			stop_sfe();
 			start_sfe();
 		}
+#endif
 	}
 
 	FILE *fp;
