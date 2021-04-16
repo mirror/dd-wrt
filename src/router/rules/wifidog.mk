@@ -1,27 +1,46 @@
 wifidog-configure:
+	make -C wolfssl/minimal
 	cd wifidog && ./autogen.sh
-	cd wifidog && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	mkdir -p wifidog/nossl
+	mkdir -p wifidog/ssl
+	cd wifidog/ssl && ../configure --disable-nls --enable-wolfssl --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) $(LDLTO) -I$(TOP)/wolfssl -I$(TOP)/wolfssl/minimal -I$(TOP)/wolfssl/standard/wolfssl  -I$(TOP)/wolfssl/wolfssl -L$(TOP)/wolfssl/minimal/src/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	AR_FLAGS="cru $(LTOPLUGIN)" \
+	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+
+	cd wifidog/nossl && ../configure --disable-nls --disable-wolfssl --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	AR_FLAGS="cru $(LTOPLUGIN)" \
+	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 wifidog:
 	install -D wifidog/config/*.webhotspot httpd/ej_temp/
 ifeq ($(CONFIG_TIEXTRA2),y)
 	install -D private/telkom/mwifidog.webhotspot httpd/ej_temp/5wifidogm.webhotspot
 endif
-	$(MAKE) -j 4 -C wifidog
+ifeq ($(CONFIG_OPENSSL),y)
+	$(MAKE) -j 4 -C wifidog/ssl
+else
+	$(MAKE) -j 4 -C wifidog/nossl
+endif
 
 wifidog-clean:
 	if test -e "wifidog/Makefile"; then make -C wifidog clean; fi
 	@true
 
 wifidog-install:
-	install -D wifidog/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
-	install -D wifidog/src/.libs/wifidog $(INSTALLDIR)/wifidog/usr/sbin/wifidog
-	install -D wifidog/libhttpd/.libs/libhttpd.so.0.0.0 $(INSTALLDIR)/wifidog/usr/lib/libhttpd.so.0
+ifeq ($(CONFIG_OPENSSL),y)
+	install -D wifidog/ssl/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
+	install -D wifidog/ssl/src/wifidog $(INSTALLDIR)/wifidog/usr/sbin/wifidog
+	install -D wifidog/ssl/wifidog-msg.html $(INSTALLDIR)/wifidog/etc
+else
+	install -D wifidog/nossl/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
+	install -D wifidog/nossl/src/wifidog $(INSTALLDIR)/wifidog/usr/sbin/wifidog
+	install -D wifidog/nossl/wifidog-msg.html $(INSTALLDIR)/wifidog/etc
+endif
+
 	mkdir -p $(INSTALLDIR)/wifidog/etc/config
 	install -D wifidog/config/*.nvramconfig $(INSTALLDIR)/wifidog/etc/config
 	install -D wifidog/config/*.webhotspot $(INSTALLDIR)/wifidog/etc/config
 ifeq ($(CONFIG_TIEXTRA2),y)
 	install -D private/telkom/mwifidog.webhotspot $(INSTALLDIR)/wifidog/etc/config/5wifidogm.webhotspot
 endif
-	install -D wifidog/wifidog-msg.html $(INSTALLDIR)/wifidog/etc
 
