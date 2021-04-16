@@ -52,14 +52,14 @@ void start_wifidog(void)
 		fprintf(fp, "CheckInterval %s\n", nvram_safe_get("wd_interval"));
 		fprintf(fp, "ClientTimeout %s\n", nvram_safe_get("wd_timeout"));
 		fprintf(fp, "TrustedMACList %s\n", nvram_safe_get("wd_maclist"));
+		if (*(nvram_safe_get("wd_messagefile"))) {
+			fprintf(fp, "HtmlMessageFile %s\n", nvram_safe_get("wd_messagefile"));
+		}
 		fprintf(fp, "AuthServer {\n");
 		fprintf(fp, "Hostname %s\n", nvram_safe_get("wd_hostname"));
 		fprintf(fp, "SSLAvailable %s\n", nvram_matchi("wd_sslavailable", 1) ? "yes" : "no");
 		fprintf(fp, "SSLPort %s\n", nvram_safe_get("wd_sslport"));
 		fprintf(fp, "HTTPPort %s\n", nvram_safe_get("wd_httpport"));
-		if (*(nvram_safe_get("wd_messagefile"))) {
-			fprintf(fp, "HtmlMessageFile %s\n", nvram_safe_get("wd_messagefile"));
-		}
 		if (nvram_matchi("wd_auth", 1)) {
 			if (*(nvram_safe_get("wd_realm")))
 				fprintf(fp, "HTTPDRealm %s\n", nvram_safe_get("wd_realm"));
