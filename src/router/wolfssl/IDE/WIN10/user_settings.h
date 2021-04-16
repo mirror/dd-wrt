@@ -1,6 +1,14 @@
 #ifndef _WIN_USER_SETTINGS_H_
 #define _WIN_USER_SETTINGS_H_
 
+/* For FIPS Ready, uncomment the following: */
+/* #define WOLFSSL_FIPS_READY */
+#ifdef WOLFSSL_FIPS_READY
+    #undef HAVE_FIPS_VERSION
+    #define HAVE_FIPS_VERSION 3
+#endif
+
+
 /* Verify this is Windows */
 #ifndef _WIN32
 #error This user_settings.h header is only designed for Windows
@@ -54,11 +62,9 @@
         /* The lib */
         #define OPENSSL_EXTRA
         #define WOLFSSL_RIPEMD
-        #define WOLFSSL_SHA512
         #define NO_PSK
         #define HAVE_EXTENDED_MASTER
         #define WOLFSSL_SNIFFER
-        #define HAVE_TLS_EXTENSIONS
         #define HAVE_SECURE_RENEGOTIATION
 
         #define HAVE_AESGCM

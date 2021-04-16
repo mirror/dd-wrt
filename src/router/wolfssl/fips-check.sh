@@ -28,18 +28,22 @@ Platform is one of:
     openrtos-3.9.2
     linux-ecc
     netbsd-selftest
+    marvell-linux-selftest
     sgx
     netos-7.6
     linuxv2 (FIPSv2, use for Win10)
     fips-ready
     stm32l4-v2 (FIPSv2, use for STM32L4)
     wolfrand
+    solaris
 Keep (default off) retains the XXX-fips-test temp dir for inspection.
 
 Example:
     $0 windows keep
 usageText
 }
+
+MAKE=make
 
 LINUX_FIPS_VERSION=v3.2.6
 LINUX_FIPS_REPO=git@github.com:wolfSSL/fips.git
@@ -96,6 +100,13 @@ NETBSD_FIPS_VERSION=v3.14.2b
 NETBSD_FIPS_REPO=git@github.com:wolfssl/fips.git
 NETBSD_CRYPT_VERSION=v3.14.2
 NETBSD_CRYPT_REPO=git@github.com:wolfssl/wolfssl.git
+
+# non-FIPS, CAVP only but pull in selftest
+# will reset above variables below in platform switch
+MARVELL_LINUX_FIPS_VERSION=v3.14.2b
+MARVELL_LINUX_FIPS_REPO=git@github.com:wolfssl/fips.git
+MARVELL_LINUX_CRYPT_VERSION=v4.1.0-stable
+MARVELL_LINUX_CRYPT_REPO=git@github.com:wolfssl/wolfssl.git
 
 STM32L4_V2_FIPS_VERSION=WCv4.0.1-stable
 STM32L4_V2_FIPS_REPO=git@github.com:wolfSSL/fips.git
@@ -182,6 +193,18 @@ netbsd-selftest)
   CRYPT_SRC_PATH=wolfcrypt/src
   CAVP_SELFTEST_ONLY="yes"
   ;;
+marvell-linux-selftest)
+  FIPS_VERSION=$MARVELL_LINUX_FIPS_VERSION
+  FIPS_REPO=$MARVELL_LINUX_FIPS_REPO
+  CRYPT_VERSION=$MARVELL_LINUX_CRYPT_VERSION
+  CRYPT_REPO=$MARVELL_LINUX_CRYPT_REPO
+  FIPS_SRCS=( selftest.c )
+  WC_MODS=( dh ecc rsa dsa aes sha sha256 sha512 hmac random )
+  CRYPT_INC_PATH=wolfssl/wolfcrypt
+  CRYPT_SRC_PATH=wolfcrypt/src
+  CAVP_SELFTEST_ONLY="yes"
+  CAVP_SELFTEST_OPTION=v2
+  ;;
 sgx)
   FIPS_VERSION=$SGX_FIPS_VERSION
   FIPS_REPO=$SGX_FIPS_REPO
@@ -228,6 +251,19 @@ wolfrand)
   FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
   FIPS_INCS=( fips.h )
   FIPS_OPTION=rand
+  ;;
+solaris)
+  FIPS_VERSION=WCv4-stable
+  FIPS_REPO=git@github.com:wolfssl/fips.git
+  CRYPT_VERSION=WCv4-stable
+  CRYPT_INC_PATH=wolfssl/wolfcrypt
+  CRYPT_SRC_PATH=wolfcrypt/src
+  WC_MODS+=( cmac dh ecc sha3 )
+  RNG_VERSION=WCv4-rng-stable
+  FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
+  FIPS_INCS=( fips.h )
+  FIPS_OPTION=v2
+  MAKE=gmake
   ;;
 *)
   Usage
@@ -300,7 +336,6 @@ else
         echo "fips-check: Couldn't checkout the FIPS repository."
         exit 1
     fi
-    FIPS_OPTION="v2"
 fi
 
 for SRC in "${FIPS_SRCS[@]}"
@@ -317,11 +352,16 @@ done
 ./autogen.sh
 if [ "x$CAVP_SELFTEST_ONLY" == "xyes" ];
 then
-    ./configure --enable-selftest
+    if [ "x$CAVP_SELFTEST_OPTION" == "xv2" ]
+    then
+        ./configure --enable-selftest=v2
+    else
+        ./configure --enable-selftest
+    fi
 else
     ./configure --enable-fips=$FIPS_OPTION
 fi
-if ! make; then
+if ! $MAKE; then
     echo "fips-check: Make failed. Debris left for analysis."
     exit 3
 fi
@@ -330,12 +370,13 @@ if [ "x$CAVP_SELFTEST_ONLY" == "xno" ];
 then
     NEWHASH=$(./wolfcrypt/test/testwolfcrypt | sed -n 's/hash = \(.*\)/\1/p')
     if [ -n "$NEWHASH" ]; then
-        sed -i.bak "s/^\".*\";/\"${NEWHASH}\";/" $CRYPT_SRC_PATH/fips_test.c
+        cp $CRYPT_SRC_PATH/fips_test.c $CRYPT_SRC_PATH/fips_test.c.bak
+        sed "s/^\".*\";/\"${NEWHASH}\";/" $CRYPT_SRC_PATH/fips_test.c.bak >$CRYPT_SRC_PATH/fips_test.c
         make clean
     fi
 fi
 
-if ! make test; then
+if ! $MAKE test; then
     echo "fips-check: Test failed. Debris left for analysis."
     exit 3
 fi
