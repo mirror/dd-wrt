@@ -29,6 +29,7 @@ wifidog-clean:
 	@true
 
 wifidog-install:
+	mkdir -p $(INSTALLDIR)/wifidog/etc/config
 ifeq ($(CONFIG_OPENSSL),y)
 	install -D wifidog/ssl/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
 	install -D wifidog/ssl/src/wifidog $(INSTALLDIR)/wifidog/usr/sbin/wifidog
@@ -39,7 +40,6 @@ else
 	install -D wifidog/nossl/wifidog-msg.html $(INSTALLDIR)/wifidog/etc
 endif
 
-	mkdir -p $(INSTALLDIR)/wifidog/etc/config
 	install -D wifidog/config/*.nvramconfig $(INSTALLDIR)/wifidog/etc/config
 	install -D wifidog/config/*.webhotspot $(INSTALLDIR)/wifidog/etc/config
 ifeq ($(CONFIG_TIEXTRA2),y)
