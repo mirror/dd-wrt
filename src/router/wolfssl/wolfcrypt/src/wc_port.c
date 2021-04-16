@@ -46,7 +46,12 @@
     #include <wolfssl/wolfcrypt/port/nxp/ksdk_port.h>
 #endif
 
-#if defined(WOLFSSL_ATMEL) || defined(WOLFSSL_ATECC508A)
+#ifdef WOLFSSL_PSOC6_CRYPTO
+    #include <wolfssl/wolfcrypt/port/cypress/psoc6_crypto.h>
+#endif
+
+#if defined(WOLFSSL_ATMEL) || defined(WOLFSSL_ATECC508A) || \
+    defined(WOLFSSL_ATECC608A)
     #include <wolfssl/wolfcrypt/port/atmel/atmel.h>
 #endif
 #if defined(WOLFSSL_RENESAS_TSIP)
@@ -68,6 +73,10 @@
 #if defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG) || \
     defined(WOLFSSL_IMX6_CAAM_BLOB)
     #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
+#endif
+
+#ifdef WOLFSSL_IMXRT_DCP
+    #include <wolfssl/wolfcrypt/port/nxp/dcp_port.h>
 #endif
 
 #ifdef WOLF_CRYPTO_CB
@@ -104,7 +113,6 @@ static volatile int initRefCount = 0;
 int wolfCrypt_Init(void)
 {
     int ret = 0;
-
     if (initRefCount == 0) {
         WOLFSSL_ENTER("wolfCrypt_Init");
 
@@ -180,7 +188,8 @@ int wolfCrypt_Init(void)
         }
     #endif
 
-    #if defined(WOLFSSL_ATMEL) || defined(WOLFSSL_ATECC508A)
+    #if defined(WOLFSSL_ATMEL) || defined(WOLFSSL_ATECC508A) || \
+        defined(WOLFSSL_ATECC608A)
         ret = atmel_init();
         if (ret != 0) {
             WOLFSSL_MSG("CryptoAuthLib init failed");
@@ -197,6 +206,19 @@ int wolfCrypt_Init(void)
     #endif
     #if defined(WOLFSSL_STSAFEA100)
         stsafe_interface_init();
+    #endif
+
+    #if defined(WOLFSSL_PSOC6_CRYPTO)
+        ret = psoc6_crypto_port_init();
+        if (ret != 0) {
+            WOLFSSL_MSG("PSoC6 crypto engine init failed");
+            return ret;
+        }
+    #endif
+
+    #ifdef WOLFSSL_SILABS_SE_ACCEL
+        /* init handles if it is already initialized */
+        ret = sl_se_init();
     #endif
 
     #ifdef WOLFSSL_ARMASM
@@ -219,6 +241,9 @@ int wolfCrypt_Init(void)
     #endif
 
 #ifdef HAVE_ECC
+    #ifdef FP_ECC
+        wc_ecc_fp_init();
+    #endif
     #ifdef ECC_CACHE_CURVE
         if ((ret = wc_ecc_curve_cache_init()) != 0) {
             WOLFSSL_MSG("Error creating curve cache");
@@ -247,6 +272,12 @@ int wolfCrypt_Init(void)
         }
 #endif
 
+#ifdef WOLFSSL_IMXRT_DCP
+        if ((ret = wc_dcp_init()) != 0) {
+            return ret;
+        }
+#endif
+
 #if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
 	if ((ret = wolfSSL_InitHandle()) != 0) {
             return ret;
@@ -259,6 +290,19 @@ int wolfCrypt_Init(void)
     return ret;
 }
 
+#ifdef WOLFSSL_TRACK_MEMORY_VERBOSE
+long wolfCrypt_heap_peakAllocs_checkpoint(void) {
+    long ret = ourMemStats.peakAllocsTripOdometer;
+    ourMemStats.peakAllocsTripOdometer = ourMemStats.totalAllocs -
+        ourMemStats.totalDeallocs;
+    return ret;
+}
+long wolfCrypt_heap_peakBytes_checkpoint(void) {
+    long ret = ourMemStats.peakBytesTripOdometer;
+    ourMemStats.peakBytesTripOdometer = ourMemStats.currentBytes;
+    return ret;
+}
+#endif
 
 /* return success value is the same as wolfCrypt_Init */
 int wolfCrypt_Cleanup(void)
@@ -302,6 +346,9 @@ int wolfCrypt_Cleanup(void)
     #if defined(WOLFSSL_CRYPTOCELL)
         cc310_Free();
     #endif
+    #ifdef WOLFSSL_SILABS_SE_ACCEL
+        ret = sl_se_deinit();
+    #endif
     #if defined(WOLFSSL_RENESAS_TSIP_CRYPT)
         tsip_Close();
     #endif
@@ -314,8 +361,60 @@ int wolfCrypt_Cleanup(void)
     return ret;
 }
 
-#if !defined(NO_FILESYSTEM) && !defined(NO_WOLFSSL_DIR) && \
-	!defined(WOLFSSL_NUCLEUS) && !defined(WOLFSSL_NUCLEUS_1_2)
+#ifndef NO_FILESYSTEM
+
+/* Helpful function to load file into allocated buffer */
+int wc_FileLoad(const char* fname, unsigned char** buf, size_t* bufLen, 
+    void* heap)
+{
+    int ret;
+    size_t fileSz;
+    XFILE f;
+
+    if (fname == NULL || buf == NULL || bufLen == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    /* set defaults */
+    *buf = NULL;
+    *bufLen = 0;
+
+    /* open file (read-only binary) */
+    f = XFOPEN(fname, "rb");
+    if (!f) {
+        WOLFSSL_MSG("wc_LoadFile file load error");
+        return BAD_PATH_ERROR;
+    }
+
+    XFSEEK(f, 0, XSEEK_END);
+    fileSz = XFTELL(f);
+    XREWIND(f);
+    if (fileSz > 0) {
+        *bufLen = fileSz;
+        *buf = (byte*)XMALLOC(*bufLen, heap, DYNAMIC_TYPE_TMP_BUFFER);
+        if (*buf == NULL) {
+            WOLFSSL_MSG("wc_LoadFile memory error");
+            ret = MEMORY_E;
+        }
+        else {
+            size_t readLen = XFREAD(*buf, 1, *bufLen, f);
+
+            /* check response code */
+            ret = (readLen == *bufLen) ? 0 : -1;
+        }
+    }
+    else {
+        ret = BUFFER_E;
+    }
+    XFCLOSE(f);
+
+    (void)heap;
+
+    return ret;
+}
+
+#if !defined(NO_WOLFSSL_DIR) && \
+    !defined(WOLFSSL_NUCLEUS) && !defined(WOLFSSL_NUCLEUS_1_2)
 
 /* File Handling Helpers */
 /* returns 0 if file found, WC_READDIR_NOFILE if no files or negative error */
@@ -614,14 +713,15 @@ void wc_ReadDirClose(ReadDirCtx* ctx)
 #endif
 }
 
-#endif /* !NO_FILESYSTEM && !NO_WOLFSSL_DIR */
+#endif /* !NO_WOLFSSL_DIR */
+#endif /* !NO_FILESYSTEM */
 
 #if !defined(NO_FILESYSTEM) && defined(WOLFSSL_ZEPHYR)
 XFILE z_fs_open(const char* filename, const char* perm)
 {
     XFILE file;
 
-    file = XMALLOC(sizeof(*file), NULL, DYNAMIC_TYPE_FILE);
+    file = (XFILE)XMALLOC(sizeof(*file), NULL, DYNAMIC_TYPE_FILE);
     if (file != NULL) {
         if (fs_open(file, filename) != 0) {
             XFREE(file, NULL, DYNAMIC_TYPE_FILE);
@@ -647,7 +747,7 @@ int z_fs_close(XFILE file)
 
 #endif /* !NO_FILESYSTEM && !WOLFSSL_ZEPHYR */
 
-
+#if !defined(WOLFSSL_USER_MUTEX) 
 wolfSSL_Mutex* wc_InitAndAllocMutex(void)
 {
     wolfSSL_Mutex* m = (wolfSSL_Mutex*) XMALLOC(sizeof(wolfSSL_Mutex), NULL,
@@ -665,6 +765,7 @@ wolfSSL_Mutex* wc_InitAndAllocMutex(void)
 
     return m;
 }
+#endif
 
 #ifdef USE_WOLF_STRTOK
 /* String token (delim) search. If str is null use nextp. */
@@ -752,33 +853,31 @@ char* wc_strsep(char **stringp, const char *delim)
 static wolfSSL_Mutex wcCryptHwMutex;
 static int wcCryptHwMutexInit = 0;
 
-int wolfSSL_CryptHwMutexInit(void) {
+int wolfSSL_CryptHwMutexInit(void)
+{
     int ret = 0;
-    if(wcCryptHwMutexInit == 0) {
+    if (wcCryptHwMutexInit == 0) {
         ret = wc_InitMutex(&wcCryptHwMutex);
-        if(ret == 0) {
+        if (ret == 0) {
             wcCryptHwMutexInit = 1;
         }
     }
     return ret;
 }
-
-int wolfSSL_CryptHwMutexLock(void) {
+int wolfSSL_CryptHwMutexLock(void)
+{
     int ret = BAD_MUTEX_E;
-
     /* Make sure HW Mutex has been initialized */
-    wolfSSL_CryptHwMutexInit();
-
-    if(wcCryptHwMutexInit) {
+    ret = wolfSSL_CryptHwMutexInit();
+    if (ret == 0) {
         ret = wc_LockMutex(&wcCryptHwMutex);
     }
     return ret;
 }
-
-int wolfSSL_CryptHwMutexUnLock(void) {
+int wolfSSL_CryptHwMutexUnLock(void)
+{
     int ret = BAD_MUTEX_E;
-
-    if(wcCryptHwMutexInit) {
+    if (wcCryptHwMutexInit) {
         ret = wc_UnLockMutex(&wcCryptHwMutex);
     }
     return ret;
@@ -885,6 +984,40 @@ int wolfSSL_CryptHwMutexUnLock(void) {
         return 0;
     }
 
+#elif defined(RTTHREAD)
+
+    int wc_InitMutex(wolfSSL_Mutex* m)
+    {
+        int iReturn;
+
+        *m = ( wolfSSL_Mutex ) rt_mutex_create("mutex",RT_IPC_FLAG_FIFO);
+        if( *m != NULL )
+            iReturn = 0;
+        else
+            iReturn = BAD_MUTEX_E;
+
+
+        return iReturn;
+    }
+
+    int wc_FreeMutex(wolfSSL_Mutex* m)
+    {
+        rt_mutex_delete( *m );
+        return 0;
+    }
+
+
+    int wc_LockMutex(wolfSSL_Mutex* m)
+    {
+        /* Assume an infinite block, or should there be zero block? */
+        return rt_mutex_take( *m, RT_WAITING_FOREVER );
+    }
+
+    int wc_UnLockMutex(wolfSSL_Mutex* m)
+    {
+        return rt_mutex_release( *m );
+    }
+
 #elif defined(WOLFSSL_SAFERTOS)
 
     int wc_InitMutex(wolfSSL_Mutex* m)
@@ -979,6 +1112,35 @@ int wolfSSL_CryptHwMutexUnLock(void) {
             return 0;
         else
             return BAD_MUTEX_E;
+    }
+
+#elif defined(WOLFSSL_KTHREADS)
+
+    /* Linux kernel mutex routines are voids, alas. */
+
+    int wc_InitMutex(wolfSSL_Mutex* m)
+    {
+        mutex_init(m);
+        return 0;
+    }
+
+    int wc_FreeMutex(wolfSSL_Mutex* m)
+    {
+        mutex_destroy(m);
+        return 0;
+    }
+
+    int wc_LockMutex(wolfSSL_Mutex* m)
+    {
+        mutex_lock(m);
+        return 0;
+    }
+
+
+    int wc_UnLockMutex(wolfSSL_Mutex* m)
+    {
+        mutex_unlock(m);
+        return 0;
     }
 
 #elif defined(WOLFSSL_VXWORKS)
@@ -1125,14 +1287,23 @@ int wolfSSL_CryptHwMutexUnLock(void) {
     }
 
 #elif defined(MICRIUM)
+    #if (OS_VERSION < 50000)
+        #define MICRIUM_ERR_TYPE OS_ERR
+        #define MICRIUM_ERR_NONE OS_ERR_NONE
+        #define MICRIUM_ERR_CODE(err) err
+    #else
+        #define MICRIUM_ERR_TYPE RTOS_ERR
+        #define MICRIUM_ERR_NONE RTOS_ERR_NONE
+        #define MICRIUM_ERR_CODE(err)    RTOS_ERR_CODE_GET(err)
+    #endif
 
     int wc_InitMutex(wolfSSL_Mutex* m)
     {
-        OS_ERR err;
+        MICRIUM_ERR_TYPE err;
 
         OSMutexCreate(m, "wolfSSL Mutex", &err);
 
-        if (err == OS_ERR_NONE)
+        if (MICRIUM_ERR_CODE(err) == MICRIUM_ERR_NONE)
             return 0;
         else
             return BAD_MUTEX_E;
@@ -1141,26 +1312,27 @@ int wolfSSL_CryptHwMutexUnLock(void) {
     int wc_FreeMutex(wolfSSL_Mutex* m)
     {
         #if (OS_CFG_MUTEX_DEL_EN == DEF_ENABLED)
-            OS_ERR err;
+            MICRIUM_ERR_TYPE err;
 
             OSMutexDel(m, OS_OPT_DEL_ALWAYS, &err);
 
-            if (err == OS_ERR_NONE)
+            if (MICRIUM_ERR_CODE(err) == MICRIUM_ERR_NONE)
                 return 0;
             else
                 return BAD_MUTEX_E;
         #else
+            (void)m;
             return 0;
         #endif
     }
 
     int wc_LockMutex(wolfSSL_Mutex* m)
     {
-        OS_ERR err;
+        MICRIUM_ERR_TYPE err;
 
         OSMutexPend(m, 0, OS_OPT_PEND_BLOCKING, NULL, &err);
 
-        if (err == OS_ERR_NONE)
+        if (MICRIUM_ERR_CODE(err) == MICRIUM_ERR_NONE)
             return 0;
         else
             return BAD_MUTEX_E;
@@ -1168,11 +1340,11 @@ int wolfSSL_CryptHwMutexUnLock(void) {
 
     int wc_UnLockMutex(wolfSSL_Mutex* m)
     {
-        OS_ERR err;
+        MICRIUM_ERR_TYPE err;
 
         OSMutexPost(m, OS_OPT_POST_NONE, &err);
 
-        if (err == OS_ERR_NONE)
+        if (MICRIUM_ERR_CODE(err) == MICRIUM_ERR_NONE)
             return 0;
         else
             return BAD_MUTEX_E;
@@ -1845,6 +2017,17 @@ int wolfSSL_CryptHwMutexUnLock(void) {
         return 0;
     }
 
+#elif defined(WOLFSSL_USER_MUTEX)
+
+    /* Use user own mutex */
+    
+    /*
+    int wc_InitMutex(wolfSSL_Mutex* m) { ... }
+    int wc_FreeMutex(wolfSSL_Mutex *m) { ... }
+    int wc_LockMutex(wolfSSL_Mutex *m) { ... }
+    int wc_UnLockMutex(wolfSSL_Mutex *m) { ... }
+    */
+
 #else
     #warning No mutex handling defined
 
@@ -1936,7 +2119,9 @@ struct tm* gmtime(const time_t* timer)
     }
 
     ret->tm_mday  = (int)++dayno;
+#ifndef WOLFSSL_LINUXKM
     ret->tm_isdst = 0;
+#endif
 
     return ret;
 }
@@ -1978,7 +2163,7 @@ time_t pic32_time(time_t* timer)
 #ifdef MICROCHIP_TCPIP_V5
     DWORD sec = 0;
 #else
-    uint32_t sec = 0;
+    word32 sec = 0;
 #endif
     time_t localTime;
 
@@ -2001,8 +2186,8 @@ time_t pic32_time(time_t* timer)
 
 time_t deos_time(time_t* timer)
 {
-    const uint32_t systemTickTimeInHz = 1000000 / systemTickInMicroseconds();
-    uint32_t *systemTickPtr = systemTickPointer();
+    const word32 systemTickTimeInHz = 1000000 / systemTickInMicroseconds();
+    word32 *systemTickPtr = systemTickPointer();
 
     if (timer != NULL)
         *timer = *systemTickPtr/systemTickTimeInHz;
@@ -2070,7 +2255,7 @@ time_t XTIME(time_t * timer)
 #if defined(WOLFSSL_XILINX)
 #include "xrtcpsu.h"
 
-time_t XTIME(time_t * timer)
+time_t xilinx_time(time_t * timer)
 {
     time_t sec = 0;
     XRtcPsu_Config* con;
@@ -2180,6 +2365,24 @@ time_t wiced_pseudo_unix_epoch_time(time_t * timer)
     #endif /* !NO_CRYPT_BENCHMARK */
 #endif /* WOLFSSL_TELIT_M2MB */
 
+
+#if defined(WOLFSSL_LINUXKM)
+time_t time(time_t * timer)
+{
+    time_t ret;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
+    struct timespec ts;
+    getnstimeofday(&ts);
+    ret = ts.tv_sec * 1000000000LL + ts.tv_nsec;
+#else
+    ret = ktime_get_real_seconds();
+#endif
+    if (timer)
+        *timer = ret;
+    return ret;
+}
+#endif /* WOLFSSL_LINUXKM */
+
 #endif /* !NO_ASN_TIME */
 
 #ifndef WOLFSSL_LEANPSK
@@ -2260,6 +2463,54 @@ char* mystrnstr(const char* s1, const char* s2, unsigned int n)
     }
 
 #endif /* WOLFSSL_NUCLEUS_1_2 */
+
+#ifdef WOLFSSL_LINUXKM
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+    /* adapted from kvrealloc() draft by Changli Gao, 2010-05-13 */
+    void *lkm_realloc(void *ptr, size_t newsize) {
+        void *nptr;
+        size_t oldsize;
+
+        if (unlikely(newsize == 0)) {
+            kvfree(ptr);
+            return ZERO_SIZE_PTR;
+        }
+
+        if (unlikely(ptr == NULL))
+            return kvmalloc(newsize, GFP_KERNEL);
+
+        if (is_vmalloc_addr(ptr)) {
+            /* no way to discern the size of the old allocation,
+             * because the kernel doesn't export find_vm_area().  if
+             * it did, we could then call get_vm_area_size() on the
+             * returned struct vm_struct.
+             */
+            return NULL;
+        } else {
+            struct page *page;
+
+            page = virt_to_head_page(ptr);
+            if (PageSlab(page) || PageCompound(page)) {
+                if (newsize < PAGE_SIZE)
+                    return krealloc(ptr, newsize, GFP_KERNEL);
+                oldsize = ksize(ptr);
+            } else {
+                oldsize = page->private;
+                if (newsize <= oldsize)
+                    return ptr;
+            }
+	}
+
+	nptr = kvmalloc(newsize, GFP_KERNEL);
+	if (nptr != NULL) {
+            memcpy(nptr, ptr, oldsize);
+            kvfree(ptr);
+	}
+
+	return nptr;
+    }
+#endif /* >= 4.12 */
+#endif /* WOLFSSL_LINUXKM */
 
 #if defined(WOLFSSL_TI_CRYPT) || defined(WOLFSSL_TI_HASH)
     #include <wolfcrypt/src/port/ti/ti-ccm.c>  /* initialize and Mutex for TI Crypt Engine */

@@ -34,6 +34,10 @@
 
 #if !defined(NO_AES) && defined(WOLFSSL_ARMASM)
 
+#ifdef HAVE_FIPS
+#undef HAVE_FIPS
+#endif
+
 #include <wolfssl/wolfcrypt/aes.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/logging.h>
@@ -2534,8 +2538,7 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     if (aes == NULL || (iv == NULL && ivSz > 0) ||
                        (authTag == NULL) ||
                        (authIn == NULL && authInSz > 0) ||
-                       (in == NULL && sz > 0) ||
-                       (out == NULL && sz > 0)) {
+                       (ivSz == 0)) {
         WOLFSSL_MSG("a NULL parameter passed in when size is larger than 0");
         return BAD_FUNC_ARG;
     }
@@ -2599,11 +2602,9 @@ int  wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     ctr = counter ;
 
     /* sanity checks */
-    if (aes == NULL || (iv == NULL && ivSz > 0) ||
-                       (authTag == NULL) ||
-                       (authIn == NULL && authInSz > 0) ||
-                       (in  == NULL && sz > 0) ||
-                       (out == NULL && sz > 0)) {
+    if (aes == NULL || iv == NULL || (sz != 0 && (in == NULL || out == NULL)) ||
+        authTag == NULL || authTagSz > AES_BLOCK_SIZE || authTagSz == 0 ||
+        ivSz == 0) {
         WOLFSSL_MSG("a NULL parameter passed in when size is larger than 0");
         return BAD_FUNC_ARG;
     }
@@ -4199,8 +4200,7 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     if (aes == NULL || (iv == NULL && ivSz > 0) ||
                        (authTag == NULL) ||
                        (authIn == NULL && authInSz > 0) ||
-                       (in == NULL && sz > 0) ||
-                       (out == NULL && sz > 0)) {
+                       (ivSz == 0)) {
         WOLFSSL_MSG("a NULL parameter passed in when size is larger than 0");
         return BAD_FUNC_ARG;
     }
@@ -4280,11 +4280,9 @@ int  wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     ctr = counter ;
 
     /* sanity checks */
-    if (aes == NULL || (iv == NULL && ivSz > 0) ||
-                       (authTag == NULL) ||
-                       (authIn == NULL && authInSz > 0) ||
-                       (in  == NULL && sz > 0) ||
-                       (out == NULL && sz > 0)) {
+    if (aes == NULL || iv == NULL || (sz != 0 && (in == NULL || out == NULL)) ||
+        authTag == NULL || authTagSz > AES_BLOCK_SIZE || authTagSz == 0 ||
+        ivSz == 0) {
         WOLFSSL_MSG("a NULL parameter passed in when size is larger than 0");
         return BAD_FUNC_ARG;
     }
@@ -4438,6 +4436,10 @@ int wc_AesCcmEncrypt(Aes* aes, byte* out, const byte* in, word32 inSz,
             || authTag == NULL || nonceSz < 7 || nonceSz > 13)
         return BAD_FUNC_ARG;
 
+    if (wc_AesCcmCheckTagSize(authTagSz) != 0) {
+        return BAD_FUNC_ARG;
+    }
+
     XMEMCPY(B+1, nonce, nonceSz);
     lenSz = AES_BLOCK_SIZE - 1 - (byte)nonceSz;
     B[0] = (authInSz > 0 ? 64 : 0)
@@ -4505,6 +4507,10 @@ int  wc_AesCcmDecrypt(Aes* aes, byte* out, const byte* in, word32 inSz,
     if (aes == NULL || out == NULL || in == NULL || nonce == NULL
             || authTag == NULL || nonceSz < 7 || nonceSz > 13)
         return BAD_FUNC_ARG;
+
+    if (wc_AesCcmCheckTagSize(authTagSz) != 0) {
+        return BAD_FUNC_ARG;
+    }
 
     o = out;
     oSz = inSz;

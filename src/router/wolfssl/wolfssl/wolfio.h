@@ -94,6 +94,8 @@
     #elif defined(WOLFSSL_NUCLEUS_1_2)
         #include <externs.h>
         #include <errno.h>
+    #elif defined(WOLFSSL_LINUXKM)
+        /* the requisite linux/net.h is included in wc_port.h, with incompatible warnings masked out. */
     #elif defined(WOLFSSL_ATMEL)
         #include "socket/include/socket.h"
     #elif defined(INTIME_RTOS)
@@ -126,9 +128,15 @@
         #include <errno.h>
     #elif defined(WOLFSSL_ZEPHYR)
         #include <net/socket.h>
+    #elif defined(MICROCHIP_PIC32)
+        #include <sys/errno.h>
     #elif defined(HAVE_NETX)
         #include "nx_api.h"
         #include "errno.h"
+    #elif defined(FUSION_RTOS)
+        #include <sys/fcltypes.h>
+        #include <fclerrno.h>
+        #include <fclfcntl.h>
     #elif !defined(WOLFSSL_NO_SOCK)
         #include <sys/types.h>
         #include <errno.h>
@@ -158,7 +166,7 @@
         #endif
     #endif
 
-    #if defined(WOLFSSL_RENESAS_RA6M3G) /* Uses FREERTOS_TCP */
+    #if defined(WOLFSSL_RENESAS_RA6M3G) || defined(WOLFSSL_RENESAS_RA6M3) /* Uses FREERTOS_TCP */
         #include <errno.h>
     #endif
 
@@ -255,6 +263,14 @@
     #define SOCKET_EPIPE       NX_NOT_CONNECTED
     #define SOCKET_ECONNREFUSED NX_NOT_CONNECTED
     #define SOCKET_ECONNABORTED NX_NOT_CONNECTED
+#elif defined(FUSION_RTOS)
+    #define SOCKET_EWOULDBLOCK FCL_EWOULDBLOCK
+    #define SOCKET_EAGAIN      FCL_EAGAIN
+    #define SOCKET_ECONNRESET  FNS_ECONNRESET
+    #define SOCKET_EINTR       FCL_EINTR
+    #define SOCKET_EPIPE       FCL_EPIPE
+    #define SOCKET_ECONNREFUSED FCL_ECONNREFUSED
+    #define SOCKET_ECONNABORTED FNS_ECONNABORTED
 #else
     #define SOCKET_EWOULDBLOCK EWOULDBLOCK
     #define SOCKET_EAGAIN      EAGAIN
@@ -286,6 +302,9 @@
 #elif defined(WOLFSSL_NUCLEUS_1_2)
     #define SEND_FUNCTION NU_Send
     #define RECV_FUNCTION NU_Recv
+#elif defined(FUSION_RTOS)
+    #define SEND_FUNCTION FNS_SEND
+    #define RECV_FUNCTION FNS_RECV
 #elif defined(WOLFSSL_ZEPHYR)
     #ifndef WOLFSSL_MAX_SEND_SZ
         #define WOLFSSL_MAX_SEND_SZ       256
@@ -293,6 +312,9 @@
 
     #define SEND_FUNCTION send
     #define RECV_FUNCTION recv
+#elif defined(WOLFSSL_LINUXKM)
+    #define SEND_FUNCTION linuxkm_send
+    #define RECV_FUNCTION linuxkm_recv
 #else
     #define SEND_FUNCTION send
     #define RECV_FUNCTION recv
@@ -303,8 +325,14 @@
 
 #ifdef USE_WINDOWS_API
     typedef unsigned int SOCKET_T;
+    #ifndef SOCKET_INVALID
+        #define SOCKET_INVALID INVALID_SOCKET
+    #endif
 #else
     typedef int SOCKET_T;
+    #ifndef SOCKET_INVALID
+        #define SOCKET_INVALID -1
+    #endif
 #endif
 
 #ifndef WOLFSSL_NO_SOCK
@@ -359,6 +387,13 @@ WOLFSSL_API  int wolfIO_Recv(SOCKET_T sd, char *buf, int sz, int rdFlags);
         #define CloseSocket(s) closesocket(s)
     #endif
     #define StartTCP()
+#elif defined(FUSION_RTOS)
+    #ifndef CloseSocket
+        #define CloseSocket(s) do {                     \
+                                    int err;            \
+                                    FNS_CLOSE(s, &err); \
+                                } while(0)
+    #endif
 #else
     #ifndef CloseSocket
         #define CloseSocket(s) close(s)
@@ -489,9 +524,9 @@ WOLFSSL_API void wolfSSL_SetIOWriteFlags(WOLFSSL* ssl, int flags);
         } conn;
         WOLFSSL_CTX *ctx;
         WOLFSSL *ssl;
-        uint8_t *input_databuf;
-        uint8_t *output_databuf;
-        uint8_t *ssl_rx_databuf;
+        byte *input_databuf;
+        byte *output_databuf;
+        byte *ssl_rx_databuf;
         int ssl_rb_len;
         int ssl_rb_off;
         struct process *process;
@@ -499,7 +534,7 @@ WOLFSSL_API void wolfSSL_SetIOWriteFlags(WOLFSSL* ssl, int flags);
         tcp_socket_event_callback_t event_callback;
         int closing;
         uip_ipaddr_t peer_addr;
-        uint16_t peer_port;
+        word16 peer_port;
     };
 
     typedef struct uip_wolfssl_ctx uip_wolfssl_ctx;
