@@ -27,8 +27,8 @@
 #define SMB2_NO_FID		(0xFFFFFFFFFFFFFFFFULL)
 
 #define FP_FILENAME(fp)		fp->filp->f_path.dentry->d_name.name
-#define FP_INODE(fp)		fp->filp->f_path.dentry->d_inode
-#define PARENT_INODE(fp)	fp->filp->f_path.dentry->d_parent->d_inode
+#define FP_INODE(fp)		d_inode(fp->filp->f_path.dentry)
+#define PARENT_INODE(fp)	d_inode(fp->filp->f_path.dentry->d_parent)
 
 #define ATTR_FP(fp) (fp->attrib_only && \
 		(fp->cdoption != FILE_OVERWRITE_IF_LE && \
@@ -91,9 +91,6 @@ struct ksmbd_file {
 	__u64				create_time;
 	__u64				itime;
 
-	bool				is_durable;
-	bool				is_resilient;
-	bool				is_persistent;
 	bool				is_nt_open;
 	bool				attrib_only;
 
@@ -189,11 +186,12 @@ struct ksmbd_file *ksmbd_lookup_fd_slow(struct ksmbd_work *work,
 
 void ksmbd_fd_put(struct ksmbd_work *work, struct ksmbd_file *fp);
 
-int ksmbd_close_fd_app_id(struct ksmbd_work *work, char *app_id);
 struct ksmbd_file *ksmbd_lookup_durable_fd(unsigned long long id);
 struct ksmbd_file *ksmbd_lookup_fd_cguid(char *cguid);
+#ifdef CONFIG_SMB_INSECURE_SERVER
 struct ksmbd_file *ksmbd_lookup_fd_filename(struct ksmbd_work *work,
 					    char *filename);
+#endif
 struct ksmbd_file *ksmbd_lookup_fd_inode(struct inode *inode);
 
 unsigned int ksmbd_open_durable_fd(struct ksmbd_file *fp);
@@ -205,9 +203,6 @@ void ksmbd_close_tree_conn_fds(struct ksmbd_work *work);
 void ksmbd_close_session_fds(struct ksmbd_work *work);
 
 int ksmbd_close_inode_fds(struct ksmbd_work *work, struct inode *inode);
-
-int ksmbd_reopen_durable_fd(struct ksmbd_work *work,
-			    struct ksmbd_file *fp);
 
 int ksmbd_init_global_file_table(void);
 void ksmbd_free_global_file_table(void);
