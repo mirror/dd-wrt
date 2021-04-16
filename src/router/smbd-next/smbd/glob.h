@@ -15,7 +15,7 @@
 #include "unicode.h"
 #include "vfs_cache.h"
 
-#define KSMBD_VERSION	"3.3.8"
+#define KSMBD_VERSION	"3.3.9"
 
 /* @FIXME clean up this code */
 
