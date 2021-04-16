@@ -774,7 +774,7 @@ config_read(const char *filename)
                     break;
                 case oSSLCertPath:
                     config.ssl_certs = safe_strdup(p1);
-#ifndef USE_CYASSL
+#ifndef USE_WOLFSSL
                     debug(LOG_WARNING, "SSLCertPath is set but not SSL compiled in. Ignoring!");
 #endif
                     break;
@@ -785,13 +785,13 @@ config_read(const char *filename)
                             "The syntax is yes or no." , linenum, filename);
                         exit(-1);
                     }
-#ifndef USE_CYASSL
+#ifndef USE_WOLFSSL
                     debug(LOG_WARNING, "SSLPeerVerification is set but no SSL compiled in. Ignoring!");
 #endif
                     break;
                 case oSSLAllowedCipherList:
                     config.ssl_cipher_list = safe_strdup(p1);
-#ifndef USE_CYASSL
+#ifndef USE_WOLFSSL
                     debug(LOG_WARNING, "SSLAllowedCipherList is set but no SSL compiled in. Ignoring!");
 #endif
                     break;
@@ -802,11 +802,11 @@ config_read(const char *filename)
                             "The syntax is yes or no." , linenum, filename);
                         exit(-1);
                     }
-#ifndef USE_CYASSL
+#ifndef USE_WOLFSSL
                     debug(LOG_WARNING, "SSLUseSNI is set but no SSL compiled in. Ignoring!");
 #else
 #ifndef HAVE_SNI
-                    debug(LOG_WARNING, "SSLUseSNI is set but no CyaSSL SNI enabled. Ignoring!");
+                    debug(LOG_WARNING, "SSLUseSNI is set but no wolfSSL SNI enabled. Ignoring!");
 #endif
 #endif
                     break;
