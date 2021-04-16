@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <net/ethernet.h>
+#include <net/if.h>
 #include <dirent.h>
 #include <sys/mman.h>
 #include <bcmnvram.h>
@@ -1303,6 +1304,67 @@ char *get_ipfromsock(int socket, char *ip)
 		inet_ntop(AF_INET6, &sa->sin6_addr, ip, INET6_ADDRSTRLEN);
 	}
 	return ip;
+}
+
+unsigned char *get_ether_hwaddr(const char *name, unsigned char *hwaddr)
+{
+	struct ifreq ifr;
+	unsigned char *ret = NULL;
+	int s;
+
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("socket");
+		return NULL;
+	}
+
+	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
+		memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+		ret = hwaddr;
+	}
+
+	close(s);
+	return ret;
+}
+
+int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
+{
+	struct ifreq ifr;
+	int ret = 0;
+	int s;
+
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("socket");
+		return errno;
+	}
+
+	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);	// must read to update struct
+	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, ETHER_ADDR_LEN);
+	ioctl(s, SIOCSIFHWADDR, &ifr);	// rewrite with updated mac
+	close(s);
+	return ret;
+}
+
+int set_hwaddr(const char *name, char *hwaddr)
+{
+	unsigned char mac[6];
+	if (ether_atoe(hwaddr, mac)) {
+		return set_ether_hwaddr(name, mac);
+	}
+	return -1;
+}
+
+char *get_hwaddr(const char *name, char *eabuf)
+{
+	unsigned char buf[6];
+	unsigned char *mac = get_ether_hwaddr(name, buf);
+	if (mac) {
+		if (ether_etoa(mac, eabuf)) {
+			return eabuf;
+		}
+	}
+	return NULL;
 }
 
 #ifdef HAVE_MICRO
