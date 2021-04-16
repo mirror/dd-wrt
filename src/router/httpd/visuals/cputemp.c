@@ -88,15 +88,19 @@ int getCoreTemp(char *p, int *ridx)
 			return 0;
 		}
 		fclose(fp);
-
+		char name[64];
+		fscanf(fp, "%s", name);
+		if (!strncmp(name, "acpitz", 6)) {
+			sprintf(p, "/sys/class/hwmon/hwmon%d", idx);
+			*ridx = 0;
+			return 1;
+		}
 		for (tidx = 0; tidx < 32; tidx++) {
 			sprintf(path, "/sys/class/hwmon/hwmon%d/temp%d_label", idx, tidx);
 			FILE *fp = fopen(path, "rb");
 			if (!fp)
 				continue;
-			char name[64];
-			fscanf(fp, "%s", name);
-			if (!strncmp(name, "Core", 4) || !strncmp(name, "acpitz", 6)) {
+			if (!strncmp(name, "Core", 4)) {
 				fclose(fp);
 				sprintf(p, "/sys/class/hwmon/hwmon%d", idx);
 				*ridx = tidx;
