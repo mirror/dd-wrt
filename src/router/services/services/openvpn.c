@@ -543,6 +543,8 @@ void start_openvpn(void)
 			stop_sfe();
 			start_sfe();
 		}
+		system("cat /proc/net/ip_conntrack_flush 2>&1");
+		system("cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1");
 #endif
 	}
 
