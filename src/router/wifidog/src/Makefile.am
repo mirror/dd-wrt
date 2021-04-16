@@ -13,7 +13,7 @@ AM_CPPFLAGS = \
 	-Wall \
 	-Wextra \
 	-Wno-unused-parameter
-wifidog_LDADD = libgateway.a $(top_builddir)/libhttpd/libhttpd.la
+wifidog_LDADD = libgateway.a $(top_builddir)/libhttpd/libhttpd.a
 
 wifidog_SOURCES = main.c
 
