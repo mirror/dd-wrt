@@ -88,7 +88,7 @@ void start_wifidog(void)
 			fprintf(fp, "}\n");
 		}
 		fclose(fp);
-		eval("wifidog");
+		eval("wifidog", "-c", "/tmp/wifidog/wifidog.conf");
 		dd_loginfo("wifidog", "successfully started\n");
 		eval("iptables", "-D", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j", "ACCEPT");
 		eval("iptables", "-I", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j", "ACCEPT");
