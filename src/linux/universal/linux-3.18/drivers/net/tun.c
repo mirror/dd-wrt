@@ -71,7 +71,6 @@
 #include <net/rtnetlink.h>
 #include <net/sock.h>
 #include <linux/seq_file.h>
-#include <linux/ieee802154.h>
 #include <linux/if_ltalk.h>
 #include <uapi/linux/if_fddi.h>
 #include <uapi/linux/if_hippi.h>
@@ -1879,6 +1878,8 @@ unlock:
 	rtnl_unlock();
 	return ret;
 }
+#define EUI64_ADDR_LEN 8
+#define IEEE802154_EXTENDED_ADDR_LEN	8
 
 /* Return correct value for tun->dev->addr_len based on tun->dev->type. */
 static unsigned char tun_get_addr_len(unsigned short type)
