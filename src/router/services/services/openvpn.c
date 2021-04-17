@@ -49,7 +49,7 @@ static void run_openvpn(char *prg, char *path)
 int cleanup_pbr(char *tablenr)
 {
 	//clean up
-	int limit = 20;
+	int limit = 1000;
 	char cmd[256] = { 0 };
 	eval("ip", "route", "flush", "table", tablenr);
 	eval("ip", "route", "flush", "table", "9");
@@ -579,11 +579,11 @@ void start_openvpn(void)
 #ifdef HAVE_ERC
 	fprintf(fp,
 		"management 127.0.0.1 5001\n"
-		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
+		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
 #else
 	fprintf(fp,
 		"management 127.0.0.1 16\n"
-		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
+		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
 #endif
 	fprintf(fp, "dev %s\n", ovpniface);
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
