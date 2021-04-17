@@ -16,6 +16,7 @@
 
 /* wolfSSL includes */
 #include <wolfssl/options.h>
+#include <wolfssl/openssl/x509v3.h>
 #include <wolfssl/ssl.h>
 #include <wolfssl/error-ssl.h>
 #include <wolfssl/wolfcrypt/asn.h>
