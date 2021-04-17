@@ -35,7 +35,7 @@
 #include <wolfssl/wolfcrypt/ecc.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/pkcs12.h>
-#include <wolfssl/openssl/ec.h>
+//#include <wolfssl/openssl/ec.h>
 #include <wolfssl/ssl.h>
 
 #define TLS1_1_VERSION                  0x0302
