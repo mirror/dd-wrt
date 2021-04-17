@@ -190,7 +190,7 @@ const size_t cipher_name_translation_table_count =
 /*
  * This function calculates the length of the resulting base64 encoded string
  */
-static const int PEM_LINE_SZ = 64;
+//static const int PEM_LINE_SZ = 64;
 static uint32_t der_to_pem_len(uint32_t der_len)
 {
     uint32_t pem_len;
