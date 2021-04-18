@@ -28,10 +28,10 @@ ${CROSS_COMPILE}objcopy \
 	$ARGS \
 	"$MODULE" "$MODULE.tmp"
 
-#[ -n "$NO_RENAME" ] && {
+[ -n "$NO_RENAME" ] && {
 	mv "${MODULE}.tmp" "$MODULE"
 	exit 0
-#}
+}
 
 ${CROSS_COMPILE}nm "$MODULE.tmp" | awk '
 BEGIN {
