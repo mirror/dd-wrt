@@ -27,12 +27,12 @@ find $TARGETS -type f -a -exec file {} \; | \
   while read F S; do
     echo "$SELF: $F:$S"
 	[ "${S}" = "relocatable" ] && {
-		eval '$STRIP_KMOD "$F"'
+		eval "$STRIP_KMOD $F"
 	} || {
-		b=$(stat -c '%a' "$F")
-		eval '$STRIP "$F"'
+		b=$(stat -c '%a' $F)
+		eval "$STRIP $F"
 		a=$(stat -c '%a' $F)
-		[ "$a" = "$b" ] || chmod $b "$F"
+		[ "$a" = "$b" ] || chmod $b $F
 	}
   done
   true
