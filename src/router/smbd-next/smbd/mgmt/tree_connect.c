@@ -82,7 +82,7 @@ int ksmbd_tree_conn_disconnect(struct ksmbd_session *sess,
 	ksmbd_release_tree_conn_id(sess, tree_conn->id);
 	list_del(&tree_conn->list);
 	ksmbd_share_config_put(tree_conn->share_conf);
-	kfree(tree_conn);
+	ksmbd_free(tree_conn);
 	return ret;
 }
 
