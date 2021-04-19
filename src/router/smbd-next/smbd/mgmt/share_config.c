@@ -49,7 +49,7 @@ static void kill_share(struct ksmbd_share_config *share)
 		path_put(&share->vfs_path);
 	kfree(share->name);
 	kfree(share->path);
-	kfree(share);
+	ksmbd_free(share);
 }
 
 void __ksmbd_share_config_put(struct ksmbd_share_config *share)
