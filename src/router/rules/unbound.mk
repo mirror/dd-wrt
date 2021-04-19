@@ -20,6 +20,7 @@ unbound-configure:
 		--enable-allsymbols \
 		--enable-tfo-client \
 		--enable-tfo-server \
+		--enable-subnet \
 		--with-chroot-dir=/tmp \
 		--with-ssl="$(TOP)/openssl" \
 		--with-pthreads \
