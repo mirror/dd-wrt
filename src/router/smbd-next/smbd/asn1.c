@@ -266,6 +266,53 @@ int build_spnego_ntlmssp_auth_blob(unsigned char **pbuffer, u16 *buflen,
 	return 0;
 }
 
+static int my_sprint_oid(const void *data, size_t datasize, char *buffer, size_t bufsize)
+{
+	const unsigned char *v = data, *end = v + datasize;
+	unsigned long num;
+	unsigned char n;
+	size_t ret;
+	int count;
+
+	if (v >= end)
+		goto bad;
+
+	n = *v++;
+	ret = count = snprintf(buffer, bufsize, "%u.%u", n / 40, n % 40);
+	buffer += count;
+	bufsize -= count;
+	if (bufsize == 0)
+		return -ENOBUFS;
+
+	while (v < end) {
+		num = 0;
+		n = *v++;
+		if (!(n & 0x80)) {
+			num = n;
+		} else {
+			num = n & 0x7f;
+			do {
+				if (v >= end)
+					goto bad;
+				n = *v++;
+				num <<= 7;
+				num |= n & 0x7f;
+			} while (n & 0x80);
+		}
+		ret += count = snprintf(buffer, bufsize, ".%lu", num);
+		buffer += count;
+		bufsize -= count;
+		if (bufsize == 0)
+			return -ENOBUFS;
+	}
+
+	return ret;
+
+bad:
+	snprintf(buffer, bufsize, "(bad)");
+	return -EBADMSG;
+}
+
 int gssapi_this_mech(void *context, size_t hdrlen,
 		unsigned char tag, const void *value, size_t vlen)
 {
@@ -285,7 +332,7 @@ out:
 	if (err) {
 		char buf[50];
 
-		sprint_oid(value, vlen, buf, sizeof(buf));
+		my_sprint_oid(value, vlen, buf, sizeof(buf));
 		ksmbd_debug(AUTH, "Unexpected OID: %s\n", buf);
 	}
 	return err;
@@ -302,7 +349,7 @@ int neg_token_init_mech_type(void *context, size_t hdrlen,
 	if (!asn1_oid_decode(value, vlen, &oid, &oidlen)) {
 		char buf[50];
 
-		sprint_oid(value, vlen, buf, sizeof(buf));
+		my_sprint_oid(value, vlen, buf, sizeof(buf));
 		ksmbd_debug(AUTH, "Unexpected OID: %s\n", buf);
 		return -EBADMSG;
 	}
