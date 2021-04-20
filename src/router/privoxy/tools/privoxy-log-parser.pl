@@ -43,7 +43,7 @@ use warnings;
 use Getopt::Long;
 
 use constant {
-    PRIVOXY_LOG_PARSER_VERSION => '0.9.2',
+    PRIVOXY_LOG_PARSER_VERSION => '0.9.3',
     # Feel free to mess with these ...
     DEFAULT_BACKGROUND => 'black',  # Choose registered colour (like 'black')
     DEFAULT_TEXT_COLOUR => 'white', # Choose registered colour (like 'black')
@@ -644,7 +644,7 @@ sub highlight_request_line($) {
     my ($method, $url, $http_version);
 
     #GET http://images.sourceforge.net/sfx/icon_warning.gif HTTP/1.1
-    if ($rl =~ m/Invalid request/) {
+    if ($rl =~ m/Invalid request/ or $rl =~ m/Failed reading chunked client body/) {
 
         $rl = h('invalid-request') . $rl . h('Standard');
 
@@ -1264,6 +1264,22 @@ sub handle_loglevel_tagging($) {
         $c =~ s@(?<=tag \')([^\']*)@$h{'tag'}$1$h{'Standard'}@;
         $c = highlight_matched_host($c, '[^\s]+(?=\.$)');
 
+    } elsif ($c =~ /^Tag/) {
+
+        # Tag 'change-tor-socks-port' for client 127.0.0.1 expired 1 seconds ago. Deleting it.
+
+        $c =~ s@(?<=Tag \')([^\']*)@$h{'tag'}$1$h{'Standard'}@;
+        $c =~ s@(?<=expired )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+        $c = highlight_matched_host($c, '(?<=client )[^\s]+');
+
+    } elsif ($c =~ /^Evaluating/) {
+
+        # Evaluating tag 'change-tor-socks-port' for client 127.0.0.1. End of life 1613162302.
+
+        $c =~ s@(?<=tag \')([^\']*)@$h{'tag'}$1$h{'Standard'}@;
+        $c = highlight_matched_host($c, '(?<=client )[^\s]+(?=\.)');
+        $c =~ s@(?<=life )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
     } elsif ($c =~ /^Client tag/) {
 
         # Client tag 'forward-directly' matches
@@ -1847,7 +1863,11 @@ sub handle_loglevel_connect($) {
     } elsif ($c =~ m/^Dropping the client connection on socket/) {
 
         # Dropping the client connection on socket 71. The server connection has not been established yet.
+        # Dropping the client connection on socket 23 with server socket 24 connected to \
+        #  www.reddit.com. The forwarder has changed.
         $c =~ s@(?<=on socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+        $c =~ s@(?<=server socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+        $c = highlight_matched_host($c, '(?<=connected to )[^ ]+(?=\.)');
 
     } elsif ($c =~ m/^The client socket \d+ has become unusable while the server/) {
 
@@ -1864,6 +1884,11 @@ sub handle_loglevel_connect($) {
 
         # Flushed 3153 bytes of request body
         $c =~ s@(?<=Flushed )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Complete client request followed by/) {
+
+        # Complete client request followed by 59 bytes of pipelined data received.
+        $c =~ s@(?<=followed by )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
     } elsif ($c =~ m/^Looks like we / or
              $c =~ m/^Unsetting keep-alive flag/ or
@@ -2144,6 +2169,8 @@ sub gather_loglevel_clf_stats($) {
     unless (defined $method) {
         # +0200] "Invalid request" 400 0
         return if ($content =~ m/^[+-]\d{4}\] "Invalid request"/);
+        # +0100] "Failed reading chunked client body" 400 0
+        return if ($content =~ m/^[+-]\d{4}\] "Failed reading chunked client body"/);
         # +0100] "GET https://securepubads.g.doubleclick.net/gampad/ads?gd[...]... [too long, truncated]
         if ($content =~ m/\[too long, truncated\]$/) {
             print("Skipped LOG_LEVEL_CLF message that got truncated by Privoxy. Statistics will be inprecise.\n");
@@ -2362,7 +2389,7 @@ sub print_stats() {
         get_percentage($requests_total, $stats{'server-keep-alive'}) . ")\n";
     print "New outgoing connections: " . $new_connections . " (" .
         get_percentage($requests_total, $new_connections) . ")\n";
-    print "Reused connections: " . $stats{'reused-connections'} . " (" .
+    print "Reused server connections: " . $stats{'reused-connections'} . " (" .
         get_percentage($requests_total, $stats{'reused-connections'}) .
         "; server offers accepted: " .
         get_percentage($stats{'server-keep-alive'}, $stats{'reused-connections'}) . ")\n";

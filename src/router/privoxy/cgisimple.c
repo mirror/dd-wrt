@@ -526,8 +526,8 @@ jb_err cgi_toggle_client_tag(struct client_state *csp,
  *          3  :  parameters = map of cgi parameters
  *
  * CGI Parameters :
- *           type : Selects the type of banner between "trans", "logo",
- *                  and "auto". Defaults to "logo" if absent or invalid.
+ *           type : Selects the type of banner between "trans", "pattern",
+ *                  and "auto". Defaults to "pattern" if absent or invalid.
  *                  "auto" means to select as if we were image-blocking.
  *                  (Only the first character really counts; b and t are
  *                  equivalent).
@@ -541,6 +541,14 @@ jb_err cgi_send_banner(struct client_state *csp,
                        const struct map *parameters)
 {
    char imagetype = lookup(parameters, "type")[0];
+
+   if (imagetype != 'a' && imagetype != 'b' &&
+       imagetype != 'p' && imagetype != 't')
+   {
+      log_error(LOG_LEVEL_ERROR, "Overruling invalid image type '%c'.",
+         imagetype);
+      imagetype = 'p';
+   }
 
    /*
     * If type is auto, then determine the right thing
@@ -980,7 +988,8 @@ jb_err cgi_send_user_manual(struct client_state *csp,
    assert(rsp);
    assert(parameters);
 
-   if (0 == strncmpic(csp->config->usermanual, "http://", 7))
+   if (0 == strncmpic(csp->config->usermanual, "http://", 7) ||
+       0 == strncmpic(csp->config->usermanual, "https://", 8))
    {
       log_error(LOG_LEVEL_CGI, "Request for local user-manual "
          "received while user-manual delivery is disabled.");

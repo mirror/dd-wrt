@@ -479,7 +479,10 @@ extern int create_client_ssl_connection(struct client_state *csp)
       }
    }
 
-   log_error(LOG_LEVEL_CONNECT, "Client successfully connected over TLS/SSL");
+   log_error(LOG_LEVEL_CONNECT, "Client successfully connected over %s (%s).",
+      mbedtls_ssl_get_version(&(ssl_attr->mbedtls_attr.ssl)),
+      mbedtls_ssl_get_ciphersuite(&(ssl_attr->mbedtls_attr.ssl)));
+
    csp->ssl_with_client_is_opened = 1;
 
 exit:
@@ -754,7 +757,9 @@ extern int create_server_ssl_connection(struct client_state *csp)
       }
    }
 
-   log_error(LOG_LEVEL_CONNECT, "Server successfully connected over TLS/SSL");
+   log_error(LOG_LEVEL_CONNECT, "Server successfully connected over %s (%s).",
+      mbedtls_ssl_get_version(&(ssl_attr->mbedtls_attr.ssl)),
+      mbedtls_ssl_get_ciphersuite(&(ssl_attr->mbedtls_attr.ssl)));
 
    /*
     * Server certificate chain is valid, so we can clean

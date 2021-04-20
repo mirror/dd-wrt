@@ -1,14 +1,122 @@
 --------------------------------------------------------------------
 ChangeLog for Privoxy
 --------------------------------------------------------------------
+*** Version 3.0.32 stable ***
+
+- Security/Reliability:
+  - ssplit(): Remove an assertion that could be triggered with a
+    crafted CGI request.
+    Commit 2256d7b4d67. OVE-20210203-0001.
+    Reported by: Joshua Rogers (Opera)
+  - cgi_send_banner(): Overrule invalid image types. Prevents a
+    crash with a crafted CGI request if Privoxy is toggled off.
+    Commit e711c505c48. OVE-20210206-0001.
+    Reported by: Joshua Rogers (Opera)
+  - socks5_connect(): Don't try to send credentials when none are
+    configured. Fixes a crash due to a NULL-pointer dereference
+    when the socks server misbehaves.
+    Commit 85817cc55b9. OVE-20210207-0001.
+    Reported by: Joshua Rogers (Opera)
+  - chunked_body_is_complete(): Prevent an invalid read of size two.
+    Commit a912ba7bc9c. OVE-20210205-0001.
+    Reported by: Joshua Rogers (Opera)
+  - Obsolete pcre: Prevent invalid memory accesses with an invalid
+    pattern passed to pcre_compile(). Note that the obsolete pcre code
+    is scheduled to be removed before the 3.0.33 release. There has been
+    a warning since since 2008 already.
+    Commit 28512e5b624. OVE-20210222-0001.
+    Reported by: Joshua Rogers (Opera)
+
+- Bug fixes:
+  - Properly parse the client-tag-lifetime directive. Previously it was
+    not accepted as an obsolete hash value was being used.
+    Reported by: Joshua Rogers (Opera)
+  - decompress_iob(): Prevent reading of uninitialized data.
+    Reported by: Joshua Rogers (Opera).
+  - decompress_iob(): Don't advance cur past eod when looking
+    for the end of the file name and comment.
+  - decompress_iob(): Cast value to unsigned char before shifting.
+    Prevents a left-shift of a negative value which is undefined behaviour.
+    Reported by: Joshua Rogers (Opera)
+  - gif_deanimate(): Confirm that that we have enough data before doing
+    any work. Fixes a crash when fuzzing with an empty document.
+    Reported by: Joshua Rogers (Opera).
+  - buf_copy(): Fail if there's no data to write or nothing to do.
+    Prevents undefined behaviour "applying zero offset to null pointer".
+    Reported by: Joshua Rogers (Opera)
+  - log_error(): Treat LOG_LEVEL_FATAL as fatal even when --stfu is
+    being used while fuzzing.
+    Reported by: Joshua Rogers (Opera).
+  - Respect DESTDIR when considering whether or not to install
+    config files with ".new" extension.
+  - OpenSSL ssl_store_cert(): Fix two error messages.
+  - Fix a couple of format specifiers.
+  - Silence compiler warnings when compiling with NDEBUG.
+  - fuzz_server_header(): Fix compiler warning.
+  - fuzz_client_header(): Fix compiler warning.
+  - cgi_send_user_manual(): Also reject requests if the user-manual
+    directive specifies a https:// URL. Previously Privoxy would try and
+    fail to open a local file.
+
+- General improvements:
+  - Log the TLS version and the the cipher when debug 2 is enabled..
+  - ssl_send_certificate_error(): Respect HEAD requests by not sending a body.
+  - ssl_send_certificate_error(): End the body with a single new line.
+  - serve(): Increase the chances that the host is logged when closing
+    a server socket.
+  - handle_established_connection(): Add parentheses to clarify an expression
+    Suggested by: David Binderman
+  - continue_https_chat(): Explicitly unset CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE
+    if process_encrypted_request() fails. This makes it more obvious that the
+    connection will not be reused. Previously serve() relied on
+    CSP_FLAG_SERVER_CONTENT_LENGTH_SET and CSP_FLAG_CHUNKED being unset.
+    Inspired by a patch from Joshua Rogers (Opera).
+  - decompress_iob(): Add periods to a couple of log messages
+  - Terminate the body of the HTTP snipplets with a single new line
+    instead of "\r\n".
+  - configure: Add --with-assertions option and only enable assertions
+    when it is used
+  - windows build: Use --with-brotli and --with-mbedtls by default and
+    enable dynamic error checking.
+  - gif_deanimate(): Confirm we've got an image before trying to write it
+    Saves a pointless buf_copy() call.
+  - OpenSSL ssl_store_cert(): Remove a superfluous space before the serial number.
+
+- Action file improvements:
+  - Disable fast-redirects for .golem.de/
+  - Unblock requests to adri*.
+  - Block requests for trc*.taboola.com/
+  - Disable fast-redirects for .linkedin.com/
+
+- Filter file improvements:
+  - Make the second pcrs job of the img-reorder filter greedy again.
+    The ungreedy version broke the img tags on:
+    https://bulk.fefe.de/scalability/.
+
+- Privoxy-Log-Parser:
+  - Highlight a few more messages.
+  - Clarify the --statistics output. The shown "Reused connections"
+    are server connections so name them appropriately.
+  - Bump version to 0.9.3.
+
+- Privoxy-Regression-Test:
+  - Add the --check-bad-ssl option to the --help output.
+  - Bump version to 0.7.3.
+
+- Documentation:
+  - Add pushing the created tag to the release steps in the developer manual.
+  - Clarify that 'debug 32768' should be used in addition to the other debug
+    directives when reporting problems.
+  - Add a 'Third-party licenses and copyrights' section to the user manual.
+
 *** Version 3.0.31 stable ***
 
 - Security/Reliability:
   - Prevent an assertion from getting triggered by a crafted CGI request.
-    Commit 5bba5b89193fa. OVE-20210130-0001.
+    Commit 5bba5b89193fa. OVE-20210130-0001. CVE-2021-20217.
     Reported by: Joshua Rogers (Opera)
   - Fixed a memory leak when decompression fails "unexpectedly".
-    Commit f431d61740cc0. OVE-20210128-0001.
+    Commit f431d61740cc0. OVE-20210128-0001. CVE-2021-20216.
 
 - Bug fixes:
   - Fixed detection of insufficient data for decompression.
@@ -321,32 +429,33 @@ ChangeLog for Privoxy
   - Fixed memory leaks when a response is buffered and the buffer
     limit is reached or Privoxy is running out of memory.
     Commits bbd53f1010b and 4490d451f9b. OVE-20201118-0001.
+    CVE-2020-35502.
     Sponsored by: Robert Klemme
   - Fixed a memory leak in the show-status CGI handler when
     no action files are configured. Commit c62254a686.
-    OVE-20201118-0002.
+    OVE-20201118-0002. CVE-2021-20209.
     Sponsored by: Robert Klemme
   - Fixed a memory leak in the show-status CGI handler when
     no filter files are configured. Commit 1b1370f7a8a.
-    OVE-20201118-0003.
+    OVE-20201118-0003. CVE-2021-20210.
     Sponsored by: Robert Klemme
   - Fixes a memory leak when client tags are active.
-    Commit 245e1cf32. OVE-20201118-0004.
+    Commit 245e1cf32. OVE-20201118-0004. CVE-2021-20211.
     Sponsored by: Robert Klemme
   - Fixed a memory leak if multiple filters are executed
     and the last one is skipped due to a pcre error.
-    Commit 5cfb7bc8fe. OVE-20201118-0005.
+    Commit 5cfb7bc8fe. OVE-20201118-0005. CVE-2021-20212.
   - Prevent an unlikely dereference of a NULL-pointer that
     could result in a crash if accept-intercepted-requests
     was enabled, Privoxy failed to get the request destination
     from the Host header and a memory allocation failed.
-    Commit 7530132349. CID 267165. OVE-20201118-0006.
+    Commit 7530132349. CID 267165. OVE-20201118-0006. CVE-2021-20213.
   - Fixed memory leaks in the client-tags CGI handler when
     client tags are configured and memory allocations fail.
-    Commit cf5640eb2a. CID 267168. OVE-20201118-0007.
+    Commit cf5640eb2a. CID 267168. OVE-20201118-0007. CVE-2021-20214.
   - Fixed memory leaks in the show-status CGI handler when memory
     allocations fail. Commit 064eac5fd0 and commit fdee85c0bf3.
-    CID 305233. OVE-20201118-0008.
+    CID 305233. OVE-20201118-0008. CVE-2021-20215.
 
 - General improvements:
   - Added experimental https inspection support which allows to filter

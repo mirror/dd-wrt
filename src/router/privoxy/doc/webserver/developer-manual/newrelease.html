@@ -206,6 +206,10 @@ for-privoxy-version=3.0.11</pre>
           v_X_Y_Z</b>"</span>. Don't use vX_Y_Z, ver_X_Y_Z, v_X.Y.Z (won't work) etc.</p>
         </li>
         <li>
+          <p>Push the tag to the remote with <span class="QUOTE">"<b class="COMMAND">git push origin
+          v_X_Y_Z</b>"</span>.</p>
+        </li>
+        <li>
           <p>On the webserver, copy the user manual to a new top-level directory called <tt class=
           "FILENAME">X.Y.Z</tt>. This ensures that help links from the CGI pages, which have the version as a prefix,
           will go into the right version of the manual. If this is a development branch release, also symlink
@@ -474,7 +478,7 @@ for-privoxy-version=3.0.11</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  dch -v 3.0.31-1</pre>
+              <pre class="PROGRAMLISTING">  dch -v 3.0.32-1</pre>
             </td>
           </tr>
         </table>
@@ -491,7 +495,7 @@ for-privoxy-version=3.0.11</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  lintian -iI ../build-area/privoxy_3.0.31-1_amd64.changes</pre>
+              <pre class="PROGRAMLISTING">  lintian -iI ../build-area/privoxy_3.0.32-1_amd64.changes</pre>
             </td>
           </tr>
         </table>
@@ -500,7 +504,7 @@ for-privoxy-version=3.0.11</pre>
           <tr>
             <td>
               <pre class=
-              "PROGRAMLISTING">  sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_3.0.31-1.dsc</pre>
+              "PROGRAMLISTING">  sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_3.0.32-1.dsc</pre>
             </td>
           </tr>
         </table>
@@ -509,19 +513,19 @@ for-privoxy-version=3.0.11</pre>
           <tr>
             <td>
               <pre class=
-              "PROGRAMLISTING">  autopkgtest /var/cache/pbuilder/result/privoxy_3.0.31-1_amd64.changes -s -- schroot sid</pre>
+              "PROGRAMLISTING">  autopkgtest /var/cache/pbuilder/result/privoxy_3.0.32-1_amd64.changes -s -- schroot sid</pre>
             </td>
           </tr>
         </table>
         <p>Or just push the changes to salsa.debian.org, where a CI pipeline is defined for the package, that builds
         and tests it.</p>
         <p>If everything is okay, run cowbuilder with i386 and amd64 environments for current Debian stable release and
-        build privoxy_3.0.31-1_i386.deb and privoxy_3.0.31-1_amd64.deb. Then sign both files:</p>
+        build privoxy_3.0.32-1_i386.deb and privoxy_3.0.32-1_amd64.deb. Then sign both files:</p>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  gpg --detach-sign --armor privoxy_3.0.31-1_i386.deb
-  gpg --detach-sign --armor privoxy_3.0.31-1_amd64.deb</pre>
+              <pre class="PROGRAMLISTING">  gpg --detach-sign --armor privoxy_3.0.32-1_i386.deb
+  gpg --detach-sign --armor privoxy_3.0.32-1_amd64.deb</pre>
             </td>
           </tr>
         </table>

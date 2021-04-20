@@ -2050,7 +2050,7 @@ for (;; ptr++)
 
     /* This "while" is the end of the "do" above. */
 
-    while (length < MAXLIT && (cd->ctypes[c = *(++ptr)] & ctype_meta) == 0);
+    while (*ptr && length < MAXLIT && (cd->ctypes[c = *(++ptr)] & ctype_meta) == 0);
 
     /* Update the last character and the count of literals */
 

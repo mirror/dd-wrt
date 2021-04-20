@@ -1572,16 +1572,16 @@ struct configuration_spec
 
 #ifdef FEATURE_HTTPS_INSPECTION
    /** Password for proxy ca file **/
-   char * ca_password;
+   char *ca_password;
 
    /** Directory with files of ca **/
    char *ca_directory;
 
    /** Filename of ca certificate **/
-   char * ca_cert_file;
+   char *ca_cert_file;
 
    /** Filename of ca key **/
-   char * ca_key_file;
+   char *ca_key_file;
 
    /** Directory for saving certificates and keys for each webpage **/
    char *certificate_directory;
@@ -1590,7 +1590,7 @@ struct configuration_spec
    char *cipher_list;
 
    /** Filename of trusted CAs certificates **/
-   char * trusted_cas_file;
+   char *trusted_cas_file;
 #endif
 };
 
