@@ -21,7 +21,8 @@ ksmbd-y :=	unicode.o auth.o vfs.o vfs_cache.o connection.o crypto_ctx.o \
 		mgmt/tree_connect.o mgmt/user_session.o smb_common.o \
 		buffer_pool.o transport_tcp.o transport_ipc.o
 
-ksmbd-y +=	smb2pdu.o smb2ops.o smb2misc.o asn1.o
+ksmbd-y +=	smb2pdu.o smb2ops.o smb2misc.o spnego_negtokeninit.asn1.o \
+		spnego_negtokentarg.asn1.o asn1.o
 ksmbd-$(CONFIG_SMB_INSECURE_SERVER) += smb1pdu.o smb1ops.o smb1misc.o netmisc.o
 ksmbd-$(CONFIG_SMB_SERVER_SMBDIRECT) += transport_rdma.o
 #else

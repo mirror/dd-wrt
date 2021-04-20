@@ -1196,8 +1196,8 @@ static int decode_negotiation_token(struct ksmbd_work *work,
 	req = work->request_buf;
 	sz = le16_to_cpu(req->SecurityBufferLength);
 
-	if (!ksmbd_decode_negTokenInit((char *)negblob, sz, conn)) {
-		if (!ksmbd_decode_negTokenTarg((char *)negblob, sz, conn)) {
+	if (ksmbd_decode_negTokenInit((char *)negblob, sz, conn)) {
+		if (ksmbd_decode_negTokenTarg((char *)negblob, sz, conn)) {
 			conn->auth_mechs |= KSMBD_AUTH_NTLMSSP;
 			conn->preferred_auth_mech = KSMBD_AUTH_NTLMSSP;
 			conn->use_spnego = false;
@@ -2250,6 +2250,19 @@ static int smb2_create_sd_buffer(struct ksmbd_work *work,
 	return rc;
 }
 
+
+static void ksmbd_acls_fattr(struct smb_fattr *fattr, struct inode *inode)
+{
+	fattr->cf_uid = inode->i_uid;
+	fattr->cf_gid = inode->i_gid;
+	fattr->cf_mode = inode->i_mode;
+	fattr->cf_dacls = NULL;
+
+	fattr->cf_acls = ksmbd_vfs_get_acl(inode, ACL_TYPE_ACCESS);
+	if (S_ISDIR(inode->i_mode))
+		fattr->cf_dacls = ksmbd_vfs_get_acl(inode, ACL_TYPE_DEFAULT);
+}
+
 /**
  * smb2_open() - handler for smb file open request
  * @work:	smb work containing request buffer
@@ -2745,23 +2758,13 @@ int smb2_open(struct ksmbd_work *work)
 							   KSMBD_SHARE_FLAG_ACL_XATTR)) {
 					struct smb_fattr fattr;
 					struct smb_ntsd *pntsd;
-					int pntsd_size, ace_num;
+					int pntsd_size, ace_num = 0;
 
-					fattr.cf_uid = inode->i_uid;
-					fattr.cf_gid = inode->i_gid;
-					fattr.cf_mode = inode->i_mode;
-					fattr.cf_dacls = NULL;
-					ace_num = 0;
-
-					fattr.cf_acls = ksmbd_vfs_get_acl(inode, ACL_TYPE_ACCESS);
+					ksmbd_acls_fattr(&fattr, inode);
 					if (fattr.cf_acls)
 						ace_num = fattr.cf_acls->a_count;
-					if (S_ISDIR(inode->i_mode)) {
-						fattr.cf_dacls =
-							ksmbd_vfs_get_acl(inode, ACL_TYPE_DEFAULT);
-						if (fattr.cf_dacls)
-							ace_num += fattr.cf_dacls->a_count;
-					}
+					if (fattr.cf_dacls)
+						ace_num += fattr.cf_dacls->a_count;
 
 					pntsd = kmalloc(sizeof(struct smb_ntsd) +
 							sizeof(struct smb_sid) * 3 +
@@ -2779,6 +2782,7 @@ int smb2_open(struct ksmbd_work *work)
 
 					rc = ksmbd_vfs_set_sd_xattr(conn,
 						path.dentry, pntsd, pntsd_size);
+					kfree(pntsd);
 					if (rc)
 						ksmbd_err("failed to store ntacl in xattr : %d\n",
 								rc);
@@ -4941,14 +4945,7 @@ static int smb2_get_info_sec(struct ksmbd_work *work,
 		return -ENOENT;
 
 	inode = FP_INODE(fp);
-	fattr.cf_uid = inode->i_uid;
-	fattr.cf_gid = inode->i_gid;
-	fattr.cf_mode = inode->i_mode;
-	fattr.cf_dacls = NULL;
-
-	fattr.cf_acls = ksmbd_vfs_get_acl(inode, ACL_TYPE_ACCESS);
-	if (S_ISDIR(inode->i_mode))
-		fattr.cf_dacls = ksmbd_vfs_get_acl(inode, ACL_TYPE_DEFAULT);
+	ksmbd_acls_fattr(&fattr, inode);
 
 	if (test_share_config_flag(work->tcon->share_conf,
 				   KSMBD_SHARE_FLAG_ACL_XATTR))
