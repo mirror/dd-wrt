@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- Copyright (C) 2001-2020 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -145,7 +145,7 @@ debug 65536 # Log applying actions</literallayout>
     <literallayout>debug    64 # debug regular expression filters</literallayout>
    <para>
     If you suspect that Privoxy interprets the request or the response
-    incorrectly, please enable
+    incorrectly, please enable additionally
    </para>
     <literallayout>debug 32768 # log all data read from the network</literallayout>
    <para>

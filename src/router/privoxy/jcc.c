@@ -228,64 +228,64 @@ static const char CHEADER[] =
    "HTTP/1.1 400 Invalid header received from client\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "Invalid header received from client.\r\n";
+   "Invalid header received from client.\n";
 
 static const char FTP_RESPONSE[] =
    "HTTP/1.1 400 Invalid request received from client\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "Invalid request. Privoxy doesn't support FTP.\r\n";
+   "Invalid request. Privoxy doesn't support FTP.\n";
 
 static const char GOPHER_RESPONSE[] =
    "HTTP/1.1 400 Invalid request received from client\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "Invalid request. Privoxy doesn't support gopher.\r\n";
+   "Invalid request. Privoxy doesn't support gopher.\n";
 
 /* XXX: should be a template */
 static const char MISSING_DESTINATION_RESPONSE[] =
    "HTTP/1.1 400 Bad request received from client\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "Bad request. Privoxy was unable to extract the destination.\r\n";
+   "Bad request. Privoxy was unable to extract the destination.\n";
 
 /* XXX: should be a template */
 static const char INVALID_SERVER_HEADERS_RESPONSE[] =
    "HTTP/1.1 502 Server or forwarder response invalid\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "Bad response. The server or forwarder response doesn't look like HTTP.\r\n";
+   "Bad response. The server or forwarder response doesn't look like HTTP.\n";
 
 /* XXX: should be a template */
 static const char MESSED_UP_REQUEST_RESPONSE[] =
    "HTTP/1.1 400 Malformed request after rewriting\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "Bad request. Messed up with header filters.\r\n";
+   "Bad request. Messed up with header filters.\n";
 
 static const char TOO_MANY_CONNECTIONS_RESPONSE[] =
    "HTTP/1.1 503 Too many open connections\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "Maximum number of open connections reached.\r\n";
+   "Maximum number of open connections reached.\n";
 
 static const char CLIENT_CONNECTION_TIMEOUT_RESPONSE[] =
    "HTTP/1.1 504 Connection timeout\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "The connection timed out because the client request didn't arrive in time.\r\n";
+   "The connection timed out because the client request didn't arrive in time.\n";
 
 static const char CLIENT_BODY_PARSE_ERROR_RESPONSE[] =
    "HTTP/1.1 400 Failed reading client body\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "Failed parsing or buffering the chunk-encoded client body.\r\n";
+   "Failed parsing or buffering the chunk-encoded client body.\n";
 
 static const char UNSUPPORTED_CLIENT_EXPECTATION_ERROR_RESPONSE[] =
    "HTTP/1.1 417 Expecting too much\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
-   "Privoxy detected an unsupported Expect header value.\r\n";
+   "Privoxy detected an unsupported Expect header value.\n";
 
 /* A function to crunch a response */
 typedef struct http_response *(*crunch_func_ptr)(struct client_state *);
@@ -1153,10 +1153,10 @@ static void wait_for_alive_connections(void)
  * Returns     : void
  *
  *********************************************************************/
-void save_connection_destination(jb_socket sfd,
-                                 const struct http_request *http,
-                                 const struct forward_spec *fwd,
-                                 struct reusable_connection *server_connection)
+static void save_connection_destination(jb_socket sfd,
+                                        const struct http_request *http,
+                                        const struct forward_spec *fwd,
+                                        struct reusable_connection *server_connection)
 {
    assert(sfd != JB_INVALID_SOCKET);
    assert(NULL != http->host);
@@ -1502,6 +1502,12 @@ static enum chunk_status chunked_body_is_complete(struct iob *iob, size_t *lengt
       }
       /* Move beyond the chunkdata. */
       p += 2 + chunksize;
+
+      /* Make sure we're still within the buffer and have two bytes left */
+      if (p + 2 > iob->eod)
+      {
+         return CHUNK_STATUS_MISSING_DATA;
+      }
 
       /* There should be another "\r\n" to skip */
       if (memcmp(p, "\r\n", 2))
@@ -2034,7 +2040,7 @@ static int read_http_request_body(struct client_state *csp)
       size_t max_bytes_to_read = to_read < sizeof(buf) ? to_read : sizeof(buf);
 
       log_error(LOG_LEVEL_CONNECT,
-         "Waiting for up to %d bytes of request body from the client.",
+         "Waiting for up to %lu bytes of request body from the client.",
          max_bytes_to_read);
       len = read_socket(csp->cfd, buf, (int)max_bytes_to_read);
       if (len <= -1)
@@ -2051,11 +2057,11 @@ static int read_http_request_body(struct client_state *csp)
 
    if (to_read != 0)
    {
-      log_error(LOG_LEVEL_CONNECT, "Not enough request body has been read: expected %d more bytes",
+      log_error(LOG_LEVEL_CONNECT, "Not enough request body has been read: expected %llu more bytes",
          csp->expected_client_content_length);
       return 1;
    }
-   log_error(LOG_LEVEL_CONNECT, "The last %d bytes of the request body have been read",
+   log_error(LOG_LEVEL_CONNECT, "The last %llu bytes of the request body have been read",
       csp->expected_client_content_length);
    return 0;
 }
@@ -2128,8 +2134,8 @@ static int can_filter_request_body(const struct client_state *csp)
                        csp->expected_client_content_length))
    {
       log_error(LOG_LEVEL_INFO,
-         "Not filtering request body from %s: buffer limit %d will be exceeded "
-         "(content length %d)", csp->ip_addr_str, csp->config->buffer_limit,
+         "Not filtering request body from %s: buffer limit %lu will be exceeded "
+         "(content length %lluu)", csp->ip_addr_str, csp->config->buffer_limit,
          csp->expected_client_content_length);
       return FALSE;
    }
@@ -2261,7 +2267,7 @@ static int read_https_request_body(struct client_state *csp)
       size_t max_bytes_to_read = to_read < sizeof(buf) ? to_read : sizeof(buf);
 
       log_error(LOG_LEVEL_CONNECT,
-         "Waiting for up to %d bytes of request body from the client.",
+         "Waiting for up to %lu bytes of request body from the client.",
          max_bytes_to_read);
       len = ssl_recv_data(&(csp->ssl_client_attr), buf,
          (unsigned)max_bytes_to_read);
@@ -2279,11 +2285,14 @@ static int read_https_request_body(struct client_state *csp)
 
    if (to_read != 0)
    {
-      log_error(LOG_LEVEL_CONNECT, "Not enough request body has been read: expected %d more bytes", to_read);
+      log_error(LOG_LEVEL_CONNECT,
+         "Not enough request body has been read: expected %lu more bytes",
+         to_read);
       return 1;
    }
 
-   log_error(LOG_LEVEL_CONNECT, "The last %d bytes of the request body have been read",
+   log_error(LOG_LEVEL_CONNECT,
+      "The last %llu bytes of the request body have been read",
       csp->expected_client_content_length);
    return 0;
 }
@@ -2907,6 +2916,7 @@ static void continue_https_chat(struct client_state *csp)
 
    if (JB_ERR_OK != process_encrypted_request(csp))
    {
+      csp->flags &= ~CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE;
       return;
    }
 
@@ -3941,8 +3951,8 @@ static void handle_established_connection(struct client_state *csp)
                   if ((ssl_send_data_delayed(&(csp->ssl_client_attr),
                           (const unsigned char *)hdr, strlen(hdr),
                           get_write_delay(csp)) < 0)
-                     || (len = ssl_flush_socket(&(csp->ssl_client_attr),
-                            csp->iob) < 0))
+                     || ((len = ssl_flush_socket(&(csp->ssl_client_attr),
+                            csp->iob)) < 0))
                   {
                      log_error(LOG_LEVEL_CONNECT, "Write header to client failed");
 
@@ -4807,7 +4817,8 @@ static void serve(struct client_state *csp)
             log_error(LOG_LEVEL_CONNECT,
                "Closing server socket %d connected to %s. "
                "Keep-alive: %u. Tainted: %u. Socket alive: %u. Timeout: %u.",
-               csp->server_connection.sfd, csp->server_connection.host,
+               csp->server_connection.sfd, (csp->server_connection.host != NULL) ?
+               csp->server_connection.host : csp->http->host,
                0 != (csp->flags & CSP_FLAG_SERVER_CONNECTION_KEEP_ALIVE),
                0 != (csp->flags & CSP_FLAG_SERVER_SOCKET_TAINTED),
                socket_is_still_alive(csp->server_connection.sfd),

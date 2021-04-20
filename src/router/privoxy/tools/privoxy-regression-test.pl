@@ -38,7 +38,7 @@ use strict;
 use Getopt::Long;
 
 use constant {
-    PRT_VERSION => 'Privoxy-Regression-Test 0.7.2',
+    PRT_VERSION => 'Privoxy-Regression-Test 0.7.3',
  
     CURL => 'curl',
 
@@ -1693,6 +1693,7 @@ sub help() {
     print << "    EOF"
 
 Options and their default values if they have any:
+    [--check-bad-ssl]
     [--debug $cli_options{'debug'}]
     [--forks $cli_options{'forks'}]
     [--fuzzer-address]

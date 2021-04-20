@@ -55,8 +55,9 @@
 #include "list.h"
 #include "miscutil.h"
 
+#ifndef NDEBUG
 static int list_is_valid (const struct list *the_list);
-
+#endif
 
 /*********************************************************************
  *
@@ -123,6 +124,7 @@ void destroy_list (struct list *the_list)
 }
 
 
+#ifndef NDEBUG
 /*********************************************************************
  *
  * Function    :  list_is_valid
@@ -142,11 +144,6 @@ void destroy_list (struct list *the_list)
  *********************************************************************/
 static int list_is_valid (const struct list *the_list)
 {
-   /*
-    * If you don't want this check, just change the line below
-    * from "#if 1" to "#if 0".
-    */
-#if 1
    const struct list_entry *cur_entry;
    const struct list_entry *last_entry = NULL;
    int entry = 0;
@@ -199,10 +196,10 @@ static int list_is_valid (const struct list *the_list)
    }
 
    return (the_list->last == last_entry);
-#else
-   return 1;
-#endif
+
 }
+#endif /* ndef NDEBUG */
+
 
 /*********************************************************************
  *

@@ -14,7 +14,7 @@
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "3.0.31">
+<!entity p-version "3.0.32">
 <!entity p-status "stable">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
 <!entity % p-not-stable "IGNORE">
@@ -8041,6 +8041,32 @@ Requests</title>
 
 <sect3 id="gplv3"><title>GNU General Public License version 3</title>
  <screen><![ RCDATA [ &GPLv3; ]]></screen>
+</sect3>
+
+<sect3 id="third-party-licenses"><title>Third-party licenses and copyrights</title>
+<para>
+ Privoxy depends on a couple of third-party libraries which have seperate licenses.
+ Please refer to the third-party websites for up-to-date license and copyright
+ information.
+</para>
+<para>
+ Privoxy depends on <ulink url="https://pcre.org/">pcre</ulink>.
+</para>
+<para>
+ When compiled with FEATURE_BROTLI (optional), Privoxy depends on
+ <ulink url="https://www.brotli.org/">brotli</ulink>.
+</para>
+<para>
+ When compiled with FEATURE_HTTPS_INSPECTION (optional),
+ Privoxy depends on a TLS library. The supported libraries are
+ <ulink url="https://www.openssl.org/">LibreSSL</ulink>,
+ <ulink url="https://tls.mbed.org/">mbed TLS</ulink> and
+ <ulink url="https://www.openssl.org/">OpenSSL</ulink>.
+</para>
+<para>
+ When compiled with FEATURE_ZLIB (optional),
+ Privoxy depends on <ulink url="https://zlib.net/">zlib</ulink>.
+</para>
 </sect3>
 
 </sect2>

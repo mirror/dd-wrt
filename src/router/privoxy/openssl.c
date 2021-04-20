@@ -61,7 +61,7 @@
 static int generate_host_certificate(struct client_state *csp);
 static void free_client_ssl_structures(struct client_state *csp);
 static void free_server_ssl_structures(struct client_state *csp);
-static int ssl_store_cert(struct client_state *csp, X509* crt);
+static int ssl_store_cert(struct client_state *csp, X509 *crt);
 static void log_ssl_errors(int debuglevel, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
 
 static int ssl_inited = 0;
@@ -265,7 +265,7 @@ extern int ssl_recv_data(struct ssl_attr *ssl_attr, unsigned char *buf, size_t m
  * Returns     :  0 on success and negative value on error
  *
  *********************************************************************/
-static int ssl_store_cert(struct client_state *csp, X509* crt)
+static int ssl_store_cert(struct client_state *csp, X509 *crt)
 {
    long len = 0;
    struct certs_chain  *last = &(csp->server_certs_chain);
@@ -283,7 +283,7 @@ static int ssl_store_cert(struct client_state *csp, X509* crt)
 
    if (!bio)
    {
-      log_ssl_errors(LOG_LEVEL_ERROR, "BIO_new_mem_buf() failed");
+      log_ssl_errors(LOG_LEVEL_ERROR, "BIO_new() failed");
       return -1;
    }
 
@@ -328,7 +328,7 @@ static int ssl_store_cert(struct client_state *csp, X509* crt)
    bio = BIO_new(BIO_s_mem());
    if (!bio)
    {
-      log_ssl_errors(LOG_LEVEL_ERROR, "BIO_new_mem_buf() failed");
+      log_ssl_errors(LOG_LEVEL_ERROR, "BIO_new() failed");
       ret = -1;
       goto exit;
    }
@@ -387,7 +387,7 @@ static int ssl_store_cert(struct client_state *csp, X509* crt)
          ul = (unsigned long)l;
          neg = "";
       }
-      if (BIO_printf(bio, " %s%lu (%s0x%lx)\n", neg, ul, neg, ul) <= 0)
+      if (BIO_printf(bio, "%s%lu (%s0x%lx)\n", neg, ul, neg, ul) <= 0)
       {
          log_ssl_errors(LOG_LEVEL_ERROR, "BIO_printf() for serial failed");
          ret = -1;
@@ -656,7 +656,7 @@ static int ssl_store_cert(struct client_state *csp, X509* crt)
    len = BIO_get_mem_data(bio, &bio_mem_data);
    if (len <= 0)
    {
-      log_error(LOG_LEVEL_ERROR, "BIO_get_mem_data() returned %d "
+      log_error(LOG_LEVEL_ERROR, "BIO_get_mem_data() returned %ld "
          "while gathering certificate information", len);
       ret = -1;
       goto exit;
@@ -869,7 +869,9 @@ extern int create_client_ssl_connection(struct client_state *csp)
        goto exit;
    }
 
-   log_error(LOG_LEVEL_CONNECT, "Client successfully connected over TLS/SSL");
+   log_error(LOG_LEVEL_CONNECT, "Client successfully connected over %s (%s).",
+      SSL_get_version(ssl), SSL_get_cipher_name(ssl));
+
    csp->ssl_with_client_is_opened = 1;
    ret = 0;
 
@@ -1179,7 +1181,8 @@ extern int create_server_ssl_connection(struct client_state *csp)
       }
    }
 
-   log_error(LOG_LEVEL_CONNECT, "Server successfully connected over TLS/SSL");
+   log_error(LOG_LEVEL_CONNECT, "Server successfully connected over %s (%s).",
+     SSL_get_version(ssl), SSL_get_cipher_name(ssl));
 
    /*
     * Server certificate chain is valid, so we can clean
@@ -1286,7 +1289,7 @@ static void log_ssl_errors(int debuglevel, const char* fmt, ...)
 extern int ssl_base64_encode(unsigned char *dst, size_t dlen, size_t *olen,
                              const unsigned char *src, size_t slen)
 {
-   *olen = 4 * ((slen/3)  + ((slen%3) ? 1 : 0)) + 1;
+   *olen = 4 * ((slen/3) + ((slen%3) ? 1 : 0)) + 1;
    if (*olen > dlen)
    {
       return ENOBUFS;
@@ -1572,7 +1575,7 @@ exit:
  *                   pointer to certificate instance otherwise
  *
  *********************************************************************/
-static X509* ssl_certificate_load(const char *cert_path)
+static X509 *ssl_certificate_load(const char *cert_path)
 {
    X509 *cert = NULL;
    FILE *cert_f = NULL;

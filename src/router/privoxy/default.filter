@@ -218,7 +218,7 @@ FILTER: img-reorder Reorder attributes in <img> tags to make the banners-by-* fi
 # and banners-by-link to preserve the original image URL in the title attribute.
 
 s|<img\s+?([^>]*)\ssrc\s*=\s*(['"])([^>'" ]+)\2|<img src=$2$3$2 $1|siUg
-s|<img\s+?([^>]*)\ssrc\s*=\s*([^'">\\\s]+)|<img src=$2 $1|siUg
+s|<img\s+?([^>]*)\ssrc\s*=\s*([^'">\\\s]+)|<img src=$2 $1|sig
 s|(<img[^>]+height)\s*=\s*|$1=|siUg
 
 s|<img (src=(?:(['"])[^>'" ]*\2\|[^'">\\\s]+?))([^>]*)\s+width\s*=\s*((["']?)\d+?\5)(?=[\s>])|<img $1 width=$4$3|siUg

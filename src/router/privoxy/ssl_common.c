@@ -337,7 +337,7 @@ extern void ssl_send_certificate_error(struct client_state *csp)
       "<p><a href=\"https://" CGI_SITE_2_HOST "/\">Privoxy</a> was unable "
       "to securely connect to the destination server.</p>"
       "<p>Reason: ";
-   const char message_end[] = "</body></html>\r\n\r\n";
+   const char message_end[] = "</body></html>\n";
    char reason[INVALID_CERT_INFO_BUF_SIZE];
    memset(reason, 0, sizeof(reason));
 
@@ -404,6 +404,16 @@ extern void ssl_send_certificate_error(struct client_state *csp)
       cert = cert->next;
    }
    strlcat(message, message_end, message_len);
+
+   if (0 == strcmpic(csp->http->gpc, "HEAD"))
+   {
+      /* Cut off body */
+      char *header_end = strstr(message, "\r\n\r\n");
+      if (header_end != NULL)
+      {
+         header_end[3] = '\0';
+      }
+   }
 
    /*
     * Sending final message to client
