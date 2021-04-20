@@ -354,6 +354,7 @@ define kernelfeatures
 	echo "CONFIG_IP_VS_NFCT=y" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_PE_SIP=m" >> $(LINUXDIR)/.config; \
 	fi
+	echo "# CONFIG_ASN1 is not set" >> $(LINUXDIR)/.config; \
 	if [ "$(CONFIG_SMBD)" = "y" ]; then \
 		sed -i 's/\# CONFIG_CRYPTO_MD5 is not set/CONFIG_CRYPTO_MD5=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_DES is not set/CONFIG_CRYPTO_DES=m/g' $(LINUXDIR)/.config; \
@@ -371,6 +372,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CRYPTO_AEAD is not set/CONFIG_CRYPTO_AEAD=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_AEAD2 is not set/CONFIG_CRYPTO_AEAD2=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_LIBCRC32C is not set/CONFIG_LIBCRC32C=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_ASN1 is not set/CONFIG_ASN1=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_CRYPTO_DRBG_CTR=n" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NFS)" = "y" ]; then \
