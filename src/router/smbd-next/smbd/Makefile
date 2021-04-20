@@ -18,6 +18,9 @@ obj-$(CONFIG_SMB_SERVER) += ksmbd.o
 $(obj)/spnego_negtokeninit.asn1.o: $(obj)/spnego_negtokeninit-asn1.c $(obj)/spnego_negtokeninit-asn1.h
 $(obj)/spnego_negtokentarg.asn1.o: $(obj)/spnego_negtokentarg-asn1.c $(obj)/spnego_negtokentarg-asn1.h
 
+clean-files	+= spnego_negtokeninit-asn1.c spnego_negtokeninit-asn1.h
+clean-files	+= spnego_negtokentarg-asn1.c spnego_negtokentarg-asn1.h
+
 ksmbd-y :=	unicode.o auth.o vfs.o vfs_cache.o connection.o crypto_ctx.o \
 		server.o misc.o oplock.o ksmbd_work.o smbacl.o ndr.o\
 		mgmt/ksmbd_ida.o mgmt/user_config.o mgmt/share_config.o \
