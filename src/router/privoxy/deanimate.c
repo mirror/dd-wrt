@@ -10,7 +10,7 @@
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the GIF file format specification (see
- *                http://tronche.com/computer-graphics/gif/gif89a.html)
+ *                https://tronche.com/computer-graphics/gif/gif89a.html)
  *                and ideas from the Image::DeAnim Perl module by
  *                Ken MacFarlane, <ksm+cpan@universal.dca.net>
  *
@@ -131,6 +131,14 @@ static int buf_extend(struct binbuffer *buf, size_t length)
  *********************************************************************/
 static int buf_copy(struct binbuffer *src, struct binbuffer *dst, size_t length)
 {
+   /*
+    * Sanity check: Make sure the source buffer contains
+    * data and there's work to be done.
+    */
+   if (src->buffer == NULL || src->size == 0 || length == 0)
+   {
+      return 1;
+   }
 
    /*
     * Sanity check: Can't copy more data than we have
@@ -325,6 +333,10 @@ int gif_deanimate(struct binbuffer *src, struct binbuffer *dst, int get_first_im
    {
       return 1;
    }
+   if (src->size <= 10)
+   {
+      return 1;
+   }
 
    c = buf_getbyte(src, 10);
 
@@ -375,9 +387,11 @@ int gif_deanimate(struct binbuffer *src, struct binbuffer *dst, int get_first_im
       switch(buf_getbyte(src, 0))
       {
          /*
-          *  End-of-GIF Marker: Append current image and return
+          * End-of-GIF Marker: Append current image if we got
+          * one and return.
           */
       case 0x3b:
+         if (image->size == 0) goto failed;
          goto write;
 
          /*

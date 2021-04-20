@@ -53,7 +53,7 @@ DOSFILTER = $(SED) -e $$'s,$$,\r,'
 
 # Path to NSIS
 # MAKENSIS = ./nsis/nsis-2.30.exe
-MAKENSIS = ./nsis-3.03/makensis.exe
+MAKENSIS = /source/nsis-3.03/makensis.exe
 
 
 ##########################################################################

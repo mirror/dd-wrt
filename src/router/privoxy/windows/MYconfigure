@@ -31,19 +31,34 @@ export CFLAGS="-O2"
 #   In other words, if you set CFLAGS you need to include -O2 if you want optimization
 #   assume I'll set cflags below, so set O2 now
 
+export CPPFLAGS=""
+# start with initially empty flags
+
 export LDFLAGS=""
 # start with initially empty flags
 
 
-### CFLAGS="${CFLAGS} -fstack-protector-strong"
-### LDFLAGS="${LDFLAGS} -fstack-protector-strong"
-# enable stack checking.  NOTE: need to specify when compiling _and_ linking
+CFLAGS="${CFLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+LDFLAGS="${LDFLAGS} -fstack-protector-strong"
+# -fstack-protector-strong:  enable stack checking.
+# NOTE: need to specify when compiling _and_ linking
 # stack-protector-strong: better balance between security and performance.
 #   This flag protects more kinds of vulnerable functions than -fstack-protector does,
 #   but not every function, providing better performance than -fstack-protector-all.
 # see : https://en.wikipedia.org/wiki/Buffer_overflow_protection
 # NOTE: needs static linking or the following in the path:
 #         /usr/i686-w64-mingw32/sys-root/mingw/bin/libssp-0.dll
+#
+# -D_FORTIFY_SOURCE:  detect some buffer overflow errors
+#     ***>> requires compiler optimization level 1 or above <<***
+# see : https://gcc.gnu.org/legacy-ml/gcc-patches/2004-09/msg02055.html
+#   The diffence between -D_FORTIFY_SOURCE=1 and -D_FORTIFY_SOURCE=2 is e.g. for
+#     struct S { struct T { char buf[5]; int x; } t; char buf[20]; } var;
+#   With -D_FORTIFY_SOURCE=1,
+#     strcpy (&var.t.buf[1], "abcdefg");
+#   is not considered an overflow (object is whole VAR), while with -D_FORTIFY_SOURCE=2
+#     strcpy (&var.t.buf[1], "abcdefg");
+#   will be considered a buffer overflow.
 
 ### CFLAGS="${CFLAGS} -march=native"
 # -march=cpu-type
@@ -69,44 +84,72 @@ LDFLAGS="${LDFLAGS} -Wl,--dynamicbase,--export-all-symbols"
 #   As a workaround, you can pass -Wl,--dynamicbase,--export-all-symbols
 #   NOTE: you can't have both this and profiling (cflags='-pg') enabled!
 
-#CFLAGS="${CFLAGS} -pg"
-#LDFLAGS="${LDFLAGS} -pg"
-# Generate extra code to write profile information suitable for the analysis program gprof.
-# Use this option when compiling the source files you want data about, and you must also use it when linking.
-# -- creates a "gmon.out" profile file when the program exits
-# -- then do 'gprof -b privoxy.exe gmon.out'
-#  ??? WHY ???  profiling doesn't work if ASLR is enabled
-
-
-### CFLAGS="${CFLAGS} -Wall"
+CFLAGS="${CFLAGS} -Wall"
 # see: http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
 # -Wall   doesn't actually turn on all warnings, so add  -Wextra
 #    but then plenty too many complaints by
+#      -Wimplicit-fallthrough=3
+#         too many warnings in pcre/study.c & pcre.c
 #      -Wmissing-field-initializers
 #      -Wsign-compare
 #      -Wtype-limits
-### CFLAGS="${CFLAGS} -Wextra -Wno-missing-field-initializers -Wno-sign-compare -Wno-type-limits"
+#      -Wunused-but-set-parameter
+#      -Wunused-but-set-variable
+CFLAGS="${CFLAGS} -Wextra -Wno-missing-field-initializers -Wno-sign-compare -Wno-type-limits"
+CFLAGS="${CFLAGS} -Wno-unused-parameter -Wno-unused-but-set-variable"
 
-# CFLAGS="${CFLAGS} -Wconversion"
+#-no-# CFLAGS="${CFLAGS} -Wconversion"
 #   way too many warnings for things that don't look like a problem
 
-### CFLAGS="${CFLAGS} -Wformat-security"
-# If -Wformat is specified, also warn about uses of format functions that represent possible security problems.
+#-no-# CFLAGS="${CFLAGS} -Werror"
+# Turn all warnings into errors.
+#   Privoxy still has a few warnings that are not a problem
 
-### CFLAGS="${CFLAGS} -Wlogical-op"
+CFLAGS="${CFLAGS} -Wformat=2"
+# -Wformat is enabled by -Wall.
+# -Wformat=2 is equivalent to -Wformat -Wformat-nonliteral -Wformat-security -Wformat-y2k
+#   -Wformat-security : also warn about uses of format functions that represent possible security problems.
+
+CFLAGS="${CFLAGS} -Wlogical-op"
 # Warn about suspicious uses of logical operators in expressions.
 
 CFLAGS="${CFLAGS} -Wshadow"
 # Warn whenever a local variable or type declaration shadows
 # another variable or whenever a built-in function is shadowed.
 
-# CFLAGS="${CFLAGS} -Wwrite-strings"
+#-no-# CFLAGS="${CFLAGS} -Wwrite-strings"
 # These warnings help you find at compile time code that can try to write
 # into a string constant, but only if you have been very careful about
 # using const in declarations and prototypes.
 # >>> Otherwise, it is just a nuisance. <<<  -- this, very much this
 
+# why does the mingw library _not_ include .a files for libpcre?
+# *sigh* build my own pcre so I can do static linking
+# Get the 8.x PCRE library from  https://ftp.pcre.org/pub/pcre/
+inc="/source/pcre-8.44/"
+lib="/source/pcre-8.44/.libs"
+CPPFLAGS="${CPPFLAGS} -I${inc}"
+LDFLAGS="${LDFLAGS} -L${lib}"
+
+# mbedtls
+# Get the 2.16.x mbedtls library from  https://github.com/ARMmbed/mbedtls/tags
+inc="/source/mbedtls-2.16.9/include"
+lib="/source/mbedtls-2.16.9/library"
+MITMOPT="--with-mbedtls"
+CPPFLAGS="${CPPFLAGS} -I${inc}"
+LDFLAGS="${LDFLAGS} -L${lib}"
+
+# brotli
+# Get the brotli library from  https://github.com/google/brotli/releases
+inc="/source/brotli-1.0.9/c/include"
+lib="/source/brotli-1.0.9/.libs"
+BROTLIOPT="--with-brotli"
+CPPFLAGS="${CPPFLAGS} -I${inc}"
+LDFLAGS="${LDFLAGS} -L${lib}"
+
+###
 echo "CFLAGS=${CFLAGS}"
+echo "CPPFLAGS=${CPPFLAGS}"
 echo "LDFLAGS=${LDFLAGS}"
 
 # ./configure cross-compilation options:
@@ -117,9 +160,11 @@ echo "LDFLAGS=${LDFLAGS}"
 ./configure  --host=i686-w64-mingw32  --enable-mingw32  --enable-zlib \
              --enable-static-linking \
              --enable-strptime-sanity-checks \
-             --disable-pthread  --disable-dynamic-pcre \
+             --disable-pthread  \
              --enable-extended-statistics \
              --enable-pcre-host-patterns \
+             --with-brotli  \
+             --with-mbedtls \
              --with-docbook=yes
 
 #  -- done --

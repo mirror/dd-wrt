@@ -5,7 +5,7 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "3.0.31">
+<!entity p-version "3.0.32">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -2376,6 +2376,12 @@ for-privoxy-version=3.0.11
         Tag all files in Git with the version number with
         <quote><command>git tag -s v_X_Y_Z</command></quote>.
         Don't use vX_Y_Z, ver_X_Y_Z, v_X.Y.Z (won't work) etc.
+       </para>
+      </listitem>
+      <listitem>
+       <para>
+        Push the tag to the remote with
+        <quote><command>git push origin v_X_Y_Z</command></quote>.
        </para>
       </listitem>
      <listitem>

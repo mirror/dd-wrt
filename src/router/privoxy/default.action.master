@@ -21,7 +21,7 @@
 #                 and enhancements are better placed in user.action,
 #                 the match-all section has been moved to match-all.action.
 #
-#  Copyright   :  Written by and Copyright (C) 2001-2020 the
+#  Copyright   :  Written by and Copyright (C) 2001-2021 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 # Feedback welcome, for details please have a look at:
@@ -708,6 +708,8 @@ adlibris.
 .adbinstaller.com/
 # URL = https://adainitiativedotorg.files.wordpress.com/2012/07/founders_laughing.png
 ada*.
+# URL = https://www.adrianschmutzler.net/
+adri*.
 
 #############################################################################
 # Generic block patterns by path:
@@ -1227,7 +1229,8 @@ static.*.criteo.net/
 cas.*.criteo.com/
 cas.criteo.com/
 # Blocked URL = https://trc-events.taboola.com/1301520/log/3/unip?en=pre_d_eng_tb&tos=382558&scd=49&ssd=1&est=1611317562537&ver=27&isls=true&src=i&invt=192000&tim=1611317945096&mrir=tto&vi=1611317562534&ref=https%3A%2F%2Fhtml.duckduckgo.com%2F&cv=20201217-8-RELEASE&item-url=https%3A%2F%2Fgenius.com%2FLords-of-acid-pussy-lyrics
-trc-events.taboola.com/
+# Blocked URL = https://trc.taboola.com/slashdot/trc/3/json?tim=18%3A22%3A49.655&lti=deflated&data=%7B%22id%22%3A608%2C%22ii%22%3A%22_homepage_%22%2C%22it%22%3A%22home%22%2C%22sd%22%3Anull%2C%22ui%22%3Anull%2C%22uifp%22%3Anull%2C%22lbt%22%3A1612905877491%2C%22vi%22%3A1613064169633%2C%22cv%22%3A%2220210209-24-RELEASE%22%2C%22uiv%22%3A%22default%22%2C%22u%22%3A%22https%3A%2F%2Fmobile.slashdot.org%2Fstory%2F21%2F02%2F11%2F0036248%2Fapple-privacy-chief-north-dakota-bill-threatens-to-destroy-the-iphone-as-you-know-it%22%2C%22bv%22%3A%220%22%2C%22ul%22%3A%5B%22en-CA%22%5D%2C%22btv%22%3A%220%22%2C%22bad%22%3A-1%2C%22sw%22%3A1366%2C%22sh%22%3A768%2C%22bw%22%3A1362%2C%22sde%22%3A%221.000%22%2C%22bh%22%3A636%2C%22dw%22%3A1350%2C%22dh%22%3A10270%2C%22r%22%3A%5B%7B%22li%22%3A%22rbox-h2m%22%2C%22s%22%3A4%2C%22uim%22%3A%22thumbnails-rr2%3Aabp%3D0%22%2C%22uip%22%3A%22Below%20Article%20Thumbnails%22%2C%22orig_uip%22%3A%22Below%20Article%20Thumbnails%22%2C%22cd%22%3A255.5%2C%22mw%22%3A300%7D%2C%7B%22li%22%3A%22rbox-h2m%22%2C%22s%22%3A5%2C%22uim%22%3A%22text-links-a%3Aabp%3D0%22%2C%22uip%22%3A%22Below%20Article%20Text%20Links%22%2C%22orig_uip%22%3A%22Below%20Article%20Text%20Links%22%2C%22cd%22%3A9961.4501953125%2C%22mw%22%3A964.5%7D%5D%2C%22cacheKey%22%3A%22home%3D_homepage_%2CBelow%20Article%20Text%20Links%3Dtext-links-a%3Aabp%3D0%2C%2CBelow%20Article%20Thumbnails%3Dthumbnails-rr2%3Aabp%3D0%22%2C%22cb%22%3A%22TRC.callbacks.recommendations_1%22%2C%22lt%22%3A%22deflated%22%7D
+trc*.taboola.com/
 
 
 #----------------------------------------------------------------------------
@@ -2240,6 +2243,10 @@ issue.freebsdfoundation.org/
 .fsf.org/
 # URL = https://consent2.ksta.de/wrapper/tcfv2/v1/gdpr/native-message?requestUUID=56b465b7-5da2-44f0-83aa-aa50687d364f&hasCsp=true&env=prod&consentLanguage=browserDefault&body=%7B%22accountId%22%3A995%2C%22requestUUID%22%3A%2256b465b7-5da2-44f0-83aa-aa50687d364f%22%2C%22propertyHref%22%3A%22https%3A%2F%2Fwww.ksta.de%2Fhtml%2Fdumont-consent%2Findex.html%3Fparam%3DeyJyZWRpcmVjdFVybCI6Ii9yYXRnZWJlci9kaWdpdGFsL3BsYXR0Zm9ybS1tb29kbGUtc3RyZWlrdC11bnphZWhsaWdlLXNjaHVlbGVyLWluLW5ydy1rb2VubmVuLWFtLW1vbnRhZy1uaWNodC1hcmJlaXRlbi0zNzkxMzY0MD9jYj0xNjEwMzY1Njc4NjY3IiwicmVmZXJyZXIiOiIifQ%3D%3D%22%2C%22euconsent%22%3Anull%2C%22meta%22%3A%22%7B%5C%22mmsCookies%5C%22%3A%5B%5C%22_sp_enable_dfp_personalized_ads%3Dfalse%3B%5C%22%5D%2C%5C%22resolved%5C%22%3Anull%7D%22%2C%22clientMMSOrigin%22%3A%22https%3A%2F%2Fconsent2.ksta.de%22%2C%22targetingParams%22%3A%22%7B%5C%22mode%5C%22%3A%5C%22dumont-consent-message%5C%22%7D%22%2C%22campaignEnv%22%3A%22prod%22%2C%22pubData%22%3A%7B%7D%7D
 .ksta.de/
+# URL = https://www.linkedin.com/authwall?trk=bf&trkInfo=bf&originalReferer=https://www.linkedin.com/in/blafasel&sessionRedirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2blafasel
+.linkedin.com/
+# URL = https://www.golem.de/sonstiges/zustimmung/auswahl.html?from=https%3A%2F%2Fwww.golem.de%2Fnews%2Flinux-rust-wandert-ins-system-2102-154041.html
+.golem.de/
 
 {+redirect{s@.*url=@http://@} -block}
 # Sticky Actions = +redirect -block
