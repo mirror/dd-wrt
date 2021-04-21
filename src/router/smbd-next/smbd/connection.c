@@ -289,6 +289,7 @@ int ksmbd_conn_handler_loop(void *p)
 	int size;
 
 	mutex_init(&conn->srv_mutex);
+	sema_init(&conn->conn_limit, num_online_cpus() * 2);
 	__module_get(THIS_MODULE);
 
 	if (t->ops->prepare && t->ops->prepare(t))
