@@ -1776,6 +1776,7 @@ service.samba3_pub="&Ouml;ffentliche Freigabe";
 service.samba3_config="Eigene Konfiguration";
 service.samba3_workgrp="Arbeitsgruppe";
 service.samba3_interfaces="Schnittstellen";
+service.samba3_connlimit="Verbindungslimit";
 service.samba3_dirpath="Verzeichnis";
 service.samba3_usr1="Benutzer1";
 service.samba3_pass1=" Kennwort1";
