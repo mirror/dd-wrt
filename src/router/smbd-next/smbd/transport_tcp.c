@@ -23,8 +23,8 @@ struct interface {
 	struct list_head	entry;
 	char			*name;
 	struct mutex		sock_release_lock;
-	struct semaphore	conn_limit;
 	int			state;
+	struct semaphore	conn_limit;
 };
 
 static LIST_HEAD(iface_list);
@@ -118,7 +118,7 @@ static inline void ksmbd_tcp_snd_timeout(struct socket *sock, s64 secs)
 #endif
 }
 
-static struct tcp_transport *alloc_transport(struct socket *client_sk)
+static struct tcp_transport *alloc_transport(struct interface *iface, struct socket *client_sk)
 {
 	struct tcp_transport *t;
 	struct ksmbd_conn *conn;
@@ -135,6 +135,7 @@ static struct tcp_transport *alloc_transport(struct socket *client_sk)
 	}
 
 	conn->transport = KSMBD_TRANS(t);
+	conn->conn_limit = &iface->conn_limit;
 	KSMBD_TRANS(t)->conn = conn;
 	KSMBD_TRANS(t)->ops = &ksmbd_tcp_transport_ops;
 	return t;
@@ -227,15 +228,16 @@ static unsigned short ksmbd_tcp_get_port(const struct sockaddr *sa)
  *
  * Return:	0 on success, otherwise error
  */
-static int ksmbd_tcp_new_connection(struct socket *client_sk)
+static int ksmbd_tcp_new_connection(struct interface *iface, struct socket *client_sk)
 {
 	struct sockaddr *csin;
 	int rc = 0;
 	struct tcp_transport *t;
 
-	t = alloc_transport(client_sk);
+	t = alloc_transport(iface, client_sk);
 	if (!t) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
+		up(&iface->conn_limit);
 		return -ENOMEM;
 	}
 
@@ -260,6 +262,7 @@ static int ksmbd_tcp_new_connection(struct socket *client_sk)
 					"ksmbd:%u", ksmbd_tcp_get_port(csin));
 	if (IS_ERR(KSMBD_TRANS(t)->handler)) {
 		ksmbd_err("cannot start conn thread\n");
+		up(&iface->conn_limit);
 		rc = PTR_ERR(KSMBD_TRANS(t)->handler);
 		free_transport(t);
 	}
@@ -267,6 +270,7 @@ static int ksmbd_tcp_new_connection(struct socket *client_sk)
 
 out_error:
 	free_transport(t);
+	up(&iface->conn_limit);
 	return rc;
 }
 
@@ -287,15 +291,17 @@ static int ksmbd_kthread_fn(void *p)
 		mutex_lock(&iface->sock_release_lock);
 		if (!iface->ksmbd_socket) {
 			mutex_unlock(&iface->sock_release_lock);
+			up(&iface->conn_limit);
 			break;
 		}
 		ret = kernel_accept(iface->ksmbd_socket, &client_sk,
 				O_NONBLOCK);
 		mutex_unlock(&iface->sock_release_lock);
 		if (ret) {
-			if (ret == -EAGAIN)
+			if (ret == -EAGAIN) {
 				/* check for new connections every 100 msecs */
 				schedule_timeout_interruptible(HZ / 10);
+			}
 			up(&iface->conn_limit);
 			continue;
 		}
@@ -304,8 +310,7 @@ static int ksmbd_kthread_fn(void *p)
 		client_sk->sk->sk_rcvtimeo = KSMBD_TCP_RECV_TIMEOUT;
 		client_sk->sk->sk_sndtimeo = KSMBD_TCP_SEND_TIMEOUT;
 
-		ksmbd_tcp_new_connection(client_sk);
-		up(&iface->conn_limit);
+		ksmbd_tcp_new_connection(iface, client_sk);
 	}
 
 	ksmbd_debug(CONN, "releasing socket\n");
