@@ -639,7 +639,9 @@ void ksmbd_tcp_destroy(void)
 		ksmbd_free(iface);
 	}
 }
-
+static uint ksmbd_connection_limit;
+module_param_named(connlimit, ksmbd_connection_limit, uint, 0644);
+MODULE_PARM_DESC(connlimit, "Maximum connection limit permitted per interface");
 
 static struct interface *alloc_iface(char *ifname)
 {
@@ -661,7 +663,7 @@ static struct interface *alloc_iface(char *ifname)
 	iface->state = IFACE_STATE_DOWN;
 	list_add(&iface->entry, &iface_list);
 	mutex_init(&iface->sock_release_lock);
-	sema_init(&iface->conn_limit, num_online_cpus() * 2); // todo. prototype! make this configurable
+	sema_init(&iface->conn_limit, ksmbd_connection_limit ? ksmbd_connection_limit : 4096); // todo. prototype! make this configurable
 	return iface;
 }
 
