@@ -263,7 +263,9 @@ void start_samba3(void)
 	       " hmac cmac md4 md5 gf128mul ctr ghash-generic gcm ccm des_generic aes_generic aes-arm"	//
 	       " aes-arm-ce aes-arm-bs sha256-arm sha512-arm ghash-ce aes-ce-cipher aes-ce-ccm"	//
 	       " aes-ce-blk aes-neon-blk aes-i586 aes-x86_64 aesni-intel ghash-clmulni-intel sha256-ssse3 sha512-ssse3 sha256-mb sha512-mb libcrc32c asn1_decoder");
-	insmod("ksmbd");
+	char param[32];
+	sprintf(param, "connlimit=%d\n", nvram_default_geti("samba3_connlimit", 16));
+	eval("insmod", "ksmbd", param);
 	struct utsname uts;
 	/* Uname can fail only if you pass a bad pointer to it. */
 	uname(&uts);
