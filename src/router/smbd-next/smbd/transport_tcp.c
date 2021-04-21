@@ -23,6 +23,7 @@ struct interface {
 	struct list_head	entry;
 	char			*name;
 	struct mutex		sock_release_lock;
+	struct semaphore	conn_limit;
 	int			state;
 };
 
@@ -282,6 +283,7 @@ static int ksmbd_kthread_fn(void *p)
 	int ret;
 
 	while (!kthread_should_stop()) {
+		down(&iface->conn_limit);
 		mutex_lock(&iface->sock_release_lock);
 		if (!iface->ksmbd_socket) {
 			mutex_unlock(&iface->sock_release_lock);
@@ -302,6 +304,7 @@ static int ksmbd_kthread_fn(void *p)
 		client_sk->sk->sk_sndtimeo = KSMBD_TCP_SEND_TIMEOUT;
 
 		ksmbd_tcp_new_connection(client_sk);
+		up(&iface->conn_limit);
 	}
 
 	ksmbd_debug(CONN, "releasing socket\n");
@@ -652,6 +655,7 @@ static struct interface *alloc_iface(char *ifname)
 	iface->state = IFACE_STATE_DOWN;
 	list_add(&iface->entry, &iface_list);
 	mutex_init(&iface->sock_release_lock);
+	sema_init(&iface->conn_limit, num_online_cpus() * 4);
 	return iface;
 }
 
