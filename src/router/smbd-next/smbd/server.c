@@ -267,6 +267,7 @@ static void handle_ksmbd_work(struct work_struct *wk)
 	ksmbd_conn_try_dequeue_request(work);
 	ksmbd_free_work_struct(work);
 	atomic_dec(&conn->r_count);
+	up(&conn->queue_limit);
 }
 
 /**
@@ -283,6 +284,7 @@ static int queue_ksmbd_work(struct ksmbd_conn *conn)
 	work = ksmbd_alloc_work_struct();
 	if (!work) {
 		ksmbd_err("allocation for work failed\n");
+		up(&conn->queue_limit);
 		return -ENOMEM;
 	}
 
@@ -292,6 +294,7 @@ static int queue_ksmbd_work(struct ksmbd_conn *conn)
 
 	if (ksmbd_init_smb_server(work)) {
 		ksmbd_free_work_struct(work);
+		up(&conn->queue_limit);
 		return -EINVAL;
 	}
 
@@ -307,9 +310,7 @@ static int queue_ksmbd_work(struct ksmbd_conn *conn)
 static int ksmbd_server_process_request(struct ksmbd_conn *conn)
 {
 	int ret;
-	down(&conn->conn_limit);
 	ret = queue_ksmbd_work(conn);
-	up(&conn->conn_limit);
 	return ret;
 	
 }
