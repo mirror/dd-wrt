@@ -1,6 +1,7 @@
  "samba3_enable"  "ksmbd Server"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "samba3_pub"  "ksmbd Public" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "samba3_srvstr"  "ksmbd Server String"  "NULL"  "FALSE" "0"
+ "samba3_connlimit"  "ksmbd Connection Limit"  "NULL"  "FALSE" "0"
  "samba3_workgrp"  "ksmbd Workgroup"  "NULL"  "FALSE" "0"
  "samba3_dirpath"  "ksmbd Dir Path"  "NULL"  "FALSE" "0"
  "samba3_usr1"  "ksmbd User1"  "NULL"  "FALSE" "0"

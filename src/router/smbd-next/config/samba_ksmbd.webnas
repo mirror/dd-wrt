@@ -17,6 +17,10 @@
 			<input maxlength="32" size="16" name="samba3_workgrp" value="<% nvg("samba3_workgrp"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.samba3_connlimit"); %></div>
+			<input maxlength="5" size="6" class="num" name="samba3_connlimit" value="<% nvg("samba3_connlimit"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.samba3_min_proto"); %></div>
 				<select name="samba3_min_proto" >
 					<option value="NT1" <% nvsm("samba3_min_proto", "NT1", "selected"); %> >NT 1.0</option>
