@@ -33,8 +33,8 @@
 
 /** Defaults configuration values */
 #ifndef SYSCONFDIR
-#define DEFAULT_CONFIGFILE "/etc/wifidog.conf"
-#define DEFAULT_HTMLMSGFILE "/etc/wifidog-msg.html"
+#define DEFAULT_CONFIGFILE "/jffs/etc/wifidog.conf"
+#define DEFAULT_HTMLMSGFILE "/jffs/etc/wifidog-msg.html"
 #else
 #define DEFAULT_CONFIGFILE SYSCONFDIR"/wifidog.conf"
 #define DEFAULT_HTMLMSGFILE SYSCONFDIR"/wifidog-msg.html"
@@ -62,7 +62,7 @@
 #define DEFAULT_AUTHSERVMSGPATHFRAGMENT "gw_message.php?"
 #define DEFAULT_AUTHSERVPINGPATHFRAGMENT "ping/?"
 #define DEFAULT_AUTHSERVAUTHPATHFRAGMENT "auth/?"
-#define DEFAULT_AUTHSERVSSLCERTPATH "/etc/ssl/certs/"
+#define DEFAULT_AUTHSERVSSLCERTPATH "/jffs/etc/ssl/certs/"
 /** Note that DEFAULT_AUTHSERVSSLNOPEERVER must be 0 or 1, even if the config file syntax is yes or no */
 #define DEFAULT_AUTHSERVSSLPEERVER 1    /* 0 means: Enable peer verification */
 #define DEFAULT_DELTATRAFFIC 0    /* 0 means: Enable peer verification */
