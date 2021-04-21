@@ -84,22 +84,32 @@ static inline void __free(void *addr)
 
 #endif
 
-void *ksmbd_alloc(size_t size)
+void *_ksmbd_alloc(size_t size, const char *func, int line)
 {
+	void *p;
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
- 	return __alloc(size, GFP_KERNEL);
+ 	p = __alloc(size, GFP_KERNEL);
 #else
-	return kvmalloc(size, GFP_KERNEL);
+	p = kvmalloc(size, GFP_KERNEL);
 #endif
+	if (!p) {
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
+	}
+	return p;
 }
 
-void *ksmbd_zalloc(size_t size)
+void *_ksmbd_zalloc(size_t size, const char *func, int line)
 {
+	void *p;
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
- 	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
+ 	p = __alloc(size, GFP_KERNEL | __GFP_ZERO);
 #else
-	return kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
+	p = kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
 #endif
+	if (!p) {
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
+	}
+	return p;
 }
 
 void ksmbd_free(void *ptr)
@@ -314,13 +324,18 @@ void ksmbd_free_request(void *addr)
 #endif
 }
 
-void *ksmbd_alloc_request(size_t size)
+void *_ksmbd_alloc_request(size_t size, const char *func, int line)
 {
+	void *p;
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	return __alloc(size, GFP_KERNEL);
+	p = __alloc(size, GFP_KERNEL);
 #else
-	return kvmalloc(size, GFP_KERNEL);
+	p = kvmalloc(size, GFP_KERNEL);
 #endif
+	if (!p) {
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
+	}
+	return p;
 }
 
 void ksmbd_free_response(void *buffer)
@@ -332,16 +347,21 @@ void ksmbd_free_response(void *buffer)
 #endif
 }
 
-void *ksmbd_alloc_response(size_t size)
+void *_ksmbd_alloc_response(size_t size, const char *func, int line)
 {
+	void *p;
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
+	p = __alloc(size, GFP_KERNEL | __GFP_ZERO);
 #else
-	return kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
+	p = kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
 #endif
+	if (!p) {
+		printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
+	}
+	return p;
 }
 
-void *ksmbd_find_buffer(size_t size)
+void *_ksmbd_find_buffer(size_t size, const char *func, int line)
 {
 	struct wm *wm;
 
@@ -350,6 +370,7 @@ void *ksmbd_find_buffer(size_t size)
 	WARN_ON(!wm);
 	if (wm)
 		return wm->buffer;
+	printk(KERN_WARNING "%s: allocation failed at %s:%d\n", __func__, func, line);
 	return NULL;
 }
 
@@ -368,12 +389,12 @@ void ksmbd_release_buffer(void *buffer)
 		release_wm(wm, wm_list);
 }
 
-void *ksmbd_realloc_response(void *ptr, size_t old_sz, size_t new_sz)
+void *_ksmbd_realloc_response(void *ptr, size_t old_sz, size_t new_sz, const char *func, int line)
 {
 	size_t sz = min(old_sz, new_sz);
 	void *nptr;
 
-	nptr = ksmbd_alloc_response(new_sz);
+	nptr = _ksmbd_alloc_response(new_sz, func, line);
 	if (!nptr)
 		return ptr;
 	memcpy(nptr, ptr, sz);
