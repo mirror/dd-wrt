@@ -217,6 +217,7 @@ static void __handle_ksmbd_work(struct ksmbd_work *work,
 		 */
 		if (conn->ops->set_rsp_credits) {
 			spin_lock(&conn->credits_lock);
+			ksmbd_debug(CONN, "set_rsp_credits\n");
 			rc = conn->ops->set_rsp_credits(work);
 			spin_unlock(&conn->credits_lock);
 			if (rc < 0) {
@@ -228,8 +229,10 @@ static void __handle_ksmbd_work(struct ksmbd_work *work,
 
 		if (work->sess && (work->sess->sign ||
 		    smb3_11_final_sess_setup_resp(work) ||
-		     conn->ops->is_sign_req(work, command)))
+		     conn->ops->is_sign_req(work, command))) {
+			ksmbd_debug(CONN, "set_sign_rsp\n");
 			conn->ops->set_sign_rsp(work);
+		}
 	} while (is_chained_smb2_message(work));
 
 	if (work->send_no_response)
@@ -239,6 +242,7 @@ send:
 	smb3_preauth_hash_rsp(work);
 	if (work->sess && work->sess->enc && work->encrypted &&
 	    conn->ops->encrypt_resp) {
+			ksmbd_debug(CONN, "encrypt_resp\n");
 		rc = conn->ops->encrypt_resp(work);
 		if (rc < 0) {
 			conn->ops->set_rsp_status(work, STATUS_DATA_ERROR);
@@ -246,6 +250,7 @@ send:
 		}
 	}
 
+	ksmbd_debug(CONN, "%s:%s\n", __func__, __LINE__);
 	ksmbd_conn_write(work);
 }
 
