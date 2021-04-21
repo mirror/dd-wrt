@@ -296,6 +296,7 @@ static int ksmbd_kthread_fn(void *p)
 			if (ret == -EAGAIN)
 				/* check for new connections every 100 msecs */
 				schedule_timeout_interruptible(HZ / 10);
+			up(&iface->conn_limit);
 			continue;
 		}
 
