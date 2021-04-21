@@ -306,7 +306,12 @@ static int queue_ksmbd_work(struct ksmbd_conn *conn)
 
 static int ksmbd_server_process_request(struct ksmbd_conn *conn)
 {
-	return queue_ksmbd_work(conn);
+	int ret;
+	down(&conn->conn_limit);
+	ret = queue_ksmbd_work(conn);
+	up(&conn->conn_limit);
+	return ret;
+	
 }
 
 static int ksmbd_server_terminate_conn(struct ksmbd_conn *conn)
