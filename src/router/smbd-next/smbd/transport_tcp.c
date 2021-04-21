@@ -656,7 +656,7 @@ static struct interface *alloc_iface(char *ifname)
 	iface->state = IFACE_STATE_DOWN;
 	list_add(&iface->entry, &iface_list);
 	mutex_init(&iface->sock_release_lock);
-	sema_init(&iface->conn_limit, num_online_cpus() * 4);
+	sema_init(&iface->conn_limit, num_online_cpus() * 2);
 	return iface;
 }
 
