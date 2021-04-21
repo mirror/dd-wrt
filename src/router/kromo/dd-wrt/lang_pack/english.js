@@ -2068,6 +2068,7 @@ service.hmilkfish_page2="<div class=\"note\"><h4>Legal</h4><div>Copyright &copy;
 
 service.samba3_srv="Samba";
 service.samba3_srvstr="Server String";
+service.samba3_connlimit="Connection Limit";
 service.samba3_pub="Public Share";
 service.samba3_config="Custom Configuration";
 service.samba3_workgrp="Workgroup";
