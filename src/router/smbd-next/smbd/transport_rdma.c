@@ -1947,7 +1947,6 @@ static int smb_direct_handle_connect_request(struct rdma_cm_id *new_cm_id)
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
-
 	KSMBD_TRANS(t)->handler = kthread_run(ksmbd_conn_handler_loop,
 			KSMBD_TRANS(t)->conn, "ksmbd:r%u", SMB_DIRECT_PORT);
 	if (IS_ERR(KSMBD_TRANS(t)->handler)) {
