@@ -1,3 +1,111 @@
+Tuesday, December 29, 2020
+  Summary for 1.10.0 libpcap release
+    Require, and assume, some level of C99 support in the C compiler
+    Require Visual Studio 2015 or later if using Visual Studio
+    Add support for capturing on DPDK devices
+    rpcap: support rpcap-over-TLS
+    Windows: report the system error for PacketSetHwFilter() failures
+    Label most APIs by the first release in which they're available
+    Add support for getting and setting packet time stamp types
+        with Npcap
+    Add pcap_init(), and add support for UTF-8 strings, including error
+        messages, on Windows
+    Improve man pages, including adding backward compatibility notes
+    Fix configure script issues, including with libnl on Linux
+    Fix CMake issues
+    Squelch complaints from Bison about "%define api.pure" being
+        deprecated
+    Fix some memory leaks, including in pcap_compile()
+    Linux: handle systems without AF_INET or AF_UNIX socket support
+    Catch invalid IPv4 addresses in filters
+    AIX: fix loading of BPF kernel extension
+    rpcapd: fix core dumps with invalid configuration file
+    Show special Linux BPF offsets symbolically in bpf_image() and
+        bpf_dump()
+    Add some overflow checks in the optimizer
+    Add pcap_datalink_val_to_description_or_dlt()
+    Windows: make the snapshot length work even if pcap_setfilter()
+        isn't called
+    Linux: get rid of Wireless Extensions for turning monitor mode on
+    Handle the pcap private data in a fashion that makes fewer
+       assumptions about memory layouts (might fix GitHub issue #940
+       on ARM)
+    Fix "unknown ether proto 'aarp'"
+    Fix some issues found by cppcheck.
+    Linux: proper memory sync for PACKET_MMAP (may prevent GitHub issue
+        #898)
+    Remove undocumented and rather old "ether proto" protocols
+    Fix some thread safety issues
+    Windows: add pcap_handle(), and deprecate pcap_fileno()
+    AirPcap: add AirPcap support in a module, rather than using
+        WinPcap/Npcap's support for it
+    Linux: drop support for libnl 1 and 2.
+    Linux: Require PF_PACKET support, and kernel 2.6.27 or later
+    Add DLT_LINUX_SLL2
+    Add a new filter "ifindex" for DLT_LINUX_SLL2 files and live
+        Linux captures
+    optimizer: add a hack to try to catch certain optimizer loops
+        (should prevent GitHub issue #112)
+    Probe CONFIGURATION descriptor of connected USB devices
+    macOS: cope with getting EPWROFF from SIOCGIFMEDIA
+    Linux: return error on interface going away, but not if it just went
+        down
+    Windows: fix compilation on Cygwin/MSYS
+    Linux: set socket protocol only after packet ring configured,
+        reducing bogus packet drop reports
+    pcap_findalldevs(): don't sort interfaces by unit number
+    Linux: get ifdrop stats from sysfs.
+    Fix various security issues reported by Charles Smith at Tangible
+        Security
+    Fix various security issues reported by Include Security
+    rpcapd: on UN*X, don't tell the client why authentication failed
+    Linux: when adjusting BPF programs, do not subtract the
+        SLL[2]_HDR_LEN if the location is negative (special metadata
+        offset)
+    Preserve references to metadata when adjusting the program;
+        see https://github.com/the-tcpdump-group/tcpdump/issues/480#issuecomment-486827278
+    Always return a list of supported time-stamp types, even if only
+        host time stamps are supported
+    Linux: with a timeout of zero, wait indefinitely
+    Linux: clean up support for some non-GNU libc C libraries
+    Increase the maximum snaplen for LINKTYPE_USBPCAP/DLT_USBPCAP
+    Fix handling of some ioctls that fail with "permission denied" even
+        when the ioctl isn't supported at all
+    Added support for ICMPv6 types 1-4 as tokens in filters
+    Windows: Report PCAP_ERROR_NO_SUCH_DEVICE for a non-existent device
+    Windows: return an appropriate error message for device removed or
+        device unusable due to a suspend/resume
+    BPF: treat both ENXIO (everybody but OpenBSD) and EIO (OpenBSD) as
+        meaning "the interface was removed"
+    BPF: report "the interface disappeared", not "the interface went
+        down", if the interface was removed during a capture
+    Linux, Windows: report a warning for unknown link-layer header types
+    Create the file in pcap_dump_open_append() if it doesn't exist
+    Linux, NPF: have pcap_breakloop() forcibly break out of a sleeping
+        capture loop
+    Report the DLT description in error messages
+    Linux: Add support for DSA data link types
+    Linux USB: use the snapshot length to set the buffer size, and set
+        the len field to reflect the length in the URB (GitHub issue
+        #808)
+    rpcapd: allow rpcapd to rebind more rapidly (GitHub issue #765)
+    Windows: clean up building DLL
+    Fix compilation of pcap-tc.c
+    Add Haiku pcap implementation
+    Windows: handle CRT mismatch for pcap_dump_fopen()
+    Windows: map NdisMediumWirelessWan to DLT_RAW
+    rpcap: add some new authentication libpcap error codes for
+        specific errors
+    rpcap: redo protocol version negotiation to avoid problems with old
+        servers (it still works with servers using the old negotiation,
+        as well as servers not supporting negotiation)
+    rpcap: error handling cleanups
+    rpcapd: fix some inetd issues
+    Don't assume ARM supports unaligned accesses
+    Remove (unused) SITA support here.
+    Correctly handle pcapng captures with more than one IDB with a
+        snspshot length greater than the supported maximum
+
 Sunday, July 22, 2018
   Summary for 1.9.1 libpcap release
     Mention pcap_get_required_select_timeout() in the main pcap man page
@@ -93,7 +201,7 @@ Sunday, June 24, 2018, by mcr@sandelman.ca
     Make VLAN filter handle both metadata and inline tags
     D-Bus captures can now be up to 128MB in size
     Added LORATAP DLT value
-    Added DLT_VSOCK for http://qemu-project.org/Features/VirtioVsock
+    Added DLT_VSOCK for https://qemu-project.org/Features/VirtioVsock
     probe_devices() fixes not to overrun buffer for name of device
     Add linux-specific pcap_set_protocol_linux() to allow specifying a specific capture protocol.
     RDMA sniffing support for pcap
@@ -275,7 +383,7 @@ Summary for 1.5.0 libpcap release
 	    than the mcr repository
 	Checks added for malloc()/realloc()/etc. failures
 	Fixed build on Solaris 11
-	Support filtering filtering E1 SS7 traffic on MTP2 layer Annex A
+	Support filtering E1 SS7 traffic on MTP2 layer Annex A
 	Use "ln -s" to link man pages by default
         Add support for getting nanosecond-resolution time stamps when
 	    capturing and reading capture files
@@ -336,7 +444,7 @@ Summary for 1.3.0 libpcap release
 Friday  December 9, 2011.  guy@alum.mit.edu.
 Summary for 1.2.1 libpcap release
 	Update README file.
-	Fix typoes in README.linux file.
+	Fix typos in README.linux file.
 	Clean up some compiler warnings.
 	Fix Linux compile problems and tests for ethtool.h.
 	Treat Debian/kFreeBSD and GNU/Hurd as systems with GNU
@@ -369,7 +477,7 @@ Summary for 1.2 libpcap release
         Noted real nature of LINKTYPE_ARCNET.
         Add a link-layer type for DVB-CI.
         Fix configure-script discovery of VLAN acceleration support.
-         see http://netoptimizer.blogspot.com/2010/09/tcpdump-vs-vlan-tags.html
+         see https://netoptimizer.blogspot.com/2010/09/tcpdump-vs-vlan-tags.html
         Linux, HP-UX, AIX, NetBSD and OpenBSD compilation/conflict fixes.
         Protect against including AIX 5.x's <net/bpf.h> having been included.
         Add DLT_DBUS, for raw D-Bus messages.
@@ -568,7 +676,7 @@ Tue.	September 19, 2006. ken@xelerance.com. Summary for 0.9.5 libpcap release
 	 beginning+link-layer
 	Add DLT/LINKTYPE for carrying FRF.16 Multi-link Frame Relay
 	Fix allocation of buffer for list of link-layer types
-	Added a new DLT and LINKTYPE value for ARINC 653 Interpartition Communcation Messages
+	Added a new DLT and LINKTYPE value for ARINC 653 Interpartition Communication Messages
 	Fixed a typo in a DLT value: it should start with DLT_ and not LINKTYPE_
 	Redefined DLT_CAN20B and LINKTYPE_CAN20B as #190 (as this is the right value for CAN).
 	Added definition for DLT_A429 and LINKTYPE_A429 as #184.
@@ -682,7 +790,7 @@ Tuesday January 9, 2001. guy@alum.mit.edu. Summary for 0.6 release
 
 	Header files fixed to allow use in C++ programs.
 
-	Removed dependancy on native headers for packet layout.
+	Removed dependency on native headers for packet layout.
 	Removed Linux specific headers that were shipped.
 
 	Security fixes: Strcpy replaced with strlcpy, sprintf replaced
@@ -820,7 +928,7 @@ v0.3 Sat Nov 30 20:56:27 PST 1996
 
 v0.2.1 Sun Jul 14 03:02:26 PDT 1996
 
-- Fixes for HP-UX 10. Thanks in part to to Thomas Wolfram
+- Fixes for HP-UX 10. Thanks in part to Thomas Wolfram
   (wolf@prz.tu-berlin.de) and Rick Jones (raj@hpisrdq.cup.hp.com)
 
 - Added support for SINIX. Thanks to Andrej Borsenkow
