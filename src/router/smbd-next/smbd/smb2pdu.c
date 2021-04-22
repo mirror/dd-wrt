@@ -4930,7 +4930,7 @@ static int smb2_get_info_sec(struct ksmbd_work *work,
 								addition_info);
 
 		pntsd->revision = cpu_to_le16(1);
-		pntsd->type = cpu_to_le16(0x9000);
+		pntsd->type = cpu_to_le16(SELF_RELATIVE | DACL_PROTECTED);
 		pntsd->osidoffset = 0;
 		pntsd->gsidoffset = 0;
 		pntsd->sacloffset = 0;
