@@ -1344,7 +1344,7 @@ static void check_time(void)
 /*
  * timeout - Schedule a timeout.
  */
-void
+void PPP_VISIBLE
 timeout(func, arg, secs, usecs)
     void (*func) __P((void *));
     void *arg;
