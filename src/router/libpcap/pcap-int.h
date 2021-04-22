@@ -53,6 +53,12 @@
 extern "C" {
 #endif
 
+#ifndef BPF_MOD
+#define		BPF_MOD		0x90
+#endif
+#ifndef BPF_XOR
+#define		BPF_XOR		0xa0
+#endif
 /*
  * If pcap_new_api is set, we disable pcap_lookupdev(), because:
  *
