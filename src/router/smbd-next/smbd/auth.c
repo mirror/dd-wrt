@@ -1449,7 +1449,7 @@ int ksmbd_crypt_message(struct ksmbd_conn *conn, struct kvec *iov,
 #endif
 	struct ksmbd_crypto_ctx *ctx;
 
-	ksmbd_debug(CONN, "%s:%s\n", __func__, __LINE__);
+	ksmbd_debug(CONN, "%s:%d\n", __func__, __LINE__);
 	rc = ksmbd_get_encryption_key(conn,
 				      le64_to_cpu(tr_hdr->SessionId),
 				      enc,
@@ -1501,7 +1501,7 @@ int ksmbd_crypt_message(struct ksmbd_conn *conn, struct kvec *iov,
 	sg_init_table(&assoc, 1);
 	smb2_sg_set_buf(&assoc, iov[0].iov_base + 24, assoc_data_len);
 #endif
-	ksmbd_debug(CONN, "%s:%s\n", __func__, __LINE__);
+	ksmbd_debug(CONN, "%s:%d\n", __func__, __LINE__);
 
 	sg = ksmbd_init_sg(iov, nvec, sign);
 	if (!sg) {
@@ -1525,7 +1525,7 @@ int ksmbd_crypt_message(struct ksmbd_conn *conn, struct kvec *iov,
 		memcpy(iv + 1, (char *)tr_hdr->Nonce, SMB3_AES128CCM_NONCE);
 	}
 
-	ksmbd_debug(CONN, "%s:%s\n", __func__, __LINE__);
+	ksmbd_debug(CONN, "%s:%d\n", __func__, __LINE__);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
 	aead_request_set_assoc(req, &assoc, assoc_data_len);
 	aead_request_set_crypt(req, sg, sg, crypt_len, iv);
@@ -1534,7 +1534,7 @@ int ksmbd_crypt_message(struct ksmbd_conn *conn, struct kvec *iov,
 	aead_request_set_ad(req, assoc_data_len);
 #endif
 	aead_request_set_callback(req, CRYPTO_TFM_REQ_MAY_SLEEP, NULL, NULL);
-	ksmbd_debug(CONN, "%s:%s\n", __func__, __LINE__);
+	ksmbd_debug(CONN, "%s:%d\n", __func__, __LINE__);
 
 	if (enc)
 		rc = crypto_aead_encrypt(req);

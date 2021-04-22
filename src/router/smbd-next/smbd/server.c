@@ -250,7 +250,7 @@ send:
 		}
 	}
 
-	ksmbd_debug(CONN, "%s:%s\n", __func__, __LINE__);
+	ksmbd_debug(CONN, "%s:%d\n", __func__, __LINE__);
 	ksmbd_conn_write(work);
 }
 

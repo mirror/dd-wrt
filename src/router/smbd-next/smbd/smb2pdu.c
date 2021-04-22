@@ -8147,7 +8147,7 @@ int smb3_encrypt_resp(struct ksmbd_work *work)
 	int rc = -ENOMEM;
 	int buf_size = 0, rq_nvec = 2 + (work->aux_payload_sz ? 1 : 0);
 
-	ksmbd_debug(CONN, "%s:%s\n", __func__, __LINE__);
+	ksmbd_debug(CONN, "%s:%d\n", __func__, __LINE__);
 	if (ARRAY_SIZE(iov) < rq_nvec) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
@@ -8176,7 +8176,7 @@ int smb3_encrypt_resp(struct ksmbd_work *work)
 	buf_size += iov[1].iov_len;
 	work->resp_hdr_sz = iov[1].iov_len;
 
-	ksmbd_debug(CONN, "%s:%s\n", __func__, __LINE__);
+	ksmbd_debug(CONN, "%s:%d\n", __func__, __LINE__);
 	rc = ksmbd_crypt_message(work->conn, iov, rq_nvec, 1);
 	if (rc)
 		return rc;
