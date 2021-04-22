@@ -3603,7 +3603,7 @@ main ()
   return 0;
 }
 _ACEOF
-for ac_arg in '' -std=gnu99 -std=c99 -c99 -AC99 -D_STDC_C99= -qlanglvl=extc99
+for ac_arg in '' -std=gnu99 -std=c99 -c99 -AC99 -D_STDC_C99=
 do
   CC="$ac_save_CC $ac_arg"
   if ac_fn_c_try_compile "$LINENO"; then :
