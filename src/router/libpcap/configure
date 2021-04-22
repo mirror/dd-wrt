@@ -3475,7 +3475,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 // Check varargs macros.  These examples are taken from C99 6.10.3.5.
 #define debug(...) fprintf (stderr, __VA_ARGS__)
 #define showlist(...) puts (#__VA_ARGS__)
-#define report(test,...) ((test) ? puts (#test) : printf (__VA_ARGS__))
+#define report(test,...) ((test) ? puts (#test) : 0)
 static void
 test_varargs_macros (void)
 {
