@@ -46,6 +46,7 @@ extern int ksmbd_debug_types;
 
 #define ksmbd_debug(type, fmt, ...)				\
 	do {							\
+		if (ksmbd_debug_types & KSMBD_DEBUG_##type)	\
 			pr_info(ksmbd_pr_fmt("%s:%d: " fmt),	\
 				__func__,			\
 				__LINE__,			\
