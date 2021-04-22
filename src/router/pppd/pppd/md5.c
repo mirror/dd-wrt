@@ -36,6 +36,9 @@
 #include <string.h>
 #include "md5.h"
 
+
+#define PPP_VISIBLE __attribute__((used)) __attribute__((__visibility__("default")))
+
 /*
  ***********************************************************************
  **  Message-digest routines:                                         **
@@ -102,7 +105,7 @@ static unsigned char PADDING[64] = {
 /* The routine MD5_Init initializes the message-digest context
    mdContext. All fields are set to zero.
  */
-void MD5_Init (mdContext)
+void PPP_VISIBLE MD5_Init (mdContext)
 MD5_CTX *mdContext;
 {
   mdContext->i[0] = mdContext->i[1] = (UINT4)0;
@@ -119,7 +122,7 @@ MD5_CTX *mdContext;
    account for the presence of each of the characters inBuf[0..inLen-1]
    in the message whose digest is being computed.
  */
-void MD5_Update (mdContext, inBuf, inLen)
+void PPP_VISIBLE MD5_Update (mdContext, inBuf, inLen)
 MD5_CTX *mdContext;
 unsigned char *inBuf;
 unsigned int inLen;
@@ -157,7 +160,7 @@ unsigned int inLen;
 /* The routine MD5Final terminates the message-digest computation and
    ends with the desired message digest in mdContext->digest[0...15].
  */
-void MD5_Final (hash, mdContext)
+void PPP_VISIBLE MD5_Final (hash, mdContext)
 unsigned char hash[];
 MD5_CTX *mdContext;
 {
