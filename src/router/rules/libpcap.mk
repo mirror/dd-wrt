@@ -1,5 +1,5 @@
 libpcap-configure:
-	cd libpcap ; ac_cv_linux_vers=2 ./configure \
+	cd libpcap ; ac_cv_linux_vers=2; ac_cv_prog_cc_c99=yes; ./configure \
 		--target=$(ARCH)-openwrt-linux \
 		--host=$(ARCH)-linux-uclibc  \
 		--libdir=/usr/lib \
@@ -10,8 +10,10 @@ libpcap-configure:
 		--disable-nls --disable-static \
 		--disable-yydebug --enable-ipv6 --with-build-cc=gcc \
 		--with-pcap=linux --without-septel --without-dag \
+		--disable-usb \
+		--without-libnl \
 		--disable-canusb --disable-can --disable-bluetooth \
-		CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC"
+		CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -std=c99 -D_GNU_SOURCE -fPIC"
 libpcap:
 	rm -f $(TOP)/libpcap/libpcap.a
 	rm -f $(TOP)/libpcap/libpcap.so
