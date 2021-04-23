@@ -100,6 +100,7 @@ int getCoreTemp(char *p, int *ridx, int acpi)
 			FILE *fp = fopen(path, "rb");
 			if (!fp)
 				continue;
+			fscanf(fp, "%s", name);
 			if (!strncmp(name, "Core", 4)) {
 				fclose(fp);
 				sprintf(p, "/sys/class/hwmon/hwmon%d", idx);
