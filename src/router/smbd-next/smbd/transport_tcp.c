@@ -6,6 +6,7 @@
 
 #include <linux/freezer.h>
 #include <linux/etherdevice.h>
+#include <linux/moduleparam.h>
 
 #include "smb_common.h"
 #include "server.h"
@@ -13,6 +14,10 @@
 #include "buffer_pool.h"
 #include "connection.h"
 #include "transport_tcp.h"
+
+static uint ksmbd_connection_limit;
+module_param_named(connlimit, ksmbd_connection_limit, uint, 0644);
+MODULE_PARM_DESC(connlimit, "Maximum connection limit permitted per interface");
 
 #define IFACE_STATE_DOWN		BIT(0)
 #define IFACE_STATE_CONFIGURED		BIT(1)
@@ -639,9 +644,6 @@ void ksmbd_tcp_destroy(void)
 		ksmbd_free(iface);
 	}
 }
-static uint ksmbd_connection_limit;
-module_param_named(connlimit, ksmbd_connection_limit, uint, 0644);
-MODULE_PARM_DESC(connlimit, "Maximum connection limit permitted per interface");
 
 static struct interface *alloc_iface(char *ifname)
 {
