@@ -61,6 +61,7 @@ realclean: $(obj-clean)
 	
 clean: rc-clean httpd-clean services-clean radauth-clean shared-clean libutils-clean nvram-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean iproute2-clean
 	rm -f .config.old .config.cmd
+	rm -rf httpd/ej_temp
 	#umount $(TARGETDIR)
 	rm -rf $(INSTALLDIR)
 	rm -rf $(TARGETDIR)
