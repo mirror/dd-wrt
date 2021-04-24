@@ -68,6 +68,7 @@ realclean: $(obj-clean)
 clean: rc-clean httpd-clean services-clean radauth-clean shared-clean libutils-clean nvram-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean iproute2-clean
 	rm -f .config.old .config.cmd
 	#umount $(TARGETDIR)
+	rm -rf httpd/ej_temp
 	rm -rf $(INSTALLDIR)
 	rm -rf $(TARGETDIR)
 	rm -f $(TARGETDIR)/*
@@ -130,6 +131,7 @@ endif
 ifeq ($(CONFIG_FREERADIUS),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so.1} $(ARCH)-uclibc/target/lib/libatomic.so.1 
 endif
+	
 ifeq ($(CONFIG_RELINK),y)
 ifneq ($(CONFIG_MUSL),y)
 	relink-lib.sh \
