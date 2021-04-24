@@ -21,7 +21,7 @@ libdnet-configure:
 endif
 
 libdnet:
-	$(MAKE) -C libdnet CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF"
+	$(MAKE) -C libdnet CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF"
 
 libdnet-install:
 	@true
