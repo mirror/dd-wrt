@@ -1,4 +1,4 @@
-wifidog-configure:
+wifidog-configure: wolfssl-configure wolfssl
 	make -C wolfssl/minimal
 	cd wifidog && ./autogen.sh
 	mkdir -p wifidog/nossl
@@ -11,7 +11,7 @@ wifidog-configure:
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-wifidog:
+wifidog: wolfssl
 	install -D wifidog/config/*.webhotspot httpd/ej_temp/
 ifeq ($(CONFIG_TIEXTRA2),y)
 	install -D private/telkom/mwifidog.webhotspot httpd/ej_temp/5wifidogm.webhotspot

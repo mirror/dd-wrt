@@ -15,7 +15,7 @@ endif
 libutils-clean:
 	make -C libutils clean
 
-libutils: nvram $(TINY)  $(JANSSON)
+libutils: nvram $(TINY)  $(JANSSON) wireless-tools
 	make -C libutils
 
 libutils-install:
