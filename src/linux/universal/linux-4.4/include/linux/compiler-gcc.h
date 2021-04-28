@@ -326,6 +326,11 @@
  */
 #define uninitialized_var(x) x = x
 
+
+#if GCC_VERSION >= 50100
+#define COMPILER_HAS_GENERIC_BUILTIN_OVERFLOW 1
+#endif
+
 /*
  * Turn individual warnings and errors on and off locally, depending
  * on version.
