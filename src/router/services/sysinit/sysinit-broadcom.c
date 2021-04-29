@@ -2853,7 +2853,7 @@ void start_sysinit(void)
 			case ROUTER_D1800H:
 			case ROUTER_DLINK_DIR865:
 			case ROUTER_UBNT_UNIFIAC:
-				modules = "et switch-core switch-robo";
+				modules = "ctf et switch-core switch-robo";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 			case ROUTER_MOTOROLA:
@@ -2945,7 +2945,7 @@ void start_sysinit(void)
 			case ROUTER_D1800H:
 			case ROUTER_DLINK_DIR865:
 			case ROUTER_UBNT_UNIFIAC:
-				modules = "et switch-core switch-robo";
+				modules = "ctf et switch-core switch-robo";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 				modules = "switch-core switch-adm";

@@ -6455,7 +6455,56 @@ void start_sysinit(void)
 
 	}
 
+	nvram_set("ctf_fa_mode", "2");
+	insmod("ctf");
 	insmod("et");
+	insmod("b5301x_common");
+	insmod("b5301x_srab");
+
+	char *vlan1 = nvram_safe_get("vlan1ports");
+	char cpy[32];
+	char cpy2[32];
+	strncpy(cpy, vlan1, 31);
+	char *p = strchr(cpy, '*');
+	if (p)
+		*p = 't';
+	p = strchr(cpy, 'u');
+	if (p)
+		*p = 0;
+	vlan1 = cpy;
+	char *vlan2 = nvram_safe_get("vlan2ports");
+	strncpy(cpy2, vlan2, 31);
+	p = strchr(cpy2, '*');
+	if (p)
+		*p = 't';
+	p = strchr(cpy2, 'u');
+	if (p)
+		*p = 0;
+	vlan2 = cpy2;
+	char *next;
+	char var[32];
+	int port = 0;
+	foreach(var, vlan2, next) {
+		if (strlen(var) == 1) {
+			nvram_set("sw_wan", var);
+			port++;
+			break;
+		}
+	}
+	char cpuport[32] = { 0 };
+	foreach(var, vlan1, next) {
+		if (strlen(var) == 1) {
+			nvram_nset(var, "sw_lan%d", port++);
+		} else
+			strncpy(cpuport, var, 1);
+
+	}
+	nvram_set("sw_cpuport", cpuport);
+	sysprintf("swconfig dev switch0 set enable_vlan 1");
+	sysprintf("swconfig dev switch0 vlan 1 set ports \"%s\"", vlan1);
+	sysprintf("swconfig dev switch0 vlan 2 set ports \"%s\"", vlan2);
+	sysprintf("swconfig dev switch0 set apply");
+
 	//load mmc drivers
 	eval("ifconfig", "eth0", "up");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
