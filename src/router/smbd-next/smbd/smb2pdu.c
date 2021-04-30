@@ -1933,9 +1933,13 @@ static noinline int create_smb2_pipe(struct ksmbd_work *work)
 	}
 
 	id = ksmbd_session_rpc_open(work->sess, name);
-	if (id < 0)
+	if (id < 0) {
 		ksmbd_err("Unable to open RPC pipe: %d\n", id);
+		err = id;
+		goto out;
+	}
 
+	rsp->hdr.Status = STATUS_SUCCESS;
 	rsp->StructureSize = cpu_to_le16(89);
 	rsp->OplockLevel = SMB2_OPLOCK_LEVEL_NONE;
 	rsp->Reserved = 0;
@@ -1958,6 +1962,19 @@ static noinline int create_smb2_pipe(struct ksmbd_work *work)
 	return 0;
 
 out:
+	switch (err) {
+	case -EINVAL:
+		rsp->hdr.Status = STATUS_INVALID_PARAMETER;
+		break;
+	case -ENOSPC:
+	case -ENOMEM:
+		rsp->hdr.Status = STATUS_NO_MEMORY;
+		break;
+	}
+
+	if (!IS_ERR(name))
+		kfree(name);
+
 	smb2_set_err_rsp(work);
 	return err;
 }
@@ -5986,8 +6003,8 @@ int smb2_read(struct ksmbd_work *work)
 			le64_to_cpu(req->VolatileFileId),
 			le64_to_cpu(req->PersistentFileId));
 	if (!fp) {
-		rsp->hdr.Status = STATUS_FILE_CLOSED;
-		return -ENOENT;
+		err = -ENOENT;
+		goto out;
 	}
 
 	if (!(fp->daccess & (FILE_READ_DATA_LE | FILE_READ_ATTRIBUTES_LE))) {
@@ -6218,7 +6235,7 @@ int smb2_write(struct ksmbd_work *work)
 {
 	struct smb2_write_req *req;
 	struct smb2_write_rsp *rsp, *rsp_org;
-	struct ksmbd_file *fp = NULL;
+	struct ksmbd_file *fp;
 	loff_t offset;
 	size_t length;
 	ssize_t nbytes;
@@ -6243,8 +6260,8 @@ int smb2_write(struct ksmbd_work *work)
 	fp = ksmbd_lookup_fd_slow(work, le64_to_cpu(req->VolatileFileId),
 		le64_to_cpu(req->PersistentFileId));
 	if (!fp) {
-		rsp->hdr.Status = STATUS_FILE_CLOSED;
-		return -ENOENT;
+		err = -ENOENT;
+		goto out;
 	}
 
 	if (!(fp->daccess & (FILE_WRITE_DATA_LE | FILE_READ_ATTRIBUTES_LE))) {
