@@ -469,7 +469,7 @@ static void check_bootfails(void)
 	if (nvram_match("no_bootfails", "1")) {
 		failcnt = 0;
 	} else if (!failcnt) {
-		dd_loginfo("init", "no previous bootfails detected! (all ok)");
+		dd_loginfo("init", "no previous bootfails detected! (all ok)\n");
 		failcnt++;
 		nvram_seti("boot_fails", failcnt);
 		nvram_commit();
