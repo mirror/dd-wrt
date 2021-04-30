@@ -31,20 +31,24 @@
 
 void start_sfe(void)
 {
-	insmod("shortcut-fe");
-	insmod("shortcut-fe-ipv6");
-	insmod("fast-classifier");
-	sysprintf("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
-	dd_loginfo("sfe", "shortcut forwarding engine successfully started\n");
+	if (!*nvram_safe_get("ctf_disable")) {
+		insmod("shortcut-fe");
+		insmod("shortcut-fe-ipv6");
+		insmod("fast-classifier");
+		sysprintf("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
+		dd_loginfo("sfe", "shortcut forwarding engine successfully started\n");
+	}
 	return;
 }
 
 void stop_sfe(void)
 {
-	rmmod("fast-classifier");
-	rmmod("shortcut-fe-ipv6");
-	rmmod("shortcut-fe");
-	dd_loginfo("sfe", "shortcut forwarding engine successfully stopped\n");
+	if (!*nvram_safe_get("ctf_disable")) {
+		rmmod("fast-classifier");
+		rmmod("shortcut-fe-ipv6");
+		rmmod("shortcut-fe");
+		dd_loginfo("sfe", "shortcut forwarding engine successfully stopped\n");
+	}
 	return;
 }
 #endif
