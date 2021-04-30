@@ -32,6 +32,7 @@
 #include <services.h>
 #include <utils.h>
 #ifdef HAVE_OPENVPN
+
 static void run_openvpn(char *prg, char *path)
 {
 	char *conf;
@@ -48,35 +49,109 @@ static void run_openvpn(char *prg, char *path)
 
 int cleanup_pbr(char *tablenr)
 {
-	//clean up
 	int limit = 1000;
 	char cmd[256] = { 0 };
 	eval("ip", "route", "flush", "table", tablenr);
-	eval("ip", "route", "flush", "table", "9");
-
+	//this is no longer necessary as the bug in OpenVPN about misdetection of default route is resolved in 2.5.2
+	//eval("ip", "route", "flush", "table", "9");
+	
 	//eval("while", "ip", "rule", "delete", "from", "0/0", "to", "0/0", "table", tablenr2, ";", "do", "true", ";", "done");  //does not work revert to system()
+	//sprintf(cmd, "while ip rule delete from 0/0 to 0/0 table %s; do true; done", tablenr);
+	//system(cmd);
 	while (limit > 0 && !eval("ip", "rule", "delete", "from", "0/0", "to", "0/0", "table", tablenr)) {
 		limit--;
 	}
-
-//      sprintf(cmd, "while ip rule delete from 0/0 to 0/0 table %s; do true; done", tablenr);
-//      system(cmd);
 	return 0;
 }
+int is_ipv4 (char *ip) {
+	int num;
+	int flag = 1;
+	int counter = 0;
+	char *p = strtok(ip,".");
+	while (p && flag ){
+		for (int i = 0; p[i] != '\0'; i++) {
+			if (!isdigit(p[i])) {
+				return 0;
+			}
+		}
+		num = atoi(p);
+		if (num >= 0 && num <= 255 && (counter++<4)) {
+			flag = 1;
+			p = strtok(NULL,".");
+		}
+		else{
+			flag = 0;
+			break;
+		}
+	}
+	return flag && (counter==4);
+}
+int split_ipv4 (char *ipv4) {
+	char ip_mask[100] = { 0 };
+	char ip[64] = { 0 };
+	char mask[4] = { 0 };
+	int mask_ok = 0;
+	char *p;
+	strncpy(ip_mask, ipv4, (sizeof ip_mask)-1);
+	p = strtok (ip_mask,"//");
+	if (p != NULL) 
+	{
+		strncpy(ip, p, (sizeof ip)-1);
+		p = strtok (NULL, "//");
+		if (p != NULL)
+			strncpy(mask, p, (sizeof mask)-1);
+	}
+	if (mask[0] != '\0') {
+		if (atoi(mask) > 0 && atoi(mask) <= 32 ) {
+			mask_ok = 1;
+		}
+	} else if (!strchr(ipv4, '/')) {
+		mask_ok = 1;
+	}
+	if (is_ipv4(ip) && mask_ok) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+int test_ipv4 (char *iprule) {
+	char *pch;
+	int flag = 1;
+	char ipv4[5][100] = { 0 };
+	char strtosplit[100] = { 0 };
+	int i = 1;
+	strncpy(strtosplit, iprule, (sizeof strtosplit)-1);
+	pch = strtok (strtosplit," ");
+ 	while (pch != NULL) {
+		if ( isdigit(pch[0]) && strchr(pch, '.')) {
+			strncpy(ipv4[i], pch, (sizeof ipv4[i])-1);
+			if (i < 5) {
+				i++;
+			} else {
+				break;
+			}
+		}
+		pch = strtok (NULL, " ");
+	}
+	for (int j = 1; j < i; j++) {
+		if (!split_ipv4(ipv4[j])) {
+			flag = 0;  //no valid IP
+		}
+	}
+	return flag;
+}
 
-void setroute_pbr(char *tablenr)
-{
-
-	cleanup_pbr(tablenr);	//probably not necessary as openvpn restarts it will clean up
-
+void setroute_pbr(char *tablenr) {
 	char *curline = nvram_safe_get("openvpncl_route");
 	char cmd[256] = { 0 };
-
+	
+	cleanup_pbr(tablenr);
+	
 	if (nvram_matchi("openvpncl_killswitch", 1)) {
 		eval("ip", "route", "add", "prohibit", "default", "table", tablenr);
 		dd_loginfo("openvpn", "PBR killswitch is active using: %s", curline);
-		// need table with a number below table 10 with default gateway to let OpenVPN get default route, possible bug where OpenVPN uses default route from lowest table but not from main table
-		eval("ip", "route", "add", "default", "via", nvram_safe_get("wan_gateway"), "table", "9");
+		// need table with a number below table 10 with default gateway to let OpenVPN get default route, possible bug where OpenVPN uses default route from lowest table but not from main table resolved in OpenVPN 2.5.2
+		//eval("ip", "route", "add", "default", "via", nvram_safe_get("wan_gateway"), "table", "9");
 	} else {
 		eval("ip", "route", "add", "default", "via", nvram_safe_get("wan_gateway"), "table", tablenr);
 		dd_loginfo("openvpn", "PBR is active but NO killwitch: %s", curline);
@@ -84,7 +159,7 @@ void setroute_pbr(char *tablenr)
 	//add other routes from main table
 	sprintf(cmd, "ip route show | grep -Ev '^default |^0.0.0.0/1 |^128.0.0.0/1 ' | while read route; do ip route add $route table %s >/dev/null 2>&1; done", tablenr);
 	sysprintf(cmd);
-
+	
 	while (curline) {
 		char *nextLine = strchr(curline, '\n');
 		size_t curlinelen = nextLine ? ((unsigned)(nextLine - curline)) : strlen(curline);
@@ -97,11 +172,11 @@ void setroute_pbr(char *tablenr)
 			//dd_loginfo("openvpn", "tempstr= [%s]\n", tempstr);
 			// check if line starts with a # skip
 			if (tempstr[0] == '#') {
-				dd_loginfo("openvpn", "Skip line starting with #: %s\n", tempstr);
+				//dd_loginfo("openvpn", "Skip line starting with #: %s\n", tempstr);
 			} else {
 				// add from if starting with digit
 				if (isdigit(tempstr[0])) {
-					dd_loginfo("openvpn", "String started with digit added from for backwards compatiblitiy: %s\n", tempstr);
+					//dd_loginfo("openvpn", "String started with digit added from for backwards compatiblitiy: %s\n", tempstr);
 					strcpy(iprule, "from ");
 				}
 				strcat(iprule, tempstr);
@@ -111,7 +186,11 @@ void setroute_pbr(char *tablenr)
 					piprule[0] = '\0';
 				}
 				if (*iprule) {
-					sysprintf("ip rule add %s table %s", iprule, tablenr);
+					if (test_ipv4(iprule)) {
+						sysprintf("ip rule add %s table %s", iprule, tablenr);
+					} else {
+						dd_loginfo("openvpn", "ip rule %s has NO valid IP address, not added to table %s", iprule, tablenr);
+					}
 				}
 			}
 			free(tempstr);
@@ -161,6 +240,8 @@ void create_openvpnrules(FILE * fp)
 	if (*(nvram_safe_get("openvpncl_route")) && strncmp((nvram_safe_get("openvpncl_route")), "#", 1) != 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		//fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//;/^$/d' \"/tmp/openvpncl/policy_ips\" | while read IP; do [[ \"$IP\" == [0-9]* ]] && IP=\"from $IP\"; ip rule add table 10 $IP; done\n");  //rules added in setroute_pbr
+		//remove possible wrong from all (bug in ip rule command where it can add garbage), courtesy of @eibgrad
+		fprintf(fp, "for i in $(ip rule | grep 'from all lookup 10' | cut -d: -f1); do ip rule del prior $i; done\n");
 /*              if (nvram_match("openvpncl_tuntap", "tap"))
                         fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n"); //needs investigation cause in TAP mode no gateway is received
                 else */
