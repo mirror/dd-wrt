@@ -6459,7 +6459,7 @@ void start_sysinit(void)
 	else
 		nvram_set("ctf_disable", "1");
 
-	nvram_set("ctf_fa_mode", "2");
+	nvram_default_get("ctf_fa_mode", "2");
 	insmod("ctf");
 	insmod("et");
 	insmod("b5301x_common");
