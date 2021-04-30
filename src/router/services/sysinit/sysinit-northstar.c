@@ -6454,6 +6454,10 @@ void start_sysinit(void)
 		}
 
 	}
+	if (nvram_match("sfe", "1"))
+		nvram_set("ctf_disable", "0");
+	else
+		nvram_set("ctf_disable", "1");
 
 	nvram_set("ctf_fa_mode", "2");
 	insmod("ctf");
