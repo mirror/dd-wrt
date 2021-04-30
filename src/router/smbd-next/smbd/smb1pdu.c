@@ -1035,6 +1035,7 @@ static int build_sess_rsp_extsec(struct ksmbd_session *sess,
 	int err = 0, neg_blob_len;
 	unsigned char *spnego_blob;
 	u16 spnego_blob_len;
+	int sz;
 
 	rsp->hdr.WordCount = 4;
 	rsp->Action = 0;
@@ -1045,19 +1046,12 @@ static int build_sess_rsp_extsec(struct ksmbd_session *sess,
 	inc_rfc1001_len(&rsp->hdr, 8);
 
 	negblob = (struct negotiate_message *)req->SecurityBlob;
-	err = ksmbd_decode_negTokenInit((char *)negblob,
-			le16_to_cpu(req->SecurityBlobLength), conn);
-	if (!err) {
-		ksmbd_debug(SMB, "negTokenInit parse err %d\n", err);
-		/* If failed, it might be negTokenTarg */
-		err = ksmbd_decode_negTokenTarg((char *)negblob,
-				le16_to_cpu(req->SecurityBlobLength),
-				conn);
-		if (!err) {
-			ksmbd_debug(SMB, "negTokenTarg parse err %d\n", err);
+	sz = le16_to_cpu(req->SecurityBlobLength);
+
+	if (ksmbd_decode_negTokenInit((char *)negblob, sz, conn)) {
+		if (ksmbd_decode_negTokenTarg((char *)negblob, sz, conn)) {
 			conn->use_spnego = false;
 		}
-		err = 0;
 	}
 
 	if (conn->mechToken)
@@ -2125,18 +2119,8 @@ out:
 	case -EINVAL:
 		rsp->hdr.Status.CifsError = STATUS_INVALID_PARAMETER;
 		break;
-	case -EOVERFLOW:
-		rsp->hdr.Status.CifsError = STATUS_BUFFER_OVERFLOW;
-		break;
-	case -ETIMEDOUT:
-		rsp->hdr.Status.CifsError = STATUS_IO_TIMEOUT;
-		break;
-	case -EOPNOTSUPP:
-		rsp->hdr.Status.CifsError = STATUS_NOT_SUPPORTED;
-		break;
-	case -EMFILE:
-		rsp->hdr.Status.CifsError = STATUS_TOO_MANY_OPENED_FILES;
-		break;
+	case -ENOSPC:
+	case -ENOMEM:
 	default:
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 		break;
@@ -2513,7 +2497,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	} else {
 		if (ksmbd_inode_pending_delete(fp)) {
 			err = -EBUSY;
-			goto out;
+			goto free_path;
 		}
 
 		if (share_ret < 0) {
@@ -4051,7 +4035,7 @@ static int query_path_info(struct ksmbd_work *work)
 	if (!test_share_config_flag(share, KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS)) {
 		if (d_is_symlink(path.dentry)) {
 			rsp_hdr->Status.CifsError = STATUS_ACCESS_DENIED;
-			goto out;
+			goto err_out;
 		}
 	}
 
@@ -4931,7 +4915,10 @@ static int smb_posix_open(struct ksmbd_work *work)
 			err = -EACCES;
 			ksmbd_debug(SMB,
 				"returning as user does not have permission to write\n");
-			goto out;
+			if (file_present)
+				goto free_path;
+			else
+				goto out;
 		}
 	}
 
@@ -6032,6 +6019,7 @@ static int find_first(struct ksmbd_work *work)
 #endif
 			rc = -EACCES;
 			rsp_hdr->Status.CifsError = STATUS_ACCESS_DENIED;
+			path_put(&path);
 			goto err_out;
 		}
 	}
@@ -6039,6 +6027,7 @@ static int find_first(struct ksmbd_work *work)
 	if (!test_share_config_flag(share, KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS)) {
 		if (d_is_symlink(path.dentry)) {
 			rsp_hdr->Status.CifsError = STATUS_ACCESS_DENIED;
+			path_put(&path);
 			goto err_out;
 		}
 	}
@@ -7966,6 +7955,7 @@ static __le32 smb_query_info_path(struct ksmbd_work *work, struct kstat *st)
 #else
 	generic_fillattr(d_inode(path.dentry), st);
 #endif
+	path_put(&path);
 out:
 	ksmbd_revert_fsids(work);
 	kfree(name);
