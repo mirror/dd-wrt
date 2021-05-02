@@ -3,7 +3,7 @@
  * Contents are wifi-specific, used by any kernel or app-level
  * software that might want wifi things as it grows.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -122,6 +122,20 @@ static const char *wf_chspec_bw_str[] =
 	"na"
 };
 
+static const uint wf_chspec_bw_half_mhz[] = {
+	10,	/*   5MHz (WL_CHANSPEC_BW_5) */
+	20,	/*  10MHz (WL_CHANSPEC_BW_10) */
+	40,	/*  20MHz (WL_CHANSPEC_BW_20) */
+	80,	/*  40MHz (WL_CHANSPEC_BW_40) */
+	160,	/*  80MHz (WL_CHANSPEC_BW_80) */
+	320,	/* 160MHz (WL_CHANSPEC_BW_160) */
+	320,	/* 160MHz (WL_CHANSPEC_BW_8080) */
+	5	/* 2.5MHz (WL_CHANSPEC_BW_2P5) */
+};
+
+#define WF_NUM_BW_HALF_MHZ \
+	(sizeof(wf_chspec_bw_half_mhz)/sizeof(wf_chspec_bw_half_mhz[0]))
+
 static const uint8 wf_chspec_bw_mhz[] =
 {5, 10, 20, 40, 80, 160, 160};
 
@@ -147,7 +161,23 @@ static const uint8 wf_5g_160m_chans[] =
 	(sizeof(wf_5g_160m_chans)/sizeof(uint8))
 
 
-/* convert bandwidth from chanspec to MHz */
+/* Get bandwidth of chanspec in half MHz;
+ * works with 2.5MHz to 160MHz (including 80p80) chanspecs
+ *
+ * @param	chspec		chanspec_t format
+ *
+ * @return	bandwidth of a chanspec in half MHz units
+ */
+uint
+wf_bw_chspec_to_half_mhz(chanspec_t chspec)
+{
+	uint bw;
+
+	bw = (chspec & WL_CHANSPEC_BW_MASK) >> WL_CHANSPEC_BW_SHIFT;
+	return (bw >= WF_NUM_BW_HALF_MHZ ? 0 : wf_chspec_bw_half_mhz[bw]);
+}
+
+/* convert bandwidth from chanspec to MHz; works with 5MHz to 160MHz (including 80p80) */
 static uint
 bw_chspec_to_mhz(chanspec_t chspec)
 {
@@ -272,43 +302,7 @@ wf_chspec_ntoa(chanspec_t chspec, char *buf)
 			sb = CHSPEC_SB_UPPER(chspec) ? "u" : "l";
 			snprintf(buf, CHANSPEC_STR_LEN, "%s%d%s", band, ctl_chan, sb);
 		} else {
-			char lll[8]={0};
-			char llu[8]={0};
-			char lul[8]={0};
-			char luu[8]={0};
-			char ull[8]={0};
-			char ulu[8]={0};
-			char uul[8]={0};
-			char uuu[8]={0};
-			if (chspec & WL_CHANSPEC_BW_160) {
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LLL)
-				sprintf(lll,"[lll]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LLU)
-				sprintf(llu,"[llu]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LUL)
-				sprintf(lul,"[lul]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LUU)
-				sprintf(luu,"[luu]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_ULL)
-				sprintf(ull,"[ull]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_ULU)
-				sprintf(ulu,"[ulu]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UUL)
-				sprintf(uul,"[uul]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UUU)
-				sprintf(uuu,"[uuu]");			
-			}
-			if (chspec & WL_CHANSPEC_BW_80) {
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LL)
-				sprintf(lll,"[ll]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LU)
-				sprintf(llu,"[lu]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UL)
-				sprintf(lul,"[ul]");
-			if ((chspec&WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UU)
-				sprintf(luu,"[uu]");
-			}
-			snprintf(buf, CHANSPEC_STR_LEN, "%s%d/%s %s%s%s%s%s%s%s%s", band, ctl_chan, bw, lll,llu,lul,luu , ull,ulu,uul,uuu);
+			snprintf(buf, CHANSPEC_STR_LEN, "%s%d/%s", band, ctl_chan, bw);
 		}
 #endif /* CHANSPEC_NEW_40MHZ_FORMAT */
 
@@ -637,12 +631,11 @@ wf_chspec_malformed(chanspec_t chanspec)
 	} else if (chspec_bw == WL_CHANSPEC_BW_40) {
 		if (CHSPEC_CTL_SB(chanspec) > WL_CHANSPEC_CTL_SB_LLU)
 			return TRUE;
-	} else if (chspec_bw == WL_CHANSPEC_BW_80 ||
-	           chspec_bw == WL_CHANSPEC_BW_8080) {
+	} else if (chspec_bw == WL_CHANSPEC_BW_80) {
 		if (CHSPEC_CTL_SB(chanspec) > WL_CHANSPEC_CTL_SB_LUU)
 			return TRUE;
-	}
-	else if (chspec_bw == WL_CHANSPEC_BW_160) {
+	} else if (chspec_bw == WL_CHANSPEC_BW_160 ||
+	           chspec_bw == WL_CHANSPEC_BW_8080) {
 		ASSERT(CHSPEC_CTL_SB(chanspec) <= WL_CHANSPEC_CTL_SB_UUU);
 	}
 	return FALSE;
@@ -1110,8 +1103,12 @@ wf_chspec_primary80_channel(chanspec_t chanspec)
 		primary80_chan = CHSPEC_CHANNEL(chanspec);
 	}
 	else if (CHSPEC_IS8080(chanspec)) {
-		/* Channel ID 1 corresponds to frequency segment 0, the primary 80 MHz segment */
-		primary80_chan = wf_chspec_get80Mhz_ch(CHSPEC_CHAN1(chanspec));
+		uint sb = CHSPEC_CTL_SB(chanspec);
+		if (sb < WL_CHANSPEC_CTL_SB_ULL) {
+			primary80_chan = wf_chspec_get80Mhz_ch(CHSPEC_CHAN1(chanspec));
+		} else {
+			primary80_chan = wf_chspec_get80Mhz_ch(CHSPEC_CHAN2(chanspec));
+		}
 	}
 	else if (CHSPEC_IS160(chanspec)) {
 		uint8 center_chan = CHSPEC_CHANNEL(chanspec);
@@ -1149,7 +1146,12 @@ wf_chspec_secondary80_channel(chanspec_t chanspec)
 	uint8 secondary80_chan;
 
 	if (CHSPEC_IS8080(chanspec)) {
-		secondary80_chan = wf_chspec_get80Mhz_ch(CHSPEC_CHAN2(chanspec));
+		uint sb = CHSPEC_CTL_SB(chanspec);
+		if (sb < WL_CHANSPEC_CTL_SB_ULL) {
+			secondary80_chan = wf_chspec_get80Mhz_ch(CHSPEC_CHAN2(chanspec));
+		} else {
+			secondary80_chan = wf_chspec_get80Mhz_ch(CHSPEC_CHAN1(chanspec));
+		}
 	}
 	else if (CHSPEC_IS160(chanspec)) {
 		uint8 center_chan = CHSPEC_CHANNEL(chanspec);
@@ -1194,11 +1196,13 @@ wf_chspec_primary80_chspec(chanspec_t chspec)
 		chspec80 = chspec;
 	}
 	else if (CHSPEC_IS8080(chspec)) {
-
-		/* Channel ID 1 corresponds to frequency segment 0, the primary 80 MHz segment */
-		center_chan = wf_chspec_get80Mhz_ch(CHSPEC_CHAN1(chspec));
-
-		sb = CHSPEC_CTL_SB(chspec);
+		uint sb = CHSPEC_CTL_SB(chspec);
+		if (sb < WL_CHANSPEC_CTL_SB_ULL) {
+			center_chan = wf_chspec_get80Mhz_ch(CHSPEC_CHAN1(chspec));
+		} else {
+			center_chan = wf_chspec_get80Mhz_ch(CHSPEC_CHAN2(chspec));
+			sb &= WL_CHANSPEC_CTL_SB_LUU; /* reduce to 80MHz side band */
+		}
 
 		/* Create primary 80MHz chanspec */
 		chspec80 = (WL_CHANSPEC_BAND_5G | WL_CHANSPEC_BW_80 | sb | center_chan);
@@ -1238,3 +1242,25 @@ wf_chspec_channel(chanspec_t chspec)
 	}
 }
 #endif /* WL11AC_80P80 */
+
+/*
+ * Given two chanspecs, returns true if they overlap.
+ * (Overlap: At least one 20MHz subband is common between the two chanspecs provided)
+ */
+bool wf_chspec_overlap(chanspec_t chspec0, chanspec_t chspec1)
+{
+	uint8 ch0, ch1;
+
+	ASSERT(CHSPEC_BW_GE(chspec0, WL_CHANSPEC_BW_20)); /* not valid for ULB chspecs */
+	ASSERT(CHSPEC_BW_GE(chspec1, WL_CHANSPEC_BW_20));
+
+	FOREACH_20_SB(chspec0, ch0) {
+		FOREACH_20_SB(chspec1, ch1) {
+			if (ch0 == ch1) {
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}

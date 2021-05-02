@@ -1,7 +1,7 @@
 /*
  * Misc Broadcom BCM47XX MDC/MDIO enet phy definitions.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -53,9 +53,9 @@
 #define LPA_100HALF	0x0080			/* can do 100mbps half-duplex */
 #define LPA_100FULL	0x0100			/* can do 100mbps full-duplex */
 #define LPA_100BASE4	0x0200			/* can do 100mbps 4k packets */
-#ifndef LPA_RESV
-#define LPA_RESV	0x1c00			/* unused */
-#endif
+#if !defined(LPA_RESV)
+#define LPA_RESV    0x1c00          /* unused */
+#endif /* LPA_RESV */
 #define LPA_RFAULT	0x2000			/* link partner faulted */
 #define LPA_LPACK	0x4000			/* link partner acked us */
 #define LPA_NPAGE	0x8000			/* next page bit */

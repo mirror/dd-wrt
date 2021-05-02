@@ -1,7 +1,7 @@
 /*
  * gmacdefs - Broadcom gmac (Unimac) specific definitions
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,10 +14,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- *
- * <<Broadcom-WL-IPTag/Open:>>
- * $Id: gmac_core.h 523172 2014-12-28 06:24:48Z $
+ * $Id: gmac_core.h 494237 2014-07-31 03:10:57Z $
  */
 
 #ifndef	_gmac_core_h_
@@ -257,7 +254,7 @@ typedef volatile struct _gmacregs {
 #define	CC_RED			0x04000000
 #define	CC_PE			0x08000000
 #define	CC_TPI			0x10000000
-#define CC_AT(corerev)  ((corerev >= 6) ? 0x0: 0x20000000)
+#define	CC_AT			0x20000000
 
 /* mac addr high */
 #define	MH_HI_MASK		0xffff
@@ -279,6 +276,4 @@ typedef volatile struct _gmacregs {
 /* 4707 has 4 GMAC and need to be reset before start access */
 #define MAX_GMAC_CORES_4707	4
 
-/* 53573 has 2 GMAC */
-#define MAX_GMAC_CORES_53573	2
 #endif	/* _gmac_core_h_ */
