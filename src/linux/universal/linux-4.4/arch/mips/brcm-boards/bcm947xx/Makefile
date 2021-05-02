@@ -23,7 +23,7 @@ SHARED := ../../../../brcm/mipsel_r1/shared
 else
 SHARED := ../../../../brcm/mipsel/shared
 endif
-EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/common/include   -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 
 ifeq ($(CONFIG_MTD_NFLASH),y)
 EXTRA_CFLAGS += -DNFLASH_SUPPORT -DCCNFLASH_SUPPORT
