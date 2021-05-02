@@ -539,7 +539,7 @@ static int rule_wanvlan(char *name)
 static int rule_fa(char *name)
 {
 	char *fa = nvram_safe_get("ctf_fa_mode");
-	return *ctf ? 1 : 0;
+	return *fa ? 1 : 0;
 }
 
 static int rule_afterburner(char *name)
