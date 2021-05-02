@@ -667,4 +667,9 @@ static inline unsigned long compare_vlan_header(const struct vlan_hdr *h1,
 		(__force u32)h2->h_vlan_encapsulated_proto);
 #endif
 }
+
+#ifdef HNDCTF
+void vlan_rxstats_upd(struct net_device *dev, struct sk_buff *skb, int packets, int bytes);
+void vlan_txstats_upd(struct net_device *dev, struct sk_buff *skb, int packets, int bytes);
+#endif /* HNDCTF */
 #endif /* !(_LINUX_IF_VLAN_H_) */
