@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: mp4file
+Version: 0.2
+Summary: Library for rudimentary parsing of mp4 atoms, especially metadata atoms.
+Home-page: UNKNOWN
+Author: Bill Napier
+Author-email: napier@pobox.com
+License: PSF
+Description: UNKNOWN
+Keywords: mp4 atom quicktime
+Platform: UNKNOWN
