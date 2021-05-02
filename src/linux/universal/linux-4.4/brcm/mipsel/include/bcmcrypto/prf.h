@@ -2,7 +2,7 @@
  * prf.h
  * PRF function used in WPA and TGi
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: prf.h 451682 2014-01-27 20:30:17Z $
+ * $Id: prf.h 241182 2011-02-17 21:50:03Z $
  */
 
 #ifndef _PRF_H_
@@ -29,18 +29,18 @@
 #define PRF_MAX_KEY_LEN	64
 #define PRF_OUTBUF_LEN	80
 
-extern int PRF(unsigned char *key, int key_len, unsigned char *prefix,
+extern int BCMROMFN(PRF)(unsigned char *key, int key_len, unsigned char *prefix,
                          int prefix_len, unsigned char *data, int data_len,
                          unsigned char *output, int len);
 
-extern int fPRF(unsigned char *key, int key_len, const unsigned char *prefix,
+extern int BCMROMFN(fPRF)(unsigned char *key, int key_len, const unsigned char *prefix,
                           int prefix_len, unsigned char *data, int data_len,
                           unsigned char *output, int len);
 
-extern void hmac_sha1(unsigned char *text, int text_len, unsigned char *key,
+extern void BCMROMFN(hmac_sha1)(unsigned char *text, int text_len, unsigned char *key,
                                 int key_len, unsigned char *digest);
 
-extern void hmac_md5(unsigned char *text, int text_len, unsigned char *key,
+extern void BCMROMFN(hmac_md5)(unsigned char *text, int text_len, unsigned char *key,
                                int key_len, unsigned char *digest);
 
 #endif /* _PRF_H_ */
