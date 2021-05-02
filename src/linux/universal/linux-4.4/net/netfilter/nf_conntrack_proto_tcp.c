@@ -33,6 +33,13 @@
 #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
 #include <net/netfilter/ipv6/nf_conntrack_ipv6.h>
 
+#ifdef HNDCTF
+#include <ctf/hndctf.h>
+extern int ip_conntrack_ipct_delete(struct nf_conn *ct, int ct_timeout);
+#else
+#define BCMFASTPATH_HOST
+#endif /* HNDCTF */
+
 /* Do not check the TCP window for incoming packets  */
 static int nf_ct_tcp_no_window_check __read_mostly = 1;
 EXPORT_SYMBOL_GPL(nf_ct_tcp_no_window_check);
@@ -1043,6 +1050,18 @@ static int tcp_packet(struct nf_conn *ct,
 		/* Keep compilers happy. */
 		break;
 	}
+
+#ifdef HNDCTF
+	/* Remove the ipc entries on receipt of FIN or RST */
+	if (CTF_ENAB(kcih)) {
+		if (ct->ctf_flags & CTF_FLAGS_CACHED) {
+			if (th->fin || th->rst) {
+				ip_conntrack_ipct_delete(ct, 0);
+			}
+			goto in_window;
+		}
+	}
+#endif /* HNDCTF */
 
 	if (!tcp_in_window(ct, &ct->proto.tcp, dir, index,
 			   skb, dataoff, th, pf)) {

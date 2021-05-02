@@ -39,6 +39,9 @@
 #include <linux/if_vlan.h>
 #include "vlan.h"
 #include "vlanproc.h"
+#ifdef HNDCTF
+#include <ctf/hndctf.h>
+#endif /* HNDCTF */
 
 #define DRV_VERSION "1.8"
 
@@ -98,6 +101,10 @@ void unregister_vlan_dev(struct net_device *dev, struct list_head *head)
 		vlan_gvrp_request_leave(dev);
 
 	vlan_group_set_device(grp, vlan->vlan_proto, vlan_id, NULL);
+
+#ifdef HNDCTF
+	(void)ctf_dev_vlan_delete(kcih, real_dev, vlan_id);
+#endif /* HNDCTF */
 
 	netdev_upper_dev_unlink(real_dev, dev);
 	/* Because unregister_netdevice_queue() makes sure at least one rcu
@@ -210,8 +217,12 @@ static int register_vlan_device(struct net_device *real_dev, u16 vlan_id)
 	struct net *net = dev_net(real_dev);
 	struct vlan_net *vn = net_generic(net, vlan_net_id);
 	char name[IFNAMSIZ];
+	char dbgstr[128];
 	int err;
 
+	snprintf(dbgstr, sizeof(dbgstr), "dev: %s vlan: %u", real_dev->name, vlan_id);
+
+	
 	if (vlan_id >= VLAN_VID_MASK)
 		return -ERANGE;
 
@@ -251,6 +262,7 @@ static int register_vlan_device(struct net_device *real_dev, u16 vlan_id)
 	if (new_dev == NULL)
 		return -ENOBUFS;
 
+
 	dev_net_set(new_dev, net);
 	/* need 4 bytes for extra VLAN header info,
 	 * hope the underlying device can handle it.
@@ -269,6 +281,30 @@ static int register_vlan_device(struct net_device *real_dev, u16 vlan_id)
 	err = register_vlan_dev(new_dev);
 	if (err < 0)
 		goto out_free_newdev;
+
+
+
+#if 0 //def HNDCTF
+
+	printk(KERN_ERR "%s - CTF state PRE for PARENT (real) device: %s[%s]\n", 
+		dbgstr, ctf_isenabled(kcih, real_dev) == TRUE ? "CTF_ON" : "CTF_OFF", real_dev->name );
+	printk(KERN_ERR "%s - CTF state PRE for CHILD (new) device: %s[%s]\n", 
+		dbgstr, ctf_isenabled(kcih, new_dev) == TRUE ? "CTF_ON" : "CTF_OFF", new_dev->name );
+
+
+	err = ctf_dev_vlan_add(kcih, real_dev, vlan_id, new_dev);
+
+	if (err != 0) {
+		printk(KERN_ERR "%s - ctf_dev_vlan_add() failed, cause: %d; still adding interface\n", dbgstr, err);
+		err = 0;
+	} else {
+
+		printk(KERN_ERR "%s - CTF state POST for PARENT (real) device: %s[%s]\n", 
+			dbgstr, ctf_isenabled(kcih, real_dev) == TRUE ? "CTF_ON" : "CTF_OFF", real_dev->name );
+		printk(KERN_ERR "%s - CTF state POST for CHILD (new) device: %s[%s]\n", 
+			dbgstr, ctf_isenabled(kcih, new_dev) == TRUE ? "CTF_ON" : "CTF_OFF", new_dev->name );
+	}
+#endif /* HNDCTF */
 
 	return 0;
 
@@ -507,12 +543,16 @@ static int vlan_ioctl_handler(struct net *net, void __user *arg)
 	struct vlan_ioctl_args args;
 	struct net_device *dev = NULL;
 
+	pr_debug("%s(): entering\n", __FUNCTION__);
+
 	if (copy_from_user(&args, arg, sizeof(struct vlan_ioctl_args)))
 		return -EFAULT;
 
 	/* Null terminate this sucker, just in case. */
 	args.device1[23] = 0;
 	args.u.device2[23] = 0;
+
+	pr_debug("%s(): args.cmd=%u\n", __FUNCTION__, args.cmd);
 
 	rtnl_lock();
 

@@ -28,6 +28,9 @@
 
 #include <linux/netfilter/x_tables.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
+#if IS_ENABLED(CONFIG_IP_NF_TARGET_CONE)
+#include <linux/netfilter_ipv4/ipt_cone.h>
+#endif /* CONFIG_IP_NF_TARGET_CONE */
 #include <net/netfilter/nf_log.h>
 #include "../../netfilter/xt_repldata.h"
 
@@ -456,6 +459,16 @@ ipt_do_table(struct sk_buff *skb,
 				/* Pop from stack? */
 				if (v != XT_RETURN) {
 					verdict = (unsigned int)(-v) - 1;
+
+#if IS_ENABLED(CONFIG_IP_NF_TARGET_CONE)
+					acpar.target   = t->u.kernel.target;
+					acpar.targinfo = t->data;
+					if (ipt_cone_target(skb, &acpar) == NF_ACCEPT) {
+						/* Accept cone target as default */
+						verdict = NF_ACCEPT;
+					}
+#endif /* CONFIG_IP_NF_TARGET_CONE */
+
 					break;
 				}
 				if (stackidx == 0) {

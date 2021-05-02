@@ -164,3 +164,5 @@ drop:
 	kfree_skb(skb);
 	return NET_RX_DROP;
 }
+
+EXPORT_SYMBOL_GPL(ip_forward);
