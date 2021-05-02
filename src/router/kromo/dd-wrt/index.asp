@@ -431,7 +431,7 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvc("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvc("lan_stp", "0"); %> /><% tran("share.disable"); %>
 								</div>
-								
+				<% ifdef("WET", "-->"); %>
 							</fieldset><br />
 							
 							<h2><% tran("idx.h23"); %></h2>
