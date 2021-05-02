@@ -3,7 +3,7 @@
  * Broadcom Home Networking Division 10/100 Mbit/s Ethernet
  * Device Driver.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etc.c 550727 2015-04-21 10:54:31Z $
+ * $Id: etc.c 670472 2016-11-16 02:24:51Z $
  */
 
 #include <et_cfg.h>
@@ -503,8 +503,7 @@ etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg, int len)
 				bcm_bprintf(&b, "fa ");
 #endif
 #ifdef BCM_GMAC3
-				if (!getvar(NULL, "gmac3_off"))
-					bcm_bprintf(&b, "gmac3 ");
+				bcm_bprintf(&b, "gmac3 ");
 #endif
 			}
 			break;
@@ -659,15 +658,23 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 	case ETCROBORD:
 		if (etc->robo && vec) {
 			uint page, reg;
-			uint16 val;
+			uint64 val;
+			int len = 2;
 			robo_info_t *robo = (robo_info_t *)etc->robo;
 
- 			page = vec[0] >> 16;
- 			reg = vec[0] & 0xffff;
-			val = -1;
-			robo->ops->read_reg(etc->robo, page, reg, &val, 2);
-			vec[1] = val;
-			ET_TRACE(("etc_ioctl: ETCROBORD of page 0x%x, reg 0x%x => 0x%x\n",
+			page = vec[0] >> 16;
+			reg = vec[0] & 0xffff;
+			if ((vec[1] >= 1) && (vec[1] <= 8))
+				len = vec[1];
+			/* For SPI mode, the length can only be 1, 2, and 4 bytes */
+			if ((len > 4) && (!strcmp(robo->ops->desc, "SPI (GPIO)"))) {
+				vec[1] = -1;
+				break;
+			}
+			val = 0;
+			robo->ops->read_reg(etc->robo, page, reg, &val, len);
+			*((unsigned long long *)&vec[2]) = val;
+			ET_TRACE(("etc_ioctl: ETCROBORD of page 0x%x, reg 0x%x  => 0x%016llX\n",
 			          page, reg, val));
 		}
 		break;
@@ -675,59 +682,24 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 	case ETCROBOWR:
 		if (etc->robo && vec) {
 			uint page, reg;
-			uint16 val; 
+			uint64 val;
 			robo_info_t *robo = (robo_info_t *)etc->robo;
-
- 			page = vec[0] >> 16;
- 			reg = vec[0] & 0xffff;
-			val = vec[1];
-			robo->ops->write_reg(etc->robo, page, vec[0], &val, 2);
-			ET_TRACE(("etc_ioctl: ETCROBOWR to page 0x%x, reg 0x%x <= 0x%x\n",
-			          page, reg, val));
-		}
-		break;
-	case ETCROBORD4:
-		if (etc->robo && vec) {
-			uint page, reg;
-			uint32 val;
-			robo_info_t *robo = (robo_info_t *)etc->robo;
-
+			int len = 2;
 			page = vec[0] >> 16;
 			reg = vec[0] & 0xffff;
-			val = -1;
-			robo->ops->read_reg(etc->robo, page, reg, &val, 4);
-			vec[1] = val;
-			ET_TRACE(("etc_ioctl: ETCROBORD4 of page 0x%x, reg 0x%x => 0x%x\n",
+			if ((vec[1] >= 1) && (vec[1] <= 8))
+				len = vec[1];
+			/* For SPI mode, the length can only be 1, 2, and 4 bytes */
+			if ((len > 4) && (!strcmp(robo->ops->desc, "SPI (GPIO)"))) {
+				vec[1] = -1;
+				break;
+			}
+			val = *((unsigned long long *)&vec[2]);
+			robo->ops->write_reg(etc->robo, page, vec[0], &val, len);
+			ET_TRACE(("etc_ioctl: ETCROBOWR to page 0x%x, reg 0x%x <= 0x%016llX\n",
 			          page, reg, val));
-		}
-		break;
 
-	case ETCROBOWR4:
-		if (etc->robo && vec) {
-			uint page, reg;
-			uint32 val;
-			robo_info_t *robo = (robo_info_t *)etc->robo;
-
-			page = vec[0] >> 16;
-			reg = vec[0] & 0xffff;
-			val = vec[1];
-			robo->ops->write_reg(etc->robo, page, vec[0], &val, 4);
-			ET_TRACE(("etc_ioctl: ETCROBOWR4 to page 0x%x, reg 0x%x <= 0x%x\n",
-			          page, reg, val));
-		}
-		break;
-	case ETCROBOWR1:
-		if (etc->robo && vec) {
-			uint page, reg;
-			uint8 val;
-			robo_info_t *robo = (robo_info_t *)etc->robo;
-
-			page = vec[0] >> 16;
-			reg = vec[0] & 0xffff;
-			val = vec[1];
-			robo->ops->write_reg(etc->robo, page, vec[0], &val, 1);
-			ET_TRACE(("etc_ioctl: ETCROBOWR4 to page 0x%x, reg 0x%x <= 0x%x\n",
-			          page, reg, val));
+			bcm_robo_check_gphy_reset(robo, page, vec[0], &val, len);
 		}
 		break;
 #endif /* ETROBO */
@@ -739,6 +711,28 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 
 	return (error);
 }
+
+int bcm5301x_robo_rreg(robo_info_t *robo, uint8 page, uint8 reg, void *val, int len)
+{
+	int ret;
+	robo_info_t *b5301x_robo = (robo_info_t *)robo;
+
+	ret = b5301x_robo->ops->read_reg(b5301x_robo, page, reg, val, len);
+
+	return ret;
+}
+EXPORT_SYMBOL(bcm5301x_robo_rreg);
+
+int bcm5301x_robo_wreg(robo_info_t *robo, uint8 page, uint8 reg, void *val, int len)
+{
+	int ret;
+	robo_info_t *b5301x_robo = (robo_info_t *)robo;
+
+	ret = b5301x_robo->ops->write_reg(b5301x_robo, page, reg, val, len);
+
+	return ret;
+}
+EXPORT_SYMBOL(bcm5301x_robo_wreg);
 
 /* called once per second */
 void
@@ -1034,8 +1028,8 @@ etc_dumpetc(etc_info_t *etc, struct bcmstrbuf *b)
 	               etc->advertise, etc->advertise2, etc->needautoneg);
 	bcm_bprintf(b, "piomode %d pioactive 0x%x nmulticast %d allmulti %d qos %d\n",
 		etc->piomode, (ulong)etc->pioactive, etc->nmulticast, etc->allmulti, etc->qos);
-	bcm_bprintf(b, "vendor 0x%x device 0x%x rev %d coreunit %d phyaddr %d mdcport %d\n",
-		etc->vendorid, etc->deviceid, etc->chiprev,
+	bcm_bprintf(b, "vendor 0x%x device 0x%x rev %d coreid %d corerev %d coreunit %d phyaddr %d mdcport %d\n",
+		etc->vendorid, etc->deviceid, etc->chiprev, etc->coreid, etc->corerev,
 		etc->coreunit, etc->phyaddr, etc->mdcport);
 
 	bcm_bprintf(b, "perm_etheraddr %s cur_etheraddr %s\n",
@@ -1056,6 +1050,12 @@ etc_dumpetc(etc_info_t *etc, struct bcmstrbuf *b)
 	(*etc->chops->statsupd)(etc->ch);
 
 	/* summary stat counter line */
+	
+	for (i = 0; i < NUMTXQ; i++) {
+		bcm_bprintf(b, "TXQ %d txframes %d \n", i, etc->txframes[i] );
+	}
+
+
 	/* use sw frame and byte counters -- hw mib counters wrap too quickly */
 	bcm_bprintf(b, "txframe %d txbyte %d txerror %d rxframe %d rxbyte %d rxerror %d\n",
 		etc->txframe, etc->txbyte, etc->txerror,
@@ -1116,22 +1116,29 @@ static void
 et_dump_arl_entry(uint porv, uint num,  uint64 reg_val64, uint32 reg_val32, struct bcmstrbuf *b)
 {
 	uint32  prtn;
-	uint64  vidn;
+	uint32  vidn;
 
-	vidn = (reg_val64 & VID_MASK) >> 48;
+	vidn = (uint32)((reg_val64 & VID_MASK) >> 48);
 	prtn = (reg_val32 & 0x1ff);
 
-	if ((prtn <= 5) && ((num == 0xff) || (!porv && (vidn == num)) || (porv && (prtn == num)))) {
-		bcm_bprintf(b, "%012llx       ", (reg_val64 & MACADDR_MASK));
-		bcm_bprintf(b, "0x%0llx", vidn);
-		bcm_bprintf(b, "%12d   ", prtn);
-		bcm_bprintf(b, "0x%08x\n", reg_val32);
+	if (((num == 0xff) || (!porv && (vidn == num)) || (porv && (prtn == num)))) {
+		bcm_bprintf(b, "%02X:%02X:%02X:%02X:%02X:%02X %4d %4d 0x%08X\n", 
+					(int)((reg_val64 >> 40) & 0xFF),
+					(int)((reg_val64 >> 32) & 0xFF),
+					(int)((reg_val64 >> 24) & 0xFF),
+					(int)((reg_val64 >> 16) & 0xFF),
+					(int)((reg_val64 >>  8) & 0xFF),
+					(int)((reg_val64      ) & 0xFF),
+					vidn,
+					prtn,
+					reg_val32 );
 	}
 }
 
 static void
 et_dump_arl_tbl(etc_info_t *etc, uint porv, uint num, struct bcmstrbuf *b)
 {
+	int     i;
 	uint8	val8 = 0x80;
 	uint32  val32;
 	uint64  val64;
@@ -1142,14 +1149,25 @@ et_dump_arl_tbl(etc_info_t *etc, uint porv, uint num, struct bcmstrbuf *b)
 
 	OSL_DELAY(150);
 
-	bcm_bprintf(b, "MAC ADDRESS        VID        Port        Flags\n");
-	bcm_bprintf(b, "-----------        ---        ----        -----\n");
+	bcm_bprintf(b, "%17s %4s %4s %s", "MAC-ADDRESS","VID","Port","Flags\n");
+//	bcm_bprintf(b, "-----------        ---        ----        -----\n");
 
 	robo->ops->read_reg(etc->robo, 5, 0x50, &val8, sizeof(uint8));
 	val8 &= 0x81;	/* read bit 0 & 7  -- if "1", ARL search is started */
 					/* and valid entry is found */
 
 	while (val8) {
+		// Wait for the Valid flag to be set
+		for( i=0; (i<100) && ((int)(val8 & 0x01) == 0); i++ )
+		{
+			OSL_DELAY(5);
+//			bcm_bprintf(b, "sleep not ready %02X\n", val8);
+			robo->ops->read_reg(etc->robo, 5, 0x50, &val8, sizeof(uint8));
+			if ( (val8 & 0x80) == 0 )
+			{
+				break;
+			}
+		}
 		/* MAC-VID  1 */
 		robo->ops->read_reg(etc->robo, 5, 0x60, &val64, sizeof(uint64));
 		/* reading 0x68 should clears bit 0 of 0x50 & search to cont.. */
@@ -1169,9 +1187,9 @@ et_dump_arl_tbl(etc_info_t *etc, uint porv, uint num, struct bcmstrbuf *b)
 			break;
 		}
 
-		if ((val8 & 0x01) == 0) {
-			robo->ops->read_reg(etc->robo, 5, 0x50, &val8, sizeof(uint8));
-		}
+//		if ((val8 & 0x01) == 0) {
+//			robo->ops->read_reg(etc->robo, 5, 0x50, &val8, sizeof(uint8));
+//		}
 
 		val8 = (val8 & 0x81);
 	}

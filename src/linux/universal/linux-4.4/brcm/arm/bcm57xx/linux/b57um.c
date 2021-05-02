@@ -300,10 +300,6 @@ pci_set_dma_mask(struct pci_dev *dev, dma_addr_t mask)
 #define pci_release_regions(pdev)
 #endif
 
-#if !defined(spin_is_locked)
-#define spin_is_locked(lock)    (test_bit(0,(lock)))
-#endif
-
 #define BCM5700_LOCK(pUmDevice, flags)					\
 	if ((pUmDevice)->do_global_lock) {				\
 		spin_lock_irqsave(&(pUmDevice)->global_lock, flags);	\
@@ -528,7 +524,7 @@ STATIC int bcm5700_set_mac_addr(struct net_device *dev, void *p);
 STATIC int bcm5700_change_mtu(struct net_device *dev, int new_mtu);
 #endif
 #ifdef BCM_NAPI_RXPOLL
-STATIC int bcm5700_poll(struct net_device *dev, int *budget);
+STATIC int bcm5700_poll(struct napi_struct *napi, int limit);
 #endif
 STATIC int replenish_rx_buffers(PUM_DEVICE_BLOCK pUmDevice, int max);
 STATIC int bcm5700_freemem(struct net_device *dev);
@@ -557,8 +553,7 @@ static struct notifier_block bcm5700_reboot_notifier = {
 	NULL,
 	0
 };
-
-#if defined(HAVE_POLL_CONTROLLER) || defined(CONFIG_NET_POLL_CONTROLLER)
+#ifdef CONFIG_NET_POLL_CONTROLLER
 STATIC void poll_bcm5700(struct net_device *dev);
 #endif
 
@@ -1287,6 +1282,10 @@ bcm5700_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	mac_net_ops.ndo_change_mtu		= &bcm5700_change_mtu;
 #endif
 	mac_net_ops.ndo_set_mac_address	= &bcm5700_set_mac_addr;
+#ifdef CONFIG_NET_POLL_CONTROLLER
+	mac_net_ops.ndo_poll_controlle = poll_bcm5700;
+#endif
+
         dev->netdev_ops = (const struct net_device_ops *)&mac_net_ops;             
 
 
@@ -1297,19 +1296,15 @@ bcm5700_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 //	dev->vlan_rx_register = &bcm5700_vlan_rx_register;
 //	dev->vlan_rx_kill_vid = &bcm5700_vlan_rx_kill_vid;
 #endif
-#ifdef BCM_NAPI_RXPOLL
-	dev->poll = bcm5700_poll;
-	dev->weight = 64;
-#endif
 
 	pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 	pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
+#ifdef BCM_NAPI_RXPOLL
+	netif_napi_add(dev, &pUmDevice->napi, bcm5700_poll, 64);
+#endif
 
 	dev->base_addr = pci_resource_start(pdev, 0);
 	dev->irq = pdev->irq;
-#if defined(HAVE_POLL_CONTROLLER) || defined(CONFIG_NET_POLL_CONTROLLER)
-	dev->poll_controller = poll_bcm5700;
-#endif
 
 #if (LINUX_VERSION_CODE >= 0x20600)
 	if ((i = register_netdev(dev))) {
@@ -2302,7 +2297,7 @@ _bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		!pDevice->InitDone || pUmDevice->suspended)
 	{
 		dev_kfree_skb(skb);
-		return 0;
+		return NETDEV_TX_OK;
 	}
 
 #if (LINUX_VERSION_CODE < 0x02032b)
@@ -2318,7 +2313,7 @@ _bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			netif_wake_queue(dev);
 			pUmDevice->tx_queued = 0;
 		}
-	    return 1;
+	    return NETDEV_TX_OK;
 	}
 
 	pPacket = (PLM_PACKET)
@@ -2330,7 +2325,7 @@ _bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			netif_wake_queue(dev);
 			pUmDevice->tx_full = 0;
 		}
-	    return 1;
+	    return NETDEV_TX_OK;
 	}
 	pUmPacket = (PUM_PACKET) pPacket;
 	pUmPacket->skbuff = skb;
@@ -2358,7 +2353,7 @@ _bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			netif_wake_queue(dev);
 			pUmDevice->tx_full = 0;
 		}
-		return 1;
+		return NETDEV_TX_OK;
 	}
 
 	pPacket->u.Tx.FragCount = frag_no + 1;
@@ -2397,7 +2392,7 @@ _bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			pskb_expand_head(skb, 0, 0, GFP_ATOMIC)) {
 
 			dev_kfree_skb(skb);
-			return 0;
+			return NETDEV_TX_OK;
 		}
 #endif
 		pUmDevice->tso_pkt_count++;
@@ -2493,7 +2488,7 @@ _bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	dev->trans_start = jiffies;
 
 
-	return 0;
+	return NETDEV_TX_OK;
 }
 
 STATIC int
@@ -2504,29 +2499,28 @@ bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	FOREACH_CHAINED_PKT(skb, n) {
 		_bcm5700_start_xmit(skb, dev);
 	}
+	return NETDEV_TX_OK;
 }
 
 #ifdef BCM_NAPI_RXPOLL
 STATIC int
-bcm5700_poll(struct net_device *dev, int *budget)
+bcm5700_poll(struct napi_struct *napi, int limit)
 {
-	int orig_budget = *budget;
+	UM_DEVICE_BLOCK *pUmDevice = container_of(napi, UM_DEVICE_BLOCK, napi);
+
+	int orig_budget = limit;
 	int work_done;
-	UM_DEVICE_BLOCK *pUmDevice = (UM_DEVICE_BLOCK *) netdev_priv(dev);
 	LM_DEVICE_BLOCK *pDevice = &pUmDevice->lm_dev;
 	unsigned long flags = 0;
 	LM_UINT32 tag;
 
-	if (orig_budget > dev->quota)
-		orig_budget = dev->quota;
 
 	BCM5700_LOCK(pUmDevice, flags);
 	/* BCM4785: Flush posted writes from GbE to host memory. */
 	if (pDevice->Flags & FLUSH_POSTED_WRITE_FLAG)
 		REG_RD(pDevice, HostCoalesce.Mode);
 	work_done = LM_ServiceRxPoll(pDevice, orig_budget);
-	*budget -= work_done;
-	dev->quota -= work_done;
+	limit -= work_done;
 
 	if (QQ_GetEntryCnt(&pUmDevice->rx_out_of_buf_q.Container)) {
 		replenish_rx_buffers(pUmDevice, 0);
@@ -2540,8 +2534,7 @@ bcm5700_poll(struct net_device *dev, int *budget)
 	}
 	if ((work_done < orig_budget) || atomic_read(&pUmDevice->intr_sem) ||
 		pUmDevice->suspended) {
-
-		netif_rx_complete(dev);
+		napi_complete(napi);
 		BCM5700_LOCK(pUmDevice, flags);
 		REG_WR(pDevice, Grc.Mode, pDevice->GrcMode);
 		pDevice->RxPoll = FALSE;
@@ -2580,9 +2573,9 @@ bcm5700_poll(struct net_device *dev, int *budget)
 			}
 		}
 		BCM5700_UNLOCK(pUmDevice, flags);
-		return 0;
+		return limit;
 	}
-	return 1;
+	return orig_budget;
 }
 #endif /* BCM_NAPI_RXPOLL */
 
@@ -3987,7 +3980,7 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 		return 0;
 	}
 #endif
-#ifdef ETHTOOL_TEST
+#if 0 //def ETHTOOL_TEST
 	case ETHTOOL_TEST: {
 		struct ethtool_test etest;
 		uint64_t tests[ETH_NUM_TESTS] = {0, 0, 0, 0, 0, 0};
@@ -5293,9 +5286,8 @@ LM_STATUS
 MM_ScheduleRxPoll(LM_DEVICE_BLOCK *pDevice)
 {
 	struct net_device *dev = ((UM_DEVICE_BLOCK *) pDevice)->dev;
-
-	if (netif_rx_schedule_prep(dev)) {
-		__netif_rx_schedule(dev);
+	if (napi_schedule_prep(&((UM_DEVICE_BLOCK *) pDevice)->napi)) {
+		napi_schedule(&((UM_DEVICE_BLOCK *) pDevice)->napi);
 		return LM_STATUS_SUCCESS;
 	}
 	return LM_STATUS_FAILURE;
@@ -6395,7 +6387,7 @@ int MM_FindCapability(LM_DEVICE_BLOCK *pDevice, int capability)
 	return (pci_find_capability(pUmDevice->pdev, capability));
 }
 
-#if defined(HAVE_POLL_CONTROLLER)||defined(CONFIG_NET_POLL_CONTROLLER)
+#ifdef CONFIG_NET_POLL_CONTROLLER
 STATIC void
 poll_bcm5700(struct net_device *dev)
 {

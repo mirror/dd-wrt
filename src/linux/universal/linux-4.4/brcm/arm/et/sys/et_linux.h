@@ -2,7 +2,7 @@
  * Linux device driver tunables for
  * Broadcom BCM47XX 10/100Mbps Ethernet Device Driver
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: et_linux.h 575708 2015-07-30 20:27:43Z $
+ * $Id: et_linux.h 575714 2015-07-30 20:59:51Z $
  */
 
 #ifndef _et_linux_h_
@@ -49,7 +49,7 @@
 #define BUFSZ       (1696)
 #define RXBUFSZ     (BUFSZ - BCMEXTRAHDROOM)
 #else /* ! BCM_GMAC3 */
-#define	BUFSZ		2048		/* packet data buffer size */
+#define	BUFSZ		2548		/* packet data buffer size */
 #define	RXBUFSZ		(BUFSZ - 256)	/* receive buffer size */
 #endif /* ! BCM_GMAC3 */
 

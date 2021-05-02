@@ -76,6 +76,7 @@
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
 #include <linux/reboot.h>
+#include <linux/spinlock.h>
 #include <asm/processor.h>		/* Processor type for cache alignment. */
 #include <asm/bitops.h>
 #include <asm/io.h>
@@ -143,7 +144,7 @@ struct ethtool_eeprom {
 #define BCM_ASF 1
 #define BCM_WOL 1
 #define BCM_TASKLET 1
-
+#define HAVE_NETIF_RECEIVE_SKB 0
 #if HAVE_NETIF_RECEIVE_SKB
 #define BCM_NAPI_RXPOLL 1
 #undef BCM_TASKLET
@@ -336,6 +337,9 @@ typedef struct _UM_DEVICE_BLOCK {
 #ifdef BCM_PROC_FS
 	struct proc_dir_entry *pfs_entry;
 	char pfs_name[32];
+#endif
+#ifdef BCM_NAPI_RXPOLL
+	struct napi_struct	napi;
 #endif
 	void *mem_list[MAX_MEM];
 	dma_addr_t dma_list[MAX_MEM];

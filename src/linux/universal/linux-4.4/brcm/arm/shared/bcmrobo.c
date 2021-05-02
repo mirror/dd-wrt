@@ -1,7 +1,7 @@
 /*
  * Broadcom 53xx RoboSwitch device driver.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,8 +15,11 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmrobo.c 581710 2015-08-25 09:58:34Z $
+ * $Id: bcmrobo.c 670472 2016-11-16 02:24:51Z $
  */
+
+/* just in case */
+# define BCMDRIVER	1
 
 
 #include <bcm_cfg.h>
@@ -38,11 +41,14 @@
 #include <etioctl.h>
 #endif
 
-#ifdef	BCMDBG
+/* enable roboSW debugging */
+#define BCMROBO_DBG	1
+
+#ifdef	BCMROBO_DBG
 #define	ET_ERROR(args)	printf args
-#else	/* BCMDBG */
+#else	/* BCMROBO_DBG */
 #define	ET_ERROR(args)
-#endif	/* BCMDBG */
+#endif	/* BCMROBO_DBG */
 #define	ET_MSG(args)
 
 #define VARG(var, len) (((len) == 1) ? *((uint8 *)(var)) : \
@@ -106,6 +112,25 @@
 #define REG_CTRL_PWRDOWN 0x0F   /* 5325: Power Down Mode register */
 #define REG_CTRL_SRST	0x79	/* Software reset control register */
 
+#if 1
+#define REG_LED_REFLSH_CTL	0x0F	/* LED configuration register */
+#define REG_LED_FUNC0_CTL	0x10	/* LED Function 0 control register */
+#define REG_LED_FUNC1_CTL	0x12	/* LED Function 1 control register */
+#define REG_LED_FUNC_MAP	0x14	/* LED Function map register */
+#define REG_LED_EN_MAP		0x16	/* LED enable map register */
+#define REG_LED_MODE_MAP_0	0x18	/* LED mode map 0 register */
+#define REG_LED_MODE_MAP_1	0x1a	/* LED mode map 1 register */
+#endif
+
+#ifdef PLC
+#define REG_CTRL_MIIP5O 0x5d    /* 53115: Port State Override register for port 5 */
+
+/* Management/Mirroring Registers */
+#define REG_MMR_ATCR    0x06    /* Aging Time Control register */
+#define REG_MMR_MCCR    0x10    /* Mirror Capture Control register */
+#define REG_MMR_IMCR    0x12    /* Ingress Mirror Control register */
+#endif /* PLC */
+
 /* Management Page registers */
 #define REG_MGMT_CFG	0x00
 #define REG_IMP0_PORT	0x01
@@ -117,6 +142,12 @@
 #define REG_STATUS_REV	0x50	/* Revision Register */
 
 #define REG_DEVICE_ID	0x30	/* 539x Device id: */
+
+/* Internal GPHY MII registers */
+#define REG_GPHY_MII_CTL	0x0	/* MII Control register */
+#define REG_GPHY_DSP		0x2a	/* DSP Coefficient Read/Write Port register */
+#define REG_GPHY_DSPA		0x2e	/* DSP Coefficient Address register */
+#define REG_GPHY_AUXCTL		0x30	/* Auxiliary Control register */
 
 /* VLAN page registers */
 #define REG_VLAN_CTRL0	0x00	/* VLAN Control 0 register */
@@ -271,6 +302,8 @@ static bool mang_mode_en = FALSE;
 
 /* misc. constants */
 #define SPI_MAX_RETRY	100
+
+static robo_info_t *robo_info = NULL;
 
 /* Enable GPIO access to the chip */
 static void
@@ -980,6 +1013,104 @@ static dev_ops_t srab = {
 #define srab_rreg(a, b, c, d, e) 0
 #endif /* ROBO_SRAB */
 
+
+static void
+bcm_robo_gphy_misc_wreg(robo_info_t *robo, int port, uint8 reg, uint8 ch, uint16 val16)
+{
+	uint16 addr;
+
+	ASSERT(ROBO_IS_BCM5301X(robo->devid));
+
+	addr = (ch << 13) |	/* channel selection */
+		(0 << 8) |	/* DSP filter 0 for misc registers */
+		reg;
+	robo->ops->write_reg(robo, (PAGE_GPHY_MII_P0 + port), REG_GPHY_DSPA,
+		&addr, sizeof(addr));
+
+	robo->ops->write_reg(robo, (PAGE_GPHY_MII_P0 + port), REG_GPHY_DSP,
+		&val16, sizeof(val16));
+}
+
+/* Need to apply the setting for EGPHY40 */
+static void
+bcm_robo_gphy_config(robo_info_t *robo, int port)
+{
+	uint16 val16;
+	int retry = 10;
+
+	if (!ROBO_IS_BCM5301X(robo->devid))
+		return;
+
+	/* wait for out of phy reset state */
+	while (retry--) {
+		robo->ops->read_reg(robo, (PAGE_GPHY_MII_P0 + port),
+			REG_GPHY_MII_CTL, &val16, sizeof(val16));
+		/* check phy reset bit */
+		if (!(val16 & (1 << 15)))
+			break;
+		bcm_mdelay(100);
+	}
+
+	if (val16 & (1 << 15)) {
+		ET_ERROR(("%s: failed to leave phy reset state\n", __FUNCTION__));
+		return;
+	}
+
+	/* CORE_SHD18_000: AUX control register, enable DSP clk */
+	val16 = 0x0C00;
+	robo->ops->write_reg(robo, (PAGE_GPHY_MII_P0 + port), REG_GPHY_AUXCTL,
+		&val16, sizeof(val16));
+
+	/* AFE registers start from DSP TAP30h */
+	/* AFE_RXCONFIG_0 */
+	bcm_robo_gphy_misc_wreg(robo, port, 0x30, 0, 0xD771);
+
+	/* AFE_RXCONFIG_2 */
+	bcm_robo_gphy_misc_wreg(robo, port, 0x30, 2, 0x1872);
+
+	/* AFE_HPF_TRIM */
+	bcm_robo_gphy_misc_wreg(robo, port, 0x33, 3, 0x0006);
+
+	/* AFE_PLLCTRL_4 */
+	bcm_robo_gphy_misc_wreg(robo, port, 0x33, 0, 0x0500);
+
+	/* DSP_TAP10 */
+	bcm_robo_gphy_misc_wreg(robo, port, 0xA, 0, 0x011B);
+
+	/* re-AutoNeg */
+	robo->ops->read_reg(robo, (PAGE_GPHY_MII_P0 + port),
+		REG_GPHY_MII_CTL, &val16, sizeof(val16));
+	val16 |= 0x0240;
+	val16 &= 0xDFFF;
+	robo->ops->write_reg(robo, (PAGE_GPHY_MII_P0 + port),
+		REG_GPHY_MII_CTL, &val16, sizeof(val16));
+
+//	ET_ERROR(("%s: gphy config done for port %d\n", __FUNCTION__, port));
+}
+
+/* Need to config bcm5301x GPHY after doing PHY reset */
+void
+bcm_robo_check_gphy_reset(robo_info_t *robo, uint8 page, uint8 reg, void *val, int len)
+{
+	uint16 val16;
+
+	if (!ROBO_IS_BCM5301X(robo->devid))
+		return;
+
+	if (len != 2)
+		return;
+
+	/* return if not accessing internal GPHY registers */
+	if (!(page >= PAGE_GPHY_MII_P0) || !(page < (PAGE_GPHY_MII_P0 + MAX_NO_PHYS)))
+		return;
+
+	/* check reset bit */
+	val16 = *(uint16 *)val;
+	if ((reg == REG_GPHY_MII_CTL) && (val16 & (1 << 15))) {
+		bcm_robo_gphy_config(robo, (page - PAGE_GPHY_MII_P0));
+	}
+}
+
 /* High level switch configuration functions. */
 static int iswrt610nv1=0;
 
@@ -1132,6 +1263,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		}
 		ET_MSG(("%s: devid: 0x%x\n", __FUNCTION__, robo->devid));
 	}
+
 	if (robo->devid == DEVID5395)
 		nvram_set("switch_type", "BCM5395");
 	else if(robo->devid == DEVID5397)
@@ -1156,7 +1288,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		nvram_set("switch_type", "BCM53030");
 	else
 		nvram_set("switch_type", "unknown");						
-
+ 
 	if (boothwmodel != NULL && !strcmp(boothwmodel, "WRT610N")
 		&& boothwver != NULL && !strcmp(boothwver, "1.0"))
 	iswrt610nv1=1;
@@ -1177,6 +1309,15 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		mii_wreg(robo, PAGE_CTRL, REG_CTRL_SRST, &srst_ctrl, sizeof(uint8));
 	}
 
+	if (ROBO_IS_BCM5301X(robo->devid)) {
+		int port;
+
+		for (port = 0; port < MAX_NO_PHYS; port++) {
+			bcm_robo_gphy_config(robo, port);
+		}
+		ET_MSG(("%s: GPHY config done\n", __FUNCTION__));
+	}
+
 	/* Enable switch leds */
 	if (sih->chip == BCM5356_CHIP_ID) {
 		if (PMUCTL_ENAB(sih)) {
@@ -1189,15 +1330,13 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		const char *var;
 
 		if (((sih->chip == BCM5357_CHIP_ID) && (sih->chippkg != BCM47186_PKG_ID)) ||
-		    ((sih->chip == BCM53572_CHIP_ID) && (sih->chippkg != BCM47188_PKG_ID))) {
+		    ((sih->chip == BCM53572_CHIP_ID) && (sih->chippkg != BCM47188_PKG_ID)))
 			led_gpios = 0x1f;
-		}
 		var = getvar(vars, "et_swleds");
 		if (var)
 			led_gpios = bcm_strtoul(var, NULL, 0);
-		if (PMUCTL_ENAB(sih) && led_gpios) {
+		if (PMUCTL_ENAB(sih) && led_gpios)
 			si_pmu_chipcontrol(sih, 2, (0x3ff << 8), (led_gpios << 8));
-		}
 	} else if (BCM53573_CHIP(sih->chip)) {
 		/* Support internal robo switch LED on/off after A1 chip revision */
 		if (sih->chippkg != BCM47189_PKG_ID && sih->chiprev >= 1) {
@@ -1288,6 +1427,11 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		robo->pwrsave_phys = 0x1f;
 #endif /* _CFE_ */
 
+#ifdef PLC
+	/* See if one of the ports is connected to plc chipset */
+	robo->plc_hw = (getvar(vars, "plc_vifs") != NULL);
+#endif /* PLC */
+
 #ifdef BCMFA
 	robo->aux_pid = -1;
 	if (BCM4707_CHIP(CHIPID(robo->sih->chip))) {
@@ -1319,12 +1463,45 @@ bcm_robo_detach(robo_info_t *robo)
 	MFREE(si_osh(robo->sih), robo, sizeof(robo_info_t));
 }
 
+/* setup switch leds */
+void
+bcm_robo_config_port_led(robo_info_t *robo)
+{
+	uint16 reg_val;
+
+	/* blink in auto mode, Bit 13:1G/ACT, Bit 12:10/100/ACT */
+	reg_val = 0x3000;
+	robo->ops->write_reg(robo, PAGE_CTRL, REG_LED_FUNC0_CTL, &reg_val, sizeof(reg_val));
+
+	robo_info=robo;
+}
+
+bool
+bcm_robo_port_link(unsigned int port)
+{
+	uint16 reg_val=0;
+
+	if (robo_info == NULL)
+		return FALSE;    
+
+	robo_info->ops->read_reg(robo_info, PAGE_STATUS, REG_STATUS_LINK, &reg_val, sizeof(reg_val));
+	reg_val &= port;
+
+	if(reg_val)
+		return TRUE;
+	else
+		return FALSE;    
+}
+
 /* Enable the device and set it to a known good state */
 int
 bcm_robo_enable_device(robo_info_t *robo)
 {
 	uint8 reg_offset, reg_val;
 	int ret = 0;
+#ifdef PLC
+	uint32 val32;
+#endif /* PLC */
 
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
@@ -1362,6 +1539,13 @@ bcm_robo_enable_device(robo_info_t *robo)
 			}
 		}
 	}
+
+#ifdef PLC
+	if (robo->plc_hw) {
+		val32 = 0x100002;
+		robo->ops->write_reg(robo, PAGE_MMR, REG_MMR_ATCR, &val32, sizeof(val32));
+	}
+#endif /* PLC */
 
 	/* Disable management interface access */
 	if (robo->ops->disable_mgmtif)
@@ -1423,21 +1607,18 @@ robo_fa_imp_port_upd(robo_info_t *robo, char *port, int pid, int vid, int pdescs
 }
 #endif /* !_CFE_ && BCMFA */
 
+#if 0 //ndef CONFIG_PLAT_BCM5301X
 /* Find the first vlanXXXXports which the last port include '*' or 'u' */
 static void
-robo_cpu_port_upd(robo_info_t *robo, pdesc_t *pdesc, int pdescsz)
+robo_cpu_port_upd(robo_info_t *robo, pdesc_t *pdesc, int pdescsz, int vlan_num)
 {
 	int vid;
 
-	for (vid = 0; vid < VLAN_NUMVLANS; vid ++) {
+	for (vid = 0; vid < vlan_num; vid ++) {
 		char vlanports[] = "vlanXXXXports";
 		char port[] = "XXXX", *next;
 		const char *ports, *cur;
 		int pid, len;
-
-		/* no members if VLAN id is out of limitation */
-		if (vid > VLAN_MAXVID)
-			return;
 
 		/* get vlan member ports from nvram */
 		sprintf(vlanports, "vlan%dports", vid);
@@ -1473,10 +1654,60 @@ robo_cpu_port_upd(robo_info_t *robo, pdesc_t *pdesc, int pdescsz)
 			if (strchr(port, FLAG_LAN) || strchr(port, FLAG_UNTAG)) {
 				/* Change it and return */
 				pdesc[pid].cpu = 1;
+				return;
 			}
 		}
 	}
 }
+
+#else
+
+#define B53_N_PORTS	9
+
+struct b53_vlan {
+	unsigned int	members:B53_N_PORTS;
+	unsigned int	untag:B53_N_PORTS;
+};
+
+struct b53_port {
+	unsigned int	pvid:12;
+};
+
+static void
+b53_robo_cpu_port_upd(robo_info_t *robo, struct b53_vlan *vlans, pdesc_t *pdesc, int pdescsz, int vlan_num)
+{
+	int vid, pid;
+	struct b53_vlan *vlan;
+	int cpupid=-1;
+
+	for (vid = 0; vid < vlan_num; vid ++) {
+
+		vlan = &vlans[vid];
+
+		if (!vlan->members)
+			continue;
+
+		for (pid=0; pid<pdescsz; pid++) { 
+
+			if (((vlan->members >> pid) & 0x1) == 0)
+				continue;
+			
+#if !defined(_CFE_) && defined(BCMFA)
+			pid = robo_fa_imp_port_upd(robo, NULL, pid, vid, pdescsz);
+#endif
+			if (pid >= 5 ) {
+				/* Change it and return */
+				cpupid = pid;
+			}
+		}
+	}
+	if (cpupid>=0) {
+		pdesc[cpupid].cpu = 1;
+		printk(KERN_INFO "%s, pdesc[%d].cpu=%d\n", __FUNCTION__, cpupid, pdesc[cpupid].cpu);
+	}
+	return;
+}
+#endif
 
 #if !defined(_CFE_) && defined(BCMFA)
 /* Default assume: Do copy to aux port */
@@ -1565,7 +1796,7 @@ robo_fa_aux_set_tcam(robo_info_t *robo, bool ipv6, bool tcp_rst, uint32 index)
 	robo->ops->write_reg(robo, PAGE_CFPTCAM, REG_CFPTCAM_ACC, &val32, sizeof(val32));
 }
 
-#ifdef BCMDBG
+#ifdef BCMROBO_DBG
 static void
 robo_fa_aux_dump_action_policy(robo_info_t *robo, struct bcmstrbuf *b, uint32 index, char *note)
 {
@@ -1650,7 +1881,7 @@ robo_fa_aux_dump_rate_counter(robo_info_t *robo, struct bcmstrbuf *b, uint32 ind
 		PAGE_CFPTCAM, REG_CFPTCAM_RATE_OUTBAND, index,
 		note ? note : "", val32);
 }
-#endif /* BCMDBG */
+#endif /* BCMROBO_DBG */
 
 void
 robo_fa_aux_init(robo_info_t *robo)
@@ -1786,6 +2017,7 @@ robo_fa_enable(robo_info_t *robo, bool on, bool bhdr)
 }
 #endif /* !_CFE_ && BCMFA */
 
+#if 0 //ndef CONFIG_PLAT_BCM5301X
 /* Configure the VLANs */
 int
 bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
@@ -1797,6 +2029,21 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 	int pdescsz;
 	uint16 vid;
 	uint8 arl_entry[8] = { 0 }, arl_entry1[8] = { 0 };
+	uint16 num_vlans = VLAN_NUMVLANS, max_vid = VLAN_MAXVID;
+
+	/* Determine number of vlans to support. */
+	if ((robo->devid == DEVID53125) || ROBO_IS_BCM5301X(robo->devid)) {
+		char *vlanmax = getvar(robo->vars, "vlan_max");
+
+		if (vlanmax) {
+			int vlan_max = bcm_atoi(vlanmax);
+
+			if ((vlan_max> 0) && (vlan_max <= 4096)) {
+				num_vlans = vlan_max;
+				max_vid = num_vlans - 1;
+			}
+		}
+	}
 
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
@@ -1862,13 +2109,11 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 
 		if ((SRAB_ENAB(robo->sih) && ROBO_IS_BCM5301X(robo->devid)) ||
 		    (BCM53573_CHIP(robo->sih->chip) && robo->sih->chippkg == BCM47189_PKG_ID)) {
-			robo_cpu_port_upd(robo, pdesc97, pdescsz);
+			robo_cpu_port_upd(robo, pdesc97, pdescsz, num_vlans);
 		}
 	}
 
-	/* setup each vlan. max. 16 vlans. */
-	/* force vlan id to be equal to vlan number */
-	for (vid = 0; vid < VLAN_NUMVLANS; vid ++) {
+	for (vid = 0; vid < num_vlans; vid ++) {
 		char vlanports[] = "vlanXXXXports";
 		char port[] = "XXXX", *next;
 		const char *ports, *cur;
@@ -1878,7 +2123,7 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 		int cpuport = 0;
 
 		/* no members if VLAN id is out of limitation */
-		if (vid > VLAN_MAXVID)
+		if (vid > max_vid)
 			goto vlan_setup;
 
 		/* get vlan member ports from nvram */
@@ -2043,6 +2288,397 @@ vlan_setup:
 			/* VLAN Table Entry Register (Page 0x05, Address 0x63-0x66/0x83-0x86) */
 			robo->ops->write_reg(robo, PAGE_VTBL, vtble, &val32,
 			                     sizeof(val32));
+
+			if (val32) {
+				ET_MSG(("robo devid=%x, vid=%d val32=0x%x val16=0x%x\n", robo->devid, vid, val32, val16));
+			}
+
+			/* VLAN Table Address Index Reg (Page 0x05, Address 0x61-0x62/0x81-0x82) */
+			val16 = vid;        /* vlan id */
+			robo->ops->write_reg(robo, PAGE_VTBL, vtbli, &val16,
+			                     sizeof(val16));
+
+			/* VLAN Table Access Register (Page 0x34, Address 0x60/0x80) */
+			val8 = ((1 << 7) | 	/* start command */
+			        0);	        /* write */
+			robo->ops->write_reg(robo, PAGE_VTBL, vtbla, &val8,
+			                     sizeof(val8));
+		}
+	}
+
+	if (robo->devid == DEVID5325) {
+		/* setup priority mapping - applies to tagged ingress frames */
+		/* Priority Re-map Register (Page 0x34, Address 0x20-0x23) */
+		val32 = ((0 << 0) |	/* 0 -> 0 */
+		         (1 << 3) |	/* 1 -> 1 */
+		         (2 << 6) |	/* 2 -> 2 */
+		         (3 << 9) |	/* 3 -> 3 */
+		         (4 << 12) |	/* 4 -> 4 */
+		         (5 << 15) |	/* 5 -> 5 */
+		         (6 << 18) |	/* 6 -> 6 */
+		         (7 << 21));	/* 7 -> 7 */
+		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_PMAP, &val32, sizeof(val32));
+	}
+
+	if (robo->devid == DEVID53115) {
+		/* Configure the priority system to use to determine the TC of
+		 * ingress frames. Use DiffServ TC mapping, otherwise 802.1p
+		 * TC mapping, otherwise MAC based TC mapping.
+		 */
+		val8 = ((0 << 6) |		/* Disable port based QoS */
+	                (2 << 2));		/* QoS priority selection */
+		robo->ops->write_reg(robo, 0x30, 0, &val8, sizeof(val8));
+
+		/* Configure tx queues scheduling mechanism */
+		val8 = (3 << 0);		/* Strict priority */
+		robo->ops->write_reg(robo, 0x30, 0x80, &val8, sizeof(val8));
+
+		/* Enable 802.1p Priority to TC mapping for individual ports */
+		val16 = 0x11f;
+		robo->ops->write_reg(robo, 0x30, 0x4, &val16, sizeof(val16));
+
+		/* Configure the TC to COS mapping. This determines the egress
+		 * transmit queue.
+		 */
+		val16 = ((1 << 0)  |	/* Pri 0 mapped to TXQ 1 */
+			 (0 << 2)  |	/* Pri 1 mapped to TXQ 0 */
+			 (0 << 4)  |	/* Pri 2 mapped to TXQ 0 */
+			 (1 << 6)  |	/* Pri 3 mapped to TXQ 1 */
+			 (2 << 8)  |	/* Pri 4 mapped to TXQ 2 */
+			 (2 << 10) |	/* Pri 5 mapped to TXQ 2 */
+			 (3 << 12) |	/* Pri 6 mapped to TXQ 3 */
+			 (3 << 14));	/* Pri 7 mapped to TXQ 3 */
+		robo->ops->write_reg(robo, 0x30, 0x62, &val16, sizeof(val16));
+	}
+
+	/* Disable management interface access */
+	if (robo->ops->disable_mgmtif)
+		robo->ops->disable_mgmtif(robo);
+
+	return 0;
+}
+#else
+
+uint8 arl_entry_g[8];
+
+int
+bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
+{
+
+	arl_entry_g[0] = mac_addr[5];
+	arl_entry_g[1] = mac_addr[4];
+	arl_entry_g[2] = mac_addr[3];
+	arl_entry_g[3] = mac_addr[2];
+	arl_entry_g[4] = mac_addr[1];
+	arl_entry_g[5] = mac_addr[0];
+
+	return 0;
+}
+
+int
+bcm_robo_config_vlan_fun(void *b53_robo, struct b53_vlan *vlans, int vlans_num, struct b53_port *b53_ports)
+{
+	uint8 val8;
+	uint16 val16;
+	uint32 val32;
+	pdesc_t *pdesc;
+	int pdescsz;
+	uint16 vid;
+	uint8 arl_entry[8] = { 0 }, arl_entry1[8] = { 0 };
+	uint16 num_vlans = VLAN_NUMVLANS, max_vid = VLAN_MAXVID;
+	robo_info_t *robo = (robo_info_t *)b53_robo;
+
+	/* Determine number of vlans to support. */
+	if ((robo->devid == DEVID53125) || ROBO_IS_BCM5301X(robo->devid)) {
+		char *vlanmax = getvar(robo->vars, "vlan_max");
+
+		if (vlanmax) {
+			int vlan_max = bcm_atoi(vlanmax);
+
+			if ((vlan_max> 0) && (vlan_max <= 4096)) {
+				num_vlans = vlan_max;
+				max_vid = num_vlans - 1;
+			}
+		}
+	}
+
+
+	if ((vlans_num> 0) && (vlans_num <= 4096)) {
+		num_vlans = vlans_num;
+		max_vid = num_vlans - 1;
+	}
+	else {
+		printk("Error: invalid vlan number \n");
+		return -1;
+	}
+
+	/* Enable management interface access */
+	if (robo->ops->enable_mgmtif)
+		robo->ops->enable_mgmtif(robo);
+
+	/* setup global vlan configuration */
+	/* VLAN Control 0 Register (Page 0x34, Address 0) */
+	robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
+	val8 |= ((1 << 7) |		/* enable 802.1Q VLAN */
+	         (3 << 5));		/* individual VLAN learning mode */
+	if (robo->devid == DEVID5325)
+		val8 &= ~(1 << 1);	/* must clear reserved bit 1 */
+	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
+
+	/* VLAN Control 1 Register (Page 0x34, Address 1) */
+	robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL1, &val8, sizeof(val8));
+	val8 |= ((1 << 2) |		/* enable RSV multicast V Fwdmap */
+		 (1 << 3));		/* enable RSV multicast V Untagmap */
+	if (robo->devid == DEVID5325)
+		val8 |= (1 << 1);	/* enable RSV multicast V Tagging */
+	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL1, &val8, sizeof(val8));
+
+	arl_entry[0] = arl_entry_g[0];
+	arl_entry[1] = arl_entry_g[1];
+	arl_entry[2] = arl_entry_g[2];
+	arl_entry[3] = arl_entry_g[3];
+	arl_entry[4] = arl_entry_g[4];
+	arl_entry[5] = arl_entry_g[5];
+
+
+	/* Initialize the MAC Addr Index Register */
+	robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_MINDX,
+	                     arl_entry, ETHER_ADDR_LEN);
+
+	pdesc = pdesc97;
+	pdescsz = sizeof(pdesc97) / sizeof(pdesc_t);
+
+	if (SRAB_ENAB(robo->sih) && ROBO_IS_BCM5301X(robo->devid))
+		b53_robo_cpu_port_upd(robo, vlans, pdesc97, pdescsz, num_vlans);
+
+	for (vid = 0; vid < num_vlans; vid ++) {
+		char port[] = "XXXX", *next;
+		const char *ports, *cur;
+		uint32 untag = 0;
+		uint32 member = 0;
+		int pid, len;
+		int cpuport = 0;
+		char ports_string[20];
+		int i;
+		char *pPort;
+		struct b53_vlan *vlan;
+
+		/* no members if VLAN id is out of limitation */
+		if (vid > max_vid)
+			goto vlan_setup;
+
+		vlan = &vlans[vid];
+
+		if (!vlan->members)
+			continue;
+
+		printk("%s vid=%d, vlan->members=0x%x, vlan->untag=0x%x \n", __FUNCTION__, vid, vlan->members, vlan->untag);
+
+		strcpy(ports_string, "");
+		pPort = ports_string;
+
+		for (i=0; i<pdescsz; i++) { 
+
+			if (((vlan->members >> i) & 0x1) == 0)
+				continue;
+
+			*pPort++ = 0x30+i;
+
+			if (((vlan->untag >> i) & 0x1) == 0) {
+				*pPort++ = 't';
+			}
+
+			*pPort++ = ' ';
+		}
+
+		if( pPort == ports_string) {
+			printk("Error: There is no any vlans config recived from swconfig \n");
+			return -1;
+		}
+		
+		pPort--;
+		*pPort = '\0';
+	
+		ports = ports_string;
+		printk("%s ports=%s \n", __FUNCTION__, ports);
+
+		/* In 539x vid == 0 us invalid?? */
+		if ((robo->devid != DEVID5325) && (vid == 0)) {
+			if (ports)
+				ET_ERROR(("VID 0 is set in nvram, Ignoring\n"));
+			continue;
+		}
+
+		/* disable this vlan if not defined */
+		if (!ports)
+			goto vlan_setup;
+
+		/*
+		 * setup each port in the vlan. cpu port needs special handing
+		 * (with or without output tagging) to support linux/pmon/cfe.
+		 */
+		for (cur = ports; cur; cur = next) {
+			/* tokenize the port list */
+			while (*cur == ' ')
+				cur ++;
+			next = bcmstrstr(cur, " ");
+			len = next ? next - cur : strlen(cur);
+			
+			if (!len)
+				break;
+			if (len > sizeof(port) - 1)
+				len = sizeof(port) - 1;
+			strncpy(port, cur, len);
+			port[len] = 0;
+
+			/* make sure port # is within the range */
+			pid = bcm_atoi(port);
+
+			if (pid >= pdescsz) {
+				ET_ERROR(("robo_config_vlan: port %d in vlan%dports is out "
+				          "of range[0-%d]\n", pid, vid, pdescsz));
+				continue;
+			}
+
+			/* build VLAN registers values */
+#ifndef	_CFE_
+#ifdef BCMFA
+			pid = robo_fa_imp_port_upd(robo, port, pid, vid, pdescsz);
+#endif
+			if ((!pdesc[pid].cpu && !strchr(port, FLAG_TAGGED)) ||
+			    (pdesc[pid].cpu && strchr(port, FLAG_UNTAG)))
+#endif /* !_CFE_ */
+				untag |= pdesc[pid].untag;
+
+			member |= pdesc[pid].member;
+
+			/* set port tag - applies to untagged ingress frames */
+			/* Default Port Tag Register (Page 0x34, Address 0x10-0x1D) */
+#ifdef	_CFE_
+#define	FL	FLAG_LAN
+#else
+#define	FL	FLAG_UNTAG
+#endif /* _CFE_ */
+			if (!pdesc[pid].cpu || strchr(port, FL)) {
+
+				struct b53_port *b53_port;
+				uint16 pvid;
+
+				b53_port = &b53_ports[pid];
+
+				pvid = b53_port->pvid;
+
+				val16 = ((0 << 13) |		/* priority - always 0 */
+				         pvid);			/* default vlan id */
+				robo->ops->write_reg(robo, PAGE_VLAN, pdesc[pid].ptagr,
+				                     &val16, sizeof(val16));
+//				printk("%s pid=%d, pvid=%d, val16=0x%x \n", __FUNCTION__, pid, pvid, val16);
+			}
+
+			if (pdesc[pid].cpu) {
+				cpuport = pid;
+			}
+		}
+
+		/* Add static ARL entries */
+		if (robo->devid == DEVID5325) {
+			val8 = vid;
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VID_E0,
+			                     &val8, sizeof(val8));
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VINDX,
+			                     &val8, sizeof(val8));
+
+			/* Write the entry */
+			val8 = 0x80;
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_CTRL,
+			                     &val8, sizeof(val8));
+			/* Wait for write to complete */
+			SPINWAIT((robo->ops->read_reg(robo, PAGE_VTBL, REG_VTBL_CTRL,
+			         &val8, sizeof(val8)), ((val8 & 0x80) != 0)),
+			         100 /* usec */);
+		} else {
+//			printk("%s %d vid=%d, cpuport=%d \n", __FUNCTION__, __LINE__, vid, cpuport);
+
+			/* Set the VLAN Id in VLAN ID Index Register */
+			val8 = vid;
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VINDX,
+			                     &val8, sizeof(val8));
+
+			/* Set the MAC addr and VLAN Id in ARL Table MAC/VID Entry 0
+			 * Register.
+			 */
+			arl_entry[6] = vid;
+			arl_entry[7] = 0x0;
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_ARL_E0,
+			                     arl_entry, sizeof(arl_entry));
+
+			/* Set the Static bit , Valid bit and Port ID fields in
+			 * ARL Table Data Entry 0 Register
+			 */
+			val32 = 0x18000 + cpuport;
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_DAT_E0,
+			                     &val32, sizeof(val32));
+
+			/* Clear the ARL_R/W bit and set the START/DONE bit in
+			 * the ARL Read/Write Control Register.
+			 */
+			val8 = 0x80;
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_CTRL,
+			                     &val8, sizeof(val8));
+			/* Wait for write to complete */
+			SPINWAIT((robo->ops->read_reg(robo, PAGE_VTBL, REG_VTBL_CTRL,
+			         &val8, sizeof(val8)), ((val8 & 0x80) != 0)),
+			         100 /* usec */);
+		}
+
+vlan_setup:
+		/* setup VLAN ID and VLAN memberships */
+
+		val32 = (untag |			/* untag enable */
+		         member);			/* vlan members */
+		if (robo->devid == DEVID5325) {
+			if (robo->corerev < 3) {
+				val32 |= ((1 << 20) |		/* valid write */
+				          ((vid >> 4) << 12));	/* vlan id bit[11:4] */
+			} else {
+				val32 |= ((1 << 24) |		/* valid write */
+				          (vid << 12));	/* vlan id bit[11:4] */
+			}
+			ET_MSG(("bcm_robo_config_vlan: programming REG_VLAN_WRITE %08x\n", val32));
+
+			/* VLAN Write Register (Page 0x34, Address 0x08-0x0B) */
+			robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_WRITE, &val32,
+			                     sizeof(val32));
+			/* VLAN Table Access Register (Page 0x34, Address 0x06-0x07) */
+			val16 = ((1 << 13) |	/* start command */
+			         (1 << 12) |	/* write state */
+			         vid);		/* vlan id */
+			robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_ACCESS, &val16,
+			                     sizeof(val16));
+		} else {
+			uint8 vtble, vtbli, vtbla;
+
+			if ((robo->devid == DEVID5395) ||
+				(robo->devid == DEVID53115) ||
+				(robo->devid == DEVID53125) ||
+				ROBO_IS_BCM5301X(robo->devid)) {
+				vtble = REG_VTBL_ENTRY_5395;
+				vtbli = REG_VTBL_INDX_5395;
+				vtbla = REG_VTBL_ACCESS_5395;
+			} else {
+				vtble = REG_VTBL_ENTRY;
+				vtbli = REG_VTBL_INDX;
+				vtbla = REG_VTBL_ACCESS;
+			}
+
+			/* VLAN Table Entry Register (Page 0x05, Address 0x63-0x66/0x83-0x86) */
+			robo->ops->write_reg(robo, PAGE_VTBL, vtble, &val32,
+			                     sizeof(val32));
+
+			if (val32) {
+				ET_MSG(("robo devid=%x, vid=%d val32=0x%x val16=0x%x\n", robo->devid, vid, val32, val16));
+			}
+
 			/* VLAN Table Address Index Reg (Page 0x05, Address 0x61-0x62/0x81-0x82) */
 			val16 = vid;        /* vlan id */
 			robo->ops->write_reg(robo, PAGE_VTBL, vtbli, &val16,
@@ -2108,6 +2744,68 @@ vlan_setup:
 	return 0;
 }
 
+int bcm_robo_global_config(void *robo, struct b53_vlan *vlans, int vlans_num, struct b53_port *ports)
+{
+	/* Configure the switch to do VLAN */
+	bcm_robo_config_vlan_fun(robo, vlans, vlans_num, ports);
+
+	/* Enable switching/forwarding */
+	if (bcm_robo_enable_switch(robo)) {
+		printk("robo_enable_switch failed \n");
+	}
+
+	bcm_robo_config_port_led(robo);
+}
+
+void bcm_robo_reset_switch(void *b53_robo)
+{
+	uint8 val8;
+	robo_info_t *robo = (robo_info_t *)b53_robo;
+
+	/* Reset the 5301x switch core and register */
+	val8 = 0x90;
+	robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_SRST, &val8, sizeof(val8));
+	val8 = 0x00;
+	robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_SRST, &val8, sizeof(val8));
+
+	srab_interface_reset(robo);
+}
+#endif
+
+static void
+bcm_robo_enable_rgmii_port(robo_info_t *robo)
+{
+        char *var;
+        int rgmii_port = -1;
+        uint8 val8;
+
+        var = getvar(robo->vars, "rgmii_port");
+        if (var)
+                rgmii_port = bcm_strtoul(var, NULL, 0);
+
+        if (SRAB_ENAB(robo->sih) && ROBO_IS_BCM5301X(robo->devid)) {
+                if (rgmii_port == 5) {
+                        val8 = 0;
+                        robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_PORT5_GMIIPO,
+                                &val8, sizeof(val8));
+                                val8 |=
+                                (1 << 7) |      /* GMII_SPEED_UP_2G */
+                                (1 << 6) |      /* SW_OVERRIDE */
+                                (1 << 5) |      /* TXFLOW_CNTL */
+                                (1 << 4) |      /* RXFLOW_CNTL */
+                                                /* default(2 << 2) SPEED :
+						 * 2b10 1000/2000Mbps
+						 */
+						/* default(1 << 1) DUPLX_MODE:
+						 * Full Duplex
+						 */
+                                (1 << 0);       /* LINK_STS: Link up */
+                        robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_PORT5_GMIIPO,
+                        &val8, sizeof(val8));
+                }
+        }
+}
+
 /* Enable switching/forwarding */
 int
 bcm_robo_enable_switch(robo_info_t *robo)
@@ -2122,6 +2820,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 	char *boardtype = nvram_get("boardtype");
 	char *cardbus = nvram_get("cardbus");
 	char *et2phyaddr = nvram_get("et2phyaddr");
+ 
 
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
@@ -2338,7 +3037,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 					&val8, sizeof(val8));
 				mang_mode_en = TRUE;
 
-				/* BCM_GMAC3: Enable ports 5 and 7 for SMP dual core 3 GMAC setup */
+				/* Enable ports 5 and 7 for SMP dual core 3 GMAC setup */
 
 				/* Port 5 GMII Port States Override Register
 				 * (Page 0, Address 0x5d)
@@ -2424,6 +3123,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		robo->ops->write_reg(robo, PAGE_CFP, REG_CFP_CTL_REG, &val8, sizeof(val8));
 	}
 
+	bcm_robo_enable_rgmii_port(robo);
 
 	/* Drop reserved bit, if any */
 	robo->ops->read_reg(robo, PAGE_CTRL, 0x2f, &val8, sizeof(val8));
@@ -2439,7 +3139,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 	return ret;
 }
 
-#ifdef BCMDBG
+#ifdef BCMROBO_DBG
 void
 robo_dump_regs(robo_info_t *robo, struct bcmstrbuf *b)
 {
@@ -2831,7 +3531,7 @@ exit:
 	if (robo->ops->disable_mgmtif)
 		robo->ops->disable_mgmtif(robo);
 }
-#endif /* BCMDBG */
+#endif /* BCMROBO_DBG */
 
 #ifndef	_CFE_
 /*
@@ -3232,6 +3932,41 @@ robo_power_save_mode_set(robo_info_t *robo, int32 mode, int32 phy)
 	return 0;
 }
 #endif /* _CFE_ */
+
+#ifdef PLC
+void
+robo_plc_hw_init(robo_info_t *robo)
+{
+	uint8 val8;
+
+	ASSERT(robo);
+
+	if (!robo->plc_hw)
+		return;
+
+	/* Enable management interface access */
+	if (robo->ops->enable_mgmtif)
+		robo->ops->enable_mgmtif(robo);
+
+	if (robo->devid == DEVID53115) {
+		/* Fix the duplex mode and speed for Port 5 */
+		val8 = ((1 << 6) | (1 << 2) | 3);
+		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_MIIP5O, &val8, sizeof(val8));
+	} else if ((robo->sih->chip == BCM5357_CHIP_ID) &&
+	           (robo->sih->chippkg == BCM5358_PKG_ID)) {
+		/* Fix the duplex mode and speed for Port 4 (MII port). Force
+		 * full duplex mode and set speed to 100.
+		 */
+		si_pmu_chipcontrol(robo->sih, 2, (1 << 1) | (1 << 2), (1 << 1) | (1 << 2));
+	}
+
+	/* Disable management interface access */
+	if (robo->ops->disable_mgmtif)
+		robo->ops->disable_mgmtif(robo);
+
+	ET_MSG(("%s: Configured PLC MII interface\n", __FUNCTION__));
+}
+#endif /* PLC */
 
 /* BCM53125 EEE IOP WAR for some other vendor's wrong EEE implementation. */
 
