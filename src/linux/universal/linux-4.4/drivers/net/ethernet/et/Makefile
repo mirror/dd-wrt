@@ -38,10 +38,18 @@ et-objs		+= $(ETSRCDIR)/sys/etc47xx.o $(ETSRCDIR)/sys/etc_adm.o
 et-objs		+= $(ETSRCDIR)/sys/etcgmac.o
 EXTRA_CFLAGS	+= -DCFG_GMAC -DBCM47XX_CHOPS -DETROBO -DETADM -DBCMDMA64 -DBCMDMA32
 endif
+ifeq ($(CONFIG_BCM_FA),y)
+et-objs += $(ETSRCDIR)/sys/etc_fa.o
+EXTRA_CFLAGS    += -DETFA
+endif
+
+ifneq ($(CONFIG_BCM_GMAC3),)
+EXTRA_CFLAGS += -DBCM_GMAC3
+endif
 
 obj-$(CONFIG_ET) := et.o
 
-EXTRA_CFLAGS	+= -DDMA -Werror
+EXTRA_CFLAGS	+= -DDMA -DHAVE_NET_DEVICE_OPS -DET_INGRESS_QOS
 ifeq ($(CONFIG_ET_ALL_PASSIVE_ON),y)
 EXTRA_CFLAGS	+= -DET_ALL_PASSIVE_ON -DET_ALL_PASSIVE
 else
