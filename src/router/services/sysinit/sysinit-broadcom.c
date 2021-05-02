@@ -3056,6 +3056,7 @@ void start_sysinit(void)
 		nvram_set("ctf_disable", "0");
 	else
 		nvram_set("ctf_disable", "1");
+
 	insmod("b5301x_common");
 	insmod("b5301x_srab");
 	char *v1 = nvram_safe_get("vlan0ports");
