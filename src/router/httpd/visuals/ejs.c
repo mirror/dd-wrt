@@ -536,6 +536,12 @@ static int rule_wanvlan(char *name)
 
 }
 
+static int rule_fa(char *name)
+{
+	char *fa = nvram_safe_get("ctf_fa_mode");
+	return *ctf ? 1 : 0;
+}
+
 static int rule_afterburner(char *name)
 {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
@@ -701,6 +707,7 @@ static struct defrule s_conditions[] = {
 #endif
 #endif
 	{ "POESWITCH", rule_poeswitch },
+	{ "FA", rule_fa },
 	{ NULL, NULL }
 };
 
