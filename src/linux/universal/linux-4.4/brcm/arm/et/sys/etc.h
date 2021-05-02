@@ -2,7 +2,7 @@
  * Common [OS-independent] header file for
  * Broadcom BCM47XX 10/100Mbps Ethernet Device Driver
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: etc.h 573045 2015-07-21 20:17:41Z $
+ * $Id: etc.h 661372 2016-09-25 01:55:55Z $
  */
 
 #ifndef _etc_h_
@@ -250,8 +250,16 @@ typedef struct et_sw_port_info {
 
 /* In GMAC3 mode, the fwder GMAC uses a smaller HWRXOFF so as to ensure that
  * the DMA(s)LAN and WLAN are aligned to 32B boundaries
+ *
+ * When DHD performs SubFrame LLCSNAP insertion, then the fwder GMAC uses a even
+ * smaller HWRXOFF ... the minimum 8Byte. This will align the SubFrame Header
+ * to the start of the packet buffer, which is aligned to 32B boundary
  */
+#if defined(BCM_DHDHDR)
+#define GMAC_FWDER_HWRXOFF	8
+#else
 #define GMAC_FWDER_HWRXOFF	18
+#endif
 
 #define TC_BK		0	/* background traffic class */
 #define TC_BE		1	/* best effort traffic class */

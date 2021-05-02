@@ -3,7 +3,7 @@
  * Perform password to key hash algorithm as defined in WPA and 802.11i
  * specifications.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: passhash.h 451682 2014-01-27 20:30:17Z $
+ * $Id: passhash.h 241182 2011-02-17 21:50:03Z $
  */
 
 #ifndef _PASSHASH_H_
@@ -38,7 +38,7 @@ extern "C" {
  *	output must be at lest 40 bytes long, and returns a 256 bit key
  *	returns 0 on success, non-zero on failure
  */
-extern int passhash(char *password, int passlen, unsigned char *ssid, int ssidlen,
+extern int BCMROMFN(passhash)(char *password, int passlen, unsigned char *ssid, int ssidlen,
                               unsigned char *output);
 
 /* init_passhash/do_passhash/get_passhash: perform passwork to key hash algorithm
