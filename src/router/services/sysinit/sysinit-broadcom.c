@@ -3004,7 +3004,53 @@ void start_sysinit(void)
 //      fprintf( "insmod %s\n", modules );
 
 		insmod(modules);
+
+		if (check_hw_type() == BCM4702_CHIP)
+			insmod("diag");
+
+		loadWlModule();
+
+	}
+	/*
+	 * Set a sane date 
+	 */
+	stime(&tm);
+
+	if (brand == ROUTER_WRT54G3G) {
+		eval("cardmgr");
+	}
+
+	switch (brand) {
+	case ROUTER_WRT600N:
+	case ROUTER_WRT610N:
+	case ROUTER_ASUS_WL500GD:
+	case ROUTER_ASUS_WL550GE:
+	case ROUTER_MOTOROLA:
+	case ROUTER_RT480W:
+	case ROUTER_WRT350N:
+	case ROUTER_BUFFALO_WZRG144NH:
+	case ROUTER_DELL_TRUEMOBILE_2300_V2:
+	case ROUTER_WRT54G1X:
+		start_config_vlan();
+		break;
+	case ROUTER_UBNT_UNIFIAC:
+		nvram_set("vlan1ports", "0 8*");
+		nvram_set("vlan2ports", "1 8");
+		start_config_vlan();
+		break;
+	default:
+		if (check_vlan_support()) {
+			start_config_vlan();
+		}
+		break;
+
+	}
+
 #ifdef HAVE_SWCONFIG
+	if (nvram_match("sfe", "1"))
+		nvram_set("ctf_disable", "0");
+	else
+		nvram_set("ctf_disable", "1");
 		insmod("b5301x_common");
 		insmod("b5301x_srab");
 		char *v1 = nvram_safe_get("vlan0ports");
@@ -3064,47 +3110,6 @@ void start_sysinit(void)
 		}
 		sysprintf("swconfig dev switch0 set apply");
 #endif
-
-		if (check_hw_type() == BCM4702_CHIP)
-			insmod("diag");
-
-		loadWlModule();
-
-	}
-	/*
-	 * Set a sane date 
-	 */
-	stime(&tm);
-
-	if (brand == ROUTER_WRT54G3G) {
-		eval("cardmgr");
-	}
-
-	switch (brand) {
-	case ROUTER_WRT600N:
-	case ROUTER_WRT610N:
-	case ROUTER_ASUS_WL500GD:
-	case ROUTER_ASUS_WL550GE:
-	case ROUTER_MOTOROLA:
-	case ROUTER_RT480W:
-	case ROUTER_WRT350N:
-	case ROUTER_BUFFALO_WZRG144NH:
-	case ROUTER_DELL_TRUEMOBILE_2300_V2:
-	case ROUTER_WRT54G1X:
-		start_config_vlan();
-		break;
-	case ROUTER_UBNT_UNIFIAC:
-		nvram_set("vlan1ports", "0 8*");
-		nvram_set("vlan2ports", "1 8");
-		start_config_vlan();
-		break;
-	default:
-		if (check_vlan_support()) {
-			start_config_vlan();
-		}
-		break;
-
-	}
 
 	cprintf("done\n");
 	return;
