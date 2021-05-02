@@ -1544,9 +1544,8 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	cprintf("need reboot\n");
 	int need_reboot = websGetVari(wp, "need_reboot", 0);
 	if (*nvram_safe_get("ctf_disable")) {
-		char *sfe = websGetVar(wp, "need_reboot", NULL);
+		char *sfe = websGetVar(wp, "sfe", NULL);
 		char *fa = websGetVar(wp, "ctf_fa_mode", NULL);
-
 		if (sfe && nvram_geti("sfe") != atoi(sfe))
 			need_reboot = 1;
 		if (fa && nvram_geti("ctf_fa_mode") != atoi(fa))
