@@ -3051,64 +3051,64 @@ void start_sysinit(void)
 		nvram_set("ctf_disable", "0");
 	else
 		nvram_set("ctf_disable", "1");
-		insmod("b5301x_common");
-		insmod("b5301x_srab");
-		char *v1 = nvram_safe_get("vlan0ports");
-		char *v2 = nvram_safe_get("vlan1ports");
-		int vlan2_supp = 0;
-		if (!*v1) {
-			v1 = v2;
-			vlan2_supp = 1;
-			v2 = nvram_safe_get("vlan2ports");
-		}
+	insmod("b5301x_common");
+	insmod("b5301x_srab");
+	char *v1 = nvram_safe_get("vlan0ports");
+	char *v2 = nvram_safe_get("vlan1ports");
+	int vlan2_supp = 0;
+	if (!*v1) {
+		v1 = v2;
+		vlan2_supp = 1;
+		v2 = nvram_safe_get("vlan2ports");
+	}
 
-		char *vlan1 = v1;
-		char cpy[32];
-		char cpy2[32];
-		strncpy(cpy, vlan1, 31);
-		char *p = strchr(cpy, '*');
-		if (p)
-			*p = 't';
-		p = strchr(cpy, 'u');
-		if (p)
-			*p = 0;
-		vlan1 = cpy;
-		char *vlan2 = v2;
-		strncpy(cpy2, vlan2, 31);
-		p = strchr(cpy2, '*');
-		if (p)
-			*p = 't';
-		p = strchr(cpy2, 'u');
-		if (p)
-			*p = 0;
-		vlan2 = cpy2;
-		char var[32];
-		int port = 0;
-		foreach(var, vlan2, next) {
-			if (strlen(var) == 1) {
-				nvram_set("sw_wan", var);
-				port++;
-				break;
-			}
+	char *vlan1 = v1;
+	char cpy[32];
+	char cpy2[32];
+	strncpy(cpy, vlan1, 31);
+	char *p = strchr(cpy, '*');
+	if (p)
+		*p = 't';
+	p = strchr(cpy, 'u');
+	if (p)
+		*p = 0;
+	vlan1 = cpy;
+	char *vlan2 = v2;
+	strncpy(cpy2, vlan2, 31);
+	p = strchr(cpy2, '*');
+	if (p)
+		*p = 't';
+	p = strchr(cpy2, 'u');
+	if (p)
+		*p = 0;
+	vlan2 = cpy2;
+	char var[32];
+	int port = 0;
+	foreach(var, vlan2, next) {
+		if (strlen(var) == 1) {
+			nvram_set("sw_wan", var);
+			port++;
+			break;
 		}
-		char cpuport[32] = { 0 };
-		foreach(var, vlan1, next) {
-			if (strlen(var) == 1) {
-				nvram_nset(var, "sw_lan%d", port++);
-			} else
-				strncpy(cpuport, var, 1);
+	}
+	char cpuport[32] = { 0 };
+	foreach(var, vlan1, next) {
+		if (strlen(var) == 1) {
+			nvram_nset(var, "sw_lan%d", port++);
+		} else
+			strncpy(cpuport, var, 1);
 
-		}
-		nvram_set("sw_cpuport", cpuport);
-		sysprintf("swconfig dev switch0 set enable_vlan 1");
-		if (vlan2_supp) {
-			sysprintf("swconfig dev switch0 vlan 1 set ports \"%s\"", vlan1);
-			sysprintf("swconfig dev switch0 vlan 2 set ports \"%s\"", vlan2);
-		} else {
-			sysprintf("swconfig dev switch0 vlan 0 set ports \"%s\"", vlan1);
-			sysprintf("swconfig dev switch0 vlan 1 set ports \"%s\"", vlan2);
-		}
-		sysprintf("swconfig dev switch0 set apply");
+	}
+	nvram_set("sw_cpuport", cpuport);
+	sysprintf("swconfig dev switch0 set enable_vlan 1");
+	if (vlan2_supp) {
+		sysprintf("swconfig dev switch0 vlan 1 set ports \"%s\"", vlan1);
+		sysprintf("swconfig dev switch0 vlan 2 set ports \"%s\"", vlan2);
+	} else {
+		sysprintf("swconfig dev switch0 vlan 0 set ports \"%s\"", vlan1);
+		sysprintf("swconfig dev switch0 vlan 1 set ports \"%s\"", vlan2);
+	}
+	sysprintf("swconfig dev switch0 set apply");
 #endif
 
 	cprintf("done\n");
