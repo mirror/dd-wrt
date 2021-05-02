@@ -1166,6 +1166,7 @@ idx.legend="WAN Connection Type";
 idx.conn_type="Connection Type";
 idx.stp="STP";
 idx.sfe="Shortcut Forwarding Engine";
+idx.fa="Flow Acceleration";
 idx.stp_mess="(disable for COMCAST ISP)";
 idx.optional="Optional Settings";
 idx.mtu="MTU";
