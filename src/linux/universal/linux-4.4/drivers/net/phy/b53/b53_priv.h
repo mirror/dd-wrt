@@ -70,9 +70,7 @@ struct b53_port {
 struct b53_device {
 	struct switch_dev sw_dev;
 	struct b53_platform_data *pdata;
-#ifdef CONFIG_PLAT_BCM5301X /* fixme: CONFIG_SMARTRG */
 	void	*robo;		/* optional robo private data */
-#endif
 
 	struct mutex reg_mutex;
 	const struct b53_io_ops *ops;
@@ -305,8 +303,8 @@ static inline int b53_write64(struct b53_device *dev, u8 page, u8 reg,
 #ifndef CONFIG_PLAT_BCM5301X /* fixme: CONFIG_SMARTRG */
 #ifdef CONFIG_BCM47XX
 
-#include <bcm47xx_nvram.h>
-#include <bcm47xx_board.h>
+char *nvram_get(char *name);
+
 static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
 {
 	enum bcm47xx_board board = bcm47xx_board_get();
@@ -316,7 +314,10 @@ static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
 	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
 		return 8;
 	default:
-		return bcm47xx_nvram_gpio_pin("robo_reset");
+		char *nv = nvram_get("robo_reset");
+		if (nv == NULL)
+			return -ENOENT;
+		return atoi(nv);
 	}
 }
 #else
