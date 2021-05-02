@@ -3087,7 +3087,7 @@ void start_sysinit(void)
 	if (p)
 		*p = 0;
 	vlan2 = cpy2;
-	char var[32];
+	char var[32], *next;
 	int port = 0;
 	foreach(var, vlan2, next) {
 		if (strlen(var) == 1) {
