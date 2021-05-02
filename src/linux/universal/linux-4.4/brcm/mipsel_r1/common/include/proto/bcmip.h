@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  *
  * Fundamental constants relating to IP Protocol
  *
- * $Id: bcmip.h 449391 2014-01-16 23:23:52Z $
+ * $Id: bcmip.h 559201 2015-05-27 00:24:11Z $
  */
 
 #ifndef _bcmip_h_
@@ -36,6 +36,7 @@
 #define IP_VER_4		4	/* version number for IPV4 */
 #define IP_VER_6		6	/* version number for IPV6 */
 
+
 #define IP_VER(ip_body) \
 	((((uint8 *)(ip_body))[IP_VER_OFFSET] & IP_VER_MASK) >> IP_VER_SHIFT)
 
@@ -43,7 +44,8 @@
 #define IP_PROT_IGMP		0x2	/* IGMP protocol */
 #define IP_PROT_TCP		0x6	/* TCP protocol */
 #define IP_PROT_UDP		0x11	/* UDP protocol type */
-#define IP_PROT_ICMP6		0x3a	/* ICMPv6 protocol type */
+#define IP_PROT_GRE		0x2f	/* GRE protocol type */
+#define IP_PROT_ICMP6           0x3a    /* ICMPv6 protocol type */
 
 /* IPV4 field offsets */
 #define IPV4_VER_HL_OFFSET      0       /* version and ihl byte offset */

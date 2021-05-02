@@ -1,7 +1,7 @@
 /*
  * Broadcom Gigabit Ethernet MAC defines.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -25,7 +25,10 @@
 #if defined(BCM_GMAC3)
 #define	DEF_INTMASK		(I_XI0 | I_XI1 | I_XI2 | I_XI3 | I_RI | I_ERRORS | I_TO)
 #else  /* ! BCM_GMAC3 */
-#define DEF_INTMASK     (I_XI0 | I_XI1 | I_XI2 | I_XI3 | I_RI | I_ERRORS)
+// debug
+//#define DEF_INTMASK     (I_XI0 | I_XI1 | I_XI2 | I_XI3 | I_RI | I_ERRORS)
+#define DEF_INTMASK     (I_RI | I_ERRORS)
+
 #endif /* ! BCM_GMAC3 */
 
 #define GMAC_RESET_DELAY 	2

@@ -4,7 +4,7 @@
  * This file implements the chip-specific routines
  * for Broadcom HNBU Sonics SiliconBackplane enet cores.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etc47xx.c 578047 2015-08-10 07:47:45Z $
+ * $Id: etc47xx.c 573053 2015-07-21 20:36:24Z $
  */
 
 #include <et_cfg.h>
@@ -70,6 +70,9 @@ struct bcm4xxx {
 	uint		vars_size;
 
 	void		*adm;		/* optional admtek private data */
+
+	/* platform device for associated switch */
+	struct platform_device *b53_device;
 };
 
 /* local prototypes */
@@ -167,6 +170,9 @@ chipid(uint vendor, uint device)
 	}
 	return (FALSE);
 }
+
+extern void * etcgmac_bcm5301x_register(void *robo);
+extern struct platform_device *etc_b53_device;
 
 static void *
 chipattach(etc_info_t *etc, void *osh, void *regsva)
@@ -329,10 +335,12 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 			goto fail;
 		}
 		/* Enable switching/forwarding */
+#if 0
 		if (bcm_robo_enable_switch(etc->robo)) {
 			ET_ERROR(("et%d: chipattach: robo_enable_switch failed\n", etc->unit));
 			goto fail;
 		}
+#endif
 	}
 #endif /* ETROBO */
 
@@ -358,6 +366,12 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 		}
 	}
 #endif /* ETADM */
+
+	if (etc_b53_device == NULL) {
+		etc_b53_device = (struct platform_device *) etcgmac_bcm5301x_register(etc->robo);
+	}
+
+	ch->b53_device = etc_b53_device;
 
 	return ((void *)ch);
 
