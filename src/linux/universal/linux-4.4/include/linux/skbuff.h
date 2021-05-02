@@ -563,6 +563,16 @@ struct sk_buff {
 		struct list_head	list;
 	};
 
+#ifdef PKTC
+	unsigned char       pktc_cb[8];
+#endif
+#ifdef CTF_PPPOE
+	unsigned char       ctf_pppoe_cb[8];
+#endif
+#ifdef CTFMAP
+	void               *ctfmap;
+#endif
+
 	union {
 		struct sock		*sk;
 		int			ip_defrag_offset;
@@ -584,11 +594,37 @@ struct sk_buff {
 
 	unsigned long		_skb_refdst;
 	void			(*destructor)(struct sk_buff *skb);
-#ifdef CONFIG_XFRM
+#if defined(CONFIG_XFRM) || defined(CTFMAP)
 	struct	sec_path	*sp;
-#endif
+#endif /* CONFIG_XFRM */
+
+#ifdef CTFPOOL
+	void               *ctfpool;
+#endif /* CTFPOOL */
+#ifdef BCMDBG_CTRACE
+	struct list_head    ctrace_list;
+#define CTRACE_NUM  16
+	char               *func[CTRACE_NUM];
+	int	                line[CTRACE_NUM];
+	int	                ctrace_start;
+	int	                ctrace_count;
+#endif /* BCMDBG_CTRACE */
+#if defined(HNDCTF) || defined(CTFPOOL)
+	__u32               pktc_flags;
+#endif /* HNDCTF || CTFPOOL */
+#ifdef HNDCTF
+	void               *ctf_ipc_txif;
+#endif /* HNDCTF */
+#if defined (HNDCTF) || defined(BCMFA)
+#define BCM_FA_INVALID_IDX_VAL	0xFFF00000
+	__u32               napt_idx;
+	__u32               napt_flags;
+#endif /* HNDCTF || BCMFA */
+
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 	struct nf_conntrack	*nfct;
+	/* Cache info */
+	__u32               nfcache;
 #endif
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	struct nf_queue_entry	*nf_queue_entry;

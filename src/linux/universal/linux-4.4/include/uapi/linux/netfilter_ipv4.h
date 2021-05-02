@@ -54,6 +54,12 @@
 #define NF_IP_NUMHOOKS		5
 #endif /* ! __KERNEL__ */
 
+#if 0
+/* Cone NAT, Otherwise Symmetric NAT */
+#define NFC_IP_CONE_NAT     0x0800
+#define NFC_IP_CONE_NAT_ALTERED 0x1000
+#endif /* CONFIG_IP_NF_TARGET_CONE */
+
 enum nf_ip_hook_priorities {
 	NF_IP_PRI_FIRST = INT_MIN,
 	NF_IP_PRI_CONNTRACK_DEFRAG = -400,

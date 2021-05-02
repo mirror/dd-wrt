@@ -1829,6 +1829,9 @@ struct net_device {
 	struct netprio_map __rcu *priomap;
 #endif
 	struct phy_device *phydev;
+#ifdef BCMFA
+	bool fa_on;
+#endif
 	struct lock_class_key *qdisc_tx_busylock;
 	bool proto_down;
 };
