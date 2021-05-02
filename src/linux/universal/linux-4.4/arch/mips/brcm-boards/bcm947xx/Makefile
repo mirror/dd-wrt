@@ -19,11 +19,12 @@
 #
 
 ifeq ($(CONFIG_CPU_MIPS32_R1),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel_r1/include -I$(srctree)/brcm/mipsel_r1/common/include   -I$(srctree)/brcm/mipsel_r1/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 SHARED := ../../../../brcm/mipsel_r1/shared
 else
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/common/include   -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 SHARED := ../../../../brcm/mipsel/shared
 endif
-EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/common/include   -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 
 ifeq ($(CONFIG_MTD_NFLASH),y)
 EXTRA_CFLAGS += -DNFLASH_SUPPORT -DCCNFLASH_SUPPORT
