@@ -1,3 +1,10 @@
+ifeq ($(CONFIG_MIPS),y)
+EXTRA_CFLAGS += -I$(srctree)/brcm/mipsel/include
+EXTRA_CFLAGS += -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/net/8021q
+else
+EXTRA_CFLAGS += -I$(srctree)/brcm/arm/include
+EXTRA_CFLAGS += -I$(srctree)/brcm/arm/common/include -I$(srctree)/net/8021q
+endif
 #
 # Makefile for the Linux PPP network device drivers.
 #
