@@ -1,6 +1,11 @@
 ifeq ($(CONFIG_MIPS),y)
+ifeq ($(CONFIG_CPU_MIPS32_R1),y)
+EXTRA_CFLAGS += -I$(srctree)/brcm/mipsel_r1/include
+EXTRA_CFLAGS += -I$(srctree)/brcm/mipsel_r1/common/include -I$(srctree)/net/8021q
+else
 EXTRA_CFLAGS += -I$(srctree)/brcm/mipsel/include
 EXTRA_CFLAGS += -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/net/8021q
+endif
 else
 EXTRA_CFLAGS += -I$(srctree)/brcm/arm/include
 EXTRA_CFLAGS += -I$(srctree)/brcm/arm/common/include -I$(srctree)/net/8021q

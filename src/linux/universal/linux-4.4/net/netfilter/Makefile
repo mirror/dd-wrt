@@ -1,8 +1,19 @@
+
 ifeq ($(CONFIG_MIPS),y)
+
+
+ifeq ($(CONFIG_CPU_MIPS32_R1),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel_r1/include -I$(srctree)/brcm/mipsel_r1/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel_r1/include -I$(srctree)/brcm/mipsel_r1/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel_r1/common/include
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel_r1/common/include
+else
 EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
-EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/common/include  -I$(srctree)/net/8021q
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/common/include
 EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/common/include
+endif
+EXTRA_CFLAGS+=-I$(srctree)/net/8021q
 else
 EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux

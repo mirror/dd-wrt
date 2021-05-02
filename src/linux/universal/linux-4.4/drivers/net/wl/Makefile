@@ -1,16 +1,18 @@
 ifeq ($(CONFIG_MIPS),y)
-EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK=1
-EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -DBCMDRIVER -Dlinux
 ifeq ($(CONFIG_CPU_MIPS32_R1),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel_r1/include -I$(srctree)/brcm/mipsel_r1/shared -I$(srctree)/brcm/mipsel_r1/common/include -I$(srctree)/brcm/mipsel_r1/shared/bcmwifi/include -I$(srctree)/brcm/mipsel_r1/wl/dump/include -I$(srctree)/brcm/mipsel_r1/wl/iocv/include -I$(srctree)/brcm/mipsel_r1/wl/clm/include -I$(srctree)/brcm/mipsel_r1/wl/ppr/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK=1
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel_r1/include -I$(srctree)/brcm/mipsel_r1/shared -I$(srctree)/brcm/mipsel_r1/common/include -I$(srctree)/brcm/mipsel_r1/shared/bcmwifi/include -I$(srctree)/brcm/mipsel_r1/wl/dump/include -I$(srctree)/brcm/mipsel_r1/wl/iocv/include -I$(srctree)/brcm/mipsel_r1/wl/clm/include -I$(srctree)/brcm/mipsel_r1/wl/ppr/include -DBCMDRIVER -Dlinux
 SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel_r1
 SRCBASE_OFFSET := ../../../brcm/mipsel_r1
 else
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -I$(srctree)/brcm/mipsel/wl/clm/include -I$(srctree)/brcm/mipsel/wl/ppr/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK=1
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -I$(srctree)/brcm/mipsel/wl/clm/include -I$(srctree)/brcm/mipsel/wl/ppr/include -I$(srctree)/brcm/mipsel/wl/clm/include -DBCMDRIVER -Dlinux
 SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel
 SRCBASE_OFFSET := ../../../brcm/mipsel
 endif
 else
 #EXTRA_CFLAGS+=-fanalyzer -Wno-analyzer-null-dereference
-DDFLAGS =-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared -I$(srctree)/brcm/arm/common/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -I$(srctree)/brcm/arm/wl/dump/include -I$(srctree)/brcm/arm/wl/iocv/include
+DDFLAGS =-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared -I$(srctree)/brcm/arm/common/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -I$(srctree)/brcm/arm/wl/dump/include -I$(srctree)/brcm/arm/wl/iocv/include -I$(srctree)/brcm/arm/wl/clm/ -I$(srctree)/brcm/arm/wl/ppr/include 
 DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/hal 
 DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/include 
 DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/core 
