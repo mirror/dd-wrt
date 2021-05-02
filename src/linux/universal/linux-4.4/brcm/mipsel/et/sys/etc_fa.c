@@ -1,7 +1,7 @@
 /*
  *  Flow Accelerator setup functions
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -602,9 +602,20 @@ found:
 		CTF_FA_GET_NH_DA(eaddr, d);
 
 		if (memcmp(nh->nh_mac, eaddr, ETHER_ADDR_LEN) == 0) {
+			int16 vid = ((LTOH16(d[0]) >> 3) & VLAN_VID_MASK);
+
 			tb_info->nh_idx = (idx & (CTF_MAX_NEXTHOP_TABLE_INDEX - 1));
 			fai->nhi.ref[tb_info->nh_idx]++;
-			ret = BCME_OK;
+
+			if (vid != (nh->vlan_tci & VLAN_VID_MASK)) {
+				char eabuf[ETHER_ADDR_STR_LEN];
+				ET_ERROR(("%s Detected NH entry VLAN change for MAC: %s old VLAN: %d new VLAN: %d\n",
+					__FUNCTION__, bcm_ether_ntoa((struct  ether_addr *)eaddr, eabuf), vid, (nh->vlan_tci & VLAN_VID_MASK)));
+				/* tell calling function to update NH entry */
+				ret = BCME_BADKEYIDX;
+			} else {
+				ret = BCME_OK;
+			}
 			break;
 		}
 	}
@@ -635,13 +646,20 @@ fa_add_nhop_entry(fa_info_t *fai, fa_napt_t *tb_info, nhop_entry_t *nh)
 	/* Prepare NH entry */
 	CTF_FA_SET_NH_ENTRY(d, nh->nh_mac, nh->l2_ftype, nh->tag_op, HTOL16(nh->vlan_tci));
 
-	if ((ret = fa_write_nhop_entry(fai, d, PEEKNEXT_NHIDX(&fai->nhi))) == BCME_BUSY) {
-		ET_ERROR(("%s Nhop write timeout!\n", __FUNCTION__));
-		goto done;
-	}
+	if (ret == BCME_BADKEYIDX) {
+		/* just update the NH entry */
+		if ((ret = fa_write_nhop_entry(fai, d, tb_info->nh_idx)) == BCME_BUSY) {
+			ET_ERROR(("%s Nhop write timeout during update!\n", __FUNCTION__));
+		}
+	} else {
+		if ((ret = fa_write_nhop_entry(fai, d, PEEKNEXT_NHIDX(&fai->nhi))) == BCME_BUSY) {
+			ET_ERROR(("%s Nhop write timeout!\n", __FUNCTION__));
+			goto done;
+		}
 
-	tb_info->nh_idx = (GETNEXT_NHIDX(&fai->nhi) & (CTF_MAX_NEXTHOP_TABLE_INDEX - 1));
-	fai->nhi.ref[tb_info->nh_idx]++;
+		tb_info->nh_idx = (GETNEXT_NHIDX(&fai->nhi) & (CTF_MAX_NEXTHOP_TABLE_INDEX - 1));
+		fai->nhi.ref[tb_info->nh_idx]++;
+	}
 
 done:
 	return ret;
@@ -1021,6 +1039,9 @@ fa_dump_nf_entry(fa_info_t *fai, uint32 napt_idx, print_hdl_t *pr)
 {
 	uint32 tbl[CTF_DATA_SIZE];
 	uint32 tbl1[CTF_DATA_SIZE];
+	char sipbuf[32];
+	char dipbuf[32];
+	char ripbuf[32];
 	bool	valid_ipv6, v4;
 	print_buf_t prnt;
 	void	*b;
@@ -1036,7 +1057,9 @@ fa_dump_nf_entry(fa_info_t *fai, uint32 napt_idx, print_hdl_t *pr)
 
 	prnt(b, "%-4.03x ", napt_idx);
 	if (!valid_ipv6) {
-		prnt(b, "%-35.08x %-35.08x ", LTOH32(tbl[5]), LTOH32(tbl[4]));
+		snprintf(sipbuf, sizeof(sipbuf), IPv4_ADDR_STR, IPv4_ADDR_TO_STR( LTOH32(tbl[5] )));
+		snprintf(dipbuf, sizeof(dipbuf), IPv4_ADDR_STR, IPv4_ADDR_TO_STR( LTOH32(tbl[4] )));
+		prnt(b, "%-35s %-35s ", sipbuf, dipbuf);
 	} else {
 		napt_idx++;
 		fa_read_napt_entry(fai, tbl1, napt_idx);
@@ -1044,12 +1067,12 @@ fa_dump_nf_entry(fa_info_t *fai, uint32 napt_idx, print_hdl_t *pr)
 		prnt(b, "%08x.%08x.%08x.%08x ", tbl[3], tbl[2], tbl[1], tbl[0]);
 	}
 	prnt(b, "%-4s ", (tbl[3] >> 31) ? "tcp":"udp");
-	prnt(b, "%-5.04x ", (LTOH16(tbl[3]) >> 15) & 0xFFFF);
-	prnt(b, "%-5.04x ", ((LTOH16(tbl[3]) & 0x7FFF) << 1) | (LTOH16(tbl[2]) >> 31));
-	prnt(b, "%-3.01x ", CTF_FA_MACC_DATA0_TS(tbl));
-	prnt(b, "%08x ", ((LTOH16(tbl[1]) & 0x7) << 29) | (LTOH16(tbl[0]) >> 3));
+	prnt(b, "%-5u ", (LTOH16(tbl[3]) >> 15) & 0xFFFF);
+	prnt(b, "%-5u ", ((LTOH16(tbl[3]) & 0x7FFF) << 1) | (LTOH16(tbl[2]) >> 31));
+	prnt(b, "%-3u ", CTF_FA_MACC_DATA0_TS(tbl));
+	prnt(b, "%-8u ", ((LTOH16(tbl[1]) & 0x7) << 29) | (LTOH16(tbl[0]) >> 3));
 	prnt(b, "%-4s ", (tbl[6] & CTF_NP_EXTERNAL) ? "2lan":"2wan");
-	prnt(b, "%-5.04x ", (LTOH16(tbl[2]) >> 15) & 0xFFFF);
+	prnt(b, "%-5u ", (LTOH16(tbl[2]) >> 15) & 0xFFFF);
 
 	if (valid_ipv6) {
 		uint32 ipv6[4];
@@ -1059,7 +1082,9 @@ fa_dump_nf_entry(fa_info_t *fai, uint32 napt_idx, print_hdl_t *pr)
 		ipv6[3] = ((tbl[5] & 0xEFFF) | (tbl[4] >> 15));
 		prnt(b, "%08x.%08x.%08x.%08x ", ipv6[3], ipv6[2], ipv6[1], ipv6[0]);
 	} else {
-		prnt(b, "%-35.08x ", ((LTOH32(tbl[2]) & 0x7FFF) << 17) | (LTOH32(tbl[1]) >> 15));
+		snprintf(ripbuf, sizeof(ripbuf), IPv4_ADDR_STR,
+			IPv4_ADDR_TO_STR( (((LTOH32(tbl[2]) & 0x7FFF) << 17) | (LTOH32(tbl[1]) >> 15)) ));
+		prnt(b, "%-35s ", ripbuf);
 	}
 	prnt(b, "%-5.01x ", (v4 ? ((tbl[6] >> 20) & 1):((tbl[7] >> 20) & 1)));
 	prnt(b, "%-4.01x ", v4);

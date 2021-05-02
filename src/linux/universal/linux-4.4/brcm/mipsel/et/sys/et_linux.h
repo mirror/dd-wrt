@@ -2,7 +2,7 @@
  * Linux device driver tunables for
  * Broadcom BCM47XX 10/100Mbps Ethernet Device Driver
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: et_linux.h 581745 2015-08-25 12:15:08Z $
+ * $Id: et_linux.h 575714 2015-07-30 20:59:51Z $
  */
 
 #ifndef _et_linux_h_
@@ -34,12 +34,11 @@
 #endif /* ET_INGRESS_QOS */
 #endif /* CONFIG_RAM_SIZE ... */
 
-#if defined(CONFIG_DHDAP_MODULE) || defined(CONFIG_DHDAP)
+#if defined(BCM_GMAC3)
+
 #undef NRXBUFPOST
 #define NRXBUFPOST 511
-#endif /* DHDAP */
 
-#if defined(BCM_GMAC3)
 /*
  * To ensure that a 2K slab is used,                                  2048
  * Linux Add-ons: skb_shared_info=264, NET_SKB_PAD=32, align=32        352
@@ -50,7 +49,7 @@
 #define BUFSZ       (1696)
 #define RXBUFSZ     (BUFSZ - BCMEXTRAHDROOM)
 #else /* ! BCM_GMAC3 */
-#define	BUFSZ		2048		/* packet data buffer size */
+#define	BUFSZ		2548		/* packet data buffer size */
 #define	RXBUFSZ		(BUFSZ - 256)	/* receive buffer size */
 #endif /* ! BCM_GMAC3 */
 
