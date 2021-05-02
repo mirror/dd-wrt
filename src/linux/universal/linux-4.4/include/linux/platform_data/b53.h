@@ -24,9 +24,7 @@
 struct b53_platform_data {
 	u32 chip_id;
 	u16 enabled_ports;
-#ifdef CONFIG_PLAT_BCM5301X /* fixme: CONFIG_SMARTRG */
 	void	*robo;		/* optional robo private data */
-#endif
 
 	/* allow to specify an ethX alias */
 	const char *alias;
