@@ -1356,5 +1356,35 @@ swconfig_exit(void)
 	genl_unregister_family(&switch_fam);
 }
 
+#include <linux/platform_data/b53.h>
+#include <linux/platform_device.h>
+
+static struct b53_platform_data etcgmac_b5301x_pdata = {
+};
+
+static struct platform_device etcgmac_b5301x_dev = {
+	.name		= "b5301x-srab-switch",
+	.id		= -1,
+	.dev		= {
+		.platform_data = &etcgmac_b5301x_pdata,
+	},
+};
+
+void * etcgmac_bcm5301x_register(void * robo) 
+{
+	int err;
+
+	etcgmac_b5301x_pdata.robo = robo;
+	err = platform_device_register(&etcgmac_b5301x_dev);
+
+	if (err) {
+		printk("Error: %s platform device register failed \n", __FUNCTION__);
+	}
+
+	return &etcgmac_b5301x_dev;
+}
+
+EXPORT_SYMBOL(etcgmac_bcm5301x_register);
+
 module_init(swconfig_init);
 module_exit(swconfig_exit);
