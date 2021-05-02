@@ -20,4 +20,4 @@ MODULE_INFO(retpoline, "Y");
 static const char __module_depends[]
 __used
 __attribute__((section(".modinfo"))) =
-"depends=et,b5301x_common";
+"depends=b5301x_common";
