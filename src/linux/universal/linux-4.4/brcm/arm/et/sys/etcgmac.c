@@ -3,7 +3,7 @@
  *
  * This file implements the chip-specific routines for the GMAC core.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etcgmac.c 573045 2015-07-21 20:17:41Z $
+ * $Id: etcgmac.c 573053 2015-07-21 20:36:24Z $
  */
 
 #include <et_cfg.h>
@@ -88,6 +88,9 @@ struct bcmgmac {
 
 	void		*adm;		/* optional admtek private data */
 	mcfilter_t	mf;		/* multicast filter */
+
+	/* platform device for associated switch */
+	struct platform_device *b53_device;
 };
 
 /* local prototypes */
@@ -192,6 +195,10 @@ chipid(uint vendor, uint device)
 
 	return (FALSE);
 }
+
+extern void * etcgmac_bcm5301x_register(void *robo);
+struct platform_device *etc_b53_device = NULL;
+
 
 static void *
 chipattach(etc_info_t *etc, void *osh, void *regsva)
@@ -389,11 +396,9 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 #ifndef _CFE_
 	/* override dma parameters, corerev 4 dma channel 1,2 and 3 default burstlen is 0. */
 	/* corerev 4,5: NS Ax; corerev 6: BCM43909 no HW prefetch; corerev 7: NS B0 */
-	printk(KERN_INFO "ET Corerev %d\n",etc->corerev);
 	if (etc->corerev == 4 ||
 	    etc->corerev == 5 ||
-	    etc->corerev == 7 ||
-	    etc->corerev == 8) {
+	    etc->corerev == 7) {
 #define DMA_CTL_TX 0
 #define DMA_CTL_RX 1
 
@@ -428,10 +433,6 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 		                                  TXBURSTLEN == 128 ? DMA_BL_128 :
 		                                  TXBURSTLEN == 64 ? DMA_BL_64 :
 		                                  TXBURSTLEN == 32 ? DMA_BL_32 : DMA_BL_16);
-		/* override burst length to 64 on 53573(corerev 8) */
-		if (etc->corerev == 8) {
-			dmactl[DMA_CTL_TX][DMA_CTL_BL] = DMA_BL_64;
-		}
 
 		dmactl[DMA_CTL_RX][DMA_CTL_PT] =  (RXPREFTHRESH == 8 ? DMA_PT_8 :
 		                                   RXPREFTHRESH == 4 ? DMA_PT_4 :
@@ -580,11 +581,15 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 			ET_ERROR(("et%d: chipattach: robo_config_vlan failed\n", etc->unit));
 			goto fail;
 		}
+
+#if 0
 		/* Enable switching/forwarding */
 		if (bcm_robo_enable_switch(etc->robo)) {
 			ET_ERROR(("et%d: chipattach: robo_enable_switch failed\n", etc->unit));
 			goto fail;
 		}
+#endif
+
 #ifdef PLC
 		/* Configure the switch port connected to PLC chipset */
 		robo_plc_hw_init(etc->robo);
@@ -632,6 +637,13 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 		}
 	}
 #endif /* ETFA */
+
+
+	if (etc_b53_device == NULL) {
+		etc_b53_device = (struct platform_device *) etcgmac_bcm5301x_register(etc->robo);
+	}
+
+	ch->b53_device = etc_b53_device;
 
 	return ((void *) ch);
 
@@ -735,12 +747,23 @@ chipdump(ch_t *ch, struct bcmstrbuf *b)
 		(ulong)ch->regs, (ulong)ch->etphy, ch->intstatus, ch->intmask);
 	bcm_bprintf(b, "\n");
 
+	bcm_bprintf(b, "DMA Dump:\n");
 	/* dma engine state */
 	for (i = 0; i < NUMTXQ; i++) {
-		dma_dump(ch->di[i], b, TRUE);
-		bcm_bprintf(b, "\n");
+//		dma_dump(ch->di[i], b, TRUE);
+		bcm_bprintf(b, "DMA[%d] txavail %d dmactrlflags 0x%08X rxgiants %d rxnobuf %d txnobuf %d txnodesc %d\n", 
+					i,
+					ch->di[i]->txavail,
+					ch->di[i]->dmactrlflags,
+					ch->di[i]->rxgiants,
+					ch->di[i]->rxnobuf,
+					ch->di[i]->txnobuf,
+					ch->di[i]->txnodesc
+					);
+//		bcm_bprintf(b, "\n");
 	}
 
+	bcm_bprintf(b, "Register Dump: 0x%08x\n", ch->regs);
 	/* registers */
 	chipdumpregs(ch, ch->regs, b);
 	bcm_bprintf(b, "\n");
@@ -913,7 +936,7 @@ gmac_reset(ch_t *ch)
 
 	cmdcfg &= ~(CC_TE | CC_RE | CC_RPI | CC_TAI | CC_HD | CC_ML |
 	            CC_CFE | CC_RL | CC_RED | CC_PE | CC_TPI | CC_PAD_EN | CC_PF);
-	cmdcfg |= (CC_PROM | CC_NLC | CC_CFE | CC_TPI | CC_AT(ch->etc->corerev));
+	cmdcfg |= (CC_PROM | CC_NLC | CC_CFE | CC_TPI | CC_AT);
 
 	if (cmdcfg != ocmdcfg)
 		W_REG(ch->osh, &ch->regs->cmdcfg, cmdcfg);
@@ -1265,12 +1288,8 @@ chipinreset:
 	if ((((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) ||
 	      (CHIPID(ch->sih->chip) == BCM4749_CHIP_ID)) &&
 	     (ch->sih->chippkg == BCM47186_PKG_ID)) ||
-	    (BCM53573_CHIP(ch->sih->chip) &&
-	     (ch->sih->chippkg == BCM47189_PKG_ID)) ||
-	    ((CHIPID(ch->sih->chip) == BCM53572_CHIP_ID) &&
-	     (ch->sih->chippkg == BCM47188_PKG_ID))) {
+	    ((CHIPID(ch->sih->chip) == BCM53572_CHIP_ID) && (ch->sih->chippkg == BCM47188_PKG_ID)))
 		sflags &= ~SISF_SW_ATTACHED;
-	}
 
 	if (sflags & SISF_SW_ATTACHED) {
 		ET_TRACE(("et%d: internal switch attached\n", ch->etc->unit));
@@ -1318,32 +1337,6 @@ chipinreset:
 				(PMU_CC1_IF_TYPE_MASK|PMU_CC1_SW_TYPE_MASK),
 				sw_type);
 		}
-	}
-
-	if (BCM53573_CHIP(ch->sih->chip) && (PMUCTL_ENAB(ch->sih))) {
-		uint32 sw_type;
-		/* set gmac0 depends on chip/package type */
-		if (ch->etc->unit == 0) {
-			char *var;
-			sw_type = PMU_CC4_SW_TYPE_EPHY | PMU_CC4_IF_TYPE_MII;
-			if ((var = getvar(ch->vars, "et_swtype")) != NULL)
-				sw_type = (bcm_atoi(var) & 0x0f) << 12;
-			else if ((BCM53573_CHIP(ch->sih->chip) &&
-			          (ch->sih->chippkg == BCM47189_PKG_ID)) ||
-			         (ch->sih->chippkg == HWSIM_PKG_ID))
-				sw_type = PMU_CC4_IF_TYPE_RGMII|PMU_CC4_SW_TYPE_RGMII;
-
-			si_pmu_chipcontrol(ch->sih, PMU_CHIPCTL4,
-				(PMU_CC4_IF_TYPE_MASK|PMU_CC4_SW_TYPE_MASK), sw_type);
-		}
-		else {
-			/* Set gmac1 to RGMII mode for 47189. */
-			sw_type = PMU_CC7_IF_TYPE_RGMII;
-			si_pmu_chipcontrol(ch->sih, PMU_CHIPCTL7,
-				PMU_CC7_IF_TYPE_MASK, sw_type);
-		}
-
-		printk(KERN_INFO "et%d: 53573 sw_type %04x\n", ch->etc->unit, sw_type);
 	}
 
 	if ((sflags & SISF_SW_ATTACHED) && (!ch->etc->robo)) {
@@ -1425,7 +1418,7 @@ gmac_mf_add(ch_t *ch, struct ether_addr *mcaddr)
 
 	/* discard duplicate add requests */
 	if (gmac_mf_lkup(ch, mcaddr) == SUCCESS) {
-		ET_ERROR(("et%d: discarding duplicate mcast filter entry\n", ch->etc->unit));
+//		ET_ERROR(("et%d: discarding duplicate mcast filter entry\n", ch->etc->unit));
 		return (FAILURE);
 	}
 
@@ -1569,7 +1562,6 @@ chiptx(ch_t *ch, void *p0)
 	int error, len;
 	uint32 q = TX_Q0;
 
-	ET_TRACE(("et%d: chiptx\n", ch->etc->unit));
 	ET_LOG("et%d: chiptx", ch->etc->unit, 0);
 
 #ifdef ETROBO
@@ -1591,6 +1583,7 @@ chiptx(ch_t *ch, void *p0)
 		ET_ERROR(("et%d: chiptx: max frame length exceeded\n",
 		          ch->etc->unit));
 		PKTFREE(ch->osh, p0, TRUE);
+		ch->etc->txerror++;
 		return FALSE;
 	}
 
@@ -1599,15 +1592,21 @@ chiptx(ch_t *ch, void *p0)
 
 	/* queue the packet based on its priority */
 	if (ch->etc->qos) {
+#if 1
+		q = etc_up2tc(PKTPRIO(p0));
+#else
 		if (ch->etc->corerev != 4 && ch->etc->corerev != 5) {
 			q = etc_up2tc(PKTPRIO(p0));
 		}
 		else {
 			q = TC_BE;
 		}
+#endif
 	}
 
 	ASSERT(q < NUMTXQ);
+	
+	ET_TRACE(("et%d: chiptx skb %p, Q %d, len %d\n", ch->etc->unit, p0, q, len ));
 
 	/* if tx completion intr is disabled then do the reclaim
 	 * once every few frames transmitted.
@@ -1627,7 +1626,7 @@ chiptx(ch_t *ch, void *p0)
 #endif /* defined(_CFE_) || defined(__NetBSD__) */
 
 	if (error) {
-		ET_ERROR(("et%d: chiptx: out of txds\n", ch->etc->unit));
+		//ET_ERROR(("et%d: chiptx: out of txds\n", ch->etc->unit));
 		ch->etc->txnobuf++;
 		return FALSE;
 	}
