@@ -417,13 +417,21 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" value="1" name="sfe" <% nvc("sfe", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="sfe" <% nvc("sfe", "0"); %> /><% tran("share.disable"); %>
 								</div>
+				<% ifdef("WET", "-->"); %>
+				<% ifdef("FA", "<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("idx.fa"); %></div>
+									<input class="spaceradio" type="radio" value="2" name="ctf_fa_mode" <% nvc("ctf_fa_mode", "2"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="1" name="ctf_fa_mode" <% nvc("ctf_fa_mode", "1"); %> /><% tran("share.disable"); %>
+								</div>
+				<% ifdef("FA", "-->"); %>
+				<% ifdef("WET", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvc("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvc("lan_stp", "0"); %> /><% tran("share.disable"); %>
 								</div>
 								
-				<% ifdef("WET", "-->"); %>
 							</fieldset><br />
 							
 							<h2><% tran("idx.h23"); %></h2>
