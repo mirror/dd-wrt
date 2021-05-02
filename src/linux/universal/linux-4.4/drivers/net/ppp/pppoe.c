@@ -85,6 +85,13 @@
 
 #include <asm/uaccess.h>
 
+#ifdef HNDCTF
+#include <linux/if.h>
+#include <linux/if_vlan.h>
+#include <ctf/hndctf.h>
+#include "vlan.h"
+#endif /* HNDCTF */
+
 #define PPPOE_HASH_BITS 4
 #define PPPOE_HASH_SIZE (1 << PPPOE_HASH_BITS)
 #define PPPOE_HASH_MASK	(PPPOE_HASH_SIZE - 1)
@@ -451,6 +458,17 @@ static int pppoe_rcv(struct sk_buff *skb, struct net_device *dev,
 	po = get_item(pn, ph->sid, eth_hdr(skb)->h_source, dev->ifindex);
 	if (!po)
 		goto drop;
+
+#if defined(HNDCTF) && defined(CTF_PPPOE)
+	/* Populate our cb array with values stating skb is pppoe rx
+	 * skb and has pppoe sid.
+	 */
+	if (CTF_ENAB(kcih)) {
+		skb->ctf_pppoe_cb[0] = 1;
+		skb->ctf_pppoe_cb[1] = 0;
+		*(__be16 *)&skb->ctf_pppoe_cb[2] = ph->sid;
+	}
+#endif
 
 	return sk_receive_skb(sk_pppox(po), skb, 0);
 
@@ -970,6 +988,33 @@ static int __pppoe_xmit(struct sock *sk, struct sk_buff *skb)
 
 	skb->protocol = cpu_to_be16(ETH_P_PPP_SES);
 	skb->dev = dev;
+
+#if defined(HNDCTF) && defined(CTF_PPPOE)
+	/* Need to populate the ipct members with pppoe sid and real tx interface */
+	if (CTF_ENAB(kcih) && (skb->ctf_pppoe_cb[0] == 2)) {
+		ctf_ipc_t *ipc;
+		ipc = (ctf_ipc_t *)(*(uint32 *)&skb->ctf_pppoe_cb[4]);
+		if (ipc != NULL) {
+			if (dev->priv_flags & IFF_802_1Q_VLAN) {
+				ipc->txif = (void *)vlan_dev_real_dev(dev);
+				ipc->vid = vlan_dev_vlan_id(dev);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 2, 0)
+				ipc->action |= ((vlan_dev_info(dev)->flags & 1) ?
+						    CTF_ACTION_TAG : CTF_ACTION_UNTAG);
+#else
+				ipc->action |= ((vlan_dev_priv(dev)->flags & 1) ?
+						    CTF_ACTION_TAG : CTF_ACTION_UNTAG);
+#endif
+			} else {
+				ipc->txif = dev;
+				ipc->action |= CTF_ACTION_UNTAG;
+			}
+			ipc->pppoe_sid = ph->sid;
+			memcpy(ipc->dhost.octet, po->pppoe_pa.remote, ETH_ALEN);
+			memcpy(ipc->shost.octet, dev->dev_addr, ETH_ALEN);
+		}
+	}
+#endif /* HNDCTF && CTF_PPPOE */
 
 	dev_hard_header(skb, dev, ETH_P_PPP_SES,
 			po->pppoe_pa.remote, NULL, data_len);
