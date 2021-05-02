@@ -3,7 +3,7 @@
  * AES encrypt/decrypt wrapper functions used around Rijndael reference
  * implementation
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: aes.h 453301 2014-02-04 19:49:09Z $
+ * $Id: aes.h 241182 2011-02-17 21:50:03Z $
  */
 
 #ifndef _AES_H_
@@ -46,27 +46,27 @@ enum {
 };
 
 
-void aes_encrypt(const size_t KL, const uint8 *K, const uint8 *ptxt, uint8 *ctxt);
-void aes_decrypt(const size_t KL, const uint8 *K, const uint8 *ctxt, uint8 *ptxt);
+void BCMROMFN(aes_encrypt)(const size_t KL, const uint8 *K, const uint8 *ptxt, uint8 *ctxt);
+void BCMROMFN(aes_decrypt)(const size_t KL, const uint8 *K, const uint8 *ctxt, uint8 *ptxt);
 
 #define aes_block_encrypt(nr, rk, ptxt, ctxt) rijndaelEncrypt(rk, nr, ptxt, ctxt)
 #define aes_block_decrypt(nr, rk, ctxt, ptxt) rijndaelDecrypt(rk, nr, ctxt, ptxt)
 
 int
-aes_cbc_encrypt_pad(uint32 *rk, const size_t key_len, const uint8 *nonce,
+BCMROMFN(aes_cbc_encrypt_pad)(uint32 *rk, const size_t key_len, const uint8 *nonce,
                               const size_t data_len, const uint8 *ptxt, uint8 *ctxt,
                               uint8 pad_type);
-int aes_cbc_encrypt(uint32 *rk, const size_t key_len, const uint8 *nonce,
+int BCMROMFN(aes_cbc_encrypt)(uint32 *rk, const size_t key_len, const uint8 *nonce,
                               const size_t data_len, const uint8 *ptxt, uint8 *ctxt);
-int aes_cbc_decrypt(uint32 *rk, const size_t key_len, const uint8 *nonce,
+int BCMROMFN(aes_cbc_decrypt)(uint32 *rk, const size_t key_len, const uint8 *nonce,
                               const size_t data_len, const uint8 *ctxt, uint8 *ptxt);
-int aes_cbc_decrypt_pad(uint32 *rk, const size_t key_len, const uint8 *nonce,
+int BCMROMFN(aes_cbc_decrypt_pad)(uint32 *rk, const size_t key_len, const uint8 *nonce,
                                   const size_t data_len, const uint8 *ctxt, uint8 *ptxt,
                                   uint8 pad_type);
 
 #define AES_CTR_MAXBLOCKS	(1<<16)
 
-int aes_ctr_crypt(unsigned int *rk, const size_t key_len, const uint8 *nonce,
+int BCMROMFN(aes_ctr_crypt)(unsigned int *rk, const size_t key_len, const uint8 *nonce,
                             const size_t data_len, const uint8 *ptxt, uint8 *ctxt);
 
 /* only support the 2 octet AAD length encoding */
@@ -117,7 +117,7 @@ int aes_ctr_crypt(unsigned int *rk, const size_t key_len, const uint8 *nonce,
 	- returns AES_CCMP_ENCRYPT_SUCCESS on success
 	- returns AES_CCMP_ENCRYPT_ERROR on error
 */
-int aes_ccmp_encrypt(unsigned int *rk, const size_t key_len,
+int BCMROMFN(aes_ccmp_encrypt)(unsigned int *rk, const size_t key_len,
 	const size_t data_len, uint8 *p, bool legacy, uint8 nonce_1st_byte);
 
 #define AES_CCMP_DECRYPT_SUCCESS	0
@@ -132,31 +132,30 @@ int aes_ccmp_encrypt(unsigned int *rk, const size_t key_len,
 	- returns AES_CCMP_DECRYPT_ERROR on decrypt protocol/format error
 	- returns AES_CCMP_DECRYPT_MIC_FAIL on message integrity check failure
 */
-int aes_ccmp_decrypt(unsigned int *rk, const size_t key_len,
+int BCMROMFN(aes_ccmp_decrypt)(unsigned int *rk, const size_t key_len,
 	const size_t data_len, uint8 *p, bool legacy, uint8 nonce_1st_byte);
 
-void aes_ccmp_cal_params(const dot11_header_t *h, bool legacy, uint8 nonce_1st_byte,
+void BCMROMFN(aes_ccmp_cal_params)(dot11_header_t *h, bool legacy, uint8 nonce_1st_byte,
                                uint8 *nonce, uint8 *aad, uint *la, uint *lh);
 
-int aes_ccm_mac(unsigned int *rk, const size_t key_len, const uint8 *nonce,
+int BCMROMFN(aes_ccm_mac)(unsigned int *rk, const size_t key_len, const uint8 *nonce,
                           const size_t aad_len, const uint8 *aad, const size_t data_len,
                           const uint8 *ptxt, uint8 *mac);
-int aes_ccm_encrypt(unsigned int *rk, const size_t key_len, const uint8 *nonce,
+int BCMROMFN(aes_ccm_encrypt)(unsigned int *rk, const size_t key_len, const uint8 *nonce,
                               const size_t aad_len, const uint8 *aad, const size_t data_len,
                               const uint8 *ptxt, uint8 *ctxt, uint8 *mac);
-int aes_ccm_decrypt(unsigned int *rk, const size_t key_len, const uint8 *nonce,
+int BCMROMFN(aes_ccm_decrypt)(unsigned int *rk, const size_t key_len, const uint8 *nonce,
                               const size_t aad_len, const uint8 *aad, const size_t data_len,
                               const uint8 *ctxt, uint8 *ptxt);
 
 #define AES_CMAC_AUTH_LEN	AES_BLOCK_SZ
 
-void aes_cmac_gen_subkeys(const int nrounds, const uint32 *rK, uint8 *K1, uint8 *K2);
+void aes_cmac_gen_subkeys(const size_t kl, const uint8 *K, uint8 *K1, uint8 *K2);
 
-void aes_cmac(const int nrounds, const uint32* rK, const uint8 *K1,
-	const uint8 *K2, const size_t data_len, const uint8 *ptxt,
-	uint8 *mac, const size_t mac_len);
+void aes_cmac(const size_t key_len, const uint8* K, const uint8 *K1,
+              const uint8 *K2, const size_t data_len, const uint8 *ptxt, uint8 *mac);
 void aes_cmac_calc(const uint8 *data, const size_t data_length,
-                   const uint8 *mic_key, const size_t key_len, uint8 *mic, const size_t mic_len);
+                   const uint8 *mic_key, const size_t key_len, uint8 *mic);
 
 #ifdef BCMAES_GENTABLE
 /*

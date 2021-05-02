@@ -1,7 +1,7 @@
 /*
  * From FreeBSD 2.2.7: Fundamental constants relating to ethernet.
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -62,12 +62,12 @@
 /*
  * The maximum packet length.
  */
-#define	ETHER_MAX_LEN		1518
+#define	ETHER_MAX_LEN		2018
 
 /*
  * The maximum packet user data length.
  */
-#define	ETHER_MAX_DATA		1500
+#define	ETHER_MAX_DATA		2000
 
 /* ether types */
 #define ETHER_TYPE_MIN		0x0600		/* Anything less than MIN is a length */

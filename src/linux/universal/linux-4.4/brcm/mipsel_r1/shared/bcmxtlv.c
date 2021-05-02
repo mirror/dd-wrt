@@ -1,7 +1,7 @@
 /*
  * Driver O/S-independent utility routines
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,7 +14,11 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: bcmxtlv.c 536655 2015-02-24 01:33:19Z $
+ *
+ *
+ * <<Broadcom-WL-IPTag/Open:>>
+ *
+ * $Id: bcmxtlv.c 534840 2015-02-16 06:44:15Z $
  */
 
 #ifndef __FreeBSD__
@@ -40,14 +44,15 @@
 #ifndef ASSERT
 #define ASSERT(exp)
 #endif
-inline void* MALLOCZ(void *o, size_t s) { BCM_REFERENCE(o); return calloc(1, s); }
-inline void MFREE(void *o, void *p, size_t s) { BCM_REFERENCE(o); BCM_REFERENCE(s); free(p); }
+INLINE void* MALLOCZ(void *o, size_t s) { BCM_REFERENCE(o); return calloc(1, s); }
+INLINE void MFREE(void *o, void *p, size_t s) { BCM_REFERENCE(o); BCM_REFERENCE(s); free(p); }
 #endif /* !BCMDRIVER */
 
 #include <bcmendian.h>
 #include <bcmutils.h>
 
-static inline int bcm_xtlv_size_for_data(int dlen, bcm_xtlv_opts_t opts) {
+static INLINE int bcm_xtlv_size_for_data(int dlen, bcm_xtlv_opts_t opts)
+{
 	return ((opts & BCM_XTLV_OPTION_ALIGN32) ? ALIGN_SIZE(dlen + BCM_XTLV_HDR_SIZE, 4)
 		: (dlen + BCM_XTLV_HDR_SIZE));
 }
@@ -191,10 +196,10 @@ bcm_xtlv_put_32(bcm_xtlvbuf_t *tbuf, uint16 type, const int32 data)
  *  caller's resposible for dst space check
  */
 int
-bcm_unpack_xtlv_entry(void **tlv_buf, uint16 xpct_type, uint16 xpct_len, void *dst,
+bcm_unpack_xtlv_entry(uint8 **tlv_buf, uint16 xpct_type, uint16 xpct_len, void *dst,
 	bcm_xtlv_opts_t opts)
 {
-	bcm_xtlv_t *ptlv = *tlv_buf;
+	bcm_xtlv_t *ptlv = (bcm_xtlv_t *)*tlv_buf;
 	uint16 len;
 	uint16 type;
 
@@ -225,10 +230,10 @@ bcm_unpack_xtlv_entry(void **tlv_buf, uint16 xpct_type, uint16 xpct_len, void *d
  *  buflen is used for tlv_buf space check
  */
 int
-bcm_pack_xtlv_entry(void **tlv_buf, uint16 *buflen, uint16 type, uint16 len, void *src,
+bcm_pack_xtlv_entry(uint8 **tlv_buf, uint16 *buflen, uint16 type, uint16 len, void *src,
 	bcm_xtlv_opts_t opts)
 {
-	bcm_xtlv_t *ptlv = *tlv_buf;
+	bcm_xtlv_t *ptlv = (bcm_xtlv_t *)*tlv_buf;
 	int size;
 
 	ASSERT(ptlv);
@@ -260,21 +265,21 @@ bcm_pack_xtlv_entry(void **tlv_buf, uint16 *buflen, uint16 type, uint16 len, voi
  *  to set function one call per found tlv record
  */
 int
-bcm_unpack_xtlv_buf(void *ctx, void *tlv_buf, uint16 buflen, bcm_xtlv_opts_t opts,
+bcm_unpack_xtlv_buf(void *ctx, uint8 *tlv_buf, uint16 buflen, bcm_xtlv_opts_t opts,
 	bcm_xtlv_unpack_cbfn_t *cbfn)
 {
 	uint16 len;
 	uint16 type;
-	int res = 0;
+	int res = BCME_OK;
 	int size;
-	bcm_xtlv_t *ptlv = tlv_buf;
+	bcm_xtlv_t *ptlv;
 	int sbuflen = buflen;
 
-	ASSERT(!buflen || ptlv);
+	ASSERT(!buflen || tlv_buf);
 	ASSERT(!buflen || cbfn);
 
 	while (sbuflen >= (int)BCM_XTLV_HDR_SIZE) {
-		ptlv = tlv_buf;
+		ptlv = (bcm_xtlv_t *)tlv_buf;
 
 		/* tlv header is always packed in LE order */
 		len = ltoh16(ptlv->len);
@@ -317,7 +322,7 @@ bcm_pack_xtlv_buf(void *ctx, void *tlv_buf, uint16 buflen, bcm_xtlv_opts_t opts,
 	while (more && (buf < endp)) {
 		more = get_next(ctx, &tlv_id, &tlv_len);
 		size = bcm_xtlv_size_for_data(tlv_len, opts);
-		if ((buf + size) > endp) {
+		if ((buf + size) >= endp) {
 			res = BCME_BUFTOOSHORT;
 			goto done;
 		}
@@ -345,11 +350,11 @@ int
 bcm_pack_xtlv_buf_from_mem(void **tlv_buf, uint16 *buflen, xtlv_desc_t *items,
 	bcm_xtlv_opts_t opts)
 {
-	int res = 0;
-	void *ptlv = *tlv_buf;
+	int res = BCME_OK;
+	uint8 *ptlv = (uint8 *)*tlv_buf;
 
 	while (items->type != 0) {
-		if ((items->len > 0) && (res = bcm_pack_xtlv_entry(&ptlv,
+		if ((res = bcm_pack_xtlv_entry(&ptlv,
 			buflen, items->type,
 			items->len, items->ptr, opts) != BCME_OK)) {
 			break;
@@ -379,12 +384,14 @@ bcm_unpack_xtlv_buf_to_mem(void *tlv_buf, int *buflen, xtlv_desc_t *items, bcm_x
 	for (; elt != NULL && res == BCME_OK; elt = bcm_next_xtlv(elt, buflen, opts)) {
 		/*  find matches in desc_t items  */
 		xtlv_desc_t *dst_desc = items;
+		uint16 len = ltoh16(elt->len);
+
 		while (dst_desc->type != 0) {
-			if (elt->id == dst_desc->type) {
-				if (elt->len != dst_desc->len) {
+			if (ltoh16(elt->id) == dst_desc->type) {
+				if (len != dst_desc->len) {
 					res = BCME_BADLEN;
 				} else {
-					memcpy(dst_desc->ptr, elt->data, elt->len);
+					memcpy(dst_desc->ptr, elt->data, len);
 				}
 				break;
 			}

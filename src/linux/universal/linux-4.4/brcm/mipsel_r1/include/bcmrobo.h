@@ -1,7 +1,7 @@
 /*
  * RoboSwitch setup functions
  *
- * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2017, Broadcom. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,11 +15,13 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmrobo.h 523408 2014-12-30 05:46:51Z $
+ * $Id: bcmrobo.h 670472 2016-11-16 02:24:51Z $
  */
 
 #ifndef _bcm_robo_h_
 #define _bcm_robo_h_
+
+#define BCMROBO_DBG 1
 
 #define	DEVID5325	0x25	/* 5325 (Not really but we fake it) */
 #define	DEVID5395	0x95	/* 5395 */
@@ -167,8 +169,9 @@ extern int bcm_robo_enable_device(robo_info_t *robo);
 extern int bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr);
 extern int bcm_robo_enable_switch(robo_info_t *robo);
 extern int bcm_robo_flow_control(robo_info_t *robo, bool set);
+extern void bcm_robo_config_port_led(robo_info_t *robo);
 
-#ifdef BCMDBG
+#ifdef BCMROBO_DBG 
 extern void robo_dump_regs(robo_info_t *robo, struct bcmstrbuf *b);
 #endif /* BCMDBG */
 
@@ -185,4 +188,6 @@ extern void robo_fa_aux_enable(robo_info_t *robo, bool enable);
 extern void robo_fa_enable(robo_info_t *robo, bool on, bool bhdr);
 #endif
 
+extern void bcm_robo_check_gphy_reset(robo_info_t *robo, uint8 page, uint8 reg,
+	void *val, int len);
 #endif /* _bcm_robo_h_ */
