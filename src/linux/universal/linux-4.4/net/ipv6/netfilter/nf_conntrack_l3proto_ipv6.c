@@ -34,6 +34,12 @@
 #include <net/netfilter/ipv6/nf_defrag_ipv6.h>
 #include <net/netfilter/nf_log.h>
 
+#ifdef HNDCTF
+extern void ip_conntrack_ipct_add(struct sk_buff *skb, u_int32_t hooknum,
+	struct nf_conn *ct, enum ip_conntrack_info ci,
+	struct nf_conntrack_tuple *manip);
+#endif /* HNDCTF */
+
 static bool ipv6_pkt_to_tuple(const struct sk_buff *skb, unsigned int nhoff,
 			      struct nf_conntrack_tuple *tuple)
 {
@@ -169,7 +175,23 @@ static unsigned int ipv6_conntrack_in(void *priv,
 				      struct sk_buff *skb,
 				      const struct nf_hook_state *state)
 {
+#if defined (HNDCTF)
+	unsigned int ret;
+
+	ret = nf_conntrack_in(state->net, PF_INET6, state->hook, skb);
+
+	if (ret == NF_ACCEPT) {
+		struct nf_conn *ct;
+		enum ip_conntrack_info ctinfo;
+
+		ct = nf_ct_get(skb, &ctinfo);
+		ip_conntrack_ipct_add(skb, state->hook, ct, ctinfo, NULL);
+	}
+
+	return ret;
+#else
 	return nf_conntrack_in(state->net, PF_INET6, state->hook, skb);
+#endif
 }
 
 static unsigned int ipv6_conntrack_local(void *priv,

@@ -30,6 +30,12 @@ EXPORT_SYMBOL_GPL(nf_br_ops);
 
 static struct lock_class_key bridge_netdev_addr_lock_key;
 
+#include <typedefs.h>
+#include <bcmdefs.h>
+#ifdef HNDCTF
+#include <ctf/hndctf.h>
+#endif /* HNDCTF */
+
 /* net device transmit always called with BH disabled */
 netdev_tx_t br_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
@@ -40,6 +46,29 @@ netdev_tx_t br_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct pcpu_sw_netstats *brstats = this_cpu_ptr(br->stats);
 	const struct nf_br_ops *nf_ops;
 	u16 vid = 0;
+
+#ifdef HNDCTF
+	/* For broadstream iqos inbound traffic. 
+	  * Inbound traffic need to apply qdisc rule to br interface, and ctf need to use 
+	  * dev_queue_xmit of bridge dev to transmit packet. 
+	  * Add fastpath here to forward packet from br to eth0/1/2 directly if this packet 
+	  * is cached in ctf ip entry.
+	  */
+	if (CTF_IS_PKTTOBR(skb)) {
+		const struct net_device_ops *ops = NULL;
+		struct net_device *tmpdev = skb->dev;
+		int rc = -1;
+
+		ops = ((struct net_device *)(skb->ctf_ipc_txif))->netdev_ops;
+		if (ops) {
+			skb->dev = (struct net_device *)(skb->ctf_ipc_txif);
+			rc = ops->ndo_start_xmit(skb, (struct net_device *)(skb->ctf_ipc_txif));
+			if (rc == NETDEV_TX_OK)
+				return rc;
+			skb->dev = tmpdev;
+		}
+	}
+#endif /* HNDCTF */
 
 	rcu_read_lock();
 	nf_ops = rcu_dereference(nf_br_ops);

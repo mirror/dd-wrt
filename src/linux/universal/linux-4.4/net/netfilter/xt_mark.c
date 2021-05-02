@@ -16,6 +16,10 @@
 #include <linux/netfilter/xt_mark.h>
 #include <linux/netfilter/x_tables.h>
 
+#ifdef HNDCTF
+#include <net/netfilter/nf_conntrack.h>
+#endif
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Marc Boucher <marc@mbsi.ca>");
 MODULE_DESCRIPTION("Xtables: packet mark operations");
@@ -65,6 +69,17 @@ mark_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	const struct xt_mark_tginfo2 *info = par->targinfo;
 
 	skb->mark = (skb->mark & ~info->mask) ^ info->mark;
+
+#ifdef HNDCTF
+	if ( info->mark == 0xB16B00B5 ) {
+		enum ip_conntrack_info ctinfo;
+		struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
+		if (ct) {
+			ct->ctf_flags |= CTF_FLAGS_EXCLUDED;
+		}
+	}
+#endif /* HNDCTF */
+
 	return XT_CONTINUE;
 }
 static bool

@@ -77,6 +77,7 @@
 #include <linux/highmem.h>
 #include <linux/capability.h>
 #include <linux/user_namespace.h>
+#include <osl.h>
 
 
 #define BCMFASTPATH
@@ -323,6 +324,10 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	skb->end = skb->tail + size;
 	skb->mac_header = (typeof(skb->mac_header))~0U;
 	skb->transport_header = (typeof(skb->transport_header))~0U;
+#if defined (HNDCTF) || defined(BCMFA)
+	skb->napt_idx = BCM_FA_INVALID_IDX_VAL;
+	skb->napt_flags = 0;
+#endif /* HNDCTF || BCMFA */
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	skb->cb_next = NULL;
 	skb->nf_queue_entry = NULL;
@@ -917,14 +922,46 @@ EXPORT_SYMBOL(consume_skb);
 
 static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
 {
+#ifdef PKTC
+	memset(new->pktc_cb, 0, sizeof(new->pktc_cb));
+#endif /* PKTC */
+#ifdef CTF_PPPOE
+	memset(new->ctf_pppoe_cb, 0, sizeof(new->ctf_pppoe_cb));
+#endif /* CTF_PPPOE */
+#if defined(HNDCTF) && defined(CTFMAP)
+	if (PKTISCTF(NULL, old))
+		new->ctfmap     = NULL;
+#endif
 	new->tstamp		= old->tstamp;
 	/* We do not copy old->sk */
 	new->dev		= old->dev;
 	memcpy(new->cb, old->cb, sizeof(old->cb));
 	skb_dst_copy(new, old);
-#ifdef CONFIG_XFRM
+#if defined(CONFIG_XFRM) || defined(CTFMAP)
 	new->sp			= secpath_get(old->sp);
 #endif
+
+#if defined(HNDCTF) || defined(CTFPOOL)
+	new->pktc_flags     = old->pktc_flags;
+#endif /* HNDCTF || CTFPOOL */
+
+#ifdef CTFPOOL
+	new->ctfpool        = NULL;
+#endif /* CTFPOOL */
+
+#ifdef BCMDBG_CTRACE
+	INIT_LIST_HEAD(&new->ctrace_list);
+	new->func[0] 		= (char *)__FUNCTION__;
+	new->line[0] 		= __LINE__;
+	new->ctrace_start 	= 0;
+	new->ctrace_count 	= 1;
+#endif /* BCMDBG_CTRACE */
+
+#if defined (HNDCTF) || defined(BCMFA)
+	new->napt_idx       = BCM_FA_INVALID_IDX_VAL;
+	new->napt_flags     = 0;
+#endif /* HNDCTF || BCMFA */
+
 	__nf_copy(new, old, false);
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	new->cb_next = NULL;
@@ -957,6 +994,7 @@ static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct
 	CHECK_SKB_FIELD(inner_network_header);
 	CHECK_SKB_FIELD(inner_mac_header);
 	CHECK_SKB_FIELD(mark);
+
 #ifdef CONFIG_NETWORK_SECMARK
 	CHECK_SKB_FIELD(secmark);
 #endif

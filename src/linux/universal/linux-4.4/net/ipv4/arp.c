@@ -119,6 +119,9 @@
 #include <linux/uaccess.h>
 
 #include <linux/netfilter_arp.h>
+#ifdef HNDCTF
+#include <ctf/hndctf.h>
+#endif
 
 #ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
 int g_arp_spoofing_enable = 0;
@@ -783,6 +786,31 @@ static int arp_process(struct net *net, struct sock *sk, struct sk_buff *skb)
 				     sha, dev->dev_addr, sha, reply_dst);
 		goto out;
 	}
+
+#if 0 //def HNDCTF
+	/* Look up in the arp table for the source ip */
+	n = __neigh_lookup(&arp_tbl, &sip, dev, 0);
+
+	/* Check if the source hw address is different from that in arp table */
+	if (n && is_valid_ether_addr(n->ha) && memcmp(sha, n->ha, dev->addr_len)) {
+		ctf_ipc_t ipc_orig, ipc_new;
+
+		memset(&ipc_orig, 0, sizeof(ipc_orig));
+		memset(&ipc_new, 0, sizeof(ipc_new));
+
+		/* Original dest host MAC to match */
+		memcpy(ipc_orig.dhost.octet, n->ha, ETH_ALEN);
+
+		/* New dest host MAC to set */
+		memcpy(ipc_new.dhost.octet, sha, ETH_ALEN);
+
+		/* Change the matching IP connections */
+		ctf_ipc_action(kcih, &ipc_orig, &ipc_new, CTF_ACTION_ROAM, FALSE);
+	}
+        if (n) {
+                neigh_release(n);
+	}
+#endif	/* HNDCTF */
 
 	if (arp->ar_op == htons(ARPOP_REQUEST) &&
 	    ip_route_input_noref(skb, tip, sip, 0, dev) == 0) {

@@ -157,6 +157,34 @@ static int vlan_dev_change_mtu(struct net_device *dev, int new_mtu)
 	return 0;
 }
 
+#ifdef HNDCTF
+void vlan_rxstats_upd(struct net_device *dev, struct sk_buff *skb, int packets, int bytes)
+{
+	struct vlan_pcpu_stats *stats;
+	struct vlan_dev_priv *vlan = vlan_dev_priv(dev);
+
+	stats = this_cpu_ptr(vlan->vlan_pcpu_stats);
+	u64_stats_update_begin(&stats->syncp);
+	stats->rx_packets += packets;
+	stats->rx_bytes += bytes;
+	u64_stats_update_end(&stats->syncp);
+}
+EXPORT_SYMBOL(vlan_rxstats_upd);
+
+void vlan_txstats_upd(struct net_device *dev, struct sk_buff *skb, int packets, int bytes)
+{
+	struct vlan_pcpu_stats *stats;
+	struct vlan_dev_priv *vlan = vlan_dev_priv(dev);
+
+	stats = this_cpu_ptr(vlan->vlan_pcpu_stats);
+	u64_stats_update_begin(&stats->syncp);
+	stats->tx_packets += packets;
+	stats->tx_bytes += bytes;
+	u64_stats_update_end(&stats->syncp);
+}
+EXPORT_SYMBOL(vlan_txstats_upd);
+#endif /* HNDCTF */
+
 void vlan_dev_set_ingress_priority(const struct net_device *dev,
 				   u32 skb_prio, u16 vlan_prio)
 {

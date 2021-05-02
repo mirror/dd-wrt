@@ -28,7 +28,19 @@
 #include <net/netfilter/nf_conntrack_seqadj.h>
 #include <net/netfilter/nf_conntrack_l3proto.h>
 #include <net/netfilter/nf_conntrack_zones.h>
+#if IS_ENABLED(CONFIG_IP_NF_TARGET_CONE)
+#include <linux/netfilter_ipv4/ipt_cone.h>
+#endif /* CONFIG_IP_NF_TARGET_CONE */
 #include <linux/netfilter/nf_nat.h>
+#ifdef HNDCTF
+#include <linux/if.h>
+#include <linux/if_vlan.h>
+#include <typedefs.h>
+#include <osl.h>
+#include <ctf/hndctf.h>
+
+#define NFC_CTF_ENABLED	(1 << 31)
+#endif /* HNDCTF */
 
 static DEFINE_SPINLOCK(nf_nat_lock);
 
@@ -128,6 +140,12 @@ hash_by_src(const struct net *net, const struct nf_conntrack_tuple *tuple)
 
 	return reciprocal_scale(hash, net->ct.nat_htable_size);
 }
+
+#ifdef HNDCTF
+extern void ip_conntrack_ipct_add(struct sk_buff *skb, u_int32_t hooknum,
+	struct nf_conn *ct, enum ip_conntrack_info ci,
+	struct nf_conntrack_tuple *manip);
+#endif /* HNDCTF */
 
 /* Is this tuple already taken? (not by us) */
 int
@@ -498,12 +516,18 @@ unsigned int nf_nat_packet(struct nf_conn *ct,
 
 		/* We are aiming to look like inverse of other direction. */
 		nf_ct_invert_tuplepr(&target, &ct->tuplehash[!dir].tuple);
+#ifdef HNDCTF
+		ip_conntrack_ipct_add(skb, hooknum, ct, ctinfo, &target);
+#endif /* HNDCTF */
 
 		l3proto = __nf_nat_l3proto_find(target.src.l3num);
 		l4proto = __nf_nat_l4proto_find(target.src.l3num,
 						target.dst.protonum);
 		if (!l3proto->manip_pkt(skb, 0, l4proto, &target, mtype))
 			return NF_DROP;
+	} else {
+#ifdef HNDCTF
+#endif /* HNDCTF */
 	}
 	return NF_ACCEPT;
 }
@@ -690,6 +714,11 @@ static void nf_nat_cleanup_conntrack(struct nf_conn *ct)
 	spin_lock_bh(&nf_nat_lock);
 	hlist_del_rcu(&nat->bysource);
 	spin_unlock_bh(&nf_nat_lock);
+
+#if IS_ENABLED(CONFIG_IP_NF_TARGET_CONE)
+	/* Detach from cone list */
+	ipt_cone_cleanup_conntrack(nat);
+#endif /* CONFIG_IP_NF_TARGET_CONE */
 }
 
 static void nf_nat_move_storage(void *new, void *old)
