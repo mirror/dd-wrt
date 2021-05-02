@@ -3016,7 +3016,7 @@ void start_sysinit(void)
 			v2 = nvram_safe_get("vlan2ports");
 		}
 
-		char *vlan1 = nvram_safe_get(v1);
+		char *vlan1 = v1;
 		char cpy[32];
 		char cpy2[32];
 		strncpy(cpy, vlan1, 31);
@@ -3027,7 +3027,7 @@ void start_sysinit(void)
 		if (p)
 			*p = 0;
 		vlan1 = cpy;
-		char *vlan2 = nvram_safe_get(v2);
+		char *vlan2 = v2;
 		strncpy(cpy2, vlan2, 31);
 		p = strchr(cpy2, '*');
 		if (p)
@@ -3036,7 +3036,6 @@ void start_sysinit(void)
 		if (p)
 			*p = 0;
 		vlan2 = cpy2;
-		char *next;
 		char var[32];
 		int port = 0;
 		foreach(var, vlan2, next) {
