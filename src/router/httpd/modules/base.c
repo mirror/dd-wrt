@@ -1543,7 +1543,16 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 
 	cprintf("need reboot\n");
 	int need_reboot = websGetVari(wp, "need_reboot", 0);
+	if (*nvram_safe_get("ctf_disable")) {
+		char *sfe = websGetVar(wp, "need_reboot", NULL);
+		char *fa = websGetVar(wp, "ctf_fa_mode", NULL);
 
+		if (sfe && nvram_geti("sfe") != atoi(sfe))
+			need_reboot = 1;
+		if (fa && nvram_geti("ctf_fa_mode") != atoi(fa))
+			need_reboot = 1;
+
+	}
 	cprintf("apply");
 
 	/**********   get "change_action" and launch gozila_cgi if needed **********/
@@ -1815,7 +1824,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(nvram_matchi("info_passwd", 0))
+	if (nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1823,7 +1832,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(!wp->isregistered)
+	if (!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
