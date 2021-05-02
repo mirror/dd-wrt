@@ -1333,13 +1333,13 @@ static int b53_switch_init(struct b53_device *dev)
 	if (!dev->buf)
 		return -ENOMEM;
 
-	dev->reset_gpio = b53_switch_get_reset_gpio(dev);
+/*	dev->reset_gpio = b53_switch_get_reset_gpio(dev);
 	if (dev->reset_gpio >= 0) {
 		ret = devm_gpio_request_one(dev->dev, dev->reset_gpio,
 					    GPIOF_OUT_INIT_HIGH, "robo_reset");
 		if (ret)
 			return ret;
-	}
+	}*/
 
 	return b53_switch_reset(dev);
 }

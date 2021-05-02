@@ -299,32 +299,4 @@ static inline int b53_write64(struct b53_device *dev, u8 page, u8 reg,
 
 	return ret;
 }
-
-#ifndef CONFIG_PLAT_BCM5301X /* fixme: CONFIG_SMARTRG */
-#ifdef CONFIG_BCM47XX
-
-char *nvram_get(char *name);
-
-static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
-{
-	enum bcm47xx_board board = bcm47xx_board_get();
-
-	switch (board) {
-	case BCM47XX_BOARD_LINKSYS_WRT300NV11:
-	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
-		return 8;
-	default:
-		char *nv = nvram_get("robo_reset");
-		if (nv == NULL)
-			return -ENOENT;
-		return atoi(nv);
-	}
-}
-#else
-static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
-{
-	return -ENOENT;
-}
-#endif
-#endif
 #endif
