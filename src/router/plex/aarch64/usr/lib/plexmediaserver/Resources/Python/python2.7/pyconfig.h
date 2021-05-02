@@ -32,7 +32,7 @@
 
 /* Define if C doubles are 64-bit IEEE 754 binary format, stored with the
    least significant byte first */
-/* #undef DOUBLE_IS_LITTLE_ENDIAN_IEEE754 */
+#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1
 
 /* Define if --enable-ipv6 is specified */
 /* #undef ENABLE_IPV6 */
@@ -99,7 +99,7 @@
 /* #undef HAVE_BROKEN_PTHREAD_SIGMASK */
 
 /* define to 1 if your sem_getvalue is broken. */
-#define HAVE_BROKEN_SEM_GETVALUE 1
+/* #undef HAVE_BROKEN_SEM_GETVALUE */
 
 /* Define if `unsetenv` does not return an int. */
 /* #undef HAVE_BROKEN_UNSETENV */
@@ -120,7 +120,7 @@
 #define HAVE_CLOCK 1
 
 /* Define if the C compiler supports computed gotos. */
-/* #undef HAVE_COMPUTED_GOTOS */
+#define HAVE_COMPUTED_GOTOS 1
 
 /* Define to 1 if you have the `confstr' function. */
 #define HAVE_CONFSTR 1
@@ -300,7 +300,7 @@
 
 /* Define if we can use gcc inline assembler to get and set x87 control word
    */
-/* #undef HAVE_GCC_ASM_FOR_X87 */
+#define HAVE_GCC_ASM_FOR_X87 1
 
 /* Define if you have the getaddrinfo function. */
 #define HAVE_GETADDRINFO 1
@@ -950,7 +950,7 @@
 
 /* Define if tzset() actually switches the local timezone in a meaningful way.
    */
-/* #undef HAVE_WORKING_TZSET */
+#define HAVE_WORKING_TZSET 1
 
 /* Define if the zlib library has inflateCopy */
 #define HAVE_ZLIB_COPY 1
@@ -997,7 +997,7 @@
 /* #undef POSIX_SEMAPHORES_NOT_ENABLED */
 
 /* Defined if PTHREAD_SCOPE_SYSTEM supported. */
-/* #undef PTHREAD_SYSTEM_SCHED_SUPPORTED */
+#define PTHREAD_SYSTEM_SCHED_SUPPORTED 1
 
 /* Define as the preferred size in bits of long digits */
 /* #undef PYLONG_BITS_IN_DIGIT */
@@ -1094,7 +1094,7 @@
 #define SYS_SELECT_WITH_SYS_TIME 1
 
 /* Define if tanh(-0.) is -0., or if platform doesn't have signed zeros */
-/* #undef TANH_PRESERVES_ZERO_SIGN */
+#define TANH_PRESERVES_ZERO_SIGN 1
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
@@ -1131,7 +1131,7 @@
 /* #undef USE_TOOLBOX_OBJECT_GLUE */
 
 /* Define if a va_list is an array of some kind */
-/* #undef VA_LIST_IS_ARRAY */
+#define VA_LIST_IS_ARRAY 1
 
 /* Define if you want SIGFPE handled (see Include/pyfpe.h). */
 /* #undef WANT_SIGFPE_HANDLER */
