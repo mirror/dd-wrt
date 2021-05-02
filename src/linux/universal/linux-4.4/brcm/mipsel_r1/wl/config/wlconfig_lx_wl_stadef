@@ -1,6 +1,6 @@
 # Broadcom 802.11abg Networking Device Driver Configuration file
 #
-# Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
+# Copyright (C) 2017, Broadcom. All Rights Reserved.
 # 
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -38,3 +38,5 @@ CCA_STATS=1
 BCM_DCS=1
 WL_ASSOC_RECREATE=1
 WL_LTR=1
+WL11N_STBC_RX_ENABLED=1
+BCMECICOEX=1
