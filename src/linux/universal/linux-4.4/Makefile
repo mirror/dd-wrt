@@ -639,6 +639,23 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, int-in-bool-context)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, attribute-alias)
 
+ifneq ($(CONFIG_BCM_CTF),)
+KBUILD_CFLAGS += -DHNDCTF -DCTFPOOL -DCTFMAP -DPKTC -DCTF_PPPOE
+ifneq ($(CONFIG_WL_USBAP),)
+KBUILD_CFLAGS += -DCTFPOOL_SPINLOCK
+endif
+ifneq ($(CONFIG_IPV6),)
+KBUILD_CFLAGS += -DCTF_IPV6
+endif
+endif
+
+ifneq ($(CONFIG_BCM_GMAC3),)
+KBUILD_CFLAGS += -DBCM_GMAC3
+endif
+
+ifneq ($(CONFIG_BCM_FA),)
+KBUILD_CFLAGS += -DBCMFA
+endif
 
 ifneq ($(CONFIG_PROXYARP),)
 KBUILD_CFLAGS += -DPROXYARP
