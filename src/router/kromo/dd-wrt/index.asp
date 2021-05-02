@@ -421,8 +421,11 @@ addEvent(window, "unload", function() {
 				<% ifndef("FA", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.fa"); %></div>
-									<input class="spaceradio" type="radio" value="2" name="ctf_fa_mode" <% nvc("ctf_fa_mode", "2"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="ctf_fa_mode" <% nvc("ctf_fa_mode", "0"); %> /><% tran("share.disable"); %>
+									<select name="ctf_fa_mode">
+										<option value="0" <% nvs("ctf_fa_mode", "0"); %>><% tran("share.disable"); %></option>
+										<option value="1" <% nvs("ctf_fa_mode", "1"); %>>CTF</option>
+										<option value="2" <% nvs("ctf_fa_mode", "2"); %>>CTF & FA</option>
+									</select>
 								</div>
 				<% ifndef("FA", "-->"); %>
 				<% ifdef("WET", "<!--"); %>
