@@ -2977,7 +2977,18 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_subf[32];
 	char wl_mubf[32];
 	char *chipset = getWifiDeviceName(prefix, NULL);
+
+#ifdef HAVE_MADWIFI
 	int maxvaps = getmaxvaps(prefix);
+#elif HAVE_RT2880
+	int maxvaps = 7;
+#else
+	int maxvaps = get_maxbssid(prefix);
+	if (has_qtn(prefix))
+		maxvaps = 3;
+#endif
+
+
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	sprintf(wl_ssid, "%s_ssid", prefix);
