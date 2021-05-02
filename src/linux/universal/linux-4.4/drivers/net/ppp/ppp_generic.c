@@ -54,6 +54,11 @@
 #include <net/net_namespace.h>
 #include <net/netns/generic.h>
 
+#ifdef HNDCTF
+//#define TYPEDEF_INT32
+#include <ctf/hndctf.h>
+#endif
+
 #define PPP_VERSION	"2.4.2"
 
 /*
@@ -1133,6 +1138,10 @@ static void ppp_dev_uninit(struct net_device *dev)
 	ppp_lock(ppp);
 	ppp->closing = 1;
 	ppp_unlock(ppp);
+
+#ifdef HNDCTF
+	ctf_dev_unregister(kcih, ppp->dev);
+#endif
 
 	mutex_lock(&pn->all_ppp_mutex);
 	unit_put(&pn->units_idr, ppp->file.index);
@@ -2818,6 +2827,12 @@ static struct ppp *ppp_create_interface(struct net *net, int unit,
 
 	ppp->ppp_net = net;
 
+#ifdef HNDCTF
+	if ((ctf_dev_register(kcih, dev, FALSE) != BCME_OK) ||
+	    (ctf_enable(kcih, dev, TRUE, NULL) != BCME_OK))
+		ctf_dev_unregister(kcih, dev);
+#endif
+
 	atomic_inc(&ppp_unit_count);
 	mutex_unlock(&pn->all_ppp_mutex);
 	rtnl_unlock();
@@ -3071,6 +3086,29 @@ static void *unit_find(struct idr *p, int n)
 {
 	return idr_find(p, n);
 }
+
+#ifdef CTF_PPPOE
+void
+ppp_rxstats_upd(void *pppif, struct sk_buff *skb)
+{
+	struct ppp *ppp = netdev_priv((const struct net_device *)pppif);
+	++ppp->dev->stats.rx_packets;
+	ppp->dev->stats.rx_bytes += skb->len;
+	ppp->last_recv = jiffies;
+}
+
+void
+ppp_txstats_upd(void *pppif, struct sk_buff *skb)
+{
+	struct ppp *ppp = netdev_priv((const struct net_device *)pppif);
+	++ppp->dev->stats.tx_packets;
+	ppp->dev->stats.tx_bytes += skb->len;
+	ppp->last_xmit = jiffies;
+}
+
+EXPORT_SYMBOL(ppp_rxstats_upd);
+EXPORT_SYMBOL(ppp_txstats_upd);
+#endif /* CTF_PPPOE */
 
 /* Module/initialization stuff */
 

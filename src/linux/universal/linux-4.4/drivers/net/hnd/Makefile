@@ -73,6 +73,11 @@ hnd-objs += $(SHARED)/bcmrobo.o
 endif
 endif
 
+ifeq ($(CONFIG_BCM_GMAC3),y)
+HND_OBJS += $(src)/$(SHARED)/hndfwd.o
+hnd-objs += $(SHARED)/hndfwd.o
+endif
+
 ifdef CONFIG_USB_RNDIS
 EXTRA_CFLAGS += -DCONFIG_USBRNDIS_RETAIL
 endif                                  
