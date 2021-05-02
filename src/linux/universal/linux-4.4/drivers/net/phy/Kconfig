@@ -263,6 +263,8 @@ config RTL8367B_PHY
 
 endif # RTL8366_SMI
 
+source "drivers/net/phy/b53/Kconfig"
+
 config MDIO_SUN4I
 	tristate "Allwinner sun4i MDIO interface support"
 	depends on ARCH_SUNXI
