@@ -6459,9 +6459,11 @@ void start_sysinit(void)
 	else
 		nvram_set("ctf_disable", "1");
 
-	nvram_default_get("ctf_fa_mode", "1");
-	if (!nvram_match("wan_proto","static") && !nvram_match("wan_proto","dhcp"))
-		nvram_set("ctf_fa_mode","1");
+	nvram_default_get("ctf_fa_mode", "0");
+	if (!nvram_match("wan_proto", "static") && !nvram_match("wan_proto", "dhcp"))
+		nvram_set("ctf_fa_mode", "0");
+	if (nvram_match("wshaper_enable", "1"))
+		nvram_set("ctf_fa_mode", "0");
 	insmod("ctf");
 	insmod("et");
 	insmod("b5301x_common");
