@@ -1,5 +1,7 @@
 EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/common/include
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/common/include
 #
 # Makefile for the PCI bus specific drivers.
 #
