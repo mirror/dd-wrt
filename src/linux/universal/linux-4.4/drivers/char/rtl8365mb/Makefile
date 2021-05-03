@@ -8,6 +8,9 @@ obj-$(CONFIG_RTL8365MB) += rtl8365mb.o
 
 KBUILD_CFLAGS += -I$(srctree)/drivers/char/rtl8365mb
 KBUILD_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+KBUILD_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+KBUILD_CFLAGS+=-I$(srctree)/brcm/arm/common/include
+KBUILD_AFLAGS+=-I$(srctree)/brcm/arm/common/include
 
 rtl8365mb-objs := acl.o cpu.o dot1x.o eee.o igmp.o interrupt.o l2.o leaky.o led.o mirror.o oam.o port.o ptp.o \
 			qos.o rate.o rldp.o rtk_switch.o rtl8367c_asicdrv_acl.o rtl8367c_asicdrv.o \
