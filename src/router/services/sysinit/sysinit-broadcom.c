@@ -2806,7 +2806,7 @@ void start_sysinit(void)
 	 */
 	uname(&name);
 
-	if (nvram_match("sfe", "1"))
+	if (nvram_default_match("sfe", "1", "0"))
 		nvram_set("ctf_disable", "0");
 	else
 		nvram_set("ctf_disable", "1");
