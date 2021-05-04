@@ -675,7 +675,7 @@ static struct net_bridge_fdb_entry *fdb_create(struct hlist_head *head,
 
 		/* Add bridge cache entry for non local hosts */
 #ifdef HNDCTF
-		if (source && (source->state == BR_STATE_FORWARDING))
+		if (!is_local && source && (source->state == BR_STATE_FORWARDING))
 			br_brc_add((unsigned char *)addr, source, skb);
 #endif /* HNDCTF */
 	}
