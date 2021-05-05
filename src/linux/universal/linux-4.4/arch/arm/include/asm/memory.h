@@ -248,6 +248,8 @@ static inline unsigned long __phys_to_virt(phys_addr_t x)
 	((((unsigned long)(kaddr) - PAGE_OFFSET) >> PAGE_SHIFT) + \
 	 PHYS_PFN_OFFSET)
 
+
+
 #endif
 
 /*
@@ -267,6 +269,18 @@ static inline void *phys_to_virt(phys_addr_t x)
 {
 	return (void *)__phys_to_virt(x);
 }
+
+#if defined(CONFIG_BCM947XX) && defined(CONFIG_BCM_GMAC3)
+static inline unsigned long virt_to_phys_noacp(const volatile void *x)
+{
+	return __virt_to_phys_noacp((unsigned long)(x));
+}
+
+/*static inline int ddr_aliasing_enabled(void)
+{
+	return __ddr_aliasing_enabled();
+}*/
+#endif /* CONFIG_BCM947XX && CONFIG_BCM_GMAC3 */
 
 /*
  * Drivers should NOT use these either.
