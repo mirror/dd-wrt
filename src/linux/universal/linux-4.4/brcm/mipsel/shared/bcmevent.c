@@ -1,7 +1,7 @@
 /*
  * bcmevent read-only data shared by kernel or app layers
  *
- * Copyright (C) 2017, Broadcom. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,7 +14,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: bcmevent.c 566959 2015-06-26 08:57:35Z $
+ * $Id: bcmevent.c 526805 2015-01-15 02:27:42Z $
  */
 
 #include <typedefs.h>
@@ -23,14 +23,15 @@
 #include <proto/bcmeth.h>
 #include <proto/bcmevent.h>
 
-/* Use the actual name for event tracing */
-#define BCMEVENT_NAME(_event) {(_event), #_event}
 
 /* Table of event name strings for UIs and debugging dumps */
 typedef struct {
 	uint event;
 	const char *name;
 } bcmevent_name_str_t;
+
+/* Use the actual name for event tracing */
+#define BCMEVENT_NAME(_event) {(_event), #_event}
 
 static const bcmevent_name_str_t bcmevent_names[] = {
 	BCMEVENT_NAME(WLC_E_SET_SSID),
@@ -84,6 +85,7 @@ static const bcmevent_name_str_t bcmevent_names[] = {
 	BCMEVENT_NAME(WLC_E_P2P_DISC_LISTEN_COMPLETE),
 #endif
 	BCMEVENT_NAME(WLC_E_RSSI),
+	BCMEVENT_NAME(WLC_E_PFN_SCAN_COMPLETE),
 	BCMEVENT_NAME(WLC_E_PFN_BEST_BATCHING),
 	BCMEVENT_NAME(WLC_E_EXTLOG_MSG),
 #ifdef WIFI_ACT_FRAME
@@ -91,9 +93,9 @@ static const bcmevent_name_str_t bcmevent_names[] = {
 	BCMEVENT_NAME(WLC_E_ACTION_FRAME_RX),
 	BCMEVENT_NAME(WLC_E_ACTION_FRAME_COMPLETE),
 #endif
+#if defined(NDIS) && (NDISVER >= 0x0620)
 	BCMEVENT_NAME(WLC_E_PRE_ASSOC_IND),
 	BCMEVENT_NAME(WLC_E_PRE_REASSOC_IND),
-#if defined(NDIS) && (NDISVER >= 0x0620)
 	BCMEVENT_NAME(WLC_E_CHANNEL_ADOPTED),
 	BCMEVENT_NAME(WLC_E_AP_STARTED),
 	BCMEVENT_NAME(WLC_E_DFS_AP_STOP),
@@ -153,18 +155,19 @@ static const bcmevent_name_str_t bcmevent_names[] = {
 #ifdef PROP_TXSTATUS
 	BCMEVENT_NAME(WLC_E_BCMC_CREDIT_SUPPORT),
 #endif
-	BCMEVENT_NAME(WLC_E_PSTA_PRIMARY_INTF_IND),
-
 	BCMEVENT_NAME(WLC_E_TXFAIL_THRESH),
-
-	BCMEVENT_NAME(WLC_E_AIBSS_TXFAIL),
-	BCMEVENT_NAME(WLC_E_CCA_CHAN_QUAL),
 #ifdef WLBSSLOAD_REPORT
 	BCMEVENT_NAME(WLC_E_BSS_LOAD),
 #endif
+#if defined(BT_WIFI_HANDOVER) || defined(WL_TBOW)
+	BCMEVENT_NAME(WLC_E_BT_WIFI_HANDOVER_REQ),
+#endif
+#ifdef WLFBT
+	BCMEVENT_NAME(WLC_E_FBT_AUTH_REQ_IND),
+#endif /* WLFBT */
 	BCMEVENT_NAME(WLC_E_AUTHORIZED),
 	BCMEVENT_NAME(WLC_E_PROBREQ_MSG_RX),
-	BCMEVENT_NAME(WLC_E_PRE_ASSOC_RSEP_IND),
+	BCMEVENT_NAME(WLC_E_DPSTA_INTF_IND),
 };
 
 
