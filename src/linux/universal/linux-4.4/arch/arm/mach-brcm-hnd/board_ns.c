@@ -79,6 +79,9 @@ EXPORT_SYMBOL(ddr_phys_offset2_va);
 unsigned int coherence_win_sz = SZ_256M;
 EXPORT_SYMBOL(coherence_win_sz);
 
+unsigned int ns_acp_win_size = SZ_256M;
+EXPORT_SYMBOL(ns_acp_win_size);
+
 /*
  * Coherence flag:
  * 0: arch is non-coherent with NS ACP or BCM53573 ACE (CCI-400) disabled.
@@ -222,7 +225,21 @@ static void __init brcm_setup(void)
 		else
 			coherence_win_sz = SZ_256M;
 	}
-	
+
+	if (OSL_ACP_WAR_ENAB() && BCM4707_CHIP(CHIPID(sih->chip))) {
+		if (sih->chippkg == BCM4708_PKG_ID)
+			ns_acp_win_size = SZ_128M;
+		else if (sih->chippkg == BCM4707_PKG_ID)
+			ns_acp_win_size = SZ_32M;
+		else
+			ns_acp_win_size = SZ_256M;
+	} else if ((BCM4707_CHIP(CHIPID(sih->chip)) &&
+		(CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) ||
+		(CHIPID(sih->chip) == BCM47094_CHIP_ID)) {
+		/* For NS-Bx and NS47094. Chiprev 4 for NS-B0 and chiprev 6 for NS-B1 */
+		ns_acp_win_size = SZ_1G;
+	}
+
 	printk(KERN_INFO "coherence_win_size = %X\n",coherence_win_sz);
 	printk(KERN_INFO "coherence_flag = %X\n", coherence_flag);
 	printk(KERN_INFO "ddr_phys_offset_va =%X\n", ddr_phys_offset_va);
@@ -264,6 +281,14 @@ void __init board_fixup(struct tag *t, char **cmdline)
 
 	u32 mem_size, lo_size;
 	early_printk("board_fixup\n");
+
+#if defined(BCM_GMAC3)
+	/* In ATLAS builds, cap the total memory to 256M (for both Ax and Bx). */
+	if ((_memsize > SZ_256M) && (_chipid == BCM4707_CHIP_ID)) {
+		_memsize = SZ_256M;
+		early_printk("ATLAS-I board_fixup: cap memory to 256M\n");
+	}
+#endif /* BCM_GMAC3 */
 
 	/* Fuxup reference clock rate */
 //      if (desc->nr == MACH_TYPE_BRCM_NS_QT )
