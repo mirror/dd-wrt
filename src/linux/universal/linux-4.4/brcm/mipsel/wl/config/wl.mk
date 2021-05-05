@@ -1,7 +1,7 @@
 # Helper makefile for building Broadcom wl device driver
 # This file maps wl driver feature flags (import) to WLFLAGS and WLFILES_SRC (export).
 #
-# Copyright (C) 2017, Broadcom. All Rights Reserved.
+# Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
 # 
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -14,11 +14,8 @@
 # WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
 # OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-# $Id: wl.mk 667737 2016-10-28 09:10:50Z $
+# $Id: wl.mk 524987 2015-01-08 14:34:41Z $
 
-
-WLFLAGS += -DBCM943217ROUTER_ACI_SCANMORECH
-WLFLAGS += -DBPHY_DESENSE
 
 
 ifeq ($(NO_BCMDBG_ASSERT), 1)
@@ -97,10 +94,6 @@ ifeq ($(PSPRETEND),1)
 	WLFLAGS += -DPSPRETEND
 	WLFLAGS += -DWL_CS_PKTRETRY
 	WLFLAGS += -DWL_CS_RESTRICT_RELEASE
-endif
-
-ifeq ($(CLIENT_CSA),1)
-	WLFLAGS += -DCLIENT_CSA
 endif
 
 #ifdef BCMDBG_TRAP
@@ -299,10 +292,8 @@ ifeq ($(WL),1)
 
 	ifneq ($(MINIAP),1)
 		WLFILES_SRC_LO += src/wl/sys/d11ucode_ge40.c
-		WLFILES_SRC_LO += src/wl/phy/wlc_phytbl_20691.c
-#		WLFILES_SRC_LO += src/wl/phy/wlc_phy_ac.c
-#		WLFILES_SRC_LO += src/wl/phy/wlc_phy_ac_gains.c
 		WLFILES_SRC_LO += src/wl/phy/wlc_phytbl_ac.c
+		WLFILES_SRC_LO += src/wl/phy/wlc_phytbl_20691.c
 		WLFILES_SRC_LO += src/wl/phy/wlc_phytbl_ac_gains.c
 		WLFILES_SRC_LO += src/wl/phy/wlc_phy_ac.c
 		WLFILES_SRC_LO += src/wl/phy/wlc_phy_ac_gains.c
@@ -344,16 +335,8 @@ endif
 	WLFILES_SRC_HI += src/wl/sys/wlc_stf.c
 	WLFILES_SRC_HI += src/wl/sys/wlc_lq.c
 	ifeq ($(WL_PROT_OBSS),1)
-		WL_MODESW := 1
 		WLFLAGS += -DWL_PROT_OBSS
 		WLFILES_SRC_HI += src/wl/sys/wlc_prot_obss.c
-	endif
-	ifeq ($(WL_MODESW),1)
-		WLFLAGS += -DWL_MODESW
-		WLFILES_SRC_HI += src/wl/sys/wlc_modesw.c
-		ifeq ($(DEBUG),1)
-			WLFLAGS += -DWL_MODESW_TIMECAL
-		endif
 	endif
 	WLFILES_SRC_HI += src/wl/sys/wlc_pm.c
 	WLFILES_SRC_HI += src/wl/sys/wlc_btcx.c
@@ -885,8 +868,7 @@ endif
 ifneq ($(ACCONF),)
 	WLFLAGS += -DACCONF=$(ACCONF)
 endif
-ifneq ($(ACCONF),0)
-endif
+
 ifneq ($(PHYCONF_DEFAULTS),)
 	WLFLAGS += -DPHYCONF_DEFAULTS=$(PHYCONF_DEFAULTS)
 endif
@@ -1027,9 +1009,6 @@ ifeq ($(IGMP_UCQUERY), 1)
 endif
 ifeq ($(UCAST_UPNP), 1)
 	WLFLAGS += -DWL_UCAST_UPNP
-endif
-ifeq ($(IGMPQ_FILTER), 1)
-	WLFLAGS += -DWL_WMF_IGMP_QUERY_FILTER
 endif
 #endif
 
@@ -1604,10 +1583,6 @@ endif
 ifeq ($(WLP2P),1)
 	WLFLAGS += -DWLP2P
 	WLFILES_SRC_HI += src/wl/sys/wlc_p2p.c
-	## Defining WAR4360_UCODE only for NIC driver
-	ifneq ($(WL_SPLIT),1)
-		WLFLAGS += -DWAR4360_UCODE
-	endif
 	WLFLAGS += -DWL_BSSCFG_TX_SUPR -DWIFI_ACT_FRAME
 	WLMCNX := 1
 ifndef WLMCHAN
@@ -1813,14 +1788,6 @@ else
 endif
 
 
-
-
-ifeq ($(STBLINUX),1)
-	WLFLAGS += -DSTB
-	ifeq ($(BCMEXTNVM),1)
-		WLFLAGS += -DBCMEXTNVM -DBCM47XX -DNVRAM_TARGET_DIR="\"$(NVRAM_TARGET_DIR)\""
-	endif
-endif
 
 #ifndef LINUX_HYBRID
 # AP/ROUTER with SDSTD
@@ -2451,12 +2418,6 @@ ifeq ($(BCM_REQUEST_FW), 1)
 endif
 #endif
 
-#ifdef BCM_UCODE_FILES
-ifeq ($(BCM_UCODE_FILES), 1)
-        WLFLAGS += -DBCM_UCODE_FILES
-endif
-#endif
-
 # HW CSO support (D11 rev40 feature)
 ifeq ($(WLCSO),1)
 	WLFLAGS += -DWLCSO
@@ -2549,6 +2510,12 @@ ifeq ($(PKTC_DONGLE),1)
 	WLFLAGS += -DPKTC_DONGLE
 endif
 
+#ifdef WLAIBSS
+ifeq ($(WLAIBSS), 1)
+        WLFLAGS += -DWLAIBSS
+        WLFILES_SRC_HI += src/wl/sys/wlc_aibss.c
+endif
+#endif
 
 #ifdef WLIPFO
 ifeq ($(WLIPFO), 1)
@@ -2589,18 +2556,7 @@ endif
 ifeq ($(ARMV7L),1)
 	ifeq ($(STBLINUX),1)
 		WLFLAGS += -DSTBLINUX
-		WLFLAGS += -DSTB
-		ifneq ($(BCM_SECURE_DMA),1)
-                        WLFLAGS += -DBCM47XX
-                endif
-		ifeq ($(BCM_SECURE_DMA),1)
-			WLFILES_SRC_LO += src/shared/stbutils.c
-		endif
 	endif
-endif
-
-ifeq ($(STBLINUX),1)
-	WLFLAGS += -DSTBLINUX
 endif
 
 # Legacy WLFILES pathless definition, please use new src relative path
@@ -2631,27 +2587,8 @@ ifeq ($(WLROAMPROF),1)
 endif
 
 # enabling secure DMA feature
-
 ifeq ($(BCM_SECURE_DMA),1)
 	WLFLAGS += -DBCM_SECURE_DMA
-endif
-
-#Support for STBC
-ifeq ($(WL11N_STBC_RX_ENABLED),1)
-	WLFLAGS += -DWL11N_STBC_RX_ENABLED
-endif
-
-ifeq ($(DISABLE_AMSDUTX_FOR_VI),1)
-	WLFLAGS += -DDISABLE_AMSDUTX_FOR_VI
-endif
-
-# Instead of disabling frameburst completly in dynamic frame burst logic, we enable RTS/CTS in frameburst.
-ifeq ($(FRAMEBURST_RTSCTS_PER_AMPDU),1)
-	WLFLAGS += -DFRAMEBURST_RTSCTS_PER_AMPDU
-endif
-
-ifeq ($(TUNE_FBOVERRIDE),1)
-	WLFLAGS += -DTUNE_FBOVERRIDE
 endif
 
 # Work-arounds for ROM compatibility - relocate struct fields that were excluded in ROMs,
