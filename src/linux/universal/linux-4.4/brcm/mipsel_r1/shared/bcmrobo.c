@@ -1470,8 +1470,8 @@ bcm_robo_config_port_led(robo_info_t *robo)
 	uint16 reg_val;
 
 	/* blink in auto mode, Bit 13:1G/ACT, Bit 12:10/100/ACT */
-	reg_val = 0x3000;
-	robo->ops->write_reg(robo, PAGE_CTRL, REG_LED_FUNC0_CTL, &reg_val, sizeof(reg_val));
+//	reg_val = 0x3000;
+//	robo->ops->write_reg(robo, PAGE_CTRL, REG_LED_FUNC0_CTL, &reg_val, sizeof(reg_val));
 
 	robo_info=robo;
 }

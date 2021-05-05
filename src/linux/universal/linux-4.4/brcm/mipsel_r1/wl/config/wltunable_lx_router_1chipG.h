@@ -1,13 +1,13 @@
 /*
  * Broadcom 802.11abg Networking Device Driver Configuration file
  *
- * Broadcom Proprietary and Confidential. Copyright (C) 2017,
+ * Copyright (C) 2015, Broadcom Corporation
  * All Rights Reserved.
  * 
- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom;
+ * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
- * written permission of Broadcom.
+ * written permission of Broadcom Corporation.
  *
  * $Id: wltunable_lx_router_1chipG.h 413605 2013-07-19 19:06:36Z $
  *
