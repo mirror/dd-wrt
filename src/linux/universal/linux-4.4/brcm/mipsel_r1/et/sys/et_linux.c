@@ -973,7 +973,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	ET_ERROR(("et%d: online cpus %d\n", unit, online_cpus));
 
 #ifdef	NAPI2_POLL
-	netif_napi_add(dev, & et->napi_poll, et_poll, 64);
+	netif_threaded_napi_add(dev, & et->napi_poll, et_poll, 64);
 	napi_enable(&et->napi_poll);
 #endif	/* NAPI2_POLL */
 
