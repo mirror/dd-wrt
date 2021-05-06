@@ -2806,7 +2806,7 @@ void start_sysinit(void)
 	 */
 	uname(&name);
 
-	if (nvram_default_match("sfe", "1", "0"))
+	if (nvram_match("sfe", "2"))
 		nvram_set("ctf_disable", "0");
 	else
 		nvram_set("ctf_disable", "1");
@@ -3052,10 +3052,6 @@ void start_sysinit(void)
 	}
 
 #ifdef HAVE_SWCONFIG
-	if (nvram_match("sfe", "1"))
-		nvram_set("ctf_disable", "0");
-	else
-		nvram_set("ctf_disable", "1");
 
 	insmod("b5301x_common");
 	insmod("b5301x_srab");

@@ -924,10 +924,8 @@ void start_qos(void)
 
 	if (!nvram_matchi("wshaper_enable", 1)) {
 #ifdef HAVE_SFE
-		if (nvram_matchi("sfe", 1))
-			start_sfe();
-		else
-			stop_sfe();
+		stop_sfe();
+		start_sfe();
 #endif
 		return;
 	}
