@@ -1560,6 +1560,8 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 			need_reboot = 1;
 		if (fa && nvram_geti("ctf_fa_mode") != atoi(fa))
 			need_reboot = 1;
+		if (need_reboot)
+			nvram_seti("do_reboot", 1);
 
 	}
 	cprintf("apply");
