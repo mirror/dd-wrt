@@ -416,7 +416,7 @@ addEvent(window, "unload", function() {
 				<% ifndef("FA", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.sfe"); %></div>
-									<select name="ctf_fa_mode">
+									<select name="sfe">
 										<option value="0" <% nvs("sfe", "0"); %>><% tran("share.disable"); %></option>
 										<option value="1" <% nvs("sfe", "1"); %>>SFE</option>
 										<option value="2" <% nvs("sfe", "2"); %>>CTF</option>
