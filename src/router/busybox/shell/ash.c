@@ -7011,7 +7011,8 @@ subevalvar(char *start, char *str, int strloc,
 	slash_pos = -1;
 	if (repl) {
 		slash_pos = expdest - ((char *)stackblock() + strloc);
-		STPUTC('/', expdest);
+		if (!(flag & EXP_DISCARD))
+			STPUTC('/', expdest);
 		//bb_error_msg("repl+1:'%s'", repl + 1);
 		p = argstr(repl + 1, (flag & EXP_DISCARD) | EXP_TILDE); /* EXP_TILDE: echo "${v/x/~}" expands ~ ! */
 		*repl = '/';
@@ -14499,7 +14500,7 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
 
 	if (sflag || minusc == NULL) {
 #if MAX_HISTORY > 0 && ENABLE_FEATURE_EDITING_SAVEHISTORY
-		if (iflag) {
+		if (line_input_state) {
 			const char *hp = lookupvar("HISTFILE");
 			if (!hp) {
 				hp = lookupvar("HOME");
@@ -14513,7 +14514,7 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
 				}
 			}
 			if (hp)
-				line_input_state->hist_file = hp;
+				line_input_state->hist_file = xstrdup(hp);
 # if ENABLE_FEATURE_SH_HISTFILESIZE
 			hp = lookupvar("HISTFILESIZE");
 			line_input_state->max_history = size_from_HISTFILESIZE(hp);
