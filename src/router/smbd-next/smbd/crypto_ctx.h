@@ -21,8 +21,8 @@ enum {
 };
 
 enum {
-	CRYPTO_AEAD_AES128_GCM = 16,
-	CRYPTO_AEAD_AES128_CCM,
+	CRYPTO_AEAD_AES_GCM = 16,
+	CRYPTO_AEAD_AES_CCM,
 	CRYPTO_AEAD_MAX,
 };
 
@@ -58,8 +58,8 @@ struct ksmbd_crypto_ctx {
 #define CRYPTO_MD4_TFM(c)	((c)->desc[CRYPTO_SHASH_MD4]->tfm)
 #define CRYPTO_MD5_TFM(c)	((c)->desc[CRYPTO_SHASH_MD5]->tfm)
 
-#define CRYPTO_GCM(c)		((c)->ccmaes[CRYPTO_AEAD_AES128_GCM])
-#define CRYPTO_CCM(c)		((c)->ccmaes[CRYPTO_AEAD_AES128_CCM])
+#define CRYPTO_GCM(c)		((c)->ccmaes[CRYPTO_AEAD_AES_GCM])
+#define CRYPTO_CCM(c)		((c)->ccmaes[CRYPTO_AEAD_AES_CCM])
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
 #define CRYPTO_ECBDES(c)	((c)->blk_desc[CRYPTO_BLK_ECBDES])
