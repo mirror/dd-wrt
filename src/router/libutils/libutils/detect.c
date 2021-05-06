@@ -1142,6 +1142,10 @@ int internal_getRouterBrand()
 	fclose(fp);
 	if (len < 1)
 		goto generic;
+	if (!strncasecmp(name, "To be filled", 12) || !strncasecmp(name, "System Product Name", 20) || !strncasecmp(name, "Default string",14)) {
+		name[0]=0;
+		len = 0;
+	}
 	fp = fopen("/sys/devices/virtual/dmi/id/board_name", "rb");
 	if (!fp)
 		fp = fopen("/sys/devices/virtual/dmi/id/product_name", "rb");
@@ -1155,7 +1159,7 @@ int internal_getRouterBrand()
 	}
 	fclose(fp);
 	name[len] = 0;
-	if (!strncmp(name, "To be filled", 12)) {
+	if (!strncasecmp(name, "To be filled", 12) || !strncasecmp(name, "System Product Name", 20) || !strncasecmp(name, "Default string",14)) {
 #ifdef HAVE_X64
 		setRouter("Generic X86_64");
 #else
