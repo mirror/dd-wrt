@@ -31,7 +31,7 @@
 
 void start_sfe(void)
 {
-	if (!*nvram_safe_get("ctf_disable")) {
+	if (match_match("sfe","1")) {
 		insmod("shortcut-fe");
 		insmod("shortcut-fe-ipv6");
 		insmod("fast-classifier");
@@ -43,12 +43,10 @@ void start_sfe(void)
 
 void stop_sfe(void)
 {
-	if (!*nvram_safe_get("ctf_disable")) {
-		rmmod("fast-classifier");
-		rmmod("shortcut-fe-ipv6");
-		rmmod("shortcut-fe");
-		dd_loginfo("sfe", "shortcut forwarding engine successfully stopped\n");
-	}
+	rmmod("fast-classifier");
+	rmmod("shortcut-fe-ipv6");
+	rmmod("shortcut-fe");
+	dd_loginfo("sfe", "shortcut forwarding engine successfully stopped\n");
 	return;
 }
 #endif
