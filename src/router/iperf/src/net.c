@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -120,7 +121,7 @@ timeout_connect(int s, const struct sockaddr *name, socklen_t namelen,
 
 /* make connection to server */
 int
-netdial(int domain, int proto, char *local, int local_port, char *server, int port, int timeout)
+netdial(int domain, int proto, const char *local, int local_port, const char *server, int port, int timeout)
 {
     struct addrinfo hints, *local_res, *server_res;
     int s, saved_errno;
@@ -217,7 +218,7 @@ netdial(int domain, int proto, char *local, int local_port, char *server, int po
 /***************************************************************/
 
 int
-netannounce(int domain, int proto, char *local, int port)
+netannounce(int domain, int proto, const char *local, int port)
 {
     struct addrinfo hints, *res;
     char portstr[6];
