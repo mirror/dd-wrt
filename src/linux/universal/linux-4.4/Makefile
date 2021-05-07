@@ -666,15 +666,15 @@ KBUILD_CFLAGS	+= $(call cc-option,-Oz,-Os) -fno-reorder-blocks -fno-tree-ch -fno
 else
 ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3
 ifdef CONFIG_PROFILE_ALL_BRANCHES
-KBUILD_CFLAGS	+= -O3
+KBUILD_CFLAGS	+= -O3 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 else
-KBUILD_CFLAGS	+= -O3 -fno-caller-saves
+KBUILD_CFLAGS	+= -O3 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 endif
 else
 ifdef CONFIG_PROFILE_ALL_BRANCHES
-KBUILD_CFLAGS	+= -O2 -fno-caller-saves
+KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 else
-KBUILD_CFLAGS	+= -O2 -fno-caller-saves
+KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 endif
 endif
 endif
