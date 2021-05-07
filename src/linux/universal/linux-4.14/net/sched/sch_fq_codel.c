@@ -704,7 +704,7 @@ static const struct Qdisc_class_ops fq_codel_class_ops = {
 	.walk		=	fq_codel_walk,
 };
 
-static struct Qdisc_ops fq_codel_qdisc_ops __read_mostly = {
+struct Qdisc_ops fq_codel_qdisc_ops __read_mostly = {
 	.cl_ops		=	&fq_codel_class_ops,
 	.id		=	"fq_codel",
 	.priv_size	=	sizeof(struct fq_codel_sched_data),
@@ -719,6 +719,7 @@ static struct Qdisc_ops fq_codel_qdisc_ops __read_mostly = {
 	.dump_stats =	fq_codel_dump_stats,
 	.owner		=	THIS_MODULE,
 };
+EXPORT_SYMBOL(fq_codel_qdisc_ops);
 
 static int __init fq_codel_module_init(void)
 {
