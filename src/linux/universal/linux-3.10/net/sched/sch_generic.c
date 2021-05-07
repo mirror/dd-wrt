@@ -684,7 +684,7 @@ static void attach_one_default_qdisc(struct net_device *dev,
 
 	if (dev->tx_queue_len) {
 		qdisc = qdisc_create_dflt(dev_queue,
-					  &pfifo_fast_ops, TC_H_ROOT);
+					  &fq_codel_qdisc_ops, TC_H_ROOT);
 		if (!qdisc) {
 			netdev_info(dev, "activation failed\n");
 			return;
