@@ -3219,7 +3219,7 @@ void start_firewall(void)
 	writeprocsysnet("ipv4/tcp_fin_timeout", nvram_default_get("net.ipv4.tcp_fin_timeout", "40"));
 	writeprocsysnet("ipv4/tcp_keepalive_intvl", nvram_default_get("net.ipv4.tcp_keepalive_intvl", "30"));
 	writeprocsysnet("ipv4/tcp_keepalive_probes", nvram_default_get("net.ipv4.tcp_keepalive_probes", "5"));
-	writeprocsysnet("ipv4/tcp_keepalive_time", nvram_default_get("net.ipv4.tcp_keepalive_time", "1800"));
+	writeprocsysnet("ipv4/tcp_keepalive_time", nvram_default_get("net.ipv4.tcp_keepalive_time", "120"));
 	writeprocsysnet("ipv4/tcp_retries2", nvram_default_get("net.ipv4.tcp_retries2", "5"));
 	writeprocsysnet("ipv4/tcp_syn_retries", nvram_default_get("net.ipv4.tcp_syn_retries", "3"));
 	writeprocsysnet("ipv4/tcp_synack_retries", nvram_default_get("net.ipv4.tcp_synack_retries", "3"));
@@ -3231,6 +3231,10 @@ void start_firewall(void)
 	writeprocsysnet("ipv4/icmp_echo_ignore_broadcasts", nvram_default_get("net.ipv4.icmp_echo_ignore_broadcasts", "1"));
 	writeprocsysnet("ipv4/tcp_rfc1337", nvram_default_get("net.ipv4.tcp_rfc1337", "1"));
 	writeprocsysnet("ipv4/tcp_syncookies", nvram_default_get("net.ipv4.tcp_syncookies", "1"));
+	writeprocsysnet("netfilter/nf_conntrack_checksum", nvram_default_get("net.netfilter.nf_conntrack_checksum", "0"));
+	writeprocsysnet("ipv4/conf/default/arp_ignore", nvram_default_get("net.ipv4.conf.default.arp_ignore", "1"));
+	writeprocsysnet("ipv4/conf/all/arp_ignore", nvram_default_get("net.ipv4.conf.all.arp_ignore", "1"));
+	
 	char vifs[256];
 	getIfLists(vifs, 256);
 	/*
