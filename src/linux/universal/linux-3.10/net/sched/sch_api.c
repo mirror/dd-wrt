@@ -1856,6 +1856,7 @@ static int __init pktsched_init(void)
 		return err;
 	}
 
+	register_qdisc(&fq_codel_qdisc_ops);
 	register_qdisc(&pfifo_qdisc_ops);
 	register_qdisc(&bfifo_qdisc_ops);
 	register_qdisc(&pfifo_head_drop_qdisc_ops);
