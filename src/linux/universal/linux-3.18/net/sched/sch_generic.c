@@ -31,7 +31,7 @@
 #include <net/dst.h>
 
 /* Qdisc to use by default */
-const struct Qdisc_ops *default_qdisc_ops = &pfifo_fast_ops;
+const struct Qdisc_ops *default_qdisc_ops = &fq_codel_qdisc_ops;
 EXPORT_SYMBOL(default_qdisc_ops);
 
 /* Main transmission queue. */
