@@ -554,8 +554,8 @@ configure:5192: $? = 0
 configure:5204: result: yes
 configure:5211: checking for _doprnt
 configure:5268: ccache arm-linux-uclibc-gcc -o conftest -Os -pipe -mcpu=cortex-a9 -mtune=cortex-a9  -msoft-float -mfloat-abi=soft -fno-caller-saves -fno-plt -fcommon   conftest.c  >&5
-/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/bin/../lib64/gcc/arm-openwrt-linux-muslgnueabi/11.1.0/../../../../arm-openwrt-linux-muslgnueabi/bin/ld: /tmp/ccNmjWVb.o:(.data+0x0): undefined reference to `_doprnt'
-/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/bin/../lib64/gcc/arm-openwrt-linux-muslgnueabi/11.1.0/../../../../arm-openwrt-linux-muslgnueabi/bin/ld: /tmp/ccNmjWVb.o: in function `main':
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/bin/../lib64/gcc/arm-openwrt-linux-muslgnueabi/11.1.0/../../../../arm-openwrt-linux-muslgnueabi/bin/ld: /tmp/ccxg6A5z.o:(.data+0x0): undefined reference to `_doprnt'
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/bin/../lib64/gcc/arm-openwrt-linux-muslgnueabi/11.1.0/../../../../arm-openwrt-linux-muslgnueabi/bin/ld: /tmp/ccxg6A5z.o: in function `main':
 conftest.c:(.text.startup+0x1c): undefined reference to `_doprnt'
 collect2: error: ld returned 1 exit status
 configure:5274: $? = 1
