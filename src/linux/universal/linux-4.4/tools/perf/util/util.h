@@ -1,6 +1,5 @@
 #ifndef GIT_COMPAT_UTIL_H
 #define GIT_COMPAT_UTIL_H
-
 #ifndef FLEX_ARRAY
 /*
  * See if our compiler is known to support flexible array members.
@@ -43,6 +42,7 @@
 #define _DEFAULT_SOURCE 1
 #define HAS_BOOL
 
+#include <compat.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/stat.h>
