@@ -1,0 +1,16 @@
+Package: libdw1
+Version: 0.180-2
+Depends: libc, libelf1, libbz21.0
+Provides: libdw
+Source: package/libs/elfutils
+SourceName: libdw
+License: GPL-3.0-or-later
+LicenseFiles: COPYING COPYING-GPLV2 COPYING-LGPLV3
+Section: libs
+SourceDateEpoch: 1616748490
+ABIVersion: 1
+CPE-ID: cpe:/a:elfutils_project:elfutils
+Maintainer: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Architecture: arm_cortex-a9
+Installed-Size: 206786
+Description:  ELF manipulation libraries (libdw)

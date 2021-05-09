@@ -1,0 +1,43 @@
+argp-parse.o: argp-parse.c \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/stdc-predef.h \
+ config.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/stdlib.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/features.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/sys/glibc-types.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/sys/cdefs.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/bits/alltypes.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/alloca.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/string.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/strings.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/unistd.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/bits/posix.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/limits.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/bits/limits.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/assert.h \
+ argp.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/stdio.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/ctype.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/errno.h \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/bits/errno.h \
+ argp-namefrob.h
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/stdc-predef.h:
+config.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/stdlib.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/features.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/sys/glibc-types.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/sys/cdefs.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/bits/alltypes.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/alloca.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/string.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/strings.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/unistd.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/bits/posix.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/limits.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/bits/limits.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/assert.h:
+argp.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/stdio.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/ctype.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/errno.h:
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/bits/errno.h:
+argp-namefrob.h:
