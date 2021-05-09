@@ -87,11 +87,10 @@ int libbpf_strerror(int err, char *buf, size_t size)
 	err = err > 0 ? err : -err;
 
 	if (err < __LIBBPF_ERRNO__START) {
-		int ret;
 
-		ret = strerror_r(err, buf, size);
+		strerror_r(err, buf, size);
 		buf[size - 1] = '\0';
-		return ret;
+		return 0;
 	}
 
 	if (err < __LIBBPF_ERRNO__END) {
