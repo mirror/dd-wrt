@@ -19,24 +19,24 @@ extern int debug_data_convert;
 #endif
 
 #define pr_err(fmt, ...) \
-	eprintf(0, verbose, pr_fmt(fmt), ##__VA_ARGS__)
+	eprintf(0, verbose, fmt, ##__VA_ARGS__)
 #define pr_warning(fmt, ...) \
-	eprintf(0, verbose, pr_fmt(fmt), ##__VA_ARGS__)
+	eprintf(0, verbose, fmt, ##__VA_ARGS__)
 #define pr_info(fmt, ...) \
-	eprintf(0, verbose, pr_fmt(fmt), ##__VA_ARGS__)
+	eprintf(0, verbose, fmt, ##__VA_ARGS__)
 #define pr_debug(fmt, ...) \
-	eprintf(1, verbose, pr_fmt(fmt), ##__VA_ARGS__)
+	eprintf(1, verbose, fmt, ##__VA_ARGS__)
 #define pr_debugN(n, fmt, ...) \
-	eprintf(n, verbose, pr_fmt(fmt), ##__VA_ARGS__)
-#define pr_debug2(fmt, ...) pr_debugN(2, pr_fmt(fmt), ##__VA_ARGS__)
-#define pr_debug3(fmt, ...) pr_debugN(3, pr_fmt(fmt), ##__VA_ARGS__)
-#define pr_debug4(fmt, ...) pr_debugN(4, pr_fmt(fmt), ##__VA_ARGS__)
+	eprintf(n, verbose, fmt, ##__VA_ARGS__)
+#define pr_debug2(fmt, ...) pr_debugN(2, fmt, ##__VA_ARGS__)
+#define pr_debug3(fmt, ...) pr_debugN(3, fmt, ##__VA_ARGS__)
+#define pr_debug4(fmt, ...) pr_debugN(4, fmt, ##__VA_ARGS__)
 
 #define pr_time_N(n, var, t, fmt, ...) \
 	eprintf_time(n, var, t, fmt, ##__VA_ARGS__)
 
-#define pr_oe_time(t, fmt, ...)  pr_time_N(1, debug_ordered_events, t, pr_fmt(fmt), ##__VA_ARGS__)
-#define pr_oe_time2(t, fmt, ...) pr_time_N(2, debug_ordered_events, t, pr_fmt(fmt), ##__VA_ARGS__)
+#define pr_oe_time(t, fmt, ...)  pr_time_N(1, debug_ordered_events, t, fmt, ##__VA_ARGS__)
+#define pr_oe_time2(t, fmt, ...) pr_time_N(2, debug_ordered_events, t, fmt, ##__VA_ARGS__)
 
 #define STRERR_BUFSIZE	128	/* For the buffer size of strerror_r */
 
