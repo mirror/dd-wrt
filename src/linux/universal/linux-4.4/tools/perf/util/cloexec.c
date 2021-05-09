@@ -1,4 +1,5 @@
 #include <sched.h>
+#include <string.h>
 #include "util.h"
 #include "../perf.h"
 #include "cloexec.h"

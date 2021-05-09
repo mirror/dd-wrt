@@ -381,7 +381,7 @@ static void print_sample_iregs(union perf_event *event __maybe_unused,
 
 	for_each_set_bit(r, (unsigned long *) &mask, sizeof(mask) * 8) {
 		u64 val = regs->regs[i++];
-		printf("%5s:0x%"PRIx64" ", perf_reg_name(r), val);
+		printf("%5s:0x%08llx", perf_reg_name(r) == NULL ? "(NULL)":perf_reg_name(r) , val);
 	}
 }
 
