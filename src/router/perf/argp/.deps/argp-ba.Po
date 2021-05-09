@@ -1,0 +1,3 @@
+argp-ba.o: argp-ba.c \
+ /home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/stdc-predef.h
+/home/xfs/toolchains/toolchain-arm_cortex-a9_gcc-11.1.0_musl_eabi/include/stdc-predef.h:
