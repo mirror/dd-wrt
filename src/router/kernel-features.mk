@@ -257,6 +257,10 @@ define kernelfeatures
 		sed -i 's/\CONFIG_EXFAT_FS=m/# CONFIG_EXFAT_FS is not set/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_FS is not set" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_PROFILING)" = "y" ]; then \
+		sed -i 's/\# CONFIG_PROFILING is not set/CONFIG_PROFILING=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_OPROFILE=y" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_OPTIMIZE_O3)" = "y" ]; then \
 		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_SIZE=y/# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
