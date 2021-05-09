@@ -3,7 +3,7 @@
  *
  * Developed at Lawrence Livermore National Laboratory (LLNL-CODE-403049).
  * Copyright (C) 2013-2014 Lawrence Livermore National Security, LLC.
- * Refer to the ZoL git commit log for authoritative copyright attribution.
+ * Refer to the OpenZFS git commit log for authoritative copyright attribution.
  *
  * The contents of this file are subject to the terms of the
  * Common Development and Distribution License Version 1.0 (CDDL-1.0).
@@ -54,7 +54,7 @@ zed_event_init(struct zed_conf *zcp)
 		zed_log_die("Failed to initialize libzfs");
 	}
 
-	zcp->zevent_fd = open(ZFS_DEV, O_RDWR);
+	zcp->zevent_fd = open(ZFS_DEV, O_RDWR | O_CLOEXEC);
 	if (zcp->zevent_fd < 0) {
 		if (zcp->do_idle)
 			return (-1);
