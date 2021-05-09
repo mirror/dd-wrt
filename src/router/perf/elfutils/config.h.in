@@ -1,0 +1,136 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Building with -fsanitize=undefined or not */
+#undef CHECK_UNDEFINED
+
+/* Should ar and ranlib use -D behavior by default? */
+#undef DEFAULT_AR_DETERMINISTIC
+
+/* Build debuginfod */
+#undef ENABLE_DEBUGINFOD
+
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
+
+/* Define to 1 if you have the declaration of `mempcpy', and to 0 if you
+   don't. */
+#undef HAVE_DECL_MEMPCPY
+
+/* Define to 1 if you have the declaration of `memrchr', and to 0 if you
+   don't. */
+#undef HAVE_DECL_MEMRCHR
+
+/* Define to 1 if you have the declaration of `powerof2', and to 0 if you
+   don't. */
+#undef HAVE_DECL_POWEROF2
+
+/* Define to 1 if you have the declaration of `rawmemchr', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RAWMEMCHR
+
+/* Defined if __attribute__((fallthrough)) is supported */
+#undef HAVE_FALLTHROUGH
+
+/* Defined if __attribute__((gcc_struct)) is supported */
+#undef HAVE_GCC_STRUCT
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `process_vm_readv' function. */
+#undef HAVE_PROCESS_VM_READV
+
+/* Define to 1 if `stdatomic.h` is provided by the system, 0 otherwise. */
+#undef HAVE_STDATOMIC_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if <sys/user.h> defines struct user_regs_struct */
+#undef HAVE_SYS_USER_REGS
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Defined if __attribute__((visibility())) is supported */
+#undef HAVE_VISIBILITY
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Support bzip2 decompression via -lbz2. */
+#undef USE_BZLIB
+
+/* Defined if demangling is enabled */
+#undef USE_DEMANGLE
+
+/* Defined if libraries should be thread-safe. */
+#undef USE_LOCKS
+
+/* Support LZMA (xz) decompression via -llzma. */
+#undef USE_LZMA
+
+/* Support gzip decompression via -lz. */
+#undef USE_ZLIB
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
+#include <eu-config.h>
