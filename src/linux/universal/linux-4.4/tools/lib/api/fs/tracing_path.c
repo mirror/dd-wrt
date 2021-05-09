@@ -2,6 +2,7 @@
 # define _GNU_SOURCE
 #endif
 
+#include <compat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

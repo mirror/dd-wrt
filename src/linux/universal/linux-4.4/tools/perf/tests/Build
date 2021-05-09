@@ -50,7 +50,7 @@ $(OUTPUT)tests/llvm-src-kbuild.c: tests/bpf-script-test-kbuild.c
 	$(Q)echo ';' >> $@
 
 ifeq ($(ARCH),$(filter $(ARCH),x86 arm arm64))
-perf-$(CONFIG_DWARF_UNWIND) += dwarf-unwind.o
+#perf-$(CONFIG_DWARF_UNWIND) += dwarf-unwind.o
 endif
 
 CFLAGS_attr.o         += -DBINDIR="BUILD_STR($(bindir_SQ))" -DPYTHON="BUILD_STR($(PYTHON_WORD))"
