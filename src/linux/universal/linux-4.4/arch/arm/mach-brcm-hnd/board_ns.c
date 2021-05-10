@@ -137,6 +137,26 @@ void __init board_map_io(void)
 	soc_map_io(&clk_ref);
 }
 
+static struct resource pmu_resources[] = {
+	[0] = {
+		.start		= 40,
+		.end		= 40,
+		.flags		= IORESOURCE_IRQ,
+	},
+	[1] = {
+		.start		= 41,
+		.end		= 41,
+		.flags		= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device pmu_device = {
+	.name			= "armv7-pmu",
+	.id			= -1,
+	.num_resources		= ARRAY_SIZE(pmu_resources),
+	.resource		= pmu_resources,
+};
+
 void __init board_init_irq(void)
 {
 	early_printk("board_init_irq\n");
@@ -272,6 +292,7 @@ void __init board_init(void)
 	 */
 	soc_add_devices();
 
+	platform_device_register(&pmu_device);
 	return;
 }
 

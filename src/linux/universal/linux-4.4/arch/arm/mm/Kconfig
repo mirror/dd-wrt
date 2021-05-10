@@ -396,7 +396,7 @@ config CPU_V7
 	select CPU_CP15_MPU if !MMU
 	select CPU_HAS_ASID if MMU
 	select CPU_PABRT_V7
-	select CPU_SPECTRE if MMU
+#	select CPU_SPECTRE if MMU
 	select CPU_TLB_V7 if MMU
 
 # ARMv7M
@@ -1028,6 +1028,7 @@ config CACHE_XSC3L2
 
 config ARM_L1_CACHE_SHIFT_6
 	bool
+	default y if CPU_V7
 	help
 	  Setting ARM L1 cache line size to 64 Bytes.
 
