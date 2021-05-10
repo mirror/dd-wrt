@@ -906,12 +906,12 @@ int arm_pmu_device_probe(struct platform_device *pdev,
 		if (!ret)
 			ret = init_fn(pmu);
 	} else {
-		ret = probe_current_pmu(pmu, probe_table);
 		cpumask_setall(&pmu->supported_cpus);
+		ret = probe_current_pmu(pmu, probe_table);
 	}
 
 	if (ret) {
-		pr_info("failed to probe PMU!\n");
+		pr_info("failed to probe PMU! %d\n", ret);
 		goto out_free;
 	}
 
