@@ -258,8 +258,17 @@ define kernelfeatures
 		echo "# CONFIG_EXFAT_FS is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_PROFILING)" = "y" ]; then \
+		sed -i 's/\# CONFIG_PERF_EVENTS is not set/CONFIG_PERF_EVENTS=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_VM_EVENT_COUNTERS is not set/CONFIG_VM_EVENT_COUNTERS=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_PROFILING is not set/CONFIG_PROFILING=y/g' $(LINUXDIR)/.config; \
-		echo "CONFIG_OPROFILE=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_OPROFILE is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_ARM_CCN is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_ARM_CCI400_PMU is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_ARM_CCI500_PMU is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BRCMSTB_GISB_ARB is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_ARM_PMU=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEBUG_PERF_USE_VMALLOC is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CGROUP_PERF is not set is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_OPTIMIZE_O3)" = "y" ]; then \
 		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_SIZE=y/# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config; \
