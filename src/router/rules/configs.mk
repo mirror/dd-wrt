@@ -1,4 +1,5 @@
 obj-y+=prepare
+obj-$(CONFIG_PROFILING) += zlib libunwind perf
 obj-$(CONFIG_OMCPROXY) += omcproxy
 obj-$(CONFIG_NVRAM) += nvram
 obj-$(CONFIG_WIRELESS_TOOLS) += wireless-tools
