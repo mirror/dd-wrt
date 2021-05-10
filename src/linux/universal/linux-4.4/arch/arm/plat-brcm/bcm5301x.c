@@ -166,6 +166,7 @@ static struct platform_device platform_spi_master_device = {
 	},
 };
 
+
 /*
  * Map fix-mapped I/O that is needed before full MMU operation
  */
@@ -697,6 +698,7 @@ static int  __init bcm5301_pl310_init( void )
 {
 	void __iomem *l2cache_base;
 	u32 auxctl_val, auxctl_msk ;
+	extern void __init l310_init( void __iomem *, u32, u32, int );
 
 	if (BCM53573_CHIP(sih->chip)) {
 		outer_cache.inv_range = NULL;
@@ -717,16 +719,18 @@ static int  __init bcm5301_pl310_init( void )
 	auxctl_val |= 1 << 29;	/* Instruction prefetch enable */
 	auxctl_val |= 1 << 28;	/* Data prefetch enable */
 	auxctl_val |= 1 << 30;	/* Early BRESP enable */
-	auxctl_val |= 1 << 22;	/* for dma coherency */
+//	auxctl_val |= 1 << 22;	/* for dma coherency */
 	
-	if (ACP_WAR_ENAB())
-		auxctl_val |= 1 << 11; /* Store buffer device limitation enable */
+//	if (ACP_WAR_ENAB())
+//		auxctl_val |= 1 << 11; /* Store buffer device limitation enable */
 
 	l2cache_base = ioremap( L2CC_BASE_PA, SZ_4K );
 
 	/* Configure using default aux control value */
 	if( l2cache_base != NULL )
-		l2x0_init( l2cache_base, auxctl_val, auxctl_msk);
+		l310_init( l2cache_base, auxctl_val, auxctl_msk, 32 );
+
+//		l2x0_init( l2cache_base, auxctl_val, auxctl_msk);
 
 	return 0;
 }

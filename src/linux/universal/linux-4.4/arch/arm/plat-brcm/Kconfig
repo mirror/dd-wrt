@@ -37,7 +37,7 @@ config PLAT_BCM5301X
 	bool "Broadcom BCM5301X SoC support"
 	select FPE_FASTFPE
 	select COMMON_CLKDEV
-	select CACHE_L2X0
+#	select CACHE_L2X0
 	select PCI
 	select PCI_DOMAINS if PCI
 #	select ARCH_SPARSEMEM_ENABLE
