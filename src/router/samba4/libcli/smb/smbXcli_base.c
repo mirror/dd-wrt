@@ -338,7 +338,10 @@ struct smbXcli_conn *smbXcli_conn_create(TALLOC_CTX *mem_ctx,
 		return NULL;
 	}
 
-	set_blocking(fd, false);
+	ret = set_blocking(fd, false);
+	if (ret < 0) {
+		goto error;
+	}
 	conn->sock_fd = fd;
 
 	conn->remote_name = talloc_strdup(conn, remote_name);
@@ -2740,6 +2743,11 @@ NTSTATUS smb1cli_req_chain_submit(struct tevent_req **reqs, int num_reqs)
 	return NT_STATUS_OK;
 }
 
+struct tevent_queue *smbXcli_conn_send_queue(struct smbXcli_conn *conn)
+{
+	return conn->outgoing;
+}
+
 bool smbXcli_conn_has_async_calls(struct smbXcli_conn *conn)
 {
 	return ((tevent_queue_length(conn->outgoing) != 0)
@@ -4749,14 +4757,14 @@ static struct tevent_req *smbXcli_negprot_smb2_subreq(struct smbXcli_negprot_sta
 	}
 	if (state->conn->max_protocol >= PROTOCOL_SMB2_10) {
 		NTSTATUS status;
-		DATA_BLOB blob;
+		struct GUID_ndr_buf guid_buf = { .buf = {0}, };
 
-		status = GUID_to_ndr_blob(&state->conn->smb2.client.guid,
-					  state, &blob);
+		status = GUID_to_ndr_buf(&state->conn->smb2.client.guid,
+					 &guid_buf);
 		if (!NT_STATUS_IS_OK(status)) {
 			return NULL;
 		}
-		memcpy(buf+12, blob.data, 16); /* ClientGuid */
+		memcpy(buf+12, guid_buf.buf, 16); /* ClientGuid */
 	} else {
 		memset(buf+12, 0, 16);	/* ClientGuid */
 	}
@@ -5327,14 +5335,14 @@ struct tevent_req *smb2cli_validate_negotiate_info_send(TALLOC_CTX *mem_ctx,
 	}
 	if (state->conn->max_protocol >= PROTOCOL_SMB2_10) {
 		NTSTATUS status;
-		DATA_BLOB blob;
+		struct GUID_ndr_buf guid_buf = { .buf = {0}, };
 
-		status = GUID_to_ndr_blob(&conn->smb2.client.guid,
-					  state, &blob);
+		status = GUID_to_ndr_buf(&conn->smb2.client.guid,
+					 &guid_buf);
 		if (!NT_STATUS_IS_OK(status)) {
 			return NULL;
 		}
-		memcpy(buf+4, blob.data, 16); /* ClientGuid */
+		memcpy(buf+4, guid_buf.buf, 16); /* ClientGuid */
 	} else {
 		memset(buf+4, 0, 16);	/* ClientGuid */
 	}
@@ -5420,6 +5428,18 @@ static void smb2cli_validate_negotiate_info_done(struct tevent_req *subreq)
 				    &state->out_input_buffer,
 				    &state->out_output_buffer);
 	TALLOC_FREE(subreq);
+
+	/*
+	 * This response must be signed correctly for
+	 * these "normal" error codes to be processed.
+	 * If the packet wasn't signed correctly we will get
+	 * NT_STATUS_ACCESS_DENIED or NT_STATUS_HMAC_NOT_SUPPORTED,
+	 * or NT_STATUS_INVALID_NETWORK_RESPONSE
+	 * from smb2_signing_check_pdu().
+	 *
+	 * We must never ignore the above errors here.
+	 */
+
 	if (NT_STATUS_EQUAL(status, NT_STATUS_FILE_CLOSED)) {
 		/*
 		 * The response was signed, but not supported
@@ -5460,6 +5480,19 @@ static void smb2cli_validate_negotiate_info_done(struct tevent_req *subreq)
 		 * See
 		 *
 		 * https://blogs.msdn.microsoft.com/openspecification/2012/06/28/smb3-secure-dialect-negotiation/
+		 *
+		 */
+		tevent_req_done(req);
+		return;
+	}
+	if (NT_STATUS_EQUAL(status, NT_STATUS_INVALID_PARAMETER)) {
+		/*
+		 * The response was signed, but not supported
+		 *
+		 * This might be returned by NetApp Ontap 7.3.7 SMB server
+		 * implementations.
+		 *
+		 * BUG: https://bugzilla.samba.org/show_bug.cgi?id=14607
 		 *
 		 */
 		tevent_req_done(req);
@@ -6434,6 +6467,19 @@ NTSTATUS smb2cli_session_encryption_on(struct smbXcli_session *session)
 	}
 	session->smb2->should_encrypt = true;
 	return NT_STATUS_OK;
+}
+
+uint16_t smb2cli_session_get_encryption_cipher(struct smbXcli_session *session)
+{
+	if (session->conn->protocol < PROTOCOL_SMB2_24) {
+		return 0;
+	}
+
+	if (!session->smb2->should_encrypt) {
+		return 0;
+	}
+
+	return session->conn->smb2.server.cipher;
 }
 
 struct smbXcli_tcon *smbXcli_tcon_create(TALLOC_CTX *mem_ctx)

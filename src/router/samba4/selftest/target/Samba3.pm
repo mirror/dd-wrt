@@ -239,7 +239,7 @@ sub check_env($$)
 	ad_member_idmap_ad  => ["fl2008r2dc"],
 	ad_member_fips      => ["ad_dc_fips"],
 
-	clusteredmember_smb1 => ["nt4_dc"],
+	clusteredmember => ["nt4_dc"],
 );
 
 %Samba3::ENV_DEPS_POST = ();
@@ -465,7 +465,7 @@ sub setup_nt4_member
 	return $ret;
 }
 
-sub setup_clusteredmember_smb1
+sub setup_clusteredmember
 {
 	my ($self, $prefix, $nt4_dc_vars) = @_;
 	my $count = 0;
@@ -515,8 +515,6 @@ sub setup_clusteredmember_smb1
        server signing = on
        clustering = yes
        ctdbd socket = ${socket}
-       client min protocol = CORE
-       server min protocol = LANMAN1
        dbwrap_tdb_mutexes:* = yes
        ${require_mutexes}
 ";
@@ -718,11 +716,52 @@ sub provision_ad_member
 	path = $share_dir
 	valid users = ADDOMAIN/%U
 
+[sub_valid_users_domain]
+    path = $share_dir
+    valid users = %D/%U
+
+[sub_valid_users_group]
+    path = $share_dir
+    valid users = \@$dcvars->{DOMAIN}/%G
+
+[valid_users]
+    path = $share_dir
+    valid users = $dcvars->{DOMAIN}/$dcvars->{DC_USERNAME}
+
+[valid_users_group]
+    path = $share_dir
+    valid users = \"\@$dcvars->{DOMAIN}/domain users\"
+
+[valid_users_unix_group]
+    path = $share_dir
+    valid users = \"+$dcvars->{DOMAIN}/domain users\"
+
+[valid_users_nis_group]
+    path = $share_dir
+    valid users = \"&$dcvars->{DOMAIN}/domain users\"
+
+[valid_users_unix_nis_group]
+    path = $share_dir
+    valid users = \"+&$dcvars->{DOMAIN}/domain users\"
+
+[valid_users_nis_unix_group]
+    path = $share_dir
+    valid users = \"&+$dcvars->{DOMAIN}/domain users\"
+
+[invalid_users]
+    path = $share_dir
+    invalid users = $dcvars->{DOMAIN}/$dcvars->{DC_USERNAME}
+
+[valid_and_invalid_users]
+    path = $share_dir
+    valid users = $dcvars->{DOMAIN}/$dcvars->{DC_USERNAME} $dcvars->{DOMAIN}/alice
+    invalid users = $dcvars->{DOMAIN}/$dcvars->{DC_USERNAME}
 ";
 
 	my $ret = $self->provision(
 	    prefix => $prefix,
 	    domain => $dcvars->{DOMAIN},
+	    realm => $dcvars->{REALM},
 	    server => "LOCALADMEMBER",
 	    password => "loCalMemberPass",
 	    extra_options => $member_options,
@@ -873,6 +912,7 @@ sub setup_ad_member_rfc2307
 	my $ret = $self->provision(
 	    prefix => $prefix,
 	    domain => $dcvars->{DOMAIN},
+	    realm => $dcvars->{REALM},
 	    server => "RFC2307MEMBER",
 	    password => "loCalMemberPass",
 	    extra_options => $member_options,
@@ -970,6 +1010,7 @@ sub setup_ad_member_idmap_rid
 	my $ret = $self->provision(
 	    prefix => $prefix,
 	    domain => $dcvars->{DOMAIN},
+	    realm => $dcvars->{REALM},
 	    server => "IDMAPRIDMEMBER",
 	    password => "loCalMemberPass",
 	    extra_options => $member_options,
@@ -1059,6 +1100,8 @@ sub setup_ad_member_idmap_ad
 	idmap config * : range = 1000000-1999999
 	idmap config $dcvars->{DOMAIN} : backend = ad
 	idmap config $dcvars->{DOMAIN} : range = 2000000-2999999
+	idmap config $dcvars->{DOMAIN} : unix_primary_group = yes
+	idmap config $dcvars->{DOMAIN} : unix_nss_info = yes
 	idmap config $dcvars->{TRUST_DOMAIN} : backend = ad
 	idmap config $dcvars->{TRUST_DOMAIN} : range = 2000000-2999999
 	gensec_gssapi:requested_life_time = 5
@@ -1067,6 +1110,7 @@ sub setup_ad_member_idmap_ad
 	my $ret = $self->provision(
 	    prefix => $prefix,
 	    domain => $dcvars->{DOMAIN},
+	    realm => $dcvars->{REALM},
 	    server => "IDMAPADMEMBER",
 	    password => "loCalMemberPass",
 	    extra_options => $member_options,
@@ -1178,7 +1222,7 @@ sub setup_simpleserver
 	ntlm auth = yes
 	vfs objects = xattr_tdb streams_depot
 	change notify = no
-	smb encrypt = off
+	server smb encrypt = off
 
 [vfs_aio_pthread]
 	path = $prefix_abs/share
@@ -1241,11 +1285,6 @@ sub setup_simpleserver
 	store dos attributes = yes
 	hide files = /hidefile/
 	hide dot files = yes
-
-[enc_desired]
-	path = $prefix_abs/share
-	vfs objects =
-	smb encrypt = desired
 
 [hidenewfiles]
 	path = $prefix_abs/share
@@ -1334,6 +1373,9 @@ sub setup_fileserver
 	my $tarmode_sharedir="$share_dir/tarmode";
 	push(@dirs,$tarmode_sharedir);
 
+	my $tarmode2_sharedir="$share_dir/tarmode2";
+	push(@dirs,$tarmode2_sharedir);
+
 	my $smbcacls_sharedir="$share_dir/smbcacls";
 	push(@dirs,$smbcacls_sharedir);
 
@@ -1362,6 +1404,14 @@ sub setup_fileserver
 
 	get quota command = $prefix_abs/getset_quota.py
 	set quota command = $prefix_abs/getset_quota.py
+[tarmode]
+	path = $tarmode_sharedir
+	comment = tar test share
+	xattr_tdb:file = $prefix_abs/tarmode-xattr.tdb
+[tarmode2]
+	path = $tarmode2_sharedir
+	comment = tar test share
+	xattr_tdb:file = $prefix_abs/tarmode2-xattr.tdb
 [spotlight]
 	path = $share_dir
 	spotlight = yes
@@ -1716,12 +1766,22 @@ $ret->{USERNAME} = KTEST\\Administrator
 sub setup_maptoguest
 {
 	my ($self, $path) = @_;
+	my $prefix_abs = abs_path($path);
+	my $libdir="$prefix_abs/lib";
+	my $share_dir="$prefix_abs/share";
+	my $errorinjectconf="$libdir/error_inject.conf";
 
 	print "PROVISIONING maptoguest...";
 
 	my $options = "
 map to guest = bad user
 ntlm auth = yes
+
+[force_user_error_inject]
+	path = $share_dir
+	vfs objects = acl_xattr fake_acls xattr_tdb error_inject
+	force user = user1
+	include = $errorinjectconf
 ";
 
 	my $vars = $self->provision(
@@ -1919,6 +1979,7 @@ sub provision($$)
 
 	my $prefix = $args{prefix};
 	my $domain = $args{domain};
+	my $realm = $args{realm};
 	my $server = $args{server};
 	my $password = $args{password};
 	my $extra_options = $args{extra_options};
@@ -1936,6 +1997,12 @@ sub provision($$)
 	my %createuser_env = ();
 	my $server_ip = Samba::get_ipv4_addr($server);
 	my $server_ipv6 = Samba::get_ipv6_addr($server);
+	my $dns_domain;
+	if (defined($realm)) {
+	    $dns_domain = lc($realm);
+	} else {
+	    $dns_domain = "samba.example.com";
+	}
 
 	my $unix_name = ($ENV{USER} or $ENV{LOGNAME} or `PATH=/usr/ucb:$ENV{PATH} whoami`);
 	chomp $unix_name;
@@ -1998,6 +2065,12 @@ sub provision($$)
 
 	my $smbcacls_sharedir_dfs="$shrdir/smbcacls_sharedir_dfs";
 	push(@dirs,$smbcacls_sharedir_dfs);
+
+	my $smbcacls_share="$shrdir/smbcacls_share";
+	push(@dirs,$smbcacls_share);
+
+	my $smbcacls_share_testdir="$shrdir/smbcacls_share/smbcacls";
+	push(@dirs,$smbcacls_share_testdir);
 
 	my $badnames_shrdir="$shrdir/badnames";
 	push(@dirs,$badnames_shrdir);
@@ -2327,6 +2400,11 @@ sub provision($$)
 	}
 
 	print CONF "
+[smbcacls_share]
+	path = $smbcacls_share
+        comment = smb username is [%U]
+	msdfs root = yes
+
 [smbcacls_sharedir_dfs]
 	path = $smbcacls_sharedir_dfs
         comment = smb username is [%U]
@@ -2340,7 +2418,7 @@ sub provision($$)
 [tmpenc]
 	path = $shrdir
 	comment = encrypt smb username is [%U]
-	smb encrypt = required
+	server smb encrypt = required
 	vfs objects = dirsort
 [tmpguest]
 	path = $shrdir
@@ -2822,7 +2900,22 @@ sub provision($$)
 [delete_readonly]
 	path = $prefix_abs/share
 	delete readonly = yes
+
+[enc_desired]
+	path = $prefix_abs/share
+	vfs objects =
+	server smb encrypt = desired
+
+[enc_off]
+	path = $prefix_abs/share
+	vfs objects =
+	server smb encrypt = off
+
+[notify_priv]
+	copy = tmp
+	honor change notify privilege = yes
 	";
+
 	close(CONF);
 
 	my $net = Samba::bindir_path($self, "net");
@@ -2915,8 +3008,8 @@ force_user:x:$gid_force_user:
 		warn("Unable to open $nss_wrapper_hosts");
 		return undef;
 	}
-	print HOSTS "${server_ip} ${hostname}.samba.example.com ${hostname}\n";
-	print HOSTS "${server_ipv6} ${hostname}.samba.example.com ${hostname}\n";
+	print HOSTS "${server_ip} ${hostname}.${dns_domain} ${hostname}\n";
+	print HOSTS "${server_ipv6} ${hostname}.${dns_domain} ${hostname}\n";
 	close(HOSTS);
 
 	$resolv_conf = "$privatedir/no_resolv.conf" unless defined($resolv_conf);
@@ -3357,20 +3450,13 @@ sub check_or_start_ctdb($$) {
 
 		my $cmd = "ctdb/tests/local_daemons.sh";
 		my @full_cmd = ("$cmd", "$prefix", "start", "$i");
-		# Dummy environment variables to avoid
-		# Samba3::get_env_for_process() from generating them
-		# and including UID_WRAPPER_ROOT=1, which causes
-		# "Unable to secure ctdb socket" error.
-		my $env_vars = {
-			CTDB_DUMMY => "1",
-		};
 		my $daemon_ctx = {
 			NAME => "ctdbd",
 			BINARY_PATH => $cmd,
 			FULL_CMD => [ @full_cmd ],
 			TEE_STDOUT => 1,
 			LOG_FILE => "/dev/null",
-			ENV_VARS => $env_vars,
+			ENV_VARS => {},
 		};
 
 		print "STARTING CTDBD (node ${i})\n";

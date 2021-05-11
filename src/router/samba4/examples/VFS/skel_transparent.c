@@ -164,9 +164,11 @@ static DIR *skel_fdopendir(vfs_handle_struct *handle, files_struct *fsp,
 }
 
 static struct dirent *skel_readdir(vfs_handle_struct *handle,
-				   DIR *dirp, SMB_STRUCT_STAT *sbuf)
+				   struct files_struct *dirfsp,
+				   DIR *dirp,
+				   SMB_STRUCT_STAT *sbuf)
 {
-	return SMB_VFS_NEXT_READDIR(handle, dirp, sbuf);
+	return SMB_VFS_NEXT_READDIR(handle, dirfsp, dirp, sbuf);
 }
 
 static void skel_seekdir(vfs_handle_struct *handle, DIR *dirp, long offset)
@@ -212,7 +214,6 @@ static int skel_openat(struct vfs_handle_struct *handle,
 
 static NTSTATUS skel_create_file(struct vfs_handle_struct *handle,
 				 struct smb_request *req,
-				 struct files_struct **dirfsp,
 				 struct smb_filename *smb_fname,
 				 uint32_t access_mask,
 				 uint32_t share_access,
@@ -231,7 +232,6 @@ static NTSTATUS skel_create_file(struct vfs_handle_struct *handle,
 {
 	return SMB_VFS_NEXT_CREATE_FILE(handle,
 					req,
-					dirfsp,
 					smb_fname,
 					access_mask,
 					share_access,
@@ -602,7 +602,7 @@ static int skel_symlinkat(vfs_handle_struct *handle,
 }
 
 static int skel_vfs_readlinkat(vfs_handle_struct *handle,
-			files_struct *dirfsp,
+			const struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			char *buf,
 			size_t bufsiz)
@@ -829,13 +829,12 @@ static NTSTATUS skel_offload_write_recv(struct vfs_handle_struct *handle,
 	return NT_STATUS_OK;
 }
 
-static NTSTATUS skel_get_compression(struct vfs_handle_struct *handle,
+static NTSTATUS skel_fget_compression(struct vfs_handle_struct *handle,
 				     TALLOC_CTX *mem_ctx,
 				     struct files_struct *fsp,
-				     struct smb_filename *smb_fname,
 				     uint16_t *_compression_fmt)
 {
-	return SMB_VFS_NEXT_GET_COMPRESSION(handle, mem_ctx, fsp, smb_fname,
+	return SMB_VFS_NEXT_FGET_COMPRESSION(handle, mem_ctx, fsp,
 					    _compression_fmt);
 }
 
@@ -933,15 +932,6 @@ static NTSTATUS skel_readdir_attr(struct vfs_handle_struct *handle,
 				  struct readdir_attr_data **pattr_data)
 {
 	return SMB_VFS_NEXT_READDIR_ATTR(handle, fname, mem_ctx, pattr_data);
-}
-
-static NTSTATUS skel_get_dos_attributes(struct vfs_handle_struct *handle,
-				struct smb_filename *smb_fname,
-				uint32_t *dosmode)
-{
-	return SMB_VFS_NEXT_GET_DOS_ATTRIBUTES(handle,
-				smb_fname,
-				dosmode);
 }
 
 struct skel_get_dos_attributes_state {
@@ -1113,19 +1103,12 @@ static int skel_sys_acl_blob_get_fd(vfs_handle_struct *handle,
 						blob_description, blob);
 }
 
-static int skel_sys_acl_set_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				SMB_ACL_TYPE_T acltype,
-				SMB_ACL_T theacl)
-{
-	return SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle, smb_fname,
-			acltype, theacl);
-}
-
-static int skel_sys_acl_set_fd(vfs_handle_struct *handle, files_struct *fsp,
+static int skel_sys_acl_set_fd(vfs_handle_struct *handle,
+			       struct files_struct *fsp,
+			       SMB_ACL_TYPE_T type,
 			       SMB_ACL_T theacl)
 {
-	return SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, theacl);
+	return SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, type, theacl);
 }
 
 static int skel_sys_acl_delete_def_file(vfs_handle_struct *handle,
@@ -1420,7 +1403,7 @@ static struct vfs_fn_pointers skel_transparent_fns = {
 	.offload_read_recv_fn = skel_offload_read_recv,
 	.offload_write_send_fn = skel_offload_write_send,
 	.offload_write_recv_fn = skel_offload_write_recv,
-	.get_compression_fn = skel_get_compression,
+	.fget_compression_fn = skel_fget_compression,
 	.set_compression_fn = skel_set_compression,
 
 	.streaminfo_fn = skel_streaminfo,
@@ -1435,7 +1418,6 @@ static struct vfs_fn_pointers skel_transparent_fns = {
 	.audit_file_fn = skel_audit_file,
 
 	/* DOS attributes. */
-	.get_dos_attributes_fn = skel_get_dos_attributes,
 	.get_dos_attributes_send_fn = skel_get_dos_attributes_send,
 	.get_dos_attributes_recv_fn = skel_get_dos_attributes_recv,
 	.fget_dos_attributes_fn = skel_fget_dos_attributes,
@@ -1454,7 +1436,6 @@ static struct vfs_fn_pointers skel_transparent_fns = {
 	.sys_acl_get_fd_fn = skel_sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = skel_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = skel_sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = skel_sys_acl_set_file,
 	.sys_acl_set_fd_fn = skel_sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = skel_sys_acl_delete_def_file,
 

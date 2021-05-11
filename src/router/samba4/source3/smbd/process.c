@@ -35,7 +35,6 @@
 #include "lib/messages_ctdb.h"
 #include "smbprofile.h"
 #include "rpc_server/spoolss/srv_spoolss_nt.h"
-#include "libsmb/libsmb.h"
 #include "../lib/util/tevent_ntstatus.h"
 #include "../libcli/security/dom_sid.h"
 #include "../libcli/security/security_token.h"
@@ -46,6 +45,7 @@
 #include "util_event.h"
 #include "libcli/smb/smbXcli_base.h"
 #include "lib/util/time_basic.h"
+#include "smb1_utils.h"
 
 /* Internal message queue for deferred opens. */
 struct pending_message_list {
@@ -2776,6 +2776,30 @@ static int release_ip(struct tevent_context *ev,
 	return 0;
 }
 
+static int match_cluster_movable_ip(uint32_t total_ip_count,
+				    const struct sockaddr_storage *ip,
+				    bool is_movable_ip,
+				    void *private_data)
+{
+	const struct sockaddr_storage *srv = private_data;
+	struct samba_sockaddr pub_ip = {
+		.u = {
+			.ss = *ip,
+		},
+	};
+	struct samba_sockaddr srv_ip = {
+		.u = {
+			.ss = *srv,
+		},
+	};
+
+	if (is_movable_ip && sockaddr_equal(&pub_ip.u.sa, &srv_ip.u.sa)) {
+		return EADDRNOTAVAIL;
+	}
+
+	return 0;
+}
+
 static NTSTATUS smbd_register_ips(struct smbXsrv_connection *xconn,
 				  struct sockaddr_storage *srv,
 				  struct sockaddr_storage *clnt)
@@ -2803,21 +2827,17 @@ static NTSTATUS smbd_register_ips(struct smbXsrv_connection *xconn,
 	}
 
 	if (xconn->client->server_multi_channel_enabled) {
-		struct ctdb_public_ip_list_old *ips = NULL;
-
-		ret = ctdbd_control_get_public_ips(cconn,
-						   0, /* flags */
-						   state,
-						   &ips);
-		if (ret != 0) {
-			return NT_STATUS_INTERNAL_ERROR;
-		}
-
-		xconn->has_ctdb_public_ip = ctdbd_find_in_public_ips(ips, srv);
-		TALLOC_FREE(ips);
-		if (xconn->has_ctdb_public_ip) {
-			DBG_DEBUG("CTDB public ip on %s\n",
+		ret = ctdbd_public_ip_foreach(cconn,
+					      match_cluster_movable_ip,
+					      srv);
+		if (ret == EADDRNOTAVAIL) {
+			xconn->has_cluster_movable_ip = true;
+			DBG_DEBUG("cluster movable IP on %s\n",
 				  smbXsrv_connection_dbg(xconn));
+		} else if (ret != 0) {
+			DBG_ERR("failed to iterate cluster IPs: %s\n",
+				strerror(ret));
+			return NT_STATUS_INTERNAL_ERROR;
 		}
 	}
 
@@ -3502,7 +3522,7 @@ static bool uid_in_use(struct auth_session_info *session_info,
 static bool gid_in_use(struct auth_session_info *session_info,
 		       gid_t gid)
 {
-	int i;
+	uint32_t i;
 	struct security_unix_token *utok = NULL;
 
 	utok = session_info->unix_token;

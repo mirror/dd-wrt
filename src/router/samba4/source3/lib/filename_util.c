@@ -165,10 +165,8 @@ const char *smb_fname_str_dbg(const struct smb_filename *smb_fname)
 		return "";
 	}
 
-	fname = talloc_asprintf(talloc_tos(),
-				"%s {%s}",
-				fname,
-				tstr);
+	fname = talloc_asprintf_append_buffer(
+		fname, " {%s}", tstr);
 	if (fname == NULL) {
 		return "";
 	}
@@ -187,21 +185,6 @@ const char *fsp_str_dbg(const struct files_struct *fsp)
 		return "";
 	}
 
-	if (fsp->dirfsp == NULL || fsp->dirfsp == fsp->conn->cwd_fsp) {
-		return name;
-	}
-
-	if (ISDOT(fsp->dirfsp->fsp_name->base_name)) {
-		return name;
-	}
-
-	name = talloc_asprintf(talloc_tos(),
-			       "%s/%s",
-			       fsp->dirfsp->fsp_name->base_name,
-			       fsp->fsp_name->base_name);
-	if (name == NULL) {
-		return "";
-	}
 	return name;
 }
 

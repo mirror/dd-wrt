@@ -1000,7 +1000,7 @@ static void convert_sbuf(vfs_handle_struct *handle, const char *fname,
 				return);
 
 	if (priv->config->fixinodes) {
-		/* some snapshot systems, like GPFS, return the name
+		/* some snapshot systems, like GPFS, return the same
 		   device:inode for the snapshot files as the current
 		   files. That breaks the 'restore' button in the shadow copy
 		   GUI, as the client gets a sharing violation.
@@ -1333,9 +1333,17 @@ static int shadow_copy2_openat(vfs_handle_struct *handle,
 	int ret;
 	bool ok;
 
+	smb_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						 dirfsp,
+						 smb_fname_in);
+	if (smb_fname == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
+
 	ok = shadow_copy2_strip_snapshot_converted(talloc_tos(),
 						   handle,
-						   smb_fname_in,
+						   smb_fname,
 						   &timestamp,
 						   &stripped,
 						   &is_converted);
@@ -1351,7 +1359,7 @@ static int shadow_copy2_openat(vfs_handle_struct *handle,
 			 * EINVAL which we carefully map to EROFS. In sum, this
 			 * matches Windows behaviour.
 			 */
-			flags = O_RDONLY;
+			flags &= ~(O_WRONLY | O_RDWR | O_CREAT);
 		}
 		return SMB_VFS_NEXT_OPENAT(handle,
 					   dirfsp,
@@ -1359,13 +1367,6 @@ static int shadow_copy2_openat(vfs_handle_struct *handle,
 					   fsp,
 					   flags,
 					   mode);
-	}
-
-	smb_fname = cp_smb_filename(talloc_tos(), smb_fname_in);
-	if (smb_fname == NULL) {
-		TALLOC_FREE(stripped);
-		errno = ENOMEM;
-		return -1;
 	}
 
 	smb_fname->base_name = shadow_copy2_convert(smb_fname,
@@ -1385,7 +1386,7 @@ static int shadow_copy2_openat(vfs_handle_struct *handle,
 	 * pwrite() syscall with EINVAL which we carefully map to EROFS. In sum,
 	 * this matches Windows behaviour.
 	 */
-	flags = O_RDONLY;
+	flags &= ~(O_WRONLY | O_RDWR | O_CREAT);
 
 	ret = SMB_VFS_NEXT_OPENAT(handle,
 				  dirfsp,
@@ -1568,7 +1569,7 @@ static int shadow_copy2_ntimes(vfs_handle_struct *handle,
 }
 
 static int shadow_copy2_readlinkat(vfs_handle_struct *handle,
-				files_struct *dirfsp,
+				const struct files_struct *dirfsp,
 				const struct smb_filename *smb_fname,
 				char *buf,
 				size_t bufsiz)
@@ -1952,6 +1953,7 @@ static int shadow_copy2_get_shadow_copy_data(
 	bool get_snaplist = false;
 	bool access_granted = false;
 	int open_flags = O_RDONLY;
+	int fd;
 	int ret = -1;
 	NTSTATUS status;
 
@@ -2001,18 +2003,19 @@ static int shadow_copy2_get_shadow_copy_data(
 	open_flags |= O_DIRECTORY;
 #endif
 
-	dirfsp->fh->fd = SMB_VFS_NEXT_OPENAT(handle,
-					     fspcwd,
-					     snapdir_smb_fname,
-					     dirfsp,
-					     open_flags,
-					     0);
-	if (dirfsp->fh->fd == -1) {
+	fd = SMB_VFS_NEXT_OPENAT(handle,
+				 fspcwd,
+				 snapdir_smb_fname,
+				 dirfsp,
+				 open_flags,
+				 0);
+	if (fd == -1) {
 		DBG_WARNING("SMB_VFS_NEXT_OPEN failed for '%s'"
 			    " - %s\n", snapdir, strerror(errno));
 		errno = ENOSYS;
 		goto done;
 	}
+	fsp_set_fd(dirfsp, fd);
 
 	p = SMB_VFS_NEXT_FDOPENDIR(handle, dirfsp, NULL, 0);
 	if (!p) {
@@ -2049,7 +2052,7 @@ static int shadow_copy2_get_shadow_copy_data(
 		time(&(priv->snaps->fetch_time));
 	}
 
-	while ((d = SMB_VFS_NEXT_READDIR(handle, p, NULL))) {
+	while ((d = SMB_VFS_NEXT_READDIR(handle, dirfsp, p, NULL))) {
 		char snapshot[GMT_NAME_LEN+1];
 		SHADOW_COPY_LABEL *tlabels;
 
@@ -2121,7 +2124,7 @@ done:
 			 * VFS_CLOSEDIR implicitly
 			 * closed the associated fd.
 			 */
-			dirfsp->fh->fd = -1;
+			fsp_set_fd(dirfsp, -1);
 		}
 	}
 	if (dirfsp != NULL) {
@@ -2191,15 +2194,25 @@ static int shadow_copy2_mkdirat(vfs_handle_struct *handle,
 				const struct smb_filename *smb_fname,
 				mode_t mode)
 {
+	struct smb_filename *full_fname = NULL;
 	time_t timestamp = 0;
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
 
 	if (!shadow_copy2_strip_snapshot(talloc_tos(),
 					handle,
-					smb_fname,
+					full_fname,
 					&timestamp,
 					NULL)) {
 		return -1;
 	}
+	TALLOC_FREE(full_fname);
 	if (timestamp != 0) {
 		errno = EROFS;
 		return -1;

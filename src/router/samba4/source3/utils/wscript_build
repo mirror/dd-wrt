@@ -275,7 +275,8 @@ bld.SAMBA3_BINARY('mvxattr',
                  source='mvxattr.c',
                  deps='''
                  talloc
-                 popt_samba3
+                 popt
+                 samba-util
                  ''',
                  enabled=bld.env.build_mvxattr)
 
@@ -283,7 +284,7 @@ bld.SAMBA3_BINARY('destroy_netlogon_creds_cli',
                   source='destroy_netlogon_creds_cli.c',
                   deps = '''
                       talloc
-                      popt_samba3
+                      smbconf
                       NETLOGON_CREDS_CLI
                   ''',
                   install=False)

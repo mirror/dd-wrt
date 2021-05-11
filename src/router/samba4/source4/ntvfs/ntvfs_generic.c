@@ -35,6 +35,8 @@
 #include "libcli/smb2/smb2.h"
 #include "libcli/smb2/smb2_calls.h"
 
+#undef strcasecmp
+
 /* a second stage function converts from the out parameters of the generic
    call onto the out parameters of the specific call made */
 typedef NTSTATUS (*second_stage_t)(struct ntvfs_module_context *,
@@ -331,7 +333,7 @@ static NTSTATUS map_openx_open(uint16_t flags, uint16_t open_mode,
 	case OPENX_MODE_DENY_DOS:
 		/* DENY_DOS is quite strange - it depends on the filename! */
 		io2->generic.in.private_flags |=
-			NTCREATEX_OPTIONS_PRIVATE_DENY_DOS;
+			NTCREATEX_FLAG_DENY_DOS;
 		if (is_exe_filename(fname)) {
 			io2->generic.in.share_access = 
 				NTCREATEX_SHARE_ACCESS_READ | 
@@ -345,7 +347,7 @@ static NTSTATUS map_openx_open(uint16_t flags, uint16_t open_mode,
 		}
 		break;
 	case OPENX_MODE_DENY_FCB:
-		io2->generic.in.private_flags |= NTCREATEX_OPTIONS_PRIVATE_DENY_FCB;
+		io2->generic.in.private_flags |= NTCREATEX_FLAG_DENY_FCB;
 		io2->generic.in.share_access = NTCREATEX_SHARE_ACCESS_NONE;
 		break;
 	default:

@@ -85,6 +85,8 @@
 #include "auth/credentials/credentials.h"
 #include "lib/param/param.h"
 #include "lib/gencache.h"
+#include "lib/util/string_wrappers.h"
+#include "lib/global_contexts.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
@@ -463,11 +465,11 @@ void set_domain_offline(struct winbindd_domain *domain)
 	   primary domain goes offline */
 
 	if ( domain->primary ) {
-		struct winbindd_child *idmap = idmap_child();
+		pid_t idmap_pid = idmap_child_pid();
 
-		if ( idmap->pid != 0 ) {
+		if (idmap_pid != 0) {
 			messaging_send_buf(global_messaging_context(),
-					   pid_to_procid(idmap->pid), 
+					   pid_to_procid(idmap_pid),
 					   MSG_WINBIND_OFFLINE, 
 					   (const uint8_t *)domain->name,
 					   strlen(domain->name)+1);
@@ -549,11 +551,11 @@ static void set_domain_online(struct winbindd_domain *domain)
 	   primary domain comes online */
 
 	if ( domain->primary ) {
-		struct winbindd_child *idmap = idmap_child();
+		pid_t idmap_pid = idmap_child_pid();
 
-		if ( idmap->pid != 0 ) {
+		if (idmap_pid != 0) {
 			messaging_send_buf(global_messaging_context(),
-					   pid_to_procid(idmap->pid), 
+					   pid_to_procid(idmap_pid),
 					   MSG_WINBIND_ONLINE, 
 					   (const uint8_t *)domain->name,
 					   strlen(domain->name)+1);
@@ -706,7 +708,7 @@ static NTSTATUS cm_get_ipc_credentials(TALLOC_CTX *mem_ctx,
 	}
 
 	cli_credentials_set_conf(creds, lp_ctx);
-	cli_credentials_set_kerberos_state(creds, CRED_DONT_USE_KERBEROS);
+	cli_credentials_set_kerberos_state(creds, CRED_USE_KERBEROS_DISABLED);
 
 	ok = cli_credentials_set_domain(creds, netbios_domain, CRED_SPECIFIED);
 	if (!ok) {
@@ -1390,7 +1392,7 @@ static bool dcip_check_name(TALLOC_CTX *mem_ctx,
 			    struct sockaddr_storage *pss,
 			    char **name, uint32_t request_flags)
 {
-	struct ip_service ip_list;
+	struct samba_sockaddr sa = {0};
 	uint32_t nt_version = NETLOGON_NT_VERSION_1;
 	NTSTATUS status;
 	const char *dc_name;
@@ -1398,8 +1400,10 @@ static bool dcip_check_name(TALLOC_CTX *mem_ctx,
 #ifdef HAVE_ADS
 	bool is_ad_domain = false;
 #endif
-	ip_list.ss = *pss;
-	ip_list.port = 0;
+	bool ok = sockaddr_storage_to_samba_sockaddr(&sa, pss);
+	if (!ok) {
+		return false;
+	}
 
 #ifdef HAVE_ADS
 	/* For active directory servers, try to get the ldap server name.
@@ -1416,7 +1420,7 @@ static bool dcip_check_name(TALLOC_CTX *mem_ctx,
 		ADS_STATUS ads_status;
 		char addr[INET6_ADDRSTRLEN];
 
-		print_sockaddr(addr, sizeof(addr), pss);
+		print_sockaddr(addr, sizeof(addr), &sa.u.ss);
 
 		ads = ads_init(domain->alt_name,
 			       domain->name,
@@ -1434,7 +1438,7 @@ static bool dcip_check_name(TALLOC_CTX *mem_ctx,
 			if (*name == NULL) {
 				return false;
 			}
-			namecache_store(*name, 0x20, 1, &ip_list);
+			namecache_store(*name, 0x20, 1, &sa);
 
 			DEBUG(10,("dcip_check_name: flags = 0x%x\n", (unsigned int)ads->config.flags));
 
@@ -1449,7 +1453,7 @@ static bool dcip_check_name(TALLOC_CTX *mem_ctx,
 					create_local_private_krb5_conf_for_domain(domain->alt_name,
 									domain->name,
 									sitename,
-									pss);
+									&sa.u.ss);
 
 					TALLOC_FREE(sitename);
 				} else {
@@ -1457,7 +1461,7 @@ static bool dcip_check_name(TALLOC_CTX *mem_ctx,
 					create_local_private_krb5_conf_for_domain(domain->alt_name,
 									domain->name,
 									NULL,
-									pss);
+									&sa.u.ss);
 				}
 				winbindd_set_locator_kdc_envs(domain);
 
@@ -1484,7 +1488,7 @@ static bool dcip_check_name(TALLOC_CTX *mem_ctx,
 			 "%s$",
 			 lp_netbios_name());
 
-		status = nbt_getdc(global_messaging_context(), 10, pss,
+		status = nbt_getdc(global_messaging_context(), 10, &sa.u.ss,
 				   domain->name, &domain->sid,
 				   my_acct_name, ACB_WSTRUST,
 				   nt_version, mem_ctx, &nt_version,
@@ -1495,14 +1499,14 @@ static bool dcip_check_name(TALLOC_CTX *mem_ctx,
 		if (*name == NULL) {
 			return false;
 		}
-		namecache_store(*name, 0x20, 1, &ip_list);
+		namecache_store(*name, 0x20, 1, &sa);
 		return True;
 	}
 
 	/* try node status request */
 
-	if (name_status_find(domain->name, 0x1c, 0x20, pss, nbtname) ) {
-		namecache_store(nbtname, 0x20, 1, &ip_list);
+	if (name_status_find(domain->name, 0x1c, 0x20, &sa.u.ss, nbtname) ) {
+		namecache_store(nbtname, 0x20, 1, &sa);
 
 		if (name != NULL) {
 			*name = talloc_strdup(mem_ctx, nbtname);
@@ -1534,9 +1538,9 @@ static bool get_dcs(TALLOC_CTX *mem_ctx, struct winbindd_domain *domain,
 {
 	fstring dcname;
 	struct  sockaddr_storage ss;
-	struct  ip_service *ip_list = NULL;
-	int     iplist_size = 0;
-	int     i;
+	struct  samba_sockaddr *sa_list = NULL;
+	size_t     salist_size = 0;
+	size_t     i;
 	bool    is_our_domain;
 	enum security_types sec = (enum security_types)lp_security();
 
@@ -1573,76 +1577,92 @@ static bool get_dcs(TALLOC_CTX *mem_ctx, struct winbindd_domain *domain,
 		if (sitename) {
 
 			/* Do the site-specific AD dns lookup first. */
-			get_sorted_dc_list(domain->alt_name, sitename, &ip_list,
-			       &iplist_size, True);
+			(void)get_sorted_dc_list(mem_ctx,
+					domain->alt_name,
+					sitename,
+					&sa_list,
+					&salist_size,
+					true);
 
 			/* Add ips to the DC array.  We don't look up the name
 			   of the DC in this function, but we fill in the char*
 			   of the ip now to make the failed connection cache
 			   work */
-			for ( i=0; i<iplist_size; i++ ) {
+			for ( i=0; i<salist_size; i++ ) {
 				char addr[INET6_ADDRSTRLEN];
 				print_sockaddr(addr, sizeof(addr),
-						&ip_list[i].ss);
+						&sa_list[i].u.ss);
 				add_one_dc_unique(mem_ctx,
 						domain->name,
 						addr,
-						&ip_list[i].ss,
+						&sa_list[i].u.ss,
 						dcs,
 						num_dcs);
 			}
 
-			SAFE_FREE(ip_list);
+			TALLOC_FREE(sa_list);
 			TALLOC_FREE(sitename);
-			iplist_size = 0;
+			salist_size = 0;
 		}
 
 		/* Now we add DCs from the main AD DNS lookup. */
-		get_sorted_dc_list(domain->alt_name, NULL, &ip_list,
-			&iplist_size, True);
+		(void)get_sorted_dc_list(mem_ctx,
+				domain->alt_name,
+				NULL,
+				&sa_list,
+				&salist_size,
+				true);
 
-		for ( i=0; i<iplist_size; i++ ) {
+		for ( i=0; i<salist_size; i++ ) {
 			char addr[INET6_ADDRSTRLEN];
 			print_sockaddr(addr, sizeof(addr),
-					&ip_list[i].ss);
+					&sa_list[i].u.ss);
 			add_one_dc_unique(mem_ctx,
 					domain->name,
 					addr,
-					&ip_list[i].ss,
+					&sa_list[i].u.ss,
 					dcs,
 					num_dcs);
 		}
 
-		SAFE_FREE(ip_list);
-		iplist_size = 0;
+		TALLOC_FREE(sa_list);
+		salist_size = 0;
         }
 
 	/* Try standard netbios queries if no ADS and fall back to DNS queries
 	 * if alt_name is available */
 	if (*num_dcs == 0) {
-		get_sorted_dc_list(domain->name, NULL, &ip_list, &iplist_size,
-		       false);
-		if (iplist_size == 0) {
+		(void)get_sorted_dc_list(mem_ctx,
+					domain->name,
+					NULL,
+					&sa_list,
+					&salist_size,
+					false);
+		if (salist_size == 0) {
 			if (domain->alt_name != NULL) {
-				get_sorted_dc_list(domain->alt_name, NULL, &ip_list,
-				       &iplist_size, true);
+				(void)get_sorted_dc_list(mem_ctx,
+						domain->alt_name,
+						NULL,
+						&sa_list,
+						&salist_size,
+						true);
 			}
 		}
 
-		for ( i=0; i<iplist_size; i++ ) {
+		for ( i=0; i<salist_size; i++ ) {
 			char addr[INET6_ADDRSTRLEN];
 			print_sockaddr(addr, sizeof(addr),
-					&ip_list[i].ss);
+					&sa_list[i].u.ss);
 			add_one_dc_unique(mem_ctx,
 					domain->name,
 					addr,
-					&ip_list[i].ss,
+					&sa_list[i].u.ss,
 					dcs,
 					num_dcs);
 		}
 
-		SAFE_FREE(ip_list);
-		iplist_size = 0;
+		TALLOC_FREE(sa_list);
+		salist_size = 0;
 	}
 
 	return True;

@@ -156,6 +156,7 @@ connection_struct *conn_new(struct smbd_server_connection *sconn);
 bool conn_idle_all(struct smbd_server_connection *sconn, time_t t);
 void conn_clear_vuid_caches(struct smbd_server_connection *sconn, uint64_t vuid);
 void conn_free(connection_struct *conn);
+void conn_setup_case_options(connection_struct *conn);
 void conn_force_tdis(
 	struct smbd_server_connection *sconn,
 	bool (*check_fn)(struct connection_struct *conn,
@@ -198,7 +199,6 @@ NTSTATUS dptr_create(connection_struct *conn,
 		bool expect_close,
 		uint16_t spid,
 		const char *wcard,
-		bool wcard_has_wild,
 		uint32_t attr,
 		struct dptr_struct **dptr_ret);
 void dptr_CloseDir(files_struct *fsp);
@@ -268,7 +268,7 @@ mode_t unix_mode(connection_struct *conn, int dosmode,
 		 struct smb_filename *smb_fname_parent);
 uint32_t dos_mode_msdfs(connection_struct *conn,
 		      const struct smb_filename *smb_fname);
-uint32_t dos_mode(connection_struct *conn, struct smb_filename *smb_fname);
+uint32_t fdos_mode(struct files_struct *fsp);
 struct tevent_req *dos_mode_at_send(TALLOC_CTX *mem_ctx,
 				    struct tevent_context *ev,
 				    files_struct *dir_fsp,
@@ -288,8 +288,7 @@ bool set_sticky_write_time_path(struct file_id fileid, struct timespec mtime);
 bool set_sticky_write_time_fsp(struct files_struct *fsp,
 			       struct timespec mtime);
 
-NTSTATUS get_ea_dos_attribute(connection_struct *conn,
-			      struct smb_filename *smb_fname,
+NTSTATUS fget_ea_dos_attribute(struct files_struct *fsp,
 			      uint32_t *pattr);
 NTSTATUS set_ea_dos_attribute(connection_struct *conn,
 			      const struct smb_filename *smb_fname,
@@ -391,14 +390,12 @@ NTSTATUS filename_convert(TALLOC_CTX *mem_ctx,
 			const char *name_in,
 			uint32_t ucf_flags,
 			NTTIME twrp,
-			bool *ppath_contains_wcard,
 			struct smb_filename **pp_smb_fname);
 NTSTATUS filename_convert_with_privilege(TALLOC_CTX *mem_ctx,
 			connection_struct *conn,
 			struct smb_request *smbreq,
 			const char *name_in,
 			uint32_t ucf_flags,
-			bool *ppath_contains_wcard,
 			struct smb_filename **pp_smb_fname);
 
 /* The following definitions come from smbd/files.c  */
@@ -408,6 +405,7 @@ NTSTATUS fsp_new(struct connection_struct *conn, TALLOC_CTX *mem_ctx,
 void fsp_set_gen_id(files_struct *fsp);
 NTSTATUS file_new(struct smb_request *req, connection_struct *conn,
 		  files_struct **result);
+NTSTATUS fsp_bind_smb(struct files_struct *fsp, struct smb_request *req);
 void file_close_conn(connection_struct *conn);
 bool file_init_global(void);
 bool file_init(struct smbd_server_connection *sconn);
@@ -421,13 +419,14 @@ files_struct *file_find_fd(struct smbd_server_connection *sconn, int fd);
 files_struct *file_find_dif(struct smbd_server_connection *sconn,
 			    struct file_id id, unsigned long gen_id);
 files_struct *file_find_di_first(struct smbd_server_connection *sconn,
-				 struct file_id id);
-files_struct *file_find_di_next(files_struct *start_fsp);
+				 struct file_id id,
+				 bool need_fsa);
+files_struct *file_find_di_next(files_struct *start_fsp,
+				 bool need_fsa);
 struct files_struct *file_find_one_fsp_from_lease_key(
 	struct smbd_server_connection *sconn,
 	const struct smb2_lease_key *lease_key);
 bool file_find_subpath(files_struct *dir_fsp);
-void fsp_free(files_struct *fsp);
 void file_free(struct smb_request *req, files_struct *fsp);
 files_struct *file_fsp(struct smb_request *req, uint16_t fid);
 struct files_struct *file_fsp_get(struct smbd_smb2_request *smb2req,
@@ -447,7 +446,11 @@ NTSTATUS file_name_hash(connection_struct *conn,
 NTSTATUS fsp_set_smb_fname(struct files_struct *fsp,
 			   const struct smb_filename *smb_fname_in);
 size_t fsp_fullbasepath(struct files_struct *fsp, char *buf, size_t buflen);
+void fsp_set_base_fsp(struct files_struct *fsp, struct files_struct *base_fsp);
 
+NTSTATUS create_internal_fsp(connection_struct *conn,
+			     const struct smb_filename *smb_fname,
+			     struct files_struct **_fsp);
 NTSTATUS create_internal_dirfsp(connection_struct *conn,
 				const struct smb_filename *smb_dname,
 				struct files_struct **_fsp);
@@ -456,6 +459,14 @@ NTSTATUS open_internal_dirfsp(connection_struct *conn,
 			      const struct smb_filename *smb_dname,
 			      int open_flags,
 			      struct files_struct **_fsp);
+
+NTSTATUS openat_pathref_fsp(const struct files_struct *dirfsp,
+			    struct smb_filename *smb_fname);
+
+void smb_fname_fsp_unlink(struct smb_filename *smb_fname);
+
+NTSTATUS move_smb_fname_fsp_link(struct smb_filename *smb_fname_dst,
+				 struct smb_filename *smb_fname_src);
 
 /* The following definitions come from smbd/ipc.c  */
 
@@ -551,13 +562,12 @@ bool remove_msdfs_link(const struct junction_map *jucn,
 struct junction_map *enum_msdfs_links(TALLOC_CTX *ctx,
 				      struct auth_session_info *session_info,
 				      size_t *p_num_jn);
-NTSTATUS resolve_dfspath_wcard(TALLOC_CTX *ctx,
-				connection_struct *conn,
-				const char *name_in,
-				uint32_t ucf_flags,
-				bool allow_broken_path,
-				char **pp_name_out,
-				bool *ppath_contains_wcard);
+NTSTATUS dfs_redirect(TALLOC_CTX *ctx,
+			connection_struct *conn,
+			const char *name_in,
+			uint32_t ucf_flags,
+			bool allow_broken_path,
+			char **pp_name_out);
 struct connection_struct;
 struct smb_filename;
 struct conn_struct_tos {
@@ -663,13 +673,6 @@ void notify_trigger(struct notify_context *notify,
 		    uint32_t action, uint32_t filter,
 		    const char *dir, const char *path);
 
-struct notify_instance;
-NTSTATUS notify_walk(struct notify_context *notify,
-		     bool (*fn)(const char *path, struct server_id server,
-				const struct notify_instance *instance,
-				void *private_data),
-		     void *private_data);
-
 /* The following definitions come from smbd/ntquotas.c  */
 
 NTSTATUS vfs_get_ntquota(files_struct *fsp, enum SMB_QUOTA_TYPE qtype,
@@ -719,15 +722,17 @@ NTSTATUS smbd_check_access_rights(struct connection_struct *conn,
 				const struct smb_filename *smb_fname,
 				bool use_privs,
 				uint32_t access_mask);
+NTSTATUS smbd_check_access_rights_fsp(struct files_struct *fsp,
+				      bool use_privs,
+				      uint32_t access_mask);
 NTSTATUS check_parent_access(struct connection_struct *conn,
 				struct files_struct *dirfsp,
 				struct smb_filename *smb_fname,
 				uint32_t access_mask);
-NTSTATUS fd_open(files_struct *fsp,
-		 int flags, mode_t mode);
-NTSTATUS fd_openat(files_struct *fsp,
-		   int flags,
-		   mode_t mode);
+NTSTATUS fd_openat(const struct files_struct *dirfsp,
+		   struct smb_filename *smb_fname,
+		   files_struct *fsp,
+		   int flags, mode_t mode);
 NTSTATUS fd_close(files_struct *fsp);
 void change_file_owner_to_parent(connection_struct *conn,
 				 struct smb_filename *inherit_from_dir,
@@ -755,7 +760,6 @@ struct fsp_lease *find_fsp_lease(struct files_struct *new_fsp,
 				 uint16_t lease_epoch);
 NTSTATUS create_file_default(connection_struct *conn,
 			     struct smb_request *req,
-			     struct files_struct **dirfsp,
 			     struct smb_filename * smb_fname,
 			     uint32_t access_mask,
 			     uint32_t share_access,
@@ -936,26 +940,7 @@ bool disk_quotas(connection_struct *conn, struct smb_filename *fname,
 /* The following definitions come from smbd/reply.c  */
 
 NTSTATUS check_path_syntax(char *path);
-NTSTATUS check_path_syntax_wcard(char *path, bool *p_contains_wcard);
 NTSTATUS check_path_syntax_posix(char *path);
-size_t srvstr_get_path_wcard(TALLOC_CTX *ctx,
-			const char *inbuf,
-			uint16_t smb_flags2,
-			char **pp_dest,
-			const char *src,
-			size_t src_len,
-			int flags,
-			NTSTATUS *err,
-			bool *contains_wcard);
-size_t srvstr_get_path_wcard_posix(TALLOC_CTX *ctx,
-			const char *inbuf,
-			uint16_t smb_flags2,
-			char **pp_dest,
-			const char *src,
-			size_t src_len,
-			int flags,
-			NTSTATUS *err,
-			bool *contains_wcard);
 size_t srvstr_get_path(TALLOC_CTX *ctx,
 			const char *inbuf,
 			uint16_t smb_flags2,
@@ -972,9 +957,6 @@ size_t srvstr_get_path_posix(TALLOC_CTX *ctx,
 			size_t src_len,
 			int flags,
 			NTSTATUS *err);
-size_t srvstr_get_path_req_wcard(TALLOC_CTX *mem_ctx, struct smb_request *req,
-				 char **pp_dest, const char *src, int flags,
-				 NTSTATUS *err, bool *contains_wcard);
 size_t srvstr_get_path_req(TALLOC_CTX *mem_ctx, struct smb_request *req,
 			   char **pp_dest, const char *src, int flags,
 			   NTSTATUS *err);
@@ -1002,9 +984,11 @@ void reply_open_and_X(struct smb_request *req);
 void reply_ulogoffX(struct smb_request *req);
 void reply_mknew(struct smb_request *req);
 void reply_ctemp(struct smb_request *req);
-NTSTATUS unlink_internals(connection_struct *conn, struct smb_request *req,
-			  uint32_t dirtype, struct smb_filename *smb_fname,
-			  bool has_wild);
+NTSTATUS unlink_internals(connection_struct *conn,
+			struct smb_request *req,
+			uint32_t dirtype,
+			struct smb_filename *smb_fname,
+			bool has_wcard);
 void reply_unlink(struct smb_request *req);
 ssize_t fake_sendfile(struct smbXsrv_connection *xconn, files_struct *fsp,
 		      off_t startpos, size_t nread);
@@ -1042,7 +1026,7 @@ void reply_mkdir(struct smb_request *req);
 void reply_rmdir(struct smb_request *req);
 NTSTATUS rename_internals_fsp(connection_struct *conn,
 			files_struct *fsp,
-			const struct smb_filename *smb_fname_dst_in,
+			struct smb_filename *smb_fname_dst_in,
 			const char *dst_original_lcomp,
 			uint32_t attrs,
 			bool replace_if_exists);
@@ -1050,12 +1034,11 @@ NTSTATUS rename_internals(TALLOC_CTX *ctx,
 			connection_struct *conn,
 			struct smb_request *req,
 			struct smb_filename *smb_fname_src,
+			const char *src_original_lcomp,
 			struct smb_filename *smb_fname_dst,
 			const char *dst_original_lcomp,
 			uint32_t attrs,
 			bool replace_if_exists,
-			bool src_has_wild,
-			bool dest_has_wild,
 			uint32_t access_mask);
 void reply_mv(struct smb_request *req);
 NTSTATUS copy_file(TALLOC_CTX *ctx,
@@ -1203,7 +1186,7 @@ int sys_statvfs(const char *path, vfs_statvfs_struct *statbuf);
 
 /* The following definitions come from smbd/trans2.c  */
 
-NTSTATUS check_access_fsp(const struct files_struct *fsp,
+NTSTATUS check_access_fsp(struct files_struct *fsp,
 			  uint32_t access_mask);
 uint64_t smb_roundup(connection_struct *conn, uint64_t val);
 bool samba_private_attr_name(const char *unix_ea_name);
@@ -1219,7 +1202,7 @@ NTSTATUS get_ea_names_from_file(TALLOC_CTX *mem_ctx,
 			char ***pnames,
 			size_t *pnum_names);
 NTSTATUS set_ea(connection_struct *conn, files_struct *fsp,
-		const struct smb_filename *smb_fname, struct ea_list *ea_list);
+		struct ea_list *ea_list);
 struct ea_list *read_ea_list_entry(TALLOC_CTX *ctx, const char *pdata, size_t data_size, size_t *pbytes_used);
 void send_trans2_replies(connection_struct *conn,
 			struct smb_request *req,
@@ -1238,7 +1221,7 @@ NTSTATUS hardlink_internals(TALLOC_CTX *ctx,
 		struct smb_filename *smb_fname_new);
 NTSTATUS smb_set_file_time(connection_struct *conn,
 			   files_struct *fsp,
-			   const struct smb_filename *smb_fname,
+			   struct smb_filename *smb_fname,
 			   struct smb_file_time *ft,
 			   bool setting_write_time);
 void reply_findclose(struct smb_request *req);
@@ -1284,7 +1267,6 @@ uid_t get_current_uid(connection_struct *conn);
 gid_t get_current_gid(connection_struct *conn);
 const struct security_unix_token *get_current_utok(connection_struct *conn);
 const struct security_token *get_current_nttok(connection_struct *conn);
-uint64_t get_current_vuid(connection_struct *conn);
 
 /* The following definitions come from smbd/utmp.c  */
 
@@ -1311,8 +1293,11 @@ int vfs_slow_fallocate(files_struct *fsp, off_t offset, off_t len);
 int vfs_fill_sparse(files_struct *fsp, off_t len);
 int vfs_set_blocking(files_struct *fsp, bool set);
 off_t vfs_transfer_file(files_struct *in, files_struct *out, off_t n);
-const char *vfs_readdirname(connection_struct *conn, void *p,
-			    SMB_STRUCT_STAT *sbuf, char **talloced);
+const char *vfs_readdirname(connection_struct *conn,
+			    struct files_struct *dirfsp,
+			    void *p,
+			    SMB_STRUCT_STAT *sbuf,
+			    char **talloced);
 int vfs_ChDir(connection_struct *conn,
 			const struct smb_filename *smb_fname);
 struct smb_filename *vfs_GetWd(TALLOC_CTX *ctx, connection_struct *conn);
@@ -1322,6 +1307,8 @@ NTSTATUS check_reduced_name(connection_struct *conn,
 NTSTATUS check_reduced_name_with_privilege(connection_struct *conn,
 			const struct smb_filename *smb_fname,
 			struct smb_request *smbreq);
+int vfs_stat(struct connection_struct *conn,
+	     struct smb_filename *smb_fname);
 int vfs_stat_smb_basename(struct connection_struct *conn,
 			const struct smb_filename *smb_fname_in,
 			SMB_STRUCT_STAT *psbuf);
@@ -1333,6 +1320,8 @@ NTSTATUS vfs_streaminfo(connection_struct *conn,
 			unsigned int *num_streams,
 			struct stream_struct **streams);
 void init_smb_file_time(struct smb_file_time *ft);
+int vfs_fake_fd(void);
+int vfs_fake_fd_close(int fd);
 
 /* The following definitions come from smbd/avahi_register.c */
 

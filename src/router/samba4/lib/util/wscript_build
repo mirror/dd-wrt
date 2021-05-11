@@ -74,16 +74,56 @@ bld.SAMBA_LIBRARY('talloc_report_printf',
                   private_library=True
                   )
 
-bld.SAMBA_SUBSYSTEM('samba-util-core',
-                    source='''data_blob.c util_file.c sys_popen.c time.c
-                              signal.c util.c idtree.c fault.c
-                              substitute.c util_process.c util_strlist.c
-                              strv_util.c bitmap.c select.c pidfile.c
-                              become_daemon.c mkdir_p.c''',
-                    deps='''time-basic samba-debug socket-blocking talloc
-                            tevent execinfo pthread strv tini''',
-                    public_deps='systemd systemd-daemon sys_rw LIBUNWIND',
+bld.SAMBA_SUBSYSTEM('smb-panic',
+                    source='''
+                    fault.c
+                    signal.c
+                    ''',
+                    deps='''
+                    replace
+                    samba-debug
+                    LIBUNWIND
+                    ''',
                     local_include=False)
+
+bld.SAMBA_SUBSYSTEM('samba-util-core',
+                    source='''
+                    data_blob.c
+                    util_file.c
+                    sys_popen.c
+                    time.c
+                    util.c
+                    idtree.c
+                    substitute.c
+                    util_process.c
+                    util_strlist.c
+                    strv_util.c
+                    bitmap.c
+                    select.c
+                    pidfile.c
+                    become_daemon.c
+                    mkdir_p.c
+                    ''',
+                    deps='''
+                    time-basic
+                    samba-debug
+                    socket-blocking
+                    talloc
+                    tevent
+                    execinfo
+                    pthread
+                    strv
+                    tini
+                    smb_strtox
+                    smb-panic
+                    ''',
+                    public_deps='systemd systemd-daemon sys_rw',
+                    local_include=False)
+
+bld.SAMBA_SUBSYSTEM('smb_strtox',
+                    source='smb_strtox.c',
+                    local_include=False)
+
 
 bld.SAMBA_LIBRARY('iov_buf',
                   source='iov_buf.c',
@@ -158,7 +198,6 @@ else:
                                  debug.h
                                  discard.h
                                  time.h
-                                 string_wrappers.h
                                  idtree.h
                                  idtree_random.h
                                  blocking.h
@@ -310,4 +349,10 @@ else:
                      source='tests/test_util.c',
                      deps='cmocka replace talloc samba-util',
                      local_include=False,
-                     for_selftest=True);
+                     for_selftest=True)
+
+    bld.SAMBA_BINARY('test_memcache',
+                     source='tests/test_memcache.c',
+                     deps='cmocka replace talloc samba-util',
+                     local_include=False,
+                     for_selftest=True)

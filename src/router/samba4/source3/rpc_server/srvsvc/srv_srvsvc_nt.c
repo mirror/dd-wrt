@@ -35,11 +35,13 @@
 #include "dbwrap/dbwrap.h"
 #include "session.h"
 #include "../lib/util/util_pw.h"
+#include "locking/share_mode_lock.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
 #include "auth.h"
 #include "messages.h"
 #include "serverid.h"
+#include "lib/global_contexts.h"
 
 extern const struct generic_mapping file_generic_mapping;
 
@@ -2420,7 +2422,6 @@ WERROR _srvsvc_NetGetFileSecurity(struct pipes_struct *p,
 					r->in.file,
 					ucf_flags,
 					0,
-					NULL,
 					&smb_fname);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		werr = ntstatus_to_werror(nt_status);
@@ -2430,7 +2431,6 @@ WERROR _srvsvc_NetGetFileSecurity(struct pipes_struct *p,
 	nt_status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_READ_ATTRIBUTES,			/* access_mask */
 		FILE_SHARE_READ|FILE_SHARE_WRITE,	/* share_access */
@@ -2556,7 +2556,6 @@ WERROR _srvsvc_NetSetFileSecurity(struct pipes_struct *p,
 					r->in.file,
 					ucf_flags,
 					0,
-					NULL,
 					&smb_fname);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		werr = ntstatus_to_werror(nt_status);
@@ -2566,7 +2565,6 @@ WERROR _srvsvc_NetSetFileSecurity(struct pipes_struct *p,
 	nt_status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_WRITE_ATTRIBUTES,			/* access_mask */
 		FILE_SHARE_READ|FILE_SHARE_WRITE,	/* share_access */

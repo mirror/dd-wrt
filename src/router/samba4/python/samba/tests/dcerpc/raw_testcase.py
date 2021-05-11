@@ -27,7 +27,6 @@ from samba import gensec
 from samba.credentials import Credentials
 from samba.tests import TestCase
 from samba.ndr import ndr_pack, ndr_unpack, ndr_unpack_out
-from samba.compat import text_type
 from samba.ntstatus import (
     NT_STATUS_CONNECTION_DISCONNECTED,
     NT_STATUS_PIPE_DISCONNECTED,
@@ -36,14 +35,18 @@ from samba.ntstatus import (
 from samba import NTSTATUSError
 from samba.samba3 import param as s3param
 from samba.samba3 import libsmb_samba_internal as libsmb
+from samba.credentials import SMB_SIGNING_REQUIRED
 
 class smb_pipe_socket(object):
 
     def __init__(self, target_hostname, pipename, creds, impersonation_level, lp):
         lp3 = s3param.get_context()
         lp3.load(lp.configfile)
+        saved_signing_state = creds.get_smb_ipc_signing()
+        creds.set_smb_ipc_signing(SMB_SIGNING_REQUIRED)
         self.smbconn = libsmb.Conn(target_hostname, 'IPC$', lp3,
-                                   creds=creds, sign=True)
+                                   creds=creds, ipc=True)
+        creds.set_smb_ipc_signing(saved_signing_state)
         self.smbfid = self.smbconn.create(pipename,
                                           DesiredAccess=0x12019f,
                                           ShareAccess=0x7,

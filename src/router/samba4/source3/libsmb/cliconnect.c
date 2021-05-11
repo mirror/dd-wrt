@@ -23,7 +23,6 @@
 #include "includes.h"
 #include "libsmb/libsmb.h"
 #include "libsmb/namequery.h"
-#include "auth_info.h"
 #include "../libcli/auth/libcli_auth.h"
 #include "../libcli/auth/spnego.h"
 #include "smb_krb5.h"
@@ -124,13 +123,13 @@ struct cli_credentials *cli_session_creds_init(TALLOC_CTX *mem_ctx,
 
 	if (use_kerberos && fallback_after_kerberos) {
 		cli_credentials_set_kerberos_state(creds,
-						   CRED_AUTO_USE_KERBEROS);
+						   CRED_USE_KERBEROS_DESIRED);
 	} else if (use_kerberos) {
 		cli_credentials_set_kerberos_state(creds,
-						   CRED_MUST_USE_KERBEROS);
+						   CRED_USE_KERBEROS_REQUIRED);
 	} else {
 		cli_credentials_set_kerberos_state(creds,
-						   CRED_DONT_USE_KERBEROS);
+						   CRED_USE_KERBEROS_DISABLED);
 	}
 
 	if (use_ccache) {
@@ -255,7 +254,7 @@ NTSTATUS cli_session_creds_prepare_krb5(struct cli_state *cli,
 
 	krb5_state = cli_credentials_get_kerberos_state(creds);
 
-	if (krb5_state != CRED_DONT_USE_KERBEROS) {
+	if (krb5_state != CRED_USE_KERBEROS_DISABLED) {
 		try_kerberos = true;
 	}
 
@@ -275,7 +274,7 @@ NTSTATUS cli_session_creds_prepare_krb5(struct cli_state *cli,
 		try_kerberos = false;
 	}
 
-	if (krb5_state == CRED_MUST_USE_KERBEROS && !try_kerberos) {
+	if (krb5_state == CRED_USE_KERBEROS_REQUIRED && !try_kerberos) {
 		DEBUG(0, ("Kerberos auth with '%s' (%s\\%s) to access "
 			  "'%s' not possible\n",
 			  user_principal, user_domain, user_account,
@@ -286,7 +285,7 @@ NTSTATUS cli_session_creds_prepare_krb5(struct cli_state *cli,
 
 	if (pass == NULL || strlen(pass) == 0) {
 		need_kinit = false;
-	} else if (krb5_state == CRED_MUST_USE_KERBEROS) {
+	} else if (krb5_state == CRED_USE_KERBEROS_REQUIRED) {
 		need_kinit = try_kerberos;
 	} else {
 		need_kinit = try_kerberos;
@@ -321,14 +320,14 @@ NTSTATUS cli_session_creds_prepare_krb5(struct cli_state *cli,
 	if (ret != 0) {
 		int dbglvl = DBGLVL_NOTICE;
 
-		if (krb5_state == CRED_MUST_USE_KERBEROS) {
+		if (krb5_state == CRED_USE_KERBEROS_REQUIRED) {
 			dbglvl = DBGLVL_ERR;
 		}
 
 		DEBUG(dbglvl, ("Kinit for %s to access %s failed: %s\n",
 			       user_principal, target_hostname,
 			       error_message(ret)));
-		if (krb5_state == CRED_MUST_USE_KERBEROS) {
+		if (krb5_state == CRED_USE_KERBEROS_REQUIRED) {
 			TALLOC_FREE(frame);
 			return krb5_to_nt_status(ret);
 		}
@@ -2535,8 +2534,9 @@ static struct tevent_req *cli_connect_sock_send(
 {
 	struct tevent_req *req, *subreq;
 	struct cli_connect_sock_state *state;
-	struct sockaddr_storage *addrs;
-	unsigned i, num_addrs;
+	struct sockaddr_storage *addrs = NULL;
+	unsigned i;
+	unsigned num_addrs = 0;
 	NTSTATUS status;
 
 	req = tevent_req_create(mem_ctx, &state,
@@ -2631,7 +2631,7 @@ static NTSTATUS cli_connect_sock_recv(struct tevent_req *req,
 
 struct cli_connect_nb_state {
 	const char *desthost;
-	int signing_state;
+	enum smb_signing_setting signing_state;
 	int flags;
 	struct cli_state *cli;
 };
@@ -2642,7 +2642,7 @@ static struct tevent_req *cli_connect_nb_send(
 	TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 	const char *host, const struct sockaddr_storage *dest_ss,
 	uint16_t port, int name_type, const char *myname,
-	int signing_state, int flags)
+	enum smb_signing_setting signing_state, int flags)
 {
 	struct tevent_req *req, *subreq;
 	struct cli_connect_nb_state *state;
@@ -2727,7 +2727,7 @@ static NTSTATUS cli_connect_nb_recv(struct tevent_req *req,
 
 NTSTATUS cli_connect_nb(const char *host, const struct sockaddr_storage *dest_ss,
 			uint16_t port, int name_type, const char *myname,
-			int signing_state, int flags, struct cli_state **pcli)
+			enum smb_signing_setting signing_state, int flags, struct cli_state **pcli)
 {
 	struct tevent_context *ev;
 	struct tevent_req *req;
@@ -2776,7 +2776,7 @@ static struct tevent_req *cli_start_connection_send(
 	TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 	const char *my_name, const char *dest_host,
 	const struct sockaddr_storage *dest_ss, int port,
-	int signing_state, int flags)
+	enum smb_signing_setting signing_state, int flags)
 {
 	struct tevent_req *req, *subreq;
 	struct cli_start_connection_state *state;
@@ -2788,7 +2788,7 @@ static struct tevent_req *cli_start_connection_send(
 	}
 	state->ev = ev;
 
-	if (signing_state == SMB_SIGNING_IPC_DEFAULT) {
+	if (flags & CLI_FULL_CONNECTION_IPC) {
 		state->min_protocol = lp_client_ipc_min_protocol();
 		state->max_protocol = lp_client_ipc_max_protocol();
 	} else {
@@ -2797,12 +2797,17 @@ static struct tevent_req *cli_start_connection_send(
 	}
 
 	if (flags & CLI_FULL_CONNECTION_FORCE_SMB1) {
-		state->max_protocol = MIN(state->max_protocol, PROTOCOL_NT1);
+		state->max_protocol = MIN(state->max_protocol,
+					  PROTOCOL_NT1);
+		state->min_protocol = MIN(state->min_protocol,
+					  state->max_protocol);
 	}
 
 	if (flags & CLI_FULL_CONNECTION_DISABLE_SMB1) {
-		state->min_protocol = MAX(state->max_protocol, PROTOCOL_SMB2_02);
-		state->max_protocol = MAX(state->max_protocol, PROTOCOL_LATEST);
+		state->min_protocol = MAX(state->min_protocol,
+					  PROTOCOL_SMB2_02);
+		state->max_protocol = MAX(state->max_protocol,
+					  state->min_protocol);
 	}
 
 	subreq = cli_connect_nb_send(state, ev, dest_host, dest_ss, port,
@@ -2881,7 +2886,7 @@ NTSTATUS cli_start_connection(struct cli_state **output_cli,
 			      const char *my_name, 
 			      const char *dest_host, 
 			      const struct sockaddr_storage *dest_ss, int port,
-			      int signing_state, int flags)
+			      enum smb_signing_setting signing_state, int flags)
 {
 	struct tevent_context *ev;
 	struct tevent_req *req;
@@ -3352,6 +3357,10 @@ static int cli_full_connection_creds_state_destructor(
 static void cli_full_connection_creds_conn_done(struct tevent_req *subreq);
 static void cli_full_connection_creds_sess_start(struct tevent_req *req);
 static void cli_full_connection_creds_sess_done(struct tevent_req *subreq);
+static void cli_full_connection_creds_enc_start(struct tevent_req *req);
+static void cli_full_connection_creds_enc_tcon(struct tevent_req *subreq);
+static void cli_full_connection_creds_enc_ver(struct tevent_req *subreq);
+static void cli_full_connection_creds_enc_done(struct tevent_req *subreq);
 static void cli_full_connection_creds_tcon_start(struct tevent_req *req);
 static void cli_full_connection_creds_tcon_done(struct tevent_req *subreq);
 
@@ -3361,10 +3370,13 @@ struct tevent_req *cli_full_connection_creds_send(
 	const struct sockaddr_storage *dest_ss, int port,
 	const char *service, const char *service_type,
 	struct cli_credentials *creds,
-	int flags, int signing_state)
+	int flags)
 {
 	struct tevent_req *req, *subreq;
 	struct cli_full_connection_creds_state *state;
+	enum smb_signing_setting signing_state;
+	enum smb_encryption_setting encryption_state =
+		cli_credentials_get_smb_encryption(creds);
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct cli_full_connection_creds_state);
@@ -3378,6 +3390,22 @@ struct tevent_req *cli_full_connection_creds_send(
 	state->service_type = service_type;
 	state->creds = creds;
 	state->flags = flags;
+
+	if (flags & CLI_FULL_CONNECTION_IPC) {
+		signing_state = cli_credentials_get_smb_ipc_signing(creds);
+	} else {
+		signing_state = cli_credentials_get_smb_signing(creds);
+	}
+
+	if (encryption_state == SMB_ENCRYPTION_REQUIRED) {
+		if (flags & CLI_FULL_CONNECTION_ANONYMOUS_FALLBACK) {
+			encryption_state = SMB_ENCRYPTION_DESIRED;
+		}
+	}
+
+	if (encryption_state >= SMB_ENCRYPTION_DESIRED) {
+		signing_state = SMB_SIGNING_REQUIRED;
+	}
 
 	subreq = cli_start_connection_send(
 		state, ev, my_name, dest_host, dest_ss, port,
@@ -3453,6 +3481,156 @@ static void cli_full_connection_creds_sess_done(struct tevent_req *subreq)
 		return;
 	}
 
+	cli_full_connection_creds_enc_start(req);
+}
+
+static void cli_full_connection_creds_enc_start(struct tevent_req *req)
+{
+	struct cli_full_connection_creds_state *state = tevent_req_data(
+		req, struct cli_full_connection_creds_state);
+	enum smb_encryption_setting encryption_state =
+		cli_credentials_get_smb_encryption(state->creds);
+	struct tevent_req *subreq = NULL;
+	NTSTATUS status;
+
+	if (encryption_state < SMB_ENCRYPTION_DESIRED) {
+		cli_full_connection_creds_tcon_start(req);
+		return;
+	}
+
+	if (smbXcli_conn_protocol(state->cli->conn) >= PROTOCOL_SMB2_02) {
+		status = smb2cli_session_encryption_on(state->cli->smb2.session);
+		if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_SUPPORTED)) {
+			if (encryption_state < SMB_ENCRYPTION_REQUIRED) {
+				cli_full_connection_creds_tcon_start(req);
+				return;
+			}
+			d_printf("Encryption required and "
+				"server doesn't support "
+				"SMB3 encryption - failing connect\n");
+			tevent_req_nterror(req, status);
+			return;
+		} else if (!NT_STATUS_IS_OK(status)) {
+			d_printf("Encryption required and "
+				"setup failed with error %s.\n",
+				nt_errstr(status));
+			tevent_req_nterror(req, status);
+			return;
+		}
+
+		cli_full_connection_creds_tcon_start(req);
+		return;
+	}
+
+	if (!SERVER_HAS_UNIX_CIFS(state->cli)) {
+		if (encryption_state < SMB_ENCRYPTION_REQUIRED) {
+			cli_full_connection_creds_tcon_start(req);
+			return;
+		}
+
+		status = NT_STATUS_NOT_SUPPORTED;
+		d_printf("Encryption required and "
+			"server doesn't support "
+			"SMB1 Unix Extensions - failing connect\n");
+		tevent_req_nterror(req, status);
+		return;
+	}
+
+	/*
+	 * We do a tcon on IPC$ just to setup the encryption,
+	 * the real tcon will be encrypted then.
+	 */
+	subreq = cli_tree_connect_send(state, state->ev, state->cli,
+				       "IPC$", "IPC", NULL);
+	if (tevent_req_nomem(subreq, req)) {
+		return;
+	}
+	tevent_req_set_callback(subreq, cli_full_connection_creds_enc_tcon, req);
+}
+
+static void cli_full_connection_creds_enc_tcon(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	struct cli_full_connection_creds_state *state = tevent_req_data(
+		req, struct cli_full_connection_creds_state);
+	NTSTATUS status;
+
+	status = cli_tree_connect_recv(subreq);
+	TALLOC_FREE(subreq);
+	if (tevent_req_nterror(req, status)) {
+		return;
+	}
+
+	subreq = cli_unix_extensions_version_send(state, state->ev, state->cli);
+	if (tevent_req_nomem(subreq, req)) {
+		return;
+	}
+	tevent_req_set_callback(subreq, cli_full_connection_creds_enc_ver, req);
+}
+
+static void cli_full_connection_creds_enc_ver(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	struct cli_full_connection_creds_state *state = tevent_req_data(
+		req, struct cli_full_connection_creds_state);
+	enum smb_encryption_setting encryption_state =
+		cli_credentials_get_smb_encryption(state->creds);
+	uint16_t major, minor;
+	uint32_t caplow, caphigh;
+	NTSTATUS status;
+
+	status = cli_unix_extensions_version_recv(subreq,
+						  &major, &minor,
+						  &caplow,
+						  &caphigh);
+	TALLOC_FREE(subreq);
+	if (!NT_STATUS_IS_OK(status)) {
+		if (encryption_state < SMB_ENCRYPTION_REQUIRED) {
+			cli_full_connection_creds_tcon_start(req);
+			return;
+		}
+		DEBUG(10, ("%s: cli_unix_extensions_version "
+			   "returned %s\n", __func__, nt_errstr(status)));
+		tevent_req_nterror(req, NT_STATUS_UNKNOWN_REVISION);
+		return;
+	}
+
+	if (!(caplow & CIFS_UNIX_TRANSPORT_ENCRYPTION_CAP)) {
+		if (encryption_state < SMB_ENCRYPTION_REQUIRED) {
+			cli_full_connection_creds_tcon_start(req);
+			return;
+		}
+		DEBUG(10, ("%s: CIFS_UNIX_TRANSPORT_ENCRYPTION_CAP "
+			   "not supported\n", __func__));
+		tevent_req_nterror(req, NT_STATUS_UNSUPPORTED_COMPRESSION);
+		return;
+	}
+
+	subreq = cli_smb1_setup_encryption_send(state, state->ev,
+						state->cli,
+						state->creds);
+	if (tevent_req_nomem(subreq, req)) {
+		return;
+	}
+	tevent_req_set_callback(subreq,
+				cli_full_connection_creds_enc_done,
+				req);
+}
+
+static void cli_full_connection_creds_enc_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+	NTSTATUS status;
+
+	status = cli_smb1_setup_encryption_recv(subreq);
+	TALLOC_FREE(subreq);
+	if (tevent_req_nterror(req, status)) {
+		return;
+	}
+
 	cli_full_connection_creds_tcon_start(req);
 }
 
@@ -3519,8 +3697,7 @@ NTSTATUS cli_full_connection_creds(struct cli_state **output_cli,
 				   const struct sockaddr_storage *dest_ss, int port,
 				   const char *service, const char *service_type,
 				   struct cli_credentials *creds,
-				   int flags,
-				   int signing_state)
+				   int flags)
 {
 	struct tevent_context *ev;
 	struct tevent_req *req;
@@ -3532,7 +3709,7 @@ NTSTATUS cli_full_connection_creds(struct cli_state **output_cli,
 	}
 	req = cli_full_connection_creds_send(
 		ev, ev, my_name, dest_host, dest_ss, port, service,
-		service_type, creds, flags, signing_state);
+		service_type, creds, flags);
 	if (req == NULL) {
 		goto fail;
 	}
@@ -3666,18 +3843,18 @@ fail:
 
 struct cli_state *get_ipc_connect(char *server,
 				struct sockaddr_storage *server_ss,
-				const struct user_auth_info *user_info)
+				struct cli_credentials *creds)
 {
         struct cli_state *cli;
 	NTSTATUS nt_status;
 	uint32_t flags = CLI_FULL_CONNECTION_ANONYMOUS_FALLBACK;
 
 	flags |= CLI_FULL_CONNECTION_FORCE_SMB1;
+	flags |= CLI_FULL_CONNECTION_IPC;
 
 	nt_status = cli_full_connection_creds(&cli, NULL, server, server_ss, 0, "IPC$", "IPC",
-					get_cmdline_auth_info_creds(user_info),
-					flags,
-					SMB_SIGNING_DEFAULT);
+					      creds,
+					flags);
 
 	if (NT_STATUS_IS_OK(nt_status)) {
 		return cli;
@@ -3687,7 +3864,7 @@ struct cli_state *get_ipc_connect(char *server,
 	    fstring remote_name;
 
 	    if (name_status_find("*", 0, 0, server_ss, remote_name)) {
-		cli = get_ipc_connect(remote_name, server_ss, user_info);
+		cli = get_ipc_connect(remote_name, server_ss, creds);
 		if (cli)
 		    return cli;
 	    }
@@ -3709,7 +3886,7 @@ struct cli_state *get_ipc_connect(char *server,
 
 struct cli_state *get_ipc_connect_master_ip(TALLOC_CTX *ctx,
 				struct sockaddr_storage *mb_ip,
-				const struct user_auth_info *user_info,
+				struct cli_credentials *creds,
 				char **pp_workgroup_out)
 {
 	char addr[INET6_ADDRSTRLEN];
@@ -3752,7 +3929,7 @@ struct cli_state *get_ipc_connect_master_ip(TALLOC_CTX *ctx,
 	DEBUG(4, ("found master browser %s, %s\n", name, addr));
 
 	print_sockaddr(addr, sizeof(addr), &server_ss);
-	cli = get_ipc_connect(addr, &server_ss, user_info);
+	cli = get_ipc_connect(addr, &server_ss, creds);
 
 	return cli;
 }

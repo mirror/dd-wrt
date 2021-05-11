@@ -421,17 +421,19 @@ static char *get_kdc_ip_string(char *mem_ctx,
 {
 	TALLOC_CTX *frame = talloc_stackframe();
 	size_t i;
-	struct ip_service *ip_srv_site = NULL;
-	struct ip_service *ip_srv_nonsite = NULL;
-	int count_site = 0;
-	int count_nonsite;
+	struct samba_sockaddr *ip_sa_site = NULL;
+	struct samba_sockaddr *ip_sa_nonsite = NULL;
+	struct samba_sockaddr sa = {0};
+	size_t count_site = 0;
+	size_t count_nonsite;
 	size_t num_dcs;
-	struct sockaddr_storage *dc_addrs;
+	struct sockaddr_storage *dc_addrs = NULL;
 	struct tsocket_address **dc_addrs2 = NULL;
 	const struct tsocket_address * const *dc_addrs3 = NULL;
 	char *result = NULL;
 	struct netlogon_samlogon_response **responses = NULL;
 	NTSTATUS status;
+	bool ok;
 	char *kdc_str = talloc_asprintf(mem_ctx, "%s\t\tkdc = %s\n", "",
 					print_canonical_sockaddr_with_port(mem_ctx, pss));
 
@@ -440,45 +442,77 @@ static char *get_kdc_ip_string(char *mem_ctx,
 		return NULL;
 	}
 
+	ok = sockaddr_storage_to_samba_sockaddr(&sa, pss);
+	if (!ok) {
+		TALLOC_FREE(kdc_str);
+		goto out;
+	}
+
 	/*
 	 * First get the KDC's only in this site, the rest will be
 	 * appended later
 	 */
 
 	if (sitename) {
-		get_kdc_list(realm, sitename, &ip_srv_site, &count_site);
-		DEBUG(10, ("got %d addresses from site %s search\n", count_site,
-			   sitename));
+		status = get_kdc_list(talloc_tos(),
+					realm,
+					sitename,
+					&ip_sa_site,
+					&count_site);
+		if (!NT_STATUS_IS_OK(status)) {
+			DBG_ERR("get_kdc_list fail %s\n",
+				nt_errstr(status));
+			TALLOC_FREE(kdc_str);
+			goto out;
+		}
+		DBG_DEBUG("got %zu addresses from site %s search\n",
+			count_site,
+			sitename);
 	}
 
 	/* Get all KDC's. */
 
-	get_kdc_list(realm, NULL, &ip_srv_nonsite, &count_nonsite);
-	DEBUG(10, ("got %d addresses from site-less search\n", count_nonsite));
+	status = get_kdc_list(talloc_tos(),
+					realm,
+					NULL,
+					&ip_sa_nonsite,
+					&count_nonsite);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("get_kdc_list (site-less) fail %s\n",
+			nt_errstr(status));
+		TALLOC_FREE(kdc_str);
+		goto out;
+	}
+	DBG_DEBUG("got %zu addresses from site-less search\n", count_nonsite);
+
+	if (count_site + count_nonsite < count_site) {
+		/* Wrap check. */
+		DBG_ERR("get_kdc_list_talloc (site-less) fail wrap error\n");
+		TALLOC_FREE(kdc_str);
+		goto out;
+	}
+
 
 	dc_addrs = talloc_array(talloc_tos(), struct sockaddr_storage,
 				count_site + count_nonsite);
 	if (dc_addrs == NULL) {
+		TALLOC_FREE(kdc_str);
 		goto out;
 	}
 
 	num_dcs = 0;
 
 	for (i = 0; i < count_site; i++) {
-		if (!sockaddr_equal(
-			(const struct sockaddr *)pss,
-			(const struct sockaddr *)&ip_srv_site[i].ss)) {
+		if (!sockaddr_equal(&sa.u.sa, &ip_sa_site[i].u.sa)) {
 			add_sockaddr_unique(dc_addrs, &num_dcs,
-					    &ip_srv_site[i].ss);
+					    &ip_sa_site[i].u.ss);
 		}
 	}
 
 	for (i = 0; i < count_nonsite; i++) {
-		if (!sockaddr_equal(
-			(const struct sockaddr *)pss,
-			(const struct sockaddr *)&ip_srv_nonsite[i].ss)) {
+		if (!sockaddr_equal(&sa.u.sa, &ip_sa_nonsite[i].u.sa)) {
 			add_sockaddr_unique(dc_addrs, &num_dcs,
-					    &ip_srv_nonsite[i].ss);
+					    &ip_sa_nonsite[i].u.ss);
 		}
 	}
 
@@ -488,9 +522,11 @@ static char *get_kdc_ip_string(char *mem_ctx,
 
 	DBG_DEBUG("%zu additional KDCs to test\n", num_dcs);
 	if (num_dcs == 0) {
+		TALLOC_FREE(kdc_str);
 		goto out;
 	}
 	if (dc_addrs2 == NULL) {
+		TALLOC_FREE(kdc_str);
 		goto out;
 	}
 
@@ -507,6 +543,7 @@ static char *get_kdc_ip_string(char *mem_ctx,
 			status = map_nt_error_from_unix(errno);
 			DEBUG(2,("Failed to create tsocket_address for %s - %s\n",
 				 addr, nt_errstr(status)));
+			TALLOC_FREE(kdc_str);
 			goto out;
 		}
 	}
@@ -524,6 +561,7 @@ static char *get_kdc_ip_string(char *mem_ctx,
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(10,("get_kdc_ip_string: cldap_multi_netlogon failed: "
 			  "%s\n", nt_errstr(status)));
+		TALLOC_FREE(kdc_str);
 		goto out;
 	}
 
@@ -538,19 +576,19 @@ static char *get_kdc_ip_string(char *mem_ctx,
 		new_kdc_str = talloc_asprintf(mem_ctx, "%s\t\tkdc = %s\n",
 					      kdc_str,
 					      print_canonical_sockaddr_with_port(mem_ctx, &dc_addrs[i]));
+		TALLOC_FREE(kdc_str);
 		if (new_kdc_str == NULL) {
 			goto out;
 		}
-		TALLOC_FREE(kdc_str);
 		kdc_str = new_kdc_str;
 	}
 
-out:
-	DEBUG(10, ("get_kdc_ip_string: Returning %s\n", kdc_str));
-
 	result = kdc_str;
-	SAFE_FREE(ip_srv_site);
-	SAFE_FREE(ip_srv_nonsite);
+out:
+	DBG_DEBUG("Returning\n%s\n", kdc_str);
+
+	TALLOC_FREE(ip_sa_site);
+	TALLOC_FREE(ip_sa_nonsite);
 	TALLOC_FREE(frame);
 	return result;
 }
@@ -786,9 +824,8 @@ bool create_local_private_krb5_conf_for_domain(const char *realm,
 		goto done;
 	}
 
-	DEBUG(5,("create_local_private_krb5_conf_for_domain: wrote "
-		"file %s with realm %s KDC list = %s\n",
-		fname, realm_upper, kdc_ip_string));
+	DBG_INFO("wrote file %s with realm %s KDC list:\n%s\n",
+		 fname, realm_upper, kdc_ip_string);
 
 	/* Set the environment variable to this file. */
 	setenv("KRB5_CONFIG", fname, 1);

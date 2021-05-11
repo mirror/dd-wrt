@@ -37,6 +37,8 @@
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
 
+#undef strcasecmp
+
 static NTSTATUS dcesrv_negotiate_contexts(struct dcesrv_call_state *call,
 				const struct dcerpc_bind *b,
 				struct dcerpc_ack_ctx *ack_ctx_list);
@@ -225,7 +227,6 @@ _PUBLIC_ NTSTATUS dcesrv_interface_register(struct dcesrv_context *dce_ctx,
 	transport = dcerpc_binding_get_transport(binding);
 	if (transport == NCACN_IP_TCP) {
 		int port;
-		char port_str[6];
 
 		/*
 		 * First check if there is already a port specified, eg
@@ -248,6 +249,7 @@ _PUBLIC_ NTSTATUS dcesrv_interface_register(struct dcesrv_context *dce_ctx,
 				port = lpcfg_rpc_server_port(dce_ctx->lp_ctx);
 			}
 			if (port != 0) {
+				char port_str[6];
 				snprintf(port_str, sizeof(port_str), "%u", port);
 				status = dcerpc_binding_set_string_option(binding,
 									  "endpoint",
@@ -313,7 +315,6 @@ _PUBLIC_ NTSTATUS dcesrv_interface_register(struct dcesrv_context *dce_ctx,
 		if (!ep) {
 			return NT_STATUS_NO_MEMORY;
 		}
-		ZERO_STRUCTP(ep);
 		ep->ep_description = talloc_move(ep, &binding);
 		ep->ep_2nd_description = talloc_move(ep, &binding2);
 		add_ep = true;
@@ -321,6 +322,7 @@ _PUBLIC_ NTSTATUS dcesrv_interface_register(struct dcesrv_context *dce_ctx,
 		/* add mgmt interface */
 		ifl = talloc_zero(ep, struct dcesrv_if_list);
 		if (!ifl) {
+			TALLOC_FREE(ep);
 			return NT_STATUS_NO_MEMORY;
 		}
 
@@ -2339,7 +2341,10 @@ _PUBLIC_ NTSTATUS dcesrv_init_context(TALLOC_CTX *mem_ctx,
 	dce_ctx->endpoint_list	= NULL;
 	dce_ctx->lp_ctx = lp_ctx;
 	dce_ctx->assoc_groups_idr = idr_init(dce_ctx);
-	NT_STATUS_HAVE_NO_MEMORY(dce_ctx->assoc_groups_idr);
+	if (dce_ctx->assoc_groups_idr == NULL) {
+		TALLOC_FREE(dce_ctx);
+		return NT_STATUS_NO_MEMORY;
+	}
 	dce_ctx->broken_connections = NULL;
 	if (cb != NULL) {
 		dce_ctx->callbacks = *cb;
@@ -2966,6 +2971,82 @@ _PUBLIC_ NTSTATUS dcesrv_connection_loop_start(struct dcesrv_connection *conn)
 		return NT_STATUS_NO_MEMORY;
 	}
 	tevent_req_set_callback(subreq, dcesrv_read_fragment_done, conn);
+
+	return NT_STATUS_OK;
+}
+
+_PUBLIC_ NTSTATUS dcesrv_call_dispatch_local(struct dcesrv_call_state *call)
+{
+	NTSTATUS status;
+	struct ndr_pull *pull = NULL;
+	struct ndr_push *push = NULL;
+	struct data_blob_list_item *rep = NULL;
+
+	pull = ndr_pull_init_blob(&call->pkt.u.request.stub_and_verifier,
+				  call);
+	if (pull == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	pull->flags |= LIBNDR_FLAG_REF_ALLOC;
+
+	call->ndr_pull = pull;
+
+	/* unravel the NDR for the packet */
+	status = call->context->iface->ndr_pull(call, call, pull, &call->r);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("DCE/RPC fault in call %s:%02X - %s\n",
+			call->context->iface->name,
+			call->pkt.u.request.opnum,
+			dcerpc_errstr(call, call->fault_code));
+		return dcerpc_fault_to_nt_status(call->fault_code);
+	}
+
+	status = call->context->iface->local(call, call, call->r);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("DCE/RPC fault in call %s:%02X - %s\n",
+			call->context->iface->name,
+			call->pkt.u.request.opnum,
+			dcerpc_errstr(call, call->fault_code));
+		return dcerpc_fault_to_nt_status(call->fault_code);
+	}
+
+	/* This can never go async for now! */
+	SMB_ASSERT(!(call->state_flags & DCESRV_CALL_STATE_FLAG_ASYNC));
+
+	/* call the reply function */
+	status = call->context->iface->reply(call, call, call->r);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("DCE/RPC fault in call %s:%02X - %s\n",
+			call->context->iface->name,
+			call->pkt.u.request.opnum,
+			dcerpc_errstr(call, call->fault_code));
+		return dcerpc_fault_to_nt_status(call->fault_code);
+	}
+
+	push = ndr_push_init_ctx(call);
+	if (push == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	push->ptr_count = call->ndr_pull->ptr_count;
+
+	status = call->context->iface->ndr_push(call, call, push, call->r);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("DCE/RPC fault in call %s:%02X - %s\n",
+			call->context->iface->name,
+			call->pkt.u.request.opnum,
+			dcerpc_errstr(call, call->fault_code));
+		return dcerpc_fault_to_nt_status(call->fault_code);
+	}
+
+	rep = talloc_zero(call, struct data_blob_list_item);
+	if (rep == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	rep->blob = ndr_push_blob(push);
+	DLIST_ADD_END(call->replies, rep);
 
 	return NT_STATUS_OK;
 }

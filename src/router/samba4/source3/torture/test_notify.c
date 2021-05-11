@@ -224,7 +224,7 @@ bool run_notify_bench2(int dummy)
 		}
 	}
 
-	while (num_notifies < torture_nprocs * torture_numops) {
+	while (num_notifies < (unsigned)(torture_nprocs * torture_numops)) {
 		int ret;
 		ret = tevent_loop_once(ev);
 		if (ret != 0) {
@@ -710,7 +710,7 @@ bool run_notify_bench3(int dummy)
 		}
 	}
 
-	while (num_done < torture_nprocs * torture_numops) {
+	while (num_done < (unsigned)(torture_nprocs * torture_numops)) {
 		int ret;
 		ret = tevent_loop_once(ev);
 		if (ret != 0) {

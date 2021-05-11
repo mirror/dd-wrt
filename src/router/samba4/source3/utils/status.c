@@ -39,6 +39,7 @@
 #include "dbwrap/dbwrap_open.h"
 #include "../libcli/security/security.h"
 #include "session.h"
+#include "locking/share_mode_lock.h"
 #include "locking/proto.h"
 #include "messages.h"
 #include "librpc/gen_ndr/open_files.h"
@@ -47,9 +48,10 @@
 #include "conn_tdb.h"
 #include "serverid.h"
 #include "status_profile.h"
-#include "smbd/notifyd/notifyd.h"
+#include "smbd/notifyd/notifyd_db.h"
 #include "cmdline_contexts.h"
 #include "locking/leases_db.h"
+#include "lib/util/string_wrappers.h"
 
 #define SMB_MAXPIDS		2048
 static uid_t 		Ucrit_uid = 0;               /* added by OH */
@@ -259,14 +261,7 @@ static void print_brl(struct file_id id,
 
 	share_mode = fetch_share_mode_unlocked(NULL, id);
 	if (share_mode) {
-		bool has_stream = share_mode->data->stream_name != NULL;
-
-		fname = talloc_asprintf(NULL, "%s%s%s",
-					share_mode->data->base_name,
-					has_stream ? ":" : "",
-					has_stream ?
-					share_mode->data->stream_name :
-					"");
+		fname = share_mode_filename(NULL, share_mode);
 	} else {
 		fname = talloc_strdup(NULL, "");
 		if (fname == NULL) {
@@ -836,18 +831,11 @@ int main(int argc, const char *argv[])
 	}
 
 	if (show_notify) {
-		struct notify_context *n;
-
-		n = notify_init(talloc_tos(), msg_ctx,
-				NULL, NULL);
-		if (n == NULL) {
-			goto done;
-		}
-		notify_walk(n, print_notify_rec, NULL);
-		TALLOC_FREE(n);
+		notify_walk(msg_ctx, print_notify_rec, NULL);
 	}
 
 done:
+	cmdline_messaging_context_free();
 	poptFreeContext(pc);
 	TALLOC_FREE(frame);
 	return ret;

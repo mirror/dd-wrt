@@ -1,5 +1,5 @@
 /* 
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
 
    test CLDAP/LDAP netlogon operations
    
@@ -32,6 +32,8 @@
 
 #include "torture/torture.h"
 #include "torture/ldap/proto.h"
+
+#undef strcasecmp
 
 #define CHECK_STATUS(status, correct) torture_assert_ntstatus_equal(tctx, status, correct, "incorrect status")
 

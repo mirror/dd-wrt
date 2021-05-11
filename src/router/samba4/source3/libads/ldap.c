@@ -96,9 +96,11 @@ static void gotalarm_sig(int signum)
 	{
 		int fd = -1;
 		NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
+		unsigned timeout_ms = 1000 * to;
 
-		status = open_socket_out(ss, port, to, &fd);
+		status = open_socket_out(ss, port, timeout_ms, &fd);
 		if (!NT_STATUS_IS_OK(status)) {
+			DEBUG(3, ("open_socket_out: failed to open socket\n"));
 			return NULL;
 		}
 
@@ -344,23 +346,25 @@ static bool ads_try_connect(ADS_STRUCT *ads, bool gc,
  Take note of and update negative connection cache.
 **********************************************************************/
 
-static NTSTATUS cldap_ping_list(ADS_STRUCT *ads,const char *domain,
-				struct ip_service *ip_list, int count)
+static NTSTATUS cldap_ping_list(ADS_STRUCT *ads,
+			const char *domain,
+			struct samba_sockaddr *sa_list,
+			size_t count)
 {
-	int i;
+	size_t i;
 	bool ok;
 
 	for (i = 0; i < count; i++) {
 		char server[INET6_ADDRSTRLEN];
 
-		print_sockaddr(server, sizeof(server), &ip_list[i].ss);
+		print_sockaddr(server, sizeof(server), &sa_list[i].u.ss);
 
 		if (!NT_STATUS_IS_OK(
 			check_negative_conn_cache(domain, server)))
 			continue;
 
 		/* Returns ok only if it matches the correct server type */
-		ok = ads_try_connect(ads, false, &ip_list[i].ss);
+		ok = ads_try_connect(ads, false, &sa_list[i].u.ss);
 
 		if (ok) {
 			return NT_STATUS_OK;
@@ -381,15 +385,20 @@ static NTSTATUS cldap_ping_list(ADS_STRUCT *ads,const char *domain,
 static NTSTATUS resolve_and_ping_netbios(ADS_STRUCT *ads,
 					 const char *domain, const char *realm)
 {
-	int count, i;
-	struct ip_service *ip_list;
+	size_t i;
+	size_t count = 0;
+	struct samba_sockaddr *sa_list = NULL;
 	NTSTATUS status;
 
 	DEBUG(6, ("resolve_and_ping_netbios: (cldap) looking for domain '%s'\n",
 		  domain));
 
-	status = get_sorted_dc_list(domain, NULL, &ip_list, &count,
-				    false);
+	status = get_sorted_dc_list(talloc_tos(),
+				domain,
+				NULL,
+				&sa_list,
+				&count,
+				false);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
@@ -400,7 +409,7 @@ static NTSTATUS resolve_and_ping_netbios(ADS_STRUCT *ads,
 		for (i = 0; i < count; ++i) {
 			char server[INET6_ADDRSTRLEN];
 
-			print_sockaddr(server, sizeof(server), &ip_list[i].ss);
+			print_sockaddr(server, sizeof(server), &sa_list[i].u.ss);
 
 			if(!NT_STATUS_IS_OK(
 				check_negative_conn_cache(realm, server))) {
@@ -413,9 +422,9 @@ static NTSTATUS resolve_and_ping_netbios(ADS_STRUCT *ads,
 		}
 	}
 
-	status = cldap_ping_list(ads, domain, ip_list, count);
+	status = cldap_ping_list(ads, domain, sa_list, count);
 
-	SAFE_FREE(ip_list);
+	TALLOC_FREE(sa_list);
 
 	return status;
 }
@@ -428,23 +437,27 @@ static NTSTATUS resolve_and_ping_netbios(ADS_STRUCT *ads,
 static NTSTATUS resolve_and_ping_dns(ADS_STRUCT *ads, const char *sitename,
 				     const char *realm)
 {
-	int count;
-	struct ip_service *ip_list = NULL;
+	size_t count = 0;
+	struct samba_sockaddr *sa_list = NULL;
 	NTSTATUS status;
 
 	DEBUG(6, ("resolve_and_ping_dns: (cldap) looking for realm '%s'\n",
 		  realm));
 
-	status = get_sorted_dc_list(realm, sitename, &ip_list, &count,
-				    true);
+	status = get_sorted_dc_list(talloc_tos(),
+				realm,
+				sitename,
+				&sa_list,
+				&count,
+				true);
 	if (!NT_STATUS_IS_OK(status)) {
-		SAFE_FREE(ip_list);
+		TALLOC_FREE(sa_list);
 		return status;
 	}
 
-	status = cldap_ping_list(ads, realm, ip_list, count);
+	status = cldap_ping_list(ads, realm, sa_list, count);
 
-	SAFE_FREE(ip_list);
+	TALLOC_FREE(sa_list);
 
 	return status;
 }
@@ -592,8 +605,36 @@ ADS_STATUS ads_connect(ADS_STRUCT *ads)
 	ADS_STATUS status;
 	NTSTATUS ntstatus;
 	char addr[INET6_ADDRSTRLEN];
+	struct samba_sockaddr existing_sa = {0};
 
-	ZERO_STRUCT(ads->ldap);
+	/*
+	 * ads_connect can be passed in a reused ADS_STRUCT
+	 * with an existing non-zero ads->ldap.ss IP address
+	 * that was stored by going through ads_find_dc()
+	 * if ads->server.ldap_server was NULL.
+	 *
+	 * If ads->server.ldap_server is still NULL but
+	 * the target address isn't the zero address, then
+	 * store that address off off before zeroing out
+	 * ads->ldap so we don't keep doing multiple calls
+	 * to ads_find_dc() in the reuse case.
+	 *
+	 * If a caller wants a clean ADS_STRUCT they
+	 * will re-initialize by calling ads_init(), or
+	 * call ads_destroy() both of which ensures
+	 * ads->ldap.ss is a properly zero'ed out valid IP
+	 * address.
+	 */
+	if (ads->server.ldap_server == NULL && !is_zero_addr(&ads->ldap.ss)) {
+		/* Save off the address we previously found by ads_find_dc(). */
+		bool ok = sockaddr_storage_to_samba_sockaddr(&existing_sa,
+							     &ads->ldap.ss);
+		if (!ok) {
+			return ADS_ERROR_NT(NT_STATUS_INVALID_ADDRESS);
+		}
+	}
+
+	ads_zero_ldap(ads);
 	ZERO_STRUCT(ads->ldap_wrap_data);
 	ads->ldap.last_attempt	= time_mono(NULL);
 	ads->ldap_wrap_data.wrap_type	= ADS_SASLWRAP_TYPE_PLAIN;
@@ -636,6 +677,20 @@ ADS_STATUS ads_connect(ADS_STRUCT *ads)
 			status = ADS_ERROR_NT(NT_STATUS_NOT_FOUND);
 			goto out;
 		}
+	}
+
+	if (!is_zero_addr(&existing_sa.u.ss)) {
+		/* We saved off who we should talk to. */
+		bool ok = ads_try_connect(ads,
+					  ads->server.gc,
+					  &existing_sa.u.ss);
+		if (ok) {
+			goto got_connection;
+		}
+		/*
+		 * Keep trying to find a server and fall through
+		 * into ads_find_dc() again.
+		 */
 	}
 
 	ntstatus = ads_find_dc(ads);
@@ -748,6 +803,25 @@ ADS_STATUS ads_connect_user_creds(ADS_STRUCT *ads)
 }
 
 /**
+ * Zero out the internal ads->ldap struct and initialize the address to zero IP.
+ * @param ads Pointer to an existing ADS_STRUCT
+ *
+ * Sets the ads->ldap.ss to a valid
+ * zero ip address that can be detected by
+ * our is_zero_addr() function. Otherwise
+ * it is left as AF_UNSPEC (0).
+ **/
+void ads_zero_ldap(ADS_STRUCT *ads)
+{
+	ZERO_STRUCT(ads->ldap);
+	/*
+	 * Initialize the sockaddr_storage so we can use
+	 * sockaddr test functions against it.
+	 */
+	zero_sockaddr(&ads->ldap.ss);
+}
+
+/**
  * Disconnect the LDAP server
  * @param ads Pointer to an existing ADS_STRUCT
  **/
@@ -764,7 +838,7 @@ void ads_disconnect(ADS_STRUCT *ads)
 	if (ads->ldap_wrap_data.mem_ctx) {
 		talloc_free(ads->ldap_wrap_data.mem_ctx);
 	}
-	ZERO_STRUCT(ads->ldap);
+	ads_zero_ldap(ads);
 	ZERO_STRUCT(ads->ldap_wrap_data);
 }
 
@@ -3209,11 +3283,28 @@ ADS_STATUS ads_current_time(ADS_STRUCT *ads)
         /* establish a new ldap tcp session if necessary */
 
 	if ( !ads->ldap.ld ) {
-		if ( (ads_s = ads_init( ads->server.realm, ads->server.workgroup, 
-			ads->server.ldap_server, ADS_SASL_PLAIN )) == NULL )
-		{
-			status = ADS_ERROR(LDAP_NO_MEMORY);
-			goto done;
+		/*
+		 * ADS_STRUCT may be being reused after a
+		 * DC lookup, so ads->ldap.ss may already have a
+		 * good address. If not, re-initialize the passed-in
+		 * ADS_STRUCT with the given server.XXXX parameters.
+		 *
+		 * Note that this doesn't depend on
+		 * ads->server.ldap_server != NULL,
+		 * as the case where ads->server.ldap_server==NULL and
+		 * ads->ldap.ss != zero_address is precisely the DC
+		 * lookup case where ads->ldap.ss was found by going
+		 * through ads_find_dc() again we want to avoid repeating.
+		 */
+		if (is_zero_addr(&ads->ldap.ss)) {
+			ads_s = ads_init(ads->server.realm,
+					 ads->server.workgroup,
+					 ads->server.ldap_server,
+					 ADS_SASL_PLAIN );
+			if (ads_s == NULL) {
+				status = ADS_ERROR(LDAP_NO_MEMORY);
+				goto done;
+			}
 		}
 		ads_s->auth.flags = ADS_AUTH_ANON_BIND;
 		status = ads_connect( ads_s );
@@ -3271,11 +3362,28 @@ ADS_STATUS ads_domain_func_level(ADS_STRUCT *ads, uint32_t *val)
         /* establish a new ldap tcp session if necessary */
 
 	if ( !ads->ldap.ld ) {
-		if ( (ads_s = ads_init( ads->server.realm, ads->server.workgroup, 
-			ads->server.ldap_server, ADS_SASL_PLAIN )) == NULL )
-		{
-			status = ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
-			goto done;
+		/*
+		 * ADS_STRUCT may be being reused after a
+		 * DC lookup, so ads->ldap.ss may already have a
+		 * good address. If not, re-initialize the passed-in
+		 * ADS_STRUCT with the given server.XXXX parameters.
+		 *
+		 * Note that this doesn't depend on
+		 * ads->server.ldap_server != NULL,
+		 * as the case where ads->server.ldap_server==NULL and
+		 * ads->ldap.ss != zero_address is precisely the DC
+		 * lookup case where ads->ldap.ss was found by going
+		 * through ads_find_dc() again we want to avoid repeating.
+		 */
+		if (is_zero_addr(&ads->ldap.ss)) {
+			ads_s = ads_init(ads->server.realm,
+					 ads->server.workgroup,
+					 ads->server.ldap_server,
+					 ADS_SASL_PLAIN );
+			if (ads_s == NULL ) {
+				status = ADS_ERROR_NT(NT_STATUS_NO_MEMORY);
+				goto done;
+			}
 		}
 		ads_s->auth.flags = ADS_AUTH_ANON_BIND;
 		status = ads_connect( ads_s );

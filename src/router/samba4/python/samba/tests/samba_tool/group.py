@@ -85,7 +85,7 @@ class GroupCmdTestCase(SambaToolCmdTest):
         # try to add all the groups again, this should fail
         for group in self.groups:
             (result, out, err) = self._create_group(group)
-            self.assertCmdFail(result, "Succeeded to create existing group")
+            self.assertCmdFail(result, "Succeeded to add existing group")
             self.assertIn("LDAP error 68 LDAP_ENTRY_ALREADY_EXISTS", err)
 
         # try to delete all the groups we just added
@@ -239,6 +239,79 @@ class GroupCmdTestCase(SambaToolCmdTest):
             name = str(groupobj.get("samAccountName", idx=0))
             found = self.assertMatch(out, name, "group '%s' not found" % name)
 
+    def test_listmembers_hide_expired(self):
+        expire_username = "expireUser"
+        expire_user = self._random_user({"name": expire_username})
+        self._create_user(expire_user)
+
+        (result, out, err) = self.runsubcmd(
+            "group",
+            "listmembers",
+            "Domain Users",
+            "--hide-expired",
+            "-H",
+            "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (os.environ["DC_USERNAME"],
+                          os.environ["DC_PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, "Error running listmembers")
+        self.assertTrue(expire_username in out,
+                         "user '%s' not found" % expire_username)
+
+        # user will be expired one second ago
+        self.samdb.setexpiry(
+            "(sAMAccountname=%s)" % expire_username,
+            -1,
+            False)
+
+        (result, out, err) = self.runsubcmd(
+            "group",
+            "listmembers",
+            "Domain Users",
+            "--hide-expired",
+            "-H",
+            "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (os.environ["DC_USERNAME"],
+                          os.environ["DC_PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, "Error running listmembers")
+        self.assertFalse(expire_username in out,
+                         "user '%s' not found" % expire_username)
+
+        self.samdb.deleteuser(expire_username)
+
+    def test_listmembers_hide_disabled(self):
+        disable_username = "disableUser"
+        disable_user = self._random_user({"name": disable_username})
+        self._create_user(disable_user)
+
+        (result, out, err) = self.runsubcmd(
+            "group",
+            "listmembers",
+            "Domain Users",
+            "--hide-disabled",
+            "-H",
+            "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (os.environ["DC_USERNAME"],
+                          os.environ["DC_PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, "Error running listmembers")
+        self.assertTrue(disable_username in out,
+                         "user '%s' not found" % disable_username)
+
+        self.samdb.disable_account("(sAMAccountname=%s)" % disable_username)
+
+        (result, out, err) = self.runsubcmd(
+            "group",
+            "listmembers",
+            "Domain Users",
+            "--hide-disabled",
+            "-H",
+            "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (os.environ["DC_USERNAME"],
+                          os.environ["DC_PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, "Error running listmembers")
+        self.assertFalse(disable_username in out,
+                         "user '%s' not found" % disable_username)
+
+        self.samdb.deleteuser(disable_username)
 
     def test_listmembers_full_dn(self):
         (result, out, err) = self.runsubcmd("group", "listmembers", "Domain Users",
@@ -264,10 +337,10 @@ class GroupCmdTestCase(SambaToolCmdTest):
 
     def test_move(self):
         full_ou_dn = str(self.samdb.normalize_dn_in_domain("OU=movetest"))
-        (result, out, err) = self.runsubcmd("ou", "create", full_ou_dn)
+        (result, out, err) = self.runsubcmd("ou", "add", full_ou_dn)
         self.assertCmdSuccess(result, out, err)
         self.assertEqual(err, "", "There shouldn't be any error message")
-        self.assertIn('Created ou "%s"' % full_ou_dn, out)
+        self.assertIn('Added ou "%s"' % full_ou_dn, out)
 
         for group in self.groups:
             (result, out, err) = self.runsubcmd(
@@ -303,6 +376,81 @@ class GroupCmdTestCase(SambaToolCmdTest):
         self.assertCmdSuccess(result, out, err)
         self.assertEqual(err, "", "Shouldn't be any error messages")
         self.assertIn("dn: CN=Domain Users,CN=Users,DC=addom,DC=samba,DC=example,DC=com", out)
+
+    def test_rename_samaccountname(self):
+        """rename the samaccountname of all groups"""
+        for group in self.groups:
+            new_name = "new_samaccountname_of_" + group["name"]
+
+            # change samaccountname
+            (result, out, err) = self.runsubcmd("group", "rename", group["name"],
+                                                "--samaccountname=" + new_name)
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_group(new_name)
+            self.assertEqual("%s" % found.get("description"), group["description"])
+            if not "cn" in group or str(group["cn"]) == str(group["name"]):
+                self.assertEqual("%s" % found.get("cn"), new_name)
+            else:
+                self.assertEqual("%s" % found.get("cn"), group["cn"])
+
+            # trying to remove the samaccountname throws an error
+            (result, out, err) = self.runsubcmd("group", "rename", new_name,
+                                                "--samaccountname=")
+            self.assertCmdFail(result)
+            self.assertIn('Failed to rename group', err)
+            self.assertIn('delete protected attribute', err)
+
+            # reset changes
+            (result, out, err) = self.runsubcmd("group", "rename", new_name,
+                                                "--samaccountname=" + group["name"])
+            self.assertCmdSuccess(result, out, err)
+            if "cn" in group:
+                (result, out, err) = self.runsubcmd("group", "rename", group["name"],
+                                                    "--force-new-cn=%s" % group["cn"])
+                self.assertCmdSuccess(result, out, err)
+
+    def test_rename_cn_mail(self):
+        """change and remove the cn and mail attributes of all groups"""
+        for group in self.groups:
+            new_mail = "new mail of " + group["name"]
+            new_cn = "new cn of " + group["name"]
+
+            # change attributes
+            (result, out, err) = self.runsubcmd("group", "rename", group["name"],
+                                                "--mail-address=" + new_mail,
+                                                "--force-new-cn=" + new_cn)
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_group(group["name"])
+            self.assertEqual("%s" % found.get("mail"), new_mail)
+            self.assertEqual("%s" % found.get("cn"), new_cn)
+
+            # remove mail
+            (result, out, err) = self.runsubcmd("group", "rename", group["name"],
+                                                "--mail-address=")
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_group(group["name"])
+            self.assertEqual(found.get("mail"), None)
+
+            # trying to remove cn (throws an error)
+            (result, out, err) = self.runsubcmd("group", "rename", group["name"],
+                                                "--force-new-cn=")
+            self.assertCmdFail(result)
+            self.assertIn("Failed to rename group", err)
+            self.assertIn("delete protected attribute", err)
+
+            # reset CN (mail is already empty)
+            (result, out, err) = self.runsubcmd("group", "rename", group["name"],
+                                                "--reset-cn")
+            self.assertCmdSuccess(result, out, err)
 
     def _randomGroup(self, base={}):
         """create a group with random attribute values, you can specify base
@@ -427,3 +575,39 @@ template """
         total_groups = len(grouplist)
         self.assertTrue("Total groups: {0}".format(total_groups) in out,
                         "Total groups not reported correctly")
+
+    def _random_user(self, base={}):
+        '''
+        create a user with random attribute values, you can specify
+        base attributes
+        '''
+        user = {
+            "name": self.randomName(),
+            "password": self.random_password(16),
+            "surname": self.randomName(),
+            "given-name": self.randomName(),
+            "job-title": self.randomName(),
+            "department": self.randomName(),
+            "company": self.randomName(),
+            "description": self.randomName(count=100),
+            "createUserFn": self._create_user,
+        }
+        user.update(base)
+        return user
+
+    def _create_user(self, user):
+        return self.runsubcmd(
+            "user",
+            "add",
+            user["name"],
+            user["password"],
+            "--surname=%s" % user["surname"],
+            "--given-name=%s" % user["given-name"],
+            "--job-title=%s" % user["job-title"],
+            "--department=%s" % user["department"],
+            "--description=%s" % user["description"],
+            "--company=%s" % user["company"],
+            "-H",
+            "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (os.environ["DC_USERNAME"],
+                          os.environ["DC_PASSWORD"]))

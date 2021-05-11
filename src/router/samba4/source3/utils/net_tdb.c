@@ -19,98 +19,71 @@
 
 #include "includes.h"
 #include "utils/net.h"
+#include "locking/share_mode_lock.h"
 #include "locking/proto.h"
 #include "librpc/gen_ndr/open_files.h"
 #include "librpc/gen_ndr/ndr_open_files.h"
-
-static int net_tdb_locking_dump(TALLOC_CTX *mem_ctx,
-				struct share_mode_data *data)
-{
-	struct ndr_print *ndr_print;
-
-	ndr_print = talloc_zero(mem_ctx, struct ndr_print);
-	if (ndr_print == NULL) {
-		d_printf("Could not allocate memory.\n");
-		return -1;
-	}
-
-	ndr_print->print = ndr_print_printf_helper;
-	ndr_print->depth = 1;
-	ndr_print_share_mode_data(ndr_print, "SHARE_MODE_DATA", data);
-	TALLOC_FREE(ndr_print);
-
-	return 0;
-}
-
-static int net_tdb_locking_fetch(TALLOC_CTX *mem_ctx, const char *hexkey,
-				 struct share_mode_lock **lock)
-{
-	DATA_BLOB blob;
-	struct file_id id;
-	bool ok;
-
-	blob = strhex_to_data_blob(mem_ctx, hexkey);
-	if (blob.length != sizeof(struct file_id)) {
-		d_printf("Invalid length %zu of key, expected %zu\n",
-			 blob.length,
-			 sizeof(struct file_id));
-		return -1;
-	}
-
-	id = *(struct file_id *)blob.data;
-
-	ok = locking_init_readonly();
-	if (!ok) {
-		d_printf("locking_init_readonly failed\n");
-		return -1;
-	}
-
-	*lock = fetch_share_mode_unlocked(mem_ctx, id);
-
-	if (*lock == NULL) {
-		d_printf("Record with key %s not found.\n", hexkey);
-		return -1;
-	}
-
-	return 0;
-}
 
 static int net_tdb_locking(struct net_context *c, int argc, const char **argv)
 {
 	TALLOC_CTX *mem_ctx = talloc_stackframe();
 	struct share_mode_lock *lock;
-	int ret;
+	DATA_BLOB blob = { .data = NULL };
+	struct file_id id = { .inode = 0 };
+	int ret = -1;
+	bool ok;
 
 	if (argc < 1) {
 		d_printf("Usage: net tdb locking <key> [ dump ]\n");
-		ret = -1;
 		goto out;
 	}
 
-	ret = net_tdb_locking_fetch(mem_ctx, argv[0], &lock);
-	if (ret != 0) {
+	ok = locking_init_readonly();
+	if (!ok) {
+		d_printf("locking_init_readonly failed\n");
+		goto out;
+	}
+
+	blob = strhex_to_data_blob(mem_ctx, argv[0]);
+	if (blob.length != sizeof(struct file_id)) {
+		d_printf("Invalid length %zu of key, expected %zu\n",
+			 blob.length,
+			 sizeof(struct file_id));
+		goto out;
+	}
+
+	memcpy(&id, blob.data, blob.length);
+
+	lock = fetch_share_mode_unlocked(mem_ctx, id);
+	if (lock == NULL) {
+		d_printf("Record with key %s not found.\n", argv[1]);
 		goto out;
 	}
 
 	if (argc == 2 && strequal(argv[1], "dump")) {
-		ret = net_tdb_locking_dump(mem_ctx, lock->data);
+		char *dump = share_mode_data_dump(mem_ctx, lock);
+		d_printf("%s\n", dump);
+		TALLOC_FREE(dump);
 	} else {
 		NTSTATUS status;
 		size_t num_share_modes = 0;
 
-		status = share_mode_count_entries(
-			lock->data->id, &num_share_modes);
+		status = share_mode_count_entries(id, &num_share_modes);
 		if (!NT_STATUS_IS_OK(status)) {
 			d_fprintf(stderr,
 				  "Could not count share entries: %s\n",
 				  nt_errstr(status));
+			goto out;
 		}
 
-		d_printf("Share path:            %s\n", lock->data->servicepath);
-		d_printf("Name:                  %s\n", lock->data->base_name);
+		d_printf("Share path:            %s\n",
+			 share_mode_servicepath(lock));
+		d_printf("Name:                  %s\n",
+			 share_mode_filename(mem_ctx, lock));
 		d_printf("Number of share modes: %zu\n", num_share_modes);
 	}
 
+	ret = 0;
 out:
 	TALLOC_FREE(mem_ctx);
 	return ret;

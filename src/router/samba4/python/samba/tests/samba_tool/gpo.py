@@ -25,6 +25,12 @@ from samba.tests.samba_tool.base import SambaToolCmdTest
 import shutil
 from samba.netcmd.gpo import get_gpo_dn, get_gpo_info
 from samba.param import LoadParm
+from samba.tests.gpo import stage_file, unstage_file
+from samba.dcerpc import preg
+from samba.ndr import ndr_pack, ndr_unpack
+from samba.common import get_string
+from configparser import ConfigParser
+from io import StringIO
 
 source_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.."))
 
@@ -541,6 +547,232 @@ class GpoCmdTestCase(SambaToolCmdTest):
         self.assertTrue(os.path.exists(os.path.join(admx_path, 'samba.admx')),
                         'Filling PolicyDefinitions failed')
         shutil.rmtree(admx_path)
+
+    def test_smb_conf_set(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/Registry.pol')
+
+        policy = 'apply group policies'
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "smb_conf",
+                                                 "set"), self.gpo_guid,
+                                                 policy, "yes",
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err,
+                              'Failed to set apply group policies')
+
+        self.assertTrue(os.path.exists(reg_pol),
+                        'The Registry.pol does not exist')
+        reg_data = ndr_unpack(preg.file, open(reg_pol, 'rb').read())
+        ret = any([get_string(e.valuename) == policy and e.data == 1 \
+            for e in reg_data.entries])
+        self.assertTrue(ret, 'The sudoers entry was not added')
+
+        # Ensure an empty set command deletes the entry
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "smb_conf",
+                                                 "set"), self.gpo_guid,
+                                                 policy, "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err,
+                              'Failed to unset apply group policies')
+
+        reg_data = ndr_unpack(preg.file, open(reg_pol, 'rb').read())
+        ret = not any([get_string(e.valuename) == policy and e.data == 1 \
+            for e in reg_data.entries])
+        self.assertTrue(ret, 'The sudoers entry was not removed')
+
+    def test_smb_conf_list(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/Registry.pol')
+
+        # Stage the Registry.pol file with test data
+        stage = preg.file()
+        e = preg.entry()
+        e.keyname = b'Software\\Policies\\Samba\\smb_conf'
+        e.valuename = b'apply group policies'
+        e.type = 4
+        e.data = 1
+        stage.num_entries = 1
+        stage.entries = [e]
+        ret = stage_file(reg_pol, ndr_pack(stage))
+        self.assertTrue(ret, 'Could not create the target %s' % reg_pol)
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "smb_conf",
+                                                 "list"), self.gpo_guid,
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn('%s = True' % e.valuename, out, 'The test entry was not found!')
+
+        # Unstage the Registry.pol file
+        unstage_file(reg_pol)
+
+    def test_security_set(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        inf_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+            self.gpo_guid, 'Machine/Microsoft/Windows NT/SecEdit/GptTmpl.inf')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "security",
+                                                 "set"), self.gpo_guid,
+                                                 'MaxTicketAge', '10',
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err,
+                              'Failed to set MaxTicketAge')
+        self.assertTrue(os.path.exists(inf_pol),
+                        '%s was not created' % inf_pol)
+        inf_pol_contents = open(inf_pol, 'r').read()
+        self.assertIn('MaxTicketAge = 10', inf_pol_contents,
+                      'The test entry was not found!')
+
+        # Ensure an empty set command deletes the entry
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "security",
+                                                 "set"), self.gpo_guid,
+                                                 'MaxTicketAge',
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err,
+                              'Failed to unset MaxTicketAge')
+        inf_pol_contents = open(inf_pol, 'r').read()
+        self.assertNotIn('MaxTicketAge = 10', inf_pol_contents,
+                      'The test entry was still found!')
+
+    def test_security_list(self):
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "security",
+                                                 "set"), self.gpo_guid,
+                                                 'MaxTicketAge', '10',
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err,
+                              'Failed to set MaxTicketAge')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "security",
+                                                 "list"), self.gpo_guid,
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn('MaxTicketAge = 10', out, 'The test entry was not found!')
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "security",
+                                                 "set"), self.gpo_guid,
+                                                 'MaxTicketAge',
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err,
+                              'Failed to unset MaxTicketAge')
+
+    def test_sudoers_remove(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/Registry.pol')
+
+        # Stage the Registry.pol file with test data
+        stage = preg.file()
+        e = preg.entry()
+        e.keyname = b'Software\\Policies\\Samba\\Unix Settings\\Sudo Rights'
+        e.valuename = b'Software\\Policies\\Samba\\Unix Settings'
+        e.type = 1
+        e.data = b'fakeu  ALL=(ALL) NOPASSWD: ALL'
+        stage.num_entries = 1
+        stage.entries = [e]
+        ret = stage_file(reg_pol, ndr_pack(stage))
+        self.assertTrue(ret, 'Could not create the target %s' % reg_pol)
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "sudoers",
+                                                 "remove"), self.gpo_guid,
+                                                 get_string(e.data),
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Sudoers remove failed')
+
+    def test_sudoers_add(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/Registry.pol')
+
+        entry = 'fakeu  ALL=(ALL) NOPASSWD: ALL'
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "sudoers",
+                                                 "add"), self.gpo_guid, entry,
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, 'Sudoers add failed')
+
+        self.assertTrue(os.path.exists(reg_pol),
+                        'The Registry.pol does not exist')
+        reg_data = ndr_unpack(preg.file, open(reg_pol, 'rb').read())
+        self.assertTrue(any([get_string(e.data) == entry for e in reg_data.entries]),
+                        'The sudoers entry was not added')
+
+    def test_sudoers_list(self):
+        lp = LoadParm()
+        lp.load(os.environ['SERVERCONFFILE'])
+        local_path = lp.get('path', 'sysvol')
+        reg_pol = os.path.join(local_path, lp.get('realm').lower(), 'Policies',
+                               self.gpo_guid, 'Machine/Registry.pol')
+
+        # Stage the Registry.pol file with test data
+        stage = preg.file()
+        e = preg.entry()
+        e.keyname = b'Software\\Policies\\Samba\\Unix Settings\\Sudo Rights'
+        e.valuename = b'Software\\Policies\\Samba\\Unix Settings'
+        e.type = 1
+        e.data = b'fakeu  ALL=(ALL) NOPASSWD: ALL'
+        stage.num_entries = 1
+        stage.entries = [e]
+        ret = stage_file(reg_pol, ndr_pack(stage))
+        self.assertTrue(ret, 'Could not create the target %s' % reg_pol)
+
+        (result, out, err) = self.runsublevelcmd("gpo", ("manage", "sudoers",
+                                                 "list"), self.gpo_guid,
+                                                 "-H", "ldap://%s" %
+                                                 os.environ["SERVER"],
+                                                 "-U%s%%%s" %
+                                                 (os.environ["USERNAME"],
+                                                 os.environ["PASSWORD"]))
+        self.assertIn(e.data, out, 'The test entry was not found!')
+
+        # Unstage the Registry.pol file
+        unstage_file(reg_pol)
 
     def setUp(self):
         """set up a temporary GPO to work with"""

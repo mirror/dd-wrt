@@ -818,8 +818,9 @@ err:
  * Failure: set errno, return NULL
  */
 static struct dirent *mh_readdir(vfs_handle_struct *handle,
-		DIR *dirp,
-		SMB_STRUCT_STAT *sbuf)
+				 struct files_struct *dirfsp,
+				 DIR *dirp,
+				 SMB_STRUCT_STAT *sbuf)
 {
 	mh_dirinfo_struct* dirInfo = (mh_dirinfo_struct*)dirp;
 	struct dirent *d = NULL;
@@ -842,7 +843,7 @@ static struct dirent *mh_readdir(vfs_handle_struct *handle,
 
 	if (! dirInfo->isInMediaFiles)
 	{
-		d = SMB_VFS_NEXT_READDIR(handle, dirInfo->dirstream, sbuf);
+		d = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream, sbuf);
 		goto out;
 	}
 
@@ -852,7 +853,7 @@ static struct dirent *mh_readdir(vfs_handle_struct *handle,
 		bool isAppleDouble;
 
 		skip = False;
-		d = SMB_VFS_NEXT_READDIR(handle, dirInfo->dirstream, sbuf);
+		d = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream, sbuf);
 
 		if (d == NULL)
 		{
@@ -996,6 +997,7 @@ static int mh_mkdirat(vfs_handle_struct *handle,
 	int status;
 	struct smb_filename *clientFname = NULL;
 	const char *path = smb_fname->base_name;
+	struct smb_filename *full_fname = NULL;
 
 	DEBUG(MH_INFO_DEBUG, ("Entering with path '%s'\n", path));
 
@@ -1007,19 +1009,27 @@ static int mh_mkdirat(vfs_handle_struct *handle,
 		goto out;
 	}
 
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		return -1;
+	}
+
 	status = alloc_get_client_smb_fname(handle,
 				talloc_tos(),
-				smb_fname,
+				full_fname,
 				&clientFname);
 	if (status != 0) {
 		goto err;
 	}
 
 	status = SMB_VFS_NEXT_MKDIRAT(handle,
-			dirfsp,
+			handle->conn->cwd_fsp,
 			clientFname,
 			mode);
 err:
+	TALLOC_FREE(full_fname);
 	TALLOC_FREE(clientFname);
 out:
 	DEBUG(MH_INFO_DEBUG, ("Leaving with path '%s'\n", path));
@@ -1106,7 +1116,6 @@ out:
  */
 static NTSTATUS mh_create_file(vfs_handle_struct *handle,
 		struct smb_request *req,
-		struct files_struct **dirfsp,
 		struct smb_filename *smb_fname,
 		uint32_t access_mask,
 		uint32_t share_access,
@@ -1136,7 +1145,6 @@ static NTSTATUS mh_create_file(vfs_handle_struct *handle,
 		status = SMB_VFS_NEXT_CREATE_FILE(
 			handle,
 			req,
-			dirfsp,
 			smb_fname,
 			access_mask,
 			share_access,
@@ -1175,7 +1183,6 @@ static NTSTATUS mh_create_file(vfs_handle_struct *handle,
 	status = SMB_VFS_NEXT_CREATE_FILE(
 		handle,
 		req,
-		dirfsp,
 		clientFname,
 		access_mask,
 		share_access,
@@ -1646,7 +1653,7 @@ out:
  * Failure: set errno, return -1
  */
 static int mh_readlinkat(vfs_handle_struct *handle,
-		files_struct *dirfsp,
+		const struct files_struct *dirfsp,
 		const struct smb_filename *smb_fname,
 		char *buf,
 		size_t bufsiz)
@@ -1992,42 +1999,6 @@ out:
 /*
  * Success: return 0
  * Failure: set errno, return -1
- * In this case, "name" is a path.
- */
-static int mh_sys_acl_set_file(vfs_handle_struct *handle,
-		const struct smb_filename *smb_fname,
-		SMB_ACL_TYPE_T acltype,
-		SMB_ACL_T theacl)
-{
-	int status;
-	struct smb_filename *clientFname = NULL;
-
-	DEBUG(MH_INFO_DEBUG, ("Entering mh_sys_acl_set_file\n"));
-	if (!is_in_media_files(smb_fname->base_name)) {
-		status = SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle, smb_fname,
-				acltype, theacl);
-		goto out;
-	}
-
-	status = alloc_get_client_smb_fname(handle,
-				talloc_tos(),
-				smb_fname,
-				&clientFname);
-	if (status != 0) {
-		goto err;
-	}
-
-	status = SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle, clientFname,
-			acltype, theacl);
-err:
-	TALLOC_FREE(clientFname);
-out:
-	return status;
-}
-
-/*
- * Success: return 0
- * Failure: set errno, return -1
  */
 static int mh_sys_acl_delete_def_file(vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname)
@@ -2242,7 +2213,6 @@ static struct vfs_fn_pointers vfs_mh_fns = {
 	/* POSIX ACL operations. */
 
 	.sys_acl_get_file_fn = mh_sys_acl_get_file,
-	.sys_acl_set_file_fn = mh_sys_acl_set_file,
 	.sys_acl_delete_def_file_fn = mh_sys_acl_delete_def_file,
 
 	/* EA operations. */

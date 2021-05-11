@@ -2,12 +2,12 @@
 .\"     Title: ctdb
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 11/03/2020
+.\"      Date: 04/26/2021
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB" "7" "11/03/2020" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB" "7" "04/26/2021" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -69,6 +69,9 @@ Manage a pool of public IP addresses that are used to provide services to client
 .RE
 .PP
 Combined with a cluster filesystem CTDB provides a full high\-availablity (HA) environment for services such as clustered Samba, NFS and other services\&.
+.PP
+In addition to the CTDB manual pages there is much more information available at
+\m[blue]\fB\%https://wiki.samba.org/index.php/CTDB_and_Clustered_Samba\fR\m[]\&.
 .SH "ANATOMY OF A CTDB CLUSTER"
 .PP
 A CTDB cluster is a collection of nodes with 2 or more network interfaces\&. All nodes provide network (usually file/NAS) services to clients\&. Data served by file services is stored on shared storage (usually a cluster filesystem) that is accessible by all nodes\&.
@@ -336,9 +339,9 @@ Client access to the cluster is load\-balanced across the HEALTHY nodes in an LV
 \fBctdb lvs\fR
 command is used to show which nodes are currently load\-balanced across\&.
 .PP
-In each LVS group, one of the nodes is selected by CTDB to be the LVS master\&. This node receives all traffic from clients coming in to the LVS public address and multiplexes it across the internal network to one of the nodes that LVS is using\&. When responding to the client, that node will send the data back directly to the client, bypassing the LVS master node\&. The command
-\fBctdb lvs master\fR
-will show which node is the current LVS master\&.
+In each LVS group, one of the nodes is selected by CTDB to be the LVS leader\&. This node receives all traffic from clients coming in to the LVS public address and multiplexes it across the internal network to one of the nodes that LVS is using\&. When responding to the client, that node will send the data back directly to the client, bypassing the LVS leader node\&. The command
+\fBctdb lvs leader\fR
+will show which node is the current LVS leader\&.
 .PP
 The path used for a client I/O is:
 .sp
@@ -350,7 +353,7 @@ The path used for a client I/O is:
 .sp -1
 .IP "  1." 4.2
 .\}
-Client sends request packet to LVSMASTER\&.
+Client sends request packet to LVS leader\&.
 .RE
 .sp
 .RS 4
@@ -361,7 +364,7 @@ Client sends request packet to LVSMASTER\&.
 .sp -1
 .IP "  2." 4.2
 .\}
-LVSMASTER passes the request on to one node across the internal network\&.
+LVS leader passes the request on to one node across the internal network\&.
 .RE
 .sp
 .RS 4
@@ -386,7 +389,7 @@ Selected node processes the request\&.
 Node responds back to client\&.
 .RE
 .PP
-This means that all incoming traffic to the cluster will pass through one physical node, which limits scalability\&. You can send more data to the LVS address that one physical node can multiplex\&. This means that you should not use LVS if your I/O pattern is write\-intensive since you will be limited in the available network bandwidth that node can handle\&. LVS does work very well for read\-intensive workloads where only smallish READ requests are going through the LVSMASTER bottleneck and the majority of the traffic volume (the data in the read replies) goes straight from the processing node back to the clients\&. For read\-intensive i/o patterns you can achieve very high throughput rates in this mode\&.
+This means that all incoming traffic to the cluster will pass through one physical node, which limits scalability\&. You can send more data to the LVS address that one physical node can multiplex\&. This means that you should not use LVS if your I/O pattern is write\-intensive since you will be limited in the available network bandwidth that node can handle\&. LVS does work very well for read\-intensive workloads where only smallish READ requests are going through the LVS leader bottleneck and the majority of the traffic volume (the data in the read replies) goes straight from the processing node back to the clients\&. For read\-intensive i/o patterns you can achieve very high throughput rates in this mode\&.
 .PP
 Note: you can use LVS and public addresses at the same time\&.
 .PP
@@ -437,11 +440,11 @@ Example
 .RE
 .\}
 .PP
-Normally any node in an LVS group can act as the LVS master\&. Nodes that are highly loaded due to other demands maybe flagged with the "slave\-only" option in the
+Normally any node in an LVS group can act as the LVS leader\&. Nodes that are highly loaded due to other demands maybe flagged with the "follower\-only" option in the
 \fICTDB_LVS_NODES\fR
 file to limit the LVS functionality of those nodes\&.
 .PP
-LVS nodes file that excludes 192\&.168\&.1\&.4 from being the LVS master node:
+LVS nodes file that excludes 192\&.168\&.1\&.4 from being the LVS leader node:
 .sp
 .if n \{\
 .RS 4
@@ -449,7 +452,7 @@ LVS nodes file that excludes 192\&.168\&.1\&.4 from being the LVS master node:
 .nf
 192\&.168\&.1\&.2
 192\&.168\&.1\&.3
-192\&.168\&.1\&.4 slave\-only
+192\&.168\&.1\&.4 follower\-only
       
 .fi
 .if n \{\
@@ -473,7 +476,7 @@ One extra NATGW public address is assigned on the public network to each NATGW g
 .PP
 There can be multiple NATGW groups in a cluster but each node can only be member of one NATGW group\&.
 .PP
-In each NATGW group, one of the nodes is selected by CTDB to be the NATGW master and the other nodes are consider to be NATGW slaves\&. NATGW slaves establish a fallback default route to the NATGW master via the private network\&. When a NATGW slave hosts no public IP addresses then it will use this route for outbound connections\&. The NATGW master hosts the NATGW public IP address and routes outgoing connections from slave nodes via this IP address\&. It also establishes a fallback default route\&.
+In each NATGW group, one of the nodes is selected by CTDB to be the NATGW leader and the other nodes are consider to be NATGW followers\&. NATGW followers establish a fallback default route to the NATGW leader via the private network\&. When a NATGW follower hosts no public IP addresses then it will use this route for outbound connections\&. The NATGW leader hosts the NATGW public IP address and routes outgoing connections from follower nodes via this IP address\&. It also establishes a fallback default route\&.
 .SS "Configuration"
 .PP
 NATGW is usually configured similar to the following example configuration:
@@ -493,7 +496,7 @@ CTDB_NATGW_DEFAULT_GATEWAY=10\&.0\&.0\&.1
 .RE
 .\}
 .PP
-Normally any node in a NATGW group can act as the NATGW master\&. Some configurations may have special nodes that lack connectivity to a public network\&. In such cases, those nodes can be flagged with the "slave\-only" option in the
+Normally any node in a NATGW group can act as the NATGW leader\&. Some configurations may have special nodes that lack connectivity to a public network\&. In such cases, those nodes can be flagged with the "follower\-only" option in the
 \fICTDB_NATGW_NODES\fR
 file to limit the NATGW functionality of those nodes\&.
 .PP
@@ -504,17 +507,17 @@ section in
 for more details of NATGW configuration\&.
 .SS "Implementation details"
 .PP
-When the NATGW functionality is used, one of the nodes is selected to act as a NAT gateway for all the other nodes in the group when they need to communicate with the external services\&. The NATGW master is selected to be a node that is most likely to have usable networks\&.
+When the NATGW functionality is used, one of the nodes is selected to act as a NAT gateway for all the other nodes in the group when they need to communicate with the external services\&. The NATGW leader is selected to be a node that is most likely to have usable networks\&.
 .PP
-The NATGW master hosts the NATGW public IP address
+The NATGW leader hosts the NATGW public IP address
 \fICTDB_NATGW_PUBLIC_IP\fR
 on the configured public interfaces
 \fICTDB_NATGW_PUBLIC_IFACE\fR
-and acts as a router, masquerading outgoing connections from slave nodes via this IP address\&. If
+and acts as a router, masquerading outgoing connections from follower nodes via this IP address\&. If
 \fICTDB_NATGW_DEFAULT_GATEWAY\fR
 is set then it also establishes a fallback default route to the configured this gateway with a metric of 10\&. A metric 10 route is used so it can co\-exist with other default routes that may be available\&.
 .PP
-A NATGW slave establishes its fallback default route to the NATGW master via the private network
+A NATGW follower establishes its fallback default route to the NATGW leader via the private network
 \fICTDB_NATGW_PRIVATE_NETWORK\fRwith a metric of 10\&. This route is used for outbound connections when no other default route is available because the node hosts no public addresses\&. A metric 10 routes is used so that it can co\-exist with other default routes that may be available when the node is hosting public addresses\&.
 .PP
 \fICTDB_NATGW_STATIC_ROUTES\fR
@@ -787,6 +790,7 @@ Verify with the command "ctdb getcapabilities" that that node no longer has the 
 \fBctdb.sysconfig\fR(5),
 \fBctdb-statistics\fR(7),
 \fBctdb-tunables\fR(7),
+\m[blue]\fB\%https://wiki.samba.org/index.php/CTDB_and_Clustered_Samba\fR\m[],
 \m[blue]\fB\%http://ctdb.samba.org/\fR\m[]
 .SH "AUTHOR"
 .br

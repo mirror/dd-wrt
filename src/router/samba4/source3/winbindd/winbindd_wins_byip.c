@@ -22,6 +22,7 @@
 #include "libsmb/namequery.h"
 #include "librpc/gen_ndr/ndr_winbind_c.h"
 #include "libsmb/nmblib.h"
+#include "lib/util/string_wrappers.h"
 
 struct winbindd_wins_byip_state {
 	struct nmb_name star;
@@ -77,7 +78,8 @@ static void winbindd_wins_byip_done(struct tevent_req *subreq)
 	struct winbindd_wins_byip_state *state = tevent_req_data(
 		req, struct winbindd_wins_byip_state);
 	struct node_status *names;
-	int i, num_names;
+	size_t i;
+	size_t num_names = 0;
 	NTSTATUS status;
 
 	status = node_status_query_recv(subreq, talloc_tos(), &names,

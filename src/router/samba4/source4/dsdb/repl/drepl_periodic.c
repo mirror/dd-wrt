@@ -1,5 +1,5 @@
 /* 
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
    DSDB replication service periodic handling
    
    Copyright (C) Stefan Metzmacher 2007
@@ -23,7 +23,7 @@
 #include "lib/events/events.h"
 #include "dsdb/samdb/samdb.h"
 #include "auth/auth.h"
-#include "smbd/service.h"
+#include "samba/service.h"
 #include "dsdb/repl/drepl_service.h"
 #include <ldb_errors.h>
 #include "../lib/util/dlinklist.h"

@@ -21,6 +21,7 @@
 #include "includes.h"
 #include "lib/socket/interfaces.h"
 #include "librpc/gen_ndr/ioctl.h"
+#include "lib/util/smb_strtox.h"
 
 static struct iface_struct *probed_ifaces;
 static int total_probed;
@@ -617,7 +618,7 @@ static void interpret_interface(char *token)
 	ifs.netmask = ss_mask;
 	ifs.bcast = ss_bcast;
 	if (if_index_set) {
-		probed_ifaces[i].if_index = if_index;
+		ifs.if_index = if_index;
 	}
 	if (speed_set) {
 		ifs.linkspeed = speed;

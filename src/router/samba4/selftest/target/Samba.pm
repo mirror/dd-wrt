@@ -280,6 +280,30 @@ EOF
 	umask $oldumask;
 }
 
+sub copy_gnupg_home($)
+{
+	my ($ctx) = @_;
+
+	my $gnupg_srcdir = "$ENV{SRCDIR_ABS}/selftest/gnupg";
+	my @files = (
+		"gpg.conf",
+		"pubring.gpg",
+		"secring.gpg",
+		"trustdb.gpg",
+	);
+
+	my $oldumask = umask;
+	umask 0077;
+	mkdir($ctx->{gnupghome}, 0777);
+	umask 0177;
+	foreach my $file (@files) {
+		my $srcfile = "${gnupg_srcdir}/${file}";
+		my $dstfile = "$ctx->{gnupghome}/${file}";
+		copy_file_content(${srcfile}, ${dstfile});
+	}
+	umask $oldumask;
+}
+
 sub mk_krb5_conf($$)
 {
 	my ($ctx) = @_;
@@ -362,26 +386,36 @@ sub mk_realms_stanza($$$$)
 	my ($realm, $dnsname, $domain, $kdc_ipv4) = @_;
 	my $lc_domain = lc($domain);
 
+	# The   pkinit_require_krbtgt_otherName = false
+	# is just because the certificates we have saved
+	# do not have the realm in the subjectAltName
+	# (specially encoded as a principal)
+	# per
+	# https://github.com/heimdal/heimdal/wiki/Setting-up-PK-INIT-and-Certificates
 	my $realms_stanza = "
  $realm = {
   kdc = $kdc_ipv4:88
   admin_server = $kdc_ipv4:88
   default_domain = $dnsname
+  pkinit_require_krbtgt_otherName = false
  }
  $dnsname = {
   kdc = $kdc_ipv4:88
   admin_server = $kdc_ipv4:88
   default_domain = $dnsname
+  pkinit_require_krbtgt_otherName = false
  }
  $domain = {
   kdc = $kdc_ipv4:88
   admin_server = $kdc_ipv4:88
   default_domain = $dnsname
+  pkinit_require_krbtgt_otherName = false
  }
  $lc_domain = {
   kdc = $kdc_ipv4:88
   admin_server = $kdc_ipv4:88
   default_domain = $dnsname
+  pkinit_require_krbtgt_otherName = false
  }
 
 ";
@@ -672,6 +706,7 @@ sub get_env_for_process
 		RESOLV_CONF => $env_vars->{RESOLV_CONF},
 		KRB5_CONFIG => $env_vars->{KRB5_CONFIG},
 		KRB5CCNAME => "$env_vars->{KRB5_CCACHE}.$proc_name",
+		GNUPGHOME => $env_vars->{GNUPGHOME},
 		SELFTEST_WINBINDD_SOCKET_DIR => $env_vars->{SELFTEST_WINBINDD_SOCKET_DIR},
 		NMBD_SOCKET_DIR => $env_vars->{NMBD_SOCKET_DIR},
 		NSS_WRAPPER_PASSWD => $env_vars->{NSS_WRAPPER_PASSWD},
@@ -857,6 +892,7 @@ my @exported_envvars = (
 	# misc stuff
 	"KRB5_CONFIG",
 	"KRB5CCNAME",
+	"GNUPGHOME",
 	"SELFTEST_WINBINDD_SOCKET_DIR",
 	"NMBD_SOCKET_DIR",
 	"LOCAL_PATH",

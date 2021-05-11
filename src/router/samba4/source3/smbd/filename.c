@@ -487,8 +487,8 @@ Note NT_STATUS_OK doesn't mean the name exists or is valid, just that we
 didn't get any fatal errors that should immediately terminate the calling SMB
 processing whilst resolving.
 
-If UCF_ALWAYS_ALLOW_WCARD_LCOMP is passed in, then a MS wildcard was detected
-and should be allowed in the last component of the path only.
+If UCF_ALWAYS_ALLOW_WCARD_LCOMP is passed in, then a MS wildcard
+should be allowed in the last component of the path only.
 
 If the orig_path was a stream, smb_filename->base_name will point to the base
 filename, and smb_filename->stream_name will point to the stream name.  If
@@ -662,11 +662,7 @@ static NTSTATUS unix_convert_step_stat(struct uc_state *state)
 
 	DBG_DEBUG("smb_fname [%s]\n", smb_fname_str_dbg(state->smb_fname));
 
-	if (state->posix_pathnames) {
-		ret = SMB_VFS_LSTAT(state->conn, state->smb_fname);
-	} else {
-		ret = SMB_VFS_STAT(state->conn, state->smb_fname);
-	}
+	ret = vfs_stat(state->conn, state->smb_fname);
 	if (ret == 0) {
 		/*
 		 * It exists. it must either be a directory or this must
@@ -826,12 +822,7 @@ static NTSTATUS unix_convert_step_stat(struct uc_state *state)
 		 * if it exists. JRA.
 		 */
 
-		if (state->posix_pathnames) {
-			ret = SMB_VFS_LSTAT(state->conn, state->smb_fname);
-		} else {
-			ret = SMB_VFS_STAT(state->conn, state->smb_fname);
-		}
-
+		ret = vfs_stat(state->conn, state->smb_fname);
 		if (ret != 0) {
 			SET_STAT_INVALID(state->smb_fname->st);
 		}
@@ -1177,12 +1168,7 @@ NTSTATUS unix_convert(TALLOC_CTX *mem_ctx,
 		 * there was one) and be done!
 		 */
 
-		if (state->posix_pathnames) {
-			ret = SMB_VFS_LSTAT(state->conn, state->smb_fname);
-		} else {
-			ret = SMB_VFS_STAT(state->conn, state->smb_fname);
-		}
-
+		ret = vfs_stat(state->conn, state->smb_fname);
 		if (ret == 0) {
 			status = check_for_dot_component(state->smb_fname);
 			if (!NT_STATUS_IS_OK(status)) {
@@ -1267,13 +1253,7 @@ NTSTATUS unix_convert(TALLOC_CTX *mem_ctx,
 					status = NT_STATUS_NO_MEMORY;
 					goto fail;
 				}
-				if (state->posix_pathnames) {
-					ret = SMB_VFS_LSTAT(state->conn,
-							    parent_fname);
-				} else {
-					ret = SMB_VFS_STAT(state->conn,
-							   parent_fname);
-				}
+				ret = vfs_stat(state->conn, parent_fname);
 				TALLOC_FREE(parent_fname);
 				if (ret == -1) {
 					if (errno == ENOTDIR ||
@@ -1823,15 +1803,14 @@ char *get_original_lcomp(TALLOC_CTX *ctx,
 	NTSTATUS status;
 
 	if (ucf_flags & UCF_DFS_PATHNAME) {
-		status = resolve_dfspath_wcard(ctx,
+		status = dfs_redirect(ctx,
 				conn,
 				filename_in,
 				ucf_flags,
 				!conn->sconn->using_smb2,
-				&fname,
-				NULL);
+				&fname);
 		if (!NT_STATUS_IS_OK(status)) {
-			DBG_DEBUG("resolve_dfspath "
+			DBG_DEBUG("dfs_redirect "
 				"failed for name %s with %s\n",
 				filename_in,
 				nt_errstr(status));
@@ -1901,9 +1880,6 @@ char *get_original_lcomp(TALLOC_CTX *ctx,
  * @param smbreq	SMB request if we're using privileges.
  * @param name_in	The unconverted name.
  * @param ucf_flags	flags to pass through to unix_convert().
- *			UCF_ALWAYS_ALLOW_WCARD_LCOMP will be OR'd in if
- *			p_cont_wcard != NULL and is true and
- *			UCF_COND_ALLOW_WCARD_LCOMP.
  * @param twrp		Optional VSS time
  * @param p_cont_wcard	If not NULL, will be set to true if the dfs path
  *			resolution detects a wildcard.
@@ -1919,34 +1895,29 @@ static NTSTATUS filename_convert_internal(TALLOC_CTX *ctx,
 				const char *name_in,
 				uint32_t ucf_flags,
 				NTTIME twrp,
-				bool *ppath_contains_wcard,
 				struct smb_filename **_smb_fname)
 {
 	struct smb_filename *smb_fname = NULL;
+	bool has_wild;
 	NTSTATUS status;
 
 	*_smb_fname = NULL;
 
 	if (ucf_flags & UCF_DFS_PATHNAME) {
-		bool path_contains_wcard = false;
 		char *fname = NULL;
-		status = resolve_dfspath_wcard(ctx, conn,
+		status = dfs_redirect(ctx, conn,
 				name_in,
 				ucf_flags,
 				!conn->sconn->using_smb2,
-				&fname,
-				&path_contains_wcard);
+				&fname);
 		if (!NT_STATUS_IS_OK(status)) {
-			DEBUG(10,("filename_convert_internal: resolve_dfspath "
+			DEBUG(10,("filename_convert_internal: dfs_redirect "
 				"failed for name %s with %s\n",
 				name_in,
 				nt_errstr(status) ));
 			return status;
 		}
 		name_in = fname;
-		if (ppath_contains_wcard != NULL && path_contains_wcard) {
-			*ppath_contains_wcard = path_contains_wcard;
-		}
 		ucf_flags &= ~UCF_DFS_PATHNAME;
 	}
 
@@ -1962,15 +1933,6 @@ static NTSTATUS filename_convert_internal(TALLOC_CTX *ctx,
 		return NT_STATUS_OK;
 	}
 
-	/*
-	 * If the caller conditionally allows wildcard lookups, only add the
-	 * always allow if the path actually does contain a wildcard.
-	 */
-	if (ucf_flags & UCF_COND_ALLOW_WCARD_LCOMP &&
-	    ppath_contains_wcard != NULL && *ppath_contains_wcard) {
-		ucf_flags |= UCF_ALWAYS_ALLOW_WCARD_LCOMP;
-	}
-
 	status = unix_convert(ctx, conn, name_in, twrp, &smb_fname, ucf_flags);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(10,("filename_convert_internal: unix_convert failed "
@@ -1980,19 +1942,16 @@ static NTSTATUS filename_convert_internal(TALLOC_CTX *ctx,
 		return status;
 	}
 
-	if ((ucf_flags & UCF_UNIX_NAME_LOOKUP) &&
-			VALID_STAT(smb_fname->st) &&
-			S_ISLNK(smb_fname->st.st_ex_mode)) {
+	if ((ucf_flags & UCF_POSIX_PATHNAMES) &&
+	    VALID_STAT(smb_fname->st) &&
+	    S_ISLNK(smb_fname->st.st_ex_mode))
+	{
 		status = check_veto_path(conn, smb_fname);
 		if (!NT_STATUS_IS_OK(status)) {
 			TALLOC_FREE(smb_fname);
 			return status;
 		}
-		*_smb_fname = smb_fname;
-		return NT_STATUS_OK;
-	}
-
-	if (!smbreq) {
+	} else if (!smbreq) {
 		status = check_name(conn, smb_fname);
 	} else {
 		status = check_name_with_privilege(conn, smbreq,
@@ -2004,6 +1963,50 @@ static NTSTATUS filename_convert_internal(TALLOC_CTX *ctx,
 			smb_fname_str_dbg(smb_fname),
 			nt_errstr(status) ));
 		TALLOC_FREE(smb_fname);
+		return status;
+	}
+
+	has_wild = ms_has_wild(name_in);
+	if (has_wild) {
+		DBG_DEBUG("[%s] contains wildcard, skipping pathref fsp\n",
+			  name_in);
+		*_smb_fname = smb_fname;
+		return NT_STATUS_OK;
+	}
+
+	if (!VALID_STAT(smb_fname->st)) {
+		DBG_DEBUG("[%s] does not exist, skipping pathref fsp\n",
+			  smb_fname_str_dbg(smb_fname));
+		*_smb_fname = smb_fname;
+		return NT_STATUS_OK;
+	}
+
+	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK)) {
+		/*
+		 * Don't leak NT_STATUS_STOPPED_ON_SYMLINK into the callers:
+		 * it's a special SMB2 error that needs an extended SMB2 error
+		 * response. We don't support that for SMB2 and it doesn't exist
+		 * at all in SMB1.
+		 *
+		 * So we deal with symlinks here as we do in
+		 * SMB_VFS_CREATE_FILE(): return success for POSIX clients with
+		 * the notable difference that there will be no fsp in
+		 * smb_fname->fsp.
+		 *
+		 * For Windows (non POSIX) clients fail with
+		 * NT_STATUS_OBJECT_NAME_NOT_FOUND.
+		 */
+		if (ucf_flags & UCF_POSIX_PATHNAMES) {
+			status = NT_STATUS_OK;
+		} else {
+			status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
+		}
+	}
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("open_pathref_fsp [%s] failed: %s\n",
+			smb_fname_str_dbg(smb_fname),
+			nt_errstr(status));
 		return status;
 	}
 
@@ -2021,7 +2024,6 @@ NTSTATUS filename_convert(TALLOC_CTX *ctx,
 				const char *name_in,
 				uint32_t ucf_flags,
 				NTTIME twrp,
-				bool *ppath_contains_wcard,
 				struct smb_filename **pp_smb_fname)
 {
 	return filename_convert_internal(ctx,
@@ -2030,7 +2032,6 @@ NTSTATUS filename_convert(TALLOC_CTX *ctx,
 					name_in,
 					ucf_flags,
 					twrp,
-					ppath_contains_wcard,
 					pp_smb_fname);
 }
 
@@ -2044,7 +2045,6 @@ NTSTATUS filename_convert_with_privilege(TALLOC_CTX *ctx,
 				struct smb_request *smbreq,
                                 const char *name_in,
                                 uint32_t ucf_flags,
-                                bool *ppath_contains_wcard,
                                 struct smb_filename **pp_smb_fname)
 {
 	return filename_convert_internal(ctx,
@@ -2053,6 +2053,44 @@ NTSTATUS filename_convert_with_privilege(TALLOC_CTX *ctx,
 					name_in,
 					ucf_flags,
 					0,
-					ppath_contains_wcard,
 					pp_smb_fname);
+}
+
+/*
+ * Build the full path from a dirfsp and dirfsp relative name
+ */
+struct smb_filename *full_path_from_dirfsp_atname(
+	TALLOC_CTX *mem_ctx,
+	const struct files_struct *dirfsp,
+	const struct smb_filename *atname)
+{
+	struct smb_filename *fname = NULL;
+	char *path = NULL;
+
+	if (dirfsp == dirfsp->conn->cwd_fsp ||
+	    ISDOT(dirfsp->fsp_name->base_name) ||
+	    atname->base_name[0] == '/')
+	{
+		path = talloc_strdup(mem_ctx, atname->base_name);
+	} else {
+		path = talloc_asprintf(mem_ctx, "%s/%s",
+				       dirfsp->fsp_name->base_name,
+				       atname->base_name);
+	}
+	if (path == NULL) {
+		return NULL;
+	}
+
+	fname = synthetic_smb_fname(mem_ctx,
+				    path,
+				    atname->stream_name,
+				    &atname->st,
+				    atname->twrp,
+				    atname->flags);
+	TALLOC_FREE(path);
+	if (fname == NULL) {
+		return NULL;
+	}
+
+	return fname;
 }

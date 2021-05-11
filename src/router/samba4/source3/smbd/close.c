@@ -23,6 +23,7 @@
 #include "system/filesys.h"
 #include "lib/util/server_id.h"
 #include "printing.h"
+#include "locking/share_mode_lock.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
 #include "smbd/scavenger.h"
@@ -242,7 +243,7 @@ static bool has_other_nonposix_opens_fn(
 	    (e->flags & SHARE_MODE_FLAG_POSIX_OPEN)) {
 		return false;
 	}
-	if (e->share_file_id == fsp->fh->gen_id) {
+	if (e->share_file_id == fh_get_gen_id(fsp->fh)) {
 		struct server_id self = messaging_server_id(
 			fsp->conn->sconn->msg_ctx);
 		if (server_id_equal(&self, &e->pid)) {
@@ -315,12 +316,12 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
 	}
 
 	if (fsp->fsp_flags.write_time_forced) {
-		struct timespec ts;
+		NTTIME mtime = share_mode_changed_write_time(lck);
+		struct timespec ts = nt_time_to_full_timespec(mtime);
 
 		DEBUG(10,("close_remove_share_mode: write time forced "
 			"for file %s\n",
 			fsp_str_dbg(fsp)));
-		ts = nt_time_to_full_timespec(lck->data->changed_write_time);
 		set_close_write_time(fsp, ts);
 	} else if (fsp->fsp_flags.update_write_time_on_close) {
 		/* Someone had a pending write. */
@@ -341,21 +342,13 @@ static NTSTATUS close_remove_share_mode(files_struct *fsp,
 
 	if (fsp->fsp_flags.initial_delete_on_close &&
 			!is_delete_on_close_set(lck, fsp->name_hash)) {
-		struct auth_session_info *session_info = NULL;
-
 		/* Initial delete on close was set and no one else
 		 * wrote a real delete on close. */
 
-		status = smbXsrv_session_info_lookup(conn->sconn->client,
-						     fsp->vuid,
-						     &session_info);
-		if (!NT_STATUS_IS_OK(status)) {
-			return NT_STATUS_INTERNAL_ERROR;
-		}
 		fsp->fsp_flags.delete_on_close = true;
 		set_delete_on_close_lck(fsp, lck,
-					session_info->security_token,
-					session_info->unix_token);
+					fsp->conn->session_info->security_token,
+					fsp->conn->session_info->unix_token);
 	}
 
 	delete_file = is_delete_on_close_set(lck, fsp->name_hash) &&
@@ -601,13 +594,14 @@ static NTSTATUS update_write_time_on_close(struct files_struct *fsp)
 
 	lck = get_existing_share_mode_lock(talloc_tos(), fsp->file_id);
 	if (lck) {
+		NTTIME share_mtime = share_mode_changed_write_time(lck);
 		/* On close if we're changing the real file time we
 		 * must update it in the open file db too. */
 		(void)set_write_time(fsp->file_id, fsp->close_write_time);
 
 		/* Close write times overwrite sticky write times
 		   so we must replace any sticky write time here. */
-		if (!null_nttime(lck->data->changed_write_time)) {
+		if (!null_nttime(share_mtime)) {
 			(void)set_sticky_write_time(fsp->file_id, fsp->close_write_time);
 		}
 		TALLOC_FREE(lck);
@@ -666,7 +660,19 @@ static void assert_no_pending_aio(struct files_struct *fsp,
 		 * fsp->aio_requests[x], causing a crash.
 		 */
 		while (fsp->num_aio_requests != 0) {
-			TALLOC_FREE(fsp->aio_requests[0]);
+			/*
+			 * NB. We *MUST* use
+			 * talloc_free(fsp->aio_requests[0]),
+			 * and *NOT* TALLOC_FREE() here, as
+			 * TALLOC_FREE(fsp->aio_requests[0])
+			 * will overwrite any new contents of
+			 * fsp->aio_requests[0] that were
+			 * copied into it via the destructor
+			 * aio_del_req_from_fsp().
+			 *
+			 * BUG: https://bugzilla.samba.org/show_bug.cgi?id=14515
+			 */
+			talloc_free(fsp->aio_requests[0]);
 		}
 		return;
 	}
@@ -691,6 +697,8 @@ static NTSTATUS close_normal_file(struct smb_request *req, files_struct *fsp,
 	NTSTATUS tmp;
 	connection_struct *conn = fsp->conn;
 	bool is_durable = false;
+
+	SMB_ASSERT(fsp->fsp_flags.is_fsa);
 
 	assert_no_pending_aio(fsp, close_type);
 
@@ -774,18 +782,11 @@ static NTSTATUS close_normal_file(struct smb_request *req, files_struct *fsp,
 		fsp->op->global->durable = false;
 	}
 
-	if (fsp->print_file) {
-		/* FIXME: return spool errors */
-		print_spool_end(fsp, close_type);
-		file_free(req, fsp);
-		return NT_STATUS_OK;
-	}
-
 	/* If this is an old DOS or FCB open and we have multiple opens on
 	   the same handle we only have one share mode. Ensure we only remove
 	   the share mode on the last close. */
 
-	if (fsp->fh->ref_count == 1) {
+	if (fh_get_refcount(fsp->fh) == 1) {
 		/* Should we return on error here... ? */
 		tmp = close_remove_share_mode(fsp, close_type);
 		status = ntstatus_keeperror(status, tmp);
@@ -1142,6 +1143,8 @@ static NTSTATUS close_directory(struct smb_request *req, files_struct *fsp,
 	const struct security_unix_token *del_token = NULL;
 	NTSTATUS notify_status;
 
+	SMB_ASSERT(fsp->fsp_flags.is_fsa);
+
 	if (fsp->conn->sconn->using_smb2) {
 		notify_status = NT_STATUS_NOTIFY_CLEANUP;
 	} else {
@@ -1164,24 +1167,15 @@ static NTSTATUS close_directory(struct smb_request *req, files_struct *fsp,
 	}
 
 	if (fsp->fsp_flags.initial_delete_on_close) {
-		struct auth_session_info *session_info = NULL;
-
 		/* Initial delete on close was set - for
 		 * directories we don't care if anyone else
 		 * wrote a real delete on close. */
 
-		status = smbXsrv_session_info_lookup(fsp->conn->sconn->client,
-						     fsp->vuid,
-						     &session_info);
-		if (!NT_STATUS_IS_OK(status)) {
-			return NT_STATUS_INTERNAL_ERROR;
-		}
-
 		send_stat_cache_delete_message(fsp->conn->sconn->msg_ctx,
 					       fsp->fsp_name->base_name);
 		set_delete_on_close_lck(fsp, lck,
-					session_info->security_token,
-					session_info->unix_token);
+					fsp->conn->session_info->security_token,
+					fsp->conn->session_info->unix_token);
 		fsp->fsp_flags.delete_on_close = true;
 	}
 
@@ -1255,7 +1249,7 @@ static NTSTATUS close_directory(struct smb_request *req, files_struct *fsp,
 
 	if (!NT_STATUS_IS_OK(status1)) {
 		DEBUG(0, ("Could not close dir! fname=%s, fd=%d, err=%d=%s\n",
-			  fsp_str_dbg(fsp), fsp->fh->fd, errno,
+			  fsp_str_dbg(fsp), fsp_get_pathref_fd(fsp), errno,
 			  strerror(errno)));
 	}
 
@@ -1279,47 +1273,91 @@ NTSTATUS close_file(struct smb_request *req, files_struct *fsp,
 {
 	NTSTATUS status;
 	struct files_struct *base_fsp = fsp->base_fsp;
+	bool close_base_fsp = false;
 
-	if (fsp->fsp_flags.is_dirfsp) {
+	/*
+	 * This fsp can never be an internal dirfsp. They must
+	 * be explicitly closed by TALLOC_FREE of the dir handle.
+	 */
+	SMB_ASSERT(!fsp->fsp_flags.is_dirfsp);
+
+	if (fsp->stream_fsp != NULL) {
 		/*
-		 * The typical way to get here is via file_close_[conn|user]()
-		 * and this is taken care of below.
+		 * fsp is the base for a stream.
+		 *
+		 * We're called with SHUTDOWN_CLOSE from files.c which walks the
+		 * complete list of files.
+		 *
+		 * We need to wait until the stream is closed.
 		 */
+		SMB_ASSERT(close_type == SHUTDOWN_CLOSE);
 		return NT_STATUS_OK;
 	}
 
-	if (fsp->dirfsp != NULL &&
-	    fsp->dirfsp != fsp->conn->cwd_fsp)
-	{
-		status = fd_close(fsp->dirfsp);
-		if (!NT_STATUS_IS_OK(status)) {
-			return status;
-		}
+	if (base_fsp != NULL) {
+		/*
+		 * We need to remove the link in order to
+		 * recurse for the base fsp below.
+		 */
+		SMB_ASSERT(base_fsp->base_fsp == NULL);
+		SMB_ASSERT(base_fsp->stream_fsp == fsp);
+		base_fsp->stream_fsp = NULL;
 
-		file_free(NULL, fsp->dirfsp);
-		fsp->dirfsp = NULL;
+		if (close_type == SHUTDOWN_CLOSE) {
+			/*
+			 * We're called with SHUTDOWN_CLOSE from files.c
+			 * which walks the complete list of files.
+			 *
+			 * We may need to defer the SHUTDOWN_CLOSE
+			 * if it's the next in the linked list.
+			 *
+			 * So we only close if the base is *not* the
+			 * next in the list.
+			 */
+			close_base_fsp = (fsp->next != base_fsp);
+		} else {
+			close_base_fsp = true;
+		}
 	}
 
-	if (fsp->fsp_flags.is_directory) {
-		status = close_directory(req, fsp, close_type);
-	} else if (fsp->fake_file_handle != NULL) {
+	if (fsp->fake_file_handle != NULL) {
 		status = close_fake_file(req, fsp);
+	} else if (fsp->print_file != NULL) {
+		/* FIXME: return spool errors */
+		print_spool_end(fsp, close_type);
+		file_free(req, fsp);
+		status = NT_STATUS_OK;
+	} else if (!fsp->fsp_flags.is_fsa) {
+		if (close_type == NORMAL_CLOSE) {
+			DBG_ERR("unexpected NORMAL_CLOSE for [%s] "
+				"is_fsa[%u] is_pathref[%u] is_directory[%u]\n",
+				fsp_str_dbg(fsp),
+				fsp->fsp_flags.is_fsa,
+				fsp->fsp_flags.is_pathref,
+				fsp->fsp_flags.is_directory);
+		}
+		SMB_ASSERT(close_type != NORMAL_CLOSE);
+		fd_close(fsp);
+		file_free(req, fsp);
+		status = NT_STATUS_OK;
+	} else if (fsp->fsp_flags.is_directory) {
+		status = close_directory(req, fsp, close_type);
 	} else {
 		status = close_normal_file(req, fsp, close_type);
 	}
 
-	if ((base_fsp != NULL) && (close_type != SHUTDOWN_CLOSE)) {
+	if (close_base_fsp) {
 
 		/*
 		 * fsp was a stream, the base fsp can't be a stream as well
 		 *
-		 * For SHUTDOWN_CLOSE this is not possible here, because
+		 * For SHUTDOWN_CLOSE this is not possible here
+		 * (if the base_fsp was the next in the linked list), because
 		 * SHUTDOWN_CLOSE only happens from files.c which walks the
 		 * complete list of files. If we mess with more than one fsp
 		 * those loops will become confused.
 		 */
 
-		SMB_ASSERT(base_fsp->base_fsp == NULL);
 		close_file(req, base_fsp, close_type);
 	}
 

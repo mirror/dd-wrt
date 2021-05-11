@@ -22,6 +22,7 @@
 #include "includes.h"
 #include "libcli/smb/smb_common.h"
 #include "system/filesys.h"
+#include "lib/param/loadparm.h"
 
 const char *smb_protocol_types_string(enum protocol_types protocol)
 {
@@ -66,7 +67,7 @@ const char *smb_protocol_types_string(enum protocol_types protocol)
 **/
 char *attrib_string(TALLOC_CTX *mem_ctx, uint32_t attrib)
 {
-	int i, len;
+	size_t i, len;
 	const struct {
 		char c;
 		uint16_t attr;
@@ -427,4 +428,43 @@ NTSTATUS smb_bytes_pull_str(TALLOC_CTX *mem_ctx, char **_str, bool ucs2,
 {
 	return internal_bytes_pull_str(mem_ctx, _str, ucs2, true,
 				       buf, buf_len, position, _consumed);
+}
+
+/**
+ * @brief Translate SMB signing settings as string to an enum.
+ *
+ * @param[in]  str  The string to translate.
+ *
+ * @return A corresponding enum @smb_signing_setting tranlated from the string.
+ */
+enum smb_signing_setting smb_signing_setting_translate(const char *str)
+{
+	enum smb_signing_setting signing_state = SMB_SIGNING_REQUIRED;
+	int32_t val = lpcfg_parse_enum_vals("client signing", str);
+
+	if (val != INT32_MIN) {
+		signing_state = val;
+	}
+
+	return signing_state;
+}
+
+/**
+ * @brief Translate SMB encryption settings as string to an enum.
+ *
+ * @param[in]  str  The string to translate.
+ *
+ * @return A corresponding enum @smb_encryption_setting tranlated from the
+ *         string.
+ */
+enum smb_encryption_setting smb_encryption_setting_translate(const char *str)
+{
+	enum smb_encryption_setting encryption_state = SMB_ENCRYPTION_REQUIRED;
+	int32_t val = lpcfg_parse_enum_vals("client smb encrypt", str);
+
+	if (val != INT32_MIN) {
+		encryption_state = val;
+	}
+
+	return encryption_state;
 }

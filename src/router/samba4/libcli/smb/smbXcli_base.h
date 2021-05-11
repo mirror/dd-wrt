@@ -43,6 +43,7 @@ struct smbXcli_conn *smbXcli_conn_create(TALLOC_CTX *mem_ctx,
 bool smbXcli_conn_is_connected(struct smbXcli_conn *conn);
 void smbXcli_conn_disconnect(struct smbXcli_conn *conn, NTSTATUS status);
 
+struct tevent_queue *smbXcli_conn_send_queue(struct smbXcli_conn *conn);
 bool smbXcli_conn_has_async_calls(struct smbXcli_conn *conn);
 
 bool smbXcli_conn_dfs_supported(struct smbXcli_conn *conn);
@@ -518,6 +519,7 @@ NTSTATUS smb2cli_session_set_channel_key(struct smbXcli_session *session,
 					 const DATA_BLOB channel_key,
 					 const struct iovec *recv_iov);
 NTSTATUS smb2cli_session_encryption_on(struct smbXcli_session *session);
+uint16_t smb2cli_session_get_encryption_cipher(struct smbXcli_session *session);
 
 struct smbXcli_tcon *smbXcli_tcon_create(TALLOC_CTX *mem_ctx);
 struct smbXcli_tcon *smbXcli_tcon_copy(TALLOC_CTX *mem_ctx,

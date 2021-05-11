@@ -29,7 +29,6 @@ import ldb
 import samba.param
 from samba import _glue
 from samba._ldb import Ldb as _Ldb
-from samba.compat import string_types
 
 
 def source_tree_topdir():
@@ -250,8 +249,8 @@ def substitute_var(text, values):
     """
 
     for (name, value) in values.items():
-        assert isinstance(name, string_types), "%r is not a string" % name
-        assert isinstance(value, string_types), "Value %r for %s is not a string" % (value, name)
+        assert isinstance(name, str), "%r is not a string" % name
+        assert isinstance(value, str), "Value %r for %s is not a string" % (value, name)
         text = text.replace("${%s}" % name, value)
 
     return text
@@ -323,46 +322,6 @@ def valid_netbios_name(name):
     return True
 
 
-def import_bundled_package(modulename, location, source_tree_container,
-                           namespace):
-    """Import the bundled version of a package.
-
-    :note: This should only be called if the system version of the package
-        is not adequate.
-
-    :param modulename: Module name to import
-    :param location: Location to add to sys.path (can be relative to
-        ${srcdir}/${source_tree_container})
-    :param source_tree_container: Directory under source root that
-        contains the bundled third party modules.
-    :param namespace: Namespace to import module from, when not in source tree
-    """
-    if in_source_tree():
-        extra_path = os.path.join(source_tree_topdir(), source_tree_container,
-                                  location)
-        if extra_path not in sys.path:
-            sys.path.insert(0, extra_path)
-        sys.modules[modulename] = __import__(modulename)
-    else:
-        sys.modules[modulename] = __import__(
-            "%s.%s" % (namespace, modulename), fromlist=[namespace])
-
-
-def ensure_third_party_module(modulename, location):
-    """Add a location to sys.path if a third party dependency can't be found.
-
-    :param modulename: Module name to import
-    :param location: Location to add to sys.path (can be relative to
-        ${srcdir}/third_party)
-    """
-    try:
-        __import__(modulename)
-    except ImportError:
-        import_bundled_package(modulename, location,
-                               source_tree_container="third_party",
-                               namespace="samba.third_party")
-
-
 def dn_from_dns_name(dnsdomain):
     """return a DN from a DNS name domain/forest root"""
     return "DC=" + ",DC=".join(dnsdomain.split("."))
@@ -386,6 +345,23 @@ def arcfour_encrypt(key, data):
     return arcfour_crypt_blob(data, key)
 
 
+def enable_net_export_keytab():
+    """This function modifies the samba.net.Net class to contain
+    an export_keytab() method."""
+    # This looks very strange because it is.
+    #
+    # The dckeytab modules contains nothing, but the act of importing
+    # it pushes a method into samba.net.Net. It ended up this way
+    # because Net.export_keytab() only works on Heimdal builds, and
+    # people sometimes want to compile Samba without Heimdal while
+    # still having a working samba-tool.
+    #
+    # There is probably a better way to do this than a magic module
+    # import (yes, that's a FIXME if you can be bothered).
+    from samba import net
+    from samba import dckeytab
+
+
 version = _glue.version
 interface_ips = _glue.interface_ips
 fault_setup = _glue.fault_setup
@@ -403,6 +379,7 @@ strcasecmp_m = _glue.strcasecmp_m
 strstr_m = _glue.strstr_m
 is_ntvfs_fileserver_built = _glue.is_ntvfs_fileserver_built
 is_heimdal_built = _glue.is_heimdal_built
+is_ad_dc_built = _glue.is_ad_dc_built
 
 NTSTATUSError = _glue.NTSTATUSError
 HRESULTError = _glue.HRESULTError

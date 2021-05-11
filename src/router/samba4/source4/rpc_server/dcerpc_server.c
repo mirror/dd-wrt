@@ -27,10 +27,10 @@
 #include "rpc_server/dcerpc_server.h"
 #include "rpc_server/dcerpc_server_proto.h"
 #include "param/param.h"
-#include "smbd/service_stream.h"
+#include "samba/service_stream.h"
 #include "lib/tsocket/tsocket.h"
 #include "lib/socket/socket.h"
-#include "smbd/process_model.h"
+#include "samba/process_model.h"
 #include "lib/util/samba_modules.h"
 #include "lib/util/tevent_ntstatus.h"
 
@@ -673,23 +673,12 @@ NTSTATUS dcesrv_gensec_prepare(TALLOC_CTX *mem_ctx,
 	struct cli_credentials *server_creds = NULL;
 	struct imessaging_context *imsg_ctx =
 		dcesrv_imessaging_context(call->conn);
-	NTSTATUS status;
 
-	server_creds = cli_credentials_init(call->auth_state);
-	if (!server_creds) {
+	server_creds = cli_credentials_init_server(call->auth_state,
+						   call->conn->dce_ctx->lp_ctx);
+	if (server_creds == NULL) {
 		DEBUG(1, ("Failed to init server credentials\n"));
 		return NT_STATUS_NO_MEMORY;
-	}
-
-	cli_credentials_set_conf(server_creds, call->conn->dce_ctx->lp_ctx);
-
-	status = cli_credentials_set_machine_account(server_creds,
-						call->conn->dce_ctx->lp_ctx);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(1, ("Failed to obtain server credentials: %s\n",
-			  nt_errstr(status)));
-		talloc_free(server_creds);
-		return status;
 	}
 
 	return samba_server_gensec_start(mem_ctx,

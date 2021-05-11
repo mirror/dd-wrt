@@ -37,6 +37,8 @@
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_AUTH
 
+#undef strcasecmp
+
 /* the list of currently registered GENSEC backends */
 static const struct gensec_security_ops **generic_security_ops;
 static int gensec_num_backends;
@@ -83,21 +85,14 @@ bool gensec_security_ops_enabled(const struct gensec_security_ops *ops, struct g
  * more compplex.
  */
 
-_PUBLIC_ const struct gensec_security_ops **gensec_use_kerberos_mechs(TALLOC_CTX *mem_ctx,
-			const struct gensec_security_ops * const *old_gensec_list,
-			struct cli_credentials *creds)
+static const struct gensec_security_ops **gensec_use_kerberos_mechs(
+		TALLOC_CTX *mem_ctx,
+		const struct gensec_security_ops * const *old_gensec_list,
+		enum credentials_use_kerberos use_kerberos,
+		bool keep_schannel)
 {
 	const struct gensec_security_ops **new_gensec_list;
 	int i, j, num_mechs_in;
-	enum credentials_use_kerberos use_kerberos = CRED_AUTO_USE_KERBEROS;
-	bool keep_schannel = false;
-
-	if (creds) {
-		use_kerberos = cli_credentials_get_kerberos_state(creds);
-		if (cli_credentials_get_netlogon_creds(creds) != NULL) {
-			keep_schannel = true;
-		}
-	}
 
 	for (num_mechs_in=0; old_gensec_list && old_gensec_list[num_mechs_in]; num_mechs_in++) {
 		/* noop */
@@ -124,18 +119,18 @@ _PUBLIC_ const struct gensec_security_ops **gensec_use_kerberos_mechs(TALLOC_CTX
 		}
 
 		switch (use_kerberos) {
-		case CRED_AUTO_USE_KERBEROS:
+		case CRED_USE_KERBEROS_DESIRED:
 			keep = true;
 			break;
 
-		case CRED_DONT_USE_KERBEROS:
+		case CRED_USE_KERBEROS_DISABLED:
 			if (old_gensec_list[i]->kerberos == false) {
 				keep = true;
 			}
 
 			break;
 
-		case CRED_MUST_USE_KERBEROS:
+		case CRED_USE_KERBEROS_REQUIRED:
 			if (old_gensec_list[i]->kerberos == true) {
 				keep = true;
 			}
@@ -162,18 +157,37 @@ _PUBLIC_ const struct gensec_security_ops **gensec_security_mechs(
 				struct gensec_security *gensec_security,
 				TALLOC_CTX *mem_ctx)
 {
-	struct cli_credentials *creds = NULL;
 	const struct gensec_security_ops * const *backends = gensec_security_all();
+	enum credentials_use_kerberos use_kerberos = CRED_USE_KERBEROS_DESIRED;
+	bool keep_schannel = false;
 
 	if (gensec_security != NULL) {
+		struct cli_credentials *creds = NULL;
+
 		creds = gensec_get_credentials(gensec_security);
+		if (creds != NULL) {
+			use_kerberos = cli_credentials_get_kerberos_state(creds);
+			if (cli_credentials_get_netlogon_creds(creds) != NULL) {
+				keep_schannel = true;
+			}
+
+			/*
+			 * Even if Kerberos is set to REQUIRED, keep the
+			 * schannel auth mechanism that machine accounts are
+			 * able to authenticate via netlogon.
+			 */
+			if (gensec_security->gensec_role == GENSEC_SERVER) {
+				keep_schannel = true;
+			}
+		}
 
 		if (gensec_security->settings->backends) {
 			backends = gensec_security->settings->backends;
 		}
 	}
 
-	return gensec_use_kerberos_mechs(mem_ctx, backends, creds);
+	return gensec_use_kerberos_mechs(mem_ctx, backends,
+					 use_kerberos, keep_schannel);
 
 }
 
@@ -297,6 +311,93 @@ const struct gensec_security_ops *gensec_security_by_name(struct gensec_security
 	}
 	talloc_free(mem_ctx);
 	return NULL;
+}
+
+static const char **gensec_security_sasl_names_from_ops(
+	struct gensec_security *gensec_security,
+	TALLOC_CTX *mem_ctx,
+	const struct gensec_security_ops * const *ops)
+{
+	const char **sasl_names = NULL;
+	size_t i, sasl_names_count = 0;
+
+	if (ops == NULL) {
+		return NULL;
+	}
+
+	sasl_names = talloc_array(mem_ctx, const char *, 1);
+	if (sasl_names == NULL) {
+		return NULL;
+	}
+
+	for (i = 0; ops[i] != NULL; i++) {
+		enum gensec_role role = GENSEC_SERVER;
+		const char **tmp = NULL;
+
+		if (ops[i]->sasl_name == NULL) {
+			continue;
+		}
+
+		if (gensec_security != NULL) {
+			if (!gensec_security_ops_enabled(ops[i],
+							 gensec_security)) {
+				continue;
+			}
+
+			role = gensec_security->gensec_role;
+		}
+
+		switch (role) {
+		case GENSEC_CLIENT:
+			if (ops[i]->client_start == NULL) {
+				continue;
+			}
+			break;
+		case GENSEC_SERVER:
+			if (ops[i]->server_start == NULL) {
+				continue;
+			}
+			break;
+		}
+
+		tmp = talloc_realloc(mem_ctx,
+				     sasl_names,
+				     const char *,
+				     sasl_names_count + 2);
+		if (tmp == NULL) {
+			TALLOC_FREE(sasl_names);
+			return NULL;
+		}
+		sasl_names = tmp;
+
+		sasl_names[sasl_names_count] = ops[i]->sasl_name;
+		sasl_names_count++;
+	}
+	sasl_names[sasl_names_count] = NULL;
+
+	return sasl_names;
+}
+
+/**
+ * @brief Get the sasl names from the gensec security context.
+ *
+ * @param[in]  gensec_security The gensec security context.
+ *
+ * @param[in]  mem_ctx The memory context to allocate memory on.
+ *
+ * @return An allocated array with sasl names, NULL on error.
+ */
+_PUBLIC_
+const char **gensec_security_sasl_names(struct gensec_security *gensec_security,
+					TALLOC_CTX *mem_ctx)
+{
+	const struct gensec_security_ops **ops = NULL;
+
+	ops = gensec_security_mechs(gensec_security, mem_ctx);
+
+	return gensec_security_sasl_names_from_ops(gensec_security,
+						   mem_ctx,
+						   ops);
 }
 
 /**

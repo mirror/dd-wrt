@@ -2158,22 +2158,16 @@ NTSTATUS rpc_pipe_bind(struct rpc_pipe_client *cli,
 unsigned int rpccli_set_timeout(struct rpc_pipe_client *rpc_cli,
 				unsigned int timeout)
 {
-	unsigned int old;
-
-	if (rpc_cli->transport == NULL) {
+	if (rpc_cli == NULL) {
 		return RPCCLI_DEFAULT_TIMEOUT;
 	}
 
-	if (rpc_cli->transport->set_timeout == NULL) {
+	if (rpc_cli->binding_handle == NULL) {
 		return RPCCLI_DEFAULT_TIMEOUT;
 	}
 
-	old = rpc_cli->transport->set_timeout(rpc_cli->transport->priv, timeout);
-	if (old == 0) {
-		return RPCCLI_DEFAULT_TIMEOUT;
-	}
-
-	return old;
+	return dcerpc_binding_handle_set_timeout(rpc_cli->binding_handle,
+						 timeout);
 }
 
 bool rpccli_is_connected(struct rpc_pipe_client *rpc_cli)
@@ -2182,11 +2176,11 @@ bool rpccli_is_connected(struct rpc_pipe_client *rpc_cli)
 		return false;
 	}
 
-	if (rpc_cli->transport == NULL) {
+	if (rpc_cli->binding_handle == NULL) {
 		return false;
 	}
 
-	return rpc_cli->transport->is_connected(rpc_cli->transport->priv);
+	return dcerpc_binding_handle_is_connected(rpc_cli->binding_handle);
 }
 
 struct rpccli_bh_state {
@@ -2197,8 +2191,17 @@ static bool rpccli_bh_is_connected(struct dcerpc_binding_handle *h)
 {
 	struct rpccli_bh_state *hs = dcerpc_binding_handle_data(h,
 				     struct rpccli_bh_state);
+	struct rpc_cli_transport *transport = hs->rpc_cli->transport;
 
-	return rpccli_is_connected(hs->rpc_cli);
+	if (transport == NULL) {
+		return false;
+	}
+
+	if (transport->is_connected == NULL) {
+		return false;
+	}
+
+	return transport->is_connected(transport->priv);
 }
 
 static uint32_t rpccli_bh_set_timeout(struct dcerpc_binding_handle *h,
@@ -2206,8 +2209,23 @@ static uint32_t rpccli_bh_set_timeout(struct dcerpc_binding_handle *h,
 {
 	struct rpccli_bh_state *hs = dcerpc_binding_handle_data(h,
 				     struct rpccli_bh_state);
+	struct rpc_cli_transport *transport = hs->rpc_cli->transport;
+	unsigned int old;
 
-	return rpccli_set_timeout(hs->rpc_cli, timeout);
+	if (transport == NULL) {
+		return RPCCLI_DEFAULT_TIMEOUT;
+	}
+
+	if (transport->set_timeout == NULL) {
+		return RPCCLI_DEFAULT_TIMEOUT;
+	}
+
+	old = transport->set_timeout(transport->priv, timeout);
+	if (old == 0) {
+		return RPCCLI_DEFAULT_TIMEOUT;
+	}
+
+	return old;
 }
 
 static void rpccli_bh_auth_info(struct dcerpc_binding_handle *h,
@@ -2637,7 +2655,7 @@ NTSTATUS rpccli_ncalrpc_bind_data(TALLOC_CTX *mem_ctx,
 					NAME_NT_AUTHORITY, /* domain */
 					"SYSTEM",
 					NULL, /* password */
-					CRED_DONT_USE_KERBEROS,
+					CRED_USE_KERBEROS_DISABLED,
 					NULL, /* netlogon_creds_CredentialState */
 					presult);
 }
@@ -2903,10 +2921,17 @@ NTSTATUS rpc_pipe_open_ncalrpc(TALLOC_CTX *mem_ctx, const char *socket_path,
 			       struct rpc_pipe_client **presult)
 {
 	struct rpc_pipe_client *result;
-	struct sockaddr_un addr;
+	struct sockaddr_un addr = { .sun_family = AF_UNIX };
+	socklen_t salen = sizeof(addr);
+	size_t pathlen;
 	NTSTATUS status;
-	int fd;
-	socklen_t salen;
+	int fd = -1;
+
+	pathlen = strlcpy(addr.sun_path, socket_path, sizeof(addr.sun_path));
+	if (pathlen >= sizeof(addr.sun_path)) {
+		DBG_DEBUG("socket_path %s too long\n", socket_path);
+		return NT_STATUS_NAME_TOO_LONG;
+	}
 
 	result = talloc_zero(mem_ctx, struct rpc_pipe_client);
 	if (result == NULL) {
@@ -2937,36 +2962,34 @@ NTSTATUS rpc_pipe_open_ncalrpc(TALLOC_CTX *mem_ctx, const char *socket_path,
 		goto fail;
 	}
 
-	ZERO_STRUCT(addr);
-	addr.sun_family = AF_UNIX;
-	strlcpy(addr.sun_path, socket_path, sizeof(addr.sun_path));
-	salen = sizeof(struct sockaddr_un);
-
 	if (connect(fd, (struct sockaddr *)(void *)&addr, salen) == -1) {
 		DEBUG(0, ("connect(%s) failed: %s\n", socket_path,
 			  strerror(errno)));
-		close(fd);
-		return map_nt_error_from_unix(errno);
+		status = map_nt_error_from_unix(errno);
+		goto fail;
 	}
 
 	status = rpc_transport_sock_init(result, fd, &result->transport);
 	if (!NT_STATUS_IS_OK(status)) {
-		close(fd);
 		goto fail;
 	}
+	fd = -1;
 
 	result->transport->transport = NCALRPC;
 
 	result->binding_handle = rpccli_bh_create(result, NULL, table);
 	if (result->binding_handle == NULL) {
-		TALLOC_FREE(result);
-		return NT_STATUS_NO_MEMORY;
+		status = NT_STATUS_NO_MEMORY;
+		goto fail;
 	}
 
 	*presult = result;
 	return NT_STATUS_OK;
 
  fail:
+	if (fd != -1) {
+		close(fd);
+	}
 	TALLOC_FREE(result);
 	return status;
 }

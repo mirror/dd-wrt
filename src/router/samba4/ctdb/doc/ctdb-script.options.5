@@ -2,12 +2,12 @@
 .\"     Title: ctdb-script.options
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 11/03/2020
+.\"      Date: 04/26/2021
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB\-SCRIPT\&.OPTIO" "5" "11/03/2020" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB\-SCRIPT\&.OPTIO" "5" "04/26/2021" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -67,16 +67,16 @@ Default is "no"\&.
 .PP
 Provides CTDB\*(Aqs NAT gateway functionality\&.
 .PP
-NAT gateway is used to configure fallback routing for nodes when they do not host any public IP addresses\&. For example, it allows unhealthy nodes to reliably communicate with external infrastructure\&. One node in a NAT gateway group will be designated as the NAT gateway master node and other (slave) nodes will be configured with fallback routes via the NAT gateway master node\&. For more information, see the
+NAT gateway is used to configure fallback routing for nodes when they do not host any public IP addresses\&. For example, it allows unhealthy nodes to reliably communicate with external infrastructure\&. One node in a NAT gateway group will be designated as the NAT gateway leader node and other (follower) nodes will be configured with fallback routes via the NAT gateway leader node\&. For more information, see the
 NAT GATEWAY
 section in
 \fBctdb\fR(7)\&.
 .PP
 CTDB_NATGW_DEFAULT_GATEWAY=\fIIPADDR\fR
 .RS 4
-IPADDR is an alternate network gateway to use on the NAT gateway master node\&. If set, a fallback default route is added via this network gateway\&.
+IPADDR is an alternate network gateway to use on the NAT gateway leader node\&. If set, a fallback default route is added via this network gateway\&.
 .sp
-No default\&. Setting this variable is optional \- if not set that no route is created on the NAT gateway master node\&.
+No default\&. Setting this variable is optional \- if not set that no route is created on the NAT gateway leader node\&.
 .RE
 .PP
 CTDB_NATGW_NODES=\fIFILENAME\fR
@@ -89,7 +89,7 @@ File format:
 .RS 4
 .\}
 .nf
-\fIIPADDR\fR [slave\-only]
+\fIIPADDR\fR [follower\-only]
 	      
 .fi
 .if n \{\
@@ -98,7 +98,7 @@ File format:
 .sp
 IPADDR is the private IP address of each node in the NAT gateway group\&.
 .sp
-If "slave\-only" is specified then the corresponding node can not be the NAT gateway master node\&. In this case
+If "follower\-only" is specified then the corresponding node can not be the NAT gateway leader node\&. In this case
 \fICTDB_NATGW_PUBLIC_IFACE\fR
 and
 \fICTDB_NATGW_PUBLIC_IP\fR
@@ -111,7 +111,7 @@ when enabled\&.
 .PP
 CTDB_NATGW_PRIVATE_NETWORK=\fIIPADDR/MASK\fR
 .RS 4
-IPADDR/MASK is the private sub\-network that is internally routed via the NAT gateway master node\&. This is usually the private network that is used for node addresses\&.
+IPADDR/MASK is the private sub\-network that is internally routed via the NAT gateway leader node\&. This is usually the private network that is used for node addresses\&.
 .sp
 No default\&.
 .RE
@@ -125,7 +125,7 @@ No default\&.
 .PP
 CTDB_NATGW_PUBLIC_IP=\fIIPADDR/MASK\fR
 .RS 4
-IPADDR/MASK indicates the IP address that is used for outgoing traffic (originating from CTDB_NATGW_PRIVATE_NETWORK) on the NAT gateway master node\&. This
+IPADDR/MASK indicates the IP address that is used for outgoing traffic (originating from CTDB_NATGW_PRIVATE_NETWORK) on the NAT gateway leader node\&. This
 \fImust not\fR
 be a configured public IP address\&.
 .sp
@@ -136,13 +136,13 @@ CTDB_NATGW_STATIC_ROUTES=\fIIPADDR/MASK[@GATEWAY]\fR \&.\&.\&.
 .RS 4
 Each IPADDR/MASK identifies a network or host to which NATGW should create a fallback route, instead of creating a single default route\&. This can be used when there is already a default route, via an interface that can not reach required infrastructure, that overrides the NAT gateway default route\&.
 .sp
-If GATEWAY is specified then the corresponding route on the NATGW master node will be via GATEWAY\&. Such routes are created even if
+If GATEWAY is specified then the corresponding route on the NATGW leader node will be via GATEWAY\&. Such routes are created even if
 \fICTDB_NATGW_DEFAULT_GATEWAY\fR
-is not specified\&. If GATEWAY is not specified for some networks then routes are only created on the NATGW master node for those networks if
+is not specified\&. If GATEWAY is not specified for some networks then routes are only created on the NATGW leader node for those networks if
 \fICTDB_NATGW_DEFAULT_GATEWAY\fR
 is specified\&.
 .sp
-This should be used with care to avoid causing traffic to unnecessarily double\-hop through the NAT gateway master, even when a node is hosting public IP addresses\&. Each specified network or host should probably have a corresponding automatically created link route or static route to avoid this\&.
+This should be used with care to avoid causing traffic to unnecessarily double\-hop through the NAT gateway leader, even when a node is hosting public IP addresses\&. Each specified network or host should probably have a corresponding automatically created link route or static route to avoid this\&.
 .sp
 No default\&.
 .RE
@@ -295,7 +295,7 @@ File format:
 .RS 4
 .\}
 .nf
-\fIIPADDR\fR [slave\-only]
+\fIIPADDR\fR [follower\-only]
 	      
 .fi
 .if n \{\
@@ -304,7 +304,7 @@ File format:
 .sp
 IPADDR is the private IP address of each node in the LVS group\&.
 .sp
-If "slave\-only" is specified then the corresponding node can not be the LVS master node\&. In this case
+If "follower\-only" is specified then the corresponding node can not be the LVS leader node\&. In this case
 \fICTDB_LVS_PUBLIC_IFACE\fR
 and
 \fICTDB_LVS_PUBLIC_IP\fR
@@ -318,7 +318,7 @@ when enabled\&.
 CTDB_LVS_PUBLIC_IFACE=\fIINTERFACE\fR
 .RS 4
 INTERFACE is the network interface that clients will use to connection to
-\fICTDB_LVS_PUBLIC_IP\fR\&. This is optional for slave\-only nodes\&. No default\&.
+\fICTDB_LVS_PUBLIC_IP\fR\&. This is optional for follower\-only nodes\&. No default\&.
 .RE
 .PP
 CTDB_LVS_PUBLIC_IP=\fIIPADDR\fR

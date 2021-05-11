@@ -30,10 +30,10 @@
 #include "../lib/util/dlinklist.h"
 #include "../lib/util/asn1.h"
 #include "ldap_server/ldap_server.h"
-#include "smbd/service_task.h"
-#include "smbd/service_stream.h"
-#include "smbd/service.h"
-#include "smbd/process_model.h"
+#include "samba/service_task.h"
+#include "samba/service_stream.h"
+#include "samba/service.h"
+#include "samba/process_model.h"
 #include "lib/tls/tls.h"
 #include "lib/messaging/irpc.h"
 #include <ldb.h>
@@ -48,6 +48,8 @@
 #include "../libcli/util/tstream.h"
 #include "libds/common/roles.h"
 #include "lib/util/time.h"
+
+#undef strcasecmp
 
 static void ldapsrv_terminate_connection_done(struct tevent_req *subreq);
 
@@ -594,10 +596,7 @@ static void ldapsrv_call_read_done(struct tevent_req *subreq)
 		return;
 	}
 
-	if (!asn1_load(asn1, blob)) {
-		ldapsrv_terminate_connection(conn, "asn1_load failed");
-		return;
-	}
+	asn1_load_nocopy(asn1, blob.data, blob.length);
 
 	limits.max_search_size =
 		lpcfg_ldap_max_search_request_size(conn->lp_ctx);
@@ -612,6 +611,7 @@ static void ldapsrv_call_read_done(struct tevent_req *subreq)
 	}
 
 	data_blob_free(&blob);
+	TALLOC_FREE(asn1);
 
 
 	/* queue the call in the global queue */
@@ -720,7 +720,7 @@ static void ldapsrv_call_writev_start(struct ldapsrv_call *call)
 
 		/*
 		 * Overflow is harmless here, just used below to
-		 * decide if to read or write, but checkd above anyway
+		 * decide if to read or write, but checked above anyway
 		 */
 		length += reply->blob.length;
 

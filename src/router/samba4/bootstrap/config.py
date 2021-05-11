@@ -134,21 +134,24 @@ PKGS = [
     ('python3-cryptography', 'python3-cryptography'), # for krb5 tests
     ('python3-dev', 'python3-devel'),
     ('python3-dbg', ''),
-    ('python3-iso8601', ''),
+    ('python3-iso8601', 'python3-iso8601'),
     ('python3-gpg', 'python3-gpg'),  # defaults to ubuntu/fedora latest
     ('python3-markdown', 'python3-markdown'),
     ('python3-matplotlib', ''),
     ('python3-dnspython', 'python3-dns'),
     ('python3-pexpect', ''),  # for wintest only
     ('python3-pyasn1', 'python3-pyasn1'), # for krb5 tests
+    ('python3-setproctitle', 'python3-setproctitle'),
 
     ('', 'libsemanage-python'),
     ('', 'policycoreutils-python'),
 
     # perl
     ('libparse-yapp-perl', 'perl-Parse-Yapp'),
-    ('libjson-perl', 'perl-JSON-Parse'),
+    ('libjson-perl', 'perl-JSON'),
+    ('', 'perl-JSON-Parse'),
     ('perl-modules', ''),
+    ('', 'perl-FindBin'),
     ('', 'perl-Archive-Tar'),
     ('', 'perl-ExtUtils-MakeMaker'),
     ('', 'perl-Test-Base'),
@@ -232,8 +235,10 @@ yum install -y dnf-plugins-core
 yum install -y epel-release
 
 yum -v repolist all
-yum config-manager --set-enabled PowerTools -y
-yum config-manager --set-enabled Devel -y
+yum config-manager --set-enabled PowerTools -y || \
+    yum config-manager --set-enabled powertools -y
+yum config-manager --set-enabled Devel -y || \
+    yum config-manager --set-enabled devel -y
 yum update -y
 
 yum install -y \
@@ -393,7 +398,6 @@ DEB_DISTS = {
         'docker_image': 'ubuntu:16.04',
         'vagrant_box': 'ubuntu/xenial64',
         'replace': {
-            'python-gpg': 'python-gpgme',
             'python3-gpg': 'python3-gpgme',
             'glusterfs-common': '',
             'libcephfs-dev': '',
@@ -443,12 +447,14 @@ RPM_DISTS = {
             # update perl core modules on centos
             # fix: Can't locate Archive/Tar.pm in @INC
             'perl': 'perl-core',
+            'perl-FindBin': '',
             'rpcsvc-proto-devel': '',
             'glusterfs-api-devel': '',
             'glusterfs-devel': '',
             'libcephfs-devel': '',
             'gnutls-devel': 'compat-gnutls34-devel',
             'liburing-devel': '',   # not available
+            'python3-setproctitle': 'python36-setproctitle',
         }
     },
     'centos8': {
@@ -462,18 +468,9 @@ RPM_DISTS = {
             'lcov': '', # does not exist
             'perl-JSON-Parse': '', # does not exist?
             'perl-Test-Base': 'perl-Test-Simple',
+            'perl-FindBin': '',
             'policycoreutils-python': 'python3-policycoreutils',
             'liburing-devel': '', # not available yet, Add me back, once available!
-        }
-    },
-    'fedora31': {
-        'docker_image': 'fedora:31',
-        'vagrant_box': 'fedora/31-cloud-base',
-        'bootstrap': DNF_BOOTSTRAP,
-        'replace': {
-            'lsb-release': 'redhat-lsb',
-            'libsemanage-python': 'python3-libsemanage',
-            'policycoreutils-python': 'python3-policycoreutils',
         }
     },
     'fedora32': {
@@ -484,38 +481,17 @@ RPM_DISTS = {
             'lsb-release': 'redhat-lsb',
             'libsemanage-python': 'python3-libsemanage',
             'policycoreutils-python': 'python3-policycoreutils',
+            'perl-FindBin': '',
         }
     },
-    'opensuse150': {
-        'docker_image': 'opensuse/leap:15.0',
-        'vagrant_box': 'opensuse/openSUSE-15.0-x86_64',
-        'bootstrap': ZYPPER_BOOTSTRAP,
+    'fedora33': {
+        'docker_image': 'fedora:33',
+        'vagrant_box': 'fedora/33-cloud-base',
+        'bootstrap': DNF_BOOTSTRAP,
         'replace': {
-            '@development-tools': '',
-            'dbus-devel': 'dbus-1-devel',
-            'docbook-style-xsl': 'docbook-xsl-stylesheets',
-            'glibc-common': 'glibc-locale',
-            'glibc-locale-source': 'glibc-i18ndata',
-            'glibc-langpack-en': '',
-            'jansson-devel': 'libjansson-devel',
-            'keyutils-libs-devel': 'keyutils-devel',
-            'krb5-workstation': 'krb5-client',
-            'libnsl2-devel': 'libnsl-devel',
-            'libsemanage-python': 'python2-semanage',
-            'openldap-devel': 'openldap2-devel',
-            'perl-Archive-Tar': 'perl-Archive-Tar-Wrapper',
-            'perl-JSON-Parse': 'perl-JSON-XS',
-            'perl-generators': '',
-            'perl-interpreter': '',
-            'procps-ng': 'procps',
-            'python-dns': 'python2-dnspython',
-            'python3-dns': 'python3-dnspython',
-            'python3-markdown': 'python3-Markdown',
-            'quota-devel': '',
-            'glusterfs-api-devel': '',
-            'libtasn1-tools': '', # asn1Parser is part of libtasn1
-            'mingw64-gcc': '', # doesn't exist
-            'liburing-devel': '',   # not available
+            'lsb-release': 'redhat-lsb',
+            'libsemanage-python': 'python3-libsemanage',
+            'policycoreutils-python': 'python3-policycoreutils',
         }
     },
     'opensuse151': {
@@ -539,15 +515,45 @@ RPM_DISTS = {
             'perl-JSON-Parse': 'perl-JSON-XS',
             'perl-generators': '',
             'perl-interpreter': '',
+            'perl-FindBin': '',
             'procps-ng': 'procps',
-            'python-dns': 'python2-dnspython',
             'python3-dns': 'python3-dnspython',
             'python3-markdown': 'python3-Markdown',
             'quota-devel': '',
             'glusterfs-api-devel': '',
             'libtasn1-tools': '', # asn1Parser is part of libtasn1
             'mingw64-gcc': '', # doesn't exist
-            'liburing-devel': '',   # not available, will be added in 15.2
+            'liburing-devel': '',   # not available
+        }
+    },
+    'opensuse152': {
+        'docker_image': 'opensuse/leap:15.2',
+        'vagrant_box': 'opensuse/openSUSE-15.2-x86_64',
+        'bootstrap': ZYPPER_BOOTSTRAP,
+        'replace': {
+            '@development-tools': '',
+            'dbus-devel': 'dbus-1-devel',
+            'docbook-style-xsl': 'docbook-xsl-stylesheets',
+            'glibc-common': 'glibc-locale',
+            'glibc-locale-source': 'glibc-i18ndata',
+            'glibc-langpack-en': '',
+            'jansson-devel': 'libjansson-devel',
+            'keyutils-libs-devel': 'keyutils-devel',
+            'krb5-workstation': 'krb5-client',
+            'libnsl2-devel': 'libnsl-devel',
+            'libsemanage-python': 'python2-semanage',
+            'openldap-devel': 'openldap2-devel',
+            'perl-Archive-Tar': 'perl-Archive-Tar-Wrapper',
+            'perl-JSON-Parse': 'perl-JSON-XS',
+            'perl-generators': '',
+            'perl-interpreter': '',
+            'perl-FindBin': '',
+            'procps-ng': 'procps',
+            'python3-dns': 'python3-dnspython',
+            'python3-markdown': 'python3-Markdown',
+            'quota-devel': '',
+            'glusterfs-api-devel': '',
+            'libtasn1-tools': '', # asn1Parser is part of libtasn1
         }
     }
 }

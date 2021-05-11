@@ -351,10 +351,13 @@ static int fake_acls_sys_acl_set_file(vfs_handle_struct *handle,
 	return ret;
 }
 
-static int fake_acls_sys_acl_set_fd(vfs_handle_struct *handle, files_struct *fsp, SMB_ACL_T theacl)
+static int fake_acls_sys_acl_set_fd(vfs_handle_struct *handle,
+				    struct files_struct *fsp,
+				    SMB_ACL_TYPE_T type,
+				    SMB_ACL_T theacl)
 {
 	int ret;
-	const char *name = FAKE_ACL_ACCESS_XATTR;
+	const char *name = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
 	DATA_BLOB blob = fake_acls_acl2blob(frame, theacl);
 	if (!blob.data) {
@@ -363,6 +366,19 @@ static int fake_acls_sys_acl_set_fd(vfs_handle_struct *handle, files_struct *fsp
 		errno = EINVAL;
 		return -1;
 	}
+
+	switch (type) {
+	case SMB_ACL_TYPE_ACCESS:
+		name = FAKE_ACL_ACCESS_XATTR;
+		break;
+	case SMB_ACL_TYPE_DEFAULT:
+		name = FAKE_ACL_DEFAULT_XATTR;
+		break;
+	default:
+		errno = EINVAL;
+		return -1;
+	}
+
 	ret = SMB_VFS_NEXT_FSETXATTR(handle, fsp, name, blob.data, blob.length, 0);
 	TALLOC_FREE(frame);
 	return ret;
@@ -703,6 +719,7 @@ static int fake_acls_fchmod(vfs_handle_struct *handle,
 	}
 	ret = fake_acls_sys_acl_set_fd(handle,
 				fsp,
+				SMB_ACL_TYPE_ACCESS,
 				the_acl);
 	TALLOC_FREE(frame);
 	return ret;
@@ -718,7 +735,6 @@ static struct vfs_fn_pointers vfs_fake_acls_fns = {
 	.sys_acl_get_fd_fn = fake_acls_sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = fake_acls_sys_acl_set_file,
 	.sys_acl_set_fd_fn = fake_acls_sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = fake_acls_sys_acl_delete_def_file,
 	.lchown_fn = fake_acls_lchown,

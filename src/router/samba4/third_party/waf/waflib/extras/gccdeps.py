@@ -27,7 +27,7 @@ if not c_preproc.go_absolute:
 	gccdeps_flags = ['-MMD']
 
 # Third-party tools are allowed to add extra names in here with append()
-supported_compilers = ['gcc', 'icc', 'clang']
+supported_compilers = ['gas', 'gcc', 'icc', 'clang']
 
 def scan(self):
 	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
@@ -163,10 +163,25 @@ def post_run(self):
 def sig_implicit_deps(self):
 	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
 		return super(self.derived_gccdeps, self).sig_implicit_deps()
+	bld = self.generator.bld
+
 	try:
-		return Task.Task.sig_implicit_deps(self)
-	except Errors.WafError:
-		return Utils.SIG_NIL
+		return self.compute_sig_implicit_deps()
+	except Errors.TaskNotReady:
+		raise ValueError("Please specify the build order precisely with gccdeps (asm/c/c++ tasks)")
+	except EnvironmentError:
+		# If a file is renamed, assume the dependencies are stale and must be recalculated
+		for x in bld.node_deps.get(self.uid(), []):
+			if not x.is_bld() and not x.exists():
+				try:
+					del x.parent.children[x.name]
+				except KeyError:
+					pass
+
+	key = self.uid()
+	bld.node_deps[key] = []
+	bld.raw_deps[key] = []
+	return Utils.SIG_NIL
 
 def wrap_compiled_task(classname):
 	derived_class = type(classname, (Task.classes[classname],), {})
@@ -175,14 +190,14 @@ def wrap_compiled_task(classname):
 	derived_class.scan = scan
 	derived_class.sig_implicit_deps = sig_implicit_deps
 
-for k in ('c', 'cxx'):
+for k in ('asm', 'c', 'cxx'):
 	if k in Task.classes:
 		wrap_compiled_task(k)
 
 @before_method('process_source')
 @feature('force_gccdeps')
 def force_gccdeps(self):
-	self.env.ENABLE_GCCDEPS = ['c', 'cxx']
+	self.env.ENABLE_GCCDEPS = ['asm', 'c', 'cxx']
 
 def configure(conf):
 	# in case someone provides a --enable-gccdeps command-line option
@@ -191,6 +206,15 @@ def configure(conf):
 
 	global gccdeps_flags
 	flags = conf.env.GCCDEPS_FLAGS or gccdeps_flags
+	if conf.env.ASM_NAME in supported_compilers:
+		try:
+			conf.check(fragment='', features='asm force_gccdeps', asflags=flags, compile_filename='test.S', msg='Checking for asm flags %r' % ''.join(flags))
+		except Errors.ConfigurationError:
+			pass
+		else:
+			conf.env.append_value('ASFLAGS', flags)
+			conf.env.append_unique('ENABLE_GCCDEPS', 'asm')
+
 	if conf.env.CC_NAME in supported_compilers:
 		try:
 			conf.check(fragment='int main() { return 0; }', features='c force_gccdeps', cflags=flags, msg='Checking for c flags %r' % ''.join(flags))

@@ -39,18 +39,18 @@
 
 #include "rpc_server/mdssvc/srv_mdssvc_nt.h"
 #include "rpc_server/mdssd.h"
+#include "lib/global_contexts.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
 
 #define DAEMON_NAME "mdssd"
-#define MDSSD_MAX_SOCKETS 64
 
 static struct server_id parent_id;
 static struct prefork_pool *mdssd_pool = NULL;
 static int mdssd_child_id = 0;
 
-static struct pf_daemon_config default_pf_mdssd_cfg = {
+static const struct pf_daemon_config default_pf_mdssd_cfg = {
 	.prefork_status = PFH_INIT,
 	.min_children = 5,
 	.max_children = 25,
@@ -389,8 +389,8 @@ static void mdssd_handle_client(struct tevent_req *req)
 			    data->msg_ctx,
 			    data->dce_ctx,
 			    ep,
-			    cli_addr,
-			    srv_addr,
+			    &cli_addr,
+			    &srv_addr,
 			    sd,
 			    term_fn,
 			    term_fn_data);
@@ -495,39 +495,32 @@ static void mdssd_check_children(struct tevent_context *ev_ctx,
 static NTSTATUS mdssd_create_sockets(struct tevent_context *ev_ctx,
 				     struct messaging_context *msg_ctx,
 				     struct dcesrv_context *dce_ctx,
-				     struct pf_listen_fd *listen_fd,
-				     int *listen_fd_size)
+				     TALLOC_CTX *mem_ctx,
+				     struct pf_listen_fd **plisten_fds,
+				     size_t *pnum_listen_fds)
 {
 	NTSTATUS status;
-	int fd = -1;
+	size_t i, num_fds;
+	struct pf_listen_fd *fds = NULL;
 	int rc;
-	int i;
-	struct dcesrv_endpoint *e = NULL;
+	struct dcesrv_endpoint *e = dce_ctx->endpoint_list;
 
 	DBG_INFO("Initializing DCE/RPC connection endpoints\n");
 
-	for (e = dce_ctx->endpoint_list; e; e = e->next) {
-		status = dcesrv_create_endpoint_sockets(ev_ctx,
-							msg_ctx,
-							dce_ctx,
-							e,
-							listen_fd,
-							listen_fd_size);
-		if (!NT_STATUS_IS_OK(status)) {
-			char *ep_string = dcerpc_binding_string(
-					dce_ctx, e->ep_description);
-			DBG_ERR("Failed to create endpoint '%s': %s\n",
-				ep_string, nt_errstr(status));
-			TALLOC_FREE(ep_string);
-			goto done;
-		}
+	status = dcesrv_create_endpoint_list_pf_listen_fds(
+		ev_ctx, msg_ctx, dce_ctx, e, mem_ctx, &num_fds, &fds);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
 	}
 
-	for (i = 0; i < *listen_fd_size; i++) {
-		rc = listen(listen_fd[i].fd, pf_mdssd_cfg.max_allowed_clients);
+	for (i = 0; i < num_fds; i++) {
+		rc = listen(fds[i].fd, pf_mdssd_cfg.max_allowed_clients);
 		if (rc == -1) {
-			char *ep_string = dcerpc_binding_string(
-					dce_ctx, e->ep_description);
+			char *ep_string = NULL;
+			e = fds[i].fd_data;
+
+			ep_string = dcerpc_binding_string(dce_ctx,
+							  e->ep_description);
 			DBG_ERR("Failed to listen on endpoint '%s': %s\n",
 				ep_string, strerror(errno));
 			status = map_nt_error_from_unix(errno);
@@ -552,11 +545,11 @@ static NTSTATUS mdssd_create_sockets(struct tevent_context *ev_ctx,
 		}
 	}
 
+	*plisten_fds = fds;
+	*pnum_listen_fds = num_fds;
+
 	status = NT_STATUS_OK;
 done:
-	if (fd != -1) {
-		close(fd);
-	}
 	return status;
 }
 
@@ -565,8 +558,8 @@ void start_mdssd(struct tevent_context *ev_ctx,
 		 struct dcesrv_context *dce_ctx)
 {
 	NTSTATUS status;
-	struct pf_listen_fd listen_fd[MDSSD_MAX_SOCKETS];
-	int listen_fd_size = 0;
+	struct pf_listen_fd *listen_fd = NULL;
+	size_t listen_fd_size = 0;
 	pid_t pid;
 	int rc;
 	bool ok;
@@ -651,7 +644,8 @@ void start_mdssd(struct tevent_context *ev_ctx,
 	status = mdssd_create_sockets(ev_ctx,
 				      msg_ctx,
 				      dce_ctx,
-				      listen_fd,
+				      dce_ctx,
+				      &listen_fd,
 				      &listen_fd_size);
 	if (!NT_STATUS_IS_OK(status)) {
 		exit(1);
@@ -668,6 +662,7 @@ void start_mdssd(struct tevent_context *ev_ctx,
 				 &mdssd_children_main,
 				 dce_ctx,
 				 &mdssd_pool);
+	TALLOC_FREE(listen_fd);
 	if (!ok) {
 		exit(1);
 	}

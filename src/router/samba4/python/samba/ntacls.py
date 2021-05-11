@@ -49,12 +49,6 @@ SECURITY_SECINFO_FLAGS = security.SECINFO_OWNER | \
                          security.SECINFO_DACL  | \
                          security.SECINFO_SACL
 
-
-# SEC_FLAG_SYSTEM_SECURITY is required otherwise get Access Denied
-SECURITY_SEC_FLAGS = security.SEC_FLAG_SYSTEM_SECURITY | \
-                     security.SEC_STD_READ_CONTROL
-
-
 class XattrBackendError(Exception):
     """A generic xattr backend error."""
 
@@ -335,13 +329,29 @@ class SMBHelper:
         self.smb_conn = smb_conn
         self.dom_sid = dom_sid
 
-    def get_acl(self, smb_path, as_sddl=False):
+    def get_acl(self, smb_path, as_sddl=False,
+                sinfo=None, access_mask=None):
         assert '/' not in smb_path
 
-        ntacl_sd = self.smb_conn.get_acl(
-            smb_path, SECURITY_SECINFO_FLAGS, SECURITY_SEC_FLAGS)
+        ntacl_sd = self.smb_conn.get_acl(smb_path,
+                                         sinfo=sinfo,
+                                         access_mask=access_mask)
 
         return ntacl_sd.as_sddl(self.dom_sid) if as_sddl else ntacl_sd
+
+    def set_acl(self, smb_path, ntacl_sd,
+                sinfo=None, access_mask=None):
+        assert '/' not in smb_path
+
+        assert(isinstance(ntacl_sd, str) or isinstance(ntacl_sd, security.descriptor))
+        if isinstance(ntacl_sd, str):
+            tmp_desc = security.descriptor.from_sddl(ntacl_sd, self.domain_sid)
+        elif isinstance(ntacl_sd, security.descriptor):
+            tmp_desc = ntacl_sd
+
+        self.smb_conn.set_acl(smb_path, tmp_desc,
+                              sinfo=sinfo,
+                              access_mask=access_mask)
 
     def list(self, smb_path=''):
         """

@@ -22,6 +22,8 @@
 #include "includes.h"
 #include "smb1_utils.h"
 #include "libcli/security/security.h"
+#include "lib/util/sys_rw_data.h"
+#include "smbd/fd_handle.h"
 
 /****************************************************************************
  Special FCB or DOS processing in the case of a sharing violation.
@@ -41,33 +43,33 @@ struct files_struct *fcb_or_dos_open(
 	NTSTATUS status;
 
 	if ((private_flags &
-	     (NTCREATEX_OPTIONS_PRIVATE_DENY_DOS|
-	      NTCREATEX_OPTIONS_PRIVATE_DENY_FCB))
+	     (NTCREATEX_FLAG_DENY_DOS|
+	      NTCREATEX_FLAG_DENY_FCB))
 	    == 0) {
 		return NULL;
 	}
 
-	for(fsp = file_find_di_first(conn->sconn, id);
+	for(fsp = file_find_di_first(conn->sconn, id, true);
 	    fsp != NULL;
-	    fsp = file_find_di_next(fsp)) {
+	    fsp = file_find_di_next(fsp, true)) {
 
 		DBG_DEBUG("Checking file %s, fd = %d, vuid = %"PRIu64", "
 			  "file_pid = %"PRIu16", "
 			  "private_options = 0x%"PRIx32", "
 			  "access_mask = 0x%"PRIx32"\n",
 			  fsp_str_dbg(fsp),
-			  fsp->fh->fd,
+			  fsp_get_pathref_fd(fsp),
 			  fsp->vuid,
 			  fsp->file_pid,
-			  fsp->fh->private_options,
+			  fh_get_private_options(fsp->fh),
 			  fsp->access_mask);
 
-		if (fsp->fh->fd != -1 &&
+		if (fsp_get_pathref_fd(fsp) != -1 &&
 		    fsp->vuid == req->vuid &&
 		    fsp->file_pid == req->smbpid &&
-		    (fsp->fh->private_options &
-		     (NTCREATEX_OPTIONS_PRIVATE_DENY_DOS |
-		      NTCREATEX_OPTIONS_PRIVATE_DENY_FCB)) &&
+		    (fh_get_private_options(fsp->fh) &
+		     (NTCREATEX_FLAG_DENY_DOS |
+		      NTCREATEX_FLAG_DENY_FCB)) &&
 		    (fsp->access_mask & FILE_WRITE_DATA) &&
 		    strequal(fsp->fsp_name->base_name, smb_fname->base_name) &&
 		    strequal(fsp->fsp_name->stream_name,
@@ -83,7 +85,7 @@ struct files_struct *fcb_or_dos_open(
 
 	/* quite an insane set of semantics ... */
 	if (is_executable(smb_fname->base_name) &&
-	    (fsp->fh->private_options & NTCREATEX_OPTIONS_PRIVATE_DENY_DOS)) {
+	    (fh_get_private_options(fsp->fh) & NTCREATEX_FLAG_DENY_DOS)) {
 		DBG_DEBUG("file fail due to is_executable.\n");
 		return NULL;
 	}
@@ -108,4 +110,18 @@ struct files_struct *fcb_or_dos_open(
 	}
 
 	return new_fsp;
+}
+
+/****************************************************************************
+ Send a keepalive packet (rfc1002).
+****************************************************************************/
+
+bool send_keepalive(int client)
+{
+	unsigned char buf[4];
+
+	buf[0] = NBSSkeepalive;
+	buf[1] = buf[2] = buf[3] = 0;
+
+	return(write_data(client,(char *)buf,4) == 4);
 }

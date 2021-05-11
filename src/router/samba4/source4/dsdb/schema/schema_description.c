@@ -1,5 +1,5 @@
 /* 
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
    Print schema info into string format
    
    Copyright (C) Andrew Bartlett 2006-2008
@@ -21,6 +21,8 @@
 #include "includes.h"
 #include "dsdb/samdb/samdb.h"
 #include "librpc/ndr/libndr.h"
+
+#undef strcasecmp
 
 #define IF_NULL_FAIL_RET(x) do {     \
 		if (!x) {		\

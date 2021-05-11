@@ -34,6 +34,8 @@
 #include "messages.h"
 #include "rpc_server/spoolss/srv_spoolss_nt.h"
 #include "rpc_client/cli_winreg_spoolss.h"
+#include "lib/util/string_wrappers.h"
+#include "lib/global_contexts.h"
 
 /* Map generic permissions to printer object specific permissions */
 
@@ -62,18 +64,6 @@ const struct generic_mapping job_generic_mapping = {
 	JOB_ALL_ACCESS
 };
 
-static const struct print_architecture_table_node archi_table[]= {
-
-	{"Windows 4.0",          SPL_ARCH_WIN40,	0 },
-	{"Windows NT x86",       SPL_ARCH_W32X86,	2 },
-	{"Windows NT R4000",     SPL_ARCH_W32MIPS,	2 },
-	{"Windows NT Alpha_AXP", SPL_ARCH_W32ALPHA,	2 },
-	{"Windows NT PowerPC",   SPL_ARCH_W32PPC,	2 },
-	{"Windows IA64",   	 SPL_ARCH_IA64,		3 },
-	{"Windows x64",   	 SPL_ARCH_X64,		3 },
-	{NULL,                   "",		-1 }
-};
-
 static bool print_driver_directories_init(void)
 {
 	int service, i;
@@ -86,6 +76,7 @@ static bool print_driver_directories_init(void)
 	const char *dir_list[] = {
 		"W32X86/PCC",
 		"x64/PCC",
+		"ARM64",
 		"color"
 	};
 
@@ -716,7 +707,7 @@ static int get_file_version(files_struct *fsp,
 {
 	char    *buf = NULL;
 	ssize_t byte_count;
-	off_t in_pos = fsp->fh->pos;
+	off_t in_pos = fh_get_pos(fsp->fh);
 
 	buf=(char *)SMB_MALLOC(DOS_HEADER_SIZE);
 	if (buf == NULL) {
@@ -840,10 +831,15 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 		goto error_exit;
 	}
 
+	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		ret = 1;
+		goto done;
+	}
+
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_GENERIC_READ,			/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
@@ -895,10 +891,16 @@ static int file_version_is_newer(connection_struct *conn, fstring new_file, fstr
 		goto error_exit;
 	}
 
+	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_NOTICE("Can't open new file [%s], errno = %d\n",
+			   smb_fname_str_dbg(smb_fname), errno);
+		goto error_exit;
+	}
+
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_GENERIC_READ,			/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
@@ -1014,8 +1016,9 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 	}
 
 	/* If architecture is Windows x64, the version is always 3. */
-	if (strcmp(architecture, SPL_ARCH_X64) == 0) {
-		DEBUG(10,("get_correct_cversion: Driver is x64, cversion = 3\n"));
+	if (strcmp(architecture, SPL_ARCH_X64) == 0 ||
+		strcmp(architecture, SPL_ARCH_ARM64) == 0) {
+		DBG_DEBUG("get_correct_cversion: this architecture must be, cversion = 3\n");
 		*perr = WERR_OK;
 		TALLOC_FREE(frame);
 		return 3;
@@ -1099,10 +1102,17 @@ static uint32_t get_correct_cversion(const struct auth_session_info *session_inf
 		goto error_exit;
 	}
 
+	nt_status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
+	if (!NT_STATUS_IS_OK(nt_status)) {
+		DBG_NOTICE("Can't open file [%s], errno =%d\n",
+			   smb_fname_str_dbg(smb_fname), errno);
+		*perr = WERR_ACCESS_DENIED;
+		goto error_exit;
+	}
+
 	nt_status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		NULL,					/* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_GENERIC_READ,			/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
@@ -2022,6 +2032,7 @@ static NTSTATUS driver_unlink_internals(connection_struct *conn,
 	struct smb_filename *smb_fname = NULL;
 	char *print_dlr_path;
 	NTSTATUS status = NT_STATUS_NO_MEMORY;
+	int ret;
 
 	print_dlr_path = talloc_asprintf(tmp_ctx, "%s/%d/%s",
 					 short_arch, vers, fname);
@@ -2036,6 +2047,20 @@ static NTSTATUS driver_unlink_internals(connection_struct *conn,
 					0,
 					0);
 	if (smb_fname == NULL) {
+		goto err_out;
+	}
+
+	ret = vfs_stat(conn, smb_fname);
+	if (ret == -1) {
+		status = map_nt_error_from_unix(errno);
+		goto err_out;
+	}
+
+	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK)) {
+		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
+	}
+	if (!NT_STATUS_IS_OK(status)) {
 		goto err_out;
 	}
 

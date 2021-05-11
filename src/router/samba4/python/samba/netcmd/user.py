@@ -33,7 +33,7 @@ import binascii
 from subprocess import Popen, PIPE, STDOUT, check_call, CalledProcessError
 from getpass import getpass
 from samba.auth import system_session
-from samba.samdb import SamDB
+from samba.samdb import SamDB, SamDBError, SamDBNotFoundError
 from samba.dcerpc import misc
 from samba.dcerpc import security
 from samba.dcerpc import drsblobs
@@ -53,9 +53,8 @@ from samba.netcmd import (
     SuperCommand,
     Option,
 )
-from samba.compat import text_type
-from samba.compat import get_bytes
-from samba.compat import get_string
+from samba.common import get_bytes
+from samba.common import get_string
 from . import common
 
 # python[3]-gpgme is abandoned since ubuntu 1804 and debian 9
@@ -219,10 +218,10 @@ if len(disabled_virtual_attributes) != 0:
     virtual_attributes_help += "Unsupported virtual attributes: %s" % ", ".join(sorted(disabled_virtual_attributes.keys()))
 
 
-class cmd_user_create(Command):
-    """Create a new user.
+class cmd_user_add(Command):
+    """Add a new user.
 
-This command creates a new user account in the Active Directory domain.  The username specified on the command is the sAMaccountName.
+This command adds a new user account to the Active Directory domain.  The username specified on the command is the sAMaccountName.
 
 User accounts may represent physical entities, such as people or may be used as service accounts for applications.  User accounts are also referred to as security principals and are assigned a security identifier (SID).
 
@@ -233,30 +232,30 @@ Unix (RFC2307) attributes may be added to the user account. Attributes taken fro
 The command may be run from the root userid or another authorized userid.  The -H or --URL= option can be used to execute the command against a remote server.
 
 Example1:
-samba-tool user create User1 passw0rd --given-name=John --surname=Smith --must-change-at-next-login -H ldap://samba.samdom.example.com -Uadministrator%passw1rd
+samba-tool user add User1 passw0rd --given-name=John --surname=Smith --must-change-at-next-login -H ldap://samba.samdom.example.com -Uadministrator%passw1rd
 
-Example1 shows how to create a new user in the domain against a remote LDAP server.  The -H parameter is used to specify the remote target server.  The -U option is used to pass the userid and password authorized to issue the command remotely.
+Example1 shows how to add a new user to the domain against a remote LDAP server.  The -H parameter is used to specify the remote target server.  The -U option is used to pass the userid and password authorized to issue the command remotely.
 
 Example2:
-sudo samba-tool user create User2 passw2rd --given-name=Jane --surname=Doe --must-change-at-next-login
+sudo samba-tool user add User2 passw2rd --given-name=Jane --surname=Doe --must-change-at-next-login
 
-Example2 shows how to create a new user in the domain against the local server.   sudo is used so a user may run the command as root.  In this example, after User2 is created, he/she will be forced to change their password when they logon.
+Example2 shows how to add a new user to the domain against the local server.   sudo is used so a user may run the command as root.  In this example, after User2 is created, he/she will be forced to change their password when they logon.
 
 Example3:
-samba-tool user create User3 passw3rd --userou='OU=OrgUnit'
+samba-tool user add User3 passw3rd --userou='OU=OrgUnit'
 
-Example3 shows how to create a new user in the OrgUnit organizational unit.
+Example3 shows how to add a new user in the OrgUnit organizational unit.
 
 Example4:
-samba-tool user create User4 passw4rd --rfc2307-from-nss --gecos 'some text'
+samba-tool user add User4 passw4rd --rfc2307-from-nss --gecos 'some text'
 
-Example4 shows how to create a new user with Unix UID, GID and login-shell set from the local NSS and GECOS set to 'some text'.
+Example4 shows how to add a new user with Unix UID, GID and login-shell set from the local NSS and GECOS set to 'some text'.
 
 Example5:
-samba-tool user create User5 passw5rd --nis-domain=samdom --unix-home=/home/User5 \\
+samba-tool user add User5 passw5rd --nis-domain=samdom --unix-home=/home/User5 \\
     --uid-number=10005 --login-shell=/bin/false --gid-number=10000
 
-Example5 shows how to create an RFC2307/NIS domain enabled user account. If
+Example5 shows how to add a new RFC2307/NIS domain enabled user account. If
 --nis-domain is set, then the other four parameters are mandatory.
 
 """
@@ -396,21 +395,7 @@ Example5 shows how to create an RFC2307/NIS domain enabled user account. If
         except Exception as e:
             raise CommandError("Failed to add user '%s': " % username, e)
 
-        self.outf.write("User '%s' created successfully\n" % username)
-
-
-class cmd_user_add(cmd_user_create):
-    __doc__ = cmd_user_create.__doc__
-    # take this print out after the add subcommand is removed.
-    # the add subcommand is deprecated but left in for now to allow people to
-    # migrate to create
-
-    def run(self, *args, **kwargs):
-        self.outf.write(
-            "Note: samba-tool user add is deprecated.  "
-            "Please use samba-tool user create for the same function.\n")
-        return super(cmd_user_add, self).run(*args, **kwargs)
-
+        self.outf.write("User '%s' added successfully\n" % username)
 
 class cmd_user_delete(Command):
     """Delete a user.
@@ -481,6 +466,14 @@ class cmd_user_list(Command):
     takes_options = [
         Option("-H", "--URL", help="LDB URL for database or target server", type=str,
                metavar="URL", dest="H"),
+        Option("--hide-expired",
+               help="Do not list expired user accounts",
+               default=False,
+               action='store_true'),
+        Option("--hide-disabled",
+               default=False,
+               action='store_true',
+               help="Do not list disabled user accounts"),
         Option("-b", "--base-dn",
                help="Specify base DN to use",
                type=str),
@@ -501,6 +494,8 @@ class cmd_user_list(Command):
             credopts=None,
             versionopts=None,
             H=None,
+            hide_expired=False,
+            hide_disabled=False,
             base_dn=None,
             full_dn=False):
         lp = sambaopts.get_loadparm()
@@ -513,10 +508,26 @@ class cmd_user_list(Command):
         if base_dn:
             search_dn = samdb.normalize_dn_in_domain(base_dn)
 
+        filter_expires = ""
+        if hide_expired is True:
+            current_nttime = samdb.get_nttime()
+            filter_expires = "(|(accountExpires=0)(accountExpires>=%u))" % (
+                current_nttime)
+
+        filter_disabled = ""
+        if hide_disabled is True:
+            filter_disabled = "(!(userAccountControl:%s:=%u))" % (
+                ldb.OID_COMPARATOR_AND, dsdb.UF_ACCOUNTDISABLE)
+
+        filter = "(&(objectClass=user)(userAccountControl:%s:=%u)%s%s)" % (
+            ldb.OID_COMPARATOR_AND,
+            dsdb.UF_NORMAL_ACCOUNT,
+            filter_disabled,
+            filter_expires)
+
         res = samdb.search(search_dn,
                            scope=ldb.SCOPE_SUBTREE,
-                           expression=("(&(objectClass=user)(userAccountControl:%s:=%u))"
-                                       % (ldb.OID_COMPARATOR_AND, dsdb.UF_NORMAL_ACCOUNT)),
+                           expression=filter,
                            attrs=["samaccountname"])
         if (len(res) == 0):
             return
@@ -748,7 +759,7 @@ class cmd_user_password(Command):
                 self.outf.write("Sorry, passwords do not match.\n")
 
         try:
-            if not isinstance(password, text_type):
+            if not isinstance(password, str):
                 password = password.decode('utf8')
             net.change_password(password)
         except Exception as msg:
@@ -1283,7 +1294,7 @@ class GetPasswordCommand(Command):
 
         def get_utf8(a, b, username):
             try:
-                u = text_type(get_bytes(b), 'utf-16-le')
+                u = str(get_bytes(b), 'utf-16-le')
             except UnicodeDecodeError as e:
                 self.outf.write("WARNING: '%s': CLEARTEXT is invalid UTF-16-LE unable to generate %s\n" % (
                                 username, a))
@@ -2825,6 +2836,230 @@ class cmd_user_move(Command):
                         (username, full_new_parent_dn))
 
 
+class cmd_user_rename(Command):
+    """Rename a user and related attributes.
+
+    This command allows to set the user's name related attributes. The user's
+    CN will be renamed automatically.
+    The user's new CN will be made up by combining the given-name, initials
+    and surname. A dot ('.') will be appended to the initials automatically
+    if required.
+    Use the --force-new-cn option to specify the new CN manually and the
+    --reset-cn option to reset this change.
+
+    Use an empty attribute value to remove the specified attribute.
+
+    The username specified on the command is the sAMAccountName.
+
+    The command may be run locally from the root userid or another authorized
+    userid.
+
+    The -H or --URL= option can be used to execute the command against a remote
+    server.
+
+    Example1:
+    samba-tool user rename johndoe --surname='Bloggs'
+
+    Example1 shows how to change the surname of a user 'johndoe' to 'Bloggs' on
+    the local server. The user's CN will be renamed automatically, based on
+    the given name, initials and surname.
+
+    Example2:
+    samba-tool user rename johndoe --force-new-cn='John Bloggs (Sales)' \\
+        --surname=Bloggs -H ldap://samba.samdom.example.com -U administrator
+
+    Example2 shows how to rename the CN of a user 'johndoe' to 'John Bloggs (Sales)'.
+    Additionally the surname ('sn' attribute) is set to 'Bloggs'.
+    The -H parameter is used to specify the remote target server.
+    """
+
+    synopsis = "%prog <username> [options]"
+
+    takes_options = [
+        Option("-H", "--URL",
+               help="LDB URL for database or target server",
+               type=str, metavar="URL", dest="H"),
+        Option("--surname",
+               help="New surname",
+               type=str),
+        Option("--given-name",
+               help="New given name",
+               type=str),
+        Option("--initials",
+               help="New initials",
+               type=str),
+        Option("--force-new-cn",
+               help="Specify a new CN (RDN) instead of using a combination "
+                    "of the given name, initials and surname.",
+               type=str, metavar="NEW_CN"),
+        Option("--reset-cn",
+               help="Set the CN (RDN) to the combination of the given name, "
+                    "initials and surname. Use this option to reset "
+                    "the changes made with the --force-new-cn option.",
+               action="store_true"),
+        Option("--display-name",
+               help="New display name",
+               type=str),
+        Option("--mail-address",
+               help="New email address",
+               type=str),
+        Option("--samaccountname",
+               help="New account name (sAMAccountName/logon name)",
+               type=str),
+        Option("--upn",
+               help="New user principal name",
+               type=str),
+    ]
+
+    takes_args = ["username"]
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "credopts": options.CredentialsOptions,
+        "versionopts": options.VersionOptions,
+    }
+
+    def run(self, username, credopts=None, sambaopts=None,
+            versionopts=None, H=None, surname=None, given_name=None,
+            initials=None, display_name=None, mail_address=None,
+            samaccountname=None, upn=None, force_new_cn=None,
+            reset_cn=None):
+        # illegal options
+        if force_new_cn and reset_cn:
+            raise CommandError("It is not allowed to specify --force-new-cn "
+                               "together with --reset-cn.")
+        if force_new_cn == "":
+            raise CommandError("Failed to rename user - delete protected "
+                               "attribute 'CN'")
+        if samaccountname == "":
+            raise CommandError("Failed to rename user - delete protected "
+                               "attribute 'sAMAccountName'")
+
+        lp = sambaopts.get_loadparm()
+        creds = credopts.get_credentials(lp, fallback_machine=True)
+        samdb = SamDB(url=H, session_info=system_session(),
+                      credentials=creds, lp=lp)
+        domain_dn = ldb.Dn(samdb, samdb.domain_dn())
+
+        filter = ("(&(sAMAccountType=%d)(sAMAccountName=%s))" %
+                  (dsdb.ATYPE_NORMAL_ACCOUNT, ldb.binary_encode(username)))
+        try:
+            res = samdb.search(base=domain_dn,
+                               expression=filter,
+                               scope=ldb.SCOPE_SUBTREE,
+                               attrs=["sAMAccountName",
+                                      "givenName",
+                                      "initials",
+                                      "sn",
+                                      "mail",
+                                      "userPrincipalName",
+                                      "displayName",
+                                      "cn"])
+            old_user = res[0]
+            user_dn = old_user.dn
+        except IndexError:
+            raise CommandError('Unable to find user "%s"' % (username))
+
+        user_parent_dn = user_dn.parent()
+        old_cn = old_user["cn"][0]
+
+        # use the sAMAccountname as CN if no name is given
+        new_fallback_cn = samaccountname if samaccountname is not None \
+                                     else old_user["sAMAccountName"]
+
+        if force_new_cn is not None:
+            new_user_cn = force_new_cn
+        else:
+            new_user_cn = samdb.fullname_from_names(old_attrs=old_user,
+                                                    given_name=given_name,
+                                                    initials=initials,
+                                                    surname=surname,
+                                                    fallback_default=new_fallback_cn)
+
+        # CN must change, if the new CN is different and the old CN is the
+        # standard CN or the change is forced with force-new-cn or reset-cn
+        expected_cn = samdb.fullname_from_names(old_attrs=old_user,
+                                        fallback_default=old_user["sAMAccountName"])
+        must_change_cn = str(old_cn) != str(new_user_cn) and \
+                         (str(old_cn) == str(expected_cn) or \
+                          reset_cn or bool(force_new_cn))
+
+        new_user_dn = ldb.Dn(samdb, "CN=%s" % new_user_cn)
+        new_user_dn.add_base(user_parent_dn)
+
+        if upn is not None:
+            if self.is_valid_upn(samdb, upn) == False:
+                raise CommandError('"%s" is not a valid upn. '
+                                   'You can manage the upn '
+                                   'suffixes with the "samba-tool domain '
+                                   'trust namespaces" command.' % upn)
+
+        user_attrs = ldb.Message()
+        user_attrs.dn = user_dn
+        samdb.prepare_attr_replace(user_attrs, old_user, "givenName", given_name)
+        samdb.prepare_attr_replace(user_attrs, old_user, "initials", initials)
+        samdb.prepare_attr_replace(user_attrs, old_user, "sn", surname)
+        samdb.prepare_attr_replace(user_attrs, old_user, "displayName", display_name)
+        samdb.prepare_attr_replace(user_attrs, old_user, "mail", mail_address)
+        samdb.prepare_attr_replace(user_attrs, old_user, "sAMAccountName", samaccountname)
+        samdb.prepare_attr_replace(user_attrs, old_user, "userPrincipalName", upn)
+
+        attributes_changed = len(user_attrs) > 0
+
+        samdb.transaction_start()
+        try:
+            if attributes_changed == True:
+                samdb.modify(user_attrs)
+            if must_change_cn == True:
+                samdb.rename(user_dn, new_user_dn)
+        except Exception as e:
+            samdb.transaction_cancel()
+            raise CommandError('Failed to rename user "%s"' % username, e)
+        samdb.transaction_commit()
+
+        if must_change_cn == True:
+            self.outf.write('Renamed CN of user "%s" from "%s" to "%s" '
+                            'successfully\n' % (username, old_cn, new_user_cn))
+
+        if attributes_changed == True:
+            self.outf.write('Following attributes of user "%s" have been '
+                            'changed successfully:\n' % (username))
+            for attr in user_attrs.keys():
+                if (attr == "dn"):
+                    continue
+                self.outf.write('%s: %s\n' % (attr, user_attrs[attr]
+                                if user_attrs[attr] else '[removed]'))
+
+    def is_valid_upn(self, samdb, upn):
+        domain_dns = samdb.domain_dns_name()
+        forest_dns = samdb.forest_dns_name()
+        upn_suffixes = [domain_dns, forest_dns]
+
+        config_basedn = samdb.get_config_basedn()
+        partitions_dn = "CN=Partitions,%s" % config_basedn
+        res = samdb.search(
+            base=partitions_dn,
+            scope=ldb.SCOPE_BASE,
+            expression="(objectClass=crossRefContainer)",
+            attrs=['uPNSuffixes'])
+
+        if (len(res) >= 1):
+            msg = res[0]
+            if 'uPNSuffixes' in msg:
+                for s in msg['uPNSuffixes']:
+                    upn_suffixes.append(str(s).lower())
+
+        upn_suffix = upn.split('@')[-1].lower()
+        upn_split = upn.split('@')
+        if (len(upn_split) < 2):
+            return False
+
+        upn_suffix = upn_split[-1].lower()
+        if upn_suffix not in upn_suffixes:
+            return False
+
+        return True
+
+
 class cmd_user_add_unix_attrs(Command):
     """Add RFC2307 attributes to a user.
 
@@ -3001,17 +3236,12 @@ The users gecos field will be set to 'User4 test'
 
         if unix_home is None:
             # obtain nETBIOS Domain Name
-            filter = "(&(objectClass=crossRef)(nETBIOSName=*))"
-            searchdn = ("CN=Partitions,CN=Configuration," + domaindn)
-            try:
-                res = samdb.search(searchdn,
-                                   scope=ldb.SCOPE_SUBTREE,
-                                   expression=filter)
-                unix_domain = res[0]["nETBIOSName"][0]
-            except IndexError:
+            unix_domain = samdb.domain_netbios_name()
+            if unix_domain is None:
                 raise CommandError('Unable to find Unix domain')
 
-            unix_home = "/home/{0}/{1}".format(unix_domain, username)
+            tmpl = lp.get('template homedir')
+            unix_home = tmpl.replace('%D', unix_domain).replace('%U', username)
 
         if not lp.get("idmap_ldb:use rfc2307"):
             self.outf.write("You are setting a Unix/RFC2307 UID & GID. "
@@ -3047,6 +3277,77 @@ unixHomeDirectory: {6}
             self.outf.write("Modified User '{}' successfully\n"
                             .format(username))
 
+class cmd_user_unlock(Command):
+    """Unlock a user account.
+
+    This command unlocks a user account in the Active Directory domain. The
+    username specified on the command is the sAMAccountName. The username may
+    also be specified using the --filter option.
+
+    The command may be run from the root userid or another authorized userid.
+    The -H or --URL= option can be used to execute the command against a remote
+    server.
+
+    Example:
+    samba-tool user unlock user1 -H ldap://samba.samdom.example.com \\
+        --username=Administrator --password=Passw0rd
+
+    The example shows how to unlock a user account in the domain against a
+    remote LDAP server. The -H parameter is used to specify the remote target
+    server. The --username= and --password= options are used to pass the
+    username and password of a user that exists on the remote server and is
+    authorized to issue the command on that server.
+"""
+
+    synopsis = "%prog (<username>|--filter <filter>) [options]"
+
+    takes_options = [
+        Option("-H",
+               "--URL",
+               help="LDB URL for database or target server",
+               type=str,
+               metavar="URL",
+               dest="H"),
+        Option("--filter",
+               help="LDAP Filter to set password on",
+               type=str),
+    ]
+
+    takes_args = ["username?"]
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "credopts": options.CredentialsOptions,
+        "versionopts": options.VersionOptions,
+    }
+
+    def run(self,
+            username=None,
+            sambaopts=None,
+            credopts=None,
+            versionopts=None,
+            filter=None,
+            H=None):
+        if username is None and filter is None:
+            raise CommandError("Either the username or '--filter' must be "
+                               "specified!")
+
+        if filter is None:
+            filter = ("(&(objectClass=user)(sAMAccountName=%s))" % (
+                ldb.binary_encode(username)))
+
+        lp = sambaopts.get_loadparm()
+        creds = credopts.get_credentials(lp, fallback_machine=True)
+
+        samdb = SamDB(url=H,
+                      session_info=system_session(),
+                      credentials=creds,
+                      lp=lp)
+        try:
+            samdb.unlock_account(filter)
+        except (SamDBError, ldb.LdbError) as msg:
+            raise CommandError("Failed to unlock user '%s': %s" % (
+                               username or filter, msg))
 
 class cmd_user_sensitive(Command):
     """Set/unset or show UF_NOT_DELEGATED for an account."""
@@ -3110,7 +3411,7 @@ class cmd_user(SuperCommand):
 
     subcommands = {}
     subcommands["add"] = cmd_user_add()
-    subcommands["create"] = cmd_user_create()
+    subcommands["create"] = cmd_user_add()
     subcommands["delete"] = cmd_user_delete()
     subcommands["disable"] = cmd_user_disable()
     subcommands["enable"] = cmd_user_enable()
@@ -3125,5 +3426,7 @@ class cmd_user(SuperCommand):
     subcommands["edit"] = cmd_user_edit()
     subcommands["show"] = cmd_user_show()
     subcommands["move"] = cmd_user_move()
+    subcommands["rename"] = cmd_user_rename()
+    subcommands["unlock"] = cmd_user_unlock()
     subcommands["addunixattrs"] = cmd_user_add_unix_attrs()
     subcommands["sensitive"] = cmd_user_sensitive()

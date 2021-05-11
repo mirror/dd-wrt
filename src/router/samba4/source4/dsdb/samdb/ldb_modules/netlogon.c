@@ -24,7 +24,7 @@
 #include <ldb.h>
 #include <ldb_errors.h>
 #include "lib/events/events.h"
-#include "smbd/service_task.h"
+#include "samba/service_task.h"
 #include "librpc/gen_ndr/ndr_misc.h"
 #include "libcli/ldap/ldap_ndr.h"
 #include "libcli/security/security.h"
@@ -38,6 +38,8 @@
 #include "../lib/tsocket/tsocket.h"
 #include "libds/common/flag_mapping.h"
 #include "lib/util/util_net.h"
+
+#undef strcasecmp
 
 /*
   fill in the cldap netlogon union for a given version

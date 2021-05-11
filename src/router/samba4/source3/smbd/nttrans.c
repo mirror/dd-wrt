@@ -630,7 +630,6 @@ void reply_ntcreate_and_X(struct smb_request *req)
 				fname,
 				ucf_flags,
 				0,
-				NULL,
 				&smb_fname);
 
 	TALLOC_FREE(case_state);
@@ -656,7 +655,6 @@ void reply_ntcreate_and_X(struct smb_request *req)
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		req,					/* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		access_mask,				/* access_mask */
 		share_access,				/* share_access */
@@ -749,7 +747,7 @@ void reply_ntcreate_and_X(struct smb_request *req)
 	}
 	p += 4;
 
-	fattr = dos_mode(conn, smb_fname);
+	fattr = fdos_mode(fsp);
 	if (fattr == 0) {
 		fattr = FILE_ATTRIBUTE_NORMAL;
 	}
@@ -1234,7 +1232,6 @@ static void call_nt_transact_create(connection_struct *conn,
 				fname,
 				ucf_flags,
 				0,
-				NULL,
 				&smb_fname);
 
 	TALLOC_FREE(case_state);
@@ -1339,7 +1336,6 @@ static void call_nt_transact_create(connection_struct *conn,
 	status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		req,					/* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname,				/* fname */
 		access_mask,				/* access_mask */
 		share_access,				/* share_access */
@@ -1429,7 +1425,7 @@ static void call_nt_transact_create(connection_struct *conn,
 	}
 	p += 8;
 
-	fattr = dos_mode(conn, smb_fname);
+	fattr = fdos_mode(fsp);
 	if (fattr == 0) {
 		fattr = FILE_ATTRIBUTE_NORMAL;
 	}
@@ -1573,7 +1569,7 @@ static NTSTATUS copy_internals(TALLOC_CTX *ctx,
 	}
 
 	/* Ensure attributes match. */
-	fattr = dos_mode(conn, smb_fname_src);
+	fattr = fdos_mode(smb_fname_src->fsp);
 	if ((fattr & ~attrs) & (FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)) {
 		status = NT_STATUS_NO_SUCH_FILE;
 		goto out;
@@ -1598,7 +1594,6 @@ static NTSTATUS copy_internals(TALLOC_CTX *ctx,
         status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		req,					/* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname_src,				/* fname */
 		FILE_READ_DATA|FILE_READ_ATTRIBUTES|
 			FILE_READ_EA,			/* access_mask */
@@ -1624,7 +1619,6 @@ static NTSTATUS copy_internals(TALLOC_CTX *ctx,
         status = SMB_VFS_CREATE_FILE(
 		conn,					/* conn */
 		req,					/* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname_dst,				/* fname */
 		FILE_WRITE_DATA|FILE_WRITE_ATTRIBUTES|
 			FILE_WRITE_EA,			/* access_mask */
@@ -1708,7 +1702,6 @@ void reply_ntrename(struct smb_request *req)
 	const char *dst_original_lcomp = NULL;
 	const char *p;
 	NTSTATUS status;
-	bool src_has_wcard = False;
 	bool dest_has_wcard = False;
 	uint32_t attrs;
 	uint32_t ucf_flags_src = ucf_flags_from_smb_request(req);
@@ -1728,8 +1721,8 @@ void reply_ntrename(struct smb_request *req)
 	rename_type = SVAL(req->vwv+1, 0);
 
 	p = (const char *)req->buf + 1;
-	p += srvstr_get_path_req_wcard(ctx, req, &oldname, p, STR_TERMINATE,
-				       &status, &src_has_wcard);
+	p += srvstr_get_path_req(ctx, req, &oldname, p, STR_TERMINATE,
+				       &status);
 	if (!NT_STATUS_IS_OK(status)) {
 		reply_nterror(req, status);
 		goto out;
@@ -1741,8 +1734,8 @@ void reply_ntrename(struct smb_request *req)
 	}
 
 	p++;
-	p += srvstr_get_path_req_wcard(ctx, req, &newname, p, STR_TERMINATE,
-				       &status, &dest_has_wcard);
+	p += srvstr_get_path_req(ctx, req, &newname, p, STR_TERMINATE,
+				       &status);
 	if (!NT_STATUS_IS_OK(status)) {
 		reply_nterror(req, status);
 		goto out;
@@ -1765,8 +1758,7 @@ void reply_ntrename(struct smb_request *req)
 	 * destination's last component.
 	 */
 	if (rename_type == RENAME_FLAG_RENAME) {
-		ucf_flags_src |= UCF_COND_ALLOW_WCARD_LCOMP;
-		ucf_flags_dst |= UCF_COND_ALLOW_WCARD_LCOMP;
+		ucf_flags_dst |= UCF_ALWAYS_ALLOW_WCARD_LCOMP;
 	}
 
 	/* rename_internals() calls unix_convert(), so don't call it here. */
@@ -1774,31 +1766,12 @@ void reply_ntrename(struct smb_request *req)
 				  oldname,
 				  ucf_flags_src,
 				  0,
-				  NULL,
 				  &smb_fname_old);
 	if (!NT_STATUS_IS_OK(status)) {
 		if (NT_STATUS_EQUAL(status,
 				    NT_STATUS_PATH_NOT_COVERED)) {
 			reply_botherror(req,
 					NT_STATUS_PATH_NOT_COVERED,
-					ERRSRV, ERRbadpath);
-			goto out;
-		}
-		reply_nterror(req, status);
-		goto out;
-	}
-
-	status = filename_convert(ctx, conn,
-				  newname,
-				  ucf_flags_dst,
-				  0,
-				  &dest_has_wcard,
-				  &smb_fname_new);
-	if (!NT_STATUS_IS_OK(status)) {
-		if (NT_STATUS_EQUAL(status,
-				    NT_STATUS_PATH_NOT_COVERED)) {
-			reply_botherror(req,
-				        NT_STATUS_PATH_NOT_COVERED,
 					ERRSRV, ERRbadpath);
 			goto out;
 		}
@@ -1813,6 +1786,27 @@ void reply_ntrename(struct smb_request *req)
 					ucf_flags_dst);
 	if (dst_original_lcomp == NULL) {
 		reply_nterror(req, NT_STATUS_NO_MEMORY);
+		goto out;
+	}
+
+	if (!req->posix_pathnames) {
+		dest_has_wcard = ms_has_wild(dst_original_lcomp);
+	}
+
+	status = filename_convert(ctx, conn,
+				  newname,
+				  ucf_flags_dst,
+				  0,
+				  &smb_fname_new);
+	if (!NT_STATUS_IS_OK(status)) {
+		if (NT_STATUS_EQUAL(status,
+				    NT_STATUS_PATH_NOT_COVERED)) {
+			reply_botherror(req,
+				        NT_STATUS_PATH_NOT_COVERED,
+					ERRSRV, ERRbadpath);
+			goto out;
+		}
+		reply_nterror(req, status);
 		goto out;
 	}
 
@@ -1837,16 +1831,15 @@ void reply_ntrename(struct smb_request *req)
 						conn,
 						req,
 						smb_fname_old,
+						NULL,
 						smb_fname_new,
 						dst_original_lcomp,
 						attrs,
 						false,
-						src_has_wcard,
-						dest_has_wcard,
 						DELETE_ACCESS);
 			break;
 		case RENAME_FLAG_HARD_LINK:
-			if (src_has_wcard || dest_has_wcard) {
+			if (dest_has_wcard) {
 				/* No wildcards. */
 				status = NT_STATUS_OBJECT_PATH_SYNTAX_BAD;
 			} else {
@@ -1858,7 +1851,7 @@ void reply_ntrename(struct smb_request *req)
 			}
 			break;
 		case RENAME_FLAG_COPY:
-			if (src_has_wcard || dest_has_wcard) {
+			if (dest_has_wcard) {
 				/* No wildcards. */
 				status = NT_STATUS_OBJECT_PATH_SYNTAX_BAD;
 			} else {
@@ -2029,7 +2022,6 @@ static void call_nt_transact_rename(connection_struct *conn,
 	char *params = *ppparams;
 	char *new_name = NULL;
 	files_struct *fsp = NULL;
-	bool dest_has_wcard = False;
 	NTSTATUS status;
 	TALLOC_CTX *ctx = talloc_tos();
 
@@ -2043,25 +2035,23 @@ static void call_nt_transact_rename(connection_struct *conn,
 		return;
 	}
 	if (req->posix_pathnames) {
-		srvstr_get_path_wcard_posix(ctx,
+		srvstr_get_path_posix(ctx,
 				params,
 				req->flags2,
 				&new_name,
 				params+4,
 				parameter_count - 4,
 				STR_TERMINATE,
-				&status,
-				&dest_has_wcard);
+				&status);
 	} else {
-		srvstr_get_path_wcard(ctx,
+		srvstr_get_path(ctx,
 				params,
 				req->flags2,
 				&new_name,
 				params+4,
 				parameter_count - 4,
 				STR_TERMINATE,
-				&status,
-				&dest_has_wcard);
+				&status);
 	}
 
 	if (!NT_STATUS_IS_OK(status)) {

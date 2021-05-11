@@ -188,11 +188,11 @@ bool run_smb2_basic(int dummy)
 			      cli->timeout,
 			      cli->smb2.session,
 			      cli->smb2.tcon);
+	cli_state_restore_tcon(cli, saved_tcon);
 	if (!NT_STATUS_IS_OK(status)) {
 		printf("smb2cli_tdis returned %s\n", nt_errstr(status));
 		return false;
 	}
-	cli_state_restore_tcon(cli, saved_tcon);
 
 	status = smb2cli_tdis(cli->conn,
 			      cli->timeout,
@@ -2715,7 +2715,7 @@ bool run_smb2_sacl(int dummy)
 	 * even though we have SEC_FLAG_SYSTEM_SECURITY,
 	 * as it seems to also need WRITE_DAC access.
 	 */
-	status = cli_smb2_set_security_descriptor(cli,
+	status = cli_set_security_descriptor(cli,
 				fnum,
 				SECINFO_DACL|SECINFO_SACL,
 				sd_sacl);
@@ -2767,13 +2767,13 @@ bool run_smb2_sacl(int dummy)
 	 * as we have both SEC_FLAG_SYSTEM_SECURITY
 	 * and WRITE_DAC access.
 	 */
-	status = cli_smb2_set_security_descriptor(cli,
+	status = cli_set_security_descriptor(cli,
 				fnum,
 				SECINFO_DACL|SECINFO_SACL,
 				sd_sacl);
 
         if (!NT_STATUS_IS_OK(status)) {
-		printf("cli_smb2_set_security_descriptor SACL "
+		printf("cli_set_security_descriptor SACL "
 			"on file %s failed (%s)\n",
 			fname,
 			nt_errstr(status));
@@ -2819,11 +2819,8 @@ bool run_smb2_sacl(int dummy)
         }
 
 	/* Try and read the SACL - should succeed. */
-	status = cli_smb2_query_security_descriptor(cli,
-				fnum,
-				SECINFO_SACL,
-				talloc_tos(),
-				&sd_sacl);
+	status = cli_query_security_descriptor(
+		cli, fnum, SECINFO_SACL, talloc_tos(), &sd_sacl);
 
         if (!NT_STATUS_IS_OK(status)) {
 		printf("Read SACL from file %s failed (%s)\n",
@@ -2838,11 +2835,8 @@ bool run_smb2_sacl(int dummy)
 	 * Try and read the DACL - should fail as we have
 	 * no READ_DAC access.
 	 */
-	status = cli_smb2_query_security_descriptor(cli,
-				fnum,
-				SECINFO_DACL,
-				talloc_tos(),
-				&sd_sacl);
+	status = cli_query_security_descriptor(
+		cli, fnum, SECINFO_DACL, talloc_tos(), &sd_sacl);
 
 	if (!NT_STATUS_EQUAL(status, NT_STATUS_ACCESS_DENIED)) {
 		printf("Reading DACL on file %s got (%s) "
@@ -2884,7 +2878,7 @@ bool run_smb2_quota1(int dummy)
 	uint16_t fnum = (uint16_t)-1;
 	SMB_NTQUOTA_STRUCT qt = {0};
 
-	printf("Starting SMB2-SACL\n");
+	printf("Starting SMB2-QUOTA1\n");
 
 	if (!torture_init_connection(&cli)) {
 		return false;

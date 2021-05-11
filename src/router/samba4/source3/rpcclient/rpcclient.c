@@ -810,19 +810,19 @@ static NTSTATUS do_cmd(struct cli_state *cli,
 		case DCERPC_AUTH_TYPE_SPNEGO:
 			switch (pipe_default_auth_spnego_type) {
 			case PIPE_AUTH_TYPE_SPNEGO_NTLMSSP:
-				krb5_state = CRED_DONT_USE_KERBEROS;
+				krb5_state = CRED_USE_KERBEROS_DISABLED;
 				break;
 			case PIPE_AUTH_TYPE_SPNEGO_KRB5:
-				krb5_state = CRED_MUST_USE_KERBEROS;
+				krb5_state = CRED_USE_KERBEROS_REQUIRED;
 				break;
 			case PIPE_AUTH_TYPE_SPNEGO_NONE:
-				krb5_state = CRED_AUTO_USE_KERBEROS;
+				krb5_state = CRED_USE_KERBEROS_DESIRED;
 				break;
 			}
 			FALL_THROUGH;
 		case DCERPC_AUTH_TYPE_NTLMSSP:
 		case DCERPC_AUTH_TYPE_KRB5:
-			if (krb5_state != CRED_AUTO_USE_KERBEROS) {
+			if (krb5_state != CRED_USE_KERBEROS_DESIRED) {
 				cli_credentials_set_kerberos_state(creds,
 								   krb5_state);
 			}
@@ -1019,7 +1019,7 @@ out_free:
 	static int		opt_port = 0;
 	int result = 0;
 	TALLOC_CTX *frame = talloc_stackframe();
-	uint32_t flags = 0;
+	uint32_t flags = CLI_FULL_CONNECTION_IPC;
 	struct dcerpc_binding *binding = NULL;
 	enum dcerpc_transport_t transport;
 	uint32_t bflags = 0;
@@ -1206,24 +1206,12 @@ out_free:
 					"IPC$", "IPC",
 					get_cmdline_auth_info_creds(
 						popt_get_cmdline_auth_info()),
-					flags,
-					SMB_SIGNING_IPC_DEFAULT);
+					flags);
 
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		DEBUG(0,("Cannot connect to server.  Error was %s\n", nt_errstr(nt_status)));
 		result = 1;
 		goto done;
-	}
-
-	if (get_cmdline_auth_info_smb_encrypt(popt_get_cmdline_auth_info())) {
-		nt_status = cli_cm_force_encryption_creds(cli,
-					get_cmdline_auth_info_creds(
-						popt_get_cmdline_auth_info()),
-					"IPC$");
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			result = 1;
-			goto done;
-		}
 	}
 
 #if 0	/* COMMENT OUT FOR TESTING */

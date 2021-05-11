@@ -41,6 +41,7 @@
 #include "lib/addns/dnsquery.h"
 #include "lib/addns/dns.h"
 #include "lib/util/sys_rw.h"
+#include "lib/util/smb_strtox.h"
 #include <arpa/nameser.h>
 #include <resolv.h>
 
@@ -267,13 +268,13 @@ done:
 static struct dns_records_container get_srv_records(TALLOC_CTX *mem_ctx,
 							const char* name)
 {
-	struct dns_records_container ret;
+	struct dns_records_container ret = {0};
 	char **addrs = NULL;
 	struct dns_rr_srv *dclist;
 	NTSTATUS status;
-	uint32_t total;
-	int i;
-	int count;
+	size_t total;
+	size_t i;
+	size_t count = 0;
 
 	memset(&ret, 0, sizeof(struct dns_records_container));
 	/* this is the blocking call we are going to lots of trouble
@@ -302,6 +303,13 @@ static struct dns_records_container get_srv_records(TALLOC_CTX *mem_ctx,
 		}
 
 		c = get_a_aaaa_records(mem_ctx, tmp_str, dclist[i].port);
+
+		/* wrap check */
+		if (total + c.count < total) {
+			/* possibly could just break here instead? */
+			TALLOC_FREE(addrs);
+			return ret;
+		}
 		total += c.count;
 		if (addrs == NULL) {
 			addrs = c.list;

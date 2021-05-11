@@ -461,13 +461,13 @@ error_status_t _epm_Insert(struct pipes_struct *p,
 		iface->syntax_id = dcerpc_binding_get_abstract_syntax(b);
 
 		/*
-		 * Check if the rpc service is alrady registered on the
+		 * Check if the rpc service is already registered on the
 		 * endpoint.
 		 */
 		if (find_interface(ep, iface) != NULL) {
-			DEBUG(8, ("dcesrv_interface_register: interface '%s' "
-				  "already registered on endpoint\n",
-				  iface->name));
+			DBG_INFO("interface '%s' already registered on "
+				 "endpoint\n",
+				 iface->name);
 			/* FIXME wrong error code? */
 			rc = EPMAPPER_STATUS_OK;
 			goto done;

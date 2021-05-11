@@ -265,12 +265,24 @@ static int syncops_mkdirat(vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname,
 			mode_t mode)
 {
+	struct smb_filename *full_fname = NULL;
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
+
         SYNCOPS_NEXT_SMB_FNAME(MKDIRAT,
-			smb_fname,
+			full_fname,
 				(handle,
 				dirfsp,
 				smb_fname,
 				mode));
+
+	TALLOC_FREE(full_fname);
 }
 
 /* close needs to be handled specially */
@@ -285,7 +297,7 @@ static int syncops_close(vfs_handle_struct *handle, files_struct *fsp)
 	if (fsp->fsp_flags.can_write && config->onclose) {
 		/* ideally we'd only do this if we have written some
 		 data, but there is no flag for that in fsp yet. */
-		fsync(fsp->fh->fd);
+		fsync(fsp_get_io_fd(fsp));
 	}
 	return SMB_VFS_NEXT_CLOSE(handle, fsp);
 }

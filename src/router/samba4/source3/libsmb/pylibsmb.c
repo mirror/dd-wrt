@@ -38,11 +38,6 @@
 #define LIST_ATTRIBUTE_MASK \
 	(FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_SYSTEM|FILE_ATTRIBUTE_HIDDEN)
 
-#define SECINFO_DEFAULT_FLAGS \
-	(SECINFO_OWNER | SECINFO_GROUP | \
-	 SECINFO_DACL | SECINFO_PROTECTED_DACL | SECINFO_UNPROTECTED_DACL | \
-	 SECINFO_SACL | SECINFO_PROTECTED_SACL | SECINFO_UNPROTECTED_SACL)
-
 static PyTypeObject *get_pytype(const char *module, const char *type)
 {
 	PyObject *mod;
@@ -95,7 +90,6 @@ struct py_cli_oplock_break {
 struct py_cli_state {
 	PyObject_HEAD
 	struct cli_state *cli;
-	bool is_smb1;
 	struct tevent_context *ev;
 	int (*req_wait_fn)(struct tevent_context *ev,
 			   struct tevent_req *req);
@@ -419,7 +413,6 @@ static PyObject *py_cli_state_new(PyTypeObject *type, PyObject *args,
 		return NULL;
 	}
 	self->cli = NULL;
-	self->is_smb1 = false;
 	self->ev = NULL;
 	self->thread_state = NULL;
 	self->oplock_waiter = NULL;
@@ -440,18 +433,18 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 	PyObject *py_lp = Py_None;
 	PyObject *py_multi_threaded = Py_False;
 	bool multi_threaded = false;
-	PyObject *py_sign = Py_False;
-	bool sign = false;
-	int signing_state = SMB_SIGNING_DEFAULT;
 	PyObject *py_force_smb1 = Py_False;
 	bool force_smb1 = false;
+	PyObject *py_ipc = Py_False;
+	bool use_ipc = false;
 	struct tevent_req *req;
 	bool ret;
 	int flags = 0;
 
 	static const char *kwlist[] = {
 		"host", "share", "lp", "creds",
-		"multi_threaded", "sign", "force_smb1",
+		"multi_threaded", "force_smb1",
+		"ipc",
 		NULL
 	};
 
@@ -466,8 +459,8 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 		&host, &share, &py_lp,
 		py_type_Credentials, &creds,
 		&py_multi_threaded,
-		&py_sign,
-		&py_force_smb1);
+		&py_force_smb1,
+		&py_ipc);
 
 	Py_DECREF(py_type_Credentials);
 
@@ -476,12 +469,7 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 	}
 
 	multi_threaded = PyObject_IsTrue(py_multi_threaded);
-	sign = PyObject_IsTrue(py_sign);
 	force_smb1 = PyObject_IsTrue(py_force_smb1);
-
-	if (sign) {
-		signing_state = SMB_SIGNING_REQUIRED;
-	}
 
 	if (force_smb1) {
 		/*
@@ -491,6 +479,11 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 		 * we have a way to force SMB1.
 		 */
 		flags = CLI_FULL_CONNECTION_FORCE_SMB1;
+	}
+
+	use_ipc = PyObject_IsTrue(py_ipc);
+	if (use_ipc) {
+		flags |= CLI_FULL_CONNECTION_IPC;
 	}
 
 	if (multi_threaded) {
@@ -504,12 +497,6 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 				"No PTHREAD support available");
 		return -1;
 #endif
-		if (!force_smb1) {
-			PyErr_SetString(PyExc_RuntimeError,
-					"multi_threaded is only possible on "
-					"SMB1 connections");
-			return -1;
-		}
 	} else {
 		ret = py_cli_state_setup_ev(self);
 		if (!ret) {
@@ -525,7 +512,7 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 
 	req = cli_full_connection_creds_send(
 		NULL, self->ev, "myname", host, NULL, 0, share, "?????",
-		cli_creds, flags, signing_state);
+		cli_creds, flags);
 	if (!py_tevent_req_wait_exc(self, req)) {
 		return -1;
 	}
@@ -535,10 +522,6 @@ static int py_cli_state_init(struct py_cli_state *self, PyObject *args,
 	if (!NT_STATUS_IS_OK(status)) {
 		PyErr_SetNTSTATUS(status);
 		return -1;
-	}
-
-	if (smbXcli_conn_protocol(self->cli->conn) < PROTOCOL_SMB2_02) {
-		self->is_smb1 = true;
 	}
 
 	/*
@@ -685,6 +668,24 @@ static PyObject *py_cli_settimeout(struct py_cli_state *self, PyObject *args)
 	return PyLong_FromLong(omsecs);
 }
 
+static PyObject *py_cli_echo(struct py_cli_state *self,
+			     PyObject *Py_UNUSED(ignored))
+{
+	DATA_BLOB data = data_blob_string_const("keepalive");
+	struct tevent_req *req = NULL;
+	NTSTATUS status;
+
+	req = cli_echo_send(NULL, self->ev, self->cli, 1, data);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_echo_recv(req);
+	TALLOC_FREE(req);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
+
+	Py_RETURN_NONE;
+}
+
 static PyObject *py_cli_create(struct py_cli_state *self, PyObject *args,
 			       PyObject *kwds)
 {
@@ -755,6 +756,39 @@ static PyObject *py_cli_close(struct py_cli_state *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+static PyObject *py_cli_rename(
+	struct py_cli_state *self, PyObject *args, PyObject *kwds)
+{
+	char *fname_src = NULL, *fname_dst = NULL;
+	int replace = false;
+	struct tevent_req *req = NULL;
+	NTSTATUS status;
+	bool ok;
+
+	static const char *kwlist[] = { "src", "dst", "replace", NULL };
+
+	ok = ParseTupleAndKeywords(
+		args, kwds, "ss|p", kwlist, &fname_src, &fname_dst, &replace);
+	if (!ok) {
+		return NULL;
+	}
+
+	req = cli_rename_send(
+		NULL, self->ev, self->cli, fname_src, fname_dst, replace);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_rename_recv(req);
+	TALLOC_FREE(req);
+
+	if (!NT_STATUS_IS_OK(status)) {
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+	Py_RETURN_NONE;
+}
+
+
 struct push_state {
 	char *data;
 	off_t nread;
@@ -813,7 +847,7 @@ static PyObject *py_smb_savefile(struct py_cli_state *self, PyObject *args)
 	}
 	status = cli_ntcreate_recv(req, &fnum, NULL);
 	TALLOC_FREE(req);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
 	/* write the new file contents */
 	state.data = data;
@@ -827,7 +861,7 @@ static PyObject *py_smb_savefile(struct py_cli_state *self, PyObject *args)
 	}
 	status = cli_push_recv(req);
 	TALLOC_FREE(req);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
 	/* close the file handle */
 	req = cli_close_send(NULL, self->ev, self->cli, fnum);
@@ -835,7 +869,7 @@ static PyObject *py_smb_savefile(struct py_cli_state *self, PyObject *args)
 		return NULL;
 	}
 	status = cli_close_recv(req);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
 	Py_RETURN_NONE;
 }
@@ -924,11 +958,11 @@ static PyObject *py_smb_loadfile(struct py_cli_state *self, PyObject *args)
 	}
 	status = cli_ntcreate_recv(req, &fnum, NULL);
 	TALLOC_FREE(req);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
 	/* get a buffer to hold the file contents */
 	status = py_smb_filesize(self, fnum, &size);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
 	result = PyBytes_FromStringAndSize(NULL, size);
 	if (result == NULL) {
@@ -1103,10 +1137,241 @@ static PyObject *py_cli_delete_on_close(struct py_cli_state *self,
 	Py_RETURN_NONE;
 }
 
+struct py_cli_notify_state {
+	PyObject_HEAD
+	struct py_cli_state *py_cli_state;
+	struct tevent_req *req;
+};
+
+static void py_cli_notify_state_dealloc(struct py_cli_notify_state *self)
+{
+	TALLOC_FREE(self->req);
+	if (self->py_cli_state != NULL) {
+		Py_DECREF(self->py_cli_state);
+		self->py_cli_state = NULL;
+	}
+	Py_TYPE(self)->tp_free(self);
+}
+
+static PyTypeObject py_cli_notify_state_type;
+
+static PyObject *py_cli_notify(struct py_cli_state *self,
+			       PyObject *args,
+			       PyObject *kwds)
+{
+	static const char *kwlist[] = {
+		"fnum",
+		"buffer_size",
+		"completion_filter",
+		"recursive",
+		NULL
+	};
+	unsigned fnum = 0;
+	unsigned buffer_size = 0;
+	unsigned completion_filter = 0;
+	PyObject *py_recursive = Py_False;
+	bool recursive = false;
+	struct tevent_req *req = NULL;
+	struct tevent_queue *send_queue = NULL;
+	struct tevent_req *flush_req = NULL;
+	bool ok;
+	struct py_cli_notify_state *py_notify_state = NULL;
+	struct timeval endtime;
+
+	ok = ParseTupleAndKeywords(args,
+				   kwds,
+				   "IIIO",
+				   kwlist,
+				   &fnum,
+				   &buffer_size,
+				   &completion_filter,
+				   &py_recursive);
+	if (!ok) {
+		return NULL;
+	}
+
+	recursive = PyObject_IsTrue(py_recursive);
+
+	req = cli_notify_send(NULL,
+			      self->ev,
+			      self->cli,
+			      fnum,
+			      buffer_size,
+			      completion_filter,
+			      recursive);
+	if (req == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+
+	/*
+	 * Just wait for the request being submitted to
+	 * the kernel/socket/wire.
+	 */
+	send_queue = smbXcli_conn_send_queue(self->cli->conn);
+	flush_req = tevent_queue_wait_send(req,
+					   self->ev,
+					   send_queue);
+	endtime = timeval_current_ofs_msec(self->cli->timeout);
+	ok = tevent_req_set_endtime(flush_req,
+				    self->ev,
+				    endtime);
+	if (!ok) {
+		TALLOC_FREE(req);
+		PyErr_NoMemory();
+		return NULL;
+	}
+	ok = py_tevent_req_wait_exc(self, flush_req);
+	if (!ok) {
+		TALLOC_FREE(req);
+		return NULL;
+	}
+	TALLOC_FREE(flush_req);
+
+	py_notify_state = (struct py_cli_notify_state *)
+		py_cli_notify_state_type.tp_alloc(&py_cli_notify_state_type, 0);
+	if (py_notify_state == NULL) {
+		TALLOC_FREE(req);
+		PyErr_NoMemory();
+		return NULL;
+	}
+	Py_INCREF(self);
+	py_notify_state->py_cli_state = self;
+	py_notify_state->req = req;
+
+	return (PyObject *)py_notify_state;
+}
+
+static PyObject *py_cli_notify_get_changes(struct py_cli_notify_state *self,
+					   PyObject *args,
+					   PyObject *kwds)
+{
+	struct py_cli_state *py_cli_state = self->py_cli_state;
+	struct tevent_req *req = self->req;
+	uint32_t i;
+	uint32_t num_changes = 0;
+	struct notify_change *changes = NULL;
+	PyObject *result = NULL;
+	NTSTATUS status;
+	bool ok;
+	static const char *kwlist[] = {
+		"wait",
+		NULL
+	};
+	PyObject *py_wait = Py_False;
+	bool wait = false;
+	bool pending;
+
+	ok = ParseTupleAndKeywords(args,
+				   kwds,
+				   "O",
+				   kwlist,
+				   &py_wait);
+	if (!ok) {
+		return NULL;
+	}
+
+	wait = PyObject_IsTrue(py_wait);
+
+	if (req == NULL) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"TODO req == NULL "
+				"- missing change notify request?");
+		return NULL;
+	}
+
+	pending = tevent_req_is_in_progress(req);
+	if (pending && !wait) {
+		Py_RETURN_NONE;
+	}
+
+	if (pending) {
+		struct timeval endtime;
+
+		endtime = timeval_current_ofs_msec(py_cli_state->cli->timeout);
+		ok = tevent_req_set_endtime(req,
+					    py_cli_state->ev,
+					    endtime);
+		if (!ok) {
+			TALLOC_FREE(req);
+			PyErr_NoMemory();
+			return NULL;
+		}
+	}
+
+	ok = py_tevent_req_wait_exc(py_cli_state, req);
+	self->req = NULL;
+	Py_DECREF(self->py_cli_state);
+	self->py_cli_state = NULL;
+	if (!ok) {
+		return NULL;
+	}
+
+	status = cli_notify_recv(req, req, &num_changes, &changes);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(req);
+		PyErr_SetNTSTATUS(status);
+		return NULL;
+	}
+
+	result = Py_BuildValue("[]");
+	if (result == NULL) {
+		TALLOC_FREE(req);
+		return NULL;
+	}
+
+	for (i = 0; i < num_changes; i++) {
+		PyObject *change = NULL;
+		int ret;
+
+		change = Py_BuildValue("{s:s,s:I}",
+				       "name", changes[i].name,
+				       "action", changes[i].action);
+		if (change == NULL) {
+			TALLOC_FREE(req);
+			return NULL;
+		}
+
+		ret = PyList_Append(result, change);
+		if (ret == -1) {
+			TALLOC_FREE(req);
+			return NULL;
+		}
+	}
+
+	TALLOC_FREE(req);
+	return result;
+}
+
+static PyMethodDef py_cli_notify_state_methods[] = {
+	{ "get_changes",
+	  (PyCFunction)py_cli_notify_get_changes,
+	  METH_VARARGS|METH_KEYWORDS,
+	  "Wait for change notifications: \n"
+	  "N.get_changes(wait=BOOLEAN) -> "
+	  "change notifications as a dictionary\n"
+	  "\t\tList contents of a directory. The keys are, \n"
+	  "\t\t\tname: name of changed object\n"
+	  "\t\t\taction: type of the change\n"
+	  "None is returned if there's no response jet and wait=False is passed"
+	},
+	{ NULL }
+};
+
+static PyTypeObject py_cli_notify_state_type = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	.tp_name = "libsmb_samba_cwrapper.Notify",
+	.tp_basicsize = sizeof(struct py_cli_notify_state),
+	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+	.tp_doc = "notify request",
+	.tp_dealloc = (destructor)py_cli_notify_state_dealloc,
+	.tp_methods = py_cli_notify_state_methods,
+};
+
 /*
  * Helper to add directory listing entries to an overall Python list
  */
-static NTSTATUS list_helper(const char *mntpoint, struct file_info *finfo,
+static NTSTATUS list_helper(struct file_info *finfo,
 			    const char *mask, void *state)
 {
 	PyObject *result = (PyObject *)state;
@@ -1146,19 +1411,44 @@ static NTSTATUS list_helper(const char *mntpoint, struct file_info *finfo,
 	return NT_STATUS_OK;
 }
 
+struct do_listing_state {
+	const char *mask;
+	NTSTATUS (*callback_fn)(
+		struct file_info *finfo,
+		const char *mask,
+		void *private_data);
+	void *private_data;
+	NTSTATUS status;
+};
+
+static void do_listing_cb(struct tevent_req *subreq)
+{
+	struct do_listing_state *state = tevent_req_callback_data_void(subreq);
+	struct file_info *finfo = NULL;
+
+	state->status = cli_list_recv(subreq, NULL, &finfo);
+	if (!NT_STATUS_IS_OK(state->status)) {
+		return;
+	}
+	state->callback_fn(finfo, state->mask, state->private_data);
+	TALLOC_FREE(finfo);
+}
+
 static NTSTATUS do_listing(struct py_cli_state *self,
 			   const char *base_dir, const char *user_mask,
 			   uint16_t attribute,
-			   NTSTATUS (*callback_fn)(const char *,
-						   struct file_info *,
+			   NTSTATUS (*callback_fn)(struct file_info *,
 						   const char *, void *),
 			   void *priv)
 {
 	char *mask = NULL;
 	unsigned int info_level = SMB_FIND_FILE_BOTH_DIRECTORY_INFO;
-	struct file_info *finfos = NULL;
-	size_t i;
-	size_t num_finfos = 0;
+	struct do_listing_state state = {
+		.mask = mask,
+		.callback_fn = callback_fn,
+		.private_data = priv,
+	};
+	struct tevent_req *req = NULL;
 	NTSTATUS status;
 
 	if (user_mask == NULL) {
@@ -1172,37 +1462,26 @@ static NTSTATUS do_listing(struct py_cli_state *self,
 	}
 	dos_format(mask);
 
-	if (self->is_smb1) {
-		struct tevent_req *req = NULL;
-
-		req = cli_list_send(NULL, self->ev, self->cli, mask, attribute,
-				    info_level);
-		if (!py_tevent_req_wait_exc(self, req)) {
-			return NT_STATUS_INTERNAL_ERROR;
-		}
-		status = cli_list_recv(req, NULL, &finfos, &num_finfos);
-		TALLOC_FREE(req);
-	} else {
-		status = cli_list(self->cli, mask, attribute, callback_fn,
-				  priv);
+	req = cli_list_send(NULL, self->ev, self->cli, mask, attribute,
+			    info_level);
+	if (req == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto done;
 	}
+	tevent_req_set_callback(req, do_listing_cb, &state);
+
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+	TALLOC_FREE(req);
+
+	status = state.status;
+	if (NT_STATUS_EQUAL(status, NT_STATUS_NO_MORE_FILES)) {
+		status = NT_STATUS_OK;
+	}
+
+done:
 	TALLOC_FREE(mask);
-
-	if (!NT_STATUS_IS_OK(status)) {
-		return status;
-	}
-
-	/* invoke the callback for the async results (SMBv1 connections) */
-	for (i = 0; i < num_finfos; i++) {
-		status = callback_fn(base_dir, &finfos[i], user_mask,
-				     priv);
-		if (!NT_STATUS_IS_OK(status)) {
-			TALLOC_FREE(finfos);
-			return status;
-		}
-	}
-
-	TALLOC_FREE(finfos);
 	return status;
 }
 
@@ -1239,70 +1518,45 @@ static PyObject *py_cli_list(struct py_cli_state *self,
 	return result;
 }
 
-/*
- * Deletes a file
- */
-static NTSTATUS unlink_file(struct py_cli_state *self, const char *filename)
-{
-	NTSTATUS status;
-	uint32_t attrs = (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
-	struct tevent_req *req = NULL;
-
-	req = cli_unlink_send(
-		NULL, self->ev, self->cli, filename, attrs);
-	if (!py_tevent_req_wait_exc(self, req)) {
-		return NT_STATUS_INTERNAL_ERROR;
-	}
-	status = cli_unlink_recv(req);
-	TALLOC_FREE(req);
-
-	return status;
-}
-
 static PyObject *py_smb_unlink(struct py_cli_state *self, PyObject *args)
 {
 	NTSTATUS status;
 	const char *filename = NULL;
+	struct tevent_req *req = NULL;
+	const uint32_t attrs = (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN);
 
 	if (!PyArg_ParseTuple(args, "s:unlink", &filename)) {
 		return NULL;
 	}
 
-	status = unlink_file(self, filename);
+	req = cli_unlink_send(NULL, self->ev, self->cli, filename, attrs);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_unlink_recv(req);
+	TALLOC_FREE(req);
 	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
 	Py_RETURN_NONE;
 }
 
-/*
- * Delete an empty directory
- */
-static NTSTATUS remove_dir(struct py_cli_state *self, const char *dirname)
-{
-	NTSTATUS status;
-	struct tevent_req *req = NULL;
-
-	req = cli_rmdir_send(NULL, self->ev, self->cli, dirname);
-	if (!py_tevent_req_wait_exc(self, req)) {
-		return NT_STATUS_INTERNAL_ERROR;
-	}
-	status = cli_rmdir_recv(req);
-	TALLOC_FREE(req);
-
-	return status;
-}
-
 static PyObject *py_smb_rmdir(struct py_cli_state *self, PyObject *args)
 {
 	NTSTATUS status;
+	struct tevent_req *req = NULL;
 	const char *dirname = NULL;
 
 	if (!PyArg_ParseTuple(args, "s:rmdir", &dirname)) {
 		return NULL;
 	}
 
-	status = remove_dir(self, dirname);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	req = cli_rmdir_send(NULL, self->ev, self->cli, dirname);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return NULL;
+	}
+	status = cli_rmdir_recv(req);
+	TALLOC_FREE(req);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
 	Py_RETURN_NONE;
 }
@@ -1326,7 +1580,7 @@ static PyObject *py_smb_mkdir(struct py_cli_state *self, PyObject *args)
 	}
 	status = cli_mkdir_recv(req);
 	TALLOC_FREE(req);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
 	Py_RETURN_NONE;
 }
@@ -1362,164 +1616,40 @@ static PyObject *py_smb_chkpath(struct py_cli_state *self, PyObject *args)
 	return PyBool_FromLong(dir_exists);
 }
 
-struct deltree_state {
-	struct py_cli_state *self;
-	const char *full_dirpath;
-};
-
-static NTSTATUS delete_dir_tree(struct py_cli_state *self,
-				const char *dirpath);
-
-/*
- * Deletes a single item in the directory tree. This could be either a file
- * or a directory. This function gets invoked as a callback for every item in
- * the given directory's listings.
- */
-static NTSTATUS delete_tree_callback(const char *mntpoint,
-				     struct file_info *finfo,
-				     const char *mask, void *priv)
+static PyObject *py_smb_get_sd(struct py_cli_state *self, PyObject *args)
 {
-	char *filepath = NULL;
-	struct deltree_state *state = priv;
-	NTSTATUS status;
-
-	/* skip '.' or '..' directory listings */
-	if (ISDOT(finfo->name) || ISDOTDOT(finfo->name)) {
-		return NT_STATUS_OK;
-	}
-
-	/* get the absolute filepath */
-	filepath = talloc_asprintf(NULL, "%s\\%s", state->full_dirpath,
-				   finfo->name);
-	if (filepath == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	if (finfo->attr & FILE_ATTRIBUTE_DIRECTORY) {
-
-		/* recursively delete the sub-directory and its contents */
-		status = delete_dir_tree(state->self, filepath);
-	} else {
-		status = unlink_file(state->self, filepath);
-	}
-
-	TALLOC_FREE(filepath);
-	return status;
-}
-
-/*
- * Removes a directory and all its contents
- */
-static NTSTATUS delete_dir_tree(struct py_cli_state *self,
-				const char *filepath)
-{
-	NTSTATUS status;
-	const char *mask = "*";
-	struct deltree_state state = { 0 };
-
-	/* go through the directory's contents, deleting each item */
-	state.self = self;
-	state.full_dirpath = filepath;
-	status = do_listing(self, filepath, mask, LIST_ATTRIBUTE_MASK,
-			    delete_tree_callback, &state);
-
-	/* remove the directory itself */
-	if (NT_STATUS_IS_OK(status)) {
-		status = remove_dir(self, filepath);
-	}
-	return status;
-}
-
-static PyObject *py_smb_deltree(struct py_cli_state *self, PyObject *args)
-{
-	NTSTATUS status;
-	const char *filepath = NULL;
-	bool dir_exists;
-
-	if (!PyArg_ParseTuple(args, "s:deltree", &filepath)) {
-		return NULL;
-	}
-
-	/* check whether we're removing a directory or a file */
-	dir_exists = check_dir_path(self, filepath);
-
-	if (dir_exists) {
-		status = delete_dir_tree(self, filepath);
-	} else {
-		status = unlink_file(self, filepath);
-	}
-
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
-
-	Py_RETURN_NONE;
-}
-
-/*
- * Read ACL on a given file/directory as a security descriptor object
- */
-static PyObject *py_smb_getacl(struct py_cli_state *self, PyObject *args)
-{
-	NTSTATUS status;
-	const char *filename = NULL;
-	unsigned int sinfo = SECINFO_DEFAULT_FLAGS;
-	unsigned int access_mask = SEC_FLAG_MAXIMUM_ALLOWED;
-	uint16_t fnum;
+	int fnum;
+	unsigned sinfo;
+	struct tevent_req *req = NULL;
 	struct security_descriptor *sd = NULL;
+	NTSTATUS status;
 
-	/* there's no async version of cli_query_security_descriptor() */
-	if (self->thread_state != NULL) {
-		PyErr_SetString(PyExc_RuntimeError,
-				"get_acl() is not supported on "
-				"a multi_threaded connection");
+	if (!PyArg_ParseTuple(args, "iI:get_acl", &fnum, &sinfo)) {
 		return NULL;
 	}
 
-	if (!PyArg_ParseTuple(args, "s|II:get_acl", &filename, &sinfo,
-			      &access_mask)) {
-		return NULL;
+	req = cli_query_security_descriptor_send(
+		NULL, self->ev, self->cli, fnum, sinfo);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return false;
 	}
+	status = cli_query_security_descriptor_recv(req, NULL, &sd);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
-	/* get a file handle with the desired access */
-	status = cli_ntcreate(self->cli, filename, 0, access_mask, 0,
-			      FILE_SHARE_READ|FILE_SHARE_WRITE,
-			      FILE_OPEN, 0x0, 0x0, &fnum, NULL);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
-
-	/* query the security descriptor for this file */
-	status = cli_query_security_descriptor(self->cli, fnum, sinfo,
-					       NULL, &sd);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
-
-	/* close the file handle and convert the SD to a python struct */
-	status = cli_close(self->cli, fnum);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
-
-	return py_return_ndr_struct("samba.dcerpc.security", "descriptor",
-				    sd, sd);
+	return py_return_ndr_struct(
+		"samba.dcerpc.security", "descriptor", sd, sd);
 }
 
-/*
- * Set ACL on file/directory using given security descriptor object
- */
-static PyObject *py_smb_setacl(struct py_cli_state *self, PyObject *args)
+static PyObject *py_smb_set_sd(struct py_cli_state *self, PyObject *args)
 {
-	NTSTATUS status;
-	char *filename = NULL;
 	PyObject *py_sd = NULL;
+	struct tevent_req *req = NULL;
 	struct security_descriptor *sd = NULL;
-	unsigned int sinfo = SECINFO_DEFAULT_FLAGS;
 	uint16_t fnum;
+	unsigned int sinfo;
+	NTSTATUS status;
 
-	/* there's no async version of cli_set_security_descriptor() */
-	if (self->thread_state != NULL) {
-		PyErr_SetString(PyExc_RuntimeError,
-				"set_acl() is not supported on "
-				"a multi_threaded connection");
-		return NULL;
-	}
-
-	if (!PyArg_ParseTuple(args, "sO|I:set_acl", &filename, &py_sd,
-			      &sinfo)) {
+	if (!PyArg_ParseTuple(args, "iOI:set_sd", &fnum, &py_sd, &sinfo)) {
 		return NULL;
 	}
 
@@ -1531,17 +1661,14 @@ static PyObject *py_smb_setacl(struct py_cli_state *self, PyObject *args)
 		return NULL;
 	}
 
-	status = cli_ntcreate(self->cli, filename, 0,
-			      SEC_FLAG_MAXIMUM_ALLOWED, 0,
-			      FILE_SHARE_READ|FILE_SHARE_WRITE,
-			      FILE_OPEN, 0x0, 0x0, &fnum, NULL);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	req = cli_set_security_descriptor_send(
+		NULL, self->ev, self->cli, fnum, sinfo, sd);
+	if (!py_tevent_req_wait_exc(self, req)) {
+		return false;
+	}
 
-	status = cli_set_security_descriptor(self->cli, fnum, sinfo, sd);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
-
-	status = cli_close(self->cli, fnum);
-	PyErr_NTSTATUS_IS_ERR_RAISE(status);
+	status = cli_set_security_descriptor_recv(req);
+	PyErr_NTSTATUS_NOT_OK_RAISE(status);
 
 	Py_RETURN_NONE;
 }
@@ -1549,6 +1676,8 @@ static PyObject *py_smb_setacl(struct py_cli_state *self, PyObject *args)
 static PyMethodDef py_cli_state_methods[] = {
 	{ "settimeout", (PyCFunction)py_cli_settimeout, METH_VARARGS,
 	  "settimeout(new_timeout_msecs) => return old_timeout_msecs" },
+	{ "echo", (PyCFunction)py_cli_echo, METH_NOARGS,
+	  "Ping the server connection" },
 	{ "create", PY_DISCARD_FUNC_SIG(PyCFunction, py_cli_create),
 		METH_VARARGS|METH_KEYWORDS,
 	  "Open a file" },
@@ -1568,6 +1697,11 @@ static PyMethodDef py_cli_state_methods[] = {
 					 py_cli_delete_on_close),
 	  METH_VARARGS|METH_KEYWORDS,
 	  "Set/Reset the delete on close flag" },
+	{ "notify", PY_DISCARD_FUNC_SIG(PyCFunction, py_cli_notify),
+	  METH_VARARGS|METH_KEYWORDS,
+	  "Wait for change notifications: \n"
+	  "notify(fnum, buffer_size, completion_filter...) -> "
+	  "libsmb_samba_internal.Notify request handle\n" },
 	{ "list", PY_DISCARD_FUNC_SIG(PyCFunction, py_cli_list),
 		METH_VARARGS|METH_KEYWORDS,
 	  "list(directory, mask='*', attribs=DEFAULT_ATTRS) -> "
@@ -1589,6 +1723,10 @@ static PyMethodDef py_cli_state_methods[] = {
 	  "mkdir(path) -> None\n\n \t\tCreate a directory." },
 	{ "rmdir", (PyCFunction)py_smb_rmdir, METH_VARARGS,
 	  "rmdir(path) -> None\n\n \t\tDelete a directory." },
+	{ "rename",
+	  PY_DISCARD_FUNC_SIG(PyCFunction, py_cli_rename),
+	  METH_VARARGS|METH_KEYWORDS,
+	  "rename(src,dst) -> None\n\n \t\tRename a file." },
 	{ "chkpath", (PyCFunction)py_smb_chkpath, METH_VARARGS,
 	  "chkpath(dir_path) -> True or False\n\n"
 	  "\t\tReturn true if directory exists, false otherwise." },
@@ -1598,24 +1736,21 @@ static PyMethodDef py_cli_state_methods[] = {
 	{ "loadfile", (PyCFunction)py_smb_loadfile, METH_VARARGS,
 	  "loadfile(path) -> file contents as a " PY_DESC_PY3_BYTES
 	  "\n\n\t\tRead contents of a file." },
-	{ "deltree", (PyCFunction)py_smb_deltree, METH_VARARGS,
-	  "deltree(path) -> None\n\n"
-	  "\t\tDelete a directory and all its contents." },
-	{ "get_acl", (PyCFunction)py_smb_getacl, METH_VARARGS,
-	  "get_acl(path[, security_info=0]) -> security_descriptor object\n\n"
-	  "\t\tGet security descriptor for file." },
-	{ "set_acl", (PyCFunction)py_smb_setacl, METH_VARARGS,
-	  "set_acl(path, security_descriptor[, security_info=0]) -> None\n\n"
-	  "\t\tSet security descriptor for file." },
+	{ "get_sd", (PyCFunction)py_smb_get_sd, METH_VARARGS,
+	  "get_sd(fnum[, security_info=0]) -> security_descriptor object\n\n"
+	  "\t\tGet security descriptor for opened file." },
+	{ "set_sd", (PyCFunction)py_smb_set_sd, METH_VARARGS,
+	  "set_sd(fnum, security_descriptor[, security_info=0]) -> None\n\n"
+	  "\t\tSet security descriptor for opened file." },
 	{ NULL, NULL, 0, NULL }
 };
 
 static PyTypeObject py_cli_state_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	.tp_name = "libsmb_samba_internal.Conn",
+	.tp_name = "libsmb_samba_cwrapper.LibsmbCConn",
 	.tp_basicsize = sizeof(struct py_cli_state),
 	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-	.tp_doc = "libsmb connection",
+	.tp_doc = "libsmb cwrapper connection",
 	.tp_new = py_cli_state_new,
 	.tp_init = (initproc)py_cli_state_init,
 	.tp_dealloc = (destructor)py_cli_state_dealloc,
@@ -1626,17 +1761,17 @@ static PyMethodDef py_libsmb_methods[] = {
 	{0},
 };
 
-void initlibsmb_samba_internal(void);
+void initlibsmb_samba_cwrapper(void);
 
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "libsmb_samba_internal",
+    .m_name = "libsmb_samba_cwrapper",
     .m_doc = "libsmb wrapper",
     .m_size = -1,
     .m_methods = py_libsmb_methods,
 };
 
-MODULE_INIT_FUNC(libsmb_samba_internal)
+MODULE_INIT_FUNC(libsmb_samba_cwrapper)
 {
 	PyObject *m = NULL;
 
@@ -1649,8 +1784,12 @@ MODULE_INIT_FUNC(libsmb_samba_internal)
 	if (PyType_Ready(&py_cli_state_type) < 0) {
 		return NULL;
 	}
+	if (PyType_Ready(&py_cli_notify_state_type) < 0) {
+		return NULL;
+	}
+
 	Py_INCREF(&py_cli_state_type);
-	PyModule_AddObject(m, "Conn", (PyObject *)&py_cli_state_type);
+	PyModule_AddObject(m, "LibsmbCConn", (PyObject *)&py_cli_state_type);
 
 #define ADD_FLAGS(val)	PyModule_AddObject(m, #val, PyLong_FromLong(val))
 
@@ -1670,6 +1809,36 @@ MODULE_INIT_FUNC(libsmb_samba_internal)
 	ADD_FLAGS(FILE_ATTRIBUTE_NONINDEXED);
 	ADD_FLAGS(FILE_ATTRIBUTE_ENCRYPTED);
 	ADD_FLAGS(FILE_ATTRIBUTE_ALL_MASK);
+
+	ADD_FLAGS(FILE_SHARE_READ);
+	ADD_FLAGS(FILE_SHARE_WRITE);
+	ADD_FLAGS(FILE_SHARE_DELETE);
+
+	/* change notify completion filter flags */
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_FILE_NAME);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_DIR_NAME);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_ATTRIBUTES);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_SIZE);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_LAST_WRITE);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_LAST_ACCESS);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_CREATION);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_EA);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_SECURITY);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_STREAM_NAME);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_STREAM_SIZE);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_STREAM_WRITE);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_NAME);
+	ADD_FLAGS(FILE_NOTIFY_CHANGE_ALL);
+
+	/* change notify action results */
+	ADD_FLAGS(NOTIFY_ACTION_ADDED);
+	ADD_FLAGS(NOTIFY_ACTION_REMOVED);
+	ADD_FLAGS(NOTIFY_ACTION_MODIFIED);
+	ADD_FLAGS(NOTIFY_ACTION_OLD_NAME);
+	ADD_FLAGS(NOTIFY_ACTION_NEW_NAME);
+	ADD_FLAGS(NOTIFY_ACTION_ADDED_STREAM);
+	ADD_FLAGS(NOTIFY_ACTION_REMOVED_STREAM);
+	ADD_FLAGS(NOTIFY_ACTION_MODIFIED_STREAM);
 
 	return m;
 }

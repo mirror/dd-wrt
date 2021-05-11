@@ -22,6 +22,7 @@
 #include "lib/util/asn1.h"
 #include "lib/util/debug.h"
 #include "lib/util/samba_util.h"
+#include "lib/util/smb_strtox.h"
 
 struct nesting {
 	off_t start;
@@ -1051,7 +1052,7 @@ bool asn1_read_BitString(struct asn1_data *data, TALLOC_CTX *mem_ctx, DATA_BLOB 
 /* read a non-negative enumerated value */
 bool asn1_read_enumerated(struct asn1_data *data, int *v)
 {
-	unsigned int val_will_wrap = (0xFF << ((sizeof(int)*8)-8));
+	unsigned int val_will_wrap = (0xFFU << ((sizeof(int)*8)-8));
 	*v = 0;
 
 	if (!asn1_start_tag(data, ASN1_ENUMERATED)) return false;
@@ -1070,7 +1071,11 @@ bool asn1_read_enumerated(struct asn1_data *data, int *v)
 			data->has_error = true;
 			return false;
 		}
-		*v = (*v << 8) + b;
+		/*
+		 * To please/fool the Undefined Behaviour Sanitizer we cast to
+		 * unsigned for the left shift.
+		 */
+		*v = ((unsigned int)*v << 8) + b;
 		if (*v < 0) {
 			/* ASN1_ENUMERATED can't be -ve. */
 			data->has_error = true;

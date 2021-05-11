@@ -92,8 +92,7 @@ NTSTATUS smb2_signing_sign_pdu(struct smb2_signing_key *signing_key,
 	}
 
 	if (!smb2_signing_key_valid(signing_key)) {
-		DBG_WARNING("Wrong session key length %zu for SMB2 signing\n",
-			    signing_key->blob.length);
+		DBG_WARNING("No signing key for SMB2 signing\n");
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
@@ -190,13 +189,8 @@ NTSTATUS smb2_signing_check_pdu(struct smb2_signing_key *signing_key,
 	static const uint8_t zero_sig[16] = { 0, };
 	int i;
 
-	if (count < 2) {
-		return NT_STATUS_INVALID_PARAMETER;
-	}
-
-	if (vector[0].iov_len != SMB2_HDR_BODY) {
-		return NT_STATUS_INVALID_PARAMETER;
-	}
+	SMB_ASSERT(count >= 2);
+	SMB_ASSERT(vector[0].iov_len == SMB2_HDR_BODY);
 
 	hdr = (const uint8_t *)vector[0].iov_base;
 
@@ -416,8 +410,7 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 	tf = (uint8_t *)vector[0].iov_base;
 
 	if (!smb2_signing_key_valid(encryption_key)) {
-		DBG_WARNING("Wrong encryption key length %zu for SMB2 signing\n",
-			    encryption_key->blob.length);
+		DBG_WARNING("No encryption key for SMB2 signing\n");
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
@@ -513,15 +506,27 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 		uint8_t *ctext = NULL;
 		size_t len = 0;
 		int i;
+		TALLOC_CTX *tmp_ctx = NULL;
 
-		ptext = talloc_size(talloc_tos(), ptext_size);
+		/*
+		 * If we come from python bindings, we don't have a stackframe
+		 * around, so use the NULL context.
+		 *
+		 * This is fine as we make sure we free the memory.
+		 */
+		if (talloc_stackframe_exists()) {
+			tmp_ctx = talloc_tos();
+		}
+
+		ptext = talloc_size(tmp_ctx, ptext_size);
 		if (ptext == NULL) {
 			status = NT_STATUS_NO_MEMORY;
 			goto out;
 		}
 
-		ctext = talloc_size(talloc_tos(), ctext_size);
+		ctext = talloc_size(tmp_ctx, ctext_size);
 		if (ctext == NULL) {
+			TALLOC_FREE(ptext);
 			status = NT_STATUS_NO_MEMORY;
 			goto out;
 		}
@@ -573,7 +578,7 @@ NTSTATUS smb2_signing_encrypt_pdu(struct smb2_signing_key *encryption_key,
 	}
 #endif /* HAVE_GNUTLS_AEAD_CIPHER_ENCRYPTV2 */
 
-	DBG_INFO("Enencrypted SMB2 message\n");
+	DBG_INFO("Encrypted SMB2 message\n");
 
 	status = NT_STATUS_OK;
 out:
@@ -613,8 +618,7 @@ NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 	tf = (uint8_t *)vector[0].iov_base;
 
 	if (!smb2_signing_key_valid(decryption_key)) {
-		DBG_WARNING("Wrong decryption key length %zu for SMB2 signing\n",
-			    decryption_key->blob.length);
+		DBG_WARNING("No decryption key for SMB2 signing\n");
 		return NT_STATUS_ACCESS_DENIED;
 	}
 
@@ -712,16 +716,27 @@ NTSTATUS smb2_signing_decrypt_pdu(struct smb2_signing_key *decryption_key,
 		uint8_t *ptext = NULL;
 		size_t len = 0;
 		int i;
+		TALLOC_CTX *tmp_ctx = NULL;
+
+		/*
+		 * If we come from python bindings, we don't have a stackframe
+		 * around, so use the NULL context.
+		 *
+		 * This is fine as we make sure we free the memory.
+		 */
+		if (talloc_stackframe_exists()) {
+			tmp_ctx = talloc_tos();
+		}
 
 		/* GnuTLS doesn't have a iovec API for decryption yet */
 
-		ptext = talloc_size(talloc_tos(), ptext_size);
+		ptext = talloc_size(tmp_ctx, ptext_size);
 		if (ptext == NULL) {
 			status = NT_STATUS_NO_MEMORY;
 			goto out;
 		}
 
-		ctext = talloc_size(talloc_tos(), ctext_size);
+		ctext = talloc_size(tmp_ctx, ctext_size);
 		if (ctext == NULL) {
 			TALLOC_FREE(ptext);
 			status = NT_STATUS_NO_MEMORY;

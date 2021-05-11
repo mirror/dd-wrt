@@ -28,6 +28,7 @@
 #include "librpc/gen_ndr/samr.h"
 #include "auth/credentials/credentials.h"
 #include "auth/gensec/gensec.h"
+#include "libcli/smb/smb_util.h"
 
 /**************************************************************************n
   Code to cope with username/password auth options from the commandline.
@@ -39,7 +40,6 @@ struct user_auth_info {
 	struct loadparm_context *lp_ctx;
 	bool got_username;
 	bool got_pass;
-	int signing_state;
 	bool smb_encrypt;
 	bool use_machine_account;
 	bool use_pw_nt_hash;
@@ -69,7 +69,6 @@ struct user_auth_info *user_auth_info_init(TALLOC_CTX *mem_ctx)
 
 	cli_credentials_set_conf(result->creds, result->lp_ctx);
 
-	result->signing_state = SMB_SIGNING_DEFAULT;
 	return result;
 }
 
@@ -240,27 +239,23 @@ void set_cmdline_auth_info_password(struct user_auth_info *auth_info,
 bool set_cmdline_auth_info_signing_state(struct user_auth_info *auth_info,
 					 const char *arg)
 {
-	auth_info->signing_state = SMB_SIGNING_DEFAULT;
-	if (strequal(arg, "off") || strequal(arg, "no") ||
-			strequal(arg, "false")) {
-		auth_info->signing_state = SMB_SIGNING_OFF;
-	} else if (strequal(arg, "on") || strequal(arg, "yes") ||
-			strequal(arg, "if_required") ||
-			strequal(arg, "true") || strequal(arg, "auto")) {
-		auth_info->signing_state = SMB_SIGNING_IF_REQUIRED;
-	} else if (strequal(arg, "force") || strequal(arg, "required") ||
-			strequal(arg, "forced")) {
-		auth_info->signing_state = SMB_SIGNING_REQUIRED;
-	} else {
-		return false;
-	}
-	return true;
+	enum smb_signing_setting signing_state =
+		smb_signing_setting_translate(arg);
+	bool ok;
+
+	ok = cli_credentials_set_smb_signing(auth_info->creds,
+					     signing_state,
+					     CRED_SPECIFIED);
+
+	return ok;
 }
 
 void set_cmdline_auth_info_signing_state_raw(struct user_auth_info *auth_info,
 					     int signing_state)
 {
-	auth_info->signing_state = signing_state;
+	cli_credentials_set_smb_signing(auth_info->creds,
+					signing_state,
+					CRED_SPECIFIED);
 }
 
 int get_cmdline_auth_info_signing_state(const struct user_auth_info *auth_info)
@@ -268,7 +263,7 @@ int get_cmdline_auth_info_signing_state(const struct user_auth_info *auth_info)
 	if (auth_info->smb_encrypt) {
 		return SMB_SIGNING_REQUIRED;
 	}
-	return auth_info->signing_state;
+	return cli_credentials_get_smb_signing(auth_info->creds);
 }
 
 void set_cmdline_auth_info_use_ccache(struct user_auth_info *auth_info, bool b)
@@ -312,9 +307,9 @@ void set_cmdline_auth_info_use_kerberos(struct user_auth_info *auth_info,
 	enum credentials_use_kerberos krb5_state;
 
 	if (b) {
-		krb5_state = CRED_MUST_USE_KERBEROS;
+		krb5_state = CRED_USE_KERBEROS_REQUIRED;
 	} else {
-		krb5_state = CRED_DONT_USE_KERBEROS;
+		krb5_state = CRED_USE_KERBEROS_DISABLED;
 	}
 
 	cli_credentials_set_kerberos_state(auth_info->creds, krb5_state);
@@ -326,7 +321,7 @@ bool get_cmdline_auth_info_use_kerberos(const struct user_auth_info *auth_info)
 
 	krb5_state = cli_credentials_get_kerberos_state(auth_info->creds);
 
-	if (krb5_state == CRED_MUST_USE_KERBEROS) {
+	if (krb5_state == CRED_USE_KERBEROS_REQUIRED) {
 		return true;
 	}
 
@@ -341,17 +336,17 @@ void set_cmdline_auth_info_fallback_after_kerberos(struct user_auth_info *auth_i
 	krb5_state = cli_credentials_get_kerberos_state(auth_info->creds);
 
 	switch (krb5_state) {
-	case CRED_MUST_USE_KERBEROS:
+	case CRED_USE_KERBEROS_REQUIRED:
 		if (b) {
-			krb5_state = CRED_AUTO_USE_KERBEROS;
+			krb5_state = CRED_USE_KERBEROS_DESIRED;
 		}
 		break;
-	case CRED_AUTO_USE_KERBEROS:
+	case CRED_USE_KERBEROS_DESIRED:
 		if (!b) {
-			krb5_state = CRED_MUST_USE_KERBEROS;
+			krb5_state = CRED_USE_KERBEROS_REQUIRED;
 		}
 		break;
-	case CRED_DONT_USE_KERBEROS:
+	case CRED_USE_KERBEROS_DISABLED:
 		/* nothing to do */
 		break;
 	}
@@ -365,7 +360,7 @@ bool get_cmdline_auth_info_fallback_after_kerberos(const struct user_auth_info *
 
 	krb5_state = cli_credentials_get_kerberos_state(auth_info->creds);
 
-	if (krb5_state == CRED_AUTO_USE_KERBEROS) {
+	if (krb5_state == CRED_USE_KERBEROS_DESIRED) {
 		return true;
 	}
 
@@ -382,6 +377,9 @@ void set_cmdline_auth_info_use_krb5_ticket(struct user_auth_info *auth_info)
 /* This should only be used by lib/popt_common.c JRA */
 void set_cmdline_auth_info_smb_encrypt(struct user_auth_info *auth_info)
 {
+	cli_credentials_set_smb_encryption(auth_info->creds,
+					   SMB_ENCRYPTION_REQUIRED,
+					   CRED_SPECIFIED);
 	auth_info->smb_encrypt = true;
 }
 

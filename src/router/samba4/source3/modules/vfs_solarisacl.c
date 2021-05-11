@@ -113,7 +113,7 @@ SMB_ACL_T solarisacl_sys_acl_get_fd(vfs_handle_struct *handle,
 
 	DEBUG(10, ("entering solarisacl_sys_acl_get_fd.\n"));
 
-	if (!solaris_acl_get_fd(fsp->fh->fd, &solaris_acl, &count)) {
+	if (!solaris_acl_get_fd(fsp_get_io_fd(fsp), &solaris_acl, &count)) {
 		goto done;
 	}
 	/* 
@@ -159,7 +159,7 @@ int solarisacl_sys_acl_set_file(vfs_handle_struct *handle,
 		DEBUG(10, ("invalid smb acl type given (%d).\n", type));
 		goto done;
 	}
-	DEBUGADD(10, ("setting %s acl\n", 
+	DEBUGADD(10, ("setting %s acl\n",
 		      ((type == SMB_ACL_TYPE_ACCESS) ? "access" : "default")));
 
 	if(!smb_acl_to_solaris_acl(theacl, &solaris_acl, &count, type)) {
@@ -170,9 +170,9 @@ int solarisacl_sys_acl_set_file(vfs_handle_struct *handle,
 
 	/*
 	 * if the file is a directory, there is extra work to do:
-	 * since the solaris acl call stores both the access acl and 
-	 * the default acl as provided, we have to get the acl part 
-	 * that has not been specified in "type" from the file first 
+	 * since the solaris acl call stores both the access acl and
+	 * the default acl as provided, we have to get the acl part
+	 * that has not been specified in "type" from the file first
 	 * and concatenate it with the acl provided.
 	 *
 	 * We can directly use SMB_VFS_STAT here, as if this was a
@@ -190,7 +190,7 @@ int solarisacl_sys_acl_set_file(vfs_handle_struct *handle,
 		int other_count;
 		SMB_ACL_TYPE_T other_type;
 
-		other_type = (type == SMB_ACL_TYPE_ACCESS) 
+		other_type = (type == SMB_ACL_TYPE_ACCESS)
 			? SMB_ACL_TYPE_DEFAULT
 			: SMB_ACL_TYPE_ACCESS;
 		DEBUGADD(10, ("getting acl from filesystem\n"));
@@ -200,11 +200,11 @@ int solarisacl_sys_acl_set_file(vfs_handle_struct *handle,
 			goto done;
 		}
 		DEBUG(10, ("adding %s part of fs acl to given acl\n",
-			   ((other_type == SMB_ACL_TYPE_ACCESS) 
+			   ((other_type == SMB_ACL_TYPE_ACCESS)
 			    ? "access"
 			    : "default")));
 		if (!solaris_add_to_acl(&solaris_acl, &count, other_acl,
-					other_count, other_type)) 
+					other_count, other_type))
 		{
 			DEBUG(10, ("error adding other acl.\n"));
 			SAFE_FREE(other_acl);
@@ -237,11 +237,14 @@ int solarisacl_sys_acl_set_file(vfs_handle_struct *handle,
  */
 int solarisacl_sys_acl_set_fd(vfs_handle_struct *handle,
 			      files_struct *fsp,
+			      SMB_ACL_TYPE_T type,
 			      SMB_ACL_T theacl)
 {
 	SOLARIS_ACL_T solaris_acl = NULL;
-	SOLARIS_ACL_T default_acl = NULL;
-	int count, default_count;
+	int count;
+	SOLARIS_ACL_T other_acl = NULL;
+	int other_count;
+	SMB_ACL_TYPE_T other_type;
 	int ret = -1;
 
 	DEBUG(10, ("entering solarisacl_sys_acl_set_fd\n"));
@@ -254,19 +257,24 @@ int solarisacl_sys_acl_set_fd(vfs_handle_struct *handle,
 	 * concatenate it with the access acl provided.
 	 */
 	if (!smb_acl_to_solaris_acl(theacl, &solaris_acl, &count, 
-				    SMB_ACL_TYPE_ACCESS))
+				    type))
 	{
 		DEBUG(10, ("conversion smb_acl -> solaris_acl failed (%s).\n",
 			   strerror(errno)));
 		goto done;
 	}
-	if (!solaris_acl_get_fd(fsp->fh->fd, &default_acl, &default_count)) {
+	if (!solaris_acl_get_fd(fsp_get_io_fd(fsp), &other_acl, &other_count)) {
 		DEBUG(10, ("error getting (default) acl from fd\n"));
 		goto done;
 	}
+
+	other_type = (type == SMB_ACL_TYPE_ACCESS)
+		? SMB_ACL_TYPE_DEFAULT
+		: SMB_ACL_TYPE_ACCESS;
+
 	if (!solaris_add_to_acl(&solaris_acl, &count,
-				default_acl, default_count,
-				SMB_ACL_TYPE_DEFAULT))
+				other_acl, other_count,
+				other_type))
 	{
 		DEBUG(10, ("error adding default acl to solaris acl\n"));
 		goto done;
@@ -276,7 +284,7 @@ int solarisacl_sys_acl_set_fd(vfs_handle_struct *handle,
 		goto done;
 	}
 
-	ret = facl(fsp->fh->fd, SETACL, count, solaris_acl);
+	ret = facl(fsp_get_io_fd(fsp), SETACL, count, solaris_acl);
 	if (ret != 0) {
 		DEBUG(10, ("call of facl failed (%s).\n", strerror(errno)));
 	}
@@ -769,7 +777,6 @@ static struct vfs_fn_pointers solarisacl_fns = {
 	.sys_acl_get_fd_fn = solarisacl_sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = solarisacl_sys_acl_set_file,
 	.sys_acl_set_fd_fn = solarisacl_sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = solarisacl_sys_acl_delete_def_file,
 };

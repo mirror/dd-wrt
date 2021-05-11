@@ -29,7 +29,6 @@
 #include "system/filesys.h"
 #include "auth/credentials/credentials.h"
 #include "auth/credentials/credentials_internal.h"
-#include "auth/credentials/credentials_proto.h"
 #include "auth/credentials/credentials_krb5.h"
 #include "auth/kerberos/kerberos_util.h"
 #include "param/param.h"
@@ -371,7 +370,8 @@ _PUBLIC_ NTSTATUS cli_credentials_set_machine_account_db_ctx(struct cli_credenti
 	}
 
 	if (secrets_tdb_password_more_recent) {
-		enum credentials_use_kerberos use_kerberos = CRED_DONT_USE_KERBEROS;
+		enum credentials_use_kerberos use_kerberos =
+			CRED_USE_KERBEROS_DISABLED;
 		char *machine_account = talloc_asprintf(tmp_ctx, "%s$", lpcfg_netbios_name(lp_ctx));
 		cli_credentials_set_password(cred, secrets_tdb_password, CRED_SPECIFIED);
 		cli_credentials_set_old_password(cred, secrets_tdb_old_password, CRED_SPECIFIED);
@@ -387,7 +387,7 @@ _PUBLIC_ NTSTATUS cli_credentials_set_machine_account_db_ctx(struct cli_credenti
 
 				FALL_THROUGH;
 			case ROLE_ACTIVE_DIRECTORY_DC:
-				use_kerberos = CRED_AUTO_USE_KERBEROS;
+				use_kerberos = CRED_USE_KERBEROS_DESIRED;
 				break;
 			}
 		}
