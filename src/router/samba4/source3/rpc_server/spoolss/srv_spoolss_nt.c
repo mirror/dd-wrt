@@ -63,6 +63,8 @@
 #include "rpc_server/rpc_server.h"
 #include "librpc/rpc/dcesrv_core.h"
 #include "printing/nt_printing_migrate_internal.h"
+#include "lib/util/string_wrappers.h"
+#include "lib/global_contexts.h"
 
 /* macros stolen from s4 spoolss server */
 #define SPOOLSS_BUFFER_UNION(fn,info,level) \
@@ -1019,7 +1021,7 @@ static SPOOLSS_NOTIFY_MSG_GROUP* notify_ctr_getgroup( SPOOLSS_NOTIFY_MSG_CTR *ct
  How many groups of change messages do we have ?
  **********************************************************************/
 
-static int notify_msg_ctr_numgroups( SPOOLSS_NOTIFY_MSG_CTR *ctr )
+static uint32_t notify_msg_ctr_numgroups( SPOOLSS_NOTIFY_MSG_CTR *ctr )
 {
 	if ( !ctr )
 		return 0;
@@ -1036,7 +1038,7 @@ static int notify_msg_ctr_addmsg( SPOOLSS_NOTIFY_MSG_CTR *ctr, SPOOLSS_NOTIFY_MS
 	SPOOLSS_NOTIFY_MSG_GROUP	*groups = NULL;
 	SPOOLSS_NOTIFY_MSG_GROUP	*msg_grp = NULL;
 	SPOOLSS_NOTIFY_MSG		*msg_list = NULL;
-	int				i, new_slot;
+	uint32_t			i, new_slot;
 
 	if ( !ctr || !msg )
 		return 0;
@@ -1363,13 +1365,12 @@ static void receive_notify2_message_list(struct messaging_context *msg,
 					 struct server_id server_id,
 					 DATA_BLOB *data)
 {
-	size_t 			msg_count, i;
+	size_t 			msg_count, i, num_groups;
 	char 			*buf = (char *)data->data;
 	char 			*msg_ptr;
 	size_t 			msg_len;
 	SPOOLSS_NOTIFY_MSG	notify;
 	SPOOLSS_NOTIFY_MSG_CTR	messages;
-	int			num_groups;
 
 	if (data->length < 4) {
 		DEBUG(0,("receive_notify2_message_list: bad message format (len < 4)!\n"));
@@ -1880,7 +1881,8 @@ WERROR _spoolss_OpenPrinterEx(struct pipes_struct *p,
 			return WERR_ACCESS_DENIED;
 		}
 
-		if (!user_ok_token(uidtoname(p->session_info->unix_token->uid), NULL,
+		if (!user_ok_token(p->session_info->unix_info->unix_name,
+				   p->session_info->info->domain_name,
 				   p->session_info->security_token, snum) ||
 		    !W_ERROR_IS_OK(print_access_check(p->session_info,
 						      p->msg_ctx,
@@ -2002,18 +2004,6 @@ WERROR _spoolss_DeletePrinter(struct pipes_struct *p,
  * static function to lookup the version id corresponding to an
  * long architecture string
  ******************************************************************/
-
-static const struct print_architecture_table_node archi_table[]= {
-
-	{"Windows 4.0",          SPL_ARCH_WIN40,	0 },
-	{"Windows NT x86",       SPL_ARCH_W32X86,	2 },
-	{"Windows NT R4000",     SPL_ARCH_W32MIPS,	2 },
-	{"Windows NT Alpha_AXP", SPL_ARCH_W32ALPHA,	2 },
-	{"Windows NT PowerPC",   SPL_ARCH_W32PPC,	2 },
-	{"Windows IA64",   	 SPL_ARCH_IA64,		3 },
-	{"Windows x64",   	 SPL_ARCH_X64,		3 },
-	{NULL,                   "",		-1 }
-};
 
 static const int drv_cversion[] = {SPOOLSS_DRIVER_VERSION_9X,
 				   SPOOLSS_DRIVER_VERSION_NT35,
@@ -2481,7 +2471,8 @@ static bool spoolss_connect_to_client(struct rpc_pipe_client **pp_pipe, struct c
 	/* setup the connection */
 	ret = cli_full_connection_creds( pp_cli, lp_netbios_name(), remote_machine,
 		&rm_addr, 0, "IPC$", "IPC",
-		anon_creds, 0, SMB_SIGNING_OFF);
+		anon_creds,
+		CLI_FULL_CONNECTION_IPC);
 	TALLOC_FREE(anon_creds);
 	if ( !NT_STATUS_IS_OK( ret ) ) {
 		DEBUG(2,("spoolss_connect_to_client: connection to [%s] failed!\n",
@@ -3950,6 +3941,9 @@ static WERROR construct_printer_info0(TALLOC_CTX *mem_ctx,
 	if (strequal(architecture, SPOOLSS_ARCHITECTURE_x64)) {
 		processor_architecture	= PROCESSOR_ARCHITECTURE_AMD64;
 		processor_type 		= PROCESSOR_AMD_X8664;
+	} else if (strequal(architecture, SPOOLSS_ARCHITECTURE_ARM64)) {
+		processor_architecture	= PROCESSOR_ARCHITECTURE_ARM64;
+		processor_type 		= PROCESSOR_ARM820;
 	} else {
 		processor_architecture	= PROCESSOR_ARCHITECTURE_INTEL;
 		processor_type 		= PROCESSOR_INTEL_PENTIUM;
@@ -5737,7 +5731,8 @@ static WERROR construct_printer_driver_info_level(TALLOC_CTX *mem_ctx,
 	}
 
 	if (pinfo2->drivername == NULL || pinfo2->drivername[0] == '\0') {
-		return WERR_UNKNOWN_PRINTER_DRIVER;
+		result = WERR_UNKNOWN_PRINTER_DRIVER;
+		goto done;
 	}
 
 	DBG_INFO("Construct printer driver [%s] for [%s]\n",
@@ -6678,7 +6673,7 @@ static WERROR update_dsspooler(TALLOC_CTX *mem_ctx,
 					  buffer.data,
 					  buffer.length);
 		if (!W_ERROR_IS_OK(result)) {
-			DEBUG(0, ("Failed to set %s\n", SPOOL_REG_PRINTSHARENAME));
+			DBG_ERR("Failed to set %s\n", SPOOL_REG_PRINTERNAME);
 			goto done;
 		}
 
@@ -7029,7 +7024,8 @@ static WERROR update_printer(struct pipes_struct *p,
 		raddr = tsocket_address_inet_addr_string(p->remote_address,
 							 p->mem_ctx);
 		if (raddr == NULL) {
-			return WERR_NOT_ENOUGH_MEMORY;
+			result = WERR_NOT_ENOUGH_MEMORY;
+			goto done;
 		}
 
 		/* add_printer_hook() will call reload_services() */

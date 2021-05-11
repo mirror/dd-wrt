@@ -41,6 +41,8 @@
 #include "lib/util/sys_rw.h"
 #include "lib/util/sys_rw_data.h"
 #include "passdb.h"
+#include "lib/util/string_wrappers.h"
+#include "lib/global_contexts.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
@@ -927,6 +929,39 @@ void winbind_disconnect_dc_parent(struct messaging_context *msg_ctx,
 	forall_children(winbind_msg_relay_fn, &state);
 }
 
+static void winbindd_msg_reload_services_child(struct messaging_context *msg,
+					       void *private_data,
+					       uint32_t msg_type,
+					       struct server_id server_id,
+					       DATA_BLOB *data)
+{
+	DBG_DEBUG("Got reload-config message\n");
+	winbindd_reload_services_file((const char *)private_data);
+}
+
+/* React on 'smbcontrol winbindd reload-config' in the same way as on SIGHUP*/
+void winbindd_msg_reload_services_parent(struct messaging_context *msg,
+					 void *private_data,
+					 uint32_t msg_type,
+					 struct server_id server_id,
+					 DATA_BLOB *data)
+{
+	struct winbind_msg_relay_state state = {
+		.msg_ctx = msg,
+		.msg_type = msg_type,
+		.data = data,
+	};
+
+	DBG_DEBUG("Got reload-config message\n");
+
+        /* Flush various caches */
+	winbindd_flush_caches();
+
+	winbindd_reload_services_file((const char *)private_data);
+
+	forall_children(winbind_msg_relay_fn, &state);
+}
+
 /* Set our domains as offline and forward the offline message to our children. */
 
 struct winbind_msg_on_offline_state {
@@ -1038,11 +1073,11 @@ void winbind_msg_online(struct messaging_context *msg_ctx,
 		   primary domain comes back online */
 
 		if ( domain->primary ) {
-			struct winbindd_child *idmap = idmap_child();
+			pid_t idmap_pid = idmap_child_pid();
 
-			if ( idmap->pid != 0 ) {
+			if (idmap_pid != 0) {
 				messaging_send_buf(msg_ctx,
-						   pid_to_procid(idmap->pid), 
+						   pid_to_procid(idmap_pid),
 						   MSG_WINBIND_ONLINE,
 						   (const uint8_t *)domain->name,
 						   strlen(domain->name)+1);
@@ -1683,6 +1718,7 @@ static bool fork_domain_child(struct winbindd_child *child)
 	if (child->pid != 0) {
 		/* Parent */
 		ssize_t nread;
+		int rc;
 
 		close(fdpair[0]);
 
@@ -1713,9 +1749,15 @@ static bool fork_domain_child(struct winbindd_child *child)
 			return false;
 		}
 
+		rc = set_blocking(fdpair[1], false);
+		if (rc < 0) {
+			close(fdpair[1]);
+			return false;
+		}
+
 		child->sock = fdpair[1];
-		set_blocking(child->sock, false);
-		return True;
+
+		return true;
 	}
 
 	/* Child */
@@ -1743,7 +1785,7 @@ static bool fork_domain_child(struct winbindd_child *child)
 
 	if (child_domain != NULL) {
 		setproctitle("domain child [%s]", child_domain->name);
-	} else if (child == idmap_child()) {
+	} else if (is_idmap_child(child)) {
 		setproctitle("idmap child");
 	}
 
@@ -1760,6 +1802,10 @@ static bool fork_domain_child(struct winbindd_child *child)
 	messaging_register(global_messaging_context(), NULL,
 			   MSG_WINBIND_DISCONNECT_DC,
 			   winbind_msg_disconnect_dc);
+	messaging_register(global_messaging_context(),
+			   override_logfile ? NULL : child->logfilename,
+			   MSG_SMB_CONF_UPDATED,
+			   winbindd_msg_reload_services_child);
 
 	primary_domain = find_our_domain();
 
@@ -1789,7 +1835,7 @@ static bool fork_domain_child(struct winbindd_child *child)
 	 * We are in idmap child, make sure that we set the
 	 * check_online_event to bring primary domain online.
 	 */
-	if (child == idmap_child()) {
+	if (is_idmap_child(child)) {
 		set_domain_online_request(primary_domain);
 	}
 

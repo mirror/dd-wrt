@@ -34,6 +34,7 @@
 #include "lib/util/debug.h"
 #include "lib/util/samba_util.h"
 #include "lib/util/sys_rw.h"
+#include "lib/util/smb_strtox.h"
 
 #include "common/db_hash.h"
 #include "common/logging.h"
@@ -590,17 +591,6 @@ static bool db_exists(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 	return true;
 }
 
-static int h2i(char h)
-{
-	if (h >= 'a' && h <= 'f') {
-		return h - 'a' + 10;
-	}
-	if (h >= 'A' && h <= 'F') {
-		return h - 'A' + 10;
-	}
-	return h - '0';
-}
-
 static int hex_to_data(const char *str, size_t len, TALLOC_CTX *mem_ctx,
 		       TDB_DATA *out)
 {
@@ -620,7 +610,11 @@ static int hex_to_data(const char *str, size_t len, TALLOC_CTX *mem_ctx,
 	}
 
 	for (i=0; i<data.dsize; i++) {
-		data.dptr[i] = h2i(str[i*2]) << 4 | h2i(str[i*2+1]);
+		bool ok = hex_byte(&str[i*2], &data.dptr[i]);
+		if (!ok) {
+			fprintf(stderr, "Invalid hex: %s\n", &str[i*2]);
+			return EINVAL;
+		}
 	}
 
 	*out = data;
@@ -2994,33 +2988,6 @@ static int control_ipreallocate(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
 	}
 
 	return ipreallocate(mem_ctx, ctdb);
-}
-
-static int control_isnotrecmaster(TALLOC_CTX *mem_ctx,
-				  struct ctdb_context *ctdb,
-				  int argc, const char **argv)
-{
-	uint32_t recmaster;
-	int ret;
-
-	if (argc != 0) {
-		usage("isnotrecmaster");
-	}
-
-	ret = ctdb_ctrl_get_recmaster(mem_ctx, ctdb->ev, ctdb->client,
-				      ctdb->pnn, TIMEOUT(), &recmaster);
-	if (ret != 0) {
-		fprintf(stderr, "Failed to get recmaster\n");
-		return ret;
-	}
-
-	if (recmaster != ctdb->pnn) {
-		printf("this node is not the recmaster\n");
-		return 1;
-	}
-
-	printf("this node is the recmaster\n");
-	return 0;
 }
 
 static int control_gratarp(TALLOC_CTX *mem_ctx, struct ctdb_context *ctdb,
@@ -5954,7 +5921,7 @@ static const struct ctdb_cmd {
 	{ "pnn", control_pnn, false, false,
 		"show the pnn of the currnet node", NULL },
 	{ "lvs", control_lvs, false, false,
-		"show lvs configuration", "master|list|status" },
+		"show lvs configuration", "leader|list|status" },
 	{ "setdebug", control_setdebug, false, true,
 		"set debug level", "ERROR|WARNING|NOTICE|INFO|DEBUG" },
 	{ "getdebug", control_getdebug, false, true,
@@ -5989,8 +5956,6 @@ static const struct ctdb_cmd {
 		"run ip reallocation (deprecated)", NULL },
 	{ "ipreallocate", control_ipreallocate, false, true,
 		"run ip reallocation", NULL },
-	{ "isnotrecmaster", control_isnotrecmaster, false, false,
-		"check if local node is the recmaster", NULL },
 	{ "gratarp", control_gratarp, false, true,
 		"send a gratuitous arp", "<ip> <interface>" },
 	{ "tickle", control_tickle, true, false,
@@ -6027,7 +5992,7 @@ static const struct ctdb_cmd {
 		"show event script status",
 		"[init|setup|startup|monitor|takeip|releaseip|ipreallocated]" },
 	{ "natgw", control_natgw, false, false,
-		"show natgw configuration", "master|list|status" },
+		"show natgw configuration", "leader|list|status" },
 	{ "getreclock", control_getreclock, false, true,
 		"get recovery lock file", NULL },
 	{ "setlmasterrole", control_setlmasterrole, false, true,

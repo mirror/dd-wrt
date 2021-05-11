@@ -32,186 +32,125 @@
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
 
-NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(struct dcesrv_endpoint *e,
-					    struct pf_listen_fd *listen_fd,
-					    int *listen_fd_size)
+NTSTATUS dcesrv_create_ncacn_ip_tcp_sockets(
+	struct dcesrv_endpoint *e,
+	TALLOC_CTX *mem_ctx,
+	size_t *pnum_fds,
+	int **pfds)
 {
-	TALLOC_CTX *tmp_ctx;
-	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
 	uint16_t port = 0;
 	char port_str[6];
 	const char *endpoint = NULL;
+	size_t i = 0, num_fds;
+	int *fds = NULL;
+	struct samba_sockaddr *addrs = NULL;
+	NTSTATUS status = NT_STATUS_INVALID_PARAMETER;
+	bool ok;
 
-	tmp_ctx = talloc_stackframe();
-	if (tmp_ctx == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	endpoint = dcerpc_binding_get_string_option(e->ep_description,
-						    "endpoint");
+	endpoint = dcerpc_binding_get_string_option(
+		e->ep_description, "endpoint");
 	if (endpoint != NULL) {
 		port = atoi(endpoint);
 	}
 
 	if (lp_interfaces() && lp_bind_interfaces_only()) {
-		uint32_t num_ifs = iface_count();
-		uint32_t i;
+		num_fds = iface_count();
+	} else {
+		num_fds = 1;
+#ifdef HAVE_IPV6
+		num_fds += 1;
+#endif
+	}
 
-		/*
-		 * We have been given an interfaces line, and been told to only
-		 * bind to those interfaces. Create a socket per interface and
-		 * bind to only these.
-		 */
+	addrs = talloc_array(mem_ctx, struct samba_sockaddr, num_fds);
+	if (addrs == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto fail;
+	}
+	fds = talloc_array(mem_ctx, int, num_fds);
+	if (fds == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto fail;
+	}
 
-		/* Now open a listen socket for each of the interfaces. */
-		for (i = 0; i < num_ifs; i++) {
+	/*
+	 * Fill "addrs"
+	 */
+
+	if (lp_interfaces() && lp_bind_interfaces_only()) {
+		for (i=0; i<num_fds; i++) {
 			const struct sockaddr_storage *ifss =
-					iface_n_sockaddr_storage(i);
-			int fd = -1;
+				iface_n_sockaddr_storage(i);
 
-			status = dcesrv_create_ncacn_ip_tcp_socket(ifss,
-								   &port,
-								   &fd);
-			if (!NT_STATUS_IS_OK(status)) {
-				goto done;
+			ok = sockaddr_storage_to_samba_sockaddr(
+				&addrs[i], ifss);
+			if (!ok) {
+				i = 0; /* nothing to close */
+				goto fail;
 			}
-			listen_fd[*listen_fd_size].fd = fd;
-			listen_fd[*listen_fd_size].fd_data = e;
-			(*listen_fd_size)++;
 		}
 	} else {
-		const char *sock_addr;
-		const char *sock_ptr;
-		char *sock_tok;
+		struct sockaddr_storage ss = { .ss_family = 0 };
 
 #ifdef HAVE_IPV6
-		sock_addr = "::,0.0.0.0";
-#else
-		sock_addr = "0.0.0.0";
-#endif
-
-		for (sock_ptr = sock_addr;
-		     next_token_talloc(talloc_tos(), &sock_ptr, &sock_tok, " \t,");
-		    ) {
-			struct sockaddr_storage ss;
-			int fd = -1;
-
-			/* open an incoming socket */
-			if (!interpret_string_addr(&ss,
-						   sock_tok,
-						   AI_NUMERICHOST|AI_PASSIVE)) {
-				continue;
-			}
-
-			status = dcesrv_create_ncacn_ip_tcp_socket(&ss,
-								   &port,
-								   &fd);
-			if (!NT_STATUS_IS_OK(status)) {
-				goto done;
-			}
-			listen_fd[*listen_fd_size].fd = fd;
-			listen_fd[*listen_fd_size].fd_data = e;
-			(*listen_fd_size)++;
+		ok = interpret_string_addr(
+			&ss, "::", AI_NUMERICHOST|AI_PASSIVE);
+		if (!ok) {
+			goto fail;
 		}
+		ok = sockaddr_storage_to_samba_sockaddr(&addrs[0], &ss);
+		if (!ok) {
+			goto fail;
+		}
+#endif
+		ok = interpret_string_addr(
+			&ss, "0.0.0.0", AI_NUMERICHOST|AI_PASSIVE);
+		if (!ok) {
+			goto fail;
+		}
+
+		/* num_fds set above depending on HAVE_IPV6 */
+		ok = sockaddr_storage_to_samba_sockaddr(
+			&addrs[num_fds-1], &ss);
+		if (!ok) {
+			goto fail;
+		}
+	}
+
+	for (i=0; i<num_fds; i++) {
+		status = dcesrv_create_ncacn_ip_tcp_socket(
+			&addrs[i].u.ss, &port, &fds[i]);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto fail;
+		}
+		samba_sockaddr_set_port(&addrs[i], port);
 	}
 
 	/* Set the port in the endpoint */
 	snprintf(port_str, sizeof(port_str), "%u", port);
 
-	status = dcerpc_binding_set_string_option(e->ep_description,
-						  "endpoint", port_str);
+	status = dcerpc_binding_set_string_option(
+		e->ep_description, "endpoint", port_str);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_ERR("Failed to set binding endpoint '%s': %s\n",
 			port_str, nt_errstr(status));
-		goto done;
+		goto fail;
 	}
 
-	status = NT_STATUS_OK;
-done:
-	talloc_free(tmp_ctx);
-	return status;
-}
+	TALLOC_FREE(addrs);
 
-NTSTATUS dcesrv_setup_ncacn_ip_tcp_sockets(struct tevent_context *ev_ctx,
-					   struct messaging_context *msg_ctx,
-					   struct dcesrv_context *dce_ctx,
-					   struct dcesrv_endpoint *e,
-					   dcerpc_ncacn_termination_fn t_fn,
-					   void *t_data)
-{
-	TALLOC_CTX *tmp_ctx;
-	NTSTATUS status;
+	*pfds = fds;
+	*pnum_fds = num_fds;
 
-	tmp_ctx = talloc_stackframe();
-	if (tmp_ctx == NULL) {
-		return NT_STATUS_NO_MEMORY;
+	return NT_STATUS_OK;
+
+fail:
+	while (i > 0) {
+		close(fds[i-1]);
+		i -= 1;
 	}
-
-	if (lp_interfaces() && lp_bind_interfaces_only()) {
-		uint32_t num_ifs = iface_count();
-		uint32_t i;
-
-		/*
-		 * We have been given an interfaces line, and been told to only
-		 * bind to those interfaces. Create a socket per interface and
-		 * bind to only these.
-		 */
-
-		/* Now open a listen socket for each of the interfaces. */
-		for (i = 0; i < num_ifs; i++) {
-			const struct sockaddr_storage *ifss =
-					iface_n_sockaddr_storage(i);
-
-			status = dcesrv_setup_ncacn_ip_tcp_socket(ev_ctx,
-								  msg_ctx,
-								  dce_ctx,
-								  e,
-								  ifss,
-								  t_fn,
-								  t_data);
-			if (!NT_STATUS_IS_OK(status)) {
-				goto done;
-			}
-		}
-	} else {
-		const char *sock_addr;
-		const char *sock_ptr;
-		char *sock_tok;
-
-#ifdef HAVE_IPV6
-		sock_addr = "::,0.0.0.0";
-#else
-		sock_addr = "0.0.0.0";
-#endif
-
-		for (sock_ptr = sock_addr;
-		     next_token_talloc(talloc_tos(), &sock_ptr, &sock_tok, " \t,");
-		    ) {
-			struct sockaddr_storage ss;
-
-			/* open an incoming socket */
-			if (!interpret_string_addr(&ss,
-						   sock_tok,
-						   AI_NUMERICHOST|AI_PASSIVE)) {
-				continue;
-			}
-
-			status = dcesrv_setup_ncacn_ip_tcp_socket(ev_ctx,
-								  msg_ctx,
-								  dce_ctx,
-								  e,
-								  &ss,
-								  t_fn,
-								  t_data);
-			if (!NT_STATUS_IS_OK(status)) {
-				goto done;
-			}
-		}
-	}
-
-	status = NT_STATUS_OK;
-done:
-	talloc_free(tmp_ctx);
+	TALLOC_FREE(fds);
+	TALLOC_FREE(addrs);
 	return status;
 }
 

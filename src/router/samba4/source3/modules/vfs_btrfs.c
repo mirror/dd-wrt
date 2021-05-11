@@ -361,12 +361,12 @@ static struct tevent_req *btrfs_offload_write_send(struct vfs_handle_struct *han
 	}
 
 	ZERO_STRUCT(cr_args);
-	cr_args.src_fd = src_fsp->fh->fd;
+	cr_args.src_fd = fsp_get_io_fd(src_fsp);
 	cr_args.src_offset = (uint64_t)src_off;
 	cr_args.dest_offset = (uint64_t)dest_off;
 	cr_args.src_length = (uint64_t)num;
 
-	ret = ioctl(dest_fsp->fh->fd, BTRFS_IOC_CLONE_RANGE, &cr_args);
+	ret = ioctl(fsp_get_io_fd(dest_fsp), BTRFS_IOC_CLONE_RANGE, &cr_args);
 	if (ret < 0) {
 		/*
 		 * BTRFS_IOC_CLONE_RANGE only supports 'sectorsize' aligned
@@ -379,7 +379,7 @@ static struct tevent_req *btrfs_offload_write_send(struct vfs_handle_struct *han
 			  (unsigned long long)cr_args.src_length,
 			  (long long)cr_args.src_fd,
 			  (unsigned long long)cr_args.src_offset,
-			  dest_fsp->fh->fd,
+			  fsp_get_io_fd(dest_fsp),
 			  (unsigned long long)cr_args.dest_offset));
 		subreq = SMB_VFS_NEXT_OFFLOAD_WRITE_SEND(handle,
 							 state,
@@ -451,46 +451,48 @@ static NTSTATUS btrfs_offload_write_recv(struct vfs_handle_struct *handle,
 	return NT_STATUS_OK;
 }
 
-/*
- * caller must pass a non-null fsp or smb_fname. If fsp is null, then
- * fall back to opening the corresponding file to issue the ioctl.
- */
-static NTSTATUS btrfs_get_compression(struct vfs_handle_struct *handle,
-				      TALLOC_CTX *mem_ctx,
-				      struct files_struct *fsp,
-				      struct smb_filename *smb_fname,
-				      uint16_t *_compression_fmt)
+static NTSTATUS btrfs_fget_compression(struct vfs_handle_struct *handle,
+				       TALLOC_CTX *mem_ctx,
+				       struct files_struct *fsp,
+				       uint16_t *_compression_fmt)
 {
+	char buf[PATH_MAX];
+	const char *p = NULL;
 	int ret;
 	long flags = 0;
-	int fd;
-	bool opened = false;
+	int fd = -1;
 	NTSTATUS status;
-	DIR *dir = NULL;
 
-	if ((fsp != NULL) && (fsp->fh->fd != -1)) {
-		fd = fsp->fh->fd;
-	} else if (smb_fname != NULL) {
-		if (S_ISDIR(smb_fname->st.st_ex_mode)) {
-			dir = opendir(smb_fname->base_name);
-			if (dir == NULL) {
-				return NT_STATUS_UNSUCCESSFUL;
-			}
-			opened = true;
-			fd = dirfd(dir);
-			if (fd < 0) {
-				status = NT_STATUS_UNSUCCESSFUL;
-				goto err_close;
-			}
-		} else {
-			fd = open(smb_fname->base_name, O_RDONLY);
-			if (fd < 0) {
-				return NT_STATUS_UNSUCCESSFUL;
-			}
-			opened = true;
+	if (!fsp->fsp_flags.is_pathref) {
+		ret = ioctl(fd, FS_IOC_GETFLAGS, &flags);
+		if (ret < 0) {
+			DBG_WARNING("FS_IOC_GETFLAGS failed: %s, fd %lld\n",
+				    strerror(errno), (long long)fd);
+			return map_nt_error_from_unix(errno);
 		}
-	} else {
-		return NT_STATUS_INVALID_PARAMETER;
+		if (flags & FS_COMPR_FL) {
+			*_compression_fmt = COMPRESSION_FORMAT_LZNT1;
+		} else {
+			*_compression_fmt = COMPRESSION_FORMAT_NONE;
+		}
+		return NT_STATUS_OK;
+	}
+
+	if (!fsp->fsp_flags.have_proc_fds) {
+		return NT_STATUS_NOT_IMPLEMENTED;
+	}
+
+	fd = fsp_get_pathref_fd(fsp);
+
+	p = sys_proc_fd_path(fd, buf, sizeof(buf));
+	if (p == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	fd = open(p, O_RDONLY);
+	if (fd == -1) {
+		DBG_ERR("/proc open of %s failed: %s\n", p, strerror(errno));
+		return map_nt_error_from_unix(errno);
 	}
 
 	ret = ioctl(fd, FS_IOC_GETFLAGS, &flags);
@@ -506,13 +508,10 @@ static NTSTATUS btrfs_get_compression(struct vfs_handle_struct *handle,
 		*_compression_fmt = COMPRESSION_FORMAT_NONE;
 	}
 	status = NT_STATUS_OK;
+
 err_close:
-	if (opened) {
-		if (dir != NULL) {
-			closedir(dir);
-		} else {
-			close(fd);
-		}
+	if (fd != -1) {
+		close(fd);
 	}
 
 	return status;
@@ -528,11 +527,11 @@ static NTSTATUS btrfs_set_compression(struct vfs_handle_struct *handle,
 	int fd;
 	NTSTATUS status;
 
-	if ((fsp == NULL) || (fsp->fh->fd == -1)) {
+	if ((fsp == NULL) || (fsp_get_io_fd(fsp) == -1)) {
 		status = NT_STATUS_INVALID_PARAMETER;
 		goto err_out;
 	}
-	fd = fsp->fh->fd;
+	fd = fsp_get_io_fd(fsp);
 
 	ret = ioctl(fd, FS_IOC_GETFLAGS, &flags);
 	if (ret < 0) {
@@ -868,7 +867,7 @@ static struct vfs_fn_pointers btrfs_fns = {
 	.offload_read_recv_fn = btrfs_offload_read_recv,
 	.offload_write_send_fn = btrfs_offload_write_send,
 	.offload_write_recv_fn = btrfs_offload_write_recv,
-	.get_compression_fn = btrfs_get_compression,
+	.fget_compression_fn = btrfs_fget_compression,
 	.set_compression_fn = btrfs_set_compression,
 	.snap_check_path_fn = btrfs_snap_check_path,
 	.snap_create_fn = btrfs_snap_create,

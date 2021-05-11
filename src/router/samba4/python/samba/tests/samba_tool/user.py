@@ -27,8 +27,8 @@ from samba import (
         )
 from samba.ndr import ndr_unpack
 from samba.dcerpc import drsblobs
-from samba.compat import get_bytes
-from samba.compat import get_string
+from samba.common import get_bytes
+from samba.common import get_string
 from samba.tests import env_loadparm
 
 
@@ -41,6 +41,12 @@ class UserCmdTestCase(SambaToolCmdTest):
         super(UserCmdTestCase, self).setUp()
         self.samdb = self.getSamDB("-H", "ldap://%s" % os.environ["DC_SERVER"],
                                    "-U%s%%%s" % (os.environ["DC_USERNAME"], os.environ["DC_PASSWORD"]))
+
+        # Modify the default template homedir
+        lp = self.get_loadparm()
+        self.template_homedir = lp.get('template homedir')
+        lp.set('template homedir', '/home/test/%D/%U')
+
         self.users = []
         self.users.append(self._randomUser({"name": "sambatool1", "company": "comp1"}))
         self.users.append(self._randomUser({"name": "sambatool2", "company": "comp1"}))
@@ -65,7 +71,7 @@ class UserCmdTestCase(SambaToolCmdTest):
                 self.assertIn("Modified User '%s' successfully" % user["name"],
                               out)
             else:
-                self.assertIn("User '%s' created successfully" % user["name"],
+                self.assertIn("User '%s' added successfully" % user["name"],
                               out)
 
             user["checkUserFn"](user)
@@ -83,6 +89,7 @@ class UserCmdTestCase(SambaToolCmdTest):
         cachedb = lp.private_path("user-syncpasswords-cache.ldb")
         if os.path.exists(cachedb):
             os.remove(cachedb)
+        lp.set('template homedir', self.template_homedir)
 
     def test_newuser(self):
         # try to add all the users again, this should fail
@@ -113,7 +120,7 @@ class UserCmdTestCase(SambaToolCmdTest):
 
             self.assertCmdSuccess(result, out, err)
             self.assertEqual(err, "", "Shouldn't be any error messages")
-            self.assertIn("User '%s' created successfully" % user["name"], out)
+            self.assertIn("User '%s' added successfully" % user["name"], out)
 
             found = self._find_user(user["name"])
 
@@ -426,6 +433,76 @@ class UserCmdTestCase(SambaToolCmdTest):
             found = self.assertMatch(out, name,
                                      "user '%s' not found" % name)
 
+    def test_list_hide_expired(self):
+        expire_username = "expireUser"
+        expire_user = self._randomUser({"name": expire_username})
+        self._create_user(expire_user)
+
+        (result, out, err) = self.runsubcmd(
+            "user",
+            "list",
+            "--hide-expired",
+            "-H",
+            "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (os.environ["DC_USERNAME"],
+                          os.environ["DC_PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, "Error running list")
+        self.assertTrue(expire_username in out,
+                        "user '%s' not found" % expire_username)
+
+        # user will be expired one second ago
+        self.samdb.setexpiry(
+            "(sAMAccountname=%s)" % expire_username,
+            -1,
+            False)
+
+        (result, out, err) = self.runsubcmd(
+            "user",
+            "list",
+            "--hide-expired",
+            "-H",
+            "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (os.environ["DC_USERNAME"],
+                          os.environ["DC_PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, "Error running list")
+        self.assertFalse(expire_username in out,
+                         "user '%s' found" % expire_username)
+
+        self.samdb.deleteuser(expire_username)
+
+    def test_list_hide_disabled(self):
+        disable_username = "disableUser"
+        disable_user = self._randomUser({"name": disable_username})
+        self._create_user(disable_user)
+
+        (result, out, err) = self.runsubcmd(
+            "user",
+            "list",
+            "--hide-disabled",
+            "-H",
+            "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (os.environ["DC_USERNAME"],
+                          os.environ["DC_PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, "Error running list")
+        self.assertTrue(disable_username in out,
+                        "user '%s' not found" % disable_username)
+
+        self.samdb.disable_account("(sAMAccountname=%s)" % disable_username)
+
+        (result, out, err) = self.runsubcmd(
+            "user",
+            "list",
+            "--hide-disabled",
+            "-H",
+            "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (os.environ["DC_USERNAME"],
+                          os.environ["DC_PASSWORD"]))
+        self.assertCmdSuccess(result, out, err, "Error running list")
+        self.assertFalse(disable_username in out,
+                         "user '%s' found" % disable_username)
+
+        self.samdb.deleteuser(disable_username)
+
     def test_show(self):
         for user in self.users:
             (result, out, err) = self.runsubcmd(
@@ -449,10 +526,10 @@ sAMAccountName: %s
 
     def test_move(self):
         full_ou_dn = str(self.samdb.normalize_dn_in_domain("OU=movetest"))
-        (result, out, err) = self.runsubcmd("ou", "create", full_ou_dn)
+        (result, out, err) = self.runsubcmd("ou", "add", full_ou_dn)
         self.assertCmdSuccess(result, out, err)
         self.assertEqual(err, "", "There shouldn't be any error message")
-        self.assertIn('Created ou "%s"' % full_ou_dn, out)
+        self.assertIn('Added ou "%s"' % full_ou_dn, out)
 
         for user in self.users:
             (result, out, err) = self.runsubcmd(
@@ -478,6 +555,240 @@ sAMAccountName: %s
         (result, out, err) = self.runsubcmd("ou", "delete", full_ou_dn)
         self.assertCmdSuccess(result, out, err,
                               "Failed to delete ou '%s'" % full_ou_dn)
+
+    def test_rename_surname_initials_givenname(self):
+        """rename the existing surname and given name and add missing
+        initials, then remove them, for all users"""
+        for user in self.users:
+            new_givenname = "new_given_name_of_" + user["name"]
+            new_initials = "A"
+            new_surname = "new_surname_of_" + user["name"]
+            found = self._find_user(user["name"])
+            old_cn = str(found.get("cn"))
+
+            # rename given name, initials and surname
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--surname=%s" % new_surname,
+                                                "--initials=%s" % new_initials,
+                                                "--given-name=%s" % new_givenname)
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_user(user["name"])
+            self.assertEqual("%s" % found.get("givenName"), new_givenname)
+            self.assertEqual("%s" % found.get("initials"), new_initials)
+            self.assertEqual("%s" % found.get("sn"), new_surname)
+            self.assertEqual("%s" % found.get("name"),
+                             "%s %s. %s" % (new_givenname, new_initials, new_surname))
+            self.assertEqual("%s" % found.get("cn"),
+                             "%s %s. %s" % (new_givenname, new_initials, new_surname))
+
+            # remove given name, initials and surname
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--surname=",
+                                                "--initials=",
+                                                "--given-name=")
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_user(user["name"])
+            self.assertEqual(found.get("givenName"), None)
+            self.assertEqual(found.get("initials"), None)
+            self.assertEqual(found.get("sn"), None)
+            self.assertEqual("%s" % found.get("cn"), user["name"])
+
+            # reset changes (initials are removed)
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--surname=%(surname)s" % user,
+                                                "--given-name=%(given-name)s" % user)
+            self.assertCmdSuccess(result, out, err)
+
+            if old_cn:
+                (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--force-new-cn=%s" % old_cn)
+
+    def test_rename_cn_samaccountname(self):
+        """rename and try to remove the cn and the samaccount of all users"""
+        for user in self.users:
+            new_cn = "new_cn_of_" + user["name"]
+            new_samaccountname = "new_samaccount_of_" + user["name"]
+            new_surname = "new_surname_of_" + user["name"]
+
+            # rename cn
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--samaccountname=%s"
+                                                 % new_samaccountname,
+                                                "--force-new-cn=%s" % new_cn)
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_user(new_samaccountname)
+            self.assertEqual("%s" % found.get("cn"), new_cn)
+            self.assertEqual("%s" % found.get("sAMAccountName"),
+                             new_samaccountname)
+
+            # changing the surname has no effect to the cn
+            (result, out, err) = self.runsubcmd("user", "rename", new_samaccountname,
+                                                "--surname=%s" % new_surname)
+            self.assertCmdSuccess(result, out, err)
+
+            found = self._find_user(new_samaccountname)
+            self.assertEqual("%s" % found.get("cn"), new_cn)
+
+            # trying to remove cn (throws an error)
+            (result, out, err) = self.runsubcmd("user", "rename",
+                                                new_samaccountname,
+                                                "--force-new-cn=")
+            self.assertCmdFail(result)
+            self.assertIn('Failed to rename user', err)
+            self.assertIn("delete protected attribute", err)
+
+            # trying to remove the samccountname (throws an error)
+            (result, out, err) = self.runsubcmd("user", "rename",
+                                                new_samaccountname,
+                                                "--samaccountname=")
+            self.assertCmdFail(result)
+            self.assertIn('Failed to rename user', err)
+            self.assertIn('delete protected attribute', err)
+
+            # reset changes (cn must be the name)
+            (result, out, err) = self.runsubcmd("user", "rename", new_samaccountname,
+                                                "--samaccountname=%(name)s"
+                                                  % user,
+                                                "--force-new-cn=%(name)s" % user)
+            self.assertCmdSuccess(result, out, err)
+
+    def test_rename_standard_cn(self):
+        """reset the cn of all users to the standard"""
+        for user in self.users:
+            new_cn = "new_cn_of_" + user["name"]
+            new_givenname = "new_given_name_of_" + user["name"]
+            new_initials = "A"
+            new_surname = "new_surname_of_" + user["name"]
+
+            # set different cn
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--force-new-cn=%s" % new_cn)
+            self.assertCmdSuccess(result, out, err)
+
+            # remove given name, initials and surname
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--surname=",
+                                                "--initials=",
+                                                "--given-name=")
+            self.assertCmdSuccess(result, out, err)
+
+            # reset the CN (no given name, initials or surname --> samaccountname)
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--reset-cn")
+
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_user(user["name"])
+            self.assertEqual("%s" % found.get("cn"), user["name"])
+
+            # set given name, initials and surname and set different cn
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--force-new-cn=%s" % new_cn,
+                                                "--surname=%s" % new_surname,
+                                                "--initials=%s" % new_initials,
+                                                "--given-name=%s" % new_givenname)
+            self.assertCmdSuccess(result, out, err)
+
+            # reset the CN (given name, initials or surname are given --> given name)
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--reset-cn")
+
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_user(user["name"])
+            self.assertEqual("%s" % found.get("cn"),
+                             "%s %s. %s" % (new_givenname, new_initials, new_surname))
+
+            # reset changes
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--reset-cn",
+                                                "--initials=",
+                                                "--surname=%(surname)s" % user,
+                                                "--given-name=%(given-name)s" % user)
+            self.assertCmdSuccess(result, out, err)
+
+    def test_rename_mailaddress_displayname(self):
+        for user in self.users:
+            new_mail = "new_mailaddress_of_" + user["name"]
+            new_displayname = "new displayname of " + user["name"]
+
+            # change mail and displayname
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--mail-address=%s"
+                                                  % new_mail,
+                                                "--display-name=%s"
+                                                  % new_displayname)
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_user(user["name"])
+            self.assertEqual("%s" % found.get("mail"), new_mail)
+            self.assertEqual("%s" % found.get("displayName"), new_displayname)
+
+            # remove mail and displayname
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--mail-address=",
+                                                "--display-name=")
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_user(user["name"])
+            self.assertEqual(found.get("mail"), None)
+            self.assertEqual(found.get("displayName"), None)
+
+    def test_rename_upn(self):
+        """rename upn of all users"""
+        for user in self.users:
+            found = self._find_user(user["name"])
+            old_upn = "%s" % found.get("userPrincipalName")
+            valid_suffix = old_upn.split('@')[1]   # samba.example.com
+
+            valid_new_upn = "new_%s@%s" % (user["name"], valid_suffix)
+            invalid_new_upn = "%s@invalid.suffix" + user["name"]
+
+            # trying to set invalid upn
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--upn=%s"
+                                                  % invalid_new_upn)
+            self.assertCmdFail(result)
+            self.assertIn('is not a valid upn', err)
+
+            # set valid upn
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--upn=%s"
+                                                  % valid_new_upn)
+            self.assertCmdSuccess(result, out, err)
+            self.assertEqual(err, "", "Shouldn't be any error messages")
+            self.assertIn('successfully', out)
+
+            found = self._find_user(user["name"])
+            self.assertEqual("%s" % found.get("userPrincipalName"), valid_new_upn)
+
+            # trying to remove upn
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--upn=%s")
+            self.assertCmdFail(result)
+            self.assertIn('is not a valid upn', err)
+
+            # reset upn
+            (result, out, err) = self.runsubcmd("user", "rename", user["name"],
+                                                "--upn=%s" % old_upn)
+            self.assertCmdSuccess(result, out, err)
 
     def test_getpwent(self):
         try:
@@ -525,7 +836,7 @@ sAMAccountName: %s
 
         self.assertCmdSuccess(result, out, err)
         self.assertEqual(err, "", "Shouldn't be any error messages")
-        self.assertIn("User '%s' created successfully" % user["name"], out)
+        self.assertIn("User '%s' added successfully" % user["name"], out)
 
         self._check_posix_user(user)
         self.runsubcmd("user", "delete", user["name"])
@@ -554,10 +865,51 @@ sAMAccountName: %s
 
         self.assertCmdSuccess(result, out, err)
         self.assertEqual(err, "", "Shouldn't be any error messages")
-        self.assertIn("User '%s' created successfully" % user["name"], out)
+        self.assertIn("User '%s' added successfully" % user["name"], out)
 
         self._check_posix_user(user)
         self.runsubcmd("user", "delete", user["name"])
+
+    # Test: samba-tool user unlock
+    # This test does not verify that the command unlocks the user, it just
+    # tests the command itself. The unlock test, which unlocks locked users,
+    # is located in the 'samba4.ldap.password_lockout' test in
+    # source4/dsdb/tests/python/password_lockout.py
+    def test_unlock(self):
+
+        # try to unlock a nonexistent user, this should fail
+        nonexistentusername = "userdoesnotexist"
+        (result, out, err) = self.runsubcmd(
+            "user", "unlock", nonexistentusername)
+        self.assertCmdFail(result, "Ensure that unlock nonexistent user fails")
+        self.assertIn("Failed to unlock user '%s'" % nonexistentusername, err)
+        self.assertIn("Unable to find user", err)
+
+        # try to unlock with insufficient permissions, this should fail
+        unprivileged_username = "unprivilegedunlockuser"
+        unlocktest_username = "usertounlock"
+
+        self.runsubcmd("user", "add", unprivileged_username, "Passw0rd")
+        self.runsubcmd("user", "add", unlocktest_username, "Passw0rd")
+
+        (result, out, err) = self.runsubcmd(
+            "user", "unlock", unlocktest_username,
+            "-H", "ldap://%s" % os.environ["DC_SERVER"],
+            "-U%s%%%s" % (unprivileged_username,
+                          "Passw0rd"))
+        self.assertCmdFail(result, "Fail with LDAP_INSUFFICIENT_ACCESS_RIGHTS")
+        self.assertIn("Failed to unlock user '%s'" % unlocktest_username, err)
+        self.assertIn("LDAP error 50 LDAP_INSUFFICIENT_ACCESS_RIGHTS", err)
+
+        self.runsubcmd("user", "delete", unprivileged_username)
+        self.runsubcmd("user", "delete", unlocktest_username)
+
+        # run unlock against test users
+        for user in self.users:
+            (result, out, err) = self.runsubcmd(
+                "user", "unlock", user["name"])
+            self.assertCmdSuccess(result, out, err, "Error running user unlock")
+            self.assertEqual(err, "", "Shouldn't be any error messages")
 
     def _randomUser(self, base={}):
         """create a user with random attribute values, you can specify base attributes"""
@@ -645,10 +997,11 @@ template """
         self.assertEqual("%s" % found.get("gidNumber"), "%s" %
                           user["gidNumber"])
         self.assertEqual("%s" % found.get("uid"), user["uid"])
+        self.assertIn('/home/test/', "%s" % found.get("unixHomeDirectory"))
         self._check_user(user)
 
     def _create_user(self, user):
-        return self.runsubcmd("user", "create", user["name"], user["password"],
+        return self.runsubcmd("user", "add", user["name"], user["password"],
                               "--surname=%s" % user["surname"],
                               "--given-name=%s" % user["given-name"],
                               "--job-title=%s" % user["job-title"],

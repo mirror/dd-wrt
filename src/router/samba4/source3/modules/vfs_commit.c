@@ -113,7 +113,7 @@ static int commit_all(
                                 ("%s: flushing %lu dirty bytes\n",
                                  MODULE, (unsigned long)c->dbytes));
 
-                        return commit_do(c, fsp->fh->fd);
+                        return commit_do(c, fsp_get_io_fd(fsp));
                 }
         }
         return 0;
@@ -135,7 +135,7 @@ static int commit(
 	c->dbytes += last_write;	/* dirty bytes always counted */
 
 	if (c->dthresh && (c->dbytes > c->dthresh)) {
-		return commit_do(c, fsp->fh->fd);
+		return commit_do(c, fsp_get_io_fd(fsp));
 	}
 
 	/* Return if we are not in EOF mode or if we have temporarily opted
@@ -147,7 +147,7 @@ static int commit(
 
 	/* This write hit or went past our cache the file size. */
 	if ((offset + last_write) >= c->eof) {
-		if (commit_do(c, fsp->fh->fd) == -1) {
+		if (commit_do(c, fsp_get_io_fd(fsp)) == -1) {
 			return -1;
 		}
 
@@ -240,7 +240,7 @@ static int commit_openat(struct vfs_handle_struct *handle,
 		 * but also practiced elsewhere -
 		 * needed for calling the VFS.
 		 */
-		fsp->fh->fd = fd;
+		fsp_set_fd(fsp, fd);
 		if (SMB_VFS_FSTAT(fsp, &st) == -1) {
 			int saved_errno = errno;
 			SMB_VFS_CLOSE(fsp);
@@ -327,7 +327,9 @@ static void commit_pwrite_written(struct tevent_req *subreq)
 	 * Ok, this is a sync fake. We should make the sync async as well, but
 	 * I'm too lazy for that right now -- vl
 	 */
-	commit_ret = commit(state->handle, state->fsp, state->fsp->fh->pos,
+	commit_ret = commit(state->handle,
+			    state->fsp,
+			    fh_get_pos(state->fsp->fh),
 			    state->ret);
 
 	if (commit_ret == -1) {

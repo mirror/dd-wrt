@@ -31,6 +31,7 @@ def configure(conf):
 
     conf.env.standalone_replace = conf.IN_LAUNCH_DIR()
 
+    conf.DEFINE('BOOL_DEFINED', 1)
     conf.DEFINE('HAVE_LIBREPLACE', 1)
     conf.DEFINE('LIBREPLACE_NETWORK_CHECKS', 1)
 
@@ -94,7 +95,8 @@ def configure(conf):
     if not conf.CONFIG_SET('HAVE_RPC_RPC_H'):
             Logs.warn('No rpc/rpc.h header found, tirpc or libntirpc missing?')
 
-    conf.SET_TARGET_TYPE('nsl', 'EMPTY')
+    if not conf.CHECK_LIB('nsl'):
+        conf.SET_TARGET_TYPE('nsl', 'EMPTY')
     conf.CHECK_HEADERS('rpc/rpc.h rpcsvc/yp_prot.h', lib='tirpc')
     if not conf.CONFIG_SET('HAVE_RPCSVC_YP_PROT_H'):
         if conf.CHECK_CFG(package='libnsl', args='--cflags --libs',
@@ -102,8 +104,6 @@ def configure(conf):
                           uselib_store='NSL'):
             conf.SET_TARGET_TYPE('nsl', 'SYSLIB')
             conf.CHECK_HEADERS('rpc/rpc.h rpcsvc/yp_prot.h', lib='tirpc nsl')
-        else:
-            conf.SET_TARGET_TYPE('nsl', 'SYSLIB')
     conf.CHECK_HEADERS('rpcsvc/nis.h rpcsvc/ypclnt.h', lib='tirpc nsl')
 
     # This file is decprecated with glibc >= 2.30 so we need to check if it
@@ -737,8 +737,6 @@ def configure(conf):
 
     conf.CHECK_CODE('mkdir("foo",0777)', define='HAVE_MKDIR_MODE', headers='sys/stat.h')
 
-    conf.CHECK_STRUCTURE_MEMBER('struct stat', 'st_mtim.tv_nsec', define='HAVE_STAT_TV_NSEC',
-                                headers='sys/stat.h')
     # we need the st_rdev test under two names
     conf.CHECK_STRUCTURE_MEMBER('struct stat', 'st_rdev',
                                 define='HAVE_STRUCT_STAT_ST_RDEV',

@@ -527,23 +527,10 @@ static struct cli_state *connect_one(const char *share)
 					    share, "?????",
 					    get_cmdline_auth_info_creds(
 						popt_get_cmdline_auth_info()),
-					    flags,
-					    get_cmdline_auth_info_signing_state(
-						popt_get_cmdline_auth_info()));
+					    flags);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		DEBUG(0,("cli_full_connection failed! (%s)\n", nt_errstr(nt_status)));
 		return NULL;
-	}
-
-	if (get_cmdline_auth_info_smb_encrypt(popt_get_cmdline_auth_info())) {
-		nt_status = cli_cm_force_encryption_creds(c,
-					get_cmdline_auth_info_creds(
-						popt_get_cmdline_auth_info()),
-					share);
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			cli_shutdown(c);
-			return NULL;
-		}
 	}
 
 	return c;

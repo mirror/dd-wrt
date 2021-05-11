@@ -37,6 +37,7 @@
 #include "lib/util/util_process.h"
 #include "lib/dbwrap/dbwrap_ctdb.h"
 #include "lib/gencache.h"
+#include "lib/util/string_wrappers.h"
 
 #ifdef HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
@@ -866,16 +867,6 @@ const char *readdirname(DIR *p)
 		return(NULL);
 
 	dname = ptr->d_name;
-
-#ifdef NEXT2
-	if (telldir(p) < 0)
-		return(NULL);
-#endif
-
-#ifdef HAVE_BROKEN_READDIR_NAME
-	/* using /usr/ucb/cc is BAD */
-	dname = dname - 2;
-#endif
 
 	return talloc_strdup(talloc_tos(), dname);
 }
@@ -1731,9 +1722,9 @@ uint32_t map_share_mode_to_deny_mode(uint32_t share_access, uint32_t private_opt
 		case FILE_SHARE_READ|FILE_SHARE_WRITE:
 			return DENY_NONE;
 	}
-	if (private_options & NTCREATEX_OPTIONS_PRIVATE_DENY_DOS) {
+	if (private_options & NTCREATEX_FLAG_DENY_DOS) {
 		return DENY_DOS;
-	} else if (private_options & NTCREATEX_OPTIONS_PRIVATE_DENY_FCB) {
+	} else if (private_options & NTCREATEX_FLAG_DENY_FCB) {
 		return DENY_FCB;
 	}
 
@@ -2047,7 +2038,7 @@ bool map_open_params_to_ntcreate(const char *smb_base_fname,
 			break;
 
 		case DENY_DOS:
-			private_flags |= NTCREATEX_OPTIONS_PRIVATE_DENY_DOS;
+			private_flags |= NTCREATEX_FLAG_DENY_DOS;
 	                if (is_executable(smb_base_fname)) {
 				share_mode = FILE_SHARE_READ|FILE_SHARE_WRITE;
 			} else {
@@ -2060,7 +2051,7 @@ bool map_open_params_to_ntcreate(const char *smb_base_fname,
 			break;
 
 		case DENY_FCB:
-			private_flags |= NTCREATEX_OPTIONS_PRIVATE_DENY_FCB;
+			private_flags |= NTCREATEX_FLAG_DENY_FCB;
 			share_mode = FILE_SHARE_NONE;
 			break;
 

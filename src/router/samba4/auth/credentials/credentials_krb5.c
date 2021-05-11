@@ -27,7 +27,6 @@
 #include "auth/kerberos/kerberos.h"
 #include "auth/credentials/credentials.h"
 #include "auth/credentials/credentials_internal.h"
-#include "auth/credentials/credentials_proto.h"
 #include "auth/credentials/credentials_krb5.h"
 #include "auth/kerberos/kerberos_credentials.h"
 #include "auth/kerberos/kerberos_srv_keytab.h"
@@ -38,6 +37,8 @@
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_AUTH
+
+#undef strncasecmp
 
 static void cli_credentials_invalidate_client_gss_creds(
 					struct cli_credentials *cred,
@@ -872,7 +873,7 @@ _PUBLIC_ int cli_credentials_get_client_gss_creds(struct cli_credentials *cred,
 	ret = cli_credentials_get_ccache(cred, event_ctx, lp_ctx,
 					 &ccache, error_string);
 	if (ret) {
-		if (cli_credentials_get_kerberos_state(cred) == CRED_MUST_USE_KERBEROS) {
+		if (cli_credentials_get_kerberos_state(cred) == CRED_USE_KERBEROS_REQUIRED) {
 			DEBUG(1, ("Failed to get kerberos credentials (kerberos required): %s\n", *error_string));
 		} else {
 			DEBUG(4, ("Failed to get kerberos credentials: %s\n", *error_string));
@@ -1432,7 +1433,7 @@ _PUBLIC_ void cli_credentials_set_impersonate_principal(struct cli_credentials *
 	cred->impersonate_principal = talloc_strdup(cred, principal);
 	talloc_free(cred->self_service);
 	cred->self_service = talloc_strdup(cred, self_service);
-	cli_credentials_set_kerberos_state(cred, CRED_MUST_USE_KERBEROS);
+	cli_credentials_set_kerberos_state(cred, CRED_USE_KERBEROS_REQUIRED);
 }
 
 /*

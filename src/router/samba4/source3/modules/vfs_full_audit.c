@@ -72,6 +72,7 @@
 #include "libcli/security/sddl.h"
 #include "passdb/machine_sid.h"
 #include "lib/util/tevent_ntstatus.h"
+#include "lib/util/string_wrappers.h"
 
 static int vfs_full_audit_debug_level = DBGC_VFS;
 
@@ -174,14 +175,13 @@ typedef enum _vfs_op_type {
 	SMB_VFS_OP_OFFLOAD_READ_RECV,
 	SMB_VFS_OP_OFFLOAD_WRITE_SEND,
 	SMB_VFS_OP_OFFLOAD_WRITE_RECV,
-	SMB_VFS_OP_GET_COMPRESSION,
+	SMB_VFS_OP_FGET_COMPRESSION,
 	SMB_VFS_OP_SET_COMPRESSION,
 	SMB_VFS_OP_SNAP_CHECK_PATH,
 	SMB_VFS_OP_SNAP_CREATE,
 	SMB_VFS_OP_SNAP_DELETE,
 
 	/* DOS attribute operations. */
-	SMB_VFS_OP_GET_DOS_ATTRIBUTES,
 	SMB_VFS_OP_GET_DOS_ATTRIBUTES_SEND,
 	SMB_VFS_OP_GET_DOS_ATTRIBUTES_RECV,
 	SMB_VFS_OP_FGET_DOS_ATTRIBUTES,
@@ -201,7 +201,6 @@ typedef enum _vfs_op_type {
 	SMB_VFS_OP_SYS_ACL_GET_FD,
 	SMB_VFS_OP_SYS_ACL_BLOB_GET_FILE,
 	SMB_VFS_OP_SYS_ACL_BLOB_GET_FD,
-	SMB_VFS_OP_SYS_ACL_SET_FILE,
 	SMB_VFS_OP_SYS_ACL_SET_FD,
 	SMB_VFS_OP_SYS_ACL_DELETE_DEF_FILE,
 
@@ -318,12 +317,11 @@ static struct {
 	{ SMB_VFS_OP_OFFLOAD_READ_RECV,	"offload_read_recv" },
 	{ SMB_VFS_OP_OFFLOAD_WRITE_SEND,	"offload_write_send" },
 	{ SMB_VFS_OP_OFFLOAD_WRITE_RECV,	"offload_write_recv" },
-	{ SMB_VFS_OP_GET_COMPRESSION,	"get_compression" },
+	{ SMB_VFS_OP_FGET_COMPRESSION,	"fget_compression" },
 	{ SMB_VFS_OP_SET_COMPRESSION,	"set_compression" },
 	{ SMB_VFS_OP_SNAP_CHECK_PATH, "snap_check_path" },
 	{ SMB_VFS_OP_SNAP_CREATE, "snap_create" },
 	{ SMB_VFS_OP_SNAP_DELETE, "snap_delete" },
-	{ SMB_VFS_OP_GET_DOS_ATTRIBUTES, "get_dos_attributes" },
 	{ SMB_VFS_OP_GET_DOS_ATTRIBUTES_SEND, "get_dos_attributes_send" },
 	{ SMB_VFS_OP_GET_DOS_ATTRIBUTES_RECV, "get_dos_attributes_recv" },
 	{ SMB_VFS_OP_FGET_DOS_ATTRIBUTES, "fget_dos_attributes" },
@@ -337,7 +335,6 @@ static struct {
 	{ SMB_VFS_OP_SYS_ACL_GET_FD,	"sys_acl_get_fd" },
 	{ SMB_VFS_OP_SYS_ACL_BLOB_GET_FILE,	"sys_acl_blob_get_file" },
 	{ SMB_VFS_OP_SYS_ACL_BLOB_GET_FD,	"sys_acl_blob_get_fd" },
-	{ SMB_VFS_OP_SYS_ACL_SET_FILE,	"sys_acl_set_file" },
 	{ SMB_VFS_OP_SYS_ACL_SET_FD,	"sys_acl_set_fd" },
 	{ SMB_VFS_OP_SYS_ACL_DELETE_DEF_FILE,	"sys_acl_delete_def_file" },
 	{ SMB_VFS_OP_GETXATTR,	"getxattr" },
@@ -1003,11 +1000,13 @@ static DIR *smb_full_audit_fdopendir(vfs_handle_struct *handle,
 }
 
 static struct dirent *smb_full_audit_readdir(vfs_handle_struct *handle,
-				    DIR *dirp, SMB_STRUCT_STAT *sbuf)
+					     struct files_struct *dirfsp,
+					     DIR *dirp,
+					     SMB_STRUCT_STAT *sbuf)
 {
 	struct dirent *result;
 
-	result = SMB_VFS_NEXT_READDIR(handle, dirp, sbuf);
+	result = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirp, sbuf);
 
 	/* This operation has no reasonable error condition
 	 * (End of dir is also failure), so always succeed.
@@ -1050,7 +1049,16 @@ static int smb_full_audit_mkdirat(vfs_handle_struct *handle,
 			const struct smb_filename *smb_fname,
 			mode_t mode)
 {
+	struct smb_filename *full_fname = NULL;
 	int result;
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
 
 	result = SMB_VFS_NEXT_MKDIRAT(handle,
 			dirfsp,
@@ -1061,7 +1069,9 @@ static int smb_full_audit_mkdirat(vfs_handle_struct *handle,
 	       (result >= 0),
 	       handle,
 	       "%s",
-	       smb_fname_str_do_log(handle->conn, smb_fname));
+	       smb_fname_str_do_log(handle->conn, full_fname));
+
+	TALLOC_FREE(full_fname);
 
 	return result;
 }
@@ -1098,7 +1108,6 @@ static int smb_full_audit_openat(vfs_handle_struct *handle,
 
 static NTSTATUS smb_full_audit_create_file(vfs_handle_struct *handle,
 				      struct smb_request *req,
-				      struct files_struct **dirfsp,
 				      struct smb_filename *smb_fname,
 				      uint32_t access_mask,
 				      uint32_t share_access,
@@ -1145,7 +1154,6 @@ static NTSTATUS smb_full_audit_create_file(vfs_handle_struct *handle,
 	result = SMB_VFS_NEXT_CREATE_FILE(
 		handle,					/* handle */
 		req,					/* req */
-		dirfsp,
 		smb_fname,				/* fname */
 		access_mask,				/* access_mask */
 		share_access,				/* share_access */
@@ -1814,7 +1822,7 @@ static int smb_full_audit_symlinkat(vfs_handle_struct *handle,
 }
 
 static int smb_full_audit_readlinkat(vfs_handle_struct *handle,
-			files_struct *dirfsp,
+			const struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			char *buf,
 			size_t bufsiz)
@@ -2173,21 +2181,19 @@ static NTSTATUS smb_full_audit_offload_write_recv(struct vfs_handle_struct *hand
 	return result;
 }
 
-static NTSTATUS smb_full_audit_get_compression(vfs_handle_struct *handle,
+static NTSTATUS smb_full_audit_fget_compression(vfs_handle_struct *handle,
 					       TALLOC_CTX *mem_ctx,
 					       struct files_struct *fsp,
-					       struct smb_filename *smb_fname,
 					       uint16_t *_compression_fmt)
 {
 	NTSTATUS result;
 
-	result = SMB_VFS_NEXT_GET_COMPRESSION(handle, mem_ctx, fsp, smb_fname,
+	result = SMB_VFS_NEXT_FGET_COMPRESSION(handle, mem_ctx, fsp,
 					      _compression_fmt);
 
-	do_log(SMB_VFS_OP_GET_COMPRESSION, NT_STATUS_IS_OK(result), handle,
+	do_log(SMB_VFS_OP_FGET_COMPRESSION, NT_STATUS_IS_OK(result), handle,
 	       "%s",
-	       (fsp ? fsp_str_do_log(fsp) :
-		smb_fname_str_do_log(handle->conn, smb_fname)));
+	       fsp_str_do_log(fsp));
 
 	return result;
 }
@@ -2219,26 +2225,6 @@ static NTSTATUS smb_full_audit_readdir_attr(struct vfs_handle_struct *handle,
 
 	do_log(SMB_VFS_OP_READDIR_ATTR, NT_STATUS_IS_OK(status), handle, "%s",
 	       smb_fname_str_do_log(handle->conn, fname));
-
-	return status;
-}
-
-static NTSTATUS smb_full_audit_get_dos_attributes(
-				struct vfs_handle_struct *handle,
-				struct smb_filename *smb_fname,
-				uint32_t *dosmode)
-{
-	NTSTATUS status;
-
-	status = SMB_VFS_NEXT_GET_DOS_ATTRIBUTES(handle,
-				smb_fname,
-				dosmode);
-
-	do_log(SMB_VFS_OP_GET_DOS_ATTRIBUTES,
-		NT_STATUS_IS_OK(status),
-		handle,
-		"%s",
-		smb_fname_str_do_log(handle->conn, smb_fname));
 
 	return status;
 }
@@ -2580,31 +2566,14 @@ static int smb_full_audit_sys_acl_blob_get_fd(vfs_handle_struct *handle,
 	return result;
 }
 
-static int smb_full_audit_sys_acl_set_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				SMB_ACL_TYPE_T acltype,
-				SMB_ACL_T theacl)
+static int smb_full_audit_sys_acl_set_fd(vfs_handle_struct *handle,
+					 struct files_struct *fsp,
+					 SMB_ACL_TYPE_T type,
+					 SMB_ACL_T theacl)
 {
 	int result;
 
-	result = SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle, smb_fname, acltype,
-					       theacl);
-
-	do_log(SMB_VFS_OP_SYS_ACL_SET_FILE,
-	       (result >= 0),
-	       handle,
-	       "%s",
-	       smb_fname_str_do_log(handle->conn, smb_fname));
-
-	return result;
-}
-
-static int smb_full_audit_sys_acl_set_fd(vfs_handle_struct *handle, files_struct *fsp,
-				SMB_ACL_T theacl)
-{
-	int result;
-
-	result = SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, theacl);
+	result = SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, type, theacl);
 
 	do_log(SMB_VFS_OP_SYS_ACL_SET_FD, (result >= 0), handle,
 	       "%s", fsp_str_do_log(fsp));
@@ -3037,7 +3006,7 @@ static struct vfs_fn_pointers vfs_full_audit_fns = {
 	.offload_read_recv_fn = smb_full_audit_offload_read_recv,
 	.offload_write_send_fn = smb_full_audit_offload_write_send,
 	.offload_write_recv_fn = smb_full_audit_offload_write_recv,
-	.get_compression_fn = smb_full_audit_get_compression,
+	.fget_compression_fn = smb_full_audit_fget_compression,
 	.set_compression_fn = smb_full_audit_set_compression,
 	.snap_check_path_fn =  smb_full_audit_snap_check_path,
 	.snap_create_fn = smb_full_audit_snap_create,
@@ -3050,7 +3019,6 @@ static struct vfs_fn_pointers vfs_full_audit_fns = {
 	.strict_lock_check_fn = smb_full_audit_strict_lock_check,
 	.translate_name_fn = smb_full_audit_translate_name,
 	.fsctl_fn = smb_full_audit_fsctl,
-	.get_dos_attributes_fn = smb_full_audit_get_dos_attributes,
 	.get_dos_attributes_send_fn = smb_full_audit_get_dos_attributes_send,
 	.get_dos_attributes_recv_fn = smb_full_audit_get_dos_attributes_recv,
 	.fget_dos_attributes_fn = smb_full_audit_fget_dos_attributes,
@@ -3064,7 +3032,6 @@ static struct vfs_fn_pointers vfs_full_audit_fns = {
 	.sys_acl_get_fd_fn = smb_full_audit_sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = smb_full_audit_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = smb_full_audit_sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = smb_full_audit_sys_acl_set_file,
 	.sys_acl_set_fd_fn = smb_full_audit_sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = smb_full_audit_sys_acl_delete_def_file,
 	.getxattr_fn = smb_full_audit_getxattr,

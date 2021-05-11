@@ -80,6 +80,8 @@
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 #endif
 
+#undef strcasecmp
+
 struct operational_data {
 	struct ldb_dn *aggregate_dn;
 };
@@ -787,7 +789,7 @@ static NTTIME get_msds_user_password_expiry_time_computed(struct ldb_module *mod
 	}
 
 	/*
-	 * Note we already catched maxPwdAge == -0x8000000000000000ULL
+	 * Note we already caught maxPwdAge == -0x8000000000000000ULL
 	 * and pwdLastSet >= 0x7FFFFFFFFFFFFFFFULL above.
 	 *
 	 * Remember maxPwdAge is a negative number,
@@ -795,7 +797,10 @@ static NTTIME get_msds_user_password_expiry_time_computed(struct ldb_module *mod
 	 *
 	 * 0x7FFFFFFFFFFFFFFEULL + 0x7FFFFFFFFFFFFFFFULL
 	 * =
-	 * 0xFFFFFFFFFFFFFFFFULL
+	 * 0xFFFFFFFFFFFFFFFDULL
+	 *
+	 * or to put it another way, adding two numbers less than 1<<63 can't
+	 * ever be more than 1<<64, therefore this result can't wrap.
 	 */
 	ret = (NTTIME)pwdLastSet - (NTTIME)maxPwdAge;
 	if (ret >= 0x7FFFFFFFFFFFFFFFULL) {

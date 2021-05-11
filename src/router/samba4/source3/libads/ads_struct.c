@@ -140,6 +140,9 @@ ADS_STRUCT *ads_init(const char *realm,
 
 	ads = SMB_XMALLOC_P(ADS_STRUCT);
 	ZERO_STRUCTP(ads);
+#ifdef HAVE_LDAP
+	ads_zero_ldap(ads);
+#endif
 
 	ads->server.realm = realm? SMB_STRDUP(realm) : NULL;
 	ads->server.workgroup = workgroup ? SMB_STRDUP(workgroup) : NULL;
@@ -176,13 +179,17 @@ ADS_STRUCT *ads_init(const char *realm,
 /****************************************************************
 ****************************************************************/
 
-bool ads_set_sasl_wrap_flags(ADS_STRUCT *ads, int flags)
+bool ads_set_sasl_wrap_flags(ADS_STRUCT *ads, unsigned flags)
 {
+	unsigned other_flags;
+
 	if (!ads) {
 		return false;
 	}
 
-	ads->auth.flags = flags;
+	other_flags = ads->auth.flags & ~(ADS_AUTH_SASL_SIGN|ADS_AUTH_SASL_SEAL);
+
+	ads->auth.flags = flags | other_flags;
 
 	return true;
 }
@@ -218,6 +225,9 @@ void ads_destroy(ADS_STRUCT **ads)
 		SAFE_FREE((*ads)->config.config_path);
 
 		ZERO_STRUCTP(*ads);
+#ifdef HAVE_LDAP
+		ads_zero_ldap(*ads);
+#endif
 
 		if ( is_mine )
 			SAFE_FREE(*ads);

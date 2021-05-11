@@ -151,7 +151,9 @@ DIR *vfs_not_implemented_fdopendir(vfs_handle_struct *handle, files_struct *fsp,
 }
 
 struct dirent *vfs_not_implemented_readdir(vfs_handle_struct *handle,
-					   DIR *dirp, SMB_STRUCT_STAT *sbuf)
+					   struct files_struct *dirfsp,
+					   DIR *dirp,
+					   SMB_STRUCT_STAT *sbuf)
 {
 	errno = ENOSYS;
 	return NULL;
@@ -201,7 +203,6 @@ int vfs_not_implemented_openat(vfs_handle_struct *handle,
 
 NTSTATUS vfs_not_implemented_create_file(struct vfs_handle_struct *handle,
 				struct smb_request *req,
-				struct files_struct **dirsp,
 				struct smb_filename *smb_fname,
 				uint32_t access_mask,
 				uint32_t share_access,
@@ -473,7 +474,7 @@ int vfs_not_implemented_symlinkat(vfs_handle_struct *handle,
 }
 
 int vfs_not_implemented_vfs_readlinkat(vfs_handle_struct *handle,
-			files_struct *dirfsp,
+			const struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			char *buf,
 			size_t bufsiz)
@@ -621,10 +622,9 @@ NTSTATUS vfs_not_implemented_offload_write_recv(struct vfs_handle_struct *handle
 	return NT_STATUS_OK;
 }
 
-NTSTATUS vfs_not_implemented_get_compression(struct vfs_handle_struct *handle,
+NTSTATUS vfs_not_implemented_fget_compression(struct vfs_handle_struct *handle,
 					     TALLOC_CTX *mem_ctx,
 					     struct files_struct *fsp,
-					     struct smb_filename *smb_fname,
 					     uint16_t *_compression_fmt)
 {
 	return NT_STATUS_INVALID_DEVICE_REQUEST;
@@ -713,13 +713,6 @@ NTSTATUS vfs_not_implemented_readdir_attr(struct vfs_handle_struct *handle,
 					  const struct smb_filename *fname,
 					  TALLOC_CTX *mem_ctx,
 					  struct readdir_attr_data **pattr_data)
-{
-	return NT_STATUS_NOT_IMPLEMENTED;
-}
-
-NTSTATUS vfs_not_implemented_get_dos_attributes(struct vfs_handle_struct *handle,
-						struct smb_filename *smb_fname,
-						uint32_t *dosmode)
 {
 	return NT_STATUS_NOT_IMPLEMENTED;
 }
@@ -850,16 +843,9 @@ int vfs_not_implemented_sys_acl_blob_get_fd(vfs_handle_struct *handle,
 	return -1;
 }
 
-int vfs_not_implemented_sys_acl_set_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				SMB_ACL_TYPE_T acltype,
-				SMB_ACL_T theacl)
-{
-	errno = ENOSYS;
-	return -1;
-}
-
-int vfs_not_implemented_sys_acl_set_fd(vfs_handle_struct *handle, files_struct *fsp,
+int vfs_not_implemented_sys_acl_set_fd(vfs_handle_struct *handle,
+				       struct files_struct *fsp,
+				       SMB_ACL_TYPE_T type,
 				       SMB_ACL_T theacl)
 {
 	errno = ENOSYS;
@@ -1116,7 +1102,7 @@ static struct vfs_fn_pointers vfs_not_implemented_fns = {
 	.offload_read_recv_fn = vfs_not_implemented_offload_read_recv,
 	.offload_write_send_fn = vfs_not_implemented_offload_write_send,
 	.offload_write_recv_fn = vfs_not_implemented_offload_write_recv,
-	.get_compression_fn = vfs_not_implemented_get_compression,
+	.fget_compression_fn = vfs_not_implemented_fget_compression,
 	.set_compression_fn = vfs_not_implemented_set_compression,
 
 	.streaminfo_fn = vfs_not_implemented_streaminfo,
@@ -1131,7 +1117,6 @@ static struct vfs_fn_pointers vfs_not_implemented_fns = {
 	.audit_file_fn = vfs_not_implemented_audit_file,
 
 	/* DOS attributes. */
-	.get_dos_attributes_fn = vfs_not_implemented_get_dos_attributes,
 	.get_dos_attributes_send_fn = vfs_not_implemented_get_dos_attributes_send,
 	.get_dos_attributes_recv_fn = vfs_not_implemented_get_dos_attributes_recv,
 	.fget_dos_attributes_fn = vfs_not_implemented_fget_dos_attributes,
@@ -1150,7 +1135,6 @@ static struct vfs_fn_pointers vfs_not_implemented_fns = {
 	.sys_acl_get_fd_fn = vfs_not_implemented_sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = vfs_not_implemented_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = vfs_not_implemented_sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = vfs_not_implemented_sys_acl_set_file,
 	.sys_acl_set_fd_fn = vfs_not_implemented_sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = vfs_not_implemented_sys_acl_delete_def_file,
 

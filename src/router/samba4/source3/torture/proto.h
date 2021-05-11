@@ -73,6 +73,7 @@ bool torture_close_connection(struct cli_state *c);
 bool torture_ioctl_test(int dummy);
 bool torture_chkpath_test(int dummy);
 NTSTATUS torture_setup_unix_extensions(struct cli_state *cli);
+void torture_conn_set_sockopt(struct cli_state *cli);
 
 /* The following definitions come from torture/utable.c  */
 
@@ -84,6 +85,10 @@ bool torture_casetable(int dummy);
  */
 
 bool run_posix_append(int dummy);
+bool run_posix_ls_wildcard_test(int dummy);
+bool run_posix_ls_single_test(int dummy);
+bool run_posix_readlink_test(int dummy);
+bool run_posix_stat_test(int dummy);
 bool run_case_insensitive_create(int dummy);
 
 bool run_nbench2(int dummy);

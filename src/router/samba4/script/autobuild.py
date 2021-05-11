@@ -4,7 +4,7 @@
 # released under GNU GPL v3 or later
 
 from __future__ import print_function
-from subprocess import call, check_call, check_output, Popen, PIPE
+from subprocess import call, check_call, check_output, Popen, PIPE, CalledProcessError
 import os
 import tarfile
 import sys
@@ -56,6 +56,8 @@ parser.add_option("--keeplogs", help="keep logs", default=False, action="store_t
 parser.add_option("--nocleanup", help="don't remove test tree", default=False, action="store_true")
 parser.add_option("--testbase", help="base directory to run tests in (default %s)" % def_testbase,
                   default=def_testbase)
+parser.add_option("--full-testbase", help="full base directory to run tests in (default %s/b$PID)" % def_testbase,
+                  default=None)
 parser.add_option("--passcmd", help="command to run on success", default=None)
 parser.add_option("--verbose", help="show all commands as they are run",
                   default=False, action="store_true")
@@ -97,7 +99,10 @@ if options.retry:
     if options.rebase is None:
         raise Exception('You can only use --retry if you also rebase')
 
-testbase = "%s/b%u" % (options.testbase, os.getpid())
+if options.full_testbase is not None:
+    testbase = options.full_testbase
+else:
+    testbase = "%s/b%u" % (options.testbase, os.getpid())
 test_master = "%s/master" % testbase
 test_prefix = "%s/prefix" % testbase
 test_tmpdir = "%s/tmp" % testbase
@@ -252,7 +257,7 @@ tasks = {
             "ad_dc_slowtests",
             "schema_pair_dc",
             "schema_dc",
-            "clusteredmember_smb1",
+            "clusteredmember",
             ])),
         ("test-slow-none", make_test(cmd='make test', TESTS="--include=selftest/slow-none", include_envs=["none"])),
         ("lcov", LCOV_CMD),
@@ -315,7 +320,7 @@ tasks = {
             "ad_dc_slowtests",
             "schema_pair_dc",
             "schema_dc",
-            "clusteredmember_smb1",
+            "clusteredmember",
             ])),
         ("lcov", LCOV_CMD),
         ("install", "make install"),
@@ -336,7 +341,6 @@ tasks = {
             "simpleserver",
             ])),
         ("lcov", LCOV_CMD),
-        ("install", "make install"),
         ("check-clean-tree", "script/clean-source-tree.sh"),
         ("clean", "make clean"),
         ],
@@ -366,6 +370,27 @@ tasks = {
             "ad_member_idmap_rid",
             "ad_member_idmap_ad",
             "ad_member_rfc2307",
+            ])),
+        ("lcov", LCOV_CMD),
+        ("check-clean-tree", "script/clean-source-tree.sh"),
+        ],
+
+    "samba-no-opath": [
+        ("random-sleep", random_sleep(300, 900)),
+        ("configure", "ADDITIONAL_CFLAGS='-DDISABLE_OPATH=1' ./configure.developer --without-ad-dc --with-selftest-prefix=./bin/ab" + samba_configure_params),
+        ("make", "make -j"),
+        ("test", make_test(
+            cmd="make test DISABLE_OPATH=1",
+            include_envs=[
+            "nt4_dc",
+            "nt4_dc_smb1",
+            "nt4_dc_smb1_done",
+            "nt4_dc_schannel",
+            "nt4_member",
+            "simpleserver",
+            "fileserver",
+            "fileserver_smb1",
+            "fileserver_smb1_done",
             ])),
         ("lcov", LCOV_CMD),
         ("check-clean-tree", "script/clean-source-tree.sh"),
@@ -595,6 +620,7 @@ tasks = {
          "PKG_CONFIG_PATH=${PREFIX_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH} "
          "./configure.developer ${PREFIX} "
          "--with-selftest-prefix=./bin/ab "
+         "--enable-clangdb "
          "--with-cluster-support "
          "--without-ad-dc "
          "--bundled-libraries=!tdb"),
@@ -605,7 +631,7 @@ tasks = {
 
         ("test",
          make_test(cmd='make test',
-                   include_envs=["clusteredmember_smb1"])
+                   include_envs=["clusteredmember"])
         ),
 
         # clean up:
@@ -644,43 +670,38 @@ tasks = {
         ("allshared-make", "make -j"),
         ],
 
-    "samba-static": [
-        ("random-sleep", random_sleep(1, 1)),
+    "samba-fuzz": [
+        # build the fuzzers (static) via the oss-fuzz script
+        ("fuzzers-mkdir-prefix", "mkdir -p ${PREFIX_DIR}"),
+        ("fuzzers-build", "OUT=${PREFIX_DIR} LIB_FUZZING_ENGINE= SANITIZER=address CXX= CFLAGS= ADDITIONAL_LDFLAGS='-fuse-ld=bfd' ./lib/fuzzing/oss-fuzz/build_samba.sh --enable-afl"),
+        ],
+
+    # * Test smbd and smbtorture can build semi-static
+    #
+    # * Test Samba without python still builds.
+    #
+    # When this test fails due to more use of Python, the expectations
+    # is that the newly failing part of the code should be disabled
+    # when --disable-python is set (rather than major work being done
+    # to support this environment).
+    #
+    # The target here is for vendors shipping a minimal smbd.
+    "samba-minimal-smbd": [
+        ("random-sleep", random_sleep(300, 900)),
+
         # build with all modules static
         ("allstatic-configure", "./configure.developer " + samba_configure_params + " --with-static-modules=ALL"),
         ("allstatic-make", "make -j"),
         ("allstatic-test", make_test(TESTS="samba3.smb2.create.*nt4_dc")),
         ("lcov", LCOV_CMD),
 
-        # retry without any required modules
-        ("none-distclean", "make distclean"),
-        ("none-configure", "./configure.developer " + samba_configure_params + " --with-static-modules=!FORCED,!DEFAULT --with-shared-modules=!FORCED,!DEFAULT"),
-        ("none-make", "make -j"),
-
         # retry with nonshared smbd and smbtorture
         ("nonshared-distclean", "make distclean"),
         ("nonshared-configure", "./configure.developer " + samba_configure_params + " --bundled-libraries=ALL --with-static-modules=ALL --nonshared-binary=smbtorture,smbd/smbd"),
-        ("nonshared-make", "make -j")
-        ],
+        ("nonshared-make", "make -j"),
 
-    "samba-fuzz": [
-        # build the fuzzers (static) via the oss-fuzz script
-        ("fuzzers-mkdir-prefix", "mkdir -p ${PREFIX_DIR}"),
-        ("fuzzers-build", "OUT=${PREFIX_DIR} LIB_FUZZING_ENGINE= SANITIZER=address CXX= CFLAGS= ./lib/fuzzing/oss-fuzz/build_samba.sh --enable-afl"),
-        ("fuzzers-check", "./lib/fuzzing/oss-fuzz/check_build.sh ${PREFIX_DIR}")
-        ],
-
-    # Test Samba without python still builds.  When this test fails
-    # due to more use of Python, the expectations is that the newly
-    # failing part of the code should be disabled when
-    # --disable-python is set (rather than major work being done to
-    # support this environment).  The target here is for vendors
-    # shipping a minimal smbd.
-    "samba-nopython": [
-        ("random-sleep", random_sleep(300, 900)),
         ("configure", "./configure.developer ${ENABLE_COVERAGE} ${PREFIX} --with-profiling-data --disable-python --without-ad-dc"),
         ("make", "make -j"),
-        ("install", "make install"),
         ("find-python", "script/find_python.sh ${PREFIX}"),
         ("test", "make test-nopython"),
         ("lcov", LCOV_CMD),
@@ -703,48 +724,13 @@ tasks = {
         ("ldb-make", "cd lib/ldb && make"),
         ("ldb-install", "cd lib/ldb && make install"),
 
-        # retry against installed library packages
-        ("libs-configure", samba_libs_configure_base + samba_libs_configure_bundled_libs + " --disable-python --without-ad-dc"),
+        # retry against installed library packages, but no required modules
+        ("libs-configure", samba_libs_configure_base + samba_libs_configure_bundled_libs + " --disable-python --without-ad-dc  --with-static-modules=!FORCED,!DEFAULT --with-shared-modules=!FORCED,!DEFAULT"),
         ("libs-make", "make -j"),
         ("libs-install", "make install"),
         ("libs-check-clean-tree", "script/clean-source-tree.sh"),
         ("libs-clean", "make clean"),
-        ],
 
-    # check we can do the same thing using python2
-    "samba-nopython-py2": [
-        ("random-sleep", random_sleep(300, 900)),
-        ("configure", "PYTHON=python2 ./configure.developer ${ENABLE_COVERAGE} ${PREFIX} --with-profiling-data --disable-python --without-ad-dc"),
-        ("make", "PYTHON=python2 make -j"),
-        ("install", "PYTHON=python2 make install"),
-        ("find-python", "script/find_python.sh ${PREFIX}"),
-        ("test", "make test-nopython"),
-        ("lcov", LCOV_CMD),
-        ("check-clean-tree", "script/clean-source-tree.sh"),
-        ("clean", "PYTHON=python2 make clean"),
-
-        ("talloc-configure", "cd lib/talloc && PYTHON=python2 " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
-        ("talloc-make", "cd lib/talloc && PYTHON=python2 make"),
-        ("talloc-install", "cd lib/talloc && PYTHON=python2 make install"),
-
-        ("tdb-configure", "cd lib/tdb && PYTHON=python2 " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
-        ("tdb-make", "cd lib/tdb && PYTHON=python2 make"),
-        ("tdb-install", "cd lib/tdb && PYTHON=python2 make install"),
-
-        ("tevent-configure", "cd lib/tevent && PYTHON=python2 " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
-        ("tevent-make", "cd lib/tevent && PYTHON=python2 make"),
-        ("tevent-install", "cd lib/tevent && PYTHON=python2 make install"),
-
-        ("ldb-configure", "cd lib/ldb && PYTHON=python2 " + samba_libs_configure_base + " --bundled-libraries=cmocka,NONE --disable-python"),
-        ("ldb-make", "cd lib/ldb && PYTHON=python2 make"),
-        ("ldb-install", "cd lib/ldb && PYTHON=python2 make install"),
-
-        # retry against installed library packages
-        ("libs-configure", "PYTHON=python2 " + samba_libs_configure_base + samba_libs_configure_bundled_libs + " --disable-python --without-ad-dc"),
-        ("libs-make", "PYTHON=python2 make -j"),
-        ("libs-install", "PYTHON=python2 make install"),
-        ("libs-check-clean-tree", "script/clean-source-tree.sh"),
-        ("libs-clean", "PYTHON=python2 make clean"),
         ],
 
     "ldb": [
@@ -860,6 +846,17 @@ def run_cmd(cmd, dir=".", show=None, output=False, checkfail=True):
     else:
         return call(cmd, shell=True, cwd=dir)
 
+def rmdir_force(dirname, re_raise=True):
+    try:
+        run_cmd("test -d %s && chmod -R +w %s; rm -rf %s" % (
+                dirname, dirname, dirname), output=True, show=True)
+    except CalledProcessError as e:
+        do_print("Failed: '%s'" % (str(e)))
+        run_cmd("tree %s" % dirname, output=True, show=True)
+        if re_raise:
+            raise
+        return False
+    return True
 
 class builder(object):
     '''handle build of one directory'''
@@ -882,8 +879,8 @@ class builder(object):
         self.test_source_dir = "%s/%s" % (testbase, self.tag)
         self.cwd = "%s/%s" % (self.test_source_dir, self.dir)
         self.prefix = "%s/%s" % (test_prefix, self.tag)
-        run_cmd("rm -rf %s" % self.test_source_dir)
-        run_cmd("rm -rf %s" % self.prefix)
+        rmdir_force(self.test_source_dir)
+        rmdir_force(self.prefix)
         if cp:
             run_cmd("cp -R -a -l %s %s" % (test_master, self.test_source_dir), dir=test_master, show=True)
         else:
@@ -893,8 +890,8 @@ class builder(object):
     def start_next(self):
         if self.next == len(self.sequence):
             if not options.nocleanup:
-                run_cmd("rm -rf %s" % self.test_source_dir)
-                run_cmd("rm -rf %s" % self.prefix)
+                rmdir_force(self.test_source_dir)
+                rmdir_force(self.prefix)
             do_print('%s: Completed OK' % self.name)
             self.done = True
             return
@@ -1018,7 +1015,7 @@ class buildlist(object):
                         'df -m %s' % testbase]:
                 try:
                     out = run_cmd(cmd, output=True, checkfail=False)
-                except subprocess.CalledProcessError as e:
+                except CalledProcessError as e:
                     out = "<failed: %s>" % str(e)
                 print('### %s' % cmd, file=f)
                 print(out, file=f)
@@ -1048,14 +1045,23 @@ class buildlist(object):
         self.tail_proc = Popen(cmd, close_fds=True)
 
 
-def cleanup():
+def cleanup(do_raise=False):
     if options.nocleanup:
         return
     run_cmd("stat %s || true" % test_tmpdir, show=True)
     run_cmd("stat %s" % testbase, show=True)
     do_print("Cleaning up %r" % cleanup_list)
     for d in cleanup_list:
-        run_cmd("rm -rf %s" % d)
+        ok = rmdir_force(d, re_raise=False)
+        if ok:
+            continue
+        if os.path.isdir(d):
+            do_print("Killing, waiting and retry")
+            run_cmd("killbysubdir %s > /dev/null 2>&1" % d, checkfail=False)
+        else:
+            do_print("Waiting and retry")
+        time.sleep(1)
+        rmdir_force(d, re_raise=do_raise)
 
 
 def daemonize(logfile):
@@ -1148,7 +1154,7 @@ def send_email(subject, text, log_tar):
     outer['From'] = options.email_from
     outer['Date'] = email.utils.formatdate(localtime=True)
     outer.preamble = 'Autobuild mails are now in MIME because we optionally attach the logs.\n'
-    outer.attach(MIMEText(text, 'plain'))
+    outer.attach(MIMEText(text, 'plain', 'utf-8'))
     if options.attach_logs:
         with open(log_tar, 'rb') as fp:
             msg = MIMEApplication(fp.read(), 'gzip', email.encoders.encode_base64)
@@ -1321,7 +1327,7 @@ while True:
         (status, failed_task, failed_stage, failed_tag, errstr) = blist.run()
         if status != 0 or errstr != "retry":
             break
-        cleanup()
+        cleanup(do_raise=True)
     except Exception:
         cleanup()
         raise

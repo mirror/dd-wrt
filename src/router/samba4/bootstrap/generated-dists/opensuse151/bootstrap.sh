@@ -70,6 +70,7 @@ zypper --non-interactive install \
     perl \
     perl-Archive-Tar-Wrapper \
     perl-ExtUtils-MakeMaker \
+    perl-JSON \
     perl-JSON-XS \
     perl-Parse-Yapp \
     perl-Test-Base \
@@ -85,7 +86,9 @@ zypper --non-interactive install \
     python3-devel \
     python3-dnspython \
     python3-gpg \
+    python3-iso8601 \
     python3-pyasn1 \
+    python3-setproctitle \
     readline-devel \
     rng-tools \
     rpcgen \

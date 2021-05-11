@@ -12,7 +12,7 @@ import samba
 
 from samba.tests import DynamicTestCase
 from samba.tests.subunitrun import SubunitOptions, TestProgram
-from samba.compat import get_string
+from samba.common import get_string
 
 import samba.getopt as options
 from samba.join import DCJoinContext

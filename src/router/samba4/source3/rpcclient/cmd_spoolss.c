@@ -34,6 +34,8 @@
 #include "../libcli/registry/util_reg.h"
 #include "libsmb/libsmb.h"
 #include "popt_common_cmdline.h"
+#include "lib/util/smb_strtox.h"
+#include "lib/util/string_wrappers.h"
 
 #define RPCCLIENT_PRINTERNAME(_printername, _cli, _arg) \
 { \
@@ -42,25 +44,6 @@
 	W_ERROR_HAVE_NO_MEMORY(_printername); \
 }
 
-/* The version int is used by getdrivers.  Note that
-   all architecture strings that support mutliple
-   versions must be grouped together since enumdrivers
-   uses this property to prevent issuing multiple
-   enumdriver calls for the same arch */
-
-
-static const struct print_architecture_table_node archi_table[]= {
-
-	{"Windows 4.0",          "WIN40",	0 },
-	{"Windows NT x86",       "W32X86",	2 },
-	{"Windows NT x86",       "W32X86",	3 },
-	{"Windows NT R4000",     "W32MIPS",	2 },
-	{"Windows NT Alpha_AXP", "W32ALPHA",	2 },
-	{"Windows NT PowerPC",   "W32PPC",	2 },
-	{"Windows IA64",         "IA64",        3 },
-	{"Windows x64",          "x64",         3 },
-	{NULL,                   "",		-1 }
-};
 
 /**
  * @file
@@ -3537,10 +3520,7 @@ static WERROR cmd_spoolss_printercmp(struct rpc_pipe_client *cli,
 				"IPC$", "IPC",
 				get_cmdline_auth_info_creds(
 					popt_get_cmdline_auth_info()),
-				0, /* flags */
-				get_cmdline_auth_info_signing_state(
-					popt_get_cmdline_auth_info()));
-
+				CLI_FULL_CONNECTION_IPC);
 	if ( !NT_STATUS_IS_OK(nt_status) )
 		return WERR_GEN_FAILURE;
 

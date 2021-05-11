@@ -19,9 +19,11 @@
 
 #include "includes.h"
 #include "smb_server/smb_server.h"
-#include "smbd/service_stream.h"
+#include "samba/service_stream.h"
 #include "ntvfs/ntvfs.h"
 #include "param/param.h"
+
+#undef strcasecmp
 
 /****************************************************************************
   Make a connection, given the snum to connect to, and the vuser of the

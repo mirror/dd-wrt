@@ -182,26 +182,26 @@ Duration of last recovery/failover: 2.248552 seconds
 192.168.2.201
 192.168.2.202
 192.168.2.203
-	</pre></div></div><div class="refsect2"><a name="idm174"></a><h3>natgw {master|list|status}</h3><p>
+	</pre></div></div><div class="refsect2"><a name="idm174"></a><h3>natgw {leader|list|status}</h3><p>
 	This command shows different aspects of NAT gateway status.
 	For an overview of CTDB's NAT gateway functionality please see
 	the <em class="citetitle">NAT GATEWAY</em> section in
 	<span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>.
-      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">master</span></dt><dd><p>
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">leader</span></dt><dd><p>
 	      Show the PNN and private IP address of the current NAT
-	      gateway master node.
+	      gateway leader node.
 	    </p><p>
 	      Example output:
 	    </p><pre class="screen">
 1 192.168.2.201
 	    </pre></dd><dt><span class="term">list</span></dt><dd><p>
 	      List the private IP addresses of nodes in the current
-	      NAT gateway group, annotating the master node.
+	      NAT gateway group, annotating the leader node.
 	    </p><p>
 	      Example output:
 	    </p><pre class="screen">
 192.168.2.200
-192.168.2.201	MASTER
+192.168.2.201	LEADER
 192.168.2.202
 192.168.2.203
 	    </pre></dd><dt><span class="term">status</span></dt><dd><p>
@@ -444,13 +444,13 @@ MonitorInterval         = 15
 	Set the runtime value of a tuneable variable.
       </p><div class="refsect3"><a name="idm297"></a><h4>Example</h4><pre class="screen">
 # ctdb setvar MonitorInterval 20
-	</pre></div></div><div class="refsect2"><a name="idm300"></a><h3>lvs {master|list|status}</h3><p>
+	</pre></div></div><div class="refsect2"><a name="idm300"></a><h3>lvs {leader|list|status}</h3><p>
 	This command shows different aspects of LVS status.  For an
 	overview of CTDB's LVS functionality please see the
 	<em class="citetitle">LVS</em> section in
 	<span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>.
-      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">master</span></dt><dd><p>
-	      Shows the PNN of the current LVS master node.
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">leader</span></dt><dd><p>
+	      Shows the PNN of the current LVS leader node.
 	    </p><p>
 	Example output:
       </p><pre class="screen">

@@ -1,44 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-test_info()
-{
-    cat <<EOF
-Verify that  'ctdb getdbmap' operates as expected.
-
-This test creates some test databases using 'ctdb attach'.
-
-Prerequisites:
-
-* An active CTDB cluster with at least 2 active nodes.
-
-Steps:
-
-1. Verify that the status on all of the ctdb nodes is 'OK'.
-2. Get the database on using 'ctdb getdbmap'.
-3. Verify that the output is valid.
-
-Expected results:
-
-* 'ctdb getdbmap' shows a valid listing of databases.
-EOF
-}
+# Verify that 'ctdb getdbmap' operates as expected
 
 . "${TEST_SCRIPTS_DIR}/integration.bash"
 
-ctdb_test_init
-
 set -e
 
-cluster_is_healthy
+ctdb_test_init
 
-make_temp_db_filename ()
-{
-    dd if=/dev/urandom count=1 bs=512 2>/dev/null |
-    md5sum |
-    awk '{printf "%s.tdb\n", $1}'
-}
+select_test_node
 
-try_command_on_node -v 0 "$CTDB getdbmap"
+# test_node set by select_test_node() above
+# shellcheck disable=SC2154
+ctdb_onnode -v "$test_node" getdbmap
 
 dbid='dbid:0x[[:xdigit:]]+'
 name='name:[^[:space:]]+'
@@ -47,27 +21,28 @@ opts='( (PERSISTENT|STICKY|READONLY|REPLICATED|UNHEALTHY))*'
 line="${dbid} ${name} ${path}${opts}"
 dbmap_pattern="^(Number of databases:[[:digit:]]+|${line})\$"
 
+# outfile set by ctdb_onnode() above
+# shellcheck disable=SC2154
 num_db_init=$(sed -n -e '1s/.*://p' "$outfile")
 
 sanity_check_output $(($num_db_init + 1)) "$dbmap_pattern"
 
 for i in $(seq 1 5) ; do
-    f=$(make_temp_db_filename)
-    echo "Creating test database: $f"
-    try_command_on_node 0 $CTDB attach "$f"
-    try_command_on_node 0 $CTDB getdbmap
-    sanity_check_output $(($num_db_init + 1)) "$dbmap_pattern"
-    num=$(sed -n -e '1s/^.*://p' "$outfile")
-    if [ $num = $(($num_db_init + $i)) ] ; then
-	echo "OK: correct number of additional databases"
-    else
-	echo "BAD: no additional database"
-	exit 1
-    fi
-    if awk '{print $2}' "$outfile" | grep -Fqx "name:$f" ; then
-	echo "OK: getdbmap knows about \"$f\""
-    else
-	echo "BAD: getdbmap does not know about \"$f\""
-	exit 1
-    fi
+	f="attach_test_${i}.tdb"
+	echo "Creating test database: $f"
+	ctdb_onnode "$test_node" "attach ${f}"
+
+	ctdb_onnode "$test_node" getdbmap
+	sanity_check_output $((num_db_init + 1)) "$dbmap_pattern"
+	num=$(sed -n -e '1s/^.*://p' "$outfile")
+	if [ "$num" = $((num_db_init + i)) ] ; then
+		echo "OK: correct number of additional databases"
+	else
+		ctdb_test_fail "BAD: no additional database"
+	fi
+	if awk '{print $2}' "$outfile" | grep -Fqx "name:$f" ; then
+		echo "OK: getdbmap knows about \"$f\""
+	else
+		ctdb_test_fail "BAD: getdbmap does not know about \"$f\""
+	fi
 done

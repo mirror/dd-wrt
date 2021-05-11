@@ -27,7 +27,7 @@ import re
 import os
 import markdown
 import xml.etree.ElementTree as ET
-from samba.compat import get_string
+from samba.common import get_string
 
 
 # Display specifier updates or otherwise (ignored in forest_update.py)
@@ -195,7 +195,7 @@ def innertext(tag):
         (tag.tail or '')
 
 
-def read_ms_markdown(in_file, out_folder=None, out_dict={}):
+def read_ms_markdown(in_file, out_folder=None, out_dict=None):
     """
     Read Github documentation to produce forest wide udpates
     :param in_file: Forest-Wide-Updates.md

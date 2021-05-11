@@ -31,6 +31,7 @@
 #include "nsswitch/winbind_client.h"
 #include "lib/winbind_util.h"
 #include "libcli/security/dom_sid.h"
+#include "lib/global_contexts.h"
 
 /*
  * Config and connection info per domain.
@@ -228,6 +229,7 @@ static void idmap_rfc2307_map_sid_results(struct idmap_rfc2307_context *ctx,
 
 	for (i = 0; i < count; i++) {
 		char *name;
+		struct dom_sid sid;
 		enum lsa_SidType lsa_type;
 		struct id_map *map;
 		uint32_t id;
@@ -276,7 +278,7 @@ static void idmap_rfc2307_map_sid_results(struct idmap_rfc2307_context *ctx,
 		   the following call will not recurse so this is safe */
 		(void)winbind_on();
 		/* Lookup name from PDC using lsa_lookup_names() */
-		b = winbind_lookup_name(dom_name, name, map->sid, &lsa_type);
+		b = winbind_lookup_name(dom_name, name, &sid, &lsa_type);
 		(void)winbind_off();
 
 		if (!b) {
@@ -300,6 +302,7 @@ static void idmap_rfc2307_map_sid_results(struct idmap_rfc2307_context *ctx,
 		}
 
 		map->status = ID_MAPPED;
+		sid_copy(map->sid, &sid);
 	}
 }
 
@@ -836,7 +839,7 @@ err:
 	return status;
 }
 
-static struct idmap_methods rfc2307_methods = {
+static const struct idmap_methods rfc2307_methods = {
 	.init = idmap_rfc2307_initialize,
 	.unixids_to_sids = idmap_rfc2307_unixids_to_sids,
 	.sids_to_unixids = idmap_rfc2307_sids_to_unixids,

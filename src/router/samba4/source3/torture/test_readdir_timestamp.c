@@ -21,6 +21,7 @@
 #include "libsmb/libsmb.h"
 #include "libsmb/clirap.h"
 #include "lib/util/tevent_ntstatus.h"
+#include "lib/util/smb_strtox.h"
 
 extern int torture_nprocs;
 extern int torture_numops;
@@ -402,7 +403,6 @@ struct list_cb_state {
 };
 
 static NTSTATUS list_cb(
-	const char *mntpoint,
 	struct file_info *f,
 	const char *mask,
 	void *private_data)

@@ -22,6 +22,7 @@ use warnings;
 use FindBin qw($RealBin $Script);
 use File::Spec;
 use File::Temp qw(tempfile);
+use File::Path qw(remove_tree);
 use Getopt::Long;
 use POSIX;
 use Cwd qw(abs_path);
@@ -280,7 +281,7 @@ my $bindir_abs = abs_path($bindir);
 my $torture_maxtime = ($ENV{TORTURE_MAXTIME} or 1200);
 
 $prefix =~ s+//+/+;
-$prefix =~ s+/./+/+;
+$prefix =~ s+/\./+/+;
 $prefix =~ s+/$++;
 
 die("using an empty prefix isn't allowed") unless $prefix ne "";
@@ -312,7 +313,6 @@ $ENV{PREFIX} = $prefix;
 $ENV{PREFIX_ABS} = $prefix_abs;
 $ENV{SRCDIR} = $srcdir;
 $ENV{SRCDIR_ABS} = $srcdir_abs;
-$ENV{GNUPGHOME} = "$srcdir_abs/selftest/gnupg";
 $ENV{BINDIR} = $bindir_abs;
 
 my $tls_enabled = not $opt_quick;
@@ -501,67 +501,39 @@ sub write_clientconf($$$)
 
 	mkdir("$clientdir", 0777) unless -d "$clientdir";
 
-	if ( -d "$clientdir/private" ) {
-	        unlink <$clientdir/private/*>;
-	} else {
-	        mkdir("$clientdir/private", 0777);
-	}
+	my @subdirs = (
+		{ name => "private", mask => 0777 },
+		{ name => "bind-dns", mask => 0777 },
+		{ name => "lockdir", mask => 0777 },
+		{ name => "statedir", mask => 0777 },
+		{ name => "cachedir", mask => 0777 },
+		{ name => "pkinit", mask => 0700 },
+		{ name => "pid", mask => 0777 },
+		# the ncalrpcdir needs exactly 0755 otherwise tests fail.
+		{ name => "ncalrpcdir", mask => 0755, umask => 0022 },
+	);
 
-	if ( -d "$clientdir/bind-dns" ) {
-	        unlink <$clientdir/bind-dns/*>;
-	} else {
-	        mkdir("$clientdir/bind-dns", 0777);
+	foreach my $sub (@subdirs) {
+		my $dir = "$clientdir/$sub->{name}";
+		remove_tree($dir);
+		my $mask = umask;
+		if (defined($sub->{umask})) {
+			umask $sub->{umask};
+		}
+		mkdir($dir, $sub->{mask});
+		umask $mask;
 	}
-
-	if ( -d "$clientdir/lockdir" ) {
-	        unlink <$clientdir/lockdir/*>;
-	} else {
-	        mkdir("$clientdir/lockdir", 0777);
-	}
-
-	if ( -d "$clientdir/statedir" ) {
-	        unlink <$clientdir/statedir/*>;
-	} else {
-	        mkdir("$clientdir/statedir", 0777);
-	}
-
-	if ( -d "$clientdir/cachedir" ) {
-	        unlink <$clientdir/cachedir/*>;
-	} else {
-	        mkdir("$clientdir/cachedir", 0777);
-	}
-
-	# this is ugly, but the ncalrpcdir needs exactly 0755
-	# otherwise tests fail.
-	my $mask = umask;
-	umask 0022;
-	if ( -d "$clientdir/ncalrpcdir/np" ) {
-	        unlink <$clientdir/ncalrpcdir/np/*>;
-		rmdir "$clientdir/ncalrpcdir/np";
-	}
-	if ( -d "$clientdir/ncalrpcdir" ) {
-	        unlink <$clientdir/ncalrpcdir/*>;
-		rmdir "$clientdir/ncalrpcdir";
-	}
-	mkdir("$clientdir/ncalrpcdir", 0755);
-	umask $mask;
 
 	my $cadir = "$ENV{SRCDIR_ABS}/selftest/manage-ca/CA-samba.example.com";
 	my $cacert = "$cadir/Public/CA-samba.example.com-cert.pem";
 	my $cacrl_pem = "$cadir/Public/CA-samba.example.com-crl.pem";
 	my $ca_users_dir = "$cadir/Users";
 
-	if ( -d "$clientdir/pkinit" ) {
-	        unlink <$clientdir/pkinit/*>;
-	} else {
-	        mkdir("$clientdir/pkinit", 0700);
-	}
-
 	# each user has a USER-${USER_PRINCIPAL_NAME}-cert.pem and
 	# USER-${USER_PRINCIPAL_NAME}-private-key.pem symlink
 	# We make a copy here and make the certificated easily
 	# accessable in the client environment.
-	$mask = umask;
+	my $mask = umask;
 	umask 0077;
 	opendir USERS, "${ca_users_dir}" or die "Could not open dir '${ca_users_dir}': $!";
 	for my $d (readdir USERS) {
@@ -601,6 +573,7 @@ sub write_clientconf($$$)
 	state directory = $clientdir/statedir
 	cache directory = $clientdir/cachedir
 	ncalrpc dir = $clientdir/ncalrpcdir
+	pid directory = $clientdir/pid
 	panic action = $RealBin/gdb_backtrace \%d
 	max xmit = 32K
 	notify:inotify = false
@@ -692,6 +665,9 @@ $ENV{RESOLV_CONF} = "${selftest_resolv_conf_path}.global";
 
 my $selftest_krbt_ccache_path = "$tmpdir_abs/selftest.krb5_ccache";
 $ENV{KRB5CCNAME} = "FILE:${selftest_krbt_ccache_path}.global";
+
+my $selftest_gnupghome_path = "$tmpdir_abs/selftest.no.gnupg";
+$ENV{GNUPGHOME} = "${selftest_gnupghome_path}.global";
 
 my @available = ();
 foreach my $fn (@testlists) {
@@ -829,6 +805,7 @@ sub setup_env($$)
 
 	$ENV{RESOLV_CONF} = "${selftest_resolv_conf_path}.${envname}/ignore";
 	$ENV{KRB5CCNAME} = "FILE:${selftest_krbt_ccache_path}.${envname}/ignore";
+	$ENV{GNUPGHOME} = "${selftest_gnupghome_path}.${envname}/ignore";
 
 	if (defined(get_running_env($envname))) {
 		$testenv_vars = get_running_env($envname);

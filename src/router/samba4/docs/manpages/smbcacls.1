@@ -2,12 +2,12 @@
 .\"     Title: smbcacls
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 11/03/2020
+.\"      Date: 04/26/2021
 .\"    Manual: User Commands
-.\"    Source: Samba 4.13.2
+.\"    Source: Samba 4.14.4
 .\"  Language: English
 .\"
-.TH "SMBCACLS" "1" "11/03/2020" "Samba 4\&.13\&.2" "User Commands"
+.TH "SMBCACLS" "1" "04/26/2021" "Samba 4\&.14\&.4" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 smbcacls \- Set or get ACLs on an NT file or directory names
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-smbcacls {//server/share} {/filename} [\-D|\-\-delete\ acl] [\-M|\-\-modify\ acl] [\-a|\-\-add\ acl] [\-S|\-\-set\ acl] [\-C|\-\-chown\ name] [\-G|\-\-chgrp\ name] [\-I\ allow|remove|copy] [\-\-numeric] [\-t] [\-U\ username] [\-d] [\-e] [\-m|\-\-max\-protocol\ LEVEL] [\-\-query\-security\-info\ FLAGS] [\-\-set\-security\-info\ FLAGS] [\-\-sddl] [\-\-domain\-sid\ SID] [\-x|\-\-maximum\-access]
+smbcacls {//server/share} {/filename} [\-D|\-\-delete\ acl] [\-M|\-\-modify\ acl] [\-a|\-\-add\ acl] [\-S|\-\-set\ acl] [\-C|\-\-chown\ name] [\-G|\-\-chgrp\ name] [\-I\ allow|remove|copy] [\-\-propagate\-inheritance] [\-\-numeric] [\-t] [\-U\ username] [\-d] [\-e] [\-m|\-\-max\-protocol\ LEVEL] [\-\-query\-security\-info\ FLAGS] [\-\-set\-security\-info\ FLAGS] [\-\-sddl] [\-\-domain\-sid\ SID] [\-x|\-\-maximum\-access]
 .SH "DESCRIPTION"
 .PP
 This tool is part of the
@@ -89,7 +89,12 @@ This command is a shortcut for \-M GROUP:name\&.
 .RS 4
 Set or unset the windows "Allow inheritable permissions" check box using the
 \fI\-I\fR
-option\&. To set the check box pass allow\&. To unset the check box pass either remove or copy\&. Remove will remove all inherited acls\&. Copy will copy all the inherited acls\&.
+option\&. To set the check box pass allow\&. To unset the check box pass either remove or copy\&. Remove will remove all inherited ACEs\&. Copy will copy all the inherited ACEs\&.
+.RE
+.PP
+\-\-propagate\-inheritance
+.RS 4
+Add, modify, delete or set ACEs on an entire directory tree according to the inheritance flags\&. Refer to the INHERITANCE section for details\&.
 .RE
 .PP
 \-\-numeric
@@ -319,7 +324,14 @@ The owner and group specify the owner and group sids for the object\&. If a SID 
 .PP
 ACEs are specified with an "ACL:" prefix, and define permissions granted to an SID\&. The SID again can be specified in S\-1\-x\-y\-z format or as a name in which case it is resolved against the server on which the file or directory resides\&. The type, flags and mask values determine the type of access granted to the SID\&.
 .PP
-The type can be either ALLOWED or DENIED to allow/deny access to the SID\&. The flags values are generally zero for file ACEs and either 9 or 2 for directory ACEs\&. Some common flags are:
+The type can be either ALLOWED or DENIED to allow/deny access to the SID\&.
+.PP
+The flags field defines how the ACE should be considered when performing inheritance\&.
+smbcacls
+uses these flags when run with
+\fI\-\-propagate\-inheritance\fR\&.
+.PP
+Flags can be specified as decimal or hexadecimal values, or with the respective (XX) aliases, separated by a vertical bar "|"\&.
 .RS
 .sp
 .RS 4
@@ -330,7 +342,8 @@ The type can be either ALLOWED or DENIED to allow/deny access to the SID\&. The 
 .sp -1
 .IP \(bu 2.3
 .\}
-\fB#define SEC_ACE_FLAG_OBJECT_INHERIT 0x1\fR
+\fI(OI)\fR
+Object Inherit 0x1
 .RE
 .sp
 .RS 4
@@ -341,7 +354,8 @@ The type can be either ALLOWED or DENIED to allow/deny access to the SID\&. The 
 .sp -1
 .IP \(bu 2.3
 .\}
-\fB#define SEC_ACE_FLAG_CONTAINER_INHERIT 0x2\fR
+\fI(CI)\fR
+Container Inherit 0x2
 .RE
 .sp
 .RS 4
@@ -352,7 +366,8 @@ The type can be either ALLOWED or DENIED to allow/deny access to the SID\&. The 
 .sp -1
 .IP \(bu 2.3
 .\}
-\fB#define SEC_ACE_FLAG_NO_PROPAGATE_INHERIT 0x4\fR
+\fI(NP)\fR
+No Propagate Inherit 0x4
 .RE
 .sp
 .RS 4
@@ -363,12 +378,11 @@ The type can be either ALLOWED or DENIED to allow/deny access to the SID\&. The 
 .sp -1
 .IP \(bu 2.3
 .\}
-\fB#define SEC_ACE_FLAG_INHERIT_ONLY 0x8\fR
+\fI(IO)\fR
+Inherit Only 0x8
 .RE
 .sp
 .RE
-.PP
-At present, flags can only be specified as decimal or hexadecimal values\&.
 .PP
 The mask is a value which expresses the access right granted to the SID\&. It can be given as a decimal or hexadecimal value, or by using one of the following text strings which map to the NT file permissions of the same name\&.
 .RS
@@ -485,6 +499,162 @@ The following combined permissions can be specified:
 \fIFULL\fR
 \- Equivalent to \*(AqRWXDPO\*(Aq permissions
 .RE
+.SH "INHERITANCE"
+.PP
+Per\-ACE inheritance flags can be set in the ACE flags field\&. By default, inheritable ACEs e\&.g\&. those marked for object inheritance (OI) or container inheritance (CI), are not propagated to sub\-files or folders\&. However, with the
+\fI\-\-propagate\-inheritance\fR
+argument specified, such ACEs are automatically propagated according to some inheritance rules\&.
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Inheritable (OI)(OI) ACE flags can only be applied to folders\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Any inheritable ACEs applied to sub\-files or folders are marked with the inherited (I) flag\&. Inheritable ACE(s) are applied to folders unless the no propagation (NP) flag is set\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+When an ACE with the (OI) flag alone set is progagated to a child folder the inheritance only flag (IO) is also applied\&. This indicates the permissions associated with the ACE don\*(Aqt apply to the folder itself (only to it\*(Aqs child files)\&. When applying the ACE to a child file the ACE is inherited as normal\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+When an ace with the (CI) flag alone set is propagated to a child file there is no effect, when propagated to a child folder it is inherited as normal\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+When an ACE that has both (OI) & (CI) flags set the ACE is inherited as normal by both folders and files\&.
+.RE
+.sp
+.RE
+.PP
+(OI)(READ) added to parent folder
+.PP
+.if n \{\
+.RS 4
+.\}
+.nf
++\-parent/        (OI)(READ)
+| +\-file\&.1       (I)(READ)
+| +\-nested/      (OI)(IO)(I)(READ)
+  |   +\-file\&.2   (I)(READ)
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+(CI)(READ) added to parent folder
+.PP
+.if n \{\
+.RS 4
+.\}
+.nf
++\-parent/        (CI)(READ)
+| +\-file\&.1
+| +\-nested/      (CI)(I)(READ)
+  |   +\-file\&.2
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+(OI)(CI)(READ) added to parent folder
+.PP
+.if n \{\
+.RS 4
+.\}
+.nf
++\-parent/        (OI)(CI)(READ)
+| +\-file\&.1       (I)(READ)
+| +\-nested/      (OI)(CI)(I)(READ)
+  |   +\-file\&.2   (I)(READ)
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+(OI)(NP)(READ) added to parent folder
+.PP
+.if n \{\
+.RS 4
+.\}
+.nf
++\-oi_dir/        (OI)(NP)(READ)
+| +\-file\&.1       (I)(READ)
+| +\-nested/
+|   +\-file\&.2
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+(CI)(NP)(READ) added to parent folder
+.PP
+.if n \{\
+.RS 4
+.\}
+.nf
++\-oi_dir/        (CI)(NP)(READ)
+| +\-file\&.1
+| +\-nested/      (I)(READ)
+|   +\-file\&.2
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+(OI)(CI)(NP)(READ) added to parent folder
+.PP
+.if n \{\
+.RS 4
+.\}
+.nf
++\-parent/        (CI)(OI)(NP)(READ)
+| +\-file\&.1       (I)(READ)
+| +\-nested/      (I)(READ)
+|   +\-file\&.2
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Files and folders with protected ACLs do not allow inheritable permissions (set with
+\fI\-I\fR)\&. Such objects will not receive ACEs flagged for inheritance with (CI) or (OI)\&.
 .SH "EXIT STATUS"
 .PP
 The
@@ -496,7 +666,7 @@ smbcacls
 couldn\*(Aqt connect to the specified server, or there was an error getting or setting the ACLs, an exit status of 1 is returned\&. If there was an error parsing any command line arguments, an exit status of 2 is returned\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.13\&.2 of the Samba suite\&.
+This man page is part of version 4\&.14\&.4 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

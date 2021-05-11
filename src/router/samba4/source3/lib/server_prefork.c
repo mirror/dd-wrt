@@ -61,7 +61,7 @@ bool prefork_create_pool(TALLOC_CTX *mem_ctx,
 			 prefork_main_fn_t *main_fn, void *private_data,
 			 struct prefork_pool **pf_pool)
 {
-	struct prefork_pool *pfp;
+	struct prefork_pool *pfp = NULL;
 	pid_t pid;
 	time_t now = time(NULL);
 	size_t data_size;
@@ -72,19 +72,23 @@ bool prefork_create_pool(TALLOC_CTX *mem_ctx,
 	pfp = talloc_zero(mem_ctx, struct prefork_pool);
 	if (!pfp) {
 		DEBUG(1, ("Out of memory!\n"));
-		return false;
+		goto fail;
 	}
 	pfp->listen_fd_size = listen_fd_size;
 	pfp->listen_fds = talloc_array(pfp, struct pf_listen_fd,
 				       listen_fd_size);
 	if (!pfp->listen_fds) {
 		DEBUG(1, ("Out of memory!\n"));
-		return false;
+		goto fail;
 	}
 	for (i = 0; i < listen_fd_size; i++) {
 		pfp->listen_fds[i] = listen_fds[i];
 		/* force sockets in non-blocking mode */
-		set_blocking(listen_fds[i].fd, false);
+		ret = set_blocking(listen_fds[i].fd, false);
+		if (ret < 0) {
+			DBG_WARNING("Failed to set sockets to non-blocking!\n");
+			goto fail;
+		}
 	}
 	pfp->main_fn = main_fn;
 	pfp->private_data = private_data;
@@ -96,8 +100,7 @@ bool prefork_create_pool(TALLOC_CTX *mem_ctx,
 		data_size);
 	if (pfp->pool == NULL) {
 		DEBUG(1, ("Failed to mmap memory for prefork pool!\n"));
-		talloc_free(pfp);
-		return false;
+		goto fail;
 	}
 	talloc_set_destructor(pfp, prefork_pool_destructor);
 
@@ -131,12 +134,14 @@ bool prefork_create_pool(TALLOC_CTX *mem_ctx,
 	ok = prefork_setup_sigchld_handler(ev_ctx, pfp);
 	if (!ok) {
 		DEBUG(1, ("Failed to setup SIGCHLD Handler!\n"));
-		talloc_free(pfp);
-		return false;
+		goto fail;
 	}
 
 	*pf_pool = pfp;
 	return true;
+fail:
+	TALLOC_FREE(pfp);
+	return false;
 }
 
 /* Provide the new max children number in new_max
@@ -147,7 +152,7 @@ bool prefork_create_pool(TALLOC_CTX *mem_ctx,
  */
 int prefork_expand_pool(struct prefork_pool *pfp, int new_max)
 {
-	struct prefork_pool *pool;
+	struct prefork_pool *pool = NULL;
 	size_t old_size;
 	size_t new_size;
 	int ret;
@@ -250,7 +255,7 @@ int prefork_retire_children(struct messaging_context *msg_ctx,
 {
 	const DATA_BLOB ping = data_blob_null;
 	time_t now = time(NULL);
-	struct prefork_oldest *oldest;
+	struct prefork_oldest *oldest = NULL;
 	int i, j;
 
 	oldest = talloc_array(pfp, struct prefork_oldest, pfp->pool_size);
@@ -455,9 +460,8 @@ static void prefork_sigchld_handler(struct tevent_context *ev_ctx,
 				    int signum, int count,
 				    void *siginfo, void *pvt)
 {
-	struct prefork_pool *pfp;
-
-	pfp = talloc_get_type_abort(pvt, struct prefork_pool);
+	struct prefork_pool *pfp = talloc_get_type_abort(
+		pvt, struct prefork_pool);
 
 	/* run the cleanup function to make sure all dead children are
 	 * properly and timely retired. */
@@ -471,7 +475,7 @@ static void prefork_sigchld_handler(struct tevent_context *ev_ctx,
 static bool prefork_setup_sigchld_handler(struct tevent_context *ev_ctx,
 					  struct prefork_pool *pfp)
 {
-	struct tevent_signal *se;
+	struct tevent_signal *se = NULL;
 
 	se = tevent_add_signal(ev_ctx, pfp, SIGCHLD, 0,
 				prefork_sigchld_handler, pfp);
@@ -525,11 +529,11 @@ struct tevent_req *prefork_listen_send(TALLOC_CTX *mem_ctx,
 					int listen_fd_size,
 					struct pf_listen_fd *listen_fds)
 {
-	struct tevent_req *req;
-	struct pf_listen_state *state;
-	struct pf_listen_ctx *ctx;
-	struct tevent_fd *fde;
-	TALLOC_CTX *fde_ctx;
+	struct tevent_req *req = NULL;
+	struct pf_listen_state *state = NULL;
+	struct pf_listen_ctx *ctx = NULL;
+	struct tevent_fd *fde = NULL;
+	TALLOC_CTX *fde_ctx = NULL;
 	int i;
 
 	req = tevent_req_create(mem_ctx, &state, struct pf_listen_state);
@@ -578,19 +582,17 @@ static void prefork_listen_accept_handler(struct tevent_context *ev,
 					  struct tevent_fd *fde,
 					  uint16_t flags, void *pvt)
 {
-	struct pf_listen_state *state;
-	struct tevent_req *req;
-	struct pf_listen_ctx *ctx;
-	struct sockaddr_storage addr;
-	socklen_t addrlen;
+	struct pf_listen_ctx *ctx = talloc_get_type_abort(
+		pvt, struct pf_listen_ctx);
+	struct tevent_req *req = ctx->req;
+	struct pf_listen_state *state = tevent_req_data(
+		ctx->req, struct pf_listen_state);
+	struct sockaddr_storage addr = { .ss_family = 0 };
+	socklen_t addrlen = sizeof(addr);
 	int soerr = 0;
 	socklen_t solen = sizeof(soerr);
 	int sd = -1;
 	int ret;
-
-	ctx = talloc_get_type_abort(pvt, struct pf_listen_ctx);
-	req = ctx->req;
-	state = tevent_req_data(ctx->req, struct pf_listen_state);
 
 	if ((state->pf->cmds == PF_SRV_MSG_EXIT) &&
 	    (state->pf->num_clients <= 0)) {
@@ -614,8 +616,6 @@ static void prefork_listen_accept_handler(struct tevent_context *ev,
 		goto done;
 	}
 
-	ZERO_STRUCT(addr);
-	addrlen = sizeof(addr);
 	sd = accept(ctx->listen_fd, (struct sockaddr *)&addr, &addrlen);
 	if (sd == -1) {
 		state->error = errno;
@@ -664,10 +664,9 @@ int prefork_listen_recv(struct tevent_req *req,
 			struct tsocket_address **srv_addr,
 			struct tsocket_address **cli_addr)
 {
-	struct pf_listen_state *state;
+	struct pf_listen_state *state = tevent_req_data(
+		req, struct pf_listen_state);
 	int ret = 0;
-
-	state = tevent_req_data(req, struct pf_listen_state);
 
 	if (state->error) {
 		ret = state->error;

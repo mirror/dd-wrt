@@ -65,6 +65,9 @@
 #define MINIMUM_GPGME_VERSION "1.2.0"
 #endif
 
+#undef strncasecmp
+#undef strcasecmp
+
 /* If we have decided there is a reason to work on this request, then
  * setup all the password hash types correctly.
  *

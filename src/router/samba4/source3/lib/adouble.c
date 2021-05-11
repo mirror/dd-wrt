@@ -1106,10 +1106,23 @@ static bool ad_convert_xattr(vfs_handle_struct *handle,
 
 		DBG_DEBUG("stream_name: %s\n", smb_fname_str_dbg(stream_name));
 
+		rc = vfs_stat(handle->conn, stream_name);
+		if (rc == -1 && errno != ENOENT) {
+			ok = false;
+			goto fail;
+		}
+
+		status = openat_pathref_fsp(handle->conn->cwd_fsp, stream_name);
+		if (!NT_STATUS_IS_OK(status) &&
+		    !NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND))
+		{
+			ok = false;
+			goto fail;
+		}
+
 		status = SMB_VFS_CREATE_FILE(
 			handle->conn,			/* conn */
 			NULL,				/* req */
-			&handle->conn->cwd_fsp,		/* dirfsp */
 			stream_name,			/* fname */
 			FILE_GENERIC_WRITE,		/* access_mask */
 			FILE_SHARE_READ | FILE_SHARE_WRITE, /* share_access */
@@ -1192,6 +1205,7 @@ static bool ad_convert_finderinfo(vfs_handle_struct *handle,
 	NTSTATUS status;
 	int saved_errno = 0;
 	int cmp;
+	int rc;
 
 	cmp = memcmp(ad->ad_filler, AD_FILLER_TAG_OSX, ADEDLEN_FILLER);
 	if (cmp != 0) {
@@ -1236,10 +1250,21 @@ static bool ad_convert_finderinfo(vfs_handle_struct *handle,
 
 	DBG_DEBUG("stream_name: %s\n", smb_fname_str_dbg(stream_name));
 
+	rc = vfs_stat(handle->conn, stream_name);
+	if (rc == -1 && errno != ENOENT) {
+		return false;
+	}
+
+	status = openat_pathref_fsp(handle->conn->cwd_fsp, stream_name);
+	if (!NT_STATUS_IS_OK(status) &&
+	    !NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND))
+	{
+		return false;
+	}
+
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,			/* conn */
 		NULL,				/* req */
-		&handle->conn->cwd_fsp,		/* dirfsp */
 		stream_name,			/* fname */
 		FILE_GENERIC_WRITE,		/* access_mask */
 		FILE_SHARE_READ | FILE_SHARE_WRITE, /* share_access */
@@ -1467,10 +1492,16 @@ static bool ad_unconvert_open_ad(TALLOC_CTX *mem_ctx,
 	NTSTATUS status;
 	int ret;
 
+	status = openat_pathref_fsp(handle->conn->cwd_fsp, adpath);
+	if (!NT_STATUS_IS_OK(status) &&
+	    !NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND))
+	{
+		return false;
+	}
+
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,
 		NULL,				/* req */
-		&handle->conn->cwd_fsp,		/* dirfsp */
 		adpath,
 		FILE_READ_DATA|FILE_WRITE_DATA,
 		FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
@@ -1519,10 +1550,18 @@ static bool ad_unconvert_get_streams(struct vfs_handle_struct *handle,
 	files_struct *fsp = NULL;
 	NTSTATUS status;
 
+	if (!VALID_STAT(smb_fname->st)) {
+		return false;
+	}
+
+	status = openat_pathref_fsp(handle->conn->cwd_fsp, smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		return false;
+	}
+
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,				/* conn */
 		NULL,					/* req */
-		&handle->conn->cwd_fsp,			/* dirfsp */
 		smb_fname,				/* fname */
 		FILE_READ_ATTRIBUTES,			/* access_mask */
 		(FILE_SHARE_READ | FILE_SHARE_WRITE |	/* share_access */
@@ -1619,10 +1658,15 @@ static bool ad_collect_one_stream(struct vfs_handle_struct *handle,
 		goto out;
 	}
 
+	status = openat_pathref_fsp(handle->conn->cwd_fsp, sname);
+	if (!NT_STATUS_IS_OK(status)) {
+		ok = false;
+		goto out;
+	}
+
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,
 		NULL,				/* req */
-		&handle->conn->cwd_fsp,		/* dirfsp */
 		sname,
 		FILE_READ_DATA|DELETE_ACCESS,
 		FILE_SHARE_READ,
@@ -2081,10 +2125,14 @@ static int ad_open_rsrc(vfs_handle_struct *handle,
 		share_access &= ~FILE_SHARE_WRITE;
 	}
 
+	status = openat_pathref_fsp(handle->conn->cwd_fsp, adp_smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		return -1;
+	}
+
 	status = SMB_VFS_CREATE_FILE(
 		handle->conn,			/* conn */
 		NULL,				/* req */
-		&handle->conn->cwd_fsp,		/* dirfsp */
 		adp_smb_fname,
 		access_mask,
 		share_access,
@@ -2527,7 +2575,7 @@ int ad_fset(struct vfs_handle_struct *handle,
 
 	if ((fsp == NULL)
 	    || (fsp->fh == NULL)
-	    || (fsp->fh->fd == -1))
+	    || (fsp_get_io_fd(fsp) == -1))
 	{
 		smb_panic("bad fsp");
 	}

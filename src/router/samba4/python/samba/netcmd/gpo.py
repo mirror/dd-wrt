@@ -37,7 +37,8 @@ from samba.netcmd import (
 from samba.samdb import SamDB
 from samba import dsdb
 from samba.dcerpc import security
-from samba.ndr import ndr_unpack
+from samba.ndr import ndr_unpack, ndr_pack
+from samba.dcerpc import preg
 import samba.security
 import samba.auth
 from samba.auth import AUTH_SESSION_INFO_DEFAULT_GROUPS, AUTH_SESSION_INFO_AUTHENTICATED, AUTH_SESSION_INFO_SIMPLE_PRIVILEGES
@@ -62,13 +63,11 @@ from samba.gp_parse.gp_csv import GPAuditCsvParser
 from samba.gp_parse.gp_inf import GptTmplInfParser
 from samba.gp_parse.gp_aas import GPAasParser
 from samba import param
-
-
-def attr_default(msg, attrname, default):
-    '''get an attribute from a ldap msg with a default'''
-    if attrname in msg:
-        return msg[attrname][0]
-    return default
+from samba.credentials import SMB_SIGNING_REQUIRED
+from samba.netcmd.common import attr_default
+from samba.common import get_bytes, get_string
+from configparser import ConfigParser
+from io import StringIO
 
 
 def gpo_flags_string(value):
@@ -382,15 +381,20 @@ def create_directory_hier(conn, remotedir):
         if not conn.chkpath(path):
             conn.mkdir(path)
 
-def smb_connection(dc_hostname, service, lp, creds, sign=False):
+def smb_connection(dc_hostname, service, lp, creds):
     # SMB connect to DC
+    # Force signing for the smb connection
+    saved_signing_state = creds.get_smb_signing()
+    creds.set_smb_signing(SMB_SIGNING_REQUIRED)
     try:
         # the SMB bindings rely on having a s3 loadparm
         s3_lp = s3param.get_context()
         s3_lp.load(lp.configfile)
-        conn = libsmb.Conn(dc_hostname, service, lp=s3_lp, creds=creds, sign=sign)
+        conn = libsmb.Conn(dc_hostname, service, lp=s3_lp, creds=creds)
     except Exception:
         raise CommandError("Error connecting to '%s' using SMB" % dc_hostname)
+    # Reset signing state
+    creds.set_smb_signing(saved_signing_state)
     return conn
 
 
@@ -998,7 +1002,7 @@ class cmd_fetch(GPOCommand):
 
         # SMB connect to DC
         conn = smb_connection(dc_hostname, service, lp=self.lp,
-                              creds=self.creds, sign=True)
+                              creds=self.creds)
 
         # Copy GPT
         tmpdir, gpodir = self.construct_tmpdir(tmpdir, gpo)
@@ -1629,8 +1633,7 @@ class cmd_admxload(Command):
         conn = smb_connection(dc_hostname,
                               'sysvol',
                               lp=self.lp,
-                              creds=self.creds,
-                              sign=True)
+                              creds=self.creds)
 
         smb_dir = '\\'.join([self.lp.get('realm').lower(),
                              'Policies', 'PolicyDefinitions'])
@@ -1665,6 +1668,585 @@ class cmd_admxload(Command):
                             raise CommandError("The authenticated user does "
                                                "not have sufficient privileges")
 
+class cmd_add_sudoers(Command):
+    """Adds a Samba Sudoers Group Policy to the sysvol
+
+This command adds a sudo rule to the sysvol for applying to winbind clients.
+
+Example:
+samba-tool gpo manage sudoers add {31B2F340-016D-11D2-945F-00C04FB984F9} 'fakeu ALL=(ALL) NOPASSWD: ALL'
+    """
+
+    synopsis = "%prog <gpo> <entry> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server", type=str,
+                metavar="URL", dest="H"),
+    ]
+
+    takes_args = ["gpo", "entry"]
+
+    def run(self, gpo, entry, H=None, sambaopts=None, credopts=None, versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
+
+        # We need to know writable DC to setup SMB connection
+        if H and H.startswith('ldap://'):
+            dc_hostname = H[7:]
+            self.url = H
+        else:
+            dc_hostname = netcmd_finddc(self.lp, self.creds)
+            self.url = dc_url(self.lp, self.creds, dc=dc_hostname)
+
+        # SMB connect to DC
+        conn = smb_connection(dc_hostname,
+                              'sysvol',
+                              lp=self.lp,
+                              creds=self.creds)
+
+        realm = self.lp.get('realm')
+        pol_dir = '\\'.join([realm.lower(), 'Policies', gpo, 'MACHINE'])
+        pol_file = '\\'.join([pol_dir, 'Registry.pol'])
+        try:
+            pol_data = ndr_unpack(preg.file, conn.loadfile(pol_file))
+        except NTSTATUSError as e:
+            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND
+            if e.args[0] in [0xC0000033, 0xC0000034]:
+                pol_data = preg.file() # The file doesn't exist
+            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            else:
+                raise
+
+        e = preg.entry()
+        e.keyname = b'Software\\Policies\\Samba\\Unix Settings\\Sudo Rights'
+        e.valuename = b'Software\\Policies\\Samba\\Unix Settings'
+        e.type = 1
+        e.data = get_bytes(entry)
+        entries = list(pol_data.entries)
+        entries.append(e)
+        pol_data.entries = entries
+        pol_data.num_entries = len(entries)
+
+        try:
+            create_directory_hier(conn, pol_dir)
+            conn.savefile(pol_file, ndr_pack(pol_data))
+        except NTSTATUSError as e:
+            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            raise
+
+class cmd_list_sudoers(Command):
+    """List Samba Sudoers Group Policy from the sysvol
+
+This command lists sudo rules from the sysvol that will be applied to winbind clients.
+
+Example:
+samba-tool gpo manage sudoers list {31B2F340-016D-11D2-945F-00C04FB984F9}
+    """
+
+    synopsis = "%prog <gpo> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server", type=str,
+                metavar="URL", dest="H"),
+    ]
+
+    takes_args = ["gpo"]
+
+    def run(self, gpo, H=None, sambaopts=None, credopts=None, versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
+
+        # We need to know writable DC to setup SMB connection
+        if H and H.startswith('ldap://'):
+            dc_hostname = H[7:]
+            self.url = H
+        else:
+            dc_hostname = netcmd_finddc(self.lp, self.creds)
+            self.url = dc_url(self.lp, self.creds, dc=dc_hostname)
+
+        # SMB connect to DC
+        conn = smb_connection(dc_hostname,
+                              'sysvol',
+                              lp=self.lp,
+                              creds=self.creds)
+
+        realm = self.lp.get('realm')
+        pol_file = '\\'.join([realm.lower(), 'Policies', gpo,
+                                'MACHINE\\Registry.pol'])
+        try:
+            pol_data = ndr_unpack(preg.file, conn.loadfile(pol_file))
+        except NTSTATUSError as e:
+            if e.args[0] == 0xC0000033: # STATUS_OBJECT_NAME_INVALID
+                return # The file doesn't exist, so there is nothing to list
+            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            raise
+
+        keyname = b'Software\\Policies\\Samba\\Unix Settings\\Sudo Rights'
+        for entry in pol_data.entries:
+            if get_bytes(entry.keyname) == keyname:
+                self.outf.write('%s\n' % entry.data)
+
+class cmd_remove_sudoers(Command):
+    """Removes a Samba Sudoers Group Policy from the sysvol
+
+This command removes a sudo rule from the sysvol from applying to winbind clients.
+
+Example:
+samba-tool gpo manage sudoers remove {31B2F340-016D-11D2-945F-00C04FB984F9} 'fakeu ALL=(ALL) NOPASSWD: ALL'
+    """
+
+    synopsis = "%prog <gpo> <entry> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server", type=str,
+                metavar="URL", dest="H"),
+    ]
+
+    takes_args = ["gpo", "entry"]
+
+    def run(self, gpo, entry, H=None, sambaopts=None, credopts=None, versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
+
+        # We need to know writable DC to setup SMB connection
+        if H and H.startswith('ldap://'):
+            dc_hostname = H[7:]
+            self.url = H
+        else:
+            dc_hostname = netcmd_finddc(self.lp, self.creds)
+            self.url = dc_url(self.lp, self.creds, dc=dc_hostname)
+
+        # SMB connect to DC
+        conn = smb_connection(dc_hostname,
+                              'sysvol',
+                              lp=self.lp,
+                              creds=self.creds)
+
+        realm = self.lp.get('realm')
+        pol_file = '\\'.join([realm.lower(), 'Policies', gpo,
+                                'MACHINE\\Registry.pol'])
+        try:
+            pol_data = ndr_unpack(preg.file, conn.loadfile(pol_file))
+        except NTSTATUSError as e:
+            if e.args[0] == 0xC0000033: # STATUS_OBJECT_NAME_INVALID
+                raise CommandError("The specified entry does not exist")
+            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            raise
+
+        if entry not in [e.data for e in pol_data.entries]:
+            raise CommandError("Cannot remove '%s' because it does not exist" %
+                                entry)
+
+        entries = [e for e in pol_data.entries if e.data != entry]
+        pol_data.num_entries = len(entries)
+        pol_data.entries = entries
+
+        try:
+            conn.savefile(pol_file, ndr_pack(pol_data))
+        except NTSTATUSError as e:
+            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            raise
+
+class cmd_sudoers(SuperCommand):
+    """Manage Sudoers Group Policy Objects"""
+    subcommands = {}
+    subcommands["add"] = cmd_add_sudoers()
+    subcommands["list"] = cmd_list_sudoers()
+    subcommands["remove"] = cmd_remove_sudoers()
+
+class cmd_set_security(Command):
+    """Set Samba Security Group Policy to the sysvol
+
+This command sets a security setting to the sysvol for applying to winbind
+clients. Not providing a value will unset the policy.
+These settings only apply to the ADDC.
+
+Example:
+samba-tool gpo manage security set {31B2F340-016D-11D2-945F-00C04FB984F9} MaxTicketAge 10
+
+Possible policies:
+MaxTicketAge            Maximum lifetime for user ticket
+                        Defined in hours
+
+MaxServiceAge           Maximum lifetime for service ticket
+                        Defined in minutes
+
+MaxRenewAge             Maximum lifetime for user ticket renewal
+                        Defined in minutes
+
+MinimumPasswordAge      Minimum password age
+                        Defined in days
+
+MaximumPasswordAge      Maximum password age
+                        Defined in days
+
+MinimumPasswordLength   Minimum password length
+                        Defined in characters
+
+PasswordComplexity      Password must meet complexity requirements
+                        1 is Enabled, 0 is Disabled
+    """
+
+    synopsis = "%prog <gpo> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server", type=str,
+                metavar="URL", dest="H"),
+    ]
+
+    takes_args = ["gpo", "policy", "value?"]
+
+    def run(self, gpo, policy, value=None, H=None, sambaopts=None,
+            credopts=None, versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
+
+        # We need to know writable DC to setup SMB connection
+        if H and H.startswith('ldap://'):
+            dc_hostname = H[7:]
+            self.url = H
+        else:
+            dc_hostname = netcmd_finddc(self.lp, self.creds)
+            self.url = dc_url(self.lp, self.creds, dc=dc_hostname)
+
+        # SMB connect to DC
+        conn = smb_connection(dc_hostname,
+                              'sysvol',
+                              lp=self.lp,
+                              creds=self.creds)
+
+        realm = self.lp.get('realm')
+        inf_dir = '\\'.join([realm.lower(), 'Policies', gpo,
+            'MACHINE\\Microsoft\\Windows NT\\SecEdit'])
+        inf_file = '\\'.join([inf_dir, 'GptTmpl.inf'])
+        try:
+            inf_data = ConfigParser(interpolation=None)
+            inf_data.optionxform=str
+            raw = conn.loadfile(inf_file)
+            try:
+                inf_data.readfp(StringIO(raw.decode()))
+            except UnicodeDecodeError:
+                inf_data.readfp(StringIO(raw.decode('utf-16')))
+        except NTSTATUSError as e:
+            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_PATH_NOT_FOUND
+            if e.args[0] not in [0xC0000033, 0xC000003A]:
+                raise
+
+        section_map = { 'MaxTicketAge' : 'Kerberos Policy',
+                        'MaxServiceAge' : 'Kerberos Policy',
+                        'MaxRenewAge' : 'Kerberos Policy',
+                        'MinimumPasswordAge' : 'System Access',
+                        'MaximumPasswordAge' : 'System Access',
+                        'MinimumPasswordLength' : 'System Access',
+                        'PasswordComplexity' : 'System Access'
+                    }
+
+        section = section_map[policy]
+        if not inf_data.has_section(section):
+            inf_data.add_section(section)
+        if value is not None:
+            inf_data.set(section, policy, value)
+        else:
+            inf_data.remove_option(section, policy)
+
+        out = StringIO()
+        inf_data.write(out)
+        try:
+            create_directory_hier(conn, inf_dir)
+            conn.savefile(inf_file, get_bytes(out.getvalue()))
+        except NTSTATUSError as e:
+            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            else:
+                raise
+
+class cmd_list_security(Command):
+    """List Samba Security Group Policy from the sysvol
+
+This command lists security settings from the sysvol that will be applied to winbind clients.
+These settings only apply to the ADDC.
+
+Example:
+samba-tool gpo manage security list {31B2F340-016D-11D2-945F-00C04FB984F9}
+    """
+
+    synopsis = "%prog <gpo> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server", type=str,
+                metavar="URL", dest="H"),
+    ]
+
+    takes_args = ["gpo"]
+
+    def run(self, gpo, H=None, sambaopts=None, credopts=None, versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
+
+        # We need to know writable DC to setup SMB connection
+        if H and H.startswith('ldap://'):
+            dc_hostname = H[7:]
+            self.url = H
+        else:
+            dc_hostname = netcmd_finddc(self.lp, self.creds)
+            self.url = dc_url(self.lp, self.creds, dc=dc_hostname)
+
+        # SMB connect to DC
+        conn = smb_connection(dc_hostname,
+                              'sysvol',
+                              lp=self.lp,
+                              creds=self.creds)
+
+        realm = self.lp.get('realm')
+        inf_file = '\\'.join([realm.lower(), 'Policies', gpo,
+            'MACHINE\\Microsoft\\Windows NT\\SecEdit\\GptTmpl.inf'])
+        try:
+            inf_data = ConfigParser(interpolation=None)
+            inf_data.optionxform=str
+            raw = conn.loadfile(inf_file)
+            try:
+                inf_data.readfp(StringIO(raw.decode()))
+            except UnicodeDecodeError:
+                inf_data.readfp(StringIO(raw.decode('utf-16')))
+        except NTSTATUSError as e:
+            if e.args[0] == 0xC0000033: # STATUS_OBJECT_NAME_INVALID
+                return # The file doesn't exist, so there is nothing to list
+            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            raise
+
+        for section in inf_data.sections():
+            if section not in ['Kerberos Policy', 'System Access']:
+                continue
+            for key, value in inf_data.items(section):
+                self.outf.write('%s = %s\n' % (key, value))
+
+class cmd_security(SuperCommand):
+    """Manage Security Group Policy Objects"""
+    subcommands = {}
+    subcommands["set"] = cmd_set_security()
+    subcommands["list"] = cmd_list_security()
+
+class cmd_list_smb_conf(Command):
+    """List Samba smb.conf Group Policy from the sysvol
+
+This command lists smb.conf settings from the sysvol that will be applied to winbind clients.
+
+Example:
+samba-tool gpo manage smb_conf list {31B2F340-016D-11D2-945F-00C04FB984F9}
+    """
+
+    synopsis = "%prog <gpo> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server", type=str,
+                metavar="URL", dest="H"),
+    ]
+
+    takes_args = ["gpo"]
+
+    def run(self, gpo, H=None, sambaopts=None, credopts=None, versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
+
+        # We need to know writable DC to setup SMB connection
+        if H and H.startswith('ldap://'):
+            dc_hostname = H[7:]
+            self.url = H
+        else:
+            dc_hostname = netcmd_finddc(self.lp, self.creds)
+            self.url = dc_url(self.lp, self.creds, dc=dc_hostname)
+
+        # SMB connect to DC
+        conn = smb_connection(dc_hostname,
+                              'sysvol',
+                              lp=self.lp,
+                              creds=self.creds)
+
+        realm = self.lp.get('realm')
+        pol_file = '\\'.join([realm.lower(), 'Policies', gpo,
+                                'MACHINE\\Registry.pol'])
+        try:
+            pol_data = ndr_unpack(preg.file, conn.loadfile(pol_file))
+        except NTSTATUSError as e:
+            if e.args[0] == 0xC0000033: # STATUS_OBJECT_NAME_INVALID
+                return # The file doesn't exist, so there is nothing to list
+            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            raise
+
+        keyname = b'Software\\Policies\\Samba\\smb_conf'
+        lp = param.LoadParm()
+        for entry in pol_data.entries:
+            if get_bytes(entry.keyname) == keyname:
+                lp.set(entry.valuename, str(entry.data))
+                val = lp.get(entry.valuename)
+                self.outf.write('%s = %s\n' % (entry.valuename, val))
+
+class cmd_set_smb_conf(Command):
+    """Sets a Samba smb.conf Group Policy to the sysvol
+
+This command sets an smb.conf setting to the sysvol for applying to winbind
+clients. Not providing a value will unset the policy.
+
+Example:
+samba-tool gpo manage smb_conf set {31B2F340-016D-11D2-945F-00C04FB984F9} 'apply gpo policies' yes
+    """
+
+    synopsis = "%prog <gpo> <entry> [options]"
+
+    takes_optiongroups = {
+        "sambaopts": options.SambaOptions,
+        "versionopts": options.VersionOptions,
+        "credopts": options.CredentialsOptions,
+    }
+
+    takes_options = [
+        Option("-H", "--URL", help="LDB URL for database or target server", type=str,
+                metavar="URL", dest="H"),
+    ]
+
+    takes_args = ["gpo", "setting", "value?"]
+
+    def run(self, gpo, setting, value=None, H=None, sambaopts=None, credopts=None,
+            versionopts=None):
+        self.lp = sambaopts.get_loadparm()
+        self.creds = credopts.get_credentials(self.lp, fallback_machine=True)
+
+        # We need to know writable DC to setup SMB connection
+        if H and H.startswith('ldap://'):
+            dc_hostname = H[7:]
+            self.url = H
+        else:
+            dc_hostname = netcmd_finddc(self.lp, self.creds)
+            self.url = dc_url(self.lp, self.creds, dc=dc_hostname)
+
+        # SMB connect to DC
+        conn = smb_connection(dc_hostname,
+                              'sysvol',
+                              lp=self.lp,
+                              creds=self.creds)
+
+        realm = self.lp.get('realm')
+        pol_dir = '\\'.join([realm.lower(), 'Policies', gpo, 'MACHINE'])
+        pol_file = '\\'.join([pol_dir, 'Registry.pol'])
+        try:
+            pol_data = ndr_unpack(preg.file, conn.loadfile(pol_file))
+        except NTSTATUSError as e:
+            # STATUS_OBJECT_NAME_INVALID, STATUS_OBJECT_NAME_NOT_FOUND
+            if e.args[0] in [0xC0000033, 0xC0000034]:
+                pol_data = preg.file() # The file doesn't exist
+            elif e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            else:
+                raise
+
+        if value is None:
+            if setting not in [e.valuename for e in pol_data.entries]:
+                raise CommandError("Cannot remove '%s' because it does "
+                                    "not exist" % setting)
+            entries = [e for e in pol_data.entries \
+                if e.valuename != setting]
+            pol_data.entries = entries
+            pol_data.num_entries = len(entries)
+        else:
+            if get_string(value).lower() in ['yes', 'true', '1']:
+                etype = 4
+                val = 1
+            elif get_string(value).lower() in ['no', 'false', '0']:
+                etype = 4
+                val = 0
+            elif get_string(value).isnumeric():
+                etype = 4
+                val = int(get_string(value))
+            else:
+                etype = 1
+                val = get_bytes(value)
+            e = preg.entry()
+            e.keyname = b'Software\\Policies\\Samba\\smb_conf'
+            e.valuename = get_bytes(setting)
+            e.type = etype
+            e.data = val
+            entries = list(pol_data.entries)
+            entries.append(e)
+            pol_data.entries = entries
+            pol_data.num_entries = len(entries)
+
+        try:
+            create_directory_hier(conn, pol_dir)
+            conn.savefile(pol_file, ndr_pack(pol_data))
+        except NTSTATUSError as e:
+            if e.args[0] == 0xC0000022: # STATUS_ACCESS_DENIED
+                raise CommandError("The authenticated user does "
+                                   "not have sufficient privileges")
+            raise
+
+class cmd_smb_conf(SuperCommand):
+    """Manage smb.conf Group Policy Objects"""
+    subcommands = {}
+    subcommands["list"] = cmd_list_smb_conf()
+    subcommands["set"] = cmd_set_smb_conf()
+
+class cmd_manage(SuperCommand):
+    """Manage Group Policy Objects"""
+    subcommands = {}
+    subcommands["sudoers"] = cmd_sudoers()
+    subcommands["security"] = cmd_security()
+    subcommands["smb_conf"] = cmd_smb_conf()
+
 class cmd_gpo(SuperCommand):
     """Group Policy Object (GPO) management."""
 
@@ -1685,3 +2267,4 @@ class cmd_gpo(SuperCommand):
     subcommands["backup"] = cmd_backup()
     subcommands["restore"] = cmd_restore()
     subcommands["admxload"] = cmd_admxload()
+    subcommands["manage"] = cmd_manage()

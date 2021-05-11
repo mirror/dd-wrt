@@ -1,5 +1,5 @@
 /*
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
    DSDB schema syntaxes
 
    Copyright (C) Stefan Metzmacher <metze@samba.org> 2006
@@ -31,6 +31,8 @@
 #include "../lib/util/charset/charset.h"
 #include "librpc/ndr/libndr.h"
 #include "../lib/util/asn1.h"
+
+#undef strcasecmp
 
 /**
  * Initialize dsdb_syntax_ctx with default values

@@ -74,6 +74,7 @@ dnf install -y \
     perl \
     perl-Archive-Tar \
     perl-ExtUtils-MakeMaker \
+    perl-JSON \
     perl-JSON-Parse \
     perl-Parse-Yapp \
     perl-Test-Base \
@@ -88,10 +89,12 @@ dnf install -y \
     python3-devel \
     python3-dns \
     python3-gpg \
+    python3-iso8601 \
     python3-libsemanage \
     python3-markdown \
     python3-policycoreutils \
     python3-pyasn1 \
+    python3-setproctitle \
     quota-devel \
     readline-devel \
     redhat-lsb \

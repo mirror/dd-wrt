@@ -99,7 +99,6 @@ NTSTATUS make_internal_rpc_pipe_socketpair(
 	struct dcesrv_connection *dcesrv_conn = NULL;
 	struct npa_state *npa;
 	NTSTATUS status;
-	int error;
 	int rc;
 	enum dcerpc_transport_t transport = dcerpc_binding_get_transport(
 			endpoint->ep_description);
@@ -176,16 +175,15 @@ NTSTATUS make_internal_rpc_pipe_socketpair(
 		goto out;
 	}
 
-	rc = make_server_pipes_struct(ncacn_conn,
-				      ncacn_conn->msg_ctx,
-				      pipe_name,
-				      transport,
-				      ncacn_conn->remote_client_addr,
-				      ncacn_conn->local_server_addr,
-				      &ncacn_conn->p,
-				      &error);
-	if (rc == -1) {
-		status = map_nt_error_from_unix(error);
+	rc = make_base_pipes_struct(ncacn_conn,
+				    ncacn_conn->msg_ctx,
+				    pipe_name,
+				    transport,
+				    ncacn_conn->remote_client_addr,
+				    ncacn_conn->local_server_addr,
+				    &ncacn_conn->p);
+	if (rc != 0) {
+		status = map_nt_error_from_unix(rc);
 		goto out;
 	}
 
@@ -421,69 +419,6 @@ fail:
 	return status;
 }
 
-static NTSTATUS rpcint_dispatch(struct dcesrv_call_state *call)
-{
-	NTSTATUS status;
-	struct ndr_pull *pull = NULL;
-	struct ndr_push *push = NULL;
-	struct data_blob_list_item *rep = NULL;
-
-	pull = ndr_pull_init_blob(&call->pkt.u.request.stub_and_verifier,
-				  call);
-	if (pull == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	pull->flags |= LIBNDR_FLAG_REF_ALLOC;
-
-	call->ndr_pull = pull;
-
-	/* unravel the NDR for the packet */
-	status = call->context->iface->ndr_pull(call, call, pull, &call->r);
-	if (!NT_STATUS_IS_OK(status)) {
-		DBG_ERR("DCE/RPC fault in call %s:%02X - %s\n",
-			call->context->iface->name,
-			call->pkt.u.request.opnum,
-			dcerpc_errstr(call, call->fault_code));
-		return status;
-	}
-
-	status = call->context->iface->local(call, call, call->r);
-	if (!NT_STATUS_IS_OK(status)) {
-		DBG_ERR("DCE/RPC fault in call %s:%02X - %s\n",
-			call->context->iface->name,
-			call->pkt.u.request.opnum,
-			dcerpc_errstr(call, call->fault_code));
-		return status;
-	}
-
-	push = ndr_push_init_ctx(call);
-	if (push == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	push->ptr_count = call->ndr_pull->ptr_count;
-
-	status = call->context->iface->ndr_push(call, call, push, call->r);
-	if (!NT_STATUS_IS_OK(status)) {
-		DBG_ERR("DCE/RPC fault in call %s:%02X - %s\n",
-			call->context->iface->name,
-			call->pkt.u.request.opnum,
-			dcerpc_errstr(call, call->fault_code));
-		return status;
-	}
-
-	rep = talloc_zero(call, struct data_blob_list_item);
-	if (rep == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
-
-	rep->blob = ndr_push_blob(push);
-	DLIST_ADD_END(call->replies, rep);
-
-	return NT_STATUS_OK;
-}
-
 struct rpcint_bh_state {
 	struct dcesrv_connection *conn;
 };
@@ -541,7 +476,7 @@ static struct tevent_req *rpcint_bh_raw_call_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	state->call = talloc_zero(hs->conn, struct dcesrv_call_state);
+	state->call = talloc_zero(state, struct dcesrv_call_state);
 	if (tevent_req_nomem(state->call, req)) {
 		return tevent_req_post(req, ev);
 	}
@@ -567,7 +502,7 @@ static struct tevent_req *rpcint_bh_raw_call_send(TALLOC_CTX *mem_ctx,
 	state->call->pkt.u.request.stub_and_verifier.length = in_length;
 
 	/* TODO: allow async */
-	status = rpcint_dispatch(state->call);
+	status = dcesrv_call_dispatch_local(state->call);
 	if (!NT_STATUS_IS_OK(status)) {
 		tevent_req_nterror(req, status);
 		return tevent_req_post(req, ev);

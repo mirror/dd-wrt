@@ -1,5 +1,5 @@
 /* 
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
    DSDB schema header
    
    Copyright (C) Stefan Metzmacher <metze@samba.org> 2006-2007
@@ -26,6 +26,9 @@
 #include "lib/util/binsearch.h"
 #include "lib/util/tsort.h"
 #include "util/dlinklist.h"
+
+#undef strcasecmp
+#undef strncasecmp
 
 static const char **dsdb_full_attribute_list_internal(TALLOC_CTX *mem_ctx, 
 						      const struct dsdb_schema *schema, 

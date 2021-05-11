@@ -261,12 +261,7 @@ static int unlinkat_acl_tdb(vfs_handle_struct *handle,
 		goto out;
 	}
 
-	if (smb_fname_tmp->flags & SMB_FILENAME_POSIX_PATH) {
-		ret = SMB_VFS_LSTAT(handle->conn, smb_fname_tmp);
-	} else {
-		ret = SMB_VFS_STAT(handle->conn, smb_fname_tmp);
-	}
-
+	ret = vfs_stat(handle->conn, smb_fname_tmp);
 	if (ret == -1) {
 		goto out;
 	}
@@ -374,55 +369,13 @@ static int connect_acl_tdb(struct vfs_handle_struct *handle,
  Remove a Windows ACL - we're setting the underlying POSIX ACL.
 *********************************************************************/
 
-static int sys_acl_set_file_tdb(vfs_handle_struct *handle,
-			const struct smb_filename *smb_fname_in,
-			SMB_ACL_TYPE_T type,
-			SMB_ACL_T theacl)
-{
-	struct db_context *db = acl_db;
-	int ret = -1;
-	int saved_errno = 0;
-	struct smb_filename *smb_fname = NULL;
-
-	smb_fname = cp_smb_filename_nostream(talloc_tos(), smb_fname_in);
-	if (smb_fname == NULL) {
-		return -1;
-	};
-
-	ret = SMB_VFS_STAT(handle->conn, smb_fname);
-	if (ret == -1) {
-		saved_errno = errno;
-		goto fail;
-	}
-
-	ret = SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle,
-						smb_fname,
-						type,
-						theacl);
-	if (ret == -1) {
-		saved_errno = errno;
-		goto fail;
-	}
-
-	acl_tdb_delete(handle, db, &smb_fname->st);
-
-fail:
-	TALLOC_FREE(smb_fname);
-
-	if (saved_errno != 0) {
-		errno = saved_errno;
-	}
-	return ret;
-}
-
-/*********************************************************************
- Remove a Windows ACL - we're setting the underlying POSIX ACL.
-*********************************************************************/
-
 static int sys_acl_set_fd_tdb(vfs_handle_struct *handle,
                             files_struct *fsp,
+			    SMB_ACL_TYPE_T type,
                             SMB_ACL_T theacl)
 {
+	struct acl_common_fsp_ext *ext = (struct acl_common_fsp_ext *)
+		VFS_FETCH_FSP_EXTENSION(handle, fsp);
 	struct db_context *db = acl_db;
 	NTSTATUS status;
 	int ret;
@@ -433,10 +386,15 @@ static int sys_acl_set_fd_tdb(vfs_handle_struct *handle,
 	}
 
 	ret = SMB_VFS_NEXT_SYS_ACL_SET_FD(handle,
-						fsp,
-						theacl);
+					  fsp,
+					  type,
+					  theacl);
 	if (ret == -1) {
 		return -1;
+	}
+
+	if (ext != NULL && ext->setting_nt_acl) {
+		return 0;
 	}
 
 	acl_tdb_delete(handle, db, &fsp->fsp_name->st);
@@ -495,7 +453,6 @@ static struct vfs_fn_pointers vfs_acl_tdb_fns = {
 	.fget_nt_acl_fn = acl_tdb_fget_nt_acl,
 	.get_nt_acl_at_fn = acl_tdb_get_nt_acl_at,
 	.fset_nt_acl_fn = acl_tdb_fset_nt_acl,
-	.sys_acl_set_file_fn = sys_acl_set_file_tdb,
 	.sys_acl_set_fd_fn = sys_acl_set_fd_tdb
 };
 

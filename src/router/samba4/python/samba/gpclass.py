@@ -16,14 +16,14 @@
 
 
 import sys
-import os
+import os, shutil
 import errno
 import tdb
 sys.path.insert(0, "bin/python")
 from samba import NTSTATUSError
-from samba.compat import ConfigParser
-from samba.compat import StringIO
-from samba.compat import get_bytes
+from configparser import ConfigParser
+from io import StringIO
+from samba.common import get_bytes
 from abc import ABCMeta, abstractmethod
 import xml.etree.ElementTree as etree
 import re
@@ -38,6 +38,7 @@ from tempfile import NamedTemporaryFile
 from samba.dcerpc import preg
 from samba.dcerpc import misc
 from samba.ndr import ndr_pack, ndr_unpack
+from samba.credentials import SMB_SIGNING_REQUIRED
 
 try:
     from enum import Enum
@@ -317,46 +318,19 @@ class gp_ext(object):
     def __str__(self):
         pass
 
-
-class gp_ext_setter(object):
-    __metaclass__ = ABCMeta
-
-    def __init__(self, logger, gp_db, lp, creds, attribute, val):
-        self.logger = logger
-        self.attribute = attribute
-        self.val = val
-        self.lp = lp
-        self.creds = creds
-        self.gp_db = gp_db
-
-    def explicit(self):
-        return self.val
-
-    def update_samba(self):
-        (upd_sam, value) = self.mapper().get(self.attribute)
-        upd_sam(value())
-
     @abstractmethod
-    def mapper(self):
-        pass
-
-    def delete(self):
-        upd_sam, _ = self.mapper().get(self.attribute)
-        upd_sam(self.val)
-
-    @abstractmethod
-    def __str__(self):
-        pass
+    def rsop(self, gpo):
+        return {}
 
 
 class gp_inf_ext(gp_ext):
     def read(self, data_file):
-        policy = open(data_file, 'r').read()
-        inf_conf = ConfigParser()
+        policy = open(data_file, 'rb').read()
+        inf_conf = ConfigParser(interpolation=None)
         inf_conf.optionxform = str
         try:
-            inf_conf.readfp(StringIO(policy))
-        except:
+            inf_conf.readfp(StringIO(policy.decode()))
+        except UnicodeDecodeError:
             inf_conf.readfp(StringIO(policy.decode('utf-16')))
         return inf_conf
 
@@ -365,6 +339,15 @@ class gp_pol_ext(gp_ext):
     def read(self, data_file):
         raw = open(data_file, 'rb').read()
         return ndr_unpack(preg.file, raw)
+
+
+class gp_xml_ext(gp_ext):
+    def read(self, data_file):
+        raw = open(data_file, 'rb').read()
+        try:
+            return etree.fromstring(raw.decode())
+        except UnicodeDecodeError:
+            return etree.fromstring(raw.decode('utf-16'))
 
 
 ''' Fetch the hostname of a writable DC '''
@@ -410,8 +393,9 @@ def cache_gpo_dir(conn, cache, sub_dir):
 
 def check_safe_path(path):
     dirs = re.split('/|\\\\', path)
-    if 'sysvol' in path:
-        dirs = dirs[dirs.index('sysvol') + 1:]
+    if 'sysvol' in path.lower():
+        ldirs = re.split('/|\\\\', path.lower())
+        dirs = dirs[ldirs.index('sysvol') + 1:]
     if '..' not in dirs:
         return os.path.join(*dirs)
     raise OSError(path)
@@ -421,7 +405,13 @@ def check_refresh_gpo_list(dc_hostname, lp, creds, gpos):
     # the SMB bindings rely on having a s3 loadparm
     s3_lp = s3param.get_context()
     s3_lp.load(lp.configfile)
-    conn = libsmb.Conn(dc_hostname, 'sysvol', lp=s3_lp, creds=creds, sign=True)
+
+    # Force signing for the connection
+    saved_signing_state = creds.get_smb_signing()
+    creds.set_smb_signing(SMB_SIGNING_REQUIRED)
+    conn = libsmb.Conn(dc_hostname, 'sysvol', lp=s3_lp, creds=creds)
+    # Reset signing state
+    creds.set_smb_signing(saved_signing_state)
     cache_path = lp.cache_path('gpo_cache')
     for gpo in gpos:
         if not gpo.file_sys_path:
@@ -473,6 +463,7 @@ def apply_gp(lp, creds, logger, store, gp_extensions, force=False):
     store.start()
     for ext in gp_extensions:
         try:
+            ext = ext(logger, lp, creds, store)
             ext.process_group_policy(del_gpos, changed_gpos)
         except Exception as e:
             logger.error('Failed to apply extension  %s' % str(ext))
@@ -496,12 +487,48 @@ def unapply_gp(lp, creds, logger, store, gp_extensions):
     store.start()
     for ext in gp_extensions:
         try:
+            ext = ext(logger, lp, creds, store)
             ext.process_group_policy(del_gpos, [])
         except Exception as e:
             logger.error('Failed to unapply extension  %s' % str(ext))
             logger.error('Message was: ' + str(e))
             continue
     store.commit()
+
+
+def __rsop_vals(vals, level=4):
+    if type(vals) == dict:
+        ret = [' '*level + '[ %s ] = %s' % (k, __rsop_vals(v, level+2))
+                for k, v in vals.items()]
+        return '\n'.join(ret)
+    elif type(vals) == list:
+        ret = [' '*level + '[ %s ]' % __rsop_vals(v, level+2) for v in vals]
+        return '\n'.join(ret)
+    else:
+        return vals
+
+def rsop(lp, creds, logger, store, gp_extensions, target):
+    dc_hostname = get_dc_hostname(creds, lp)
+    gpos = get_gpo_list(dc_hostname, creds, lp)
+    check_refresh_gpo_list(dc_hostname, lp, creds, gpos)
+
+    print('Resultant Set of Policy')
+    print('%s Policy\n' % target)
+    term_width = shutil.get_terminal_size(fallback=(120, 50))[0]
+    for gpo in gpos:
+        print('GPO: %s' % gpo.display_name)
+        print('='*term_width)
+        for ext in gp_extensions:
+            ext = ext(logger, lp, creds, store)
+            print('  CSE: %s' % ext.__module__.split('.')[-1])
+            print('  ' + ('-'*int(term_width/2)))
+            for section, settings in ext.rsop(gpo).items():
+                print('    Policy Type: %s' % section)
+                print('    ' + ('-'*int(term_width/2)))
+                print(__rsop_vals(settings))
+                print('    ' + ('-'*int(term_width/2)))
+            print('  ' + ('-'*int(term_width/2)))
+        print('%s\n' % ('='*term_width))
 
 
 def parse_gpext_conf(smb_conf):
@@ -511,7 +538,7 @@ def parse_gpext_conf(smb_conf):
     else:
         lp.load_default()
     ext_conf = lp.state_path('gpext.conf')
-    parser = ConfigParser()
+    parser = ConfigParser(interpolation=None)
     parser.read(ext_conf)
     return lp, parser
 

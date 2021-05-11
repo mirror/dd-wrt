@@ -24,6 +24,7 @@
 */
 
 #include "includes.h"
+#include "locking/share_mode_lock.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
 #include "popt_common.h"
@@ -35,6 +36,7 @@
 #include "libcli/security/security.h"
 #include "lib/smbd_shim.h"
 #include "system/filesys.h"
+#include "lib/global_contexts.h"
 
 /* List to hold groups of commands */
 static struct cmd_list {

@@ -41,6 +41,7 @@
 #include "lib/param/loadparm.h"
 #include "utils/net_dns.h"
 #include "auth/kerberos/pac_utils.h"
+#include "lib/util/string_wrappers.h"
 
 #ifdef HAVE_JANSSON
 #include <jansson.h>
@@ -1515,7 +1516,7 @@ static NTSTATUS net_update_dns_internal(struct net_context *c,
 					int num_addrs, bool remove_host)
 {
 	struct dns_rr_ns *nameservers = NULL;
-	int ns_count = 0, i;
+	size_t ns_count = 0, i;
 	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
 	DNS_ERROR dns_err;
 	fstring dns_server;
@@ -2189,35 +2190,80 @@ static int net_ads_dns_unregister(struct net_context *c,
 #endif
 }
 
-static int net_ads_dns_gethostbyname(struct net_context *c, int argc, const char **argv)
+
+static int net_ads_dns_async(struct net_context *c, int argc, const char **argv)
 {
-#if defined(WITH_DNS_UPDATES)
-	DNS_ERROR err;
+	size_t num_names = 0;
+	char **hostnames = NULL;
+	size_t i = 0;
+	struct samba_sockaddr *addrs = NULL;
+	NTSTATUS status;
 
-#ifdef DEVELOPER
-	talloc_enable_leak_report();
-#endif
-
-	if (argc != 2 || c->display_usage) {
+	if (argc != 1 || c->display_usage) {
 		d_printf(  "%s\n"
 			   "    %s\n"
 			   "    %s\n",
 			 _("Usage:"),
-			 _("net ads dns gethostbyname <server> <name>\n"),
-			 _("  Look up hostname from the AD\n"
-			   "    nameserver\tName server to use\n"
+			 _("net ads dns async <name>\n"),
+			 _("  Async look up hostname from the DNS server\n"
 			   "    hostname\tName to look up\n"));
 		return -1;
 	}
 
-	err = do_gethostbyname(argv[0], argv[1]);
-	if (!ERR_DNS_IS_OK(err)) {
-		d_printf(_("do_gethostbyname returned %s (%d)\n"),
-			dns_errstr(err), ERROR_DNS_V(err));
+	status = ads_dns_lookup_a(talloc_tos(),
+				  argv[0],
+				  &num_names,
+				  &hostnames,
+				  &addrs);
+	if (!NT_STATUS_IS_OK(status)) {
+		d_printf("Looking up A record for %s got error %s\n",
+			 argv[0],
+			 nt_errstr(status));
+		return -1;
+	}
+	d_printf("Async A record lookup - got %u names for %s\n",
+		 (unsigned int)num_names,
+		 argv[0]);
+	for (i = 0; i < num_names; i++) {
+		char addr_buf[INET6_ADDRSTRLEN];
+		print_sockaddr(addr_buf,
+			       sizeof(addr_buf),
+			       &addrs[i].u.ss);
+		d_printf("hostname[%u] = %s, IPv4addr = %s\n",
+			(unsigned int)i,
+			hostnames[i],
+			addr_buf);
+	}
+
+#if defined(HAVE_IPV6)
+	status = ads_dns_lookup_aaaa(talloc_tos(),
+				     argv[0],
+				     &num_names,
+				     &hostnames,
+				     &addrs);
+	if (!NT_STATUS_IS_OK(status)) {
+		d_printf("Looking up AAAA record for %s got error %s\n",
+			 argv[0],
+			 nt_errstr(status));
+		return -1;
+	}
+	d_printf("Async AAAA record lookup - got %u names for %s\n",
+		 (unsigned int)num_names,
+		 argv[0]);
+	for (i = 0; i < num_names; i++) {
+		char addr_buf[INET6_ADDRSTRLEN];
+		print_sockaddr(addr_buf,
+			       sizeof(addr_buf),
+			       &addrs[i].u.ss);
+		d_printf("hostname[%u] = %s, IPv6addr = %s\n",
+			(unsigned int)i,
+			hostnames[i],
+			addr_buf);
 	}
 #endif
 	return 0;
 }
+
 
 static int net_ads_dns(struct net_context *c, int argc, const char *argv[])
 {
@@ -2239,12 +2285,12 @@ static int net_ads_dns(struct net_context *c, int argc, const char *argv[])
 			   "    Remove host dns entry from AD")
 		},
 		{
-			"gethostbyname",
-			net_ads_dns_gethostbyname,
+			"async",
+			net_ads_dns_async,
 			NET_TRANSPORT_ADS,
 			N_("Look up host"),
-			N_("net ads dns gethostbyname\n"
-			   "    Look up host")
+			N_("net ads dns async\n"
+			   "    Look up host using async DNS")
 		},
 		{NULL, NULL, 0, NULL, NULL}
 	};
@@ -2432,13 +2478,13 @@ static int net_ads_printer_publish(struct net_context *c, int argc, const char *
 		talloc_destroy(mem_ctx);
 		return -1;
 	}
-	cli_credentials_set_kerberos_state(creds, CRED_MUST_USE_KERBEROS);
+	cli_credentials_set_kerberos_state(creds, CRED_USE_KERBEROS_REQUIRED);
 
 	nt_status = cli_full_connection_creds(&cli, lp_netbios_name(), servername,
 					&server_ss, 0,
 					"IPC$", "IPC",
-					creds, 0,
-					SMB_SIGNING_IPC_DEFAULT);
+					creds,
+					CLI_FULL_CONNECTION_IPC);
 
 	if (NT_STATUS_IS_ERR(nt_status)) {
 		d_fprintf(stderr, _("Unable to open a connection to %s to "

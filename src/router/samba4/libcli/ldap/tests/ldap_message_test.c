@@ -197,6 +197,7 @@ static void test_recursion_depth_equals_max(void **state)
 	uint8_t *buffer = NULL;
 	const size_t BUFF_SIZE = 1048576;
 	size_t len;
+	int ret;
 	struct ldap_request_limits limits = {
 		.max_search_size = 256000,
 	};
@@ -219,6 +220,10 @@ static void test_recursion_depth_equals_max(void **state)
 	status = ldap_decode(
 		asn1, &limits, samba_ldap_control_handlers(), ldap_msg);
 	assert_true(NT_STATUS_IS_OK(status));
+
+	ret = fclose(f);
+	f = NULL;
+	assert_true(ret == 0);
 }
 
 /*
@@ -237,6 +242,7 @@ static void test_recursion_depth_greater_than_max(void **state)
 	uint8_t *buffer = NULL;
 	const size_t BUFF_SIZE = 1048576;
 	size_t len;
+	int ret;
 	struct ldap_request_limits limits = {
 		.max_search_size = 256000,
 	};
@@ -259,6 +265,54 @@ static void test_recursion_depth_greater_than_max(void **state)
 	status = ldap_decode(
 		asn1, &limits, samba_ldap_control_handlers(), ldap_msg);
 	assert_ldap_status_equal(LDAP_PROTOCOL_ERROR, status);
+
+	ret = fclose(f);
+	f = NULL;
+	assert_true(ret == 0);
+}
+
+/*
+ * Check we can decode an exop response
+ */
+static void test_decode_exop_response(void **state)
+{
+	struct test_ctx *test_ctx = talloc_get_type_abort(
+		*state,
+		struct test_ctx);
+	struct asn1_data *asn1;
+	struct ldap_message *ldap_msg;
+	NTSTATUS status;
+	FILE *f = NULL;
+	uint8_t *buffer = NULL;
+	const size_t BUFF_SIZE = 1048576;
+	size_t len;
+	int ret;
+	struct ldap_request_limits limits = {
+		.max_search_size = 256000,
+	};
+
+
+	buffer = talloc_zero_array(test_ctx, uint8_t, BUFF_SIZE);
+	f = fopen("./libcli/ldap/tests/data/ldap-starttls-response.dat", "r");
+	assert_not_ferror(f);
+	len = fread(buffer, sizeof(uint8_t), BUFF_SIZE, f);
+	assert_not_ferror(f);
+	assert_true(len > 0);
+
+	asn1 = asn1_init(test_ctx, 3);
+	assert_non_null(asn1);
+	asn1_load_nocopy(asn1, buffer, len);
+
+	ldap_msg = talloc(test_ctx, struct ldap_message);
+	assert_non_null(ldap_msg);
+
+	status = ldap_decode(
+		asn1, &limits, samba_ldap_control_handlers(), ldap_msg);
+	assert_true(NT_STATUS_IS_OK(status));
+
+	ret = fclose(f);
+	f = NULL;
+	assert_true(ret == 0);
 }
 
 int main(_UNUSED_ int argc, _UNUSED_ const char **argv)
@@ -278,6 +332,10 @@ int main(_UNUSED_ int argc, _UNUSED_ const char **argv)
 			teardown),
 		cmocka_unit_test_setup_teardown(
 			test_recursion_depth_greater_than_max,
+			setup,
+			teardown),
+		cmocka_unit_test_setup_teardown(
+			test_decode_exop_response,
 			setup,
 			teardown),
 	};

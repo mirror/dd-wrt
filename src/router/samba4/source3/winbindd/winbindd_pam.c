@@ -46,10 +46,12 @@
 #include "rpc_client/util_netlogon.h"
 #include "param/param.h"
 #include "messaging/messaging.h"
+#include "lib/util/string_wrappers.h"
 #include "lib/crypto/gnutls_helpers.h"
 
 #include "lib/crypto/gnutls_helpers.h"
 #include <gnutls/crypto.h>
+#include "lib/global_contexts.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
@@ -2403,6 +2405,15 @@ process_result:
 			goto done;
 		}
 
+		if (!is_allowed_domain(info3->base.logon_domain.string)) {
+			DBG_NOTICE("Authentication failed for user [%s] "
+				   "from firewalled domain [%s]\n",
+				   info3->base.account_name.string,
+				   info3->base.logon_domain.string);
+			result = NT_STATUS_AUTHENTICATION_FIREWALL_FAILED;
+			goto done;
+		}
+
 		result = append_auth_data(state->mem_ctx, state->response,
 					  state->request->flags,
 					  validation_level,
@@ -2756,6 +2767,16 @@ enum winbindd_result winbindd_dual_pam_auth_crap(struct winbindd_domain *domain,
 			goto done;
 		}
 
+		if (!is_allowed_domain(info3->base.logon_domain.string)) {
+			DBG_NOTICE("Authentication failed for user [%s] "
+				   "from firewalled domain [%s]\n",
+				   info3->base.account_name.string,
+				   info3->base.logon_domain.string);
+			state->response->data.auth.authoritative = true;
+			result = NT_STATUS_AUTHENTICATION_FIREWALL_FAILED;
+			goto done;
+		}
+
 		result = append_auth_data(state->mem_ctx, state->response,
 					  state->request->flags,
 					  validation_level,
@@ -2821,6 +2842,14 @@ enum winbindd_result winbindd_dual_pam_chauthtok(struct winbindd_domain *contact
 			       domain,
 			       user);
 	if (!ok) {
+		goto done;
+	}
+
+	if (!is_allowed_domain(domain)) {
+		DBG_NOTICE("Authentication failed for user [%s] "
+			   "from firewalled domain [%s]\n",
+			   user, domain);
+		result = NT_STATUS_AUTHENTICATION_FIREWALL_FAILED;
 		goto done;
 	}
 
@@ -3085,6 +3114,15 @@ enum winbindd_result winbindd_dual_pam_chng_pswd_auth_crap(struct winbindd_domai
 		fstrcpy(domain,lp_workgroup());
 	}
 
+	if (!is_allowed_domain(domain)) {
+		DBG_NOTICE("Authentication failed for user [%s] "
+			   "from firewalled domain [%s]\n",
+			   state->request->data.chng_pswd_auth_crap.user,
+			   domain);
+		result = NT_STATUS_AUTHENTICATION_FIREWALL_FAILED;
+		goto done;
+	}
+
 	if(!*user) {
 		fstrcpy(user, state->request->data.chng_pswd_auth_crap.user);
 	}
@@ -3285,6 +3323,14 @@ NTSTATUS winbindd_pam_auth_pac_verify(struct winbindd_cli_state *state,
 				       &info6);
 	if (!NT_STATUS_IS_OK(result)) {
 		return result;
+	}
+
+	if (!is_allowed_domain(info6->base.logon_domain.string)) {
+		DBG_NOTICE("Authentication failed for user [%s] "
+			   "from firewalled domain [%s]\n",
+			   info6->base.account_name.string,
+			   info6->base.logon_domain.string);
+		return NT_STATUS_AUTHENTICATION_FIREWALL_FAILED;
 	}
 
 	result = map_info6_to_validation(state->mem_ctx,

@@ -28,6 +28,7 @@
 #include "printing/pcap.h"
 #include "printing/queue_process.h"
 #include "locking/proto.h"
+#include "locking/share_mode_lock.h"
 #include "smbd/smbd.h"
 #include "rpc_server/rpc_config.h"
 #include "printing/load.h"
@@ -36,6 +37,7 @@
 #include "auth.h"
 #include "nt_printing.h"
 #include "util_event.h"
+#include "lib/global_contexts.h"
 
 /**
  * @brief Purge stale printers and reload from pre-populated pcap cache.

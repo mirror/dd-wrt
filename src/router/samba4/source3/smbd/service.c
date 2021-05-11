@@ -33,6 +33,7 @@
 #include "messages.h"
 #include "lib/afs/afs_funcs.h"
 #include "lib/util_path.h"
+#include "lib/util/string_wrappers.h"
 
 bool canonicalize_connect_path(connection_struct *conn)
 {
@@ -556,28 +557,19 @@ static NTSTATUS make_connection_snum(struct smbXsrv_connection *xconn,
 		      ( lp_enable_asu_support() && strequal(dev,"ADMIN$")) );
 
 	/* Case options for the share. */
-	if (lp_case_sensitive(snum) == Auto) {
-		/* We will be setting this per packet. Set to be case
-		 * insensitive for now. */
-		conn->case_sensitive = False;
-	} else {
-		conn->case_sensitive = (bool)lp_case_sensitive(snum);
-	}
+	conn_setup_case_options(conn);
 
-	conn->case_preserve = lp_preserve_case(snum);
-	conn->short_case_preserve = lp_short_preserve_case(snum);
-
-	conn->encrypt_level = lp_smb_encrypt(snum);
-	if (conn->encrypt_level > SMB_SIGNING_OFF) {
-		if (lp_smb_encrypt(-1) == SMB_SIGNING_OFF) {
-			if (conn->encrypt_level == SMB_SIGNING_REQUIRED) {
+	conn->encrypt_level = lp_server_smb_encrypt(snum);
+	if (conn->encrypt_level > SMB_ENCRYPTION_OFF) {
+		if (lp_server_smb_encrypt(-1) == SMB_ENCRYPTION_OFF) {
+			if (conn->encrypt_level == SMB_ENCRYPTION_REQUIRED) {
 				DBG_ERR("Service [%s] requires encryption, but "
 					"it is disabled globally!\n",
 					lp_const_servicename(snum));
 				status = NT_STATUS_ACCESS_DENIED;
 				goto err_root_exit;
 			}
-			conn->encrypt_level = SMB_SIGNING_OFF;
+			conn->encrypt_level = SMB_ENCRYPTION_OFF;
 		}
 	}
 

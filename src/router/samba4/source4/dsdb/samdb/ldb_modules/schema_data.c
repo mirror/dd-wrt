@@ -1,5 +1,5 @@
 /* 
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
 
    The module that handles the Schema checkings and dynamic attributes
    
@@ -29,6 +29,8 @@
 #include "librpc/gen_ndr/ndr_drsblobs.h"
 #include "param/param.h"
 #include "dsdb/samdb/ldb_modules/util.h"
+
+#undef strcasecmp
 
 static int generate_objectClasses(struct ldb_context *ldb, struct ldb_message *msg,
 				  const struct dsdb_schema *schema);

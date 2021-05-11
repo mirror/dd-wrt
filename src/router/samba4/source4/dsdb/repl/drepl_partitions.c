@@ -1,5 +1,5 @@
 /* 
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
    DSDB replication service
    
    Copyright (C) Stefan Metzmacher 2007
@@ -22,7 +22,7 @@
 #include "includes.h"
 #include "dsdb/samdb/samdb.h"
 #include "auth/auth.h"
-#include "smbd/service.h"
+#include "samba/service.h"
 #include "lib/events/events.h"
 #include "dsdb/repl/drepl_service.h"
 #include <ldb_errors.h>
@@ -36,6 +36,8 @@
 
 #undef DBGC_CLASS
 #define DBGC_CLASS            DBGC_DRS_REPL
+
+#undef strcasecmp
 
 /*
   load the partitions list based on replicated NC attributes in our

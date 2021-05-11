@@ -39,6 +39,9 @@
 #include "lib/util/dlinklist.h"
 #include "dlz_minimal.h"
 #include "dnsserver_common.h"
+#include "lib/util/smb_strtox.h"
+
+#undef strcasecmp
 
 struct b9_options {
 	const char *url;

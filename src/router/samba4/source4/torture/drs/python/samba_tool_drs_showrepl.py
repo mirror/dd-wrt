@@ -26,8 +26,7 @@ import re
 import json
 import ldb
 import random
-from samba.compat import text_type
-from samba.compat import get_string
+from samba.common import get_string
 
 GUID_RE = r'[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}'
 HEX8_RE = r'0x[\da-f]{8}'
@@ -146,7 +145,7 @@ class SambaToolDrsShowReplTests(drs_base.DrsBaseTestCase):
                 for k in ("last attempt time",
                           "last attempt message",
                           "last success"):
-                    self.assertTrue(isinstance(r[k], text_type))
+                    self.assertTrue(isinstance(r[k], str))
                 self.assertRegexpMatches(r["DSA objectGUID"], '^%s$' % GUID_RE)
                 self.assertTrue(isinstance(r["consecutive failures"], int))
 

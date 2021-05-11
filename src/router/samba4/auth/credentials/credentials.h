@@ -38,10 +38,13 @@ struct gssapi_creds_container;
 struct smb_krb5_context;
 struct keytab_container;
 struct db_context;
+enum smb_signing_setting;
+enum smb_encryption_setting;
 
 /* In order of priority */
 enum credentials_obtained { 
 	CRED_UNINITIALISED = 0,  /* We don't even have a guess yet */
+	CRED_SMB_CONF,           /* Current value should be used, which comes from smb.conf */
 	CRED_CALLBACK, 		 /* Callback should be used to obtain value */
 	CRED_GUESS_ENV,	         /* Current value should be used, which was guessed */
 	CRED_GUESS_FILE,	 /* A guess from a file (or file pointed at in env variable) */
@@ -50,9 +53,12 @@ enum credentials_obtained {
 };
 
 enum credentials_use_kerberos {
-	CRED_AUTO_USE_KERBEROS = 0, /* Default, we try kerberos if available */
-	CRED_DONT_USE_KERBEROS,     /* Sometimes trying kerberos just does 'bad things', so don't */
-	CRED_MUST_USE_KERBEROS      /* Sometimes administrators are parinoid, so always do kerberos */
+	/** Sometimes trying kerberos just does 'bad things', so don't */
+	CRED_USE_KERBEROS_DISABLED = 0,
+	/** Default, we try kerberos if available */
+	CRED_USE_KERBEROS_DESIRED,
+	/** Sometimes administrators are paranoid, so always do kerberos */
+	CRED_USE_KERBEROS_REQUIRED,
 };
 
 enum credentials_krb_forwardable {
@@ -73,6 +79,8 @@ bool cli_credentials_set_workstation(struct cli_credentials *cred,
 				     enum credentials_obtained obtained);
 bool cli_credentials_is_anonymous(struct cli_credentials *cred);
 struct cli_credentials *cli_credentials_init(TALLOC_CTX *mem_ctx);
+struct cli_credentials *cli_credentials_init_server(TALLOC_CTX *mem_ctx,
+						    struct loadparm_context *lp_ctx);
 void cli_credentials_set_anonymous(struct cli_credentials *cred);
 bool cli_credentials_wrong_password(struct cli_credentials *cred);
 const char *cli_credentials_get_password(struct cli_credentials *cred);
@@ -288,6 +296,26 @@ void *_cli_credentials_callback_data(struct cli_credentials *cred);
 	talloc_get_type_abort(_cli_credentials_callback_data(_cred), _type)
 #define cli_credentials_callback_data_void(_cred) \
 	_cli_credentials_callback_data(_cred)
+
+bool cli_credentials_set_smb_signing(struct cli_credentials *cred,
+				     enum smb_signing_setting signing_state,
+				     enum credentials_obtained obtained);
+enum smb_signing_setting
+cli_credentials_get_smb_signing(struct cli_credentials *cred);
+
+bool cli_credentials_set_smb_ipc_signing(struct cli_credentials *cred,
+					 enum smb_signing_setting ipc_signing_state,
+					 enum credentials_obtained obtained);
+enum smb_signing_setting
+cli_credentials_get_smb_ipc_signing(struct cli_credentials *cred);
+
+bool cli_credentials_set_smb_encryption(struct cli_credentials *cred,
+					enum smb_encryption_setting encryption_state,
+					enum credentials_obtained obtained);
+enum smb_encryption_setting
+cli_credentials_get_smb_encryption(struct cli_credentials *cred);
+
+void cli_credentials_dump(struct cli_credentials *creds);
 
 /**
  * Return attached NETLOGON credentials 

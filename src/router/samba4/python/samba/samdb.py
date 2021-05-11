@@ -32,10 +32,9 @@ from samba import dsdb, dsdb_dns
 from samba.ndr import ndr_unpack, ndr_pack
 from samba.dcerpc import drsblobs, misc
 from samba.common import normalise_int32
-from samba.compat import text_type
-from samba.compat import binary_type
-from samba.compat import get_bytes
+from samba.common import get_bytes, cmp
 from samba.dcerpc import security
+import binascii
 
 __docformat__ = "restructuredText"
 
@@ -43,6 +42,11 @@ __docformat__ = "restructuredText"
 def get_default_backend_store():
     return "tdb"
 
+class SamDBError(Exception):
+    pass
+
+class SamDBNotFoundError(SamDBError):
+    pass
 
 class SamDB(samba.Ldb):
     """The SAM database."""
@@ -180,6 +184,31 @@ dn: %s
 changetype: modify
 replace: pwdLastSet
 pwdLastSet: 0
+""" % (user_dn)
+        self.modify_ldif(mod)
+
+    def unlock_account(self, search_filter):
+        """Unlock a user account by resetting lockoutTime to 0.
+        This does also reset the badPwdCount to 0.
+
+        :param search_filter: LDAP filter to find the user (e.g.
+            sAMAccountName=username)
+        """
+        res = self.search(base=self.domain_dn(),
+                          scope=ldb.SCOPE_SUBTREE,
+                          expression=search_filter,
+                          attrs=[])
+        if len(res) == 0:
+            raise SamDBNotFoundError('Unable to find user "%s"' % search_filter)
+        if len(res) != 1:
+            raise SamDBError('User "%s" is not unique' % search_filter)
+        user_dn = res[0].dn
+
+        mod = """
+dn: %s
+changetype: modify
+replace: lockoutTime
+lockoutTime: 0
 """ % (user_dn)
         self.modify_ldif(mod)
 
@@ -394,6 +423,60 @@ member: %s
         else:
             self.transaction_commit()
 
+    def prepare_attr_replace(self, msg, old, attr_name, value):
+        """Changes the MessageElement with the given attr_name of the
+        given Message. If the value is "" set an empty value and the flag
+        FLAG_MOD_DELETE, otherwise set the new value and FLAG_MOD_REPLACE.
+        If the value is None or the Message contains the attr_name with this
+        value, nothing will changed."""
+        # skip unchanged attribute
+        if value is None:
+            return
+        if attr_name in old and str(value) == str(old[attr_name]):
+            return
+
+        # remove attribute
+        if len(value) == 0:
+            if attr_name in old:
+                el = ldb.MessageElement([], ldb.FLAG_MOD_DELETE, attr_name)
+                msg.add(el)
+            return
+
+        # change attribute
+        el = ldb.MessageElement(value, ldb.FLAG_MOD_REPLACE, attr_name)
+        msg.add(el)
+
+    def fullname_from_names(self, given_name=None, initials=None, surname=None,
+                            old_attrs={}, fallback_default=""):
+        """Prepares new combined fullname, using the name parts.
+        Used for things like displayName or cn.
+        Use the original name values, if no new one is specified."""
+
+        attrs = {"givenName": given_name,
+                 "initials": initials,
+                 "sn": surname}
+
+        # if the attribute is not specified, try to use the old one
+        for attr_name, attr_value in attrs.items():
+            if attr_value == None and attr_name in old_attrs:
+                attrs[attr_name] = str(old_attrs[attr_name])
+
+        # add '.' to initials if initals are not None and not "" and if the initials
+        # don't have already a '.' at the end
+        if attrs["initials"] and not attrs["initials"].endswith('.'):
+            attrs["initials"] += '.'
+
+        # remove empty values (None and '')
+        attrs_values = list(filter(None, attrs.values()))
+
+        # fullname is the combination of not-empty values as string, separated by ' '
+        fullname = ' '.join(attrs_values)
+
+        if fullname == '':
+            return fallback_default
+
+        return fullname
+
     def newuser(self, username, password,
                 force_password_change_at_next_login_req=False,
                 useusernameascn=False, userou=None, surname=None, givenname=None,
@@ -439,16 +522,9 @@ member: %s
         :param smartcard_required: set the UF_SMARTCARD_REQUIRED bit of the new user
         """
 
-        displayname = ""
-        if givenname is not None:
-            displayname += givenname
-
-        if initials is not None:
-            displayname += ' %s.' % initials
-
-        if surname is not None:
-            displayname += ' %s' % surname
-
+        displayname = self.fullname_from_names(given_name=givenname,
+                                               initials=initials,
+                                               surname=surname)
         cn = username
         if useusernameascn is None and displayname != "":
             cn = displayname
@@ -602,15 +678,9 @@ member: %s
         """
 
         # Prepare the contact name like the RSAT, using the name parts.
-        cn = ""
-        if givenname is not None:
-            cn += givenname
-
-        if initials is not None:
-            cn += ' %s.' % initials
-
-        if surname is not None:
-            cn += ' %s' % surname
+        cn = self.fullname_from_names(given_name=givenname,
+                                      initials=initials,
+                                      surname=surname)
 
         # Use the specified fullcontactname instead of the previously prepared
         # contact name, if it is specified.
@@ -773,7 +843,7 @@ member: %s
             if len(res) > 1:
                 raise Exception('Matched %u multiple users with filter "%s"' % (len(res), search_filter))
             user_dn = res[0].dn
-            if not isinstance(password, text_type):
+            if not isinstance(password, str):
                 pw = password.decode('utf-8')
             else:
                 pw = password
@@ -914,6 +984,21 @@ accountExpires: %u
         """Get the NTDS objectGUID"""
         return dsdb._samdb_ntds_objectGUID(self)
 
+    def get_timestr(self):
+        """Get the current time as generalized time string"""
+        res = self.search(base="",
+                          scope=ldb.SCOPE_BASE,
+                          attrs=["currentTime"])
+        return str(res[0]["currentTime"][0])
+
+    def get_time(self):
+        """Get the current time as UNIX time"""
+        return ldb.string_to_time(self.get_timestr())
+
+    def get_nttime(self):
+        """Get the current time as NT time"""
+        return samba.unix2nttime(self.get_time())
+
     def server_site_name(self):
         """Get the server site name"""
         return dsdb._samdb_server_site_name(self)
@@ -927,6 +1012,21 @@ accountExpires: %u
         """return the DNS name of the domain root"""
         domain_dn = self.get_default_basedn()
         return domain_dn.canonical_str().split('/')[0]
+
+    def domain_netbios_name(self):
+        """return the NetBIOS name of the domain root"""
+        domain_dn = self.get_default_basedn()
+        dns_name = self.domain_dns_name()
+        filter = "(&(objectClass=crossRef)(nETBIOSName=*)(ncName=%s)(dnsroot=%s))" % (domain_dn, dns_name)
+        partitions_dn = self.get_partitions_dn()
+        res = self.search(partitions_dn,
+                          scope=ldb.SCOPE_ONELEVEL,
+                          expression=filter)
+        try:
+            netbios_domain = res[0]["nETBIOSName"][0].decode()
+        except IndexError:
+            return None
+        return netbios_domain
 
     def forest_dns_name(self):
         """return the DNS name of the forest root"""
@@ -1098,7 +1198,7 @@ schemaUpdateNow: 1
         return dn
 
     def set_minPwdAge(self, value):
-        if not isinstance(value, binary_type):
+        if not isinstance(value, bytes):
             value = str(value).encode('utf8')
         m = ldb.Message()
         m.dn = ldb.Dn(self, self.domain_dn())
@@ -1115,7 +1215,7 @@ schemaUpdateNow: 1
             return int(res[0]["minPwdAge"][0])
 
     def set_maxPwdAge(self, value):
-        if not isinstance(value, binary_type):
+        if not isinstance(value, bytes):
             value = str(value).encode('utf8')
         m = ldb.Message()
         m.dn = ldb.Dn(self, self.domain_dn())
@@ -1132,7 +1232,7 @@ schemaUpdateNow: 1
             return int(res[0]["maxPwdAge"][0])
 
     def set_minPwdLength(self, value):
-        if not isinstance(value, binary_type):
+        if not isinstance(value, bytes):
             value = str(value).encode('utf8')
         m = ldb.Message()
         m.dn = ldb.Dn(self, self.domain_dn())
@@ -1149,7 +1249,7 @@ schemaUpdateNow: 1
             return int(res[0]["minPwdLength"][0])
 
     def set_pwdProperties(self, value):
-        if not isinstance(value, binary_type):
+        if not isinstance(value, bytes):
             value = str(value).encode('utf8')
         m = ldb.Message()
         m.dn = ldb.Dn(self, self.domain_dn())
@@ -1302,3 +1402,76 @@ schemaUpdateNow: 1
         if not full_dn.is_child_of(domain_dn):
             full_dn.add_base(domain_dn)
         return full_dn
+
+class dsdb_Dn(object):
+    '''a class for binary DN'''
+
+    def __init__(self, samdb, dnstring, syntax_oid=None):
+        '''create a dsdb_Dn'''
+        if syntax_oid is None:
+            # auto-detect based on string
+            if dnstring.startswith("B:"):
+                syntax_oid = dsdb.DSDB_SYNTAX_BINARY_DN
+            elif dnstring.startswith("S:"):
+                syntax_oid = dsdb.DSDB_SYNTAX_STRING_DN
+            else:
+                syntax_oid = dsdb.DSDB_SYNTAX_OR_NAME
+        if syntax_oid in [dsdb.DSDB_SYNTAX_BINARY_DN, dsdb.DSDB_SYNTAX_STRING_DN]:
+            # it is a binary DN
+            colons = dnstring.split(':')
+            if len(colons) < 4:
+                raise RuntimeError("Invalid DN %s" % dnstring)
+            prefix_len = 4 + len(colons[1]) + int(colons[1])
+            self.prefix = dnstring[0:prefix_len]
+            self.binary = self.prefix[3 + len(colons[1]):-1]
+            self.dnstring = dnstring[prefix_len:]
+        else:
+            self.dnstring = dnstring
+            self.prefix = ''
+            self.binary = ''
+        self.dn = ldb.Dn(samdb, self.dnstring)
+
+    def __str__(self):
+        return self.prefix + str(self.dn.extended_str(mode=1))
+
+    def __cmp__(self, other):
+        ''' compare dsdb_Dn values similar to parsed_dn_compare()'''
+        dn1 = self
+        dn2 = other
+        guid1 = dn1.dn.get_extended_component("GUID")
+        guid2 = dn2.dn.get_extended_component("GUID")
+
+        v = cmp(guid1, guid2)
+        if v != 0:
+            return v
+        v = cmp(dn1.binary, dn2.binary)
+        return v
+
+    # In Python3, __cmp__ is replaced by these 6 methods
+    def __eq__(self, other):
+        return self.__cmp__(other) == 0
+
+    def __ne__(self, other):
+        return self.__cmp__(other) != 0
+
+    def __lt__(self, other):
+        return self.__cmp__(other) < 0
+
+    def __le__(self, other):
+        return self.__cmp__(other) <= 0
+
+    def __gt__(self, other):
+        return self.__cmp__(other) > 0
+
+    def __ge__(self, other):
+        return self.__cmp__(other) >= 0
+
+    def get_binary_integer(self):
+        '''return binary part of a dsdb_Dn as an integer, or None'''
+        if self.prefix == '':
+            return None
+        return int(self.binary, 16)
+
+    def get_bytes(self):
+        '''return binary as a byte string'''
+        return binascii.unhexlify(self.binary)

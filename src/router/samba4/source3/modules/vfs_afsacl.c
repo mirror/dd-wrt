@@ -25,6 +25,7 @@
 #include "../libcli/security/dom_sid.h"
 #include "passdb.h"
 #include "lib/afs/afs_settoken.h"
+#include "lib/util/string_wrappers.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_VFS
@@ -690,7 +691,7 @@ static size_t afs_fto_nt_acl(struct afs_acl *afs_acl,
 {
 	SMB_STRUCT_STAT sbuf;
 
-	if (fsp->fh->fd == -1) {
+	if (fsp_get_pathref_fd(fsp) == -1) {
 		/* Get the stat struct for the owner info. */
 		return afs_to_nt_acl(afs_acl, fsp->conn, fsp->fsp_name,
 				     security_info, mem_ctx, ppdesc);

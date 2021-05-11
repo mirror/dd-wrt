@@ -35,6 +35,7 @@
 #include "../libcli/security/security.h"
 #include "lib/util/tevent_ntstatus.h"
 #include "lib/util/time_basic.h"
+#include "lib/util/string_wrappers.h"
 
 /*
  * Routine to open a directory
@@ -332,8 +333,7 @@ list_fn(const char *name,
 }
 
 static NTSTATUS
-dir_list_fn(const char *mnt,
-            struct file_info *finfo,
+dir_list_fn(struct file_info *finfo,
             const char *mask,
             void *state)
 {
@@ -559,12 +559,12 @@ SMBC_opendir_ctx(SMBCCTX *context,
 
 	if (server[0] == (char)0) {
 
-                int i;
-                int count;
-                int max_lmb_count;
+                size_t i;
+                size_t count = 0;
+                size_t max_lmb_count;
                 struct sockaddr_storage *ip_list;
                 struct sockaddr_storage server_addr;
-                struct user_auth_info *u_info;
+		struct cli_credentials *creds = NULL;
 		NTSTATUS status;
 
 		if (share[0] != (char)0 || path[0] != (char)0) {
@@ -583,8 +583,8 @@ SMBC_opendir_ctx(SMBCCTX *context,
                                  ? INT_MAX
                                  : smbc_getOptionBrowseMaxLmbCount(context));
 
-		u_info = user_auth_info_init(frame);
-		if (u_info == NULL) {
+		creds = cli_credentials_init(frame);
+		if (creds == NULL) {
 			if (dir) {
 				SAFE_FREE(dir->fname);
 				SAFE_FREE(dir);
@@ -593,8 +593,9 @@ SMBC_opendir_ctx(SMBCCTX *context,
 			errno = ENOMEM;
 			return NULL;
 		}
-		set_cmdline_auth_info_username(u_info, user);
-		set_cmdline_auth_info_password(u_info, password);
+
+		(void)cli_credentials_set_username(creds, user, CRED_SPECIFIED);
+		(void)cli_credentials_set_password(creds, password, CRED_SPECIFIED);
 
 		/*
                  * We have server and share and path empty but options
@@ -606,8 +607,11 @@ SMBC_opendir_ctx(SMBCCTX *context,
                  */
 
                 ip_list = NULL;
-		status = name_resolve_bcast(MSBROWSE, 1, talloc_tos(),
-					    &ip_list, &count);
+		status = name_resolve_bcast(talloc_tos(),
+					    MSBROWSE,
+					    1,
+					    &ip_list,
+					    &count);
                 if (!NT_STATUS_IS_OK(status))
 		{
 
@@ -645,13 +649,13 @@ SMBC_opendir_ctx(SMBCCTX *context,
                 	struct cli_state *cli = NULL;
 
 			print_sockaddr(addr, sizeof(addr), &ip_list[i]);
-                        DEBUG(99, ("Found master browser %d of %d: %s\n",
+                        DEBUG(99, ("Found master browser %zu of %zu: %s\n",
                                    i+1, MAX(count, max_lmb_count),
                                    addr));
 
                         cli = get_ipc_connect_master_ip(talloc_tos(),
 							&ip_list[i],
-                                                        u_info,
+							creds,
 							&wg_ptr);
 			/* cli == NULL is the master browser refused to talk or
 			   could not be found */
@@ -911,6 +915,7 @@ SMBC_opendir_ctx(SMBCCTX *context,
                          */
 			char *targetpath;
 			struct cli_state *targetcli;
+			struct cli_credentials *creds = NULL;
 			NTSTATUS status;
 
 			/* We connect to the server and list the directory */
@@ -943,8 +948,12 @@ SMBC_opendir_ctx(SMBCCTX *context,
 				return NULL;
 			}
 
+			creds = get_cmdline_auth_info_creds(
+					context->internal->auth_info);
+
 			status = cli_resolve_path(
-				frame, "", context->internal->auth_info,
+				frame, "",
+				creds,
 				srv->cli, path, &targetcli, &targetpath);
 			if (!NT_STATUS_IS_OK(status)) {
 				d_printf("Could not resolve %s\n", path);
@@ -1033,13 +1042,18 @@ int
 SMBC_closedir_ctx(SMBCCTX *context,
                   SMBCFILE *dir)
 {
-	TALLOC_CTX *frame = talloc_stackframe();
+	TALLOC_CTX *frame = NULL;
 
 	if (!context || !context->internal->initialized) {
 		errno = EINVAL;
-		TALLOC_FREE(frame);
 		return -1;
 	}
+
+	if (dir == NULL) {
+		return 0;
+	}
+
+	frame = talloc_stackframe();
 
 	if (!SMBC_dlist_contains(context->internal->files, dir)) {
 		errno = EBADF;
@@ -1052,11 +1066,8 @@ SMBC_closedir_ctx(SMBCCTX *context,
 
 	DLIST_REMOVE(context->internal->files, dir);
 
-	if (dir) {
-
-		SAFE_FREE(dir->fname);
-		SAFE_FREE(dir);    /* Free the space too */
-	}
+	SAFE_FREE(dir->fname);
+	SAFE_FREE(dir);    /* Free the space too */
 
 	TALLOC_FREE(frame);
 	return 0;
@@ -1543,6 +1554,7 @@ SMBC_mkdir_ctx(SMBCCTX *context,
 	char *targetpath = NULL;
 	uint16_t port = 0;
 	struct cli_state *targetcli = NULL;
+	struct cli_credentials *creds = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
 	NTSTATUS status;
 
@@ -1595,8 +1607,11 @@ SMBC_mkdir_ctx(SMBCCTX *context,
 
 	}
 
+	creds = get_cmdline_auth_info_creds(context->internal->auth_info);
+
 	/*d_printf(">>>mkdir: resolving %s\n", path);*/
-	status = cli_resolve_path(frame, "", context->internal->auth_info,
+	status = cli_resolve_path(frame, "",
+				  creds,
 				  srv->cli, path, &targetcli, &targetpath);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("Could not resolve %s\n", path);
@@ -1623,8 +1638,7 @@ SMBC_mkdir_ctx(SMBCCTX *context,
  */
 
 static NTSTATUS
-rmdir_list_fn(const char *mnt,
-              struct file_info *finfo,
+rmdir_list_fn(struct file_info *finfo,
               const char *mask,
               void *state)
 {
@@ -1654,6 +1668,7 @@ SMBC_rmdir_ctx(SMBCCTX *context,
         char *targetpath = NULL;
 	uint16_t port = 0;
 	struct cli_state *targetcli = NULL;
+	struct cli_credentials *creds = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
 	NTSTATUS status;
 
@@ -1706,8 +1721,11 @@ SMBC_rmdir_ctx(SMBCCTX *context,
 
 	}
 
+	creds = get_cmdline_auth_info_creds(context->internal->auth_info),
+
 	/*d_printf(">>>rmdir: resolving %s\n", path);*/
-	status = cli_resolve_path(frame, "", context->internal->auth_info,
+	status = cli_resolve_path(frame, "",
+				  creds,
 				  srv->cli, path, &targetcli, &targetpath);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("Could not resolve %s\n", path);
@@ -1959,6 +1977,7 @@ SMBC_chmod_ctx(SMBCCTX *context,
 	char *path = NULL;
 	uint32_t attr;
 	uint16_t port = 0;
+	struct cli_credentials *creds = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
         NTSTATUS status;
 
@@ -2010,8 +2029,11 @@ SMBC_chmod_ctx(SMBCCTX *context,
 		return -1;  /* errno set by SMBC_server */
 	}
 	
+	creds = get_cmdline_auth_info_creds(context->internal->auth_info);
+
 	/*d_printf(">>>unlink: resolving %s\n", path);*/
-	status = cli_resolve_path(frame, "", context->internal->auth_info,
+	status = cli_resolve_path(frame, "",
+				  creds,
 				  srv->cli, path, &targetcli, &targetpath);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("Could not resolve %s\n", path);
@@ -2152,6 +2174,7 @@ SMBC_unlink_ctx(SMBCCTX *context,
 	uint16_t port = 0;
 	struct cli_state *targetcli = NULL;
 	SMBCSRV *srv = NULL;
+	struct cli_credentials *creds = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
         NTSTATUS status;
 
@@ -2204,8 +2227,11 @@ SMBC_unlink_ctx(SMBCCTX *context,
 
 	}
 
+	creds = get_cmdline_auth_info_creds(context->internal->auth_info);
+
 	/*d_printf(">>>unlink: resolving %s\n", path);*/
-	status = cli_resolve_path(frame, "", context->internal->auth_info,
+	status = cli_resolve_path(frame, "",
+				  creds,
 				  srv->cli, path, &targetcli, &targetpath);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("Could not resolve %s\n", path);
@@ -2282,6 +2308,8 @@ SMBC_rename_ctx(SMBCCTX *ocontext,
 	SMBCSRV *srv = NULL;
 	uint16_t port1 = 0;
 	uint16_t port2 = 0;
+	struct cli_credentials *ocreds = NULL;
+	struct cli_credentials *ncreds = NULL;
 	TALLOC_CTX *frame = talloc_stackframe();
         NTSTATUS status;
 
@@ -2375,7 +2403,10 @@ SMBC_rename_ctx(SMBCCTX *ocontext,
 				    	   password1);
 
 	/*d_printf(">>>rename: resolving %s\n", path1);*/
-	status = cli_resolve_path(frame, "", ocontext->internal->auth_info,
+	ocreds = get_cmdline_auth_info_creds(ocontext->internal->auth_info);
+
+	status = cli_resolve_path(frame, "",
+				  ocreds,
 				  srv->cli, path1, &targetcli1, &targetpath1);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("Could not resolve %s\n", path1);
@@ -2392,7 +2423,10 @@ SMBC_rename_ctx(SMBCCTX *ocontext,
 	
 	/*d_printf(">>>rename: resolved path as %s\n", targetpath1);*/
 	/*d_printf(">>>rename: resolving %s\n", path2);*/
-	status = cli_resolve_path(frame, "", ncontext->internal->auth_info,
+	ncreds = get_cmdline_auth_info_creds(ncontext->internal->auth_info);
+
+	status = cli_resolve_path(frame, "",
+				  ncreds,
 				  srv->cli, path2, &targetcli2, &targetpath2);
 	if (!NT_STATUS_IS_OK(status)) {
 		d_printf("Could not resolve %s\n", path2);

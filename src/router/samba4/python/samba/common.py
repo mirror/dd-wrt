@@ -1,6 +1,7 @@
 # Samba common functions
 #
 # Copyright (C) Matthieu Patou <mat@matws.net>
+# Copyright (C) Lumir Balhar <lbalhar@redhat.com> 2017
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,21 +18,16 @@
 #
 
 
-import ldb
-from samba import dsdb
-from samba.ndr import ndr_pack
-from samba.dcerpc import misc
-import binascii
+def cmp(x, y):
+    """
+    Replacement for built-in function cmp that was removed in Python 3
 
-from samba.compat import PY3
+    Compare the two objects x and y and return an integer according to
+    the outcome. The return value is negative if x < y, zero if x == y
+    and strictly positive if x > y.
+    """
 
-
-if PY3:
-    # cmp() exists only in Python 2
-    def cmp(a, b):
-        return (a > b) - (a < b)
-
-    raw_input = input
+    return (x > y) - (x < y)
 
 
 def confirm(msg, forced=False, allow_all=False):
@@ -60,7 +56,7 @@ def confirm(msg, forced=False, allow_all=False):
         prompt = '[y/N/all/none]'
 
     while True:
-        v = raw_input(msg + ' %s ' % prompt)
+        v = input(msg + ' %s ' % prompt)
         v = v.upper()
         if v in mapping:
             return mapping[v]
@@ -74,75 +70,38 @@ def normalise_int32(ivalue):
     return str(ivalue)
 
 
-class dsdb_Dn(object):
-    '''a class for binary DN'''
+# Sometimes in PY3 we have variables whose content can be 'bytes' or
+# 'str' and we can't be sure which. Generally this is because the
+# code variable can be initialised (or reassigned) a value from different
+# api(s) or functions depending on complex conditions or logic. Or another
+# common case is in PY2 the variable is 'type <str>' and in PY3 it is
+# 'class <str>' and the function to use e.g. b64encode requires 'bytes'
+# in PY3. In such cases it would be nice to avoid excessive testing in
+# the client code. Calling such a helper function should be avoided
+# if possible but sometimes this just isn't possible.
+# If a 'str' object is passed in it is encoded using 'utf8' or if 'bytes'
+# is passed in it is returned unchanged.
+# Using this function is PY2/PY3 code should ensure in most cases
+# the PY2 code runs unchanged in PY2 whereas the code in PY3 possibly
+# encodes the variable (see PY2 implementation of this function below)
+def get_bytes(bytesorstring):
+    tmp = bytesorstring
+    if isinstance(bytesorstring, str):
+        tmp = bytesorstring.encode('utf8')
+    elif not isinstance(bytesorstring, bytes):
+        raise ValueError('Expected byte or string for %s:%s' % (type(bytesorstring), bytesorstring))
+    return tmp
 
-    def __init__(self, samdb, dnstring, syntax_oid=None):
-        '''create a dsdb_Dn'''
-        if syntax_oid is None:
-            # auto-detect based on string
-            if dnstring.startswith("B:"):
-                syntax_oid = dsdb.DSDB_SYNTAX_BINARY_DN
-            elif dnstring.startswith("S:"):
-                syntax_oid = dsdb.DSDB_SYNTAX_STRING_DN
-            else:
-                syntax_oid = dsdb.DSDB_SYNTAX_OR_NAME
-        if syntax_oid in [dsdb.DSDB_SYNTAX_BINARY_DN, dsdb.DSDB_SYNTAX_STRING_DN]:
-            # it is a binary DN
-            colons = dnstring.split(':')
-            if len(colons) < 4:
-                raise RuntimeError("Invalid DN %s" % dnstring)
-            prefix_len = 4 + len(colons[1]) + int(colons[1])
-            self.prefix = dnstring[0:prefix_len]
-            self.binary = self.prefix[3 + len(colons[1]):-1]
-            self.dnstring = dnstring[prefix_len:]
-        else:
-            self.dnstring = dnstring
-            self.prefix = ''
-            self.binary = ''
-        self.dn = ldb.Dn(samdb, self.dnstring)
-
-    def __str__(self):
-        return self.prefix + str(self.dn.extended_str(mode=1))
-
-    def __cmp__(self, other):
-        ''' compare dsdb_Dn values similar to parsed_dn_compare()'''
-        dn1 = self
-        dn2 = other
-        guid1 = dn1.dn.get_extended_component("GUID")
-        guid2 = dn2.dn.get_extended_component("GUID")
-
-        v = cmp(guid1, guid2)
-        if v != 0:
-            return v
-        v = cmp(dn1.binary, dn2.binary)
-        return v
-
-    # In Python3, __cmp__ is replaced by these 6 methods
-    def __eq__(self, other):
-        return self.__cmp__(other) == 0
-
-    def __ne__(self, other):
-        return self.__cmp__(other) != 0
-
-    def __lt__(self, other):
-        return self.__cmp__(other) < 0
-
-    def __le__(self, other):
-        return self.__cmp__(other) <= 0
-
-    def __gt__(self, other):
-        return self.__cmp__(other) > 0
-
-    def __ge__(self, other):
-        return self.__cmp__(other) >= 0
-
-    def get_binary_integer(self):
-        '''return binary part of a dsdb_Dn as an integer, or None'''
-        if self.prefix == '':
-            return None
-        return int(self.binary, 16)
-
-    def get_bytes(self):
-        '''return binary as a byte string'''
-        return binascii.unhexlify(self.binary)
+# helper function to get a string from a variable that maybe 'str' or
+# 'bytes' if 'bytes' then it is decoded using 'utf8'. If 'str' is passed
+# it is returned unchanged
+# Using this function is PY2/PY3 code should ensure in most cases
+# the PY2 code runs unchanged in PY2 whereas the code in PY3 possibly
+# decodes the variable (see PY2 implementation of this function below)
+def get_string(bytesorstring):
+    tmp = bytesorstring
+    if isinstance(bytesorstring, bytes):
+        tmp = bytesorstring.decode('utf8')
+    elif not isinstance(bytesorstring, str):
+        raise ValueError('Expected byte of string for %s:%s' % (type(bytesorstring), bytesorstring))
+    return tmp

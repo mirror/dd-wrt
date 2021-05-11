@@ -1,31 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-test_info()
-{
-    cat <<EOF
-Verify that IPs can be rearrranged using 'ctdb reloadips'.
+# Verify that IPs can be reconfigured using 'ctdb reloadips'
 
-Various sub-tests that remove addresses from the public_addresses file
-on a node or delete the entire contents of the public_addresses file.
-
-Prerequisites:
-
-* An active CTDB cluster with at least 2 active nodes.
-
-Expected results:
-
-* When addresses are deconfigured "ctdb ip" no longer reports them and
-  when added they are seen again.
-EOF
-}
+# Various sub-tests that remove addresses from the public_addresses file
+# on a node or delete the entire contents of the public_addresses file.
 
 . "${TEST_SCRIPTS_DIR}/integration.bash"
 
-ctdb_test_init
-
 set -e
 
-cluster_is_healthy
+ctdb_test_init
 
 select_test_node_and_ips
 
@@ -49,7 +33,7 @@ do_ctdb_reloadips ()
 	local retry_max=10
 	local retry_count=0
 	while : ; do
-		if try_command_on_node any "$CTDB reloadips all" ; then
+		if ctdb_onnode "$test_node" "reloadips all" ; then
 			return 0
 		fi
 
@@ -89,7 +73,7 @@ GOOD: node $test_node is no longer hosting IP $test_ip:
 $out
 EOF
 
-try_command_on_node any $CTDB sync
+ctdb_onnode "$test_node" sync
 
 
 echo "Restoring addresses"
@@ -110,7 +94,7 @@ GOOD: node $test_node has these addresses:
 $out
 EOF
 
-try_command_on_node any $CTDB sync
+ctdb_onnode "$test_node" sync
 
 
 echo "Emptying public addresses file on $test_node"

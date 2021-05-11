@@ -30,6 +30,8 @@
 #include "../libcli/security/security.h"
 #include "util_tdb.h"
 #include "passdb/pdb_tdb.h"
+#include "lib/util/smb_strtox.h"
+#include "lib/util/string_wrappers.h"
 
 #if 0 /* when made a module use this */
 

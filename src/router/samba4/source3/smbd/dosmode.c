@@ -27,6 +27,7 @@
 #include "smbd/smbd.h"
 #include "lib/param/loadparm.h"
 #include "lib/util/tevent_ntstatus.h"
+#include "lib/util/string_wrappers.h"
 
 static NTSTATUS get_file_handle_for_metadata(connection_struct *conn,
 				const struct smb_filename *smb_fname,
@@ -362,8 +363,7 @@ NTSTATUS parse_dos_attribute_blob(struct smb_filename *smb_fname,
 	return NT_STATUS_OK;
 }
 
-NTSTATUS get_ea_dos_attribute(connection_struct *conn,
-			      struct smb_filename *smb_fname,
+NTSTATUS fget_ea_dos_attribute(struct files_struct *fsp,
 			      uint32_t *pattr)
 {
 	DATA_BLOB blob;
@@ -371,63 +371,28 @@ NTSTATUS get_ea_dos_attribute(connection_struct *conn,
 	fstring attrstr;
 	NTSTATUS status;
 
-	if (!lp_store_dos_attributes(SNUM(conn))) {
+	if (!lp_store_dos_attributes(SNUM(fsp->conn))) {
 		return NT_STATUS_NOT_IMPLEMENTED;
 	}
 
 	/* Don't reset pattr to zero as we may already have filename-based attributes we
 	   need to preserve. */
 
-	sizeret = SMB_VFS_GETXATTR(conn, smb_fname,
-				   SAMBA_XATTR_DOS_ATTRIB, attrstr,
-				   sizeof(attrstr));
-	if (sizeret == -1 && errno == EACCES) {
-		int saved_errno = 0;
-
-		/*
-		 * According to MS-FSA 2.1.5.1.2.1 "Algorithm to Check Access to
-		 * an Existing File" FILE_LIST_DIRECTORY on a directory implies
-		 * FILE_READ_ATTRIBUTES for directory entries. Being able to
-		 * stat() a file implies FILE_LIST_DIRECTORY for the directory
-		 * containing the file.
-		 */
-
-		if (!VALID_STAT(smb_fname->st)) {
-			/*
-			 * Safety net: dos_mode() already checks this, but as we
-			 * become root based on this, add an additional layer of
-			 * defense.
-			 */
-			DBG_ERR("Rejecting root override, invalid stat [%s]\n",
-				smb_fname_str_dbg(smb_fname));
-			return NT_STATUS_ACCESS_DENIED;
-		}
-
-		become_root();
-		sizeret = SMB_VFS_GETXATTR(conn, smb_fname,
-					   SAMBA_XATTR_DOS_ATTRIB,
-					   attrstr,
-					   sizeof(attrstr));
-		if (sizeret == -1) {
-			saved_errno = errno;
-		}
-		unbecome_root();
-
-		if (saved_errno != 0) {
-			errno = saved_errno;
-		}
-	}
+	sizeret = SMB_VFS_FGETXATTR(fsp->base_fsp ? fsp->base_fsp : fsp,
+				    SAMBA_XATTR_DOS_ATTRIB,
+				    attrstr,
+				    sizeof(attrstr));
 	if (sizeret == -1) {
 		DBG_INFO("Cannot get attribute "
 			 "from EA on file %s: Error = %s\n",
-			 smb_fname_str_dbg(smb_fname), strerror(errno));
+			 fsp_str_dbg(fsp), strerror(errno));
 		return map_nt_error_from_unix(errno);
 	}
 
 	blob.data = (uint8_t *)attrstr;
 	blob.length = sizeret;
 
-	status = parse_dos_attribute_blob(smb_fname, blob, pattr);
+	status = parse_dos_attribute_blob(fsp->fsp_name, blob, pattr);
 	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
@@ -632,6 +597,7 @@ uint32_t dos_mode_msdfs(connection_struct *conn,
  * check whether a file or directory is flagged as compressed.
  */
 static NTSTATUS dos_mode_check_compressed(connection_struct *conn,
+					  struct files_struct *fsp,
 					  struct smb_filename *smb_fname,
 					  bool *is_compressed)
 {
@@ -643,7 +609,7 @@ static NTSTATUS dos_mode_check_compressed(connection_struct *conn,
 		goto err_out;
 	}
 
-	status = SMB_VFS_GET_COMPRESSION(conn, tmp_ctx, NULL, smb_fname,
+	status = SMB_VFS_FGET_COMPRESSION(conn, tmp_ctx, fsp,
 					 &compression_fmt);
 	if (!NT_STATUS_IS_OK(status)) {
 		goto err_ctx_free;
@@ -698,10 +664,15 @@ static uint32_t dos_mode_from_name(connection_struct *conn,
 
 static uint32_t dos_mode_post(uint32_t dosmode,
 			      connection_struct *conn,
+			      struct files_struct *fsp,
 			      struct smb_filename *smb_fname,
 			      const char *func)
 {
 	NTSTATUS status;
+
+	if (fsp != NULL) {
+		smb_fname = fsp->fsp_name;
+	}
 
 	/*
 	 * According to MS-FSA a stream name does not have
@@ -723,7 +694,7 @@ static uint32_t dos_mode_post(uint32_t dosmode,
 	if (conn->fs_capabilities & FILE_FILE_COMPRESSION) {
 		bool compressed = false;
 
-		status = dos_mode_check_compressed(conn, smb_fname,
+		status = dos_mode_check_compressed(conn, fsp, smb_fname,
 						   &compressed);
 		if (NT_STATUS_IS_OK(status) && compressed) {
 			dosmode |= FILE_ATTRIBUTE_COMPRESSED;
@@ -750,29 +721,43 @@ static uint32_t dos_mode_post(uint32_t dosmode,
  if "store dos attributes" is true.
 ****************************************************************************/
 
-uint32_t dos_mode(connection_struct *conn, struct smb_filename *smb_fname)
+uint32_t fdos_mode(struct files_struct *fsp)
 {
 	uint32_t result = 0;
 	NTSTATUS status = NT_STATUS_OK;
 
-	DEBUG(8,("dos_mode: %s\n", smb_fname_str_dbg(smb_fname)));
+	if (fsp == NULL) {
+		/*
+		 * The pathological case where a callers does
+		 * fdos_mode(smb_fname->fsp) passing a pathref fsp. But as
+		 * smb_fname points at a symlink in POSIX context smb_fname->fsp
+		 * is NULL.
+		 */
+		return FILE_ATTRIBUTE_NORMAL;
+	}
 
-	if (!VALID_STAT(smb_fname->st)) {
+	DBG_DEBUG("%s\n", fsp_str_dbg(fsp));
+
+	if (!VALID_STAT(fsp->fsp_name->st)) {
 		return 0;
 	}
 
+	if (S_ISLNK(fsp->fsp_name->st.st_ex_mode)) {
+		return FILE_ATTRIBUTE_NORMAL;
+	}
+
 	/* Get the DOS attributes via the VFS if we can */
-	status = SMB_VFS_GET_DOS_ATTRIBUTES(conn, smb_fname, &result);
+	status = SMB_VFS_FGET_DOS_ATTRIBUTES(fsp->conn, fsp, &result);
 	if (!NT_STATUS_IS_OK(status)) {
 		/*
 		 * Only fall back to using UNIX modes if we get NOT_IMPLEMENTED.
 		 */
 		if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_IMPLEMENTED)) {
-			result |= dos_mode_from_sbuf(conn, smb_fname);
+			result |= dos_mode_from_sbuf(fsp->conn, fsp->fsp_name);
 		}
 	}
 
-	result = dos_mode_post(result, conn, smb_fname, __func__);
+	result = dos_mode_post(result, fsp->conn, fsp, NULL, __func__);
 	return result;
 }
 
@@ -873,6 +858,7 @@ static void dos_mode_at_vfs_get_dosmode_done(struct tevent_req *subreq)
 	if (NT_STATUS_IS_OK(status)) {
 		state->dosmode = dos_mode_post(state->dosmode,
 					       state->dir_fsp->conn,
+					       NULL,
 					       state->smb_fname,
 					       __func__);
 		tevent_req_done(req);
@@ -901,7 +887,7 @@ static void dos_mode_at_vfs_get_dosmode_done(struct tevent_req *subreq)
 		return;
 	}
 
-	state->dosmode = dos_mode(state->dir_fsp->conn, smb_path);
+	state->dosmode = fdos_mode(state->smb_fname->fsp);
 	tevent_req_done(req);
 	return;
 }
@@ -1163,7 +1149,7 @@ NTSTATUS file_set_sparse(connection_struct *conn,
 		return status;
 	}
 
-	old_dosmode = dos_mode(conn, fsp->fsp_name);
+	old_dosmode = fdos_mode(fsp);
 
 	if (sparse && !(old_dosmode & FILE_ATTRIBUTE_SPARSE)) {
 		new_dosmode = old_dosmode | FILE_ATTRIBUTE_SPARSE;
@@ -1314,7 +1300,7 @@ NTSTATUS set_create_timespec_ea(connection_struct *conn,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	dosmode = dos_mode(conn, smb_fname);
+	dosmode = fdos_mode(psmb_fname->fsp);
 
 	smb_fname->st.st_ex_btime = create_time;
 
@@ -1376,10 +1362,10 @@ static NTSTATUS get_file_handle_for_metadata(connection_struct *conn,
 
 	file_id = vfs_file_id_from_sbuf(conn, &smb_fname->st);
 
-	for(fsp = file_find_di_first(conn->sconn, file_id);
+	for(fsp = file_find_di_first(conn->sconn, file_id, true);
 			fsp;
-			fsp = file_find_di_next(fsp)) {
-		if (fsp->fh->fd != -1) {
+			fsp = file_find_di_next(fsp, true)) {
+		if (fsp_get_io_fd(fsp) != -1) {
 			*ret_fsp = fsp;
 			return NT_STATUS_OK;
 		}
@@ -1391,11 +1377,19 @@ static NTSTATUS get_file_handle_for_metadata(connection_struct *conn,
 		return NT_STATUS_NO_MEMORY;
 	}
 
+	status = openat_pathref_fsp(conn->cwd_fsp, smb_fname_cp);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK)) {
+		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
+	}
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(smb_fname_cp);
+		return status;
+	}
+
 	/* Opens an INTERNAL_OPEN_ONLY write handle. */
 	status = SMB_VFS_CREATE_FILE(
 		conn,                                   /* conn */
 		NULL,                                   /* req */
-		&conn->cwd_fsp,				/* dirfsp */
 		smb_fname_cp,				/* fname */
 		FILE_WRITE_ATTRIBUTES,			/* access_mask */
 		(FILE_SHARE_READ | FILE_SHARE_WRITE |   /* share_access */

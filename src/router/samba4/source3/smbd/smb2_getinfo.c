@@ -304,12 +304,12 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 		ZERO_STRUCT(write_time_ts);
 
 		switch (in_file_info_class) {
-		case 0x0F:/* RAW_FILEINFO_SMB2_ALL_EAS */
-			file_info_level = 0xFF00 | in_file_info_class;
+		case FSCC_FILE_FULL_EA_INFORMATION:
+			file_info_level = SMB2_FILE_FULL_EA_INFORMATION;
 			break;
 
-		case 0x12:/* RAW_FILEINFO_SMB2_ALL_INFORMATION */
-			file_info_level = 0xFF00 | in_file_info_class;
+		case FSCC_FILE_ALL_INFORMATION:
+			file_info_level = SMB2_FILE_ALL_INFORMATION;
 			break;
 
 		default:
@@ -334,7 +334,7 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 
 			/* We know this name is ok, it's already passed the checks. */
 
-		} else if (fsp->fh->fd == -1) {
+		} else if (fsp_get_pathref_fd(fsp) == -1) {
 			/*
 			 * This is actually a QFILEINFO on a directory
 			 * handle (returned from an NT SMB). NT5.0 seems

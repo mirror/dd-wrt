@@ -219,8 +219,10 @@ static bool zfs_process_smbacl(vfs_handle_struct *handle, files_struct *fsp,
 	}
 	if (must_add_empty_ace) {
 		acebuf[i].a_type = SMB_ACE4_ACCESS_ALLOWED_ACE_TYPE;
-		acebuf[i].a_flags = SMB_ACE4_DIRECTORY_INHERIT_ACE| \
-				    SMB_ACE4_FILE_INHERIT_ACE|ACE_EVERYONE;
+		acebuf[i].a_flags = SMB_ACE4_DIRECTORY_INHERIT_ACE |
+			SMB_ACE4_FILE_INHERIT_ACE |
+			ACE_EVERYONE |
+			ACE_INHERITED_ACE;
 		acebuf[i].a_access_mask = 0;
 		i++;
 	}
@@ -533,16 +535,9 @@ static SMB_ACL_T zfsacl_fail__sys_acl_get_fd(vfs_handle_struct *handle,
 	return (SMB_ACL_T)NULL;
 }
 
-static int zfsacl_fail__sys_acl_set_file(vfs_handle_struct *handle,
-					 const struct smb_filename *smb_fname,
-					 SMB_ACL_TYPE_T type,
-					 SMB_ACL_T theacl)
-{
-	return -1;
-}
-
 static int zfsacl_fail__sys_acl_set_fd(vfs_handle_struct *handle,
 				       files_struct *fsp,
+				       SMB_ACL_TYPE_T type,
 				       SMB_ACL_T theacl)
 {
 	return -1;
@@ -616,7 +611,6 @@ static struct vfs_fn_pointers zfsacl_fns = {
 	.sys_acl_get_fd_fn = zfsacl_fail__sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = zfsacl_fail__sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = zfsacl_fail__sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = zfsacl_fail__sys_acl_set_file,
 	.sys_acl_set_fd_fn = zfsacl_fail__sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = zfsacl_fail__sys_acl_delete_def_file,
 	.fget_nt_acl_fn = zfsacl_fget_nt_acl,

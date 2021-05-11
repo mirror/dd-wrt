@@ -33,6 +33,7 @@ from samba.netcmd import (
     Option,
     SuperCommand,
 )
+from samba.netcmd.common import attr_default
 from samba.samdb import SamDB
 from samba import drs_utils, nttime2string, dsdb
 from samba.dcerpc import drsuapi, misc
@@ -46,7 +47,7 @@ from samba.uptodateness import (
     get_utdv_summary,
     get_kcc_and_dsas,
 )
-from samba.compat import get_string
+from samba.common import get_string
 from samba.samdb import get_default_backend_store
 
 def drsuapi_connect(ctx):
@@ -73,13 +74,6 @@ def drs_errmsg(werr):
     if ecode == 0:
         return "was successful"
     return "failed, result %u (%s)" % (ecode, estring)
-
-
-def attr_default(msg, attrname, default):
-    '''get an attribute from a ldap msg with a default'''
-    if attrname in msg:
-        return msg[attrname][0]
-    return default
 
 
 def drs_parse_ntds_dn(ntds_dn):

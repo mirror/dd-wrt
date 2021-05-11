@@ -37,23 +37,11 @@ static struct cli_state *connect_one(const struct user_auth_info *auth_info,
 				NULL, port,
 				share, "?????",
 				get_cmdline_auth_info_creds(auth_info),
-				flags,
-				get_cmdline_auth_info_signing_state(auth_info));
+				flags);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		DBG_ERR("cli_full_connection failed! (%s)\n",
 			nt_errstr(nt_status));
 		return NULL;
-	}
-
-	if (get_cmdline_auth_info_smb_encrypt(auth_info)) {
-		nt_status = cli_cm_force_encryption_creds(
-			c,
-			get_cmdline_auth_info_creds(auth_info),
-			share);
-                if (!NT_STATUS_IS_OK(nt_status)) {
-			cli_shutdown(c);
-			c = NULL;
-                }
 	}
 
 	return c;

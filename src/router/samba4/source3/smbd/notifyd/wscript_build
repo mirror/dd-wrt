@@ -1,8 +1,21 @@
 #!/usr/bin/env python
 
+bld.SAMBA3_SUBSYSTEM('fcn_wait',
+                     source='fcn_wait.c',
+                     deps='samba3core')
+
+bld.SAMBA3_SUBSYSTEM('notifyd_db',
+		     source='notifyd_entry.c notifyd_db.c',
+                     deps='samba-debug dbwrap errors3')
+
 bld.SAMBA3_SUBSYSTEM('notifyd',
 		     source='notifyd.c',
-                     deps='util_tdb TDB_LIB messages_util')
+                     deps='''
+                         util_tdb
+                         TDB_LIB
+                         messages_util
+                         notifyd_db
+                     ''')
 
 bld.SAMBA3_BINARY('notifyd-tests',
                   source='tests.c',
@@ -17,3 +30,15 @@ bld.SAMBA3_BINARY('notifydd',
                   deps='''notifyd
                        smbconf
                   ''')
+
+TORTURE_NOTIFYD_SOURCE='test_notifyd.c'
+TORTURE_NOTIFYD_DEPS='fcn_wait notifyd_db'
+
+bld.SAMBA_MODULE('TORTURE_NOTIFYD',
+	source=TORTURE_NOTIFYD_SOURCE,
+	subsystem='smbtorture',
+	init_function='torture_notifyd_init',
+	deps=TORTURE_NOTIFYD_DEPS,
+	internal_module=True,
+	enabled=bld.PYTHON_BUILD_IS_ENABLED()
+	)

@@ -113,6 +113,8 @@ struct debug_class {
 	 */
 	char *logfile;
 	int fd;
+	/* inode number of the logfile to detect logfile rotation */
+	ino_t ino;
 };
 
 static const char *default_classname_table[] = {
@@ -161,7 +163,7 @@ static const char *default_classname_table[] = {
  * system has been initialized.
  */
 static struct debug_class debug_class_list_initial[ARRAY_SIZE(default_classname_table)] = {
-	[DBGC_ALL] = (struct debug_class) { .fd = 2 },
+	[DBGC_ALL] = { .fd = 2 },
 };
 
 static size_t debug_num_classes = 0;
@@ -1082,14 +1084,17 @@ static void debug_callback_log(const char *msg, int msg_level)
  Fix from dgibson@linuxcare.com.
 **************************************************************************/
 
-static bool reopen_one_log(int *fd, const char *logfile)
+static bool reopen_one_log(struct debug_class *config)
 {
-	int old_fd = *fd;
+	int old_fd = config->fd;
+	const char *logfile = config->logfile;
+	struct stat st;
 	int new_fd;
+	int ret;
 
 	if (logfile == NULL) {
 		debug_close_fd(old_fd);
-		*fd = -1;
+		config->fd = -1;
 		return true;
 	}
 
@@ -1104,8 +1109,18 @@ static bool reopen_one_log(int *fd, const char *logfile)
 
 	debug_close_fd(old_fd);
 	smb_set_close_on_exec(new_fd);
-	*fd = new_fd;
+	config->fd = new_fd;
 
+	ret = fstat(new_fd, &st);
+	if (ret != 0) {
+		log_overflow = true;
+		DBG_ERR("Unable to fstat() new log file '%s': %s\n",
+			logfile, strerror(errno));
+		log_overflow = false;
+		return false;
+	}
+
+	config->ino = st.st_ino;
 	return true;
 }
 
@@ -1164,8 +1179,7 @@ bool reopen_logs_internal(void)
 	state.reopening_logs = true;
 
 	for (i = DBGC_ALL; i < debug_num_classes; i++) {
-		ok = reopen_one_log(&dbgc_config[i].fd,
-				    dbgc_config[i].logfile);
+		ok = reopen_one_log(&dbgc_config[i]);
 		if (!ok) {
 			break;
 		}
@@ -1249,51 +1263,62 @@ bool need_to_check_log_size(void)
  Check to see if the log has grown to be too big.
  **************************************************************************/
 
-static void do_one_check_log_size(off_t maxlog, int *_fd, const char *logfile)
+static void do_one_check_log_size(off_t maxlog, struct debug_class *config)
 {
-	char name[strlen(logfile) + 5];
+	char name[strlen(config->logfile) + 5];
 	struct stat st;
-	int fd = *_fd;
 	int ret;
+	bool reopen = false;
 	bool ok;
 
 	if (maxlog == 0) {
 		return;
 	}
 
-	ret = fstat(fd, &st);
+	ret = stat(config->logfile, &st);
 	if (ret != 0) {
 		return;
 	}
-	if (st.st_size < maxlog ) {
+	if (st.st_size >= maxlog ) {
+		reopen = true;
+	}
+
+	if (st.st_ino != config->ino) {
+		reopen = true;
+	}
+
+	if (!reopen) {
 		return;
 	}
 
 	/* reopen_logs_internal() modifies *_fd */
 	(void)reopen_logs_internal();
-	fd = *_fd;
 
-	if (fd <= 2) {
+	if (config->fd <= 2) {
 		return;
 	}
-	ret = fstat(fd, &st);
+	ret = fstat(config->fd, &st);
 	if (ret != 0) {
+		config->ino = (ino_t)0;
 		return;
 	}
+
+	config->ino = st.st_ino;
+
 	if (st.st_size < maxlog) {
 		return;
 	}
 
-	snprintf(name, sizeof(name), "%s.old", logfile);
+	snprintf(name, sizeof(name), "%s.old", config->logfile);
 
-	(void)rename(logfile, name);
+	(void)rename(config->logfile, name);
 
 	ok = reopen_logs_internal();
 	if (ok) {
 		return;
 	}
 	/* We failed to reopen a log - continue using the old name. */
-	(void)rename(name, logfile);
+	(void)rename(name, config->logfile);
 }
 
 static void do_check_log_size(off_t maxlog)
@@ -1307,9 +1332,7 @@ static void do_check_log_size(off_t maxlog)
 		if (dbgc_config[i].logfile == NULL) {
 			continue;
 		}
-		do_one_check_log_size(maxlog,
-				      &dbgc_config[i].fd,
-				      dbgc_config[i].logfile);
+		do_one_check_log_size(maxlog, &dbgc_config[i]);
 	}
 }
 

@@ -31,6 +31,8 @@ bool winbindd_setup_sig_hup_handler(const char *lfile);
 bool winbindd_use_idmap_cache(void);
 bool winbindd_use_cache(void);
 char *get_winbind_priv_pipe_dir(void);
+void winbindd_flush_caches(void);
+bool winbindd_reload_services_file(const char *lfile);
 
 /* The following definitions come from winbindd/winbindd_ads.c  */
 
@@ -341,6 +343,11 @@ void winbind_msg_ip_dropped_parent(struct messaging_context *msg_ctx,
 				   uint32_t msg_type,
 				   struct server_id server_id,
 				   DATA_BLOB *data);
+void winbindd_msg_reload_services_parent(struct messaging_context *msg,
+					 void *private_data,
+					 uint32_t msg_type,
+					 struct server_id server_id,
+					 DATA_BLOB *data);
 NTSTATUS winbindd_reinit_after_fork(const struct winbindd_child *myself,
 				    const char *logfilename);
 struct winbindd_domain *wb_child_domain(void);
@@ -357,8 +364,15 @@ NTSTATUS winbindd_print_groupmembers(struct db_context *members,
 
 /* The following definitions come from winbindd/winbindd_idmap.c  */
 
+struct tevent_req *wb_parent_idmap_setup_send(TALLOC_CTX *mem_ctx,
+					      struct tevent_context *ev);
+NTSTATUS wb_parent_idmap_setup_recv(struct tevent_req *req,
+				    const struct wb_parent_idmap_config **_cfg);
+
 void init_idmap_child(void);
 struct winbindd_child *idmap_child(void);
+bool is_idmap_child(const struct winbindd_child *child);
+pid_t idmap_child_pid(void);
 struct dcerpc_binding_handle *idmap_child_handle(void);
 struct idmap_domain *idmap_find_domain_with_sid(const char *domname,
 						const struct dom_sid *sid);

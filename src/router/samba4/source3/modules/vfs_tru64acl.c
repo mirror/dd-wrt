@@ -76,7 +76,7 @@ SMB_ACL_T tru64acl_sys_acl_get_fd(vfs_handle_struct *handle,
 				  TALLOC_CTX *mem_ctx)
 {
 	struct smb_acl_t *result;
-	acl_t tru64_acl = acl_get_fd(fsp->fh->fd, ACL_TYPE_ACCESS);
+	acl_t tru64_acl = acl_get_fd(fsp_get_io_fd(fsp), ACL_TYPE_ACCESS);
 
 	if (tru64_acl == NULL) {
 		return NULL;
@@ -96,7 +96,7 @@ int tru64acl_sys_acl_set_file(vfs_handle_struct *handle,
         acl_type_t the_acl_type;
         acl_t tru64_acl;
 
-        DEBUG(10, ("tru64acl_sys_acl_set_file called with name %s, type %d\n", 
+        DEBUG(10, ("tru64acl_sys_acl_set_file called with name %s, type %d\n",
 			smb_fname->base_name, type));
 
         switch(type) {
@@ -135,14 +135,29 @@ fail:
 
 int tru64acl_sys_acl_set_fd(vfs_handle_struct *handle,
 			    files_struct *fsp,
+			    SMB_ACL_TYPE_T type,
 			    SMB_ACL_T theacl)
 {
         int res;
         acl_t tru64_acl = smb_acl_to_tru64_acl(theacl);
+        acl_type_t the_acl_type;
+
+        switch(type) {
+        case SMB_ACL_TYPE_ACCESS:
+                the_acl_type = ACL_TYPE_ACCESS;
+                break;
+        case SMB_ACL_TYPE_DEFAULT:
+                the_acl_type = ACL_TYPE_DEFAULT;
+                break;
+        default:
+                errno = EINVAL;
+                return -1;
+        }
+
         if (tru64_acl == NULL) {
                 return -1;
         }
-        res =  acl_set_fd(fsp->fh->fd, ACL_TYPE_ACCESS, tru64_acl);
+        res =  acl_set_fd(fsp_get_io_fd(fsp), the_acl_type, tru64_acl);
         acl_free(tru64_acl);
         return res;
 
@@ -476,7 +491,6 @@ static struct vfs_fn_pointers tru64acl_fns = {
 	.sys_acl_get_fd_fn = tru64acl_sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = tru64acl_sys_acl_set_file,
 	.sys_acl_set_fd_fn = tru64acl_sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = tru64acl_sys_acl_delete_def_file,
 };

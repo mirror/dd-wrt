@@ -461,7 +461,7 @@ static NTSTATUS smbd_smb2_create_durable_lease_check(struct smb_request *smb1req
 	ucf_flags = filename_create_ucf_flags(smb1req, FILE_OPEN);
 	status = filename_convert(talloc_tos(), fsp->conn,
 				  filename, ucf_flags,
-				  0, NULL, &smb_fname);
+				  0, &smb_fname);
 	TALLOC_FREE(filename);
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(10, ("filename_convert returned %s\n",
@@ -776,8 +776,9 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 
 		smbd_smb2_create_finish(req);
 		return req;
+	}
 
-	} else if (CAN_PRINT(smb1req->conn)) {
+	if (CAN_PRINT(smb1req->conn)) {
 		if (state->dhnc != NULL || state->dh2c != NULL) {
 			/* durable handles are not supported on printers */
 			tevent_req_nterror(req, NT_STATUS_OBJECT_NAME_NOT_FOUND);
@@ -836,8 +837,9 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 
 		smbd_smb2_create_finish(req);
 		return req;
+	}
 
-	} else if (state->do_durable_reconnect) {
+	if (state->do_durable_reconnect) {
 		DATA_BLOB new_cookie = data_blob_null;
 		NTTIME now = timeval_to_nttime(&smb2req->request_time);
 
@@ -946,7 +948,6 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 				  state->fname,
 				  ucf_flags,
 				  state->twrp_time,
-				  NULL, /* ppath_contains_wcards */
 				  &smb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
 		tevent_req_nterror(req, status);
@@ -989,7 +990,6 @@ static struct tevent_req *smbd_smb2_create_send(TALLOC_CTX *mem_ctx,
 
 	status = SMB_VFS_CREATE_FILE(smb1req->conn,
 				     smb1req,
-				     &smb1req->conn->cwd_fsp,
 				     smb_fname,
 				     in_desired_access,
 				     in_share_access,
@@ -1319,8 +1319,7 @@ static void smbd_smb2_create_after_exec(struct tevent_req *req)
 	DEBUG(10, ("smbd_smb2_create_send: "
 		   "response construction phase\n"));
 
-	state->out_file_attributes = dos_mode(state->result->conn,
-					      state->result->fsp_name);
+	state->out_file_attributes = fdos_mode(state->result);
 
 	if (state->mxac != NULL) {
 		NTTIME last_write_time;
@@ -1715,6 +1714,7 @@ static void remove_deferred_open_message_smb2_internal(struct smbd_smb2_request 
 	state->open_was_deferred = false;
 	/* Ensure we don't have any outstanding immediate event. */
 	TALLOC_FREE(state->im);
+	TALLOC_FREE(state->open_rec);
 }
 
 void remove_deferred_open_message_smb2(

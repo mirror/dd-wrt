@@ -25,7 +25,6 @@ from samba import credentials
 import samba.tests
 import os
 import binascii
-from samba.compat import PY3
 from samba.dcerpc import misc
 
 
@@ -34,13 +33,6 @@ class CredentialsTests(samba.tests.TestCaseInTempDir):
     def setUp(self):
         super(CredentialsTests, self).setUp()
         self.creds = credentials.Credentials()
-        if PY3:
-            # Because Python 2 does not support 'x' mode and Python 3
-            # does not support 'wx' mode in open() function
-            # for exclusive creation
-            self.open_mode = 'x'
-        else:
-            self.open_mode = 'wx'
 
     def test_set_username(self):
         self.creds.set_username("somebody")
@@ -203,7 +195,7 @@ class CredentialsTests(samba.tests.TestCaseInTempDir):
         username = "user"
 
         passwd_file_name = os.path.join(self.tempdir, "parse_file")
-        passwd_file_fd = open(passwd_file_name, self.open_mode)
+        passwd_file_fd = open(passwd_file_name, 'x')
         passwd_file_fd.write("realm=%s\n" % realm)
         passwd_file_fd.write("domain=%s\n" % domain)
         passwd_file_fd.write("username=%s\n" % username)
@@ -226,7 +218,7 @@ class CredentialsTests(samba.tests.TestCaseInTempDir):
         username = "user"
 
         passwd_file_name = os.path.join(self.tempdir, "parse_file")
-        passwd_file_fd = open(passwd_file_name, self.open_mode)
+        passwd_file_fd = open(passwd_file_name, 'x')
         passwd_file_fd.write("realm=%s\n" % realm)
         passwd_file_fd.write("domain=%s\n" % domain)
         passwd_file_fd.write("username=%s\\%s\n" % (domain, username))
@@ -251,7 +243,7 @@ class CredentialsTests(samba.tests.TestCaseInTempDir):
         userdom = "userdom"
 
         passwd_file_name = os.path.join(self.tempdir, "parse_file")
-        passwd_file_fd = open(passwd_file_name, self.open_mode)
+        passwd_file_fd = open(passwd_file_name, 'x')
         passwd_file_fd.write("realm=%s\n" % realm)
         passwd_file_fd.write("domain=%s\n" % domain)
         passwd_file_fd.write("username=%s/%s\n" % (userdom, username))
@@ -274,7 +266,7 @@ class CredentialsTests(samba.tests.TestCaseInTempDir):
         userdom = "userdom"
 
         passwd_file_name = os.path.join(self.tempdir, "parse_file")
-        passwd_file_fd = open(passwd_file_name, self.open_mode)
+        passwd_file_fd = open(passwd_file_name, 'x')
         passwd_file_fd.write("username=%s\\%s%%%s\n" % (userdom, username, password))
         passwd_file_fd.write("realm=ignorerealm\n")
         passwd_file_fd.write("domain=ignoredomain\n")
@@ -297,7 +289,7 @@ class CredentialsTests(samba.tests.TestCaseInTempDir):
         userdom = "userdom"
 
         passwd_file_name = os.path.join(self.tempdir, "parse_file")
-        passwd_file_fd = open(passwd_file_name, self.open_mode)
+        passwd_file_fd = open(passwd_file_name, 'x')
         passwd_file_fd.write("realm=ignorerealm\n")
         passwd_file_fd.write("username=%s\\%s%%%s\n" % (userdom, username, password))
         passwd_file_fd.write("domain=ignoredomain\n")
@@ -332,7 +324,7 @@ class CredentialsTests(samba.tests.TestCaseInTempDir):
         os.environ["USER"] = "env_user"
         creds.guess(lp)
         realm = "realm.example.com"
-        creds.set_realm(realm, credentials.UNINITIALISED)
+        creds.set_realm(realm, credentials.SMB_CONF)
         creds.parse_string("user")
         self.assertEqual(creds.get_username(), "user")
         self.assertEqual(creds.get_domain(), lp.get("workgroup").upper())
@@ -360,7 +352,7 @@ class CredentialsTests(samba.tests.TestCaseInTempDir):
         os.environ["USER"] = "env_user"
         creds.guess(lp)
         realm = "realm.example.com"
-        creds.set_realm(realm, credentials.UNINITIALISED)
+        creds.set_realm(realm, credentials.SMB_CONF)
         self.assertEqual(creds.get_username(), "env_user")
         self.assertEqual(creds.get_domain(), lp.get("workgroup").upper())
         self.assertEqual(creds.get_realm(), realm.upper())
@@ -456,3 +448,54 @@ class CredentialsTests(samba.tests.TestCaseInTempDir):
         self.assertEqual(creds.get_principal(), "user@samba.org")
         self.assertEqual(creds.is_anonymous(), False)
         self.assertEqual(creds.authentication_requested(), True)
+
+    def test_smb_signing(self):
+        creds = credentials.Credentials()
+        self.assertEqual(creds.get_smb_signing(), credentials.SMB_SIGNING_DEFAULT)
+        creds.set_smb_signing(credentials.SMB_SIGNING_REQUIRED)
+        self.assertEqual(creds.get_smb_signing(), credentials.SMB_SIGNING_REQUIRED)
+
+    def test_smb_signing_set_conf(self):
+        lp = samba.tests.env_loadparm()
+
+        creds = credentials.Credentials()
+        creds.set_conf(lp)
+        self.assertEqual(creds.get_smb_signing(), credentials.SMB_SIGNING_DEFAULT)
+        creds.set_smb_signing(credentials.SMB_SIGNING_OFF)
+        self.assertEqual(creds.get_smb_signing(), credentials.SMB_SIGNING_OFF)
+        creds.set_conf(lp)
+        self.assertEqual(creds.get_smb_signing(), credentials.SMB_SIGNING_OFF)
+
+    def test_smb_ipc_signing(self):
+        creds = credentials.Credentials()
+        self.assertEqual(creds.get_smb_ipc_signing(), credentials.SMB_SIGNING_REQUIRED)
+        creds.set_smb_ipc_signing(credentials.SMB_SIGNING_OFF)
+        self.assertEqual(creds.get_smb_ipc_signing(), credentials.SMB_SIGNING_OFF)
+
+    def test_smb_ipc_signing_set_conf(self):
+        lp = samba.tests.env_loadparm()
+
+        creds = credentials.Credentials()
+        creds.set_conf(lp)
+        self.assertEqual(creds.get_smb_ipc_signing(), credentials.SMB_SIGNING_REQUIRED)
+        creds.set_smb_ipc_signing(credentials.SMB_SIGNING_OFF)
+        self.assertEqual(creds.get_smb_ipc_signing(), credentials.SMB_SIGNING_OFF)
+        creds.set_conf(lp)
+        self.assertEqual(creds.get_smb_ipc_signing(), credentials.SMB_SIGNING_OFF)
+
+    def test_smb_encryption(self):
+        creds = credentials.Credentials()
+        self.assertEqual(creds.get_smb_encryption(), credentials.SMB_ENCRYPTION_DEFAULT)
+        creds.set_smb_encryption(credentials.SMB_ENCRYPTION_REQUIRED)
+        self.assertEqual(creds.get_smb_encryption(), credentials.SMB_ENCRYPTION_REQUIRED)
+
+    def test_smb_encryption_set_conf(self):
+        lp = samba.tests.env_loadparm()
+
+        creds = credentials.Credentials()
+        creds.set_conf(lp)
+        self.assertEqual(creds.get_smb_encryption(), credentials.SMB_ENCRYPTION_DEFAULT)
+        creds.set_smb_encryption(credentials.SMB_ENCRYPTION_OFF)
+        self.assertEqual(creds.get_smb_encryption(), credentials.SMB_ENCRYPTION_OFF)
+        creds.set_conf(lp)
+        self.assertEqual(creds.get_smb_encryption(), credentials.SMB_ENCRYPTION_OFF)

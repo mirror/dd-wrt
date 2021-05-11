@@ -69,8 +69,27 @@ SMB_ACL_T posixacl_sys_acl_get_fd(vfs_handle_struct *handle,
 				  files_struct *fsp, TALLOC_CTX *mem_ctx)
 {
 	struct smb_acl_t *result;
-	acl_t acl = acl_get_fd(fsp->fh->fd);
+	acl_t acl = NULL;
 
+	if (!fsp->fsp_flags.is_pathref) {
+		acl = acl_get_fd(fsp_get_io_fd(fsp));
+	} else if (fsp->fsp_flags.have_proc_fds) {
+		int fd = fsp_get_pathref_fd(fsp);
+		const char *proc_fd_path = NULL;
+		char buf[PATH_MAX];
+
+		proc_fd_path = sys_proc_fd_path(fd, buf, sizeof(buf));
+		if (proc_fd_path == NULL) {
+			return NULL;
+		}
+
+		acl = acl_get_file(proc_fd_path, ACL_TYPE_ACCESS);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		acl = acl_get_file(fsp->fsp_name->base_name, ACL_TYPE_ACCESS);
+	}
 	if (acl == NULL) {
 		return NULL;
 	}
@@ -118,14 +137,37 @@ int posixacl_sys_acl_set_file(vfs_handle_struct *handle,
 
 int posixacl_sys_acl_set_fd(vfs_handle_struct *handle,
 			    files_struct *fsp,
+			    SMB_ACL_TYPE_T type,
 			    SMB_ACL_T theacl)
 {
 	int res;
 	acl_t acl = smb_acl_to_posix(theacl);
+	int fd = fsp_get_pathref_fd(fsp);
+
 	if (acl == NULL) {
 		return -1;
 	}
-	res =  acl_set_fd(fsp->fh->fd, acl);
+
+	if (!fsp->fsp_flags.is_pathref && type == SMB_ACL_TYPE_ACCESS) {
+		res = acl_set_fd(fd, acl);
+	} else if (fsp->fsp_flags.have_proc_fds) {
+		const char *proc_fd_path = NULL;
+		char buf[PATH_MAX];
+
+		proc_fd_path = sys_proc_fd_path(fd, buf, sizeof(buf));
+		if (proc_fd_path == NULL) {
+			return -1;
+		}
+		res = acl_set_file(proc_fd_path, type, acl);
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+		res = acl_set_file(fsp->fsp_name->base_name,
+				   type,
+				   acl);
+	}
+
 	acl_free(acl);
 	return res;
 }
@@ -274,7 +316,8 @@ static int smb_acl_set_mode(acl_entry_t entry, SMB_ACL_PERM_T perm)
 	    ((ret = acl_add_perm(permset, ACL_EXECUTE)) != 0)) {
 		return ret;
 	}
-        return acl_set_permset(entry, permset);
+
+	return 0;
 }
 
 static acl_t smb_acl_to_posix(const struct smb_acl_t *acl)
@@ -377,7 +420,6 @@ static struct vfs_fn_pointers posixacl_fns = {
 	.sys_acl_get_fd_fn = posixacl_sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = posix_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = posix_sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = posixacl_sys_acl_set_file,
 	.sys_acl_set_fd_fn = posixacl_sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = posixacl_sys_acl_delete_def_file,
 };

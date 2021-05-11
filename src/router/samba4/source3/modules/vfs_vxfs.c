@@ -28,6 +28,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "system/filesys.h"
 #include "vfs_vxfs.h"
 
+#undef strcasecmp
+
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_VFS
 
@@ -483,30 +485,18 @@ out:
 	return ret;
 }
 
-static int vxfs_sys_acl_set_fd(vfs_handle_struct *handle, files_struct *fsp,
+static int vxfs_sys_acl_set_fd(vfs_handle_struct *handle,
+			       struct files_struct *fsp,
+			       SMB_ACL_TYPE_T type,
 			       SMB_ACL_T theacl)
 {
 
 	if (vxfs_compare(fsp->conn, fsp->fsp_name, theacl,
-			 SMB_ACL_TYPE_ACCESS)) {
+			 type)) {
 		return 0;
 	}
 
-	return SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, theacl);
-}
-
-static int vxfs_sys_acl_set_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				SMB_ACL_TYPE_T acltype,
-				SMB_ACL_T theacl)
-{
-	if (vxfs_compare(handle->conn, smb_fname,
-			theacl, acltype)) {
-		return 0;
-	}
-
-	return SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle, smb_fname,
-			acltype, theacl);
+	return SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, type, theacl);
 }
 
 static int vxfs_set_xattr(struct vfs_handle_struct *handle,
@@ -594,7 +584,7 @@ static int vxfs_fset_xattr(struct vfs_handle_struct *handle,
 
 	DEBUG(10, ("In vxfs_fset_xattr\n"));
 
-	ret = vxfs_setxattr_fd(fsp->fh->fd, name, value, size, flags);
+	ret = vxfs_setxattr_fd(fsp_get_io_fd(fsp), name, value, size, flags);
 	if ((ret == 0) ||
 	    ((ret == -1) && (errno != ENOTSUP) && (errno != ENOSYS))) {
 		SMB_VFS_NEXT_FREMOVEXATTR(handle, fsp, name);
@@ -652,7 +642,7 @@ static ssize_t vxfs_fget_xattr(struct vfs_handle_struct *handle,
 
 	DEBUG(10, ("In vxfs_fget_xattr\n"));
 
-	ret = vxfs_getxattr_fd(fsp->fh->fd, name, value, size);
+	ret = vxfs_getxattr_fd(fsp_get_io_fd(fsp), name, value, size);
 	if ((ret != -1) || ((errno != ENOTSUP) &&
 			    (errno != ENOSYS) && (errno != ENODATA))) {
 		return ret;
@@ -744,7 +734,7 @@ static int vxfs_fremove_xattr(struct vfs_handle_struct *handle,
 	old_errno = errno;
 
 	/* Remove with new way */
-	ret_new = vxfs_removexattr_fd(fsp->fh->fd, name);
+	ret_new = vxfs_removexattr_fd(fsp_get_io_fd(fsp), name);
 	/*
 	 * If both fail, return failuer else return whichever succeeded
 	 */
@@ -807,7 +797,7 @@ static ssize_t vxfs_flistxattr(struct vfs_handle_struct *handle,
 {
 	ssize_t result;
 
-	result = vxfs_listxattr_fd(fsp->fh->fd, list, size);
+	result = vxfs_listxattr_fd(fsp_get_io_fd(fsp), list, size);
 	if (result >= 0 || ((errno != ENOTSUP) && (errno != ENOSYS))) {
 		return result;
 	}
@@ -881,7 +871,7 @@ static NTSTATUS vxfs_fset_ea_dos_attributes(struct vfs_handle_struct *handle,
 	DBG_DEBUG("Entered function\n");
 
 	if (!(dosmode & FILE_ATTRIBUTE_READONLY)) {
-		ret = vxfs_checkwxattr_fd(fsp->fh->fd);
+		ret = vxfs_checkwxattr_fd(fsp_get_io_fd(fsp));
 		if (ret == -1) {
 			DBG_DEBUG("ret:%d\n", ret);
 			if ((errno != EOPNOTSUPP) && (errno != ENOENT)) {
@@ -890,7 +880,7 @@ static NTSTATUS vxfs_fset_ea_dos_attributes(struct vfs_handle_struct *handle,
 		}
 	}
 	if (dosmode & FILE_ATTRIBUTE_READONLY) {
-		ret = vxfs_setwxattr_fd(fsp->fh->fd);
+		ret = vxfs_setwxattr_fd(fsp_get_io_fd(fsp));
 		DBG_DEBUG("ret:%d\n", ret);
 		if (ret == -1) {
 			if ((errno != EOPNOTSUPP) && (errno != EINVAL)) {
@@ -903,7 +893,7 @@ static NTSTATUS vxfs_fset_ea_dos_attributes(struct vfs_handle_struct *handle,
 	err = SMB_VFS_NEXT_FSET_DOS_ATTRIBUTES(handle, fsp, dosmode);
 	if (!NT_STATUS_IS_OK(err)) {
 		if (attrset) {
-			ret = vxfs_clearwxattr_fd(fsp->fh->fd);
+			ret = vxfs_clearwxattr_fd(fsp_get_io_fd(fsp));
 			DBG_DEBUG("ret:%d\n", ret);
 			if ((ret == -1) && (errno != ENOENT)) {
 				return map_nt_error_from_unix(errno);
@@ -933,7 +923,6 @@ static struct vfs_fn_pointers vfs_vxfs_fns = {
 	.connect_fn = vfs_vxfs_connect,
 
 #ifdef VXFS_ACL_SHARE
-	.sys_acl_set_file_fn = vxfs_sys_acl_set_file,
 	.sys_acl_set_fd_fn = vxfs_sys_acl_set_fd,
 #endif
 

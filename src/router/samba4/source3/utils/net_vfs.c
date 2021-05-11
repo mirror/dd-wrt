@@ -23,11 +23,11 @@
 #include <ftw.h>
 #include "system/filesys.h"
 #include "system/passwd.h"
-#include "popt_common.h"
 #include "lib/param/loadparm.h"
 #include "lib/param/param.h"
 #include "libcli/security/security.h"
 #include "smbd/proto.h"
+#include "locking/share_mode_lock.h"
 #include "locking/proto.h"
 #include "auth.h"
 #include "client.h"
@@ -35,6 +35,7 @@
 #include "lib/adouble.h"
 #include "lib/string_replace.h"
 #include "utils/net.h"
+#include "lib/global_contexts.h"
 
 #define NET_VFS_CMD_STREAM_TO_ADOUBLE "stream2adouble"
 
@@ -241,10 +242,19 @@ static int net_vfs_get_ntacl(struct net_context *net,
 		goto done;
 	}
 
+	status = openat_pathref_fsp(state.conn_tos->conn->cwd_fsp, smb_fname);
+	if (NT_STATUS_EQUAL(status, NT_STATUS_STOPPED_ON_SYMLINK)) {
+		status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
+	}
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_ERR("openat_pathref_fsp [%s] failed: %s\n",
+			smb_fname_str_dbg(smb_fname), nt_errstr(status));
+		goto done;
+	}
+
 	status = SMB_VFS_CREATE_FILE(
 		state.conn_tos->conn,
 		NULL,				/* req */
-		&state.conn_tos->conn->cwd_fsp,
 		smb_fname,
 		FILE_READ_ATTRIBUTES|READ_CONTROL_ACCESS,
 		FILE_SHARE_READ|FILE_SHARE_WRITE,

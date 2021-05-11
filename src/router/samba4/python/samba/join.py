@@ -49,8 +49,7 @@ import re
 import os
 import tempfile
 from collections import OrderedDict
-from samba.compat import text_type
-from samba.compat import get_string
+from samba.common import get_string
 from samba.netcmd import CommandError
 
 
@@ -259,7 +258,7 @@ class DCJoinContext(object):
         ctx.del_noerror(res[0].dn, recursive=True)
 
         if "msDS-Krbtgtlink" in res[0]:
-            new_krbtgt_dn = res[0]["msDS-Krbtgtlink"][0]
+            ctx.new_krbtgt_dn = res[0]["msDS-Krbtgtlink"][0]
             ctx.del_noerror(ctx.new_krbtgt_dn)
 
         res = ctx.samdb.search(base=ctx.samdb.get_default_basedn(),
@@ -505,7 +504,7 @@ class DCJoinContext(object):
                     v = [rec[a]]
                 else:
                     v = rec[a]
-                v = [x.encode('utf8') if isinstance(x, text_type) else x for x in v]
+                v = [x.encode('utf8') if isinstance(x, str) else x for x in v]
                 rattr = ctx.tmp_samdb.dsdb_DsReplicaAttribute(ctx.tmp_samdb, a, v)
                 attrs.append(rattr)
 

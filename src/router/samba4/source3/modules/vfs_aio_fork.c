@@ -30,6 +30,7 @@
 #include "lib/util/sys_rw_data.h"
 #include "lib/util/msghdr.h"
 #include "smbprofile.h"
+#include "lib/global_contexts.h"
 
 #if !defined(HAVE_STRUCT_MSGHDR_MSG_CONTROL) && !defined(HAVE_STRUCT_MSGHDR_MSG_ACCRIGHTS)
 # error Can not pass file descriptors
@@ -419,9 +420,9 @@ static int aio_child_destructor(struct aio_child *child)
 static struct files_struct *close_fsp_fd(struct files_struct *fsp,
 					 void *private_data)
 {
-	if ((fsp->fh != NULL) && (fsp->fh->fd != -1)) {
-		close(fsp->fh->fd);
-		fsp->fh->fd = -1;
+	if ((fsp->fh != NULL) && (fsp_get_pathref_fd(fsp) != -1)) {
+		close(fsp_get_pathref_fd(fsp));
+		fsp_set_fd(fsp, -1);
 	}
 	return NULL;
 }
@@ -585,7 +586,7 @@ static struct tevent_req *aio_fork_pread_send(struct vfs_handle_struct *handle,
 	cmd.cmd = READ_CMD;
 	cmd.erratic_testing_mode = config->erratic_testing_mode;
 
-	DEBUG(10, ("sending fd %d to child %d\n", fsp->fh->fd,
+	DEBUG(10, ("sending fd %d to child %d\n", fsp_get_io_fd(fsp),
 		   (int)state->child->pid));
 
 	/*
@@ -593,7 +594,7 @@ static struct tevent_req *aio_fork_pread_send(struct vfs_handle_struct *handle,
 	 * domain socket. This should never block.
 	 */
 	written = write_fd(state->child->sockfd, &cmd, sizeof(cmd),
-			   fsp->fh->fd);
+			   fsp_get_io_fd(fsp));
 	if (written == -1) {
 		err = errno;
 
@@ -711,7 +712,7 @@ static struct tevent_req *aio_fork_pwrite_send(
 	cmd.cmd = WRITE_CMD;
 	cmd.erratic_testing_mode = config->erratic_testing_mode;
 
-	DEBUG(10, ("sending fd %d to child %d\n", fsp->fh->fd,
+	DEBUG(10, ("sending fd %d to child %d\n", fsp_get_io_fd(fsp),
 		   (int)state->child->pid));
 
 	/*
@@ -719,7 +720,7 @@ static struct tevent_req *aio_fork_pwrite_send(
 	 * domain socket. This should never block.
 	 */
 	written = write_fd(state->child->sockfd, &cmd, sizeof(cmd),
-			   fsp->fh->fd);
+			   fsp_get_io_fd(fsp));
 	if (written == -1) {
 		err = errno;
 
@@ -819,7 +820,7 @@ static struct tevent_req *aio_fork_fsync_send(
 	cmd.cmd = FSYNC_CMD;
 	cmd.erratic_testing_mode = config->erratic_testing_mode;
 
-	DEBUG(10, ("sending fd %d to child %d\n", fsp->fh->fd,
+	DEBUG(10, ("sending fd %d to child %d\n", fsp_get_io_fd(fsp),
 		   (int)state->child->pid));
 
 	/*
@@ -827,7 +828,7 @@ static struct tevent_req *aio_fork_fsync_send(
 	 * domain socket. This should never block.
 	 */
 	written = write_fd(state->child->sockfd, &cmd, sizeof(cmd),
-			   fsp->fh->fd);
+			   fsp_get_io_fd(fsp));
 	if (written == -1) {
 		err = errno;
 

@@ -1,5 +1,5 @@
 /* 
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
    KCC service periodic handling
    
    Copyright (C) Andrew Tridgell 2009
@@ -24,7 +24,7 @@
 #include "lib/events/events.h"
 #include "dsdb/samdb/samdb.h"
 #include "auth/auth.h"
-#include "smbd/service.h"
+#include "samba/service.h"
 #include "lib/messaging/irpc.h"
 #include "dsdb/kcc/kcc_connection.h"
 #include "dsdb/kcc/kcc_service.h"

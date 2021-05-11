@@ -108,8 +108,8 @@ NTSTATUS connect_to_service(struct net_context *c,
 			    const char *service_type)
 {
 	NTSTATUS nt_status;
-	enum smb_signing_setting signing_setting = SMB_SIGNING_DEFAULT;
 	struct cli_credentials *creds = NULL;
+	int flags = 0;
 
 	creds = net_context_creds(c, c);
 	if (creds == NULL) {
@@ -118,14 +118,14 @@ NTSTATUS connect_to_service(struct net_context *c,
 	}
 
 	if (strequal(service_type, "IPC")) {
-		signing_setting = SMB_SIGNING_IPC_DEFAULT;
+		flags |= CLI_FULL_CONNECTION_IPC;
 	}
 
 	nt_status = cli_full_connection_creds(cli_ctx, NULL, server_name,
 					server_ss, c->opt_port,
 					service_name, service_type,
-					creds, 0,
-					signing_setting);
+					creds,
+					flags);
 	if (!NT_STATUS_IS_OK(nt_status)) {
 		d_fprintf(stderr, _("Could not connect to server %s\n"),
 			  server_name);
@@ -146,16 +146,6 @@ NTSTATUS connect_to_service(struct net_context *c,
 		    NT_STATUS_V(NT_STATUS_ACCOUNT_DISABLED))
 			d_fprintf(stderr, _("The account was disabled.\n"));
 		return nt_status;
-	}
-
-	if (c->smb_encrypt) {
-		nt_status = cli_cm_force_encryption_creds(*cli_ctx,
-							  creds,
-							  service_name);
-		if (!NT_STATUS_IS_OK(nt_status)) {
-			cli_shutdown(*cli_ctx);
-			*cli_ctx = NULL;
-		}
 	}
 
 	return nt_status;
@@ -195,7 +185,8 @@ NTSTATUS connect_to_ipc_anonymous(struct net_context *c,
 	nt_status = cli_full_connection_creds(cli_ctx, c->opt_requester_name,
 					server_name, server_ss, c->opt_port,
 					"IPC$", "IPC",
-					anon_creds, 0, SMB_SIGNING_OFF);
+					anon_creds,
+					CLI_FULL_CONNECTION_IPC);
 
 	if (NT_STATUS_IS_OK(nt_status)) {
 		return nt_status;
@@ -502,13 +493,13 @@ struct cli_credentials *net_context_creds(struct net_context *c,
 
 	if (c->opt_kerberos && c->opt_user_specified) {
 		cli_credentials_set_kerberos_state(creds,
-						   CRED_AUTO_USE_KERBEROS);
+						   CRED_USE_KERBEROS_DESIRED);
 	} else if (c->opt_kerberos) {
 		cli_credentials_set_kerberos_state(creds,
-						   CRED_MUST_USE_KERBEROS);
+						   CRED_USE_KERBEROS_REQUIRED);
 	} else {
 		cli_credentials_set_kerberos_state(creds,
-						   CRED_DONT_USE_KERBEROS);
+						   CRED_USE_KERBEROS_DISABLED);
 	}
 
 	if (c->opt_ccache) {
@@ -574,6 +565,12 @@ struct cli_credentials *net_context_creds(struct net_context *c,
 		cli_credentials_set_password(creds,
 					     c->opt_password,
 					     CRED_SPECIFIED);
+	}
+
+	if (c->smb_encrypt) {
+		cli_credentials_set_smb_encryption(creds,
+						   SMB_ENCRYPTION_REQUIRED,
+						   CRED_SPECIFIED);
 	}
 
 	return creds;

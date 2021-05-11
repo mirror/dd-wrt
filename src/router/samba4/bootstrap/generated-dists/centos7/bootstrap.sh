@@ -72,6 +72,7 @@ yum install -y \
     patch \
     perl-Archive-Tar \
     perl-ExtUtils-MakeMaker \
+    perl-JSON \
     perl-JSON-Parse \
     perl-Parse-Yapp \
     perl-Test-Base \
@@ -87,8 +88,10 @@ yum install -y \
     python36-cryptography \
     python36-devel \
     python36-dns \
+    python36-iso8601 \
     python36-markdown \
     python36-pyasn1 \
+    python36-setproctitle \
     quota-devel \
     readline-devel \
     redhat-lsb \

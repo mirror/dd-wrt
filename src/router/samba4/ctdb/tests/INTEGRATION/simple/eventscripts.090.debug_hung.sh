@@ -1,19 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-test_info()
-{
-    cat <<EOF
-Verify CTDB's debugging of timed out eventscripts
-
-Prerequisites:
-
-* An active CTDB cluster with monitoring enabled
-
-Expected results:
-
-* When an eventscript times out the correct debugging is executed.
-EOF
-}
+# Verify CTDB's debugging of timed out eventscripts
 
 . "${TEST_SCRIPTS_DIR}/integration.bash"
 
@@ -22,8 +9,6 @@ set -e
 ctdb_test_skip_on_cluster
 
 ctdb_test_init
-
-cluster_is_healthy
 
 select_test_node
 
@@ -52,6 +37,11 @@ wait_for_monitor_event $test_node
 echo "Waiting for debugging output to appear..."
 # Use test -s because the file is created above using mktemp
 wait_until 60 test -s "$debug_output"
+
+echo
+echo "Debugging output:"
+cat "$debug_output"
+echo
 
 echo "Checking output of hung script debugging..."
 

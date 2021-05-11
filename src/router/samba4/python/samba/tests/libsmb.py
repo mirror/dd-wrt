@@ -20,11 +20,14 @@
 from samba.samba3 import libsmb_samba_internal as libsmb
 from samba.dcerpc import security
 from samba.samba3 import param as s3param
-from samba import credentials
+from samba import (credentials,NTSTATUSError)
+from samba.ntstatus import NT_STATUS_DELETE_PENDING
+from samba.credentials import SMB_ENCRYPTION_REQUIRED
 import samba.tests
 import threading
 import sys
 import os
+import random
 
 
 class LibsmbTestCase(samba.tests.TestCase):
@@ -49,8 +52,7 @@ class LibsmbTestCase(samba.tests.TestCase):
             except Exception:
                 self.exc = sys.exc_info()
 
-    def test_OpenClose(self):
-
+    def prep_creds(self):
         lp = s3param.get_context()
         lp.load(os.getenv("SMB_CONF_PATH"))
 
@@ -58,6 +60,11 @@ class LibsmbTestCase(samba.tests.TestCase):
         creds.guess(lp)
         creds.set_username(os.getenv("USERNAME"))
         creds.set_password(os.getenv("PASSWORD"))
+
+        return (lp,creds)
+
+    def test_OpenClose(self):
+        (lp,creds) = self.prep_creds()
 
         c = libsmb.Conn(os.getenv("SERVER_IP"), "tmp",
                         lp, creds, multi_threaded=True,
@@ -77,6 +84,61 @@ class LibsmbTestCase(samba.tests.TestCase):
             if t.exc:
                 raise t.exc[0](t.exc[1])
 
+    def test_SMB3EncryptionRequired(self):
+        test_dir = 'testing_%d' % random.randint(0, 0xFFFF)
+
+        (lp,creds) = self.prep_creds()
+        creds.set_smb_encryption(SMB_ENCRYPTION_REQUIRED)
+
+        c = libsmb.Conn(os.getenv("SERVER_IP"), "tmp",
+                        lp, creds)
+
+        c.mkdir(test_dir)
+        c.rmdir(test_dir)
+
+    def test_SMB1EncryptionRequired(self):
+        test_dir = 'testing_%d' % random.randint(0, 0xFFFF)
+
+        (lp,creds) = self.prep_creds()
+        creds.set_smb_encryption(SMB_ENCRYPTION_REQUIRED)
+
+        c = libsmb.Conn(os.getenv("SERVER_IP"), "tmp",
+                        lp, creds, force_smb1=True)
+
+        c.mkdir(test_dir)
+        c.rmdir(test_dir)
+
+    def test_RenameDstDelOnClose(self):
+        (lp,creds) = self.prep_creds()
+
+        dstdir = "\\dst-subdir"
+
+        c1 = libsmb.Conn(os.getenv("SERVER_IP"), "tmp", lp, creds)
+        c2 = libsmb.Conn(os.getenv("SERVER_IP"), "tmp", lp, creds)
+
+        try:
+            c1.deltree(dstdir)
+        except:
+            pass
+
+        c1.mkdir(dstdir)
+        dnum = c1.create(dstdir, DesiredAccess=security.SEC_STD_DELETE)
+        c1.delete_on_close(dnum,1)
+        c2.savefile("\\src.txt", b"Content")
+
+        with self.assertRaises(NTSTATUSError) as cm:
+            c2.rename("\\src.txt", dstdir + "\\dst.txt")
+        if (cm.exception.args[0] != NT_STATUS_DELETE_PENDING):
+            raise AssertionError("Rename must fail with DELETE_PENDING")
+
+        c1.delete_on_close(dnum,0)
+        c1.close(dnum)
+
+        try:
+            c1.deltree(dstdir)
+            c1.unlink("\\src.txt")
+        except:
+            pass
 
 if __name__ == "__main__":
     import unittest

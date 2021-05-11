@@ -231,6 +231,8 @@ bool smbd_smb2_is_compound(const struct smbd_smb2_request *req)
 static NTSTATUS smbd_initialize_smb2(struct smbXsrv_connection *xconn,
 				     uint64_t expected_seq_low)
 {
+	int rc;
+
 	xconn->smb2.credits.seq_low = expected_seq_low;
 	xconn->smb2.credits.seq_range = 1;
 	xconn->smb2.credits.granted = 1;
@@ -259,7 +261,11 @@ static NTSTATUS smbd_initialize_smb2(struct smbXsrv_connection *xconn,
 	tevent_fd_set_auto_close(xconn->transport.fde);
 
 	/* Ensure child is set to non-blocking mode */
-	set_blocking(xconn->transport.sock, false);
+	rc = set_blocking(xconn->transport.sock, false);
+	if (rc < 0) {
+		return NT_STATUS_INTERNAL_ERROR;
+	}
+
 	return NT_STATUS_OK;
 }
 
@@ -1635,9 +1641,9 @@ void smbd_server_connection_terminate_ex(struct smbXsrv_connection *xconn,
 		  smbXsrv_connection_dbg(xconn), num_ok,
 		  reason, location);
 
-	if (xconn->has_ctdb_public_ip) {
+	if (xconn->has_cluster_movable_ip) {
 		/*
-		 * If the connection has a ctdb public address
+		 * If the connection has a movable cluster public address
 		 * we disconnect all client connections,
 		 * as the public address might be moved to
 		 * a different node.
@@ -3231,6 +3237,11 @@ NTSTATUS smbd_smb2_request_dispatch(struct smbd_smb2_request *req)
 			if (file_id_volatile != UINT64_MAX) {
 				return smbd_smb2_request_error(req,
 						NT_STATUS_FILE_CLOSED);
+			}
+		} else {
+			if (fsp->fsp_flags.encryption_required && !req->was_encrypted) {
+				return smbd_smb2_request_error(req,
+						NT_STATUS_ACCESS_DENIED);
 			}
 		}
 	}

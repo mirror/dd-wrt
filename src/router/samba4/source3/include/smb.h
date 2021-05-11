@@ -30,7 +30,7 @@
 #include "libds/common/roles.h"
 
 /* logged when starting the various Samba daemons */
-#define COPYRIGHT_STARTUP_MESSAGE	"Copyright Andrew Tridgell and the Samba Team 1992-2020"
+#define COPYRIGHT_STARTUP_MESSAGE	"Copyright Andrew Tridgell and the Samba Team 1992-2021"
 
 #define SAFETY_MARGIN 1024
 #define LARGE_WRITEX_HDR_SIZE 65
@@ -134,7 +134,6 @@ struct notify_mid_map;
 struct notify_db_entry;
 struct notify_event;
 struct notify_change_request;
-struct sys_notify_backend;
 struct sys_notify_context {
 	struct tevent_context *ev;
 	void *private_data; 	/* For use by the system backend */
@@ -402,21 +401,17 @@ Offset  Data			length.
 #define NTCREATEX_OPTIONS_INVALID_PARAM_MASK    (0xFF100030)
 
 /*
- * Private create options used by the ntcreatex processing code. From Samba4.
- * We reuse some ignored flags for private use. Passed in the private_flags
- * argument.
+ * Private flags used by the ntcreatex processing
+ * code. Passed in the private_flags argument.
  */
-#define NTCREATEX_OPTIONS_PRIVATE_DENY_DOS     0x0001
-#define NTCREATEX_OPTIONS_PRIVATE_DENY_FCB     0x0002
+#define NTCREATEX_FLAG_DENY_DOS			0x0001
+#define NTCREATEX_FLAG_DENY_FCB			0x0002
 
-/* Private options for streams support */
-#define NTCREATEX_OPTIONS_PRIVATE_STREAM_DELETE 0x0004
+/* Private flag for printer support */
+#define NTCREATEX_FLAG_DELETE_ON_CLOSE		0x0008
 
-/* Private options for printer support */
-#define NTCREATEX_OPTIONS_PRIVATE_DELETE_ON_CLOSE 0x0008
-
-/* Private option for streams support */
-#define NTCREATEX_OPTIONS_PRIVATE_STREAM_BASEOPEN 0x0010
+/* Private flag for streams support */
+#define NTCREATEX_FLAG_STREAM_BASEOPEN		0x0010
 
 /* Flag for NT transact rename call. */
 #define RENAME_REPLACE_IF_EXISTS 1
@@ -690,12 +685,6 @@ struct node_status_extra {
 #define LDAP_PORT	389
 #endif
 #define LDAP_GC_PORT    3268
-
-/* used by the IP comparison function */
-struct ip_service {
-	struct sockaddr_storage ss;
-	unsigned port;
-};
 
 struct ea_struct {
 	uint8_t flags;

@@ -48,18 +48,18 @@
 	when they do not host any public IP addresses.  For example,
 	it allows unhealthy nodes to reliably communicate with
 	external infrastructure.  One node in a NAT gateway group will
-	be designated as the NAT gateway master node and other (slave)
+	be designated as the NAT gateway leader node and other (follower)
 	nodes will be configured with fallback routes via the NAT
-	gateway master node.  For more information, see the
+	gateway leader node.  For more information, see the
 	<em class="citetitle">NAT GATEWAY</em> section in
 	<span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>.
       </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">CTDB_NATGW_DEFAULT_GATEWAY=<em class="parameter"><code>IPADDR</code></em></span></dt><dd><p>
 	      IPADDR is an alternate network gateway to use on the NAT
-	      gateway master node.  If set, a fallback default route
+	      gateway leader node.  If set, a fallback default route
 	      is added via this network gateway.
 	    </p><p>
 	      No default.  Setting this variable is optional - if not
-	      set that no route is created on the NAT gateway master
+	      set that no route is created on the NAT gateway leader
 	      node.
 	    </p></dd><dt><span class="term">CTDB_NATGW_NODES=<em class="parameter"><code>FILENAME</code></em></span></dt><dd><p>
 	      FILENAME contains the list of nodes that belong to the
@@ -67,14 +67,14 @@
 	    </p><p>
 	      File format:
 	      </p><pre class="screen">
-<em class="parameter"><code>IPADDR</code></em> [<span class="optional">slave-only</span>]
+<em class="parameter"><code>IPADDR</code></em> [<span class="optional">follower-only</span>]
 	      </pre><p>
 	    </p><p>
 	      IPADDR is the private IP address of each node in the NAT
 	      gateway group.
 	    </p><p>
-	      If "slave-only" is specified then the corresponding node
-	      can not be the NAT gateway master node.  In this case
+	      If "follower-only" is specified then the corresponding node
+	      can not be the NAT gateway leader node.  In this case
 	      <code class="varname">CTDB_NATGW_PUBLIC_IFACE</code> and
 	      <code class="varname">CTDB_NATGW_PUBLIC_IP</code> are optional and
 	      unused.
@@ -83,7 +83,7 @@
 	      <code class="filename">/usr/local/etc/ctdb/natgw_nodes</code> when enabled.
 	    </p></dd><dt><span class="term">CTDB_NATGW_PRIVATE_NETWORK=<em class="parameter"><code>IPADDR/MASK</code></em></span></dt><dd><p>
 	      IPADDR/MASK is the private sub-network that is
-	      internally routed via the NAT gateway master node.  This
+	      internally routed via the NAT gateway leader node.  This
 	      is usually the private network that is used for node
 	      addresses.
 	    </p><p>
@@ -96,7 +96,7 @@
 	    </p></dd><dt><span class="term">CTDB_NATGW_PUBLIC_IP=<em class="parameter"><code>IPADDR/MASK</code></em></span></dt><dd><p>
 	      IPADDR/MASK indicates the IP address that is used for
 	      outgoing traffic (originating from
-	      CTDB_NATGW_PRIVATE_NETWORK) on the NAT gateway master
+	      CTDB_NATGW_PRIVATE_NETWORK) on the NAT gateway leader
 	      node.  This <span class="emphasis"><em>must not</em></span> be a
 	      configured public IP address.
 	    </p><p>
@@ -110,18 +110,18 @@
 	      the NAT gateway default route.
 	    </p><p>
 	      If GATEWAY is specified then the corresponding route on
-	      the NATGW master node will be via GATEWAY.  Such routes
+	      the NATGW leader node will be via GATEWAY.  Such routes
 	      are created even if
 	      <code class="varname">CTDB_NATGW_DEFAULT_GATEWAY</code> is not
 	      specified.  If GATEWAY is not specified for some
 	      networks then routes are only created on the NATGW
-	      master node for those networks if
+	      leader node for those networks if
 	      <code class="varname">CTDB_NATGW_DEFAULT_GATEWAY</code> is
 	      specified.
 	    </p><p>
 	      This should be used with care to avoid causing traffic
 	      to unnecessarily double-hop through the NAT gateway
-	      master, even when a node is hosting public IP addresses.
+	      leader, even when a node is hosting public IP addresses.
 	      Each specified network or host should probably have a
 	      corresponding automatically created link route or static
 	      route to avoid this.
@@ -233,14 +233,14 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 	    </p><p>
 	      File format:
 	      </p><pre class="screen">
-<em class="parameter"><code>IPADDR</code></em> [<span class="optional">slave-only</span>]
+<em class="parameter"><code>IPADDR</code></em> [<span class="optional">follower-only</span>]
 	      </pre><p>
 	    </p><p>
 	      IPADDR is the private IP address of each node in the LVS
 	      group.
 	    </p><p>
-	      If "slave-only" is specified then the corresponding node
-	      can not be the LVS master node.  In this case
+	      If "follower-only" is specified then the corresponding node
+	      can not be the LVS leader node.  In this case
 	      <code class="varname">CTDB_LVS_PUBLIC_IFACE</code> and
 	      <code class="varname">CTDB_LVS_PUBLIC_IP</code> are optional and
 	      unused.
@@ -252,7 +252,7 @@ CTDB_PER_IP_ROUTING_TABLE_ID_HIGH=9000
 	  </span></dt><dd><p>
 	      INTERFACE is the network interface that clients will use
 	      to connection to <code class="varname">CTDB_LVS_PUBLIC_IP</code>.
-	      This is optional for slave-only nodes.
+	      This is optional for follower-only nodes.
 	      No default.
 	    </p></dd><dt><span class="term">
 	    CTDB_LVS_PUBLIC_IP=<em class="parameter"><code>IPADDR</code></em>

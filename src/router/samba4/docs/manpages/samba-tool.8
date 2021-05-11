@@ -2,12 +2,12 @@
 .\"     Title: samba-tool
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 11/03/2020
+.\"      Date: 04/26/2021
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.13.2
+.\"    Source: Samba 4.14.4
 .\"  Language: English
 .\"
-.TH "SAMBA\-TOOL" "8" "11/03/2020" "Samba 4\&.13\&.2" "System Administration tools"
+.TH "SAMBA\-TOOL" "8" "04/26/2021" "Samba 4\&.14\&.4" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -129,9 +129,9 @@ option "<name>" to value "<value>" from the command line\&. This overrides compi
 .SS "computer"
 .PP
 Manage computer accounts\&.
-.SS "computer create computername [options]"
+.SS "computer add computername [options]"
 .PP
-Create a new computer in the Active Directory Domain\&.
+Add a new computer to the Active Directory Domain\&.
 .PP
 The new computer name specified on the command is the sAMAccountName, with or without the trailing dollar sign\&.
 .PP
@@ -159,6 +159,13 @@ Computer\*(Aqs Service Principal Name, can be provided multiple times\&.
 .RS 4
 Prepare enabled machine account for oldjoin mechanism\&.
 .RE
+.SS "computer create computername [options]"
+.PP
+Add a new computer\&. This is a synonym for the
+samba\-tool computer add
+command and is available for compatibility reasons only\&. Please use
+samba\-tool computer add
+instead\&.
 .SS "computer delete computername [options]"
 .PP
 Delete an existing computer account\&.
@@ -197,9 +204,9 @@ Comma separated list of attributes, which will be printed\&.
 .SS "contact"
 .PP
 Manage contacts\&.
-.SS "contact create [contactname] [options]"
+.SS "contact add [contactname] [options]"
 .PP
-Create a new contact in the Active Directory Domain\&.
+Add a new contact to the Active Directory Domain\&.
 .PP
 The name of the new contact can be specified by the first argument \*(Aqcontactname\*(Aq or the \-\-given\-name, \-\-initial and \-\-surname arguments\&. If no \*(Aqcontactname\*(Aq is given, contact\*(Aqs name will be made up of the given arguments by combining the given\-name, initials and surname\&. Each argument is optional\&. A dot (\*(Aq\&.\*(Aq) will be appended to the initials automatically\&.
 .PP
@@ -272,6 +279,13 @@ Contact\*(Aqs mobile phone number\&.
 .RS 4
 Contact\*(Aqs office location\&.
 .RE
+.SS "contact create [contactname] [options]"
+.PP
+Add a new contact\&. This is a synonym for the
+samba\-tool contact add
+command and is available for compatibility reasons only\&. Please use
+samba\-tool contact add
+instead\&.
 .SS "contact delete contactname [options]"
 .PP
 Delete an existing contact\&.
@@ -309,6 +323,50 @@ The contactname specified on the command is the common name or the distinguished
 \-\-attributes=CONTACT_ATTRS
 .RS 4
 Comma separated list of attributes, which will be printed\&.
+.RE
+.SS "contact rename contactname [options]"
+.PP
+Rename a contact and related attributes\&.
+.PP
+This command allows to set the contact\*(Aqs name related attributes\&. The contact\*(Aqs CN will be renamed automatically\&. The contact\*(Aqs new CN will be made up by combining the given\-name, initials and surname\&. A dot (\*(Aq\&.\*(Aq) will be appended to the initials automatically, if required\&. Use the \-\-force\-new\-cn option to specify the new CN manually and \-\-reset\-cn to reset this change\&.
+.PP
+Use an empty attribute value to remove the specified attribute\&.
+.PP
+The contact name specified on the command is the CN\&.
+.PP
+\-\-surname=SURNAME
+.RS 4
+New surname\&.
+.RE
+.PP
+\-\-given\-name=GIVEN_NAME
+.RS 4
+New given name\&.
+.RE
+.PP
+\-\-initials=INITIALS
+.RS 4
+New initials\&.
+.RE
+.PP
+\-\-force\-new\-cn=NEW_CN
+.RS 4
+Specify a new CN (RDN) instead of using a combination of the given name, initials and surname\&.
+.RE
+.PP
+\-\-reset\-cn
+.RS 4
+Set the CN to the default combination of given name, initials and surname\&.
+.RE
+.PP
+\-\-display\-name=DISPLAY_NAME
+.RS 4
+New display name\&.
+.RE
+.PP
+\-\-mail\-address=MAIL_ADDRESS
+.RS 4
+New email address\&.
 .RE
 .SS "dbcheck"
 .PP
@@ -556,6 +614,13 @@ Manage groups\&.
 .SS "group add groupname [options]"
 .PP
 Create a new AD group\&.
+.SS "group create groupname [options]"
+.PP
+Add a new AD group\&. This is a synonym for the
+samba\-tool group add
+command and is available for compatibility reasons only\&. Please use
+samba\-tool group add
+instead\&.
 .SS "group addmembers groupname members [options]"
 .PP
 Add members to an AD group\&.
@@ -576,6 +641,23 @@ List all groups\&.
 .SS "group listmembers groupname [options]"
 .PP
 List all members of the specified AD group\&.
+.PP
+By default the sAMAccountNames are listed\&. If no sAMAccountName is available, the CN will be used instead\&.
+.PP
+\-\-full\-dn
+.RS 4
+List the distinguished names instead of the sAMAccountNames\&.
+.RE
+.PP
+\-\-hide\-expired
+.RS 4
+Do not list expired group members\&.
+.RE
+.PP
+\-\-hide\-disabled
+.RS 4
+Do not list disabled group members\&.
+.RE
 .SS "group move groupname new_parent_dn [options]"
 .PP
 This command moves a group into the specified organizational unit or container\&.
@@ -594,6 +676,35 @@ Show group object and it\*(Aqs attributes\&.
 .SS "group stats [options]"
 .PP
 Show statistics for overall groups and group memberships\&.
+.SS "group rename groupname [options]"
+.PP
+Rename a group and related attributes\&.
+.PP
+This command allows to set the group\*(Aqs name related attributes\&. The group\*(Aqs CN will be renamed automatically\&. The group\*(Aqs CN will be the sAMAccountName\&. Use the \-\-force\-new\-cn option to specify the new CN manually and the \-\-reset\-cn to reset this change\&.
+.PP
+Use an empty attribute value to remove the specified attribute\&.
+.PP
+The groupname specified on the command is the sAMAccountName\&.
+.PP
+\-\-force\-new\-cn=NEW_CN
+.RS 4
+Specify a new CN (RDN) instead of using the sAMAccountName\&.
+.RE
+.PP
+\-\-reset\-cn
+.RS 4
+Set the CN to the sAMAccountName\&.
+.RE
+.PP
+\-\-mail\-address=MAIL_ADDRESS
+.RS 4
+New mail address
+.RE
+.PP
+\-\-samaccountname=SAMACCOUNTNAME
+.RS 4
+New account name (sAMAccountName/logon name)
+.RE
 .SS "ldapcmp \fIURL1\fR \fIURL2\fR \fIdomain|configuration|schema|dnsdomain|dnsforest\fR [options]"
 .PP
 Compare two LDAP databases\&.
@@ -658,9 +769,9 @@ Reset sysvol ACLs to defaults (including correct ACLs on GPOs)\&.
 .SS "ou"
 .PP
 Manage organizational units (OUs)\&.
-.SS "ou create ou_dn [options]"
+.SS "ou add ou_dn [options]"
 .PP
-Create an organizational unit\&.
+Add a new organizational unit\&.
 .PP
 The name of the organizational unit can be specified as a full DN or without the domainDN component\&.
 .PP
@@ -668,6 +779,13 @@ The name of the organizational unit can be specified as a full DN or without the
 .RS 4
 Specify OU\*(Aqs description\&.
 .RE
+.SS "ou create ou_dn [options]"
+.PP
+Add a new organizational unit\&. This is a synonym for the
+samba\-tool ou add
+command and is available for compatibility reasons only\&. Please use
+samba\-tool ou add
+instead\&.
 .SS "ou delete ou_dn [options]"
 .PP
 Delete an organizational unit\&.
@@ -764,12 +882,14 @@ Retrieve the time on a server\&.
 Manage users\&.
 .SS "user add username [password]"
 .PP
-Create a new user\&. Please note that this subcommand is deprecated and available for compatibility reasons only\&. Please use
-samba\-tool user create
-instead\&.
+Add a new user to the Active Directory Domain\&.
 .SS "user create username [password]"
 .PP
-Create a new user in the Active Directory Domain\&.
+Add a new user\&. This is a synonym for the
+samba\-tool user add
+command and is available for compatibility reasons only\&. Please use
+samba\-tool user add
+instead\&.
 .SS "user delete username [options]"
 .PP
 Delete an existing user account\&.
@@ -790,6 +910,28 @@ Enable a user account\&.
 .SS "user list"
 .PP
 List all users\&.
+.PP
+By default the user\*(Aqs sAMAccountNames are listed\&.
+.PP
+\-\-full\-dn
+.RS 4
+List user\*(Aqs distinguished names instead of the sAMAccountNames\&.
+.RE
+.PP
+\-b BASE_DN|\-\-base\-dn=BASE_DN
+.RS 4
+Specify base DN to use\&. Only users under the specified base DN will be listed\&.
+.RE
+.PP
+\-\-hide\-expired
+.RS 4
+Do not list expired user accounts\&.
+.RE
+.PP
+\-\-hide\-disabled
+.RS 4
+Do not list disabled user accounts\&.
+.RE
 .SS "user setprimarygroup username primarygroupname"
 .PP
 Set the primary group a user account\&.
@@ -814,12 +956,69 @@ The name of the organizational unit or container can be specified as a full DN o
 .SS "user password [options]"
 .PP
 Change password for a user account (the one provided in authentication)\&.
+.SS "user rename username [options]"
+.PP
+Rename a user and related attributes\&.
+.PP
+This command allows to set the user\*(Aqs name related attributes\&. The user\*(Aqs CN will be renamed automatically\&. The user\*(Aqs new CN will be made up by combining the given\-name, initials and surname\&. A dot (\*(Aq\&.\*(Aq) will be appended to the initials automatically, if required\&. Use the \-\-force\-new\-cn option to specify the new CN manually and \-\-reset\-cn to reset this change\&.
+.PP
+Use an empty attribute value to remove the specified attribute\&.
+.PP
+The username specified on the command is the sAMAccountName\&.
+.PP
+\-\-surname=SURNAME
+.RS 4
+New surname
+.RE
+.PP
+\-\-given\-name=GIVEN_NAME
+.RS 4
+New given name
+.RE
+.PP
+\-\-initials=INITIALS
+.RS 4
+New initials
+.RE
+.PP
+\-\-force\-new\-cn=NEW_CN
+.RS 4
+Specify a new CN (RDN) instead of using a combination of the given name, initials and surname\&.
+.RE
+.PP
+\-\-reset\-cn
+.RS 4
+Set the CN to the default combination of given name, initials and surname\&.
+.RE
+.PP
+\-\-display\-name=DISPLAY_NAME
+.RS 4
+New display name
+.RE
+.PP
+\-\-mail\-address=MAIL_ADDRESS
+.RS 4
+New email address
+.RE
+.PP
+\-\-samaccountname=SAMACCOUNTNAME
+.RS 4
+New account name (sAMAccountName/logon name)
+.RE
+.PP
+\-\-upn=UPN
+.RS 4
+New user principal name
+.RE
 .SS "user setexpiry username [options]"
 .PP
 Set the expiration of a user account\&.
 .SS "user setpassword username [options]"
 .PP
 Sets or resets the password of a user account\&.
+.SS "user unlock username [options]"
+.PP
+This command unlocks a user account in the Active Directory domain\&.
 .SS "user getpassword username [options]"
 .PP
 Gets the password of a user account\&.
@@ -893,7 +1092,7 @@ because the repsFrom/To objects are not replicated, and it can reveal replicatio
 Gives usage information\&.
 .SH "VERSION"
 .PP
-This man page is complete for version 4\&.13\&.2 of the Samba suite\&.
+This man page is complete for version 4\&.14\&.4 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

@@ -17,12 +17,14 @@
  *  along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ADS_DNS_H
-#define _ADS_DNS_H
+#ifndef __LIB_ADDNS_DNSQUERY_H__
+#define __LIB_ADDNS_DNSQUERY_H__
 
 #include "replace.h"
 #include <tevent.h>
 #include "libcli/dns/dns.h"
+#include "lib/util/util_net.h"
+#include "libcli/util/ntstatus.h"
 
 /* The following definitions come from libads/dns.c  */
 
@@ -36,7 +38,7 @@ NTSTATUS ads_dns_lookup_srv_recv(struct tevent_req *req,
 NTSTATUS ads_dns_lookup_srv(TALLOC_CTX *ctx,
 				const char *name,
 				struct dns_rr_srv **dclist,
-				int *numdcs);
+				size_t *numdcs);
 struct tevent_req *ads_dns_lookup_ns_send(TALLOC_CTX *mem_ctx,
 					  struct tevent_context *ev,
 					  const char *name);
@@ -47,29 +49,36 @@ NTSTATUS ads_dns_lookup_ns_recv(struct tevent_req *req,
 NTSTATUS ads_dns_lookup_ns(TALLOC_CTX *ctx,
 				const char *dnsdomain,
 				struct dns_rr_ns **nslist,
-				int *numns);
-NTSTATUS ads_dns_query_dcs(TALLOC_CTX *ctx,
-			   const char *realm,
-			   const char *sitename,
-			   struct dns_rr_srv **dclist,
-			   int *numdcs );
-NTSTATUS ads_dns_query_gcs(TALLOC_CTX *ctx,
-			   const char *realm,
-			   const char *sitename,
-			   struct dns_rr_srv **dclist,
-			   int *numdcs );
-NTSTATUS ads_dns_query_kdcs(TALLOC_CTX *ctx,
-			    const char *dns_forest_name,
-			    const char *sitename,
-			    struct dns_rr_srv **dclist,
-			    int *numdcs );
-NTSTATUS ads_dns_query_pdc(TALLOC_CTX *ctx,
-			   const char *dns_domain_name,
-			   struct dns_rr_srv **dclist,
-			   int *numdcs );
-NTSTATUS ads_dns_query_dcs_guid(TALLOC_CTX *ctx,
-				const char *dns_forest_name,
-				const char *domain_guid,
-				struct dns_rr_srv **dclist,
-				int *numdcs );
-#endif	/* _ADS_DNS_H */
+				size_t *numns);
+struct tevent_req *ads_dns_lookup_a_send(TALLOC_CTX *mem_ctx,
+				struct tevent_context *ev,
+				const char *name);
+NTSTATUS ads_dns_lookup_a_recv(struct tevent_req *req,
+				TALLOC_CTX *mem_ctx,
+				uint8_t *rcode_out,
+				size_t *num_names_out,
+				char ***hostnames_out,
+				struct samba_sockaddr **addrs_out);
+NTSTATUS ads_dns_lookup_a(TALLOC_CTX *ctx,
+			const char *name_in,
+			size_t *num_names_out,
+			char ***hostnames_out,
+			struct samba_sockaddr **addrs_out);
+#if defined(HAVE_IPV6)
+struct tevent_req *ads_dns_lookup_aaaa_send(TALLOC_CTX *mem_ctx,
+				struct tevent_context *ev,
+				const char *name);
+NTSTATUS ads_dns_lookup_aaaa_recv(struct tevent_req *req,
+				TALLOC_CTX *mem_ctx,
+				uint8_t *rcode_out,
+				size_t *num_names_out,
+				char ***hostnames_out,
+				struct samba_sockaddr **addrs_out);
+NTSTATUS ads_dns_lookup_aaaa(TALLOC_CTX *ctx,
+			const char *name_in,
+			size_t *num_names_out,
+			char ***hostnames_out,
+			struct samba_sockaddr **addrs_out);
+#endif
+
+#endif	/* __LIB_ADDNS_DNSQUERY_H__ */

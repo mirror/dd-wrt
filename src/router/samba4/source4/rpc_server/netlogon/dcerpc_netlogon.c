@@ -48,6 +48,8 @@
 #define DCESRV_INTERFACE_NETLOGON_BIND(context, iface) \
        dcesrv_interface_netlogon_bind(context, iface)
 
+#undef strcasecmp
+
 /*
  * This #define allows the netlogon interface to accept invalid
  * association groups, because association groups are to coordinate
@@ -907,7 +909,7 @@ static NTSTATUS dcesrv_netr_ServerPasswordSet2(struct dcesrv_call_state *dce_cal
 	confounder_len = 512 - new_password.length;
 	enc_blob = data_blob_const(r->in.new_password->data, confounder_len);
 	dec_blob = data_blob_const(password_buf.data, confounder_len);
-	if (data_blob_cmp(&dec_blob, &enc_blob) == 0) {
+	if (confounder_len > 0 && data_blob_cmp(&dec_blob, &enc_blob) == 0) {
 		DBG_WARNING("Confounder buffer not encrypted Length[%zu]\n",
 			    confounder_len);
 		return NT_STATUS_WRONG_PASSWORD;

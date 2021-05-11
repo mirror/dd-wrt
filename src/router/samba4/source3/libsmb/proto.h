@@ -86,12 +86,12 @@ NTSTATUS cli_tree_connect(struct cli_state *cli, const char *share,
 NTSTATUS cli_tdis(struct cli_state *cli);
 NTSTATUS cli_connect_nb(const char *host, const struct sockaddr_storage *dest_ss,
 			uint16_t port, int name_type, const char *myname,
-			int signing_state, int flags, struct cli_state **pcli);
+			enum smb_signing_setting signing_state, int flags, struct cli_state **pcli);
 NTSTATUS cli_start_connection(struct cli_state **output_cli,
 			      const char *my_name,
 			      const char *dest_host,
 			      const struct sockaddr_storage *dest_ss, int port,
-			      int signing_state, int flags);
+			      enum smb_signing_setting signing_state, int flags);
 NTSTATUS cli_smb1_setup_encryption(struct cli_state *cli,
 				   struct cli_credentials *creds);
 struct tevent_req *cli_full_connection_creds_send(
@@ -100,7 +100,7 @@ struct tevent_req *cli_full_connection_creds_send(
 	const struct sockaddr_storage *dest_ss, int port,
 	const char *service, const char *service_type,
 	struct cli_credentials *creds,
-	int flags, int signing_state);
+	int flags);
 NTSTATUS cli_full_connection_creds_recv(struct tevent_req *req,
 					struct cli_state **output_cli);
 NTSTATUS cli_full_connection_creds(struct cli_state **output_cli,
@@ -109,35 +109,29 @@ NTSTATUS cli_full_connection_creds(struct cli_state **output_cli,
 				   const struct sockaddr_storage *dest_ss, int port,
 				   const char *service, const char *service_type,
 				   struct cli_credentials *creds,
-				   int flags,
-				   int signing_state);
+				   int flags);
 NTSTATUS cli_raw_tcon(struct cli_state *cli,
 		      const char *service, const char *pass, const char *dev,
 		      uint16_t *max_xmit, uint16_t *tid);
 struct cli_state *get_ipc_connect(char *server,
 				struct sockaddr_storage *server_ss,
-				const struct user_auth_info *user_info);
+				struct cli_credentials *creds);
 struct cli_state *get_ipc_connect_master_ip(TALLOC_CTX *ctx,
 				struct sockaddr_storage *mb_ip,
-				const struct user_auth_info *user_info,
+				struct cli_credentials *creds,
 				char **pp_workgroup_out);
 
 /* The following definitions come from libsmb/clidfs.c  */
 
-NTSTATUS cli_cm_force_encryption_creds(struct cli_state *c,
-				       struct cli_credentials *creds,
-				       const char *sharename);
 NTSTATUS cli_cm_open(TALLOC_CTX *ctx,
-				struct cli_state *referring_cli,
-				const char *server,
-				const char *share,
-				const struct user_auth_info *auth_info,
-				bool force_encrypt,
-				int max_protocol,
-				const struct sockaddr_storage *dest_ss,
-				int port,
-				int name_type,
-				struct cli_state **pcli);
+		     struct cli_state *referring_cli,
+		     const char *server,
+		     const char *share,
+		     struct cli_credentials *creds,
+		     const struct sockaddr_storage *dest_ss,
+		     int port,
+		     int name_type,
+		     struct cli_state **pcli);
 void cli_cm_display(struct cli_state *c);
 struct client_dfs_referral;
 NTSTATUS cli_dfs_get_referral_ex(TALLOC_CTX *ctx,
@@ -155,7 +149,7 @@ NTSTATUS cli_dfs_get_referral(TALLOC_CTX *ctx,
 			size_t *consumed);
 NTSTATUS cli_resolve_path(TALLOC_CTX *ctx,
 			  const char *mountpt,
-			  const struct user_auth_info *dfs_auth_info,
+			  struct cli_credentials *creds,
 			  struct cli_state *rootcli,
 			  const char *path,
 			  struct cli_state **targetcli,
@@ -166,7 +160,6 @@ bool cli_check_msdfs_proxy(TALLOC_CTX *ctx,
 			const char *sharename,
 			char **pp_newserver,
 			char **pp_newshare,
-			bool force_encrypt,
 			struct cli_credentials *creds);
 
 /* The following definitions come from libsmb/clientgen.c  */
@@ -177,9 +170,8 @@ extern struct GUID cli_state_client_guid;
 struct cli_state *cli_state_create(TALLOC_CTX *mem_ctx,
 				   int fd,
 				   const char *remote_name,
-				   int signing_state,
+				   enum smb_signing_setting signing_state,
 				   int flags);
-void cli_nt_pipes_close(struct cli_state *cli);
 void cli_shutdown(struct cli_state *cli);
 uint16_t cli_state_get_vc_num(struct cli_state *cli);
 uint32_t cli_setpid(struct cli_state *cli, uint32_t pid);
@@ -749,12 +741,14 @@ NTSTATUS is_bad_finfo_name(const struct cli_state *cli,
 			const struct file_info *finfo);
 
 NTSTATUS cli_list_old(struct cli_state *cli,const char *Mask,uint32_t attribute,
-		      NTSTATUS (*fn)(const char *, struct file_info *,
+		      NTSTATUS (*fn)(struct file_info *,
 				 const char *, void *), void *state);
 NTSTATUS cli_list_trans(struct cli_state *cli, const char *mask,
 			uint32_t attribute, int info_level,
-			NTSTATUS (*fn)(const char *mnt, struct file_info *finfo,
-				   const char *mask, void *private_data),
+			NTSTATUS (*fn)(
+				struct file_info *finfo,
+				const char *mask,
+				void *private_data),
 			void *private_data);
 struct tevent_req *cli_list_send(TALLOC_CTX *mem_ctx,
 				 struct tevent_context *ev,
@@ -762,11 +756,17 @@ struct tevent_req *cli_list_send(TALLOC_CTX *mem_ctx,
 				 const char *mask,
 				 uint32_t attribute,
 				 uint16_t info_level);
-NTSTATUS cli_list_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
-		       struct file_info **finfo, size_t *num_finfo);
-NTSTATUS cli_list(struct cli_state *cli,const char *Mask,uint32_t attribute,
-		  NTSTATUS (*fn)(const char *, struct file_info *, const char *,
-			     void *), void *state);
+NTSTATUS cli_list_recv(
+	struct tevent_req *req,
+	TALLOC_CTX *mem_ctx,
+	struct file_info **pfinfo);
+NTSTATUS cli_list(struct cli_state *cli,
+		  const char *mask,
+		  uint32_t attribute,
+		  NTSTATUS (*fn)(struct file_info *finfo,
+				 const char *mask,
+				 void *private_data),
+		  void *private_data);
 
 /* The following definitions come from libsmb/climessage.c  */
 
@@ -938,6 +938,16 @@ NTSTATUS cli_splice(struct cli_state *srccli, struct cli_state *dstcli,
 
 /* The following definitions come from libsmb/clisecdesc.c  */
 
+struct tevent_req *cli_query_security_descriptor_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	uint16_t fnum,
+	uint32_t sec_info);
+NTSTATUS cli_query_security_descriptor_recv(
+	struct tevent_req *req,
+	TALLOC_CTX *mem_ctx,
+	struct security_descriptor **sd);
 NTSTATUS cli_query_security_descriptor(struct cli_state *cli,
 				       uint16_t fnum,
 				       uint32_t sec_info,
@@ -945,6 +955,14 @@ NTSTATUS cli_query_security_descriptor(struct cli_state *cli,
 				       struct security_descriptor **sd);
 NTSTATUS cli_query_secdesc(struct cli_state *cli, uint16_t fnum,
 			  TALLOC_CTX *mem_ctx, struct security_descriptor **sd);
+struct tevent_req *cli_set_security_descriptor_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	uint16_t fnum,
+	uint32_t sec_info,
+	const struct security_descriptor *sd);
+NTSTATUS cli_set_security_descriptor_recv(struct tevent_req *req);
 NTSTATUS cli_set_security_descriptor(struct cli_state *cli,
 				     uint16_t fnum,
 				     uint32_t sec_info,

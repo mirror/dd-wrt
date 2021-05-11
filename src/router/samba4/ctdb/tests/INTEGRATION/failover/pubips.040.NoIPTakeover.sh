@@ -1,80 +1,71 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-test_info()
-{
-    cat <<EOF
-Verify that  'ctdb setvar NoIPTakeover 1' stops ip addresses from being failed 
-over onto the node.
-
-Prerequisites:
-
-* An active CTDB cluster with at least 2 active nodes.
-
-Steps:
-
-1. Verify that the status on all of the ctdb nodes is 'OK'.
-2. Use 'ctdb ip' on one of the nodes to list the IP addresses being
-   served.
-3. Use 'ctdb moveip' to move an address from one node to another.
-4. Verify that the IP is no longer being hosted by the first node and is now being hosted by the second node.
-
-Expected results:
-
-* 'ctdb moveip' allows an IP address to be moved between cluster nodes.
-EOF
-}
+# Verify that 'ctdb setvar NoIPTakeover 1' stops IP addresses being taken over
 
 . "${TEST_SCRIPTS_DIR}/integration.bash"
 
+set -e
+
 ctdb_test_init
 
-cluster_is_healthy
-
-try_command_on_node 0 "$CTDB listnodes | wc -l"
-num_nodes="$out"
+ctdb_get_all_pnns
+# out is set above
+# shellcheck disable=SC2154
+num_nodes=$(echo "$out" | wc -l | tr -d '[:space:]')
 echo "There are $num_nodes nodes..."
 
-if [ $num_nodes -lt 2 ] ; then
+if [ "$num_nodes" -lt 2 ] ; then
     echo "Less than 2 nodes!"
     exit 1
 fi
 
+select_test_node_and_ips
 
-echo "Wait until the ips are reallocated"
-sleep_for 30
-try_command_on_node 0 "$CTDB ipreallocate"
 
-num=`try_command_on_node -v 1 "$CTDB ip" | grep -v Public | egrep " 1$" | wc -l`
-echo "Number of addresses on node 1 : $num"
+# sets: num
+count_ips_on_node ()
+{
+	local node="$1"
 
+	ctdb_onnode "$node" ip
+	# outfile is set by ctdb_onnode() above
+	# shellcheck disable=SC2154,SC2126
+	# * || true is needed to avoid command failure when there are no matches
+	# * Using "wc -l | tr -d '[:space:]'" is our standard
+	#   pattern... and "grep -c" requires handling of special case
+	#   for no match
+	num=$(grep -v 'Public' "$outfile" | \
+		      grep " ${node}\$" | \
+		      wc -l | \
+		      tr -d '[:space:]')
+	echo "Number of addresses on node ${node}: ${num}"
+}
+
+
+# test_node is set by select_test_node_and_ips() above
+# shellcheck disable=SC2154
+count_ips_on_node "$test_node"
 
 echo "Turning on NoIPTakeover on all nodes"
-try_command_on_node all "$CTDB setvar NoIPTakeover 1"
-try_command_on_node 1 "$CTDB ipreallocate"
+ctdb_onnode all "setvar NoIPTakeover 1"
+ctdb_onnode "$test_node" ipreallocate
 
-echo Disable node 1
-try_command_on_node 1 "$CTDB disable"
-try_command_on_node 1 "$CTDB ipreallocate"
-num=`try_command_on_node -v 1 "$CTDB ip" | grep -v Public | egrep " 1$" | wc -l`
-echo "Number of addresses on node 1 : $num"
-[ "$num" != "0" ] && {
-    echo "BAD: node 1 still hosts ip addresses"
-    exit 1
-}
+echo "Disable node ${test_node}"
+ctdb_onnode "$test_node" disable
+
+count_ips_on_node "$test_node"
+if [ "$num" != "0" ] ; then
+	test_fail "BAD: node 1 still hosts IP addresses"
+fi
 
 
 echo "Enable node 1 again"
-try_command_on_node 1 "$CTDB enable"
-sleep_for 30
-try_command_on_node 1 "$CTDB ipreallocate"
-try_command_on_node 1 "$CTDB ipreallocate"
-num=`try_command_on_node -v 1 "$CTDB ip" | grep -v Public | egrep " 1$" | wc -l`
-echo "Number of addresses on node 1 : $num"
-[ "$num" != "0" ] && {
-    echo "BAD: node took over ip addresses"
-    exit 1
-}
+ctdb_onnode "$test_node" enable
+
+count_ips_on_node "$test_node"
+if [ "$num" != "0" ] ; then
+	test_fail "BAD: node 1 took over IP addresses"
+fi
 
 
-echo "OK. ip addresses were not taken over"
-exit 0
+echo "OK: IP addresses were not taken over"

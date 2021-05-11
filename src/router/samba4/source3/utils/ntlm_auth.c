@@ -48,6 +48,7 @@
 #include "lib/util/base64.h"
 #include "cmdline_contexts.h"
 #include "lib/util/tevent_ntstatus.h"
+#include "lib/util/string_wrappers.h"
 
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
@@ -1364,9 +1365,9 @@ static NTSTATUS ntlm_auth_prepare_gensec_server(TALLOC_CTX *mem_ctx,
 	cli_credentials_set_conf(server_credentials, lp_ctx);
 
 	if (lp_server_role() == ROLE_ACTIVE_DIRECTORY_DC || lp_security() == SEC_ADS || USE_KERBEROS_KEYTAB) {
-		cli_credentials_set_kerberos_state(server_credentials, CRED_AUTO_USE_KERBEROS);
+		cli_credentials_set_kerberos_state(server_credentials, CRED_USE_KERBEROS_DESIRED);
 	} else {
-		cli_credentials_set_kerberos_state(server_credentials, CRED_DONT_USE_KERBEROS);
+		cli_credentials_set_kerberos_state(server_credentials, CRED_USE_KERBEROS_DISABLED);
 	}
 
 	nt_status = gensec_server_start(tmp_ctx, gensec_settings,

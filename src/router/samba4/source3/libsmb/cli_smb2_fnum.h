@@ -93,14 +93,15 @@ struct tevent_req *cli_smb2_unlink_send(
 	const char *fname,
 	const struct smb2_create_blobs *in_cblobs);
 NTSTATUS cli_smb2_unlink_recv(struct tevent_req *req);
-NTSTATUS cli_smb2_list(struct cli_state *cli,
-			const char *pathname,
-			uint32_t attribute,
-			NTSTATUS (*fn)(const char *,
-				struct file_info *,
-				const char *,
-				void *),
-			void *state);
+struct tevent_req *cli_smb2_list_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	const char *pathname);
+NTSTATUS cli_smb2_list_recv(
+	struct tevent_req *req,
+	TALLOC_CTX *mem_ctx,
+	struct file_info **pfinfo);
 NTSTATUS cli_smb2_qpathinfo_basic(struct cli_state *cli,
 			const char *name,
 			SMB_STRUCT_STAT *sbuf,
@@ -205,15 +206,6 @@ NTSTATUS cli_smb2_get_fs_volume_info(struct cli_state *cli,
 			char **_volume_name,
 			uint32_t *pserial_number,
 			time_t *pdate);
-NTSTATUS cli_smb2_query_security_descriptor(struct cli_state *cli,
-			uint16_t fnum,
-			uint32_t sec_info,
-			TALLOC_CTX *mem_ctx,
-			struct security_descriptor **ppsd);
-NTSTATUS cli_smb2_set_security_descriptor(struct cli_state *cli,
-			uint16_t fnum,
-			uint32_t sec_info,
-			const struct security_descriptor *sd);
 struct tevent_req *cli_smb2_query_mxac_send(TALLOC_CTX *mem_ctx,
 					    struct tevent_context *ev,
 					    struct cli_state *cli,
@@ -223,10 +215,14 @@ NTSTATUS cli_smb2_query_mxac_recv(struct tevent_req *req,
 NTSTATUS cli_smb2_query_mxac(struct cli_state *cli,
 			     const char *fname,
 			     uint32_t *mxac);
-NTSTATUS cli_smb2_rename(struct cli_state *cli,
-			 const char *fname_src,
-			 const char *fname_dst,
-			 bool replace);
+struct tevent_req *cli_smb2_rename_send(
+	TALLOC_CTX *mem_ctx,
+	struct tevent_context *ev,
+	struct cli_state *cli,
+	const char *fname_src,
+	const char *fname_dst,
+	bool replace);
+NTSTATUS cli_smb2_rename_recv(struct tevent_req *req);
 NTSTATUS cli_smb2_set_ea_fnum(struct cli_state *cli,
 			uint16_t fnum,
 			const char *ea_name,

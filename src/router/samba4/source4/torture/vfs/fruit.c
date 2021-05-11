@@ -1962,9 +1962,8 @@ static bool write_stream(struct smb2_tree *tree,
 		if (value == NULL) {
 			return true;
 		} else {
-			torture_comment(tctx, "Unable to open stream %s\n",
-			    full_name);
-			sleep(10000000);
+			torture_comment(tctx, "Unable to open stream %s: %s\n",
+			    full_name, nt_errstr(status));
 			return false;
 		}
 	}
@@ -5047,7 +5046,7 @@ static bool test_readdir_attr_illegal_ntfs(struct torture_context *tctx,
 	unsigned int count;
 	union smb_search_data *d;
 	uint64_t rfork_len;
-	int i;
+	unsigned int i;
 
 	smb2_deltree(tree, BASEDIR);
 
@@ -5780,7 +5779,7 @@ static bool test_copy_chunk_streams(struct torture_context *torture,
 		{ "src:foo", "dst:foo" },
 		{ "src" AFPRESOURCE_STREAM, "dst" AFPRESOURCE_STREAM }
 	};
-	int i;
+	size_t i;
 	TALLOC_CTX *tmp_ctx = NULL;
 	bool ok = false;
 

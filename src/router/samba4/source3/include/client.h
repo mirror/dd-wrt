@@ -78,9 +78,6 @@ struct cli_state {
 
 	bool use_oplocks; /* should we use oplocks? */
 
-	/* Where (if anywhere) this is mounted under DFS. */
-	char *dfs_mountpoint;
-
 	struct smbXcli_conn *conn;
 
 	struct {
@@ -121,5 +118,6 @@ struct file_info {
 #define CLI_FULL_CONNECTION_FORCE_ASCII 0x0100
 #define CLI_FULL_CONNECTION_FORCE_SMB1 0x0400
 #define CLI_FULL_CONNECTION_DISABLE_SMB1 0x0800
+#define CLI_FULL_CONNECTION_IPC          0x1000
 
 #endif /* _CLIENT_H */
