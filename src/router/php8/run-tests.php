@@ -23,7 +23,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: a34434b7531d7d4c95d3fc07323ea0d2c04df3c7 $ */
+/* $Id: c5f1c02ad686648dc811baae762ba3b47d755c8d $ */
 
 /* Let there be no top-level code beyond this point:
  * Only functions and classes, thanks!
@@ -632,7 +632,7 @@ function main(): void
                     }
                     break;
                 case '--version':
-                    echo '$Id: a34434b7531d7d4c95d3fc07323ea0d2c04df3c7 $' . "\n";
+                    echo '$Id: c5f1c02ad686648dc811baae762ba3b47d755c8d $' . "\n";
                     exit(1);
 
                 default:
@@ -803,7 +803,7 @@ function main(): void
 
     junit_save_xml();
     if (getenv('REPORT_EXIT_STATUS') !== '0' && getenv('REPORT_EXIT_STATUS') !== 'no' &&
-            ($sum_results['FAILED'] || $sum_results['LEAKED'])) {
+            ($sum_results['FAILED'] || $sum_results['BORKED'] || $sum_results['LEAKED'])) {
         exit(1);
     }
 }
@@ -1294,6 +1294,9 @@ function system_with_timeout(
     }
     if ($stat["exitcode"] > 128 && $stat["exitcode"] < 160) {
         $data .= "\nTermsig=" . ($stat["exitcode"] - 128) . "\n";
+    } else if (defined('PHP_WINDOWS_VERSION_MAJOR') && (($stat["exitcode"] >> 28) & 0b1111) === 0b1100) {
+        // https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/87fba13e-bf06-450e-83b1-9241dc81e781
+        $data .= "\nTermsig=" . $stat["exitcode"] . "\n";
     }
 
     proc_close($proc);
@@ -3359,6 +3362,7 @@ function show_result(
                 case 'FAIL':
                 case 'BORK':
                 case 'LEAK':
+                case 'LEAK&FAIL':
                     // Light Red
                     $color = "\e[1;31m{$result}\e[0m"; break;
                 default: // Yellow

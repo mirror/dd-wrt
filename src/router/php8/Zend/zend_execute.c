@@ -54,11 +54,11 @@
 #  define ZEND_VM_FP_GLOBAL_REG "%r14"
 #  define ZEND_VM_IP_GLOBAL_REG "%r15"
 # elif defined(__GNUC__) && ZEND_GCC_VERSION >= 4008 && defined(__powerpc64__)
-#  define ZEND_VM_FP_GLOBAL_REG "r28"
-#  define ZEND_VM_IP_GLOBAL_REG "r29"
+#  define ZEND_VM_FP_GLOBAL_REG "r14"
+#  define ZEND_VM_IP_GLOBAL_REG "r15"
 # elif defined(__IBMC__) && ZEND_GCC_VERSION >= 4002 && defined(__powerpc64__)
-#  define ZEND_VM_FP_GLOBAL_REG "r28"
-#  define ZEND_VM_IP_GLOBAL_REG "r29"
+#  define ZEND_VM_FP_GLOBAL_REG "r14"
+#  define ZEND_VM_IP_GLOBAL_REG "r15"
 # elif defined(__GNUC__) && ZEND_GCC_VERSION >= 4008 && defined(__aarch64__)
 #  define ZEND_VM_FP_GLOBAL_REG "x27"
 #  define ZEND_VM_IP_GLOBAL_REG "x28"
@@ -4005,6 +4005,10 @@ static zend_never_inline zend_execute_data *zend_init_dynamic_call_string(zend_s
 
 		if (UNEXPECTED(!(fbc->common.fn_flags & ZEND_ACC_STATIC))) {
 			zend_non_static_method_call(fbc);
+			if (fbc->common.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE) {
+				zend_string_release_ex(fbc->common.function_name, 0);
+				zend_free_trampoline(fbc);
+			}
 			return NULL;
 		}
 		if (EXPECTED(fbc->type == ZEND_USER_FUNCTION) && UNEXPECTED(!RUN_TIME_CACHE(&fbc->op_array))) {
@@ -4129,6 +4133,10 @@ static zend_never_inline zend_execute_data *zend_init_dynamic_call_array(zend_ar
 			}
 			if (!(fbc->common.fn_flags & ZEND_ACC_STATIC)) {
 				zend_non_static_method_call(fbc);
+				if (fbc->common.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE) {
+					zend_string_release_ex(fbc->common.function_name, 0);
+					zend_free_trampoline(fbc);
+				}
 				return NULL;
 			}
 			object_or_called_scope = called_scope;
@@ -4571,6 +4579,9 @@ ZEND_API zend_result ZEND_FASTCALL zend_handle_undef_args(zend_execute_data *cal
 			}
 
 			ZVAL_COPY_VALUE(arg, &default_value);
+			if (ZEND_ARG_SEND_MODE(arg_info) & ZEND_SEND_BY_REF) {
+				ZVAL_NEW_REF(arg, arg);
+			}
 		}
 	}
 
