@@ -1264,13 +1264,11 @@ static void php_session_remove_cookie(void) {
 	zend_llist_element *next;
 	zend_llist_element *current;
 	char *session_cookie;
-	zend_string *e_session_name;
 	size_t session_cookie_len;
 	size_t len = sizeof("Set-Cookie")-1;
 
-	e_session_name = php_url_encode(PS(session_name), strlen(PS(session_name)));
-	spprintf(&session_cookie, 0, "Set-Cookie: %s=", ZSTR_VAL(e_session_name));
-	zend_string_free(e_session_name);
+	ZEND_ASSERT(strpbrk(PS(session_name), "=,; \t\r\n\013\014") == NULL);
+	spprintf(&session_cookie, 0, "Set-Cookie: %s=", PS(session_name));
 
 	session_cookie_len = strlen(session_cookie);
 	current = l->head;
@@ -1302,7 +1300,7 @@ static int php_session_send_cookie(void) /* {{{ */
 {
 	smart_str ncookie = {0};
 	zend_string *date_fmt = NULL;
-	zend_string *e_session_name, *e_id;
+	zend_string *e_id;
 
 	if (SG(headers_sent)) {
 		const char *output_start_filename = php_output_get_start_filename();
@@ -1316,16 +1314,20 @@ static int php_session_send_cookie(void) /* {{{ */
 		return FAILURE;
 	}
 
-	/* URL encode session_name and id because they might be user supplied */
-	e_session_name = php_url_encode(PS(session_name), strlen(PS(session_name)));
+	/* Prevent broken Set-Cookie header, because the session_name might be user supplied */
+	if (strpbrk(PS(session_name), "=,; \t\r\n\013\014") != NULL) {   /* man isspace for \013 and \014 */
+		php_error_docref(NULL, E_WARNING, "session.name cannot contain any of the following '=,; \\t\\r\\n\\013\\014'");
+		return FAILURE;
+	}
+
+	/* URL encode id because it might be user supplied */
 	e_id = php_url_encode(ZSTR_VAL(PS(id)), ZSTR_LEN(PS(id)));
 
 	smart_str_appendl(&ncookie, "Set-Cookie: ", sizeof("Set-Cookie: ")-1);
-	smart_str_appendl(&ncookie, ZSTR_VAL(e_session_name), ZSTR_LEN(e_session_name));
+	smart_str_appendl(&ncookie, PS(session_name), strlen(PS(session_name)));
 	smart_str_appendc(&ncookie, '=');
 	smart_str_appendl(&ncookie, ZSTR_VAL(e_id), ZSTR_LEN(e_id));
 
-	zend_string_release_ex(e_session_name, 0);
 	zend_string_release_ex(e_id, 0);
 
 	if (PS(cookie_lifetime) > 0) {
@@ -1950,12 +1952,23 @@ static int save_handler_check_session() {
 	return SUCCESS;
 }
 
+static inline void set_user_save_handler_ini(void) {
+	zend_string *ini_name, *ini_val;
+
+	ini_name = zend_string_init("session.save_handler", sizeof("session.save_handler") - 1, 0);
+	ini_val = zend_string_init("user", sizeof("user") - 1, 0);
+	PS(set_handler) = 1;
+	zend_alter_ini_entry(ini_name, ini_val, PHP_INI_USER, PHP_INI_STAGE_RUNTIME);
+	PS(set_handler) = 0;
+	zend_string_release_ex(ini_val, 0);
+	zend_string_release_ex(ini_name, 0);
+}
+
 /* {{{ Sets user-level functions */
 PHP_FUNCTION(session_set_save_handler)
 {
 	zval *args = NULL;
 	int i, num_args, argc = ZEND_NUM_ARGS();
-	zend_string *ini_name, *ini_val;
 
 	if (argc > 0 && argc <= 2) {
 		zval *obj = NULL;
@@ -2049,14 +2062,8 @@ PHP_FUNCTION(session_set_save_handler)
 			remove_user_shutdown_function("session_shutdown", sizeof("session_shutdown") - 1);
 		}
 
-		if (PS(mod) && PS(session_status) != php_session_active && PS(mod) != &ps_mod_user) {
-			ini_name = zend_string_init("session.save_handler", sizeof("session.save_handler") - 1, 0);
-			ini_val = zend_string_init("user", sizeof("user") - 1, 0);
-			PS(set_handler) = 1;
-			zend_alter_ini_entry(ini_name, ini_val, PHP_INI_USER, PHP_INI_STAGE_RUNTIME);
-			PS(set_handler) = 0;
-			zend_string_release_ex(ini_val, 0);
-			zend_string_release_ex(ini_name, 0);
+		if (PS(session_status) != php_session_active && (!PS(mod) || PS(mod) != &ps_mod_user)) {
+			set_user_save_handler_ini();
 		}
 
 		RETURN_TRUE;
@@ -2088,14 +2095,8 @@ PHP_FUNCTION(session_set_save_handler)
 	/* remove shutdown function */
 	remove_user_shutdown_function("session_shutdown", sizeof("session_shutdown") - 1);
 
-	if (PS(mod) && PS(mod) != &ps_mod_user) {
-		ini_name = zend_string_init("session.save_handler", sizeof("session.save_handler") - 1, 0);
-		ini_val = zend_string_init("user", sizeof("user") - 1, 0);
-		PS(set_handler) = 1;
-		zend_alter_ini_entry(ini_name, ini_val, PHP_INI_USER, PHP_INI_STAGE_RUNTIME);
-		PS(set_handler) = 0;
-		zend_string_release_ex(ini_val, 0);
-		zend_string_release_ex(ini_name, 0);
+	if (!PS(mod) || PS(mod) != &ps_mod_user) {
+		set_user_save_handler_ini();
 	}
 
 	for (i = 0; i < argc; i++) {
@@ -2690,7 +2691,8 @@ static int php_rinit_session(zend_bool auto_start) /* {{{ */
 {
 	php_rinit_session_globals();
 
-	if (PS(mod) == NULL) {
+	PS(mod) = NULL;
+	{
 		char *value;
 
 		value = zend_ini_string("session.save_handler", sizeof("session.save_handler") - 1, 0);

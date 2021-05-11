@@ -567,7 +567,7 @@ static int odbc_stmt_describe(pdo_stmt_t *stmt, int colno)
 	SQLULEN	colsize;
 	SQLLEN displaysize = 0;
 
-	rc = SQLDescribeCol(S->stmt, colno+1, S->cols[colno].colname,
+	rc = SQLDescribeCol(S->stmt, colno+1, (SQLCHAR *) S->cols[colno].colname,
 			sizeof(S->cols[colno].colname)-1, &colnamelen,
 			&S->cols[colno].coltype, &colsize, NULL, NULL);
 
@@ -650,6 +650,7 @@ static int odbc_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, zend_ulong
 
 	/* if it is a column containing "long" data, perform late binding now */
 	if (C->is_long) {
+		SQLLEN orig_fetched_len = SQL_NULL_DATA;
 		zend_ulong used = 0;
 		char *buf;
 		RETCODE rc;
@@ -660,18 +661,20 @@ static int odbc_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, zend_ulong
 
 		rc = SQLGetData(S->stmt, colno+1, C->is_unicode ? SQL_C_BINARY : SQL_C_CHAR, C->data,
  			256, &C->fetched_len);
+		orig_fetched_len = C->fetched_len;
 
-		if (rc == SQL_SUCCESS) {
+		if (rc == SQL_SUCCESS && C->fetched_len < 256) {
 			/* all the data fit into our little buffer;
 			 * jump down to the generic bound data case */
 			goto in_data;
 		}
 
-		if (rc == SQL_SUCCESS_WITH_INFO) {
+		if (rc == SQL_SUCCESS_WITH_INFO || rc == SQL_SUCCESS) {
 			/* this is a 'long column'
 
 			 read the column in 255 byte blocks until the end of the column is reached, reassembling those blocks
-			 in order into the output buffer
+			 in order into the output buffer; 255 bytes are an optimistic assumption, since the driver may assert
+			 more or less NUL bytes at the end; we cater to that later, if actual length information is available
 
 			 this loop has to work whether or not SQLGetData() provides the total column length.
 			 calling SQLDescribeCol() or other, specifically to get the column length, then doing a single read
@@ -685,10 +688,17 @@ static int odbc_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, zend_ulong
 			do {
 				C->fetched_len = 0;
 				/* read block. 256 bytes => 255 bytes are actually read, the last 1 is NULL */
-				rc = SQLGetData(S->stmt, colno+1, SQL_C_CHAR, buf2, 256, &C->fetched_len);
+				rc = SQLGetData(S->stmt, colno+1, C->is_unicode ? SQL_C_BINARY : SQL_C_CHAR, buf2, 256, &C->fetched_len);
+
+				/* adjust `used` in case we have length info from the driver */
+				if (orig_fetched_len >= 0 && C->fetched_len >= 0) {
+					SQLLEN fixed_used = orig_fetched_len - C->fetched_len;
+					ZEND_ASSERT(fixed_used <= used + 1);
+					used = fixed_used;
+				}
 
 				/* resize output buffer and reassemble block */
-				if (rc==SQL_SUCCESS_WITH_INFO) {
+				if (rc==SQL_SUCCESS_WITH_INFO || (rc==SQL_SUCCESS && C->fetched_len > 255)) {
 					/* point 5, in section "Retrieving Data with SQLGetData" in http://msdn.microsoft.com/en-us/library/windows/desktop/ms715441(v=vs.85).aspx
 					 states that if SQL_SUCCESS_WITH_INFO, fetched_len will be > 255 (greater than buf2's size)
 					 (if a driver fails to follow that and wrote less than 255 bytes to buf2, this will AV or read garbage into buf) */
@@ -777,7 +787,7 @@ static int odbc_stmt_set_param(pdo_stmt_t *stmt, zend_long attr, zval *val)
 	switch (attr) {
 		case PDO_ATTR_CURSOR_NAME:
 			convert_to_string(val);
-			rc = SQLSetCursorName(S->stmt, Z_STRVAL_P(val), Z_STRLEN_P(val));
+			rc = SQLSetCursorName(S->stmt, (SQLCHAR *) Z_STRVAL_P(val), Z_STRLEN_P(val));
 
 			if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
 				return 1;
@@ -806,7 +816,7 @@ static int odbc_stmt_get_attr(pdo_stmt_t *stmt, zend_long attr, zval *val)
 		{
 			char buf[256];
 			SQLSMALLINT len = 0;
-			rc = SQLGetCursorName(S->stmt, buf, sizeof(buf), &len);
+			rc = SQLGetCursorName(S->stmt, (SQLCHAR *) buf, sizeof(buf), &len);
 
 			if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
 				ZVAL_STRINGL(val, buf, len);

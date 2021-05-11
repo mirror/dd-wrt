@@ -2933,7 +2933,7 @@ static int zend_jit_setup(void)
 # elif defined(__GNUC__) && defined(__x86_64__)
 	tsrm_ls_cache_tcb_offset = tsrm_get_ls_cache_tcb_offset();
 	if (tsrm_ls_cache_tcb_offset == 0) {
-#if defined(__has_attribute) && __has_attribute(tls_model)
+#if defined(__has_attribute) && __has_attribute(tls_model) && !defined(__FreeBSD__)
 		size_t ret;
 
 		asm ("movq _tsrm_ls_cache@gottpoff(%%rip),%0"
@@ -2952,7 +2952,7 @@ static int zend_jit_setup(void)
 # elif defined(__GNUC__) && defined(__i386__)
 	tsrm_ls_cache_tcb_offset = tsrm_get_ls_cache_tcb_offset();
 	if (tsrm_ls_cache_tcb_offset == 0) {
-#if 1
+#if !defined(__FreeBSD__)
 		size_t ret;
 
 		asm ("leal _tsrm_ls_cache@ntpoff,%0\n"
@@ -4329,12 +4329,17 @@ static int zend_jit_math_long_long(dasm_State    **Dst,
 		}
 
 		do {
-			if ((Z_MODE(op1_addr) == IS_CONST_ZVAL && Z_LVAL_P(Z_ZV(op1_addr)) == 1) ||
-			    (Z_MODE(op2_addr) == IS_CONST_ZVAL && Z_LVAL_P(Z_ZV(op2_addr)) == 1)) {
+			if ((sizeof(void*) == 8 || Z_MODE(res_addr) != IS_REG) &&
+			    ((Z_MODE(op1_addr) == IS_CONST_ZVAL && Z_LVAL_P(Z_ZV(op1_addr)) == 1) ||
+			     (Z_MODE(op2_addr) == IS_CONST_ZVAL && Z_LVAL_P(Z_ZV(op2_addr)) == 1))) {
 				if (opcode == ZEND_ADD) {
 					|.if X64
 						|	mov64 rax, 0x43e0000000000000
-						|	SET_ZVAL_LVAL res_addr, rax
+						if (Z_MODE(res_addr) == IS_REG) {
+							|	movd xmm(Z_REG(res_addr)-ZREG_XMM0), rax
+						} else {
+							|	SET_ZVAL_LVAL res_addr, rax
+						}
 					|.else
 						|	SET_ZVAL_LVAL res_addr, 0
 						|	SET_ZVAL_W2 res_addr, 0x41e00000
@@ -4343,7 +4348,11 @@ static int zend_jit_math_long_long(dasm_State    **Dst,
 				} else if (opcode == ZEND_SUB) {
 					|.if X64
 						|	mov64 rax, 0xc3e0000000000000
-						|	SET_ZVAL_LVAL res_addr, rax
+						if (Z_MODE(res_addr) == IS_REG) {
+							|	movd xmm(Z_REG(res_addr)-ZREG_XMM0), rax
+						} else {
+							|	SET_ZVAL_LVAL res_addr, rax
+						}
 					|.else
 						|	SET_ZVAL_LVAL res_addr, 0x00200000
 						|	SET_ZVAL_W2 res_addr, 0xc1e00000
@@ -4428,7 +4437,14 @@ static int zend_jit_math_double_long(dasm_State    **Dst,
                                      zend_jit_addr   res_addr,
                                      uint32_t        res_use_info)
 {
-	zend_reg result_reg, tmp_reg;
+	zend_reg result_reg, tmp_reg_gp;
+
+	if (Z_MODE(res_addr) == IS_MEM_ZVAL && Z_REG(res_addr) == ZREG_R0) {
+		/* ASSIGN_DIM_OP */
+		tmp_reg_gp = ZREG_R1;
+	} else {
+		tmp_reg_gp = ZREG_R0;
+	}
 
 	if (zend_is_commutative(opcode)
 	 && (Z_MODE(res_addr) != IS_REG || Z_MODE(op1_addr) != IS_REG || Z_REG(res_addr) != Z_REG(op1_addr))) {
@@ -4437,13 +4453,7 @@ static int zend_jit_math_double_long(dasm_State    **Dst,
 		} else {
 			result_reg = ZREG_XMM0;
 		}
-		if (Z_MODE(res_addr) == IS_MEM_ZVAL && Z_REG(res_addr) == ZREG_R0) {
-			/* ASSIGN_DIM_OP */
-			tmp_reg = ZREG_R1;
-		} else {
-			tmp_reg = ZREG_R0;
-		}
-		|	SSE_GET_ZVAL_LVAL result_reg, op2_addr, tmp_reg
+		|	SSE_GET_ZVAL_LVAL result_reg, op2_addr, tmp_reg_gp
 		if (Z_MODE(res_addr) == IS_MEM_ZVAL && Z_REG(res_addr) == ZREG_R0) {
 			/* ASSIGN_DIM_OP */
 			if (CAN_USE_AVX()) {
@@ -4485,7 +4495,7 @@ static int zend_jit_math_double_long(dasm_State    **Dst,
 			 && Z_LVAL_P(Z_ZV(op2_addr)) == 0) {
 				/* +/- 0 */
 			} else {
-				|	SSE_GET_ZVAL_LVAL tmp_reg, op2_addr, ZREG_R0
+				|	SSE_GET_ZVAL_LVAL tmp_reg, op2_addr, tmp_reg_gp
 				|	AVX_MATH_REG opcode, result_reg, op1_reg, tmp_reg
 			}
 		} else {
@@ -4495,7 +4505,7 @@ static int zend_jit_math_double_long(dasm_State    **Dst,
 			 && Z_LVAL_P(Z_ZV(op2_addr)) == 0) {
 				/* +/- 0 */
 			} else {
-				|	SSE_GET_ZVAL_LVAL tmp_reg, op2_addr, ZREG_R0
+				|	SSE_GET_ZVAL_LVAL tmp_reg, op2_addr, tmp_reg_gp
 				|	SSE_MATH_REG opcode, result_reg, tmp_reg
 			}
 		}
@@ -5211,6 +5221,9 @@ static int zend_jit_concat_helper(dasm_State    **Dst,
 			|	add r4, 12
 			|.endif
 		}
+		/* concatination with empty string may increase refcount */
+		op1_info |= MAY_BE_RCN;
+		op2_info |= MAY_BE_RCN;
 		|	FREE_OP op1_type, op1, op1_info, 0, opline
 		|	FREE_OP op2_type, op2, op2_info, 0, opline
 		|5:
@@ -5237,6 +5250,9 @@ static int zend_jit_concat_helper(dasm_State    **Dst,
 		|.if not(X64)
 		|	add r4, 12
 		|.endif
+		/* concatination with empty string may increase refcount */
+		op1_info |= MAY_BE_RCN;
+		op2_info |= MAY_BE_RCN;
 		|	FREE_OP op1_type, op1, op1_info, 0, opline
 		|	FREE_OP op2_type, op2, op2_info, 0, opline
 		if (may_throw) {
@@ -15495,7 +15511,7 @@ static zend_regset zend_jit_get_scratch_regset(const zend_op *opline, const zend
 			op2_info = OP2_INFO();
 			if (opline->op1_type == IS_CV
 			 && !(op2_info & MAY_BE_UNDEF)
-			 && !(op1_info & (MAY_BE_STRING|MAY_BE_ARRAY|MAY_BE_RESOURCE|MAY_BE_REF))) {
+			 && !(op1_info & (MAY_BE_STRING|MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE|MAY_BE_REF))) {
 				if ((op2_info & (MAY_BE_ANY|MAY_BE_REF)) == MAY_BE_DOUBLE) {
 					regset = ZEND_REGSET(ZREG_XMM0);
 				} else if ((op2_info & (MAY_BE_ANY|MAY_BE_REF)) == MAY_BE_LONG) {
