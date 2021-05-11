@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.215 Kernel Configuration
+# Linux/mips 4.4.268 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -427,6 +427,7 @@ CONFIG_MMU=y
 #
 CONFIG_BINFMT_ELF=y
 CONFIG_ARCH_BINFMT_ELF_STATE=y
+CONFIG_ELFCORE=y
 CONFIG_BINFMT_SCRIPT=y
 # CONFIG_HAVE_AOUT is not set
 # CONFIG_BINFMT_MISC is not set
@@ -1315,6 +1316,7 @@ CONFIG_AR8216_PHY=y
 CONFIG_FIXED_PHY=y
 # CONFIG_MDIO_BITBANG is not set
 # CONFIG_RTL8366_SMI is not set
+# CONFIG_B53 is not set
 # CONFIG_MDIO_BCM_UNIMAC is not set
 # CONFIG_GATEWORKS_GW16083 is not set
 CONFIG_PPP=y
@@ -1942,7 +1944,6 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
 # CONFIG_FUSE_FS is not set
-# CONFIG_CUSE is not set
 # CONFIG_OVERLAY_FS is not set
 
 #
@@ -2432,6 +2433,6 @@ CONFIG_CLZ_TAB=y
 CONFIG_MPILIB=y
 CONFIG_OID_REGISTRY=y
 # CONFIG_SG_SPLIT is not set
-# CONFIG_ARCH_HAS_SG_CHAIN is not set
+CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
