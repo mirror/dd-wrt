@@ -640,7 +640,7 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, attribute-alias)
 
 ifneq ($(CONFIG_BCM_CTF),)
-KBUILD_CFLAGS += -DHNDCTF -DCTFPOOL -DCTFMAP -DPKTC -DCTF_PPPOE
+KBUILD_CFLAGS += -DHNDCTF -DCTFPOOL -DCTFMAP -DPKTC -DCTF_PPPOE -DBCMDMASGLISTOSL
 ifneq ($(CONFIG_WL_USBAP),)
 KBUILD_CFLAGS += -DCTFPOOL_SPINLOCK
 endif

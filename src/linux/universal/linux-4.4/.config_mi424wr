@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.4.215 Kernel Configuration
+# Linux/arm 4.4.268 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -242,6 +242,7 @@ CONFIG_IOSCHED_DEADLINE=y
 CONFIG_DEFAULT_DEADLINE=y
 # CONFIG_DEFAULT_NOOP is not set
 CONFIG_DEFAULT_IOSCHED="deadline"
+# CONFIG_ASN1 is not set
 CONFIG_INLINE_SPIN_UNLOCK_IRQ=y
 CONFIG_INLINE_READ_UNLOCK=y
 CONFIG_INLINE_READ_UNLOCK_IRQ=y
@@ -477,6 +478,7 @@ CONFIG_CMDLINE_FROM_BOOTLOADER=y
 # Userspace binary formats
 #
 CONFIG_BINFMT_ELF=y
+CONFIG_ELFCORE=y
 CONFIG_BINFMT_SCRIPT=y
 # CONFIG_HAVE_AOUT is not set
 # CONFIG_BINFMT_MISC is not set
@@ -1544,6 +1546,7 @@ CONFIG_SPI_BITBANG=y
 #
 # CONFIG_SPI_SPIDEV is not set
 # CONFIG_SPI_TLE62X0 is not set
+# CONFIG_SPI_DYNAMIC is not set
 # CONFIG_SPMI is not set
 # CONFIG_HSI is not set
 
