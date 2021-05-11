@@ -1941,6 +1941,18 @@ static void add_usages(const zend_op_array *op_array, zend_ssa *ssa, zend_bitset
 				if (op->op2_def >= 0) {
 					zend_bitset_incl(worklist, op->op2_def);
 				}
+			} else if (use + 1 < op_array->last
+			 && op_array->opcodes[use + 1].opcode == ZEND_OP_DATA) {
+				op++;
+				if (op->result_def >= 0) {
+					zend_bitset_incl(worklist, op->result_def);
+				}
+				if (op->op1_def >= 0) {
+					zend_bitset_incl(worklist, op->op1_def);
+				}
+				if (op->op2_def >= 0) {
+					zend_bitset_incl(worklist, op->op2_def);
+				}
 			}
 			use = zend_ssa_next_use(ssa->ops, var, use);
 		} while (use >= 0);
@@ -2316,10 +2328,6 @@ static uint32_t zend_fetch_prop_type(const zend_script *script, zend_property_in
 	}
 	if (prop_info && ZEND_TYPE_IS_SET(prop_info->type)) {
 		uint32_t type = zend_convert_type_declaration_mask(ZEND_TYPE_PURE_MASK(prop_info->type));
-
-		if (type & (MAY_BE_STRING|MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE)) {
-			type |= MAY_BE_RC1 | MAY_BE_RCN;
-		}
 		if (ZEND_TYPE_HAS_CLASS(prop_info->type)) {
 			type |= MAY_BE_OBJECT;
 			if (pce) {
@@ -2331,6 +2339,9 @@ static uint32_t zend_fetch_prop_type(const zend_script *script, zend_property_in
 					zend_string_release(lcname);
 				}
 			}
+		}
+		if (type & (MAY_BE_STRING|MAY_BE_ARRAY|MAY_BE_OBJECT|MAY_BE_RESOURCE)) {
+			type |= MAY_BE_RC1 | MAY_BE_RCN;
 		}
 		return type;
 	}
