@@ -271,7 +271,7 @@ static void store_inheritance_attributes(files_struct *fsp,
 	pai_buf = create_pai_buf_v2(file_ace_list, dir_ace_list,
 				sd_type, &store_size);
 
-	if (fsp->fh->fd != -1) {
+	if (fsp_get_pathref_fd(fsp) != -1) {
 		ret = SMB_VFS_FSETXATTR(fsp, SAMBA_POSIX_INHERITANCE_EA_NAME,
 				pai_buf, store_size, 0);
 	} else {
@@ -624,7 +624,7 @@ static struct pai_val *fload_inherited_info(files_struct *fsp)
 	}
 
 	do {
-		if (fsp->fh->fd != -1) {
+		if (fsp_get_pathref_fd(fsp) != -1) {
 			ret = SMB_VFS_FGETXATTR(fsp, SAMBA_POSIX_INHERITANCE_EA_NAME,
 					pai_buf, pai_buf_size);
 		} else {
@@ -2869,6 +2869,7 @@ static bool set_canon_ace_list(files_struct *fsp,
 	SMB_ACL_TYPE_T the_acl_type = (default_ace ? SMB_ACL_TYPE_DEFAULT : SMB_ACL_TYPE_ACCESS);
 	bool needs_mask = False;
 	mode_t mask_perms = 0;
+	int sret;
 
 	/* Use the psbuf that was passed in. */
 	if (psbuf != &fsp->fsp_name->st) {
@@ -3020,79 +3021,35 @@ static bool set_canon_ace_list(files_struct *fsp,
 	/*
 	 * Finally apply it to the file or directory.
 	 */
+	sret = SMB_VFS_SYS_ACL_SET_FD(fsp, the_acl_type, the_acl);
+	if (sret == -1) {
+		/*
+		 * Some systems allow all the above calls and only fail with no ACL support
+		 * when attempting to apply the acl. HPUX with HFS is an example of this. JRA.
+		 */
+		if (no_acl_syscall_error(errno)) {
+			*pacl_set_support = false;
+		}
 
-	if (default_ace || fsp->fsp_flags.is_directory || fsp->fh->fd == -1) {
-		if (SMB_VFS_SYS_ACL_SET_FILE(conn, fsp->fsp_name,
-					     the_acl_type, the_acl) == -1) {
-			/*
-			 * Some systems allow all the above calls and only fail with no ACL support
-			 * when attempting to apply the acl. HPUX with HFS is an example of this. JRA.
-			 */
-			if (no_acl_syscall_error(errno)) {
-				*pacl_set_support = False;
-			}
+		if (acl_group_override(conn, fsp->fsp_name)) {
+			DBG_DEBUG("acl group control on and current user in "
+				  "file [%s] primary group.\n",
+				  fsp_str_dbg(fsp));
 
-			if (acl_group_override(conn, fsp->fsp_name)) {
-				int sret;
-
-				DEBUG(5,("set_canon_ace_list: acl group "
-					 "control on and current user in file "
-					 "%s primary group.\n",
-					 fsp_str_dbg(fsp)));
-
-				become_root();
-				sret = SMB_VFS_SYS_ACL_SET_FILE(conn,
-				    fsp->fsp_name, the_acl_type,
-				    the_acl);
-				unbecome_root();
-				if (sret == 0) {
-					ret = True;	
-				}
-			}
-
-			if (ret == False) {
-				DEBUG(2,("set_canon_ace_list: "
-					 "sys_acl_set_file type %s failed for "
-					 "file %s (%s).\n",
-					 the_acl_type == SMB_ACL_TYPE_DEFAULT ?
-					 "directory default" : "file",
-					 fsp_str_dbg(fsp), strerror(errno)));
-				goto fail;
+			become_root();
+			sret = SMB_VFS_SYS_ACL_SET_FD(fsp,
+						      the_acl_type,
+						      the_acl);
+			unbecome_root();
+			if (sret == 0) {
+				ret = true;
 			}
 		}
-	} else {
-		if (SMB_VFS_SYS_ACL_SET_FD(fsp, the_acl) == -1) {
-			/*
-			 * Some systems allow all the above calls and only fail with no ACL support
-			 * when attempting to apply the acl. HPUX with HFS is an example of this. JRA.
-			 */
-			if (no_acl_syscall_error(errno)) {
-				*pacl_set_support = False;
-			}
 
-			if (acl_group_override(conn, fsp->fsp_name)) {
-				int sret;
-
-				DEBUG(5,("set_canon_ace_list: acl group "
-					 "control on and current user in file "
-					 "%s primary group.\n",
-					 fsp_str_dbg(fsp)));
-
-				become_root();
-				sret = SMB_VFS_SYS_ACL_SET_FD(fsp, the_acl);
-				unbecome_root();
-				if (sret == 0) {
-					ret = True;
-				}
-			}
-
-			if (ret == False) {
-				DEBUG(2,("set_canon_ace_list: "
-					 "sys_acl_set_file failed for file %s "
-					 "(%s).\n",
-					 fsp_str_dbg(fsp), strerror(errno)));
-				goto fail;
-			}
+		if (ret == false) {
+			DBG_WARNING("sys_acl_set_file on file [%s]: (%s)\n",
+				    fsp_str_dbg(fsp), strerror(errno));
+			goto fail;
 		}
 	}
 
@@ -4138,7 +4095,7 @@ static int copy_access_posix_acl(connection_struct *conn,
 	if ((ret = chmod_acl_internals(conn, posix_acl, mode)) == -1)
 		goto done;
 
-	ret = SMB_VFS_SYS_ACL_SET_FILE(conn, smb_fname_to,
+	ret = SMB_VFS_SYS_ACL_SET_FD(smb_fname_to->fsp,
 			SMB_ACL_TYPE_ACCESS, posix_acl);
 
  done:
@@ -4383,10 +4340,9 @@ NTSTATUS set_unix_posix_default_acl(connection_struct *conn,
 		return map_nt_error_from_unix(errno);
 	}
 
-	ret = SMB_VFS_SYS_ACL_SET_FILE(conn,
-					fsp->fsp_name,
-					SMB_ACL_TYPE_DEFAULT,
-					def_acl);
+	ret = SMB_VFS_SYS_ACL_SET_FD(fsp,
+				     SMB_ACL_TYPE_DEFAULT,
+				     def_acl);
 	if (ret == -1) {
 		status = map_nt_error_from_unix(errno);
 		DBG_INFO("acl_set_file failed on directory %s (%s)\n",
@@ -4559,7 +4515,7 @@ static NTSTATUS remove_posix_acl(connection_struct *conn,
 	}
 
 	/* Set the new empty file ACL. */
-	ret = SMB_VFS_SYS_ACL_SET_FD(fsp, new_file_acl);
+	ret = SMB_VFS_SYS_ACL_SET_FD(fsp, SMB_ACL_TYPE_ACCESS, new_file_acl);
 	if (ret == -1) {
 		status = map_nt_error_from_unix(errno);
 		DBG_INFO("acl_set_file failed on %s (%s)\n",
@@ -4605,7 +4561,7 @@ NTSTATUS set_unix_posix_acl(connection_struct *conn,
 		return map_nt_error_from_unix(errno);
 	}
 
-	ret = SMB_VFS_SYS_ACL_SET_FD(fsp, file_acl);
+	ret = SMB_VFS_SYS_ACL_SET_FD(fsp, SMB_ACL_TYPE_ACCESS, file_acl);
 	if (ret == -1) {
 		status = map_nt_error_from_unix(errno);
 		DBG_INFO("acl_set_file failed on %s (%s)\n",
@@ -4693,25 +4649,48 @@ int posix_sys_acl_blob_get_fd(vfs_handle_struct *handle,
 {
 	SMB_STRUCT_STAT sbuf;
 	TALLOC_CTX *frame;
-	struct smb_acl_wrapper acl_wrapper;
+	struct smb_acl_wrapper acl_wrapper = { 0 };
+	int fd = fsp_get_pathref_fd(fsp);
+	char buf[PATH_MAX] = {0};
+	struct smb_filename fname;
 	int ret;
 
-	/* This ensures that we also consider the default ACL */
-	if (fsp->fsp_flags.is_directory ||  fsp->fh->fd == -1) {
-		return posix_sys_acl_blob_get_file(handle,
-						fsp->fsp_name,
-						mem_ctx,
-						blob_description,
-						blob);
+	if (fsp->fsp_flags.have_proc_fds) {
+		const char *proc_fd_path = NULL;
+
+		proc_fd_path = sys_proc_fd_path(fd, buf, sizeof(buf));
+		if (proc_fd_path == NULL) {
+			return -1;
+		}
+
+		fname = (struct smb_filename) {
+			.base_name = discard_const_p(char, proc_fd_path),
+		};
+	} else {
+		/*
+		 * This is no longer a handle based call.
+		 */
+
+		fname = (struct smb_filename) {
+			.base_name = fsp->fsp_name->base_name,
+		};
 	}
+
 	frame = talloc_stackframe();
 
-	acl_wrapper.default_acl = NULL;
-
-	acl_wrapper.access_acl = smb_vfs_call_sys_acl_get_file(handle,
-					fsp->fsp_name,
+	acl_wrapper.access_acl = smb_vfs_call_sys_acl_get_file(
+					handle,
+					&fname,
 					SMB_ACL_TYPE_ACCESS,
 					frame);
+
+	if (fsp->fsp_flags.is_directory) {
+		acl_wrapper.default_acl = smb_vfs_call_sys_acl_get_file(
+						handle,
+						&fname,
+						SMB_ACL_TYPE_DEFAULT,
+						frame);
+	}
 
 	ret = smb_vfs_call_fstat(handle, fsp, &sbuf);
 	if (ret == -1) {

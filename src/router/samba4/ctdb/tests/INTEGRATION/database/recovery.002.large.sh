@@ -1,33 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-test_info()
-{
-    cat <<EOF
-Older style of recovery using PULL_DB and PUSH_DB controls tries to
-construct a single large marshall buffer for all the records in the
-database.  However, this approach is problematic as talloc restricts the
-maximum size of buffer to 256M.  Also, trying to construct and send large
-buffers is inefficient and can cause CTDB daemon to be tied up for long
-periods of time.
+# Test recovery of large volatile and persistent databases
 
-Instead new style recovery is introduced using DB_PULL and
-DB_PUSH_START/DB_PUSH_CONFIRM controls.  This sends the records in
-batches of ~RecBufferSizeLimit in size at a time.
-
-Expected results:
-
-* The recovery should complete successfully
-
-EOF
-}
+# Recovery now uses DB_PULL and DB_PUSH_START/DB_PUSH_CONFIRM
+# controls.  This sends the records in batches of ~RecBufferSizeLimit
+# in size at a time.  Test that large databases are re-assembled
+# correctly.
 
 . "${TEST_SCRIPTS_DIR}/integration.bash"
 
-ctdb_test_init
-
 set -e
 
-cluster_is_healthy
+ctdb_test_init
 
 #
 # Main test

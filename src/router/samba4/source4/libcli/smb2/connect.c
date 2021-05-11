@@ -31,6 +31,7 @@
 #include "param/param.h"
 #include "auth/credentials/credentials.h"
 #include "../libcli/smb/smbXcli_base.h"
+#include "smb2_constants.h"
 
 struct smb2_connect_state {
 	struct tevent_context *ev;
@@ -76,6 +77,8 @@ struct tevent_req *smb2_connect_send(TALLOC_CTX *mem_ctx,
 	struct smb2_connect_state *state;
 	struct composite_context *creq;
 	static const char *default_ports[] = { "445", "139", NULL };
+	enum smb_encryption_setting encryption_state =
+		cli_credentials_get_smb_encryption(credentials);
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct smb2_connect_state);
@@ -99,6 +102,10 @@ struct tevent_req *smb2_connect_send(TALLOC_CTX *mem_ctx,
 		state->ports = default_ports;
 	}
 
+	if (encryption_state >= SMB_ENCRYPTION_DESIRED) {
+		state->options.signing = SMB_SIGNING_REQUIRED;
+	}
+
 	make_nbt_name_client(&state->calling,
 			     cli_credentials_get_workstation(credentials));
 
@@ -116,7 +123,7 @@ struct tevent_req *smb2_connect_send(TALLOC_CTX *mem_ctx,
 
 		status = smb2_transport_raw_init(state, ev,
 						 existing_conn,
-						 options,
+						 &state->options,
 						 &state->transport);
 		if (tevent_req_nterror(req, status)) {
 			return tevent_req_post(req, ev);
@@ -237,6 +244,8 @@ static void smb2_connect_session_start(struct tevent_req *req)
 	tevent_req_set_callback(subreq, smb2_connect_session_done, req);
 }
 
+static void smb2_connect_enc_start(struct tevent_req *req);
+static void smb2_connect_tcon_start(struct tevent_req *req);
 static void smb2_connect_tcon_done(struct tevent_req *subreq);
 
 static void smb2_connect_session_done(struct tevent_req *subreq)
@@ -248,7 +257,6 @@ static void smb2_connect_session_done(struct tevent_req *subreq)
 		tevent_req_data(req,
 		struct smb2_connect_state);
 	NTSTATUS status;
-	uint32_t timeout_msec;
 
 	status = smb2_session_setup_spnego_recv(subreq);
 	TALLOC_FREE(subreq);
@@ -288,6 +296,54 @@ static void smb2_connect_session_done(struct tevent_req *subreq)
 	if (tevent_req_nomem(state->tree, req)) {
 		return;
 	}
+
+	smb2_connect_enc_start(req);
+}
+
+static void smb2_connect_enc_start(struct tevent_req *req)
+{
+	struct smb2_connect_state *state =
+		tevent_req_data(req,
+				struct smb2_connect_state);
+	enum smb_encryption_setting encryption_state =
+		cli_credentials_get_smb_encryption(state->credentials);
+	NTSTATUS status;
+
+	if (encryption_state < SMB_ENCRYPTION_DESIRED) {
+		smb2_connect_tcon_start(req);
+		return;
+	}
+
+	status = smb2cli_session_encryption_on(state->session->smbXcli);
+	if (!NT_STATUS_IS_OK(status)) {
+		if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_SUPPORTED)) {
+			if (encryption_state < SMB_ENCRYPTION_REQUIRED) {
+				smb2_connect_tcon_start(req);
+				return;
+			}
+
+			DBG_ERR("Encryption required and server doesn't support "
+				"SMB3 encryption - failing connect\n");
+			tevent_req_nterror(req, status);
+			return;
+		}
+
+		DBG_ERR("Encryption required and setup failed with error %s.\n",
+			nt_errstr(status));
+		tevent_req_nterror(req, NT_STATUS_PROTOCOL_NOT_SUPPORTED);
+		return;
+	}
+
+	smb2_connect_tcon_start(req);
+}
+
+static void smb2_connect_tcon_start(struct tevent_req *req)
+{
+	struct smb2_connect_state *state =
+		tevent_req_data(req,
+				struct smb2_connect_state);
+	struct tevent_req *subreq = NULL;
+	uint32_t timeout_msec;
 
 	timeout_msec = state->transport->options.request_timeout * 1000;
 

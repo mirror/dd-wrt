@@ -45,6 +45,9 @@
 #include "libds/common/flag_mapping.h"
 #include "system/network.h"
 #include "librpc/gen_ndr/irpc.h"
+#include "lib/util/smb_strtox.h"
+
+#undef strcasecmp
 
 struct samldb_ctx;
 enum samldb_add_type {
@@ -1875,7 +1878,8 @@ static int samldb_prim_group_trigger(struct samldb_ctx *ac)
 static int samldb_check_user_account_control_invariants(struct samldb_ctx *ac,
 						    uint32_t user_account_control)
 {
-	int i, ret = 0;
+	size_t i;
+	int ret = 0;
 	bool need_check = false;
 	const struct uac_to_guid {
 		uint32_t uac;
@@ -1985,7 +1989,8 @@ static int samldb_check_user_account_control_acl(struct samldb_ctx *ac,
 						 uint32_t user_account_control,
 						 uint32_t user_account_control_old)
 {
-	int i, ret = 0;
+	size_t i;
+	int ret = 0;
 	bool need_acl_check = false;
 	struct ldb_result *res;
 	const char * const sd_attrs[] = {"ntSecurityDescriptor", NULL};

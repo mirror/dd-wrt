@@ -36,10 +36,11 @@ TaskGen.declare_chain(
     decider = decide_ext,
 )
 
-
-for y in (Build.BuildContext, Build.CleanContext, Build.InstallContext, Build.UninstallContext, Build.ListContext):
-    class tmp(y):
-        variant = 'default'
+Build.BuildContext.variant = 'default'
+Build.CleanContext.variant = 'default'
+Build.InstallContext.variant = 'default'
+Build.UninstallContext.variant = 'default'
+Build.ListContext.variant = 'default'
 
 def abspath(self, env=None):
     if env and hasattr(self, 'children'):

@@ -213,7 +213,7 @@ _PUBLIC_ char *dcerpc_binding_string(TALLOC_CTX *mem_ctx, const struct dcerpc_bi
 {
 	char *s = talloc_strdup(mem_ctx, "");
 	char *o = s;
-	int i;
+	size_t i;
 	const char *t_name = NULL;
 	bool option_section = false;
 	const char *target_hostname = NULL;
@@ -227,9 +227,11 @@ _PUBLIC_ char *dcerpc_binding_string(TALLOC_CTX *mem_ctx, const struct dcerpc_bi
 	}
 
 	if (!GUID_all_zero(&b->object)) {
+		struct GUID_txt_buf buf;
+
 		o = s;
-		s = talloc_asprintf_append_buffer(s, "%s@",
-				    GUID_string(mem_ctx, &b->object));
+		s = talloc_asprintf_append_buffer(
+			s, "%s@", GUID_buf_string(&b->object, &buf));
 		if (s == NULL) {
 			talloc_free(o);
 			return NULL;
@@ -385,13 +387,14 @@ _PUBLIC_ NTSTATUS dcerpc_parse_binding(TALLOC_CTX *mem_ctx, const char *_s, stru
 
 	p = strchr(s, '[');
 	if (p) {
-		*p = '\0';
-		options = p + 1;
-		if (options[strlen(options)-1] != ']') {
+		char *q = p + strlen(p) - 1;
+		if (*q != ']') {
 			talloc_free(b);
 			return NT_STATUS_INVALID_PARAMETER_MIX;
 		}
-		options[strlen(options)-1] = 0;
+		*p = '\0';
+		*q = '\0';
+		options = p + 1;
 	}
 
 	p = strchr(s, '@');
@@ -1205,7 +1208,7 @@ static NTSTATUS dcerpc_floor_set_rhs_data(TALLOC_CTX *mem_ctx,
 
 enum dcerpc_transport_t dcerpc_transport_by_endpoint_protocol(int prot)
 {
-	int i;
+	size_t i;
 
 	/* Find a transport that has 'prot' as 4th protocol */
 	for (i=0;i<ARRAY_SIZE(transports);i++) {
@@ -1221,7 +1224,7 @@ enum dcerpc_transport_t dcerpc_transport_by_endpoint_protocol(int prot)
 
 _PUBLIC_ enum dcerpc_transport_t dcerpc_transport_by_tower(const struct epm_tower *tower)
 {
-	int i;
+	size_t i;
 
 	/* Find a transport that matches this tower */
 	for (i=0;i<ARRAY_SIZE(transports);i++) {
@@ -1247,7 +1250,7 @@ _PUBLIC_ enum dcerpc_transport_t dcerpc_transport_by_tower(const struct epm_towe
 
 _PUBLIC_ const char *derpc_transport_string_by_transport(enum dcerpc_transport_t t)
 {
-	int i;
+	size_t i;
 
 	for (i=0; i<ARRAY_SIZE(transports); i++) {
 		if (t == transports[i].transport) {
@@ -1455,7 +1458,7 @@ _PUBLIC_ NTSTATUS dcerpc_binding_build_tower(TALLOC_CTX *mem_ctx,
 					     struct epm_tower *tower)
 {
 	const enum epm_protocol *protseq = NULL;
-	int num_protocols = -1, i;
+	size_t i, num_protocols;
 	struct ndr_syntax_id abstract_syntax;
 	NTSTATUS status;
 
@@ -1468,7 +1471,7 @@ _PUBLIC_ NTSTATUS dcerpc_binding_build_tower(TALLOC_CTX *mem_ctx,
 		}
 	}
 
-	if (num_protocols == -1) {
+	if (i == ARRAY_SIZE(transports)) {
 		DEBUG(0, ("Unable to find transport with id '%d'\n", binding->transport));
 		return NT_STATUS_UNSUCCESSFUL;
 	}

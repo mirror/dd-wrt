@@ -53,7 +53,7 @@ static struct composite_context *resolve_name_lmhosts_send(
 	struct composite_context *c;
 	struct resolve_lmhosts_state *state;
 	struct sockaddr_storage *resolved_iplist;
-	int resolved_count, i;
+	size_t resolved_count = 0, i;
 
 	if (event_ctx == NULL) {
 		return NULL;
@@ -68,8 +68,12 @@ static struct composite_context *resolve_name_lmhosts_send(
 	if (composite_nomem(state, c)) return c;
 	c->private_data = state;
 
-	c->status = resolve_lmhosts_file_as_sockaddr(dyn_LMHOSTSFILE, name->name, name->type,
-						     state, &resolved_iplist, &resolved_count);
+	c->status = resolve_lmhosts_file_as_sockaddr(state,
+						     dyn_LMHOSTSFILE,
+						     name->name,
+						     name->type,
+						     &resolved_iplist,
+						     &resolved_count);
 	if (!composite_is_ok(c)) return c;
 
 	for (i=0; i < resolved_count; i += 2) {

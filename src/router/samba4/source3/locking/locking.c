@@ -39,6 +39,8 @@
 #include "lib/util/time_basic.h"
 #include "system/filesys.h"
 #include "lib/util/server_id.h"
+#include "share_mode_lock.h"
+#include "share_mode_lock_private.h"
 #include "locking/proto.h"
 #include "smbd/globals.h"
 #include "dbwrap/dbwrap.h"
@@ -1069,7 +1071,7 @@ static bool file_has_open_streams_fn(
 	struct file_has_open_streams_state *state = private_data;
 
 	if ((e->private_options &
-	     NTCREATEX_OPTIONS_PRIVATE_STREAM_BASEOPEN) == 0) {
+	     NTCREATEX_FLAG_STREAM_BASEOPEN) == 0) {
 		return false;
 	}
 

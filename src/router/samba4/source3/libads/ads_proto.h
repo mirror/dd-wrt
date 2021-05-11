@@ -47,7 +47,7 @@ ADS_STRUCT *ads_init(const char *realm,
 		     const char *workgroup,
 		     const char *ldap_server,
 		     enum ads_sasl_state_e sasl_state);
-bool ads_set_sasl_wrap_flags(ADS_STRUCT *ads, int flags);
+bool ads_set_sasl_wrap_flags(ADS_STRUCT *ads, unsigned flags);
 void ads_destroy(ADS_STRUCT **ads);
 
 /* The following definitions come from libads/disp_sec.c  */
@@ -81,6 +81,7 @@ bool ads_sitename_match(ADS_STRUCT *ads);
 bool ads_closest_dc(ADS_STRUCT *ads);
 ADS_STATUS ads_connect(ADS_STRUCT *ads);
 ADS_STATUS ads_connect_user_creds(ADS_STRUCT *ads);
+void ads_zero_ldap(ADS_STRUCT *ads);
 void ads_disconnect(ADS_STRUCT *ads);
 ADS_STATUS ads_do_search_all_fn(ADS_STRUCT *ads, const char *bind_path,
 				int scope, const char *expr, const char **attrs,

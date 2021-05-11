@@ -31,6 +31,7 @@
 #include "rpc_client/init_samr.h"
 #include "rpc_client/init_lsa.h"
 #include "../libcli/security/security.h"
+#include "lib/util/smb_strtox.h"
 
 static struct dom_sid domain_sid;
 
@@ -3032,7 +3033,7 @@ static NTSTATUS cmd_samr_chgpasswd3(struct rpc_pipe_client *cli,
 	struct userPwdChangeFailureInformation *reject = NULL;
 	struct dcerpc_binding_handle *b = cli->binding_handle;
 
-	if (argc < 3) {
+	if (argc < 4) {
 		printf("Usage: %s username oldpass newpass\n", argv[0]);
 		return NT_STATUS_INVALID_PARAMETER;
 	}

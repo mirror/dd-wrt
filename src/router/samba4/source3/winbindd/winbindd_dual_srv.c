@@ -37,6 +37,7 @@
 #include "rpc_client/cli_netlogon.h"
 #include "rpc_client/util_netlogon.h"
 #include "libsmb/dsgetdcname.h"
+#include "lib/global_contexts.h"
 
 void _wbint_Ping(struct pipes_struct *p, struct wbint_Ping *r)
 {
@@ -200,7 +201,7 @@ NTSTATUS _wbint_Sids2UnixIDs(struct pipes_struct *p,
 
 		sid_compose(m->sid, d->sid, ids[i].rid);
 		m->status = ID_UNKNOWN;
-		m->xid = (struct unixid) { .type = ids[i].type };
+		m->xid = (struct unixid) { .type = ids[i].type_hint };
 	}
 
 	status = dom->methods->sids_to_unixids(dom, id_map_ptrs);
@@ -226,6 +227,12 @@ NTSTATUS _wbint_Sids2UnixIDs(struct pipes_struct *p,
 
 	for (i=0; i<num_ids; i++) {
 		struct id_map *m = id_map_ptrs[i];
+
+		if (m->status == ID_REQUIRE_TYPE) {
+			ids[i].xid.id = UINT32_MAX;
+			ids[i].xid.type = ID_TYPE_WB_REQUIRE_TYPE;
+			continue;
+		}
 
 		if (!idmap_unix_id_is_in_range(m->xid.id, dom)) {
 			DBG_DEBUG("id %"PRIu32" is out of range "
@@ -276,8 +283,12 @@ NTSTATUS _wbint_UnixIDs2Sids(struct pipes_struct *p,
 	}
 
 	for (i=0; i<r->in.num_ids; i++) {
-		r->out.xids[i] = maps[i]->xid;
-		sid_copy(&r->out.sids[i], maps[i]->sid);
+		if (maps[i]->status == ID_MAPPED) {
+			r->out.xids[i] = maps[i]->xid;
+			sid_copy(&r->out.sids[i], maps[i]->sid);
+		} else {
+			r->out.sids[i] = (struct dom_sid) { 0 };
+		}
 	}
 
 	TALLOC_FREE(maps);

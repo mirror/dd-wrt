@@ -1,5 +1,5 @@
 /*
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
 
    DSDB replication service - repl secret handling
 
@@ -24,7 +24,7 @@
 #include "includes.h"
 #include "ldb_module.h"
 #include "dsdb/samdb/samdb.h"
-#include "smbd/service.h"
+#include "samba/service.h"
 #include "dsdb/repl/drepl_service.h"
 #include "param/param.h"
 

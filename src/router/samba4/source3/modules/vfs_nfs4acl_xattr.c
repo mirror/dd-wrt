@@ -133,7 +133,7 @@ static NTSTATUS nfs4acl_get_blob(struct vfs_handle_struct *handle,
 			return NT_STATUS_NO_MEMORY;
 		}
 
-		if (fsp != NULL && fsp->fh->fd != -1) {
+		if (fsp != NULL && fsp_get_pathref_fd(fsp) != -1) {
 			length = SMB_VFS_NEXT_FGETXATTR(handle,
 							fsp,
 							config->xattr_name,
@@ -335,7 +335,7 @@ static bool nfs4acl_smb4acl_set_fn(vfs_handle_struct *handle,
 		return false;
 	}
 
-	if (fsp->fh->fd != -1) {
+	if (fsp_get_pathref_fd(fsp) != -1) {
 		ret = SMB_VFS_NEXT_FSETXATTR(handle, fsp, config->xattr_name,
 					     blob.data, blob.length, 0);
 	} else {
@@ -396,7 +396,7 @@ static NTSTATUS nfs4acl_xattr_fset_nt_acl(vfs_handle_struct *handle,
 
 		restored_mode = existing_mode | expected_mode;
 
-		if (fsp->fh->fd != -1) {
+		if (fsp_get_io_fd(fsp) != -1) {
 			ret = SMB_VFS_NEXT_FCHMOD(handle,
 						  fsp,
 						  restored_mode);
@@ -620,16 +620,9 @@ static SMB_ACL_T nfs4acl_xattr_fail__sys_acl_get_fd(vfs_handle_struct *handle,
 	return (SMB_ACL_T)NULL;
 }
 
-static int nfs4acl_xattr_fail__sys_acl_set_file(vfs_handle_struct *handle,
-					 const struct smb_filename *smb_fname,
-					 SMB_ACL_TYPE_T type,
-					 SMB_ACL_T theacl)
-{
-	return -1;
-}
-
 static int nfs4acl_xattr_fail__sys_acl_set_fd(vfs_handle_struct *handle,
 				       files_struct *fsp,
+				       SMB_ACL_TYPE_T type,
 				       SMB_ACL_T theacl)
 {
 	return -1;
@@ -667,7 +660,6 @@ static struct vfs_fn_pointers nfs4acl_xattr_fns = {
 	.sys_acl_get_fd_fn = nfs4acl_xattr_fail__sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = nfs4acl_xattr_fail__sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = nfs4acl_xattr_fail__sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = nfs4acl_xattr_fail__sys_acl_set_file,
 	.sys_acl_set_fd_fn = nfs4acl_xattr_fail__sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = nfs4acl_xattr_fail__sys_acl_delete_def_file,
 };

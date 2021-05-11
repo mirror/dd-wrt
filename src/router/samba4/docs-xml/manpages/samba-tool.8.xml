@@ -116,8 +116,8 @@
 </refsect2>
 
 <refsect3>
-	<title>computer create <replaceable>computername</replaceable> [options]</title>
-	<para>Create a new computer in the Active Directory Domain.</para>
+	<title>computer add <replaceable>computername</replaceable> [options]</title>
+	<para>Add a new computer to the Active Directory Domain.</para>
 	<para>The new computer name specified on the command is the
 	sAMAccountName, with or without the trailing dollar sign.</para>
 
@@ -160,6 +160,14 @@
 	</para></listitem>
 	</varlistentry>
 	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>computer create <replaceable>computername</replaceable> [options]</title>
+	<para>Add a new computer. This is a synonym for the
+	<command>samba-tool computer add</command> command and is available
+	for compatibility reasons only. Please use
+	<command>samba-tool computer add</command> instead.</para>
 </refsect3>
 
 <refsect3>
@@ -223,8 +231,8 @@
 </refsect2>
 
 <refsect3>
-	<title>contact create [<replaceable>contactname</replaceable>] [options]</title>
-	<para>Create a new contact in the Active Directory Domain.</para>
+	<title>contact add [<replaceable>contactname</replaceable>] [options]</title>
+	<para>Add a new contact to the Active Directory Domain.</para>
 	<para>The name of the new contact can be specified by the first
 	argument 'contactname' or the --given-name, --initial and --surname
 	arguments. If no 'contactname' is given, contact's name will be made
@@ -338,6 +346,14 @@
 </refsect3>
 
 <refsect3>
+	<title>contact create [<replaceable>contactname</replaceable>] [options]</title>
+	<para>Add a new contact. This is a synonym for the
+	<command>samba-tool contact add</command> command and is available
+	for compatibility reasons only. Please use
+	<command>samba-tool contact add</command> instead.</para>
+</refsect3>
+
+<refsect3>
 	<title>contact delete <replaceable>contactname</replaceable> [options]</title>
 	<para>Delete an existing contact.</para>
 	<para>The contactname specified on the command is the common name or the
@@ -398,6 +414,73 @@
 	<term>--attributes=CONTACT_ATTRS</term>
 	<listitem><para>
 	Comma separated list of attributes, which will be printed.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>contact rename <replaceable>contactname</replaceable> [options]</title>
+	<para>Rename a contact and related attributes.</para>
+	<para>This command allows to set the contact's name related attributes. The contact's
+	CN will be renamed automatically.
+	The contact's new CN will be made up by combining the given-name, initials
+	and surname. A dot ('.') will be appended to the initials automatically,
+	if required.
+	Use the --force-new-cn option to specify the new CN manually and --reset-cn
+	to reset this change.</para>
+	<para>Use an empty attribute value to remove the specified attribute.</para>
+	<para>The contact name specified on the command is the CN.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--surname=SURNAME</term>
+	<listitem><para>
+	New surname.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--given-name=GIVEN_NAME</term>
+	<listitem><para>
+	New given name.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--initials=INITIALS</term>
+	<listitem><para>
+	New initials.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--force-new-cn=NEW_CN</term>
+	<listitem><para>
+	Specify a new CN (RDN) instead of using a combination
+	of the given name, initials and surname.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--reset-cn</term>
+	<listitem><para>
+	Set the CN to the default combination of given name,
+	initials and surname.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--display-name=DISPLAY_NAME</term>
+	<listitem><para>
+	New display name.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--mail-address=MAIL_ADDRESS</term>
+	<listitem><para>
+	New email address.
 	</para></listitem>
 	</varlistentry>
 	</variablelist>
@@ -812,6 +895,14 @@
 </refsect3>
 
 <refsect3>
+	<title>group create <replaceable>groupname</replaceable> [options]</title>
+	<para>Add a new AD group. This is a synonym for the
+	<command>samba-tool group add</command> command and is available
+	for compatibility reasons only. Please use
+	<command>samba-tool group add</command> instead.</para>
+</refsect3>
+
+<refsect3>
 	<title>group addmembers <replaceable>groupname</replaceable> <replaceable>members</replaceable> [options]</title>
 	<para>Add members to an AD group.</para>
 </refsect3>
@@ -844,6 +935,28 @@
 <refsect3>
 	<title>group listmembers <replaceable>groupname</replaceable> [options]</title>
 	<para>List all members of the specified AD group.</para>
+	<para>By default the sAMAccountNames are listed. If no sAMAccountName
+	is available, the CN will be used instead.</para>
+	<variablelist>
+	<varlistentry>
+	<term>--full-dn</term>
+	<listitem><para>
+	List the distinguished names instead of the sAMAccountNames.
+	</para></listitem>
+	</varlistentry>
+	<varlistentry>
+	<term>--hide-expired</term>
+	<listitem><para>
+	Do not list expired group members.
+	</para></listitem>
+	</varlistentry>
+	<varlistentry>
+	<term>--hide-disabled</term>
+	<listitem><para>
+	Do not list disabled group members.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
 </refsect3>
 
 <refsect3>
@@ -870,6 +983,48 @@
 <refsect3>
 	<title>group stats [options]</title>
 	<para>Show statistics for overall groups and group memberships.</para>
+</refsect3>
+
+<refsect3>
+	<title>group rename <replaceable>groupname</replaceable> [options]</title>
+	<para>Rename a group and related attributes.</para>
+	<para>This command allows to set the group's name related attributes. The
+	group's CN will be renamed automatically.
+	The group's CN will be the sAMAccountName.
+	Use the --force-new-cn option to specify the new CN manually and the
+	--reset-cn to reset this change.</para>
+	<para>Use an empty attribute value to remove the specified attribute.</para>
+	<para>The groupname specified on the command is the sAMAccountName.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--force-new-cn=NEW_CN</term>
+	<listitem><para>
+	Specify a new CN (RDN) instead of using the sAMAccountName.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--reset-cn</term>
+	<listitem><para>
+	Set the CN to the sAMAccountName.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--mail-address=MAIL_ADDRESS</term>
+	<listitem><para>
+	New mail address
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--samaccountname=SAMACCOUNTNAME</term>
+	<listitem><para>
+	New account name (sAMAccountName/logon name)
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
 </refsect3>
 
 <refsect2>
@@ -979,8 +1134,8 @@
 </refsect2>
 
 <refsect3>
-	<title>ou create <replaceable>ou_dn</replaceable> [options]</title>
-	<para>Create an organizational unit.</para>
+	<title>ou add <replaceable>ou_dn</replaceable> [options]</title>
+	<para>Add a new organizational unit.</para>
 	<para>The name of the organizational unit can be specified as a full DN
 	or without the domainDN component.</para>
 
@@ -992,6 +1147,14 @@
 	</para></listitem>
 	</varlistentry>
 	</variablelist>
+</refsect3>
+
+<refsect3>
+	<title>ou create <replaceable>ou_dn</replaceable> [options]</title>
+	<para>Add a new organizational unit. This is a synonym for the
+	<command>samba-tool ou add</command> command and is available
+	for compatibility reasons only. Please use
+	<command>samba-tool ou add</command> instead.</para>
 </refsect3>
 
 <refsect3>
@@ -1147,14 +1310,15 @@
 
 <refsect3>
 	<title>user add <replaceable>username</replaceable> [<replaceable>password</replaceable>]</title>
-	<para>Create a new user. Please note that this subcommand is deprecated
-	and available for compatibility reasons only. Please use
-	<command>samba-tool user create</command> instead.</para>
+	<para>Add a new user to the Active Directory Domain.</para>
 </refsect3>
 
 <refsect3>
 	<title>user create <replaceable>username</replaceable> [<replaceable>password</replaceable>]</title>
-	<para>Create a new user in the Active Directory Domain.</para>
+	<para>Add a new user. This is a synonym for the
+	<command>samba-tool user add</command> command and is available
+	for compatibility reasons only. Please use
+	<command>samba-tool user add</command> instead.</para>
 </refsect3>
 
 <refsect3>
@@ -1190,6 +1354,34 @@
 <refsect3>
 	<title>user list</title>
 	<para>List all users.</para>
+	<para>By default the user's sAMAccountNames are listed.</para>
+	<variablelist>
+	<varlistentry>
+	<term>--full-dn</term>
+	<listitem><para>
+	List user's distinguished names instead of the sAMAccountNames.
+	</para></listitem>
+	</varlistentry>
+	<varlistentry>
+	<term>-b BASE_DN|--base-dn=BASE_DN</term>
+	<listitem><para>
+	Specify base DN to use. Only users under the specified base DN will be
+	listed.
+	</para></listitem>
+	</varlistentry>
+	<varlistentry>
+	<term>--hide-expired</term>
+	<listitem><para>
+	Do not list expired user accounts.
+	</para></listitem>
+	</varlistentry>
+	<varlistentry>
+	<term>--hide-disabled</term>
+	<listitem><para>
+	Do not list disabled user accounts.
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
 </refsect3>
 
 <refsect3>
@@ -1233,6 +1425,87 @@
 </refsect3>
 
 <refsect3>
+	<title>user rename <replaceable>username</replaceable> [options]</title>
+	<para>Rename a user and related attributes.</para>
+	<para>This command allows to set the user's name related attributes. The user's
+	CN will be renamed automatically.
+	The user's new CN will be made up by combining the given-name, initials
+	and surname. A dot ('.') will be appended to the initials automatically,
+	if required.
+	Use the --force-new-cn option to specify the new CN manually and --reset-cn
+	to reset this change.</para>
+	<para>Use an empty attribute value to remove the specified attribute.</para>
+	<para>The username specified on the command is the sAMAccountName.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term>--surname=SURNAME</term>
+	<listitem><para>
+	New surname
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--given-name=GIVEN_NAME</term>
+	<listitem><para>
+	New given name
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--initials=INITIALS</term>
+	<listitem><para>
+	New initials
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--force-new-cn=NEW_CN</term>
+	<listitem><para>
+	Specify a new CN (RDN) instead of using a combination
+	of the given name, initials and surname.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--reset-cn</term>
+	<listitem><para>
+	Set the CN to the default combination of given name,
+	initials and surname.
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--display-name=DISPLAY_NAME</term>
+	<listitem><para>
+	New display name
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--mail-address=MAIL_ADDRESS</term>
+	<listitem><para>
+	New email address
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--samaccountname=SAMACCOUNTNAME</term>
+	<listitem><para>
+	New account name (sAMAccountName/logon name)
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--upn=UPN</term>
+	<listitem><para>
+	New user principal name
+	</para></listitem>
+	</varlistentry>
+	</variablelist>
+</refsect3>
+
+<refsect3>
 	<title>user setexpiry <replaceable>username</replaceable> [options]</title>
 	<para>Set the expiration of a user account.</para>
 </refsect3>
@@ -1240,6 +1513,12 @@
 <refsect3>
 	<title>user setpassword <replaceable>username</replaceable> [options]</title>
 	<para>Sets or resets the password of a user account.</para>
+</refsect3>
+
+<refsect3>
+	<title>user unlock <replaceable>username</replaceable> [options]</title>
+	<para>This command unlocks a user account in the Active Directory
+	domain.</para>
 </refsect3>
 
 <refsect3>

@@ -60,6 +60,7 @@
 #include "../smbd/globals.h"
 #include "auth.h"
 #include "../lib/tsocket/tsocket.h"
+#include "lib/util/smb_strtox.h"
 #include <libgen.h>
 
 #define UM_PARAM_TYPE_NAME "unityed_media"
@@ -613,6 +614,7 @@ err:
  * Failure: set errno, return NULL
  */
 static struct dirent *um_readdir(vfs_handle_struct *handle,
+				 struct files_struct *dirfsp,
 				 DIR *dirp,
 				 SMB_STRUCT_STAT *sbuf)
 {
@@ -630,7 +632,7 @@ static struct dirent *um_readdir(vfs_handle_struct *handle,
 		   dirInfo->clientSubDirname));
 
 	if (!dirInfo->isInMediaFiles) {
-		return SMB_VFS_NEXT_READDIR(handle, dirInfo->dirstream, sbuf);
+		return SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream, sbuf);
 	}
 
 	do {
@@ -641,7 +643,7 @@ static struct dirent *um_readdir(vfs_handle_struct *handle,
 		uintmax_t number;
 
 		skip = false;
-		d = SMB_VFS_NEXT_READDIR(handle, dirInfo->dirstream, sbuf);
+		d = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirInfo->dirstream, sbuf);
 
 		if (d == NULL) {
 			break;
@@ -742,6 +744,7 @@ static int um_mkdirat(vfs_handle_struct *handle,
 	int status;
 	const char *path = smb_fname->base_name;
 	struct smb_filename *client_fname = NULL;
+	struct smb_filename *full_fname = NULL;
 
 	DEBUG(10, ("Entering with path '%s'\n", path));
 
@@ -752,20 +755,28 @@ static int um_mkdirat(vfs_handle_struct *handle,
 				mode);
 	}
 
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		return -1;
+	}
+
 	status = alloc_get_client_smb_fname(handle,
 				talloc_tos(),
-				smb_fname,
+				full_fname,
 				&client_fname);
 	if (status != 0) {
 		goto err;
 	}
 
 	status = SMB_VFS_NEXT_MKDIRAT(handle,
-				dirfsp,
+				handle->conn->cwd_fsp,
 				client_fname,
 				mode);
 err:
 	TALLOC_FREE(client_fname);
+	TALLOC_FREE(full_fname);
 	DEBUG(10, ("Leaving with path '%s'\n", path));
 	return status;
 }
@@ -837,7 +848,6 @@ err:
 
 static NTSTATUS um_create_file(vfs_handle_struct *handle,
 			       struct smb_request *req,
-			       struct files_struct **dirfsp,
 			       struct smb_filename *smb_fname,
 			       uint32_t access_mask,
 			       uint32_t share_access,
@@ -865,7 +875,6 @@ static NTSTATUS um_create_file(vfs_handle_struct *handle,
 		return SMB_VFS_NEXT_CREATE_FILE(
 			handle,
 			req,
-			dirfsp,
 			smb_fname,
 			access_mask,
 			share_access,
@@ -900,7 +909,6 @@ static NTSTATUS um_create_file(vfs_handle_struct *handle,
 	status = SMB_VFS_NEXT_CREATE_FILE(
 		handle,
 		req,
-		dirfsp,
 		client_fname,
 		access_mask,
 		share_access,
@@ -1286,7 +1294,7 @@ err:
 }
 
 static int um_readlinkat(vfs_handle_struct *handle,
-			files_struct *dirfsp,
+			const struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			char *buf,
 			size_t bufsiz)
@@ -1596,44 +1604,6 @@ err:
 	return ret;
 }
 
-static int um_sys_acl_set_file(vfs_handle_struct *handle,
-			       const struct smb_filename *smb_fname,
-			       SMB_ACL_TYPE_T acltype,
-			       SMB_ACL_T theacl)
-{
-	int status;
-	int saved_errno = 0;
-	struct smb_filename *client_fname = NULL;
-
-	DEBUG(10, ("Entering um_sys_acl_set_file\n"));
-
-	if (!is_in_media_files(smb_fname->base_name)) {
-		return SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle, smb_fname,
-						     acltype, theacl);
-	}
-
-	status = alloc_get_client_smb_fname(handle,
-				talloc_tos(),
-				smb_fname,
-				&client_fname);
-	if (status != 0) {
-		goto err;
-	}
-
-	status = SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle, client_fname,
-					       acltype, theacl);
-
-err:
-	if (status == -1) {
-		saved_errno = errno;
-	}
-	TALLOC_FREE(client_fname);
-	if (saved_errno != 0) {
-		errno = saved_errno;
-	}
-	return status;
-}
-
 static int um_sys_acl_delete_def_file(vfs_handle_struct *handle,
 				const struct smb_filename *smb_fname)
 {
@@ -1875,7 +1845,6 @@ static struct vfs_fn_pointers vfs_um_fns = {
 	/* POSIX ACL operations. */
 
 	.sys_acl_get_file_fn = um_sys_acl_get_file,
-	.sys_acl_set_file_fn = um_sys_acl_set_file,
 	.sys_acl_delete_def_file_fn = um_sys_acl_delete_def_file,
 
 	/* EA operations. */

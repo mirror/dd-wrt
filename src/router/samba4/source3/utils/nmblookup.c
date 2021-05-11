@@ -23,6 +23,7 @@
 #include "popt_common.h"
 #include "libsmb/nmblib.h"
 #include "libsmb/namequery.h"
+#include "lib/util/string_wrappers.h"
 
 static bool give_flags = false;
 static bool use_bcast = true;
@@ -113,7 +114,8 @@ static bool do_node_status(const char *name,
 		struct sockaddr_storage *pss)
 {
 	struct nmb_name nname;
-	int count, i, j;
+	size_t count = 0;
+	size_t i, j;
 	struct node_status *addrs;
 	struct node_status_extra extra;
 	fstring cleanname;
@@ -157,7 +159,7 @@ static bool do_node_status(const char *name,
 
 static bool query_one(const char *lookup, unsigned int lookup_type)
 {
-	int j, count;
+	size_t j, count = 0;
 	uint8_t flags;
 	struct sockaddr_storage *ip_list=NULL;
 	NTSTATUS status = NT_STATUS_NOT_FOUND;
@@ -171,9 +173,11 @@ static bool query_one(const char *lookup, unsigned int lookup_type)
 				    &bcast_addr, talloc_tos(),
 				    &ip_list, &count, &flags);
 	} else {
-		status = name_resolve_bcast(
-			lookup, lookup_type,
-			talloc_tos(), &ip_list, &count);
+		status = name_resolve_bcast(talloc_tos(),
+					    lookup,
+					    lookup_type,
+					    &ip_list,
+					    &count);
 	}
 
 	if (!NT_STATUS_IS_OK(status)) {

@@ -25,6 +25,7 @@
 #include "rpc_server/rpc_ncacn_np.h"
 #include "smbd/globals.h"
 #include "../libcli/security/security.h"
+#include "smbd/fd_handle.h"
 
 struct print_file_data {
 	char *svcname;
@@ -230,7 +231,7 @@ NTSTATUS print_spool_open(files_struct *fsp,
 	}
 
 	fsp->file_id = vfs_file_id_from_sbuf(fsp->conn, &fsp->fsp_name->st);
-	fsp->fh->fd = fd;
+	fsp_set_fd(fsp, fd);
 
 	fsp->vuid = current_vuid;
 	fsp->fsp_flags.can_lock = false;
@@ -276,7 +277,7 @@ int print_spool_write(files_struct *fsp,
 	 * spoolss may have deleted it to signal someone has killed
 	 * the job through it's interface */
 
-	if (sys_fstat(fsp->fh->fd, &st, false) != 0) {
+	if (sys_fstat(fsp_get_io_fd(fsp), &st, false) != 0) {
 		ret = errno;
 		DEBUG(3, ("printfile_offset: sys_fstat failed on %s (%s)\n",
 			  fsp_str_dbg(fsp), strerror(ret)));
@@ -286,7 +287,7 @@ int print_spool_write(files_struct *fsp,
 	/* check if the file is unlinked, this will signal spoolss has
 	 * killed it, just return an error and close the file */
 	if (st.st_ex_nlink == 0) {
-		close(fsp->fh->fd);
+		close(fsp_get_io_fd(fsp));
 		return EBADF;
 	}
 
@@ -299,7 +300,7 @@ int print_spool_write(files_struct *fsp,
 		offset = (st.st_ex_size & 0xffffffff00000000LL) + offset;
 	}
 
-	n = write_data_at_offset(fsp->fh->fd, data, size, offset);
+	n = write_data_at_offset(fsp_get_io_fd(fsp), data, size, offset);
 	if (n == -1) {
 		ret = errno;
 		print_spool_terminate(fsp->conn, fsp->print_file);
@@ -317,8 +318,8 @@ void print_spool_end(files_struct *fsp, enum file_close_type close_type)
 	WERROR werr;
 	struct dcerpc_binding_handle *b = NULL;
 
-	if (fsp->fh->private_options &
-	    NTCREATEX_OPTIONS_PRIVATE_DELETE_ON_CLOSE) {
+	if (fh_get_private_options(fsp->fh) &
+	    NTCREATEX_FLAG_DELETE_ON_CLOSE) {
 		int ret;
 
 		/*
@@ -328,7 +329,7 @@ void print_spool_end(files_struct *fsp, enum file_close_type close_type)
 		 * _spoolss_EndDocPrinter() will take
 		 * care of deleting it for us.
 		 */
-		ret = ftruncate(fsp->fh->fd, 0);
+		ret = ftruncate(fsp_get_io_fd(fsp), 0);
 		if (ret == -1) {
 			DBG_ERR("ftruncate failed: %s\n", strerror(errno));
 		}

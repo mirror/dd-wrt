@@ -2,12 +2,12 @@
 .\"     Title: vfs_glusterfs
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 11/03/2020
+.\"      Date: 04/26/2021
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.13.2
+.\"    Source: Samba 4.14.4
 .\"  Language: English
 .\"
-.TH "VFS_GLUSTERFS" "8" "11/03/2020" "Samba 4\&.13\&.2" "System Administration tools"
+.TH "VFS_GLUSTERFS" "8" "04/26/2021" "Samba 4\&.14\&.4" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -111,10 +111,25 @@ Defines the glusterfs volumename to use for this share\&.
 .PP
 The GlusterFS write\-behind performance translator, when used with Samba, could be a source of data corruption\&. The translator, while processing a write call, immediately returns success but continues writing the data to the server in the background\&. This can cause data corruption when two clients relying on Samba to provide data consistency are operating on the same file\&.
 .PP
-The write\-behind translator is enabled by default on GlusterFS\&. The vfs_glusterfs plugin will check for the presence of the translator and refuse to connect if detected\&. Please disable the write\-behind translator for the GlusterFS volume to allow the plugin to connect to the volume\&.
+The write\-behind translator is enabled by default on GlusterFS\&. The vfs_glusterfs plugin will check for the presence of the translator and refuse to connect if detected\&. Please disable the write\-behind translator for the GlusterFS volume to allow the plugin to connect to the volume\&. The write\-behind translator can easily be disabled via calling
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+                        gluster volume set <volumename> performance\&.write\-behind off
+                
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+on the commandline\&.
+.PP
+With GlusterFS versions >= 9, we silently bypass write\-behind translator during initial connect and failure is avoided\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.13\&.2 of the Samba suite\&.
+This man page is part of version 4\&.14\&.4 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

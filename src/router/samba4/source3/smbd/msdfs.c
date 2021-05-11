@@ -33,6 +33,7 @@
 #include "libcli/security/security.h"
 #include "librpc/gen_ndr/ndr_dfsblobs.h"
 #include "lib/tsocket/tsocket.h"
+#include "lib/global_contexts.h"
 
 /**********************************************************************
  Parse a DFS pathname of the form \hostname\service\reqpath
@@ -58,8 +59,7 @@ static NTSTATUS parse_dfs_path(connection_struct *conn,
 				const char *pathname,
 				bool allow_wcards,
 				bool allow_broken_path,
-				struct dfs_path *pdp, /* MUST BE TALLOCED */
-				bool *ppath_contains_wcard)
+				struct dfs_path *pdp) /* MUST BE TALLOCED */
 {
 	const struct loadparm_substitution *lp_sub =
 		loadparm_s3_global_substitution();
@@ -208,20 +208,19 @@ static NTSTATUS parse_dfs_path(connection_struct *conn,
 
   local_path:
 
-	*ppath_contains_wcard = False;
-
 	pdp->reqpath = p;
 
 	/* Rest is reqpath. */
 	if (pdp->posix_path) {
 		status = check_path_syntax_posix(pdp->reqpath);
 	} else {
-		if (allow_wcards) {
-			status = check_path_syntax_wcard(pdp->reqpath,
-					ppath_contains_wcard);
-		} else {
-			status = check_path_syntax(pdp->reqpath);
+		if (!allow_wcards) {
+			bool has_wcard = ms_has_wild(pdp->reqpath);
+			if (has_wcard) {
+				return NT_STATUS_INVALID_PARAMETER;
+			}
 		}
+		status = check_path_syntax(pdp->reqpath);
 	}
 
 	if (!NT_STATUS_IS_OK(status)) {
@@ -317,6 +316,8 @@ static NTSTATUS create_conn_struct_as_root(TALLOC_CTX *ctx,
 	} else {
 		vfs_user = get_current_username();
 	}
+
+	conn_setup_case_options(conn);
 
 	set_conn_connectpath(conn, connpath);
 
@@ -703,9 +704,7 @@ static NTSTATUS dfs_path_lookup(TALLOC_CTX *ctx,
 
 	if (NT_STATUS_IS_OK(status)) {
 		/* XX_ALLOW_WCARD_XXX is called from search functions. */
-		if (ucf_flags &
-				(UCF_COND_ALLOW_WCARD_LCOMP|
-				 UCF_ALWAYS_ALLOW_WCARD_LCOMP)) {
+		if (ucf_flags & UCF_ALWAYS_ALLOW_WCARD_LCOMP) {
 			DEBUG(6,("dfs_path_lookup (FindFirst) No redirection "
 				 "for dfs link %s.\n", dfspath));
 			status = NT_STATUS_OK;
@@ -818,19 +817,17 @@ static NTSTATUS dfs_path_lookup(TALLOC_CTX *ctx,
  returned to the client.
 *****************************************************************/
 
-static NTSTATUS dfs_redirect(TALLOC_CTX *ctx,
+NTSTATUS dfs_redirect(TALLOC_CTX *ctx,
 			connection_struct *conn,
 			const char *path_in,
 			uint32_t ucf_flags,
 			bool allow_broken_path,
-			char **pp_path_out,
-			bool *ppath_contains_wcard)
+			char **pp_path_out)
 {
 	const struct loadparm_substitution *lp_sub =
 		loadparm_s3_global_substitution();
 	NTSTATUS status;
-	bool search_wcard_flag = (ucf_flags &
-		(UCF_COND_ALLOW_WCARD_LCOMP|UCF_ALWAYS_ALLOW_WCARD_LCOMP));
+	bool search_wcard_flag = (ucf_flags & UCF_ALWAYS_ALLOW_WCARD_LCOMP);
 	struct dfs_path *pdp = talloc(ctx, struct dfs_path);
 
 	if (!pdp) {
@@ -838,8 +835,7 @@ static NTSTATUS dfs_redirect(TALLOC_CTX *ctx,
 	}
 
 	status = parse_dfs_path(conn, path_in, search_wcard_flag,
-				allow_broken_path, pdp,
-			ppath_contains_wcard);
+				allow_broken_path, pdp);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(pdp);
 		return status;
@@ -978,7 +974,6 @@ NTSTATUS get_referred_path(TALLOC_CTX *ctx,
 	struct connection_struct *conn = NULL;
 	int snum;
 	NTSTATUS status = NT_STATUS_NOT_FOUND;
-	bool dummy;
 	struct dfs_path *pdp = talloc_zero(frame, struct dfs_path);
 
 	if (!pdp) {
@@ -988,8 +983,7 @@ NTSTATUS get_referred_path(TALLOC_CTX *ctx,
 
 	*self_referralp = False;
 
-	status = parse_dfs_path(NULL, dfs_path, False, allow_broken_path,
-				pdp, &dummy);
+	status = parse_dfs_path(NULL, dfs_path, False, allow_broken_path, pdp);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(frame);
 		return status;
@@ -1231,15 +1225,13 @@ bool create_junction(TALLOC_CTX *ctx,
 	const struct loadparm_substitution *lp_sub =
 		loadparm_s3_global_substitution();
 	int snum;
-	bool dummy;
 	struct dfs_path *pdp = talloc(ctx,struct dfs_path);
 	NTSTATUS status;
 
 	if (!pdp) {
 		return False;
 	}
-	status = parse_dfs_path(NULL, dfs_path, False, allow_broken_path,
-				pdp, &dummy);
+	status = parse_dfs_path(NULL, dfs_path, False, allow_broken_path, pdp);
 	if (!NT_STATUS_IS_OK(status)) {
 		return False;
 	}
@@ -1805,37 +1797,4 @@ struct junction_map *enum_msdfs_links(TALLOC_CTX *ctx,
 		}
 	}
 	return jn;
-}
-
-/******************************************************************************
- Core function to resolve a dfs pathname possibly containing a wildcard.  If
- ppath_contains_wcard != NULL, it will be set to true if a wildcard is
- detected during dfs resolution.
-******************************************************************************/
-
-NTSTATUS resolve_dfspath_wcard(TALLOC_CTX *ctx,
-				connection_struct *conn,
-				const char *name_in,
-				uint32_t ucf_flags,
-				bool allow_broken_path,
-				char **pp_name_out,
-				bool *ppath_contains_wcard)
-{
-	bool path_contains_wcard = false;
-	NTSTATUS status = NT_STATUS_OK;
-
-	status = dfs_redirect(ctx,
-				conn,
-				name_in,
-				ucf_flags,
-				allow_broken_path,
-				pp_name_out,
-				&path_contains_wcard);
-
-	if (NT_STATUS_IS_OK(status) &&
-				ppath_contains_wcard != NULL &&
-				path_contains_wcard) {
-		*ppath_contains_wcard = path_contains_wcard;
-	}
-	return status;
 }

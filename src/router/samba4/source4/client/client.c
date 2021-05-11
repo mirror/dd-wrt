@@ -58,6 +58,8 @@
 #define DEFAULT_PAGER "more"
 #endif
 
+#undef strncasecmp
+
 struct smbclient_context {
 	char *remote_cur_dir;
 	struct smbcli_state *cli;
@@ -1347,11 +1349,6 @@ static const char *readdirname(DIR *p)
 		return(NULL);
 
 	dname = ptr->d_name;
-
-#ifdef NEXT2
-	if (telldir(p) < 0)
-		return(NULL);
-#endif
 
 #ifdef HAVE_BROKEN_READDIR
 	/* using /usr/ucb/cc is BAD */

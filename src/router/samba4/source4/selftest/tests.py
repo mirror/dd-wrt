@@ -161,7 +161,10 @@ for t in smbtorture4_testsuites("ldap."):
         plansmbtorture4testsuite(
             t, "ad_dc_default", '-U"$USERNAME%$PASSWORD" //$DC_SERVER/_none_')
     else:
-        plansmbtorture4testsuite(t, "ad_dc_default", '-U"$USERNAME%$PASSWORD" //$SERVER_IP/_none_')
+        plansmbtorture4testsuite(
+            t,
+            "ad_dc_default",
+            '-U"$USERNAME%$PASSWORD" //$SERVER_IP/_none_ -D "$USERNAME"@"$REALM"##"$PASSWORD"')
 
 for t in smbtorture4_testsuites("dsdb."):
     plansmbtorture4testsuite(t, "ad_dc:local", "localhost")
@@ -183,9 +186,9 @@ plantestsuite_loadlist("samba4.tests.attr_from_server.python(ad_dc_ntvfs)",
 # add tests to this list as they start passing, so we test
 # that they stay passing
 ncacn_np_tests = ["rpc.schannel", "rpc.join", "rpc.lsa", "rpc.dssetup", "rpc.altercontext", "rpc.netlogon", "rpc.netlogon.admin", "rpc.handles", "rpc.samsync", "rpc.samba3-sessionkey", "rpc.samba3-getusername", "rpc.samba3-lsa", "rpc.samba3-bind", "rpc.samba3-netlogon", "rpc.asyncbind", "rpc.lsalookup", "rpc.lsa-getuser", "rpc.schannel2", "rpc.authcontext"]
-ncalrpc_tests = ["rpc.schannel", "rpc.join", "rpc.lsa", "rpc.dssetup", "rpc.altercontext", "rpc.netlogon", "rpc.netlogon.admin", "rpc.asyncbind", "rpc.lsalookup", "rpc.lsa-getuser", "rpc.schannel2", "rpc.authcontext"]
+ncalrpc_tests = ["rpc.schannel", "rpc.join", "rpc.lsa", "rpc.dssetup", "rpc.altercontext", "rpc.netlogon", "rpc.netlogon.admin", "rpc.netlogon.zerologon", "rpc.asyncbind", "rpc.lsalookup", "rpc.lsa-getuser", "rpc.schannel2", "rpc.authcontext"]
 drs_rpc_tests = smbtorture4_testsuites("drs.rpc")
-ncacn_ip_tcp_tests = ["rpc.schannel", "rpc.join", "rpc.lsa", "rpc.dssetup", "rpc.drsuapi", "rpc.drsuapi_w2k8", "rpc.netlogon", "rpc.netlogon.admin", "rpc.asyncbind", "rpc.lsalookup", "rpc.lsa-getuser", "rpc.schannel2", "rpc.authcontext", "rpc.samr.passwords.validate"] + drs_rpc_tests
+ncacn_ip_tcp_tests = ["rpc.schannel", "rpc.join", "rpc.lsa", "rpc.dssetup", "rpc.drsuapi", "rpc.drsuapi_w2k8", "rpc.netlogon", "rpc.netlogon.admin", "rpc.netlogon.zerologon", "rpc.asyncbind", "rpc.lsalookup", "rpc.lsa-getuser", "rpc.schannel2", "rpc.authcontext", "rpc.samr.passwords.validate"] + drs_rpc_tests
 slow_ncacn_np_tests = ["rpc.samlogon", "rpc.samr", "rpc.samr.users", "rpc.samr.large-dc", "rpc.samr.users.privileges", "rpc.samr.passwords", "rpc.samr.passwords.pwdlastset", "rpc.samr.passwords.lockout", "rpc.samr.passwords.badpwdcount"]
 slow_ncacn_ip_tcp_tests = ["rpc.cracknames"]
 
@@ -478,6 +481,14 @@ for t in smbtorture4_testsuites("dlz_bind9."):
 
 planpythontestsuite("nt4_dc_smb1", "samba.tests.libsmb")
 
+planpythontestsuite("ad_member", "samba.tests.smb-notify",
+                    environ={'USERNAME':'$DC_USERNAME',
+                             'PASSWORD':'$DC_PASSWORD',
+                             'USERNAME_UNPRIV':'alice',
+                             'PASSWORD_UNPRIV':'Secret007',
+                             'STRICT_CHECKING':'0',
+                             'NOTIFY_SHARE':'notify_priv'})
+
 # Blackbox Tests:
 # tests that interact directly with the command-line tools rather than using
 # the API. These mainly test that the various command-line options of commands
@@ -548,6 +559,12 @@ plantestsuite("samba4.blackbox.client_etypes_all(ad_dc:client)", "ad_dc:client",
 plantestsuite("samba4.blackbox.client_etypes_legacy(ad_dc:client)", "ad_dc:client", [os.path.join(bbdir, "test_client_etypes.sh"), '$DC_SERVER', '$DC_USERNAME', '$DC_PASSWORD', '$PREFIX_ABS', 'legacy', '23'])
 plantestsuite("samba4.blackbox.client_etypes_strong(ad_dc:client)", "ad_dc:client", [os.path.join(bbdir, "test_client_etypes.sh"), '$DC_SERVER', '$DC_USERNAME', '$DC_PASSWORD', '$PREFIX_ABS', 'strong', '17_18'])
 plantestsuite("samba4.blackbox.net_ads_dns(ad_member:local)", "ad_member:local", [os.path.join(bbdir, "test_net_ads_dns.sh"), '$DC_SERVER', '$DC_USERNAME', '$DC_PASSWORD', '$REALM', '$USERNAME', '$PASSWORD'])
+plantestsuite("samba4.blackbox.net_ads_dns_async(ad_member:local)",
+        "ad_member:local",
+        [os.path.join(bbdir,
+            "test_net_ads_dns_async.sh"),
+            '$DC_SERVER',
+            '$REALM'])
 plantestsuite("samba4.blackbox.samba-tool_ntacl(ad_member:local)", "ad_member:local", [os.path.join(bbdir, "test_samba-tool_ntacl.sh"), '$PREFIX', '$DOMSID'])
 
 if have_gnutls_crypto_policies:
@@ -561,7 +578,8 @@ if have_gnutls_crypto_policies:
     plantestsuite("samba3.wbinfo_simple.fips.%s" % t, "ad_member_fips:local", [os.path.join(srcdir(), "nsswitch/tests/test_wbinfo_simple.sh"), t])
     plantestsuite("samba4.wbinfo_name_lookup.fips", "ad_member_fips", [os.path.join(srcdir(), "nsswitch/tests/test_wbinfo_name_lookup.sh"), '$DOMAIN', '$REALM', '$DC_USERNAME'])
 
-plantestsuite_loadlist("samba4.rpc.echo against NetBIOS alias", "ad_dc_ntvfs", [valgrindify(smbtorture4), "$LISTOPT", "$LOADLIST", 'ncacn_np:$NETBIOSALIAS', '-U$DOMAIN/$USERNAME%$PASSWORD', 'rpc.echo'])
+plansmbtorture4testsuite('rpc.echo', "ad_dc_ntvfs", ['ncacn_np:$NETBIOSALIAS', '-U$DOMAIN/$USERNAME%$PASSWORD'], "samba4.rpc.echo against NetBIOS alias")
+
 # json tests hook into ``chgdcpass'' to make them run in contributor CI on
 # gitlab
 planpythontestsuite("chgdcpass", "samba.tests.blackbox.netads_json")
@@ -704,6 +722,10 @@ def planoldpythontestsuite(env, module, name=None, extra_path=[], environ={}, ex
         name = module
     plantestsuite_loadlist(name, env, args)
 
+if have_gnutls_crypto_policies:
+    planoldpythontestsuite("ad_dc", "samba.tests.dcerpc.createtrustrelax", environ={'GNUTLS_FORCE_FIPS_MODE':'1'})
+    planoldpythontestsuite("ad_dc_fips", "samba.tests.dcerpc.createtrustrelax", environ={'GNUTLS_FORCE_FIPS_MODE':'1'})
+
 # Run complex search expressions test once for each database backend.
 # Right now ad_dc has mdb and ad_dc_ntvfs has tdb
 mdb_testenv = "ad_dc"
@@ -761,6 +783,7 @@ planpythontestsuite("chgdcpass:local", "samba.tests.samba_tool.user_check_passwo
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.group")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.ou")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.computer")
+planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.contact")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.forest")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.schema")
 planpythontestsuite("schema_dc:local", "samba.tests.samba_tool.schema")
@@ -938,7 +961,19 @@ planoldpythontestsuite("fileserver",
                        "samba.tests.blackbox.smbcacls_basic(DFS)",
                        environ={'SHARE': 'msdfs-share',
                                  'TESTDIR': 'smbcacls_sharedir_dfs'})
-
+# Run smbcacls_propagate_inhertance tests on non msdfs root share
+planoldpythontestsuite("fileserver",
+                       "samba.tests.blackbox.smbcacls_propagate_inhertance")
+#
+# A) Run the smbcacls_propagate_inhertance tests on a msdfs root share
+#    *without* any nested dfs links
+# B) Run the smbcacls_propagate_inhertance tests on a msdfs root share
+#    *with* a nested dfs link
+#
+planoldpythontestsuite("fileserver",
+                       "samba.tests.blackbox.smbcacls_dfs_propagate_inherit",
+                       "samba.tests.blackbox.smbcacls_dfs_propagate_inherit(DFS-msdfs-root)",
+                       environ={'SHARE': 'smbcacls_share'})
 #
 # Want a selection of environments across the process models
 #
@@ -1338,6 +1373,12 @@ for env in ["rodc", "promoted_dc", "fl2000dc", "fl2008r2dc"]:
                                                             '--option=torture:expect_machine_account=true'] + extra_options,
                              "samba4.krb5.kdc with machine account")
 
+planpythontestsuite("ad_dc", "samba.tests.krb5.as_canonicalization_tests")
+planpythontestsuite("ad_dc", "samba.tests.krb5.compatability_tests")
+planpythontestsuite("ad_dc", "samba.tests.krb5.kdc_tests")
+planpythontestsuite(
+    "ad_dc",
+    "samba.tests.krb5.kdc_tgs_tests")
 
 for env in [
         'vampire_dc',

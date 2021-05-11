@@ -22,6 +22,7 @@
 #define DBGC_CLASS DBGC_LOCKING
 #include "includes.h"
 #include "lib/util/server_id.h"
+#include "locking/share_mode_lock.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
 #include "messages.h"
@@ -37,7 +38,7 @@ void break_kernel_oplock(struct messaging_context *msg_ctx, files_struct *fsp)
 
 	/* Put the kernel break info into the message. */
 	push_file_id_24((char *)msg, &fsp->file_id);
-	SIVAL(msg,24,fsp->fh->gen_id);
+	SIVAL(msg, 24, fh_get_gen_id(fsp->fh));
 
 	/* Don't need to be root here as we're only ever
 	   sending to ourselves. */
@@ -84,7 +85,7 @@ NTSTATUS set_file_oplock(files_struct *fsp)
 		 "tv_sec = %x, tv_usec = %x\n",
 		 fsp_str_dbg(fsp),
 		 file_id_str_buf(fsp->file_id, &buf),
-		 fsp->fh->gen_id,
+		 fh_get_gen_id(fsp->fh),
 		 (int)fsp->open_time.tv_sec,
 		 (int)fsp->open_time.tv_usec);
 
@@ -432,12 +433,11 @@ static void downgrade_lease_additional_trigger(struct tevent_context *ev,
 					    &state->lease_key,
 					    state->break_from,
 					    state->break_to);
-	TALLOC_FREE(state);
 	if (!NT_STATUS_IS_OK(status)) {
 		smbd_server_disconnect_client(state->client,
 					      nt_errstr(status));
-		return;
 	}
+	TALLOC_FREE(state);
 }
 
 struct fsps_lease_update_state {
@@ -789,7 +789,7 @@ static files_struct *initial_break_processing(
 			   "Allowing break to succeed regardless.\n",
 			   fsp_str_dbg(fsp),
 			   file_id_str_buf(id, &idbuf),
-			   fsp->fh->gen_id);
+			   fh_get_gen_id(fsp->fh));
 		return NULL;
 	}
 
@@ -1281,7 +1281,6 @@ static void contend_level2_oplocks_begin_default(files_struct *fsp,
 		.sconn = fsp->conn->sconn, .id = fsp->file_id,
 	};
 	struct share_mode_lock *lck = NULL;
-	struct share_mode_data *d = NULL;
 	bool ok, has_read_lease;
 
 	/*
@@ -1320,7 +1319,6 @@ static void contend_level2_oplocks_begin_default(files_struct *fsp,
 			    file_id_str_buf(state.id, &idbuf));
 		return;
 	}
-	d = lck->data;
 
 	/*
 	 * Walk leases and oplocks separately: We have to send one break per
@@ -1344,8 +1342,10 @@ static void contend_level2_oplocks_begin_default(files_struct *fsp,
 		 * Lazy update here. It might be that the read lease
 		 * has gone in the meantime.
 		 */
-		d->flags &= ~SHARE_MODE_LEASE_READ;
-		d->modified = true;
+		uint32_t acc, sh, ls;
+		share_mode_flags_get(lck, &acc, &sh, &ls);
+		ls &= ~SHARE_MODE_LEASE_READ;
+		share_mode_flags_set(lck, acc, sh, ls, NULL);
 	}
 
 	TALLOC_FREE(lck);

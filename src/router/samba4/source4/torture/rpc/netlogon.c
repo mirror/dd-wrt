@@ -38,6 +38,8 @@
 #include "lib/replace/system/network.h"
 #include "dsdb/samdb/samdb.h"
 
+#undef strcasecmp
+
 #define TEST_MACHINE_NAME "torturetest"
 
 static bool test_netr_broken_binding_handle(struct torture_context *tctx,
@@ -748,11 +750,11 @@ static bool test_ServerReqChallenge_4_repeats(
 	r.in.credentials = &credentials1;
 	r.out.return_credentials = &credentials2;
 
-        /*
-         * Set the first 4 bytes of the client challenge to the same
-         * value, this should pass as 5 bytes identical are needed to
-         * fail for CVE-2020-1472(ZeroLogon)
-         *
+	/*
+	 * Set the first 4 bytes of the client challenge to the same
+	 * value, this should pass as 5 bytes identical are needed to
+	 * fail for CVE-2020-1472(ZeroLogon)
+	 *
 	 * BUG: https://bugzilla.samba.org/show_bug.cgi?id=14497
 	 */
 	credentials1.data[0] = 'A';
@@ -802,6 +804,108 @@ static bool test_ServerReqChallenge_4_repeats(
 		NT_STATUS_OK,
 		"ServerAuthenticate2 unexpected");
 
+	return true;
+}
+
+/*
+ * Establish a NetLogon session, using a session key that encrypts the
+ * target character to zero
+ */
+static bool test_ServerAuthenticate2_encrypts_to_zero(
+	struct torture_context *tctx,
+	struct dcerpc_pipe *p,
+	struct cli_credentials *machine_credentials,
+	const char target,
+	struct netlogon_creds_CredentialState **creds_out)
+{
+	const char *computer_name =
+		cli_credentials_get_workstation(machine_credentials);
+	struct netr_ServerReqChallenge r;
+	struct netr_ServerAuthenticate2 a;
+	struct netr_Credential credentials1, credentials2, credentials3;
+	struct netlogon_creds_CredentialState *creds  = NULL;
+	const struct samr_Password *mach_password;
+	struct dcerpc_binding_handle *b = p->binding_handle;
+	const char *account_name = cli_credentials_get_username(
+		machine_credentials);
+	uint32_t flags =
+		NETLOGON_NEG_AUTH2_ADS_FLAGS |
+		NETLOGON_NEG_SUPPORTS_AES;
+	enum netr_SchannelType sec_chan_type =
+		cli_credentials_get_secure_channel_type(machine_credentials);
+	/*
+	 * Limit the number of attempts to generate a suitable session key.
+	 */
+	const unsigned MAX_ITER = 4096;
+	unsigned i = 0;
+
+	mach_password = cli_credentials_get_nt_hash(machine_credentials, tctx);
+
+	r.in.server_name = NULL;
+	r.in.computer_name = computer_name;
+	r.in.credentials = &credentials1;
+	r.out.return_credentials = &credentials2;
+
+	netlogon_creds_random_challenge(&credentials1);
+	credentials1.data[0] = target;
+	i = 0;
+	torture_comment(tctx, "Generating candidate session keys\n");
+	do {
+		TALLOC_FREE(creds);
+		i++;
+
+		torture_assert_ntstatus_ok(
+			tctx,
+			dcerpc_netr_ServerReqChallenge_r(b, tctx, &r),
+			"ServerReqChallenge failed");
+		torture_assert_ntstatus_ok(
+			tctx,
+			r.out.result,
+			"ServerReqChallenge failed");
+
+		a.in.server_name = NULL;
+		a.in.account_name = account_name;
+		a.in.secure_channel_type = sec_chan_type;
+		a.in.computer_name = computer_name;
+		a.in.negotiate_flags = &flags;
+		a.out.negotiate_flags = &flags;
+		a.in.credentials = &credentials3;
+		a.out.return_credentials = &credentials3;
+
+		creds = netlogon_creds_client_init(
+			tctx,
+			a.in.account_name,
+			a.in.computer_name,
+			a.in.secure_channel_type,
+			&credentials1,
+			&credentials2,
+			mach_password,
+			&credentials3,
+			flags);
+
+		torture_assert(tctx, creds != NULL, "memory allocation");
+	} while (credentials3.data[0] != 0 && i < MAX_ITER);
+
+	if (i >= MAX_ITER) {
+		torture_comment(
+			tctx,
+			"Unable to obtain a suitable session key, "
+			"after [%u] attempts\n",
+			i);
+		torture_fail(tctx, "Unable obtain suitable session key");
+	}
+
+	torture_assert_ntstatus_ok(
+		tctx,
+		dcerpc_netr_ServerAuthenticate2_r(b, tctx, &a),
+		"ServerAuthenticate2 failed");
+	torture_assert_ntstatus_equal(
+		tctx,
+		a.out.result,
+		NT_STATUS_OK,
+		"ServerAuthenticate2 unexpected result code");
+
+	*creds_out = creds;
 	return true;
 }
 
@@ -1165,6 +1269,484 @@ static bool test_SetPassword2_with_flags(struct torture_context *tctx,
 
 	return true;
 }
+
+/*
+  try to change the password of our machine account using a buffer of all zeros,
+  and a session key that encrypts that to all zeros.
+
+Note: The test does use sign and seal, it's purpose is to exercise
+      the detection code in dcesrv_netr_ServerPasswordSet2
+*/
+static bool test_SetPassword2_encrypted_to_all_zeros(
+	struct torture_context *tctx,
+	struct dcerpc_pipe *p1,
+	struct cli_credentials *machine_credentials)
+{
+	struct netr_ServerPasswordSet2 r;
+	struct netlogon_creds_CredentialState *creds;
+	struct samr_CryptPassword password_buf;
+	struct netr_Authenticator credential, return_authenticator;
+	struct netr_CryptPassword new_password;
+	struct dcerpc_pipe *p = NULL;
+	struct dcerpc_binding_handle *b = NULL;
+
+	if (!test_ServerAuthenticate2_encrypts_to_zero(
+		tctx,
+		p1,
+		machine_credentials,
+		'\0',
+		&creds)) {
+
+		return false;
+	}
+
+	if (!test_SetupCredentialsPipe(
+		p1,
+		tctx,
+		machine_credentials,
+		creds,
+		DCERPC_SIGN | DCERPC_SEAL,
+		&p))
+	{
+		return false;
+	}
+	b = p->binding_handle;
+
+	r.in.server_name = talloc_asprintf(
+		tctx,
+		"\\\\%s", dcerpc_server_name(p));
+	r.in.account_name = talloc_asprintf(tctx, "%s$", TEST_MACHINE_NAME);
+	r.in.secure_channel_type =
+		cli_credentials_get_secure_channel_type(machine_credentials);
+	r.in.computer_name = TEST_MACHINE_NAME;
+	r.in.credential = &credential;
+	r.in.new_password = &new_password;
+	r.out.return_authenticator = &return_authenticator;
+
+	ZERO_STRUCT(password_buf);
+
+	if (!(creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES)) {
+		torture_fail(tctx, "NETLOGON_NEG_SUPPORTS_AES not set");
+	}
+	netlogon_creds_aes_encrypt(creds, password_buf.data, 516);
+	if(!all_zero(password_buf.data, 516)) {
+		torture_fail(tctx, "Password did not encrypt to all zeros\n");
+	}
+
+	memcpy(new_password.data, password_buf.data, 512);
+	new_password.length = IVAL(password_buf.data, 512);
+	torture_assert_int_equal(
+		tctx,
+		new_password.length,
+		0,
+		"Length should have encrypted to 0");
+
+	netlogon_creds_client_authenticator(creds, &credential);
+
+	torture_assert_ntstatus_ok(
+		tctx,
+		dcerpc_netr_ServerPasswordSet2_r(b, tctx, &r),
+		"ServerPasswordSet2 zero length check failed");
+	torture_assert_ntstatus_equal(
+		tctx, r.out.result, NT_STATUS_WRONG_PASSWORD, "");
+
+	return true;
+}
+
+/*
+ * Choose a session key that encrypts a password of all zeros to all zeros.
+ * Then try to set the password, using a zeroed buffer, with a non zero
+ * length.
+ *
+ * This exercises the password self encryption check.
+ *
+ * Note: The test does use sign and seal, it's purpose is to exercise
+ *     the detection code in dcesrv_netr_ServerPasswordSet2
+*/
+static bool test_SetPassword2_password_encrypts_to_zero(
+	struct torture_context *tctx,
+	struct dcerpc_pipe *p1,
+	struct cli_credentials *machine_credentials)
+{
+	struct netr_ServerPasswordSet2 r;
+	struct netlogon_creds_CredentialState *creds;
+	struct samr_CryptPassword password_buf;
+	struct netr_Authenticator credential, return_authenticator;
+	struct netr_CryptPassword new_password;
+	struct dcerpc_pipe *p = NULL;
+	struct dcerpc_binding_handle *b = NULL;
+
+	if (!test_ServerAuthenticate2_encrypts_to_zero(
+		tctx,
+		p1,
+		machine_credentials,
+		0x00,
+		&creds)) {
+
+		return false;
+	}
+
+	if (!test_SetupCredentialsPipe(
+		p1,
+		tctx,
+		machine_credentials,
+		creds,
+		DCERPC_SIGN | DCERPC_SEAL,
+		&p))
+	{
+		return false;
+	}
+	b = p->binding_handle;
+
+	r.in.server_name = talloc_asprintf(
+		tctx,
+		"\\\\%s", dcerpc_server_name(p));
+	r.in.account_name = talloc_asprintf(tctx, "%s$", TEST_MACHINE_NAME);
+	r.in.secure_channel_type =
+		cli_credentials_get_secure_channel_type(machine_credentials);
+	r.in.computer_name = TEST_MACHINE_NAME;
+	r.in.credential = &credential;
+	r.in.new_password = &new_password;
+	r.out.return_authenticator = &return_authenticator;
+
+	ZERO_STRUCT(password_buf);
+	SIVAL(password_buf.data, 512, 512);
+
+	if (!(creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES)) {
+		torture_fail(tctx, "NETLOGON_NEG_SUPPORTS_AES not set");
+	}
+	netlogon_creds_aes_encrypt(creds, password_buf.data, 516);
+
+	memcpy(new_password.data, password_buf.data, 512);
+	new_password.length = IVAL(password_buf.data, 512);
+
+	netlogon_creds_client_authenticator(creds, &credential);
+
+	torture_assert_ntstatus_ok(
+		tctx,
+		dcerpc_netr_ServerPasswordSet2_r(b, tctx, &r),
+		"ServerPasswordSet2 password encrypts to zero check failed");
+	torture_assert_ntstatus_equal(
+		tctx, r.out.result, NT_STATUS_WRONG_PASSWORD, "");
+
+	return true;
+}
+
+/*
+ * Check that an all zero confounder, that encrypts to all zeros is
+ * rejected.
+ *
+ * Note: The test does use sign and seal, it's purpose is to exercise
+ *       the detection code in dcesrv_netr_ServerPasswordSet2
+ */
+static bool test_SetPassword2_confounder(
+	struct torture_context *tctx,
+	struct dcerpc_pipe *p1,
+	struct cli_credentials *machine_credentials)
+{
+	struct netr_ServerPasswordSet2 r;
+	struct netlogon_creds_CredentialState *creds;
+	struct samr_CryptPassword password_buf;
+	struct netr_Authenticator credential, return_authenticator;
+	struct netr_CryptPassword new_password;
+	struct dcerpc_pipe *p = NULL;
+	struct dcerpc_binding_handle *b = NULL;
+
+	if (!test_ServerAuthenticate2_encrypts_to_zero(
+		tctx,
+		p1,
+		machine_credentials,
+		'\0',
+		&creds)) {
+
+		return false;
+	}
+
+	if (!test_SetupCredentialsPipe(
+		p1,
+		tctx,
+		machine_credentials,
+		creds,
+		DCERPC_SIGN | DCERPC_SEAL,
+		&p))
+	{
+		return false;
+	}
+	b = p->binding_handle;
+
+	r.in.server_name = talloc_asprintf(
+		tctx,
+		"\\\\%s", dcerpc_server_name(p));
+	r.in.account_name = talloc_asprintf(tctx, "%s$", TEST_MACHINE_NAME);
+	r.in.secure_channel_type =
+		cli_credentials_get_secure_channel_type(machine_credentials);
+	r.in.computer_name = TEST_MACHINE_NAME;
+	r.in.credential = &credential;
+	r.in.new_password = &new_password;
+	r.out.return_authenticator = &return_authenticator;
+
+	ZERO_STRUCT(password_buf);
+	password_buf.data[511] = 'A';
+	SIVAL(password_buf.data, 512, 2);
+
+	if (!(creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES)) {
+		torture_fail(tctx, "NETLOGON_NEG_SUPPORTS_AES not set");
+	}
+	netlogon_creds_aes_encrypt(creds, password_buf.data, 516);
+
+	memcpy(new_password.data, password_buf.data, 512);
+	new_password.length = IVAL(password_buf.data, 512);
+
+	netlogon_creds_client_authenticator(creds, &credential);
+
+	torture_assert_ntstatus_ok(
+		tctx,
+		dcerpc_netr_ServerPasswordSet2_r(b, tctx, &r),
+		"ServerPasswordSet2 confounder check failed");
+	torture_assert_ntstatus_equal(
+		tctx, r.out.result, NT_STATUS_WRONG_PASSWORD, "");
+
+	return true;
+}
+
+/*
+ * try a change password for our machine account, using an all zero
+ *  request. This should fail on the zero length check.
+ *
+ * Note: This test uses ARC4 encryption to exercise the desired check.
+ */
+static bool test_SetPassword2_all_zeros(
+	struct torture_context *tctx,
+	struct dcerpc_pipe *p1,
+	struct cli_credentials *machine_credentials)
+{
+	struct netr_ServerPasswordSet2 r;
+	struct netlogon_creds_CredentialState *creds;
+	struct samr_CryptPassword password_buf;
+	struct netr_Authenticator credential, return_authenticator;
+	struct netr_CryptPassword new_password;
+	struct dcerpc_pipe *p = NULL;
+	struct dcerpc_binding_handle *b = NULL;
+	uint32_t flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+
+	if (!test_SetupCredentials2(
+		p1,
+		tctx,
+		flags,
+		machine_credentials,
+		cli_credentials_get_secure_channel_type(machine_credentials),
+		&creds))
+	{
+		return false;
+	}
+	if (!test_SetupCredentialsPipe(
+		p1,
+		tctx,
+		machine_credentials,
+		creds,
+		DCERPC_SIGN | DCERPC_SEAL,
+		&p))
+	{
+		return false;
+	}
+	b = p->binding_handle;
+
+	r.in.server_name = talloc_asprintf(
+		tctx,
+		"\\\\%s", dcerpc_server_name(p));
+	r.in.account_name = talloc_asprintf(tctx, "%s$", TEST_MACHINE_NAME);
+	r.in.secure_channel_type =
+		cli_credentials_get_secure_channel_type(machine_credentials);
+	r.in.computer_name = TEST_MACHINE_NAME;
+	r.in.credential = &credential;
+	r.in.new_password = &new_password;
+	r.out.return_authenticator = &return_authenticator;
+
+	ZERO_STRUCT(password_buf.data);
+	if (creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
+		torture_fail(tctx, "NETLOGON_NEG_SUPPORTS_AES enabled\n");
+	}
+	netlogon_creds_arcfour_crypt(creds, password_buf.data, 516);
+
+	memcpy(new_password.data, password_buf.data, 512);
+	new_password.length = IVAL(password_buf.data, 512);
+
+	torture_comment(
+		tctx,
+		"Testing ServerPasswordSet2 on machine account\n");
+
+	netlogon_creds_client_authenticator(creds, &credential);
+
+	torture_assert_ntstatus_ok(
+		tctx,
+		dcerpc_netr_ServerPasswordSet2_r(b, tctx, &r),
+		"ServerPasswordSet2 zero length check failed");
+	torture_assert_ntstatus_equal(
+		tctx, r.out.result, NT_STATUS_WRONG_PASSWORD, "");
+
+	return true;
+}
+
+/*
+  try a change password for our machine account, using a maximum length
+  password
+*/
+static bool test_SetPassword2_maximum_length_password(
+	struct torture_context *tctx,
+	struct dcerpc_pipe *p1,
+	struct cli_credentials *machine_credentials)
+{
+	struct netr_ServerPasswordSet2 r;
+	struct netlogon_creds_CredentialState *creds;
+	struct samr_CryptPassword password_buf;
+	struct netr_Authenticator credential, return_authenticator;
+	struct netr_CryptPassword new_password;
+	struct dcerpc_pipe *p = NULL;
+	struct dcerpc_binding_handle *b = NULL;
+	uint32_t flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+	DATA_BLOB new_random_pass = data_blob_null;
+
+	if (!test_SetupCredentials2(
+		p1,
+		tctx,
+		flags,
+		machine_credentials,
+		cli_credentials_get_secure_channel_type(machine_credentials),
+		&creds))
+	{
+		return false;
+	}
+	if (!test_SetupCredentialsPipe(
+		p1,
+		tctx,
+		machine_credentials,
+		creds,
+		DCERPC_SIGN | DCERPC_SEAL,
+		&p))
+	{
+		return false;
+	}
+	b = p->binding_handle;
+
+	r.in.server_name = talloc_asprintf(
+		tctx,
+		"\\\\%s", dcerpc_server_name(p));
+	r.in.account_name = talloc_asprintf(tctx, "%s$", TEST_MACHINE_NAME);
+	r.in.secure_channel_type =
+		cli_credentials_get_secure_channel_type(machine_credentials);
+	r.in.computer_name = TEST_MACHINE_NAME;
+	r.in.credential = &credential;
+	r.in.new_password = &new_password;
+	r.out.return_authenticator = &return_authenticator;
+
+	new_random_pass = netlogon_very_rand_pass(tctx, 256);
+	set_pw_in_buffer(password_buf.data, &new_random_pass);
+	SIVAL(password_buf.data, 512, 512);
+	if (creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
+		netlogon_creds_aes_encrypt(creds, password_buf.data, 516);
+	} else {
+		netlogon_creds_arcfour_crypt(creds, password_buf.data, 516);
+	}
+
+	memcpy(new_password.data, password_buf.data, 512);
+	new_password.length = IVAL(password_buf.data, 512);
+
+	torture_comment(
+		tctx,
+		"Testing ServerPasswordSet2 on machine account\n");
+
+	netlogon_creds_client_authenticator(creds, &credential);
+
+	torture_assert_ntstatus_ok(
+		tctx,
+		dcerpc_netr_ServerPasswordSet2_r(b, tctx, &r),
+		"ServerPasswordSet2 zero length check failed");
+	torture_assert_ntstatus_equal(
+		tctx, r.out.result, NT_STATUS_OK, "");
+
+	return true;
+}
+
+/*
+  try a change password for our machine account, using a password of
+  all zeros, and a non zero password length.
+
+  This test relies on the buffer being encrypted with ARC4, to
+  trigger the appropriate check in the rpc server code
+*/
+static bool test_SetPassword2_all_zero_password(
+	struct torture_context *tctx,
+	struct dcerpc_pipe *p1,
+	struct cli_credentials *machine_credentials)
+{
+	struct netr_ServerPasswordSet2 r;
+	struct netlogon_creds_CredentialState *creds;
+	struct samr_CryptPassword password_buf;
+	struct netr_Authenticator credential, return_authenticator;
+	struct netr_CryptPassword new_password;
+	struct dcerpc_pipe *p = NULL;
+	struct dcerpc_binding_handle *b = NULL;
+	uint32_t flags = NETLOGON_NEG_AUTH2_ADS_FLAGS;
+
+	if (!test_SetupCredentials2(
+		p1,
+		tctx,
+		flags,
+		machine_credentials,
+		cli_credentials_get_secure_channel_type(machine_credentials),
+		&creds))
+	{
+		return false;
+	}
+	if (!test_SetupCredentialsPipe(
+		p1,
+		tctx,
+		machine_credentials,
+		creds,
+		DCERPC_SIGN | DCERPC_SEAL,
+		&p))
+	{
+		return false;
+	}
+	b = p->binding_handle;
+
+	r.in.server_name = talloc_asprintf(
+		tctx,
+		"\\\\%s", dcerpc_server_name(p));
+	r.in.account_name = talloc_asprintf(tctx, "%s$", TEST_MACHINE_NAME);
+	r.in.secure_channel_type =
+		cli_credentials_get_secure_channel_type(machine_credentials);
+	r.in.computer_name = TEST_MACHINE_NAME;
+	r.in.credential = &credential;
+	r.in.new_password = &new_password;
+	r.out.return_authenticator = &return_authenticator;
+
+	ZERO_STRUCT(password_buf.data);
+	SIVAL(password_buf.data, 512, 128);
+	if (creds->negotiate_flags & NETLOGON_NEG_SUPPORTS_AES) {
+		torture_fail(tctx, "NETLOGON_NEG_SUPPORTS_AES set");
+	}
+	netlogon_creds_arcfour_crypt(creds, password_buf.data, 516);
+
+	memcpy(new_password.data, password_buf.data, 512);
+	new_password.length = IVAL(password_buf.data, 512);
+
+	torture_comment(
+		tctx,
+		"Testing ServerPasswordSet2 on machine account\n");
+
+	netlogon_creds_client_authenticator(creds, &credential);
+
+	torture_assert_ntstatus_ok(
+		tctx,
+		dcerpc_netr_ServerPasswordSet2_r(b, tctx, &r),
+		"ServerPasswordSet2 all zero password check failed");
+	torture_assert_ntstatus_equal(
+		tctx, r.out.result, NT_STATUS_WRONG_PASSWORD, "");
+
+	return true;
+}
+
 
 static bool test_SetPassword2(struct torture_context *tctx,
 			      struct dcerpc_pipe *p,
@@ -5227,68 +5809,52 @@ struct torture_suite *torture_rpc_netlogon(TALLOC_CTX *mem_ctx)
 	tcase = torture_suite_add_machine_bdc_rpc_iface_tcase(suite, "netlogon",
 						  &ndr_table_netlogon, TEST_MACHINE_NAME);
 
+	torture_rpc_tcase_add_test_creds(tcase, "SetupCredentialsDowngrade", test_SetupCredentialsDowngrade);
+	torture_rpc_tcase_add_test(tcase, "lsa_over_netlogon", test_lsa_over_netlogon);
+
+	torture_rpc_tcase_add_test_creds(tcase, "GetForestTrustInformation", test_netr_GetForestTrustInformation);
+	torture_rpc_tcase_add_test_creds(tcase, "ServerGetTrustInfo_AES", test_netr_ServerGetTrustInfo_AES);
+	torture_rpc_tcase_add_test_creds(tcase, "ServerGetTrustInfo", test_netr_ServerGetTrustInfo);
+	torture_rpc_tcase_add_test(tcase, "DsRAddressToSitenamesExW", test_netr_DsRAddressToSitenamesExW);
+	torture_rpc_tcase_add_test(tcase, "DsRAddressToSitenamesW", test_netr_DsRAddressToSitenamesW);
+	torture_rpc_tcase_add_test(tcase, "DsrGetDcSiteCoverageW", test_netr_DsrGetDcSiteCoverageW);
+	torture_rpc_tcase_add_test(tcase, "DsRGetDCNameEx2", test_netr_DsRGetDCNameEx2);
+	torture_rpc_tcase_add_test(tcase, "DsRGetDCNameEx", test_netr_DsRGetDCNameEx);
+	torture_rpc_tcase_add_test(tcase, "DsRGetDCName", test_netr_DsRGetDCName);
+	test = torture_rpc_tcase_add_test_creds(tcase, "GetDomainInfo_async", test_GetDomainInfo_async);
+	test->dangerous = true;
+	torture_rpc_tcase_add_test(tcase, "NetrEnumerateTrustedDomainsEx", test_netr_NetrEnumerateTrustedDomainsEx);
+	torture_rpc_tcase_add_test(tcase, "NetrEnumerateTrustedDomains", test_netr_NetrEnumerateTrustedDomains);
+	torture_rpc_tcase_add_test(tcase, "DsrEnumerateDomainTrusts", test_DsrEnumerateDomainTrusts);
+	torture_rpc_tcase_add_test_creds(tcase, "DatabaseSync2", test_DatabaseSync2);
+	torture_rpc_tcase_add_test(tcase, "GetAnyDCName", test_GetAnyDCName);
+	torture_rpc_tcase_add_test(tcase, "ManyGetDCName", test_ManyGetDCName);
+	torture_rpc_tcase_add_test(tcase, "GetDcName", test_GetDcName);
+	torture_rpc_tcase_add_test_creds(tcase, "AccountSync", test_AccountSync);
+	torture_rpc_tcase_add_test_creds(tcase, "AccountDeltas", test_AccountDeltas);
+	torture_rpc_tcase_add_test_creds(tcase, "DatabaseRedo", test_DatabaseRedo);
+	torture_rpc_tcase_add_test_creds(tcase, "DatabaseDeltas", test_DatabaseDeltas);
+	torture_rpc_tcase_add_test_creds(tcase, "DatabaseSync", test_DatabaseSync);
+	torture_rpc_tcase_add_test_creds(tcase, "GetDomainInfo", test_GetDomainInfo);
+	torture_rpc_tcase_add_test_creds(tcase, "GetTrustPasswords", test_GetTrustPasswords);
+	torture_rpc_tcase_add_test_creds(tcase, "GetPassword", test_GetPassword);
+	torture_rpc_tcase_add_test_creds(tcase, "SetPassword2_AES", test_SetPassword2_AES);
+	torture_rpc_tcase_add_test_creds(tcase, "SetPassword2", test_SetPassword2);
+	torture_rpc_tcase_add_test_creds(tcase, "SetPassword", test_SetPassword);
+	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuse", test_ServerReqChallengeReuse);
+	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuseGlobal4", test_ServerReqChallengeReuseGlobal4);
+	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuseGlobal3", test_ServerReqChallengeReuseGlobal3);
+	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuseGlobal2", test_ServerReqChallengeReuseGlobal2);
+	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuseGlobal", test_ServerReqChallengeReuseGlobal);
+	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeGlobal", test_ServerReqChallengeGlobal);
+	torture_rpc_tcase_add_test_creds(tcase, "invalidAuthenticate2", test_invalidAuthenticate2);
+	torture_rpc_tcase_add_test_creds(tcase, "SamLogon", test_SamLogon);
+	torture_rpc_tcase_add_test(tcase, "LogonUasLogoff", test_LogonUasLogoff);
+	torture_rpc_tcase_add_test(tcase, "LogonUasLogon", test_LogonUasLogon);
+
 	torture_rpc_tcase_add_test(tcase, "Broken RPC binding handle",
 				   test_netr_broken_binding_handle);
 
-	torture_rpc_tcase_add_test(tcase, "LogonUasLogon", test_LogonUasLogon);
-	torture_rpc_tcase_add_test(tcase, "LogonUasLogoff", test_LogonUasLogoff);
-	torture_rpc_tcase_add_test_creds(tcase, "SamLogon", test_SamLogon);
-	torture_rpc_tcase_add_test_creds(tcase, "invalidAuthenticate2", test_invalidAuthenticate2);
-	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeGlobal", test_ServerReqChallengeGlobal);
-	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuseGlobal", test_ServerReqChallengeReuseGlobal);
-	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuseGlobal2", test_ServerReqChallengeReuseGlobal2);
-	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuseGlobal3", test_ServerReqChallengeReuseGlobal3);
-	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuseGlobal4", test_ServerReqChallengeReuseGlobal4);
-	torture_rpc_tcase_add_test_creds(tcase, "ServerReqChallengeReuse", test_ServerReqChallengeReuse);
-	torture_rpc_tcase_add_test_creds(tcase, "SetPassword", test_SetPassword);
-	torture_rpc_tcase_add_test_creds(tcase, "SetPassword2", test_SetPassword2);
-	torture_rpc_tcase_add_test_creds(tcase, "SetPassword2_AES", test_SetPassword2_AES);
-	torture_rpc_tcase_add_test_creds(tcase, "GetPassword", test_GetPassword);
-	torture_rpc_tcase_add_test_creds(tcase, "GetTrustPasswords", test_GetTrustPasswords);
-	torture_rpc_tcase_add_test_creds(tcase, "GetDomainInfo", test_GetDomainInfo);
-	torture_rpc_tcase_add_test_creds(tcase, "DatabaseSync", test_DatabaseSync);
-	torture_rpc_tcase_add_test_creds(tcase, "DatabaseDeltas", test_DatabaseDeltas);
-	torture_rpc_tcase_add_test_creds(tcase, "DatabaseRedo", test_DatabaseRedo);
-	torture_rpc_tcase_add_test_creds(tcase, "AccountDeltas", test_AccountDeltas);
-	torture_rpc_tcase_add_test_creds(tcase, "AccountSync", test_AccountSync);
-	torture_rpc_tcase_add_test(tcase, "GetDcName", test_GetDcName);
-	torture_rpc_tcase_add_test(tcase, "ManyGetDCName", test_ManyGetDCName);
-	torture_rpc_tcase_add_test(tcase, "GetAnyDCName", test_GetAnyDCName);
-	torture_rpc_tcase_add_test_creds(tcase, "DatabaseSync2", test_DatabaseSync2);
-	torture_rpc_tcase_add_test(tcase, "DsrEnumerateDomainTrusts", test_DsrEnumerateDomainTrusts);
-	torture_rpc_tcase_add_test(tcase, "NetrEnumerateTrustedDomains", test_netr_NetrEnumerateTrustedDomains);
-	torture_rpc_tcase_add_test(tcase, "NetrEnumerateTrustedDomainsEx", test_netr_NetrEnumerateTrustedDomainsEx);
-	test = torture_rpc_tcase_add_test_creds(tcase, "GetDomainInfo_async", test_GetDomainInfo_async);
-	test->dangerous = true;
-	torture_rpc_tcase_add_test(tcase, "DsRGetDCName", test_netr_DsRGetDCName);
-	torture_rpc_tcase_add_test(tcase, "DsRGetDCNameEx", test_netr_DsRGetDCNameEx);
-	torture_rpc_tcase_add_test(tcase, "DsRGetDCNameEx2", test_netr_DsRGetDCNameEx2);
-	torture_rpc_tcase_add_test(tcase, "DsrGetDcSiteCoverageW", test_netr_DsrGetDcSiteCoverageW);
-	torture_rpc_tcase_add_test(tcase, "DsRAddressToSitenamesW", test_netr_DsRAddressToSitenamesW);
-	torture_rpc_tcase_add_test(tcase, "DsRAddressToSitenamesExW", test_netr_DsRAddressToSitenamesExW);
-	torture_rpc_tcase_add_test_creds(tcase, "ServerGetTrustInfo", test_netr_ServerGetTrustInfo);
-	torture_rpc_tcase_add_test_creds(tcase, "ServerGetTrustInfo_AES", test_netr_ServerGetTrustInfo_AES);
-	torture_rpc_tcase_add_test_creds(tcase, "GetForestTrustInformation", test_netr_GetForestTrustInformation);
-
-	torture_rpc_tcase_add_test(tcase, "lsa_over_netlogon", test_lsa_over_netlogon);
-	torture_rpc_tcase_add_test_creds(tcase, "SetupCredentialsDowngrade", test_SetupCredentialsDowngrade);
-
-	torture_rpc_tcase_add_test_creds(
-		tcase,
-		"ServerReqChallenge",
-		test_ServerReqChallenge);
-	torture_rpc_tcase_add_test_creds(
-		tcase,
-		"ServerReqChallenge_zero_challenge",
-		test_ServerReqChallenge_zero_challenge);
-	torture_rpc_tcase_add_test_creds(
-		tcase,
-		"ServerReqChallenge_5_repeats",
-		test_ServerReqChallenge_5_repeats);
-	torture_rpc_tcase_add_test_creds(
-		tcase,
-		"ServerReqChallenge_4_repeats",
-		test_ServerReqChallenge_4_repeats);
 	return suite;
 }
 
@@ -5307,6 +5873,63 @@ struct torture_suite *torture_rpc_netlogon_s3(TALLOC_CTX *mem_ctx)
 	torture_rpc_tcase_add_test_creds(tcase, "SetPassword2", test_SetPassword2);
 	torture_rpc_tcase_add_test_creds(tcase, "SetPassword2_AES", test_SetPassword2_AES);
 	torture_rpc_tcase_add_test(tcase, "NetrEnumerateTrustedDomains", test_netr_NetrEnumerateTrustedDomains);
+
+	return suite;
+}
+
+struct torture_suite *torture_rpc_netlogon_zerologon(TALLOC_CTX *mem_ctx)
+{
+	struct torture_suite *suite = torture_suite_create(
+		mem_ctx,
+		"netlogon.zerologon");
+	struct torture_rpc_tcase *tcase;
+
+	tcase = torture_suite_add_machine_bdc_rpc_iface_tcase(
+		suite,
+		"netlogon",
+		&ndr_table_netlogon,
+		TEST_MACHINE_NAME);
+
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"ServerReqChallenge",
+		test_ServerReqChallenge);
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"ServerReqChallenge_zero_challenge",
+		test_ServerReqChallenge_zero_challenge);
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"ServerReqChallenge_5_repeats",
+		test_ServerReqChallenge_5_repeats);
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"ServerReqChallenge_4_repeats",
+		test_ServerReqChallenge_4_repeats);
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"test_SetPassword2_encrypted_to_all_zeros",
+		test_SetPassword2_encrypted_to_all_zeros);
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"test_SetPassword2_password_encrypts_to_zero",
+		test_SetPassword2_password_encrypts_to_zero);
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"test_SetPassword2_confounder",
+		test_SetPassword2_confounder);
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"test_SetPassword2_all_zeros",
+		test_SetPassword2_all_zeros);
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"test_SetPassword2_all_zero_password",
+		test_SetPassword2_all_zero_password);
+	torture_rpc_tcase_add_test_creds(
+		tcase,
+		"test_SetPassword2_maximum_length_password",
+		test_SetPassword2_maximum_length_password);
 
 	return suite;
 }

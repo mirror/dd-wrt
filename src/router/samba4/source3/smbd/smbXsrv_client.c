@@ -105,14 +105,13 @@ static TDB_DATA smbXsrv_client_global_id_to_key(const struct GUID *client_guid,
 {
 	TDB_DATA key = { .dsize = 0, };
 	NTSTATUS status;
-	DATA_BLOB b;
+	struct GUID_ndr_buf buf = { .buf = {0}, };
 
-	status = GUID_to_ndr_blob(client_guid, talloc_tos(), &b);
+	status = GUID_to_ndr_buf(client_guid, &buf);
 	if (!NT_STATUS_IS_OK(status)) {
 		return key;
 	}
-	memcpy(key_buf, b.data, SMBXSRV_CLIENT_GLOBAL_TDB_KEY_SIZE);
-	data_blob_free(&b);
+	memcpy(key_buf, buf.buf, SMBXSRV_CLIENT_GLOBAL_TDB_KEY_SIZE);
 
 	key = make_tdb_data(key_buf, SMBXSRV_CLIENT_GLOBAL_TDB_KEY_SIZE);
 
@@ -568,6 +567,7 @@ NTSTATUS smbXsrv_client_create(TALLOC_CTX *mem_ctx,
 		return NT_STATUS_NO_MEMORY;
 	}
 	tevent_req_set_callback(subreq, smbXsrv_client_connection_pass_loop, client);
+	client->connection_pass_subreq = subreq;
 
 	*_client = client;
 	return NT_STATUS_OK;
@@ -606,6 +606,8 @@ static void smbXsrv_client_connection_pass_loop(struct tevent_req *subreq)
 	NTSTATUS status;
 	int sock_fd = -1;
 	uint64_t seq_low;
+
+	client->connection_pass_subreq = NULL;
 
 	ret = messaging_filtered_read_recv(subreq, talloc_tos(), &rec);
 	TALLOC_FREE(subreq);
@@ -731,6 +733,7 @@ next:
 		return;
 	}
 	tevent_req_set_callback(subreq, smbXsrv_client_connection_pass_loop, client);
+	client->connection_pass_subreq = subreq;
 }
 
 NTSTATUS smbXsrv_client_update(struct smbXsrv_client *client)
@@ -796,6 +799,8 @@ NTSTATUS smbXsrv_client_remove(struct smbXsrv_client *client)
 	if (!client->global->stored) {
 		return NT_STATUS_OK;
 	}
+
+	TALLOC_FREE(client->connection_pass_subreq);
 
 	client->global->db_rec = smbXsrv_client_global_fetch_locked(
 					table->global.db_ctx,

@@ -46,7 +46,7 @@ static ssize_t getxattr_do(vfs_handle_struct *handle,
 	int saved_errno = 0;
 
 	become_root();
-	if (fsp && fsp->fh->fd != -1) {
+	if (fsp && fsp_get_pathref_fd(fsp) != -1) {
 		sizeret = SMB_VFS_FGETXATTR(fsp, xattr_name, val, size);
 	} else {
 		sizeret = SMB_VFS_GETXATTR(handle->conn, smb_fname,
@@ -196,7 +196,7 @@ static NTSTATUS store_acl_blob_fsp(vfs_handle_struct *handle,
 		  (unsigned int)pblob->length, fsp_str_dbg(fsp)));
 
 	become_root();
-	if (fsp->fh->fd != -1) {
+	if (fsp_get_pathref_fd(fsp) != -1) {
 		ret = SMB_VFS_FSETXATTR(fsp, XATTR_NTACL_NAME,
 			pblob->data, pblob->length, 0);
 	} else {
@@ -223,47 +223,32 @@ static NTSTATUS store_acl_blob_fsp(vfs_handle_struct *handle,
  Remove a Windows ACL - we're setting the underlying POSIX ACL.
 *********************************************************************/
 
-static int sys_acl_set_file_xattr(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
+static int sys_acl_set_fd_xattr(vfs_handle_struct *handle,
+				files_struct *fsp,
 				SMB_ACL_TYPE_T type,
 				SMB_ACL_T theacl)
 {
-	int ret = SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle,
-						smb_fname,
-						type,
-						theacl);
+	struct acl_common_fsp_ext *ext = (struct acl_common_fsp_ext *)
+		VFS_FETCH_FSP_EXTENSION(handle, fsp);
+	int ret;
+
+	ret = SMB_VFS_NEXT_SYS_ACL_SET_FD(handle,
+					  fsp,
+					  type,
+					  theacl);
 	if (ret == -1) {
 		return -1;
 	}
 
-	become_root();
-	SMB_VFS_REMOVEXATTR(handle->conn, smb_fname,
-			XATTR_NTACL_NAME);
-	unbecome_root();
-
-	return ret;
-}
-
-/*********************************************************************
- Remove a Windows ACL - we're setting the underlying POSIX ACL.
-*********************************************************************/
-
-static int sys_acl_set_fd_xattr(vfs_handle_struct *handle,
-                            files_struct *fsp,
-                            SMB_ACL_T theacl)
-{
-	int ret = SMB_VFS_NEXT_SYS_ACL_SET_FD(handle,
-						fsp,
-						theacl);
-	if (ret == -1) {
-		return -1;
+	if (ext != NULL && ext->setting_nt_acl) {
+		return 0;
 	}
 
 	become_root();
 	SMB_VFS_FREMOVEXATTR(fsp, XATTR_NTACL_NAME);
 	unbecome_root();
 
-	return ret;
+	return 0;
 }
 
 static int connect_acl_xattr(struct vfs_handle_struct *handle,
@@ -406,7 +391,6 @@ static struct vfs_fn_pointers vfs_acl_xattr_fns = {
 	.fget_nt_acl_fn = acl_xattr_fget_nt_acl,
 	.get_nt_acl_at_fn = acl_xattr_get_nt_acl_at,
 	.fset_nt_acl_fn = acl_xattr_fset_nt_acl,
-	.sys_acl_set_file_fn = sys_acl_set_file_xattr,
 	.sys_acl_set_fd_fn = sys_acl_set_fd_xattr
 };
 

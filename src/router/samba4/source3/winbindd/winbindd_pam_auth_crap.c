@@ -21,6 +21,8 @@
 #include "winbindd.h"
 #include "rpc_client/util_netlogon.h"
 #include "libcli/security/dom_sid.h"
+#include "lib/util/string_wrappers.h"
+#include "lib/global_contexts.h"
 
 struct winbindd_pam_auth_crap_state {
 	struct winbindd_response *response;

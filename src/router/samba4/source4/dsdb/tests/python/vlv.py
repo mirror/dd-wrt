@@ -18,8 +18,8 @@ import samba.getopt as options
 from samba.auth import system_session
 import ldb
 from samba.samdb import SamDB
-from samba.compat import get_bytes
-from samba.compat import get_string
+from samba.common import get_bytes
+from samba.common import get_string
 
 import time
 
@@ -510,10 +510,8 @@ class VLVTests(VLVTestsBase):
                 random.shuffle(gte_tests)
                 res = None
                 sort_control = "server_sort:1:0:%s" % attr
-
                 expected_order = self.get_expected_order(attr, expression)
-                sort_control = "server_sort:1:0:%s" % attr
-                res = None
+
                 for before in range(0, 11):
                     after = before
                     for gte in gte_tests:
@@ -1217,6 +1215,29 @@ class VLVTests(VLVTestsBase):
                                           after_count=len(self.users))
         expected_results = [r for r in full_results if r != del_user[attr]]
         self.assertEqual(results, expected_results)
+
+    def test_vlv_change_during_search(self):
+        attr = 'facsimileTelephoneNumber'
+        prefix = "change_during_search_"
+        expr = "(&(objectClass=user)(cn=%s*))" % (prefix)
+        num_users = 3
+        users = [self.create_user(i, num_users, prefix=prefix)
+                 for i in range(num_users)]
+        expr = "(&(objectClass=user)(facsimileTelephoneNumber=%s*))" % (prefix)
+
+        # Start the VLV, change the searched attribute and try the
+        # cookie.
+        results, cookie = self.vlv_search(attr, expr)
+
+        for u in users:
+            self.ldb.modify_ldif("dn: %s\n"
+                                 "changetype: modify\n"
+                                 "replace: facsimileTelephoneNumber\n"
+                                 "facsimileTelephoneNumber: 123" % u['dn'])
+
+        for i in range(2):
+            results, cookie = self.vlv_search(attr, expr, cookie=cookie,
+                                              offset=i+1)
 
 
 

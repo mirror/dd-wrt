@@ -327,9 +327,24 @@
  * Version 43 - SMB_VFS_READ_DFS_PATHAT() should take a non-const name.
 		There's no easy way to return stat info for a DFS link
 		otherwise.
+ * Change to Version 44 - will ship with 4.14.
+ * Version 44 - Remove dirfsp arg from struct files_struct
+ * Version 44 - Remove dirfsp arg to SMB_VFS_CREATE_FILE()
+ * Version 44 - Make dirfsp arg to SMB_VFS_READLINKAT() const
+ * Version 44 - Add a flag 'encryption_required' to files_struct that that
+ *              prevents that encrypted connections can be downgraded.
+ * Version 44 - Add a flag 'is_pathref' to struct files_struct.
+ * Version 44 - Add 'is_fsa' flag to struct files_struct.
+ * Version 44 - Add 'have_proc_fds' flag to struct connection_struct.
+ * Version 44 - Add 'have_proc_fds' flag to struct files_struct.
+ * Version 44 - Add dirfsp arg to SMB_VFS_READDIR()
+ * Version 44 - Remove SMB_VFS_GET_DOS_ATTRIBUTES()
+ * Version 44 - Replace SMB_VFS_GET_COMPRESSION() with SMB_VFS_FGET_COMPRESSION()
+ * Version 44 - Add type argument to SMB_VFS_SYS_ACL_SET_FD()
+ * Version 44 - Remove SMB_VFS_SYS_ACL_SET_FILE()
  */
 
-#define SMB_VFS_INTERFACE_VERSION 43
+#define SMB_VFS_INTERFACE_VERSION 44
 
 /*
     All intercepted VFS operations must be declared as static functions inside module source
@@ -355,21 +370,7 @@ typedef union unid_t {
 	gid_t gid;
 } unid_t;
 
-struct fd_handle {
-	size_t ref_count;
-	int fd;
-	uint64_t position_information;
-	off_t pos;
-	uint32_t private_options;	/* NT Create options, but we only look at
-				 * NTCREATEX_OPTIONS_PRIVATE_DENY_DOS and
-				 * NTCREATEX_OPTIONS_PRIVATE_DENY_FCB and
-				 * NTCREATEX_OPTIONS_PRIVATE_DELETE_ON_CLOSE
-				 * for print files *only*, where
-				 * DELETE_ON_CLOSE is not stored in the share
-				 * mode database.
-				 */
-	uint64_t gen_id;
-};
+struct fd_handle;
 
 struct fsp_lease {
 	size_t ref_count;
@@ -384,7 +385,6 @@ typedef struct files_struct {
 	struct smbXsrv_open *op;
 	struct connection_struct *conn;
 	struct fd_handle *fh;
-	struct files_struct *dirfsp;
 	unsigned int num_smb_operations;
 	struct file_id file_id;
 	uint64_t initial_allocation_size; /* Faked up initial allocation on disk. */
@@ -393,6 +393,9 @@ typedef struct files_struct {
 	struct timeval open_time;
 	uint32_t access_mask;		/* NTCreateX access bits (FILE_READ_DATA etc.) */
 	struct {
+		bool is_pathref : 1; /* See below */
+		bool is_fsa : 1;     /* See below */
+		bool have_proc_fds : 1;
 		bool kernel_share_modes_taken : 1;
 		bool update_write_time_triggered : 1;
 		bool update_write_time_on_close : 1;
@@ -411,6 +414,7 @@ typedef struct files_struct {
 		bool use_ofd_locks : 1;
 		bool closing : 1;
 		bool lock_failure_seen : 1;
+		bool encryption_required : 1;
 	} fsp_flags;
 
 	struct tevent_timer *update_write_time_event;
@@ -442,6 +446,7 @@ typedef struct files_struct {
 	struct notify_change_buf *notify;
 
 	struct files_struct *base_fsp; /* placeholder for delete on close */
+	struct files_struct *stream_fsp; /* backlink from base_fsp */
 
 	/*
 	 * Cache of share_mode_data->flags
@@ -484,6 +489,159 @@ typedef struct files_struct {
 	uint64_t lock_failure_offset;
 } files_struct;
 
+/*
+ * The fsp flags "is_pathref" and "is_fsa"
+ * =======================================
+ *
+ * Summary
+ * -------
+ *
+ * The flag "is_pathref" is a property of the low-level VFS-layer file
+ * handle. If "is_pathref" is true, only a subset of VFS calls are allowed
+ * on the handle and on systems that support it, the low-level fd is open
+ * with O_PATH. If "is_pathref" is false, the low-level fd is a "normal"
+ * file descriptor that can be used with all VFS calls.
+ *
+ * The flag "is_fsa" is a property of the FSA layer in Samba. The term FSA
+ * layer refers to the parts of smbs that implement Windows NTFS semantics
+ * on-top of a POSIX filesystem. If "is_fsa" is true, the fsp was
+ * processed by the SMB_VFS_CREATE_FILE() VFS call, otherwise the fsp was
+ * created by openat_pathref_fsp() which only connected the low-level
+ * handle by calling into VFS SMB_VFS_OPENAT(), but the whole FSA layer
+ * logic is skipped.
+ *
+ * Note that only three possible combinations of "is_pathref" and "is_fsa"
+ * are possible:
+ *
+ * | is_fsa \ is_pathref | + | - |
+ * |---------------------+---+---|
+ * | +                   | + | + |
+ * | -                   | + | - |
+ *
+ * So a fsp can't be a full low-level fd (is_pathref=false) and not be
+ * processed by the FSA layer.
+ *
+ * Details
+ * -------
+ *
+ * On Linux the O_PATH flag to open() can be used to open a filehandle on
+ * a file or directory with interesting properties:
+ *
+ * - the file-handle indicates a location in the filesystem tree,
+ * - no permission checks are done by the kernel and
+ * - only operations that act purely at the file descriptor level are
+ *   allowed.
+ *
+ * The file itself is not opened, and other file operations (e.g.,
+ * read(2), write(2), fchmod(2), fchown(2), fgetxattr(2), ioctl(2),
+ * mmap(2)) fail with the error EBADF.
+ *
+ * The following subset of operations that is relevant to Samba is allowed:
+ *
+ * - close(2),
+ * - fchdir(2), if the file descriptor refers to a directory,
+ * - fstat(2),
+ * - fstatfs(2) and
+ * - passing the file descriptor as the dirfd argument of openat() and the
+ *   other "*at()" system calls. This includes linkat(2) with
+ *   AT_EMPTY_PATH (or via procfs using AT_SYMLINK_FOLLOW) even if the
+ *   file is not a directory.
+ *
+ * Opening a file or directory with the O_PATH flag requires no
+ * permissions on the object itself (but does require execute permission
+ * on the directories in the path prefix). By contrast, obtaining a
+ * reference to a filesystem object by opening it with the O_RDONLY flag
+ * requires that the caller have read permission on the object, even when
+ * the subsequent operation (e.g., fchdir(2), fstat(2)) does not require
+ * read permis‐ sion on the object. [1]
+ *
+ * If for example Samba receives an SMB request to open a file requesting
+ * SEC_FILE_READ_ATTRIBUTE access rights because the client wants to read
+ * the file's metadata from the handle, Samba will have to call POSIX
+ * open() with at least O_RDONLY access rights.
+ *
+ * Usecase for O_PATH in Samba
+ * ---------------------------
+ *
+ * By leveraging this Linux specific flags we can avoid permission
+ * mismatches as described above. Additionally O_PATH allows basing all
+ * filesystem accesses done by the fileserver on handle based syscalls by
+ * opening all client pathnames with O_PATH and consistently using for
+ * example fstat() instead of stat() throughout the codebase.
+ *
+ * Subsequently we will refer to Samba file-handles (fsp's) opened with
+ * O_PATH "path referencing fsp's" or "pathref" fsp's for short.
+ *
+ * Currently Samba bases the decision whether to call POSIX open() on a
+ * client pathname or whether to leave the low-level handle at -1, what we
+ * call a stat-open, in the function open_file() and it is based on the
+ * client requested SMB acccess mask.
+ *
+ * The set of rights that trigger an open() include READ_CONTROL_ACCESS,
+ * resulting in a call to open() with at least O_RDONLY. If the filesystem
+ * supports NT style ACLs natively (like GPFS or ZFS), the filesystem may
+ * grant the user requested right READ_CONTROL_ACCESS, but it may not
+ * grant READ_DATA (O_RDONLY), resulting in a permission denied error.
+ *
+ * Historically the set of access rights that triggered opening a file was:
+ *
+ *   FILE_READ_DATA
+ *   FILE_WRITE_DATA
+ *   FILE_APPEND_DATA
+ *   FILE_EXECUTE
+ *   WRITE_DAC_ACCESS
+ *   WRITE_OWNER_ACCESS
+ *   SEC_FLAG_SYSTEM_SECURITY
+ *   READ_CONTROL_ACCESS
+ *
+ * By using O_PATH this can be trimmed down to
+ *
+ *   FILE_READ_DATA
+ *   FILE_WRITE_DATA
+ *   FILE_APPEND_DATA
+ *   FILE_EXECUTE
+ *
+ * Fallback on systems without O_PATH support
+ * ------------------------------------------
+ *
+ * A fallback is needed that allows opening a file-handle with the same
+ * higher level semantics even if the system doesn't support O_PATH. This
+ * is implemented by qimpersonating the root user for the open()
+ * syscall. To avoid bypassing restrictive permissions on intermediate
+ * directories components of a path, the root user is only impersonated
+ * after changing directory to the parent directory of the client
+ * requested pathname.
+ *
+ * In order to avoid privilege escalation security issues with these root
+ * opened file-handles we must carefully control their usage throughout
+ * the codebase. Therefor we
+ *
+ * - tag the pathref fsp's with the flag "is_pathref" and
+ *
+ * - control access to the file-handle by making the structure private and only
+ *   allowing access with accessor functions.
+ *
+ * Two functions are used to fetch the low-level system file-handle from an fsp
+ *
+ * - fsp_get_io_fd(fsp): enforces fsp is NOT a pathref file-handle and
+ *
+ * - fsp_get_pathref_fd(fsp): allows fsp to be either a pathref file-handle or a
+ *   traditional POSIX file-handle opened with O_RDONLY or any other POSIX open
+ *   flag.
+ *
+ * The general guideline when to use which function is:
+ *
+ * - if you do something like fstat(fd), use fsp_get_pathref_fd(fsp),
+ * - if you do something like *at(dirfd, ...), use fsp_get_pathref_fd(fsp),
+ * - if you want to print the fd for example in DEBUG messages, use
+ *   fsp_get_pathref_fd(fsp),
+ * - if you want to call close(fd), use fsp_get_pathref_fd(fsp),
+ * - if you're doing a logical comparison of fd values, use
+ *   fsp_get_pathref_fd().
+ *
+ * In any other case use fsp_get_io_fd().
+ */
+
 #define FSP_POSIX_FLAGS_OPEN		0x01
 #define FSP_POSIX_FLAGS_RENAME		0x02
 #define FSP_POSIX_FLAGS_PATHNAMES	0x04
@@ -525,6 +683,7 @@ typedef struct connection_struct {
 	bool printer;
 	bool ipc;
 	bool read_only; /* Attributes for the current user of the share. */
+	bool have_proc_fds;
 	uint32_t share_access;
 	/* Does this filesystem honor
 	   sub second timestamps on files
@@ -672,6 +831,20 @@ struct smb_filename {
 	uint32_t flags;
 	SMB_STRUCT_STAT st;
 	NTTIME twrp;
+
+	/*
+	 * Internal file handle, O_PATH based if available,
+	 * otherwise O_RDONLY as root.
+	 */
+	struct files_struct *fsp;
+
+	/*
+	 * Link between the struct smb_filename and the above
+	 * fsp. fsp_link is a talloc child of the fsp. Ensures a possible
+	 * talloc_free(fsp) resets the smb_fname->fsp pointer to NULL in
+	 * the is fsp_link talloc destructor.
+	 */
+	struct fsp_smb_fname_link *fsp_link;
 };
 
 /*
@@ -752,8 +925,9 @@ struct vfs_fn_pointers {
 
 	DIR *(*fdopendir_fn)(struct vfs_handle_struct *handle, files_struct *fsp, const char *mask, uint32_t attributes);
 	struct dirent *(*readdir_fn)(struct vfs_handle_struct *handle,
-					 DIR *dirp,
-					 SMB_STRUCT_STAT *sbuf);
+				     struct files_struct *dirfsp,
+				     DIR *dirp,
+				     SMB_STRUCT_STAT *sbuf);
 	void (*seekdir_fn)(struct vfs_handle_struct *handle, DIR *dirp, long offset);
 	long (*telldir_fn)(struct vfs_handle_struct *handle, DIR *dirp);
 	void (*rewind_dir_fn)(struct vfs_handle_struct *handle, DIR *dirp);
@@ -773,7 +947,6 @@ struct vfs_fn_pointers {
 			 mode_t mode);
 	NTSTATUS (*create_file_fn)(struct vfs_handle_struct *handle,
 				   struct smb_request *req,
-				   struct files_struct **dirfsp,
 				   struct smb_filename *smb_fname,
 				   uint32_t access_mask,
 				   uint32_t share_access,
@@ -862,7 +1035,7 @@ struct vfs_fn_pointers {
 				struct files_struct *dirfsp,
 				const struct smb_filename *new_smb_fname);
 	int (*readlinkat_fn)(struct vfs_handle_struct *handle,
-				struct files_struct *dirfsp,
+				const struct files_struct *dirfsp,
 				const struct smb_filename *smb_fname,
 				char *buf,
 				size_t bufsiz);
@@ -911,10 +1084,9 @@ struct vfs_fn_pointers {
 	NTSTATUS (*offload_write_recv_fn)(struct vfs_handle_struct *handle,
 					  struct tevent_req *req,
 					  off_t *copied);
-	NTSTATUS (*get_compression_fn)(struct vfs_handle_struct *handle,
+	NTSTATUS (*fget_compression_fn)(struct vfs_handle_struct *handle,
 				       TALLOC_CTX *mem_ctx,
 				       struct files_struct *fsp,
-				       struct smb_filename *smb_fname,
 				       uint16_t *_compression_fmt);
 	NTSTATUS (*set_compression_fn)(struct vfs_handle_struct *handle,
 				       TALLOC_CTX *mem_ctx,
@@ -981,10 +1153,6 @@ struct vfs_fn_pointers {
 			     uint32_t max_out_len,
 			     uint32_t *out_len); 
 
-	NTSTATUS (*get_dos_attributes_fn)(struct vfs_handle_struct *handle,
-					  struct smb_filename *smb_fname,
-					  uint32_t *dosmode);
-
 	NTSTATUS (*fget_dos_attributes_fn)(struct vfs_handle_struct *handle,
 					   struct files_struct *fsp,
 					   uint32_t *dosmode);
@@ -1050,11 +1218,10 @@ struct vfs_fn_pointers {
 	int (*sys_acl_blob_get_fd_fn)(struct vfs_handle_struct *handle, struct files_struct *fsp,
 				      TALLOC_CTX *mem_ctx, char **blob_description,
 				      DATA_BLOB *blob);
-	int (*sys_acl_set_file_fn)(struct vfs_handle_struct *handle,
-					const struct smb_filename *smb_fname,
-					SMB_ACL_TYPE_T acltype,
-					SMB_ACL_T theacl);
-	int (*sys_acl_set_fd_fn)(struct vfs_handle_struct *handle, struct files_struct *fsp, SMB_ACL_T theacl);
+	int (*sys_acl_set_fd_fn)(struct vfs_handle_struct *handle,
+				 struct files_struct *fsp,
+				 SMB_ACL_TYPE_T type,
+				 SMB_ACL_T theacl);
 	int (*sys_acl_delete_def_file_fn)(struct vfs_handle_struct *handle,
 					const struct smb_filename *smb_fname);
 
@@ -1266,8 +1433,9 @@ DIR *smb_vfs_call_fdopendir(struct vfs_handle_struct *handle,
 					const char *mask,
 					uint32_t attributes);
 struct dirent *smb_vfs_call_readdir(struct vfs_handle_struct *handle,
-					DIR *dirp,
-					SMB_STRUCT_STAT *sbuf);
+				    struct files_struct *dirfsp,
+				    DIR *dirp,
+				    SMB_STRUCT_STAT *sbuf);
 void smb_vfs_call_seekdir(struct vfs_handle_struct *handle,
 			  DIR *dirp, long offset);
 long smb_vfs_call_telldir(struct vfs_handle_struct *handle,
@@ -1288,7 +1456,6 @@ int smb_vfs_call_openat(struct vfs_handle_struct *handle,
 			mode_t mode);
 NTSTATUS smb_vfs_call_create_file(struct vfs_handle_struct *handle,
 				  struct smb_request *req,
-				  struct files_struct **dirfsp,
 				  struct smb_filename *smb_fname,
 				  uint32_t access_mask,
 				  uint32_t share_access,
@@ -1407,7 +1574,7 @@ int smb_vfs_call_symlinkat(struct vfs_handle_struct *handle,
 			struct files_struct *dirfsp,
 			const struct smb_filename *new_smb_fname);
 int smb_vfs_call_readlinkat(struct vfs_handle_struct *handle,
-			struct files_struct *dirfsp,
+			const struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			char *buf,
 			size_t bufsiz);
@@ -1469,9 +1636,6 @@ NTSTATUS smb_vfs_call_fsctl(struct vfs_handle_struct *handle,
 			    uint8_t **_out_data,
 			    uint32_t max_out_len,
 			    uint32_t *out_len);
-NTSTATUS smb_vfs_call_get_dos_attributes(struct vfs_handle_struct *handle,
-					 struct smb_filename *smb_fname,
-					 uint32_t *dosmode);
 NTSTATUS smb_vfs_call_fget_dos_attributes(struct vfs_handle_struct *handle,
 					  struct files_struct *fsp,
 					  uint32_t *dosmode);
@@ -1516,10 +1680,9 @@ struct tevent_req *smb_vfs_call_offload_write_send(struct vfs_handle_struct *han
 NTSTATUS smb_vfs_call_offload_write_recv(struct vfs_handle_struct *handle,
 					 struct tevent_req *req,
 					 off_t *copied);
-NTSTATUS smb_vfs_call_get_compression(struct vfs_handle_struct *handle,
+NTSTATUS smb_vfs_call_fget_compression(struct vfs_handle_struct *handle,
 				      TALLOC_CTX *mem_ctx,
 				      struct files_struct *fsp,
-				      struct smb_filename *smb_fname,
 				      uint16_t *_compression_fmt);
 NTSTATUS smb_vfs_call_set_compression(struct vfs_handle_struct *handle,
 				      TALLOC_CTX *mem_ctx,
@@ -1580,12 +1743,10 @@ int smb_vfs_call_sys_acl_blob_get_fd(struct vfs_handle_struct *handle,
 				     TALLOC_CTX *mem_ctx,
 				     char **blob_description,
 				     DATA_BLOB *blob);
-int smb_vfs_call_sys_acl_set_file(struct vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				SMB_ACL_TYPE_T acltype,
-				SMB_ACL_T theacl);
 int smb_vfs_call_sys_acl_set_fd(struct vfs_handle_struct *handle,
-				struct files_struct *fsp, SMB_ACL_T theacl);
+				struct files_struct *fsp,
+				SMB_ACL_TYPE_T type,
+				SMB_ACL_T theacl);
 int smb_vfs_call_sys_acl_delete_def_file(struct vfs_handle_struct *handle,
 				const struct smb_filename *smb_fname);
 ssize_t smb_vfs_call_getxattr(struct vfs_handle_struct *handle,
@@ -1729,7 +1890,9 @@ NTSTATUS vfs_not_implemented_snap_delete(struct vfs_handle_struct *handle,
 DIR *vfs_not_implemented_fdopendir(vfs_handle_struct *handle, files_struct *fsp,
 				   const char *mask, uint32_t attr);
 struct dirent *vfs_not_implemented_readdir(vfs_handle_struct *handle,
-					   DIR *dirp, SMB_STRUCT_STAT *sbuf);
+					   struct files_struct *dirfsp,
+					   DIR *dirp,
+					   SMB_STRUCT_STAT *sbuf);
 void vfs_not_implemented_seekdir(vfs_handle_struct *handle, DIR *dirp, long offset);
 long vfs_not_implemented_telldir(vfs_handle_struct *handle, DIR *dirp);
 void vfs_not_implemented_rewind_dir(vfs_handle_struct *handle, DIR *dirp);
@@ -1749,7 +1912,6 @@ int vfs_not_implemented_openat(vfs_handle_struct *handle,
 			       mode_t mode);
 NTSTATUS vfs_not_implemented_create_file(struct vfs_handle_struct *handle,
 				struct smb_request *req,
-				struct files_struct **dirfsp,
 				struct smb_filename *smb_fname,
 				uint32_t access_mask,
 				uint32_t share_access,
@@ -1854,7 +2016,7 @@ int vfs_not_implemented_symlinkat(vfs_handle_struct *handle,
 				struct files_struct *dirfsp,
 				const struct smb_filename *new_smb_fname);
 int vfs_not_implemented_vfs_readlinkat(vfs_handle_struct *handle,
-			struct files_struct *dirfsp,
+			const struct files_struct *dirfsp,
 			const struct smb_filename *smb_fname,
 			char *buf,
 			size_t bufsiz);
@@ -1905,10 +2067,9 @@ struct tevent_req *vfs_not_implemented_offload_write_send(
 NTSTATUS vfs_not_implemented_offload_write_recv(struct vfs_handle_struct *handle,
 						struct tevent_req *req,
 						off_t *copied);
-NTSTATUS vfs_not_implemented_get_compression(struct vfs_handle_struct *handle,
+NTSTATUS vfs_not_implemented_fget_compression(struct vfs_handle_struct *handle,
 					     TALLOC_CTX *mem_ctx,
 					     struct files_struct *fsp,
-					     struct smb_filename *smb_fname,
 					     uint16_t *_compression_fmt);
 NTSTATUS vfs_not_implemented_set_compression(struct vfs_handle_struct *handle,
 					     TALLOC_CTX *mem_ctx,
@@ -1953,9 +2114,6 @@ NTSTATUS vfs_not_implemented_readdir_attr(struct vfs_handle_struct *handle,
 					  const struct smb_filename *fname,
 					  TALLOC_CTX *mem_ctx,
 					  struct readdir_attr_data **pattr_data);
-NTSTATUS vfs_not_implemented_get_dos_attributes(struct vfs_handle_struct *handle,
-						struct smb_filename *smb_fname,
-						uint32_t *dosmode);
 struct tevent_req *vfs_not_implemented_get_dos_attributes_send(
 			TALLOC_CTX *mem_ctx,
 			struct tevent_context *ev,
@@ -2002,11 +2160,9 @@ int vfs_not_implemented_sys_acl_blob_get_file(vfs_handle_struct *handle,
 int vfs_not_implemented_sys_acl_blob_get_fd(vfs_handle_struct *handle,
 				files_struct *fsp, TALLOC_CTX *mem_ctx,
 				char **blob_description, DATA_BLOB *blob);
-int vfs_not_implemented_sys_acl_set_file(vfs_handle_struct *handle,
-				const struct smb_filename *smb_fname,
-				SMB_ACL_TYPE_T acltype,
-				SMB_ACL_T theacl);
-int vfs_not_implemented_sys_acl_set_fd(vfs_handle_struct *handle, files_struct *fsp,
+int vfs_not_implemented_sys_acl_set_fd(vfs_handle_struct *handle,
+				       struct files_struct *fsp,
+				       SMB_ACL_TYPE_T type,
 				       SMB_ACL_T theacl);
 int vfs_not_implemented_sys_acl_delete_def_file(vfs_handle_struct *handle,
 					const struct smb_filename *smb_fname);

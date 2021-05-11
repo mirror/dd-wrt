@@ -65,6 +65,7 @@ planpythontestsuite("none", "samba.tests.credentials")
 planpythontestsuite("none", "samba.tests.registry")
 planpythontestsuite("ad_dc_ntvfs:local", "samba.tests.auth")
 planpythontestsuite("none", "samba.tests.get_opt")
+planpythontestsuite("none", "samba.tests.cred_opt")
 planpythontestsuite("none", "samba.tests.security")
 planpythontestsuite("none", "samba.tests.dcerpc.misc")
 planpythontestsuite("none", "samba.tests.dcerpc.integer")
@@ -92,6 +93,9 @@ planpythontestsuite(
     extra_path=[os.path.join(samba4srcdir, "..", "buildtools"),
                 os.path.join(samba4srcdir, "..", "third_party", "waf")])
 planpythontestsuite("fileserver", "samba.tests.smbd_fuzztest")
+planpythontestsuite("nt4_dc_smb1", "samba.tests.dcerpc.binding")
+for env in [ 'ad_dc:local', 'ad_dc_fips:local' ]:
+    planpythontestsuite(env, "samba.tests.dcerpc.samr_change_password")
 
 
 def cmdline(script, *args):
@@ -212,6 +216,7 @@ planpythontestsuite("none", "samba.tests.graph")
 plantestsuite("wafsamba.duplicate_symbols", "none", [os.path.join(srcdir(), "buildtools/wafsamba/test_duplicate_symbol.sh")])
 planpythontestsuite("none", "samba.tests.glue")
 planpythontestsuite("none", "samba.tests.tdb_util")
+planpythontestsuite("none", "samba.tests.samdb")
 planpythontestsuite("none", "samba.tests.samdb_api")
 
 if with_pam:
@@ -376,6 +381,8 @@ plantestsuite("samba.unittests.lib_util_modules", "none",
 
 plantestsuite("samba.unittests.smb1cli_session", "none",
               [os.path.join(bindir(), "default/libcli/smb/test_smb1cli_session")])
+plantestsuite("samba.unittests.smb_util_translate", "none",
+              [os.path.join(bindir(), "default/libcli/smb/test_util_translate")])
 
 plantestsuite("samba.unittests.talloc_keep_secret", "none",
               [os.path.join(bindir(), "default/lib/util/test_talloc_keep_secret")])
@@ -398,6 +405,8 @@ plantestsuite("samba.unittests.util_paths", "none",
               [os.path.join(bindir(), "default/lib/util/test_util_paths")])
 plantestsuite("samba.unittests.util", "none",
               [os.path.join(bindir(), "default/lib/util/test_util")])
+plantestsuite("samba.unittests.memcache", "none",
+              [os.path.join(bindir(), "default/lib/util/test_memcache")])
 plantestsuite("samba.unittests.ntlm_check", "none",
               [os.path.join(bindir(), "default/libcli/auth/test_ntlm_check")])
 plantestsuite("samba.unittests.gnutls", "none",
@@ -413,3 +422,5 @@ plantestsuite("samba.unittests.test_oLschema2ldif", "none",
 if with_elasticsearch_backend:
     plantestsuite("samba.unittests.mdsparser_es", "none",
                   [os.path.join(bindir(), "default/source3/test_mdsparser_es")] + [configuration])
+plantestsuite("samba.unittests.credentials", "none",
+              [os.path.join(bindir(), "default/auth/credentials/test_creds")])

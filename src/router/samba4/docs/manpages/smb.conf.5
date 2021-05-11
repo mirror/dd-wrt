@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 11/03/2020
+.\"      Date: 04/26/2021
 .\"    Manual: File Formats and Conventions
-.\"    Source: Samba 4.13.2
+.\"    Source: Samba 4.14.4
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "11/03/2020" "Samba 4\&.13\&.2" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "04/26/2021" "Samba 4\&.14\&.4" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1507,6 +1507,20 @@ Example:
 \fI\fIapply group policies\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .RE
 
+async dns timeout (G)
+.PP
+.RS 4
+The number of seconds the asynchronous DNS resolver code in Samba will wait for responses\&. Some of the Samba client library code uses internal asynchronous DNS resolution for A and AAAA records when trying to find Active Directory Domain controllers\&. This value prevents this name resolution code from waiting for DNS server timeouts\&.
+.sp
+The minimum value of this parameter is clamped at 1 second\&.
+.sp
+Default:
+\fI\fIasync dns timeout\fR\fR\fI = \fR\fI10\fR\fI \fR
+.sp
+Example:
+\fI\fIasync dns timeout\fR\fR\fI = \fR\fI20\fR\fI \fR
+.RE
+
 async smb echo handler (G)
 .PP
 .RS 4
@@ -2406,6 +2420,124 @@ option\&.
 .sp
 Default:
 \fI\fIclient signing\fR\fR\fI = \fR\fIdefault\fR\fI \fR
+.RE
+
+client smb encrypt (G)
+.PP
+.RS 4
+This parameter controls whether a client should try or is required to use SMB encryption\&. It has different effects depending on whether the connection uses SMB1 or SMB3:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+If the connection uses SMB1, then this option controls the use of a Samba\-specific extension to the SMB protocol introduced in Samba 3\&.2 that makes use of the Unix extensions\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+If the connection uses SMB2 or newer, then this option controls the use of the SMB\-level encryption that is supported in SMB version 3\&.0 and above and available in Windows 8 and newer\&.
+.RE
+.sp
+.RE
+This parameter can be set globally\&. Possible values are
+\fIoff\fR,
+\fIif_required\fR,
+\fIdesired\fR, and
+\fIrequired\fR\&. A special value is
+\fIdefault\fR
+which is the implicit default setting of
+\fIif_required\fR\&.
+.PP
+\fIEffects for SMB1\fR
+.RS 4
+The Samba\-specific encryption of SMB1 connections is an extension to the SMB protocol negotiated as part of the UNIX extensions\&. SMB encryption uses the GSSAPI (SSPI on Windows) ability to encrypt and sign every request/response in a SMB protocol stream\&. When enabled it provides a secure method of SMB/CIFS communication, similar to an ssh protected session, but using SMB/CIFS authentication to negotiate encryption and signing keys\&. Currently this is only supported smbclient of by Samba 3\&.2 and newer\&. Windows does not support this feature\&.
+.sp
+When set to default, SMB encryption is probed, but not enforced\&. When set to required, SMB encryption is required and if set to disabled, SMB encryption can not be negotiated\&.
+.RE
+.PP
+\fIEffects for SMB3 and newer\fR
+.RS 4
+Native SMB transport encryption is available in SMB version 3\&.0 or newer\&. It is only used by Samba if
+\fIclient max protocol\fR
+is set to
+\fISMB3\fR
+or newer\&.
+.sp
+These features can be controlled with settings of
+\fIclient smb encrypt\fR
+as follows:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Leaving it as default, explicitly setting
+\fIdefault\fR, or setting it to
+\fIif_required\fR
+globally will enable negotiation of encryption but will not turn on data encryption globally\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Setting it to
+\fIdesired\fR
+globally will enable negotiation and will turn on data encryption on sessions and share connections for those servers that support it\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Setting it to
+\fIrequired\fR
+globally will enable negotiation and turn on data encryption on sessions and share connections\&. Clients that do not support encryption will be denied access to the server\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Setting it to
+\fIoff\fR
+globally will completely disable the encryption feature for all connections\&.
+.RE
+.sp
+.RE
+.RE
+.sp
+Default:
+\fI\fIclient smb encrypt\fR\fR\fI = \fR\fIdefault\fR\fI \fR
 .RE
 
 client use spnego principal (G)
@@ -3860,6 +3992,19 @@ Default:
 \fI\fIfollow symlinks\fR\fR\fI = \fR\fIyes\fR\fI \fR
 .RE
 
+smbd force process locks (S)
+.PP
+.RS 4
+This boolean option tells
+smbd
+whether to forcefully disable the use of Open File Description locks on Linux\&.
+.sp
+This option should not be changed from the default unless you know what you\*(Aqre doing\&.
+.sp
+Default:
+\fI\fIsmbd force process locks\fR\fR\fI = \fR\fIno\fR\fI \fR
+.RE
+
 force create mode (S)
 .PP
 .RS 4
@@ -4456,6 +4601,17 @@ Default:
 .sp
 Example:
 \fI\fIhomedir map\fR\fR\fI = \fR\fIamd\&.homedir\fR\fI \fR
+.RE
+
+honor change notify privilege (S)
+.PP
+.RS 4
+This option can be used to make use of the change notify privilege\&. By default notify results are not checked against the file system permissions\&.
+.sp
+If "honor change notify privilege" is enabled, a user will only receive notify results, if he has change notify privilege or sufficient file system permissions\&. If a user has the change notify privilege, he will receive all requested notify results, even if the user does not have the permissions on the file system\&.
+.sp
+Default:
+\fI\fIhonor change notify privilege\fR\fR\fI = \fR\fIno\fR\fI \fR
 .RE
 
 host msdfs (G)
@@ -8290,7 +8446,7 @@ Number of minutes to permit an NTLM login after a password change or reset using
 .sp
 This parameter only applies when
 \m[blue]\fBserver role\fR\m[]
-is set to Active Directory Domain Controller
+is set to Active Directory Domain Controller\&.
 .sp
 Default:
 \fI\fIold password allowed period\fR\fR\fI = \fR\fI60\fR\fI \fR
@@ -10600,6 +10756,234 @@ Default:
 \fI\fIserver signing\fR\fR\fI = \fR\fIdefault\fR\fI \fR
 .RE
 
+server smb encrypt (S)
+.PP
+.RS 4
+This parameter controls whether a remote client is allowed or required to use SMB encryption\&. It has different effects depending on whether the connection uses SMB1 or SMB2 and newer:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+If the connection uses SMB1, then this option controls the use of a Samba\-specific extension to the SMB protocol introduced in Samba 3\&.2 that makes use of the Unix extensions\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+If the connection uses SMB2 or newer, then this option controls the use of the SMB\-level encryption that is supported in SMB version 3\&.0 and above and available in Windows 8 and newer\&.
+.RE
+.sp
+.RE
+This parameter can be set globally and on a per\-share bases\&. Possible values are
+\fIoff\fR,
+\fIif_required\fR,
+\fIdesired\fR, and
+\fIrequired\fR\&. A special value is
+\fIdefault\fR
+which is the implicit default setting of
+\fIif_required\fR\&.
+.PP
+\fIEffects for SMB1\fR
+.RS 4
+The Samba\-specific encryption of SMB1 connections is an extension to the SMB protocol negotiated as part of the UNIX extensions\&. SMB encryption uses the GSSAPI (SSPI on Windows) ability to encrypt and sign every request/response in a SMB protocol stream\&. When enabled it provides a secure method of SMB/CIFS communication, similar to an ssh protected session, but using SMB/CIFS authentication to negotiate encryption and signing keys\&. Currently this is only supported smbclient of by Samba 3\&.2 and newer, and hopefully soon Linux CIFSFS and MacOS/X clients\&. Windows clients do not support this feature\&.
+.sp
+This may be set on a per\-share basis, but clients may chose to encrypt the entire session, not just traffic to a specific share\&. If this is set to mandatory then all traffic to a share
+\fImust\fR
+be encrypted once the connection has been made to the share\&. The server would return "access denied" to all non\-encrypted requests on such a share\&. Selecting encrypted traffic reduces throughput as smaller packet sizes must be used (no huge UNIX style read/writes allowed) as well as the overhead of encrypting and signing all the data\&.
+.sp
+If SMB encryption is selected, Windows style SMB signing (see the
+\m[blue]\fBserver signing\fR\m[]
+option) is no longer necessary, as the GSSAPI flags use select both signing and sealing of the data\&.
+.sp
+When set to auto or default, SMB encryption is offered, but not enforced\&. When set to mandatory, SMB encryption is required and if set to disabled, SMB encryption can not be negotiated\&.
+.RE
+.PP
+\fIEffects for SMB2 and newer\fR
+.RS 4
+Native SMB transport encryption is available in SMB version 3\&.0 or newer\&. It is only offered by Samba if
+\fIserver max protocol\fR
+is set to
+\fISMB3\fR
+or newer\&. Clients supporting this type of encryption include Windows 8 and newer, Windows server 2012 and newer, and smbclient of Samba 4\&.1 and newer\&.
+.sp
+The protocol implementation offers various options:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The capability to perform SMB encryption can be negotiated during protocol negotiation\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Data encryption can be enabled globally\&. In that case, an encryption\-capable connection will have all traffic in all its sessions encrypted\&. In particular all share connections will be encrypted\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Data encryption can also be enabled per share if not enabled globally\&. For an encryption\-capable connection, all connections to an encryption\-enabled share will be encrypted\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Encryption can be enforced\&. This means that session setups will be denied on non\-encryption\-capable connections if data encryption has been enabled globally\&. And tree connections will be denied for non\-encryption capable connections to shares with data encryption enabled\&.
+.RE
+.sp
+.RE
+These features can be controlled with settings of
+\fIserver smb encrypt\fR
+as follows:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Leaving it as default, explicitly setting
+\fIdefault\fR, or setting it to
+\fIif_required\fR
+globally will enable negotiation of encryption but will not turn on data encryption globally or per share\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Setting it to
+\fIdesired\fR
+globally will enable negotiation and will turn on data encryption on sessions and share connections for those clients that support it\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Setting it to
+\fIrequired\fR
+globally will enable negotiation and turn on data encryption on sessions and share connections\&. Clients that do not support encryption will be denied access to the server\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Setting it to
+\fIoff\fR
+globally will completely disable the encryption feature for all connections\&. Setting
+\fIserver smb encrypt = required\fR
+for individual shares (while it\*(Aqs globally off) will deny access to this shares for all clients\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Setting it to
+\fIdesired\fR
+on a share will turn on data encryption for this share for clients that support encryption if negotiation has been enabled globally\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Setting it to
+\fIrequired\fR
+on a share will enforce data encryption for this share if negotiation has been enabled globally\&. I\&.e\&. clients that do not support encryption will be denied access to the share\&.
+.sp
+Note that this allows per\-share enforcing to be controlled in Samba differently from Windows: In Windows,
+\fIRejectUnencryptedAccess\fR
+is a global setting, and if it is set, all shares with data encryption turned on are automatically enforcing encryption\&. In order to achieve the same effect in Samba, one has to globally set
+\fIserver smb encrypt\fR
+to
+\fIif_required\fR, and then set all shares that should be encrypted to
+\fIrequired\fR\&. Additionally, it is possible in Samba to have some shares with encryption
+\fIrequired\fR
+and some other shares with encryption only
+\fIdesired\fR, which is not possible in Windows\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Setting it to
+\fIoff\fR
+or
+\fIif_required\fR
+for a share has no effect\&.
+.RE
+.sp
+.RE
+.RE
+.sp
+Default:
+\fI\fIserver smb encrypt\fR\fR\fI = \fR\fIdefault\fR\fI \fR
+.RE
+
 server string (G)
 .PP
 .RS 4
@@ -11158,233 +11542,8 @@ Default:
 smb encrypt (S)
 .PP
 .RS 4
-This parameter controls whether a remote client is allowed or required to use SMB encryption\&. It has different effects depending on whether the connection uses SMB1 or SMB2 and newer:
-.RS
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-If the connection uses SMB1, then this option controls the use of a Samba\-specific extension to the SMB protocol introduced in Samba 3\&.2 that makes use of the Unix extensions\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-If the connection uses SMB2 or newer, then this option controls the use of the SMB\-level encryption that is supported in SMB version 3\&.0 and above and available in Windows 8 and newer\&.
-.RE
-.sp
-.RE
-This parameter can be set globally and on a per\-share bases\&. Possible values are
-\fIoff\fR
-(or
-\fIdisabled\fR),
-\fIenabled\fR
-(or
-\fIauto\fR, or
-\fIif_required\fR),
-\fIdesired\fR, and
-\fIrequired\fR
-(or
-\fImandatory\fR)\&. A special value is
-\fIdefault\fR
-which is the implicit default setting of
-\fIenabled\fR\&.
-.PP
-\fIEffects for SMB1\fR
-.RS 4
-The Samba\-specific encryption of SMB1 connections is an extension to the SMB protocol negotiated as part of the UNIX extensions\&. SMB encryption uses the GSSAPI (SSPI on Windows) ability to encrypt and sign every request/response in a SMB protocol stream\&. When enabled it provides a secure method of SMB/CIFS communication, similar to an ssh protected session, but using SMB/CIFS authentication to negotiate encryption and signing keys\&. Currently this is only supported smbclient of by Samba 3\&.2 and newer, and hopefully soon Linux CIFSFS and MacOS/X clients\&. Windows clients do not support this feature\&.
-.sp
-This may be set on a per\-share basis, but clients may chose to encrypt the entire session, not just traffic to a specific share\&. If this is set to mandatory then all traffic to a share
-\fImust\fR
-be encrypted once the connection has been made to the share\&. The server would return "access denied" to all non\-encrypted requests on such a share\&. Selecting encrypted traffic reduces throughput as smaller packet sizes must be used (no huge UNIX style read/writes allowed) as well as the overhead of encrypting and signing all the data\&.
-.sp
-If SMB encryption is selected, Windows style SMB signing (see the
-\m[blue]\fBserver signing\fR\m[]
-option) is no longer necessary, as the GSSAPI flags use select both signing and sealing of the data\&.
-.sp
-When set to auto or default, SMB encryption is offered, but not enforced\&. When set to mandatory, SMB encryption is required and if set to disabled, SMB encryption can not be negotiated\&.
-.RE
-.PP
-\fIEffects for SMB2\fR
-.RS 4
-Native SMB transport encryption is available in SMB version 3\&.0 or newer\&. It is only offered by Samba if
-\fIserver max protocol\fR
-is set to
-\fISMB3\fR
-or newer\&. Clients supporting this type of encryption include Windows 8 and newer, Windows server 2012 and newer, and smbclient of Samba 4\&.1 and newer\&.
-.sp
-The protocol implementation offers various options:
-.RS
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-The capability to perform SMB encryption can be negotiated during protocol negotiation\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Data encryption can be enabled globally\&. In that case, an encryption\-capable connection will have all traffic in all its sessions encrypted\&. In particular all share connections will be encrypted\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Data encryption can also be enabled per share if not enabled globally\&. For an encryption\-capable connection, all connections to an encryption\-enabled share will be encrypted\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Encryption can be enforced\&. This means that session setups will be denied on non\-encryption\-capable connections if data encryption has been enabled globally\&. And tree connections will be denied for non\-encryption capable connections to shares with data encryption enabled\&.
-.RE
-.sp
-.RE
-These features can be controlled with settings of
-\fIsmb encrypt\fR
-as follows:
-.RS
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Leaving it as default, explicitly setting
-\fIdefault\fR, or setting it to
-\fIenabled\fR
-globally will enable negotiation of encryption but will not turn on data encryption globally or per share\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Setting it to
-\fIdesired\fR
-globally will enable negotiation and will turn on data encryption on sessions and share connections for those clients that support it\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Setting it to
-\fIrequired\fR
-globally will enable negotiation and turn on data encryption on sessions and share connections\&. Clients that do not support encryption will be denied access to the server\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Setting it to
-\fIoff\fR
-globally will completely disable the encryption feature for all connections\&. Setting
-\fIsmb encrypt = required\fR
-for individual shares (while it\*(Aqs globally off) will deny access to this shares for all clients\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Setting it to
-\fIdesired\fR
-on a share will turn on data encryption for this share for clients that support encryption if negotiation has been enabled globally\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Setting it to
-\fIrequired\fR
-on a share will enforce data encryption for this share if negotiation has been enabled globally\&. I\&.e\&. clients that do not support encryption will be denied access to the share\&.
-.sp
-Note that this allows per\-share enforcing to be controlled in Samba differently from Windows: In Windows,
-\fIRejectUnencryptedAccess\fR
-is a global setting, and if it is set, all shares with data encryption turned on are automatically enforcing encryption\&. In order to achieve the same effect in Samba, one has to globally set
-\fIsmb encrypt\fR
-to
-\fIenabled\fR, and then set all shares that should be encrypted to
-\fIrequired\fR\&. Additionally, it is possible in Samba to have some shares with encryption
-\fIrequired\fR
-and some other shares with encryption only
-\fIdesired\fR, which is not possible in Windows\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-Setting it to
-\fIoff\fR
-or
-\fIenabled\fR
-for a share has no effect\&.
-.RE
-.sp
-.RE
-.RE
+This is a synonym for
+\m[blue]\fBserver smb encrypt\fR\m[]\&.
 .sp
 Default:
 \fI\fIsmb encrypt\fR\fR\fI = \fR\fIdefault\fR\fI \fR
@@ -13622,7 +13781,7 @@ and
 special sections make life for an administrator easy, but the various combinations of default attributes can be tricky\&. Take extreme care when designing these sections\&. In particular, ensure that the permissions on spool directories are correct\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.13\&.2 of the Samba suite\&.
+This man page is part of version 4\&.14\&.4 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsamba\fR(7),

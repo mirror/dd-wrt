@@ -26,6 +26,9 @@
 
 #define FILE_HANDLE_OFFSET 0x1000
 
+static NTSTATUS fsp_attach_smb_fname(struct files_struct *fsp,
+				     struct smb_filename **_smb_fname);
+
 /**
  * create new fsp to be used for file_new or a durable handle reconnect
  */
@@ -46,22 +49,18 @@ NTSTATUS fsp_new(struct connection_struct *conn, TALLOC_CTX *mem_ctx,
 	 * when doing a dos/fcb open, which will then share the file_handle
 	 * across multiple fsps.
 	 */
-	fsp->fh = talloc_zero(mem_ctx, struct fd_handle);
+	fsp->fh = fd_handle_create(mem_ctx);
 	if (fsp->fh == NULL) {
 		goto fail;
 	}
 
-#if defined(HAVE_OFD_LOCKS)
-	fsp->fsp_flags.use_ofd_locks = true;
-	if (lp_parm_bool(SNUM(conn),
-			 "smbd",
-			 "force process locks",
-			 false)) {
-		fsp->fsp_flags.use_ofd_locks = false;
-	}
+	fsp->fsp_flags.use_ofd_locks = !lp_smbd_force_process_locks(SNUM(conn));
+#ifndef HAVE_OFD_LOCKS
+	fsp->fsp_flags.use_ofd_locks = false;
 #endif
-	fsp->fh->ref_count = 1;
-	fsp->fh->fd = -1;
+
+	fh_set_refcount(fsp->fh, 1);
+	fsp_set_fd(fsp, -1);
 
 	fsp->fnum = FNUM_FIELD_INVALID;
 	fsp->conn = conn;
@@ -71,6 +70,9 @@ NTSTATUS fsp_new(struct connection_struct *conn, TALLOC_CTX *mem_ctx,
 	sconn->num_files += 1;
 
 	conn->num_files_open++;
+
+	DBG_INFO("allocated files structure (%u used)\n",
+		(unsigned int)sconn->num_files);
 
 	*result = fsp;
 	return NT_STATUS_OK;
@@ -92,12 +94,46 @@ void fsp_set_gen_id(files_struct *fsp)
 	 * A billion of 64-bit increments per second gives us
 	 * more than 500 years of runtime without wrap.
 	 */
-	fsp->fh->gen_id = gen_id++;
+	gen_id++;
+	fh_set_gen_id(fsp->fh, gen_id);
 }
 
 /****************************************************************************
  Find first available file slot.
 ****************************************************************************/
+
+NTSTATUS fsp_bind_smb(struct files_struct *fsp, struct smb_request *req)
+{
+	struct smbXsrv_open *op = NULL;
+	NTTIME now;
+	NTSTATUS status;
+
+	if (req == NULL) {
+		DBG_DEBUG("INTERNAL_OPEN_ONLY, skipping smbXsrv_open\n");
+		return NT_STATUS_OK;
+	}
+
+	now = timeval_to_nttime(&fsp->open_time);
+
+	status = smbXsrv_open_create(req->xconn,
+				     fsp->conn->session_info,
+				     now,
+				     &op);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+	fsp->op = op;
+	op->compat = fsp;
+	fsp->fnum = op->local_id;
+
+	fsp->mid = req->mid;
+	req->chain_fsp = fsp;
+
+	DBG_DEBUG("fsp [%s] mid [%" PRIu64"]\n",
+		fsp_str_dbg(fsp), fsp->mid);
+
+	return NT_STATUS_OK;
+}
 
 NTSTATUS file_new(struct smb_request *req, connection_struct *conn,
 		  files_struct **result)
@@ -113,24 +149,10 @@ NTSTATUS file_new(struct smb_request *req, connection_struct *conn,
 
 	GetTimeOfDay(&fsp->open_time);
 
-	if (req) {
-		struct smbXsrv_connection *xconn = req->xconn;
-		struct smbXsrv_open *op = NULL;
-		NTTIME now = timeval_to_nttime(&fsp->open_time);
-
-		status = smbXsrv_open_create(xconn,
-					     conn->session_info,
-					     now, &op);
-		if (!NT_STATUS_IS_OK(status)) {
-			file_free(NULL, fsp);
-			return status;
-		}
-		fsp->op = op;
-		op->compat = fsp;
-		fsp->fnum = op->local_id;
-	} else {
-		DEBUG(10, ("%s: req==NULL, INTERNAL_OPEN_ONLY, smbXsrv_open "
-			   "allocated\n", __func__));
+	status = fsp_bind_smb(fsp, req);
+	if (!NT_STATUS_IS_OK(status)) {
+		file_free(NULL, fsp);
+		return status;
 	}
 
 	fsp_set_gen_id(fsp);
@@ -151,13 +173,7 @@ NTSTATUS file_new(struct smb_request *req, connection_struct *conn,
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	DEBUG(5,("allocated file structure %s (%u used)\n",
-		 fsp_fnum_dbg(fsp), (unsigned int)sconn->num_files));
-
-	if (req != NULL) {
-		fsp->mid = req->mid;
-		req->chain_fsp = fsp;
-	}
+	DBG_INFO("new file %s\n", fsp_fnum_dbg(fsp));
 
 	/* A new fsp invalidates the positive and
 	  negative fsp_fi_cache as the new fsp is pushed
@@ -167,6 +183,28 @@ NTSTATUS file_new(struct smb_request *req, connection_struct *conn,
 	ZERO_STRUCT(sconn->fsp_fi_cache);
 
 	*result = fsp;
+	return NT_STATUS_OK;
+}
+
+NTSTATUS create_internal_fsp(connection_struct *conn,
+			     const struct smb_filename *smb_fname,
+			     struct files_struct **_fsp)
+{
+	struct files_struct *fsp = NULL;
+	NTSTATUS status;
+
+	status = file_new(NULL, conn, &fsp);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	status = fsp_set_smb_fname(fsp, smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		file_free(NULL, fsp);
+		return status;
+	}
+
+	*_fsp = fsp;
 	return NT_STATUS_OK;
 }
 
@@ -183,14 +221,8 @@ NTSTATUS create_internal_dirfsp(connection_struct *conn,
 	struct files_struct *fsp = NULL;
 	NTSTATUS status;
 
-	status = file_new(NULL, conn, &fsp);
+	status = create_internal_fsp(conn, smb_dname, &fsp);
 	if (!NT_STATUS_IS_OK(status)) {
-		return status;
-	}
-
-	status = fsp_set_smb_fname(fsp, smb_dname);
-	if (!NT_STATUS_IS_OK(status)) {
-		file_free(NULL, fsp);
 		return status;
 	}
 
@@ -222,7 +254,7 @@ NTSTATUS open_internal_dirfsp(connection_struct *conn,
 #ifdef O_DIRECTORY
 	open_flags |= O_DIRECTORY;
 #endif
-	status = fd_open(fsp, open_flags, 0);
+	status = fd_openat(conn->cwd_fsp, fsp->fsp_name, fsp, open_flags, 0);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_INFO("Could not open fd for %s (%s)\n",
 			 smb_fname_str_dbg(smb_dname),
@@ -246,6 +278,350 @@ NTSTATUS open_internal_dirfsp(connection_struct *conn,
 	fsp->file_id = vfs_file_id_from_sbuf(conn, &fsp->fsp_name->st);
 
 	*_fsp = fsp;
+	return NT_STATUS_OK;
+}
+
+/*
+ * The "link" in the name doesn't imply link in the filesystem
+ * sense. It's a object that "links" together an fsp and an smb_fname
+ * and the link allocated as talloc child of an fsp.
+ *
+ * The link is created for fsps that open_smbfname_fsp() returns in
+ * smb_fname->fsp. When this fsp is freed by fsp_free() by some caller
+ * somewhere, the destructor fsp_smb_fname_link_destructor() on the link object
+ * will use the link to reset the reference in smb_fname->fsp that is about to
+ * go away.
+ *
+ * This prevents smb_fname_internal_fsp_destructor() from seeing dangling fsp
+ * pointers.
+ */
+
+struct fsp_smb_fname_link {
+	struct fsp_smb_fname_link **smb_fname_link;
+	struct files_struct **smb_fname_fsp;
+};
+
+static int fsp_smb_fname_link_destructor(struct fsp_smb_fname_link *link)
+{
+	if (link->smb_fname_link == NULL) {
+		return 0;
+	}
+
+	*link->smb_fname_link = NULL;
+	*link->smb_fname_fsp = NULL;
+	return 0;
+}
+
+static NTSTATUS fsp_smb_fname_link(struct files_struct *fsp,
+				   struct fsp_smb_fname_link **smb_fname_link,
+				   struct files_struct **smb_fname_fsp)
+{
+	struct fsp_smb_fname_link *link = NULL;
+
+	SMB_ASSERT(*smb_fname_link == NULL);
+	SMB_ASSERT(*smb_fname_fsp == NULL);
+
+	link = talloc_zero(fsp, struct fsp_smb_fname_link);
+	if (link == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	link->smb_fname_link = smb_fname_link;
+	link->smb_fname_fsp = smb_fname_fsp;
+	*smb_fname_link = link;
+	*smb_fname_fsp = fsp;
+
+	talloc_set_destructor(link, fsp_smb_fname_link_destructor);
+	return NT_STATUS_OK;
+}
+
+/*
+ * Free a link, carefully avoiding to trigger the link destructor
+ */
+static void destroy_fsp_smb_fname_link(struct fsp_smb_fname_link **_link)
+{
+	struct fsp_smb_fname_link *link = *_link;
+
+	if (link == NULL) {
+		return;
+	}
+	talloc_set_destructor(link, NULL);
+	TALLOC_FREE(link);
+	*_link = NULL;
+}
+
+/*
+ * Talloc destructor set on an smb_fname set by openat_pathref_fsp() used to
+ * close the embedded smb_fname->fsp.
+ */
+static int smb_fname_fsp_destructor(struct smb_filename *smb_fname)
+{
+	struct files_struct *fsp = smb_fname->fsp;
+	NTSTATUS status;
+	int saved_errno = errno;
+
+	destroy_fsp_smb_fname_link(&smb_fname->fsp_link);
+
+	if (fsp == NULL) {
+		errno = saved_errno;
+		return 0;
+	}
+
+	if (fsp->base_fsp != NULL) {
+		struct files_struct *tmp_base_fsp = fsp->base_fsp;
+
+		fsp_set_base_fsp(fsp, NULL);
+
+		status = fd_close(tmp_base_fsp);
+		SMB_ASSERT(NT_STATUS_IS_OK(status));
+		file_free(NULL, tmp_base_fsp);
+	}
+
+	status = fd_close(fsp);
+	SMB_ASSERT(NT_STATUS_IS_OK(status));
+	file_free(NULL, fsp);
+	smb_fname->fsp = NULL;
+
+	errno = saved_errno;
+	return 0;
+}
+
+/*
+ * For proper streams support, we have to open the base_fsp for pathref
+ * fsp's as well.
+ */
+static NTSTATUS open_pathref_base_fsp(const struct files_struct *dirfsp,
+				      struct files_struct *fsp)
+{
+	struct smb_filename *smb_fname_base = NULL;
+	NTSTATUS status;
+
+	smb_fname_base = synthetic_smb_fname(talloc_tos(),
+					     fsp->fsp_name->base_name,
+					     NULL,
+					     NULL,
+					     fsp->fsp_name->twrp,
+					     fsp->fsp_name->flags);
+	if (smb_fname_base == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	status = openat_pathref_fsp(dirfsp, smb_fname_base);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(smb_fname_base);
+		if (!NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
+			DBG_DEBUG("Opening base file failed: %s\n",
+				  nt_errstr(status));
+			return status;
+		}
+		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
+	}
+
+	fsp_set_base_fsp(fsp, smb_fname_base->fsp);
+	smb_fname_fsp_unlink(smb_fname_base);
+	TALLOC_FREE(smb_fname_base);
+
+	return NT_STATUS_OK;
+}
+
+/*
+ * Open an internal O_PATH based fsp for smb_fname. If O_PATH is not
+ * available, open O_RDONLY as root. Both is done in fd_open() ->
+ * non_widelink_open(), triggered by setting fsp->fsp_flags.is_pathref to
+ * true.
+ */
+NTSTATUS openat_pathref_fsp(const struct files_struct *dirfsp,
+			    struct smb_filename *smb_fname)
+{
+	connection_struct *conn = dirfsp->conn;
+	struct smb_filename *full_fname = NULL;
+	bool file_existed = VALID_STAT(smb_fname->st);
+	struct files_struct *fsp = NULL;
+	int open_flags = O_RDONLY;
+	NTSTATUS status;
+
+	DBG_DEBUG("smb_fname [%s]\n", smb_fname_str_dbg(smb_fname));
+
+	if (smb_fname->fsp != NULL) {
+		/* We already have one for this name. */
+		DBG_DEBUG("smb_fname [%s] already has a pathref fsp.\n",
+			smb_fname_str_dbg(smb_fname));
+		return NT_STATUS_OK;
+	}
+
+	if (file_existed && S_ISLNK(smb_fname->st.st_ex_mode)) {
+		return NT_STATUS_STOPPED_ON_SYMLINK;
+	}
+
+	status = fsp_new(conn, conn, &fsp);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	GetTimeOfDay(&fsp->open_time);
+	fsp_set_gen_id(fsp);
+	ZERO_STRUCT(conn->sconn->fsp_fi_cache);
+
+	fsp->fsp_flags.is_pathref = true;
+	if (S_ISDIR(smb_fname->st.st_ex_mode)) {
+		fsp->fsp_flags.is_directory = true;
+		open_flags |= O_DIRECTORY;
+	}
+
+	full_fname = full_path_from_dirfsp_atname(fsp,
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		status = NT_STATUS_NO_MEMORY;
+		goto fail;
+	}
+
+	if (is_ntfs_default_stream_smb_fname(full_fname)) {
+		full_fname->stream_name = NULL;
+	}
+
+	status = fsp_attach_smb_fname(fsp, &full_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
+
+	if ((conn->fs_capabilities & FILE_NAMED_STREAMS)
+	    && is_ntfs_stream_smb_fname(fsp->fsp_name))
+	{
+		status = open_pathref_base_fsp(dirfsp, fsp);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto fail;
+		}
+	}
+
+	status = fd_openat(dirfsp, smb_fname, fsp, open_flags, 0);
+	if (!NT_STATUS_IS_OK(status)) {
+		DBG_DEBUG("Could not open fd for [%s]: %s\n",
+			  fsp_str_dbg(fsp),
+			  nt_errstr(status));
+
+		if (fsp->base_fsp != NULL) {
+			struct files_struct *tmp_base_fsp = fsp->base_fsp;
+
+			fsp_set_base_fsp(fsp, NULL);
+
+			fd_close(tmp_base_fsp);
+			file_free(NULL, tmp_base_fsp);
+		}
+		file_free(NULL, fsp);
+		fsp = NULL;
+
+		if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND) ||
+		    NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_PATH_NOT_FOUND))
+		{
+			/*
+			 * streams_xattr return NT_STATUS_NOT_FOUND for
+			 * opens of not yet exisiting streams.
+			 *
+			 * ELOOP maps to NT_STATUS_OBJECT_PATH_NOT_FOUND
+			 * and this will result from a open request from
+			 * a POSIX client on a symlink.
+			 *
+			 * NT_STATUS_OBJECT_NAME_NOT_FOUND is the simple
+			 * ENOENT case.
+			 */
+			status = NT_STATUS_OBJECT_NAME_NOT_FOUND;
+		}
+		if (!NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_NOT_FOUND)) {
+			goto fail;
+		}
+
+		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
+	}
+
+	if (file_existed &&
+	    !check_same_dev_ino(&smb_fname->st, &fsp->fsp_name->st))
+	{
+		DBG_DEBUG("file [%s] - dev/ino mismatch. "
+			  "Old (dev=%ju, ino=%ju). "
+			  "New (dev=%ju, ino=%ju).\n",
+			  smb_fname_str_dbg(smb_fname),
+			  (uintmax_t)smb_fname->st.st_ex_dev,
+			  (uintmax_t)smb_fname->st.st_ex_ino,
+			  (uintmax_t)fsp->fsp_name->st.st_ex_dev,
+			  (uintmax_t)fsp->fsp_name->st.st_ex_ino);
+		status = NT_STATUS_ACCESS_DENIED;
+		goto fail;
+	}
+
+	fsp->file_id = vfs_file_id_from_sbuf(conn, &fsp->fsp_name->st);
+
+	status = fsp_smb_fname_link(fsp,
+				    &smb_fname->fsp_link,
+				    &smb_fname->fsp);
+	if (!NT_STATUS_IS_OK(status)) {
+		goto fail;
+	}
+
+	DBG_DEBUG("fsp [%s]: OK\n", fsp_str_dbg(fsp));
+
+	talloc_set_destructor(smb_fname, smb_fname_fsp_destructor);
+	return NT_STATUS_OK;
+
+fail:
+	DBG_DEBUG("Opening pathref for [%s] failed: %s\n",
+		  smb_fname_str_dbg(smb_fname),
+		  nt_errstr(status));
+
+	if (fsp == NULL) {
+		return status;
+	}
+	if (fsp->base_fsp != NULL) {
+		struct files_struct *tmp_base_fsp = fsp->base_fsp;
+
+		fsp_set_base_fsp(fsp, NULL);
+
+		fd_close(tmp_base_fsp);
+		file_free(NULL, tmp_base_fsp);
+	}
+	fd_close(fsp);
+	file_free(NULL, fsp);
+	return status;
+}
+
+void smb_fname_fsp_unlink(struct smb_filename *smb_fname)
+{
+	talloc_set_destructor(smb_fname, NULL);
+	smb_fname->fsp = NULL;
+	destroy_fsp_smb_fname_link(&smb_fname->fsp_link);
+}
+
+/*
+ * Move any existing embedded fsp refs from the src name to the
+ * destination. It's safe to call this on src smb_fname's that have no embedded
+ * pathref fsp.
+ */
+NTSTATUS move_smb_fname_fsp_link(struct smb_filename *smb_fname_dst,
+				 struct smb_filename *smb_fname_src)
+{
+	NTSTATUS status;
+
+	/*
+	 * The target should always not be linked yet!
+	 */
+	SMB_ASSERT(smb_fname_dst->fsp == NULL);
+	SMB_ASSERT(smb_fname_dst->fsp_link == NULL);
+
+	if (smb_fname_src->fsp == NULL) {
+		return NT_STATUS_OK;
+	}
+
+	status = fsp_smb_fname_link(smb_fname_src->fsp,
+				    &smb_fname_dst->fsp_link,
+				    &smb_fname_dst->fsp);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	talloc_set_destructor(smb_fname_dst, smb_fname_fsp_destructor);
+
+	smb_fname_fsp_unlink(smb_fname_src);
+
 	return NT_STATUS_OK;
 }
 
@@ -376,7 +752,7 @@ files_struct *file_find_fd(struct smbd_server_connection *sconn, int fd)
 	files_struct *fsp;
 
 	for (fsp=sconn->files; fsp; fsp=fsp->next,count++) {
-		if (fsp->fh->fd == fd) {
+		if (fsp_get_pathref_fd(fsp) == fd) {
 			if (count > 10) {
 				DLIST_PROMOTE(sconn->files, fsp);
 			}
@@ -401,29 +777,40 @@ files_struct *file_find_dif(struct smbd_server_connection *sconn,
 		return NULL;
 	}
 
-	for (fsp=sconn->files; fsp; fsp=fsp->next,count++) {
-		/* We can have a fsp->fh->fd == -1 here as it could be a stat open. */
-		if (file_id_equal(&fsp->file_id, &id) &&
-		    fsp->fh->gen_id == gen_id ) {
-			if (count > 10) {
-				DLIST_PROMOTE(sconn->files, fsp);
-			}
-			/* Paranoia check. */
-			if ((fsp->fh->fd == -1) &&
-			    (fsp->oplock_type != NO_OPLOCK &&
-			     fsp->oplock_type != LEASE_OPLOCK)) {
-				struct file_id_buf idbuf;
-				DEBUG(0,("file_find_dif: file %s file_id = "
-					 "%s, gen = %u oplock_type = %u is a "
-					 "stat open with oplock type !\n",
-					 fsp_str_dbg(fsp),
-					 file_id_str_buf(fsp->file_id, &idbuf),
-					 (unsigned int)fsp->fh->gen_id,
-					 (unsigned int)fsp->oplock_type ));
-				smb_panic("file_find_dif");
-			}
-			return fsp;
+	for (fsp = sconn->files; fsp; fsp = fsp->next,count++) {
+		/*
+		 * We can have a fsp->fh->fd == -1 here as it could be a stat
+		 * open.
+		 */
+		if (!file_id_equal(&fsp->file_id, &id)) {
+			continue;
 		}
+		if (!fsp->fsp_flags.is_fsa) {
+			continue;
+		}
+		if (fh_get_gen_id(fsp->fh) != gen_id) {
+			continue;
+		}
+		if (count > 10) {
+			DLIST_PROMOTE(sconn->files, fsp);
+		}
+		/* Paranoia check. */
+		if ((fsp_get_pathref_fd(fsp) == -1) &&
+		    (fsp->oplock_type != NO_OPLOCK &&
+		     fsp->oplock_type != LEASE_OPLOCK))
+		{
+			struct file_id_buf idbuf;
+
+			DBG_ERR("file %s file_id = "
+				"%s, gen = %u oplock_type = %u is a "
+				"stat open with oplock type !\n",
+				fsp_str_dbg(fsp),
+				file_id_str_buf(fsp->file_id, &idbuf),
+				(unsigned int)fh_get_gen_id(fsp->fh),
+				(unsigned int)fsp->oplock_type);
+			smb_panic("file_find_dif");
+		}
+		return fsp;
 	}
 
 	return NULL;
@@ -436,7 +823,8 @@ files_struct *file_find_dif(struct smbd_server_connection *sconn,
 ****************************************************************************/
 
 files_struct *file_find_di_first(struct smbd_server_connection *sconn,
-				 struct file_id id)
+				 struct file_id id,
+				 bool need_fsa)
 {
 	files_struct *fsp;
 
@@ -448,6 +836,9 @@ files_struct *file_find_di_first(struct smbd_server_connection *sconn,
 	sconn->fsp_fi_cache.id = id;
 
 	for (fsp=sconn->files;fsp;fsp=fsp->next) {
+		if (need_fsa && !fsp->fsp_flags.is_fsa) {
+			continue;
+		}
 		if (file_id_equal(&fsp->file_id, &id)) {
 			/* Setup positive cache. */
 			sconn->fsp_fi_cache.fsp = fsp;
@@ -464,11 +855,15 @@ files_struct *file_find_di_first(struct smbd_server_connection *sconn,
  Find the next fsp having the same device and inode.
 ****************************************************************************/
 
-files_struct *file_find_di_next(files_struct *start_fsp)
+files_struct *file_find_di_next(files_struct *start_fsp,
+				bool need_fsa)
 {
 	files_struct *fsp;
 
 	for (fsp = start_fsp->next;fsp;fsp=fsp->next) {
+		if (need_fsa && !fsp->fsp_flags.is_fsa) {
+			continue;
+		}
 		if (file_id_equal(&fsp->file_id, &start_fsp->file_id)) {
 			return fsp;
 		}
@@ -548,7 +943,7 @@ bool file_find_subpath(files_struct *dir_fsp)
  Free up a fsp.
 ****************************************************************************/
 
-void fsp_free(files_struct *fsp)
+static void fsp_free(files_struct *fsp)
 {
 	struct smbd_server_connection *sconn = fsp->conn->sconn;
 
@@ -562,10 +957,11 @@ void fsp_free(files_struct *fsp)
 
 	TALLOC_FREE(fsp->fake_file_handle);
 
-	if (fsp->fh->ref_count == 1) {
+	if (fh_get_refcount(fsp->fh) == 1) {
 		TALLOC_FREE(fsp->fh);
 	} else {
-		fsp->fh->ref_count--;
+		size_t new_refcount = fh_get_refcount(fsp->fh) - 1;
+		fh_set_refcount(fsp->fh, new_refcount);
 	}
 
 	if (fsp->lease != NULL) {
@@ -577,6 +973,18 @@ void fsp_free(files_struct *fsp)
 	}
 
 	fsp->conn->num_files_open--;
+
+	if (fsp->fsp_name != NULL &&
+	    fsp->fsp_name->fsp_link != NULL)
+	{
+		/*
+		 * Free fsp_link of fsp->fsp_name. To do this in the correct
+		 * talloc destructor order we have to do it here. The
+		 * talloc_free() of the link should set the fsp pointer to NULL.
+		 */
+		TALLOC_FREE(fsp->fsp_name->fsp_link);
+		SMB_ASSERT(fsp->fsp_name->fsp == NULL);
+	}
 
 	/* this is paranoia, just in case someone tries to reuse the
 	   information */
@@ -590,6 +998,10 @@ void file_free(struct smb_request *req, files_struct *fsp)
 {
 	struct smbd_server_connection *sconn = fsp->conn->sconn;
 	uint64_t fnum = fsp->fnum;
+
+	if (fsp == fsp->conn->cwd_fsp) {
+		return;
+	}
 
 	if (fsp->notify) {
 		size_t len = fsp_fullbasepath(fsp, NULL, 0);
@@ -772,13 +1184,16 @@ NTSTATUS dup_file_fsp(
 	uint32_t create_options,
 	files_struct *to)
 {
+	size_t new_refcount;
+
 	/* this can never happen for print files */
 	SMB_ASSERT(from->print_file == NULL);
 
 	TALLOC_FREE(to->fh);
 
 	to->fh = from->fh;
-	to->fh->ref_count++;
+	new_refcount = fh_get_refcount(to->fh) + 1;
+	fh_set_refcount(to->fh, new_refcount);
 
 	to->file_id = from->file_id;
 	to->initial_allocation_size = from->initial_allocation_size;
@@ -795,6 +1210,10 @@ NTSTATUS dup_file_fsp(
 	to->fsp_flags.modified = from->fsp_flags.modified;
 	to->fsp_flags.is_directory = from->fsp_flags.is_directory;
 	to->fsp_flags.aio_write_behind = from->fsp_flags.aio_write_behind;
+	to->fsp_flags.is_fsa = from->fsp_flags.is_fsa;
+	to->fsp_flags.is_pathref = from->fsp_flags.is_pathref;
+	to->fsp_flags.have_proc_fds = from->fsp_flags.have_proc_fds;
+	to->fsp_flags.is_dirfsp = from->fsp_flags.is_dirfsp;
 
 	return fsp_set_smb_fname(to, from->fsp_name);
 }
@@ -829,25 +1248,66 @@ NTSTATUS file_name_hash(connection_struct *conn,
 	return NT_STATUS_OK;
 }
 
+static NTSTATUS fsp_attach_smb_fname(struct files_struct *fsp,
+				     struct smb_filename **_smb_fname)
+{
+	struct smb_filename *smb_fname_new = *_smb_fname;
+	const char *name_str = NULL;
+	uint32_t name_hash = 0;
+	NTSTATUS status;
+
+	name_str = smb_fname_str_dbg(smb_fname_new);
+	if (name_str == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	status = file_name_hash(fsp->conn,
+				name_str,
+				&name_hash);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	status = fsp_smb_fname_link(fsp,
+				    &smb_fname_new->fsp_link,
+				    &smb_fname_new->fsp);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	fsp->name_hash = name_hash;
+	fsp->fsp_name = smb_fname_new;
+	*_smb_fname = NULL;
+	return NT_STATUS_OK;
+}
+
 /**
  * The only way that the fsp->fsp_name field should ever be set.
  */
 NTSTATUS fsp_set_smb_fname(struct files_struct *fsp,
 			   const struct smb_filename *smb_fname_in)
 {
-	struct smb_filename *smb_fname_new;
+	struct smb_filename *smb_fname_old = fsp->fsp_name;
+	struct smb_filename *smb_fname_new = NULL;
+	NTSTATUS status;
 
 	smb_fname_new = cp_smb_filename(fsp, smb_fname_in);
 	if (smb_fname_new == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	TALLOC_FREE(fsp->fsp_name);
-	fsp->fsp_name = smb_fname_new;
+	status = fsp_attach_smb_fname(fsp, &smb_fname_new);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(smb_fname_new);
+		return status;
+	}
 
-	return file_name_hash(fsp->conn,
-			smb_fname_str_dbg(fsp->fsp_name),
-			&fsp->name_hash);
+	if (smb_fname_old != NULL) {
+		smb_fname_fsp_unlink(smb_fname_old);
+		TALLOC_FREE(smb_fname_old);
+	}
+
+	return NT_STATUS_OK;
 }
 
 size_t fsp_fullbasepath(struct files_struct *fsp, char *buf, size_t buflen)
@@ -858,7 +1318,7 @@ size_t fsp_fullbasepath(struct files_struct *fsp, char *buf, size_t buflen)
 	/*
 	 * Don't pass NULL buffer to snprintf (to satisfy static checker)
 	 * Some callers will call this function with NULL for buf and
-	 * 0 for buflen in order to get length of fullbasepatch (without
+	 * 0 for buflen in order to get length of fullbasepath (without
 	 * needing to allocate or write to buf)
 	 */
 	if (buf == NULL) {
@@ -870,4 +1330,23 @@ size_t fsp_fullbasepath(struct files_struct *fsp, char *buf, size_t buflen)
 	SMB_ASSERT(len>0);
 
 	return len;
+}
+
+void fsp_set_base_fsp(struct files_struct *fsp, struct files_struct *base_fsp)
+{
+	SMB_ASSERT(fsp->stream_fsp == NULL);
+	if (base_fsp != NULL) {
+		SMB_ASSERT(base_fsp->base_fsp == NULL);
+		SMB_ASSERT(base_fsp->stream_fsp == NULL);
+	}
+
+	if (fsp->base_fsp != NULL) {
+		SMB_ASSERT(fsp->base_fsp->stream_fsp == fsp);
+		fsp->base_fsp->stream_fsp = NULL;
+	}
+
+	fsp->base_fsp = base_fsp;
+	if (fsp->base_fsp != NULL) {
+		fsp->base_fsp->stream_fsp = fsp;
+	}
 }

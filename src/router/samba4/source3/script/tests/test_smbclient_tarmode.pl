@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-
 # Unix SMB/CIFS implementation.
 # Test suite for the tar backup mode of smbclient.
 # Copyright (C) Aurélien Aptel 2013
@@ -304,6 +303,8 @@ sub test_creation_attr {
     @inc = grep { $_->attr('a') && !$_->attr_any('h', 's') } @all;
     smb_tar('tarmode inc nohidden nosystem', '-Tc', $TAR, $DIR);
     $err += check_tar($TAR, \@inc);
+    # adjust attr so remote files can be deleted with deltree
+    File::walk(sub { $_->set_attr(qw/n r s h/) }, File::tree($DIR));
 
     $err;
 }
@@ -399,7 +400,10 @@ sub test_creation_incremental {
     } else {
         smb_tar('', '-Tcg', $TAR, $DIR);
     }
-    return check_tar($TAR, \@files);
+    my $res = check_tar($TAR, \@files);
+    # adjust attr so remote files can be deleted with deltree
+    File::walk(sub { $_->set_attr(qw/n r s h/) }, File::tree($DIR));
+    return $res
 }
 
 
@@ -917,8 +921,22 @@ Remove all files in the server C<$DIR> (not root)
 sub reset_remote {
     # remove_tree($LOCALPATH . '/'. $DIR);
     # make_path($LOCALPATH . '/'. $DIR);
-    remove_tree($LOCALPATH, {keep_root => 1});
-    make_path($LOCALPATH, {keep_root => 1});
+    my $DIR;
+    my @names;
+    my $name;
+
+    smb_client_cmd(0, '-c', "deltree ./*");
+
+    # Ensure all files are gone.
+
+    opendir(DIR,$LOCALPATH) or die "Can't open $LOCALPATH\n";
+    @names = readdir(DIR) or die "Unable to read $LOCALPATH\n";
+    closedir(DIR);
+    foreach $name (@names) {
+	next if ($name eq ".");   # skip the current directory entry
+	next if ($name eq "..");  # skip the parent  directory entry
+	die "$LOCALPATH not empty\n";
+    }
 }
 
 =head3 C<reset_tmp( )>
@@ -1120,7 +1138,9 @@ sub check_tar {
     return (@more + @less + @diff); # nb of errors
 }
 
-=head3 C<smb_client ( @args )>
+=head3 C<smb_client_cmd( $will_die, @args)>
+
+=head3 C<smb_client_cmd( 0, '-c', 'deltree', $somedir )>
 
 Run smbclient with C<@args> passed as argument and return output.
 
@@ -1131,11 +1151,12 @@ the command-line are already inserted.
 
 The output contains both the C<STDOUT> and C<STDERR>.
 
-Die if smbclient crashes or exits with an error code.
+if C<$will_die> then Die if smbclient crashes or exits with an error code.
+otherwise return output
 
 =cut
-sub smb_client {
-    my (@args) = @_;
+sub smb_client_cmd {
+    my ($will_die, @args) = @_;
 
     my $fullpath = "//$HOST/$SHARE";
     my $cmd = sprintf("%s %s %s",
@@ -1168,9 +1189,32 @@ sub smb_client {
     }
 
     if ($err) {
-        die "ERROR: $errstr";
+	if ($will_die) {
+		die "ERROR: $errstr";
+	} else {
+		say "ERROR: $errstr";
+	}
     }
     return $out;
+}
+
+=head3 C<smb_client ( @args )>
+
+Run smbclient with C<@args> passed as argument and return output.
+
+Each element of C<@args> becomes one escaped argument of smbclient.
+
+Host, share, user, password and the additionnal arguments provided on
+the command-line are already inserted.
+
+The output contains both the C<STDOUT> and C<STDERR>.
+
+Die if smbclient crashes or exits with an error code.
+
+=cut
+sub smb_client {
+    my (@args) = @_;
+    return smb_client_cmd(1, @args)
 }
 
 sub smb_cmd {

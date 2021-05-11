@@ -36,6 +36,8 @@
 #include "../lib/util/pidfile.h"
 #include "serverid.h"
 #include "cmdline_contexts.h"
+#include "lib/util/string_wrappers.h"
+#include "lib/global_contexts.h"
 
 #ifdef HAVE_LIBUNWIND_H
 #include <libunwind.h>
@@ -1774,6 +1776,7 @@ int main(int argc, const char **argv)
 
 	ret = !do_command(evt_ctx, msg_ctx, argc, argv);
 
+	cmdline_messaging_context_free();
 	poptFreeContext(pc);
 	TALLOC_FREE(frame);
 	return ret;

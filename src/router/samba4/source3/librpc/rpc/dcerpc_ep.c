@@ -84,9 +84,6 @@ static NTSTATUS ep_register(TALLOC_CTX *mem_ctx,
 	}
 
 	tmp_ctx = talloc_stackframe();
-	if (tmp_ctx == NULL) {
-		return NT_STATUS_NO_MEMORY;
-	}
 
 	epmd_mode = rpc_epmapper_mode();
 
@@ -100,7 +97,8 @@ static NTSTATUS ep_register(TALLOC_CTX *mem_ctx,
 						       0,
 						       &local);
 		if (rc < 0) {
-			return NT_STATUS_NO_MEMORY;
+			status = NT_STATUS_NO_MEMORY;
+			goto done;
 		}
 
 		status = rpcint_binding_handle(tmp_ctx,
@@ -246,8 +244,8 @@ static NTSTATUS ep_register(TALLOC_CTX *mem_ctx,
 	}
 
 	if (pbh != NULL) {
+		talloc_steal(h, cli);
 		*pbh = talloc_move(mem_ctx, &h);
-		talloc_steal(*pbh, cli);
 	}
 
 done:

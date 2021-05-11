@@ -25,7 +25,8 @@
 #include "system/capability.h"
 #include "system/passwd.h"
 #include "system/filesys.h"
-#include "../lib/util/setid.h"
+#include "lib/util/setid.h"
+#include "lib/util/time.h"
 
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
@@ -120,124 +121,6 @@ int sys_fcntl_int(int fd, int cmd, int arg)
 		ret = fcntl(fd, cmd, arg);
 	} while (ret == -1 && errno == EINTR);
 	return ret;
-}
-
-/****************************************************************************
- Get/Set all the possible time fields from a stat struct as a timespec.
-****************************************************************************/
-
-static struct timespec get_atimespec(const struct stat *pst)
-{
-#if !defined(HAVE_STAT_HIRES_TIMESTAMPS)
-	struct timespec ret;
-
-	/* Old system - no ns timestamp. */
-	ret.tv_sec = pst->st_atime;
-	ret.tv_nsec = 0;
-	return ret;
-#else
-#if defined(HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC)
-	struct timespec ret;
-	ret.tv_sec = pst->st_atim.tv_sec;
-	ret.tv_nsec = pst->st_atim.tv_nsec;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_MTIMENSEC)
-	struct timespec ret;
-	ret.tv_sec = pst->st_atime;
-	ret.tv_nsec = pst->st_atimensec;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_MTIME_N)
-	struct timespec ret;
-	ret.tv_sec = pst->st_atime;
-	ret.tv_nsec = pst->st_atime_n;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_UMTIME)
-	struct timespec ret;
-	ret.tv_sec = pst->st_atime;
-	ret.tv_nsec = pst->st_uatime * 1000;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC)
-	return pst->st_atimespec;
-#else
-#error	CONFIGURE_ERROR_IN_DETECTING_TIMESPEC_IN_STAT
-#endif
-#endif
-}
-
-static struct timespec get_mtimespec(const struct stat *pst)
-{
-#if !defined(HAVE_STAT_HIRES_TIMESTAMPS)
-	struct timespec ret;
-
-	/* Old system - no ns timestamp. */
-	ret.tv_sec = pst->st_mtime;
-	ret.tv_nsec = 0;
-	return ret;
-#else
-#if defined(HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC)
-	struct timespec ret;
-	ret.tv_sec = pst->st_mtim.tv_sec;
-	ret.tv_nsec = pst->st_mtim.tv_nsec;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_MTIMENSEC)
-	struct timespec ret;
-	ret.tv_sec = pst->st_mtime;
-	ret.tv_nsec = pst->st_mtimensec;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_MTIME_N)
-	struct timespec ret;
-	ret.tv_sec = pst->st_mtime;
-	ret.tv_nsec = pst->st_mtime_n;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_UMTIME)
-	struct timespec ret;
-	ret.tv_sec = pst->st_mtime;
-	ret.tv_nsec = pst->st_umtime * 1000;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC)
-	return pst->st_mtimespec;
-#else
-#error	CONFIGURE_ERROR_IN_DETECTING_TIMESPEC_IN_STAT
-#endif
-#endif
-}
-
-static struct timespec get_ctimespec(const struct stat *pst)
-{
-#if !defined(HAVE_STAT_HIRES_TIMESTAMPS)
-	struct timespec ret;
-
-	/* Old system - no ns timestamp. */
-	ret.tv_sec = pst->st_ctime;
-	ret.tv_nsec = 0;
-	return ret;
-#else
-#if defined(HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC)
-	struct timespec ret;
-	ret.tv_sec = pst->st_ctim.tv_sec;
-	ret.tv_nsec = pst->st_ctim.tv_nsec;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_MTIMENSEC)
-	struct timespec ret;
-	ret.tv_sec = pst->st_ctime;
-	ret.tv_nsec = pst->st_ctimensec;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_MTIME_N)
-	struct timespec ret;
-	ret.tv_sec = pst->st_ctime;
-	ret.tv_nsec = pst->st_ctime_n;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_UMTIME)
-	struct timespec ret;
-	ret.tv_sec = pst->st_ctime;
-	ret.tv_nsec = pst->st_uctime * 1000;
-	return ret;
-#elif defined(HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC)
-	return pst->st_ctimespec;
-#else
-#error	CONFIGURE_ERROR_IN_DETECTING_TIMESPEC_IN_STAT
-#endif
-#endif
 }
 
 /****************************************************************************
@@ -704,8 +587,9 @@ char *sys_getwd(void)
 static bool set_process_capability(enum smbd_capability capability,
 				   bool enable)
 {
-	cap_value_t cap_vals[2] = {0};
-	int num_cap_vals = 0;
+	/* "5" is the number of "num_cap_vals++" below */
+	cap_value_t cap_vals[5] = {0};
+	size_t num_cap_vals = 0;
 
 	cap_t cap;
 
@@ -730,6 +614,12 @@ static bool set_process_capability(enum smbd_capability capability,
 	}
 
 	switch (capability) {
+		/*
+		 * WARNING: If you add any #ifdef for a fresh
+		 * capability, bump up the array size in the
+		 * declaration of cap_vals[] above just to be
+		 * trivially safe to never overwrite cap_vals[].
+		 */
 		case KERNEL_OPLOCK_CAPABILITY:
 #ifdef CAP_NETWORK_MGT
 			/* IRIX has CAP_NETWORK_MGT for oplocks. */
@@ -755,8 +645,6 @@ static bool set_process_capability(enum smbd_capability capability,
 			cap_vals[num_cap_vals++] = CAP_DAC_OVERRIDE;
 #endif
 	}
-
-	SMB_ASSERT(num_cap_vals <= ARRAY_SIZE(cap_vals));
 
 	if (num_cap_vals == 0) {
 		cap_free(cap);
@@ -1142,3 +1030,59 @@ int sys_get_number_of_cores(void)
 	return ret;
 }
 #endif
+
+static struct proc_fd_pattern {
+	const char *pattern;
+	const char *test_path;
+} proc_fd_patterns[] = {
+	/* Linux */
+	{ "/proc/self/fd/%d", "/proc/self/fd/0" },
+	{ NULL, NULL },
+};
+
+static const char *proc_fd_pattern;
+
+bool sys_have_proc_fds(void)
+{
+	static bool checked;
+	static bool have_proc_fds;
+	struct proc_fd_pattern *p = NULL;
+	struct stat sb;
+	int ret;
+
+	if (checked) {
+		return have_proc_fds;
+	}
+
+	for (p = &proc_fd_patterns[0]; p->test_path != NULL; p++) {
+		ret = stat(p->test_path, &sb);
+		if (ret != 0) {
+			continue;
+		}
+		have_proc_fds = true;
+		proc_fd_pattern = p->pattern;
+		break;
+	}
+
+	checked = true;
+	return have_proc_fds;
+}
+
+const char *sys_proc_fd_path(int fd, char *buf, int bufsize)
+{
+	int written;
+
+	if (!sys_have_proc_fds()) {
+		return NULL;
+	}
+
+	written = snprintf(buf,
+			   bufsize,
+			   proc_fd_pattern,
+			   fd);
+	if (written >= bufsize) {
+		return NULL;
+	}
+
+	return buf;
+}

@@ -11,7 +11,7 @@ define_test ()
 shellcheck_test ()
 {
 	ok_null
-	if type shellcheck >/dev/null ; then
+	if type shellcheck >/dev/null 2>&1 ; then
 		# Skip some recent checks:
 		#
 		# SC1090: Can't follow non-constant source. Use a
@@ -32,6 +32,5 @@ shellcheck_test ()
 		unit_test shellcheck --exclude="$_excludes" "$@"
 	else
 		ctdb_test_skip "shellcheck not installed"
-		unit_test true
 	fi
 }

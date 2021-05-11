@@ -467,15 +467,16 @@ static DIR *smb_time_audit_fdopendir(vfs_handle_struct *handle,
 }
 
 static struct dirent *smb_time_audit_readdir(vfs_handle_struct *handle,
-						 DIR *dirp,
-						 SMB_STRUCT_STAT *sbuf)
+					     struct files_struct *dirfsp,
+					     DIR *dirp,
+					     SMB_STRUCT_STAT *sbuf)
 {
 	struct dirent *result;
 	struct timespec ts1,ts2;
 	double timediff;
 
 	clock_gettime_mono(&ts1);
-	result = SMB_VFS_NEXT_READDIR(handle, dirp, sbuf);
+	result = SMB_VFS_NEXT_READDIR(handle, dirfsp, dirp, sbuf);
 	clock_gettime_mono(&ts2);
 	timediff = nsec_time_diff(&ts2,&ts1)*1.0e-9;
 
@@ -544,9 +545,18 @@ static int smb_time_audit_mkdirat(vfs_handle_struct *handle,
 				const struct smb_filename *smb_fname,
 				mode_t mode)
 {
+	struct smb_filename *full_fname = NULL;
 	int result;
 	struct timespec ts1,ts2;
 	double timediff;
+
+	full_fname = full_path_from_dirfsp_atname(talloc_tos(),
+						  dirfsp,
+						  smb_fname);
+	if (full_fname == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
 
 	clock_gettime_mono(&ts1);
 	result = SMB_VFS_NEXT_MKDIRAT(handle,
@@ -559,8 +569,10 @@ static int smb_time_audit_mkdirat(vfs_handle_struct *handle,
 	if (timediff > audit_timeout) {
 		smb_time_audit_log_smb_fname("mkdirat",
 			timediff,
-			smb_fname);
+			full_fname);
 	}
+
+	TALLOC_FREE(full_fname);
 
 	return result;
 }
@@ -614,7 +626,6 @@ static int smb_time_audit_openat(vfs_handle_struct *handle,
 
 static NTSTATUS smb_time_audit_create_file(vfs_handle_struct *handle,
 					   struct smb_request *req,
-					   struct files_struct **dirfsp,
 					   struct smb_filename *fname,
 					   uint32_t access_mask,
 					   uint32_t share_access,
@@ -640,7 +651,6 @@ static NTSTATUS smb_time_audit_create_file(vfs_handle_struct *handle,
 	result = SMB_VFS_NEXT_CREATE_FILE(
 		handle,					/* handle */
 		req,					/* req */
-		dirfsp,					/* dirfsp */
 		fname,					/* fname */
 		access_mask,				/* access_mask */
 		share_access,				/* share_access */
@@ -1435,7 +1445,7 @@ static int smb_time_audit_symlinkat(vfs_handle_struct *handle,
 }
 
 static int smb_time_audit_readlinkat(vfs_handle_struct *handle,
-				files_struct *dirfsp,
+				const struct files_struct *dirfsp,
 				const struct smb_filename *smb_fname,
 				char *buf,
 				size_t bufsiz)
@@ -1787,30 +1797,6 @@ static NTSTATUS smb_time_audit_fsctl(struct vfs_handle_struct *handle,
 	return result;
 }
 
-static NTSTATUS smb_time_get_dos_attributes(struct vfs_handle_struct *handle,
-					struct smb_filename *smb_fname,
-					uint32_t *dosmode)
-{
-	NTSTATUS result;
-	struct timespec ts1,ts2;
-	double timediff;
-
-	clock_gettime_mono(&ts1);
-	result = SMB_VFS_NEXT_GET_DOS_ATTRIBUTES(handle,
-				smb_fname,
-				dosmode);
-	clock_gettime_mono(&ts2);
-	timediff = nsec_time_diff(&ts2,&ts1)*1.0e-9;
-
-	if (timediff > audit_timeout) {
-		smb_time_audit_log_fname("get_dos_attributes",
-				timediff,
-				smb_fname->base_name);
-	}
-
-	return result;
-}
-
 struct smb_time_audit_get_dos_attributes_state {
 	struct vfs_aio_state aio_state;
 	files_struct *dir_fsp;
@@ -2151,10 +2137,9 @@ static NTSTATUS smb_time_audit_offload_write_recv(struct vfs_handle_struct *hand
 	return NT_STATUS_OK;
 }
 
-static NTSTATUS smb_time_audit_get_compression(vfs_handle_struct *handle,
+static NTSTATUS smb_time_audit_fget_compression(vfs_handle_struct *handle,
 					       TALLOC_CTX *mem_ctx,
 					       struct files_struct *fsp,
-					       struct smb_filename *smb_fname,
 					       uint16_t *_compression_fmt)
 {
 	NTSTATUS result;
@@ -2162,19 +2147,14 @@ static NTSTATUS smb_time_audit_get_compression(vfs_handle_struct *handle,
 	double timediff;
 
 	clock_gettime_mono(&ts1);
-	result = SMB_VFS_NEXT_GET_COMPRESSION(handle, mem_ctx, fsp, smb_fname,
+	result = SMB_VFS_NEXT_FGET_COMPRESSION(handle, mem_ctx, fsp,
 					      _compression_fmt);
 	clock_gettime_mono(&ts2);
 	timediff = nsec_time_diff(&ts2,&ts1)*1.0e-9;
 
 	if (timediff > audit_timeout) {
-		if (fsp !=  NULL) {
-			smb_time_audit_log_fsp("get_compression",
-					       timediff, fsp);
-		} else {
-			smb_time_audit_log_smb_fname("get_compression",
-						     timediff, smb_fname);
-		}
+		smb_time_audit_log_fsp("get_compression",
+				       timediff, fsp);
 	}
 
 	return result;
@@ -2415,31 +2395,9 @@ static int smb_time_audit_sys_acl_blob_get_fd(vfs_handle_struct *handle,
 	return result;
 }
 
-static int smb_time_audit_sys_acl_set_file(vfs_handle_struct *handle,
-					   const struct smb_filename *smb_fname,
-					   SMB_ACL_TYPE_T acltype,
-					   SMB_ACL_T theacl)
-{
-	int result;
-	struct timespec ts1,ts2;
-	double timediff;
-
-	clock_gettime_mono(&ts1);
-	result = SMB_VFS_NEXT_SYS_ACL_SET_FILE(handle, smb_fname, acltype,
-					       theacl);
-	clock_gettime_mono(&ts2);
-	timediff = nsec_time_diff(&ts2,&ts1)*1.0e-9;
-
-	if (timediff > audit_timeout) {
-		smb_time_audit_log_fname("sys_acl_set_file", timediff,
-			smb_fname->base_name);
-	}
-
-	return result;
-}
-
 static int smb_time_audit_sys_acl_set_fd(vfs_handle_struct *handle,
 					 files_struct *fsp,
+					 SMB_ACL_TYPE_T type,
 					 SMB_ACL_T theacl)
 {
 	int result;
@@ -2447,7 +2405,7 @@ static int smb_time_audit_sys_acl_set_fd(vfs_handle_struct *handle,
 	double timediff;
 
 	clock_gettime_mono(&ts1);
-	result = SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, theacl);
+	result = SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, type, theacl);
 	clock_gettime_mono(&ts2);
 	timediff = nsec_time_diff(&ts2,&ts1)*1.0e-9;
 
@@ -2909,7 +2867,7 @@ static struct vfs_fn_pointers vfs_time_audit_fns = {
 	.offload_read_recv_fn = smb_time_audit_offload_read_recv,
 	.offload_write_send_fn = smb_time_audit_offload_write_send,
 	.offload_write_recv_fn = smb_time_audit_offload_write_recv,
-	.get_compression_fn = smb_time_audit_get_compression,
+	.fget_compression_fn = smb_time_audit_fget_compression,
 	.set_compression_fn = smb_time_audit_set_compression,
 	.snap_check_path_fn = smb_time_audit_snap_check_path,
 	.snap_create_fn = smb_time_audit_snap_create,
@@ -2922,7 +2880,6 @@ static struct vfs_fn_pointers vfs_time_audit_fns = {
 	.strict_lock_check_fn = smb_time_audit_strict_lock_check,
 	.translate_name_fn = smb_time_audit_translate_name,
 	.fsctl_fn = smb_time_audit_fsctl,
-	.get_dos_attributes_fn = smb_time_get_dos_attributes,
 	.get_dos_attributes_send_fn = smb_time_audit_get_dos_attributes_send,
 	.get_dos_attributes_recv_fn = smb_time_audit_get_dos_attributes_recv,
 	.fget_dos_attributes_fn = smb_time_fget_dos_attributes,
@@ -2936,7 +2893,6 @@ static struct vfs_fn_pointers vfs_time_audit_fns = {
 	.sys_acl_get_fd_fn = smb_time_audit_sys_acl_get_fd,
 	.sys_acl_blob_get_file_fn = smb_time_audit_sys_acl_blob_get_file,
 	.sys_acl_blob_get_fd_fn = smb_time_audit_sys_acl_blob_get_fd,
-	.sys_acl_set_file_fn = smb_time_audit_sys_acl_set_file,
 	.sys_acl_set_fd_fn = smb_time_audit_sys_acl_set_fd,
 	.sys_acl_delete_def_file_fn = smb_time_audit_sys_acl_delete_def_file,
 	.getxattr_fn = smb_time_audit_getxattr,

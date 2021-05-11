@@ -17,6 +17,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "includes.h"
+#include "locking/share_mode_lock.h"
 #include "smbd/smbd.h"
 
 #include "messages.h"
@@ -38,6 +39,7 @@
 #include "librpc/rpc/dcesrv_core.h"
 #include "lib/server_prefork.h"
 #include "lib/server_prefork_util.h"
+#include "lib/global_contexts.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_RPC_SRV
@@ -48,7 +50,7 @@ static struct server_id parent_id;
 static struct prefork_pool *spoolss_pool = NULL;
 static int spoolss_child_id = 0;
 
-static struct pf_daemon_config default_pf_spoolss_cfg = {
+static const struct pf_daemon_config default_pf_spoolss_cfg = {
 	.prefork_status = PFH_INIT,
 	.min_children = 5,
 	.max_children = 25,
@@ -428,8 +430,8 @@ static void spoolss_handle_client(struct tevent_req *req)
 			    data->msg_ctx,
 			    data->dce_ctx,
 			    ep,
-			    cli_addr,
-			    srv_addr,
+			    &cli_addr,
+			    &srv_addr,
 			    sd,
 			    spoolss_client_terminated,
 			    data);
@@ -578,40 +580,33 @@ static char *get_bq_logfile(void)
 static NTSTATUS spoolssd_create_sockets(struct tevent_context *ev_ctx,
 		struct messaging_context *msg_ctx,
 		struct dcesrv_context *dce_ctx,
-		struct pf_listen_fd *listen_fd,
-		int *listen_fd_size)
+		TALLOC_CTX *mem_ctx,
+		struct pf_listen_fd **plisten_fds,
+		size_t *pnum_listen_fds)
 {
 	NTSTATUS status;
-	int fd = -1;
 	int rc;
 	enum rpc_service_mode_e epm_mode = rpc_epmapper_mode();
-	uint32_t i;
-	struct dcesrv_endpoint *e = NULL;
+	size_t i, num_fds;
+	struct pf_listen_fd *fds = NULL;
+	struct dcesrv_endpoint *e = dce_ctx->endpoint_list;
 
 	DBG_INFO("Initializing DCE/RPC connection endpoints\n");
 
-	for (e = dce_ctx->endpoint_list; e; e = e->next) {
-		status = dcesrv_create_endpoint_sockets(ev_ctx,
-							msg_ctx,
-							dce_ctx,
-							e,
-							listen_fd,
-							listen_fd_size);
-		if (!NT_STATUS_IS_OK(status)) {
-			char *ep_string = dcerpc_binding_string(
-					dce_ctx, e->ep_description);
-			DBG_ERR("Failed to create endpoint '%s': %s\n",
-				ep_string, nt_errstr(status));
-			TALLOC_FREE(ep_string);
-			goto done;
-		}
+	status = dcesrv_create_endpoint_list_pf_listen_fds(
+		ev_ctx, msg_ctx, dce_ctx, e, mem_ctx, &num_fds, &fds);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
 	}
 
-	for (i = 0; i < *listen_fd_size; i++) {
-		rc = listen(listen_fd[i].fd, pf_spoolss_cfg.max_allowed_clients);
+	for (i = 0; i < num_fds; i++) {
+		rc = listen(fds[i].fd, pf_spoolss_cfg.max_allowed_clients);
 		if (rc == -1) {
-			char *ep_string = dcerpc_binding_string(
-					dce_ctx, e->ep_description);
+			char *ep_string = NULL;
+			e = fds[i].fd_data;
+
+			ep_string = dcerpc_binding_string(dce_ctx,
+							  e->ep_description);
 			DBG_ERR("Failed to listen on endpoint '%s': %s\n",
 				ep_string, strerror(errno));
 			status = map_nt_error_from_unix(errno);
@@ -639,12 +634,11 @@ static NTSTATUS spoolssd_create_sockets(struct tevent_context *ev_ctx,
 		}
 	}
 
+	*plisten_fds = fds;
+	*pnum_listen_fds = num_fds;
+
 	status = NT_STATUS_OK;
 done:
-	if (fd != -1) {
-		close(fd);
-	}
-
 	return status;
 }
 
@@ -654,8 +648,8 @@ pid_t start_spoolssd(struct tevent_context *ev_ctx,
 {
 	pid_t pid;
 	NTSTATUS status;
-	struct pf_listen_fd listen_fds[1];
-	int listen_fds_size = 0;
+	struct pf_listen_fd *listen_fds = NULL;
+	size_t listen_fds_size = 0;
 	int ret;
 	bool ok;
 	const struct dcesrv_endpoint_server *ep_server = NULL;
@@ -769,7 +763,8 @@ pid_t start_spoolssd(struct tevent_context *ev_ctx,
 	status = spoolssd_create_sockets(ev_ctx,
 					 msg_ctx,
 					 dce_ctx,
-					 listen_fds,
+					 dce_ctx,
+					 &listen_fds,
 					 &listen_fds_size);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_ERR("Failed to create sockets: %s\n",
@@ -785,6 +780,7 @@ pid_t start_spoolssd(struct tevent_context *ev_ctx,
 				 pf_spoolss_cfg.max_children,
 				 &spoolss_children_main, dce_ctx,
 				 &spoolss_pool);
+	TALLOC_FREE(listen_fds);
 	if (!ok) {
 		exit(1);
 	}

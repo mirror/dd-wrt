@@ -349,7 +349,7 @@ struct dcesrv_endpoint_server {
 
 	/* this function can be used by other endpoint servers to
 	 * ask for a dcesrv_interface implementation
-	 * - iface must be reference to an already existeng struct !
+	 * - iface must be reference to an already existing struct !
 	 */
 	bool (*interface_by_name)(struct dcesrv_interface *iface, const char *);
 };
@@ -623,6 +623,8 @@ _PUBLIC_ void dcesrv_terminate_connection(struct dcesrv_connection *dce_conn,
 _PUBLIC_ void dcesrv_sock_report_output_data(struct dcesrv_connection *dce_conn);
 
 _PUBLIC_ NTSTATUS dcesrv_connection_loop_start(struct dcesrv_connection *conn);
+
+_PUBLIC_ NTSTATUS dcesrv_call_dispatch_local(struct dcesrv_call_state *call);
 
 _PUBLIC_ const struct dcesrv_interface *find_interface_by_uuid(
 				const struct dcesrv_endpoint *endpoint,

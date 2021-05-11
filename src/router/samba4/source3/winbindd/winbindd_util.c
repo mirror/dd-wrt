@@ -33,6 +33,9 @@
 #include "librpc/gen_ndr/ndr_drsblobs.h"
 #include "auth/credentials/credentials.h"
 #include "libsmb/samlogon_cache.h"
+#include "lib/util/smb_strtox.h"
+#include "lib/util/string_wrappers.h"
+#include "lib/global_contexts.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_WINBIND
@@ -123,8 +126,6 @@ static NTSTATUS add_trusted_domain(const char *domain_name,
 				   struct winbindd_domain **_d)
 {
 	struct winbindd_domain *domain = NULL;
-	const char **ignored_domains = NULL;
-	const char **dom = NULL;
 	int role = lp_server_role();
 	struct dom_sid_buf buf;
 
@@ -133,12 +134,8 @@ static NTSTATUS add_trusted_domain(const char *domain_name,
 		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	ignored_domains = lp_parm_string_list(-1, "winbind", "ignore domains", NULL);
-	for (dom=ignored_domains; dom && *dom; dom++) {
-		if (gen_fnmatch(*dom, domain_name) == 0) {
-			DEBUG(2,("Ignoring domain '%s'\n", domain_name));
-			return NT_STATUS_NO_SUCH_DOMAIN;
-		}
+	if (!is_allowed_domain(domain_name)) {
+		return NT_STATUS_NO_SUCH_DOMAIN;
 	}
 
 	/*

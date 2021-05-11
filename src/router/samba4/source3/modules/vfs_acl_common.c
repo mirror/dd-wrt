@@ -1034,6 +1034,7 @@ NTSTATUS fset_nt_acl_common(
 	TALLOC_CTX *frame = talloc_stackframe();
 	bool ignore_file_system_acl = lp_parm_bool(
 	    SNUM(handle->conn), module_name, "ignore system acls", false);
+	struct acl_common_fsp_ext *ext = NULL;
 
 	if (DEBUGLEVEL >= 10) {
 		DBG_DEBUG("incoming sd for file %s\n", fsp_str_dbg(fsp));
@@ -1090,6 +1091,12 @@ NTSTATUS fset_nt_acl_common(
 		psd->type |= SEC_DESC_SACL_PRESENT;
 	}
 
+	ext = VFS_ADD_FSP_EXTENSION(handle,
+				    fsp,
+				    struct acl_common_fsp_ext,
+				    NULL);
+	ext->setting_nt_acl = true;
+
 	if (ignore_file_system_acl) {
 		if (chown_needed) {
 			/* send only ownership stuff to lower layer */
@@ -1097,23 +1104,19 @@ NTSTATUS fset_nt_acl_common(
 			status = set_underlying_acl(handle, fsp, psd,
 						    security_info_sent, true);
 			if (!NT_STATUS_IS_OK(status)) {
-				TALLOC_FREE(frame);
-				return status;
+				goto done;
 			}
 		}
 		ZERO_ARRAY(hash);
 		status = store_v3_blob(store_acl_blob_fsp_fn, handle, fsp, psd,
 				       NULL, hash);
-
-		TALLOC_FREE(frame);
-		return status;
+		goto done;
 	}
 
 	status = set_underlying_acl(handle, fsp, psd, security_info_sent,
 				    chown_needed);
 	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(frame);
-		return status;
+		goto done;
 	}
 
 	/* Get the full underlying sd, then hash. */
@@ -1124,14 +1127,12 @@ NTSTATUS fset_nt_acl_common(
 					  &pdesc_next);
 
 	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(frame);
-		return status;
+		goto done;
 	}
 
 	status = hash_sd_sha256(pdesc_next, hash);
 	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(frame);
-		return status;
+		goto done;
 	}
 
 	/* Get the full underlying sd, then hash. */
@@ -1147,14 +1148,12 @@ NTSTATUS fset_nt_acl_common(
 		status = store_v3_blob(store_acl_blob_fsp_fn, handle, fsp, psd,
 				       pdesc_next, hash);
 
-		TALLOC_FREE(frame);
-		return status;
+		goto done;
 	}
 
 	status = hash_blob_sha256(sys_acl_blob, sys_acl_hash);
 	if (!NT_STATUS_IS_OK(status)) {
-		TALLOC_FREE(frame);
-		return status;
+		goto done;
 	}
 
 	if (DEBUGLEVEL >= 10) {
@@ -1176,12 +1175,13 @@ NTSTATUS fset_nt_acl_common(
 				     sys_acl_description, sys_acl_hash);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_DEBUG("create_sys_acl_blob failed\n");
-		TALLOC_FREE(frame);
-		return status;
+		goto done;
 	}
 
 	status = store_acl_blob_fsp_fn(handle, fsp, &blob);
 
+done:
+	VFS_REMOVE_FSP_EXTENSION(handle, fsp);
 	TALLOC_FREE(frame);
 	return status;
 }
@@ -1235,8 +1235,8 @@ static int acl_common_remove_object(vfs_handle_struct *handle,
 
 	/* Ensure we have this file open with DELETE access. */
 	id = vfs_file_id_from_sbuf(conn, &local_fname->st);
-	for (fsp = file_find_di_first(conn->sconn, id); fsp;
-		     fsp = file_find_di_next(fsp)) {
+	for (fsp = file_find_di_first(conn->sconn, id, true); fsp;
+		     fsp = file_find_di_next(fsp, true)) {
 		if (fsp->access_mask & DELETE_ACCESS &&
 		    fsp->fsp_flags.delete_on_close)
 		{

@@ -316,7 +316,7 @@ create_release() {
 
 	echo "Signing ${tarname} => ${tarname}.asc"
 	rm -f "${tarname}.asc"
-	gpg -u "${GPG_USER}" --detach-sign --armor ${tarname} || {
+	gpg --default-key "${GPG_KEYID}" --detach-sign --armor ${tarname} || {
 		return 1
 	}
 	test -f "${tarname}.asc" || {
@@ -362,7 +362,7 @@ patch_release() {
 	echo "Signing ${patchfile} => ${patchfile}.asc"
 	rm -f "${patchfile}.asc"
 	CLEANUP_FILES="${CLEANUP_FILES} ${patchfile}.asc"
-	gpg -u "${GPG_USER}" --detach-sign --armor ${patchfile} || {
+	gpg --default-key "${GPG_KEYID}" --detach-sign --armor ${patchfile} || {
 		return 1
 	}
 	test -f "${patchfile}.asc" || {
@@ -1053,7 +1053,7 @@ samba-rc)
 	}
 
 	test -z "${GPG_KEYID-}"  && {
-		GPG_KEYID='6F33915B6568B7EA'
+		GPG_KEYID='AA99442FB680B620'
 	}
 
 	productbase="samba"
@@ -1074,7 +1074,7 @@ samba-stable)
 	}
 
 	test -z "${GPG_KEYID-}"  && {
-		GPG_KEYID='6F33915B6568B7EA'
+		GPG_KEYID='AA99442FB680B620'
 	}
 
 	productbase="samba"
@@ -1096,7 +1096,7 @@ TODO-samba-security)
 	}
 
 	test -z "${GPG_KEYID-}"  && {
-		GPG_KEYID='6F33915B6568B7EA'
+		GPG_KEYID='AA99442FB680B620'
 	}
 
 	productbase="samba"

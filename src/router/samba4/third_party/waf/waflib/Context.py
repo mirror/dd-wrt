@@ -6,19 +6,29 @@
 Classes and functions enabling the command system
 """
 
-import os, re, imp, sys
+import os, re, sys
 from waflib import Utils, Errors, Logs
 import waflib.Node
 
+if sys.hexversion > 0x3040000:
+	import types
+	class imp(object):
+		new_module = lambda x: types.ModuleType(x)
+else:
+	import imp
+
 # the following 3 constants are updated on each new release (do not touch)
-HEXVERSION=0x2001200
+HEXVERSION=0x2001500
 """Constant updated on new releases"""
 
-WAFVERSION="2.0.18"
+WAFVERSION="2.0.21"
 """Constant updated on new releases"""
 
-WAFREVISION="314689b8994259a84f0de0aaef74d7ce91f541ad"
+WAFREVISION="edde20a6425a5c3eb6b47d5f3f5c4fbc93fed5f4"
 """Git revision when the waf version is updated"""
+
+WAFNAME="waf"
+"""Application name displayed on --help"""
 
 ABI = 20
 """Version of the build data cache file format (used in :py:const:`waflib.Context.DBFILE`)"""
@@ -520,7 +530,7 @@ class Context(ctx):
 		"""
 		Prints a configuration message of the form ``msg: result``.
 		The second part of the message will be in colors. The output
-		can be disabled easly by setting ``in_msg`` to a positive value::
+		can be disabled easily by setting ``in_msg`` to a positive value::
 
 			def configure(conf):
 				self.in_msg = 1

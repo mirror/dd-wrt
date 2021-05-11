@@ -23,6 +23,7 @@
 #include "../lib/util/tevent_ntstatus.h"
 #include "libads/sitename_cache.h"
 #include "../lib/addns/dnsquery.h"
+#include "../lib/addns/dnsquery_srv.h"
 #include "../libcli/netlogon/netlogon.h"
 #include "lib/async_req/async_sock.h"
 #include "lib/tsocket/tsocket.h"
@@ -31,9 +32,70 @@
 #include "../libcli/nbt/libnbt.h"
 #include "libads/kerberos_proto.h"
 #include "lib/gencache.h"
+#include "librpc/gen_ndr/dns.h"
+#include "lib/util/util_net.h"
+#include "lib/util/string_wrappers.h"
 
 /* nmbd.c sets this to True. */
 bool global_in_nmbd = False;
+
+/*
+ * Utility function to convert from a sockaddr_storage
+ * array to a struct samba_sockaddr array.
+ */
+
+static NTSTATUS sockaddr_array_to_samba_sockaddr_array(
+				TALLOC_CTX *ctx,
+				struct samba_sockaddr **sa_out,
+				size_t *count_out,
+				const struct sockaddr_storage *ss_in,
+				size_t count_in)
+{
+	struct samba_sockaddr *sa = NULL;
+	size_t i;
+	size_t count = 0;
+
+	if (count_in == 0) {
+		/*
+		 * Zero length arrays are returned as NULL.
+		 * in the name resolution code.
+		 */
+		*count_out = 0;
+		*sa_out = NULL;
+		return NT_STATUS_OK;
+	}
+	sa = talloc_zero_array(ctx,
+				struct samba_sockaddr,
+				count_in);
+	if (sa == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+	count = 0;
+	for (i = 0; i < count_in; i++) {
+		bool ok;
+
+		/* Filter out zero addresses. */
+		if (is_zero_addr(&ss_in[i])) {
+			continue;
+		}
+		ok = sockaddr_storage_to_samba_sockaddr(&sa[count],
+							&ss_in[i]);
+		if (!ok) {
+			continue;
+		}
+		count++;
+	}
+	if (count == 0) {
+		/*
+		 * Zero length arrays are returned as NULL.
+		 * in the name resolution code.
+		 */
+		TALLOC_FREE(sa);
+	}
+	*count_out = count;
+	*sa_out = sa;
+	return NT_STATUS_OK;
+}
 
 /****************************
  * SERVER AFFINITY ROUTINES *
@@ -219,24 +281,27 @@ char *saf_fetch(TALLOC_CTX *mem_ctx, const char *domain )
 	return server;
 }
 
-static void set_socket_addr_v4(struct sockaddr_storage *addr)
+static void set_socket_addr_v4(struct samba_sockaddr *addr)
 {
-	if (!interpret_string_addr(addr, lp_nbt_client_socket_address(),
+	if (!interpret_string_addr(&addr->u.ss, lp_nbt_client_socket_address(),
 				   AI_NUMERICHOST|AI_PASSIVE)) {
-		zero_sockaddr(addr);
+		zero_sockaddr(&addr->u.ss);
+		/* zero_sockaddr sets family to AF_INET. */
+		addr->sa_socklen = sizeof(struct sockaddr_in);
 	}
-	if (addr->ss_family != AF_INET) {
-		zero_sockaddr(addr);
+	if (addr->u.ss.ss_family != AF_INET) {
+		zero_sockaddr(&addr->u.ss);
+		/* zero_sockaddr sets family to AF_INET. */
+		addr->sa_socklen = sizeof(struct sockaddr_in);
 	}
 }
 
 static struct in_addr my_socket_addr_v4(void)
 {
-	struct sockaddr_storage my_addr;
-	struct sockaddr_in *in_addr = (struct sockaddr_in *)((char *)&my_addr);
+	struct samba_sockaddr my_addr = {0};
 
 	set_socket_addr_v4(&my_addr);
-	return in_addr->sin_addr;
+	return my_addr.u.in.sin_addr;
 }
 
 /****************************************************************************
@@ -257,23 +322,24 @@ static int generate_trn_id(void)
 ****************************************************************************/
 
 static struct node_status *parse_node_status(TALLOC_CTX *mem_ctx, char *p,
-				int *num_names,
+				size_t *num_names,
 				struct node_status_extra *extra)
 {
 	struct node_status *ret;
-	int i;
+	size_t i;
+	size_t result_count = 0;
 
-	*num_names = CVAL(p,0);
+	result_count = CVAL(p,0);
 
-	if (*num_names == 0)
+	if (result_count == 0)
 		return NULL;
 
-	ret = talloc_array(mem_ctx, struct node_status,*num_names);
+	ret = talloc_array(mem_ctx, struct node_status,result_count);
 	if (!ret)
 		return NULL;
 
 	p++;
-	for (i=0;i< *num_names;i++) {
+	for (i=0;i< result_count;i++) {
 		strlcpy(ret[i].name,p,16);
 		trim_char(ret[i].name,'\0',' ');
 		ret[i].type = CVAL(p,15);
@@ -288,6 +354,7 @@ static struct node_status *parse_node_status(TALLOC_CTX *mem_ctx, char *p,
 	if (extra) {
 		memcpy(&extra->mac_addr, p, 6); /* Fill in the mac addr */
 	}
+	*num_names = result_count;
 	return ret;
 }
 
@@ -411,10 +478,7 @@ static void sock_packet_read_got_socket(struct tevent_req *subreq)
 		subreq, struct tevent_req);
 	struct sock_packet_read_state *state = tevent_req_data(
 		req, struct sock_packet_read_state);
-	union {
-		struct sockaddr sa;
-		struct sockaddr_in sin;
-	} addr;
+	struct samba_sockaddr addr = {0};
 	ssize_t ret;
 	ssize_t received;
 	int err;
@@ -443,8 +507,8 @@ static void sock_packet_read_got_socket(struct tevent_req *subreq)
 		goto retry;
 	}
 	ret = tsocket_address_bsd_sockaddr(state->addr,
-					   &addr.sa,
-					   sizeof(addr.sin));
+					&addr.u.sa,
+					sizeof(addr.u.in));
 	if (ret == -1) {
 		tevent_req_nterror(req, map_nt_error_from_unix(errno));
 		return;
@@ -452,7 +516,7 @@ static void sock_packet_read_got_socket(struct tevent_req *subreq)
 
 	state->packet = parse_packet_talloc(
 		state, (char *)state->buf, received, state->type,
-		addr.sin.sin_addr, addr.sin.sin_port);
+		addr.u.in.sin_addr, addr.u.in.sin_port);
 	if (state->packet == NULL) {
 		DEBUG(10, ("parse_packet failed\n"));
 		goto retry;
@@ -528,8 +592,8 @@ static void nb_trans_send_next(struct tevent_req *subreq);
 static struct tevent_req *nb_trans_send(
 	TALLOC_CTX *mem_ctx,
 	struct tevent_context *ev,
-	const struct sockaddr_storage *_my_addr,
-	const struct sockaddr_storage *_dst_addr,
+	const struct samba_sockaddr *_my_addr,
+	const struct samba_sockaddr *_dst_addr,
 	bool bcast,
 	uint8_t *buf, size_t buflen,
 	enum packet_type type, int trn_id,
@@ -537,12 +601,10 @@ static struct tevent_req *nb_trans_send(
 			  void *private_data),
 	void *private_data)
 {
-	const struct sockaddr *my_addr =
-		discard_const_p(const struct sockaddr, _my_addr);
-	size_t my_addr_len = sizeof(*_my_addr);
-	const struct sockaddr *dst_addr =
-		discard_const_p(const struct sockaddr, _dst_addr);
-	size_t dst_addr_len = sizeof(*_dst_addr);
+	const struct sockaddr *my_addr = &_my_addr->u.sa;
+	size_t my_addr_len = sizeof(_my_addr->u.in); /*We know it's AF_INET.*/
+	const struct sockaddr *dst_addr = &_dst_addr->u.sa;
+	size_t dst_addr_len = sizeof(_dst_addr->u.in); /*We know it's AF_INET.*/
 	struct tevent_req *req, *subreq;
 	struct nb_trans_state *state;
 	int ret;
@@ -709,8 +771,8 @@ static NTSTATUS nb_trans_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 **************************************************************************/
 
 struct node_status_query_state {
-	struct sockaddr_storage my_addr;
-	struct sockaddr_storage addr;
+	struct samba_sockaddr my_addr;
+	struct samba_sockaddr addr;
 	uint8_t buf[1024];
 	ssize_t buflen;
 	struct packet_struct *packet;
@@ -729,7 +791,7 @@ struct tevent_req *node_status_query_send(TALLOC_CTX *mem_ctx,
 	struct node_status_query_state *state;
 	struct packet_struct p;
 	struct nmb_packet *nmb = &p.packet.nmb;
-	struct sockaddr_in *in_addr;
+	bool ok;
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct node_status_query_state);
@@ -743,9 +805,13 @@ struct tevent_req *node_status_query_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	state->addr = *addr;
-	in_addr = (struct sockaddr_in *)(void *)&state->addr;
-	in_addr->sin_port = htons(NMB_PORT);
+	ok = sockaddr_storage_to_samba_sockaddr(&state->addr, addr);
+	if (!ok) {
+		/* node status must be IPv4 */
+		tevent_req_nterror(req, NT_STATUS_INVALID_ADDRESS);
+		return tevent_req_post(req, ev);
+	}
+	state->addr.u.in.sin_port = htons(NMB_PORT);
 
 	set_socket_addr_v4(&state->my_addr);
 
@@ -775,10 +841,17 @@ struct tevent_req *node_status_query_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	subreq = nb_trans_send(state, ev, &state->my_addr, &state->addr, false,
-			       state->buf, state->buflen,
-			       NMB_PACKET, nmb->header.name_trn_id,
-			       node_status_query_validator, NULL);
+	subreq = nb_trans_send(state,
+				ev,
+				&state->my_addr,
+				&state->addr,
+				false,
+				state->buf,
+				state->buflen,
+				NMB_PACKET,
+				nmb->header.name_trn_id,
+				node_status_query_validator,
+				NULL);
 	if (tevent_req_nomem(subreq, req)) {
 		DEBUG(10, ("nb_trans_send failed\n"));
 		return tevent_req_post(req, ev);
@@ -828,13 +901,13 @@ static void node_status_query_done(struct tevent_req *subreq)
 
 NTSTATUS node_status_query_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 				struct node_status **pnode_status,
-				int *pnum_names,
+				size_t *pnum_names,
 				struct node_status_extra *extra)
 {
 	struct node_status_query_state *state = tevent_req_data(
 		req, struct node_status_query_state);
 	struct node_status *node_status;
-	int num_names;
+	size_t num_names = 0;
 	NTSTATUS status;
 
 	if (tevent_req_is_nterror(req, &status)) {
@@ -854,7 +927,7 @@ NTSTATUS node_status_query_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 NTSTATUS node_status_query(TALLOC_CTX *mem_ctx, struct nmb_name *name,
 			   const struct sockaddr_storage *addr,
 			   struct node_status **pnode_status,
-			   int *pnum_names,
+			   size_t *pnum_names,
 			   struct node_status_extra *extra)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
@@ -886,9 +959,15 @@ static bool name_status_lmhosts(const struct sockaddr_storage *paddr,
 	FILE *f;
 	char *name;
 	int name_type;
-	struct sockaddr_storage addr;
+	struct samba_sockaddr addr_in = {0};
+	struct samba_sockaddr addr = {0};
+	bool ok;
 
-	if (paddr->ss_family != AF_INET) {
+	ok = sockaddr_storage_to_samba_sockaddr(&addr_in, paddr);
+	if (!ok) {
+		return false;
+	}
+	if (addr_in.u.ss.ss_family != AF_INET) {
 		return false;
 	}
 
@@ -897,16 +976,14 @@ static bool name_status_lmhosts(const struct sockaddr_storage *paddr,
 		return false;
 	}
 
-	while (getlmhostsent(talloc_tos(), f, &name, &name_type, &addr)) {
-		if (addr.ss_family != AF_INET) {
+	while (getlmhostsent(talloc_tos(), f, &name, &name_type, &addr.u.ss)) {
+		if (addr.u.ss.ss_family != AF_INET) {
 			continue;
 		}
 		if (name_type != qname_type) {
 			continue;
 		}
-		if (memcmp(&((const struct sockaddr_in *)paddr)->sin_addr,
-			   &((const struct sockaddr_in *)&addr)->sin_addr,
-			   sizeof(struct in_addr)) == 0) {
+		if (sockaddr_equal(&addr_in.u.sa, &addr.u.sa)) {
 			fstrcpy(pname, name);
 			endlmhosts(f);
 			return true;
@@ -928,10 +1005,9 @@ bool name_status_find(const char *q_name,
 			fstring name)
 {
 	char addr[INET6_ADDRSTRLEN];
-	struct sockaddr_storage ss;
 	struct node_status *addrs = NULL;
 	struct nmb_name nname;
-	int count = 0, i;
+	size_t count = 0, i;
 	bool result = false;
 	NTSTATUS status;
 
@@ -963,8 +1039,6 @@ bool name_status_find(const char *q_name,
 		namecache_status_store(q_name, q_type, type, to_ss, name);
 		return true;
 	}
-
-	set_socket_addr_v4(&ss);
 
 	/* W2K PDC's seem not to respond to '*'#0. JRA */
 	make_nmb_name(&nname, q_name, q_type);
@@ -1017,10 +1091,23 @@ static int addr_compare(const struct sockaddr_storage *ss1,
 	int max_bits1=0, max_bits2=0;
 	int num_interfaces = iface_count();
 	int i;
+	struct samba_sockaddr sa1;
+	struct samba_sockaddr sa2;
+	bool ok;
+
+	ok = sockaddr_storage_to_samba_sockaddr(&sa1, ss1);
+	if (!ok) {
+		return 0; /* No change. */
+	}
+
+	ok = sockaddr_storage_to_samba_sockaddr(&sa2, ss2);
+	if (!ok) {
+		return 0; /* No change. */
+	}
 
 	/* Sort IPv4 addresses first. */
-	if (ss1->ss_family != ss2->ss_family) {
-		if (ss2->ss_family == AF_INET) {
+	if (sa1.u.ss.ss_family != sa2.u.ss.ss_family) {
+		if (sa2.u.ss.ss_family == AF_INET) {
 			return 1;
 		} else {
 			return -1;
@@ -1031,34 +1118,32 @@ static int addr_compare(const struct sockaddr_storage *ss1,
 	 * family. */
 
 	for (i=0;i<num_interfaces;i++) {
-		const struct sockaddr_storage *pss = iface_n_bcast(i);
+		struct samba_sockaddr sif = {0};
 		const unsigned char *p_ss1 = NULL;
 		const unsigned char *p_ss2 = NULL;
 		const unsigned char *p_if = NULL;
 		size_t len = 0;
 		int bits1, bits2;
 
-		if (pss->ss_family != ss1->ss_family) {
+		ok = sockaddr_storage_to_samba_sockaddr(&sif, iface_n_bcast(i));
+		if (!ok) {
+			return 0; /* No change. */
+		}
+		if (sif.u.ss.ss_family != sa1.u.ss.ss_family) {
 			/* Ignore interfaces of the wrong type. */
 			continue;
 		}
-		if (pss->ss_family == AF_INET) {
-			p_if = (const unsigned char *)
-				&((const struct sockaddr_in *)pss)->sin_addr;
-			p_ss1 = (const unsigned char *)
-				&((const struct sockaddr_in *)ss1)->sin_addr;
-			p_ss2 = (const unsigned char *)
-				&((const struct sockaddr_in *)ss2)->sin_addr;
+		if (sif.u.ss.ss_family == AF_INET) {
+			p_if = (const unsigned char *)&sif.u.in.sin_addr;
+			p_ss1 = (const unsigned char *)&sa1.u.in.sin_addr;
+			p_ss2 = (const unsigned char *)&sa2.u.in.sin_addr;
 			len = 4;
 		}
 #if defined(HAVE_IPV6)
-		if (pss->ss_family == AF_INET6) {
-			p_if = (const unsigned char *)
-				&((const struct sockaddr_in6 *)pss)->sin6_addr;
-			p_ss1 = (const unsigned char *)
-				&((const struct sockaddr_in6 *)ss1)->sin6_addr;
-			p_ss2 = (const unsigned char *)
-				&((const struct sockaddr_in6 *)ss2)->sin6_addr;
+		if (sif.u.ss.ss_family == AF_INET6) {
+			p_if = (const unsigned char *)&sif.u.in6.sin6_addr;
+			p_ss1 = (const unsigned char *)&sa1.u.in6.sin6_addr;
+			p_ss2 = (const unsigned char *)&sa2.u.in6.sin6_addr;
 			len = 16;
 		}
 #endif
@@ -1072,15 +1157,15 @@ static int addr_compare(const struct sockaddr_storage *ss1,
 	}
 
 	/* Bias towards directly reachable IPs */
-	if (iface_local((const struct sockaddr *)ss1)) {
-		if (ss1->ss_family == AF_INET) {
+	if (iface_local(&sa1.u.sa)) {
+		if (sa1.u.ss.ss_family == AF_INET) {
 			max_bits1 += 32;
 		} else {
 			max_bits1 += 128;
 		}
 	}
-	if (iface_local((const struct sockaddr *)ss2)) {
-		if (ss2->ss_family == AF_INET) {
+	if (iface_local(&sa2.u.sa)) {
+		if (sa2.u.ss.ss_family == AF_INET) {
 			max_bits2 += 32;
 		} else {
 			max_bits2 += 128;
@@ -1089,36 +1174,13 @@ static int addr_compare(const struct sockaddr_storage *ss1,
 	return max_bits2 - max_bits1;
 }
 
-/*******************************************************************
- compare 2 ldap IPs by nearness to our interfaces - used in qsort
-*******************************************************************/
-
-static int ip_service_compare(struct ip_service *ss1, struct ip_service *ss2)
-{
-	int result;
-
-	if ((result = addr_compare(&ss1->ss, &ss2->ss)) != 0) {
-		return result;
-	}
-
-	if (ss1->port > ss2->port) {
-		return 1;
-	}
-
-	if (ss1->port < ss2->port) {
-		return -1;
-	}
-
-	return 0;
-}
-
 /*
   sort an IP list so that names that are close to one of our interfaces
   are at the top. This prevents the problem where a WINS server returns an IP
   that is not reachable from our subnet as the first match
 */
 
-static void sort_addr_list(struct sockaddr_storage *sslist, int count)
+static void sort_addr_list(struct sockaddr_storage *sslist, size_t count)
 {
 	if (count <= 1) {
 		return;
@@ -1127,37 +1189,40 @@ static void sort_addr_list(struct sockaddr_storage *sslist, int count)
 	TYPESAFE_QSORT(sslist, count, addr_compare);
 }
 
-static void sort_service_list(struct ip_service *servlist, int count)
+static int samba_sockaddr_compare(struct samba_sockaddr *sa1,
+				struct samba_sockaddr *sa2)
+{
+	return addr_compare(&sa1->u.ss, &sa2->u.ss);
+}
+
+static void sort_sa_list(struct samba_sockaddr *salist, size_t count)
 {
 	if (count <= 1) {
 		return;
 	}
 
-	TYPESAFE_QSORT(servlist, count, ip_service_compare);
+	TYPESAFE_QSORT(salist, count, samba_sockaddr_compare);
 }
 
 /**********************************************************************
- Remove any duplicate address/port pairs in the list
+ Remove any duplicate address/port pairs in the samba_sockaddr array.
  *********************************************************************/
 
-int remove_duplicate_addrs2(struct ip_service *iplist, int count )
+size_t remove_duplicate_addrs2(struct samba_sockaddr *salist, size_t count )
 {
-	int i, j;
+	size_t i, j;
 
-	DEBUG(10,("remove_duplicate_addrs2: "
-			"looking for duplicate address/port pairs\n"));
+	DBG_DEBUG("looking for duplicate address/port pairs\n");
 
 	/* One loop to set duplicates to a zero addr. */
-	for ( i=0; i<count; i++ ) {
-		if ( is_zero_addr(&iplist[i].ss)) {
+	for (i=0; i < count; i++) {
+		if (is_zero_addr(&salist[i].u.ss)) {
 			continue;
 		}
 
-		for ( j=i+1; j<count; j++ ) {
-			if (sockaddr_equal((struct sockaddr *)(void *)&iplist[i].ss,
-					   (struct sockaddr *)(void *)&iplist[j].ss) &&
-					iplist[i].port == iplist[j].port) {
-				zero_sockaddr(&iplist[j].ss);
+		for (j=i+1; j<count; j++) {
+			if (sockaddr_equal(&salist[i].u.sa, &salist[j].u.sa)) {
+				zero_sockaddr(&salist[j].u.ss);
 			}
 		}
 	}
@@ -1165,8 +1230,8 @@ int remove_duplicate_addrs2(struct ip_service *iplist, int count )
 	/* Now remove any addresses set to zero above. */
 	for (i = 0; i < count; i++) {
 		while (i < count &&
-				is_zero_addr(&iplist[i].ss)) {
-			ARRAY_DEL_ELEMENT(iplist, i, count);
+				is_zero_addr(&salist[i].u.ss)) {
+			ARRAY_DEL_ELEMENT(salist, i, count);
 			count--;
 		}
 	}
@@ -1174,13 +1239,15 @@ int remove_duplicate_addrs2(struct ip_service *iplist, int count )
 	return count;
 }
 
-static bool prioritize_ipv4_list(struct ip_service *iplist, int count)
+static bool prioritize_ipv4_list(struct samba_sockaddr *salist, size_t count)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
-	struct ip_service *iplist_new = talloc_array(frame, struct ip_service, count);
-	int i, j;
+	struct samba_sockaddr *salist_new = talloc_array(frame,
+						struct samba_sockaddr,
+						count);
+	size_t i, j;
 
-	if (iplist_new == NULL) {
+	if (salist_new == NULL) {
 		TALLOC_FREE(frame);
 		return false;
 	}
@@ -1189,19 +1256,19 @@ static bool prioritize_ipv4_list(struct ip_service *iplist, int count)
 
 	/* Copy IPv4 first. */
 	for (i = 0; i < count; i++) {
-		if (iplist[i].ss.ss_family == AF_INET) {
-			iplist_new[j++] = iplist[i];
+		if (salist[i].u.ss.ss_family == AF_INET) {
+			salist_new[j++] = salist[i];
 		}
 	}
 
 	/* Copy IPv6. */
 	for (i = 0; i < count; i++) {
-		if (iplist[i].ss.ss_family != AF_INET) {
-			iplist_new[j++] = iplist[i];
+		if (salist[i].u.ss.ss_family != AF_INET) {
+			salist_new[j++] = salist[i];
 		}
 	}
 
-	memcpy(iplist, iplist_new, sizeof(struct ip_service)*count);
+	memcpy(salist, salist_new, sizeof(struct samba_sockaddr)*count);
 	TALLOC_FREE(frame);
 	return true;
 }
@@ -1214,8 +1281,8 @@ static bool prioritize_ipv4_list(struct ip_service *iplist, int count)
 ****************************************************************************/
 
 struct name_query_state {
-	struct sockaddr_storage my_addr;
-	struct sockaddr_storage addr;
+	struct samba_sockaddr my_addr;
+	struct samba_sockaddr addr;
 	bool bcast;
 	bool bcast_star_query;
 
@@ -1227,7 +1294,7 @@ struct name_query_state {
 	uint8_t flags;
 
 	struct sockaddr_storage *addrs;
-	int num_addrs;
+	size_t num_addrs;
 };
 
 static bool name_query_validator(struct packet_struct *p, void *private_data);
@@ -1243,7 +1310,7 @@ struct tevent_req *name_query_send(TALLOC_CTX *mem_ctx,
 	struct name_query_state *state;
 	struct packet_struct p;
 	struct nmb_packet *nmb = &p.packet.nmb;
-	struct sockaddr_in *in_addr;
+	bool ok;
 
 	req = tevent_req_create(mem_ctx, &state, struct name_query_state);
 	if (req == NULL) {
@@ -1264,9 +1331,13 @@ struct tevent_req *name_query_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	state->addr = *addr;
-	in_addr = (struct sockaddr_in *)(void *)&state->addr;
-	in_addr->sin_port = htons(NMB_PORT);
+	ok = sockaddr_storage_to_samba_sockaddr(&state->addr, addr);
+	if (!ok) {
+		/* Node status must be IPv4 */
+		tevent_req_nterror(req, NT_STATUS_INVALID_ADDRESS);
+		return tevent_req_post(req, ev);
+	}
+	state->addr.u.in.sin_port = htons(NMB_PORT);
 
 	set_socket_addr_v4(&state->my_addr);
 
@@ -1308,10 +1379,17 @@ struct tevent_req *name_query_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
-	subreq = nb_trans_send(state, ev, &state->my_addr, &state->addr, bcast,
-			       state->buf, state->buflen,
-			       NMB_PACKET, nmb->header.name_trn_id,
-			       name_query_validator, state);
+	subreq = nb_trans_send(state,
+				ev,
+				&state->my_addr,
+				&state->addr,
+				bcast,
+				state->buf,
+				state->buflen,
+				NMB_PACKET,
+				nmb->header.name_trn_id,
+				name_query_validator,
+				state);
 	if (tevent_req_nomem(subreq, req)) {
 		DEBUG(10, ("nb_trans_send failed\n"));
 		return tevent_req_post(req, ev);
@@ -1404,7 +1482,9 @@ static bool name_query_validator(struct packet_struct *p, void *private_data)
 		uint16_t flags;
 		struct in_addr ip;
 		struct sockaddr_storage addr;
-		int j;
+		struct samba_sockaddr sa = {0};
+		bool ok;
+		size_t j;
 
 		flags = RSVAL(&nmb->answers->rdata[i*6], 0);
 		got_unique_netbios_name |= ((flags & 0x8000) == 0);
@@ -1412,14 +1492,24 @@ static bool name_query_validator(struct packet_struct *p, void *private_data)
 		putip((char *)&ip,&nmb->answers->rdata[2+i*6]);
 		in_addr_to_sockaddr_storage(&addr, ip);
 
-		if (is_zero_addr(&addr)) {
+		ok = sockaddr_storage_to_samba_sockaddr(&sa, &addr);
+		if (!ok) {
+			continue;
+		}
+
+		if (is_zero_addr(&sa.u.ss)) {
 			continue;
 		}
 
 		for (j=0; j<state->num_addrs; j++) {
-			if (sockaddr_equal(
-				    (struct sockaddr *)(void *)&addr,
-				    (struct sockaddr *)(void *)&state->addrs[j])) {
+			struct samba_sockaddr sa_j = {0};
+
+			ok = sockaddr_storage_to_samba_sockaddr(&sa_j,
+						&state->addrs[j]);
+			if (!ok) {
+				continue;
+			}
+			if (sockaddr_equal(&sa.u.sa, &sa_j.u.sa)) {
 				break;
 			}
 		}
@@ -1431,6 +1521,10 @@ static bool name_query_validator(struct packet_struct *p, void *private_data)
 		DEBUGADD(2,("%s ",inet_ntoa(ip)));
 
 		state->addrs[state->num_addrs] = addr;
+		/* wrap check. */
+		if (state->num_addrs + 1 < state->num_addrs) {
+			return false;
+		}
 		state->num_addrs += 1;
 	}
 	DEBUGADD(2,(")\n"));
@@ -1487,7 +1581,7 @@ static void name_query_done(struct tevent_req *subreq)
 }
 
 NTSTATUS name_query_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
-			 struct sockaddr_storage **addrs, int *num_addrs,
+			 struct sockaddr_storage **addrs, size_t *num_addrs,
 			 uint8_t *flags)
 {
 	struct name_query_state *state = tevent_req_data(
@@ -1524,7 +1618,7 @@ NTSTATUS name_query(const char *name, int name_type,
 		    const struct sockaddr_storage *to_ss,
 		    TALLOC_CTX *mem_ctx,
 		    struct sockaddr_storage **addrs,
-		    int *num_addrs, uint8_t *flags)
+		    size_t *num_addrs, uint8_t *flags)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
 	struct tevent_context *ev;
@@ -1557,57 +1651,6 @@ NTSTATUS name_query(const char *name, int name_type,
 	return status;
 }
 
-/********************************************************
- Convert an array if struct sockaddr_storage to struct ip_service
- return false on failure.  Port is set to PORT_NONE;
- pcount is [in/out] - it is the length of ss_list on input,
- and the length of return_iplist on output as we remove any
- zero addresses from ss_list.
-*********************************************************/
-
-static bool convert_ss2service(struct ip_service **return_iplist,
-		const struct sockaddr_storage *ss_list,
-		int *pcount)
-{
-	int i;
-	int orig_count = *pcount;
-	int real_count = 0;
-
-	if (orig_count==0 || !ss_list )
-		return False;
-
-	/* Filter out zero addrs. */
-	for ( i=0; i<orig_count; i++ ) {
-		if (is_zero_addr(&ss_list[i])) {
-			continue;
-		}
-		real_count++;
-	}
-	if (real_count==0) {
-		return false;
-	}
-
-	/* copy the ip address; port will be PORT_NONE */
-	if ((*return_iplist = SMB_MALLOC_ARRAY(struct ip_service, real_count)) ==
-			NULL) {
-		DEBUG(0,("convert_ip2service: malloc failed "
-			"for %d enetries!\n", real_count ));
-		return False;
-	}
-
-	for ( i=0, real_count = 0; i<orig_count; i++ ) {
-		if (is_zero_addr(&ss_list[i])) {
-			continue;
-		}
-		(*return_iplist)[real_count].ss   = ss_list[i];
-		(*return_iplist)[real_count].port = PORT_NONE;
-		real_count++;
-	}
-
-	*pcount = real_count;
-	return true;
-}
-
 struct name_queries_state {
 	struct tevent_context *ev;
 	const char *name;
@@ -1615,17 +1658,17 @@ struct name_queries_state {
 	bool bcast;
 	bool recurse;
 	const struct sockaddr_storage *addrs;
-	int num_addrs;
+	size_t num_addrs;
 	int wait_msec;
 	int timeout_msec;
 
 	struct tevent_req **subreqs;
-	int num_received;
-	int num_sent;
+	size_t num_received;
+	size_t num_sent;
 
-	int received_index;
+	size_t received_index;
 	struct sockaddr_storage *result_addrs;
-	int num_result_addrs;
+	size_t num_result_addrs;
 	uint8_t flags;
 };
 
@@ -1641,7 +1684,7 @@ static struct tevent_req *name_queries_send(
 	const char *name, int name_type,
 	bool bcast, bool recurse,
 	const struct sockaddr_storage *addrs,
-	int num_addrs, int wait_msec, int timeout_msec)
+	size_t num_addrs, int wait_msec, int timeout_msec)
 {
 	struct tevent_req *req, *subreq;
 	struct name_queries_state *state;
@@ -1702,7 +1745,7 @@ static void name_queries_done(struct tevent_req *subreq)
 		subreq, struct tevent_req);
 	struct name_queries_state *state = tevent_req_data(
 		req, struct name_queries_state);
-	int i;
+	size_t i;
 	NTSTATUS status;
 
 	status = name_query_recv(subreq, state, &state->result_addrs,
@@ -1719,6 +1762,11 @@ static void name_queries_done(struct tevent_req *subreq)
 	}
 	TALLOC_FREE(state->subreqs[i]);
 
+	/* wrap check. */
+	if (state->num_received + 1 < state->num_received) {
+		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		return;
+	}
 	state->num_received += 1;
 
 	if (!NT_STATUS_IS_OK(status)) {
@@ -1777,8 +1825,8 @@ static void name_queries_next(struct tevent_req *subreq)
 
 static NTSTATUS name_queries_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 				  struct sockaddr_storage **result_addrs,
-				  int *num_result_addrs, uint8_t *flags,
-				  int *received_index)
+				  size_t *num_result_addrs, uint8_t *flags,
+				  size_t *received_index)
 {
 	struct name_queries_state *state = tevent_req_data(
 		req, struct name_queries_state);
@@ -1809,7 +1857,7 @@ static NTSTATUS name_queries_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 
 struct name_resolve_bcast_state {
 	struct sockaddr_storage *addrs;
-	int num_addrs;
+	size_t num_addrs;
 };
 
 static void name_resolve_bcast_done(struct tevent_req *subreq);
@@ -1822,7 +1870,7 @@ struct tevent_req *name_resolve_bcast_send(TALLOC_CTX *mem_ctx,
 	struct tevent_req *req, *subreq;
 	struct name_resolve_bcast_state *state;
 	struct sockaddr_storage *bcast_addrs;
-	int i, num_addrs, num_bcast_addrs;
+	size_t i, num_addrs, num_bcast_addrs;
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct name_resolve_bcast_state);
@@ -1895,7 +1943,7 @@ static void name_resolve_bcast_done(struct tevent_req *subreq)
 
 NTSTATUS name_resolve_bcast_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 				 struct sockaddr_storage **addrs,
-				 int *num_addrs)
+				 size_t *num_addrs)
 {
 	struct name_resolve_bcast_state *state = tevent_req_data(
 		req, struct name_resolve_bcast_state);
@@ -1909,11 +1957,11 @@ NTSTATUS name_resolve_bcast_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 	return NT_STATUS_OK;
 }
 
-NTSTATUS name_resolve_bcast(const char *name,
+NTSTATUS name_resolve_bcast(TALLOC_CTX *mem_ctx,
+			const char *name,
 			int name_type,
-			TALLOC_CTX *mem_ctx,
 			struct sockaddr_storage **return_iplist,
-			int *return_count)
+			size_t *return_count)
 {
 	TALLOC_CTX *frame = talloc_stackframe();
 	struct tevent_context *ev;
@@ -1943,12 +1991,12 @@ struct query_wins_list_state {
 	const char *name;
 	uint8_t name_type;
 	struct in_addr *servers;
-	uint32_t num_servers;
+	size_t num_servers;
 	struct sockaddr_storage server;
-	uint32_t num_sent;
+	size_t num_sent;
 
 	struct sockaddr_storage *addrs;
-	int num_addrs;
+	size_t num_addrs;
 	uint8_t flags;
 };
 
@@ -1962,7 +2010,7 @@ static void query_wins_list_done(struct tevent_req *subreq);
 static struct tevent_req *query_wins_list_send(
 	TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 	struct in_addr src_ip, const char *name, uint8_t name_type,
-	struct in_addr *servers, int num_servers)
+	struct in_addr *servers, size_t num_servers)
 {
 	struct tevent_req *req, *subreq;
 	struct query_wins_list_state *state;
@@ -1989,10 +2037,18 @@ static struct tevent_req *query_wins_list_send(
 	subreq = name_query_send(state, state->ev,
 				 state->name, state->name_type,
 				 false, true, &state->server);
-	state->num_sent += 1;
+
 	if (tevent_req_nomem(subreq, req)) {
 		return tevent_req_post(req, ev);
 	}
+
+	/* wrap check */
+	if (state->num_sent + 1 < state->num_sent) {
+		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		return tevent_req_post(req, ev);
+	}
+
+	state->num_sent += 1;
 	if (!tevent_req_set_endtime(subreq, state->ev,
 				    timeval_current_ofs(2, 0))) {
 		return tevent_req_post(req, ev);
@@ -2049,7 +2105,7 @@ static void query_wins_list_done(struct tevent_req *subreq)
 static NTSTATUS query_wins_list_recv(struct tevent_req *req,
 				     TALLOC_CTX *mem_ctx,
 				     struct sockaddr_storage **addrs,
-				     int *num_addrs,
+				     size_t *num_addrs,
 				     uint8_t *flags)
 {
 	struct query_wins_list_state *state = tevent_req_data(
@@ -2072,11 +2128,11 @@ static NTSTATUS query_wins_list_recv(struct tevent_req *req,
 }
 
 struct resolve_wins_state {
-	int num_sent;
-	int num_received;
+	size_t num_sent;
+	size_t num_received;
 
 	struct sockaddr_storage *addrs;
-	int num_addrs;
+	size_t num_addrs;
 	uint8_t flags;
 };
 
@@ -2091,8 +2147,10 @@ struct tevent_req *resolve_wins_send(TALLOC_CTX *mem_ctx,
 	struct resolve_wins_state *state;
 	char **wins_tags = NULL;
 	struct sockaddr_storage src_ss;
+	struct samba_sockaddr src_sa = {0};
 	struct in_addr src_ip;
-	int i, num_wins_tags;
+	size_t i, num_wins_tags;
+	bool ok;
 
 	req = tevent_req_create(mem_ctx, &state,
 				struct resolve_wins_state);
@@ -2113,9 +2171,15 @@ struct tevent_req *resolve_wins_send(TALLOC_CTX *mem_ctx,
 		zero_sockaddr(&src_ss);
 	}
 
-	if (src_ss.ss_family != AF_INET) {
+	ok = sockaddr_storage_to_samba_sockaddr(&src_sa, &src_ss);
+	if (!ok) {
+		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		goto fail;
+	}
+
+	if (src_sa.u.ss.ss_family != AF_INET) {
 		char addr[INET6_ADDRSTRLEN];
-		print_sockaddr(addr, sizeof(addr), &src_ss);
+		print_sockaddr(addr, sizeof(addr), &src_sa.u.ss);
 		DEBUG(3,("resolve_wins: cannot receive WINS replies "
 			"on IPv6 address %s\n",
 			addr));
@@ -2123,7 +2187,7 @@ struct tevent_req *resolve_wins_send(TALLOC_CTX *mem_ctx,
 		goto fail;
 	}
 
-	src_ip = ((const struct sockaddr_in *)(void *)&src_ss)->sin_addr;
+	src_ip = src_sa.u.in.sin_addr;
 
 	wins_tags = wins_srv_tags();
 	if (wins_tags == NULL) {
@@ -2133,13 +2197,18 @@ struct tevent_req *resolve_wins_send(TALLOC_CTX *mem_ctx,
 
 	num_wins_tags = 0;
 	while (wins_tags[num_wins_tags] != NULL) {
+		/* wrap check. */
+		if (num_wins_tags + 1 < num_wins_tags) {
+			tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+			goto fail;
+		}
 		num_wins_tags += 1;
 	}
 
 	for (i=0; i<num_wins_tags; i++) {
-		int num_servers, num_alive;
+		size_t num_servers, num_alive;
 		struct in_addr *servers, *alive;
-		int j;
+		size_t j;
 
 		if (!wins_server_tag_ips(wins_tags[i], talloc_tos(),
 					 &servers, &num_servers)) {
@@ -2214,6 +2283,12 @@ static void resolve_wins_done(struct tevent_req *subreq)
 		return;
 	}
 
+	/* wrap check. */
+	if (state->num_received + 1 < state->num_received) {
+		tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		return;
+	}
+
 	state->num_received += 1;
 
 	if (state->num_received < state->num_sent) {
@@ -2227,7 +2302,7 @@ static void resolve_wins_done(struct tevent_req *subreq)
 
 NTSTATUS resolve_wins_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 			   struct sockaddr_storage **addrs,
-			   int *num_addrs, uint8_t *flags)
+			   size_t *num_addrs, uint8_t *flags)
 {
 	struct resolve_wins_state *state = tevent_req_data(
 		req, struct resolve_wins_state);
@@ -2252,11 +2327,11 @@ NTSTATUS resolve_wins_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
  Resolve via "wins" method.
 *********************************************************/
 
-NTSTATUS resolve_wins(const char *name,
+NTSTATUS resolve_wins(TALLOC_CTX *mem_ctx,
+		const char *name,
 		int name_type,
-		TALLOC_CTX *mem_ctx,
 		struct sockaddr_storage **return_iplist,
-		int *return_count)
+		size_t *return_count)
 {
 	struct tevent_context *ev;
 	struct tevent_req *req;
@@ -2280,14 +2355,16 @@ fail:
 	return status;
 }
 
+
 /********************************************************
  Resolve via "hosts" method.
 *********************************************************/
 
-static NTSTATUS resolve_hosts(const char *name, int name_type,
-			      TALLOC_CTX *mem_ctx,
+static NTSTATUS resolve_hosts(TALLOC_CTX *mem_ctx,
+			      const char *name,
+			      int name_type,
 			      struct sockaddr_storage **return_iplist,
-			      int *return_count)
+			      size_t *return_count)
 {
 	/*
 	 * "host" means do a localhost, or dns lookup.
@@ -2296,7 +2373,9 @@ static NTSTATUS resolve_hosts(const char *name, int name_type,
 	struct addrinfo *ailist = NULL;
 	struct addrinfo *res = NULL;
 	int ret = -1;
-	int i = 0;
+	size_t i = 0;
+	size_t ret_count = 0;
+	struct sockaddr_storage *iplist = NULL;
 
 	if ( name_type != 0x20 && name_type != 0x0) {
 		DEBUG(5, ("resolve_hosts: not appropriate "
@@ -2304,9 +2383,6 @@ static NTSTATUS resolve_hosts(const char *name, int name_type,
 			name_type));
 		return NT_STATUS_INVALID_PARAMETER;
 	}
-
-	*return_iplist = NULL;
-	*return_count = 0;
 
 	DEBUG(3,("resolve_hosts: Attempting host lookup for name %s<0x%x>\n",
 				name, name_type));
@@ -2332,39 +2408,51 @@ static NTSTATUS resolve_hosts(const char *name, int name_type,
 	}
 
 	for (res = ailist; res; res = res->ai_next) {
-		struct sockaddr_storage ss;
+		struct sockaddr_storage ss = {0};
+		struct sockaddr_storage *tmp = NULL;
 
-		if (!res->ai_addr || res->ai_addrlen == 0) {
+		if ((res->ai_addr == NULL) ||
+		    (res->ai_addrlen == 0) ||
+		    (res->ai_addrlen > sizeof(ss))) {
 			continue;
 		}
 
-		ZERO_STRUCT(ss);
 		memcpy(&ss, res->ai_addr, res->ai_addrlen);
 
 		if (is_zero_addr(&ss)) {
 			continue;
 		}
 
-		*return_count += 1;
+		/* wrap check. */
+		if (ret_count + 1 < ret_count) {
+			freeaddrinfo(ailist);
+			TALLOC_FREE(iplist);
+			return NT_STATUS_INVALID_PARAMETER;
+		}
+		ret_count += 1;
 
-		*return_iplist = talloc_realloc(
-			mem_ctx, *return_iplist, struct sockaddr_storage,
-			*return_count);
-		if (!*return_iplist) {
+		tmp = talloc_realloc(
+			mem_ctx, iplist, struct sockaddr_storage,
+			ret_count);
+		if (tmp == NULL) {
 			DEBUG(3,("resolve_hosts: malloc fail !\n"));
 			freeaddrinfo(ailist);
+			TALLOC_FREE(iplist);
 			return NT_STATUS_NO_MEMORY;
 		}
-		(*return_iplist)[i] = ss;
+		iplist = tmp;
+		iplist[i] = ss;
 		i++;
 	}
 	if (ailist) {
 		freeaddrinfo(ailist);
 	}
-	if (*return_count) {
-		return NT_STATUS_OK;
+	if (ret_count == 0) {
+		return NT_STATUS_UNSUCCESSFUL;
 	}
-	return NT_STATUS_UNSUCCESSFUL;
+	*return_count = ret_count;
+	*return_iplist = iplist;
+	return NT_STATUS_OK;
 }
 
 /********************************************************
@@ -2374,169 +2462,131 @@ static NTSTATUS resolve_hosts(const char *name, int name_type,
 /* Special name type used to cause a _kerberos DNS lookup. */
 #define KDC_NAME_TYPE 0xDCDC
 
-static NTSTATUS resolve_ads(const char *name,
+static NTSTATUS resolve_ads(TALLOC_CTX *ctx,
+			    const char *name,
 			    int name_type,
 			    const char *sitename,
-			    struct ip_service **return_iplist,
-			    int *return_count)
+			    struct sockaddr_storage **return_addrs,
+			    size_t *return_count)
 {
-	int 			i;
+	size_t 			i;
 	NTSTATUS  		status;
-	TALLOC_CTX		*ctx;
 	struct dns_rr_srv	*dcs = NULL;
-	int			numdcs = 0;
-	int			numaddrs = 0;
+	size_t			numdcs = 0;
+	size_t num_srv_addrs = 0;
+	struct sockaddr_storage *srv_addrs = NULL;
+	char *query = NULL;
 
 	if ((name_type != 0x1c) && (name_type != KDC_NAME_TYPE) &&
 	    (name_type != 0x1b)) {
 		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	if ( (ctx = talloc_init("resolve_ads")) == NULL ) {
-		DEBUG(0,("resolve_ads: talloc_init() failed!\n"));
-		return NT_STATUS_NO_MEMORY;
-	}
+	status = NT_STATUS_OK;
 
-	/* The DNS code needs fixing to find IPv6 addresses... JRA. */
 	switch (name_type) {
 		case 0x1b:
 			DEBUG(5,("resolve_ads: Attempting to resolve "
 				 "PDC for %s using DNS\n", name));
-			status = ads_dns_query_pdc(ctx,
-						   name,
-						   &dcs,
-						   &numdcs);
+			query = ads_dns_query_string_pdc(ctx, name);
 			break;
 
 		case 0x1c:
 			DEBUG(5,("resolve_ads: Attempting to resolve "
 				 "DCs for %s using DNS\n", name));
-			status = ads_dns_query_dcs(ctx,
-						   name,
-						   sitename,
-						   &dcs,
-						   &numdcs);
+			query = ads_dns_query_string_dcs(ctx, name);
 			break;
 		case KDC_NAME_TYPE:
 			DEBUG(5,("resolve_ads: Attempting to resolve "
 				 "KDCs for %s using DNS\n", name));
-			status = ads_dns_query_kdcs(ctx,
-						    name,
-						    sitename,
-						    &dcs,
-						    &numdcs);
+			query = ads_dns_query_string_kdcs(ctx, name);
 			break;
 		default:
 			status = NT_STATUS_INVALID_PARAMETER;
 			break;
 	}
 
-	if ( !NT_STATUS_IS_OK( status ) ) {
-		talloc_destroy(ctx);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+	if (query == NULL) {
+		return NT_STATUS_NO_MEMORY;
+	}
+
+	DBG_DEBUG("SRV query for %s\n", query);
+
+	status = ads_dns_query_srv(
+		ctx,
+		lp_get_async_dns_timeout(),
+		sitename,
+		query,
+		&dcs,
+		&numdcs);
+	if (!NT_STATUS_IS_OK(status)) {
 		return status;
 	}
 
 	if (numdcs == 0) {
-		*return_iplist = NULL;
+		*return_addrs = NULL;
 		*return_count = 0;
-		talloc_destroy(ctx);
+		TALLOC_FREE(dcs);
 		return NT_STATUS_OK;
 	}
 
-	for (i=0;i<numdcs;i++) {
-		if (!dcs[i].ss_s) {
-			numaddrs += 1;
-		} else {
-			numaddrs += dcs[i].num_ips;
+	/* First count the sizes of each array. */
+	for(i = 0; i < numdcs; i++) {
+		if (dcs[i].ss_s == NULL) {
+			/*
+			 * Nothing received or timeout in A/AAAA reqs
+			 */
+			continue;
 		}
-        }
 
-	if ((*return_iplist = SMB_MALLOC_ARRAY(struct ip_service, numaddrs)) ==
-			NULL ) {
-		DEBUG(0,("resolve_ads: malloc failed for %d entries\n",
-					numaddrs ));
-		talloc_destroy(ctx);
+		if (num_srv_addrs + dcs[i].num_ips < num_srv_addrs) {
+			/* Wrap check. */
+			TALLOC_FREE(dcs);
+			return NT_STATUS_INVALID_PARAMETER;
+		}
+		/* Add in the number of addresses we got. */
+		num_srv_addrs += dcs[i].num_ips;
+	}
+
+	/* Allocate the list of IP addresses we already have. */
+	srv_addrs = talloc_zero_array(ctx,
+				struct sockaddr_storage,
+				num_srv_addrs);
+	if (srv_addrs == NULL) {
+		TALLOC_FREE(dcs);
 		return NT_STATUS_NO_MEMORY;
 	}
 
-	/* now unroll the list of IP addresses */
+	num_srv_addrs = 0;
+	for(i = 0; i < numdcs; i++) {
+		/* Copy all the IP addresses from the SRV response */
+		size_t j;
+		for (j = 0; j < dcs[i].num_ips; j++) {
+			char addr[INET6_ADDRSTRLEN];
 
-	*return_count = 0;
-
-	for (i = 0; i < numdcs && (*return_count<numaddrs); i++ ) {
-		/* If we don't have an IP list for a name, lookup it up */
-		if (!dcs[i].ss_s) {
-			/* We need to get all IP addresses here. */
-			struct addrinfo *res = NULL;
-			struct addrinfo *p;
-			int extra_addrs = 0;
-
-			if (!interpret_string_addr_internal(&res,
-						dcs[i].hostname,
-						0)) {
+			srv_addrs[num_srv_addrs] = dcs[i].ss_s[j];
+			if (is_zero_addr(&srv_addrs[num_srv_addrs])) {
 				continue;
 			}
-			/* Add in every IP from the lookup. How
-			   many is that ? */
-			for (p = res; p; p = p->ai_next) {
-				struct sockaddr_storage ss;
-				memcpy(&ss, p->ai_addr, p->ai_addrlen);
-				if (is_zero_addr(&ss)) {
-					continue;
-				}
-				extra_addrs++;
-			}
-			if (extra_addrs > 1) {
-				/* We need to expand the return_iplist array
-				   as we only budgeted for one address. */
-				numaddrs += (extra_addrs-1);
-				*return_iplist = SMB_REALLOC_ARRAY(*return_iplist,
-						struct ip_service,
-						numaddrs);
-				if (*return_iplist == NULL) {
-					if (res) {
-						freeaddrinfo(res);
-					}
-					talloc_destroy(ctx);
-					return NT_STATUS_NO_MEMORY;
-				}
-			}
-			for (p = res; p; p = p->ai_next) {
-				(*return_iplist)[*return_count].port = dcs[i].port;
-				memcpy(&(*return_iplist)[*return_count].ss,
-						p->ai_addr,
-						p->ai_addrlen);
-				if (is_zero_addr(&(*return_iplist)[*return_count].ss)) {
-					continue;
-				}
-				(*return_count)++;
-				/* Should never happen, but still... */
-				if (*return_count>=numaddrs) {
-					break;
-				}
-			}
-			if (res) {
-				freeaddrinfo(res);
-			}
-		} else {
-			/* use all the IP addresses from the SRV response */
-			size_t j;
-			for (j = 0; j < dcs[i].num_ips; j++) {
-				(*return_iplist)[*return_count].port = dcs[i].port;
-				(*return_iplist)[*return_count].ss = dcs[i].ss_s[j];
-				if (is_zero_addr(&(*return_iplist)[*return_count].ss)) {
-					continue;
-				}
-                                (*return_count)++;
-				/* Should never happen, but still... */
-				if (*return_count>=numaddrs) {
-					break;
-				}
-			}
+
+			DBG_DEBUG("SRV lookup %s got IP[%zu] %s\n",
+				name,
+				j,
+				print_sockaddr(addr,
+					sizeof(addr),
+					&srv_addrs[num_srv_addrs]));
+
+			num_srv_addrs++;
 		}
 	}
 
-	talloc_destroy(ctx);
+	TALLOC_FREE(dcs);
+
+	*return_addrs = srv_addrs;
+	*return_count = num_srv_addrs;
 	return NT_STATUS_OK;
 }
 
@@ -2573,7 +2623,7 @@ static const char **filter_out_nbt_lookup(TALLOC_CTX *mem_ctx,
 }
 
 /*******************************************************************
- Internal interface to resolve a name into an IP address.
+ Samba interface to resolve a name into an IP address.
  Use this function if the string is either an IP address, DNS
  or host name or NetBIOS name. This uses the name switch in the
  smb.conf to determine the order of name resolution.
@@ -2583,68 +2633,88 @@ static const char **filter_out_nbt_lookup(TALLOC_CTX *mem_ctx,
  resolve_hosts() when looking up DC's via SRV RR entries in DNS
 **********************************************************************/
 
-NTSTATUS internal_resolve_name(const char *name,
+NTSTATUS internal_resolve_name(TALLOC_CTX *ctx,
+				const char *name,
 			        int name_type,
 				const char *sitename,
-				struct ip_service **return_iplist,
-				int *return_count,
+				struct samba_sockaddr **return_salist,
+				size_t *return_count,
 				const char **resolve_order)
 {
-	const char *tok;
 	NTSTATUS status = NT_STATUS_UNSUCCESSFUL;
-	int i;
-	TALLOC_CTX *frame = NULL;
+	size_t i;
+	size_t nc_count = 0;
+	size_t ret_count = 0;
+	bool ok;
+	struct sockaddr_storage *ss_list = NULL;
+	struct samba_sockaddr *sa_list = NULL;
+	TALLOC_CTX *frame = talloc_stackframe();
 
-	*return_iplist = NULL;
-	*return_count = 0;
-
-	DEBUG(10, ("internal_resolve_name: looking up %s#%x (sitename %s)\n",
-			name, name_type, sitename ? sitename : "(null)"));
+	DBG_DEBUG("looking up %s#%x (sitename %s)\n",
+		name, name_type, sitename ? sitename : "(null)");
 
 	if (is_ipaddress(name)) {
-		if ((*return_iplist = SMB_MALLOC_P(struct ip_service)) ==
-				NULL) {
-			DEBUG(0,("internal_resolve_name: malloc fail !\n"));
-			return NT_STATUS_NO_MEMORY;
-		}
-
-		/* ignore the port here */
-		(*return_iplist)->port = PORT_NONE;
+		struct sockaddr_storage ss;
 
 		/* if it's in the form of an IP address then get the lib to interpret it */
-		if (!interpret_string_addr(&(*return_iplist)->ss,
-					name, AI_NUMERICHOST)) {
-			DEBUG(1,("internal_resolve_name: interpret_string_addr "
-				"failed on %s\n",
-				name));
-			SAFE_FREE(*return_iplist);
+		ok = interpret_string_addr(&ss, name, AI_NUMERICHOST);
+		if (!ok) {
+			DBG_WARNING("interpret_string_addr failed on %s\n",
+				name);
+			TALLOC_FREE(frame);
 			return NT_STATUS_INVALID_PARAMETER;
 		}
-		if (is_zero_addr(&(*return_iplist)->ss)) {
-			SAFE_FREE(*return_iplist);
+		if (is_zero_addr(&ss)) {
+			TALLOC_FREE(frame);
 			return NT_STATUS_UNSUCCESSFUL;
 		}
+
+		status = sockaddr_array_to_samba_sockaddr_array(frame,
+							&sa_list,
+							&ret_count,
+							&ss,
+							1);
+		if (!NT_STATUS_IS_OK(status)) {
+			TALLOC_FREE(frame);
+			return status;
+		}
+
+		*return_salist = talloc_move(ctx, &sa_list);
 		*return_count = 1;
+		TALLOC_FREE(frame);
 		return NT_STATUS_OK;
 	}
 
 	/* Check name cache */
 
-	if (namecache_fetch(name, name_type, return_iplist, return_count)) {
-		*return_count = remove_duplicate_addrs2(*return_iplist,
-					*return_count );
-		/* This could be a negative response */
-		if (*return_count > 0) {
-			return NT_STATUS_OK;
-		} else {
+	ok = namecache_fetch(frame,
+				name,
+				name_type,
+				&sa_list,
+				&nc_count);
+	if (ok) {
+		/*
+		 * remove_duplicate_addrs2() has the
+		 * side effect of removing zero addresses,
+		 * so use it here.
+		 */
+		nc_count = remove_duplicate_addrs2(sa_list, nc_count);
+		if (nc_count == 0) {
+			TALLOC_FREE(sa_list);
+			TALLOC_FREE(frame);
 			return NT_STATUS_UNSUCCESSFUL;
 		}
+		*return_count = nc_count;
+		*return_salist = talloc_move(ctx, &sa_list);
+		TALLOC_FREE(frame);
+		return NT_STATUS_OK;
 	}
 
 	/* set the name resolution order */
 
 	if (resolve_order && strcmp(resolve_order[0], "NULL") == 0) {
-		DEBUG(8,("internal_resolve_name: all lookups disabled\n"));
+		DBG_DEBUG("all lookups disabled\n");
+		TALLOC_FREE(frame);
 		return NT_STATUS_INVALID_PARAMETER;
 	}
 
@@ -2652,8 +2722,6 @@ NTSTATUS internal_resolve_name(const char *name,
 		static const char *host_order[] = { "host", NULL };
 		resolve_order = host_order;
 	}
-
-	frame = talloc_stackframe();
 
 	if ((strlen(name) > MAX_NETBIOSNAME_LEN - 1) ||
 	    (strchr(name, '.') != NULL)) {
@@ -2670,140 +2738,162 @@ NTSTATUS internal_resolve_name(const char *name,
 	/* iterate through the name resolution backends */
 
 	for (i=0; resolve_order[i]; i++) {
-		tok = resolve_order[i];
+		const char *tok = resolve_order[i];
 
-		if((strequal(tok, "host") || strequal(tok, "hosts"))) {
-			struct sockaddr_storage *ss_list;
-			status = resolve_hosts(name, name_type,
-					       talloc_tos(), &ss_list,
-					       return_count);
-			if (NT_STATUS_IS_OK(status)) {
-				if (!convert_ss2service(return_iplist,
-							ss_list,
-							return_count)) {
-					status = NT_STATUS_NO_MEMORY;
-				}
-				goto done;
+		if ((strequal(tok, "host") || strequal(tok, "hosts"))) {
+			status = resolve_hosts(talloc_tos(),
+					       name,
+					       name_type,
+					       &ss_list,
+					       &ret_count);
+			if (!NT_STATUS_IS_OK(status)) {
+				continue;
 			}
-		} else if(strequal( tok, "kdc")) {
+			goto done;
+		}
+
+		if (strequal(tok, "kdc")) {
 			/* deal with KDC_NAME_TYPE names here.
 			 * This will result in a SRV record lookup */
-			status = resolve_ads(name, KDC_NAME_TYPE, sitename,
-					     return_iplist, return_count);
-			if (NT_STATUS_IS_OK(status)) {
-				/* Ensure we don't namecache
-				 * this with the KDC port. */
-				name_type = KDC_NAME_TYPE;
-				goto done;
+			status = resolve_ads(talloc_tos(),
+					     name,
+					     KDC_NAME_TYPE,
+					     sitename,
+					     &ss_list,
+					     &ret_count);
+			if (!NT_STATUS_IS_OK(status)) {
+				continue;
 			}
-		} else if(strequal( tok, "ads")) {
+			/* Ensure we don't namecache
+			 * this with the KDC port. */
+			name_type = KDC_NAME_TYPE;
+			goto done;
+		}
+
+		if (strequal(tok, "ads")) {
 			/* deal with 0x1c and 0x1b names here.
 			 * This will result in a SRV record lookup */
-			status = resolve_ads(name, name_type, sitename,
-					     return_iplist, return_count);
-			if (NT_STATUS_IS_OK(status)) {
-				goto done;
+			status = resolve_ads(talloc_tos(),
+					     name,
+					     name_type,
+					     sitename,
+					     &ss_list,
+					     &ret_count);
+			if (!NT_STATUS_IS_OK(status)) {
+				continue;
 			}
-		} else if (strequal(tok, "lmhosts")) {
-			struct sockaddr_storage *ss_list;
-			status = resolve_lmhosts_file_as_sockaddr(
-				get_dyn_LMHOSTSFILE(), name, name_type,
-				talloc_tos(), &ss_list, return_count);
-			if (NT_STATUS_IS_OK(status)) {
-				if (!convert_ss2service(return_iplist,
-							ss_list,
-							return_count)) {
-					status = NT_STATUS_NO_MEMORY;
-				}
-				goto done;
-			}
-		} else if (strequal(tok, "wins")) {
-			/* don't resolve 1D via WINS */
-			struct sockaddr_storage *ss_list = NULL;
-			if (name_type != 0x1D) {
-				status = resolve_wins(name, name_type,
-						      talloc_tos(),
-						      &ss_list,
-						      return_count);
-				if (NT_STATUS_IS_OK(status)) {
-					if (!convert_ss2service(return_iplist,
-								ss_list,
-								return_count)) {
-						status = NT_STATUS_NO_MEMORY;
-					}
-					goto done;
-				}
-			}
-		} else if (strequal(tok, "bcast")) {
-			struct sockaddr_storage *ss_list = NULL;
-			status = name_resolve_bcast(
-				name, name_type, talloc_tos(),
-				&ss_list, return_count);
-			if (NT_STATUS_IS_OK(status)) {
-				if (!convert_ss2service(return_iplist,
-							ss_list,
-							return_count)) {
-					status = NT_STATUS_NO_MEMORY;
-				}
-				goto done;
-			}
-		} else {
-			DEBUG(0,("resolve_name: unknown name switch type %s\n",
-				tok));
+			goto done;
 		}
+
+		if (strequal(tok, "lmhosts")) {
+			status = resolve_lmhosts_file_as_sockaddr(
+				talloc_tos(),
+				get_dyn_LMHOSTSFILE(),
+				name,
+				name_type,
+				&ss_list,
+				&ret_count);
+			if (!NT_STATUS_IS_OK(status)) {
+				continue;
+			}
+			goto done;
+		}
+
+		if (strequal(tok, "wins")) {
+			/* don't resolve 1D via WINS */
+			if (name_type == 0x1D) {
+				continue;
+			}
+			status = resolve_wins(talloc_tos(),
+					      name,
+					      name_type,
+					      &ss_list,
+					      &ret_count);
+			if (!NT_STATUS_IS_OK(status)) {
+				continue;
+			}
+			goto done;
+		}
+
+		if (strequal(tok, "bcast")) {
+			status = name_resolve_bcast(
+						talloc_tos(),
+						name,
+						name_type,
+						&ss_list,
+						&ret_count);
+			if (!NT_STATUS_IS_OK(status)) {
+				continue;
+			}
+			goto done;
+		}
+
+		DBG_ERR("unknown name switch type %s\n", tok);
 	}
 
 	/* All of the resolve_* functions above have returned false. */
 
 	TALLOC_FREE(frame);
-	SAFE_FREE(*return_iplist);
 	*return_count = 0;
 
 	return status;
 
   done:
 
+	status = sockaddr_array_to_samba_sockaddr_array(frame,
+							&sa_list,
+							&ret_count,
+							ss_list,
+							ret_count);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(frame);
+		return NT_STATUS_NO_MEMORY;
+	}
+
 	/* Remove duplicate entries.  Some queries, notably #1c (domain
 	controllers) return the PDC in iplist[0] and then all domain
 	controllers including the PDC in iplist[1..n].  Iterating over
 	the iplist when the PDC is down will cause two sets of timeouts. */
 
-	*return_count = remove_duplicate_addrs2(*return_iplist, *return_count );
+	ret_count = remove_duplicate_addrs2(sa_list, ret_count);
 
 	/* Save in name cache */
 	if ( DEBUGLEVEL >= 100 ) {
-		for (i = 0; i < *return_count && DEBUGLEVEL == 100; i++) {
+		for (i = 0; i < ret_count && DEBUGLEVEL == 100; i++) {
 			char addr[INET6_ADDRSTRLEN];
 			print_sockaddr(addr, sizeof(addr),
-					&(*return_iplist)[i].ss);
-			DEBUG(100, ("Storing name %s of type %d (%s:%d)\n",
+					&sa_list[i].u.ss);
+			DEBUG(100, ("Storing name %s of type %d (%s:0)\n",
 					name,
 					name_type,
-					addr,
-					(*return_iplist)[i].port));
+					addr));
 		}
 	}
 
-	if (*return_count) {
-		namecache_store(name, name_type, *return_count, *return_iplist);
+	if (ret_count) {
+		namecache_store(name,
+				name_type,
+				ret_count,
+				sa_list);
 	}
 
 	/* Display some debugging info */
 
 	if ( DEBUGLEVEL >= 10 ) {
-		DEBUG(10, ("internal_resolve_name: returning %d addresses: ",
-					*return_count));
+		DBG_DEBUG("returning %zu addresses: ",
+				ret_count);
 
-		for (i = 0; i < *return_count; i++) {
+		for (i = 0; i < ret_count; i++) {
 			char addr[INET6_ADDRSTRLEN];
 			print_sockaddr(addr, sizeof(addr),
-					&(*return_iplist)[i].ss);
-			DEBUGADD(10, ("%s:%d ",
-					addr,
-					(*return_iplist)[i].port));
+					&sa_list[i].u.ss);
+			DEBUGADD(10, ("%s ", addr));
 		}
 		DEBUG(10, ("\n"));
 	}
+
+	*return_count = ret_count;
+	*return_salist = talloc_move(ctx, &sa_list);
 
 	TALLOC_FREE(frame);
 	return status;
@@ -2821,9 +2911,9 @@ bool resolve_name(const char *name,
 		int name_type,
 		bool prefer_ipv4)
 {
-	struct ip_service *ss_list = NULL;
+	struct samba_sockaddr *sa_list = NULL;
 	char *sitename = NULL;
-	int count = 0;
+	size_t count = 0;
 	NTSTATUS status;
 	TALLOC_CTX *frame = NULL;
 
@@ -2835,19 +2925,22 @@ bool resolve_name(const char *name,
 
 	sitename = sitename_fetch(frame, lp_realm()); /* wild guess */
 
-	status = internal_resolve_name(name, name_type, sitename,
-				       &ss_list, &count,
-				       lp_name_resolve_order());
+	status = internal_resolve_name(frame,
+					name,
+					name_type,
+					sitename,
+					&sa_list,
+					&count,
+					lp_name_resolve_order());
 	if (NT_STATUS_IS_OK(status)) {
-		int i;
+		size_t i;
 
 		if (prefer_ipv4) {
 			for (i=0; i<count; i++) {
-				if (!is_zero_addr(&ss_list[i].ss) &&
-				    !is_broadcast_addr((struct sockaddr *)(void *)&ss_list[i].ss) &&
-						(ss_list[i].ss.ss_family == AF_INET)) {
-					*return_ss = ss_list[i].ss;
-					SAFE_FREE(ss_list);
+				if (!is_broadcast_addr(&sa_list[i].u.sa) &&
+						(sa_list[i].u.ss.ss_family == AF_INET)) {
+					*return_ss = sa_list[i].u.ss;
+					TALLOC_FREE(sa_list);
 					TALLOC_FREE(frame);
 					return True;
 				}
@@ -2856,17 +2949,16 @@ bool resolve_name(const char *name,
 
 		/* only return valid addresses for TCP connections */
 		for (i=0; i<count; i++) {
-			if (!is_zero_addr(&ss_list[i].ss) &&
-			    !is_broadcast_addr((struct sockaddr *)(void *)&ss_list[i].ss)) {
-				*return_ss = ss_list[i].ss;
-				SAFE_FREE(ss_list);
+			if (!is_broadcast_addr(&sa_list[i].u.sa)) {
+				*return_ss = sa_list[i].u.ss;
+				TALLOC_FREE(sa_list);
 				TALLOC_FREE(frame);
 				return True;
 			}
 		}
 	}
 
-	SAFE_FREE(ss_list);
+	TALLOC_FREE(sa_list);
 	TALLOC_FREE(frame);
 	return False;
 }
@@ -2884,34 +2976,37 @@ NTSTATUS resolve_name_list(TALLOC_CTX *ctx,
 		struct sockaddr_storage **return_ss_arr,
 		unsigned int *p_num_entries)
 {
-	struct ip_service *ss_list = NULL;
+	struct samba_sockaddr *sa_list = NULL;
 	char *sitename = NULL;
-	int count = 0;
-	int i;
-	unsigned int num_entries;
+	size_t count = 0;
+	size_t i;
+	unsigned int num_entries = 0;
+	struct sockaddr_storage *result_arr = NULL;
 	NTSTATUS status;
 
-	*p_num_entries = 0;
-	*return_ss_arr = NULL;
-
 	if (is_ipaddress(name)) {
-		*return_ss_arr = talloc(ctx, struct sockaddr_storage);
-		if (!*return_ss_arr) {
+		result_arr = talloc(ctx, struct sockaddr_storage);
+		if (result_arr == NULL) {
 			return NT_STATUS_NO_MEMORY;
 		}
-		if (!interpret_string_addr(*return_ss_arr, name, AI_NUMERICHOST)) {
-			TALLOC_FREE(*return_ss_arr);
+		if (!interpret_string_addr(result_arr, name, AI_NUMERICHOST)) {
+			TALLOC_FREE(result_arr);
 			return NT_STATUS_BAD_NETWORK_NAME;
 		}
 		*p_num_entries = 1;
+		*return_ss_arr = result_arr;
 		return NT_STATUS_OK;
 	}
 
 	sitename = sitename_fetch(ctx, lp_realm()); /* wild guess */
 
-	status = internal_resolve_name(name, name_type, sitename,
-						  &ss_list, &count,
-						  lp_name_resolve_order());
+	status = internal_resolve_name(ctx,
+					name,
+					name_type,
+					sitename,
+					&sa_list,
+					&count,
+					lp_name_resolve_order());
 	TALLOC_FREE(sitename);
 
 	if (!NT_STATUS_IS_OK(status)) {
@@ -2920,8 +3015,8 @@ NTSTATUS resolve_name_list(TALLOC_CTX *ctx,
 
 	/* only return valid addresses for TCP connections */
 	for (i=0, num_entries = 0; i<count; i++) {
-		if (!is_zero_addr(&ss_list[i].ss) &&
-		    !is_broadcast_addr((struct sockaddr *)(void *)&ss_list[i].ss)) {
+		if (!is_zero_addr(&sa_list[i].u.ss) &&
+		    !is_broadcast_addr(&sa_list[i].u.sa)) {
 			num_entries++;
 		}
 	}
@@ -2930,25 +3025,32 @@ NTSTATUS resolve_name_list(TALLOC_CTX *ctx,
 		goto done;
 	}
 
-	*return_ss_arr = talloc_array(ctx,
+	result_arr = talloc_array(ctx,
 				struct sockaddr_storage,
 				num_entries);
-	if (!(*return_ss_arr)) {
+	if (result_arr == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto done;
 	}
 
 	for (i=0, num_entries = 0; i<count; i++) {
-		if (!is_zero_addr(&ss_list[i].ss) &&
-		    !is_broadcast_addr((struct sockaddr *)(void *)&ss_list[i].ss)) {
-			(*return_ss_arr)[num_entries++] = ss_list[i].ss;
+		if (!is_zero_addr(&sa_list[i].u.ss) &&
+		    !is_broadcast_addr(&sa_list[i].u.sa)) {
+			result_arr[num_entries++] = sa_list[i].u.ss;
 		}
+	}
+
+	if (num_entries == 0) {
+		TALLOC_FREE(result_arr);
+		status = NT_STATUS_BAD_NETWORK_NAME;
+		goto done;
 	}
 
 	status = NT_STATUS_OK;
 	*p_num_entries = num_entries;
+	*return_ss_arr = result_arr;
 done:
-	SAFE_FREE(ss_list);
+	TALLOC_FREE(sa_list);
 	return status;
 }
 
@@ -2958,8 +3060,8 @@ done:
 
 bool find_master_ip(const char *group, struct sockaddr_storage *master_ss)
 {
-	struct ip_service *ip_list = NULL;
-	int count = 0;
+	struct samba_sockaddr *sa_list = NULL;
+	size_t count = 0;
 	NTSTATUS status;
 
 	if (lp_disable_netbios()) {
@@ -2967,23 +3069,35 @@ bool find_master_ip(const char *group, struct sockaddr_storage *master_ss)
 		return false;
 	}
 
-	status = internal_resolve_name(group, 0x1D, NULL, &ip_list, &count,
-				       lp_name_resolve_order());
+	status = internal_resolve_name(talloc_tos(),
+					group,
+					0x1D,
+					NULL,
+					&sa_list,
+					&count,
+					lp_name_resolve_order());
 	if (NT_STATUS_IS_OK(status)) {
-		*master_ss = ip_list[0].ss;
-		SAFE_FREE(ip_list);
+		*master_ss = sa_list[0].u.ss;
+		TALLOC_FREE(sa_list);
 		return true;
 	}
 
-	status = internal_resolve_name(group, 0x1B, NULL, &ip_list, &count,
-				       lp_name_resolve_order());
+	TALLOC_FREE(sa_list);
+
+	status = internal_resolve_name(talloc_tos(),
+					group,
+					0x1B,
+					NULL,
+					&sa_list,
+					&count,
+					lp_name_resolve_order());
 	if (NT_STATUS_IS_OK(status)) {
-		*master_ss = ip_list[0].ss;
-		SAFE_FREE(ip_list);
+		*master_ss = sa_list[0].u.ss;
+		TALLOC_FREE(sa_list);
 		return true;
 	}
 
-	SAFE_FREE(ip_list);
+	TALLOC_FREE(sa_list);
 	return false;
 }
 
@@ -2994,23 +3108,33 @@ bool find_master_ip(const char *group, struct sockaddr_storage *master_ss)
 
 bool get_pdc_ip(const char *domain, struct sockaddr_storage *pss)
 {
-	struct ip_service *ip_list = NULL;
-	int count = 0;
+	struct samba_sockaddr *sa_list = NULL;
+	size_t count = 0;
 	NTSTATUS status = NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND;
 	static const char *ads_order[] = { "ads", NULL };
 	/* Look up #1B name */
 
 	if (lp_security() == SEC_ADS) {
-		status = internal_resolve_name(domain, 0x1b, NULL, &ip_list,
-					       &count, ads_order);
+		status = internal_resolve_name(talloc_tos(),
+						domain,
+						0x1b,
+						NULL,
+						&sa_list,
+						&count,
+						ads_order);
 	}
 
 	if (!NT_STATUS_IS_OK(status) || count == 0) {
-		status = internal_resolve_name(domain, 0x1b, NULL, &ip_list,
-					       &count,
-					       lp_name_resolve_order());
+		TALLOC_FREE(sa_list);
+		status = internal_resolve_name(talloc_tos(),
+						domain,
+						0x1b,
+						NULL,
+						&sa_list,
+						&count,
+						lp_name_resolve_order());
 		if (!NT_STATUS_IS_OK(status)) {
-			SAFE_FREE(ip_list);
+			TALLOC_FREE(sa_list);
 			return false;
 		}
 	}
@@ -3019,12 +3143,12 @@ bool get_pdc_ip(const char *domain, struct sockaddr_storage *pss)
 	   multi-homed PDC and not a mess up */
 
 	if ( count > 1 ) {
-		DEBUG(6,("get_pdc_ip: PDC has %d IP addresses!\n", count));
-		sort_service_list(ip_list, count);
+		DBG_INFO("PDC has %zu IP addresses!\n", count);
+		sort_sa_list(sa_list, count);
 	}
 
-	*pss = ip_list[0].ss;
-	SAFE_FREE(ip_list);
+	*pss = sa_list[0].u.ss;
+	TALLOC_FREE(sa_list);
 	return true;
 }
 
@@ -3037,10 +3161,11 @@ enum dc_lookup_type { DC_NORMAL_LOOKUP, DC_ADS_ONLY, DC_KDC_ONLY };
  a domain.
 *********************************************************/
 
-static NTSTATUS get_dc_list(const char *domain,
+static NTSTATUS get_dc_list(TALLOC_CTX *ctx,
+			const char *domain,
 			const char *sitename,
-			struct ip_service **ip_list,
-			int *count,
+			struct samba_sockaddr **sa_list_ret,
+			size_t *ret_count,
 			enum dc_lookup_type lookup_type,
 			bool *ordered)
 {
@@ -3048,21 +3173,17 @@ static NTSTATUS get_dc_list(const char *domain,
 	char *saf_servername = NULL;
 	char *pserver = NULL;
 	const char *p;
-	char *port_str = NULL;
-	int port;
 	char *name;
 	size_t num_addresses = 0;
-	size_t local_count, i;
-	struct ip_service *return_iplist = NULL;
-	struct ip_service *auto_ip_list = NULL;
+	size_t local_count = 0;
+	size_t i;
+	struct samba_sockaddr *auto_sa_list = NULL;
+	struct samba_sockaddr *return_salist = NULL;
 	bool done_auto_lookup = false;
-	int auto_count = 0;
+	size_t auto_count = 0;
 	NTSTATUS status;
-	TALLOC_CTX *ctx = talloc_stackframe();
+	TALLOC_CTX *frame = talloc_stackframe();
 	int auto_name_type = 0x1C;
-
-	*ip_list = NULL;
-	*count = 0;
 
 	*ordered = False;
 
@@ -3102,14 +3223,14 @@ static NTSTATUS get_dc_list(const char *domain,
 	/* fetch the server we have affinity for.  Add the
 	   'password server' list to a search for our domain controllers */
 
-	saf_servername = saf_fetch(ctx, domain);
+	saf_servername = saf_fetch(frame, domain);
 
 	if (strequal(domain, lp_workgroup()) || strequal(domain, lp_realm())) {
-		pserver = talloc_asprintf(ctx, "%s, %s",
+		pserver = talloc_asprintf(frame, "%s, %s",
 			saf_servername ? saf_servername : "",
 			lp_password_server());
 	} else {
-		pserver = talloc_asprintf(ctx, "%s, *",
+		pserver = talloc_asprintf(frame, "%s, *",
 			saf_servername ? saf_servername : "");
 	}
 
@@ -3129,20 +3250,36 @@ static NTSTATUS get_dc_list(const char *domain,
 	 */
 
 	p = pserver;
-	while (next_token_talloc(ctx, &p, &name, LIST_SEP)) {
+	while (next_token_talloc(frame, &p, &name, LIST_SEP)) {
 		if (!done_auto_lookup && strequal(name, "*")) {
-			status = internal_resolve_name(domain, auto_name_type,
-						       sitename,
-						       &auto_ip_list,
-						       &auto_count,
-						       resolve_order);
-			if (NT_STATUS_IS_OK(status)) {
-				num_addresses += auto_count;
-			}
 			done_auto_lookup = true;
-			DEBUG(8,("Adding %d DC's from auto lookup\n",
-						auto_count));
+
+			status = internal_resolve_name(frame,
+							domain,
+							auto_name_type,
+							sitename,
+							&auto_sa_list,
+							&auto_count,
+							resolve_order);
+			if (!NT_STATUS_IS_OK(status)) {
+				continue;
+			}
+			/* Wrap check. */
+			if (num_addresses + auto_count < num_addresses) {
+				TALLOC_FREE(auto_sa_list);
+				status = NT_STATUS_INVALID_PARAMETER;
+				goto out;
+			}
+			num_addresses += auto_count;
+			DBG_DEBUG("Adding %zu DC's from auto lookup\n",
+						auto_count);
 		} else  {
+			/* Wrap check. */
+			if (num_addresses + 1 < num_addresses) {
+				TALLOC_FREE(auto_sa_list);
+				status = NT_STATUS_INVALID_PARAMETER;
+				goto out;
+			}
 			num_addresses++;
 		}
 	}
@@ -3151,19 +3288,34 @@ static NTSTATUS get_dc_list(const char *domain,
 	   just return the list of DC's.  Or maybe we just failed. */
 
 	if (num_addresses == 0) {
+		struct samba_sockaddr *dc_salist = NULL;
+		size_t dc_count = 0;
+
 		if (done_auto_lookup) {
 			DEBUG(4,("get_dc_list: no servers found\n"));
 			status = NT_STATUS_NO_LOGON_SERVERS;
 			goto out;
 		}
-		status = internal_resolve_name(domain, auto_name_type,
-					       sitename, ip_list,
-					     count, resolve_order);
+		/* talloc off frame, only move to ctx on success. */
+		status = internal_resolve_name(frame,
+						domain,
+						auto_name_type,
+						sitename,
+						&dc_salist,
+						&dc_count,
+						resolve_order);
+		if (!NT_STATUS_IS_OK(status)) {
+			goto out;
+		}
+		return_salist = dc_salist;
+		local_count = dc_count;
 		goto out;
 	}
 
-	if ((return_iplist = SMB_MALLOC_ARRAY(struct ip_service,
-					num_addresses)) == NULL) {
+	return_salist = talloc_zero_array(frame,
+					struct samba_sockaddr,
+					num_addresses);
+	if (return_salist == NULL) {
 		DEBUG(3,("get_dc_list: malloc fail !\n"));
 		status = NT_STATUS_NO_MEMORY;
 		goto out;
@@ -3175,18 +3327,18 @@ static NTSTATUS get_dc_list(const char *domain,
 	/* fill in the return list now with real IP's */
 
 	while ((local_count<num_addresses) &&
-			next_token_talloc(ctx, &p, &name, LIST_SEP)) {
-		struct sockaddr_storage name_ss;
+			next_token_talloc(frame, &p, &name, LIST_SEP)) {
+		struct samba_sockaddr name_sa = {0};
 
 		/* copy any addresses from the auto lookup */
 
 		if (strequal(name, "*")) {
-			int j;
+			size_t j;
 			for (j=0; j<auto_count; j++) {
 				char addr[INET6_ADDRSTRLEN];
 				print_sockaddr(addr,
 						sizeof(addr),
-						&auto_ip_list[j].ss);
+						&auto_sa_list[j].u.ss);
 				/* Check for and don't copy any
 				 * known bad DC IP's. */
 				if(!NT_STATUS_IS_OK(check_negative_conn_cache(
@@ -3198,40 +3350,35 @@ static NTSTATUS get_dc_list(const char *domain,
 						addr));
 					continue;
 				}
-				return_iplist[local_count].ss =
-					auto_ip_list[j].ss;
-				return_iplist[local_count].port =
-					auto_ip_list[j].port;
+				return_salist[local_count] = auto_sa_list[j];
 				local_count++;
 			}
 			continue;
 		}
 
-		/* added support for address:port syntax for ads
-		 * (not that I think anyone will ever run the LDAP
-		 * server in an AD domain on something other than
-		 * port 389
-		 * However, the port should not be used for kerberos
-		 */
-
-		port = (lookup_type == DC_ADS_ONLY) ? LDAP_PORT :
-			((lookup_type == DC_KDC_ONLY) ? DEFAULT_KRB5_PORT :
-			 PORT_NONE);
-		if ((port_str=strchr(name, ':')) != NULL) {
-			*port_str = '\0';
-			if (lookup_type != DC_KDC_ONLY) {
-				port_str++;
-				port = atoi(port_str);
-			}
-		}
-
 		/* explicit lookup; resolve_name() will
 		 * handle names & IP addresses */
-		if (resolve_name( name, &name_ss, 0x20, true )) {
+		if (resolve_name(name, &name_sa.u.ss, 0x20, true)) {
 			char addr[INET6_ADDRSTRLEN];
+			bool ok;
+
+			/*
+			 * Ensure we set sa_socklen correctly.
+			 * Doesn't matter now, but eventually we
+			 * will remove ip_service and return samba_sockaddr
+			 * arrays directly.
+			 */
+			ok = sockaddr_storage_to_samba_sockaddr(
+					&name_sa,
+					&name_sa.u.ss);
+			if (!ok) {
+				status = NT_STATUS_INVALID_ADDRESS;
+				goto out;
+			}
+
 			print_sockaddr(addr,
 					sizeof(addr),
-					&name_ss);
+					&name_sa.u.ss);
 
 			/* Check for and don't copy any known bad DC IP's. */
 			if( !NT_STATUS_IS_OK(check_negative_conn_cache(domain,
@@ -3242,8 +3389,7 @@ static NTSTATUS get_dc_list(const char *domain,
 				continue;
 			}
 
-			return_iplist[local_count].ss = name_ss;
-			return_iplist[local_count].port = port;
+			return_salist[local_count] = name_sa;
 			local_count++;
 			*ordered = true;
 		}
@@ -3252,13 +3398,13 @@ static NTSTATUS get_dc_list(const char *domain,
 	/* need to remove duplicates in the list if we have any
 	   explicit password servers */
 
-	local_count = remove_duplicate_addrs2(return_iplist, local_count );
+	local_count = remove_duplicate_addrs2(return_salist, local_count );
 
 	/* For DC's we always prioritize IPv4 due to W2K3 not
 	 * supporting LDAP, KRB5 or CLDAP over IPv6. */
 
-	if (local_count && return_iplist) {
-		prioritize_ipv4_list(return_iplist, local_count);
+	if (local_count && return_salist != NULL) {
+		prioritize_ipv4_list(return_salist, local_count);
 	}
 
 	if ( DEBUGLEVEL >= 4 ) {
@@ -3271,109 +3417,122 @@ static NTSTATUS get_dc_list(const char *domain,
 			char addr[INET6_ADDRSTRLEN];
 			print_sockaddr(addr,
 					sizeof(addr),
-					&return_iplist[i].ss);
-			DEBUGADD(4,("%s:%d ", addr, return_iplist[i].port ));
+					&return_salist[i].u.ss);
+			DEBUGADD(4,("%s ", addr));
 		}
 		DEBUGADD(4,("\n"));
 	}
 
-	*ip_list = return_iplist;
-	*count = local_count;
-
-	status = ( *count != 0 ? NT_STATUS_OK : NT_STATUS_NO_LOGON_SERVERS );
+	status = (local_count != 0 ? NT_STATUS_OK : NT_STATUS_NO_LOGON_SERVERS);
 
   out:
 
-	if (!NT_STATUS_IS_OK(status)) {
-		SAFE_FREE(return_iplist);
-		*ip_list = NULL;
-		*count = 0;
+	if (NT_STATUS_IS_OK(status)) {
+		*sa_list_ret = talloc_move(ctx, &return_salist);
+		*ret_count = local_count;
 	}
-
-	SAFE_FREE(auto_ip_list);
-	TALLOC_FREE(ctx);
+	TALLOC_FREE(return_salist);
+	TALLOC_FREE(auto_sa_list);
+	TALLOC_FREE(frame);
 	return status;
 }
 
 /*********************************************************************
  Small wrapper function to get the DC list and sort it if neccessary.
+ Returns a samba_sockaddr array.
 *********************************************************************/
 
-NTSTATUS get_sorted_dc_list( const char *domain,
-			const char *sitename,
-			struct ip_service **ip_list,
-			int *count,
-			bool ads_only )
+NTSTATUS get_sorted_dc_list(TALLOC_CTX *ctx,
+				const char *domain,
+				const char *sitename,
+				struct samba_sockaddr **sa_list_ret,
+				size_t *ret_count,
+				bool ads_only)
 {
 	bool ordered = false;
 	NTSTATUS status;
 	enum dc_lookup_type lookup_type = DC_NORMAL_LOOKUP;
+	struct samba_sockaddr *sa_list = NULL;
+	size_t count = 0;
 
-	*ip_list = NULL;
-	*count = 0;
-
-	DEBUG(8,("get_sorted_dc_list: attempting lookup "
-		"for name %s (sitename %s)\n",
+	DBG_INFO("attempting lookup for name %s (sitename %s)\n",
 		domain,
-		 sitename ? sitename : "NULL"));
+		sitename ? sitename : "NULL");
 
 	if (ads_only) {
 		lookup_type = DC_ADS_ONLY;
 	}
 
-	status = get_dc_list(domain, sitename, ip_list,
-			count, lookup_type, &ordered);
+	status = get_dc_list(ctx,
+			domain,
+			sitename,
+			&sa_list,
+			&count,
+			lookup_type,
+			&ordered);
 	if (NT_STATUS_EQUAL(status, NT_STATUS_NO_LOGON_SERVERS)
-	    && sitename) {
-		DEBUG(3,("get_sorted_dc_list: no server for name %s available"
-			 " in site %s, fallback to all servers\n",
-			 domain, sitename));
-		status = get_dc_list(domain, NULL, ip_list,
-				     count, lookup_type, &ordered);
+			&& sitename) {
+		DBG_NOTICE("no server for name %s available"
+			" in site %s, fallback to all servers\n",
+			domain,
+			sitename);
+		status = get_dc_list(ctx,
+				domain,
+				NULL,
+				&sa_list,
+				&count,
+				lookup_type,
+				&ordered);
 	}
 
 	if (!NT_STATUS_IS_OK(status)) {
-		SAFE_FREE(*ip_list);
-		*count = 0;
 		return status;
 	}
 
 	/* only sort if we don't already have an ordered list */
 	if (!ordered) {
-		sort_service_list(*ip_list, *count);
+		sort_sa_list(sa_list, count);
 	}
 
-	return NT_STATUS_OK;
+	*ret_count = count;
+	*sa_list_ret = sa_list;
+	return status;
 }
 
 /*********************************************************************
  Get the KDC list - re-use all the logic in get_dc_list.
+ Returns a samba_sockaddr array.
 *********************************************************************/
 
-NTSTATUS get_kdc_list( const char *realm,
+NTSTATUS get_kdc_list(TALLOC_CTX *ctx,
+			const char *realm,
 			const char *sitename,
-			struct ip_service **ip_list,
-			int *count)
+			struct samba_sockaddr **sa_list_ret,
+			size_t *ret_count)
 {
-	bool ordered;
+	size_t count = 0;
+	struct samba_sockaddr *sa_list = NULL;
+	bool ordered = false;
 	NTSTATUS status;
 
-	*count = 0;
-	*ip_list = NULL;
-
-	status = get_dc_list(realm, sitename, ip_list,
-			count, DC_KDC_ONLY, &ordered);
+	status = get_dc_list(ctx,
+			realm,
+			sitename,
+			&sa_list,
+			&count,
+			DC_KDC_ONLY,
+			&ordered);
 
 	if (!NT_STATUS_IS_OK(status)) {
-		SAFE_FREE(*ip_list);
-		*count = 0;
 		return status;
 	}
 
 	/* only sort if we don't already have an ordered list */
-	if ( !ordered ) {
-		sort_service_list(*ip_list, *count);
+	if (!ordered ) {
+		sort_sa_list(sa_list, count);
 	}
 
-	return NT_STATUS_OK;
+	*ret_count = count;
+	*sa_list_ret = sa_list;
+	return status;
 }

@@ -66,7 +66,7 @@ static NTSTATUS auth3_generate_session_info_pac(struct auth4_context *auth_ctx,
 
 	if (pac_blob) {
 #ifdef HAVE_KRB5
-		struct wbcAuthUserParams params = {};
+		struct wbcAuthUserParams params = { 0 };
 		struct wbcAuthUserInfo *info = NULL;
 		struct wbcAuthErrorInfo *err = NULL;
 		wbcErr wbc_err;
@@ -356,9 +356,9 @@ NTSTATUS auth_generic_prepare(TALLOC_CTX *mem_ctx,
 		cli_credentials_set_conf(server_credentials, lp_ctx);
 
 		if (lp_security() == SEC_ADS || USE_KERBEROS_KEYTAB) {
-			cli_credentials_set_kerberos_state(server_credentials, CRED_AUTO_USE_KERBEROS);
+			cli_credentials_set_kerberos_state(server_credentials, CRED_USE_KERBEROS_DESIRED);
 		} else {
-			cli_credentials_set_kerberos_state(server_credentials, CRED_DONT_USE_KERBEROS);
+			cli_credentials_set_kerberos_state(server_credentials, CRED_USE_KERBEROS_DISABLED);
 		}
 
 		nt_status = gensec_server_start(tmp_ctx, gensec_settings,

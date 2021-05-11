@@ -298,6 +298,7 @@ static NTSTATUS cmd_open(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, c
 	struct smb_filename *smb_fname = NULL;
 	NTSTATUS status;
 	int ret;
+	int fd;
 
 	mode = 00400;
 
@@ -377,7 +378,7 @@ static NTSTATUS cmd_open(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, c
 	if (fsp == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
-	fsp->fh = talloc_zero(fsp, struct fd_handle);
+	fsp->fh = fd_handle_create(fsp);
 	if (fsp->fh == NULL) {
 		TALLOC_FREE(fsp);
 		return NT_STATUS_NO_MEMORY;
@@ -399,18 +400,19 @@ static NTSTATUS cmd_open(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, c
 		return status;
 	}
 
-	fsp->fh->fd = SMB_VFS_OPENAT(vfs->conn,
-				     fspcwd,
-				     smb_fname,
-				     fsp,
-				     flags,
-				     mode);
-	if (fsp->fh->fd == -1) {
+	fd = SMB_VFS_OPENAT(vfs->conn,
+			    fspcwd,
+			    smb_fname,
+			    fsp,
+			    flags,
+			    mode);
+	if (fd == -1) {
 		printf("open: error=%d (%s)\n", errno, strerror(errno));
 		TALLOC_FREE(fsp);
 		TALLOC_FREE(smb_fname);
 		return NT_STATUS_UNSUCCESSFUL;
 	}
+	fsp_set_fd(fsp, fd);
 
 	status = NT_STATUS_OK;
 	ret = SMB_VFS_FSTAT(fsp, &smb_fname->st);
@@ -444,8 +446,8 @@ static NTSTATUS cmd_open(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, c
 	fsp->sent_oplock_break = NO_BREAK_SENT;
 	fsp->fsp_flags.is_directory = false;
 
-	vfs->files[fsp->fh->fd] = fsp;
-	printf("open: fd=%d\n", fsp->fh->fd);
+	vfs->files[fsp_get_pathref_fd(fsp)] = fsp;
+	printf("open: fd=%d\n", fsp_get_pathref_fd(fsp));
 	return NT_STATUS_OK;
 }
 
@@ -1013,6 +1015,7 @@ static NTSTATUS cmd_utime(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, 
 {
 	struct smb_file_time ft;
 	struct smb_filename *smb_fname = NULL;
+	NTSTATUS status;
 
 	if (argc != 4) {
 		printf("Usage: utime <path> <access> <modify>\n");
@@ -1024,11 +1027,15 @@ static NTSTATUS cmd_utime(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int argc, 
 	ft.atime = time_t_to_full_timespec(atoi(argv[2]));
 	ft.mtime = time_t_to_full_timespec(atoi(argv[3]));
 
-	smb_fname = synthetic_smb_fname_split(mem_ctx,
-					argv[1],
-					lp_posix_pathnames());
-	if (smb_fname == NULL) {
-		return NT_STATUS_NO_MEMORY;
+	status = filename_convert(mem_ctx,
+				  vfs->conn,
+				  argv[1],
+				  0,
+				  0,
+				  &smb_fname);
+	if (!NT_STATUS_IS_OK(status)) {
+		printf("utime: %s\n", nt_errstr(status));
+		return status;
 	}
 
 	if (SMB_VFS_NTIMES(vfs->conn, smb_fname, &ft) != 0) {
@@ -1626,6 +1633,7 @@ static NTSTATUS cmd_set_nt_acl(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int a
 	struct smb_filename *smb_fname = NULL;
 	NTSTATUS status;
 	struct security_descriptor *sd = NULL;
+	int fd;
 
 	if (argc != 3) {
 		printf("Usage: set_nt_acl <file> <sddl>\n");
@@ -1638,7 +1646,7 @@ static NTSTATUS cmd_set_nt_acl(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int a
 	if (fsp == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
-	fsp->fh = talloc_zero(fsp, struct fd_handle);
+	fsp->fh = fd_handle_create(fsp);
 	if (fsp->fh == NULL) {
 		TALLOC_FREE(fsp);
 		return NT_STATUS_NO_MEMORY;
@@ -1667,26 +1675,27 @@ static NTSTATUS cmd_set_nt_acl(struct vfs_state *vfs, TALLOC_CTX *mem_ctx, int a
 		return status;
 	}
 
-	fsp->fh->fd = SMB_VFS_OPENAT(vfs->conn,
-				     fspcwd,
-				     smb_fname,
-				     fsp,
-				     O_RDWR,
-				     mode);
-	if (fsp->fh->fd == -1 && errno == EISDIR) {
-		fsp->fh->fd = SMB_VFS_OPENAT(vfs->conn,
-					     fspcwd,
-					     smb_fname,
-					     fsp,
-					     flags,
-					     mode);
+	fd = SMB_VFS_OPENAT(vfs->conn,
+			    fspcwd,
+			    smb_fname,
+			    fsp,
+			    O_RDWR,
+			    mode);
+	if (fd == -1 && errno == EISDIR) {
+		fd = SMB_VFS_OPENAT(vfs->conn,
+				    fspcwd,
+				    smb_fname,
+				    fsp,
+				    flags,
+				    mode);
 	}
-	if (fsp->fh->fd == -1) {
+	if (fd == -1) {
 		printf("open: error=%d (%s)\n", errno, strerror(errno));
 		TALLOC_FREE(fsp);
 		TALLOC_FREE(smb_fname);
 		return NT_STATUS_UNSUCCESSFUL;
 	}
+	fsp_set_fd(fsp, fd);
 
 	status = NT_STATUS_OK;
 	ret = SMB_VFS_FSTAT(fsp, &smb_fname->st);

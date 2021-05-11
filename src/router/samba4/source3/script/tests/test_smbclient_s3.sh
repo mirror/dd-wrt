@@ -404,6 +404,40 @@ EOF
     return 0
 }
 
+# Test recursive listing across msdfs links
+test_msdfs_recursive_dir()
+{
+    tmpfile=$PREFIX/smbclient.in.$$
+    error="NT_STATUS_OBJECT_PATH_NOT_FOUND"
+
+    cat > $tmpfile <<EOF
+recurse
+dir
+quit
+EOF
+
+    cmd='$SMBCLIENT "$@" -U$USERNAME%$PASSWORD //$SERVER/msdfs-share -I $SERVER_IP $ADDARGS -m $PROTOCOL < $tmpfile 2>&1'
+    out=$(eval $cmd)
+    ret="$?"
+
+    if [ "$ret" -ne 0 ] ; then
+	echo "$out"
+	echo "failed listing msfds-share\ with error $ret"
+	return 1
+    fi
+
+    echo "$out" | grep "$error" > /dev/null 2>&1
+
+    ret="$?"
+    if [ "$ret" -eq 0 ] ; then
+	echo "$out"
+	echo "Listing \\msdfs-share recursively found $error"
+	return 1
+    fi
+
+    return 0
+}
+
 # Archive bits are correctly set on file/dir creation and rename.
 test_rename_archive_bit()
 {
@@ -1796,6 +1830,140 @@ EOF
     fi
 }
 
+test_valid_users()
+{
+    tmpfile=$PREFIX/smbclient_interactive_prompt_commands
+    cat > $tmpfile <<EOF
+ls
+quit
+EOF
+    # User in "valid users" can login to service
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -U$DC_USERNAME%$DC_PASSWORD //$SERVER/valid_users $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    ret=$?
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:valid_users 'User in 'valid users' can login to service' failed - $ret"
+       return 1
+    fi
+
+    # User from ad group in "valid users" can login to service
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -U$DC_USERNAME%$DC_PASSWORD //$SERVER/valid_users_group $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    ret=$?
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:valid_users_group 'User from ad group in 'valid users' can login to service' failed - $ret"
+       return 1
+    fi
+
+    # User from UNIX group in "valid users" can login to service
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -U$DC_USERNAME%$DC_PASSWORD //$SERVER/valid_users_unix_group $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    ret=$?
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:valid_users_unix_group 'User from UNIX group in 'valid users' can login to service' failed - $ret"
+       return 1
+    fi
+
+    # User not in NIS group in "valid users" can't login to service
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -U$DC_USERNAME%$DC_PASSWORD //$SERVER/valid_users_nis_group $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    echo "$out" | grep 'NT_STATUS_ACCESS_DENIED'
+    ret=$?
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:valid_users_nis_group 'User not in NIS group in 'valid users' can't login to service' failed - $ret"
+       return 1
+    fi
+
+    # Check user in UNIX, then in NIS group in "valid users" can login to service
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -U$DC_USERNAME%$DC_PASSWORD //$SERVER/valid_users_unix_nis_group $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    ret=$?
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:valid_users_unix_nis_group 'Check user in UNIX, then in NIS group in 'valid users' can login to service' failed - $ret"
+       return 1
+    fi
+
+    # Check user in NIS, then in UNIX group in "valid users" can login to service
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -U$DC_USERNAME%$DC_PASSWORD //$SERVER/valid_users_nis_unix_group $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    ret=$?
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:valid_users_nis_unix_group 'Check user in NIS, then in UNIX group in 'valid users' can login to service' failed - $ret"
+       return 1
+    fi
+
+    # User not in "invalid users" can login to service
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -Ualice%Secret007 //$SERVER/invalid_users $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    ret=$?
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:invalid_users 'User not in 'invalid users' can login to service' failed - $ret"
+       return 1
+    fi
+
+    # User in "invalid users" can't login to service
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -U$DC_USERNAME%$DC_PASSWORD //$SERVER/invalid_users $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    echo "$out" | grep 'NT_STATUS_ACCESS_DENIED'
+    ret=$?
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:invalid_users 'User in 'invalid users' can't login to service' failed - $ret"
+       return 1
+    fi
+
+    # User is in "valid and invalid users" can't login to service
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -U$DC_USERNAME%$DC_PASSWORD //$SERVER/valid_and_invalid_users $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    echo "$out" | grep 'NT_STATUS_ACCESS_DENIED'
+    ret=$?
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:valid_and_invalid_users 'User is in 'valid and invalid users' can't login to service' failed - $ret"
+       return 1
+    fi
+
+    # 2 Users are in "valid users"
+    cmd='CLI_FORCE_INTERACTIVE=yes $SMBCLIENT "$@" -Ualice%Secret007 //$SERVER/valid_and_invalid_users $ADDARGS < $tmpfile 2>&1'
+    eval echo "$cmd"
+    out=`eval $cmd`
+    ret=$?
+    rm -f $tmpfile
+
+    if [ $ret -ne 0 ] ; then
+       echo "$out"
+       echo "test_valid_users:valid_and_invalid_users '2 Users are in 'valid users'' failed - $ret"
+       return 1
+    fi
+
+    return 0
+}
+
 #
 #
 LOGDIR_PREFIX=test_smbclient_s3
@@ -1851,6 +2019,10 @@ testit "Reading a owner-only file fails" \
 
 testit "Accessing an MS-DFS link" \
    test_msdfs_link || \
+   failed=`expr $failed + 1`
+
+testit "Recursive ls across MS-DFS links" \
+   test_msdfs_recursive_dir || \
    failed=`expr $failed + 1`
 
 testit "Ensure archive bit is set correctly on file/dir rename" \
@@ -1947,6 +2119,10 @@ testit "rm -rf $LOGDIR" \
 
 testit "delete a non empty directory" \
     test_del_nedir || \
+    failed=`expr $failed + 1`
+
+testit "valid users" \
+    test_valid_users || \
     failed=`expr $failed + 1`
 
 testok $0 $failed

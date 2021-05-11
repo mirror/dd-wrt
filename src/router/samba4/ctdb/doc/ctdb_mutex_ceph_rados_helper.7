@@ -2,12 +2,12 @@
 .\"     Title: Ceph RADOS Mutex
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 11/03/2020
+.\"      Date: 04/26/2021
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CEPH RADOS MUTEX" "7" "11/03/2020" "ctdb" "CTDB \- clustered TDB database"
+.TH "CEPH RADOS MUTEX" "7" "04/26/2021" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -59,6 +59,8 @@ must be up and running, with a configuration, and keyring file for
 located in a librados default search path (e\&.g\&. /etc/ceph/)\&.
 \fIPool\fR
 must already exist\&.
+.PP
+For informational purposes, ctdb_mutex_ceph_rados_helper will also register the recovery lock holder in Ceph Manager\*(Aqs service map\&.
 .SH "SEE ALSO"
 .PP
 \fBctdb\fR(7),

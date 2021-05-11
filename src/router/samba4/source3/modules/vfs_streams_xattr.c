@@ -226,11 +226,7 @@ static int streams_xattr_fstat(vfs_handle_struct *handle, files_struct *fsp,
 		return -1;
 	}
 
-	if (smb_fname_base->flags & SMB_FILENAME_POSIX_PATH) {
-		ret = SMB_VFS_LSTAT(handle->conn, smb_fname_base);
-	} else {
-		ret = SMB_VFS_STAT(handle->conn, smb_fname_base);
-	}
+	ret = vfs_stat(handle->conn, smb_fname_base);
 	*sbuf = smb_fname_base->st;
 
 	if (ret == -1) {
@@ -371,15 +367,9 @@ static int streams_xattr_openat(struct vfs_handle_struct *handle,
 	struct stream_io *sio = NULL;
 	struct ea_struct ea;
 	char *xattr_name = NULL;
-	int pipe_fds[2];
 	int fakefd = -1;
 	bool set_empty_xattr = false;
 	int ret;
-
-	/*
-	 * For now assert this, so the below SMB_VFS_SETXATTR() works.
-	 */
-	SMB_ASSERT(dirfsp->fh->fd == AT_FDCWD);
 
 	SMB_VFS_HANDLE_GET_DATA(handle, config, struct streams_xattr_config,
 				return -1);
@@ -395,6 +385,11 @@ static int streams_xattr_openat(struct vfs_handle_struct *handle,
 					   flags,
 					   mode);
 	}
+
+	/*
+	 * For now assert this, so the below SMB_VFS_SETXATTR() works.
+	 */
+	SMB_ASSERT(fsp_get_pathref_fd(dirfsp) == AT_FDCWD);
 
 	status = streams_xattr_get_name(handle, talloc_tos(),
 					smb_fname->stream_name, &xattr_name);
@@ -456,18 +451,7 @@ static int streams_xattr_openat(struct vfs_handle_struct *handle,
 		}
 	}
 
-	/*
-	 * Return a valid fd, but ensure any attempt to use it returns an error
-	 * (EPIPE).
-	 */
-	ret = pipe(pipe_fds);
-	if (ret != 0) {
-		goto fail;
-	}
-
-	close(pipe_fds[1]);
-	pipe_fds[1] = -1;
-	fakefd = pipe_fds[0];
+	fakefd = vfs_fake_fd();
 
         sio = VFS_ADD_FSP_EXTENSION(handle, fsp, struct stream_io, NULL);
         if (sio == NULL) {
@@ -504,7 +488,7 @@ static int streams_xattr_openat(struct vfs_handle_struct *handle,
 
  fail:
 	if (fakefd >= 0) {
-		close(fakefd);
+		vfs_fake_fd_close(fakefd);
 		fakefd = -1;
 	}
 
@@ -517,7 +501,7 @@ static int streams_xattr_close(vfs_handle_struct *handle,
 	int ret;
 	int fd;
 
-	fd = fsp->fh->fd;
+	fd = fsp_get_pathref_fd(fsp);
 
 	DBG_DEBUG("streams_xattr_close called [%s] fd [%d]\n",
 			smb_fname_str_dbg(fsp->fsp_name), fd);
@@ -526,8 +510,8 @@ static int streams_xattr_close(vfs_handle_struct *handle,
 		return SMB_VFS_NEXT_CLOSE(handle, fsp);
 	}
 
-	ret = close(fd);
-	fsp->fh->fd = -1;
+	ret = vfs_fake_fd_close(fd);
+	fsp_set_fd(fsp, -1);
 
 	return ret;
 }
@@ -1425,13 +1409,14 @@ static SMB_ACL_T streams_xattr_sys_acl_get_fd(vfs_handle_struct *handle,
 
 static int streams_xattr_sys_acl_set_fd(vfs_handle_struct *handle,
 					files_struct *fsp,
+					SMB_ACL_TYPE_T type,
 					SMB_ACL_T theacl)
 {
 	struct stream_io *sio =
 		(struct stream_io *)VFS_FETCH_FSP_EXTENSION(handle, fsp);
 
 	if (sio == NULL) {
-		return SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, theacl);
+		return SMB_VFS_NEXT_SYS_ACL_SET_FD(handle, fsp, type, theacl);
 	}
 
 	return 0;

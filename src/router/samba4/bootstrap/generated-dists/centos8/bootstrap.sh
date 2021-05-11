@@ -12,8 +12,10 @@ yum install -y dnf-plugins-core
 yum install -y epel-release
 
 yum -v repolist all
-yum config-manager --set-enabled PowerTools -y
-yum config-manager --set-enabled Devel -y
+yum config-manager --set-enabled PowerTools -y || \
+    yum config-manager --set-enabled powertools -y
+yum config-manager --set-enabled Devel -y || \
+    yum config-manager --set-enabled devel -y
 yum update -y
 
 yum install -y \
@@ -79,6 +81,7 @@ yum install -y \
     perl \
     perl-Archive-Tar \
     perl-ExtUtils-MakeMaker \
+    perl-JSON \
     perl-Parse-Yapp \
     perl-Test-Simple \
     perl-generators \
@@ -92,10 +95,12 @@ yum install -y \
     python3-devel \
     python3-dns \
     python3-gpg \
+    python3-iso8601 \
     python3-libsemanage \
     python3-markdown \
     python3-policycoreutils \
     python3-pyasn1 \
+    python3-setproctitle \
     quota-devel \
     readline-devel \
     redhat-lsb \

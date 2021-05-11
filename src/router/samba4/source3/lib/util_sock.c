@@ -31,19 +31,6 @@
 #include "lib/util/sys_rw.h"
 #include "lib/util/sys_rw_data.h"
 
-const char *client_addr(int fd, char *addr, size_t addrlen)
-{
-	return get_peer_addr(fd,addr,addrlen);
-}
-
-#if 0
-/* Not currently used. JRA. */
-int client_socket_port(int fd)
-{
-	return get_socket_port(fd);
-}
-#endif
-
 /****************************************************************************
  Determine if a file descriptor is in fact a socket.
 ****************************************************************************/
@@ -54,48 +41,6 @@ bool is_a_socket(int fd)
 	socklen_t l;
 	l = sizeof(int);
 	return(getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&v, &l) == 0);
-}
-
-/****************************************************************************
- Read from a socket.
-****************************************************************************/
-
-ssize_t read_udp_v4_socket(int fd,
-			char *buf,
-			size_t len,
-			struct sockaddr_storage *psa)
-{
-	ssize_t ret;
-	socklen_t socklen = sizeof(*psa);
-	struct sockaddr_in *si = (struct sockaddr_in *)psa;
-
-	memset((char *)psa,'\0',socklen);
-
-	ret = (ssize_t)sys_recvfrom(fd,buf,len,0,
-			(struct sockaddr *)psa,&socklen);
-	if (ret <= 0) {
-		/* Don't print a low debug error for a non-blocking socket. */
-		if (errno == EAGAIN) {
-			DEBUG(10,("read_udp_v4_socket: returned EAGAIN\n"));
-		} else {
-			DEBUG(2,("read_udp_v4_socket: failed. errno=%s\n",
-				strerror(errno)));
-		}
-		return 0;
-	}
-
-	if (psa->ss_family != AF_INET) {
-		DEBUG(2,("read_udp_v4_socket: invalid address family %d "
-			"(not IPv4)\n", (int)psa->ss_family));
-		return 0;
-	}
-
-	DEBUG(10,("read_udp_v4_socket: ip %s port %d read: %lu\n",
-			inet_ntoa(si->sin_addr),
-			si->sin_port,
-			(unsigned long)ret));
-
-	return ret;
 }
 
 /****************************************************************************
@@ -201,20 +146,6 @@ NTSTATUS read_fd_with_timeout(int fd, char *buf,
 NTSTATUS read_data_ntstatus(int fd, char *buffer, size_t N)
 {
 	return read_fd_with_timeout(fd, buffer, N, N, 0, NULL);
-}
-
-/****************************************************************************
- Send a keepalive packet (rfc1002).
-****************************************************************************/
-
-bool send_keepalive(int client)
-{
-	unsigned char buf[4];
-
-	buf[0] = NBSSkeepalive;
-	buf[1] = buf[2] = buf[3] = 0;
-
-	return(write_data(client,(char *)buf,4) == 4);
 }
 
 /****************************************************************************
@@ -695,59 +626,6 @@ NTSTATUS open_socket_out_defer_recv(struct tevent_req *req, int *pfd)
 	*pfd = state->fd;
 	state->fd = -1;
 	return NT_STATUS_OK;
-}
-
-/****************************************************************************
- Open a connected UDP socket to host on port
-**************************************************************************/
-
-int open_udp_socket(const char *host, int port)
-{
-	struct sockaddr_storage ss;
-	int res;
-	socklen_t salen;
-
-	if (!interpret_string_addr(&ss, host, 0)) {
-		DEBUG(10,("open_udp_socket: can't resolve name %s\n",
-			host));
-		return -1;
-	}
-
-	res = socket(ss.ss_family, SOCK_DGRAM, 0);
-	if (res == -1) {
-		return -1;
-	}
-
-#if defined(HAVE_IPV6)
-	if (ss.ss_family == AF_INET6) {
-		struct sockaddr_in6 *psa6;
-		psa6 = (struct sockaddr_in6 *)&ss;
-		psa6->sin6_port = htons(port);
-		if (psa6->sin6_scope_id == 0
-				&& IN6_IS_ADDR_LINKLOCAL(&psa6->sin6_addr)) {
-			setup_linklocal_scope_id(
-				(struct sockaddr *)&ss);
-		}
-		salen = sizeof(struct sockaddr_in6);
-	} else 
-#endif
-	if (ss.ss_family == AF_INET) {
-		struct sockaddr_in *psa;
-		psa = (struct sockaddr_in *)&ss;
-		psa->sin_port = htons(port);
-	    salen = sizeof(struct sockaddr_in);
-	} else {
-		DEBUG(1, ("unknown socket family %d", ss.ss_family));
-		close(res);
-		return -1;
-	}
-
-	if (connect(res, (struct sockaddr *)&ss, salen)) {
-		close(res);
-		return -1;
-	}
-
-	return res;
 }
 
 /*******************************************************************

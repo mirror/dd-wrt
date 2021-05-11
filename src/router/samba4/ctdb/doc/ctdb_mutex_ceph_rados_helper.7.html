@@ -18,7 +18,10 @@ Object: Ceph RADOS object name
       with a configuration, and keyring file for <em class="parameter"><code>User</code></em>
       located in a librados default search path (e.g. /etc/ceph/).
       <em class="parameter"><code>Pool</code></em> must already exist.
-    </p></div><div class="refsect1"><a name="idm22"></a><h2>SEE ALSO</h2><p>
+    </p><p>
+      For informational purposes, ctdb_mutex_ceph_rados_helper will also
+      register the recovery lock holder in Ceph Manager's service map.
+    </p></div><div class="refsect1"><a name="idm23"></a><h2>SEE ALSO</h2><p>
       <span class="citerefentry"><span class="refentrytitle">ctdb</span>(7)</span>,
 
       <span class="citerefentry"><span class="refentrytitle">ctdbd</span>(1)</span>,

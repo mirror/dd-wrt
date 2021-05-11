@@ -29,6 +29,8 @@
 #include "idmap.h"
 #include "idmap_rw.h"
 #include "../libcli/security/security.h"
+#include "lib/util/smb_strtox.h"
+#include "lib/global_contexts.h"
 
 #undef DBGC_CLASS
 #define DBGC_CLASS DBGC_IDMAP
@@ -250,6 +252,17 @@ static NTSTATUS idmap_ldap_allocate_id_internal(struct idmap_domain *dom,
 					   LDAP_ATTR_GIDNUMBER);
 		break;
 
+	case ID_TYPE_BOTH:
+		/*
+		 * This is not supported here yet and
+		 * already handled in idmap_rw_new_mapping()
+		 */
+		FALL_THROUGH;
+	case ID_TYPE_NOT_SPECIFIED:
+		/*
+		 * This is handled in idmap_rw_new_mapping()
+		 */
+		FALL_THROUGH;
 	default:
 		DEBUG(2, ("Invalid ID type (0x%x)\n", xid->type));
 		return NT_STATUS_INVALID_PARAMETER;
@@ -867,6 +880,7 @@ static NTSTATUS idmap_ldap_sids_to_unixids(struct idmap_domain *dom,
 	const char **attr_list;
 	char *filter = NULL;
 	bool multi = False;
+	size_t num_required = 0;
 	int idx = 0;
 	int bidx = 0;
 	int count;
@@ -1075,7 +1089,21 @@ again:
 			ids[i]->status = ID_UNMAPPED;
 			if (ids[i]->sid != NULL) {
 				ret = idmap_ldap_new_mapping(dom, ids[i]);
+				DBG_DEBUG("idmap_ldap_new_mapping returned %s\n",
+					  nt_errstr(ret));
+				if (NT_STATUS_EQUAL(ret, STATUS_SOME_UNMAPPED)) {
+					if (ids[i]->status == ID_REQUIRE_TYPE) {
+						num_required += 1;
+						continue;
+					}
+				}
 				if (!NT_STATUS_IS_OK(ret)) {
+					/*
+					 * If we can't create
+					 * a new mapping it's unlikely
+					 * that it will work for the
+					 * next entry.
+					 */
 					goto done;
 				}
 			}
@@ -1083,6 +1111,9 @@ again:
 	}
 
 	ret = NT_STATUS_OK;
+	if (num_required > 0) {
+		ret = STATUS_SOME_UNMAPPED;
+	}
 
 done:
 	talloc_free(memctx);
@@ -1093,7 +1124,7 @@ done:
  Close the idmap ldap instance
 **********************************/
 
-static struct idmap_methods idmap_ldap_methods = {
+static const struct idmap_methods idmap_ldap_methods = {
 
 	.init = idmap_ldap_db_init,
 	.unixids_to_sids = idmap_ldap_unixids_to_sids,

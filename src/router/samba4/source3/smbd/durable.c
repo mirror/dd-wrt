@@ -23,6 +23,7 @@
 #include "includes.h"
 #include "system/filesys.h"
 #include "lib/util/server_id.h"
+#include "locking/share_mode_lock.h"
 #include "smbd/smbd.h"
 #include "smbd/globals.h"
 #include "libcli/security/security.h"
@@ -74,7 +75,7 @@ NTSTATUS vfs_default_durable_cookie(struct files_struct *fsp,
 		return NT_STATUS_NOT_SUPPORTED;
 	}
 
-	if (fsp->fh->fd == -1) {
+	if (fsp_get_io_fd(fsp) == -1) {
 		return NT_STATUS_NOT_SUPPORTED;
 	}
 
@@ -100,7 +101,7 @@ NTSTATUS vfs_default_durable_cookie(struct files_struct *fsp,
 	cookie.servicepath = conn->connectpath;
 	cookie.base_name = fsp->fsp_name->base_name;
 	cookie.initial_allocation_size = fsp->initial_allocation_size;
-	cookie.position_information = fsp->fh->position_information;
+	cookie.position_information = fh_get_position_information(fsp->fh);
 	cookie.update_write_time_triggered =
 		fsp->fsp_flags.update_write_time_triggered;
 	cookie.update_write_time_on_close =
@@ -211,8 +212,8 @@ NTSTATUS vfs_default_durable_disconnect(struct files_struct *fsp,
 		init_smb_file_time(&ft);
 
 		if (fsp->fsp_flags.write_time_forced) {
-			ft.mtime = nt_time_to_full_timespec(
-				lck->data->changed_write_time);
+			NTTIME mtime = share_mode_changed_write_time(lck);
+			ft.mtime = nt_time_to_full_timespec(mtime);
 		} else if (fsp->fsp_flags.update_write_time_on_close) {
 			if (is_omit_timespec(&fsp->close_write_time)) {
 				ft.mtime = timespec_current();
@@ -253,7 +254,7 @@ NTSTATUS vfs_default_durable_disconnect(struct files_struct *fsp,
 	cookie.servicepath = conn->connectpath;
 	cookie.base_name = fsp_str_dbg(fsp);
 	cookie.initial_allocation_size = fsp->initial_allocation_size;
-	cookie.position_information = fsp->fh->position_information;
+	cookie.position_information = fh_get_position_information(fsp->fh);
 	cookie.update_write_time_triggered =
 		fsp->fsp_flags.update_write_time_triggered;
 	cookie.update_write_time_on_close =
@@ -677,7 +678,7 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		return status;
 	}
 
-	fsp->fh->private_options = e.private_options;
+	fh_set_private_options(fsp->fh, e.private_options);
 	fsp->file_id = file_id;
 	fsp->file_pid = smb1req->smbpid;
 	fsp->vuid = smb1req->vuid;
@@ -718,7 +719,7 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		if (!GUID_equal(fsp_client_guid(fsp),
 				&e.client_guid)) {
 			TALLOC_FREE(lck);
-			fsp_free(fsp);
+			file_free(smb1req, fsp);
 			return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 		}
 
@@ -734,7 +735,7 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 			&epoch); /* epoch */
 		if (!NT_STATUS_IS_OK(status)) {
 			TALLOC_FREE(lck);
-			fsp_free(fsp);
+			file_free(smb1req, fsp);
 			return status;
 		}
 
@@ -746,13 +747,13 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 			epoch);
 		if (fsp->lease == NULL) {
 			TALLOC_FREE(lck);
-			fsp_free(fsp);
+			file_free(smb1req, fsp);
 			return NT_STATUS_NO_MEMORY;
 		}
 	}
 
 	fsp->initial_allocation_size = cookie.initial_allocation_size;
-	fsp->fh->position_information = cookie.position_information;
+	fh_set_position_information(fsp->fh, cookie.position_information);
 	fsp->fsp_flags.update_write_time_triggered =
 		cookie.update_write_time_triggered;
 	fsp->fsp_flags.update_write_time_on_close =
@@ -761,13 +762,10 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	fsp->close_write_time = nt_time_to_full_timespec(
 		cookie.close_write_time);
 
-	/* TODO: real dirfsp... */
-	fsp->dirfsp = fsp->conn->cwd_fsp;
-
 	status = fsp_set_smb_fname(fsp, smb_fname);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(lck);
-		fsp_free(fsp);
+		file_free(smb1req, fsp);
 		DEBUG(0, ("vfs_default_durable_reconnect: "
 			  "fsp_set_smb_fname failed: %s\n",
 			  nt_errstr(status)));
@@ -783,12 +781,13 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		e.share_file_id,
 		messaging_server_id(conn->sconn->msg_ctx),
 		smb1req->mid,
-		fsp->fh->gen_id);
+		fh_get_gen_id(fsp->fh));
 	if (!ok) {
 		DBG_DEBUG("Could not set new share_mode_entry values\n");
 		TALLOC_FREE(lck);
 		op->compat = NULL;
-		fsp_free(fsp);
+		fsp->op = NULL;
+		file_free(smb1req, fsp);
 		return NT_STATUS_INTERNAL_ERROR;
 	}
 
@@ -800,7 +799,8 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 			  nt_errstr(status)));
 		TALLOC_FREE(lck);
 		op->compat = NULL;
-		fsp_free(fsp);
+		fsp->op = NULL;
+		file_free(smb1req, fsp);
 		return status;
 	}
 
@@ -815,13 +815,14 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		flags = O_RDONLY;
 	}
 
-	status = fd_openat(fsp, flags, 0);
+	status = fd_openat(conn->cwd_fsp, fsp->fsp_name, fsp, flags, 0);
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(lck);
 		DEBUG(1, ("vfs_default_durable_reconnect: failed to open "
 			  "file: %s\n", nt_errstr(status)));
 		op->compat = NULL;
-		fsp_free(fsp);
+		fsp->op = NULL;
+		file_free(smb1req, fsp);
 		return status;
 	}
 
@@ -848,7 +849,8 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;
-		fsp_free(fsp);
+		fsp->op = NULL;
+		file_free(smb1req, fsp);
 		return status;
 	}
 
@@ -861,7 +863,8 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;
-		fsp_free(fsp);
+		fsp->op = NULL;
+		file_free(smb1req, fsp);
 		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
@@ -875,11 +878,12 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;
-		fsp_free(fsp);
+		fsp->op = NULL;
+		file_free(smb1req, fsp);
 		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
-	(void)dos_mode(fsp->conn, fsp->fsp_name);
+	(void)fdos_mode(fsp);
 
 	ok = vfs_default_durable_reconnect_check_stat(&cookie.stat_info,
 						      &fsp->fsp_name->st,
@@ -893,7 +897,8 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;
-		fsp_free(fsp);
+		fsp->op = NULL;
+		file_free(smb1req, fsp);
 		return NT_STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
@@ -909,7 +914,8 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 		}
 		TALLOC_FREE(lck);
 		op->compat = NULL;
-		fsp_free(fsp);
+		fsp->op = NULL;
+		file_free(smb1req, fsp);
 		return status;
 	}
 
@@ -920,7 +926,8 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 			  "vfs_default_durable_cookie - %s\n",
 			  nt_errstr(status)));
 		op->compat = NULL;
-		fsp_free(fsp);
+		fsp->op = NULL;
+		file_free(smb1req, fsp);
 		return status;
 	}
 
@@ -930,11 +937,9 @@ NTSTATUS vfs_default_durable_reconnect(struct connection_struct *conn,
 	DEBUG(10, ("vfs_default_durable_reconnect: opened file '%s'\n",
 		   fsp_str_dbg(fsp)));
 
-	/*
-	 * release the sharemode lock: this writes the changes
-	 */
-	lck->data->modified = true;
 	TALLOC_FREE(lck);
+
+	fsp->fsp_flags.is_fsa = true;
 
 	*result = fsp;
 	*new_cookie = new_cookie_blob;

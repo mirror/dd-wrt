@@ -120,9 +120,12 @@ char *print_sockaddr(char *dest,
 			const struct sockaddr_storage *psa);
 char *print_canonical_sockaddr(TALLOC_CTX *ctx,
 			const struct sockaddr_storage *pss);
-int get_socket_port(int fd);
-const char *client_socket_addr(int fd, char *addr, size_t addr_len);
 
 void set_socket_options(int fd, const char *options);
+
+bool sockaddr_storage_to_samba_sockaddr(
+	struct samba_sockaddr *sa, const struct sockaddr_storage *ss);
+bool samba_sockaddr_set_port(struct samba_sockaddr *sa, uint16_t port);
+bool samba_sockaddr_get_port(const struct samba_sockaddr *sa, uint16_t *port);
 
 #endif /* _SAMBA_UTIL_NET_H_ */

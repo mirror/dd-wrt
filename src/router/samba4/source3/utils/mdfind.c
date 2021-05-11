@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 	const char *mds_query = NULL;
 	struct cli_state *cli = NULL;
 	char *basepath = NULL;
-	uint32_t flags = 0;
+	uint32_t flags = CLI_FULL_CONNECTION_IPC;
 	int signing_state = SMB_SIGNING_IPC_DEFAULT;
 	uint64_t *cnids = NULL;
 	size_t ncnids;
@@ -153,18 +153,10 @@ int main(int argc, char **argv)
 					   "IPC$",
 					   "IPC",
 					   creds,
-					   flags,
-					   SMB_SIGNING_IPC_DEFAULT);
+					   flags);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_ERR("Cannot connect to server: %s\n", nt_errstr(status));
 		goto fail;
-	}
-
-	if (get_cmdline_auth_info_smb_encrypt(auth)) {
-		status = cli_cm_force_encryption_creds(cli, creds, "IPC$");
-		if (!NT_STATUS_IS_OK(status)) {
-			goto fail;
-		}
 	}
 
 	status = cli_rpc_pipe_open_noauth_transport(cli,
@@ -259,6 +251,7 @@ int main(int argc, char **argv)
 		goto fail;
 	}
 
+	cmdline_messaging_context_free();
 	TALLOC_FREE(frame);
 	poptFreeContext(pc);
 	return 0;

@@ -283,8 +283,8 @@ static void parse_args(int argc, const char *argv[],
 	if (opt_kerberos) {
 		cli_credentials_set_kerberos_state(cred,
 		                                   strcmp(opt_kerberos, "yes")
-		                                   ? CRED_MUST_USE_KERBEROS
-		                                   : CRED_DONT_USE_KERBEROS);
+		                                   ? CRED_USE_KERBEROS_REQUIRED
+		                                   : CRED_USE_KERBEROS_DISABLED);
 	}
 
 	if (options->runas == NULL && options->runas_file != NULL) {
@@ -347,7 +347,7 @@ static NTSTATUS winexe_svc_upload(
 	int flags)
 {
 	struct cli_state *cli;
-	uint16_t fnum;
+	uint16_t fnum = 0xffff;
 	NTSTATUS status;
 	const DATA_BLOB *binary = NULL;
 
@@ -360,7 +360,6 @@ static NTSTATUS winexe_svc_upload(
 		"ADMIN$",
 		"?????",
 		credentials,
-		0,
 		0);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_WARNING("cli_full_connection_creds failed: %s\n",
@@ -390,7 +389,7 @@ static NTSTATUS winexe_svc_upload(
 	}
 
 	if (binary == NULL) {
-		//TODO
+		goto done;
 	}
 
 	status = cli_ntcreate(
@@ -421,16 +420,20 @@ static NTSTATUS winexe_svc_upload(
 		NULL);
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_WARNING("Could not write file: %s\n", nt_errstr(status));
-		goto close_done;
+		goto done;
 	}
 
-close_done:
-	status = cli_close(cli, fnum);
-	if (!NT_STATUS_IS_OK(status)) {
-		DBG_WARNING("Close(%"PRIu16") failed for %s: %s\n", fnum,
-			    service_filename, nt_errstr(status));
-	}
 done:
+	if (fnum != 0xffff) {
+		status = cli_close(cli, fnum);
+		if (!NT_STATUS_IS_OK(status)) {
+			DBG_WARNING("Close(%"PRIu16") failed for %s: %s\n",
+				    fnum,
+				    service_filename,
+				    nt_errstr(status));
+		}
+	}
+
 	TALLOC_FREE(cli);
 	return status;
 }
@@ -1919,8 +1922,7 @@ int main(int argc, const char *argv[])
 		"IPC$",
 		"?????",
 		options.credentials,
-		0,
-		0);
+		CLI_FULL_CONNECTION_IPC);
 
 	if (!NT_STATUS_IS_OK(status)) {
 		DBG_WARNING("cli_full_connection_creds failed: %s\n",

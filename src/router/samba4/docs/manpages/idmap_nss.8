@@ -2,12 +2,12 @@
 .\"     Title: idmap_nss
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 11/03/2020
+.\"      Date: 04/26/2021
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.13.2
+.\"    Source: Samba 4.14.4
 .\"  Language: English
 .\"
-.TH "IDMAP_NSS" "8" "11/03/2020" "Samba 4\&.13\&.2" "System Administration tools"
+.TH "IDMAP_NSS" "8" "04/26/2021" "Samba 4\&.14\&.4" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -34,7 +34,7 @@ idmap_nss \- Samba\*(Aqs idmap_nss Backend for Winbind
 The idmap_nss plugin provides a means to map Unix users and groups to Windows accounts\&. This provides a simple means of ensuring that the SID for a Unix user named jsmith is reported as the one assigned to DOMAIN\ejsmith which is necessary for reporting ACLs on files and printers stored on a Samba member server\&.
 .SH "EXAMPLES"
 .PP
-This example shows how to use idmap_nss to check the local accounts for its own domain while using allocation to create new mappings for trusted domains
+This example shows how to use idmap_nss to obtain the local account ID\*(Aqs for its own domain (SAMBA) from NSS, whilst allocating new mappings for the default domain (*) and any trusted domains\&.
 .sp
 .if n \{\
 .RS 4

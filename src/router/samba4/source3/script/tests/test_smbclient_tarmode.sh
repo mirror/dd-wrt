@@ -94,7 +94,7 @@ test_tarmode_creation() {
 	# Clear temp data
 	rm -rf -- "$PREFIX"/tarmode > /dev/null 2>&1
 	rm -f "$PREFIX"/tarmode.tar > /dev/null 2>&1
-	rm -rf "$LOCAL_PATH" > /dev/null 2>&1
+	$SMBCLIENT //$SERVER/tarmode $CONFIGURATION -U$USERNAME%$PASSWORD -c "deltree smbclient_tar"
 
 	# Build the test data
 	if ! create_test_data "$LOCAL_PATH"; then
@@ -104,14 +104,15 @@ test_tarmode_creation() {
 	fi
 
 	# Create tarfile with smbclient
-	if ! $SMBCLIENT //$SERVER/tmp $CONFIGURATION -U$USERNAME%$PASSWORD -I $SERVER_IP -p 139 \
-			$ADDARGS -c "tarmode full" -Tc "$PREFIX/tarmode.tar" "/tarmode"; then
+	if ! $SMBCLIENT //$SERVER/tarmode $CONFIGURATION -U$USERNAME%$PASSWORD -I $SERVER_IP -p 139 \
+			$ADDARGS -c "tarmode full" -Tc "$PREFIX/tarmode.tar" "/smbclient_tar"; then
 		echo "Couldn't create tar file with tarmode -Tc"
 		false
 		return
 	fi
 
-	# Extract data to verify
+	# Extract data to verify - this puts it into $PREFIX/smbclient_tar/
+	# but we must leave it there as it's used to verify in test_tarmode_extraction()
 	if ! tar -xf "$PREFIX/tarmode.tar" -C "$PREFIX"; then
 		echo "Couldn't extract data from created tarfile"
 		false
@@ -119,12 +120,16 @@ test_tarmode_creation() {
 	fi
 
 	# Verify data
-	if ! validate_data "$PREFIX/tarmode" "$LOCAL_PATH"; then
+	if ! validate_data "$PREFIX/smbclient_tar" "$LOCAL_PATH"; then
 		echo "Data not equivalent"
 		false
 		return
 	fi
 
+	# Clear temp data
+	rm -rf -- "$PREFIX"/tarmode > /dev/null 2>&1
+	rm -f "$PREFIX"/tarmode.tar > /dev/null 2>&1
+	$SMBCLIENT //$SERVER/tarmode $CONFIGURATION -U$USERNAME%$PASSWORD -c "deltree smbclient_tar"
 	true
 	return
 
@@ -136,7 +141,7 @@ test_tarmode_extraction() {
 	# Clear temp data
 	rm -rf -- "$PREFIX"/tarmode > /dev/null 2>&1
 	rm -f "$PREFIX"/tarmode.tar > /dev/null 2>&1
-	rm -rf "$LOCAL_PATH" > /dev/null 2>&1
+	$SMBCLIENT //$SERVER/tarmode $CONFIGURATION -U$USERNAME%$PASSWORD -c "deltree smbclient_tar"
 
 	# Build the test data
 	if ! create_test_data "$PREFIX/tarmode"; then
@@ -146,14 +151,14 @@ test_tarmode_extraction() {
 	fi
 
 	# Create tarfile to extract on client
-	if ! tar -cf "$PREFIX/tarmode.tar" -C "$PREFIX" tarmode; then
+	if ! tar -cf "$PREFIX/tarmode.tar" -C "$PREFIX" smbclient_tar; then
 		echo "Couldn't create tar archive"
 		false
 		return
 	fi
 
 	# Extract tarfile with smbclient
-	if ! $SMBCLIENT //$SERVER/tmp $CONFIGURATION -U$USERNAME%$PASSWORD -I $SERVER_IP -p 139 \
+	if ! $SMBCLIENT //$SERVER/tarmode $CONFIGURATION -U$USERNAME%$PASSWORD -I $SERVER_IP -p 139 \
 			$ADDARGS -c "tarmode full" -Tx "$PREFIX/tarmode.tar"; then
 		echo "Couldn't extact tar file with tarmode -Tx"
 		false
@@ -161,12 +166,18 @@ test_tarmode_extraction() {
 	fi
 
 	# Verify data
-	if ! validate_data "$PREFIX/tarmode" "$LOCAL_PATH"; then
+	if ! validate_data "$PREFIX/smbclient_tar" "$LOCAL_PATH"; then
 		echo "Data not equivalent"
 		false
 		return
 	fi
 
+	# Clear temp data
+	rm -rf -- "$PREFIX"/tarmode > /dev/null 2>&1
+	rm -f "$PREFIX"/tarmode.tar > /dev/null 2>&1
+	$SMBCLIENT //$SERVER/tarmode $CONFIGURATION -U$USERNAME%$PASSWORD -c "deltree smbclient_tar"
+	# Cleanup the verification data created by test_tarmode_creation().
+	rm -rf "$PREFIX"/smbclient_tar > /dev/null 2>&1
 	true
 	return
 

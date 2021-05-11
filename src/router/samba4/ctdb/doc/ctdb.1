@@ -2,12 +2,12 @@
 .\"     Title: ctdb
 .\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 11/03/2020
+.\"      Date: 04/26/2021
 .\"    Manual: CTDB - clustered TDB database
 .\"    Source: ctdb
 .\"  Language: English
 .\"
-.TH "CTDB" "1" "11/03/2020" "ctdb" "CTDB \- clustered TDB database"
+.TH "CTDB" "1" "04/26/2021" "ctdb" "CTDB \- clustered TDB database"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -346,16 +346,16 @@ This command shows lists the ip addresses of all the nodes in the cluster\&.
 .RE
 .\}
 .RE
-.SS "natgw {master|list|status}"
+.SS "natgw {leader|list|status}"
 .PP
 This command shows different aspects of NAT gateway status\&. For an overview of CTDB\*(Aqs NAT gateway functionality please see the
 NAT GATEWAY
 section in
 \fBctdb\fR(7)\&.
 .PP
-master
+leader
 .RS 4
-Show the PNN and private IP address of the current NAT gateway master node\&.
+Show the PNN and private IP address of the current NAT gateway leader node\&.
 .sp
 Example output:
 .sp
@@ -373,7 +373,7 @@ Example output:
 .PP
 list
 .RS 4
-List the private IP addresses of nodes in the current NAT gateway group, annotating the master node\&.
+List the private IP addresses of nodes in the current NAT gateway group, annotating the leader node\&.
 .sp
 Example output:
 .sp
@@ -382,7 +382,7 @@ Example output:
 .\}
 .nf
 192\&.168\&.2\&.200
-192\&.168\&.2\&.201	MASTER
+192\&.168\&.2\&.201	LEADER
 192\&.168\&.2\&.202
 192\&.168\&.2\&.203
 	    
@@ -804,16 +804,16 @@ Set the runtime value of a tuneable variable\&.
 .RE
 .\}
 .RE
-.SS "lvs {master|list|status}"
+.SS "lvs {leader|list|status}"
 .PP
 This command shows different aspects of LVS status\&. For an overview of CTDB\*(Aqs LVS functionality please see the
 LVS
 section in
 \fBctdb\fR(7)\&.
 .PP
-master
+leader
 .RS 4
-Shows the PNN of the current LVS master node\&.
+Shows the PNN of the current LVS leader node\&.
 .sp
 Example output:
 .sp

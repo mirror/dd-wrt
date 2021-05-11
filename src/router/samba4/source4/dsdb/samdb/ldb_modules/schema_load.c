@@ -1,5 +1,5 @@
 /* 
-   Unix SMB/CIFS mplementation.
+   Unix SMB/CIFS Implementation.
 
    The module that handles the Schema FSMO Role Owner
    checkings, it also loads the dsdb_schema.
@@ -33,6 +33,7 @@
 #include "lib/tdb_wrap/tdb_wrap.h"
 #include "dsdb/samdb/ldb_modules/util.h"
 #include "lib/ldb-samba/ldb_wrap.h"
+#include "lib/util/smb_strtox.h"
 
 #include "system/filesys.h"
 struct schema_load_private_data {
