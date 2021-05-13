@@ -539,7 +539,6 @@ int main(int argc, char **argv)
 	cprintf("first message\n");
 	lcdmessage("System Start");
 
-	writeproc("/proc/sys/kernel/sysrq", "1");
 	signal_init();
 	signal(SIGHUP, rc_signal);
 	signal(SIGUSR1, rc_signal);	// Start single service from WEB, by
@@ -551,6 +550,7 @@ int main(int argc, char **argv)
 
 	dd_loginfo("init", "starting devinit\n");
 	start_service("devinit");	//init /dev /proc etc.
+	writeproc("/proc/sys/kernel/sysrq", "1");
 	check_bootfails();
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))	//special treatment
 	FILE *out = fopen("/tmp/.nvram_done", "wb");
