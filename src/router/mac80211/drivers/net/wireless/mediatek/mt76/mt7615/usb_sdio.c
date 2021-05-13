@@ -67,7 +67,7 @@ static int mt7663_usb_sdio_set_rates(struct mt7615_dev *dev,
 	struct mt7615_rate_desc *rate = &wrd->rate;
 	struct mt7615_sta *sta = wrd->sta;
 	u32 w5, w27, addr, val;
-	u16 idx = sta->vif->mt76.omac_idx;
+	u16 idx;
 
 	lockdep_assert_held(&dev->mt76.mutex);
 
@@ -119,6 +119,7 @@ static int mt7663_usb_sdio_set_rates(struct mt7615_dev *dev,
 
 	sta->rate_probe = sta->rateset[rate->rateset].probe_rate.idx != -1;
 
+	idx = sta->vif->mt76.omac_idx;
 	idx = idx > HW_BSSID_MAX ? HW_BSSID_0 : idx;
 	addr = idx > 1 ? MT_LPON_TCR2(idx): MT_LPON_TCR0(idx);
 
@@ -332,7 +333,7 @@ int mt7663_usb_sdio_register_device(struct mt7615_dev *dev)
 
 		/* decrease max A-MSDU size if SG is not supported */
 		vht_cap = &dev->mphy.sband_5g.sband.vht_cap;
-		vht_cap->cap &= ~IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991;
+		vht_cap->cap &= ~IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454;
 	}
 
 	ieee80211_queue_work(hw, &dev->mcu_work);

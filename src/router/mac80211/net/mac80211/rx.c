@@ -1728,6 +1728,73 @@ ieee80211_rx_h_uapsd_and_pspoll(struct ieee80211_rx_data *rx)
 	return RX_CONTINUE;
 }
 
+static void ieee80211_update_data_rx_stats(struct ieee80211_rx_data *rx,
+					   struct ieee80211_sta_rx_stats *stats,
+					   struct ieee80211_rx_status *status,
+					   int skb_len)
+{
+	stats->fragments++;
+	stats->packets++;
+	stats->last_rx = jiffies;
+	stats->last_rate = sta_stats_encode_rate(status);
+
+	/* The seqno index has the same property as needed
+	 * for the rx_msdu field, i.e. it is IEEE80211_NUM_TIDS
+	 * for non-QoS-data frames. Here we know it's a data
+	 * frame, so count MSDUs.
+	 */
+	u64_stats_update_begin(&stats->syncp);
+	stats->msdu[rx->seqno_idx]++;
+	stats->bytes += skb_len;
+	u64_stats_update_end(&stats->syncp);
+
+#ifdef CONFIG_MAC80211_DEBUG_STA_COUNTERS
+	/* This code has a lot in common with ieee80211_add_rx_radiotap_header */
+	switch (status->bw) {
+	case RATE_INFO_BW_20:
+		stats->msdu_20++;
+		break;
+	case RATE_INFO_BW_40:
+		stats->msdu_40++;
+		break;
+	case RATE_INFO_BW_80:
+		stats->msdu_80++;
+		break;
+	case RATE_INFO_BW_160:
+		stats->msdu_160++;
+		break;
+	case RATE_INFO_BW_HE_RU:
+		stats->msdu_he_ru_alloc[status->he_ru]++;
+		break;
+	};
+
+	if (status->encoding == RX_ENC_HE) {
+		stats->msdu_he_tot++;
+		if (status->flag & RX_FLAG_RADIOTAP_HE_MU)
+			stats->msdu_he_mu++;
+	}
+	else if (status->encoding == RX_ENC_VHT) {
+		stats->msdu_vht++;
+	}
+	else if (status->encoding == RX_ENC_HT) {
+		stats->msdu_ht++;
+	}
+	else {
+		stats->msdu_legacy++;
+	}
+
+	if (status->nss >= 7)
+		stats->msdu_nss[7]++;
+	else
+		stats->msdu_nss[status->nss]++;
+
+	if (status->rate_idx >= 31)
+		stats->msdu_rate_idx[31]++;
+	else
+		stats->msdu_rate_idx[status->rate_idx]++;
+#endif
+}
+
 static ieee80211_rx_result debug_noinline
 ieee80211_rx_h_sta_process(struct ieee80211_rx_data *rx)
 {
@@ -2792,6 +2859,8 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx_data *rx)
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
 	__le16 fc = hdr->frame_control;
+	ieee80211_rx_result rv;
+	int orig_len = skb->len;
 
 	if (!(status->rx_flags & IEEE80211_RX_AMSDU))
 		return RX_CONTINUE;
@@ -2837,7 +2906,12 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx_data *rx)
 		}
 	}
 
-	return __ieee80211_rx_h_amsdu(rx, 0);
+	rv = __ieee80211_rx_h_amsdu(rx, 0);
+	if ((rv == RX_QUEUED) && (rx->sta)) {
+		struct ieee80211_sta_rx_stats *stats = &rx->sta->rx_stats;
+		ieee80211_update_data_rx_stats(rx, stats, status, orig_len);
+	}
+	return rv;
 }
 
 #ifdef CPTCFG_MAC80211_MESH
@@ -3060,6 +3134,13 @@ ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
 	     !test_bit(SDATA_STATE_OFFCHANNEL, &sdata->state)))
 		mod_timer(&local->dynamic_ps_timer, jiffies +
 			  msecs_to_jiffies(local->hw.conf.dynamic_ps_timeout));
+
+	
+	if (rx->sta) {
+		struct ieee80211_sta_rx_stats *stats = &rx->sta->rx_stats;
+		struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(rx->skb);
+		ieee80211_update_data_rx_stats(rx, stats, status, rx->skb->len);
+	}
 
 	ieee80211_deliver_skb(rx);
 
@@ -4629,25 +4710,10 @@ static void ieee80211_rx_8023(struct ieee80211_rx_data *rx,
 	}
 	/* end of statistics */
 
-	stats->last_rx = jiffies;
-	stats->last_rate = sta_stats_encode_rate(status);
-
-	stats->fragments++;
-	stats->packets++;
-
 	skb->dev = fast_rx->dev;
 
+	ieee80211_update_data_rx_stats(rx, stats, status, orig_len);
 	ieee80211_rx_stats(fast_rx->dev, skb->len);
-
-	/* The seqno index has the same property as needed
-	 * for the rx_msdu field, i.e. it is IEEE80211_NUM_TIDS
-	 * for non-QoS-data frames. Here we know it's a data
-	 * frame, so count MSDUs.
-	 */
-	u64_stats_update_begin(&stats->syncp);
-	stats->msdu[rx->seqno_idx]++;
-	stats->bytes += orig_len;
-	u64_stats_update_end(&stats->syncp);
 
 	if (fast_rx->internal_forward) {
 		struct sk_buff *xmit_skb = NULL;

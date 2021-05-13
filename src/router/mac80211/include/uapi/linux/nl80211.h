@@ -2535,6 +2535,10 @@ enum nl80211_commands {
  * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
  *	transmit power to stay within regulatory limits. u32, dBi.
  *
+ * @NL80211_ATTR_RECONNECT_REQUESTED: flag attribute, used with deauth and
+ *	disassoc events to indicate that an immediate reconnect to the AP
+ *	is desired.
+ *
  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
  * @NL80211_ATTR_MAX: highest attribute number currently defined
  * @__NL80211_ATTR_AFTER_LAST: internal use
@@ -3054,6 +3058,8 @@ enum nl80211_attrs {
 
 	NL80211_ATTR_MTIKWDS,
 
+	NL80211_ATTR_RECONNECT_REQUESTED,
+
 	/* add attributes here, update the policy in nl80211.c */
 
 	__NL80211_ATTR_AFTER_LAST,
@@ -3278,6 +3284,7 @@ enum nl80211_he_ru_alloc {
 	NL80211_RATE_INFO_HE_RU_ALLOC_484,
 	NL80211_RATE_INFO_HE_RU_ALLOC_996,
 	NL80211_RATE_INFO_HE_RU_ALLOC_2x996,
+	NL80211_RATE_INFO_HE_RU_ALLOC_LAST /* new entries before this */
 };
 
 /**

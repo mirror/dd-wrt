@@ -94,10 +94,14 @@ mt7915_rx_poll_complete(struct mt76_dev *mdev, enum mt76_rxq_id q)
 }
 
 /* TODO: support 2/4/6/8 MSI-X vectors */
-static irqreturn_t mt7915_irq_handler(int irq, void *dev_instance)
+static void mt7915_irq_tasklet(unsigned long data)
 {
-	struct mt7915_dev *dev = dev_instance;
+	struct mt7915_dev *dev = (struct mt7915_dev *)data;
 	u32 intr, intr1, mask;
+
+	mt76_wr(dev, MT_INT_MASK_CSR, 0);
+	if (dev->hif2)
+		mt76_wr(dev, MT_INT1_MASK_CSR, 0);
 
 	intr = mt76_rr(dev, MT_INT_SOURCE_CSR);
 	intr &= dev->mt76.mmio.irqmask;
@@ -110,9 +114,6 @@ static irqreturn_t mt7915_irq_handler(int irq, void *dev_instance)
 
 		intr |= intr1;
 	}
-
-	if (!test_bit(MT76_STATE_INITIALIZED, &dev->mphy.state))
-		return IRQ_NONE;
 
 	trace_dev_irq(&dev->mt76, intr, dev->mt76.mmio.irqmask);
 
@@ -150,6 +151,20 @@ static irqreturn_t mt7915_irq_handler(int irq, void *dev_instance)
 			wake_up(&dev->reset_wait);
 		}
 	}
+}
+
+static irqreturn_t mt7915_irq_handler(int irq, void *dev_instance)
+{
+	struct mt7915_dev *dev = dev_instance;
+
+	mt76_wr(dev, MT_INT_MASK_CSR, 0);
+	if (dev->hif2)
+		mt76_wr(dev, MT_INT1_MASK_CSR, 0);
+
+	if (!test_bit(MT76_STATE_INITIALIZED, &dev->mphy.state))
+		return IRQ_NONE;
+
+	tasklet_schedule(&dev->irq_tasklet);
 
 	return IRQ_HANDLED;
 }
@@ -179,7 +194,7 @@ static void mt7915_pci_init_hif2(struct mt7915_dev *dev)
 	}
 
 	/* master switch of PCIe tnterrupt enable */
-	mt7915_l1_wr(dev, MT_PCIE1_MAC_INT_ENABLE, 0xff);
+	mt76_wr(dev, MT_PCIE1_MAC_INT_ENABLE, 0xff);
 }
 
 static int mt7915_pci_hif2_probe(struct pci_dev *pdev)
@@ -212,6 +227,7 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 		.survey_flags = SURVEY_INFO_TIME_TX |
 				SURVEY_INFO_TIME_RX |
 				SURVEY_INFO_TIME_BSS_RX,
+		.token_size = MT7915_TOKEN_SIZE,
 		.tx_prepare_skb = mt7915_tx_prepare_skb,
 		.tx_complete_skb = mt7915_tx_complete_skb,
 		.rx_skb = mt7915_queue_rx_skb,
@@ -253,6 +269,8 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 	if (ret)
 		return ret;
 
+	mt76_pci_disable_aspm(pdev);
+
 	if (id->device == 0x7916)
 		return mt7915_pci_hif2_probe(pdev);
 
@@ -263,18 +281,24 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 
 	dev = container_of(mdev, struct mt7915_dev, mt76);
 
+	ret = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_ALL_TYPES);
+	if (ret < 0)
+		goto free;
+
+
 	mdev->cipher_suites = cipher_suites;
 	mdev->n_cipher_suites = ARRAY_SIZE(cipher_suites);
 
-	mt76_mmio_init(&dev->mt76, pcim_iomap_table(pdev)[0]);
-	mdev->rev = (mt7915_l1_rr(dev, MT_HW_CHIPID) << 16) |
-		    (mt7915_l1_rr(dev, MT_HW_REV) & 0xff);
-	dev_dbg(mdev->dev, "ASIC revision: %04x\n", mdev->rev);
+	ret = mt7915_mmio_init(mdev, pcim_iomap_table(pdev)[0], pdev->irq);
+	if (ret)
+		goto error;
+
+	tasklet_init(&dev->irq_tasklet, mt7915_irq_tasklet, (unsigned long)dev);
 
 	mt76_wr(dev, MT_INT_MASK_CSR, 0);
 
 	/* master switch of PCIe tnterrupt enable */
-	mt7915_l1_wr(dev, MT_PCIE_MAC_INT_ENABLE, 0xff);
+	mt76_wr(dev, MT_PCIE_MAC_INT_ENABLE, 0xff);
 
 	ret = devm_request_irq(mdev->dev, pdev->irq, mt7915_irq_handler,
 			       IRQF_SHARED, KBUILD_MODNAME, dev);
@@ -285,10 +309,14 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 
 	ret = mt7915_register_device(dev);
 	if (ret)
-		goto error;
+		goto free_irq;
 
 	return 0;
+free_irq:
+	devm_free_irq(mdev->dev, pdev->irq, dev);
 error:
+	pci_free_irq_vectors(pdev);
+free:
 	mt76_free_device(&dev->mt76);
 
 	return ret;

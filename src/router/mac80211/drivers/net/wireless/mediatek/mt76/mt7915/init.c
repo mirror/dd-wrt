@@ -4,6 +4,7 @@
 #include <linux/etherdevice.h>
 #include "mt7915.h"
 #include "mac.h"
+#include "mcu.h"
 #include "eeprom.h"
 
 #define CCK_RATE(_idx, _rate) {						\
@@ -133,6 +134,9 @@ mt7915_init_wiphy(struct ieee80211_hw *hw)
 	hw->max_tx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF;
 	hw->netdev_features = NETIF_F_RXCSUM;
 
+	hw->radiotap_timestamp.units_pos =
+		IEEE80211_RADIOTAP_TIMESTAMP_UNIT_US;
+
 	phy->slottime = 9;
 
 	hw->sta_data_size = sizeof(struct mt7915_sta);
@@ -152,15 +156,17 @@ mt7915_init_wiphy(struct ieee80211_hw *hw)
 
 	hw->max_tx_fragments = 4;
 
+	if (!phy->dev->dbdc_support)
+		wiphy->txq_memory_limit = 32 << 20; /* 32 MiB */
+
 	if (phy->mt76->cap.has_2ghz) {
 		phy->mt76->sband_2g.sband.ht_cap.cap |=
 			IEEE80211_HT_CAP_LDPC_CODING |
 			IEEE80211_HT_CAP_MAX_AMSDU;
-		phy->mt76->sband_5g.sband.vht_cap.cap |=
+		phy->mt76->sband_2g.sband.vht_cap.cap |=
 			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991 |
 			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
 	}
-
 	if (phy->mt76->cap.has_5ghz) {
 		phy->mt76->sband_5g.sband.ht_cap.cap |=
 			IEEE80211_HT_CAP_LDPC_CODING |
@@ -173,9 +179,6 @@ mt7915_init_wiphy(struct ieee80211_hw *hw)
 	mt76_set_stream_caps(phy->mt76, true, dev->mt76.turboqam);
 	mt7915_set_stream_vht_txbf_caps(phy);
 	mt7915_set_stream_he_caps(phy);
-
-	if (!phy->dev->dbdc_support)
-		wiphy->txq_memory_limit = 32 << 20; /* 32 MiB */
 }
 
 static void
@@ -226,8 +229,6 @@ static void mt7915_mac_init(struct mt7915_dev *dev)
 				       MT_WTBL_UPDATE_ADM_COUNT_CLEAR);
 	for (i = 0; i < 2; i++)
 		mt7915_mac_init_band(dev, i);
-
-	mt7915_mcu_set_rts_thresh(&dev->phy, 0x92b);
 }
 
 static int mt7915_txbf_init(struct mt7915_dev *dev)
@@ -309,7 +310,45 @@ static void mt7915_init_work(struct work_struct *work)
 	mt7915_init_txpower(dev, &dev->mphy.sband_2g.sband);
 	mt7915_init_txpower(dev, &dev->mphy.sband_5g.sband);
 	mt7915_txbf_init(dev);
-	mt7915_register_ext_phy(dev);
+}
+
+static void mt7915_wfsys_reset(struct mt7915_dev *dev)
+{
+	u32 val = MT_TOP_PWR_KEY | MT_TOP_PWR_SW_PWR_ON | MT_TOP_PWR_PWR_ON;
+
+#define MT_MCU_DUMMY_RANDOM	GENMASK(15, 0)
+#define MT_MCU_DUMMY_DEFAULT	GENMASK(31, 16)
+
+	mt76_wr(dev, MT_MCU_WFDMA0_DUMMY_CR, MT_MCU_DUMMY_RANDOM);
+
+	/* change to software control */
+	val |= MT_TOP_PWR_SW_RST;
+	mt76_wr(dev, MT_TOP_PWR_CTRL, val);
+
+	/* reset wfsys */
+	val &= ~MT_TOP_PWR_SW_RST;
+	mt76_wr(dev, MT_TOP_PWR_CTRL, val);
+
+	/* release wfsys then mcu re-excutes romcode */
+	val |= MT_TOP_PWR_SW_RST;
+	mt76_wr(dev, MT_TOP_PWR_CTRL, val);
+
+	/* switch to hw control */
+	val &= ~MT_TOP_PWR_SW_RST;
+	val |= MT_TOP_PWR_HW_CTRL;
+	mt76_wr(dev, MT_TOP_PWR_CTRL, val);
+
+	/* check whether mcu resets to default */
+	if (!mt76_poll_msec(dev, MT_MCU_WFDMA0_DUMMY_CR, MT_MCU_DUMMY_DEFAULT,
+			    MT_MCU_DUMMY_DEFAULT, 1000)) {
+		dev_err(dev->mt76.dev, "wifi subsystem reset failure\n");
+		return;
+	}
+
+	/* wfsys reset won't clear host registers */
+	mt76_clear(dev, MT_TOP_MISC, MT_TOP_MISC_FW_STATE);
+
+	msleep(100);
 }
 
 static int mt7915_init_hardware(struct mt7915_dev *dev)
@@ -319,10 +358,12 @@ static int mt7915_init_hardware(struct mt7915_dev *dev)
 	mt76_wr(dev, MT_INT_SOURCE_CSR, ~0);
 
 	INIT_WORK(&dev->init_work, mt7915_init_work);
-	spin_lock_init(&dev->token_lock);
-	idr_init(&dev->token);
+	dev->dbdc_support = !!(mt76_rr(dev, MT_HW_BOUND) & BIT(5));
 
-	dev->dbdc_support = !!(mt7915_l1_rr(dev, MT_HW_BOUND) & BIT(5));
+	/* If MCU was already running, it is likely in a bad state */
+	if (mt76_get_field(dev, MT_TOP_MISC, MT_TOP_MISC_FW_STATE) >
+	    FW_STATE_FW_DOWNLOAD)
+		mt7915_wfsys_reset(dev);
 
 	ret = mt7915_dma_init(dev);
 	if (ret)
@@ -337,12 +378,25 @@ static int mt7915_init_hardware(struct mt7915_dev *dev)
 	mt76_wr(dev, MT_SWDEF_MODE, MT_SWDEF_NORMAL_MODE);
 
 	ret = mt7915_mcu_init(dev);
-	if (ret)
-		return ret;
+	if (ret) {
+		/* Reset and try again */
+		mt7915_wfsys_reset(dev);
+
+		ret = mt7915_mcu_init(dev);
+		if (ret)
+			return ret;
+	}
 
 	ret = mt7915_eeprom_init(dev);
 	if (ret < 0)
 		return ret;
+
+
+	if (dev->flash_mode) {
+		ret = mt7915_mcu_apply_group_cal(dev);
+		if (ret)
+			return ret;
+	}
 
 	/* Beacon and mgmt frames should occupy wcid 0 */
 	idx = mt76_wcid_alloc(dev->mt76.wcid_mask, MT7915_WTBL_STA - 1);
@@ -691,6 +745,10 @@ int mt7915_register_device(struct mt7915_dev *dev)
 
 	ieee80211_queue_work(mt76_hw(dev), &dev->init_work);
 
+	ret = mt7915_register_ext_phy(dev);
+	if (ret)
+		return ret;
+
 	return mt7915_init_debugfs(dev);
 }
 
@@ -699,9 +757,9 @@ void mt7915_unregister_device(struct mt7915_dev *dev)
 	mt7915_unregister_ext_phy(dev);
 	mt76_unregister_device(&dev->mt76);
 	mt7915_mcu_exit(dev);
-	mt7915_dma_cleanup(dev);
-
 	mt7915_tx_token_put(dev);
+	mt7915_dma_cleanup(dev);
+	tasklet_disable(&dev->irq_tasklet);
 
 	mt76_free_device(&dev->mt76);
 }
