@@ -2806,10 +2806,12 @@ void start_sysinit(void)
 	 */
 	uname(&name);
 
+#ifdef HAVE_SWCONFIG
 	if (nvram_match("sfe", "2"))
 		nvram_set("ctf_disable", "0");
 	else
 		nvram_set("ctf_disable", "1");
+#endif
 
 	snprintf(buf, sizeof(buf), "/lib/modules/%s", name.release);
 	if (stat("/proc/modules", &tmp_stat) == 0 && stat(buf, &tmp_stat) == 0) {
