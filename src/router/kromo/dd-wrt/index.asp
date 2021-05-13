@@ -413,7 +413,7 @@ addEvent(window, "unload", function() {
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvg("wan_mtu"); %>" />
 								</div>
 				<% ifdef("WET", "-->"); %>
-				<% ifndef("FA", "<!--"); %>
+				<% ifndef("CTF", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.sfe"); %></div>
 									<select name="sfe">
@@ -422,6 +422,8 @@ addEvent(window, "unload", function() {
 										<option value="2" <% nvs("sfe", "2"); %>>CTF</option>
 									</select>
 								</div>
+				<% ifndef("CTF", "-->"); %>
+				<% ifndef("FA", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.fa"); %></div>
 									<select name="ctf_fa_mode">
@@ -431,13 +433,13 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 				<% ifndef("FA", "-->"); %>
-				<% ifdef("FA", "<!--"); %>
+				<% ifndef("SFE", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.sfe"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="sfe" <% nvc("sfe", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="sfe" <% nvc("sfe", "0"); %> /><% tran("share.disable"); %>
 								</div>
-				<% ifdef("FA", "-->"); %>
+				<% ifndef("SFE", "-->"); %>
 				<% ifdef("WET", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
