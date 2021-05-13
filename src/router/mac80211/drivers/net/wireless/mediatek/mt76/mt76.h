@@ -18,12 +18,14 @@
 #include "util.h"
 #include "testmode.h"
 
-#define MT_MCU_RING_SIZE    32
-#define MT_RX_BUF_SIZE      2048
-#define MT_SKB_HEAD_LEN     128
+#define MT_MCU_RING_SIZE	32
+#define MT_RX_BUF_SIZE		2048
+#define MT_SKB_HEAD_LEN		128
 
-#define MT_MAX_NON_AQL_PKT  16
-#define MT_TXQ_FREE_THR     32
+#define MT_MAX_NON_AQL_PKT	16
+#define MT_TXQ_FREE_THR		32
+
+#define MT76_TOKEN_FREE_THR	64
 
 struct mt76_dev;
 struct mt76_phy;
@@ -172,7 +174,8 @@ struct mt76_mcu_ops {
 };
 
 struct mt76_queue_ops {
-	int (*init)(struct mt76_dev *dev);
+	int (*init)(struct mt76_dev *dev,
+		    int (*poll)(struct napi_struct *napi, int budget));
 
 	int (*alloc)(struct mt76_dev *dev, struct mt76_queue *q,
 		     int idx, int n_desc, int bufsize,
@@ -193,7 +196,11 @@ struct mt76_queue_ops {
 	void (*tx_cleanup)(struct mt76_dev *dev, struct mt76_queue *q,
 			   bool flush);
 
+	void (*rx_cleanup)(struct mt76_dev *dev, struct mt76_queue *q);
+
 	void (*kick)(struct mt76_dev *dev, struct mt76_queue *q);
+
+	void (*reset_q)(struct mt76_dev *dev, struct mt76_queue *q);
 };
 
 enum mt76_wcid_flags {
@@ -329,6 +336,7 @@ struct mt76_driver_ops {
 	u32 drv_flags;
 	u32 survey_flags;
 	u16 txwi_size;
+	u16 token_size;
 	u8 mcs_rates;
 
 	void (*update_survey)(struct mt76_dev *dev);
@@ -497,9 +505,10 @@ struct mt76_rx_status {
 		u16 wcid_idx;
 	};
 
-	unsigned long reorder_time;
+	u32 reorder_time;
 
 	u32 ampdu_ref;
+	u32 timestamp;
 
 	u8 iv[6];
 
@@ -536,7 +545,7 @@ struct mt76_testmode_data {
 	struct sk_buff *tx_skb;
 
 	u32 tx_count;
-	u16 tx_msdu_len;
+	u16 tx_mpdu_len;
 
 	u8 tx_rate_mode;
 	u8 tx_rate_idx;
@@ -608,6 +617,12 @@ struct mt76_phy {
 
 	struct delayed_work mac_work;
 	u8 mac_work_count;
+
+	struct {
+		struct sk_buff *head;
+		struct sk_buff **tail;
+		u16 seqno;
+	} rx_amsdu[__MT_RXQ_MAX];
 };
 
 struct mt76_dev {
@@ -641,14 +656,10 @@ struct mt76_dev {
 	struct mt76_mcu mcu;
 
 	struct net_device napi_dev;
+	struct net_device tx_napi_dev;
 	spinlock_t rx_lock;
 	struct napi_struct napi[__MT_RXQ_MAX];
 	struct sk_buff_head rx_skb[__MT_RXQ_MAX];
-	struct {
-		struct sk_buff *head;
-		struct sk_buff **tail;
-		u16 seqno;
-	} rx_amsdu[__MT_RXQ_MAX];
 
 	struct list_head txwi_cache;
 	struct mt76_queue *q_mcu[__MT_MCUQ_MAX];
@@ -658,6 +669,10 @@ struct mt76_dev {
 
 	struct mt76_worker tx_worker;
 	struct napi_struct tx_napi;
+
+	spinlock_t token_lock;
+	struct idr token;
+	int token_count;
 
 	wait_queue_head_t tx_wait;
 	struct sk_buff_head status_list;
@@ -803,13 +818,15 @@ static inline u16 mt76_rev(struct mt76_dev *dev)
 #define mt76xx_chip(dev) mt76_chip(&((dev)->mt76))
 #define mt76xx_rev(dev) mt76_rev(&((dev)->mt76))
 
-#define mt76_init_queues(dev)		(dev)->mt76.queue_ops->init(&((dev)->mt76))
+#define mt76_init_queues(dev, ...)		(dev)->mt76.queue_ops->init(&((dev)->mt76), __VA_ARGS__)
 #define mt76_queue_alloc(dev, ...)	(dev)->mt76.queue_ops->alloc(&((dev)->mt76), __VA_ARGS__)
 #define mt76_tx_queue_skb_raw(dev, ...)	(dev)->mt76.queue_ops->tx_queue_skb_raw(&((dev)->mt76), __VA_ARGS__)
 #define mt76_tx_queue_skb(dev, ...)	(dev)->mt76.queue_ops->tx_queue_skb(&((dev)->mt76), __VA_ARGS__)
 #define mt76_queue_rx_reset(dev, ...)	(dev)->mt76.queue_ops->rx_reset(&((dev)->mt76), __VA_ARGS__)
-#define mt76_queue_tx_cleanup(dev, ...)        (dev)->mt76.queue_ops->tx_cleanup(&((dev)->mt76), __VA_ARGS__)
+#define mt76_queue_tx_cleanup(dev, ...)	(dev)->mt76.queue_ops->tx_cleanup(&((dev)->mt76), __VA_ARGS__)
+#define mt76_queue_rx_cleanup(dev, ...)	(dev)->mt76.queue_ops->rx_cleanup(&((dev)->mt76), __VA_ARGS__)
 #define mt76_queue_kick(dev, ...)	(dev)->mt76.queue_ops->kick(&((dev)->mt76), __VA_ARGS__)
+#define mt76_queue_reset(dev, ...)	(dev)->mt76.queue_ops->reset_q(&((dev)->mt76), __VA_ARGS__)
 
 #define mt76_for_each_q_rx(dev, i)	\
 	for (i = 0; i < ARRAY_SIZE((dev)->q_rx) && \
@@ -836,6 +853,7 @@ void mt76_seq_puts_array(struct seq_file *file, const char *str,
 
 int mt76_eeprom_init(struct mt76_dev *dev, int len);
 void mt76_eeprom_override(struct mt76_phy *phy);
+int mt76_get_of_eeprom(struct mt76_dev *dev, void *data, int offset, int len);
 
 struct mt76_queue *
 mt76_init_queue(struct mt76_dev *dev, int qid, int idx, int n_desc,
@@ -1013,6 +1031,7 @@ void mt76_stop_tx_queues(struct mt76_phy *phy, struct ieee80211_sta *sta,
 void mt76_tx_check_agg_ssn(struct ieee80211_sta *sta, struct sk_buff *skb);
 void mt76_txq_schedule(struct mt76_phy *phy, enum mt76_txq_id qid);
 void mt76_txq_schedule_all(struct mt76_phy *phy);
+void mt76_tx_worker_run(struct mt76_dev *dev);
 void mt76_tx_worker(struct mt76_worker *w);
 void mt76_release_buffered_frames(struct ieee80211_hw *hw,
 				  struct ieee80211_sta *sta,
@@ -1046,7 +1065,14 @@ struct sk_buff *mt76_tx_status_skb_get(struct mt76_dev *dev,
 				       struct sk_buff_head *list);
 void mt76_tx_status_skb_done(struct mt76_dev *dev, struct sk_buff *skb,
 			     struct sk_buff_head *list);
-void mt76_tx_complete_skb(struct mt76_dev *dev, u16 wcid, struct sk_buff *skb);
+void __mt76_tx_complete_skb(struct mt76_dev *dev, u16 wcid, struct sk_buff *skb,
+			    struct list_head *free_list);
+static inline void
+mt76_tx_complete_skb(struct mt76_dev *dev, u16 wcid, struct sk_buff *skb)
+{
+    __mt76_tx_complete_skb(dev, wcid, skb, NULL);
+}
+
 void mt76_tx_status_check(struct mt76_dev *dev, struct mt76_wcid *wcid,
 			  bool flush);
 int mt76_sta_state(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
@@ -1081,6 +1107,7 @@ int mt76_testmode_cmd(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 int mt76_testmode_dump(struct ieee80211_hw *hw, struct sk_buff *skb,
 		       struct netlink_callback *cb, void *data, int len);
 int mt76_testmode_set_state(struct mt76_phy *phy, enum mt76_testmode_state state);
+int mt76_testmode_alloc_skb(struct mt76_phy *phy, u32 len);
 
 static inline void mt76_testmode_reset(struct mt76_phy *phy, bool disable)
 {
@@ -1206,4 +1233,40 @@ s8 mt76_get_rate_power_limits(struct mt76_phy *phy,
 			      struct mt76_power_limits *dest,
 			      s8 target_power);
 
+struct mt76_txwi_cache *
+mt76_token_release(struct mt76_dev *dev, int token, bool *wake);
+int mt76_token_consume(struct mt76_dev *dev, struct mt76_txwi_cache **ptxwi);
+void __mt76_set_tx_blocked(struct mt76_dev *dev, bool blocked);
+
+static inline void mt76_set_tx_blocked(struct mt76_dev *dev, bool blocked)
+{
+	spin_lock_bh(&dev->token_lock);
+	__mt76_set_tx_blocked(dev, blocked);
+	spin_unlock_bh(&dev->token_lock);
+}
+
+static inline int
+mt76_token_get(struct mt76_dev *dev, struct mt76_txwi_cache **ptxwi)
+{
+	int token;
+
+	spin_lock_bh(&dev->token_lock);
+	token = idr_alloc(&dev->token, *ptxwi, 0, dev->drv->token_size,
+			  GFP_ATOMIC);
+	spin_unlock_bh(&dev->token_lock);
+
+	return token;
+}
+
+static inline struct mt76_txwi_cache *
+mt76_token_put(struct mt76_dev *dev, int token)
+{
+	struct mt76_txwi_cache *txwi;
+
+	spin_lock_bh(&dev->token_lock);
+	txwi = idr_remove(&dev->token, token);
+	spin_unlock_bh(&dev->token_lock);
+
+	return txwi;
+}
 #endif

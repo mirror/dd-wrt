@@ -426,6 +426,7 @@ struct mesh_sta {
 
 DECLARE_EWMA(signal, 10, 8)
 
+/* Update sta_accum_rx_stats if you change this structure. */
 struct ieee80211_sta_rx_stats {
 	unsigned long packets;
 	unsigned long last_rx;
@@ -439,6 +440,24 @@ struct ieee80211_sta_rx_stats {
 	struct u64_stats_sync syncp;
 	u64 bytes;
 	u64 msdu[IEEE80211_NUM_TIDS + 1];
+
+#ifdef CONFIG_MAC80211_DEBUG_STA_COUNTERS
+	/* these take liberty with how things are defined, and are
+	 * designed to give a rough idea of how things are going.
+	 */
+	u32 msdu_20;
+	u32 msdu_40;
+	u32 msdu_80;
+	u32 msdu_160;
+	u32 msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_LAST];
+	u32 msdu_he_tot;
+	u32 msdu_he_mu;
+	u32 msdu_vht;
+	u32 msdu_ht;
+	u32 msdu_legacy;
+	u32 msdu_nss[8];
+	u32 msdu_rate_idx[32];
+#endif
 };
 
 /*
@@ -924,5 +943,8 @@ static inline u32 sta_stats_encode_rate(struct ieee80211_rx_status *s)
 
 	return r;
 }
+
+void sta_accum_rx_stats(struct sta_info *sta,
+			struct ieee80211_sta_rx_stats *rx_stats);
 
 #endif /* STA_INFO_H */

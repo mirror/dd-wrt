@@ -968,7 +968,7 @@ static void ieee80211_parse_extension_element(u32 *crc,
 		break;
 	case WLAN_EID_EXT_HE_OPERATION:
 		if (len >= sizeof(*elems->he_operation) &&
-		    len == ieee80211_he_oper_size(data) - 1) {
+		    len >= ieee80211_he_oper_size(data) - 1) {
 			if (crc)
 				*crc = crc32_be(*crc, (void *)elem,
 						elem->datalen + 2);
@@ -3493,7 +3493,7 @@ bool ieee80211_chandef_he_6ghz_oper(struct ieee80211_sub_if_data *sdata,
 
 	*chandef = he_chandef;
 
-	return false;
+	return true;
 }
 
 bool ieee80211_chandef_s1g_oper(const struct ieee80211_s1g_oper_ie *oper,
@@ -3703,6 +3703,7 @@ u64 ieee80211_calculate_rx_timestamp(struct ieee80211_local *local,
 	u64 ts = status->mactime;
 	struct rate_info ri;
 	u16 rate;
+	u8 n_ltf;
 
 	if (WARN_ON(!ieee80211_have_rx_timestamp(status)))
 		return 0;
@@ -3713,11 +3714,58 @@ u64 ieee80211_calculate_rx_timestamp(struct ieee80211_local *local,
 
 	/* Fill cfg80211 rate info */
 	switch (status->encoding) {
+	case RX_ENC_HE:
+		ri.flags |= RATE_INFO_FLAGS_HE_MCS;
+		ri.mcs = status->rate_idx;
+		ri.nss = status->nss;
+		ri.he_ru_alloc = status->he_ru;
+		if (status->enc_flags & RX_ENC_FLAG_SHORT_GI)
+			ri.flags |= RATE_INFO_FLAGS_SHORT_GI;
+
+		/*
+		 * See P802.11ax_D6.0, section 27.3.4 for
+		 * VHT PPDU format.
+		 */
+		if (status->flag & RX_FLAG_MACTIME_PLCP_START) {
+			mpdu_offset += 2;
+			ts += 36;
+
+			/*
+			 * TODO:
+			 * For HE MU PPDU, add the HE-SIG-B.
+			 * For HE ER PPDU, add 8us for the HE-SIG-A.
+			 * For HE TB PPDU, add 4us for the HE-STF.
+			 * Add the HE-LTF durations - variable.
+			 */
+		}
+
+		break;
 	case RX_ENC_HT:
 		ri.mcs = status->rate_idx;
 		ri.flags |= RATE_INFO_FLAGS_MCS;
 		if (status->enc_flags & RX_ENC_FLAG_SHORT_GI)
 			ri.flags |= RATE_INFO_FLAGS_SHORT_GI;
+
+		/*
+		 * See P802.11REVmd_D3.0, section 19.3.2 for
+		 * HT PPDU format.
+		 */
+		if (status->flag & RX_FLAG_MACTIME_PLCP_START) {
+			mpdu_offset += 2;
+			if (status->enc_flags & RX_ENC_FLAG_HT_GF)
+				ts += 24;
+			else
+				ts += 32;
+
+			/*
+			 * Add Data HT-LTFs per streams
+			 * TODO: add Extension HT-LTFs, 4us per LTF
+			 */
+			n_ltf = ((ri.mcs >> 3) & 3) + 1;
+			n_ltf = n_ltf == 3 ? 4 : n_ltf;
+			ts += n_ltf * 4;
+		}
+
 		break;
 	case RX_ENC_VHT:
 		ri.flags |= RATE_INFO_FLAGS_VHT_MCS;
@@ -3725,6 +3773,23 @@ u64 ieee80211_calculate_rx_timestamp(struct ieee80211_local *local,
 		ri.nss = status->nss;
 		if (status->enc_flags & RX_ENC_FLAG_SHORT_GI)
 			ri.flags |= RATE_INFO_FLAGS_SHORT_GI;
+
+		/*
+		 * See P802.11REVmd_D3.0, section 21.3.2 for
+		 * VHT PPDU format.
+		 */
+		if (status->flag & RX_FLAG_MACTIME_PLCP_START) {
+			mpdu_offset += 2;
+			ts += 36;
+
+			/*
+			 * Add VHT-LTFs per streams
+			 */
+			n_ltf = (ri.nss != 1) && (ri.nss % 2) ?
+				ri.nss + 1 : ri.nss;
+			ts += 4 * n_ltf;
+		}
+
 		break;
 	default:
 		WARN_ON(1);
@@ -3748,7 +3813,6 @@ u64 ieee80211_calculate_rx_timestamp(struct ieee80211_local *local,
 		ri.legacy = DIV_ROUND_UP(bitrate, (1 << shift));
 
 		if (status->flag & RX_FLAG_MACTIME_PLCP_START) {
-			/* TODO: handle HT/VHT preambles */
 			if (status->band == NL80211_BAND_5GHZ) {
 				ts += 20 << shift;
 				mpdu_offset += 2;

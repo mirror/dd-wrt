@@ -284,6 +284,8 @@ enum {
 	MCU_EXT_CMD_FW_DBG_CTRL = 0x95,
 	MCU_EXT_CMD_SET_RDD_TH = 0x9d,
 	MCU_EXT_CMD_SET_SPR = 0xa8,
+	MCU_EXT_CMD_GROUP_PRE_CAL_INFO = 0xab,
+	MCU_EXT_CMD_DPD_PRE_CAL_INFO = 0xac,
 	MCU_EXT_CMD_PHY_STAT_INFO = 0xad,
 };
 
@@ -917,7 +919,7 @@ struct sta_rec_ra {
 	u8 op_vht_rx_nss;
 	u8 op_vht_rx_nss_type;
 
-	__le32 sta_status;
+	__le32 sta_cap;
 
 	struct ra_phy phy;
 } __packed;
