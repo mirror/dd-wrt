@@ -1,7 +1,7 @@
 
 #CC = gcc
 #CFLAGS = -I. -fPIC -O -g -Wall -Werror -Wno-unused-variable -Wno-unused-parameter
-CFLAGS += $(COPTS) -DRPCOVERRIDE -I. -Iinclude -Ilibrpc -fPIC -Wall -Wno-unused-variable -Wno-unused-parameter $(LTO)
+CFLAGS += $(COPTS) -DRPCOVERRIDE -I. -Iinclude -Ilibrpc -fPIC -Wall -Wno-unused-variable -Wno-unused-parameter
 CFLAGS += -D_GNU_SOURCE
 
 COMMON_PROG_OBJS = \
