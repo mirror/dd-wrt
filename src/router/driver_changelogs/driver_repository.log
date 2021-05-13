@@ -1,4 +1,32 @@
 ------------------------------------------------------------------------
+r6259 | brainslayer | 2021-05-13 16:40:05 +0700 (Thu, 13 May 2021) | 1 line
+
+mt76 update. contains CVE-2020-24588 mitigation
+------------------------------------------------------------------------
+r6258 | brainslayer | 2021-05-13 15:59:49 +0700 (Thu, 13 May 2021) | 1 line
+
+remove sglist
+------------------------------------------------------------------------
+r6257 | brainslayer | 2021-05-13 15:16:58 +0700 (Thu, 13 May 2021) | 1 line
+
+sync firmwares to keep both variants at same codelevel
+------------------------------------------------------------------------
+r6256 | brainslayer | 2021-05-13 15:14:31 +0700 (Thu, 13 May 2021) | 1 line
+
+add diag code for tracking calibrations fails and rework scan code
+------------------------------------------------------------------------
+r6255 | brainslayer | 2021-05-13 14:45:15 +0700 (Thu, 13 May 2021) | 1 line
+
+add 3.15-00018 vanilla fw series
+------------------------------------------------------------------------
+r6254 | brainslayer | 2021-05-13 14:43:52 +0700 (Thu, 13 May 2021) | 1 line
+
+add 3.15-00018 vanilla fw series
+------------------------------------------------------------------------
+r6253 | brainslayer | 2021-05-13 14:22:37 +0700 (Thu, 13 May 2021) | 1 line
+
+fix quantenna issue on asus ac87
+------------------------------------------------------------------------
 r6252 | brainslayer | 2021-05-12 17:59:54 +0700 (Wed, 12 May 2021) | 60 lines
 
 Several security issues in the 802.11 implementations were found by
