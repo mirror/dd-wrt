@@ -2778,7 +2778,6 @@ bcm_robo_enable_rgmii_port(robo_info_t *robo)
         char *var;
         int rgmii_port = -1;
         uint8 val8;
-
         var = getvar(robo->vars, "rgmii_port");
         if (var)
                 rgmii_port = bcm_strtoul(var, NULL, 0);
@@ -2813,6 +2812,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 	int i, max_port_ind, ret = 0;
 	uint8 val8;
 	uint16 val16 = 0;
+	char *asus = nvram_get("model");
 	char *boothwmodel = nvram_get("boot_hw_model");
 	char *boothwver = nvram_get("boot_hw_ver");
 	char *boardnum = nvram_get("boardnum");
@@ -3121,6 +3121,14 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		/* Disable CFP by default */
 		val8 = 0x0;
 		robo->ops->write_reg(robo, PAGE_CFP, REG_CFP_CTL_REG, &val8, sizeof(val8));
+	}
+
+	if (asus && (!strcmp(asus,"RT-AC87U") || !strcmp(asus,"RT-AC88U"))) {
+	printk(KERN_INFO "workaround for RT-AC87U/RT-AC88U\n");
+	//val = robo_read16(ROBO_CTRL_PAGE, ROBO_REG_CTRL_PORT5_GMIIPO);
+	/* (GMII_SPEED_UP_2G|SW_OVERRIDE|TXFLOW_CNTL|RXFLOW_CNTL|LINK_STS) */
+	val8 = 0xfb;
+	robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_PORT5_GMIIPO, &val8, sizeof(val8));
 	}
 
 	bcm_robo_enable_rgmii_port(robo);
