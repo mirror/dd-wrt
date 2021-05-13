@@ -542,6 +542,18 @@ static int rule_fa(char *name)
 	return *fa ? 1 : 0;
 }
 
+static int rule_ctf(char *name)
+{
+	char *ctf = nvram_safe_get("ctf_disable");
+	return *ctf ? 1 : 0;
+}
+
+static int rule_sfe(char *name)
+{
+	return !rule_ctf(name);
+}
+
+
 static int rule_afterburner(char *name)
 {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
@@ -708,6 +720,8 @@ static struct defrule s_conditions[] = {
 #endif
 	{ "POESWITCH", rule_poeswitch },
 	{ "FA", rule_fa },
+	{ "CTF", rule_ctf },
+	{ "SFE", rule_sfe },
 	{ NULL, NULL }
 };
 
