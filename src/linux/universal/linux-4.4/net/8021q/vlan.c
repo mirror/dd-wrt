@@ -290,15 +290,16 @@ static int register_vlan_device(struct net_device *real_dev, u16 vlan_id)
 		dbgstr, ctf_isenabled(kcih, real_dev) == TRUE ? "CTF_ON" : "CTF_OFF", real_dev->name );
 	printk(KERN_ERR "%s - CTF state PRE for CHILD (new) device: %s[%s]\n", 
 		dbgstr, ctf_isenabled(kcih, new_dev) == TRUE ? "CTF_ON" : "CTF_OFF", new_dev->name );
-
+#endif
 
 	err = ctf_dev_vlan_add(kcih, real_dev, vlan_id, new_dev);
 
 	if (err != 0) {
 		printk(KERN_ERR "%s - ctf_dev_vlan_add() failed, cause: %d; still adding interface\n", dbgstr, err);
 		err = 0;
-	} else {
-
+	} 
+#if 0
+	else {
 		printk(KERN_ERR "%s - CTF state POST for PARENT (real) device: %s[%s]\n", 
 			dbgstr, ctf_isenabled(kcih, real_dev) == TRUE ? "CTF_ON" : "CTF_OFF", real_dev->name );
 		printk(KERN_ERR "%s - CTF state POST for CHILD (new) device: %s[%s]\n", 
