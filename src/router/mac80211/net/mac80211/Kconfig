@@ -310,6 +310,17 @@ config MAC80211_DEBUG_COUNTERS
 
 	  If unsure, say N.
 
+config MAC80211_DEBUG_STA_COUNTERS
+	bool "Extra Station TX/RX statistics"
+	depends on MAC80211_DEBUG_MENU
+	depends on MAC80211_DEBUGFS
+	help
+	  Selecting this option causes mac80211 to keep additional
+	  and very verbose station-specific TX and RX statistics
+	  These will be exposed in debugfs.
+
+	  If unsure, say N.
+
 config MAC80211_STA_HASH_MAX_SIZE
 	int "Station hash table maximum size" if MAC80211_DEBUG_MENU
 	default 0

@@ -554,7 +554,7 @@ void mwl_set_caps(struct mwl_priv *priv, bool qam256)
 		priv->band_24.n_bitrates = ARRAY_SIZE(mwl_rates_24);
 
 		mwl_set_ht_caps(priv, &priv->band_24);
-		mwl_set_vht_caps(priv, &priv->band_24, qam256);
+//		mwl_set_vht_caps(priv, &priv->band_24, qam256);
 
 		hw->wiphy->bands[NL80211_BAND_2GHZ] = &priv->band_24;
 	}

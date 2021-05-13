@@ -836,11 +836,6 @@ void ieee80211_tx_monitor(struct ieee80211_local *local, struct sk_buff *skb,
 	struct net_device *prev_dev = NULL;
 	int rtap_len;
 
-	if (ieee80211_skb_resize(local, NULL, skb, 0, 0)) {
-		dev_kfree_skb(skb);
-		return;
-	}
-
 	/* send frame to monitor interfaces now */
 	rtap_len = ieee80211_tx_radiotap_len(info, status);
 	if (WARN_ON_ONCE(skb_headroom(skb) < rtap_len)) {

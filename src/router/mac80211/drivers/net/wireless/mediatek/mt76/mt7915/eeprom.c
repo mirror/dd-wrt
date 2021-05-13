@@ -8,10 +8,27 @@ static u32 mt7915_eeprom_read(struct mt7915_dev *dev, u32 offset)
 {
 	u8 *data = dev->mt76.eeprom.data;
 
-	if (data[offset] == 0xff)
+	if (data[offset] == 0xff && !dev->flash_mode)
 		mt7915_mcu_get_eeprom(dev, offset);
 
 	return data[offset];
+}
+
+static int mt7915_eeprom_load_precal(struct mt7915_dev *dev)
+{
+	struct mt76_dev *mdev = &dev->mt76;
+	u32 val;
+
+	val = mt7915_eeprom_read(dev, MT_EE_DO_PRE_CAL);
+	if (val != (MT_EE_WIFI_CAL_DPD | MT_EE_WIFI_CAL_GROUP))
+		return 0;
+
+	val = MT_EE_CAL_GROUP_SIZE + MT_EE_CAL_DPD_SIZE;
+	dev->cal = devm_kzalloc(mdev->dev, val, GFP_KERNEL);
+	if (!dev->cal)
+		return -ENOMEM;
+
+	return mt76_get_of_eeprom(mdev, dev->cal, MT_EE_PRECAL, val);
 }
 
 static int mt7915_eeprom_load(struct mt7915_dev *dev)
@@ -22,12 +39,14 @@ static int mt7915_eeprom_load(struct mt7915_dev *dev)
 	if (ret < 0)
 		return ret;
 
-	if (ret)
+	if (ret) {
 		dev->flash_mode = true;
-	else
+		ret = mt7915_eeprom_load_precal(dev);
+	} else {
 		memset(dev->mt76.eeprom.data, -1, MT7915_EEPROM_SIZE);
+	}
 
-	return 0;
+	return ret;
 }
 
 static int mt7915_check_eeprom(struct mt7915_dev *dev)
@@ -128,7 +147,7 @@ int mt7915_eeprom_get_target_power(struct mt7915_dev *dev,
 				   struct ieee80211_channel *chan,
 				   u8 chain_idx)
 {
-	int index;
+	int index, target_power;
 	bool tssi_on;
 
 	if (chain_idx > 3)
@@ -137,15 +156,22 @@ int mt7915_eeprom_get_target_power(struct mt7915_dev *dev,
 	tssi_on = mt7915_tssi_enabled(dev, chan->band);
 
 	if (chan->band == NL80211_BAND_2GHZ) {
-		index = MT_EE_TX0_POWER_2G + chain_idx * 3 + !tssi_on;
-	} else {
-		int group = tssi_on ?
-			    mt7915_get_channel_group(chan->hw_value) : 8;
+		index = MT_EE_TX0_POWER_2G + chain_idx * 3;
+		target_power = mt7915_eeprom_read(dev, index);
 
-		index = MT_EE_TX0_POWER_5G + chain_idx * 12 + group;
+		if (!tssi_on)
+			target_power += mt7915_eeprom_read(dev, index + 1);
+	} else {
+		int group = mt7915_get_channel_group(chan->hw_value);
+
+		index = MT_EE_TX0_POWER_5G + chain_idx * 12;
+		target_power = mt7915_eeprom_read(dev, index + group);
+
+		if (!tssi_on)
+			target_power += mt7915_eeprom_read(dev, index + 8);
 	}
 
-	return mt7915_eeprom_read(dev, index);
+	return target_power;
 }
 
 s8 mt7915_eeprom_get_power_delta(struct mt7915_dev *dev, int band)

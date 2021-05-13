@@ -1268,11 +1268,6 @@ void cfg80211_init_wdev(struct wireless_dev *wdev)
 #ifdef CONFIG_WIRELESS_EXT
 	if (!wdev->netdev->wireless_handlers)
 		wdev->netdev->wireless_handlers = &cfg80211_wext_handler;
-#else
-	printk_once(KERN_WARNING "cfg80211: wext will not work because "
-		    "kernel was compiled with CONFIG_WIRELESS_EXT=n. "
-		    "Tools using wext interface, like iwconfig will "
-		    "not work.\n");
 #endif
 	wdev->wext.default_key = -1;
 	wdev->wext.default_mgmt_key = -1;

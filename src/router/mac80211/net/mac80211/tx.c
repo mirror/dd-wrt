@@ -5,7 +5,7 @@
  * Copyright 2006-2007	Jiri Benc <jbenc@suse.cz>
  * Copyright 2007	Johannes Berg <johannes@sipsolutions.net>
  * Copyright 2013-2014  Intel Mobile Communications GmbH
- * Copyright (C) 2018-2020 Intel Corporation
+ * Copyright (C) 2018-2021 Intel Corporation
  *
  * Transmit and frame generation functions.
  */
@@ -1404,8 +1404,17 @@ static void ieee80211_txq_enqueue(struct ieee80211_local *local,
 	ieee80211_set_skb_enqueue_time(skb);
 
 	spin_lock_bh(&fq->lock);
-	fq_tin_enqueue(fq, tin, flow_idx, skb,
-		       fq_skb_free_func);
+	/*
+	 * For management frames, don't really apply codel etc.,
+	 * we don't want to apply any shaping or anything we just
+	 * want to simplify the driver API by having them on the
+	 * txqi.
+	 */
+	if (unlikely(txqi->txq.tid == IEEE80211_NUM_TIDS))
+		__skb_queue_tail(&txqi->frags, skb);
+	else
+		fq_tin_enqueue(fq, tin, flow_idx, skb,
+			       fq_skb_free_func);
 	spin_unlock_bh(&fq->lock);
 }
 
@@ -1971,53 +1980,42 @@ static bool ieee80211_tx(struct ieee80211_sub_if_data *sdata,
 }
 
 /* device xmit handlers */
-int ieee80211_skb_resize(struct ieee80211_local *local,
-			 struct ieee80211_sub_if_data *sdata,
-			 struct sk_buff *skb, int hdr_len, int hdr_extra)
+
+enum ieee80211_encrypt {
+	ENCRYPT_NO,
+	ENCRYPT_MGMT,
+	ENCRYPT_DATA,
+};
+
+static int ieee80211_skb_resize(struct ieee80211_sub_if_data *sdata,
+				struct sk_buff *skb,
+				int head_need,
+				enum ieee80211_encrypt encrypt)
 {
-	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
-	struct ieee80211_hdr *hdr;
-	int head_need, head_max;
-	int tail_need, tail_max;
-	bool enc_tailroom = false;
+	struct ieee80211_local *local = sdata->local;
+	bool enc_tailroom;
+	int tail_need = 0;
 
-	if (sdata && !hdr_len &&
-	    !(info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT)) {
-		hdr = (struct ieee80211_hdr *) skb->data;
-		enc_tailroom = (sdata->crypto_tx_tailroom_needed_cnt ||
-				ieee80211_is_mgmt(hdr->frame_control));
-		hdr_len += sdata->encrypt_headroom;
-	}
+	enc_tailroom = encrypt == ENCRYPT_MGMT ||
+		       (encrypt == ENCRYPT_DATA &&
+			sdata->crypto_tx_tailroom_needed_cnt);
 
-	head_need = head_max = hdr_len;
-	tail_need = tail_max = 0;
-	if (!sdata) {
-		head_need = head_max = local->tx_headroom;
-	} else {
-		head_max += hdr_extra;
-		head_max += max_t(int, local->tx_headroom,
-				  local->hw.extra_tx_headroom);
-		head_need += local->hw.extra_tx_headroom;
-
-		tail_max = IEEE80211_ENCRYPT_TAILROOM;
-		if (enc_tailroom)
-			tail_need = tail_max;
+	if (enc_tailroom) {
+		tail_need = IEEE80211_ENCRYPT_TAILROOM;
+		tail_need -= skb_tailroom(skb);
+		tail_need = max_t(int, tail_need, 0);
 	}
 
 	if (skb_cloned(skb) &&
 	    (!ieee80211_hw_check(&local->hw, SUPPORTS_CLONED_SKBS) ||
 	     !skb_clone_writable(skb, ETH_HLEN) || enc_tailroom))
 		I802_DEBUG_INC(local->tx_expand_skb_head_cloned);
-	else if (head_need > skb_headroom(skb) ||
-		 tail_need > skb_tailroom(skb))
+	else if (head_need || tail_need)
 		I802_DEBUG_INC(local->tx_expand_skb_head);
 	else
 		return 0;
 
-	head_max = max_t(int, 0, head_max - skb_headroom(skb));
-	tail_max = max_t(int, 0, tail_max - skb_tailroom(skb));
-
-	if (pskb_expand_head(skb, head_max, tail_max, GFP_ATOMIC)) {
+	if (pskb_expand_head(skb, head_need, tail_need, GFP_ATOMIC)) {
 		wiphy_debug(local->hw.wiphy,
 			    "failed to reallocate TX buffer\n");
 		return -ENOMEM;
@@ -2031,9 +2029,24 @@ void ieee80211_xmit(struct ieee80211_sub_if_data *sdata,
 {
 	struct ieee80211_local *local = sdata->local;
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
-	struct ieee80211_hdr *hdr;
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
+	int headroom;
+	enum ieee80211_encrypt encrypt;
 
-	if (ieee80211_skb_resize(local, sdata, skb, 0, 0)) {
+	if (info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT)
+		encrypt = ENCRYPT_NO;
+	else if (ieee80211_is_mgmt(hdr->frame_control))
+		encrypt = ENCRYPT_MGMT;
+	else
+		encrypt = ENCRYPT_DATA;
+
+	headroom = local->tx_headroom;
+	if (encrypt != ENCRYPT_NO)
+		headroom += sdata->encrypt_headroom;
+	headroom -= skb_headroom(skb);
+	headroom = max_t(int, 0, headroom);
+
+	if (ieee80211_skb_resize(sdata, skb, headroom, encrypt)) {
 		ieee80211_free_txskb(&local->hw, skb);
 		return;
 	}
@@ -2882,13 +2895,29 @@ static struct sk_buff *ieee80211_build_hdr(struct ieee80211_sub_if_data *sdata,
 	}
 
 	skb_pull(skb, skip_header_bytes);
-	head_need = hdrlen + encaps_len + meshhdrlen;
+	head_need = hdrlen + encaps_len + meshhdrlen - skb_headroom(skb);
 
-	if (ieee80211_skb_resize(local, sdata, skb, head_need,
-				 sdata->encrypt_headroom)) {
-		ieee80211_free_txskb(&local->hw, skb);
-		skb = NULL;
-		return ERR_PTR(-ENOMEM);
+	/*
+	 * So we need to modify the skb header and hence need a copy of
+	 * that. The head_need variable above doesn't, so far, include
+	 * the needed header space that we don't need right away. If we
+	 * can, then we don't reallocate right now but only after the
+	 * frame arrives at the master device (if it does...)
+	 *
+	 * If we cannot, however, then we will reallocate to include all
+	 * the ever needed space. Also, if we need to reallocate it anyway,
+	 * make it big enough for everything we may ever need.
+	 */
+
+	if (head_need > 0 || skb_cloned(skb)) {
+		head_need += sdata->encrypt_headroom;
+		head_need += local->tx_headroom;
+		head_need = max_t(int, 0, head_need);
+		if (ieee80211_skb_resize(sdata, skb, head_need, ENCRYPT_DATA)) {
+			ieee80211_free_txskb(&local->hw, skb);
+			skb = NULL;
+			return ERR_PTR(-ENOMEM);
+		}
 	}
 
 	if (encaps_data)
@@ -3505,6 +3534,7 @@ static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_local *local = sdata->local;
 	u16 ethertype = (skb->data[12] << 8) | skb->data[13];
 	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
+	int hw_headroom = sdata->local->hw.extra_tx_headroom;
 	struct ethhdr eth;
 	struct ieee80211_tx_info *info;
 	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
@@ -3556,7 +3586,10 @@ static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
 	 * as the may-encrypt argument for the resize to not account for
 	 * more room than we already have in 'extra_head'
 	 */
-	if (unlikely(ieee80211_skb_resize(local, sdata, skb, extra_head, 0))) {
+	if (unlikely(ieee80211_skb_resize(sdata, skb,
+					  max_t(int, extra_head + hw_headroom -
+						     skb_headroom(skb), 0),
+					  ENCRYPT_NO))) {
 		kfree_skb(skb);
 		return true;
 	}
@@ -3648,7 +3681,7 @@ begin:
 	    test_bit(IEEE80211_TXQ_STOP_NETIF_TX, &txqi->flags))
 		goto out;
 
-	if (vif->txqs_stopped[ieee80211_ac_from_tid(txq->tid)]) {
+	if (vif->txqs_stopped[txq->ac]) {
 		set_bit(IEEE80211_TXQ_STOP_NETIF_TX, &txqi->flags);
 		goto out;
 	}
@@ -3879,7 +3912,7 @@ void __ieee80211_schedule_txq(struct ieee80211_hw *hw,
 		 * get immediately moved to the back of the list on the next
 		 * call to ieee80211_next_txq().
 		 */
-		if (txqi->txq.sta &&
+		if (txqi->txq.sta && local->airtime_flags &&
 		    wiphy_ext_feature_isset(local->hw.wiphy,
 					    NL80211_EXT_FEATURE_AIRTIME_FAIRNESS))
 			list_add(&txqi->schedule_order,
@@ -3903,6 +3936,9 @@ bool ieee80211_txq_airtime_check(struct ieee80211_hw *hw,
 		return true;
 
 	if (!txq->sta)
+		return true;
+
+	if (unlikely(txq->tid == IEEE80211_NUM_TIDS))
 		return true;
 
 	sta = container_of(txq->sta, struct sta_info, sta);
@@ -4230,6 +4266,9 @@ static bool ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_sta *pubsta = NULL;
 	unsigned long flags;
 	int q = info->hw_queue;
+
+	if (sta)
+		sk_pacing_shift_update(skb->sk, local->hw.tx_sk_pacing_shift);
 
 	if (ieee80211_queue_skb(local, sdata, sta, skb))
 		return true;

@@ -2633,6 +2633,56 @@ static void sta_update_codel_params(struct sta_info *sta, u32 thr)
 	}
 }
 
+void sta_accum_rx_stats(struct sta_info *sta,
+			struct ieee80211_sta_rx_stats *rx_stats)
+{
+	int cpu;
+	int i;
+
+	memcpy(rx_stats, &sta->rx_stats, sizeof(*rx_stats));
+
+	if (!sta->pcpu_rx_stats)
+		return;
+
+	for_each_possible_cpu(cpu) {
+		struct ieee80211_sta_rx_stats *cpurxs;
+
+		cpurxs = per_cpu_ptr(sta->pcpu_rx_stats, cpu);
+		rx_stats->packets += cpurxs->packets;
+		if (time_after(cpurxs->last_rx, rx_stats->last_rx)) {
+			rx_stats->last_rx = cpurxs->last_rx;
+			rx_stats->last_signal = cpurxs->last_signal;
+			for (i = 0; i<IEEE80211_MAX_CHAINS; i++)
+				rx_stats->chain_signal_last[i] = cpurxs->chain_signal_last[i];
+			rx_stats->last_rate = cpurxs->last_rate;
+		}
+		rx_stats->num_duplicates += cpurxs->num_duplicates;
+		rx_stats->fragments += cpurxs->fragments;
+		rx_stats->dropped += cpurxs->dropped;
+		rx_stats->bytes += sta_get_stats_bytes(cpurxs);
+		for (i = 0; i<=IEEE80211_NUM_TIDS; i++) {
+			rx_stats->msdu[i] += sta_get_tidstats_msdu(cpurxs, i);
+		}
+#ifdef CONFIG_MAC80211_DEBUG_STA_COUNTERS
+		rx_stats->msdu_20 += cpurxs->msdu_20;
+		rx_stats->msdu_40 += cpurxs->msdu_40;
+		rx_stats->msdu_80 += cpurxs->msdu_80;
+		rx_stats->msdu_160 += cpurxs->msdu_160;
+		for (i = 0; i<NL80211_RATE_INFO_HE_RU_ALLOC_LAST; i++)
+			rx_stats->msdu_he_ru_alloc[i] += cpurxs->msdu_he_ru_alloc[i];
+		rx_stats->msdu_he_tot += cpurxs->msdu_he_tot;
+		rx_stats->msdu_he_mu += cpurxs->msdu_he_mu;
+		rx_stats->msdu_vht += cpurxs->msdu_vht;
+		rx_stats->msdu_ht += cpurxs->msdu_ht;
+		rx_stats->msdu_legacy += cpurxs->msdu_legacy;
+		for (i = 0; i<8; i++)
+			rx_stats->msdu_nss[i] += cpurxs->msdu_nss[i];
+		for (i = 0; i<32; i++)
+			rx_stats->msdu_rate_idx[i] += cpurxs->msdu_rate_idx[i];
+#endif
+	}
+}
+
 void ieee80211_sta_set_expected_throughput(struct ieee80211_sta *pubsta,
 					   u32 thr)
 {

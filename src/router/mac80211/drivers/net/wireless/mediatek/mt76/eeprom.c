@@ -9,7 +9,7 @@
 #include <linux/etherdevice.h>
 #include "mt76.h"
 
-static int mt76_get_of_eeprom(struct mt76_dev *dev, int len)
+int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int offset, int len)
 {
 #if defined(CONFIG_OF) && defined(CONFIG_MTD)
 	struct device_node *np = dev->dev->of_node;
@@ -17,7 +17,6 @@ static int mt76_get_of_eeprom(struct mt76_dev *dev, int len)
 	const __be32 *list;
 	const char *part, *file, *disable_2ghz, *disable_5ghz;
 	phandle phandle;
-	int offset = 0;
 	int size;
 	size_t retlen;
 	int ret;
@@ -64,9 +63,9 @@ static int mt76_get_of_eeprom(struct mt76_dev *dev, int len)
 		f_offset = srcf->f_pos;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,19,0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
-		kernel_read(srcf, dev->eeprom.data, 1024, &f_offset);
+		kernel_read(srcf, eep, 1024, &f_offset);
 #else
-		kernel_read(srcf, f_offset, dev->eeprom.data, 1024);
+		kernel_read(srcf, f_offset, eep, 1024);
 #endif
 #else
 	        srcf->f_op->read(srcf, dev->eeprom.data, 1024, &f_offset);
@@ -105,7 +104,7 @@ static int mt76_get_of_eeprom(struct mt76_dev *dev, int len)
 
 		offset = be32_to_cpup(list);
 		dev_info(dev->dev, "Read calibration data from part %s, offset 0x%08X, len 0x%08X\n", part, offset, len);
-		ret = mtd_read(mtd, offset, len, &retlen, dev->eeprom.data);
+		ret = mtd_read(mtd, offset, len, &retlen, eep);
 		put_mtd_device(mtd);
 		if (ret)
 			goto out_put_node;
@@ -116,7 +115,7 @@ static int mt76_get_of_eeprom(struct mt76_dev *dev, int len)
 		}
 
 		if (of_property_read_bool(dev->dev->of_node, "big-endian")) {
-			u8 *data = (u8 *)dev->eeprom.data;
+			u8 *data = (u8 *)eep;
 			int i;
 
 			/* convert eeprom data in Little Endian */
@@ -137,6 +136,7 @@ out_put_node:
 	return -ENOENT;
 #endif
 }
+EXPORT_SYMBOL_GPL(mt76_get_of_eeprom);
 
 void mt76_eeprom_override(struct mt76_phy *phy)
 {
@@ -360,20 +360,21 @@ s8 mt76_get_rate_power_limits(struct mt76_phy *phy,
 
 	txs_delta = mt76_get_txs_delta(np, hweight8(phy->antenna_mask));
 
-	val = mt76_get_of_array(np, "cck", &len, ARRAY_SIZE(dest->cck));
+	val = mt76_get_of_array(np, "rates-cck", &len, ARRAY_SIZE(dest->cck));
 	mt76_apply_array_limit(dest->cck, ARRAY_SIZE(dest->cck), val,
 			       target_power, txs_delta, &max_power);
 
-	val = mt76_get_of_array(np, "ofdm", &len, ARRAY_SIZE(dest->ofdm));
+	val = mt76_get_of_array(np, "rates-ofdm",
+				&len, ARRAY_SIZE(dest->ofdm));
 	mt76_apply_array_limit(dest->ofdm, ARRAY_SIZE(dest->ofdm), val,
 			       target_power, txs_delta, &max_power);
 
-	val = mt76_get_of_array(np, "mcs", &len, mcs_rates + 1);
+	val = mt76_get_of_array(np, "rates-mcs", &len, mcs_rates + 1);
 	mt76_apply_multi_array_limit(dest->mcs[0], ARRAY_SIZE(dest->mcs[0]),
 				     ARRAY_SIZE(dest->mcs), val, len,
 				     target_power, txs_delta, &max_power);
 
-	val = mt76_get_of_array(np, "ru", &len, ru_rates + 1);
+	val = mt76_get_of_array(np, "rates-ru", &len, ru_rates + 1);
 	mt76_apply_multi_array_limit(dest->ru[0], ARRAY_SIZE(dest->ru[0]),
 				     ARRAY_SIZE(dest->ru), val, len,
 				     target_power, txs_delta, &max_power);
@@ -389,7 +390,7 @@ int mt76_eeprom_init(struct mt76_dev *dev, int len)
 	if (!dev->eeprom.data)
 		return -ENOMEM;
 
-	return !mt76_get_of_eeprom(dev, len);
+	return !mt76_get_of_eeprom(dev, dev->eeprom.data, 0, len);
 }
 
 EXPORT_SYMBOL_GPL(mt76_eeprom_init);

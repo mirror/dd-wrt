@@ -127,6 +127,124 @@ static ssize_t sta_flags_read(struct file *file, char __user *userbuf,
 }
 STA_OPS(flags);
 
+static ssize_t sta_stats_read(struct file *file, char __user *userbuf,
+			      size_t count, loff_t *ppos)
+{
+	struct sta_info *sta = file->private_data;
+	unsigned int len = 0;
+	const int buf_len = 8000;
+	char *buf = kzalloc(buf_len, GFP_KERNEL);
+	unsigned long sum;
+	char tmp[60];
+	int i;
+	struct ieee80211_sta_rx_stats rx_stats = {0};
+
+	if (!buf)
+		return -ENOMEM;
+
+	sta_accum_rx_stats(sta, &rx_stats);
+
+#define PRINT_MY_STATS(a, b) do {					\
+		len += scnprintf(buf + len, buf_len - len, "%30s %18lu\n", a, (unsigned long)(b)); \
+		if (len >= buf_len) {					\
+			goto done;					\
+		}							\
+	} while (0)
+
+#define PRINT_MY_STATS_S(a, b) do {					\
+		len += scnprintf(buf + len, buf_len - len, "%30s %18ld\n", a, (long)(b)); \
+		if (len >= buf_len) {					\
+			goto done;					\
+		}							\
+	} while (0)
+
+	PRINT_MY_STATS("rx-packets", rx_stats.packets);
+	PRINT_MY_STATS("rx-bytes", rx_stats.bytes);
+	PRINT_MY_STATS("rx-dup", rx_stats.num_duplicates);
+	PRINT_MY_STATS("rx-fragments", rx_stats.fragments);
+	PRINT_MY_STATS("rx-dropped", rx_stats.dropped);
+	PRINT_MY_STATS_S("rx-last-signal", rx_stats.last_signal);
+
+	for (i = 0; i<IEEE80211_MAX_CHAINS; i++) {
+		if (rx_stats.chains & (1<<i)) {
+			sprintf(tmp, "rx-last-signal-chain[%i]", i);
+			PRINT_MY_STATS_S(tmp, rx_stats.chain_signal_last[i]);
+		}
+	}
+	PRINT_MY_STATS("rx-last-rate-encoded", rx_stats.last_rate);
+
+	len += scnprintf(buf + len, buf_len - len, "\n");
+
+	sum = sta->tx_stats.packets[0] + sta->tx_stats.packets[1]
+		+ sta->tx_stats.packets[2] + sta->tx_stats.packets[3];
+	PRINT_MY_STATS("tx-packets", sum);
+
+		sum = sta->tx_stats.bytes[0] + sta->tx_stats.bytes[1]
+		+ sta->tx_stats.bytes[2] + sta->tx_stats.bytes[3];
+	PRINT_MY_STATS("tx-bytes", sum);
+
+	/* per txq stats */
+	PRINT_MY_STATS("tx-packets-acs[VO]", sta->tx_stats.packets[IEEE80211_AC_VO]);
+	PRINT_MY_STATS("tx-packets-acs[VI]", sta->tx_stats.packets[IEEE80211_AC_VI]);
+	PRINT_MY_STATS("tx-packets-acs[BE]", sta->tx_stats.packets[IEEE80211_AC_BE]);
+	PRINT_MY_STATS("tx-packets-acs[BK]", sta->tx_stats.packets[IEEE80211_AC_BK]);
+
+	PRINT_MY_STATS("tx-bytes-acs[VO]", sta->tx_stats.bytes[IEEE80211_AC_VO]);
+	PRINT_MY_STATS("tx-bytes-acs[VI]", sta->tx_stats.bytes[IEEE80211_AC_VI]);
+	PRINT_MY_STATS("tx-bytes-acs[BE]", sta->tx_stats.bytes[IEEE80211_AC_BE]);
+	PRINT_MY_STATS("tx-bytes-acs[BK]", sta->tx_stats.bytes[IEEE80211_AC_BK]);
+
+	len += scnprintf(buf + len, buf_len - len, "\n");
+	for (i = 0; i<=IEEE80211_NUM_TIDS; i++) {
+		sprintf(tmp, "tx-msdu-tid[%2i]", i);
+		PRINT_MY_STATS(tmp, sta->tx_stats.msdu[i]);
+	}
+
+	len += scnprintf(buf + len, buf_len - len, "\n");
+	for (i = 0; i<=IEEE80211_NUM_TIDS; i++) {
+		sprintf(tmp, "rx-msdu-tid[%2i]", i);
+		PRINT_MY_STATS(tmp, rx_stats.msdu[i]);
+	}
+
+#ifdef CONFIG_MAC80211_DEBUG_STA_COUNTERS
+	PRINT_MY_STATS("rx-bw-20", rx_stats.msdu_20);
+	PRINT_MY_STATS("rx-bw-40", rx_stats.msdu_40);
+	PRINT_MY_STATS("rx-bw-80", rx_stats.msdu_80);
+	PRINT_MY_STATS("rx-bw-160", rx_stats.msdu_160);
+
+	PRINT_MY_STATS("rx-he-total", rx_stats.msdu_he_tot);
+	PRINT_MY_STATS("rx-he-mu", rx_stats.msdu_he_mu);
+	PRINT_MY_STATS("rx-vht", rx_stats.msdu_vht);
+	PRINT_MY_STATS("rx-ht", rx_stats.msdu_ht);
+	PRINT_MY_STATS("rx-legacy", rx_stats.msdu_legacy);
+
+	PRINT_MY_STATS("rx-he-ru-alloc[   26]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_26]);
+	PRINT_MY_STATS("rx-he-ru-alloc[   52]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_52]);
+	PRINT_MY_STATS("rx-he-ru-alloc[  106]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_106]);
+	PRINT_MY_STATS("rx-he-ru-alloc[  242]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_242]);
+	PRINT_MY_STATS("rx-he-ru-alloc[  484]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_484]);
+	PRINT_MY_STATS("rx-he-ru-alloc[  996]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_996]);
+	PRINT_MY_STATS("rx-he-ru-alloc[2x996]", rx_stats.msdu_he_ru_alloc[NL80211_RATE_INFO_HE_RU_ALLOC_2x996]);
+
+	for (i = 0; i<8; i++) {
+		sprintf(tmp, "rx-msdu-nss[%i]", i);
+		PRINT_MY_STATS(tmp, rx_stats.msdu_nss[i]);
+	}
+
+	for (i = 0; i<32; i++) {
+		sprintf(tmp, "rx-rate-idx[%3i]", i);
+		PRINT_MY_STATS(tmp, rx_stats.msdu_rate_idx[i]);
+	}
+#endif
+
+#undef PRINT_MY_STATS
+done:
+	i = simple_read_from_buffer(userbuf, count, ppos, buf, strlen(buf));
+	kfree(buf);
+	return i;
+}
+STA_OPS(stats);
+
 static ssize_t sta_num_ps_buf_frames_read(struct file *file,
 					  char __user *userbuf,
 					  size_t count, loff_t *ppos)
@@ -1048,6 +1166,7 @@ void ieee80211_sta_debugfs_add(struct sta_info *sta)
 	DEBUGFS_ADD(tdma_queues);
 #endif
 	DEBUGFS_ADD(flags);
+	DEBUGFS_ADD(stats);
 	DEBUGFS_ADD(aid);
 	DEBUGFS_ADD(num_ps_buf_frames);
 	DEBUGFS_ADD(last_seq_ctrl);
