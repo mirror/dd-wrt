@@ -245,7 +245,7 @@ static struct switch_attr default_port[] = {
 	[PORT_LINK] = {
 		.type = SWITCH_TYPE_LINK,
 		.name = "link",
-		.description = "Get port link information",
+		.description = "Get/Set port link information",
 		.set = swconfig_set_link,
 		.get = swconfig_get_link,
 	}
@@ -1320,6 +1320,7 @@ switch_generic_set_link(struct switch_dev *dev, int port,
 
 	return 0;
 }
+EXPORT_SYMBOL(switch_generic_set_link);
 
 static int __init
 swconfig_init(void)
