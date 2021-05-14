@@ -181,29 +181,85 @@ void start_setup_vlans(void)
 		char *vlans = nvram_nget("port%dvlans", i);
 		char *next;
 		char vlan[4];
-
+		int mask = 0;
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
 			if (tmp >= 16) {
+				vlan_number = tmp;
 				if (vlan_number == 16)
 					tagged[vlan_number] = 1;
 
 				if (i == 0 && nvram_exists("sw_wancpuport")) {
 					if (!nvram_match("sw_wan", "-1")) {
 						switch (vlan_number) {
-						case 17:
+						case 22:
 							eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "igmp_snooping", "1");
 							break;
 						case 16:
 							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
 							break;
+						case 17:	// no auto negotiate
+							mask |= 4;
+							break;
+						case 18:	// no full speed
+							mask |= 1;
+							break;
+						case 19:	// no full duplex
+							mask |= 2;
+							break;
+						case 20:	// disabled
+							mask |= 8;
+							break;
+						case 21:	// no gigabit
+							mask |= 16;
+							break;
+
+						}
+					} else {
+						switch (vlan_number) {
+						case 22:
+							eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
+							break;
+						case 17:	// no auto negotiate
+							mask |= 4;
+							break;
+						case 18:	// no full speed
+							mask |= 1;
+							break;
+						case 19:	// no full duplex
+							mask |= 2;
+							break;
+						case 20:	// disabled
+							mask |= 8;
+							break;
+						case 21:	// no gigabit
+							mask |= 16;
+							break;
 						}
 					}
 				} else {
-					if (vlan_number == 17) {
-						eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
+					if (vlan_number > 16) {
+						switch (vlan_number) {
+						case 22:
+							eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
+							break;
+						case 17:	// no auto negotiate
+							mask |= 4;
+							break;
+						case 18:	// no full speed
+							mask |= 1;
+							break;
+						case 19:	// no full duplex
+							mask |= 2;
+							break;
+						case 20:	// disabled
+							mask |= 8;
+							break;
+						case 21:	// no gigabit
+							mask |= 16;
+							break;
+						}
 					}
-
 				}
 			} else {
 				vlan_number = tmp;
@@ -255,10 +311,36 @@ void start_setup_vlans(void)
 					if (!nvram_match(hwaddr, ""))
 						set_hwaddr(buff, nvram_safe_get(hwaddr));
 				}
-
 			}
 		}
+		char linkstr[128] = { 0 };
+		if (mask & 4) {
+			if (mask & 2)
+				sprintf(linkstr, "duplex half");
+			else
+				sprintf(linkstr, "duplex full");
+
+			if (mask & 16) {
+				if (mask & 1)
+					sprintf(linkstr, "%s speed 10", linkstr);
+				else
+					sprintf(linkstr, "%s speed 100", linkstr);
+
+				sprintf(linkstr, "%s autoneg off", linkstr);
+			} else {
+				sprintf(linkstr, "%s speed 1000", linkstr);
+				sprintf(linkstr, "%s autoneg on", linkstr);
+			}
+
+		} else
+			sprintf(linkstr, "autoneg on", linkstr);
+		if (i == 0) {
+			sysprintf("swconfig dev switch0 port %s set link \"%s\"", nvram_safe_get("sw_wan"), linkstr);
+		} else {
+			sysprintf("swconfig dev switch0 port %s set link \"%s\"", nvram_nget("sw_lan%d", i), linkstr);
+		}
 	}
+
 #ifdef HAVE_R9000
 	for (vlan_number = 0; vlan_number < 16; vlan_number++) {
 		char *ports = &buildports[vlan_number][0];
@@ -268,6 +350,7 @@ void start_setup_vlans(void)
 			sysprintf(". /usr/sbin/config_vlan.sh \"%d\" \"%s\" \"0\" \"0\" \"0\" \"normal_lan\"");
 		}
 	}
+
 	sysprintf(". /usr/sbin/config_vlan.sh \"2\" \"\" \"0\" \"1\" \"0\"  \"wan\"");
 	sysprintf(". /tmp/ssdk_new.sh");
 #else
@@ -282,6 +365,7 @@ void start_setup_vlans(void)
 			sysprintf("swconfig dev switch0 vlan %d set ports \"\"", vlan_number);
 		}
 	}
+
 	eval("swconfig", "dev", "switch0", "set", "apply");
 #endif
 #else
