@@ -37,7 +37,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	 * (x 16 dosn't apply) 
 	 */
 
-	int i, j, vlans[22][7], tmp, wl_br;
+	int i, j, vlans[23][7], tmp, wl_br;
 	char *c, *next, buff[32], portvlan[32];
 	int a;
 	int lanports = 4;
@@ -49,7 +49,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	if (getRouterBrand() == ROUTER_UBNT_NANOAC)
 		lanports = 2;
 
-	for (i = 0; i < 22; i++)
+	for (i = 0; i < 23; i++)
 		for (j = 0; j < lanports + 2; j++)
 			vlans[i][j] = -1;
 
@@ -217,13 +217,11 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 	int len = 21;
 #ifdef HAVE_SWCONFIG
-	hasgiga = 0;
 #ifdef HAVE_ALPINE
 	len = 16;		// no tag support for now
 #else
-	len = 17;
 	if (has_igmpsnooping())
-		len = 18;
+		len = 22;
 #endif
 #endif
 
@@ -244,11 +242,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.tagged)</script>");
 			break;
 		case 17:
-#ifdef HAVE_SWCONFIG
-			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.snooping)</script>");
-#else
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.negociate)</script>");
-#endif
 			break;
 		case 18:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.fullspeed)</script>");
@@ -261,6 +255,9 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			break;
 		case 21:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.gigabit)</script>");
+			break;
+		case 22:
+			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.snooping)</script>");
 			break;
 		default:
 			snprintf(buff, 31, "%d", i);
@@ -281,22 +278,18 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" name=");
 			websWrite(wp, buff);
 
-			if (i < 17 || i > 21) {
+			if (i < 17 || i > 22) {
 				if (vlans[i][j] == 1)
 					websWrite(wp, " checked=\"checked\"");
 			} else {
 				if (vlans[i][j] == -1)
 					websWrite(wp, " checked=\"checked\"");
 			}
-#ifdef HAVE_SWCONFIG
-			if (i < 18) {
-#else
 			if (i < 17) {
-#endif
 				websWrite(wp, " onclick=");
 				snprintf(buff, sizeof(buff), "\"SelVLAN(this.form,'port%d')\"", j);
 				websWrite(wp, buff);
-			} else if (i == 17 || i == 20 || i == 21) {
+			} else if (i == 17 || i == 20 || i == 21 || i == 22) {
 				websWrite(wp, " onclick=");
 				snprintf(buff, sizeof(buff), "\"SelSpeed(this.form,'port%d')\"", j);
 				websWrite(wp, buff);
