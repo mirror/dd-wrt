@@ -5410,9 +5410,7 @@ void port_vlan_table_save(webs_t wp)
 	for (port = 0; port < ports; port++) {
 		for (vlan = 0; vlan < max; vlan++) {
 			snprintf(portid, sizeof(portid), "port%dvlan%d", port, vlan);
-			fprintf(stderr, "portid %s\n", portid);
 			char *s_portval = websGetVar(wp, portid, "");
-			fprintf(stderr, "portval %s\n", s_portval);
 #ifdef HAVE_SWCONFIG
 			if (vlan < 17 || vlan > 22)
 #else
@@ -5421,7 +5419,6 @@ void port_vlan_table_save(webs_t wp)
 				i = (strcmp(s_portval, "on") == 0);
 			else
 				i = (strcmp(s_portval, "on") != 0);
-			fprintf(stderr, "status %d\n", i);
 			if (i) {
 				if (*(portvlan))
 					strcat(portvlan, " ");
@@ -5429,7 +5426,6 @@ void port_vlan_table_save(webs_t wp)
 				snprintf(buff, 4, "%d", vlan);
 				strcat(portvlan, buff);
 				vlans[vlan] = 1;
-				fprintf(stderr, "%s\n", portvlan);
 #ifdef HAVE_SWCONFIG
 				if (vlan < 16) {
 					char buff[32];
