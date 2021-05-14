@@ -38,6 +38,95 @@ struct b53_mib_desc {
 	const char *name;
 };
 
+/* BCM5365 MIB counters */
+static const struct b53_mib_desc b53_mibs_65[] = {
+	{ 8, 0x00, "TxOctets" },
+	{ 4, 0x08, "TxDropPkts" },
+	{ 4, 0x10, "TxBroadcastPkts" },
+	{ 4, 0x14, "TxMulticastPkts" },
+	{ 4, 0x18, "TxUnicastPkts" },
+	{ 4, 0x1c, "TxCollisions" },
+	{ 4, 0x20, "TxSingleCollision" },
+	{ 4, 0x24, "TxMultipleCollision" },
+	{ 4, 0x28, "TxDeferredTransmit" },
+	{ 4, 0x2c, "TxLateCollision" },
+	{ 4, 0x30, "TxExcessiveCollision" },
+	{ 4, 0x38, "TxPausePkts" },
+	{ 8, 0x44, "RxOctets" },
+	{ 4, 0x4c, "RxUndersizePkts" },
+	{ 4, 0x50, "RxPausePkts" },
+	{ 4, 0x54, "Pkts64Octets" },
+	{ 4, 0x58, "Pkts65to127Octets" },
+	{ 4, 0x5c, "Pkts128to255Octets" },
+	{ 4, 0x60, "Pkts256to511Octets" },
+	{ 4, 0x64, "Pkts512to1023Octets" },
+	{ 4, 0x68, "Pkts1024to1522Octets" },
+	{ 4, 0x6c, "RxOversizePkts" },
+	{ 4, 0x70, "RxJabbers" },
+	{ 4, 0x74, "RxAlignmentErrors" },
+	{ 4, 0x78, "RxFCSErrors" },
+	{ 8, 0x7c, "RxGoodOctets" },
+	{ 4, 0x84, "RxDropPkts" },
+	{ 4, 0x88, "RxUnicastPkts" },
+	{ 4, 0x8c, "RxMulticastPkts" },
+	{ 4, 0x90, "RxBroadcastPkts" },
+	{ 4, 0x94, "RxSAChanges" },
+	{ 4, 0x98, "RxFragments" },
+	{ },
+};
+
+#define B63XX_MIB_TXB_ID	0	/* TxOctets */
+#define B63XX_MIB_RXB_ID	14	/* RxOctets */
+
+/* BCM63xx MIB counters */
+static const struct b53_mib_desc b53_mibs_63xx[] = {
+	{ 8, 0x00, "TxOctets" },
+	{ 4, 0x08, "TxDropPkts" },
+	{ 4, 0x0c, "TxQoSPkts" },
+	{ 4, 0x10, "TxBroadcastPkts" },
+	{ 4, 0x14, "TxMulticastPkts" },
+	{ 4, 0x18, "TxUnicastPkts" },
+	{ 4, 0x1c, "TxCollisions" },
+	{ 4, 0x20, "TxSingleCollision" },
+	{ 4, 0x24, "TxMultipleCollision" },
+	{ 4, 0x28, "TxDeferredTransmit" },
+	{ 4, 0x2c, "TxLateCollision" },
+	{ 4, 0x30, "TxExcessiveCollision" },
+	{ 4, 0x38, "TxPausePkts" },
+	{ 8, 0x3c, "TxQoSOctets" },
+	{ 8, 0x44, "RxOctets" },
+	{ 4, 0x4c, "RxUndersizePkts" },
+	{ 4, 0x50, "RxPausePkts" },
+	{ 4, 0x54, "Pkts64Octets" },
+	{ 4, 0x58, "Pkts65to127Octets" },
+	{ 4, 0x5c, "Pkts128to255Octets" },
+	{ 4, 0x60, "Pkts256to511Octets" },
+	{ 4, 0x64, "Pkts512to1023Octets" },
+	{ 4, 0x68, "Pkts1024to1522Octets" },
+	{ 4, 0x6c, "RxOversizePkts" },
+	{ 4, 0x70, "RxJabbers" },
+	{ 4, 0x74, "RxAlignmentErrors" },
+	{ 4, 0x78, "RxFCSErrors" },
+	{ 8, 0x7c, "RxGoodOctets" },
+	{ 4, 0x84, "RxDropPkts" },
+	{ 4, 0x88, "RxUnicastPkts" },
+	{ 4, 0x8c, "RxMulticastPkts" },
+	{ 4, 0x90, "RxBroadcastPkts" },
+	{ 4, 0x94, "RxSAChanges" },
+	{ 4, 0x98, "RxFragments" },
+	{ 4, 0xa0, "RxSymbolErrors" },
+	{ 4, 0xa4, "RxQoSPkts" },
+	{ 8, 0xa8, "RxQoSOctets" },
+	{ 4, 0xb0, "Pkts1523to2047Octets" },
+	{ 4, 0xb4, "Pkts2048to4095Octets" },
+	{ 4, 0xb8, "Pkts4096to8191Octets" },
+	{ 4, 0xbc, "Pkts8192to9728Octets" },
+	{ 4, 0xc0, "RxDiscarded" },
+	{ }
+};
+
+#define B53XX_MIB_TXB_ID	0	/* TxOctets */
+#define B53XX_MIB_RXB_ID	12	/* RxOctets */
 
 /* MIB counters */
 static const struct b53_mib_desc b53_mibs[] = {
@@ -78,6 +167,7 @@ static const struct b53_mib_desc b53_mibs[] = {
 	{ 4, 0xc0, "RxDiscarded" },
 	{ }
 };
+
 
 
 /*
@@ -312,6 +402,27 @@ static int b53_port_get_link(struct switch_dev *dev, int port,
 
 }
 
+static int b53_port_set_link(struct switch_dev *sw_dev, int port,
+			     struct switch_port_link *link)
+{
+	struct b53_device *dev = sw_to_b53(sw_dev);
+
+	if (port == sw_dev->cpu_port)
+		return -EINVAL;
+
+	if (!(BIT(port) & dev->enabled_ports))
+		return -EINVAL;
+
+	if (link->speed == SWITCH_PORT_SPEED_1000 &&
+	    (is5325(dev) || is5365(dev)))
+		return -EINVAL;
+
+	if (link->speed == SWITCH_PORT_SPEED_1000 && !link->duplex)
+		return -EINVAL;
+
+	return switch_generic_set_link(sw_dev, port, link);
+}
+
 extern void bcm_robo_reset_switch(void *robo);
 static int b53_global_reset_switch(struct switch_dev *dev)
 {
@@ -369,7 +480,16 @@ static int b53_port_get_mib(struct switch_dev *sw_dev,
 	if (!(BIT(port) & dev->enabled_ports))
 		return -1;
 
-	mibs = b53_mibs;
+	if (is5365(dev)) {
+		if (port == 5)
+			port = 8;
+
+		mibs = b53_mibs_65;
+	} else if (is63xx(dev)) {
+		mibs = b53_mibs_63xx;
+	} else {
+		mibs = b53_mibs;
+	}
 
 	dev->buf[0] = 0;
 
@@ -394,6 +514,78 @@ static int b53_port_get_mib(struct switch_dev *sw_dev,
 	val->value.s = dev->buf;
 
 	return 0;
+}
+#define B63XX_MIB_TXB_ID	0	/* TxOctets */
+#define B63XX_MIB_RXB_ID	14	/* RxOctets */
+#define B53XX_MIB_TXB_ID	0	/* TxOctets */
+#define B53XX_MIB_RXB_ID	12	/* RxOctets */
+
+static int b53_port_get_stats(struct switch_dev *sw_dev, int port,
+				struct switch_port_stats *stats)
+{
+	struct b53_device *dev = sw_to_b53(sw_dev);
+	const struct b53_mib_desc *mibs;
+	int txb_id, rxb_id;
+	u64 rxb, txb;
+
+	if (!(BIT(port) & dev->enabled_ports))
+		return -EINVAL;
+
+	txb_id = B53XX_MIB_TXB_ID;
+	rxb_id = B53XX_MIB_RXB_ID;
+
+	if (is5365(dev)) {
+		if (port == 5)
+			port = 8;
+
+		mibs = b53_mibs_65;
+	} else if (is63xx(dev)) {
+		mibs = b53_mibs_63xx;
+		txb_id = B63XX_MIB_TXB_ID;
+		rxb_id = B63XX_MIB_RXB_ID;
+	} else {
+		mibs = b53_mibs;
+	}
+
+	dev->buf[0] = 0;
+
+	if (mibs->size == 8) {
+		b53_read64(dev, B53_MIB_PAGE(port), mibs[txb_id].offset, &txb);
+		b53_read64(dev, B53_MIB_PAGE(port), mibs[rxb_id].offset, &rxb);
+	} else {
+		u32 val32;
+
+		b53_read32(dev, B53_MIB_PAGE(port), mibs[txb_id].offset, &val32);
+		txb = val32;
+
+		b53_read32(dev, B53_MIB_PAGE(port), mibs[rxb_id].offset, &val32);
+		rxb = val32;
+	}
+
+	stats->tx_bytes = txb;
+	stats->rx_bytes = rxb;
+
+	return 0;
+}
+
+static int b53_phy_read16(struct switch_dev *dev, int addr, u8 reg, u16 *value)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	if (priv->ops->phy_read16)
+		return priv->ops->phy_read16(priv, addr, reg, value);
+
+	return b53_read16(priv, B53_PORT_MII_PAGE(addr), reg, value);
+}
+
+static int b53_phy_write16(struct switch_dev *dev, int addr, u8 reg, u16 value)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	if (priv->ops->phy_write16)
+		return priv->ops->phy_write16(priv, addr, reg, value);
+
+	return b53_write16(priv, B53_PORT_MII_PAGE(addr), reg, value);
 }
 
 static struct switch_attr b53_global_ops_25[] = {
@@ -507,7 +699,11 @@ static const struct switch_dev_ops b53_switch_ops_25 = {
 	.set_port_pvid = b53_port_set_pvid,
 	.apply_config = b53_global_apply_config,
 	.reset_switch = b53_global_reset_switch,
+	.set_port_link = b53_port_set_link,
 	.get_port_link = b53_port_get_link,
+	.get_port_stats = b53_port_get_stats,
+	.phy_read16 = b53_phy_read16,
+	.phy_write16 = b53_phy_write16,
 };
 
 static const struct switch_dev_ops b53_switch_ops_65 = {
@@ -530,7 +726,11 @@ static const struct switch_dev_ops b53_switch_ops_65 = {
 	.set_port_pvid = b53_port_set_pvid,
 	.apply_config = b53_global_apply_config,
 	.reset_switch = b53_global_reset_switch,
+	.set_port_link = b53_port_set_link,
 	.get_port_link = b53_port_get_link,
+	.get_port_stats = b53_port_get_stats,
+	.phy_read16 = b53_phy_read16,
+	.phy_write16 = b53_phy_write16,
 };
 
 static const struct switch_dev_ops b53_switch_ops = {
@@ -553,7 +753,11 @@ static const struct switch_dev_ops b53_switch_ops = {
 	.set_port_pvid = b53_port_set_pvid,
 	.apply_config = b53_global_apply_config,
 	.reset_switch = b53_global_reset_switch,
+	.set_port_link = b53_port_set_link,
 	.get_port_link = b53_port_get_link,
+	.get_port_stats = b53_port_get_stats,
+	.phy_read16 = b53_phy_read16,
+	.phy_write16 = b53_phy_write16,
 };
 
 struct b53_chip_data {
