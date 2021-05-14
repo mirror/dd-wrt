@@ -63,6 +63,22 @@
 #define	BFL_AFTERBURNER		0x0200
 #endif
 
+static char *brcm_to_swconfig(char *vlan, char *buf)
+{
+	strcpy(buf, vlan);
+	int i;
+	int len = strlen(buf);
+	for (i = 0; i < len; i++) {
+		if (buf[i] == '*')
+			buf[i] = 't';
+		if (buf[i] == 'u') {
+			buf[i] = buf[i + 1];
+			len--;
+		}
+	}
+	return buf;
+}
+
 static void check_brcm_cpu_type(void)
 {
 	FILE *fcpu;
@@ -3065,27 +3081,10 @@ void start_sysinit(void)
 		vlan2_supp = 1;
 		v2 = nvram_safe_get("vlan2ports");
 	}
-
-	char *vlan1 = v1;
-	char cpy[32];
-	char cpy2[32];
-	strncpy(cpy, vlan1, 31);
-	char *p = strchr(cpy, '*');
-	if (p)
-		*p = 't';
-	p = strchr(cpy, 'u');
-	if (p)
-		*p = 0;
-	vlan1 = cpy;
-	char *vlan2 = v2;
-	strncpy(cpy2, vlan2, 31);
-	p = strchr(cpy2, '*');
-	if (p)
-		*p = 't';
-	p = strchr(cpy2, 'u');
-	if (p)
-		*p = 0;
-	vlan2 = cpy2;
+	char vlan2buf[64];
+	char vlan1buf[64];
+	char *vlan2 = brcm_to_swconfig(v2, vlan2buf);
+	char *vlan1 = brcm_to_swconfig(v1, vlan1buf);
 	char var[32], *next;
 	int port = 0;
 	foreach(var, vlan2, next) {
@@ -3485,6 +3484,7 @@ char *enable_dtag_vlan(int enable)
 	else if (!strcmp(vlan_wan_ports, "0 8"))
 		vlan7ports = "0t 8";
 
+#ifndef HAVE_SWCONFIG
 	if (!donothing) {
 		writevaproc("1", "/proc/switch/%s/reset", eth);
 		writevaproc("1", "/proc/switch/%s/enable_vlan", eth);
@@ -3512,6 +3512,32 @@ char *enable_dtag_vlan(int enable)
 			start_setup_vlans();
 		}
 	}
+#else
+	if (!donothing) {
+		if (enable) {
+			char vlanbuf[64];
+			fprintf(stderr, "enable vlan port mapping %s/%s\n", vlan_lan_ports, vlan7ports);
+			if (!nvram_matchi("dtag_vlan8", 1)
+			    || nvram_matchi("wan_vdsl", 0)) {
+				sysprintf("swconfig dev switch0 vlan %d ports set \"%s\"", lan_vlan_num, brcm_to_swconfig(vlan_lan_ports, vlanbuf));
+				sysprintf("swconfig dev switch0 vlan %d ports set \"\"", wan_vlan_num);
+				sysprintf("swconfig dev switch0 vlan 7 ports set \"%s\"", vlan7ports);
+			} else {
+				sysprintf("swconfig dev switch0 vlan %d ports set \"%s\"", lan_vlan_num, brcm_to_swconfig(vlan_lan_ports, vlanbuf));
+				sysprintf("swconfig dev switch0 vlan %d ports set \"\"", wan_vlan_num);
+				sysprintf("swconfig dev switch0 vlan 7 ports set \"%s\"", vlan7ports);
+				sysprintf("swconfig dev switch0 vlan 8 ports set \"%s\"", vlan7ports);
+			}
+		} else {
+			fprintf(stderr, "disable vlan port mapping %s/%s\n", vlan_lan_ports, vlan_wan_ports);
+			sysprintf("swconfig dev switch0 vlan 7 ports set \"\"");
+			sysprintf("swconfig dev switch0 vlan 8 ports set \"\"");
+			sysprintf("swconfig dev switch0 vlan %d ports set \"%s\"", lan_vlan_num, brcm_to_swconfig(vlan_lan_ports, vlanbuf));
+			sysprintf("swconfig dev switch0 vlan %d ports set \"%s\"", wan_vlan_num, brcm_to_swconfig(vlan_wan_ports, vlanbuf));
+		}
+		start_setup_vlans();
+	}
+#endif
 	nvram_seti("fromvdsl", 0);
 	return eth;
 }
