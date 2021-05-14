@@ -1280,6 +1280,6 @@ endif
 
 rc: $(OBJS)
 	@echo "[LD] $@"
-	@$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
 
 $(OBJS): $(CY_DEPS)
