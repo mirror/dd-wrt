@@ -1,0 +1,93 @@
+Index: connection.c
+===================================================================
+--- connection.c	(revision 46660)
++++ connection.c	(working copy)
+@@ -289,7 +289,6 @@ int ksmbd_conn_handler_loop(void *p)
+ 	int size;
+ 
+ 	mutex_init(&conn->srv_mutex);
+-	sema_init(&conn->queue_limit, num_online_cpus() * 2);
+ 	__module_get(THIS_MODULE);
+ 
+ 	if (t->ops->prepare && t->ops->prepare(t))
+@@ -316,18 +315,15 @@ int ksmbd_conn_handler_loop(void *p)
+ 				    pdu_size);
+ 			continue;
+ 		}
+-		down(&conn->queue_limit);
+ 		/* 4 for rfc1002 length field */
+ 		size = pdu_size + 4;
+ 		conn->request_buf = ksmbd_alloc_request(size);
+ 		if (!conn->request_buf) {
+-			up(&conn->queue_limit);
+ 			continue;
+ 		}
+ 
+ 		memcpy(conn->request_buf, hdr_buf, sizeof(hdr_buf));
+ 		if (!ksmbd_smb_request(conn)) {
+-			up(&conn->queue_limit);
+ 			break;
+ 		}
+ 
+@@ -337,13 +333,11 @@ int ksmbd_conn_handler_loop(void *p)
+ 		 */
+ 		size = t->ops->read(t, conn->request_buf + 4, pdu_size);
+ 		if (size < 0) {
+-			up(&conn->queue_limit);
+ 			ksmbd_err("sock_read failed: %d\n", size);
+ 			break;
+ 		}
+ 
+ 		if (size != pdu_size) {
+-			up(&conn->queue_limit);
+ 			ksmbd_err("PDU error. Read: %d, Expected: %d\n",
+ 				  size,
+ 				  pdu_size);
+@@ -351,7 +345,6 @@ int ksmbd_conn_handler_loop(void *p)
+ 		}
+ 
+ 		if (!default_conn_ops.process_fn) {
+-			up(&conn->queue_limit);
+ 			ksmbd_err("No connection request callback\n");
+ 			break;
+ 		}
+Index: connection.h
+===================================================================
+--- connection.h	(revision 46660)
++++ connection.h	(working copy)
+@@ -48,7 +48,6 @@ struct ksmbd_conn {
+ 	struct smb_version_cmds		*cmds;
+ 	unsigned int			max_cmds;
+ 	struct mutex			srv_mutex;
+-	struct semaphore		queue_limit;
+ 	int				status;
+ 	unsigned int			cli_cap;
+ 	char				*request_buf;
+Index: server.c
+===================================================================
+--- server.c	(revision 46660)
++++ server.c	(working copy)
+@@ -267,7 +267,6 @@ static void handle_ksmbd_work(struct work_struct *
+ 	ksmbd_conn_try_dequeue_request(work);
+ 	ksmbd_free_work_struct(work);
+ 	atomic_dec(&conn->r_count);
+-	up(&conn->queue_limit);
+ }
+ 
+ /**
+@@ -284,7 +283,6 @@ static int queue_ksmbd_work(struct ksmbd_conn *con
+ 	work = ksmbd_alloc_work_struct();
+ 	if (!work) {
+ 		ksmbd_err("allocation for work failed\n");
+-		up(&conn->queue_limit);
+ 		return -ENOMEM;
+ 	}
+ 
+@@ -294,7 +292,6 @@ static int queue_ksmbd_work(struct ksmbd_conn *con
+ 
+ 	if (ksmbd_init_smb_server(work)) {
+ 		ksmbd_free_work_struct(work);
+-		up(&conn->queue_limit);
+ 		return -EINVAL;
+ 	}
+ 
