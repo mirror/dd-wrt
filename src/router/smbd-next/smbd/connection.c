@@ -372,8 +372,6 @@ out:
 		default_conn_ops.terminate_fn(conn);
 	t->ops->disconnect(t);
 	module_put(THIS_MODULE);
-	if (conn->conn_limit)
-		up(conn->conn_limit);
 	return 0;
 }
 
