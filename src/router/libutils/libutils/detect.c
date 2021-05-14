@@ -1151,7 +1151,8 @@ int internal_getRouterBrand()
 		fp = fopen("/sys/devices/virtual/dmi/id/product_name", "rb");
 	if (!fp)
 		goto generic;
-	name[len++] = 0x20;
+	if (len)
+		name[len++] = 0x20;
 	while ((b = getc(fp)) != EOF && len < (sizeof(name) - 1)) {
 		if (b == 0xa || b == 0)
 			break;
