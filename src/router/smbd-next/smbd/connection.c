@@ -289,7 +289,6 @@ int ksmbd_conn_handler_loop(void *p)
 	int size;
 
 	mutex_init(&conn->srv_mutex);
-	sema_init(&conn->queue_limit, num_online_cpus() * 2);
 	__module_get(THIS_MODULE);
 
 	if (t->ops->prepare && t->ops->prepare(t))
@@ -316,18 +315,15 @@ int ksmbd_conn_handler_loop(void *p)
 				    pdu_size);
 			continue;
 		}
-		down(&conn->queue_limit);
 		/* 4 for rfc1002 length field */
 		size = pdu_size + 4;
 		conn->request_buf = ksmbd_alloc_request(size);
 		if (!conn->request_buf) {
-			up(&conn->queue_limit);
 			continue;
 		}
 
 		memcpy(conn->request_buf, hdr_buf, sizeof(hdr_buf));
 		if (!ksmbd_smb_request(conn)) {
-			up(&conn->queue_limit);
 			break;
 		}
 
@@ -337,13 +333,11 @@ int ksmbd_conn_handler_loop(void *p)
 		 */
 		size = t->ops->read(t, conn->request_buf + 4, pdu_size);
 		if (size < 0) {
-			up(&conn->queue_limit);
 			ksmbd_err("sock_read failed: %d\n", size);
 			break;
 		}
 
 		if (size != pdu_size) {
-			up(&conn->queue_limit);
 			ksmbd_err("PDU error. Read: %d, Expected: %d\n",
 				  size,
 				  pdu_size);
@@ -351,7 +345,6 @@ int ksmbd_conn_handler_loop(void *p)
 		}
 
 		if (!default_conn_ops.process_fn) {
-			up(&conn->queue_limit);
 			ksmbd_err("No connection request callback\n");
 			break;
 		}
