@@ -1,0 +1,97 @@
+Index: connection.c
+===================================================================
+--- connection.c	(revision 46657)
++++ connection.c	(working copy)
+@@ -372,8 +372,6 @@ out:
+ 		default_conn_ops.terminate_fn(conn);
+ 	t->ops->disconnect(t);
+ 	module_put(THIS_MODULE);
+-	if (conn->conn_limit)
+-		up(conn->conn_limit);
+ 	return 0;
+ }
+ 
+Index: connection.h
+===================================================================
+--- connection.h	(revision 46657)
++++ connection.h	(working copy)
+@@ -48,7 +48,6 @@ struct ksmbd_conn {
+ 	struct smb_version_cmds		*cmds;
+ 	unsigned int			max_cmds;
+ 	struct mutex			srv_mutex;
+-	struct semaphore 		*conn_limit;
+ 	struct semaphore		queue_limit;
+ 	int				status;
+ 	unsigned int			cli_cap;
+Index: transport_tcp.c
+===================================================================
+--- transport_tcp.c	(revision 46657)
++++ transport_tcp.c	(working copy)
+@@ -29,7 +29,6 @@ struct interface {
+ 	char			*name;
+ 	struct mutex		sock_release_lock;
+ 	int			state;
+-	struct semaphore	conn_limit;
+ };
+ 
+ static LIST_HEAD(iface_list);
+@@ -140,7 +139,6 @@ static struct tcp_transport *alloc_transport(struc
+ 	}
+ 
+ 	conn->transport = KSMBD_TRANS(t);
+-	conn->conn_limit = &iface->conn_limit;
+ 	KSMBD_TRANS(t)->conn = conn;
+ 	KSMBD_TRANS(t)->ops = &ksmbd_tcp_transport_ops;
+ 	return t;
+@@ -242,7 +240,6 @@ static int ksmbd_tcp_new_connection(struct interfa
+ 	t = alloc_transport(iface, client_sk);
+ 	if (!t) {
+ 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
+-		up(&iface->conn_limit);
+ 		return -ENOMEM;
+ 	}
+ 
+@@ -267,7 +264,6 @@ static int ksmbd_tcp_new_connection(struct interfa
+ 					"ksmbd:%u", ksmbd_tcp_get_port(csin));
+ 	if (IS_ERR(KSMBD_TRANS(t)->handler)) {
+ 		ksmbd_err("cannot start conn thread\n");
+-		up(&iface->conn_limit);
+ 		rc = PTR_ERR(KSMBD_TRANS(t)->handler);
+ 		free_transport(t);
+ 	}
+@@ -275,7 +271,6 @@ static int ksmbd_tcp_new_connection(struct interfa
+ 
+ out_error:
+ 	free_transport(t);
+-	up(&iface->conn_limit);
+ 	return rc;
+ }
+ 
+@@ -292,11 +287,9 @@ static int ksmbd_kthread_fn(void *p)
+ 	int ret;
+ 
+ 	while (!kthread_should_stop()) {
+-		down(&iface->conn_limit);
+ 		mutex_lock(&iface->sock_release_lock);
+ 		if (!iface->ksmbd_socket) {
+ 			mutex_unlock(&iface->sock_release_lock);
+-			up(&iface->conn_limit);
+ 			break;
+ 		}
+ 		ret = kernel_accept(iface->ksmbd_socket, &client_sk,
+@@ -307,7 +300,6 @@ static int ksmbd_kthread_fn(void *p)
+ 				/* check for new connections every 100 msecs */
+ 				schedule_timeout_interruptible(HZ / 10);
+ 			}
+-			up(&iface->conn_limit);
+ 			continue;
+ 		}
+ 
+@@ -665,7 +657,6 @@ static struct interface *alloc_iface(char *ifname)
+ 	iface->state = IFACE_STATE_DOWN;
+ 	list_add(&iface->entry, &iface_list);
+ 	mutex_init(&iface->sock_release_lock);
+-	sema_init(&iface->conn_limit, ksmbd_connection_limit ? ksmbd_connection_limit : 4096); // todo. prototype! make this configurable
+ 	return iface;
+ }
+ 
