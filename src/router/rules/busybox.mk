@@ -437,9 +437,19 @@ ifeq ($(CONFIG_SMP),y)
 	echo "CONFIG_FEATURE_TASKSET_FANCY=y" >> busybox/.config
 	echo "CONFIG_FEATURE_TASKSET_CPULIST=y" >> busybox/.config
 else
+ifeq ($(CONFIG_X86),y)
+	sed -i 's/\# CONFIG_TASKSET is not set//g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TASKSET_FANCY is not set//g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TASKSET_CPULIST is not set//g' busybox/.config
+	echo "CONFIG_TASKSET=y" >> busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_SHOW_THREADS is not set/CONFIG_FEATURE_SHOW_THREADS=y/g' busybox/.config
+	echo "CONFIG_FEATURE_TASKSET_FANCY=y" >> busybox/.config
+	echo "CONFIG_FEATURE_TASKSET_CPULIST=y" >> busybox/.config
+else
 	echo "# CONFIG_TASKSET is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_TASKSET_FANCY is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_TASKSET_CPULIST is not set" >> busybox/.config
+endif
 endif
 	echo "# CONFIG_FEATURE_GZIP_LEVELS is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_DD_STATUS is not set" >> busybox/.config
