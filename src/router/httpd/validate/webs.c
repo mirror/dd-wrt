@@ -5392,12 +5392,15 @@ void ddns_update_value(webs_t wp)
 
 void port_vlan_table_save(webs_t wp)
 {
-	int port = 0, vlan = 0, vlans[22], i;
+	int port = 0, vlan = 0, vlans[23], i;
 	char portid[32], portvlan[64], buff[32] = { 0 }, *c, *next, br0vlans[64], br1vlans[64], br2vlans[64];
 	int portval;
 	strcpy(portvlan, "");
+	int max = 22;
+	if (has_igmpsnooping())
+	    max = 23;
 
-	for (vlan = 0; vlan < 22; vlan++)
+	for (vlan = 0; vlan < max; vlan++)
 		vlans[vlan] = 0;
 
 	vlans[16] = 1;
@@ -5405,20 +5408,20 @@ void port_vlan_table_save(webs_t wp)
 	if (nvram_exists("sw_lan6"))
 		ports = 7;
 	for (port = 0; port < ports; port++) {
-		for (vlan = 0; vlan < 22; vlan++) {
+		for (vlan = 0; vlan < max; vlan++) {
 			snprintf(portid, sizeof(portid), "port%dvlan%d", port, vlan);
+			fprintf(stderr, "portid %s\n", portid);
 			char *s_portval = websGetVar(wp, portid, "");
-			if (!*s_portval)
-				continue;
+			fprintf(stderr, "portval %s\n", s_portval);
 #ifdef HAVE_SWCONFIG
-			if (vlan < 18 || vlan > 21)
+			if (vlan < 17 || vlan > 22)
 #else
 			if (vlan < 17 || vlan > 21)
 #endif
 				i = (strcmp(s_portval, "on") == 0);
 			else
 				i = (strcmp(s_portval, "on") != 0);
-
+			fprintf(stderr, "status %d\n", i);
 			if (i) {
 				if (*(portvlan))
 					strcat(portvlan, " ");
@@ -5426,6 +5429,7 @@ void port_vlan_table_save(webs_t wp)
 				snprintf(buff, 4, "%d", vlan);
 				strcat(portvlan, buff);
 				vlans[vlan] = 1;
+				fprintf(stderr, "%s\n", portvlan);
 #ifdef HAVE_SWCONFIG
 				if (vlan < 16) {
 					char buff[32];
