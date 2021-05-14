@@ -3522,14 +3522,14 @@ char *enable_dtag_vlan(int enable)
 				sysprintf("swconfig dev switch0 vlan %d set ports \"%s\"", lan_vlan_num, brcm_to_swconfig(vlan_lan_ports, vlanbuf));
 				start_setup_vlans();
 				sysprintf("swconfig dev switch0 vlan %d set ports \"\"", wan_vlan_num);
-				sysprintf("swconfig dev switch0 vlan 7 set ports \"%s\"", vlan7ports);
+				sysprintf("swconfig dev switch0 vlan 7 set ports \"%s\"", brcm_to_swconfig(vlan7ports, vlanbuf));
 				sysprintf("swconfig dev switch0 set apply");
 			} else {
 				sysprintf("swconfig dev switch0 vlan %d set ports \"%s\"", lan_vlan_num, brcm_to_swconfig(vlan_lan_ports, vlanbuf));
 				start_setup_vlans();
 				sysprintf("swconfig dev switch0 vlan %d set ports \"\"", wan_vlan_num);
-				sysprintf("swconfig dev switch0 vlan 7 set ports \"%s\"", vlan7ports);
-				sysprintf("swconfig dev switch0 vlan 8 set ports \"%s\"", vlan7ports);
+				sysprintf("swconfig dev switch0 vlan 7 set ports \"%s\"", brcm_to_swconfig(vlan7ports, vlanbuf));
+				sysprintf("swconfig dev switch0 vlan 8 set ports \"%s\"", brcm_to_swconfig(vlan7ports, vlanbuf));
 				sysprintf("swconfig dev switch0 set apply");
 			}
 		} else {
