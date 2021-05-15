@@ -1027,13 +1027,6 @@ void start_qos(void)
 void stop_qos(void)
 {
 	//if imq is not available we don't have to run 
-	DIR *dir = opendir("/proc/sys/net/ipv4/conf/imq0");
-	if (dir) {
-		closedir(dir);
-	} else {
-		return;
-	}
-
 	int ret = 0;
 
 	char *wan_dev = get_wan_face();
