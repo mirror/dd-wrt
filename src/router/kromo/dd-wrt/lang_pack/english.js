@@ -1875,6 +1875,7 @@ service.vpnd_endip="Pool end IP";
 service.vpnd_cl2cl="Client to Client connection allowed";
 service.vpnd_switch="Config as";
 service.vpnd_dupcn="Allow duplicate Clients";
+service.vpnd_allowcnwan="Allow Clients WAN access (internet)";
 service.vpnd_proxy="DHCP-Proxy mode";
 service.vpnd_clcon="Client connect script";
 service.vpnd_cldiscon="Client disconnect script";

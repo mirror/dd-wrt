@@ -1622,6 +1622,7 @@ service.vpnd_endip="Pool End-IP";
 service.vpnd_cl2cl="Klient zu Klient Verbindung erlaubt";
 service.vpnd_switch="Konfiguriere als";
 service.vpnd_dupcn="Erlaube doppelte Clients";
+service.vpnd_allowcnwan="Erlaube Clients WAN zugang (internet)";
 service.vpnd_proxy="DHCP-Proxy Modus";
 service.vpnd_clcon="Client Verbindungsskript";
 service.vpnd_ccddef="CCD-Dir DEFAULT file";
