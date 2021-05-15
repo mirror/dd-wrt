@@ -35,12 +35,12 @@
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_tunnel"); %></div>
 			<select name="openvpncl_proto">
-			    <option value="udp" <% nvram_selected("openvpncl_proto","udp"); %>>udp</option>
 			    <option value="udp4" <% nvram_selected("openvpncl_proto","udp4"); %>>udp4</option>
 			    <option value="udp6" <% nvram_selected("openvpncl_proto","udp6"); %>>udp6</option>
-			    <option value="tcp-client" <% nvram_selected("openvpncl_proto","tcp-client"); %>>tcp</option>
+			    <option value="udp" <% nvram_selected("openvpncl_proto","udp"); %>>udp</option>
 			    <option value="tcp4-client" <% nvram_selected("openvpncl_proto","tcp4-client"); %>>tcp4</option>
 			    <option value="tcp6-client" <% nvram_selected("openvpncl_proto","tcp6-client"); %>>tcp6</option>
+			    <option value="tcp-client" <% nvram_selected("openvpncl_proto","tcp-client"); %>>tcp</option>
 			</select>
 		</div>
 		<div class="setting">
@@ -189,10 +189,10 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_mtu"); %></div>
-				<input size="5" maxlength="5" class="num" name="openvpncl_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvg("openvpncl_mtu"); %>" />
+				<input size="5" maxlength="5" class="num" name="openvpncl_mtu" onblur="valid_range(this,0,65535,share.port)" value="<% nvg("openvpncl_mtu"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 1500)");
+				document.write("(" + share.deflt + ": 1400, 0 not set)");
 				//]]>
 				</script></span>
 			</div>

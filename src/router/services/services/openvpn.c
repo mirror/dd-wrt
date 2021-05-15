@@ -278,6 +278,10 @@ void create_openvpnserverrules(FILE * fp)
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
+	if (nvram_matchi("openvpn_allowcnwan", 1)) {
+		fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+		fprintf(fp, "iptables -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+	}
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpnsrv_fw.sh\n");
 	fprintf(fp, "/tmp/openvpnsrv_fw.sh\n");
 }
@@ -404,7 +408,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 		else		//TCP_NODELAY is generally a good latency optimization
 			fprintf(fp, "tcp-nodelay\n");
-		if (nvram_invmatch("openvpn_mtu", ""))
+		if (nvram_invmatch("openvpn_mtu", "") && nvram_invmatchi("openvpn_mtu", 0))
 			fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpn_mtu"));
 		if (nvram_invmatch("openvpn_fragment", "") && (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp4") || nvram_match("openvpn_proto", "udp6"))) {
 			fprintf(fp, "fragment %s\n", nvram_safe_get("openvpn_fragment"));
@@ -504,7 +508,8 @@ void start_openvpnserver(void)
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
-
+	if (nvram_matchi("openvpn_allowcnwan", 1))
+		fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
 /*      if ((nvram_matchi("openvpn_dhcpbl",1)
                         && nvram_match("openvpn_tuntap", "tap")
                         && nvram_matchi("openvpn_proxy",0))
@@ -708,7 +713,7 @@ void start_openvpn(void)
 	}
 	if (nvram_invmatch("openvpncl_auth", "none") && nvram_invmatchi("openvpncl_tlscip", 0))	//not needed if we have no auth anyway
 		fprintf(fp, "tls-client\n");
-	if (nvram_invmatch("openvpncl_mtu", ""))
+	if (nvram_invmatch("openvpncl_mtu", "") && nvram_invmatchi("openvpncl_mtu", 0))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_fragment", "") && (nvram_match("openvpncl_proto", "udp") || nvram_match("openvpncl_proto", "udp4") || nvram_match("openvpncl_proto", "udp6"))) {
 		fprintf(fp, "fragment %s\n", nvram_safe_get("openvpncl_fragment"));

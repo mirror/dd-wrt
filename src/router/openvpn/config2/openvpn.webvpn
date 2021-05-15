@@ -84,16 +84,16 @@
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_tunnel"); %></div>
 				<select name="openvpn_proto">
-				<option value="udp" <% nvram_selected("openvpn_proto","udp"); %>>udp</option>
 				<option value="udp4" <% nvram_selected("openvpn_proto","udp4"); %>>udp4</option>
 				<option value="udp6" <% nvram_selected("openvpn_proto","udp6"); %>>udp6</option>
-				<option value="tcp-server" <% nvram_selected("openvpn_proto","tcp-server"); %>>tcp</option>
+				<option value="udp" <% nvram_selected("openvpn_proto","udp"); %>>udp</option>
 				<option value="tcp4-server" <% nvram_selected("openvpn_proto","tcp4-server"); %>>tcp4</option>
 				<option value="tcp6-server" <% nvram_selected("openvpn_proto","tcp6-server"); %>>tcp6</option>
+				<option value="tcp-server" <% nvram_selected("openvpn_proto","tcp-server"); %>>tcp</option>
 				</select>
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": UDP)");
+				document.write("(" + share.deflt + ": udp4)");
 				//]]>
 				</script></span>
 			</div>
@@ -209,11 +209,16 @@
 					<input class="spaceradio" type="radio" name="openvpn_dupcn" value="0" <% nvc("openvpn_dupcn", "0"); %> /><% tran("share.disable"); %>
 				</div>
 				<div class="setting">
+					<div class="label"><% tran("service.vpnd_allowcnwan"); %></div>
+					<input class="spaceradio" type="radio" name="openvpn_allowcnwan" value="1" <% nvc("openvpn_allowcnwan", "1"); %> /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="openvpn_allowcnwan" value="0" <% nvc("openvpn_allowcnwan", "0"); %> /><% tran("share.disable"); %>
+				</div>
+				<div class="setting">
 					<div class="label"><% tran("service.vpn_mtu"); %></div>
-					<input size="5" maxlength="5" class="num" name="openvpn_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvg("openvpn_mtu"); %>" />
+					<input size="5" maxlength="5" class="num" name="openvpn_mtu" onblur="valid_range(this,0,65535,share.port)" value="<% nvg("openvpn_mtu"); %>" />
 					<span class="default"><script type="text/javascript">
 					//<![CDATA[
-					document.write("(" + share.deflt + ": 1500)");
+					document.write("(" + share.deflt + ": 1400, 0 not set)");
 					//]]>
 					</script></span>
 				</div>
