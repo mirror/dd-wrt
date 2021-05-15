@@ -5397,8 +5397,10 @@ void port_vlan_table_save(webs_t wp)
 	int portval;
 	strcpy(portvlan, "");
 	int max = 22;
+#ifdef HAVE_SWCONFIG
 	if (has_igmpsnooping())
 	    max = 23;
+#endif
 
 	for (vlan = 0; vlan < max; vlan++)
 		vlans[vlan] = 0;
