@@ -1549,11 +1549,12 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		char *wan_proto = websGetVar(wp, "wan_proto", NULL);
 		char *wshaper_enable = websGetVar(wp, "wshaper_enable", NULL);
 		if (wan_proto && !nvram_match("wan_proto", wan_proto)) {
-			if (strcmp(wan_proto, "static") && strcmp(wan_proto, "dhcp"))
+			if (strcmp(wan_proto, "static") && strcmp(wan_proto, "dhcp") && (fa && strcmp(fa, "0"))) {
 				need_reboot = 1;
+			}
 		}
 		if (wshaper_enable && !nvram_match("wshaper_enable", wshaper_enable)) {
-			if (!strcmp(wshaper_enable, "1"))
+			if (!strcmp(wshaper_enable, "1") && !nvram_match("ctf_fa_mode","0"))
 				need_reboot = 1;
 		}
 		if (fa && nvram_geti("ctf_fa_mode") != atoi(fa))
