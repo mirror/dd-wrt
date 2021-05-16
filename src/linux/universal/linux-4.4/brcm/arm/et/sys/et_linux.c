@@ -926,7 +926,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 #ifdef CTFPOOL
 		/* create ctf packet pool with specified number of buffers */
-		if (CTF_ENAB(et->cih)) {
+		if (1) {
 			uint32 poolsz;
 			/* use large ctf poolsz for platforms with more memory */
 			poolsz = ((get_num_physpages() >= 32767) ? CTFPOOLSZ * 2 :
@@ -1251,7 +1251,6 @@ static int __init
 et_module_init(void)
 {
 	char * var;
-	int et_ctf_disable = 0;
 
 #if defined(BCMDBG)
 	if (msglevel != 0xdeadbeef)
@@ -1296,12 +1295,6 @@ et_module_init(void)
 	if (var)
 		et_rxlazy_dyn_thresh = bcm_strtoul(var, NULL, 0);
 	printf("%s: et_rxlazy_dyn_thresh set to %d\n", __FUNCTION__, et_rxlazy_dyn_thresh);
-
-	var = getvar(NULL, "ctf_disable");
-	if (var) {
-		et_ctf_disable = bcm_strtoul(var, NULL, 0);
-	}
-	printf("%s: et_ctf_disable set to %d\n", __FUNCTION__, et_ctf_disable);
 
 	return pci_module_init(&et_pci_driver);
 }
