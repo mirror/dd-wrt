@@ -1422,9 +1422,9 @@ ifeq ($(BCMDMA64OSL),1)
 	WLFLAGS += -DBCMDMA64OSL
 endif
 
-#ifeq ($(BCMDMASGLISTOSL),1)
+ifeq ($(BCMDMASGLISTOSL),1)
 	WLFLAGS += -DBCMDMASGLISTOSL
-#endif
+endif
 
 # Early DMA TX Free for LOW driver
 ifeq ($(WL_DMA_TX_FREE),1)
