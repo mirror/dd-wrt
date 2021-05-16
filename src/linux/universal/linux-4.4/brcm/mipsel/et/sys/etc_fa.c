@@ -1468,6 +1468,22 @@ fa_enable_device(fa_t *fa)
 	return 0;
 }
 
+int
+fa_disable_device(fa_t *fa)
+{
+	fa_info_t *fai = (fa_info_t *)fa;
+
+	if (FA_IS_AUX_DEV(fa))
+		return 0;
+
+	fa_down(fai);
+
+	/* Update the state to enabled/disabled */
+	fai->enabled = FALSE;
+
+	return 0;
+}
+
 void *
 fa_process_tx(fa_t *fa, void *p)
 {

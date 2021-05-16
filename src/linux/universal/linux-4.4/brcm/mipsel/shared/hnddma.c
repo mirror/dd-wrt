@@ -792,11 +792,11 @@ BCMATTACHFN_DMA_ATTACH(dma_attach)(osl_t *osh, const char *name, si_t *sih,
 		 * overlapping due to cache write-back operation. In the case of MIPS 74k, the
 		 * cache line size is 32 bytes.
 		 */
-#ifdef __mips__
+//#ifdef __mips__
 		di->dmadesc_align = 5;	/* 32 byte alignment */
-#else
-		di->dmadesc_align = 4;	/* 16 byte alignment */
-#endif
+//#else
+//		di->dmadesc_align = 4;	/* 16 byte alignment */
+//#endif
 	}
 
 	DMA_NONE(("DMA descriptor align_needed %d, align %d\n",

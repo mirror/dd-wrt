@@ -268,8 +268,7 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	etc->bp_ticks_usec = si_clock(ch->sih) / 1000000;
 
 #ifdef PKTC
-	etc->pktc = (getintvar(ch->vars, "pktc_disable") == 0) &&
-		(getintvar(ch->vars, "ctf_disable") == 0);
+	etc->pktc = (getintvar(ch->vars, "pktc_disable") == 0) && 1;
 #endif
 
 	/* get our local ether addr */
