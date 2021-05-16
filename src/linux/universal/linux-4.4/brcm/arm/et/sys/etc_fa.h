@@ -92,6 +92,7 @@ typedef struct fa_pub {
 extern fa_t *fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo);
 extern void fa_detach(fa_t *fa);
 extern int fa_enable_device(fa_t *fa);
+extern int fa_disable_device(fa_t *fa);
 extern void *fa_process_tx(fa_t *fa, void *p);
 extern void fa_process_rx(fa_t *fa, void *p);
 extern uint32 fa_get_nid_rx(osl_t *osh, void *p, int bhdroff);
