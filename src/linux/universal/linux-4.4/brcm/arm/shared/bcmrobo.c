@@ -2408,7 +2408,7 @@ bcm_robo_config_vlan_fun(void *b53_robo, struct b53_vlan *vlans, int vlans_num, 
 		max_vid = num_vlans - 1;
 	}
 	else {
-		printk("Error: invalid vlan number \n");
+		printk(KERN_ERR "Error: invalid vlan number \n");
 		return -1;
 	}
 
@@ -2472,7 +2472,7 @@ bcm_robo_config_vlan_fun(void *b53_robo, struct b53_vlan *vlans, int vlans_num, 
 		if (!vlan->members)
 			continue;
 
-		printk("%s vid=%d, vlan->members=0x%x, vlan->untag=0x%x \n", __FUNCTION__, vid, vlan->members, vlan->untag);
+		printk(KERN_INFO "%s vid=%d, vlan->members=0x%x, vlan->untag=0x%x \n", __FUNCTION__, vid, vlan->members, vlan->untag);
 
 		strcpy(ports_string, "");
 		pPort = ports_string;
@@ -2492,7 +2492,7 @@ bcm_robo_config_vlan_fun(void *b53_robo, struct b53_vlan *vlans, int vlans_num, 
 		}
 
 		if( pPort == ports_string) {
-			printk("Error: There is no any vlans config recived from swconfig \n");
+			printk(KERN_ERR "Error: There is no any vlans config recived from swconfig \n");
 			return -1;
 		}
 		
@@ -2500,7 +2500,7 @@ bcm_robo_config_vlan_fun(void *b53_robo, struct b53_vlan *vlans, int vlans_num, 
 		*pPort = '\0';
 	
 		ports = ports_string;
-		printk("%s ports=%s \n", __FUNCTION__, ports);
+		printk(KERN_INFO "%s ports=%s \n", __FUNCTION__, ports);
 
 		/* In 539x vid == 0 us invalid?? */
 		if ((robo->devid != DEVID5325) && (vid == 0)) {
@@ -2751,7 +2751,7 @@ int bcm_robo_global_config(void *robo, struct b53_vlan *vlans, int vlans_num, st
 
 	/* Enable switching/forwarding */
 	if (bcm_robo_enable_switch(robo)) {
-		printk("robo_enable_switch failed \n");
+		printk(KERN_ERR "robo_enable_switch failed \n");
 	}
 
 	bcm_robo_config_port_led(robo);
