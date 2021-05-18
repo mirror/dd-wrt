@@ -249,7 +249,7 @@ static struct b53_io_ops b53_mdio_ops = {
 	.phy_read16 = b53_mdio_phy_read16,
 	.phy_write16 = b53_mdio_phy_write16,
 };
-#endif
+#else
 static struct b53_io_ops b53_srab_ops = {
 	.read8 = b53_srab_read8,
 	.read16 = b53_srab_read16,
@@ -262,7 +262,7 @@ static struct b53_io_ops b53_srab_ops = {
 	.write48 = b53_srab_write48,
 	.write64 = b53_srab_write64,
 };
-
+#endif
 
 static int b53_srab_probe(struct platform_device *pdev)
 {
