@@ -2196,6 +2196,7 @@ et_ethtool(et_info_t *et, struct ethtool_cmd *ecmd)
 }
 #endif /* SIOCETHTOOL */
 
+
 static int
 et_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
@@ -2206,6 +2207,7 @@ et_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	bool get = 0, set;
 	et_var_t *var = NULL;
 	void *buffer = NULL;
+	struct mii_ioctl_data *data = (struct mii_ioctl_data *) &ifr->ifr_data;
 
 	et = ET_INFO(dev);
 
@@ -2244,6 +2246,15 @@ et_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 		size = sizeof(et_var_t);
 		set = TRUE;
 		break;
+	case SIOCGMIIREG:		/* Read MII PHY register. */
+		//vec[1] = (et->etc->chops->phyrd)(et->etc->ch, et->etc->phyaddr, vec[0]);
+		data->val_out = (et->etc->chops->phyrd)(et->etc->ch, data->phy_id & 0x1f , data->reg_num & 0x1f);
+		return 0;
+	case SIOCSMIIREG:		/* Write MII PHY register. */
+    		if (!capable (CAP_NET_ADMIN))
+			return -EPERM;
+		(et->etc->chops->phywr)(et->etc->ch, data->phy_id & 0x1f, data->reg_num & 0x1f, data->val_in);
+    		return 0;
 	default:
 		size = sizeof(int);
 		get = FALSE; set = TRUE;
