@@ -568,6 +568,8 @@ static int b53_port_get_stats(struct switch_dev *sw_dev, int port,
 	return 0;
 }
 
+
+
 static int b53_phy_read16(struct switch_dev *dev, int addr, u8 reg, u16 *value)
 {
 	struct b53_device *priv = sw_to_b53(dev);
