@@ -169,6 +169,87 @@ static int b53_srab_write64(struct b53_device *dev, u8 page, u8 reg,
 	return ret;
 }
 
+#ifndef CONFIG_PLAT_BCM5301X
+static int do_ioctl(struct ifreq *ifr, int cmd)
+{
+	mm_segment_t old_fs = get_fs();
+	int ret;
+	struct net_device *dev = dev_get_by_name(&init_net, "eth0");
+	if (!dev || !dev->netdev_ops || !dev->netdev_ops->ndo_do_ioctl) {
+	    printk(KERN_INFO "no netdev found on eth0\n");
+	    return -1;
+	}
+	set_fs(KERNEL_DS);
+	ret = dev->netdev_ops->ndo_do_ioctl(dev, ifr, cmd);
+	set_fs(old_fs);
+
+	return ret;
+}
+
+static u16 mdio_read(__u16 phy_id, __u8 reg)
+{
+	struct ifreq ifr;
+	struct mii_ioctl_data *mii = if_mii(&ifr);
+	int err;
+
+	mii->phy_id = phy_id;
+	mii->reg_num = reg;
+
+	err = do_ioctl(&ifr, SIOCGMIIREG);
+	if (err < 0) {
+		printk(KERN_ERR "failed to read mdio reg %i with err %i.\n", reg, err);
+
+		return 0xffff;
+	}
+
+	return mii->val_out;
+}
+
+static void mdio_write(__u16 phy_id, __u8 reg, __u16 val)
+{
+	struct ifreq ifr;
+	struct mii_ioctl_data *mii = if_mii(&ifr);
+	int err;
+
+	mii->phy_id = phy_id;
+	mii->reg_num = reg;
+	mii->val_in = val;
+
+	err = do_ioctl(&ifr, SIOCSMIIREG);
+	if (err < 0) {
+		printk(KERN_ERR "failed to write mdio reg: %i with err %i.\n", reg, err);
+		return;
+	}
+}
+
+static int b53_mdio_phy_read16(struct b53_device *dev, int addr, u8 reg,
+			       u16 *value)
+{
+	*value = mdio_read(addr, reg);
+	return 0;
+}
+
+static int b53_mdio_phy_write16(struct b53_device *dev, int addr, u8 reg,
+				u16 value)
+{
+	mdio_write(addr, reg, value);
+	return 0;
+}
+static struct b53_io_ops b53_mdio_ops = {
+	.read8 = b53_srab_read8,
+	.read16 = b53_srab_read16,
+	.read32 = b53_srab_read32,
+	.read48 = b53_srab_read48,
+	.read64 = b53_srab_read64,
+	.write8 = b53_srab_write8,
+	.write16 = b53_srab_write16,
+	.write32 = b53_srab_write32,
+	.write48 = b53_srab_write48,
+	.write64 = b53_srab_write64,
+	.phy_read16 = b53_mdio_phy_read16,
+	.phy_write16 = b53_mdio_phy_write16,
+};
+#endif
 static struct b53_io_ops b53_srab_ops = {
 	.read8 = b53_srab_read8,
 	.read16 = b53_srab_read16,
@@ -182,6 +263,7 @@ static struct b53_io_ops b53_srab_ops = {
 	.write64 = b53_srab_write64,
 };
 
+
 static int b53_srab_probe(struct platform_device *pdev)
 {
 	struct b53_platform_data *pdata = pdev->dev.platform_data;
@@ -190,7 +272,12 @@ static int b53_srab_probe(struct platform_device *pdev)
 	if (!pdata)
 		return -EINVAL;
 
+
+#ifdef CONFIG_PLAT_BCM5301X
 	dev = b53_switch_alloc(&pdev->dev, &b53_srab_ops, pdata->regs);
+#else
+	dev = b53_switch_alloc(&pdev->dev, &b53_mdio_ops, pdata->regs);
+#endif
 	if (!dev)
 		return -ENOMEM;
 
