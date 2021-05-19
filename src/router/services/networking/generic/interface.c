@@ -185,80 +185,32 @@ void start_setup_vlans(void)
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
 			if (tmp >= 16) {
-				if (vlan_number == 16)
+				if (tmp == 16)
 					tagged[vlan_number] = 1;
 
-				if (i == 0 && nvram_exists("sw_wancpuport")) {
-					if (!nvram_match("sw_wan", "-1")) {
-						switch (vlan_number) {
-						case 22:
-							eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "igmp_snooping", "1");
-							break;
-						case 16:
-							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
-							break;
-						case 17:	// no auto negotiate
-							mask |= 4;
-							break;
-						case 18:	// no full speed
-							mask |= 1;
-							break;
-						case 19:	// no full duplex
-							mask |= 2;
-							break;
-						case 20:	// disabled
-							mask |= 8;
-							break;
-						case 21:	// no gigabit
-							mask |= 16;
-							break;
-
-						}
-					} else {
-						switch (vlan_number) {
-						case 22:
-							eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
-							break;
-						case 17:	// no auto negotiate
-							mask |= 4;
-							break;
-						case 18:	// no full speed
-							mask |= 1;
-							break;
-						case 19:	// no full duplex
-							mask |= 2;
-							break;
-						case 20:	// disabled
-							mask |= 8;
-							break;
-						case 21:	// no gigabit
-							mask |= 16;
-							break;
-						}
-					}
-				} else {
-					if (vlan_number > 16) {
-						switch (vlan_number) {
-						case 22:
-							eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
-							break;
-						case 17:	// no auto negotiate
-							mask |= 4;
-							break;
-						case 18:	// no full speed
-							mask |= 1;
-							break;
-						case 19:	// no full duplex
-							mask |= 2;
-							break;
-						case 20:	// disabled
-							mask |= 8;
-							break;
-						case 21:	// no gigabit
-							mask |= 16;
-							break;
-						}
-					}
+				switch (tmp) {
+				case 22:
+					eval("swconfig", "dev", "switch0", "port", (!nvram_match("sw_wan", "-1") && !i) ? nvram_safe_get("sw_wan") : nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
+					break;
+				case 16:
+					if (!nvram_match("sw_wan", "-1") && nvram_exists("sw_wancpuport"))
+						sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
+					break;
+				case 17:	// no auto negotiate
+					mask |= 4;
+					break;
+				case 18:	// no full speed
+					mask |= 1;
+					break;
+				case 19:	// no full duplex
+					mask |= 2;
+					break;
+				case 20:	// disabled
+					mask |= 8;
+					break;
+				case 21:	// no gigabit
+					mask |= 16;
+					break;
 				}
 			} else {
 				vlan_number = tmp;
