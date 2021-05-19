@@ -261,8 +261,8 @@ script:
  - sudo ./check generic/412
  - sudo ./check generic/420
 # - sudo ./check generic/422
- - sudo ./check generic/432
- - sudo ./check generic/433
+# - sudo ./check generic/432 5.4 kernel cifs issue (duplicate extent to file)
+# - sudo ./check generic/433 5.4 kernel cifs issue (duplicate extent to file)
  - sudo ./check generic/436
  - sudo ./check generic/437
 # - travis_wait sudo ./check generic/438 (timeover > 10m)
