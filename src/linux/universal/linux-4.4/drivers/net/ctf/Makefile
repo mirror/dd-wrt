@@ -33,6 +33,6 @@ endif
 
 ctf-objs := $(CTFDIR)/ctf.o
 
-obj-m := ctf.o
+obj-$(CONFIG_BCM_CTF) := ctf.o
 
 clean-files += $(CTFDIR)/*.o $(CTFDIR)/.*.o.cmd
