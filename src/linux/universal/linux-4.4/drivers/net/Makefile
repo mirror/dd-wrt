@@ -73,7 +73,7 @@ obj-$(CONFIG_WL) += wl/
 obj-$(CONFIG_BCM_CTF)       += ctf/
 #obj-$(CONFIG_WL) += wl_cfg80211/
 obj-$(CONFIG_PROXYARP) += proxyarp/
-obj-m += switch/
+#obj-m += switch/
 endif
 obj-$(CONFIG_USB_CDC_PHONET)   += usb/
 ifeq ($(CONFIG_RAETH_ROUTER),y)
