@@ -7519,6 +7519,7 @@ int smb2_ioctl(struct ksmbd_work *work)
 		nbytes = sizeof(struct reparse_data_buffer);
 		break;
 	}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	case FSCTL_DUPLICATE_EXTENTS_TO_FILE:
 	{
 		struct ksmbd_file *fp_in, *fp_out = NULL;
@@ -7568,6 +7569,7 @@ dup_ext_out:
 			goto out;
 		break;
 	}
+#endif
 	default:
 		ksmbd_debug(SMB, "not implemented yet ioctl command 0x%x\n",
 				cnt_code);
