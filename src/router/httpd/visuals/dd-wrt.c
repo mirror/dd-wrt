@@ -2591,6 +2591,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 //              sprintf(wmm, "%s_wmm", var);
 //              showRadio(wp, "wl_adv.label18", wmm);
 #endif
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
+		showbridgesettings(wp, getRADev(var), 1, 0);
+#else
+		showbridgesettings(wp, var, 1, 0);
+#endif
 
 #else				// start EASY_WIRELESS_SETUP
 
@@ -2770,33 +2775,31 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				show_bgscan_options(wp, var);
 			}
 		}
-#endif
-
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 		showbridgesettings(wp, getRADev(var), 1, 0);
 #else
 		showbridgesettings(wp, var, 1, 0);
 #endif
-#if (defined(HAVE_EASY_WIRELESS_CONFIG) && !defined(HAVE_BCMMODERN)) && !defined(HAVE_BRCMFMAC)
 		websWrite(wp, "</div>\n");
 #endif
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s','%d')\\\" />\");\n//]]>\n</script>\n",
-			  prefix, count - 1);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.copy + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
-			  var);
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"paste_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
-			  var);
+
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
-		if (is_ap8x() && count == 4) {
-			websWrite(wp, "<div class=\"warning\">\n");
-			websWrite(wp, "  <p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
-			websWrite(wp, "</div>\n<br>\n");
-		}
 	}
+	if (is_ap8x() && count == 4) {
+		websWrite(wp, "<div class=\"warning\">\n");
+		websWrite(wp, "  <p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
+		websWrite(wp, "</div>\n<br>\n");
+	}
+	websWrite(wp,
+		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s','%d')\\\" />\");\n//]]>\n</script>\n",
+		  prefix, count - 1);
+	websWrite(wp,
+		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.copy + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+		  var);
+	websWrite(wp,
+		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"paste_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+		  var);
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
@@ -2987,7 +2990,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_qtn(prefix))
 		maxvaps = 3;
 #endif
-
 
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
