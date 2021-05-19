@@ -539,7 +539,7 @@ static int rule_wanvlan(char *name)
 static int rule_fa(char *name)
 {
 	char *fa = nvram_safe_get("ctf_fa_mode");
-	return *fa ? 1 : 0;
+	return *fa ? (nvram_match("wan_proto","dhcp") || nvram_match("wan_proto","static")) : 0;
 }
 
 static int rule_ctf(char *name)
