@@ -904,9 +904,11 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	 * device, the skb->dev for all the packets from aux will be change to FA dev later.
 	 */
 	if (CTF_CAPABLE_DEV(et)) {
+		printk(KERN_INFO "attach ctf for %s\n", dev->name);
 		et->cih = ctf_attach(osh, dev->name, &et_msg_level, et_ctf_detach, et);
 
 		if (DEV_NTKIF(et->etc)) {   /* Bind CTF to ethernet network interface */
+			printk(KERN_INFO "bind ctf to eth if\n");
 			if (ctf_dev_register(et->cih, dev, FALSE) != BCME_OK) {
 				ET_ERROR(("et%d: ctf_dev_register() failed\n", unit));
 				goto fail;
@@ -1246,11 +1248,16 @@ static int et_check_ctf_offsets(int dbgpr)
 #endif
 }
 #endif
-
+#ifdef CONFIG_BCM_CTF
+int32 __init ctf_init(void);
+#endif
 static int __init
 et_module_init(void)
 {
 	char * var;
+#ifdef CONFIG_BCM_CTF
+	ctf_init();
+#endif
 
 #if defined(BCMDBG)
 	if (msglevel != 0xdeadbeef)
