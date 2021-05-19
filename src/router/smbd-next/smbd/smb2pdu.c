@@ -7547,7 +7547,7 @@ int smb2_ioctl(struct ksmbd_work *work)
 		dst_off = le64_to_cpu(dup_ext->TargetFileOffset);
 		length = le64_to_cpu(dup_ext->ByteCount);
 		cloned = vfs_clone_file_range(fp_in->filp, src_off, fp_out->filp,
-				dst_off, length, 0);
+				dst_off, length);
 		if (cloned == -EXDEV || cloned == -EOPNOTSUPP) {
 			ret = -EOPNOTSUPP;
 			goto dup_ext_out;
