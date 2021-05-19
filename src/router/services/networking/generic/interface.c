@@ -185,7 +185,6 @@ void start_setup_vlans(void)
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
 			if (tmp >= 16) {
-				vlan_number = tmp;
 				if (vlan_number == 16)
 					tagged[vlan_number] = 1;
 
