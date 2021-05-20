@@ -1,0 +1,224 @@
+Index: .travis.yml
+===================================================================
+--- .travis.yml	(revision 46730)
++++ .travis.yml	(working copy)
+@@ -261,8 +261,8 @@ script:
+  - sudo ./check generic/412
+  - sudo ./check generic/420
+ # - sudo ./check generic/422
+-# - sudo ./check generic/432 5.4 kernel cifs issue (duplicate extent to file)
+-# - sudo ./check generic/433 5.4 kernel cifs issue (duplicate extent to file)
++ - sudo ./check generic/432
++ - sudo ./check generic/433
+  - sudo ./check generic/436
+  - sudo ./check generic/437
+ # - travis_wait sudo ./check generic/438 (timeover > 10m)
+Index: mgmt/ksmbd_ida.c
+===================================================================
+--- mgmt/ksmbd_ida.c	(revision 46730)
++++ mgmt/ksmbd_ida.c	(working copy)
+@@ -13,14 +13,19 @@ static inline int __acquire_id(struct ida *ida, in
+ #ifdef CONFIG_SMB_INSECURE_SERVER
+ int ksmbd_acquire_smb1_tid(struct ida *ida)
+ {
+-	return __acquire_id(ida, 1, 0xFFFF);
++	return __acquire_id(ida, 0, 0xFFFF);
+ }
+ #endif
+ 
+ int ksmbd_acquire_smb2_tid(struct ida *ida)
+ {
+-	return __acquire_id(ida, 1, 0xFFFFFFFF);
++	int id;
+ 
++	id = __acquire_id(ida, 0, 0);
++	if (id == 0xFFFF)
++		id = __acquire_id(ida, 0, 0);
++
++	return id;
+ }
+ 
+ #ifdef CONFIG_SMB_INSECURE_SERVER
+Index: smb2pdu.c
+===================================================================
+--- smb2pdu.c	(revision 46730)
++++ smb2pdu.c	(working copy)
+@@ -4755,8 +4755,7 @@ static int smb2_get_info_filesystem(struct ksmbd_w
+ 					       FILE_PERSISTENT_ACLS |
+ 					       FILE_UNICODE_ON_DISK |
+ 					       FILE_CASE_PRESERVED_NAMES |
+-					       FILE_CASE_SENSITIVE_SEARCH |
+-					       FILE_SUPPORTS_BLOCK_REFCOUNTING);
++					       FILE_CASE_SENSITIVE_SEARCH);
+ 
+ 		info->Attributes |= cpu_to_le32(server_conf.share_fake_fscaps);
+ 
+@@ -6589,7 +6588,7 @@ int smb2_lock(struct ksmbd_work *work)
+ 	int flags = 0;
+ 	int cmd = 0;
+ 	int err = 0, i;
+-	u64 lock_start, lock_length;
++	u64 lock_length;
+ 	struct ksmbd_lock *smb_lock = NULL, *cmp_lock, *tmp;
+ 	int nolock = 0;
+ 	LIST_HEAD(lock_list);
+@@ -6628,22 +6627,25 @@ int smb2_lock(struct ksmbd_work *work)
+ 
+ 		cmd = smb2_set_flock_flags(flock, flags);
+ 
+-		lock_start = le64_to_cpu(lock_ele[i].Offset);
+-		lock_length = le64_to_cpu(lock_ele[i].Length);
+-		if (lock_start > U64_MAX - lock_length) {
++		flock->fl_start = le64_to_cpu(lock_ele[i].Offset);
++		if (flock->fl_start > OFFSET_MAX) {
+ 			ksmbd_err("Invalid lock range requested\n");
+ 			rsp->hdr.Status = STATUS_INVALID_LOCK_RANGE;
+ 			goto out;
+ 		}
+ 
+-		if (lock_start > OFFSET_MAX)
+-			flock->fl_start = OFFSET_MAX;
+-		else
+-			flock->fl_start = lock_start;
+-
+ 		lock_length = le64_to_cpu(lock_ele[i].Length);
+-		if (lock_length > OFFSET_MAX - flock->fl_start)
+-			lock_length = OFFSET_MAX - flock->fl_start;
++		if (lock_length > 0) {
++			if (lock_length > OFFSET_MAX - flock->fl_start) {
++				ksmbd_debug(SMB,
++					"Invalid lock range requested\n");
++				lock_length = OFFSET_MAX - flock->fl_start;
++				rsp->hdr.Status = STATUS_INVALID_LOCK_RANGE;
++				goto out;
++			}
++		} else {
++			lock_length = 0;
++		}
+ 
+ 		flock->fl_end = flock->fl_start + lock_length;
+ 
+@@ -7519,57 +7521,6 @@ int smb2_ioctl(struct ksmbd_work *work)
+ 		nbytes = sizeof(struct reparse_data_buffer);
+ 		break;
+ 	}
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+-	case FSCTL_DUPLICATE_EXTENTS_TO_FILE:
+-	{
+-		struct ksmbd_file *fp_in, *fp_out = NULL;
+-		struct duplicate_extents_to_file *dup_ext;
+-		loff_t src_off, dst_off, length, cloned;
+-
+-		dup_ext = (struct duplicate_extents_to_file *)&req->Buffer[0];
+-
+-		fp_in = ksmbd_lookup_fd_slow(work, dup_ext->VolatileFileHandle,
+-				dup_ext->PersistentFileHandle);
+-		if (!fp_in) {
+-			ksmbd_err("not found file handle in duplicate extent to file\n");
+-			ret = -ENOENT;
+-			goto out;
+-		}
+-
+-		fp_out = ksmbd_lookup_fd_fast(work, id);
+-		if (!fp_out) {
+-			ksmbd_err("not found fp\n");
+-			ret = -ENOENT;
+-			goto dup_ext_out;
+-		}
+-
+-		src_off = le64_to_cpu(dup_ext->SourceFileOffset);
+-		dst_off = le64_to_cpu(dup_ext->TargetFileOffset);
+-		length = le64_to_cpu(dup_ext->ByteCount);
+-		cloned = vfs_clone_file_range(fp_in->filp, src_off, fp_out->filp,
+-				dst_off, length);
+-		if (cloned == -EXDEV || cloned == -EOPNOTSUPP) {
+-			ret = -EOPNOTSUPP;
+-			goto dup_ext_out;
+-		} else if (cloned != length) {
+-			cloned = ksmbd_vfs_copy_file_range(fp_in->filp, src_off,
+-					fp_out->filp, dst_off, length);
+-			if (cloned != length) {
+-				if (cloned < 0)
+-					ret = cloned;
+-				else
+-					ret = -EINVAL;
+-			}
+-		}
+-
+-dup_ext_out:
+-		ksmbd_fd_put(work, fp_in);
+-		ksmbd_fd_put(work, fp_out);
+-		if (ret < 0)
+-			goto out;
+-		break;
+-	}
+-#endif
+ 	default:
+ 		ksmbd_debug(SMB, "not implemented yet ioctl command 0x%x\n",
+ 				cnt_code);
+@@ -7950,7 +7901,7 @@ bool smb2_is_sign_req(struct ksmbd_work *work, uns
+ 	    command != SMB2_OPLOCK_BREAK_HE)
+ 		return true;
+ 
+-	return false;
++	return 0;
+ }
+ 
+ /**
+Index: smb2pdu.h
+===================================================================
+--- smb2pdu.h	(revision 46730)
++++ smb2pdu.h	(working copy)
+@@ -851,14 +851,6 @@ struct smb2_write_rsp {
+ 
+ #define SMB2_0_IOCTL_IS_FSCTL 0x00000001
+ 
+-struct duplicate_extents_to_file {
+-	__u64 PersistentFileHandle; /* source file handle, opaque endianness */
+-	__u64 VolatileFileHandle;
+-	__le64 SourceFileOffset;
+-	__le64 TargetFileOffset;
+-	__le64 ByteCount;  /* Bytes to be copied */
+-} __packed;
+-
+ struct smb2_ioctl_req {
+ 	struct smb2_hdr hdr;
+ 	__le16 StructureSize; /* Must be 57 */
+Index: smbfsctl.h
+===================================================================
+--- smbfsctl.h	(revision 46730)
++++ smbfsctl.h	(working copy)
+@@ -64,7 +64,6 @@
+ #define FSCTL_SET_SHORT_NAME_BEHAVIOR 0x000901B4 /* BB add struct */
+ #define FSCTL_QUERY_ALLOCATED_RANGES 0x000940CF /* BB add struct */
+ #define FSCTL_SET_DEFECT_MANAGEMENT  0x00098134 /* BB add struct */
+-#define FSCTL_DUPLICATE_EXTENTS_TO_FILE 0x00098344
+ #define FSCTL_SIS_LINK_FILES         0x0009C104
+ #define FSCTL_PIPE_PEEK              0x0011400C /* BB add struct */
+ #define FSCTL_PIPE_TRANSCEIVE        0x0011C017 /* BB add struct */
+Index: vfs.c
+===================================================================
+--- vfs.c	(revision 46730)
++++ vfs.c	(working copy)
+@@ -2627,7 +2627,7 @@ extern long do_splice_direct(struct file *in, loff
+ 		loff_t *opos, size_t len, unsigned int flags);
+ #endif
+ 
+-int ksmbd_vfs_copy_file_range(struct file *file_in, loff_t pos_in,
++static int ksmbd_vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+ 		struct file *file_out, loff_t pos_out, size_t len)
+ {
+ 	struct inode *inode_in = file_inode(file_in);
+Index: vfs.h
+===================================================================
+--- vfs.h	(revision 46730)
++++ vfs.h	(working copy)
+@@ -239,8 +239,6 @@ int ksmbd_vfs_copy_file_ranges(struct ksmbd_work *
+ 		struct srv_copychunk *chunks, unsigned int chunk_count,
+ 		unsigned int *chunk_count_written,
+ 		unsigned int *chunk_size_written, loff_t  *total_size_written);
+-int ksmbd_vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+-		struct file *file_out, loff_t pos_out, size_t len);
+ struct ksmbd_file *ksmbd_vfs_dentry_open(struct ksmbd_work *work,
+ 		const struct path *path, int flags, __le32 option, int fexist);
+ ssize_t ksmbd_vfs_listxattr(struct dentry *dentry, char **list);
