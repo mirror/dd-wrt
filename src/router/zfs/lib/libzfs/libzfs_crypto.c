@@ -28,13 +28,13 @@
 #include <openssl/evp.h>
 #if LIBFETCH_DYNAMIC
 #include <dlfcn.h>
-#endif
 #if LIBFETCH_IS_FETCH
 #include <sys/param.h>
 #include <stdio.h>
 #include <fetch.h>
 #elif LIBFETCH_IS_LIBCURL
 #include <curl/curl.h>
+#endif
 #endif
 #include <libzfs.h>
 #include "libzfs_impl.h"
