@@ -1,4 +1,4 @@
-zfs-configure: libtirpc-configure libtirpc libudev openssl zlib
+zfs-configure: libtirpc-configure libtirpc libudev openssl zlib curl
 	cd zfs && ./autogen.sh
 	cd zfs && autoreconf
 	cd zfs && ./configure \
@@ -7,7 +7,7 @@ zfs-configure: libtirpc-configure libtirpc libudev openssl zlib
 		--host=$(ARCH)-linux \
 		--disable-pyzfs \
 		CC="$(CC) -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CFLAGS="-I$(TOP)/zlib -I$(TOP)/util-linux/include  -I$(TOP)/util-linux/libblkid/src -I$(TOP)/util-linux/libuuid/src    -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/openssl/include  -I$(TOP)/libudev/src/libudev -D_GNU_SOURCE" \
+		CFLAGS="-I$(TOP)/zlib -I$(TOP)/util-linux/include  -I$(TOP)/util-linux/libblkid/src -I$(TOP)/util-linux/libuuid/src -I$(TOP)/curl/include -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/openssl/include  -I$(TOP)/libudev/src/libudev -D_GNU_SOURCE" \
 		LDFLAGS="-L$(TOP)/zlib  -L$(TOP)/util-linux/.libs -L$(TOP)/libtirpc/src/.libs -L$(TOP)/zfs/lib/libuutil/.libs -L$(TOP)/openssl -L$(TOP)/libudev/src/libudev/.libs" \
 		--with-linux=$(LINUXDIR)
 	cd zfs && find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
