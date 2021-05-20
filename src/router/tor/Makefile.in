@@ -5053,6 +5053,7 @@ pprint_tput = @pprint_tput@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 rust_crates = @rust_crates@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
