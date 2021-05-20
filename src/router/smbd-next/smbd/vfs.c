@@ -2627,7 +2627,7 @@ extern long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
 		loff_t *opos, size_t len, unsigned int flags);
 #endif
 
-int ksmbd_vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+static int ksmbd_vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 		struct file *file_out, loff_t pos_out, size_t len)
 {
 	struct inode *inode_in = file_inode(file_in);

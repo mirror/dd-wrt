@@ -13,14 +13,19 @@ static inline int __acquire_id(struct ida *ida, int from, int to)
 #ifdef CONFIG_SMB_INSECURE_SERVER
 int ksmbd_acquire_smb1_tid(struct ida *ida)
 {
-	return __acquire_id(ida, 1, 0xFFFF);
+	return __acquire_id(ida, 0, 0xFFFF);
 }
 #endif
 
 int ksmbd_acquire_smb2_tid(struct ida *ida)
 {
-	return __acquire_id(ida, 1, 0xFFFFFFFF);
+	int id;
 
+	id = __acquire_id(ida, 0, 0);
+	if (id == 0xFFFF)
+		id = __acquire_id(ida, 0, 0);
+
+	return id;
 }
 
 #ifdef CONFIG_SMB_INSECURE_SERVER

@@ -4755,8 +4755,7 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 					       FILE_PERSISTENT_ACLS |
 					       FILE_UNICODE_ON_DISK |
 					       FILE_CASE_PRESERVED_NAMES |
-					       FILE_CASE_SENSITIVE_SEARCH |
-					       FILE_SUPPORTS_BLOCK_REFCOUNTING);
+					       FILE_CASE_SENSITIVE_SEARCH);
 
 		info->Attributes |= cpu_to_le32(server_conf.share_fake_fscaps);
 
@@ -6589,7 +6588,7 @@ int smb2_lock(struct ksmbd_work *work)
 	int flags = 0;
 	int cmd = 0;
 	int err = 0, i;
-	u64 lock_start, lock_length;
+	u64 lock_length;
 	struct ksmbd_lock *smb_lock = NULL, *cmp_lock, *tmp;
 	int nolock = 0;
 	LIST_HEAD(lock_list);
@@ -6628,22 +6627,25 @@ int smb2_lock(struct ksmbd_work *work)
 
 		cmd = smb2_set_flock_flags(flock, flags);
 
-		lock_start = le64_to_cpu(lock_ele[i].Offset);
-		lock_length = le64_to_cpu(lock_ele[i].Length);
-		if (lock_start > U64_MAX - lock_length) {
+		flock->fl_start = le64_to_cpu(lock_ele[i].Offset);
+		if (flock->fl_start > OFFSET_MAX) {
 			ksmbd_err("Invalid lock range requested\n");
 			rsp->hdr.Status = STATUS_INVALID_LOCK_RANGE;
 			goto out;
 		}
 
-		if (lock_start > OFFSET_MAX)
-			flock->fl_start = OFFSET_MAX;
-		else
-			flock->fl_start = lock_start;
-
 		lock_length = le64_to_cpu(lock_ele[i].Length);
-		if (lock_length > OFFSET_MAX - flock->fl_start)
-			lock_length = OFFSET_MAX - flock->fl_start;
+		if (lock_length > 0) {
+			if (lock_length > OFFSET_MAX - flock->fl_start) {
+				ksmbd_debug(SMB,
+					"Invalid lock range requested\n");
+				lock_length = OFFSET_MAX - flock->fl_start;
+				rsp->hdr.Status = STATUS_INVALID_LOCK_RANGE;
+				goto out;
+			}
+		} else {
+			lock_length = 0;
+		}
 
 		flock->fl_end = flock->fl_start + lock_length;
 
@@ -7519,57 +7521,6 @@ int smb2_ioctl(struct ksmbd_work *work)
 		nbytes = sizeof(struct reparse_data_buffer);
 		break;
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
-	case FSCTL_DUPLICATE_EXTENTS_TO_FILE:
-	{
-		struct ksmbd_file *fp_in, *fp_out = NULL;
-		struct duplicate_extents_to_file *dup_ext;
-		loff_t src_off, dst_off, length, cloned;
-
-		dup_ext = (struct duplicate_extents_to_file *)&req->Buffer[0];
-
-		fp_in = ksmbd_lookup_fd_slow(work, dup_ext->VolatileFileHandle,
-				dup_ext->PersistentFileHandle);
-		if (!fp_in) {
-			ksmbd_err("not found file handle in duplicate extent to file\n");
-			ret = -ENOENT;
-			goto out;
-		}
-
-		fp_out = ksmbd_lookup_fd_fast(work, id);
-		if (!fp_out) {
-			ksmbd_err("not found fp\n");
-			ret = -ENOENT;
-			goto dup_ext_out;
-		}
-
-		src_off = le64_to_cpu(dup_ext->SourceFileOffset);
-		dst_off = le64_to_cpu(dup_ext->TargetFileOffset);
-		length = le64_to_cpu(dup_ext->ByteCount);
-		cloned = vfs_clone_file_range(fp_in->filp, src_off, fp_out->filp,
-				dst_off, length);
-		if (cloned == -EXDEV || cloned == -EOPNOTSUPP) {
-			ret = -EOPNOTSUPP;
-			goto dup_ext_out;
-		} else if (cloned != length) {
-			cloned = ksmbd_vfs_copy_file_range(fp_in->filp, src_off,
-					fp_out->filp, dst_off, length);
-			if (cloned != length) {
-				if (cloned < 0)
-					ret = cloned;
-				else
-					ret = -EINVAL;
-			}
-		}
-
-dup_ext_out:
-		ksmbd_fd_put(work, fp_in);
-		ksmbd_fd_put(work, fp_out);
-		if (ret < 0)
-			goto out;
-		break;
-	}
-#endif
 	default:
 		ksmbd_debug(SMB, "not implemented yet ioctl command 0x%x\n",
 				cnt_code);
@@ -7950,7 +7901,7 @@ bool smb2_is_sign_req(struct ksmbd_work *work, unsigned int command)
 	    command != SMB2_OPLOCK_BREAK_HE)
 		return true;
 
-	return false;
+	return 0;
 }
 
 /**
