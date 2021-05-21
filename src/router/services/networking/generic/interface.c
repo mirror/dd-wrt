@@ -184,9 +184,12 @@ void start_setup_vlans(void)
 		int mask = 0;
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
+			if (tmp == 16)
+				tagged[i] = 1;
+		}
+		foreach(vlan, vlans, next) {
+			int tmp = atoi(vlan);
 			if (tmp >= 16) {
-				if (tmp == 16)
-					tagged[vlan_number] = 1;
 
 				switch (tmp) {
 				case 22:
@@ -222,15 +225,15 @@ void start_setup_vlans(void)
 				} else {
 					if (i == 0) {
 						if (strlen(ports))
-							snprintf(ports, 31, "%s %s", ports, nvram_nget("sw_wan", i));
+							snprintf(ports, 31, "%s %s%s", ports, nvram_nget("sw_wan", i), tagged[i] ? "t" : "");
 						else
-							snprintf(ports, 31, "%s", nvram_nget("sw_wan", i));
+							snprintf(ports, 31, "%s%s", nvram_nget("sw_wan", i), tagged[i] ? "t" : "");
 					} else {
 
 						if (strlen(ports))
-							snprintf(ports, 31, "%s %s", ports, nvram_nget("sw_lan%d", i));
+							snprintf(ports, 31, "%s %s%s", ports, nvram_nget("sw_lan%d", i), tagged[i] ? "t" : "");
 						else
-							snprintf(ports, 31, "%s", nvram_nget("sw_lan%d", i));
+							snprintf(ports, 31, "%s%s", nvram_nget("sw_lan%d", i), tagged[i] ? "t" : "");
 					}
 
 				}
@@ -309,9 +312,9 @@ void start_setup_vlans(void)
 		char *ports = &buildports[vlan_number][0];
 		if (strlen(ports)) {
 			if (nvram_exists("sw_wancpuport"))
-				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s%s\"", vlan_number, nvram_safe_get("sw_lancpuport"), ports, tagged[vlan_number] ? "t" : "");
+				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_lancpuport"), ports);
 			else
-				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s%s\"", vlan_number, nvram_safe_get("sw_cpuport"), ports, tagged[vlan_number] ? "t" : "");
+				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_cpuport"), ports);
 		} else {
 			sysprintf("swconfig dev switch0 vlan %d set ports \"\"", vlan_number);
 		}
@@ -379,6 +382,11 @@ void start_setup_vlans(void)
 			int lastvlan = 0;
 			int portmask = 3;
 			int mask = 0;
+			foreach(vlan, vlans, next) {
+				tmp = atoi(vlan);
+				if (tmp == 16)
+					tagged[i] = 1;
+			}
 
 			foreach(vlan, vlans, next) {
 				tmp = atoi(vlan);
@@ -398,11 +406,9 @@ void start_setup_vlans(void)
 					}
 
 					sprintf((char *)
-						&portsettings[tmp][0], "%s %d", (char *)
-						&portsettings[tmp][0], use);
+						&portsettings[tmp][0], "%s %d%s", (char *)
+						&portsettings[tmp][0], use, tagged[i] ? "t" : "");
 				} else {
-					if (tmp == 16)	// vlan tagged
-						tagged[use] = 1;
 					if (tmp == 17)	// no auto negotiate
 						mask |= 4;
 					if (tmp == 18)	// no full speed
@@ -464,15 +470,15 @@ void start_setup_vlans(void)
 		strcpy(port, &portsettings[i][0]);
 		bzero(&portsettings[i][0], 64);
 		foreach(vlan, port, next) {
-			int vlan_number = atoi(vlan);
-			if (vlan_number < 5 && vlan_number >= 0 && tagged[vlan_number]) {
-				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
+			int vlan_number = vlan[0] - '0';
+			if (vlan_number < 5 && vlan_number >= 0) {
+				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7)
-				   && tagged[vlan_number] && !ast) {
-				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
+				   && !ast) {
+				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7)
-				   && tagged[vlan_number] && ast) {
-				sprintf(&portsettings[i][0], "%s %s*", &portsettings[i][0], vlan);
+				   && ast) {
+				sprintf(&portsettings[i][0], "%s %d*", &portsettings[i][0], vlan_number);
 			} else {
 				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
 			}
