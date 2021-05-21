@@ -276,6 +276,7 @@ endif
 #	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
 	export STRIP="sstrip" && \
+	export NO_RENAME=1 && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
 	#mkdir $(TARGETDIR)/boot
