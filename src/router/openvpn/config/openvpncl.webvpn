@@ -116,11 +116,11 @@
 		<div id="idupauth">
 			<div class="setting">
 				<div class="label"><% tran("share.usrname"); %></div>
-				 <input size="32" maxlength="32" class="text" name="openvpncl_user" value="<% nvg("openvpncl_user"); %>" />
+				 <input size="32" class="text" name="openvpncl_user" value="<% nvg("openvpncl_user"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("share.passwd"); %></div>
-				<input size="32" maxlength="32" class="text" name="openvpncl_pass" value="<% nvg("openvpncl_pass"); %>" />
+				<input size="32" class="text" name="openvpncl_pass" value="<% nvg("openvpncl_pass"); %>" />
 			</div>
 		</div>
 		<div class="setting">
