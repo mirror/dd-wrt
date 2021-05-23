@@ -222,7 +222,7 @@ void start_sysinit(void)
 	if (nvram_default_matchi("ubnt_power", 1, 0)) {
 		led_control(POE_GPIO, LED_ON);
 	}
-	
+
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	char macaddr[32];

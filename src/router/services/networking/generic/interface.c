@@ -173,6 +173,17 @@ void start_setup_vlans(void)
 	memset(&buildports[0][0], 0, 16 * 32);
 	int vlan_number;
 	int i;
+
+	char *c = nvram_safe_get("portvlanlist");
+	int *vlanlist = malloc(sizeof(int) * strlen(c));
+	for (i = 0; i < 16; i++)
+		vlanlist[i] = i;
+	i = 0;
+	char *portvlan[32];
+	char *next;
+	foreach(portvlan, c, next) {
+		vlanlist[i++] = atoi(portvlan);
+	}
 #ifdef HAVE_R9000
 	for (i = 0; i < 7; i++) {
 #else
@@ -184,35 +195,35 @@ void start_setup_vlans(void)
 		int mask = 0;
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
-			if (tmp == 16)
+			if (tmp == 16000)
 				tagged[i] = 1;
 		}
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
-			if (tmp >= 16) {
+			if (tmp >= 16000) {
 
 				switch (tmp) {
-				case 22:
+				case 22000:
 					eval("swconfig", "dev", "switch0", "port", (!nvram_match("sw_wan", "-1") && !i) ? nvram_safe_get("sw_wan") : nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
 					break;
-				case 16:
+				case 16000:
 					if (!nvram_match("sw_wan", "-1") && nvram_exists("sw_wancpuport"))
-						sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
+						sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlanlist[vlan_number], nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
 					break;
-				case 17:	// no auto negotiate
+				case 17000:	// no auto negotiate
 					mask |= 4;
 					break;
-				case 18:	// no full speed
+				case 18000:	// no full speed
+					mask |= 16;
+					break;
+				case 19000:	// no full duplex
 					mask |= 1;
 					break;
-				case 19:	// no full duplex
+				case 20000:	// disabled
 					mask |= 2;
 					break;
-				case 20:	// disabled
+				case 21000:	// no gigabit
 					mask |= 8;
-					break;
-				case 21:	// no gigabit
-					mask |= 16;
 					break;
 				}
 			} else {
@@ -220,7 +231,7 @@ void start_setup_vlans(void)
 				char *ports = &buildports[vlan_number][0];
 				if (i == 0 && nvram_exists("sw_wancpuport")) {	// wan port
 					if (!nvram_match("sw_wan", "-1")) {
-						sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
+						sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlan_number], nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
 					}
 				} else {
 					if (i == 0) {
@@ -238,7 +249,7 @@ void start_setup_vlans(void)
 
 				}
 				char buff[32];
-				snprintf(buff, 9, "%d", tmp);
+				snprintf(buff, 9, "%d", vlanlist[vlan_number]);
 				eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 				char *lanphy = "eth0";
 				char *wanphy = "eth0";
@@ -254,7 +265,7 @@ void start_setup_vlans(void)
 					eval("vconfig", "add", wanphy, buff);
 				else
 					eval("vconfig", "add", lanphy, buff);
-				snprintf(buff, 9, "vlan%d", tmp);
+				snprintf(buff, 9, "vlan%d", vlanlist[vlan_number]);
 				if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
 					if (*(nvram_nget("vlan%d_ipaddr", vlan_number)))
 						eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
@@ -347,6 +358,16 @@ void start_setup_vlans(void)
 	struct ifreq ifr;
 	char *phy = getPhyDev();
 
+	char *c = nvram_safe_get("portvlanlist");
+	int *vlanlist = malloc(sizeof(int) * strlen(c));
+	for (i = 0; i < 16; i++)
+		vlanlist[i] = i;
+	i = 0;
+	char *portvlan[32];
+	char *next;
+	foreach(portvlan, c, next) {
+		vlanlist[i++] = atoi(portvlan);
+	}
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 
 	int vlanmap[6] = { 0, 1, 2, 3, 4, 5 };	// 0=wan; 1,2,3,4=lan; 5=internal 
@@ -390,13 +411,13 @@ void start_setup_vlans(void)
 
 			foreach(vlan, vlans, next) {
 				tmp = atoi(vlan);
-				if (tmp < 16) {
+				if (tmp < 16000) {
 					lastvlan = tmp;
 					if (i == 5) {
-						snprintf(buff, 9, "%d", tmp);
+						snprintf(buff, 9, "%d", vlanlist[tmp]);
 						eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 						eval("vconfig", "add", phy, buff);
-						snprintf(buff, 9, "vlan%d", tmp);
+						snprintf(buff, 9, "vlan%d", vlanlist[tmp]);
 						if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
 							if (*(nvram_nget("%s_ipaddr", buff)))
 								eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
@@ -409,16 +430,16 @@ void start_setup_vlans(void)
 						&portsettings[tmp][0], "%s %d%s", (char *)
 						&portsettings[tmp][0], use, tagged[i] ? "t" : "");
 				} else {
-					if (tmp == 17)	// no auto negotiate
+					if (tmp == 17000)	// no auto negotiate
 						mask |= 4;
-					if (tmp == 18)	// no full speed
-						mask |= 1;
-					if (tmp == 19)	// no full duplex
-						mask |= 2;
-					if (tmp == 20)	// disabled
-						mask |= 8;
-					if (tmp == 21)	// no gigabit
+					if (tmp == 18000)	// gigabit
 						mask |= 16;
+					if (tmp == 19000)	// fullspeed
+						mask |= 1;
+					if (tmp == 20000)	// duplex
+						mask |= 2;
+					if (tmp == 21000)	// enabled
+						mask |= 8;
 
 				}
 			}
@@ -485,13 +506,14 @@ void start_setup_vlans(void)
 		}
 	}
 	for (i = 0; i < 16; i++) {
-		writevaproc(" ", "/proc/switch/%s/vlan/%d/ports", phy, i);
+		writevaproc(" ", "/proc/switch/%s/vlan/%d/ports", phy, vlanlist[i]);
 	}
 	for (i = 0; i < 16; i++) {
 		fprintf(stderr, "configure vlan ports to %s\n", portsettings[i]);
-		writevaproc(portsettings[i], "/proc/switch/%s/vlan/%d/ports", phy, i);
+		writevaproc(portsettings[i], "/proc/switch/%s/vlan/%d/ports", phy, vlanlist[i]);
 	}
 #endif
+	free(vlanlist);
 }
 
 int flush_interfaces(void)

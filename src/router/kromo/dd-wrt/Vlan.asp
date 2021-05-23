@@ -11,55 +11,75 @@ function to_apply(F) {
 	applytake(F);
 }
 
+function vlan_add(F, I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "portvlan_add";
+	apply(F);
+}
+
+function vlan_remove(F, I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "portvlan_remove";
+	F.del_value.value=I;
+	apply(F);
+}
+
 function SelSpeed(F,I) {
-	if(eval("F."+I+"vlan20") && eval("F."+I+"vlan20").checked==false) {
-		for(i=0;i<20;i++) {
+	var vlancount = <% nvg("portvlan_count"); %>;
+	
+	if(eval("F."+I+"vlan21000") && eval("F."+I+"vlan21000").checked==false) {
+		for(i=0;i<vlancount;i++) {
 			if (eval("F."+I+"vlan"+i)) {
 				choose_disable(eval("F."+I+"vlan"+i));
 			}
 		}
-		choose_disable(eval("F."+I+"vlan21"));
+		choose_disable(eval("F."+I+"vlan16000"));
+		choose_disable(eval("F."+I+"vlan17000"));
+		choose_disable(eval("F."+I+"vlan18000"));
+		choose_disable(eval("F."+I+"vlan19000"));		
 	} else {
-		for(i=0;i<20;i++) {
+		for(i=0;i<vlancount;i++) {
 			if (eval("F."+I+"vlan"+i)) {
 				choose_enable(eval("F."+I+"vlan"+i));
 			}
 		}
-		if (eval("F."+I+"vlan21")) {
-			choose_enable(eval("F."+I+"vlan21"));
-		}
+		choose_enable(eval("F."+I+"vlan16000"));
+		choose_enable(eval("F."+I+"vlan17000"));
+		choose_enable(eval("F."+I+"vlan18000"));
+		choose_enable(eval("F."+I+"vlan19000"));
+
 		SelVLAN(F,I);
-		if (eval("F."+I+"vlan17")) {
-		    if(eval("F."+I+"vlan17").checked) {
-			    if (eval("F."+I+"vlan18")) {
-		    	    eval("F."+I+"vlan18").checked=true;
-			    choose_disable(eval("F."+I+"vlan18"));
+		if (eval("F."+I+"vlan17000")) {
+		    if(eval("F."+I+"vlan17000").checked) {
+			    if (eval("F."+I+"vlan18000")) {
+		    	    eval("F."+I+"vlan18000").checked=true;
+			    choose_disable(eval("F."+I+"vlan18000"));
 		    	    }
-			    if (eval("F."+I+"vlan19")) {
-			    eval("F."+I+"vlan19").checked=true;
-			    choose_disable(eval("F."+I+"vlan19"));
+			    if (eval("F."+I+"vlan19000")) {
+			    eval("F."+I+"vlan19000").checked=true;
+			    choose_disable(eval("F."+I+"vlan19000"));
 			    }
-			    if (eval("F."+I+"vlan21")) {
-			    eval("F."+I+"vlan21").checked=true;
-			    choose_disable(eval("F."+I+"vlan21"));
+			    if (eval("F."+I+"vlan20000")) {
+			    eval("F."+I+"vlan20000").checked=true;
+			    choose_disable(eval("F."+I+"vlan20000"));
 			    }
 		    } else {
-			    if (eval("F."+I+"vlan18")) {
-			    choose_enable(eval("F."+I+"vlan18"));
+			    if (eval("F."+I+"vlan18000")) {
+			    choose_enable(eval("F."+I+"vlan18000"));
 			    }
-			    if (eval("F."+I+"vlan19")) {
-			    choose_enable(eval("F."+I+"vlan19"));
+			    if (eval("F."+I+"vlan19000")) {
+			    choose_enable(eval("F."+I+"vlan19000"));
 			    }
-			    if (eval("F."+I+"vlan21")) {
-			    choose_enable(eval("F."+I+"vlan21"));
+			    if (eval("F."+I+"vlan20000")) {
+			    choose_enable(eval("F."+I+"vlan20000"));
 			    }
 		    }
-		    if (eval("F."+I+"vlan18")) {
-		    if(eval("F."+I+"vlan21").checked) {
-	    		    eval("F."+I+"vlan18").checked=true;
-			    choose_disable(eval("F."+I+"vlan18"));
+		    if (eval("F."+I+"vlan19000")) {
+		    if(eval("F."+I+"vlan18000").checked) {
+	    		    eval("F."+I+"vlan19000").checked=true;
+			    choose_disable(eval("F."+I+"vlan19000"));
 		    } else {
-			    choose_enable(eval("F."+I+"vlan18"));
+			    choose_enable(eval("F."+I+"vlan19000"));
 		    }
 		    }
 	    }
@@ -68,15 +88,16 @@ function SelSpeed(F,I) {
 
 function SelVLAN(F,I) {
 	var i,j=0;
-	if(!eval("F."+I+"vlan20") || eval("F."+I+"vlan20").checked == true) {
-		if(eval("F."+I+"vlan16") && eval("F."+I+"vlan16").checked == true) {
-			if(eval("F."+I+"vlan"+i)) {
-				for(i=0;i<16;i++) {
+	var vlancount = <% nvg("portvlan_count"); %>;
+	if(!eval("F."+I+"vlan21000") || eval("F."+I+"vlan21000").checked == true) {
+		if(eval("F."+I+"vlan16000") && eval("F."+I+"vlan16000").checked == true) {
+			for(i=0;i<vlancount;i++) {
+				if(eval("F."+I+"vlan"+i)) {
 					choose_enable(eval("F."+I+"vlan"+i));
 				}
 			}
 		} else {
-			for(i=0;i<16;i++) {
+			for(i=0;i<vlancount;i++) {
 				if(eval("F."+I+"vlan"+i)) {
 					if(j==1) {
 						eval("F."+I+"vlan"+i).checked=false;
@@ -90,7 +111,7 @@ function SelVLAN(F,I) {
 				}
 			}
 			if(j==1) {
-				for(i=0;i<16;i++) {
+				for(i=0;i<vlancount;i++) {
 					if(eval("F."+I+"vlan"+i)) {
 						if(!(eval("F."+I+"vlan"+i).checked)) {
 							choose_disable(eval("F."+I+"vlan"+i));
@@ -145,6 +166,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
+							<input type="hidden" name="del_value" />
 
 							<h2><% tran("vlan.h2"); %></h2>
 							<fieldset>

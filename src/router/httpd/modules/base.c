@@ -1162,6 +1162,8 @@ static struct gozila_action gozila_actions[] = {
 	{ "PokerEdit", "poker_credit", "", REFRESH, "poker_credit" },
 	{ "PokerEdit", "poker_back", "", REFRESH, "poker_back" },
 #endif
+	{ "Vlan", "portvlan_add", "", REFRESH, "portvlan_add" },
+	{ "Vlan", "portvlan_remove", "", REFRESH, "portvlan_remove" },
 #ifdef HAVE_BONDING
 	{ "Networking", "add_bond", "", REFRESH, "add_bond" },
 	{ "Networking", "del_bond", "", REFRESH, "del_bond" },
