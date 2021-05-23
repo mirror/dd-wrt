@@ -5390,33 +5390,112 @@ void ddns_update_value(webs_t wp)
 
 }
 
-void port_vlan_table_save(webs_t wp)
+void portvlan_add(webs_t wp)
 {
-	int port = 0, vlan = 0, vlans[23], i;
-	char portid[32], portvlan[64], buff[32] = { 0 }, *c, *next, br0vlans[64], br1vlans[64], br2vlans[64];
-	int portval;
-	strcpy(portvlan, "");
-	int max = 22;
-#ifdef HAVE_SWCONFIG
-	if (has_igmpsnooping())
-	    max = 23;
-#endif
+	int blen = nvram_default_geti("portvlan_count", 3);
+	blen++;
+	nvram_seti("portvlan_count", blen);
+}
 
-	for (vlan = 0; vlan < max; vlan++)
-		vlans[vlan] = 0;
-
-	vlans[16] = 1;
+void portvlan_remove(webs_t wp)
+{
 	int ports = 5;
 	if (nvram_exists("sw_lan6"))
 		ports = 7;
+	int blen = nvram_default_geti("portvlan_count", 3);
+	int val = websGetVari(wp, "del_value", -1);
+	if (val >= 0) {
+		char *vlist = nvram_safe_get("portvlanlist");
+		char *vlanlist = malloc(strlen(vlist));
+		vlanlist[0] = 0;
+		char *next;
+		char portvlan[32];
+		int i = 0, a;
+		foreach(portvlan, vlist, next) {
+			if (val != i) {
+				if (*vlanlist)
+					sprintf(vlanlist, "%s %s", vlanlist, portvlan);
+				else
+					sprintf(vlanlist, "%s", portvlan);
+			} else {
+				for (a = 0; a < ports; a++) {
+					char var[32];
+					char *list = nvram_nget("port%dvlans", a);
+					char *newlist = strdup(list);
+					newlist[0] = 0;
+					char *next2;
+					foreach(var, list, next2) {
+						if (strcmp(portvlan, var)) {
+							if (*newlist)
+								sprintf(newlist, "%s %s", newlist, var);
+							else
+								strcpy(newlist, var);
+						}
+
+					}
+					nvram_nset(newlist, "port%dvlans", a);
+					free(newlist);
+				}
+			}
+			i++;
+		}
+		nvram_safe_set("portvlanlist", vlanlist);
+		free(vlanlist);
+	}
+	blen--;
+	nvram_seti("portvlan_count", blen);
+}
+
+void port_vlan_table_save(webs_t wp)
+{
+	int port = 0, vlan = 0, *vlans, i;
+	char portid[32], portvlan[64], buff[32] = { 0 }, *c, *next, br0vlans[64], br1vlans[64], br2vlans[64];
+	int portval;
+	strcpy(portvlan, "");
+	int blen = nvram_geti("portvlan_count");
+	int max = blen + 5;
+#ifdef HAVE_SWCONFIG
+	if (has_igmpsnooping())
+		max++;
+#endif
+
+	vlans = malloc(sizeof(int) * max);
+	for (vlan = 0; vlan < max; vlan++)
+		vlans[vlan] = 0;
+	vlans[blen] = 1;
+	int ports = 5;
+	if (nvram_exists("sw_lan6"))
+		ports = 7;
+	char *vlanlist = malloc(blen * 5);
+	vlanlist[0] = 0;
+	for (i = 0; i < blen; i++) {
+		sprintf(portid, "portvlan%dlist", i);
+		char *s_vlan = websGetVar(wp, portid, NULL);
+		int num;
+		if (s_vlan) {
+			num = atoi(s_vlan);
+			if (num > 4094)
+				num = 4094;
+		}
+		if (i)
+			sprintf(vlanlist, "%s %d", vlanlist, num);
+		else
+			sprintf(vlanlist, "%d", num);
+	}
+	nvram_set("portvlanlist", vlanlist);
+	free(vlanlist);
 	for (port = 0; port < ports; port++) {
 		for (vlan = 0; vlan < max; vlan++) {
 			snprintf(portid, sizeof(portid), "port%dvlan%d", port, vlan);
 			char *s_portval = websGetVar(wp, portid, "");
+			int flag = vlan;
+			if (vlan >= blen) {
+				flag = (vlan - blen) * 1000 + 16000;
+			}
 #ifdef HAVE_SWCONFIG
-			if (vlan < 17 || vlan > 22)
+			if (flag < 17000 || flag > 22000)
 #else
-			if (vlan < 17 || vlan > 21)
+			if (flag < 17000 || flag > 21000)
 #endif
 				i = (strcmp(s_portval, "on") == 0);
 			else
@@ -5425,11 +5504,14 @@ void port_vlan_table_save(webs_t wp)
 				if (*(portvlan))
 					strcat(portvlan, " ");
 
-				snprintf(buff, 4, "%d", vlan);
+				if (vlan >= blen)
+					snprintf(buff, 6, "%d", (vlan - blen) * 1000 + 16000);
+				else
+					snprintf(buff, 6, "%d", vlan);
 				strcat(portvlan, buff);
 				vlans[vlan] = 1;
 #ifdef HAVE_SWCONFIG
-				if (vlan < 16) {
+				if (flag < 16000) {
 					char buff[32];
 					snprintf(buff, 9, "%d", vlan);
 					eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
@@ -5471,12 +5553,14 @@ void port_vlan_table_save(webs_t wp)
 	/*
 	 * if a VLAN is used, it also gets assigned to port #5 
 	 */
-	for (vlan = 0; vlan < 17; vlan++) {
+	for (vlan = 0; vlan < blen + 2; vlan++) {
 		if (vlans[vlan]) {
 			if (*(portvlan))
 				strcat(portvlan, " ");
-
-			snprintf(buff, 4, "%d", vlan);
+			if (vlan >= blen)
+				snprintf(buff, 6, "%d", (vlan - blen) * 1000 + 16000);
+			else
+				snprintf(buff, 6, "%d", vlan);
 			strcat(portvlan, buff);
 		}
 	}

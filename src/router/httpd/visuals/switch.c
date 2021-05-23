@@ -37,21 +37,32 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	 * (x 16 dosn't apply) 
 	 */
 
-	int i, j, vlans[23][7], tmp, wl_br;
+	int i, j, *vlans[7], tmp, wl_br;
 	char *c, *next, buff[32], portvlan[32];
-	int a;
+	int a, *vlanlist;
 	int lanports = 4;
 	if (nvram_exists("sw_lan6"))
 		lanports = 6;
+	int blen = nvram_default_geti("portvlan_count", 3);
+	char *deflist = malloc((blen * 5) + 1);
+	for (i = 0; i < 7; i++)
+		vlans[i] = malloc(sizeof(int) * (blen + 8));
+	vlanlist = malloc(sizeof(int) * (blen + 16));
 
 	if (getRouterBrand() == ROUTER_UBNT_UNIFIAC)
 		lanports = 2;
 	if (getRouterBrand() == ROUTER_UBNT_NANOAC)
 		lanports = 2;
-
-	for (i = 0; i < 23; i++)
+	c = nvram_safe_get("portvlanlist");
+	for (i = 0; i < blen; i++)
+		vlanlist[i] = i;
+	i = 0;
+	foreach(portvlan, c, next) {
+		vlanlist[i++] = atoi(portvlan);
+	}
+	for (i = 0; i < blen + 8; i++)
 		for (j = 0; j < lanports + 2; j++)
-			vlans[i][j] = -1;
+			vlans[j][i] = -1;
 
 	wl_br = -1;
 
@@ -82,11 +93,13 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 						else
 							continue;
 					}
-
+					if (tmp >= 16000) {
+						tmp = blen + ((tmp - 16000) / 1000);
+					}
 					if (i < lanports + 1) {
-						vlans[tmp][i] = 1;
+						vlans[i][tmp] = 1;
 					} else {
-						vlans[tmp][lanports + 1] = i - (lanports + 1);
+						vlans[lanports + 1][tmp] = i - (lanports + 1);
 					}
 				}
 			}
@@ -102,7 +115,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<th colspan=\"%d\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports);
 	else
 		websWrite(wp, "<th colspan=\"%d\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports + 1);
-	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.bridge)</script></th>\n");
+	websWrite(wp, "<th rowspan=\"2\">&nbsp;</th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
 	if (!nowan)
@@ -113,7 +126,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</tr>\n");
 
 	websWrite(wp, "              <tr>\n");
-	websWrite(wp, "<td><script type=\"text/javascript\">Capture(vlan.linkstatus)</script></td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
 	for (a = nowan; a < lanports + 1; a++) {
 		int status = 0;
 		if (a == 0)
@@ -172,7 +185,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		fclose(fp);
 
 		websWrite(wp, "              <tr>\n");
-		websWrite(wp, "<td><script type=\"text/javascript\">Capture(vlan.linkstatus)</script></td>\n");
+		websWrite(wp, "<td>&nbsp;</td>\n");
 
 		int vlanmap[6] = { 0, 1, 2, 3, 4, 5 };	// 0=wan; 1,2,3,4=lan; 5=internal 
 		getPortMapping(vlanmap);
@@ -213,62 +226,62 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "              </tr>\n");
 	}
 #endif
-	int hasgiga = 1;
-
-	int len = 21;
+	int len = blen;
 #ifdef HAVE_SWCONFIG
 #ifdef HAVE_ALPINE
-	len = 16;		// no tag support for now
 #else
+	len += 6;
 	if (has_igmpsnooping())
-		len = 22;
+		len++;
 #endif
 #endif
-
-	for (a = 0; a < len + hasgiga; a++) {
-		i = a;
-		if (hasgiga) {
-			if (a == 18)
-				i = 21;
-			if (a > 18)
-				i = a - 1;
-		}
+	for (i = 0; i < len; i++) {
 
 		websWrite(wp, "              <tr>\n");
 		websWrite(wp, "<td>");
+		int flag = i;
+		if (i >= blen) {
+			flag = ((i - blen) * 1000) + 16000;
+		}
 
-		switch (i) {
-		case 16:
+		switch (flag) {
+		case 16000:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.tagged)</script>");
 			break;
-		case 17:
+		case 17000:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.negociate)</script>");
 			break;
-		case 18:
-			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.fullspeed)</script>");
-			break;
-		case 19:
-			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.fullduplex)</script>");
-			break;
-		case 20:
-			websWrite(wp, "<script type=\"text/javascript\">Capture(share.enabled)</script>");
-			break;
-		case 21:
+		case 18000:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.gigabit)</script>");
 			break;
-		case 22:
+		case 19000:
+			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.fullspeed)</script>");
+			break;
+		case 20000:
+			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.fullduplex)</script>");
+			break;
+		case 21000:
+			websWrite(wp, "<script type=\"text/javascript\">Capture(share.enabled)</script>");
+			break;
+		case 22000:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.snooping)</script>");
 			break;
 		default:
-			snprintf(buff, 31, "%d", i);
-			websWrite(wp, buff);
+			if (!i)
+				sprintf(deflist, "%d", i);
+			else
+				sprintf(deflist, "%s %d", deflist, i);
+			websWrite(wp, "<input class=\"num\" maxlength=\"2\" size=\"4\" name=\"portvlan%dlist\" value=\"%d\" />", i, vlanlist[i]);
 			break;
 		}
 
 		websWrite(wp, "</td>\n");
 
 		for (j = nowan; j < lanports + 1; j++) {
-			snprintf(buff, 31, "\"port%dvlan%d\"", j, i);
+			if (i >= blen)
+				snprintf(buff, 31, "\"port%dvlan%d\"", j, ((i - blen) * 1000) + 16000);
+			else
+				snprintf(buff, 31, "\"port%dvlan%d\"", j, i);
 			websWrite(wp, "<td");
 
 			if (j % 2 == 0)
@@ -278,18 +291,18 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" name=");
 			websWrite(wp, buff);
 
-			if (i < 17 || i > 22) {
-				if (vlans[i][j] == 1)
+			if (flag < 17000 || flag > 22000) {
+				if (vlans[j][i] == 1)
 					websWrite(wp, " checked=\"checked\"");
 			} else {
-				if (vlans[i][j] == -1)
+				if (vlans[j][i] == -1)
 					websWrite(wp, " checked=\"checked\"");
 			}
-			if (i < 17) {
+			if (flag < 17000) {
 				websWrite(wp, " onclick=");
 				snprintf(buff, sizeof(buff), "\"SelVLAN(this.form,'port%d')\"", j);
 				websWrite(wp, buff);
-			} else if (i == 17 || i == 20 || i == 21 || i == 22) {
+			} else if (flag == 17000 || flag == 18000 || flag == 21000 || flag == 22000) {
 				websWrite(wp, " onclick=");
 				snprintf(buff, sizeof(buff), "\"SelSpeed(this.form,'port%d')\"", j);
 				websWrite(wp, buff);
@@ -297,29 +310,27 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, " /></div></td>\n");
 		}
 
-		if (i < 16) {
-			websWrite(wp, "			<td><select name=");
-			snprintf(buff, 31, "\"vlan%d\"", i);
-			websWrite(wp, buff);
-			websWrite(wp, "><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"-1\\\"");
-			if (vlans[i][lanports + 1] < 0)
-				websWrite(wp, " selected=\\\"selected\\\"");
-			websWrite(wp, ">\" + share.none + \"</option>\");\n//]]>\n</script><option value=\"0\"");
-			if (vlans[i][lanports + 1] == 0)
-				websWrite(wp, " selected=\"selected\"");
-			websWrite(wp, ">LAN</option></select></td>\n");
+		if (flag < 16000 && flag > 2) {
+			websWrite(wp,
+				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vlan_remove(this.form,'%d')\\\" />\");\n//]]>\n</script></td>\n",
+				  i);
 		} else {
 			websWrite(wp, "<td>&nbsp;</td>\n");
 		}
 
 		websWrite(wp, "</tr>\n");
+		if (i == (blen - 1)) {
+			websWrite(wp,
+				  "<tr><td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  i);
 
-		if (i == 16 || i == 20) {
+		}
+		if (flag == 20000 || flag == 16000) {
 			websWrite(wp, "<tr><td>&nbsp;</td></tr>\n");
 		}
 	}
 
-#ifndef HAVE_SWCONFIG
+#if 0				//ndef HAVE_SWCONFIG
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<td><script type=\"text/javascript\">Capture(share.wireless)</script></td>\n");
 
@@ -350,5 +361,10 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, ">\" + vlan.trunk + \"</option>\");\n//]]>\n</script></select></td>\n");
 	websWrite(wp, "              </tr>");
 #endif
+	for (i = 0; i < 7; i++)
+		free(vlans[i]);
+	free(vlanlist);
+	nvram_default_get("portvlanlist", deflist);
+	free(deflist);
 	return;
 }

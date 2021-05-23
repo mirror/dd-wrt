@@ -45,7 +45,7 @@
 
 struct nvram_param srouter_defaults[] = {
 	// {"default_init","1",0},
-	{ "nvram_ver", "4" },
+	{ "nvram_ver", "6" },
 #ifdef HAVE_GGEW
 	{ "router_style", "blue" },
 #elif HAVE_OCTAGON
@@ -2807,14 +2807,14 @@ struct nvram_param srouter_defaults[] = {
 	{ "port2vlans", "1" },
 	{ "port3vlans", "1" },
 	{ "port4vlans", "1" },
-	{ "port5vlans", "1 2 16" },
+	{ "port5vlans", "1 2 16000" },
 #else
 	{ "port0vlans", "1" },
 	{ "port1vlans", "0" },
 	{ "port2vlans", "0" },
 	{ "port3vlans", "0" },
 	{ "port4vlans", "0" },
-	{ "port5vlans", "0 1 16" },
+	{ "port5vlans", "0 1 16000" },
 #endif
 	{ "vlans", "0" },
 	{ "trunking", "0" },

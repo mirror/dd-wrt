@@ -2865,7 +2865,7 @@ void start_restore_defaults(void)
 		nvram_seti("port2vlans", 1);
 		nvram_seti("port3vlans", 1);
 		nvram_seti("port4vlans", 1);
-		nvram_set("port5vlans", "1 2 16");
+		nvram_set("port5vlans", "1 2 16000");
 	}
 
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
@@ -3589,6 +3589,38 @@ void start_nvram(void)
 		free(newip);
 	}
 #endif
+	if (nvram_geti("nvram_ver") < 6) {
+		nvram_seti("nvram_ver", 6);
+		nvram_seti("portvlan_count", "16");
+		char *next;
+		char var[32];
+		int i;
+		for (i = 0; i < 7; i++) {
+			char *port = nvram_nget("port%dvlans", i);
+			char conv[1024] = { 0 };
+			foreach(var, port, next) {
+				int tmp = atoi(var);
+				if (tmp >= 16 && tmp < 16000) {
+					if (tmp == 21)
+						tmp = 18;
+					else if (tmp == 18)
+						tmp = 19;
+					else if (tmp == 19)
+						tmp = 20;
+					else if (tmp == 20)
+						tmp = 21;
+
+					tmp -= 16;
+				tmp = tmp * 1000 + 16000}
+				if (conv[0])
+					sprintf(conv, "%s %d", conv, tmp);
+				else
+					sprintf(conv, "%d", tmp);
+			}
+			nvram_nset(conv, "port%dvlans", i);
+		}
+		nvram_set("portvlanlist", "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15");
+	}
 	if (nvram_geti("nvram_ver") < 5) {
 		nvram_seti("nvram_ver", 5);
 		nvram_seti("block_multicast", 1);

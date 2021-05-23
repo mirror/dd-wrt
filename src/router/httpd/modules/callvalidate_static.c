@@ -709,6 +709,8 @@ static struct callmap gozila_map[] = {
 #endif
 	{ "ddns_save_value", &ddns_save_value },
 	{ "port_vlan_table_save", &port_vlan_table_save },
+	{ "portvlan_add", &portvlan_add },
+	{ "portvlan_remove", &portvlan_remove },
 	{ "save_wireless_advanced", &save_wireless_advanced },
 	{ "save_wireless_advanced", &save_wireless_advanced },
 	{ "save_wireless_advanced", &save_wireless_advanced },
