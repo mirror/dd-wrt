@@ -37,7 +37,7 @@ CONFIGURE_ARGS_OVPN += \
 	--enable-multihome \
 	--with-crypto-library=openssl \
 	$(OPENSSL_SSL_ADDOPT) \
-	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(OPENSSL_SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(OPENSSL_SSLPATH)/include  -DNEED_PRINTF -std=c99 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(OPENSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -L$(TOP)/libucontext -lucontext" \
 	LZO_CFLAGS="-I$(TOP)/lzo/include" \
 	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
@@ -65,7 +65,7 @@ CONFIGURE_ARGS_WOLFSSL += \
 	--enable-multihome \
 	--with-crypto-library=wolfssl \
 	$(WOLFSSL_SSL_ADDOPT) \
-	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(WOLFSSL_SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(WOLFSSL_SSLPATH)/include  -DNEED_PRINTF  -std=c99 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(WOLFSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread" \
 	LZO_CFLAGS="-I$(TOP)/lzo/include" \
 	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
