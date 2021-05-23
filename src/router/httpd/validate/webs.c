@@ -5425,7 +5425,7 @@ void portvlan_remove(webs_t wp)
 					newlist[0] = 0;
 					char *next2;
 					foreach(var, list, next2) {
-						if (strcmp(portvlan, var)) {
+						if (atoi(var) != i) {
 							if (*newlist)
 								sprintf(newlist, "%s %s", newlist, var);
 							else
@@ -5486,12 +5486,12 @@ void port_vlan_table_save(webs_t wp)
 	free(vlanlist);
 	for (port = 0; port < ports; port++) {
 		for (vlan = 0; vlan < max; vlan++) {
-			snprintf(portid, sizeof(portid), "port%dvlan%d", port, vlan);
-			char *s_portval = websGetVar(wp, portid, "");
 			int flag = vlan;
 			if (vlan >= blen) {
 				flag = (vlan - blen) * 1000 + 16000;
 			}
+			snprintf(portid, sizeof(portid), "port%dvlan%d", port, flag);
+			char *s_portval = websGetVar(wp, portid, "");
 #ifdef HAVE_SWCONFIG
 			if (flag < 17000 || flag > 22000)
 #else

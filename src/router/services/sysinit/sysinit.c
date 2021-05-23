@@ -3591,7 +3591,7 @@ void start_nvram(void)
 #endif
 	if (nvram_geti("nvram_ver") < 6) {
 		nvram_seti("nvram_ver", 6);
-		nvram_seti("portvlan_count", "16");
+		nvram_seti("portvlan_count", 16);
 		char *next;
 		char var[32];
 		int i;
@@ -3600,7 +3600,7 @@ void start_nvram(void)
 			char conv[1024] = { 0 };
 			foreach(var, port, next) {
 				int tmp = atoi(var);
-				if (tmp >= 16 && tmp < 16000) {
+				if (tmp >= 16 && tmp < 32) {
 					if (tmp == 21)
 						tmp = 18;
 					else if (tmp == 18)

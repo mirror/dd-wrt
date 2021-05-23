@@ -170,10 +170,9 @@ void start_setup_vlans(void)
 	char snoop[5];
 	memset(&tagged[0], 0, sizeof(tagged));
 	memset(&snoop[0], 0, sizeof(snoop));
-	memset(&buildports[0][0], 0, 16 * 32);
 	int vlan_number;
 	int i;
-	char **buildports = malloc(sizeof(char **) * blen);
+	char **buildports = malloc(sizeof(char **) * (blen + 2));
 	for (i=0;i<blen+2;i++) {
 	    buildports[i]=malloc(32);
 	    memset(buildports[i], 0, 32);
@@ -195,7 +194,7 @@ void start_setup_vlans(void)
 #endif
 		char *vlans = nvram_nget("port%dvlans", i);
 		char *next;
-		char vlan[4];
+		char vlan[32];
 		int mask = 0;
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
@@ -239,13 +238,13 @@ void start_setup_vlans(void)
 					}
 				} else {
 					if (i == 0) {
-						if (strlen(ports))
+						if (*ports)
 							snprintf(ports, 31, "%s %s%s", ports, nvram_nget("sw_wan", i), tagged[i] ? "t" : "");
 						else
 							snprintf(ports, 31, "%s%s", nvram_nget("sw_wan", i), tagged[i] ? "t" : "");
 					} else {
 
-						if (strlen(ports))
+						if (*ports)
 							snprintf(ports, 31, "%s %s%s", ports, nvram_nget("sw_lan%d", i), tagged[i] ? "t" : "");
 						else
 							snprintf(ports, 31, "%s%s", nvram_nget("sw_lan%d", i), tagged[i] ? "t" : "");
@@ -327,11 +326,11 @@ void start_setup_vlans(void)
 		char *ports = buildports[vlan_number];
 		if (strlen(ports)) {
 			if (nvram_exists("sw_wancpuport"))
-				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlanvlan_number], nvram_safe_get("sw_lancpuport"), ports);
+				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlan_number], nvram_safe_get("sw_lancpuport"), ports);
 			else
-				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlanvlan_number], nvram_safe_get("sw_cpuport"), ports);
+				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlan_number], nvram_safe_get("sw_cpuport"), ports);
 		} else {
-			sysprintf("swconfig dev switch0 vlan %d set ports \"\"", vlanlist[vlanvlan_number]);
+			sysprintf("swconfig dev switch0 vlan %d set ports \"\"", vlanlist[vlan_number]);
 		}
 	}
 
@@ -357,9 +356,9 @@ void start_setup_vlans(void)
 	}
 
 	int i, j, ret = 0, tmp, workaround = 0, found;
-	char *vlans, *next, vlan[4], buff[70], buff2[16];
+	char *vlans, *next, vlan[32], buff[70], buff2[16];
 	FILE *fp;
-	char **portsettings = malloc(sizeof(char **) * blen);
+	char **portsettings = malloc(sizeof(char **) * (blen + 2));
 	for (i=0;i<blen+2;i++) {
 	    portsettings[i]=malloc(64);
 	    memset(portsettings[i], 0, 32);
