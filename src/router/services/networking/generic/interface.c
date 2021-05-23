@@ -147,6 +147,7 @@ void start_config_vlan(void)
 
 void start_setup_vlans(void)
 {
+	int blen = nvram_geti("portvlan_count");
 #ifdef HAVE_SWCONFIG
 
 	if (!nvram_exists("sw_cpuport") && !nvram_exists("sw_wancpuport"))
@@ -165,7 +166,6 @@ void start_setup_vlans(void)
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 #endif
-	char buildports[18][32];
 	char tagged[18];
 	char snoop[5];
 	memset(&tagged[0], 0, sizeof(tagged));
@@ -173,13 +173,17 @@ void start_setup_vlans(void)
 	memset(&buildports[0][0], 0, 16 * 32);
 	int vlan_number;
 	int i;
-
+	char **buildports = malloc(sizeof(char **) * blen);
+	for (i=0;i<blen+2;i++) {
+	    buildports[i]=malloc(32);
+	    memset(buildports[i], 0, 32);
+	}
 	char *c = nvram_safe_get("portvlanlist");
 	int *vlanlist = malloc(sizeof(int) * strlen(c));
 	for (i = 0; i < 16; i++)
 		vlanlist[i] = i;
 	i = 0;
-	char *portvlan[32];
+	char portvlan[32];
 	char *next;
 	foreach(portvlan, c, next) {
 		vlanlist[i++] = atoi(portvlan);
@@ -228,7 +232,7 @@ void start_setup_vlans(void)
 				}
 			} else {
 				vlan_number = tmp;
-				char *ports = &buildports[vlan_number][0];
+				char *ports = buildports[vlan_number];
 				if (i == 0 && nvram_exists("sw_wancpuport")) {	// wan port
 					if (!nvram_match("sw_wan", "-1")) {
 						sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlan_number], nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
@@ -308,7 +312,7 @@ void start_setup_vlans(void)
 
 #ifdef HAVE_R9000
 	for (vlan_number = 0; vlan_number < 16; vlan_number++) {
-		char *ports = &buildports[vlan_number][0];
+		char *ports = buildports[vlan_number];
 		if (strlen(ports)) {
 //                          sw_user_lan_ports_vlan_config "7" "6" "0" "0" "0" "normal_lan"
 //                          sw_user_lan_ports_vlan_config "1" "" "0" "1" "0" "wan"
@@ -319,20 +323,23 @@ void start_setup_vlans(void)
 	sysprintf(". /usr/sbin/config_vlan.sh \"2\" \"\" \"0\" \"1\" \"0\"  \"wan\"");
 	sysprintf(". /tmp/ssdk_new.sh");
 #else
-	for (vlan_number = 0; vlan_number < 16; vlan_number++) {
-		char *ports = &buildports[vlan_number][0];
+	for (vlan_number = 0; vlan_number < blen; vlan_number++) {
+		char *ports = buildports[vlan_number];
 		if (strlen(ports)) {
 			if (nvram_exists("sw_wancpuport"))
-				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_lancpuport"), ports);
+				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlanvlan_number], nvram_safe_get("sw_lancpuport"), ports);
 			else
-				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_cpuport"), ports);
+				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlanlist[vlanvlan_number], nvram_safe_get("sw_cpuport"), ports);
 		} else {
-			sysprintf("swconfig dev switch0 vlan %d set ports \"\"", vlan_number);
+			sysprintf("swconfig dev switch0 vlan %d set ports \"\"", vlanlist[vlanvlan_number]);
 		}
 	}
 
 	eval("swconfig", "dev", "switch0", "set", "apply");
 #endif
+	for (i=0;i<blen+2;i++)
+	    free(buildports[i]);
+	free(buildports);
 #else
 	/*
 	 * VLAN #16 is just a convieniant way of storing tagging info.  There is
@@ -352,7 +359,11 @@ void start_setup_vlans(void)
 	int i, j, ret = 0, tmp, workaround = 0, found;
 	char *vlans, *next, vlan[4], buff[70], buff2[16];
 	FILE *fp;
-	char portsettings[18][64];
+	char **portsettings = malloc(sizeof(char **) * blen);
+	for (i=0;i<blen+2;i++) {
+	    portsettings[i]=malloc(64);
+	    memset(portsettings[i], 0, 32);
+	}
 	char tagged[18];
 	unsigned char mac[20];;
 	struct ifreq ifr;
@@ -393,7 +404,6 @@ void start_setup_vlans(void)
 	if (strstr(asttemp, "7u"))
 		ast = 7;
 
-	bzero(&portsettings[0][0], 18 * 64);
 	bzero(&tagged[0], sizeof(tagged));
 	for (i = 0; i < 6; i++) {
 		vlans = nvram_nget("port%dvlans", i);
@@ -405,7 +415,7 @@ void start_setup_vlans(void)
 			int mask = 0;
 			foreach(vlan, vlans, next) {
 				tmp = atoi(vlan);
-				if (tmp == 16)
+				if (tmp == 16000)
 					tagged[i] = 1;
 			}
 
@@ -427,8 +437,8 @@ void start_setup_vlans(void)
 					}
 
 					sprintf((char *)
-						&portsettings[tmp][0], "%s %d%s", (char *)
-						&portsettings[tmp][0], use, tagged[i] ? "t" : "");
+						portsettings[tmp], "%s %d%s", (char *)
+						portsettings[tmp], use, tagged[i] ? "t" : "");
 				} else {
 					if (tmp == 17000)	// no auto negotiate
 						mask |= 4;
@@ -485,33 +495,36 @@ void start_setup_vlans(void)
 		}
 	}
 
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < blen; i++) {
 		char port[64];
 
-		strcpy(port, &portsettings[i][0]);
-		bzero(&portsettings[i][0], 64);
+		strcpy(port, portsettings[i]);
+		bzero(portsettings[i], 64);
 		foreach(vlan, port, next) {
 			int vlan_number = vlan[0] - '0';
 			if (vlan_number < 5 && vlan_number >= 0) {
-				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
+				sprintf(portsettings[i], "%s %s", portsettings[i], vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7)
 				   && !ast) {
-				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
+				sprintf(portsettings[i], "%s %s", portsettings[i], vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7)
 				   && ast) {
-				sprintf(&portsettings[i][0], "%s %d*", &portsettings[i][0], vlan_number);
+				sprintf(portsettings[i], "%s %d*", portsettings[i], vlan_number);
 			} else {
-				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
+				sprintf(portsettings[i], "%s %s", portsettings[i], vlan);
 			}
 		}
 	}
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < blen; i++) {
 		writevaproc(" ", "/proc/switch/%s/vlan/%d/ports", phy, vlanlist[i]);
 	}
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < blen; i++) {
 		fprintf(stderr, "configure vlan ports to %s\n", portsettings[i]);
 		writevaproc(portsettings[i], "/proc/switch/%s/vlan/%d/ports", phy, vlanlist[i]);
 	}
+	for (i=0;i<blen+2;i++)
+	    free(portsettings[i]);
+	free(portsettings);
 #endif
 	free(vlanlist);
 }
