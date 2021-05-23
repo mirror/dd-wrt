@@ -3611,7 +3611,8 @@ void start_nvram(void)
 						tmp = 21;
 
 					tmp -= 16;
-				tmp = tmp * 1000 + 16000}
+					tmp = tmp * 1000 + 16000;
+				}
 				if (conv[0])
 					sprintf(conv, "%s %d", conv, tmp);
 				else
