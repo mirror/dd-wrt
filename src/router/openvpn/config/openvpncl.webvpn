@@ -55,6 +55,7 @@
 			<option value="AES-192-CBC" <% nvram_selected("openvpncl_cipher","AES-192-CBC"); %>>AES-192-CBC</option>
 			<option value="AES-128-CBC" <% nvram_selected("openvpncl_cipher","AES-128-CBC"); %>>AES-128-CBC</option>
 			<option value="none" <% nvram_selected("openvpncl_cipher","none"); %>>None</option>
+			<option value="" <% nvram_selected("openvpncl_cipher",""); %>>Not set</option>
 			</select>
 		</div>
 		<div class="setting">
@@ -66,6 +67,7 @@
 			<option value="md5" <% nvram_selected("openvpncl_auth","md5"); %>>MD5</option>
 			<option value="md4" <% nvram_selected("openvpncl_auth","md4"); %>>MD4</option>
 			<option value="none" <% nvram_selected("openvpncl_auth","none"); %>>None</option>
+			<option value="" <% nvram_selected("openvpncl_auth",""); %>>Not set</option>
 			</select>
 		</div>
 		<div class="setting">
@@ -116,11 +118,11 @@
 		<div id="idupauth">
 			<div class="setting">
 				<div class="label"><% tran("share.usrname"); %></div>
-				 <input size="32" maxlength="32" class="text" name="openvpncl_user" value="<% nvg("openvpncl_user"); %>" />
+				 <input size="48" maxlength="64" class="text" name="openvpncl_user" value="<% nvg("openvpncl_user"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("share.passwd"); %></div>
-				<input size="32" maxlength="32" class="text" name="openvpncl_pass" value="<% nvg("openvpncl_pass"); %>" />
+				<input size="48" maxlength="64" class="text" name="openvpncl_pass" value="<% nvg("openvpncl_pass"); %>" />
 			</div>
 		</div>
 		<div class="setting">

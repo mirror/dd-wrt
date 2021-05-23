@@ -360,9 +360,12 @@ void start_openvpnserver(void)
 	if (nvram_matchi("openvpn_switch", 1)) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
 		fprintf(fp, "keepalive 10 120\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpnd.pid\n" "management 127.0.0.1 14\n" "management-log-cache 100\n" "topology subnet\n"
-			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_cipher"),
-			nvram_safe_get("openvpn_auth"));
+			"script-security 2\n" "port %s\n" "proto %s\n", nvram_safe_get("openvpn_port"), nvram_safe_get("openvpn_proto"));
 		//egc
+		if (nvram_invmatch("openvpn_auth", ""))
+			fprintf(fp, "auth %s\n", nvram_safe_get("openvpn_auth"));
+		if (nvram_invmatch("openvpn_cipher", ""))
+			fprintf(fp, "cipher %s\n" , nvram_safe_get("openvpn_cipher"));
 		char dcbuffer[128] = { 0 };
 		char *dc1 = nvram_safe_get("openvpn_dc1");
 		char *dc2 = nvram_safe_get("openvpn_dc2");
@@ -391,7 +394,7 @@ void start_openvpnserver(void)
 				fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
 					nvram_safe_get("openvpn_lzo"));
 		}
-		if (nvram_invmatch("openvpn_auth", "none"))	//not needed if we have no auth anyway
+		if (nvram_invmatch("openvpn_auth", "none"))	//? the server directive already set will expand to tls-server
 			fprintf(fp, "tls-server\n");
 		if (nvram_matchi("openvpn_dupcn", 1))
 			fprintf(fp, "duplicate-cn\n");
@@ -671,9 +674,10 @@ void start_openvpn(void)
 #endif
 	fprintf(fp, "dev %s\n", ovpniface);
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
-	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
-	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
-
+	if (nvram_invmatch("openvpncl_cipher", ""))
+		fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
+	if (nvram_invmatch("openvpncl_auth", ""))
+		fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
 	//egc
 	char dcbuffer[128] = { 0 };
 	char *dc1 = nvram_safe_get("openvpncl_dc1");
