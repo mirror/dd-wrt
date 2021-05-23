@@ -3234,7 +3234,7 @@ void start_firewall(void)
 	writeprocsysnet("netfilter/nf_conntrack_checksum", nvram_default_get("net.netfilter.nf_conntrack_checksum", "0"));
 	writeprocsysnet("ipv4/conf/default/arp_ignore", nvram_default_get("net.ipv4.conf.default.arp_ignore", "1"));
 	writeprocsysnet("ipv4/conf/all/arp_ignore", nvram_default_get("net.ipv4.conf.all.arp_ignore", "1"));
-	
+
 	char vifs[256];
 	getIfLists(vifs, 256);
 	/*

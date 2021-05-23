@@ -3114,7 +3114,6 @@ void start_sysinit(void)
 
 	}
 
-
 	cprintf("done\n");
 	return;
 

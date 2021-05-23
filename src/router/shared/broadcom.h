@@ -167,6 +167,8 @@ EJ_VISIBLE void raid_save(webs_t wp);
 EJ_VISIBLE void zfs_scrub(webs_t wp);
 EJ_VISIBLE void sysctl_save(webs_t wp);
 EJ_VISIBLE void ddns_save_value(webs_t wp);
+EJ_VISIBLE void portvlan_add(webs_t wp);
+EJ_VISIBLE void portvlan_remove(webs_t wp);
 EJ_VISIBLE void port_vlan_table_save(webs_t wp);
 EJ_VISIBLE void save_wireless_advanced(webs_t wp);
 EJ_VISIBLE void save_wireless_advanced(webs_t wp);
