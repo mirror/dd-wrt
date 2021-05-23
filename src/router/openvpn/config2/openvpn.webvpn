@@ -108,6 +108,7 @@
 				<option value="AES-192-CBC" <% nvram_selected("openvpn_cipher","AES-192-CBC"); %>>AES-192-CBC</option>
 				<option value="AES-128-CBC" <% nvram_selected("openvpn_cipher","AES-128-CBC"); %>>AES-128-CBC</option>
 				<option value="none" <% nvram_selected("openvpn_cipher","none"); %>>None</option>
+				<option value="" <% nvram_selected("openvpn_cipher",""); %>>Not set</option>
 				</select>
 			</div>
 			<div class="setting">
@@ -119,6 +120,7 @@
 				<option value="md5" <% nvram_selected("openvpn_auth","md5"); %>>MD5</option>
 				<option value="md4" <% nvram_selected("openvpn_auth","md4"); %>>MD4</option>
 				<option value="none" <% nvram_selected("openvpn_auth","none"); %>>None</option>
+				<option value="" <% nvram_selected("openvpn_auth",""); %>>Not set</option>
 				</select>
 			</div>
 			<div class="setting">
