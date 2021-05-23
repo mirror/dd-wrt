@@ -179,7 +179,7 @@ void start_setup_vlans(void)
 	}
 	char *c = nvram_safe_get("portvlanlist");
 	int *vlanlist = malloc(sizeof(int) * strlen(c));
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < strlen(c); i++)
 		vlanlist[i] = i;
 	i = 0;
 	char portvlan[32];
@@ -370,7 +370,7 @@ void start_setup_vlans(void)
 
 	char *c = nvram_safe_get("portvlanlist");
 	int *vlanlist = malloc(sizeof(int) * strlen(c));
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < strlen(c); i++)
 		vlanlist[i] = i;
 	i = 0;
 	char *portvlan[32];
