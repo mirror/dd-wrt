@@ -468,6 +468,27 @@ static int b53_global_reset_mib(struct switch_dev *dev,
 	return 0;
 }
 
+static int b53_port_disable(struct switch_dev *sw_dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	struct b53_device *dev = sw_to_b53(sw_dev);
+	u16 val16;
+	int port = val->port_vlan;
+
+	if (!(BIT(port) & dev->enabled_ports))
+		return -1;
+	b53_read16(dev, B53_CTRL_PAGE, B53_PORT_CTRL(port), &val16);
+	val16 &= ~3; /* enable state */
+	if (val->value.i)
+		val16 |= 3; /* disable */
+	
+	b53_write16(dev, B53_CTRL_PAGE, B53_PORT_CTRL(port), val16);
+
+	return 0;
+}
+
+
 static int b53_port_get_mib(struct switch_dev *sw_dev,
 			    const struct switch_attr *attr,
 			    struct switch_val *val)
@@ -675,6 +696,12 @@ static struct switch_attr b53_port_ops[] = {
 		.name = "mib",
 		.description = "Get port's MIB counters",
 		.get = b53_port_get_mib,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Disable Port",
+		.get = b53_port_disable,
 	},
 };
 
