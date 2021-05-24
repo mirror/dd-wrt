@@ -6,6 +6,7 @@
 #include <linux/slab.h>
 #include <linux/buffer_head.h>
 #include <linux/mpage.h>
+#include <linux/blk_types.h>
 #include "apfs.h"
 
 static int apfs_readpage(struct file *file, struct page *page)
@@ -19,10 +20,156 @@ static int apfs_readpages(struct file *file, struct address_space *mapping,
 	return mpage_readpages(mapping, pages, nr_pages, apfs_get_block);
 }
 
+/**
+ * apfs_create_dstream_rec - Create the data stream record for an inode
+ * @inode: the vfs inode
+ *
+ * Does nothing if the record already exists.  TODO: support cloned files.
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+static int apfs_create_dstream_rec(struct inode *inode)
+{
+	struct super_block *sb = inode->i_sb;
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_inode_info *ai = APFS_I(inode);
+	struct apfs_key key;
+	struct apfs_query *query;
+	struct apfs_dstream_id_key raw_key;
+	struct apfs_dstream_id_val raw_val;
+	int ret;
+
+	if (inode->i_size || inode->i_blocks) /* Already has a dstream */
+		return 0;
+
+	apfs_init_dstream_id_key(ai->i_extent_id, &key);
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	query->key = &key;
+	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
+
+	ret = apfs_btree_query(sb, &query);
+	if (ret != -ENODATA) /* Either an error, or the record already exists */
+		goto out;
+
+	apfs_key_set_hdr(APFS_TYPE_DSTREAM_ID, ai->i_extent_id, &raw_key);
+	raw_val.refcnt = cpu_to_le32(1);
+	ret = apfs_btree_insert(query, &raw_key, sizeof(raw_key),
+				&raw_val, sizeof(raw_val));
+out:
+	apfs_free_query(sb, query);
+	return ret;
+}
+
+static int apfs_write_begin(struct file *file, struct address_space *mapping,
+			    loff_t pos, unsigned int len, unsigned int flags,
+			    struct page **pagep, void **fsdata)
+{
+	struct inode *inode = mapping->host;
+	struct super_block *sb = inode->i_sb;
+	struct page *page;
+	struct buffer_head *bh, *head;
+	unsigned int blocksize, block_start, block_end, from, to;
+	pgoff_t index = pos >> PAGE_SHIFT;
+	sector_t iblock = (sector_t)index << (PAGE_SHIFT - inode->i_blkbits);
+	int err;
+
+	err = apfs_transaction_start(sb);
+	if (err)
+		return err;
+
+	err = apfs_create_dstream_rec(inode);
+	if (err)
+		goto out_abort;
+
+	page = grab_cache_page_write_begin(mapping, index,
+					   flags | AOP_FLAG_NOFS);
+	if (!page) {
+		err = -ENOMEM;
+		goto out_abort;
+	}
+	if (!page_has_buffers(page))
+		create_empty_buffers(page, sb->s_blocksize, 0);
+
+	/* CoW moves existing blocks, so read them but mark them as unmapped */
+	head = page_buffers(page);
+	blocksize = head->b_size;
+	from = pos & (PAGE_SIZE - 1);
+	to = from + min(inode->i_size - pos, (loff_t)len);
+	for (bh = head, block_start = 0; bh != head || !block_start;
+	     block_start = block_end, bh = bh->b_this_page, ++iblock) {
+		block_end = block_start + blocksize;
+		if (to > block_start && from < block_end) {
+			if (!buffer_mapped(bh)) {
+				err = __apfs_get_block(inode, iblock, bh,
+						       false /* create */);
+				if (err)
+					goto out_put_page;
+			}
+			if (!buffer_uptodate(bh)) {
+				get_bh(bh);
+				lock_buffer(bh);
+				bh->b_end_io = end_buffer_read_sync;
+				submit_bh(REQ_OP_READ, 0, bh);
+				wait_on_buffer(bh);
+				if (!buffer_uptodate(bh)) {
+					err = -EIO;
+					goto out_put_page;
+				}
+			}
+			clear_buffer_mapped(bh);
+		}
+	}
+
+	err = __block_write_begin(page, pos, len, apfs_get_new_block);
+	if (err)
+		goto out_put_page;
+
+	*pagep = page;
+	return 0;
+
+out_put_page:
+	unlock_page(page);
+	put_page(page);
+out_abort:
+	apfs_transaction_abort(sb);
+	return err;
+}
+
+static int apfs_write_end(struct file *file, struct address_space *mapping,
+			  loff_t pos, unsigned int len, unsigned int copied,
+			  struct page *page, void *fsdata)
+{
+	struct inode *inode = mapping->host;
+	struct super_block *sb = inode->i_sb;
+	int ret, err;
+
+	ret = generic_write_end(file, mapping, pos, len, copied, page, fsdata);
+	if (ret < len) {
+		/* XXX: handle short writes */
+		err = -EIO;
+		goto out_abort;
+	}
+
+	err = apfs_update_inode(inode, NULL /* new_name */);
+	if (err)
+		goto out_abort;
+
+	err = apfs_transaction_commit(sb);
+	if (!err)
+		return ret;
+
+out_abort:
+	apfs_transaction_abort(sb);
+	return err;
+}
+
 /* bmap is not implemented to avoid issues with CoW on swapfiles */
 static const struct address_space_operations apfs_aops = {
 	.readpage	= apfs_readpage,
 	.readpages	= apfs_readpages,
+	.write_begin	= apfs_write_begin,
+	.write_end	= apfs_write_end,
 };
 
 /**
@@ -384,6 +531,99 @@ fail:
 }
 
 /**
+ * apfs_create_dstream_xfield - Create the inode xfield for a new data stream
+ * @inode:	the in-memory inode
+ * @query:	the query that found the inode record
+ *
+ * Returns 0 on success, or a negative error code in case of failure.
+ */
+static int apfs_create_dstream_xfield(struct inode *inode,
+				      struct apfs_query *query)
+{
+	char *raw = query->node->object.bh->b_data;
+	struct apfs_inode_val *new_val;
+	struct apfs_dstream dstream = {0};
+	struct apfs_x_field xkey;
+	int xlen;
+	int buflen;
+	int err;
+
+	buflen = query->len;
+	buflen += sizeof(struct apfs_x_field) + sizeof(dstream);
+	new_val = kzalloc(buflen, GFP_KERNEL);
+	if (!new_val)
+		return -ENOMEM;
+	memcpy(new_val, raw + query->off, query->len);
+
+	dstream.size = cpu_to_le64(inode->i_size);
+	dstream.alloced_size = cpu_to_le64(inode->i_blocks << 9);
+
+	/* TODO: can we assume that all inode records have an xfield blob? */
+	xkey.x_type = APFS_INO_EXT_TYPE_DSTREAM;
+	xkey.x_flags = APFS_XF_SYSTEM_FIELD;
+	xkey.x_size = cpu_to_le16(sizeof(dstream));
+	xlen = apfs_insert_xfield(new_val->xfields, buflen - sizeof(*new_val),
+				  &xkey, &dstream);
+	if (!xlen) {
+		/* Buffer has enough space, but the metadata claims otherwise */
+		apfs_alert(inode->i_sb, "bad xfields on inode 0x%llx",
+			   apfs_ino(inode));
+		err = -EFSCORRUPTED;
+		goto fail;
+	}
+
+	/* Just remove the old record and create a new one */
+	err = apfs_btree_replace(query, NULL /* key */, 0 /* key_len */,
+				 new_val, sizeof(*new_val) + xlen);
+
+fail:
+	kfree(new_val);
+	return err;
+}
+
+/**
+ * apfs_inode_resize - Update the sizes reported in an inode record
+ * @inode:	the in-memory inode
+ * @query:	the query that found the inode record
+ *
+ * Returns 0 on success, or a negative error code in case of failure.
+ */
+static int apfs_inode_resize(struct inode *inode, struct apfs_query *query)
+{
+	char *raw = query->node->object.bh->b_data;
+	struct apfs_inode_val *inode_raw;
+	char *xval;
+	int xlen;
+	int err;
+
+	err = apfs_query_join_transaction(query);
+	if (err)
+		return err;
+	inode_raw = (void *)raw + query->off;
+
+	xlen = apfs_find_xfield(inode_raw->xfields,
+				query->len - sizeof(*inode_raw),
+				APFS_INO_EXT_TYPE_DSTREAM, &xval);
+	if (!xlen && !inode->i_size) /* Empty file: no dstream needed yet */
+		return 0;
+
+	if (xlen) {
+		struct apfs_dstream *dstream;
+
+		if (xlen != sizeof(*dstream))
+			return -EFSCORRUPTED;
+		dstream = (struct apfs_dstream *)xval;
+
+		/* TODO: count bytes read and written */
+		dstream->size = cpu_to_le64(inode->i_size);
+		dstream->alloced_size = cpu_to_le64(inode->i_blocks << 9);
+		return 0;
+	}
+	/* This inode has no dstream xfield, so we need to create it */
+	return apfs_create_dstream_xfield(inode, query);
+}
+
+/**
  * apfs_update_inode - Update an existing inode record
  * @inode:	the modified in-memory inode
  * @new_name:	name of the new primary link (NULL if unchanged)
@@ -409,6 +649,10 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	if (err)
 		goto fail;
 
+	err = apfs_inode_resize(inode, query);
+	if (err)
+		goto fail;
+
 	/* TODO: just use apfs_btree_replace()? */
 	err = apfs_query_join_transaction(query);
 	if (err)
@@ -419,6 +663,7 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	inode_raw = (void *)node_raw + query->off;
 
 	inode_raw->parent_id = cpu_to_le64(ai->i_parent_id);
+	inode_raw->private_id = cpu_to_le64(ai->i_extent_id);
 	inode_raw->mode = cpu_to_le16(inode->i_mode);
 	inode_raw->owner = cpu_to_le32(i_uid_read(inode));
 	inode_raw->group = cpu_to_le32(i_gid_read(inode));
@@ -441,8 +686,6 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 		inode_raw->nlink = cpu_to_le32(inode->i_nlink ? : 1);
 	}
 
-	/* TODO: set size and block count */
-
 fail:
 	apfs_free_query(sb, query);
 	return err;
@@ -461,6 +704,9 @@ static int apfs_delete_inode(struct inode *inode)
 	struct apfs_superblock *vsb_raw = sbi->s_vsb_raw;
 	struct apfs_query *query;
 	int ret;
+
+	if (inode->i_size || inode->i_blocks) /* TODO: implement truncation */
+		return -EOPNOTSUPP;
 
 	query = apfs_inode_lookup(inode);
 	if (IS_ERR(query))
@@ -561,6 +807,7 @@ struct inode *apfs_new_inode(struct inode *dir, umode_t mode, dev_t rdev)
 	ai->i_saved_uid = i_uid_read(inode);
 	ai->i_saved_gid = i_gid_read(inode);
 	ai->i_parent_id = apfs_ino(dir);
+	ai->i_extent_id = cnid;
 	set_nlink(inode, 1);
 	ai->i_nchildren = 0;
 
@@ -634,4 +881,13 @@ int apfs_create_inode_rec(struct super_block *sb, struct inode *inode,
 fail:
 	apfs_free_query(sb, query);
 	return ret;
+}
+
+int apfs_setattr(struct dentry *dentry, struct iattr *iattr)
+{
+	struct inode *inode = d_inode(dentry);
+
+	if (iattr->ia_valid & ATTR_SIZE && iattr->ia_size != inode->i_size)
+		return -EOPNOTSUPP; /* TODO: implement truncation */
+	return simple_setattr(dentry, iattr);
 }

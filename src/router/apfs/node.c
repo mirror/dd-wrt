@@ -107,6 +107,7 @@ struct apfs_node *apfs_read_node(struct super_block *sb, u64 oid, u32 storage,
 		return ERR_PTR(-ENOMEM);
 	}
 
+	node->tree_type = le32_to_cpu(raw->btn_o.o_subtype);
 	node->flags = le16_to_cpu(raw->btn_flags);
 	node->records = le32_to_cpu(raw->btn_nkeys);
 	node->key = sizeof(*raw) + le16_to_cpu(raw->btn_table_space.off)
@@ -160,7 +161,6 @@ static struct apfs_node *apfs_create_node(struct super_block *sb, u32 storage)
 	struct buffer_head *bh;
 	struct apfs_btree_node_phys *raw;
 	u64 bno, oid;
-	u32 subtype;
 	int err;
 
 	switch (storage) {
@@ -175,8 +175,6 @@ static struct apfs_node *apfs_create_node(struct super_block *sb, u32 storage)
 		err = apfs_create_omap_rec(sb, oid, bno);
 		if (err)
 			return ERR_PTR(err);
-
-		subtype = APFS_OBJECT_TYPE_FSTREE;
 		break;
 	case APFS_OBJ_PHYSICAL:
 		err = apfs_spaceman_allocate_block(sb, &bno);
@@ -184,9 +182,7 @@ static struct apfs_node *apfs_create_node(struct super_block *sb, u32 storage)
 			return ERR_PTR(err);
 		/* We don't write to the container's omap */
 		le64_add_cpu(&vsb_raw->apfs_fs_alloc_count, 1);
-
 		oid = bno;
-		subtype = APFS_OBJECT_TYPE_OMAP;
 		break;
 	case APFS_OBJ_EPHEMERAL:
 		apfs_cpoint_data_allocate(sb, &bno);
@@ -196,8 +192,6 @@ static struct apfs_node *apfs_create_node(struct super_block *sb, u32 storage)
 		err = apfs_create_cpoint_map(sb, oid, bno);
 		if (err)
 			return ERR_PTR(err);
-
-		subtype = APFS_OBJECT_TYPE_SPACEMAN_FREE_QUEUE;
 		break;
 	default:
 		ASSERT(false);
@@ -212,11 +206,11 @@ static struct apfs_node *apfs_create_node(struct super_block *sb, u32 storage)
 		goto fail;
 	set_buffer_csum(bh);
 
-	/* The object header is entirely set here; the caller can ignore it */
+	/* Set most of the object header, but the subtype is up to the caller */
 	raw->btn_o.o_oid = cpu_to_le64(oid);
 	raw->btn_o.o_xid = cpu_to_le64(sbi->s_xid);
 	raw->btn_o.o_type = cpu_to_le32(storage | APFS_OBJECT_TYPE_BTREE_NODE);
-	raw->btn_o.o_subtype = cpu_to_le32(subtype);
+	raw->btn_o.o_subtype = 0;
 
 	/* The caller is expected to change most node fields */
 	raw->btn_flags = 0;
@@ -315,6 +309,7 @@ void apfs_update_node(struct apfs_node *node)
 	type = (node->flags & APFS_BTNODE_ROOT) ? APFS_OBJECT_TYPE_BTREE :
 						  APFS_OBJECT_TYPE_BTREE_NODE;
 	raw->btn_o.o_type = cpu_to_le32(type | tflags);
+	raw->btn_o.o_subtype = cpu_to_le32(node->tree_type);
 
 	raw->btn_flags = cpu_to_le16(node->flags);
 	raw->btn_nkeys = cpu_to_le32(node->records);
@@ -400,10 +395,9 @@ static int apfs_node_locate_data(struct apfs_node *node, int index, int *off)
 	if (apfs_node_has_fixed_kv_size(node)) {
 		/* These node types have fixed length keys and data */
 		struct apfs_kvoff *entry;
-		u32 subtype = le32_to_cpu(raw->btn_o.o_subtype);
 
 		entry = (struct apfs_kvoff *)raw->btn_data + index;
-		if (subtype == APFS_OBJECT_TYPE_SPACEMAN_FREE_QUEUE) {
+		if (node->tree_type == APFS_OBJECT_TYPE_SPACEMAN_FREE_QUEUE) {
 			/* A free-space queue record may have no value */
 			if (le16_to_cpu(entry->v) == APFS_BTOFF_INVALID)
 				return 0;
@@ -504,17 +498,22 @@ static int apfs_key_from_query(struct apfs_query *query, struct apfs_key *key)
 	struct super_block *sb = query->node->object.sb;
 	char *raw = query->node->object.bh->b_data;
 	void *raw_key = (void *)(raw + query->key_off);
+	bool hashed;
 	int err = 0;
 
 	switch (query->flags & APFS_QUERY_TREE_MASK) {
 	case APFS_QUERY_CAT:
-		err = apfs_read_cat_key(raw_key, query->key_len, key);
+		hashed = apfs_is_normalization_insensitive(sb);
+		err = apfs_read_cat_key(raw_key, query->key_len, key, hashed);
 		break;
 	case APFS_QUERY_OMAP:
 		err = apfs_read_omap_key(raw_key, query->key_len, key);
 		break;
 	case APFS_QUERY_FREE_QUEUE:
 		err = apfs_read_free_queue_key(raw_key, query->key_len, key);
+		break;
+	case APFS_QUERY_EXTENTREF:
+		err = apfs_read_extentref_key(raw_key, query->key_len, key);
 		break;
 	default:
 		/* Not implemented yet */
@@ -734,6 +733,7 @@ static int apfs_btree_inc_height(struct apfs_query *query)
 	if (IS_ERR(new_node))
 		return PTR_ERR(new_node);
 	new_node->flags = root->flags & ~APFS_BTNODE_ROOT;
+	new_node->tree_type = root->tree_type;
 
 	/* Move all records into the child node; get rid of the info footer */
 	new_node->records = root->records;
@@ -966,6 +966,7 @@ int apfs_node_split(struct apfs_query *query)
 		err = PTR_ERR(new_node);
 		goto out_free_buffer;
 	}
+	new_node->tree_type = old_node->tree_type;
 	new_node->flags = old_node->flags;
 	new_node->records = 0;
 	new_node->key_free_list_len = 0;

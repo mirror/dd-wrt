@@ -293,13 +293,8 @@ static int apfs_checkpoint_end(struct super_block *sb)
 	struct apfs_sb_info *sbi = APFS_SB(sb);
 	struct apfs_obj_phys *obj = &sbi->s_msb_raw->nx_o;
 	struct buffer_head *bh = sbi->s_mobject.bh;
-	int err;
 
 	ASSERT(!(sb->s_flags & SB_RDONLY));
-
-	err = blkdev_issue_flush(sb->s_bdev, GFP_KERNEL, NULL);
-	if (err)
-		return err;
 
 	apfs_obj_set_csum(sb, obj);
 	mark_buffer_dirty(bh);
@@ -386,39 +381,34 @@ int apfs_transaction_commit(struct super_block *sb)
 	struct apfs_sb_info *sbi = APFS_SB(sb);
 	struct apfs_transaction *trans = &sbi->s_transaction;
 	struct apfs_bh_info *bhi, *tmp;
-	int err;
+	int err = 0;
 
 	ASSERT(!(sb->s_flags & SB_RDONLY));
 	ASSERT(trans->t_old_msb && trans->t_old_vsb);
 
 	list_for_each_entry_safe(bhi, tmp, &trans->t_buffers, list) {
 		struct buffer_head *bh = bhi->bh;
+		int curr_err;
 
 		ASSERT(buffer_trans(bh));
 
 		if (buffer_csum(bh))
 			apfs_obj_set_csum(sb, (void *)bh->b_data);
 		mark_buffer_dirty(bh);
+		curr_err = sync_dirty_buffer(bh);
+		if (curr_err)
+			err = curr_err;
+
 		bh->b_private = NULL;
 		clear_buffer_trans(bh);
 		clear_buffer_csum(bh);
 		brelse(bh);
 		bhi->bh = NULL;
-
 		list_del(&bhi->list);
 		kfree(bhi);
 	}
-	/* We still hold references to these buffer heads */
-	err = sync_dirty_buffer(sbi->s_omap_root->object.bh);
 	if (err)
 		goto fail;
-	err = sync_dirty_buffer(sbi->s_cat_root->object.bh);
-	if (err)
-		goto fail;
-	err = sync_dirty_buffer(sbi->s_vobject.bh);
-	if (err)
-		goto fail;
-
 	err = apfs_checkpoint_end(sb);
 	if (err)
 		goto fail;

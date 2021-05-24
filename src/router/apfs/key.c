@@ -47,6 +47,9 @@ int apfs_filename_cmp(struct super_block *sb,
 	struct apfs_unicursor cursor1, cursor2;
 	bool case_fold = apfs_is_case_insensitive(sb);
 
+	if (!apfs_is_normalization_insensitive(sb))
+		return strcmp(name1, name2);
+
 	apfs_init_unicursor(&cursor1, name1);
 	apfs_init_unicursor(&cursor2, name2);
 
@@ -93,10 +96,11 @@ int apfs_keycmp(struct super_block *sb,
  * @raw:	pointer to the raw key
  * @size:	size of the raw key
  * @key:	apfs_key structure to store the result
+ * @hashed:	are the directory records hashed?
  *
  * Returns 0 on success, or a negative error code otherwise.
  */
-int apfs_read_cat_key(void *raw, int size, struct apfs_key *key)
+int apfs_read_cat_key(void *raw, int size, struct apfs_key *key, bool hashed)
 {
 	if (size < sizeof(struct apfs_key_header))
 		return -EFSCORRUPTED;
@@ -105,19 +109,28 @@ int apfs_read_cat_key(void *raw, int size, struct apfs_key *key)
 
 	switch (key->type) {
 	case APFS_TYPE_DIR_REC:
-		if (size < sizeof(struct apfs_drec_hashed_key) + 1 ||
-		    *((char *)raw + size - 1) != 0) {
-			/* Filename must have NULL-termination */
-			return -EFSCORRUPTED;
+		if (hashed) {
+			if (size < sizeof(struct apfs_drec_hashed_key) + 1 ||
+			    *((char *)raw + size - 1) != 0) {
+				/* Filename must have NULL-termination */
+				return -EFSCORRUPTED;
+			}
+			/* Name length is not used in key comparisons, only the hash */
+			key->number = le32_to_cpu(
+			      ((struct apfs_drec_hashed_key *)raw)->name_len_and_hash) &
+								    APFS_DREC_HASH_MASK;
+			key->name = ((struct apfs_drec_hashed_key *)raw)->name;
+			break;
+		} else {
+			if (size < sizeof(struct apfs_drec_key) + 1 ||
+			    *((char *)raw + size - 1) != 0) {
+				/* Filename must have NULL-termination */
+				return -EFSCORRUPTED;
+			}
+			/* There's no hash */
+			key->number = 0;
+			key->name = ((struct apfs_drec_key *)raw)->name;
 		}
-
-		/* Name length is not used in key comparisons, only the hash */
-		key->number = le32_to_cpu(
-		      ((struct apfs_drec_hashed_key *)raw)->name_len_and_hash) &
-							    APFS_DREC_HASH_MASK;
-
-		key->name = ((struct apfs_drec_hashed_key *)raw)->name;
-		break;
 	case APFS_TYPE_XATTR:
 		if (size < sizeof(struct apfs_xattr_key) + 1 ||
 		    *((char *)raw + size - 1) != 0) {
@@ -196,14 +209,34 @@ int apfs_read_omap_key(void *raw, int size, struct apfs_key *key)
 }
 
 /**
- * apfs_init_drec_hashed_key - Initialize an in-memory key for a dentry query
+ * apfs_read_extentref_key - Parse an on-disk extent reference tree key
+ * @raw:	pointer to the raw key
+ * @size:	size of the raw key
+ * @key:	apfs_key structure to store the result
+ *
+ * Returns 0 on success, or a negative error code otherwise.
+ */
+int apfs_read_extentref_key(void *raw, int size, struct apfs_key *key)
+{
+	if (size != sizeof(struct apfs_phys_ext_key))
+		return -EFSCORRUPTED;
+	key->id = apfs_cat_cnid((struct apfs_key_header *)raw);
+	key->type = apfs_cat_type((struct apfs_key_header *)raw);
+	key->number = 0;
+	key->name = NULL;
+	return 0;
+}
+
+/**
+ * apfs_init_drec_key - Initialize an in-memory key for a dentry query
  * @sb:		filesystem superblock
  * @ino:	inode number of the parent directory
  * @name:	filename (NULL for a multiple query)
  * @key:	apfs_key structure to initialize
+ * @hashed:	is this a hashed key?
  */
-void apfs_init_drec_hashed_key(struct super_block *sb, u64 ino,
-			       const char *name, struct apfs_key *key)
+void apfs_init_drec_key(struct super_block *sb, u64 ino, const char *name,
+			struct apfs_key *key, bool hashed)
 {
 	struct apfs_unicursor cursor;
 	bool case_fold = apfs_is_case_insensitive(sb);
@@ -211,6 +244,11 @@ void apfs_init_drec_hashed_key(struct super_block *sb, u64 ino,
 
 	key->id = ino;
 	key->type = APFS_TYPE_DIR_REC;
+	if (!apfs_is_normalization_insensitive(sb)) {
+		key->name = name;
+		key->number = 0;
+		return;
+	}
 
 	/* To respect normalization, queries can only consider the hash */
 	key->name = NULL;
