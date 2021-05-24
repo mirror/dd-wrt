@@ -46,6 +46,38 @@ static void set_empty_btree_info(struct apfs_btree_info *info, u32 subtype)
 }
 
 /**
+ * min_table_size - Get the minimum size of the table of contents for a leaf
+ * @type: btree type for the leaf node
+ */
+static int min_table_size(u32 type)
+{
+	int key_size, val_size, toc_size;
+	int space, count;
+
+	/* Trees with fixed key/value sizes preallocate the whole table */
+	switch (type) {
+	case APFS_OBJECT_TYPE_OMAP:
+		key_size = sizeof(struct apfs_omap_key);
+		val_size = sizeof(struct apfs_omap_val);
+		toc_size = sizeof(struct apfs_kvoff);
+		break;
+	case APFS_OBJECT_TYPE_SPACEMAN_FREE_QUEUE:
+		key_size = sizeof(struct apfs_spaceman_free_queue_key);
+		val_size = sizeof(__le64); /* We assume no ghosts here */
+		toc_size = sizeof(struct apfs_kvoff);
+		break;
+	default:
+		/* It should at least have room for one record */
+		return sizeof(struct apfs_kvloc) * BTREE_TOC_ENTRY_MAX_UNUSED;
+	}
+
+	/* The footer of root nodes is ignored for some reason */
+	space = param->blocksize - sizeof(struct apfs_btree_node_phys);
+	count = space / (key_size + val_size + toc_size);
+	return count * toc_size;
+}
+
+/**
  * make_empty_btree_root - Make an empty root for a b-tree
  * @bno:	block number to use
  * @oid:	object id to use
@@ -59,7 +91,7 @@ void make_empty_btree_root(u64 bno, u64 oid, u32 subtype)
 	struct apfs_btree_node_phys *root = get_zeroed_block(bno);
 	u32 type;
 	u16 flags;
-	int toc_entry_len, toc_len, free_len;
+	int toc_len, free_len;
 	int head_len = sizeof(*root);
 	int info_len = sizeof(struct apfs_btree_info);
 
@@ -68,11 +100,7 @@ void make_empty_btree_root(u64 bno, u64 oid, u32 subtype)
 		flags |= APFS_BTNODE_FIXED_KV_SIZE;
 	root->btn_flags = cpu_to_le16(flags);
 
-	if (subtype == APFS_OBJECT_TYPE_SPACEMAN_FREE_QUEUE)
-		toc_entry_len = sizeof(struct apfs_kvoff);
-	else
-		toc_entry_len = sizeof(struct apfs_kvloc);
-	toc_len = toc_entry_len * BTREE_TOC_ENTRY_MAX_UNUSED;
+	toc_len = min_table_size(subtype);
 
 	/* No keys and no values, so this is straightforward */
 	root->btn_nkeys = 0;
@@ -138,7 +166,7 @@ static void make_omap_root(u64 bno, bool is_vol)
 
 	/* The mkfs will need only one record on each omap */
 	root->btn_nkeys = cpu_to_le32(1);
-	toc_len = BTREE_TOC_ENTRY_MAX_UNUSED * sizeof(*kvoff);
+	toc_len = min_table_size(APFS_OBJECT_TYPE_OMAP);
 	key_len = 1 * sizeof(*key);
 	val_len = 1 * sizeof(*val);
 
@@ -218,8 +246,9 @@ void make_omap_btree(u64 bno, bool is_vol)
  */
 static void set_cat_info(struct apfs_btree_info *info)
 {
-	int maxkey = sizeof(struct apfs_drec_hashed_key) +
-		     strlen("private-dir") + 1;
+	int drec_keysz = param->norm_sensitive ? sizeof(struct apfs_drec_key) :
+						 sizeof(struct apfs_drec_hashed_key);
+	int maxkey = drec_keysz + strlen("private-dir") + 1;
 	int maxval = sizeof(struct apfs_inode_val) +
 		     sizeof(struct apfs_xf_blob) + sizeof(struct apfs_x_field) +
 		     ROUND_UP(strlen("private-dir") + 1, 8);
@@ -253,7 +282,7 @@ void make_cat_root(u64 bno, u64 oid)
 
 	/* The two dentry records and their inodes */
 	root->btn_nkeys = cpu_to_le32(4);
-	toc_len = BTREE_TOC_ENTRY_MAX_UNUSED * sizeof(*kvloc);
+	toc_len = min_table_size(APFS_OBJECT_TYPE_FSTREE);
 	root->btn_table_space.off = 0;
 	root->btn_table_space.len = cpu_to_le16(toc_len);
 

@@ -511,6 +511,16 @@ enum {
 };
 
 /*
+ * Structure of the key for a directory entry - no hash, used on normalization
+ * sensitive volumes
+ */
+struct apfs_drec_key {
+	struct apfs_key_header hdr;
+	__le16 name_len;
+	u8 name[0];
+} __packed;
+
+/*
  * Structure of the key for a directory entry, including a precomputed
  * hash of its name
  */
