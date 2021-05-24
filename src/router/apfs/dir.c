@@ -12,6 +12,7 @@
  * apfs_drec_from_query - Read the directory record found by a successful query
  * @query:	the query that found the record
  * @drec:	Return parameter.  The directory record found.
+ * @hashed:	is this record hashed?
  *
  * Reads the directory record into @drec and performs some basic sanity checks
  * as a protection against crafted filesystems.  Returns 0 on success or
@@ -20,30 +21,37 @@
  * The caller must not free @query while @drec is in use, because @drec->name
  * points to data on disk.
  */
-static int apfs_drec_from_query(struct apfs_query *query,
-				struct apfs_drec *drec)
+static int apfs_drec_from_query(struct apfs_query *query, struct apfs_drec *drec, bool hashed)
 {
 	char *raw = query->node->object.bh->b_data;
-	struct apfs_drec_hashed_key *de_key;
+	struct apfs_drec_hashed_key *de_hkey = NULL;
+	struct apfs_drec_key *de_ukey = NULL;
 	struct apfs_drec_val *de;
-	int namelen = query->key_len - sizeof(*de_key);
-	char *xval = NULL;
-	int xlen;
+	int namelen, xlen;
+	char *xval = NULL, *name;
 
+	namelen = query->key_len - (hashed ? sizeof(*de_hkey) : sizeof(*de_ukey));
 	if (namelen < 1)
 		return -EFSCORRUPTED;
 	if (query->len < sizeof(*de))
 		return -EFSCORRUPTED;
 
 	de = (struct apfs_drec_val *)(raw + query->off);
-	de_key = (struct apfs_drec_hashed_key *)(raw + query->key_off);
-
-	if (namelen != (le32_to_cpu(de_key->name_len_and_hash) &
-			APFS_DREC_LEN_MASK))
-		return -EFSCORRUPTED;
+	if (hashed) {
+		de_hkey = (struct apfs_drec_hashed_key *)(raw + query->key_off);
+		if (namelen != (le32_to_cpu(de_hkey->name_len_and_hash) &
+				APFS_DREC_LEN_MASK))
+			return -EFSCORRUPTED;
+		name = de_hkey->name;
+	} else {
+		de_ukey = (struct apfs_drec_key *)(raw + query->key_off);
+		if (namelen != le16_to_cpu(de_ukey->name_len))
+			return -EFSCORRUPTED;
+		name = de_ukey->name;
+	}
 
 	/* Filename must be NULL-terminated */
-	if (de_key->name[namelen - 1] != 0)
+	if (name[namelen - 1] != 0)
 		return -EFSCORRUPTED;
 
 	/* The dentry may have at most one xfield: the sibling id */
@@ -56,7 +64,7 @@ static int apfs_drec_from_query(struct apfs_query *query,
 		drec->sibling_id = le64_to_cpup(sib_id);
 	}
 
-	drec->name = de_key->name;
+	drec->name = name;
 	drec->name_len = namelen - 1; /* Don't count the NULL termination */
 	drec->ino = le64_to_cpu(de->file_id);
 
@@ -85,9 +93,10 @@ static struct apfs_query *apfs_dentry_lookup(struct inode *dir,
 	struct apfs_key key;
 	struct apfs_query *query;
 	u64 cnid = apfs_ino(dir);
+	bool hashed = apfs_is_normalization_insensitive(sb);
 	int err;
 
-	apfs_init_drec_hashed_key(sb, cnid, child->name, &key);
+	apfs_init_drec_key(sb, cnid, child->name, &key, hashed);
 
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
@@ -105,7 +114,7 @@ static struct apfs_query *apfs_dentry_lookup(struct inode *dir,
 		err = apfs_btree_query(sb, &query);
 		if (err)
 			goto fail;
-		err = apfs_drec_from_query(query, drec);
+		err = apfs_drec_from_query(query, drec, hashed);
 		if (err)
 			goto fail;
 	} while (unlikely(apfs_filename_cmp(sb, child->name, drec->name)));
@@ -156,6 +165,7 @@ static int apfs_readdir(struct file *file, struct dir_context *ctx)
 	struct apfs_query *query;
 	u64 cnid = apfs_ino(inode);
 	loff_t pos;
+	bool hashed = apfs_is_normalization_insensitive(sb);
 	int err = 0;
 
 	down_read(&sbi->s_big_sem);
@@ -171,7 +181,7 @@ static int apfs_readdir(struct file *file, struct dir_context *ctx)
 	}
 
 	/* We want all the children for the cnid, regardless of the name */
-	apfs_init_drec_hashed_key(sb, cnid, NULL /* name */, &key);
+	apfs_init_drec_key(sb, cnid, NULL /* name */, &key, hashed);
 	query->key = &key;
 	query->flags = APFS_QUERY_CAT | APFS_QUERY_MULTIPLE | APFS_QUERY_EXACT;
 
@@ -193,7 +203,7 @@ static int apfs_readdir(struct file *file, struct dir_context *ctx)
 		if (err)
 			break;
 
-		err = apfs_drec_from_query(query, &drec);
+		err = apfs_drec_from_query(query, &drec, hashed);
 		if (err) {
 			apfs_alert(sb, "bad dentry record in directory 0x%llx",
 				   cnid);
@@ -225,7 +235,35 @@ const struct file_operations apfs_dir_operations = {
 };
 
 /**
- * apfs_build_dentry_key - Allocate and initialize the key for a dentry record
+ * apfs_build_dentry_unhashed_key - Allocate and initialize the key for an unhashed dentry record
+ * @qname:	filename
+ * @parent_id:	inode number for the parent of the dentry
+ * @key_p:	on return, a pointer to the new on-disk key structure
+ *
+ * Returns the length of the key, or a negative error code in case of failure.
+ */
+static int apfs_build_dentry_unhashed_key(struct qstr *qname, u64 parent_id,
+					  struct apfs_drec_key **key_p)
+{
+	struct apfs_drec_key *key;
+	u16 namelen = qname->len + 1; /* We count the null-termination */
+	int key_len;
+
+	key_len = sizeof(*key) + namelen;
+	key = kmalloc(key_len, GFP_KERNEL);
+	if (!key)
+		return -ENOMEM;
+
+	apfs_key_set_hdr(APFS_TYPE_DIR_REC, parent_id, key);
+	key->name_len = cpu_to_le16(namelen);
+	strcpy(key->name, qname->name);
+
+	*key_p = key;
+	return key_len;
+}
+
+/**
+ * apfs_build_dentry_hashed_key - Allocate and initialize the key for a hashed dentry record
  * @qname:	filename
  * @hash:	filename hash
  * @parent_id:	inode number for the parent of the dentry
@@ -233,8 +271,8 @@ const struct file_operations apfs_dir_operations = {
  *
  * Returns the length of the key, or a negative error code in case of failure.
  */
-static int apfs_build_dentry_key(struct qstr *qname, u64 hash, u64 parent_id,
-				 struct apfs_drec_hashed_key **key_p)
+static int apfs_build_dentry_hashed_key(struct qstr *qname, u64 hash, u64 parent_id,
+					struct apfs_drec_hashed_key **key_p)
 {
 	struct apfs_drec_hashed_key *key;
 	u16 namelen = qname->len + 1; /* We count the null-termination */
@@ -313,12 +351,13 @@ static int apfs_create_dentry_rec(struct inode *inode, struct qstr *qname,
 	struct apfs_sb_info *sbi = APFS_SB(sb);
 	struct apfs_key key;
 	struct apfs_query *query;
-	struct apfs_drec_hashed_key *raw_key = NULL;
+	void *raw_key = NULL;
 	struct apfs_drec_val *raw_val = NULL;
 	int key_len, val_len;
+	bool hashed = apfs_is_normalization_insensitive(sb);
 	int ret;
 
-	apfs_init_drec_hashed_key(sb, parent_id, qname->name, &key);
+	apfs_init_drec_key(sb, parent_id, qname->name, &key, hashed);
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query)
 		return -ENOMEM;
@@ -329,11 +368,17 @@ static int apfs_create_dentry_rec(struct inode *inode, struct qstr *qname,
 	if (ret && ret != -ENODATA)
 		goto fail;
 
-	key_len = apfs_build_dentry_key(qname, key.number, parent_id, &raw_key);
+	if (hashed)
+		key_len = apfs_build_dentry_hashed_key(qname, key.number, parent_id,
+						       (struct apfs_drec_hashed_key **)&raw_key);
+	else
+		key_len = apfs_build_dentry_unhashed_key(qname, parent_id,
+							 (struct apfs_drec_key **)&raw_key);
 	if (key_len < 0) {
 		ret = key_len;
 		goto fail;
 	}
+
 	val_len = apfs_build_dentry_val(inode, sibling_id, &raw_val);
 	if (val_len < 0) {
 		ret = val_len;
