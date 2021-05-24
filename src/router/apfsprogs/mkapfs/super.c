@@ -132,7 +132,9 @@ static void make_volume(u64 bno, u64 oid)
 	vsb->apfs_magic = cpu_to_le32(APFS_MAGIC);
 
 	vsb->apfs_features = cpu_to_le64(APFS_FEATURE_HARDLINK_MAP_RECORDS);
-	if (param->case_sensitive)
+	if (param->norm_sensitive)
+		vsb->apfs_incompatible_features = 0;
+	else if (param->case_sensitive)
 		vsb->apfs_incompatible_features =
 			cpu_to_le64(APFS_INCOMPAT_NORMALIZATION_INSENSITIVE);
 	else
@@ -153,8 +155,7 @@ static void make_volume(u64 bno, u64 oid)
 	vsb->apfs_formatted_by.timestamp = cpu_to_le64(get_timestamp());
 	vsb->apfs_formatted_by.last_xid = cpu_to_le64(MKFS_XID);
 
-	if (param->label)
-		strcpy((char *)vsb->apfs_volname, param->label);
+	strcpy((char *)vsb->apfs_volname, param->label);
 	vsb->apfs_next_doc_id = cpu_to_le32(APFS_MIN_DOC_ID);
 
 	vsb->apfs_root_tree_type = cpu_to_le32(APFS_OBJ_VIRTUAL |

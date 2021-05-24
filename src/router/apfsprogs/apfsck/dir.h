@@ -7,9 +7,6 @@
 
 #include <apfs/types.h>
 
-struct apfs_drec_hashed_key;
-
-extern void parse_dentry_record(struct apfs_drec_hashed_key *key,
-				struct apfs_drec_val *val, int len);
+extern void parse_dentry_record(void *key, struct apfs_drec_val *val, int len);
 
 #endif	/* _DIR_H */

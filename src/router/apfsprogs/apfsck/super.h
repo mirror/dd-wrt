@@ -44,6 +44,7 @@ struct volume_superblock {
 struct super_block {
 	struct apfs_nx_superblock *s_raw;
 	void *s_bitmap;	/* Allocation bitmap for the whole container */
+	void *s_ip_bitmap; /* Allocation bitmap for the internal pool */
 	struct btree *s_omap;
 	struct object *s_reaper;
 	unsigned long s_blocksize;
@@ -88,6 +89,18 @@ static inline bool apfs_is_case_insensitive(void)
 
 	return (vsb->v_raw->apfs_incompatible_features &
 		cpu_to_le64(APFS_INCOMPAT_CASE_INSENSITIVE)) != 0;
+}
+
+static inline bool apfs_is_normalization_insensitive(void)
+{
+	extern struct volume_superblock *vsb;
+	u64 flags = le64_to_cpu(vsb->v_raw->apfs_incompatible_features);
+
+	if (apfs_is_case_insensitive())
+		return true;
+	if (flags & APFS_INCOMPAT_NORMALIZATION_INSENSITIVE)
+		return true;
+	return false;
 }
 
 extern void parse_filesystem(void);

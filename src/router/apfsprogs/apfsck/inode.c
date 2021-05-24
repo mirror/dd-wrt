@@ -642,6 +642,8 @@ void parse_inode_record(struct apfs_inode_key *key,
 			vsb->v_dir_count++;
 		break;
 	case S_IFLNK:
+		if ((mode & ~S_IFMT) != 0x1ed)
+			report("Symlink inode", "wrong permissions.");
 		vsb->v_symlink_count++;
 		break;
 	case S_IFSOCK:

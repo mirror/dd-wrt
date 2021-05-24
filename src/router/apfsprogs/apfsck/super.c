@@ -151,11 +151,13 @@ static void main_super_compare(struct apfs_nx_superblock *desc,
 	}
 
 	/*
-	 * The nx_counters array doesn't always match.  Naturally, this means
+	 * The nx_counters array doesn't always match, and it seems that the
+	 * same is true of the flags for some reason. Naturally, this means
 	 * the checksum won't match either.
 	 */
 	if (memcmp(desc_bytes + 0x08, copy_bytes + 0x08, 0x3D8 - 0x08) ||
-	    memcmp(desc_bytes + 0x4D8, copy_bytes + 0x4D8, 4096 - 0x4D8))
+	    memcmp(desc_bytes + 0x4D8, copy_bytes + 0x4D8, 0x4F0 - 0x4D8) ||
+	    memcmp(desc_bytes + 0x4F8, copy_bytes + 0x4F8, 4096 - 0x4F8))
 		report("Block zero", "fields don't match the checkpoint.");
 }
 
@@ -466,13 +468,9 @@ static void check_incompat_vol_features(u64 flags)
 	if (flags & APFS_INCOMPAT_ENC_ROLLED)
 		report_unknown("Change of encryption keys");
 
-	/*
-	 * I don't believe actual normalization-sensitive volumes exist, the
-	 * normalization-insensitive flag just means case-sensitive.
-	 */
-	if ((bool)(flags & APFS_INCOMPAT_CASE_INSENSITIVE) !=
-	    !(bool)(flags & APFS_INCOMPAT_NORMALIZATION_INSENSITIVE))
-		report("Volume superblock", "normalization sensitive?");
+	if ((bool)(flags & APFS_INCOMPAT_CASE_INSENSITIVE) &&
+	    (bool)(flags & APFS_INCOMPAT_NORMALIZATION_INSENSITIVE))
+		report("Volume superblock", "redundant flag for case sensitivity.");
 }
 
 /**
@@ -567,6 +565,8 @@ static struct apfs_superblock *map_volume_super(int vol,
 		report("Volume superblock", "next document id is invalid.");
 
 	vol_name = (char *)vsb->v_raw->apfs_volname;
+	if (!*vol_name)
+		report("Volume superblock", "label is missing.");
 	if (strnlen(vol_name, APFS_VOLNAME_LEN) == APFS_VOLNAME_LEN)
 		report("Volume superblock", "name lacks NULL-termination.");
 

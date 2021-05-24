@@ -1,4 +1,4 @@
-SRCS = checksum.c unicode.c
+SRCS = checksum.c parameters.c unicode.c
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 

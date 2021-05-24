@@ -24,6 +24,40 @@
 bool ongoing_query;
 
 /**
+ * node_min_table_size - Return the minimum size for a node's table of contents
+ * @node: the node
+ */
+static int node_min_table_size(struct node *node)
+{
+	u32 type = node->object.subtype;
+	bool leaf = (node->flags) & APFS_BTNODE_LEAF;
+	int key_size, val_size, toc_size;
+	int space, count;
+
+	/* Trees with fixed key/value sizes preallocate the whole table */
+	switch (type) {
+	case APFS_OBJECT_TYPE_OMAP:
+		key_size = sizeof(struct apfs_omap_key);
+		val_size = leaf ? sizeof(struct apfs_omap_val) : sizeof(__le64);
+		toc_size = sizeof(struct apfs_kvoff);
+		break;
+	case APFS_OBJECT_TYPE_SPACEMAN_FREE_QUEUE:
+		key_size = sizeof(struct apfs_spaceman_free_queue_key);
+		val_size = sizeof(__le64); /* We assume no ghosts here */
+		toc_size = sizeof(struct apfs_kvoff);
+		break;
+	default:
+		/* It should at least have room for one record */
+		return sizeof(struct apfs_kvloc);
+	}
+
+	/* The footer of root nodes is ignored for some reason */
+	space = sb->s_blocksize - sizeof(struct apfs_btree_node_phys);
+	count = space / (key_size + val_size + toc_size);
+	return count * toc_size;
+}
+
+/**
  * node_is_valid - Check basic sanity of the node index
  * @node:	node to check
  */
@@ -49,6 +83,9 @@ static bool node_is_valid(struct node *node)
 
 	entry_size = (node_has_fixed_kv_size(node)) ?
 		sizeof(struct apfs_kvoff) : sizeof(struct apfs_kvloc);
+
+	if (index_size < node_min_table_size(node))
+		return false;
 
 	/* All records must have an entry in the table of contents */
 	return records * entry_size <= index_size;
@@ -929,10 +966,11 @@ static void check_btree_footer(struct btree *btree)
 /**
  * parse_free_queue_btree - Parse and check a free-space queue tree
  * @oid:	object id for the b-tree root
+ * @index:	position of this free queue in the free queue array
  *
  * Returns a pointer to the free queue structure.
  */
-struct free_queue *parse_free_queue_btree(u64 oid)
+struct free_queue *parse_free_queue_btree(u64 oid, int index)
 {
 	struct free_queue *sfq;
 	struct btree *btree;
@@ -942,6 +980,7 @@ struct free_queue *parse_free_queue_btree(u64 oid)
 	if (!sfq)
 		system_error();
 	btree = &sfq->sfq_btree;
+	sfq->sfq_index = index;
 
 	btree->type = BTREE_TYPE_FREE_QUEUE;
 	btree->omap_table = NULL; /* These are ephemeral objects */

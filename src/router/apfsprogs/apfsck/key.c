@@ -118,23 +118,42 @@ static u32 dentry_hash(const char *name)
  */
 static void read_dir_rec_key(void *raw, int size, struct key *key)
 {
-	struct apfs_drec_hashed_key *raw_key;
+	bool hashed = apfs_is_normalization_insensitive();
 	int namelen;
 
-	if (size < sizeof(struct apfs_drec_hashed_key) + 1)
-		report("Directory record", "wrong size of key.");
+	if (hashed && size < sizeof(struct apfs_drec_hashed_key) + 1)
+		report("Hashed directory record", "wrong size of key.");
+	if (!hashed && size < sizeof(struct apfs_drec_key) + 1)
+		report("Unhashed directory record", "wrong size of key.");
+
 	if (*((char *)raw + size - 1) != 0)
 		report("Directory record", "filename lacks NULL-termination.");
-	raw_key = raw;
 
-	/* The filename length is ignored for the ordering, so mask it away */
-	key->number = le32_to_cpu(raw_key->name_len_and_hash) & ~0x3FFU;
-	key->name = (char *)raw_key->name;
+	if (hashed) {
+		struct apfs_drec_hashed_key *raw_key = raw;
 
-	if (key->number != dentry_hash(key->name))
-		report("Directory record", "filename hash is corrupted.");
+		/* The filename length is ignored for the ordering, so mask it away */
+		key->number = le32_to_cpu(raw_key->name_len_and_hash) & ~0x3FFU;
+		key->name = (char *)raw_key->name;
+		if (key->number != dentry_hash(key->name))
+			report("Directory record", "filename hash is corrupted.");
+		namelen = le32_to_cpu(raw_key->name_len_and_hash) & 0x3FFU;
+		if (size != sizeof(*raw_key) + namelen) {
+			report("Hashed directory record",
+			       "size of key doesn't match the name length.");
+		}
+	} else {
+		struct apfs_drec_key *raw_key = raw;
 
-	namelen = le32_to_cpu(raw_key->name_len_and_hash) & 0x3FFU;
+		key->number = 0;
+		key->name = (char *)raw_key->name;
+		namelen = le16_to_cpu(raw_key->name_len);
+		if (size != sizeof(*raw_key) + namelen) {
+			report("Unhashed directory record",
+			       "size of key doesn't match the name length.");
+		}
+	}
+
 	if (namelen > 256) {
 		/* The name must fit in name_buf from parse_subtree() */
 		report("Directory record", "name is too long.");
@@ -142,10 +161,6 @@ static void read_dir_rec_key(void *raw, int size, struct key *key)
 	if (strlen(key->name) + 1 != namelen) {
 		/* APFS counts the NULL termination for the filename length */
 		report("Directory record", "wrong name length in key.");
-	}
-	if (size != sizeof(struct apfs_drec_hashed_key) + namelen) {
-		report("Directory record",
-		       "size of key doesn't match the name length.");
 	}
 }
 
