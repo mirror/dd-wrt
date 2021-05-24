@@ -5453,7 +5453,7 @@ void port_vlan_table_save(webs_t wp)
 	int portval;
 	strcpy(portvlan, "");
 	int blen = nvram_geti("portvlan_count");
-	int max = blen + 5;
+	int max = blen + 6;
 #ifdef HAVE_SWCONFIG
 	if (has_igmpsnooping())
 		max++;
