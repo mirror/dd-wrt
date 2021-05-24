@@ -49,6 +49,7 @@ struct apfs_object {
  * In-memory representation of an APFS node
  */
 struct apfs_node {
+	u32 tree_type;		/* Tree type (subtype of the node object) */
 	u16 flags;		/* Node flags */
 	u32 records;		/* Number of records in the node */
 
@@ -98,8 +99,8 @@ static inline bool apfs_node_has_fixed_kv_size(struct apfs_node *node)
 struct apfs_spaceman {
 	struct apfs_spaceman_phys *sm_raw; /* On-disk spaceman structure */
 	struct buffer_head	  *sm_bh;  /* Buffer head for @sm_raw */
+	struct buffer_head	  *sm_ip;  /* Current internal pool */
 
-	int sm_struct_size;		/* Actual size of @sm_raw */
 	u32 sm_blocks_per_chunk;	/* Blocks covered by a bitmap block */
 	u32 sm_chunks_per_cib;		/* Chunk count in a chunk-info block */
 	u64 sm_block_count;		/* Block count for the container */
@@ -184,6 +185,18 @@ static inline bool apfs_is_case_insensitive(struct super_block *sb)
 	       cpu_to_le64(APFS_INCOMPAT_CASE_INSENSITIVE)) != 0;
 }
 
+static inline bool apfs_is_normalization_insensitive(struct super_block *sb)
+{
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	u64 flags = le64_to_cpu(sbi->s_vsb_raw->apfs_incompatible_features);
+
+	if (apfs_is_case_insensitive(sb))
+		return true;
+	if (flags & APFS_INCOMPAT_NORMALIZATION_INSENSITIVE)
+		return true;
+	return false;
+}
+
 /**
  * apfs_max_maps_per_block - Find the maximum map count for a mapping block
  * @sb: superblock structure
@@ -236,6 +249,19 @@ static inline void apfs_init_omap_key(u64 oid, u64 xid, struct apfs_key *key)
 }
 
 /**
+ * apfs_init_extent_key - Initialize an in-memory key for an extentref query
+ * @bno:	physical block number for the start of the extent
+ * @key:	apfs_key structure to initialize
+ */
+static inline void apfs_init_extent_key(u64 bno, struct apfs_key *key)
+{
+	key->id = bno;
+	key->type = APFS_TYPE_EXTENT;
+	key->number = 0;
+	key->name = NULL;
+}
+
+/**
  * apfs_init_inode_key - Initialize an in-memory key for an inode query
  * @ino:	inode number
  * @key:	apfs_key structure to initialize
@@ -260,6 +286,19 @@ static inline void apfs_init_file_extent_key(u64 id, u64 offset,
 	key->id = id;
 	key->type = APFS_TYPE_FILE_EXTENT;
 	key->number = offset;
+	key->name = NULL;
+}
+
+/**
+ * apfs_init_dstream_id_key - Initialize an in-memory key for a dstream query
+ * @id:		data stream id
+ * @key:	apfs_key structure to initialize
+ */
+static inline void apfs_init_dstream_id_key(u64 id, struct apfs_key *key)
+{
+	key->id = id;
+	key->type = APFS_TYPE_DSTREAM_ID;
+	key->number = 0;
 	key->name = NULL;
 }
 
@@ -291,8 +330,8 @@ static inline void apfs_init_sibling_map_key(u64 id, struct apfs_key *key)
 	key->name = NULL;
 }
 
-extern void apfs_init_drec_hashed_key(struct super_block *sb, u64 ino,
-				      const char *name, struct apfs_key *key);
+extern void apfs_init_drec_key(struct super_block *sb, u64 ino, const char *name,
+			       struct apfs_key *key, bool hashed);
 
 /**
  * apfs_init_xattr_key - Initialize an in-memory key for a xattr query
@@ -323,15 +362,16 @@ static inline void apfs_key_set_hdr(u64 type, u64 id, void *key)
 }
 
 /* Flags for the query structure */
-#define APFS_QUERY_TREE_MASK	0007	/* Which b-tree we query */
+#define APFS_QUERY_TREE_MASK	0017	/* Which b-tree we query */
 #define APFS_QUERY_OMAP		0001	/* This is a b-tree object map query */
 #define APFS_QUERY_CAT		0002	/* This is a catalog tree query */
 #define APFS_QUERY_FREE_QUEUE	0004	/* This is a free queue query */
-#define APFS_QUERY_NEXT		0010	/* Find next of multiple matches */
-#define APFS_QUERY_EXACT	0020	/* Search for an exact match */
-#define APFS_QUERY_DONE		0040	/* The search at this level is over */
-#define APFS_QUERY_ANY_NAME	0100	/* Multiple search for any name */
-#define APFS_QUERY_ANY_NUMBER	0200	/* Multiple search for any number */
+#define APFS_QUERY_EXTENTREF	0010	/* This is an extent reference query */
+#define APFS_QUERY_NEXT		0020	/* Find next of multiple matches */
+#define APFS_QUERY_EXACT	0040	/* Search for an exact match */
+#define APFS_QUERY_DONE		0100	/* The search at this level is over */
+#define APFS_QUERY_ANY_NAME	0200	/* Multiple search for any name */
+#define APFS_QUERY_ANY_NUMBER	0400	/* Multiple search for any number */
 #define APFS_QUERY_MULTIPLE	(APFS_QUERY_ANY_NAME | APFS_QUERY_ANY_NUMBER)
 
 /*
@@ -367,6 +407,8 @@ static inline u32 apfs_query_storage(struct apfs_query *query)
 		return APFS_OBJ_VIRTUAL;
 	if (query->flags & APFS_QUERY_FREE_QUEUE)
 		return APFS_OBJ_EPHEMERAL;
+	if (query->flags & APFS_QUERY_EXTENTREF)
+		return APFS_OBJ_PHYSICAL;
 	BUG();
 }
 
@@ -504,8 +546,12 @@ extern int apfs_delete_orphan_link(struct inode *inode);
 /* extents.c */
 extern int apfs_extent_from_query(struct apfs_query *query,
 				  struct apfs_file_extent *extent);
+extern int __apfs_get_block(struct inode *inode, sector_t iblock,
+			    struct buffer_head *bh_result, int create);
 extern int apfs_get_block(struct inode *inode, sector_t iblock,
 			  struct buffer_head *bh_result, int create);
+extern int apfs_get_new_block(struct inode *inode, sector_t iblock,
+			      struct buffer_head *bh_result, int create);
 
 /* inode.c */
 extern struct inode *apfs_iget(struct super_block *sb, u64 cnid);
@@ -517,15 +563,17 @@ extern struct inode *apfs_new_inode(struct inode *dir, umode_t mode,
 				    dev_t rdev);
 extern int apfs_create_inode_rec(struct super_block *sb, struct inode *inode,
 				 struct dentry *dentry);
+extern int apfs_setattr(struct dentry *dentry, struct iattr *iattr);
 
 /* key.c */
 extern int apfs_filename_cmp(struct super_block *sb,
 			     const char *name1, const char *name2);
 extern int apfs_keycmp(struct super_block *sb,
 		       struct apfs_key *k1, struct apfs_key *k2);
-extern int apfs_read_cat_key(void *raw, int size, struct apfs_key *key);
+extern int apfs_read_cat_key(void *raw, int size, struct apfs_key *key, bool hashed);
 extern int apfs_read_free_queue_key(void *raw, int size, struct apfs_key *key);
 extern int apfs_read_omap_key(void *raw, int size, struct apfs_key *key);
+extern int apfs_read_extentref_key(void *raw, int size, struct apfs_key *key);
 
 /* message.c */
 extern __printf(3, 4)

@@ -53,6 +53,9 @@ static int apfs_dentry_hash(const struct dentry *dir, struct qstr *child)
 	unsigned long hash;
 	bool case_fold = apfs_is_case_insensitive(dir->d_sb);
 
+	if (!apfs_is_normalization_insensitive(dir->d_sb))
+		return 0;
+
 	apfs_init_unicursor(&cursor, child->name);
 	hash = init_name_hash(dir);
 
