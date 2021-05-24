@@ -108,7 +108,12 @@ void *read_object(u64 oid, struct htable_entry **omap_table, struct object *obj)
 	if (!ongoing_query) { /* Query code will revisit already parsed nodes */
 		if (vsb)
 			++vsb->v_block_count;
-		container_bmap_mark_as_used(bno, 1 /* length */);
+		if ((obj->type == APFS_OBJECT_TYPE_SPACEMAN_CIB) ||
+		     (obj->type == APFS_OBJECT_TYPE_SPACEMAN_CAB)) {
+			ip_bmap_mark_as_used(bno, 1 /* length */);
+		} else {
+			container_bmap_mark_as_used(bno, 1 /* length */);
+		}
 	}
 
 	if (oid != obj->oid)
@@ -126,9 +131,7 @@ void *read_object(u64 oid, struct htable_entry **omap_table, struct object *obj)
 		report("Object header", "bad transaction id in block 0x%llx.",
 		       (unsigned long long)bno);
 	if (vsb && vsb->v_first_xid > xid)
-		report("Object header",
-		       "transaction id in block 0x%llx is older than volume.",
-		       (unsigned long long)bno);
+		report_weird("Transaction id in block is older than volume");
 	if (omap_table && xid != omap_rec->o_xid)
 		report("Object header",
 		       "transaction id in omap key doesn't match block 0x%llx.",

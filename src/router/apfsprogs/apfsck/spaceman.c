@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <apfs/parameters.h>
 #include <apfs/raw.h>
 #include "apfsck.h"
 #include "btree.h"
@@ -15,6 +16,92 @@
 #include "object.h"
 #include "spaceman.h"
 #include "super.h"
+
+/**
+ * block_in_ip - Does this block belong to the internal pool?
+ * @bno: block number to check
+ */
+static inline bool block_in_ip(u64 bno)
+{
+	struct spaceman *sm = &sb->s_spaceman;
+	u64 start = sm->sm_ip_base;
+	u64 end = start + sm->sm_ip_block_count;
+
+	return bno >= start && bno < end;
+}
+
+/**
+ * range_in_ip - Is this range included in the internal pool?
+ * @paddr:	first block of the range
+ * @length:	length of the range
+ */
+static bool range_in_ip(u64 paddr, u64 length)
+{
+	u64 last = paddr + length - 1;
+	bool first_in_ip = block_in_ip(paddr);
+	bool last_in_ip = block_in_ip(last);
+
+	if ((first_in_ip && !last_in_ip) || (!first_in_ip && last_in_ip))
+		report("Free queue record", "internal pool is overrun.");
+	return first_in_ip;
+}
+
+/**
+ * bmap_mark_as_used - Set a range to ones in a bitmap
+ * @bitmap:	the bitmap
+ * @paddr:	first block number
+ * @length:	block count
+ *
+ * Checks that an address range is still zeroed in the given bitmap, and then
+ * switches those bits.
+ */
+static void bmap_mark_as_used(u64 *bitmap, u64 paddr, u64 length)
+{
+	u64 *byte;
+	u64 flag;
+	u64 i;
+
+	for (i = paddr; i < paddr + length; ++i) {
+		byte = bitmap + i / 64;
+		flag = 1ULL << i % 64;
+		if (*byte & flag)
+			report(NULL /* context */, "A block is used twice.");
+		*byte |= flag;
+	}
+}
+
+/**
+ * ip_bmap_mark_as_used - Mark a range as used in the ip allocation bitmap
+ * @paddr:	first block number
+ * @length:	block count
+ *
+ * Checks that the given address range is still marked as free in the internal
+ * pool's allocation bitmap, and then switches those bits.
+ */
+void ip_bmap_mark_as_used(u64 paddr, u64 length)
+{
+	if (!range_in_ip(paddr, length))
+		report(NULL /* context */, "Out-of-range ip block number.");
+	paddr -= sb->s_spaceman.sm_ip_base;
+	bmap_mark_as_used(sb->s_ip_bitmap, paddr, length);
+}
+
+/**
+ * container_bmap_mark_as_used - Mark a range as used in the allocation bitmap
+ * @paddr:	first block number
+ * @length:	block count
+ *
+ * Checks that the given address range is still marked as free in the
+ * container's allocation bitmap, and then switches those bits.
+ */
+void container_bmap_mark_as_used(u64 paddr, u64 length)
+{
+	/* Avoid out-of-bounds writes to the allocation bitmap */
+	if (paddr + length >= sb->s_block_count || paddr + length < paddr)
+		report(NULL /* context */, "Out-of-range block number.");
+
+	bmap_mark_as_used(sb->s_bitmap, paddr, length);
+}
 
 /**
  * parse_spaceman_chunk_counts - Parse spaceman fields for chunk-related counts
@@ -48,6 +135,9 @@ static void parse_spaceman_chunk_counts(struct apfs_spaceman_phys *raw)
 					  sm->sm_blocks_per_chunk);
 	sm->sm_cib_count = DIV_ROUND_UP(sm->sm_chunk_count,
 					sm->sm_chunks_per_cib);
+
+	if ((sm->sm_chunk_count + sm->sm_cib_count) * 3 != sm->sm_ip_block_count)
+		report("Space manager", "wrong size of internal pool.");
 }
 
 /**
@@ -92,7 +182,7 @@ static void *read_chunk_bitmap(u64 addr, u64 bmap)
 	} while (read_bytes > 0);
 
 	/* Mark the bitmap block as used in the actual allocation bitmap */
-	container_bmap_mark_as_used(bmap, 1 /* length */);
+	ip_bmap_mark_as_used(bmap, 1 /* length */);
 	return ret;
 }
 
@@ -239,6 +329,31 @@ static u64 spaceman_val_from_off(struct apfs_spaceman_phys *raw, u32 offset)
 }
 
 /**
+ * spaceman_256_from_off - Get a pointer to the 256 bits on a spaceman offset
+ * @raw:	pointer to the raw space manager
+ * @offset:	offset of the 256-bit value in @raw
+ *
+ * TODO: check that no values found by this function overlap with each other,
+ * and also with spaceman_val_from_off().
+ */
+static char *spaceman_256_from_off(struct apfs_spaceman_phys *raw, u32 offset)
+{
+	struct spaceman *sm = &sb->s_spaceman;
+	char *value_p = (char *)raw + offset;
+	int sz_256 = 256 / 8;
+
+	assert(sm->sm_struct_size);
+
+	if (offset & 0x7)
+		report("Spaceman", "offset is not aligned to 8 bytes.");
+	if (offset < sm->sm_struct_size)
+		report("Spaceman", "offset overlaps with structure.");
+	if (offset >= sb->s_blocksize || offset + sz_256 > sb->s_blocksize)
+		report("Spaceman", "offset is out of bounds.");
+	return value_p;
+}
+
+/**
  * parse_spaceman_main_device - Parse and check the spaceman main device struct
  * @raw: pointer to the raw space manager
  */
@@ -380,7 +495,7 @@ static void check_spaceman_free_queues(struct apfs_spaceman_free_queue *sfq)
 	}
 
 	sm->sm_ip_fq = parse_free_queue_btree(
-				le64_to_cpu(sfq[APFS_SFQ_IP].sfq_tree_oid));
+				le64_to_cpu(sfq[APFS_SFQ_IP].sfq_tree_oid), APFS_SFQ_IP);
 	if (le64_to_cpu(sfq[APFS_SFQ_IP].sfq_count) != sm->sm_ip_fq->sfq_count)
 		report("Spaceman free queue", "wrong block count.");
 	if (le64_to_cpu(sfq[APFS_SFQ_IP].sfq_oldest_xid) !=
@@ -389,9 +504,11 @@ static void check_spaceman_free_queues(struct apfs_spaceman_free_queue *sfq)
 	if (le16_to_cpu(sfq[APFS_SFQ_IP].sfq_tree_node_limit) <
 					sm->sm_ip_fq->sfq_btree.node_count)
 		report("Spaceman free queue", "node count above limit.");
+	if (le16_to_cpu(sfq[APFS_SFQ_IP].sfq_tree_node_limit) != ip_fq_node_limit(sm->sm_chunks))
+		report("Spaceman free queue", "wrong node limit.");
 
 	sm->sm_main_fq = parse_free_queue_btree(
-				le64_to_cpu(sfq[APFS_SFQ_MAIN].sfq_tree_oid));
+				le64_to_cpu(sfq[APFS_SFQ_MAIN].sfq_tree_oid), APFS_SFQ_MAIN);
 	if (le64_to_cpu(sfq[APFS_SFQ_MAIN].sfq_count) !=
 					sm->sm_main_fq->sfq_count)
 		report("Spaceman free queue", "wrong block count.");
@@ -401,6 +518,8 @@ static void check_spaceman_free_queues(struct apfs_spaceman_free_queue *sfq)
 	if (le16_to_cpu(sfq[APFS_SFQ_MAIN].sfq_tree_node_limit) <
 					sm->sm_main_fq->sfq_btree.node_count)
 		report("Spaceman free queue", "node count above limit.");
+	if (le16_to_cpu(sfq[APFS_SFQ_MAIN].sfq_tree_node_limit) != main_fq_node_limit(sm->sm_blocks))
+		report("Spaceman free queue", "wrong node limit.");
 }
 
 /**
@@ -431,31 +550,37 @@ static void compare_container_bitmaps(u64 *sm_bmap, u64 *real_bmap, u64 chunks)
 }
 
 /**
- * container_bmap_mark_as_used - Mark a range as used in the allocation bitmap
- * @paddr:	first block number
- * @length:	block count
- *
- * Checks that the given address range is still marked as free in the
- * container's allocation bitmap, and then switches those bits.
+ * check_ip_free_next - Check the free_next field for the internal pool
+ * @free_next:	256-bit field to check
+ * @free_head:	first free block in the ip circular buffer
+ * @free_len:	number of free blocks in the ip circular buffer
  */
-void container_bmap_mark_as_used(u64 paddr, u64 length)
+static void check_ip_free_next(__le16 *free_next, u16 free_head, u16 free_len)
 {
-	u64 *bitmap = sb->s_bitmap;
-	u64 *byte;
-	u64 flag;
-	u64 i;
+	int bmap_count = 16;
+	__le16 *expected;
+	u32 i;
 
-	/* Avoid out-of-bounds writes to the allocation bitmap */
-	if (paddr + length >= sb->s_block_count || paddr + length < paddr)
-		report(NULL /* context */, "Out-of-range block number.");
+	expected = calloc(bmap_count, sizeof(*free_next));
+	if (!expected)
+		system_error();
 
-	for (i = paddr; i < paddr + length; ++i) {
-		byte = bitmap + i / 64;
-		flag = 1ULL << i % 64;
-		if (*byte & flag)
-			report(NULL /* context */, "A block is used twice.");
-		*byte |= flag;
+	/*
+	 * Ip bitmap blocks are marked with numbers 1,2,3,...,14,15,0 in
+	 * free_next, except when they are in use: those get overwritten with
+	 * 0xFFFF.
+	 */
+	for (i = 0; i < bmap_count; i++) {
+		u32 index_in_free = (bmap_count + i - free_head) % bmap_count;
+
+		if (index_in_free < free_len)
+			expected[i] = cpu_to_le16((1 + i) % bmap_count);
+		else
+			expected[i] = cpu_to_le16(0xFFFF);
 	}
+
+	if (memcmp(free_next, expected, bmap_count * sizeof(*free_next)))
+		report("Space manager", "Bad ip_bm_free_next bitmap.");
 }
 
 /**
@@ -470,6 +595,7 @@ static u64 parse_ip_bitmap_list(struct apfs_spaceman_phys *raw)
 	u64 bmap_off;
 	u32 bmap_length = le32_to_cpu(raw->sm_ip_bm_block_count);
 	u16 free_head, free_tail, free_length;
+	char *free_next;
 
 	/*
 	 * So far all internal pool bitmaps encountered had only one block; the
@@ -485,17 +611,23 @@ static u64 parse_ip_bitmap_list(struct apfs_spaceman_phys *raw)
 	/* The head and tail fit in 16-bit fields, so the length also should */
 	if (bmap_length > (u16)(~0U))
 		report("Internal pool", "bitmap list is too long.");
+	/* This may be wrong for huge containers, I haven't tested those yet */
+	if (bmap_length != 16)
+		report("Space manager", "ip doesn't have 16 bitmaps.");
 
 	free_head = le16_to_cpu(raw->sm_ip_bm_free_head);
 	free_tail = le16_to_cpu(raw->sm_ip_bm_free_tail);
-	free_length = (bmap_length + free_tail + 1 - free_head) % bmap_length;
+	free_length = (bmap_length + free_tail - free_head) % bmap_length;
 
 	if (free_head >= bmap_length || free_tail >= bmap_length)
 		report("Internal pool", "free bitmaps are out-of-bounds.");
 	if ((bmap_length + bmap_off - free_head) % bmap_length < free_length)
 		report("Internal pool", "current bitmap listed as free.");
-	if (free_length != bmap_length - 1)
-		report_unknown("Multiple internal pool bitmaps in use");
+	if (free_length != bmap_length - 2)
+		report_unknown("Internal pool bitmaps in use are not two");
+
+	free_next = spaceman_256_from_off(raw, le32_to_cpu(raw->sm_ip_bm_free_next_offset));
+	check_ip_free_next((__le16 *)free_next, free_head, free_length);
 
 	container_bmap_mark_as_used(bmap_base, bmap_length);
 	return bmap_base + bmap_off;
@@ -547,35 +679,23 @@ static void check_ip_bitmap_blocks(struct apfs_spaceman_phys *raw)
 /**
  * check_internal_pool - Check the internal pool of blocks
  * @raw:	pointer to the raw space manager
- * @real_bmap:	container allocation bitmap assembled by the fsck
  */
-static void check_internal_pool(struct apfs_spaceman_phys *raw, u64 *real_bmap)
+static void check_internal_pool(struct apfs_spaceman_phys *raw)
 {
 	u64 *pool_bmap;
 	u64 pool_base = le64_to_cpu(raw->sm_ip_base);
 	u64 pool_blocks = le64_to_cpu(raw->sm_ip_block_count);
-	u64 xid, free_next;
-	u64 i;
+	u64 ip_chunk_count = DIV_ROUND_UP(pool_blocks, 8 * sb->s_blocksize);
+	u64 xid;
 
 	pool_bmap = mmap(NULL, sb->s_blocksize, PROT_READ, MAP_PRIVATE,
 			 fd, parse_ip_bitmap_list(raw) * sb->s_blocksize);
 	if (pool_bmap == MAP_FAILED)
 		system_error();
 
-	for (i = 0; i < pool_blocks; ++i) {
-		u64 bno = pool_base + i;
-		u64 real_index = bno / 64;
-		u64 real_flag = 1ULL << bno % 64;
-		u64 pool_index = i / 64;
-		u64 pool_flag = 1ULL << i % 64;
-
-		if ((bool)(pool_bmap[pool_index] & pool_flag) !=
-		    (bool)(real_bmap[real_index] & real_flag))
-			report("Internal pool", "bad allocation bitmap.");
-
-		/* In the container bitmap, the whole pool is marked as used */
-		real_bmap[real_index] |= real_flag;
-	}
+	if (memcmp(pool_bmap, sb->s_ip_bitmap, ip_chunk_count * sb->s_blocksize))
+		report("Space manager", "bad ip allocation bitmap.");
+	container_bmap_mark_as_used(pool_base, pool_blocks);
 
 	munmap(pool_bmap, sb->s_blocksize);
 
@@ -586,12 +706,6 @@ static void check_internal_pool(struct apfs_spaceman_phys *raw, u64 *real_bmap)
 	xid = spaceman_val_from_off(raw, le32_to_cpu(raw->sm_ip_bm_xid_offset));
 	if (xid > sb->s_xid)
 		report("Internal pool", "bad transaction id.");
-
-	/* TODO: actually figure out the sm_ip_bm_free_next_offset field */
-	free_next = spaceman_val_from_off(raw,
-				le32_to_cpu(raw->sm_ip_bm_free_next_offset));
-	if (free_next != 0x0004000300020001)
-		report_weird("Free next field of the space manager");
 
 	check_ip_bitmap_blocks(raw);
 }
@@ -605,6 +719,7 @@ void check_spaceman(u64 oid)
 	struct spaceman *sm = &sb->s_spaceman;
 	struct object obj;
 	struct apfs_spaceman_phys *raw;
+	u64 ip_chunk_count;
 	u32 flags;
 
 	raw = read_ephemeral_object(oid, &obj);
@@ -613,6 +728,13 @@ void check_spaceman(u64 oid)
 	if (obj.subtype != APFS_OBJECT_TYPE_INVALID)
 		report("Space manager", "wrong object subtype.");
 	sm->sm_xid = obj.xid;
+
+	sm->sm_ip_base = le64_to_cpu(raw->sm_ip_base);
+	sm->sm_ip_block_count = le64_to_cpu(raw->sm_ip_block_count);
+	ip_chunk_count = DIV_ROUND_UP(sm->sm_ip_block_count, 8 * sb->s_blocksize);
+	sb->s_ip_bitmap = calloc(ip_chunk_count, sb->s_blocksize);
+	if (!sb->s_ip_bitmap)
+		system_error();
 
 	flags = le32_to_cpu(raw->sm_flags);
 	if ((flags & APFS_SM_FLAGS_VALID_MASK) != flags)
@@ -641,7 +763,8 @@ void check_spaceman(u64 oid)
 	parse_spaceman_main_device(raw);
 	check_spaceman_tier2_device(raw);
 	check_spaceman_free_queues(raw->sm_fq);
-	check_internal_pool(raw, sb->s_bitmap);
+	check_internal_pool(raw);
+	free(sb->s_ip_bitmap);
 
 	if (raw->sm_fs_reserve_block_count || raw->sm_fs_reserve_alloc_count)
 		report_unknown("Reserved allocation blocks");
@@ -664,7 +787,8 @@ void parse_free_queue_record(struct apfs_spaceman_free_queue_key *key,
 			     void *val, int len, struct btree *btree)
 {
 	struct free_queue *sfq = (struct free_queue *)btree;
-	u64 length, xid;
+	u64 paddr, length, xid;
+	bool inside_ip;
 
 	if (!len) {
 		length = 1; /* Ghost records are for one block long extents */
@@ -681,6 +805,13 @@ void parse_free_queue_record(struct apfs_spaceman_free_queue_key *key,
 	}
 	sfq->sfq_count += length;
 
+	paddr = le64_to_cpu(key->sfqk_paddr);
+	inside_ip = range_in_ip(paddr, length);
+	if (sfq->sfq_index == APFS_SFQ_IP && !inside_ip)
+		report("Free queue record", "range should be inside the IP.");
+	if (sfq->sfq_index != APFS_SFQ_IP && inside_ip)
+		report("Free queue record", "range should be outside the IP.");
+
 	xid = le64_to_cpu(key->sfqk_xid);
 	if (xid > sb->s_xid)
 		report("Free queue record", "bad transaction id.");
@@ -691,5 +822,8 @@ void parse_free_queue_record(struct apfs_spaceman_free_queue_key *key,
 	 * These blocks are free, but still not marked as such.  The point
 	 * seems to be the preservation of recent checkpoints.
 	 */
-	container_bmap_mark_as_used(le64_to_cpu(key->sfqk_paddr), length);
+	if (inside_ip)
+		ip_bmap_mark_as_used(paddr, length);
+	else
+		container_bmap_mark_as_used(paddr, length);
 }

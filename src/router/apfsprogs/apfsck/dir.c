@@ -89,16 +89,25 @@ static void parse_dentry_xfields(struct apfs_xf_blob *xblob, int len,
  *
  * Internal consistency of @key must be checked before calling this function.
  */
-void parse_dentry_record(struct apfs_drec_hashed_key *key,
-			 struct apfs_drec_val *val, int len)
+void parse_dentry_record(void *key, struct apfs_drec_val *val, int len)
 {
 	u64 ino, parent_ino;
 	struct inode *inode, *parent;
-	char *name = (char *)key->name;
-	int namelen = le32_to_cpu(key->name_len_and_hash) & 0x3FFU;
+	char *name;
+	int namelen;
 	u16 filetype, dtype;
 	u64 sibling_id;
 	struct sibling *sibling;
+
+	if (apfs_is_normalization_insensitive()) {
+		struct apfs_drec_hashed_key *hkey = key;
+		name = (char *)hkey->name;
+		namelen = le32_to_cpu(hkey->name_len_and_hash) & 0x3FFU;
+	} else {
+		struct apfs_drec_key *ukey = key;
+		name = (char *)ukey->name;
+		namelen = le16_to_cpu(ukey->name_len);
+	}
 
 	if (len < sizeof(*val))
 		report("Dentry record", "value is too small.");
@@ -112,7 +121,7 @@ void parse_dentry_record(struct apfs_drec_hashed_key *key,
 	if (ino == APFS_PRIV_DIR_INO_NUM && strcmp(name, "private-dir"))
 		report("Private directory", "wrong name.");
 
-	parent_ino = cat_cnid(&key->hdr);
+	parent_ino = cat_cnid(key);
 	check_inode_ids(ino, parent_ino);
 	if (parent_ino != APFS_ROOT_DIR_PARENT) {
 		parent = get_inode(parent_ino);
@@ -150,5 +159,5 @@ void parse_dentry_record(struct apfs_drec_hashed_key *key,
 	if (!sibling_id) /* No sibling record for this dentry */
 		return;
 	sibling = get_sibling(sibling_id, inode);
-	set_or_check_sibling(parent_ino, namelen, key->name, sibling);
+	set_or_check_sibling(parent_ino, namelen, (u8 *)name, sibling);
 }

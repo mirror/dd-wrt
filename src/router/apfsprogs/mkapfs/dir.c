@@ -27,15 +27,34 @@ static void set_key_header(u64 ino, u64 type, struct apfs_key_header *key)
 }
 
 /**
- * make_special_dentry_key - Make the dentry key for a special directory
+ * make_unhashed_dentry_key - Make an unhashed dentry key
  * @ino:	inode number for the parent
  * @name:	directory name
  * @key:	key space to use
  *
  * Returns the length of the key.
  */
-static int make_special_dentry_key(u64 ino, char *name,
-				   struct apfs_drec_hashed_key *key)
+static int make_unhashed_dentry_key(u64 ino, char *name,
+				    struct apfs_drec_key *key)
+{
+	u32 len = strlen(name) + 1; /* The null termination is counted */
+
+	set_key_header(ino, APFS_TYPE_DIR_REC, &key->hdr);
+	strcpy((char *)key->name, name);
+	key->name_len = cpu_to_le16(len);
+	return sizeof(*key) + len;
+}
+
+/**
+ * make_hashed_dentry_key - Make a hashed dentry key
+ * @ino:	inode number for the parent
+ * @name:	directory name
+ * @key:	key space to use
+ *
+ * Returns the length of the key.
+ */
+static int make_hashed_dentry_key(u64 ino, char *name,
+				  struct apfs_drec_hashed_key *key)
 {
 	u32 len;
 	u32 hash = 0xFFFFFFFF;
@@ -53,6 +72,22 @@ static int make_special_dentry_key(u64 ino, char *name,
 
 	key->name_len_and_hash = cpu_to_le32(hash | len);
 	return sizeof(*key) + len;
+}
+
+/**
+ * make_special_dentry_key - Make the dentry key for a special directory
+ * @ino:	inode number for the parent
+ * @name:	directory name
+ * @key:	key space to use
+ *
+ * Returns the length of the key.
+ */
+static int make_special_dentry_key(u64 ino, char *name, void *key)
+{
+	if (param->norm_sensitive)
+		return make_unhashed_dentry_key(ino, name, key);
+	else
+		return make_hashed_dentry_key(ino, name, key);
 }
 
 /**

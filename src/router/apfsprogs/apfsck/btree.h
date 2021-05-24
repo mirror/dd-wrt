@@ -174,7 +174,7 @@ static inline bool btree_is_extentref(struct btree *btree)
 	return btree->type == BTREE_TYPE_EXTENTREF;
 }
 
-extern struct free_queue *parse_free_queue_btree(u64 oid);
+extern struct free_queue *parse_free_queue_btree(u64 oid, int index);
 extern struct btree *parse_snap_meta_btree(u64 oid);
 extern struct btree *parse_extentref_btree(u64 oid);
 extern struct btree *parse_omap_btree(u64 oid);

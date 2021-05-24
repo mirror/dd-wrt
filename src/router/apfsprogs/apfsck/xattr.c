@@ -108,6 +108,8 @@ void parse_xattr_record(struct apfs_xattr_key *key,
 	} else {
 		if (len != le16_to_cpu(val->xdata_len))
 			report("Xattr record", "bad length for embedded data.");
+		if (len > APFS_XATTR_MAX_EMBEDDED_SIZE)
+			report("Xattr record", "embedded data is too long.");
 	}
 
 	if (!strcmp((char *)key->name, APFS_XATTR_NAME_SYMLINK)) {
