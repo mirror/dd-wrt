@@ -173,9 +173,9 @@ void start_setup_vlans(void)
 	int vlan_number;
 	int i;
 	char **buildports = malloc(sizeof(char **) * (blen + 2));
-	for (i=0;i<blen+2;i++) {
-	    buildports[i]=malloc(32);
-	    memset(buildports[i], 0, 32);
+	for (i = 0; i < blen + 2; i++) {
+		buildports[i] = malloc(32);
+		memset(buildports[i], 0, 32);
 	}
 	char *c = nvram_safe_get("portvlanlist");
 	int *vlanlist = malloc(sizeof(int) * strlen(c));
@@ -216,16 +216,16 @@ void start_setup_vlans(void)
 				case 17000:	// no auto negotiate
 					mask |= 4;
 					break;
-				case 18000:	// no full speed
+				case 18000:	// no gigabit
 					mask |= 16;
 					break;
-				case 19000:	// no full duplex
+				case 19000:	// no full speed
 					mask |= 1;
 					break;
-				case 20000:	// disabled
+				case 20000:	// no duplex
 					mask |= 2;
 					break;
-				case 21000:	// no gigabit
+				case 21000:	// disabled
 					mask |= 8;
 					break;
 				}
@@ -307,6 +307,19 @@ void start_setup_vlans(void)
 		} else {
 			sysprintf("swconfig dev switch0 port %s set link \"%s\"", nvram_nget("sw_lan%d", i), linkstr);
 		}
+		if (mask & 8) {
+			if (i == 0) {
+				sysprintf("swconfig dev switch0 port %s set disable 1", nvram_safe_get("sw_wan"));
+			} else {
+				sysprintf("swconfig dev switch0 port %s set disable 1", nvram_nget("sw_lan%d", i));
+			}
+		} else {
+			if (i == 0) {
+				sysprintf("swconfig dev switch0 port %s set disable 0", nvram_safe_get("sw_wan"));
+			} else {
+				sysprintf("swconfig dev switch0 port %s set disable 0", nvram_nget("sw_lan%d", i));
+			}
+		}
 	}
 
 #ifdef HAVE_R9000
@@ -336,8 +349,8 @@ void start_setup_vlans(void)
 
 	eval("swconfig", "dev", "switch0", "set", "apply");
 #endif
-	for (i=0;i<blen+2;i++)
-	    free(buildports[i]);
+	for (i = 0; i < blen + 2; i++)
+		free(buildports[i]);
 	free(buildports);
 #else
 	/*
@@ -359,9 +372,9 @@ void start_setup_vlans(void)
 	char *vlans, *next, vlan[32], buff[70], buff2[16];
 	FILE *fp;
 	char **portsettings = malloc(sizeof(char **) * (blen + 2));
-	for (i=0;i<blen+2;i++) {
-	    portsettings[i]=malloc(64);
-	    memset(portsettings[i], 0, 32);
+	for (i = 0; i < blen + 2; i++) {
+		portsettings[i] = malloc(64);
+		memset(portsettings[i], 0, 32);
 	}
 	char tagged[18];
 	unsigned char mac[20];;
@@ -520,8 +533,8 @@ void start_setup_vlans(void)
 		fprintf(stderr, "configure vlan ports to %s\n", portsettings[i]);
 		writevaproc(portsettings[i], "/proc/switch/%s/vlan/%d/ports", phy, vlanlist[i]);
 	}
-	for (i=0;i<blen+2;i++)
-	    free(portsettings[i]);
+	for (i = 0; i < blen + 2; i++)
+		free(portsettings[i]);
 	free(portsettings);
 #endif
 	free(vlanlist);
