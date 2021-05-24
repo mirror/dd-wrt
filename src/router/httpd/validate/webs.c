@@ -5564,6 +5564,7 @@ void port_vlan_table_save(webs_t wp)
 			strcat(portvlan, buff);
 		}
 	}
+	free(vlans);
 	if (ports == 5)
 		nvram_set("port5vlans", portvlan);
 	else
