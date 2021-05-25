@@ -1,5 +1,10 @@
 #!/bin/sh
+
 killall -9 wdswatchdog.sh    
+if [ -z "$(nvram get wds_watchdog_ips)" ]; then
+	exit
+fi
+
 if [ "$(nvram get wds_watchdog_enable)" = "1" ]; then    
-    /etc/config/wdswatchdog.sh&
+	/etc/config/wdswatchdog.sh&
 fi
