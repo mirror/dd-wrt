@@ -3,6 +3,7 @@
 WDS_WATCHDOG_INTERVAL_SEC=$(nvram get wds_watchdog_interval_sec)
 WDS_WATCHDOG_IPS=$(nvram get wds_watchdog_ips)
 WDS_WATCHDOG_MODE=$(nvram get wds_watchdog_mode)
+WDS_WATCHDOG_TIMEOUT=$(nvram get wds_watchdog_timeout)
 TAG="WDS_Watchdog[$$]"
 
 logger -t "$TAG" "Started"
@@ -14,7 +15,7 @@ do
 		DROPPED=false
 		for ip in $WDS_WATCHDOG_IPS
 		do
-			if ping -c 1 $ip > /tmp/null
+			if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
 			then
 				logger -t "$TAG" "$ip ok"
 			else
@@ -28,7 +29,7 @@ do
 			sleep 10
 			for ip in $WDS_WATCHDOG_IPS
 			do
-				if ping -c 1 $ip > /tmp/null
+				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
 				then
 					logger -t "$TAG" "$ip ok"
 				else
@@ -43,7 +44,7 @@ do
 			sleep 10
 			for ip in $WDS_WATCHDOG_IPS
 			do
-				if ping -c 1 $ip > /tmp/null
+				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
 				then
 					logger -t "$TAG" "$ip ok"
 				else
@@ -60,7 +61,7 @@ do
 		DROPPED=true
 		for ip in $WDS_WATCHDOG_IPS
 		do
-			if ping -c 1 $ip > /tmp/null
+			if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
 			then
 				DROPPED=false
 				logger -t "$TAG" "$ip ok"
@@ -74,7 +75,7 @@ do
 			sleep 10
 			for ip in $WDS_WATCHDOG_IPS
 			do
-				if ping -c 1 $ip > /tmp/null
+				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
 				then
 					DROPPED=false
 					logger -t "$TAG" "$ip ok"
@@ -89,7 +90,7 @@ do
 			sleep 10
 			for ip in $WDS_WATCHDOG_IPS
 			do
-				if ping -c 1 $ip > /tmp/null
+				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
 				then
 					DROPPED=false
 					logger -t "$TAG" "$ip ok"
