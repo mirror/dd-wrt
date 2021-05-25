@@ -169,8 +169,8 @@ static inline u32 apfs_index_in_data_area(struct super_block *sb, u64 bno)
 	u64 data_base = le64_to_cpu(raw_sb->nx_xp_data_base);
 	u32 data_index = le32_to_cpu(raw_sb->nx_xp_data_index);
 	u32 data_blks = le32_to_cpu(raw_sb->nx_xp_data_blocks);
-	u32 ret = bno - data_base + data_blks - data_index;
-	return ret % data_blks;
+	u64 div = (bno - data_base + data_blks - data_index);
+	return do_div(div, data_blks);
 }
 
 /**
