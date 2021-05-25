@@ -4,7 +4,7 @@
 #
 KERNEL_VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)/net/sched
-CFLAGS_EXTRA += -g
+#CFLAGS_EXTRA += 
 
 obj-m = apfs.o
 apfs-y = btree.o dir.o extents.o file.o inode.o key.o message.o compress.o \
