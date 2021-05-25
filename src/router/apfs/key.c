@@ -84,7 +84,7 @@ int apfs_keycmp(struct super_block *sb,
 		return k1->type < k2->type ? -1 : 1;
 	if (k1->number != k2->number)
 		return k1->number < k2->number ? -1 : 1;
-	if (!k1->name)
+	if (!k1->name || !k2->name)
 		return 0;
 
 	/* Normalization seems to be ignored here, even for directory records */
@@ -120,7 +120,6 @@ int apfs_read_cat_key(void *raw, int size, struct apfs_key *key, bool hashed)
 			      ((struct apfs_drec_hashed_key *)raw)->name_len_and_hash) &
 								    APFS_DREC_HASH_MASK;
 			key->name = ((struct apfs_drec_hashed_key *)raw)->name;
-			break;
 		} else {
 			if (size < sizeof(struct apfs_drec_key) + 1 ||
 			    *((char *)raw + size - 1) != 0) {
@@ -131,6 +130,7 @@ int apfs_read_cat_key(void *raw, int size, struct apfs_key *key, bool hashed)
 			key->number = 0;
 			key->name = ((struct apfs_drec_key *)raw)->name;
 		}
+		break;
 	case APFS_TYPE_XATTR:
 		if (size < sizeof(struct apfs_xattr_key) + 1 ||
 		    *((char *)raw + size - 1) != 0) {

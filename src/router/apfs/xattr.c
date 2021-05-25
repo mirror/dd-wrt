@@ -62,6 +62,7 @@ static int apfs_xattr_from_query(struct apfs_query *query,
  * @xattr:	the xattr structure
  * @buffer:	where to copy the attribute value
  * @size:	size of @buffer
+ * @only_whole:	are partial reads banned?
  *
  * Copies the value of @xattr to @buffer, if provided. If @buffer is NULL, just
  * computes the size of the buffer required.
@@ -71,7 +72,7 @@ static int apfs_xattr_from_query(struct apfs_query *query,
  */
 static int apfs_xattr_extents_read(struct inode *parent,
 				   struct apfs_xattr *xattr,
-				   void *buffer, size_t size)
+				   void *buffer, size_t size, bool only_whole)
 {
 	struct super_block *sb = parent->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
@@ -90,8 +91,13 @@ static int apfs_xattr_extents_read(struct inode *parent,
 
 	if (!buffer) /* All we want is the length */
 		return length;
-	if (length > size) /* xattr won't fit in the buffer */
-		return -ERANGE;
+	if (only_whole) {
+		if (length > size) /* xattr won't fit in the buffer */
+			return -ERANGE;
+	} else {
+		if (length > size)
+			length = size;
+	}
 
 	extent_id = le64_to_cpu(xdata->xattr_obj_id);
 	/* We will read all the extents, starting with the last one */
@@ -144,7 +150,7 @@ static int apfs_xattr_extents_read(struct inode *parent,
 			bytes = min(sb->s_blocksize,
 				    (unsigned long)(length - file_off));
 
-			bh = sb_bread(sb, ext.phys_block_num + j);
+			bh = apfs_sb_bread(sb, ext.phys_block_num + j);
 			if (!bh) {
 				ret = -EIO;
 				goto done;
@@ -166,6 +172,7 @@ done:
  * @xattr:	the xattr structure
  * @buffer:	where to copy the attribute value
  * @size:	size of @buffer
+ * @only_whole:	are partial reads banned?
  *
  * Copies the inline value of @xattr to @buffer, if provided. If @buffer is
  * NULL, just computes the size of the buffer required.
@@ -175,14 +182,19 @@ done:
  */
 static int apfs_xattr_inline_read(struct inode *parent,
 				  struct apfs_xattr *xattr,
-				  void *buffer, size_t size)
+				  void *buffer, size_t size, bool only_whole)
 {
 	int length = xattr->xdata_len;
 
 	if (!buffer) /* All we want is the length */
 		return length;
-	if (length > size) /* xattr won't fit in the buffer */
-		return -ERANGE;
+	if (only_whole) {
+		if (length > size) /* xattr won't fit in the buffer */
+			return -ERANGE;
+	} else {
+		if (length > size)
+			length = size;
+	}
 	memcpy(buffer, xattr->xdata, length);
 	return length;
 }
@@ -198,6 +210,20 @@ static int apfs_xattr_inline_read(struct inode *parent,
  */
 int __apfs_xattr_get(struct inode *inode, const char *name, void *buffer,
 		     size_t size)
+{
+	return ____apfs_xattr_get(inode, name, buffer, size, true /* only_whole */);
+}
+
+/**
+ * ____apfs_xattr_get - Find and read a named attribute, optionally header only
+ * @inode:	inode the attribute belongs to
+ * @name:	name of the attribute
+ * @buffer:	where to copy the attribute value
+ * @size:	size of @buffer
+ * @only_whole:	must read complete (no partial header read allowed)
+ */
+int ____apfs_xattr_get(struct inode *inode, const char *name, void *buffer,
+		       size_t size, bool only_whole)
 {
 	struct super_block *sb = inode->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
@@ -226,9 +252,9 @@ int __apfs_xattr_get(struct inode *inode, const char *name, void *buffer,
 	}
 
 	if (xattr.has_dstream)
-		ret = apfs_xattr_extents_read(inode, &xattr, buffer, size);
+		ret = apfs_xattr_extents_read(inode, &xattr, buffer, size, only_whole);
 	else
-		ret = apfs_xattr_inline_read(inode, &xattr, buffer, size);
+		ret = apfs_xattr_inline_read(inode, &xattr, buffer, size, only_whole);
 
 done:
 	apfs_free_query(sb, query);
@@ -251,13 +277,12 @@ done:
 int apfs_xattr_get(struct inode *inode, const char *name, void *buffer,
 		   size_t size)
 {
-	struct super_block *sb = inode->i_sb;
-	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_nxsb_info *nxi = APFS_NXI(inode->i_sb);
 	int ret;
 
-	down_read(&sbi->s_big_sem);
+	down_read(&nxi->nx_big_sem);
 	ret = __apfs_xattr_get(inode, name, buffer, size);
-	up_read(&sbi->s_big_sem);
+	up_read(&nxi->nx_big_sem);
 	return ret;
 }
 
@@ -269,9 +294,175 @@ static int apfs_xattr_osx_get(const struct xattr_handler *handler,
 	return apfs_xattr_get(inode, name, buffer, size);
 }
 
+/**
+ * apfs_build_xattr_key - Allocate and initialize the key for a xattr record
+ * @name:	xattr name
+ * @ino:	inode number for xattr's owner
+ * @key_p:	on return, a pointer to the new on-disk key structure
+ *
+ * Returns the length of the key, or a negative error code in case of failure.
+ */
+static int apfs_build_xattr_key(const char *name, u64 ino, struct apfs_xattr_key **key_p)
+{
+	struct apfs_xattr_key *key;
+	u16 namelen = strlen(name) + 1; /* We count the null-termination */
+	int key_len;
+
+	key_len = sizeof(*key) + namelen;
+	key = kmalloc(key_len, GFP_KERNEL);
+	if (!key)
+		return -ENOMEM;
+
+	apfs_key_set_hdr(APFS_TYPE_XATTR, ino, key);
+	key->name_len = cpu_to_le16(namelen);
+	strcpy(key->name, name);
+
+	*key_p = key;
+	return key_len;
+}
+
+/**
+ * apfs_build_xattr_val - Allocate and initialize the value for an inline xattr
+ * @value:	content of the xattr
+ * @size:	size of @value
+ * @val_p:	on return, a pointer to the new on-disk value structure
+ *
+ * Returns the length of the value, or a negative error code in case of failure.
+ */
+static int apfs_build_xattr_val(const void *value, size_t size, struct apfs_xattr_val **val_p)
+{
+	struct apfs_xattr_val *val;
+	int val_len;
+
+	val_len = sizeof(*val) + size;
+	val = kmalloc(val_len, GFP_KERNEL);
+	if (!val)
+		return -ENOMEM;
+
+	val->flags = cpu_to_le16(APFS_XATTR_DATA_EMBEDDED);
+	val->xdata_len = cpu_to_le16(size);
+	memcpy(val->xdata, value, size);
+
+	*val_p = val;
+	return val_len;
+}
+
+/**
+ * apfs_xattr_set - Write a named attribute
+ * @inode:	inode the attribute will belong to
+ * @name:	name for the attribute
+ * @value:	value for the attribute
+ * @size:	size of @value
+ * @flags:	XATTR_REPLACE and XATTR_CREATE
+ *
+ * Returns 0 on success, or a negative error code in case of failure.
+ */
+int apfs_xattr_set(struct inode *inode, const char *name, const void *value,
+		   size_t size, int flags)
+{
+	struct super_block *sb = inode->i_sb;
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_key key;
+	struct apfs_query *query;
+	u64 cnid = apfs_ino(inode);
+	int key_len, val_len;
+	struct apfs_xattr_key *raw_key = NULL;
+	struct apfs_xattr_val *raw_val = NULL;
+	int ret;
+
+	if (size > APFS_XATTR_MAX_EMBEDDED_SIZE)
+		return -ERANGE; /* TODO: support dstream xattrs */
+
+	apfs_init_xattr_key(cnid, name, &key);
+
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	query->key = &key;
+	query->flags = APFS_QUERY_CAT | APFS_QUERY_EXACT;
+
+	ret = apfs_btree_query(sb, &query);
+	if (ret) {
+		if (ret != -ENODATA)
+			goto done;
+		else if (flags & XATTR_REPLACE)
+			goto done;
+	} else if (flags & XATTR_CREATE) {
+		ret = -EEXIST;
+		goto done;
+	}
+
+	key_len = apfs_build_xattr_key(name, cnid, &raw_key);
+	if (key_len < 0) {
+		ret = key_len;
+		goto done;
+	}
+	val_len = apfs_build_xattr_val(value, size, &raw_val);
+	if (val_len < 0) {
+		ret = val_len;
+		goto done;
+	}
+
+	/* For now this is the only system xattr we support */
+	if (strcmp(name, APFS_XATTR_NAME_SYMLINK) == 0)
+		raw_val->flags |= cpu_to_le16(APFS_XATTR_FILE_SYSTEM_OWNED);
+
+	if (ret)
+		ret = apfs_btree_insert(query, raw_key, key_len, raw_val, val_len);
+	else
+		ret = apfs_btree_replace(query, raw_key, key_len, raw_val, val_len);
+
+done:
+	kfree(raw_val);
+	kfree(raw_key);
+	apfs_free_query(sb, query);
+	return ret;
+}
+int APFS_XATTR_SET_MAXOPS(void)
+{
+	return 1;
+}
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+static int apfs_xattr_osx_set(const struct xattr_handler *handler,
+	      struct dentry *unused, struct inode *inode, const char *name,
+	      const void *value, size_t size, int flags)
+#else
+static int apfs_xattr_osx_set(const struct xattr_handler *handler,
+		  struct user_namespace *mnt_userns, struct dentry *unused,
+		  struct inode *inode, const char *name, const void *value,
+		  size_t size, int flags)
+#endif
+{
+	struct super_block *sb = inode->i_sb;
+	struct apfs_max_ops maxops;
+	int err;
+
+	maxops.cat = APFS_XATTR_SET_MAXOPS();
+	maxops.blks = 0;
+
+	err = apfs_transaction_start(sb, maxops);
+	if (err)
+		return err;
+
+	/* Ignore the fake 'osx' prefix */
+	err = apfs_xattr_set(inode, name, value, size, flags);
+	if (err)
+		goto fail;
+
+	err = apfs_transaction_commit(sb);
+	if (!err)
+		return 0;
+
+fail:
+	apfs_transaction_abort(sb);
+	return err;
+}
+
 static const struct xattr_handler apfs_xattr_osx_handler = {
 	.prefix	= XATTR_MAC_OSX_PREFIX,
 	.get	= apfs_xattr_osx_get,
+	.set	= apfs_xattr_osx_set,
 };
 
 /* On-disk xattrs have no namespace; use a fake 'osx' prefix in the kernel */
@@ -285,13 +476,14 @@ ssize_t apfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
 	struct inode *inode = d_inode(dentry);
 	struct super_block *sb = inode->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
 	struct apfs_key key;
 	struct apfs_query *query;
 	u64 cnid = apfs_ino(inode);
 	size_t free = size;
 	ssize_t ret;
 
-	down_read(&sbi->s_big_sem);
+	down_read(&nxi->nx_big_sem);
 
 	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
 	if (!query) {
@@ -339,6 +531,6 @@ ssize_t apfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
 
 fail:
 	apfs_free_query(sb, query);
-	up_read(&sbi->s_big_sem);
+	up_read(&nxi->nx_big_sem);
 	return ret;
 }
