@@ -437,6 +437,8 @@ alive.legend3="Proxy/Connexion Watchdog";
 alive.sevr3="Proxy Watchdog";
 alive.IP2="Adresse IP du proxy";
 alive.port="Port du proxy";
+alive.mode0="Any dropped IP's for reboot";
+alive.mode1="All dropped IP's for reboot";
 
 //help container
 halive.right2="Choisissez quand le routeur doit red&eacute;marrer. <em>Cron</em> doit &ecirc;tre activ&eacute; dans l&apos;onglet gestion.";
