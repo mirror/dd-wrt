@@ -5,7 +5,6 @@
 
 #include <linux/slab.h>
 #include <linux/buffer_head.h>
-#include <linux/fs.h>
 #include "apfs.h"
 
 /**
@@ -138,12 +137,12 @@ fail:
 int apfs_inode_by_name(struct inode *dir, const struct qstr *child, u64 *ino)
 {
 	struct super_block *sb = dir->i_sb;
-	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
 	struct apfs_query *query;
 	struct apfs_drec drec;
 	int err = 0;
 
-	down_read(&sbi->s_big_sem);
+	down_read(&nxi->nx_big_sem);
 	query = apfs_dentry_lookup(dir, child, &drec);
 	if (IS_ERR(query)) {
 		err = PTR_ERR(query);
@@ -152,7 +151,7 @@ int apfs_inode_by_name(struct inode *dir, const struct qstr *child, u64 *ino)
 	*ino = drec.ino;
 	apfs_free_query(sb, query);
 out:
-	up_read(&sbi->s_big_sem);
+	up_read(&nxi->nx_big_sem);
 	return err;
 }
 
@@ -161,6 +160,7 @@ static int apfs_readdir(struct file *file, struct dir_context *ctx)
 	struct inode *inode = file_inode(file);
 	struct super_block *sb = inode->i_sb;
 	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
 	struct apfs_key key;
 	struct apfs_query *query;
 	u64 cnid = apfs_ino(inode);
@@ -168,7 +168,7 @@ static int apfs_readdir(struct file *file, struct dir_context *ctx)
 	bool hashed = apfs_is_normalization_insensitive(sb);
 	int err = 0;
 
-	down_read(&sbi->s_big_sem);
+	down_read(&nxi->nx_big_sem);
 
 	/* Inode numbers might overflow here; follow btrfs in ignoring that */
 	if (!dir_emit_dots(file, ctx))
@@ -224,7 +224,7 @@ static int apfs_readdir(struct file *file, struct dir_context *ctx)
 	apfs_free_query(sb, query);
 
 out:
-	up_read(&sbi->s_big_sem);
+	up_read(&nxi->nx_big_sem);
 	return err;
 }
 
@@ -232,6 +232,7 @@ const struct file_operations apfs_dir_operations = {
 	.llseek		= generic_file_llseek,
 	.read		= generic_read_dir,
 	.iterate_shared	= apfs_readdir,
+	.unlocked_ioctl	= apfs_dir_ioctl,
 };
 
 /**
@@ -306,7 +307,7 @@ static int apfs_build_dentry_val(struct inode *inode, u64 sibling_id,
 	struct apfs_x_field xkey;
 	int total_xlen = 0, val_len;
 	__le64 raw_sibling_id = cpu_to_le64(sibling_id);
-	struct timespec now = current_time(inode);
+	struct timespec64 now = current_time(inode);
 
 	/* The dentry record may have one xfield: the sibling id */
 	if (sibling_id)
@@ -320,7 +321,7 @@ static int apfs_build_dentry_val(struct inode *inode, u64 sibling_id,
 	*val_p = val;
 
 	val->file_id = cpu_to_le64(apfs_ino(inode));
-	val->date_added = cpu_to_le64(timespec_to_ns(&now));
+	val->date_added = cpu_to_le64(timespec64_to_ns(&now));
 	val->flags = cpu_to_le16((inode->i_mode >> 12) & 15); /* File type */
 
 	if (!sibling_id)
@@ -393,6 +394,7 @@ fail:
 	apfs_free_query(sb, query);
 	return ret;
 }
+#define APFS_CREATE_DENTRY_REC_MAXOPS	1
 
 /**
  * apfs_build_sibling_val - Allocate and initialize a sibling link's value
@@ -468,6 +470,7 @@ fail:
 	apfs_free_query(sb, query);
 	return ret;
 }
+#define APFS_CREATE_SIBLING_LINK_REC_MAXOPS	1
 
 /**
  * apfs_create_sibling_map_rec - Create a sibling map record for a dentry
@@ -509,6 +512,7 @@ fail:
 	apfs_free_query(sb, query);
 	return ret;
 }
+#define APFS_CREATE_SIBLING_MAP_REC_MAXOPS	1
 
 /**
  * apfs_create_sibling_recs - Create sibling link and map records for a dentry
@@ -522,13 +526,12 @@ static int apfs_create_sibling_recs(struct dentry *dentry,
 				    struct inode *inode, u64 *sibling_id)
 {
 	struct super_block *sb = dentry->d_sb;
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_superblock *vsb_raw = sbi->s_vsb_raw;
+	struct apfs_superblock *vsb_raw = APFS_SB(sb)->s_vsb_raw;
 	u64 cnid;
 	int ret;
 
 	/* Sibling ids come from the same pool as the inode numbers */
-	ASSERT(sbi->s_xid == le64_to_cpu(vsb_raw->apfs_o.o_xid));
+	apfs_assert_in_transaction(sb, &vsb_raw->apfs_o);
 	cnid = le64_to_cpu(vsb_raw->apfs_next_obj_id);
 	le64_add_cpu(&vsb_raw->apfs_next_obj_id, 1);
 
@@ -542,6 +545,8 @@ static int apfs_create_sibling_recs(struct dentry *dentry,
 	*sibling_id = cnid;
 	return 0;
 }
+#define APFS_CREATE_SIBLING_RECS_MAXOPS	(APFS_CREATE_SIBLING_LINK_REC_MAXOPS + \
+					 APFS_CREATE_SIBLING_MAP_REC_MAXOPS)
 
 /**
  * apfs_create_dentry - Create all records for a new dentry
@@ -578,6 +583,9 @@ static int apfs_create_dentry(struct dentry *dentry, struct inode *inode)
 		--APFS_I(parent)->i_nchildren;
 	return err;
 }
+#define APFS_CREATE_DENTRY_MAXOPS	(APFS_CREATE_SIBLING_RECS_MAXOPS + \
+					 APFS_CREATE_DENTRY_REC_MAXOPS + \
+					 APFS_UPDATE_INODE_MAXOPS())
 
 /**
  * apfs_undo_create_dentry - Clean up apfs_create_dentry()
@@ -590,14 +598,20 @@ static void apfs_undo_create_dentry(struct dentry *dentry)
 	--APFS_I(parent)->i_nchildren;
 }
 
-int apfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
-	       dev_t rdev)
+int apfs_mkany(struct inode *dir, struct dentry *dentry, umode_t mode,
+	       dev_t rdev, const char *symname)
 {
 	struct super_block *sb = dir->i_sb;
 	struct inode *inode;
+	struct apfs_max_ops maxops;
 	int err;
 
-	err = apfs_transaction_start(sb);
+	maxops.cat = APFS_CREATE_INODE_REC_MAXOPS() + APFS_CREATE_DENTRY_MAXOPS;
+	if (symname)
+		maxops.cat += APFS_XATTR_SET_MAXOPS();
+	maxops.blks = 0;
+
+	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
 
@@ -615,6 +629,15 @@ int apfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
 	if (err)
 		goto out_discard_inode;
 
+	if (symname) {
+		err = apfs_xattr_set(inode, APFS_XATTR_NAME_SYMLINK, symname,
+				     strlen(symname) + 1, 0 /* flags */);
+		if (err == -ERANGE)
+			err = -ENAMETOOLONG;
+		if (err)
+			goto out_undo_create;
+	}
+
 	err = apfs_transaction_commit(sb);
 	if (err)
 		goto out_undo_create;
@@ -626,22 +649,59 @@ out_undo_create:
 	apfs_undo_create_dentry(dentry);
 out_discard_inode:
 	/* Don't reset nlink: on-disk cleanup is unneeded and would deadlock */
-	unlock_new_inode(inode);
+	discard_new_inode(inode);
 out_abort:
 	apfs_transaction_abort(sb);
 	return err;
 }
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+int apfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
+	       dev_t rdev)
+#else
+int apfs_mknod(struct user_namespace *mnt_userns, struct inode *dir,
+	       struct dentry *dentry, umode_t mode, dev_t rdev)
+#endif
+{
+	return apfs_mkany(dir, dentry, mode, rdev, NULL /* symname */);
+}
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
 
 int apfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
 	return apfs_mknod(dir, dentry, mode | S_IFDIR, 0 /* rdev */);
 }
 
+#else
+
+int apfs_mkdir(struct user_namespace *mnt_userns, struct inode *dir,
+	       struct dentry *dentry, umode_t mode)
+{
+	return apfs_mknod(mnt_userns, dir, dentry, mode | S_IFDIR, 0 /* rdev */);
+}
+
+#endif
+
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+
 int apfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 		bool excl)
 {
 	return apfs_mknod(dir, dentry, mode, 0 /* rdev */);
 }
+
+#else
+
+int apfs_create(struct user_namespace *mnt_userns, struct inode *dir,
+		struct dentry *dentry, umode_t mode, bool excl)
+{
+	return apfs_mknod(mnt_userns, dir, dentry, mode, 0 /* rdev */);
+}
+
+#endif
+
 
 /**
  * apfs_prepare_dentry_for_link - Assign a sibling id and records to a dentry
@@ -679,6 +739,8 @@ static int apfs_prepare_dentry_for_link(struct dentry *dentry)
 	return apfs_create_dentry_rec(d_inode(dentry), &dentry->d_name,
 				      apfs_ino(parent), sibling_id);
 }
+#define APFS_PREPARE_DENTRY_FOR_LINK_MAXOPS	(1 + APFS_CREATE_SIBLING_RECS_MAXOPS + \
+						 APFS_CREATE_DENTRY_REC_MAXOPS)
 
 /**
  * __apfs_undo_link - Clean up __apfs_link()
@@ -729,15 +791,22 @@ fail:
 	drop_nlink(inode);
 	return err;
 }
+#define __APFS_LINK_MAXOPS	(APFS_UPDATE_INODE_MAXOPS() + \
+				 APFS_PREPARE_DENTRY_FOR_LINK_MAXOPS + \
+				 APFS_CREATE_DENTRY_MAXOPS)
 
 int apfs_link(struct dentry *old_dentry, struct inode *dir,
 	      struct dentry *dentry)
 {
 	struct super_block *sb = dir->i_sb;
 	struct inode *inode = d_inode(old_dentry);
+	struct apfs_max_ops maxops;
 	int err;
 
-	err = apfs_transaction_start(sb);
+	maxops.cat = __APFS_LINK_MAXOPS;
+	maxops.blks = 0;
+
+	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
 
@@ -799,6 +868,7 @@ fail:
 	apfs_free_query(sb, query);
 	return ret;
 }
+#define APFS_DELETE_SIBLING_LINK_REC_MAXOPS	1
 
 /**
  * apfs_delete_sibling_map_rec - Delete the sibling map record for a dentry
@@ -837,6 +907,7 @@ fail:
 	apfs_free_query(sb, query);
 	return ret;
 }
+#define APFS_DELETE_SIBLING_MAP_REC_MAXOPS	1
 
 /**
  * apfs_delete_dentry - Delete all records for a dentry
@@ -879,6 +950,9 @@ static int apfs_delete_dentry(struct dentry *dentry)
 		++APFS_I(parent)->i_nchildren;
 	return err;
 }
+#define APFS_DELETE_DENTRY_MAXOPS	(1 + APFS_DELETE_SIBLING_LINK_REC_MAXOPS + \
+					 APFS_DELETE_SIBLING_MAP_REC_MAXOPS + \
+					 APFS_UPDATE_INODE_MAXOPS())
 
 /**
  * apfs_undo_delete_dentry - Clean up apfs_delete_dentry()
@@ -1045,6 +1119,8 @@ fail:
 	kfree(qname.name);
 	return err;
 }
+#define APFS_CREATE_ORPHAN_LINK_MAXOPS	(APFS_CREATE_DENTRY_REC_MAXOPS + \
+					 APFS_UPDATE_INODE_MAXOPS())
 
 /**
  * apfs_delete_orphan_link - Delete the link for an orphan inode
@@ -1087,6 +1163,10 @@ fail:
 	apfs_free_query(sb, query);
 	kfree(qname.name);
 	return err;
+}
+int APFS_DELETE_ORPHAN_LINK_MAXOPS(void)
+{
+	return 1 + APFS_UPDATE_INODE_MAXOPS();
 }
 
 /**
@@ -1145,13 +1225,20 @@ fail:
 		__apfs_undo_unlink(dentry);
 	return err;
 }
+#define __APFS_UNLINK_MAXOPS	(APFS_DELETE_DENTRY_MAXOPS + \
+				 APFS_CREATE_ORPHAN_LINK_MAXOPS + \
+				 APFS_UPDATE_INODE_MAXOPS())
 
 int apfs_unlink(struct inode *dir, struct dentry *dentry)
 {
 	struct super_block *sb = dir->i_sb;
+	struct apfs_max_ops maxops;
 	int err;
 
-	err = apfs_transaction_start(sb);
+	maxops.cat = __APFS_UNLINK_MAXOPS;
+	maxops.blks = 0;
+
+	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
 
@@ -1180,19 +1267,31 @@ int apfs_rmdir(struct inode *dir, struct dentry *dentry)
 	return apfs_unlink(dir, dentry);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
 int apfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 		struct inode *new_dir, struct dentry *new_dentry,
 		unsigned int flags)
+#else
+int apfs_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
+		struct dentry *old_dentry, struct inode *new_dir,
+		struct dentry *new_dentry, unsigned int flags)
+#endif
 {
 	struct super_block *sb = old_dir->i_sb;
 	struct inode *old_inode = d_inode(old_dentry);
 	struct inode *new_inode = d_inode(new_dentry);
+	struct apfs_max_ops maxops;
 	int err;
 
 	if (flags & ~RENAME_NOREPLACE) /* TODO: support RENAME_EXCHANGE */
 		return -EINVAL;
 
-	err = apfs_transaction_start(sb);
+	maxops.cat = __APFS_UNLINK_MAXOPS + __APFS_LINK_MAXOPS;
+	if (new_inode)
+		maxops.cat += __APFS_UNLINK_MAXOPS;
+	maxops.blks = 0;
+
+	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
 

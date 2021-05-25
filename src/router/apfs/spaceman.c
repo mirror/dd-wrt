@@ -7,7 +7,6 @@
 #include <linux/fs.h>
 #include "apfs.h"
 
-
 /**
  * apfs_spaceman_read_cib_addr - Get the address of a cib from the spaceman
  * @sb:		superblock structure
@@ -20,8 +19,7 @@
  */
 static u64 apfs_spaceman_read_cib_addr(struct super_block *sb, int index)
 {
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_spaceman *sm = &sbi->s_spaceman;
+	struct apfs_spaceman *sm = APFS_SM(sb);
 	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
 	u32 offset;
 	__le64 *addr_p;
@@ -40,13 +38,12 @@ static u64 apfs_spaceman_read_cib_addr(struct super_block *sb, int index)
 static void apfs_spaceman_write_cib_addr(struct super_block *sb,
 					 int index, u64 addr)
 {
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_spaceman *sm = &sbi->s_spaceman;
+	struct apfs_spaceman *sm = APFS_SM(sb);
 	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
 	u32 offset;
 	__le64 *addr_p;
 
-	ASSERT(le64_to_cpu(sm_raw->sm_o.o_xid) == sbi->s_xid);
+	apfs_assert_in_transaction(sb, &sm_raw->sm_o);
 
 	offset = sm->sm_addr_offset + index * sizeof(*addr_p);
 	addr_p = (void *)sm_raw + offset;
@@ -75,8 +72,7 @@ static inline int apfs_max_chunks_per_cib(struct super_block *sb)
 static int apfs_read_spaceman_dev(struct super_block *sb,
 				  struct apfs_spaceman_device *dev)
 {
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_spaceman *spaceman = &sbi->s_spaceman;
+	struct apfs_spaceman *spaceman = APFS_SM(sb);
 
 	if (dev->sm_cab_count) {
 		apfs_err(sb, "large devices are not supported");
@@ -106,7 +102,7 @@ static int apfs_read_spaceman_dev(struct super_block *sb,
  */
 static __le64 *apfs_spaceman_get_64(struct super_block *sb, size_t off)
 {
-	struct apfs_spaceman *spaceman = &APFS_SB(sb)->s_spaceman;
+	struct apfs_spaceman *spaceman = APFS_SM(sb);
 	struct apfs_spaceman_phys *sm_raw = spaceman->sm_raw;
 
 	if (off > sb->s_blocksize)
@@ -143,7 +139,7 @@ static bool apfs_ip_bm_is_free(struct apfs_spaceman_phys *sm, u16 index)
  */
 static int apfs_update_ip_bm_free_next(struct super_block *sb)
 {
-	struct apfs_spaceman *spaceman = &APFS_SB(sb)->s_spaceman;
+	struct apfs_spaceman *spaceman = APFS_SM(sb);
 	struct apfs_spaceman_phys *raw = spaceman->sm_raw;
 	u32 free_next_off = le32_to_cpu(raw->sm_ip_bm_free_next_offset);
 	int bmap_count = 16;
@@ -173,8 +169,8 @@ static int apfs_update_ip_bm_free_next(struct super_block *sb)
  */
 static int apfs_rotate_ip_bitmaps(struct super_block *sb)
 {
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_spaceman *spaceman = &sbi->s_spaceman;
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_spaceman *spaceman = APFS_SM(sb);
 	struct apfs_spaceman_phys *sm_raw = spaceman->sm_raw;
 	u64 bmap_base = le64_to_cpu(sm_raw->sm_ip_bm_base);
 	u32 bmap_length = le32_to_cpu(sm_raw->sm_ip_bm_block_count);
@@ -183,10 +179,7 @@ static int apfs_rotate_ip_bitmaps(struct super_block *sb)
 	struct buffer_head *old_bh = NULL, *new_bh = NULL;
 	int err = 0;
 
-	ASSERT(le64_to_cpu(sm_raw->sm_o.o_xid) == sbi->s_xid);
-
-	brelse(spaceman->sm_ip);
-	spaceman->sm_ip = NULL;
+	apfs_assert_in_transaction(sb, &sm_raw->sm_o);
 
 	if (le32_to_cpu(sm_raw->sm_ip_bm_size_in_blocks) != 1) {
 		apfs_warn(sb, "Multiblock ip bitmaps not supported");
@@ -196,7 +189,7 @@ static int apfs_rotate_ip_bitmaps(struct super_block *sb)
 	xid = apfs_spaceman_get_64(sb, le32_to_cpu(sm_raw->sm_ip_bm_xid_offset));
 	if (!xid)
 		return -EFSCORRUPTED;
-	*xid = cpu_to_le64(sbi->s_xid);
+	*xid = cpu_to_le64(nxi->nx_xid);
 
 	free_head = le16_to_cpu(sm_raw->sm_ip_bm_free_head);
 	free_tail = le16_to_cpu(sm_raw->sm_ip_bm_free_tail);
@@ -204,7 +197,7 @@ static int apfs_rotate_ip_bitmaps(struct super_block *sb)
 	curr_bmap_off = apfs_spaceman_get_64(sb, le32_to_cpu(sm_raw->sm_ip_bitmap_offset));
 	if (!curr_bmap_off)
 		return -EFSCORRUPTED;
-	old_bh = sb_bread(sb, bmap_base + le64_to_cpup(curr_bmap_off));
+	old_bh = apfs_sb_bread(sb, bmap_base + le64_to_cpup(curr_bmap_off));
 	if (!old_bh)
 		return -EIO;
 
@@ -217,7 +210,7 @@ static int apfs_rotate_ip_bitmaps(struct super_block *sb)
 	if (err)
 		goto out;
 
-	new_bh = sb_bread(sb, bmap_base + le64_to_cpup(curr_bmap_off));
+	new_bh = apfs_sb_bread(sb, bmap_base + le64_to_cpup(curr_bmap_off));
 	if (!new_bh) {
 		err = -EIO;
 		goto out;
@@ -235,6 +228,199 @@ out:
 	return err;
 }
 
+/*
+ * Free queue record data
+ */
+struct apfs_fq_rec {
+	u64 xid;
+	u64 bno;
+	u64 len;
+};
+
+/**
+ * apfs_fq_rec_from_query - Read the free queue record found by a query
+ * @query:	the query that found the record
+ * @fqrec:	on return, the free queue record
+ *
+ * Reads the free queue record into @fqrec and performs some basic sanity
+ * checks as a protection against crafted filesystems. Returns 0 on success
+ * or -EFSCORRUPTED otherwise.
+ */
+static int apfs_fq_rec_from_query(struct apfs_query *query, struct apfs_fq_rec *fqrec)
+{
+	char *raw = query->node->object.bh->b_data;
+	struct apfs_spaceman_free_queue_key *key;
+
+	if (query->key_len != sizeof(*key))
+		return -EFSCORRUPTED;
+	key = (struct apfs_spaceman_free_queue_key *)(raw + query->key_off);
+
+	fqrec->xid = le64_to_cpu(key->sfqk_xid);
+	fqrec->bno = le64_to_cpu(key->sfqk_paddr);
+
+	if (query->len == 0) {
+		fqrec->len = 1; /* Ghost record */
+		return 0;
+	} else if (query->len == sizeof(__le64)) {
+		fqrec->len = le64_to_cpup((__le64 *)(raw + query->off));
+		return 0;
+	}
+	return -EFSCORRUPTED;
+}
+
+/**
+ * apfs_block_in_ip - Does this block belong to the internal pool?
+ * @sm:		in-memory spaceman structure
+ * @bno:	block number to check
+ */
+static inline bool apfs_block_in_ip(struct apfs_spaceman *sm, u64 bno)
+{
+	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
+	u64 start = le64_to_cpu(sm_raw->sm_ip_base);
+	u64 end = start + le64_to_cpu(sm_raw->sm_ip_block_count);
+
+	return bno >= start && bno < end;
+}
+
+/**
+ * apfs_ip_mark_free - Mark a block in the internal pool as free
+ * @sb:		superblock structure
+ * @bno:	block number (must belong to the ip)
+ */
+static int apfs_ip_mark_free(struct super_block *sb, u64 bno)
+{
+	struct apfs_spaceman *sm = APFS_SM(sb);
+	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
+	char *bitmap = sm->sm_ip->b_data;
+
+	bno -= le64_to_cpu(sm_raw->sm_ip_base);
+	__clear_bit_le(bno, bitmap);
+
+	return 0;
+}
+
+/*
+ * apfs_main_free - Mark a regular block as free
+ */
+static int apfs_main_free(struct super_block *sb, u64 bno);
+
+/**
+ * apfs_flush_fq_rec - Delete a single fq record and mark its blocks as free
+ * @root:	free queue root node
+ * @xid:	transaction to target
+ * @len:	on return, the number of freed blocks
+ *
+ * Returns 0 on success, or a negative error code in case of failure. -ENODATA
+ * in particular means that there are no matching records left.
+ */
+static int apfs_flush_fq_rec(struct apfs_node *root, u64 xid, u64 *len)
+{
+	struct super_block *sb = root->object.sb;
+	struct apfs_spaceman *sm = APFS_SM(sb);
+	struct apfs_query *query = NULL;
+	struct apfs_fq_rec fqrec = {0};
+	struct apfs_key key;
+	u64 bno;
+	int err;
+
+	query = apfs_alloc_query(root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	apfs_init_free_queue_key(xid, 0 /* paddr */, &key);
+	query->key = &key;
+	query->flags |= APFS_QUERY_FREE_QUEUE | APFS_QUERY_ANY_NUMBER | APFS_QUERY_EXACT;
+
+	err = apfs_btree_query(sb, &query);
+	if (err)
+		goto fail;
+	err = apfs_fq_rec_from_query(query, &fqrec);
+	if (err)
+		goto fail;
+
+	for (bno = fqrec.bno; bno < fqrec.bno + fqrec.len; ++bno) {
+		if(apfs_block_in_ip(sm, bno))
+			err = apfs_ip_mark_free(sb, bno);
+		else
+			err = apfs_main_free(sb, bno);
+		if(err)
+			apfs_err(sb, "freeing block 0x%llx failed (%d)", (unsigned long long)bno, err);
+	}
+	err = apfs_btree_remove(query);
+	if (err)
+		goto fail;
+	*len = fqrec.len;
+
+fail:
+	apfs_free_query(sb, query);
+	return err;
+}
+
+/**
+ * apfs_free_queue_oldest_xid - Find the oldest xid among the free queue records
+ * @root: free queue root node
+ */
+static u64 apfs_free_queue_oldest_xid(struct apfs_node *root)
+{
+	struct apfs_spaceman_free_queue_key *key;
+	char *raw = root->object.bh->b_data;
+	int len, off;
+
+	len = apfs_node_locate_key(root, 0, &off);
+	if (len != sizeof(*key)) /* No records in queue (or corruption) */
+		return 0;
+	key = (struct apfs_spaceman_free_queue_key *)(raw + off);
+	return le64_to_cpu(key->sfqk_xid);
+}
+
+/**
+ * apfs_flush_free_queue - Free ip blocks queued by old transactions
+ * @sb:		superblock structure
+ * @qid:	queue to be freed
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+static int apfs_flush_free_queue(struct super_block *sb, unsigned qid)
+{
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_spaceman *sm = APFS_SM(sb);
+	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
+	struct apfs_spaceman_free_queue *fq = &sm_raw->sm_fq[qid];
+	struct apfs_node *fq_root;
+	u64 oldest = le64_to_cpu(fq->sfq_oldest_xid);
+	int err;
+
+	/* Preserve a few transactions */
+	if (oldest + 4 >= nxi->nx_xid)
+		return 0;
+
+	fq_root = apfs_read_node(sb, le64_to_cpu(fq->sfq_tree_oid),
+				 APFS_OBJ_EPHEMERAL, true /* write */);
+	if (IS_ERR(fq_root))
+		return PTR_ERR(fq_root);
+
+	while (true) {
+		u64 count = 0;
+
+		/* Probably not very efficient... */
+		err = apfs_flush_fq_rec(fq_root, oldest, &count);
+		if (err == -ENODATA) {
+			err = 0;
+			break;
+		} else if (err) {
+			goto fail;
+		} else {
+			le64_add_cpu(&fq->sfq_count, -count);
+		}
+	}
+	fq->sfq_oldest_xid = cpu_to_le64(apfs_free_queue_oldest_xid(fq_root));
+
+	apfs_obj_set_csum(sb, &sm_raw->sm_o);
+
+fail:
+	apfs_node_put(fq_root);
+	return err;
+}
+
 /**
  * apfs_read_spaceman - Find and read the space manager
  * @sb: superblock structure
@@ -245,9 +431,9 @@ out:
  */
 int apfs_read_spaceman(struct super_block *sb)
 {
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_nx_superblock *raw_sb = sbi->s_msb_raw;
-	struct apfs_spaceman *spaceman = &sbi->s_spaceman;
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_nx_superblock *raw_sb = nxi->nx_raw;
+	struct apfs_spaceman *spaceman = APFS_SM(sb);
 	struct buffer_head *sm_bh;
 	struct apfs_spaceman_phys *sm_raw;
 	u32 sm_flags;
@@ -262,7 +448,7 @@ int apfs_read_spaceman(struct super_block *sb)
 		return PTR_ERR(sm_bh);
 	sm_raw = (struct apfs_spaceman_phys *)sm_bh->b_data;
 
-	if (sbi->s_flags & APFS_CHECK_NODES &&
+	if (nxi->nx_flags & APFS_CHECK_NODES &&
 	    !apfs_obj_verify_csum(sb, &sm_raw->sm_o)) {
 		apfs_err(sb, "bad checksum for the space manager");
 		err = -EFSBADCRC;
@@ -292,6 +478,12 @@ int apfs_read_spaceman(struct super_block *sb)
 	err = apfs_rotate_ip_bitmaps(sb);
 	if (err)
 		goto fail;
+	err = apfs_flush_free_queue(sb, APFS_SFQ_IP);
+	if (err)
+		goto fail;
+	err = apfs_flush_free_queue(sb, APFS_SFQ_MAIN);
+	if (err)
+		goto fail;
 	return 0;
 
 fail:
@@ -310,10 +502,10 @@ static void apfs_write_spaceman(struct apfs_spaceman *sm)
 {
 	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
 	struct apfs_spaceman_device *dev_raw = &sm_raw->sm_dev[APFS_SD_MAIN];
-	struct apfs_sb_info *sbi;
+	struct apfs_nxsb_info *nxi;
 
-	sbi = container_of(sm, struct apfs_sb_info, s_spaceman);
-	ASSERT(le64_to_cpu(sm_raw->sm_o.o_xid) == sbi->s_xid);
+	nxi = container_of(sm, struct apfs_nxsb_info, nx_spaceman);
+	ASSERT(le64_to_cpu(sm_raw->sm_o.o_xid) == nxi->nx_xid);
 
 	dev_raw->sm_free_count = cpu_to_le64(sm->sm_free_count);
 }
@@ -326,7 +518,7 @@ static void apfs_write_spaceman(struct apfs_spaceman *sm)
  */
 static u64 apfs_ip_find_free(struct super_block *sb)
 {
-	struct apfs_spaceman *sm = &APFS_SB(sb)->s_spaceman;
+	struct apfs_spaceman *sm = APFS_SM(sb);
 	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
 	int bitcount = le64_to_cpu(sm_raw->sm_ip_block_count);
 	char *bitmap = sm->sm_ip->b_data;
@@ -366,7 +558,7 @@ static u64 apfs_chunk_find_free(struct super_block *sb, char *bitmap, u64 addr)
  */
 static void apfs_ip_mark_used(struct super_block *sb, u64 bno)
 {
-	struct apfs_spaceman *sm = &APFS_SB(sb)->s_spaceman;
+	struct apfs_spaceman *sm = APFS_SM(sb);
 	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
 	char *bitmap = sm->sm_ip->b_data;
 
@@ -389,17 +581,17 @@ static inline void apfs_chunk_mark_used(struct super_block *sb, char *bitmap,
 }
 
 /**
- * apfs_block_in_ip - Does this block belong to the internal pool?
- * @sm:		in-memory spaceman structure
- * @bno:	block number to check
+ * apfs_chunk_mark_free - Mark a block inside a chunk as free
+ * @sb:		superblock structure
+ * @bitmap:	allocation bitmap for the chunk
+ * @bno:	block number (must belong to the chunk)
  */
-static inline bool apfs_block_in_ip(struct apfs_spaceman *sm, u64 bno)
+static inline int apfs_chunk_mark_free(struct super_block *sb, char *bitmap,
+					u64 bno)
 {
-	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
-	u64 start = le64_to_cpu(sm_raw->sm_ip_base);
-	u64 end = start + le64_to_cpu(sm_raw->sm_ip_block_count);
+	int bitcount = sb->s_blocksize * 8;
 
-	return bno >= start && bno < end;
+	return __test_and_clear_bit_le(bno & (bitcount - 1), bitmap);
 }
 
 /**
@@ -411,8 +603,8 @@ static inline bool apfs_block_in_ip(struct apfs_spaceman *sm, u64 bno)
  */
 int apfs_free_queue_insert(struct super_block *sb, u64 bno)
 {
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_spaceman *sm = &sbi->s_spaceman;
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_spaceman *sm = APFS_SM(sb);
 	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
 	struct apfs_spaceman_free_queue *fq;
 	struct apfs_node *fq_root;
@@ -437,7 +629,7 @@ int apfs_free_queue_insert(struct super_block *sb, u64 bno)
 		goto fail;
 	}
 
-	apfs_init_free_queue_key(sbi->s_xid, bno, &key);
+	apfs_init_free_queue_key(nxi->nx_xid, bno, &key);
 	query->key = &key;
 	query->flags |= APFS_QUERY_FREE_QUEUE;
 
@@ -445,7 +637,7 @@ int apfs_free_queue_insert(struct super_block *sb, u64 bno)
 	if (err && err != -ENODATA)
 		goto fail;
 
-	raw_key.sfqk_xid = cpu_to_le64(sbi->s_xid);
+	raw_key.sfqk_xid = cpu_to_le64(nxi->nx_xid);
 	raw_key.sfqk_paddr = cpu_to_le64(bno);
 	/* A lack of value (ghost record) implies a single-block extent */
 	err = apfs_btree_insert(query, &raw_key, sizeof(raw_key),
@@ -454,7 +646,7 @@ int apfs_free_queue_insert(struct super_block *sb, u64 bno)
 		goto fail;
 
 	if (!fq->sfq_oldest_xid)
-		fq->sfq_oldest_xid = cpu_to_le64(sbi->s_xid);
+		fq->sfq_oldest_xid = cpu_to_le64(nxi->nx_xid);
 	le64_add_cpu(&fq->sfq_count, 1);
 	apfs_obj_set_csum(sb, &sm_raw->sm_o);
 
@@ -465,22 +657,19 @@ fail:
 }
 
 /**
- * apfs_chunk_allocate_block - Allocate a single block from a chunk
+ * apfs_chunk_alloc_free - Allocate or free block in given CIB and chunk
  * @sb:		superblock structure
  * @cib_bh:	buffer head for the chunk-info block
  * @index:	index of this chunk's info structure inside @cib
- * @bno:	on return, the allocated block number
- *
- * Finds a free block in the chunk and marks it as used; the buffer at @cib_bh
- * may be replaced if needed for copy-on-write.  Returns 0 on success, or a
- * negative error code in case of failure.
+ * @bno:	block number
+ * @is_alloc:	true to allocate, false to free
  */
-static int apfs_chunk_allocate_block(struct super_block *sb,
-				     struct buffer_head **cib_bh,
-				     int index, u64 *bno)
+static int apfs_chunk_alloc_free(struct super_block *sb,
+				 struct buffer_head **cib_bh,
+				 int index, u64 *bno, bool is_alloc)
 {
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_spaceman *sm = &sbi->s_spaceman;
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_spaceman *sm = APFS_SM(sb);
 	struct apfs_chunk_info_block *cib;
 	struct apfs_chunk_info *ci;
 	struct buffer_head *bmap_bh = NULL;
@@ -493,24 +682,28 @@ static int apfs_chunk_allocate_block(struct super_block *sb,
 	ci = &cib->cib_chunk_info[index];
 
 	/* Cibs and bitmaps from old transactions can't be modified in place */
-	if (le64_to_cpu(cib->cib_o.o_xid) < sbi->s_xid)
+	if (le64_to_cpu(cib->cib_o.o_xid) < nxi->nx_xid)
 		old_cib = true;
-	if (le64_to_cpu(ci->ci_xid) < sbi->s_xid)
+	if (le64_to_cpu(ci->ci_xid) < nxi->nx_xid)
 		old_bmap = true;
-	if (le32_to_cpu(ci->ci_free_count) < 1)
+	if (is_alloc && le32_to_cpu(ci->ci_free_count) < 1)
 		return -ENOSPC;
 
 	/* Read the current bitmap, or allocate it if necessary */
 	if (!ci->ci_bitmap_addr) {
 		u64 bmap_bno;
 
+		/* Freeing a block in an all-free chunk? */
+		if(!is_alloc)
+			return -EFSCORRUPTED;
+
 		/* All blocks in this chunk are free */
 		bmap_bno = apfs_ip_find_free(sb);
 		if (!bmap_bno)
 			return -EFSCORRUPTED;
-		bmap_bh = sb_bread(sb, bmap_bno);
+		bmap_bh = apfs_sb_bread(sb, bmap_bno);
 	} else {
-		bmap_bh = sb_bread(sb, le64_to_cpu(ci->ci_bitmap_addr));
+		bmap_bh = apfs_sb_bread(sb, le64_to_cpu(ci->ci_bitmap_addr));
 	}
 	if (!bmap_bh)
 		return -EIO;
@@ -531,7 +724,7 @@ static int apfs_chunk_allocate_block(struct super_block *sb,
 			goto fail;
 		}
 
-		new_bmap_bh = sb_bread(sb, new_bmap_bno);
+		new_bmap_bh = apfs_sb_bread(sb, new_bmap_bno);
 		if (!new_bmap_bh) {
 			err = -EIO;
 			goto fail;
@@ -557,7 +750,7 @@ static int apfs_chunk_allocate_block(struct super_block *sb,
 			goto fail;
 		}
 
-		new_cib_bh = sb_bread(sb, new_cib_bno);
+		new_cib_bh = apfs_sb_bread(sb, new_cib_bno);
 		if (!new_cib_bh) {
 			err = -EIO;
 			goto fail;
@@ -572,28 +765,38 @@ static int apfs_chunk_allocate_block(struct super_block *sb,
 		cib = (struct apfs_chunk_info_block *)(*cib_bh)->b_data;
 		ci = &cib->cib_chunk_info[index];
 		cib->cib_o.o_oid = cpu_to_le64(new_cib_bno);
-		cib->cib_o.o_xid = cpu_to_le64(sbi->s_xid);
+		cib->cib_o.o_xid = cpu_to_le64(nxi->nx_xid);
 
 		apfs_ip_mark_used(sb, new_cib_bno);
 	}
 
 	/* The chunk info can be updated now */
-	ASSERT(le64_to_cpu(cib->cib_o.o_xid) == sbi->s_xid);
-	ci->ci_xid = cpu_to_le64(sbi->s_xid);
-	le32_add_cpu(&ci->ci_free_count, -1);
+	apfs_assert_in_transaction(sb, &cib->cib_o);
+	ci->ci_xid = cpu_to_le64(nxi->nx_xid);
+	le32_add_cpu(&ci->ci_free_count, is_alloc ? -1 : 1);
 	ci->ci_bitmap_addr = cpu_to_le64(bmap_bh->b_blocknr);
 	apfs_obj_set_csum(sb, &cib->cib_o);
 	mark_buffer_dirty(*cib_bh);
 
-	/* Finally, allocate the actual block that was requested */
-	*bno = apfs_chunk_find_free(sb, bmap, le64_to_cpu(ci->ci_addr));
-	if (!*bno) {
-		err = -EFSCORRUPTED;
-		goto fail;
+	/* Finally, allocate / free the actual block that was requested */
+	if(is_alloc) {
+		*bno = apfs_chunk_find_free(sb, bmap, le64_to_cpu(ci->ci_addr));
+		if (!*bno) {
+			err = -EFSCORRUPTED;
+			goto fail;
+		}
+		apfs_chunk_mark_used(sb, bmap, *bno);
+		sm->sm_free_count -= 1;
+	} else {
+		if(!apfs_chunk_mark_free(sb, bmap, *bno)) {
+			le32_add_cpu(&ci->ci_free_count, -1);
+			apfs_obj_set_csum(sb, &cib->cib_o);
+			mark_buffer_dirty(*cib_bh);
+			err = -EFSCORRUPTED;
+		} else
+			sm->sm_free_count += 1;
 	}
-	apfs_chunk_mark_used(sb, bmap, *bno);
 	mark_buffer_dirty(bmap_bh);
-	sm->sm_free_count -= 1;
 
 fail:
 	brelse(bmap_bh);
@@ -601,26 +804,45 @@ fail:
 }
 
 /**
+ * apfs_chunk_allocate_block - Allocate a single block from a chunk
+ * @sb:		superblock structure
+ * @cib_bh:	buffer head for the chunk-info block
+ * @index:	index of this chunk's info structure inside @cib
+ * @bno:	on return, the allocated block number
+ *
+ * Finds a free block in the chunk and marks it as used; the buffer at @cib_bh
+ * may be replaced if needed for copy-on-write.  Returns 0 on success, or a
+ * negative error code in case of failure.
+ */
+static int apfs_chunk_allocate_block(struct super_block *sb,
+				     struct buffer_head **cib_bh,
+				     int index, u64 *bno)
+{
+	return apfs_chunk_alloc_free(sb, cib_bh, index, bno, true);
+}
+
+/**
  * apfs_cib_allocate_block - Allocate a single block from a cib
  * @sb:		superblock structure
  * @cib_bh:	buffer head for the chunk-info block
  * @bno:	on return, the allocated block number
+ * @backwards:	start the search on the last chunk
  *
  * Finds a free block among all the chunks in the cib and marks it as used; the
  * buffer at @cib_bh may be replaced if needed for copy-on-write.  Returns 0 on
  * success, or a negative error code in case of failure.
  */
 static int apfs_cib_allocate_block(struct super_block *sb,
-				   struct buffer_head **cib_bh, u64 *bno)
+				   struct buffer_head **cib_bh, u64 *bno, bool backwards)
 {
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_spaceman *sm = &sbi->s_spaceman;
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_spaceman *sm = APFS_SM(sb);
 	struct apfs_chunk_info_block *cib;
 	u32 chunk_count;
 	int i;
 
 	cib = (struct apfs_chunk_info_block *)(*cib_bh)->b_data;
-	if (sbi->s_flags & APFS_CHECK_NODES &&
+	if (nxi->nx_flags & APFS_CHECK_NODES &&
 	    !apfs_obj_verify_csum(sb, &cib->cib_o)) {
 		apfs_err(sb, "bad checksum for chunk-info block");
 		return -EFSBADCRC;
@@ -632,9 +854,12 @@ static int apfs_cib_allocate_block(struct super_block *sb,
 		return -EFSCORRUPTED;
 
 	for (i = 0; i < chunk_count; ++i) {
+		int index;
 		int err;
 
-		err = apfs_chunk_allocate_block(sb, cib_bh, i, bno);
+		index = backwards ? chunk_count - 1 - i : i;
+
+		err = apfs_chunk_allocate_block(sb, cib_bh, index, bno);
 		if (err == -ENOSPC) /* This chunk is full */
 			continue;
 		return err;
@@ -646,31 +871,35 @@ static int apfs_cib_allocate_block(struct super_block *sb,
  * apfs_spaceman_allocate_block - Allocate a single on-disk block
  * @sb:		superblock structure
  * @bno:	on return, the allocated block number
+ * @backwards:	start the search on the last chunk
  *
  * Finds a free block among the spaceman bitmaps and marks it as used.  Returns
  * 0 on success, or a negative error code in case of failure.
  */
-int apfs_spaceman_allocate_block(struct super_block *sb, u64 *bno)
+int apfs_spaceman_allocate_block(struct super_block *sb, u64 *bno, bool backwards)
 {
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_spaceman *sm = &sbi->s_spaceman;
+	struct apfs_spaceman *sm = APFS_SM(sb);
 	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
 	int i;
 
 	for (i = 0; i < sm->sm_cib_count; ++i) {
 		struct buffer_head *cib_bh;
 		u64 cib_bno;
+		int index;
 		int err;
 
-		cib_bno = apfs_spaceman_read_cib_addr(sb, i);
-		cib_bh = sb_bread(sb, cib_bno);
+		/* Keep extents and metadata separate to limit fragmentation */
+		index = backwards ? sm->sm_cib_count - 1 - i : i;
+
+		cib_bno = apfs_spaceman_read_cib_addr(sb, index);
+		cib_bh = apfs_sb_bread(sb, cib_bno);
 		if (!cib_bh)
 			return -EIO;
 
-		err = apfs_cib_allocate_block(sb, &cib_bh, bno);
+		err = apfs_cib_allocate_block(sb, &cib_bh, bno, backwards);
 		if (!err) {
 			/* The cib may have been moved */
-			apfs_spaceman_write_cib_addr(sb, i, cib_bh->b_blocknr);
+			apfs_spaceman_write_cib_addr(sb, index, cib_bh->b_blocknr);
 			/* The free block count has changed */
 			apfs_write_spaceman(sm);
 			apfs_obj_set_csum(sb, &sm_raw->sm_o);
@@ -681,4 +910,56 @@ int apfs_spaceman_allocate_block(struct super_block *sb, u64 *bno)
 		return err;
 	}
 	return -ENOSPC;
+}
+
+/**
+ * apfs_chunk_free - Mark a regular block as free given CIB and chunk
+ * @sb:		superblock structure
+ * @cib_bh:	buffer head for the chunk-info block
+ * @index:	index of this chunk's info structure inside @cib
+ * @bno:	block number (must not belong to the ip)
+ */
+static int apfs_chunk_free(struct super_block *sb,
+				struct buffer_head **cib_bh,
+				int index, u64 bno)
+{
+	return apfs_chunk_alloc_free(sb, cib_bh, index, &bno, false);
+}
+
+/**
+ * apfs_main_free - Mark a regular block as free
+ * @sb:		superblock structure
+ * @bno:	block number (must not belong to the ip)
+ */
+static int apfs_main_free(struct super_block *sb, u64 bno)
+{
+	struct apfs_spaceman *sm = APFS_SM(sb);
+	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
+	int cib_idx, chunk_idx;
+	struct buffer_head *cib_bh;
+	u64 cib_bno;
+	int err;
+
+	if(!sm_raw->sm_blocks_per_chunk || !sm_raw->sm_chunks_per_cib)
+		return -EINVAL;
+	chunk_idx = bno / sm->sm_blocks_per_chunk;
+	cib_idx = chunk_idx / sm->sm_chunks_per_cib;
+	chunk_idx -= cib_idx * sm->sm_chunks_per_cib;
+
+	cib_bno = apfs_spaceman_read_cib_addr(sb, cib_idx);
+	cib_bh = apfs_sb_bread(sb, cib_bno);
+	if (!cib_bh)
+		return -EIO;
+
+	err = apfs_chunk_free(sb, &cib_bh, chunk_idx, bno);
+	if (!err) {
+		/* The cib may have been moved */
+		apfs_spaceman_write_cib_addr(sb, cib_idx, cib_bh->b_blocknr);
+		/* The free block count has changed */
+		apfs_write_spaceman(sm);
+		apfs_obj_set_csum(sb, &sm_raw->sm_o);
+	}
+	brelse(cib_bh);
+
+	return err;
 }

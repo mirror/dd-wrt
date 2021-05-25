@@ -9,16 +9,29 @@
 #include <linux/blk_types.h>
 #include "apfs.h"
 
+#define MAX_PFK_LEN	512
+
 static int apfs_readpage(struct file *file, struct page *page)
 {
 	return mpage_readpage(page, apfs_get_block);
 }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) /* Misses mpage_readpages() */
+
+static void apfs_readahead(struct readahead_control *rac)
+{
+	mpage_readahead(rac, apfs_get_block);
+}
+
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) */
 
 static int apfs_readpages(struct file *file, struct address_space *mapping,
 			  struct list_head *pages, unsigned int nr_pages)
 {
 	return mpage_readpages(mapping, pages, nr_pages, apfs_get_block);
 }
+
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) */
 
 /**
  * apfs_create_dstream_rec - Create the data stream record for an inode
@@ -60,6 +73,222 @@ out:
 	apfs_free_query(sb, query);
 	return ret;
 }
+#define APFS_CREATE_DSTREAM_REC_MAXOPS	1
+
+/**
+ * apfs_create_crypto_rec - Create the crypto state record for an inode
+ * @inode: the vfs inode
+ *
+ * Does nothing if the record already exists.  TODO: support cloned files.
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+static int apfs_create_crypto_rec(struct inode *inode)
+{
+	struct super_block *sb = inode->i_sb;
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_inode_info *ai = APFS_I(inode);
+	struct apfs_key key;
+	struct apfs_query *query;
+	struct apfs_crypto_state_key raw_key;
+	int ret;
+
+	if (inode->i_size || inode->i_blocks) /* Already has a dstream */
+		return 0;
+
+	apfs_init_crypto_state_key(ai->i_extent_id, &key);
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	query->key = &key;
+	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
+
+	ret = apfs_btree_query(sb, &query);
+	if (ret != -ENODATA) /* Either an error, or the record already exists */
+		goto out;
+
+	apfs_key_set_hdr(APFS_TYPE_CRYPTO_STATE, ai->i_extent_id, &raw_key);
+	if(sbi->s_dflt_pfk) {
+		struct apfs_crypto_state_val *raw_val = sbi->s_dflt_pfk;
+		unsigned key_len = le16_to_cpu(raw_val->state.key_len);
+		ret = apfs_btree_insert(query, &raw_key, sizeof(raw_key),
+					raw_val, sizeof(*raw_val) + key_len);
+	} else {
+		struct apfs_crypto_state_val raw_val;
+		raw_val.refcnt = cpu_to_le32(1);
+		raw_val.state.major_version = cpu_to_le16(APFS_WMCS_MAJOR_VERSION);
+		raw_val.state.minor_version = cpu_to_le16(APFS_WMCS_MINOR_VERSION);
+		raw_val.state.cpflags = 0;
+		raw_val.state.persistent_class = cpu_to_le32(APFS_PROTECTION_CLASS_F);
+		raw_val.state.key_os_version = 0;
+		raw_val.state.key_revision = cpu_to_le16(1);
+		raw_val.state.key_len = cpu_to_le16(0);
+		ret = apfs_btree_insert(query, &raw_key, sizeof(raw_key),
+					&raw_val, sizeof(raw_val));
+	}
+out:
+	apfs_free_query(sb, query);
+	return ret;
+}
+#define APFS_CREATE_CRYPTO_REC_MAXOPS	1
+
+/**
+ * apfs_dflt_key_class - Returns default key class for files in volume
+ * @sb: volume superblock
+ */
+static unsigned apfs_dflt_key_class(struct super_block *sb)
+{
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+
+	if (!sbi->s_dflt_pfk)
+		return APFS_PROTECTION_CLASS_F;
+
+	return le32_to_cpu(sbi->s_dflt_pfk->state.persistent_class);
+}
+
+/**
+ * apfs_create_crypto_rec - Adjust crypto state record refcount
+ * @sb: volume superblock
+ * @crypto_id: crypto_id to adjust
+ * @delta: desired change in reference count
+ *
+ * This function is used when adding or removing extents, as each extent holds
+ * a reference to the crypto ID. It should also be used when removing inodes,
+ * and in that case it should also remove the crypto record (TODO).
+ */
+int apfs_crypto_adj_refcnt(struct super_block *sb, u64 crypto_id, int delta)
+{
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_key key;
+	struct apfs_query *query;
+	struct apfs_crypto_state_val *raw_val;
+	char *raw;
+	int ret;
+
+	if (!crypto_id)
+		return 0;
+
+	apfs_init_crypto_state_key(crypto_id, &key);
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	query->key = &key;
+	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
+
+	ret = apfs_btree_query(sb, &query);
+	if (ret)
+		goto out;
+
+	ret = apfs_query_join_transaction(query);
+	if (ret)
+		return ret;
+	raw = query->node->object.bh->b_data;
+	raw_val = (void *)raw + query->off;
+
+	le32_add_cpu(&raw_val->refcnt, delta);
+
+out:
+	apfs_free_query(sb, query);
+	return ret;
+}
+int APFS_CRYPTO_ADJ_REFCNT_MAXOPS(void)
+{
+	return 1;
+}
+
+/**
+ * apfs_crypto_set_key - Modify content of crypto state record
+ * @sb: volume superblock
+ * @crypto_id: crypto_id to modify
+ * @new_val: new crypto state data; new_val->refcnt is overridden
+ *
+ * This function does not alter the inode's default protection class field.
+ * It needs to be done separately if the class changes.
+ */
+static int apfs_crypto_set_key(struct super_block *sb, u64 crypto_id, struct apfs_crypto_state_val *new_val)
+{
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_key key;
+	struct apfs_query *query;
+	struct apfs_crypto_state_val *raw_val;
+	char *raw;
+	int ret;
+	unsigned pfk_len;
+
+	if (!crypto_id)
+		return 0;
+
+	pfk_len = le16_to_cpu(new_val->state.key_len);
+
+	apfs_init_crypto_state_key(crypto_id, &key);
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	query->key = &key;
+	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
+
+	ret = apfs_btree_query(sb, &query);
+	if (ret)
+		goto out;
+	raw = query->node->object.bh->b_data;
+	raw_val = (void *)raw + query->off;
+
+	new_val->refcnt = raw_val->refcnt;
+
+	ret = apfs_btree_replace(query, NULL /* key */, 0 /* key_len */,
+				 new_val, sizeof(*new_val) + pfk_len);
+
+out:
+	apfs_free_query(sb, query);
+	return ret;
+}
+#define APFS_CRYPTO_SET_KEY_MAXOPS	1
+
+/**
+ * apfs_crypto_get_key - Retrieve content of crypto state record
+ * @sb: volume superblock
+ * @crypto_id: crypto_id to modify
+ * @val: result crypto state data
+ * @max_len: maximum allowed value of val->state.key_len
+ */
+static int apfs_crypto_get_key(struct super_block *sb, u64 crypto_id, struct apfs_crypto_state_val *val,
+			       unsigned max_len)
+{
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_key key;
+	struct apfs_query *query;
+	struct apfs_crypto_state_val *raw_val;
+	char *raw;
+	int ret;
+	unsigned pfk_len;
+
+	if (!crypto_id)
+		return -ENOENT;
+
+	apfs_init_crypto_state_key(crypto_id, &key);
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	query->key = &key;
+	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
+
+	ret = apfs_btree_query(sb, &query);
+	if (ret)
+		goto out;
+	raw = query->node->object.bh->b_data;
+	raw_val = (void *)raw + query->off;
+
+	pfk_len = le16_to_cpu(raw_val->state.key_len);
+	if(pfk_len > max_len) {
+		ret = -ENOSPC;
+		goto out;
+	}
+
+	memcpy(val, raw_val, sizeof(*val) + pfk_len);
+
+out:
+	apfs_free_query(sb, query);
+	return ret;
+}
 
 static int apfs_write_begin(struct file *file, struct address_space *mapping,
 			    loff_t pos, unsigned int len, unsigned int flags,
@@ -72,15 +301,29 @@ static int apfs_write_begin(struct file *file, struct address_space *mapping,
 	unsigned int blocksize, block_start, block_end, from, to;
 	pgoff_t index = pos >> PAGE_SHIFT;
 	sector_t iblock = (sector_t)index << (PAGE_SHIFT - inode->i_blkbits);
+	int blkcount = (len + sb->s_blocksize - 1) >> inode->i_blkbits;
+	struct apfs_max_ops maxops;
 	int err;
 
-	err = apfs_transaction_start(sb);
+	maxops.cat = APFS_CREATE_DSTREAM_REC_MAXOPS +
+		     APFS_CREATE_CRYPTO_REC_MAXOPS +
+		     APFS_UPDATE_INODE_MAXOPS() +
+		     blkcount * APFS_GET_NEW_BLOCK_MAXOPS();
+	maxops.blks = blkcount;
+
+	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
 
 	err = apfs_create_dstream_rec(inode);
 	if (err)
 		goto out_abort;
+
+	if(apfs_vol_is_encrypted(sb)) {
+		err = apfs_create_crypto_rec(inode);
+		if (err)
+			goto out_abort;
+	}
 
 	page = grab_cache_page_write_begin(mapping, index,
 					   flags | AOP_FLAG_NOFS);
@@ -142,6 +385,7 @@ static int apfs_write_end(struct file *file, struct address_space *mapping,
 {
 	struct inode *inode = mapping->host;
 	struct super_block *sb = inode->i_sb;
+	struct buffer_head *bh, *head;
 	int ret, err;
 
 	ret = generic_write_end(file, mapping, pos, len, copied, page, fsdata);
@@ -150,6 +394,19 @@ static int apfs_write_end(struct file *file, struct address_space *mapping,
 		err = -EIO;
 		goto out_abort;
 	}
+
+	bh = head = page_buffers(page);
+	do {
+		if (buffer_dirty(bh))
+			sync_dirty_buffer(bh);
+		put_bh(bh);
+		bh = bh->b_this_page;
+	} while (bh != head);
+
+	/* TODO: write all metadata for inodes at transaction commit instead? */
+	err = apfs_flush_extent_cache(inode);
+	if (err)
+		goto out_abort;
 
 	err = apfs_update_inode(inode, NULL /* new_name */);
 	if (err)
@@ -167,7 +424,11 @@ out_abort:
 /* bmap is not implemented to avoid issues with CoW on swapfiles */
 static const struct address_space_operations apfs_aops = {
 	.readpage	= apfs_readpage,
-	.readpages	= apfs_readpages,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+	.readahead      = apfs_readahead,
+#else
+	.readpages      = apfs_readpages,
+#endif
 	.write_begin	= apfs_write_begin,
 	.write_end	= apfs_write_end,
 };
@@ -176,16 +437,20 @@ static const struct address_space_operations apfs_aops = {
  * apfs_inode_set_ops - Set up an inode's operations
  * @inode:	vfs inode to set up
  * @rdev:	device id (0 if not a device file)
+ * @compressed:	is this a compressed inode?
  *
  * For device files, also sets the device id to @rdev.
  */
-static void apfs_inode_set_ops(struct inode *inode, dev_t rdev)
+static void apfs_inode_set_ops(struct inode *inode, dev_t rdev, bool compressed)
 {
 	/* A lot of operations still missing, of course */
 	switch (inode->i_mode & S_IFMT) {
 	case S_IFREG:
 		inode->i_op = &apfs_file_inode_operations;
-		inode->i_fop = &apfs_file_operations;
+		if (compressed)
+			inode->i_fop = &apfs_compress_file_operations;
+		else
+			inode->i_fop = &apfs_file_operations;
 		inode->i_mapping->a_ops = &apfs_aops;
 		break;
 	case S_IFDIR:
@@ -218,7 +483,8 @@ static int apfs_inode_from_query(struct apfs_query *query, struct inode *inode)
 	char *raw = query->node->object.bh->b_data;
 	char *xval = NULL;
 	int xlen;
-	u32 rdev = 0;
+	u32 rdev = 0, bsd_flags;
+	bool compressed = false;
 
 	if (query->len < sizeof(*inode_val))
 		goto corrupted;
@@ -228,6 +494,8 @@ static int apfs_inode_from_query(struct apfs_query *query, struct inode *inode)
 	ai->i_parent_id = le64_to_cpu(inode_val->parent_id);
 	ai->i_extent_id = le64_to_cpu(inode_val->private_id);
 	inode->i_mode = le16_to_cpu(inode_val->mode);
+	ai->i_key_class = le32_to_cpu(inode_val->default_protection_class);
+	ai->i_int_flags = le64_to_cpu(inode_val->internal_flags);
 
 	ai->i_saved_uid = le32_to_cpu(inode_val->owner);
 	i_uid_write(inode, ai->i_saved_uid);
@@ -245,20 +513,29 @@ static int apfs_inode_from_query(struct apfs_query *query, struct inode *inode)
 		ai->i_nchildren = le32_to_cpu(inode_val->nchildren);
 	}
 
-	inode->i_atime = ns_to_timespec(le64_to_cpu(inode_val->access_time));
-	inode->i_ctime = ns_to_timespec(le64_to_cpu(inode_val->change_time));
-	inode->i_mtime = ns_to_timespec(le64_to_cpu(inode_val->mod_time));
-	ai->i_crtime = ns_to_timespec(le64_to_cpu(inode_val->create_time));
+	inode->i_atime = ns_to_timespec64(le64_to_cpu(inode_val->access_time));
+	inode->i_ctime = ns_to_timespec64(le64_to_cpu(inode_val->change_time));
+	inode->i_mtime = ns_to_timespec64(le64_to_cpu(inode_val->mod_time));
+	ai->i_crtime = ns_to_timespec64(le64_to_cpu(inode_val->create_time));
 
-	inode->i_size = inode->i_blocks = 0; /* TODO: compressed inodes */
-	xlen = apfs_find_xfield(inode_val->xfields,
-				query->len - sizeof(*inode_val),
-				APFS_INO_EXT_TYPE_DSTREAM, &xval);
-	if (xlen >= sizeof(struct apfs_dstream)) {
-		struct apfs_dstream *dstream = (struct apfs_dstream *)xval;
+	inode->i_size = inode->i_blocks = 0;
+	bsd_flags = le32_to_cpu(inode_val->bsd_flags);
+	if ((bsd_flags & APFS_INOBSD_COMPRESSED) && !S_ISDIR(inode->i_mode)) {
+		if (!apfs_compress_get_size(inode, &inode->i_size)) {
+			/* TODO: correct block calculation in general */
+			inode->i_blocks = (inode->i_size + 511) >> 9;
+			compressed = true;
+		}
+	} else {
+		xlen = apfs_find_xfield(inode_val->xfields,
+					query->len - sizeof(*inode_val),
+					APFS_INO_EXT_TYPE_DSTREAM, &xval);
+		if (xlen >= sizeof(struct apfs_dstream)) {
+			struct apfs_dstream *dstream = (struct apfs_dstream *)xval;
 
-		inode->i_size = le64_to_cpu(dstream->size);
-		inode->i_blocks = le64_to_cpu(dstream->alloced_size) >> 9;
+			inode->i_size = le64_to_cpu(dstream->size);
+			inode->i_blocks = le64_to_cpu(dstream->alloced_size) >> 9;
+		}
 	}
 	xval = NULL;
 
@@ -272,7 +549,7 @@ static int apfs_inode_from_query(struct apfs_query *query, struct inode *inode)
 		rdev = le32_to_cpup(rdev_p);
 	}
 
-	apfs_inode_set_ops(inode, rdev);
+	apfs_inode_set_ops(inode, rdev, compressed);
 	return 0;
 
 corrupted:
@@ -360,6 +637,7 @@ static struct inode *apfs_iget_locked(struct super_block *sb, u64 cnid)
 struct inode *apfs_iget(struct super_block *sb, u64 cnid)
 {
 	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
 	struct inode *inode;
 	struct apfs_query *query;
 	int err;
@@ -370,7 +648,7 @@ struct inode *apfs_iget(struct super_block *sb, u64 cnid)
 	if (!(inode->i_state & I_NEW))
 		return inode;
 
-	down_read(&sbi->s_big_sem);
+	down_read(&nxi->nx_big_sem);
 	query = apfs_inode_lookup(inode);
 	if (IS_ERR(query)) {
 		err = PTR_ERR(query);
@@ -380,7 +658,7 @@ struct inode *apfs_iget(struct super_block *sb, u64 cnid)
 	apfs_free_query(sb, query);
 	if (err)
 		goto fail;
-	up_read(&sbi->s_big_sem);
+	up_read(&nxi->nx_big_sem);
 
 	/* Allow the user to override the ownership */
 	if (uid_valid(sbi->s_uid))
@@ -393,31 +671,74 @@ struct inode *apfs_iget(struct super_block *sb, u64 cnid)
 	return inode;
 
 fail:
-	up_read(&sbi->s_big_sem);
+	up_read(&nxi->nx_big_sem);
 	iget_failed(inode);
 	return ERR_PTR(err);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0) /* No statx yet... */
+
 int apfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
-		   struct kstat *stat)
+		 struct kstat *stat)
 {
 	struct inode *inode = d_inode(dentry);
-	struct apfs_inode_info *ai = APFS_I(inode);
-
-//	stat->result_mask |= STATX_BTIME;
-//	stat->btime = ai->i_crtime;
-
-//	if (apfs_xattr_get(inode, APFS_XATTR_NAME_COMPRESSED, NULL, 0) >= 0)
-//		stat->attributes |= STATX_ATTR_COMPRESSED;
-
-//	stat->attributes_mask |= STATX_ATTR_COMPRESSED;
 
 	generic_fillattr(inode, stat);
-#if BITS_PER_LONG == 32
 	stat->ino = apfs_ino(inode);
-#endif
 	return 0;
 }
+
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+int apfs_getattr(const struct path *path, struct kstat *stat,
+		 u32 request_mask, unsigned int query_flags)
+
+{
+	struct inode *inode = d_inode(path->dentry);
+	struct apfs_inode_info *ai = APFS_I(inode);
+
+	stat->result_mask |= STATX_BTIME;
+	stat->btime = ai->i_crtime;
+
+	if (apfs_xattr_get(inode, APFS_XATTR_NAME_COMPRESSED, NULL, 0) >= 0)
+		stat->attributes |= STATX_ATTR_COMPRESSED;
+
+	stat->attributes_mask |= STATX_ATTR_COMPRESSED;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(inode, stat);
+#else
+	generic_fillattr(mnt_userns, inode, stat);
+#endif
+
+	stat->ino = apfs_ino(inode);
+	return 0;
+}
+#else
+int apfs_getattr(struct user_namespace *mnt_userns,
+		 const struct path *path, struct kstat *stat, u32 request_mask,
+		 unsigned int query_flags)
+{
+	struct inode *inode = d_inode(path->dentry);
+	struct apfs_inode_info *ai = APFS_I(inode);
+
+	stat->result_mask |= STATX_BTIME;
+	stat->btime = ai->i_crtime;
+
+	if (apfs_xattr_get(inode, APFS_XATTR_NAME_COMPRESSED, NULL, 0) >= 0)
+		stat->attributes |= STATX_ATTR_COMPRESSED;
+
+	stat->attributes_mask |= STATX_ATTR_COMPRESSED;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+	generic_fillattr(inode, stat);
+#else
+	generic_fillattr(mnt_userns, inode, stat);
+#endif
+
+	stat->ino = apfs_ino(inode);
+	return 0;
+}
+#endif
 
 /**
  * apfs_build_inode_val - Allocate and initialize the value for an inode record
@@ -449,7 +770,7 @@ static int apfs_build_inode_val(struct inode *inode, struct qstr *qname,
 	val->parent_id = cpu_to_le64(APFS_I(inode)->i_parent_id);
 	val->private_id = cpu_to_le64(apfs_ino(inode));
 
-	val->mod_time = cpu_to_le64(timespec_to_ns(&inode->i_mtime));
+	val->mod_time = cpu_to_le64(timespec64_to_ns(&inode->i_mtime));
 	val->create_time = val->change_time = val->access_time = val->mod_time;
 
 	if (S_ISDIR(inode->i_mode))
@@ -529,6 +850,7 @@ fail:
 	kfree(new_val);
 	return err;
 }
+#define APFS_INODE_RENAME_MAXOPS	1
 
 /**
  * apfs_create_dstream_xfield - Create the inode xfield for a new data stream
@@ -544,6 +866,7 @@ static int apfs_create_dstream_xfield(struct inode *inode,
 	struct apfs_inode_val *new_val;
 	struct apfs_dstream dstream = {0};
 	struct apfs_x_field xkey;
+	struct apfs_inode_info *ai = APFS_I(inode);
 	int xlen;
 	int buflen;
 	int err;
@@ -557,6 +880,8 @@ static int apfs_create_dstream_xfield(struct inode *inode,
 
 	dstream.size = cpu_to_le64(inode->i_size);
 	dstream.alloced_size = cpu_to_le64(inode->i_blocks << 9);
+	if(apfs_vol_is_encrypted(inode->i_sb))
+		dstream.default_crypto_id = cpu_to_le64(ai->i_extent_id);
 
 	/* TODO: can we assume that all inode records have an xfield blob? */
 	xkey.x_type = APFS_INO_EXT_TYPE_DSTREAM;
@@ -580,6 +905,7 @@ fail:
 	kfree(new_val);
 	return err;
 }
+#define APFS_CREATE_DSTREAM_XFIELD_MAXOPS	1
 
 /**
  * apfs_inode_resize - Update the sizes reported in an inode record
@@ -590,7 +916,7 @@ fail:
  */
 static int apfs_inode_resize(struct inode *inode, struct apfs_query *query)
 {
-	char *raw = query->node->object.bh->b_data;
+	char *raw;
 	struct apfs_inode_val *inode_raw;
 	char *xval;
 	int xlen;
@@ -599,6 +925,7 @@ static int apfs_inode_resize(struct inode *inode, struct apfs_query *query)
 	err = apfs_query_join_transaction(query);
 	if (err)
 		return err;
+	raw = query->node->object.bh->b_data;
 	inode_raw = (void *)raw + query->off;
 
 	xlen = apfs_find_xfield(inode_raw->xfields,
@@ -622,6 +949,7 @@ static int apfs_inode_resize(struct inode *inode, struct apfs_query *query)
 	/* This inode has no dstream xfield, so we need to create it */
 	return apfs_create_dstream_xfield(inode, query);
 }
+#define APFS_INODE_RESIZE_MAXOPS	(1 + APFS_CREATE_DSTREAM_XFIELD_MAXOPS)
 
 /**
  * apfs_update_inode - Update an existing inode record
@@ -659,7 +987,7 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 		goto fail;
 	bh = query->node->object.bh;
 	node_raw = (void *)bh->b_data;
-	ASSERT(sbi->s_xid == le64_to_cpu(node_raw->btn_o.o_xid));
+	apfs_assert_in_transaction(sb, &node_raw->btn_o);
 	inode_raw = (void *)node_raw + query->off;
 
 	inode_raw->parent_id = cpu_to_le64(ai->i_parent_id);
@@ -667,6 +995,8 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	inode_raw->mode = cpu_to_le16(inode->i_mode);
 	inode_raw->owner = cpu_to_le32(i_uid_read(inode));
 	inode_raw->group = cpu_to_le32(i_gid_read(inode));
+	inode_raw->default_protection_class = cpu_to_le32(ai->i_key_class);
+	inode_raw->internal_flags = cpu_to_le64(ai->i_int_flags);
 
 	/* Don't persist the uid/gid provided by the user on mount */
 	if (uid_valid(sbi->s_uid))
@@ -674,10 +1004,10 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	if (gid_valid(sbi->s_gid))
 		inode_raw->group = cpu_to_le32(ai->i_saved_gid);
 
-	inode_raw->access_time = cpu_to_le64(timespec_to_ns(&inode->i_atime));
-	inode_raw->change_time = cpu_to_le64(timespec_to_ns(&inode->i_ctime));
-	inode_raw->mod_time = cpu_to_le64(timespec_to_ns(&inode->i_mtime));
-	inode_raw->create_time = cpu_to_le64(timespec_to_ns(&ai->i_crtime));
+	inode_raw->access_time = cpu_to_le64(timespec64_to_ns(&inode->i_atime));
+	inode_raw->change_time = cpu_to_le64(timespec64_to_ns(&inode->i_ctime));
+	inode_raw->mod_time = cpu_to_le64(timespec64_to_ns(&inode->i_mtime));
+	inode_raw->create_time = cpu_to_le64(timespec64_to_ns(&ai->i_crtime));
 
 	if (S_ISDIR(inode->i_mode)) {
 		inode_raw->nchildren = cpu_to_le32(ai->i_nchildren);
@@ -690,6 +1020,10 @@ fail:
 	apfs_free_query(sb, query);
 	return err;
 }
+int APFS_UPDATE_INODE_MAXOPS(void)
+{
+	return APFS_INODE_RENAME_MAXOPS + APFS_INODE_RESIZE_MAXOPS + 1;
+}
 
 /**
  * apfs_delete_inode - Delete an inode record and update the volume file count
@@ -700,8 +1034,7 @@ fail:
 static int apfs_delete_inode(struct inode *inode)
 {
 	struct super_block *sb = inode->i_sb;
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_superblock *vsb_raw = sbi->s_vsb_raw;
+	struct apfs_superblock *vsb_raw = APFS_SB(sb)->s_vsb_raw;
 	struct apfs_query *query;
 	int ret;
 
@@ -714,7 +1047,7 @@ static int apfs_delete_inode(struct inode *inode)
 	ret = apfs_btree_remove(query);
 	apfs_free_query(sb, query);
 
-	ASSERT(sbi->s_xid == le64_to_cpu(vsb_raw->apfs_o.o_xid));
+	apfs_assert_in_transaction(sb, &vsb_raw->apfs_o);
 	switch (inode->i_mode & S_IFMT) {
 	case S_IFREG:
 		le64_add_cpu(&vsb_raw->apfs_num_files, -1);
@@ -731,15 +1064,20 @@ static int apfs_delete_inode(struct inode *inode)
 	}
 	return ret;
 }
+#define APFS_DELETE_INODE_MAXOPS	1
 
 void apfs_evict_inode(struct inode *inode)
 {
 	struct super_block *sb = inode->i_sb;
+	struct apfs_max_ops maxops;
 
 	if (is_bad_inode(inode) || inode->i_nlink)
 		goto out_clear;
 
-	if (apfs_transaction_start(sb))
+	maxops.cat = APFS_DELETE_INODE_MAXOPS + APFS_DELETE_ORPHAN_LINK_MAXOPS();
+	maxops.blks = 0;
+
+	if (apfs_transaction_start(sb, maxops))
 		goto out_report;
 	if (apfs_delete_inode(inode))
 		goto out_abort;
@@ -785,15 +1123,14 @@ static int apfs_insert_inode_locked(struct inode *inode)
 struct inode *apfs_new_inode(struct inode *dir, umode_t mode, dev_t rdev)
 {
 	struct super_block *sb = dir->i_sb;
-	struct apfs_sb_info *sbi = APFS_SB(sb);
-	struct apfs_superblock *vsb_raw = sbi->s_vsb_raw;
+	struct apfs_superblock *vsb_raw = APFS_SB(sb)->s_vsb_raw;
 	struct inode *inode;
 	struct apfs_inode_info *ai;
 	u64 cnid;
-	struct timespec now;
+	struct timespec64 now;
 
 	/* Updating on-disk structures here is odd, but it works for now */
-	ASSERT(sbi->s_xid == le64_to_cpu(vsb_raw->apfs_o.o_xid));
+	apfs_assert_in_transaction(sb, &vsb_raw->apfs_o);
 
 	inode = new_inode(sb);
 	if (!inode)
@@ -803,24 +1140,36 @@ struct inode *apfs_new_inode(struct inode *dir, umode_t mode, dev_t rdev)
 	cnid = le64_to_cpu(vsb_raw->apfs_next_obj_id);
 	le64_add_cpu(&vsb_raw->apfs_next_obj_id, 1);
 	apfs_set_ino(inode, cnid);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
 	inode_init_owner(inode, dir, mode);
+#else
+	inode_init_owner(&init_user_ns, inode, dir, mode);
+#endif
+
 	ai->i_saved_uid = i_uid_read(inode);
 	ai->i_saved_gid = i_gid_read(inode);
 	ai->i_parent_id = apfs_ino(dir);
 	ai->i_extent_id = cnid;
 	set_nlink(inode, 1);
 	ai->i_nchildren = 0;
+	if (apfs_vol_is_encrypted(sb) && S_ISREG(mode))
+		ai->i_key_class = apfs_dflt_key_class(sb);
+	else
+		ai->i_key_class = 0;
+	ai->i_int_flags = APFS_INODE_NO_RSRC_FORK;
 
 	now = current_time(inode);
 	inode->i_atime = inode->i_mtime = inode->i_ctime = ai->i_crtime = now;
-	vsb_raw->apfs_last_mod_time = cpu_to_le64(timespec_to_ns(&now));
+	vsb_raw->apfs_last_mod_time = cpu_to_le64(timespec64_to_ns(&now));
 
 	/* Symlinks are not yet supported */
-	ASSERT(!S_ISLNK(mode));
 	if (S_ISREG(mode))
 		le64_add_cpu(&vsb_raw->apfs_num_files, 1);
 	else if (S_ISDIR(mode))
 		le64_add_cpu(&vsb_raw->apfs_num_directories, 1);
+	else if (S_ISLNK(mode))
+		le64_add_cpu(&vsb_raw->apfs_num_symlinks, 1);
 	else
 		le64_add_cpu(&vsb_raw->apfs_num_other_fsobjects, 1);
 
@@ -832,7 +1181,7 @@ struct inode *apfs_new_inode(struct inode *dir, umode_t mode, dev_t rdev)
 	}
 
 	/* No need to dirty the inode, we'll write it to disk right away */
-	apfs_inode_set_ops(inode, rdev);
+	apfs_inode_set_ops(inode, rdev, false /* compressed */);
 	return inode;
 }
 
@@ -882,12 +1231,264 @@ fail:
 	apfs_free_query(sb, query);
 	return ret;
 }
+int APFS_CREATE_INODE_REC_MAXOPS(void)
+{
+	return 1;
+}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
 int apfs_setattr(struct dentry *dentry, struct iattr *iattr)
+#else
+int apfs_setattr(struct user_namespace *mnt_userns,
+		 struct dentry *dentry, struct iattr *iattr)
+#endif
 {
 	struct inode *inode = d_inode(dentry);
+	struct super_block *sb = inode->i_sb;
+	struct apfs_max_ops maxops;
+	int err;
 
 	if (iattr->ia_valid & ATTR_SIZE && iattr->ia_size != inode->i_size)
 		return -EOPNOTSUPP; /* TODO: implement truncation */
-	return simple_setattr(dentry, iattr);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+	err = simple_setattr(dentry, iattr);
+#else
+	err = simple_setattr(mnt_userns, dentry, iattr);
+#endif
+
+	if(err)
+		return err;
+
+	maxops.cat = APFS_UPDATE_INODE_MAXOPS();
+	maxops.blks = 0;
+
+	/* TODO: figure out why ->write_inode() isn't firing */
+	err = apfs_transaction_start(sb, maxops);
+	if (err)
+		return err;
+	err = apfs_update_inode(inode, NULL /* new_name */);
+	if (err)
+		goto fail;
+	err = apfs_transaction_commit(sb);
+	if (err)
+		goto fail;
+	return 0;
+
+fail:
+	apfs_transaction_abort(sb);
+	return err;
+}
+
+static int apfs_ioc_set_dflt_pfk(struct file *file, void __user *user_pfk)
+{
+	struct inode *inode = file_inode(file);
+	struct super_block *sb = inode->i_sb;
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_wrapped_crypto_state pfk_hdr;
+	struct apfs_crypto_state_val *pfk;
+	unsigned key_len;
+
+	if (__copy_from_user(&pfk_hdr, user_pfk, sizeof(pfk_hdr)))
+		return -EFAULT;
+	key_len = le16_to_cpu(pfk_hdr.key_len);
+	if (key_len > MAX_PFK_LEN)
+		return -EFBIG;
+	pfk = kmalloc(sizeof(*pfk) + key_len, GFP_KERNEL);
+	if (!pfk)
+		return -ENOMEM;
+	if (__copy_from_user(&pfk->state, user_pfk, sizeof(pfk_hdr) + key_len)) {
+		kfree(pfk);
+		return -EFAULT;
+	}
+	pfk->refcnt = cpu_to_le32(1);
+
+	down_write(&nxi->nx_big_sem);
+
+	if (sbi->s_dflt_pfk)
+		kfree(sbi->s_dflt_pfk);
+	sbi->s_dflt_pfk = pfk;
+
+	up_write(&nxi->nx_big_sem);
+
+	return 0;
+}
+
+static int apfs_ioc_set_dir_class(struct file *file, u32 __user *user_class)
+{
+	struct inode *inode = file_inode(file);
+	struct apfs_inode_info *ai = APFS_I(inode);
+	struct super_block *sb = inode->i_sb;
+	struct apfs_max_ops maxops;
+	u32 class;
+	int err;
+
+	if (get_user(class, user_class))
+		return -EFAULT;
+
+	ai->i_key_class = class;
+
+	maxops.cat = APFS_UPDATE_INODE_MAXOPS();
+	maxops.blks = 0;
+
+	err = apfs_transaction_start(sb, maxops);
+	if (err)
+		return err;
+	err = apfs_update_inode(inode, NULL /* new_name */);
+	if (err)
+		goto fail;
+	err = apfs_transaction_commit(sb);
+	if (err)
+		goto fail;
+	return 0;
+
+fail:
+	apfs_transaction_abort(sb);
+	return err;
+}
+
+static int apfs_ioc_set_pfk(struct file *file, void __user *user_pfk)
+{
+	struct inode *inode = file_inode(file);
+	struct super_block *sb = inode->i_sb;
+	struct apfs_wrapped_crypto_state pfk_hdr;
+	struct apfs_crypto_state_val *pfk;
+	struct apfs_inode_info *ai = APFS_I(inode);
+	struct apfs_max_ops maxops;
+	unsigned key_len, key_class;
+	int err;
+
+	if (__copy_from_user(&pfk_hdr, user_pfk, sizeof(pfk_hdr)))
+		return -EFAULT;
+	key_len = le16_to_cpu(pfk_hdr.key_len);
+	if (key_len > MAX_PFK_LEN)
+		return -EFBIG;
+	pfk = kmalloc(sizeof(*pfk) + key_len, GFP_KERNEL);
+	if (!pfk)
+		return -ENOMEM;
+	if (__copy_from_user(&pfk->state, user_pfk, sizeof(pfk_hdr) + key_len)) {
+		kfree(pfk);
+		return -EFAULT;
+	}
+	pfk->refcnt = cpu_to_le32(1);
+
+	maxops.cat = APFS_CRYPTO_SET_KEY_MAXOPS + APFS_UPDATE_INODE_MAXOPS();
+	maxops.blks = 0;
+
+	err = apfs_transaction_start(sb, maxops);
+	if (err) {
+		kfree(pfk);
+		return err;
+	}
+
+	err = apfs_crypto_set_key(sb, ai->i_extent_id, pfk);
+	if (err)
+		goto fail;
+
+	key_class = le32_to_cpu(pfk_hdr.persistent_class);
+	if (ai->i_key_class != key_class) {
+		ai->i_key_class = key_class;
+		err = apfs_update_inode(inode, NULL /* new_name */);
+		if (err)
+			goto fail;
+	}
+
+	err = apfs_transaction_commit(sb);
+	if (err)
+		goto fail;
+	kfree(pfk);
+	return 0;
+
+fail:
+	apfs_transaction_abort(sb);
+	kfree(pfk);
+	return err;
+}
+
+static int apfs_ioc_get_class(struct file *file, u32 __user *user_class)
+{
+	struct inode *inode = file_inode(file);
+	struct apfs_inode_info *ai = APFS_I(inode);
+	u32 class;
+
+	class = ai->i_key_class;
+	if (put_user(class, user_class))
+		return -EFAULT;
+	return 0;
+}
+
+static int apfs_ioc_get_pfk(struct file *file, void __user *user_pfk)
+{
+	struct inode *inode = file_inode(file);
+	struct super_block *sb = inode->i_sb;
+	struct apfs_nxsb_info *nxi = APFS_NXI(sb);
+	struct apfs_wrapped_crypto_state pfk_hdr;
+	struct apfs_crypto_state_val *pfk;
+	unsigned max_len, key_len;
+	struct apfs_inode_info *ai = APFS_I(inode);
+	int err;
+
+	if (__copy_from_user(&pfk_hdr, user_pfk, sizeof(pfk_hdr)))
+		return -EFAULT;
+	max_len = le16_to_cpu(pfk_hdr.key_len);
+	if (max_len > MAX_PFK_LEN)
+		return -EFBIG;
+	pfk = kmalloc(sizeof(*pfk) + max_len, GFP_KERNEL);
+	if (!pfk)
+		return -ENOMEM;
+
+	down_read(&nxi->nx_big_sem);
+
+	err = apfs_crypto_get_key(sb, ai->i_extent_id, pfk, max_len);
+	if (err)
+		goto fail;
+
+	up_read(&nxi->nx_big_sem);
+
+	key_len = le16_to_cpu(pfk->state.key_len);
+	if (__copy_to_user(user_pfk, &pfk->state, sizeof(pfk_hdr) + key_len)) {
+		kfree(pfk);
+		return -EFAULT;
+	}
+
+	kfree(pfk);
+	return 0;
+
+fail:
+	up_read(&nxi->nx_big_sem);
+	kfree(pfk);
+	return err;
+}
+
+long apfs_dir_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	void __user *argp = (void __user *)arg;
+
+	switch (cmd) {
+	case APFS_IOC_SET_DFLT_PFK:
+		return apfs_ioc_set_dflt_pfk(file, argp);
+	case APFS_IOC_SET_DIR_CLASS:
+		return apfs_ioc_set_dir_class(file, argp);
+	case APFS_IOC_GET_CLASS:
+		return apfs_ioc_get_class(file, argp);
+	default:
+		return -ENOTTY;
+	}
+}
+
+long apfs_file_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	void __user *argp = (void __user *)arg;
+
+	switch (cmd) {
+	case APFS_IOC_SET_PFK:
+		return apfs_ioc_set_pfk(file, argp);
+	case APFS_IOC_GET_CLASS:
+		return apfs_ioc_get_class(file, argp);
+	case APFS_IOC_GET_PFK:
+		return apfs_ioc_get_pfk(file, argp);
+	default:
+		return -ENOTTY;
+	}
 }
