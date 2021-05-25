@@ -3657,6 +3657,7 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #ifdef HAVE_PLEX
 	{ "plex_enable", "0" },
+	{ "plex_appdir", "/jffs/plex" },
 #endif
 #ifdef HAVE_MACTELNET
 	{ "mactelnetd_enable", "0" },
