@@ -277,6 +277,28 @@ struct apfs_dstream_id_val {
 	__le32 refcnt;
 } __packed;
 
+/*
+ * Structure used to store the encryption state for PFKs
+ */
+struct apfs_wrapped_crypto_state {
+	__le16 major_version;
+	__le16 minor_version;
+	__le32 cpflags;
+	__le32 persistent_class;
+	__le32 key_os_version;
+	__le16 key_revision;
+	__le16 key_len;
+	u8 persistent_key[0];
+} __packed;
+
+/*
+ * Structure of a crypto state record
+ */
+struct apfs_crypto_state_val {
+	__le32 refcnt;
+	struct apfs_wrapped_crypto_state state;
+} __packed;
+
 /* Inode numbers for special inodes */
 #define APFS_INVALID_INO_NUM		0
 
@@ -310,11 +332,14 @@ struct apfs_dstream_id_val {
 /* Masks for internal flags */
 #define APFS_VALID_INTERNAL_INODE_FLAGS		0x0001ffdf
 #define APFS_INODE_INHERITED_INTERNAL_FLAGS	(APFS_INODE_MAINTAIN_DIR_STATS)
-#define APFS_INDOE_CLONED_INTERNAL_FLAGS	(APFS_INODE_HAS_RSRC_FORK \
+#define APFS_INODE_CLONED_INTERNAL_FLAGS	(APFS_INODE_HAS_RSRC_FORK \
 						| APFS_INODE_NO_RSRC_FORK \
 						| APFS_INODE_HAS_FINDER_INFO)
 #define APFS_INODE_PINNED_MASK			(APFS_INODE_PINNED_TO_MAIN \
 						| APFS_INODE_PINNED_TO_TIER2)
+
+/* BSD flags */
+#define APFS_INOBSD_COMPRESSED			0x00000020
 
 /*
  * Structure of an inode as stored as a B-tree value
@@ -504,6 +529,13 @@ struct apfs_file_extent_key {
  * Structure of the key for a data stream record
  */
 struct apfs_dstream_id_key {
+	struct apfs_key_header hdr;
+} __packed;
+
+/*
+ * Structure of the key for a crypto state record
+ */
+struct apfs_crypto_state_key {
 	struct apfs_key_header hdr;
 } __packed;
 
@@ -774,6 +806,8 @@ struct apfs_nx_efi_jumpstart {
 /* Main container */
 
 /* Container constants */
+#define APFS_SUPER_MAGIC			0x4253584E
+
 #define APFS_NX_MAGIC				0x4253584E
 #define APFS_NX_BLOCK_NUM			0
 #define APFS_NX_MAX_FILE_SYSTEMS		100
@@ -822,6 +856,10 @@ enum {
 	APFS_NX_NUM_COUNTERS		= 32
 };
 
+#ifndef UUID_SIZE
+#define UUID_SIZE 16
+#endif
+
 /*
  * On-disk representation of the container superblock
  */
@@ -835,7 +873,7 @@ struct apfs_nx_superblock {
 	__le64 nx_readonly_compatible_features;
 	__le64 nx_incompatible_features;
 
-/*48*/	char nx_uuid[16];
+/*48*/	char nx_uuid[UUID_SIZE];
 
 /*58*/	__le64 nx_next_oid;
 	__le64 nx_next_xid;
@@ -997,7 +1035,7 @@ struct apfs_modified_by {
 #define APFS_PROTECTION_CLASS_F		6 /* No protection, nonpersistent key */
 
 /*
- * Structure used to store the encryption state
+ * Structure used to store the encryption state for MKs
  */
 struct apfs_wrapped_meta_crypto_state {
 	__le16 major_version;
@@ -1105,6 +1143,36 @@ struct apfs_xattr_val {
 struct apfs_xattr_dstream {
 	__le64 xattr_obj_id;
 	struct apfs_dstream dstream;
+} __packed;
+
+/*
+ * Compressed file header
+ */
+struct apfs_compress_hdr {
+	__le32 signature;
+	__le32 algo;
+	__le64 size;
+} __packed;
+
+#define APFS_COMPRESS_ZLIB_ATTR		3
+#define APFS_COMPRESS_ZLIB_RSRC		4
+
+struct apfs_compress_rsrc_hdr {
+	__be32 data_offs;
+	__be32 mgmt_offs;
+	__be32 data_size;
+	__be32 mgmt_size;
+} __packed;
+
+#define APFS_COMPRESS_BLOCK		0x10000
+
+struct apfs_compress_rsrc_data {
+	__le32 unknown;
+	__le32 num;
+	struct apfs_compress_rsrc_block {
+		__le32 offs;
+		__le32 size;
+	} __packed block[0];
 } __packed;
 
 #endif	/* _APFS_RAW_H */
