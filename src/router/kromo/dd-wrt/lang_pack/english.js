@@ -531,7 +531,7 @@ alive.IP2="Proxy IP Address";
 alive.port="Proxy Port";
 alive.mode0="Any dropped IP's for reboot";
 alive.mode1="All dropped IP's for reboot";
-
+alive.timeout="Ping timeout in seconds";
 //help container
 var halive=new Object();
 halive.right2="Choose when reboot to the router. Cron must be enabled in the management tab.";
