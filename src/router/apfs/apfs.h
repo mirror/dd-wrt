@@ -524,7 +524,7 @@ struct apfs_inode_info {
 	struct apfs_file_extent	i_cached_extent; /* Latest extent record */
 	bool			i_extent_dirty;	 /* Is i_cached_extent dirty? */
 	spinlock_t		i_extent_lock;	 /* Protects i_cached_extent */
-	struct timespec64	i_crtime;	 /* Time of creation */
+	struct timespec		i_crtime;	 /* Time of creation */
 	u32			i_nchildren;	 /* Child count for directory */
 	uid_t			i_saved_uid;	 /* User ID on disk */
 	gid_t			i_saved_gid;	 /* Group ID on disk */

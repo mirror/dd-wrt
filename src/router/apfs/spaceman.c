@@ -936,13 +936,16 @@ static int apfs_main_free(struct super_block *sb, u64 bno)
 	struct apfs_spaceman *sm = APFS_SM(sb);
 	struct apfs_spaceman_phys *sm_raw = sm->sm_raw;
 	int cib_idx, chunk_idx;
+	u64 chunk_idx64;
 	struct buffer_head *cib_bh;
 	u64 cib_bno;
 	int err;
 
 	if(!sm_raw->sm_blocks_per_chunk || !sm_raw->sm_chunks_per_cib)
 		return -EINVAL;
-	chunk_idx = bno / sm->sm_blocks_per_chunk;
+	chunk_idx64 = bno;
+	do_div(chunk_idx64, sm->sm_blocks_per_chunk);
+	chunk_idx = chunk_idx64;
 	cib_idx = chunk_idx / sm->sm_chunks_per_cib;
 	chunk_idx -= cib_idx * sm->sm_chunks_per_cib;
 

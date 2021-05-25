@@ -4,13 +4,14 @@
 #
 KERNEL_VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)/net/sched
+CFLAGS_EXTRA += -g
 
 obj-m = apfs.o
 apfs-y = btree.o dir.o extents.o file.o inode.o key.o message.o compress.o \
 	 namei.o node.o object.o super.o symlink.o unicode.o xattr.o xfield.o transaction.o spaceman.o
 
 default:
-	make -C $(LINUXDIR) M=$(shell pwd)
+	make -C $(LINUXDIR) M=$(shell pwd) EXTRA_CFLAGS="$(CFLAGS_EXTRA)"
 clean:
 	make -C $(LINUXDIR) M=$(shell pwd) clean
 
