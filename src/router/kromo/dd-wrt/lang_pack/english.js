@@ -529,6 +529,8 @@ alive.legend3="Proxy/Connection Watchdog";
 alive.sevr3="Enable Proxy Watchdog";
 alive.IP2="Proxy IP Address";
 alive.port="Proxy Port";
+alive.mode0="Any dropped IP's for reboot";
+alive.mode1="All dropped IP's for reboot";
 
 //help container
 var halive=new Object();
