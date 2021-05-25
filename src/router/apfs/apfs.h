@@ -19,17 +19,20 @@
 #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
 #define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0) /* SB_RDONLY came in 4.14 */
+static inline void discard_new_inode(struct inode *inode)
+{
+	unlock_new_inode(inode);
+	iput(inode);
+}
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0) /* SB_RDONLY came in 4.14 */
 #define SB_RDONLY MS_RDONLY
 #define SB_ACTIVE MS_ACTIVE
 #define SB_SILENT MS_SILENT
 #define SB_NOSEC MS_NOSEC
 static inline bool sb_rdonly(const struct super_block *sb) { return sb->s_flags & MS_RDONLY; }
-static inline void discard_new_inode(struct inode *inode)
-{
-	unlock_new_inode(inode);
-	iput(inode);
-}
 
 #endif
 
