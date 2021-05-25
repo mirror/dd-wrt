@@ -513,6 +513,7 @@ alive.IP2="Proxy-IP-Adresse";
 alive.port="Proxy-Port";
 alive.mode0="Reboot bei einer fehlgeschlagenen IP";
 alive.mode1="Reboot wenn alle IP's fehlschlagen";
+alive.timeout="Ping timeout in Sekunden";
 
 //help container
 
