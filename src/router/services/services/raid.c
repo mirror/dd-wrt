@@ -169,7 +169,7 @@ void start_raid(void)
 		dd_loginfo("raid", "XFS modules successfully loaded\n");
 	}
 	if (apfs) {
-		insmod("apfs");
+		insmod("libcrc32c apfs");
 		dd_loginfo("raid", "APFS modules successfully loaded\n");
 	}
 	if (ext4 || ext2) {
