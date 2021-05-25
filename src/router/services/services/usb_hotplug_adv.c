@@ -300,7 +300,7 @@ static bool usb_load_modules(char *fs)
 		insmod("xfs");
 	}
 	if (!strcmp(fs, "apfs")) {
-		insmod("apfs");
+		insmod("libcrc32c apfs");
 	}
 	if (!strcmp(fs, "f2fs")) {
 		insmod("crc32 libcrc32c crc32c_generic crc32_generic f2fs");
