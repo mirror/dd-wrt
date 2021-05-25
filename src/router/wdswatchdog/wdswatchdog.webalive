@@ -15,5 +15,10 @@
 			<div class="label"><% tran("alive.IP"); %></div>
 			<input size="40" maxLength="47" class="text" name="wds_watchdog_ips" value="<% nvg("wds_watchdog_ips"); %>" />
 		</div>
+		<div class="setting">
+			<div class="label"><% tran("share.mode"); %></div>
+			<input class="spaceradio" type="radio" value="0" name="wds_watchdog_mode" <% nvc("wds_watchdog_mode","0"); /><% tran("alive.mode0"); %></br>
+			<input class="spaceradio" type="radio" value="1" name="wds_watchdog_mode" <% nvc("wds_watchdog_mode","1"); /><% tran("alive.mode1"); %>
+		</div>
 	</div>
 </fieldset><br/>
