@@ -2950,6 +2950,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "wds_watchdog_enable", "0" },
 	{ "wds_watchdog_interval_sec", "1000" },
 	{ "wds_watchdog_ips", "" },
+	{ "wds_watchdog_mode", "0" },
 	{ "dhcpfwd_enable", "0" },
 	{ "dhcpfwd_ip", "0.0.0.0" },
 	{ "NC_enable", "0" },
