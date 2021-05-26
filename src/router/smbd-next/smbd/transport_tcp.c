@@ -56,8 +56,8 @@ static inline void ksmbd_tcp_nodelay(struct socket *sock)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 	int val = 1;
 
-	kernel_setsockopt(sock, SOL_TCP, TCP_NODELAY,
-		(char *)&val, sizeof(val));
+	kernel_setsockopt(sock, SOL_TCP, TCP_NODELAY, (char *)&val,
+			  sizeof(val));
 #else
 	tcp_sock_set_nodelay(sock->sk);
 #endif
@@ -68,8 +68,8 @@ static inline void ksmbd_tcp_reuseaddr(struct socket *sock)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 	int val = 1;
 
-	kernel_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		(char *)&val, sizeof(val));
+	kernel_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&val,
+			  sizeof(val));
 #else
 	sock_set_reuseaddr(sock->sk);
 #endif
@@ -165,7 +165,7 @@ static void free_transport(struct tcp_transport *t)
  * Return:	Number of IO segments
  */
 static unsigned int kvec_array_init(struct kvec *new, struct kvec *iov,
-		unsigned int nr_segs, size_t bytes)
+				    unsigned int nr_segs, size_t bytes)
 {
 	size_t base = 0;
 
@@ -260,8 +260,9 @@ static int ksmbd_tcp_new_connection(struct interface *iface, struct socket *clie
 	}
 #endif
 	KSMBD_TRANS(t)->handler = kthread_run(ksmbd_conn_handler_loop,
-					KSMBD_TRANS(t)->conn,
-					"ksmbd:%u", ksmbd_tcp_get_port(csin));
+					      KSMBD_TRANS(t)->conn,
+					      "ksmbd:%u",
+					      ksmbd_tcp_get_port(csin));
 	if (IS_ERR(KSMBD_TRANS(t)->handler)) {
 		ksmbd_err("cannot start conn thread\n");
 		rc = PTR_ERR(KSMBD_TRANS(t)->handler);
@@ -293,7 +294,7 @@ static int ksmbd_kthread_fn(void *p)
 			break;
 		}
 		ret = kernel_accept(iface->ksmbd_socket, &client_sk,
-				O_NONBLOCK);
+				    O_NONBLOCK);
 		mutex_unlock(&iface->sock_release_lock);
 		if (ret) {
 			if (ret == -EAGAIN) {
@@ -329,8 +330,8 @@ static int ksmbd_tcp_run_kthread(struct interface *iface)
 	int rc;
 	struct task_struct *kthread;
 
-	kthread = kthread_run(ksmbd_kthread_fn, (void *)iface,
-		"ksmbd-%s", iface->name);
+	kthread = kthread_run(ksmbd_kthread_fn, (void *)iface, "ksmbd-%s",
+			      iface->name);
 	if (IS_ERR(kthread)) {
 		rc = PTR_ERR(kthread);
 		return rc;
@@ -351,7 +352,7 @@ static int ksmbd_tcp_run_kthread(struct interface *iface)
  *		otherwise return error number
  */
 static int ksmbd_tcp_readv(struct tcp_transport *t, struct kvec *iov_orig,
-		unsigned int nr_segs, unsigned int to_read)
+			   unsigned int nr_segs, unsigned int to_read)
 {
 	int length = 0;
 	int total_read;
@@ -419,7 +420,8 @@ static int ksmbd_tcp_read(struct ksmbd_transport *t, char *buf, unsigned int to_
 }
 
 static int ksmbd_tcp_writev(struct ksmbd_transport *t, struct kvec *iov,
-		int nvecs, int size, bool need_invalidate, unsigned int remote_key)
+			    int nvecs, int size, bool need_invalidate,
+			    unsigned int remote_key)
 
 {
 	struct msghdr smb_msg = {.msg_flags = MSG_NOSIGNAL};
@@ -469,7 +471,7 @@ static int create_socket(struct interface *iface)
 	if (ret) {
 		ksmbd_debug(ALL, "Can't create socket for ipv6, try ipv4: %d\n", ret);
 		ret = sock_create(PF_INET, SOCK_STREAM, IPPROTO_TCP,
-				&ksmbd_socket);
+				  &ksmbd_socket);
 		if (ret) {
 			ksmbd_err("Can't create socket for ipv4: %d\n", ret);
 			goto out_error;
@@ -511,10 +513,10 @@ static int create_socket(struct interface *iface)
 	}
 	if (ipv4)
 		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin,
-				sizeof(sin));
+				  sizeof(sin));
 	else
 		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin6,
-				sizeof(sin6));
+				  sizeof(sin6));
 	if (ret) {
 		ksmbd_err("Failed to bind socket: %d (%s)\n", ret, iface->name);
 		goto out_error;
@@ -546,7 +548,7 @@ out_error:
 }
 
 static int ksmbd_netdev_event(struct notifier_block *nb, unsigned long event,
-		void *ptr)
+			      void *ptr)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
 	struct net_device *netdev = ptr;
