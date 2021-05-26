@@ -37,7 +37,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	 * (x 16 dosn't apply) 
 	 */
 
-	int i, j, *vlans[7], tmp, wl_br;
+	int i, j, *vlans[8], tmp, wl_br;
 	char *c, *next, buff[32], portvlan[32];
 	int a, *vlanlist;
 	int lanports = 4;
@@ -45,7 +45,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		lanports = 6;
 	int blen = nvram_default_geti("portvlan_count", 3);
 	char *deflist = malloc((blen * 5) + 1);
-	for (i = 0; i < 7; i++)
+	for (i = 0; i < 8; i++)
 		vlans[i] = malloc(sizeof(int) * (blen + 8));
 	vlanlist = malloc(sizeof(int) * (blen + 16));
 
