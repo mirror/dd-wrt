@@ -212,8 +212,9 @@ struct smb_direct_rdma_rw_msg {
 static void smb_direct_destroy_pools(struct smb_direct_transport *transport);
 static void smb_direct_post_recv_credits(struct work_struct *work);
 static int smb_direct_post_send_data(struct smb_direct_transport *t,
-		struct smb_direct_send_ctx *send_ctx,
-		struct kvec *iov, int niov, int remaining_data_length);
+				     struct smb_direct_send_ctx *send_ctx,
+				     struct kvec *iov, int niov,
+				     int remaining_data_length);
 
 static inline void
 *smb_direct_recvmsg_payload(struct smb_direct_recvmsg *recvmsg)
@@ -222,7 +223,7 @@ static inline void
 }
 
 static inline bool is_receive_credit_post_required(int receive_credits,
-		int avail_recvmsg_count)
+						   int avail_recvmsg_count)
 {
 	return receive_credits <= (smb_direct_receive_credit_max >> 3) &&
 		avail_recvmsg_count >= (receive_credits >> 2);
@@ -245,10 +246,10 @@ smb_direct_recvmsg *get_free_recvmsg(struct smb_direct_transport *t)
 }
 
 static void put_recvmsg(struct smb_direct_transport *t,
-		struct smb_direct_recvmsg *recvmsg)
+			struct smb_direct_recvmsg *recvmsg)
 {
 	ib_dma_unmap_single(t->cm_id->device, recvmsg->sge.addr,
-			recvmsg->sge.length, DMA_FROM_DEVICE);
+			    recvmsg->sge.length, DMA_FROM_DEVICE);
 
 	spin_lock(&t->recvmsg_queue_lock);
 	list_add(&recvmsg->list, &t->recvmsg_queue);
@@ -263,7 +264,7 @@ smb_direct_recvmsg *get_empty_recvmsg(struct smb_direct_transport *t)
 	spin_lock(&t->empty_recvmsg_queue_lock);
 	if (!list_empty(&t->empty_recvmsg_queue)) {
 		recvmsg = list_first_entry(&t->empty_recvmsg_queue,
-			struct smb_direct_recvmsg, list);
+					   struct smb_direct_recvmsg, list);
 		list_del(&recvmsg->list);
 	}
 	spin_unlock(&t->empty_recvmsg_queue_lock);
@@ -271,10 +272,10 @@ smb_direct_recvmsg *get_empty_recvmsg(struct smb_direct_transport *t)
 }
 
 static void put_empty_recvmsg(struct smb_direct_transport *t,
-		struct smb_direct_recvmsg *recvmsg)
+			      struct smb_direct_recvmsg *recvmsg)
 {
 	ib_dma_unmap_single(t->cm_id->device, recvmsg->sge.addr,
-			recvmsg->sge.length, DMA_FROM_DEVICE);
+			    recvmsg->sge.length, DMA_FROM_DEVICE);
 
 	spin_lock(&t->empty_recvmsg_queue_lock);
 	list_add_tail(&recvmsg->list, &t->empty_recvmsg_queue);
@@ -282,7 +283,8 @@ static void put_empty_recvmsg(struct smb_direct_transport *t,
 }
 
 static void enqueue_reassembly(struct smb_direct_transport *t,
-		struct smb_direct_recvmsg *recvmsg, int data_length)
+			       struct smb_direct_recvmsg *recvmsg,
+			       int data_length)
 {
 	spin_lock(&t->reassembly_queue_lock);
 	list_add_tail(&recvmsg->list, &t->reassembly_queue);
@@ -398,9 +400,9 @@ static void free_transport(struct smb_direct_transport *t)
 
 	ksmbd_debug(RDMA, "wait for all send posted to IB to finish\n");
 	wait_event(t->wait_send_payload_pending,
-		atomic_read(&t->send_payload_pending) == 0);
+		   atomic_read(&t->send_payload_pending) == 0);
 	wait_event(t->wait_send_pending,
-		atomic_read(&t->send_pending) == 0);
+		   atomic_read(&t->send_pending) == 0);
 
 	cancel_work_sync(&t->disconnect_work);
 	cancel_delayed_work_sync(&t->post_recv_credits_work);
@@ -456,18 +458,18 @@ static struct smb_direct_sendmsg
 }
 
 static void smb_direct_free_sendmsg(struct smb_direct_transport *t,
-		struct smb_direct_sendmsg *msg)
+				    struct smb_direct_sendmsg *msg)
 {
 	int i;
 
 	if (msg->num_sge > 0) {
 		ib_dma_unmap_single(t->cm_id->device,
-				msg->sge[0].addr, msg->sge[0].length,
-				DMA_TO_DEVICE);
+				    msg->sge[0].addr, msg->sge[0].length,
+				    DMA_TO_DEVICE);
 		for (i = 1; i < msg->num_sge; i++)
 			ib_dma_unmap_page(t->cm_id->device,
-					msg->sge[i].addr, msg->sge[i].length,
-					DMA_TO_DEVICE);
+					  msg->sge[i].addr, msg->sge[i].length,
+					  DMA_TO_DEVICE);
 	}
 	mempool_free(msg, t->sendmsg_mempool);
 }
@@ -481,24 +483,24 @@ static int smb_direct_check_recvmsg(struct smb_direct_recvmsg *recvmsg)
 		struct smb2_hdr *hdr = (struct smb2_hdr *)(recvmsg->packet
 				+ le32_to_cpu(req->data_offset) - 4);
 		ksmbd_debug(RDMA,
-				"CreditGranted: %u, CreditRequested: %u, DataLength: %u, RemainingDataLength: %u, SMB: %x, Command: %u\n",
-				le16_to_cpu(req->credits_granted),
-				le16_to_cpu(req->credits_requested),
-				req->data_length, req->remaining_data_length,
-				hdr->ProtocolId, hdr->Command);
+			    "CreditGranted: %u, CreditRequested: %u, DataLength: %u, RemainingDataLength: %u, SMB: %x, Command: %u\n",
+			    le16_to_cpu(req->credits_granted),
+			    le16_to_cpu(req->credits_requested),
+			    req->data_length, req->remaining_data_length,
+			    hdr->ProtocolId, hdr->Command);
 		break;
 	}
 	case SMB_DIRECT_MSG_NEGOTIATE_REQ: {
 		struct smb_direct_negotiate_req *req =
 			(struct smb_direct_negotiate_req *)recvmsg->packet;
 		ksmbd_debug(RDMA,
-			"MinVersion: %u, MaxVersion: %u, CreditRequested: %u, MaxSendSize: %u, MaxRecvSize: %u, MaxFragmentedSize: %u\n",
-			le16_to_cpu(req->min_version),
-			le16_to_cpu(req->max_version),
-			le16_to_cpu(req->credits_requested),
-			le32_to_cpu(req->preferred_send_size),
-			le32_to_cpu(req->max_receive_size),
-			le32_to_cpu(req->max_fragmented_size));
+			    "MinVersion: %u, MaxVersion: %u, CreditRequested: %u, MaxSendSize: %u, MaxRecvSize: %u, MaxFragmentedSize: %u\n",
+			    le16_to_cpu(req->min_version),
+			    le16_to_cpu(req->max_version),
+			    le16_to_cpu(req->credits_requested),
+			    le32_to_cpu(req->preferred_send_size),
+			    le32_to_cpu(req->max_receive_size),
+			    le32_to_cpu(req->max_fragmented_size));
 		if (le16_to_cpu(req->min_version) > 0x0100 ||
 		    le16_to_cpu(req->max_version) < 0x0100)
 			return -EOPNOTSUPP;
@@ -527,8 +529,8 @@ static void recv_done(struct ib_cq *cq, struct ib_wc *wc)
 	if (wc->status != IB_WC_SUCCESS || wc->opcode != IB_WC_RECV) {
 		if (wc->status != IB_WC_WR_FLUSH_ERR) {
 			ksmbd_err("Recv error. status='%s (%d)' opcode=%d\n",
-				ib_wc_status_msg(wc->status), wc->status,
-				wc->opcode);
+				  ib_wc_status_msg(wc->status), wc->status,
+				  wc->opcode);
 			smb_direct_disconnect_rdma_connection(t);
 		}
 		put_empty_recvmsg(t, recvmsg);
@@ -536,11 +538,11 @@ static void recv_done(struct ib_cq *cq, struct ib_wc *wc)
 	}
 
 	ksmbd_debug(RDMA, "Recv completed. status='%s (%d)', opcode=%d\n",
-			ib_wc_status_msg(wc->status), wc->status,
-			wc->opcode);
+		    ib_wc_status_msg(wc->status), wc->status,
+		    wc->opcode);
 
 	ib_dma_sync_single_for_cpu(wc->qp->device, recvmsg->sge.addr,
-			recvmsg->sge.length, DMA_FROM_DEVICE);
+				   recvmsg->sge.length, DMA_FROM_DEVICE);
 
 	switch (recvmsg->type) {
 	case SMB_DIRECT_MSG_NEGOTIATE_REQ:
@@ -582,10 +584,10 @@ static void recv_done(struct ib_cq *cq, struct ib_wc *wc)
 		t->recv_credit_target =
 				le16_to_cpu(data_transfer->credits_requested);
 		atomic_add(le16_to_cpu(data_transfer->credits_granted),
-				&t->send_credits);
+			   &t->send_credits);
 
 		if (le16_to_cpu(data_transfer->flags) &
-				SMB_DIRECT_RESPONSE_REQUESTED)
+		    SMB_DIRECT_RESPONSE_REQUESTED)
 			queue_work(smb_direct_wq, &t->send_immediate_work);
 
 		if (atomic_read(&t->send_credits) > 0)
@@ -593,7 +595,7 @@ static void recv_done(struct ib_cq *cq, struct ib_wc *wc)
 
 		if (is_receive_credit_post_required(receive_credits, avail_recvmsg_count))
 			mod_delayed_work(smb_direct_wq,
-					&t->post_recv_credits_work, 0);
+					 &t->post_recv_credits_work, 0);
 		break;
 	}
 	default:
@@ -602,14 +604,14 @@ static void recv_done(struct ib_cq *cq, struct ib_wc *wc)
 }
 
 static int smb_direct_post_recv(struct smb_direct_transport *t,
-		struct smb_direct_recvmsg *recvmsg)
+				struct smb_direct_recvmsg *recvmsg)
 {
 	struct ib_recv_wr wr;
 	int ret;
 
 	recvmsg->sge.addr = ib_dma_map_single(t->cm_id->device,
-			recvmsg->packet, t->max_recv_size,
-			DMA_FROM_DEVICE);
+					      recvmsg->packet, t->max_recv_size,
+					      DMA_FROM_DEVICE);
 	ret = ib_dma_mapping_error(t->cm_id->device, recvmsg->sge.addr);
 	if (ret)
 		return ret;
@@ -626,8 +628,8 @@ static int smb_direct_post_recv(struct smb_direct_transport *t,
 	if (ret) {
 		ksmbd_err("Can't post recv: %d\n", ret);
 		ib_dma_unmap_single(t->cm_id->device,
-			recvmsg->sge.addr, recvmsg->sge.length,
-			DMA_FROM_DEVICE);
+				    recvmsg->sge.addr, recvmsg->sge.length,
+				    DMA_FROM_DEVICE);
 		smb_direct_disconnect_rdma_connection(t);
 		return ret;
 	}
@@ -635,7 +637,7 @@ static int smb_direct_post_recv(struct smb_direct_transport *t,
 }
 
 static int smb_direct_read(struct ksmbd_transport *t, char *buf,
-		unsigned int size)
+			   unsigned int size)
 {
 	struct smb_direct_recvmsg *recvmsg;
 	struct smb_direct_data_transfer *data_transfer;
@@ -694,14 +696,14 @@ again:
 				data_read = 4;
 				recvmsg->first_segment = false;
 				ksmbd_debug(RDMA,
-					"returning rfc1002 length %d\n",
-					rfc1002_len);
+					    "returning rfc1002 length %d\n",
+					    rfc1002_len);
 				goto read_rfc1002_done;
 			}
 
 			to_copy = min_t(int, data_length - offset, to_read);
 			memcpy(buf + data_read, (char *)data_transfer + data_offset + offset,
-				to_copy);
+			       to_copy);
 
 			/* move on to the next buffer? */
 			if (to_copy == data_length - offset) {
@@ -738,23 +740,24 @@ again:
 		if (is_receive_credit_post_required(st->recv_credits, st->count_avail_recvmsg)) {
 			spin_unlock(&st->receive_credit_lock);
 			mod_delayed_work(smb_direct_wq,
-					&st->post_recv_credits_work, 0);
+					 &st->post_recv_credits_work, 0);
 		} else {
 			spin_unlock(&st->receive_credit_lock);
 		}
 
 		st->first_entry_offset = offset;
 		ksmbd_debug(RDMA,
-			"returning to thread data_read=%d reassembly_data_length=%d first_entry_offset=%d\n",
-			data_read, st->reassembly_data_length,
-			st->first_entry_offset);
+			    "returning to thread data_read=%d reassembly_data_length=%d first_entry_offset=%d\n",
+			    data_read, st->reassembly_data_length,
+			    st->first_entry_offset);
 read_rfc1002_done:
 		return data_read;
 	}
 
 	ksmbd_debug(RDMA, "wait_event on more data\n");
 	rc = wait_event_interruptible(st->wait_reassembly_queue,
-		st->reassembly_data_length >= size || st->status != SMB_DIRECT_CS_CONNECTED);
+				      st->reassembly_data_length >= size ||
+				       st->status != SMB_DIRECT_CS_CONNECTED);
 	if (rc)
 		return -EINTR;
 
@@ -825,13 +828,13 @@ static void send_done(struct ib_cq *cq, struct ib_wc *wc)
 	t = sendmsg->transport;
 
 	ksmbd_debug(RDMA, "Send completed. status='%s (%d)', opcode=%d\n",
-			ib_wc_status_msg(wc->status), wc->status,
-			wc->opcode);
+		    ib_wc_status_msg(wc->status), wc->status,
+		    wc->opcode);
 
 	if (wc->status != IB_WC_SUCCESS || wc->opcode != IB_WC_SEND) {
 		ksmbd_err("Send error. status='%s (%d)', opcode=%d\n",
-			ib_wc_status_msg(wc->status), wc->status,
-			wc->opcode);
+			  ib_wc_status_msg(wc->status), wc->status,
+			  wc->opcode);
 		smb_direct_disconnect_rdma_connection(t);
 	}
 
@@ -847,7 +850,7 @@ static void send_done(struct ib_cq *cq, struct ib_wc *wc)
 	 * is invalid.
 	 */
 	for (pos = &sendmsg->list, prev = pos->prev, end = sendmsg->list.next;
-			prev != end; pos = prev, prev = prev->prev) {
+	     prev != end; pos = prev, prev = prev->prev) {
 		sibling = container_of(pos, struct smb_direct_sendmsg, list);
 		smb_direct_free_sendmsg(t, sibling);
 	}
@@ -869,7 +872,7 @@ static int manage_credits_prior_sending(struct smb_direct_transport *t)
 }
 
 static int smb_direct_post_send(struct smb_direct_transport *t,
-		struct ib_send_wr *wr)
+				struct ib_send_wr *wr)
 {
 	int ret;
 
@@ -894,8 +897,9 @@ static int smb_direct_post_send(struct smb_direct_transport *t,
 }
 
 static void smb_direct_send_ctx_init(struct smb_direct_transport *t,
-		struct smb_direct_send_ctx *send_ctx,
-		bool need_invalidate_rkey, unsigned int remote_key)
+				     struct smb_direct_send_ctx *send_ctx,
+				     bool need_invalidate_rkey,
+				     unsigned int remote_key)
 {
 	INIT_LIST_HEAD(&send_ctx->msg_list);
 	send_ctx->wr_cnt = 0;
@@ -904,7 +908,8 @@ static void smb_direct_send_ctx_init(struct smb_direct_transport *t,
 }
 
 static int smb_direct_flush_send_list(struct smb_direct_transport *t,
-		struct smb_direct_send_ctx *send_ctx, bool is_last)
+				      struct smb_direct_send_ctx *send_ctx,
+				      bool is_last)
 {
 	struct smb_direct_sendmsg *first, *last;
 	int ret;
@@ -913,11 +918,11 @@ static int smb_direct_flush_send_list(struct smb_direct_transport *t,
 		return 0;
 
 	first = list_first_entry(&send_ctx->msg_list,
-				struct smb_direct_sendmsg,
-				list);
+				 struct smb_direct_sendmsg,
+				 list);
 	last = list_last_entry(&send_ctx->msg_list,
-				struct smb_direct_sendmsg,
-				list);
+			       struct smb_direct_sendmsg,
+			       list);
 
 	last->wr.send_flags = IB_SEND_SIGNALED;
 	last->wr.wr_cqe = &last->cqe;
@@ -929,12 +934,13 @@ static int smb_direct_flush_send_list(struct smb_direct_transport *t,
 	ret = smb_direct_post_send(t, &first->wr);
 	if (!ret) {
 		smb_direct_send_ctx_init(t, send_ctx,
-			send_ctx->need_invalidate_rkey, send_ctx->remote_key);
+					 send_ctx->need_invalidate_rkey,
+					 send_ctx->remote_key);
 	} else {
 		atomic_add(send_ctx->wr_cnt, &t->send_credits);
 		wake_up(&t->wait_send_credits);
 		list_for_each_entry_safe(first, last, &send_ctx->msg_list,
-				list) {
+					 list) {
 			smb_direct_free_sendmsg(t, first);
 		}
 	}
@@ -942,7 +948,7 @@ static int smb_direct_flush_send_list(struct smb_direct_transport *t,
 }
 
 static int wait_for_credits(struct smb_direct_transport *t,
-		wait_queue_head_t *waitq, atomic_t *credits)
+			    wait_queue_head_t *waitq, atomic_t *credits)
 {
 	int ret;
 
@@ -952,8 +958,8 @@ static int wait_for_credits(struct smb_direct_transport *t,
 
 		atomic_inc(credits);
 		ret = wait_event_interruptible(*waitq,
-				atomic_read(credits) > 0 ||
-				t->status != SMB_DIRECT_CS_CONNECTED);
+					       atomic_read(credits) > 0 ||
+						t->status != SMB_DIRECT_CS_CONNECTED);
 
 		if (t->status != SMB_DIRECT_CS_CONNECTED)
 			return -ENOTCONN;
@@ -963,12 +969,12 @@ static int wait_for_credits(struct smb_direct_transport *t,
 }
 
 static int wait_for_send_credits(struct smb_direct_transport *t,
-		struct smb_direct_send_ctx *send_ctx)
+				 struct smb_direct_send_ctx *send_ctx)
 {
 	int ret;
 
-	if (send_ctx && (send_ctx->wr_cnt >= 16 ||
-			 atomic_read(&t->send_credits) <= 1)) {
+	if (send_ctx &&
+	    (send_ctx->wr_cnt >= 16 || atomic_read(&t->send_credits) <= 1)) {
 		ret = smb_direct_flush_send_list(t, send_ctx, false);
 		if (ret)
 			return ret;
@@ -978,8 +984,8 @@ static int wait_for_send_credits(struct smb_direct_transport *t,
 }
 
 static int smb_direct_create_header(struct smb_direct_transport *t,
-		int size, int remaining_data_length,
-		struct smb_direct_sendmsg **sendmsg_out)
+				    int size, int remaining_data_length,
+				    struct smb_direct_sendmsg **sendmsg_out)
 {
 	struct smb_direct_sendmsg *sendmsg;
 	struct smb_direct_data_transfer *packet;
@@ -1008,12 +1014,12 @@ static int smb_direct_create_header(struct smb_direct_transport *t,
 	packet->padding = 0;
 
 	ksmbd_debug(RDMA,
-		"credits_requested=%d credits_granted=%d data_offset=%d data_length=%d remaining_data_length=%d\n",
-		le16_to_cpu(packet->credits_requested),
-		le16_to_cpu(packet->credits_granted),
-		le32_to_cpu(packet->data_offset),
-		le32_to_cpu(packet->data_length),
-		le32_to_cpu(packet->remaining_data_length));
+		    "credits_requested=%d credits_granted=%d data_offset=%d data_length=%d remaining_data_length=%d\n",
+		    le16_to_cpu(packet->credits_requested),
+		    le16_to_cpu(packet->credits_granted),
+		    le32_to_cpu(packet->data_offset),
+		    le32_to_cpu(packet->data_length),
+		    le32_to_cpu(packet->remaining_data_length));
 
 	/* Map the packet to DMA */
 	header_length = sizeof(struct smb_direct_data_transfer);
@@ -1073,8 +1079,8 @@ static int get_sg_list(void *buf, int size, struct scatterlist *sg_list, int nen
 }
 
 static int get_mapped_sg_list(struct ib_device *device, void *buf, int size,
-		struct scatterlist *sg_list, int nentries,
-		enum dma_data_direction dir)
+			      struct scatterlist *sg_list, int nentries,
+			      enum dma_data_direction dir)
 {
 	int npages;
 
@@ -1085,15 +1091,15 @@ static int get_mapped_sg_list(struct ib_device *device, void *buf, int size,
 }
 
 static int post_sendmsg(struct smb_direct_transport *t,
-		struct smb_direct_send_ctx *send_ctx,
-		struct smb_direct_sendmsg *msg)
+			struct smb_direct_send_ctx *send_ctx,
+			struct smb_direct_sendmsg *msg)
 {
 	int i;
 
 	for (i = 0; i < msg->num_sge; i++)
 		ib_dma_sync_single_for_device(t->cm_id->device,
-				msg->sge[i].addr, msg->sge[i].length,
-				DMA_TO_DEVICE);
+					      msg->sge[i].addr, msg->sge[i].length,
+					      DMA_TO_DEVICE);
 
 	msg->cqe.done = send_done;
 	msg->wr.opcode = IB_WR_SEND;
@@ -1123,8 +1129,9 @@ static int post_sendmsg(struct smb_direct_transport *t,
 }
 
 static int smb_direct_post_send_data(struct smb_direct_transport *t,
-		struct smb_direct_send_ctx *send_ctx,
-		struct kvec *iov, int niov, int remaining_data_length)
+				     struct smb_direct_send_ctx *send_ctx,
+				     struct kvec *iov, int niov,
+				     int remaining_data_length)
 {
 	int i, j, ret;
 	struct smb_direct_sendmsg *msg;
@@ -1152,8 +1159,9 @@ static int smb_direct_post_send_data(struct smb_direct_transport *t,
 
 		sg_init_table(sg, SMB_DIRECT_MAX_SEND_SGES - 1);
 		sg_cnt = get_mapped_sg_list(t->cm_id->device,
-				iov[i].iov_base, iov[i].iov_len,
-				sg, SMB_DIRECT_MAX_SEND_SGES - 1, DMA_TO_DEVICE);
+					    iov[i].iov_base, iov[i].iov_len,
+					    sg, SMB_DIRECT_MAX_SEND_SGES - 1,
+					    DMA_TO_DEVICE);
 		if (sg_cnt <= 0) {
 			ksmbd_err("failed to map buffer\n");
 			ret = -ENOMEM;
@@ -1186,8 +1194,8 @@ err:
 }
 
 static int smb_direct_writev(struct ksmbd_transport *t,
-		struct kvec *iov, int niovs, int buflen,
-		bool need_invalidate, unsigned int remote_key)
+			     struct kvec *iov, int niovs, int buflen,
+			     bool need_invalidate, unsigned int remote_key)
 {
 	struct smb_direct_transport *st = SMB_DIRECT_TRANS(t);
 	int remaining_data_length;
@@ -1221,8 +1229,8 @@ static int smb_direct_writev(struct ksmbd_transport *t,
 				remaining_data_length -=
 					(buflen - iov[i].iov_len);
 				ret = smb_direct_post_send_data(st, &send_ctx,
-						&iov[start], i - start,
-						remaining_data_length);
+								&iov[start], i - start,
+								remaining_data_length);
 				if (ret)
 					goto done;
 			} else {
@@ -1236,11 +1244,10 @@ static int smb_direct_writev(struct ksmbd_transport *t,
 						j * max_iov_size;
 					vec.iov_len =
 						min_t(int, max_iov_size,
-						buflen - max_iov_size * j);
+						      buflen - max_iov_size * j);
 					remaining_data_length -= vec.iov_len;
-					ret = smb_direct_post_send_data(st,
-						&send_ctx, &vec, 1,
-						remaining_data_length);
+					ret = smb_direct_post_send_data(st, &send_ctx, &vec, 1,
+									remaining_data_length);
 					if (ret)
 						goto done;
 				}
@@ -1256,8 +1263,8 @@ static int smb_direct_writev(struct ksmbd_transport *t,
 				/* send out all remaining vecs */
 				remaining_data_length -= buflen;
 				ret = smb_direct_post_send_data(st, &send_ctx,
-					&iov[start], i - start,
-					remaining_data_length);
+								&iov[start], i - start,
+								remaining_data_length);
 				if (ret)
 					goto done;
 				break;
@@ -1276,20 +1283,20 @@ done:
 	 */
 
 	wait_event(st->wait_send_payload_pending,
-		atomic_read(&st->send_payload_pending) == 0);
+		   atomic_read(&st->send_payload_pending) == 0);
 	return ret;
 }
 
 static void read_write_done(struct ib_cq *cq, struct ib_wc *wc,
-		enum dma_data_direction dir)
+			    enum dma_data_direction dir)
 {
 	struct smb_direct_rdma_rw_msg *msg = container_of(wc->wr_cqe,
-					struct smb_direct_rdma_rw_msg, cqe);
+							  struct smb_direct_rdma_rw_msg, cqe);
 	struct smb_direct_transport *t = msg->t;
 
 	if (wc->status != IB_WC_SUCCESS) {
 		ksmbd_err("read/write error. opcode = %d, status = %s(%d)\n",
-			wc->opcode, ib_wc_status_msg(wc->status), wc->status);
+			  wc->opcode, ib_wc_status_msg(wc->status), wc->status);
 		smb_direct_disconnect_rdma_connection(t);
 	}
 
@@ -1319,8 +1326,8 @@ static void write_done(struct ib_cq *cq, struct ib_wc *wc)
 }
 
 static int smb_direct_rdma_xmit(struct smb_direct_transport *t, void *buf,
-		int buf_len, u32 remote_key, u64 remote_offset, u32 remote_len,
-		bool is_read)
+				int buf_len, u32 remote_key, u64 remote_offset,
+				u32 remote_len, bool is_read)
 {
 	struct smb_direct_rdma_rw_msg *msg;
 	int ret;
@@ -1333,7 +1340,7 @@ static int smb_direct_rdma_xmit(struct smb_direct_transport *t, void *buf,
 
 	/* TODO: mempool */
 	msg = kmalloc(offsetof(struct smb_direct_rdma_rw_msg, sg_list) +
-		sizeof(struct scatterlist) * SG_CHUNK_SIZE, GFP_KERNEL);
+		      sizeof(struct scatterlist) * SG_CHUNK_SIZE, GFP_KERNEL);
 	if (!msg) {
 		atomic_inc(&t->rw_avail_ops);
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
@@ -1364,9 +1371,9 @@ static int smb_direct_rdma_xmit(struct smb_direct_transport *t, void *buf,
 	}
 
 	ret = rdma_rw_ctx_init(&msg->rw_ctx, t->qp, t->qp->port,
-			msg->sg_list, BUFFER_NR_PAGES(buf, buf_len),
-			0, remote_offset, remote_key,
-			is_read ? DMA_FROM_DEVICE : DMA_TO_DEVICE);
+			       msg->sg_list, BUFFER_NR_PAGES(buf, buf_len),
+			       0, remote_offset, remote_key,
+			       is_read ? DMA_FROM_DEVICE : DMA_TO_DEVICE);
 	if (ret < 0) {
 		ksmbd_err("failed to init rdma_rw_ctx: %d\n", ret);
 		goto err;
@@ -1376,7 +1383,7 @@ static int smb_direct_rdma_xmit(struct smb_direct_transport *t, void *buf,
 	msg->cqe.done = is_read ? read_done : write_done;
 	msg->completion = &completion;
 	first_wr = rdma_rw_ctx_wrs(&msg->rw_ctx, t->qp, t->qp->port,
-				&msg->cqe, NULL);
+				   &msg->cqe, NULL);
 
 	ret = ib_post_send(t->qp, first_wr, NULL);
 	if (ret) {
@@ -1428,17 +1435,17 @@ static void smb_direct_disconnect(struct ksmbd_transport *t)
 
 	smb_direct_disconnect_rdma_connection(st);
 	wait_event_interruptible(st->wait_status,
-			st->status == SMB_DIRECT_CS_DISCONNECTED);
+				 st->status == SMB_DIRECT_CS_DISCONNECTED);
 	free_transport(st);
 }
 
 static int smb_direct_cm_handler(struct rdma_cm_id *cm_id,
-		struct rdma_cm_event *event)
+				 struct rdma_cm_event *event)
 {
 	struct smb_direct_transport *t = cm_id->context;
 
 	ksmbd_debug(RDMA, "RDMA CM event. cm_id=%p event=%s (%d)\n",
-			cm_id, rdma_event_msg(event->event), event->event);
+		    cm_id, rdma_event_msg(event->event), event->event);
 
 	switch (event->event) {
 	case RDMA_CM_EVENT_ESTABLISHED: {
@@ -1461,8 +1468,8 @@ static int smb_direct_cm_handler(struct rdma_cm_id *cm_id,
 	}
 	default:
 		ksmbd_err("Unexpected RDMA CM event. cm_id=%p, event=%s (%d)\n",
-				cm_id, rdma_event_msg(event->event),
-				event->event);
+			  cm_id, rdma_event_msg(event->event),
+			  event->event);
 		break;
 	}
 	return 0;
@@ -1473,7 +1480,7 @@ static void smb_direct_qpair_handler(struct ib_event *event, void *context)
 	struct smb_direct_transport *t = context;
 
 	ksmbd_debug(RDMA, "Received QP event. cm_id=%p, event=%s (%d)\n",
-			t->cm_id, ib_event_msg(event->event), event->event);
+		    t->cm_id, ib_event_msg(event->event), event->event);
 
 	switch (event->event) {
 	case IB_EVENT_CQ_ERR:
@@ -1486,7 +1493,7 @@ static void smb_direct_qpair_handler(struct ib_event *event, void *context)
 }
 
 static int smb_direct_send_negotiate_response(struct smb_direct_transport *t,
-		int failed)
+					      int failed)
 {
 	struct smb_direct_sendmsg *sendmsg;
 	struct smb_direct_negotiate_resp *resp;
@@ -1521,9 +1528,9 @@ static int smb_direct_send_negotiate_response(struct smb_direct_transport *t,
 	}
 
 	sendmsg->sge[0].addr = ib_dma_map_single(t->cm_id->device,
-				(void *)resp, sizeof(*resp), DMA_TO_DEVICE);
-	ret = ib_dma_mapping_error(t->cm_id->device,
-				sendmsg->sge[0].addr);
+						 (void *)resp, sizeof(*resp),
+						 DMA_TO_DEVICE);
+	ret = ib_dma_mapping_error(t->cm_id->device, sendmsg->sge[0].addr);
 	if (ret) {
 		smb_direct_free_sendmsg(t, sendmsg);
 		return ret;
@@ -1540,7 +1547,7 @@ static int smb_direct_send_negotiate_response(struct smb_direct_transport *t,
 	}
 
 	wait_event(t->wait_send_pending,
-			atomic_read(&t->send_pending) == 0);
+		   atomic_read(&t->send_pending) == 0);
 	return 0;
 }
 
@@ -1620,9 +1627,9 @@ static int smb_direct_negotiate(struct smb_direct_transport *t)
 
 	ksmbd_debug(RDMA, "Waiting for SMB_DIRECT negotiate request\n");
 	ret = wait_event_interruptible_timeout(t->wait_status,
-			t->negotiation_requested ||
-			t->status == SMB_DIRECT_CS_DISCONNECTED,
-			SMB_DIRECT_NEGOTIATE_TIMEOUT * HZ);
+					       t->negotiation_requested ||
+						t->status == SMB_DIRECT_CS_DISCONNECTED,
+					       SMB_DIRECT_NEGOTIATE_TIMEOUT * HZ);
 	if (ret <= 0 || t->status == SMB_DIRECT_CS_DISCONNECTED) {
 		ret = ret < 0 ? ret : -ETIMEDOUT;
 		goto out;
@@ -1634,9 +1641,9 @@ static int smb_direct_negotiate(struct smb_direct_transport *t)
 
 	req = (struct smb_direct_negotiate_req *)recvmsg->packet;
 	t->max_recv_size = min_t(int, t->max_recv_size,
-			le32_to_cpu(req->preferred_send_size));
+				 le32_to_cpu(req->preferred_send_size));
 	t->max_send_size = min_t(int, t->max_send_size,
-			le32_to_cpu(req->max_receive_size));
+				 le32_to_cpu(req->max_receive_size));
 	t->max_fragmented_send_size =
 			le32_to_cpu(req->max_fragmented_size);
 
@@ -1648,7 +1655,7 @@ out:
 }
 
 static int smb_direct_init_params(struct smb_direct_transport *t,
-		struct ib_qp_cap *cap)
+				  struct ib_qp_cap *cap)
 {
 	struct ib_device *device = t->cm_id->device;
 	int max_send_sges, max_pages, max_rw_wrs, max_send_wrs;
@@ -1816,7 +1823,7 @@ err:
 }
 
 static int smb_direct_create_qpair(struct smb_direct_transport *t,
-		struct ib_qp_cap *cap)
+				   struct ib_qp_cap *cap)
 {
 	int ret;
 	struct ib_qp_init_attr qp_attr;
@@ -1830,7 +1837,7 @@ static int smb_direct_create_qpair(struct smb_direct_transport *t,
 	}
 
 	t->send_cq = ib_alloc_cq(t->cm_id->device, t,
-			t->send_credit_target, 0, IB_POLL_WORKQUEUE);
+				 t->send_credit_target, 0, IB_POLL_WORKQUEUE);
 	if (IS_ERR(t->send_cq)) {
 		ksmbd_err("Can't create RDMA send CQ\n");
 		ret = PTR_ERR(t->send_cq);
@@ -1839,8 +1846,8 @@ static int smb_direct_create_qpair(struct smb_direct_transport *t,
 	}
 
 	t->recv_cq = ib_alloc_cq(t->cm_id->device, t,
-			cap->max_send_wr + cap->max_rdma_ctxs,
-			0, IB_POLL_WORKQUEUE);
+				 cap->max_send_wr + cap->max_rdma_ctxs,
+				 0, IB_POLL_WORKQUEUE);
 	if (IS_ERR(t->recv_cq)) {
 		ksmbd_err("Can't create RDMA recv CQ\n");
 		ret = PTR_ERR(t->recv_cq);
@@ -1937,8 +1944,8 @@ static int smb_direct_handle_connect_request(struct rdma_cm_id *new_cm_id)
 
 	if (!rdma_frwr_is_supported(&new_cm_id->device->attrs)) {
 		ksmbd_debug(RDMA,
-			"Fast Registration Work Requests is not supported. device capabilities=%llx\n",
-			new_cm_id->device->attrs.device_cap_flags);
+			    "Fast Registration Work Requests is not supported. device capabilities=%llx\n",
+			    new_cm_id->device->attrs.device_cap_flags);
 		return -EPROTONOSUPPORT;
 	}
 
@@ -1948,7 +1955,8 @@ static int smb_direct_handle_connect_request(struct rdma_cm_id *new_cm_id)
 		return -ENOMEM;
 	}
 	KSMBD_TRANS(t)->handler = kthread_run(ksmbd_conn_handler_loop,
-			KSMBD_TRANS(t)->conn, "ksmbd:r%u", SMB_DIRECT_PORT);
+					      KSMBD_TRANS(t)->conn, "ksmbd:r%u",
+					      SMB_DIRECT_PORT);
 	if (IS_ERR(KSMBD_TRANS(t)->handler)) {
 		int ret = PTR_ERR(KSMBD_TRANS(t)->handler);
 
@@ -1961,7 +1969,7 @@ static int smb_direct_handle_connect_request(struct rdma_cm_id *new_cm_id)
 }
 
 static int smb_direct_listen_handler(struct rdma_cm_id *cm_id,
-		struct rdma_cm_event *event)
+				     struct rdma_cm_event *event)
 {
 	switch (event->event) {
 	case RDMA_CM_EVENT_CONNECT_REQUEST: {
@@ -1973,13 +1981,12 @@ static int smb_direct_listen_handler(struct rdma_cm_id *cm_id,
 		}
 
 		ksmbd_debug(RDMA, "Received connection request. cm_id=%p\n",
-			cm_id);
+			    cm_id);
 		break;
 	}
 	default:
 		ksmbd_err("Unexpected listen event. cm_id=%p, event=%s (%d)\n",
-				cm_id,
-				rdma_event_msg(event->event), event->event);
+			  cm_id, rdma_event_msg(event->event), event->event);
 		break;
 	}
 	return 0;
@@ -1996,10 +2003,9 @@ static int smb_direct_listen(int port)
 	};
 
 	cm_id = rdma_create_id(&init_net, smb_direct_listen_handler,
-		&smb_direct_listener, RDMA_PS_TCP, IB_QPT_RC);
+			       &smb_direct_listener, RDMA_PS_TCP, IB_QPT_RC);
 	if (IS_ERR(cm_id)) {
-		ksmbd_err("Can't create cm id: %ld\n",
-				PTR_ERR(cm_id));
+		ksmbd_err("Can't create cm id: %ld\n", PTR_ERR(cm_id));
 		return PTR_ERR(cm_id);
 	}
 
@@ -2050,7 +2056,7 @@ int ksmbd_rdma_init(void)
 	}
 
 	ksmbd_debug(RDMA, "init RDMA listener. cm_id=%p\n",
-		smb_direct_listener.cm_id);
+		    smb_direct_listener.cm_id);
 	return 0;
 }
 

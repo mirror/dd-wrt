@@ -257,7 +257,7 @@ static void __ksmbd_inode_close(struct ksmbd_file *fp)
 					     fp->stream.name);
 		if (err)
 			ksmbd_err("remove xattr failed : %s\n",
-				fp->stream.name);
+				  fp->stream.name);
 	}
 
 	if (atomic_dec_and_test(&ci->m_count)) {
@@ -328,7 +328,7 @@ static struct ksmbd_file *ksmbd_fp_get(struct ksmbd_file *fp)
 }
 
 static struct ksmbd_file *__ksmbd_lookup_fd(struct ksmbd_file_table *ft,
-		unsigned int id)
+					    unsigned int id)
 {
 	struct ksmbd_file *fp;
 
@@ -352,7 +352,7 @@ static void set_close_state_blocked_works(struct ksmbd_file *fp)
 
 	spin_lock(&fp->f_lock);
 	list_for_each_entry_safe(cancel_work, ctmp, &fp->blocked_works,
-			fp_entry) {
+				 fp_entry) {
 		list_del(&cancel_work->fp_entry);
 		cancel_work->state = KSMBD_WORK_CLOSED;
 		cancel_work->cancel_fn(cancel_work->cancel_argv);
@@ -422,7 +422,7 @@ struct ksmbd_file *ksmbd_lookup_fd_fast(struct ksmbd_work *work, unsigned int id
 }
 
 struct ksmbd_file *ksmbd_lookup_fd_slow(struct ksmbd_work *work, unsigned int id,
-		unsigned int pid)
+					unsigned int pid)
 {
 	struct ksmbd_file *fp;
 
@@ -599,8 +599,10 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work, struct file *filp)
 }
 
 static int
-__close_file_table_ids(struct ksmbd_file_table *ft, struct ksmbd_tree_connect *tcon,
-		bool (*skip)(struct ksmbd_tree_connect *tcon, struct ksmbd_file *fp))
+__close_file_table_ids(struct ksmbd_file_table *ft,
+		       struct ksmbd_tree_connect *tcon,
+		       bool (*skip)(struct ksmbd_tree_connect *tcon,
+				    struct ksmbd_file *fp))
 {
 	unsigned int			id;
 	struct ksmbd_file		*fp;
