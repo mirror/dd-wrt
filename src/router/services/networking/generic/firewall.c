@@ -2574,8 +2574,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	}
 #endif
 
-	if (!filter_host_url)
-		save2file_A_forward("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
 
 	foreach(var, vifs, next) {
 		if (strcmp(get_wan_face(), var)
@@ -2585,6 +2583,9 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 			}
 		}
 	}
+
+	if (!filter_host_url)
+		save2file_A_forward("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
 
 	save2file_A_forward("-j upnp");
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
