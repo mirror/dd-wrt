@@ -628,8 +628,10 @@ void start_openvpn(void)
 		eval("iptables", "-I", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
 		//consider restarting SFE to drop existing connections e.g. eval("restart", "sfe"); or: stop_sfe(); start_sfe();
 #ifdef HAVE_SFE
-		stop_sfe();
-		start_sfe();
+		if (nvram_match("sfe","1")) {
+			stop_sfe();
+			start_sfe();
+		}
 		system("cat /proc/net/ip_conntrack_flush 2>&1");
 		system("cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1");
 #endif
