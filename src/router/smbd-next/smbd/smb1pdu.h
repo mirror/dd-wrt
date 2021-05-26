@@ -1558,7 +1558,7 @@ extern int init_smb1_server(struct ksmbd_conn *conn);
 
 /* function prototypes */
 extern int init_smb_rsp_hdr(struct ksmbd_work *work);
-extern uint16_t get_smb_cmd_val(struct ksmbd_work *work);
+extern u16 get_smb_cmd_val(struct ksmbd_work *work);
 extern void set_smb_rsp_status(struct ksmbd_work *work, __le32 err);
 extern int smb_allocate_rsp_buf(struct ksmbd_work *work);
 extern bool smb1_is_sign_req(struct ksmbd_work *work, unsigned int command);

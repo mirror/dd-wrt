@@ -276,7 +276,7 @@ static int handle_response(int type, void *payload, size_t sz)
 		 */
 		if (entry->type + 1 != type) {
 			ksmbd_err("Waiting for IPC type %d, got %d. Ignore.\n",
-				entry->type + 1, type);
+				  entry->type + 1, type);
 		}
 
 		entry->response = ksmbd_alloc(sz);
@@ -327,9 +327,8 @@ static int ipc_server_config_on_startup(struct ksmbd_startup_request *req)
 					req->ifc_list_sz);
 	if (ret) {
 		ksmbd_err("Server configuration error: %s %s %s\n",
-				req->netbios_name,
-				req->server_string,
-				req->work_group);
+			  req->netbios_name, req->server_string,
+			  req->work_group);
 		return ret;
 	}
 
@@ -565,9 +564,9 @@ ksmbd_ipc_spnego_authen_request(const char *spnego_blob, int blob_len)
 
 struct ksmbd_tree_connect_response *
 ksmbd_ipc_tree_connect_request(struct ksmbd_session *sess,
-		struct ksmbd_share_config *share,
-		struct ksmbd_tree_connect *tree_conn,
-		struct sockaddr *peer_addr)
+			       struct ksmbd_share_config *share,
+			       struct ksmbd_tree_connect *tree_conn,
+			       struct sockaddr *peer_addr)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_tree_connect_request *req;
@@ -611,7 +610,7 @@ ksmbd_ipc_tree_connect_request(struct ksmbd_session *sess,
 }
 
 int ksmbd_ipc_tree_disconnect_request(unsigned long long session_id,
-		unsigned long long connect_id)
+				      unsigned long long connect_id)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_tree_disconnect_request *req;
@@ -735,7 +734,7 @@ struct ksmbd_rpc_command *ksmbd_rpc_close(struct ksmbd_session *sess, int handle
 }
 
 struct ksmbd_rpc_command *ksmbd_rpc_write(struct ksmbd_session *sess, int handle,
-		void *payload, size_t payload_sz)
+					  void *payload, size_t payload_sz)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_rpc_command *req;
@@ -783,7 +782,7 @@ struct ksmbd_rpc_command *ksmbd_rpc_read(struct ksmbd_session *sess, int handle)
 }
 
 struct ksmbd_rpc_command *ksmbd_rpc_ioctl(struct ksmbd_session *sess, int handle,
-		void *payload, size_t payload_sz)
+					  void *payload, size_t payload_sz)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_rpc_command *req;
@@ -808,7 +807,7 @@ struct ksmbd_rpc_command *ksmbd_rpc_ioctl(struct ksmbd_session *sess, int handle
 }
 
 struct ksmbd_rpc_command *ksmbd_rpc_rap(struct ksmbd_session *sess, void *payload,
-		size_t payload_sz)
+					size_t payload_sz)
 {
 	struct ksmbd_ipc_msg *msg;
 	struct ksmbd_rpc_command *req;

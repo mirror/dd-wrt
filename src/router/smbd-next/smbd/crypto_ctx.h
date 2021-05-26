@@ -67,7 +67,6 @@ struct ksmbd_crypto_ctx {
 #endif
 
 void ksmbd_release_crypto_ctx(struct ksmbd_crypto_ctx *ctx);
-
 struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_hmacmd5(void);
 struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_hmacsha256(void);
 struct ksmbd_crypto_ctx *ksmbd_crypto_ctx_find_cmacaes(void);

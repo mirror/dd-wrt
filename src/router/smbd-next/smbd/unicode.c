@@ -45,7 +45,7 @@ int smb1_utf16_name_length(const __le16 *from, int maxbytes)
  * Return:	string length after conversion
  */
 static int smb_utf16_bytes(const __le16 *from, int maxbytes,
-		const struct nls_table *codepage)
+			   const struct nls_table *codepage)
 {
 	int i;
 	int charlen, outlen = 0;
@@ -83,7 +83,7 @@ static int smb_utf16_bytes(const __le16 *from, int maxbytes,
  */
 static int
 cifs_mapchar(char *target, const __u16 src_char, const struct nls_table *cp,
-		bool mapchar)
+	     bool mapchar)
 {
 	int len = 1;
 
@@ -174,7 +174,7 @@ static inline int is_char_allowed(char *ch)
  * Return:	string length after conversion
  */
 static int smb_from_utf16(char *to, const __le16 *from, int tolen, int fromlen,
-		const struct nls_table *codepage, bool mapchar)
+			  const struct nls_table *codepage, bool mapchar)
 {
 	int i, charlen, safelen;
 	int outlen = 0;
@@ -228,7 +228,7 @@ static int smb_from_utf16(char *to, const __le16 *from, int tolen, int fromlen,
  * Return:	string length after conversion
  */
 int smb_strtoUTF16(__le16 *to, const char *from, int len,
-	      const struct nls_table *codepage)
+		   const struct nls_table *codepage)
 {
 	int charlen;
 	int i;
@@ -243,7 +243,7 @@ int smb_strtoUTF16(__le16 *to, const char *from, int len,
 		 * in destination len is length in wchar_t units (16bits)
 		 */
 		i  = utf8s_to_utf16s(from, len, UTF16_LITTLE_ENDIAN,
-				       (wchar_t *)to, len);
+				     (wchar_t *)to, len);
 
 		/* if success terminate and exit */
 		if (i >= 0)
@@ -286,7 +286,8 @@ success:
  * Return:	destination string buffer or error ptr
  */
 char *smb_strndup_from_utf16(const char *src, const int maxlen,
-		const bool is_unicode, const struct nls_table *codepage)
+			     const bool is_unicode,
+			     const struct nls_table *codepage)
 {
 	int len, ret;
 	char *dst;
@@ -300,7 +301,7 @@ char *smb_strndup_from_utf16(const char *src, const int maxlen,
 			return ERR_PTR(-ENOMEM);
 		}
 		ret = smb_from_utf16(dst, (__le16 *)src, len, maxlen, codepage,
-			       false);
+				     false);
 		if (ret < 0) {
 			kfree(dst);
 			return ERR_PTR(-EINVAL);
@@ -345,7 +346,7 @@ char *smb_strndup_from_utf16(const char *src, const int maxlen,
  * Return:	char length after conversion
  */
 int smbConvertToUTF16(__le16 *target, const char *source, int srclen,
-		const struct nls_table *cp, int mapchars)
+		      const struct nls_table *cp, int mapchars)
 {
 	int i, j, charlen;
 	char src_char;
