@@ -2154,7 +2154,7 @@ int filtersync_main(int argc, char *argv[])
 			changed = 1;
 	}
 #ifdef HAVE_SFE
-	if (changed)
+	if (changed && nvram_match("sfe","1"))
 		stop_sfe();
 #endif
 	for (seq = 1; seq <= NR_RULES; seq++) {
@@ -2165,7 +2165,7 @@ int filtersync_main(int argc, char *argv[])
 		DEBUG("seq=%d, ret=%d\n", seq, ret);
 	}
 #ifdef HAVE_SFE
-	if (changed)
+	if (changed && nvram_match("sfe","1"))
 		start_sfe();
 #endif
 	return 0;
@@ -3172,7 +3172,8 @@ void start_firewall(void)
 	int remotemanage = 0;
 	lock();
 #ifdef HAVE_SFE
-	stop_sfe();
+	if (nvram_match("sfe","1"))
+		stop_sfe();
 #endif
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
@@ -3513,7 +3514,8 @@ void stop_firewall(void)
 	diag_led(DMZ, STOP_LED);
 #endif
 #ifdef HAVE_SFE
-	stop_sfe();
+	if (nvram_match("sfe","1"))
+		stop_sfe();
 #endif
 	char num[32];
 	int i;
