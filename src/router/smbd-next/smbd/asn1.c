@@ -356,7 +356,7 @@ int neg_token_init_mech_type(void *context, size_t hdrlen, unsigned char tag,
 
 fail:
 	kfree(oid);
-	sprint_oid(value, vlen, buf, sizeof(buf));
+	my_sprint_oid(value, vlen, buf, sizeof(buf));
 	ksmbd_debug(AUTH, "Unexpected OID: %s\n", buf);
 	return -EBADMSG;
 }
