@@ -343,6 +343,8 @@ void start_init_start(void)
 	start_bridging();
 #endif
 	start_lan();
+	/* we need todo it a second time since the bridge did not exist before */
+	start_setup_vlans();
 #ifdef HAVE_IPVS
 	start_ipvs();
 #endif
