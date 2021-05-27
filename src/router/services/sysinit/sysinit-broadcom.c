@@ -3042,6 +3042,12 @@ void start_sysinit(void)
 	if (brand == ROUTER_WRT54G3G) {
 		eval("cardmgr");
 	}
+	
+	if (brand == ROUTER_UBNT_UNIFIAC) {
+		nvram_set("vlan1ports", "0 8*");
+		nvram_set("vlan2ports", "1 8");
+	}
+
 
 #ifdef HAVE_SWCONFIG
 
@@ -3099,11 +3105,7 @@ void start_sysinit(void)
 	case ROUTER_BUFFALO_WZRG144NH:
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:
 	case ROUTER_WRT54G1X:
-		start_config_vlan();
-		break;
 	case ROUTER_UBNT_UNIFIAC:
-		nvram_set("vlan1ports", "0 8*");
-		nvram_set("vlan2ports", "1 8");
 		start_config_vlan();
 		break;
 	default:
