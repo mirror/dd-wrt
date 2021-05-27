@@ -270,14 +270,19 @@ void start_setup_vlans(void)
 					eval("vconfig", "add", lanphy, buff);
 				snprintf(buff, 9, "vlan%d", vlanlist[vlan_number]);
 				if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
-					if (*(nvram_nget("vlan%d_ipaddr", vlan_number)))
-						eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
-					else
-						eval("ifconfig", buff, "0.0.0.0", "up");
 					char hwaddr[32];
 					sprintf(hwaddr, "%s_hwaddr", buff);
 					if (!nvram_match(hwaddr, ""))
 						set_hwaddr(buff, nvram_safe_get(hwaddr));
+					if (nvram_nmatch("0", "%s_bridged", buff)) {
+						if (*(nvram_nget("%s_ipaddr", buff)))
+							eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
+						else
+							eval("ifconfig", buff, "0.0.0.0", "up");
+					} else {
+						char tmp[256];
+						br_add_interface(getBridge(buff, tmp), buff);
+					}
 				}
 			}
 		}
@@ -439,12 +444,23 @@ void start_setup_vlans(void)
 						eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 						eval("vconfig", "add", phy, buff);
 						snprintf(buff, 9, "vlan%d", vlanlist[tmp]);
+
 						if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
-							if (*(nvram_nget("%s_ipaddr", buff)))
-								eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
-							else
-								eval("ifconfig", buff, "0.0.0.0", "up");
+							char hwaddr[32];
+							sprintf(hwaddr, "%s_hwaddr", buff);
+							if (!nvram_match(hwaddr, ""))
+								set_hwaddr(buff, nvram_safe_get(hwaddr));
+							if (nvram_nmatch("0", "%s_bridged", buff)) {
+								if (*(nvram_nget("%s_ipaddr", buff)))
+									eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
+								else
+									eval("ifconfig", buff, "0.0.0.0", "up");
+							} else {
+								char tmp[256];
+								br_add_interface(getBridge(buff, tmp), buff);
+							}
 						}
+
 					}
 
 					sprintf((char *)
