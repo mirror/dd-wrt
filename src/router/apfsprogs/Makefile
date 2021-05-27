@@ -6,6 +6,7 @@ all:
 clean:
 	$(MAKE) -C apfsck clean
 	$(MAKE) -C mkapfs clean
+	$(MAKE) -C lib clean
 
 
 install:
