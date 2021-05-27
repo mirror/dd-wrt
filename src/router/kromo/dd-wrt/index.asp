@@ -242,10 +242,6 @@ function submitcheck(F) {
 			F.recursive_dns.value = F._recursive_dns.checked ? 1 : 0;
 		}
 		
-		if(F._fullswitch) {
-			F.fullswitch.value = F._fullswitch.checked ? 1 : 0;
-		}
-		
 		if(F._ppp_mlppp) {
 			F.ppp_mlppp.value = F._ppp_mlppp.checked ? 1 : 0;
 		}
@@ -342,7 +338,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="auth_dnsmasq" value="0" />
 							<input type="hidden" name="dns_redirect" value="0" />
 							<input type="hidden" name="recursive_dns" value="0" />
-							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="ppp_mlppp" value="0" />
 							<input type="hidden" name="ignore_wan_dns" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
@@ -468,7 +463,6 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							
-							<% show_wan_to_switch(); %>
 							<% show_dhcpd_settings(); %>
 							
 							<fieldset>

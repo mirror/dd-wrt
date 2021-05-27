@@ -6359,30 +6359,6 @@ EJ_VISIBLE void ej_gethostnamebyip(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-/*
- * BEGIN Added by Botho 10.May.06 
- */
-EJ_VISIBLE void ej_show_wan_to_switch(webs_t wp, int argc, char_t ** argv)
-{
-
-	if (nvram_match("wan_proto", "disabled") || getSTA() || getWET())	// WAN 
-		// disabled 
-		// OR 
-		// Wirelles 
-		// is 
-		// not 
-		// AP
-	{
-		websWrite(wp, "<fieldset>\n"
-			  "<legend><script type=\"text/javascript\">Capture(idx.legend2)</script></legend>\n"
-			  "<div class=\"setting\">\n"
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wantoswitch)</script></div>\n"
-			  "<input class=\"spaceradio\" type=\"checkbox\" name=\"_fullswitch\" value=\"1\" %s />\n" "</div>\n" "</fieldset><br />\n", nvram_matchi("fullswitch", 1) ? "checked=\"checked\"" : "");
-	}
-
-	return;
-}
-
 #define PROC_DEV "/proc/net/dev"
 
 EJ_VISIBLE void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
