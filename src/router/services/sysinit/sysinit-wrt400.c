@@ -153,14 +153,8 @@ void start_sysinit(void)
 #ifdef HAVE_SWCONFIG
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		if (nvram_match("wan_proto", "disabled")
-		    && nvram_matchi("fullswitch", 1)) {
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4 5");
-		} else {
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 3 4 5");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 2");
-		}
-
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 3 4 5");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 2");
 		eval("swconfig", "dev", "eth0", "set", "apply");
 		nvram_seti("sw_cpuport", 0);
 		nvram_seti("sw_wan", 2);
@@ -201,13 +195,8 @@ void start_sysinit(void)
 #ifdef HAVE_SWCONFIG
 		system("swconfig dev switch0 set reset 1");
 		system("swconfig dev switch0 set enable_vlan 1");
-		if (nvram_match("wan_proto", "disabled")
-		    && nvram_matchi("fullswitch", 1)) {
-			system("swconfig dev switch0 vlan 1 set ports \"0t 1 2 3 4 5\"");
-		} else {
-			system("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");
-			system("swconfig dev switch0 vlan 2 set ports \"0t 1\"");
-		}
+		system("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");
+		system("swconfig dev switch0 vlan 2 set ports \"0t 1\"");
 		system("swconfig dev switch0 set apply");
 		nvram_seti("sw_cpuport", 0);
 		nvram_seti("sw_wan", 1);

@@ -425,7 +425,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "wan_proto", "dhcp" },	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_WHRHPGN
 #ifdef HAVE_ONNET
-	{ "fullswitch", "1" },
 	{ "wan_proto", "disabled" },	/* [static|dhcp|pppoe|disabled] */
 #else
 	{ "wan_proto", "dhcp" },	/* [static|dhcp|pppoe|disabled] */
@@ -1792,7 +1791,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "radius_passphrase", "none" },
 	{ "wan_proto", "disabled" },
 	{ "wan_default", "eth0" },
-	{ "fullswitch", "1" },
 	{ "time_zone", "America/Los_Angeles" },
 	{ "wlan0_security_mode", "psk2" },
 	{ "wlan0_akm", "psk2" },
@@ -3128,7 +3126,6 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{ "maskmac", "1" },
 #endif
-	{ "fullswitch", "0" },
 #ifdef HAVE_OPENVPN
 	{ "openvpncl_enable", "0" },
 	{ "openvpncl_mit", "1" },

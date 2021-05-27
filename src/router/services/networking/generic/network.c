@@ -715,45 +715,6 @@ void start_lan(void)
 	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
 	strcpy(lan_ifnames, nvram_safe_get("lan_ifnames"));
 
-	if (*(nvram_safe_get("wan_default"))) {
-		PORTSETUPWAN(nvram_safe_get("wan_default"));	// setup
-		// default
-		// wan ports, 
-		// or
-		// reassign
-		// wan if
-		// required
-		// by network 
-		// setup
-
-		/*
-		 * add wan ifname to lan_ifnames if we use fullswitch 
-		 */
-		if (nvram_matchi("fullswitch", 1)
-		    && (getSTA() || getWET()
-			|| nvram_match("wan_proto", "disabled"))) {
-			if (!nvram_matchi("fullswitch_set", 1)) {
-				nvram_set("lan_default", lan_ifnames);
-				nvram_seti("fullswitch_set", 1);
-			}
-			sprintf(lan_ifnames, "%s %s", nvram_safe_get("lan_default"), nvram_safe_get("wan_default"));
-			strcpy(wan_ifname, "");
-#if defined(HAVE_ERC) && defined(HAVE_CARAMBOLA)
-			nvram_nseti(1, "%s_bridged", nvram_safe_get("wan_default"));
-#endif
-		} else {
-			if (nvram_matchi("fullswitch_set", 1)) {
-				strcpy(lan_ifnames, nvram_safe_get("lan_default"));
-				nvram_unset("lan_default");
-				strcpy(wan_ifname, nvram_safe_get("wan_default"));
-				nvram_unset("fullswitch_set");
-			}
-#if defined(HAVE_ERC) && defined(HAVE_CARAMBOLA)
-			nvram_nseti(0, "%s_bridged", nvram_safe_get("wan_default"));
-#endif
-		}
-	}
-
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		return;
 
@@ -1042,23 +1003,6 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("vlan2");
 	}
-#ifdef HAVE_SWCONFIG
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 1");
-	if (nvram_match("wan_proto", "disabled")
-	    && nvram_matchi("fullswitch", 1)) {
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4 5");
-	} else {
-#ifdef HAVE_WZRG300NH2
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 3 4 5");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 2");
-#else
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
-#endif
-	}
-	system("swconfig dev eth0 set apply");
-#endif
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("vlan1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
