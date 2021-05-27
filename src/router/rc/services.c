@@ -449,7 +449,7 @@ static void handle_index(void)
 	start_service("bridging");
 #endif
 	start_service_force("lan");
-	start_service_force("vlan_config");
+	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
 	start_service("ipvs");
 #endif
