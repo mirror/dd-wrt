@@ -281,6 +281,7 @@ void start_setup_vlans(void)
 							eval("ifconfig", buff, "0.0.0.0", "up");
 					} else {
 						char tmp[256];
+						eval("ifconfig", buff, "0.0.0.0", "up");
 						br_add_interface(getBridge(buff, tmp), buff);
 					}
 				}
@@ -457,6 +458,7 @@ void start_setup_vlans(void)
 									eval("ifconfig", buff, "0.0.0.0", "up");
 							} else {
 								char tmp[256];
+								eval("ifconfig", buff, "0.0.0.0", "up");
 								br_add_interface(getBridge(buff, tmp), buff);
 							}
 						}
