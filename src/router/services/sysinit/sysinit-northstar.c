@@ -6495,20 +6495,36 @@ void start_sysinit(void)
 	int port = 0;
 	vlan1 = brcm_to_swconfig(vlan1, vlan1buf);
 	vlan2 = brcm_to_swconfig(vlan2, vlan2buf);
+	int wanport = 0;
 	foreach(var, vlan2, next) {
 		if (strlen(var) == 1) {
 			nvram_set("sw_wan", var);
+			wanport = atoi(var);
 			port++;
 			break;
 		}
 	}
 	char cpuport[32] = { 0 };
+	int swap = 0;
 	foreach(var, vlan1, next) {
 		if (strlen(var) == 1) {
+			if (wanport > atoi(var))
+				swap++;
 			nvram_nset(var, "sw_lan%d", port++);
 		} else
 			strncpy(cpuport, var, 1);
 
+	}
+	if (swap != port - 1)
+		swap = 0;
+	if (swap) {		// lan ports are in physical reverse order (guessed)
+		int i;
+		for (i = 0; i < (port / 2); i++) {
+			char *sw1 = nvram_nget("sw_lan%d", i);
+			char *sw2 = nvram_nget("sw_lan%d", (port - 1) - i);
+			nvram_nset(sw1, "sw_lan%d", (port - 1) - 1);
+			nvram_nset(sw2, "sw_lan%d", i);
+		}
 	}
 	nvram_set("sw_cpuport", cpuport);
 	sysprintf("swconfig dev switch0 set enable_vlan 1");
