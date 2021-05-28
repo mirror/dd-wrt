@@ -3056,7 +3056,7 @@ void start_sysinit(void)
 	char *v1 = nvram_safe_get("vlan0ports");
 	char *v2 = nvram_safe_get("vlan1ports");
 	int vlan2_supp = 0;
-	if (!*v1) {
+	if (!*v1 || *nvram_safe_get("vlan2ports")) {
 		v1 = v2;
 		vlan2_supp = 1;
 		v2 = nvram_safe_get("vlan2ports");
