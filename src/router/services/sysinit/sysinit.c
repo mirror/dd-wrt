@@ -2526,6 +2526,7 @@ void start_restore_defaults(void)
 	case ROUTER_WRT310N:
 	case ROUTER_DLINK_DIR865:
 	case ROUTER_D1800H:
+	case ROUTER_LINKSYS_E4200:
 	case ROUTER_ASUS_AC66U:
 		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_exists("vlan2ports")
