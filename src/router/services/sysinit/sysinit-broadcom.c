@@ -3090,7 +3090,7 @@ void start_sysinit(void)
 		swap = 0;
 	if (swap) {		// lan ports are in physical reverse order (guessed)
 		int i;
-		for (i = 0 < port / 2; i++) {
+		for (i = 0; i < (port / 2); i++) {
 			char *sw1 = nvram_nget("sw_lan%d", i);
 			char *sw2 = nvram_nget("sw_lan%d", (port - 1) - i);
 			nvram_nset(sw1, "sw_lan%d", (port - 1) - 1);
