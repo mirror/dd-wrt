@@ -2788,7 +2788,7 @@ void start_restore_defaults(void)
 				if (nvram_matchi("bootnv_ver", 4)
 				    || nvram_match("boardnum", "WAP54GV3_8M_0614"))
 					nvram_set("vlan0ports", "3 2 1 0 5*");
-				else
+				else if (!nvram_exists("vlan2ports"))
 					nvram_set("vlan0ports", "1 2 3 4 5*");
 				break;
 			}
