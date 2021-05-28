@@ -3086,7 +3086,7 @@ void start_sysinit(void)
 			strncpy(cpuport, var, 1);
 
 	}
-	if (swap != port)
+	if (swap != port - 1)
 		swap = 0;
 	if (swap) {		// lan ports are in physical reverse order (guessed)
 		int i;
