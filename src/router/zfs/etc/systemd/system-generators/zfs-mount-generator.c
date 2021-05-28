@@ -235,7 +235,7 @@ line_worker(char *line, const char *cachefile)
 
 	const char *pool = dataset;
 	if ((toktmp = strchr(pool, '/')) != NULL)
-		pool = strndupa(pool, toktmp - pool);
+		pool = strndup(pool, toktmp - pool);
 
 	if (p_nbmand == NULL) {
 		fprintf(stderr, PROGNAME "[%d]: %s: not enough tokens!\n",
