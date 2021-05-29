@@ -112,12 +112,22 @@ host_triplet = @host@
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compile_check_sizeof.m4 \
+	$(top_srcdir)/m4/curl-amissl.m4 \
+	$(top_srcdir)/m4/curl-bearssl.m4 \
 	$(top_srcdir)/m4/curl-compilers.m4 \
 	$(top_srcdir)/m4/curl-confopts.m4 \
 	$(top_srcdir)/m4/curl-functions.m4 \
+	$(top_srcdir)/m4/curl-gnutls.m4 \
+	$(top_srcdir)/m4/curl-mbedtls.m4 \
+	$(top_srcdir)/m4/curl-mesalink.m4 $(top_srcdir)/m4/curl-nss.m4 \
 	$(top_srcdir)/m4/curl-openssl.m4 \
 	$(top_srcdir)/m4/curl-override.m4 \
-	$(top_srcdir)/m4/curl-reentrant.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/curl-reentrant.m4 \
+	$(top_srcdir)/m4/curl-rustls.m4 \
+	$(top_srcdir)/m4/curl-schannel.m4 \
+	$(top_srcdir)/m4/curl-sectransp.m4 \
+	$(top_srcdir)/m4/curl-sysconfig.m4 \
+	$(top_srcdir)/m4/curl-wolfssl.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
 	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/m4/xc-am-iface.m4 \
@@ -347,7 +357,7 @@ SUPPORT_PROTOCOLS = @SUPPORT_PROTOCOLS@
 USE_ARES = @USE_ARES@
 USE_BEARSSL = @USE_BEARSSL@
 USE_GNUTLS = @USE_GNUTLS@
-USE_GNUTLS_NETTLE = @USE_GNUTLS_NETTLE@
+USE_HYPER = @USE_HYPER@
 USE_LIBRTMP = @USE_LIBRTMP@
 USE_LIBSSH = @USE_LIBSSH@
 USE_LIBSSH2 = @USE_LIBSSH2@
@@ -361,9 +371,13 @@ USE_NGTCP2_CRYPTO_OPENSSL = @USE_NGTCP2_CRYPTO_OPENSSL@
 USE_NSS = @USE_NSS@
 USE_OPENLDAP = @USE_OPENLDAP@
 USE_QUICHE = @USE_QUICHE@
+USE_RUSTLS = @USE_RUSTLS@
 USE_SCHANNEL = @USE_SCHANNEL@
 USE_SECTRANSP = @USE_SECTRANSP@
 USE_UNIX_SOCKETS = @USE_UNIX_SOCKETS@
+USE_WIN32_CRYPTO = @USE_WIN32_CRYPTO@
+USE_WIN32_LARGE_FILES = @USE_WIN32_LARGE_FILES@
+USE_WIN32_SMALL_FILES = @USE_WIN32_SMALL_FILES@
 USE_WINDOWS_SSPI = @USE_WINDOWS_SSPI@
 USE_WOLFSSH = @USE_WOLFSSH@
 USE_WOLFSSL = @USE_WOLFSSL@

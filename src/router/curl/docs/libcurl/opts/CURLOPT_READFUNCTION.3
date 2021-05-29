@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_READFUNCTION 3 "November 04, 2020" "libcurl 7.74.0" "curl_easy_setopt options"
+.TH CURLOPT_READFUNCTION 3 "December 30, 2020" "libcurl 7.77.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_READFUNCTION \- read callback for data uploads
@@ -76,7 +76,7 @@ The default internal read callback is fread().
 This is used for all protocols when doing uploads.
 .SH EXAMPLE
 .nf
-size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
+size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
   FILE *readhere = (FILE *)userdata;
   curl_off_t nread;
