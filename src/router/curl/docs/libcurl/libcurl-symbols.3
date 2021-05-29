@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -19,7 +19,7 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH libcurl-symbols 3 "Dec  9, 2020" "libcurl 7.41.0" "libcurl symbols"
+.TH libcurl-symbols 3 "May 26, 2021" "libcurl 7.41.0" "libcurl symbols"
 .SH NAME
 libcurl-symbols \- libcurl symbol version information
 .SH "libcurl symbols"
@@ -70,6 +70,8 @@ Introduced in 7.10.6
 Introduced in 7.22.0
 .IP CURLAUTH_ONLY
 Introduced in 7.21.3
+.IP CURLAUTH_AWS_SIGV4
+Introduced in 7.75.0
 .IP CURLCLOSEPOLICY_CALLBACK
 Introduced in 7.7
 .IP CURLCLOSEPOLICY_LEAST_RECENTLY_USED
@@ -287,6 +289,8 @@ Introduced in 7.16.0
 Introduced in 7.10
 .IP CURLE_SSL_CIPHER
 Introduced in 7.10
+.IP CURLE_SSL_CLIENTCERT
+Introduced in 7.77.0
 .IP CURLE_SSL_CONNECT_ERROR
 Introduced in 7.1
 .IP CURLE_SSL_CRL_BADFILE
@@ -610,6 +614,8 @@ Introduced in 7.9.7
 Introduced in 7.61.0
 .IP CURLINFO_REDIRECT_URL
 Introduced in 7.18.2
+.IP CURLINFO_REFERER
+Introduced in 7.76.0
 .IP CURLINFO_REQUEST_SIZE
 Introduced in 7.4.1
 .IP CURLINFO_RESPONSE_CODE
@@ -813,6 +819,8 @@ Introduced in 7.1
 Introduced in 7.10
 .IP CURLOPT_CAINFO
 Introduced in 7.4.2
+.IP CURLOPT_CAINFO_BLOB
+Introduced in 7.77.0
 .IP CURLOPT_CAPATH
 Introduced in 7.9.8
 .IP CURLOPT_CERTINFO
@@ -893,6 +901,12 @@ Introduced in 7.60.0
 .IP CURLOPT_DNS_USE_GLOBAL_CACHE
 Introduced in 7.9.3
 Deprecated since 7.11.1
+.IP CURLOPT_DOH_SSL_VERIFYHOST
+Introduced in 7.76.0
+.IP CURLOPT_DOH_SSL_VERIFYPEER
+Introduced in 7.76.0
+.IP CURLOPT_DOH_SSL_VERIFYSTATUS
+Introduced in 7.76.0
 .IP CURLOPT_DOH_URL
 Introduced in 7.62.0
 .IP CURLOPT_EGDSOCKET
@@ -1170,6 +1184,8 @@ Introduced in 7.19.1
 Introduced in 7.1
 .IP CURLOPT_PROXY_CAINFO
 Introduced in 7.52.0
+.IP CURLOPT_PROXY_CAINFO_BLOB
+Introduced in 7.77.0
 .IP CURLOPT_PROXY_CAPATH
 Introduced in 7.52.0
 .IP CURLOPT_PROXY_CRLFILE
@@ -1435,6 +1451,8 @@ Introduced in 7.19.1
 Introduced in 7.1
 .IP CURLOPT_USE_SSL
 Introduced in 7.17.0
+.IP CURLOPT_AWS_SIGV4
+Introduced in 7.75.0
 .IP CURLOPT_VERBOSE
 Introduced in 7.1
 .IP CURLOPT_WILDCARDMATCH
@@ -1501,6 +1519,8 @@ Introduced in 7.19.4
 Introduced in 7.19.4
 .IP CURLPROTO_GOPHER
 Introduced in 7.21.2
+.IP CURLPROTO_GOPHERS
+Introduced in 7.75.0
 .IP CURLPROTO_HTTP
 Introduced in 7.19.4
 .IP CURLPROTO_HTTPS
@@ -1708,6 +1728,8 @@ Introduced in 7.34.0
 .IP CURLSSLBACKEND_POLARSSL
 Introduced in 7.34.0
 Deprecated since 7.69.0
+.IP CURLSSLBACKEND_RUSTLS
+Introduced in 7.76.0
 .IP CURLSSLBACKEND_QSOSSL
 Introduced in 7.34.0
 .IP CURLSSLBACKEND_SCHANNEL
@@ -1718,6 +1740,8 @@ Introduced in 7.64.1
 Introduced in 7.49.0
 .IP CURLSSLOPT_ALLOW_BEAST
 Introduced in 7.25.0
+.IP CURLSSLOPT_AUTO_CLIENT_CERT
+Introduced in 7.77.0
 .IP CURLSSLOPT_NATIVE_CA
 Introduced in 7.71.0
 .IP CURLSSLOPT_NO_PARTIALCHAIN
@@ -1836,6 +1860,8 @@ Introduced in 7.57.0
 Introduced in 7.10
 .IP CURLVERSION_FOURTH
 Introduced in 7.16.1
+.IP CURLVERSION_NINTH
+Introduced in 7.75.0
 .IP CURLVERSION_NOW
 Introduced in 7.10
 .IP CURLVERSION_SECOND
@@ -1844,6 +1870,8 @@ Introduced in 7.11.1
 Introduced in 7.70.0
 .IP CURLVERSION_SIXTH
 Introduced in 7.66.0
+.IP CURLVERSION_TENTH
+Introduced in 7.77.0
 .IP CURLVERSION_THIRD
 Introduced in 7.12.0
 .IP CURL_CHUNK_BGN_FUNC_FAIL
@@ -2130,6 +2158,8 @@ Introduced in 7.15.4
 Introduced in 7.19.6
 .IP CURL_VERSION_DEBUG
 Introduced in 7.10.6
+.IP CURL_VERSION_GSASL
+Introduced in 7.76.0
 .IP CURL_VERSION_GSSAPI
 Introduced in 7.38.0
 .IP CURL_VERSION_GSSNEGOTIATE

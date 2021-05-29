@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -31,6 +31,7 @@
 #include "tool_easysrc.h"
 #include "tool_setopt.h"
 #include "tool_convert.h"
+#include "tool_msgs.h"
 
 #include "memdebug.h" /* keep this as LAST include */
 
@@ -132,6 +133,7 @@ const struct NameValueUnsigned setopt_nv_CURLSSLOPT[] = {
   NV(CURLSSLOPT_NO_PARTIALCHAIN),
   NV(CURLSSLOPT_REVOKE_BEST_EFFORT),
   NV(CURLSSLOPT_NATIVE_CA),
+  NV(CURLSSLOPT_AUTO_CLIENT_CERT),
   NVEND,
 };
 
@@ -315,7 +317,11 @@ CURLcode tool_setopt_enum(CURL *curl, struct GlobalConfig *config,
     }
   }
 
- nomem:
+#ifdef DEBUGBUILD
+  if(ret)
+    warnf(config, "option %s returned error (%d)\n", name, (int)ret);
+#endif
+  nomem:
   return ret;
 }
 
