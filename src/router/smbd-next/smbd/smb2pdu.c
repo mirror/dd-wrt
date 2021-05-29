@@ -6046,7 +6046,10 @@ int smb2_read(struct ksmbd_work *work)
 	}
 
 	if ((nbytes == 0 && length != 0) || nbytes < mincount) {
-		ksmbd_free_response(work->aux_payload_buf);
+		if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
+			ksmbd_release_buffer(work->aux_payload_buf);
+		else
+			kvfree(work->aux_payload_buf);
 		work->aux_payload_buf = NULL;
 		rsp->hdr.Status = STATUS_END_OF_FILE;
 		smb2_set_err_rsp(work);
@@ -6062,7 +6065,10 @@ int smb2_read(struct ksmbd_work *work)
 		/* write data to the client using rdma channel */
 		remain_bytes = smb2_read_rdma_channel(work, req,
 						work->aux_payload_buf, nbytes);
-		ksmbd_free_response(work->aux_payload_buf);
+		if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
+			ksmbd_release_buffer(work->aux_payload_buf);
+		else
+			kvfree(work->aux_payload_buf);
 		work->aux_payload_buf = NULL;
 
 		nbytes = 0;
