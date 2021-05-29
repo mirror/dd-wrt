@@ -6505,7 +6505,6 @@ void start_sysinit(void)
 		}
 	}
 	char cpuport[32] = { 0 };
-	char cpuport[32] = { 0 };
 	int swap = 0;
 	foreach(var, vlan1, next) {
 		if (strlen(var) == 1) {
