@@ -6527,10 +6527,10 @@ void start_sysinit(void)
 		}
 	}
 	nvram_set("sw_cpuport", cpuport);
-	sysprintf("swconfig dev switch0 set enable_vlan 1");
-	sysprintf("swconfig dev switch0 vlan 1 set ports \"%s\"", vlan1);
-	sysprintf("swconfig dev switch0 vlan 2 set ports \"%s\"", vlan2);
-	sysprintf("swconfig dev switch0 set apply");
+	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan1);
+	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", vlan2);
+	eval("swconfig", "dev", "switch0", "set", "apply");
 
 	//load mmc drivers
 	eval("ifconfig", "eth0", "up");
