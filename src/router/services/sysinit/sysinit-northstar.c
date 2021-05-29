@@ -6505,6 +6505,7 @@ void start_sysinit(void)
 		}
 	}
 	char cpuport[32] = { 0 };
+	char cpuport[32] = { 0 };
 	int swap = 0;
 	foreach(var, vlan1, next) {
 		if (strlen(var) == 1) {
@@ -6519,10 +6520,10 @@ void start_sysinit(void)
 		swap = 0;
 	if (swap) {		// lan ports are in physical reverse order (guessed)
 		int i;
-		for (i = 0; i < (port / 2); i++) {
+		for (i = 1; i < (port / 2) + 1; i++) {
 			char *sw1 = nvram_nget("sw_lan%d", i);
-			char *sw2 = nvram_nget("sw_lan%d", (port - 1) - i);
-			nvram_nset(sw1, "sw_lan%d", (port - 1) - 1);
+			char *sw2 = nvram_nget("sw_lan%d", port - i);
+			nvram_nset(sw1, "sw_lan%d", port - i);
 			nvram_nset(sw2, "sw_lan%d", i);
 		}
 	}
