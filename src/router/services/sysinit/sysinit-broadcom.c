@@ -3091,11 +3091,17 @@ void start_sysinit(void)
 	if (swap) {		// lan ports are in physical reverse order (guessed)
 		int i;
 		for (i = 1; i < (port / 2) + 1; i++) {
-			char *sw1 = nvram_nget("sw_lan%d", i);
-			char *sw2 = nvram_nget("sw_lan%d", port - i);
-			nvram_nset(sw1, "sw_lan%d", port - i);
-			nvram_nset(sw2, "sw_lan%d", i);
-		}
+			char s1[32];
+			char s2[32];
+			sprintf(s1, "sw_lan%d", i);
+			sprintf(s2, "sw_lan%d", port-i);
+			char *sw1 = strdup(nvram_safe_get(s1));
+			char *sw2 = strdup(nvram_safe_get(s2));
+			nvram_set(s2, sw1);
+			nvram_set(s1, sw2);
+			free(sw1);
+			free(sw2);
+ 		}
 	}
 	nvram_set("sw_cpuport", cpuport);
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
