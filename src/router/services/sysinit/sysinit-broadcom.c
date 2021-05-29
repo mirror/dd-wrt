@@ -3098,15 +3098,15 @@ void start_sysinit(void)
 		}
 	}
 	nvram_set("sw_cpuport", cpuport);
-	sysprintf("swconfig dev switch0 set enable_vlan 1");
+	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	if (vlan2_supp) {
-		sysprintf("swconfig dev switch0 vlan 1 set ports \"%s\"", vlan1);
-		sysprintf("swconfig dev switch0 vlan 2 set ports \"%s\"", vlan2);
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan1);
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", vlan2);
 	} else {
-		sysprintf("swconfig dev switch0 vlan 0 set ports \"%s\"", vlan1);
-		sysprintf("swconfig dev switch0 vlan 1 set ports \"%s\"", vlan2);
+		eval("swconfig", "dev", "switch0", "vlan", "0", "set", "ports", vlan1);
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan2);
 	}
-	sysprintf("swconfig dev switch0 set apply");
+	eval("swconfig", "dev", "switch0", "set", "apply");
 #endif
 
 	switch (brand) {
@@ -3571,6 +3571,55 @@ void start_dtag(void)
 
 char *set_wan_state(int state)
 {
+	char *v1 = nvram_safe_get("vlan0ports");
+	char *v2 = nvram_safe_get("vlan1ports");
+	int vlan2_supp = 0;
+	if (!*v1 || *nvram_safe_get("vlan2ports")) {
+		v1 = v2;
+		vlan2_supp = 1;
+		v2 = nvram_safe_get("vlan2ports");
+	}
+	char vlan2buf[64];
+	char vlan1buf[64];
+	char *vlan2 = brcm_to_swconfig(v2, vlan2buf);
+	char *vlan1 = brcm_to_swconfig(v1, vlan1buf);
+
+	if (!state) {
+		char *p = strchr(vlan1, 't');
+		if (p)
+			*p = 0;
+		p = strchr(vlan2, 't');
+		if (p)
+			*p = 0;
+		sprintf(vlan1, "%s %s", vlan1, vlan2);
+		eval("swconfig", "dev", "switch0", "set", "reset", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan1);
+		eval("swconfig", "dev", "switch0", "set", "apply");
+		eval("ifconfig", "eth0", "up");
+		eval("vconfig", "rem", "vlan0");
+		eval("vconfig", "rem", "vlan1");
+		eval("vconfig", "rem", "vlan2");
+		return "eth0";
+	} else {
+
+		eval("swconfig", "dev", "switch0", "set", "reset", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+		if (vlan2_supp) {
+			eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan1);
+			eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", vlan2);
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", "eth0", "1");
+			eval("vconfig", "add", "eth0", "2");
+		} else {
+			eval("swconfig", "dev", "switch0", "vlan", "0", "set", "ports", vlan1);
+			eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan2);
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", "eth0", "0");
+			eval("vconfig", "add", "eth0", "1");
+		}
+		eval("swconfig", "dev", "switch0", "set", "apply");
+	}
 	return NULL;
 }
 
