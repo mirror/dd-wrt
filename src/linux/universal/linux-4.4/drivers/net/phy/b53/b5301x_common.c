@@ -441,12 +441,56 @@ static int b53_global_reset_switch(struct switch_dev *dev)
 	return 0;
 }
 
+static void b53_enable_vlan(struct switch_dev *dev, int enable)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+	__u16 val16;
+	int disable = enable ? 0 : 1;
+
+	b53_read16(priv, B53_VLAN_PAGE, B53_VLAN_CTRL0, &val16);
+	b53_write16(priv, B53_VLAN_PAGE, B53_VLAN_CTRL0, disable ? 0 : val16 | (1 << 7) /* 802.1Q VLAN */ |(3 << 5) /* mac check and hash */ );
+
+	b53_read16(priv, B53_VLAN_PAGE, B53_VLAN_CTRL1, &val16);
+	b53_write16(priv, B53_VLAN_PAGE, B53_VLAN_CTRL1, disable ? 0 : val16 | (is5325(priv)  ? (1 << 1) : 0) | (1 << 2) | (1 << 3));	/* RSV multicast */
+
+	if (!is5325(priv))
+		return;
+
+//      b53_write16(priv, B53_VLAN_PAGE, B53_VLAN_CTRL4, disable ? 0 :
+//              (1 << 6) /* drop invalid VID frames */);
+	b53_write16(priv, B53_VLAN_PAGE, B53_VLAN_CTRL4, disable ? 0 : (2 << 6) /* do not check */ );
+	b53_write16(priv, B53_VLAN_PAGE, B53_VLAN_CTRL5, disable ? 0 : (1 << 3) /* drop miss V table frames */ );
+
+}
+
+static int b53_set_jumbo(struct b53_device *dev, int enable, int allow_10_100)
+{
+	u32 port_mask = 0;
+	u16 max_size = JMS_MIN_SIZE;
+
+	if (is5325(dev) || is5365(dev))
+		return -EINVAL;
+
+	if (enable) {
+		port_mask = dev->enabled_ports;
+		max_size = JMS_MAX_SIZE;
+		if (allow_10_100)
+			port_mask |= JPM_10_100_JUMBO_EN;
+	}
+
+	b53_write32(dev, B53_JUMBO_PAGE, dev->jumbo_pm_reg, port_mask);
+	return b53_write16(dev, B53_JUMBO_PAGE, dev->jumbo_size_reg, max_size);
+}
+
 extern int bcm_robo_global_config(void *robo, struct b53_vlan *vlans, int vlans_num, struct b53_port *ports);
 static int b53_global_apply_config(struct switch_dev *dev)
 {
 	struct b53_device *priv = sw_to_b53(dev);
 
 	bcm_robo_global_config(priv->robo, priv->vlans, dev->vlans, priv->ports);
+	b53_enable_vlan(dev, priv->enable_vlan);
+	if (!is5325(priv) && !is5365(priv))
+		b53_set_jumbo(priv, priv->enable_jumbo, 1);
 
 	return 0;
 }
