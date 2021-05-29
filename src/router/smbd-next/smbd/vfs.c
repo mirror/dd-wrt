@@ -332,7 +332,6 @@ static int ksmbd_vfs_stream_read(struct ksmbd_file *fp, char *buf, loff_t *pos,
 {
 	ssize_t v_len;
 	char *stream_buf = NULL;
-	int err;
 
 	ksmbd_debug(VFS, "read stream data pos : %llu, count : %zd\n",
 		    *pos, count);
@@ -341,13 +340,13 @@ static int ksmbd_vfs_stream_read(struct ksmbd_file *fp, char *buf, loff_t *pos,
 				       fp->stream.name,
 				       fp->stream.size,
 				       &stream_buf);
-	if (v_len == -ENOENT) {
+	if ((int)v_len < 0) {
 		ksmbd_err("not found stream in xattr : %zd\n", v_len);
-		err = -ENOENT;
-		return err;
+		return (int)v_len;
 	}
 
 	memcpy(buf, &stream_buf[*pos], count);
+	kvfree(stream_buf);
 	return v_len > count ? count : v_len;
 }
 
@@ -538,9 +537,9 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 				       fp->stream.name,
 				       fp->stream.size,
 				       &stream_buf);
-	if (v_len == -ENOENT) {
+	if ((int)v_len < 0) {
 		ksmbd_err("not found stream in xattr : %zd\n", v_len);
-		err = -ENOENT;
+		err = (int)v_len;
 		goto out;
 	}
 
@@ -554,6 +553,7 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 
 		if (v_len > 0)
 			memcpy(wbuf, stream_buf, v_len);
+		kvfree(stream_buf);
 		stream_buf = wbuf;
 	}
 
@@ -987,13 +987,18 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 	struct path path;
 	struct dentry *dentry, *parent;
 	int err;
+	int flags = 0;
 
 	if (ksmbd_override_fsids(work)) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
-	err = kern_path(name, LOOKUP_FOLLOW, &path);
+	if (test_share_config_flag(work->tcon->share_conf,
+				   KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS))
+		flags = LOOKUP_FOLLOW;
+
+	err = kern_path(name, flags, &path);
 	if (err) {
 		ksmbd_debug(VFS, "can't get %s, err %d\n", name, err);
 		ksmbd_revert_fsids(work);
@@ -1073,13 +1078,18 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 	struct path oldpath, newpath;
 	struct dentry *dentry;
 	int err;
+	int flags = 0;
 
 	if (ksmbd_override_fsids(work)) {
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
-	err = kern_path(oldname, LOOKUP_FOLLOW, &oldpath);
+	if (test_share_config_flag(work->tcon->share_conf,
+				   KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS))
+		flags = LOOKUP_FOLLOW;
+
+	err = kern_path(oldname, flags, &oldpath);
 	if (err) {
 		ksmbd_err("cannot get linux path for %s, err = %d\n",
 			  oldname, err);
@@ -1087,7 +1097,7 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 	}
 
 	dentry = kern_path_create(AT_FDCWD, newname, &newpath,
-				  LOOKUP_FOLLOW | LOOKUP_REVAL);
+				  flags | LOOKUP_REVAL);
 	if (IS_ERR(dentry)) {
 		err = PTR_ERR(dentry);
 		ksmbd_err("path create err for %s, err %d\n", newname, err);
@@ -1212,6 +1222,7 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	struct dentry *src_dent, *trap_dent, *src_child;
 	char *dst_name;
 	int err;
+	int flags;
 
 	dst_name = extract_last_component(newname);
 	if (!dst_name)
@@ -1220,7 +1231,12 @@ int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 	src_dent_parent = dget_parent(fp->filp->f_path.dentry);
 	src_dent = fp->filp->f_path.dentry;
 
-	err = kern_path(newname, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &dst_path);
+	flags = LOOKUP_DIRECTORY;
+	if (test_share_config_flag(work->tcon->share_conf,
+				   KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS))
+		flags |= LOOKUP_FOLLOW;
+
+	err = kern_path(newname, flags, &dst_path);
 	if (err) {
 		ksmbd_debug(VFS, "Cannot get path for %s [%d]\n", newname, err);
 		goto out;
