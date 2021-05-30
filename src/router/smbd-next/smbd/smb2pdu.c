@@ -6053,7 +6053,7 @@ int smb2_read(struct ksmbd_work *work)
 		if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
 			ksmbd_release_buffer(work->aux_payload_buf);
 		else
-			kvfree(work->aux_payload_buf);
+			ksmbd_free_response(work->aux_payload_buf);
 		work->aux_payload_buf = NULL;
 		rsp->hdr.Status = STATUS_END_OF_FILE;
 		smb2_set_err_rsp(work);
@@ -6072,7 +6072,7 @@ int smb2_read(struct ksmbd_work *work)
 		if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
 			ksmbd_release_buffer(work->aux_payload_buf);
 		else
-			kvfree(work->aux_payload_buf);
+			ksmbd_free_response(work->aux_payload_buf);
 		work->aux_payload_buf = NULL;
 
 		nbytes = 0;

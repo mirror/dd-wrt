@@ -346,7 +346,7 @@ static int ksmbd_vfs_stream_read(struct ksmbd_file *fp, char *buf, loff_t *pos,
 	}
 
 	memcpy(buf, &stream_buf[*pos], count);
-	kvfree(stream_buf);
+	ksmbd_free(stream_buf);
 	return v_len > count ? count : v_len;
 }
 
@@ -553,7 +553,7 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 
 		if (v_len > 0)
 			memcpy(wbuf, stream_buf, v_len);
-		kvfree(stream_buf);
+		ksmbd_free(stream_buf);
 		stream_buf = wbuf;
 	}
 
