@@ -6538,6 +6538,7 @@ void start_sysinit(void)
  		}
 	}
 	nvram_set("sw_cpuport", cpuport);
+	nvram_commit();
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan1);
 	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", vlan2);
