@@ -20,6 +20,10 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/platform_data/b53.h>
+#include <typedefs.h>
+#include <siutils.h>
+#include <bcmutils.h>
+#include <bcmrobo.h>
 
 #include "b53_priv.h"
 
@@ -52,9 +56,26 @@
 /* the register captures interrupt pulses from the switch */
 #define B53_SRAB_INTR			0x44
 
+static int bcm5301x_robo_rreg(robo_info_t *robo, uint8 page, uint8 reg, void *val, int len)
+{
+	int ret;
+	robo_info_t *b5301x_robo = (robo_info_t *)robo;
 
-extern int bcm5301x_robo_rreg(void *robo, u8 page, u8 reg, void *val, int len);
-extern int bcm5301x_robo_wreg(void *robo, u8 page, u8 reg, void *val, int len);
+	ret = b5301x_robo->ops->read_reg(b5301x_robo, page, reg, val, len);
+
+	return ret;
+}
+
+static int bcm5301x_robo_wreg(robo_info_t *robo, uint8 page, uint8 reg, void *val, int len)
+{
+	int ret;
+	robo_info_t *b5301x_robo = (robo_info_t *)robo;
+
+	ret = b5301x_robo->ops->write_reg(b5301x_robo, page, reg, val, len);
+
+	return ret;
+}
+
 
 static int b53_srab_read8(struct b53_device *dev, u8 page, u8 reg, u8 *val)
 {
