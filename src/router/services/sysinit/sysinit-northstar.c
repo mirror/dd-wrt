@@ -6923,7 +6923,6 @@ char *set_wan_state(int state)
 	char *vlan1 = brcm_to_swconfig(v1, vlan1buf);
 
 	if (!state) {
-		start_sfe();
 		char *p = strchr(vlan1, 't');
 		if (p)
 			*p = 0;
