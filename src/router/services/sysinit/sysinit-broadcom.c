@@ -3052,6 +3052,7 @@ void start_sysinit(void)
 
 	insmod("b5301x_common");
 	insmod("b5301x_srab");
+
 	char *v1 = nvram_safe_get("vlan0ports");
 	char *v2 = nvram_safe_get("vlan1ports");
 	int vlan2_supp = 0;
@@ -3059,6 +3060,22 @@ void start_sysinit(void)
 		v1 = v2;
 		vlan2_supp = 1;
 		v2 = nvram_safe_get("vlan2ports");
+	}
+	if (!vlan2_supp) {
+		nvram_default_get("port0vlans", "1");
+		nvram_default_get("port1vlans", "0");
+		nvram_default_get("port2vlans", "0");
+		nvram_default_get("port3vlans", "0");
+		nvram_default_get("port4vlans", "0");
+		nvram_default_get("port5vlans", "0 1 16000");
+	} else {
+		nvram_default_get("port0vlans", "2");
+		nvram_default_get("port1vlans", "1");
+		nvram_default_get("port2vlans", "1");
+		nvram_default_get("port3vlans", "1");
+		nvram_default_get("port4vlans", "1");
+		nvram_default_get("port5vlans", "1 2 16000");
+
 	}
 	char vlan2buf[64];
 	char vlan1buf[64];
@@ -3094,14 +3111,14 @@ void start_sysinit(void)
 			char s1[32];
 			char s2[32];
 			sprintf(s1, "sw_lan%d", i);
-			sprintf(s2, "sw_lan%d", port-i);
+			sprintf(s2, "sw_lan%d", port - i);
 			char *sw1 = strdup(nvram_safe_get(s1));
 			char *sw2 = strdup(nvram_safe_get(s2));
 			nvram_set(s2, sw1);
 			nvram_set(s1, sw2);
 			free(sw1);
 			free(sw2);
- 		}
+		}
 	}
 	nvram_set("sw_cpuport", cpuport);
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
