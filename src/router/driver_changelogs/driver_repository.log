@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6280 | brainslayer | 2021-05-31 16:03:18 +0700 (Mon, 31 May 2021) | 1 line
+
+relocate register wrapper
+------------------------------------------------------------------------
 r6279 | brainslayer | 2021-05-31 15:35:58 +0700 (Mon, 31 May 2021) | 1 line
 
 fix registering switch for 57xx based devices like wrt300
