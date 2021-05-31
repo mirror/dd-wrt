@@ -6506,16 +6506,21 @@ void start_sysinit(void)
 	}
 	char cpuport[32] = { 0 };
 	int swap = 0;
+	int first = -1;
+	int last = -1;
 	foreach(var, vlan1, next) {
 		if (strlen(var) == 1) {
 			if (wanport > atoi(var))
 				swap++;
+			last = atoi(var);
+			if (first == -1) 
+			    first = last;
 			nvram_nset(var, "sw_lan%d", port++);
 		} else
 			strncpy(cpuport, var, 1);
 
 	}
-	if (swap != port - 1)
+	if (swap != port - 1 || first > last)
 		swap = 0;
 	if (swap) {		// lan ports are in physical reverse order (guessed)
 		int i;
