@@ -6905,8 +6905,8 @@ void start_dtag(void)
 
 char *set_wan_state(int state)
 {
-	if (getRouterBrand() == ROUTER_ASUS_AC87U)
-		return NULL;
+//	if (getRouterBrand() == ROUTER_ASUS_AC87U)
+	return NULL;
 	if (nvram_match("vlans", "1"))
 		return NULL;
 	char *v1 = nvram_safe_get("vlan0ports");
