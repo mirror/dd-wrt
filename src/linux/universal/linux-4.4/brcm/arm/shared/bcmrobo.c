@@ -1127,7 +1127,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 #endif /* _CFE_ */
 	int lan_portenable = 0;
 	int rc;
-
+	printk(KERN_INFO "robo attach\n");
 	/* Allocate and init private state */
 	if (!(robo = MALLOC(si_osh(sih), sizeof(robo_info_t)))) {
 		ET_ERROR(("robo_attach: out of memory, malloced %d bytes",
@@ -1263,11 +1263,15 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		}
 		ET_MSG(("%s: devid: 0x%x\n", __FUNCTION__, robo->devid));
 	}
+	printk(KERN_INFO "robo id %X\n", robo->devid);
+
 
 	if (robo->devid == DEVID5395)
 		nvram_set("switch_type", "BCM5395");
 	else if(robo->devid == DEVID5397)
 		nvram_set("switch_type", "BCM5397");
+	else if(robo->devid == DEVID5398)
+		nvram_set("switch_type", "BCM5398");
 	else if(robo->devid == DEVID5325)
 		nvram_set("switch_type", "BCM5325");
 	else if(robo->devid == DEVID53115)
@@ -2441,15 +2445,46 @@ bcm_robo_config_vlan_fun(void *b53_robo, struct b53_vlan *vlans, int vlans_num, 
 	arl_entry[5] = arl_entry_g[5];
 
 
-	/* Initialize the MAC Addr Index Register */
-	robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_MINDX,
-	                     arl_entry, ETHER_ADDR_LEN);
+	if (robo->devid == DEVID5325) {
+		/* Init the entry 1 of the bin */
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_ARL_E1,
+		                     arl_entry1, sizeof(arl_entry1));
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VID_E1,
+		                     arl_entry1, 1);
 
-	pdesc = pdesc97;
-	pdescsz = sizeof(pdesc97) / sizeof(pdesc_t);
+		/* Init the entry 0 of the bin */
+		arl_entry[6] = 0x8;		/* Port Id: MII */
+		arl_entry[7] = 0xc0;	/* Static Entry, Valid */
 
-	if (SRAB_ENAB(robo->sih) && ROBO_IS_BCM5301X(robo->devid))
-		b53_robo_cpu_port_upd(robo, vlans, pdesc97, pdescsz, num_vlans);
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_ARL_E0,
+		                     arl_entry, sizeof(arl_entry));
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_MINDX,
+		                     arl_entry, ETHER_ADDR_LEN);
+
+		/* VLAN Control 4 Register (Page 0x34, Address 4) */
+		val8 = (1 << 6);		/* drop frame with VID violation */
+		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL4, &val8, sizeof(val8));
+
+		/* VLAN Control 5 Register (Page 0x34, Address 5) */
+		val8 = (1 << 3);		/* drop frame when miss V table */
+		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL5, &val8, sizeof(val8));
+
+		pdesc = pdesc25;
+		pdescsz = sizeof(pdesc25) / sizeof(pdesc_t);
+	} else {
+		/* Initialize the MAC Addr Index Register */
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_MINDX,
+		                     arl_entry, ETHER_ADDR_LEN);
+
+		pdesc = pdesc97;
+		pdescsz = sizeof(pdesc97) / sizeof(pdesc_t);
+
+		if ((SRAB_ENAB(robo->sih) && ROBO_IS_BCM5301X(robo->devid))  ||
+		    (BCM53573_CHIP(robo->sih->chip) && robo->sih->chippkg == BCM47189_PKG_ID) )
+			b53_robo_cpu_port_upd(robo, vlans, pdesc97, pdescsz, num_vlans);
+	}
+
+
 
 	for (vid = 0; vid < num_vlans; vid ++) {
 		char port[] = "XXXX", *next;
