@@ -2838,9 +2838,16 @@ void start_sysinit(void)
 #else
 		nvram_seti("portprio_support", 1);	// only switch drivers in VINT support this
 #endif
-
+		if (brand == ROUTER_WRT600N)
+			insmod("wl");
+		
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
+//#ifdef HAVE_BCMMODERN
+//				modules = "bcm57xx";
+//				break;
+//#endif
+			
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
@@ -2936,12 +2943,16 @@ void start_sysinit(void)
 			}
 		} else {
 			switch (brand) {
+			case ROUTER_WRT610N:
+//#ifdef HAVE_BCMMODERN
+//				modules = "bcm57xx";
+//				break;
+//#endif
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
 			case ROUTER_WRT350N:
 			case ROUTER_WRT600N:
-			case ROUTER_WRT610N:
 			case ROUTER_WRT610NV2:
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
