@@ -2799,21 +2799,6 @@ struct nvram_param srouter_defaults[] = {
 	/*
 	 * start lonewolf mods 
 	 */
-#ifdef HAVE_SWCONFIG
-	{ "port0vlans", "2" },
-	{ "port1vlans", "1" },
-	{ "port2vlans", "1" },
-	{ "port3vlans", "1" },
-	{ "port4vlans", "1" },
-	{ "port5vlans", "1 2 16000" },
-#else
-	{ "port0vlans", "1" },
-	{ "port1vlans", "0" },
-	{ "port2vlans", "0" },
-	{ "port3vlans", "0" },
-	{ "port4vlans", "0" },
-	{ "port5vlans", "0 1 16000" },
-#endif
 	{ "vlans", "0" },
 	{ "trunking", "0" },
 	/*
