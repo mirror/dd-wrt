@@ -1012,6 +1012,9 @@ int attached_to_ICH4_or_older( struct pci_dev *pdev)
 	return 0;
 }
 
+extern void * etcgmac_bcm5301x_register(void *robo);
+struct platform_device *etc_b53_device = NULL;
+
 static int
 __devinit bcm5700_init_board(struct pci_dev *pdev, struct net_device **dev_out, int board_idx)
 {
@@ -1167,6 +1170,11 @@ robo_fail:
 		}
 		pUmDevice->robo = (void *)robo;
 	}
+	if (etc_b53_device == NULL) {
+		printk(KERN_INFO "register switch\n");
+		etc_b53_device = (struct platform_device *) etcgmac_bcm5301x_register(pUmDevice->robo);
+	} else
+		printk(KERN_INFO "switch already taken\n");
 
 	if ((pDevice->Flags & JUMBO_CAPABLE_FLAG) == 0) {
 		if (dev->mtu > 1500) {
