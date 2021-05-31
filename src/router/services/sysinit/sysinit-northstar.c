@@ -6905,6 +6905,8 @@ void start_dtag(void)
 
 char *set_wan_state(int state)
 {
+	if (getRouterBrand() == ROUTER_ASUS_AC87U)
+		return NULL;
 	if (nvram_match("vlans", "1"))
 		return NULL;
 	char *v1 = nvram_safe_get("vlan0ports");
@@ -6921,6 +6923,7 @@ char *set_wan_state(int state)
 	char *vlan1 = brcm_to_swconfig(v1, vlan1buf);
 
 	if (!state) {
+		start_sfe();
 		char *p = strchr(vlan1, 't');
 		if (p)
 			*p = 0;
