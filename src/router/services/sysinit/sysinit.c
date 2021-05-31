@@ -2864,14 +2864,24 @@ void start_restore_defaults(void)
 
 	}
 
-	if (restore_defaults && !nvram_exists("vlan0ports") && nvram_exists("vlan1ports")
-	    && nvram_exists("vlan2ports")) {
-		nvram_seti("port0vlans", 2);
-		nvram_seti("port1vlans", 1);
-		nvram_seti("port2vlans", 1);
-		nvram_seti("port3vlans", 1);
-		nvram_seti("port4vlans", 1);
-		nvram_set("port5vlans", "1 2 16000");
+	if (restore_defaults) {
+		if (!nvram_exists("vlan0ports") && nvram_exists("vlan1ports")
+		    && nvram_exists("vlan2ports")) {
+			nvram_seti("port0vlans", 2);
+			nvram_seti("port1vlans", 1);
+			nvram_seti("port2vlans", 1);
+			nvram_seti("port3vlans", 1);
+			nvram_seti("port4vlans", 1);
+			nvram_set("port5vlans", "1 2 16000");
+		} else {
+			nvram_seti("port0vlans", 1);
+			nvram_seti("port1vlans", 0);
+			nvram_seti("port2vlans", 0);
+			nvram_seti("port3vlans", 0);
+			nvram_seti("port4vlans", 0);
+			nvram_set("port5vlans", "0 1 16000");
+
+		}
 	}
 
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
