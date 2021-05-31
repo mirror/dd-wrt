@@ -3125,7 +3125,6 @@ void start_sysinit(void)
 		}
 	}
 	nvram_set("sw_cpuport", cpuport);
-	nvram_commit();
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	if (vlan2_supp) {
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan1);
