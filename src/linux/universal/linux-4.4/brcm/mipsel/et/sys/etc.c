@@ -712,28 +712,6 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 	return (error);
 }
 
-int bcm5301x_robo_rreg(robo_info_t *robo, uint8 page, uint8 reg, void *val, int len)
-{
-	int ret;
-	robo_info_t *b5301x_robo = (robo_info_t *)robo;
-
-	ret = b5301x_robo->ops->read_reg(b5301x_robo, page, reg, val, len);
-
-	return ret;
-}
-EXPORT_SYMBOL(bcm5301x_robo_rreg);
-
-int bcm5301x_robo_wreg(robo_info_t *robo, uint8 page, uint8 reg, void *val, int len)
-{
-	int ret;
-	robo_info_t *b5301x_robo = (robo_info_t *)robo;
-
-	ret = b5301x_robo->ops->write_reg(b5301x_robo, page, reg, val, len);
-
-	return ret;
-}
-EXPORT_SYMBOL(bcm5301x_robo_wreg);
-
 /* called once per second */
 void
 etc_watchdog(etc_info_t *etc)
