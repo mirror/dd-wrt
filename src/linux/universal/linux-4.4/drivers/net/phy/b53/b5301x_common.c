@@ -1151,6 +1151,7 @@ int b53_switch_detect(struct b53_device *dev)
 	ret = b53_read8(dev, B53_MGMT_PAGE, B53_DEVICE_ID, &id8);
 	if (ret)
 		return ret;
+	printk(KERN_INFO "switch id %X\n", id8);
 
 	switch (id8) {
 	case 0:
@@ -1178,6 +1179,7 @@ int b53_switch_detect(struct b53_device *dev)
 		break;
 	default:
 		ret = b53_read32(dev, B53_MGMT_PAGE, B53_DEVICE_ID, &id32);
+		printk(KERN_INFO "switch id32 %X\n", id32);
 		if (ret)
 			return ret;
 
