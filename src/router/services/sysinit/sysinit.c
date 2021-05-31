@@ -2484,10 +2484,10 @@ void start_restore_defaults(void)
 			// configured vid 1
 			// as lan)
 		{
-			nvram_set("vlan0ports", " ");
+			nvram_unset("vlan0ports");
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8*");
-			nvram_set("vlan0hwname", " ");
+			nvram_unset("vlan0hwname");
 			nvram_set("vlan1hwname", "et0");
 			nvram_set("landevs", "vlan1 wl0 wl1");
 			nvram_set("lan_ifnames", "vlan1 eth0 eth1");
