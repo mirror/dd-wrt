@@ -167,39 +167,40 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libacls_la_LIBADD =
-am__libacls_la_SOURCES_DIST = IntRange.cc IntRange.h RegexData.cc \
-	RegexData.h StringData.cc StringData.h Time.cc Time.h \
-	TimeData.cc TimeData.h AllOf.cc AllOf.h AnnotateClient.cc \
+am__libacls_la_SOURCES_DIST = AclDenyInfoList.h AclSizeLimit.cc \
+	AclSizeLimit.h AllOf.cc AllOf.h AnnotateClient.cc \
 	AnnotateClient.h AnnotateTransaction.cc AnnotateTransaction.h \
 	AnnotationData.cc AnnotationData.h AnyOf.cc AnyOf.h Asn.cc \
 	Asn.h AtStep.cc AtStep.h AtStepData.cc AtStepData.h \
-	ConnectionsEncrypted.cc ConnectionsEncrypted.h ConnMark.cc \
-	ConnMark.h DestinationAsn.h DestinationDomain.cc \
+	ConnMark.cc ConnMark.h ConnectionsEncrypted.cc \
+	ConnectionsEncrypted.h DestinationAsn.h DestinationDomain.cc \
 	DestinationDomain.h DestinationIp.cc DestinationIp.h \
-	DomainData.cc DomainData.h ExtUser.cc ExtUser.h \
-	HasComponent.cc HasComponent.h HasComponentData.cc \
-	HasComponentData.h HierCodeData.cc HierCodeData.h HierCode.cc \
-	HierCode.h HttpHeaderData.cc HttpHeaderData.h HttpRepHeader.cc \
-	HttpRepHeader.h HttpReqHeader.cc HttpReqHeader.h HttpStatus.cc \
-	HttpStatus.h Ip.cc Ip.h LocalIp.cc LocalIp.h LocalPort.cc \
+	DomainData.cc DomainData.h ExtUser.cc ExtUser.h Gadgets.cc \
+	Gadgets.h HasComponent.cc HasComponent.h HasComponentData.cc \
+	HasComponentData.h HierCode.cc HierCode.h HierCodeData.cc \
+	HierCodeData.h HttpHeaderData.cc HttpHeaderData.h \
+	HttpRepHeader.cc HttpRepHeader.h HttpReqHeader.cc \
+	HttpReqHeader.h HttpStatus.cc HttpStatus.h IntRange.cc \
+	IntRange.h Ip.cc Ip.h LocalIp.cc LocalIp.h LocalPort.cc \
 	LocalPort.h MaxConnection.cc MaxConnection.h Method.cc \
-	MethodData.cc MethodData.h Method.h MyPortName.cc MyPortName.h \
-	Note.h Note.cc NoteData.h NoteData.cc PeerName.cc PeerName.h \
-	Protocol.cc ProtocolData.cc ProtocolData.h Protocol.h \
-	Random.cc Random.h ReplyHeaderStrategy.h ReplyMimeType.h \
-	RequestHeaderStrategy.h RequestMimeType.h SourceAsn.h \
-	SourceDomain.cc SourceDomain.h SourceIp.cc SourceIp.h \
-	SquidError.h SquidError.cc SquidErrorData.cc SquidErrorData.h \
-	Tag.cc Tag.h TransactionInitiator.cc TransactionInitiator.h \
-	Url.cc Url.h UrlLogin.cc UrlLogin.h UrlPath.cc UrlPath.h \
-	UrlPort.cc UrlPort.h UserData.cc UserData.h AclDenyInfoList.h \
-	Gadgets.cc Gadgets.h AclSizeLimit.cc AclSizeLimit.h \
-	CertificateData.cc CertificateData.h Certificate.cc \
-	Certificate.h ServerCertificate.cc ServerCertificate.h \
-	ServerName.cc ServerName.h SslError.cc SslError.h \
-	SslErrorData.cc SslErrorData.h AdaptationService.h \
-	AdaptationService.cc AdaptationServiceData.h \
-	AdaptationServiceData.cc Arp.cc Arp.h Eui64.cc Eui64.h
+	Method.h MethodData.cc MethodData.h MyPortName.cc MyPortName.h \
+	Note.cc Note.h NoteData.cc NoteData.h PeerName.cc PeerName.h \
+	Protocol.cc Protocol.h ProtocolData.cc ProtocolData.h \
+	Random.cc Random.h RegexData.cc RegexData.h \
+	ReplyHeaderStrategy.h ReplyMimeType.h RequestHeaderStrategy.h \
+	RequestMimeType.h SourceAsn.h SourceDomain.cc SourceDomain.h \
+	SourceIp.cc SourceIp.h SquidError.cc SquidError.h \
+	SquidErrorData.cc SquidErrorData.h StringData.cc StringData.h \
+	Tag.cc Tag.h Time.cc Time.h TimeData.cc TimeData.h \
+	TransactionInitiator.cc TransactionInitiator.h Url.cc Url.h \
+	UrlLogin.cc UrlLogin.h UrlPath.cc UrlPath.h UrlPort.cc \
+	UrlPort.h UserData.cc UserData.h CertificateData.cc \
+	CertificateData.h Certificate.cc Certificate.h \
+	ServerCertificate.cc ServerCertificate.h ServerName.cc \
+	ServerName.h SslError.cc SslError.h SslErrorData.cc \
+	SslErrorData.h AdaptationService.h AdaptationService.cc \
+	AdaptationServiceData.h AdaptationServiceData.cc Arp.cc Arp.h \
+	Eui64.cc Eui64.h
 am__objects_1 = CertificateData.lo Certificate.lo ServerCertificate.lo \
 	ServerName.lo SslError.lo SslErrorData.lo
 @ENABLE_SSL_TRUE@am__objects_2 = $(am__objects_1)
@@ -207,20 +208,20 @@ am__objects_3 = AdaptationService.lo AdaptationServiceData.lo
 @ENABLE_ADAPTATION_TRUE@am__objects_4 = $(am__objects_3)
 am__objects_5 = Arp.lo Eui64.lo
 @ENABLE_EUI_TRUE@am__objects_6 = $(am__objects_5)
-am_libacls_la_OBJECTS = IntRange.lo RegexData.lo StringData.lo Time.lo \
-	TimeData.lo AllOf.lo AnnotateClient.lo AnnotateTransaction.lo \
-	AnnotationData.lo AnyOf.lo Asn.lo AtStep.lo AtStepData.lo \
-	ConnectionsEncrypted.lo ConnMark.lo DestinationDomain.lo \
-	DestinationIp.lo DomainData.lo ExtUser.lo HasComponent.lo \
-	HasComponentData.lo HierCodeData.lo HierCode.lo \
-	HttpHeaderData.lo HttpRepHeader.lo HttpReqHeader.lo \
-	HttpStatus.lo Ip.lo LocalIp.lo LocalPort.lo MaxConnection.lo \
-	Method.lo MethodData.lo MyPortName.lo Note.lo NoteData.lo \
-	PeerName.lo Protocol.lo ProtocolData.lo Random.lo \
-	SourceDomain.lo SourceIp.lo SquidError.lo SquidErrorData.lo \
-	Tag.lo TransactionInitiator.lo Url.lo UrlLogin.lo UrlPath.lo \
-	UrlPort.lo UserData.lo Gadgets.lo AclSizeLimit.lo \
-	$(am__objects_2) $(am__objects_4) $(am__objects_6)
+am_libacls_la_OBJECTS = AclSizeLimit.lo AllOf.lo AnnotateClient.lo \
+	AnnotateTransaction.lo AnnotationData.lo AnyOf.lo Asn.lo \
+	AtStep.lo AtStepData.lo ConnMark.lo ConnectionsEncrypted.lo \
+	DestinationDomain.lo DestinationIp.lo DomainData.lo ExtUser.lo \
+	Gadgets.lo HasComponent.lo HasComponentData.lo HierCode.lo \
+	HierCodeData.lo HttpHeaderData.lo HttpRepHeader.lo \
+	HttpReqHeader.lo HttpStatus.lo IntRange.lo Ip.lo LocalIp.lo \
+	LocalPort.lo MaxConnection.lo Method.lo MethodData.lo \
+	MyPortName.lo Note.lo NoteData.lo PeerName.lo Protocol.lo \
+	ProtocolData.lo Random.lo RegexData.lo SourceDomain.lo \
+	SourceIp.lo SquidError.lo SquidErrorData.lo StringData.lo \
+	Tag.lo Time.lo TimeData.lo TransactionInitiator.lo Url.lo \
+	UrlLogin.lo UrlPath.lo UrlPort.lo UserData.lo $(am__objects_2) \
+	$(am__objects_4) $(am__objects_6)
 libacls_la_OBJECTS = $(am_libacls_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -231,7 +232,7 @@ am_libapi_la_OBJECTS = Acl.lo BoolOps.lo Checklist.lo InnerNode.lo \
 	Options.lo Tree.lo
 libapi_la_OBJECTS = $(am_libapi_la_OBJECTS)
 libstate_la_LIBADD =
-am_libstate_la_OBJECTS = Strategised.lo FilledChecklist.lo Address.lo
+am_libstate_la_OBJECTS = Address.lo FilledChecklist.lo Strategised.lo
 libstate_la_OBJECTS = $(am_libstate_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -879,52 +880,53 @@ libapi_la_SOURCES = \
 	BoolOps.h \
 	Checklist.cc \
 	Checklist.h \
-	forward.h \
 	InnerNode.cc \
 	InnerNode.h \
-	Options.h \
 	Options.cc \
+	Options.h \
 	Tree.cc \
-	Tree.h
+	Tree.h \
+	forward.h
 
 libstate_la_SOURCES = \
+	Address.cc \
+	Address.h \
 	CharacterSetOption.h \
 	Data.h \
-	Strategy.h \
-	Strategised.cc \
-	Strategised.h \
 	FilledChecklist.cc \
 	FilledChecklist.h \
-	Address.h \
-	Address.cc
+	Strategised.cc \
+	Strategised.h \
+	Strategy.h
 
-libacls_la_SOURCES = IntRange.cc IntRange.h RegexData.cc RegexData.h \
-	StringData.cc StringData.h Time.cc Time.h TimeData.cc \
-	TimeData.h AllOf.cc AllOf.h AnnotateClient.cc AnnotateClient.h \
+libacls_la_SOURCES = AclDenyInfoList.h AclSizeLimit.cc AclSizeLimit.h \
+	AllOf.cc AllOf.h AnnotateClient.cc AnnotateClient.h \
 	AnnotateTransaction.cc AnnotateTransaction.h AnnotationData.cc \
 	AnnotationData.h AnyOf.cc AnyOf.h Asn.cc Asn.h AtStep.cc \
-	AtStep.h AtStepData.cc AtStepData.h ConnectionsEncrypted.cc \
-	ConnectionsEncrypted.h ConnMark.cc ConnMark.h DestinationAsn.h \
-	DestinationDomain.cc DestinationDomain.h DestinationIp.cc \
-	DestinationIp.h DomainData.cc DomainData.h ExtUser.cc \
-	ExtUser.h HasComponent.cc HasComponent.h HasComponentData.cc \
-	HasComponentData.h HierCodeData.cc HierCodeData.h HierCode.cc \
-	HierCode.h HttpHeaderData.cc HttpHeaderData.h HttpRepHeader.cc \
+	AtStep.h AtStepData.cc AtStepData.h ConnMark.cc ConnMark.h \
+	ConnectionsEncrypted.cc ConnectionsEncrypted.h \
+	DestinationAsn.h DestinationDomain.cc DestinationDomain.h \
+	DestinationIp.cc DestinationIp.h DomainData.cc DomainData.h \
+	ExtUser.cc ExtUser.h Gadgets.cc Gadgets.h HasComponent.cc \
+	HasComponent.h HasComponentData.cc HasComponentData.h \
+	HierCode.cc HierCode.h HierCodeData.cc HierCodeData.h \
+	HttpHeaderData.cc HttpHeaderData.h HttpRepHeader.cc \
 	HttpRepHeader.h HttpReqHeader.cc HttpReqHeader.h HttpStatus.cc \
-	HttpStatus.h Ip.cc Ip.h LocalIp.cc LocalIp.h LocalPort.cc \
-	LocalPort.h MaxConnection.cc MaxConnection.h Method.cc \
-	MethodData.cc MethodData.h Method.h MyPortName.cc MyPortName.h \
-	Note.h Note.cc NoteData.h NoteData.cc PeerName.cc PeerName.h \
-	Protocol.cc ProtocolData.cc ProtocolData.h Protocol.h \
-	Random.cc Random.h ReplyHeaderStrategy.h ReplyMimeType.h \
+	HttpStatus.h IntRange.cc IntRange.h Ip.cc Ip.h LocalIp.cc \
+	LocalIp.h LocalPort.cc LocalPort.h MaxConnection.cc \
+	MaxConnection.h Method.cc Method.h MethodData.cc MethodData.h \
+	MyPortName.cc MyPortName.h Note.cc Note.h NoteData.cc \
+	NoteData.h PeerName.cc PeerName.h Protocol.cc Protocol.h \
+	ProtocolData.cc ProtocolData.h Random.cc Random.h RegexData.cc \
+	RegexData.h ReplyHeaderStrategy.h ReplyMimeType.h \
 	RequestHeaderStrategy.h RequestMimeType.h SourceAsn.h \
 	SourceDomain.cc SourceDomain.h SourceIp.cc SourceIp.h \
-	SquidError.h SquidError.cc SquidErrorData.cc SquidErrorData.h \
-	Tag.cc Tag.h TransactionInitiator.cc TransactionInitiator.h \
-	Url.cc Url.h UrlLogin.cc UrlLogin.h UrlPath.cc UrlPath.h \
-	UrlPort.cc UrlPort.h UserData.cc UserData.h AclDenyInfoList.h \
-	Gadgets.cc Gadgets.h AclSizeLimit.cc AclSizeLimit.h \
-	$(am__append_2) $(am__append_3) $(am__append_4)
+	SquidError.cc SquidError.h SquidErrorData.cc SquidErrorData.h \
+	StringData.cc StringData.h Tag.cc Tag.h Time.cc Time.h \
+	TimeData.cc TimeData.h TransactionInitiator.cc \
+	TransactionInitiator.h Url.cc Url.h UrlLogin.cc UrlLogin.h \
+	UrlPath.cc UrlPath.h UrlPort.cc UrlPort.h UserData.cc \
+	UserData.h $(am__append_2) $(am__append_3) $(am__append_4)
 EXTRA_libacls_la_SOURCES = $(SSL_ACLS) $(ADAPT_ACLS) $(ARP_ACLS)
 SSL_ACLS = \
         CertificateData.cc \

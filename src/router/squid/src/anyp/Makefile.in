@@ -730,7 +730,6 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libanyp.la
 libanyp_la_SOURCES = \
-	forward.h \
 	PortCfg.cc \
 	PortCfg.h \
 	ProtocolType.cc \
@@ -740,7 +739,8 @@ libanyp_la_SOURCES = \
 	Uri.cc \
 	Uri.h \
 	UriScheme.cc \
-	UriScheme.h
+	UriScheme.h \
+	forward.h
 
 all: all-am
 

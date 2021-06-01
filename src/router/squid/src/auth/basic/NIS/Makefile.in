@@ -735,8 +735,8 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 basic_nis_auth_SOURCES = \
 	basic_nis_auth.cc \
-	nis_support.h \
-	nis_support.cc
+	nis_support.cc \
+	nis_support.h
 
 basic_nis_auth_LDADD = \
 	$(top_builddir)/lib/libmiscencoding.la \

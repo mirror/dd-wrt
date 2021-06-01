@@ -766,9 +766,9 @@ EXTRA_DIST = \
 	negotiate_kerberos_auth.8
 
 negotiate_kerberos_auth_SOURCES = \
+	negotiate_kerberos.h \
 	negotiate_kerberos_auth.cc \
-	negotiate_kerberos_pac.cc \
-	negotiate_kerberos.h
+	negotiate_kerberos_pac.cc
 
 negotiate_kerberos_auth_LDFLAGS = 
 negotiate_kerberos_auth_LDADD = \

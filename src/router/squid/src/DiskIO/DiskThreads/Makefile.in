@@ -166,16 +166,16 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libDiskThreads_la_LIBADD =
-am__libDiskThreads_la_SOURCES_DIST = async_io.cc CommIO.cc CommIO.h \
-	DiskThreads.h DiskThreadsDiskFile.cc DiskThreadsDiskFile.h \
+am__libDiskThreads_la_SOURCES_DIST = CommIO.cc CommIO.h DiskThreads.h \
+	DiskThreadsDiskFile.cc DiskThreadsDiskFile.h \
 	DiskThreadsDiskIOModule.cc DiskThreadsDiskIOModule.h \
-	DiskThreadsIOStrategy.cc DiskThreadsIOStrategy.h \
+	DiskThreadsIOStrategy.cc DiskThreadsIOStrategy.h async_io.cc \
 	aiops_win32.cc aiops.cc
 @ENABLE_WIN32_AIOPS_TRUE@am__objects_1 = aiops_win32.lo
 @ENABLE_WIN32_AIOPS_FALSE@am__objects_2 = aiops.lo
-am_libDiskThreads_la_OBJECTS = async_io.lo CommIO.lo \
-	DiskThreadsDiskFile.lo DiskThreadsDiskIOModule.lo \
-	DiskThreadsIOStrategy.lo $(am__objects_1) $(am__objects_2)
+am_libDiskThreads_la_OBJECTS = CommIO.lo DiskThreadsDiskFile.lo \
+	DiskThreadsDiskIOModule.lo DiskThreadsIOStrategy.lo \
+	async_io.lo $(am__objects_1) $(am__objects_2)
 libDiskThreads_la_OBJECTS = $(am_libDiskThreads_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -742,10 +742,10 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libDiskThreads.la
-libDiskThreads_la_SOURCES = async_io.cc CommIO.cc CommIO.h \
-	DiskThreads.h DiskThreadsDiskFile.cc DiskThreadsDiskFile.h \
+libDiskThreads_la_SOURCES = CommIO.cc CommIO.h DiskThreads.h \
+	DiskThreadsDiskFile.cc DiskThreadsDiskFile.h \
 	DiskThreadsDiskIOModule.cc DiskThreadsDiskIOModule.h \
-	DiskThreadsIOStrategy.cc DiskThreadsIOStrategy.h \
+	DiskThreadsIOStrategy.cc DiskThreadsIOStrategy.h async_io.cc \
 	$(am__append_2) $(am__append_3)
 @ENABLE_WIN32_AIOPS_FALSE@EXTRA_DIST = aiops_win32.cc
 @ENABLE_WIN32_AIOPS_TRUE@EXTRA_DIST = aiops.cc

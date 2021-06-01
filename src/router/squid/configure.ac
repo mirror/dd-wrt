@@ -5,7 +5,7 @@
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[5.0.5],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[5.0.6],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -2773,6 +2773,7 @@ SQUID_YESNO([$enableval],
 ])
 # Default OFF. This is a debug feature. Only check and enable if forced ON.
 if test "x$enable_cpu_profiling" = "xyes"; then
+  AC_CHECK_FUNCS(clock_gettime_nsec_np)
   SQUID_CHECK_FUNCTIONAL_CPU_PROFILER
   if test "x$squid_cv_cpu_profiler_works" = "xno"; then
     AC_MSG_ERROR([CPU profiling will not be functional in this build.])
@@ -3894,6 +3895,7 @@ AC_CONFIG_FILES([
 	src/DiskIO/DiskThreads/Makefile
 	src/DiskIO/IpcIo/Makefile
 	src/DiskIO/Mmapped/Makefile
+	src/error/Makefile
 	src/esi/Makefile
 	src/eui/Makefile
 	src/format/Makefile

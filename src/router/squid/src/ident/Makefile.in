@@ -728,8 +728,8 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libident.la
 libident_la_SOURCES = \
-	AclIdent.h \
 	AclIdent.cc \
+	AclIdent.h \
 	Config.h \
 	Ident.cc \
 	Ident.h

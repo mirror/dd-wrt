@@ -164,7 +164,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libnegotiate_la_LIBADD =
-am_libnegotiate_la_OBJECTS = Scheme.lo Config.lo User.lo \
+am_libnegotiate_la_OBJECTS = Config.lo Scheme.lo User.lo \
 	UserRequest.lo
 libnegotiate_la_OBJECTS = $(am_libnegotiate_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -773,10 +773,10 @@ SUBDIRS = $(NEGOTIATE_AUTH_HELPERS)
 EXTRA_DIST = helpers.m4
 noinst_LTLIBRARIES = libnegotiate.la
 libnegotiate_la_SOURCES = \
-	Scheme.cc \
-	Scheme.h \
 	Config.cc \
 	Config.h \
+	Scheme.cc \
+	Scheme.h \
 	User.cc \
 	User.h \
 	UserRequest.cc \

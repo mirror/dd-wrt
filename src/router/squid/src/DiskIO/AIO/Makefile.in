@@ -168,9 +168,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libAIO_la_LIBADD =
-am__libAIO_la_SOURCES_DIST = async_io.h AIODiskFile.cc AIODiskFile.h \
+am__libAIO_la_SOURCES_DIST = AIODiskFile.cc AIODiskFile.h \
 	AIODiskIOModule.cc AIODiskIOModule.h AIODiskIOStrategy.cc \
-	AIODiskIOStrategy.h aio_win32.cc aio_win32.h
+	AIODiskIOStrategy.h async_io.h aio_win32.cc aio_win32.h
 @ENABLE_WIN32_AIO_TRUE@am__objects_1 = aio_win32.lo
 am_libAIO_la_OBJECTS = AIODiskFile.lo AIODiskIOModule.lo \
 	AIODiskIOStrategy.lo $(am__objects_1)
@@ -738,9 +738,9 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libAIO.la
-libAIO_la_SOURCES = async_io.h AIODiskFile.cc AIODiskFile.h \
-	AIODiskIOModule.cc AIODiskIOModule.h AIODiskIOStrategy.cc \
-	AIODiskIOStrategy.h $(am__append_2)
+libAIO_la_SOURCES = AIODiskFile.cc AIODiskFile.h AIODiskIOModule.cc \
+	AIODiskIOModule.h AIODiskIOStrategy.cc AIODiskIOStrategy.h \
+	async_io.h $(am__append_2)
 @ENABLE_WIN32_AIO_FALSE@EXTRA_DIST = \
 @ENABLE_WIN32_AIO_FALSE@	aio_win32.cc \
 @ENABLE_WIN32_AIO_FALSE@	aio_win32.h

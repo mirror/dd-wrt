@@ -166,12 +166,12 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 libipc_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libipc_la_OBJECTS = FdNotes.lo Kid.lo Kids.lo MemMap.lo Queue.lo \
-	ReadWriteLock.lo StartListening.lo StoreMap.lo StrandCoord.lo \
-	StrandSearch.lo SharedListen.lo TypedMsgHdr.lo Coordinator.lo \
-	UdsOp.lo Port.lo Strand.lo Forwarder.lo Inquirer.lo \
-	mem/Page.lo mem/PagePool.lo mem/Pages.lo mem/PageStack.lo \
-	mem/Segment.lo
+am_libipc_la_OBJECTS = Coordinator.lo FdNotes.lo Forwarder.lo \
+	Inquirer.lo Kid.lo Kids.lo MemMap.lo Port.lo QuestionerId.lo \
+	Queue.lo ReadWriteLock.lo RequestId.lo SharedListen.lo \
+	StartListening.lo StoreMap.lo Strand.lo StrandCoord.lo \
+	StrandSearch.lo TypedMsgHdr.lo UdsOp.lo mem/Page.lo \
+	mem/PagePool.lo mem/PageStack.lo mem/Pages.lo mem/Segment.lo
 libipc_la_OBJECTS = $(am_libipc_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -196,8 +196,9 @@ am__depfiles_remade = ./$(DEPDIR)/Coordinator.Plo \
 	./$(DEPDIR)/FdNotes.Plo ./$(DEPDIR)/Forwarder.Plo \
 	./$(DEPDIR)/Inquirer.Plo ./$(DEPDIR)/Kid.Plo \
 	./$(DEPDIR)/Kids.Plo ./$(DEPDIR)/MemMap.Plo \
-	./$(DEPDIR)/Port.Plo ./$(DEPDIR)/Queue.Plo \
-	./$(DEPDIR)/ReadWriteLock.Plo ./$(DEPDIR)/SharedListen.Plo \
+	./$(DEPDIR)/Port.Plo ./$(DEPDIR)/QuestionerId.Plo \
+	./$(DEPDIR)/Queue.Plo ./$(DEPDIR)/ReadWriteLock.Plo \
+	./$(DEPDIR)/RequestId.Plo ./$(DEPDIR)/SharedListen.Plo \
 	./$(DEPDIR)/StartListening.Plo ./$(DEPDIR)/StoreMap.Plo \
 	./$(DEPDIR)/Strand.Plo ./$(DEPDIR)/StrandCoord.Plo \
 	./$(DEPDIR)/StrandSearch.Plo ./$(DEPDIR)/TypedMsgHdr.Plo \
@@ -747,57 +748,60 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libipc.la
 libipc_la_SOURCES = \
+	Coordinator.cc \
+	Coordinator.h \
 	FdNotes.cc \
 	FdNotes.h \
+	Forwarder.cc \
+	Forwarder.h \
+	Inquirer.cc \
+	Inquirer.h \
 	Kid.cc \
 	Kid.h \
 	Kids.cc \
 	Kids.h \
-	Messages.h \
 	MemMap.cc \
 	MemMap.h \
+	Messages.h \
+	Port.cc \
+	Port.h \
+	QuestionerId.cc \
+	QuestionerId.h \
 	Queue.cc \
 	Queue.h \
 	ReadWriteLock.cc \
 	ReadWriteLock.h \
+	Request.h \
+	RequestId.cc \
+	RequestId.h \
+	Response.h \
+	SharedListen.cc \
+	SharedListen.h \
 	StartListening.cc \
 	StartListening.h \
 	StoreMap.cc \
 	StoreMap.h \
+	Strand.cc \
+	Strand.h \
 	StrandCoord.cc \
 	StrandCoord.h \
 	StrandCoords.h \
 	StrandSearch.cc \
 	StrandSearch.h \
-	SharedListen.cc \
-	SharedListen.h \
 	TypedMsgHdr.cc \
 	TypedMsgHdr.h \
-	Coordinator.cc \
-	Coordinator.h \
 	UdsOp.cc \
 	UdsOp.h \
-	Port.cc \
-	Port.h \
-	Strand.cc \
-	Strand.h \
 	forward.h \
-	Forwarder.cc \
-	Forwarder.h \
-	Inquirer.cc \
-	Inquirer.h \
-	Request.h \
-	Response.h \
-	\
 	mem/FlexibleArray.h \
 	mem/Page.cc \
 	mem/Page.h \
 	mem/PagePool.cc \
 	mem/PagePool.h \
-	mem/Pages.cc \
-	mem/Pages.h \
 	mem/PageStack.cc \
 	mem/PageStack.h \
+	mem/Pages.cc \
+	mem/Pages.h \
 	mem/Pointer.h \
 	mem/Segment.cc \
 	mem/Segment.h \
@@ -866,8 +870,8 @@ mem/$(DEPDIR)/$(am__dirstamp):
 	@: > mem/$(DEPDIR)/$(am__dirstamp)
 mem/Page.lo: mem/$(am__dirstamp) mem/$(DEPDIR)/$(am__dirstamp)
 mem/PagePool.lo: mem/$(am__dirstamp) mem/$(DEPDIR)/$(am__dirstamp)
-mem/Pages.lo: mem/$(am__dirstamp) mem/$(DEPDIR)/$(am__dirstamp)
 mem/PageStack.lo: mem/$(am__dirstamp) mem/$(DEPDIR)/$(am__dirstamp)
+mem/Pages.lo: mem/$(am__dirstamp) mem/$(DEPDIR)/$(am__dirstamp)
 mem/Segment.lo: mem/$(am__dirstamp) mem/$(DEPDIR)/$(am__dirstamp)
 
 libipc.la: $(libipc_la_OBJECTS) $(libipc_la_DEPENDENCIES) $(EXTRA_libipc_la_DEPENDENCIES) 
@@ -889,8 +893,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Kids.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MemMap.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Port.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QuestionerId.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Queue.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ReadWriteLock.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RequestId.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SharedListen.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StartListening.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StoreMap.Plo@am__quote@ # am--include-marker
@@ -1246,8 +1252,10 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/Kids.Plo
 	-rm -f ./$(DEPDIR)/MemMap.Plo
 	-rm -f ./$(DEPDIR)/Port.Plo
+	-rm -f ./$(DEPDIR)/QuestionerId.Plo
 	-rm -f ./$(DEPDIR)/Queue.Plo
 	-rm -f ./$(DEPDIR)/ReadWriteLock.Plo
+	-rm -f ./$(DEPDIR)/RequestId.Plo
 	-rm -f ./$(DEPDIR)/SharedListen.Plo
 	-rm -f ./$(DEPDIR)/StartListening.Plo
 	-rm -f ./$(DEPDIR)/StoreMap.Plo
@@ -1314,8 +1322,10 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/Kids.Plo
 	-rm -f ./$(DEPDIR)/MemMap.Plo
 	-rm -f ./$(DEPDIR)/Port.Plo
+	-rm -f ./$(DEPDIR)/QuestionerId.Plo
 	-rm -f ./$(DEPDIR)/Queue.Plo
 	-rm -f ./$(DEPDIR)/ReadWriteLock.Plo
+	-rm -f ./$(DEPDIR)/RequestId.Plo
 	-rm -f ./$(DEPDIR)/SharedListen.Plo
 	-rm -f ./$(DEPDIR)/StartListening.Plo
 	-rm -f ./$(DEPDIR)/StoreMap.Plo
