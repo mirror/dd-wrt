@@ -179,13 +179,13 @@ am_libfs_la_OBJECTS = Module.lo
 libfs_la_OBJECTS = $(am_libfs_la_OBJECTS)
 librock_la_LIBADD =
 am_librock_la_OBJECTS = rock/RockDbCell.lo rock/RockHeaderUpdater.lo \
-	rock/RockIoState.lo rock/RockIoRequests.lo rock/RockRebuild.lo \
+	rock/RockIoRequests.lo rock/RockIoState.lo rock/RockRebuild.lo \
 	rock/RockStoreFileSystem.lo rock/RockSwapDir.lo
 librock_la_OBJECTS = $(am_librock_la_OBJECTS)
 libufs_la_LIBADD =
-am_libufs_la_OBJECTS = ufs/StoreFSufs.lo ufs/UFSStoreState.lo \
-	ufs/UFSSwapDir.lo ufs/UFSStrategy.lo ufs/StoreSearchUFS.lo \
-	ufs/UFSSwapLogParser.lo ufs/RebuildState.lo
+am_libufs_la_OBJECTS = ufs/RebuildState.lo ufs/StoreFSufs.lo \
+	ufs/StoreSearchUFS.lo ufs/UFSStoreState.lo ufs/UFSStrategy.lo \
+	ufs/UFSSwapDir.lo ufs/UFSSwapLogParser.lo
 libufs_la_OBJECTS = $(am_libufs_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -768,39 +768,42 @@ libdiskd_la_SOURCES = \
 	diskd/StoreFSdiskd.cc
 
 libufs_la_SOURCES = \
-	ufs/StoreFSufs.h \
+	ufs/RebuildState.cc \
+	ufs/RebuildState.h \
 	ufs/StoreFSufs.cc \
+	ufs/StoreFSufs.h \
+	ufs/StoreSearchUFS.cc \
+	ufs/StoreSearchUFS.h \
 	ufs/UFSStoreState.cc \
-	ufs/UFSSwapDir.cc \
-	ufs/UFSSwapDir.h \
+	ufs/UFSStoreState.h \
 	ufs/UFSStrategy.cc \
 	ufs/UFSStrategy.h \
-	ufs/UFSStoreState.h \
-	ufs/StoreSearchUFS.h \
-	ufs/StoreSearchUFS.cc \
-	ufs/UFSSwapLogParser.h \
+	ufs/UFSSwapDir.cc \
+	ufs/UFSSwapDir.h \
 	ufs/UFSSwapLogParser.cc \
-	ufs/RebuildState.h \
-	ufs/RebuildState.cc
+	ufs/UFSSwapLogParser.h
 
 librock_la_SOURCES = \
-	rock/forward.h \
 	rock/RockDbCell.cc \
 	rock/RockDbCell.h \
 	rock/RockHeaderUpdater.cc \
 	rock/RockHeaderUpdater.h \
-	rock/RockIoState.cc \
-	rock/RockIoState.h \
 	rock/RockIoRequests.cc \
 	rock/RockIoRequests.h \
+	rock/RockIoState.cc \
+	rock/RockIoState.h \
 	rock/RockRebuild.cc \
 	rock/RockRebuild.h \
 	rock/RockStoreFileSystem.cc \
 	rock/RockStoreFileSystem.h \
 	rock/RockSwapDir.cc \
-	rock/RockSwapDir.h
+	rock/RockSwapDir.h \
+	rock/forward.h
 
-libfs_la_SOURCES = Module.cc Module.h
+libfs_la_SOURCES = \
+	Module.cc \
+	Module.h
+
 libfs_la_LIBADD = $(STORE_LIBS_TO_BUILD)
 libfs_la_DEPENDENCIES = $(STORE_LIBS_TO_BUILD)
 all: all-am
@@ -892,9 +895,9 @@ rock/RockDbCell.lo: rock/$(am__dirstamp) \
 	rock/$(DEPDIR)/$(am__dirstamp)
 rock/RockHeaderUpdater.lo: rock/$(am__dirstamp) \
 	rock/$(DEPDIR)/$(am__dirstamp)
-rock/RockIoState.lo: rock/$(am__dirstamp) \
-	rock/$(DEPDIR)/$(am__dirstamp)
 rock/RockIoRequests.lo: rock/$(am__dirstamp) \
+	rock/$(DEPDIR)/$(am__dirstamp)
+rock/RockIoState.lo: rock/$(am__dirstamp) \
 	rock/$(DEPDIR)/$(am__dirstamp)
 rock/RockRebuild.lo: rock/$(am__dirstamp) \
 	rock/$(DEPDIR)/$(am__dirstamp)
@@ -911,16 +914,16 @@ ufs/$(am__dirstamp):
 ufs/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) ufs/$(DEPDIR)
 	@: > ufs/$(DEPDIR)/$(am__dirstamp)
+ufs/RebuildState.lo: ufs/$(am__dirstamp) ufs/$(DEPDIR)/$(am__dirstamp)
 ufs/StoreFSufs.lo: ufs/$(am__dirstamp) ufs/$(DEPDIR)/$(am__dirstamp)
-ufs/UFSStoreState.lo: ufs/$(am__dirstamp) \
-	ufs/$(DEPDIR)/$(am__dirstamp)
-ufs/UFSSwapDir.lo: ufs/$(am__dirstamp) ufs/$(DEPDIR)/$(am__dirstamp)
-ufs/UFSStrategy.lo: ufs/$(am__dirstamp) ufs/$(DEPDIR)/$(am__dirstamp)
 ufs/StoreSearchUFS.lo: ufs/$(am__dirstamp) \
 	ufs/$(DEPDIR)/$(am__dirstamp)
+ufs/UFSStoreState.lo: ufs/$(am__dirstamp) \
+	ufs/$(DEPDIR)/$(am__dirstamp)
+ufs/UFSStrategy.lo: ufs/$(am__dirstamp) ufs/$(DEPDIR)/$(am__dirstamp)
+ufs/UFSSwapDir.lo: ufs/$(am__dirstamp) ufs/$(DEPDIR)/$(am__dirstamp)
 ufs/UFSSwapLogParser.lo: ufs/$(am__dirstamp) \
 	ufs/$(DEPDIR)/$(am__dirstamp)
-ufs/RebuildState.lo: ufs/$(am__dirstamp) ufs/$(DEPDIR)/$(am__dirstamp)
 
 libufs.la: $(libufs_la_OBJECTS) $(libufs_la_DEPENDENCIES) $(EXTRA_libufs_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libufs_la_OBJECTS) $(libufs_la_LIBADD) $(LIBS)

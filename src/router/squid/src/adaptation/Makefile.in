@@ -169,9 +169,9 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libadaptation_la_DEPENDENCIES = $(am__append_3) $(am__append_5)
 am_libadaptation_la_OBJECTS = AccessCheck.lo AccessRule.lo Answer.lo \
-	Config.lo DynamicGroupCfg.lo Elements.lo Initiate.lo \
-	Initiator.lo Iterator.lo Message.lo Service.lo \
-	ServiceConfig.lo ServiceGroups.lo ServiceFilter.lo History.lo
+	Config.lo DynamicGroupCfg.lo Elements.lo History.lo \
+	Initiate.lo Initiator.lo Iterator.lo Message.lo Service.lo \
+	ServiceConfig.lo ServiceFilter.lo ServiceGroups.lo
 libadaptation_la_OBJECTS = $(am_libadaptation_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -796,7 +796,8 @@ libadaptation_la_SOURCES = \
 	DynamicGroupCfg.h \
 	Elements.cc \
 	Elements.h \
-	forward.h \
+	History.cc \
+	History.h \
 	Initiate.cc \
 	Initiate.h \
 	Initiator.cc \
@@ -809,12 +810,11 @@ libadaptation_la_SOURCES = \
 	Service.h \
 	ServiceConfig.cc \
 	ServiceConfig.h \
-	ServiceGroups.cc \
-	ServiceGroups.h \
 	ServiceFilter.cc \
 	ServiceFilter.h \
-	History.cc \
-	History.h
+	ServiceGroups.cc \
+	ServiceGroups.h \
+	forward.h
 
 libadaptation_la_LIBADD = $(am__append_3) $(am__append_5)
 all: all-recursive

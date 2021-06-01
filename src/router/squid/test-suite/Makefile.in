@@ -175,8 +175,8 @@ am__objects_1 = stub_cbdata.$(OBJEXT) stub_debug.$(OBJEXT) \
 	stub_MemBuf.$(OBJEXT) stub_SBuf.$(OBJEXT) stub_tools.$(OBJEXT) \
 	stub_fatal.$(OBJEXT)
 am__objects_2 = test_tools.$(OBJEXT) $(am__objects_1)
-am_ESIExpressions_OBJECTS = ESIExpressions.$(OBJEXT) \
-	stub_libmem.$(OBJEXT) $(am__objects_2)
+am_ESIExpressions_OBJECTS = $(am__objects_2) ESIExpressions.$(OBJEXT) \
+	stub_libmem.$(OBJEXT)
 ESIExpressions_OBJECTS = $(am_ESIExpressions_OBJECTS)
 @ENABLE_XPROF_STATS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/lib/profiler/libprofiler.la
 am__DEPENDENCIES_2 = $(top_builddir)/compat/libcompatsquid.la \
@@ -192,8 +192,8 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-am_VirtualDeleteOperator_OBJECTS = VirtualDeleteOperator.$(OBJEXT) \
-	stub_libmem.$(OBJEXT) $(am__objects_2)
+am_VirtualDeleteOperator_OBJECTS = $(am__objects_2) \
+	VirtualDeleteOperator.$(OBJEXT) stub_libmem.$(OBJEXT)
 VirtualDeleteOperator_OBJECTS = $(am_VirtualDeleteOperator_OBJECTS)
 VirtualDeleteOperator_LDADD = $(LDADD)
 VirtualDeleteOperator_DEPENDENCIES =  \
@@ -201,20 +201,20 @@ VirtualDeleteOperator_DEPENDENCIES =  \
 	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
 	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3)
-am_debug_OBJECTS = debug.$(OBJEXT) stub_libmem.$(OBJEXT) \
-	$(am__objects_2)
+am_debug_OBJECTS = $(am__objects_2) debug.$(OBJEXT) \
+	stub_libmem.$(OBJEXT)
 debug_OBJECTS = $(am_debug_OBJECTS)
 debug_LDADD = $(LDADD)
 debug_DEPENDENCIES = $(top_builddir)/src/base/libbase.la \
 	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
 	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3)
-am_mem_hdr_test_OBJECTS = mem_hdr_test.$(OBJEXT) $(am__objects_2)
+am_mem_hdr_test_OBJECTS = $(am__objects_2) mem_hdr_test.$(OBJEXT)
 mem_hdr_test_OBJECTS = $(am_mem_hdr_test_OBJECTS)
 mem_hdr_test_DEPENDENCIES = $(top_builddir)/src/stmem.o \
 	$(top_builddir)/src/mem_node.o \
 	$(top_builddir)/src/mem/libmem.la $(am__DEPENDENCIES_4)
-am_mem_node_test_OBJECTS = mem_node_test.$(OBJEXT) $(am__objects_2)
+am_mem_node_test_OBJECTS = $(am__objects_2) mem_node_test.$(OBJEXT)
 mem_node_test_OBJECTS = $(am_mem_node_test_OBJECTS)
 mem_node_test_DEPENDENCIES = $(top_builddir)/src/mem_node.o \
 	$(top_builddir)/src/mem/libmem.la $(am__DEPENDENCIES_4)
@@ -225,16 +225,16 @@ membanger_DEPENDENCIES = $(top_builddir)/src/base/libbase.la \
 	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
 	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3)
-am_splay_OBJECTS = splay.$(OBJEXT) stub_libmem.$(OBJEXT) \
-	$(am__objects_2)
+am_splay_OBJECTS = $(am__objects_2) splay.$(OBJEXT) \
+	stub_libmem.$(OBJEXT)
 splay_OBJECTS = $(am_splay_OBJECTS)
 splay_LDADD = $(LDADD)
 splay_DEPENDENCIES = $(top_builddir)/src/base/libbase.la \
 	$(top_builddir)/src/globals.o $(top_builddir)/src/time.o \
 	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3)
-am_syntheticoperators_OBJECTS = syntheticoperators.$(OBJEXT) \
-	stub_libmem.$(OBJEXT) $(am__objects_2)
+am_syntheticoperators_OBJECTS = $(am__objects_2) stub_libmem.$(OBJEXT) \
+	syntheticoperators.$(OBJEXT)
 syntheticoperators_OBJECTS = $(am_syntheticoperators_OBJECTS)
 syntheticoperators_LDADD = $(LDADD)
 syntheticoperators_DEPENDENCIES = $(top_builddir)/src/base/libbase.la \
@@ -843,27 +843,53 @@ STUBS = \
 	STUB.h
 
 DEBUG_SOURCE = test_tools.cc $(STUBS)
-debug_SOURCES = debug.cc stub_libmem.cc $(DEBUG_SOURCE) 
-ESIExpressions_SOURCES = ESIExpressions.cc stub_libmem.cc $(DEBUG_SOURCE)
+debug_SOURCES = \
+	$(DEBUG_SOURCE) \
+	debug.cc \
+	stub_libmem.cc
+
+ESIExpressions_SOURCES = \
+	$(DEBUG_SOURCE) \
+	ESIExpressions.cc \
+	stub_libmem.cc
+
 ESIExpressions_LDADD = $(top_builddir)/src/esi/Expression.o \
 		$(LDADD)
 
-mem_node_test_SOURCES = mem_node_test.cc $(DEBUG_SOURCE)
+mem_node_test_SOURCES = \
+	$(DEBUG_SOURCE) \
+	mem_node_test.cc
+
 mem_node_test_LDADD = \
 	$(top_builddir)/src/mem_node.o \
 	$(top_builddir)/src/mem/libmem.la \
 	$(LDADD)
 
-mem_hdr_test_SOURCES = mem_hdr_test.cc $(DEBUG_SOURCE)
+mem_hdr_test_SOURCES = \
+	$(DEBUG_SOURCE) \
+	mem_hdr_test.cc
+
 mem_hdr_test_LDADD = \
 	$(top_builddir)/src/stmem.o \
 	$(top_builddir)/src/mem_node.o \
 	$(top_builddir)/src/mem/libmem.la \
 	$(LDADD)
 
-splay_SOURCES = splay.cc stub_libmem.cc $(DEBUG_SOURCE)
-syntheticoperators_SOURCES = syntheticoperators.cc stub_libmem.cc $(DEBUG_SOURCE)
-VirtualDeleteOperator_SOURCES = VirtualDeleteOperator.cc stub_libmem.cc $(DEBUG_SOURCE)
+splay_SOURCES = \
+	$(DEBUG_SOURCE) \
+	splay.cc \
+	stub_libmem.cc
+
+syntheticoperators_SOURCES = \
+	$(DEBUG_SOURCE) \
+	stub_libmem.cc \
+	syntheticoperators.cc
+
+VirtualDeleteOperator_SOURCES = \
+	$(DEBUG_SOURCE) \
+	VirtualDeleteOperator.cc \
+	stub_libmem.cc
+
 all: all-am
 
 .SUFFIXES:

@@ -164,8 +164,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libmem_la_LIBADD =
-am_libmem_la_OBJECTS = AllocatorProxy.lo old_api.lo Pool.lo \
-	PoolChunked.lo PoolMalloc.lo
+am_libmem_la_OBJECTS = AllocatorProxy.lo Pool.lo PoolChunked.lo \
+	PoolMalloc.lo old_api.lo
 libmem_la_OBJECTS = $(am_libmem_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -733,16 +733,16 @@ noinst_LTLIBRARIES = libmem.la
 libmem_la_SOURCES = \
 	AllocatorProxy.cc \
 	AllocatorProxy.h \
-	forward.h \
 	Meter.h \
-	old_api.cc \
 	Pool.cc \
 	Pool.h \
 	PoolChunked.cc \
 	PoolChunked.h \
-	PoolingAllocator.h \
 	PoolMalloc.cc \
-	PoolMalloc.h
+	PoolMalloc.h \
+	PoolingAllocator.h \
+	forward.h \
+	old_api.cc
 
 all: all-am
 

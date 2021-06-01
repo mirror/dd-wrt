@@ -166,9 +166,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_purge_OBJECTS = convert.$(OBJEXT) socket.$(OBJEXT) signal.$(OBJEXT) \
-	squid-tlv.$(OBJEXT) copyout.$(OBJEXT) conffile.$(OBJEXT) \
-	purge.$(OBJEXT)
+am_purge_OBJECTS = conffile.$(OBJEXT) convert.$(OBJEXT) \
+	copyout.$(OBJEXT) purge.$(OBJEXT) signal.$(OBJEXT) \
+	socket.$(OBJEXT) squid-tlv.$(OBJEXT)
 purge_OBJECTS = $(am_purge_OBJECTS)
 @ENABLE_XPROF_STATS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/lib/profiler/libprofiler.la
 am__DEPENDENCIES_2 = $(top_builddir)/compat/libcompatsquid.la \
@@ -739,19 +739,19 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 @ENABLE_WIN32SPECIFIC_FALSE@man_MANS = purge.1
 purge_SOURCES = \
-	convert.cc \
-	convert.hh \
-	socket.cc \
-	socket.hh \
-	signal.cc \
-	signal.hh \
-	squid-tlv.cc \
-	squid-tlv.hh \
-	copyout.cc \
-	copyout.hh \
 	conffile.cc \
 	conffile.hh \
-	purge.cc
+	convert.cc \
+	convert.hh \
+	copyout.cc \
+	copyout.hh \
+	purge.cc \
+	signal.cc \
+	signal.hh \
+	socket.cc \
+	socket.hh \
+	squid-tlv.cc \
+	squid-tlv.hh
 
 purge_LDADD = \
 	$(COMPAT_LIB) \

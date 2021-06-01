@@ -729,11 +729,11 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libparser.la
 libparser_la_SOURCES = \
-	BinaryTokenizer.h \
 	BinaryTokenizer.cc \
-	forward.h \
+	BinaryTokenizer.h \
+	Tokenizer.cc \
 	Tokenizer.h \
-	Tokenizer.cc
+	forward.h
 
 all: all-am
 

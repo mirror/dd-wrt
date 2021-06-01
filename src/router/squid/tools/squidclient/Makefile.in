@@ -166,9 +166,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_squidclient_OBJECTS = gssapi_support.$(OBJEXT) Ping.$(OBJEXT) \
-	squidclient.$(OBJEXT) test_tools.$(OBJEXT) time.$(OBJEXT) \
-	Transport.$(OBJEXT)
+am_squidclient_OBJECTS = Ping.$(OBJEXT) Transport.$(OBJEXT) \
+	gssapi_support.$(OBJEXT) squidclient.$(OBJEXT) \
+	test_tools.$(OBJEXT) time.$(OBJEXT)
 am__dirstamp = $(am__leading_dot)dirstamp
 nodist_squidclient_OBJECTS = tests/stub_debug.$(OBJEXT) \
 	tests/stub_libmem.$(OBJEXT)
@@ -822,16 +822,16 @@ SUBSTITUTE = sed "\
 # Neither of these should be disted from here.
 TESTSOURCES = test_tools.cc
 squidclient_SOURCES = \
-	gssapi_support.cc \
-	gssapi_support.h \
 	Parameters.h \
 	Ping.cc \
 	Ping.h \
+	Transport.cc \
+	Transport.h \
+	gssapi_support.cc \
+	gssapi_support.h \
 	squidclient.cc \
 	test_tools.cc \
-	time.cc \
-	Transport.cc \
-	Transport.h
+	time.cc
 
 nodist_squidclient_SOURCES = \
 	tests/stub_debug.cc \

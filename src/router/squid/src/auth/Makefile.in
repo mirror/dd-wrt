@@ -171,9 +171,10 @@ am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 am__DEPENDENCIES_1 =
-am_libauth_la_OBJECTS = Type.lo Config.lo CredentialsCache.lo \
-	CredentialState.lo Gadgets.lo Scheme.lo SchemeConfig.lo \
-	SchemesConfig.lo State.lo toUtf.lo User.lo UserRequest.lo
+am_libauth_la_OBJECTS = Config.lo CredentialState.lo \
+	CredentialsCache.lo Gadgets.lo Scheme.lo SchemeConfig.lo \
+	SchemesConfig.lo State.lo Type.lo User.lo UserRequest.lo \
+	toUtf.lo
 libauth_la_OBJECTS = $(am_libauth_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -782,15 +783,12 @@ SUBDIRS = $(AUTH_MODULES)
 DIST_SUBDIRS = basic digest negotiate ntlm
 noinst_LTLIBRARIES = libauth.la libacls.la
 libauth_la_SOURCES = \
-	Type.h \
-	Type.cc \
 	Config.cc \
 	Config.h \
-	CredentialsCache.h \
-	CredentialsCache.cc \
 	CredentialState.cc \
 	CredentialState.h \
-	forward.h \
+	CredentialsCache.cc \
+	CredentialsCache.h \
 	Gadgets.cc \
 	Gadgets.h \
 	QueueNode.h \
@@ -798,23 +796,25 @@ libauth_la_SOURCES = \
 	Scheme.h \
 	SchemeConfig.cc \
 	SchemeConfig.h \
-	SchemesConfig.h \
 	SchemesConfig.cc \
-	State.h \
+	SchemesConfig.h \
 	State.cc \
-	toUtf.h \
-	toUtf.cc \
-	User.h \
+	State.h \
+	Type.cc \
+	Type.h \
 	User.cc \
+	User.h \
+	UserRequest.cc \
 	UserRequest.h \
-	UserRequest.cc
+	forward.h \
+	toUtf.cc \
+	toUtf.h
 
 libauth_la_LIBADD = $(AUTH_LIBS_TO_BUILD)
 libauth_la_DEPENDENCIES = $(AUTH_LIBS_TO_BUILD)
 libacls_la_SOURCES = \
 	Acl.cc \
 	Acl.h \
-	\
 	AclMaxUserIp.cc \
 	AclMaxUserIp.h \
 	AclProxyAuth.cc \

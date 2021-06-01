@@ -261,6 +261,12 @@ urnHandleReply(void *data, StoreIOBuffer result)
         return;
     }
 
+    if (!e->isAccepting()) {
+        debugs(52, 3, "terminating due to bad " << *e);
+        delete urnState;
+        return;
+    }
+
     /* Update reqofs to point to where in the buffer we'd be */
     urnState->reqofs += result.length;
 
@@ -429,6 +435,7 @@ urnParseReply(const char *inbuf, const HttpRequestMethod& m)
     }
 
     debugs(52, 3, "urnParseReply: Found " << i << " URLs");
+    xfree(buf);
     return list;
 }
 
