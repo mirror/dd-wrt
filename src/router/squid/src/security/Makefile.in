@@ -165,8 +165,9 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libsecurity_la_LIBADD =
 am_libsecurity_la_OBJECTS = BlindPeerConnector.lo EncryptorAnswer.lo \
-	Handshake.lo KeyData.lo NegotiationHistory.lo PeerConnector.lo \
-	PeerOptions.lo ServerOptions.lo Session.lo
+	ErrorDetail.lo Handshake.lo Io.lo KeyData.lo \
+	NegotiationHistory.lo PeerConnector.lo PeerOptions.lo \
+	ServerOptions.lo Session.lo
 libsecurity_la_OBJECTS = $(am_libsecurity_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -188,7 +189,8 @@ DEFAULT_INCLUDES =
 depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/BlindPeerConnector.Plo \
-	./$(DEPDIR)/EncryptorAnswer.Plo ./$(DEPDIR)/Handshake.Plo \
+	./$(DEPDIR)/EncryptorAnswer.Plo ./$(DEPDIR)/ErrorDetail.Plo \
+	./$(DEPDIR)/Handshake.Plo ./$(DEPDIR)/Io.Plo \
 	./$(DEPDIR)/KeyData.Plo ./$(DEPDIR)/NegotiationHistory.Plo \
 	./$(DEPDIR)/PeerConnector.Plo ./$(DEPDIR)/PeerOptions.Plo \
 	./$(DEPDIR)/ServerOptions.Plo ./$(DEPDIR)/Session.Plo
@@ -782,9 +784,12 @@ libsecurity_la_SOURCES = \
 	Context.h \
 	EncryptorAnswer.cc \
 	EncryptorAnswer.h \
+	ErrorDetail.cc \
+	ErrorDetail.h \
 	Handshake.cc \
 	Handshake.h \
-	forward.h \
+	Io.cc \
+	Io.h \
 	KeyData.cc \
 	KeyData.h \
 	LockingPointer.h \
@@ -797,7 +802,8 @@ libsecurity_la_SOURCES = \
 	ServerOptions.cc \
 	ServerOptions.h \
 	Session.cc \
-	Session.h
+	Session.h \
+	forward.h
 
 all: all-recursive
 
@@ -865,7 +871,9 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlindPeerConnector.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EncryptorAnswer.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ErrorDetail.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Handshake.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Io.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KeyData.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NegotiationHistory.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PeerConnector.Plo@am__quote@ # am--include-marker
@@ -1278,7 +1286,9 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/BlindPeerConnector.Plo
 	-rm -f ./$(DEPDIR)/EncryptorAnswer.Plo
+	-rm -f ./$(DEPDIR)/ErrorDetail.Plo
 	-rm -f ./$(DEPDIR)/Handshake.Plo
+	-rm -f ./$(DEPDIR)/Io.Plo
 	-rm -f ./$(DEPDIR)/KeyData.Plo
 	-rm -f ./$(DEPDIR)/NegotiationHistory.Plo
 	-rm -f ./$(DEPDIR)/PeerConnector.Plo
@@ -1332,7 +1342,9 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 		-rm -f ./$(DEPDIR)/BlindPeerConnector.Plo
 	-rm -f ./$(DEPDIR)/EncryptorAnswer.Plo
+	-rm -f ./$(DEPDIR)/ErrorDetail.Plo
 	-rm -f ./$(DEPDIR)/Handshake.Plo
+	-rm -f ./$(DEPDIR)/Io.Plo
 	-rm -f ./$(DEPDIR)/KeyData.Plo
 	-rm -f ./$(DEPDIR)/NegotiationHistory.Plo
 	-rm -f ./$(DEPDIR)/PeerConnector.Plo

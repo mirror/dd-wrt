@@ -744,7 +744,6 @@ libcomm_la_SOURCES = \
 	Connection.cc \
 	Connection.h \
 	Flag.h \
-	forward.h \
 	IoCallback.cc \
 	IoCallback.h \
 	Loops.h \
@@ -761,8 +760,8 @@ libcomm_la_SOURCES = \
 	UdpOpenDialer.h \
 	Write.cc \
 	Write.h \
-	\
-	comm_internal.h
+	comm_internal.h \
+	forward.h
 
 all: all-am
 

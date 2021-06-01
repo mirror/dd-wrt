@@ -164,9 +164,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libicap_la_LIBADD =
-am_libicap_la_OBJECTS = Client.lo Config.lo Elements.lo Options.lo \
-	ServiceRep.lo Launcher.lo OptXact.lo Xaction.lo ModXact.lo \
-	icap_log.lo History.lo
+am_libicap_la_OBJECTS = Client.lo Config.lo Elements.lo History.lo \
+	Launcher.lo ModXact.lo OptXact.lo Options.lo ServiceRep.lo \
+	Xaction.lo icap_log.lo
 libicap_la_OBJECTS = $(am_libicap_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -737,27 +737,27 @@ noinst_LTLIBRARIES = libicap.la
 libicap_la_SOURCES = \
 	Client.cc \
 	Client.h \
-	InOut.h \
 	Config.cc \
 	Config.h \
 	Elements.cc \
 	Elements.h \
+	History.cc \
+	History.h \
+	InOut.h \
+	Launcher.cc \
+	Launcher.h \
+	ModXact.cc \
+	ModXact.h \
+	OptXact.cc \
+	OptXact.h \
 	Options.cc \
 	Options.h \
 	ServiceRep.cc \
 	ServiceRep.h \
-	Launcher.cc \
-	Launcher.h \
-	OptXact.cc \
-	OptXact.h \
 	Xaction.cc \
 	Xaction.h \
-	ModXact.cc \
-	ModXact.h \
 	icap_log.cc \
-	icap_log.h \
-	History.cc \
-	History.h
+	icap_log.h
 
 all: all-am
 

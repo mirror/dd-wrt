@@ -108,7 +108,7 @@ HttpHdrSc::parse(const String * str)
         type = scLookupTable.lookup(SBuf(item,ilen));
 
         if (type == SC_ENUM_END) {
-            debugs(90, 2, "hdr sc: unknown control-directive: near '" << item << "' in '" << str << "'");
+            debugs(90, 2, "unknown control-directive near '" << item << "' in '" << *str << "'");
             type = SC_OTHER;
         }
 
@@ -132,7 +132,7 @@ HttpHdrSc::parse(const String * str)
 
         if (sct->isSet(type)) {
             if (type != SC_OTHER)
-                debugs(90, 2, "hdr sc: ignoring duplicate control-directive: near '" << item << "' in '" << str << "'");
+                debugs(90, 2, "ignoring duplicate control-directive near '" << item << "' in '" << *str << "'");
 
             ++ scHeaderStats[type].repCount;
 
@@ -336,6 +336,16 @@ HttpHdrSc::getMergedTarget(const char *ourtarget)
     HttpHdrScTarget *sctus = findTarget(ourtarget);
     HttpHdrScTarget *sctgeneric = findTarget(NULL);
 
+    /* W3C Edge Architecture Specification 1.0 section 3
+     *
+     * "If more than one is targeted at a surrogate, the most specific applies.
+     *  For example,
+     *    Surrogate-Control: max-age=60, no-store;abc
+     *  The surrogate that identified itself as 'abc' would apply no-store;
+     *  others would apply max-age=60.
+     *
+     * XXX: the if statements below will *merge* the no-store and max-age settings.
+     */
     if (sctgeneric || sctus) {
         HttpHdrScTarget *sctusable = new HttpHdrScTarget(NULL);
 

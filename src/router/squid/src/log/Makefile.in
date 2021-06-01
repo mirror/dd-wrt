@@ -164,11 +164,11 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 liblog_la_LIBADD =
-am_liblog_la_OBJECTS = access_log.lo Config.lo File.lo \
+am_liblog_la_OBJECTS = Config.lo CustomLog.lo File.lo \
 	FormatHttpdCombined.lo FormatHttpdCommon.lo \
 	FormatSquidCustom.lo FormatSquidIcap.lo FormatSquidNative.lo \
 	FormatSquidReferer.lo FormatSquidUseragent.lo ModDaemon.lo \
-	ModStdio.lo ModSyslog.lo ModUdp.lo CustomLog.lo TcpLogger.lo
+	ModStdio.lo ModSyslog.lo ModUdp.lo TcpLogger.lo access_log.lo
 liblog_la_OBJECTS = $(am_liblog_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -785,21 +785,20 @@ SUBDIRS = $(LOG_DAEMON_HELPERS)
 EXTRA_DIST = helpers.m4
 noinst_LTLIBRARIES = liblog.la
 liblog_la_SOURCES = \
-	access_log.h \
-	access_log.cc \
 	Config.cc \
 	Config.h \
+	CustomLog.cc \
+	CustomLog.h \
 	File.cc \
 	File.h \
 	FormatHttpdCombined.cc \
 	FormatHttpdCommon.cc \
-	Formats.h \
 	FormatSquidCustom.cc \
 	FormatSquidIcap.cc \
 	FormatSquidNative.cc \
 	FormatSquidReferer.cc \
 	FormatSquidUseragent.cc \
-	forward.h \
+	Formats.h \
 	ModDaemon.cc \
 	ModDaemon.h \
 	ModStdio.cc \
@@ -808,10 +807,11 @@ liblog_la_SOURCES = \
 	ModSyslog.h \
 	ModUdp.cc \
 	ModUdp.h \
-	CustomLog.h \
-	CustomLog.cc \
 	TcpLogger.cc \
-	TcpLogger.h
+	TcpLogger.h \
+	access_log.cc \
+	access_log.h \
+	forward.h
 
 all: all-recursive
 

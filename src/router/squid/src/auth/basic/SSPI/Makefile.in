@@ -744,7 +744,8 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 basic_sspi_auth_SOURCES = \
 	basic_sspi_auth.cc \
-	valid.cc valid.h
+	valid.cc \
+	valid.h
 
 basic_sspi_auth_CXXFLAGS = -Wl,--enable-auto-import
 basic_sspi_auth_LDADD = \

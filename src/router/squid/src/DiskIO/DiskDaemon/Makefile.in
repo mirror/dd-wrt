@@ -168,8 +168,8 @@ am__installdirs = "$(DESTDIR)$(libexecdir)"
 PROGRAMS = $(libexec_PROGRAMS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libDiskDaemon_la_LIBADD =
-am_libDiskDaemon_la_OBJECTS = DiskdAction.lo DiskdFile.lo \
-	DiskdIOStrategy.lo DiskDaemonDiskIOModule.lo
+am_libDiskDaemon_la_OBJECTS = DiskDaemonDiskIOModule.lo DiskdAction.lo \
+	DiskdFile.lo DiskdIOStrategy.lo
 libDiskDaemon_la_OBJECTS = $(am_libDiskDaemon_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -748,15 +748,15 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libDiskDaemon.la
 libDiskDaemon_la_SOURCES = \
-	diomsg.h \
+	DiskDaemonDiskIOModule.cc \
+	DiskDaemonDiskIOModule.h \
 	DiskdAction.cc \
 	DiskdAction.h \
 	DiskdFile.cc \
 	DiskdFile.h \
 	DiskdIOStrategy.cc \
 	DiskdIOStrategy.h \
-	DiskDaemonDiskIOModule.cc \
-	DiskDaemonDiskIOModule.h
+	diomsg.h
 
 diskd_SOURCES = diskd.cc
 nodist_diskd_SOURCES = time.cc

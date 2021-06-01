@@ -162,9 +162,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libsnmplib_la_LIBADD =
-am_libsnmplib_la_OBJECTS = asn1.lo parse.lo snmp_vars.lo \
-	coexistance.lo snmp_api.lo snmp_error.lo mib.lo \
-	snmp_api_error.lo snmp_msg.lo snmp_pdu.lo snmplib_debug.lo
+am_libsnmplib_la_OBJECTS = asn1.lo coexistance.lo mib.lo parse.lo \
+	snmp_api.lo snmp_api_error.lo snmp_error.lo snmp_msg.lo \
+	snmp_pdu.lo snmp_vars.lo snmplib_debug.lo
 libsnmplib_la_OBJECTS = $(am_libsnmplib_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -479,11 +479,18 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include
 
 noinst_LTLIBRARIES = libsnmplib.la
-libsnmplib_la_SOURCES = asn1.c parse.c snmp_vars.c \
-	coexistance.c snmp_api.c snmp_error.c  \
-	mib.c snmp_api_error.c   \
+libsnmplib_la_SOURCES = \
+	asn1.c \
+	coexistance.c \
+	mib.c \
+	parse.c \
+	snmp_api.c \
+	snmp_api_error.c \
+	snmp_error.c \
 	snmp_msg.c \
-	snmp_pdu.c  snmplib_debug.c
+	snmp_pdu.c \
+	snmp_vars.c \
+	snmplib_debug.c
 
 all: all-am
 

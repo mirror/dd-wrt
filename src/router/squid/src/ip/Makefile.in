@@ -731,15 +731,15 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libip.la
 libip_la_SOURCES = \
-	forward.h \
-	Address.h \
 	Address.cc \
-	Intercept.h \
+	Address.h \
 	Intercept.cc \
-	NfMarkConfig.h \
+	Intercept.h \
 	NfMarkConfig.cc \
-	QosConfig.h \
+	NfMarkConfig.h \
 	QosConfig.cc \
+	QosConfig.h \
+	forward.h \
 	tools.cc \
 	tools.h
 

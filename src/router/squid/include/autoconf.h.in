@@ -118,6 +118,9 @@
 /* Define to 1 if you have the <byteswap.h> header file. */
 #undef HAVE_BYTESWAP_H
 
+/* Define to 1 if you have the `clock_gettime_nsec_np' function. */
+#undef HAVE_CLOCK_GETTIME_NSEC_NP
+
 /* Define to 1 if you have the `closedir' function. */
 #undef HAVE_CLOSEDIR
 
@@ -518,6 +521,9 @@
 
 /* "Define to 1 if the OPENSSL_LH_strhash() OpenSSL API function exists" */
 #undef HAVE_LIBCRYPTO_OPENSSL_LH_STRHASH
+
+/* "Define to 1 if the X509_chain_up_ref() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_X509_CHAIN_UP_REF
 
 /* "Define to 1 if the X509_CRL_up_ref() OpenSSL API function exists" */
 #undef HAVE_LIBCRYPTO_X509_CRL_UP_REF
@@ -981,6 +987,9 @@
 /* SSL_CTX_get0_certificate is available */
 #undef HAVE_SSL_CTX_GET0_CERTIFICATE
 
+/* "Define to 1 of the SSL_get0_param() OpenSSL API function exists" */
+#undef HAVE_SSL_GET0_PARAM
+
 /* Define if sockaddr_storage has field ss_len */
 #undef HAVE_SS_LEN_IN_SS
 
@@ -1249,6 +1258,10 @@
 
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #undef HAVE_WS2TCPIP_H
+
+/* "Define to 1 if the X509_VERIFY_PARAM_set_auth_level() OpenSSL API function
+   exists" */
+#undef HAVE_X509_VERIFY_PARAM_SET_AUTH_LEVEL
 
 /* Define to 1 if you have the `__htole16' function. */
 #undef HAVE___HTOLE16

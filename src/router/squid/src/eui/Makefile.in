@@ -730,12 +730,12 @@ COMPAT_LIB = $(top_builddir)/compat/libcompatsquid.la $(LIBPROFILER)
 subst_perlshell = sed -e 's,[@]PERL[@],$(PERL),g' <$(srcdir)/$@.pl.in >$@ || ($(RM) -f $@ ; exit 1)
 noinst_LTLIBRARIES = libeui.la
 libeui_la_SOURCES = \
-	Config.h \
 	Config.cc \
-	Eui48.h \
+	Config.h \
 	Eui48.cc \
-	Eui64.h \
-	Eui64.cc
+	Eui48.h \
+	Eui64.cc \
+	Eui64.h
 
 libeui_la_LIBADD = $(EUILIB)
 all: all-am
