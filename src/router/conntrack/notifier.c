@@ -157,23 +157,21 @@ int main(int argc, char *argv[])
 		char dst[64];
 		char sport[64];
 		char dport[64];
-		if (nf) {	//nf_conntrack has 2 fields more
-			fscanf(fp, "%*s %*s %s %*s %*s %s %s %s %s %s", proto, state, src, dst, sport, dport);
-		} else {
-			fscanf(fp, "%s %*s %*s %s %s %s %s %s", proto, state, src, dst, sport, dport);
-
-		}
+		//default tcp
+		fscanf(fp, "%*s %*s %s %*s %*s %s %s %s %s %s", proto, state, src, dst, sport, dport);
+		if (!strcmp(proto, "udp") || !strcmp(proto, "unknown"))	// parse udp
+			fscanf(fp, "%*s %*s %s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
+		if (!strcmp(proto, "gre"))	// parse gre
+			fscanf(fp, "%*s %*s %s %*s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
+		if (!strcmp(proto, "sctp"))	// parse sctp
+			fscanf(fp, "%*s %*s %s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
 		if (feof(fp))
 			break;
 		if (!strcmp(proto, "tcp") && strcmp(state, "ESTABLISHED"))
 			continue;
-		if (!strcmp(proto, "tcp")) {	//tcp has one field more
-			addEntry(&list, &src[4], &dport[6], 1);	//add connection per port
-			addEntry(&total, &src[4], "0", 1);	//add connection to total statistic
-		} else {
-			addEntry(&list, &state[4], &sport[6], 1);
-			addEntry(&total, &state[4], "0", 1);
-		}
+
+		addEntry(&list, &src[4], &dport[6], 1);	//add connection per port
+		addEntry(&total, &src[4], "0", 1);	//add connection to total statistic
 	}
 	fclose(fp);
 	struct linkedlist *entry = &total;
