@@ -340,14 +340,19 @@ static int ksmbd_vfs_stream_read(struct ksmbd_file *fp, char *buf, loff_t *pos,
 				       fp->stream.name,
 				       fp->stream.size,
 				       &stream_buf);
-	if ((int)v_len < 0) {
-		ksmbd_err("not found stream in xattr : %zd\n", v_len);
+	if ((int)v_len <= 0)
 		return (int)v_len;
+
+	if (v_len <= *pos) {
+		count = -EINVAL;
+		goto free_buf;
 	}
 
 	memcpy(buf, &stream_buf[*pos], count);
+
+free_buf:
 	ksmbd_free(stream_buf);
-	return v_len > count ? count : v_len;
+	return count;
 }
 
 /**
