@@ -6905,8 +6905,6 @@ void start_dtag(void)
 
 char *set_wan_state(int state)
 {
-//	if (getRouterBrand() == ROUTER_ASUS_AC87U)
-	return NULL;
 	if (nvram_match("vlans", "1"))
 		return NULL;
 	char *v1 = nvram_safe_get("vlan0ports");
@@ -6924,21 +6922,20 @@ char *set_wan_state(int state)
 
 	if (!state) {
 		char *p = strchr(vlan1, 't');
-		if (p)
-			*p = 0;
+		if (!p)
+			strcat(vlan1,"t");
 		p = strchr(vlan2, 't');
-		if (p)
-			*p = 0;
+		if (!p)
+			strcat(vlan2,"t");
 		sprintf(vlan1, "%s %s", vlan1, vlan2);
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
-		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan1);
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "rem", "vlan0");
-		eval("vconfig", "rem", "vlan1");
 		eval("vconfig", "rem", "vlan2");
-		return "eth0";
+		return "vlan1";
 	} else {
 
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
