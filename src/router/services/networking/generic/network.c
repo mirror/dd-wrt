@@ -1985,7 +1985,7 @@ void start_lan(void)
 
 #endif
 	char *wanstate = NULL;
-	if (getSTA() || getWET() || CANBRIDGE()) {
+	if (getSTA() || getWET() || CANBRIDGE() && !nvram_match("vlans", "1")) {
 		wanstate = set_wan_state(0);
 	} else {
 		set_wan_state(1);
