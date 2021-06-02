@@ -818,6 +818,7 @@ hpforward.page9="<dd>Click the <i>Enable</i> checkbox to enable port forwarding 
 
 // ** IP Forward - 1:1 NAT **//
 var pforwardip=new Object();
+pforwardip.titl="IP Forward";
 pforwardip.h2="IP Forward - 1:1 NAT";
 pforwardip.legend="Forwards";
 pforwardip.name="Name";
