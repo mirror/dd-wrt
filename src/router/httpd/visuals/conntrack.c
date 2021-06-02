@@ -123,14 +123,12 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	char state[32] = "";
 	char dum1[32];
 	int dum2;
-	int nf = 0;
 	char *lanip = nvram_safe_get("lan_ipaddr");
 	char buf[128];
 	lock();
 	fp = fopen("/proc/net/ip_conntrack", "rb");
 	if (fp == NULL) {
 		fp = fopen("/proc/net/nf_conntrack", "rb");
-		nf = 1;
 	}
 	if (fp == NULL) {
 		unlock();
@@ -156,10 +154,7 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td>%s</td>", protocol);
 
 		// Timeout
-		if (!nf)
-			sscanf(line, "%*s %*d %d", &timeout);
-		else
-			sscanf(line, "%*s %*d %*s %*d %d", &timeout);
+		sscanf(line, "%*s %*d %*s %*d %d", &timeout);
 
 		websWrite(wp, "<td align=\"right\">%d</td>", timeout);
 
