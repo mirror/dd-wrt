@@ -42,9 +42,9 @@ EJ_VISIBLE void ej_dumpip_conntrack(webs_t wp, int argc, char_t ** argv)
 	FILE *fp;
 	int c;
 	lock();
-	fp = fopen("/proc/net/ip_conntrack", "rb");
+	fp = fopen("/proc/net/nf_conntrack", "rb");
 	if (fp == NULL) {
-		fp = fopen("/proc/net/nf_conntrack", "rb");
+		fp = fopen("/proc/net/ip_conntrack", "rb");
 	}
 	if (fp == NULL) {
 		unlock();
@@ -126,9 +126,9 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	char *lanip = nvram_safe_get("lan_ipaddr");
 	char buf[128];
 	lock();
-	fp = fopen("/proc/net/ip_conntrack", "rb");
+	fp = fopen("/proc/net/nf_conntrack", "rb");
 	if (fp == NULL) {
-		fp = fopen("/proc/net/nf_conntrack", "rb");
+		fp = fopen("/proc/net/ip_conntrack", "rb");
 	}
 	if (fp == NULL) {
 		unlock();
