@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 			sscanf(line, "%*s %*s %s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
 		if (!strcmp(proto, "tcp") && strcmp(state, "ESTABLISHED"))
 			continue;
-
+		fprintf(stderr, "add %s %s\n", &src[4], &dport[6]);
 		addEntry(&list, &src[4], &dport[6], 1);	//add connection per port
 		addEntry(&total, &src[4], "0", 1);	//add connection to total statistic
 	}
