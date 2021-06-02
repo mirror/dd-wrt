@@ -145,11 +145,13 @@ int main(int argc, char *argv[])
 	total.value = 0;
 	total.next = NULL;
 	total.prev = NULL;
-	FILE *fp = fopen("/proc/net/ip_conntrack", "rb");
-	if (fp == NULL) {
-		fp = fopen("/proc/net/nf_conntrack", "rb");
+	FILE *fp = fopen("/proc/net/nf_conntrack", "rb");
+	if (fp)
 		nf = 1;
-	}
+	else	
+		fp = fopen("/proc/net/ip_conntrack", "rb");
+	if (!fp)
+	    return;
 	while (1) {
 		char proto[64];
 		char state[64];
@@ -165,15 +167,15 @@ int main(int argc, char *argv[])
 			break;
 		//default tcp
 		sscanf(line, "%*s %*s %s %*s %*s %s %s %s %s %s", proto, state, src, dst, sport, dport);
-		if (!strcmp(proto, "udp") || !strcmp(proto, "unknown"))	// parse udp
+		if (!strcmp(proto, "udp") || !strcmp(proto, "unknown")) {	// parse udp
 			sscanf(line, "%*s %*s %s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
+		}
 		if (!strcmp(proto, "gre"))	// parse gre
 			sscanf(line, "%*s %*s %s %*s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
 		if (!strcmp(proto, "sctp"))	// parse sctp
 			sscanf(line, "%*s %*s %s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
 		if (!strcmp(proto, "tcp") && strcmp(state, "ESTABLISHED"))
 			continue;
-		fprintf(stderr, "add %s %s\n", &src[4], &dport[6]);
 		addEntry(&list, &src[4], &dport[6], 1);	//add connection per port
 		addEntry(&total, &src[4], "0", 1);	//add connection to total statistic
 	}
