@@ -157,16 +157,20 @@ int main(int argc, char *argv[])
 		char dst[64];
 		char sport[64];
 		char dport[64];
-		//default tcp
-		fscanf(fp, "%*s %*s %s %*s %*s %s %s %s %s %s", proto, state, src, dst, sport, dport);
-		if (!strcmp(proto, "udp") || !strcmp(proto, "unknown"))	// parse udp
-			fscanf(fp, "%*s %*s %s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
-		if (!strcmp(proto, "gre"))	// parse gre
-			fscanf(fp, "%*s %*s %s %*s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
-		if (!strcmp(proto, "sctp"))	// parse sctp
-			fscanf(fp, "%*s %*s %s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
+		char linebuf[1024];
+		char *line = fgets(linebuf, 1024, fp); 
+		if (!line)
+		    break;
 		if (feof(fp))
 			break;
+		//default tcp
+		sscanf(line, "%*s %*s %s %*s %*s %s %s %s %s %s", proto, state, src, dst, sport, dport);
+		if (!strcmp(proto, "udp") || !strcmp(proto, "unknown"))	// parse udp
+			sscanf(line, "%*s %*s %s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
+		if (!strcmp(proto, "gre"))	// parse gre
+			sscanf(line, "%*s %*s %s %*s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
+		if (!strcmp(proto, "sctp"))	// parse sctp
+			sscanf(line, "%*s %*s %s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
 		if (!strcmp(proto, "tcp") && strcmp(state, "ESTABLISHED"))
 			continue;
 
