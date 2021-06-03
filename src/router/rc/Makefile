@@ -1051,6 +1051,9 @@ endif
 ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH
 endif
+ifeq ($(CONFIG_CONNTRACK),y)
+CFLAGS += -DHAVE_CONNTRACK
+endif
 ifeq ($(CONFIG_RT2880),y)
 CFLAGS += -DHAVE_RT2880
 endif
