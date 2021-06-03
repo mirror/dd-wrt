@@ -520,10 +520,6 @@ void start_sysinit(void)
 	mkdir("/dev/usb", 0700);
 #endif
 	cprintf("sysinit() setup console\n");
-#ifndef HAVE_MICRO
-	if (!nvram_matchi("disable_watchdog", 1))
-		eval("watchdog");	// system watchdog
-#endif
 	fprintf(stderr, "boardnum %s\n", nvram_safe_get("boardnum"));
 	fprintf(stderr, "boardtype %s\n", nvram_safe_get("boardtype"));
 	fprintf(stderr, "boardrev %s\n", nvram_safe_get("boardrev"));
@@ -2840,14 +2836,14 @@ void start_sysinit(void)
 #endif
 		if (brand == ROUTER_WRT600N)
 			insmod("wl");
-		
+
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
 //#ifdef HAVE_BCMMODERN
-//				modules = "bcm57xx";
-//				break;
+//                              modules = "bcm57xx";
+//                              break;
 //#endif
-			
+
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
@@ -2945,8 +2941,8 @@ void start_sysinit(void)
 			switch (brand) {
 			case ROUTER_WRT610N:
 //#ifdef HAVE_BCMMODERN
-//				modules = "bcm57xx";
-//				break;
+//                              modules = "bcm57xx";
+//                              break;
 //#endif
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
@@ -3066,7 +3062,7 @@ void start_sysinit(void)
 	char *v1 = nvram_safe_get("vlan0ports");
 	char *v2 = nvram_safe_get("vlan1ports");
 	int vlan2_supp = 0;
-	if (!*v1 || *nvram_safe_get("vlan2ports") || brand == ROUTER_WRT600N){
+	if (!*v1 || *nvram_safe_get("vlan2ports") || brand == ROUTER_WRT600N) {
 		v1 = v2;
 		vlan2_supp = 1;
 		v2 = nvram_safe_get("vlan2ports");
@@ -3111,8 +3107,8 @@ void start_sysinit(void)
 			if (wanport > atoi(var))
 				swap++;
 			last = atoi(var);
-			if (first == -1) 
-			    first = last;
+			if (first == -1)
+				first = last;
 			nvram_nset(var, "sw_lan%d", port++);
 		} else
 			strncpy(cpuport, var, 1);
@@ -3625,10 +3621,10 @@ char *set_wan_state(int state)
 	if (!state) {
 		char *p = strchr(vlan1, 't');
 		if (!p)
-			strcat(vlan1,"t");
+			strcat(vlan1, "t");
 		p = strchr(vlan2, 't');
 		if (!p)
-			strcat(vlan2,"t");
+			strcat(vlan2, "t");
 		sprintf(vlan1, "%s %s", vlan1, vlan2);
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");

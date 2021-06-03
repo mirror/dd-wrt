@@ -58,9 +58,6 @@ void start_sysinit(void)
 	eval("mknod", "/dev/crypto", "c", "10", "70");
 	eval("mount", "-o", "remount,rw", "/");
 
-	if (!nvram_matchi("disable_watchdog", 1))
-		eval("watchdog");	// system watchdog
-
 	cprintf("sysinit() setup console\n");
 
 	/*
