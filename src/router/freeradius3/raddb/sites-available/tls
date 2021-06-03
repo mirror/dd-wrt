@@ -52,6 +52,7 @@ listen {
 	#	auth	  = only Access-Request
 	#	acct	  = only Accounting-Request
 	#	auth+acct = both
+	#	coa	  = only CoA / Disconnect requests
 	#
 	type = auth+acct
 
@@ -62,6 +63,24 @@ listen {
 	virtual_server = default
 
 	clients = radsec
+
+	#
+	#  When this is set to "yes", new TLS connections
+	#  are processed through a section called
+	#
+	#	Autz-Type New-TLS-Connection {
+	#		  ...
+	#	}
+	#
+	#  The request contains TLS client certificate attributes,
+	#  and nothing else.  The debug output will print which
+	#  attributes are available on your system.
+	#
+	#  If the section returns "ok" or "updated", then the
+	#  connection is accepted.  Otherwise the connection is
+	#  terminated.
+	#
+#	check_client_connections = yes
 
 	#
 	#  Connection limiting for sockets with "proto = tcp".
@@ -203,6 +222,16 @@ listen {
 	#	check_crl = yes
 		ca_path = ${cadir}
 
+		# OpenSSL does not reload contents of ca_path dir over time.
+		# That means that if check_crl is enabled and CRLs are loaded
+		# from ca_path dir, at some point CRLs will expire and
+		# RADIUSd will stop authenticating NASes.
+		# If ca_path_reload_interval is non-zero, it will force OpenSSL
+		# to reload all data from ca_path periodically
+		#
+		# Flush ca_path each hour
+		ca_path_reload_interval = 3600
+
 	       #
 	       #  If check_cert_issuer is set, the value will
 	       #  be checked against the DN of the issuer in
@@ -246,6 +275,13 @@ listen {
 		# behavior. Having it set to yes is a current best practice
 		# for TLS
 		cipher_server_preference = no
+
+		#
+		#  Older TLS versions are deprecated.  But for RadSec,
+		#  we CAN allow TLS 1.3.
+		#
+		tls_min_version = "1.2"
+		tls_max_version = "1.3"
 
 		#
 		#  Session resumption / fast reauthentication
@@ -430,6 +466,9 @@ clients radsec {
 home_server tls {
 	ipaddr = 127.0.0.1
 	port = 2083
+
+	# type can be the same types as for the "listen" section/
+	# e.g. auth, acct, auth+acct, coa
 	type = auth
 	secret = radsec
 	proto = tcp

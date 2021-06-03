@@ -18,7 +18,7 @@
  * Copyright 2007 Apple Inc.
  */
 
-RCSID("$Id: 7f6b06299c99299fdda1cce65a2f92b1d89be417 $")
+RCSID("$Id: b3fd9fff437f3d39350c3c6986260d0df7ad4e7e $")
 USES_APPLE_DEPRECATED_API
 
 #include	<freeradius-devel/radiusd.h>
@@ -138,16 +138,14 @@ static rlm_rcode_t getUserNodeRef(REQUEST *request, char* inUserName, char **out
 				if (strcmp(pAttrEntry->fAttributeSignature.fBufferData, kDSNAttrMetaNodeLocation) == 0) {
 					status = dsGetAttributeValue(nodeRef, tDataBuff, 1, valueRef, &pValueEntry);
 					if (status == eDSNoErr && pValueEntry != NULL) {
-						pUserLocation = talloc_array(request, char, pValueEntry->fAttributeValueData.fBufferLength + 1);
+						pUserLocation = talloc_zero_array(request, char, pValueEntry->fAttributeValueData.fBufferLength + 1);
 						memcpy(pUserLocation, pValueEntry->fAttributeValueData.fBufferData, pValueEntry->fAttributeValueData.fBufferLength);
-						pUserLocation[pValueEntry->fAttributeValueData.fBufferLength] = '\0';
 					}
 				} else if (strcmp(pAttrEntry->fAttributeSignature.fBufferData, kDSNAttrRecordName) == 0) {
 					status = dsGetAttributeValue(nodeRef, tDataBuff, 1, valueRef, &pValueEntry);
 					if (status == eDSNoErr && pValueEntry != NULL) {
-						*outUserName = talloc_array(request, char, pValueEntry->fAttributeValueData.fBufferLength + 1);
+						*outUserName = talloc_zero_array(request, char, pValueEntry->fAttributeValueData.fBufferLength + 1);
 						memcpy(*outUserName, pValueEntry->fAttributeValueData.fBufferData, pValueEntry->fAttributeValueData.fBufferLength);
-						*outUserName[pValueEntry->fAttributeValueData.fBufferLength] = '\0';
 					}
 				}
 

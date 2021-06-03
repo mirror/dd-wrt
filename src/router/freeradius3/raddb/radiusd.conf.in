@@ -3,7 +3,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file - @RADIUSD_VERSION_STRING@
 ##
 ##	http://www.freeradius.org/
-##	$Id: e8aee3c00193127177cd65e31156c1d0f4b124d3 $
+##	$Id: 61cc3a481a1c79566b2c321a06226c71193f71b2 $
 ##
 
 ######################################################################
@@ -25,7 +25,7 @@
 #		The "sites-available" directory contains many
 #		worked examples of common configurations.
 #
-#	  raddb/certs/README
+#	  raddb/certs/README.md
 #		How to create certificates for EAP or RadSec.
 #
 #	Every configuration item in the server is documented
@@ -378,6 +378,25 @@ log {
 	#  The message when the user exceeds the Simultaneous-Use limit.
 	#
 	msg_denied = "You are already logged in - access denied"
+
+	#  Suppress "secret" attributes when printing them in debug mode.
+	#
+	#  Secrets are NOT tracked across xlat expansions.  If your
+	#  configuration puts secrets into other strings, they will
+	#  still get printed.
+	#
+	#  Setting this to "yes" means that the server prints
+	#
+	#	<<< secret >>>
+	#
+	#  instead of the value, for attriburtes which contain secret
+	#  information.  e.g. User-Name, Tunnel-Password, etc.
+	#
+	#  This configuration is disabled by default.  It is extremely
+	#  important for administrators to be able to debug user logins
+	#  by seeing what is actually being sent.
+	#
+#	suppress_secrets = no
 }
 
 #  The program to execute to do concurrency checks.

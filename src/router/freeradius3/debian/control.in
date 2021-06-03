@@ -8,7 +8,7 @@ Build-Depends: @BUILDDEPS@ debhelper (>= 9),
  libcap-dev,
  libgdbm-dev,
  libiodbc2-dev,
- libjson0 | libjson-c2 | libjson-c3,
+ libjson0 | libjson-c2 | libjson-c3 | libjson-c4 | libjson-c5,
  libjson0-dev | libjson-c-dev,
  libkrb5-dev | heimdal-dev,
  libldap2-dev,
@@ -32,7 +32,7 @@ Build-Depends: @BUILDDEPS@ debhelper (>= 9),
  samba-dev | samba4-dev
 Section: net
 Priority: optional
-Maintainer: Josip Rodin <joy-packages@debian.org>
+Maintainer: Network RADIUS SARL <info@networkradius.com>
 Uploaders: Stephen Gran <sgran@debian.org>, Mark Hymers <mhy@debian.org>
 Standards-Version: 3.9.8
 Homepage: http://www.freeradius.org/
@@ -75,7 +75,6 @@ Architecture: any
 Replaces: freeradius (<< 3)
 Conflicts: radiusd-livingston, yardradius
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${dist:Depends}, freeradius-common, freeradius-config, libfreeradius3 (= ${binary:Version})
-Recommends: libdbi-perl
 Description: FreeRADIUS client utilities
  This package contains various client programs and utilities from
  the FreeRADIUS Server project, including:
@@ -88,7 +87,15 @@ Description: FreeRADIUS client utilities
   - radwho
   - radzap
   - rlm_ippool_tool
+  - rlm_sqlippool_tool
   - smbencrypt
+
+Package: freeradius-perl-util
+Architecture: any
+Depends: libnet-ip-perl
+Recommends: libtemplate-perl, libdbi-perl, libyaml-libyaml-perl, libdbd-pg-perl, libdbd-mysql-perl, libdbd-sqlite3-perl, libdbd-sybase-perl
+Description: FreeRADIUS Perl utilities
+  This package contains utilities for managing IP pools in SQL databases
 
 Package: libfreeradius3
 Architecture: any
@@ -124,6 +131,7 @@ Description: kerberos module for FreeRADIUS server
 Package: freeradius-ldap
 Architecture: any
 Depends: freeradius (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}, ${dist:Depends}
+Recommends: libsasl2-modules-gssapi-mit | libsasl2-modules-gssapi-heimdal
 Description: LDAP module for FreeRADIUS server
  The FreeRADIUS server can use LDAP to authenticate users, and this module
  is necessary for that.

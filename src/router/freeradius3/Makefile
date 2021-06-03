@@ -1,14 +1,14 @@
 #
-# Makefile
+#  Makefile
 #
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-# Version:	$Id: 9815c94a5197f660f6aeafed53c9862fc5329efc $
+#  Version:	$Id: f4be9e184668122b838047a467d0ec942189081a $
 #
 
 #
-#	we didn't called ./configure? just define the version.
+#  If we didn't call ./configure just define the version.
 #
 RADIUSD_VERSION_STRING := $(shell cat VERSION)
 
@@ -45,15 +45,19 @@ endif
 
 MFLAGS += --no-print-directory
 
-# The version of GNU Make is too old, don't use it (.FEATURES variable was
-# wad added in 3.81)
+#
+#  The version of GNU Make is too old, don't use it (.FEATURES
+#  variable was added in 3.81)
+#
 ifndef .FEATURES
 $(error The build system requires GNU Make 3.81 or later.)
 endif
 
 export DESTDIR := $(R)
 
-# And over-ride all of the other magic.
+#
+#  And over-ride all of the other magic.
+#
 ifneq "$(MAKECMDGOALS)" "deb"
 ifneq "$(MAKECMDGOALS)" "rpm"
 ifeq "$(findstring docker,$(MAKECMDGOALS))" ""
@@ -65,7 +69,7 @@ endif
 endif
 
 #
-#  To work around OpenSSL issues with travis.
+#  To work around OpenSSL issues within CI.
 #
 .PHONY:
 raddb/test.conf:
@@ -77,12 +81,13 @@ raddb/test.conf:
 #
 #  Run "radiusd -C", looking for errors.
 #
-# Only redirect STDOUT, which should contain details of why the test failed.
-# Don't molest STDERR as this may be used to receive output from a debugger.
+#  Only redirect STDOUT, which should contain details of why the test failed.
+#  Don't molest STDERR as this may be used to receive output from a debugger.
+#
 $(BUILD_DIR)/tests/radiusd-c: raddb/test.conf ${BUILD_DIR}/bin/radiusd | build.raddb
 	@$(MAKE) -C raddb/certs
 	@printf "radiusd -C... "
-	@if ! FR_LIBRARY_PATH=./build/lib/local/.libs/ ./build/make/jlibtool --mode=execute ./build/bin/radiusd -XCMd ./raddb -D ./share -n test > $(BUILD_DIR)/tests/radiusd.config.log; then \
+	@if ! $(TESTBIN)/radiusd -XCMd ./raddb -D ./share -n test > $(BUILD_DIR)/tests/radiusd.config.log; then \
 		rm -f raddb/test.conf; \
 		cat $(BUILD_DIR)/tests/radiusd.config.log; \
 		echo "fail"; \
@@ -92,13 +97,15 @@ $(BUILD_DIR)/tests/radiusd-c: raddb/test.conf ${BUILD_DIR}/bin/radiusd | build.r
 	@echo "ok"
 	@touch $@
 
-test: ${BUILD_DIR}/bin/radiusd ${BUILD_DIR}/bin/radclient tests.unit tests.xlat tests.keywords tests.auth tests.modules $(BUILD_DIR)/tests/radiusd-c | build.raddb
+test: ${BUILD_DIR}/bin/radiusd ${BUILD_DIR}/bin/radclient tests.unit tests.xlat tests.keywords tests.auth $(BUILD_DIR)/tests/radiusd-c | build.raddb
 	@$(MAKE) -C src/tests tests
 
-#  Tests specifically for Travis.  We do a LOT more than just
-#  the above tests
-travis-test: raddb/test.conf test
-	@FR_LIBRARY_PATH=./build/lib/local/.libs/ ./build/make/jlibtool --mode=execute ./build/bin/radiusd -xxxv -n test
+#
+#  Tests specifically for CI. We do a LOT more than just
+#  the above tests
+#
+ci-test: raddb/test.conf test
+	@$(TESTBIN)/radiusd -xxxv -n test
 	@rm -f raddb/test.conf
 	@$(MAKE) install
 	@perl -p -i -e 's/allow_vulnerable_openssl = no/allow_vulnerable_openssl = yes/' ${raddbdir}/radiusd.conf
@@ -106,26 +113,30 @@ travis-test: raddb/test.conf test
 	@${sbindir}/radiusd -XC
 
 #
-# The $(R) is a magic variable not defined anywhere in this source.
-# It's purpose is to allow an admin to create an installation 'tar'
-# file *without* actually installing it.  e.g.:
+#  The $(R) is a magic variable not defined anywhere in this source.
+#  It's purpose is to allow an admin to create an installation 'tar'
+#  file *without* actually installing it.  e.g.:
 #
 #  $ R=/home/root/tmp make install
 #  $ cd /home/root/tmp
 #  $ tar -cf ~/freeradius-package.tar *
 #
-# The 'tar' file can then be un-tar'd on any similar machine.  It's a
-# cheap way of creating packages, without using a package manager.
-# Many of the platform-specific packaging tools use the $(R) variable
-# when creating their packages.
+#  The 'tar' file can then be un-tar'd on any similar machine.  It's a
+#  cheap way of creating packages, without using a package manager.
+#  Many of the platform-specific packaging tools use the $(R) variable
+#  when creating their packages.
 #
-# For compatibility with typical GNU packages (e.g. as seen in libltdl),
-# we make sure DESTDIR is defined.
+#  For compatibility with typical GNU packages (e.g. as seen in libltdl),
+#  we make sure DESTDIR is defined.
 #
 export DESTDIR := $(R)
 
 DICTIONARIES := $(wildcard share/dictionary*)
 install.share: $(addprefix $(R)$(dictdir)/,$(notdir $(DICTIONARIES)))
+
+.PHONY: dictionary.format
+dictionary.format: $(DICTIONARIES)
+	@./share/format.pl $(DICTIONARIES)
 
 $(R)$(dictdir)/%: share/%
 	@echo INSTALL $(notdir $<)
@@ -214,8 +225,8 @@ ifeq "$(AUTOCONF_EXISTS)" ""
 $(error You need to install autoconf to re-build the "configure" scripts)
 endif
 
-# Configure files depend on "in" files, and on the top-level macro files
-# If there are headers, run auto-header, too.
+#  Configure files depend on "in" files, and on the top-level macro files
+#  If there are headers, run auto-header, too.
 src/%configure: src/%configure.ac acinclude.m4 aclocal.m4 $(wildcard $(dir $@)m4/*m4) | src/freeradius-devel
 	@echo AUTOCONF $(dir $@)
 	cd $(dir $@) && $(AUTOCONF) -I $(top_builddir) -I $(top_builddir)/m4 -I $(top_builddir)/$(dir $@)m4
@@ -224,7 +235,7 @@ src/%configure: src/%configure.ac acinclude.m4 aclocal.m4 $(wildcard $(dir $@)m4
 		cd $(dir $@) && $(AUTOHEADER); \
 	 fi
 
-# "%configure" doesn't match "configure"
+#  "%configure" doesn't match "configure"
 configure: configure.ac $(wildcard ac*.m4) $(wildcard m4/*.m4)
 	@echo AUTOCONF $@
 	@$(AUTOCONF)
@@ -238,9 +249,10 @@ reconfig: $(CONFIGURE_FILES) src/include/autoconf.h.in
 config.status: configure
 	./config.status --recheck
 
-# target is "configure"
+#  target is "reconfig"
 endif
 
+#
 #  If we've already run configure, then add rules which cause the
 #  module-specific "all.mk" files to depend on the mk.in files, and on
 #  the configure script.
@@ -288,7 +300,9 @@ freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2: .git
 %.sig: %
 	gpg --default-key packages@freeradius.org -b $<
 
-# high-level targets
+#
+#  High-level targets
+#
 .PHONY: dist-check
 dist-check: redhat/freeradius.spec suse/freeradius.spec debian/changelog
 	@if [ `grep ^Version: redhat/freeradius.spec | sed 's/.*://;s/ //g'` != "$(RADIUSD_VERSION_STRING)" ]; then \
@@ -311,6 +325,10 @@ dist-check: redhat/freeradius.spec suse/freeradius.spec debian/changelog
 		echo debian/changelog needs to be updated; \
 		exit 1; \
 	fi
+	@if [ `grep version doc/antora/antora.yml | sed 's/^.*version: //'` != "'$(RADIUSD_VERSION_STRING)'" ]; then \
+		echo doc/antora/antora.yml needs to be updated with: version '$(RADIUSD_VERSION_STRING)'; \
+		exit 1; \
+	fi
 
 dist: dist-check freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2
 
@@ -327,7 +345,7 @@ dist-tag: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz freeradius-server-$
 	@echo "git tag release_`echo $(RADIUSD_VERSION_STRING) | tr .- __`"
 
 #
-#	Docker-related targets (main docker images and crossbuild)
+#  Docker-related targets (main Docker images and crossbuild)
 #
 ifneq "$(findstring docker,$(MAKECMDGOALS))" ""
 include scripts/docker/docker.mk
@@ -338,7 +356,7 @@ include scripts/crossbuild/crossbuild.mk
 endif
 
 #
-#	Build a debian package
+#  Build a Debian package
 #
 .PHONY: deb
 deb:
@@ -346,7 +364,7 @@ deb:
 	fakeroot dpkg-buildpackage -b -uc
 
 #
-#	Build a rpm package
+#  Build an RPM package
 #
 .PHONY: rpm
 rpmbuild/SOURCES/freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2: freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2
@@ -361,7 +379,9 @@ rpm: rpmbuild/SOURCES/freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2
 	fi
 	@QA_RPATHS=0x0003 rpmbuild --define "_topdir `pwd`/rpmbuild" -bb redhat/freeradius.spec
 
-# Developer checks
+#
+#  Developer checks
+#
 .PHONY: warnings
 warnings:
 	@(make clean all 2>&1) | egrep -v '^/|deprecated|^In file included|: In function|   from |^HEADER|^CC|^LN' > warnings.txt

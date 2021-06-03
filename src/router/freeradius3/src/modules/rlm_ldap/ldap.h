@@ -1,5 +1,5 @@
 /**
- * $Id: 7dc874d35ee089b75357478f2b812ad709bcb749 $
+ * $Id: c86b097f7428bbf4a9d2767c9be21202e355daa5 $
  * @file ldap.h
  * @brief LDAP authorization and authentication module headers.
  *
@@ -264,6 +264,9 @@ typedef struct ldap_instance {
 							//!< server presents.
 
 	int		tls_require_cert;		//!< OpenLDAP constant representing the require cert string.
+
+	char const	*tls_min_version_str;		//!< Minimum TLS version
+	int		tls_min_version;
 
 	/*
 	 *	Options

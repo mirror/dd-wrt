@@ -1,5 +1,5 @@
 /**
- * $Id: 5da940c2b7b8ee02564882af4d82c8630b4a8382 $
+ * $Id: 93aebcab04e07774ed3215f3b18a1b8ac565fcf1 $
  *
  * @brief Source control functions
  *
@@ -47,8 +47,12 @@ extern "C" {
  */
 #ifdef __GNUC__
 #  define CC_HINT(_x) __attribute__ ((_x))
+#  define likely(_x)	__builtin_expect((_x), 1)
+#  define unlikely(_x)	__builtin_expect((_x), 0)
 #else
 #  define CC_HINT(_x)
+#  define likely(_x)	_x
+#  define unlikely(_x)	_x
 #endif
 
 #ifdef HAVE_ATTRIBUTE_BOUNDED

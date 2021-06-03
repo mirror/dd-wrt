@@ -10,7 +10,7 @@
 .RE
 .sp
 ..
-.TH unlang 5 "06 December 2017" "" "FreeRADIUS Processing un-language"
+.TH unlang 5 "16 February 2021" "" "FreeRADIUS Processing un-language"
 .SH NAME
 unlang \- FreeRADIUS Processing un\-language
 .SH DESCRIPTION
@@ -195,7 +195,7 @@ The <list> can be one of "request", "reply", "proxy-request",
 of Version 3, the <list> can be omitted, in which case "request" is
 assumed.
 
-The "control" list is the list of attributes maintainted internally by
+The "control" list is the list of attributes maintained internally by
 the server that controls how the server processes the request.  Any
 attribute that does not go in a packet on the network will generally
 be placed in the "control" list.
@@ -397,7 +397,7 @@ Evaluates to true if 'foo' is a non-empty string (single quotes, double
 quotes, or back-quoted).  Also evaluates to true if 'foo' is a
 non-zero number.  Note that the language is poorly typed, so the
 string "0000" can be interpreted as a numerical zero.  This issue can
-be avoided by comparings strings to an empty string, rather than by
+be avoided by comparing strings to an empty string, rather than by
 evaluating the string by itself.
 
 If the word 'foo' is not a quoted string, then it can be taken as a
@@ -437,7 +437,7 @@ false.
 Compares 'foo' to 'bar', and evaluates to true if the comparison holds
 true.  Valid comparison operators are "==", "!=", "<", "<=", ">",
 ">=", "=~", and "!~", all with their usual meanings.  The operators
-":=" and "=" are assignment operators, and are not allowed for
+":=", "^=" and "=" are assignment operators, and are not allowed for
 comparisons.
 
 The operators "<", "<=", ">", and ">=" are also allowed for checking
@@ -562,7 +562,7 @@ as seen in the examples below.
 .IP """strings"""
 .RS
 Double-quoted strings are expanded by inserting the value of any
-attributes (see VARIABLES, below) before being evaluated.  If
+attributes (see ATTRIBUTE REFERENCES, below) before being evaluated.  If
 the result is a number it is evaluated in a numerical context.
 
 String length is limited by line-length, usually about 8000
@@ -606,7 +606,7 @@ start and end of the subject string.
 
 If the comparison operator is "=~", then parentheses in the regular
 expression will define variables containing the matching text, as
-described below in the VARIABLES section.
+described below in the ATTRIBUTE REFERENCES section.
 .SH EXPANSIONS
 Attributes are expanded using the ATTRIBUTE REFERENCE syntax
 described above, and surrounding the reference with "%{...}"
@@ -714,8 +714,8 @@ the expansion of "%{reply:Reply-Message[*]} will yield "Hello\\nbob"
 .SH ATTRIBUTE ASSIGNMENTS
 The attribute lists described above may be edited by listing one or
 more attributes in an "update" section.  Once the attributes have been
-defined, they may be referenced as described above in the VARIABLES
-section.
+defined, they may be referenced as described above in the ATTRIBUTE
+REFERENCES section.
 
 The following syntax defines attributes in an "update" section.  Each
 attribute and value has to be all on one line in the configuration
@@ -748,6 +748,11 @@ Add the attribute to the tail of the list, even if attributes of the
 same name are already present in the list. When the right hand side
 of the expression resolves to multiple values, it means add all values
 to the tail of the list.
+.IP ^=
+Add the attribute to the head of the list, even if attributes of the
+same name are already present in the list.  When the right hand side
+of the expression resolves to multiple values, it means prepend all
+values to the head of the list.
 .RE
 .PP
 Enforcement and Filtering Operators
@@ -854,7 +859,7 @@ failover tracking that nothing was done in the current section.
 .IP ok
 Instructs the server that the request was processed properly.  This
 keyword can be used to over-ride earlier failures, if the local
-administrator determines that the faiures are not catastrophic.
+administrator determines that the failures are not catastrophic.
 .IP reject
 Causes the request to be immediately rejected
 .SH MODULE RETURN CODES

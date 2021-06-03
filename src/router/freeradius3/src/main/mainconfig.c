@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: e9dd412dee59dd0d60d25bb0a46a0508cd4fc991 $
+ * Version:	$Id: db110ed6f54e9231e5dfd25d90a612d5af92c171 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: e9dd412dee59dd0d60d25bb0a46a0508cd4fc991 $")
+RCSID("$Id: db110ed6f54e9231e5dfd25d90a612d5af92c171 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -148,6 +148,7 @@ static const CONF_PARSER log_config[] = {
 	{ "colourise",FR_CONF_POINTER(PW_TYPE_BOOLEAN, &do_colourise), NULL },
 	{ "use_utc", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &log_dates_utc), NULL },
 	{ "msg_denied", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.denied_msg), "You are already logged in - access denied" },
+	{ "suppress_secrets", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.suppress_secrets), NULL },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -941,6 +942,9 @@ do {\
 		for (ci = cf_item_find_next(subcs, NULL);
 		     ci != NULL;
 		     ci = cf_item_find_next(subcs, ci)) {
+
+			if (cf_item_is_data(ci)) continue;
+
 			if (!cf_item_is_pair(ci)) {
 				cf_log_err(ci, "Unexpected item in ENV section");
 				goto failure;

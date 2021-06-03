@@ -1,7 +1,7 @@
 /*
  * radeapclient.c	EAP specific radius packet debug tool.
  *
- * Version:	$Id: 553a6a6a57e074088b66506640af3e0efc17e36c $
+ * Version:	$Id: cd504a8363f8ff6cbab9763667e0e31246cf976b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 553a6a6a57e074088b66506640af3e0efc17e36c $")
+RCSID("$Id: cd504a8363f8ff6cbab9763667e0e31246cf976b $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -181,6 +181,14 @@ static int rc_unmap_eapsim_types(RADIUS_PACKET *r);
 static void rc_get_port(PW_CODE type, uint16_t *port);
 static void rc_evprep_packet_timeout(rc_transaction_t *trans);
 static void rc_deallocate_id(rc_transaction_t *trans);
+
+/*
+ *	For cbtls_cache_*()
+ */
+rlm_rcode_t process_post_auth(UNUSED int postauth_type, UNUSED REQUEST *request)
+{
+	return RLM_MODULE_FAIL;
+}
 
 
 static void NEVER_RETURNS usage(void)
@@ -1964,7 +1972,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("$Id: 553a6a6a57e074088b66506640af3e0efc17e36c $"
+			printf("$Id: cd504a8363f8ff6cbab9763667e0e31246cf976b $"
 #ifndef ENABLE_REPRODUCIBLE_BUILDS
 			", built on " __DATE__ " at " __TIME__
 #endif

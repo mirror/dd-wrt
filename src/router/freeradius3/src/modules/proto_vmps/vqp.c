@@ -1,7 +1,7 @@
 /*
  * vqp.c	Functions to send/receive VQP packets.
  *
- * Version:	$Id: 2f0521e624b1ff8681459e6817f94e677ad207b3 $
+ * Version:	$Id: 8ab822d01ec44ba2cde9b14fdfec7e587f899211 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2007 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 2f0521e624b1ff8681459e6817f94e677ad207b3 $")
+RCSID("$Id: 8ab822d01ec44ba2cde9b14fdfec7e587f899211 $")
 
 #include	<freeradius-devel/libradius.h>
 #include	<freeradius-devel/udpfromto.h>
@@ -460,9 +460,13 @@ int vqp_decode(RADIUS_PACKET *packet)
 	while (ptr < end) {
 		char *p;
 
+		if ((end - ptr) < 6) break;
+
 		attribute = (ptr[2] << 8) | ptr[3];
 		length = (ptr[4] << 8) | ptr[5];
 		ptr += 6;
+
+		if ((ptr + length) > end) break;
 
 		/*
 		 *	Hack to get the dictionaries to work correctly.
@@ -525,6 +529,7 @@ int vqp_decode(RADIUS_PACKET *packet)
 			}
 			break;
 		}
+
 		ptr += length;
 		debug_pair(vp);
 		fr_cursor_insert(&cursor, vp);

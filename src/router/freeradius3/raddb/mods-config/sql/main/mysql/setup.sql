@@ -6,13 +6,12 @@
 ##		 to something else.  Also update raddb/mods-available/sql
 ##		 with the new RADIUS password.
 ##
-##	$Id: f0453e179a6721c5675f6d72ad30a97e1ccb48fa $
+##	$Id: cd44117def3283fd94e0b956a52c67bebfde529a $
 
 #
 #  Create default administrator for RADIUS
 #
-CREATE USER 'radius'@'localhost';
-SET PASSWORD FOR 'radius'@'localhost' = PASSWORD('radpass');
+CREATE USER 'radius'@'localhost' IDENTIFIED BY 'radpass';
 
 # The server can read any table in SQL
 GRANT SELECT ON radius.* TO 'radius'@'localhost';

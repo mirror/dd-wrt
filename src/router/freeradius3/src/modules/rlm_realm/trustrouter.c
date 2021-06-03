@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: c708470f0e01013e6a5c591738327e18542d2a5a $
+ * $Id: 7fcf189402e3a4eecf741dcc2a163a9b4bd618aa $
  * @file trustrouter.c
  * @brief Integration with external trust router code
  *
@@ -320,7 +320,7 @@ static fr_tls_server_conf_t *construct_tls(TIDC_INSTANCE *inst,
 {
 	fr_tls_server_conf_t *tls;
 	unsigned char *key_buf = NULL;
-	ssize_t keylen;
+	ssize_t keylen = 0;
 	char *hexbuf = NULL;
 	DH *aaa_server_dh;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L

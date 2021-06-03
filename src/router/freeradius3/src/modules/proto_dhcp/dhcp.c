@@ -1,7 +1,7 @@
 /*
  * dhcp.c	Functions to send/receive dhcp packets.
  *
- * Version:	$Id: 4431af3b27590e4536a28e221399dbd849c58cb9 $
+ * Version:	$Id: f922d635fda00723707213157bb582cdf89cd012 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  * Copyright 2008 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 4431af3b27590e4536a28e221399dbd849c58cb9 $")
+RCSID("$Id: f922d635fda00723707213157bb582cdf89cd012 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/udpfromto.h>
@@ -349,31 +349,19 @@ RADIUS_PACKET *fr_dhcp_recv(int sockfd)
 	packet->code = code[2] | PW_DHCP_OFFSET;
 
 	/*
-	 *	Create a unique vector from the MAC address and the
-	 *	DHCP opcode.  This is a hack for the RADIUS
+	 *	Create a unique vector from the xid and the client
+	 *	hardware address.  This is a hack for the RADIUS
 	 *	infrastructure in the rest of the server.
-	 *
-	 *	Note: packet->data[2] == 6, which is smaller than
-	 *	sizeof(packet->vector)
-	 *
-	 *	FIXME:  Look for client-identifier in packet,
-	 *      and use that, too?
+	 *	It is also used for de-duplicating DHCP packets
 	 */
-	memset(packet->vector, 0, sizeof(packet->vector));
-	memcpy(packet->vector, packet->data + 28, packet->data[2]);
-	packet->vector[packet->data[2]] = packet->code & 0xff;
+	memcpy(packet->vector, packet->data + 4, 4); /* xid */
+	memcpy(packet->vector + 4, packet->data + 24, 4); /* giaddr */
+	packet->vector[8] = packet->code & 0xff;	/* message type */
+	memcpy(packet->vector + 9, packet->data + 28, 6); /* chaddr is always 6 for us */
 
 	/*
 	 *	FIXME: for DISCOVER / REQUEST: src_port == dst_port + 1
 	 *	FIXME: for OFFER / ACK       : src_port = dst_port - 1
-	 */
-
-	/*
-	 *	Unique keys are xid, client mac, and client ID?
-	 */
-
-	/*
-	 *	FIXME: More checks, like DHCP packet type?
 	 */
 
 	sizeof_dst = sizeof(dst);
@@ -979,7 +967,7 @@ int fr_dhcp_decode(RADIUS_PACKET *packet)
 	uint32_t giaddr;
 	vp_cursor_t cursor;
 	VALUE_PAIR *head = NULL, *vp;
-	VALUE_PAIR *maxms, *mtu;
+	VALUE_PAIR *maxms, *mtu, *netaddr;
 
 	fr_cursor_init(&cursor, &head);
 	p = packet->data;
@@ -1004,7 +992,7 @@ int fr_dhcp_decode(RADIUS_PACKET *packet)
 	 */
 	for (i = 0; i < 14; i++) {
 
-		vp = fr_pair_make(packet, NULL, dhcp_header_names[i], NULL, T_OP_EQ);
+		vp = fr_pair_afrom_num(packet, 256 + i, DHCP_MAGIC_VENDOR);
 		if (!vp) {
 			char buffer[256];
 			strlcpy(buffer, fr_strerror(), sizeof(buffer));
@@ -1151,6 +1139,53 @@ int fr_dhcp_decode(RADIUS_PACKET *packet)
 	}
 
 	/*
+	 *	Determine the address to use in looking up which subnet the
+	 *	client belongs to based on packet data.  The sequence here
+	 *	is based on ISC DHCP behaviour and RFCs 3527 and 3011.  We
+	 *	store the found address in an internal attribute of 274 -
+	 *	DHCP-Network-Subnet.  This is stored as an IPv4 prefix
+	 *	with a /32 netmask allowing "closest containing subnet"
+	 *	matching in rlm_files
+	 */
+	vp = fr_pair_afrom_num(packet, 274, DHCP_MAGIC_VENDOR);
+	/*
+	 *	First look for Relay-Link-Selection - option 82, suboption 5
+	 */
+	netaddr = fr_pair_find_by_num(head, (82 | (5 << 8)), DHCP_MAGIC_VENDOR, TAG_ANY);
+	if (!netaddr) {
+		/*
+		 *	Next try Subnet-Selection-Option - option 118
+		 */
+		netaddr = fr_pair_find_by_num(head, 118, DHCP_MAGIC_VENDOR, TAG_ANY);
+	}
+	if (!netaddr) {
+		if (giaddr != htonl(INADDR_ANY)) {
+			/*
+			 *	Gateway address is set - use that one
+			 */
+			memcpy(&vp->vp_ipv4prefix[2], packet->data + 24, 4);
+		} else {
+			/*
+			 *	else, store client address whatever it is
+			 */
+			memcpy(&vp->vp_ipv4prefix[2], packet->data + 12, 4);
+		}
+	} else {
+		/*
+		 *	Store whichever address we've found from options
+		 */
+		memcpy(&vp->vp_ipv4prefix[2], &netaddr->vp_ipaddr, 4);
+	}
+	/*
+	 *	Set the netmask to /32
+	 */
+	vp->vp_ipv4prefix[0] = 0;
+	vp->vp_ipv4prefix[1] = 32;
+
+	debug_pair(vp);
+	fr_cursor_insert(&cursor, vp);
+
+	/*
 	 *	FIXME: Nuke attributes that aren't used in the normal
 	 *	header for discover/requests.
 	 */
@@ -1191,6 +1226,12 @@ int8_t fr_dhcp_attr_cmp(void const *a, void const *b)
 
 	VERIFY_VP(my_a);
 	VERIFY_VP(my_b);
+
+	/*
+	 *	ADSL Forum vendor-specific options after others to remain grouped
+	 */
+	if ((my_a->da->vendor == VENDORPEC_ADSL) && (my_b->da->vendor != VENDORPEC_ADSL)) return +1;
+	if ((my_a->da->vendor != VENDORPEC_ADSL) && (my_b->da->vendor == VENDORPEC_ADSL)) return -1;
 
 	/*
 	 *	DHCP-Message-Type is first, for simplicity.
@@ -1417,7 +1458,7 @@ static ssize_t fr_dhcp_encode_adsl(uint8_t *out, size_t outlen, vp_cursor_t *cur
 	 */
 	if (out[1] == 5) return 0;
 
-	return out[1];
+	return out[1] + 2;
 }
 
 /** Encode a DHCP option and any sub-options.
@@ -2184,19 +2225,15 @@ RADIUS_PACKET *fr_dhcp_recv_raw_packet(int sockfd, struct sockaddr_ll *p_ll, RAD
 	packet->code = code[2] | PW_DHCP_OFFSET;
 
 	/*
-	 *	Create a unique vector from the MAC address and the
-	 *	DHCP opcode.  This is a hack for the RADIUS
+	 *	Create a unique vector from the xid and the client
+	 *	hardware address.  This is a hack for the RADIUS
 	 *	infrastructure in the rest of the server.
-	 *
-	 *	Note: packet->data[2] == 6, which is smaller than
-	 *	sizeof(packet->vector)
-	 *
-	 *	FIXME:  Look for client-identifier in packet,
-	 *      and use that, too?
+	 *	It is also used for de-duplicating DHCP packets
 	 */
-	memset(packet->vector, 0, sizeof(packet->vector));
-	memcpy(packet->vector, packet->data + 28, packet->data[2]);
-	packet->vector[packet->data[2]] = packet->code & 0xff;
+	memcpy(packet->vector, packet->data + 4, 4); /* xid */
+	memcpy(packet->vector + 4, packet->data + 24, 4); /* giaddr */
+	packet->vector[8] = packet->code & 0xff;	/* message type */
+	memcpy(packet->vector + 9, packet->data + 28, 6); /* chaddr is always 6 for us */
 
 	packet->src_port = udp_src_port;
 	packet->dst_port = udp_dst_port;

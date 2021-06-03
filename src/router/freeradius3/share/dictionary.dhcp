@@ -12,7 +12,7 @@
 #
 #	http://www.bind9.net/rfc-dhcp
 #
-#	$Id: 533548d43735e289dd9b274089f23b17c81af366 $
+#	$Id: 665d4f4c22246865941d23b778bbab10b0f6c3a4 $
 #
 ##############################################################################
 
@@ -59,6 +59,19 @@ ATTRIBUTE	DHCP-Relay-Max-Hop-Count		271	integer
 # This is copied from the request packet, giaddr, and
 # added to the reply packet by the server core.
 ATTRIBUTE	DHCP-Relay-IP-Address			272	ipaddr
+
+# This address is assigned on a hierarchical basis to then determine
+# the subnet which the client belongs to.  Stored as an ipv4prefix
+# to allow closest subnet matching in rlm_files
+ATTRIBUTE	DHCP-Network-Subnet			274	ipv4prefix
+
+# This is a name for the group a client belongs to then used for
+# looking up of options
+ATTRIBUTE	DHCP-Group-Name				275	string
+
+# These are for controlling option lookups
+ATTRIBUTE	DHCP-SQL-Option-Identifier		276	string
+ATTRIBUTE	DHCP-SQL-Option-Context			277	string
 
 VALUE	DHCP-Flags			Broadcast		0x8000
 
@@ -311,7 +324,7 @@ ATTRIBUTE	DHCP-Auto-Config			116	byte
 # Name Service Search
 ATTRIBUTE	DHCP-Name-Service-Search		117	octets
 # Subnet Selection Option
-ATTRIBUTE	DHCP-Subnet-Selection-Option		118	octets
+ATTRIBUTE	DHCP-Subnet-Selection-Option		118	ipaddr
 # DNS domain serach list
 ATTRIBUTE	DHCP-Domain-Search			119	octets
 # SIP-Servers DHCP Option

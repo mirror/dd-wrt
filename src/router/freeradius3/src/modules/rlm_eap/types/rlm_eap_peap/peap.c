@@ -1,7 +1,7 @@
 /*
  * peap.c contains the interfaces that are called from eap
  *
- * Version:     $Id: deaf702d61eb13d714737f322fd1637000f4c3b8 $
+ * Version:     $Id: 5647f613afd5ac8238a6e577c3814681d2ce5f1e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: deaf702d61eb13d714737f322fd1637000f4c3b8 $")
+RCSID("$Id: 5647f613afd5ac8238a6e577c3814681d2ce5f1e $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_peap.h"
@@ -442,6 +442,7 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *handler, tls_se
 	switch (reply->code) {
 	case PW_CODE_ACCESS_ACCEPT:
 		RDEBUG2("Tunneled authentication was successful");
+		tls_session->authentication_success = true;
 		t->status = PEAP_STATUS_SENT_TLV_SUCCESS;
 		eappeap_success(handler, tls_session);
 		rcode = RLM_MODULE_HANDLED;
@@ -790,6 +791,7 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 			/* send an identity request */
 			t->session_resumption_state = PEAP_RESUMPTION_NO;
 			t->status = PEAP_STATUS_INNER_IDENTITY_REQ_SENT;
+			tls_session->session_not_resumed = true;
 			eappeap_identity(handler, tls_session);
 		}
 		return RLM_MODULE_HANDLED;
@@ -903,15 +905,15 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 
 		return RLM_MODULE_REJECT;
 
-		case PEAP_STATUS_PHASE2_INIT:
-			RDEBUG("In state machine in phase2 init?");
+	case PEAP_STATUS_PHASE2_INIT:
+		RDEBUG("In state machine in phase2 init?");
 
-		case PEAP_STATUS_PHASE2:
-			break;
+	case PEAP_STATUS_PHASE2:
+		break;
 
-		default:
-			REDEBUG("Unhandled state in peap");
-			return RLM_MODULE_REJECT;
+	default:
+		REDEBUG("Unhandled state in peap");
+		return RLM_MODULE_REJECT;
 	}
 
 	fake = request_alloc_fake(request);
@@ -1040,6 +1042,10 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 
 		if (vp) {
 			eap_tunnel_data_t *tunnel;
+			bool proxy_as_eap = t->proxy_tunneled_request_as_eap;
+			VALUE_PAIR *flag = fr_pair_find_by_num(fake->config, PW_PROXY_TUNNELED_REQUEST_AS_EAP, 0, TAG_ANY);
+
+			if (flag) proxy_as_eap = flag->vp_integer;
 
 			/*
 			 *	The tunneled request was NOT handled,
@@ -1056,7 +1062,7 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 			 *	Once the tunneled EAP session is ALMOST
 			 *	done, THEN we proxy it...
 			 */
-			if (!t->proxy_tunneled_request_as_eap) {
+			if (!proxy_as_eap) {
 				fake->options |= RAD_REQUEST_OPTION_PROXY_EAP;
 
 				/*

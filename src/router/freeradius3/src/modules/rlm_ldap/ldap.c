@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: cf7a84e0693351ce61566b0502ee80c66b2e7bd3 $
+ * $Id: f25ee9e2e0c86cb27294522bdcd6fabe9e058f4c $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -1515,9 +1515,15 @@ void *mod_conn_create(TALLOC_CTX *ctx, void *instance)
 	maybe_ldap_option(LDAP_OPT_X_TLS_CERTFILE, "certificate_file", inst->tls_certificate_file);
 	maybe_ldap_option(LDAP_OPT_X_TLS_KEYFILE, "private_key_file", inst->tls_private_key_file);
 
-#  ifdef LDAP_OPT_X_TLS_NEVER
+#  ifdef LDAP_OPT_X_TLS_REQUIRE_CERT
 	if (inst->tls_require_cert_str) {
 		do_ldap_option(LDAP_OPT_X_TLS_REQUIRE_CERT, "require_cert", &inst->tls_require_cert);
+	}
+#  endif
+
+#  ifdef LDAP_OPT_X_TLS_PROTOCOL_MIN
+	if (inst->tls_min_version_str) {
+		do_ldap_option(LDAP_OPT_X_TLS_PROTOCOL_MIN, "tls_min_version", &inst->tls_min_version);
 	}
 #  endif
 

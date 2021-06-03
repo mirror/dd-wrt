@@ -1,7 +1,7 @@
 /*
  * threads.c	request threading support
  *
- * Version:	$Id: cd0b912938eb7b433cf369a24e88fb3a473f03ad $
+ * Version:	$Id: a9bd63bb57484df65fe716a31ec46568c596936c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: cd0b912938eb7b433cf369a24e88fb3a473f03ad $")
+RCSID("$Id: a9bd63bb57484df65fe716a31ec46568c596936c $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -758,7 +758,7 @@ static void *request_handler_thread(void *arg)
 			 *	waiting, but DON'T print out any more
 			 *	text.
 			 */
-			if (errno == EINTR) {
+			if ((errno == EINTR) || (errno == EAGAIN)) {
 				DEBUG2("Re-wait %d", self->thread_num);
 				goto re_wait;
 			}

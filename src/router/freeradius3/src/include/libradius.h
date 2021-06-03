@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id: ce2f713de184e08ba2e74624896772e55112ce23 $
+ * $Id: 2f15b7aaf1fae0a8636443aae1ac606fab50dc90 $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2014 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id: ce2f713de184e08ba2e74624896772e55112ce23 $")
+RCSIDH(libradius_h, "$Id: 2f15b7aaf1fae0a8636443aae1ac606fab50dc90 $")
 
 /*
  *  Compiler hinting macros.  Included here for 3rd party consumers
@@ -57,7 +57,13 @@ RCSIDH(libradius_h, "$Id: ce2f713de184e08ba2e74624896772e55112ce23 $")
  *  Talloc memory allocation is used in preference to malloc throughout
  *  the libraries and server.
  */
+#ifdef HAVE_WDOCUMENTATION
+DIAG_OFF(documentation)
+#endif
 #include <talloc.h>
+#ifdef HAVE_WDOCUMENTATION
+DIAG_ON(documentation)
+#endif
 
 /*
  *  Defines signatures for any missing functions.
@@ -188,6 +194,10 @@ typedef struct attr_flags {
 	unsigned int	virtual : 1;				//!< for dynamic expansion
 
 	unsigned int	compare : 1;				//!< has a paircompare registered
+
+	unsigned int	is_dup : 1;				//!< is a duplicate of another attribute
+
+	unsigned int	secret : 1;				//!< is a secret thingy
 
 	uint8_t		encrypt;      				//!< Ecryption method.
 	uint8_t		length;
@@ -443,7 +453,7 @@ size_t   	vp_prints_value(char *out, size_t outlen, VALUE_PAIR const *vp, char q
 
 char     	*vp_aprints_value(TALLOC_CTX *ctx, VALUE_PAIR const *vp, char quote);
 
-size_t    	vp_prints_value_json(char *out, size_t outlen, VALUE_PAIR const *vp);
+size_t    	vp_prints_value_json(char *out, size_t outlen, VALUE_PAIR const *vp, bool raw_value);
 size_t		vp_prints(char *out, size_t outlen, VALUE_PAIR const *vp);
 void		vp_print(FILE *, VALUE_PAIR const *);
 void		vp_printlist(FILE *, VALUE_PAIR const *);
@@ -472,6 +482,8 @@ int		dict_addvalue(char const *namestr, char const *attrstr, int value);
 int		dict_init(char const *dir, char const *fn);
 void		dict_free(void);
 int		dict_read(char const *dir, char const *filename);
+size_t		dict_print_oid(char *buffer, size_t buflen, DICT_ATTR const *da);
+int		dict_walk(fr_hash_table_walk_t callback, void *context);
 
 void 		dict_attr_free(DICT_ATTR const **da);
 int		dict_unknown_from_fields(DICT_ATTR *da, unsigned int attr, unsigned int vendor);
@@ -586,6 +598,7 @@ int		rad_vp2attr(RADIUS_PACKET const *packet,
 			    VALUE_PAIR const **pvp, uint8_t *ptr, size_t room);
 
 /* pair.c */
+VALUE_PAIR	*fr_pair_alloc(TALLOC_CTX *ctx);
 VALUE_PAIR	*fr_pair_afrom_da(TALLOC_CTX *ctx, DICT_ATTR const *da);
 VALUE_PAIR	*fr_pair_afrom_num(TALLOC_CTX *ctx, unsigned int attr, unsigned int vendor);
 int		fr_pair_to_unknown(VALUE_PAIR *vp);
@@ -611,6 +624,7 @@ VALUE_PAIR	*fr_cursor_remove(vp_cursor_t *cursor);
 VALUE_PAIR	*fr_cursor_replace(vp_cursor_t *cursor, VALUE_PAIR *new);
 void		fr_pair_delete_by_num(VALUE_PAIR **, unsigned int attr, unsigned int vendor, int8_t tag);
 void		fr_pair_add(VALUE_PAIR **, VALUE_PAIR *);
+void		fr_pair_prepend(VALUE_PAIR **, VALUE_PAIR *);
 void		fr_pair_replace(VALUE_PAIR **first, VALUE_PAIR *add);
 int		fr_pair_cmp(VALUE_PAIR *a, VALUE_PAIR *b);
 int		fr_pair_list_cmp(VALUE_PAIR *a, VALUE_PAIR *b);
@@ -632,7 +646,7 @@ void		fr_pair_value_strsteal(VALUE_PAIR *vp, char const *src);
 void		fr_pair_value_strcpy(VALUE_PAIR *vp, char const * src);
 void		fr_pair_value_bstrncpy(VALUE_PAIR *vp, void const * src, size_t len);
 void		fr_pair_value_sprintf(VALUE_PAIR *vp, char const * fmt, ...) CC_HINT(format (printf, 2, 3));
-void		fr_pair_list_move(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **from);
+void		fr_pair_list_move(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **from, FR_TOKEN op);
 void		fr_pair_list_move_by_num(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **from,
 					 unsigned int attr, unsigned int vendor, int8_t tag);
 void		fr_pair_list_mcopy_by_num(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **from,

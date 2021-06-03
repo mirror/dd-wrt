@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: a3c575bceb55f4ec787822ee4a9ae0d8570ad356 $
+ * Version:     $Id: 874a4b74200bffcccf2c5582ee6dba88960326ba $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: a3c575bceb55f4ec787822ee4a9ae0d8570ad356 $")
+RCSID("$Id: 874a4b74200bffcccf2c5582ee6dba88960326ba $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_ttls.h"
@@ -130,6 +130,14 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 		return -1;
 	}
 
+#ifdef TLS1_3_VERSION
+	if ((inst->tls_conf->min_version == TLS1_3_VERSION) && !inst->tls_conf->tls13_enable_magic) {
+		ERROR("There are no standards for using TLS 1.3 with TTLS.");
+		ERROR("You MUST enable TLS 1.2 for TTLS to work.");
+		return -1;
+	}
+#endif
+
 	return 0;
 }
 
@@ -181,7 +189,11 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 		client_cert = inst->req_client_cert;
 	}
 
-	ssn = eaptls_session(handler, inst->tls_conf, client_cert);
+	/*
+	 *	Don't allow TLS 1.3 for us, even if it's allowed
+	 *	elsewhere.
+	 */
+	ssn = eaptls_session(handler, inst->tls_conf, client_cert, inst->tls_conf->tls13_enable_magic);
 	if (!ssn) {
 		return 0;
 	}
@@ -189,9 +201,13 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	handler->opaque = ((void *)ssn);
 
 	/*
-	 *	Set up type-specific information.
+	 *	Set the label to a fixed string.  For TLS 1.3, the
+	 *	label is the same for all TLS-based EAP methods.  If
+	 *	the client is using TLS 1.3, then eaptls_success()
+	 *	will over-ride this label with the correct label for
+	 *	TLS 1.3.
 	 */
-	ssn->prf_label = "ttls keying material";
+	ssn->label = "ttls keying material";
 
 	/*
 	 *	TLS session initialization is over.  Now handle TLS
@@ -201,7 +217,7 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	if ((status == FR_TLS_INVALID) || (status == FR_TLS_FAIL)) {
 		REDEBUG("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	} else {
-		RDEBUG2("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
+		RDEBUG3("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	}
 	if (status == 0) return 0;
 
@@ -238,7 +254,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 	if ((status == FR_TLS_INVALID) || (status == FR_TLS_FAIL)) {
 		REDEBUG("[eaptls process] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	} else {
-		RDEBUG2("[eaptls process] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
+		RDEBUG3("[eaptls process] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	}
 
 	/*
@@ -342,8 +358,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 		 *	Success: Automatically return MPPE keys.
 		 */
 	case PW_CODE_ACCESS_ACCEPT:
-		ret = eaptls_success(handler, 0);
-		goto done;
+		goto do_keys;
 
 		/*
 		 *	No response packet, MUST be proxying it.

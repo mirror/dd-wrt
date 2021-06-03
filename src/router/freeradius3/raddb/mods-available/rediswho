@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: dba8c583f08db3490f74127d680c3d7ce5d1c572 $
+#  $Id: d303550fa48460f9583c051795ad7f179fcbd36b $
 
 #
 #  Configuration file for the "rediswho" module.
@@ -8,6 +8,12 @@
 #  This module tracks the last set of login sessions for a user.
 #
 rediswho {
+	# REDIS instance to use (from mods-available/redis)
+	#
+	#  If you have multiple redis instances, such as "redis redis1 {...}",
+	#  use the *instance* name here: redis1.
+#	redis_module_instance = redis
+
 	#  How many sessions to keep track of per user.
 	#  If there are more than this number, older sessions are deleted.
 	trim_count = 15

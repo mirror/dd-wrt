@@ -2,7 +2,7 @@
 #
 #  main/mssql/process-radacct.sql -- Schema extensions for processing radacct entries
 #
-#  $Id: f1fb7d9f940c2bcb5132221bb9db30cac57217d7 $
+#  $Id: a3a64451d56979369f177cf971dd173c6670bd84 $
 
 --  ---------------------------------
 --  - Per-user data usage over time -
@@ -81,7 +81,7 @@ BEGIN
     DECLARE @v_start DATETIME;
     DECLARE @v_end DATETIME;
 
-    SELECT @v_start = COALESCE(MAX(period_start), CAST('1970-01-01' AS DATETIME)) FROM data_usage_by_period;
+    SELECT @v_start = COALESCE(DATEADD(ss, 1, MAX(period_end)), CAST('1970-01-01' AS DATETIME)) FROM data_usage_by_period;
     SELECT @v_end = CAST(CURRENT_TIMESTAMP AS DATETIME2(0));
 
     BEGIN TRAN;

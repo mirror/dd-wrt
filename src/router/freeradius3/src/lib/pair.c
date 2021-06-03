@@ -1,7 +1,7 @@
 /*
  * pair.c	Functions to handle VALUE_PAIRs
  *
- * Version:	$Id: d711f90c5d3e1f1703c1fc4b59e898cabba68b43 $
+ * Version:	$Id: 377ab22d41b728287abd0d5ab415b40f8f40b076 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: d711f90c5d3e1f1703c1fc4b59e898cabba68b43 $")
+RCSID("$Id: 377ab22d41b728287abd0d5ab415b40f8f40b076 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/regex.h>
@@ -45,7 +45,7 @@ static int _fr_pair_free(VALUE_PAIR *vp) {
 	return 0;
 }
 
-static VALUE_PAIR *fr_pair_alloc(TALLOC_CTX *ctx)
+VALUE_PAIR *fr_pair_alloc(TALLOC_CTX *ctx)
 {
 	VALUE_PAIR *vp;
 
@@ -284,6 +284,43 @@ void fr_pair_add(VALUE_PAIR **first, VALUE_PAIR *add)
 	}
 
 	i->next = add;
+}
+
+/** Add a VP to the start of the list.
+ *
+ * Links the new VP to 'first', then points 'first' at the new VP.
+ *
+ * @param[in] first VP in linked list. Will add new VP to the start of this list.
+ * @param[in] add VP to add to list.
+ */
+void fr_pair_prepend(VALUE_PAIR **first, VALUE_PAIR *add)
+{
+	VALUE_PAIR *i;
+
+	if (!add) return;
+
+	VERIFY_VP(add);
+
+	if (*first == NULL) {
+		*first = add;
+		return;
+	}
+
+	/*
+	 *	Find the end of the list to be prepended
+	 */
+	for (i = add; i->next; i = i->next) {
+#ifdef WITH_VERIFY_PTR
+		VERIFY_VP(i);
+		/*
+		 *	The same VP should never by added multiple times
+		 *	to the same list.
+		 */
+		fr_assert(*first != i);
+#endif
+	}
+	i->next = *first;
+	*first = add;
 }
 
 /** Replace all matching VPs
@@ -851,13 +888,15 @@ void fr_pair_steal(TALLOC_CTX *ctx, VALUE_PAIR *vp)
  * @param[in] ctx for talloc
  * @param[in,out] to destination list.
  * @param[in,out] from source list.
+ * @param[in] op operator for move.
  *
  * @see radius_pairmove
  */
-void fr_pair_list_move(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **from)
+void fr_pair_list_move(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **from, FR_TOKEN op)
 {
 	VALUE_PAIR *i, *found;
 	VALUE_PAIR *head_new, **tail_new;
+	VALUE_PAIR *head_prepend;
 	VALUE_PAIR **tail_from;
 
 	if (!to || !from || !*from) return;
@@ -870,6 +909,12 @@ void fr_pair_list_move(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **from)
 	 */
 	head_new = NULL;
 	tail_new = &head_new;
+
+	/*
+	 *	Any attributes that are requested to be prepended
+	 *	are added to a temporary list here
+	 */
+	head_prepend = NULL;
 
 	/*
 	 *	We're looping over the "from" list, moving some
@@ -983,13 +1028,36 @@ void fr_pair_list_move(TALLOC_CTX *ctx, VALUE_PAIR **to, VALUE_PAIR **from)
 			fr_pair_steal(ctx, i);
 			tail_new = &(i->next);
 			continue;
+		case T_OP_PREPEND:
+			i->next = head_prepend;
+			head_prepend = i;
+			fr_pair_steal(ctx, i);
+			continue;
 		}
 	} /* loop over the "from" list. */
 
 	/*
-	 *	Take the "new" list, and append it to the "to" list.
+	 * 	If the op parameter was prepend, add the "new" list
+	 *	attributes first as those whose individual operator
+	 *	is prepend should be prepended to the resulting list
 	 */
-	fr_pair_add(to, head_new);
+	if (op == T_OP_PREPEND) {
+		fr_pair_prepend(to, head_new);
+	}
+
+	/*
+	 *	If there are any items in the prepend list prepend
+	 *	it to the "to" list
+	 */
+	fr_pair_prepend(to, head_prepend);
+
+	/*
+	 *	If the op parameter was not prepend, take the "new"
+	 *	list, and append it to the "to" list.
+	 */
+	if (op != T_OP_PREPEND) {
+		fr_pair_add(to, head_new);
+	}
 }
 
 /** Move matching pairs between VALUE_PAIR lists
@@ -1823,7 +1891,7 @@ FR_TOKEN fr_pair_raw_from_str(char const **ptr, VALUE_PAIR_RAW *raw)
 		break;
 
 	default:
-		fr_strerror_printf("Failed to find expected value on right hand side");
+		fr_strerror_printf("Failed to find expected value on right hand side in %s", raw->l_opand);
 		return T_INVALID;
 	}
 

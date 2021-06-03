@@ -1,5 +1,5 @@
 ###########################################################################
-# $Id: dcb61f7c26b07351c6be5ff28d91b0a37066d744 $                 #
+# $Id: f1ad9afd34fbed766ecbb513927c4f1dd89d9015 $                 #
 #                                                                         #
 #  schema.sql                       rlm_sql - FreeRADIUS SQL Module       #
 #                                                                         #
@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS radacct (
   acctinterval int(12) default NULL,
   acctsessiontime int(12) unsigned default NULL,
   acctauthentic varchar(32) default NULL,
-  connectinfo_start varchar(50) default NULL,
-  connectinfo_stop varchar(50) default NULL,
+  connectinfo_start varchar(128) default NULL,
+  connectinfo_stop varchar(128) default NULL,
   acctinputoctets bigint(20) default NULL,
   acctoutputoctets bigint(20) default NULL,
   calledstationid varchar(50) NOT NULL default '',
@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS radacct (
   framedipv6prefix varchar(45) NOT NULL default '',
   framedinterfaceid varchar(44) NOT NULL default '',
   delegatedipv6prefix varchar(45) NOT NULL default '',
+  class varchar(64) default NULL,
   PRIMARY KEY (radacctid),
   UNIQUE KEY acctuniqueid (acctuniqueid),
   KEY username (username),

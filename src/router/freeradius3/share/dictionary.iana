@@ -5,11 +5,8 @@
 #	Mostly values which have been allocated by IANA under
 #	"expert review", but which don't have an RFC associated with them.
 #
-#	$Id: 58f1c391b47f19b7f8c4dd9cc605bc55d957084b $
+#	$Id: 052deca43c891a62842a681b05c95e2bf7fdf882 $
 #
-
-#	RFC 4005
-ATTRIBUTE	Originating-Line-Info			94	string
 
 #	draft-sterman-aaa-sip-00.txt
 #

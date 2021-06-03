@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id: a10097637b0038ea38c1a92368524853c6352d30 $
+ * Version:	$Id: 76f87b7289ab8b8df0d3cd2f5fcfe357354d33f8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: a10097637b0038ea38c1a92368524853c6352d30 $")
+RCSID("$Id: 76f87b7289ab8b8df0d3cd2f5fcfe357354d33f8 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -481,9 +481,9 @@ int rad_authenticate(REQUEST *request)
 		 *	done by the server, by rejecting them here.
 		 */
 		case PW_CODE_ACCESS_REJECT:
+			request->reply->code = PW_CODE_ACCESS_REJECT;
 			rad_authlog("Login incorrect (Home Server says so)",
 				    request, 0);
-			request->reply->code = PW_CODE_ACCESS_REJECT;
 			return RLM_MODULE_REJECT;
 
 		default:
@@ -526,6 +526,7 @@ autz_redo:
 	case RLM_MODULE_REJECT:
 	case RLM_MODULE_USERLOCK:
 	default:
+		request->reply->code = PW_CODE_ACCESS_REJECT;
 		if ((module_msg = fr_pair_find_by_num(request->packet->vps, PW_MODULE_FAILURE_MESSAGE, 0, TAG_ANY)) != NULL) {
 			char msg[MAX_STRING_LEN + 16];
 			snprintf(msg, sizeof(msg), "Invalid user (%s)",
@@ -534,7 +535,6 @@ autz_redo:
 		} else {
 			rad_authlog("Invalid user", request, 0);
 		}
-		request->reply->code = PW_CODE_ACCESS_REJECT;
 		return result;
 	}
 	if (!autz_retry) {
@@ -554,34 +554,41 @@ autz_redo:
 	 *	modules has decided that a proxy should be used. If
 	 *	so, get out of here and send the packet.
 	 */
-	if (
 #ifdef WITH_PROXY
-	    (request->proxy == NULL) &&
+	if (request->proxy == NULL)
 #endif
-	    ((tmp = fr_pair_find_by_num(request->config, PW_PROXY_TO_REALM, 0, TAG_ANY)) != NULL)) {
-		REALM *realm;
+	{
+		if ((tmp = fr_pair_find_by_num(request->config, PW_PROXY_TO_REALM, 0, TAG_ANY)) != NULL) {
+			REALM *realm;
 
-		realm = realm_find2(tmp->vp_strvalue);
+			realm = realm_find2(tmp->vp_strvalue);
 
-		/*
-		 *	Don't authenticate, as the request is going to
-		 *	be proxied.
-		 */
-		if (realm && realm->auth_pool) {
+			/*
+			 *	Don't authenticate, as the request is going to
+			 *	be proxied.
+			 */
+			if (realm && realm->auth_pool) {
+				return RLM_MODULE_OK;
+			}
+
+			/*
+			 *	Catch users who set Proxy-To-Realm to a LOCAL
+			 *	realm (sigh).  But don't complain if it is
+			 *	*the* LOCAL realm.
+			 */
+			if (realm && (strcmp(realm->name, "LOCAL") != 0)) {
+				RWDEBUG2("You set Proxy-To-Realm = %s, but it is a LOCAL realm!  Cancelling proxy request.", realm->name);
+			}
+
+			if (!realm) {
+				RWDEBUG2("You set Proxy-To-Realm = %s, but the realm does not exist!  Cancelling invalid proxy request.", tmp->vp_strvalue);
+			}
+		} else if (((tmp = fr_pair_find_by_num(request->config, PW_HOME_SERVER_POOL, 0, TAG_ANY)) != NULL) ||
+			  ((tmp = fr_pair_find_by_num(request->config, PW_PACKET_DST_IP_ADDRESS, 0, TAG_ANY)) != NULL) ||
+			  ((tmp = fr_pair_find_by_num(request->config, PW_PACKET_DST_IPV6_ADDRESS, 0, TAG_ANY)) != NULL) ||
+			  ((tmp = fr_pair_find_by_num(request->config, PW_HOME_SERVER_NAME, 0, TAG_ANY)) != NULL)) {
+			RDEBUG("Proxying due to %s", tmp->da->name);
 			return RLM_MODULE_OK;
-		}
-
-		/*
-		 *	Catch users who set Proxy-To-Realm to a LOCAL
-		 *	realm (sigh).  But don't complain if it is
-		 *	*the* LOCAL realm.
-		 */
-		if (realm &&(strcmp(realm->name, "LOCAL") != 0)) {
-			RWDEBUG2("You set Proxy-To-Realm = %s, but it is a LOCAL realm!  Cancelling proxy request.", realm->name);
-		}
-
-		if (!realm) {
-			RWDEBUG2("You set Proxy-To-Realm = %s, but the realm does not exist!  Cancelling invalid proxy request.", tmp->vp_strvalue);
 		}
 	}
 
@@ -854,6 +861,22 @@ int rad_virtual_server(REQUEST *request)
 	}
 
 	if (request->reply->code == PW_CODE_ACCESS_ACCEPT) {
+		/*
+		 *	Check that there is a name which can be used
+		 *	to identify the user.  The configuration
+		 *	depends on User-Name or Stripped-User-Name
+		 *	existing, and being (mostly) unique to that
+		 *	user.
+		 */
+		if (!request->parent && request->username &&
+		    (request->username->da->attr == PW_USER_NAME) &&
+		    (request->username->vp_strvalue[0] == '@') &&
+		    !fr_pair_find_by_num(request->packet->vps, PW_STRIPPED_USER_NAME, 0, TAG_ANY)) {
+			RWDEBUG("User-Name is anonymized, and no Stripped-User-Name exists.");
+			RWDEBUG("It may be difficult or impossible to identify the user");
+			RWDEBUG("Please update Stripped-User-Name with information which identifies the user");
+		}
+
 		rad_postauth(request);
 	}
 

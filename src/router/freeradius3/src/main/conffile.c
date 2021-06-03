@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: a8c667bfb5df142f6bfde864339510f2ef3920e4 $
+ * Version:	$Id: 44ecb9f53f8169f279db621ef98ff6b662f3e27f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: a8c667bfb5df142f6bfde864339510f2ef3920e4 $")
+RCSID("$Id: 44ecb9f53f8169f279db621ef98ff6b662f3e27f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -2794,6 +2794,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 
 		case T_OP_EQ:
 		case T_OP_SET:
+		case T_OP_PREPEND:
 			while (isspace((int) *ptr)) ptr++;
 
 			/*
@@ -3561,6 +3562,10 @@ bool cf_item_is_pair(CONF_ITEM const *item)
 	return item->type == CONF_ITEM_PAIR;
 }
 
+bool cf_item_is_data(CONF_ITEM const *item)
+{
+	return item->type == CONF_ITEM_DATA;
+}
 
 static CONF_DATA *cf_data_alloc(CONF_SECTION *parent, char const *name,
 				void *data, void (*data_free)(void *))

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 0c872ea24653a1b68a71a56072b4324fe06e321a $
+ * $Id: 9b01856b42d04c94c559cc70b177c17c04717ef7 $
  * @file rlm_sql.c
  * @brief Implements SQL 'users' file, and SQL accounting.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 0c872ea24653a1b68a71a56072b4324fe06e321a $")
+RCSID("$Id: 9b01856b42d04c94c559cc70b177c17c04717ef7 $")
 
 #include <ctype.h>
 
@@ -573,7 +573,7 @@ static int sql_get_grouplist(rlm_sql_t *inst, rlm_sql_handle_t **handle, REQUEST
 
 	if (!inst->config->groupmemb_query) return 0;
 
-	if (radius_axlat(&expanded, request, inst->config->groupmemb_query, sql_escape_for_xlat_func, inst) < 0) return -1;
+	if (radius_axlat(&expanded, request, inst->config->groupmemb_query, sql_escape_func, *handle) < 0) return -1;
 
 	ret = rlm_sql_select_query(inst, request, handle, expanded);
 	talloc_free(expanded);
@@ -1532,6 +1532,20 @@ static int acct_redundant(rlm_sql_t *inst, REQUEST *request, sql_acct_section_t 
 		pair = cf_pair_find_next(section->cs, pair, attr);
 
 		if (!pair) {
+			char const *name;
+
+			/*
+			 *	Hack for RADIUS!
+			 */
+			name = cf_section_name1(section->cs);
+			if ((strcmp(name, "accounting-on") == 0) ||
+			    (strcmp(name, "accounting-off") == 0)) {
+				RDEBUG("Accounting on/off had no updates.  Returning 'ok'");
+				rcode = RLM_MODULE_OK;
+				goto finish;
+			}
+
+
 			RDEBUG("No additional queries configured");
 			rcode = RLM_MODULE_NOOP;
 

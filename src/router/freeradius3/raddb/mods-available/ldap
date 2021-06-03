@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 1741d7e6ed472617f190f90a545272be980a6ff1 $
+#  $Id: 015ae6907b8113771691ae3a3c1d53b05756d143 $
 
 #
 #  Lightweight Directory Access Protocol (LDAP)
@@ -197,6 +197,19 @@ ldap {
 		#  "samaccountname=" instead of "uid="
 		#
 		filter = "(uid=%{%{Stripped-User-Name}:-%{User-Name}})"
+
+		#  For Active Directory nested group, you should comment out the previous 'filter = ...'
+		#  and use the below. Where 'group' is the group you are querying for.
+		#
+		#  NOTE: The string '1.2.840.113556.1.4.1941' specifies LDAP_MATCHING_RULE_IN_CHAIN.
+		#  This applies only to DN attributes. This is an extended match operator that walks
+		#  the chain of ancestry in objects all the way to the root until it finds a match.
+		#  This reveals group nesting. It is available only on domain controllers with
+		#  Windows Server 2003 SP2 or Windows Server 2008 (or above).
+		#
+		#  See: https://social.technet.microsoft.com/wiki/contents/articles/5392.active-directory-ldap-syntax-filters.aspx
+		#
+#		filter = "(&(objectClass=user)(sAMAccountName=%{%{Stripped-User-Name}:-%{User-Name}})(memberOf:1.2.840.113556.1.4.1941:=cn=group,${..base_dn}))"
 
 		#  SASL parameters to use for user binds
 		#
@@ -575,6 +588,12 @@ ldap {
 		#  on the contents of ldap.conf.
 
 #		require_cert	= 'demand'
+
+		#
+		#  Minimum TLS version to accept. We STRONGLY recommend
+		#  setting this to "1.2"
+		#
+#		tls_min_version = "1.2"
 	}
 
 	#  As of version 3.0, the 'pool' section has replaced the

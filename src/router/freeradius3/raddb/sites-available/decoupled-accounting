@@ -15,7 +15,7 @@
 #	This file is NOT meant to be used as-is.  It needs to be
 #	edited to match your local configuration.
 #
-#	$Id: 4b50b422c169338e93f03320a01bbebe272dee41 $
+#	$Id: abf455cc2cf10da1e8e749a90b544a533c7e26e1 $
 #
 ######################################################################
 
@@ -102,8 +102,12 @@ accounting {
 	radutmp
 #	sradutmp
 
+	#
 	#  Return an address to the IP Pool when we see a stop record.
-#	main_pool
+	#
+	#  Ensure that &control:Pool-Name is set to determine which
+	#  pool of IPs are used.
+#	sqlippool
 
 	#
 	#  Log traffic to an SQL database.
