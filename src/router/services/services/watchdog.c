@@ -37,9 +37,9 @@ void start_watchdog(void)
 	return;
 }
 
-void stop_watchdog(void) // shall never be called
+void stop_watchdog(void)	// shall never be called
 {
-	stop_process("watchdog", "watchdog timer");  
+	stop_process("watchdog", "watchdog timer");
 	return;
 }
 #endif

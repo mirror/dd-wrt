@@ -46,6 +46,7 @@ static void add_server(FILE * fp, char *server)
 {
 	fprintf(fp, "server=/%s/\n", server);
 }
+
 static void add_ubnt_telemetry(FILE * fp)
 {
 	static unsigned char *servers[] = {
