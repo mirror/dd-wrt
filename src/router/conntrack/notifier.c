@@ -203,8 +203,6 @@ static void notifier(void)
 
 int main(int argc, char *argv[])
 {
-	if (!nvram_match("warn_enabled", "1"))
-		return 0;
 
 	/* 
 	 * Run it under background 
