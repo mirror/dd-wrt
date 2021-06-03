@@ -560,6 +560,7 @@ int main(int argc, char **argv)
 #endif
 	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("sysinit");
+	start_service("watchdog");
 #ifndef HAVE_MICRO
 	if (console_init())
 		noconsole = 1;
