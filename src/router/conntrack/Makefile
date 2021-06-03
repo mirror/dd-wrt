@@ -7,6 +7,10 @@ endif
 
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/ $(COPTS) $(MIPS16_OPT) $(LTO) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections 
 
+ifeq ($(CONFIG_SYSLOG),y)
+  CFLAGS += -DHAVE_SYSLOG
+endif
+
 MODULE:=conntrack.startup
 
 include $(TOP)/busybox/.config
