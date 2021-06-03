@@ -239,6 +239,9 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_SPOTPASS
 	start_service_f("spotpass");
 #endif
+#ifdef HAVE_CONNTRACK
+	start_service_f("notifier");
+#endif
 #ifdef HAVE_IAS
 	if (nvram_geti("ias_startup") > 0) {
 		nvram_seti("ias_startup", 3);
@@ -388,6 +391,9 @@ static int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_GPSI
 	stop_service_f("gps");
+#endif
+#ifdef HAVE_CONNTRACK
+	stop_service_f("notifier");
 #endif
 	stop_running_main(0, NULL);
 
