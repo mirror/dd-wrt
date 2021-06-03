@@ -69,9 +69,7 @@ void freeList(LINKEDLIST * list)
 	LINKEDLIST *first = list->next;
 	if (list == NULL)
 		return;
-	while (1) {
-		if (first->next == NULL)
-			return;
+	while (first) {
 		LINKEDLIST *next = first->next;
 		free(first->name);
 		free(first);
