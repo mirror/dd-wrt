@@ -1,5 +1,5 @@
 /*
- * notifier.c
+ * watchdog.c
  *
  * Copyright (C) 2021 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
@@ -19,7 +19,7 @@
  *
  * $Id:
  */
-#ifdef HAVE_CONNTRACK
+#ifndef HAVE_MICRO
 #include <stdlib.h>
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -28,18 +28,18 @@
 #include <signal.h>
 #include <services.h>
 
-void start_notifier(void)
+void start_watchdog(void)
 {
-	if (nvram_match("warn_enabled", "1")) {
-		eval("notifier");
-		dd_loginfo("notifier", "daemon successfully started\n");
+	if (!nvram_matchi("disable_watchdog", 1)) {
+		eval("watchdog");	// system watchdog
+		dd_loginfo("watchdog", "daemon successfully started\n");
 	}
 	return;
 }
 
-void stop_notifier(void)
+void stop_watchdog(void) // shall never be called
 {
-	stop_process("notifier", "conntrack notifier");
+	stop_process("watchdog", "watchdog timer");  
 	return;
 }
 #endif
