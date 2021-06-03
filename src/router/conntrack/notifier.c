@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <bcmnvram.h>
+#include <utils.h>
 #include <unistd.h>
 
 typedef struct linkedlist {
@@ -33,11 +34,11 @@ typedef struct linkedlist {
 	int port;
 	struct linkedlist *prev;
 	struct linkedlist *next;
-};
+} LINKEDLIST;
 
-void addEntry(struct linkedlist *list, char *name, char *port, int value)
+void addEntry(LINKEDLIST * list, char *name, char *port, int value)
 {
-	struct linkedlist *first = list;
+	LINKEDLIST *first = list;
 	if (nvram_match("wan_ipaddr", name))	// silently ignore the wan ip
 		return;
 	int p = atoi(port);
@@ -49,7 +50,7 @@ void addEntry(struct linkedlist *list, char *name, char *port, int value)
 			return;
 		} else {
 			if (first->next == NULL) {
-				struct linkedlist *next = malloc(sizeof(struct linkedlist));
+				LINKEDLIST *next = malloc(sizeof(LINKEDLIST));
 				next->name = strdup(name);
 				next->value = value;
 				next->port = p;
@@ -63,15 +64,15 @@ void addEntry(struct linkedlist *list, char *name, char *port, int value)
 	}
 }
 
-void freeList(struct linkedlist *list)
+void freeList(LINKEDLIST * list)
 {
-	struct linkedlist *first = list->next;
+	LINKEDLIST *first = list->next;
 	if (list == NULL)
 		return;
 	while (1) {
 		if (first->next == NULL)
 			return;
-		struct linkedlist *next = first->next;
+		LINKEDLIST *next = first->next;
 		free(first->name);
 		free(first);
 		first = next;
@@ -82,7 +83,7 @@ void freeList(struct linkedlist *list)
  * sends a email with the detailed connection statistic per port. this requires a modified sendmail command from busybox. the original one is buggy and does not work with alot of email servers like exim, so we modified
  * it to support direct message sending and authentication with commandline parameters
  */
-void send_email(struct linkedlist *list, char *source, int value)
+void send_email(LINKEDLIST * list, char *source, int value)
 {
 	char *server = nvram_safe_get("warn_server");
 	char *from = nvram_safe_get("warn_from");
@@ -103,10 +104,11 @@ void send_email(struct linkedlist *list, char *source, int value)
 		fprintf(fp, "From: %s\n", fromfull);
 		fprintf(fp, "Subject: DD-WRT: user %s reached connection limit\n\n", source);
 		fprintf(fp, "ip %s has %d open connections\n", source, value);
-
+		dd_loginfo("notifier", "ip %s has %d open connections\n", source, value);
 		while (1) {
 			if (!strcmp(list->name, source)) {
 				fprintf(fp, "%d open connections on port %d\n", list->value, list->port);
+				dd_loginfo("notifier", "%d open connections on port %d\n", list->value, list->port);
 			}
 			list = list->next;
 			if (list == NULL)
@@ -133,9 +135,8 @@ int main(int argc, char *argv[])
 {
 	if (!nvram_match("warn_enabled", "1"))
 		return 0;
-	int nf = 0;
-	struct linkedlist list;
-	struct linkedlist total;
+	LINKEDLIST list;
+	LINKEDLIST total;
 	list.name = "entry";
 	list.value = 0;
 	list.next = NULL;
@@ -146,12 +147,10 @@ int main(int argc, char *argv[])
 	total.next = NULL;
 	total.prev = NULL;
 	FILE *fp = fopen("/proc/net/nf_conntrack", "rb");
-	if (fp)
-		nf = 1;
-	else	
+	if (!fp)
 		fp = fopen("/proc/net/ip_conntrack", "rb");
 	if (!fp)
-	    return;
+		return -1;
 	while (1) {
 		char proto[64];
 		char state[64];
@@ -160,9 +159,9 @@ int main(int argc, char *argv[])
 		char sport[64];
 		char dport[64];
 		char linebuf[1024];
-		char *line = fgets(linebuf, 1024, fp); 
+		char *line = fgets(linebuf, 1024, fp);
 		if (!line)
-		    break;
+			break;
 		if (feof(fp))
 			break;
 		//default tcp
@@ -180,7 +179,7 @@ int main(int argc, char *argv[])
 		addEntry(&total, &src[4], "0", 1);	//add connection to total statistic
 	}
 	fclose(fp);
-	struct linkedlist *entry = &total;
+	LINKEDLIST *entry = &total;
 	int limit = atoi(nvram_default_get("warn_connlimit", "500"));
 	while (1) {
 		if (entry->value > limit) {
