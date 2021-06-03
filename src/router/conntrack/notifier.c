@@ -131,10 +131,8 @@ void send_email(LINKEDLIST * list, char *source, int value)
 
 }
 
-int main(int argc, char *argv[])
+static int notifier_loop(void)
 {
-	if (!nvram_match("warn_enabled", "1"))
-		return 0;
 	LINKEDLIST list;
 	LINKEDLIST total;
 	list.name = "entry";
@@ -191,5 +189,43 @@ int main(int argc, char *argv[])
 	}
 	freeList(&list);
 	freeList(&total);
+	return 0;
+}
+
+static void notifier(void)
+{
+	while (1) {
+		sleep(5 * 60);	// wait 5 minutes between each checks
+		notifier_loop();
+	}
+
+}
+
+int main(int argc, char *argv[])
+{
+	if (!nvram_match("warn_enabled", "1"))
+		return 0;
+
+	/* 
+	 * Run it under background 
+	 */
+	switch (fork()) {
+	case -1:
+		perror("fork failed");
+		exit(1);
+		break;
+	case 0:
+		/* 
+		 * child process 
+		 */
+		notifier();
+		exit(0);
+		break;
+	default:
+		/* 
+		 * parent process should just die 
+		 */
+		_exit(0);
+	}
 	return 0;
 }
