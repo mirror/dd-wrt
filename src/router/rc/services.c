@@ -997,6 +997,9 @@ static void handle_filters(void)
 #ifdef HAVE_UDPXY
 	restart_f("udpxy");
 #endif
+#ifdef HAVE_CONNTRACK
+	restart_f("notifier");
+#endif
 //      start_service_f("anchorfreednat");
 }
 
