@@ -5,7 +5,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/ $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections 
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/ $(COPTS) $(MIPS16_OPT) $(LTO) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections 
 
 MODULE:=conntrack.startup
 
@@ -22,7 +22,7 @@ endif
 endif
 
 notifier: notifier.o
-	$(CC) -o $@ $^ $(CFLAGS) -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils
+	$(CC) -o $@ $^ $(CFLAGS) $(LDLTO) -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils
 
 clean:
 	rm -f notifier notifier.o
