@@ -28,6 +28,16 @@
 #include <signal.h>
 #include <services.h>
 
+char *notifier_deps(void)
+{
+	return "warn_enabled";
+}
+
+char *notifier_proc(void)
+{
+	return "notifier";
+}
+
 void start_notifier(void)
 {
 	if (nvram_match("warn_enabled", "1")) {

@@ -54,7 +54,7 @@ int cleanup_pbr(char *tablenr)
 	eval("ip", "route", "flush", "table", tablenr);
 	//this is no longer necessary as the bug in OpenVPN about misdetection of default route is resolved in 2.5.2
 	//eval("ip", "route", "flush", "table", "9");
-	
+
 	//eval("while", "ip", "rule", "delete", "from", "0/0", "to", "0/0", "table", tablenr2, ";", "do", "true", ";", "done");  //does not work revert to system()
 	//sprintf(cmd, "while ip rule delete from 0/0 to 0/0 table %s; do true; done", tablenr);
 	//system(cmd);
@@ -63,46 +63,48 @@ int cleanup_pbr(char *tablenr)
 	}
 	return 0;
 }
-int is_ipv4 (char *ip) {
+
+int is_ipv4(char *ip)
+{
 	int num;
 	int flag = 1;
 	int counter = 0;
-	char *p = strtok(ip,".");
-	while (p && flag ){
+	char *p = strtok(ip, ".");
+	while (p && flag) {
 		for (int i = 0; p[i] != '\0'; i++) {
 			if (!isdigit(p[i])) {
 				return 0;
 			}
 		}
 		num = atoi(p);
-		if (num >= 0 && num <= 255 && (counter++<4)) {
+		if (num >= 0 && num <= 255 && (counter++ < 4)) {
 			flag = 1;
-			p = strtok(NULL,".");
-		}
-		else{
+			p = strtok(NULL, ".");
+		} else {
 			flag = 0;
 			break;
 		}
 	}
-	return flag && (counter==4);
+	return flag && (counter == 4);
 }
-int split_ipv4 (char *ipv4) {
+
+int split_ipv4(char *ipv4)
+{
 	char ip_mask[100] = { 0 };
 	char ip[64] = { 0 };
 	char mask[4] = { 0 };
 	int mask_ok = 0;
 	char *p;
-	strncpy(ip_mask, ipv4, (sizeof ip_mask)-1);
-	p = strtok (ip_mask,"//");
-	if (p != NULL) 
-	{
-		strncpy(ip, p, (sizeof ip)-1);
-		p = strtok (NULL, "//");
+	strncpy(ip_mask, ipv4, (sizeof ip_mask) - 1);
+	p = strtok(ip_mask, "//");
+	if (p != NULL) {
+		strncpy(ip, p, (sizeof ip) - 1);
+		p = strtok(NULL, "//");
 		if (p != NULL)
-			strncpy(mask, p, (sizeof mask)-1);
+			strncpy(mask, p, (sizeof mask) - 1);
 	}
 	if (mask[0] != '\0') {
-		if (atoi(mask) > 0 && atoi(mask) <= 32 ) {
+		if (atoi(mask) > 0 && atoi(mask) <= 32) {
 			mask_ok = 1;
 		}
 	} else if (!strchr(ipv4, '/')) {
@@ -114,39 +116,42 @@ int split_ipv4 (char *ipv4) {
 		return 0;
 	}
 }
-int test_ipv4 (char *iprule) {
+
+int test_ipv4(char *iprule)
+{
 	char *pch;
 	int flag = 1;
 	char ipv4[5][100] = { 0 };
 	char strtosplit[100] = { 0 };
 	int i = 1;
-	strncpy(strtosplit, iprule, (sizeof strtosplit)-1);
-	pch = strtok (strtosplit," ");
- 	while (pch != NULL) {
-		if ( isdigit(pch[0]) && strchr(pch, '.')) {
-			strncpy(ipv4[i], pch, (sizeof ipv4[i])-1);
+	strncpy(strtosplit, iprule, (sizeof strtosplit) - 1);
+	pch = strtok(strtosplit, " ");
+	while (pch != NULL) {
+		if (isdigit(pch[0]) && strchr(pch, '.')) {
+			strncpy(ipv4[i], pch, (sizeof ipv4[i]) - 1);
 			if (i < 5) {
 				i++;
 			} else {
 				break;
 			}
 		}
-		pch = strtok (NULL, " ");
+		pch = strtok(NULL, " ");
 	}
 	for (int j = 1; j < i; j++) {
 		if (!split_ipv4(ipv4[j])) {
-			flag = 0;  //no valid IP
+			flag = 0;	//no valid IP
 		}
 	}
 	return flag;
 }
 
-void setroute_pbr(char *tablenr) {
+void setroute_pbr(char *tablenr)
+{
 	char *curline = nvram_safe_get("openvpncl_route");
 	char cmd[256] = { 0 };
-	
+
 	cleanup_pbr(tablenr);
-	
+
 	if (nvram_matchi("openvpncl_killswitch", 1)) {
 		eval("ip", "route", "add", "prohibit", "default", "table", tablenr);
 		dd_loginfo("openvpn", "PBR killswitch is active using: %s", curline);
@@ -159,7 +164,7 @@ void setroute_pbr(char *tablenr) {
 	//add other routes from main table
 	sprintf(cmd, "ip route show | grep -Ev '^default |^0.0.0.0/1 |^128.0.0.0/1 ' | while read route; do ip route add $route table %s >/dev/null 2>&1; done", tablenr);
 	sysprintf(cmd);
-	
+
 	while (curline) {
 		char *nextLine = strchr(curline, '\n');
 		size_t curlinelen = nextLine ? ((unsigned)(nextLine - curline)) : strlen(curline);
@@ -365,7 +370,7 @@ void start_openvpnserver(void)
 		if (nvram_invmatch("openvpn_auth", ""))
 			fprintf(fp, "auth %s\n", nvram_safe_get("openvpn_auth"));
 		if (nvram_invmatch("openvpn_cipher", ""))
-			fprintf(fp, "cipher %s\n" , nvram_safe_get("openvpn_cipher"));
+			fprintf(fp, "cipher %s\n", nvram_safe_get("openvpn_cipher"));
 		char dcbuffer[128] = { 0 };
 		char *dc1 = nvram_safe_get("openvpn_dc1");
 		char *dc2 = nvram_safe_get("openvpn_dc2");
@@ -628,7 +633,7 @@ void start_openvpn(void)
 		eval("iptables", "-I", "FORWARD", "-o", get_wan_face(), "-j", "DROP");
 		//consider restarting SFE to drop existing connections e.g. eval("restart", "sfe"); or: stop_sfe(); start_sfe();
 #ifdef HAVE_SFE
-		if (nvram_match("sfe","1")) {
+		if (nvram_match("sfe", "1")) {
 			stop_sfe();
 			start_sfe();
 		}
@@ -666,13 +671,9 @@ void start_openvpn(void)
 			fprintf(fp, "key /tmp/openvpncl/client.key\n");
 	}
 #ifdef HAVE_ERC
-	fprintf(fp,
-		"management 127.0.0.1 5001\n"
-		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
+	fprintf(fp, "management 127.0.0.1 5001\n" "management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
 #else
-	fprintf(fp,
-		"management 127.0.0.1 16\n"
-		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
+	fprintf(fp, "management 127.0.0.1 16\n" "management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "script-security 2\n");
 #endif
 	fprintf(fp, "dev %s\n", ovpniface);
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
