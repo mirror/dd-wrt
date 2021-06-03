@@ -61,8 +61,6 @@ void start_sysinit(void)
 
 	eval("mknod", "/dev/gpio", "c", "127", "0");
 
-	if (!nvram_matchi("disable_watchdog", 1))
-		eval("watchdog");
 	/*
 	 * Setup console 
 	 */

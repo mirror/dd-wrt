@@ -65,8 +65,6 @@ void start_sysinit(void)
 
 	cprintf("sysinit() setup console\n");
 	eval("insmod", "ks8695_wdt", "wdt_time=30");	// load watchdog module with 30 seconds timeout
-	if (!nvram_matchi("disable_watchdog", 1))
-		eval("watchdog");
 	/*
 	 * Setup console 
 	 */

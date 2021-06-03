@@ -6513,8 +6513,8 @@ void start_sysinit(void)
 			if (wanport > atoi(var))
 				swap++;
 			last = atoi(var);
-			if (first == -1) 
-			    first = last;
+			if (first == -1)
+				first = last;
 			nvram_nset(var, "sw_lan%d", port++);
 		} else
 			strncpy(cpuport, var, 1);
@@ -6528,14 +6528,14 @@ void start_sysinit(void)
 			char s1[32];
 			char s2[32];
 			sprintf(s1, "sw_lan%d", i);
-			sprintf(s2, "sw_lan%d", port-i);
+			sprintf(s2, "sw_lan%d", port - i);
 			char *sw1 = strdup(nvram_safe_get(s1));
 			char *sw2 = strdup(nvram_safe_get(s2));
 			nvram_set(s2, sw1);
 			nvram_set(s1, sw2);
 			free(sw1);
 			free(sw2);
- 		}
+		}
 	}
 	nvram_set("sw_cpuport", cpuport);
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
@@ -6644,10 +6644,6 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 //      nvram_set("wl0_ifname", "wlan0");
-
-	if (!nvram_matchi("disable_watchdog", 1)) {
-		eval("watchdog");
-	}
 
 	if (check_vlan_support()) {
 		start_config_vlan();
@@ -6921,10 +6917,10 @@ char *set_wan_state(int state)
 	if (!state) {
 		char *p = strchr(vlan1, 't');
 		if (!p)
-			strcat(vlan1,"t");
+			strcat(vlan1, "t");
 		p = strchr(vlan2, 't');
 		if (!p)
-			strcat(vlan2,"t");
+			strcat(vlan2, "t");
 		sprintf(vlan1, "%s %s", vlan1, vlan2);
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
