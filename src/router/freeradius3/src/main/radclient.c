@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 52d2872b13b5336284c44c7606161f2998d1e53b $
+ * Version:	$Id: 5d8f49f58a00bc7c8192e367281022045db43cc8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 52d2872b13b5336284c44c7606161f2998d1e53b $")
+RCSID("$Id: 5d8f49f58a00bc7c8192e367281022045db43cc8 $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -960,8 +960,8 @@ static int send_one_packet(rc_request_t *request)
 			 */
 			fr_packet_list_yank(pl, request->packet);
 
-			REDEBUG("No reply from server for ID %d socket %d",
-				request->packet->id, request->packet->sockfd);
+			RDEBUG("No reply from server for ID %d socket %d",
+			       request->packet->id, request->packet->sockfd);
 			deallocate_id(request);
 
 			/*
@@ -1197,9 +1197,11 @@ int main(int argc, char **argv)
 			break;
 
 		case 'c':
-			if (!isdigit((int) *optarg))
-				usage();
+			if (!isdigit((int) *optarg)) usage();
+
 			resend_count = atoi(optarg);
+
+			if (resend_count < 1) usage();
 			break;
 
 		case 'D':

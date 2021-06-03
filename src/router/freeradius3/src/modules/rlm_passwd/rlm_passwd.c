@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 5a011fed765e24eb79202af39ea1bb3a17376945 $
+ * $Id: 77c65e08380b93e682666faa39e3281dfe7cef9d $
  * @file rlm_passwd.c
  * @brief Enables authentication against unix passwd files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: 5a011fed765e24eb79202af39ea1bb3a17376945 $")
+RCSID("$Id: 77c65e08380b93e682666faa39e3281dfe7cef9d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -166,6 +166,7 @@ static struct hashtable * build_hash_table (char const * file, int nfields,
 	size_t len;
 	unsigned int h;
 	struct mypasswd *hashentry, *hashentry1;
+	struct mypasswd **lastentry; /* temp pointers to end of lists */
 	char *list;
 	char *nextlist=0;
 	int i;
@@ -212,6 +213,20 @@ static struct hashtable * build_hash_table (char const * file, int nfields,
 		return ht;
 	}
 	memset(ht->table, 0, tablesize * sizeof(struct mypasswd *));
+
+	/*
+	 * Initialise temporary pointers to last entries in has table
+	 */
+	lastentry = (struct mypasswd **) rad_malloc (tablesize * sizeof(struct mypasswd *));
+	if (!lastentry) {
+		/*
+		 * Unable to allocate memory for temp pointers
+		 */
+		ht->tablesize = 0;
+		return ht;
+	}
+	memset(lastentry, 0, tablesize * sizeof(struct mypasswd *));
+
 	while (fgets(buffer, 1024, ht->fp)) {
 		if(*buffer && *buffer!='\n' && (!ignorenis || (*buffer != '+' && *buffer != '-')) ){
 			if(!(hashentry = mypasswd_malloc(buffer, nfields, &len))){
@@ -231,8 +246,9 @@ static struct hashtable * build_hash_table (char const * file, int nfields,
 				else nextlist = 0;
 			}
 			h = hash(hashentry->field[keyfield], tablesize);
-			hashentry->next = ht->table[h];
-			ht->table[h] = hashentry;
+			if (!ht->table[h]) ht->table[h] = hashentry;
+			if (lastentry[h]) lastentry[h]->next = hashentry;
+			lastentry[h] = hashentry;
 			if (islist) {
 				for(list=nextlist; nextlist; list = nextlist){
 					for (nextlist = list; *nextlist && *nextlist!=','; nextlist++);
@@ -245,12 +261,14 @@ static struct hashtable * build_hash_table (char const * file, int nfields,
 					for (i=0; i<nfields; i++) hashentry1->field[i] = hashentry->field[i];
 					hashentry1->field[keyfield] = list;
 					h = hash(list, tablesize);
-					hashentry1->next = ht->table[h];
-					ht->table[h] = hashentry1;
+					if (!ht->table[h]) ht->table[h] = hashentry1;
+					if (lastentry[h]) lastentry[h]->next = hashentry1;
+					lastentry[h] = hashentry1;
 				}
 			}
 		}
 	}
+	free(lastentry);
 	fclose(ht->fp);
 	ht->fp = NULL;
 	return ht;
@@ -551,9 +569,8 @@ static rlm_rcode_t CC_HINT(nonnull) mod_passwd_map(void *instance, REQUEST *requ
 		return RLM_MODULE_NOTFOUND;
 	}
 
-	for (i = fr_cursor_init(&cursor, &key);
-	     i;
-	     i = fr_cursor_next_by_num(&cursor, inst->keyattr->attr, inst->keyattr->vendor, TAG_ANY)) {
+	fr_cursor_init(&cursor, &key);
+	while ((i = fr_cursor_next_by_num(&cursor, inst->keyattr->attr, inst->keyattr->vendor, TAG_ANY))) {
 		/*
 		 *	Ensure we have the string form of the attribute
 		 */
@@ -565,6 +582,10 @@ static rlm_rcode_t CC_HINT(nonnull) mod_passwd_map(void *instance, REQUEST *requ
 			addresult(request, inst, request, &request->config, pw, 0, "config");
 			addresult(request->reply, inst, request, &request->reply->vps, pw, 1, "reply_items");
 			addresult(request->packet, inst, request, &request->packet->vps, pw, 2, "request_items");
+
+			if (!inst->allow_multiple) {
+				break;
+			}
 		} while ((pw = get_next(buffer, inst->ht, &last_found)));
 
 		found++;

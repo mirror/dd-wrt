@@ -1,7 +1,7 @@
 # -*- makefile -*-
 # Make.inc.in
 #
-# Version:	$Id: 0b2cd74de88f8b902d7f12b6d400bd283d5d504b $
+# Version:	$Id: 05f82776ff52fcb6fda1f41ed56cb4a587e18094 $
 #
 
 # Location of files.
@@ -173,3 +173,14 @@ else
 	TESTBINDIR = ./$(BUILD_DIR)/bin
 	TESTBIN    = ./$(BUILD_DIR)/bin
 endif
+
+
+#
+#  For creating documentation via doc/all.mk
+#
+ASCIIDOCTOR := @ASCIIDOCTOR@
+PANDOC := @PANDOC@
+PANDOC_ENGINE := @PANDOC_ENGINE@
+DOXYGEN := @DOXYGEN@
+GRAPHVIZ_DOT := @GRAPHVIZ_DOT@
+ANTORA := @ANTORA@

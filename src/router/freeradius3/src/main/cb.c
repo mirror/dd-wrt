@@ -1,7 +1,7 @@
 /*
  * cb.c
  *
- * Version:     $Id: 4ae14e575bef9fa34bb6170b20624320f12abe13 $
+ * Version:     $Id: cd0d3b6c99909db98b0785f366ba0ac77d68f8be $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 4ae14e575bef9fa34bb6170b20624320f12abe13 $")
+RCSID("$Id: cd0d3b6c99909db98b0785f366ba0ac77d68f8be $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -29,45 +29,94 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 #ifdef WITH_TLS
 void cbtls_info(SSL const *s, int where, int ret)
 {
-	char const *str, *state;
+	char const *role, *state;
 	REQUEST *request = SSL_get_ex_data(s, FR_TLS_EX_INDEX_REQUEST);
 
 	if ((where & ~SSL_ST_MASK) & SSL_ST_CONNECT) {
-		str="TLS_connect";
+		role = "Client ";
 	} else if (((where & ~SSL_ST_MASK)) & SSL_ST_ACCEPT) {
-		str="TLS_accept";
+		role = "Server ";
 	} else {
-		str="(other)";
+		role = "";
 	}
 
 	state = SSL_state_string_long(s);
 	state = state ? state : "<none>";
 
 	if ((where & SSL_CB_LOOP) || (where & SSL_CB_HANDSHAKE_START) || (where & SSL_CB_HANDSHAKE_DONE)) {
-		RDEBUG2("%s: %s", str, state);
+		if (RDEBUG_ENABLED3) {
+			char const *abbrv = SSL_state_string(s);
+			size_t len;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+			STACK_OF(SSL_CIPHER) *client_ciphers;
+			STACK_OF(SSL_CIPHER) *server_ciphers;
+#endif
+
+			/*
+			 *	Trim crappy OpenSSL state strings...
+			 */
+			len = strlen(abbrv);
+			if ((len > 1) && (abbrv[len - 1] == ' ')) len--;
+
+			RDEBUG3("(TLS) Handshake state [%.*s] - %s%s", (int)len, abbrv, role, state);
+
+			/*
+			 *	After a ClientHello, list all the proposed ciphers from the client
+			 */
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+			if (SSL_get_state(s) == TLS_ST_SR_CLNT_HELLO) {
+				int i;
+				int num_ciphers;
+				const SSL_CIPHER *this_cipher;
+
+				server_ciphers = SSL_get_ciphers(s);
+				if (server_ciphers) {
+					RDEBUG3("Server preferred ciphers (by priority)");
+					num_ciphers = sk_SSL_CIPHER_num(server_ciphers);
+					for (i = 0; i < num_ciphers; i++) {
+						this_cipher = sk_SSL_CIPHER_value(server_ciphers, i);
+						RDEBUG3("(TLS)    [%i] %s", i, SSL_CIPHER_get_name(this_cipher));
+					}
+				}
+	
+				client_ciphers = SSL_get_client_ciphers(s);
+				if (client_ciphers) {
+					RDEBUG3("Client preferred ciphers (by priority)");
+					num_ciphers = sk_SSL_CIPHER_num(client_ciphers);
+					for (i = 0; i < num_ciphers; i++) {
+						this_cipher = sk_SSL_CIPHER_value(client_ciphers, i);
+						RDEBUG3("(TLS)    [%i] %s", i, SSL_CIPHER_get_name(this_cipher));
+					}
+				}
+			}
+#endif
+		} else {
+			RDEBUG2("(TLS) Handshake state - %s%s (%i)", role, state, SSL_get_state(s));
+		}
+		RDEBUG3("(TLS) %s: %s", role, state);
 		return;
 	}
 
 	if (where & SSL_CB_ALERT) {
 		if ((ret & 0xff) == SSL_AD_CLOSE_NOTIFY) return;
 
-		RERROR("TLS Alert %s:%s:%s", (where & SSL_CB_READ) ? "read": "write",
+		RERROR("(TLS) Alert %s:%s:%s", (where & SSL_CB_READ) ? "read": "write",
 		       SSL_alert_type_string_long(ret), SSL_alert_desc_string_long(ret));
 		return;
 	}
 
 	if (where & SSL_CB_EXIT) {
 		if (ret == 0) {
-			RERROR("%s: Failed in %s", str, state);
+			RERROR("(TLS) %s: Failed in %s", role, state);
 			return;
 		}
 
 		if (ret < 0) {
 			if (SSL_want_read(s)) {
-				RDEBUG2("%s: Need to read more data: %s", str, state);
+				RDEBUG2("(TLS) %s: Need to read more data: %s", role, state);
 				return;
 			}
-			ERROR("tls: %s: Error in %s", str, state);
+			RERROR("(TLS) %s: Error in %s", role, state);
 		}
 	}
 }
@@ -88,13 +137,13 @@ void cbtls_msg(int write_p, int msg_version, int content_type,
 	 *	the SSL Session state.
 	 */
 	if ((msg_version == 0) && (content_type > UINT8_MAX)) {
-		DEBUG4("Ignoring cbtls_msg call with pseudo content type %i, version %i",
+		DEBUG4("(TLS) Ignoring cbtls_msg call with pseudo content type %i, version %i",
 		       content_type, msg_version);
 		return;
 	}
 
 	if ((write_p != 0) && (write_p != 1)) {
-		DEBUG4("Ignoring cbtls_msg call with invalid write_p %d", write_p);
+		DEBUG4("(TLS) Ignoring cbtls_msg call with invalid write_p %d", write_p);
 		return;
 	}
 
@@ -114,6 +163,7 @@ void cbtls_msg(int write_p, int msg_version, int content_type,
 	state->info.version = msg_version;
 	state->info.initialized = true;
 
+
 	if (content_type == SSL3_RT_ALERT) {
 		state->info.alert_level = buf[0];
 		state->info.alert_description = buf[1];
@@ -123,6 +173,12 @@ void cbtls_msg(int write_p, int msg_version, int content_type,
 		state->info.handshake_type = buf[0];
 		state->info.alert_level = 0x00;
 		state->info.alert_description = 0x00;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+	} else if (content_type == SSL3_RT_INNER_CONTENT_TYPE && buf[0] == SSL3_RT_APPLICATION_DATA) {
+		/* let tls_ack_handler set application_data */
+		state->info.content_type = SSL3_RT_HANDSHAKE;
+#endif
 
 #ifdef SSL3_RT_HEARTBEAT
 	} else if (content_type == TLS1_RT_HEARTBEAT) {

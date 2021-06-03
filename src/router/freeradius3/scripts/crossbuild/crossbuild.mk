@@ -107,7 +107,7 @@ define CROSSBUILD_IMAGE_RULE
 #
 .PHONY: crossbuild.${1}.status
 crossbuild.${1}.status:
-	${Q}echo -n "`echo \"  ${1}                    \" | cut -c 1-20`"
+	${Q}printf "%s" "`echo \"  ${1}                    \" | cut -c 1-20`"
 	${Q}if [ -e "$(DD)/stamp-up.${1}" ]; then echo "running"; \
 		elif [ -e "$(DD)/stamp-image.${1}" ]; then echo "built"; \
 		else echo "-"; fi
@@ -116,7 +116,7 @@ crossbuild.${1}.status:
 #
 $(DD)/stamp-image.${1}:
 	${Q}echo "BUILD ${1} ($(CB_IPREFIX)/${1}) > $(DD)/build.${1}"
-	${Q}docker build $(DT)/${1} -f $(DT)/${1}/Dockerfile -t $(CB_IPREFIX)/${1} >$(DD)/build.${1} 2>&1
+	${Q}docker build $(DOCKER_BUILD_OPTS) $(DT)/${1} -f $(DT)/${1}/Dockerfile -t $(CB_IPREFIX)/${1} >$(DD)/build.${1} 2>&1
 	${Q}touch $(DD)/stamp-image.${1}
 
 #

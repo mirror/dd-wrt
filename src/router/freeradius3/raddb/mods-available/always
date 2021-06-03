@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: de3f13089d8951f4c822ebc4007df58e0487de14 $
+#  $Id: 92e892768c61bb8e2357ac6935659cb4c5fa9721 $
 
 #
 #  The "always" module is here for debugging purposes, or
@@ -31,6 +31,26 @@
 #  sessions.
 #
 #  mpp = <integer>
+#
+#  An xlat based on the instance name can be called to change the status
+#  returned by the instance.
+#
+#  Force the module status to be alive or dead:
+#
+#  %{db_status:alive}
+#  %{db_status:dead}
+#
+#  Update the rcode returned by an alive module (a dead module returns fail):
+#
+#  %{db_status:ok}
+#  %{db_status:fail}
+#  %{db_status:notfound}
+#  ...
+#
+#  The above xlats expand to the current status of the module. To fetch the
+#  current status without affecting it call the xlat with an empty argument:
+#
+#  %{db_status:}
 #
 always reject {
 	rcode = reject

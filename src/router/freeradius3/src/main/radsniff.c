@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9b0bfd4f47a2e8f1a3e2eb030ca7f6bced76aa6a $
+ * $Id: e0d2b650f184c29588d371addb7f9e355502374c $
  * @file radsniff.c
  * @brief Capture, filter, and generate statistics for RADIUS traffic
  *
@@ -24,7 +24,7 @@
  * @copyright 2006 Nicolas Baradakis <nicolas.baradakis@cegetel.net>
  */
 
-RCSID("$Id: 9b0bfd4f47a2e8f1a3e2eb030ca7f6bced76aa6a $")
+RCSID("$Id: e0d2b650f184c29588d371addb7f9e355502374c $")
 
 #define _LIBRADIUS 1
 #include <time.h>
@@ -2018,6 +2018,7 @@ int main(int argc, char *argv[])
 				INFO("%i.%s", i++, dev_p->name);
 			}
 			ret = 0;
+			pcap_freealldevs(all_devices);
 			goto finish;
 		}
 
@@ -2415,6 +2416,9 @@ int main(int argc, char *argv[])
 		}
 		conf->from_auto = true;
 		conf->from_dev = true;
+
+		pcap_freealldevs(all_devices);
+
 		INFO("Defaulting to capture on all interfaces");
 	}
 

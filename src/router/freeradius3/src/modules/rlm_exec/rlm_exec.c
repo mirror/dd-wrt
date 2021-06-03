@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: e7dbfa685e9c78cf07514db282246c42da554489 $
+ * $Id: f7e23628e66854dc01786266c39e398b8fafb699 $
  * @file rlm_exec.c
  * @brief Execute commands and parse the results.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: e7dbfa685e9c78cf07514db282246c42da554489 $")
+RCSID("$Id: f7e23628e66854dc01786266c39e398b8fafb699 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -353,7 +353,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_exec_dispatch(void *instance, REQUEST *r
 	 *	If we're not waiting, then there are no output pairs.
 	 */
 	if (inst->output) {
-		fr_pair_list_move(ctx, output_pairs, &answer);
+		fr_pair_list_move(ctx, output_pairs, &answer, T_OP_ADD);
 	}
 	fr_pair_list_free(&answer);
 
@@ -399,7 +399,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 	/*
 	 *	Always add the value-pairs to the reply.
 	 */
-	fr_pair_list_move(request->reply, &request->reply->vps, &tmp);
+	fr_pair_list_move(request->reply, &request->reply->vps, &tmp, T_OP_ADD);
 	fr_pair_list_free(&tmp);
 
 	finish:

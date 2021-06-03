@@ -1,7 +1,7 @@
 /*
  * dhcp.c	DHCP processing.
  *
- * Version:	$Id: 595c8622e30771f42197c05c26c9e2bdc0017991 $
+ * Version:	$Id: 4cafd5624c3d966767d0ef7fe1dee39a4df62752 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -353,6 +353,15 @@ static int dhcp_process(REQUEST *request)
 		relay = radius_pair_create(request->reply, &request->reply->vps,
 					  272, DHCP_MAGIC_VENDOR);
 		if (relay) relay->vp_ipaddr = vp->vp_ipaddr;
+	}
+
+	/*
+	 *	RFC 6842: If there's a DHCP-Client-Identifier ("uid") in the
+	 *	request then echo this in the reply.
+	 */
+	vp = fr_pair_find_by_num(request->packet->vps, 61, DHCP_MAGIC_VENDOR, TAG_ANY); /* DHCP-Client-Identifier */
+	if (vp && !fr_pair_find_by_num(request->reply->vps, 61, DHCP_MAGIC_VENDOR, TAG_ANY)) {
+		fr_pair_add(&request->reply->vps, fr_pair_copy(request->reply, vp));
 	}
 
 	vp = fr_pair_find_by_num(request->packet->vps, 53, DHCP_MAGIC_VENDOR, TAG_ANY); /* DHCP-Message-Type */

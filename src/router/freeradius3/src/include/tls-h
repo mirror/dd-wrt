@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /**
- * $Id: 62f57c4715a611284042edb28c284a7b91a6538b $
+ * $Id: cea6f7d0f6bfc22d1032748dafaa06f1d42e6e09 $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id: 62f57c4715a611284042edb28c284a7b91a6538b $")
+RCSIDH(tls_h, "$Id: cea6f7d0f6bfc22d1032748dafaa06f1d42e6e09 $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -139,6 +139,9 @@ typedef struct _tls_session_t {
 	bool		invalid_hb_used;		//!< Whether heartbleed attack was detected.
 	bool		connected;			//!< whether the outgoing socket is connected
 	bool		is_init_finished;		//!< whether or not init is finished
+	bool		client_cert_ok;			//!< whether or not we validated the client certificate
+	bool		authentication_success;		//!< whether or not the user was authenticated (cert or PW)
+	bool		quick_session_tickets;		//!< for EAP-TLS.
 
 	/*
 	 *	Framed-MTU attribute in RADIUS, if present, can also be used to set this
@@ -160,8 +163,11 @@ typedef struct _tls_session_t {
 	void 		*opaque;
 	void 		(*free_opaque)(void *opaque);
 
-	char const	*prf_label;
+	char const	*label;
 	bool		allow_session_resumption;	//!< Whether session resumption is allowed.
+	bool		session_not_resumed;		//!< Whether our session was not resumed.
+
+	fr_tls_server_conf_t const *conf;		//! for better complaints
 } tls_session_t;
 
 /*
@@ -309,7 +315,7 @@ int		tls_error_io_log(REQUEST *request, tls_session_t *session, int ret, char co
 				 CC_HINT(format (printf, 4, 5));
 
 void		tls_global_cleanup(void);
-tls_session_t	*tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQUEST *request, bool client_cert);
+tls_session_t	*tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQUEST *request, bool client_cert, bool allow_tls13);
 tls_session_t	*tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, int fd, VALUE_PAIR **certs);
 fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs);
 fr_tls_server_conf_t *tls_client_conf_parse(CONF_SECTION *cs);
@@ -319,6 +325,7 @@ int 		tls_handshake_recv(REQUEST *, tls_session_t *ssn);
 int 		tls_handshake_send(REQUEST *, tls_session_t *ssn);
 void 		tls_session_information(tls_session_t *ssn);
 void		tls_session_id(SSL_SESSION *ssn, char *buffer, size_t bufsize);
+X509_STORE	*fr_init_x509_store(fr_tls_server_conf_t *conf);
 
 /*
  *	Low-level TLS stuff
@@ -360,6 +367,10 @@ struct fr_tls_server_conf_t {
 	bool		disable_tlsv1;
 	bool		disable_tlsv1_1;
 	bool		disable_tlsv1_2;
+	bool		tls13_enable_magic;
+
+	int		min_version;
+	int		max_version;
 
 	char const	*tls_min_version;
 	char const	*tls_max_version;
@@ -371,16 +382,20 @@ struct fr_tls_server_conf_t {
 	bool		check_crl;
 	bool		check_all_crl;
 	bool		allow_expired_crl;
+	uint32_t	ca_path_reload_interval;
+	uint32_t	ca_path_last_reload;
+	X509_STORE	*old_x509_store;
 	char const	*check_cert_cn;
 	char const	*cipher_list;
 	bool		cipher_server_preference;
 	char const	*check_cert_issuer;
 
 	bool     	session_cache_enable;
-	uint32_t     	session_timeout;
+	uint32_t     	session_lifetime;
 	uint32_t     	session_cache_size;
 	char const	*session_id_name;
 	char const	*session_cache_path;
+	char const	*session_cache_server;
 	fr_hash_table_t *cache_ht;
 	char		session_context_id[SSL_MAX_SSL_SESSION_ID_LENGTH];
 
@@ -388,6 +403,8 @@ struct fr_tls_server_conf_t {
 	char const	*verify_tmp_dir;
 	char const	*verify_client_cert_cmd;
 	bool		require_client_cert;
+
+	pthread_mutex_t	mutex;
 
 #ifdef HAVE_OPENSSL_OCSP_H
 	/*

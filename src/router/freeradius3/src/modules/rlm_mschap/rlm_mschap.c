@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 83c84a63e2c1af9415ffb09a97345dca07ad0666 $
+ * $Id: 98bbff05f257c664edc1a330b0565cfa849bcb6d $
  * @file rlm_mschap.c
  * @brief Implemented mschap authentication.
  *
@@ -23,7 +23,7 @@
  */
 
 /*  MPPE support from Takahiro Wagatsuma <waga@sic.shibaura-it.ac.jp> */
-RCSID("$Id: 83c84a63e2c1af9415ffb09a97345dca07ad0666 $")
+RCSID("$Id: 98bbff05f257c664edc1a330b0565cfa849bcb6d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -616,7 +616,7 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 			return -1;
 		}
 #else
-		cf_log_err_cs(conf, "'winbind' auth not enabled at compiled time");
+		cf_log_err_cs(conf, "'winbind' is not enabled in this build.");
 		return -1;
 #endif
 	}

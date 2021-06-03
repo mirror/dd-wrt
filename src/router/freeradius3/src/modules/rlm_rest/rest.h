@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9e278d16c4e9d399853d84d66d582bc8da40cefb $
+ * $Id: d077ccc5c2cca689fd858bf13cc6b371e42b880a $
  *
  * @brief Function prototypes and datatypes for the REST (HTTP) transport.
  * @file rest.h
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSIDH(other_h, "$Id: 9e278d16c4e9d399853d84d66d582bc8da40cefb $")
+RCSIDH(other_h, "$Id: d077ccc5c2cca689fd858bf13cc6b371e42b880a $")
 
 #include <freeradius-devel/connection.h>
 #include "config.h"
@@ -31,12 +31,20 @@ RCSIDH(other_h, "$Id: 9e278d16c4e9d399853d84d66d582bc8da40cefb $")
 #define CURL_NO_OLDIES 1
 #include <curl/curl.h>
 
+#ifdef HAVE_WDOCUMENTATION
+DIAG_OFF(documentation)
+#endif
+
 #ifdef HAVE_JSON
 #  if defined(HAVE_JSONMC_JSON_H)
 #    include <json-c/json.h>
 #  elif defined(HAVE_JSON_JSON_H)
 #    include <json/json.h>
 #  endif
+#endif
+
+#ifdef HAVE_WDOCUMENTATION
+DIAG_ON(documentation)
 #endif
 
 #define REST_URI_MAX_LEN		2048
@@ -102,6 +110,8 @@ extern const FR_NAME_NUMBER http_body_type_table[];
 
 extern const FR_NAME_NUMBER http_content_type_table[];
 
+extern const FR_NAME_NUMBER http_negotiation_table[];
+
 /*
  *	Structure for section configuration
  */
@@ -114,6 +124,9 @@ typedef struct rlm_rest_section_t {
 
 	char const		*body_str;	//!< The string version of the encoding/content type.
 	http_body_type_t	body;		//!< What encoding type should be used.
+
+	bool			attr_num;	//!< If true, the the attribute number is supplied for each attribute.
+	bool			raw_value;	//!< If true, enumerated attributes are provided as a numeric value
 
 	char const		*force_to_str;	//!< Force decoding with this decoder.
 	http_body_type_t	force_to;	//!< Override the Content-Type header in the response
@@ -153,6 +166,9 @@ typedef struct rlm_rest_t {
 
 	struct timeval		connect_timeout_tv;	//!< Connection timeout timeval.
 	long			connect_timeout;	//!< Connection timeout ms.
+
+	char const		*http_negotiation_str;	//!< The string version of the http_negotiation
+	long			http_negotiation;	//!< The HTTP protocol version to use
 
 	fr_connection_pool_t	*pool;		//!< Pointer to the connection pool.
 
@@ -255,7 +271,7 @@ typedef struct rlm_rest_handle_t {
  *	CURLOPT_READFUNCTION prototype.
  */
 typedef size_t (*rest_read_t)(void *ptr, size_t size, size_t nmemb,
-			      void *userdata);
+			      void *userdata, rlm_rest_section_t *section);
 
 /*
  *	Connection API callbacks

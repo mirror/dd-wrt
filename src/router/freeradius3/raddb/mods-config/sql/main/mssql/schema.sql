@@ -1,4 +1,4 @@
--- $Id: 7930c9e66d1b4767a9c3bfa4ac6eda2504ec3057 $d$
+-- $Id: 5e23d33fc710d4b160b01b6f55ca5a1310f8397a $d$
 --
 -- schela.sql   rlm_sql - FreeRADIUS SQL Module
 --
@@ -25,18 +25,18 @@ CREATE TABLE [radacct] (
 	[GroupName] [varchar] (64) NOT NULL,
 	[Realm] [varchar] (64) NOT NULL,
 	[NASIPAddress] [varchar] (15) NOT NULL,
-	[NASPortId] [varchar] (15) NULL,
+	[NASPortId] [varchar] (32) NULL,
 	[NASPortType] [varchar] (32) NULL,
 	[AcctStartTime] [datetime] NOT NULL,
 	[AcctStopTime] [datetime] NOT NULL,
 	[AcctSessionTime] [bigint] NULL,
 	[AcctAuthentic] [varchar] (32) NULL,
-	[ConnectInfo_start] [varchar] (32) NULL,
-	[ConnectInfo_stop] [varchar] (32) NULL,
+	[ConnectInfo_start] [varchar] (128) NULL,
+	[ConnectInfo_stop] [varchar] (128) NULL,
 	[AcctInputOctets] [bigint] NULL,
 	[AcctOutputOctets] [bigint] NULL,
-	[CalledStationId] [varchar] (30) NOT NULL,
-	[CallingStationId] [varchar] (30) NOT NULL,
+	[CalledStationId] [varchar] (50) NOT NULL,
+	[CallingStationId] [varchar] (50) NOT NULL,
 	[AcctTerminateCause] [varchar] (32) NOT NULL,
 	[ServiceType] [varchar] (32) NULL,
 	[FramedProtocol] [varchar] (32) NULL,
@@ -46,7 +46,8 @@ CREATE TABLE [radacct] (
 	[FramedInterfaceId] [varchar] (44) NOT NULL,
 	[DelegatedIPv6Prefix] [varchar] (45) NOT NULL,
 	[AcctStartDelay] [int] NULL,
-	[AcctStopDelay] [int] NULL
+	[AcctStopDelay] [int] NULL,
+	[Class] [varchar] (64) NULL
 ) ON [PRIMARY]
 GO
 
@@ -79,6 +80,7 @@ ALTER TABLE [radacct] WITH NOCHECK ADD
 	CONSTRAINT [DF_radacct_DelegatedIPv6Prefix] DEFAULT ('') FOR [DelegatedIPv6Prefix],
 	CONSTRAINT [DF_radacct_AcctStartDelay] DEFAULT (null) FOR [AcctStartDelay],
 	CONSTRAINT [DF_radacct_AcctStopDelay] DEFAULT (null) FOR [AcctStopDelay],
+	CONSTRAINT [DF_radacct_Class] DEFAULT (null) FOR [Class],
 	CONSTRAINT [PK_radacct] PRIMARY KEY NONCLUSTERED
 	(
 		[RadAcctId]
@@ -116,6 +118,9 @@ CREATE INDEX [AcctStopTime] ON [radacct]([AcctStopTime]) ON [PRIMARY]
 GO
 
 CREATE INDEX [NASIPAddress] ON [radacct]([NASIPAddress]) ON [PRIMARY]
+GO
+
+CREATE INDEX [Class] ON [radacct]([Class]) ON [PRIMARY]
 GO
 
 /* For use by onoff */

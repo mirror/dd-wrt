@@ -6,7 +6,7 @@
 #
 #	As posted to the list by Eric Kilfoil <ekilfoil@uslec.net>
 #
-# Version:	$Id: 51a52ec63cbc3f6e2f8df5a28bf8c03893527057 $
+# Version:	$Id: 97196ac55d9c95faa4fdefeebf06dc8126169886 $
 #
 
 VENDOR		Juniper				2636
@@ -48,6 +48,9 @@ ATTRIBUTE	Juniper-Local-Group-Name		46	string
 ATTRIBUTE	Juniper-Local-Interface			47	string
 ATTRIBUTE	Juniper-Switching-Filter		48	string
 ATTRIBUTE	Juniper-VoIP-Vlan			49	string
+ATTRIBUTE	Juniper-CWA-Redirect			50	string
+
+ATTRIBUTE	Juniper-AV-Pair				52	string
 
 VALUE	Juniper-CTPView-APP-Group	Net_View		1
 VALUE	Juniper-CTPView-APP-Group	Net_Admin		2

@@ -16,16 +16,22 @@
  */
 
 /**
- * $Id: 50955fe01da2be9414845aabdeadb03dda40cebf $
+ * $Id: 7d9be91afefb78027a96ae438fbe71ef25e7ed85 $
  *
  * @file atomic_queue.h
  * @brief Thread-safe queues.
  *
  * @copyright 2016 Alan DeKok <aland@freeradius.org>
  */
-RCSIDH(atomic_queue_h, "$Id: 50955fe01da2be9414845aabdeadb03dda40cebf $")
+RCSIDH(atomic_queue_h, "$Id: 7d9be91afefb78027a96ae438fbe71ef25e7ed85 $")
 
+#ifdef HAVE_WDOCUMENTATION
+DIAG_OFF(documentation)
+#endif
 #include <talloc.h>
+#ifdef HAVE_WDOCUMENTATION
+DIAG_ON(documentation)
+#endif
 #include <stdbool.h>
 
 #ifdef HAVE_STDATOMIC_H

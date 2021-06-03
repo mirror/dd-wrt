@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 3282f401ec14c365c5dd4c5e113d288a3b1347ea $
+ * $Id: 65b7d9aba2527dddc7e2c49d6b2bb14db6013f29 $
  * @file rlm_sql_sqlite.c
  * @brief SQLite driver.
  *
  * @copyright 2013 Network RADIUS SARL <info@networkradius.com>
  * @copyright 2007 Apple Inc.
  */
-RCSID("$Id: 3282f401ec14c365c5dd4c5e113d288a3b1347ea $")
+RCSID("$Id: 65b7d9aba2527dddc7e2c49d6b2bb14db6013f29 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -94,6 +94,7 @@ static sql_rcode_t sql_error_to_rcode(int status)
 	case SQLITE_ERROR:	/* SQL error or missing database */
 	case SQLITE_FULL:
 	case SQLITE_MISMATCH:
+	case SQLITE_BUSY:       /* Database file busy - can be caused by locking */
 		return RLM_SQL_ERROR;
 
 	/*

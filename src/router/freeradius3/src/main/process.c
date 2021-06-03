@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 1a48517d43b5dc0ca73eb7f71fa3fe90ad99699a $
+ * $Id: 8098b81bc1d8f7f151efdb6604c02adb43cc2cae $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 1a48517d43b5dc0ca73eb7f71fa3fe90ad99699a $")
+RCSID("$Id: 8098b81bc1d8f7f151efdb6604c02adb43cc2cae $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -1506,7 +1506,8 @@ static void request_finish(REQUEST *request, int action)
 	/*
 	 *	See if we need to delay an Access-Reject packet.
 	 */
-	if ((request->reply->code == PW_CODE_ACCESS_REJECT) &&
+	if ((request->packet->code == PW_CODE_ACCESS_REQUEST) &&
+	    (request->reply->code == PW_CODE_ACCESS_REJECT) &&
 	    (request->root->reject_delay.tv_sec > 0)) {
 		request->response_delay = request->root->reject_delay;
 
@@ -1598,6 +1599,8 @@ static void request_finish(REQUEST *request, int action)
  */
 static void request_running(REQUEST *request, int action)
 {
+	int rcode;
+
 	VERIFY_REQUEST(request);
 
 	TRACE_STATE_MACHINE;
@@ -1631,7 +1634,8 @@ static void request_running(REQUEST *request, int action)
 		/*
 		 *	We may need to send a proxied request.
 		 */
-		if (request_will_proxy(request)) {
+		rcode = request_will_proxy(request);
+		if (rcode == 1) {
 #ifdef DEBUG_STATE_MACHINE
 			if (rad_debug_lvl) printf("(%u) ********\tWill Proxy\t********\n", request->number);
 #endif
@@ -1641,13 +1645,42 @@ static void request_running(REQUEST *request, int action)
 			 *	up the post proxy fail
 			 *	handler.
 			 */
+		retry_proxy:
 			if (request_proxy(request) < 0) {
 				if (request->home_server && request->home_server->server) goto req_finished;
+
+				if (request->home_pool && request->home_server &&
+				    (request->home_server->state >= HOME_STATE_IS_DEAD)) {
+					VALUE_PAIR *vp;
+					REALM *realm = NULL;
+					home_server_t *home = NULL;
+
+					vp = fr_pair_find_by_num(request->config, PW_PROXY_TO_REALM, 0, TAG_ANY);
+					if (vp) realm = realm_find2(vp->vp_strvalue);
+
+					/*
+					 *	Since request->home_server is dead,
+					 *	this function won't pick the same home server as before.
+					 */
+					if (realm) home = home_server_ldb(vp->vp_strvalue, request->home_pool, request);
+					if (home) {
+						home_server_update_request(home, request);
+						goto retry_proxy;
+					}
+				}
 
 				(void) setup_post_proxy_fail(request);
 				process_proxy_reply(request, NULL);
 				goto req_finished;
 			}
+
+		} else if (rcode < 0) {
+			/*
+			 *	No live home servers, run Post-Proxy-Type Fail.
+			 */
+			(void) setup_post_proxy_fail(request);
+			process_proxy_reply(request, NULL);
+			goto req_finished;
 		} else
 #endif
 		{
@@ -2473,19 +2506,18 @@ static int process_proxy_reply(REQUEST *request, RADIUS_PACKET *reply)
 		remove_from_proxy_hash(request);
 	}
 
-	old_server = request->server;
 
 	/*
-	 *	If the home server is virtual, just run pre_proxy from
-	 *	that section.
+	 *	Run the request through the virtual server for the
+	 *	home server, OR through the virtual server for the
+	 *	home server pool.
 	 */
+	old_server = request->server;
 	if (request->home_server && request->home_server->server) {
 		request->server = request->home_server->server;
 
-	} else {
-		if (request->home_pool && request->home_pool->virtual_server) {
-			request->server = request->home_pool->virtual_server;
-		}
+	} else if (request->home_pool && request->home_pool->virtual_server) {
+		request->server = request->home_pool->virtual_server;
 	}
 
 	/*
@@ -2887,8 +2919,9 @@ static void proxy_running(REQUEST *request, int action)
  * The key attributes are:
  *   - PW_PROXY_TO_REALM          - Specifies a realm the request should be proxied to.
  *   - PW_HOME_SERVER_POOL        - Specifies a specific home server pool to proxy to.
- *   - PW_PACKET_DST_IP_ADDRESS   - Specifies a specific IPv4 home server to proxy to.
- *   - PW_PACKET_DST_IPV6_ADDRESS - Specifies a specific IPv6 home server to proxy to.
+ *   - PW_HOME_SERVER_NAME        - Specifies a home server by name
+ *   - PW_PACKET_DST_IP_ADDRESS   - Specifies a home server by IPv4 address
+ *   - PW_PACKET_DST_IPV6_ADDRESS - Specifies a home server by IPv5 address
  *
  * Certain packet types such as #PW_CODE_STATUS_SERVER will never be proxied.
  *
@@ -3062,6 +3095,54 @@ static int request_will_proxy(REQUEST *request)
 
 		return 0;
 
+	} else if ((vp = fr_pair_find_by_num(request->config, PW_HOME_SERVER_NAME, 0, TAG_ANY)) != NULL) {
+		int type;
+
+		switch (request->packet->code) {
+		case PW_CODE_ACCESS_REQUEST:
+			type = HOME_TYPE_AUTH;
+			break;
+
+#ifdef WITH_ACCOUNTING
+		case PW_CODE_ACCOUNTING_REQUEST:
+			type = HOME_TYPE_ACCT;
+			break;
+#endif
+
+#ifdef WITH_COA
+		case PW_CODE_COA_REQUEST:
+		case PW_CODE_DISCONNECT_REQUEST:
+			type = HOME_TYPE_COA;
+			break;
+#endif
+
+		default:
+			return 0;
+		}
+
+		/*
+		 *	Find the home server by name.
+		 */
+		home = home_server_byname(vp->vp_strvalue, type);
+		if (!home) {
+			RWDEBUG("No such home server %s", vp->vp_strvalue);
+			return 0;
+		}
+
+		/*
+		 *	The home server is alive (or may be alive).
+		 *	Send the packet to the IP.
+		 */
+		if (home->state < HOME_STATE_IS_DEAD) goto do_home;
+
+		/*
+		 *	The home server is dead.  If you wanted
+		 *	fail-over, you should have proxied to a pool.
+		 *	Sucks to be you.
+		 */
+
+		return 0;
+
 	} else {
 		return 0;
 	}
@@ -3082,7 +3163,7 @@ static int request_will_proxy(REQUEST *request)
 
 	if (!home) {
 		REDEBUG2("Failed to find live home server: Cancelling proxy");
-		return 1;
+		return -1;
 	}
 
 do_home:
@@ -3179,12 +3260,12 @@ do_home:
 		pre_proxy_type = vp->vp_integer;
 	}
 
-	old_server = request->server;
-
 	/*
-	 *	If the home server is virtual, just run pre_proxy from
-	 *	that section.
+	 *	Run the request through the virtual server for the
+	 *	home server, OR through the virtual server for the
+	 *	home server pool.
 	 */
+	old_server = request->server;
 	if (request->home_server && request->home_server->server) {
 		request->server = request->home_server->server;
 
@@ -4175,6 +4256,7 @@ static void request_coa_originate(REQUEST *request)
 	VALUE_PAIR *vp;
 	REQUEST *coa;
 	fr_ipaddr_t ipaddr;
+	char const *old_server;
 	char buffer[256];
 
 	VERIFY_REQUEST(request);
@@ -4318,19 +4400,26 @@ static void request_coa_originate(REQUEST *request)
 		pre_proxy_type = vp->vp_integer;
 	}
 
-	if (coa->home_pool && coa->home_pool->virtual_server) {
-		char const *old_server = coa->server;
+	/*
+	 *	Run the request through the virtual server for the
+	 *	home server, OR through the virtual server for the
+	 *	home server pool.
+	 */
+	old_server = request->server;
+	if (coa->home_server && coa->home_server->server) {
+		coa->server = coa->home_server->server;
 
+	} else if (coa->home_pool && coa->home_pool->virtual_server) {
 		coa->server = coa->home_pool->virtual_server;
-		RDEBUG2("server %s {", coa->server);
-		RINDENT();
-		rcode = process_pre_proxy(pre_proxy_type, coa);
-		REXDENT();
-		RDEBUG2("}");
-		coa->server = old_server;
-	} else {
-		rcode = process_pre_proxy(pre_proxy_type, coa);
 	}
+
+	RDEBUG2("server %s {", coa->server);
+	RINDENT();
+	rcode = process_pre_proxy(pre_proxy_type, coa);
+	REXDENT();
+	RDEBUG2("}");
+	coa->server = old_server;
+
 	switch (rcode) {
 	default:
 		goto fail;

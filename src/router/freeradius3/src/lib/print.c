@@ -1,7 +1,7 @@
 /*
  * print.c	Routines to print stuff.
  *
- * Version:	$Id: 9ac927358b2012ea1ec4bf2ac60db4d1adbdc252 $
+ * Version:	$Id: 2293ee9fea1e1b487fcc5a5c0b0c68c092c703c6 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 9ac927358b2012ea1ec4bf2ac60db4d1adbdc252 $")
+RCSID("$Id: 2293ee9fea1e1b487fcc5a5c0b0c68c092c703c6 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -495,32 +495,25 @@ char *vp_aprints_type(TALLOC_CTX *ctx, PW_TYPE type)
  * @param out Where to write the string.
  * @param outlen Length of output buffer.
  * @param vp to print.
+ * @param raw_value if true, the raw value is printed and not the enumerated attribute value
  * @return the length of data written to out, or a value >= outlen on truncation.
  */
-size_t vp_prints_value_json(char *out, size_t outlen, VALUE_PAIR const *vp)
+size_t vp_prints_value_json(char *out, size_t outlen, VALUE_PAIR const *vp, bool raw_value)
 {
 	char const	*q;
 	size_t		len, freespace = outlen;
+	bool		raw = raw_value || (!vp->da->flags.has_tag && !vp->da->flags.has_value);
 
-	if (!vp->da->flags.has_tag) {
+	if (raw) {
 		switch (vp->da->type) {
 		case PW_TYPE_INTEGER:
-			if (vp->da->flags.has_value) break;
-
 			return snprintf(out, freespace, "%u", vp->vp_integer);
 
 		case PW_TYPE_SHORT:
-			if (vp->da->flags.has_value) break;
-
 			return snprintf(out, freespace, "%u", (unsigned int) vp->vp_short);
 
 		case PW_TYPE_BYTE:
-			if (vp->da->flags.has_value) break;
-
 			return snprintf(out, freespace, "%u", (unsigned int) vp->vp_byte);
-
-		case PW_TYPE_SIGNED:
-			return snprintf(out, freespace, "%d", vp->vp_signed);
 
 		default:
 			break;
@@ -775,7 +768,7 @@ char *vp_aprints(TALLOC_CTX *ctx, VALUE_PAIR const *vp, char quote)
 
 	value = vp_aprints_value(ctx, vp, quote);
 
-	if (vp->da->flags.has_tag) {
+	if (vp->da->flags.has_tag && (vp->tag != TAG_ANY)) {
 		if (quote && (vp->da->type == PW_TYPE_STRING)) {
 			str = talloc_asprintf(ctx, "%s:%d %s %c%s%c", vp->da->name, vp->tag, token, quote, value, quote);
 		} else {

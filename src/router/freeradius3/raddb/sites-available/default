@@ -11,7 +11,7 @@
 #	the "inner-tunnel" virtual server.  You will likely have to edit
 #	that, too, for authentication to work.
 #
-#	$Id: c60c0ba4c8728fac10b190dbb3b752f9df317c07 $
+#	$Id: 30161087c7afd74014a0ef5ec87cbe77326ac1da $
 #
 ######################################################################
 #
@@ -61,6 +61,7 @@ listen {
 	#  Allowed values are:
 	#	auth	listen for authentication packets
 	#	acct	listen for accounting packets
+	#       auth+acct listen for both authentication and accounting packets
 	#	proxy   IP to use for sending proxied packets
 	#	detail  Read from the detail file.  For examples, see
 	#               raddb/sites-available/copy-acct-to-home-server
@@ -349,10 +350,25 @@ authorize {
 	#
 	#  The WiMAX specification says that the Calling-Station-Id
 	#  is 6 octets of the MAC.  This definition conflicts with
-	#  RFC 3580, and all common RADIUS practices.  Un-commenting
-	#  the "wimax" module here means that it will fix the
-	#  Calling-Station-Id attribute to the normal format as
-	#  specified in RFC 3580 Section 3.21
+	#  RFC 3580, and all common RADIUS practices.  If you are using
+	#  old style WiMAX (non LTE) the un-commenting the "wimax" module
+	#  here means that it will fix the Calling-Station-Id attribute to
+	#  the normal format as specified in RFC 3580 Section 3.21.
+	#
+	#  If you are using WiMAX 2.1 (LTE) then un-commenting will allow 
+	#  the module to handle SQN resyncronisation. Prior to calling the
+	#  module it is necessary to populate the following attributes
+	#  with the relevant keys:
+	#    control:WiMAX-SIM-Ki
+	#    control:WiMAX-SIM-OPc
+	#
+	#  If WiMAX-Re-synchronization-Info is found in the request then
+	#  the module will attempt to extract SQN and store it in
+	#  control:WiMAX-SIM-SQN. Also a copy of RAND is extracted to
+	#  control:WiMAX-SIM-RAND.
+	#
+	#  If the SIM cannot be authenticated using Ki and OPc then reject
+	#  will be returned.
 #	wimax
 
 	#
@@ -455,6 +471,23 @@ authorize {
 #	Autz-Type Status-Server {
 #
 #	}
+
+	#
+	#  RADIUS/TLS (or RadSec) connections are processed through
+	#  this section.  See sites-available/tls, and the configuration
+	#  item "check_client_connections" for more information.
+	#
+	#  The request contains TLS client certificate attributes,
+	#  and nothing else.  The debug output will print which
+	#  attributes are available on your system.
+	#
+	#  If the section returns "ok" or "updated", then the
+	#  connection is accepted.  Otherwise the connection is
+	#  terminated.
+	#
+	Autz-Type New-TLS-Connection {
+		  ok
+	}
 }
 
 
@@ -641,7 +674,11 @@ accounting {
 #	radutmp
 #	sradutmp
 
+	#
 	#  Return an address to the IP Pool when we see a stop record.
+	#
+	#  Ensure that &control:Pool-Name is set to determine which
+	#  pool of IPs are used.
 #	sqlippool
 
 	#
@@ -710,6 +747,48 @@ session {
 #	}
 
 	#
+	#  Reject packets where User-Name != TLS-Client-Cert-Common-Name
+	#  There is no reason for users to lie about their names.
+	#
+	#  In general, User-Name == EAP Identity == TLS-Client-Cert-Common-Name
+	#
+#	verify_tls_client_common_name
+
+	#
+	#  If there is no Stripped-User-Name in the request, AND we have a client cert,
+	#  then create a Stripped-User-Name from the TLS client certificate information.
+	#
+	#  Note that this policy MUST be edited for your local system!
+	#  We do not know which fields exist in which certificate, as
+	#  there is no standard here.  There is no way for us to have
+	#  a default configuration which "just works" everywhere.  We
+	#  can only make recommendations.
+	#
+	#  The Stripped-User-Name is updated so that it is logged in
+	#  the various "username" fields.  This logging means that you
+	#  can associate a particular session with a particular client
+	#  certificate.
+	#
+#	if (&EAP-Message && !&Stripped-User-Name && &TLS-Client-Cert-Serial) {
+#		update request {
+#			&Stripped-User-Name := "%{%{TLS-Client-Cert-Subject-Alt-Name-Email}:-%{%{TLS-Client-Cert-Common-Name}:-%{TLS-Client-Cert-Serial}}}"
+#		}
+#
+		#
+		#  Create a Class attribute which is a hash of a bunch
+		#  of information which we hope exists.  This
+		#  attribute should be echoed back in
+		#  Accounting-Request packets, which will let the
+		#  administrator correlate authentication and
+		#  accounting.
+		#
+#		update reply {
+#			Class += "%{md5:%{Calling-Station-Id}%{Called-Station-Id}%{TLS-Client-Cert-Subject-Alt-Name-Email}%{TLS-Client-Cert-Common-Name}%{TLS-Client-Cert-Serial}%{NAS-IPv6-Address}%{NAS-IP-Address}%{NAS-Identifier}%{NAS-Port}"
+#		}
+#
+#	}
+
+	#
 	#  For EAP-TTLS and PEAP, add the cached attributes to the reply.
 	#  The "session-state" attributes are automatically cached when
 	#  an Access-Challenge is sent, and automatically retrieved
@@ -731,8 +810,12 @@ session {
 #		&reply: += &session-state:
 #	}
 
+	#
 	#  Refresh leases when we see a start or alive. Return an address to
 	#  the IP Pool when we see a stop record.
+	#
+	#  Ensure that &control:Pool-Name is set to determine which
+	#  pool of IPs are used.
 #	sqlippool
 
 
@@ -770,8 +853,8 @@ session {
 #	exec
 
 	#
-	#  Calculate the various WiMAX keys.  In order for this to work,
-	#  you will need to define the WiMAX NAI, usually via
+	#  In order to calcualate the various keys for old style WiMAX
+	#  (non LTE) you will need to define the WiMAX NAI, usually via
 	#
 	#	update request {
 	#	       &WiMAX-MN-NAI = "%{User-Name}"
@@ -792,8 +875,14 @@ session {
 	#  are included.  See "raddb/modules/wimax", configuration
 	#  entry "delete_mppe_keys" for more information.
 	#
+	#  For LTE style WiMAX you need to populate the following with the
+	#  relevant values:
+	#    control:WiMAX-SIM-Ki
+	#    control:WiMAX-SIM-OPc
+	#    control:WiMAX-SIM-AMF
+	#    control:WiMAX-SIM-SQN
+	#
 #	wimax
-
 
 	#  If there is a client certificate (EAP-TLS, sometimes PEAP
 	#  and TTLS), then some attributes are filled out after the
@@ -875,6 +964,15 @@ session {
 #	Post-Auth-Type Challenge {
 #		remove_reply_message_if_eap
 #		attr_filter.access_challenge.post-auth
+#	}
+	#
+	#  If the client sends EAP-Key-Name in the request,
+	#  then echo the real value back in the reply.
+	#
+#	if (EAP-Key-Name && &reply:EAP-Session-Id) {
+#		update reply {
+#			&EAP-Key-Name := &reply:EAP-Session-Id
+#		}
 #	}
 
 #}

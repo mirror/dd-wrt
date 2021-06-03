@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 9fed166e624360e921c80ac43bf734d51f8faa29 $
+ * $Id: 1cd73ff2469d5f1cac253adedc77037be2a7ae24 $
  * @file rlm_dhcp.c
  * @brief Will contain dhcp listener code.
  *
  * @copyright 2012  The FreeRADIUS server project
  */
-RCSID("$Id: 9fed166e624360e921c80ac43bf734d51f8faa29 $")
+RCSID("$Id: 1cd73ff2469d5f1cac253adedc77037be2a7ae24 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -97,7 +97,7 @@ static ssize_t dhcp_options_xlat(UNUSED void *instance, REQUEST *request,
 			decoded++;
 		}
 
-		fr_pair_list_move(request->packet, &(request->packet->vps), &head);
+		fr_pair_list_move(request->packet, &(request->packet->vps), &head, T_OP_ADD);
 
 		/* Free any unmoved pairs */
 		fr_pair_list_free(&head);

@@ -2,7 +2,7 @@
 ##
 ## mods-available/sql -- SQL modules
 ##
-##	$Id: 7e9eee03c58bab67206ec10249db79ebbc0baa3c $
+##	$Id: cfeac63ea87c30fead8457af6d10f5c3a0f48aef $
 
 ######################################################################
 #
@@ -130,6 +130,11 @@ sql {
 	#
 	#		raddb/mods-config/sql/main/mongo/queries.conf
 	#		raddb/mods-config/sql/main/ippool/queries.conf
+	#
+	#	In order to use findAndModify with an aggretation pipleline, make
+	#	sure that you are running MongoDB version 4.2 or greater. FreeRADIUS
+	#	assumes that the paramaters passed to the methods are supported by the
+	#	version of MongoDB which it is connected to.
 	#
 	mongo {
 		#
@@ -319,6 +324,26 @@ sql {
 
 	# Set to 'yes' to read radius clients from the database ('nas' table)
 	# Clients will ONLY be read on server startup.
+	#
+	#  A client can be link to a virtual server via the SQL
+	#  module.  This link is done via the following process:
+	#
+	#  If there is no listener in a virtual server, SQL clients
+	#  are added to the global list for that virtual server.
+	#
+	#  If there is a listener, and the first listener does not
+	#  have a "clients=..." configuration item, SQL clients are
+	#  added to the global list.
+	#
+	#  If there is a listener, and the first one does have a
+	#  "clients=..." configuration item, SQL clients are added to
+	#  that list.  The client { ...} ` configured in that list are
+	#  also added for that listener.
+	#
+	#  The only issue is if you have multiple listeners in a
+	#  virtual server, each with a different client list, then
+	#  the SQL clients are added only to the first listener.
+	#
 #	read_clients = yes
 
 	# Table to keep radius client info

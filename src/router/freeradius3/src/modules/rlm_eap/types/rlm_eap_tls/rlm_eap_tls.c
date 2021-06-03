@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 4d41cd42e6e5e353db9fc591e3c430ea8ac1c946 $
+ * Version:     $Id: 5db75823e2240447e4bf5032aadef32d7730992b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  */
 
-RCSID("$Id: 4d41cd42e6e5e353db9fc591e3c430ea8ac1c946 $")
+RCSID("$Id: 5db75823e2240447e4bf5032aadef32d7730992b $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #ifdef HAVE_OPENSSL_RAND_H
@@ -43,6 +43,7 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 static CONF_PARSER module_config[] = {
 	{ "tls", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_eap_tls_t, tls_conf_name), NULL },
 	{ "virtual_server", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_eap_tls_t, virtual_server), NULL },
+	{ "configurable_client_cert", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_eap_tls_t, configurable_client_cert), NULL },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -84,25 +85,38 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	tls_session_t	*ssn;
 	rlm_eap_tls_t	*inst;
 	REQUEST		*request = handler->request;
+	bool		require_client_cert = true;
 
 	inst = type_arg;
 
 	handler->tls = true;
 
 	/*
-	 *	EAP-TLS always requires a client certificate.
+	 *	Respect EAP-TLS-Require-Client-Cert, but only if
+	 *	enabled in the module configuration.
+	 *
+	 *	We can't change behavior of existing systems, so this
+	 *	change has to be enabled via a new configuration
+	 *	option.
 	 */
-	ssn = eaptls_session(handler, inst->tls_conf, true);
+	if (inst->configurable_client_cert) {
+		VALUE_PAIR *vp;
+
+		vp = fr_pair_find_by_num(handler->request->config, PW_EAP_TLS_REQUIRE_CLIENT_CERT, 0, TAG_ANY);
+		if (vp && !vp->vp_integer) require_client_cert = false;
+	}
+
+	/*
+	 *	EAP-TLS always requires a client certificate, and
+	 *	allows for TLS 1.3 if permitted.
+	 */
+	ssn = eaptls_session(handler, inst->tls_conf, require_client_cert, true);
 	if (!ssn) {
 		return 0;
 	}
 
 	handler->opaque = ((void *)ssn);
-
-	/*
-	 *	Set up type-specific information.
-	 */
-	ssn->prf_label = "client EAP encryption";
+	ssn->quick_session_tickets = true; /* send as soon as we've seen the client cert */
 
 	/*
 	 *	TLS session initialization is over.  Now handle TLS
@@ -112,7 +126,7 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	if ((status == FR_TLS_INVALID) || (status == FR_TLS_FAIL)) {
 		REDEBUG("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	} else {
-		RDEBUG2("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
+		RDEBUG3("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	}
 	if (status == 0) return 0;
 
@@ -141,7 +155,7 @@ static int CC_HINT(nonnull) mod_process(void *type_arg, eap_handler_t *handler)
 	if ((status == FR_TLS_INVALID) || (status == FR_TLS_FAIL)) {
 		REDEBUG("[eaptls process] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	} else {
-		RDEBUG2("[eaptls process] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
+		RDEBUG3("[eaptls process] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	}
 
 
@@ -194,6 +208,13 @@ static int CC_HINT(nonnull) mod_process(void *type_arg, eap_handler_t *handler)
 			talloc_free(fake);
 			/* success */
 		}
+
+		/*
+		 *	Set the label to a fixed string.  For TLS 1.3,
+		 *	the label is the same for all TLS-based EAP
+		 *	methods.
+		 */
+		tls_session->label = "client EAP encryption";
 
 		/*
 		 *	Success: Automatically return MPPE keys.

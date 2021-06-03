@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id: c05aa5bf67121bf1190160bddd05a5580ca6dcb1 $
+ * Version:	$Id: d0080623362345afb165ea5712d2129211634ab9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: c05aa5bf67121bf1190160bddd05a5580ca6dcb1 $")
+RCSID("$Id: d0080623362345afb165ea5712d2129211634ab9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -604,7 +604,7 @@ static int module_conf_parse(module_instance_t *node, void **handle)
  */
 static module_instance_t *module_bootstrap(CONF_SECTION *cs)
 {
-	char const *name1, *name2;
+	char const *name1, *name2, *askedname;
 	module_instance_t *node, myNode;
 	char module_name[256];
 
@@ -612,17 +612,20 @@ static module_instance_t *module_bootstrap(CONF_SECTION *cs)
 	 *	Figure out which module we want to load.
 	 */
 	name1 = cf_section_name1(cs);
-	name2 = cf_section_name2(cs);
-	if (!name2) name2 = name1;
+	askedname = name2 = cf_section_name2(cs);
+	if (!askedname) {
+		askedname = name1;
+		name2 = "";
+	}
 
-	strlcpy(myNode.name, name2, sizeof(myNode.name));
+	strlcpy(myNode.name, askedname, sizeof(myNode.name));
 
 	/*
 	 *	See if the module already exists.
 	 */
 	node = rbtree_finddata(instance_tree, &myNode);
 	if (node) {
-		ERROR("Duplicate module \"%s %s\", in file %s:%d and file %s:%d",
+		ERROR("Duplicate module \"%s %s { ... }\", in file %s:%d and file %s:%d",
 		      name1, name2,
 		      cf_section_filename(cs),
 		      cf_section_lineno(cs),
@@ -638,7 +641,7 @@ static module_instance_t *module_bootstrap(CONF_SECTION *cs)
 	 */
 	node = talloc_zero(instance_tree, module_instance_t);
 	node->cs = cs;
-	strlcpy(node->name, name2, sizeof(node->name));
+	strlcpy(node->name, askedname, sizeof(node->name));
 
 	/*
 	 *	Names in the "modules" section aren't prefixed
@@ -1045,6 +1048,8 @@ static int load_subcomponent_section(CONF_SECTION *cs,
 		return 1;
 	}
 
+	DEBUG("Compiling %s %s for attr %s", cf_section_name1(cs), name2, da->name);
+
 	/*
 	 *	Compile the group.
 	 */
@@ -1157,6 +1162,7 @@ static int load_component_section(CONF_SECTION *cs,
 		if (comp == MOD_AUTHENTICATE) {
 			DICT_VALUE *dval;
 			char const *modrefname = NULL;
+
 			if (cp) {
 				modrefname = cf_pair_attr(cp);
 			} else {
@@ -1168,6 +1174,7 @@ static int load_component_section(CONF_SECTION *cs,
 					return -1;
 				}
 			}
+			if (*modrefname == '-') modrefname++;
 
 			dval = dict_valbyname(PW_AUTH_TYPE, 0, modrefname);
 			if (!dval) {
@@ -1372,6 +1379,44 @@ static int load_byserver(CONF_SECTION *cs)
 		}
 #endif
 
+#ifdef WITH_TLS
+		/*
+		 *	It's OK to not have TLS cache sections.
+		 */
+		da = dict_attrbyname("TLS-Cache-Method");
+		subcs = cf_section_sub_find_name2(cs, "cache", "load");
+		if (subcs && !load_subcomponent_section(subcs,
+							components,
+							da,
+							MOD_POST_AUTH)) {
+			goto error; /* FIXME: memleak? */
+		}
+
+		subcs = cf_section_sub_find_name2(cs, "cache", "save");
+		if (subcs && !load_subcomponent_section(subcs,
+							components,
+							da,
+							MOD_POST_AUTH)) {
+			goto error; /* FIXME: memleak? */
+		}
+
+		subcs = cf_section_sub_find_name2(cs, "cache", "clear");
+		if (subcs && !load_subcomponent_section(subcs,
+							components,
+							da,
+							MOD_POST_AUTH)) {
+			goto error; /* FIXME: memleak? */
+		}
+
+		subcs = cf_section_sub_find_name2(cs, "cache", "refresh");
+		if (subcs && !load_subcomponent_section(subcs,
+							components,
+							da,
+							MOD_POST_AUTH)) {
+			goto error; /* FIXME: memleak? */
+		}
+#endif
+
 #ifdef WITH_DHCP
 		/*
 		 *	It's OK to not have DHCP.
@@ -1405,6 +1450,8 @@ static int load_byserver(CONF_SECTION *cs)
 			subcs = cf_subsection_find_next(cs, subcs, "dhcp");
 		}
 #endif
+
+
 	} while (0);
 
 	if (name) {
@@ -1684,6 +1731,11 @@ static int define_type(CONF_SECTION *cs, DICT_ATTR const *da, char const *name)
 {
 	uint32_t value;
 	DICT_VALUE *dval;
+
+	/*
+	 *	Allow for conditionally loaded types
+	 */
+	if (*name == '-') name++;
 
 	/*
 	 *	If the value already exists, don't

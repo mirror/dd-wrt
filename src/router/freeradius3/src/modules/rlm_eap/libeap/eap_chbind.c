@@ -1,7 +1,7 @@
 /*
  * eap_chbind.c
  *
- * Version:     $Id: 91d2cc783eb5ac9aecd5789ace3d5427524ce749 $
+ * Version:     $Id: 21b258410cf2b4293a37aebb49d2adeaeba74ca2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 
-RCSID("$Id: 91d2cc783eb5ac9aecd5789ace3d5427524ce749 $")
+RCSID("$Id: 21b258410cf2b4293a37aebb49d2adeaeba74ca2 $")
 
 #include "eap_chbind.h"
 
@@ -247,9 +247,8 @@ chbind_packet_t *eap_chbind_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 	 *	Compute the total length of the channel binding data.
 	 */
 	length = 0;
-	for (vp =fr_cursor_init(&cursor, &first);
-	     vp != NULL;
-	     vp = fr_cursor_next_by_num(&cursor, PW_UKERNA_CHBIND, VENDORPEC_UKERNA, TAG_ANY)) {
+	fr_cursor_init(&cursor, &first);
+	while ((vp = fr_cursor_next_by_num(&cursor, PW_UKERNA_CHBIND, VENDORPEC_UKERNA, TAG_ANY))) {
 		length += vp->vp_length;
 	}
 
@@ -268,9 +267,8 @@ chbind_packet_t *eap_chbind_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 	 *	Copy the data over to our packet.
 	 */
 	packet = (chbind_packet_t *) ptr;
-	for (vp = fr_cursor_init(&cursor, &first);
-	     vp != NULL;
-	     vp = fr_cursor_next_by_num(&cursor, PW_UKERNA_CHBIND, VENDORPEC_UKERNA, TAG_ANY)) {
+	fr_cursor_init(&cursor, &first);
+	while ((vp = fr_cursor_next_by_num(&cursor, PW_UKERNA_CHBIND, VENDORPEC_UKERNA, TAG_ANY))) {
 		memcpy(ptr, vp->vp_octets, vp->vp_length);
 		ptr += vp->vp_length;
 	}

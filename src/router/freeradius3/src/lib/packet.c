@@ -1,7 +1,7 @@
 /*
  * packet.c	Generic packet manipulation functions.
  *
- * Version:	$Id: cb3484c999e4a2be63a13b4a4a1d7ca200bccd8b $
+ * Version:	$Id: acba8d9f0172ab0cb8e06943904327bca953f0a2 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000-2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: cb3484c999e4a2be63a13b4a4a1d7ca200bccd8b $")
+RCSID("$Id: acba8d9f0172ab0cb8e06943904327bca953f0a2 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -254,7 +254,7 @@ typedef struct fr_packet_socket_t {
 
 
 #define FNV_MAGIC_PRIME (0x01000193)
-#define MAX_SOCKETS (256)
+#define MAX_SOCKETS (1024)
 #define SOCKOFFSET_MASK (MAX_SOCKETS - 1)
 #define SOCK2OFFSET(sockfd) ((sockfd * FNV_MAGIC_PRIME) & SOCKOFFSET_MASK)
 
@@ -924,6 +924,10 @@ RADIUS_PACKET *fr_packet_list_recv(fr_packet_list_t *pl, fd_set *set)
 #ifdef WITH_TCP
 		if (pl->sockets[start].proto == IPPROTO_TCP) {
 			packet = fr_tcp_recv(pl->sockets[start].sockfd, 0);
+			if (!packet) {
+				fr_strerror_printf("TCP connection has been closed");
+				return NULL;
+			}
 
 			/*
 			 *	We always know src/dst ip/port for TCP

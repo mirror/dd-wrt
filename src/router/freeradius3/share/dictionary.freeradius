@@ -4,7 +4,7 @@
 #
 #	The FreeRADIUS Vendor-Specific dictionary.
 #
-# Version:	$Id: c92c5214ad45337b636e89532d811002cdeb9c2d $
+# Version:	$Id: f6ead2eb09e66607b6567ffe584b916e47144a7c $
 #
 
 VENDOR		FreeRADIUS			11344
@@ -181,5 +181,8 @@ ATTRIBUTE	FreeRADIUS-EAP-FAST-Request-Action	186.19	short
 ATTRIBUTE	FreeRADIUS-EAP-FAST-PKCS		186.20	octets
 
 ATTRIBUTE	FreeRADIUS-Stats-Error			187	string
+
+ATTRIBUTE	FreeRADIUS-Stats-Client-IPv6-Address	188	ipv6addr
+ATTRIBUTE	FreeRADIUS-Stats-Server-IPv6-Address	189	ipv6addr
 
 END-VENDOR FreeRADIUS

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: b444b972fa6a6e8133b5e2c6753757237e9100c6 $
+ * $Id: 1908e9d28c2fc5222161c80597d2aa32c08f7dbe $
  * @file rlm_yubikey.c
  * @brief Authentication for yubikey OTP tokens.
  *
@@ -23,7 +23,7 @@
  * @copyright 2013 The FreeRADIUS server project
  * @copyright 2013 Network RADIUS <info@networkradius.com>
  */
-RCSID("$Id: b444b972fa6a6e8133b5e2c6753757237e9100c6 $")
+RCSID("$Id: 1908e9d28c2fc5222161c80597d2aa32c08f7dbe $")
 
 #include "rlm_yubikey.h"
 
@@ -334,7 +334,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 	 *	It's left up to the user if they want to decode it or not.
 	 */
 	if (inst->id_len) {
-		vp = fr_pair_make(request, &request->packet->vps, "Yubikey-Public-ID", NULL, T_OP_SET);
+		vp = fr_pair_make(request->packet, &request->packet->vps, "Yubikey-Public-ID", NULL, T_OP_SET);
 		if (!vp) {
 			REDEBUG("Failed creating Yubikey-Public-ID");
 

@@ -2,7 +2,7 @@
 #
 #  main/sqlite/process-radacct.sql -- Schema extensions and script for processing radacct entries
 #
-#  $Id: 334bd7fb6c8eee453a25fdec8b15bf34c144005f $
+#  $Id: 5c667a4e460c5b369cdfc4c113fcca76120c5ce3 $
 
 --  ---------------------------------
 --  - Per-user data usage over time -
@@ -49,3 +49,4 @@ CREATE TABLE data_usage_by_period (
     PRIMARY KEY (username, period_start)
 );
 CREATE INDEX idx_data_usage_by_period_period_start ON data_usage_by_period(period_start);
+CREATE INDEX idx_data_usage_by_period_period_end ON data_usage_by_period(period_end);

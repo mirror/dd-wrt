@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 78c7370a639eddef8f7aa5db3ab6fba351447d28 $
+ * Version:     $Id: 9085272c769a530dcedd83f1dc72c6f728b0dc20 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,11 +22,12 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 78c7370a639eddef8f7aa5db3ab6fba351447d28 $")
+RCSID("$Id: 9085272c769a530dcedd83f1dc72c6f728b0dc20 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
+#include <freeradius-devel/modules.h>
 #include <freeradius-devel/rad_assert.h>
 
 #ifdef HAVE_SYS_STAT_H
@@ -191,9 +192,9 @@ static int tls_verror_log(REQUEST *request, char const *msg, va_list ap)
 
 			/* Extra verbose */
 			if ((request && RDEBUG_ENABLED3) || DEBUG_ENABLED3) {
-				ROPTIONAL(REDEBUG, ERROR, "%s: %s[%i]:%s", p, file, line, buffer);
+				ROPTIONAL(REDEBUG, ERROR, "(TLS) %s: %s[%i]:%s", p, file, line, buffer);
 			} else {
-				ROPTIONAL(REDEBUG, ERROR, "%s: %s", p, buffer);
+				ROPTIONAL(REDEBUG, ERROR, "(TLS) %s: %s", p, buffer);
 			}
 
 			talloc_free(p);
@@ -309,11 +310,11 @@ int tls_error_io_log(REQUEST *request, tls_session_t *session, int ret, char con
 	 *	being regarded as "dead".
 	 */
 	case SSL_ERROR_SYSCALL:
-		ROPTIONAL(REDEBUG, ERROR, "System call (I/O) error (%i)", ret);
+		ROPTIONAL(REDEBUG, ERROR, "(TLS) System call (I/O) error (%i)", ret);
 		return 0;
 
 	case SSL_ERROR_SSL:
-		ROPTIONAL(REDEBUG, ERROR, "TLS protocol error (%i)", ret);
+		ROPTIONAL(REDEBUG, ERROR, "(TLS) Protocol error (%i)", ret);
 		return 0;
 
 	/*
@@ -323,7 +324,7 @@ int tls_error_io_log(REQUEST *request, tls_session_t *session, int ret, char con
 	 *	the code needs updating here.
 	 */
 	default:
-		ROPTIONAL(REDEBUG, ERROR, "TLS session error %i (%i)", error, ret);
+		ROPTIONAL(REDEBUG, ERROR, "(TLS) Session error %i (%i)", error, ret);
 		return 0;
 	}
 
@@ -506,6 +507,7 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 
 	ssn->ctx = conf->ctx;
 	ssn->mtu = conf->fragment_size;
+	ssn->conf = conf;
 
 	SSL_CTX_set_mode(ssn->ctx, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
 
@@ -537,9 +539,10 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_CONF, (void *)conf);
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_SSN, (void *)ssn);
 	if (certs) SSL_set_ex_data(ssn->ssl, fr_tls_ex_index_certs, (void *)certs);
-	SSL_set_fd(ssn->ssl, fd);
-	ret = SSL_connect(ssn->ssl);
 
+	SSL_set_fd(ssn->ssl, fd);
+
+	ret = SSL_connect(ssn->ssl);
 	if (ret < 0) {
 		switch (SSL_get_error(ssn->ssl, ret)) {
 			default:
@@ -555,7 +558,7 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 	}
 
 	if (ret <= 0) {
-		tls_error_io_log(NULL, ssn, ret, "Failed in " STRINGIFY(__FUNCTION__) " (SSL_connect)");
+		tls_error_io_log(NULL, ssn, ret, "Failed in connecting TLS session.");
 		talloc_free(ssn);
 
 		return NULL;
@@ -575,24 +578,82 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
  * @param conf to use to configure the tls session.
  * @param request The current #REQUEST.
  * @param client_cert Whether to require a client_cert.
+ * @param allow_tls13 Whether to allow or forbid TLS 1.3.
  * @return a new session on success, or NULL on error.
  */
-tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQUEST *request, bool client_cert)
+tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQUEST *request, bool client_cert,
+#ifndef TLS1_3_VERSION
+			       UNUSED
+#endif
+			       bool allow_tls13)
 {
 	tls_session_t	*state = NULL;
 	SSL		*new_tls = NULL;
 	int		verify_mode = 0;
 	VALUE_PAIR	*vp;
+	X509_STORE	*new_cert_store;
 
 	rad_assert(request != NULL);
 
-	RDEBUG2("Initiating new TLS session");
+	RDEBUG2("(TLS) Initiating new session");
+
+	/*
+	 *	Replace X509 store if it is time to update CRLs/certs in ca_path
+	 */
+	if (conf->ca_path_reload_interval > 0 && conf->ca_path_last_reload + conf->ca_path_reload_interval <= request->timestamp) {
+		pthread_mutex_lock(&conf->mutex);
+		/* recheck conf->ca_path_last_reload because it may be inaccurate without mutex */
+		if (conf->ca_path_last_reload + conf->ca_path_reload_interval <= request->timestamp) {
+			RDEBUG2("Flushing X509 store to re-read data from ca_path dir");
+
+			if ((new_cert_store = fr_init_x509_store(conf)) == NULL) {
+				RERROR("Error replacing X509 store, out of memory (?)");
+			} else {
+				if (conf->old_x509_store) X509_STORE_free(conf->old_x509_store);
+				/*
+				 * Swap empty store with the old one.
+				 */
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+				conf->old_x509_store = SSL_CTX_get_cert_store(conf->ctx);
+				/* Bump refcnt so the store is kept allocated till next store replacement */
+				X509_STORE_up_ref(conf->old_x509_store);
+				SSL_CTX_set_cert_store(conf->ctx, new_cert_store);
+#else
+				/*
+				 * We do not use SSL_CTX_set_cert_store() call here because
+				 * we are not sure that old X509 store is not in the use by some
+				 * thread (i.e. cert check in progress).
+				 * Keep it allocated till next store replacement.
+				 */
+				conf->old_x509_store = conf->ctx->cert_store;
+				conf->ctx->cert_store = new_cert_store;
+#endif
+				conf->ca_path_last_reload = request->timestamp;
+			}
+		}
+		pthread_mutex_unlock(&conf->mutex);
+	}
 
 	new_tls = SSL_new(conf->ctx);
 	if (new_tls == NULL) {
 		tls_error_log(request, "Error creating new TLS session");
 		return NULL;
 	}
+
+#ifdef TLS1_3_VERSION
+	/*
+	 *	Disallow TLS 1.3 for TTLS, PEAP, and FAST.
+	 *
+	 *	We need another magic configuration option to allow
+	 *	it.
+	 */
+	if (!allow_tls13 && (conf->max_version == TLS1_3_VERSION)) {
+		if (SSL_set_max_proto_version(new_tls, TLS1_2_VERSION) == 0) {
+			tls_error_log(request, "Failed limiting maximum version to TLS 1.3");
+			return NULL;
+		}
+	}
+#endif
 
 	/* We use the SSL's "app_data" to indicate a call-back */
 	SSL_set_app_data(new_tls, NULL);
@@ -606,6 +667,7 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 
 	state->ctx = conf->ctx;
 	state->ssl = new_tls;
+	state->conf = conf;
 
 	/*
 	 *	Initialize callbacks
@@ -646,7 +708,7 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 	 *	Verify the peer certificate, if asked.
 	 */
 	if (client_cert) {
-		RDEBUG2("Setting verify mode to require certificate from client");
+		RDEBUG2("(TLS) Setting verify mode to require certificate from client");
 		verify_mode = SSL_VERIFY_PEER;
 		verify_mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
 		verify_mode |= SSL_VERIFY_CLIENT_ONCE;
@@ -670,10 +732,41 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 	 *	just too much.
 	 */
 	state->mtu = conf->fragment_size;
+#define EAP_TLS_MAGIC_OVERHEAD (63)
+
+	/*
+	 *	If the packet contains an MTU, then use that.  We
+	 *	trust the admin!
+	 */
 	vp = fr_pair_find_by_num(request->packet->vps, PW_FRAMED_MTU, 0, TAG_ANY);
-	if (vp && (vp->vp_integer > 100) && (vp->vp_integer < state->mtu)) {
-		state->mtu = vp->vp_integer;
+	if (vp) {
+		if ((vp->vp_integer > 100) && (vp->vp_integer < state->mtu)) {
+			state->mtu = vp->vp_integer;
+		}
+
+	} else if (request->parent) {
+		/*
+		 *	If there's a parent request, we look for what
+		 *	MTU was set there.  Then, we use an MTU which
+		 *	accounts for the extra overhead of nesting EAP
+		 *	+ TLS inside of EAP + TLS.
+		 */
+		vp = fr_pair_find_by_num(request->parent->state, PW_FRAMED_MTU, 0, TAG_ANY);
+		if (vp && (vp->vp_integer > (100 + EAP_TLS_MAGIC_OVERHEAD)) && (vp->vp_integer <= state->mtu)) {
+			state->mtu = vp->vp_integer - EAP_TLS_MAGIC_OVERHEAD;
+		}
 	}
+
+	/*
+	 *	Cache / update the Framed-MTU in the session-state
+	 *	list.
+	 */
+	vp = fr_pair_find_by_num(request->state, PW_FRAMED_MTU, 0, TAG_ANY);
+	if (!vp) {
+		vp = fr_pair_afrom_num(request->state_ctx, PW_FRAMED_MTU, 0);
+		fr_pair_add(&request->state, vp);
+	}
+	if (vp) vp->vp_integer = state->mtu;
 
 	if (/*conf->session_cache_enable*/0) state->allow_session_resumption = true; /* otherwise it's false */
 
@@ -697,12 +790,15 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 {
 	int err;
 
-	if (ssn->invalid_hb_used) return 0;
+	if (ssn->invalid_hb_used) {
+		REDEBUG("OpenSSL Heartbeat attack detected.  Closing connection");
+		return 0;
+	}
 
 	if (ssn->dirty_in.used > 0) {
 		err = BIO_write(ssn->into_ssl, ssn->dirty_in.data, ssn->dirty_in.used);
 		if (err != (int) ssn->dirty_in.used) {
-			REDEBUG("TLS - Failed writing %zd bytes to SSL BIO: %d", ssn->dirty_in.used, err);
+			REDEBUG("(TLS) Failed writing %zd bytes to SSL BIO: %d", ssn->dirty_in.used, err);
 			record_init(&ssn->dirty_in);
 			return 0;
 		}
@@ -716,21 +812,23 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 		return 1;
 	}
 
-	if (!tls_error_io_log(request, ssn, err, "Failed in " STRINGIFY(__FUNCTION__) " (SSL_read)")) return 0;
+	if (!tls_error_io_log(request, ssn, err, "Failed reading from OpenSSL")) return 0;
 
 	/* Some Extra STATE information for easy debugging */
 	if (!ssn->is_init_finished && SSL_is_init_finished(ssn->ssl)) {
 		VALUE_PAIR *vp;
 		char const *str_version;
 
-		RDEBUG2("TLS - Connection Established");
+		RDEBUG2("(TLS) Connection Established");
 		ssn->is_init_finished = true;
 
 		vp = fr_pair_afrom_num(request->state_ctx, PW_TLS_SESSION_CIPHER_SUITE, 0);
 		if (vp) {
 			fr_pair_value_strcpy(vp, SSL_CIPHER_get_name(SSL_get_current_cipher(ssn->ssl)));
 			fr_pair_add(&request->state, vp);
+			RINDENT();
 			rdebug_pair(L_DBG_LVL_2, request, vp, NULL);
+			REXDENT();
 		}
 
 		switch (ssn->info.version) {
@@ -767,13 +865,16 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 		if (vp) {
 			fr_pair_value_strcpy(vp, str_version);
 			fr_pair_add(&request->state, vp);
+			RINDENT();
 			rdebug_pair(L_DBG_LVL_2, request, vp, NULL);
+			REXDENT();
+
 		}
 	}
-	else if (SSL_in_init(ssn->ssl)) { RDEBUG2("TLS - In Handshake Phase"); }
-	else if (SSL_in_before(ssn->ssl)) { RDEBUG2("TLS - Before Handshake Phase"); }
-	else if (SSL_in_accept_init(ssn->ssl)) { RDEBUG2("TLS - In Accept mode"); }
-	else if (SSL_in_connect_init(ssn->ssl)) { RDEBUG2("TLS - In Connect mode"); }
+	else if (SSL_in_init(ssn->ssl)) { RDEBUG2("(TLS) In Handshake Phase"); }
+	else if (SSL_in_before(ssn->ssl)) { RDEBUG2("(TLS) Before Handshake Phase"); }
+	else if (SSL_in_accept_init(ssn->ssl)) { RDEBUG2("(TLS) In Accept mode"); }
+	else if (SSL_in_connect_init(ssn->ssl)) { RDEBUG2("(TLS) In Connect mode"); }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10001000L
 	/*
@@ -791,7 +892,7 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 		 *	to get the session is a hard fail.
 		 */
 		if (!ssn->ssl_session && ssn->is_init_finished) {
-			RDEBUG("TLS - Failed getting session");
+			RDEBUG("(TLS) Failed getting session");
 			return 0;
 		}
 	}
@@ -805,23 +906,23 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 		err = BIO_read(ssn->from_ssl, ssn->dirty_out.data,
 			       sizeof(ssn->dirty_out.data));
 		if (err > 0) {
-			RDEBUG2("TLS - got %d bytes of data", err);
+			RDEBUG3("(TLS) got %d bytes of data", err);
 			ssn->dirty_out.used = err;
 
 		} else if (BIO_should_retry(ssn->from_ssl)) {
 			record_init(&ssn->dirty_in);
-			RDEBUG2("TLS - Asking for more data in tunnel.");
+			RDEBUG2("(TLS) Asking for more data in tunnel.");
 			return 1;
 
 		} else {
-			tls_error_log(NULL, "Error reading from SSL BIO");
+			tls_error_log(NULL, "Error reading from OpenSSL");
 			record_init(&ssn->dirty_in);
-			RDEBUG2("TLS - Tunnel data is established.");
+			RDEBUG2("(TLS) Tunnel data is established.");
 			return 0;
 		}
 	} else {
 
-		RDEBUG2("TLS - Application data.");
+		RDEBUG2("(TLS) Application data.");
 		/* Its clean application data, do whatever we want */
 		record_init(&ssn->clean_out);
 	}
@@ -855,13 +956,12 @@ int tls_handshake_send(REQUEST *request, tls_session_t *ssn)
 		record_minus(&ssn->clean_in, NULL, written);
 
 		/* Get the dirty data from Bio to send it */
-		err = BIO_read(ssn->from_ssl, ssn->dirty_out.data,
-			       sizeof(ssn->dirty_out.data));
+		err = BIO_read(ssn->from_ssl, ssn->dirty_out.data + ssn->dirty_out.used,
+			       sizeof(ssn->dirty_out.data) - ssn->dirty_out.used);
 		if (err > 0) {
-			ssn->dirty_out.used = err;
+			ssn->dirty_out.used += err;
 		} else {
-			if (!tls_error_io_log(request, ssn, err,
-					      "Failed in " STRINGIFY(__FUNCTION__) " (SSL_write)")) {
+			if (!tls_error_io_log(request, ssn, err, "Failed writing to OpenSSL")) {
 				return 0;
 			}
 		}
@@ -964,6 +1064,7 @@ void tls_session_information(tls_session_t *tls_session)
 	char const *str_write_p, *str_version, *str_content_type = "";
 	char const *str_details1 = "", *str_details2= "";
 	REQUEST *request;
+	char content_type[16], alert_buf[16];
 	char buffer[32];
 
 	/*
@@ -972,7 +1073,16 @@ void tls_session_information(tls_session_t *tls_session)
 	 */
 	if (rad_debug_lvl == 0) return;
 
-	str_write_p = tls_session->info.origin ? ">>> send" : "<<< recv";
+	/*
+	 *	OpenSSL calls this function with 'pseudo' content
+	 *	types.  The user doesn't care about them, so suppress them.
+	 */
+	if (tls_session->info.content_type > UINT8_MAX) return;
+
+	request = SSL_get_ex_data(tls_session->ssl, FR_TLS_EX_INDEX_REQUEST);
+	if (!request) return;
+
+	str_write_p = tls_session->info.origin ? "(TLS) send" : "(TLS) recv";
 
 	switch (tls_session->info.version) {
 	case SSL2_VERSION:
@@ -1006,8 +1116,7 @@ void tls_session_information(tls_session_t *tls_session)
 		break;
 	}
 
-	if (tls_session->info.version == SSL3_VERSION ||
-	    tls_session->info.version == TLS1_VERSION) {
+	if (1) {
 		switch (tls_session->info.content_type) {
 		case SSL3_RT_CHANGE_CIPHER_SPEC:
 			str_content_type = "ChangeCipherSpec";
@@ -1026,7 +1135,8 @@ void tls_session_information(tls_session_t *tls_session)
 			break;
 
 		default:
-			str_content_type = "UnknownContentType";
+			snprintf(content_type, sizeof(content_type), "content=%d", tls_session->info.content_type);
+			str_content_type = content_type;
 			break;
 		}
 
@@ -1072,6 +1182,10 @@ void tls_session_information(tls_session_t *tls_session)
 
 				case SSL3_AD_HANDSHAKE_FAILURE:
 					str_details2 = " handshake_failure";
+					break;
+
+				case SSL3_AD_NO_CERTIFICATE:
+					str_details2 = " no_certificate";
 					break;
 
 				case SSL3_AD_BAD_CERTIFICATE:
@@ -1120,6 +1234,17 @@ void tls_session_information(tls_session_t *tls_session)
 
 				case TLS1_AD_PROTOCOL_VERSION:
 					str_details2 = " protocol_version";
+
+#ifdef TLS1_3_VERSION
+					/*
+					 *	Complain about OpenSSL bugs.
+					 */
+					if ((tls_session->info.version > tls_session->conf->max_version) &&
+					    (rad_debug_lvl > 0)) {
+						WARN("TLS 1.3 has been negotiated even though it was disabled.  This is an OpenSSL Bug.");
+						WARN("Please set: cipher_list = \"DEFAULT@SECLEVEL=1\" in the tls {...} section.");
+					}
+#endif
 					break;
 
 				case TLS1_AD_INSUFFICIENT_SECURITY:
@@ -1137,12 +1262,66 @@ void tls_session_information(tls_session_t *tls_session)
 				case TLS1_AD_NO_RENEGOTIATION:
 					str_details2 = " no_renegotiation";
 					break;
+
+#ifdef TLS13_AD_MISSING_EXTENSIONS
+				case TLS13_AD_MISSING_EXTENSIONS:
+					str_details2 = " missing_extensions";
+					break;
+#endif
+
+#ifdef TLS13_AD_CERTIFICATE_REQUIRED
+				case TLS13_AD_CERTIFICATE_REQUIRED:
+					str_details2 = " certificate_required";
+					break;
+#endif
+
+#ifdef TLS1_AD_UNSUPPORTED_EXTENSION
+				case TLS1_AD_UNSUPPORTED_EXTENSION:
+					str_details2 = " unsupported_extension";
+					break;
+#endif
+
+#ifdef TLS1_AD_CERTIFICATE_UNOBTAINABLE
+				case TLS1_AD_CERTIFICATE_UNOBTAINABLE:
+					str_details2 = " certificate_unobtainable";
+					break;
+#endif
+
+#ifdef TLS1_AD_UNRECOGNIZED_NAME
+				case TLS1_AD_UNRECOGNIZED_NAME:
+					str_details2 = " unrecognized_name";
+					break;
+#endif
+
+#ifdef TLS1_AD_BAD_CERTIFICATE_STATUS_RESPONSE
+				case TLS1_AD_BAD_CERTIFICATE_STATUS_RESPONSE:
+					str_details2 = " bad_certificate_status_response";
+					break;
+#endif
+
+#ifdef TLS1_AD_BAD_CERTIFICATE_HASH_VALUE
+				case TLS1_AD_BAD_CERTIFICATE_HASH_VALUE:
+					str_details2 = " bad_certificate_hash_value";
+					break;
+#endif
+
+#ifdef TLS1_AD_UNKNOWN_PSK_IDENTITY
+				case TLS1_AD_UNKNOWN_PSK_IDENTITY:
+					str_details2 = " unknown_psk_identity";
+					break;
+#endif
+
+#ifdef TLS1_AD_NO_APPLICATION_PROTOCOL
+				case TLS1_AD_NO_APPLICATION_PROTOCOL:
+					str_details2 = " no_application_protocol";
+					break;
+#endif
 				}
 			}
 		}
 
 		if (tls_session->info.content_type == SSL3_RT_HANDSHAKE) {
-			str_details1 = "???";
+			str_details1 = "";
 
 			if (tls_session->info.record_len > 0) switch (tls_session->info.handshake_type) {
 			case SSL3_MT_HELLO_REQUEST:
@@ -1156,6 +1335,18 @@ void tls_session_information(tls_session_t *tls_session)
 			case SSL3_MT_SERVER_HELLO:
 				str_details1 = ", ServerHello";
 				break;
+
+#ifdef SSL3_MT_NEWSESSION_TICKET
+			case SSL3_MT_NEWSESSION_TICKET:
+				str_details1 = ", NewSessionTicket";
+				break;
+#endif
+
+#ifdef SSL3_MT_ENCRYPTED_EXTENSIONS
+			case SSL3_MT_ENCRYPTED_EXTENSIONS:
+				str_details1 = ", EncryptedExtensions";
+				break;
+#endif
 
 			case SSL3_MT_CERTIFICATE:
 				str_details1 = ", Certificate";
@@ -1184,19 +1375,26 @@ void tls_session_information(tls_session_t *tls_session)
 			case SSL3_MT_FINISHED:
 				str_details1 = ", Finished";
 				break;
+
+#ifdef SSL3_MT_KEY_UPDATE
+			case SSL3_MT_KEY_UPDATE:
+				str_content_type = "KeyUpdate";
+				break;
+#endif
+
+			default:
+				snprintf(alert_buf, sizeof(alert_buf), ", type=%d", tls_session->info.handshake_type);
+				str_details1 = alert_buf;
+				break;
 			}
 		}
 	}
 
 	snprintf(tls_session->info.info_description,
 		 sizeof(tls_session->info.info_description),
-		 "%s %s%s [length %04lx]%s%s\n",
+		 "%s %s%s%s%s\n",
 		 str_write_p, str_version, str_content_type,
-		 (unsigned long)tls_session->info.record_len,
 		 str_details1, str_details2);
-
-	request = SSL_get_ex_data(tls_session->ssl, FR_TLS_EX_INDEX_REQUEST);
-	if (!request) return;
 
 	RDEBUG2("%s", tls_session->info.info_description);
 }
@@ -1204,11 +1402,12 @@ void tls_session_information(tls_session_t *tls_session)
 static CONF_PARSER cache_config[] = {
 	{ "enable", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, session_cache_enable), "no" },
 
-	{ "lifetime", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, session_timeout), "24" },
+	{ "lifetime", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, session_lifetime), "24" },
 	{ "name", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, session_id_name), NULL },
 
 	{ "max_entries", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, session_cache_size), "255" },
 	{ "persist_dir", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, session_cache_path), NULL },
+	{ "virtual_server", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, session_cache_server), NULL },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -1256,6 +1455,7 @@ static CONF_PARSER tls_server_config[] = {
 #ifdef X509_V_FLAG_CRL_CHECK_ALL
 	{ "check_all_crl", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, check_all_crl), "no" },
 #endif
+	{ "ca_path_reload_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, ca_path_reload_interval), "0" },
 	{ "allow_expired_crl", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, allow_expired_crl), NULL },
 	{ "check_cert_cn", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_cn), NULL },
 	{ "cipher_list", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, cipher_list), NULL },
@@ -1281,9 +1481,21 @@ static CONF_PARSER tls_server_config[] = {
 	{ "disable_tlsv1_2", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, disable_tlsv1_2), NULL },
 #endif
 
-	{ "tls_max_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_max_version), "" },
+	{ "tls_max_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_max_version), NULL },
 
-	{ "tls_min_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_min_version), "1.0" },
+	{ "tls_min_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_min_version),
+#if defined(TLS1_2_VERSION)
+	  "1.2"
+#elif defined(TLS1_1_VERSION)
+	  "1.1"
+#else
+	  "1.0"
+#endif
+	},
+
+#ifdef TLS1_3_VERSION
+	{ "tls13_enable", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, tls13_enable_magic), NULL },
+#endif
 
 	{ "cache", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) cache_config },
 
@@ -1312,6 +1524,7 @@ static CONF_PARSER tls_client_config[] = {
 	{ "check_cert_cn", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_cn), NULL },
 	{ "cipher_list", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, cipher_list), NULL },
 	{ "check_cert_issuer", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_issuer), NULL },
+	{ "ca_path_reload_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, ca_path_reload_interval), "0" },
 
 #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
 #ifndef OPENSSL_NO_ECDH
@@ -1331,9 +1544,17 @@ static CONF_PARSER tls_client_config[] = {
 	{ "disable_tlsv1_2", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, disable_tlsv1_2), NULL },
 #endif
 
-	{ "tls_max_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_max_version), "" },
+	{ "tls_max_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_max_version), NULL },
 
-	{ "tls_min_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_min_version), "1.0" },
+	{ "tls_min_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_min_version),
+#if defined(TLS1_2_VERSION)
+	  "1.2"
+#elif defined(TLS1_1_VERSION)
+	  "1.1"
+#else
+	  "1.0"
+#endif
+	},
 
 	CONF_PARSER_TERMINATOR
 };
@@ -1348,6 +1569,23 @@ static int load_dh_params(SSL_CTX *ctx, char *file)
 	BIO *bio;
 
 	if (!file) return 0;
+
+	/*
+	 * Prior to trying to load the file, check what OpenSSL will do with it.
+	 *
+	 * Certain downstreams (such as RHEL) will ignore user-provided dhparams
+	 * in FIPS mode, unless the specified parameters are FIPS-approved.
+	 * However, since OpenSSL >= 1.1.1 will automatically select parameters
+	 * anyways, there's no point in attempting to load them.
+	 *
+	 * Change suggested by @t8m
+	 */
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+	if (FIPS_mode() > 0) {
+		WARN(LOG_PREFIX ": Ignoring user-selected DH parameters in FIPS mode. Using defaults.");
+		return 0;
+	}
+#endif
 
 	if ((bio = BIO_new_file(file, "r")) == NULL) {
 		ERROR(LOG_PREFIX ": Unable to open DH file - %s", file);
@@ -1714,6 +1952,21 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 			}
 		}
 
+		/*
+		 *	Resumption MUST use the same EAP type as from
+		 *	the original packet.
+		 */
+		vp = fr_pair_find_by_num(pairlist->reply, PW_EAP_TYPE, 0, TAG_ANY);
+		if (vp) {
+			VALUE_PAIR *type = fr_pair_find_by_num(request->packet->vps, PW_EAP_TYPE, 0, TAG_ANY);
+
+			if (type && (type->vp_integer != vp->vp_integer)) {
+				REDEBUG("Resumption has changed EAP types for session %s", buffer);
+				REDEBUG("Rejecting session due to protocol violations");
+				goto error;
+			}
+		}
+
 		/* move the cached VPs into the session */
 		fr_pair_list_mcopy_by_num(talloc_ctx, &vps, &pairlist->reply, 0, 0, TAG_ANY);
 
@@ -1729,6 +1982,350 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 error:
 	if (sess_data) talloc_free(sess_data);
 	if (pairlist) pairlist_free(&pairlist);
+
+	return sess;
+}
+
+static size_t tls_session_id_binary(SSL_SESSION *ssn, uint8_t *buffer, size_t bufsize)
+{
+#if OPENSSL_VERSION_NUMBER < 0x10001000L
+	size_t size;
+
+	size = ssn->session_id_length;
+	if (size > bufsize) size = bufsize;
+
+	memcpy(buffer, ssn->session_id, size);
+	return size;
+#else
+	unsigned int size;
+	uint8_t const *p;
+
+	p = SSL_SESSION_get_id(ssn, &size);
+	if (size > bufsize) size = bufsize;
+
+	memcpy(buffer, p, size);
+	return size;
+#endif
+}
+
+/*
+ *	From TLS-Cache-Method
+ *
+ *	All of the save / clear / load callbacks are done with any
+ *	OpenSSL locks *unlocked*.  So says the OpenSSL code.
+ */
+#define CACHE_SAVE (1)
+#define CACHE_LOAD (2)
+#define CACHE_CLEAR (3)
+#define CACHE_REFRESH (4)
+
+static REQUEST *cache_init_fake_request(fr_tls_server_conf_t const *conf, SSL_SESSION *sess, SSL *ssl,
+					uint8_t const *data, size_t size)
+{
+	VALUE_PAIR		*vp;
+	REQUEST			*fake, *request = NULL;
+	uint8_t			buffer[MAX_SESSION_SIZE];
+
+	if (sess) {
+		size = tls_session_id_binary(sess, buffer, sizeof(buffer));
+		data = buffer;
+	}
+
+	/*
+	 *	We get called essentially at random by OpenSSL, with
+	 *	no information other than the session ID.  As a
+	 *	result, we have to manually set up our own request.
+	 */
+	if (ssl) request = SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_REQUEST);
+
+	if (request) {
+		fake = request_alloc_fake(request);
+	} else {
+		fake = request_alloc(NULL);
+		fake->packet = rad_alloc(fake, false);
+		fake->reply = rad_alloc(fake, false);
+	}
+
+	vp = fr_pair_afrom_num(fake->packet, PW_TLS_SESSION_ID, 0);
+	if (!vp) {
+		talloc_free(fake);
+		return NULL;
+	}
+
+	fr_pair_value_memcpy(vp, data, size);
+	fr_pair_add(&fake->packet->vps, vp);
+
+	fake->server = conf->session_cache_server;
+
+	return fake;
+}
+
+/*
+ *	Clear cached data
+ */
+static void cbtls_cache_clear(SSL_CTX *ctx, SSL_SESSION *sess)
+{
+	fr_tls_server_conf_t	*conf;
+	REQUEST			*fake;
+
+	conf = (fr_tls_server_conf_t *)SSL_CTX_get_app_data(ctx);
+	if (!conf) {
+		DEBUG(LOG_PREFIX ": Failed to find TLS configuration in session");
+		return;
+	}
+
+	/*
+	 *	Find the SSL ID from the session, and delete it.
+	 *
+	 *	Don't bother with any parent request.  We're in a
+	 *	timer callback, and there is no request available.
+	 */
+	fake = cache_init_fake_request(conf, sess, NULL, NULL, 0);
+	if (!fake) return;
+
+	/*
+	 *	Use &request:TLS-Session-Id to clear the cache entry.
+	 */
+	(void) process_post_auth(CACHE_CLEAR, fake);
+	talloc_free(fake);
+	return;
+}
+
+/*
+ *	OpenSSL calls this function in order to save the session
+ *	BEFORE it has sent the final TLS success.  So our process here
+ *	is to say "yes, we saved it", and then do the *actual* saving
+ *	after the TLS success has been sent.
+ */
+static int cbtls_cache_save(UNUSED SSL *ssl, UNUSED SSL_SESSION *sess)
+{
+	return 0;
+}
+
+static int cbtls_cache_save_vps(SSL *ssl, SSL_SESSION *sess, VALUE_PAIR *vps)
+{
+	fr_tls_server_conf_t	*conf;
+	VALUE_PAIR		*vp;
+	REQUEST			*fake = NULL;
+	size_t			size, rv;
+	uint8_t			*p, *sess_blob = NULL;
+
+	conf = (fr_tls_server_conf_t *)SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_CONF);
+	if (!conf) return 0;
+
+	/*
+	 *	Find the SSL ID from the session, and save it.
+	 *
+	 *	Save anything from the parent request.
+	 */
+	fake = cache_init_fake_request(conf, sess, ssl, NULL, 0);
+	if (!fake) return 0;
+
+	/* find out what length data we need */
+	size = i2d_SSL_SESSION(sess, NULL);
+	if (size < 1) return 0;
+
+	/* Do not convert to TALLOC - it's passed to OpenSSL */
+	/* alloc and convert to ASN.1 */
+	MEM(sess_blob = malloc(size));
+
+	/* openssl mutates &p */
+	p = sess_blob;
+	rv = i2d_SSL_SESSION(sess, &p);
+	if (rv != size) goto error;
+
+	vp = fr_pair_afrom_num(fake->state_ctx, PW_TLS_SESSION_DATA, 0);
+	if (!vp) goto error;
+
+	fr_pair_value_memcpy(vp, sess_blob, size);
+	fr_pair_add(&fake->state, vp);
+
+	if (vps) fr_pair_add(&fake->reply->vps, fr_pair_list_copy(fake->reply, vps));
+
+	/*
+	 *	Use &request:TLS-Session-Id to save the
+	 *	&session-state:TLS-Session-Data values.
+	 *
+	 *	The current &reply: list is the list of VPs which
+	 *	should be cached.
+	 *
+	 *	Any other attributes which need to be saved can be
+	 *	read from the &outer.reply: list.
+	 */
+	(void) process_post_auth(CACHE_SAVE, fake);
+
+error:
+	if (fake) talloc_free(fake);
+	free(sess_blob);
+
+	return 0;
+}
+
+static int cbtls_cache_refresh(SSL *ssl, SSL_SESSION *sess)
+{
+	fr_tls_server_conf_t	*conf;
+	REQUEST			*fake = NULL;
+
+	conf = (fr_tls_server_conf_t *)SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_CONF);
+	if (!conf) return 0;
+
+	/*
+	 *	Find the SSL ID from the session, and save it.
+	 *
+	 *	Save anything from the parent request.
+	 */
+	fake = cache_init_fake_request(conf, sess, ssl, NULL, 0);
+	if (!fake) return 0;
+	/*
+	 *	Use &request:TLS-Session-Id to update the cache
+	 *	entry so that it doesn't not expire.
+	 */
+	(void) process_post_auth(CACHE_REFRESH, fake);
+
+	talloc_free(fake);
+
+	return 0;
+}
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+static SSL_SESSION *cbtls_cache_load(SSL *ssl, unsigned char *data, int len, int *copy)
+#else
+static SSL_SESSION *cbtls_cache_load(SSL *ssl, const unsigned char *data, int len, int *copy)
+#endif
+{
+	fr_tls_server_conf_t	*conf;
+	size_t			size;
+	uint8_t const  		*p;
+	VALUE_PAIR		*vp, *vps;
+	TALLOC_CTX		*talloc_ctx;
+	SSL_SESSION		*sess = NULL;
+	REQUEST			*fake = NULL;
+	REQUEST			*request = SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_REQUEST);
+	char			buffer[2 * MAX_SESSION_SIZE + 1];
+
+	conf = (fr_tls_server_conf_t *)SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_CONF);
+	if (!conf) return NULL;
+
+	rad_assert(request);
+
+	size = len;
+	if (size > MAX_SESSION_SIZE) size = MAX_SESSION_SIZE;
+
+	if (fr_debug_lvl > 1) {
+		fr_bin2hex(buffer, data, size);
+		RDEBUG2("Peer requested cached session: %s", buffer);
+	}
+
+	*copy = 0;
+
+	/*
+	 *	Take the given SSL ID, and create a fake request.
+	 *
+	 *	Don't bother parenting it from another request.  We do
+	 *	this for a number of reasons.
+	 *
+	 *	One is that rest of the code expects that the VPs will
+	 *	be added to fr_tls_ex_index_vps.  So we don't want to
+	 *	be poking the request directly, as that will result in
+	 *	a change of behavior.
+	 *
+	 *	The larger reason is that we do _not_ want to actually
+	 *	update the reply, until such time as we know that the
+	 *	user has been authenticated.
+	 */
+	fake = cache_init_fake_request(conf, NULL, NULL, data, size);
+	if (!fake) return 0;
+
+	/*
+	 *	Use &request:TLS-Session-Id to load the cached
+	 *	session.
+	 *
+	 *	The "cache load { ...}" section should put the reply
+	 *	attributes into the &reply: list, and the
+	 *	&session-state:TLS-Session-Data attribute.
+	 *
+	 *	Why?  Because v4 does it that way, and there aren't
+	 *	really good reasons for doing it differently.
+	 */
+	(void) process_post_auth(CACHE_LOAD, fake);
+
+	/*
+	 *	Enforce client certificate expiration.
+	 */
+	vp = fr_pair_find_by_num(fake->reply->vps, PW_TLS_CLIENT_CERT_EXPIRATION, 0, TAG_ANY);
+	if (vp) {
+		time_t expires;
+
+		if (ocsp_asn1time_to_epoch(&expires, vp->vp_strvalue) < 0) {
+			RDEBUG2("Failed getting certificate expiration, removing cache entry for session %s - %s", buffer, fr_strerror());
+			SSL_SESSION_free(sess);
+			sess = NULL;
+			goto error;
+		}
+
+		if (expires <= request->timestamp) {
+			RDEBUG2("Certificate has expired, removing cache entry for session %s", buffer);
+			SSL_SESSION_free(sess);
+			sess = NULL;
+			goto error;
+		}
+
+		/*
+		 *	Account for Session-Timeout, if it's available.
+		 */
+		vp = fr_pair_find_by_num(request->reply->vps, PW_SESSION_TIMEOUT, 0, TAG_ANY);
+		if (vp) {
+			if ((request->timestamp + vp->vp_integer) > expires) {
+				vp->vp_integer = expires - request->timestamp;
+				RWDEBUG2("Updating Session-Timeout to %u, due to impending certificate expiration",
+					 vp->vp_integer);
+			}
+		}
+	}
+
+	/*
+	 *	Try to de-serialize the session data.
+	 */
+	vp = fr_pair_find_by_num(fake->state, PW_TLS_SESSION_DATA, 0, TAG_ANY);
+	if (!vp) {
+		RWDEBUG("Failed to find TLS-Session-Data in 'session-state' list for session %s", buffer);
+		goto error;
+	}
+
+	/*
+	 *	OpenSSL mutates what's passed in, so we assign sess_data to q,
+	 *	so the value of q gets mutated, and not the value of sess_data.
+	 *
+	 *	We then need a pointer to hold &q, but it can't be const, because
+	 *	clang complains about lack of consting in nested pointer types.
+	 *
+	 *	So we memcpy the value of that pointer, to one that
+	 *	does have a const, which we then pass into d2i_SSL_SESSION *sigh*.
+	 */
+	p = vp->vp_octets;
+	sess = d2i_SSL_SESSION(NULL, &p, vp->vp_length);
+	if (!sess) {
+		RWDEBUG("Failed loading persisted session: %s", ERR_error_string(ERR_get_error(), NULL));
+		goto error;
+	}
+
+	talloc_ctx = SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_TALLOC);
+	vps = NULL;
+
+	/* move the cached VPs into the session */
+	fr_pair_list_mcopy_by_num(talloc_ctx, &vps, &fake->reply->vps, 0, 0, TAG_ANY);
+
+	SSL_SESSION_set_ex_data(sess, fr_tls_ex_index_vps, vps);
+	RDEBUG("Successfully restored session %s", buffer);
+	rdebug_pair_list(L_DBG_LVL_2, request, vps, "reply:");
+
+	/*
+	 *	The "restore VPs from OpenSSL cache" code is
+	 *	now in eaptls_process()
+	 */
+
+error:
+	if (fake) talloc_free(fake);
 
 	return sess;
 }
@@ -2087,6 +2684,10 @@ static char const *cert_attr_names[9][2] = {
 #define FR_TLS_SAN_UPN          (7)
 #define FR_TLS_VALID_SINCE	(8)
 
+static const char *cert_names[2] = {
+	"client", "server",
+};
+
 /*
  *	Before trusting a certificate, you must make sure that the
  *	certificate is 'valid'. There are several steps that your
@@ -2183,8 +2784,8 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	buf[0] = '\0';
 	sn = X509_get_serialNumber(client_cert);
 
-	RDEBUG2("TLS - Creating attributes from certificate OIDs");
-	RINDENT();
+	RDEBUG2("(TLS) Creating attributes from %s certificate", cert_names[lookup]);
+ 	RINDENT();
 
 	/*
 	 *	For this next bit, we create the attributes *only* if
@@ -2405,7 +3006,6 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 				fr_bin2hex(value + 2, srcp, asn1len);
 			}
 
-
 			vp = fr_pair_make(talloc_ctx, certs, attribute, value, T_OP_ADD);
 			if (!vp) {
 				RDEBUG3("Skipping %s += '%s'.  Please check that both the "
@@ -2471,6 +3071,9 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	 *	checks.
 	 */
 	if (depth == 0) {
+		tls_session_t *ssn = SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_SSN);
+		rad_assert(ssn != NULL);
+
 		/*
 		 *	If the conf tells us to, check cert issuer
 		 *	against the specified value and fail
@@ -2595,6 +3198,11 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 			unlink(filename);
 			break;
 		}
+
+		/*
+		 *	Track that we've verified the client certificate.
+		 */
+		ssn->client_cert_ok = (my_ok == 1);
 	} /* depth == 0 */
 
 	if (certs && request && !my_ok) {
@@ -2616,19 +3224,18 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 }
 
 
-#ifdef HAVE_OPENSSL_OCSP_H
 /*
- * 	Create Global X509 revocation store and use it to verify
- * 	OCSP responses
+ * 	Configure a X509 CA store to verify OCSP or client repsonses
  *
  * 	- Load the trusted CAs
  * 	- Load the trusted issuer certificates
+ *	- Configure CRLs check if needed
  */
-static X509_STORE *init_revocation_store(fr_tls_server_conf_t *conf)
+X509_STORE *fr_init_x509_store(fr_tls_server_conf_t *conf)
 {
-	X509_STORE *store = NULL;
+	X509_STORE *store = X509_STORE_new();
 
-	store = X509_STORE_new();
+	if (store == NULL) return NULL;
 
 	/* Load the CAs we trust */
 	if (conf->ca_file || conf->ca_path)
@@ -2647,7 +3254,6 @@ static X509_STORE *init_revocation_store(fr_tls_server_conf_t *conf)
 #endif
 	return store;
 }
-#endif	/* HAVE_OPENSSL_OCSP_H */
 
 #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
 #ifndef OPENSSL_NO_ECDH
@@ -2655,6 +3261,33 @@ static int set_ecdh_curve(SSL_CTX *ctx, char const *ecdh_curve, bool disable_sin
 {
 	int      nid;
 	EC_KEY  *ecdh;
+
+	if (!disable_single_dh_use) {
+		SSL_CTX_set_options(ctx, SSL_OP_SINGLE_ECDH_USE);
+	}
+
+#if OPENSSL_VERSION_NUMBER >= 0x0100200fL
+	if (strchr(ecdh_curve, ':') != 0) {
+		char *list = strdup(ecdh_curve);
+
+		if (SSL_CTX_set1_curves_list(ctx, list) == 0) {
+			free(list);
+			ERROR(LOG_PREFIX ": Unknown ecdh_curve \"%s\"", ecdh_curve);
+			return -1;
+		}
+		free(list);
+
+		(void) SSL_CTX_set_ecdh_auto(ctx, 1);
+		return 0;
+	}
+
+	/*
+	 *	Just pick the right curve.
+	 */
+	if (ecdh_curve && !*ecdh_curve) {
+		(void) SSL_CTX_set_ecdh_auto(ctx, 1);
+	}
+#endif
 
 	if (!ecdh_curve || !*ecdh_curve) return 0;
 
@@ -2671,10 +3304,6 @@ static int set_ecdh_curve(SSL_CTX *ctx, char const *ecdh_curve, bool disable_sin
 	}
 
 	SSL_CTX_set_tmp_ecdh(ctx, ecdh);
-
-	if (!disable_single_dh_use) {
-		SSL_CTX_set_options(ctx, SSL_OP_SINGLE_ECDH_USE);
-	}
 
 	EC_KEY_free(ecdh);
 
@@ -2798,9 +3427,6 @@ static const FR_NAME_NUMBER version2int[] = {
 #ifdef TLS1_3_VERSION
 	{ "1.3",    TLS1_3_VERSION },
 #endif
-#ifdef TLS1_4_VERSION
-	{ "1.4",    TLS1_4_VERSION },
-#endif
 	{ NULL, 0 }
 };
 
@@ -2821,13 +3447,13 @@ SSL_CTX *tls_init_ctx(fr_tls_server_conf_t *conf, int client)
 	SSL_CTX		*ctx;
 	X509_STORE	*certstore;
 	int		verify_mode = SSL_VERIFY_NONE;
-	int		ctx_options = 0;
-	int		ctx_tls_versions = 0;
+	int		ctx_options = 0, ctx_available = 0;
 	int		type;
 #ifdef CHECK_FOR_PSK_CERTS
 	bool		psk_and_certs = false;
 #endif
-	bool		insecure_tls_version = false;
+	int		min_version;
+	int		max_version;
 
 	/*
 	 *	SHA256 is in all versions of OpenSSL, but isn't
@@ -2840,7 +3466,7 @@ SSL_CTX *tls_init_ctx(fr_tls_server_conf_t *conf, int client)
 
 	ctx = SSL_CTX_new(SSLv23_method()); /* which is really "all known SSL / TLS methods".  Idiots. */
 	if (!ctx) {
-		tls_error_log(NULL, "Failed creating TLS context");
+		tls_error_log(NULL, "Failed creating OpenSSL context");
 		return NULL;
 	}
 
@@ -3048,20 +3674,35 @@ SSL_CTX *tls_init_ctx(fr_tls_server_conf_t *conf, int client)
 		return NULL;
 	}
 
-	/* Load the CAs we trust */
 load_ca:
+	/*
+	 * Load the CAs we trust and configure CRL checks if needed
+	 */
 #if defined(X509_V_FLAG_PARTIAL_CHAIN)
 	X509_STORE_set_flags(SSL_CTX_get_cert_store(ctx), X509_V_FLAG_PARTIAL_CHAIN);
 #endif
 	if (conf->ca_file || conf->ca_path) {
-		if (!SSL_CTX_load_verify_locations(ctx, conf->ca_file, conf->ca_path)) {
-			tls_error_log(NULL, "Failed reading Trusted root CA list \"%s\"",
-				      conf->ca_file);
-			return NULL;
-		}
+		if ((certstore = fr_init_x509_store(conf)) == NULL ) return NULL;
+		SSL_CTX_set_cert_store(ctx, certstore);
 	}
+
 	if (conf->ca_file && *conf->ca_file) SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(conf->ca_file));
 
+	conf->ca_path_last_reload = time(NULL);
+	conf->old_x509_store = NULL;
+
+	/*
+	 * Disable reloading of cert store if we're not using CA path
+	 */
+	if (!conf->ca_path) conf->ca_path_reload_interval = 0;
+
+	if (conf->ca_path_reload_interval > 0 && conf->ca_path_reload_interval < 300) {
+		DEBUG2("ca_path_reload_interval is set too low, reset it to 300");
+		conf->ca_path_reload_interval = 300;
+	}
+
+
+	/* Load private key */
 	if (conf->private_key_file) {
 		if (!(SSL_CTX_use_PrivateKey_file(ctx, conf->private_key_file, type))) {
 			tls_error_log(NULL, "Failed reading private key file \"%s\"",
@@ -3089,173 +3730,219 @@ post_ca:
 	ctx_options |= SSL_OP_NO_SSLv3;
 
 	/*
+	 *	If set then dummy Change Cipher Spec (CCS) messages are sent in
+	 *	TLSv1.3. This has the effect of making TLSv1.3 look more like TLSv1.2
+	 *	so that middleboxes that do not understand TLSv1.3 will not drop
+	 *	the connection. This isn't needed for EAP-TLS, so we disable it.
+	 *
+	 *	EAP (hopefully) does not have middlebox deployments
+	 */
+#ifdef SSL_OP_ENABLE_MIDDLEBOX_COMPAT
+	ctx_options &= ~SSL_OP_ENABLE_MIDDLEBOX_COMPAT;
+#endif
+
+	/*
 	 *	SSL_CTX_set_(min|max)_proto_version was included in OpenSSL 1.1.0
 	 *
 	 *	This version already defines macros for TLS1_2_VERSION and
 	 *	below, so we don't need to check for them explicitly.
 	 *
 	 *	TLS1_3_VERSION is available in OpenSSL 1.1.1.
-	 *
-	 *	TLS1_4_VERSION in speculative.
 	 */
-	{
-		int min_version = 0;
-		int max_version = 0;
 
+	/*
+	 *	Get the max version from the configuration files.
+	 */
+	if (conf->tls_max_version && *conf->tls_max_version) {
+		max_version = fr_str2int(version2int, conf->tls_max_version, 0);
+		if (!max_version) {
+			ERROR("Invalid value for tls_max_version '%s'", conf->tls_max_version);
+			return NULL;
+		}
+	} else {
 		/*
-		 *	Get the max version.
+		 *	Pick the maximum version available at compile
+		 *	time.
 		 */
-		if (conf->tls_max_version && *conf->tls_max_version) {
-			max_version = fr_str2int(version2int, conf->tls_max_version, 0);
-			if (!max_version) {
-				ERROR("Invalid value for tls_max_version '%s'", conf->tls_max_version);
-				return NULL;
-			}
-		} else {
-			/*
-			 *	Pick the maximum one we know about.
-			 */
-#ifdef TLS1_4_VERSION
-			max_version = TLS1_2_VERSION; /* NOT a typo! EAP methods for TLS 1.4 are NOT finished */
-#elif defined(TLS1_3_VERSION)
-			max_version = TLS1_2_VERSION; /* NOT a typo! EAP methods for TLS 1.3 are NOT finished */
+#if defined(TLS1_3_VERSION)
+		max_version = TLS1_3_VERSION;
 #elif defined(TLS1_2_VERSION)
-			max_version = TLS1_2_VERSION;
+		max_version = TLS1_2_VERSION;
 #elif defined(TLS1_1_VERSION)
-			max_version = TLS1_1_VERSION;
+		max_version = TLS1_1_VERSION;
 #else
-			max_version = TLS1_VERSION;
+		max_version = TLS1_VERSION;
 #endif
-		}
-
-		/*
-		 *	Set these for the rest of the code.
-		 */
-#ifdef TLS1_2_VERSION
-		if (max_version < TLS1_2_VERSION) {
-			conf->disable_tlsv1_2 = true;
-		}
-#endif
-#ifdef TLS1_1_VERSION
-		if (max_version < TLS1_1_VERSION) {
-			conf->disable_tlsv1_1 = true;
-		}
-#endif
-
-		/*
-		 *	Get the min version.
-		 */
-		if (conf->tls_min_version && *conf->tls_min_version) {
-			min_version = fr_str2int(version2int, conf->tls_min_version, 0);
-			if (!min_version) {
-				ERROR("Unknown or unsupported value for tls_min_version '%s'", conf->tls_min_version);
-				return NULL;
-			}
-		} else {
-			min_version = TLS1_VERSION;
-		}
-
-		/*
-		 *	Compare the two.
-		 */
-		if (min_version > max_version) {
-			ERROR("tls_min_version '%s' must be <= tls_max_version '%s'",
-			      conf->tls_min_version, conf->tls_max_version);
-			return NULL;
-		}
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-#ifdef CHECK_FOR_PSK_CERTS
-		/*
-		 *	Disable TLS 1.3 when using PSKs and certs.
-		 *	This doesn't work.
-		 *
-		 *	It's best to disable the offending
-		 *	configuration and warn about it.  The
-		 *	alternative is to have the admin wonder why it
-		 *	doesn't work.
-		 *
-		 *	Note that the admin can over-ride this by
-		 *	setting "min_version = max_version = 1.3"
-		 */
-		if (psk_and_certs &&
-		    (min_version < TLS1_3_VERSION) && (max_version >= TLS1_3_VERSION)) {
-			max_version = TLS1_2_VERSION;
-			radlog(L_DBG | L_WARN, "Disabling TLS 1.3 due to PSK and certificates being configured simultaneously.  This is not supported by the standards.");
-		}
-#endif
-
-		if (!SSL_CTX_set_max_proto_version(ctx, max_version)) {
-			ERROR("Failed setting TLS maximum version");
-			return NULL;
-		}
-
-		if (!SSL_CTX_set_min_proto_version(ctx, min_version)) {
-			ERROR("Failed setting TLS minimum version");
-			return NULL;
-		}
-
-		/*
-		 *	No one should be using TLS 1.0 or TLS 1.1 any more
-		 */
-		if (min_version < TLS1_2_VERSION) insecure_tls_version = true;
-#else  /* OpenSSL version < 1.1.0 */
-
-#ifdef SSL_OP_NO_TLSv1
-		insecure_tls_version |= (conf->disable_tlsv1 == false);
-#endif
-#ifdef SSL_OP_NO_TLSv1_1
-		insecure_tls_version |= (conf->disable_tlsv1_1 == false);
-#endif
-#endif	/* OpenSSL version ? 1.1.0 */
-
-		if (rad_debug_lvl && insecure_tls_version) {
-			WARN("The configuration allows TLS 1.0 and/or TLS 1.1.  We STRONGLY recommned using only TLS 1.2 for security");
-			WARN("Please set: tls_min_version = \"1.2\"");
-		}
 	}
 
 	/*
-	 *	For historical config compatibility, we also allow
-	 *	these, but complain if the admin uses them.
+	 *	Get the min version from the configuration files.
 	 */
+	if (conf->tls_min_version && *conf->tls_min_version) {
+		min_version = fr_str2int(version2int, conf->tls_min_version, 0);
+		if (!min_version) {
+			ERROR("Unknown or unsupported value for tls_min_version '%s'", conf->tls_min_version);
+			return NULL;
+		}
+	} else {
+		/*
+		 *	Allow TLS 1.0.  It is horribly insecure, but
+		 *	some systems still use it.
+		 */
+		min_version = TLS1_VERSION;
+	}
+
+	/*
+	 *	Compare the two.
+	 */
+	if ((min_version > max_version) || (max_version < min_version)) {
+		ERROR("tls_min_version '%s' must be <= tls_max_version '%s'",
+		      conf->tls_min_version, conf->tls_max_version);
+		return NULL;
+	}
+
+#ifdef CHECK_FOR_PSK_CERTS
+	/*
+	 *	Disable TLS 1.3 when using PSKs and certs.
+	 *	This doesn't work.
+	 *
+	 *	It's best to disable the offending
+	 *	configuration and warn about it.  The
+	 *	alternative is to have the admin wonder why it
+	 *	doesn't work.
+	 *
+	 *	Note that the admin can over-ride this by
+	 *	setting "min_version = max_version = 1.3"
+	 */
+	if (psk_and_certs &&
+	    (min_version < TLS1_3_VERSION) && (max_version >= TLS1_3_VERSION)) {
+		max_version = TLS1_2_VERSION;
+		radlog(L_DBG | L_WARN, "Disabling TLS 1.3 due to PSK and certificates being configured simultaneously.  This is not supported by the standards.");
+	}
+#endif
+
+	/*
+	 *	No one should be using TLS 1.0 or TLS 1.1 any more
+	 *
+	 *	If TLS1.2 isn't defined by OpenSSL, then we _know_
+	 *	it's an insecure version of OpenSSL.
+	 */
+#ifdef TLS1_2_VERSION
+	if (max_version < TLS1_2_VERSION)
+#endif
+	{
+		if (rad_debug_lvl) {
+			WARN(LOG_PREFIX ": The configuration allows TLS 1.0 and/or TLS 1.1.  We STRONGLY recommned using only TLS 1.2 for security");
+			WARN(LOG_PREFIX ": Please set: tls_min_version = '1.2'");
+		}
+	}
+
 #ifdef SSL_OP_NO_TLSv1
+	/*
+	 *	Check min / max against the old-style "disable" flag.
+	 */
 	if (conf->disable_tlsv1) {
+		if (min_version == TLS1_VERSION) {
+			ERROR(LOG_PREFIX ": 'disable_tlsv1' is set, but 'min_version = 1.0'.  These cannot both be true.");
+			return NULL;
+		}
+		if (max_version == TLS1_VERSION) {
+			ERROR(LOG_PREFIX ": 'disable_tlsv1' is set, but 'max_version = 1.0'.  These cannot both be true.");
+			return NULL;
+		}
 		ctx_options |= SSL_OP_NO_TLSv1;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		WARN("Please use tls_min_version and tls_max_version instead of disable_tlsv1");
-#endif
 	}
 
-	ctx_tls_versions |= SSL_OP_NO_TLSv1;
+	if (min_version > TLS1_VERSION) ctx_options |= SSL_OP_NO_TLSv1;
+
+	ctx_available |= SSL_OP_NO_TLSv1;
 #endif
+
 #ifdef SSL_OP_NO_TLSv1_1
+	/*
+	 *	Check min / max against the old-style "disable" flag.
+	 */
 	if (conf->disable_tlsv1_1) {
+		if (min_version <= TLS1_1_VERSION) {
+			ERROR(LOG_PREFIX ": 'disable_tlsv1_1' is set, but 'min_version <= 1.1'.  These cannot both be true.");
+			return NULL;
+		}
+		if (max_version == TLS1_1_VERSION) {
+			ERROR(LOG_PREFIX ": 'disable_tlsv1_1' is set, but 'max_version = 1.1'.  These cannot both be true.");
+			return NULL;
+		}
 		ctx_options |= SSL_OP_NO_TLSv1_1;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		WARN("Please use tls_min_version and tls_max_version instead of disable_tlsv1_2");
-#endif
 	}
 
-	ctx_tls_versions |= SSL_OP_NO_TLSv1_1;
+	if (min_version > TLS1_1_VERSION) ctx_options |= SSL_OP_NO_TLSv1_1;
+	if (max_version < TLS1_1_VERSION) ctx_options |= SSL_OP_NO_TLSv1_1;
+
+	ctx_available |= SSL_OP_NO_TLSv1_1;
 #endif
+
 #ifdef SSL_OP_NO_TLSv1_2
-
+	/*
+	 *	Check min / max against the old-style "disable" flag.
+	 */
 	if (conf->disable_tlsv1_2) {
+		if (min_version <= TLS1_2_VERSION) {
+			ERROR(LOG_PREFIX ": 'disable_tlsv1_2' is set, but 'min_version <= 1.2'.  These cannot both be true.");
+			return NULL;
+		}
+		if (max_version == TLS1_2_VERSION) {
+			ERROR(LOG_PREFIX ": 'disable_tlsv1_1' is set, but 'max_version = 1.2'.  These cannot both be true.");
+			return NULL;
+		}
 		ctx_options |= SSL_OP_NO_TLSv1_2;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		WARN("Please use tls_min_version and tls_max_version instead of disable_tlsv1_2");
+	}
+	ctx_available |= SSL_OP_NO_TLSv1_2;
+
+	if (min_version > TLS1_2_VERSION) ctx_options |= SSL_OP_NO_TLSv1_2;
+	if (max_version < TLS1_2_VERSION) ctx_options |= SSL_OP_NO_TLSv1_2;
 #endif
+
+#ifdef SSL_OP_NO_TLSv1_3
+	ctx_available |= SSL_OP_NO_TLSv1_3;
+	if (min_version > TLS1_3_VERSION) ctx_options |= SSL_OP_NO_TLSv1_3;
+	if (max_version < TLS1_3_VERSION) ctx_options |= SSL_OP_NO_TLSv1_3;
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	if (conf->disable_tlsv1) {
+		WARN(LOG_PREFIX ": Please use 'tls_min_version' and 'tls_max_version' instead of 'disable_tlsv1'");
+	}
+	if (conf->disable_tlsv1_1) {
+		WARN(LOG_PREFIX ": Please use 'tls_min_version' and 'tls_max_version' instead of 'disable_tlsv1_1'");
+	}
+	if (conf->disable_tlsv1_2) {
+		WARN(LOG_PREFIX ": Please use 'tls_min_version' and 'tls_max_version' instead of 'disable_tlsv1_2'");
 	}
 
-	ctx_tls_versions |= SSL_OP_NO_TLSv1_2;
+	ctx_options &= ~(ctx_available); /* clear these flags, as they're not needed. */
 
-#endif
+	if (!SSL_CTX_set_max_proto_version(ctx, max_version)) {
+		ERROR("Failed setting TLS maximum version");
+		return NULL;
+	}
 
-	if ((ctx_options & ctx_tls_versions) == ctx_tls_versions) {
+	if (!SSL_CTX_set_min_proto_version(ctx, min_version)) {
+		ERROR("Failed setting TLS minimum version");
+		return NULL;
+	}
+#endif	/* OpenSSL version < 1.1.0 */
+
+	if ((ctx_options & ctx_available) == ctx_available) {
 		ERROR(LOG_PREFIX ": You have disabled all available TLS versions.  EAP will not work");
 		return NULL;
 	}
+
+	/*
+	 *	Cache min / max TLS version so that we can
+	 *	programatically disable TLS 1.3 for TTLS, PEAP, and
+	 *	FAST.
+	 */
+	conf->min_version = min_version;
+	conf->max_version = max_version;
 
 #ifdef SSL_OP_NO_TICKET
 	ctx_options |= SSL_OP_NO_TICKET;
@@ -3290,6 +3977,19 @@ post_ca:
 	}
 
 	SSL_CTX_set_options(ctx, ctx_options);
+
+	/*
+	 *	TLS 1.3 introduces the concept of early data (also known as zero
+	 *	round trip data or 0-RTT data). Early data allows a client to send
+	 *	data to a server in the first round trip of a connection, without
+	 *	waiting for the TLS handshake to complete if the client has spoken
+	 *	to the same server recently. This doesn't work for EAP, so we
+	 *	disable early data.
+	 *
+	 */
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+	SSL_CTX_set_max_early_data(ctx, 0);
+#endif
 
 	/*
 	 *	TODO: Set the RSA & DH
@@ -3336,10 +4036,19 @@ post_ca:
 		/*
 		 *	Cache sessions on disk if requested.
 		 */
-		if (conf->session_cache_path) {
+		if (conf->session_cache_path && *conf->session_cache_path) {
 			SSL_CTX_sess_set_new_cb(ctx, cbtls_new_session);
 			SSL_CTX_sess_set_get_cb(ctx, cbtls_get_session);
 			SSL_CTX_sess_set_remove_cb(ctx, cbtls_remove_session);
+		}
+
+		/*
+		 *	Or run the cache through a virtual server.
+		 */
+		if (conf->session_cache_server && *conf->session_cache_server) {
+			SSL_CTX_sess_set_new_cb(ctx, cbtls_cache_save);
+			SSL_CTX_sess_set_get_cb(ctx, cbtls_cache_load);
+			SSL_CTX_sess_set_remove_cb(ctx, cbtls_cache_clear);
 		}
 
 		SSL_CTX_set_quiet_shutdown(ctx, 1);
@@ -3358,6 +4067,17 @@ post_ca:
 	    		return NULL;
 		}
 		X509_STORE_set_flags(certstore, X509_V_FLAG_CRL_CHECK);
+
+#ifdef X509_V_FLAG_USE_DELTAS
+		/*
+		 *	If set, delta CRLs (if present) are used to
+		 *	determine certificate status. If not set
+		 *	deltas are ignored.
+		 *
+		 *	So it's safe to always set this flag.
+		 */
+		X509_STORE_set_flags(certstore, X509_V_FLAG_USE_DELTAS);
+#endif
 
 #ifdef X509_V_FLAG_CRL_CHECK_ALL
 		if (conf->check_all_crl)
@@ -3424,9 +4144,9 @@ post_ca:
 					       (unsigned int) strlen(conf->session_context_id));
 
 		/*
-		 *	Our timeout is in hours, this is in seconds.
+		 *	Our lifetime is in hours, this is in seconds.
 		 */
-		SSL_CTX_set_timeout(ctx, conf->session_timeout * 3600);
+		SSL_CTX_set_timeout(ctx, conf->session_lifetime * 3600);
 
 		/*
 		 *	Set the maximum number of entries in the
@@ -3467,6 +4187,8 @@ static int _tls_server_conf_free(fr_tls_server_conf_t *conf)
 	if (conf->ctx) SSL_CTX_free(conf->ctx);
 
 	if (conf->cache_ht) fr_hash_table_free(conf->cache_ht);
+
+	pthread_mutex_destroy(&conf->mutex);
 
 #ifdef HAVE_OPENSSL_OCSP_H
 	if (conf->ocsp_store) X509_STORE_free(conf->ocsp_store);
@@ -3536,6 +4258,16 @@ fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs)
 	if (conf->fragment_size < 100) conf->fragment_size = 100;
 
 	/*
+	 *	Disallow sessions of more than 7 days, as per RFC
+	 *	8446.
+	 *
+	 *	Note that we also enforce this on TLS 1.2, etc.
+	 *	Because there's just no reason to have month-long TLS
+	 *	sessions.
+	 */
+	if (conf->session_lifetime > (7 * 24)) conf->session_lifetime = 7 * 24;
+
+	/*
 	 *	Only check for certificate things if we don't have a
 	 *	PSK query.
 	 */
@@ -3562,6 +4294,11 @@ fr_tls_server_conf_t *tls_server_conf_parse(CONF_SECTION *cs)
 			goto error;
 		}
 	}
+
+	/*
+	 *	Initialize configuration mutex
+	 */
+	pthread_mutex_init(&conf->mutex, NULL);
 
 	/*
 	 *	Initialize TLS
@@ -3633,7 +4370,7 @@ skip_list:
 	 * 	Initialize OCSP Revocation Store
 	 */
 	if (conf->ocsp_enable) {
-		conf->ocsp_store = init_revocation_store(conf);
+		conf->ocsp_store = fr_init_x509_store(conf);
 		if (conf->ocsp_store == NULL) goto error;
 	}
 #endif /*HAVE_OPENSSL_OCSP_H*/
@@ -3755,7 +4492,7 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 		 *	not allowed,
 		 */
 		if (SSL_session_reused(ssn->ssl)) {
-			RDEBUG("Forcibly stopping session resumption as it is not allowed");
+			RDEBUG("(TLS) cache - Forcibly stopping session resumption as it is administratively disabled.");
 			return -1;
 		}
 
@@ -3763,11 +4500,13 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 	 *	Else resumption IS allowed, so we store the
 	 *	user data in the cache.
 	 */
-	} else if (!SSL_session_reused(ssn->ssl)) {
+	} else if ((!SSL_session_reused(ssn->ssl)) || ssn->session_not_resumed) {
 		VALUE_PAIR **certs;
 		char buffer[2 * MAX_SESSION_SIZE + 1];
 
 		tls_session_id(ssn->ssl_session, buffer, MAX_SESSION_SIZE);
+
+		RDEBUG("(TLS) cache - Setting up attributes for session resumption");
 
 		vp = fr_pair_list_copy_by_num(talloc_ctx, request->reply->vps, PW_USER_NAME, 0, TAG_ANY);
 		if (vp) fr_pair_add(&vps, vp);
@@ -3776,6 +4515,9 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 		if (vp) fr_pair_add(&vps, vp);
 
 		vp = fr_pair_list_copy_by_num(talloc_ctx, request->packet->vps, PW_STRIPPED_USER_DOMAIN, 0, TAG_ANY);
+		if (vp) fr_pair_add(&vps, vp);
+
+		vp = fr_pair_list_copy_by_num(talloc_ctx, request->packet->vps, PW_EAP_TYPE, 0, TAG_ANY);
 		if (vp) fr_pair_add(&vps, vp);
 
 		vp = fr_pair_list_copy_by_num(talloc_ctx, request->reply->vps, PW_CHARGEABLE_USER_IDENTITY, 0, TAG_ANY);
@@ -3889,6 +4631,10 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 					fprintf(vp_file, "\n");
 					fclose(vp_file);
 				}
+
+			} else if (conf->session_cache_server) {
+				cbtls_cache_save_vps(ssn->ssl, ssn->ssl_session, vps);
+
 			} else {
 				RDEBUG("Failed to find 'persist_dir' in TLS configuration.  Session will not be cached on disk.");
 			}
@@ -3901,15 +4647,27 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 	 *	Else the session WAS allowed.  Copy the cached reply.
 	 */
 	} else {
-		char buffer[2 * MAX_SESSION_SIZE + 1];
-
-		tls_session_id(ssn->ssl_session, buffer, MAX_SESSION_SIZE);
+		RDEBUG("(TLS) cache - Refreshing entry for session resumption");
 
 		/*
 		 *	The "restore VPs from OpenSSL cache" code is
 		 *	now in eaptls_process()
 		 */
 		if (conf->session_cache_path) {
+			char buffer[2 * MAX_SESSION_SIZE + 1];
+
+#if OPENSSL_VERSION_NUMBER >= 0x10001000L
+#ifdef TLS1_3_VERSION
+			/*
+			 *	OpenSSL frees the underlying session out from
+			 *	under us in TLS 1.3.
+			 */
+			if (ssn->info.version == TLS1_3_VERSION) ssn->ssl_session = SSL_get_session(ssn->ssl);
+#endif
+#endif
+
+			tls_session_id(ssn->ssl_session, buffer, MAX_SESSION_SIZE);
+
 			/* "touch" the cached session/vp file */
 			char filename[3 * MAX_SESSION_SIZE + 1];
 
@@ -3919,6 +4677,10 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 			snprintf(filename, sizeof(filename), "%s%c%s.vps",
 				 conf->session_cache_path, FR_DIR_SEP, buffer);
 			utime(filename, NULL);
+		}
+
+		if (conf->session_cache_server) {
+			cbtls_cache_refresh(ssn->ssl, ssn->ssl_session);
 		}
 
 		/*
@@ -3975,27 +4737,30 @@ fr_tls_status_t tls_application_data(tls_session_t *ssn, REQUEST *request)
 	if (err <= 0) {
 		int code;
 
-		RDEBUG("SSL_read Error");
+		RDEBUG3("SSL_read Error");
 
 		code = SSL_get_error(ssn->ssl, err);
 		switch (code) {
 		case SSL_ERROR_WANT_READ:
-			RDEBUG("Error in fragmentation logic: SSL_WANT_READ");
+			RDEBUG("(TLS) OpenSSL says that it needs to read more data.");
 			return FR_TLS_MORE_FRAGMENTS;
 
 		case SSL_ERROR_WANT_WRITE:
-			RDEBUG("Error in fragmentation logic: SSL_WANT_WRITE");
+			RDEBUG("(TLS) Error in fragmentation logic: SSL_WANT_WRITE");
 			return FR_TLS_FAIL;
 
 		case SSL_ERROR_NONE:
-			RDEBUG2("No application data received.  Assuming handshake is continuing...");
+			RDEBUG2("(TLS) No application data received.  Assuming handshake is continuing...");
 			err = 0;
 			break;
 
+		case SSL_ERROR_ZERO_RETURN:
+			RDEBUG2("(TLS) Other end closed the TLS tunnel.");
+			return FR_TLS_FAIL;
+
 		default:
-			REDEBUG("Error in fragmentation logic");
-			tls_error_io_log(request, ssn, err,
-					 "Failed in " STRINGIFY(__FUNCTION__) " (SSL_read)");
+			REDEBUG("(TLS) Error in fragmentation logic - code %d", code);
+			tls_error_io_log(request, ssn, err, "Failed reading application data from OpenSSL");
 			return FR_TLS_FAIL;
 		}
 	}
@@ -4026,27 +4791,27 @@ fr_tls_status_t tls_application_data(tls_session_t *ssn, REQUEST *request)
 fr_tls_status_t tls_ack_handler(tls_session_t *ssn, REQUEST *request)
 {
 	if (ssn == NULL){
-		REDEBUG("Unexpected ACK received:  No ongoing SSL session");
+		REDEBUG("(TLS) Unexpected ACK received:  No ongoing SSL session");
 		return FR_TLS_INVALID;
 	}
 	if (!ssn->info.initialized) {
-		RDEBUG("No SSL info available.  Waiting for more SSL data");
+		RDEBUG("(TLS) No SSL info available.  Waiting for more SSL data");
 		return FR_TLS_REQUEST;
 	}
 
 	if ((ssn->info.content_type == handshake) && (ssn->info.origin == 0)) {
-		REDEBUG("Unexpected ACK received:  We sent no previous messages");
+		REDEBUG("(TLS) Unexpected ACK received:  We sent no previous messages");
 		return FR_TLS_INVALID;
 	}
 
 	switch (ssn->info.content_type) {
 	case alert:
-		RDEBUG2("Peer ACKed our alert");
+		RDEBUG2("(TLS) Peer ACKed our alert");
 		return FR_TLS_FAIL;
 
 	case handshake:
 		if ((ssn->is_init_finished) && (ssn->dirty_out.used == 0)) {
-			RDEBUG2("Peer ACKed our handshake fragment.  handshake is finished");
+			RDEBUG2("(TLS) Peer ACKed our handshake fragment.  handshake is finished");
 
 			/*
 			 *	From now on all the content is
@@ -4057,12 +4822,12 @@ fr_tls_status_t tls_ack_handler(tls_session_t *ssn, REQUEST *request)
 			return FR_TLS_SUCCESS;
 		} /* else more data to send */
 
-		RDEBUG2("Peer ACKed our handshake fragment");
+		RDEBUG2("(TLS) Peer ACKed our handshake fragment");
 		/* Fragmentation handler, send next fragment */
 		return FR_TLS_REQUEST;
 
 	case application_data:
-		RDEBUG2("Peer ACKed our application data fragment");
+		RDEBUG2("(TLS) Peer ACKed our application data fragment");
 		return FR_TLS_REQUEST;
 
 		/*
@@ -4070,7 +4835,7 @@ fr_tls_status_t tls_ack_handler(tls_session_t *ssn, REQUEST *request)
 		 *	to the default section below.
 		 */
 	default:
-		REDEBUG("Invalid ACK received: %d", ssn->info.content_type);
+		REDEBUG("(TLS) Invalid ACK received: %d", ssn->info.content_type);
 		return FR_TLS_INVALID;
 	}
 }

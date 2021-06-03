@@ -28,6 +28,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main/radiusd.c])
 AC_CONFIG_HEADER([src/include/autoconf.h])
 m4_include([m4/ax_cc.m4])
+m4_include([m4/ax_prog_perl_modules.m4])
 
 dnl #############################################################
 dnl #
@@ -65,6 +66,55 @@ dnl #
 dnl #############################################################
 
 dnl #
+dnl # check for JSON.pm, ASCIIDOCTOR and pandoc
+dnl #
+AC_PATH_PROG(ASCIIDOCTOR, asciidoctor)
+if test "x$ac_cv_path_ASCIIDOCTOR" = "x"; then
+  AC_MSG_WARN([asciidoctor not found - Please install if you want build the docs])
+fi
+
+AC_PATH_PROG(PANDOC, pandoc)
+if test "x$ac_cv_path_PANDOC" = "x"; then
+  AC_MSG_WARN([pandoc not found - Please install if you want build the docs])
+else
+  #
+  #  Pandoc v2 onwards renamed --latex-engine to --pdf-engine
+  #
+  if pandoc --help 2>&1 | grep -q "latex-engine"; then
+    PANDOC_ENGINE=latex
+  else
+    PANDOC_ENGINE=pdf
+  fi
+  AC_SUBST(PANDOC_ENGINE)
+fi
+
+# pandoc and asciidoctor is defined? then check it.
+if test "x$ac_cv_path_PANDOC" != "x" && test "x$ac_cv_path_ASCIIDOCTOR" != "x"; then
+  AX_PROG_PERL_MODULES(JSON, , AC_MSG_WARN([Perl JSON module not found - Please install if you want build the docs]))
+fi
+
+dnl #
+dnl # check for doxygen
+dnl #
+AC_PATH_PROG(DOXYGEN, doxygen)
+if test "x$ac_cv_path_DOXYGEN" != "x"; then
+  AC_PATH_PROG(GRAPHVIZ_DOT, dot)
+  if test "x$ac_cv_path_GRAPHVIZ_DOT" = "x"; then
+    AC_MSG_WARN([dot not found - Please install the graphviz if you want to build the docs/source])
+  fi
+else
+  AC_MSG_WARN([doxygen not found - Please install if you want build the docs/source])
+fi
+
+dnl #
+dnl # check for Antora
+dnl #
+AC_PATH_PROG(ANTORA, antora)
+if test "x$ac_cv_path_ANTORA" = "x"; then
+  AC_MSG_WARN([antora not found - Please install if you want build the site])
+fi
+
+dnl #
 dnl #  Enable developer features like debugging symbols.
 dnl #  These checks must be done before expanding the AC_PROG_CC
 dnl #  and AC_PROG_CXX macros.
@@ -99,6 +149,22 @@ dnl #
 if test "x$developer" = "xyes"; then
   : ${CFLAGS=-g3}
 fi
+
+dnl #
+dnl #  The developer option WITH_VERIFY_PTR significantly scews profiling so
+dnl #  we allow it to be disabled.
+dnl #
+AC_ARG_ENABLE(verify-ptr,
+[  --disable-verify-ptr    disables WITH_VERIFY_PTR developer build option.],
+[ case "$enableval" in
+  no)
+    verify_ptr=""
+    ;;
+  *)
+    verify_ptr="-DWITH_VERIFY_PTR=1"
+  esac ],
+[ verify_ptr="-DWITH_VERIFY_PTR=1" ],
+)
 
 dnl #############################################################
 dnl #
@@ -564,6 +630,11 @@ AC_ARG_WITH(openssl,
     ;;
   esac ]
 )
+if test "x$WITH_THREADS" = "xno"; then
+  if test "x$WITH_OPENSSL" = "xyes"; then
+    AC_MSG_ERROR([[Threads are required when using OpenSSL, use --with-threads=yes]])
+  fi
+fi
 
 dnl #
 dnl #  extra argument: --with-openssl-lib-dir=dir
@@ -1739,10 +1810,10 @@ if test "x$developer" = "xyes"; then
   dnl #
   AX_CC_WEVERYTHING_FLAG
   if test "x$ax_cv_cc_weverything_flag" = "xyes"; then
-    devflags="$devflags -W -Weverything -Wformat=2 -Wno-missing-field-initializers -Wno-date-time -Wno-padded -Wno-gnu-zero-variadic-macro-arguments -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-conversion -Wno-switch-enum -Wno-gnu-statement-expression -Wno-extended-offsetof -Wno-cast-align -Wno-documentation-unknown-command -Wno-covered-switch-default -Wno-packed -DWITH_VERIFY_PTR=1"
+    devflags="$devflags -W -Weverything -Wformat=2 -Wno-missing-field-initializers -Wno-date-time -Wno-padded -Wno-gnu-zero-variadic-macro-arguments -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-conversion -Wno-switch-enum -Wno-gnu-statement-expression -Wno-extended-offsetof -Wno-cast-align -Wno-documentation-unknown-command -Wno-covered-switch-default -Wno-packed $verify_ptr"
   else
     if test "x$GCC" = "xyes"; then
-      devflags="$devflags -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -W -Wredundant-decls -Wundef -Wformat-y2k -Wno-format-extra-args -Wno-format-zero-length -Wno-cast-align -Wformat-nonliteral -Wformat-security -Wformat=2 -DWITH_VERIFY_PTR=1"
+      devflags="$devflags -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -W -Wredundant-decls -Wundef -Wformat-y2k -Wno-format-extra-args -Wno-format-zero-length -Wno-cast-align -Wformat-nonliteral -Wformat-security -Wformat=2 $verify_ptr"
       INSTALLSTRIP=""
     fi
   fi

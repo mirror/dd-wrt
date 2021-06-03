@@ -4,11 +4,11 @@
 /*
  * conffile.h	Defines for the conffile parsing routines.
  *
- * Version:	$Id: 8cb045c946a2b046ef998f83ef4aaf65b06ebdef $
+ * Version:	$Id: b99688196bbb8acb01f9b222016302527e7e59c2 $
  *
  */
 
-RCSIDH(conffile_h, "$Id: 8cb045c946a2b046ef998f83ef4aaf65b06ebdef $")
+RCSIDH(conffile_h, "$Id: b99688196bbb8acb01f9b222016302527e7e59c2 $")
 
 #include <stddef.h>
 #include <freeradius-devel/token.h>
@@ -273,6 +273,7 @@ int cf_pair_count(CONF_SECTION const *cs);
 CONF_SECTION *cf_item_parent(CONF_ITEM const *ci);
 bool cf_item_is_section(CONF_ITEM const *item);
 bool cf_item_is_pair(CONF_ITEM const *item);
+bool cf_item_is_data(CONF_ITEM const *item);
 CONF_PAIR *cf_item_to_pair(CONF_ITEM const *item);
 CONF_SECTION *cf_item_to_section(CONF_ITEM const *item);
 CONF_ITEM *cf_pair_to_item(CONF_PAIR const *cp);
