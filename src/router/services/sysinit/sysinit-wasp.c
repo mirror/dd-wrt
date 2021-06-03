@@ -122,8 +122,6 @@ void start_sysinit(void)
 	int s;
 	char mac[32];
 	FILE *fp;
-	if (!nvram_matchi("disable_watchdog", 1))
-		eval("watchdog");
 
 	/*
 	 * Setup console 

@@ -78,9 +78,6 @@ void start_sysinit(void)
 	} else
 		insmod("softdog");
 
-	if (!nvram_matchi("disable_watchdog", 1)) {
-	} else
-		eval("watchdog");	// system watchdog
 #ifdef HAVE_ERC
 	if (isregistered_real() && nvram_matchi("ree_resetme", 1)) {
 		fprintf(stderr, "Restoring REE default nvram\n");

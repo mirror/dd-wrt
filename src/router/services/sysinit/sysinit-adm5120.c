@@ -306,9 +306,6 @@ void start_sysinit(void)
 	 */
 	detect_wireless_devices(RADIO_ALL);
 
-	if (!nvram_matchi("disable_watchdog", 1))
-		eval("watchdog");
-
 #ifdef HAVE_WP54G
 	writeprocsys("dev/wifi0/ledpin", "6");
 	writeprocsys("dev/wifi0/softled", "1");

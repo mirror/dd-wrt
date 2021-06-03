@@ -79,7 +79,6 @@ void start_sysinit(void)
 
 	if (!nvram_matchi("disable_watchdog", 1)) {
 		insmod("imx2_wdt");
-		eval("watchdog");
 	}
 	/*
 	 * Setup console 

@@ -68,8 +68,6 @@ void start_sysinit(void)
 		eval("/sbin/mtd", "erase", "nvram");
 		nvram_commit();
 	}
-	if (!nvram_matchi("disable_watchdog", 1))
-		eval("watchdog");
 	/*
 	 * Setup console 
 	 */
