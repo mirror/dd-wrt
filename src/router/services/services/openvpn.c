@@ -69,9 +69,10 @@ int is_ipv4(char *ip)
 	int num;
 	int flag = 1;
 	int counter = 0;
+	int i;
 	char *p = strtok(ip, ".");
 	while (p && flag) {
-		for (int i = 0; p[i] != '\0'; i++) {
+		for (i = 0; p[i] != '\0'; i++) {
 			if (!isdigit(p[i])) {
 				return 0;
 			}
@@ -124,6 +125,7 @@ int test_ipv4(char *iprule)
 	char ipv4[5][100] = { 0 };
 	char strtosplit[100] = { 0 };
 	int i = 1;
+	int j;
 	strncpy(strtosplit, iprule, (sizeof strtosplit) - 1);
 	pch = strtok(strtosplit, " ");
 	while (pch != NULL) {
@@ -137,7 +139,7 @@ int test_ipv4(char *iprule)
 		}
 		pch = strtok(NULL, " ");
 	}
-	for (int j = 1; j < i; j++) {
+	for (j = 1; j < i; j++) {
 		if (!split_ipv4(ipv4[j])) {
 			flag = 0;	//no valid IP
 		}
