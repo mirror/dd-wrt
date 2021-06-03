@@ -3,7 +3,7 @@
 # Python module example file
 # Miguel A.L. Paraz <mparaz@mparaz.com>
 #
-# $Id: 5d437f446e8938beb1d458dc332e4081bf3d5144 $
+# $Id: bb2d99775ade0a78f7390bfb352904568c0139e4 $
 
 import radiusd
 
@@ -93,7 +93,7 @@ def send_coa(p):
   return radiusd.RLM_MODULE_OK
 
 
-def detach():
+def detach(p):
   print("*** goodbye from example.py ***")
   return radiusd.RLM_MODULE_OK
 

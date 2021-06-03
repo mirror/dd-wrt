@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 2186cdd170f044c72b7848b0280559d3fdf4c45d $
+ * $Id: a45dd654738308df738eb41a8c1b3adaa6217eee $
  * @file rlm_sql_mongo.c
  * @brief Mongo driver.
  *
  * @copyright 2019 Network RADIUS SARL
  */
 
-RCSID("$Id: 2186cdd170f044c72b7848b0280559d3fdf4c45d $")
+RCSID("$Id: a45dd654738308df738eb41a8c1b3adaa6217eee $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -411,12 +411,17 @@ static CC_HINT(nonnull) sql_rcode_t sql_query(rlm_sql_handle_t *handle, rlm_sql_
 		}
 
 		if (bson_iter_init_find(&iter, bson, "update")) {
-			if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
-				DEBUG("rlm_sql_mongo: 'update' does not hold a document.");
+			if (!(BSON_ITER_HOLDS_DOCUMENT(&iter) || BSON_ITER_HOLDS_ARRAY(&iter))) {
+				DEBUG("rlm_sql_mongo: 'update' does not hold a document or array.");
 				goto error;
 			}
 
-			bson_iter_document(&iter, &document_len, &document);
+			if (BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+				bson_iter_document(&iter, &document_len, &document);
+			} else {
+				bson_iter_array(&iter, &document_len, &document);
+			}
+
 			bson_update = bson_new_from_data(document, document_len);
 
 			if (!bson_update) {

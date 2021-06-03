@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: 844898eed105e750b82825ffd8c848547558beeb $
+ * Version:	$Id: 9c24a572a3b94f52cd38bc33af8dc8201cb71d47 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -1138,7 +1138,7 @@ static int command_show_modules(rad_listen_t *listener, UNUSED int argc, UNUSED 
 }
 
 #ifdef WITH_PROXY
-static int command_show_home_servers(rad_listen_t *listener, UNUSED int argc, UNUSED char *argv[])
+static int command_show_home_servers(rad_listen_t *listener, int argc, char *argv[])
 {
 	int i;
 	home_server_t *home;
@@ -1146,10 +1146,7 @@ static int command_show_home_servers(rad_listen_t *listener, UNUSED int argc, UN
 
 	char buffer[256];
 
-	for (i = 0; i < 256; i++) {
-		home = home_server_bynumber(i);
-		if (!home) break;
-
+	for (i = 0; (home = home_server_bynumber(i)) != NULL; i++) {
 		/*
 		 *	Internal "virtual" home server.
 		 */
@@ -1212,10 +1209,19 @@ static int command_show_home_servers(rad_listen_t *listener, UNUSED int argc, UN
 
 		} else continue;
 
-		cprintf(listener, "%s\t%d\t%s\t%s\t%s\t%d\n",
-			ip_ntoh(&home->ipaddr, buffer, sizeof(buffer)),
-			home->port, proto, type, state,
-			home->currently_outstanding);
+		if (argc > 0 && !strcmp(argv[0], "all")) {
+			char const *dynamic = home->dynamic ? "yes" : "no";
+
+			cprintf(listener, "%s\t%d\t%s\t%s\t%s\t%d\t(name=%s, dynamic=%s)\n",
+				ip_ntoh(&home->ipaddr, buffer, sizeof(buffer)),
+				home->port, proto, type, state,
+				home->currently_outstanding, home->name, dynamic);
+		} else {
+			cprintf(listener, "%s\t%d\t%s\t%s\t%s\t%d\n",
+				ip_ntoh(&home->ipaddr, buffer, sizeof(buffer)),
+				home->port, proto, type, state,
+				home->currently_outstanding);
+		}
 	}
 
 	return CMD_OK;
@@ -1239,27 +1245,107 @@ static int command_show_client_config(rad_listen_t *listener, int argc, char *ar
 	return 1;
 }
 
+/*
+ *	@todo - copied from clients.c.  Better to re-use, but whatever.
+ */
+struct radclient_list {
+	char const	*name;	/* name of this list */
+	char const	*server; /* virtual server associated with this client list */
 
-static int command_show_clients(rad_listen_t *listener, UNUSED int argc, UNUSED char *argv[])
+	/*
+	 *	FIXME: One set of trees for IPv4, and another for IPv6?
+	 */
+	rbtree_t	*trees[129]; /* for 0..128, inclusive. */
+	uint32_t       	min_prefix;
+};
+
+
+static int command_show_clients(rad_listen_t *listener, int argc, char *argv[])
 {
 	int i;
 	RADCLIENT *client;
 	char buffer[256];
 
-	for (i = 0; i < 256; i++) {
-		client = client_findbynumber(NULL, i);
-		if (!client) break;
+	if (argc == 0) {
+		for (i = 0; (client = client_findbynumber(NULL, i)) != NULL; i++) {
+			ip_ntoh(&client->ipaddr, buffer, sizeof(buffer));
 
-		ip_ntoh(&client->ipaddr, buffer, sizeof(buffer));
-
-		if (((client->ipaddr.af == AF_INET) &&
-		     (client->ipaddr.prefix != 32)) ||
-		    ((client->ipaddr.af == AF_INET6) &&
-		     (client->ipaddr.prefix != 128))) {
-			cprintf(listener, "%s/%d\n", buffer, client->ipaddr.prefix);
-		} else {
-			cprintf(listener, "%s\n", buffer);
+			if (((client->ipaddr.af == AF_INET) &&
+			     (client->ipaddr.prefix != 32)) ||
+			    ((client->ipaddr.af == AF_INET6) &&
+			     (client->ipaddr.prefix != 128))) {
+				cprintf(listener, "%s/%d\n", buffer, client->ipaddr.prefix);
+			} else {
+				cprintf(listener, "%s\n", buffer);
+			}
 		}
+
+		return CMD_OK;
+	}
+
+	if (argc != 1) {
+		cprintf_error(listener, "Unknown command %s %s ...\n", argv[0], argv[1]);
+		return -1;
+	}
+
+	if (strcmp(argv[0], "verbose") != 0) {
+		cprintf_error(listener, "Unknown command %s\n", argv[0]);
+		return -1;
+	}
+
+	for (i = 0; (client = client_findbynumber(NULL, i)) != NULL; i++) {
+		if (client->cs) {
+			cprintf(listener, "client %s {\n", cf_section_name2(client->cs));
+		} else {
+			cprintf(listener, "client {\n");
+		}
+
+		fr_ntop(buffer, sizeof(buffer), &client->ipaddr);
+		cprintf(listener, "\tipaddr = %s\n", buffer);
+
+		if (client->src_ipaddr.af != AF_UNSPEC) {
+			fr_ntop(buffer, sizeof(buffer), &client->src_ipaddr);
+			cprintf(listener, "\tsrc_ipaddr = %s\n", buffer);
+		}
+
+		if (client->proto == IPPROTO_UDP) {
+			cprintf(listener, "\tproto = udp\n");
+		} else if (client->proto == IPPROTO_TCP) {
+			cprintf(listener, "\tproto = tcp\n");
+		} else {
+			cprintf(listener, "\tproto = *\n");
+		}
+
+		cprintf(listener, "\tsecret = %s\n", client->secret);
+		cprintf(listener, "\tlongname = %s\n", client->longname);
+		cprintf(listener, "\tshortname = %s\n", client->shortname);
+		if (client->nas_type) cprintf(listener, "\tnas_type = %s\n", client->nas_type);
+		cprintf(listener, "\tnumber = %d\n", client->number);
+
+		if (client->server) {
+			cprintf(listener, "\tvirtual_server = %s\n", client->server);
+		}
+
+#ifdef WITH_DYNAMIC_CLIENTS
+		if (client->dynamic) {
+			cprintf(listener, "\tdynamic = yes\n");
+			cprintf(listener, "\tlifetime = %u\n", client->lifetime);
+		}
+#endif
+
+#ifdef WITH_TLS
+		if (client->tls_required) {
+			cprintf(listener, "\ttls = yes\n");
+		}
+#endif
+
+		if (client->list && client->list->server) {
+			cprintf(listener, "\tparent_virtual_server = %s\n", client->list->server);
+		} else {
+			cprintf(listener, "\tglobal = yes\n");
+		}
+
+		cprintf(listener, "}\n");
 	}
 
 	return CMD_OK;
@@ -2047,7 +2133,7 @@ static fr_command_table_t command_table_show_client[] = {
 	  "- show configuration for given client",
 	  command_show_client_config, NULL },
 	{ "list", FR_READ,
-	  "show client list - shows list of global clients",
+	  "show client list [verbose] - shows list of global clients",
 	  command_show_clients, NULL },
 
 	{ NULL, 0, NULL, NULL, NULL }
@@ -2056,7 +2142,7 @@ static fr_command_table_t command_table_show_client[] = {
 #ifdef WITH_PROXY
 static fr_command_table_t command_table_show_home[] = {
 	{ "list", FR_READ,
-	  "show home_server list - shows list of home servers",
+	  "show home_server list [all] - shows list of home servers",
 	  command_show_home_servers, NULL },
 	{ "state", FR_READ,
 	  "show home_server state <ipaddr> <port> [udp|tcp] [src <ipaddr>] - shows state of given home server",
@@ -2597,6 +2683,36 @@ static int command_del_client(rad_listen_t *listener, int argc, char *argv[])
 }
 
 
+static int command_del_home_server(rad_listen_t *listener, int argc, char *argv[])
+{
+	if (argc < 2) {
+		cprintf_error(listener, "<name> and <type> are required\n");
+		return 0;
+	}
+
+	if (home_server_delete(argv[0], argv[1]) < 0) {
+		cprintf_error(listener, "Failed deleted home_server %s - %s\n", argv[1], fr_strerror());
+		return 0;
+	}
+
+	return CMD_OK;
+}
+
+static int command_add_home_server_file(rad_listen_t *listener, int argc, char *argv[])
+{
+	if (argc < 1) {
+		cprintf_error(listener, "<file> is required\n");
+		return 0;
+	}
+
+	if (home_server_afrom_file(argv[0]) < 0) {
+		cprintf_error(listener, "Unable to add home server - %s\n", fr_strerror());
+		return 0;
+	}
+
+	return CMD_OK;
+}
+
 static fr_command_table_t command_table_del_client[] = {
 	{ "ipaddr", FR_WRITE,
 	  "del client ipaddr <ipaddr> [udp|tcp] [listen <ipaddr> <port>] - Delete a dynamically created client",
@@ -2605,15 +2721,25 @@ static fr_command_table_t command_table_del_client[] = {
 	{ NULL, 0, NULL, NULL, NULL }
 };
 
+static fr_command_table_t command_table_del_home_server[] = {
+	{ "file", FR_WRITE,
+	  "del home_server file <name> [auth|acct|coa] - Delete a dynamically created home_server",
+	  command_del_home_server, NULL },
+
+	{ NULL, 0, NULL, NULL, NULL }
+};
 
 static fr_command_table_t command_table_del[] = {
 	{ "client", FR_WRITE,
 	  "del client <command> - Delete client configuration commands",
 	  NULL, command_table_del_client },
 
+	{ "home_server", FR_WRITE,
+	  "del home_server <command> - Delete home_server configuration commands",
+	  NULL, command_table_del_home_server },
+
 	{ NULL, 0, NULL, NULL, NULL }
 };
-
 
 static fr_command_table_t command_table_add_client[] = {
 	{ "file", FR_WRITE,
@@ -2623,11 +2749,22 @@ static fr_command_table_t command_table_add_client[] = {
 	{ NULL, 0, NULL, NULL, NULL }
 };
 
+static fr_command_table_t command_table_add_home_server[] = {
+	{ "file", FR_WRITE,
+	  "add home_server file <filename> - Add new home serverdefinition from <filename>",
+	  command_add_home_server_file, NULL },
+
+	{ NULL, 0, NULL, NULL, NULL }
+};
 
 static fr_command_table_t command_table_add[] = {
 	{ "client", FR_WRITE,
 	  "add client <command> - Add client configuration commands",
 	  NULL, command_table_add_client },
+
+	{ "home_server", FR_WRITE,
+	  "add home_server <command> - Add home server configuration commands",
+	  NULL, command_table_add_home_server },
 
 	{ NULL, 0, NULL, NULL, NULL }
 };

@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: b0953aa1d4e15cc9d89fd13c7019d774f38ce59d $
+ * Version:     $Id: fa2d6ff1eb60bfaa021bfc4dc27e50691e3c45c0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: b0953aa1d4e15cc9d89fd13c7019d774f38ce59d $")
+RCSID("$Id: fa2d6ff1eb60bfaa021bfc4dc27e50691e3c45c0 $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -61,33 +61,51 @@ static int openssl_get_keyblock_size(REQUEST *request, SSL *ssl)
 		return -1;
 
 	RDEBUG2("OpenSSL: keyblock size: key_len=%d MD_size=%d "
-		   "IV_len=%d", EVP_CIPHER_key_length(c), md_size,
-		   EVP_CIPHER_iv_length(c));
+		"IV_len=%d", EVP_CIPHER_key_length(c), md_size,
+		EVP_CIPHER_iv_length(c));
 	return 2 * (EVP_CIPHER_key_length(c) +
 		    md_size +
 		    EVP_CIPHER_iv_length(c));
 #else
 	const SSL_CIPHER *ssl_cipher;
 	int cipher, digest;
+	int mac_key_len, enc_key_len, fixed_iv_len;
 
 	ssl_cipher = SSL_get_current_cipher(ssl);
 	if (!ssl_cipher)
 		return -1;
 	cipher = SSL_CIPHER_get_cipher_nid(ssl_cipher);
 	digest = SSL_CIPHER_get_digest_nid(ssl_cipher);
-	RDEBUG2("OpenSSL: cipher nid %d digest nid %d", cipher, digest);
+	RDEBUG3("OpenSSL: cipher nid %d digest nid %d",
+		cipher, digest);
 	if (cipher < 0 || digest < 0)
 		return -1;
-	c = EVP_get_cipherbynid(cipher);
-	h = EVP_get_digestbynid(digest);
-	if (!c || !h)
+	if (cipher == NID_undef) {
+		RDEBUG3("OpenSSL: no cipher in use?!");
 		return -1;
+	}
+	c = EVP_get_cipherbynid(cipher);
+	if (!c)
+		return -1;
+	enc_key_len = EVP_CIPHER_key_length(c);
+	if (EVP_CIPHER_mode(c) == EVP_CIPH_GCM_MODE ||
+	    EVP_CIPHER_mode(c) == EVP_CIPH_CCM_MODE)
+		fixed_iv_len = 4; /* only part of IV from PRF */
+	else
+		fixed_iv_len = EVP_CIPHER_iv_length(c);
+	if (digest == NID_undef) {
+		RDEBUG3("OpenSSL: no digest in use (e.g., AEAD)");
+		mac_key_len = 0;
+	} else {
+		h = EVP_get_digestbynid(digest);
+		if (!h)
+			return -1;
+		mac_key_len = EVP_MD_size(h);
+	}
 
-	RDEBUG2("OpenSSL: keyblock size: key_len=%d MD_size=%d IV_len=%d",
-		   EVP_CIPHER_key_length(c), EVP_MD_size(h),
-		   EVP_CIPHER_iv_length(c));
-	return 2 * (EVP_CIPHER_key_length(c) + EVP_MD_size(h) +
-		    EVP_CIPHER_iv_length(c));
+	RDEBUG2("OpenSSL: keyblock size: mac_key_len=%d enc_key_len=%d fixed_iv_len=%d",
+		mac_key_len, enc_key_len, fixed_iv_len);
+	return 2 * (mac_key_len + enc_key_len + fixed_iv_len);
 #endif
 }
 
@@ -98,7 +116,6 @@ static void eap_fast_init_keys(REQUEST *request, tls_session_t *tls_session)
 {
 	eap_fast_tunnel_t *t = tls_session->opaque;
 	uint8_t *buf;
-	uint8_t *scratch;
 	size_t ksize;
 
 	RDEBUG2("Deriving EAP-FAST keys");
@@ -108,11 +125,10 @@ static void eap_fast_init_keys(REQUEST *request, tls_session_t *tls_session)
 	ksize = openssl_get_keyblock_size(request, tls_session->ssl);
 	rad_assert(ksize > 0);
 	buf = talloc_size(request, ksize + sizeof(*t->keyblock));
-	scratch = talloc_size(request, ksize + sizeof(*t->keyblock));
 
 	t->keyblock = talloc(t, eap_fast_keyblock_t);
 
-	eap_fast_tls_gen_challenge(tls_session->ssl, buf, scratch, ksize + sizeof(*t->keyblock), "key expansion");
+	eap_fast_tls_gen_challenge(tls_session->ssl, tls_session->info.version, buf, ksize + sizeof(*t->keyblock), "key expansion");
 	memcpy(t->keyblock, &buf[ksize], sizeof(*t->keyblock));
 	memset(buf, 0, ksize + sizeof(*t->keyblock));
 
@@ -123,7 +139,6 @@ static void eap_fast_init_keys(REQUEST *request, tls_session_t *tls_session)
 	t->imckc = 0;
 
 	talloc_free(buf);
-	talloc_free(scratch);
 }
 
 /**
@@ -765,6 +780,7 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply( eap_handler_t *eap_session,
 	switch (reply->code) {
 	case PW_CODE_ACCESS_ACCEPT:
 		RDEBUG("Got tunneled Access-Accept");
+		tls_session->authentication_success = true;
 		rcode = RLM_MODULE_OK;
 
 		for (vp = fr_cursor_init(&cursor, &reply->vps); vp; vp = fr_cursor_next(&cursor)) {

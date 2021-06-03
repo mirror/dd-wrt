@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
--- $Id: 919687de64f6074868eeff31cdfbfb01b3dbeda2 $                 	   --
+-- $Id: bdbbfec27bbf8108539fe00c75dc41f04a88c298 $                 	   --
 --                                                                         --
 --  schema.sql                       rlm_sql - FreeRADIUS SQLite Module    --
 --                                                                         --
@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS radacct (
 	acctinterval int(12) default NULL,
 	acctsessiontime int(12) default NULL,
 	acctauthentic varchar(32) default NULL,
-	connectinfo_start varchar(50) default NULL,
-	connectinfo_stop varchar(50) default NULL,
+	connectinfo_start varchar(128) default NULL,
+	connectinfo_stop varchar(128) default NULL,
 	acctinputoctets bigint(20) default NULL,
 	acctoutputoctets bigint(20) default NULL,
 	calledstationid varchar(50) NOT NULL default '',
@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS radacct (
 	framedipv6address varchar(45) NOT NULL default '',
 	framedipv6prefix varchar(45) NOT NULL default '',
 	framedinterfaceid varchar(44) NOT NULL default '',
-	delegatedipv6prefix varchar(45) NOT NULL default ''
+	delegatedipv6prefix varchar(45) NOT NULL default '',
+	class varchar(64) default NULL
 );
 
 CREATE UNIQUE INDEX acctuniqueid ON radacct(acctuniqueid);

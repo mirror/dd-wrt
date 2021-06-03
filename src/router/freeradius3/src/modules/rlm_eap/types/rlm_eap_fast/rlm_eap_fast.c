@@ -1,7 +1,7 @@
 /*
  * rlm_eap_fast.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 2ce2dd0c3bc36794013ad24325450ecc6e8e5348 $
+ * Version:     $Id: 34688b06bfd792115a9d3c37415abc13effee66f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 2ce2dd0c3bc36794013ad24325450ecc6e8e5348 $")
+RCSID("$Id: 34688b06bfd792115a9d3c37415abc13effee66f $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 
@@ -130,6 +130,14 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 		ERROR("rlm_eap_fast.pac_lifetime: must be non-zero");
 		return -1;
 	}
+
+#ifdef TLS1_3_VERSION
+	if (inst->tls_conf->min_version == TLS1_3_VERSION) {
+		ERROR("There are no standards for using TLS 1.3 with EAP-FAST.");
+		ERROR("You MUST enable TLS 1.2 for EAP-FAST to work.");
+		return -1;
+	}
+#endif
 
 	rad_assert(PAC_A_ID_LENGTH == MD5_DIGEST_LENGTH);
 	FR_MD5_CTX ctx;
@@ -392,7 +400,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 	if ((status == FR_TLS_INVALID) || (status == FR_TLS_FAIL)) {
 		REDEBUG("[eaptls process] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	} else {
-		RDEBUG2("[eaptls process] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
+		RDEBUG3("[eaptls process] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	}
 
 	/*
@@ -553,7 +561,12 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	} else {
 		client_cert = inst->req_client_cert;
 	}
-	handler->opaque = tls_session = eaptls_session(handler, inst->tls_conf, client_cert);
+
+	/*
+	 *	Don't allow TLS 1.3 for us, even if it's allowed
+	 *	elsewhere.
+	 */
+	handler->opaque = tls_session = eaptls_session(handler, inst->tls_conf, client_cert, false);
 
 	if (!tls_session) return 0;
 
@@ -566,16 +579,20 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 		}
 	}
 
-#ifdef SSL_OP_NO_TLSv1_2
-	/*
-	 *	Forcibly disable TLSv1.2
-	 *
-	 *	@fixme - TLSv1.2 uses a different PRF and
-	 *	SSL_export_keying_material("key expansion") is
-	 *	forbidden
-	 */
-	SSL_set_options(tls_session->ssl, SSL_OP_NO_TLSv1_2);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+	{
+		int i;
+		for (i = 0; ; i++) {
+			const char *cipher = SSL_get_cipher_list(tls_session->ssl, i);
+			if (!cipher) break;
+			if (!strstr(cipher, "ADH-")) continue;
+			RDEBUG("Setting security level to 0 to allow anonymous cipher suites");
+			SSL_set_security_level(tls_session->ssl, 0);
+			break;
+		}
+	}
 #endif
+
 #ifdef SSL_OP_NO_TLSv1_3
 	/*
 	 *	Forcibly disable TLSv1.3

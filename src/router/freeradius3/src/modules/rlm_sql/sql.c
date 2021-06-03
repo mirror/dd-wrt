@@ -2,7 +2,7 @@
  *  sql.c		rlm_sql - FreeRADIUS SQL Module
  *		Main code directly taken from ICRADIUS
  *
- * Version:	$Id: 3bda868f0c984100bc6c64749d6f58d0c94fe03b $
+ * Version:	$Id: 44093ee66bb4edd2dd617b663b5954762a414ff9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2001  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 3bda868f0c984100bc6c64749d6f58d0c94fe03b $")
+RCSID("$Id: 44093ee66bb4edd2dd617b663b5954762a414ff9 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/rad_assert.h>
@@ -68,6 +68,12 @@ int sql_fr_pair_list_afrom_str(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **h
 	char buf[MAX_STRING_LEN];
 	char do_xlat = 0;
 	FR_TOKEN token, op = T_EOL;
+	size_t num_fields = talloc_array_length(row) - 1; /* includes a trailing NULL ptr */
+
+	if (num_fields < 4) {
+		REDEBUG("Insufficient fields for 'id,username,attribute,value,operator'");
+		return -1;
+	}
 
 	/*
 	 *	Verify the 'Attribute' field
@@ -80,7 +86,7 @@ int sql_fr_pair_list_afrom_str(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **h
 	/*
 	 *	Verify the 'op' field
 	 */
-	if (row[4] != NULL && row[4][0] != '\0') {
+	if ((num_fields >= 4) && row[4] != NULL && row[4][0] != '\0') {
 		ptr = row[4];
 		op = gettoken(&ptr, buf, sizeof(buf), false);
 		if (!fr_assignment_op[op] && !fr_equality_op[op]) {

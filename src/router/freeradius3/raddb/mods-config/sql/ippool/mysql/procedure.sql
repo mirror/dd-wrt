@@ -55,11 +55,19 @@ proc:BEGIN
         FROM radippool
         WHERE pool_name = v_pool_name
                 AND expiry_time > NOW()
-                AND username = v_username
-                AND callingstationid = v_callingstationid
+                AND nasipaddress = v_nasipaddress
+                AND pool_key = v_pool_key
         LIMIT 1
         FOR UPDATE;
 --      FOR UPDATE SKIP LOCKED;  -- Better performance, but limited support
+
+        -- NOTE: You should enable SKIP LOCKED here (as well as any other
+        --       instances) if your database server supports it. If it is not
+        --       supported and you are not running a multi-master cluster (e.g.
+        --       Galera or MaxScale) then you should instead consider using the
+        --       SP in procedure-no-skip-locked.sql which will be faster and
+        --       less likely to result in thread starvation under highly
+        --       concurrent load.
 
         -- Reissue an user's previous IP address, provided that the lease is
         -- available (i.e. enable sticky IPs)
@@ -71,8 +79,8 @@ proc:BEGIN
         -- SELECT framedipaddress INTO r_address
         -- FROM radippool
         -- WHERE pool_name = v_pool_name
-        --         AND username = v_username
-        --         AND callingstationid = v_callingstationid
+        --         AND nasipaddress = v_nasipaddress
+        --         AND pool_key = v_pool_key
         -- LIMIT 1
         -- FOR UPDATE;
         -- -- FOR UPDATE SKIP LOCKED;  -- Better performance, but limited support
@@ -85,7 +93,7 @@ proc:BEGIN
                 SELECT framedipaddress INTO r_address
                 FROM radippool
                 WHERE pool_name = v_pool_name
-                        AND ( expiry_time < NOW() OR expiry_time IS NULL )
+                        AND expiry_time < NOW()
                 ORDER BY
                         expiry_time
                 LIMIT 1

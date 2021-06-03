@@ -1,7 +1,7 @@
 /*
  * radmin.c	RADIUS Administration tool.
  *
- * Version:	$Id: 8d5306af5e22ab0a8bfc8cf832ae4f57b2ba2877 $
+ * Version:	$Id: 8edf163911552a406a2358979a3926378c93c412 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2012   Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 8d5306af5e22ab0a8bfc8cf832ae4f57b2ba2877 $")
+RCSID("$Id: 8edf163911552a406a2358979a3926378c93c412 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/md5.h>
@@ -108,7 +108,7 @@ static void NEVER_RETURNS usage(int status)
 	FILE *output = status ? stderr : stdout;
 	fprintf(output, "Usage: %s [ args ]\n", progname);
 	fprintf(output, "  -d raddb_dir    Configuration files are in \"raddbdir/*\".\n");
-	fprintf(stderr, "  -D <dictdir>    Set main dictionary directory (defaults to " DICTDIR ").\n");
+	fprintf(output, "  -D <dictdir>    Set main dictionary directory (defaults to " DICTDIR ").\n");
 	fprintf(output, "  -e command      Execute 'command' and then exit.\n");
 	fprintf(output, "  -E              Echo commands as they are being executed.\n");
 	fprintf(output, "  -f socket_file  Open socket_file directly, without reading radius.conf\n");

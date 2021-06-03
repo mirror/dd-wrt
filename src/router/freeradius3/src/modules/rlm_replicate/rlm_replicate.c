@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: aaba1da136b3381d39aa2b48e0a6fea333d6adb5 $
+ * $Id: cee26cc97ad4409f08874a557ba46fbe36495fd9 $
  * @file rlm_replicate.c
  * @brief Duplicate RADIUS requests.
  *
  * @copyright 2011-2013  The FreeRADIUS server project
  */
-RCSID("$Id: aaba1da136b3381d39aa2b48e0a6fea333d6adb5 $")
+RCSID("$Id: cee26cc97ad4409f08874a557ba46fbe36495fd9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -113,6 +113,20 @@ static int replicate_packet(UNUSED void *instance, REQUEST *request, pair_lists_
 			REDEBUG2("Failed to find live home server for realm %s", realm->name);
 			continue;
 		}
+
+#ifdef WITH_TCP
+		if (home->proto != IPPROTO_UDP) {
+			REDEBUG("The replicate module only does UDP - Cannot send to TCP home_server %s", home->name);
+			continue;
+		}
+#endif
+
+#ifdef WITH_TLS
+		if (home->tls) {
+			REDEBUG("The replicate module only does UDP - Cannot send to TLS home_server %s", home->name);
+			continue;
+		}
+#endif
 
 		/*
 		 *	For replication to multiple servers we re-use the packet

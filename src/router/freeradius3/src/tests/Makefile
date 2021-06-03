@@ -3,33 +3,88 @@
 ## Makefile -- Build and run tests for the server.
 ##
 ##	http://www.freeradius.org/
-##	$Id: 42715939913ca615116b5b2d1e0dc17c288cb557 $
+##	$Id: e3180b80cb1c1d05150428be09d362a6e980ce25 $
 ##
 #
 include ../../Make.inc
 
 BUILD_PATH := $(top_builddir)/build
+
+#
+#  Build eapol_test if requested to.
+#
+.PHONY: eapol_test
+eapol_test: $(BUILD_PATH)/tests/eapol_test/eapol_test.mk
+	@echo EAPOL_TEST=$(EAPOL_TEST)
+
+#
+#  If we're doing anything resembling EAP, then make sure that
+#  EAPOL_TEST is defined.
+#
+ifneq "(findstring eap,$(MAKECMDGOALS))" ""
+$(BUILD_PATH)/tests/eapol_test:
+	@mkdir -p $@
+
 TEST_PATH := $(top_builddir)/src/tests
+DICT_PATH := $(TEST_PATH)
 BIN_PATH := $(BUILD_PATH)/bin/local
-LIB_PATH := $(BUILD_PATH)/lib/.libs/
+RADIUSD_BIN := $(BIN_PATH)/radiusd
+
+ifeq "$(DICT_PATH)" "$(TEST_PATH)"
+LIB_PATH := $(BUILD_PATH)/lib/local/.libs/
 DYLD_LIBRARY_PATH := $(DYLD_LIBRARY_PATH):$(LIB_PATH)
-
 export DYLD_LIBRARY_PATH
+endif
 
-RADDB_PATH := $(top_builddir)/raddb
+ifneq "$(OPENSSL_LIBS)" ""
+#
+#  Build eapol_test, and cache its output.  Note that EAPOL_TEST may not be
+#  defined, so we have to run the shell script for the second line, too.
+#
+#  Normal expansion will still run the script if EAPOL_TEST_BIN is
+#  set but empty, which we don't want.
+#
+ifeq "$(EAPOL_TEST_BIN)" ""
+override EAPOL_TEST_BIN := $(shell $(top_builddir)/scripts/ci/eapol_test-build.sh)
+endif
+
+$(BUILD_PATH)/tests/eapol_test/eapol_test.mk: | $(BUILD_PATH)/tests/eapol_test
+	@echo "EAPOL_TEST=" $(EAPOL_TEST_BIN) > $@
+	@echo "TLS1_3=" $(shell strings "$(RADIUSD_BIN)" | grep -q '^tls13_enable$$' && \
+		strings "$(EAPOL_TEST_BIN)" | grep 'tlsv1_3' | head -n 1) >> $@
+	@echo "OPENSSL_OK=" $(shell openssl version | grep -v ' 1\.0') >> $@
+else
+#
+#  No OpenSSL means that we don't even try to build eapol_test
+#
+.PHONY: $(BUILD_PATH)/tests/eapol_test/eapol_test.mk
+$(BUILD_PATH)/tests/eapol_test/eapol_test.mk: | $(BUILD_PATH)/tests/eapol_test
+	@touch $@
+endif
+
+-include $(BUILD_PATH)/tests/eapol_test/eapol_test.mk
+endif
+
+#
+#  OpenSSL 1.0.x doesn't support cipher_list="DEFAULT@SECLEVEL=1"
+#
+#  If the variable is empty, then OpenSSL isn't OK.
+#
+ifeq "$(OPENSSL_OK)" ""
+SECLEVEL=
+else
+SECLEVEL=@SECLEVEL=1
+endif
+
+RADDB_PATH := $(top_builddir)/raddb/
 
 TESTS	= mschapv1 digest-01/digest* \
 	test.example.com
 
 PORT	 = 12340
-#PORT	 = 1812
 ACCTPORT = $(shell expr $(PORT) + 1)
 
 #	example.com stripped.example.com
-
-EAPOL_TEST = $(shell which eapol_test)
-
-EAP_TLS_TESTS = eap-ttls-pap.conf eap-ttls-mschapv2.conf peap-mschapv2.conf
 
 SECRET	= testing123
 
@@ -38,27 +93,31 @@ SECRET	= testing123
 #
 #	Build the directory for testing the server
 #
-all: parse tests
+all: tests
 
 clean:
-	@rm -f test.conf dictionary *.ok *.log
+	@rm -f test.conf dictionary *.ok *.log $(BUILD_DIR)/tests/eap
 
 dictionary:
-	@echo "# test dictionary not install.  Delete at any time." > dictionary
-	@echo '$$INCLUDE ' $(top_builddir)/share/dictionary >> dictionary
-	@echo '$$INCLUDE ' $(top_builddir)/src/tests/dictionary.test >> dictionary
-	@echo '$$INCLUDE ' $(top_builddir)/share/dictionary.dhcp >> dictionary
-	@echo '$$INCLUDE ' $(top_builddir)/share/dictionary.vqp >> dictionary
+	@echo "# test dictionary. Do not install.  Delete at any time." > dictionary;  \
+	echo '$$INCLUDE ' $(top_builddir)/share/dictionary >> dictionary;          \
+	echo '$$INCLUDE ' $(top_builddir)/src/tests/dictionary.test >> dictionary; \
+	if [ "$(DICT_PATH)" = "$(TEST_PATH)" ]; then                               \
+	    echo '$$INCLUDE ' $(top_builddir)/share/dictionary.dhcp >> dictionary; \
+	    echo '$$INCLUDE ' $(top_builddir)/share/dictionary.vqp >> dictionary;  \
+	fi
 
-test.conf: dictionary
-	@echo "# test configuration file.  Do not install.  Delete at any time." > test.conf
-	@echo "libdir =" $(LIB_PATH) >> test.conf
-	@echo "testdir =" $(TEST_PATH) >> test.conf
-	@echo 'logdir = $${testdir}' >> test.conf
-	@echo 'maindir = ${top_builddir}/raddb/' >> test.conf
-	@echo 'radacctdir = $${testdir}' >> test.conf
-	@echo 'pidfile = $${testdir}/radiusd.pid' >> test.conf
-	@echo 'panic_action = "gdb -batch -x ${testdir}/panic.gdb %e %p > ${testdir}/gdb.log 2>&1; cat ${testdir}/gdb.log"' >> test.conf
+test.conf: dictionary config/eap-test
+	@echo "# test configuration file.  Do not install.  Delete at any time." > $@
+	@if [ -n "$(LIB_PATH)" ]; then  \
+	    echo "libdir =" $(LIB_PATH) >> $@; \
+	fi
+	@echo "testdir =" $(TEST_PATH) >> $@
+	@echo 'logdir = $${testdir}' >> $@
+	@echo "maindir =" $(RADDB_PATH) >> $@
+	@echo 'radacctdir = $${testdir}' >> $@
+	@echo 'pidfile = $${testdir}/radiusd.pid' >> $@
+	@echo 'panic_action = "gdb -batch -x $${testdir}/panic.gdb %e %p > $${testdir}/gdb.log 2>&1; cat $${testdir}/gdb.log"' >> $@
 	@echo 'security {' >> $@
 	@echo '        allow_vulnerable_openssl = yes' >> $@
 	@echo '}' >> $@
@@ -66,13 +125,40 @@ test.conf: dictionary
 	@echo 'modconfdir = $${maindir}mods-config' >> $@
 	@echo 'certdir = $${maindir}/certs' >> $@
 	@echo 'cadir   = $${maindir}/certs' >> $@
-	@echo '$$INCLUDE $${testdir}/config/' >> test.conf
-	@echo '$$INCLUDE $${maindir}/radiusd.conf' >> test.conf
+	@echo '$$INCLUDE $${testdir}/config/' >> $@
+	@echo '$$INCLUDE $${maindir}/radiusd.conf' >> $@
+
+#
+#  Rename "inner-tunnel", and ensure that it only uses the "eap-test" module.
+#
+config/eap-test-inner-tunnel: $(RADDB_PATH)sites-available/inner-tunnel
+	@sed 's/eap/eap-test/;s/server inner-tunnel/server eap-test-inner-tunnel/' < $< > $@
+
+#
+#  * Same renames as above
+#  * enable caching
+#  * uncomment caching directory
+#  * set the minimum TLS version to 1.0 for testing
+#  * set the maximum TLS version to 1.2 or 1.3, depending if 1.3 is available
+#  * always enable TLS 1.3 for the tests, via the super-secret magic flag.
+#  * tell OpenSSL to enable insecure ciphers TLS 1.0 and TLS 1.1
+#
+config/eap-test: $(RADDB_PATH)mods-available/eap config/eap-test-inner-tunnel
+	@sed -e 's/eap {/eap eap-test {/' \
+	     -e 's/= inner-tunnel/= eap-test-inner-tunnel/;s/use_tunneled_reply = no/use_tunneled_reply = yes/' \
+	     -e 's/enable = no/enable = yes/' \
+	     -e 's/^\(.*\)persist_dir =/  persist_dir =/' \
+	     -e 's/tls_min_version = "1.2"/tls_min_version = "1.0"/' \
+	     -e '$(if $(TLS1_3),s/tls_max_version = "1.2"/tls_max_version = "1.3"/)' \
+	     -e  '/tls_max_version/s/^//p; /tls_max_version/s/^.*/        tls13_enable=true/' \
+	     -e 's/cipher_list = "DEFAULT"/cipher_list = "DEFAULT${SECLEVEL}"/' \
+		 < $< > $@
 
 radiusd.pid: test.conf
-	@rm -f $(TEST_PATH)/gdb.log $(TEST_PATH)/radius.log
+	@rm -rf $(TEST_PATH)/gdb.log $(TEST_PATH)/radius.log $(TEST_PATH)/tlscache
+	@mkdir -p $(TEST_PATH)/tlscache
 	@printf "Starting server... "
-	@if ! $(BIN_PATH)/radiusd -Pxxxxml $(TEST_PATH)/radius.log -d ${top_builddir}/src/tests -n test -i 127.0.0.1 -p $(PORT) -D $(TEST_PATH); then\
+	@if ! $(RADIUSD_BIN) -Pxxxxml $(TEST_PATH)/radius.log -d ${top_builddir}/src/tests -n test -i 127.0.0.1 -p $(PORT) -D $(DICT_PATH); then \
 		echo "failed"; \
 		echo "Last log entries were:"; \
 		tail -n 20 "$(TEST_PATH)/radius.log"; \
@@ -102,17 +188,110 @@ radiusd.kill:
 	@rm -f radiusd.pid
 
 #
-#  Run eapol_test if it exists.  Otherwise do nothing
+#  Run eapol_test if it exists and we built with openssl support.
+#  Otherwise do nothing.
 #
 ifneq "$(EAPOL_TEST)" ""
-%.ok: %.conf
-	@echo EAPOL_TEST $(patsubst %.conf,%,$<)
-	@$(EAPOL_TEST) -c $< -p $(PORT) -s $(SECRET) > $(patsubst %.conf,%.log,$<) 2>&1
+EAP_FILES	= eap-md5.conf
+EAP_TLS_FILES	= eap-ttls-pap.conf eap-ttls-mschapv2.conf peap-mschapv2.conf
+EAP_TLS_VERSIONS = 1.1 1.2
+ifneq "$(TLS1_3)" ""
+EAP_TLS_VERSIONS += 1.3
+endif
+
+EAP_TLS_DISABLE_STRING=tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1 tls_disable_tlsv1_2=1 $(TLS1_3)
+
+.PHONY: $(BUILD_PATH)/tests/eap
+$(BUILD_PATH)/tests/eap:
+	@mkdir -p $@
+
+.PHONY: clean.tests.eap
+clean.tests.eap:
+	@rm -rf $(BUILD_PATH)/tests/eap config/tlscache config/eap-test config/eap-test-inner-tunnel
+
+#
+#  Set target-specific variables, so that the later shell scripts are rather more understandable.
+#
+#  MD5 doesn't use MPPE keys
+#
+$(BUILD_PATH)/tests/eap/%.ok: NO_MPPE = $(filter eap-md5,$(basename $(notdir $@)))
+$(BUILD_PATH)/tests/eap/%.ok: CMD =  $(EAPOL_TEST) -c $< -p $(PORT) -s $(SECRET) $(if $(NO_MPPE),-n)
+$(BUILD_PATH)/tests/eap/%.ok: LOG =  $(patsubst %.ok,%,$@).log
+
+$(BUILD_PATH)/tests/eap/%.ok: $(top_builddir)/src/tests/%.conf | radiusd.kill $(BUILD_PATH)/tests/eap radiusd.pid radiusd.kill
+	@printf 'EAPOL_TEST %s ' $(notdir $(patsubst %.conf,%,$<))
+	@if ! $(CMD) > $(LOG) 2>&1; then \
+		echo " - " FAILED - command failed; \
+		echo ">>> cmd -" $(CMD); \
+		echo ">>> log -" $(LOG); \
+		echo "===================="; \
+		tail -10 $(LOG); \
+		echo "===================="; \
+		$(MAKE) radiusd.kill; \
+		exit 1; \
+	fi
+	@echo
 	@touch $@
 
-tests.eap: $(patsubst %.conf,%.ok, $(EAP_TLS_TESTS))
+#
+#  Don't run the full TLS version tests for CI post-install.
+#
+ifneq "$(prefix)" ""
+#
+#  ${1} is the config file
+#  ${2} is the TLS version to use.
+#
+#  Update the phase1 configuration to enable/disable various TLS versions
+#  insert an OpenSSL cipher configuration line by cloning "password" and editing it.
+#
+define EAP_TLS_CONFIG
+$(BUILD_PATH)/tests/eap/${1}-${2}.conf: $(top_builddir)/src/tests/${1}.conf
+	@sed -e 's/phase1="/phase1="$(subst $(subst .,_,${2})=1,$(subst .,_,${2})=0,$(EAP_TLS_DISABLE_STRING)) /' \
+	     -e  '/password/s/^//p; /password/s/^.*/        openssl_ciphers="DEFAULT${SECLEVEL}"/' \
+		< $$< > $$@
 
+$(BUILD_PATH)/tests/eap/${1}-${2}.ok: $(BUILD_PATH)/tests/eap/${1}-${2}.conf
+	@printf 'EAPOL_TEST %s' $$(notdir $$(patsubst %.ok,%,$$@))
+	@if ! $$(CMD) -r 1 > $$(LOG) 2>&1; then \
+		echo " - " FAILED  - command failed; \
+		echo ">>> cmd -" $$(CMD) -r 1; \
+		echo ">>> log -" $$(LOG); \
+		echo "===================="; \
+		tail -10 $$(LOG); \
+		echo "===================="; \
+		$(MAKE) radiusd.kill; \
+		exit 1; \
+	elif ! grep -q '^SSL: Using TLS version TLSv${2}$$$$' $$(patsubst %.ok,%,$$@).log; then \
+		echo " - " FAILED - not using TLS version ${2}; \
+		echo ">>> cmd -" $$(CMD) -r 1; \
+		echo ">>> log -" $$(LOG); \
+		$(MAKE) radiusd.kill; \
+		exit 1; \
+	elif ! grep -q '^OpenSSL: Handshake finished - resumed=1$$$$' $$(patsubst %.ok,%,$$@).log; then \
+		echo " - " FAILED - did not use resumption; \
+		echo ">>> cmd -" $$(CMD) -r 1; \
+		echo ">>> log -" $$(LOG); \
+		$(MAKE) radiusd.kill; \
+		exit 1; \
+	fi
+	@echo
+	@touch $$@
+
+# EAP-FAST doesn't do TLS 1.3
+ifneq "${1}-${2}" "eap-fast-1.3"
+EAP_TLS_VERSION_FILES += $(BUILD_PATH)/tests/eap/${1}-${2}.ok
 endif
+endef
+
+$(foreach FILE,$(patsubst %.conf,%,$(EAP_TLS_FILES)),$(foreach TLS,$(EAP_TLS_VERSIONS),$(eval $(call EAP_TLS_CONFIG,${FILE},${TLS}))))
+endif # there's no "prefix", so we don't run the full EAP tests
+
+EAPOL_OK_FILES := $(sort $(addprefix $(BUILD_PATH)/tests/eap/,$(patsubst %.conf,%.ok, $(notdir $(EAP_TLS_FILES) $(EAP_FILES)))) $(EAP_TLS_VERSION_FILES))
+
+tests.eap: $(EAPOL_OK_FILES) | radiusd.kill radiusd.pid
+	@$(MAKE) radiusd.kill
+
+endif # we have eapol_test built
 
 # kill the server (if it's running)
 # start the server
@@ -125,4 +304,3 @@ tests: test.conf | radiusd.kill radiusd.pid
 ifneq "$(EAPOL_TEST)" ""
 	@$(MAKE) tests.eap
 endif
-	@$(MAKE) radiusd.kill

@@ -1,7 +1,7 @@
 /*
  * eap.h    Header file containing the interfaces for all EAP types.
  *
- * Version:     $Id: 61d9474ff0f41d6cf3c26fca69d449c8f5012a5d $
+ * Version:     $Id: b487c086508d9e01b13079e61bb679e21b99185a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _EAP_H
 #define _EAP_H
 
-RCSIDH(eap_h, "$Id: 61d9474ff0f41d6cf3c26fca69d449c8f5012a5d $")
+RCSIDH(eap_h, "$Id: b487c086508d9e01b13079e61bb679e21b99185a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -119,6 +119,7 @@ typedef struct _eap_handler {
 	int		trips;
 
 	bool		tls;
+	bool		started;
 	bool		finished;
 	VALUE_PAIR	*certs;
 } eap_handler_t;

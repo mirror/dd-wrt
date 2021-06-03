@@ -1,5 +1,5 @@
 /*
- * $Id: 10a33464a153d4482e34e55bea7e8c652c472a56 $
+ * $Id: 28ec0c8df420aac129e40c80caa14895bd8663b6 $
  *
  * Postgresql schema for FreeRADIUS
  *
@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS radacct (
 	FramedIPv6Address	inet,
 	FramedIPv6Prefix	inet,
 	FramedInterfaceId	text,
-	DelegatedIPv6Prefix	inet
+	DelegatedIPv6Prefix	inet,
+	Class			text
 );
 -- This index may be useful..
 -- CREATE UNIQUE INDEX radacct_whoson on radacct (AcctStartTime, nasipaddress);

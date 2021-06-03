@@ -1,5 +1,5 @@
 /*
- * $Id: e4a42923e565c598427a1f0b794881d9a8d75d62 $
+ * $Id: 54916e5e9c4c7926a97a88d90ee1a08acf48a92a $
  *
  * Oracle schema for FreeRADIUS
  *
@@ -15,7 +15,7 @@ CREATE TABLE radacct (
 	acctsessionid		VARCHAR(96) NOT NULL,
 	acctuniqueid		VARCHAR(32),
 	username		VARCHAR(64) NOT NULL,
-	realm			VARCHAR(30),
+	realm			VARCHAR(64),
 	nasipaddress		VARCHAR(15) NOT NULL,
 	nasportid		VARCHAR(32),
 	nasporttype		VARCHAR(32),
@@ -23,8 +23,8 @@ CREATE TABLE radacct (
 	acctstoptime		TIMESTAMP WITH TIME ZONE,
 	acctsessiontime		NUMERIC(19),
 	acctauthentic		VARCHAR(32),
-	connectinfo_start	VARCHAR(50),
-	connectinfo_stop	VARCHAR(50),
+	connectinfo_start	VARCHAR(128),
+	connectinfo_stop	VARCHAR(128),
 	acctinputoctets		NUMERIC(19),
 	acctoutputoctets	NUMERIC(19),
 	calledstationid		VARCHAR(50),
@@ -39,7 +39,8 @@ CREATE TABLE radacct (
 	delegatedipv6prefix	VARCHAR(45),
 	acctstartdelay		NUMERIC(12),
 	acctstopdelay		NUMERIC(12),
-	XAscendSessionSvrKey	VARCHAR(10)
+	XAscendSessionSvrKey	VARCHAR(10),
+	Class			VARCHAR(64)
 );
 
 CREATE UNIUQE INDEX radacct_idx0

@@ -28,11 +28,12 @@ RUN rm /etc/yum.repos.d/CentOS-SCLo-scl.repo
 #  - doxygen & JSON.pm
 RUN yum install -y doxygen graphviz perl-JSON
 #  - antora (npm needed)
-RUN curl -sL https://rpm.nodesource.com/setup_8.x | bash -
+RUN curl -sL https://rpm.nodesource.com/setup_10.x | bash -
 RUN yum install -y nodejs
 RUN npm i -g @antora/cli@2.1 @antora/site-generator-default@2.1
 #  - pandoc
 RUN curl -o - -L $(curl -s https://api.github.com/repos/jgm/pandoc/releases/latest | grep "browser_download_url.*tar.gz" | cut -d '"' -f 4) | tar xzvf - -C /tmp/
+# "
 RUN mv /tmp/pandoc-*/bin/* /usr/local/bin
 #  - asciidoctor
 RUN yum install -y rubygems-devel
@@ -65,12 +66,13 @@ RUN git clone --depth 1 --no-single-branch ${source}
 
 #
 #  Install build dependencies for all branches from v3 onwards
+#  Nodesource has issues (no SRPMS in some repos) and is not needed here
 #
 WORKDIR freeradius-server
 RUN for i in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin 2>/dev/null | sed -e 's#origin/##' | egrep "^(v[3-9]*\.[0-9x]*\.x|master)$");\
 	do \
 		git checkout $i; \
-		[ -e redhat/freeradius.spec ] && yum-builddep -y redhat/freeradius.spec; \
+		[ -e redhat/freeradius.spec ] && yum-builddep --disablerepo="nodesource*" -y redhat/freeradius.spec; \
 	done
 
 #

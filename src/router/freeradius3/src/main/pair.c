@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: f8f2bb51d70d3b41413d92c42f607063d2b6d1b3 $
+ * $Id: 030b905157c187748adc7b1d22fbaf39205eeb8f $
  *
  * @brief Valuepair functions that are radiusd-specific and as such do not
  * 	  belong in the library.
@@ -27,7 +27,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: f8f2bb51d70d3b41413d92c42f607063d2b6d1b3 $")
+RCSID("$Id: 030b905157c187748adc7b1d22fbaf39205eeb8f $")
 
 #include <ctype.h>
 
@@ -227,8 +227,16 @@ int radius_compare_vps(UNUSED REQUEST *request, VALUE_PAIR *check, VALUE_PAIR *v
 			ret = memcmp(&vp->vp_ipv6addr, &check->vp_ipv6addr, sizeof(vp->vp_ipv6addr));
 			break;
 
+		case PW_TYPE_IPV4_PREFIX:
 		case PW_TYPE_IPV6_PREFIX:
-			ret = memcmp(vp->vp_ipv6prefix, check->vp_ipv6prefix, sizeof(vp->vp_ipv6prefix));
+			ret = fr_pair_cmp_op(check->op, vp, check);
+			if (ret == -1) return -2;   // error
+			if (check->op == T_OP_LT || check->op == T_OP_LE)
+				ret = (ret == 1) ? -1 : 1;
+			else if (check->op == T_OP_GT || check->op == T_OP_GE)
+				ret = (ret == 1) ? 1 : -1;
+			else if (check->op == T_OP_CMP_EQ)
+				ret = (ret == 1) ? 0 : -1;
 			break;
 
 		case PW_TYPE_IFID:
@@ -734,6 +742,11 @@ void rdebug_pair(log_lvl_t level, REQUEST *request, VALUE_PAIR *vp, char const *
 
 	if (!radlog_debug_enabled(L_DBG, level, request)) return;
 
+	if (vp->da->flags.secret && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
+		RDEBUGX(level, "%s%s = <<< secret >>>", prefix ? prefix : "", vp->da->name);
+		return;
+	}
+
 	vp_prints(buffer, sizeof(buffer), vp);
 	RDEBUGX(level, "%s%s", prefix ? prefix : "",  buffer);
 }
@@ -758,6 +771,11 @@ void rdebug_pair_list(log_lvl_t level, REQUEST *request, VALUE_PAIR *vp, char co
 	     vp;
 	     vp = fr_cursor_next(&cursor)) {
 		VERIFY_VP(vp);
+
+		if (vp->da->flags.secret && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
+			RDEBUGX(level, "%s%s = <<< secret >>>", prefix ? prefix : "", vp->da->name);
+			continue;
+		}
 
 		vp_prints(buffer, sizeof(buffer), vp);
 		RDEBUGX(level, "%s%s", prefix ? prefix : "",  buffer);
@@ -786,6 +804,12 @@ void rdebug_proto_pair_list(log_lvl_t level, REQUEST *request, VALUE_PAIR *vp)
 		VERIFY_VP(vp);
 		if ((vp->da->vendor == 0) &&
 		    ((vp->da->attr & 0xFFFF) > 0xff)) continue;
+
+		if (vp->da->flags.secret && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
+			RDEBUGX(level, "%s = <<< secret >>>", vp->da->name);
+			continue;
+		}
+
 		vp_prints(buffer, sizeof(buffer), vp);
 		RDEBUGX(level, "%s", buffer);
 	}

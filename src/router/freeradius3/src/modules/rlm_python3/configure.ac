@@ -7,6 +7,7 @@ if test x$with_[]modname != xno; then
 
 	AC_PROG_CC
 	AC_PROG_CPP
+	AM_PATH_PYTHON([3.0],, [:])
 
 	dnl extra argument: --with-rlm-python3-config-bin
 	PYTHON3_CONFIG_BIN=
@@ -47,18 +48,26 @@ if test x$with_[]modname != xno; then
 		dnl # Strip debug symbol flags (-g[0-9]?). We decide on debugging symbols, not python
 		dnl # Strip -W*, we decide what warnings are important
 		dnl # Strip -DNDEBUG
-		mod_cflags=`echo $python3_cflags | sed -e '\
-			s/-I/-isystem/g;\
-			s/-isysroot[[ =]]\{0,1\}[[^-]]*//g;\
-			s/-O[[^[[:blank:]]]]*//g;\
-			s/-Wp,-D_FORTIFY_SOURCE=[[[:digit:]]]//g;\
-			s/-g[[^ ]]*//g;\
-			s/-W[[^ ]]*//g;\
-			s/-DNDEBUG[[[:blank:]]]*//g;
+		dnl # Strip -frecord-gcc-switches, We decide if we need that, not python.
+		dnl # Strip -specs=/path/whatever.specs, We don't need the compiler .specs that comes from Python
+		mod_cflags=`echo " $python3_cflags" | sed -e '\
+			s/ -I/ -isystem/g;\
+			s/ -isysroot[[ =]]\{0,1\}[[^-]]*/ /g;\
+			s/ -O[[^[[:blank:]]]]*/ /g;\
+			s/ -Wp,-D_FORTIFY_SOURCE=[[[:digit:]]]/ /g;\
+			s/ -g[[^ ]]*/ /g;\
+			s/ -W[[^ ]]*/ /g;\
+			s/ -DNDEBUG[[[:blank:]]]*/ /g;\
+			s/ -frecord-gcc-switches/ /g;\
+			s/ -specs=[[^ ]]*/ /g;
 			'`
 		AC_MSG_NOTICE([Sanitized cflags were \"${mod_cflags}\"])
 
-		python3_ldflags=`${PYTHON3_CONFIG_BIN} --ldflags`
+		dnl # From python 3.8, --embed is required
+		dnl # https://bugs.python.org/issue36721
+		AX_COMPARE_VERSION(${PYTHON_VERSION}, [ge], [3.8], [EMBED="--embed"], [])
+
+		python3_ldflags=`${PYTHON3_CONFIG_BIN} --ldflags $EMBED`
 		AC_MSG_NOTICE([${PYTHON3_CONFIG_BIN}'s ldflags were \"$python3_ldflags}\"])
 
 		dnl # Strip -Wl,-O1... Is -O even a valid linker flag??
@@ -77,6 +86,7 @@ if test x$with_[]modname != xno; then
 
 		targetname="rlm_python3"
 	fi
+	AC_CHECK_FUNCS([dl_iterate_phdr])
 else
 	targetname=
 	echo \*\*\* module modname is disabled.

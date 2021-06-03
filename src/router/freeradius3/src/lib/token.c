@@ -2,7 +2,7 @@
  * token.c	Read the next token from a string.
  *		Yes it's pretty primitive but effective.
  *
- * Version:	$Id: 8ae41b392f34a0362c12190d801fac74ac5e6f71 $
+ * Version:	$Id: a7978622e6139536d6ed28883671a66a2903c01d $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 8ae41b392f34a0362c12190d801fac74ac5e6f71 $")
+RCSID("$Id: a7978622e6139536d6ed28883671a66a2903c01d $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -42,6 +42,7 @@ const FR_NAME_NUMBER fr_tokens[] = {
 	{ "=*", T_OP_CMP_TRUE,  },
 	{ "!*", T_OP_CMP_FALSE, },
 	{ "==",	T_OP_CMP_EQ,	},
+	{ "^=", T_OP_PREPEND,	},
 	{ "=",	T_OP_EQ,	},
 	{ "!=",	T_OP_NE,	},
 	{ ">=",	T_OP_GE,	},
@@ -78,9 +79,10 @@ const bool fr_assignment_op[] = {
 	false,		/* =* 		20 */
 	false,		/* !* */
 	false,		/* == */
-	false,				/* # */
-	false,		/* bare word */
-	false,		/* "foo" 	25 */
+	true,		/* ^= */
+	false,		/* # */
+	false,		/* bare word 	25 */
+	false,		/* "foo" */
 	false,		/* 'foo' */
 	false,		/* `foo` */
 	false
@@ -108,12 +110,13 @@ const bool fr_equality_op[] = {
 	true,		/* < */
 	true,		/* =~ */
 	true,		/* !~ */
-	true,		/* =* 		20 */
+	true,		/* =*		20 */
 	true,		/* !* */
 	true,		/* == */
-	false,				/* # */
-	false,		/* bare word */
-	false,		/* "foo" 	25 */
+	false,		/* ^= */
+	false,		/* # */
+	false,		/* bare word 	25 */
+	false,		/* "foo" */
 	false,		/* 'foo' */
 	false,		/* `foo` */
 	false
@@ -144,9 +147,10 @@ const bool fr_str_tok[] = {
 	false,		/* =* 		20 */
 	false,		/* !* */
 	false,		/* == */
-	false,				/* # */
-	true,		/* bare word */
-	true,		/* "foo" 	25 */
+	false,		/* ^= */
+	false,		/* # */
+	true,		/* bare word 	25 */
+	true,		/* "foo" */
 	true,		/* 'foo' */
 	true,		/* `foo` */
 	false

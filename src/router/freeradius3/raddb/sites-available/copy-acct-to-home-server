@@ -21,7 +21,7 @@
 #	That way, each server has the same set of information, and
 #	can make the same decision about the user.
 #
-#	$Id: ea3909830f6f453bb6dcda0f24570a331cab0216 $
+#	$Id: cd085e099a30f492984f539760561c8d34edff95 $
 #
 ######################################################################
 
@@ -68,6 +68,12 @@ server copy-acct-to-home-server {
 		#  one large file.  File globbing also means that with
 		#  a common naming scheme for detail files, then you can
 		#  have many detail file writers, and only one reader.
+		#
+		#  Do NOT copy the "filename" configuration from the
+		#  "detail" module here.  It won't work.  Instead, use
+		#  file globbing (or wildcards), such as:
+		#
+		#	filename = ${radacctdir}/reader1/detail-*
 		#
 		filename = ${radacctdir}/detail
 
@@ -125,9 +131,19 @@ server copy-acct-to-home-server {
 		#
 		#  Accounting requests are generally proxied to the same
 		#  home server as authentication requests.
-	#	IPASS
-		suffix
-	#	ntdomain
+#		IPASS
+#		suffix
+#		ntdomain
+
+		#
+		#  Edit proxy.conf to add a "home_server" section,
+		#  which points to the other server.
+		#
+		#  Then set that home_server name here.
+		#
+		update control {
+			Home-Server-Name := "name_of_home_server_from_proxy.conf"
+		}
 
 		#
 		#  Read the 'acct_users' file.  This isn't always

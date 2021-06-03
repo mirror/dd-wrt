@@ -1,7 +1,7 @@
 /*
  * mem.c  Memory allocation, deallocation stuff.
  *
- * Version:     $Id: d80a91b42221ef69f4ba00d3bf20d082103b35da $
+ * Version:     $Id: 15f3569c77f8edea2215c4e3ada3af7b75b8c121 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,10 +21,14 @@
  * Copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  */
 
-RCSID("$Id: d80a91b42221ef69f4ba00d3bf20d082103b35da $")
+RCSID("$Id: 15f3569c77f8edea2215c4e3ada3af7b75b8c121 $")
 
 #include <stdio.h>
 #include "rlm_eap.h"
+
+#ifdef WITH_TLS
+#include <freeradius-devel/tls.h>
+#endif
 
 #ifdef HAVE_PTHREAD_H
 #define PTHREAD_MUTEX_LOCK pthread_mutex_lock
@@ -250,6 +254,24 @@ static void eaplist_expire(rlm_eap_t *inst, REQUEST *request, time_t timestamp)
 				inst->session_head = NULL;
 				inst->session_tail = NULL;
 			}
+
+#ifdef WITH_TLS
+			/*
+			 *	Remove expired TLS sessions.
+			 */
+			switch (handler->type) {
+			case PW_EAP_TLS:
+			case PW_EAP_TTLS:
+			case PW_EAP_PEAP:
+			case PW_EAP_FAST:
+				tls_fail(handler->opaque); /* MUST be a tls_session! */
+				break;
+
+			default:
+				break;
+			}
+#endif
+
 			talloc_free(handler);
 		} else {
 			break;

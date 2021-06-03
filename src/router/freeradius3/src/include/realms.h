@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: 6dae8b4f85a46880234b24b921262c458918eaa2 $
+ * Version:	$Id: dcb420371e5f1927792a2ea1108097bbc109a1eb $
  *
  */
 
-RCSIDH(realms_h, "$Id: 6dae8b4f85a46880234b24b921262c458918eaa2 $")
+RCSIDH(realms_h, "$Id: dcb420371e5f1927792a2ea1108097bbc109a1eb $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +59,7 @@ typedef struct home_server {
 							//!< stats or when specifying home servers for a pool.
 
 	bool			dual;			//!< One of a pair of homeservers on consecutive ports.
+	bool			dynamic;		//!< is this a dynamically added home server?
 	char const		*server;		//!< For internal proxying
 	char const		*parent_server;
 
@@ -205,6 +206,9 @@ home_server_t	*home_server_byname(char const *name, int type);
 home_server_t	*home_server_bynumber(int number);
 #endif
 home_pool_t	*home_pool_byname(char const *name, int type);
+
+int		home_server_afrom_file(char const *filename);
+int		home_server_delete(char const *name, char const *type);
 
 #ifdef __cplusplus
 }

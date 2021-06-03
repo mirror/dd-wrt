@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: d40c27d88a4eade78149b6e25578db7fa82f61e2 $
+ * $Id: 07fa098f45fd106d4beaa6e681ebab2d6583137a $
  * @file rlm_cache.c
  * @brief Cache values and merge them back into future requests.
  *
  * @copyright 2012-2014 The FreeRADIUS server project
  */
-RCSID("$Id: d40c27d88a4eade78149b6e25578db7fa82f61e2 $")
+RCSID("$Id: 07fa098f45fd106d4beaa6e681ebab2d6583137a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -715,7 +715,7 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 	/*
 	 *	Sanity check for crazy people.
 	 */
-	if (strncmp(inst->driver_name, "rlm_cache_", 8) != 0) {
+	if (strncmp(inst->driver_name, "rlm_cache_", 10) != 0) {
 		cf_log_err_cs(conf, "\"%s\" is NOT an Cache driver!", inst->driver_name);
 		return -1;
 	}

@@ -3,11 +3,11 @@
 /*
  *	detail.h	Routines to handle detail files.
  *
- * Version:	$Id: d7ca13335fb8c62ee7d7858f215f11c67f177c14 $
+ * Version:	$Id: 5b5539baa150cdf05568f187701b72812e003eaa $
  *
  */
 
-RCSIDH(detail_h, "$Id: d7ca13335fb8c62ee7d7858f215f11c67f177c14 $")
+RCSIDH(detail_h, "$Id: 5b5539baa150cdf05568f187701b72812e003eaa $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +42,8 @@ typedef struct listen_detail_t {
 	int		delay_time;
 	char const	*filename;
 	char const	*filename_work;
+
+	TALLOC_CTX	*ctx;
 	VALUE_PAIR	*vps;
 	int		work_fd;
 

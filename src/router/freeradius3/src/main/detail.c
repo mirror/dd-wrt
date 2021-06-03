@@ -1,7 +1,7 @@
 /*
  * detail.c	Process the detail file
  *
- * Version:	$Id: 3c0e95cc0464260dff4256df67dbf4b9293879ee $
+ * Version:	$Id: a5e8437e1c5c091fb84b7915c7687ba46f4133ef $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 3c0e95cc0464260dff4256df67dbf4b9293879ee $")
+RCSID("$Id: a5e8437e1c5c091fb84b7915c7687ba46f4133ef $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -507,6 +507,9 @@ open_file:
 
 	case STATE_HEADER:
 	do_header:
+		rad_assert(data->ctx == NULL);
+		MEM(data->ctx = talloc_init("detail"));
+
 		data->done_entry = false;
 		data->timestamp_offset = 0;
 
@@ -539,6 +542,7 @@ open_file:
 			DEBUG("detail (%s): Unlinking %s", data->name, data->filename_work);
 			unlink(data->filename_work);
 			if (data->fp) fclose(data->fp);
+			TALLOC_FREE(data->ctx);
 			data->fp = NULL;
 			data->work_fd = -1;
 			data->state = STATE_UNOPENED;
@@ -666,7 +670,7 @@ open_file:
 				data->timestamp = atoi(value);
 				data->timestamp_offset = data->last_offset;
 
-				vp = fr_pair_afrom_num(data, PW_PACKET_ORIGINAL_TIMESTAMP, 0);
+				vp = fr_pair_afrom_num(data->ctx, PW_PACKET_ORIGINAL_TIMESTAMP, 0);
 				if (vp) {
 					vp->vp_date = (uint32_t) data->timestamp;
 					vp->type = VT_DATA;
@@ -690,7 +694,7 @@ open_file:
 			 *	attributes like radsqlrelay does?
 			 */
 			vp = NULL;
-			if ((fr_pair_list_afrom_str(data, buffer, &vp) > 0) &&
+			if ((fr_pair_list_afrom_str(data->ctx, buffer, &vp) > 0) &&
 			    (vp != NULL)) {
 				fr_cursor_merge(&cursor, vp);
 			} else {
@@ -775,6 +779,7 @@ open_file:
 		}
 
 		fr_pair_list_free(&data->vps);
+		TALLOC_FREE(data->ctx);
 		data->state = STATE_HEADER;
 		goto do_header;
 	}
@@ -786,6 +791,7 @@ open_file:
 	if (data->done_entry) {
 		DEBUG2("detail (%s): Skipping record for timestamp %lu", data->name, data->timestamp);
 		fr_pair_list_free(&data->vps);
+		TALLOC_FREE(data->ctx);
 		data->state = STATE_HEADER;
 		goto do_header;
 	}

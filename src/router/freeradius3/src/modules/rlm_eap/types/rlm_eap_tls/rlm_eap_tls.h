@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.h
  *
- * Version:     $Id: cebcb92f57fcdf7399b6e34e8860578bfc0fca53 $
+ * Version:     $Id: 550cbbdce33d0f9adbb9405dab5c2aedd28aa9be $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _RLM_EAP_TLS_H
 #define _RLM_EAP_TLS_H
 
-RCSIDH(rlm_eap_tls_h, "$Id: cebcb92f57fcdf7399b6e34e8860578bfc0fca53 $")
+RCSIDH(rlm_eap_tls_h, "$Id: 550cbbdce33d0f9adbb9405dab5c2aedd28aa9be $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -42,6 +42,11 @@ typedef struct rlm_eap_tls_t {
 	 *	Virtual server for checking certificates
 	 */
 	char const *virtual_server;
+
+	/*
+	 * 	Configurable EAP-TLS-Require-Client-Cert
+	 */
+	bool configurable_client_cert;
 } rlm_eap_tls_t;
 
 #endif /* _RLM_EAP_TLS_H */

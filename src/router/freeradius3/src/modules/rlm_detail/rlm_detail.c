@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 5d5ab846d8616e55a5df258612521cb92d308b40 $
+ * $Id: 379f697a63b7fcf9120083272e41bce66174ca21 $
  * @file rlm_detail.c
  * @brief Write plaintext versions of packets to flatfiles.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: 5d5ab846d8616e55a5df258612521cb92d308b40 $")
+RCSID("$Id: 379f697a63b7fcf9120083272e41bce66174ca21 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -379,7 +379,7 @@ static rlm_rcode_t CC_HINT(nonnull) detail_do(void *instance, REQUEST *request, 
 	 *	suppress the write.  This check prevents an infinite
 	 *	loop.
 	 */
-	if ((request->listener->type == RAD_LISTEN_DETAIL) &&
+	if (request->listener && (request->listener->type == RAD_LISTEN_DETAIL) &&
 	    (fnmatch(((listen_detail_t *)request->listener->data)->filename,
 		     buffer, FNM_FILE_NAME | FNM_PERIOD ) == 0)) {
 		RWDEBUG2("Suppressing infinite loop");

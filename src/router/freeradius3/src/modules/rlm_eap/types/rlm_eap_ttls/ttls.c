@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 627d722ed7db10e705253f8ed213af35eb48141f $
+ * Version:     $Id: 4e01134af5a37ca6f4e1b7b4605cbf09a5123f67 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: 627d722ed7db10e705253f8ed213af35eb48141f $")
+RCSID("$Id: 4e01134af5a37ca6f4e1b7b4605cbf09a5123f67 $")
 
 #include "eap_ttls.h"
 #include "eap_chbind.h"
@@ -405,7 +405,7 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 		 */
 		if (((vp->da->vendor == 0) && (vp->da->attr == PW_CHAP_CHALLENGE)) ||
 		    ((vp->da->vendor == VENDORPEC_MICROSOFT) && (vp->da->attr == PW_MSCHAP_CHALLENGE))) {
-			uint8_t	challenge[16];
+			uint8_t	challenge[17];
 
 			if ((vp->vp_length < 8) ||
 			    (vp->vp_length > 16)) {
@@ -415,8 +415,11 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, REQUEST *fake, SSL *ssl,
 				return NULL;
 			}
 
-			eapttls_gen_challenge(ssl, challenge,
-					      sizeof(challenge));
+			/*
+			 *	TLSv1.3 exports a different key depending on the length
+			 *	requested so ask for *exactly* what the spec requires
+			 */
+			eapttls_gen_challenge(ssl, challenge, vp->vp_length + 1);
 
 			if (memcmp(challenge, vp->vp_octets,
 				   vp->vp_length) != 0) {
@@ -644,6 +647,7 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply(eap_handler_t *handler, tls_se
 	 */
 	switch (reply->code) {
 	case PW_CODE_ACCESS_ACCEPT:
+		tls_session->authentication_success = true;
 		RDEBUG("Got tunneled Access-Accept");
 
 		rcode = RLM_MODULE_OK;

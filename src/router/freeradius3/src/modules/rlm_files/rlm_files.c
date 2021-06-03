@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: c825a9230b01e58b8d8b8f26d49a46b9de9990f9 $
+ * $Id: 9e77cd7ff193100a7e6e3038700beea9955560c0 $
  * @file rlm_files.c
  * @brief Process simple 'users' policy files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: c825a9230b01e58b8d8b8f26d49a46b9de9990f9 $")
+RCSID("$Id: 9e77cd7ff193100a7e6e3038700beea9955560c0 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>
@@ -422,7 +422,7 @@ static rlm_rcode_t file_common(rlm_files_t *inst, REQUEST *request, char const *
 			/* ctx may be reply or proxy */
 			reply_tmp = fr_pair_list_copy(reply_packet, pl->reply);
 			radius_pairmove(request, &reply_packet->vps, reply_tmp, true);
-			fr_pair_list_move(request, &request->config, &check_tmp);
+			fr_pair_list_move(request, &request->config, &check_tmp, T_OP_ADD);
 			fr_pair_list_free(&check_tmp);
 
 			/*

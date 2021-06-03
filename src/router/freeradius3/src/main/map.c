@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 6275ba124ded76bce46726232d8920c060308ed0 $
+ * $Id: 451a58a15c473c3d1db69042a3d8ac6a4bb466b6 $
  *
  * @brief map / template functions
  * @file main/map.c
@@ -26,7 +26,7 @@
  * @copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: 6275ba124ded76bce46726232d8920c060308ed0 $")
+RCSID("$Id: 451a58a15c473c3d1db69042a3d8ac6a4bb466b6 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1173,9 +1173,13 @@ int map_to_request(REQUEST *request, vp_map_t const *map, radius_map_getvalue_t 
 				rad_assert(map->rhs->type == TMPL_TYPE_EXEC);
 				/* FALL-THROUGH */
 		case T_OP_ADD:
-				fr_pair_list_move(parent, list, &head);
+				fr_pair_list_move(parent, list, &head, map->op);
 				fr_pair_list_free(&head);
 			}
+			goto finish;
+		case T_OP_PREPEND:
+			fr_pair_list_move(parent, list, &head, T_OP_PREPEND);
+			fr_pair_list_free(&head);
 			goto finish;
 
 		default:
@@ -1339,6 +1343,14 @@ int map_to_request(REQUEST *request, vp_map_t const *map, radius_map_getvalue_t 
 		}
 		/* Free any we didn't insert */
 		fr_pair_list_free(&head);
+		break;
+
+	/*
+	 *	^= - Prepend src_list attributes to the destination
+	 */
+	case T_OP_PREPEND:
+		fr_pair_prepend(list, head);
+		head = NULL;
 		break;
 
 	/*

@@ -1,7 +1,7 @@
 /*
  * @name modcall.c
  *
- * Version:	$Id: 789bd667b08f610d0e330143c43dcf5df934224b $
+ * Version:	$Id: 839f5b09e73e2ab37cd60fb6bb4a1c2f6e8fe60a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 789bd667b08f610d0e330143c43dcf5df934224b $")
+RCSID("$Id: 839f5b09e73e2ab37cd60fb6bb4a1c2f6e8fe60a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -1516,7 +1516,6 @@ static const int authtype_actions[GROUPTYPE_COUNT][RLM_MODULE_NUMCODES] =
 int modcall_fixup_update(vp_map_t *map, UNUSED void *ctx)
 {
 	CONF_PAIR *cp = cf_item_to_pair(map->ci);
-
 	/*
 	 *	Anal-retentive checks.
 	 */
@@ -1593,7 +1592,7 @@ int modcall_fixup_update(vp_map_t *map, UNUSED void *ctx)
 		}
 
 		/*
-		 *	Only += and :=, and !* operators are supported
+		 *	Only += and :=, and !*, and ^= operators are supported
 		 *	for lists.
 		 */
 		switch (map->op) {
@@ -1623,6 +1622,14 @@ int modcall_fixup_update(vp_map_t *map, UNUSED void *ctx)
 		case T_OP_EQ:
 			if (map->rhs->type != TMPL_TYPE_EXEC) {
 				cf_log_err(map->ci, "Invalid source for list assignment '%s = ...'", map->lhs->name);
+				return -1;
+			}
+			break;
+
+		case T_OP_PREPEND:
+			if ((map->rhs->type != TMPL_TYPE_LIST) &&
+			    (map->rhs->type != TMPL_TYPE_EXEC)) {
+				cf_log_err(map->ci, "Invalid source for list assignment '%s ^= ...'", map->lhs->name);
 				return -1;
 			}
 			break;

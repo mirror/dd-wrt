@@ -16,7 +16,7 @@
 #ifndef LISTEN_H
 #define LISTEN_H
 /**
- * $Id: 4f50bbf8088b0a8f08f38baf65fd304325d01168 $
+ * $Id: c5b45f0a7e9c83ea1d9f473c4467663e808330cd $
  *
  * @file listen.h
  * @brief The listener API.
@@ -80,6 +80,7 @@ struct rad_listen {
 
 #ifdef WITH_TLS
 	fr_tls_server_conf_t *tls;
+	bool		check_client_connections;
 #endif
 
 	rad_listen_recv_t recv;
@@ -146,6 +147,12 @@ typedef struct listen_socket_t {
 	pthread_mutex_t mutex;
 	uint8_t		*data;
 	size_t		partial;
+	enum {
+		LISTEN_TLS_INIT = 0,
+		LISTEN_TLS_CHECKING,
+		LISTEN_TLS_SETUP,
+		LISTEN_TLS_RUNNING,
+	} state;
 #endif
 
 	RADCLIENT_LIST	*clients;

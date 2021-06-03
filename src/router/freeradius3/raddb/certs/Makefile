@@ -96,6 +96,7 @@ client.crt: client.csr ca.pem ca.key
 
 client.p12: client.crt
 	openssl pkcs12 -export -in client.crt -inkey client.key -out client.p12  -passin pass:$(PASSWORD_CLIENT) -passout pass:$(PASSWORD_CLIENT)
+	cp client.p12 $(USER_NAME).p12
 
 client.pem: client.p12
 	openssl pkcs12 -in client.p12 -out client.pem -passin pass:$(PASSWORD_CLIENT) -passout pass:$(PASSWORD_CLIENT)
@@ -115,7 +116,7 @@ inner-server.csr inner-server.key: inner-server.cnf
 	$(OPENSSL) req -new  -out inner-server.csr -keyout inner-server.key -config ./inner-server.cnf
 	chmod g+r inner-server.key
 
-inner-server.crt: inner-server.csr ca.key ca.pem
+inner-server.crt: ca.key ca.pem inner-server.csr
 	$(OPENSSL) ca -batch -keyfile ca.key -cert ca.pem -in inner-server.csr  -key $(PASSWORD_CA) -out inner-server.crt -extensions xpserver_ext -extfile xpextensions -config ./inner-server.cnf
 
 inner-server.p12: inner-server.crt
