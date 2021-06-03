@@ -18,7 +18,6 @@ static void watchdog(void)
 	int oldstate1 = -1;
 	int radiostate2 = -1;
 	int oldstate2 = -1;
-	int counter = 0;
 	int dropcounter = 0;
 	static int lasttarget = 0;
 	int radioledinitcount = 0;
@@ -218,11 +217,6 @@ static void watchdog(void)
 #endif
 
 		sleep(5);
-		if (nvram_matchi("warn_enabled", 1)) {
-			counter++;
-			if (!(counter % 60))
-				system("notifier&");	// 
-		}
 	}
 }
 
