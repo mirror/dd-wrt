@@ -22,7 +22,7 @@ endif
 endif
 
 notifier: notifier.o
-	$(CC) -o $@ $^ $(CFLAGS) -L$(TOP)/nvram -lnvram
+	$(CC) -o $@ $^ $(CFLAGS) -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils
 
 clean:
 	rm -f notifier notifier.o
