@@ -25,9 +25,6 @@ static void watchdog(void)
 	if (fd == -1)
 		fd = open("/dev/watchdog", O_WRONLY);
 
-	if (fd == -1) {
-		return;
-	}
 #ifdef HAVE_MADWIFI
 	int cnt = getdevicecount();
 #else
@@ -35,8 +32,10 @@ static void watchdog(void)
 #endif
 
 	while (1) {
-		write(fd, "\0", 1);
-		fsync(fd);
+		if (fd != -1) {
+			write(fd, "\0", 1);
+			fsync(fd);
+		}
 		if (!nvram_matchi("flash_active", 1)) {
 
 #ifndef HAVE_RT2880
