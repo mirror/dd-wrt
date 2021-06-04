@@ -1767,6 +1767,7 @@ struct spi_master *devm_spi_alloc_master(struct device *dev, unsigned int size)
 
 	master = spi_alloc_master(dev, size);
 	if (master) {
+		master->devm_allocated = true;
 		*ptr = master;
 		devres_add(dev, ptr);
 	} else {
@@ -1956,11 +1957,6 @@ int devm_spi_register_master(struct device *dev, struct spi_master *master)
 }
 EXPORT_SYMBOL_GPL(devm_spi_register_master);
 
-static int devm_spi_match_master(struct device *dev, void *res, void *master)
-{
-	return *(struct spi_master **)res == master;
-}
-
 static int __unregister(struct device *dev, void *null)
 {
 	spi_unregister_device(to_spi_device(dev));
@@ -1999,8 +1995,7 @@ void spi_unregister_master(struct spi_master *master)
 	/* Release the last reference on the master if its driver
 	 * has not yet been converted to devm_spi_alloc_master().
 	 */
-	if (!devres_find(master->dev.parent, devm_spi_release_master,
-			 devm_spi_match_master, master))
+	if (!master->devm_allocated)
 		put_device(&master->dev);
 
 	if (IS_ENABLED(CONFIG_SPI_DYNAMIC))
