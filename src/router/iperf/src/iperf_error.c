@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2020, The Regents of the University of
+ * iperf, Copyright (c) 2014-2021, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -341,6 +341,14 @@ iperf_strerror(int int_errno)
             snprintf(errstr, len, "unable to set CPU affinity");
             perr = 1;
             break;
+        case IERCVTIMEOUT:
+            snprintf(errstr, len, "receive timeout value is incorrect or not in range");
+            perr = 1;
+            break;
+        case IERVRSONLYRCVTIMEOUT:
+            snprintf(errstr, len, "client receive timeout is valid only in receiving mode");
+            perr = 1;
+            break;
 	case IEDAEMON:
 	    snprintf(errstr, len, "unable to become a daemon");
 	    perr = 1;
@@ -423,6 +431,18 @@ iperf_strerror(int int_errno)
             break;
 	case IETOTALRATE:
 	    snprintf(errstr, len, "total required bandwidth is larger than server limit");
+            break;
+    case IESKEWTHRESHOLD:
+	    snprintf(errstr, len, "skew threshold must be a positive number");
+            break;
+	case IEIDLETIMEOUT:
+	    snprintf(errstr, len, "idle timeout parameter is not positive or larget then allowed limit");
+            break;
+	case IENOMSG:
+	    snprintf(errstr, len, "idle timeout for receiving data");
+            break;
+    case IESETDONTFRAGMENT:
+	    snprintf(errstr, len, "unable to set IP Do-Not-Fragment flag");
             break;
 	default:
 	    snprintf(errstr, len, "int_errno=%d", int_errno);
