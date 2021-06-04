@@ -5196,7 +5196,7 @@ void start_sysinit(void)
 	struct nvram_param *extra_params = NULL;
 	int change = 0;
 
-//      insmod("softdog");
+       insmod("softdog");
 	/*
 	 * Setup console 
 	 */
@@ -6644,7 +6644,6 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 //      nvram_set("wl0_ifname", "wlan0");
-
 	if (check_vlan_support()) {
 		start_config_vlan();
 	}
