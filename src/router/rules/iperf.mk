@@ -1,4 +1,5 @@
 iperf-configure:
+	cd iperf && autoreconf -f
 	cd iperf && ./bootstrap.sh
 	cd iperf && ./configure --host=$(ARCH)-linux --disable-shared --without-openssl --prefix=/usr --libdir=/usr/lib \
 		CC="$(CC)" \
