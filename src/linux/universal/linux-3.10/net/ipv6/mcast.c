@@ -1375,8 +1375,6 @@ static struct sk_buff *mld_newpack(struct inet6_dev *idev, int size)
 
 	/* we assume size > sizeof(ra) here */
 	size += hlen + tlen;
-	/* limit our allocations to order-0 page */
-	size = min_t(int, size, SKB_MAX_ORDER(0, 0));
 	skb = sock_alloc_send_skb(sk, size, 1, &err);
 
 	if (!skb)
