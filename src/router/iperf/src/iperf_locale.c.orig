@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------- 
- * iperf, Copyright (c) 2014-2021, The Regents of the University of
+ * iperf, Copyright (c) 2014-2020, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -100,43 +100,34 @@ const char usage_longstr[] = "Usage: iperf3 [-s|-c host] [options]\n"
                            "  -p, --port      #         server port to listen on/connect to\n"
                            "  -f, --format   [kmgtKMGT] format to report: Kbits, Mbits, Gbits, Tbits\n"
                            "  -i, --interval  #         seconds between periodic throughput reports\n"
-                           "  -I, --pidfile file        write PID file\n"
                            "  -F, --file name           xmit/recv the specified file\n"
 #if defined(HAVE_CPU_AFFINITY)
                            "  -A, --affinity n/n,m      set CPU affinity\n"
 #endif /* HAVE_CPU_AFFINITY */
                            "  -B, --bind      <host>    bind to the interface associated with the address <host>\n"
-#if defined(HAVE_SO_BINDTODEVICE)
-                           "  --bind-dev      <dev>     bind to the network interface with SO_BINDTODEVICE\n"
-#endif /* HAVE_SO_BINDTODEVICE */
                            "  -V, --verbose             more detailed output\n"
                            "  -J, --json                output in JSON format\n"
                            "  --logfile f               send output to a log file\n"
                            "  --forceflush              force flushing output at every interval\n"
-                           "  --timestamps<=format>     emit a timestamp at the start of each output line\n"
-                           "                            (optional \"=\" and format string as per strftime(3))\n"
+                           "  --timestamps    <format>  emit a timestamp at the start of each output line\n"
+                           "                            (using optional format string as per strftime(3))\n"
     
-                           "  --rcv-timeout #           idle timeout for receiving data\n"
-                           "                            (default %d ms)\n"
                            "  -d, --debug               emit debugging output\n"
                            "  -v, --version             show version information and quit\n"
                            "  -h, --help                show this message and quit\n"
                            "Server specific:\n"
                            "  -s, --server              run in server mode\n"
                            "  -D, --daemon              run the server as a daemon\n"
+                           "  -I, --pidfile file        write PID file\n"
                            "  -1, --one-off             handle one client connection then exit\n"
 			   "  --server-bitrate-limit #[KMG][/#]   server's total bit rate limit (default 0 = no limit)\n"
 			   "                            (optional slash and number of secs interval for averaging\n"
 			   "                            total data rate.  Default is 5 seconds)\n"
-                           "  --idle-timeout #          restart idle server after # seconds in case it\n"
-                           "                            got stuck (default - no timeout)\n"
 #if defined(HAVE_SSL)
                            "  --rsa-private-key-path    path to the RSA private key used to decrypt\n"
 			   "                            authentication credentials\n"
                            "  --authorized-users-path   path to the configuration file containing user\n"
                            "                            credentials\n"
-                           "  --time-skew-threshold     time skew threshold (in seconds) between the server\n"
-                           "                            and client during the authentication process\n"
 #endif //HAVE_SSL
                            "Client specific:\n"
                            "  -c, --client    <host>    run in client mode, connecting to <host>\n"
@@ -150,7 +141,7 @@ const char usage_longstr[] = "Usage: iperf3 [-s|-c host] [options]\n"
                            "  -b, --bitrate #[KMG][/#]  target bitrate in bits/sec (0 for unlimited)\n"
                            "                            (default %d Mbit/sec for UDP, unlimited for TCP)\n"
                            "                            (optional slash and packet count for burst mode)\n"
-			   "  --pacing-timer #[KMG]     set the timing for pacing, in microseconds (default %d)\n"
+			   "  --pacing-timer #[KMG]     set the timing for pacing, in microseconds (default 1000)\n"
 #if defined(HAVE_SO_MAX_PACING_RATE)
                            "  --fq-rate #[KMG]          enable fair-queuing based socket pacing in\n"
 			   "                            bits/sec (Linux only)\n"
@@ -192,9 +183,6 @@ const char usage_longstr[] = "Usage: iperf3 [-s|-c host] [options]\n"
                            "  --udp-counters-64bit      use 64-bit counters in UDP test packets\n"
                            "  --repeating-payload       use repeating pattern in payload, instead of\n"
                            "                            randomized payload (like in iperf2)\n"
-#if defined(HAVE_DONT_FRAGMENT)
-                           "  --dont-fragment           set IPv4 Don't Fragment flag\n"
-#endif /* HAVE_DONT_FRAGMENT */
 #if defined(HAVE_SSL)
                            "  --username                username for authentication\n"
                            "  --rsa-public-key-path     path to the RSA public key used to encrypt\n"
@@ -244,9 +232,6 @@ const char client_port[] =
 const char bind_address[] =
 "Binding to local address %s\n";
 
-const char bind_dev[] =
-"Binding to local network device %s\n";
-
 const char bind_port[] =
 "Binding to local port %s\n";
 
@@ -295,7 +280,7 @@ const char report_connecting[] =
 "Connecting to host %s, port %d\n";
 
 const char report_authentication_succeeded[] =
-"Authentication succeeded for user '%s' ts %ld\n";
+"Authentication successed for user '%s' ts %ld\n";
 
 const char report_authentication_failed[] =
 "Authentication failed for user '%s' ts %ld\n";

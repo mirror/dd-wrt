@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2021, The Regents of the University of
+ * iperf, Copyright (c) 2014-2020, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -49,6 +49,7 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+#include <netinet/tcp.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/mman.h>
@@ -88,7 +89,6 @@
 #include "version.h"
 #if defined(HAVE_SSL)
 #include <openssl/bio.h>
-#include <openssl/err.h>
 #include "iperf_auth.h"
 #endif /* HAVE_SSL */
 
@@ -116,7 +116,7 @@ usage()
 void
 usage_long(FILE *f)
 {
-    fprintf(f, usage_longstr, DEFAULT_NO_MSG_RCVD_TIMEOUT, UDP_RATE / (1024*1024), DEFAULT_PACING_TIMER, DURATION, DEFAULT_TCP_BLKSIZE / 1024, DEFAULT_UDP_BLKSIZE);
+    fprintf(f, usage_longstr, UDP_RATE / (1024*1024), DURATION, DEFAULT_TCP_BLKSIZE / 1024, DEFAULT_UDP_BLKSIZE);
 }
 
 
@@ -338,12 +338,6 @@ iperf_get_test_bind_address(struct iperf_test *ipt)
     return ipt->bind_address;
 }
 
-char *
-iperf_get_test_bind_dev(struct iperf_test *ipt)
-{
-    return ipt->bind_dev;
-}
-
 int
 iperf_get_test_udp_counters_64bit(struct iperf_test *ipt)
 {
@@ -385,30 +379,6 @@ int
 iperf_get_test_connect_timeout(struct iperf_test *ipt)
 {
     return ipt->settings->connect_timeout;
-}
-
-int
-iperf_get_test_idle_timeout(struct iperf_test *ipt)
-{
-    return ipt->settings->idle_timeout;
-}
-
-int
-iperf_get_dont_fragment(struct iperf_test *ipt)
-{
-    return ipt->settings->dont_fragment;
-}
-
-struct iperf_time*
-iperf_get_test_rcv_timeout(struct iperf_test *ipt)
-{
-    return &ipt->settings->rcv_timeout;
-}
-
-char*
-iperf_get_test_congestion_control(struct iperf_test* ipt)
-{
-    return ipt->congestion;
 }
 
 /************** Setter routines for some fields inside iperf_test *************/
@@ -672,12 +642,6 @@ iperf_set_test_server_authorized_users(struct iperf_test *ipt, const char *serve
 }
 
 void
-iperf_set_test_server_skew_threshold(struct iperf_test *ipt, int server_skew_threshold)
-{
-    ipt->server_skew_threshold = server_skew_threshold;
-}
-
-void
 iperf_set_test_server_rsa_privkey(struct iperf_test *ipt, const char *server_rsa_privkey_base64)
 {
     ipt->server_rsa_private_key = load_privkey_from_base64(server_rsa_privkey_base64);
@@ -688,12 +652,6 @@ void
 iperf_set_test_bind_address(struct iperf_test *ipt, const char *bnd_address)
 {
     ipt->bind_address = strdup(bnd_address);
-}
-
-void
-iperf_set_test_bind_dev(struct iperf_test *ipt, char *bnd_dev)
-{
-    ipt->bind_dev = strdup(bnd_dev);
 }
 
 void
@@ -740,31 +698,6 @@ void
 iperf_set_test_connect_timeout(struct iperf_test* ipt, int ct)
 {
     ipt->settings->connect_timeout = ct;
-}
-
-void
-iperf_set_test_idle_timeout(struct iperf_test* ipt, int to)
-{
-    ipt->settings->idle_timeout = to;
-}
-
-void
-iperf_set_dont_fragment(struct iperf_test* ipt, int dnf)
-{
-    ipt->settings->dont_fragment = dnf;
-}
-
-void
-iperf_set_test_rcv_timeout(struct iperf_test* ipt, struct iperf_time* to)
-{
-    ipt->settings->rcv_timeout.secs = to->secs;
-    ipt->settings->rcv_timeout.usecs = to->usecs;
-}
-
-void
-iperf_set_test_congestion_control(struct iperf_test* ipt, char* cc)
-{
-    ipt->congestion = strdup(cc);
 }
 
 
@@ -955,9 +888,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
         {"bidir", no_argument, NULL, OPT_BIDIRECTIONAL},
         {"window", required_argument, NULL, 'w'},
         {"bind", required_argument, NULL, 'B'},
-#if defined(HAVE_SO_BINDTODEVICE)
-        {"bind-dev", required_argument, NULL, OPT_BIND_DEV},
-#endif /* HAVE_SO_BINDTODEVICE */
         {"cport", required_argument, NULL, OPT_CLIENT_PORT},
         {"set-mss", required_argument, NULL, 'M'},
         {"no-delay", no_argument, NULL, 'N'},
@@ -993,21 +923,15 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	{"get-server-output", no_argument, NULL, OPT_GET_SERVER_OUTPUT},
 	{"udp-counters-64bit", no_argument, NULL, OPT_UDP_COUNTERS_64BIT},
  	{"no-fq-socket-pacing", no_argument, NULL, OPT_NO_FQ_SOCKET_PACING},
-#if defined(HAVE_DONT_FRAGMENT)
-	{"dont-fragment", no_argument, NULL, OPT_DONT_FRAGMENT},
-#endif /* HAVE_DONT_FRAGMENT */
 #if defined(HAVE_SSL)
     {"username", required_argument, NULL, OPT_CLIENT_USERNAME},
     {"rsa-public-key-path", required_argument, NULL, OPT_CLIENT_RSA_PUBLIC_KEY},
     {"rsa-private-key-path", required_argument, NULL, OPT_SERVER_RSA_PRIVATE_KEY},
     {"authorized-users-path", required_argument, NULL, OPT_SERVER_AUTHORIZED_USERS},
-    {"time-skew-threshold", required_argument, NULL, OPT_SERVER_SKEW_THRESHOLD},
 #endif /* HAVE_SSL */
 	{"fq-rate", required_argument, NULL, OPT_FQ_RATE},
 	{"pacing-timer", required_argument, NULL, OPT_PACING_TIMER},
 	{"connect-timeout", required_argument, NULL, OPT_CONNECT_TIMEOUT},
-        {"idle-timeout", required_argument, NULL, OPT_IDLE_TIMEOUT},
-        {"rcv-timeout", required_argument, NULL, OPT_RCV_TIMEOUT},
         {"debug", no_argument, NULL, 'd'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, NULL, 0}
@@ -1015,7 +939,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     int flag;
     int portno;
     int blksize;
-    int server_flag, client_flag, rate_flag, duration_flag, rcv_timeout_flag;
+    int server_flag, client_flag, rate_flag, duration_flag;
     char *endptr;
 #if defined(HAVE_CPU_AFFINITY)
     char* comma;
@@ -1023,10 +947,9 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     char* slash;
     struct xbind_entry *xbe;
     double farg;
-    int rcv_timeout_in = 0;
 
     blksize = 0;
-    server_flag = client_flag = rate_flag = duration_flag = rcv_timeout_flag = 0;
+    server_flag = client_flag = rate_flag = duration_flag = 0;
 #if defined(HAVE_SSL)
     char *client_username = NULL, *client_rsa_public_key = NULL, *server_rsa_private_key = NULL;
 #endif /* HAVE_SSL */
@@ -1220,11 +1143,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
             case 'B':
                 test->bind_address = strdup(optarg);
                 break;
-#if defined (HAVE_SO_BINDTODEVICE)
-            case OPT_BIND_DEV:
-                test->bind_dev = strdup(optarg);
-                break;
-#endif /* HAVE_SO_BINDTODEVICE */
             case OPT_CLIENT_PORT:
 		portno = atoi(optarg);
 		if (portno < 1 || portno > 65535) {
@@ -1333,24 +1251,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
             case 'F':
                 test->diskfile_name = optarg;
                 break;
-            case OPT_IDLE_TIMEOUT:
-                test->settings->idle_timeout = atoi(optarg);
-                if (test->settings->idle_timeout < 1 || test->settings->idle_timeout > MAX_TIME) {
-                    i_errno = IEIDLETIMEOUT;
-                    return -1;
-                }
-		server_flag = 1;
-	        break;
-            case OPT_RCV_TIMEOUT:
-                rcv_timeout_in = atoi(optarg);
-                if (rcv_timeout_in < MIN_NO_MSG_RCVD_TIMEOUT || rcv_timeout_in > MAX_TIME * SEC_TO_mS) {
-                    i_errno = IERCVTIMEOUT;
-                    return -1;
-                }
-                test->settings->rcv_timeout.secs = rcv_timeout_in / SEC_TO_mS;
-                test->settings->rcv_timeout.usecs = (rcv_timeout_in % SEC_TO_mS) * mS_TO_US;
-                rcv_timeout_flag = 1;
-	        break;
             case 'A':
 #if defined(HAVE_CPU_AFFINITY)
                 test->affinity = strtol(optarg, &endptr, 0);
@@ -1391,6 +1291,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		break;
 	    case 'I':
 		test->pidfile = strdup(optarg);
+		server_flag = 1;
 	        break;
 	    case OPT_LOGFILE:
 		test->logfile = strdup(optarg);
@@ -1424,12 +1325,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		return -1;
 #endif
 		break;
-#if defined(HAVE_DONT_FRAGMENT)
-        case OPT_DONT_FRAGMENT:
-            test->settings->dont_fragment = 1;
-            client_flag = 1;
-            break;
-#endif /* HAVE_DONT_FRAGMENT */
 #if defined(HAVE_SSL)
         case OPT_CLIENT_USERNAME:
             client_username = strdup(optarg);
@@ -1442,13 +1337,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
             break;
         case OPT_SERVER_AUTHORIZED_USERS:
             test->server_authorized_users = strdup(optarg);
-            break;
-        case OPT_SERVER_SKEW_THRESHOLD:
-            test->server_skew_threshold = atoi(optarg);
-            if(test->server_skew_threshold <= 0){
-                i_errno = IESKEWTHRESHOLD;
-                return -1;
-            }
             break;
 #endif /* HAVE_SSL */
 	    case OPT_PACING_TIMER:
@@ -1499,7 +1387,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
             return -1;
         } 
         if (test_load_pubkey_from_file(client_rsa_public_key) < 0){
-            iperf_err(test, "%s\n", ERR_error_string(ERR_get_error(), NULL));
             i_errno = IESETCLIENTAUTH;
             return -1;
         }
@@ -1514,12 +1401,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     if (test->role == 'c' && (server_rsa_private_key || test->server_authorized_users)){
         i_errno = IESERVERONLY;
         return -1;
-    } else if (test->role == 'c' && (test->server_skew_threshold != 0)){
-        i_errno = IESERVERONLY;
-        return -1;
-    } else if (test->role == 'c' && rcv_timeout_flag && test->mode == SENDER){
-        i_errno = IERVRSONLYRCVTIMEOUT;
-        return -1;
     } else if (test->role == 's' && (server_rsa_private_key || test->server_authorized_users) && 
         !(server_rsa_private_key && test->server_authorized_users)) {
          i_errno = IESETSERVERAUTH;
@@ -1527,17 +1408,11 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     } else if (test->role == 's' && server_rsa_private_key) {
         test->server_rsa_private_key = load_privkey_from_file(server_rsa_private_key);
         if (test->server_rsa_private_key == NULL){
-            iperf_err(test, "%s\n", ERR_error_string(ERR_get_error(), NULL));
             i_errno = IESETSERVERAUTH;
             return -1;
         }
-	    free(server_rsa_private_key);
-	    server_rsa_private_key = NULL;
-
-        if(test->server_skew_threshold == 0){
-            // Set default value for time skew threshold
-            test->server_skew_threshold=10;
-        }
+	free(server_rsa_private_key);
+	server_rsa_private_key = NULL;
     }
 
 #endif //HAVE_SSL
@@ -1631,12 +1506,10 @@ int iperf_open_logfile(struct iperf_test *test)
 int
 iperf_set_send_state(struct iperf_test *test, signed char state)
 {
-    if (test->ctrl_sck >= 0) {
-        test->state = state;
-        if (Nwrite(test->ctrl_sck, (char*) &state, sizeof(state), Ptcp) < 0) {
-	    i_errno = IESENDMESSAGE;
-	    return -1;
-        }
+    test->state = state;
+    if (Nwrite(test->ctrl_sck, (char*) &state, sizeof(state), Ptcp) < 0) {
+	i_errno = IESENDMESSAGE;
+	return -1;
     }
     return 0;
 }
@@ -1648,7 +1521,7 @@ iperf_check_throttle(struct iperf_stream *sp, struct iperf_time *nowP)
     double seconds;
     uint64_t bits_per_second;
 
-    if (sp->test->done || sp->test->settings->rate == 0)
+    if (sp->test->done || sp->test->settings->rate == 0 || sp->test->settings->burst != 0)
         return;
     iperf_time_diff(&sp->result->start_time_fixed, nowP, &temp_time);
     seconds = iperf_time_in_secs(&temp_time);
@@ -1696,8 +1569,7 @@ iperf_check_total_rate(struct iperf_test *test, iperf_size_t last_interval_bytes
     }
 
     if (bits_per_second  > test->settings->bitrate_limit) {
-        if (iperf_get_verbose(test))
-            iperf_err(test, "Total throughput of %" PRIu64 " bps exceeded %" PRIu64 " bps limit", bits_per_second, test->settings->bitrate_limit);
+	iperf_err(test, "Total throughput of %" PRIu64 " bps exceeded %" PRIu64 " bps limit", bits_per_second, test->settings->bitrate_limit);
 	test->bitrate_limit_exceeded = 1;
     }
 }
@@ -1708,7 +1580,6 @@ iperf_send(struct iperf_test *test, fd_set *write_setP)
     register int multisend, r, streams_active;
     register struct iperf_stream *sp;
     struct iperf_time now;
-    int no_throttle_check;
 
     /* Can we do multisend mode? */
     if (test->settings->burst != 0)
@@ -1718,20 +1589,13 @@ iperf_send(struct iperf_test *test, fd_set *write_setP)
     else
         multisend = 1;	/* nope */
 
-    /* Should bitrate throttle be checked for every send */
-    no_throttle_check = test->settings->rate != 0 && test->settings->burst == 0;
-
     for (; multisend > 0; --multisend) {
-	if (no_throttle_check)
+	if (test->settings->rate != 0 && test->settings->burst == 0)
 	    iperf_time_now(&now);
 	streams_active = 0;
 	SLIST_FOREACH(sp, &test->streams, streams) {
 	    if ((sp->green_light && sp->sender &&
 		 (write_setP == NULL || FD_ISSET(sp->socket, write_setP)))) {
-        if (multisend > 1 && test->settings->bytes != 0 && test->bytes_sent >= test->settings->bytes)
-            break;
-        if (multisend > 1 && test->settings->blocks != 0 && test->blocks_sent >= test->settings->blocks)
-            break;
 		if ((r = sp->snd(sp)) < 0) {
 		    if (r == NET_SOFTERROR)
 			break;
@@ -1740,16 +1604,18 @@ iperf_send(struct iperf_test *test, fd_set *write_setP)
 		}
 		streams_active = 1;
 		test->bytes_sent += r;
-		if (!sp->pending_size)
-		    ++test->blocks_sent;
-                if (no_throttle_check)
-		    iperf_check_throttle(sp, &now);
+		++test->blocks_sent;
+		iperf_check_throttle(sp, &now);
+		if (multisend > 1 && test->settings->bytes != 0 && test->bytes_sent >= test->settings->bytes)
+		    break;
+		if (multisend > 1 && test->settings->blocks != 0 && test->blocks_sent >= test->settings->blocks)
+		    break;
 	    }
 	}
 	if (!streams_active)
 	    break;
     }
-    if (!no_throttle_check) {   /* Throttle check if was not checked for each send */
+    if (test->settings->burst != 0) {
 	iperf_time_now(&now);
 	SLIST_FOREACH(sp, &test->streams, streams)
 	    if (sp->sender)
@@ -1860,18 +1726,14 @@ int test_is_authorized(struct iperf_test *test){
 	if (rc) {
 	    return -1;
 	}
-        int ret = check_authentication(username, password, ts, test->server_authorized_users, test->server_skew_threshold);
+        int ret = check_authentication(username, password, ts, test->server_authorized_users);
         if (ret == 0){
-            if (test->debug) {
-              iperf_printf(test, report_authentication_succeeded, username, ts);
-            }
+            iperf_printf(test, report_authentication_succeeded, username, ts);
             free(username);
             free(password);
             return 0;
         } else {
-            if (test->debug) {
-                iperf_printf(test, report_authentication_failed, username, ts);
-            }
+            iperf_printf(test, report_authentication_failed, username, ts);
             free(username);
             free(password);
             return -1;
@@ -2034,10 +1896,6 @@ send_parameters(struct iperf_test *test)
 	    cJSON_AddNumberToObject(j, "udp_counters_64bit", iperf_get_test_udp_counters_64bit(test));
 	if (test->repeating_payload)
 	    cJSON_AddNumberToObject(j, "repeating_payload", test->repeating_payload);
-#if defined(HAVE_DONT_FRAGMENT)
-	if (test->settings->dont_fragment)
-	    cJSON_AddNumberToObject(j, "dont_fragment", test->settings->dont_fragment);
-#endif /* HAVE_DONT_FRAGMENT */
 #if defined(HAVE_SSL)
 	/* Send authentication parameters */
 	if (test->settings->client_username && test->settings->client_password && test->settings->client_rsa_pubkey){
@@ -2146,10 +2004,6 @@ get_parameters(struct iperf_test *test)
 	    iperf_set_test_udp_counters_64bit(test, 1);
 	if ((j_p = cJSON_GetObjectItem(j, "repeating_payload")) != NULL)
 	    test->repeating_payload = 1;
-#if defined(HAVE_DONT_FRAGMENT)
-	if ((j_p = cJSON_GetObjectItem(j, "dont_fragment")) != NULL)
-	    test->settings->dont_fragment = j_p->valueint;
-#endif /* HAVE_DONT_FRAGMENT */
 #if defined(HAVE_SSL)
 	if ((j_p = cJSON_GetObjectItem(j, "authtoken")) != NULL)
         test->settings->authtoken = strdup(j_p->valuestring);
@@ -2654,15 +2508,12 @@ iperf_defaults(struct iperf_test *testp)
     testp->settings->bitrate_limit_interval = 5;
     testp->settings->bitrate_limit_stats_per_interval = 0;
     testp->settings->fqrate = 0;
-    testp->settings->pacing_timer = DEFAULT_PACING_TIMER;
+    testp->settings->pacing_timer = 1000;
     testp->settings->burst = 0;
     testp->settings->mss = 0;
     testp->settings->bytes = 0;
     testp->settings->blocks = 0;
     testp->settings->connect_timeout = -1;
-    testp->settings->rcv_timeout.secs = DEFAULT_NO_MSG_RCVD_TIMEOUT / SEC_TO_mS;
-    testp->settings->rcv_timeout.usecs = (DEFAULT_NO_MSG_RCVD_TIMEOUT % SEC_TO_mS) * mS_TO_US;
-
     memset(testp->cookie, 0, COOKIE_SIZE);
 
     testp->multisend = 10;	/* arbitrary */
@@ -2753,8 +2604,6 @@ iperf_free_test(struct iperf_test *test)
 	free(test->tmp_template);
     if (test->bind_address)
 	free(test->bind_address);
-    if (test->bind_dev)
-	free(test->bind_dev);
     if (!TAILQ_EMPTY(&test->xbind_addrs)) {
         struct xbind_entry *xbe;
 
@@ -2948,7 +2797,6 @@ iperf_reset_test(struct iperf_test *test)
     test->settings->burst = 0;
     test->settings->mss = 0;
     test->settings->tos = 0;
-    test->settings->dont_fragment = 0;
 
 #if defined(HAVE_SSL)
     if (test->settings->authtoken) {
@@ -3073,11 +2921,6 @@ iperf_stats_callback(struct iperf_test *test)
 			rp->stream_max_snd_cwnd = temp.snd_cwnd;
 		    }
 		    
-		    temp.snd_wnd = get_snd_wnd(&temp);
-		    if (temp.snd_wnd > rp->stream_max_snd_wnd) {
-			rp->stream_max_snd_wnd = temp.snd_wnd;
-		    }
-
 		    temp.rtt = get_rtt(&temp);
 		    if (temp.rtt > rp->stream_max_rtt) {
 			rp->stream_max_rtt = temp.rtt;
@@ -3509,7 +3352,7 @@ iperf_print_results(struct iperf_test *test)
                     if (test->sender_has_retransmits) {
                         /* Sender summary, TCP and SCTP with retransmits. */
                         if (test->json_output)
-                            cJSON_AddItemToObject(json_summary_stream, "sender", iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  retransmits: %d  max_snd_cwnd:  %d  max_snd_wnd:  %d  max_rtt:  %d  min_rtt:  %d  mean_rtt:  %d sender: %b", (int64_t) sp->socket, (double) start_time, (double) sender_time, (double) sender_time, (int64_t) bytes_sent, bandwidth * 8, (int64_t) sp->result->stream_retrans, (int64_t) sp->result->stream_max_snd_cwnd, (int64_t) sp->result->stream_max_snd_wnd, (int64_t) sp->result->stream_max_rtt, (int64_t) sp->result->stream_min_rtt, (int64_t) ((sp->result->stream_count_rtt == 0) ? 0 : sp->result->stream_sum_rtt / sp->result->stream_count_rtt), stream_must_be_sender));
+                            cJSON_AddItemToObject(json_summary_stream, "sender", iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  retransmits: %d  max_snd_cwnd:  %d  max_rtt:  %d  min_rtt:  %d  mean_rtt:  %d sender: %b", (int64_t) sp->socket, (double) start_time, (double) sender_time, (double) sender_time, (int64_t) bytes_sent, bandwidth * 8, (int64_t) sp->result->stream_retrans, (int64_t) sp->result->stream_max_snd_cwnd, (int64_t) sp->result->stream_max_rtt, (int64_t) sp->result->stream_min_rtt, (int64_t) ((sp->result->stream_count_rtt == 0) ? 0 : sp->result->stream_sum_rtt / sp->result->stream_count_rtt), stream_must_be_sender));
                         else
                             if (test->role == 's' && !sp->sender) {
                                 if (test->verbose)
@@ -3923,7 +3766,7 @@ print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *
 	if (test->sender_has_retransmits == 1 && sp->sender) {
 	    /* Interval, TCP with retransmits. */
 	    if (test->json_output)
-		cJSON_AddItemToArray(json_interval_streams, iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  retransmits: %d  snd_cwnd:  %d  snd_wnd:  %d  rtt:  %d  rttvar: %d  pmtu: %d  omitted: %b sender: %b", (int64_t) sp->socket, (double) st, (double) et, (double) irp->interval_duration, (int64_t) irp->bytes_transferred, bandwidth * 8, (int64_t) irp->interval_retrans, (int64_t) irp->snd_cwnd, (int64_t) irp->snd_wnd, (int64_t) irp->rtt, (int64_t) irp->rttvar, (int64_t) irp->pmtu, irp->omitted, sp->sender));
+		cJSON_AddItemToArray(json_interval_streams, iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  retransmits: %d  snd_cwnd:  %d  rtt:  %d  rttvar: %d  pmtu: %d  omitted: %b sender: %b", (int64_t) sp->socket, (double) st, (double) et, (double) irp->interval_duration, (int64_t) irp->bytes_transferred, bandwidth * 8, (int64_t) irp->interval_retrans, (int64_t) irp->snd_cwnd, (int64_t) irp->rtt, (int64_t) irp->rttvar, (int64_t) irp->pmtu, irp->omitted, sp->sender));
 	    else {
 		unit_snprintf(cbuf, UNIT_LEN, irp->snd_cwnd, 'A');
 		iperf_printf(test, report_bw_retrans_cwnd_format, sp->socket, mbuf, st, et, ubuf, nbuf, irp->interval_retrans, cbuf, irp->omitted?report_omitted:"");
@@ -4054,7 +3897,6 @@ iperf_new_stream(struct iperf_test *test, int s, int sender)
         free(sp);
         return NULL;
     }
-    sp->pending_size = 0;
 
     /* Set socket */
     sp->socket = s;
@@ -4138,45 +3980,6 @@ iperf_init_stream(struct iperf_stream *sp, struct iperf_test *test)
         }
     }
 
-#if defined(HAVE_DONT_FRAGMENT)
-    /* Set Don't Fragment (DF). Only applicable to IPv4/UDP tests. */
-    if (iperf_get_test_protocol_id(test) == Pudp &&
-        getsockdomain(sp->socket) == AF_INET &&
-        iperf_get_dont_fragment(test)) {
-
-        /*
-         * There are multiple implementations of this feature depending on the OS.
-         * We need to handle separately Linux, UNIX, and Windows, as well as
-         * the case that DF isn't supported at all (such as on macOS).
-         */
-#if defined(IP_MTU_DISCOVER) /* Linux version of IP_DONTFRAG */
-        opt = IP_PMTUDISC_DO;
-        if (setsockopt(sp->socket, IPPROTO_IP, IP_MTU_DISCOVER, &opt, sizeof(opt)) < 0) {
-            i_errno = IESETDONTFRAGMENT;
-            return -1;
-        }
-#else
-#if defined(IP_DONTFRAG) /* UNIX does IP_DONTFRAG */
-        opt = 1;
-        if (setsockopt(sp->socket, IPPROTO_IP, IP_DONTFRAG, &opt, sizeof(opt)) < 0) {
-            i_errno = IESETDONTFRAGMENT;
-            return -1;
-        }
-#else
-#if defined(IP_DONTFRAGMENT) /* Windows does IP_DONTFRAGMENT */
-        opt = 1;
-        if (setsockopt(sp->socket, IPPROTO_IP, IP_DONTFRAGMENT, &opt, sizeof(opt)) < 0) {
-            i_errno = IESETDONTFRAGMENT;
-            return -1;
-        }
-#else
-	i_errno = IESETDONTFRAGMENT;
-	return -1;
-#endif /* IP_DONTFRAGMENT */
-#endif /* IP_DONTFRAG */
-#endif /* IP_MTU_DISCOVER */
-    }
-#endif /* HAVE_DONT_FRAGMENT */
     return 0;
 }
 
@@ -4214,46 +4017,24 @@ static int
 diskfile_send(struct iperf_stream *sp)
 {
     int r;
-    int buffer_left = sp->diskfile_left; // represents total data in buffer to be sent out
     static int rtot;
 
     /* if needed, read enough data from the disk to fill up the buffer */
     if (sp->diskfile_left < sp->test->settings->blksize && !sp->test->done) {
-    	r = read(sp->diskfile_fd, sp->buffer, sp->test->settings->blksize -
-    		 sp->diskfile_left);
-        buffer_left += r;
-    	rtot += r;
-    	if (sp->test->debug) {
-    	    printf("read %d bytes from file, %d total\n", r, rtot);	    
-    	}
-
-        // If the buffer doesn't contain a full buffer at this point,
-        // adjust the size of the data to send.
-        if (buffer_left != sp->test->settings->blksize) {
-            if (sp->test->debug) 
-                printf("possible eof\n");
-            // setting data size to be sent, 
-            // which is less than full block/buffer size 
-            // (to be used by iperf_tcp_send, etc.)
-            sp->pending_size = buffer_left; 
-        }
-    	
-        // If there's no work left, we're done.
-        if (buffer_left == 0) {
-    	    sp->test->done = 1;
-    	    if (sp->test->debug)
-    		  printf("done\n");
-    	}
-    }
-
-    // If there's no data left in the file or in the buffer, we're done. 
-    // No more data available to be sent.  
-    // Return without sending data to the network 
-    if( sp->test->done || buffer_left == 0 ){
-        if (sp->test->debug)
-              printf("already done\n");
-        sp->test->done = 1;
-        return 0;
+	r = read(sp->diskfile_fd, sp->buffer, sp->test->settings->blksize -
+		 sp->diskfile_left);
+	rtot += r;
+	if (sp->test->debug) {
+	    printf("read %d bytes from file, %d total\n", r, rtot);
+	    if (r != sp->test->settings->blksize - sp->diskfile_left)
+		printf("possible eof\n");
+	}
+	/* If there's no data left in the file or in the buffer, we're done */
+	if (r == 0 && sp->diskfile_left == 0) {
+	    sp->test->done = 1;
+	    if (sp->test->debug)
+		printf("done\n");
+	}
     }
 
     r = sp->snd2(sp);
@@ -4266,7 +4047,7 @@ diskfile_send(struct iperf_stream *sp)
      * front of the buffer so they can hopefully go out on the next
      * pass.
      */
-    sp->diskfile_left = buffer_left - r;
+    sp->diskfile_left = sp->test->settings->blksize - r;
     if (sp->diskfile_left && sp->diskfile_left < sp->test->settings->blksize) {
 	memcpy(sp->buffer,
 	       sp->buffer + (sp->test->settings->blksize - sp->diskfile_left),
@@ -4380,7 +4161,7 @@ iperf_create_pidfile(struct iperf_test *test)
 	    return -1;
 	}
 	snprintf(buf, sizeof(buf), "%d", getpid()); /* no trailing newline */
-	if (write(fd, buf, strlen(buf)) < 0) {
+	if (write(fd, buf, strlen(buf) + 1) < 0) {
 	    return -1;
 	}
 	if (close(fd) < 0) {
@@ -4441,18 +4222,13 @@ iperf_json_finish(struct iperf_test *test)
     if (test->server_output_text) {
 	cJSON_AddStringToObject(test->json_top, "server_output_text", test->server_output_text);
     }
-    // Get ASCII rendering of JSON structure.  Then make our
-    // own copy of it and return the storage that cJSON allocated
-    // on our behalf.  We keep our own copy around.
-    char *str = cJSON_Print(test->json_top);
-    if (str == NULL)
-	return -1;
-    test->json_output_string = strdup(str);
-    cJSON_free(str);
+    test->json_output_string = cJSON_Print(test->json_top);
     if (test->json_output_string == NULL)
         return -1;
     fprintf(test->outfile, "%s\n", test->json_output_string);
     iflush(test);
+    cJSON_free(test->json_output_string);
+    test->json_output_string = NULL;
     cJSON_Delete(test->json_top);
     test->json_top = test->json_start = test->json_connected = test->json_intervals = test->json_server_output = test->json_end = NULL;
     return 0;
@@ -4546,14 +4322,13 @@ iperf_clearaffinity(struct iperf_test *test)
 #endif /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY nor HAVE_SETPROCESSAFFINITYMASK */
 }
 
-static char iperf_timestr[100];
-static char linebuffer[1024];
+char iperf_timestr[100];
 
 int
 iperf_printf(struct iperf_test *test, const char* format, ...)
 {
     va_list argp;
-    int r = 0, r0;
+    int r = -1;
     time_t now;
     struct tm *ltm = NULL;
     char *ct = NULL;
@@ -4580,40 +4355,23 @@ iperf_printf(struct iperf_test *test, const char* format, ...)
      */
     if (test->role == 'c') {
 	if (ct) {
-            r0 = fprintf(test->outfile, "%s", ct);
-            if (r0 < 0)
-                return r0;
-            r += r0;
+	    fprintf(test->outfile, "%s", ct);
 	}
-	if (test->title) {
-	    r0 = fprintf(test->outfile, "%s:  ", test->title);
-            if (r0 < 0)
-                return r0;
-            r += r0;
-        }
+	if (test->title)
+	    fprintf(test->outfile, "%s:  ", test->title);
 	va_start(argp, format);
-	r0 = vfprintf(test->outfile, format, argp);
+	r = vfprintf(test->outfile, format, argp);
 	va_end(argp);
-        if (r0 < 0)
-            return r0;
-        r += r0;
     }
     else if (test->role == 's') {
+	char linebuffer[1024];
+	int i = 0;
 	if (ct) {
-	    r0 = snprintf(linebuffer, sizeof(linebuffer), "%s", ct);
-            if (r0 < 0)
-                return r0;
-            r += r0;
+	    i = sprintf(linebuffer, "%s", ct);
 	}
-        /* Should always be true as long as sizeof(ct) < sizeof(linebuffer) */
-        if (r < sizeof(linebuffer)) {
-            va_start(argp, format);
-            r0 = vsnprintf(linebuffer + r, sizeof(linebuffer) - r, format, argp);
-            va_end(argp);
-            if (r0 < 0)
-                return r0;
-            r += r0;
-        }
+	va_start(argp, format);
+	r = vsnprintf(linebuffer + i, sizeof(linebuffer), format, argp);
+	va_end(argp);
 	fprintf(test->outfile, "%s", linebuffer);
 
 	if (test->role == 's' && iperf_get_test_get_server_output(test)) {

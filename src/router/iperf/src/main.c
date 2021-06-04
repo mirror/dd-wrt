@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2015, 2017, 2019, The Regents of the University of
+ * iperf, Copyright (c) 2014-2021, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -151,14 +151,21 @@ run(struct iperf_test *test)
             for (;;) {
 		int rc;
 		rc = iperf_run_server(test);
+                test->server_last_run_rc =rc;
 		if (rc < 0) {
 		    iperf_err(test, "error - %s", iperf_strerror(i_errno));
+                    if (test->json_output) {
+                        if (iperf_json_finish(test) < 0)
+                            return -1;
+                    }
+                    iflush(test);
+
 		    if (rc < -1) {
 		        iperf_errexit(test, "exiting");
 		    }
                 }
                 iperf_reset_test(test);
-                if (iperf_get_test_one_off(test)) {
+                if (iperf_get_test_one_off(test) && rc != 2) {
 		    /* Authentication failure doesn't count for 1-off test */
 		    if (rc < 0 && i_errno == IEAUTHTEST) {
 			continue;
@@ -169,8 +176,13 @@ run(struct iperf_test *test)
 	    iperf_delete_pidfile(test);
             break;
 	case 'c':
+	    if (iperf_create_pidfile(test) < 0) {
+		i_errno = IEPIDFILE;
+		iperf_errexit(test, "error - %s", iperf_strerror(i_errno));
+	    }
 	    if (iperf_run_client(test) < 0)
 		iperf_errexit(test, "error - %s", iperf_strerror(i_errno));
+	    iperf_delete_pidfile(test);
             break;
         default:
             usage();

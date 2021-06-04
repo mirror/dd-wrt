@@ -1,4 +1,4 @@
-.TH IPERF3 1 "July 2020" ESnet "User Manuals"
+.TH IPERF3 1 "February 2021" ESnet "User Manuals"
 .SH NAME
 iperf3 \- perform network throughput tests
 .SH SYNOPSIS
@@ -117,6 +117,9 @@ set server port to listen on/connect to to \fIn\fR (default 5201)
 pause \fIn\fR seconds between periodic throughput reports;
 default is 1, use 0 to disable
 .TP
+.BR -I ", " --pidfile " \fIfile\fR"
+write a file with the process ID, most useful when running as a daemon.
+.TP
 .BR -F ", " --file " \fIname\fR"
 Use a file as the source (on the sender) or sink (on the receiver) of
 data, rather than just generating random data or throwing it away.
@@ -139,6 +142,10 @@ CPUs).
 .TP
 .BR -B ", " --bind " \fIhost\fR"
 bind to the specific interface associated with address \fIhost\fR.
+.BR --bind-dev " \fIdev\R"
+bind to the specified network interface.
+This option uses SO_BINDTODEVICE, and may require root permissions.
+(Available on Linux and possibly other systems.)
 .TP
 .BR -V ", " --verbose " "
 give more detailed output 
@@ -153,13 +160,21 @@ send output to a log file.
 force flushing output at every interval.
 Used to avoid buffering when sending output to pipe.
 .TP
-.BR --timestamps " [\fIformat\fR]"
+.BR --timestamps "[\fB=\fIformat\fR]"
 prepend a timestamp at the start of each output line.
 By default, timestamps have the format emitted by
 .BR ctime ( 1 ).
-Optionally, a format specification can be passed to customize the
+Optionally, \fC=\fR followed by
+a format specification can be passed to customize the
 timestamps, see
 .BR strftime ( 3 ).
+If this optional format is given, the \fC=\fR must immediately
+follow the \fB--timestamps\fR option with no whitespace intervening.
+.TP
+.BR --rcv-timeout " \fI#\fR"
+set idle timeout for receiving data during active tests. The receiver
+will halt a test if no data is received from the sender for this
+number of ms (default to 12000 ms, or 2 minutes).
 .TP
 .BR -d ", " --debug " "
 emit debugging output.
@@ -178,9 +193,6 @@ run in server mode
 .TP
 .BR -D ", " --daemon " "
 run the server in background as a daemon
-.TP
-.BR -I ", " --pidfile " \fIfile\fR"
-write a file with the process ID, most useful when running as a daemon.
 .TP
 .BR -1 ", " --one-off
 handle one client connection, then exit.
@@ -205,6 +217,10 @@ iperf tests (if built with OpenSSL support).
 The file is a comma separated list of usernames and password hashes;
 more information on the structure of the file can be found in the
 EXAMPLES section.
+.TP
+.BR --time-skew-threshold second " \fIseconds\fR"
+time skew threshold (in seconds) between the server and client
+during the authentication process.
 .SH "CLIENT SPECIFIC OPTIONS"
 .TP
 .BR -c ", " --client " \fIhost\fR"
@@ -386,6 +402,10 @@ It might help to test and reveal problems in networking gear with hardware
 compression (including some WiFi access points), where iperf2 and iperf3
 perform differently, just based on payload entropy.
 .TP
+.BR --dont-fragment
+Set the IPv4 Don't Fragment (DF) bit on outgoing packets.
+Only applicable to tests doing UDP over IPv4.
+.TP
 .BR --username " \fIusername\fR" 
 username to use for authentication to the iperf server (if built with
 OpenSSL support).
@@ -402,7 +422,11 @@ path to the RSA public key used to encrypt authentication credentials
 The authentication feature of iperf3 requires an RSA public keypair.
 The public key is used to encrypt the authentication token containing the 
 user credentials, while the private key is used to decrypt the authentication token.
-An example of a set of UNIX/Linux commands to generate correct keypair follows:
+The private key must be in PEM format and additionally must not have a
+password set.
+The public key must be in PEM format and use SubjectPrefixKeyInfo encoding.
+An example of a set of UNIX/Linux commands using OpenSSL
+to generate a correctly-formed keypair follows:
 .sp 1 
 .in +.5i
 > openssl genrsa -des3 -out private.pem 2048
