@@ -135,6 +135,15 @@ define kernelfeatures
 	if [ "$(CONFIG_HIGH_RES_TIMERS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_HIGH_RES_TIMERS is not set/CONFIG_HIGH_RES_TIMERS=y/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_KERNELLTO)" = "y" ]; then \
+		echo "CONFIG_LTO_MENU=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_LTO_DISABLE is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_LTO=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_LTO_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_LTO_CP_CLONE is not set" >> $(LINUXDIR)/.config; \
+	else \
+		echo "# CONFIG_LTO_MENU is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_IPETH)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config; \
 	fi
