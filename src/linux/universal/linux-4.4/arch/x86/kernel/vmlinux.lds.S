@@ -385,7 +385,9 @@ INIT_PER_CPU(irq_stack_union);
 #ifdef CONFIG_KEXEC_CORE
 #include <asm/kexec.h>
 
+#ifndef CONFIG_LTO
 . = ASSERT(kexec_control_code_size <= KEXEC_CONTROL_CODE_MAX_SIZE,
            "kexec control code size is too big");
+#endif
 #endif
 
