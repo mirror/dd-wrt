@@ -25,6 +25,7 @@ def getsizes(file):
             if name == "linux_banner": continue
             # statics and some other optimizations adds random .NUMBER
             name = re.sub(r'\.[0-9]+', '', name)
+	    name = name.replace(".lto_priv", "")
             sym[name] = sym.get(name, 0) + int(size, 16)
     return sym
 

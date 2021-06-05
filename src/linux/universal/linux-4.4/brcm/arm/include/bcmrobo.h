@@ -156,6 +156,14 @@ struct robo_info_s {
 #endif /* BCMFA */
 };
 
+/* port descriptor */
+typedef	struct {
+	uint32 untag;	/* untag enable bit (Page 0x05 Address 0x63-0x66 Bit[17:9]) */
+	uint32 member;	/* vlan member bit (Page 0x05 Address 0x63-0x66 Bit[7:0]) */
+	uint8 ptagr;	/* port tag register address (Page 0x34 Address 0x10-0x1F) */
+	uint8 cpu;	/* is this cpu port? */
+} pdesc_t;
+
 /* Power Save mode related functions */
 extern int32 robo_power_save_mode_get(robo_info_t *robo, int32 phy);
 extern int32 robo_power_save_mode_set(robo_info_t *robo, int32 mode, int32 phy);

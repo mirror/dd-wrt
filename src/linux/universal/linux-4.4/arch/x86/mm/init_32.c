@@ -801,7 +801,9 @@ void __init mem_init(void)
 #define __FIXADDR_TOP (-PAGE_SIZE)
 #ifdef CONFIG_HIGHMEM
 	BUILD_BUG_ON(PKMAP_BASE + LAST_PKMAP*PAGE_SIZE	> FIXADDR_START);
+#ifndef CONFIG_LTO /* Something in gcc 6 LTO doesn't like this check */
 	BUILD_BUG_ON(VMALLOC_END			> PKMAP_BASE);
+#endif
 #endif
 #define high_memory (-128UL << 20)
 	BUILD_BUG_ON(VMALLOC_START			>= VMALLOC_END);
