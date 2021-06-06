@@ -352,6 +352,11 @@
 #define __copy(symbol)                 __attribute__((__copy__(symbol)))
 #endif
 
+#if __GNUC__ >= 6
+/* Avoid reordering a top level statement */
+#define __noreorder    __attribute__((no_reorder))
+#endif
+
 /*
  * A trick to suppress uninitialized variable warning without generating any
  * code

@@ -172,7 +172,7 @@ extern bool initcall_debug;
  */
 
 #define __define_initcall(fn, id) \
-	static initcall_t __initcall_##fn##id __used \
+	static initcall_t __initcall_##fn##id __used __noreorder \
 	__attribute__((__section__(".initcall" #id ".init"))) = fn;
 
 /*

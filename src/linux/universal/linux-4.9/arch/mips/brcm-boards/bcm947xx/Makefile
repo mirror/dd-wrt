@@ -34,7 +34,7 @@ EXTRA_CFLAGS += -DLINUX_HYBRID_POSTPROCESSING_REMOVAL
 ifeq ($(CONFIG_PCI),y)
 BCM947XX_OBJS += $(addprefix $(SHARED)/, hndpci.o) pcibios.o
 endif
-
+EXTRA_CFLAGS+=$(DISABLE_LTO)
 ifeq ($(CONFIG_MTD_NFLASH),y)
 BCM947XX_OBJS += $(addprefix $(SHARED)/, hndnand.o)
 BCM947XX_OBJS += $(addprefix $(SHARED)/, nflash_mips.o)
