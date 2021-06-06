@@ -20,7 +20,7 @@ endif
 
 wolfssl-clean:
 	-make -C wolfssl/minimal clean
-	-make -C wolfssl/standard
+	-make -C wolfssl/standard clean
 	@true
 
 wolfssl-install:
