@@ -34,6 +34,7 @@ CFLAGS_sha512-glue.o += $(DISABLE_LTO)
 CFLAGS_sha512-neon-glue.o += $(DISABLE_LTO)
 CFLAGS_sha1-ce-glue.o += $(DISABLE_LTO)
 CFLAGS_sha256-ce-glue.o += $(DISABLE_LTO)
+CFLAGS_sha2-ce-glue.o += $(DISABLE_LTO)
 CFLAGS_aes-ce-glue.o += $(DISABLE_LTO)
 CFLAGS_ghash-ce-glue.o += $(DISABLE_LTO)
 

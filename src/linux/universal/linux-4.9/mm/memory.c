@@ -2989,12 +2989,6 @@ out:
 	spin_unlock(fe->ptl);
 	return ret;
 }
-#else
-static int do_set_pmd(struct fault_env *fe, struct page *page)
-{
-	BUILD_BUG();
-	return 0;
-}
 #endif
 
 /**
@@ -3018,6 +3012,7 @@ int alloc_set_pte(struct fault_env *fe, struct mem_cgroup *memcg,
 	pte_t entry;
 	int ret;
 
+#ifdef CONFIG_TRANSPARENT_HUGE_PAGECACHE
 	if (pmd_none(*fe->pmd) && PageTransCompound(page) &&
 			IS_ENABLED(CONFIG_TRANSPARENT_HUGE_PAGECACHE)) {
 		/* THP on COW? */
@@ -3027,7 +3022,7 @@ int alloc_set_pte(struct fault_env *fe, struct mem_cgroup *memcg,
 		if (ret != VM_FAULT_FALLBACK)
 			return ret;
 	}
-
+#endif
 	if (!fe->pte) {
 		ret = pte_alloc_one_map(fe);
 		if (ret)
