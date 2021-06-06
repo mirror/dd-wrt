@@ -9,6 +9,7 @@
 
 KBUILD_AFLAGS	:=$(KBUILD_AFLAGS:-msoft-float=-Wa,-mfpu=softvfp+vfp -mfloat-abi=soft)
 LDFLAGS		+=--no-warn-mismatch
+KBUILD_CFLAGS   += $(DISABLE_LTO)
 
 obj-y			+= vfp.o
 
