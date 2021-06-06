@@ -90,7 +90,7 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlinuz
 # machines may also.  Since BFD is incredibly buggy with respect to
 # crossformat linking we rely on the elf2ecoff tool for format conversion.
 #
-cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
+cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
 cflags-y			+= -msoft-float -mno-branch-likely
 LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
 ifdef CONFIG_64BIT
