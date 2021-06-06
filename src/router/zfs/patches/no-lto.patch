@@ -1,0 +1,13 @@
+Index: module/lua/Makefile.in
+===================================================================
+--- module/lua/Makefile.in	(revision 46894)
++++ module/lua/Makefile.in	(working copy)
+@@ -7,7 +7,7 @@
+ 
+ obj-$(CONFIG_ZFS) := $(MODULE).o
+ 
+-ccflags-y := -DLUA_USE_LONGLONG
++ccflags-y := -DLUA_USE_LONGLONG -fno-lto
+ 
+ $(MODULE)-objs += lapi.o
+ $(MODULE)-objs += lauxlib.o
