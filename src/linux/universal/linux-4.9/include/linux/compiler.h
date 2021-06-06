@@ -426,6 +426,10 @@ unsigned long read_word_at_a_time(const void *addr)
 #define noinline
 #endif
 
+#ifndef __noreorder
+#define __noreorder		/* unimplemented */
+#endif
+
 /*
  * Rather then using noinline to prevent stack consumption, use
  * noinline_for_stack instead.  For documentation reasons.

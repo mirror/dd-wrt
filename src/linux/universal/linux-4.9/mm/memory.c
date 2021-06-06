@@ -3456,8 +3456,10 @@ out:
 static int create_huge_pmd(struct fault_env *fe)
 {
 	struct vm_area_struct *vma = fe->vma;
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE	
 	if (vma_is_anonymous(vma))
 		return do_huge_pmd_anonymous_page(fe);
+#endif
 	if (vma->vm_ops->pmd_fault)
 		return vma->vm_ops->pmd_fault(vma, fe->address, fe->pmd,
 				fe->flags);
@@ -3466,8 +3468,10 @@ static int create_huge_pmd(struct fault_env *fe)
 
 static int wp_huge_pmd(struct fault_env *fe, pmd_t orig_pmd)
 {
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE	
 	if (vma_is_anonymous(fe->vma))
 		return do_huge_pmd_wp_page(fe, orig_pmd);
+#endif
 	if (fe->vma->vm_ops->pmd_fault)
 		return fe->vma->vm_ops->pmd_fault(fe->vma, fe->address, fe->pmd,
 				fe->flags);
