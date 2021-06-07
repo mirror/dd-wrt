@@ -1,3 +1,5 @@
+KBUILD_CFLAGS += $(DISABLE_LTO)
+
 hostprogs-y := vdsomunge
 
 obj-vdso := vgettimeofday.o datapage.o
