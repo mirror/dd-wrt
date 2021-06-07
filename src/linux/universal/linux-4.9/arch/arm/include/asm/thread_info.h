@@ -112,11 +112,11 @@ extern void crunch_task_copy(struct thread_info *, void *);
 extern void crunch_task_restore(struct thread_info *, void *);
 extern void crunch_task_release(struct thread_info *);
 
-extern void iwmmxt_task_disable(struct thread_info *);
-extern void iwmmxt_task_copy(struct thread_info *, void *);
-extern void iwmmxt_task_restore(struct thread_info *, void *);
-extern void iwmmxt_task_release(struct thread_info *);
-extern void iwmmxt_task_switch(struct thread_info *);
+asmlinkage void iwmmxt_task_disable(struct thread_info *);
+asmlinkage void iwmmxt_task_copy(struct thread_info *, void *);
+asmlinkage void iwmmxt_task_restore(struct thread_info *, void *);
+asmlinkage void iwmmxt_task_release(struct thread_info *);
+asmlinkage void iwmmxt_task_switch(struct thread_info *);
 
 extern void vfp_sync_hwstate(struct thread_info *);
 extern void vfp_flush_hwstate(struct thread_info *);
