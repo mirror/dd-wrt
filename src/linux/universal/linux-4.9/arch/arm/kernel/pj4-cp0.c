@@ -19,6 +19,7 @@
 #include <asm/thread_notify.h>
 #include <asm/cputype.h>
 
+#ifdef CONFIG_IWMMXT
 static int iwmmxt_do(struct notifier_block *self, unsigned long cmd, void *t)
 {
 	struct thread_info *thread = t;
@@ -49,7 +50,7 @@ static struct notifier_block __maybe_unused iwmmxt_notifier_block = {
 	.notifier_call	= iwmmxt_do,
 };
 
-
+#endif
 static u32 __init pj4_cp_access_read(void)
 {
 	u32 value;
