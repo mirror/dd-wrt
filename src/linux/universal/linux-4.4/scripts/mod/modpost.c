@@ -1530,6 +1530,20 @@ static void report_sec_mismatch(const char *modname,
 	fprintf(stderr, "\n");
 }
 
+/* For checks remove .lto_priv.0 which is added randomly by gcc LTO */
+
+static char *cleansym(const char *sym)
+{
+	char *nsym = strdup(sym);
+	char *p;
+	if (!nsym)
+		exit(ENOMEM);
+	p = strstr(nsym, ".lto_priv.0");
+	if (p && p[11] == 0)
+		*p = 0;
+	return nsym;
+}
+
 static void default_mismatch_handler(const char *modname, struct elf_info *elf,
 				     const struct sectioncheck* const mismatch,
 				     Elf_Rela *r, Elf_Sym *sym, const char *fromsec)
@@ -1539,6 +1553,7 @@ static void default_mismatch_handler(const char *modname, struct elf_info *elf,
 	Elf_Sym *from;
 	const char *tosym;
 	const char *fromsym;
+	char *fromsym_clean, *tosym_clean;
 
 	from = find_elf_symbol2(elf, r->r_offset, fromsec);
 	fromsym = sym_name(elf, from);
@@ -1551,14 +1566,19 @@ static void default_mismatch_handler(const char *modname, struct elf_info *elf,
 	to = find_elf_symbol(elf, r->r_addend, sym);
 	tosym = sym_name(elf, to);
 
+	fromsym_clean = cleansym(fromsym);
+	tosym_clean = cleansym(tosym);
+
 	/* check whitelist - we may ignore it */
 	if (secref_whitelist(mismatch,
-			     fromsec, fromsym, tosec, tosym)) {
+			     fromsec, fromsym_clean, tosec, tosym_clean)) {
 		report_sec_mismatch(modname, mismatch,
 				    fromsec, r->r_offset, fromsym,
 				    is_function(from), tosec, tosym,
 				    is_function(to));
 	}
+	free(fromsym_clean);
+	free(tosym_clean);
 }
 
 static int is_executable_section(struct elf_info* elf, unsigned int section_index)
