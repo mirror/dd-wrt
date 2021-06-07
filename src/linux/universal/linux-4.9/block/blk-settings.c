@@ -864,7 +864,7 @@ void blk_queue_write_cache(struct request_queue *q, bool wc, bool fua)
 		queue_flag_clear(QUEUE_FLAG_FUA, q);
 	spin_unlock_irq(q->queue_lock);
 }
-EXPORT_SYMBOL_GPL(blk_queue_write_cache);
+EXPORT_SYMBOL(blk_queue_write_cache);
 
 static int __init blk_settings_init(void)
 {
