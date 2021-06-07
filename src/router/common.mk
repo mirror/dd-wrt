@@ -1,6 +1,6 @@
 export LTO := -flto -fwhole-program
 export LTOMIN := -flto
-export LDLTO := -flto=jobserver -fuse-linker-plugin
+export LDLTO := -flto=$(shell getconf _NPROCESSORS_ONLN) -fuse-linker-plugin
 export LTOPLUGIN := --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so)
 
 
