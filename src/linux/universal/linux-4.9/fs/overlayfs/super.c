@@ -997,6 +997,7 @@ static unsigned int ovl_split_lowerdirs(char *str)
 	return ctr;
 }
 
+#ifdef CONFIG_FS_POSIX_ACL
 static int __maybe_unused
 ovl_posix_acl_xattr_get(const struct xattr_handler *handler,
 			struct dentry *dentry, struct inode *inode,
@@ -1062,6 +1063,7 @@ out_acl_release:
 	posix_acl_release(acl);
 	return err;
 }
+#endif
 
 static int ovl_own_xattr_get(const struct xattr_handler *handler,
 			     struct dentry *dentry, struct inode *inode,
@@ -1093,6 +1095,7 @@ static int ovl_other_xattr_set(const struct xattr_handler *handler,
 	return ovl_xattr_set(dentry, name, value, size, flags);
 }
 
+#ifdef CONFIG_FS_POSIX_ACL
 static const struct xattr_handler __maybe_unused
 ovl_posix_acl_access_xattr_handler = {
 	.name = XATTR_NAME_POSIX_ACL_ACCESS,
@@ -1108,6 +1111,7 @@ ovl_posix_acl_default_xattr_handler = {
 	.get = ovl_posix_acl_xattr_get,
 	.set = ovl_posix_acl_xattr_set,
 };
+#endif
 
 static const struct xattr_handler ovl_own_xattr_handler = {
 	.prefix	= OVL_XATTR_PREFIX,
