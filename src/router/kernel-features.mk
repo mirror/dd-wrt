@@ -141,6 +141,9 @@ define kernelfeatures
 		echo "CONFIG_LTO=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LTO_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LTO_CP_CLONE is not set" >> $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3 is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/g' $(LINUXDIR)/.config; \
 	else \
 		echo "# CONFIG_LTO_MENU is not set" >> $(LINUXDIR)/.config; \
 	fi
