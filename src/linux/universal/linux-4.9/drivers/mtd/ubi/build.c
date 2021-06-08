@@ -1263,7 +1263,7 @@ typedef struct {
 
 
 
-static int getbootdevice(void)
+static __init int getbootdevice(void)
 {
 	struct mtd_info *mtd;
 	size_t len;
