@@ -145,6 +145,7 @@ define kernelfeatures
 		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_OPTIMIZE_INLINING=y/# CONFIG_OPTIMIZE_INLINING is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_KALLSYMS=y/# CONFIG_KALLSYMS is not set/g' $(LINUXDIR)/.config; \
 	else \
 		echo "# CONFIG_LTO_MENU is not set" >> $(LINUXDIR)/.config; \
 	fi
