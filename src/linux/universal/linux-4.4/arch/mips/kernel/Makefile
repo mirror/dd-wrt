@@ -1,7 +1,7 @@
 #
 # Makefile for the Linux/MIPS kernel.
 #
-EXTRA_CFLAGS+=$(DISABLE_LTO)
+#EXTRA_CFLAGS+=$(DISABLE_LTO)
 
 extra-y		:= head.o vmlinux.lds
 
