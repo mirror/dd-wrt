@@ -1,7 +1,7 @@
 #
 # Makefile for the PCI specific kernel interface routines under Linux.
 #
-EXTRA_CFLAGS+=$(DISABLE_LTO)
+#EXTRA_CFLAGS+=$(DISABLE_LTO)
 
 obj-y				+= pci.o
 
