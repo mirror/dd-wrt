@@ -10,4 +10,5 @@ endif
 # various version of gcc have a LTO bug where the &&labels used in the
 # BPF interpreter can cause linker errors when spread incorrectly over
 # partitions. Disable LTO for BPF for now
-CFLAGS_core.o = $(DISABLE_LTO)
+CFLAGS_core.o += $(DISABLE_LTO)
+CFLAGS_syscall.o = $(DISABLE_LTO)
