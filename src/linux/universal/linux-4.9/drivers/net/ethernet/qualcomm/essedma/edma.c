@@ -1415,7 +1415,7 @@ netdev_tx_t edma_xmit(struct sk_buff *skb,
 	/* Check and mark VLAN tag offload */
 	if (unlikely(skb_vlan_tag_present(skb)))
 		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_FLAG;
-	else if (adapter->default_vlan_tag)
+	else if (adapter->default_vlan_tag && !adapter->edma_cinfo->is_single_phy)
 		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_DEFAULT_FLAG;
 
 	/* Check and mark checksum offload */
