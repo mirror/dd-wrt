@@ -6,6 +6,8 @@ do
     cp $i .config
     sed -i 's/\CONFIG_EXFAT_FS=m/ /g' .config	    
     echo "# CONFIG_EXFAT_FS is not set" >> .config
+    echo "# CONFIG_LTO_MENU is not set" >> .config
+    echo "# CONFIG_ASN1 is not set" >> .config
     grep "CONFIG_X86=y" $i
     if [ $? -eq 0 ] 
 	then 
@@ -149,6 +151,8 @@ do
 	    sed -i 's/\CONFIG_WR1043V4=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WA7510=y/ /g' .config	    
     fi
+    sed -i 's/\# CONFIG_LTO_MENU is not set/ /g' .config	    
+    sed -i 's/\# CONFIG_ASN1 is not set/ /g' .config	    
     sed -i 's/\# CONFIG_EXFAT_FS is not set/ /g' .config	    
     cp .config $i
 done
