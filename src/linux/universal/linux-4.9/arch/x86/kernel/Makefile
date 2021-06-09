@@ -1,6 +1,11 @@
 #
 # Makefile for the linux kernel.
 #
+CFLAGS_tls.o = $(DISABLE_LTO)
+CFLAGS_sys_x86_64.o = $(DISABLE_LTO)
+CFLAGS_ioport.o = $(DISABLE_LTO)
+CFLAGS_vm86_32.o = $(DISABLE_LTO)
+CFLAGS_ldt.o = $(DISABLE_LTO)
 
 extra-y	:= head_$(BITS).o
 extra-y	+= head$(BITS).o
