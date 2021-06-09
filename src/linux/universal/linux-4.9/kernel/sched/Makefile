@@ -1,4 +1,3 @@
-
 ifdef CONFIG_FUNCTION_TRACER
 CFLAGS_REMOVE_clock.o = $(CC_FLAGS_FTRACE)
 endif
@@ -15,7 +14,6 @@ ifneq ($(CONFIG_SCHED_OMIT_FRAME_POINTER),y)
 # to get a correct value for the wait-channel (WCHAN in ps). --davidm
 CFLAGS_core.o := $(PROFILING) -fno-omit-frame-pointer
 endif
-CFLAGS_core.o += $(DISABLE_LTO)
 
 obj-y += core.o loadavg.o clock.o cputime.o
 obj-y += idle_task.o fair.o rt.o deadline.o stop_task.o
