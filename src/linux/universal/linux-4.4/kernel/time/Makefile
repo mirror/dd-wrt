@@ -1,8 +1,3 @@
-CFLAGS_posix_timers.o = $(DISABLE_LTO)
-CFLAGS_hrtimer.o = $(DISABLE_LTO)
-CFLAGS_time.o = $(DISABLE_LTO)
-CFLAGS_itimer.o = $(DISABLE_LTO)
-
 obj-y += time.o timer.o hrtimer.o itimer.o posix-timers.o posix-cpu-timers.o
 obj-y += timekeeping.o ntp.o clocksource.o jiffies.o timer_list.o
 obj-y += timeconv.o timecounter.o posix-clock.o alarmtimer.o
