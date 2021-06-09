@@ -1,7 +1,7 @@
 #
 # Makefile for the Linux/MIPS-specific parts of the memory manager.
 #
-#EXTRA_CFLAGS+=$(DISABLE_LTO)
+CFLAGS_cache.o = $(DISABLE_LTO)
 
 obj-y				+= cache.o dma-default.o extable.o fault.o \
 				   gup.o init.o mmap.o page.o page-funcs.o \
