@@ -4,9 +4,12 @@
 
 CPPFLAGS_vmlinux.lds := -DTEXT_OFFSET=$(TEXT_OFFSET)
 AFLAGS_head.o        := -DTEXT_OFFSET=$(TEXT_OFFSET)
-+CFLAGS_ptrace.o	     := $(DISABLE_LTO)
-+CFLAGS_pj4-cp0.o     := $(DISABLE_LTO)
-+CFLAGS_xscale-cp0.o  := $(DISABLE_LTO)
+CFLAGS_ptrace.o	     := $(DISABLE_LTO)
+CFLAGS_pj4-cp0.o     := $(DISABLE_LTO)
+CFLAGS_xscale-cp0.o  := $(DISABLE_LTO)
+CFLAGS_atags_parse.o  := $(DISABLE_LTO)
+CFLAGS_atags_proc.o  := $(DISABLE_LTO)
+CFLAGS_atags_compat.o  := $(DISABLE_LTO)
 
 ifdef CONFIG_FUNCTION_TRACER
 CFLAGS_REMOVE_ftrace.o = -pg
