@@ -22,13 +22,15 @@
 #endif
 
 #ifndef cond_syscall
-#define cond_syscall(x)	\
-	extern long x(void) __attribute__((alias("sys_ni_syscall"), weak));
+#define cond_syscall(x)	asm(				\
+	".weak " VMLINUX_SYMBOL_STR(x) "\n\t"		\
+	".set  " VMLINUX_SYMBOL_STR(x) ","		\
+		 VMLINUX_SYMBOL_STR(sys_ni_syscall))
 #endif
 
 #ifndef SYSCALL_ALIAS
 #define SYSCALL_ALIAS(a, name) \
-	long a(void) __attribute__((alias(__stringify(name))))
+	__visible typeof(a) a __attribute__((alias(__stringify(name))))
 #endif
 
 #define __page_aligned_data	__section(.data..page_aligned) __aligned(PAGE_SIZE)
