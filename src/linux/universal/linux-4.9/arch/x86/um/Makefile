@@ -1,9 +1,6 @@
 #
 # Copyright (C) 2002 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
 #
-CFLAGS_ldt.o = $(DISABLE_LTO)
-CFLAGS_tls_32.o = $(DISABLE_LTO)
-
 ifeq ($(CONFIG_X86_32),y)
 	BITS := 32
 else

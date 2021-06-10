@@ -802,7 +802,9 @@ void __init mem_init(void)
 #endif
 #endif
 #define high_memory (-128UL << 20)
+#ifndef CONFIG_LTO
 	BUILD_BUG_ON(VMALLOC_START			>= VMALLOC_END);
+#endif
 #undef high_memory
 #undef __FIXADDR_TOP
 

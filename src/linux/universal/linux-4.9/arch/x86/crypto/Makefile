@@ -55,6 +55,17 @@ ifeq ($(avx2_supported),yes)
 	obj-$(CONFIG_CRYPTO_SHA256_MB) += sha256-mb/
 	obj-$(CONFIG_CRYPTO_SHA512_MB) += sha512-mb/
 endif
+CFLAGS_aes_glue.o += $(DISABLE_LTO)
+CFLAGS_twofish_glue.o += $(DISABLE_LTO)
+CFLAGS_salsa20_glue.o += $(DISABLE_LTO)
+CFLAGS_serpent_sse2_glue.o += $(DISABLE_LTO)
+CFLAGS_des3_ede_glue.o += $(DISABLE_LTO)
+CFLAGS_camellia_glue.o += $(DISABLE_LTO)
+CFLAGS_blowfish_glue.o += $(DISABLE_LTO)
+CFLAGS_twofish_glue.o += $(DISABLE_LTO)
+CFLAGS_twofish_glue_3way.o += $(DISABLE_LTO)
+CFLAGS_chacha20.o += $(DISABLE_LTO)
+
 
 aes-i586-y := aes-i586-asm_32.o aes_glue.o
 twofish-i586-y := twofish-i586-asm_32.o twofish_glue.o
@@ -87,6 +98,11 @@ ifeq ($(avx2_supported),yes)
 	chacha20-x86_64-y += chacha20-avx2-x86_64.o
 	serpent-avx2-y := serpent-avx2-asm_64.o serpent_avx2_glue.o
 endif
+CFLAGS_aesni-intel_glue.o += $(DISABLE_LTO)
+CFLAGS_ghash-clmulni-intel_glue.o += $(DISABLE_LTO)
+CFLAGS_sha1_ssse3_glue.o += $(DISABLE_LTO)
+CFLAGS_poly1305_glue.o += $(DISABLE_LTO)
+
 
 aesni-intel-y := aesni-intel_asm.o aesni-intel_glue.o fpu.o
 aesni-intel-$(CONFIG_64BIT) += aesni-intel_avx-x86_64.o aes_ctrby8_avx-x86_64.o
@@ -100,6 +116,13 @@ endif
 ifeq ($(sha1_ni_supported),yes)
 sha1-ssse3-y += sha1_ni_asm.o
 endif
+CFLAGS_crc32c-intel_glue.o += $(DISABLE_LTO)
+CFLAGS_crc32-pclmul_glue.o += $(DISABLE_LTO)
+CFLAGS_sha256_ssse3_glue.o += $(DISABLE_LTO)
+CFLAGS_sha512_ssse3_glue.o += $(DISABLE_LTO)
+CFLAGS_crct10dif-pclmul_glue.o += $(DISABLE_LTO)
+
+
 crc32c-intel-y := crc32c-intel_glue.o
 crc32c-intel-$(CONFIG_64BIT) += crc32c-pcl-intel-asm_64.o
 crc32-pclmul-y := crc32-pclmul_asm.o crc32-pclmul_glue.o
