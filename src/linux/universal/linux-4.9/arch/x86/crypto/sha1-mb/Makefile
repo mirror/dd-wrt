@@ -3,6 +3,7 @@
 #
 
 OBJECT_FILES_NON_STANDARD := y
+CFLAGS_sha1_mb.o += $(DISABLE_LTO)
 
 avx2_supported := $(call as-instr,vpgatherdd %ymm0$(comma)(%eax$(comma)%ymm1\
                                 $(comma)4)$(comma)%ymm2,yes,no)

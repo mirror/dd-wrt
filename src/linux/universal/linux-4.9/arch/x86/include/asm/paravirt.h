@@ -736,7 +736,8 @@ static __always_inline void pv_kick(int cpu)
  */
 #define PV_THUNK_NAME(func) "__raw_callee_save_" #func
 #define PV_CALLEE_SAVE_REGS_THUNK(func)					\
-	extern typeof(func) __raw_callee_save_##func;			\
+	extern __visible typeof(func) __raw_callee_save_##func;		\
+	extern __visible typeof(func) func;				\
 									\
 	asm(".pushsection .text;"					\
 	    ".globl " PV_THUNK_NAME(func) ";"				\

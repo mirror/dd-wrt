@@ -1,11 +1,6 @@
 #
 # Makefile for the Linux/MIPS kernel.
 #
-CFLAGS_signal.o = $(DISABLE_LTO)
-CFLAGS_signal32.o = $(DISABLE_LTO)
-CFLAGS_syscall.o = $(DISABLE_LTO)
-CFLAGS_linux32.o = $(DISABLE_LTO)
-
 extra-y		:= head.o vmlinux.lds
 
 obj-y		+= cpu-probe.o branch.o elf.o entry.o genex.o idle.o irq.o \

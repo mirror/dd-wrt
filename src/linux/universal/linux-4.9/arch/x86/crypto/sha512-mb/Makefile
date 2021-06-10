@@ -1,6 +1,8 @@
 #
 # Arch-specific CryptoAPI modules.
 #
+CFLAGS_sha512_mb.o += $(DISABLE_LTO)
+CFLAGS_sha512_mb_mgr_init_avx2.o += $(DISABLE_LTO)
 
 avx2_supported := $(call as-instr,vpgatherdd %ymm0$(comma)(%eax$(comma)%ymm1\
                                 $(comma)4)$(comma)%ymm2,yes,no)

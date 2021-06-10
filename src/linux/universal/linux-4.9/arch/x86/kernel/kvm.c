@@ -77,7 +77,7 @@ static int parse_no_kvmclock_vsyscall(char *arg)
 early_param("no-kvmclock-vsyscall", parse_no_kvmclock_vsyscall);
 
 static DEFINE_PER_CPU(struct kvm_vcpu_pv_apf_data, apf_reason) __aligned(64);
-static DEFINE_PER_CPU(struct kvm_steal_time, steal_time) __aligned(64);
+__visible DEFINE_PER_CPU(struct kvm_steal_time, steal_time) __aligned(64);
 static int has_steal_clock = 0;
 
 /*
