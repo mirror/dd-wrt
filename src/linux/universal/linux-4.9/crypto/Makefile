@@ -1,6 +1,7 @@
 #
 # Cryptographic API
 #
+CFLAGS_sha512_generic.o += $(DISABLE_LTO)
 
 obj-$(CONFIG_CRYPTO) += crypto.o
 crypto-y := api.o cipher.o compress.o memneq.o

@@ -1,7 +1,6 @@
 #
 # Makefile for MIPS-specific library files..
 #
-EXTRA_CFLAGS+=$(DISABLE_LTO)
 
 lib-y	+= bitops.o csum_partial.o delay.o memcpy.o memset.o memcmp.o \
 	   mips-atomic.o strlen_user.o strncpy_user.o \
