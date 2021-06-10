@@ -63,6 +63,22 @@ $(MODULE)-$(CONFIG_X86) += algs/modes/gcm_pclmulqdq.o
 $(MODULE)-$(CONFIG_X86) += algs/aes/aes_impl_aesni.o
 $(MODULE)-$(CONFIG_X86) += algs/aes/aes_impl_x86-64.o
 
+$(obj)/algs/modes/gcm_pclmulqdq.o: c_flags += -fno-lto
+$(obj)/algs/modes/gcm.o: c_flags += -fno-lto
+$(obj)/algs/modes/gcm_generic.o: c_flags += -fno-lto
+$(obj)/algs/modes/ccm.o: c_flags += -fno-lto
+$(obj)/algs/modes/ctr.o: c_flags += -fno-lto
+$(obj)/algs/modes/cbc.o: c_flags += -fno-lto
+$(obj)/algs/modes/ecb.o: c_flags += -fno-lto
+$(obj)/algs/modes/modes.o: c_flags += -fno-lto
+$(obj)/algs/aes/aes_modes.o: c_flags += -fno-lto
+$(obj)/algs/aes/aes_impl.o: c_flags += -fno-lto
+$(obj)/algs/aes/aes_impl_aesni.o: c_flags += -fno-lto
+$(obj)/algs/aes/aes_impl_x86-64.o: c_flags += -fno-lto
+$(obj)/algs/aes/aes_impl_generic.o: c_flags += -fno-lto
+$(obj)/core/kcf_prov_lib.o: c_flags += -fno-lto
+$(obj)/asm-x86_64/aes/aeskey.o: c_flags += -fno-lto
+
 # Suppress objtool "can't find jump dest instruction at" warnings.  They
 # are caused by the constants which are defined in the text section of the
 # assembly file using .byte instructions (e.g. bswap_mask).  The objtool
