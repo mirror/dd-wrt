@@ -135,6 +135,11 @@ define kernelfeatures
 	if [ "$(CONFIG_HIGH_RES_TIMERS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_HIGH_RES_TIMERS is not set/CONFIG_HIGH_RES_TIMERS=y/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_OPTIMIZE_O3)" = "y" ]; then \
+		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_SIZE=y/# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3 is not set/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_KERNELLTO)" = "y" ]; then \
 		echo "CONFIG_LTO_MENU=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LTO_DISABLE is not set" >> $(LINUXDIR)/.config; \
@@ -286,11 +291,6 @@ define kernelfeatures
 		echo "CONFIG_ARM_PMU=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_DEBUG_PERF_USE_VMALLOC is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_CGROUP_PERF is not set is not set" >> $(LINUXDIR)/.config; \
-	fi
-	if [ "$(CONFIG_OPTIMIZE_O3)" = "y" ]; then \
-		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_SIZE=y/# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3 is not set/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_EXFAT)" = "y" ]; then \
 		sed -i 's/\# CONFIG_EXFAT_FS is not set/CONFIG_EXFAT_FS=m/g' $(LINUXDIR)/.config; \
