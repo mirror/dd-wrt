@@ -404,6 +404,8 @@ static void detect_wireless_devices(int mask)
 #endif
 #ifdef HAVE_X86
 	if ((mask & RADIO_MT76)) {
+		insmod("hwmon");
+		insmod("thermal_sys");
 		fprintf(stderr, "load Medatek MT76 Driver\n");
 		int wificnt = 0;
 		int total = 0;
