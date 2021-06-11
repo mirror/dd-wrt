@@ -354,7 +354,7 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 	FILE *fp2 = NULL;
-#ifdef HAVE_ATH10K
+#if defined(HAVE_ATH10K) || defined(HAVE_MT76)
 	if (!disable_wifitemp) {
 		int c = getdevicecount();
 		for (i = 0; i < c; i++) {
@@ -365,6 +365,10 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			int scan = 0;
 			for (scan = 0; scan < 20; scan++) {
 				sprintf(path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
+				fp2 = fopen(path, "rb");
+				if (fp2)
+					break;
+				sprintf(path, "/sys/class/ieee80211/phy%d/hwmon%d/temp1_input", i, scan);
 				fp2 = fopen(path, "rb");
 				if (fp2)
 					break;
