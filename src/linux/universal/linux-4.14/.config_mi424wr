@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.14.223 Kernel Configuration
+# Linux/arm 4.14.236 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -283,6 +283,7 @@ CONFIG_DEFAULT_IOSCHED="deadline"
 # CONFIG_MQ_IOSCHED_DEADLINE is not set
 # CONFIG_MQ_IOSCHED_KYBER is not set
 # CONFIG_IOSCHED_BFQ is not set
+ 
 CONFIG_INLINE_SPIN_UNLOCK_IRQ=y
 CONFIG_INLINE_READ_UNLOCK=y
 CONFIG_INLINE_READ_UNLOCK_IRQ=y
