@@ -183,13 +183,13 @@ else
 	-touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
 endif
 endif
-	$(kernelfeatures)
 ifeq ($(CONFIG_DIST),"mini")
 	sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/g' $(LINUXDIR)/.config
 	sed -i 's/\CONFIG_KALLSYMS=y/# CONFIG_KALLSYMS is not set/g' $(LINUXDIR)/.config
 else
 	sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_SIZE=y/# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config
 endif
+	$(kernelfeatures)
 ifeq ($(CONFIG_SWAP),y)
 	sed -i 's/\# CONFIG_SWAP is not set/CONFIG_SWAP=y/g' $(LINUXDIR)/.config
 	echo "# CONFIG_FRONTSWAP is not set" >> $(LINUXDIR)/.config
