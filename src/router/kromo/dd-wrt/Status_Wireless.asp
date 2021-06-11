@@ -112,7 +112,6 @@ function OpenSiteSurvey () {
 		openWindow('Site_Survey.asp', 760, 700);
 	}
 	else {
-		openWindow('Site_Survey.asp', 760, 700);
 		alert(errmsg.err59);
 	};
 }
@@ -122,7 +121,6 @@ function OpenChannelSurvey () {
 		openWindow('Channel_Survey.asp', 760, 700);
 	}
 	else {
-		openWindow('Channel_Survey.asp', 760, 700);
 		alert(errmsg.err59);
 	};
 }
@@ -132,7 +130,6 @@ function OpenSpectral () {
 		openWindow('spectral_scan.html', 1024, 700);
 	}
 	else {
-		openWindow('spectral_scan.html', 1024, 700);
 		alert(errmsg.err59);
 	};
 }
