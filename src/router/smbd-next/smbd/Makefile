@@ -15,8 +15,6 @@ EXTRA_CFLAGS += -DCONFIG_SMB_INSECURE_SERVER=1 -g -I$(TOP)/smbd-next/smbd -DCONF
 
 obj-$(CONFIG_SMB_SERVER) += ksmbd.o
 
-$(obj)/spnego_negtokeninit.asn1.o: $(obj)/spnego_negtokeninit-asn1.c $(obj)/spnego_negtokeninit-asn1.h
-$(obj)/spnego_negtokentarg.asn1.o: $(obj)/spnego_negtokentarg-asn1.c $(obj)/spnego_negtokentarg-asn1.h
 
 clean-files	+= spnego_negtokeninit-asn1.c spnego_negtokeninit-asn1.h
 clean-files	+= spnego_negtokentarg-asn1.c spnego_negtokentarg-asn1.h
@@ -27,8 +25,15 @@ ksmbd-y :=	unicode.o auth.o vfs.o vfs_cache.o connection.o crypto_ctx.o \
 		mgmt/tree_connect.o mgmt/user_session.o smb_common.o \
 		buffer_pool.o transport_tcp.o transport_ipc.o
 
-ksmbd-y +=	smb2pdu.o smb2ops.o smb2misc.o spnego_negtokeninit-asn1.o \
-		spnego_negtokentarg-asn1.o asn1.o
+ksmbd-y +=	smb2pdu.o smb2ops.o smb2misc.o ksmbd_spnego_negtokeninit-asn1.o \
+		ksmbd_spnego_negtokentarg-asn1.o asn1.o
+
+$(obj)/asn1.o: $(obj)/ksmbd_spnego_negtokeninit-asn1.h $(obj)/ksmbd_spnego_negtokentarg-asn1.h
+
+
+$(obj)/ksmbd_spnego_negtokeninit.asn1.o: $(obj)/ksmbd_spnego_negtokeninit-asn1.c $(obj)/ksmbd_spnego_negtokeninit-asn1.h
+$(obj)/ksmbd_spnego_negtokentarg.asn1.o: $(obj)/ksmbd_spnego_negtokentarg-asn1.c $(obj)/ksmbd_spnego_negtokentarg-asn1.h
+
 ksmbd-$(CONFIG_SMB_INSECURE_SERVER) += smb1pdu.o smb1ops.o smb1misc.o netmisc.o
 ksmbd-$(CONFIG_SMB_SERVER_SMBDIRECT) += transport_rdma.o
 #else
