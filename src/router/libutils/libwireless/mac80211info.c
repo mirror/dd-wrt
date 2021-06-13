@@ -504,6 +504,73 @@ nla_put_failure:
 	return 0;
 }
 
+
+
+int mac80211_get_maxpower(char *interface)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct genlmsghdr *gnlh;
+	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
+	struct nlattr *tb_freq[NL80211_FREQUENCY_ATTR_MAX + 1];
+	struct nlattr *nl_band;
+	struct nlattr *nl_freq;
+	int rem_band, rem_freq, rem_rate, rem_mode, rem_cmd, rem_ftype, rem_if;
+	int phy;
+	char ifname[32];
+	strcpy(ifname, interface);
+	char *c = strchr(ifname, '.');
+	if (c)
+		c[0] = 0;
+	lock();
+	phy = mac80211_get_phyidx_by_vifname(interface);
+
+	if (phy == -1) {
+		unlock();
+		return 0;
+	}
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
+		return 0;
+	}
+	if (!msg) {
+		unlock();
+		return 0;
+	}
+	int maxpower = 0;
+	gnlh = nlmsg_data(nlmsg_hdr(msg));
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+	if (tb[NL80211_ATTR_WIPHY_BANDS]) {
+		nla_for_each_nested(nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
+			nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(nl_band),
+				  nla_len(nl_band), NULL);
+			if (tb_band[NL80211_BAND_ATTR_FREQS]) {
+				nla_for_each_nested(nl_freq, tb_band[NL80211_BAND_ATTR_FREQS], rem_freq) {
+					if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
+						continue;
+					if (tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] &&
+					    !tb_freq[NL80211_FREQUENCY_ATTR_DISABLED]) {
+						int p = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]) / 100;
+						if (p>maxpower)
+						    maxpower=p;
+					}
+				}
+			}
+		}
+	}
+
+
+	nlmsg_free(msg);
+	unlock();
+	return maxpower;
+nla_put_failure:
+	nlmsg_free(msg);
+	unlock();
+	return 0;
+}
+
 struct statdata {
 	struct mac80211_info *mac80211_info;
 	int iftype;
