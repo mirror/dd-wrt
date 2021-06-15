@@ -3152,9 +3152,16 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO) || !defined(HAVE_IDEXX)
 	websWrite(wp, "<div class=\"setting\">\n");
+#ifdef HAVE_ATH9K
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm (Max %d)\n",
 		  power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
+#else
+	websWrite(wp,
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
+		  power, txpower + wifi_gettxpoweroffset(prefix));
+
+#endif
 	websWrite(wp, "</div>\n");
 	sprintf(power, "%s_antgain", prefix);
 #ifndef HAVE_MAKSAT
@@ -4421,9 +4428,15 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO)
 	websWrite(wp, "<div class=\"setting\">\n");
+#ifdef HAVE_ATH9K
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm (Max %d)\n",
 		  power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
+#else
+	websWrite(wp,
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
+		  power, txpower + wifi_gettxpoweroffset(prefix));
+#endif
 	websWrite(wp, "</div>\n");
 	sprintf(power, "%s_antgain", prefix);
 #ifndef HAVE_MAKSAT
