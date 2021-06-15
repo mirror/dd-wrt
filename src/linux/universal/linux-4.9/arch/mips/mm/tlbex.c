@@ -1645,8 +1645,8 @@ static void build_setup_pgd(void)
 		panic("tlbmiss_handler_setup_pgd space exceeded");
 
 	uasm_resolve_relocs(relocs, labels);
-	pr_debug("Wrote tlbmiss_handler_setup_pgd (%u instructions).\n",
-		 (unsigned int)(p - (u32)&tlbmiss_handler_setup_pgd));
+	pr_debug("Wrote tlbmiss_handler_setup_pgd (%lu instructions).\n",
+		 (size_t)(p - (size_t)&tlbmiss_handler_setup_pgd));
 
 	dump_handler("tlbmiss_handler", (u32*)&tlbmiss_handler_setup_pgd,
 					tlbmiss_handler_setup_pgd_size);
