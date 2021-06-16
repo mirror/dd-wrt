@@ -36,6 +36,17 @@
 
 #define DISK_SECTOR_SIZE        512
 
+#include <endian.h>
+#include <byteswap.h>
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define STORE32_LE(X)		bswap_32(X)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define STORE32_LE(X)		(X)
+#else
+#error unkown endianness!
+#endif
+
 struct pte {
 	uint8_t active;
 	uint8_t chs_start[3];
@@ -122,10 +133,14 @@ int main(int argc, char *argv[])
 	int i;
 	fprintf(stderr, "old layout\n");
 	for (i = 0; i < 4; i++) {
+		presentlayout[i].start = STORE32_LE(presentlayout[i].start);
+		presentlayout[i].length = STORE32_LE(presentlayout[i].length);
 		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, presentlayout[i].start, presentlayout[i].start + presentlayout[i].length - 1, presentlayout[i].active, presentlayout[i].type);
 	}
 	fprintf(stderr, "new layout\n");
 	for (i = 0; i < 4; i++) {
+		newlayout[i].start = STORE32_LE(newlayout[i].start);
+		newlayout[i].length = STORE32_LE(newlayout[i].length);
 		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, newlayout[i].start, newlayout[i].start + newlayout[i].length - 1, newlayout[i].active, newlayout[i].type);
 	}
 	struct pte *nvram = &presentlayout[2];
@@ -138,8 +153,16 @@ int main(int argc, char *argv[])
 				memcpy(&newlayout[2], &nvram, sizeof(struct pte));
 				fseek(out, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
 				fseek(in, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
+				for (i = 0; i < 4; i++) {
+					newlayout[i].start = STORE32_LE(newlayout[i].start);
+					newlayout[i].length = STORE32_LE(newlayout[i].length);
+				}
 				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, in);
 				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, out);
+				for (i = 0; i < 4; i++) {
+					newlayout[i].start = STORE32_LE(newlayout[i].start);
+					newlayout[i].length = STORE32_LE(newlayout[i].length);
+				}
 			}
 		} else {
 			fprintf(stderr, "read nvram from old offset %d with len %d\n", nvram->start * 512, len);
