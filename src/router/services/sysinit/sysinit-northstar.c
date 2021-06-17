@@ -6498,7 +6498,9 @@ void start_sysinit(void)
 	int wanport = 0;
 	foreach(var, vlan2, next) {
 		if (strlen(var) == 1) {
-			nvram_set("sw_wan", var);
+			char *tv = strdup(var);
+			nvram_set("sw_wan", tv);
+			free(tv);
 			wanport = atoi(var);
 			port++;
 			break;
@@ -6515,9 +6517,12 @@ void start_sysinit(void)
 			last = atoi(var);
 			if (first == -1)
 				first = last;
-			nvram_nset(var, "sw_lan%d", port++);
-		} else
+			char *tv = strdup(var);
+			nvram_nset(tv, "sw_lan%d", port++);
+			free(tv);
+		} else {
 			strncpy(cpuport, var, 1);
+		}
 
 	}
 	if (swap != port - 1 || first > last)
@@ -6537,7 +6542,7 @@ void start_sysinit(void)
 			free(sw2);
 		}
 	}
-	nvram_set("sw_cpuport", cpuport);
+	nvram_set("sw_cpuport", strdup(cpuport));
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan1);
 	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", vlan2);
