@@ -123,8 +123,8 @@ void start_sysinit(void)
 	}
 	switch (brand) {
 	case ROUTER_DIR860LB1:
-		insmod("hwmon");
 		insmod("thermal_sys");
+		insmod("hwmon");
 		insmod("compat");
 		insmod("mac80211");
 		insmod("mt76");
@@ -150,8 +150,8 @@ void start_sysinit(void)
 	case ROUTER_DIR882:
 	case ROUTER_R6850:
 	case ROUTER_R6220:
-		insmod("hwmon");
 		insmod("thermal_sys");
+		insmod("hwmon");
 		insmod("compat");
 		insmod("mac80211");
 		if (!nvram_match("no_mt76", "1")) {
@@ -182,8 +182,8 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 3);
 		break;
 	case ROUTER_R6800:
-		insmod("hwmon");
 		insmod("thermal_sys");
+		insmod("hwmon");
 		insmod("compat");
 		insmod("mac80211");
 		if (!nvram_match("no_mt76", "1")) {
@@ -277,8 +277,8 @@ void start_sysinit(void)
 		break;
 	case ROUTER_BOARD_E1700:
 	case ROUTER_DIR810L:
-		insmod("hwmon");
 		insmod("thermal_sys");
+		insmod("hwmon");
 		insmod("compat");
 		insmod("mac80211");
 		/* load soc drivers */
@@ -297,8 +297,8 @@ void start_sysinit(void)
 		insmod("mt76x2e");
 		break;
 	default:
-		insmod("hwmon");
 		insmod("thermal_sys");
+		insmod("hwmon");
 		insmod("compat");
 		insmod("mac80211");
 		/* load soc drivers */
