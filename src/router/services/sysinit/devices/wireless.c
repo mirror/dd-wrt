@@ -308,8 +308,8 @@ static void detect_wireless_devices(int mask)
 #ifdef HAVE_ATH10K
 	fprintf(stderr, "load ATH/QCA 802.11ac Driver\n");
 	if ((mask & RADIO_ATH10K)) {
-		insmod("hwmon");
 		insmod("thermal_sys");
+		insmod("hwmon");
 		nvram_default_get("ath10k_encap", "0");
 		if (!nvram_match("noath10k", "1")) {
 			insmod("ath");
@@ -404,8 +404,8 @@ static void detect_wireless_devices(int mask)
 #endif
 #ifdef HAVE_X86
 	if ((mask & RADIO_MT76)) {
-		insmod("hwmon");
 		insmod("thermal_sys");
+		insmod("hwmon");
 		fprintf(stderr, "load Medatek MT76 Driver\n");
 		int wificnt = 0;
 		int total = 0;
