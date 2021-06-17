@@ -6678,7 +6678,7 @@ void start_overclocking(void)
 
 	char *ov = nvram_safe_get("overclocking");
 
-	if (*ov)
+	if (!*ov)
 		return;
 	int clk = atoi(ov);
 
