@@ -276,7 +276,13 @@ $(KERNEL_PATH)/.installed: $(KERNEL_TAR)
 	sed -i '/jmp early_idt_handler$$/a .fill early_idt_handlers + i*9 - ., 1, 0xcc' $(KERNEL_PATH)/arch/x86/kernel/head_{64,32}.S || true
 	printf 'ifdef CONFIG_X86_64\nLDFLAGS += $$(call ld-option, -z max-page-size=0x200000)\nendif\n' >> $(KERNEL_PATH)/arch/x86/Makefile
 	sed -i 's/^Elf_Addr per_cpu_load_addr;$$/static \0/' $(KERNEL_PATH)/arch/x86/tools/relocs.c || true
-	if grep -qr UTS_UBUNTU_RELEASE_ABI $(KERNEL_PATH)/debian/rules.d; then echo 'KBUILD_CFLAGS += -DUTS_UBUNTU_RELEASE_ABI=0' >> $(KERNEL_PATH)/Makefile; fi
+	if grep -sqr UTS_UBUNTU_RELEASE_ABI $(KERNEL_PATH)/debian/rules.d; then echo 'KBUILD_CFLAGS += -DUTS_UBUNTU_RELEASE_ABI=0' >> $(KERNEL_PATH)/Makefile; fi
+	if grep -sq 'RHEL_MAJOR = 8' $(KERNEL_PATH)/Makefile.rhelver; then \
+		sed -i '/#include <asm\//a #include <asm\/acpi.h>/' $(KERNEL_PATH)/arch/x86/kernel/{apic/apic.c,irqinit.c,kvm.c,mpparse.c} && \
+		sed -i '/#include <asm\//a #include <asm\/numa.h>/' $(KERNEL_PATH)/arch/x86/kernel/setup.c && \
+		sed -i '/irq_hv_callback_count/d' $(KERNEL_PATH)/arch/x86/kernel/kvm.c && \
+		sed -i '/do_vmm_communication/d' $(KERNEL_PATH)/arch/x86/entry/entry_64.S; \
+	fi
 	sed -i "/^if INET\$$/a source \"net/wireguard/Kconfig\"" $(KERNEL_PATH)/net/Kconfig
 	sed -i "/^obj-\$$(CONFIG_NETFILTER).*+=/a obj-\$$(CONFIG_WIREGUARD) += wireguard/" $(KERNEL_PATH)/net/Makefile
 	ln -sfT $(shell readlink -f ../..) $(KERNEL_PATH)/net/wireguard

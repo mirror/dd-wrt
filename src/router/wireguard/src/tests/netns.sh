@@ -367,6 +367,7 @@ ip1 -6 rule add table main suppress_prefixlength 0
 ip1 -4 route add default dev wg0 table 51820
 ip1 -4 rule add not fwmark 51820 table 51820
 ip1 -4 rule add table main suppress_prefixlength 0
+n1 bash -c 'printf 0 > /proc/sys/net/ipv4/conf/vethc/rp_filter'
 # suppress_prefixlength only got added in 3.12, and we want to support 3.10+.
 if [[ $(ip1 -4 rule show all) == *suppress_prefixlength* ]]; then
 	# Flood the pings instead of sending just one, to trigger routing table reference counting bugs.

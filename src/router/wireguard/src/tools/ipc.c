@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "containers.h"
+#include "ipc.h"
 
 struct string_list {
 	char *buffer;
@@ -44,6 +45,8 @@ static int string_list_add(struct string_list *list, const char *str)
 #include "ipc-linux.h"
 #elif defined(__OpenBSD__)
 #include "ipc-openbsd.h"
+#elif defined(__FreeBSD__)
+#include "ipc-freebsd.h"
 #endif
 
 /* first\0second\0third\0forth\0last\0\0 */
