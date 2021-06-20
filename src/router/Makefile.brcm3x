@@ -811,8 +811,8 @@ ifeq ($(CONFIG_NOAC),y)
 #endif
 endif
 	-tools/ubnt/src/mkfwimage -v BZ.bcm4706.v6.0.0.3000.150000.1500 -o mipsel-uclibc/UNIFIAC.dd-wrt.bin -i tools/ubnt/unifiac-ddwrt.txt
-	./netgear/lzma e $(ARCH)-uclibc/vmlinux.bin  $(ARCH)-uclibc/vmlinux_netgear.lzma
-#	./netgear/lzma e $(ARCH)-uclibc/lzma_vmlinus  $(ARCH)-uclibc/vmlinux_netgear.lzma
+#	./netgear/lzma e $(ARCH)-uclibc/vmlinux.bin  $(ARCH)-uclibc/vmlinux_netgear.lzma
+	./netgear/lzma e $(ARCH)-uclibc/lzma_vmlinus  $(ARCH)-uclibc/vmlinux_netgear.lzma
 	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx $(ARCH)-uclibc/vmlinux_netgear.lzma  -a 4096 $(ARCH)-uclibc/rootfs.squashfs
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-r6300.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6300.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.chk 
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4500.chk
