@@ -18,6 +18,7 @@
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <linux/crc32c.h>
+#include <linux/pagemap.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <linux/sched/xacct.h>
@@ -2228,6 +2229,7 @@ int ksmbd_vfs_empty_dir(struct ksmbd_file *fp)
 #else
 	err = iterate_dir(fp->filp, &readdir_data.ctx);
 #endif
+
 	if (readdir_data.dirent_count > 2)
 		err = -ENOTEMPTY;
 	else
@@ -2306,7 +2308,7 @@ static int ksmbd_vfs_lookup_in_dir(struct path *dir, char *name, size_t namelen)
 		return PTR_ERR(dfilp);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	ret = vfs_readdir(dfilp, &readdir_data.filldir, &readdir_data);
+	ret = vfs_readdir(dfilp, readdir_data.filldir, &readdir_data);
 #else
 	ret = iterate_dir(dfilp, &readdir_data.ctx);
 #endif
