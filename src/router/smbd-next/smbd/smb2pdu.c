@@ -3868,7 +3868,7 @@ int smb2_query_dir(struct ksmbd_work *work)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	rc = vfs_readdir(dir_fp->filp, dir_fp->readdir_data->filldir, dir_fp->readdir_data);
+	rc = vfs_readdir(dir_fp->filp, dir_fp->readdir_data.filldir, &dir_fp->readdir_data);
 #else
 	rc = iterate_dir(dir_fp->filp, &dir_fp->readdir_data.ctx);
 #endif

@@ -6100,7 +6100,11 @@ static int find_first(struct ksmbd_work *work)
 		if (dir_fp->dirent_offset >= dir_fp->readdir_data.used) {
 			dir_fp->dirent_offset = 0;
 			dir_fp->readdir_data.used = 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+			rc = vfs_readdir(dir_fp->filp, dir_fp->readdir_data.filldir, &dir_fp->readdir_data);
+#else
 			rc = iterate_dir(dir_fp->filp, &dir_fp->readdir_data.ctx);
+#endif
 			if (rc < 0) {
 				ksmbd_debug(SMB, "err : %d\n", rc);
 				goto err_out;
@@ -6358,7 +6362,11 @@ static int find_next(struct ksmbd_work *work)
 		if (dir_fp->dirent_offset >= dir_fp->readdir_data.used) {
 			dir_fp->dirent_offset = 0;
 			dir_fp->readdir_data.used = 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+			rc = vfs_readdir(dir_fp->filp, dir_fp->readdir_data.filldir, &dir_fp->readdir_data);
+#else
 			rc = iterate_dir(dir_fp->filp, &dir_fp->readdir_data.ctx);
+#endif
 			if (rc < 0) {
 				ksmbd_debug(SMB, "err : %d\n", rc);
 				goto err_out;
