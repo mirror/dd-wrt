@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 04/26/2021
+.\"      Date: 06/01/2021
 .\"    Manual: File Formats and Conventions
-.\"    Source: Samba 4.14.4
+.\"    Source: Samba 4.14.5
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "04/26/2021" "Samba 4\&.14\&.4" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "06/01/2021" "Samba 4\&.14\&.5" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1536,11 +1536,17 @@ auth event notification (G)
 When enabled, this option causes Samba (acting as an Active Directory Domain Controller) to stream authentication events across the internal message bus\&. Scripts built using Samba\*(Aqs python bindings can listen to these events by registering as the service
 auth_event\&.
 .sp
-This should be considered a developer option (it assists in the Samba testsuite) rather than a facility for external auditing, as message delivery is not guaranteed (a feature that the testsuite works around)\&. Additionally Samba must be compiled with the jansson support for this option to be effective\&.
+This is
+\fInot\fR
+needed for the audit logging described in
+\m[blue]\fBlog level\fR\m[]\&.
+.sp
+Instead, this should instead be considered a developer option (it assists in the Samba testsuite) rather than a facility for external auditing, as message delivery is not guaranteed (a feature that the testsuite works around)\&.
 .sp
 The authentication events are also logged via the normal logging methods when the
 \m[blue]\fBlog level\fR\m[]
-is set appropriately\&.
+is set appropriately, say to
+auth_json_audit:3\&.
 .sp
 Default:
 \fI\fIauth event notification\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -3645,11 +3651,17 @@ dsdb event notification (G)
 When enabled, this option causes Samba (acting as an Active Directory Domain Controller) to stream Samba database events across the internal message bus\&. Scripts built using Samba\*(Aqs python bindings can listen to these events by registering as the service
 dsdb_event\&.
 .sp
-This should be considered a developer option (it assists in the Samba testsuite) rather than a facility for external auditing, as message delivery is not guaranteed (a feature that the testsuite works around)\&.
+This is
+\fInot\fR
+needed for the audit logging described in
+\m[blue]\fBlog level\fR\m[]\&.
+.sp
+Instead, this should instead be considered a developer option (it assists in the Samba testsuite) rather than a facility for external auditing, as message delivery is not guaranteed (a feature that the testsuite works around)\&.
 .sp
 The Samba database events are also logged via the normal logging methods when the
 \m[blue]\fBlog level\fR\m[]
-is set appropriately\&.
+is set appropriately, say to
+dsdb_json_audit:5\&.
 .sp
 Default:
 \fI\fIdsdb event notification\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -3661,11 +3673,17 @@ dsdb group change notification (G)
 When enabled, this option causes Samba (acting as an Active Directory Domain Controller) to stream group membership change events across the internal message bus\&. Scripts built using Samba\*(Aqs python bindings can listen to these events by registering as the service
 dsdb_group_event\&.
 .sp
-This should be considered a developer option (it assists in the Samba testsuite) rather than a facility for external auditing, as message delivery is not guaranteed (a feature that the testsuite works around)\&.
+This is
+\fInot\fR
+needed for the audit logging described in
+\m[blue]\fBlog level\fR\m[]\&.
 .sp
-The group events are also logged via the normal logging methods when the
+Instead, this should instead be considered a developer option (it assists in the Samba testsuite) rather than a facility for external auditing, as message delivery is not guaranteed (a feature that the testsuite works around)\&.
+.sp
+The Samba database events are also logged via the normal logging methods when the
 \m[blue]\fBlog level\fR\m[]
-is set appropriately\&.
+is set appropriately, say to
+dsdb_group_json_audit:5\&.
 .sp
 Default:
 \fI\fIdsdb group change notification\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -3677,11 +3695,17 @@ dsdb password event notification (G)
 When enabled, this option causes Samba (acting as an Active Directory Domain Controller) to stream password change and reset events across the internal message bus\&. Scripts built using Samba\*(Aqs python bindings can listen to these events by registering as the service
 password_event\&.
 .sp
-This should be considered a developer option (it assists in the Samba testsuite) rather than a facility for external auditing, as message delivery is not guaranteed (a feature that the testsuite works around)\&.
+This is
+\fInot\fR
+needed for the audit logging described in
+\m[blue]\fBlog level\fR\m[]\&.
 .sp
-The password events are also logged via the normal logging methods when the
+Instead, this should instead be considered a developer option (it assists in the Samba testsuite) rather than a facility for external auditing, as message delivery is not guaranteed (a feature that the testsuite works around)\&.
+.sp
+The Samba database events are also logged via the normal logging methods when the
 \m[blue]\fBlog level\fR\m[]
-is set appropriately\&.
+is set appropriately, say to
+dsdb_password_json_audit:5\&.
 .sp
 Default:
 \fI\fIdsdb password event notification\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -6308,28 +6332,6 @@ This parameter has been extended since the 2\&.2\&.x series, now it allows one t
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIsmb2\fR
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fIsmb2_credits\fR
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
 \fIrpc_parse\fR
 .RE
 .sp
@@ -6572,6 +6574,39 @@ This parameter has been extended since the 2\&.2\&.x series, now it allows one t
 .sp -1
 .IP \(bu 2.3
 .\}
+\fIdrs_repl\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIsmb2\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIsmb2_credits\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 \fIdsdb_audit\fR
 .RE
 .sp
@@ -6630,6 +6665,28 @@ This parameter has been extended since the 2\&.2\&.x series, now it allows one t
 \fIdsdb_transaction_json_audit\fR
 .RE
 .sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIdsdb_group_audit\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIdsdb_group_json_audit\fR
+.RE
+.sp
 .RE
 To configure the logging for specific classes to go into a different file then
 \m[blue]\fBlog file\fR\m[], you can append
@@ -6637,11 +6694,17 @@ To configure the logging for specific classes to go into a different file then
 to the class, eg
 \fIlog level = 1 full_audit:1@/var/log/audit\&.log\fR\&.
 .sp
-Authentication and authorization audit information is logged under the auth_audit, and if Samba was not compiled with \-\-without\-json, a JSON representation is logged under auth_json_audit\&.
+Authentication and authorization audit information is logged under the
+\fIauth_audit\fR, and if Samba was not compiled with \-\-without\-json, a JSON representation is logged under
+\fIauth_json_audit\fR\&.
 .sp
 Support is comprehensive for all authentication and authorisation of user accounts in the Samba Active Directory Domain Controller, as well as the implicit authentication in password changes\&. In the file server, NTLM authentication, SMB and RPC authorization is covered\&.
 .sp
-Log levels for auth_audit and auth_audit_json are:
+Log levels for
+\fIauth_audit\fR
+and
+\fIauth_audit_json\fR
+are:
 .RS
 .sp
 .RS 4
@@ -6689,12 +6752,137 @@ Log levels for auth_audit and auth_audit_json are:
 .RE
 .sp
 .RE
-Changes to the sam\&.ldb database are logged under the dsdb_audit and a JSON representation is logged under dsdb_json_audit\&.
+Changes to the AD DC
+sam\&.ldb
+database are logged under the
+\fIdsdb_audit\fR
+and a JSON representation is logged under
+\fIdsdb_json_audit\fR\&.
 .sp
-Password changes and Password resets are logged under dsdb_password_audit and a JSON representation is logged under the dsdb_password_json_audit\&.
+Group membership changes to the AD DC
+sam\&.ldb
+database are logged under the
+\fIdsdb_group_audit\fR
+and a JSON representation is logged under
+\fIdsdb_group_json_audit\fR\&.
 .sp
-Transaction rollbacks and prepare commit failures are logged under the dsdb_transaction_audit and a JSON representation is logged under the password_json_audit\&. Logging the transaction details allows the identification of password and sam\&.ldb operations that have been rolled back\&.
+Log levels for
+\fIdsdb_audit\fR,
+\fIdsdb_json_audit\fR,
+\fIdsdb_group_audit\fR,
+\fIdsdb_group_json_audit\fR
+and
+\fIdsdb_json_audit\fR
+are:
+.RS
 .sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+5: Database modifications
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+5: Replicated updates from another DC
+.RE
+.sp
+.RE
+Password changes and Password resets in the AD DC are logged under
+\fIdsdb_password_audit\fR
+and a JSON representation is logged under the
+\fIdsdb_password_json_audit\fR\&. Password changes will also appears as authentication events via
+\fIauth_audit\fR
+and
+\fIauth_audit_json\fR\&.
+.sp
+Log levels for
+\fIdsdb_password_audit\fR
+and
+\fIdsdb_password_json_audit\fR
+are:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+5: Successful password changes and resets
+.RE
+.sp
+.RE
+Transaction rollbacks and prepare commit failures are logged under the
+\fIdsdb_transaction_audit\fR
+and a JSON representation is logged under the
+\fIdsdb_transaction_json_audit\fR\&.
+.sp
+Log levels for
+\fIdsdb_transaction_audit\fR
+and
+\fIdsdb_transaction_json\fR
+are:
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+5: Transaction failure (rollback)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+10: Transaction success (commit)
+.RE
+.sp
+.RE
+Transaction roll\-backs are possible in Samba, and whilst they rarely reflect anything more than the failure of an individual operation (say due to the add of a conflicting record), they are possible\&. Audit logs are already generated and sent to the system logs before the transaction is complete\&. Logging the transaction details allows the identification of password and
+sam\&.ldb
+operations that have been rolled back, and so have not actually persisted\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+Changes to
+sam\&.ldb
+made locally by the
+root
+user with direct access to the database are not logged to the system logs, but to the administrator\*(Aqs own console\&. While less than ideal, any user able to make such modifications could disable the audit logging in any case\&.
+.sp .5v
+.RE
 Default:
 \fI\fIlog level\fR\fR\fI = \fR\fI0\fR\fI \fR
 .sp
@@ -13781,7 +13969,7 @@ and
 special sections make life for an administrator easy, but the various combinations of default attributes can be tricky\&. Take extreme care when designing these sections\&. In particular, ensure that the permissions on spool directories are correct\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.4 of the Samba suite\&.
+This man page is part of version 4\&.14\&.5 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsamba\fR(7),

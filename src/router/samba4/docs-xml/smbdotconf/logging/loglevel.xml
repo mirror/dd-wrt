@@ -24,8 +24,6 @@
 	<listitem><para><parameter moreinfo="none">printdrivers</parameter></para></listitem>
 	<listitem><para><parameter moreinfo="none">lanman</parameter></para></listitem>
 	<listitem><para><parameter moreinfo="none">smb</parameter></para></listitem>
-	<listitem><para><parameter moreinfo="none">smb2</parameter></para></listitem>
-	<listitem><para><parameter moreinfo="none">smb2_credits</parameter></para></listitem>
 	<listitem><para><parameter moreinfo="none">rpc_parse</parameter></para></listitem>
 	<listitem><para><parameter moreinfo="none">rpc_srv</parameter></para></listitem>
 	<listitem><para><parameter moreinfo="none">rpc_cli</parameter></para></listitem>
@@ -41,19 +39,24 @@
 	<listitem><para><parameter moreinfo="none">msdfs</parameter></para></listitem>
 	<listitem><para><parameter moreinfo="none">dmapi</parameter></para></listitem>
 	<listitem><para><parameter moreinfo="none">registry</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">scavenger</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">dns</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">ldb</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">tevent</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">auth_audit</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">auth_json_audit</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">kerberos</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">dsdb_audit</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">dsdb_json_audit</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">dsdb_password_audit</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">dsdb_password_json_audit</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">dsdb_transaction_audit</parameter></para></listitem>
-        <listitem><para><parameter moreinfo="none">dsdb_transaction_json_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">scavenger</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">dns</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">ldb</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">tevent</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">auth_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">auth_json_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">kerberos</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">drs_repl</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">smb2</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">smb2_credits</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">dsdb_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">dsdb_json_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">dsdb_password_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">dsdb_password_json_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">dsdb_transaction_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">dsdb_transaction_json_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">dsdb_group_audit</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">dsdb_group_json_audit</parameter></para></listitem>
     </itemizedlist>
 
     <para>To configure the logging for specific classes to go into a different
@@ -62,9 +65,9 @@
     full_audit:1@/var/log/audit.log</parameter>.</para>
 
     <para>Authentication and authorization audit information is logged
-    under the auth_audit, and if Samba was not compiled with
+    under the <parameter>auth_audit</parameter>, and if Samba was not compiled with
     --without-json, a JSON representation is logged under
-    auth_json_audit.</para>
+    <parameter>auth_json_audit</parameter>.</para>
 
     <para>Support is comprehensive for all authentication and authorisation
     of user accounts in the Samba Active Directory Domain Controller,
@@ -72,7 +75,8 @@
     the file server, NTLM authentication, SMB and RPC authorization is
     covered.</para>
 
-    <para>Log levels for auth_audit and auth_audit_json are:</para>
+    <para>Log levels for <parameter>auth_audit</parameter> and
+    <parameter>auth_audit_json</parameter> are:</para>
     <itemizedlist>
 	<listitem><para>2: Authentication Failure</para></listitem>
 	<listitem><para>3: Authentication Success</para></listitem>
@@ -80,21 +84,69 @@
 	<listitem><para>5: Anonymous Authentication and Authorization Success</para></listitem>
     </itemizedlist>
 
-    <para>Changes to the sam.ldb database are logged
-    under the dsdb_audit and a JSON representation is logged under
-    dsdb_json_audit.</para>
+    <para>Changes to the AD DC <command moreinfo="none">sam.ldb</command>
+    database are logged under the <parameter>dsdb_audit</parameter>
+    and a JSON representation is logged under
+    <parameter>dsdb_json_audit</parameter>.</para>
 
-    <para>Password changes and Password resets are logged under
-    dsdb_password_audit and a JSON representation is logged under the
-    dsdb_password_json_audit.</para>
+    <para>Group membership changes to the AD DC <command
+    moreinfo="none">sam.ldb</command> database are logged under the
+    <parameter>dsdb_group_audit</parameter> and a JSON representation
+    is logged under
+    <parameter>dsdb_group_json_audit</parameter>.</para>
+
+    <para>Log levels for <parameter>dsdb_audit</parameter>,
+    <parameter>dsdb_json_audit</parameter>,
+    <parameter>dsdb_group_audit</parameter>,
+    <parameter>dsdb_group_json_audit</parameter> and
+    <parameter>dsdb_json_audit</parameter> are:</para>
+    <itemizedlist>
+	<listitem><para>5: Database modifications</para></listitem>
+	<listitem><para>5: Replicated updates from another DC</para></listitem>
+    </itemizedlist>
+
+    <para>Password changes and Password resets in the AD DC are logged
+    under <parameter>dsdb_password_audit</parameter> and a JSON
+    representation is logged under the
+    <parameter>dsdb_password_json_audit</parameter>.  Password changes
+    will also appears as authentication events via
+    <parameter>auth_audit</parameter> and
+    <parameter>auth_audit_json</parameter>.</para>
+
+    <para>Log levels for <parameter>dsdb_password_audit</parameter> and
+    <parameter>dsdb_password_json_audit</parameter> are:</para>
+    <itemizedlist>
+	<listitem><para>5: Successful password changes and resets</para></listitem>
+    </itemizedlist>
 
     <para>Transaction rollbacks and prepare commit failures are logged under
-    the dsdb_transaction_audit and a JSON representation is logged under the
-    password_json_audit. Logging the transaction details allows the
-    identification of password and sam.ldb operations that have been rolled
-    back.</para>
+    the <parameter>dsdb_transaction_audit</parameter> and a JSON representation is logged under the
+    <parameter>dsdb_transaction_json_audit</parameter>. </para>
 
+    <para>Log levels for <parameter>dsdb_transaction_audit</parameter> and
+    <parameter>dsdb_transaction_json</parameter> are:</para>
 
+    <itemizedlist>
+	<listitem><para>5: Transaction failure (rollback)</para></listitem>
+	<listitem><para>10: Transaction success (commit)</para></listitem>
+    </itemizedlist>
+
+    <para>Transaction roll-backs are possible in Samba, and whilst
+    they rarely reflect anything more than the failure of an
+    individual operation (say due to the add of a conflicting record),
+    they are possible.  Audit logs are already generated and sent to
+    the system logs before the transaction is complete.  Logging the
+    transaction details allows the identification of password and
+    <command moreinfo="none">sam.ldb</command> operations that have
+    been rolled back, and so have not actually persisted.</para>
+
+    <warning><para> Changes to <command
+    moreinfo="none">sam.ldb</command> made locally by the <command
+    moreinfo="none">root</command> user with direct access to the
+    database are not logged to the system logs, but to the
+    administrator's own console.  While less than ideal, any user able
+    to make such modifications could disable the audit logging in any
+    case. </para></warning>
 </description>
 <value type="default">0</value>
 <value type="example">3 passdb:5 auth:10 winbind:2</value>

@@ -2,12 +2,12 @@
 .\"     Title: rpcclient
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 04/26/2021
+.\"      Date: 06/01/2021
 .\"    Manual: User Commands
-.\"    Source: Samba 4.14.4
+.\"    Source: Samba 4.14.5
 .\"  Language: English
 .\"
-.TH "RPCCLIENT" "1" "04/26/2021" "Samba 4\&.14\&.4" "User Commands"
+.TH "RPCCLIENT" "1" "06/01/2021" "Samba 4\&.14\&.5" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -569,12 +569,32 @@ Query info policy
 .PP
 lookupsids
 .RS 4
-Resolve a list of SIDs to usernames\&.
+Convert SIDs to names
+.RE
+.PP
+lookupsids3
+.RS 4
+Convert SIDs to names
+.RE
+.PP
+lookupsids_level
+.RS 4
+Convert SIDs to names
 .RE
 .PP
 lookupnames
 .RS 4
-Resolve a list of usernames to SIDs\&.
+Convert names to SIDs
+.RE
+.PP
+lookupnames4
+.RS 4
+Convert names to SIDs
+.RE
+.PP
+lookupnames_level
+.RS 4
+Convert names to SIDs
 .RE
 .PP
 enumtrust
@@ -597,6 +617,11 @@ lsaenumsid
 Enumerate the LSA SIDS
 .RE
 .PP
+lsacreateaccount
+.RS 4
+Create a new lsa account
+.RE
+.PP
 lsaenumprivsaccount
 .RS 4
 Enumerate the privileges of an SID
@@ -607,9 +632,14 @@ lsaenumacctrights
 Enumerate the rights of an SID
 .RE
 .PP
-lsaenumacctwithright
+lsaaddpriv
 .RS 4
-Enumerate accounts with a right
+Assign a privilege to a SID
+.RE
+.PP
+lsadelpriv
+.RS 4
+Revoke a privilege from a SID
 .RE
 .PP
 lsaaddacctrights
@@ -631,17 +661,80 @@ lsaquerysecobj
 .RS 4
 Query LSA security object
 .RE
+.PP
+lsaquerytrustdominfo
+.RS 4
+Query LSA trusted domains info (given a SID)
+.RE
+.PP
+lsaquerytrustdominfobyname
+.RS 4
+Query LSA trusted domains info (given a name), only works for Windows > 2k
+.RE
+.PP
+lsaquerytrustdominfobysid
+.RS 4
+Query LSA trusted domains info (given a SID)
+.RE
+.PP
+lsasettrustdominfo
+.RS 4
+Set LSA trusted domain info
+.RE
+.PP
+getusername
+.RS 4
+Get username
+.RE
+.PP
+createsecret
+.RS 4
+Create Secret
+.RE
+.PP
+deletesecret
+.RS 4
+Delete Secret
+.RE
+.PP
+querysecret
+.RS 4
+Query Secret
+.RE
+.PP
+setsecret
+.RS 4
+Set Secret
+.RE
+.PP
+retrieveprivatedata
+.RS 4
+Retrieve Private Data
+.RE
+.PP
+storeprivatedata
+.RS 4
+Store Private Data
+.RE
+.PP
+createtrustdom
+.RS 4
+Create Trusted Domain
+.RE
+.PP
+deletetrustdom
+.RS 4
+Delete Trusted Domain
+.RE
 .SS "LSARPC\-DS"
 .PP
 dsroledominfo
 .RS 4
 Get Primary Domain Information
 .RE
+.SS "DFS"
 .PP
-.PP
-\fIDFS\fR
-.PP
-dfsexist
+dfsversion
 .RS 4
 Query DFS support
 .RE
@@ -665,16 +758,21 @@ dfsenum
 .RS 4
 Enumerate dfs shares
 .RE
-.SS "REG"
 .PP
-shutdown
+dfsenumex
 .RS 4
-Remote Shutdown
+Enumerate dfs shares
+.RE
+.SS "SHUTDOWN"
+.PP
+shutdowninit
+.RS 4
+syntax: shutdown [\-m message]
 .RE
 .PP
-abortshutdown
+shutdownabort
 .RS 4
-Abort Shutdown
+syntax: shutdownabort
 .RE
 .SS "SRVSVC"
 .PP
@@ -774,6 +872,11 @@ queryusergroups
 Query user groups
 .RE
 .PP
+queryuseraliases
+.RS 4
+Query user aliases
+.RE
+.PP
 querygroupmem
 .RS 4
 Query group membership
@@ -784,7 +887,27 @@ queryaliasmem
 Query alias membership
 .RE
 .PP
+queryaliasinfo
+.RS 4
+Query alias info
+.RE
+.PP
+deletealias
+.RS 4
+Delete an alias
+.RE
+.PP
 querydispinfo
+.RS 4
+Query display info
+.RE
+.PP
+querydispinfo2
+.RS 4
+Query display info
+.RE
+.PP
+querydispinfo3
 .RS 4
 Query display info
 .RE
@@ -809,9 +932,24 @@ enumalsgroups
 Enumerate alias groups
 .RE
 .PP
+enumdomains
+.RS 4
+Enumerate domains
+.RE
+.PP
 createdomuser
 .RS 4
 Create domain user
+.RE
+.PP
+createdomgroup
+.RS 4
+Create domain group
+.RE
+.PP
+createdomalias
+.RS 4
+Create domain alias
 .RE
 .PP
 samlookupnames
@@ -822,6 +960,11 @@ Look up names
 samlookuprids
 .RS 4
 Look up names
+.RE
+.PP
+deletedomgroup
+.RS 4
+Delete domain group
 .RE
 .PP
 deletedomuser
@@ -839,9 +982,44 @@ getdompwinfo
 Retrieve domain password info
 .RE
 .PP
+getusrdompwinfo
+.RS 4
+Retrieve user domain password info
+.RE
+.PP
 lookupdomain
 .RS 4
-Look up domain
+Lookup Domain Name
+.RE
+.PP
+chgpasswd
+.RS 4
+Change user password
+.RE
+.PP
+chgpasswd2
+.RS 4
+Change user password
+.RE
+.PP
+chgpasswd3
+.RS 4
+Change user password
+.RE
+.PP
+getdispinfoidx
+.RS 4
+Get Display Information Index
+.RE
+.PP
+setuserinfo
+.RS 4
+Set user info
+.RE
+.PP
+setuserinfo2
+.RS 4
+Set user info2
 .RE
 .SS "SPOOLSS"
 .PP
@@ -912,14 +1090,24 @@ enumdataex
 Enumerate printer data for a key
 .RE
 .PP
+enumkey
+.RS 4
+Enumerate printer keys
+.RE
+.PP
 enumjobs <printer>
 .RS 4
 List the jobs and status of a given printer\&. This command corresponds to the MS Platform SDK EnumJobs() function
 .RE
 .PP
-enumkey
+getjob
 .RS 4
-Enumerate printer keys
+Get print job
+.RE
+.PP
+setjob
+.RS 4
+Set print job
 .RE
 .PP
 enumports [level]
@@ -961,19 +1149,24 @@ Execute a GetPrinterDriverDirectory() RPC to retrieve the SMB share name and sub
 are "Windows 4\&.0" (for Windows 95/98), "Windows NT x86", "Windows NT PowerPC", "Windows Alpha_AXP", and "Windows NT R4000"\&.
 .RE
 .PP
+getdriverpackagepath
+.RS 4
+Get print driver package download directory
+.RE
+.PP
 getprinter <printername>
 .RS 4
 Retrieve the current printer information\&. This command corresponds to the GetPrinter() MS Platform SDK function\&.
 .RE
 .PP
-getprintprocdir
-.RS 4
-Get print processor directory
-.RE
-.PP
 openprinter <printername>
 .RS 4
 Execute an OpenPrinterEx() and ClosePrinter() RPC against a given printer\&.
+.RE
+.PP
+openprinter_ex <printername>
+.RS 4
+Open printer handle
 .RE
 .PP
 setdriver <printername> <drivername>
@@ -985,6 +1178,11 @@ enumprinters
 and
 enumdrivers
 commands for obtaining a list of of installed printers and drivers\&.
+.RE
+.PP
+getprintprocdir
+.RS 4
+Get print processor directory
 .RE
 .PP
 addform
@@ -1031,6 +1229,56 @@ rffpcnex
 .RS 4
 Rffpcnex test
 .RE
+.PP
+printercmp
+.RS 4
+Printer comparison test
+.RE
+.PP
+enumprocs
+.RS 4
+Enumerate Print Processors
+.RE
+.PP
+enumprocdatatypes
+.RS 4
+Enumerate Print Processor Data Types
+.RE
+.PP
+enummonitors
+.RS 4
+Enumerate Print Monitors
+.RE
+.PP
+createprinteric
+.RS 4
+Create Printer IC
+.RE
+.PP
+playgdiscriptonprinteric
+.RS 4
+Create Printer IC
+.RE
+.PP
+getcoreprinterdrivers
+.RS 4
+Get CorePrinterDriver
+.RE
+.PP
+enumpermachineconnections
+.RS 4
+Enumerate Per Machine Connections
+.RE
+.PP
+addpermachineconnection
+.RS 4
+Add Per Machine Connection
+.RE
+.PP
+delpermachineconnection
+.RS 4
+Delete Per Machine Connection
+.RE
 .SS "NETLOGON"
 .PP
 logonctrl2
@@ -1038,30 +1286,105 @@ logonctrl2
 Logon Control 2
 .RE
 .PP
+getanydcname
+.RS 4
+Get trusted DC name
+.RE
+.PP
+getdcname
+.RS 4
+Get trusted PDC name
+.RE
+.PP
+dsr_getdcname
+.RS 4
+Get trusted DC name
+.RE
+.PP
+dsr_getdcnameex
+.RS 4
+Get trusted DC name
+.RE
+.PP
+dsr_getdcnameex2
+.RS 4
+Get trusted DC name
+.RE
+.PP
+dsr_getsitename
+.RS 4
+Get sitename
+.RE
+.PP
+dsr_getforesttrustinfo
+.RS 4
+Get Forest Trust Info
+.RE
+.PP
 logonctrl
 .RS 4
 Logon Control
-.RE
-.PP
-samsync
-.RS 4
-Sam Synchronisation
-.RE
-.PP
-samdeltas
-.RS 4
-Query Sam Deltas
 .RE
 .PP
 samlogon
 .RS 4
 Sam Logon
 .RE
+.PP
+change_trust_pw
+.RS 4
+Change Trust Account Password
+.RE
+.PP
+gettrustrid
+.RS 4
+Get trust rid
+.RE
+.PP
+dsr_enumtrustdom
+.RS 4
+Enumerate trusted domains
+.RE
+.PP
+dsenumdomtrusts
+.RS 4
+Enumerate all trusted domains in an AD forest
+.RE
+.PP
+deregisterdnsrecords
+.RS 4
+Deregister DNS records
+.RE
+.PP
+netrenumtrusteddomains
+.RS 4
+Enumerate trusted domains
+.RE
+.PP
+netrenumtrusteddomainsex
+.RS 4
+Enumerate trusted domains
+.RE
+.PP
+getdcsitecoverage
+.RS 4
+Get the Site\-Coverage from a DC
+.RE
+.PP
+capabilities
+.RS 4
+Return Capabilities
+.RE
+.PP
+logongetdomaininfo
+.RS 4
+Return LogonGetDomainInfo
+.RE
 .SS "FSRVP"
 .PP
-fss_is_path_sup <share>
+fss_is_path_sup
 .RS 4
-Check whether a share supports shadow\-copy requests
+Check whether a share supports shadow\-copy
 .RE
 .PP
 fss_get_sup_version
@@ -1069,46 +1392,391 @@ fss_get_sup_version
 Get supported FSRVP version from server
 .RE
 .PP
-fss_create_expose <context> <[ro|rw]> <share1> [share2] \&.\&.\&. [shareN]
+fss_create_expose
 .RS 4
-Request shadow\-copy creation and exposure as a new share
+Request shadow\-copy creation and exposure
 .RE
 .PP
-fss_delete <base_share> <shadow_copy_set_id> <shadow_copy_id>
+fss_delete
 .RS 4
 Request shadow\-copy share deletion
 .RE
 .PP
-fss_has_shadow_copy <base_share>
+fss_has_shadow_copy
 .RS 4
 Check for an associated share shadow\-copy
 .RE
 .PP
-fss_get_mapping <base_share> <shadow_copy_set_id> <shadow_copy_id>
+fss_get_mapping
 .RS 4
 Get shadow\-copy share mapping information
 .RE
 .PP
-fss_recovery_complete <shadow_copy_set_id>
+fss_recovery_complete
 .RS 4
-Flag read\-write shadow\-copy as recovery complete, allowing further shadow\-copy requests
+Flag read\-write snapshot as recovery complete,
 .RE
-.SS "GENERAL COMMANDS"
+.SS "CLUSAPI"
+.PP
+clusapi_open_cluster
+.RS 4
+Open cluster
+.RE
+.PP
+clusapi_get_cluster_name
+.RS 4
+Get cluster name
+.RE
+.PP
+clusapi_get_cluster_version
+.RS 4
+Get cluster version
+.RE
+.PP
+clusapi_get_quorum_resource
+.RS 4
+Get quorum resource
+.RE
+.PP
+clusapi_create_enum
+.RS 4
+Create enum query
+.RE
+.PP
+clusapi_create_enumex
+.RS 4
+Create enumex query
+.RE
+.PP
+clusapi_open_resource
+.RS 4
+Open cluster resource
+.RE
+.PP
+clusapi_online_resource
+.RS 4
+Set cluster resource online
+.RE
+.PP
+clusapi_offline_resource
+.RS 4
+Set cluster resource offline
+.RE
+.PP
+clusapi_get_resource_state
+.RS 4
+Get cluster resource state
+.RE
+.PP
+clusapi_get_cluster_version2
+.RS 4
+Get cluster version2
+.RE
+.PP
+clusapi_pause_node
+.RS 4
+Pause cluster node
+.RE
+.PP
+clusapi_resume_node
+.RS 4
+Resume cluster node
+.RE
+.SS "DRSUAPI"
+.PP
+dscracknames
+.RS 4
+Crack Name
+.RE
+.PP
+dsgetdcinfo
+.RS 4
+Get Domain Controller Info
+.RE
+.PP
+dsgetncchanges
+.RS 4
+Get NC Changes
+.RE
+.PP
+dswriteaccountspn
+.RS 4
+Write Account SPN
+.RE
+.SS "ECHO"
+.PP
+echoaddone
+.RS 4
+Add one to a number
+.RE
+.PP
+echodata
+.RS 4
+Echo data
+.RE
+.PP
+sinkdata
+.RS 4
+Sink data
+.RE
+.PP
+sourcedata
+.RS 4
+Source data
+.RE
+.SS "EPMAPPER"
+.PP
+epmmap
+.RS 4
+Map a binding
+.RE
+.PP
+epmlookup
+.RS 4
+Lookup bindings
+.RE
+.SS "EVENTLOG"
+.PP
+eventlog_readlog
+.RS 4
+Read Eventlog
+.RE
+.PP
+eventlog_numrecord
+.RS 4
+Get number of records
+.RE
+.PP
+eventlog_oldestrecord
+.RS 4
+Get oldest record
+.RE
+.PP
+eventlog_reportevent
+.RS 4
+Report event
+.RE
+.PP
+eventlog_reporteventsource
+.RS 4
+Report event and source
+.RE
+.PP
+eventlog_registerevsource
+.RS 4
+Register event source
+.RE
+.PP
+eventlog_backuplog
+.RS 4
+Backup Eventlog File
+.RE
+.PP
+eventlog_loginfo
+.RS 4
+Get Eventlog Information
+.RE
+.SS "IRemoteWinspool"
+.PP
+winspool_AsyncOpenPrinter
+.RS 4
+Open printer handle
+.RE
+.PP
+winspool_AsyncCorePrinterDriverInstalled
+.RS 4
+Query Core Printer Driver Installed
+.RE
+.SS "NTSVCS"
+.PP
+ntsvcs_getversion
+.RS 4
+Query NTSVCS version
+.RE
+.PP
+ntsvcs_validatedevinst
+.RS 4
+Query NTSVCS device instance
+.RE
+.PP
+ntsvcs_hwprofflags
+.RS 4
+Query NTSVCS HW prof flags
+.RE
+.PP
+ntsvcs_hwprofinfo
+.RS 4
+Query NTSVCS HW prof info
+.RE
+.PP
+ntsvcs_getdevregprop
+.RS 4
+Query NTSVCS device registry property
+.RE
+.PP
+ntsvcs_getdevlistsize
+.RS 4
+Query NTSVCS device list size
+.RE
+.PP
+ntsvcs_getdevlist
+.RS 4
+Query NTSVCS device list
+.RE
+.SS "MDSSVC"
+.PP
+fetch_properties
+.RS 4
+Fetch connection properties
+.RE
+.PP
+fetch_attributes
+.RS 4
+Fetch attributes for a CNID
+.RE
+.SS "WINREG"
+.PP
+winreg_enumkey
+.RS 4
+Enumerate Keys
+.RE
+.PP
+querymultiplevalues
+.RS 4
+Query multiple values
+.RE
+.PP
+querymultiplevalues2
+.RS 4
+Query multiple values
+.RE
+.SS "WITNESS"
+.PP
+GetInterfaceList
+.RS 4
+List the interfaces to which witness client connections can be made
+.RE
+.PP
+Register
+.RS 4
+Register for resource state change notifications of a NetName and IPAddress
+.RE
+.PP
+UnRegister
+.RS 4
+Unregister for notifications from the server
+.RE
+.PP
+AsyncNotify
+.RS 4
+Request notification of registered resource changes from the server
+.RE
+.PP
+RegisterEx
+.RS 4
+Register for resource state change notifications of a NetName, ShareName and multiple IPAddresses
+.RE
+.SS "WKSSVC"
+.PP
+wkssvc_wkstagetinfo
+.RS 4
+Query WKSSVC Workstation Information
+.RE
+.PP
+wkssvc_getjoininformation
+.RS 4
+Query WKSSVC Join Information
+.RE
+.PP
+wkssvc_messagebuffersend
+.RS 4
+Send WKSSVC message
+.RE
+.PP
+wkssvc_enumeratecomputernames
+.RS 4
+Enumerate WKSSVC computer names
+.RE
+.PP
+wkssvc_enumerateusers
+.RS 4
+Enumerate WKSSVC users
+.RE
+.SS "GENERAL OPTIONS"
+.PP
+help
+.RS 4
+Get help on commands
+.RE
+.PP
+?
+.RS 4
+Get help on commands
+.RE
 .PP
 debuglevel
 .RS 4
-Set the current debug level used to log information\&.
+Set debug level
 .RE
 .PP
-help (?)
+debug
 .RS 4
-Print a listing of all known commands or extended help on a particular command\&.
+Set debug level
 .RE
 .PP
-quit (exit)
+list
 .RS 4
-Exit
-rpcclient\&.
+List available commands on pipe
+.RE
+.PP
+exit
+.RS 4
+Exit program
+.RE
+.PP
+quit
+.RS 4
+Exit program
+.RE
+.PP
+sign
+.RS 4
+Force RPC pipe connections to be signed
+.RE
+.PP
+seal
+.RS 4
+Force RPC pipe connections to be sealed
+.RE
+.PP
+packet
+.RS 4
+Force RPC pipe connections with packet authentication level
+.RE
+.PP
+schannel
+.RS 4
+Force RPC pipe connections to be sealed with \*(Aqschannel\*(Aq\&. Force RPC pipe connections to be sealed with \*(Aqschannel\*(Aq\&. Assumes valid machine account to this domain controller\&.
+.RE
+.PP
+schannelsign
+.RS 4
+Force RPC pipe connections to be signed (not sealed) with \*(Aqschannel\*(Aq\&. Assumes valid machine account to this domain controller\&.
+.RE
+.PP
+timeout
+.RS 4
+Set timeout (in milliseconds) for RPC operations
+.RE
+.PP
+transport
+.RS 4
+Choose ncacn transport for RPC operations
+.RE
+.PP
+none
+.RS 4
+Force RPC pipe connections to have no special properties
 .RE
 .SH "BUGS"
 .PP
@@ -1127,7 +1795,7 @@ and
 that are incompatible for some commands or services\&. Additionally, the developers are sending reports to Microsoft, and problems found or reported to Microsoft are fixed in Service Packs, which may result in incompatibilities\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.4 of the Samba suite\&.
+This man page is part of version 4\&.14\&.5 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.
