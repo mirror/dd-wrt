@@ -109,6 +109,9 @@ Define ksmbd configuration parameters list.
 		host where ksmbd runs. the format is "cifs/<FQDN>". if this
 		option is not given, ksmbd sets "cifs" to the service name and
 		try to get the host FQDN using getaddrinfo(3).
+	- server multi channel support
+		This boolean parameter controls whether ksmbd will support
+		SMB3 multi-channel.
 
 * Supported [share] level parameters list:
 	- comment (default: none)
