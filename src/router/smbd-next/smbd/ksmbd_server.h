@@ -13,10 +13,6 @@
 #define KSMBD_GENL_NAME		"SMBD_GENL"
 #define KSMBD_GENL_VERSION		0x01
 
-#ifndef ____ksmbd_align
-#define ____ksmbd_align		__aligned(4)
-#endif
-
 #define KSMBD_REQ_MAX_ACCOUNT_NAME_SZ	48
 #define KSMBD_REQ_MAX_HASH_SZ		18
 #define KSMBD_REQ_MAX_SHARE_NAME	64
@@ -33,6 +29,7 @@ struct ksmbd_heartbeat {
 #define KSMBD_GLOBAL_FLAG_CACHE_TBUF		BIT(1)
 #define KSMBD_GLOBAL_FLAG_CACHE_RBUF		BIT(2)
 #define KSMBD_GLOBAL_FLAG_SMB2_ENCRYPTION	BIT(3)
+#define KSMBD_GLOBAL_FLAG_SMB3_MULTICHANNEL	BIT(4)
 
 struct ksmbd_startup_request {
 	__u32	flags;
@@ -52,19 +49,19 @@ struct ksmbd_startup_request {
 	__u32	share_fake_fscaps;
 	__u32	sub_auth[3];
 	__u32	ifc_list_sz;
-	__s8	____payload[0];
-} ____ksmbd_align;
+	__s8	____payload[];
+};
 
 #define KSMBD_STARTUP_CONFIG_INTERFACES(s)	((s)->____payload)
 
 struct ksmbd_shutdown_request {
 	__s32	reserved;
-} ____ksmbd_align;
+};
 
 struct ksmbd_login_request {
 	__u32	handle;
 	__s8	account[KSMBD_REQ_MAX_ACCOUNT_NAME_SZ];
-} ____ksmbd_align;
+};
 
 struct ksmbd_login_response {
 	__u32	handle;
@@ -74,12 +71,12 @@ struct ksmbd_login_response {
 	__u16	status;
 	__u16	hash_sz;
 	__s8	hash[KSMBD_REQ_MAX_HASH_SZ];
-} ____ksmbd_align;
+};
 
 struct ksmbd_share_config_request {
 	__u32	handle;
 	__s8	share_name[KSMBD_REQ_MAX_SHARE_NAME];
-} ____ksmbd_align;
+};
 
 struct ksmbd_share_config_response {
 	__u32	handle;
@@ -91,17 +88,21 @@ struct ksmbd_share_config_response {
 	__u16	force_uid;
 	__u16	force_gid;
 	__u32	veto_list_sz;
-	__s8	____payload[0];
-} ____ksmbd_align;
+	__s8	____payload[];
+};
 
 #define KSMBD_SHARE_CONFIG_VETO_LIST(s)	((s)->____payload)
-#define KSMBD_SHARE_CONFIG_PATH(s)				\
-	({							\
-		char *p = (s)->____payload;			\
-		if ((s)->veto_list_sz)				\
-			p += (s)->veto_list_sz + 1;		\
-		p;						\
-	 })
+
+static inline char *
+ksmbd_share_config_path(struct ksmbd_share_config_response *sc)
+{
+	char *p = sc->____payload;
+
+	if (sc->veto_list_sz)
+		p += sc->veto_list_sz + 1;
+
+	return p;
+}
 
 struct ksmbd_tree_connect_request {
 	__u32	handle;
@@ -112,43 +113,43 @@ struct ksmbd_tree_connect_request {
 	__s8	account[KSMBD_REQ_MAX_ACCOUNT_NAME_SZ];
 	__s8	share[KSMBD_REQ_MAX_SHARE_NAME];
 	__s8	peer_addr[64];
-} ____ksmbd_align;
+};
 
 struct ksmbd_tree_connect_response {
 	__u32	handle;
 	__u16	status;
 	__u16	connection_flags;
-} ____ksmbd_align;
+};
 
 struct ksmbd_tree_disconnect_request {
 	__u64	session_id;
 	__u64	connect_id;
-} ____ksmbd_align;
+};
 
 struct ksmbd_logout_request {
 	__s8	account[KSMBD_REQ_MAX_ACCOUNT_NAME_SZ];
-} ____ksmbd_align;
+};
 
 struct ksmbd_rpc_command {
 	__u32	handle;
 	__u32	flags;
 	__u32	payload_sz;
-	__u8	payload[0];
-} ____ksmbd_align;
+	__u8	payload[];
+};
 
 struct ksmbd_spnego_authen_request {
 	__u32	handle;
 	__u16	spnego_blob_len;
 	__u8	spnego_blob[0];
-} ____ksmbd_align;
+};
 
 struct ksmbd_spnego_authen_response {
 	__u32	handle;
 	struct ksmbd_login_response	login_response;
 	__u16	session_key_len;
 	__u16	spnego_blob_len;
-	__u8	payload[0];		/* session key + AP_REP */
-} ____ksmbd_align;
+	__u8	payload[];		/* session key + AP_REP */
+};
 
 /*
  * This also used as NETLINK attribute type value.

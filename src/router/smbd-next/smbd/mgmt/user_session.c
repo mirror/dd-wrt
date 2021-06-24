@@ -30,15 +30,12 @@ struct ksmbd_session_rpc {
 
 static void free_channel_list(struct ksmbd_session *sess)
 {
-	struct channel *chann;
-	struct list_head *tmp, *t;
+	struct channel *chann, *tmp;
 
-	list_for_each_safe(tmp, t, &sess->ksmbd_chann_list) {
-		chann = list_entry(tmp, struct channel, chann_list);
-		if (chann) {
-			list_del(&chann->chann_list);
-			kfree(chann);
-		}
+	list_for_each_entry_safe(chann, tmp, &sess->ksmbd_chann_list,
+			         chann_list) {
+		list_del(&chann->chann_list);
+		kfree(chann);
 	}
 }
 
@@ -87,7 +84,7 @@ static int __rpc_method(char *rpc_name)
 	if (!strcmp(rpc_name, "\\lsarpc") || !strcmp(rpc_name, "lsarpc"))
 		return KSMBD_RPC_LSARPC_METHOD_INVOKE;
 
-	ksmbd_err("Unsupported RPC: %s\n", rpc_name);
+	pr_err("Unsupported RPC: %s\n", rpc_name);
 	return 0;
 }
 
@@ -206,7 +203,8 @@ void ksmbd_sessions_deregister(struct ksmbd_conn *conn)
 	}
 }
 
-bool ksmbd_session_id_match(struct ksmbd_session *sess, unsigned long long id)
+static bool ksmbd_session_id_match(struct ksmbd_session *sess,
+				   unsigned long long id)
 {
 	return sess->id == id;
 }
@@ -231,7 +229,7 @@ int get_session(struct ksmbd_session *sess)
 void put_session(struct ksmbd_session *sess)
 {
 	if (atomic_dec_and_test(&sess->refcnt))
-		ksmbd_err("get/%s seems to be mismatched.", __func__);
+		pr_err("get/%s seems to be mismatched.", __func__);
 }
 
 struct ksmbd_session *ksmbd_session_lookup_slowpath(unsigned long long id)
@@ -247,6 +245,52 @@ struct ksmbd_session *ksmbd_session_lookup_slowpath(unsigned long long id)
 	up_read(&sessions_table_lock);
 
 	return sess;
+}
+
+struct ksmbd_session *ksmbd_session_lookup_all(struct ksmbd_conn *conn,
+					       unsigned long long id)
+{
+	struct ksmbd_session *sess;
+
+	sess = ksmbd_session_lookup(conn, id);
+	if (!sess && conn->binding)
+		sess = ksmbd_session_lookup_slowpath(id);
+	return sess;
+}
+
+struct preauth_session *ksmbd_preauth_session_alloc(struct ksmbd_conn *conn,
+						    u64 sess_id)
+{
+	struct preauth_session *sess;
+
+	sess = kmalloc(sizeof(struct preauth_session), GFP_KERNEL);
+	if (!sess)
+		return NULL;
+
+	sess->id = sess_id;
+	memcpy(sess->Preauth_HashValue, conn->preauth_info->Preauth_HashValue,
+	       PREAUTH_HASHVALUE_SIZE);
+	list_add(&sess->preauth_entry, &conn->preauth_sess_table);
+
+	return sess;
+}
+
+static bool ksmbd_preauth_session_id_match(struct preauth_session *sess,
+					   unsigned long long id)
+{
+	return sess->id == id;
+}
+
+struct preauth_session *ksmbd_preauth_session_lookup(struct ksmbd_conn *conn,
+						     unsigned long long id)
+{
+	struct preauth_session *sess = NULL;
+
+	list_for_each_entry(sess, &conn->preauth_sess_table, preauth_entry) {
+		if (ksmbd_preauth_session_id_match(sess, id))
+			return sess;
+	}
+	return NULL;
 }
 
 #ifdef CONFIG_SMB_INSECURE_SERVER

@@ -185,7 +185,7 @@ static struct ksmbd_inode *ksmbd_inode_get(struct ksmbd_file *fp)
 
 	rc = ksmbd_inode_init(ci, fp);
 	if (rc) {
-		ksmbd_err("inode initialized failed\n");
+		pr_err("inode initialized failed\n");
 		kfree(ci);
 		return NULL;
 	}
@@ -256,8 +256,8 @@ static void __ksmbd_inode_close(struct ksmbd_file *fp)
 		err = ksmbd_vfs_remove_xattr(filp->f_path.dentry,
 					     fp->stream.name);
 		if (err)
-			ksmbd_err("remove xattr failed : %s\n",
-				  fp->stream.name);
+			pr_err("remove xattr failed : %s\n",
+			       fp->stream.name);
 	}
 
 	if (atomic_dec_and_test(&ci->m_count)) {
@@ -493,15 +493,13 @@ struct ksmbd_file *ksmbd_lookup_fd_inode(struct inode *inode)
 {
 	struct ksmbd_file	*lfp;
 	struct ksmbd_inode	*ci;
-	struct list_head	*cur;
 
 	ci = ksmbd_inode_lookup_by_vfsinode(inode);
 	if (!ci)
 		return NULL;
 
 	read_lock(&ci->m_lock);
-	list_for_each(cur, &ci->m_fp_list) {
-		lfp = list_entry(cur, struct ksmbd_file, node);
+	list_for_each_entry(lfp, &ci->m_fp_list, node) {
 		if (inode == FP_INODE(lfp)) {
 			atomic_dec(&ci->m_count);
 			read_unlock(&ci->m_lock);
@@ -565,7 +563,7 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work, struct file *filp)
 
 	fp = ksmbd_alloc_file_struct();
 	if (!fp) {
-		ksmbd_err("Failed to allocate memory\n");
+		pr_err("Failed to allocate memory\n");
 		return ERR_PTR(-ENOMEM);
 	}
 
@@ -582,20 +580,22 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work, struct file *filp)
 	fp->f_ci		= ksmbd_inode_get(fp);
 
 	if (!fp->f_ci) {
-		ksmbd_free_file_struct(fp);
-		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
-		return ERR_PTR(-ENOMEM);
+		ret = -ENOMEM;
+		goto err_out;
 	}
 
 	ret = __open_id(&work->sess->file_table, fp, OPEN_ID_TYPE_VOLATILE_ID);
 	if (ret) {
 		ksmbd_inode_put(fp->f_ci);
-		ksmbd_free_file_struct(fp);
-		return ERR_PTR(ret);
+		goto err_out;
 	}
 
 	atomic_inc(&work->conn->stats.open_files_count);
 	return fp;
+
+err_out:
+	ksmbd_free_file_struct(fp);
+	return ERR_PTR(ret);
 }
 
 static int
@@ -622,12 +622,14 @@ __close_file_table_ids(struct ksmbd_file_table *ft,
 	return num;
 }
 
-static bool tree_conn_fd_check(struct ksmbd_tree_connect *tcon, struct ksmbd_file *fp)
+static bool tree_conn_fd_check(struct ksmbd_tree_connect *tcon,
+			       struct ksmbd_file *fp)
 {
 	return fp->tcon != tcon;
 }
 
-static bool session_fd_check(struct ksmbd_tree_connect *tcon, struct ksmbd_file *fp)
+static bool session_fd_check(struct ksmbd_tree_connect *tcon,
+			     struct ksmbd_file *fp)
 {
 	return false;
 }

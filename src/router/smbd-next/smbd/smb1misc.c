@@ -254,15 +254,15 @@ int ksmbd_smb1_check_message(struct ksmbd_work *work)
 		ksmbd_debug(SMB, "Not support cmd %x\n", command);
 		return 1;
 	} else if (hdr->WordCount != wc) {
-		ksmbd_err("Invalid word count, %d not %d. cmd %x\n",
-			hdr->WordCount, wc, command);
+		pr_err("Invalid word count, %d not %d. cmd %x\n",
+		       hdr->WordCount, wc, command);
 		return 1;
 	}
 
 	data_len = smb1_get_data_len(hdr);
 	if (len < data_len) {
-		ksmbd_err("Invalid data area length %u not %u. cmd : %x\n",
-			len, data_len, command);
+		pr_err("Invalid data area length %u not %u. cmd : %x\n",
+		       len, data_len, command);
 		return 1;
 	}
 
@@ -282,8 +282,8 @@ int ksmbd_smb1_check_message(struct ksmbd_work *work)
 			return 0;
 		}
 
-		ksmbd_err("cli req too short, len %d not %d. cmd:%x\n",
-			len, clc_len, command);
+		pr_err("cli req too short, len %d not %d. cmd:%x\n",
+		       len, clc_len, command);
 
 		return 1;
 	}
