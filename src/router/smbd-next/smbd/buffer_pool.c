@@ -434,7 +434,7 @@ int ksmbd_init_buffer_pools(void)
 	return 0;
 
 out:
-	ksmbd_err("failed to allocate memory\n");
+	pr_err("failed to allocate memory\n");
 	ksmbd_destroy_buffer_pools();
 	return -ENOMEM;
 }
