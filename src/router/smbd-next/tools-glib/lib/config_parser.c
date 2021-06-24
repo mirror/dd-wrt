@@ -555,6 +555,15 @@ static void global_group_kv(gpointer _k, gpointer _v, gpointer user_data)
 		global_conf.krb5_keytab_file = cp_get_group_kv_string(_v);
 		return;
 	}
+
+	if (!cp_key_cmp(_k, "server multi channel support")) {
+		if (cp_get_group_kv_bool(_v))
+			global_conf.flags |= KSMBD_GLOBAL_FLAG_SMB3_MULTICHANNEL;
+		else
+			global_conf.flags &= ~KSMBD_GLOBAL_FLAG_SMB3_MULTICHANNEL;
+
+		return;
+	}
 }
 
 static void fixup_missing_global_group(void)
