@@ -2,12 +2,12 @@
 .\"     Title: smbcacls
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 04/26/2021
+.\"      Date: 06/01/2021
 .\"    Manual: User Commands
-.\"    Source: Samba 4.14.4
+.\"    Source: Samba 4.14.5
 .\"  Language: English
 .\"
-.TH "SMBCACLS" "1" "04/26/2021" "Samba 4\&.14\&.4" "User Commands"
+.TH "SMBCACLS" "1" "06/01/2021" "Samba 4\&.14\&.5" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -318,6 +318,203 @@ ACL:<sid or name>:<type>/<flags>/<mask>
 .RE
 .\}
 .PP
+Control bits related to automatic inheritance
+.RS
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIOD\fR
+\- "Owner Defaulted" \- Indicates that the SID of the owner of the security descriptor was provided by a default mechanism\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIGD\fR
+\- "Group Defaulted" \- Indicates that the SID of the security descriptor group was provided by a default mechanism\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDP\fR
+\- "DACL Present" \- Indicates a security descriptor that has a discretionary access control list (DACL)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDD\fR
+\- "DACL Defaulted" \- Indicates a security descriptor with a default DACL\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fISP\fR
+\- "SACL Present" \- Indicates a security descriptor that has a system access control list (SACL)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fISD\fR
+\- "SACL Defaulted" \- A default mechanism, rather than the original provider of the security descriptor, provided the SACL\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDT\fR
+\- "DACL Trusted"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fISS\fR
+\- "Server Security"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDR\fR
+\- "DACL Inheritance Required" \- Indicates a required security descriptor in which the DACL is set up to support automatic propagation of inheritable access control entries (ACEs) to existing child objects\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fISR\fR
+\- "SACL Inheritance Required" \- Indicates a required security descriptor in which the SACL is set up to support automatic propagation of inheritable ACEs to existing child objects\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDI\fR
+\- "DACL Auto Inherited" \- Indicates a security descriptor in which the DACL is set up to support automatic propagation of inheritable access control entries (ACEs) to existing child objects\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fISI\fR
+\- "SACL Auto Inherited" \- Indicates a security descriptor in which the SACL is set up to support automatic propagation of inheritable ACEs to existing child objects\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIPD\fR
+\- "DACL Protected" \- Prevents the DACL of the security descriptor from being modified by inheritable ACEs\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIPS\fR
+\- "SACL Protected" \- Prevents the SACL of the security descriptor from being modified by inheritable ACEs\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIRM\fR
+\- "RM Control Valid" \- Indicates that the resource manager control is valid\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fISR\fR
+\- "Self Relative" \- Indicates a self\-relative security descriptor\&.
+.RE
+.sp
+.RE
+.PP
 The revision of the ACL specifies the internal Windows NT ACL revision for the security descriptor\&. If not specified it defaults to 1\&. Using values other than 1 may cause strange behaviour\&.
 .PP
 The owner and group specify the owner and group sids for the object\&. If a SID in the format S\-1\-x\-y\-z is specified this is used, otherwise the name specified is resolved using the server on which the file or directory resides\&.
@@ -380,6 +577,18 @@ No Propagate Inherit 0x4
 .\}
 \fI(IO)\fR
 Inherit Only 0x8
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI(I)\fR
+ACE was inherited 0x10
 .RE
 .sp
 .RE
@@ -666,7 +875,7 @@ smbcacls
 couldn\*(Aqt connect to the specified server, or there was an error getting or setting the ACLs, an exit status of 1 is returned\&. If there was an error parsing any command line arguments, an exit status of 2 is returned\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.14\&.4 of the Samba suite\&.
+This man page is part of version 4\&.14\&.5 of the Samba suite\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

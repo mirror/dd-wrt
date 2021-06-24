@@ -52,6 +52,19 @@ static char *compact_args(const char **argv, int argc, int from)
 	return arg_str;
 }
 
+static void run_done(struct tevent_req *req)
+{
+	struct run_event_script_list **script_list =
+		tevent_req_callback_data_void(req);
+	bool status;
+	int ret;
+
+	status = run_event_recv(req, &ret, NULL, script_list);
+	if (!status) {
+		fprintf(stderr, "run_event_recv() failed, ret=%d\n", ret);
+	}
+}
+
 static void do_run(TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 		   struct run_event_context *run_ctx,
 		   int argc, const char **argv)
@@ -61,8 +74,8 @@ static void do_run(TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 	struct run_event_script_list *script_list = NULL;
 	char *arg_str;
 	unsigned int i;
-	int ret, t;
-	bool status;
+	int t;
+	bool wait_for_signal = false;
 
 	if (argc < 5) {
 		usage(argv[0]);
@@ -86,17 +99,13 @@ static void do_run(TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 			     timeout,
 			     false);
 	if (req == NULL) {
-		fprintf(stderr, "run_proc_send() failed\n");
+		fprintf(stderr, "run_event_send() failed\n");
 		return;
 	}
+
+	tevent_req_set_callback(req, run_done, &script_list);
 
 	tevent_req_poll(req, ev);
-
-	status = run_event_recv(req, &ret, mem_ctx, &script_list);
-	if (! status) {
-		fprintf(stderr, "run_proc_recv() failed, ret=%d\n", ret);
-		return;
-	}
 
 	if (script_list == NULL || script_list->num_scripts == 0) {
 		printf("No event scripts found\n");
@@ -106,9 +115,30 @@ static void do_run(TALLOC_CTX *mem_ctx, struct tevent_context *ev,
 	printf("Event %s completed with result=%d\n",
 	       argv[4], script_list->summary);
 	for (i=0; i<script_list->num_scripts; i++) {
-		printf("%s result=%d\n", script_list->script[i].name,
-		       script_list->script[i].summary);
+		struct run_event_script *s = &script_list->script[i];
+		printf("%s result=%d\n", s->name, s->summary);
+
+		if (s->summary == -ETIMEDOUT) {
+			wait_for_signal = true;
+		}
 	}
+
+	TALLOC_FREE(script_list);
+	TALLOC_FREE(req);
+
+	if (!wait_for_signal) {
+		return;
+	}
+
+	req = tevent_wakeup_send(
+		ev, ev, tevent_timeval_current_ofs(10, 0));
+	if (req == NULL) {
+		fprintf(stderr, "Could not wait for signal\n");
+		return;
+	}
+
+	tevent_req_poll(req, ev);
+	TALLOC_FREE(req);
 }
 
 static void do_list(TALLOC_CTX *mem_ctx, struct tevent_context *ev,
