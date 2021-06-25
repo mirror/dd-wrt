@@ -66,7 +66,7 @@ then
 	mkdir -p ${R}/tmp
 fi
 
-for i in etc bin lib usr/lib sbin proc dev sys usr/sbin oldroot
+for i in etc bin lib usr/lib sbin proc dev sys usr/sbin usr/bin oldroot
 do
 	mkdir -p ${R}/$i
 done
@@ -74,8 +74,8 @@ for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat 
 		/sbin/pivot_root /usr/sbin/chroot /bin/dd /bin/sleep /bin/echo \
 	/sbin/mtd \
 	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/write /sbin/ledtool \
-	/usr/sbin/httpd /sbin/service /usr/lib/validate.so /usr/lib/visuals.so /usr/sbin/writetool
-	
+	/usr/sbin/httpd /sbin/service /usr/lib/validate.so /usr/lib/visuals.so /usr/sbin/writetool /sbin/watchdog \
+	/usr/sbin/sdparm /usr/bin/killall
 do
 	cp -a $i $R/$i
 	copylibs $i $R
@@ -105,6 +105,17 @@ stopservice pppoeserver
 stopservice upnp
 stopservice olsrd
 stopservice rsync
+stopservice nfs
+stopservice dnsmasq
+stopservice syslog
+stopservice smartd
+stopservice sshd
+stopservice telnetd
+killall -9 rpc.mountd
+killall -9 rpcbind
+killall -9 irqbalance
+killall -9 mstpd
+killall -9 wland
 killall wdswatchdog.sh
 killall schedulerb.sh
 killall proxywatchdog.sh
