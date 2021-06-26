@@ -3641,6 +3641,7 @@ void start_nvram(void)
 		nvram_seti("nvram_ver", 5);
 		nvram_seti("block_multicast", 1);
 #ifdef HAVE_MADWIFI
+		nvram_set("wifi_display", "ath0");
 		char *buf;
 		int NVRAMSPACE = nvram_size();
 		if (!(buf = safe_malloc(NVRAMSPACE)))
