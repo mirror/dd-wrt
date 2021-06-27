@@ -88,7 +88,7 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlinuz
 # crossformat linking we rely on the elf2ecoff tool for format conversion.
 #
 cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
-cflags-y			+= -msoft-float -mno-branch-likely
+cflags-y			+= -msoft-float
 LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib --gc-sections
 KBUILD_AFLAGS_MODULE		+= -mno-long-calls
 KBUILD_CFLAGS_MODULE		+= -mno-long-calls
