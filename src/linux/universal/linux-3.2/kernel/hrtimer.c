@@ -335,6 +335,7 @@ u64 ktime_divns(const ktime_t kt, s64 div)
 
 	return dclc;
 }
+EXPORT_SYMBOL(ktime_divns);
 #endif /* BITS_PER_LONG >= 64 */
 
 /*
