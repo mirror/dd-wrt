@@ -1,6 +1,10 @@
 #
 # Makefile for the Linux/MIPS kernel.
 #
+CFLAGS_signal.o = $(DISABLE_LTO)
+CFLAGS_signal32.o = $(DISABLE_LTO)
+CFLAGS_syscall.o = $(DISABLE_LTO)
+CFLAGS_linux32.o = $(DISABLE_LTO)
 
 extra-y		:= head.o init_task.o vmlinux.lds
 
@@ -103,6 +107,7 @@ obj-$(CONFIG_MIPS_MACHINE)	+= mips_machine.o
 
 obj-$(CONFIG_OF)		+= prom.o
 
+CFLAGS_syscall.o += $(DISABLE_LTO)
 CFLAGS_cpu-bugs64.o	= $(shell if $(CC) $(KBUILD_CFLAGS) -Wa,-mdaddi -c -o /dev/null -x c /dev/null >/dev/null 2>&1; then echo "-DHAVE_AS_SET_DADDI"; fi)
 
 obj-$(CONFIG_HAVE_STD_PC_SERIAL_PORT)	+= 8250-platform.o

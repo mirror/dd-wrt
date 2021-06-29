@@ -513,6 +513,7 @@
 
 #define EXIT_DATA							\
 	*(.exit.data)							\
+	*(.exit.rodata)							\
 	DEV_DISCARD(exit.data)						\
 	DEV_DISCARD(exit.rodata)					\
 	CPU_DISCARD(exit.data)						\

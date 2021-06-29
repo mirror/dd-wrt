@@ -58,7 +58,10 @@ struct thread_info {
 
 /* How to get the thread information struct from C.  */
 register struct thread_info *__current_thread_info __asm__("$28");
-#define current_thread_info()  __current_thread_info
+static inline struct thread_info *current_thread_info(void)
+{
+	return __current_thread_info;
+}
 
 #endif /* !__ASSEMBLY__ */
 
