@@ -1,6 +1,7 @@
 #
 # Makefile for MIPS-specific library files..
 #
+#EXTRA_CFLAGS+=$(DISABLE_LTO)
 
 lib-y	+= csum_partial.o delay.o memcpy.o memcpy-inatomic.o memset.o \
 	   strlen_user.o strncpy_user.o strnlen_user.o uncached.o memcmp.o
@@ -32,3 +33,4 @@ obj-$(CONFIG_CPU_XLR)		+= dump_tlb.o
 
 # libgcc-style stuff needed in the kernel
 obj-y += ashldi3.o ashrdi3.o cmpdi2.o lshrdi3.o ucmpdi2.o
+CFLAGS_memcmp.o += $(DISABLE_LTO)
