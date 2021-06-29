@@ -186,9 +186,9 @@ extern struct trace_event_functions exit_syscall_print_funcs;
 	static struct syscall_metadata __used			\
 	  __attribute__((section("__syscalls_metadata")))	\
 	 *__p_syscall_meta_##sname = &__syscall_meta__##sname;	\
-	asmlinkage long sys_##sname(void)
+	asmlinkage __used __attribute__((__visibility__("default"))) long sys_##sname(void)
 #else
-#define SYSCALL_DEFINE0(name)	   asmlinkage long sys_##name(void)
+#define SYSCALL_DEFINE0(name)	   asmlinkage __used __attribute__((__visibility__("default"))) long sys_##name(void)
 #endif
 
 #define SYSCALL_DEFINE1(name, ...) SYSCALL_DEFINEx(1, _##name, __VA_ARGS__)
@@ -235,23 +235,23 @@ extern struct trace_event_functions exit_syscall_print_funcs;
 	__diag_push();							\
 	__diag_ignore(GCC, 8, "-Wattribute-alias",			\
 		      "Type aliasing is used to sanitize syscall arguments");\
-	asmlinkage long sys##name(__SC_DECL##x(__VA_ARGS__));		\
-	static inline long SYSC##name(__SC_DECL##x(__VA_ARGS__));	\
-	asmlinkage long SyS##name(__SC_LONG##x(__VA_ARGS__))		\
+	asmlinkage __used __attribute__((__visibility__("default"))) long sys##name(__SC_DECL##x(__VA_ARGS__));		\
+	static inline  __used long SYSC##name(__SC_DECL##x(__VA_ARGS__));	\
+	asmlinkage __used __attribute__((__visibility__("default"))) long SyS##name(__SC_LONG##x(__VA_ARGS__))		\
 	{								\
 		__SC_TEST##x(__VA_ARGS__);				\
 		return (long) SYSC##name(__SC_CAST##x(__VA_ARGS__));	\
 	}								\
 	SYSCALL_ALIAS(sys##name, SyS##name);				\
 	__diag_pop();							\
-	static inline long SYSC##name(__SC_DECL##x(__VA_ARGS__))
+	static inline  __used long SYSC##name(__SC_DECL##x(__VA_ARGS__))
 
 #else /* CONFIG_HAVE_SYSCALL_WRAPPERS */
 
-#define SYSCALL_DEFINE(name) asmlinkage long sys_##name
-#define __SYSCALL_DEFINEx(x, name, ...)					\
-	asmlinkage long sys##name(__SC_DECL##x(__VA_ARGS__))
+#define SYSCALL_DEFINE(name) asmlinkage __used __attribute__((__visibility__("default"))) long sys_##name
 
+#define __SYSCALL_DEFINEx(x, name, ...)					\
+	asmlinkage long  __used  __attribute__((__visibility__("default"))) sys##name(__SC_DECL##x(__VA_ARGS__))
 #endif /* CONFIG_HAVE_SYSCALL_WRAPPERS */
 
 asmlinkage long sys_time(time_t __user *tloc);
@@ -830,6 +830,7 @@ asmlinkage long sys_fanotify_mark(int fanotify_fd, unsigned int flags,
 				  const char  __user *pathname);
 asmlinkage long sys_syncfs(int fd);
 
+asmlinkage
 int kernel_execve(const char *filename, const char *const argv[], const char *const envp[]);
 
 

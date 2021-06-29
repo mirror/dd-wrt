@@ -22,6 +22,7 @@ def getsizes(file):
             if name[:6] == "__mod_": continue
             # function names begin with '.' on 64-bit powerpc
             if "." in name[1:]: name = "static." + name.split(".")[0]
+	    name = name.replace(".lto_priv", "")
             sym[name] = sym.get(name, 0) + int(size, 16)
     return sym
 

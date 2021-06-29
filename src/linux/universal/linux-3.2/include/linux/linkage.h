@@ -5,9 +5,9 @@
 #include <asm/linkage.h>
 
 #ifdef __cplusplus
-#define CPP_ASMLINKAGE extern "C"
+#define CPP_ASMLINKAGE extern "C" __visible __used
 #else
-#define CPP_ASMLINKAGE
+#define CPP_ASMLINKAGE __visible __used
 #endif
 
 #ifndef asmlinkage
