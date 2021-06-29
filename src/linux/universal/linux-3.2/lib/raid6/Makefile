@@ -10,7 +10,7 @@ quiet_cmd_unroll = UNROLL  $@
                    < $< > $@ || ( rm -f $@ && exit 1 )
 
 ifeq ($(CONFIG_ALTIVEC),y)
-altivec_flags := -maltivec -mabi=altivec
+altivec_flags := -maltivec -mabi=altivec ${DISABLE_LTO}
 endif
 
 targets += int1.c
