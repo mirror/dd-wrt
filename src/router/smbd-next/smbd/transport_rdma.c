@@ -159,8 +159,6 @@ struct smb_direct_transport {
 };
 
 #define KSMBD_TRANS(t) ((struct ksmbd_transport *)&((t)->transport))
-#define SMB_DIRECT_TRANS(t) ((struct smb_direct_transport *)container_of(t, \
-				struct smb_direct_transport, transport))
 
 enum {
 	SMB_DIRECT_MSG_NEGOTIATE_REQ = 0,
@@ -205,9 +203,11 @@ struct smb_direct_rdma_rw_msg {
 	struct scatterlist	sg_list[0];
 };
 
-#define BUFFER_NR_PAGES(buf, len)					\
-		(DIV_ROUND_UP((unsigned long)(buf) + (len), PAGE_SIZE)	\
-			- (unsigned long)(buf) / PAGE_SIZE)
+static inline int get_buf_page_count(void *buf, int size)
+{
+	return (int)(DIV_ROUND_UP((uintptr_t)buf + size, PAGE_SIZE) -
+		     (uintptr_t)buf / PAGE_SIZE);
+}
 
 static void smb_direct_destroy_pools(struct smb_direct_transport *transport);
 static void smb_direct_post_recv_credits(struct work_struct *work);
@@ -215,6 +215,12 @@ static int smb_direct_post_send_data(struct smb_direct_transport *t,
 				     struct smb_direct_send_ctx *send_ctx,
 				     struct kvec *iov, int niov,
 				     int remaining_data_length);
+
+static inline struct smb_direct_transport *
+smb_trans_direct_transfort(struct ksmbd_transport *t)
+{
+	return container_of(t, struct smb_direct_transport, transport);
+}
 
 static inline void
 *smb_direct_recvmsg_payload(struct smb_direct_recvmsg *recvmsg)
@@ -644,7 +650,7 @@ static int smb_direct_read(struct ksmbd_transport *t, char *buf,
 	int to_copy, to_read, data_read, offset;
 	u32 data_length, remaining_data_length, data_offset;
 	int rc;
-	struct smb_direct_transport *st = SMB_DIRECT_TRANS(t);
+	struct smb_direct_transport *st = smb_trans_direct_transfort(t);
 
 again:
 	if (st->status != SMB_DIRECT_CS_CONNECTED) {
@@ -1053,7 +1059,7 @@ static int get_sg_list(void *buf, int size, struct scatterlist *sg_list, int nen
 	int offset, len;
 	int i = 0;
 
-	if (nentries < BUFFER_NR_PAGES(buf, size))
+	if (nentries < get_buf_page_count(buf, size))
 		return -EINVAL;
 
 	offset = offset_in_page(buf);
@@ -1197,7 +1203,7 @@ static int smb_direct_writev(struct ksmbd_transport *t,
 			     struct kvec *iov, int niovs, int buflen,
 			     bool need_invalidate, unsigned int remote_key)
 {
-	struct smb_direct_transport *st = SMB_DIRECT_TRANS(t);
+	struct smb_direct_transport *st = smb_trans_direct_transfort(t);
 	int remaining_data_length;
 	int start, i, j;
 	int max_iov_size = st->max_send_size -
@@ -1350,11 +1356,11 @@ static int smb_direct_rdma_xmit(struct smb_direct_transport *t, void *buf,
 	msg->sgt.sgl = &msg->sg_list[0];
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
 	ret = sg_alloc_table_chained(&msg->sgt,
-				BUFFER_NR_PAGES(buf, buf_len),
+				get_buf_page_count(buf, buf_len),
 				msg->sg_list, SG_CHUNK_SIZE);
 #else
 	ret = sg_alloc_table_chained(&msg->sgt,
-				BUFFER_NR_PAGES(buf, buf_len),
+				get_buf_page_count(buf, buf_len),
 				msg->sg_list);
 #endif
 	if (ret) {
@@ -1371,7 +1377,7 @@ static int smb_direct_rdma_xmit(struct smb_direct_transport *t, void *buf,
 	}
 
 	ret = rdma_rw_ctx_init(&msg->rw_ctx, t->qp, t->qp->port,
-			       msg->sg_list, BUFFER_NR_PAGES(buf, buf_len),
+			       msg->sg_list, get_buf_page_count(buf, buf_len),
 			       0, remote_offset, remote_key,
 			       is_read ? DMA_FROM_DEVICE : DMA_TO_DEVICE);
 	if (ret < 0) {
@@ -1413,7 +1419,7 @@ static int smb_direct_rdma_write(struct ksmbd_transport *t, void *buf,
 		unsigned int buflen, u32 remote_key, u64 remote_offset,
 		u32 remote_len)
 {
-	return smb_direct_rdma_xmit(SMB_DIRECT_TRANS(t), buf, buflen,
+	return smb_direct_rdma_xmit(smb_trans_direct_transfort(t), buf, buflen,
 			remote_key, remote_offset,
 			remote_len, false);
 }
@@ -1422,14 +1428,14 @@ static int smb_direct_rdma_read(struct ksmbd_transport *t, void *buf,
 		unsigned int buflen, u32 remote_key, u64 remote_offset,
 		u32 remote_len)
 {
-	return smb_direct_rdma_xmit(SMB_DIRECT_TRANS(t), buf, buflen,
+	return smb_direct_rdma_xmit(smb_trans_direct_transfort(t), buf, buflen,
 			remote_key, remote_offset,
 			remote_len, true);
 }
 
 static void smb_direct_disconnect(struct ksmbd_transport *t)
 {
-	struct smb_direct_transport *st = SMB_DIRECT_TRANS(t);
+	struct smb_direct_transport *st = smb_trans_direct_transfort(t);
 
 	ksmbd_debug(RDMA, "Disconnecting cm_id=%p\n", st->cm_id);
 
@@ -1897,7 +1903,7 @@ err:
 
 static int smb_direct_prepare(struct ksmbd_transport *t)
 {
-	struct smb_direct_transport *st = SMB_DIRECT_TRANS(t);
+	struct smb_direct_transport *st = smb_trans_direct_transfort(t);
 	int ret;
 	struct ib_qp_cap qp_cap;
 
