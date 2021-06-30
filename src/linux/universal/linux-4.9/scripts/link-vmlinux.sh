@@ -63,9 +63,9 @@ modpost_link()
 	local objects
 
 	if [ -n "${CONFIG_THIN_ARCHIVES}" ]; then
-		objects="--whole-archive built-in.o"
+		objects="${KBUILD_VMLINUX_HEAD} --whole-archive built-in.o"
 	else
-		objects="${KBUILD_VMLINUX_INIT}				\
+		objects="${KBUILD_VMLINUX_HEAD} ${KBUILD_VMLINUX_INIT}				\
 			--start-group					\
 			${KBUILD_VMLINUX_MAIN}				\
 			--end-group"
@@ -83,9 +83,9 @@ vmlinux_link()
 
 	if [ "${SRCARCH}" != "um" ]; then
 		if [ -n "${CONFIG_THIN_ARCHIVES}" ]; then
-			objects="--whole-archive built-in.o ${1}"
+			objects="${KBUILD_VMLINUX_HEAD} --whole-archive built-in.o ${1}"
 		else
-			objects="${KBUILD_VMLINUX_INIT}			\
+			objects="${KBUILD_VMLINUX_HEAD} ${KBUILD_VMLINUX_INIT}			\
 				--start-group				\
 				${KBUILD_VMLINUX_MAIN}			\
 				--end-group				\
@@ -96,9 +96,9 @@ vmlinux_link()
 			-T ${lds} ${objects}
 	else
 		if [ -n "${CONFIG_THIN_ARCHIVES}" ]; then
-			objects="-Wl,--whole-archive built-in.o ${1}"
+			objects="${KBUILD_VMLINUX_HEAD} -Wl,--whole-archive built-in.o ${1}"
 		else
-			objects="${KBUILD_VMLINUX_INIT}			\
+			objects="${KBUILD_VMLINUX_HEAD} ${KBUILD_VMLINUX_INIT}			\
 				-Wl,--start-group			\
 				${KBUILD_VMLINUX_MAIN}			\
 				-Wl,--end-group				\
