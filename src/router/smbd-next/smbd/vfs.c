@@ -1981,7 +1981,7 @@ int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
 		int *out_count)
 {
 	struct file *f = fp->filp;
-	struct inode *inode = FP_INODE(fp);
+	struct inode *inode = file_inode(fp->filp);
 	loff_t maxbytes = (u64)inode->i_sb->s_maxbytes, end;
 	loff_t extent_start, extent_end;
 	int ret = 0;

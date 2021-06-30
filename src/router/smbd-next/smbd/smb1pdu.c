@@ -6769,9 +6769,9 @@ static int query_file_info(struct ksmbd_work *work)
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-	generic_fillattr(&init_user_ns, FP_INODE(fp), &st);
+	generic_fillattr(&init_user_ns, file_inode(fp->filp), &st);
 #else
-	generic_fillattr(FP_INODE(fp), &st);
+	generic_fillattr(file_inode(fp->filp), &st);
 #endif
 
 	switch (le16_to_cpu(req_params->InformationLevel)) {
@@ -7112,13 +7112,13 @@ static int smb_set_dispostion(struct ksmbd_work *work)
 			goto err_out;
 		}
 
-		if (!(FP_INODE(fp)->i_mode & 0222)) {
+		if (!(file_inode(fp->filp)->i_mode & 0222)) {
 			rsp->hdr.Status.CifsError = STATUS_CANNOT_DELETE;
 			ret = -EPERM;
 			goto err_out;
 		}
 
-		if (S_ISDIR(FP_INODE(fp)->i_mode) &&
+		if (S_ISDIR(file_inode(fp->filp)->i_mode) &&
 				ksmbd_vfs_empty_dir(fp) == -ENOTEMPTY) {
 			rsp->hdr.Status.CifsError = STATUS_DIRECTORY_NOT_EMPTY;
 			ret = -ENOTEMPTY;

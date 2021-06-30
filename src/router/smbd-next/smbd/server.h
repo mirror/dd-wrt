@@ -8,14 +8,24 @@
 
 #include "smbacl.h"
 
-#define SERVER_STATE_STARTING_UP	0
-#define SERVER_STATE_RUNNING		1
-#define SERVER_STATE_RESETTING		2
-#define SERVER_STATE_SHUTTING_DOWN	3
+/*
+ * Server state type
+ */
+enum {
+	SERVER_STATE_STARTING_UP,
+	SERVER_STATE_RUNNING,
+	SERVER_STATE_RESETTING,
+	SERVER_STATE_SHUTTING_DOWN,
+};
 
-#define SERVER_CONF_NETBIOS_NAME	0
-#define SERVER_CONF_SERVER_STRING	1
-#define SERVER_CONF_WORK_GROUP		2
+/*
+ * Server global config string index
+ */
+enum {
+	SERVER_CONF_NETBIOS_NAME,
+	SERVER_CONF_SERVER_STRING,
+	SERVER_CONF_WORK_GROUP,
+};
 
 extern int ksmbd_debugging;
 
