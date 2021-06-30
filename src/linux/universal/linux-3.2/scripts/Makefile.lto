@@ -48,7 +48,7 @@ ifneq ($(call cc-option,${LTO_CFLAGS},n),n)
 	#LTO_FINAL_CFLAGS := -flto=jobserver
 
 	# requires plugin ar passed and very recent HJ binutils
-        LTO_CFLAGS += -fno-fat-lto-objects
+        LTO_CFLAGS += -fno-fat-lto-objects -flto-partition=none
 
 # Used to disable LTO for specific files (e.g. vdso)
 	DISABLE_LTO := -fno-lto
