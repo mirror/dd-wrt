@@ -4880,7 +4880,7 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 		info = (struct filesystem_info *)(rsp->Buffer);
 		info->TotalAllocationUnits = cpu_to_le64(stfs.f_blocks);
 		info->FreeAllocationUnits = cpu_to_le64(stfs.f_bfree);
-		info->SectorsPerAllocationUnit = cpu_to_le32(stfs.f_bsize >> 9);
+		info->SectorsPerAllocationUnit = cpu_to_le32(1);
 		info->BytesPerSector = cpu_to_le32(stfs.f_bsize);
 		rsp->OutputBufferLength = cpu_to_le32(24);
 		inc_rfc1001_len(rsp_org, 24);
@@ -4897,7 +4897,7 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 					cpu_to_le64(stfs.f_bavail);
 		info->ActualAvailableAllocationUnits =
 					cpu_to_le64(stfs.f_bfree);
-		info->SectorsPerAllocationUnit = cpu_to_le32(stfs.f_bsize >> 9);
+		info->SectorsPerAllocationUnit = cpu_to_le32(1);
 		info->BytesPerSector = cpu_to_le32(stfs.f_bsize);
 		rsp->OutputBufferLength = cpu_to_le32(32);
 		inc_rfc1001_len(rsp_org, 32);
