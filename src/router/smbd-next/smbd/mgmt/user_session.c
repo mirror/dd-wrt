@@ -154,11 +154,17 @@ void ksmbd_session_destroy(struct ksmbd_session *sess)
 
 	list_del(&sess->sessions_entry);
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 	if (IS_SMB2(sess->conn)) {
 		down_write(&sessions_table_lock);
 		hash_del(&sess->hlist);
 		up_write(&sessions_table_lock);
 	}
+#else
+	down_write(&sessions_table_lock);
+	hash_del(&sess->hlist);
+	up_write(&sessions_table_lock);
+#endif
 
 	if (sess->user)
 		ksmbd_free_user(sess->user);
