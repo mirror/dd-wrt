@@ -969,6 +969,7 @@ void ping_rcv(struct sk_buff *skb)
 	struct sock *sk;
 	struct net *net = dev_net(skb->dev);
 	struct icmphdr *icmph = icmp_hdr(skb);
+	bool rc = false;
 
 	/* We assume the packet has already been checked by icmp_rcv */
 
@@ -983,12 +984,14 @@ void ping_rcv(struct sk_buff *skb)
 		struct sk_buff *skb2 = skb_clone(skb, GFP_ATOMIC);
 
 		pr_debug("rcv on socket %p\n", sk);
-		if (skb2)
-			ping_queue_rcv_skb(sk, skb2);
+		if (skb2 && !ping_queue_rcv_skb(sk, skb2))
+			rc = true;
 		sock_put(sk);
-		return;
 	}
-	pr_debug("no socket, dropping\n");
+	if (!rc)
+		pr_debug("no socket, dropping\n");
+
+	return;
 
 	/* We're called from icmp_rcv(). kfree_skb() is done there. */
 }
