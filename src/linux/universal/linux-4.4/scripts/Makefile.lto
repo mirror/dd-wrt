@@ -64,6 +64,8 @@ ifdef CONFIG_LTO_CP_CLONE
 	LTO_FINAL_CFLAGS += -fipa-cp-clone
 	LTO_CFLAGS += -fipa-cp-clone
 endif
+	LTO_FINAL_CFLAGS += -flto-partition=none
+	LTO_CFLAGS += -flto-partition=none
 
 	# In principle gcc should pass through options in the object files,
 	# but it doesn't always work. So do it here manually
