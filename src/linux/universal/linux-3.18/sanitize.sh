@@ -161,6 +161,8 @@ do
 	    sed -i 's/\CONFIG_ARCHERC25=y/ /g' .config	    
 	    sed -i 's/\CONFIG_POWERBEAMAC_GEN2=y/ /g' .config	    
     fi
+    sed -i 's/\# CONFIG_LTO_MENU is not set/ /g' .config	    
+    sed -i 's/\# CONFIG_ASN1 is not set/ /g' .config	    
     sed -i 's/\# CONFIG_EXFAT_FS is not set/ /g' .config	    
     cp .config $i
 done
