@@ -326,15 +326,15 @@ $(sort $(subdir-obj-y)): $(subdir-ym) ;
 #
 ifdef builtin-target
 
-ifdef CONFIG_THIN_ARCHIVES
+#ifdef CONFIG_THIN_ARCHIVES
   cmd_make_builtin = rm -f $@; $(AR) rcST$(KBUILD_ARFLAGS)
   cmd_make_empty_builtin = rm -f $@; $(AR) rcST$(KBUILD_ARFLAGS)
   quiet_cmd_link_o_target = AR      $@
-else
-  cmd_make_builtin = $(LD) $(ld_flags) -r -o
-  cmd_make_empty_builtin = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS)
-  quiet_cmd_link_o_target = LD      $@
-endif
+#else
+#  cmd_make_builtin = $(LD) $(ld_flags) -r -o
+#  cmd_make_empty_builtin = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS)
+#  quiet_cmd_link_o_target = LD      $@
+#endif
 
 # If the list of objects to link is empty, just create an empty built-in.o
 cmd_link_o_target = $(if $(strip $(obj-y)),\

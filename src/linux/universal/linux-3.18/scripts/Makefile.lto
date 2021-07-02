@@ -1,0 +1,97 @@
+#
+# Support for gcc link time optimization
+#
+
+DISABLE_LTO :=
+LTO_CFLAGS :=
+
+export DISABLE_LTO
+export LTO_CFLAGS
+
+ifdef CONFIG_LTO
+# 4.7 works mostly, but it sometimes loses symbols on large builds
+# This can be worked around by marking those symbols visible,
+# but that is fairly ugly and the problem is gone with 4.8
+# So only allow it with 4.8 for now.
+ifeq ($(call cc-ifversion, -ge, 0408,y),y)
+ifneq ($(call cc-option,${LTO_CFLAGS},n),n)
+# We need HJ Lu's Linux binutils because mainline binutils does not
+# support mixing assembler and LTO code in the same ld -r object.
+# XXX check if the gcc plugin ld is the expected one too
+# XXX some Fedora binutils should also support it. How to check for that?
+ifeq ($(call ld-ifversion,-ge,22710001,y),y)
+
+# gcc 5.0 supports __attribute__((no_reorder)), so we don't
+# need to disable reordering globally, but can only use
+# it on init calls.
+# Disabled for now because of some undebugged bug in 5.x
+#ifeq ($(call cc-ifversion,-ge,0500,y),y)
+#	DISABLE_TL_REORDER :=
+#else
+	DISABLE_TL_REORDER := -fno-toplevel-reorder
+#endif
+        LTO_CFLAGS := -flto $(DISABLE_TL_REORDER)
+	LTO_FINAL_CFLAGS := -fuse-linker-plugin
+
+# the -fno-toplevel-reorder is to preserve the order of initcalls
+# everything else should tolerate reordering
+        LTO_FINAL_CFLAGS += $(DISABLE_TL_REORDER)
+
+# enable LTO and set the jobs used by the LTO phase
+# this should be -flto=jobserver to coordinate with the
+# parent make, but work around
+# http://gcc.gnu.org/bugzilla/show_bug.cgi?id=50639
+# use as many jobs as processors are online for now
+# this actually seems to be a kernel bug with the pipe code
+	LTO_FINAL_CFLAGS := -flto -flinker-output=nolto-rel -flto=$(shell getconf _NPROCESSORS_ONLN) -fwhole-program
+	#-flto=$(shell getconf _NPROCESSORS_ONLN)
+	#LTO_FINAL_CFLAGS := -flto=jobserver
+
+	# requires plugin ar passed and very recent HJ binutils
+        LTO_CFLAGS += -fno-fat-lto-objects
+
+# Used to disable LTO for specific files (e.g. vdso)
+	DISABLE_LTO := -fno-lto
+
+	LTO_FINAL_CFLAGS += ${LTO_CFLAGS} -fwhole-program
+
+ifdef CONFIG_LTO_DEBUG
+	LTO_FINAL_CFLAGS += -dH -fdump-ipa-cgraph -fdump-ipa-inline-details
+	# -Wl,-plugin-save-temps -save-temps
+	LTO_CFLAGS +=
+endif
+ifdef CONFIG_LTO_CP_CLONE
+	LTO_FINAL_CFLAGS += -fipa-cp-clone
+	LTO_CFLAGS += -fipa-cp-clone
+endif
+	LTO_FINAL_CFLAGS += -flto-partition=none
+	LTO_CFLAGS += -flto-partition=none
+
+	# In principle gcc should pass through options in the object files,
+	# but it doesn't always work. So do it here manually
+	# Note that special options for individual files does not
+	# work currently (except for some special cases that only
+	# affect the compiler frontend)
+	# The main offenders are FTRACE and GCOV -- we exclude
+	# those in the config.
+	LTO_FINAL_CFLAGS += $(filter -g%,${KBUILD_CFLAGS})
+	LTO_FINAL_CFLAGS += $(filter -O%,${KBUILD_CFLAGS})
+	LTO_FINAL_CFLAGS += $(filter -f%,${KBUILD_CFLAGS})
+	LTO_FINAL_CFLAGS += $(filter -m%,${KBUILD_CFLAGS})
+	LTO_FINAL_CFLAGS += $(filter -W%,${KBUILD_CFLAGS})
+
+	KBUILD_CFLAGS += ${LTO_CFLAGS}
+
+	LDFINAL := ${CONFIG_SHELL} ${srctree}/scripts/gcc-ld \
+                  ${LTO_FINAL_CFLAGS}
+
+else
+        $(warning "WARNING: Too old linker version $(call sh ld-version) for kernel LTO. You need Linux binutils. CONFIG_LTO disabled.")
+endif
+else
+        $(warning "WARNING: Compiler/Linker does not support LTO/WHOPR with linker plugin. CONFIG_LTO disabled.")
+endif
+else
+        $(warning "WARNING: GCC $(call cc-version) too old for LTO/WHOPR. CONFIG_LTO disabled")
+endif
+endif
