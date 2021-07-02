@@ -740,29 +740,18 @@ taskq_t *arc_prune_taskq;
  * Hash table routines
  */
 
-#define	HT_LOCK_ALIGN	64
-#define	HT_LOCK_PAD	(P2NPHASE(sizeof (kmutex_t), (HT_LOCK_ALIGN)))
-
-struct ht_lock {
-	kmutex_t	ht_lock;
-#ifdef _KERNEL
-	unsigned char	pad[HT_LOCK_PAD];
-#endif
-};
-
-#define	BUF_LOCKS 8192
+#define	BUF_LOCKS 2048
 typedef struct buf_hash_table {
 	uint64_t ht_mask;
 	arc_buf_hdr_t **ht_table;
-	struct ht_lock ht_locks[BUF_LOCKS];
+	kmutex_t ht_locks[BUF_LOCKS] ____cacheline_aligned;
 } buf_hash_table_t;
 
 static buf_hash_table_t buf_hash_table;
 
 #define	BUF_HASH_INDEX(spa, dva, birth) \
 	(buf_hash(spa, dva, birth) & buf_hash_table.ht_mask)
-#define	BUF_HASH_LOCK_NTRY(idx) (buf_hash_table.ht_locks[idx & (BUF_LOCKS-1)])
-#define	BUF_HASH_LOCK(idx)	(&(BUF_HASH_LOCK_NTRY(idx).ht_lock))
+#define	BUF_HASH_LOCK(idx)	(&buf_hash_table.ht_locks[idx & (BUF_LOCKS-1)])
 #define	HDR_LOCK(hdr) \
 	(BUF_HASH_LOCK(BUF_HASH_INDEX(hdr->b_spa, &hdr->b_dva, hdr->b_birth)))
 
@@ -1111,7 +1100,7 @@ buf_fini(void)
 	    (buf_hash_table.ht_mask + 1) * sizeof (void *));
 #endif
 	for (i = 0; i < BUF_LOCKS; i++)
-		mutex_destroy(&buf_hash_table.ht_locks[i].ht_lock);
+		mutex_destroy(BUF_HASH_LOCK(i));
 	kmem_cache_destroy(hdr_full_cache);
 	kmem_cache_destroy(hdr_full_crypt_cache);
 	kmem_cache_destroy(hdr_l2only_cache);
@@ -1276,10 +1265,8 @@ retry:
 		for (ct = zfs_crc64_table + i, *ct = i, j = 8; j > 0; j--)
 			*ct = (*ct >> 1) ^ (-(*ct & 1) & ZFS_CRC64_POLY);
 
-	for (i = 0; i < BUF_LOCKS; i++) {
-		mutex_init(&buf_hash_table.ht_locks[i].ht_lock,
-		    NULL, MUTEX_DEFAULT, NULL);
-	}
+	for (i = 0; i < BUF_LOCKS; i++)
+		mutex_init(BUF_HASH_LOCK(i), NULL, MUTEX_DEFAULT, NULL);
 }
 
 #define	ARC_MINTIME	(hz>>4) /* 62 ms */
@@ -7454,9 +7441,10 @@ arc_state_multilist_index_func(multilist_t *ml, void *obj)
 	 * Also, the low order bits of the hash value are thought to be
 	 * distributed evenly. Otherwise, in the case that the multilist
 	 * has a power of two number of sublists, each sublists' usage
-	 * would not be evenly distributed.
+	 * would not be evenly distributed. In this context full 64bit
+	 * division would be a waste of time, so limit it to 32 bits.
 	 */
-	return (buf_hash(hdr->b_spa, &hdr->b_dva, hdr->b_birth) %
+	return ((unsigned int)buf_hash(hdr->b_spa, &hdr->b_dva, hdr->b_birth) %
 	    multilist_get_num_sublists(ml));
 }
 
