@@ -293,7 +293,7 @@ unsigned long zfs_metaslab_max_size_cache_sec = 3600; /* 1 hour */
  * a metaslab would take it over this percentage, the oldest selected metaslab
  * is automatically unloaded.
  */
-int zfs_metaslab_mem_limit = 75;
+int zfs_metaslab_mem_limit = 25;
 
 /*
  * Force the per-metaslab range trees to use 64-bit integers to store
@@ -1874,7 +1874,12 @@ static unsigned int
 metaslab_idx_func(multilist_t *ml, void *arg)
 {
 	metaslab_t *msp = arg;
-	return (msp->ms_id % multilist_get_num_sublists(ml));
+
+	/*
+	 * ms_id values are allocated sequentially, so full 64bit
+	 * division would be a waste of time, so limit it to 32 bits.
+	 */
+	return ((unsigned int)msp->ms_id % multilist_get_num_sublists(ml));
 }
 
 uint64_t
