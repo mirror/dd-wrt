@@ -334,6 +334,10 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 #define noinline
 #endif
 
+#ifndef __noreorder
+#define __noreorder		/* unimplemented */
+#endif
+
 /*
  * Rather then using noinline to prevent stack consumption, use
  * noinline_for_stack instead.  For documentation reasons.

@@ -29,6 +29,7 @@ static const struct ar71xx_pci_irq *ar71xx_pci_irq_map __initdata;
 
 int (*ar71xx_pci_plat_dev_init) (struct pci_dev * dev);
 
+#ifdef CONFIG_MACH_AR7100
 static int ar71xx_be_handler(struct pt_regs *regs, int is_fixup)
 {
 	int err = 0;
@@ -37,7 +38,7 @@ static int ar71xx_be_handler(struct pt_regs *regs, int is_fixup)
 
 	return (is_fixup && !err) ? MIPS_BE_FIXUP : MIPS_BE_FATAL;
 }
-
+#endif
 int pcibios_plat_dev_init(struct pci_dev *dev)
 {
 	if (ar71xx_pci_plat_dev_init)
