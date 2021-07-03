@@ -108,7 +108,6 @@ export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time
 endif
 ifeq ($(ARCH),powerpc)
 export COPTS:=$(BASEOPT) -pipe -funit-at-a-time -mcpu=603e -mtune=603e -fno-caller-saves
-#-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),i386)
 export COPTS:=$(BASEOPT) -pipe -march=i486 -funit-at-a-time 
@@ -252,7 +251,7 @@ endif
 	fi
 	
 
-include common.mk
+include common-nolto.mk
 
 makeimage:
 	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 64000 -i 65536 -N 65536 -q $(ARCH)-uclibc/root.ext2
@@ -400,7 +399,9 @@ ifeq ($(CONFIG_RB600),y)
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj powerpc -b 262144
 #	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -U -f -b 256000 -i 65536 -N 65536 -q $(ARCH)-uclibc/root.ext2
 	cp $(LINUXDIR)/vmlinux rb600.img.kernel
-	./gen_image_rb.sh rb600.img 10 1 64 $(ARCH)-uclibc/root.fs 32
+	./gen_image_rb.sh rb600.img.src 10 1 64 $(ARCH)-uclibc/root.fs 32
+	dd if=rb600.img.src of=rb600.img bs=1048576 conv=sync
+	
 	./tools/wrap rb600.img rb600.bin
 endif
 
