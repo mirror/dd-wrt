@@ -1131,6 +1131,12 @@ ifeq ($(CONFIG_X86),y)
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 	install writetool $(INSTALLDIR)/usr/sbin
 endif
+ifeq ($(CONFIG_RB600),y)
+	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
+	install update-after-pivot.sh $(INSTALLDIR)/usr/sbin	
+	install ldd.sh $(INSTALLDIR)/usr/sbin
+	install writetool $(INSTALLDIR)/usr/sbin
+endif
 ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
