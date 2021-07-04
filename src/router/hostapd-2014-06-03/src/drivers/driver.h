@@ -19,7 +19,7 @@
 
 #define WPA_SUPPLICANT_DRIVER_VERSION 4
 
-#include "drivers/nl80211_copy.h"
+#include "../../../shared/nl80211.h"
 #include "common/defs.h"
 #include "utils/list.h"
 
