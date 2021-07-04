@@ -346,11 +346,11 @@ LD		= $(CROSS_COMPILE)ld
 LDFINAL	= $(LD)
 CC		= $(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
-ifdef CONFIG_LTO
+#ifneq ($(CONFIG_LTO),)
 AR		= $(CROSS_COMPILE)gcc-ar
-else
-AR		= $(CROSS_COMPILE)ar
-endif
+#else
+#AR		= $(CROSS_COMPILE)ar
+#endif
 NM		= $(CROSS_COMPILE)nm
 STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
