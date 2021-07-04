@@ -138,6 +138,8 @@ endif
 
 IW_CFLAGS=-I$(TOP)/libnl-tiny/include \
 	-DCONFIG_LIBNL20 \
+	-DCONFIG_TDMA \
+	-I$(TOP)/shared \
 	-D_GNU_SOURCE
 IW_LDFLAGS=-L$(TOP)/libnl-tiny/
 
