@@ -99,7 +99,7 @@ all: clean $(ALL)
 
 VERSION_OBJS := $(filter-out version.o, $(OBJS))
 
-version.c: version.sh $(patsubst %.o,%.c,$(VERSION_OBJS)) nl80211.h iw.h Makefile \
+version.c: version.sh $(patsubst %.o,%.c,$(VERSION_OBJS)) iw.h Makefile \
 		$(wildcard .git/index .git/refs/tags)
 	@$(NQ) ' GEN ' $@
 	$(Q)./version.sh $@

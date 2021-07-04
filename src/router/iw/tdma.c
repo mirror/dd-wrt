@@ -42,7 +42,7 @@ static int join_tdma(struct nl80211_state *state,
 		{ .name = "HT3", .val = NL80211_CHAN_HT20, .bw = NL80211_CHAN_WIDTH_3, },
 		{ .name = "HT5", .val = NL80211_CHAN_HT20, .bw = NL80211_CHAN_WIDTH_5, },
 		{ .name = "HT10", .val = NL80211_CHAN_HT20, .bw = NL80211_CHAN_WIDTH_10, },
-		{ .name = "NOHT40", .val = NL80211_CHAN_NO_HT, .bw = NL80211_CHAN_WIDTH_40_NOHT, },
+//		{ .name = "NOHT40", .val = NL80211_CHAN_NO_HT, .bw = NL80211_CHAN_WIDTH_40_NOHT, },
 	};
 	unsigned int htval = NL80211_CHAN_NO_HT;
 	unsigned int bwval = NL80211_CHAN_WIDTH_20_NOHT;
