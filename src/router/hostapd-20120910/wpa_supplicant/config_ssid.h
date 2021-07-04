@@ -11,7 +11,7 @@
 
 #include "common/defs.h"
 #include "eap_peer/eap_config.h"
-#include "drivers/nl80211_copy.h"
+#include "../../shared/nl80211.h"
 
 #define MAX_SSID_LEN 32
 

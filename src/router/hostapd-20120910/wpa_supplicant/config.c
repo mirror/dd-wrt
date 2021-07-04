@@ -14,7 +14,7 @@
 #include "rsn_supp/wpa.h"
 #include "eap_peer/eap.h"
 #include "p2p/p2p.h"
-#include "drivers/nl80211_copy.h"
+#include "../../shared/nl80211.h"
 #include "config.h"
 
 

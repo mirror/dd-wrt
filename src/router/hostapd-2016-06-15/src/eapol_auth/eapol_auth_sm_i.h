@@ -151,7 +151,7 @@ struct eapol_state_machine {
 	/* TODO: check when the last messages can be released */
 	struct radius_msg *last_recv_radius;
 	u8 last_eap_id; /* last used EAP Identifier */
-	u8 *identity;
+	const char *identity;
 	size_t identity_len;
 	u8 eap_type_authsrv; /* EAP type of the last EAP packet from
 			      * Authentication server */

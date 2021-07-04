@@ -13,7 +13,7 @@
 #ifndef DRIVER_NL80211_H
 #define DRIVER_NL80211_H
 
-#include "nl80211_copy.h"
+#include "../../../shared/nl80211.h"
 #include "utils/list.h"
 #include "driver.h"
 
