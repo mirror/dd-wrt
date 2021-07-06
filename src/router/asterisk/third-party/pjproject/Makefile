@@ -130,7 +130,7 @@ source/pjlib/include/pj/%.h: patches/%.h
 
 source/build.mak: Makefile.rules source/version.mak source/user.mak $(addprefix source/pjlib/include/pj/,$(notdir $(wildcard patches/*.h))) .rebuild_needed
 	$(ECHO_PREFIX) Configuring with $(PJPROJECT_CONFIG_OPTS)
-	$(CMD_PREFIX) (cd source ; ./aconfigure $(QUIET_CONFIGURE) $(PJPROJECT_CONFIG_OPTS))
+	$(CMD_PREFIX) (cd source ; ./aconfigure $(QUIET_CONFIGURE) --host $(ARCH)-linux-uclibc $(PJPROJECT_CONFIG_OPTS))
 
 build.mak: source/build.mak
 	$(CMD_PREFIX) $(GREP) -v -e prefix -e "export PJ_SHARED_LIBRARIES" -e MACHINE_NAME \
