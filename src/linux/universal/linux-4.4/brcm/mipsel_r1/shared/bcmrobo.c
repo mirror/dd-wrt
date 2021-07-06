@@ -1563,14 +1563,6 @@ bcm_robo_enable_device(robo_info_t *robo)
 #define FLAG_UNTAG	'u'	/* input & output untagged (CPU port only, for OS (linux, ...) */
 #define FLAG_LAN	'*'	/* input & output untagged (CPU port only, for CFE */
 
-/* port descriptor */
-typedef	struct {
-	uint32 untag;	/* untag enable bit (Page 0x05 Address 0x63-0x66 Bit[17:9]) */
-	uint32 member;	/* vlan member bit (Page 0x05 Address 0x63-0x66 Bit[7:0]) */
-	uint8 ptagr;	/* port tag register address (Page 0x34 Address 0x10-0x1F) */
-	uint8 cpu;	/* is this cpu port? */
-} pdesc_t;
-
 pdesc_t pdesc97[] = {
 	/* 5395/5397/5398/53115S is 0 ~ 7.  port 8 is IMP port. */
 	/* port 0 */ {1 << 9, 1 << 0, REG_VLAN_PTAG0, 0},
