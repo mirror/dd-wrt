@@ -91,12 +91,6 @@ mount -t sysfs sys ${R}sys
 mount -o remount,ro /usr/local
 umount /usr/local
 cp -av /dev ${R}/
-#not nice, but works.
-for i in /tmp/services/* ; do echo `basename $i .0` ; done | grep -v "httpd" | while read service ; do stopservice $service ; done
-killall process_monitor
-killall mstpd
-killall resetbutton
-killall cron
 stopservice snmp
 stopservice transmission
 stopservice plex
@@ -111,6 +105,12 @@ stopservice syslog
 stopservice smartd
 stopservice sshd
 stopservice telnetd
+#not nice, but works.
+for i in /tmp/services/* ; do echo `basename $i .0` ; done | grep -v "httpd" | while read service ; do stopservice $service ; done
+killall process_monitor
+killall mstpd
+killall resetbutton
+killall cron
 killall -9 rpc.mountd
 killall -9 rpcbind
 killall -9 irqbalance
