@@ -4,6 +4,9 @@
 
 #include "webs.h"
 #include "nvramsr.c"
+#ifdef HAVE_WIREGUARD
+#include "wireguard.c"
+#endif
 #include "cgi.c"
 #include "ej.c"
 #include "base.c"

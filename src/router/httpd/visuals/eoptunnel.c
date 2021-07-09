@@ -419,6 +419,11 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							fclose(svg);
 							websWrite(wp, "<div class=\"setting\">\n");
 							wfputs(buf, wp);
+							websWrite(wp,"<script type=\"text/javascript\">\n");
+							websWrite(wp,"//<![CDATA[\n");
+							websWrite(wp,"document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"config_button\\\" value=\\\"\" + sbutton.download_config + \"\\\" onclick=\\\"window.location.href='/wireguard_config_oet%d_peer%d.conf';\\\" />\");\n", tun, peer);
+							websWrite(wp,"//]]>\n");
+							websWrite(wp,"</script>\n");
 							websWrite(wp, "</div>\n");
 							free(buf);
 							hasqr = 1;

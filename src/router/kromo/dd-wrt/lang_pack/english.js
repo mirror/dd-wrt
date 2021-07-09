@@ -239,6 +239,7 @@ share.paste="Paste";
 
 var sbutton=new Object();
 sbutton.save="Save";
+sbutton.download_config="Save Config";
 sbutton.savetitle="Only save settings without commit";
 sbutton.apply="Apply Settings";
 sbutton.applytitle="Apply settings immediately";

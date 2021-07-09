@@ -2857,6 +2857,10 @@ static struct mime_handler mime_handlers[] = {
 	 do_auth,
 	 1, 0 },
 #endif
+#ifdef HAVE_WIREGUARD
+	{ "wireguard_config_oet**.conf*", "application/octet-stream", no_cache, NULL,
+	 download_wireguard_config, do_auth, 0, 0 },
+#endif
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
 	{ "backup/cfe.bin", "application/octet-stream", no_cache, NULL,
 	 do_cfebackup,
