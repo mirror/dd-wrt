@@ -233,6 +233,7 @@ share.paste="Einf&uuml;gen";
 
 
 sbutton.save="Speichern";
+sbutton.download_config="Konfiguration Runterladen";
 sbutton.savetitle="Nur speichern, ohne bereitstellen";
 sbutton.apply="Anwenden";
 sbutton.applytitle="Wende Einstellungen unmittelbar an";
