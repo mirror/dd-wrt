@@ -233,7 +233,7 @@ share.paste="Einf&uuml;gen";
 
 
 sbutton.save="Speichern";
-sbutton.download_config="Exportiere Peer Konfiguration";
+sbutton.download_config="Exportiere Partner Konfiguration";
 sbutton.savetitle="Nur speichern, ohne bereitstellen";
 sbutton.apply="Anwenden";
 sbutton.applytitle="Wende Einstellungen unmittelbar an";
