@@ -26,7 +26,7 @@
 #include "webs.h"
 #include "nvram_backup.c"
 #ifdef HAVE_WIREGUARD
-#include "wireguard.c"
+#include "wireguard_config.c"
 #endif
 #include "cgi.c"
 #include "ej.c"
