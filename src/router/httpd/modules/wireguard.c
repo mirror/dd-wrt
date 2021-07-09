@@ -28,26 +28,24 @@ static int wfclose(webs_t fp);
 static int wfflush(webs_t fp);
 static void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 
-
 static void download_wireguard_config(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	char fname[128];
-	snprintf(fname, sizeof(fname), "%s", path+1);
+	snprintf(fname, sizeof(fname), "%s", path + 1);
 	char dname[128];
-	snprintf(dname,sizeof(dname),"%s", path+1);
+	snprintf(dname, sizeof(dname), "%s", path + 1);
 	char *p = strstr(dname, "..");
 	if (p)
-	    return;
+		return;
 	p = strstr(dname, "/");
 	if (p)
-	    return;
+		return;
 
 	p = strstr(dname, ".");
 	if (p)
-	    *p = '_';
+		*p = '_';
 	char location[128];
-	snprintf(location,sizeof(location,"/tmp/wireguard/%s", dname);
+	snprintf(location, sizeof(location), "/tmp/wireguard/%s", dname);
 	do_file_attach(handler, location, wp, fname);
 	return;
 }
-
