@@ -1,3 +1,25 @@
+/*
+ * wireguard_config.c
+ *
+ * Copyright (C) 2005 - 2021 Sebastian Gottschall <gottschall@dd-wrt.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * $Id:
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -31,9 +53,9 @@ static void do_file_attach(struct mime_handler *handler, char *path, webs_t stre
 static void download_wireguard_config(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	char fname[128];
-	snprintf(fname, sizeof(fname), "%s", path + 1);
+	snprintf(fname, sizeof(fname), "%s", path);
 	char dname[128];
-	snprintf(dname, sizeof(dname), "%s", path + 1);
+	snprintf(dname, sizeof(dname), "%s", path);
 	char *p = strstr(dname, "..");
 	if (p)
 		return;
@@ -45,7 +67,7 @@ static void download_wireguard_config(unsigned char method, struct mime_handler 
 	if (p)
 		*p = '_';
 	char location[128];
-	snprintf(location, sizeof(location), "/tmp/wireguard/%s", dname);
+	snprintf(location, sizeof(location), "/tmp/wireguard/%s", &dname[sizeof("wireguard_config")]);
 	do_file_attach(handler, location, wp, fname);
 	return;
 }
