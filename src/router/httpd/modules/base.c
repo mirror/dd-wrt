@@ -1556,7 +1556,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 			}
 		}
 		if (wshaper_enable && !nvram_match("wshaper_enable", wshaper_enable)) {
-			if (!strcmp(wshaper_enable, "1") && !nvram_match("ctf_fa_mode","0"))
+			if (!strcmp(wshaper_enable, "1") && !nvram_match("ctf_fa_mode", "0"))
 				need_reboot = 1;
 		}
 		if (fa && nvram_geti("ctf_fa_mode") != atoi(fa))
@@ -1836,7 +1836,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(nvram_matchi("info_passwd", 0))
+	if (nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1844,7 +1844,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(!wp->isregistered)
+	if (!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
