@@ -412,7 +412,7 @@ ifeq ($(CONFIG_WHR1166D),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_1166.dts
 else
 ifeq ($(CONFIG_WHR600D),y)
-	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_600d.dts
 else
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_whr300hp2.dts
 endif
@@ -675,7 +675,7 @@ ifeq ($(CONFIG_DIR615),y)
 	./tools/buildimg/v2image -v -i mipsel-uclibc/raw.img -o mipsel-uclibc/dir615d-web.bin -d /dev/mtdblock/2 -s wrgn22_dlwbr_dir615 -c
 endif
 ifeq ($(CONFIG_DIR615H),y)
-	./tools/senao/header.x86 -s mipsel-uclibc/aligned.uimage -d mipsel-uclibc/dir615h-web.bin -a -t kernel
+	-./tools/senao/header.x86 -s mipsel-uclibc/aligned.uimage -d mipsel-uclibc/dir615h-web.bin -a -t kernel
 endif
 ifeq ($(CONFIG_DIR300),y)
 	./tools/buildimg/packimgs -v -o mipsel-uclibc/raw.img -i mipsel-uclibc/aligned.uimage
