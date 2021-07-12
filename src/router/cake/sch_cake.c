@@ -519,6 +519,52 @@ static bool cobalt_queue_empty(struct cobalt_vars *vars,
 	return down;
 }
 
+static __be16 cake_skb_proto(const struct sk_buff *skb)
+{
+	unsigned int offset = skb_mac_offset(skb) + sizeof(struct ethhdr);
+	__be16 proto = skb->protocol;
+	struct vlan_hdr vhdr, *vh;
+
+	while (proto == htons(ETH_P_8021Q) || proto == htons(ETH_P_8021AD)) {
+		vh = skb_header_pointer(skb, offset, sizeof(vhdr), &vhdr);
+		if (!vh)
+			break;
+
+		proto = vh->h_vlan_encapsulated_proto;
+		offset += sizeof(vhdr);
+	}
+
+	return proto;
+}
+
+static int cake_set_ce(struct sk_buff *skb)
+{
+	int wlen = skb_network_offset(skb);
+
+	switch (cake_skb_proto(skb)) {
+	case htons(ETH_P_IP):
+		wlen += sizeof(struct iphdr);
+		if (!pskb_may_pull(skb, wlen) ||
+		    skb_try_make_writable(skb, wlen))
+			return 0;
+
+		return IP_ECN_set_ce(ip_hdr(skb));
+
+	case htons(ETH_P_IPV6):
+		wlen += sizeof(struct ipv6hdr);
+		if (!pskb_may_pull(skb, wlen) ||
+		    skb_try_make_writable(skb, wlen))
+			return 0;
+
+		return IP6_ECN_set_ce(skb, ipv6_hdr(skb));
+
+	default:
+		return 0;
+	}
+
+	return 0;
+}
+
 /* Call this with a freshly dequeued packet for possible congestion marking.
  * Returns true as an instruction to drop the packet, false for delivery.
  */
@@ -571,7 +617,7 @@ static bool cobalt_should_drop(struct cobalt_vars *vars,
 
 	if (next_due && vars->dropping) {
 		/* Use ECN mark if possible, otherwise drop */
-		drop = !(vars->ecn_marked = INET_ECN_set_ce(skb));
+		drop = !(vars->ecn_marked = cake_set_ce(skb));
 
 		vars->count++;
 		if (!vars->count)
@@ -604,24 +650,6 @@ static bool cobalt_should_drop(struct cobalt_vars *vars,
 		vars->drop_next = now;
 
 	return drop;
-}
-
-static __be16 cake_skb_proto(const struct sk_buff *skb)
-{
-	unsigned int offset = skb_mac_offset(skb) + sizeof(struct ethhdr);
-	__be16 proto = skb->protocol;
-	struct vlan_hdr vhdr, *vh;
-
-	while (proto == htons(ETH_P_8021Q) || proto == htons(ETH_P_8021AD)) {
-		vh = skb_header_pointer(skb, offset, sizeof(vhdr), &vhdr);
-		if (!vh)
-			break;
-
-		proto = vh->h_vlan_encapsulated_proto;
-		offset += sizeof(vhdr);
-	}
-
-	return proto;
 }
 
 #if IS_REACHABLE(CONFIG_NF_CONNTRACK)
@@ -1121,6 +1149,8 @@ static const void *cake_get_tcpopt(const struct tcphdr *tcph,
 			length--;
 			continue;
 		}
+		if (length < 2)
+			break;
 		opsize = *ptr++;
 		if (opsize < 2 || opsize > length)
 			break;
@@ -1258,6 +1288,8 @@ static bool cake_tcph_may_drop(const struct tcphdr *tcph,
 			length--;
 			continue;
 		}
+		if (length < 2)
+			break;
 		opsize = *ptr++;
 		if (opsize < 2 || opsize > length)
 			break;
@@ -1437,7 +1469,8 @@ static struct sk_buff *cake_ack_filter(struct cake_sched_data *q,
 	 * packet is consecutive with the eligible ACK, and their flags match.
 	 */
 	if (elig_ack && aggressive && elig_ack->next == skb &&
-	    (elig_flags == (tcp_flag_word(tcph) & (TCP_FLAG_ECE | TCP_FLAG_CWR))))
+	    (elig_flags == (tcp_flag_word(tcph) &
+			    (TCP_FLAG_ECE | TCP_FLAG_CWR))))
 		goto found;
 
 	return NULL;
@@ -1712,32 +1745,51 @@ static unsigned int cake_drop(struct Qdisc *sch, struct sk_buff **to_free)
 	return idx + (tin << 16);
 }
 
-static u8 cake_handle_diffserv(struct sk_buff *skb, u16 wash)
+static u8 cake_handle_diffserv(struct sk_buff *skb, bool wash)
 {
-	int wlen = skb_network_offset(skb);
+	const int offset = skb_network_offset(skb);
+	u16 *buf, buf_;
 	u8 dscp;
 
 	switch (cake_skb_proto(skb)) {
 	case htons(ETH_P_IP):
-		wlen += sizeof(struct iphdr);
-		if (!pskb_may_pull(skb, wlen) ||
-		    skb_try_make_writable(skb, wlen))
+		buf = skb_header_pointer(skb, offset, sizeof(buf_), &buf_);
+		if (unlikely(!buf))
 			return 0;
 
-		dscp = ipv4_get_dsfield(ip_hdr(skb)) >> 2;
-		if (wash && dscp)
+		/* ToS is in the second byte of iphdr */
+		dscp = ipv4_get_dsfield((struct iphdr *)buf) >> 2;
+
+		if (wash && dscp) {
+			const int wlen = offset + sizeof(struct iphdr);
+
+			if (!pskb_may_pull(skb, wlen) ||
+			    skb_try_make_writable(skb, wlen))
+				return 0;
+
 			ipv4_change_dsfield(ip_hdr(skb), INET_ECN_MASK, 0);
+		}
+
 		return dscp;
 
 	case htons(ETH_P_IPV6):
-		wlen += sizeof(struct ipv6hdr);
-		if (!pskb_may_pull(skb, wlen) ||
-		    skb_try_make_writable(skb, wlen))
+		buf = skb_header_pointer(skb, offset, sizeof(buf_), &buf_);
+		if (unlikely(!buf))
 			return 0;
 
-		dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> 2;
-		if (wash && dscp)
+		/* Traffic class is in the first and second bytes of ipv6hdr */
+		dscp = ipv6_get_dsfield((struct ipv6hdr *)buf) >> 2;
+
+		if (wash && dscp) {
+			const int wlen = offset + sizeof(struct ipv6hdr);
+
+			if (!pskb_may_pull(skb, wlen) ||
+			    skb_try_make_writable(skb, wlen))
+				return 0;
+
 			ipv6_change_dsfield(ipv6_hdr(skb), INET_ECN_MASK, 0);
+		}
+
 		return dscp;
 
 	case htons(ETH_P_ARP):
@@ -1754,14 +1806,17 @@ static struct cake_tin_data *cake_select_tin(struct Qdisc *sch,
 {
 	struct cake_sched_data *q = qdisc_priv(sch);
 	u32 tin, mark;
+	bool wash;
 	u8 dscp;
 
 	/* Tin selection: Default to diffserv-based selection, allow overriding
-	 * using firewall marks or skb->priority.
+	 * using firewall marks or skb->priority. Call DSCP parsing early if
+	 * wash is enabled, otherwise defer to below to skip unneeded parsing.
 	 */
-	dscp = cake_handle_diffserv(skb,
-				    q->rate_flags & CAKE_FLAG_WASH);
 	mark = (skb->mark & q->fwmark_mask) >> q->fwmark_shft;
+	wash = !!(q->rate_flags & CAKE_FLAG_WASH);
+	if (wash)
+		dscp = cake_handle_diffserv(skb, wash);
 
 	if (q->tin_mode == CAKE_DIFFSERV_BESTEFFORT)
 		tin = 0;
@@ -1775,6 +1830,8 @@ static struct cake_tin_data *cake_select_tin(struct Qdisc *sch,
 		tin = q->tin_order[TC_H_MIN(skb->priority) - 1];
 
 	else {
+		if (!wash)
+			dscp = cake_handle_diffserv(skb, wash);
 		tin = q->tin_index[dscp];
 
 		if (unlikely(tin >= q->tin_cnt))
@@ -2145,8 +2202,9 @@ begin:
 				b = q->tins;
 
 				if (wrapped) {
-					/* It's possible for q->qlen to be nonzero when
-					 * we actually have no packets anywhere.
+					/* It's possible for q->qlen to be
+					 * nonzero when we actually have no
+					 * packets anywhere.
 					 */
 					if (empty)
 						return NULL;
@@ -2770,9 +2828,9 @@ static int cake_change(struct Qdisc *sch, struct nlattr *opt,
 	}
 
 	if (tb[TCA_CAKE_FLOW_MODE])
-		q->flow_mode = (q->flow_mode & CAKE_FLOW_NAT_FLAG) |
-			(nla_get_u32(tb[TCA_CAKE_FLOW_MODE]) &
-				~CAKE_FLOW_NAT_FLAG);
+		q->flow_mode = ((q->flow_mode & CAKE_FLOW_NAT_FLAG) |
+				(nla_get_u32(tb[TCA_CAKE_FLOW_MODE]) &
+					CAKE_FLOW_MASK));
 
 	if (tb[TCA_CAKE_ATM])
 		q->atm_mode = nla_get_u32(tb[TCA_CAKE_ATM]);
