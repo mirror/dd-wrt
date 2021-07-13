@@ -1854,7 +1854,7 @@ int internal_getRouterBrand()
 		{ -1, "PowerBeam 5AC 300", 0xe6f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 },	//
 		{ -1, "PowerBeam 5AC 400", 0xe7f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 },	//
 		{ -1, "PowerBeam 5AC Gen2", 0xe3d6, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 },	//
-		{ -1, "PowerBeam 5AC X Gen2", 0xe3d9, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 },	//
+		{ -1, "PowerBeam 5AC X Gen2", 0xe3d9, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 },	//
 		{ -1, "ISO Station 5AC", 0xe7f7, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 2 },	//
 		{ -1, "ISO Station 5AC", 0xe6f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 2 },	//
 		{ -1, "NanoStation 5AC loco", 0xe7fa, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 2 },	//
