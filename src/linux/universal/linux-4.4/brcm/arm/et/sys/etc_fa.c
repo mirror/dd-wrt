@@ -1384,8 +1384,10 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 	}
 
 	/* Create the FA proc for user application */
-	if (FA_FA_CORE(coreunit))
+	if (FA_FA_CORE(coreunit)) {
+		printk(KERN_INFO "FA Core Detected!\n");
 		fa_proc = et_fa_fs_create();
+	}
 
 	if (!fa_corereg(fai, coreunit)) {
 		MFREE(si_osh(sih), fai, sizeof(fa_info_t));
@@ -1917,24 +1919,14 @@ fa_set_name(fa_t *fa, char *name)
 	}
 }
 
-int
-fa_read_proc(char *buffer, char **start, off_t offset, int length, int *eof, void *data)
+
+ssize_t
+fa_read_proc(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	int len;
-
-	if (offset > 0) {
-		*eof = 1;
-		return 0;
-	}
-
-	/* Give the processed buffer back to userland */
-	if (!length) {
-		ET_ERROR(("%s: Not enough return buf space\n", __FUNCTION__));
-		return 0;
-	}
-
+	char buffer[16];
 	len = sprintf(buffer, "%d\n", 1);
-	return len;
+	return simple_read_from_buffer(buf, count, ppos, buffer, len);
 }
 
 void
