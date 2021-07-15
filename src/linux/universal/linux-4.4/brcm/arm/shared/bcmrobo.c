@@ -1745,6 +1745,13 @@ robo_fa_aux_set_tcam(robo_info_t *robo, bool ipv6, bool tcp_rst, uint32 index)
 	uint8 l3_framing_bit, tcp_flags_bit;
 	uint8 phy_portmap = 0x1F; /* port 0~4 by default */
 
+	char *rgmii_port;
+
+	/* Add rgmii port into phy_portmap */
+	rgmii_port = getvar(robo->vars, "rgmii_port");
+	if (rgmii_port)
+		phy_portmap |= (1 << bcm_strtoul(rgmii_port, NULL, 0));
+
 	if (ipv6)
 		l3_framing_bit = 1; /* IPv6 */
 	else
@@ -1953,6 +1960,7 @@ robo_fa_aux_enable(robo_info_t *robo, bool enable)
 {
 	uint8 val8 = 0x0;
 	uint8 phy_portmap = 0x1F; /* port 0~4 by default */
+	char *rgmii_port;
 
 	if (!robo)
 		return;
@@ -1960,6 +1968,11 @@ robo_fa_aux_enable(robo_info_t *robo, bool enable)
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
 		robo->ops->enable_mgmtif(robo);
+
+	/* Add rgmii port into phy_portmap */
+	rgmii_port = getvar(robo->vars, "rgmii_port");
+	if (rgmii_port)
+		phy_portmap |= (1 << bcm_strtoul(rgmii_port, NULL, 0));
 
 	/* Enable CFP on phy ports */
 	if (enable)
