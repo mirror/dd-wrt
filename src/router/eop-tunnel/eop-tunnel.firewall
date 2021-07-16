@@ -2,6 +2,13 @@
 nv=/usr/sbin/nvram
 ipt=/usr/sbin/iptables
 tunnels=`$nv get oet_tunnels`
+
+#debug
+deb=$(nvram get console_debug)
+if [[ $deb -eq 1 ]]; then
+	set -x
+fi
+
 #WAN_IF="$(ip route | awk '/^default/{print $NF}')"
 WAN_IF=$(get_wanface)
 FW_STATE="-m state --state NEW"
@@ -11,24 +18,27 @@ do
 	then 
 		FW_CHAIN="blocked-oet${i}"
 		WGDELRT="/tmp/wgdelrt_oet${i}"
-		
-		$ipt -D FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
-		$ipt -D FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
-		$ipt -D INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
-		$ipt -D INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
-		$ipt -D INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
-		$ipt -D INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT 2>&1 > /dev/null
+		{
+		$ipt -D FORWARD -i oet${i} -j ACCEPT
+		$ipt -D FORWARD -o oet${i} -j ACCEPT
+		$ipt -D INPUT -i oet${i} -j ACCEPT
+		$ipt -D INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT
+		$ipt -D INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT
+		$ipt -D INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT
 		$ipt -t raw -D PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP
-		$ipt -t nat -D POSTROUTING -o oet${i} -j MASQUERADE 2>&1 > /dev/null
-		$ipt -D FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN >/dev/null 2>&1
-		$ipt -F $FW_CHAIN >/dev/null 2>&1
-		$ipt -X $FW_CHAIN >/dev/null 2>&1
+		#$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -j DROP
+		#$ipt -t nat -D POSTROUTING -o oet${i} -j MASQUERADE
+		$ipt -t nat -D POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr)
+		$ipt -D FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN
+		$ipt -F $FW_CHAIN
+		$ipt -X $FW_CHAIN
 		if [[ -f "$WGDELRT" ]]; then
-			(while read route; do $route; done < $WGDELRT) >/dev/null 2>&1
+			(while read route; do $route; done < $WGDELRT)
 			rm $WGDELRT
 		fi
 		# remove because FW sets it by default
-		$ipt -D FORWARD -i oet${i} $FW_STATE -j ACCEPT > /dev/null 2>&1
+		$ipt -D FORWARD -i oet${i} $FW_STATE -j ACCEPT
+		} >/dev/null 2>&1
 	fi
 done
 for i in `seq 1 $tunnels`
@@ -37,29 +47,31 @@ do
 	then
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
-			$ipt -I INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+			$ipt -I INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT >/dev/null 2>&1
 		fi
 		if [ `$nv get oet${i}_proto` -eq 0 ]
 		then
-			$ipt -I INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+			$ipt -I INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT >/dev/null 2>&1
 		fi
 		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 ]]
 		then
-			$ipt -I FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
-			$ipt -I INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
+			$ipt -I FORWARD -i oet${i} -j ACCEPT >/dev/null 2>&1
+			$ipt -I INPUT -i oet${i} -j ACCEPT >/dev/null 2>&1
 		fi
 		if [ `$nv get oet${i}_proto` -eq 2 ]
 		then
-			insmod xt_addrtype
 			if [ `$nv get oet${i}_mit` -eq 1 ]
 			then
+				insmod xt_addrtype
 				$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP
+				#$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -j DROP
 			fi
 			#egc: add NAT out for DDWRT client
 			# Controlled by nvram parameter oet${i}_natout
 			if [[ $($nv get oet${i}_natout) -eq 1 ]]
 			then
-				$ipt -t nat -I POSTROUTING -o oet${i} -j MASQUERADE 2>&1 > /dev/null
+				#$ipt -t nat -I POSTROUTING -o oet${i} -j MASQUERADE >/dev/null 2>&1
+				$ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr) >/dev/null 2>&1
 			fi
 			#egc: killswitch controled by nvram parameter oet${i}_killswitch
 			if [[ $($nv get oet${i}_killswitch) -eq 1 ]]
@@ -77,7 +89,7 @@ do
 						#check if ip address is used then block
 						case $line in
 						 [0-9]*)
-							$ipt -A $FW_CHAIN -s $line -j REJECT 2>&1 > /dev/null
+							$ipt -A $FW_CHAIN -s $line -j REJECT >/dev/null 2>&1
 							;;
 						 *)
 							# do nothing
@@ -88,9 +100,15 @@ do
 					$ipt -I FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN
 				else
 					#general killswitch
-					logger -p user.info "WireGuard Killswitch on br0 activated for all clients!"
-					echo "$ipt -D FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT" >> $WGDELRT
-					$ipt -I FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT
+					#logger -p user.info "WireGuard Killswitch on br0 activated for all clients!"
+					#echo "$ipt -D FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT" >> $WGDELRT
+					#$ipt -I FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT
+					logger -p user.info "WireGuard Killswitch activated for all clients!"
+					echo "$ipt -D FORWARD -o $WAN_IF -j REJECT" >> $WGDELRT
+					$ipt -I FORWARD -o $WAN_IF -j REJECT
+					#todo restart SFE/CTF to cut existing connections
+					#cat /proc/net/ip_conntrack_flush 2>&1
+					#cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1
 				fi
 			fi
 			#end kill switch
