@@ -1352,8 +1352,16 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 	 * Bypass mode: Only FA device
 	 * fa_probe has filter it for us.
 	 */
-	if (!FA_FA_CORE(coreunit) && !FA_AUX_CORE(coreunit))
+	/* Create the FA proc for user application */
+	if (FA_FA_CORE(coreunit)) {
+		printk(KERN_INFO "FA Core Detected!\n");
+		fa_proc = et_fa_fs_create();
+	}
+
+	if (!FA_FA_CORE(coreunit) && !FA_AUX_CORE(coreunit)) {
+		printk(KERN_INFO "FA Disabled!\n");
 		return NULL;
+	}
 
 	/* Allocate private info structure */
 	if ((fai = MALLOC(si_osh(sih), sizeof(fa_info_t))) == NULL) {
@@ -1383,11 +1391,6 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 		goto aux_done;
 	}
 
-	/* Create the FA proc for user application */
-	if (FA_FA_CORE(coreunit)) {
-		printk(KERN_INFO "FA Core Detected!\n");
-		fa_proc = et_fa_fs_create();
-	}
 
 	if (!fa_corereg(fai, coreunit)) {
 		MFREE(si_osh(sih), fai, sizeof(fa_info_t));
