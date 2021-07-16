@@ -3583,6 +3583,8 @@ int getmaxvaps(const char *prefix)
 		return 8;
 	if (is_ath10k(prefix))
 		return 16;
+	if (is_ath5k(prefix))
+		return 4;
 	if (is_mt7615(prefix))
 		return 16;
 	if (is_mt7915(prefix))
