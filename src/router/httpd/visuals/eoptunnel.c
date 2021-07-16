@@ -556,7 +556,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					show_caption(wp, "label", "share.ipaddrmask", NULL);
 					snprintf(temp, sizeof(temp), "oet%d_ipaddrmask", tun);
-					websWrite(wp, "<input size=\"32\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+					websWrite(wp, "<input size=\"48\" maxlength=\"64\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 				}
 				websWrite(wp, "</div>\n");
 				//end alternative input

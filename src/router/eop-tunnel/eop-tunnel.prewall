@@ -1,20 +1,29 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
 /bin/mkdir -p /tmp/oet/pid
+
+#debug
+deb=$(nvram get console_debug)
+if [[ $deb -eq 1 ]]; then
+	set -x
+fi
+
 cd /tmp/oet/pid
-rmmod eoip
+rmmod eoip >/dev/null 2>&1
 tunnels=`$nv get oet_tunnels`
 for i in `seq 1 $tunnels`
 do
 	if test -e "${i}.pid" 
-	then 
-	    emf del iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
-	    brctl delif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
-	    ip tunnel del oet${i} 2>&1 > /dev/null
-	    ip link del oet${i} 2>&1 > /dev/null
-	    wg set oet${i} peer $($nv get oet${i}_peerkey) remove 2>&1 > /dev/null
+	then
+		{
+	    emf del iface $(getbridge oet${i}) oet${i}
+	    brctl delif $(getbridge oet${i}) oet${i}
+	    ip tunnel del oet${i}
+	    ip link del oet${i}
+	    #wg set oet${i} peer $($nv get oet${i}_peerkey) remove >/dev/null 2>&1  #Does not work peerkey needs index
 	    rm -f ${i}.pid
 		#remove DNS
+		} >/dev/null 2>&1
 		$nv unset wg_get_dns
 		if [[ -f /tmp/resolv.dnsmasq_oet${i} ]]; then
 			cat /tmp/resolv.dnsmasq_oet${i} | while read -r  remdns; do
@@ -22,19 +31,27 @@ do
 			done
 			rm /tmp/resolv.dnsmasq_oet${i}
 		fi
+		# remove PBR
+		TID=$((20+$i))
+		while ip rule delete from 0/0 to 0/0 table $TID >/dev/null 2>&1; do true; done
+		ip route flush table $TID
+		logger -p user.info "Flush delete PBR interface oet${i}, table : $TID"
 		# execute route down script
 		[[ ! -z "$($nv get oet${i}_rtdownscript | sed '/^[[:blank:]]*#/d')" ]] && { sh $($nv get oet${i}_rtdownscript) & }
+		ip route flush cache
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
 		if [ `$nv get oet${i}_proto` -eq 2 ]
 		then
+			{
 			mkdir -p /tmp/wireguard
 			insmod ipv6
 			insmod udp_tunnel
 			insmod ip6_udp_tunnel
 			insmod ip_tunnel
 			insmod wireguard
+			} >/dev/null 2>&1
 			logger -p user.info "Enable WireGuard interface oet${i} on port $($nv get oet${i}_port)"
 			if [ -z "$($nv get oet${i}_mtu)" ]
 			then
@@ -54,17 +71,18 @@ do
 			wg set oet${i} listen-port $($nv get oet${i}_port)
 			$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
-			rm /tmp/wireguard/oet${i}_private
-			
+			#wg set oet${i} private-key < $(echo $($nv get oet${i}_private))  #only works in bash
+			if [[ "$($nv get console_debug)" -ne  1 ]]  #debug remove later
+			then
+				rm /tmp/wireguard/oet${i}_private
+			fi
 			#egc add code to regenerate public key from private key if private key is set manually
 			$nv set oet${i}_public="$($nv get oet${i}_private|wg pubkey)"
-			
 			#egc add fwmark
 			if [[ ! -z "$($nv get oet${i}_fwmark)" ]]
 			then
 				wg set oet${i} fwmark $($nv get oet${i}_fwmark)
 			fi
-			
 			peers=$((`$nv get oet${i}_peers` - 1))
 			$nv set oet${i}_bridged=0
 			for p in `seq 0 $peers`
@@ -87,50 +105,63 @@ do
 					#egc On WAP's wan_gateway is 0.0.0.0 and wan_proto=disabled use lan_gateway
 					GATEWAY="$($nv get wan_gateway)"
 					[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
-					#[[ $GATEWAY = "0.0.0.0" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
-					route add -host $($nv get oet${i}_rem${p}) gw $GATEWAY dev $(get_wanface) 2>&1 > /dev/null
+					#Note the resolve of the host (DNS) might be problematic, WG should wait and retry, consider moving this to eop-tunnel-raip.sh
+					route add -host $($nv get oet${i}_rem${p}) gw $GATEWAY dev $(get_wanface) >/dev/null 2>&1
 					logger -p user.info "WireGuard setting route for oet${i} to endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p}) via $GATEWAY dev $(get_wanface)"
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
-				#rm -f /tmp/wireguard/oet${i}_psk${p}
+				if [[ "$($nv get console_debug)" -ne  1 ]]  #debug remove later
+				then
+					rm -f /tmp/wireguard/oet${i}_psk${p}
+				fi
 			done
-			ifconfig oet${i} promisc up 2>&1 > /dev/null
-			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i} 2>&1 > /dev/null
+			ifconfig oet${i} promisc up >/dev/null 2>&1
+			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i} >/dev/null 2>&1
 			# alternative input with ipaddrmask
 			if [[ ! -z "$($nv get oet${i}_ipaddrmask)" ]]
 			then
 				for ipaddrmask in $($nv get oet${i}_ipaddrmask | sed "s/,/ /g") ; do
-					ip addr add $ipaddrmask dev oet${i} 2>&1 > /dev/null
-					logger -p user.info "WireGuard $ipaddrmask added to oet${i}"
+					##ip addr add $ipaddrmask dev oet${i} >/dev/null 2>&1
+					##logger -p user.info "WireGuard $ipaddrmask added to oet${i}"
 					# set ip address and netmask for backwards compatibility only for IPv4
 					case $ipaddrmask in
-					  *.*)
+					  *.*) #IPv4
 						IPADDR=${ipaddrmask%%/*}
-						#mask="${ipaddrmask#*/}"
+						mask="${ipaddrmask#*/}"
 						# error handling if netmask is not specified
-						if [[ -z "${ipaddrmask##*/[0-3]*}" ]] ;then
+						#if [[ -z "${ipaddrmask##*/[0-3]}" || -z "${ipaddrmask##*/[0-3][0-9]}" ]] ;then
+						if [[ $mask -lt 33 ]] ;then
 							mask="${ipaddrmask#*/}"
-						else  # no valid mask specified
-							logger -p user.info "WireGuard no valid tunnel address for oet${i}: $ipaddrmask, assume /32"
-							mask=32
+						else
+							logger -p user.info "ERROR: WireGuard no valid tunnel address for oet${i}: $ipaddrmask, please correct, using /24"
+							mask=24
 						fi
+						ip addr add $IPADDR/$mask dev oet${i} >/dev/null 2>&1
+						logger -p user.info "WireGuard $IPADDR/$mask added to oet${i}"
 						set -- $(( 5 - ($mask / 8) )) 255 255 255 255 $(( (255 << (8 - ($mask % 8))) & 255 )) 0 0 0
 						[ $1 -gt 1 ] && shift $1 || shift
 						NETMASK=${1-0}.${2-0}.${3-0}.${4-0}
 						$nv set oet${i}_ipaddr=$IPADDR
 						$nv set oet${i}_netmask=$NETMASK
+						;;
+					  *:*) #IPv6
+						ip addr add $ipaddrmask dev oet${i} >/dev/null 2>&1
+						logger -p user.info "WireGuard $ipaddrmask added to oet${i}"
+						;;
+					  *)
+						logger -p user.info "ERROR: WireGuard no valid IPv4 or IPV6 tunnel address for oet${i}: $ipaddrmask, please correct"
+						;;
 					esac
 				done
-				# ip addr add "$($nv get oet${i}_ipaddrmask)" dev oet${i} 2>&1 > /dev/null
 			else
-				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
+				logger -p user.info "ERROR: WireGuard no valid IPv4 or IPV6 tunnel address for oet${i}: $ipaddrmask, please correct, trying the old way"
+				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
 			fi
 			
 			echo enable > ${i}.pid
 			# add routes based on allowed IP's has to be after interface is up
 			# spawn process so that it does not stop, tunnel is send as parameter maybe use nohup
 			/usr/bin/eop-tunnel-raip.sh $i &
-
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
@@ -140,14 +171,14 @@ do
 			eoip add tunnel-id $($nv get oet${i}_id) name oet${i} remote $($nv get oet${i}_rem) local $($nv get oet${i}_local)
 			if [ `$nv get oet${i}_bridged` -eq 1 ]
 			then
-				ifconfig oet${i} up 2>&1 > /dev/null
-				ifconfig oet${i} promisc 2>&1 > /dev/null
-				brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+				ifconfig oet${i} up >/dev/null 2>&1
+				ifconfig oet${i} promisc >/dev/null 2>&1
+				brctl addif $(getbridge oet${i}) oet${i} >/dev/null 2>&1
 				setportprio $(getbridge oet${i}) oet${i}
-				emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+				emf add iface $(getbridge oet${i}) oet${i} >/dev/null 2>&1
 			else
-				ifconfig oet${i} promisc up 2>&1 > /dev/null
-				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
+				ifconfig oet${i} promisc up >/dev/null 2>&1
+				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
 			fi
 			echo enable > ${i}.pid
 		fi
@@ -165,15 +196,15 @@ do
 			if [ `$nv get oet${i}_bridged` -eq 1 ]
 			then
 				ip link set dev oet${i} up
-				ifconfig oet${i} up 2>&1 > /dev/null
-				ifconfig oet${i} promisc 2>&1 > /dev/null
-				brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+				ifconfig oet${i} up >/dev/null 2>&1
+				ifconfig oet${i} promisc >/dev/null 2>&1
+				brctl addif $(getbridge oet${i}) oet${i} >/dev/null 2>&1
 				setportprio $(getbridge oet${i}) oet${i}
-				emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+				emf add iface $(getbridge oet${i}) oet${i} >/dev/null 2>&1
 			else
 				ip link set dev oet${i} up
-				ifconfig oet${i} promisc 2>&1 > /dev/null
-				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
+				ifconfig oet${i} promisc >/dev/null 2>&1
+				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
     			fi
 			echo enable > ${i}.pid
 		fi

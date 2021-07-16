@@ -1903,7 +1903,7 @@ void add_peer(webs_t wp)
 	default_set("namep", "Peer");
 	default_seti("endpoint", 0);
 	default_seti("usepsk", 0);
-	default_seti("aip_rten", 0);
+	default_seti("aip_rten", 1);
 	default_set("rem", "0.0.0.0");
 	default_seti("peerport", 51820);
 	default_set("ip", "0.0.0.0");
