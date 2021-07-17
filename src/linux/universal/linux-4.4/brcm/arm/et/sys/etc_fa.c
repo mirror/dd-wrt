@@ -1343,20 +1343,25 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 	fa_info_t *fai = NULL;
 	bool fa_capable = FA_CAPABLE(fa_chip_rev(sih), sih->chip);
 
+	if (!fa_capable) {
+		printk(KERN_INFO "not FA capable\n");
+	}
+	/* Create the FA proc for user application */
+	if (FA_FA_CORE(coreunit)) {
+		printk(KERN_INFO "FA Core Detected!\n");
+		fa_proc = et_fa_fs_create();
+	}
+
 	/* By pass fa attach if FA configuration is not enabled or invalid */
-	if (!FA_ON_MODE_VALID() || !fa_capable)
+	if (!FA_ON_MODE_VALID()) {
 		return NULL;
+	}
 
 	/* Do fa_attach for:
 	 * Normal mode: Both Aux and FA device
 	 * Bypass mode: Only FA device
 	 * fa_probe has filter it for us.
 	 */
-	/* Create the FA proc for user application */
-	if (FA_FA_CORE(coreunit)) {
-		printk(KERN_INFO "FA Core Detected!\n");
-		fa_proc = et_fa_fs_create();
-	}
 
 	if (!FA_FA_CORE(coreunit) && !FA_AUX_CORE(coreunit)) {
 		printk(KERN_INFO "FA Disabled!\n");
