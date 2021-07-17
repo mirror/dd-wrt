@@ -6471,29 +6471,38 @@ void start_sysinit(void)
 		}
 
 	}
+	if (!*nvram_safe_get("ctf_fa_cap")) {
+		nvram_set("ctf_fa_mode", "2");
+		insmod("ctf");
+		insmod("et");
+		FILE *fa = fopen("/proc/fa", "rb");
+		if (fa) {
+			fclose(fa);
+			nvram_set("ctf_fa_cap", "1");
+		} else {
+			nvram_set("ctf_fa_cap", "0");
+			nvram_unset("ctf_fa_mode");
+		}
+		nvram_commit();
+		sys_reboot();
+	}
+
 	if (nvram_match("sfe", "2"))
 		nvram_set("ctf_disable", "0");
 	else
 		nvram_set("ctf_disable", "1");
-
-	nvram_default_get("ctf_fa_mode", "0");
-	if (!nvram_match("wan_proto", "static") && !nvram_match("wan_proto", "dhcp"))
-		nvram_set("ctf_fa_mode", "0");
-	if (nvram_match("wshaper_enable", "1"))
-		nvram_set("ctf_fa_mode", "0");
-	insmod("ctf");
-	insmod("et");
-	FILE *fa = fopen("/proc/fa", "rb");
-	if (fa) {
-		fclose(fa);
+	
+	if (nvram_match("ctf_fa_cap","1")) {
 		nvram_default_get("ctf_fa_mode", "0");
 		if (!nvram_match("wan_proto", "static") && !nvram_match("wan_proto", "dhcp"))
 			nvram_set("ctf_fa_mode", "0");
 		if (nvram_match("wshaper_enable", "1"))
 			nvram_set("ctf_fa_mode", "0");
-	} else {
-		nvram_unset("ctf_fa_mode");
 	}
+
+	insmod("ctf");
+	insmod("et");
+
 
 	insmod("b5301x_common");
 	insmod("b5301x_srab");
