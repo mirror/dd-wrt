@@ -6483,6 +6483,7 @@ void start_sysinit(void)
 			nvram_set("ctf_fa_cap", "0");
 			nvram_unset("ctf_fa_mode");
 		}
+		nvram_set("ctf_fa_mode", "0");
 		nvram_commit();
 		sys_reboot();
 	}
