@@ -6486,6 +6486,9 @@ void start_sysinit(void)
 		nvram_set("ctf_fa_mode", "0");
 		nvram_commit();
 		sys_reboot();
+		while(1) {
+		    // do nothing loop
+		}
 	}
 
 	if (nvram_match("sfe", "2"))
