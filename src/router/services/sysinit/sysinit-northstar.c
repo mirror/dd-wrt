@@ -6472,17 +6472,17 @@ void start_sysinit(void)
 
 	}
 	if (nvram_geti("nvram_ver") < 8 || !*nvram_safe_get("ctf_fa_cap")) {
-		nvram_set("ctf_fa_mode", "2");
+		nvram_seti("ctf_fa_mode", 2);
 		nvram_seti("nvram_ver", 8);
 		insmod("ctf");
 		insmod("et");
 		FILE *fa = fopen("/proc/fa", "rb");
 		if (fa) {
 			fclose(fa);
-			nvram_set("ctf_fa_cap", "1");
-			nvram_set("ctf_fa_mode", "0");
+			nvram_seti("ctf_fa_cap", 1);
+			nvram_seti("ctf_fa_mode", 0);
 		} else {
-			nvram_set("ctf_fa_cap", "0");
+			nvram_seti("ctf_fa_cap", 0);
 			nvram_unset("ctf_fa_mode");
 		}
 		nvram_commit();
