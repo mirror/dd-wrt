@@ -6471,8 +6471,9 @@ void start_sysinit(void)
 		}
 
 	}
-	if (!*nvram_safe_get("ctf_fa_cap")) {
+	if (nvram_geti("nvram_ver") < 8 || !*nvram_safe_get("ctf_fa_cap")) {
 		nvram_set("ctf_fa_mode", "2");
+		nvram_seti("nvram_ver", 8);
 		insmod("ctf");
 		insmod("et");
 		FILE *fa = fopen("/proc/fa", "rb");
