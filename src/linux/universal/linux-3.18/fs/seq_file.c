@@ -36,6 +36,9 @@ static void *seq_buf_alloc(unsigned long size)
 {
 	void *buf;
 
+	if (unlikely(size > MAX_RW_COUNT))
+		return NULL;
+
 	buf = kmalloc(size, GFP_KERNEL | __GFP_NOWARN);
 	if (!buf && size > PAGE_SIZE)
 		buf = vmalloc(size);
