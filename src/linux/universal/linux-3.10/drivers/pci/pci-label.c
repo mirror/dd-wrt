@@ -199,7 +199,7 @@ static void dsm_label_utf16s_to_utf8s(union acpi_object *obj, char *buf)
 			      package.elements[1].string.pointer,
 			      obj->package.elements[1].string.length,
 			      UTF16_LITTLE_ENDIAN,
-			      buf, PAGE_SIZE);
+			      buf, PAGE_SIZE - 1);
 	buf[len] = '\n';
 }
 
