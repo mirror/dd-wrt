@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.271 Kernel Configuration
+# Linux/arm 4.9.276 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -2345,6 +2345,7 @@ CONFIG_POWER_SUPPLY=y
 # CONFIG_CHARGER_BQ25890 is not set
 # CONFIG_CHARGER_SMB347 is not set
 # CONFIG_BATTERY_GAUGE_LTC2941 is not set
+# CONFIG_BATTERY_RT5033 is not set
 # CONFIG_CHARGER_RT9455 is not set
 CONFIG_HWMON=y
 # CONFIG_HWMON_VID is not set
