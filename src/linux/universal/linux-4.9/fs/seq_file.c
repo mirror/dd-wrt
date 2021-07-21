@@ -25,6 +25,10 @@ static void seq_set_overflow(struct seq_file *m)
 
 static void *seq_buf_alloc(unsigned long size)
 {
+
+	if (unlikely(size > MAX_RW_COUNT))
+		return NULL;
+
 	return kvmalloc(size, GFP_KERNEL);
 }
 
@@ -63,8 +67,6 @@ int seq_open(struct file *file, const struct seq_operations *op)
 	// to the lifetime of the file.
 	p->file = file;
 
-	if (unlikely(size > MAX_RW_COUNT))
-		return NULL;
 
 	/*
 	 * Wrappers around seq_open(e.g. swaps_open) need to be
