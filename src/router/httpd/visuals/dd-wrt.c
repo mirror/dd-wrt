@@ -6585,13 +6585,22 @@ EJ_VISIBLE void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 			}
 			int a, cnt = 0, c = 0;
 			i++;
+			int check = 0;
+			if (line[i] == '"')
+				check = 1;
 			for (a = i; a < i + sizeof(fname) - 1; a++) {
-				if (line[a] == '"') {
-					cnt++;
-					continue;
+				if (check) {
+					if (line[a] == '"') {
+						cnt++;
+						continue;
+					}
+					if (cnt == 2)
+						break;
+				} else {
+					if (line[a] == ',') {
+						break;
+					}
 				}
-				if (cnt == 2)
-					break;
 				fname[c++] = line[a];
 			}
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", name, nvram_match("dns_crypt_resolver", name) ? "selected" : "", fname);
