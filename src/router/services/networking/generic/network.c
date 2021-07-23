@@ -1988,7 +1988,8 @@ void start_lan(void)
 	if (getSTA() || getWET() || CANBRIDGE() && !nvram_match("vlans", "1")) {
 		wanstate = set_wan_state(0);
 	} else {
-		set_wan_state(1);
+		if (!nvram_match("vlans", "1"))
+			set_wan_state(1);
 	}
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
 		br_add_bridge(lan_ifname);
