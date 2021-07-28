@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -66,6 +66,7 @@
 #include "feature/nodelist/torcert.h"
 #include "core/or/channelpadding.h"
 #include "feature/dirauth/authmode.h"
+#include "feature/hs/hs_service.h"
 
 #include "core/or/cell_st.h"
 #include "core/or/cell_queue_st.h"
@@ -686,6 +687,11 @@ connection_or_finished_flushing(or_connection_t *conn)
       /* PROXY_HAPROXY gets connected by receiving an ack. */
       if (conn->proxy_type == PROXY_HAPROXY) {
         tor_assert(TO_CONN(conn)->proxy_state == PROXY_HAPROXY_WAIT_FOR_FLUSH);
+        IF_BUG_ONCE(buf_datalen(TO_CONN(conn)->inbuf) != 0) {
+          /* This should be impossible; we're not even reading. */
+          connection_or_close_for_error(conn, 0);
+          return -1;
+        }
         TO_CONN(conn)->proxy_state = PROXY_CONNECTED;
 
         if (connection_tls_start_handshake(conn, 0) < 0) {
@@ -1974,7 +1980,8 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
                                                    conn->identity_digest);
     const int is_authority_fingerprint = router_digest_is_trusted_dir(
                                                    conn->identity_digest);
-    const int non_anonymous_mode = rend_non_anonymous_mode_enabled(options);
+    const int non_anonymous_mode =
+      hs_service_non_anonymous_mode_enabled(options);
     int severity;
     const char *extra_log = "";
 

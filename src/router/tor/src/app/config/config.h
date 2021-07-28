@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -43,6 +43,9 @@ void init_protocol_warning_severity_level(void);
 int get_protocol_warning_severity_level(void);
 
 #define LOG_PROTOCOL_WARN (get_protocol_warning_severity_level())
+
+/** Pattern for backing up configuration files */
+#define CONFIG_BACKUP_PATTERN "%s.orig.1"
 
 /** An error from options_trial_assign() or options_init_from_string(). */
 typedef enum setopt_err_t {

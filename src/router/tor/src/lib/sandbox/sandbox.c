@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -734,7 +734,7 @@ sb_socket(scmp_filter_ctx ctx, sandbox_cfg_t *filter)
     SCMP_CMP(2, SCMP_CMP_EQ, IPPROTO_IP));
   if (rc)
     return rc;
-#endif
+#endif /* defined(ENABLE_NSS) */
 
   rc = seccomp_rule_add_3(ctx, SCMP_ACT_ALLOW, SCMP_SYS(socket),
       SCMP_CMP(0, SCMP_CMP_EQ, PF_UNIX),
@@ -1713,7 +1713,7 @@ get_syscall_from_ucontext(const ucontext_t *ctx)
 {
   return (int) ctx->uc_mcontext.M_SYSCALL;
 }
-#else
+#else /* !defined(SYSCALL_NAME_DEBUGGING) */
 static const char *
 get_syscall_name(int syscall_num)
 {
@@ -1726,7 +1726,7 @@ get_syscall_from_ucontext(const ucontext_t *ctx)
   (void) ctx;
   return -1;
 }
-#endif
+#endif /* defined(SYSCALL_NAME_DEBUGGING) */
 
 #ifdef USE_BACKTRACE
 #define MAX_DEPTH 256

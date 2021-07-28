@@ -1,6 +1,6 @@
 /* Copyright (c) 2003, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #ifndef TOR_TORTLS_H
@@ -108,7 +108,6 @@ int tor_tls_handshake(tor_tls_t *tls);
 int tor_tls_finish_handshake(tor_tls_t *tls);
 void tor_tls_unblock_renegotiation(tor_tls_t *tls);
 void tor_tls_block_renegotiation(tor_tls_t *tls);
-void tor_tls_assert_renegotiation_unblocked(tor_tls_t *tls);
 int tor_tls_get_pending_bytes(tor_tls_t *tls);
 size_t tor_tls_get_forced_write_size(tor_tls_t *tls);
 
