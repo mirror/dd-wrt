@@ -110,10 +110,7 @@ do
 					logger -p user.info "WireGuard setting route for oet${i} to endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p}) via $GATEWAY dev $(get_wanface)"
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
-				if [[ "$($nv get console_debug)" -ne  1 ]]  #debug remove later
-				then
-					rm -f /tmp/wireguard/oet${i}_psk${p}
-				fi
+				#rm -f /tmp/wireguard/oet${i}_psk${p}  #cannot remove key here as wg set is started in a subshell and not ready yet
 			done
 			ifconfig oet${i} promisc up >/dev/null 2>&1
 			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i} >/dev/null 2>&1
