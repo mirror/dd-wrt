@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9b01856b42d04c94c559cc70b177c17c04717ef7 $
+ * $Id: 90fe371b0757d4aa364f70f6eb743e68073487e8 $
  * @file rlm_sql.c
  * @brief Implements SQL 'users' file, and SQL accounting.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 9b01856b42d04c94c559cc70b177c17c04717ef7 $")
+RCSID("$Id: 90fe371b0757d4aa364f70f6eb743e68073487e8 $")
 
 #include <ctype.h>
 
@@ -303,7 +303,7 @@ static int generate_sql_clients(rlm_sql_t *inst)
 
 		num_rows = (inst->module->sql_num_fields)(handle, inst->config);
 		if (num_rows < 5) {
-			WARN("SELECT returned too few rows.  Please do not edit 'client_query'");
+			WARN("SELECT returned too few fields.  Please do not edit 'client_query'");
 			continue;
 		}
 

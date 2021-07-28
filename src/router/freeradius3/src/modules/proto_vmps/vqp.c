@@ -1,7 +1,7 @@
 /*
  * vqp.c	Functions to send/receive VQP packets.
  *
- * Version:	$Id: 8ab822d01ec44ba2cde9b14fdfec7e587f899211 $
+ * Version:	$Id: 9667387abce8e6488a1389c66e08bd355060aa81 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2007 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 8ab822d01ec44ba2cde9b14fdfec7e587f899211 $")
+RCSID("$Id: 9667387abce8e6488a1389c66e08bd355060aa81 $")
 
 #include	<freeradius-devel/libradius.h>
 #include	<freeradius-devel/udpfromto.h>
@@ -459,6 +459,7 @@ int vqp_decode(RADIUS_PACKET *packet)
 	 */
 	while (ptr < end) {
 		char *p;
+		DICT_ATTR const *da;
 
 		if ((end - ptr) < 6) break;
 
@@ -472,7 +473,14 @@ int vqp_decode(RADIUS_PACKET *packet)
 		 *	Hack to get the dictionaries to work correctly.
 		 */
 		attribute |= 0x2000;
-		vp = fr_pair_afrom_num(packet, attribute, 0);
+
+		/*
+		 *	We don't care about unknown attributes in VQP.
+		 */
+		da = dict_attrbyvalue(attribute, 0);
+		if (!da) continue;
+
+		vp = fr_pair_afrom_da(packet, da);
 		if (!vp) {
 			fr_pair_list_free(&packet->vps);
 

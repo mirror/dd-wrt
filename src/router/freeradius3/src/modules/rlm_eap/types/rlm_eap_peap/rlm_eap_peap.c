@@ -1,7 +1,7 @@
 /*
  * rlm_eap_peap.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: a389361f6d2c85ea8b70e5d054c999c38a0e66cf $
+ * Version:     $Id: 4bbf57330fb1d802f26d7637715f70ec19e2d7a6 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: a389361f6d2c85ea8b70e5d054c999c38a0e66cf $")
+RCSID("$Id: 4bbf57330fb1d802f26d7637715f70ec19e2d7a6 $")
 
 #include "eap_peap.h"
 
@@ -141,6 +141,17 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 		ERROR("You MUST enable TLS 1.2 for PEAP to work.");
 		return -1;
 	}
+
+	if ((inst->tls_conf->max_version == TLS1_3_VERSION) ||
+	    (inst->tls_conf->min_version == TLS1_3_VERSION)) {
+		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		WARN("!! There is no standard for using PEAP with TLS 1.3");
+		WARN("!! Please set tls_max_version = \"1.2\"");
+		WARN("!! FreeRADIUS only supports TLS 1.3 for special builds of wpa_supplicant and Windows");
+		WARN("!! This limitation is likely to change in late 2021.");
+		WARN("!! If you are using this version of FreeRADIUS after 2021, you will probably need to upgrade");
+		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+}
 #endif
 
 	return 0;

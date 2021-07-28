@@ -3,7 +3,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file - @RADIUSD_VERSION_STRING@
 ##
 ##	http://www.freeradius.org/
-##	$Id: 61cc3a481a1c79566b2c321a06226c71193f71b2 $
+##	$Id: 7d7b0c01274d81a0c5c6e0c0827907af6768af11 $
 ##
 
 ######################################################################
@@ -278,6 +278,17 @@ max_requests = 16384
 #  allowed values: {no, yes}
 #
 hostname_lookups = no
+
+#
+#  Run a "Post-Auth-Type Client-Lost" section.  This ONLY happens when
+#  the server sends an Access-Challenge, and then client does not
+#  respond to it.  The goal is to allow administrators to log
+#  something when the client does not respond.
+#
+#  See sites-available/default, "Post-Auth-Type Client-Lost" for more
+#  information.
+#
+#postauth_client_lost = no
 
 #
 #  Logging section.  The various "log_*" configuration items
