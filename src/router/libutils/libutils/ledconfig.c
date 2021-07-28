@@ -23,32 +23,37 @@
 #include <bcmnvram.h>
 #include <utils.h>
 
+#define GPIO_VOID	0xffff
+#define GPIO_LOW	0x1000
+#define GPIO_IN		0x2000
+
+#define GPIO_MASK	0xfff
 static void getledconfig(struct ledconfig *cfg)
 {
 
-	cfg->power_gpio = 0xffff;
-	cfg->beeper_gpio = 0xffff;
-	cfg->diag_gpio = 0xffff;
-	cfg->diag_gpio_disabled = 0xffff;
-	cfg->dmz_gpio = 0xffff;
-	cfg->connected_gpio = 0xffff;
-	cfg->disconnected_gpio = 0xffff;
-	cfg->bridge_gpio = 0xffff;
-	cfg->vpn_gpio = 0xffff;
-	cfg->ses_gpio = 0xffff;	// use for SES1 (Linksys), AOSS (Buffalo)
-	cfg->ses2_gpio = 0xffff;
-	cfg->wlan_gpio = 0xffff;	// wlan button led R7000
-	cfg->wlan0_gpio = 0xffff;	// use this only if wlan led is not controlled by hardware!
-	cfg->wlan1_gpio = 0xffff;
-	cfg->wlan2_gpio = 0xffff;
-	cfg->usb_gpio = 0xffff;
-	cfg->usb_gpio1 = 0xffff;
-	cfg->sec_gpio = 0xffff;	// generic
-	cfg->sec0_gpio = 0xffff;	// security leds, wrt600n
-	cfg->sec1_gpio = 0xffff;
-	cfg->usb_power = 0xffff;
-	cfg->usb_power1 = 0xffff;
-	cfg->poe_gpio = 0xffff;
+	cfg->power_gpio = GPIO_VOID;
+	cfg->beeper_gpio = GPIO_VOID;
+	cfg->diag_gpio = GPIO_VOID;
+	cfg->diag_gpio_disabled = GPIO_VOID;
+	cfg->dmz_gpio = GPIO_VOID;
+	cfg->connected_gpio = GPIO_VOID;
+	cfg->disconnected_gpio = GPIO_VOID;
+	cfg->bridge_gpio = GPIO_VOID;
+	cfg->vpn_gpio = GPIO_VOID;
+	cfg->ses_gpio = GPIO_VOID;	// use for SES1 (Linksys), AOSS (Buffalo)
+	cfg->ses2_gpio = GPIO_VOID;
+	cfg->wlan_gpio = GPIO_VOID;	// wlan button led R7000
+	cfg->wlan0_gpio = GPIO_VOID;	// use this only if wlan led is not controlled by hardware!
+	cfg->wlan1_gpio = GPIO_VOID;
+	cfg->wlan2_gpio = GPIO_VOID;
+	cfg->usb_gpio = GPIO_VOID;
+	cfg->usb_gpio1 = GPIO_VOID;
+	cfg->sec_gpio = GPIO_VOID;	// generic
+	cfg->sec0_gpio = GPIO_VOID;	// security leds, wrt600n
+	cfg->sec1_gpio = GPIO_VOID;
+	cfg->usb_power = GPIO_VOID;
+	cfg->usb_power1 = GPIO_VOID;
+	cfg->poe_gpio = GPIO_VOID;
 	cfg->v1func = 0;
 	cfg->connblue = nvram_matchi("connblue", 1) ? 1 : 0;
 
@@ -58,62 +63,62 @@ static void getledconfig(struct ledconfig *cfg)
 	{
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_TECHNAXX3G:
-		cfg->usb_gpio = 0x1009;
-		cfg->diag_gpio = 0x100c;
-		cfg->connected_gpio = 0x100b;
-		cfg->ses_gpio = 0x100c;
+		cfg->usb_gpio = GPIO_LOW | 0x9;
+		cfg->diag_gpio = GPIO_LOW | 0xc;
+		cfg->connected_gpio = GPIO_LOW | 0xb;
+		cfg->ses_gpio = GPIO_LOW | 0xc;
 		break;
 #ifdef HAVE_WPE72
 	case ROUTER_BOARD_NS5M:
-		cfg->diag_gpio = 0x100d;
+		cfg->diag_gpio = GPIO_LOW | 0xd;
 		break;
 #else
 	case ROUTER_BOARD_NS5M:
-		cfg->poe_gpio = 0x0008;
+		cfg->poe_gpio = 0x8;
 		break;
 #endif
 	case ROUTER_BOARD_UNIFI:
-		cfg->ses_gpio = 0x0001;
-		cfg->sec0_gpio = 0x0001;
+		cfg->ses_gpio = 0x1;
+		cfg->sec0_gpio = 0x1;
 		break;
 	case ROUTER_BOARD_UNIFI_V2:
-		cfg->connected_gpio = 0x000d;
+		cfg->connected_gpio = 0xd;
 		break;
 	case ROUTER_UBNT_NANOAC:
-		cfg->poe_gpio = 0x0003;
+		cfg->poe_gpio = 0x3;
 		break;
 	case ROUTER_BOARD_NS2M:
-		cfg->poe_gpio = 0x0008;
+		cfg->poe_gpio = 0x8;
 		break;
 	case ROUTER_BOARD_NS5MXW:
-		cfg->poe_gpio = 0x0002;
+		cfg->poe_gpio = 0x2;
 		break;
 	case ROUTER_UBNT_UAPAC:
 	case ROUTER_UBNT_UAPACPRO:
-		cfg->ses_gpio = 0x0007;
-		cfg->sec0_gpio = 0x0007;
+		cfg->ses_gpio = 0x7;
+		cfg->sec0_gpio = 0x7;
 		break;
 	case ROUTER_BOARD_AIRROUTER:
-		cfg->power_gpio = 0x100b;
-		cfg->diag_gpio = 0x000b;
-		cfg->connected_gpio = 0x1000;
+		cfg->power_gpio = GPIO_LOW | 0xb;
+		cfg->diag_gpio = 0xb;
+		cfg->connected_gpio = GPIO_LOW | 0x0;
 		break;
 	case ROUTER_BOARD_DANUBE:
 #ifdef HAVE_WMBR_G300NH
-		cfg->diag_gpio = 0x1005;
-		cfg->ses_gpio = 0x100e;
-		cfg->sec0_gpio = 0x100e;
-		cfg->connected_gpio = 0x1011;
-		cfg->disconnected_gpio = 0x1012;
-		cfg->power_gpio = 0x1001;
+		cfg->diag_gpio = GPIO_LOW | 0x5;
+		cfg->ses_gpio = GPIO_LOW | 0xe;
+		cfg->sec0_gpio = GPIO_LOW | 0xe;
+		cfg->connected_gpio = GPIO_LOW | 0x11;
+		cfg->disconnected_gpio = GPIO_LOW | 0x12;
+		cfg->power_gpio = GPIO_LOW | 0x1;
 #endif
 #ifdef HAVE_SX763
-//              cfg->diag_gpio = 0x1005;
-//              cfg->ses_gpio = 0x100e;
-//              cfg->sec0_gpio = 0x100e;
-		cfg->connected_gpio = 0x10de;
-//              cfg->disconnected_gpio = 0x1012;
-//              cfg->power_gpio = 0x1001;
+//              cfg->diag_gpio = GPIO_LOW | 0x5;
+//              cfg->ses_gpio = GPIO_LOW | 0xe;
+//              cfg->sec0_gpio = GPIO_LOW | 0xe;
+		cfg->connected_gpio = GPIO_LOW | 0xde;
+//              cfg->disconnected_gpio = GPIO_LOW | 0x12;
+//              cfg->power_gpio = GPIO_LOW | 0x1;
 #endif
 		break;
 #ifdef HAVE_UNIWIP
@@ -122,10 +127,10 @@ static void getledconfig(struct ledconfig *cfg)
 #endif
 #ifdef HAVE_WDR4900
 	case ROUTER_BOARD_WDR4900:
-		cfg->diag_gpio = 0x0000;
-		cfg->usb_gpio = 0x0001;
-		cfg->usb_gpio1 = 0x0002;
-		cfg->usb_power = 0x1003;
+		cfg->diag_gpio = 0x0;
+		cfg->usb_gpio = 0x1;
+		cfg->usb_gpio1 = 0x2;
+		cfg->usb_power = GPIO_LOW | 0x3;
 		break;
 #endif
 #ifdef HAVE_WRT1900AC
@@ -133,249 +138,249 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_WRT_1900ACS:
 
 	case ROUTER_WRT_1900ACV2:
-		cfg->usb_power = 0x0032;
+		cfg->usb_power = 0x32;
 	case ROUTER_WRT_1900AC:
-		cfg->power_gpio = 0x0000;
-		cfg->diag_gpio = 0x1000;
-		cfg->connected_gpio = 0x0006;
-		cfg->disconnected_gpio = 0x0007;
-//              cfg->usb_gpio = 0x0004;
-//              cfg->usb_gpio1 = 0x0005;
-		cfg->ses_gpio = 0x0009;
+		cfg->power_gpio = 0x0;
+		cfg->diag_gpio = GPIO_LOW | 0x0;
+		cfg->connected_gpio = 0x6;
+		cfg->disconnected_gpio = 0x7;
+//              cfg->usb_gpio = 0x4;
+//              cfg->usb_gpio1 = 0x5;
+		cfg->ses_gpio = 0x9;
 		break;
 	case ROUTER_WRT_3200ACM:
 	case ROUTER_WRT_32X:
-//              cfg->usb_power = 0x002f;
-		cfg->power_gpio = 0x0000;
-		cfg->diag_gpio = 0x1000;
-		cfg->connected_gpio = 0x0006;
-		cfg->disconnected_gpio = 0x0007;
-//              cfg->usb_gpio = 0x0004;
-//              cfg->usb_gpio1 = 0x0005;
-		cfg->ses_gpio = 0x0009;
+//              cfg->usb_power = 0x2f;
+		cfg->power_gpio = 0x0;
+		cfg->diag_gpio = GPIO_LOW | 0x0;
+		cfg->connected_gpio = 0x6;
+		cfg->disconnected_gpio = 0x7;
+//              cfg->usb_gpio = 0x4;
+//              cfg->usb_gpio1 = 0x5;
+		cfg->ses_gpio = 0x9;
 		break;
 #endif
 	case ROUTER_BOARD_PB42:
 #ifdef HAVE_WA901
-		cfg->diag_gpio = 0x1002;
-		cfg->ses_gpio = 0x0004;
-//              cfg->usb_gpio = 0x1001;
+		cfg->diag_gpio = GPIO_LOW | 0x2;
+		cfg->ses_gpio = 0x4;
+//              cfg->usb_gpio = GPIO_LOW | 0x1;
 #elif  HAVE_WR941
-		cfg->diag_gpio = 0x1002;
-		cfg->ses_gpio = 0x0005;
-//              cfg->usb_gpio = 0x1001;
+		cfg->diag_gpio = GPIO_LOW | 0x2;
+		cfg->ses_gpio = 0x5;
+//              cfg->usb_gpio = GPIO_LOW | 0x1;
 #endif
 #ifdef HAVE_MR3020
-		cfg->connected_gpio = 0x101b;
-		cfg->diag_gpio = 0x101a;
-		cfg->usb_power = 0x0008;
+		cfg->connected_gpio = GPIO_LOW | 0x1b;
+		cfg->diag_gpio = GPIO_LOW | 0x1a;
+		cfg->usb_power = 0x8;
 #elif HAVE_GL150
-//              cfg->power_gpio = 0x101b;
-//              cfg->diag_gpio = 0x001b;
-//              cfg->usb_power = 0x0008;
+//              cfg->power_gpio = GPIO_LOW | 0x1b;
+//              cfg->diag_gpio = 0x1b;
+//              cfg->usb_power = 0x8;
 #elif HAVE_WR710
-		cfg->power_gpio = 0x101b;
-		cfg->diag_gpio = 0x001b;
+		cfg->power_gpio = GPIO_LOW | 0x1b;
+		cfg->diag_gpio = 0x1b;
 #elif HAVE_WA701V2
-		cfg->diag_gpio = 0x101b;
-		cfg->ses_gpio = 0x0001;
-		cfg->sec0_gpio = 0x0001;
+		cfg->diag_gpio = GPIO_LOW | 0x1b;
+		cfg->ses_gpio = 0x1;
+		cfg->sec0_gpio = 0x1;
 #elif HAVE_WR703
-		cfg->diag_gpio = 0x101b;
-		cfg->ses_gpio = 0x0001;
-		cfg->sec0_gpio = 0x0001;
-		cfg->usb_power = 0x0008;
+		cfg->diag_gpio = GPIO_LOW | 0x1b;
+		cfg->ses_gpio = 0x1;
+		cfg->sec0_gpio = 0x1;
+		cfg->usb_power = 0x8;
 #elif HAVE_WR842
-		cfg->diag_gpio = 0x1001;
-		cfg->ses_gpio = 0x0000;
-		cfg->usb_power = 0x0006;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->ses_gpio = 0x0;
+		cfg->usb_power = 0x6;
 
 #elif HAVE_WR741V4
-		cfg->diag_gpio = 0x101b;
-		cfg->ses_gpio = 0x0001;
-		cfg->sec0_gpio = 0x0001;
+		cfg->diag_gpio = GPIO_LOW | 0x1b;
+		cfg->ses_gpio = 0x1;
+		cfg->sec0_gpio = 0x1;
 
 #elif HAVE_MR3420
-		cfg->diag_gpio = 0x1001;
-		cfg->connected_gpio = 0x1008;
-		cfg->usb_power = 0x0006;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0x8;
+		cfg->usb_power = 0x6;
 #elif HAVE_WR741
-		cfg->diag_gpio = 0x1001;
-		cfg->ses_gpio = 0x0000;
-//              cfg->usb_gpio = 0x1001;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->ses_gpio = 0x0;
+//              cfg->usb_gpio = GPIO_LOW | 0x1;
 #endif
 #ifdef HAVE_WR1043
-		cfg->diag_gpio = 0x1002;
-		cfg->ses_gpio = 0x0005;
-//              cfg->usb_gpio = 0x1001;
+		cfg->diag_gpio = GPIO_LOW | 0x2;
+		cfg->ses_gpio = 0x5;
+//              cfg->usb_gpio = GPIO_LOW | 0x1;
 #endif
 #ifdef HAVE_WRT160NL
-		cfg->power_gpio = 0x100e;
-		cfg->connected_gpio = 0x1009;
-		cfg->ses_gpio = 0x1008;
+		cfg->power_gpio = GPIO_LOW | 0xe;
+		cfg->connected_gpio = GPIO_LOW | 0x9;
+		cfg->ses_gpio = GPIO_LOW | 0x8;
 #endif
 #ifdef HAVE_TG2521
-		cfg->ses_gpio = 0x1003;
-		cfg->diag_gpio = 0x1003;
-		cfg->usb_power = 0x1005;
+		cfg->ses_gpio = GPIO_LOW | 0x3;
+		cfg->diag_gpio = GPIO_LOW | 0x3;
+		cfg->usb_power = GPIO_LOW | 0x5;
 #endif
 #ifdef HAVE_TEW632BRP
-		cfg->diag_gpio = 0x1001;
-		cfg->ses_gpio = 0x1003;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->ses_gpio = GPIO_LOW | 0x3;
 #endif
 #ifdef HAVE_WP543
-		cfg->diag_gpio = 0x1007;
-		cfg->connected_gpio = 0x1006;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->connected_gpio = GPIO_LOW | 0x6;
 #endif
 #ifdef HAVE_WP546
-		cfg->beeper_gpio = 0x0001;
-		cfg->diag_gpio = 0x1007;
-		cfg->connected_gpio = 0x1006;
+		cfg->beeper_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->connected_gpio = GPIO_LOW | 0x6;
 #endif
 #ifdef HAVE_DIR825
-		cfg->power_gpio = 0x1002;
-		cfg->diag_gpio = 0x1001;
-		cfg->connected_gpio = 0x100b;
-		cfg->disconnected_gpio = 0x1006;
-		cfg->ses_gpio = 0x1004;
-		cfg->usb_gpio = 0x1000;
-//              cfg->wlan0_gpio = 0x00ff; //correct states missing
+		cfg->power_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0xb;
+		cfg->disconnected_gpio = GPIO_LOW | 0x6;
+		cfg->ses_gpio = GPIO_LOW | 0x4;
+		cfg->usb_gpio = GPIO_LOW | 0x0;
+//              cfg->wlan0_gpio = 0xff; //correct states missing
 #endif
 #ifdef HAVE_WNDR3700
-		cfg->power_gpio = 0x1002;
-		cfg->diag_gpio = 0x1001;
-		cfg->connected_gpio = 0x1006;
-		cfg->ses_gpio = 0x1004;
+		cfg->power_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0x6;
+		cfg->ses_gpio = GPIO_LOW | 0x4;
 #endif
 #ifdef HAVE_WZRG300NH
-		cfg->diag_gpio = 0x1001;
-		cfg->connected_gpio = 0x1012;
-		cfg->ses_gpio = 0x1011;
-		cfg->sec0_gpio = 0x1011;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0x12;
+		cfg->ses_gpio = GPIO_LOW | 0x11;
+		cfg->sec0_gpio = GPIO_LOW | 0x11;
 #endif
 #ifdef HAVE_DIR632
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1000;
-		cfg->connected_gpio = 0x1011;
-		cfg->usb_gpio = 0x100b;
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x0;
+		cfg->connected_gpio = GPIO_LOW | 0x11;
+		cfg->usb_gpio = GPIO_LOW | 0xb;
 #endif
 #ifdef HAVE_WZRG450
-		cfg->diag_gpio = 0x100e;
-		cfg->ses_gpio = 0x100d;
-		cfg->sec0_gpio = 0x100d;
-		cfg->usb_power = 0x0010;
-		cfg->connected_gpio = 0x102e;	// card 1, gpio 14
+		cfg->diag_gpio = GPIO_LOW | 0xe;
+		cfg->ses_gpio = GPIO_LOW | 0xd;
+		cfg->sec0_gpio = GPIO_LOW | 0xd;
+		cfg->usb_power = 0x10;
+		cfg->connected_gpio = GPIO_LOW | 0x2e;	// card 1, gpio 14
 #endif
 #ifdef HAVE_WZRG300NH2
-		cfg->diag_gpio = 0x1010;
-		cfg->ses_gpio = 0x1026;	// card 1, gpio 6
-		cfg->sec0_gpio = 0x1026;
-		cfg->usb_power = 0x000d;
-		cfg->connected_gpio = 0x1027;	// card 1, gpio 7
+		cfg->diag_gpio = GPIO_LOW | 0x10;
+		cfg->ses_gpio = GPIO_LOW | 0x26;	// card 1, gpio 6
+		cfg->sec0_gpio = GPIO_LOW | 0x26;
+		cfg->usb_power = 0xd;
+		cfg->connected_gpio = GPIO_LOW | 0x27;	// card 1, gpio 7
 #endif
 #ifdef HAVE_WZRHPAG300NH
-		cfg->diag_gpio = 0x1001;
-		cfg->connected_gpio = 0x1033;	// card 2 gpio 3
-		cfg->sec0_gpio = 0x1025;
-		cfg->sec1_gpio = 0x1031;
-		cfg->ses_gpio = 0x1025;	// card 1 gpio 5
-		cfg->ses2_gpio = 0x1031;	// card 2 gpio 5
-		cfg->usb_power = 0x0002;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0x33;	// card 2 gpio 3
+		cfg->sec0_gpio = GPIO_LOW | 0x25;
+		cfg->sec1_gpio = GPIO_LOW | 0x31;
+		cfg->ses_gpio = GPIO_LOW | 0x25;	// card 1 gpio 5
+		cfg->ses2_gpio = GPIO_LOW | 0x31;	// card 2 gpio 5
+		cfg->usb_power = 0x2;
 #endif
 #ifdef HAVE_DIR615C1
-		cfg->power_gpio = 0x1004;
-		cfg->wlan0_gpio = 0x100f;
+		cfg->power_gpio = GPIO_LOW | 0x4;
+		cfg->wlan0_gpio = GPIO_LOW | 0xf;
 #endif
 #ifdef HAVE_DIR615E
-		cfg->power_gpio = 0x0006;
-		cfg->diag_gpio = 0x0001;
-		cfg->connected_gpio = 0x1011;
-		cfg->disconnected_gpio = 0x0007;
-		cfg->ses_gpio = 0x1000;
+		cfg->power_gpio = 0x6;
+		cfg->diag_gpio = 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0x11;
+		cfg->disconnected_gpio = 0x7;
+		cfg->ses_gpio = GPIO_LOW | 0x0;
 #endif
 #ifdef HAVE_DAP2230
-		cfg->diag_gpio = 0x000b;
-		cfg->power_gpio = 0x100b;
+		cfg->diag_gpio = 0xb;
+		cfg->power_gpio = GPIO_LOW | 0xb;
 #elif HAVE_LIMA
-//              cfg->disconnected_gpio = 0x000f;
-//              cfg->power_gpio = 0x1005;
-//              cfg->diag_gpio = 0x0005;
+//              cfg->disconnected_gpio = 0xf;
+//              cfg->power_gpio = GPIO_LOW | 0x5;
+//              cfg->diag_gpio = 0x5;
 #elif HAVE_RAMBUTAN
-//              cfg->disconnected_gpio = 0x000f;
-//              cfg->power_gpio = 0x1005;
-//              cfg->diag_gpio = 0x0005;
+//              cfg->disconnected_gpio = 0xf;
+//              cfg->power_gpio = GPIO_LOW | 0x5;
+//              cfg->diag_gpio = 0x5;
 #elif HAVE_WR940V6
-		cfg->diag_gpio = 0x000f;
+		cfg->diag_gpio = 0xf;
 #elif HAVE_WR940V4
-		cfg->disconnected_gpio = 0x000f;
-		cfg->power_gpio = 0x1005;
-		cfg->diag_gpio = 0x0005;
+		cfg->disconnected_gpio = 0xf;
+		cfg->power_gpio = GPIO_LOW | 0x5;
+		cfg->diag_gpio = 0x5;
 
 #elif HAVE_WR941V6
-		cfg->disconnected_gpio = 0x000f;
-		cfg->power_gpio = 0x1012;
-		cfg->diag_gpio = 0x0012;
+		cfg->disconnected_gpio = 0xf;
+		cfg->power_gpio = GPIO_LOW | 0x12;
+		cfg->diag_gpio = 0x12;
 
 #elif HAVE_WR841V12
-		cfg->power_gpio = 0x1001;
-		cfg->diag_gpio = 0x0001;
-		cfg->ses_gpio = 0x1003;
-		cfg->sec0_gpio = 0x1003;
-		cfg->connected_gpio = 0x1002;
+		cfg->power_gpio = GPIO_LOW | 0x1;
+		cfg->diag_gpio = 0x1;
+		cfg->ses_gpio = GPIO_LOW | 0x3;
+		cfg->sec0_gpio = GPIO_LOW | 0x3;
+		cfg->connected_gpio = GPIO_LOW | 0x2;
 #elif HAVE_WR841V11
-		cfg->power_gpio = 0x1001;
-		cfg->diag_gpio = 0x0001;
-		cfg->ses_gpio = 0x1003;
-		cfg->sec0_gpio = 0x1003;
-		cfg->connected_gpio = 0x1002;
+		cfg->power_gpio = GPIO_LOW | 0x1;
+		cfg->diag_gpio = 0x1;
+		cfg->ses_gpio = GPIO_LOW | 0x3;
+		cfg->sec0_gpio = GPIO_LOW | 0x3;
+		cfg->connected_gpio = GPIO_LOW | 0x2;
 #elif HAVE_ARCHERC25
-		cfg->power_gpio = 0x1011;
-		cfg->diag_gpio = 0x0011;
-		cfg->ses_gpio = 0x1002;
-		cfg->sec0_gpio = 0x1002;
-		cfg->connected_gpio = 0x007d;
-		cfg->disconnected_gpio = 0x007c;
+		cfg->power_gpio = GPIO_LOW | 0x11;
+		cfg->diag_gpio = 0x11;
+		cfg->ses_gpio = GPIO_LOW | 0x2;
+		cfg->sec0_gpio = GPIO_LOW | 0x2;
+		cfg->connected_gpio = 0x7d;
+		cfg->disconnected_gpio = 0x7c;
 #elif HAVE_WR841V9
-		cfg->diag_gpio = 0x1003;
+		cfg->diag_gpio = GPIO_LOW | 0x3;
 #elif HAVE_WR842V2
-		cfg->connected_gpio = 0x100e;
-		cfg->usb_power = 0x2004;
-		cfg->usb_gpio = 0x100f;
+		cfg->connected_gpio = GPIO_LOW | 0xe;
+		cfg->usb_power = GPIO_IN | 0x4;
+		cfg->usb_gpio = GPIO_LOW | 0xf;
 #elif HAVE_WR810N
-		cfg->diag_gpio = 0x100d;
-		cfg->usb_power = 0x000b;
+		cfg->diag_gpio = GPIO_LOW | 0xd;
+		cfg->usb_power = 0xb;
 #elif HAVE_WR841V8
-		cfg->diag_gpio = 0x100f;
-		cfg->connected_gpio = 0x100e;
+		cfg->diag_gpio = GPIO_LOW | 0xf;
+		cfg->connected_gpio = GPIO_LOW | 0xe;
 #elif HAVE_DIR615I
-		cfg->power_gpio = 0x000e;
-		cfg->diag_gpio = 0x100f;
-		cfg->connected_gpio = 0x100c;
-		cfg->disconnected_gpio = 0x0016;
+		cfg->power_gpio = 0xe;
+		cfg->diag_gpio = GPIO_LOW | 0xf;
+		cfg->connected_gpio = GPIO_LOW | 0xc;
+		cfg->disconnected_gpio = 0x16;
 #endif
 #ifdef HAVE_WRT400
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1005;
-		cfg->ses_gpio = 0x1004;
-		cfg->connected_gpio = 0x0007;
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x5;
+		cfg->ses_gpio = GPIO_LOW | 0x4;
+		cfg->connected_gpio = 0x7;
 #endif
 #ifdef HAVE_ALFAAP94
-		cfg->power_gpio = 0x0005;
+		cfg->power_gpio = 0x5;
 #endif
 		break;
 	case ROUTER_ALLNET01:
-		cfg->connected_gpio = 0x1000;
+		cfg->connected_gpio = GPIO_LOW | 0x0;
 		break;
 	case ROUTER_BOARD_WP54G:
-		cfg->diag_gpio = 0x1002;
-		cfg->connected_gpio = 0x1007;
+		cfg->diag_gpio = GPIO_LOW | 0x2;
+		cfg->connected_gpio = GPIO_LOW | 0x7;
 		break;
 	case ROUTER_BOARD_NP28G:
-		cfg->diag_gpio = 0x1002;
-		cfg->connected_gpio = 0x1006;
+		cfg->diag_gpio = GPIO_LOW | 0x2;
+		cfg->connected_gpio = GPIO_LOW | 0x6;
 		break;
 	case ROUTER_BOARD_GATEWORX_GW2369:
-		cfg->connected_gpio = 0x1002;
+		cfg->connected_gpio = GPIO_LOW | 0x2;
 		break;
 	case ROUTER_BOARD_GW2388:
 	case ROUTER_BOARD_GW6400:
@@ -383,105 +388,105 @@ static void getledconfig(struct ledconfig *cfg)
 #ifdef HAVE_NEWPORT
 
 #elif defined(HAVE_VENTANA)
-		cfg->power_gpio = 0x1066;
-		cfg->diag_gpio = 0x006F;
-		cfg->connected_gpio = 0x0066;
-		cfg->disconnected_gpio = 0x0067;
+		cfg->power_gpio = GPIO_LOW | 0x66;
+		cfg->diag_gpio = 0x6F;
+		cfg->connected_gpio = 0x66;
+		cfg->disconnected_gpio = 0x67;
 #else
-		cfg->connected_gpio = 0x1010;	// 16 is mapped to front led
+		cfg->connected_gpio = GPIO_LOW | 0x10;	// 16 is mapped to front led
 #endif
 		break;
 	case ROUTER_BOARD_GATEWORX:
 #ifdef HAVE_WG302V1
-		cfg->diag_gpio = 0x1004;
-		cfg->wlan0_gpio = 0x1005;
+		cfg->diag_gpio = GPIO_LOW | 0x4;
+		cfg->wlan0_gpio = GPIO_LOW | 0x5;
 #elif HAVE_WG302
-		cfg->diag_gpio = 0x1002;
-		cfg->wlan0_gpio = 0x1004;
+		cfg->diag_gpio = GPIO_LOW | 0x2;
+		cfg->wlan0_gpio = GPIO_LOW | 0x4;
 #else
 		if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350"))
-			cfg->connected_gpio = 0x1005;
+			cfg->connected_gpio = GPIO_LOW | 0x5;
 		else if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4"))
-			cfg->connected_gpio = 0x1018;
+			cfg->connected_gpio = GPIO_LOW | 0x18;
 		else
-			cfg->connected_gpio = 0x0003;
+			cfg->connected_gpio = 0x3;
 #endif
 		break;
 	case ROUTER_BOARD_GATEWORX_SWAP:
-		cfg->connected_gpio = 0x0004;
+		cfg->connected_gpio = 0x4;
 		break;
 	case ROUTER_BOARD_STORM:
-		cfg->connected_gpio = 0x0005;
-		cfg->diag_gpio = 0x0003;
+		cfg->connected_gpio = 0x5;
+		cfg->diag_gpio = 0x3;
 		break;
 	case ROUTER_LINKSYS_WRH54G:
-		cfg->diag_gpio = 0x1001;	// power led blink / off to indicate factory
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_WRT54G:
 	case ROUTER_WRT54G_V8:
-		cfg->power_gpio = 0x0001;
-		cfg->dmz_gpio = 0x1007;
-		cfg->connected_gpio = 0x1003;	// ses orange
-		cfg->ses_gpio = 0x1002;	// ses white
-		cfg->ses2_gpio = 0x1003;	// ses orange
+		cfg->power_gpio = 0x1;
+		cfg->dmz_gpio = GPIO_LOW | 0x7;
+		cfg->connected_gpio = GPIO_LOW | 0x3;	// ses orange
+		cfg->ses_gpio = GPIO_LOW | 0x2;	// ses white
+		cfg->ses2_gpio = GPIO_LOW | 0x3;	// ses orange
 		break;
 	case ROUTER_WRT54G_V81:
-		cfg->power_gpio = 0x1001;
-		cfg->dmz_gpio = 0x1002;
-		cfg->connected_gpio = 0x1004;	// ses orange
-		cfg->ses_gpio = 0x1003;	// ses white
-		cfg->ses2_gpio = 0x1004;	// ses orange
+		cfg->power_gpio = GPIO_LOW | 0x1;
+		cfg->dmz_gpio = GPIO_LOW | 0x2;
+		cfg->connected_gpio = GPIO_LOW | 0x4;	// ses orange
+		cfg->ses_gpio = GPIO_LOW | 0x3;	// ses white
+		cfg->ses2_gpio = GPIO_LOW | 0x4;	// ses orange
 		break;
 	case ROUTER_WRT54G1X:
-		cfg->connected_gpio = 0x1003;
+		cfg->connected_gpio = GPIO_LOW | 0x3;
 		cfg->v1func = 1;
 		break;
 	case ROUTER_WRT350N:
-		cfg->connected_gpio = 0x1003;
-		cfg->power_gpio = 0x0001;
-		cfg->ses2_gpio = 0x1003;	// ses orange
-		cfg->sec0_gpio = 0x1009;
-		cfg->usb_gpio = 0x100b;
+		cfg->connected_gpio = GPIO_LOW | 0x3;
+		cfg->power_gpio = 0x1;
+		cfg->ses2_gpio = GPIO_LOW | 0x3;	// ses orange
+		cfg->sec0_gpio = GPIO_LOW | 0x9;
+		cfg->usb_gpio = GPIO_LOW | 0xb;
 		break;
 	case ROUTER_WRT600N:
-		cfg->power_gpio = 0x1002;
-		cfg->diag_gpio = 0x0002;
-		cfg->usb_gpio = 0x1003;
-		cfg->sec0_gpio = 0x1009;
-		cfg->sec1_gpio = 0x100b;
+		cfg->power_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio = 0x2;
+		cfg->usb_gpio = GPIO_LOW | 0x3;
+		cfg->sec0_gpio = GPIO_LOW | 0x9;
+		cfg->sec1_gpio = GPIO_LOW | 0xb;
 		break;
 	case ROUTER_LINKSYS_WRT55AG:
-		cfg->connected_gpio = 0x1003;
+		cfg->connected_gpio = GPIO_LOW | 0x3;
 		break;
 	case ROUTER_DLINK_DIR330:
-		cfg->diag_gpio = 0x1006;
-		cfg->connected_gpio = 0x1000;
-		cfg->usb_gpio = 0x1004;
+		cfg->diag_gpio = GPIO_LOW | 0x6;
+		cfg->connected_gpio = GPIO_LOW | 0x0;
+		cfg->usb_gpio = GPIO_LOW | 0x4;
 		break;
 	case ROUTER_ASUS_RTN10PLUS:
-//              cfg->diag_gpio = 0x100d;
-//              cfg->connected_gpio = 0x1008;
-//              cfg->power_gpio = 0x1009;
+//              cfg->diag_gpio = GPIO_LOW | 0xd;
+//              cfg->connected_gpio = GPIO_LOW | 0x8;
+//              cfg->power_gpio = GPIO_LOW | 0x9;
 		break;
 	case ROUTER_BOARD_DIR600B:
-		cfg->diag_gpio = 0x100d;
-		cfg->connected_gpio = 0x1008;
-		cfg->power_gpio = 0x1009;
+		cfg->diag_gpio = GPIO_LOW | 0xd;
+		cfg->connected_gpio = GPIO_LOW | 0x8;
+		cfg->power_gpio = GPIO_LOW | 0x9;
 		break;
 	case ROUTER_BOARD_DIR615D:
 #ifdef HAVE_DIR615H
-		cfg->diag_gpio = 0x0007;
-		cfg->connected_gpio = 0x100d;
-		cfg->disconnected_gpio = 0x100c;
-		cfg->ses_gpio = 0x100e;
-		cfg->power_gpio = 0x0009;
+		cfg->diag_gpio = 0x7;
+		cfg->connected_gpio = GPIO_LOW | 0xd;
+		cfg->disconnected_gpio = GPIO_LOW | 0xc;
+		cfg->ses_gpio = GPIO_LOW | 0xe;
+		cfg->power_gpio = 0x9;
 #else
-		cfg->diag_gpio = 0x1008;
-		cfg->connected_gpio = 0x100c;
-		cfg->disconnected_gpio = 0x100e;
-		cfg->ses_gpio = 0x100b;
-		cfg->power_gpio = 0x1009;
+		cfg->diag_gpio = GPIO_LOW | 0x8;
+		cfg->connected_gpio = GPIO_LOW | 0xc;
+		cfg->disconnected_gpio = GPIO_LOW | 0xe;
+		cfg->ses_gpio = GPIO_LOW | 0xb;
+		cfg->power_gpio = GPIO_LOW | 0x9;
 #endif
 		break;
 		/*
@@ -490,552 +495,552 @@ static void getledconfig(struct ledconfig *cfg)
 
 		 */
 	case ROUTER_BOARD_W502U:
-		cfg->connected_gpio = 0x100d;
+		cfg->connected_gpio = GPIO_LOW | 0xd;
 		break;
 	case ROUTER_BOARD_OPENRISC:
 #ifndef HAVE_ERC
 // ERC: diag button is used different / wlan button is handled by a script
-		cfg->diag_gpio = 0x0003;
-		cfg->ses_gpio = 0x0005;
+		cfg->diag_gpio = 0x3;
+		cfg->ses_gpio = 0x5;
 #endif
 		break;
 	case ROUTER_BOARD_WR5422:
-		cfg->ses_gpio = 0x100d;
+		cfg->ses_gpio = GPIO_LOW | 0xd;
 		break;
 	case ROUTER_BOARD_F5D8235:
-		cfg->usb_gpio = 0x1017;
-		cfg->diag_gpio = 0x1009;
-		cfg->disconnected_gpio = 0x1006;
-		cfg->connected_gpio = 0x1005;
-		cfg->ses_gpio = 0x100c;
+		cfg->usb_gpio = GPIO_LOW | 0x17;
+		cfg->diag_gpio = GPIO_LOW | 0x9;
+		cfg->disconnected_gpio = GPIO_LOW | 0x6;
+		cfg->connected_gpio = GPIO_LOW | 0x5;
+		cfg->ses_gpio = GPIO_LOW | 0xc;
 		break;
 #else
 	case ROUTER_BOARD_DANUBE:
 #ifdef HAVE_WMBR_G300NH
-		cfg->diag_gpio = 0x1005;
-		cfg->ses_gpio = 0x100e;
-		cfg->sec0_gpio = 0x100e;
-		cfg->connected_gpio = 0x1011;
-		cfg->disconnected_gpio = 0x1012;
-		cfg->power_gpio = 0x1001;
+		cfg->diag_gpio = GPIO_LOW | 0x5;
+		cfg->ses_gpio = GPIO_LOW | 0xe;
+		cfg->sec0_gpio = GPIO_LOW | 0xe;
+		cfg->connected_gpio = GPIO_LOW | 0x11;
+		cfg->disconnected_gpio = GPIO_LOW | 0x12;
+		cfg->power_gpio = GPIO_LOW | 0x1;
 #endif
 		break;
 	case ROUTER_BOARD_PB42:
 #ifdef HAVE_WZRG300NH
-		cfg->diag_gpio = 0x1001;
-		cfg->connected_gpio = 0x1012;
-		cfg->ses_gpio = 0x1011;
-		cfg->sec0_gpio = 0x1011;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0x12;
+		cfg->ses_gpio = GPIO_LOW | 0x11;
+		cfg->sec0_gpio = GPIO_LOW | 0x11;
 #endif
 #ifdef HAVE_WZRHPAG300NH
-		cfg->diag_gpio = 0x1001;
-		cfg->connected_gpio = 0x1033;
-		cfg->ses_gpio = 0x1025;
-		cfg->ses2_gpio = 0x1031;
-		cfg->sec0_gpio = 0x1025;
-		cfg->sec1_gpio = 0x1031;
-		cfg->usb_power = 0x0002;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0x33;
+		cfg->ses_gpio = GPIO_LOW | 0x25;
+		cfg->ses2_gpio = GPIO_LOW | 0x31;
+		cfg->sec0_gpio = GPIO_LOW | 0x25;
+		cfg->sec1_gpio = GPIO_LOW | 0x31;
+		cfg->usb_power = 0x2;
 #endif
 #ifdef HAVE_WZRG450
-		cfg->diag_gpio = 0x100e;
-		cfg->ses_gpio = 0x100d;
-		cfg->sec0_gpio = 0x100d;
-		cfg->usb_power = 0x0010;
-		cfg->connected_gpio = 0x102e;	// card 1, gpio 14
+		cfg->diag_gpio = GPIO_LOW | 0xe;
+		cfg->ses_gpio = GPIO_LOW | 0xd;
+		cfg->sec0_gpio = GPIO_LOW | 0xd;
+		cfg->usb_power = 0x10;
+		cfg->connected_gpio = GPIO_LOW | 0x2e;	// card 1, gpio 14
 #endif
 #ifdef HAVE_WZRG300NH2
-		cfg->diag_gpio = 0x1010;
-		cfg->ses_gpio = 0x1026;
-		cfg->sec0_gpio = 0x1026;
-		cfg->usb_power = 0x000d;
-		cfg->connected_gpio = 0x1027;
+		cfg->diag_gpio = GPIO_LOW | 0x10;
+		cfg->ses_gpio = GPIO_LOW | 0x26;
+		cfg->sec0_gpio = GPIO_LOW | 0x26;
+		cfg->usb_power = 0xd;
+		cfg->connected_gpio = GPIO_LOW | 0x27;
 #endif
 		break;
 #endif
 	case ROUTER_BOARD_HAMEA15:
-		cfg->diag_gpio = 0x1011;
-		cfg->connected_gpio = 0x1014;
-//              cfg->ses_gpio = 0x100e;
+		cfg->diag_gpio = GPIO_LOW | 0x11;
+		cfg->connected_gpio = GPIO_LOW | 0x14;
+//              cfg->ses_gpio = GPIO_LOW | 0xe;
 		break;
 	case ROUTER_BOARD_WCRGN:
-		cfg->diag_gpio = 0x1007;
-		cfg->connected_gpio = 0x100b;
-//              cfg->ses_gpio = 0x100e;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->connected_gpio = GPIO_LOW | 0xb;
+//              cfg->ses_gpio = GPIO_LOW | 0xe;
 		break;
 	case ROUTER_R6800:
-		cfg->diag_gpio = 0x1008;
-		cfg->power_gpio = 0x11f1;
-		cfg->diag_gpio = 0x11f0;
-		cfg->diag_gpio_disabled = 0x11f1;
-		cfg->usb_gpio = 0x11f6;
-		cfg->usb_gpio1 = 0x11f7;
-		cfg->sec_gpio = 0x0011;
-		cfg->wlan_gpio = 0x1005;
+		cfg->diag_gpio = GPIO_LOW | 0x8;
+		cfg->power_gpio = GPIO_LOW | 0x1f1;
+		cfg->diag_gpio = GPIO_LOW | 0x1f0;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x1f1;
+		cfg->usb_gpio = GPIO_LOW | 0x1f6;
+		cfg->usb_gpio1 = GPIO_LOW | 0x1f7;
+		cfg->sec_gpio = 0x11;
+		cfg->wlan_gpio = GPIO_LOW | 0x5;
 		break;
 	case ROUTER_R6850:
-		cfg->power_gpio = 0x1012;
-		cfg->usb_gpio = 0x100f;
-		cfg->diag_gpio = 0x0012;
-		cfg->diag_gpio_disabled = 0x1012;
-		cfg->connected_gpio = 0x100d;
+		cfg->power_gpio = GPIO_LOW | 0x12;
+		cfg->usb_gpio = GPIO_LOW | 0xf;
+		cfg->diag_gpio = 0x12;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x12;
+		cfg->connected_gpio = GPIO_LOW | 0xd;
 		break;
 	case ROUTER_R6220:
-		cfg->power_gpio = 0x1012;
-		cfg->usb_gpio = 0x100f;
-		cfg->diag_gpio = 0x0012;
-		cfg->diag_gpio_disabled = 0x1012;
-		cfg->connected_gpio = 0x100d;
-		cfg->sec_gpio = 0x100c;
-		cfg->usb_power = 0x000a;
+		cfg->power_gpio = GPIO_LOW | 0x12;
+		cfg->usb_gpio = GPIO_LOW | 0xf;
+		cfg->diag_gpio = 0x12;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x12;
+		cfg->connected_gpio = GPIO_LOW | 0xd;
+		cfg->sec_gpio = GPIO_LOW | 0xc;
+		cfg->usb_power = 0xa;
 		break;
 	case ROUTER_DIR882:
-		cfg->connected_gpio = 0x1003;
-		cfg->disconnected_gpio = 0x1004;
-		cfg->diag_gpio = 0x1008;
-		cfg->power_gpio = 0x1010;
-		cfg->usb_gpio = 0x100c;
-		cfg->usb_gpio1 = 0x100e;
+		cfg->connected_gpio = GPIO_LOW | 0x3;
+		cfg->disconnected_gpio = GPIO_LOW | 0x4;
+		cfg->diag_gpio = GPIO_LOW | 0x8;
+		cfg->power_gpio = GPIO_LOW | 0x10;
+		cfg->usb_gpio = GPIO_LOW | 0xc;
+		cfg->usb_gpio1 = GPIO_LOW | 0xe;
 		break;
 	case ROUTER_DIR860LB1:
-		cfg->power_gpio = 0x100f;
-		cfg->diag_gpio = 0x100d;
-		cfg->diag_gpio_disabled = 0x100f;
-		cfg->disconnected_gpio = 0x100e;
-		cfg->connected_gpio = 0x1010;
+		cfg->power_gpio = GPIO_LOW | 0xf;
+		cfg->diag_gpio = GPIO_LOW | 0xd;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0xf;
+		cfg->disconnected_gpio = GPIO_LOW | 0xe;
+		cfg->connected_gpio = GPIO_LOW | 0x10;
 		break;
 	case ROUTER_DIR810L:
-		cfg->power_gpio = 0x0009;
-		cfg->diag_gpio = 0x000d;
-		cfg->diag_gpio_disabled = 0x0009;
-		cfg->connected_gpio = 0x1028;
-		cfg->disconnected_gpio = 0x000c;
+		cfg->power_gpio = 0x9;
+		cfg->diag_gpio = 0xd;
+		cfg->diag_gpio_disabled = 0x9;
+		cfg->connected_gpio = GPIO_LOW | 0x28;
+		cfg->disconnected_gpio = 0xc;
 		break;
 	case ROUTER_WHR300HP2:
-		cfg->power_gpio = 0x1009;
-		cfg->diag_gpio = 0x1007;
-		cfg->diag_gpio_disabled = 0x1009;
-		cfg->wlan0_gpio = 0x1008;
-		cfg->sec0_gpio = 0x100a;
-		cfg->ses_gpio = 0x100a;
-		cfg->connected_gpio = 0x1039;
-		cfg->disconnected_gpio = 0x103b;
+		cfg->power_gpio = GPIO_LOW | 0x9;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x9;
+		cfg->wlan0_gpio = GPIO_LOW | 0x8;
+		cfg->sec0_gpio = GPIO_LOW | 0xa;
+		cfg->ses_gpio = GPIO_LOW | 0xa;
+		cfg->connected_gpio = GPIO_LOW | 0x39;
+		cfg->disconnected_gpio = GPIO_LOW | 0x3b;
 		break;
 	case ROUTER_BOARD_WHRG300N:
-		cfg->diag_gpio = 0x1007;
-		cfg->connected_gpio = 0x1009;
-		cfg->ses_gpio = 0x100e;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->connected_gpio = GPIO_LOW | 0x9;
+		cfg->ses_gpio = GPIO_LOW | 0xe;
 		break;
 #ifdef HAVE_WNR2200
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->power_gpio = 0x1022;
-		cfg->diag_gpio = 0x1021;
-		cfg->connected_gpio = 0x1007;
-		cfg->usb_power = 0x0024;	// enable usb port 
-		cfg->ses_gpio = 0x1005;	//correct state missing
-		cfg->usb_gpio = 0x1008;
-//              cfg->sec0_gpio = 0x1004;
+		cfg->power_gpio = GPIO_LOW | 0x22;
+		cfg->diag_gpio = GPIO_LOW | 0x21;
+		cfg->connected_gpio = GPIO_LOW | 0x7;
+		cfg->usb_power = 0x24;	// enable usb port 
+		cfg->ses_gpio = GPIO_LOW | 0x5;	//correct state missing
+		cfg->usb_gpio = GPIO_LOW | 0x8;
+//              cfg->sec0_gpio = GPIO_LOW | 0x4;
 		break;
 #elif HAVE_PERU
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x000c;
-		cfg->beeper_gpio = 0x0004;
+		cfg->diag_gpio = 0xc;
+		cfg->beeper_gpio = 0x4;
 		break;
 #elif HAVE_WNR2000
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->power_gpio = 0x1023;
-		cfg->diag_gpio = 0x1022;
-		cfg->connected_gpio = 0x1000;
-//              cfg->ses_gpio = 0x1004;
-//              cfg->sec0_gpio = 0x1004;
+		cfg->power_gpio = GPIO_LOW | 0x23;
+		cfg->diag_gpio = GPIO_LOW | 0x22;
+		cfg->connected_gpio = GPIO_LOW | 0x0;
+//              cfg->ses_gpio = GPIO_LOW | 0x4;
+//              cfg->sec0_gpio = GPIO_LOW | 0x4;
 		break;
 #elif HAVE_WLAEAG300N
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->power_gpio = 0x1010;
-		cfg->diag_gpio = 0x1011;
-		cfg->connected_gpio = 0x1006;
-		cfg->ses_gpio = 0x100e;
-		cfg->sec0_gpio = 0x100e;
+		cfg->power_gpio = GPIO_LOW | 0x10;
+		cfg->diag_gpio = GPIO_LOW | 0x11;
+		cfg->connected_gpio = GPIO_LOW | 0x6;
+		cfg->ses_gpio = GPIO_LOW | 0xe;
+		cfg->sec0_gpio = GPIO_LOW | 0xe;
 		break;
 #elif HAVE_CARAMBOLA
 #ifdef HAVE_ERC
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->vpn_gpio = 0x101B;
-		cfg->wlan0_gpio = 0x0000;
+		cfg->vpn_gpio = GPIO_LOW | 0x1B;
+		cfg->wlan0_gpio = 0x0;
 		break;
 #elif HAVE_FMS2111
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x0013;
-		cfg->beeper_gpio = 0x000c;
+		cfg->diag_gpio = 0x13;
+		cfg->beeper_gpio = 0xc;
 		break;
 #else
 	case ROUTER_BOARD_WHRHPGN:
-//              cfg->usb_power = 0x001a;
-//              cfg->usb_gpio = 0x0001;
-//              cfg->ses_gpio = 0x101b;
+//              cfg->usb_power = 0x1a;
+//              cfg->usb_gpio = 0x1;
+//              cfg->ses_gpio = GPIO_LOW | 0x1b;
 		break;
 #endif
 #elif HAVE_HORNET
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->usb_power = 0x001a;
-		cfg->usb_gpio = 0x0001;
-		cfg->ses_gpio = 0x101b;
+		cfg->usb_power = 0x1a;
+		cfg->usb_gpio = 0x1;
+		cfg->ses_gpio = GPIO_LOW | 0x1b;
 		break;
 #elif HAVE_RB2011
 	case ROUTER_BOARD_WHRHPGN:
-//              cfg->diag_gpio = 0x100f;
-//              cfg->connected_gpio = 0x1012;
-//              cfg->disconnected_gpio = 0x1013;
-//              cfg->power_gpio = 0x100e;
-//              cfg->usb_power = 0x001a;
-//              cfg->usb_gpio = 0x100b;
-//              cfg->ses_gpio = 0x101b;
+//              cfg->diag_gpio = GPIO_LOW | 0xf;
+//              cfg->connected_gpio = GPIO_LOW | 0x12;
+//              cfg->disconnected_gpio = GPIO_LOW | 0x13;
+//              cfg->power_gpio = GPIO_LOW | 0xe;
+//              cfg->usb_power = 0x1a;
+//              cfg->usb_gpio = GPIO_LOW | 0xb;
+//              cfg->ses_gpio = GPIO_LOW | 0x1b;
 		break;
 #elif HAVE_WDR3500
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->usb_gpio = 0x100b;
-		cfg->usb_power = 0x000f;
-		cfg->diag_gpio = 0x100e;
-		cfg->connected_gpio = 0x100f;
+		cfg->usb_gpio = GPIO_LOW | 0xb;
+		cfg->usb_power = 0xf;
+		cfg->diag_gpio = GPIO_LOW | 0xe;
+		cfg->connected_gpio = GPIO_LOW | 0xf;
 		break;
 #elif HAVE_WDR4300
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->usb_gpio = 0x100b;
-		cfg->usb_gpio1 = 0x100c;
-		cfg->usb_power = 0x0015;
-		cfg->usb_power1 = 0x0016;
-		cfg->diag_gpio = 0x100e;
-		cfg->connected_gpio = 0x100f;
+		cfg->usb_gpio = GPIO_LOW | 0xb;
+		cfg->usb_gpio1 = GPIO_LOW | 0xc;
+		cfg->usb_power = 0x15;
+		cfg->usb_power1 = 0x16;
+		cfg->diag_gpio = GPIO_LOW | 0xe;
+		cfg->connected_gpio = GPIO_LOW | 0xf;
 		break;
 #elif HAVE_WNDR3700V4
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x1002;
-		cfg->power_gpio = 0x1000;
-		cfg->connected_gpio = 0x1001;
-		cfg->disconnected_gpio = 0x1003;
-		cfg->usb_power = 0x0020;
-		cfg->usb_gpio = 0x100d;
-		cfg->ses_gpio = 0x1010;
+		cfg->diag_gpio = GPIO_LOW | 0x2;
+		cfg->power_gpio = GPIO_LOW | 0x0;
+		cfg->connected_gpio = GPIO_LOW | 0x1;
+		cfg->disconnected_gpio = GPIO_LOW | 0x3;
+		cfg->usb_power = 0x20;
+		cfg->usb_gpio = GPIO_LOW | 0xd;
+		cfg->ses_gpio = GPIO_LOW | 0x10;
 		break;
 #elif HAVE_DAP3662
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x100e;	// red
-		cfg->diag_gpio_disabled = 0x1017;	//
-		cfg->power_gpio = 0x1017;	// green
+		cfg->diag_gpio = GPIO_LOW | 0xe;	// red
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x17;	//
+		cfg->power_gpio = GPIO_LOW | 0x17;	// green
 		break;
 #elif HAVE_DIR862
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x100e;	// orange
-		cfg->diag_gpio_disabled = 0x1013;	// 
-		cfg->power_gpio = 0x1013;	// green
-		cfg->connected_gpio = 0x1016;	// green
-		cfg->disconnected_gpio = 0x1017;	// orange
+		cfg->diag_gpio = GPIO_LOW | 0xe;	// orange
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x13;	// 
+		cfg->power_gpio = GPIO_LOW | 0x13;	// green
+		cfg->connected_gpio = GPIO_LOW | 0x16;	// green
+		cfg->disconnected_gpio = GPIO_LOW | 0x17;	// orange
 		break;
 #elif HAVE_XD9531
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->connected_gpio = 0x1004;
-		cfg->diag_gpio = 0x100D;
+		cfg->connected_gpio = GPIO_LOW | 0x4;
+		cfg->diag_gpio = GPIO_LOW | 0xD;
 		break;
 #elif HAVE_CPE880
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->connected_gpio = 0x1012;
+		cfg->connected_gpio = GPIO_LOW | 0x12;
 		break;
 #elif HAVE_MMS344
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x100e;
+		cfg->diag_gpio = GPIO_LOW | 0xe;
 		break;
 #elif HAVE_WR1043V4
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x0006;
-		cfg->ses_gpio = 0x1001;
-		cfg->sec0_gpio = 0x1001;
-		cfg->usb_gpio = 0x1007;
-		cfg->usb_power = 0x0008;
+		cfg->diag_gpio = 0x6;
+		cfg->ses_gpio = GPIO_LOW | 0x1;
+		cfg->sec0_gpio = GPIO_LOW | 0x1;
+		cfg->usb_gpio = GPIO_LOW | 0x7;
+		cfg->usb_power = 0x8;
 
 		break;
 #elif HAVE_ARCHERC7V5
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x0006;
-		cfg->connected_gpio = 0x1015;
-		cfg->disconnected_gpio = 0x1014;
-		cfg->ses_gpio = 0x1001;
-		cfg->sec0_gpio = 0x1001;
-		cfg->usb_power = 0x0013;
-		cfg->usb_gpio = 0x1007;
+		cfg->diag_gpio = 0x6;
+		cfg->connected_gpio = GPIO_LOW | 0x15;
+		cfg->disconnected_gpio = GPIO_LOW | 0x14;
+		cfg->ses_gpio = GPIO_LOW | 0x1;
+		cfg->sec0_gpio = GPIO_LOW | 0x1;
+		cfg->usb_power = 0x13;
+		cfg->usb_gpio = GPIO_LOW | 0x7;
 
 		break;
 #elif HAVE_ARCHERC7V4
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x0006;
-		cfg->connected_gpio = 0x101a;
-		cfg->disconnected_gpio = 0x1019;
-		cfg->ses_gpio = 0x101f;
-		cfg->sec0_gpio = 0x101f;
+		cfg->diag_gpio = 0x6;
+		cfg->connected_gpio = GPIO_LOW | 0x1a;
+		cfg->disconnected_gpio = GPIO_LOW | 0x19;
+		cfg->ses_gpio = GPIO_LOW | 0x1f;
+		cfg->sec0_gpio = GPIO_LOW | 0x1f;
 
-//              cfg->usb_power = 0x0016;
-		cfg->usb_gpio = 0x1007;
+//              cfg->usb_power = 0x16;
+		cfg->usb_gpio = GPIO_LOW | 0x7;
 
-//              cfg->usb_power1 = 0x0015;
-		cfg->usb_gpio1 = 0x1008;
+//              cfg->usb_power1 = 0x15;
+		cfg->usb_gpio1 = GPIO_LOW | 0x8;
 
 		break;
 #elif HAVE_ARCHERC7
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x100e;
-		cfg->ses_gpio = 0x100f;
-		cfg->sec0_gpio = 0x100f;
+		cfg->diag_gpio = GPIO_LOW | 0xe;
+		cfg->ses_gpio = GPIO_LOW | 0xf;
+		cfg->sec0_gpio = GPIO_LOW | 0xf;
 
-		cfg->usb_power = 0x0016;
-		cfg->usb_gpio = 0x1012;
+		cfg->usb_power = 0x16;
+		cfg->usb_gpio = GPIO_LOW | 0x12;
 
-		cfg->usb_power1 = 0x0015;
-		cfg->usb_gpio1 = 0x1013;
+		cfg->usb_power1 = 0x15;
+		cfg->usb_gpio1 = GPIO_LOW | 0x13;
 
 		break;
 #elif HAVE_WR1043V2
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x1013;
-//              cfg->connected_gpio = 0x1012;
-//              cfg->disconnected_gpio = 0x1013;
-//              cfg->power_gpio = 0x100e;
-		cfg->usb_power = 0x0015;
-		cfg->usb_gpio = 0x100f;
-		cfg->ses_gpio = 0x1012;
-		cfg->sec0_gpio = 0x1012;
+		cfg->diag_gpio = GPIO_LOW | 0x13;
+//              cfg->connected_gpio = GPIO_LOW | 0x12;
+//              cfg->disconnected_gpio = GPIO_LOW | 0x13;
+//              cfg->power_gpio = GPIO_LOW | 0xe;
+		cfg->usb_power = 0x15;
+		cfg->usb_gpio = GPIO_LOW | 0xf;
+		cfg->ses_gpio = GPIO_LOW | 0x12;
+		cfg->sec0_gpio = GPIO_LOW | 0x12;
 		break;
 #elif HAVE_WZR450HP2
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x1014;
-//              cfg->connected_gpio = 0x1012;
-//              cfg->disconnected_gpio = 0x1013;
-//              cfg->power_gpio = 0x100e;
-//              cfg->usb_power = 0x001a;
-//              cfg->usb_gpio = 0x100b;
+		cfg->diag_gpio = GPIO_LOW | 0x14;
+//              cfg->connected_gpio = GPIO_LOW | 0x12;
+//              cfg->disconnected_gpio = GPIO_LOW | 0x13;
+//              cfg->power_gpio = GPIO_LOW | 0xe;
+//              cfg->usb_power = 0x1a;
+//              cfg->usb_gpio = GPIO_LOW | 0xb;
 
-		cfg->connected_gpio = 0x100d;
-		cfg->power_gpio = 0x1013;
-		cfg->ses_gpio = 0x1003;
-		cfg->sec0_gpio = 0x1003;
+		cfg->connected_gpio = GPIO_LOW | 0xd;
+		cfg->power_gpio = GPIO_LOW | 0x13;
+		cfg->ses_gpio = GPIO_LOW | 0x3;
+		cfg->sec0_gpio = GPIO_LOW | 0x3;
 		break;
 #elif HAVE_DHP1565
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x100e;
-		cfg->diag_gpio_disabled = 0x1016;
-		cfg->connected_gpio = 0x1012;
-		cfg->disconnected_gpio = 0x1013;
-		cfg->power_gpio = 0x1016;
-		cfg->usb_gpio = 0x100b;
-		cfg->ses_gpio = 0x100f;
+		cfg->diag_gpio = GPIO_LOW | 0xe;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x16;
+		cfg->connected_gpio = GPIO_LOW | 0x12;
+		cfg->disconnected_gpio = GPIO_LOW | 0x13;
+		cfg->power_gpio = GPIO_LOW | 0x16;
+		cfg->usb_gpio = GPIO_LOW | 0xb;
+		cfg->ses_gpio = GPIO_LOW | 0xf;
 		break;
 #elif HAVE_E325N
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->connected_gpio = 0x0003;
-		cfg->disconnected_gpio = 0x0002;
+		cfg->connected_gpio = 0x3;
+		cfg->disconnected_gpio = 0x2;
 		break;
 #elif defined(HAVE_SR3200) || defined(HAVE_CPE890)
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->power_gpio = 0x1001;
-		cfg->diag_gpio = 0x0001;
+		cfg->power_gpio = GPIO_LOW | 0x1;
+		cfg->diag_gpio = 0x1;
 		break;
 #elif HAVE_XD3200
 	case ROUTER_BOARD_WHRHPGN:
 		break;
 #elif HAVE_E380AC
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x0003;
+		cfg->diag_gpio = 0x3;
 		break;
 #elif HAVE_WR615N
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x1001;
-		cfg->connected_gpio = 0x1002;
-		cfg->disconnected_gpio = 0x1003;
-		cfg->ses_gpio = 0x100c;
-		cfg->sec0_gpio = 0x100c;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0x2;
+		cfg->disconnected_gpio = GPIO_LOW | 0x3;
+		cfg->ses_gpio = GPIO_LOW | 0xc;
+		cfg->sec0_gpio = GPIO_LOW | 0xc;
 		break;
 #elif HAVE_E355AC
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x0002;
+		cfg->diag_gpio = 0x2;
 		break;
 #elif HAVE_WR650AC
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->ses_gpio = 0x1014;
-		cfg->sec0_gpio = 0x1014;
-		cfg->connected_gpio = 0x1004;
-		cfg->diag_gpio = 0x0004;
+		cfg->ses_gpio = GPIO_LOW | 0x14;
+		cfg->sec0_gpio = GPIO_LOW | 0x14;
+		cfg->connected_gpio = GPIO_LOW | 0x4;
+		cfg->diag_gpio = 0x4;
 		break;
 #elif HAVE_DIR869
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->disconnected_gpio = 0x100f;
-		cfg->connected_gpio = 0x1010;
-		cfg->diag_gpio = 0x000f;
+		cfg->disconnected_gpio = GPIO_LOW | 0xf;
+		cfg->connected_gpio = GPIO_LOW | 0x10;
+		cfg->diag_gpio = 0xf;
 		break;
 #elif HAVE_DIR859
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->power_gpio = 0x100f;
-		cfg->connected_gpio = 0x1010;
-		cfg->diag_gpio = 0x000f;
+		cfg->power_gpio = GPIO_LOW | 0xf;
+		cfg->connected_gpio = GPIO_LOW | 0x10;
+		cfg->diag_gpio = 0xf;
 		break;
 #elif HAVE_JWAP606
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x100b;
-		cfg->connected_gpio = 0x100d;
-		cfg->disconnected_gpio = 0x100d;
-		cfg->power_gpio = 0x100b;
-//              cfg->usb_power = 0x001a;
-//              cfg->usb_gpio = 0x100b;
-//              cfg->ses_gpio = 0x101b;
+		cfg->diag_gpio = GPIO_LOW | 0xb;
+		cfg->connected_gpio = GPIO_LOW | 0xd;
+		cfg->disconnected_gpio = GPIO_LOW | 0xd;
+		cfg->power_gpio = GPIO_LOW | 0xb;
+//              cfg->usb_power = 0x1a;
+//              cfg->usb_gpio = GPIO_LOW | 0xb;
+//              cfg->ses_gpio = GPIO_LOW | 0x1b;
 		break;
 #elif HAVE_DIR825C1
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x100f;
-		cfg->connected_gpio = 0x1012;
-		cfg->disconnected_gpio = 0x1013;
-		cfg->power_gpio = 0x100e;
-//              cfg->usb_power = 0x001a;
-		cfg->usb_gpio = 0x100b;
-//              cfg->ses_gpio = 0x101b;
+		cfg->diag_gpio = GPIO_LOW | 0xf;
+		cfg->connected_gpio = GPIO_LOW | 0x12;
+		cfg->disconnected_gpio = GPIO_LOW | 0x13;
+		cfg->power_gpio = GPIO_LOW | 0xe;
+//              cfg->usb_power = 0x1a;
+		cfg->usb_gpio = GPIO_LOW | 0xb;
+//              cfg->ses_gpio = GPIO_LOW | 0x1b;
 		break;
 #elif HAVE_WDR2543
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x1000;
-		cfg->usb_gpio = 0x1008;
+		cfg->diag_gpio = GPIO_LOW | 0x0;
+		cfg->usb_gpio = GPIO_LOW | 0x8;
 		break;
 #elif HAVE_WASP
 	case ROUTER_BOARD_WHRHPGN:
-//              cfg->usb_power = 0x001a;
-//              cfg->usb_gpio = 0x0001;
-//              cfg->ses_gpio = 0x101b;
+//              cfg->usb_power = 0x1a;
+//              cfg->usb_gpio = 0x1;
+//              cfg->ses_gpio = GPIO_LOW | 0x1b;
 		break;
 #else
 	case ROUTER_BOARD_WHRHPGN:
-		cfg->diag_gpio = 0x1001;
-		cfg->connected_gpio = 0x1006;
-		cfg->ses_gpio = 0x1000;
-		cfg->sec0_gpio = 0x1000;
+		cfg->diag_gpio = GPIO_LOW | 0x1;
+		cfg->connected_gpio = GPIO_LOW | 0x6;
+		cfg->ses_gpio = GPIO_LOW | 0x0;
+		cfg->sec0_gpio = GPIO_LOW | 0x0;
 		break;
 #endif
 	case ROUTER_BUFFALO_WBR54G:
-		cfg->diag_gpio = 0x1007;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
 		break;
 	case ROUTER_BUFFALO_WBR2G54S:
-		cfg->diag_gpio = 0x0001;
-		cfg->ses_gpio = 0x0006;
+		cfg->diag_gpio = 0x1;
+		cfg->ses_gpio = 0x6;
 		break;
 	case ROUTER_BUFFALO_WLA2G54C:
-		cfg->diag_gpio = 0x1004;
-		cfg->ses_gpio = 0x1003;
+		cfg->diag_gpio = GPIO_LOW | 0x4;
+		cfg->ses_gpio = GPIO_LOW | 0x3;
 		break;
 	case ROUTER_BUFFALO_WLAH_G54:
-		cfg->diag_gpio = 0x1007;
-		cfg->ses_gpio = 0x1006;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->ses_gpio = GPIO_LOW | 0x6;
 		break;
 	case ROUTER_BUFFALO_WAPM_HP_AM54G54:
-		cfg->diag_gpio = 0x1007;
-		cfg->ses_gpio = 0x1001;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->ses_gpio = GPIO_LOW | 0x1;
 		break;
 	case ROUTER_BOARD_WHRAG108:
-		cfg->diag_gpio = 0x1007;
-		cfg->bridge_gpio = 0x1004;
-		cfg->ses_gpio = 0x1000;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->bridge_gpio = GPIO_LOW | 0x4;
+		cfg->ses_gpio = GPIO_LOW | 0x0;
 		break;
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
-		cfg->diag_gpio = 0x1007;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
 		if (nvram_match("DD_BOARD", "Buffalo WHR-G125")) {
-			cfg->connected_gpio = 0x1001;
-			cfg->sec0_gpio = 0x1006;
+			cfg->connected_gpio = GPIO_LOW | 0x1;
+			cfg->sec0_gpio = GPIO_LOW | 0x6;
 		} else {
-			cfg->bridge_gpio = 0x1001;
-			cfg->ses_gpio = 0x1006;
+			cfg->bridge_gpio = GPIO_LOW | 0x1;
+			cfg->ses_gpio = GPIO_LOW | 0x6;
 		}
 		break;
 	case ROUTER_UBNT_UNIFIAC:
-		cfg->power_gpio = 0x000e;
-		cfg->diag_gpio = 0x000f;
+		cfg->power_gpio = 0xe;
+		cfg->diag_gpio = 0xf;
 		break;
 	case ROUTER_D1800H:
-		cfg->usb_gpio = 0x1001;
-		cfg->usb_power = 0x0007;
-		cfg->power_gpio = 0x0002;
-		cfg->diag_gpio = 0x000d;
-		cfg->diag_gpio_disabled = 0x0002;
-		cfg->connected_gpio = 0x100f;
-		cfg->disconnected_gpio = 0x100e;
+		cfg->usb_gpio = GPIO_LOW | 0x1;
+		cfg->usb_power = 0x7;
+		cfg->power_gpio = 0x2;
+		cfg->diag_gpio = 0xd;
+		cfg->diag_gpio_disabled = 0x2;
+		cfg->connected_gpio = GPIO_LOW | 0xf;
+		cfg->disconnected_gpio = GPIO_LOW | 0xe;
 		break;
 	case ROUTER_BUFFALO_WZRRSG54:
-		cfg->diag_gpio = 0x1007;
-		cfg->vpn_gpio = 0x1001;
-		cfg->ses_gpio = 0x1006;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->vpn_gpio = GPIO_LOW | 0x1;
+		cfg->ses_gpio = GPIO_LOW | 0x6;
 		break;
 	case ROUTER_BUFFALO_WZRG300N:
-		cfg->diag_gpio = 0x1007;
-		cfg->bridge_gpio = 0x1001;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->bridge_gpio = GPIO_LOW | 0x1;
 		break;
 	case ROUTER_BUFFALO_WZRG144NH:
-		cfg->diag_gpio = 0x1003;
-		cfg->bridge_gpio = 0x1001;
-		cfg->ses_gpio = 0x1002;
+		cfg->diag_gpio = GPIO_LOW | 0x3;
+		cfg->bridge_gpio = GPIO_LOW | 0x1;
+		cfg->ses_gpio = GPIO_LOW | 0x2;
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
-//              cfg->usb_power = 0x0009;      // USB 2.0 ehci port
-		cfg->usb_power1 = 0x100a;	// USB 3.0 xhci port
-//              cfg->wlan0_gpio = 0x0028; // wireless orange
-//              cfg->wlan1_gpio = 0x0029; // wireless blue
-		cfg->connected_gpio = 0x002a;	// connected blue
-		cfg->sec0_gpio = 0x002b;
-		cfg->sec1_gpio = 0x002c;
+//              cfg->usb_power = 0x9;      // USB 2.0 ehci port
+		cfg->usb_power1 = GPIO_LOW | 0xa;	// USB 3.0 xhci port
+//              cfg->wlan0_gpio = 0x28; // wireless orange
+//              cfg->wlan1_gpio = 0x29; // wireless blue
+		cfg->connected_gpio = 0x2a;	// connected blue
+		cfg->sec0_gpio = 0x2b;
+		cfg->sec1_gpio = 0x2c;
 		// 0x2b strange led orange
 		// 0x2c strange led blue
-		cfg->power_gpio = 0x002e;
-		cfg->diag_gpio = 0x002d;
-		cfg->diag_gpio_disabled = 0x002e;
-		cfg->usb_gpio = 0x002f;
+		cfg->power_gpio = 0x2e;
+		cfg->diag_gpio = 0x2d;
+		cfg->diag_gpio_disabled = 0x2e;
+		cfg->usb_gpio = 0x2f;
 		break;
 
 	case ROUTER_BUFFALO_WXR1900DHP:
-		cfg->usb_power = 0x000d;	// USB 2.0 ehci port
-		cfg->usb_power1 = 0x000e;	// USB 3.0 xhci port
-//              cfg->wlan0_gpio = 0x0028; // wireless orange
-//              cfg->wlan1_gpio = 0x0029; // wireless blue
-		cfg->connected_gpio = 0x0009;	// connected blue
-		cfg->disconnected_gpio = 0x000a;	// connected blue
-		cfg->sec0_gpio = 0x000b;
-		cfg->sec1_gpio = 0x000b;
+		cfg->usb_power = 0xd;	// USB 2.0 ehci port
+		cfg->usb_power1 = 0xe;	// USB 3.0 xhci port
+//              cfg->wlan0_gpio = 0x28; // wireless orange
+//              cfg->wlan1_gpio = 0x29; // wireless blue
+		cfg->connected_gpio = 0x9;	// connected blue
+		cfg->disconnected_gpio = 0xa;	// connected blue
+		cfg->sec0_gpio = 0xb;
+		cfg->sec1_gpio = 0xb;
 		// 0x2b strange led orange
 		// 0x2c strange led blue
-		cfg->power_gpio = 0x0006;
-		cfg->diag_gpio = 0x0005;
-		cfg->diag_gpio_disabled = 0x0006;
+		cfg->power_gpio = 0x6;
+		cfg->diag_gpio = 0x5;
+		cfg->diag_gpio_disabled = 0x6;
 		break;
 
 	case ROUTER_BUFFALO_WZR1750:
-		cfg->usb_power = 0x0009;	// USB 2.0 ehci port
-		cfg->usb_power1 = 0x100a;	// USB 3.0 xhci port
-//              cfg->wlan0_gpio = 0x0028; // wireless orange
-//              cfg->wlan1_gpio = 0x0029; // wireless blue
-		cfg->connected_gpio = 0x002a;	// connected blue
-		cfg->sec0_gpio = 0x002b;
-		cfg->sec1_gpio = 0x002c;
+		cfg->usb_power = 0x9;	// USB 2.0 ehci port
+		cfg->usb_power1 = GPIO_LOW | 0xa;	// USB 3.0 xhci port
+//              cfg->wlan0_gpio = 0x28; // wireless orange
+//              cfg->wlan1_gpio = 0x29; // wireless blue
+		cfg->connected_gpio = 0x2a;	// connected blue
+		cfg->sec0_gpio = 0x2b;
+		cfg->sec1_gpio = 0x2c;
 		// 0x2b strange led orange
 		// 0x2c strange led blue
-		cfg->power_gpio = 0x002d;
-		cfg->diag_gpio = 0x002e;
-		cfg->diag_gpio_disabled = 0x002d;
-		cfg->usb_gpio = 0x002f;
+		cfg->power_gpio = 0x2d;
+		cfg->diag_gpio = 0x2e;
+		cfg->diag_gpio_disabled = 0x2d;
+		cfg->usb_gpio = 0x2f;
 		break;
 #ifndef HAVE_BUFFALO
 #ifdef HAVE_DIR300
 	case ROUTER_BOARD_FONERA:
-		cfg->diag_gpio = 0x0003;
-		cfg->bridge_gpio = 0x0004;
-		cfg->ses_gpio = 0x0001;
+		cfg->diag_gpio = 0x3;
+		cfg->bridge_gpio = 0x4;
+		cfg->ses_gpio = 0x1;
 		break;
 #endif
 #ifdef HAVE_WRT54G2
 	case ROUTER_BOARD_FONERA:
-		cfg->bridge_gpio = 0x0004;
-		cfg->ses_gpio = 0x1004;
-		cfg->diag_gpio = 0x1003;
+		cfg->bridge_gpio = 0x4;
+		cfg->ses_gpio = GPIO_LOW | 0x4;
+		cfg->diag_gpio = GPIO_LOW | 0x3;
 		break;
 #endif
 #ifdef HAVE_RTG32
@@ -1044,346 +1049,346 @@ static void getledconfig(struct ledconfig *cfg)
 #endif
 #ifdef HAVE_BWRG1000
 	case ROUTER_BOARD_LS2:
-		cfg->diag_gpio = 0x0007;
+		cfg->diag_gpio = 0x7;
 		break;
 #endif
 #ifdef HAVE_DIR400
 	case ROUTER_BOARD_FONERA2200:
-		cfg->diag_gpio = 0x0003;
-		cfg->bridge_gpio = 0x0004;
-		cfg->ses_gpio = 0x0001;
+		cfg->diag_gpio = 0x3;
+		cfg->bridge_gpio = 0x4;
+		cfg->ses_gpio = 0x1;
 		break;
 #endif
 #ifdef HAVE_WRK54G
 	case ROUTER_BOARD_FONERA:
-		cfg->diag_gpio = 0x1007;
-		cfg->dmz_gpio = 0x0005;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->dmz_gpio = 0x5;
 		break;
 #endif
 	case ROUTER_BOARD_TW6600:
-		cfg->diag_gpio = 0x1007;
-		cfg->bridge_gpio = 0x1004;
-		cfg->ses_gpio = 0x1000;
+		cfg->diag_gpio = GPIO_LOW | 0x7;
+		cfg->bridge_gpio = GPIO_LOW | 0x4;
+		cfg->ses_gpio = GPIO_LOW | 0x0;
 		break;
 	case ROUTER_MOTOROLA:
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1001;	// power led blink / off to indicate factory
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_RT210W:
-		cfg->power_gpio = 0x1005;
-		cfg->diag_gpio = 0x0005;	// power led blink / off to indicate factory
+		cfg->power_gpio = GPIO_LOW | 0x5;
+		cfg->diag_gpio = 0x5;	// power led blink / off to indicate factory
 		// defaults
-		cfg->connected_gpio = 0x1000;
-		cfg->wlan0_gpio = 0x1003;
+		cfg->connected_gpio = GPIO_LOW | 0x0;
+		cfg->wlan0_gpio = GPIO_LOW | 0x3;
 		break;
 	case ROUTER_RT480W:
 	case ROUTER_BELKIN_F5D7230_V2000:
 	case ROUTER_BELKIN_F5D7231:
-		cfg->power_gpio = 0x1005;
-		cfg->diag_gpio = 0x0005;	// power led blink / off to indicate factory
+		cfg->power_gpio = GPIO_LOW | 0x5;
+		cfg->diag_gpio = 0x5;	// power led blink / off to indicate factory
 		// defaults
-		cfg->connected_gpio = 0x1000;
+		cfg->connected_gpio = GPIO_LOW | 0x0;
 		break;
 	case ROUTER_MICROSOFT_MN700:
-		cfg->power_gpio = 0x0006;
-		cfg->diag_gpio = 0x1006;	// power led blink / off to indicate factory
+		cfg->power_gpio = 0x6;
+		cfg->diag_gpio = GPIO_LOW | 0x6;	// power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_ASUS_WL500GD:
 	case ROUTER_ASUS_WL520GUGC:
-		cfg->diag_gpio = 0x0000;	// power led blink / off to indicate factory
+		cfg->diag_gpio = 0x0;	// power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_ASUS_WL500G_PRE:
 	case ROUTER_ASUS_WL700GE:
-		cfg->power_gpio = 0x1001;
-		cfg->diag_gpio = 0x0001;	// power led blink / off to indicate factory
+		cfg->power_gpio = GPIO_LOW | 0x1;
+		cfg->diag_gpio = 0x1;	// power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_ASUS_WL550GE:
-		cfg->power_gpio = 0x1002;
-		cfg->diag_gpio = 0x0002;	// power led blink / off to indicate factory
+		cfg->power_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio = 0x2;	// power led blink / off to indicate factory
 		// defaults
 		break;
 	case ROUTER_WRT54G3G:
 	case ROUTER_WRTSL54GS:
-		cfg->power_gpio = 0x0001;
-		cfg->dmz_gpio = 0x1000;
-		cfg->connected_gpio = 0x1007;	// ses orange
-		cfg->ses_gpio = 0x1005;	// ses white
-		cfg->ses2_gpio = 0x1007;	// ses orange 
+		cfg->power_gpio = 0x1;
+		cfg->dmz_gpio = GPIO_LOW | 0x0;
+		cfg->connected_gpio = GPIO_LOW | 0x7;	// ses orange
+		cfg->ses_gpio = GPIO_LOW | 0x5;	// ses white
+		cfg->ses2_gpio = GPIO_LOW | 0x7;	// ses orange 
 		break;
 	case ROUTER_MOTOROLA_WE800G:
 	case ROUTER_MOTOROLA_V1:
-		cfg->diag_gpio = 0x1003;
-		cfg->wlan0_gpio = 0x1001;
-		cfg->bridge_gpio = 0x1005;
+		cfg->diag_gpio = GPIO_LOW | 0x3;
+		cfg->wlan0_gpio = GPIO_LOW | 0x1;
+		cfg->bridge_gpio = GPIO_LOW | 0x5;
 		break;
 	case ROUTER_DELL_TRUEMOBILE_2300:
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:
-		cfg->power_gpio = 0x1007;
-		cfg->diag_gpio = 0x0007;	// power led blink / off to indicate factory
+		cfg->power_gpio = GPIO_LOW | 0x7;
+		cfg->diag_gpio = 0x7;	// power led blink / off to indicate factory
 		// defaults
-		cfg->wlan0_gpio = 0x1006;
+		cfg->wlan0_gpio = GPIO_LOW | 0x6;
 		break;
 	case ROUTER_NETGEAR_WNR834B:
-		cfg->power_gpio = 0x1004;
-		cfg->diag_gpio = 0x1005;
-		cfg->wlan0_gpio = 0x1006;
+		cfg->power_gpio = GPIO_LOW | 0x4;
+		cfg->diag_gpio = GPIO_LOW | 0x5;
+		cfg->wlan0_gpio = GPIO_LOW | 0x6;
 		break;
 	case ROUTER_SITECOM_WL105B:
-		cfg->power_gpio = 0x0003;
-		cfg->diag_gpio = 0x1003;	// power led blink / off to indicate factory
+		cfg->power_gpio = 0x3;
+		cfg->diag_gpio = GPIO_LOW | 0x3;	// power led blink / off to indicate factory
 		// defaults
-		cfg->wlan0_gpio = 0x1004;
+		cfg->wlan0_gpio = GPIO_LOW | 0x4;
 		break;
 	case ROUTER_WRT300N:
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1001;	// power led blink / off to indicate fac.def.
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_WRT150N:
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1001;	// power led blink / off to indicate fac.def.
-		cfg->sec0_gpio = 0x1005;
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power led blink / off to indicate fac.def.
+		cfg->sec0_gpio = GPIO_LOW | 0x5;
 		break;
 	case ROUTER_WRT300NV11:
-		cfg->ses_gpio = 0x1005;
-		cfg->sec0_gpio = 0x1003;
-		// cfg->diag_gpio = 0x101; //power led blink / off to indicate fac.def.
+		cfg->ses_gpio = GPIO_LOW | 0x5;
+		cfg->sec0_gpio = GPIO_LOW | 0x3;
+		// cfg->diag_gpio = GPIO_LOW | 0x1; //power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_WRT310N:
-		cfg->connected_gpio = 0x1003;	//ses orange
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1001;	// power led blink / off to indicate fac.def.
-		cfg->ses_gpio = 0x1009;	// ses blue
+		cfg->connected_gpio = GPIO_LOW | 0x3;	//ses orange
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power led blink / off to indicate fac.def.
+		cfg->ses_gpio = GPIO_LOW | 0x9;	// ses blue
 		break;
 	case ROUTER_WRT310NV2:
-		cfg->connected_gpio = 0x1002;	// ses orange
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1001;	// power led blink / off to indicate fac.def.
-		cfg->ses_gpio = 0x1004;	// ses blue
+		cfg->connected_gpio = GPIO_LOW | 0x2;	// ses orange
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power led blink / off to indicate fac.def.
+		cfg->ses_gpio = GPIO_LOW | 0x4;	// ses blue
 		break;
 	case ROUTER_WRT160N:
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1001;	// power led blink / off to indicate fac.def. 
-		cfg->connected_gpio = 0x1003;	// ses orange
-		cfg->ses_gpio = 0x1005;	// ses blue
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power led blink / off to indicate fac.def. 
+		cfg->connected_gpio = GPIO_LOW | 0x3;	// ses orange
+		cfg->ses_gpio = GPIO_LOW | 0x5;	// ses blue
 		break;
 	case ROUTER_WRT160NV3:
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1001;	// power led blink / off to indicate fac.def. 
-		cfg->connected_gpio = 0x1002;	// ses orange
-		cfg->ses_gpio = 0x1004;	// ses blue
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power led blink / off to indicate fac.def. 
+		cfg->connected_gpio = GPIO_LOW | 0x2;	// ses orange
+		cfg->ses_gpio = GPIO_LOW | 0x4;	// ses blue
 		break;
 	case ROUTER_LINKSYS_E800:
 	case ROUTER_LINKSYS_E900:
 	case ROUTER_LINKSYS_E1500:
 	case ROUTER_LINKSYS_E1550:
-		cfg->power_gpio = 0x1006;
-		cfg->diag_gpio = 0x0006;	// power led blink / off to indicate fac.def.
-		cfg->ses_gpio = 0x1008;	// ses blue
+		cfg->power_gpio = GPIO_LOW | 0x6;
+		cfg->diag_gpio = 0x6;	// power led blink / off to indicate fac.def.
+		cfg->ses_gpio = GPIO_LOW | 0x8;	// ses blue
 		break;
 	case ROUTER_LINKSYS_E1000V2:
-		cfg->power_gpio = 0x1006;
-		cfg->diag_gpio = 0x0006;	// power led blink / off to indicate fac.def. 
-		cfg->connected_gpio = 0x0007;	// ses orange
-		cfg->ses_gpio = 0x0008;	// ses blue
+		cfg->power_gpio = GPIO_LOW | 0x6;
+		cfg->diag_gpio = 0x6;	// power led blink / off to indicate fac.def. 
+		cfg->connected_gpio = 0x7;	// ses orange
+		cfg->ses_gpio = 0x8;	// ses blue
 		break;
 	case ROUTER_LINKSYS_E2500:
-		cfg->power_gpio = 0x1006;
-		cfg->diag_gpio = 0x0006;	// power led blink / off to indicate fac.def.
+		cfg->power_gpio = GPIO_LOW | 0x6;
+		cfg->diag_gpio = 0x6;	// power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_LINKSYS_E3200:
-		cfg->power_gpio = 0x1003;
-		cfg->diag_gpio = 0x0003;	// power led blink / off to indicate fac.def. 
+		cfg->power_gpio = GPIO_LOW | 0x3;
+		cfg->diag_gpio = 0x3;	// power led blink / off to indicate fac.def. 
 		break;
 	case ROUTER_LINKSYS_E4200:
-		cfg->power_gpio = 0x1005;	// white LED1
-		cfg->diag_gpio = 0x1003;	// power led blink / off to indicate fac.def. 
-//              cfg->connected_gpio = 0x1003; // white LED2
+		cfg->power_gpio = GPIO_LOW | 0x5;	// white LED1
+		cfg->diag_gpio = GPIO_LOW | 0x3;	// power led blink / off to indicate fac.def. 
+//              cfg->connected_gpio = GPIO_LOW | 0x3; // white LED2
 		break;
 	case ROUTER_LINKSYS_EA6500:
-		cfg->diag_gpio = 0x1001;	// white led blink / off to indicate fac.def. 
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// white led blink / off to indicate fac.def. 
 		break;
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_LINKSYS_EA6700:
 	case ROUTER_LINKSYS_EA6400:
 	case ROUTER_LINKSYS_EA6350:
 	case ROUTER_LINKSYS_EA6900:
-		cfg->usb_power = 0x0009;	//usb power on/off
-		cfg->usb_power1 = 0x000a;	//usb power on/off
-		cfg->diag_gpio = 0x1006;	// white led blink / off to indicate fac.def. 
-		cfg->connected_gpio = 0x0008;
+		cfg->usb_power = 0x9;	//usb power on/off
+		cfg->usb_power1 = 0xa;	//usb power on/off
+		cfg->diag_gpio = GPIO_LOW | 0x6;	// white led blink / off to indicate fac.def. 
+		cfg->connected_gpio = 0x8;
 		break;
 	case ROUTER_LINKSYS_EA8500:
-		cfg->power_gpio = 0x1000;	// power led 
-		cfg->diag_gpio = 0x0000;	// power led orange     
-		cfg->wlan0_gpio = 0x0001;	// radio 0  
-		cfg->ses_gpio = 0x1002;	// wps led
+		cfg->power_gpio = GPIO_LOW | 0x0;	// power led 
+		cfg->diag_gpio = 0x0;	// power led orange     
+		cfg->wlan0_gpio = 0x1;	// radio 0  
+		cfg->ses_gpio = GPIO_LOW | 0x2;	// wps led
 		break;
 	case ROUTER_ASUS_WL500G:
-		cfg->power_gpio = 0x1000;
-		cfg->diag_gpio = 0x0000;	// power led blink /off to indicate factory
+		cfg->power_gpio = GPIO_LOW | 0x0;
+		cfg->diag_gpio = 0x0;	// power led blink /off to indicate factory
 		// defaults
 		break;
 	case ROUTER_ASUS_WL500W:
-		cfg->power_gpio = 0x1005;
-		cfg->diag_gpio = 0x0005;	// power led blink /off to indicate factory
+		cfg->power_gpio = GPIO_LOW | 0x5;
+		cfg->diag_gpio = 0x5;	// power led blink /off to indicate factory
 		// defaults
 		break;
 	case ROUTER_LINKSYS_WTR54GS:
-		cfg->diag_gpio = 0x0001;
+		cfg->diag_gpio = 0x1;
 		break;
 	case ROUTER_WAP54G_V1:
-		cfg->diag_gpio = 0x1003;
-		cfg->wlan0_gpio = 0x1004;	// LINK led
+		cfg->diag_gpio = GPIO_LOW | 0x3;
+		cfg->wlan0_gpio = GPIO_LOW | 0x4;	// LINK led
 		break;
 	case ROUTER_WAP54G_V3:
-		cfg->ses_gpio = 0x100c;
-		cfg->connected_gpio = 0x0006;
+		cfg->ses_gpio = GPIO_LOW | 0xc;
+		cfg->connected_gpio = 0x6;
 		break;
 	case ROUTER_NETGEAR_WNR834BV2:
-		cfg->power_gpio = 0x0002;
-		cfg->diag_gpio = 0x0003;	// power led amber 
-		cfg->connected_gpio = 0x0007;	// WAN led green 
+		cfg->power_gpio = 0x2;
+		cfg->diag_gpio = 0x3;	// power led amber 
+		cfg->connected_gpio = 0x7;	// WAN led green 
 		break;
 	case ROUTER_NETGEAR_WNDR3300:
-		cfg->power_gpio = 0x0005;
-		cfg->diag_gpio = 0x1005;	// power led blink /off to indicate factory defaults
-		cfg->connected_gpio = 0x0007;	// WAN led green 
+		cfg->power_gpio = 0x5;
+		cfg->diag_gpio = GPIO_LOW | 0x5;	// power led blink /off to indicate factory defaults
+		cfg->connected_gpio = 0x7;	// WAN led green 
 		break;
 	case ROUTER_ASKEY_RT220XD:
-		cfg->wlan0_gpio = 0x1000;
-		cfg->dmz_gpio = 0x1001;	// not soldered 
+		cfg->wlan0_gpio = GPIO_LOW | 0x0;
+		cfg->dmz_gpio = GPIO_LOW | 0x1;	// not soldered 
 		break;
 	case ROUTER_WRT610N:
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1001;	// power led blink /off to indicate factory defaults
-		cfg->connected_gpio = 0x1003;	// ses amber
-		cfg->ses_gpio = 0x1009;	// ses blue
-		cfg->usb_gpio = 0x1000;
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power led blink /off to indicate factory defaults
+		cfg->connected_gpio = GPIO_LOW | 0x3;	// ses amber
+		cfg->ses_gpio = GPIO_LOW | 0x9;	// ses blue
+		cfg->usb_gpio = GPIO_LOW | 0x0;
 		break;
 	case ROUTER_WRT610NV2:
-		cfg->power_gpio = 0x0005;
-		cfg->diag_gpio = 0x1005;	// power led blink
-		cfg->connected_gpio = 0x1000;	// ses amber
-		cfg->ses_gpio = 0x1003;	// ses blue
-		cfg->usb_gpio = 0x0007;
+		cfg->power_gpio = 0x5;
+		cfg->diag_gpio = GPIO_LOW | 0x5;	// power led blink
+		cfg->connected_gpio = GPIO_LOW | 0x0;	// ses amber
+		cfg->ses_gpio = GPIO_LOW | 0x3;	// ses blue
+		cfg->usb_gpio = 0x7;
 		break;
 	case ROUTER_USR_5461:
-		cfg->usb_gpio = 0x0001;
+		cfg->usb_gpio = 0x1;
 		break;
 	case ROUTER_USR_5465:
-		//cfg->usb_gpio = 0x0002; //or 0x0001 ??
+		//cfg->usb_gpio = 0x2; //or 0x1 ??
 		break;
 	case ROUTER_NETGEAR_WGR614L:
 	case ROUTER_NETGEAR_WGR614V9:
-		// cfg->power_gpio = 0x1007;       // don't use - resets router
-		cfg->diag_gpio = 0x0006;
-		cfg->connected_gpio = 0x1004;
+		// cfg->power_gpio = GPIO_LOW | 0x7;       // don't use - resets router
+		cfg->diag_gpio = 0x6;
+		cfg->connected_gpio = GPIO_LOW | 0x4;
 		break;
 	case ROUTER_NETGEAR_WG602_V4:
-		cfg->power_gpio = 0x1001;	// trick: make lan led green for 100Mbps
+		cfg->power_gpio = GPIO_LOW | 0x1;	// trick: make lan led green for 100Mbps
 		break;
 	case ROUTER_BELKIN_F5D7231_V2000:
-		cfg->connected_gpio = 0x1004;
-		cfg->diag_gpio = 0x0001;	// power led blink /off to indicate factory defaults
+		cfg->connected_gpio = GPIO_LOW | 0x4;
+		cfg->diag_gpio = 0x1;	// power led blink /off to indicate factory defaults
 		break;
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_NETGEAR_WNR3500LV2:
-		cfg->power_gpio = 0x0003;	// power led green
-		cfg->diag_gpio = 0x0007;	// power led amber
-		cfg->ses_gpio = 0x0001;	// WPS led green
-		cfg->connected_gpio = 0x0002;	// wan led green
-		cfg->wlan1_gpio = 0x0000;	// radio 1 blue led
-		cfg->usb_gpio = 0x0014;	// usb power
+		cfg->power_gpio = 0x3;	// power led green
+		cfg->diag_gpio = 0x7;	// power led amber
+		cfg->ses_gpio = 0x1;	// WPS led green
+		cfg->connected_gpio = 0x2;	// wan led green
+		cfg->wlan1_gpio = 0x0;	// radio 1 blue led
+		cfg->usb_gpio = 0x14;	// usb power
 		break;
 	case ROUTER_NETGEAR_WNDR3400:
-		cfg->power_gpio = 0x0003;	//power led green
-		cfg->diag_gpio = 0x0007;	// power led amber
-		cfg->connected_gpio = 0x0001;	//wan led green
-		cfg->usb_gpio = 0x1002;	//usb led green
-		cfg->wlan1_gpio = 0x0000;	// radio 1 led blue
+		cfg->power_gpio = 0x3;	//power led green
+		cfg->diag_gpio = 0x7;	// power led amber
+		cfg->connected_gpio = 0x1;	//wan led green
+		cfg->usb_gpio = GPIO_LOW | 0x2;	//usb led green
+		cfg->wlan1_gpio = 0x0;	// radio 1 led blue
 		break;
 	case ROUTER_NETGEAR_WNDR4000:
-		cfg->power_gpio = 0x0000;	//power led green
-		cfg->diag_gpio = 0x0001;	// power led amber
-		cfg->connected_gpio = 0x0002;	//wan led green
-		cfg->wlan0_gpio = 0x0003;	//radio 0 led green
-		cfg->wlan1_gpio = 0x0004;	// radio 1 led blue
-		cfg->usb_gpio = 0x0005;	//usb led green
-		cfg->ses_gpio = 0x1006;	// WPS led green - inverse
-		cfg->ses2_gpio = 0x1007;	// WLAN led green - inverse
+		cfg->power_gpio = 0x0;	//power led green
+		cfg->diag_gpio = 0x1;	// power led amber
+		cfg->connected_gpio = 0x2;	//wan led green
+		cfg->wlan0_gpio = 0x3;	//radio 0 led green
+		cfg->wlan1_gpio = 0x4;	// radio 1 led blue
+		cfg->usb_gpio = 0x5;	//usb led green
+		cfg->ses_gpio = GPIO_LOW | 0x6;	// WPS led green - inverse
+		cfg->ses2_gpio = GPIO_LOW | 0x7;	// WLAN led green - inverse
 		break;
 	case ROUTER_DLINK_DIR860:
-		cfg->usb_power = 0x000a;
-		cfg->connected_gpio = 0x1004;
-		cfg->disconnected_gpio = 0x1003;
-		cfg->power_gpio = 0x1001;
-		cfg->diag_gpio = 0x1000;
-		cfg->diag_gpio_disabled = 0x1001;
+		cfg->usb_power = 0xa;
+		cfg->connected_gpio = GPIO_LOW | 0x4;
+		cfg->disconnected_gpio = GPIO_LOW | 0x3;
+		cfg->power_gpio = GPIO_LOW | 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x0;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x1;
 		break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR868C:
-		cfg->usb_power = 0x000a;
-		cfg->connected_gpio = 0x1003;
-		cfg->disconnected_gpio = 0x1001;
-		cfg->power_gpio = 0x1002;
-		cfg->diag_gpio = 0x1000;
+		cfg->usb_power = 0xa;
+		cfg->connected_gpio = GPIO_LOW | 0x3;
+		cfg->disconnected_gpio = GPIO_LOW | 0x1;
+		cfg->power_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio = GPIO_LOW | 0x0;
 		break;
 
 	case ROUTER_DLINK_DIR880:
-		cfg->connected_gpio = 0x1003;
-		cfg->disconnected_gpio = 0x1001;
-		cfg->power_gpio = 0x1002;
-		cfg->diag_gpio = 0x1000;
-		cfg->diag_gpio_disabled = 0x1002;
-		cfg->usb_gpio = 0x1008;
-		cfg->usb_gpio1 = 0x100f;
-//              cfg->wlan0_gpio = 0x100d;
-//              cfg->wlan1_gpio = 0x100e;
-		cfg->usb_power = 0x0009;
-		cfg->usb_power1 = 0x000a;
+		cfg->connected_gpio = GPIO_LOW | 0x3;
+		cfg->disconnected_gpio = GPIO_LOW | 0x1;
+		cfg->power_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio = GPIO_LOW | 0x0;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x2;
+		cfg->usb_gpio = GPIO_LOW | 0x8;
+		cfg->usb_gpio1 = GPIO_LOW | 0xf;
+//              cfg->wlan0_gpio = GPIO_LOW | 0xd;
+//              cfg->wlan1_gpio = GPIO_LOW | 0xe;
+		cfg->usb_power = 0x9;
+		cfg->usb_power1 = 0xa;
 		break;
 	case ROUTER_DLINK_DIR885:
-		cfg->usb_power = 0x0012;
-		cfg->usb_gpio = 0x1008;
-		cfg->power_gpio = 0x1000;
-		cfg->diag_gpio = 0x1002;
-		cfg->diag_gpio_disabled = 0x1000;
-		cfg->disconnected_gpio = 0x1003;
-		cfg->connected_gpio = 0x1001;
-		cfg->wlan0_gpio = 0x100d;
-		cfg->wlan1_gpio = 0x100e;
+		cfg->usb_power = 0x12;
+		cfg->usb_gpio = GPIO_LOW | 0x8;
+		cfg->power_gpio = GPIO_LOW | 0x0;
+		cfg->diag_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x0;
+		cfg->disconnected_gpio = GPIO_LOW | 0x3;
+		cfg->connected_gpio = GPIO_LOW | 0x1;
+		cfg->wlan0_gpio = GPIO_LOW | 0xd;
+		cfg->wlan1_gpio = GPIO_LOW | 0xe;
 		break;
 	case ROUTER_DLINK_DIR895:
-		cfg->usb_power = 0x0015;
-		cfg->usb_power1 = 0x0012;
-		cfg->usb_gpio = 0x1008;
-		cfg->usb_gpio1 = 0x100f;
-		cfg->power_gpio = 0x1000;
-		cfg->diag_gpio = 0x1002;
-		cfg->diag_gpio_disabled = 0x1000;
-		cfg->disconnected_gpio = 0x1003;
-		cfg->connected_gpio = 0x1001;
-		cfg->wlan0_gpio = 0x100d;
-		cfg->wlan1_gpio = 0x100e;
+		cfg->usb_power = 0x15;
+		cfg->usb_power1 = 0x12;
+		cfg->usb_gpio = GPIO_LOW | 0x8;
+		cfg->usb_gpio1 = GPIO_LOW | 0xf;
+		cfg->power_gpio = GPIO_LOW | 0x0;
+		cfg->diag_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x0;
+		cfg->disconnected_gpio = GPIO_LOW | 0x3;
+		cfg->connected_gpio = GPIO_LOW | 0x1;
+		cfg->wlan0_gpio = GPIO_LOW | 0xd;
+		cfg->wlan1_gpio = GPIO_LOW | 0xe;
 		break;
 	case ROUTER_DLINK_DIR890:
-		cfg->usb_power = 0x0015;
-		cfg->usb_power1 = 0x0012;
-		cfg->usb_gpio = 0x1008;
-		cfg->usb_gpio1 = 0x100f;
-		cfg->connected_gpio = 0x1001;
-		cfg->disconnected_gpio = 0x1003;
-		cfg->power_gpio = 0x1002;
-		cfg->diag_gpio = 0x0002;
+		cfg->usb_power = 0x15;
+		cfg->usb_power1 = 0x12;
+		cfg->usb_gpio = GPIO_LOW | 0x8;
+		cfg->usb_gpio1 = GPIO_LOW | 0xf;
+		cfg->connected_gpio = GPIO_LOW | 0x1;
+		cfg->disconnected_gpio = GPIO_LOW | 0x3;
+		cfg->power_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio = 0x2;
 		break;
 	case ROUTER_TRENDNET_TEW828:
-		cfg->usb_gpio = 0x1004;
-		cfg->power_gpio = 0x1006;
-		cfg->diag_gpio = 0x0006;
+		cfg->usb_gpio = GPIO_LOW | 0x4;
+		cfg->power_gpio = GPIO_LOW | 0x6;
+		cfg->diag_gpio = 0x6;
 		break;
 	case ROUTER_TRENDNET_TEW812:
 		// gpio !1 = 2.4 ghz led
@@ -1391,360 +1396,360 @@ static void getledconfig(struct ledconfig *cfg)
 		// gpio !3 = power somthing
 		// gpio !8 = usb led
 		// 
-		cfg->usb_gpio = 0x1008;
-		cfg->diag_gpio = 0x1003;
-		cfg->wlan0_gpio = 0x1001;
-		cfg->wlan1_gpio = 0x1002;
+		cfg->usb_gpio = GPIO_LOW | 0x8;
+		cfg->diag_gpio = GPIO_LOW | 0x3;
+		cfg->wlan0_gpio = GPIO_LOW | 0x1;
+		cfg->wlan1_gpio = GPIO_LOW | 0x2;
 		break;
 	case ROUTER_ASUS_RTN18U:
-		cfg->power_gpio = 0x1000;
-//              cfg->usb_power = 0x000d;      //usb power on/off
+		cfg->power_gpio = GPIO_LOW | 0x0;
+//              cfg->usb_power = 0xd;      //usb power on/off
 		if (nvram_match("bl_version", "3.0.0.7")) {
-			cfg->usb_gpio = 0x100e;
-			cfg->connected_gpio = 0x1003;
-			cfg->disconnected_gpio = 0x1006;
+			cfg->usb_gpio = GPIO_LOW | 0xe;
+			cfg->connected_gpio = GPIO_LOW | 0x3;
+			cfg->disconnected_gpio = GPIO_LOW | 0x6;
 		} else if (nvram_match("bl_version", "1.0.0.0")) {
-			cfg->usb_gpio = 0x1003;
-			cfg->connected_gpio = 0x1006;
-			cfg->disconnected_gpio = 0x1009;
+			cfg->usb_gpio = GPIO_LOW | 0x3;
+			cfg->connected_gpio = GPIO_LOW | 0x6;
+			cfg->disconnected_gpio = GPIO_LOW | 0x9;
 		} else {
-			cfg->usb_gpio = 0x1003;
-			cfg->usb_gpio1 = 0x100e;
-			cfg->connected_gpio = 0x1006;
-			cfg->disconnected_gpio = 0x1009;
+			cfg->usb_gpio = GPIO_LOW | 0x3;
+			cfg->usb_gpio1 = GPIO_LOW | 0xe;
+			cfg->connected_gpio = GPIO_LOW | 0x6;
+			cfg->disconnected_gpio = GPIO_LOW | 0x9;
 		}
 		break;
 	case ROUTER_TPLINK_ARCHERC8:
-		cfg->ses_gpio = 0x0006;
-		cfg->usb_gpio = 0x0002;
-		cfg->diag_gpio = 0x1004;
-//              cfg->usb_gpio1 = 0x0007;
-//              cfg->disconnected_gpio = 0x000f;
-		cfg->connected_gpio = 0x0008;
-		cfg->power_gpio = 0x0004;
-//              cfg->diag_gpio = 0x0012;
-		cfg->usb_power = 0x000a;	// usb 3
-		cfg->usb_power1 = 0x0009;	// usb 2
+		cfg->ses_gpio = 0x6;
+		cfg->usb_gpio = 0x2;
+		cfg->diag_gpio = GPIO_LOW | 0x4;
+//              cfg->usb_gpio1 = 0x7;
+//              cfg->disconnected_gpio = 0xf;
+		cfg->connected_gpio = 0x8;
+		cfg->power_gpio = 0x4;
+//              cfg->diag_gpio = 0x12;
+		cfg->usb_power = 0xa;	// usb 3
+		cfg->usb_power1 = 0x9;	// usb 2
 		break;
 	case ROUTER_TPLINK_ARCHERC8_V4:
-		cfg->ses_gpio = 0x0002;
-		cfg->usb_gpio = 0x0006;
-		cfg->usb_gpio1 = 0x0007;
-		cfg->disconnected_gpio = 0x000f;
-		cfg->connected_gpio = 0x000e;
-		cfg->power_gpio = 0x1012;
-		cfg->diag_gpio = 0x0012;
-		cfg->usb_power = 0x000c;	// usb 3
-		cfg->usb_power1 = 0x000d;	// usb 2
+		cfg->ses_gpio = 0x2;
+		cfg->usb_gpio = 0x6;
+		cfg->usb_gpio1 = 0x7;
+		cfg->disconnected_gpio = 0xf;
+		cfg->connected_gpio = 0xe;
+		cfg->power_gpio = GPIO_LOW | 0x12;
+		cfg->diag_gpio = 0x12;
+		cfg->usb_power = 0xc;	// usb 3
+		cfg->usb_power1 = 0xd;	// usb 2
 		break;
 	case ROUTER_TPLINK_ARCHERC9:
-		cfg->ses_gpio = 0x0002;
-		cfg->usb_gpio = 0x0006;
-		cfg->usb_gpio1 = 0x0007;
-		cfg->disconnected_gpio = 0x000f;
-		cfg->connected_gpio = 0x000e;
-		cfg->power_gpio = 0x1012;
-		cfg->diag_gpio = 0x0012;
-		cfg->usb_power = 0x000c;	// usb 3
-		cfg->usb_power1 = 0x000d;	// usb 2
+		cfg->ses_gpio = 0x2;
+		cfg->usb_gpio = 0x6;
+		cfg->usb_gpio1 = 0x7;
+		cfg->disconnected_gpio = 0xf;
+		cfg->connected_gpio = 0xe;
+		cfg->power_gpio = GPIO_LOW | 0x12;
+		cfg->diag_gpio = 0x12;
+		cfg->usb_power = 0xc;	// usb 3
+		cfg->usb_power1 = 0xd;	// usb 2
 		break;
 	case ROUTER_TPLINK_ARCHERC3150:
-		cfg->ses_gpio = 0x0002;
-//              cfg->usb_gpio = 0x0006;
-//              cfg->usb_gpio1 = 0x0007;
-//              cfg->disconnected_gpio = 0x000f;
-//              cfg->connected_gpio = 0x000e;
-//              cfg->power_gpio = 0x1012;
-//              cfg->diag_gpio = 0x0012;
-		cfg->usb_power = 0x000c;	// usb 3
-		cfg->usb_power1 = 0x000d;	// usb 2
+		cfg->ses_gpio = 0x2;
+//              cfg->usb_gpio = 0x6;
+//              cfg->usb_gpio1 = 0x7;
+//              cfg->disconnected_gpio = 0xf;
+//              cfg->connected_gpio = 0xe;
+//              cfg->power_gpio = GPIO_LOW | 0x12;
+//              cfg->diag_gpio = 0x12;
+		cfg->usb_power = 0xc;	// usb 3
+		cfg->usb_power1 = 0xd;	// usb 2
 		break;
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
-		cfg->wlan1_gpio = 0x1006;
-		cfg->power_gpio = 0x1003;
-		cfg->usb_power = 0x0009;	//usb power on/off
-		cfg->usb_power1 = 0x000a;	//usb power on/off
-		cfg->usb_gpio = 0x100e;
-		cfg->usb_gpio1 = 0x1000;
-		cfg->diag_gpio = 0x0003;
-		cfg->connected_gpio = 0x1001;
-		cfg->disconnected_gpio = 0x1002;
+		cfg->wlan1_gpio = GPIO_LOW | 0x6;
+		cfg->power_gpio = GPIO_LOW | 0x3;
+		cfg->usb_power = 0x9;	//usb power on/off
+		cfg->usb_power1 = 0xa;	//usb power on/off
+		cfg->usb_gpio = GPIO_LOW | 0xe;
+		cfg->usb_gpio1 = GPIO_LOW | 0x0;
+		cfg->diag_gpio = 0x3;
+		cfg->connected_gpio = GPIO_LOW | 0x1;
+		cfg->disconnected_gpio = GPIO_LOW | 0x2;
 		break;
 	case ROUTER_ASUS_AC3200:
-		cfg->usb_power = 0x0009;
-		cfg->power_gpio = 0x1003;
-		cfg->connected_gpio = 0x1005;
-		cfg->diag_gpio = 0x0003;
+		cfg->usb_power = 0x9;
+		cfg->power_gpio = GPIO_LOW | 0x3;
+		cfg->connected_gpio = GPIO_LOW | 0x5;
+		cfg->diag_gpio = 0x3;
 		// wps gpio = 14
 		break;
 	case ROUTER_ASUS_AC1200:
-		cfg->usb_power = 0x100a;
-		cfg->diag_gpio = 0x000a;
-		cfg->diag_gpio_disabled = 0x100a;
-		cfg->usb_gpio = 0x100f;
+		cfg->usb_power = GPIO_LOW | 0xa;
+		cfg->diag_gpio = 0xa;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0xa;
+		cfg->usb_gpio = GPIO_LOW | 0xf;
 		break;
 	case ROUTER_ASUS_AC88U:
 	case ROUTER_ASUS_AC3100:
 	case ROUTER_ASUS_AC5300:
-		cfg->usb_power = 0x0009;
-		cfg->usb_gpio = 0x1010;
-		cfg->usb_gpio1 = 0x1011;
-		cfg->power_gpio = 0x1003;
-		cfg->diag_gpio = 0x0003;
-		cfg->connected_gpio = 0x0005;
-		cfg->disconnected_gpio = 0x1015;
-		cfg->ses_gpio = 0x1013;
+		cfg->usb_power = 0x9;
+		cfg->usb_gpio = GPIO_LOW | 0x10;
+		cfg->usb_gpio1 = GPIO_LOW | 0x11;
+		cfg->power_gpio = GPIO_LOW | 0x3;
+		cfg->diag_gpio = 0x3;
+		cfg->connected_gpio = 0x5;
+		cfg->disconnected_gpio = GPIO_LOW | 0x15;
+		cfg->ses_gpio = GPIO_LOW | 0x13;
 		// komisches symbol gpio 21
 		// quantenna reset 8 inv (off / on to reset)    
 		break;
 	case ROUTER_ASUS_AC87U:
-		cfg->usb_power = 0x0009;
-		cfg->power_gpio = 0x1003;
-		cfg->connected_gpio = 0x1005;
-		cfg->ses_gpio = 0x1001;
+		cfg->usb_power = 0x9;
+		cfg->power_gpio = GPIO_LOW | 0x3;
+		cfg->connected_gpio = GPIO_LOW | 0x5;
+		cfg->ses_gpio = GPIO_LOW | 0x1;
 		// quantenna reset 8 inv (off / on to reset)    
 		break;
 	case ROUTER_NETGEAR_EX6200:
-		//cfg->power_gpio = 0x1009;   // connected red
-		cfg->diag_gpio = 0x1001;	// Netgear logo 
-		cfg->connected_gpio = 0x1008;	// connected green
-		cfg->wlan1_gpio = 0x100b;	// radio led red 2.4G
-		cfg->wlan0_gpio = 0x100d;	// radio led red 5G
-		cfg->usb_gpio = 0x1005;	// usb led 
-		//cfg->usb_power = 0x0000;    // usb enable
+		//cfg->power_gpio = GPIO_LOW | 0x9;   // connected red
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// Netgear logo 
+		cfg->connected_gpio = GPIO_LOW | 0x8;	// connected green
+		cfg->wlan1_gpio = GPIO_LOW | 0xb;	// radio led red 2.4G
+		cfg->wlan0_gpio = GPIO_LOW | 0xd;	// radio led red 5G
+		cfg->usb_gpio = GPIO_LOW | 0x5;	// usb led 
+		//cfg->usb_power = 0x0;    // usb enable
 		break;
 	case ROUTER_NETGEAR_AC1450:
-		cfg->power_gpio = 0x1002;	// power led green
-		//cfg->diag_gpio = 0x1003;    // power led orange
-		cfg->diag_gpio = 0x1001;	// Netgear logo 
-		cfg->connected_gpio = 0x100a;	// wan led green - hw controlled
-		cfg->wlan0_gpio = 0x100b;	// radio led blue
-		cfg->usb_gpio = 0x1008;	// usb led 
-		//cfg->usb_power = 0x0000;    // usb enable
+		cfg->power_gpio = GPIO_LOW | 0x2;	// power led green
+		//cfg->diag_gpio = GPIO_LOW | 0x3;    // power led orange
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// Netgear logo 
+		cfg->connected_gpio = GPIO_LOW | 0xa;	// wan led green - hw controlled
+		cfg->wlan0_gpio = GPIO_LOW | 0xb;	// radio led blue
+		cfg->usb_gpio = GPIO_LOW | 0x8;	// usb led 
+		//cfg->usb_power = 0x0;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R6250:
-		cfg->power_gpio = 0x1002;	// power led green
-		//cfg->diag_gpio = 0x1003;    // power led orange
-		cfg->diag_gpio = 0x0001;	// Netgear logo
-		//emblem0_gpio = 0x0001; // NETGEAR Emblem       
-		cfg->connected_gpio = 0x100f;	// wan led green
-		cfg->wlan0_gpio = 0x100b;	// radio led blue
-		cfg->usb_gpio = 0x1008;	// usb led green
-		//cfg->usb_power = 0x0000;    // usb enable
+		cfg->power_gpio = GPIO_LOW | 0x2;	// power led green
+		//cfg->diag_gpio = GPIO_LOW | 0x3;    // power led orange
+		cfg->diag_gpio = 0x1;	// Netgear logo
+		//emblem0_gpio = 0x1; // NETGEAR Emblem       
+		cfg->connected_gpio = GPIO_LOW | 0xf;	// wan led green
+		cfg->wlan0_gpio = GPIO_LOW | 0xb;	// radio led blue
+		cfg->usb_gpio = GPIO_LOW | 0x8;	// usb led green
+		//cfg->usb_power = 0x0;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R6300:
-		cfg->usb_gpio = 0x1008;	//usb led
-		cfg->usb_power = 0x0000;	//usb power on/off
-		cfg->connected_gpio = 0x100f;	//green led
-		cfg->power_gpio = 0x1002;	//power orange led
-		cfg->diag_gpio = 0x1003;	//power led orange
-		//cfg->diag_gpio_disabled=0x0009;//netgear logo led r
-		//emblem0_gpio = 0x1001;   // NETGEAR Emblem l     
-		//emblem1_gpio = 0x1009;   // NETGEAR Emblem r
-		cfg->wlan0_gpio = 0x100b;	// radio led blue
+		cfg->usb_gpio = GPIO_LOW | 0x8;	//usb led
+		cfg->usb_power = 0x0;	//usb power on/off
+		cfg->connected_gpio = GPIO_LOW | 0xf;	//green led
+		cfg->power_gpio = GPIO_LOW | 0x2;	//power orange led
+		cfg->diag_gpio = GPIO_LOW | 0x3;	//power led orange
+		//cfg->diag_gpio_disabled=0x9;//netgear logo led r
+		//emblem0_gpio = GPIO_LOW | 0x1;   // NETGEAR Emblem l     
+		//emblem1_gpio = GPIO_LOW | 0x9;   // NETGEAR Emblem r
+		cfg->wlan0_gpio = GPIO_LOW | 0xb;	// radio led blue
 		break;
 	case ROUTER_NETGEAR_R6300V2:
-		cfg->power_gpio = 0x1002;	// power led green
-		//cfg->diag_gpio = 0x1003;    // power led orange
-		cfg->diag_gpio = 0x1001;	// Netgear logo 
-		cfg->connected_gpio = 0x100a;	// wan led green - hw controlled
-		cfg->wlan0_gpio = 0x100b;	// radio led blue
-		cfg->usb_gpio = 0x1008;	// usb led 
-		//cfg->usb_power = 0x0000;    // usb enable
+		cfg->power_gpio = GPIO_LOW | 0x2;	// power led green
+		//cfg->diag_gpio = GPIO_LOW | 0x3;    // power led orange
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// Netgear logo 
+		cfg->connected_gpio = GPIO_LOW | 0xa;	// wan led green - hw controlled
+		cfg->wlan0_gpio = GPIO_LOW | 0xb;	// radio led blue
+		cfg->usb_gpio = GPIO_LOW | 0x8;	// usb led 
+		//cfg->usb_power = 0x0;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R6400:
 	case ROUTER_NETGEAR_R6400V2:
 	case ROUTER_NETGEAR_R6700V3:
-		cfg->power_gpio = 0x1001;	// 
-		cfg->connected_gpio = 0x1007;	//
-		cfg->usb_power = 0x0000;	//
-		cfg->diag_gpio = 0x1002;	// 
-		cfg->wlan0_gpio = 0x1009;	// radio 0 
-		cfg->wlan1_gpio = 0x1008;	// radio 1 
-		cfg->ses_gpio = 0x100a;	// wps led
-		cfg->wlan_gpio = 0x100b;	// wifi button led
-		cfg->usb_gpio = 0x100c;	// usb1 
-		cfg->usb_gpio1 = 0x100d;	// usb2
+		cfg->power_gpio = GPIO_LOW | 0x1;	// 
+		cfg->connected_gpio = GPIO_LOW | 0x7;	//
+		cfg->usb_power = 0x0;	//
+		cfg->diag_gpio = GPIO_LOW | 0x2;	// 
+		cfg->wlan0_gpio = GPIO_LOW | 0x9;	// radio 0 
+		cfg->wlan1_gpio = GPIO_LOW | 0x8;	// radio 1 
+		cfg->ses_gpio = GPIO_LOW | 0xa;	// wps led
+		cfg->wlan_gpio = GPIO_LOW | 0xb;	// wifi button led
+		cfg->usb_gpio = GPIO_LOW | 0xc;	// usb1 
+		cfg->usb_gpio1 = GPIO_LOW | 0xd;	// usb2
 		break;
 	case ROUTER_NETGEAR_R7000:
-		cfg->power_gpio = 0x1002;	// power led 
-		cfg->diag_gpio = 0x1003;	// power led orange     
-		cfg->connected_gpio = 0x1009;	// wan led
-		cfg->usb_power = 0x0000;	// usb enable
-		cfg->wlan0_gpio = 0x100d;	// radio 0 
-		cfg->wlan1_gpio = 0x100c;	// radio 1 
-		cfg->ses_gpio = 0x100e;	// wps led
-		//cfg->wlan_gpio = 0x100f;    // wifi button led
-		cfg->usb_gpio = 0x1011;	//usb1 
-		cfg->usb_gpio1 = 0x1012;	//usb2 
+		cfg->power_gpio = GPIO_LOW | 0x2;	// power led 
+		cfg->diag_gpio = GPIO_LOW | 0x3;	// power led orange     
+		cfg->connected_gpio = GPIO_LOW | 0x9;	// wan led
+		cfg->usb_power = 0x0;	// usb enable
+		cfg->wlan0_gpio = GPIO_LOW | 0xd;	// radio 0 
+		cfg->wlan1_gpio = GPIO_LOW | 0xc;	// radio 1 
+		cfg->ses_gpio = GPIO_LOW | 0xe;	// wps led
+		//cfg->wlan_gpio = GPIO_LOW | 0xf;    // wifi button led
+		cfg->usb_gpio = GPIO_LOW | 0x11;	//usb1 
+		cfg->usb_gpio1 = GPIO_LOW | 0x12;	//usb2 
 		break;
 	case ROUTER_NETGEAR_R7000P:
-		cfg->power_gpio = 0x1002;	// power led *
-		cfg->diag_gpio = 0x1003;	// power led orange *    
-		cfg->connected_gpio = 0x1008;	// wan led
-		//cfg->usb_power = 0x0000;    // usb enable
-		cfg->wlan0_gpio = 0x1009;	// radio 0 *
-		cfg->wlan1_gpio = 0x100a;	// radio 1 *
-		cfg->ses_gpio = 0x100b;	// wps led * //13 is wifi
-		//cfg->wlan_gpio = 0x100f;    // wifi button led
-		cfg->usb_gpio = 0x100e;	//usb1 *
-		cfg->usb_gpio1 = 0x100f;	//usb2 *
+		cfg->power_gpio = GPIO_LOW | 0x2;	// power led *
+		cfg->diag_gpio = GPIO_LOW | 0x3;	// power led orange *    
+		cfg->connected_gpio = GPIO_LOW | 0x8;	// wan led
+		//cfg->usb_power = 0x0;    // usb enable
+		cfg->wlan0_gpio = GPIO_LOW | 0x9;	// radio 0 *
+		cfg->wlan1_gpio = GPIO_LOW | 0xa;	// radio 1 *
+		cfg->ses_gpio = GPIO_LOW | 0xb;	// wps led * //13 is wifi
+		//cfg->wlan_gpio = GPIO_LOW | 0xf;    // wifi button led
+		cfg->usb_gpio = GPIO_LOW | 0xe;	//usb1 *
+		cfg->usb_gpio1 = GPIO_LOW | 0xf;	//usb2 *
 		break;
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7500:
-		cfg->power_gpio = 0x0000;	// power led 
-		cfg->diag_gpio = 0x000a;	// power led orange     
-		cfg->diag_gpio_disabled = 0x0000;	// power led orange     
-		cfg->connected_gpio = 0x0007;	// wan led
-		cfg->usb_power = 0x0010;	// usb enable
-		cfg->usb_power1 = 0x000f;	// usb enable
-		cfg->wlan0_gpio = 0x0001;	// radio 0 
-		cfg->wlan1_gpio = 0x1002;	// radio 1 
-		cfg->ses_gpio = 0x1009;	// wps led
-		cfg->wlan_gpio = 0x1008;	// wifi button led
-		cfg->usb_gpio = 0x0004;	//usb1 
-		cfg->usb_gpio1 = 0x0005;	//usb2 
+		cfg->power_gpio = 0x0;	// power led 
+		cfg->diag_gpio = 0xa;	// power led orange     
+		cfg->diag_gpio_disabled = 0x0;	// power led orange     
+		cfg->connected_gpio = 0x7;	// wan led
+		cfg->usb_power = 0x10;	// usb enable
+		cfg->usb_power1 = 0xf;	// usb enable
+		cfg->wlan0_gpio = 0x1;	// radio 0 
+		cfg->wlan1_gpio = GPIO_LOW | 0x2;	// radio 1 
+		cfg->ses_gpio = GPIO_LOW | 0x9;	// wps led
+		cfg->wlan_gpio = GPIO_LOW | 0x8;	// wifi button led
+		cfg->usb_gpio = 0x4;	//usb1 
+		cfg->usb_gpio1 = 0x5;	//usb2 
 		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
-		cfg->diag_gpio = 0x00D4;	//gpio 212 on i2c slave antaira-gpio
-		cfg->beeper_gpio = 0x00D7;	//gpio 215 on i2c slave antaira-gpio
+		cfg->diag_gpio = 0xD4;	//gpio 212 on i2c slave antaira-gpio
+		cfg->beeper_gpio = 0xD7;	//gpio 215 on i2c slave antaira-gpio
 #endif
 		break;
 	case ROUTER_NETGEAR_R7800:
-		cfg->power_gpio = 0x0000;	// power led 
-		cfg->diag_gpio = 0x000a;	// power led orange     
-		cfg->diag_gpio_disabled = 0x0000;	// power led orange     
-		cfg->connected_gpio = 0x0007;	// wan led
-		cfg->usb_power = 0x0010;	// usb enable
-		cfg->usb_power1 = 0x000f;
-		cfg->wlan0_gpio = 0x0009;	// radio 5G 
-		cfg->wlan1_gpio = 0x0008;	// radio 2G
-		//cfg->ses_gpio = 0x1009;     // wps button led used for 2G
-		//cfg->wlan_gpio = 0x0008;    // wifi button led used for 5G
-		cfg->usb_gpio = 0x0004;	//usb1 
-		cfg->usb_gpio1 = 0x0005;	//usb2
+		cfg->power_gpio = 0x0;	// power led 
+		cfg->diag_gpio = 0xa;	// power led orange     
+		cfg->diag_gpio_disabled = 0x0;	// power led orange     
+		cfg->connected_gpio = 0x7;	// wan led
+		cfg->usb_power = 0x10;	// usb enable
+		cfg->usb_power1 = 0xf;
+		cfg->wlan0_gpio = 0x9;	// radio 5G 
+		cfg->wlan1_gpio = 0x8;	// radio 2G
+		//cfg->ses_gpio = GPIO_LOW | 0x9;     // wps button led used for 2G
+		//cfg->wlan_gpio = 0x8;    // wifi button led used for 5G
+		cfg->usb_gpio = 0x4;	//usb1 
+		cfg->usb_gpio1 = 0x5;	//usb2
 		break;
 	case ROUTER_ASROCK_G10:
-		cfg->diag_gpio = 0x0009;	// power led orange     
-		cfg->connected_gpio = 0x0008;	// wan led
-		cfg->disconnected_gpio = 0x0007;	// wan led
+		cfg->diag_gpio = 0x9;	// power led orange     
+		cfg->connected_gpio = 0x8;	// wan led
+		cfg->disconnected_gpio = 0x7;	// wan led
 		break;
 	case ROUTER_NETGEAR_R9000:
 
-		cfg->power_gpio = 0x0016;	// power led 
-		cfg->diag_gpio = 0x1016;	// power led orange     
-		cfg->diag_gpio_disabled = 0x0016;	// power led orange     
-		cfg->connected_gpio = 0x0017;	// wan led
-//      cfg->usb_power = 0x0010;      // usb enable
-//      cfg->usb_power1 = 0x000f;
-		cfg->ses_gpio = 0x1027;	// wps button led used for 2G
-		cfg->usb_gpio = 0x0024;	//usb1 
-		cfg->usb_gpio1 = 0x0025;	//usb2
+		cfg->power_gpio = 0x16;	// power led 
+		cfg->diag_gpio = GPIO_LOW | 0x16;	// power led orange     
+		cfg->diag_gpio_disabled = 0x16;	// power led orange     
+		cfg->connected_gpio = 0x17;	// wan led
+//      cfg->usb_power = 0x10;      // usb enable
+//      cfg->usb_power1 = 0xf;
+		cfg->ses_gpio = GPIO_LOW | 0x27;	// wps button led used for 2G
+		cfg->usb_gpio = 0x24;	//usb1 
+		cfg->usb_gpio1 = 0x25;	//usb2
 		break;
 	case ROUTER_TRENDNET_TEW827:
-		cfg->power_gpio = 0x1035;	// power led 
-		cfg->usb_gpio = 0x1007;	// usb led
+		cfg->power_gpio = GPIO_LOW | 0x35;	// power led 
+		cfg->usb_gpio = GPIO_LOW | 0x7;	// usb led
 		break;
 	case ROUTER_NETGEAR_R8000:
-		cfg->power_gpio = 0x1002;	// power led 
-		cfg->diag_gpio = 0x1003;	// power led orange     
-		cfg->connected_gpio = 0x1009;	// wan led green
-		cfg->usb_power = 0x0000;	// usb enable
-		cfg->wlan0_gpio = 0x100d;	// radio 2G 
-		cfg->wlan1_gpio = 0x100c;	// radio 5G-1 
-		cfg->wlan2_gpio = 0x1010;	// radio 5G-2
-		cfg->ses_gpio = 0x100e;	// wps led
-		cfg->wlan_gpio = 0x100f;	// wifi button led
-		cfg->usb_gpio = 0x1011;	//usb1 
-		cfg->usb_gpio1 = 0x1012;	//usb2 
+		cfg->power_gpio = GPIO_LOW | 0x2;	// power led 
+		cfg->diag_gpio = GPIO_LOW | 0x3;	// power led orange     
+		cfg->connected_gpio = GPIO_LOW | 0x9;	// wan led green
+		cfg->usb_power = 0x0;	// usb enable
+		cfg->wlan0_gpio = GPIO_LOW | 0xd;	// radio 2G 
+		cfg->wlan1_gpio = GPIO_LOW | 0xc;	// radio 5G-1 
+		cfg->wlan2_gpio = GPIO_LOW | 0x10;	// radio 5G-2
+		cfg->ses_gpio = GPIO_LOW | 0xe;	// wps led
+		cfg->wlan_gpio = GPIO_LOW | 0xf;	// wifi button led
+		cfg->usb_gpio = GPIO_LOW | 0x11;	//usb1 
+		cfg->usb_gpio1 = GPIO_LOW | 0x12;	//usb2 
 		break;
 	case ROUTER_NETGEAR_R8500:
-		cfg->power_gpio = 0x1002;	// power led 
-		cfg->diag_gpio = 0x100f;	//      
-		cfg->connected_gpio = 0x1009;	// wan led white 1Gb amber 100Mb
-		cfg->usb_power = 0x0000;	// usb enable
-		cfg->wlan0_gpio = 0x100b;	// radio 5G-1
-		cfg->wlan1_gpio = 0x100d;	// radio 2G 
-		cfg->wlan2_gpio = 0x100c;	// radio 5G-2
-		cfg->ses_gpio = 0x100e;	// wps led
-		cfg->wlan_gpio = 0x0014;	// wifi button led
-		cfg->usb_gpio = 0x1011;	//usb1 
-		cfg->usb_gpio1 = 0x1012;	//usb2 
+		cfg->power_gpio = GPIO_LOW | 0x2;	// power led 
+		cfg->diag_gpio = GPIO_LOW | 0xf;	//      
+		cfg->connected_gpio = GPIO_LOW | 0x9;	// wan led white 1Gb amber 100Mb
+		cfg->usb_power = 0x0;	// usb enable
+		cfg->wlan0_gpio = GPIO_LOW | 0xb;	// radio 5G-1
+		cfg->wlan1_gpio = GPIO_LOW | 0xd;	// radio 2G 
+		cfg->wlan2_gpio = GPIO_LOW | 0xc;	// radio 5G-2
+		cfg->ses_gpio = GPIO_LOW | 0xe;	// wps led
+		cfg->wlan_gpio = 0x14;	// wifi button led
+		cfg->usb_gpio = GPIO_LOW | 0x11;	//usb1 
+		cfg->usb_gpio1 = GPIO_LOW | 0x12;	//usb2 
 		break;
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
-		cfg->power_gpio = 0x1002;	//power led green
-		cfg->diag_gpio = 0x1003;	// power led amber
-		cfg->connected_gpio = 0x100f;	//wan led green
-		cfg->wlan0_gpio = 0x1009;	//radio 0 led green
-		cfg->wlan1_gpio = 0x100b;	// radio 1 led blue
-		cfg->usb_gpio = 0x1008;	//usb led green
-		cfg->usb_gpio1 = 0x100e;	//usb1 led green
+		cfg->power_gpio = GPIO_LOW | 0x2;	//power led green
+		cfg->diag_gpio = GPIO_LOW | 0x3;	// power led amber
+		cfg->connected_gpio = GPIO_LOW | 0xf;	//wan led green
+		cfg->wlan0_gpio = GPIO_LOW | 0x9;	//radio 0 led green
+		cfg->wlan1_gpio = GPIO_LOW | 0xb;	// radio 1 led blue
+		cfg->usb_gpio = GPIO_LOW | 0x8;	//usb led green
+		cfg->usb_gpio1 = GPIO_LOW | 0xe;	//usb1 led green
 		break;
 	case ROUTER_ASUS_RTN66:
 	case ROUTER_ASUS_AC66U:
-		cfg->power_gpio = 0x100c;
-		cfg->diag_gpio = 0x000c;
-		cfg->usb_gpio = 0x100f;
+		cfg->power_gpio = GPIO_LOW | 0xc;
+		cfg->diag_gpio = 0xc;
+		cfg->usb_gpio = GPIO_LOW | 0xf;
 		break;
 	case ROUTER_NETGEAR_WNR2000V2:
 
 		//cfg->power_gpio = ??;
-		cfg->diag_gpio = 0x0002;
-		cfg->ses_gpio = 0x0007;	//WPS led
-		cfg->connected_gpio = 0x0006;
+		cfg->diag_gpio = 0x2;
+		cfg->ses_gpio = 0x7;	//WPS led
+		cfg->connected_gpio = 0x6;
 		break;
 	case ROUTER_WRT320N:
-		cfg->power_gpio = 0x0002;	//power/diag (disabled=blink)
-		cfg->ses_gpio = 0x1003;	// ses blue
-		cfg->connected_gpio = 0x1004;	//ses orange
+		cfg->power_gpio = 0x2;	//power/diag (disabled=blink)
+		cfg->ses_gpio = GPIO_LOW | 0x3;	// ses blue
+		cfg->connected_gpio = GPIO_LOW | 0x4;	//ses orange
 		break;
 	case ROUTER_ASUS_RTN12:
-		cfg->power_gpio = 0x1002;
-		cfg->diag_gpio = 0x0002;	// power blink
+		cfg->power_gpio = GPIO_LOW | 0x2;
+		cfg->diag_gpio = 0x2;	// power blink
 		break;
 	case ROUTER_BOARD_NEPTUNE:
-//              cfg->usb_gpio = 0x1008;
-		// 0x100c //unknown gpio label, use as diag
+//              cfg->usb_gpio = GPIO_LOW | 0x8;
+		// GPIO_LOW | 0xc //unknown gpio label, use as diag
 #ifdef HAVE_RUT500
-		cfg->diag_gpio = 0x100e;
+		cfg->diag_gpio = GPIO_LOW | 0xe;
 #else
-		cfg->diag_gpio = 0x100c;
+		cfg->diag_gpio = GPIO_LOW | 0xc;
 #endif
 		break;
 	case ROUTER_ASUS_RTN10U:
-		cfg->ses_gpio = 0x0007;
-		cfg->usb_gpio = 0x0008;
+		cfg->ses_gpio = 0x7;
+		cfg->usb_gpio = 0x8;
 		break;
 	case ROUTER_ASUS_RTN12B:
-		cfg->connected_gpio = 0x1005;
+		cfg->connected_gpio = GPIO_LOW | 0x5;
 		break;
 	case ROUTER_ASUS_RTN10PLUSD1:
-		cfg->ses_gpio = 0x0007;
-		cfg->power_gpio = 0x1006;
-		cfg->diag_gpio = 0x0006;
+		cfg->ses_gpio = 0x7;
+		cfg->power_gpio = GPIO_LOW | 0x6;
+		cfg->diag_gpio = 0x6;
 		break;
 	case ROUTER_ASUS_RTN10:
 	case ROUTER_ASUS_RTN16:
 	case ROUTER_NETCORE_NW618:
-		cfg->power_gpio = 0x1001;
-		cfg->diag_gpio = 0x0001;	// power blink
+		cfg->power_gpio = GPIO_LOW | 0x1;
+		cfg->diag_gpio = 0x1;	// power blink
 		break;
 	case ROUTER_BELKIN_F7D3301:
 	case ROUTER_BELKIN_F7D3302:
 	case ROUTER_BELKIN_F7D4301:
 	case ROUTER_BELKIN_F7D4302:
-		cfg->power_gpio = 0x100a;	// green
-		cfg->diag_gpio = 0x100b;	// red
-		cfg->ses_gpio = 0x100d;	// wps orange
+		cfg->power_gpio = GPIO_LOW | 0xa;	// green
+		cfg->diag_gpio = GPIO_LOW | 0xb;	// red
+		cfg->ses_gpio = GPIO_LOW | 0xd;	// wps orange
 		break;
 	case ROUTER_DYNEX_DX_NRUTER:
-		cfg->power_gpio = 0x0001;
-		cfg->diag_gpio = 0x1001;	// power blink
-		cfg->connected_gpio = 0x1000;
-		cfg->sec0_gpio = 0x1003;
+		cfg->power_gpio = 0x1;
+		cfg->diag_gpio = GPIO_LOW | 0x1;	// power blink
+		cfg->connected_gpio = GPIO_LOW | 0x0;
+		cfg->sec0_gpio = GPIO_LOW | 0x3;
 		break;
 #endif
 	}
@@ -1858,16 +1863,16 @@ int led_control(int type, int act)
 		break;
 	}
 	if (act == GPIO_CHECK) {
-		if ((use_gpio & 0xfff) != 0xfff)
+		if ((use_gpio & GPIO_MASK) != GPIO_MASK)
 			return 1;
 		else
 			return 0;
 	}
-	if ((use_gpio & 0xfff) != 0xfff) {
-		int gpio_value = use_gpio & 0xfff;
-		int enable = (use_gpio & 0x1000) == 0 ? 1 : 0;
-		int disable = (use_gpio & 0x1000) == 0 ? 0 : 1;
-		int setin = (use_gpio & 0x2000) == 0 ? 0 : 1;
+	if ((use_gpio & GPIO_MASK) != GPIO_MASK) {
+		int gpio_value = use_gpio & GPIO_MASK;
+		int enable = (use_gpio & GPIO_LOW) == 0 ? 1 : 0;
+		int disable = (use_gpio & GPIO_LOW) == 0 ? 0 : 1;
+		int setin = (use_gpio & GPIO_IN) == 0 ? 0 : 1;
 		switch (act) {
 		case LED_ON:
 			set_gpio(gpio_value, enable);
@@ -1974,7 +1979,7 @@ static int diag_led_4704(int type, int act)
 	switch (type) {
 	case DIAG:		// GPIO 1
 		if (hw_error) {
-			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x00);
+			write_gpio("/dev/gpio/out", (out & 0x7c));
 			return 1;
 		}
 
@@ -1985,7 +1990,7 @@ static int diag_led_4704(int type, int act)
 			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x81);
 			// cprintf("tallest:=====( DIAG START_LED !!)=====\n");
 		} else if (act == MALFUNCTION_LED) {	// start blinking
-			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x00);
+			write_gpio("/dev/gpio/out", (out & 0x7c));
 			hw_error = 1;
 			// cprintf("tallest:=====( DIAG MALFUNCTION_LED !!)=====\n");
 		}
