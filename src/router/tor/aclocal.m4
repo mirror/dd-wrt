@@ -1233,6 +1233,8 @@ AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
 m4_include([m4/ax_check_sign.m4])
+m4_include([m4/ax_compiler_vendor.m4])
+m4_include([m4/ax_compiler_version.m4])
 m4_include([m4/pc_from_ucontext.m4])
 m4_include([m4/pkg.m4])
 m4_include([m4/pprint.m4])

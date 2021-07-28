@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -240,7 +240,7 @@ networkstatus_get_cache_fname,(int flav,
 }
 
 /**
- * Read and and return the cached consensus of type <b>flavorname</b>.  If
+ * Read and return the cached consensus of type <b>flavorname</b>.  If
  * <b>unverified</b> is false, get the one we haven't verified. Return NULL if
  * the file isn't there. */
 static tor_mmap_t *

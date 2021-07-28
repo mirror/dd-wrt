@@ -67,7 +67,7 @@ The following options in this section are only recognized on the
 [[opt-h]] **`-h`**, **`--help`**::
     Display a short help message and exit.
 
-[[opt-f]] **`-f`** __FILE__::
+[[opt-f]] **`-f`**, **`--torrc-file`** __FILE__::
     Specify a new configuration file to contain further Tor configuration
     options, or pass *-* to make Tor read its configuration from standard
     input. (Default: **`@CONFDIR@/torrc`**, or **`$HOME/.torrc`** if
@@ -91,8 +91,9 @@ The following options in this section are only recognized on the
 [[opt-hash-password]] **`--hash-password`** __PASSWORD__::
     Generate a hashed password for control port access.
 
-[[opt-list-fingerprint]] **`--list-fingerprint`**::
-    Generate your keys and output your nickname and fingerprint.
+[[opt-list-fingerprint]] **`--list-fingerprint`** [__key type__]::
+    Generate your keys and output your nickname and fingerprint. Optionally,
+    you can specify the key type as `rsa` (default) or `ed25519`.
 
 [[opt-verify-config]] **`--verify-config`**::
     Verify whether the configuration file is valid.
@@ -965,23 +966,6 @@ forward slash (/) in the configuration file and on the command line.
     If KIST is used in Schedulers, this is a multiplier of the per-socket
     limit calculation of the KIST algorithm. (Default: 1.0)
 
-
-[[ServerTransportListenAddr]] **ServerTransportListenAddr** __transport__ __IP__:__PORT__::
-    When this option is set, Tor will suggest __IP__:__PORT__ as the
-    listening address of any pluggable transport proxy that tries to
-    launch __transport__. (IPv4 addresses should written as-is; IPv6
-    addresses should be wrapped in square brackets.) (Default: none)
-
-[[ServerTransportOptions]] **ServerTransportOptions** __transport__ __k=v__ __k=v__ ...::
-    When this option is set, Tor will pass the __k=v__ parameters to
-    any pluggable transport proxy that tries to launch __transport__. +
-    (Example: ServerTransportOptions obfs45 shared-secret=bridgepasswd cache=/var/lib/tor/cache) (Default: none)
-
-[[ServerTransportPlugin]] **ServerTransportPlugin** __transport__ exec __path-to-binary__ [options]::
-    The Tor relay launches the pluggable transport proxy in __path-to-binary__
-    using __options__ as its command-line options, and expects to receive
-    proxied client traffic from it. (Default: none)
-
 [[Socks4Proxy]] **Socks4Proxy** __host__[:__port__]::
     Tor will make all OR connections through the SOCKS 4 proxy at host:port
     (or host:1080 if port is not specified).
@@ -1239,16 +1223,6 @@ The following options are useful only for clients (that is, if
     A list of ports that your firewall allows you to connect to. Only used when
     **FascistFirewall** is set. This option is deprecated; use ReachableAddresses
     instead. (Default: 80, 443)
-
-[[HidServAuth]] **HidServAuth** __onion-address__ __auth-cookie__ [__service-name__]::
-    Client authorization for a v2 hidden service. Valid onion addresses contain 16
-    characters in a-z2-7 plus ".onion", and valid auth cookies contain 22
-    characters in A-Za-z0-9+/. The service name is only used for internal
-    purposes, e.g., for Tor controllers. This option may be used multiple times
-    for different hidden services. If a hidden service uses authorization and
-    this option is not set, the hidden service is not accessible. Hidden
-    services can be configured to require authorization using the
-    **HiddenServiceAuthorizeClient** option.
 
 [[HTTPTunnelPort]] **HTTPTunnelPort** ['address'**:**]{empty}__port__|**auto** [_isolation flags_]::
     Open this port to listen for proxy connections using the "HTTP CONNECT"
@@ -1888,6 +1862,12 @@ The following options control when Tor enters and leaves dormant mode:
     counts as client activity for the purpose of DormantClientTimeout.
     If false, then only network activity counts. (Default: 1)
 
+[[DormantTimeoutEnabled]] **DormantTimeoutEnabled** **0**|**1**::
+    If false, then no amount of time without activity is sufficient to
+    make Tor go dormant.  Setting this option to zero is only recommended for
+    special-purpose applications that need to use the Tor binary for
+    something other than sending or receiving Tor traffic. (Default: 1)
+
 == NODE SELECTION OPTIONS
 
 // These options are in alphabetical order, with exceptions as noted.
@@ -2206,13 +2186,14 @@ is non-zero):
     (Default: "month 1 0:00")
 
 [[Address]] **Address** __address__::
-    The IPv4 address of this server, or a fully qualified domain name of
-    this server that resolves to an IPv4 address.  You can leave this
-    unset, and Tor will try to guess your IPv4 address.  This IPv4
-    address is the one used to tell clients and other servers where to
-    find your Tor server; it doesn't affect the address that your server
-    binds to.  To bind to a different address, use the ORPort and
-    OutboundBindAddress options.
+    The address of this server, or a fully qualified domain name of this server
+    that resolves to an address.  You can leave this unset, and Tor will try to
+    guess your address.  If a domain name is provided, Tor will attempt to
+    resolve it and use the underlying IPv4/IPv6 address as its publish address
+    (taking precedence over the ORPort configuration). The publish address is
+    the one used to tell clients and other servers where to find your Tor
+    server; it doesn't affect the address that your server binds to.  To bind
+    to a different address, use the ORPort and OutboundBindAddress options.
 
 [[AddressDisableIPv6]] **AddressDisableIPv6** **0**|**1**::
    By default, Tor will attempt to find the IPv6 of the relay if there is no
@@ -2241,21 +2222,13 @@ is non-zero):
     relay is configured in bridge mode.
 
 //Out of order because it logically belongs after BridgeRelay.
-[[BridgeRecordUsageByCountry]] **BridgeRecordUsageByCountry** **0**|**1**::
-    When this option is enabled and BridgeRelay is also enabled, and we have
-    GeoIP data, Tor keeps a per-country count of how many client
-    addresses have contacted it so that it can help the bridge authority guess
-    which countries have blocked access to it. If ExtraInfoStatistics is
-    enabled, it will be published as part of the extra-info document.
-    (Default: 1)
-
-//Out of order because it logically belongs after BridgeRelay.
 [[BridgeDistribution]] **BridgeDistribution** __string__::
     If set along with BridgeRelay, Tor will include a new line in its
     bridge descriptor which indicates to the BridgeDB service how it
     would like its bridge address to be given out. Set it to "none" if
     you want BridgeDB to avoid distributing your bridge address, or "any" to
-    let BridgeDB decide. (Default: any)
+    let BridgeDB decide.  See https://bridges.torproject.org/info for a more
+    up-to-date list of options. (Default: any)
 
 [[ContactInfo]] **ContactInfo** __email_address__::
     Administrative contact information for this relay or bridge. This line
@@ -2678,6 +2651,22 @@ is non-zero):
     name lookups that your server does on behalf of clients. (Default:
     "www.google.com, www.mit.edu, www.yahoo.com, www.slashdot.org")
 
+[[ServerTransportListenAddr]] **ServerTransportListenAddr** __transport__ __IP__:__PORT__::
+    When this option is set, Tor will suggest __IP__:__PORT__ as the
+    listening address of any pluggable transport proxy that tries to
+    launch __transport__. (IPv4 addresses should written as-is; IPv6
+    addresses should be wrapped in square brackets.) (Default: none)
+
+[[ServerTransportOptions]] **ServerTransportOptions** __transport__ __k=v__ __k=v__ ...::
+    When this option is set, Tor will pass the __k=v__ parameters to
+    any pluggable transport proxy that tries to launch __transport__. +
+    (Example: ServerTransportOptions obfs45 shared-secret=bridgepasswd cache=/var/lib/tor/cache) (Default: none)
+
+[[ServerTransportPlugin]] **ServerTransportPlugin** __transport__ exec __path-to-binary__ [options]::
+    The Tor relay launches the pluggable transport proxy in __path-to-binary__
+    using __options__ as its command-line options, and expects to receive
+    proxied client traffic from it. (Default: none)
+
 [[ShutdownWaitLength]] **ShutdownWaitLength** __NUM__::
     When we get a SIGINT and we're a server, we begin shutting down:
     we close listeners and start refusing new circuits. After **NUM**
@@ -2704,6 +2693,14 @@ is non-zero):
 Relays publish most statistics in a document called the
 extra-info document. The following options affect the different
 types of statistics that Tor relays collect and publish:
+
+[[BridgeRecordUsageByCountry]] **BridgeRecordUsageByCountry** **0**|**1**::
+    When this option is enabled and BridgeRelay is also enabled, and we have
+    GeoIP data, Tor keeps a per-country count of how many client
+    addresses have contacted it so that it can help the bridge authority guess
+    which countries have blocked access to it. If ExtraInfoStatistics is
+    enabled, it will be published as part of the extra-info document.
+    (Default: 1)
 
 [[CellStatistics]] **CellStatistics** **0**|**1**::
     Relays only.
@@ -2761,7 +2758,7 @@ types of statistics that Tor relays collect and publish:
     (Default: 1)
 
 [[HiddenServiceStatistics]] **HiddenServiceStatistics** **0**|**1**::
-    Relays only.
+    Relays and bridges only.
     When this option is enabled, a Tor relay writes obfuscated
     statistics on its role as hidden-service directory, introduction
     point, or rendezvous point to disk every 24 hours.  If ExtraInfoStatistics
@@ -2804,6 +2801,11 @@ details.)
     but one DirPort must have the **NoAdvertise** flag set. (Default: 0) +
      +
     The same flags are supported here as are supported by ORPort.
+     +
+    As of Tor 0.4.6.1-alpha, non-authoritative relays (see
+    AuthoritativeDirectory) will not publish the DirPort but will still listen
+    on it. Clients don't use the DirPorts on relays, so it is safe for you
+    to remove the DirPort from your torrc configuration.
 
 [[DirPortFrontPage]] **DirPortFrontPage** __FILENAME__::
     When this option is set, it takes an HTML file and publishes it as "/" on
@@ -2945,6 +2947,30 @@ Denial of Service mitigation subsystem described above.
     applied. "0" means use the consensus parameter. If not defined in the
     consensus, the value is 100.
     (Default: 0)
+
+[[DoSConnectionConnectRate]] **DoSConnectionConnectRate** __NUM__::
+
+    The allowed rate of client connection from a single address per second.
+    Coupled with the burst (see below), if the limit is reached, the address
+    is marked and a defense is applied (DoSConnectionDefenseType) for a period
+    of time defined by DoSConnectionConnectDefenseTimePeriod. If not defined
+    or set to 0, it is controlled by a consensus parameter.
+    (Default: 0)
+
+[[DoSConnectionConnectBurst]] **DoSConnectionConnectBurst** __NUM__::
+
+    The allowed burst of client connection from a single address per second.
+    See the DoSConnectionConnectRate for more details on this detection. If
+    not defined or set to 0, it is controlled by a consensus parameter.
+    (Default: 0)
+
+[[DoSConnectionConnectDefenseTimePeriod]] **DoSConnectionConnectDefenseTimePeriod** __N__ **seconds**|**minutes**|**hours**::
+
+    The base time period in seconds that the client connection defense is
+    activated for. The actual value is selected randomly for each activation
+    from N+1 to 3/2 * N. If not defined or set to 0, it is controlled by a
+    consensus parameter.
+    (Default: 24 hours)
 
 [[DoSRefuseSingleHopClientRendezvous]] **DoSRefuseSingleHopClientRendezvous** **0**|**1**|**auto**::
 
@@ -3215,20 +3241,6 @@ The next section describes the per service options that can only be set
    not an authorization mechanism; it is instead meant to be a mild
    inconvenience to port-scanners.) (Default: 0)
 
-[[HiddenServiceAuthorizeClient]] **HiddenServiceAuthorizeClient** __auth-type__ __client-name__,__client-name__,__...__::
-    If configured, the v2 hidden service is accessible for authorized clients
-    only. The auth-type can either be \'basic' for a general-purpose
-    authorization protocol or \'stealth' for a less scalable protocol that also
-    hides service activity from unauthorized clients. Only clients that are
-    listed here are authorized to access the hidden service. Valid client names
-    are 1 to 16 characters long and only use characters in A-Za-z0-9+-_ (no
-    spaces). If this option is set, the hidden service is not accessible for
-    clients without authorization any more. Generated authorization data can be
-    found in the hostname file. Clients need to put this authorization data in
-    their configuration file using **HidServAuth**. This option is only for v2
-    services; v3 services configure client authentication in a subdirectory of
-    HiddenServiceDir instead (see <<client-authorization,CLIENT AUTHORIZATION>>).
-
 [[HiddenServiceDir]] **HiddenServiceDir** __DIRECTORY__::
     Store data files for a hidden service in DIRECTORY. Every hidden service
     must have a separate directory. You may use this option  multiple times to
@@ -3323,7 +3335,7 @@ The next section describes the per service options that can only be set
 
 [[HiddenServiceNumIntroductionPoints]] **HiddenServiceNumIntroductionPoints** __NUM__::
     Number of introduction points the hidden service will have. You can't
-    have more than 10 for v2 service and 20 for v3. (Default: 3)
+    have more than 20. (Default: 3)
 
 [[HiddenServicePort]] **HiddenServicePort** __VIRTPORT__ [__TARGET__]::
     Configure a virtual port VIRTPORT for a hidden service. You may use this
@@ -3337,17 +3349,9 @@ The next section describes the per service options that can only be set
     connects to that VIRTPORT, one of the TARGETs from those lines will be
     chosen at random. Note that address-port pairs have to be comma-separated.
 
-[[HiddenServiceVersion]] **HiddenServiceVersion** **2**|**3**::
+[[HiddenServiceVersion]] **HiddenServiceVersion** **3**::
     A list of rendezvous service descriptor versions to publish for the hidden
-    service. Currently, versions 2 and 3 are supported. (Default: 3)
-
-[[RendPostPeriod]] **RendPostPeriod** __N__ **seconds**|**minutes**|**hours**|**days**|**weeks**::
-    Every time the specified period elapses, Tor uploads any rendezvous
-    service descriptors to the directory servers. This information is also
-    uploaded whenever it changes. Minimum value allowed is 10 minutes and
-    maximum is 3.5 days. This option is only for v2 services.
-    (Default: 1 hour)
-
+    service. Currently, only version 3 is supported. (Default: 3)
 
 
 **PER INSTANCE OPTIONS:**
@@ -3395,8 +3399,6 @@ The next section describes the per service options that can only be set
 
 [[client-authorization]]
 == CLIENT AUTHORIZATION
-
-(Version 3 only)
 
 Service side:
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2020, The Tor Project, Inc. */
+/* Copyright (c) 2016-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -64,7 +64,6 @@
 #include "lib/crypt_ops/crypto_rand.h"
 #include "lib/crypt_ops/crypto_util.h"
 #include "feature/dirparse/parsecommon.h"
-#include "feature/rend/rendcache.h"
 #include "feature/hs/hs_cache.h"
 #include "feature/hs/hs_config.h"
 #include "feature/nodelist/torcert.h" /* tor_cert_encode_ed22519() */
@@ -137,7 +136,7 @@ static token_rule_t hs_desc_superencrypted_v3_token_table[] = {
 /** Descriptor ruleset for the encrypted section. */
 static token_rule_t hs_desc_encrypted_v3_token_table[] = {
   T1_START(str_create2_formats, R3_CREATE2_FORMATS, CONCAT_ARGS, NO_OBJ),
-  T01(str_intro_auth_required, R3_INTRO_AUTH_REQUIRED, ARGS, NO_OBJ),
+  T01(str_intro_auth_required, R3_INTRO_AUTH_REQUIRED, GE(1), NO_OBJ),
   T01(str_single_onion, R3_SINGLE_ONION_SERVICE, ARGS, NO_OBJ),
   END_OF_TABLE
 };
@@ -2322,6 +2321,7 @@ desc_decode_encrypted_v3(const hs_descriptor_t *desc,
   /* Authentication type. It's optional but only once. */
   tok = find_opt_by_keyword(tokens, R3_INTRO_AUTH_REQUIRED);
   if (tok) {
+    tor_assert(tok->n_args >= 1);
     if (!decode_auth_type(desc_encrypted_out, tok->args[0])) {
       log_warn(LD_REND, "Service descriptor authentication type has "
                         "invalid entry(ies).");

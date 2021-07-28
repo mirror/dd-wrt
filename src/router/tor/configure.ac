@@ -4,11 +4,13 @@ dnl Copyright (c) 2007-2019, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.4.5.8])
+AC_INIT([tor],[0.4.6.6])
 AC_CONFIG_SRCDIR([src/app/main/tor_main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
 configure_flags="$*"
+AC_DEFINE_UNQUOTED([CONFIG_FLAGS], ["$configure_flags"], [Flags passed to configure])
+
 
 # DO NOT EDIT THIS DEFINITION BY HAND UNLESS YOU KNOW WHAT YOU'RE DOING.
 #
@@ -16,7 +18,7 @@ configure_flags="$*"
 # version number changes.  Tor uses it to make sure that it
 # only shuts down for missing "required protocols" when those protocols
 # are listed as required by a consensus after this date.
-AC_DEFINE(APPROX_RELEASE_DATE, ["2021-05-07"], # for 0.4.5.8
+AC_DEFINE(APPROX_RELEASE_DATE, ["2021-06-30"], # for 0.4.6.6
           [Approximate date when this software was released. (Updated when the version changes.)])
 
 # "foreign" means we don't follow GNU package layout standards
@@ -427,6 +429,17 @@ AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 AC_PROG_SED
+
+AX_COMPILER_VERSION
+AX_COMPILER_VENDOR
+
+AC_DEFINE_UNQUOTED([COMPILER_VERSION],["$ax_cv_c_compiler_version"], [Compiler version])
+AC_DEFINE_UNQUOTED([COMPILER_VENDOR],["$ax_cv_c_compiler_vendor"], [Compiler vendor])
+
+AS_CASE($ax_cv_c_compiler_vendor,
+        [gnu], AC_DEFINE([COMPILER],["GCC"],[Compiler name]),
+        AC_DEFINE([COMPILER],[],[Compiler name])
+)
 
 AC_ARG_VAR([PERL], [path to Perl binary])
 AC_CHECK_PROGS([PERL], [perl])
@@ -2806,10 +2819,10 @@ PPRINT_PROP_BOOL([libscrypt (--disable-libscrypt)], $value)
 test "x$enable_systemd" = "xyes" && value=1 || value=0
 PPRINT_PROP_BOOL([Systemd support (--enable-systemd)], $value)
 
-test "x$enable_lzma" = "xyes" && value=1 || value=0
+test "x$have_lzma" = "xyes" && value=1 || value=0
 PPRINT_PROP_BOOL([liblzma (--enable-lzma)], $value)
 
-test "x$enable_zstd" = "xyes" && value=1 || value=0
+test "x$have_zstd" = "xyes" && value=1 || value=0
 PPRINT_PROP_BOOL([libzstd (--enable-zstd)], $value)
 
 AS_ECHO

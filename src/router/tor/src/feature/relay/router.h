@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -129,6 +129,7 @@ void router_free_all(void);
 STATIC void get_platform_str(char *platform, size_t len);
 STATIC int router_write_fingerprint(int hashed, int ed25519_identity);
 STATIC smartlist_t *get_my_declared_family(const or_options_t *options);
+STATIC void router_announce_bridge_status_page(void);
 STATIC int load_stats_file(const char *filename, const char *ts_tag,
                            time_t now, char **out);
 

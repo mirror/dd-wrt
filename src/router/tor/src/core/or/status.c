@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2020, The Tor Project, Inc. */
+/* Copyright (c) 2010-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -105,10 +105,9 @@ log_onion_service_stats(void)
   }
 
   log_notice(LD_HEARTBEAT,
-             "Our onion service%s received %u v2 and %u v3 INTRODUCE2 cells "
+             "Heartbeat: Our onion service%s received %u v3 INTRODUCE2 cells "
              "and attempted to launch %d rendezvous circuits.",
              num_services == 1 ? "" : "s",
-             hs_stats_get_n_introduce2_v2_cells(),
              hs_stats_get_n_introduce2_v3_cells(),
              hs_stats_get_n_rendezvous_launches());
 }

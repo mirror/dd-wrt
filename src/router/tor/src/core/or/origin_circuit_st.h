@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -127,9 +127,6 @@ struct origin_circuit_t {
    * windows for each hop.
    */
   crypt_path_t *cpath;
-
-  /** Holds all rendezvous data on either client or service side. */
-  rend_data_t *rend_data;
 
   /** Holds hidden service identifier on either client or service side. This
    * is for both introduction and rendezvous circuit. */
