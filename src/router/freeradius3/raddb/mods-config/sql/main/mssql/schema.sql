@@ -1,4 +1,4 @@
--- $Id: 5e23d33fc710d4b160b01b6f55ca5a1310f8397a $d$
+-- $Id: 6338c1d1744078cabac25a9768725d4e71863a60 $d$
 --
 -- schela.sql   rlm_sql - FreeRADIUS SQL Module
 --
@@ -276,8 +276,15 @@ CREATE TABLE [radpostauth] (
 	[userName] [varchar] (64) NOT NULL ,
 	[pass] [varchar] (64) NOT NULL ,
 	[reply] [varchar] (32) NOT NULL ,
-	[authdate] [datetime] NOT NULL
+	[authdate] [datetime] NOT NULL,
+	[Class] [varchar] (64) NULL
 )
+GO
+
+CREATE INDEX [userName] ON [radpostauth]([userName]) ON [PRIMARY]
+GO
+
+CREATE INDEX [Class] ON [radpostauth]([Class]) ON [PRIMARY]
 GO
 
 ALTER TABLE [radpostauth] WITH NOCHECK ADD

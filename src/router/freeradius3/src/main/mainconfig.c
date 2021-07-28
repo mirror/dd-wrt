@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: db110ed6f54e9231e5dfd25d90a612d5af92c171 $
+ * Version:	$Id: b134712356b27ca62fc6f1c8341f3646d51fe70e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: db110ed6f54e9231e5dfd25d90a612d5af92c171 $")
+RCSID("$Id: b134712356b27ca62fc6f1c8341f3646d51fe70e $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -197,6 +197,7 @@ static const CONF_PARSER server_config[] = {
 	{ "max_request_time", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.max_request_time), STRINGIFY(MAX_REQUEST_TIME) },
 	{ "cleanup_delay", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.cleanup_delay), STRINGIFY(CLEANUP_DELAY) },
 	{ "max_requests", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.max_requests), STRINGIFY(MAX_REQUESTS) },
+	{ "postauth_client_lost", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.postauth_client_lost), "no" },
 	{ "pidfile", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.pid_file), "${run_dir}/radiusd.pid"},
 	{ "checkrad", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.checkrad), "${sbindir}/checkrad" },
 

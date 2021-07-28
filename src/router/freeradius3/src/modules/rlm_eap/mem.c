@@ -1,7 +1,7 @@
 /*
  * mem.c  Memory allocation, deallocation stuff.
  *
- * Version:     $Id: 15f3569c77f8edea2215c4e3ada3af7b75b8c121 $
+ * Version:     $Id: 6be8ca4af78f039850e5eb24bc572b9dc512b288 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  */
 
-RCSID("$Id: 15f3569c77f8edea2215c4e3ada3af7b75b8c121 $")
+RCSID("$Id: 6be8ca4af78f039850e5eb24bc572b9dc512b288 $")
 
 #include <stdio.h>
 #include "rlm_eap.h"
@@ -347,6 +347,7 @@ int eaplist_add(rlm_eap_t *inst, eap_handler_t *handler)
 	handler->state[4] = handler->trips ^ handler->state[0];
 	handler->state[5] = handler->eap_id ^ handler->state[1];
 	handler->state[6] = handler->type ^ handler->state[2];
+	handler->state[12] = handler->state[2] ^ (RADIUSD_VERSION & 0xff);
 
 	fr_pair_value_memcpy(state, handler->state, sizeof(handler->state));
 

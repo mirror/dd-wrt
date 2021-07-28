@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: dcb420371e5f1927792a2ea1108097bbc109a1eb $
+ * Version:	$Id: 90ee6ada2d3beaec4b08383b9b332fedf18f0817 $
  *
  */
 
-RCSIDH(realms_h, "$Id: dcb420371e5f1927792a2ea1108097bbc109a1eb $")
+RCSIDH(realms_h, "$Id: 90ee6ada2d3beaec4b08383b9b332fedf18f0817 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +41,7 @@ typedef enum {
 	HOME_STATE_ZOMBIE,
 	HOME_STATE_IS_DEAD,
 	HOME_STATE_CONNECTION_FAIL,
+	HOME_STATE_ADMIN_DOWN,
 } home_state_t;
 
 typedef struct fr_socket_limit_t {

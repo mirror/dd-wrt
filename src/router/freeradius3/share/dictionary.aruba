@@ -1,9 +1,9 @@
 # -*- text -*-
 # Copyright (C) 2020 The FreeRADIUS Server project and contributors
 # This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
-# Version $Id: 55d6ac5af7d297fa322990afed451e9a4f2e4afc $
+# Version $Id: 694a984f6e5f6f997aeacc83f5bdcf565f083087 $
 #
-#	Version: $Id: 55d6ac5af7d297fa322990afed451e9a4f2e4afc $
+#	Version: $Id: 694a984f6e5f6f997aeacc83f5bdcf565f083087 $
 #
 VENDOR		Aruba				14823
 BEGIN-VENDOR	Aruba
@@ -70,6 +70,9 @@ ATTRIBUTE	Aruba-Gateway-Zone			54	string
 ATTRIBUTE	Aruba-STP-Admin-Edge-Port		58	integer
 
 ATTRIBUTE	Aruba-UBT-Gateway-CPPM-Role		59	string
+
+ATTRIBUTE  	Aruba-AP-MAC-Address        		60      string
+ATTRIBUTE  	Aruba-Device-MAC-Address    		61      string
 
 VALUE	Aruba-AirGroup-Device-Type	Personal-Device		1
 VALUE	Aruba-AirGroup-Device-Type	Shared-Device		2

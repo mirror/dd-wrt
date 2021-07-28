@@ -1,7 +1,7 @@
 /*
  * pair.c	Functions to handle VALUE_PAIRs
  *
- * Version:	$Id: 377ab22d41b728287abd0d5ab415b40f8f40b076 $
+ * Version:	$Id: 146c82f95b551ed0f704ed5ba0814014fbc778b7 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 377ab22d41b728287abd0d5ab415b40f8f40b076 $")
+RCSID("$Id: 146c82f95b551ed0f704ed5ba0814014fbc778b7 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/regex.h>
@@ -121,24 +121,7 @@ VALUE_PAIR *fr_pair_afrom_num(TALLOC_CTX *ctx, unsigned int attr, unsigned int v
 	DICT_ATTR const *da;
 
 	da = dict_attrbyvalue(attr, vendor);
-	if (!da) {
-		VALUE_PAIR *vp;
-
-		vp = fr_pair_alloc(ctx);
-		if (!vp) return NULL;
-
-		/*
-		 *	Ensure that the DA is parented by the VP.
-		 */
-		da = dict_unknown_afrom_fields(vp, attr, vendor);
-		if (!da) {
-			talloc_free(vp);
-			return NULL;
-		}
-
-		vp->da = da;
-		return vp;
-	}
+	if (!da) return NULL;
 
 	return fr_pair_afrom_da(ctx, da);
 }
