@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2020, The Tor Project, Inc. */
+/* Copyright (c) 2016-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -445,7 +445,7 @@ trailing_zeros(uint64_t x)
     x>>=1;
   }
   return i;
-#endif
+#endif /* defined(__GNUC__) */
 }
 
 /**

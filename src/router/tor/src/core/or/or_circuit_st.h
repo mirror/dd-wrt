@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #ifndef OR_CIRCUIT_ST_H
@@ -62,6 +62,12 @@ struct or_circuit_t {
   /** If set, this circuit carries HS traffic. Consider it in any HS
    *  statistics. */
   unsigned int circuit_carries_hs_traffic_stats : 1;
+
+  /** True iff this circuit was made with a CREATE_FAST cell, or a CREATE[2]
+   * cell with a TAP handshake. If this is the case and this is a rend circuit,
+   * this is a v2 circuit, otherwise if this is a rend circuit it's a v3
+   * circuit. */
+  bool used_legacy_circuit_handshake;
 
   /** Number of cells that were removed from circuit queue; reset every
    * time when writing buffer stats to disk. */

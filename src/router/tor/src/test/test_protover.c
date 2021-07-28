@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2020, The Tor Project, Inc. */
+/* Copyright (c) 2016-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define PROTOVER_PRIVATE
@@ -650,7 +650,7 @@ test_protover_vote_roundtrip_ours(void *args)
  */
 #define PROTOVER(proto_string, version_macro) \
   (proto_string "=" STR(version_macro))
-#endif
+#endif /* defined(COCCI) */
 
 #define DEBUG_PROTOVER(flags) \
   STMT_BEGIN \

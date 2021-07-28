@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2020, The Tor Project, Inc. */
+/* Copyright (c) 2016-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -34,7 +34,6 @@
 #include "feature/nodelist/networkstatus.h"
 #include "feature/nodelist/nodelist.h"
 #include "feature/nodelist/routerset.h"
-#include "feature/rend/rendclient.h"
 #include "lib/crypt_ops/crypto_format.h"
 #include "lib/crypt_ops/crypto_rand.h"
 #include "lib/crypt_ops/crypto_util.h"
@@ -360,16 +359,6 @@ note_connection_attempt_succeeded(const hs_ident_edge_conn_t *hs_conn_ident)
   /* Remove from the hid serv cache all requests for that service so we can
    * query the HSDir again later on for various reasons. */
   purge_hid_serv_request(&hs_conn_ident->identity_pk);
-
-  /* The v2 subsystem cleans up the intro point time out flag at this stage.
-   * We don't try to do it here because we still need to keep intact the intro
-   * point state for future connections. Even though we are able to connect to
-   * the service, doesn't mean we should reset the timed out intro points.
-   *
-   * It is not possible to have successfully connected to an intro point
-   * present in our cache that was on error or timed out. Every entry in that
-   * cache have a 2 minutes lifetime so ultimately the intro point(s) state
-   * will be reset and thus possible to be retried. */
 }
 
 /** Given the pubkey of a hidden service in <b>onion_identity_pk</b>, fetch its
@@ -1131,7 +1120,7 @@ handle_introduce_ack_success(origin_circuit_t *intro_circ)
   rend_circ =
   hs_circuitmap_get_established_rend_circ_client_side(rendezvous_cookie);
   if (rend_circ == NULL) {
-    log_warn(LD_REND, "Can't find any rendezvous circuit. Stopping");
+    log_info(LD_REND, "Can't find any rendezvous circuit. Stopping");
     goto end;
   }
 
@@ -1951,16 +1940,8 @@ hs_client_note_connection_attempt_succeeded(const edge_connection_t *conn)
 {
   tor_assert(connection_edge_is_rendezvous_stream(conn));
 
-  if (BUG(conn->rend_data && conn->hs_ident)) {
-    log_warn(LD_BUG, "Stream had both rend_data and hs_ident..."
-             "Prioritizing hs_ident");
-  }
-
   if (conn->hs_ident) { /* It's v3: pass it to the prop224 handler */
     note_connection_attempt_succeeded(conn->hs_ident);
-    return;
-  } else if (conn->rend_data) { /* It's v2: pass it to the legacy handler */
-    rend_client_note_connection_attempt_ended(conn->rend_data);
     return;
   }
 }
@@ -2087,9 +2068,7 @@ int
 hs_client_send_introduce1(origin_circuit_t *intro_circ,
                           origin_circuit_t *rend_circ)
 {
-  return (intro_circ->hs_ident) ? send_introduce1(intro_circ, rend_circ) :
-                                  rend_client_send_introduction(intro_circ,
-                                                                rend_circ);
+  return send_introduce1(intro_circ, rend_circ);
 }
 
 /** Called when the client circuit circ has been established. It can be either
@@ -2100,21 +2079,15 @@ hs_client_circuit_has_opened(origin_circuit_t *circ)
 {
   tor_assert(circ);
 
-  /* Handle both version. v2 uses rend_data and v3 uses the hs circuit
-   * identifier hs_ident. Can't be both. */
   switch (TO_CIRCUIT(circ)->purpose) {
   case CIRCUIT_PURPOSE_C_INTRODUCING:
     if (circ->hs_ident) {
       client_intro_circ_has_opened(circ);
-    } else {
-      rend_client_introcirc_has_opened(circ);
     }
     break;
   case CIRCUIT_PURPOSE_C_ESTABLISH_REND:
     if (circ->hs_ident) {
       client_rendezvous_circ_has_opened(circ);
-    } else {
-      rend_client_rendcirc_has_opened(circ);
     }
     break;
   default:
@@ -2428,9 +2401,7 @@ hs_client_get_random_intro_from_edge(const edge_connection_t *edge_conn)
 {
   tor_assert(edge_conn);
 
-  return (edge_conn->hs_ident) ?
-    client_get_random_intro(&edge_conn->hs_ident->identity_pk) :
-    rend_client_get_random_intro(edge_conn->rend_data);
+  return client_get_random_intro(&edge_conn->hs_ident->identity_pk);
 }
 
 /** Called when get an INTRODUCE_ACK cell on the introduction circuit circ.
@@ -2452,9 +2423,7 @@ hs_client_receive_introduce_ack(origin_circuit_t *circ,
     goto end;
   }
 
-  ret = (circ->hs_ident) ? handle_introduce_ack(circ, payload, payload_len) :
-                           rend_client_introduction_acked(circ, payload,
-                                                          payload_len);
+  ret = handle_introduce_ack(circ, payload, payload_len);
   /* For path bias: This circuit was used successfully. NACK or ACK counts. */
   pathbias_mark_use_success(circ);
 
@@ -2488,9 +2457,8 @@ hs_client_receive_rendezvous2(origin_circuit_t *circ,
   log_info(LD_REND, "Got RENDEZVOUS2 cell from hidden service on circuit %u.",
            TO_CIRCUIT(circ)->n_circ_id);
 
-  ret = (circ->hs_ident) ? handle_rendezvous2(circ, payload, payload_len) :
-                           rend_client_receive_rendezvous(circ, payload,
-                                                          payload_len);
+  ret = handle_rendezvous2(circ, payload, payload_len);
+
  end:
   return ret;
 }
@@ -2511,9 +2479,7 @@ hs_client_reextend_intro_circuit(origin_circuit_t *circ)
 
   tor_assert(circ);
 
-  ei = (circ->hs_ident) ?
-    client_get_random_intro(&circ->hs_ident->identity_pk) :
-    rend_client_get_random_intro(circ->rend_data);
+  ei = client_get_random_intro(&circ->hs_ident->identity_pk);
   if (ei == NULL) {
     log_warn(LD_REND, "No usable introduction points left. Closing.");
     circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_INTERNAL);
@@ -2591,9 +2557,6 @@ hs_client_free_all(void)
 void
 hs_client_purge_state(void)
 {
-  /* v2 subsystem. */
-  rend_client_purge_state();
-
   /* Cancel all descriptor fetches. Do this first so once done we are sure
    * that our descriptor cache won't modified. */
   cancel_descriptor_fetches();

@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -44,6 +44,7 @@
 #include "feature/dirparse/routerparse.h"
 #include "feature/hibernate/hibernate.h"
 #include "feature/hs/hs_dos.h"
+#include "feature/hs/hs_service.h"
 #include "feature/nodelist/authcert.h"
 #include "feature/nodelist/networkstatus.h"
 #include "feature/nodelist/routerlist.h"
@@ -51,13 +52,12 @@
 #include "feature/relay/ext_orport.h"
 #include "feature/relay/routerkeys.h"
 #include "feature/relay/routermode.h"
-#include "feature/rend/rendcache.h"
-#include "feature/rend/rendservice.h"
 #include "feature/stats/predict_ports.h"
 #include "feature/stats/bwhist.h"
 #include "feature/stats/rephist.h"
 #include "lib/compress/compress.h"
 #include "lib/buf/buffers.h"
+#include "lib/crypt_ops/crypto_format.h"
 #include "lib/crypt_ops/crypto_rand.h"
 #include "lib/crypt_ops/crypto_s2k.h"
 #include "lib/net/resolve.h"
@@ -309,7 +309,7 @@ process_win32_console_ctrl(DWORD ctrl_type)
   activate_signal(SIGINT);
   return TRUE;
 }
-#endif
+#endif /* defined(_WIN32) */
 
 /**
  * Write current memory usage information to the log.
@@ -425,7 +425,6 @@ dumpstats(int severity)
   dumpmemusage(severity);
 
   rep_hist_dump_stats(now,severity);
-  rend_service_dump_stats(severity);
   hs_service_dump_stats(severity);
 }
 
@@ -515,7 +514,7 @@ handle_signals(void)
      * to handle control signals like Ctrl+C in the console, we can use this to
      * simulate the SIGINT signal */
     if (enabled) SetConsoleCtrlHandler(process_win32_console_ctrl, TRUE);
-#endif
+#endif /* defined(_WIN32) */
 }
 
 /* Cause the signal handler for signal_num to be called in the event loop. */
@@ -551,7 +550,6 @@ tor_init(int argc, char *argv[])
   rep_hist_init();
   bwhist_init();
   /* Initialize the service cache. */
-  rend_cache_init();
   addressmap_init(); /* Init the client dns cache. Do it always, since it's
                       * cheap. */
 
@@ -734,29 +732,52 @@ tor_remove_file(const char *filename)
 static int
 do_list_fingerprint(void)
 {
-  char buf[FINGERPRINT_LEN+1];
+  const or_options_t *options = get_options();
+  const char *arg = options->command_arg;
+  char rsa[FINGERPRINT_LEN + 1];
   crypto_pk_t *k;
-  const char *nickname = get_options()->Nickname;
+  const ed25519_public_key_t *edkey;
+  const char *nickname = options->Nickname;
   sandbox_disable_getaddrinfo_cache();
-  if (!server_mode(get_options())) {
+
+  bool show_rsa = !strcmp(arg, "") || !strcmp(arg, "rsa");
+  bool show_ed25519 = !strcmp(arg, "ed25519");
+  if (!show_rsa && !show_ed25519) {
+    log_err(LD_GENERAL,
+      "If you give a key type, you must specify 'rsa' or 'ed25519'. Exiting.");
+    return -1;
+  }
+
+  if (!server_mode(options)) {
     log_err(LD_GENERAL,
             "Clients don't have long-term identity keys. Exiting.");
     return -1;
   }
   tor_assert(nickname);
   if (init_keys() < 0) {
-    log_err(LD_GENERAL,"Error initializing keys; exiting.");
+    log_err(LD_GENERAL, "Error initializing keys; exiting.");
     return -1;
   }
   if (!(k = get_server_identity_key())) {
-    log_err(LD_GENERAL,"Error: missing identity key.");
+    log_err(LD_GENERAL, "Error: missing RSA identity key.");
     return -1;
   }
-  if (crypto_pk_get_fingerprint(k, buf, 1)<0) {
-    log_err(LD_BUG, "Error computing fingerprint");
+  if (crypto_pk_get_fingerprint(k, rsa, 1) < 0) {
+    log_err(LD_BUG, "Error computing RSA fingerprint");
     return -1;
   }
-  printf("%s %s\n", nickname, buf);
+  if (!(edkey = get_master_identity_key())) {
+    log_err(LD_GENERAL,"Error: missing ed25519 identity key.");
+    return -1;
+  }
+  if (show_rsa) {
+    printf("%s %s\n", nickname, rsa);
+  }
+  if (show_ed25519) {
+    char ed25519[ED25519_BASE64_LEN + 1];
+    digest256_to_base64(ed25519, (const char *) edkey->pubkey);
+    printf("%s %s\n", nickname, ed25519);
+  }
   return 0;
 }
 
@@ -831,7 +852,6 @@ sandbox_init_filter(void)
 {
   const or_options_t *options = get_options();
   sandbox_cfg_t *cfg = sandbox_cfg_new();
-  int i;
 
   sandbox_cfg_allow_openat_filename(&cfg,
       get_cachedir_fname("cached-status"));
@@ -917,10 +937,23 @@ sandbox_init_filter(void)
   else
     sandbox_cfg_allow_open_filename(&cfg, tor_strdup("/etc/resolv.conf"));
 
-  for (i = 0; i < 2; ++i) {
-    if (get_torrc_fname(i)) {
-      sandbox_cfg_allow_open_filename(&cfg, tor_strdup(get_torrc_fname(i)));
-    }
+  const char *torrc_defaults_fname = get_torrc_fname(1);
+  if (torrc_defaults_fname) {
+    sandbox_cfg_allow_open_filename(&cfg, tor_strdup(torrc_defaults_fname));
+  }
+  const char *torrc_fname = get_torrc_fname(0);
+  if (torrc_fname) {
+    sandbox_cfg_allow_open_filename(&cfg, tor_strdup(torrc_fname));
+    // allow torrc backup and torrc.tmp to make SAVECONF work
+    char *torrc_bck = NULL;
+    tor_asprintf(&torrc_bck, CONFIG_BACKUP_PATTERN, torrc_fname);
+    sandbox_cfg_allow_rename(&cfg, tor_strdup(torrc_fname), torrc_bck);
+    char *torrc_tmp = NULL;
+    tor_asprintf(&torrc_tmp, "%s.tmp", torrc_fname);
+    sandbox_cfg_allow_rename(&cfg, torrc_tmp, tor_strdup(torrc_fname));
+    sandbox_cfg_allow_open_filename(&cfg, tor_strdup(torrc_tmp));
+    // we need to stat the existing backup file
+    sandbox_cfg_allow_stat_filename(&cfg, tor_strdup(torrc_bck));
   }
 
   SMARTLIST_FOREACH(options->FilesOpenedByIncludes, char *, f, {
@@ -1079,6 +1112,7 @@ sandbox_init_filter(void)
     OPEN_DATADIR2_SUFFIX("stats", "buffer-stats", ".tmp");
     OPEN_DATADIR2_SUFFIX("stats", "conn-stats", ".tmp");
     OPEN_DATADIR2_SUFFIX("stats", "hidserv-stats", ".tmp");
+    OPEN_DATADIR2_SUFFIX("stats", "hidserv-v3-stats", ".tmp");
 
     OPEN_DATADIR("approved-routers");
     OPEN_DATADIR_SUFFIX("fingerprint", ".tmp");
@@ -1104,6 +1138,7 @@ sandbox_init_filter(void)
     RENAME_SUFFIX2("stats", "buffer-stats", ".tmp");
     RENAME_SUFFIX2("stats", "conn-stats", ".tmp");
     RENAME_SUFFIX2("stats", "hidserv-stats", ".tmp");
+    RENAME_SUFFIX2("stats", "hidserv-v3-stats", ".tmp");
     RENAME_SUFFIX("hashed-fingerprint", ".tmp");
     RENAME_SUFFIX("router-stability", ".tmp");
 

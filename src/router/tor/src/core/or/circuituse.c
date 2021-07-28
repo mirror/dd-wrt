@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -58,9 +58,6 @@
 #include "feature/nodelist/routerlist.h"
 #include "feature/relay/routermode.h"
 #include "feature/relay/selftest.h"
-#include "feature/rend/rendclient.h"
-#include "feature/rend/rendcommon.h"
-#include "feature/rend/rendservice.h"
 #include "feature/stats/predict_ports.h"
 #include "lib/math/fp.h"
 #include "lib/time/tvdiff.h"
@@ -84,16 +81,6 @@ static int
 circuit_matches_with_rend_stream(const edge_connection_t *edge_conn,
                                  const origin_circuit_t *origin_circ)
 {
-  /* Check if this is a v2 rendezvous circ/stream */
-  if ((edge_conn->rend_data && !origin_circ->rend_data) ||
-      (!edge_conn->rend_data && origin_circ->rend_data) ||
-      (edge_conn->rend_data && origin_circ->rend_data &&
-       rend_cmp_service_ids(rend_data_get_address(edge_conn->rend_data),
-                            rend_data_get_address(origin_circ->rend_data)))) {
-    /* this circ is not for this conn */
-    return 0;
-  }
-
   /* Check if this is a v3 rendezvous circ/stream */
   if ((edge_conn->hs_ident && !origin_circ->hs_ident) ||
       (!edge_conn->hs_ident && origin_circ->hs_ident) ||
@@ -689,8 +676,7 @@ circuit_expire_building(void)
           /* c_rend_ready circs measure age since timestamp_dirty,
            * because that's set when they switch purposes
            */
-          if (TO_ORIGIN_CIRCUIT(victim)->rend_data ||
-              TO_ORIGIN_CIRCUIT(victim)->hs_ident ||
+          if (TO_ORIGIN_CIRCUIT(victim)->hs_ident ||
               victim->timestamp_dirty > cutoff.tv_sec)
             continue;
           break;
@@ -897,7 +883,7 @@ circuit_log_ancient_one_hop_circuits(int age)
       continue;
     /* Single Onion Services deliberately make long term one-hop intro
      * and rendezvous connections. Don't log the established ones. */
-    if (rend_service_allow_non_anonymous_connection(options) &&
+    if (hs_service_allow_non_anonymous_connection(options) &&
         (circ->purpose == CIRCUIT_PURPOSE_S_INTRO ||
          circ->purpose == CIRCUIT_PURPOSE_S_REND_JOINED))
       continue;
@@ -1142,7 +1128,7 @@ needs_exit_circuits(time_t now, int *needs_uptime, int *needs_capacity)
 STATIC int
 needs_hs_server_circuits(time_t now, int num_uptime_internal)
 {
-  if (!rend_num_services() && !hs_service_get_num_services()) {
+  if (!hs_service_get_num_services()) {
     /* No services, we don't need anything. */
     goto no_need;
   }
@@ -1661,8 +1647,9 @@ circuit_testing_opened(origin_circuit_t *circ)
   } else if (circuit_enough_testing_circs()) {
     router_perform_bandwidth_test(NUM_PARALLEL_TESTING_CIRCS, time(NULL));
     have_performed_bandwidth_test = 1;
-  } else
-    router_do_reachability_checks(1, 0);
+  } else {
+    router_do_reachability_checks();
+  }
 }
 
 /** A testing circuit has failed to build. Take whatever stats we want. */
@@ -2012,14 +1999,6 @@ bool
 circuit_purpose_is_hs_vanguards(const uint8_t purpose)
 {
   return (purpose == CIRCUIT_PURPOSE_HS_VANGUARDS);
-}
-
-/** Return true iff the given circuit is an HS v2 circuit. */
-bool
-circuit_is_hs_v2(const circuit_t *circ)
-{
-  return (CIRCUIT_IS_ORIGIN(circ) &&
-          (CONST_TO_ORIGIN_CIRCUIT(circ)->rend_data != NULL));
 }
 
 /** Return true iff the given circuit is an HS v3 circuit. */
@@ -2448,19 +2427,12 @@ circuit_get_open_circ_or_launch(entry_connection_t *conn,
       extend_info = hs_client_get_random_intro_from_edge(edge_conn);
       if (!extend_info) {
         log_info(LD_REND, "No intro points: re-fetching service descriptor.");
-        if (edge_conn->rend_data) {
-          rend_client_refetch_v2_renddesc(edge_conn->rend_data);
-        } else {
-          hs_client_refetch_hsdesc(&edge_conn->hs_ident->identity_pk);
-        }
+        hs_client_refetch_hsdesc(&edge_conn->hs_ident->identity_pk);
         connection_ap_mark_as_waiting_for_renddesc(conn);
         return 0;
       }
-      log_info(LD_REND,"Chose %s as intro point for '%s'.",
-               extend_info_describe(extend_info),
-               (edge_conn->rend_data) ?
-               safe_str_client(rend_data_get_address(edge_conn->rend_data)) :
-               "service");
+      log_info(LD_REND,"Chose %s as intro point for service",
+               extend_info_describe(extend_info));
     }
 
     /* If we have specified a particular exit node for our
@@ -2584,10 +2556,7 @@ circuit_get_open_circ_or_launch(entry_connection_t *conn,
       rep_hist_note_used_internal(time(NULL), need_uptime, 1);
       if (circ) {
         const edge_connection_t *edge_conn = ENTRY_TO_EDGE_CONN(conn);
-        if (edge_conn->rend_data) {
-          /* write the service_id into circ */
-          circ->rend_data = rend_data_dup(edge_conn->rend_data);
-        } else if (edge_conn->hs_ident) {
+        if (edge_conn->hs_ident) {
           circ->hs_ident =
             hs_ident_circuit_new(&edge_conn->hs_ident->identity_pk);
         }
@@ -2733,6 +2702,13 @@ consider_recording_trackhost(const entry_connection_t *conn,
   const or_options_t *options = get_options();
   char *new_address = NULL;
   char fp[HEX_DIGEST_LEN+1];
+  uint64_t stream_id = 0;
+
+  if (BUG(!conn)) {
+    return;
+  }
+
+  stream_id = ENTRY_TO_CONN(conn)->global_identifier;
 
   /* Search the addressmap for this conn's destination. */
   /* If they're not in the address map.. */
@@ -2756,7 +2732,7 @@ consider_recording_trackhost(const entry_connection_t *conn,
 
   addressmap_register(conn->socks_request->address, new_address,
                       time(NULL) + options->TrackHostExitsExpire,
-                      ADDRMAPSRC_TRACKEXIT, 0, 0);
+                      ADDRMAPSRC_TRACKEXIT, 0, 0, stream_id);
 }
 
 /** Attempt to attach the connection <b>conn</b> to <b>circ</b>, and send a
@@ -2796,8 +2772,9 @@ connection_ap_handshake_attach_chosen_circuit(entry_connection_t *conn,
 
   tor_assert(conn->socks_request);
   if (conn->socks_request->command == SOCKS_COMMAND_CONNECT) {
-    if (!conn->use_begindir)
+    if (!conn->use_begindir) {
       consider_recording_trackhost(conn, circ);
+    }
     if (connection_ap_handshake_send_begin(conn) < 0)
       return -1;
   } else {
@@ -2826,13 +2803,9 @@ connection_ap_get_nonrend_circ_purpose(const entry_connection_t *conn)
   if (base_conn->linked_conn &&
       base_conn->linked_conn->type == CONN_TYPE_DIR) {
     /* Set a custom purpose for hsdir activity */
-    if (base_conn->linked_conn->purpose == DIR_PURPOSE_UPLOAD_RENDDESC_V2 ||
-       base_conn->linked_conn->purpose == DIR_PURPOSE_UPLOAD_HSDESC) {
+    if (base_conn->linked_conn->purpose == DIR_PURPOSE_UPLOAD_HSDESC) {
       return CIRCUIT_PURPOSE_S_HSDIR_POST;
-    } else if (base_conn->linked_conn->purpose
-                 == DIR_PURPOSE_FETCH_RENDDESC_V2 ||
-               base_conn->linked_conn->purpose
-                 == DIR_PURPOSE_FETCH_HSDESC) {
+    } else if (base_conn->linked_conn->purpose == DIR_PURPOSE_FETCH_HSDESC) {
       return CIRCUIT_PURPOSE_C_HSDIR_GET;
     }
   }

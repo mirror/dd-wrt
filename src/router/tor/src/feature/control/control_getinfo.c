@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2020, The Tor Project, Inc. */
+ * Copyright (c) 2007-2021, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -47,7 +47,6 @@
 #include "feature/relay/router.h"
 #include "feature/relay/routermode.h"
 #include "feature/relay/selftest.h"
-#include "feature/rend/rendcache.h"
 #include "feature/stats/geoip_stats.h"
 #include "feature/stats/predict_ports.h"
 #include "feature/stats/rephist.h"
@@ -353,25 +352,23 @@ getinfo_helper_current_consensus(consensus_flavor_t flavor,
     *errmsg = "Internal error: unrecognized flavor name.";
     return -1;
   }
-  if (we_want_to_fetch_flavor(get_options(), flavor)) {
-    /** Check from the cache */
-    const cached_dir_t *consensus = dirserv_get_consensus(flavor_name);
-    if (consensus) {
-      *answer = tor_strdup(consensus->dir);
+  tor_mmap_t *mapped = networkstatus_map_cached_consensus(flavor_name);
+  if (mapped) {
+    *answer = tor_memdup_nulterm(mapped->data, mapped->size);
+    tor_munmap_file(mapped);
+  }
+  if (!*answer) { /* Maybe it's in the cache? */
+    if (we_want_to_fetch_flavor(get_options(), flavor)) {
+      const cached_dir_t *consensus = dirserv_get_consensus(flavor_name);
+      if (consensus) {
+        *answer = tor_strdup(consensus->dir);
+      }
     }
   }
-  if (!*answer) { /* try loading it from disk */
-
-    tor_mmap_t *mapped = networkstatus_map_cached_consensus(flavor_name);
-    if (mapped) {
-      *answer = tor_memdup_nulterm(mapped->data, mapped->size);
-      tor_munmap_file(mapped);
-    }
-    if (!*answer) { /* generate an error */
-      *errmsg = "Could not open cached consensus. "
-        "Make sure FetchUselessDescriptors is set to 1.";
-      return -1;
-    }
+  if (!*answer) { /* generate an error */
+    *errmsg = "Could not open cached consensus. "
+      "Make sure FetchUselessDescriptors is set to 1.";
+    return -1;
   }
   return 0;
 }
@@ -542,25 +539,14 @@ getinfo_helper_dir(control_connection_t *control_conn,
     hostname_type_t addr_type;
 
     question += strlen("hs/client/desc/id/");
-    if (rend_valid_v2_service_id(question)) {
-      addr_type = ONION_V2_HOSTNAME;
-    } else if (hs_address_is_valid(question)) {
+    if (hs_address_is_valid(question)) {
       addr_type = ONION_V3_HOSTNAME;
     } else {
       *errmsg = "Invalid address";
       return -1;
     }
 
-    if (addr_type == ONION_V2_HOSTNAME) {
-      rend_cache_entry_t *e = NULL;
-      if (!rend_cache_lookup_entry(question, -1, &e)) {
-        /* Descriptor found in cache */
-        *answer = tor_strdup(e->desc);
-      } else {
-        *errmsg = "Not found in cache";
-        return -1;
-      }
-    } else {
+    if (addr_type == ONION_V3_HOSTNAME) {
       ed25519_public_key_t service_pk;
       const char *desc;
 
@@ -584,25 +570,14 @@ getinfo_helper_dir(control_connection_t *control_conn,
     hostname_type_t addr_type;
 
     question += strlen("hs/service/desc/id/");
-    if (rend_valid_v2_service_id(question)) {
-      addr_type = ONION_V2_HOSTNAME;
-    } else if (hs_address_is_valid(question)) {
+    if (hs_address_is_valid(question)) {
       addr_type = ONION_V3_HOSTNAME;
     } else {
       *errmsg = "Invalid address";
       return -1;
     }
-    rend_cache_entry_t *e = NULL;
 
-    if (addr_type == ONION_V2_HOSTNAME) {
-      if (!rend_cache_lookup_v2_desc_as_service(question, &e)) {
-        /* Descriptor found in cache */
-        *answer = tor_strdup(e->desc);
-      } else {
-        *errmsg = "Not found in cache";
-        return -1;
-      }
-    } else {
+    if (addr_type == ONION_V3_HOSTNAME) {
       ed25519_public_key_t service_pk;
       char *desc;
 
