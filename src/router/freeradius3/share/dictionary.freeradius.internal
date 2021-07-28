@@ -4,7 +4,7 @@
 #
 #	Non Protocol Attributes used by FreeRADIUS
 #
-#	$Id: 24d7e25b7cdb2c61651f4a9bf8fb31e2b34354cd $
+#	$Id: 8e8a868c65d8ffc05c93b04706e9a6018f57d3aa $
 #
 
 #	The attributes number ranges are allocates as follows:
@@ -551,7 +551,7 @@ ATTRIBUTE	TLS-Cert-Subject-Alt-Name-Email		1915	string
 ATTRIBUTE	TLS-Cert-Subject-Alt-Name-Dns		1916	string
 ATTRIBUTE	TLS-Cert-Subject-Alt-Name-Upn		1917	string
 ATTRIBUTE	TLS-Cert-Valid-Since			1918	string
-# 1919: reserved for future cert attribute
+ATTRIBUTE	TLS-Session-Information			1919	string
 ATTRIBUTE	TLS-Client-Cert-Serial			1920	string
 ATTRIBUTE	TLS-Client-Cert-Expiration		1921	string
 ATTRIBUTE	TLS-Client-Cert-Issuer			1922	string
@@ -684,6 +684,7 @@ VALUE	Session-Type			Local			1
 VALUE	Post-Auth-Type			Local			1
 VALUE	Post-Auth-Type			Reject			2
 VALUE	Post-Auth-Type			Challenge		3
+VALUE	Post-Auth-Type			Client-Lost		4
 
 #
 #	And Post-Proxy

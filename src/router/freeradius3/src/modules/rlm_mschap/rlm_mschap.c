@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 98bbff05f257c664edc1a330b0565cfa849bcb6d $
+ * $Id: 5b17676a9f62b23c85ff70f6dbb1c42033fc13d6 $
  * @file rlm_mschap.c
  * @brief Implemented mschap authentication.
  *
@@ -23,7 +23,7 @@
  */
 
 /*  MPPE support from Takahiro Wagatsuma <waga@sic.shibaura-it.ac.jp> */
-RCSID("$Id: 98bbff05f257c664edc1a330b0565cfa849bcb6d $")
+RCSID("$Id: 5b17676a9f62b23c85ff70f6dbb1c42033fc13d6 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -321,6 +321,56 @@ static ssize_t mschap_xlat(void *instance, REQUEST *request,
 		}
 		data = response->vp_octets + 2;
 		data_len = 24;
+
+	/*
+	 *	Pull the domain name out of the User-Name, if it exists.
+	 *
+	 *	This is the full domain name, not just the name after host/
+	 */
+	} else if (strncasecmp(fmt, "Domain-Name", 11) == 0) {
+		char *p;
+
+		user_name = fr_pair_find_by_num(request->packet->vps, PW_USER_NAME, 0, TAG_ANY);
+		if (!user_name) {
+			REDEBUG("No User-Name was found in the request");
+			return -1;
+		}
+
+		/*
+		 *	First check to see if this is a host/ style User-Name
+		 *	(a la Kerberos host principal)
+		 */
+		if (strncmp(user_name->vp_strvalue, "host/", 5) == 0) {
+			/*
+			 *	If we're getting a User-Name formatted in this way,
+			 *	it's likely due to PEAP.  The Windows Domain will be
+			 *	the first domain component following the hostname,
+			 *	or the machine name itself if only a hostname is supplied
+			 */
+			p = strchr(user_name->vp_strvalue, '.');
+			if (!p) {
+				RDEBUG2("setting NT-Domain to same as machine name");
+				strlcpy(out, user_name->vp_strvalue + 5, outlen);
+			} else {
+				p++;	/* skip the period */
+				strlcpy(out, p, outlen);
+			}
+		} else {
+			p = strchr(user_name->vp_strvalue, '\\');
+			if (!p) {
+				REDEBUG("No NT-Domain was found in the User-Name");
+				return -1;
+			}
+
+			/*
+			 *	Hack.  This is simpler than the alternatives.
+			 */
+			*p = '\0';
+			strlcpy(out, user_name->vp_strvalue, outlen);
+			*p = '\\';
+		}
+
+		return strlen(out);
 
 	/*
 	 *	Pull the NT-Domain out of the User-Name, if it exists.

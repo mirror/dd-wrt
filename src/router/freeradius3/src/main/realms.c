@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: 682c58f35114d73588f9eeb06533eb2ecc83ecf4 $
+ * Version:     $Id: 4a6dafb7419a230e4410ed621bfb2116c63f5279 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 682c58f35114d73588f9eeb06533eb2ecc83ecf4 $")
+RCSID("$Id: 4a6dafb7419a230e4410ed621bfb2116c63f5279 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -277,6 +277,10 @@ static ssize_t xlat_home_server(UNUSED void *instance, REQUEST *request,
 
 		case HOME_STATE_CONNECTION_FAIL:
 			state = "fail";
+			break;
+
+		case HOME_STATE_ADMIN_DOWN:
+			state = "down";
 			break;
 
 		default:

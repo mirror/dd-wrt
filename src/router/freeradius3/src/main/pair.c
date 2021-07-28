@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 030b905157c187748adc7b1d22fbaf39205eeb8f $
+ * $Id: 2f736d74cf7ca2de6323fadae9780d2b8e3613c1 $
  *
  * @brief Valuepair functions that are radiusd-specific and as such do not
  * 	  belong in the library.
@@ -27,7 +27,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 030b905157c187748adc7b1d22fbaf39205eeb8f $")
+RCSID("$Id: 2f736d74cf7ca2de6323fadae9780d2b8e3613c1 $")
 
 #include <ctype.h>
 
@@ -742,7 +742,7 @@ void rdebug_pair(log_lvl_t level, REQUEST *request, VALUE_PAIR *vp, char const *
 
 	if (!radlog_debug_enabled(L_DBG, level, request)) return;
 
-	if (vp->da->flags.secret && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
+	if (vp->da->flags.secret && request->root && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
 		RDEBUGX(level, "%s%s = <<< secret >>>", prefix ? prefix : "", vp->da->name);
 		return;
 	}
@@ -772,7 +772,7 @@ void rdebug_pair_list(log_lvl_t level, REQUEST *request, VALUE_PAIR *vp, char co
 	     vp = fr_cursor_next(&cursor)) {
 		VERIFY_VP(vp);
 
-		if (vp->da->flags.secret && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
+		if (vp->da->flags.secret && request->root && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
 			RDEBUGX(level, "%s%s = <<< secret >>>", prefix ? prefix : "", vp->da->name);
 			continue;
 		}
@@ -805,7 +805,7 @@ void rdebug_proto_pair_list(log_lvl_t level, REQUEST *request, VALUE_PAIR *vp)
 		if ((vp->da->vendor == 0) &&
 		    ((vp->da->attr & 0xFFFF) > 0xff)) continue;
 
-		if (vp->da->flags.secret && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
+		if (vp->da->flags.secret && request->root && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
 			RDEBUGX(level, "%s = <<< secret >>>", vp->da->name);
 			continue;
 		}

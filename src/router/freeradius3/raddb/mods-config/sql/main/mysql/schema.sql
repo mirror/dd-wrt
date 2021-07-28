@@ -1,5 +1,5 @@
 ###########################################################################
-# $Id: f1ad9afd34fbed766ecbb513927c4f1dd89d9015 $                 #
+# $Id: 41fcccad1c012226d12cc721518fe91e311e55e2 $                 #
 #                                                                         #
 #  schema.sql                       rlm_sql - FreeRADIUS SQL Module       #
 #                                                                         #
@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS radacct (
   KEY acctstarttime (acctstarttime),
   KEY acctinterval (acctinterval),
   KEY acctstoptime (acctstoptime),
-  KEY nasipaddress (nasipaddress)
+  KEY nasipaddress (nasipaddress),
+  KEY class (class)
 ) ENGINE = INNODB;
 
 #
@@ -145,8 +146,10 @@ CREATE TABLE IF NOT EXISTS radpostauth (
   pass varchar(64) NOT NULL default '',
   reply varchar(32) NOT NULL default '',
   authdate timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  class varchar(64) default NULL,
   PRIMARY KEY  (id),
-  KEY username (username(32))
+  KEY username (username),
+  KEY class (class)
 ) ENGINE = INNODB;
 
 #

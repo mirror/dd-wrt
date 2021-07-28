@@ -1,7 +1,7 @@
 /*
  * rlm_eap_fast.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 34688b06bfd792115a9d3c37415abc13effee66f $
+ * Version:     $Id: 02ea77f3c220daf7284e8d3e970d8ce9f1acad64 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 34688b06bfd792115a9d3c37415abc13effee66f $")
+RCSID("$Id: 02ea77f3c220daf7284e8d3e970d8ce9f1acad64 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 
@@ -136,6 +136,17 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 		ERROR("There are no standards for using TLS 1.3 with EAP-FAST.");
 		ERROR("You MUST enable TLS 1.2 for EAP-FAST to work.");
 		return -1;
+	}
+
+	if ((inst->tls_conf->max_version == TLS1_3_VERSION) ||
+	    (inst->tls_conf->min_version == TLS1_3_VERSION)) {
+		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		WARN("!! There is no standard for using EAP-FAST with TLS 1.3");
+		WARN("!! Please set tls_max_version = \"1.2\"");
+		WARN("!! FreeRADIUS only supports TLS 1.3 for special builds of wpa_supplicant and Windows");
+		WARN("!! This limitation is likely to change in late 2021.");
+		WARN("!! If you are using this version of FreeRADIUS after 2021, you will probably need to upgrade");
+		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 	}
 #endif
 

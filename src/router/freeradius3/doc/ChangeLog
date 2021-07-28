@@ -1,3 +1,25 @@
+FreeRADIUS 3.0.23 Thu 10 Jun 2021 12:00:00 EDT urgency=low
+	Feature improvements
+	* Update dictionary.aruba
+	* Add "set home_server state ... down" in order to mark the
+	  home server as administratively down.  Use "alive" to bring
+	  it back to life.
+	* Add Post-Auth-Type "Client-Lost" which should make it easier
+	  to log when clients stop responding.
+	* Add sites-available/totp as an example of how to use TOTP.
+	* Add %{mschap:Domain-Name}, fixes #3944.
+	* Cache TLS messages in &session-state, for more debugging.
+	* Notes in eap configuration about TLS 1.0 / TLS 1.1, and setting
+	  cipher_list = "DEFAULT@SECLEVEL=1"
+	* Added MANY warning messages about using TLS 1.3 with EAP.
+	  In short, don't use it.  Microsoft will support it in fall 2021.
+
+	Bug fixes
+	* Fix crash in some cases when home server is down, in debug mode.
+	* Fix (again) "read clients from SQL" functionality.
+	* Fix sql_map to return values in more situations.
+	* Silently ignore LEAP configuration instead of erroring out.
+
 FreeRADIUS 3.0.22 Mon 17 May 2021 12:00:00 EDT urgency=low
 	Feature improvements
 	* Many new "unlang" documentation files.  See "make docsite"
@@ -46,7 +68,7 @@ FreeRADIUS 3.0.22 Mon 17 May 2021 12:00:00 EDT urgency=low
 	* Allow use of password preparation methods with rlm_eap_pwd.
 	  Patch from Michael Braun.
 	* Many, many, improvements for DHCP from Nick Porter and Terry Burton.
-	* More RFC complaince for various corner cases of DHCP,
+	* More RFC compliance for various corner cases of DHCP,
 	* Use DHCP-specific schemas.
 	* Add stored procedures for DHCP lease allocation
 	* Add support for DHCP-Decline.
@@ -84,6 +106,7 @@ FreeRADIUS 3.0.22 Mon 17 May 2021 12:00:00 EDT urgency=low
 	* PEAP 'proxy_tunneled_request_as_eap' is now configurable
 	  at runtime with Proxy-Tunneled-Request-As-EAP.
 	* Debug output now lists client/server proposed TLS ciphers.
+	* Add support for TLS1.3, patches from Alexander Clouter
 
 	Bug fixes
 	* Fix long-term double free due to PCRE calling our "free"
@@ -113,7 +136,7 @@ FreeRADIUS 3.0.22 Mon 17 May 2021 12:00:00 EDT urgency=low
 	* Properly add SQL clients to virtual servers.
 	* Update documentation for cert generation.  Patch from Alexander Scheel.
 	* Use better API when decoding DHCP packets, to avoid unnecessary work.
-	  This improves performance noticably.
+	  This improves performance noticeably.
 	* Parse locale-dependent dates.  Fixes #3602.
 	* Strip out "-frecord-gcc-switches" from rlm_python3 configure build. Fixes #3693
 	* Fix radiusd.conf ENV LD_PRELOAD function.

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 8098b81bc1d8f7f151efdb6604c02adb43cc2cae $
+ * $Id: da2b614e0806cb1f2689ff172c04905956c38f59 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 8098b81bc1d8f7f151efdb6604c02adb43cc2cae $")
+RCSID("$Id: da2b614e0806cb1f2689ff172c04905956c38f59 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -690,7 +690,7 @@ static void request_done(REQUEST *request, int action)
 				home_server_t *home = request->home_pool->servers[i];
 
 				if (home->state == HOME_STATE_CONNECTION_FAIL) {
-					mark_home_server_dead(home, &now);
+					mark_home_server_dead(home, &now, false);
 				}
 			}
 		}
@@ -1113,6 +1113,11 @@ static void request_queue_or_run(REQUEST *request,
 	 */
 	while (waitpid(-1, NULL, WNOHANG) > 0);
 #endif
+}
+
+void request_inject(REQUEST *request)
+{
+	request_queue_or_run(request, request_running);
 }
 
 
@@ -3691,7 +3696,7 @@ static void ping_home_server(void *ctx)
 
 		if (timercmp(&when, &now, <)) {
 			DEBUG("PING: Zombie period is over for home server %s", home->log_name);
-			mark_home_server_dead(home, &now);
+			mark_home_server_dead(home, &now, false);
 		}
 	}
 
@@ -3720,6 +3725,7 @@ static void ping_home_server(void *ctx)
 	NO_CHILD_THREAD;
 
 	request->proxy = rad_alloc(request, true);
+	request->root = &main_config;
 	rad_assert(request->proxy != NULL);
 
 	if (home->ping_check == HOME_PING_CHECK_STATUS_SERVER) {
@@ -3921,7 +3927,7 @@ void revive_home_server(void *ctx)
 	       home->port);
 }
 
-void mark_home_server_dead(home_server_t *home, struct timeval *when)
+void mark_home_server_dead(home_server_t *home, struct timeval *when, bool down)
 {
 	int previous_state = home->state;
 	char buffer[128];
@@ -3933,6 +3939,15 @@ void mark_home_server_dead(home_server_t *home, struct timeval *when)
 
 	home->state = HOME_STATE_IS_DEAD;
 	home_trigger(home, "home_server.dead");
+
+	/*
+	 *	Administratively down - don't do anything to bring it
+	 *	up.
+	 */
+	if (down) {
+		home->state = HOME_STATE_ADMIN_DOWN;
+		return;
+	}
 
 	/*
 	 *	Ping it if configured, AND we can ping it.
@@ -4013,7 +4028,7 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
 		 *	as dead.
 		 */
 		if (home->state == HOME_STATE_CONNECTION_FAIL) {
-			mark_home_server_dead(home, &now);
+			mark_home_server_dead(home, &now, false);
 		}
 
 		/*
@@ -4104,7 +4119,7 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
 		 *	as dead.
 		 */
 		if (home->state == HOME_STATE_CONNECTION_FAIL) {
-			mark_home_server_dead(home, &now);
+			mark_home_server_dead(home, &now, false);
 		}
 
 		response_window = request_response_window(request);

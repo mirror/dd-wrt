@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 9085272c769a530dcedd83f1dc72c6f728b0dc20 $
+ * Version:     $Id: e032c408e0c1d3911ccaad7b81ceffce9fc82d4c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 9085272c769a530dcedd83f1dc72c6f728b0dc20 $")
+RCSID("$Id: e032c408e0c1d3911ccaad7b81ceffce9fc82d4c $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -648,8 +648,18 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 	 *	it.
 	 */
 	if (!allow_tls13 && (conf->max_version == TLS1_3_VERSION)) {
+		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		WARN("!!                    FORCING MAXIMUM TLS VERSION TO TLS 1.2                  !!");
+		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		WARN("!! There is no standard for using this EAP method with TLS 1.3");
+		WARN("!! Please set tls_max_version = \"1.2\"");
+		WARN("!! FreeRADIUS only supports TLS 1.3 for special builds of wpa_supplicant and Windows");
+		WARN("!! This limitation is likely to change in late 2021.");
+		WARN("!! If you are using this version of FreeRADIUS after 2021, you will probably need to upgrade");
+		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
 		if (SSL_set_max_proto_version(new_tls, TLS1_2_VERSION) == 0) {
-			tls_error_log(request, "Failed limiting maximum version to TLS 1.3");
+			tls_error_log(request, "Failed limiting maximum version to TLS 1.2");
 			return NULL;
 		}
 	}
@@ -1064,6 +1074,7 @@ void tls_session_information(tls_session_t *tls_session)
 	char const *str_write_p, *str_version, *str_content_type = "";
 	char const *str_details1 = "", *str_details2= "";
 	REQUEST *request;
+	VALUE_PAIR *vp;
 	char content_type[16], alert_buf[16];
 	char buffer[32];
 
@@ -1395,6 +1406,17 @@ void tls_session_information(tls_session_t *tls_session)
 		 "%s %s%s%s%s\n",
 		 str_write_p, str_version, str_content_type,
 		 str_details1, str_details2);
+
+	/*
+	 *	Cache the TLS session information in the session-state
+	 *	list, so it can be accessed by Post-Auth-Type
+	 *	Client-Lost { ... }
+	 */
+	vp = fr_pair_afrom_num(request->state_ctx, PW_TLS_SESSION_INFORMATION, 0);
+	if (vp) {
+		fr_pair_value_strcpy(vp, tls_session->info.info_description);
+		fr_pair_add(&request->state, vp);
+	}
 
 	RDEBUG2("%s", tls_session->info.info_description);
 }
@@ -3765,7 +3787,7 @@ post_ca:
 		 *	time.
 		 */
 #if defined(TLS1_3_VERSION)
-		max_version = TLS1_3_VERSION;
+		max_version = TLS1_2_VERSION; /* yes, we only use TLS 1.3 if it's EXPLICITELY ENABLED */
 #elif defined(TLS1_2_VERSION)
 		max_version = TLS1_2_VERSION;
 #elif defined(TLS1_1_VERSION)
@@ -3906,6 +3928,17 @@ post_ca:
 	if (min_version > TLS1_3_VERSION) ctx_options |= SSL_OP_NO_TLSv1_3;
 	if (max_version < TLS1_3_VERSION) ctx_options |= SSL_OP_NO_TLSv1_3;
 #endif
+
+	/*
+	 *	Tell OpenSSL PRETTY PLEASE MAY WE USE TLS 1.1.
+	 *
+	 *	Because saying "use TLS 1.1" isn't enough.  We have to
+	 *	send it flowers and cake.
+	 */
+	if ((min_version <= TLS1_1_VERSION) &&
+	    !strstr(conf->cipher_list, "DEFAULT@SECLEVEL=1")) {
+		WARN(LOG_PREFIX ": In order to use TLS 1.0 and/or TLS 1.1, you likely need to set: cipher_list = \"DEFAULT@SECLEVEL=1\"");
+	}
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (conf->disable_tlsv1) {
