@@ -142,7 +142,7 @@ static void flog(const char *fmt, ...)
 	}
 }
 
-#undef system // prevent circular dependency
+#undef system			// prevent circular dependency
 
 int dd_system(const char *command)
 {
@@ -1177,6 +1177,8 @@ char *getdisc(void)		// works only for squashfs
 			char tmp[32];
 			if (!strncmp(cache, "mmcblk", 6))
 				sprintf(tmp, "/dev/%sp2", cache);
+			else if (!strncmp(cache, "nvme", 4))
+				sprintf(tmp, "/dev/%sp2", cache);
 			else
 				sprintf(tmp, "/dev/%s2", cache);
 			if (rootdetect(tmp) > 0) {
@@ -1231,6 +1233,25 @@ char *getdisc(void)		// works only for squashfs
 					nvram_commit();
 				}
 				return ret;
+			}
+		}
+	}
+	for (a = '1'; a <= '2'; a++) {
+		for (n = '1'; n <= 5; n++) {
+			for (i = '0'; i <= '9'; i++) {
+				char dev[64];
+				sprintf(dev, "/dev/nvme%cn%cp%c", i, n, a);
+				int detect = rootdetect(dev);
+				if (detect < 0)
+					continue;
+				if (detect) {
+					sprintf(ret, "nvme%cn%c", i, n);
+					if (!nocache) {
+						nvram_set("root_disc", ret);
+						nvram_commit();
+					}
+					return ret;
+				}
 			}
 		}
 	}
