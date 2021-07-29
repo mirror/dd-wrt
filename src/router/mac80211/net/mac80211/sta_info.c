@@ -2133,7 +2133,7 @@ sta_get_last_rx_stats(struct sta_info *sta)
 	return stats;
 }
 
-static void sta_stats_decode_rate(struct ieee80211_local *local, u32 rate,
+void sta_stats_decode_rate(struct ieee80211_local *local, u32 rate,
 				  struct rate_info *rinfo)
 {
 	rinfo->bw = STA_STATS_GET(BW, rate);
@@ -2161,7 +2161,7 @@ static void sta_stats_decode_rate(struct ieee80211_local *local, u32 rate,
 
 		sband = local->hw.wiphy->bands[band];
 
-		if (WARN_ON_ONCE(!sband->bitrates))
+		if (!sband || WARN_ON_ONCE(!sband->bitrates))
 			break;
 
 		brate = sband->bitrates[rate_idx].bitrate;
