@@ -18,7 +18,8 @@ enum {
 	Root_SR0 = MKDEV(SCSI_CDROM_MAJOR, 0),
 };
 #ifdef CONFIG_X86
-extern dev_t ROOT_DEV[13];
+#define  root_devices 38
+extern dev_t ROOT_DEV[root_devices];
 #else
 extern dev_t ROOT_DEV;
 #endif
