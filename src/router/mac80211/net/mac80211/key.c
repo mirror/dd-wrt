@@ -334,8 +334,6 @@ static void ieee80211_pairwise_rekey(struct ieee80211_key *old,
 		}
 		if (!wiphy_ext_feature_isset(local->hw.wiphy,
 					     NL80211_EXT_FEATURE_CAN_REPLACE_PTK0)) {
-			pr_warn_ratelimited("Rekeying PTK for STA %pM but driver can't safely do that.",
-					    sta->sta.addr);
 			/* Flushing the driver queues *may* help prevent
 			 * the clear text leaks and freezes.
 			 */

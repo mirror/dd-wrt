@@ -130,9 +130,9 @@ static ssize_t write_file_turboqam(struct file *file, const char __user *user_bu
        mt76dev->turboqam = turboqam;
        if (mt76phy->cap.has_2ghz) {
 		if (turboqam)
-			mt76_init_sband_2g(mt76phy, mt7603_rates, ARRAY_SIZE(mt7603_rates), 1);
+			mt76_init_sband_2g(mt76phy, mt76_rates, ARRAY_SIZE(mt76_rates), 1);
 		else
-			mt76_init_sband_2g(mt76phy, mt7603_rates, ARRAY_SIZE(mt7603_rates), 0);
+			mt76_init_sband_2g(mt76phy, mt76_rates, ARRAY_SIZE(mt76_rates), 0);
 	}
 	return count;
 }

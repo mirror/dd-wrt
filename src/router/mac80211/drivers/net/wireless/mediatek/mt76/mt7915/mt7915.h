@@ -9,7 +9,7 @@
 #include "../mt76.h"
 #include "regs.h"
 
-#define MT7915_MAX_INTERFACES		32
+#define MT7915_MAX_INTERFACES		19
 #define MT7915_MAX_WMM_SETS		4
 #define MT7915_WTBL_SIZE		288
 #define MT7915_WTBL_RESERVED		(MT7915_WTBL_SIZE - 1)
@@ -31,12 +31,15 @@
 #define MT7915_ROM_PATCH		"mediatek/mt7915_rom_patch.bin"
 
 #define MT7915_EEPROM_SIZE		3584
+#define MT7915_EEPROM_BLOCK_SIZE	16
 #define MT7915_TOKEN_SIZE		8192
 
 #define MT7915_CFEND_RATE_DEFAULT	0x49	/* OFDM 24M */
 #define MT7915_CFEND_RATE_11B		0x03	/* 11B LP, 11M */
-#define MT7915_5G_RATE_DEFAULT		0x4b	/* OFDM 6M */
-#define MT7915_2G_RATE_DEFAULT		0x0	/* CCK 1M */
+
+#define MT7915_THERMAL_THROTTLE_MAX	100
+
+#define MT7915_SKU_RATE_NUM		161
 
 struct mt7915_vif;
 struct mt7915_sta;
@@ -59,15 +62,6 @@ enum mt7915_rxq_id {
 	MT7915_RXQ_MCU_WA_EXT,
 };
 
-struct mt7915_sta_stats {
-	struct rate_info prob_rate;
-	struct rate_info tx_rate;
-
-	unsigned long per;
-	unsigned long changed;
-	unsigned long jiffies;
-};
-
 struct mt7915_sta_key_conf {
 	s8 keyidx;
 	u8 key[16];
@@ -78,18 +72,16 @@ struct mt7915_sta {
 
 	struct mt7915_vif *vif;
 
-	struct list_head stats_list;
 	struct list_head poll_list;
 	struct list_head rc_list;
 	u32 airtime_ac[8];
 
-	struct mt7915_sta_stats stats;
-
+	unsigned long changed;
+	unsigned long jiffies;
 	unsigned long ampdu_state;
 
 	struct mt7915_sta_key_conf bip;
 };
-
 struct mt7915_vif {
 	u16 idx;
 	u8 omac_idx;
@@ -127,6 +119,9 @@ struct mt7915_phy {
 
 	struct ieee80211_vif *monitor_vif;
 
+	struct thermal_cooling_device *cdev;
+	u8 throttle_state;
+
 	u32 rxfilter;
 	u64 omac_mask;
 
@@ -142,9 +137,7 @@ struct mt7915_phy {
 	u32 ampdu_ref;
 
 	struct mib_stats mib;
-	struct list_head stats_list;
-
-	u8 sta_work_count;
+	struct mt76_channel_state state_ts;
 
 #ifdef CPTCFG_NL80211_TESTMODE
 	struct {
@@ -241,13 +234,6 @@ enum mt7915_rdd_cmd {
 	RDD_IRQ_OFF,
 };
 
-enum {
-	RATE_CTRL_RU_INFO,
-	RATE_CTRL_FIXED_RATE_INFO,
-	RATE_CTRL_DUMP_INFO,
-	RATE_CTRL_MU_INFO,
-};
-
 static inline struct mt7915_phy *
 mt7915_hw_phy(struct ieee80211_hw *hw)
 {
@@ -281,7 +267,6 @@ static inline u8 mt7915_lmac_mapping(struct mt7915_dev *dev, u8 ac)
 	return 3 - ac;
 }
 
-extern struct ieee80211_rate mt7915_rates[12];
 extern const struct ieee80211_ops mt7915_ops;
 extern const struct mt76_testmode_ops mt7915_testmode_ops;
 
@@ -347,9 +332,8 @@ int mt7915_mcu_set_rts_thresh(struct mt7915_phy *phy, u32 val);
 int mt7915_mcu_set_pm(struct mt7915_dev *dev, int band, int enter);
 int mt7915_mcu_set_sku_en(struct mt7915_phy *phy, bool enable);
 int mt7915_mcu_set_txpower_sku(struct mt7915_phy *phy);
-int mt7915_mcu_set_txbf_type(struct mt7915_dev *dev);
-int mt7915_mcu_set_txbf_module(struct mt7915_dev *dev);
-int mt7915_mcu_set_txbf_sounding(struct mt7915_dev *dev);
+int mt7915_mcu_get_txpower_sku(struct mt7915_phy *phy, s8 *txpower, int len);
+int mt7915_mcu_set_txbf(struct mt7915_dev *dev, u8 action);
 int mt7915_mcu_set_fcc5_lpn(struct mt7915_dev *dev, int val);
 int mt7915_mcu_set_pulse_th(struct mt7915_dev *dev,
 			    const struct mt7915_dfs_pulse *pulse);
@@ -357,8 +341,9 @@ int mt7915_mcu_set_radar_th(struct mt7915_dev *dev, int index,
 			    const struct mt7915_dfs_pattern *pattern);
 int mt7915_mcu_apply_group_cal(struct mt7915_dev *dev);
 int mt7915_mcu_apply_tx_dpd(struct mt7915_phy *phy);
-int mt7915_mcu_get_temperature(struct mt7915_dev *dev, int index);
-int mt7915_mcu_get_tx_rate(struct mt7915_dev *dev, u32 cmd, u16 wlan_idx);
+int mt7915_mcu_get_chan_mib_info(struct mt7915_phy *phy, bool chan_switch);
+int mt7915_mcu_get_temperature(struct mt7915_phy *phy);
+int mt7915_mcu_set_thermal_throttling(struct mt7915_phy *phy, u8 state);
 int mt7915_mcu_get_rx_rate(struct mt7915_phy *phy, struct ieee80211_vif *vif,
 			   struct ieee80211_sta *sta, struct rate_info *rate);
 int mt7915_mcu_rdd_cmd(struct mt7915_dev *dev, enum mt7915_rdd_cmd cmd,
@@ -425,7 +410,7 @@ int mt76_dfs_start_rdd(struct mt7915_dev *dev, bool force);
 int mt7915_dfs_init_radar_detector(struct mt7915_phy *phy);
 void mt7915_set_stream_he_caps(struct mt7915_phy *phy);
 void mt7915_set_stream_vht_txbf_caps(struct mt7915_phy *phy);
-void mt7915_update_channel(struct mt76_dev *mdev);
+void mt7915_update_channel(struct mt76_phy *mphy);
 int mt7915_init_debugfs(struct mt7915_dev *dev);
 #ifdef CPTCFG_MAC80211_DEBUGFS
 void mt7915_sta_add_debugfs(struct ieee80211_hw *hw, struct ieee80211_vif *vif,

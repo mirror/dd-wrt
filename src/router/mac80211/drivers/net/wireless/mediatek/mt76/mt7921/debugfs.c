@@ -184,7 +184,10 @@ mt7921_txpwr(struct seq_file *s, void *data)
 	struct mt7921_txpwr txpwr;
 	int ret;
 
+	mt7921_mutex_acquire(dev);
 	ret = mt7921_get_txpwr_info(dev, &txpwr);
+	mt7921_mutex_release(dev);
+
 	if (ret)
 		return ret;
 
@@ -247,6 +250,9 @@ mt7921_pm_set(void *data, u64 val)
 	ieee80211_iterate_active_interfaces(mphy->hw,
 					    IEEE80211_IFACE_ITER_RESUME_ALL,
 					    mt7921_pm_interface_iter, mphy->priv);
+
+	mt76_connac_mcu_set_deep_sleep(&dev->mt76, pm->ds_enable);
+
 	mt7921_mutex_release(dev);
 
 	return 0;
@@ -263,6 +269,36 @@ mt7921_pm_get(void *data, u64 *val)
 }
 
 DEFINE_DEBUGFS_ATTRIBUTE(fops_pm, mt7921_pm_get, mt7921_pm_set, "%lld\n");
+
+static int
+mt7921_deep_sleep_set(void *data, u64 val)
+{
+	struct mt7921_dev *dev = data;
+	struct mt76_connac_pm *pm = &dev->pm;
+	bool enable = !!val;
+
+	mt7921_mutex_acquire(dev);
+	if (pm->ds_enable != enable) {
+		mt76_connac_mcu_set_deep_sleep(&dev->mt76, enable);
+		pm->ds_enable = enable;
+	}
+	mt7921_mutex_release(dev);
+
+	return 0;
+}
+
+static int
+mt7921_deep_sleep_get(void *data, u64 *val)
+{
+	struct mt7921_dev *dev = data;
+
+	*val = dev->pm.ds_enable;
+
+	return 0;
+}
+
+DEFINE_DEBUGFS_ATTRIBUTE(fops_ds, mt7921_deep_sleep_get,
+			 mt7921_deep_sleep_set, "%lld\n");
 
 static int
 mt7921_pm_stats(struct seq_file *s, void *data)
@@ -411,9 +447,9 @@ static ssize_t write_file_turboqam(struct file *file, const char __user *user_bu
        mt76dev->turboqam = turboqam;
        if (mt76phy->cap.has_2ghz) {
 		if (turboqam)
-			mt76_init_sband_2g(mt76phy, mt7921_rates, ARRAY_SIZE(mt7921_rates), 1);
+			mt76_init_sband_2g(mt76phy, mt76_rates, ARRAY_SIZE(mt76_rates), 1);
 		else
-			mt76_init_sband_2g(mt76phy, mt7921_rates, ARRAY_SIZE(mt7921_rates), 0);
+			mt76_init_sband_2g(mt76phy, mt76_rates, ARRAY_SIZE(mt76_rates), 0);
 	}
 	return count;
 }
@@ -448,6 +484,7 @@ int mt7921_init_debugfs(struct mt7921_dev *dev)
 	debugfs_create_file("chip_reset", 0600, dir, dev, &fops_reset);
 	debugfs_create_devm_seqfile(dev->mt76.dev, "runtime_pm_stats", dir,
 				    mt7921_pm_stats);
+	debugfs_create_file("deep-sleep", 0600, dir, dev, &fops_ds);
 	debugfs_create_file("turboqam", S_IRUSR | S_IWUSR, dir, dev, &fops_turboqam);
 	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, dir,
 			    dev, &fops_chanbw);

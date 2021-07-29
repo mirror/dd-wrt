@@ -3,6 +3,7 @@
 
 #include "mt7915.h"
 #include "eeprom.h"
+#include "mcu.h"
 
 /** global debugfs **/
 
@@ -16,7 +17,7 @@ mt7915_implicit_txbf_set(void *data, u64 val)
 
 	dev->ibf = !!val;
 
-	return mt7915_mcu_set_txbf_type(dev);
+	return mt7915_mcu_set_txbf(dev, MT_BF_TYPE_UPDATE);
 }
 
 static int
@@ -147,6 +148,9 @@ mt7915_txbf_stat_read_phy(struct mt7915_phy *phy, struct seq_file *s)
 {
 	struct mt7915_dev *dev = s->private;
 	bool ext_phy = phy != &dev->phy;
+	static const char * const bw[] = {
+		"BW20", "BW40", "BW80", "BW160"
+	};
 	int cnt;
 
 	if (!phy)
@@ -164,11 +168,16 @@ mt7915_txbf_stat_read_phy(struct mt7915_phy *phy, struct seq_file *s)
 	seq_puts(s, "Tx Beamformer Rx feedback statistics: ");
 
 	cnt = mt76_rr(dev, MT_ETBF_RX_FB_CNT(ext_phy));
-	seq_printf(s, "All: %ld, HE: %ld, VHT: %ld, HT: %ld\n",
+	seq_printf(s, "All: %ld, HE: %ld, VHT: %ld, HT: %ld, ",
 		   FIELD_GET(MT_ETBF_RX_FB_ALL, cnt),
 		   FIELD_GET(MT_ETBF_RX_FB_HE, cnt),
 		   FIELD_GET(MT_ETBF_RX_FB_VHT, cnt),
 		   FIELD_GET(MT_ETBF_RX_FB_HT, cnt));
+	cnt = mt76_rr(dev, MT_ETBF_RX_FB_CONT(ext_phy));
+	seq_printf(s, "%s, NC: %ld, NR: %ld\n",
+		   bw[FIELD_GET(MT_ETBF_RX_FB_BW, cnt)],
+		   FIELD_GET(MT_ETBF_RX_FB_NC, cnt),
+		   FIELD_GET(MT_ETBF_RX_FB_NR, cnt));
 
 	/* Tx Beamformee Rx NDPA & Tx feedback report */
 	cnt = mt76_rr(dev, MT_ETBF_TX_NDP_BFRP(ext_phy));
@@ -204,7 +213,7 @@ mt7915_tx_stats_show(struct seq_file *file, void *data)
 	mt7915_txbf_stat_read_phy(mt7915_ext_phy(dev), file);
 
 	/* Tx amsdu info */
-	seq_puts(file, "Tx MSDU stat:\n");
+	seq_puts(file, "Tx MSDU statistics:\n");
 	for (i = 0, n = 0; i < ARRAY_SIZE(stat); i++) {
 		stat[i] = mt76_rr(dev,  MT_PLE_AMSDU_PACK_MSDU_CNT(i));
 		n += stat[i];
@@ -223,18 +232,6 @@ mt7915_tx_stats_show(struct seq_file *file, void *data)
 }
 
 DEFINE_SHOW_ATTRIBUTE(mt7915_tx_stats);
-
-static int mt7915_read_temperature(struct seq_file *s, void *data)
-{
-	struct mt7915_dev *dev = dev_get_drvdata(s->private);
-	int temp;
-
-	/* cpu */
-	temp = mt7915_mcu_get_temperature(dev, 0);
-	seq_printf(s, "Temperature: %d\n", temp);
-
-	return 0;
-}
 
 static int
 mt7915_queues_acq(struct seq_file *s, void *data)
@@ -307,54 +304,23 @@ mt7915_puts_rate_txpower(struct seq_file *s, struct mt7915_phy *phy)
 		"RU26", "RU52", "RU106", "RU242/SU20",
 		"RU484/SU40", "RU996/SU80", "RU2x996/SU160"
 	};
-	struct mt7915_dev *dev = dev_get_drvdata(s->private);
-	bool ext_phy = phy != &dev->phy;
-	u32 reg_base;
-	int i, idx = 0;
+	s8 txpower[MT7915_SKU_RATE_NUM], *buf;
+	int i;
 
 	if (!phy)
 		return;
 
-	reg_base = MT_TMAC_FP0R0(ext_phy);
-	seq_printf(s, "\nBand %d\n", ext_phy);
+	seq_printf(s, "\nBand %d\n", phy != &phy->dev->phy);
 
-	for (i = 0; i < ARRAY_SIZE(mt7915_sku_group_len); i++) {
-		u8 cnt, mcs_num = mt7915_sku_group_len[i];
-		s8 txpower[12];
-		int j;
+	mt7915_mcu_get_txpower_sku(phy, txpower, sizeof(txpower));
+	for (i = 0, buf = txpower; i < ARRAY_SIZE(mt7915_sku_group_len); i++) {
+		u8 mcs_num = mt7915_sku_group_len[i];
 
-		if (i == SKU_HT_BW20 || i == SKU_HT_BW40) {
-			mcs_num = 8;
-		} else if (i >= SKU_VHT_BW20 && i <= SKU_VHT_BW160) {
+		if (i >= SKU_VHT_BW20 && i <= SKU_VHT_BW160)
 			mcs_num = 10;
-		} else if (i == SKU_HE_RU26) {
-			reg_base = MT_TMAC_FP0R18(ext_phy);
-			idx = 0;
-		}
 
-		for (j = 0, cnt = 0; j < DIV_ROUND_UP(mcs_num, 4); j++) {
-			u32 val;
-
-			if (i == SKU_VHT_BW160 && idx == 60) {
-				reg_base = MT_TMAC_FP0R15(ext_phy);
-				idx = 0;
-			}
-
-			val = mt76_rr(dev, reg_base + (idx / 4) * 4);
-
-			if (idx && idx % 4)
-				val >>= (idx % 4) * 8;
-
-			while (val > 0 && cnt < mcs_num) {
-				s8 pwr = FIELD_GET(MT_TMAC_FP_MASK, val);
-
-				txpower[cnt++] = pwr;
-				val >>= 8;
-				idx++;
-			}
-		}
-
-		mt76_seq_puts_array(s, sku_group_name[i], txpower, mcs_num);
+		mt76_seq_puts_array(s, sku_group_name[i], buf, mcs_num);
+		buf += mt7915_sku_group_len[i];
 	}
 }
 
@@ -447,9 +413,9 @@ static ssize_t write_file_turboqam(struct file *file, const char __user *user_bu
        mt76dev->turboqam = turboqam;
        if (mt76phy->cap.has_2ghz) {
 		if (turboqam)
-			mt76_init_sband_2g(mt76phy, mt7915_rates, ARRAY_SIZE(mt7915_rates), 1);
+			mt76_init_sband_2g(mt76phy, mt76_rates, ARRAY_SIZE(mt76_rates), 1);
 		else
-			mt76_init_sband_2g(mt76phy, mt7915_rates, ARRAY_SIZE(mt7915_rates), 0);
+			mt76_init_sband_2g(mt76phy, mt76_rates, ARRAY_SIZE(mt76_rates), 0);
 	}
 	return count;
 }
@@ -483,8 +449,6 @@ int mt7915_init_debugfs(struct mt7915_dev *dev)
 	debugfs_create_file("radar_trigger", 0200, dir, dev,
 			    &fops_radar_trigger);
 	debugfs_create_file("ser_trigger", 0200, dir, dev, &fops_ser_trigger);
-	debugfs_create_devm_seqfile(dev->mt76.dev, "temperature", dir,
-				    mt7915_read_temperature);
 	debugfs_create_devm_seqfile(dev->mt76.dev, "txpower_sku", dir,
 				    mt7915_read_rate_txpower);
 	debugfs_create_file("turboqam", S_IRUSR | S_IWUSR, dir, dev, &fops_turboqam);
@@ -509,56 +473,9 @@ static int mt7915_sta_fixed_rate_set(void *data, u64 rate)
 DEFINE_DEBUGFS_ATTRIBUTE(fops_fixed_rate, NULL,
 			 mt7915_sta_fixed_rate_set, "%llx\n");
 
-static int
-mt7915_sta_stats_show(struct seq_file *s, void *data)
-{
-	struct ieee80211_sta *sta = s->private;
-	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
-	struct mt7915_sta_stats *stats = &msta->stats;
-	struct rate_info *rate = &stats->prob_rate;
-	static const char * const bw[] = {
-		"BW20", "BW5", "BW10", "BW40",
-		"BW80", "BW160", "BW_HE_RU"
-	};
-
-	if (!rate->legacy && !rate->flags)
-		return 0;
-
-	seq_puts(s, "Probing rate - ");
-	if (rate->flags & RATE_INFO_FLAGS_MCS)
-		seq_puts(s, "HT ");
-	else if (rate->flags & RATE_INFO_FLAGS_VHT_MCS)
-		seq_puts(s, "VHT ");
-	else if (rate->flags & RATE_INFO_FLAGS_HE_MCS)
-		seq_puts(s, "HE ");
-	else
-		seq_printf(s, "Bitrate %d\n", rate->legacy);
-
-	if (rate->flags) {
-		seq_printf(s, "%s NSS%d MCS%d ",
-			   bw[rate->bw], rate->nss, rate->mcs);
-
-		if (rate->flags & RATE_INFO_FLAGS_SHORT_GI)
-			seq_puts(s, "SGI ");
-		else if (rate->he_gi)
-			seq_puts(s, "HE GI ");
-
-		if (rate->he_dcm)
-			seq_puts(s, "DCM ");
-	}
-
-	seq_printf(s, "\nPPDU PER: %ld.%1ld%%\n",
-		   stats->per / 10, stats->per % 10);
-
-	return 0;
-}
-
-DEFINE_SHOW_ATTRIBUTE(mt7915_sta_stats);
-
 void mt7915_sta_add_debugfs(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			    struct ieee80211_sta *sta, struct dentry *dir)
 {
 	debugfs_create_file("fixed_rate", 0600, dir, sta, &fops_fixed_rate);
-	debugfs_create_file("stats", 0400, dir, sta, &mt7915_sta_stats_fops);
 }
 #endif
