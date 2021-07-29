@@ -141,7 +141,8 @@ void start_hotplug_block(void)
 	char *name = slash + 1;
 	if (strncmp(name, "disc", 4) && (strncmp(name, "sd", 2))
 	    && (strncmp(name, "sr", 2))
-	    && (strncmp(name, "mmcblk", 6)))
+	    && (strncmp(name, "mmcblk", 6))
+	    && (strncmp(name, "nvme", 4)))
 		return;		//skip
 
 	char devname[64];
@@ -483,7 +484,8 @@ static int usb_add_ufd(char *devpath)
 				continue;
 			if (new && (strncmp(entry->d_name, "sd", 2))
 			    && (strncmp(entry->d_name, "sr", 2))
-			    && (strncmp(entry->d_name, "mmcblk", 6)))
+			    && (strncmp(entry->d_name, "mmcblk", 6))
+			    && (strncmp(entry->d_name, "nvme", 4)))
 				continue;
 			mounted[i] = 1;
 
@@ -503,9 +505,9 @@ static int usb_add_ufd(char *devpath)
 			}
 			if (new) {
 				//              sysprintf("echo test %s >> /tmp/hotplugs",entry->d_name);
-				if (strlen(entry->d_name) != 3 && (strncmp(entry->d_name, "mmcblk", 6)))
+				if (strlen(entry->d_name) != 3 && (strncmp(entry->d_name, "mmcblk", 6) && strncmp(entry->d_name, "nvme", 4)))
 					continue;
-				if (strlen(entry->d_name) != 7 && !(strncmp(entry->d_name, "mmcblk", 6)))
+				if (strlen(entry->d_name) != 7 && (!strncmp(entry->d_name, "mmcblk", 6) || !strncmp(entry->d_name, "nvme", 4)))
 					continue;
 				//              sysprintf("echo test success %s >> /tmp/hotplugs",entry->d_name);
 				sprintf(path, "/dev/%s", entry->d_name);

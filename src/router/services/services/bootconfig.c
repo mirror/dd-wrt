@@ -72,7 +72,7 @@ void start_bootconfig(void)
 		strcat(args, " pti=off");
 	if (nvram_match("boot_nospec_store_bypass_disable", "1"))
 		strcat(args, " spec_store_bypass_disable=off");
-	if (strlen(disc) == 7)	//mmcblk0
+	if (strlen(disc) == 7)	//mmcblk0 / nvme0n1
 		sprintf(dev, "/dev/%sp1", disc);
 	else
 		sprintf(dev, "/dev/%s1", disc);
