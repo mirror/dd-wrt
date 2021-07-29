@@ -61,6 +61,7 @@
 #include <rpc/svc.h>
 #include <rpc/clnt.h>
 #include <stddef.h>
+#include <errno.h>
 #include "rpc_com.h"
 static bool_t	xdrrec_getlong(XDR *, long *);
 static bool_t	xdrrec_putlong(XDR *, const long *);
@@ -537,7 +538,13 @@ __xdrrec_getrec(xdrs, statp, expectdata)
 		n = rstrm->readit(rstrm->tcp_handle, rstrm->in_hdrp,
 		    (int)sizeof (rstrm->in_header) - rstrm->in_hdrlen);
 		if (n == 0) {
-			*statp = expectdata ? XPRT_DIED : XPRT_IDLE;
+			/* EAGAIN or EWOULDBLOCK means a zero length
+			 * read not an EOF.
+			 */
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				*statp = XPRT_IDLE;
+			else
+				*statp = expectdata ? XPRT_DIED : XPRT_IDLE;
 			return FALSE;
 		}
 		if (n < 0) {
@@ -564,6 +571,7 @@ __xdrrec_getrec(xdrs, statp, expectdata)
 			rstrm->in_header &= ~LAST_FRAG;
 			rstrm->last_frag = TRUE;
 		}
+		rstrm->in_haveheader = 1;
 	}
 
 	n =  rstrm->readit(rstrm->tcp_handle,
@@ -576,7 +584,13 @@ __xdrrec_getrec(xdrs, statp, expectdata)
 	}
 
 	if (n == 0) {
-		*statp = expectdata ? XPRT_DIED : XPRT_IDLE;
+		/* EAGAIN or EWOULDBLOCK means a zero length
+		 * read not an EOF.
+		 */
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			*statp = XPRT_IDLE;
+		else
+			*statp = expectdata ? XPRT_DIED : XPRT_IDLE;
 		return FALSE;
 	}
 

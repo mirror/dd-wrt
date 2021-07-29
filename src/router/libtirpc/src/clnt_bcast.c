@@ -330,6 +330,7 @@ rpc_broadcast_exp(prog, vers, proc, xargs, argsp, xresults, resultsp,
 	if (nettype == NULL)
 		nettype = "datagram_n";
 	if ((handle = __rpc_setconf(nettype)) == NULL) {
+		AUTH_DESTROY(sys_auth);
 		return (RPC_UNKNOWNPROTO);
 	}
 	while ((nconf = __rpc_getconf(handle)) != NULL) {

@@ -243,7 +243,7 @@ svc_fd_create(fd, sendsize, recvsize)
 		goto freedata;
 	}
 	if (!__rpc_set_netbuf(&ret->xp_rtaddr, &ss, sizeof(ss))) {
-		warnx("svc_fd_create: no mem for local addr");
+		warnx("svc_fd_create: no mem for remote addr");
 		goto freedata;
 	}
 
@@ -253,9 +253,10 @@ svc_fd_create(fd, sendsize, recvsize)
 	return ret;
 
 freedata:
-	if (ret->xp_ltaddr.buf != NULL)
+	if (ret->xp_ltaddr.buf != NULL) {
 		mem_free(ret->xp_ltaddr.buf, rep->xp_ltaddr.maxlen);
-
+		ret->xp_ltaddr.buf = NULL;
+	}
 	return NULL;
 }
 
@@ -502,9 +503,14 @@ read_vc(xprtp, buf, len)
 	cfp = (struct cf_conn *)xprt->xp_p1;
 
 	if (cfp->nonblock) {
+		/* Since len == 0 is returned on zero length
+		 * read or EOF errno needs to be reset before
+		 * the read
+		 */
+		errno = 0;
 		len = read(sock, buf, (size_t)len);
 		if (len < 0) {
-			if (errno == EAGAIN)
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				len = 0;
 			else
 				goto fatal_err;

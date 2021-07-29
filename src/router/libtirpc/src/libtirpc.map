@@ -298,7 +298,7 @@ TIRPC_0.3.2 {
     key_gendes;
     key_get_conv;
     key_setsecret;
-    key_secret_is_set;
+    key_secretkey_is_set;
     key_setnet;
     netname2host;
     netname2user;

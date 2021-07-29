@@ -64,6 +64,10 @@
 #ifndef _RPC_PMAP_CLNT_H_
 #define _RPC_PMAP_CLNT_H_
 
+#include <rpc/types.h>
+#include <rpc/xdr.h>
+#include <rpc/clnt.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

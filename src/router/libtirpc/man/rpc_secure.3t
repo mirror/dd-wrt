@@ -19,7 +19,7 @@
 .Ft AUTH *
 .Fo authdes_pk_create
 .Fa "char *name"
-.FA "netobj *publickey"
+.Fa "netobj *publickey"
 .Fa "unsigned window"
 .Fa "struct sockaddr *addr"
 .Fa "des_block *ckey"

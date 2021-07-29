@@ -120,6 +120,8 @@ void	gss_log_debug		(const char *fmt, ...);
 void	gss_log_status		(char *m, OM_uint32 major, OM_uint32 minor);
 void	gss_log_hexdump		(const u_char *buf, int len, int offset);
 
+bool_t	is_authgss_client	(CLIENT *);
+
 #ifdef __cplusplus
 }
 #endif

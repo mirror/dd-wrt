@@ -157,6 +157,7 @@ rpc_reg(prognum, versnum, procnum, progname, inproc, outproc, nettype)
 				((netid = strdup(nconf->nc_netid)) == NULL)) {
 				warnx(rpc_reg_err, rpc_reg_msg, __no_mem_str);
 				SVC_DESTROY(svcxprt);
+				free(xdrbuf);
 				break;
 			}
 			madenow = TRUE;
