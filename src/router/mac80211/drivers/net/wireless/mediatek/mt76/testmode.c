@@ -2,7 +2,7 @@
 /* Copyright (C) 2020 Felix Fietkau <nbd@nbd.name> */
 #include "mt76.h"
 
-static const struct nla_policy mt76_tm_policy[NUM_MT76_TM_ATTRS] = {
+const struct nla_policy mt76_tm_policy[NUM_MT76_TM_ATTRS] = {
 	[MT76_TM_ATTR_RESET] = { .type = NLA_FLAG },
 	[MT76_TM_ATTR_STATE] = { .type = NLA_U8 },
 	[MT76_TM_ATTR_TX_COUNT] = { .type = NLA_U32 },
@@ -21,7 +21,9 @@ static const struct nla_policy mt76_tm_policy[NUM_MT76_TM_ATTRS] = {
 	[MT76_TM_ATTR_TX_IPG] = { .type = NLA_U32 },
 	[MT76_TM_ATTR_TX_TIME] = { .type = NLA_U32 },
 	[MT76_TM_ATTR_FREQ_OFFSET] = { .type = NLA_U32 },
+	[MT76_TM_ATTR_DRV_DATA] = { .type = NLA_NESTED },
 };
+EXPORT_SYMBOL_GPL(mt76_tm_policy);
 
 void mt76_testmode_tx_pending(struct mt76_phy *phy)
 {
@@ -88,17 +90,8 @@ static void
 mt76_testmode_free_skb(struct mt76_phy *phy)
 {
 	struct mt76_testmode_data *td = &phy->test;
-	struct sk_buff *skb = td->tx_skb;
 
-	if (!skb)
-		return;
-
-	if (skb_has_frag_list(skb)) {
-		kfree_skb_list(skb_shinfo(skb)->frag_list);
-		skb_shinfo(skb)->frag_list = NULL;
-	}
-
-	dev_kfree_skb(skb);
+	dev_kfree_skb(td->tx_skb);
 	td->tx_skb = NULL;
 }
 
@@ -158,19 +151,18 @@ int mt76_testmode_alloc_skb(struct mt76_phy *phy, u32 len)
 			frag_len = MT_TXP_MAX_LEN;
 
 		frag = alloc_skb(frag_len, GFP_KERNEL);
-		if (!frag)
+		if (!frag) {
+			mt76_testmode_free_skb(phy);
+			dev_kfree_skb(head);
 			return -ENOMEM;
+		}
 
 		__skb_put_zero(frag, frag_len);
 		head->len += frag->len;
 		head->data_len += frag->len;
 
-		if (*frag_tail) {
-			(*frag_tail)->next = frag;
-			frag_tail = &frag;
-		} else {
-			*frag_tail = frag;
-		}
+		*frag_tail = frag;
+		frag_tail = &(*frag_tail)->next;
 	}
 
 	mt76_testmode_free_skb(phy);
@@ -531,6 +523,14 @@ mt76_testmode_dump_stats(struct mt76_phy *phy, struct sk_buff *msg)
 	u64 rx_fcs_error = 0;
 	int i;
 
+	if (dev->test_ops->dump_stats) {
+		int ret;
+
+		ret = dev->test_ops->dump_stats(phy, msg);
+		if (ret)
+			return ret;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(td->rx_stats.packets); i++) {
 		rx_packets += td->rx_stats.packets[i];
 		rx_fcs_error += td->rx_stats.fcs_error[i];
@@ -544,9 +544,6 @@ mt76_testmode_dump_stats(struct mt76_phy *phy, struct sk_buff *msg)
 	    nla_put_u64_64bit(msg, MT76_TM_STATS_ATTR_RX_FCS_ERROR, rx_fcs_error,
 			      MT76_TM_STATS_ATTR_PAD))
 		return -EMSGSIZE;
-
-	if (dev->test_ops->dump_stats)
-		return dev->test_ops->dump_stats(phy, msg);
 
 	return 0;
 }

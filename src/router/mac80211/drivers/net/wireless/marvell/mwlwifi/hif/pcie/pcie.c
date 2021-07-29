@@ -554,7 +554,7 @@ static void pcie_timer_routine(struct ieee80211_hw *hw)
 	if (ba_full && rm_stream) {
 		ieee80211_stop_tx_ba_session(rm_stream->sta,
 					     rm_stream->tid);
-		wiphy_debug(hw->wiphy, "Stop BA %pM\n", rm_stream->sta->addr);
+		//wiphy_debug(hw->wiphy, "Stop BA %pM\n", rm_stream->sta->addr);
 	}
 	spin_unlock_bh(&priv->stream_lock);
 }

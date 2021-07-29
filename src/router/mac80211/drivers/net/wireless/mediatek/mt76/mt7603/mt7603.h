@@ -160,7 +160,6 @@ struct mt7603_dev {
 
 	unsigned int reset_cause[__RESET_CAUSE_MAX];
 };
-extern struct ieee80211_rate mt7603_rates[12];
 
 extern const struct mt76_driver_ops mt7603_drv_ops;
 extern const struct ieee80211_ops mt7603_ops;
@@ -257,7 +256,7 @@ void mt7603_sta_remove(struct mt76_dev *mdev, struct ieee80211_vif *vif,
 
 void mt7603_pre_tbtt_tasklet(unsigned long arg);
 
-void mt7603_update_channel(struct mt76_dev *mdev);
+void mt7603_update_channel(struct mt76_phy *mphy);
 
 void mt7603_edcca_set_strict(struct mt7603_dev *dev, bool val);
 void mt7603_cca_stats_reset(struct mt7603_dev *dev);

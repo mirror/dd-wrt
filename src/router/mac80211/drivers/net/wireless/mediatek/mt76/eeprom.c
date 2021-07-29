@@ -102,7 +102,7 @@ int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int offset, int len)
 			goto out_put_node;
 		}
 
-		offset = be32_to_cpup(list);
+		offset += be32_to_cpup(list);
 		dev_info(dev->dev, "Read calibration data from part %s, offset 0x%08X, len 0x%08X\n", part, offset, len);
 		ret = mtd_read(mtd, offset, len, &retlen, eep);
 		put_mtd_device(mtd);

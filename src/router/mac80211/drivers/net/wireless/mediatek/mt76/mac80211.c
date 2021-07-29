@@ -102,6 +102,22 @@ static const struct ieee80211_tpt_blink mt76_tpt_blink[] = {
 	{ .throughput = 300 * 1024, .blink_time =  50 },
 };
 
+struct ieee80211_rate mt76_rates[] = {
+	CCK_RATE(0, 10),
+	CCK_RATE(1, 20),
+	CCK_RATE(2, 55),
+	CCK_RATE(3, 110),
+	OFDM_RATE(11, 60),
+	OFDM_RATE(15, 90),
+	OFDM_RATE(10, 120),
+	OFDM_RATE(14, 180),
+	OFDM_RATE(9,  240),
+	OFDM_RATE(13, 360),
+	OFDM_RATE(8,  480),
+	OFDM_RATE(12, 540),
+};
+EXPORT_SYMBOL_GPL(mt76_rates);
+
 static int mt76_led_init(struct mt76_dev *dev)
 {
 	struct device_node *np = dev->dev->of_node;
@@ -351,7 +367,6 @@ mt76_phy_init(struct mt76_phy *phy, struct ieee80211_hw *hw)
 	ieee80211_hw_set(hw, AP_LINK_PS);
 	ieee80211_hw_set(hw, REPORTS_TX_ACK_STATUS);
 
-	wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
 	if (dev->cipher_suites && dev->n_cipher_suites) {
 		wiphy->cipher_suites = dev->cipher_suites;
 		wiphy->n_cipher_suites = dev->n_cipher_suites;
@@ -359,15 +374,6 @@ mt76_phy_init(struct mt76_phy *phy, struct ieee80211_hw *hw)
 		wiphy->cipher_suites = cipher_suites;
 		wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
 	}
-	wiphy->interface_modes =
-		BIT(NL80211_IFTYPE_STATION) |
-		BIT(NL80211_IFTYPE_AP) |
-#ifdef CPTCFG_MAC80211_MESH
-		BIT(NL80211_IFTYPE_MESH_POINT) |
-#endif
-		BIT(NL80211_IFTYPE_P2P_CLIENT) |
-		BIT(NL80211_IFTYPE_P2P_GO) |
-		BIT(NL80211_IFTYPE_ADHOC);
 }
 
 struct mt76_phy *
@@ -387,6 +393,17 @@ mt76_alloc_phy(struct mt76_dev *dev, unsigned int size,
 	phy->dev = dev;
 	phy->hw = hw;
 	phy->priv = hw->priv + phy_size;
+
+	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
+	hw->wiphy->interface_modes =
+		BIT(NL80211_IFTYPE_STATION) |
+		BIT(NL80211_IFTYPE_AP) |
+#ifdef CPTCFG_MAC80211_MESH
+		BIT(NL80211_IFTYPE_MESH_POINT) |
+#endif
+		BIT(NL80211_IFTYPE_P2P_CLIENT) |
+		BIT(NL80211_IFTYPE_P2P_GO) |
+		BIT(NL80211_IFTYPE_ADHOC);
 
 	return phy;
 }
@@ -474,6 +491,17 @@ mt76_alloc_device(struct device *pdev, unsigned int size,
 	skb_queue_head_init(&dev->mcu.res_q);
 	init_waitqueue_head(&dev->mcu.wait);
 	mutex_init(&dev->mcu.mutex);
+
+	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
+	hw->wiphy->interface_modes =
+		BIT(NL80211_IFTYPE_STATION) |
+		BIT(NL80211_IFTYPE_AP) |
+#ifdef CPTCFG_MAC80211_MESH
+		BIT(NL80211_IFTYPE_MESH_POINT) |
+#endif
+		BIT(NL80211_IFTYPE_P2P_CLIENT) |
+		BIT(NL80211_IFTYPE_P2P_GO) |
+		BIT(NL80211_IFTYPE_ADHOC);
 
 	spin_lock_init(&dev->token_lock);
 	idr_init(&dev->token);
@@ -564,10 +592,36 @@ EXPORT_SYMBOL_GPL(mt76_free_device);
 static void mt76_rx_release_amsdu(struct mt76_phy *phy, enum mt76_rxq_id q)
 {
 	struct sk_buff *skb = phy->rx_amsdu[q].head;
+	struct mt76_rx_status *status = (struct mt76_rx_status *)skb->cb;
 	struct mt76_dev *dev = phy->dev;
 
 	phy->rx_amsdu[q].head = NULL;
 	phy->rx_amsdu[q].tail = NULL;
+
+	/*
+	 * Validate if the amsdu has a proper first subframe.
+	 * A single MSDU can be parsed as A-MSDU when the unauthenticated A-MSDU
+	 * flag of the QoS header gets flipped. In such cases, the first
+	 * subframe has a LLC/SNAP header in the location of the destination
+	 * address.
+	 */
+	if (skb_shinfo(skb)->frag_list) {
+		int offset = 0;
+
+		if (!(status->flag & RX_FLAG_8023)) {
+			offset = ieee80211_get_hdrlen_from_skb(skb);
+
+			if ((status->flag &
+			     (RX_FLAG_DECRYPTED | RX_FLAG_IV_STRIPPED)) ==
+			    RX_FLAG_DECRYPTED)
+				offset += 8;
+		}
+
+		if (ether_addr_equal(skb->data + offset, rfc1042_header)) {
+			dev_kfree_skb(skb);
+			return;
+		}
+	}
 	__skb_queue_tail(&dev->rx_skb[q], skb);
 }
 
@@ -657,20 +711,19 @@ void mt76_update_survey_active_time(struct mt76_phy *phy, ktime_t time)
 }
 EXPORT_SYMBOL_GPL(mt76_update_survey_active_time);
 
-void mt76_update_survey(struct mt76_dev *dev)
+void mt76_update_survey(struct mt76_phy *phy)
 {
+	struct mt76_dev *dev = phy->dev;
 	ktime_t cur_time;
 
 	if (dev->drv->update_survey)
-		dev->drv->update_survey(dev);
+		dev->drv->update_survey(phy);
 
 	cur_time = ktime_get_boottime();
-	mt76_update_survey_active_time(&dev->phy, cur_time);
-	if (dev->phy2)
-		mt76_update_survey_active_time(dev->phy2, cur_time);
+	mt76_update_survey_active_time(phy, cur_time);
 
 	if (dev->drv->drv_flags & MT_DRV_SW_RX_AIRTIME) {
-		struct mt76_channel_state *state = dev->phy.chan_state;
+		struct mt76_channel_state *state = phy->chan_state;
 
 		spin_lock_bh(&dev->cc_lock);
 		state->cc_bss_rx += dev->cur_cc_bss_rx;
@@ -690,7 +743,7 @@ void mt76_set_channel(struct mt76_phy *phy)
 
 	wait_event_timeout(dev->tx_wait, !mt76_has_tx_pending(phy), timeout);
 	if (phy->chan_state)
-		mt76_update_survey(dev);
+		mt76_update_survey(phy);
 
 	phy->chandef = *chandef;
 	phy->chan_state = mt76_channel_state(phy, chandef->chan);
@@ -717,7 +770,7 @@ int mt76_get_survey(struct ieee80211_hw *hw, int idx,
 
 	mutex_lock(&dev->mutex);
 	if (idx == 0 && dev->drv->update_survey)
-		mt76_update_survey(dev);
+		mt76_update_survey(phy);
 
 	sband = &phy->sband_2g;
 	if (idx >= sband->sband.n_channels) {
@@ -1367,3 +1420,17 @@ mt76_init_queue(struct mt76_dev *dev, int qid, int idx, int n_desc,
 	return hwq;
 }
 EXPORT_SYMBOL_GPL(mt76_init_queue);
+
+u16 mt76_default_basic_rate(struct mt76_phy *phy, struct ieee80211_vif *vif)
+{
+	int i = ffs(vif->bss_conf.basic_rates) - 1, offset = 0;
+	struct ieee80211_rate *rate;
+
+	if (phy->chandef.chan->band == NL80211_BAND_5GHZ)
+		offset = 4;
+
+	rate = &mt76_rates[offset + i];
+
+	return rate->hw_value;
+}
+EXPORT_SYMBOL_GPL(mt76_default_basic_rate);
