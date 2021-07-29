@@ -1164,7 +1164,7 @@ static int rootdetect(char *fname)
 
 char *getdisc(void)		// works only for squashfs 
 {
-	int i, a;
+	int i, a, n;
 	int nocache = 0;
 	static char ret[8];
 #ifndef HAVE_EROUTER
