@@ -74,7 +74,7 @@ __getpublickey_real(netname, publickey)
 		return (0);
 	}
 	*p = '\0';
-	(void) strncpy(publickey, lookup, HEXKEYBYTES);
+	memcpy(publickey, lookup, HEXKEYBYTES);
 	publickey[HEXKEYBYTES] = '\0';
 	return (1);
 }

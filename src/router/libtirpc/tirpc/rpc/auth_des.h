@@ -110,27 +110,12 @@ struct authdes_verf {
 #define adv_xtimeverf	adv_time_u.adv_xtime
 #define adv_nickname	adv_int_u
 
-/*
- * Map a des credential into a unix cred.
- *
- */
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern int authdes_getucred( struct authdes_cred *, uid_t *, gid_t *, int *, gid_t * );
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern bool_t	xdr_authdes_cred(XDR *, struct authdes_cred *);
-extern bool_t	xdr_authdes_verf(XDR *, struct authdes_verf *);
 extern int	rtime(struct sockaddr_in *, struct timeval *,
 		    struct timeval *);
 extern void	kgetnetname(char *);
-extern enum auth_stat _svcauth_des(struct svc_req *, struct rpc_msg *);
 #ifdef __cplusplus
 }
 #endif

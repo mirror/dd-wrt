@@ -112,7 +112,7 @@ __rpc_dtbsize()
 		return (tbsize);
 	}
 	if (getrlimit(RLIMIT_NOFILE, &rl) == 0) {
-		return (tbsize = (int)rl.rlim_max);
+		return (tbsize = (int)rl.rlim_cur);
 	}
 	/*
 	 * Something wrong.  I'll try to save face by returning a
@@ -319,6 +319,7 @@ __rpc_setconf(nettype)
 		handle->nflag = FALSE;
 		break;
 	default:
+		free(handle);
 		return (NULL);
 	}
 

@@ -313,7 +313,6 @@ svc_com_create(fd, sendsize, recvsize, netid)
 	SVCXPRT *svc;
 	int madefd = FALSE;
 	int port;
-	struct sockaddr_in sin;
 
 	if ((nconf = __rpc_getconfip(netid)) == NULL) {
 		(void) syslog(LOG_ERR, "Could not get %s transport", netid);
@@ -330,10 +329,6 @@ svc_com_create(fd, sendsize, recvsize, netid)
 		madefd = TRUE;
 	}
 
-	memset(&sin, 0, sizeof sin);
-	sin.sin_family = AF_INET;
-	bindresvport(fd, &sin);
-	listen(fd, SOMAXCONN);
 	svc = svc_tli_create(fd, nconf, NULL, sendsize, recvsize);
 	(void) freenetconfigent(nconf);
 	if (svc == NULL) {
@@ -521,6 +516,7 @@ clnt_broadcast(prog, vers, proc, xargs, argsp, xresults, resultsp, eachresult)
 	    (resultproc_t) rpc_wrap_bcast, "udp");
 }
 
+#ifdef AUTHDES_SUPPORT
 /*
  * Create the client des authentication object. Obsoleted by
  * authdes_seccreate().
@@ -599,6 +595,32 @@ authdes_pk_create(servername, pkey, window, syncaddr, ckey)
 fallback:
 	return authdes_pk_seccreate(servername, pkey, window, NULL, ckey, NULL);
 }
+#else
+AUTH *
+authdes_create(servername, window, syncaddr, ckey)
+	char *servername;		/* network name of server */
+	u_int window;			/* time to live */
+	struct sockaddr *syncaddr;	/* optional hostaddr to sync with */
+	des_block *ckey;		/* optional conversation key to use */
+{ return (NULL); }
+
+AUTH *
+authdes_pk_create(servername, pkey, window, syncaddr, ckey)
+	char *servername;		/* network name of server */
+	netobj *pkey;			/* public key */
+	u_int window;			/* time to live */
+	struct sockaddr *syncaddr;	/* optional hostaddr to sync with */
+	des_block *ckey;		/* optional conversation key to use */
+{ return (NULL); }
+
+AUTH *
+authdes_seccreate(const char *servername, const u_int win,
+	const char *timehost, const des_block *ckey)
+{
+	return (NULL);
+}
+
+#endif
 
 
 /*
@@ -668,15 +690,17 @@ svcunix_create(sock, sendsize, recvsize, path)
 		    strcmp(nconf->nc_protofmly, NC_LOOPBACK) == 0)
 			break;
 	}
-	if (nconf == NULL)
+	if (nconf == NULL) {
+		endnetconfig(localhandle);
 		return(xprt);
+	}
 
 	if ((sock = __rpc_nconf2fd(nconf)) < 0)
 		goto done;
 
 	memset(&sun, 0, sizeof sun);
 	sun.sun_family = AF_LOCAL;
-	strncpy(sun.sun_path, path, sizeof(sun.sun_path));
+	strncpy(sun.sun_path, path, (sizeof(sun.sun_path)-1));
 	addrlen = sizeof(struct sockaddr_un);
 	sa = (struct sockaddr *)&sun;
 
@@ -697,6 +721,8 @@ svcunix_create(sock, sendsize, recvsize, path)
 	}
 
 	xprt = (SVCXPRT *)svc_tli_create(sock, nconf, &taddr, sendsize, recvsize);
+	if (xprt == NULL)
+		close(sock);
 
 done:
 	endnetconfig(localhandle);

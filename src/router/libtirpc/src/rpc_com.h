@@ -61,8 +61,7 @@ void __xprt_unregister_unlocked(SVCXPRT *);
 void __xprt_set_raddr(SVCXPRT *, const struct sockaddr_storage *);
 
 
-SVCXPRT **__svc_xports;
-int __svc_maxrec;
+extern int __svc_maxrec;
 
 #ifdef __cplusplus
 }

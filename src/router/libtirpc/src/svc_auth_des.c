@@ -145,7 +145,7 @@ _svcauth_des(rqst, msg)
 			return (AUTH_BADCRED);
 		}
 		cred->adc_fullname.name = area->area_netname;
-		bcopy((char *)ixdr, cred->adc_fullname.name, 
+		memcpy(cred->adc_fullname.name, (char *)ixdr,
 			(u_int)namelen);
 		cred->adc_fullname.name[namelen] = 0;
 		ixdr += (RNDUP(namelen) / BYTES_PER_XDR_UNIT);
@@ -356,7 +356,7 @@ cache_init()
 
 	authdes_cache = (struct cache_entry *)
 		mem_alloc(sizeof(struct cache_entry) * AUTHDES_CACHESZ);	
-	bzero((char *)authdes_cache, 
+	memset(authdes_cache, 0,
 		sizeof(struct cache_entry) * AUTHDES_CACHESZ);
 
 	authdes_lru = (short *)mem_alloc(sizeof(short) * AUTHDES_CACHESZ);
@@ -419,7 +419,7 @@ cache_spot(key, name, timestamp)
 		if (cp->key.key.high == hi && 
 		    cp->key.key.low == key->key.low &&
 		    cp->rname != NULL &&
-		    bcmp(cp->rname, name, strlen(name) + 1) == 0) {
+		    memcmp(cp->rname, name, strlen(name) + 1) == 0) {
 			if (BEFORE(timestamp, &cp->laststamp)) {
 				svcauthdes_stats.ncachereplays++;
 				return (-1); /* replay */

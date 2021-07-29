@@ -75,8 +75,8 @@ _des_crypt_call(buf, len, dparms)
 	des_crypt_1_arg.desbuf.desbuf_val = buf;
 	des_crypt_1_arg.des_dir = dparms->des_dir;
 	des_crypt_1_arg.des_mode = dparms->des_mode;
-	bcopy(dparms->des_ivec, des_crypt_1_arg.des_ivec, 8);
-	bcopy(dparms->des_key, des_crypt_1_arg.des_key, 8);
+	memcpy(des_crypt_1_arg.des_ivec, dparms->des_ivec, 8);
+	memcpy(des_crypt_1_arg.des_key, dparms->des_key, 8);
 
 	result_1 = des_crypt_1(&des_crypt_1_arg, clnt);
 	if (result_1 == (desresp *) NULL) {
@@ -88,8 +88,8 @@ _des_crypt_call(buf, len, dparms)
 
 	if (result_1->stat == DESERR_NONE ||
 	    result_1->stat == DESERR_NOHWDEVICE) {
-		bcopy(result_1->desbuf.desbuf_val, buf, len);
-		bcopy(result_1->des_ivec, dparms->des_ivec, 8);
+		memcpy(buf, result_1->desbuf.desbuf_val, len);
+		memcpy(dparms->des_ivec, result_1->des_ivec, 8);
 	}
 
 	clnt_freeres(clnt, (xdrproc_t)xdr_desresp, result_1);

@@ -61,10 +61,6 @@
 #if !HAVE_GETRPCBYNAME || !HAVE_GETRPCBYNUMBER || \
 	!HAVE_SETRPCENT || !HAVE_ENDRPCENT || !HAVE_GETRPCENT
 
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 /*
  * Internet version.
  */
@@ -104,7 +100,7 @@ _rpcdata()
 	return (d);
 }
 
-#if !HAVE_GETRPCBYNYMBER
+#if !HAVE_GETRPCBYNUMBER
 struct rpcent *
 getrpcbynumber(number)
 	int number;

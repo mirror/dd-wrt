@@ -90,6 +90,7 @@ rtime(addrp, timep, timeout)
 
 	/* TCP and UDP port are the same in this case */
 	if ((serv = getservbyname("time", "tcp")) == NULL) {
+		do_close(s);
 		return(-1);
 	}
 

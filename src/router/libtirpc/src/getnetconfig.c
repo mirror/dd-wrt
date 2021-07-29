@@ -681,6 +681,7 @@ struct netconfig	*ncp;
 {
     struct netconfig	*p;
     char	*tmp;
+    char	*t;
     u_int	i;
 
     if ((tmp=malloc(MAXNETCONFIGLINE)) == NULL)
@@ -700,20 +701,21 @@ struct netconfig	*ncp;
      */
     *p = *ncp;
     p->nc_netid = (char *)strcpy(tmp,ncp->nc_netid);
-    tmp = strchr(tmp, 0) + 1;
-    p->nc_protofmly = (char *)strcpy(tmp,ncp->nc_protofmly);
-    tmp = strchr(tmp, 0) + 1;
-    p->nc_proto = (char *)strcpy(tmp,ncp->nc_proto);
-    tmp = strchr(tmp, 0) + 1;
-    p->nc_device = (char *)strcpy(tmp,ncp->nc_device);
+    t = strchr(tmp, 0) + 1;
+    p->nc_protofmly = (char *)strcpy(t,ncp->nc_protofmly);
+    t = strchr(t, 0) + 1;
+    p->nc_proto = (char *)strcpy(t,ncp->nc_proto);
+    t = strchr(t, 0) + 1;
+    p->nc_device = (char *)strcpy(t,ncp->nc_device);
     p->nc_lookups = (char **)malloc((size_t)(p->nc_nlookups+1) * sizeof(char *));
     if (p->nc_lookups == NULL) {
-	free(p->nc_netid);
+	free(p);
+	free(tmp);
 	return(NULL);
     }
     for (i=0; i < p->nc_nlookups; i++) {
-    	tmp = strchr(tmp, 0) + 1;
-    	p->nc_lookups[i] = (char *)strcpy(tmp,ncp->nc_lookups[i]);
+	t = strchr(t, 0) + 1;
+	p->nc_lookups[i] = (char *)strcpy(t,ncp->nc_lookups[i]);
     }
     return(p);
 }

@@ -328,6 +328,8 @@ svc_dg_destroy(xprt)
 		(void) mem_free(xprt->xp_ltaddr.buf, xprt->xp_ltaddr.maxlen);
 	if (xprt->xp_tp)
 		(void) free(xprt->xp_tp);
+	if (xprt->xp_netid)
+		(void) free(xprt->xp_netid);
 	(void) mem_free(xprt, sizeof (SVCXPRT));
 }
 
