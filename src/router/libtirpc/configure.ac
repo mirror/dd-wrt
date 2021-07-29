@@ -1,4 +1,4 @@
-AC_INIT(libtirpc, 1.0.2)
+AC_INIT(libtirpc, 1.3.2)
 AM_INIT_AUTOMAKE([silent-rules])
 AM_SILENT_RULES([yes])
 AC_CONFIG_SRCDIR([src/auth_des.c])
@@ -51,6 +51,14 @@ if test "x$enable_gssapi" = xyes; then
 	GSSAPI_LIBS=`${KRB5_CONFIG} --libs gssapi`
 	AC_SUBST([GSSAPI_CFLAGS])
 	AC_SUBST([GSSAPI_LIBS])
+fi
+
+AC_ARG_ENABLE(authdes,
+	[AC_HELP_STRING([--enable-authdes], [Enable AUTH_DES support @<:@default=no@:>@])],
+      [],[enable_authdes=no])
+AM_CONDITIONAL(AUTHDES, test "x$enable_authdes" = xyes)
+if test "x$enable_authdes" != xno; then
+	AC_DEFINE(AUTHDES_SUPPORT, 1, [Define if AUTH_DES is support])
 fi
 
 AC_ARG_ENABLE(ipv6,

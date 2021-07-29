@@ -68,7 +68,7 @@ xdr_rpc_gss_buf(XDR *xdrs, gss_buffer_t buf, u_int maxsize)
 	if (xdr_stat && xdrs->x_op == XDR_DECODE)
 		buf->length = tmplen;
 
-	gss_log_debug("xdr_rpc_gss_buf: %s %s (%p:%d)",
+	gss_log_debug("xdr_rpc_gss_buf: %s %s (%p:%lu)",
 		      (xdrs->x_op == XDR_ENCODE) ? "encode" : "decode",
 		      (xdr_stat == TRUE) ? "success" : "failure",
 		      buf->value, buf->length);
@@ -88,7 +88,7 @@ xdr_rpc_gss_cred(XDR *xdrs, struct rpc_gss_cred *p)
 		    xdr_rpc_gss_buf(xdrs, &p->gc_ctx, MAX_AUTH_BYTES));
 
 	gss_log_debug("xdr_rpc_gss_cred: %s %s "
-		      "(v %d, proc %d, seq %d, svc %d, ctx %p:%d)",
+		      "(v %d, proc %d, seq %d, svc %d, ctx %p:%lu)",
 		      (xdrs->x_op == XDR_ENCODE) ? "encode" : "decode",
 		      (xdr_stat == TRUE) ? "success" : "failure",
 		      p->gc_v, p->gc_proc, p->gc_seq, p->gc_svc,
@@ -105,7 +105,7 @@ xdr_rpc_gss_init_args(XDR *xdrs, gss_buffer_desc *p)
 
 	xdr_stat = xdr_rpc_gss_buf(xdrs, p, maxlen);
 
-	gss_log_debug("xdr_rpc_gss_init_args: %s %s (token %p:%d)",
+	gss_log_debug("xdr_rpc_gss_init_args: %s %s (token %p:%lu)",
 		      (xdrs->x_op == XDR_ENCODE) ? "encode" : "decode",
 		      (xdr_stat == TRUE) ? "success" : "failure",
 		      p->value, p->length);
@@ -128,7 +128,7 @@ xdr_rpc_gss_init_res(XDR *xdrs, struct rpc_gss_init_res *p)
 		    xdr_rpc_gss_buf(xdrs, &p->gr_token, tok_maxlen));
 
 	gss_log_debug("xdr_rpc_gss_init_res %s %s "
-		      "(ctx %p:%d, maj %d, min %d, win %d, token %p:%d)",
+		      "(ctx %p:%lu, maj %d, min %d, win %d, token %p:%lu)",
 		      (xdrs->x_op == XDR_ENCODE) ? "encode" : "decode",
 		      (xdr_stat == TRUE) ? "success" : "failure",
 		      p->gr_ctx.value, p->gr_ctx.length,

@@ -38,6 +38,7 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include <arpa/inet.h>
 #include <rpc/types.h>
@@ -103,10 +104,12 @@ xdrstdio_getlong(xdrs, lp)
 	XDR *xdrs;
 	long *lp;
 {
+	int32_t mycopy;
 
-	if (fread(lp, sizeof(int32_t), 1, (FILE *)xdrs->x_private) != 1)
+	if (fread(&mycopy, sizeof(int32_t), 1, (FILE *)xdrs->x_private) != 1)
 		return (FALSE);
-	*lp = (long)ntohl((u_int32_t)*lp);
+
+	*lp = (long)ntohl(mycopy);
 	return (TRUE);
 }
 
@@ -115,8 +118,14 @@ xdrstdio_putlong(xdrs, lp)
 	XDR *xdrs;
 	const long *lp;
 {
-	long mycopy = (long)htonl((u_int32_t)*lp);
+	int32_t mycopy;
 
+#if defined(_LP64)
+	if ((*lp > UINT32_MAX) || (*lp < INT32_MIN))
+		return (FALSE);
+#endif
+
+	mycopy = (int32_t)htonl((int32_t)*lp);
 	if (fwrite(&mycopy, sizeof(int32_t), 1, (FILE *)xdrs->x_private) != 1)
 		return (FALSE);
 	return (TRUE);

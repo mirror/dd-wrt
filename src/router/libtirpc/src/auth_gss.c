@@ -207,6 +207,7 @@ authgss_create(CLIENT *clnt, gss_name_t name, struct rpc_gss_sec *sec)
 			rpc_createerr.cf_stat = RPC_SYSTEMERROR;
 			rpc_createerr.cf_error.re_errno = ENOMEM;
 			free(auth);
+			free(gd);
 			return (NULL);
 		}
 	}
@@ -476,7 +477,7 @@ _rpc_gss_refresh(AUTH *auth, rpc_gss_options_ret_t *options_ret)
 	for (;;) {
 		/* print the token we just received */
 		if (recv_tokenp != GSS_C_NO_BUFFER) {
-			gss_log_debug("The token we just received (length %d):",
+			gss_log_debug("The token we just received (length %lu):",
 				  recv_tokenp->length);
 			gss_log_hexdump(recv_tokenp->value, recv_tokenp->length, 0);
 		}
@@ -509,7 +510,7 @@ _rpc_gss_refresh(AUTH *auth, rpc_gss_options_ret_t *options_ret)
 			memset(&gr, 0, sizeof(gr));
 
 			/* print the token we are about to send */
-			gss_log_debug("The token being sent (length %d):",
+			gss_log_debug("The token being sent (length %lu):",
 				  send_token.length);
 			gss_log_hexdump(send_token.value, send_token.length, 0);
 
@@ -592,7 +593,7 @@ _rpc_gss_refresh(AUTH *auth, rpc_gss_options_ret_t *options_ret)
 			if (rpc_gss_oid_to_mech(actual_mech_type, &mechanism)) {
 				strncpy(options_ret->actual_mechanism,
 					mechanism,
-					sizeof(options_ret->actual_mechanism));
+					(sizeof(options_ret->actual_mechanism)-1));
 			}
 
 			gd->established = TRUE;
@@ -980,4 +981,10 @@ rpc_gss_max_data_length(AUTH *auth, int maxlen)
 			result = (int)max_input_size;
 	rpc_gss_clear_error();
 	return result;
+}
+
+bool_t
+is_authgss_client(CLIENT *clnt)
+{
+	return (clnt->cl_auth->ah_ops == &authgss_ops);
 }

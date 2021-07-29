@@ -877,7 +877,8 @@ xdr_int64_t(xdrs, llp)
 		if (XDR_GETLONG(xdrs, (long *)&ul[1]) == FALSE)
 			return (FALSE);
 		*llp = (int64_t)
-		    (((u_int64_t)ul[0] << 32) | ((u_int64_t)ul[1]));
+		    (((u_int64_t)ul[0] << 32) |
+		     ((u_int64_t)(ul[1]) & 0xffffffff));
 		return (TRUE);
 	case XDR_FREE:
 		return (TRUE);
@@ -910,7 +911,8 @@ xdr_u_int64_t(xdrs, ullp)
 		if (XDR_GETLONG(xdrs, (long *)&ul[1]) == FALSE)
 			return (FALSE);
 		*ullp = (u_int64_t)
-		    (((u_int64_t)ul[0] << 32) | ((u_int64_t)ul[1]));
+		    (((u_int64_t)ul[0] << 32) |
+		     ((u_int64_t)(ul[1]) & 0xffffffff));
 		return (TRUE);
 	case XDR_FREE:
 		return (TRUE);

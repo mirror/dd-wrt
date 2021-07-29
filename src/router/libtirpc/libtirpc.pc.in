@@ -7,6 +7,6 @@ Name: libtirpc
 Description: Transport Independent RPC Library
 Requires:
 Version: @PACKAGE_VERSION@
-Libs: -L@libdir@ -ltirpc
+Libs: -L${libdir} -ltirpc
 Libs.private: -lpthread
-Cflags: -I@includedir@/tirpc
+Cflags: -I${includedir}/tirpc

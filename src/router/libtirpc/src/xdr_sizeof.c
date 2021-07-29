@@ -39,6 +39,7 @@
 #include <rpc/xdr.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "un-namespace.h"
 
 /* ARGSUSED */

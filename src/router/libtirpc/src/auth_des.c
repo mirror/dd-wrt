@@ -396,7 +396,7 @@ authdes_validate(AUTH *auth, struct opaque_auth *rverf)
 	/*
 	 * validate
 	 */
-	if (bcmp((char *)&ad->ad_timestamp, (char *)&verf.adv_timestamp,
+	if (memcmp((char *)&ad->ad_timestamp, (char *)&verf.adv_timestamp,
 		 sizeof(struct timeval)) != 0) {
 		LIBTIRPC_DEBUG(1, ("authdes_validate: verifier mismatch"));
 		return (FALSE);
