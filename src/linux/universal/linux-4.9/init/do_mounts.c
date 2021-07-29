@@ -40,8 +40,8 @@ int __initdata rd_doload;	/* 1 = load RAM disk, 0 = don't load */
 int root_mountflags = MS_RDONLY | MS_SILENT;
 
 #ifdef CONFIG_X86
-int root_devices=28;
-char * __initdata root_device_name2[28]={"/dev/hda2",
+int root_devices=38;
+char * __initdata root_device_name2[38]={"/dev/hda2",
 					"/dev/hdb2",
 					"/dev/hdc2",
 					"/dev/hdd2", 
@@ -68,7 +68,18 @@ char * __initdata root_device_name2[28]={"/dev/hda2",
 					"/dev/sdx2", 
 					"/dev/sdy2", 
 					"/dev/sdz2", 
-					"/dev/mmcblk0p2"};
+					"/dev/mmcblk0p2",
+					"/dev/nvme0n1p2",
+					"/dev/nvme0n2p2",
+					"/dev/nvme0n3p2",
+					"/dev/nvme0n4p2",
+					"/dev/nvme0n5p2",
+					"/dev/nvme1n1p2",
+					"/dev/nvme1n2p2",
+					"/dev/nvme1n3p2",
+					"/dev/nvme1n4p2",
+					"/dev/nvme1n5p2",
+					};
 #define root_device_name root_device_name2[0]
 dev_t ROOT_DEV[13];
 #define BASE_ROOT ROOT_DEV[0]
