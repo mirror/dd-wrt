@@ -173,7 +173,7 @@ static inline bool ipv6_anycast_destination(const struct sk_buff *skb)
 
 int ip6_fragment(struct sk_buff *skb, int (*output)(struct sk_buff *));
 
-static inline int ip6_skb_dst_mtu(struct sk_buff *skb)
+static inline unsigned int ip6_skb_dst_mtu(struct sk_buff *skb)
 {
 	struct ipv6_pinfo *np = skb->sk && !dev_recursion_level() ?
 				inet6_sk(skb->sk) : NULL;
