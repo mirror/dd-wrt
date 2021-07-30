@@ -2047,6 +2047,7 @@ const struct address_space_operations ntfs_aops = {
 	.write_end = ntfs_write_end,
 	.direct_IO = ntfs_direct_IO,
 	.bmap = ntfs_bmap,
+	.set_page_dirty = __set_page_dirty_buffers,
 };
 
 const struct address_space_operations ntfs_aops_cmpr = {
