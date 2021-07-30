@@ -191,7 +191,7 @@ static inline bool ipv6_unicast_destination(const struct sk_buff *skb)
 
 int ip6_fragment(struct sk_buff *skb, int (*output)(struct sk_buff *));
 
-static inline int ip6_skb_dst_mtu(struct sk_buff *skb)
+static inline unsigned int ip6_skb_dst_mtu(struct sk_buff *skb)
 {
 	struct ipv6_pinfo *np = skb->sk ? inet6_sk(skb->sk) : NULL;
 
