@@ -76,6 +76,59 @@ out:
 #define APFS_CREATE_DSTREAM_REC_MAXOPS	1
 
 /**
+ * apfs_put_dstream_rec - Put a reference for an inode's data stream record
+ * @inode: the vfs inode
+ *
+ * Deletes the record if the reference count goes to zero. Returns 0 on success
+ * or a negative error code in case of failure.
+ */
+static int apfs_put_dstream_rec(struct inode *inode)
+{
+	struct super_block *sb = inode->i_sb;
+	struct apfs_sb_info *sbi = APFS_SB(sb);
+	struct apfs_inode_info *ai = APFS_I(inode);
+	struct apfs_key key;
+	struct apfs_query *query;
+	struct apfs_dstream_id_val raw_val;
+	void *raw = NULL;
+	u32 refcnt;
+	int ret;
+
+	apfs_init_dstream_id_key(ai->i_extent_id, &key);
+	query = apfs_alloc_query(sbi->s_cat_root, NULL /* parent */);
+	if (!query)
+		return -ENOMEM;
+	query->key = &key;
+	query->flags |= APFS_QUERY_CAT | APFS_QUERY_EXACT;
+
+	ret = apfs_btree_query(sb, &query);
+	if (ret) {
+		if (ret == -ENODATA)
+			ret = inode->i_size ? -EFSCORRUPTED : 0;
+		goto out;
+	}
+
+	if (query->len != sizeof(raw_val)) {
+		ret = -EFSCORRUPTED;
+		goto out;
+	}
+	raw = query->node->object.bh->b_data;
+	raw_val = *(struct apfs_dstream_id_val *)(raw + query->off);
+	refcnt = le32_to_cpu(raw_val.refcnt);
+
+	if (refcnt == 1) {
+		ret = apfs_btree_remove(query);
+		goto out;
+	}
+
+	raw_val.refcnt = cpu_to_le32(refcnt - 1);
+	ret = apfs_btree_replace(query, NULL /* key */, 0 /* key_len */, &raw_val, sizeof(raw_val));
+out:
+	apfs_free_query(sb, query);
+	return ret;
+}
+
+/**
  * apfs_create_crypto_rec - Create the crypto state record for an inode
  * @inode: the vfs inode
  *
@@ -302,6 +355,7 @@ static int apfs_write_begin(struct file *file, struct address_space *mapping,
 	pgoff_t index = pos >> PAGE_SHIFT;
 	sector_t iblock = (sector_t)index << (PAGE_SHIFT - inode->i_blkbits);
 	int blkcount = (len + sb->s_blocksize - 1) >> inode->i_blkbits;
+	loff_t i_blks_end;
 	struct apfs_max_ops maxops;
 	int err;
 
@@ -337,8 +391,16 @@ static int apfs_write_begin(struct file *file, struct address_space *mapping,
 	/* CoW moves existing blocks, so read them but mark them as unmapped */
 	head = page_buffers(page);
 	blocksize = head->b_size;
-	from = pos & (PAGE_SIZE - 1);
-	to = from + min(inode->i_size - pos, (loff_t)len);
+	i_blks_end = (inode->i_size + sb->s_blocksize - 1) >> inode->i_blkbits;
+	i_blks_end <<= inode->i_blkbits;
+	if (i_blks_end >= pos) {
+		from = pos & (PAGE_SIZE - 1);
+		to = from + min(i_blks_end - pos, (loff_t)len);
+	} else {
+		/* TODO: deal with preallocated tail blocks */
+		from = UINT_MAX;
+		to = 0;
+	}
 	for (bh = head, block_start = 0; bh != head || !block_start;
 	     block_start = block_end, bh = bh->b_this_page, ++iblock) {
 		block_end = block_start + blocksize;
@@ -349,7 +411,7 @@ static int apfs_write_begin(struct file *file, struct address_space *mapping,
 				if (err)
 					goto out_put_page;
 			}
-			if (!buffer_uptodate(bh)) {
+			if (buffer_mapped(bh) && !buffer_uptodate(bh)) {
 				get_bh(bh);
 				lock_buffer(bh);
 				bh->b_end_io = end_buffer_read_sync;
@@ -522,7 +584,6 @@ static int apfs_inode_from_query(struct apfs_query *query, struct inode *inode)
 	bsd_flags = le32_to_cpu(inode_val->bsd_flags);
 	if ((bsd_flags & APFS_INOBSD_COMPRESSED) && !S_ISDIR(inode->i_mode)) {
 		if (!apfs_compress_get_size(inode, &inode->i_size)) {
-			/* TODO: correct block calculation in general */
 			inode->i_blocks = (inode->i_size + 511) >> 9;
 			compressed = true;
 		}
@@ -536,6 +597,16 @@ static int apfs_inode_from_query(struct apfs_query *query, struct inode *inode)
 			inode->i_size = le64_to_cpu(dstream->size);
 			inode->i_blocks = le64_to_cpu(dstream->alloced_size) >> 9;
 		}
+	}
+	xval = NULL;
+
+	/* TODO: move each xfield read to its own function */
+	ai->i_sparse_bytes = 0;
+	xlen = apfs_find_xfield(inode_val->xfields, query->len - sizeof(*inode_val), APFS_INO_EXT_TYPE_SPARSE_BYTES, &xval);
+	if (xlen >= sizeof(__le64)) {
+		__le64 *sparse_bytes_p = (__le64 *)xval;
+
+		ai->i_sparse_bytes = le64_to_cpup(sparse_bytes_p);
 	}
 	xval = NULL;
 
@@ -754,12 +825,13 @@ static int apfs_build_inode_val(struct inode *inode, struct qstr *qname,
 	struct apfs_inode_val *val;
 	struct apfs_x_field xkey;
 	int total_xlen, val_len;
-	__le32 rdev = cpu_to_le32(inode->i_rdev);
+	bool is_device = S_ISCHR(inode->i_mode) || S_ISBLK(inode->i_mode);
+	__le32 rdev;
 
 	/* The only required xfield is the name, and the id if it's a device */
 	total_xlen = sizeof(struct apfs_xf_blob);
 	total_xlen += sizeof(xkey) + round_up(qname->len + 1, 8);
-	if (inode->i_rdev)
+	if (is_device)
 		total_xlen += sizeof(xkey) + round_up(sizeof(rdev), 8);
 
 	val_len = sizeof(*val) + total_xlen;
@@ -788,7 +860,8 @@ static int apfs_build_inode_val(struct inode *inode, struct qstr *qname,
 	xkey.x_flags = APFS_XF_DO_NOT_COPY;
 	xkey.x_size = cpu_to_le16(qname->len + 1);
 	apfs_insert_xfield(val->xfields, total_xlen, &xkey, qname->name);
-	if (inode->i_rdev) {
+	if (is_device) {
+		rdev = cpu_to_le32(inode->i_rdev);
 		xkey.x_type = APFS_INO_EXT_TYPE_RDEV;
 		xkey.x_flags = 0; /* TODO: proper flags here? */
 		xkey.x_size = cpu_to_le16(sizeof(rdev));
@@ -853,6 +926,20 @@ fail:
 #define APFS_INODE_RENAME_MAXOPS	1
 
 /**
+ * apfs_alloced_size - Return the alloced size for an inode's dstream
+ * @inode: the vfs inode
+ *
+ * TODO: is this always correct? Or could the extents have an unused tail?
+ */
+static inline u64 apfs_alloced_size(struct inode *inode)
+{
+	struct super_block *sb = inode->i_sb;
+	u64 blks = (inode->i_size + sb->s_blocksize - 1) >> inode->i_blkbits;
+
+	return blks << inode->i_blkbits;
+}
+
+/**
  * apfs_create_dstream_xfield - Create the inode xfield for a new data stream
  * @inode:	the in-memory inode
  * @query:	the query that found the inode record
@@ -879,7 +966,7 @@ static int apfs_create_dstream_xfield(struct inode *inode,
 	memcpy(new_val, raw + query->off, query->len);
 
 	dstream.size = cpu_to_le64(inode->i_size);
-	dstream.alloced_size = cpu_to_le64(inode->i_blocks << 9);
+	dstream.alloced_size = cpu_to_le64(apfs_alloced_size(inode));
 	if(apfs_vol_is_encrypted(inode->i_sb))
 		dstream.default_crypto_id = cpu_to_le64(ai->i_extent_id);
 
@@ -943,13 +1030,101 @@ static int apfs_inode_resize(struct inode *inode, struct apfs_query *query)
 
 		/* TODO: count bytes read and written */
 		dstream->size = cpu_to_le64(inode->i_size);
-		dstream->alloced_size = cpu_to_le64(inode->i_blocks << 9);
+		dstream->alloced_size = cpu_to_le64(apfs_alloced_size(inode));
 		return 0;
 	}
 	/* This inode has no dstream xfield, so we need to create it */
 	return apfs_create_dstream_xfield(inode, query);
 }
 #define APFS_INODE_RESIZE_MAXOPS	(1 + APFS_CREATE_DSTREAM_XFIELD_MAXOPS)
+
+/**
+ * apfs_create_sparse_xfield - Create an inode xfield to count sparse bytes
+ * @inode:	the in-memory inode
+ * @query:	the query that found the inode record
+ *
+ * Returns 0 on success, or a negative error code in case of failure.
+ */
+static int apfs_create_sparse_xfield(struct inode *inode, struct apfs_query *query)
+{
+	char *raw = query->node->object.bh->b_data;
+	struct apfs_inode_val *new_val;
+	__le64 sparse_bytes;
+	struct apfs_x_field xkey;
+	struct apfs_inode_info *ai = APFS_I(inode);
+	int xlen;
+	int buflen;
+	int err;
+
+	buflen = query->len;
+	buflen += sizeof(struct apfs_x_field) + sizeof(sparse_bytes);
+	new_val = kzalloc(buflen, GFP_KERNEL);
+	if (!new_val)
+		return -ENOMEM;
+	memcpy(new_val, raw + query->off, query->len);
+
+	sparse_bytes = cpu_to_le64(ai->i_sparse_bytes);
+
+	/* TODO: can we assume that all inode records have an xfield blob? */
+	xkey.x_type = APFS_INO_EXT_TYPE_SPARSE_BYTES;
+	xkey.x_flags = APFS_XF_SYSTEM_FIELD | APFS_XF_CHILDREN_INHERIT;
+	xkey.x_size = cpu_to_le16(sizeof(sparse_bytes));
+	xlen = apfs_insert_xfield(new_val->xfields, buflen - sizeof(*new_val), &xkey, &sparse_bytes);
+	if (!xlen) {
+		/* Buffer has enough space, but the metadata claims otherwise */
+		apfs_alert(inode->i_sb, "bad xfields on inode 0x%llx", apfs_ino(inode));
+		err = -EFSCORRUPTED;
+		goto fail;
+	}
+
+	/* Just remove the old record and create a new one */
+	err = apfs_btree_replace(query, NULL /* key */, 0 /* key_len */, new_val, sizeof(*new_val) + xlen);
+
+fail:
+	kfree(new_val);
+	return err;
+}
+
+/**
+ * apfs_inode_resize_sparse - Update sparse byte count reported in inode record
+ * @inode:	the in-memory inode
+ * @query:	the query that found the inode record
+ *
+ * Returns 0 on success, or a negative error code in case of failure.
+ */
+static int apfs_inode_resize_sparse(struct inode *inode, struct apfs_query *query)
+{
+	struct apfs_inode_info *ai = APFS_I(inode);
+	char *raw;
+	struct apfs_inode_val *inode_raw;
+	char *xval;
+	int xlen;
+	int err;
+
+	err = apfs_query_join_transaction(query);
+	if (err)
+		return err;
+	raw = query->node->object.bh->b_data;
+	inode_raw = (void *)raw + query->off;
+
+	xlen = apfs_find_xfield(inode_raw->xfields,
+				query->len - sizeof(*inode_raw),
+				APFS_INO_EXT_TYPE_SPARSE_BYTES, &xval);
+	if (!xlen && !ai->i_sparse_bytes)
+		return 0;
+
+	if (xlen) {
+		__le64 *sparse_bytes_p;
+
+		if (xlen != sizeof(*sparse_bytes_p))
+			return -EFSCORRUPTED;
+		sparse_bytes_p = (__le64 *)xval;
+
+		*sparse_bytes_p = cpu_to_le64(ai->i_sparse_bytes);
+		return 0;
+	}
+	return apfs_create_sparse_xfield(inode, query);
+}
 
 /**
  * apfs_update_inode - Update an existing inode record
@@ -973,11 +1148,16 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	if (IS_ERR(query))
 		return PTR_ERR(query);
 
+	/* TODO: copy the record to memory and make all xfield changes there */
 	err = apfs_inode_rename(inode, new_name, query);
 	if (err)
 		goto fail;
 
 	err = apfs_inode_resize(inode, query);
+	if (err)
+		goto fail;
+
+	err = apfs_inode_resize_sparse(inode, query);
 	if (err)
 		goto fail;
 
@@ -1038,8 +1218,17 @@ static int apfs_delete_inode(struct inode *inode)
 	struct apfs_query *query;
 	int ret;
 
-	if (inode->i_size || inode->i_blocks) /* TODO: implement truncation */
-		return -EOPNOTSUPP;
+	ret = apfs_delete_all_xattrs(inode);
+	if (ret)
+		return ret;
+
+	ret = apfs_truncate(inode, 0 /* new_size */);
+	if (ret)
+		return ret;
+
+	ret = apfs_put_dstream_rec(inode);
+	if (ret)
+		return ret;
 
 	query = apfs_inode_lookup(inode);
 	if (IS_ERR(query))
@@ -1158,6 +1347,7 @@ struct inode *apfs_new_inode(struct inode *dir, umode_t mode, dev_t rdev)
 	else
 		ai->i_key_class = 0;
 	ai->i_int_flags = APFS_INODE_NO_RSRC_FORK;
+	ai->i_sparse_bytes = 0;
 
 	now = current_time(inode);
 	inode->i_atime = inode->i_mtime = inode->i_ctime = ai->i_crtime = now;
@@ -1236,6 +1426,34 @@ int APFS_CREATE_INODE_REC_MAXOPS(void)
 	return 1;
 }
 
+/**
+ * apfs_setsize - Change the size of a regular file
+ * @inode:	the vfs inode
+ * @new_size:	the new size
+ *
+ * Returns 0 on success or a negative error code in case of failure.
+ */
+static int apfs_setsize(struct inode *inode, loff_t new_size)
+{
+	int err;
+
+	if (new_size == inode->i_size)
+		return 0;
+	inode->i_mtime = inode->i_ctime = current_time(inode);
+
+	err = apfs_create_dstream_rec(inode);
+	if (err)
+		return err;
+
+	/* Must be called before i_size is changed */
+	err = apfs_truncate(inode, new_size);
+	if (err)
+		return err;
+
+	truncate_setsize(inode, new_size);
+	return 0;
+}
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
 int apfs_setattr(struct dentry *dentry, struct iattr *iattr)
 #else
@@ -1248,16 +1466,12 @@ int apfs_setattr(struct user_namespace *mnt_userns,
 	struct apfs_max_ops maxops;
 	int err;
 
-	if (iattr->ia_valid & ATTR_SIZE && iattr->ia_size != inode->i_size)
-		return -EOPNOTSUPP; /* TODO: implement truncation */
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
-	err = simple_setattr(dentry, iattr);
+	err = setattr_prepare(dentry, iattr);
 #else
-	err = simple_setattr(mnt_userns, dentry, iattr);
+	err = setattr_prepare(&init_user_ns, dentry, iattr);
 #endif
-
-	if(err)
+	if (err)
 		return err;
 
 	maxops.cat = APFS_UPDATE_INODE_MAXOPS();
@@ -1267,9 +1481,56 @@ int apfs_setattr(struct user_namespace *mnt_userns,
 	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
+
+	if (S_ISREG(inode->i_mode) && (iattr->ia_valid & ATTR_SIZE)) {
+		err = apfs_setsize(inode, iattr->ia_size);
+		if (err)
+			goto fail;
+	}
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+	setattr_copy(inode, iattr);
+#else
+	setattr_copy(&init_user_ns, inode, iattr);
+#endif
+
+	mark_inode_dirty(inode);
 	err = apfs_update_inode(inode, NULL /* new_name */);
 	if (err)
 		goto fail;
+
+	err = apfs_transaction_commit(sb);
+	if (err)
+		goto fail;
+	return 0;
+
+fail:
+	apfs_transaction_abort(sb);
+	return err;
+}
+
+/* TODO: this only seems to be necessary because ->write_inode() isn't firing */
+int apfs_update_time(struct inode *inode, struct timespec64 *time, int flags)
+{
+	struct super_block *sb = inode->i_sb;
+	struct apfs_max_ops maxops;
+	int err;
+
+	maxops.cat = APFS_UPDATE_INODE_MAXOPS();
+	maxops.blks = 0;
+
+	err = apfs_transaction_start(sb, maxops);
+	if (err)
+		return err;
+
+	err = generic_update_time(inode, time, flags);
+	if (err)
+		goto fail;
+
+	err = apfs_update_inode(inode, NULL /* new_name */);
+	if (err)
+		goto fail;
+
 	err = apfs_transaction_commit(sb);
 	if (err)
 		goto fail;
