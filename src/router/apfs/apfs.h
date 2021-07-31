@@ -19,14 +19,6 @@
 #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
 #define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0) /* SB_RDONLY came in 4.14 */
-static inline void discard_new_inode(struct inode *inode)
-{
-	unlock_new_inode(inode);
-	iput(inode);
-}
-#endif
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0) /* SB_RDONLY came in 4.14 */
 #define SB_RDONLY MS_RDONLY
 #define SB_ACTIVE MS_ACTIVE
@@ -740,7 +732,7 @@ extern int apfs_setattr(struct user_namespace *mnt_userns,
 			struct dentry *dentry, struct iattr *iattr);
 #endif
 
-extern int apfs_update_time(struct inode *inode, struct timespec64 *time, int flags);
+extern int apfs_update_time(struct inode *inode, struct timespec *time, int flags);
 long apfs_dir_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 long apfs_file_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 
