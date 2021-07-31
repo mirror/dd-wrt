@@ -1510,7 +1510,7 @@ fail:
 }
 
 /* TODO: this only seems to be necessary because ->write_inode() isn't firing */
-int apfs_update_time(struct inode *inode, struct timespec64 *time, int flags)
+int apfs_update_time(struct inode *inode, struct timespec *time, int flags)
 {
 	struct super_block *sb = inode->i_sb;
 	struct apfs_max_ops maxops;
