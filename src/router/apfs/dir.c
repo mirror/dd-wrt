@@ -598,6 +598,16 @@ static void apfs_undo_create_dentry(struct dentry *dentry)
 	--APFS_I(parent)->i_nchildren;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+
+static inline void discard_new_inode(struct inode *inode)
+{
+	unlock_new_inode(inode);
+	iput(inode);
+}
+
+#endif
+
 int apfs_mkany(struct inode *dir, struct dentry *dentry, umode_t mode,
 	       dev_t rdev, const char *symname)
 {
@@ -1282,6 +1292,9 @@ int apfs_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
 	struct inode *new_inode = d_inode(new_dentry);
 	struct apfs_max_ops maxops;
 	int err;
+
+	if (new_inode && APFS_I(new_inode)->i_nchildren)
+		return -ENOTEMPTY;
 
 	if (flags & ~RENAME_NOREPLACE) /* TODO: support RENAME_EXCHANGE */
 		return -EINVAL;
