@@ -556,11 +556,7 @@ static int cake_set_ce(struct sk_buff *skb)
 		    skb_try_make_writable(skb, wlen))
 			return 0;
 
-#if KERNEL_VERSION(3, 18, 0) > LINUX_VERSION_CODE
-		return IP6_ECN_set_ce(ipv6_hdr(skb));
-#else
 		return IP6_ECN_set_ce(skb, ipv6_hdr(skb));
-#endif
 
 
 	default:
