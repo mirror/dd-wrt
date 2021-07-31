@@ -297,6 +297,8 @@ int apfs_delete_node(struct apfs_query *query)
 	u64 bno = node->object.block_nr;
 	int err;
 
+	ASSERT(query->parent);
+
 	/*
 	 * For ephemeral nodes, it's important to do this before actually
 	 * deleting the node, because that involves moving blocks around.
@@ -307,7 +309,7 @@ int apfs_delete_node(struct apfs_query *query)
 
 	switch (query->flags & APFS_QUERY_TREE_MASK) {
 	case APFS_QUERY_CAT:
-		err = apfs_free_queue_insert(sb, bno);
+		err = apfs_free_queue_insert(sb, bno, 1);
 		if (err)
 			return err;
 		err = apfs_delete_omap_rec(sb, oid);
@@ -318,7 +320,8 @@ int apfs_delete_node(struct apfs_query *query)
 		le64_add_cpu(&vsb_raw->apfs_fs_alloc_count, -1);
 		return 0;
 	case APFS_QUERY_OMAP:
-		err = apfs_free_queue_insert(sb, bno);
+	case APFS_QUERY_EXTENTREF:
+		err = apfs_free_queue_insert(sb, bno, 1);
 		if (err)
 			return err;
 		/* We don't write to the container's omap */
@@ -335,6 +338,7 @@ int apfs_delete_node(struct apfs_query *query)
 			return err;
 		return 0;
 	default:
+		apfs_debug(sb, "new query type must implement node deletion");
 		return -EOPNOTSUPP;
 	}
 }
@@ -977,24 +981,23 @@ static int apfs_attach_child(struct apfs_query *query, struct apfs_node *child)
 int apfs_node_split(struct apfs_query *query)
 {
 	struct super_block *sb = query->node->object.sb;
-	struct apfs_node *old_node, *new_node;
-	struct apfs_btree_node_phys *old_raw, *new_raw;
+	struct apfs_node *old_node;
+	struct apfs_btree_node_phys *old_raw;
 	char *buffer = NULL;
 	struct apfs_node buf_node;
 	struct buffer_head buf_bh;
 	u32 storage = apfs_query_storage(query);
-	int record_count;
+	int record_count, new_rec_count, old_rec_count;
 	int err;
 
 	if (apfs_node_is_root(query->node)) {
 		err = apfs_btree_inc_height(query);
 		if (err)
 			return err;
+	} else if (!query->parent) {
+		return -EFSCORRUPTED;
 	}
 	old_node = query->node;
-
-	/* Do this first, or node splits may cause @query->parent to be gone */
-	apfs_btree_change_node_count(query->parent, 1 /* change */);
 
 	old_raw = (void *)old_node->object.bh->b_data;
 	apfs_assert_in_transaction(sb, &old_raw->btn_o);
@@ -1013,59 +1016,76 @@ int apfs_node_split(struct apfs_query *query)
 	buf_node = *old_node;
 	buf_node.object.bh = &buf_bh;
 
-	/* The first half of the records go in the original node */
-	record_count = old_node->records; /* TODO: what if record_count == 1? */
+	/*
+	 * The first half of the records go in the original node. If there's
+	 * only one record, just defragment the node and don't split anything;
+	 * this approach will probably not work for huge inline xattrs (TODO).
+	 */
+	record_count = old_node->records;
+	new_rec_count = record_count / 2;
+	old_rec_count = record_count - new_rec_count;
 	old_node->records = 0;
 	old_node->key_free_list_len = 0;
 	old_node->val_free_list_len = 0;
-	err = apfs_copy_record_range(old_node, &buf_node, 0, record_count / 2);
+	err = apfs_copy_record_range(old_node, &buf_node, 0, old_rec_count);
 	if (err)
-		goto out_free_buffer;
+		goto out;
 	apfs_update_node(old_node);
 
 	/* The second half is copied to a new node */
-	new_node = apfs_create_node(sb, storage);
-	if (IS_ERR(new_node)) {
-		err = PTR_ERR(new_node);
-		goto out_free_buffer;
-	}
-	new_node->tree_type = old_node->tree_type;
-	new_node->flags = old_node->flags;
-	new_node->records = 0;
-	new_node->key_free_list_len = 0;
-	new_node->val_free_list_len = 0;
-	err = apfs_copy_record_range(new_node, &buf_node, record_count / 2,
-				     record_count);
-	if (err)
-		goto out_put_node;
-	new_raw = (void *)new_node->object.bh->b_data;
-	apfs_assert_in_transaction(sb, &new_raw->btn_o);
-	new_raw->btn_level = old_raw->btn_level;
-	apfs_update_node(new_node);
+	if (new_rec_count != 0) {
+		struct apfs_node *new_node;
+		struct apfs_btree_node_phys *new_raw;
 
-	err = apfs_attach_child(query->parent, new_node);
-	apfs_free_query(sb, query->parent);
-	query->parent = NULL; /* The caller only gets the leaf */
-	if (err)
-		goto out_put_node;
+		apfs_btree_change_node_count(query->parent, 1 /* change */);
 
-	/* Point the query back to the original record */
-	if (query->index >= record_count / 2) {
-		/* The record got moved to the new node */
-		apfs_node_put(query->node);
-		apfs_node_get(new_node);
-		query->node = new_node;
-		query->index -= record_count / 2;
+		new_node = apfs_create_node(sb, storage);
+		if (IS_ERR(new_node)) {
+			err = PTR_ERR(new_node);
+			goto out;
+		}
+		new_node->tree_type = old_node->tree_type;
+		new_node->flags = old_node->flags;
+		new_node->records = 0;
+		new_node->key_free_list_len = 0;
+		new_node->val_free_list_len = 0;
+		err = apfs_copy_record_range(new_node, &buf_node, old_rec_count, record_count);
+		if (err) {
+			apfs_node_put(new_node);
+			goto out;
+		}
+		new_raw = (void *)new_node->object.bh->b_data;
+		apfs_assert_in_transaction(sb, &new_raw->btn_o);
+		new_raw->btn_level = old_raw->btn_level;
+		apfs_update_node(new_node);
+
+		err = apfs_attach_child(query->parent, new_node);
+		apfs_free_query(sb, query->parent);
+		query->parent = NULL; /* The caller only gets the leaf */
+		if (err) {
+			apfs_node_put(new_node);
+			goto out;
+		}
+
+		/* Point the query back to the original record */
+		if (query->index >= old_rec_count) {
+			/* The record got moved to the new node */
+			apfs_node_put(query->node);
+			apfs_node_get(new_node);
+			query->node = new_node;
+			query->index -= old_rec_count;
+		}
+
+		apfs_node_put(new_node);
 	}
+
 	/* Updating these fields isn't really necessary, but it's cleaner */
 	query->len = apfs_node_locate_data(query->node, query->index,
 					   &query->off);
 	query->key_len = apfs_node_locate_key(query->node, query->index,
 					      &query->key_off);
 
-out_put_node:
-	apfs_node_put(new_node);
-out_free_buffer:
+out:
 	kfree(buffer);
 	return err;
 }
@@ -1244,9 +1264,9 @@ static int apfs_node_free_list_alloc(struct apfs_node *node, u16 len, bool value
 		if (curr_len >= len) {
 			if (abs_off + curr_len > sb->s_blocksize)
 				return -EFSCORRUPTED;
+			*list_len -= curr_len;
 			apfs_node_free_list_unlink(prev, curr);
 			apfs_node_free_list_add(node, abs_off + len, curr_len - len);
-			*list_len -= len;
 			return abs_off;
 		}
 

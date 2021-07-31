@@ -474,6 +474,87 @@ void apfs_btree_change_node_count(struct apfs_query *query, int change)
 }
 
 /**
+ * apfs_query_refresh - Recreate a catalog query invalidated by node splits
+ * @old_query: the catalog query to refresh
+ *
+ * On success, @old_query is left pointing to the same leaf record, but with
+ * valid ancestor queries as well. Returns a negative error code in case of
+ * failure, or 0 on success.
+ */
+static int apfs_query_refresh(struct apfs_query *old_query)
+{
+	struct apfs_node *node = old_query->node;
+	struct super_block *sb = node->object.sb;
+	char *raw = node->object.bh->b_data;
+	struct apfs_query *new_query, *ancestor;
+	struct apfs_key new_key;
+	bool hashed = apfs_is_normalization_insensitive(sb);
+	int err = 0;
+
+	/*
+	 * This function is for handling multiple splits of the same node,
+	 * which are only expected when large inline xattr values are involved.
+	 */
+	if ((old_query->flags & APFS_QUERY_TREE_MASK) != APFS_QUERY_CAT) {
+		apfs_warn(sb, "attempt to refresh a non-catalog query");
+		return -EFSCORRUPTED;
+	}
+	if (!apfs_node_is_leaf(node)) {
+		apfs_warn(sb, "attempt to refresh a non-leaf query");
+		return -EFSCORRUPTED;
+	}
+
+	/* Build a new query that points exactly to the same key */
+	err = apfs_read_cat_key(raw + old_query->key_off, old_query->key_len, &new_key, hashed);
+	if (err)
+		return err;
+	new_query = apfs_alloc_query(APFS_SB(sb)->s_cat_root, NULL /* parent */);
+	if (!new_query)
+		return -ENOMEM;
+	new_query->key = &new_key;
+	new_query->flags = APFS_QUERY_CAT | APFS_QUERY_EXACT;
+
+	err = apfs_btree_query(sb, &new_query);
+	if (err)
+		goto fail;
+
+	/* Set the original query flags and key on the new query */
+	for (ancestor = new_query; ancestor; ancestor = ancestor->parent) {
+		ancestor->flags = old_query->flags;
+		ancestor->key = old_query->key;
+	}
+
+	/* Replace the parent of the original query with the new valid one */
+	apfs_free_query(sb, old_query->parent);
+	old_query->parent = new_query->parent;
+	new_query->parent = NULL;
+
+fail:
+	apfs_free_query(sb, new_query);
+	return err;
+}
+
+/**
+ * apfs_query_is_orphan - Check if all of a query's ancestors are set
+ * @query: the query to check
+ *
+ * A query may lose some of its ancestors during a node split. This can be
+ * used to check if that has happened.
+ *
+ * TODO: running this check early on the insert, remove and replace functions
+ * could be used to simplify several callers that do their own query refresh.
+ */
+static bool apfs_query_is_orphan(const struct apfs_query *query)
+{
+	while (query) {
+		if (apfs_node_is_root(query->node))
+			return false;
+		query = query->parent;
+	}
+	return true;
+}
+
+/**
  * apfs_btree_insert - Insert a new record into a b-tree
  * @query:	query run to search for the record
  * @key:	on-disk record key
@@ -489,6 +570,7 @@ int apfs_btree_insert(struct apfs_query *query, void *key, int key_len,
 		      void *val, int val_len)
 {
 	struct apfs_node *node = query->node;
+	struct super_block *sb = node->object.sb;
 	struct apfs_btree_node_phys *node_raw;
 	int err;
 
@@ -508,6 +590,15 @@ again:
 
 	err = apfs_node_insert(query, key, key_len, val, val_len);
 	if (err == -ENOSPC) {
+		if (!query->parent && !apfs_node_is_root(node)) {
+			if (node->records == 1) {
+				apfs_warn(sb, "huge inline xattr fills a node");
+				return -EOPNOTSUPP;
+			}
+			err = apfs_query_refresh(query);
+			if (err)
+				return err;
+		}
 		err = apfs_node_split(query);
 		if (err)
 			return err;
@@ -552,9 +643,16 @@ int apfs_btree_remove(struct apfs_query *query)
 	node_raw = (void *)query->node->object.bh->b_data;
 	apfs_assert_in_transaction(node->object.sb, &node_raw->btn_o);
 
-	if (node->records == 1)
-		/* Just get rid of the node.  TODO: update the node heights? */
-		return apfs_delete_node(query);
+	if (node->records == 1) {
+		if (query->parent) {
+			/* Just get rid of the node */
+			return apfs_delete_node(query);
+		} else {
+			/* All descendants are gone, root is the whole tree */
+			node_raw->btn_level = 0;
+			node->flags |= APFS_BTNODE_LEAF;
+		}
+	}
 
 	/* The first key in a node must match the parent record's */
 	if (query->parent && query->index == 0) {
@@ -625,9 +723,15 @@ int apfs_btree_replace(struct apfs_query *query, void *key, int key_len,
 	ASSERT(key || val);
 
 	/* Do this first, or node splits may cause @query->parent to be gone */
-	if (apfs_node_is_leaf(node))
+	if (apfs_node_is_leaf(node)) {
+		if (apfs_query_is_orphan(query)) {
+			err = apfs_query_refresh(query);
+			if (err)
+				return err;
+		}
 		apfs_btree_change_rec_count(query, 0 /* change */,
 					    key_len, val_len);
+	}
 
 	err = apfs_query_join_transaction(query);
 	if (err)
@@ -648,6 +752,15 @@ again:
 
 	err = apfs_node_replace(query, key, key_len, val, val_len);
 	if (err == -ENOSPC) {
+		if (!query->parent && !apfs_node_is_root(node)) {
+			if (node->records == 1) {
+				apfs_warn(sb, "huge inline xattr fills a node");
+				return -EOPNOTSUPP;
+			}
+			err = apfs_query_refresh(query);
+			if (err)
+				return err;
+		}
 		err = apfs_node_split(query);
 		if (err)
 			return err;

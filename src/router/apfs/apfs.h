@@ -36,6 +36,10 @@ static inline bool sb_rdonly(const struct super_block *sb) { return sb->s_flags 
 
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 0)
+#define lockdep_assert_held_write(l)	((void)(l))
+#endif
+
 #define APFS_IOC_SET_DFLT_PFK	_IOW('@', 0x80, struct apfs_wrapped_crypto_state)
 #define APFS_IOC_SET_DIR_CLASS	_IOW('@', 0x81, u32)
 #define APFS_IOC_SET_PFK	_IOW('@', 0x82, struct apfs_wrapped_crypto_state)
@@ -456,6 +460,26 @@ static inline void apfs_key_set_hdr(u64 type, u64 id, void *key)
 	hdr->obj_id_and_type = cpu_to_le64(id | type << APFS_OBJ_TYPE_SHIFT);
 }
 
+/**
+ * apfs_cat_type - Read the record type of a catalog key
+ * @key: the raw catalog key
+ */
+static inline int apfs_cat_type(struct apfs_key_header *key)
+{
+	return (le64_to_cpu(key->obj_id_and_type) & APFS_OBJ_TYPE_MASK) >> APFS_OBJ_TYPE_SHIFT;
+}
+
+/**
+ * apfs_cat_cnid - Read the cnid value on a catalog key
+ * @key: the raw catalog key
+ *
+ * TODO: rename this function, since it's not just for the catalog anymore
+ */
+static inline u64 apfs_cat_cnid(struct apfs_key_header *key)
+{
+	return le64_to_cpu(key->obj_id_and_type) & APFS_OBJ_ID_MASK;
+}
+
 /* Flags for the query structure */
 #define APFS_QUERY_TREE_MASK	0017	/* Which b-tree we query */
 #define APFS_QUERY_OMAP		0001	/* This is a b-tree object map query */
@@ -518,6 +542,16 @@ struct apfs_file_extent {
 };
 
 /*
+ * Physical extent record data in memory
+ */
+struct apfs_phys_extent {
+	u64 bno;
+	u64 blkcount;
+	u64 len;	/* In bytes */
+	u32 refcnt;
+};
+
+/*
  * APFS inode data in memory
  */
 struct apfs_inode_info {
@@ -533,6 +567,7 @@ struct apfs_inode_info {
 	gid_t			i_saved_gid;	 /* Group ID on disk */
 	u32			i_key_class;	 /* Security class for directory */
 	u64			i_int_flags;	 /* Internal flags */
+	u64			i_sparse_bytes;	 /* Sparse byte count in file */
 
 	struct inode vfs_inode;
 };
@@ -685,6 +720,7 @@ extern int apfs_flush_extent_cache(struct inode *inode);
 extern int apfs_get_new_block(struct inode *inode, sector_t iblock,
 			      struct buffer_head *bh_result, int create);
 extern int APFS_GET_NEW_BLOCK_MAXOPS(void);
+extern int apfs_truncate(struct inode *inode, loff_t new_size);
 
 /* inode.c */
 extern struct inode *apfs_iget(struct super_block *sb, u64 cnid);
@@ -704,6 +740,7 @@ extern int apfs_setattr(struct user_namespace *mnt_userns,
 			struct dentry *dentry, struct iattr *iattr);
 #endif
 
+extern int apfs_update_time(struct inode *inode, struct timespec64 *time, int flags);
 long apfs_dir_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 long apfs_file_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 
@@ -766,7 +803,7 @@ extern struct buffer_head *apfs_read_object_block(struct super_block *sb,
 
 /* spaceman.c */
 extern int apfs_read_spaceman(struct super_block *sb);
-extern int apfs_free_queue_insert(struct super_block *sb, u64 bno);
+extern int apfs_free_queue_insert(struct super_block *sb, u64 bno, u64 count);
 extern int apfs_spaceman_allocate_block(struct super_block *sb, u64 *bno, bool backwards);
 
 /* super.c */
@@ -790,6 +827,7 @@ extern int __apfs_xattr_get(struct inode *inode, const char *name, void *buffer,
 			    size_t size);
 extern int apfs_xattr_get(struct inode *inode, const char *name, void *buffer,
 			  size_t size);
+extern int apfs_delete_all_xattrs(struct inode *inode);
 extern int apfs_xattr_set(struct inode *inode, const char *name, const void *value,
 			  size_t size, int flags);
 extern int APFS_XATTR_SET_MAXOPS(void);
