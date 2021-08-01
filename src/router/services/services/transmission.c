@@ -45,7 +45,7 @@ struct config_val {
 
 static struct config_val config[] = {
 	{ "alt-speed-down", "50", 0, 0 },
-	{ "alt-speed-enabled", "true", 0, 0 },
+	{ "alt-speed-enabled", "false", 0, 0 },
 	{ "alt-speed-time-begin", "540", 0, 0 },
 	{ "alt-speed-time-day", "127", 0, 0 },
 	{ "alt-speed-time-enabled", "false", 0, 0 },
