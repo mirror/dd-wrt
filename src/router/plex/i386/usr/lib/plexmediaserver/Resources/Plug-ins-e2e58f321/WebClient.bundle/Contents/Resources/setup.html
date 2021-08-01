@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Plex Setup</title>
+
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="15; url=/web/index.html#!/setup">
+
+  <script type="text/javascript">
+    (function () {
+      'use strict';
+
+      var timestamp = new Date().getTime();
+      var img = new Image();
+
+      img.onload = function () {
+        window.location.href = 'https://plex.tv/servers/setup' + window.location.search + '&url=' + window.location.protocol + '//' + window.location.host;
+      };
+
+      img.onabort = img.onerror = function () {
+        window.location.href = '/web/index.html#!/setup';
+      };
+
+      img.src = 'https://plex.tv/assets/test.gif?t=' + timestamp;
+    })();
+  </script>
+</head>
+
+<body>
+</body>
+
+</html>
