@@ -79,9 +79,9 @@ static void add_ms_telemetry(FILE * fp)
 		"aidps.atdmt.com",
 		"aka-cdn-ns.adtech.de",
 		"alpha.telemetry.microsoft.com",
-		"apac1.notify.windows.com.akadns.net",
 		"api.cortana.ai",
 		"asimov-win.settings.data.microsoft.com.akadns.net",
+		"azwancan.trafficmanager.net",
 		"b.ads1.msn.com",
 		"b.ads2.msads.net",
 		"b.rad.msn.com",
@@ -251,10 +251,8 @@ static void add_ms_telemetry(FILE * fp)
 		"ch3302-c.1drv.com",
 		"ch3302-e.1drv.com",
 		"compatexchange1.trafficmanager.net",
-		"continuum.dds.microsoft.com",
 		"corp.sts.microsoft.com",
 		"corpext.msitadfs.glbdns2.microsoft.com",
-		"cs.dds.microsoft.com",
 		"cs1.wpc.v0cdn.net",
 		"cy2.vortex.data.microsoft.com.akadns.net",
 		"db3aqu.atdmt.com",
@@ -441,7 +439,6 @@ static void add_ms_telemetry(FILE * fp)
 		"win10.ipv6.microsoft.com",
 		"win1710.ipv6.microsoft.com",
 		"win8.ipv6.microsoft.com",
-		"www.msedge.net",
 		"ztd.dds.microsoft.com"
 	};
 	int i;
