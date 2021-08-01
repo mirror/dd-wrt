@@ -62,7 +62,7 @@ static struct config_val config[] = {
 	{ "download-limit-enabled", "0", 0, 0 },
 	{ "download-queue-enabled", "true", 0, 0 },
 	{ "download-queue-size", "5", 0, 0 },
-	{ "encryption", "0", 0, 0 },
+	{ "encryption", "1", 0, 0 },
 	{ "idle-seeding-limit", "30", 0, 0 },
 	{ "idle-seeding-limit-enabled", "false", 0, 0 },
 	{ "incomplete-dir", "", 0, 0 },
