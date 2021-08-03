@@ -1237,7 +1237,7 @@ char *getdisc(void)		// works only for squashfs
 		}
 	}
 	for (a = '1'; a <= '2'; a++) {
-		for (n = '1'; n <= 5; n++) {
+		for (n = '1'; n <= '5'; n++) {
 			for (i = '0'; i <= '9'; i++) {
 				char dev[64];
 				sprintf(dev, "/dev/nvme%cn%cp%c", i, n, a);
