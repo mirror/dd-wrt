@@ -271,7 +271,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				sprintf(deflist, "%d", i);
 			else
 				sprintf(deflist, "%s %d", deflist, i);
-			websWrite(wp, "<input class=\"num\" maxlength=\"2\" size=\"4\" name=\"portvlan%dlist\" value=\"%d\" />", i, vlanlist[i]);
+			websWrite(wp, "<input class=\"num\" maxlength=\"4\" size=\"4\" name=\"portvlan%dlist\" value=\"%d\" />", i, vlanlist[i]);
 			break;
 		}
 
