@@ -624,6 +624,7 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	 * Broadcom FA.
 	 */
 	if (BCM4707_CHIP(CHIPID(ch->sih->chip))) {
+		printk(KERN_INFO "attaching FA\n");
 		/* Attach to the fa */
 		if ((etc->fa = fa_attach(ch->sih, ch->et, ch->vars, etc->coreunit, etc->robo))) {
 			ET_TRACE(("et%d: chipattach: Calling fa attach\n", etc->unit));
