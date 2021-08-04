@@ -91,7 +91,7 @@ void start_bootconfig(void)
 		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
 		fprintf(out, "terminal --timeout=10 serial\n");
 		fprintf(out, "\n");
-		vga = " video=vga16fb:off nofb";
+		vga = " video=vga16fb:off nofb console=ttyS0,115200n8";
 	}
 	fprintf(out, "default 0\n");
 	if (strlen(args)) {
@@ -103,12 +103,12 @@ void start_bootconfig(void)
 	if (strlen(args)) {
 		fprintf(out, "title   DD-WRT\n");
 		fprintf(out, "root    (hd0,0)\n");
-		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s console=ttyS0,115200n8 reboot=bios rootdelay=5%s\n", vga, args);
+		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s reboot=bios rootdelay=5%s\n", vga, args);
 		fprintf(out, "boot\n\n");
 	}
 	fprintf(out, "title   default\n");
 	fprintf(out, "root    (hd0,0)\n");
-	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s console=ttyS0,115200n8 reboot=bios rootdelay=5\n", vga);
+	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s reboot=bios rootdelay=5\n", vga);
 	fprintf(out, "boot\n");
 	fprintf(out, "\n");
 	fclose(out);
