@@ -59,7 +59,7 @@
 
 /*
  * User configurable initial values per SMB_DIRECT transport connection
- * as defined in [MS-KSMBD] 3.1.1.1
+ * as defined in [MS-SMBD] 3.1.1.1
  * Those may change after a SMB_DIRECT negotiation
  */
 /* The local peer's maximum number of credits to grant to the peer */
@@ -1212,10 +1212,8 @@ static int smb_direct_writev(struct ksmbd_transport *t,
 	struct kvec vec;
 	struct smb_direct_send_ctx send_ctx;
 
-	if (st->status != SMB_DIRECT_CS_CONNECTED) {
-		ret = -ENOTCONN;
-		goto done;
-	}
+	if (st->status != SMB_DIRECT_CS_CONNECTED)
+		return -ENOTCONN;
 
 	//FIXME: skip RFC1002 header..
 	buflen -= 4;
@@ -2078,6 +2076,20 @@ int ksmbd_rdma_destroy(void)
 		smb_direct_wq = NULL;
 	}
 	return 0;
+}
+
+bool ksmbd_rdma_capable_netdev(struct net_device *netdev)
+{
+	struct ib_device *ibdev;
+	bool rdma_capable = false;
+
+	ibdev = ib_device_get_by_netdev(netdev, RDMA_DRIVER_UNKNOWN);
+	if (ibdev) {
+		if (rdma_frwr_is_supported(&ibdev->attrs))
+			rdma_capable = true;
+		ib_device_put(ibdev);
+	}
+	return rdma_capable;
 }
 
 static struct ksmbd_transport_ops ksmbd_smb_direct_transport_ops = {

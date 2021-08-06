@@ -79,6 +79,9 @@ struct ksmbd_conn {
 		char			*ntlmssp_cryptkey;
 	};
 
+	spinlock_t			llist_lock;
+	struct list_head		lock_list;
+
 	struct preauth_integrity_info	*preauth_info;
 
 	bool				need_neg;
@@ -106,6 +109,8 @@ struct ksmbd_conn {
 	__le16				cipher_type;
 	__le16				compress_algorithm;
 	bool				posix_ext_supported;
+	bool				signing_negotiated;
+	__le16				signing_algorithm;
 	bool				binding;
 };
 
@@ -137,6 +142,9 @@ struct ksmbd_transport {
 #define KSMBD_TCP_RECV_TIMEOUT	(7 * HZ)
 #define KSMBD_TCP_SEND_TIMEOUT	(5 * HZ)
 #define KSMBD_TCP_PEER_SOCKADDR(c)	((struct sockaddr *)&((c)->peer_addr))
+
+extern struct list_head conn_list;
+extern rwlock_t conn_list_lock;
 
 bool ksmbd_conn_alive(struct ksmbd_conn *conn);
 void ksmbd_conn_wait_idle(struct ksmbd_conn *conn);
