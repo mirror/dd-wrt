@@ -48,8 +48,6 @@
 #define CIFS_DEFAULT_IOSIZE	(64 * 1024)
 #define MAX_CIFS_SMALL_BUFFER_SIZE 448 /* big enough for most */
 
-extern struct list_head global_lock_list;
-
 #define IS_SMB2(x)		((x)->vals->protocol_id != SMB10_PROT_ID)
 #define MAX_HEADER_SIZE(conn)		((conn)->vals->max_header_size)
 
@@ -503,7 +501,6 @@ bool ksmbd_smb_request(struct ksmbd_conn *conn);
 
 int ksmbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count);
 
-int ksmbd_negotiate_smb_dialect(void *buf);
 int ksmbd_init_smb_server(struct ksmbd_work *work);
 
 bool ksmbd_pdu_size_has_room(unsigned int pdu);
@@ -517,6 +514,7 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work,
 				      int (*fn)(struct ksmbd_conn *,
 						int,
 						struct ksmbd_dir_info *,
+						struct user_namespace *,
 						struct ksmbd_kstat *));
 
 int ksmbd_extract_shortname(struct ksmbd_conn *conn,

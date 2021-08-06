@@ -31,8 +31,6 @@ static const char basechars[43] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_-!@#$%";
 #define KSMBD_MIN_SUPPORTED_HEADER_SIZE	(sizeof(struct smb2_hdr))
 #endif
 
-LIST_HEAD(global_lock_list);
-
 struct smb_protocol {
 	int		index;
 	char		*name;
@@ -40,7 +38,7 @@ struct smb_protocol {
 	__u16		prot_id;
 };
 
-static struct smb_protocol smb_protos[] = {
+static struct smb_protocol smb1_protos[] = {
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	{
 		SMB1_PROT,
@@ -56,16 +54,25 @@ static struct smb_protocol smb_protos[] = {
 	},
 #endif
 	{
-		SMB21_PROT,
-		"\2SMB 2.1",
-		"SMB2_10",
-		SMB21_PROT_ID
-	},
-	{
 		SMB2X_PROT,
 		"\2SMB 2.???",
 		"SMB2_22",
 		SMB2X_PROT_ID
+	},
+};
+
+static struct smb_protocol smb2_protos[] = {
+	{
+		SMB2_PROT,
+		"\2SMB 2.002",
+		"SMB2_02",
+		SMB20_PROT_ID
+	},
+	{
+		SMB21_PROT,
+		"\2SMB 2.1",
+		"SMB2_10",
+		SMB21_PROT_ID
 	},
 	{
 		SMB30_PROT,
@@ -118,14 +125,24 @@ inline int ksmbd_max_protocol(void)
 
 int ksmbd_lookup_protocol_idx(char *str)
 {
-	int offt = ARRAY_SIZE(smb_protos) - 1;
+	int offt = ARRAY_SIZE(smb1_protos) - 1;
 	int len = strlen(str);
 
 	while (offt >= 0) {
-		if (!strncmp(str, smb_protos[offt].prot, len)) {
+		if (!strncmp(str, smb1_protos[offt].prot, len)) {
 			ksmbd_debug(SMB, "selected %s dialect idx = %d\n",
-				    smb_protos[offt].prot, offt);
-			return smb_protos[offt].index;
+				    smb1_protos[offt].prot, offt);
+			return smb1_protos[offt].index;
+		}
+		offt--;
+	}
+
+	offt = ARRAY_SIZE(smb2_protos) - 1;
+	while (offt >= 0) {
+		if (!strncmp(str, smb2_protos[offt].prot, len)) {
+			ksmbd_debug(SMB, "selected %s dialect idx = %d\n",
+				    smb2_protos[offt].prot, offt);
+			return smb2_protos[offt].index;
 		}
 		offt--;
 	}
@@ -206,7 +223,7 @@ static int ksmbd_lookup_dialect_by_name(char *cli_dialects, __le16 byte_count)
 	int i, seq_num, bcount, next;
 	char *dialect;
 
-	for (i = ARRAY_SIZE(smb_protos) - 1; i >= 0; i--) {
+	for (i = ARRAY_SIZE(smb1_protos) - 1; i >= 0; i--) {
 		seq_num = 0;
 		next = 0;
 		dialect = cli_dialects;
@@ -215,14 +232,14 @@ static int ksmbd_lookup_dialect_by_name(char *cli_dialects, __le16 byte_count)
 			dialect = next_dialect(dialect, &next);
 			ksmbd_debug(SMB, "client requested dialect %s\n",
 				dialect);
-			if (!strcmp(dialect, smb_protos[i].name)) {
-				if (supported_protocol(smb_protos[i].index)) {
+			if (!strcmp(dialect, smb1_protos[i].name)) {
+				if (supported_protocol(smb1_protos[i].index)) {
 					ksmbd_debug(SMB,
 						"selected %s dialect\n",
-						smb_protos[i].prot);
-					if (smb_protos[i].index == SMB1_PROT)
+						smb1_protos[i].prot);
+					if (smb1_protos[i].index == SMB1_PROT)
 						return seq_num;
-					return smb_protos[i].prot_id;
+					return smb1_protos[i].prot_id;
 				}
 			}
 			seq_num++;
@@ -238,19 +255,19 @@ int ksmbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count)
 	int i;
 	int count;
 
-	for (i = ARRAY_SIZE(smb_protos) - 1; i >= 0; i--) {
+	for (i = ARRAY_SIZE(smb2_protos) - 1; i >= 0; i--) {
 		count = le16_to_cpu(dialects_count);
 		while (--count >= 0) {
 			ksmbd_debug(SMB, "client requested dialect 0x%x\n",
 				le16_to_cpu(cli_dialects[count]));
 			if (le16_to_cpu(cli_dialects[count]) !=
-					smb_protos[i].prot_id)
+					smb2_protos[i].prot_id)
 				continue;
 
-			if (supported_protocol(smb_protos[i].index)) {
+			if (supported_protocol(smb2_protos[i].index)) {
 				ksmbd_debug(SMB, "selected %s dialect\n",
-					smb_protos[i].prot);
-				return smb_protos[i].prot_id;
+					smb2_protos[i].prot);
+				return smb2_protos[i].prot_id;
 			}
 		}
 	}
@@ -258,7 +275,7 @@ int ksmbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count)
 	return BAD_PROT_ID;
 }
 
-int ksmbd_negotiate_smb_dialect(void *buf)
+static int ksmbd_negotiate_smb_dialect(void *buf)
 {
 	__le32 proto;
 
@@ -321,10 +338,12 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work, int info_level,
 				      char *search_pattern,
 				      int (*fn)(struct ksmbd_conn *, int,
 						struct ksmbd_dir_info *,
+						struct user_namespace *,
 						struct ksmbd_kstat *))
 {
 	int i, rc = 0;
 	struct ksmbd_conn *conn = work->conn;
+	struct user_namespace *user_ns = file_mnt_user_ns(dir->filp);
 
 	for (i = 0; i < 2; i++) {
 		struct kstat kstat;
@@ -347,9 +366,11 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work, int info_level,
 
 			ksmbd_kstat.kstat = &kstat;
 			ksmbd_vfs_fill_dentry_attrs(work,
+						    user_ns,
 						    dir->filp->f_path.dentry->d_parent,
 						    &ksmbd_kstat);
-			rc = fn(conn, info_level, d_info, &ksmbd_kstat);
+			rc = fn(conn, info_level, d_info,
+				user_ns, &ksmbd_kstat);
 			if (rc)
 				break;
 			if (d_info->out_buf_len <= 0)

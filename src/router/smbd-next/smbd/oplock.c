@@ -1734,7 +1734,8 @@ struct lease_ctx_info *parse_lease_state(void *open_req)
  * @open_req:	buffer containing smb2 file open(create) request
  * @tag:	context name to search for
  *
- * Return:      pointer to requested context, NULL if @str context not found
+ * Return:	pointer to requested context, NULL if @str context not found
+ *		or error pointer if name length is invalid.
  */
 struct create_context *smb2_find_context_vals(void *open_req, const char *tag)
 {
@@ -1760,7 +1761,7 @@ struct create_context *smb2_find_context_vals(void *open_req, const char *tag)
 		next = le32_to_cpu(cc->Next);
 	} while (next != 0);
 
-	return ERR_PTR(-ENOENT);
+	return NULL;
 }
 
 /**
@@ -1870,6 +1871,7 @@ void create_posix_rsp_buf(char *cc, struct ksmbd_file *fp)
 {
 	struct create_posix_rsp *buf;
 	struct inode *inode = file_inode(fp->filp);
+	struct user_namespace *user_ns = file_mnt_user_ns(fp->filp);
 
 	buf = (struct create_posix_rsp *)cc;
 	memset(buf, 0, sizeof(struct create_posix_rsp));
@@ -1900,9 +1902,9 @@ void create_posix_rsp_buf(char *cc, struct ksmbd_file *fp)
 	buf->nlink = cpu_to_le32(inode->i_nlink);
 	buf->reparse_tag = cpu_to_le32(fp->volatile_id);
 	buf->mode = cpu_to_le32(inode->i_mode);
-	id_to_sid(from_kuid(&init_user_ns, inode->i_uid),
+	id_to_sid(from_kuid(user_ns, inode->i_uid),
 		  SIDNFS_USER, (struct smb_sid *)&buf->SidBuffer[0]);
-	id_to_sid(from_kgid(&init_user_ns, inode->i_gid),
+	id_to_sid(from_kgid(user_ns, inode->i_gid),
 		  SIDNFS_GROUP, (struct smb_sid *)&buf->SidBuffer[20]);
 }
 

@@ -65,13 +65,15 @@ static int ndr_write_bytes(struct ndr *n, void *value, size_t sz)
 	return 0;
 }
 
-static int ndr_write_string(struct ndr *n, void *value, size_t sz)
+static int ndr_write_string(struct ndr *n, char *value)
 {
+	size_t sz;
+
+	sz = strlen(value) + 1;
 	if (n->length <= n->offset + sz)
 		try_to_realloc_ndr_blob(n, sz);
 
-	strncpy(ndr_get_field(n), value, sz);
-	sz++;
+	memcpy(ndr_get_field(n), value, sz);
 	n->offset += sz;
 	n->offset = ALIGN(n->offset, 2);
 	return 0;
@@ -134,9 +136,9 @@ int ndr_encode_dos_attr(struct ndr *n, struct xattr_dos_attrib *da)
 
 	if (da->version == 3) {
 		snprintf(hex_attr, 10, "0x%x", da->attr);
-		ndr_write_string(n, hex_attr, strlen(hex_attr));
+		ndr_write_string(n, hex_attr);
 	} else {
-		ndr_write_string(n, "", strlen(""));
+		ndr_write_string(n, "");
 	}
 	ndr_write_int16(n, da->version);
 	ndr_write_int32(n, da->version);
@@ -222,7 +224,9 @@ static int ndr_encode_posix_acl_entry(struct ndr *n, struct xattr_smb_acl *acl)
 	return 0;
 }
 
-int ndr_encode_posix_acl(struct ndr *n, struct inode *inode,
+int ndr_encode_posix_acl(struct ndr *n,
+			 struct user_namespace *user_ns,
+			 struct inode *inode,
 			 struct xattr_smb_acl *acl,
 			 struct xattr_smb_acl *def_acl)
 {
@@ -250,8 +254,8 @@ int ndr_encode_posix_acl(struct ndr *n, struct inode *inode,
 		ndr_write_int32(n, 0);
 	}
 
-	ndr_write_int64(n, from_kuid(&init_user_ns, inode->i_uid));
-	ndr_write_int64(n, from_kgid(&init_user_ns, inode->i_gid));
+	ndr_write_int64(n, from_kuid(user_ns, inode->i_uid));
+	ndr_write_int64(n, from_kgid(user_ns, inode->i_gid));
 	ndr_write_int32(n, inode->i_mode);
 
 	if (acl) {

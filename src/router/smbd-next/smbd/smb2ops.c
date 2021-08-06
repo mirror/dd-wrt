@@ -229,6 +229,7 @@ int init_smb2_0_server(struct ksmbd_conn *conn)
 	conn->max_cmds = ARRAY_SIZE(smb2_0_server_cmds);
 	conn->max_credits = SMB2_MAX_CREDITS;
 	conn->total_credits = 0;
+	conn->signing_algorithm = SIGNING_ALG_HMAC_SHA256;
 	return 0;
 }
 #else
@@ -250,6 +251,7 @@ void init_smb2_1_server(struct ksmbd_conn *conn)
 	conn->cmds = smb2_0_server_cmds;
 	conn->max_cmds = ARRAY_SIZE(smb2_0_server_cmds);
 	conn->max_credits = SMB2_MAX_CREDITS;
+	conn->signing_algorithm = SIGNING_ALG_HMAC_SHA256;
 
 	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_LEASES)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_LEASING;
@@ -267,6 +269,7 @@ void init_smb3_0_server(struct ksmbd_conn *conn)
 	conn->cmds = smb2_0_server_cmds;
 	conn->max_cmds = ARRAY_SIZE(smb2_0_server_cmds);
 	conn->max_credits = SMB2_MAX_CREDITS;
+	conn->signing_algorithm = SIGNING_ALG_AES_CMAC;
 
 	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_LEASES)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_LEASING;
@@ -291,6 +294,7 @@ void init_smb3_02_server(struct ksmbd_conn *conn)
 	conn->cmds = smb2_0_server_cmds;
 	conn->max_cmds = ARRAY_SIZE(smb2_0_server_cmds);
 	conn->max_credits = SMB2_MAX_CREDITS;
+	conn->signing_algorithm = SIGNING_ALG_AES_CMAC;
 
 	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_LEASES)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_LEASING;
@@ -315,6 +319,7 @@ int init_smb3_11_server(struct ksmbd_conn *conn)
 	conn->cmds = smb2_0_server_cmds;
 	conn->max_cmds = ARRAY_SIZE(smb2_0_server_cmds);
 	conn->max_credits = SMB2_MAX_CREDITS;
+	conn->signing_algorithm = SIGNING_ALG_AES_CMAC;
 
 	if (server_conf.flags & KSMBD_GLOBAL_FLAG_SMB2_LEASES)
 		conn->vals->capabilities |= SMB2_GLOBAL_CAP_LEASING;
