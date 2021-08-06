@@ -17,7 +17,7 @@ static void usage(void)
 	fprintf(stderr, "Usage: ksmbd.control\n");
 	fprintf(stderr, "\t-s | --shutdown\n");
 	fprintf(stderr, "\t-d | --debug=all or [smb, auth, etc...]\n");
-	fprintf(stderr, "\t-c | --cifsd-version\n");
+	fprintf(stderr, "\t-c | --ksmbd-version\n");
 	fprintf(stderr, "\t-V | --version\n");
 
 	exit(EXIT_FAILURE);
@@ -60,7 +60,7 @@ static int ksmbd_control_show_version(void)
 	ret = read(fd, ver, 255);
 	close(fd);
 	if (ret != -1)
-		pr_info("cifsd version : %s\n", ver);
+		pr_info("ksmbd version : %s\n", ver);
 	return ret;
 }
 
@@ -91,8 +91,7 @@ out:
 int main(int argc, char *argv[])
 {
 	int ret = EXIT_FAILURE;
-	int c, cmd = 0;
-	char *section;
+	int c;
 
 	set_logger_app_name("ksmbd.control");
 

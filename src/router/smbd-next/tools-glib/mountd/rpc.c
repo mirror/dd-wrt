@@ -294,8 +294,6 @@ static __u8 noop_int8(__u8 v)
 #define NDR_WRITE_INT(name, type, be, le)				\
 int ndr_write_##name(struct ksmbd_dcerpc *dce, type value)		\
 {									\
-	type ret;							\
-									\
 	if (try_realloc_payload(dce, sizeof(value)))			\
 		return -ENOMEM;						\
 	align_offset(dce, sizeof(type));				\

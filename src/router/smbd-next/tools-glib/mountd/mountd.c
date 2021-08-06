@@ -139,9 +139,47 @@ char *make_path_subauth(void)
 	return path;
 }
 
+/*
+ * Write to file safely; by using a tmp and atomic rename.
+ * Avoids a corrupt file if the write would be interrupted due
+ * to a power failure.
+ */
+static int write_file_safe(char *path, char *buff, size_t length, int mode)
+{
+	int fd, ret = -1;
+	char *path_tmp = g_strdup_printf("%s.tmp", path);
+
+	if (g_file_test(path_tmp, G_FILE_TEST_EXISTS))
+		unlink(path_tmp);
+
+	fd = open(path_tmp, O_CREAT | O_EXCL | O_WRONLY, mode);
+	if (fd < 0) {
+		pr_err("Unable to create %s: %s\n", path_tmp, strerr(errno));
+		goto err_out;
+	}
+
+	if (write(fd, buff, length) == -1) {
+		pr_err("Unable to write to %s: %s\n", path_tmp, strerr(errno));
+		close(fd);
+		goto err_out;
+	}
+
+	fsync(fd);
+	close(fd);
+
+	if (rename(path_tmp, path)) {
+		pr_err("Unable to rename to %s: %s\n", path, strerr(errno));
+		goto err_out;
+	}
+	ret = 0;
+
+err_out:
+	g_free(path_tmp);
+	return ret;
+}
+
 static int create_subauth_file(char *path_subauth)
 {
-	int fd;
 	char subauth_buf[35];
 	GRand *rnd;
 
@@ -150,19 +188,8 @@ static int create_subauth_file(char *path_subauth)
 		g_rand_int_range(rnd, 0, INT_MAX),
 		g_rand_int_range(rnd, 0, INT_MAX));
 
-	fd = open(path_subauth, O_CREAT | O_WRONLY,
-			S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
-	if (fd < 0)
-		return -1;
-
-	if (write(fd, subauth_buf, strlen(subauth_buf)) == -1) {
-		pr_err("Unable to write subauth: %s\n", strerr(errno));
-		close(fd);
-		return -1;
-	}
-	close(fd);
-
-	return 0;
+	return write_file_safe(path_subauth, subauth_buf, strlen(subauth_buf),
+		S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
 }
 
 static int generate_sub_auth(void)
@@ -177,11 +204,14 @@ retry:
 	rc = cp_parse_subauth(path_subauth);
 	if (rc < 0) {
 		rc = create_subauth_file(path_subauth);
-		if (rc)
+		if (rc) {
+			free(path_subauth);
 			return -1;
+		}
 		goto retry;
 	}
 
+	free(path_subauth);
 	return 0;
 }
 

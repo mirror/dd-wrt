@@ -233,10 +233,8 @@ int usm_add_update_user_from_pwdentry(char *data)
 
 int usm_add_subauth_global_conf(char *data)
 {
-	unsigned int subauth[3];
 	char *pos = data;
 	char *spos;
-	int ret;
 
 	if (!pos)
 		return -EINVAL;

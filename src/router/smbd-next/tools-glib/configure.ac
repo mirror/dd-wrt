@@ -8,7 +8,7 @@ AC_INIT([ksmbd-tools],
 	ksmbd_tools_version,
 	[linkinjeon@kernel.org],
 	[ksmbd-tools],
-	[https://github.com/cifsd-team/cifsd-tools])
+	[https://github.com/cifsd-team/ksmbd-tools])
 
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADER([config.h])
