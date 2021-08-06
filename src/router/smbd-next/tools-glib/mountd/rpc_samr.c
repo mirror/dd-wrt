@@ -114,7 +114,6 @@ static int samr_connect5_return(struct ksmbd_rpc_pipe *pipe)
 static int samr_enum_domain_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
-	char *hostname, *builtin;
 
 	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
 
@@ -195,7 +194,7 @@ static int samr_lookup_domain_return(struct ksmbd_rpc_pipe *pipe)
 	struct ksmbd_dcerpc *dce = pipe->dce;
 	struct connect_handle *ch;
 	struct smb_sid sid = {0};
-	int i, j;
+	int i;
 
 	ch = samr_ch_lookup(dce->sm_req.handle);
 	if (!ch)
@@ -221,8 +220,6 @@ static int samr_lookup_domain_return(struct ksmbd_rpc_pipe *pipe)
 static int samr_open_domain_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
-	int i, j;
-	struct smb_sid sid;
 
 	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
 
@@ -246,7 +243,6 @@ static int samr_open_domain_return(struct ksmbd_rpc_pipe *pipe)
 static int samr_lookup_names_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
-	struct passwd *passwd;
 	int user_num;
 
 	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
@@ -267,7 +263,6 @@ static int samr_lookup_names_return(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 	struct connect_handle *ch;
-	struct passwd *passwd;
 
 	ch = samr_ch_lookup(dce->sm_req.handle);
 	if (!ch)
@@ -295,7 +290,6 @@ static int samr_lookup_names_return(struct ksmbd_rpc_pipe *pipe)
 static int samr_open_user_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
-	unsigned int req_rid;
 
 	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
 

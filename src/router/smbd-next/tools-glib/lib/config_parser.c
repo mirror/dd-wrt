@@ -719,7 +719,6 @@ void cp_smbconfig_destroy(void)
 
 int cp_parse_external_smbconf_group(char *name, char *opts)
 {
-	char *delim = opts;
 	char *pos;
 	int i, len;
 

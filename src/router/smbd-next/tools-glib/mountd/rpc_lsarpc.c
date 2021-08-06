@@ -115,7 +115,6 @@ static int lsarpc_get_primary_domain_info_return(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 	int i;
-	size_t max_len, actual_len;
 
 	if (dce->lr_req.level != DS_ROLE_BASIC_INFORMATION)
 		return KSMBD_RPC_EBAD_FUNC;
@@ -159,7 +158,6 @@ static int lsarpc_open_policy2_return(struct ksmbd_rpc_pipe *pipe)
 static int lsarpc_query_info_policy_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
-	unsigned long long id;
 
 	ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE);
 	dce->lr_req.level = ndr_read_int16(dce); // level
@@ -172,7 +170,6 @@ static int lsarpc_query_info_policy_return(struct ksmbd_rpc_pipe *pipe)
 	struct ksmbd_dcerpc *dce = pipe->dce;
 	struct smb_sid sid;
 	struct policy_handle *ph;
-	int len;
 
 	ph = lsarpc_ph_lookup(dce->lr_req.handle);
 	if (!ph)
@@ -209,7 +206,6 @@ static int __lsarpc_entry_processed(struct ksmbd_rpc_pipe *pipe, int i)
 static int lsarpc_lookup_sid2_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
-	unsigned long long id;
 	unsigned int num_sid, i;
 
 	ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE);
@@ -271,7 +267,6 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 
 	for (i = 0; i < pipe->num_entries; i++) {
 		struct lsarpc_names_info *ni;
-		int len;
 
 		ni = (struct lsarpc_names_info *)g_array_index(pipe->entries,
 				gpointer, i);
@@ -378,7 +373,7 @@ static int lsarpc_lookup_names3_return(struct ksmbd_rpc_pipe *pipe)
 	struct ksmbd_dcerpc *dce = pipe->dce;
 	struct policy_handle *ph;
 	struct smb_sid sid;
-	int i, len;
+	int i;
 
 	ph = lsarpc_ph_lookup(dce->lr_req.handle);
 	if (!ph)
