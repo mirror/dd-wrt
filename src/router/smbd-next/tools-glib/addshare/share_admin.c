@@ -102,8 +102,6 @@ static void __write_share(gpointer key, gpointer value, gpointer buf)
 
 static void write_share(struct smbconf_group *g)
 {
-	int ret, nr = 0;
-
 	wsz = snprintf(wbuf, sizeof(wbuf), "[%s]\n", g->name);
 	__write();
 	g_hash_table_foreach(g->kv, __write_share, NULL);

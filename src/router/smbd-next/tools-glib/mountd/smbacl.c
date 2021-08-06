@@ -229,7 +229,6 @@ static int set_dacl(struct ksmbd_dcerpc *dce, int rid)
 
 int build_sec_desc(struct ksmbd_dcerpc *dce, __u32 *secdesclen, int rid)
 {
-	__u32 offset;
 	int l_offset, acl_size_offset;
 	int acl_size;
 

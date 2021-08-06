@@ -208,7 +208,6 @@ static char *get_hashed_b64_password(void)
 
 static void write_user(struct ksmbd_user *user)
 {
-	char *data;
 	int ret, nr = 0;
 	size_t wsz;
 
