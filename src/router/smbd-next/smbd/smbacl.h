@@ -189,9 +189,9 @@ struct posix_acl_state {
 	struct posix_ace_state_array *groups;
 };
 
-int parse_sec_desc(struct smb_ntsd *pntsd, int acl_len,
+int parse_sec_desc(struct user_namespace *user_ns, struct smb_ntsd *pntsd, int acl_len,
 		struct smb_fattr *fattr);
-int build_sec_desc(struct smb_ntsd *pntsd, struct smb_ntsd *ppntsd,
+int build_sec_desc(struct user_namespace *user_ns, struct smb_ntsd *pntsd, struct smb_ntsd *ppntsd,
 		int addition_info, __u32 *secdesclen, struct smb_fattr *fattr);
 int init_acl_state(struct posix_acl_state *state, int cnt);
 void free_acl_state(struct posix_acl_state *state);
@@ -199,13 +199,13 @@ void posix_state_to_acl(struct posix_acl_state *state,
 		struct posix_acl_entry *pace);
 int compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid);
 bool smb_inherit_flags(int flags, bool is_dir);
-int smb_inherit_dacl(struct ksmbd_conn *conn, struct dentry *dentry,
+int smb_inherit_dacl(struct ksmbd_conn *conn, struct path *path,
 		unsigned int uid, unsigned int gid);
-int smb_check_perm_dacl(struct ksmbd_conn *conn, struct dentry *dentry,
+int smb_check_perm_dacl(struct ksmbd_conn *conn, struct path *path,
 		__le32 *pdaccess, int uid);
 int store_init_posix_acl(struct inode *inode, umode_t perm);
 int set_info_sec(struct ksmbd_conn *conn, struct ksmbd_tree_connect *tcon,
-		struct dentry *dentry, struct smb_ntsd *pntsd, int ntsd_len,
+		 struct path *path, struct smb_ntsd *pntsd, int ntsd_len,
 		bool type_check);
 void id_to_sid(unsigned int cid, uint sidtype, struct smb_sid *ssid);
 void ksmbd_init_domain(u32 *sub_auth);

@@ -23,8 +23,8 @@ static DEFINE_MUTEX(init_lock);
 
 static struct ksmbd_conn_ops default_conn_ops;
 
-static LIST_HEAD(conn_list);
-static DEFINE_RWLOCK(conn_list_lock);
+LIST_HEAD(conn_list);
+DEFINE_RWLOCK(conn_list_lock);
 
 /**
  * ksmbd_conn_free() - free resources of the connection instance
@@ -73,6 +73,9 @@ struct ksmbd_conn *ksmbd_conn_alloc(void)
 	spin_lock_init(&conn->request_lock);
 	spin_lock_init(&conn->credits_lock);
 	ida_init(&conn->async_ida);
+
+	spin_lock_init(&conn->llist_lock);
+	INIT_LIST_HEAD(&conn->lock_list);
 
 	write_lock(&conn_list_lock);
 	list_add(&conn->conns_list, &conn_list);
@@ -137,7 +140,8 @@ int ksmbd_conn_try_dequeue_request(struct ksmbd_work *work)
 	    list_empty(&work->async_request_entry))
 		return 0;
 
-	atomic_dec(&conn->req_running);
+	if (!work->multiRsp)
+		atomic_dec(&conn->req_running);
 	spin_lock(&conn->request_lock);
 	if (!work->multiRsp) {
 		list_del_init(&work->request_entry);
@@ -260,7 +264,7 @@ bool ksmbd_conn_alive(struct ksmbd_conn *conn)
 
 	/*
 	 * Stop current session if the time that get last request from client
-	 * is bigger than deadtime user configured and openning file count is
+	 * is bigger than deadtime user configured and opening file count is
 	 * zero.
 	 */
 	if (server_conf.deadtime > 0 &&
@@ -386,7 +390,7 @@ int ksmbd_conn_transport_init(void)
 
 	ret = ksmbd_rdma_init();
 	if (ret) {
-		pr_err("Failed to init KSMBD subsystem: %d\n", ret);
+		pr_err("Failed to init RDMA subsystem: %d\n", ret);
 		goto out;
 	}
 out:

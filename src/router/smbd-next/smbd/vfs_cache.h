@@ -23,7 +23,7 @@
 #define	FILE_GENERIC_EXECUTE	0X1200a0
 
 #define KSMBD_START_FID		0
-#define KSMBD_NO_FID		(UINT_MAX)
+#define KSMBD_NO_FID		(INT_MAX)
 #define SMB2_NO_FID		(0xFFFFFFFFFFFFFFFFULL)
 
 #define FP_FILENAME(fp)		((fp)->filp->f_path.dentry->d_name.name)
@@ -34,7 +34,8 @@ struct ksmbd_session;
 
 struct ksmbd_lock {
 	struct file_lock *fl;
-	struct list_head glist;
+	struct list_head clist;
+	struct list_head flist;
 	struct list_head llist;
 	unsigned int flags;
 	int cmd;
@@ -66,8 +67,8 @@ struct ksmbd_inode {
 struct ksmbd_file {
 	struct file			*filp;
 	char				*filename;
-	unsigned int			persistent_id;
-	unsigned int			volatile_id;
+	u64				persistent_id;
+	u64				volatile_id;
 
 	spinlock_t			f_lock;
 
@@ -95,6 +96,7 @@ struct ksmbd_file {
 	struct stream			stream;
 	struct list_head		node;
 	struct list_head		blocked_works;
+	struct list_head		lock_list;
 
 	int				durable_timeout;
 
@@ -153,10 +155,8 @@ struct ksmbd_file_table {
 	struct idr		*idr;
 };
 
-static inline bool HAS_FILE_ID(unsigned long long req)
+static inline bool has_file_id(u64 id)
 {
-	unsigned int id = (unsigned int)req;
-
 	return id < KSMBD_NO_FID;
 }
 
@@ -168,15 +168,11 @@ static inline bool ksmbd_stream_fd(struct ksmbd_file *fp)
 int ksmbd_init_file_table(struct ksmbd_file_table *ft);
 void ksmbd_destroy_file_table(struct ksmbd_file_table *ft);
 
-int ksmbd_close_fd(struct ksmbd_work *work, unsigned int id);
-
-struct ksmbd_file *ksmbd_lookup_fd_fast(struct ksmbd_work *work,
-					unsigned int id);
-struct ksmbd_file *ksmbd_lookup_foreign_fd(struct ksmbd_work *work,
-					   unsigned int id);
-struct ksmbd_file *ksmbd_lookup_fd_slow(struct ksmbd_work *work,
-					unsigned int id,
-					unsigned int pid);
+int ksmbd_close_fd(struct ksmbd_work *work, u64 id);
+struct ksmbd_file *ksmbd_lookup_fd_fast(struct ksmbd_work *work, u64 id);
+struct ksmbd_file *ksmbd_lookup_foreign_fd(struct ksmbd_work *work, u64 id);
+struct ksmbd_file *ksmbd_lookup_fd_slow(struct ksmbd_work *work, u64 id,
+					u64 pid);
 
 void ksmbd_fd_put(struct ksmbd_work *work, struct ksmbd_file *fp);
 
