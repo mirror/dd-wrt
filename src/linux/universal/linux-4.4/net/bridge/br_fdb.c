@@ -1035,7 +1035,11 @@ static int __br_fdb_add(struct ndmsg *ndm, struct net_bridge *br,
 		}
 		local_bh_disable();
 		rcu_read_lock();
+#ifdef HNDCTF
 		br_fdb_update(br, p, addr, vid, true, NULL);
+#else
+		br_fdb_update(br, p, addr, vid, true);
+#endif
 		rcu_read_unlock();
 		local_bh_enable();
 	} else {
