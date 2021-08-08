@@ -181,6 +181,17 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 1");
 	eval("swconfig", "dev", "switch0", "set", "apply");
+	nvram_seti("sw_cpuport", 0);
+	nvram_seti("sw_wan", 1);
+	nvram_seti("sw_lan1", 2);
+	nvram_seti("sw_lan2", 3);
+	nvram_seti("sw_lan3", 4);
+	nvram_seti("sw_lan4", 5);
+	nvram_default_geti("port0vlans", 2);
+	nvram_default_geti("port1vlans", 1);
+	nvram_default_geti("port2vlans", 1);
+	nvram_default_geti("port3vlans", 1);
+	nvram_default_geti("port4vlans", 1);
 
 	eval("ifconfig", "eth0", "up");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
