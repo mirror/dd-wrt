@@ -149,7 +149,8 @@ ifdef CONFIG_HTOP
 	cp -r terminfo $(INSTALLDIR)/etc/
 endif
 ifdef CONFIG_WDR4900
-	ln -sf /tmp/firmware $(INSTALLDIR)/lib/firmware
+	ln -sf /tmp/firmware/pci_wmac0.eeprom $(INSTALLDIR)/lib/firmware/pci_wmac0.eeprom
+	ln -sf /tmp/firmware/pci_wmac1.eeprom $(INSTALLDIR)/lib/firmware/pci_wmac1.eeprom
 endif
 
 
