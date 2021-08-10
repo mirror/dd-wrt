@@ -2864,7 +2864,7 @@ void start_restore_defaults(void)
 
 	}
 #endif
-	if (restore_defaults) {
+	if (restore_defaults && !nvram_exists("port0vlans")) {
 		if (!nvram_exists("vlan2ports") && nvram_exists("vlan1ports")
 		    && nvram_exists("vlan0ports")) {
 			nvram_seti("port0vlans", 1);
