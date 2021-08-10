@@ -2882,7 +2882,6 @@ void start_restore_defaults(void)
 			nvram_set("port5vlans", "1 2 16000");
 		}
 	}
-
 #ifdef HAVE_BRCMROUTER
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
 		if (!nvram_exists("aa0"))
