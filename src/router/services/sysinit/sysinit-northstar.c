@@ -6487,8 +6487,8 @@ void start_sysinit(void)
 		}
 		nvram_commit();
 		sys_reboot();
-		while(1) {
-		    // do nothing loop
+		while (1) {
+			// do nothing loop
 		}
 	}
 
@@ -6496,8 +6496,8 @@ void start_sysinit(void)
 		nvram_set("ctf_disable", "0");
 	else
 		nvram_set("ctf_disable", "1");
-	
-	if (nvram_match("ctf_fa_cap","1")) {
+
+	if (nvram_match("ctf_fa_cap", "1")) {
 		nvram_default_get("ctf_fa_mode", "0");
 		if (!nvram_match("wan_proto", "static") && !nvram_match("wan_proto", "dhcp"))
 			nvram_set("ctf_fa_mode", "0");
@@ -6507,7 +6507,6 @@ void start_sysinit(void)
 
 	insmod("ctf");
 	insmod("et");
-
 
 	insmod("b5301x_common");
 	insmod("b5301x_srab");
