@@ -256,6 +256,7 @@ void start_sysinit(void)
 	nvram_default_geti("port2vlans", 1);
 	nvram_default_geti("port3vlans", 1);
 	nvram_default_geti("port4vlans", 1);
+	nvram_default_get("port5vlans", "1 2 16000");
 
 	return;
 	cprintf("done\n");
