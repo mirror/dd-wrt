@@ -380,7 +380,7 @@ ifeq ($(CONFIG_OLED),y)
 CFLAGS_EXTRA += -DHAVE_OLED
 endif
 ifeq ($(CONFIG_NORTHSTAR),y)
-CFLAGS_EXTRA += -DHAVE_NORTHSTAR
+CFLAGS_EXTRA += -DHAVE_NORTHSTAR -DHAVE_BRCMROUTER
 OBJS += rtl_8365mb.o
 endif
 ifeq ($(CONFIG_MT7620),y)
@@ -970,6 +970,7 @@ ifeq ($(CONFIG_RT61),y)
 OBJS += site_survey_ralink.o
 else
 OBJS += site_survey_broadcom.o
+CFLAGS_EXTRA += -DHAVE_BRCMROUTER
 endif
 endif
 endif
@@ -1419,6 +1420,9 @@ CFLAGS_EXTRA += -DHAVE_DIR810L
 endif
 ifeq ($(CONFIG_DIR860),y)
 CFLAGS_EXTRA += -DHAVE_DIR860
+endif
+ifeq ($(ARCHITECTURE),broadcom)
+CFLAGS_EXTRA += -DHAVE_BRCMROUTER
 endif
 
 ifneq ($(ARCHITECTURE),broadcom)
