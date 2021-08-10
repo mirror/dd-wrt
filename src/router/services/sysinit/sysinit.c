@@ -2356,16 +2356,16 @@ void start_restore_defaults(void)
 #endif
 
 	int nvcnt = 0;
-
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
+	buffalo_defaults(restore_defaults);
+#endif
+#ifdef HAVE_BRCMROUTER
 #ifndef HAVE_MADWIFI
 	int icnt = get_wl_instances();
 #else
 	int icnt = getdevicecount();
 	if (brand == ROUTER_LINKSYS_E2500 || brand == ROUTER_LINKSYS_E3200)	//dual radio, 2nd on usb-bus
 		icnt = 2;
-#endif
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
-	buffalo_defaults(restore_defaults);
 #endif
 	runStartup(".pf");
 	// if (!nvram_match("default_init","1"))
@@ -2863,7 +2863,7 @@ void start_restore_defaults(void)
 		}
 
 	}
-
+#endif
 	if (restore_defaults) {
 		if (!nvram_exists("vlan2ports") && nvram_exists("vlan1ports")
 		    && nvram_exists("vlan0ports")) {
@@ -2883,6 +2883,7 @@ void start_restore_defaults(void)
 		}
 	}
 
+#ifdef HAVE_BRCMROUTER
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
 		if (!nvram_exists("aa0"))
 			nvram_seti("aa0", 3);
@@ -2922,7 +2923,7 @@ void start_restore_defaults(void)
 	if (restore_defaults && brand == ROUTER_BUFFALO_WLI_TX4_G54HP) {
 		nvram_seti("wl0_txpwr", 28);
 	}
-
+#endif
 	/*
 	 * Always set OS defaults 
 	 */
@@ -3364,11 +3365,12 @@ void start_nvram(void)
 	nvram_set("wan_get_dns", "");
 	nvram_set("openvpn_get_dns", "");
 	nvram_seti("filter_id", 1);
-	nvram_seti("wl_active_add_mac", 0);
 	nvram_set("ddns_change", "");
 	nvram_unset("action_service");
 	nvram_set("wan_get_domain", "");
 
+#ifdef HAVE_BRCMROUTER
+	nvram_seti("wl_active_add_mac", 0);
 	if (nvram_matchi("wl_gmode", 5))	// Mixed mode had been
 		// changed to 5
 		nvram_seti("wl_gmode", 1);
@@ -3377,7 +3379,7 @@ void start_nvram(void)
 		// changed to 2, after 1.40.1 
 		// for WiFi G certication
 		nvram_seti("wl_gmode", 2);
-
+#endif
 	nvram_set("ping_ip", "");
 	nvram_set("ping_times", "");
 
@@ -3405,6 +3407,7 @@ void start_nvram(void)
 	/*
 	 * The tkip and aes already are changed to wl_crypto from v3.63.3.0 
 	 */
+#ifdef HAVE_BRCMROUTER
 	if (nvram_match("wl_wep", "tkip")) {
 		nvram_set("wl_crypto", "tkip");
 	} else if (nvram_match("wl_wep", "aes")) {
@@ -3415,7 +3418,7 @@ void start_nvram(void)
 
 	if (nvram_match("wl_wep", "restricted"))
 		nvram_set("wl_wep", "enabled");	// the nas need this value,
-
+#endif
 #ifdef HAVE_SET_BOOT
 	if (!nvram_matchi("boot_wait_web", 0))
 		nvram_seti("boot_wait_web", 1);
