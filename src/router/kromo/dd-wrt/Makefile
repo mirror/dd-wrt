@@ -839,6 +839,8 @@ ifeq ($(CONFIG_ANTAIRA),y)
 	sed -e 's/dd-wrt/Antaira/g' help/HWireless.asp > $(INSTALLDIR)/www/help/HWireless.asp 
 	sed -e 's/dd-wrt/Antaira/g' help/HUpgrade.asp > $(INSTALLDIR)/www/help/HUpgrade.asp 
 	sed -i 's/NAT \/ QoS/Port Forwarding/g' $(INSTALLDIR)/www/lang_pack/*
+	sed -i 's/wl_basic.client=\"Client\";/wl_basic.client=\"Client (NAT)\";/g' $(INSTALLDIR)/www/lang_pack/*
+	sed -i 's/wl_basic.repeater=\"Repeater\";/wl_basic.repeater="Repeater (NAT)\";/g' $(INSTALLDIR)/www/lang_pack/*
 	mkdir -p $(INSTALLDIR)/etc/config
 	cp -f antaira/defaults/config/* $(INSTALLDIR)/etc/config
 	mkdir -p $(INSTALLDIR)/sbin
