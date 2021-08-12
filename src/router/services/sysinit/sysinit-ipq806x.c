@@ -550,10 +550,10 @@ void start_sysinit(void)
 		nvram_seti("sw_wancpuport", 0);
 		nvram_seti("sw_lancpuport", 6);
 		nvram_seti("sw_wan", 5);
-		nvram_seti("sw_lan1", 1);
-		nvram_seti("sw_lan2", 2);
-		nvram_seti("sw_lan3", 3);
-		nvram_seti("sw_lan4", 4);
+		nvram_seti("sw_lan1", 4);
+		nvram_seti("sw_lan2", 3);
+		nvram_seti("sw_lan3", 2);
+		nvram_seti("sw_lan4", 1);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 //              writeproc("/proc/irq/101/smp_affinity", "2");
