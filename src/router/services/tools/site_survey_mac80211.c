@@ -1624,8 +1624,10 @@ static int open_site_survey(void)
 
 int site_survey_main_mac802211(int argc, char *argv[])
 {
+	char *sta = NULL;
+
 	unlink(SITE_SURVEY_DB);
-	char *sta = nvram_safe_get("wifi_display");
+	sta = argc > 1 ? argv[1] : nvram_safe_get("wifi_display");
 	mac80211_site_survey(sta);
 	return 0;
 }
