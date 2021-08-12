@@ -2359,7 +2359,6 @@ void start_restore_defaults(void)
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 	buffalo_defaults(restore_defaults);
 #endif
-#ifdef HAVE_BRCMROUTER
 #ifndef HAVE_MADWIFI
 	int icnt = get_wl_instances();
 #else
@@ -2397,6 +2396,7 @@ void start_restore_defaults(void)
 		nvram_set("http_passwd", DEFAULT_USER);
 	}
 	if (restore_defaults) {
+#ifdef HAVE_BRCMROUTER
 		switch (brand) {
 		case ROUTER_ASUS_WL520G:
 		case ROUTER_ASUS_WL500G_PRE_V2:
@@ -2440,6 +2440,7 @@ void start_restore_defaults(void)
 			}
 			break;
 		}
+#endif
 #ifdef HAVE_SPUTNIK
 		nvram_set("lan_ipaddr", "192.168.180.1");
 #elif HAVE_BUFFALO
@@ -2474,6 +2475,7 @@ void start_restore_defaults(void)
 		nvram_set("lan_ipaddr", "192.168.0.1");
 	}
 #endif
+#ifdef HAVE_BRCMROUTER
 	switch (brand) {
 	case ROUTER_WRT600N:
 		if (nvram_match("switch_type", "BCM5395") && nvram_match("vlan0ports", "1 2 3 4 8*"))	// fix for WRT600N
