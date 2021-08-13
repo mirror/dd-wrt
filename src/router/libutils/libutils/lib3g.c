@@ -1626,7 +1626,7 @@ void get3GControlDevice(void)
 	if (nvram_invmatch("wan_select_enable", "1")) {
 		fprintf(stderr, "WAN_SELECT no multisim selected, turn back to A(1)\n");
 		nvram_set("wan_select", "1");
-		nvram_commit();
+		nvram_async_commit();
 	}
 	int gpio1, gpio2;
 	int select = nvram_geti("wan_select");
