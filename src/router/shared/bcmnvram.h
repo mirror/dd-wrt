@@ -174,6 +174,7 @@ extern int _nvram_commit(void);
  * @return	0 on success and errno on failure
  */
 extern int nvram_commit(void);
+extern int nvram_async_commit(void);
 
 /*
  * Get all NVRAM variables (format name=value\0 ... \0\0).
