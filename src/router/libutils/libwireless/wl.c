@@ -3971,7 +3971,7 @@ int wlconf_up(char *name)
 	if (nvram_match("wl_mode", "ap")) {
 		cprintf("this version does only support the client mode\n");
 		nvram_set("wl_mode", "sta");
-		nvram_commit();
+		nvram_async_commit();
 	}
 #endif
 	int instance = get_wl_instance(name);

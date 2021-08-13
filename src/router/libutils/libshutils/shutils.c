@@ -1199,7 +1199,7 @@ char *getdisc(void)		// works only for squashfs
 			sprintf(ret, "sd%c", i);
 			if (!nocache) {
 				nvram_set("root_disc", ret);
-				nvram_commit();
+				nvram_async_commit();
 			}
 			return ret;
 		}
@@ -1214,7 +1214,7 @@ char *getdisc(void)		// works only for squashfs
 			sprintf(ret, "hd%c", i);
 			if (!nocache) {
 				nvram_set("root_disc", ret);
-				nvram_commit();
+				nvram_async_commit();
 			}
 			return ret;
 		}
@@ -1230,7 +1230,7 @@ char *getdisc(void)		// works only for squashfs
 				sprintf(ret, "mmcblk%c", i);
 				if (!nocache) {
 					nvram_set("root_disc", ret);
-					nvram_commit();
+					nvram_async_commit();
 				}
 				return ret;
 			}
@@ -1248,7 +1248,7 @@ char *getdisc(void)		// works only for squashfs
 					sprintf(ret, "nvme%cn%c", i, n);
 					if (!nocache) {
 						nvram_set("root_disc", ret);
-						nvram_commit();
+						nvram_async_commit();
 					}
 					return ret;
 				}
