@@ -287,7 +287,7 @@ void shutdown_system(void)
 		sync();
 		unmount_fs();	// try it a second time, but consider that kill already could have reached init process
 		nvram_seti("end_time", time(NULL));
-		nvram_commit();
+		nvram_async_commit();
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
 		eval("mount", "-o", "remount,ro", "/usr/local");
 		eval("mount", "-o", "remount,ro", "/");
@@ -459,7 +459,7 @@ static void reset_bootfails(void)
 	if (failcnt) {
 		// all went well, reset to zero
 		nvram_seti("boot_fails", 0);
-		nvram_commit();
+		nvram_async_commit();
 	}
 
 }
@@ -473,7 +473,7 @@ static void check_bootfails(void)
 		dd_loginfo("init", "no previous bootfails detected! (all ok)\n");
 		failcnt++;
 		nvram_seti("boot_fails", failcnt);
-		nvram_commit();
+		nvram_async_commit();
 	} else {
 		if (failcnt < 5)
 			dd_loginfo("init", "boot failed %d times, will reset after 5 attempts\n", failcnt++);
@@ -514,7 +514,7 @@ static void check_bootfails(void)
 		if (failcnt < 5) {
 			nvram_seti("boot_last_fail", failcnt);
 			nvram_seti("boot_fails", failcnt);
-			nvram_commit();
+			nvram_async_commit();
 		}
 	}
 
