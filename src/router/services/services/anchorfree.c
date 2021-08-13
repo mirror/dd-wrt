@@ -121,7 +121,7 @@ void start_anchorfree(void)
 			bzero(devid, 256);
 			deviceID(devid);
 			nvram_set("af_hash", devid);
-			nvram_commit();
+			nvram_async_commit();
 		} else {
 			strcpy(devid, nvram_safe_get("af_hash"));
 		}
@@ -262,7 +262,7 @@ void start_anchorfree(void)
 			fprintf(stderr, "error while registration (cannot reach registration site)!\n");
 			nvram_set("af_servicestatus", "cannot reach registration site!");
 			nvram_seti("af_registered", 0);
-			nvram_commit();
+			nvram_async_commit();
 			return;
 		}
 		char status[32];
@@ -273,7 +273,7 @@ void start_anchorfree(void)
 			nvram_set("af_servicestatus", "registration failed (bad status)");
 			fclose(response);
 			nvram_seti("af_registered", 0);
-			nvram_commit();
+			nvram_async_commit();
 			return;
 		}
 		nvram_set("af_servicestatus", status);
@@ -282,7 +282,7 @@ void start_anchorfree(void)
 			fprintf(stderr, "registration failed\n");
 			fclose(response);
 			nvram_seti("af_registered", 0);
-			nvram_commit();
+			nvram_async_commit();
 			return;
 		}
 		bzero(status, 32);
@@ -292,7 +292,7 @@ void start_anchorfree(void)
 			nvram_set("af_servicestatus", "registration failed (bad sid)");
 			fclose(response);
 			nvram_seti("af_registered", 0);
-			nvram_commit();
+			nvram_async_commit();
 			return;
 		}
 		fprintf(stderr, "configuring service id %s\n", status);
@@ -325,7 +325,7 @@ void start_anchorfree(void)
 	}
 
 	if (need_commit)
-		nvram_commit();
+		nvram_async_commit();
 	return;
 }
 
@@ -408,7 +408,7 @@ void stop_anchorfree(void)
 		unlink("/tmp/.anchorfree");
 		if (nvram_matchi("af_enable", 0))
 			stop_anchorfree_unregister();
-		nvram_commit();
+		nvram_async_commit();
 	}
 	return;
 }

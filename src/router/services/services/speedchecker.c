@@ -57,7 +57,7 @@ void start_speedchecker_init(void)
 		}
 	}
 	if (change)
-		nvram_commit();
+		nvram_async_commit();
 
 }
 

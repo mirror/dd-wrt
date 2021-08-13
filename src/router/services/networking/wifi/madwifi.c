@@ -1187,18 +1187,18 @@ void addWPS(FILE * fp, char *prefix, int configured)
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
 		if (nvram_matchi("wps_forcerelease", 1)) {
 			nvram_seti("wps_status", 0);
-			nvram_commit();
+			nvram_async_commit();
 			fprintf(fp, "wps_state=1\n");
 		} else {
 			if (configured) {
 				if (nvram_match("wps_status", "")) {
 					nvram_seti("wps_status", 1);
-					nvram_commit();
+					nvram_async_commit();
 				}
 			} else {
 				if (nvram_match("wps_status", "")) {
 					nvram_seti("wps_status", 0);
-					nvram_commit();
+					nvram_async_commit();
 				}
 			}
 
@@ -2977,7 +2977,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #endif
 
 	if (need_commit) {
-		nvram_commit();
+		nvram_async_commit();
 		need_commit = 0;
 	}
 	eval("killall", "-9", "roaming_daemon");

@@ -590,7 +590,7 @@ static void buffalo_defaults(int force)
 #ifdef HAVE_SPOTPASS
 		eval("startservice", "spotpass_defaults", "-f");
 #endif
-		nvram_commit();
+		nvram_async_commit();
 	}
 }
 
@@ -817,7 +817,7 @@ static void buffalo_defaults(int force)
 #ifdef HAVE_SPOTPASS
 		eval("startservice", "spotpass_defaults", "-f");
 #endif
-		nvram_commit();
+		nvram_async_commit();
 	}
 }
 #endif
@@ -3020,7 +3020,7 @@ void start_restore_defaults(void)
 	if (found == 0 && firststyle[0] != '\0') {
 		nvram_set("router_style", firststyle);
 		if (!restore_defaults) {
-			nvram_commit();
+			nvram_async_commit();
 		}
 	}
 	globfree(&globbuf);
@@ -3033,7 +3033,7 @@ void start_restore_defaults(void)
 
 		unset_nvram();
 		setWifiPass();
-		nvram_commit();
+		nvram_async_commit();
 		cprintf("done\n");
 		for (i = 0; i < MAX_NVPARSE; i++) {
 			del_wds_wsec(0, i);
@@ -3794,7 +3794,7 @@ void start_nvram(void)
 		nvram_set("olsrd_interfaces", newwordlist);
 		free(newwordlist);
 
-		nvram_commit();
+		nvram_async_commit();
 #endif
 	}
 	if (nvram_geti("nvram_ver") < 6) {

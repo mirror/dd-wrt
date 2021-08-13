@@ -208,7 +208,7 @@ void start_quagga_writememory(void)
 		nvram_unset("ripd_conf");
 	}
 
-	nvram_commit();
+	nvram_async_commit();
 }
 
 static int zebra_ospf_init(void)

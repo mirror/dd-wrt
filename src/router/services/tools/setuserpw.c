@@ -33,7 +33,8 @@ int setuserpasswd_main(int argc, char **argv)
 		nvram_seti("unblock", 1);
 	nvram_set("http_username", zencrypt(argv[1], passout));
 	nvram_set("http_passwd", zencrypt(argv[2], passout));
-	nvram_commit();
+
+	nvram_async_commit();
 	start_mkfiles();
 	return 0;
 }
