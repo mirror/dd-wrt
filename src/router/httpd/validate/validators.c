@@ -2279,7 +2279,7 @@ EJ_VISIBLE void validate_iradius(webs_t wp, char *value, struct variable *v)
 
 	sprintf(nr, "%d", leasen);
 	nvram_set("iradius_count", nr);
-	nvram_commit();
+	nvram_async_commit();
 	free(leases);
 }
 #endif
@@ -2312,7 +2312,7 @@ EJ_VISIBLE void validate_userlist(webs_t wp, char *value, struct variable *v)
 		strcat(leases, " ");
 	}
 	nvram_set("fon_userlist", leases);
-	nvram_commit();
+	nvram_async_commit();
 	free(leases);
 }
 
@@ -2376,7 +2376,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 
 	if (leasenum <= 0) {
 		nvram_unset("static_leases");
-		nvram_commit();
+		nvram_async_commit();
 		return;
 	}
 	char *leases = NULL;
@@ -2422,7 +2422,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 		strcat(leases, " ");
 	}
 	nvram_set("static_leases", leases);
-	nvram_commit();
+	nvram_async_commit();
 	free(leases);
 }
 
@@ -3439,7 +3439,7 @@ write_nvram:
 	nvram_set(v->name, buf);
 	nvram_set("static_route_name", buf_name);
 #ifdef HAVE_MICRO
-	nvram_commit();
+	nvram_async_commit();
 #endif
 	free(old_name);
 	free(old);
@@ -3687,7 +3687,7 @@ write_nvram:
 	fclose(backup);
 	nvram_set(v->name, buf);
 	nvram_set("pbr_rule_name", buf_name);
-	nvram_commit();
+	nvram_async_commit();
 
 	free(old_name);
 	free(old);

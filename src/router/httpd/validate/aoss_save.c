@@ -63,12 +63,12 @@ void aoss_save(webs_t wp)
 	if (*(nvram_safe_get("aoss_vifs"))) {
 		nvram_unset("wlan0_vifs");
 		nvram_unset("aoss_vifs");
-		nvram_commit();
+		nvram_async_commit();
 	}
 	if (*(nvram_safe_get("aossa_vifs"))) {
 		nvram_unset("wlan1_vifs");
 		nvram_unset("aossa_vifs");
-		nvram_commit();
+		nvram_async_commit();
 	}
 	char *registrar = websGetVar(wp, "wps_registrar", NULL);
 	if (registrar && nvram_invmatch("wps_registrar", registrar)) {

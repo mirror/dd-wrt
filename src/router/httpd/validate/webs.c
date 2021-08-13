@@ -302,7 +302,7 @@ static void validate_filter_tod(webs_t wp)
 void applytake(char *value)
 {
 	if (value && !strcmp(value, "ApplyTake")) {
-		nvram_commit();
+		nvram_async_commit();
 		service_restart();
 	}
 }
@@ -1296,7 +1296,7 @@ static int security_save_prefix(webs_t wp, char *prefix)
 	foreach(var, vifs, next) {
 		save_secprefix(wp, var);
 	}
-	// nvram_commit ();
+	// nvram_async_commit ();
 	return 0;
 }
 
@@ -1392,7 +1392,7 @@ static void do_script_save(webs_t wp, char *type)
 		removeLineBreak(startup);
 
 		nvram_set(type, startup);
-		nvram_commit();
+		nvram_async_commit();
 		nvram2file(type, fname);
 		chmod(fname, 0700);
 	}
@@ -1692,7 +1692,7 @@ void qos_add_svc(webs_t wp)
 //              return;
 
 	nvram_set("svqos_svcs", new_svcs);
-	nvram_commit();
+	nvram_async_commit();
 	free(new_svcs);
 }
 
@@ -2211,7 +2211,7 @@ void qos_save(webs_t wp)
 	nvram_set("svqos_aqd", websGetVar(wp, "qos_aqd", "sfq"));
 #endif
 
-	// nvram_commit ();
+	// nvram_async_commit ();
 
 	/*
 	 * tcp-packet flags
@@ -2291,7 +2291,7 @@ void qos_save(webs_t wp)
 	}
 
 	nvram_set("svqos_svcs", svqos_var);
-	// nvram_commit ();
+	// nvram_async_commit ();
 	bzero(svqos_var, 4096);
 
 	/*
@@ -2391,7 +2391,7 @@ void qos_save(webs_t wp)
 	}
 
 	nvram_set("svqos_ips", svqos_var);
-	// nvram_commit ();
+	// nvram_async_commit ();
 	bzero(svqos_var, 4096);
 
 	/*
@@ -2439,7 +2439,7 @@ void qos_save(webs_t wp)
 
 	nvram_set("svqos_macs", svqos_var);
 	free(svqos_var);
-	// nvram_commit ();
+	// nvram_async_commit ();
 
 	/*
 	 * adm6996 LAN port priorities 
@@ -2935,7 +2935,7 @@ void add_vifs_single(char *prefix, int device)
 	gp_action = 0;
 #endif
 
-	// nvram_commit ();
+	// nvram_async_commit ();
 	free(n);
 }
 
@@ -3292,12 +3292,12 @@ void remove_vifs_single(char *prefix, int vap)
 	if (*(nvram_safe_get("aoss_vifs"))) {
 		nvram_unset("wlan0_vifs");
 		nvram_unset("aoss_vifs");
-		nvram_commit();
+		nvram_async_commit();
 	}
 	if (*(nvram_safe_get("aossa_vifs"))) {
 		nvram_unset("wlan1_vifs");
 		nvram_unset("aossa_vifs");
-		nvram_commit();
+		nvram_async_commit();
 	}
 #endif
 	free(copy);
@@ -3411,7 +3411,7 @@ void add_bond(webs_t wp)
 
 	sprintf(var, "%d", realcount);
 	nvram_set("bonding_count", var);
-	nvram_commit();
+	nvram_async_commit();
 	return;
 }
 
@@ -3443,7 +3443,7 @@ void del_bond(webs_t wp)
 	sprintf(var, "%d", realcount);
 	nvram_set("bonding_count", var);
 	nvram_set("bondings", newwordlist);
-	nvram_commit();
+	nvram_async_commit();
 	free(newwordlist);
 
 	return;
@@ -3467,7 +3467,7 @@ void add_olsrd(webs_t wp)
 		strcpy(newadd, ifname);
 	}
 	nvram_set("olsrd_interfaces", newadd);
-	nvram_commit();
+	nvram_async_commit();
 	free(newadd);
 	return;
 }
@@ -3493,7 +3493,7 @@ void del_olsrd(webs_t wp)
 		count++;
 	}
 	nvram_set("olsrd_interfaces", newlist);
-	nvram_commit();
+	nvram_async_commit();
 	free(newlist);
 	return;
 }
@@ -3546,7 +3546,7 @@ void save_olsrd(webs_t wp)
 		free(tmp);
 	}
 	nvram_set("olsrd_interfaces", newlist);
-	nvram_commit();
+	nvram_async_commit();
 	free(newlist);
 	return;
 }
@@ -4033,7 +4033,7 @@ void add_vlan(webs_t wp)
 
 	sprintf(var, "%d", realcount);
 	nvram_set("vlan_tagcount", var);
-	nvram_commit();
+	nvram_async_commit();
 	return;
 }
 
@@ -4076,7 +4076,7 @@ void del_vlan(webs_t wp)
 	sprintf(var, "%d", realcount);
 	nvram_set("vlan_tagcount", var);
 	nvram_set("vlan_tags", newwordlist);
-	nvram_commit();
+	nvram_async_commit();
 	free(newwordlist);
 
 	return;
@@ -4102,7 +4102,7 @@ void add_mdhcp(webs_t wp)
 
 	sprintf(var, "%d", realcount);
 	nvram_set("mdhcpd_count", var);
-	nvram_commit();
+	nvram_async_commit();
 	return;
 }
 
@@ -4134,7 +4134,7 @@ void del_mdhcp(webs_t wp)
 	sprintf(var, "%d", realcount);
 	nvram_set("mdhcpd_count", var);
 	nvram_set("mdhcpd", newwordlist);
-	nvram_commit();
+	nvram_async_commit();
 	free(newwordlist);
 
 	return;
@@ -4177,7 +4177,7 @@ void del_bridge(webs_t wp)
 	sprintf(var, "%d", realcount);
 	nvram_set("bridges_count", var);
 	nvram_set("bridges", newwordlist);
-	nvram_commit();
+	nvram_async_commit();
 	free(newwordlist);
 
 	return;
@@ -4203,7 +4203,7 @@ void add_bridge(webs_t wp)
 
 	sprintf(var, "%d", realcount);
 	nvram_set("bridges_count", var);
-	nvram_commit();
+	nvram_async_commit();
 	return;
 }
 
@@ -4235,7 +4235,7 @@ void del_bridgeif(webs_t wp)
 	sprintf(var, "%d", realcount);
 	nvram_set("bridgesif_count", var);
 	nvram_set("bridgesif", newwordlist);
-	nvram_commit();
+	nvram_async_commit();
 	free(newwordlist);
 
 	return;
@@ -4262,7 +4262,7 @@ void add_bridgeif(webs_t wp)
 
 	sprintf(var, "%d", realcount);
 	nvram_set("bridgesif_count", var);
-	nvram_commit();
+	nvram_async_commit();
 	return;
 }
 
@@ -4288,7 +4288,7 @@ void add_ipvs(webs_t wp)
 
 	sprintf(var, "%d", realcount);
 	nvram_set("ipvs_count", var);
-	nvram_commit();
+	nvram_async_commit();
 	return;
 }
 
@@ -4324,7 +4324,7 @@ void del_ipvs(webs_t wp)
 	sprintf(var, "%d", realcount);
 	nvram_set("ipvs_count", var);
 	nvram_set("ipvs", newwordlist);
-	nvram_commit();
+	nvram_async_commit();
 	if (newwordlist)
 		free(newwordlist);
 	return;
@@ -4350,7 +4350,7 @@ void add_ipvstarget(webs_t wp)
 
 	sprintf(var, "%d", realcount);
 	nvram_set("ipvstarget_count", var);
-	nvram_commit();
+	nvram_async_commit();
 	return;
 }
 
@@ -4386,7 +4386,7 @@ void del_ipvstarget(webs_t wp)
 	sprintf(var, "%d", realcount);
 	nvram_set("ipvstarget_count", var);
 	nvram_set("ipvstarget", newwordlist);
-	nvram_commit();
+	nvram_async_commit();
 	if (newwordlist)
 		free(newwordlist);
 	return;
@@ -4829,7 +4829,7 @@ void wireless_join(webs_t wp)
 				nvram_set("wl_ssid", ssid);
 			nvram_nset(ssid, "%s_ssid", wifi);
 			nvram_set("cur_ssid", ssid);
-			nvram_commit();
+			nvram_async_commit();
 		}
 
 	}
@@ -4925,7 +4925,7 @@ void wireless_save(webs_t wp)
 	}
 	nvram_set("radiooff_boot_off", rd_boot_off);
 #endif
-	// nvram_commit ();
+	// nvram_async_commit ();
 	applytake(value);
 #ifdef HAVE_GUESTPORT
 	eval("stopservice", "firewall");
@@ -4988,7 +4988,7 @@ void ttraff_erase(webs_t wp)
 		}
 	}
 	pclose(fp);
-	nvram_commit();
+	nvram_async_commit();
 }
 
 void changepass(webs_t wp)
@@ -5019,7 +5019,7 @@ void changepass(webs_t wp)
 		nvram_set("http_pwdpln", pass);
 #endif
 	}
-	nvram_commit();
+	nvram_async_commit();
 }
 
 #ifdef HAVE_CHILLILOCAL
@@ -5660,7 +5660,7 @@ void port_vlan_table_save(webs_t wp)
 	nvram_set("trunking", buff);
 	nvram_seti("vlans", 1);
 
-	nvram_commit();
+	nvram_async_commit();
 
 }
 
