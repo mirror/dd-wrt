@@ -788,12 +788,46 @@ static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
 			mark_inode_dirty(inode);
 		}
 	} else if (vbo < valid && valid < end) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+		/* fix page */
+		unsigned long uaddr = ~0ul;
+		struct page *page;
+		long i, npages;
+		size_t dvbo = valid - vbo;
+		size_t off = 0;
+		unsigned long nr_segs = iter->nr_segs;
+		const struct iovec *iov = iter->iov;
+
+		/*Find user address*/
+		for (i = 0; i < nr_segs; i++) {
+			if (off <= dvbo && dvbo < off + iov[i].iov_len) {
+				uaddr = (unsigned long)iov[i].iov_base + dvbo -
+					off;
+				break;
+			}
+			off += iov[i].iov_len;
+		}
+
+		if (uaddr == ~0ul)
+			goto fix_error;
+
+		npages = get_user_pages_unlocked(current, current->mm, uaddr, 1, &page, FOLL_WRITE);
+		if (npages <= 0)
+			goto fix_error;
+
+		zero_user_segment(page, valid & (PAGE_SIZE - 1), PAGE_SIZE);
+		put_page(page);
+#else
 		iov_iter_revert(iter, end - valid);
 		iov_iter_zero(end - valid, iter);
+#endif
 	}
 
 out:
 	return ret;
+fix_error:
+	ntfs_inode_warn(inode, "file garbage at 0x%llx", valid);
+	goto out;
 }
 
 int ntfs_set_size(struct inode *inode, u64 new_size)
