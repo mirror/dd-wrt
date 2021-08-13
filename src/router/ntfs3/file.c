@@ -261,7 +261,12 @@ static int ntfs_zero_range(struct inode *inode, u64 vbo, u64 vbo_to)
 				lock_buffer(bh);
 				bh->b_end_io = end_buffer_read_sync;
 				get_bh(bh);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+				submit_bh(REQ_OP_READ, bh);
+#else
 				submit_bh(REQ_OP_READ, 0, bh);
+
+#endif
 
 				wait_on_buffer(bh);
 				if (!buffer_uptodate(bh)) {
