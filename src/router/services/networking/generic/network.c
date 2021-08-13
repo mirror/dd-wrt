@@ -649,7 +649,7 @@ void reset_hwaddr(char *ifname)
 				nvram_unset("wan_hwaddr");
 				// fix dlink quirk, by restarting system. utils.c will
 				// automaticly assign the et0macaddr then
-				nvram_commit();
+				nvram_async_commit();
 				eval("event", "5", "1", "15");
 			}
 		}
@@ -1893,7 +1893,7 @@ void start_lan(void)
 		nvram_set("lan_ifname", lan_ifname);
 		nvram_set("wan_ifname", wan_ifname);
 		nvram_set("lan_ifnames", lan_ifnames);
-		nvram_commit();
+		nvram_async_commit();
 	}
 
 	cprintf("lan ifname = %s\n", lan_ifname);
@@ -1946,7 +1946,7 @@ void start_lan(void)
 
 		if (nvram_match("wl0_hwaddr", "") || !nvram_exists("wl0_hwaddr")) {
 			nvram_set("wl0_hwaddr", mac);
-			nvram_commit();
+			nvram_async_commit();
 		}
 	}
 	/*
@@ -2110,7 +2110,7 @@ void start_lan(void)
 					if (nvram_nmatch("", "wl%d_hwaddr", instance)
 					    || !nvram_nget("wl%d_hwaddr", instance)) {
 						nvram_nset(mac, "wl%d_hwaddr", instance);
-						nvram_commit();
+						nvram_async_commit();
 						ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 						strncpy(ifr.ifr_name, name, IFNAMSIZ);
 
@@ -3325,7 +3325,7 @@ void run_wan(int status)
 	if ((strcmp(wan_proto, "3g") == 0)) {
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
-			nvram_commit();
+			nvram_async_commit();
 			load_drivers(1);
 		}
 
@@ -4238,7 +4238,7 @@ void run_wan(int status)
 	else if (strcmp(wan_proto, "iphone") == 0) {
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
-			nvram_commit();
+			nvram_async_commit();
 			load_drivers(1);
 		}
 		insmod("ipheth");

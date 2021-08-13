@@ -38,7 +38,7 @@ void start_rstats(void)
 	if (nvram_match("rstats_path", "/jffs/")
 	    && nvram_matchi("enable_jffs2", 1)) {
 		nvram_set("rstats_path", "");
-		nvram_commit();
+		nvram_async_commit();
 	}
 
 	if (nvram_matchi("rstats_enable", 1)) {

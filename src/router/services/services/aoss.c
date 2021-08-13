@@ -104,7 +104,7 @@ void start_aoss(void)
 #ifdef HAVE_WZRHPAG300NH
 	nvram_set("wlan1_vifs", copy2);
 #endif
-	nvram_commit();
+	nvram_async_commit();
 	int hasaoss = 0;
 #ifdef HAVE_WZRHPAG300NH
 #ifdef HAVE_ATH9K

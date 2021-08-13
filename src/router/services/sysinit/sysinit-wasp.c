@@ -460,7 +460,7 @@ void start_sysinit(void)
 		nvram_set("wlan10k-ct_bak", "1");
 	} else
 		nvram_set("wlan10k-ct_bak", "0");
-	nvram_commit();
+	nvram_async_commit();
 #endif
 #if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
 	runStartup(".onnet");

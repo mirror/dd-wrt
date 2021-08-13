@@ -380,7 +380,7 @@ void start_raid(void)
 
 		if (!strcmp(done, "0")) {
 			nvram_nseti(1, "raiddone%d", i);
-			nvram_commit();
+			nvram_async_commit();
 		}
 
 		i++;
