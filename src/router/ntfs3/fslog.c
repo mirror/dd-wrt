@@ -1544,8 +1544,9 @@ static u32 current_log_avail(struct ntfs_log *log)
 	 */
 	next_free_off = (log->l_flags & NTFSLOG_REUSE_TAIL)
 				? log->next_page + log->page_size
-			: log->next_page == log->first_page ? log->l_size
-							    : log->next_page;
+				: log->next_page == log->first_page
+					  ? log->l_size
+					  : log->next_page;
 
 	/* If the two offsets are the same then there is no available space */
 	if (oldest_off == next_free_off)

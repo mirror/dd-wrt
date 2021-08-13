@@ -111,8 +111,28 @@ static int ntfs_create(struct inode *dir,
 	ni_lock_dir(ni);
 
 	inode = ntfs_create_inode(dir, dentry, NULL, S_IFREG | mode,
-				  0, NULL, 0, excl, NULL);
+				  0, NULL, 0, NULL);
 
+	ni_unlock(ni);
+
+	return IS_ERR(inode) ? PTR_ERR(inode) : 0;
+}
+
+/*
+ * ntfs_mknod
+ *
+ * inode_operations::mknod
+ */
+static int ntfs_mknod(struct inode *dir,
+		      struct dentry *dentry, umode_t mode, dev_t rdev)
+{
+	struct ntfs_inode *ni = ntfs_i(dir);
+	struct inode *inode;
+
+	ni_lock_dir(ni);
+
+	inode = ntfs_create_inode(dir, dentry, NULL, mode, rdev,
+				  NULL, 0, NULL);
 	ni_unlock(ni);
 
 	return IS_ERR(inode) ? PTR_ERR(inode) : 0;
@@ -194,7 +214,7 @@ static int ntfs_symlink(struct inode *dir,
 	ni_lock_dir(ni);
 
 	inode = ntfs_create_inode(dir, dentry, NULL, S_IFLNK | 0777,
-				  0, symname, size, 0, NULL);
+				  0, symname, size, NULL);
 
 	ni_unlock(ni);
 
@@ -215,7 +235,7 @@ static int ntfs_mkdir(struct inode *dir,
 	ni_lock_dir(ni);
 
 	inode = ntfs_create_inode(dir, dentry, NULL, S_IFDIR | mode,
-				  0, NULL, -1, 0, NULL);
+				  0, NULL, -1, NULL);
 
 	ni_unlock(ni);
 
@@ -473,82 +493,6 @@ out:
 	return err;
 }
 
-/*
- * ntfs_atomic_open
- *
- * inode_operations::atomic_open
- */
-static int
-ntfs_atomic_open(struct inode *dir, struct dentry *dentry,
-		 struct file *file, unsigned flags, umode_t mode,
-		 int *opened)
-{
-	int err;
-	bool excl = !!(flags & O_EXCL);
-	struct inode *inode;
-	struct ntfs_fnd *fnd = NULL;
-	struct ntfs_inode *ni = ntfs_i(dir);
-	struct dentry *d = NULL;
-	struct cpu_str *uni = __getname();
-
-	if (!uni)
-		return -ENOMEM;
-
-	err = ntfs_nls_to_utf16(ni->mi.sbi, dentry->d_name.name,
-				dentry->d_name.len, uni, NTFS_NAME_LEN,
-				UTF16_HOST_ENDIAN);
-	if (err < 0)
-		goto out;
-
-	ni_lock_dir(ni);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
-	if (d_unhashed(dentry)) {
-#else
-	if (d_in_lookup(dentry)) {
-#endif
-		fnd = fnd_get();
-		if (!fnd) {
-			err = -ENOMEM;
-			goto out1;
-		}
-
-		d = d_splice_alias(dir_search_u(dir, uni, fnd), dentry);
-		if (IS_ERR(d)) {
-			err = PTR_ERR(d);
-			d = NULL;
-			goto out2;
-		}
-
-		if (d)
-			dentry = d;
-	}
-
-	if (!(flags & O_CREAT) || d_really_is_positive(dentry)) {
-		err = finish_no_open(file, d);
-		goto out2;
-	}
-
-	*opened |= FILE_CREATED;
-
-	/*fnd contains tree's path to insert to*/
-	/* TODO: init_user_ns? */
-	inode = ntfs_create_inode(dir, dentry, uni, mode, 0,
-				  NULL, 0, excl, fnd);
-	err = IS_ERR(inode) ? PTR_ERR(inode)
-			    : finish_open(file, dentry, ntfs_file_open, opened);
-	dput(d);
-
-out2:
-	fnd_put(fnd);
-out1:
-	ni_unlock(ni);
-out:
-	__putname(uni);
-
-	return err;
-}
-
 struct dentry *ntfs3_get_parent(struct dentry *child)
 {
 	struct inode *inode = d_inode(child);
@@ -571,21 +515,31 @@ struct dentry *ntfs3_get_parent(struct dentry *child)
 	return ERR_PTR(-ENOENT);
 }
 
+// clang-format off
 const struct inode_operations ntfs_dir_inode_operations = {
-	.lookup = ntfs_lookup,
-	.create = ntfs_create,
-	.link = ntfs_link,
-	.unlink = ntfs_unlink,
-	.symlink = ntfs_symlink,
-	.mkdir = ntfs_mkdir,
-	.rmdir = ntfs_rmdir,
-	.rename = ntfs_rename,
-	.permission = ntfs_permission,
-	.get_acl = ntfs_get_acl,
-	.set_acl = ntfs_set_acl,
-	.setattr = ntfs3_setattr,
-	.getattr = ntfs_getattr,
-	.listxattr = ntfs_listxattr,
-	.atomic_open = ntfs_atomic_open,
-	.fiemap = ntfs_fiemap,
+	.lookup		= ntfs_lookup,
+	.create		= ntfs_create,
+	.link		= ntfs_link,
+	.unlink		= ntfs_unlink,
+	.symlink	= ntfs_symlink,
+	.mkdir		= ntfs_mkdir,
+	.rmdir		= ntfs_rmdir,
+	.mknod		= ntfs_mknod,
+	.rename		= ntfs_rename,
+	.permission	= ntfs_permission,
+	.get_acl	= ntfs_get_acl,
+	.set_acl	= ntfs_set_acl,
+	.setattr	= ntfs3_setattr,
+	.getattr	= ntfs_getattr,
+	.listxattr	= ntfs_listxattr,
+	.fiemap		= ntfs_fiemap,
 };
+
+const struct inode_operations ntfs_special_inode_operations = {
+	.setattr	= ntfs3_setattr,
+	.getattr	= ntfs_getattr,
+	.listxattr	= ntfs_listxattr,
+	.get_acl	= ntfs_get_acl,
+	.set_acl	= ntfs_set_acl,
+};
+// clang-format on
