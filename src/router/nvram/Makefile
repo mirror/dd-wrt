@@ -174,10 +174,10 @@ install: all
 
 
 clean:
-	rm -f *.o *.a *.so nvram
+	rm -f *.o *.a *.so nvram async_commit
 
 async_commit: async_commit.o
-	@$(CC) $(CFLAGS) -mpreferred-stack-boundary=2 -falign-functions=1 -falign-jumps=1 -falign-loops=1 -fomit-frame-pointer -o $@ $^ -L. -lnvram
+	@$(CC) $(CFLAGS) -o $@ $^ -L. -lnvram
 	
 
 libnvram.so: nvram_linux.o nvram_convert.o backup.o
