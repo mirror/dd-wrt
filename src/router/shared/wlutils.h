@@ -362,6 +362,7 @@ extern struct wifi_channels *list_channels_11n(char *devnr);
 extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country, int max_bandwidth_khz, unsigned char band);
 extern int getdevicecount(void);
 
+extern int mac80211_get_maxpower(char *interface);
 extern int mac80211_get_coverageclass(char *interface);
 extern struct mac80211_info *mac80211_assoclist(char *interface);
 extern char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc);
