@@ -85,7 +85,7 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 		}
 		strcat(sbuff, "[0:0]");
 		nvram_set(tq, sbuff);
-		nvram_commit();	// invalidate them
+		nvram_async_commit();	// invalidate them
 		tdata = nvram_safe_get(tq);
 	}
 
@@ -312,7 +312,7 @@ static int ttraff_main(int argc, char **argv)
 
 		if (needcommit)	// commit only 1 time per day (at 23:59)
 		{
-			nvram_commit();
+			nvram_async_commit();
 			commited = 1;
 			needcommit = 0;
 			dd_syslog(LOG_DEBUG, "ttraff: data for %d-%d-%d commited to nvram\n", day, month, year);

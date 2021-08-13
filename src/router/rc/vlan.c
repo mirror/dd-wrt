@@ -636,7 +636,7 @@ static int vlan_configure(void)
 			return -1;
 	}
 
-	nvram_commit();
+	nvram_async_commit();
 
 	return 0;
 }
