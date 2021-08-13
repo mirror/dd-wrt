@@ -458,7 +458,7 @@ void start_sysinit(void)
 			free(var);
 		}
 		if (gpio_need_commit)
-			nvram_commit();
+			nvram_async_commit();
 	}
 #endif
 

@@ -336,7 +336,7 @@ int ddns_success_main(int argc, char *argv[])
 	nvram_set("ddns_url_buf", nvram_safe_get(_url));
 	nvram_set("ddns_custom_5_buf", nvram_safe_get("ddns_custom_5"));
 
-	nvram_commit();
+	nvram_async_commit();
 
 	cprintf("done\n");
 

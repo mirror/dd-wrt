@@ -404,7 +404,7 @@ void chilli_config(void)
 		filter[a] = 0;
 		if (strcmp(filter, add)) {
 			nvram_set("chilli_additional", filter);
-			nvram_commit();
+			nvram_async_commit();
 		}
 		free(filter);
 	}
@@ -443,7 +443,7 @@ void hotspotsys_config(void)
 			sprintf(&idkey[2 * i], "%02d", (hash[i] + hash[i + 1]) % 100);
 		idkey[12] = '\0';
 		nvram_set("hotss_remotekey", idkey);
-		nvram_commit();
+		nvram_async_commit();
 		char sendid[256];
 		sprintf(sendid,
 			"/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&operator=%s\\&location=%s\\&remotekey=%s",

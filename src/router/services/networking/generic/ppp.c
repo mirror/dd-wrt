@@ -267,7 +267,7 @@ int ipdown_main(int argc, char **argv)
 			stamp = 0;
 		snprintf(buffer, sizeof(buffer), "%ld", stamp);
 		nvram_set("ppp_byte_stamp", buffer);
-		nvram_commit();
+		nvram_async_commit();
 	}
 
 	if (nvram_matchi("ppp_demand", 1)

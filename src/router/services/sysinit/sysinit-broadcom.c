@@ -319,11 +319,11 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 			nvram_set("pci/2/1/macaddr", mac);
 		}
 		nvram_seti("partialboots", 0);
-		nvram_commit();
+		nvram_async_commit();
 	case ROUTER_LINKSYS_EA2700:
 		nvram_seti("bootpartition", 0);
 		nvram_seti("partialboots", 0);
-		nvram_commit();
+		nvram_async_commit();
 		insmod("wl");	// load module
 		break;
 	case ROUTER_WRT600N:

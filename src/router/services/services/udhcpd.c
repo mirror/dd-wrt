@@ -208,11 +208,11 @@ void start_udhcpd(void)
 	// Wolf add - keep lease within reasonable timeframe
 	if (nvram_geti("dhcp_lease") < 10) {
 		nvram_seti("dhcp_lease", 10);
-		nvram_commit();
+		nvram_async_commit();
 	}
 	if (nvram_geti("dhcp_lease") > 5760) {
 		nvram_seti("dhcp_lease", 5760);
-		nvram_commit();
+		nvram_async_commit();
 	}
 
 	fprintf(fp, "option lease %d\n", nvram_geti("dhcp_lease") ? nvram_geti("dhcp_lease") * 60 : 86400);

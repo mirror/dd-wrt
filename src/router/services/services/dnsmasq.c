@@ -569,7 +569,7 @@ void start_dnsmasq(void)
 	if (nvram_match("lan_proto", "dhcp")
 	    && nvram_matchi("dnsmasq_enable", 0)) {
 		nvram_seti("dnsmasq_enable", 1);
-		nvram_commit();
+		nvram_async_commit();
 	}
 
 	if (!nvram_invmatchi("dnsmasq_enable", 0)) {
