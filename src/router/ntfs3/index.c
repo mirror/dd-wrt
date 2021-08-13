@@ -2574,6 +2574,10 @@ out2:
 	return err;
 }
 
+/*
+ * Update duplicated information in directory entry
+ * 'dup' - info from MFT record
+ */
 int indx_update_dup(struct ntfs_inode *ni, struct ntfs_sb_info *sbi,
 		    const struct ATTR_FILE_NAME *fname,
 		    const struct NTFS_DUP_INFO *dup, int sync)
@@ -2598,7 +2602,7 @@ int indx_update_dup(struct ntfs_inode *ni, struct ntfs_sb_info *sbi,
 		goto out;
 	}
 
-	/* Find entries tree and on disk */
+	/* Find entry in directory */
 	err = indx_find(indx, ni, root, fname, fname_full_size(fname), sbi,
 			&diff, &e, fnd);
 	if (err)
@@ -2624,13 +2628,15 @@ int indx_update_dup(struct ntfs_inode *ni, struct ntfs_sb_info *sbi,
 	memcpy(&e_fname->dup, dup, sizeof(*dup));
 
 	if (fnd->level) {
+		/* directory entry in index */
 		err = indx_write(indx, ni, fnd->nodes[fnd->level - 1], sync);
-	} else if (sync) {
-		mi->dirty = true;
-		err = mi_write(mi, 1);
 	} else {
+		/* directory entry in directory MFT record */
 		mi->dirty = true;
-		mark_inode_dirty(&ni->vfs_inode);
+		if (sync)
+			err = mi_write(mi, 1);
+		else
+			mark_inode_dirty(&ni->vfs_inode);
 	}
 
 out:

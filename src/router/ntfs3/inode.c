@@ -51,6 +51,9 @@ static struct inode *ntfs_read_mft(struct inode *inode,
 	struct runs_tree *run;
 
 	inode->i_op = NULL;
+	/* Setup 'uid' and 'gid' */
+	inode->i_uid = sbi->options.fs_uid;
+	inode->i_gid = sbi->options.fs_gid;
 
 	err = mi_init(&ni->mi, sbi, ino);
 	if (err)
@@ -354,8 +357,15 @@ next_attr:
 
 	case ATTR_EA_INFO:
 		if (!attr->name_len &&
-		    resident_data_ex(attr, sizeof(struct EA_INFO)))
+		    resident_data_ex(attr, sizeof(struct EA_INFO))) {
 			ni->ni_flags |= NI_FLAG_EA;
+			/*
+			 * ntfs_get_wsl_perm updates inode->i_uid, inode->i_gid, inode->i_mode
+			 */
+			inode->i_mode = mode;
+			ntfs_get_wsl_perm(inode);
+			mode = inode->i_mode;
+		}
 		goto next_attr;
 
 	default:
@@ -387,14 +397,12 @@ end_enum:
 	if (std5->fa & FILE_ATTRIBUTE_READONLY)
 		mode &= ~0222;
 
-	/* Setup 'uid' and 'gid' */
-	inode->i_uid = sbi->options.fs_uid;
-	inode->i_gid = sbi->options.fs_gid;
-
 	if (!names) {
 		err = -EINVAL;
 		goto out;
 	}
+
+	set_nlink(inode, names);
 
 	if (S_ISDIR(mode)) {
 		ni->std_fa |= FILE_ATTRIBUTE_DIRECTORY;
@@ -404,7 +412,6 @@ end_enum:
 		 * included in enumeration.
 		 * Usually a hard links to directories are disabled
 		 */
-		set_nlink(inode, 1);
 		inode->i_op = &ntfs_dir_inode_operations;
 		inode->i_fop = &ntfs_dir_operations;
 		ni->i_valid = 0;
@@ -413,19 +420,18 @@ end_enum:
 		inode->i_op = &ntfs_link_inode_operations;
 		inode->i_fop = NULL;
 		inode_nohighmem(inode); // ??
-		set_nlink(inode, names);
 	} else if (S_ISREG(mode)) {
 		ni->std_fa &= ~FILE_ATTRIBUTE_DIRECTORY;
-
-		set_nlink(inode, names);
-
 		inode->i_op = &ntfs_file_inode_operations;
 		inode->i_fop = &ntfs_file_operations;
 		inode->i_mapping->a_ops =
 			is_compressed(ni) ? &ntfs_aops_cmpr : &ntfs_aops;
-
 		if (ino != MFT_REC_MFT)
 			init_rwsem(&ni->file.run_lock);
+	} else if (S_ISCHR(mode) || S_ISBLK(mode) || S_ISFIFO(mode) ||
+		   S_ISSOCK(mode)) {
+		inode->i_op = &ntfs_special_inode_operations;
+		init_special_inode(inode, mode, inode->i_rdev);
 	} else if (fname && fname->home.low == cpu_to_le32(MFT_REC_EXTEND) &&
 		   fname->home.seq == cpu_to_le16(MFT_REC_EXTEND)) {
 		/* Records in $Extend are not a files or general directories */
@@ -568,7 +574,6 @@ static noinline int ntfs_get_block_vbo(struct inode *inode, u64 vbo,
 		if (!create) {
 			if (bh->b_size > bytes)
 				bh->b_size = bytes;
-
 			return 0;
 		}
 		WARN_ON(1);
@@ -594,15 +599,16 @@ static noinline int ntfs_get_block_vbo(struct inode *inode, u64 vbo,
 			set_buffer_new(bh);
 	} else if (create) {
 		/*normal write*/
-		if (vbo >= valid) {
+		if (bytes > bh->b_size)
+			bytes = bh->b_size;
+
+		if (vbo >= valid)
 			set_buffer_new(bh);
-			if (bytes > bh->b_size)
-				bytes = bh->b_size;
+
+		if (vbo + bytes > valid) {
 			ni->i_valid = vbo + bytes;
 			mark_inode_dirty(inode);
 		}
-	} else if (valid >= inode->i_size) {
-		/* normal read of normal file*/
 	} else if (vbo >= valid) {
 		/* read out of valid data*/
 		/* should never be here 'cause already checked */
@@ -616,19 +622,22 @@ static noinline int ntfs_get_block_vbo(struct inode *inode, u64 vbo,
 		/*
 		 * read across valid size: vbo < valid && valid < vbo + block_size
 		 */
-		u32 voff = valid - vbo;
+		bytes = block_size;
 
-		bh->b_size = bytes = block_size;
-		off = vbo & (PAGE_SIZE - 1);
-		set_bh_page(bh, page, off);
-		ll_rw_block(REQ_OP_READ, 0, 1, &bh);
-		wait_on_buffer(bh);
-		/* Uhhuh. Read error. Complain and punt. */
-		if (!buffer_uptodate(bh)) {
-			err = -EIO;
-			goto out;
+		if (page) {
+			u32 voff = valid - vbo;
+
+			bh->b_size = block_size;
+			off = vbo & (PAGE_SIZE - 1);
+			set_bh_page(bh, page, off);
+			ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+			wait_on_buffer(bh);
+			if (!buffer_uptodate(bh)) {
+				err = -EIO;
+				goto out;
+			}
+			zero_user_segment(page, off + voff, off + block_size);
 		}
-		zero_user_segment(page, off + voff, off + block_size);
 	}
 
 	if (bh->b_size > bytes)
@@ -747,12 +756,9 @@ static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
 	struct address_space *mapping = file->f_mapping;
 	struct inode *inode = mapping->host;
 	struct ntfs_inode *ni = ntfs_i(inode);
-	size_t count = iov_iter_count(iter);
 	loff_t vbo = iocb->ki_pos;
-	loff_t end = vbo + count;
+	loff_t end;
 	int wr = iov_iter_rw(iter) & WRITE;
-	const struct iovec *iov = iter->iov;
-	unsigned long nr_segs = iter->nr_segs;
 	loff_t valid;
 	ssize_t ret;
 
@@ -770,54 +776,24 @@ static ssize_t ntfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
 	ret = blockdev_direct_IO(iocb, inode, iter, offset, wr ? ntfs_get_block_direct_IO_W :
  				      ntfs_get_block_direct_IO_R);
 #endif
+	if (ret <= 0)
+		goto out;
+
+	end = vbo + ret;
 	valid = ni->i_valid;
 	if (wr) {
-		if (ret <= 0)
-			goto out;
-
-		vbo += ret;
-		if (vbo > valid && !S_ISBLK(inode->i_mode)) {
+		if (end > valid && !S_ISBLK(inode->i_mode)) {
+			ni->i_valid = end;
 			ni->i_valid = vbo;
 			mark_inode_dirty(inode);
 		}
 	} else if (vbo < valid && valid < end) {
-		/* fix page */
-		unsigned long uaddr = ~0ul;
-		struct page *page;
-		long i, npages;
-		size_t dvbo = valid - vbo;
-		size_t off = 0;
-
-		/*Find user address*/
-		for (i = 0; i < nr_segs; i++) {
-			if (off <= dvbo && dvbo < off + iov[i].iov_len) {
-				uaddr = (unsigned long)iov[i].iov_base + dvbo -
-					off;
-				break;
-			}
-			off += iov[i].iov_len;
-		}
-
-		if (uaddr == ~0ul)
-			goto fix_error;
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
-		npages = get_user_pages_unlocked(current, current->mm, uaddr, 1, &page, FOLL_WRITE);
-#else
-		npages = get_user_pages_unlocked(uaddr, 1, &page, FOLL_WRITE);
-#endif
-		if (npages <= 0)
-			goto fix_error;
-
-		zero_user_segment(page, valid & (PAGE_SIZE - 1), PAGE_SIZE);
-		put_page(page);
+		iov_iter_revert(iter, end - valid);
+		iov_iter_zero(end - valid, iter);
 	}
 
 out:
 	return ret;
-fix_error:
-	ntfs_inode_warn(inode, "file garbage at 0x%llx", valid);
-	goto out;
 }
 
 int ntfs_set_size(struct inode *inode, u64 new_size)
@@ -1188,7 +1164,7 @@ out:
 struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 				const struct cpu_str *uni, umode_t mode,
 				dev_t dev, const char *symname, u32 size,
-				int excl, struct ntfs_fnd *fnd)
+				struct ntfs_fnd *fnd)
 {
 	int err;
 	struct super_block *sb = dir->i_sb;
@@ -1211,20 +1187,13 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 	struct INDEX_ROOT *root, *dir_root;
 	struct NTFS_DE *e, *new_de = NULL;
 	struct REPARSE_DATA_BUFFER *rp = NULL;
-	bool is_dir = S_ISDIR(mode);
-	bool is_link = S_ISLNK(mode);
 	bool rp_inserted = false;
-	bool is_sp = S_ISCHR(mode) || S_ISBLK(mode) || S_ISFIFO(mode) ||
-		     S_ISSOCK(mode);
-
-	if (is_sp)
-		return ERR_PTR(-EOPNOTSUPP);
 
 	dir_root = indx_get_root(&dir_ni->dir, dir_ni, NULL, NULL);
 	if (!dir_root)
 		return ERR_PTR(-EINVAL);
 
-	if (is_dir) {
+	if (S_ISDIR(mode)) {
 		/* use parent's directory attributes */
 		fa = dir_ni->std_fa | FILE_ATTRIBUTE_DIRECTORY |
 		     FILE_ATTRIBUTE_ARCHIVE;
@@ -1235,7 +1204,7 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 		 */
 		if (dir->i_ino == MFT_REC_ROOT)
 			fa &= ~(FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
-	} else if (is_link) {
+	} else if (S_ISLNK(mode)) {
 		/* It is good idea that link should be the same type (file/dir) as target */
 		fa = FILE_ATTRIBUTE_REPARSE_POINT;
 
@@ -1263,14 +1232,19 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 		 *		path_put(&path);
 		 *	}
 		 */
-	} else if (sbi->options.sparse) {
-		/* sparsed regular file, cause option 'sparse' */
-		fa = FILE_ATTRIBUTE_SPARSE_FILE | FILE_ATTRIBUTE_ARCHIVE;
-	} else if (dir_ni->std_fa & FILE_ATTRIBUTE_COMPRESSED) {
-		/* compressed regular file, if parent is compressed */
-		fa = FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ARCHIVE;
+	} else if (S_ISREG(mode)) {
+		if (sbi->options.sparse) {
+			/* sparsed regular file, cause option 'sparse' */
+			fa = FILE_ATTRIBUTE_SPARSE_FILE |
+			     FILE_ATTRIBUTE_ARCHIVE;
+		} else if (dir_ni->std_fa & FILE_ATTRIBUTE_COMPRESSED) {
+			/* compressed regular file, if parent is compressed */
+			fa = FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ARCHIVE;
+		} else {
+			/* regular file, default attributes */
+			fa = FILE_ATTRIBUTE_ARCHIVE;
+		}
 	} else {
-		/* regular file, default attributes */
 		fa = FILE_ATTRIBUTE_ARCHIVE;
 	}
 
@@ -1299,6 +1273,7 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 		goto out3;
 	}
 	inode = &ni->vfs_inode;
+	inode_init_owner(inode, dir, mode);
 
 	inode->i_atime = inode->i_mtime = inode->i_ctime = ni->i_crtime =
 		current_time(inode);
@@ -1422,7 +1397,7 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 		e = Add2Ptr(root, sizeof(struct INDEX_ROOT));
 		e->size = cpu_to_le16(sizeof(struct NTFS_DE));
 		e->flags = NTFS_IE_LAST;
-	} else if (is_link) {
+	} else if (S_ISLNK(mode)) {
 		/*
 		 * symlink to file
 		 * Create empty resident data attribute
@@ -1437,38 +1412,55 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 		attr->res.data_off = SIZEOF_RESIDENT_LE;
 	} else {
 		/*
-		 * regular file
+		 * regular file or node
 		 */
 		attr->type = ATTR_DATA;
 		attr->id = cpu_to_le16(aid++);
-		/* Create empty non resident data attribute */
-		attr->non_res = 1;
-		attr->nres.evcn = cpu_to_le64(-1ll);
-		if (fa & FILE_ATTRIBUTE_SPARSE_FILE) {
-			attr->size = cpu_to_le32(SIZEOF_NONRESIDENT_EX + 8);
-			attr->name_off = SIZEOF_NONRESIDENT_EX_LE;
-			attr->flags = ATTR_FLAG_SPARSED;
-			asize = SIZEOF_NONRESIDENT_EX + 8;
-		} else if (fa & FILE_ATTRIBUTE_COMPRESSED) {
-			attr->size = cpu_to_le32(SIZEOF_NONRESIDENT_EX + 8);
-			attr->name_off = SIZEOF_NONRESIDENT_EX_LE;
-			attr->flags = ATTR_FLAG_COMPRESSED;
-			attr->nres.c_unit = COMPRESSION_UNIT;
-			asize = SIZEOF_NONRESIDENT_EX + 8;
+
+		if (S_ISREG(mode)) {
+			/* Create empty non resident data attribute */
+			attr->non_res = 1;
+			attr->nres.evcn = cpu_to_le64(-1ll);
+			if (fa & FILE_ATTRIBUTE_SPARSE_FILE) {
+				attr->size =
+					cpu_to_le32(SIZEOF_NONRESIDENT_EX + 8);
+				attr->name_off = SIZEOF_NONRESIDENT_EX_LE;
+				attr->flags = ATTR_FLAG_SPARSED;
+				asize = SIZEOF_NONRESIDENT_EX + 8;
+			} else if (fa & FILE_ATTRIBUTE_COMPRESSED) {
+				attr->size =
+					cpu_to_le32(SIZEOF_NONRESIDENT_EX + 8);
+				attr->name_off = SIZEOF_NONRESIDENT_EX_LE;
+				attr->flags = ATTR_FLAG_COMPRESSED;
+				attr->nres.c_unit = COMPRESSION_UNIT;
+				asize = SIZEOF_NONRESIDENT_EX + 8;
+			} else {
+				attr->size =
+					cpu_to_le32(SIZEOF_NONRESIDENT + 8);
+				attr->name_off = SIZEOF_NONRESIDENT_LE;
+				asize = SIZEOF_NONRESIDENT + 8;
+			}
+			attr->nres.run_off = attr->name_off;
 		} else {
-			attr->size = cpu_to_le32(SIZEOF_NONRESIDENT + 8);
-			attr->name_off = SIZEOF_NONRESIDENT_LE;
-			asize = SIZEOF_NONRESIDENT + 8;
+			/* Create empty resident data attribute */
+			attr->size = cpu_to_le32(SIZEOF_RESIDENT);
+			attr->name_off = SIZEOF_RESIDENT_LE;
+			if (fa & FILE_ATTRIBUTE_SPARSE_FILE)
+				attr->flags = ATTR_FLAG_SPARSED;
+			else if (fa & FILE_ATTRIBUTE_COMPRESSED)
+				attr->flags = ATTR_FLAG_COMPRESSED;
+			attr->res.data_off = SIZEOF_RESIDENT_LE;
+			asize = SIZEOF_RESIDENT;
+			ni->ni_flags |= NI_FLAG_RESIDENT;
 		}
-		attr->nres.run_off = attr->name_off;
 	}
 
-	if (is_dir) {
+	if (S_ISDIR(mode)) {
 		ni->ni_flags |= NI_FLAG_DIR;
 		err = indx_init(&ni->dir, sbi, attr, INDEX_MUTEX_I30);
 		if (err)
 			goto out4;
-	} else if (is_link) {
+	} else if (S_ISLNK(mode)) {
 		rp = ntfs_create_reparse_buffer(sbi, symname, size, &nsize);
 
 		if (IS_ERR(rp)) {
@@ -1555,36 +1547,32 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 	/* Update current directory record */
 	mark_inode_dirty(dir);
 
-	/* Fill vfs inode fields */
-	inode->i_uid = sbi->options.uid ? sbi->options.fs_uid : current_fsuid();
-	inode->i_gid = sbi->options.gid		 ? sbi->options.fs_gid
-		       : (dir->i_mode & S_ISGID) ? dir->i_gid
-						 : current_fsgid();
 	inode->i_generation = le16_to_cpu(rec->seq);
 
 	dir->i_mtime = dir->i_ctime = inode->i_atime;
 
-	if (is_dir) {
+	if (S_ISDIR(mode)) {
 		if (dir->i_mode & S_ISGID)
 			mode |= S_ISGID;
 		inode->i_op = &ntfs_dir_inode_operations;
 		inode->i_fop = &ntfs_dir_operations;
-	} else if (is_link) {
+	} else if (S_ISLNK(mode)) {
 		inode->i_op = &ntfs_link_inode_operations;
 		inode->i_fop = NULL;
 		inode->i_mapping->a_ops = &ntfs_aops;
-	} else {
+	} else if (S_ISREG(mode)) {
 		inode->i_op = &ntfs_file_inode_operations;
 		inode->i_fop = &ntfs_file_operations;
 		inode->i_mapping->a_ops =
 			is_compressed(ni) ? &ntfs_aops_cmpr : &ntfs_aops;
 		init_rwsem(&ni->file.run_lock);
+	} else {
+		inode->i_op = &ntfs_special_inode_operations;
+		init_special_inode(inode, mode, dev);
 	}
 
-	inode->i_mode = mode;
-
 #ifdef CONFIG_NTFS3_FS_POSIX_ACL
-	if (!is_link && (sb->s_flags & SB_POSIXACL)) {
+	if (!S_ISLNK(mode) && (sb->s_flags & SB_POSIXACL)) {
 		err = ntfs_init_acl(inode, dir);
 		if (err)
 			goto out6;
@@ -1604,6 +1592,7 @@ struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 	/* call 'd_instantiate' after inode->i_op is set but before finish_open */
 	d_instantiate(dentry, inode);
 
+	ntfs_save_wsl_perm(inode);
 	mark_inode_dirty(inode);
 	mark_inode_dirty(dir);
 
@@ -1620,7 +1609,7 @@ out6:
 		ntfs_remove_reparse(sbi, IO_REPARSE_TAG_SYMLINK, &new_de->ref);
 
 out5:
-	if (is_dir || run_is_empty(&ni->file.run))
+	if (S_ISDIR(mode) || run_is_empty(&ni->file.run))
 		goto out4;
 
 	run_deallocate(sbi, &ni->file.run, false);
