@@ -102,6 +102,7 @@ int ntfs_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat
 #ifdef STATX_BTIME
 	stat->result_mask |= STATX_BTIME;
 	stat->btime = ni->i_crtime;
+	stat->blksize = ni->mi.sbi->cluster_size; /* 512, 1K, ..., 2M */
 #endif
 
 	return 0;
@@ -193,8 +194,6 @@ next:
 		cond_resched();
 	}
 
-	mark_inode_dirty(inode);
-
 	return 0;
 
 out:
@@ -205,9 +204,95 @@ out:
 }
 
 /*
+ * ntfs_zero_range
+ *
+ * Helper function for punch_hole.
+ * It zeroes a range [vbo, vbo_to)
+ */
+static int ntfs_zero_range(struct inode *inode, u64 vbo, u64 vbo_to)
+{
+	int err = 0;
+	struct address_space *mapping = inode->i_mapping;
+	u32 blocksize = 1 << inode->i_blkbits;
+	pgoff_t idx = vbo >> PAGE_SHIFT;
+	u32 z_start = vbo & (PAGE_SIZE - 1);
+	pgoff_t idx_end = (vbo_to + PAGE_SIZE - 1) >> PAGE_SHIFT;
+	loff_t page_off;
+	struct buffer_head *head, *bh;
+	u32 bh_next, bh_off, z_end;
+	sector_t iblock;
+	struct page *page;
+
+	for (; idx < idx_end; idx += 1, z_start = 0) {
+		page_off = (loff_t)idx << PAGE_SHIFT;
+		z_end = (page_off + PAGE_SIZE) > vbo_to ? (vbo_to - page_off)
+							: PAGE_SIZE;
+		iblock = page_off >> inode->i_blkbits;
+
+		page = find_or_create_page(mapping, idx,
+					   mapping_gfp_constraint(mapping,
+								  ~__GFP_FS));
+		if (!page)
+			return -ENOMEM;
+
+		if (!page_has_buffers(page))
+			create_empty_buffers(page, blocksize, 0);
+
+		bh = head = page_buffers(page);
+		bh_off = 0;
+		do {
+			bh_next = bh_off + blocksize;
+
+			if (bh_next <= z_start || bh_off >= z_end)
+				continue;
+
+			if (!buffer_mapped(bh)) {
+				ntfs_get_block(inode, iblock, bh, 0);
+				/* unmapped? It's a hole - nothing to do */
+				if (!buffer_mapped(bh))
+					continue;
+			}
+
+			/* Ok, it's mapped. Make sure it's up-to-date */
+			if (PageUptodate(page))
+				set_buffer_uptodate(bh);
+
+			if (!buffer_uptodate(bh)) {
+				lock_buffer(bh);
+				bh->b_end_io = end_buffer_read_sync;
+				get_bh(bh);
+				submit_bh(REQ_OP_READ, 0, bh);
+
+				wait_on_buffer(bh);
+				if (!buffer_uptodate(bh)) {
+					unlock_page(page);
+					put_page(page);
+					err = -EIO;
+					goto out;
+				}
+			}
+
+			mark_buffer_dirty(bh);
+
+		} while (bh_off = bh_next, iblock += 1,
+			 head != (bh = bh->b_this_page));
+
+		zero_user_segment(page, z_start, z_end);
+
+		unlock_page(page);
+		put_page(page);
+		cond_resched();
+	}
+out:
+	mark_inode_dirty(inode);
+	return err;
+}
+
+/*
  * ntfs_sparse_cluster
  *
  * Helper function to zero a new allocated clusters
+ * NOTE: 512 <= cluster size <= 2M
  */
 void ntfs_sparse_cluster(struct inode *inode, struct page *page0, CLST vcn,
 			 CLST len)
@@ -242,13 +327,6 @@ void ntfs_sparse_cluster(struct inode *inode, struct page *page0, CLST vcn,
 		if ((from || PAGE_SIZE != to) &&
 		    likely(!page_has_buffers(page))) {
 			create_empty_buffers(page, blocksize, 0);
-			if (!page_has_buffers(page)) {
-				ntfs_inode_err(
-					inode,
-					"failed to allocate page buffers.");
-				/*err = -ENOMEM;*/
-				goto unlock_page;
-			}
 		}
 
 		if (page_has_buffers(page)) {
@@ -277,7 +355,6 @@ void ntfs_sparse_cluster(struct inode *inode, struct page *page0, CLST vcn,
 			set_page_dirty(page);
 		}
 
-unlock_page:
 		if (idx != idx0) {
 			unlock_page(page);
 			put_page(page);
@@ -295,57 +372,62 @@ static int ntfs_file_mmap(struct file *file, struct vm_area_struct *vma)
 	struct address_space *mapping = file->f_mapping;
 	struct inode *inode = mapping->host;
 	struct ntfs_inode *ni = ntfs_i(inode);
-	u64 to, from = ((u64)vma->vm_pgoff << PAGE_SHIFT);
+	u64 from = ((u64)vma->vm_pgoff << PAGE_SHIFT);
 	bool rw = vma->vm_flags & VM_WRITE;
 	int err;
 
 	if (is_encrypted(ni)) {
-		ntfs_inode_warn(inode,
-				"mmap is not supported for encrypted files");
-		err = -EOPNOTSUPP;
-		goto out;
+		ntfs_inode_warn(inode, "mmap encrypted not supported");
+		return -EOPNOTSUPP;
 	}
 
-	if (!rw)
-		goto do_map;
-
-	if (is_compressed(ni)) {
-		ntfs_inode_warn(
-			inode,
-			"mmap(write) is not supported for compressed files");
-		err = -EOPNOTSUPP;
-		goto out;
+	if (is_dedup(ni)) {
+		ntfs_inode_warn(inode, "mmap deduplicated not supported");
+		return -EOPNOTSUPP;
 	}
 
-	to = min_t(loff_t, i_size_read(inode),
-		   from + vma->vm_end - vma->vm_start);
+	if (is_compressed(ni) && rw) {
+		ntfs_inode_warn(inode, "mmap(write) compressed not supported");
+		return -EOPNOTSUPP;
+	}
 
-	if (is_sparsed(ni)) {
-		/* allocate clusters for rw map */
-		struct ntfs_sb_info *sbi = inode->i_sb->s_fs_info;
-		CLST vcn, lcn, len;
-		CLST end = bytes_to_cluster(sbi, to);
-		bool new;
+	if (rw) {
+		u64 to = min_t(loff_t, i_size_read(inode),
+			       from + vma->vm_end - vma->vm_start);
 
-		for (vcn = from >> sbi->cluster_bits; vcn < end; vcn += len) {
-			err = attr_data_get_block(ni, vcn, 1, &lcn, &len, &new);
+		if (is_sparsed(ni)) {
+			/* allocate clusters for rw map */
+			struct ntfs_sb_info *sbi = inode->i_sb->s_fs_info;
+			CLST lcn, len;
+			CLST vcn = from >> sbi->cluster_bits;
+			CLST end = bytes_to_cluster(sbi, to);
+			bool new;
+
+			for (; vcn < end; vcn += len) {
+				err = attr_data_get_block(ni, vcn, 1, &lcn,
+							  &len, &new);
+				if (err)
+					goto out;
+
+				if (!new)
+					continue;
+				ntfs_sparse_cluster(inode, NULL, vcn, 1);
+			}
+		}
+
+		if (ni->i_valid < to) {
+			if (!inode_trylock(inode)) {
+				err = -EAGAIN;
+				goto out;
+			}
+			err = ntfs_extend_initialized_size(file, ni,
+							   ni->i_valid, to);
+			inode_unlock(inode);
 			if (err)
 				goto out;
-			if (!new)
-				continue;
-			ntfs_sparse_cluster(inode, NULL, vcn, 1);
 		}
 	}
 
-	if (ni->i_valid < to) {
-		inode_lock(inode);
-		err = ntfs_extend_initialized_size(file, ni, ni->i_valid, to);
-		inode_unlock(inode);
-		if (err)
-			goto out;
-	}
-
-do_map:
 	err = generic_file_mmap(file, vma);
 out:
 	return err;
@@ -480,8 +562,11 @@ static long ntfs_fallocate(struct file *file, int mode, loff_t vbo, loff_t len)
 
 	/* Return error if mode is not supported */
 	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE |
-		     FALLOC_FL_COLLAPSE_RANGE))
+		     FALLOC_FL_COLLAPSE_RANGE)) {
+		ntfs_inode_warn(inode, "fallocate(0x%x) is not supported",
+				mode);
 		return -EOPNOTSUPP;
+	}
 
 	ntfs_set_state(sbi, NTFS_DIRTY_DIRTY);
 
@@ -495,16 +580,11 @@ static long ntfs_fallocate(struct file *file, int mode, loff_t vbo, loff_t len)
 	}
 
 	if (mode & FALLOC_FL_PUNCH_HOLE) {
+		u32 frame_size;
+		loff_t mask, vbo_a, end_a, tmp;
+
 		if (!(mode & FALLOC_FL_KEEP_SIZE)) {
 			err = -EINVAL;
-			goto out;
-		}
-
-		if (!is_sparsed(ni) && !is_compressed(ni)) {
-			ntfs_inode_warn(
-				inode,
-				"punch_hole only for sparsed/compressed files");
-			err = -EOPNOTSUPP;
 			goto out;
 		}
 
@@ -518,11 +598,46 @@ static long ntfs_fallocate(struct file *file, int mode, loff_t vbo, loff_t len)
 		if (err)
 			goto out;
 
+		inode_dio_wait(inode);
+
 		truncate_pagecache(inode, vbo_down);
 
+		if (!is_sparsed(ni) && !is_compressed(ni)) {
+			/* normal file */
+			err = ntfs_zero_range(inode, vbo, end);
+			goto out;
+		}
+
 		ni_lock(ni);
-		err = attr_punch_hole(ni, vbo, len);
+		err = attr_punch_hole(ni, vbo, len, &frame_size);
 		ni_unlock(ni);
+		if (err != E_NTFS_NOTALIGNED)
+			goto out;
+
+		/* process not aligned punch */
+		mask = frame_size - 1;
+		vbo_a = (vbo + mask) & ~mask;
+		end_a = end & ~mask;
+
+		tmp = min(vbo_a, end);
+		if (tmp > vbo) {
+			err = ntfs_zero_range(inode, vbo, tmp);
+			if (err)
+				goto out;
+		}
+
+		if (vbo < end_a && end_a < end) {
+			err = ntfs_zero_range(inode, end_a, end);
+			if (err)
+				goto out;
+		}
+
+		/* Aligned punch_hole */
+		if (end_a > vbo_a) {
+			ni_lock(ni);
+			err = attr_punch_hole(ni, vbo_a, end_a - vbo_a, NULL);
+			ni_unlock(ni);
+		}
 	} else if (mode & FALLOC_FL_COLLAPSE_RANGE) {
 		if (mode & ~FALLOC_FL_COLLAPSE_RANGE) {
 			err = -EINVAL;
@@ -546,6 +661,9 @@ static long ntfs_fallocate(struct file *file, int mode, loff_t vbo, loff_t len)
 						   LLONG_MAX);
 		if (err)
 			goto out;
+
+		/* Wait for existing dio to complete */
+		inode_dio_wait(inode);
 
 		truncate_pagecache(inode, vbo_down);
 
@@ -592,9 +710,8 @@ static long ntfs_fallocate(struct file *file, int mode, loff_t vbo, loff_t len)
 				 * fallocate(1G) will zero 1G and this can be very long
 				 * xfstest 016/086 will fail without 'ntfs_sparse_cluster'
 				 */
-				/*ntfs_sparse_cluster(inode, NULL, vcn,
-				 *		    min(vcn_v - vcn, clen));
-				 */
+				ntfs_sparse_cluster(inode, NULL, vcn,
+						    min(vcn_v - vcn, clen));
 			}
 		}
 
@@ -608,13 +725,14 @@ static long ntfs_fallocate(struct file *file, int mode, loff_t vbo, loff_t len)
 		}
 	}
 
+out:
+	if (err == -EFBIG)
+		err = -ENOSPC;
+
 	if (!err) {
 		inode->i_ctime = inode->i_mtime = current_time(inode);
 		mark_inode_dirty(inode);
 	}
-out:
-	if (err == -EFBIG)
-		err = -ENOSPC;
 
 	inode_unlock(inode);
 	return err;
@@ -687,6 +805,8 @@ int ntfs3_setattr(struct dentry *dentry,
 			ni->std_fa |= FILE_ATTRIBUTE_READONLY;
 	}
 
+	if (ia_valid & (ATTR_UID | ATTR_GID | ATTR_MODE))
+		ntfs_save_wsl_perm(inode);
 	mark_inode_dirty(inode);
 out:
 	return err;
@@ -1124,29 +1244,31 @@ int ntfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
 	return err;
 }
 
+// clang-format off
 const struct inode_operations ntfs_file_inode_operations = {
-	.getattr = ntfs_getattr,
-	.setattr = ntfs3_setattr,
-	.listxattr = ntfs_listxattr,
-	.permission = ntfs_permission,
-	.get_acl = ntfs_get_acl,
-	.set_acl = ntfs_set_acl,
-	.fiemap = ntfs_fiemap,
+	.getattr	= ntfs_getattr,
+	.setattr	= ntfs3_setattr,
+	.listxattr	= ntfs_listxattr,
+	.permission	= ntfs_permission,
+	.get_acl	= ntfs_get_acl,
+	.set_acl	= ntfs_set_acl,
+	.fiemap		= ntfs_fiemap,
 };
 
 const struct file_operations ntfs_file_operations = {
-	.llseek = generic_file_llseek,
-	.read_iter = ntfs_file_read_iter,
-	.write_iter = ntfs_file_write_iter,
+	.llseek		= generic_file_llseek,
+	.read_iter	= ntfs_file_read_iter,
+	.write_iter	= ntfs_file_write_iter,
 	.unlocked_ioctl = ntfs_ioctl,
 #ifdef CONFIG_COMPAT
-	.compat_ioctl = ntfs_compat_ioctl,
+	.compat_ioctl	= ntfs_compat_ioctl,
 #endif
-	.splice_read = generic_file_splice_read,
-	.mmap = ntfs_file_mmap,
-	.open = ntfs_file_open,
-	.fsync = generic_file_fsync,
-	.splice_write = iter_file_splice_write,
-	.fallocate = ntfs_fallocate,
-	.release = ntfs_file_release,
+	.splice_read	= generic_file_splice_read,
+	.mmap		= ntfs_file_mmap,
+	.open		= ntfs_file_open,
+	.fsync		= generic_file_fsync,
+	.splice_write	= iter_file_splice_write,
+	.fallocate	= ntfs_fallocate,
+	.release	= ntfs_file_release,
 };
+// clang-format on

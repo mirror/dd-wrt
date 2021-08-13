@@ -1941,7 +1941,7 @@ out:
 }
 
 /* not for normal files */
-int attr_punch_hole(struct ntfs_inode *ni, u64 vbo, u64 bytes)
+int attr_punch_hole(struct ntfs_inode *ni, u64 vbo, u64 bytes, u32 *frame_size)
 {
 	int err = 0;
 	struct runs_tree *run = &ni->file.run;
@@ -1951,6 +1951,7 @@ int attr_punch_hole(struct ntfs_inode *ni, u64 vbo, u64 bytes)
 	struct mft_inode *mi, *mi_b;
 	CLST svcn, evcn1, vcn, len, end, alen, dealloc;
 	u64 total_size, alloc_size;
+	u32 mask;
 
 	if (!bytes)
 		return 0;
@@ -1973,7 +1974,6 @@ int attr_punch_hole(struct ntfs_inode *ni, u64 vbo, u64 bytes)
 		return 0;
 	}
 
-	/* TODO: add support for normal files too */
 	if (!is_attr_ext(attr_b))
 		return -EOPNOTSUPP;
 
@@ -1985,8 +1985,22 @@ int attr_punch_hole(struct ntfs_inode *ni, u64 vbo, u64 bytes)
 		return 0;
 	}
 
-	if (vbo + bytes > alloc_size)
-		bytes = alloc_size - vbo;
+	mask = (sbi->cluster_size << attr_b->nres.c_unit) - 1;
+
+	bytes += vbo;
+	if (bytes > alloc_size)
+		bytes = alloc_size;
+	bytes -= vbo;
+
+	if ((vbo & mask) || (bytes & mask)) {
+		/* We have to zero a range(s)*/
+		if (frame_size == NULL) {
+			/* Caller insists range is aligned */
+			return -EINVAL;
+		}
+		*frame_size = mask + 1;
+		return E_NTFS_NOTALIGNED;
+	}
 
 	down_write(&ni->file.run_lock);
 	/*

@@ -17,8 +17,10 @@
  * ni  - ntfs inode              - extends linux inode. consists of one or more mft inodes
  * index - unit inside directory - 2K, 4K, <=page size, does not depend on cluster size
  *
- * TODO: Implement
+ * WSL - Windows Subsystem for Linux
  * https://docs.microsoft.com/en-us/windows/wsl/file-permissions
+ * It stores uid/gid/mode/dev in xattr
+ *
  */
 
 #include <linux/backing-dev.h>
@@ -1419,13 +1421,15 @@ static struct dentry *ntfs_mount(struct file_system_type *fs_type, int flags,
 	return mount_bdev(fs_type, flags, dev_name, data, ntfs_fill_super);
 }
 
+// clang-format off
 static struct file_system_type ntfs_fs_type = {
-	.owner = THIS_MODULE,
-	.name = "ntfs3",
-	.mount = ntfs_mount,
-	.kill_sb = kill_block_super,
-	.fs_flags = FS_REQUIRES_DEV,
+	.owner		= THIS_MODULE,
+	.name		= "ntfs3",
+	.mount		= ntfs_mount,
+	.kill_sb	= kill_block_super,
+	.fs_flags	= FS_REQUIRES_DEV,
 };
+// clang-format on
 
 static int __init init_ntfs_fs(void)
 {

@@ -18,6 +18,9 @@
 #define E_NTFS_FIXUP			555
 /* ntfs specific error code about resident->nonresident*/
 #define E_NTFS_NONRESIDENT		556
+/* ntfs specific error code about punch hole*/
+#define E_NTFS_NOTALIGNED		557
+
 
 /* sbi->flags */
 #define NTFS_FLAGS_NODISCARD		0x00000001
@@ -408,7 +411,7 @@ int attr_is_frame_compressed(struct ntfs_inode *ni, struct ATTRIB *attr,
 int attr_allocate_frame(struct ntfs_inode *ni, CLST frame, size_t compr_size,
 			u64 new_valid);
 int attr_collapse_range(struct ntfs_inode *ni, u64 vbo, u64 bytes);
-int attr_punch_hole(struct ntfs_inode *ni, u64 vbo, u64 bytes);
+int attr_punch_hole(struct ntfs_inode *ni, u64 vbo, u64 bytes, u32 *frame_size);
 
 /* functions from attrlist.c*/
 void al_destroy(struct ntfs_inode *ni);
@@ -650,7 +653,7 @@ int inode_write_data(struct inode *inode, const void *data, size_t bytes);
 struct inode *ntfs_create_inode(struct inode *dir, struct dentry *dentry,
 				const struct cpu_str *uni, umode_t mode,
 				dev_t dev, const char *symname, u32 size,
-				int excl, struct ntfs_fnd *fnd);
+				struct ntfs_fnd *fnd);
 int ntfs_link_inode(struct inode *inode, struct dentry *dentry);
 int ntfs_unlink_inode(struct inode *dir, const struct dentry *dentry);
 void ntfs_evict_inode(struct inode *inode);
@@ -664,6 +667,7 @@ int fill_name_de(struct ntfs_sb_info *sbi, void *buf, const struct qstr *name,
 struct dentry *ntfs3_get_parent(struct dentry *child);
 
 extern const struct inode_operations ntfs_dir_inode_operations;
+extern const struct inode_operations ntfs_special_inode_operations;
 
 /* globals from record.c */
 int mi_get(struct ntfs_sb_info *sbi, CLST rno, struct mft_inode **mi);
@@ -800,6 +804,9 @@ int ntfs_permission(struct inode *inode,
 		    int mask);
 ssize_t ntfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
 extern const struct xattr_handler *ntfs_xattr_handlers[];
+
+int ntfs_save_wsl_perm(struct inode *inode);
+void ntfs_get_wsl_perm(struct inode *inode);
 
 /* globals from lznt.c */
 struct lznt *get_lznt_ctx(int level);
