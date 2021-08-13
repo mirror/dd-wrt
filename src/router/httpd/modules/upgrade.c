@@ -835,7 +835,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary)	// jimmy,
 			nvram_set("region", "SA");
 #endif
 	}
-	_sys_commit();
+	_sys_commit(1);
 
 	/*
 	 * Slurp anything remaining in the request 

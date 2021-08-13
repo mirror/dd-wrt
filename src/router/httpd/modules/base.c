@@ -91,12 +91,16 @@ void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, 
 /*
  * Deal with side effects before committing 
  */
-static int _sys_commit(void)
+static int _sys_commit(int noasync)
 {
 	if (nvram_matchi("dhcpnvram", 1)) {
 		killall("dnsmasq", SIGUSR2);	// update lease -- tofu
 	}
-	return _nvram_commit();
+	if (noasync)
+	    return _nvram_commit();
+	else
+	    return nvram_async_commit();
+	
 }
 
 /*
@@ -1361,13 +1365,13 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	}
 
 	if (action == SERVICE_RESTART) {
-		_sys_commit();
+		_sys_commit(0);
 		service_restart();
 	} else if (action == SYS_RESTART) {
-		_sys_commit();
+		_sys_commit(0);
 		sys_restart();
 	} else if (action == RESTART) {
-		_sys_commit();
+		_sys_commit(0);
 		sys_restart();
 	} else if (action == REFRESH_DELAY) {
 		struct timespec tim, tim2;
@@ -1632,7 +1636,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		diag_led(DIAG, STOP_LED);
 #endif
 		if (!strcmp(value, "ApplyTake")) {
-			_sys_commit();
+			_sys_commit(0);
 		}
 	}
 
@@ -1725,7 +1729,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		if (region_sa)
 			nvram_set("region", "SA");
 #endif
-		_sys_commit();
+		_sys_commit(1);
 
 		action = REBOOT;
 	}

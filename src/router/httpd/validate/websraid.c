@@ -96,7 +96,7 @@ void format_drive(webs_t wp)
 		char labelstr[32];
 		sprintf(labelstr, "%s_label", &fs[5]);
 		nvram_set(labelstr, label);
-		nvram_commit();
+		nvram_async_commit();
 	}
 	eval("umount", fs);
 	char name[32];
