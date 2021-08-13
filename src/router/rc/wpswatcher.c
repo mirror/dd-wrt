@@ -45,7 +45,7 @@ static int wpswatcher_main(int argc, char **argv)
 		if (fp) {
 			killall("ledtool", SIGKILL);
 			nvram_seti("wps_status", 1);
-			nvram_commit();
+			nvram_async_commit();
 			unlink("/tmp/.wpsdone");
 			fclose(fp);
 			led_control(LED_SES, LED_ON);
@@ -57,7 +57,7 @@ static int wpswatcher_main(int argc, char **argv)
 	if (!timeout) {
 		killall("ledtool", SIGKILL);
 		nvram_seti("wps_status", 1);
-		nvram_commit();
+		nvram_async_commit();
 		eval("ledtool", "1800", "3");
 	}
 	return 0;
