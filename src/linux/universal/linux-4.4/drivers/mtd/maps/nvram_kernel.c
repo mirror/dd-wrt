@@ -196,14 +196,15 @@ int nvram_commit(void)
 		return -EINVAL;
 	}
 
+	mutex_lock(&nvram_sem);
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
 	if (!(buf = MALLOC(erasesize))) {
 		printk("nvram_commit: out of memory\n");
+		mutex_unlock(&nvram_sem);
 		return -ENOMEM;
 	}
 
-	mutex_lock(&nvram_sem);
 
 	if ((i = erasesize - NVRAM_SPACE) > 0) {
 		offset = nvram_mtd->size - erasesize;
