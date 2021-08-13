@@ -165,15 +165,20 @@ vpath %.c $(SRCBASE)/shared/nvram
 	@echo "[CC] $@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-all: libnvram.so
+all: libnvram.so async_commit
 
 install: all
 	install -D libnvram.so $(INSTALLDIR)/lib/libnvram.so
+	install -D async_commit $(INSTALLDIR)/sbin/async_commit
 	$(STRIP) $(INSTALLDIR)/lib/libnvram.so
 
 
 clean:
 	rm -f *.o *.a *.so nvram
+
+async_commit: async_commit.o
+	@$(CC) $(CFLAGS) -o $@ $^ -L. -lnvram
+	
 
 libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	@echo "[LD] $@"
