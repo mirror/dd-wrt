@@ -2740,7 +2740,7 @@ freeradius.email="Adres Email";
 freeradius.common="Common Certificate Name";
 freeradius.expiration="Wygasa (w dniach)";
 freeradius.passphrase="Passphrase";
-freeradius.generate="Wygeneruj certyfikat;
+freeradius.generate="Wygeneruj certyfikat";
 freeradius.cert_status="Status certyfikatu";
 freeradius.port="Port Radius'a";
 
@@ -2871,7 +2871,7 @@ wl_basic.label2="Tryb sieci bezprzewodowej";
 wl_basic.label3="Nazwa sieci bezprzewodowej (SSID)";
 wl_basic.label4="Kanał";
 wl_basic.vht80p80chan="Wireless Channel 2 (VHT80+80)";
-wl_basic.label5="Rozgłaszanie nazwy sieci bezprzewodowej (SSID);
+wl_basic.label5="Rozgłaszanie nazwy sieci bezprzewodowej (SSID)";
 wl_basic.label6="Sensitivity Range (ACK Timing)";
 wl_basic.label7="802.11n Transmission Mode";
 wl_basic.igmpsnooping="Optimize Multicast Traffic";
