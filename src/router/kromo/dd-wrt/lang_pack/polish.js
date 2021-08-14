@@ -553,7 +553,7 @@ hconfig.right4="Kliknij przycisk <em>Przeglądaj...</em>, aby wyszukać plik kon
 // help page
 hconfig.page1="<dd>Możesz wykonać kopię zapasową bieżącej konfiguracji na wypadek konieczności przywrócenia routera do domyślnych ustawień fabrycznych.</dd><dt>";
 hconfig.page2="</dt><dd>Kliknij przycisk <i>Kopia zapasowa</i>, aby pobrać aktualną konfigurację routera na komputer.</dd>";
-hconfig.page3="<dd>Kliknij przycisk <i>Przeglądaj</i> aby wyszukać plik konfiguracyjny, który jest aktualnie zapisany na komputerze. Kliknij przycisk <i>Przywróć</i>, aby nadpisać wszystkie bieżące konfiguracje konfiguracjami z pliku konfiguracyjnego<br /><br /><div class="note"><h4>Uwaga</h4><div>Przywracaj konfiguracje tylko z plików kopii zapasowych utworzonych przy użyciu tego samego oprogramowania sprzętowego i tego samego modelu routera.</dd></div></dd>";
+hconfig.page3="<dd>Kliknij przycisk <i>Przeglądaj</i> aby wyszukać plik konfiguracyjny, który jest aktualnie zapisany na komputerze. Kliknij przycisk <i>Przywróć</i>, aby nadpisać wszystkie bieżące konfiguracje konfiguracjami z pliku konfiguracyjnego<br /><br /><div class=\"note\"><h4>Uwaga</h4><div>Przywracaj konfiguracje tylko z plików kopii zapasowych utworzonych przy użyciu tego samego oprogramowania sprzętowego i tego samego modelu routera.</dd></div></dd>";
 
 // ** DDNS.asp **//
 
@@ -2332,7 +2332,7 @@ hstatus_wireless.right4="As selected from the wireless tab, this will display th
 
 //help page
 hstatus_wireless.page1="<dd>This status screen displays the router's wireless status and configuration. All information is read-only.</dd>";
-hstatus_wireless.page2="<dd>To jest adres MAC routera widoczny w twojej sieci bezprzewodowej. This is the Router's MAC Address, as seen on your local, wireless network.</dd>"
+hstatus_wireless.page2="<dd>To jest adres MAC routera widoczny w twojej sieci bezprzewodowej. This is the Router's MAC Address, as seen on your local, wireless network.</dd>";
 hstatus_wireless.page3="<dd>The Mode of the wireless network is displayed here.</dd>";
 hstatus_wireless.page4="<dd>The SSID of the wireless network is displayed here.</dd>";
 hstatus_wireless.page5="<dd>The channel of the wireless network is displayed here.</dd>";
