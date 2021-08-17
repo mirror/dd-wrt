@@ -2179,6 +2179,7 @@ cprintf("set antdiv mode %s\n",name);
 		struct {int bsscfg_idx; int enable;} setbuf;
 		char vifname[VIFNAME_LEN];
 		char *name_ptr = name;
+		bsscfg = &bclist->bsscfgs[i];
 
 		setbuf.bsscfg_idx = bclist->bsscfgs[i].idx;
 		setbuf.enable = 1;
