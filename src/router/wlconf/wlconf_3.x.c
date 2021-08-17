@@ -3472,37 +3472,37 @@ cprintf("set enable bss %s\n",name);
 
 cprintf("set enable wmf %s\n",name);
 
-if (nvram_match(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp), "1")) {
 #ifdef __CONFIG_DHDAP__
 	if (is_dhd) {
-	for (i = 0; i < bclist->count; i++) {
-			bsscfg = &bclist->bsscfgs[i];
-			strncpy(prefix, bsscfg->prefix, PREFIX_LEN - 1);
+		if (nvram_match(strcat_r(prefix, "wmf_bss_enable", tmp), "1")) {
 			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucigmp_query", tmp)));
 			(void)dhd_iovar_setint(name, "wmf_ucast_igmp_query", val);
 			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_mdata_sendup", tmp)));
 			(void)dhd_iovar_setint(name, "wmf_mcast_data_sendup", val);
 			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucast_upnp", tmp)));
 			(void)dhd_iovar_setint(name, "wmf_ucast_upnp", val);
-	}	
+			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_igmpq_filter", tmp)));
+			(void)dhd_iovar_setint(name, "wmf_igmpq_filter", val);
+		}
 	} else {
 #endif /* __CONFIG_DHDAP__ */
 	for (i = 0; i < bclist->count; i++) {
 			bsscfg = &bclist->bsscfgs[i];
-			strncpy(prefix, bsscfg->prefix, PREFIX_LEN - 1);
-			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucigmp_query", tmp)));
-			WL_BSSIOVAR_SETINT(name, "wmf_ucast_igmp_query", bsscfg->idx, val);
-			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_mdata_sendup", tmp)));
-			WL_BSSIOVAR_SETINT(name, "wmf_mcast_data_sendup", bsscfg->idx, val);
-			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucast_upnp", tmp)));
-			WL_BSSIOVAR_SETINT(name, "wmf_ucast_upnp", bsscfg->idx, val);
-			val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_igmpq_filter", tmp)));
-			WL_BSSIOVAR_SETINT(name, "wmf_igmpq_filter", bsscfg->idx, val);
+			if (nvram_match(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp), "1")) {
+				strncpy(prefix, bsscfg->prefix, PREFIX_LEN - 1);
+				val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucigmp_query", tmp)));
+				WL_BSSIOVAR_SETINT(name, "wmf_ucast_igmp_query", bsscfg->idx, val);
+				val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_mdata_sendup", tmp)));
+				WL_BSSIOVAR_SETINT(name, "wmf_mcast_data_sendup", bsscfg->idx, val);
+				val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucast_upnp", tmp)));
+				WL_BSSIOVAR_SETINT(name, "wmf_ucast_upnp", bsscfg->idx, val);
+				val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_igmpq_filter", tmp)));
+				WL_BSSIOVAR_SETINT(name, "wmf_igmpq_filter", bsscfg->idx, val);
+			}
  	}		
 #ifdef __CONFIG_DHDAP__
 	}
 #endif
-    }
 
 #ifdef __CONFIG_DHDAP__
 	if (is_dhd) {
