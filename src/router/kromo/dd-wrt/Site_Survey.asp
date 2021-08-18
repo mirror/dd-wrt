@@ -47,7 +47,7 @@ function do_join (F,SSID) {
 					//<![CDATA[
 					
 					var table = new Array(
-					<% dump_site_survey(""); %>
+					<%% dump_site_survey("%s"); %%>
 					);
 					
 					if (table.length == 0) {
