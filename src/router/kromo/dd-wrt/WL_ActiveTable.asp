@@ -45,7 +45,7 @@ addEvent(window, "load", function() {
 
 refreshParent = function() {
 	var elements = opener.document.forms["macfilter"].elements;
-	var url = elements["submit_button"].value + '-' + elements["ifname"].value + ".asp";
+	var url = elements["submit_button"].value + ".asp";
 	opener.window.location = url;
 };
 		
