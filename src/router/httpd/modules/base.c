@@ -1097,9 +1097,6 @@ static struct gozila_action gozila_actions[] = {
 	{ "WL_WPATable", "save", "wireless_2", REFRESH, "security_save" },
 	{ "WL_WPATable", "keysize", "wireless_2", REFRESH, "security_save" },
 	{ "WL_ActiveTable", "add_mac", "", REFRESH, "add_active_mac" },
-	{ "WL_ActiveTable-wl0", "add_mac", "", REFRESH, "add_active_mac" },
-	{ "WL_ActiveTable-wl1", "add_mac", "", REFRESH, "add_active_mac" },
-	{ "WL_ActiveTable-wl2", "add_mac", "", REFRESH, "add_active_mac" },
 	/*
 	 * Siafu addition 
 	 */
