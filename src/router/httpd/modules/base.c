@@ -910,6 +910,28 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 	free(temp);
 }
 
+static void do_sitesurvey(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+{
+	char ifname[32];
+	bzero(ifname, sizeof(ifname));
+	char *idx = strchr(path, '-');
+	if (idx) {
+		char *temp2 = idx + 1;
+		strlcpy(ifname, temp2, sizeof(ifname) - 1);
+	}
+
+	filteralphanum(ifname);
+
+	idx = strrchr(ifname, '.');
+	if (idx)
+		*idx = 0;
+	if (!*(ifname) || strlen(ifname) < 2)
+		return;
+	char *temp = insert(stream, ifname, "0", "Site_Survey.asp");
+	do_ej_buffer(temp, stream);
+	free(temp);
+}
+
 static void do_wds(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char *idx = strchr(path, '-');
@@ -1389,6 +1411,8 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		do_radiuscert(METHOD_GET, NULL, path, wp);	// refresh
 #endif
 	// #ifdef HAVE_MADWIFI
+	else if (!strncmp(path, "Site_Survey", 11))
+		do_sitesurvey(METHOD_GET, NULL, path, wp);	// refresh
 	else if (!strncmp(path, "WL_ActiveTable", 14))
 		do_activetable(METHOD_GET, NULL, path, wp);	// refresh
 	else if (!strncmp(path, "Wireless_WDS", 12))
