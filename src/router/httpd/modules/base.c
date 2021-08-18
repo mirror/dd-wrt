@@ -2729,6 +2729,7 @@ static struct mime_handler mime_handlers[] = {
 	// #ifdef HAVE_MADWIFI
 	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1, 0 },
 	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, 1, 0 },
+	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, 1, 0 },
 	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, 1, 0 },
 	// #endif
 	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, 1, 0 },
