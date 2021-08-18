@@ -911,12 +911,9 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 			strcpy(ifname, temp3);
 		}
 	}
-	if (!*(ifname))
+	if (sanitize_ifname(ifname))
 		return;
 	filteralphanum(ifname);
-	if (sanitize_ifname(ifname)) {
-		bzero(ifname, sizeof(ifname));
-	}
 	char *temp = insert(stream, ifname, "0", "WL_ActiveTable.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
@@ -927,8 +924,9 @@ static void do_sitesurvey(unsigned char method, struct mime_handler *handler, ch
 	char ifname[32];
 	getiffromurl(ifname, sizeof(ifname), path);
 	filteralphanum(ifname);
-	if (sanitize_ifname(ifname))
-		return;
+	if (sanitize_ifname(ifname)) {
+		bzero(ifname, sizeof(ifname));
+	}
 	char *temp = insert(stream, ifname, "0", "Site_Survey.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
