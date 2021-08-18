@@ -895,7 +895,7 @@ static int sanitize_ifname(char *ifname)
 	char *idx = strrchr(ifname, '.');
 	if (idx)
 		*idx = 0;
-	if (!*(ifname) || strlen(ifname) < 2)
+	if (!*(ifname) || strlen(ifname) < 2 || strlen(ifname) > 15)
 		return -1;
 
 	return 0;
