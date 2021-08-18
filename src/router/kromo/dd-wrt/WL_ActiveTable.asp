@@ -38,8 +38,7 @@ function valid_value(F)
 }
 
 addEvent(window, "load", function() {
-	
-	<% onload("WL_ActiveTable-%s", "setTimeout('opener.window.location.reload();',500);"); %>
+	<%% onload("WL_ActiveTable-%s", "setTimeout('opener.window.location.reload();',500);"); %%>
 	window.focus();
 
 });
