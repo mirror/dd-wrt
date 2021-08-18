@@ -4848,9 +4848,8 @@ static void savesysctl(char *path, char *nvname, char *name, char *sysval, void 
 	char *webvalue = websGetVar(wp, nvname, NULL);
 	if (!webvalue)
 		return;
-	if (strcmp(webvalue, sysval)) {
-		nvram_set(nvname, webvalue);
-	}
+	nvram_set(nvname, webvalue);
+	
 	return;
 }
 
