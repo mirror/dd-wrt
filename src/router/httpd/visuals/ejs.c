@@ -105,9 +105,7 @@ char *GOZILA_GET(webs_t wp, char *name)
 
 struct onload onloads[] = {
 	// { "Filters", filter_onload },
-	{ "WL_ActiveTable-wl0", wl_active_onload },
-	{ "WL_ActiveTable-wl1", wl_active_onload },
-	{ "WL_ActiveTable-wl2", wl_active_onload },
+	{ "WL_ActiveTable", wl_active_onload },
 	{ "MACClone", macclone_onload },
 	{ "FilterSummary", filtersummary_onload },
 	{ "Ping", ping_onload },
