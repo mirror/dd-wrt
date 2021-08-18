@@ -247,7 +247,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 	char *name;
 	char speedbuf[32];
 
-	name = argv[1];
+	name = argv[0];
 	if (name == NULL || *(name) == 0)
 		eval("site_survey");
 	else {
