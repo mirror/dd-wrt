@@ -886,15 +886,16 @@ static void getiffromurl(char *ifname, int len, char *path)
 	char *idx = strchr(path, '-');
 	if (idx) {
 		char *temp2 = idx + 1;
-		strlcpy(ifname, temp2, sizeof(ifname) - 1);
+		char *idx = strrchr(temp2, '.');
+		if (!idx)
+			return;
+		*idx = 0;
+		strlcpy(ifname, temp2, len - 1);
 	}
 }
 
 static int sanitize_ifname(char *ifname)
 {
-	char *idx = strrchr(ifname, '.');
-	if (idx)
-		*idx = 0;
 	if (!*(ifname) || strlen(ifname) < 2 || strlen(ifname) > 15)
 		return -1;
 
@@ -953,12 +954,7 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 	getiffromurl(ifname, sizeof(ifname), path);
 	if (!*(ifname))
 		return;
-
 	filteralphanum(ifname);
-	char *idx = strrchr(ifname, '.');
-	if (!idx)
-		return;
-	*idx = 0;
 	char index[32];
 	int strl = strlen(ifname);
 	if (strl > 2)
@@ -1849,7 +1845,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(nvram_matchi("info_passwd", 0))
+	if (nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1857,7 +1853,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(!wp->isregistered)
+	if (!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
