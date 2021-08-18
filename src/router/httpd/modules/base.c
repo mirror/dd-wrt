@@ -97,10 +97,10 @@ static int _sys_commit(int noasync)
 		killall("dnsmasq", SIGUSR2);	// update lease -- tofu
 	}
 	if (noasync)
-	    return _nvram_commit();
+		return _nvram_commit();
 	else
-	    return nvram_async_commit();
-	
+		return nvram_async_commit();
+
 }
 
 /*
@@ -880,16 +880,31 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 }
 #endif
 
-static void do_activetable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+static void getiffromurl(char *ifname, int len, char *path)
 {
-	char ifname[32];
-	bzero(ifname, sizeof(ifname));
+	bzero(ifname, len);
 	char *idx = strchr(path, '-');
 	if (idx) {
 		char *temp2 = idx + 1;
 		strlcpy(ifname, temp2, sizeof(ifname) - 1);
 	}
+}
 
+static int sanitize_ifname(char *ifname)
+{
+	char *idx = strrchr(ifname, '.');
+	if (idx)
+		*idx = 0;
+	if (!*(ifname) || strlen(ifname) < 2)
+		return -1;
+
+	return 0;
+}
+
+static void do_activetable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+{
+	char ifname[32];
+	getiffromurl(ifname, sizeof(ifname), path);
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3 != NULL) {
 		if (*temp3) {
@@ -899,11 +914,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 	if (!*(ifname))
 		return;
 	filteralphanum(ifname);
-
-	idx = strrchr(ifname, '.');
-	if (idx)
-		*idx = 0;
-	if (!*(ifname) || strlen(ifname) < 2)
+	if (sanitize_ifname(ifname))
 		return;
 	char *temp = insert(stream, ifname, "0", "WL_ActiveTable.asp");
 	do_ej_buffer(temp, stream);
@@ -913,19 +924,9 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 static void do_sitesurvey(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char ifname[32];
-	bzero(ifname, sizeof(ifname));
-	char *idx = strchr(path, '-');
-	if (idx) {
-		char *temp2 = idx + 1;
-		strlcpy(ifname, temp2, sizeof(ifname) - 1);
-	}
-
+	getiffromurl(ifname, sizeof(ifname), path);
 	filteralphanum(ifname);
-
-	idx = strrchr(ifname, '.');
-	if (idx)
-		*idx = 0;
-	if (!*(ifname) || strlen(ifname) < 2)
+	if (sanitize_ifname(ifname))
 		return;
 	char *temp = insert(stream, ifname, "0", "Site_Survey.asp");
 	do_ej_buffer(temp, stream);
@@ -934,20 +935,13 @@ static void do_sitesurvey(unsigned char method, struct mime_handler *handler, ch
 
 static void do_wds(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
-	char *idx = strchr(path, '-');
-	if (!idx)
-		return;
-	char *temp2 = idx + 1;
 	char ifname[32];
-	strlcpy(ifname, temp2, sizeof(ifname) - 1);
+	getiffromurl(ifname, sizeof(ifname), path);
 	if (!*(ifname))
 		return;
 	filteralphanum(ifname);
 
-	idx = strrchr(ifname, '.');
-	if (idx)
-		*idx = 0;
-	if (!*(ifname) || strlen(ifname) < 2)
+	if (sanitize_ifname(ifname))
 		return;
 	char *temp = insert(stream, ifname, "0", "Wireless_WDS.asp");
 	do_ej_buffer(temp, stream);
@@ -956,13 +950,8 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 
 static void do_wireless_adv(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
-	char *idx = strchr(path, '-');
-	if (!idx)
-		return;
-	char *temp2 = idx + 1;
 	char ifname[32];
-
-	strlcpy(ifname, temp2, sizeof(ifname) - 1);
+	getiffromurl(ifname, sizeof(ifname), path);
 	if (!*(ifname))
 		return;
 
@@ -1861,7 +1850,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (nvram_matchi("info_passwd", 0))
+	if(nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1869,7 +1858,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (!wp->isregistered)
+	if(!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
