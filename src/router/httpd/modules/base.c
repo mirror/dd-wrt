@@ -956,7 +956,7 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 		return;
 
 	filteralphanum(ifname);
-	idx = strrchr(ifname, '.');
+	char *idx = strrchr(ifname, '.');
 	if (!idx)
 		return;
 	*idx = 0;
