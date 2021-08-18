@@ -915,7 +915,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 		return;
 	filteralphanum(ifname);
 	if (sanitize_ifname(ifname)) {
-		bzero(ifname, sizeof(ifname);
+		bzero(ifname, sizeof(ifname));
 	}
 	char *temp = insert(stream, ifname, "0", "WL_ActiveTable.asp");
 	do_ej_buffer(temp, stream);
