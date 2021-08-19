@@ -368,6 +368,7 @@ static int apfs_write_begin(struct file *file, struct address_space *mapping,
 	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
+	apfs_inode_join_transaction(sb, inode);
 
 	err = apfs_create_dstream_rec(inode);
 	if (err)
@@ -405,6 +406,8 @@ static int apfs_write_begin(struct file *file, struct address_space *mapping,
 	     block_start = block_end, bh = bh->b_this_page, ++iblock) {
 		block_end = block_start + blocksize;
 		if (to > block_start && from < block_end) {
+			if (buffer_trans(bh))
+				continue;
 			if (!buffer_mapped(bh)) {
 				err = __apfs_get_block(inode, iblock, bh,
 						       false /* create */);
@@ -447,7 +450,6 @@ static int apfs_write_end(struct file *file, struct address_space *mapping,
 {
 	struct inode *inode = mapping->host;
 	struct super_block *sb = inode->i_sb;
-	struct buffer_head *bh, *head;
 	int ret, err;
 
 	ret = generic_write_end(file, mapping, pos, len, copied, page, fsdata);
@@ -456,23 +458,6 @@ static int apfs_write_end(struct file *file, struct address_space *mapping,
 		err = -EIO;
 		goto out_abort;
 	}
-
-	bh = head = page_buffers(page);
-	do {
-		if (buffer_dirty(bh))
-			sync_dirty_buffer(bh);
-		put_bh(bh);
-		bh = bh->b_this_page;
-	} while (bh != head);
-
-	/* TODO: write all metadata for inodes at transaction commit instead? */
-	err = apfs_flush_extent_cache(inode);
-	if (err)
-		goto out_abort;
-
-	err = apfs_update_inode(inode, NULL /* new_name */);
-	if (err)
-		goto out_abort;
 
 	err = apfs_transaction_commit(sb);
 	if (!err)
@@ -493,6 +478,9 @@ static const struct address_space_operations apfs_aops = {
 #endif
 	.write_begin	= apfs_write_begin,
 	.write_end	= apfs_write_end,
+
+	/* The intention is to keep bhs around until the transaction is over */
+	.invalidatepage	= noop_invalidatepage,
 };
 
 /**
@@ -758,8 +746,9 @@ int apfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	stat->ino = apfs_ino(inode);
 	return 0;
 }
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0) */
 
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
 int apfs_getattr(const struct path *path, struct kstat *stat,
 		 u32 request_mask, unsigned int query_flags)
 
@@ -810,6 +799,8 @@ int apfs_getattr(struct user_namespace *mnt_userns,
 	return 0;
 }
 #endif
+
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0) */
 
 /**
  * apfs_build_inode_val - Allocate and initialize the value for an inode record
@@ -1091,6 +1082,9 @@ fail:
  * @query:	the query that found the inode record
  *
  * Returns 0 on success, or a negative error code in case of failure.
+ *
+ * TODO: should the xfield be removed if the count reaches 0? Should the inode
+ * flag change?
  */
 static int apfs_inode_resize_sparse(struct inode *inode, struct apfs_query *query)
 {
@@ -1144,6 +1138,10 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	struct apfs_inode_val *inode_raw;
 	int err;
 
+	err = apfs_flush_extent_cache(inode);
+	if (err)
+		return err;
+
 	query = apfs_inode_lookup(inode);
 	if (IS_ERR(query))
 		return PTR_ERR(query);
@@ -1160,6 +1158,8 @@ int apfs_update_inode(struct inode *inode, char *new_name)
 	err = apfs_inode_resize_sparse(inode, query);
 	if (err)
 		goto fail;
+	if (ai->i_sparse_bytes)
+		ai->i_int_flags |= APFS_INODE_IS_SPARSE;
 
 	/* TODO: just use apfs_btree_replace()? */
 	err = apfs_query_join_transaction(query);
@@ -1481,6 +1481,7 @@ int apfs_setattr(struct user_namespace *mnt_userns,
 	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
+	apfs_inode_join_transaction(sb, inode);
 
 	if (S_ISREG(inode->i_mode) && (iattr->ia_valid & ATTR_SIZE)) {
 		err = apfs_setsize(inode, iattr->ia_size);
@@ -1495,10 +1496,6 @@ int apfs_setattr(struct user_namespace *mnt_userns,
 #endif
 
 	mark_inode_dirty(inode);
-	err = apfs_update_inode(inode, NULL /* new_name */);
-	if (err)
-		goto fail;
-
 	err = apfs_transaction_commit(sb);
 	if (err)
 		goto fail;
@@ -1522,12 +1519,9 @@ int apfs_update_time(struct inode *inode, struct timespec *time, int flags)
 	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
+	apfs_inode_join_transaction(sb, inode);
 
 	err = generic_update_time(inode, time, flags);
-	if (err)
-		goto fail;
-
-	err = apfs_update_inode(inode, NULL /* new_name */);
 	if (err)
 		goto fail;
 
@@ -1596,9 +1590,7 @@ static int apfs_ioc_set_dir_class(struct file *file, u32 __user *user_class)
 	err = apfs_transaction_start(sb, maxops);
 	if (err)
 		return err;
-	err = apfs_update_inode(inode, NULL /* new_name */);
-	if (err)
-		goto fail;
+	apfs_inode_join_transaction(sb, inode);
 	err = apfs_transaction_commit(sb);
 	if (err)
 		goto fail;
@@ -1650,9 +1642,7 @@ static int apfs_ioc_set_pfk(struct file *file, void __user *user_pfk)
 	key_class = le32_to_cpu(pfk_hdr.persistent_class);
 	if (ai->i_key_class != key_class) {
 		ai->i_key_class = key_class;
-		err = apfs_update_inode(inode, NULL /* new_name */);
-		if (err)
-			goto fail;
+		apfs_inode_join_transaction(sb, inode);
 	}
 
 	err = apfs_transaction_commit(sb);

@@ -128,7 +128,9 @@ struct apfs_spaceman {
 struct apfs_nx_transaction {
 	struct buffer_head *t_old_msb;  /* Main superblock being replaced */
 	bool force_commit;		/* If set, commit is guaranteed */
+	bool commiting;			/* The transaction is being commited */
 
+	struct list_head t_inodes;	/* List of inodes in the transaction */
 	struct list_head t_buffers;	/* List of buffers in the transaction */
 	size_t t_buffers_count;		/* Count of items on the list */
 	int t_starts_count;		/* Count of starts for transaction */
@@ -560,6 +562,7 @@ struct apfs_inode_info {
 	u32			i_key_class;	 /* Security class for directory */
 	u64			i_int_flags;	 /* Internal flags */
 	u64			i_sparse_bytes;	 /* Sparse byte count in file */
+	struct list_head	i_list;		 /* List of inodes in transaction */
 
 	struct inode vfs_inode;
 };
@@ -714,6 +717,9 @@ extern int apfs_get_new_block(struct inode *inode, sector_t iblock,
 extern int APFS_GET_NEW_BLOCK_MAXOPS(void);
 extern int apfs_truncate(struct inode *inode, loff_t new_size);
 
+/* file.c */
+extern int apfs_fsync(struct file *file, loff_t start, loff_t end, int datasync);
+
 /* inode.c */
 extern struct inode *apfs_iget(struct super_block *sb, u64 cnid);
 extern int apfs_update_inode(struct inode *inode, char *new_name);
@@ -802,12 +808,14 @@ extern int apfs_spaceman_allocate_block(struct super_block *sb, u64 *bno, bool b
 extern int apfs_map_volume_super(struct super_block *sb, bool write);
 extern int apfs_read_omap(struct super_block *sb, bool write);
 extern int apfs_read_catalog(struct super_block *sb, bool write);
+extern int apfs_sync_fs(struct super_block *sb, int wait);
 
 /* transaction.c */
 extern void apfs_cpoint_data_allocate(struct super_block *sb, u64 *bno);
 extern int apfs_cpoint_data_free(struct super_block *sb, u64 bno);
 extern int apfs_transaction_start(struct super_block *sb, struct apfs_max_ops maxops);
 extern int apfs_transaction_commit(struct super_block *sb);
+extern void apfs_inode_join_transaction(struct super_block *sb, struct inode *inode);
 extern int apfs_transaction_join(struct super_block *sb,
 				 struct buffer_head *bh);
 void apfs_transaction_abort(struct super_block *sb);
