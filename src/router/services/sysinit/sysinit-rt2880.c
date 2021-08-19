@@ -176,10 +176,10 @@ void start_sysinit(void)
 //              set_smp_affinity(23, 8);        // wifi2
 		nvram_seti("sw_cpuport", 6);
 		nvram_seti("sw_wan", 4);
-		nvram_seti("sw_lan1", 0);
-		nvram_seti("sw_lan2", 1);
-		nvram_seti("sw_lan3", 2);
-		nvram_seti("sw_lan4", 3);
+		nvram_seti("sw_lan1", 3);
+		nvram_seti("sw_lan2", 2);
+		nvram_seti("sw_lan3", 1);
+		nvram_seti("sw_lan4", 0);
 		break;
 	case ROUTER_R6800:
 		insmod("thermal_sys");
@@ -208,10 +208,10 @@ void start_sysinit(void)
 //              set_smp_affinity(23, 8);        // wifi2
 		nvram_seti("sw_cpuport", 6);
 		nvram_seti("sw_wan", 4);
-		nvram_seti("sw_lan1", 0);
-		nvram_seti("sw_lan2", 1);
-		nvram_seti("sw_lan3", 2);
-		nvram_seti("sw_lan4", 3);
+		nvram_seti("sw_lan1", 3);
+		nvram_seti("sw_lan2", 2);
+		nvram_seti("sw_lan3", 1);
+		nvram_seti("sw_lan4", 0);
 
 		writestr("/sys/class/leds/white:wan/brightness", "0");
 		writestr("/sys/class/leds/white:lan1/brightness", "0");
