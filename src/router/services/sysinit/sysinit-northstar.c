@@ -6476,7 +6476,7 @@ void start_sysinit(void)
 	if (nvram_geti("nvram_ver") < 8 || !*nvram_safe_get("ctf_fa_cap")) {
 		nvram_seti("nvram_ver", 8);
 		if (nvram_match("ctf_fa_cap", "0"))
-			break;
+			goto next;
 		nvram_seti("ctf_fa_mode", 2);
 		insmod("ctf");
 		insmod("et");
@@ -6495,6 +6495,7 @@ void start_sysinit(void)
 			// do nothing loop
 		}
 	}
+	next:;
 
 	if (nvram_match("sfe", "2"))
 		nvram_set("ctf_disable", "0");
