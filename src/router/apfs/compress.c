@@ -9,7 +9,7 @@
 
 #include "apfs.h"
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+#if 0
 
 #include <linux/vmalloc.h>
 
