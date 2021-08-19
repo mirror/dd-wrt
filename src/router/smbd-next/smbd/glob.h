@@ -15,7 +15,7 @@
 #include "unicode.h"
 #include "vfs_cache.h"
 
-#define KSMBD_VERSION	"3.4.0"
+#define KSMBD_VERSION	"3.4.1"
 
 extern int ksmbd_debug_types;
 
