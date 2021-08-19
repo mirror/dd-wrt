@@ -5,14 +5,21 @@
 
 #include "apfs.h"
 
-static vm_fault_t apfs_page_mkwrite(struct vm_fault *vmf)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0) /* SB_RDONLY came in 4.14 */
+static vma_fault_t apfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+{
+	struct page *page = vmf->page;
+	struct inode *inode = file_inode(vma->vm_file);
+#else
+static vma_fault_t apfs_page_mkwrite(struct vm_fault *vmf)
 {
 	struct vm_area_struct *vma = vmf->vma;
 	struct page *page = vmf->page;
 	struct inode *inode = file_inode(vmf->vma->vm_file);
+#endif
 	struct super_block *sb = inode->i_sb;
 	struct buffer_head *bh, *head;
-	vm_fault_t ret = VM_FAULT_LOCKED;
+	vma_fault_t ret = VM_FAULT_LOCKED;
 	struct apfs_max_ops maxops;
 	int blkcount = PAGE_SIZE >> inode->i_blkbits;
 	unsigned int blocksize, block_start, len;
@@ -20,8 +27,7 @@ static vm_fault_t apfs_page_mkwrite(struct vm_fault *vmf)
 	int err = 0;
 
 	sb_start_pagefault(inode->i_sb);
-	file_update_time(vmf->vma->vm_file);
-
+	file_update_time(vma->vm_file);
 	/* Placeholder values, I need to get back to this in the future */
 	maxops.cat = APFS_UPDATE_INODE_MAXOPS() +
 		     blkcount * APFS_GET_NEW_BLOCK_MAXOPS();

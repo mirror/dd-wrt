@@ -19,6 +19,18 @@
 #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
 #define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
 
+#define vma_fault_t int
+
+static inline void noop_invalidatepage(struct page *page, unsigned int offset,
+		unsigned int length)
+{
+	/*
+	 * There is no page cache to invalidate in the dax case, however
+	 * we need this callback defined to prevent falling back to
+	 * block_invalidatepage() in do_invalidatepage().
+	 */
+}
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0) /* SB_RDONLY came in 4.14 */
 #define SB_RDONLY MS_RDONLY
 #define SB_ACTIVE MS_ACTIVE
