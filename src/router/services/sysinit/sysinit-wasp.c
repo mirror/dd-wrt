@@ -333,10 +333,10 @@ void start_sysinit(void)
 	nvram_seti("sw_lancpuport", 0);
 	nvram_seti("sw_wancpuport", 6);
 	nvram_seti("sw_wan", 1);
-	nvram_seti("sw_lan1", 2);
-	nvram_seti("sw_lan2", 3);
-	nvram_seti("sw_lan3", 4);
-	nvram_seti("sw_lan4", 5);
+	nvram_seti("sw_lan1", 5);
+	nvram_seti("sw_lan2", 4);
+	nvram_seti("sw_lan3", 3);
+	nvram_seti("sw_lan4", 2);
 #elif defined (HAVE_WZR450HP2) || defined(HAVE_WR1043V2)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
