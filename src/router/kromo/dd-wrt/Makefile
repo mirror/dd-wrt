@@ -832,15 +832,16 @@ ifeq ($(CONFIG_ANTAIRA),y)
 	sed -e 's/About\.htm/http:\/\/www.antaira.com/g' -e 's/DDWRT_About/Antaira_About/g' common.js >$(INSTALLDIR)/www/common.js
 	sed -e 's/DD-WRT \/ NewMedia-NET GmbH/Antaira Technologies/g' SuperChannel.asp >$(INSTALLDIR)/www/SuperChannel.asp
 	sed -e 's/<br>Powered by DD-WRT//g' Wiviz_Survey.asp >$(INSTALLDIR)/www/Wiviz_Survey.asp
-	sed -e 's/DD-WRT/Antaria/g' help/HManagement.asp >$(INSTALLDIR)/www/help/HManagement.asp
-	sed -e 's/DD-WRT/Antaria/g' help/HPPTP.asp >$(INSTALLDIR)/www/help/HPPTP.asp
-	sed -e 's/www.dd-wrt.com/www.antaira.com/g' help/HStatus.asp >$(INSTALLDIR)/www/help/HStatus.asp
-	sed -e 's/www.dd-wrt.com/www.antaira.com/g' -e 's/DD-WRT/Antaira/g' help/index.asp >$(INSTALLDIR)/www/help/index.asp 
-	sed -e 's/dd-wrt/Antaira/g' help/HWireless.asp > $(INSTALLDIR)/www/help/HWireless.asp 
-	sed -e 's/dd-wrt/Antaira/g' help/HUpgrade.asp > $(INSTALLDIR)/www/help/HUpgrade.asp 
+	sed -i 's/DD-WRT/Antaria/g' $(INSTALLDIR)/www/help/*
+	sed -i 's/dd-wrt/Antaria/g' $(INSTALLDIR)/www/help/*
+	sed -i 's/www.dd-wrt.com/www.antaira.com/g' $(INSTALLDIR)/www/help/*
 	sed -i 's/NAT \/ QoS/Port Forwarding/g' $(INSTALLDIR)/www/lang_pack/*
-	sed -i 's/wl_basic.client=\"Client\";/wl_basic.client=\"Client (NAT)\";/g' $(INSTALLDIR)/www/lang_pack/*
-	sed -i 's/wl_basic.repeater=\"Repeater\";/wl_basic.repeater="Repeater (NAT)\";/g' $(INSTALLDIR)/www/lang_pack/*
+	sed -i 's/DD-WRT/Antaria/g' $(INSTALLDIR)/www/lang_pack/*
+	sed -i 's/dd-wrt/Antaria/g' $(INSTALLDIR)/www/lang_pack/*
+	sed -i 's/www.dd-wrt.com/www.antaira.com/g' $(INSTALLDIR)/www/lang_pack/*
+	sed -i 's/wl_basic.clientBridge=\"Client Bridge\";/wl_basic.clientBridge=\"Client Bridge (no NAT)\";/g' $(INSTALLDIR)/www/lang_pack/*
+	sed -i 's/wl_basic.clientRelayd=\"Client Bridge (Routed)\";/wl_basic.clientRelayd=\"Client Bridge (Routed no NAT)\";/g' $(INSTALLDIR)/www/lang_pack/*
+	sed -i 's/hwl_basic.right2/hwl_basic.antaira/g' $(INSTALLDIR)/www/Wireless_Basic.asp
 	mkdir -p $(INSTALLDIR)/etc/config
 	cp -f antaira/defaults/config/* $(INSTALLDIR)/etc/config
 	mkdir -p $(INSTALLDIR)/sbin
