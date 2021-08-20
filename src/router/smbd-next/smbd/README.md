@@ -122,12 +122,12 @@ build your kernel
 13. SMB direct(RDMA)
 14. Win-ACL
 15. Kerberos
+16. Multi-channel
 
 *Planned*
-1. Multi-channel
-2. Durable handle v1/v2
-3. Persistent handles
-4. Directory lease
+1. Durable handle v1/v2
+2. Persistent handles
+3. Directory lease
 
 
 ## Supported Linux Kernel Versions
