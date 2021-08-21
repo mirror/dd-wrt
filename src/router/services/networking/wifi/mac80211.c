@@ -1360,12 +1360,17 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 
 	if (vapid > 0) {
-		int brand = getRouterBrand();
-		if (brand == ROUTER_WRT_3200ACM || brand == ROUTER_WRT_32X) {
-			hwbuff[0] |= 0x2;
-			hwbuff[5] += vapid & 0xf;
+		char *wifimac = nvram_nget("%s_hwaddr", ifname);
+		if (*wifimac) {
+			memcpy(hwbuff, ether_aton(wifimac), 6);
 		} else {
-			hwbuff[0] ^= ((vapid - 1) << 2) | 0x2;
+			int brand = getRouterBrand();
+			if (brand == ROUTER_WRT_3200ACM || brand == ROUTER_WRT_32X) {
+				hwbuff[0] |= 0x2;
+				hwbuff[5] += vapid & 0xf;
+			} else {
+				hwbuff[0] ^= ((vapid - 1) << 2) | 0x2;
+			}
 		}
 
 	}
