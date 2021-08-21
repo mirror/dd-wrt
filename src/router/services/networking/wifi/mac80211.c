@@ -540,7 +540,8 @@ void configure_single_ath9k(int count)
 #else
 	getMacAddr(dev, macaddr);
 #endif
-	nvram_set(athmac, macaddr);
+	if (!*nvram_safe_get(athmac))
+		nvram_set(athmac, macaddr);
 	int distance = nvram_default_geti(sens, 500);	// to meter
 	char dist[32];
 	if (distance > 0)
@@ -1350,7 +1351,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	    && !strcmp(maininterface, "wlan0")) {
 		ieee80211_aton(nvram_safe_get("def_whwaddr"), hwbuff);
 	} else {
-		int i = wl_hwaddr(maininterface, hwbuff);
+		char *wifimac = nvram_nget("%s_hwaddr", maininterface);
+		if (*wifimac) {
+			memcpy(hwbuff, ether_aton(wifimac), 6);
+		} else {
+			int i = wl_hwaddr(maininterface, hwbuff);
+		}
 	}
 
 	if (vapid > 0) {
