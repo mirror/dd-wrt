@@ -603,9 +603,22 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	return;
 
 }
+
 static void do_redirect(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
-websWrite(wp, "<html><head><meta http-equiv=\"refresh\" content=\"0\"; url=\"%s\" /></head></html>\n", path);
+	websWrite(stream, "<!DOCTYPE HTML>\n");
+	websWrite(stream, "<head>\n");
+	websWrite(stream, "<meta charset=\"UTF-8\">\n");
+	websWrite(stream, "<meta http-equiv=\"refresh\" content=\"0; url=%s\">\n", path);
+	websWrite(stream, "<script type=\"text/javascript\">\n");
+	websWrite(stream, "window.location.href = \"%s\"\n", path);
+	websWrite(stream, "</script>\n");
+	websWrite(stream, "<title>Page Redirection</title>\n");
+	websWrite(stream, "</head>\n");
+	websWrite(stream, "<body>\n");
+	websWrite(stream, "If you are not redirected automatically, follow this <a href='%s'>link</a>.\n", path);
+	websWrite(stream, "</body>\n");
+	websWrite(stream, "</html>\n");
 }
 
 static void do_filtertable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
@@ -1392,25 +1405,8 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		sprintf(path, "%s", next_page);
 	} else
 		sprintf(path, "%s.asp", submit_button);
-	if (!strncmp(path, "WL_FilterTable", 14))
-		do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
-#ifdef HAVE_FREERADIUS
-	else if (!strncmp(path, "FreeRadiusCert", 14))
-		do_radiuscert(METHOD_GET, NULL, path, wp);	// refresh
-#endif
-	// #ifdef HAVE_MADWIFI
-	else if (!strncmp(path, "Site_Survey", 11))
-		do_sitesurvey(METHOD_GET, NULL, path, wp);	// refresh
-	else if (!strncmp(path, "WL_ActiveTable", 14))
-		do_activetable(METHOD_GET, NULL, path, wp);	// refresh
-	else if (!strncmp(path, "Wireless_WDS", 12))
-		do_wds(METHOD_GET, NULL, path, wp);	// refresh
-	// #endif
-	else if (!strncmp(path, "Wireless_Advanced", 17))
-		do_wireless_adv(METHOD_GET, NULL, path, wp);	// refresh
-	else
-		do_ej(METHOD_GET, NULL, path, wp);	// refresh
 
+	do_redirect(METHOD_GET, NULL, path, wp);
 #ifdef HAVE_ANTAIRA
 	// @markus. this is wrong here, it works as a hack but structural it should use handlers
 	if (!strcmp(submit_type, "browser_date")) {
@@ -1785,23 +1781,7 @@ footer:
 		else {
 			sprintf(path, "%s.asp", submit_button);
 		}
-			do_redirect(METHOD_GET, NULL, path, wp);
-#if 0
-		if (!strncmp(path, "WL_FilterTable", 14))
-			do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
-#ifdef HAVE_FREERADIUS
-		else if (!strncmp(path, "FreeRadiusCert", 14))
-			do_radiuscert(METHOD_GET, NULL, path, wp);	// refresh      
-#endif
-		else if (!strncmp(path, "WL_ActiveTable", 14))
-			do_activetable(METHOD_GET, NULL, path, wp);	// refresh      
-		else if (!strncmp(path, "Wireless_WDS", 12))
-			do_wds(METHOD_GET, NULL, path, wp);	// refresh
-		else if (!strncmp(path, "Wireless_Advanced", 17))
-			do_wireless_adv(METHOD_GET, NULL, path, wp);	// refresh
-		else
-			do_ej(METHOD_GET, NULL, path, wp);	// refresh
-#endif
+		do_redirect(METHOD_GET, NULL, path, wp);
 		websDone(wp, 200);
 	} else {
 #ifndef HAVE_WRK54G
@@ -1852,7 +1832,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (nvram_matchi("info_passwd", 0))
+	if(nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1860,7 +1840,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (!wp->isregistered)
+	if(!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
