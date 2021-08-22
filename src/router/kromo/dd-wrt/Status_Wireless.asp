@@ -190,7 +190,6 @@ addEvent(window, "unload", function() {
 					<div id="contents">
 						<form name="Status_Wireless" action="apply.cgi" method="post">
 							<input type="hidden" name="submit_button" value="Status_Wireless" />
-							<input type="hidden" name="next_page" value="Status_Wireless.asp" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" value="refresh" />
 							<h2><% tran("status_wireless.h2"); %></h2>
