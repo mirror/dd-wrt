@@ -603,6 +603,10 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	return;
 
 }
+static void do_redirect(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+{
+websWrite(wp, "<html><head><meta http-equiv=\"refresh\" content=\"0\"; url=\"%s\" /></head></html>\n", path);
+}
 
 static void do_filtertable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
@@ -1778,9 +1782,11 @@ footer:
 		next_page = websGetVar(wp, "next_page", NULL);
 		if (next_page)
 			sprintf(path, "%s", next_page);
-		else
+		else {
 			sprintf(path, "%s.asp", submit_button);
-
+		}
+			do_redirect(METHOD_GET, NULL, path, wp);
+#if 0
 		if (!strncmp(path, "WL_FilterTable", 14))
 			do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
 #ifdef HAVE_FREERADIUS
@@ -1795,6 +1801,7 @@ footer:
 			do_wireless_adv(METHOD_GET, NULL, path, wp);	// refresh
 		else
 			do_ej(METHOD_GET, NULL, path, wp);	// refresh
+#endif
 		websDone(wp, 200);
 	} else {
 #ifndef HAVE_WRK54G
