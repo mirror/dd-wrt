@@ -78,7 +78,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
-							<input type="hidden" name="next_page" value="Diagnostics.asp" />
 							<h2><% tran("diag.h2"); %></h2>
 							
 							<fieldset>
