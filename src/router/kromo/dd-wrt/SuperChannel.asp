@@ -34,7 +34,6 @@ function to_submit(F) {
                     		<form name="register" action="apply.cgi" method="post">
                   			<input type="hidden" name="submit_button" value="SuperChannel" />
                   			<input type="hidden" name="submit_type" />
-                  			<input type="hidden" name="next_page" value="Wireless_Basic.asp" />
                   			<input type="hidden" name="change_action" />
 					<input type="hidden" name="action" value="Apply" />
 					<fieldset>

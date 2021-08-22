@@ -243,7 +243,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" value="delete" />
-							<input type="hidden" name="next_page" value="Status_Lan.asp" />
 							
 							<input type="hidden" name="if_del" />
 							<input type="hidden" name="ip_del" />
