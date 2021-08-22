@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6349 | brainslayer | 2021-08-22 20:27:38 +0700 (Sun, 22 Aug 2021) | 1 line
+
+the 10.4 based firmware for qca988x seem to be unreliable. so use latest known good one
+------------------------------------------------------------------------
 r6348 | brainslayer | 2021-08-18 15:25:19 +0700 (Wed, 18 Aug 2021) | 1 line
 
 fix module author
