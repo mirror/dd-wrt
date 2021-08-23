@@ -2140,10 +2140,12 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		style = "elegant";
 	if (!charset)
 		charset = strdup(live_translate(wp, "lang_charset.set"));
-
-	websWrite(wp,
-		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html>\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-		  charset);
+	char *translate = "";
+	if (!nvram_match("language", "english"))
+		translate = "translate=\"no\""
+		    websWrite(wp,
+			      "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html%s>\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
+			      translate, charset);
 #ifndef HAVE_MICRO
 	websWrite(wp, "\t\t<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n\t\t<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
 #endif
