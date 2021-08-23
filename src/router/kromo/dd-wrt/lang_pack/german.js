@@ -266,7 +266,7 @@ sbutton.manual_wol="Manuelles Aufwecken";
 sbutton.summary="Zusammenfassung";
 sbutton.filterIP="Liste der PCs editieren";
 sbutton.filterMac="MAC-Filterliste editieren";
-sbutton.filterSer="Service hinzuf&uuml;gen/editieren";
+sbutton.filterSer="Dienst hinzuf&uuml;gen/editieren";
 sbutton.reboot="Router neu starten";
 sbutton.help="   Hilfe  ";
 sbutton.wl_client_mac="MAC-Liste WLAN-Clients";
@@ -274,7 +274,7 @@ sbutton.update_filter="Filterliste updaten";
 sbutton.join="Verbinden";
 sbutton.log_in="Eingehendes Log";
 sbutton.log_out="Ausgehendes Log";
-sbutton.edit_srv="Service hinzuf&uuml;gen/editieren";
+sbutton.edit_srv="Dienst hinzuf&uuml;gen/editieren";
 sbutton.routingtab="Routentabelle anzeigen";
 sbutton.policytab="Regeltabelle anzeigen";
 sbutton.wanmac="Zeige aktuelle PC-MAC-Adresse";
@@ -376,7 +376,7 @@ errmsg.err52="Eingegebene Passw&ouml;rter stimmen nicht &uuml;berein.";
 
 // Port_Services.asp error messages
 errmsg.err53="Klicken Sie nach dem Abschluss aller Aktionen den Anwenden-Button um die Einstellungen zu &uuml;bernehmen.";
-errmsg.err54="Sie m&uuml;ssen einen Service-Namen angeben.";
+errmsg.err54="Sie m&uuml;ssen einen Dienst-Namen angeben.";
 errmsg.err55="Der Dienstname existiert bereits.";
 
 // QoS.asp error messages
@@ -414,7 +414,7 @@ bmenu.setupmacclone="MAC-Adresse klonen";
 bmenu.setuprouting="Erweitertes Routing";
 bmenu.setupvlan="Switch Konfiguration";
 bmenu.setupeop="EoIP Tunnel";
-bmenu.networking="Netzwerke";
+bmenu.networking="Vernetzung";
 
 bmenu.wireless="WLAN";
 bmenu.wirelessBasic="Basis-Einstellungen";
@@ -469,8 +469,8 @@ bmenu.adminFactory="Werkseinstellungen";
 bmenu.adminUpgrade="Firmware-Update";
 bmenu.adminBackup="Backup";
 
-bmenu.services="Services";
-bmenu.servicesServices="Services";
+bmenu.services="Dienste";
+bmenu.servicesServices="Dienste";
 bmenu.servicesRadius="FreeRadius";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
@@ -569,8 +569,8 @@ ddnsm.all_noip="Keine WAN-Verbindung";
 //help container
 
 hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfename eines Domainnamens anstatt einer IP-Adresse. \
-	Der Service verwaltet und &auml;ndert die IP-Adresse sowie die Domaininformation dynamisch.\
-	Sie m&uuml;ssen sich f&uuml;r den Service bei einem entsprechenden Provider (passend zur Auswahlbox links) anmelden.";
+	Der Dienst verwaltet und &auml;ndert die IP-Adresse sowie die Domaininformation dynamisch.\
+	Sie m&uuml;ssen sich f&uuml;r den Dienst bei einem entsprechenden Provider (passend zur Auswahlbox links) anmelden.";
 hddns.right4="Geben Sie eine Zahl in der Box an um den Interval f&uuml;r das erzwungene Update anzugeben (in Tagen). Updates sollten nur Automatisch durchgef&uuml;hrt werden wenn sich Ihre IP &auml;ndert. Achten Sie darauf das Sie Updates nicht zu oft durchf&uuml;hren, da ihr DDNS Provider Sie sonst Sperren k&ouml;nnte.";
 // ** Diagnostics.asp **//
 
@@ -639,7 +639,7 @@ filter.polallow="Internetzugriff w&auml;hrend der angegebenen Tage und Stunden."
 filter.legend2="Tage";
 filter.time="Zeiten";
 filter.h24="24 Stunden";
-filter.legend3="Blockierte Services";
+filter.legend3="Blockierte Dienste";
 filter.catchall="Alle P2P-Protokolle abfangen";
 filter.legend4="Webseite mit Hilfe einer URL blockieren";
 filter.legend5="Webseite mit Hilfe von Schlagworten blockieren";
@@ -655,7 +655,7 @@ hfilter.right4="Hier k&ouml;nnnen Sie eine Richtlinie ein- oder ausschalten.";
 hfilter.right6="Hier k&ouml;nnen Sie ihrer Richtlinie einen Namen zuweisen.";
 hfilter.right8="Hier k&ouml;nnen Sie ein oder mehrere Tage ausw&auml;hlen, an denen die Richtlinie gelten soll.";
 hfilter.right10="Hier k&ouml;nnen Sie die Tageszeit angeben, zu der die Richtlinie gelten soll.";
-hfilter.right12="Hier k&ouml;nnen Sie Services ausw&auml;hlen, welche blockiert werden sollen. Klicken Sie <em>" + sbutton.filterSer + "</em> um die Einstellungen zu &auml;ndern.";
+hfilter.right12="Hier k&ouml;nnen Sie Dienste ausw&auml;hlen, welche blockiert werden sollen. Klicken Sie <em>" + sbutton.filterSer + "</em> um die Einstellungen zu &auml;ndern.";
 hfilter.right14="Hier k&ouml;nnen Sie diverse Webseiten mit Hilfe einer URL blockieren.";
 hfilter.right16="Hier k&ouml;nnen Sie mit Hilfe von Schlagworten Webseiten blockieren, die diese enthalten.";
 
@@ -719,7 +719,7 @@ hprforward.right2="Einige Anwendungen ben&ouml;tigen offene Ports, damit sie kor
 p2p.titl="Peer-to-Peer Anwendungen";
 p2p.h2="BitTorrent Klient";
 p2p.legend="CTorrent";
-p2p.ctorrent_srv="Ctorrent Service";
+p2p.ctorrent_srv="Ctorrent Dienst";
 
 
 
@@ -947,8 +947,8 @@ hotspotsys.customsplash="Angepasste Splash Seite (Walled Garden)";
 //anchorfree.country="Land";
 //anchorfree.category="Kategorie";
 //anchorfree.publish="Hotspot auf WiFi Karte anzeigen";
-//anchorfree.serviceid="Service ID";
-//anchorfree.servicestatus="Service Status";
+//anchorfree.serviceid="Dienste ID";
+//anchorfree.servicestatus="Dienst Status";
 //anchorfree.agreement="Nutzungsbestimmungen";
 //anchorfree.agree="Einverstanden";
 //anchorfree.validaddr="Um den Hotspot korrekt auf der Karte anzeigen zu k&ouml;nnen, mu&szlig; eine g&uuml;ltige Adresse angegeben werden!";
@@ -975,7 +975,7 @@ hotspotsys.customsplash="Angepasste Splash Seite (Walled Garden)";
 info.titl="Info";
 info.h2="System Information";
 info.wlanmac="WLAN MAC";
-info.srv="Services";
+info.srv="Dienste";
 info.ap="Access Point";
 
 
@@ -1112,7 +1112,7 @@ log_out.titl="Ausgehende Log-Tabelle";
 log_out.h2="Ausgehende Log-Tabelle";
 log_out.th_lanip="LAN-IP";
 log_out.th_wanip="Ziel-URL/IP";
-log_out.th_port="Service-/Port-Nummer";
+log_out.th_port="Dienst-/Port-Nummer";
 
 
 // ** Log.asp **//
@@ -1933,7 +1933,7 @@ status_router.sys_model="Router-Modell";
 status_router.sys_firmver="Firmware-Version";
 status_router.sys_time="Aktuelle Zeit";
 status_router.sys_up="Uptime";
-status_router.sys_load="Auslastung";
+status_router.sys_load="Lastdurchschnitt";
 status_router.sys_kernel="Kernel Version";
 status_router.legend2="CPU";
 status_router.cpu="CPU-Modell";
@@ -2096,7 +2096,7 @@ upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Weiterleitungen";
 upnp.legend2="UPnP-Konfiguration";
-upnp.serv="UPnP-Service";
+upnp.serv="UPnP-Dienst";
 upnp.clear="L&ouml;scht die Port-Weiterleitungen beim Start";
 upnp.url="Sende Pr&auml;sentations-URL";
 upnp.msg1="Klicken Sie hier, um die Lease zu l&ouml;schen";
@@ -2223,7 +2223,7 @@ wpa.owe_ifname="OWE &Uumlbergangs Interface";
 
 aoss.titl="AOSS Sicherheit";
 aoss.aoss="AOSS";
-aoss.service="AOSS Service";
+aoss.service="AOSS Dienst";
 aoss.enable="AOSS Einschalten";
 aoss.start="Starte AOSS Aushandlung";
 aoss.securitymodes="Sicherheits Einstellungen";
@@ -2321,7 +2321,7 @@ wds.legend2="Erweiterte Optionen";
 // ** Wireless_radauth.asp **//
 
 radius.titl="Radius";
-radius.h2="Remote Authentication Dial-In User Service";
+radius.h2="Fern-Authentifizierungs Einwahl Nutzer Dienst";
 radius.legend="Radius";
 radius.retry="Prim&auml;re Server Versuche";
 radius.label="Radius Client MAC";
