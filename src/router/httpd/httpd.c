@@ -1268,7 +1268,8 @@ static void *handle_request(void *arg)
 			handler->output(method_type, handler, file, conn_fp);
 			goto out;
 		}
-	break}
+		break;
+	}
 	send_error(conn_fp, 404, "Not Found", NULL, "File %s not found.", file);
 
       out:;
