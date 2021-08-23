@@ -182,6 +182,13 @@ static int registered_real = -1;
 #ifdef HAVE_SUPERCHANNEL
 static int superchannel = -1;
 #endif
+#ifdef HAVE_REGISTER
+#define IS_REGISTERED(conn_fp) (conn_fp->isregistered)
+#define IS_REGISTERED_REAL(conn_fp) (conn_fp->isregistered_real)
+#else
+#define IS_REGISTERED(conn_fp) (1)
+#define IS_REGISTERED_REAL(conn_fp) (1)
+#endif
 
 #define DEFAULT_HTTP_PORT 80
 static char pid_file[80];
@@ -1159,21 +1166,18 @@ static void *handle_request(void *arg)
 	}
 #endif
 	int changepassword = 0;
-#ifdef HAVE_REGISTER
-	if (!conn_fp->isregistered_real) {
+	if (!IS_REGISTERED_REAL(conn_fp)) {
 		if (endswith(file, "About.htm"))
 			file = "register.asp";
 	}
-	if (!conn_fp->isregistered) {
+	if (!IS_REGISTERED(conn_fp)) {
 		if (endswith(file, ".asp"))
 			file = "register.asp";
 		else if (endswith(file, ".htm"))
 			file = "register.asp";
 		else if (endswith(file, ".html"))
 			file = "register.asp";
-	} else
-#endif
-	{
+	} else {
 		if (((nvram_match("http_username", DEFAULT_USER)
 		      && nvram_match("http_passwd", DEFAULT_PASS))
 		     || nvram_match("http_username", "")
@@ -1199,85 +1203,74 @@ static void *handle_request(void *arg)
 	}
 	FILE *fp;
 	int file_found = 1;
-	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
-		if (match(handler->pattern, file)) {
-			airbag_setpostinfo(handler->pattern);
-#ifdef HAVE_REGISTER
-			if (conn_fp->isregistered)
-#endif
-			{
-				if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
+	for (handler = &mime_handlers[0]; handler->pattern && match(handler->pattern, file); handler++) {
+		airbag_setpostinfo(handler->pattern);
+		if (IS_REGISTERED(conn_fp) && !changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
 
-					if (authorization)
-						conn_fp->authorization = strdup(authorization);
+			if (authorization)
+				conn_fp->authorization = strdup(authorization);
 
-					int result = handler->auth(conn_fp, auth_check);
+			int result = handler->auth(conn_fp, auth_check);
 
 #ifdef HAVE_IAS
-					if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp"))
-							 && strstr(useragent, "Android")
-							 && ias_sid_valid(conn_fp))) {
-						fprintf(stderr, "[AUTH FAIL]: %s", useragent);
+			if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp"))
+					 && strstr(useragent, "Android")
+					 && ias_sid_valid(conn_fp))) {
+				fprintf(stderr, "[AUTH FAIL]: %s", useragent);
 #else
-					if (!result) {
+			if (!result) {
 #endif
-						send_authenticate(conn_fp);
-						goto out;
-					}
-				}
-			}
-			conn_fp->post = 0;
-			if (method_type == METHOD_POST) {
-				conn_fp->post = 1;
-			}
-
-			if (handler->input) {
-				PTHREAD_MUTEX_LOCK(&input_mutex);
-				if (handler->input(file, conn_fp, content_length, boundary)) {
-					PTHREAD_MUTEX_UNLOCK(&input_mutex);
-					goto out;
-				}
-				PTHREAD_MUTEX_UNLOCK(&input_mutex);
-			}
-#if 0				// defined(linux)
-			if (!DO_SSL(conn_fp) && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
-				/* Read up to two more characters */
-				if (fgetc(conn_fp->fp) != EOF)
-					(void)fgetc(conn_fp->fp);
-				fcntl(fileno(conn_fp->fp), F_SETFL, flags);
-			}
-#endif
-			if (check_connect_type(conn_fp) < 0) {
-				send_error(conn_fp, 401, "Bad Request", NULL, "Can't use wireless interface to access GUI.");
+				send_authenticate(conn_fp);
 				goto out;
 			}
-				if (handler->send_headers)
-					send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
-			// check for do_file handler and check if file exists
-			file_found = 1;
-			if (handler->output == do_file) {
-				if (getWebsFileLen(conn_fp, file) == 0) {
-					if (!(fp = fopen(file, "rb"))) {
-						file_found = 0;
-					} else {
-						fclose(fp);
-					}
+		}
+		conn_fp->post = 0;
+		if (method_type == METHOD_POST) {
+			conn_fp->post = 1;
+		}
+
+		if (handler->input) {
+			PTHREAD_MUTEX_LOCK(&input_mutex);
+			if (handler->input(file, conn_fp, content_length, boundary)) {
+				PTHREAD_MUTEX_UNLOCK(&input_mutex);
+				goto out;
+			}
+			PTHREAD_MUTEX_UNLOCK(&input_mutex);
+		}
+#if 0				// defined(linux)
+		if (!DO_SSL(conn_fp) && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
+			/* Read up to two more characters */
+			if (fgetc(conn_fp->fp) != EOF)
+				(void)fgetc(conn_fp->fp);
+			fcntl(fileno(conn_fp->fp), F_SETFL, flags);
+		}
+#endif
+		if (check_connect_type(conn_fp) < 0) {
+			send_error(conn_fp, 401, "Bad Request", NULL, "Can't use wireless interface to access GUI.");
+			goto out;
+		}
+		if (handler->send_headers)
+			send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
+		// check for do_file handler and check if file exists
+		file_found = 1;
+		if (handler->output == do_file) {
+			if (getWebsFileLen(conn_fp, file) == 0) {
+				if (!(fp = fopen(file, "rb"))) {
+					file_found = 0;
+				} else {
+					fclose(fp);
 				}
 			}
-			if (handler->output && file_found) {
-				handler->output(method_type, handler, file, conn_fp);
-			} else {
-				send_error(conn_fp, 404, "Not Found", NULL, "File %s not found.", file);
-			}
-
-			break;
-
 		}
-
-		if (!handler || !handler->pattern) {
+		if (handler->output && file_found) {
+			handler->output(method_type, handler, file, conn_fp);
+		} else {
 			send_error(conn_fp, 404, "Not Found", NULL, "File %s not found.", file);
 		}
+
+		goto out;
 	}
+	send_error(conn_fp, 404, "Not Found", NULL, "File %s not found.", file);
 
       out:;
 	setnaggle(conn_fp, 0);
