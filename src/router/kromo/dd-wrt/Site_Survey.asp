@@ -41,7 +41,7 @@ function do_join (F,SSID) {
 				   <th width="5%"><%% tran("share.openn"); %%></th>
 				   <th width="5%"><%% tran("share.dtim"); %%></th>
 				   <th width="5%"><%% tran("share.rates"); %%></th>
-				   <th width="7%"><%% tran("survey.thjoin"); %%></th>
+				   <th width="7%"></th>
 				</tr>
 					<script type="text/javascript">
 					//<![CDATA[
