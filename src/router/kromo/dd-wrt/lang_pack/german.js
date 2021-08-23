@@ -1481,7 +1481,7 @@ hroute.right10="Setzt den angewandten Netzwerk-Bereich.";
 
 survey.titl="Netzsuche";
 survey.titl2="Kanalsuche";
-survey.h2="Benachbarte WLAN-Netzwerke";
+survey.h2="WLAN-Netzwerke in der N&auml;he";
 survey.h3="Kan&auml;le und Qualit&auml;ten";
 survey.thjoin="Netz beitreten";
 
