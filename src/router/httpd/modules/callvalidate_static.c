@@ -54,6 +54,7 @@
 #include <wlutils.h>
 #include <netdb.h>
 #include <utils.h>
+#include <airbag.h>
 
 #include <dlfcn.h>
 #include <stdio.h>
