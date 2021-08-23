@@ -3258,20 +3258,20 @@ int tf_webWriteESC(webs_t wp, const char *value)
 	n = 0;
 	r = 0;
 	for (c = value; *c; c++) {
-		if ((isprint(*c)) && (*c != '"') && (*c != '&')
+		if (n < (sizeof(buf) - 1) && (isprint(*c)) && (*c != '"') && (*c != '&')
 		    && (*c != '<') && (*c != '>') && (*c != '\'')
 		    && (*c != '\\')) {
 			buf[n++] = *c;
 		} else {
-			n += sprintf(&buf[n], "&#%d;", *c);
+			n += snprintf(&buf[n], sizeof(buf) - n, "&#%d;", *c);
 		}
-		if (n > (sizeof(buf) - 10)) {	// ! extra space for &...
+		if (n > (sizeof(buf) - 10) && n < (sizeof(buf) - 1)) {	// ! extra space for &...
 			buf[n] = 0;
 			n = 0;
 			r += wfputs(buf, wp);
 		}
 	}
-	if (n > 0) {
+	if (n > 0 && n < (sizeof(buf) - 1)) {
 		buf[n] = 0;
 		r += wfputs(buf, wp);
 	}
@@ -3297,47 +3297,47 @@ int tf_webWriteJS(webs_t wp, const char *s)
 			c++;
 			switch (*c) {
 			case 0xa3:
-				n += sprintf(buf + n, "&auml;");
+				n += snprintf(buf + n, sizeof(buf) - n, "&auml;");
 				break;
 			case 0xb6:
-				n += sprintf(buf + n, "&ouml;");
+				n += snprintf(buf + n, sizeof(buf) - n, "&ouml;");
 				break;
 			case 0xbc:
-				n += sprintf(buf + n, "&uuml;");
+				n += snprintf(buf + n, sizeof(buf) - n, "&uuml;");
 				break;
 			case 0xc4:
-				n += sprintf(buf + n, "&Auml;");
+				n += snprintf(buf + n, sizeof(buf) - n, "&Auml;");
 				break;
 			case 0xd6:
-				n += sprintf(buf + n, "&Ouml;");
+				n += snprintf(buf + n, sizeof(buf) - n, "&Ouml;");
 				break;
 			case 0xdc:
-				n += sprintf(buf + n, "&Uuml;");
+				n += snprintf(buf + n, sizeof(buf) - n, "&Uuml;");
 				break;
 			case 0xdf:
-				n += sprintf(buf + n, "&szlig;");
+				n += snprintf(buf + n, sizeof(buf) - n, "&szlig;");
 				break;
 			default:
 				s--;
 			}
 		} else if (*c == '<') {
-			n += sprintf(buf + n, "&lt;");
+			n += snprintf(buf + n, sizeof(buf) - n, "&lt;");
 		} else if (*c == '\'') {
 			continue;
 		} else if (*c == '>') {
-			n += sprintf(buf + n, "&gt;");
-		} else if ((*c != '"') && (*c != '\\') && (*c != '/') && (*c != '*') && (isprint(*c))) {
+			n += snprintf(buf + n, sizeof(buf) - n, "&gt;");
+		} else if (n < (sizeof(buf) - 1) && (*c != '"') && (*c != '\\') && (*c != '/') && (*c != '*') && (isprint(*c))) {
 			buf[n++] = *c;
 		} else {
-			n += sprintf(&buf[n], "\\x%02x", *c);
+			n += snprintf(&buf[n], sizeof(buf) - n, "\\x%02x", *c);
 		}
-		if (n > (sizeof(buf) - 10)) {	// ! extra space for \xHH
+		if (n > (sizeof(buf) - 10) && n < (sizeof(buf) - 1)) {	// ! extra space for \xHH
 			buf[n] = 0;
 			n = 0;
 			r += wfputs(buf, wp);
 		}
 	}
-	if (n > 0) {
+	if (n > 0 && n < (sizeof(buf) - 1)) {
 		buf[n] = 0;
 		r += wfputs(buf, wp);
 	}
