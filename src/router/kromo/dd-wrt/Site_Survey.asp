@@ -30,7 +30,7 @@ function do_join (F,SSID) {
 			<table class="center table" cellspacing="5" id="survey_table">
 				<tr>
 				   <th width="25%"><%% tran("share.ssid"); %%></th>
-				   <th width="7%">Mode</th>
+				   <th width="7%"><%% tran("share.mode"); %%></th>
 				   <th width="19%"><%% tran("share.mac"); %%></th>
 				   <th width="5%"><%% tran("share.channel"); %%></th>
 				   <th width="5%"><%% tran("share.frequency"); %%></th>
