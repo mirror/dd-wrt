@@ -271,7 +271,7 @@ sbutton.reboot="Router neu starten";
 sbutton.help="   Hilfe  ";
 sbutton.wl_client_mac="MAC-Liste WLAN-Clients";
 sbutton.update_filter="Filterliste updaten";
-sbutton.join="Beitreten";
+sbutton.join="Verbinden";
 sbutton.log_in="Eingehendes Log";
 sbutton.log_out="Ausgehendes Log";
 sbutton.edit_srv="Service hinzuf&uuml;gen/editieren";
@@ -1094,8 +1094,8 @@ dsl.snr="DSL Signal (up/down)";
 
 
 //sshd.webservices
-join.titl="beitreten";
-join.mess1="Sie sind nun erfolgreich dem folgendem Netzerk als Client beigetreten: ";
+join.titl="Verbinden";
+join.mess1="Sie sind nun erfolgreich dem folgenden Netzerk als Client verbunden: ";
 
 
 // ** Log_incoming.asp **//
@@ -1483,7 +1483,7 @@ survey.titl="Netzsuche";
 survey.titl2="Kanalsuche";
 survey.h2="WLAN-Netzwerke in der N&auml;he";
 survey.h3="Kan&auml;le und Qualit&auml;ten";
-survey.thjoin="Netz beitreten";
+survey.thjoin="Verbinden";
 
 
 
