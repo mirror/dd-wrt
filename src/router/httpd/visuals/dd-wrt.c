@@ -4857,11 +4857,14 @@ EJ_VISIBLE void ej_gen_timer_fields(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 {
-#ifdef HAVE_ANTAIRA
+#if defined(HAVE_ANTAIRA) && defined(HAVE_HABANERO)
+	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(sbutton.survey)</script></legend>");
 	websWrite(wp, "<div class=\"center\">");
-	websWrite(wp, "<input title=\"Site survey\" class=\"button\" type=\"button\" name=\"site_survey\" value=\"Wireless site survey\" onclick=\"openWindow('Site_Survey.asp', 760, 700)\"/>");
-	websWrite(wp, "<br></br>");
+	websWrite(wp, "<input title=\"Site survey (wlan0)\" class=\"button\" type=\"button\" name=\"site_survey\" value=\"Wireless site survey (wlan0)\" onclick=\"openWindow('Site_Survey-wlan0.asp', 760, 700)\"/>");
+	websWrite(wp, "<input title=\"Site survey (wlan1)\" class=\"button\" type=\"button\" name=\"site_survey\" value=\"Wireless site survey (wlan1)\" onclick=\"openWindow('Site_Survey-wlan1.asp', 760, 700)\"/>");
 	websWrite(wp, "</div>");
+	websWrite(wp, "</fieldset>");
+	websWrite(wp, "<br></br>");
 #endif
 
 #ifndef HAVE_MADWIFI
