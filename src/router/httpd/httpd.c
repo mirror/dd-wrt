@@ -1251,7 +1251,6 @@ static void *handle_request(void *arg)
 				send_error(conn_fp, 401, "Bad Request", NULL, "Can't use wireless interface to access GUI.");
 				goto out;
 			}
-			if (handler->output != do_file)
 				if (handler->send_headers)
 					send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 			// check for do_file handler and check if file exists
