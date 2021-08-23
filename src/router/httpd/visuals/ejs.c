@@ -52,57 +52,6 @@
 #endif
 #include <glob.h>
 
-/*void do_ej_buffer(char *buffer, webs_t stream)
-{
-	stream->p->env->do_ej_buffer(buffer, stream);
-}
-
-char *websGetVar(webs_t wp, char *var, char *d)
-{
-	return wp->p->env->websGetVar(wp, var, d);
-}
-
-int websGetVari(webs_t wp, char *var, int d)
-{
-	return wp->p->env->websGetVari(wp, var, d);
-}
-*/
-/*size_t websWrite(webs_t wp, char *fmt, ...)
-{
-	va_list arglist;
-	va_start(arglist, fmt);
-	size_t ret = wp->p->env->vwebsWrite(wp, fmt, arglist);
-	va_end(arglist);
-	return ret;
-}
-
-void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
-{
-	stream->p->env->do_ej(method, handler, path, stream);
-
-}
-
-FILE *getWebsFile(webs_t wp, char *path)
-{
-	return wp->p->env->getWebsFile(wp, path);
-}
-
-int wfputs(char *buf, webs_t fp)
-{
-	return fp->p->env->wfputs(buf, fp);
-}
-
-char *live_translate(webs_t wp, const char *tran)
-{
-	return wp->p->env->live_translate(wp, tran);
-}
-
-char *GOZILA_GET(webs_t wp, char *name)
-{
-	return wp->p->env->GOZILA_GET(wp, name);
-}
-*/
-
 struct onload onloads[] = {
 	// { "Filters", filter_onload },
 	{ "WL_ActiveTable", wl_active_onload },
@@ -2143,9 +2092,9 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	char *translate = "";
 	if (!nvram_match("language", "english"))
 		translate = " translate=\"no\"";
-		    websWrite(wp,
-			      "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html%s>\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-			      translate, charset);
+	websWrite(wp,
+		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html%s>\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
+		  translate, charset);
 #ifndef HAVE_MICRO
 	websWrite(wp, "\t\t<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n\t\t<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
 #endif

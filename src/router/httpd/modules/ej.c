@@ -305,7 +305,7 @@ static void do_ej_file(FILE * fp, int len, webs_t stream)
 
 #include "../html.c"
 
-FILE *getWebsFile(webs_t wp, char *path2)
+static FILE *_getWebsFile(webs_t wp, char *path2, int *len)
 {
 	FILE *web;
 
@@ -313,12 +313,13 @@ FILE *getWebsFile(webs_t wp, char *path2)
 	char *query = strchr(path, '?');
 	if (query)
 		*query++ = 0;
-
+//	fprintf(stderr, "open %s\n", path);
 	cprintf("opening %s\n", path);
 	int i = 0;
 	unsigned int curoffset = 0;
 	while (websRomPageIndex[i].path != NULL) {
 
+		*len = websRomPageIndex[i].size - WEBSOFFSET;
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			/* to prevent stack overwrite problems */
 			web = fopen("/tmp/debug/www", "rb");
@@ -327,37 +328,40 @@ FILE *getWebsFile(webs_t wp, char *path2)
 			if (web == NULL)
 				goto err;
 			fseek(web, curoffset, SEEK_SET);
-			cprintf("found %s\n", path);
+		//	fprintf(stderr, "found %s\n", path);
 			free(path);
 			return web;
 		}
-		curoffset += (websRomPageIndex[i].size - WEBSOFFSET);
+		curoffset += *len;
 		i++;
 	}
-	cprintf("not found %s\n", path);
+//	fprintf(stderr, "not found %s\n", path);
 
 err:
+	*len = 0;
+	web = fopen(path, "rb");
+	if (web == NULL)
+		goto err2;
+	fseek(web, 0, SEEK_END);
+	*len = ftell(web);
+	fseek(web, 0, SEEK_SET);
+err2:
 	free(path);
-	return NULL;
+	return web;
+}
+
+FILE *getWebsFile(webs_t wp, char *path2)
+{
+	int len;
+	return _getWebsFile(wp, path2, &len);
 }
 
 int getWebsFileLen(webs_t wp, char *path2)
 {
-	unsigned int len = 0;
-	int i = 0;
-	char *path = strdup(path2);
-	char *query = strchr(path, '?');
-	if (query)
-		*query++ = 0;
-
-	while (websRomPageIndex[i].path != NULL) {
-		if (!strcmp(websRomPageIndex[i].path, path)) {
-			len = websRomPageIndex[i].size - WEBSOFFSET;
-			break;
-		}
-		i++;
-	}
-	free(path);
+	int len = 0;
+	FILE *fp = _getWebsFile(wp, path2, &len);
+	if (fp)
+		fclose(fp);
 	return len;
 }
 
@@ -370,33 +374,11 @@ void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_
 
 	i = 0;
 	len = 0;
-	unsigned int curoffset = 0;
-	while (websRomPageIndex[i].path != NULL) {
-		if (!strcmp(websRomPageIndex[i].path, path)) {
-			fp = fopen("/tmp/debug/www", "rb");
-			if (!fp)
-				fp = fopen("/etc/www", "rb");
-			if (fp == NULL)
-				return;
-			fseek(fp, curoffset, SEEK_SET);
-			len = websRomPageIndex[i].size - WEBSOFFSET;
-			break;
-		}
-		curoffset += websRomPageIndex[i].size - WEBSOFFSET;
-		i++;
-	}
-	if (fp == NULL) {
-		fp = fopen(path, "rb");
-		if (fp == NULL)
-			return;
-		fseek(fp, 0, SEEK_END);
-		len = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
+	fp = _getWebsFile(stream, path, &len);
+	if (fp) {
 		do_ej_file(fp, len, stream);
-	} else {
-		do_ej_file(fp, len, stream);
+		fclose(fp);
 	}
-	fclose(fp);
 	memdebug_leave_info(path);
 
 }
