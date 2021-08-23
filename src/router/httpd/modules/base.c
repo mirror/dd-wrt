@@ -606,19 +606,9 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 
 static void do_redirect(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
-	websWrite(stream, "<!DOCTYPE HTML>\n");
-	websWrite(stream, "<head>\n");
-	websWrite(stream, "<meta charset=\"UTF-8\">\n");
-	websWrite(stream, "<meta http-equiv=\"refresh\" content=\"0; url=%s\">\n", path);
-	websWrite(stream, "<script type=\"text/javascript\">\n");
-	websWrite(stream, "window.location.href = \"%s\"\n", path);
-	websWrite(stream, "</script>\n");
-	websWrite(stream, "<title>Page Redirection</title>\n");
-	websWrite(stream, "</head>\n");
-	websWrite(stream, "<body>\n");
-	websWrite(stream, "If you are not redirected automatically, follow this <a href='%s'>link</a>.\n", path);
-	websWrite(stream, "</body>\n");
-	websWrite(stream, "</html>\n");
+	char redirect_path[128];
+	snprintf(redirect_path, sizeof(redirect_path), "Location: %s", path);
+	send_headers(stream, 302, "Found", redirect_path, "", -1, NULL, 1);
 }
 
 static void do_filtertable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
@@ -2667,6 +2657,8 @@ static void do_language(unsigned char method, struct mime_handler *handler, char
 }
 #endif
 
+#define NO_HEADER 0
+#define SEND_HEADER 1
 static char no_cache[] = "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 static char do_cache[] = "Cache-Control: private, max-age=600\r\n";
 
@@ -2674,206 +2666,162 @@ static struct mime_handler mime_handlers[] = {
 	// { "ezconfig.asp", "text/html", ezc_version, do_apply_ezconfig_post,
 	// do_ezconfig_asp, do_auth ,0},
 #ifdef HAVE_SKYTRON
-	{ "setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
 #endif
 #ifdef HAVE_POKER
-	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0 },
+	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
 #endif
 #ifdef HAVE_DDLAN
-	{ "Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Management*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Services*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Log*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Management*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Services*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Log*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
 #endif
 
-	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0 },
+	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
 #ifdef HAVE_REGISTER
-	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, 1, 0 },
+	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, SEND_HEADER, 0 },
 #endif
 	{ "WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,
-	 do_auth, 1, 0 },
+	 do_auth, SEND_HEADER, 0 },
 #ifdef HAVE_FREERADIUS
-	{ "FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth,
-	 1, 0 },
-	{ "freeradius-certs/*", "application/octet-stream", no_cache, NULL,
-	 cert_file_out, do_auth, 0, 0 },
+	{ "FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth, SEND_HEADER, 0 },
+	{ "freeradius-certs/*", "application/octet-stream", no_cache, NULL, cert_file_out, do_auth, NO_HEADER, 0 },
 #endif
-	// #endif
-	// #ifdef HAVE_MADWIFI
-	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1, 0 },
-	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, 1, 0 },
-	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, 1, 0 },
-	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, 1, 0 },
-	// #endif
-	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, 1, 0 },
-	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0 },
-	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0 },
-	// {"style.css", "text/css", NULL, NULL, do_style, NULL,0, 0,0},
-	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, SEND_HEADER, 0 },
+	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, SEND_HEADER, 0 },
+	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, SEND_HEADER, 0 },
+	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, SEND_HEADER, 0 },
+	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, SEND_HEADER, 0 },
+	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, SEND_HEADER, 0 },
+	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
 #ifdef HAVE_LANGUAGE
-	{ "lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0 },
+	{ "lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, NO_HEADER, 0 },
 #endif
 #ifdef HAVE_BUFFALO
-	{ "intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0 },
-	{ "intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0 },
-	{ "intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0 },
-	{ "vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, 1, 0 },
+	{ "intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, NO_HEADER, 0 },
+	{ "intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, SEND_HEADER, 0 },
+	{ "intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, SEND_HEADER, 0 },
+	{ "vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, SEND_HEADER, 0 },
 #endif
-	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1, 0 },
+	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, SEND_HEADER, 0 },
 #ifdef HAVE_SKYTRON
-	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0 },
-	{ "**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
-	{ "**.html", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, SEND_HEADER, 0 },
+	{ "**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "**.html", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
 #else
-	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0 },
-	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0 },
-	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, 1, 0 },
-	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, 1, 0 },
+	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, SEND_HEADER, 0 },
+	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, SEND_HEADER, 0 },
+	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
+	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
 
 #endif
 #ifdef HAVE_ROUTERSTYLE
-	{ "style/blue/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
-	{ "style/cyan/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
-	{ "style/elegant/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
-	{ "style/elegant/fresh.css", "text/css", do_cache, NULL, do_ej, NULL, 1, 0 },
-	{ "style/elegant/fresh-dark.css", "text/css", do_cache, NULL, do_ej, NULL, 1, 0 },
-	{ "style/green/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
-	{ "style/orange/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
-	{ "style/red/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
-	{ "style/yellow/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
-	{ "style/blue/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
-	{ "style/cyan/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
-	{ "style/elegant/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
-	{ "style/green/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
-	{ "style/orange/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
-	{ "style/red/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
-	{ "style/yellow/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
+	{ "style/blue/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
+	{ "style/cyan/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
+	{ "style/elegant/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
+	{ "style/elegant/fresh.css", "text/css", do_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
+	{ "style/elegant/fresh-dark.css", "text/css", do_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
+	{ "style/green/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
+	{ "style/orange/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
+	{ "style/red/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
+	{ "style/yellow/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
+	{ "style/blue/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
+	{ "style/cyan/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
+	{ "style/elegant/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
+	{ "style/green/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
+	{ "style/orange/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
+	{ "style/red/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
+	{ "style/yellow/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
 #endif
 #ifdef HAVE_REGISTER
-	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, 0, 0 },
+	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, 0 },
 #endif
-//      {"graph_if.svg*", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 1},
-//      {"graph_if.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 1},
-	{ "**.css", "text/css", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0 },
-	{ "**.gif", "image/gif", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.png", "image/png", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.ico", "image/x-icon", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.mp4", "video/mp4", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.mpg", "video/mpeg", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, 0, 0 },
-	{ "**.flv", "video/x-flv", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.css", "text/css", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, NO_HEADER, 0 },
+	{ "**.gif", "image/gif", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.png", "image/png", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.ico", "image/x-icon", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.pdf", "application/pdf", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.mp4", "video/mp4", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.mpg", "video/mpeg", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.flv", "video/x-flv", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
 
 #ifdef HAVE_PRIVOXY
-	{ "wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL, do_wpad, NULL, 0, 0 },
+	{ "wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL, do_wpad, NULL, NO_HEADER, 0 },
 #endif
 #ifdef HAVE_ATH9K
-	{ "spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, 1, 0 },
+	{ "spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, SEND_HEADER, 0 },
 #endif
 #ifdef HAVE_SKYTRON
-	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-	 do_auth2, 1, 0 },
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth2, NO_HEADER, 0 },
 #elif HAVE_DDLAN
-	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-	 NULL, 1, 0 },
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, 0 },
 #else
-	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-	 do_auth, 1, 0 },
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, 0 },
 #endif
-	{ "fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, 1, 0 },
+	{ "fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, SEND_HEADER, 0 },
 #ifdef HAVE_DDLAN
-	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL,
-	 1, 0 },
-	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
-	 NULL, 1, 0 },
+	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, 0 },
+	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, NULL, NO_HEADER, 0 },
 #else
-	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-	 do_auth, 1, 0 },
-	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
-	 do_auth, 1, 0 },
+	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, 0 },
+	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, do_auth, NO_HEADER, 0 },
 #endif
 #ifdef HAVE_BUFFALO
-	{ "olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post,
-	 do_upgrade_cgi,
-	 do_auth, 1, 0 },
+	{ "olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post, do_upgrade_cgi, do_auth, SEND_HEADER, 0 },
 #endif
-	// {"Gozila.cgi*", "text/html", no_cache, NULL, do_setup_wizard,
-	// do_auth,0,0}, // for setup wizard
-	/*
-	 * { "**.cfg", "application/octet-stream", no_cache, NULL, do_backup,
-	 * do_auth ,0,0}, 
-	 */
 #ifdef HAVE_DDLAN
-	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post,
-	 do_upgrade_cgi,
-	 NULL, 1, 0 },
+	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, NULL, SEND_HEADER, 0 },
 #else
-	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post,
-	 do_upgrade_cgi,
-	 do_auth, 1, 0 },
+	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, do_auth, SEND_HEADER, 0 },
 #endif
-	{ "test.bin**", "application/octet-stream", no_cache, NULL, do_file,
-	 do_auth, 0, 0 },
-
-	{ "bigfile.bin*", "application/octet-stream", no_cache, NULL,
-	 do_bigfile, NULL, 0, 1 },
+	{ "test.bin**", "application/octet-stream", no_cache, NULL, do_file, do_auth, NO_HEADER, 0 },
+	{ "bigfile.bin*", "application/octet-stream", no_cache, NULL, do_bigfile, NULL, NO_HEADER, 1 },
 
 #ifdef HAVE_DDLAN
-	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL,
-	 nv_file_out, do_auth2, 0, 0 },
-
-	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
-	 nv_file_out,
-	 do_auth2, 0, 0 },
-	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL,
-	 1, 0 },
+	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth2, NO_HEADER, 0 },
+	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth2, NO_HEADER, 0 },
+	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL, SEND_HEADER, 0 },
 #else
-	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL,
-	 nv_file_out, do_auth, 0, 0 },
-	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
-	 nv_file_out,
-	 do_auth, 0, 0 },
-	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi,
-	 do_auth,
-	 1, 0 },
+	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, 0 },
+	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, 0 },
+	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth, SEND_HEADER, 0 },
 #endif
 #ifdef HAVE_WIREGUARD
 	{ "wireguard_config_oet**.conf*", "application/octet-stream", no_cache, NULL,
-	 download_wireguard_config, do_auth, 0, 0 },
+	 download_wireguard_config, do_auth, NO_HEADER, 0 },
 #endif
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-	{ "backup/cfe.bin", "application/octet-stream", no_cache, NULL,
-	 do_cfebackup,
-	 do_auth, 0, 0 },
+	{ "backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup, do_auth, NO_HEADER, 0 },
 #endif
 #ifdef HAVE_STATUS_SYSLOG
-	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, 1, 0 },
+	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, SEND_HEADER, 0 },
 #endif
-	{ "ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, 1, 0 },
-	{ "traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup,
-	 do_auth, 0, 0 },
-	{ "tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi,
-	 do_auth, 1, 0 },
-	{ "*", "application/octet-stream", no_cache, NULL, do_file, do_auth, 1, 0 },
+	{ "ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, SEND_HEADER, 0 },
+	{ "traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup, do_auth, NO_HEADER, 0 },
+	{ "tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi, do_auth, SEND_HEADER, 0 },
+	{ "*", "application/octet-stream", no_cache, NULL, do_file, do_auth, NO_HEADER, 0 },
 	// for ddm
-	{ NULL, NULL, NULL, NULL, NULL, NULL, 0, 0 }
+	{ NULL, NULL, NULL, NULL, NULL, NULL, NO_HEADER, 0 }
 };
 
 #ifdef HAVE_BUFFALO
