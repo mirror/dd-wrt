@@ -1775,10 +1775,9 @@ footer:
 		websDone(wp, 200);
 	} else {
 #ifndef HAVE_WRK54G
-		do_ej(METHOD_GET, NULL, "Reboot.asp", wp);
+		do_redirect(METHOD_GET, NULL, "Reboot.asp", wp);
 		websDone(wp, 200);
 #endif
-		// sleep (5);
 		sys_reboot();
 		return 1;
 	}
