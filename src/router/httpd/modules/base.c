@@ -2658,169 +2658,168 @@ static void do_language(unsigned char method, struct mime_handler *handler, char
 
 #define NO_HEADER 0
 #define SEND_HEADER 1
+#define IGNORE_OPTIONS 0
+#define HANDLE_OPTIONS 1
 static char no_cache[] = "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 static char do_cache[] = "Cache-Control: private, max-age=600\r\n";
 
 static struct mime_handler mime_handlers[] = {
-	// { "ezconfig.asp", "text/html", ezc_version, do_apply_ezconfig_post,
-	// do_ezconfig_asp, do_auth ,0},
 #ifdef HAVE_SKYTRON
-	{ "setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_POKER
-	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
+	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_DDLAN
-	{ "Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Management*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Services*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Log*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Management*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Services*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Log*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 
-	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
+	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_REGISTER
-	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, SEND_HEADER, 0 },
+	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, SEND_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,
-	 do_auth, SEND_HEADER, 0 },
+	{ "WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_FREERADIUS
-	{ "FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth, SEND_HEADER, 0 },
-	{ "freeradius-certs/*", "application/octet-stream", no_cache, NULL, cert_file_out, do_auth, NO_HEADER, 0 },
+	{ "FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "freeradius-certs/*", "application/octet-stream", no_cache, NULL, cert_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, SEND_HEADER, 0 },
-	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, SEND_HEADER, 0 },
-	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, SEND_HEADER, 0 },
-	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, SEND_HEADER, 0 },
-	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, SEND_HEADER, 0 },
-	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, SEND_HEADER, 0 },
-	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_LANGUAGE
-	{ "lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, NO_HEADER, 0 },
+	{ "lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_BUFFALO
-	{ "intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, NO_HEADER, 0 },
-	{ "intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, SEND_HEADER, 0 },
-	{ "intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, SEND_HEADER, 0 },
-	{ "vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, SEND_HEADER, 0 },
+	{ "intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, SEND_HEADER, 0 },
+	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_SKYTRON
-	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, SEND_HEADER, 0 },
-	{ "**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
-	{ "**.html", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, 0 },
+	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "**.html", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
 #else
-	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, SEND_HEADER, 0 },
-	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, SEND_HEADER, 0 },
-	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
-	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
+	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
 
 #endif
 #ifdef HAVE_ROUTERSTYLE
-	{ "style/blue/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
-	{ "style/cyan/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
-	{ "style/elegant/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
-	{ "style/elegant/fresh.css", "text/css", do_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
-	{ "style/elegant/fresh-dark.css", "text/css", do_cache, NULL, do_ej, NULL, SEND_HEADER, 0 },
-	{ "style/green/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
-	{ "style/orange/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
-	{ "style/red/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
-	{ "style/yellow/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, 0 },
-	{ "style/blue/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
-	{ "style/cyan/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
-	{ "style/elegant/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
-	{ "style/green/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
-	{ "style/orange/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
-	{ "style/red/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
-	{ "style/yellow/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, 0 },
+	{ "style/blue/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/cyan/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/elegant/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/elegant/fresh.css", "text/css", do_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/elegant/fresh-dark.css", "text/css", do_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/green/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/orange/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/red/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/yellow/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/blue/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/cyan/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/elegant/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/green/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/orange/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/red/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/yellow/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_REGISTER
-	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, 0 },
+	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "**.css", "text/css", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, NO_HEADER, 0 },
-	{ "**.gif", "image/gif", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.png", "image/png", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.ico", "image/x-icon", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.pdf", "application/pdf", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.mp4", "video/mp4", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.mpg", "video/mpeg", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
-	{ "**.flv", "video/x-flv", NULL, NULL, do_file, NULL, NO_HEADER, 0 },
+	{ "**.css", "text/css", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.gif", "image/gif", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.png", "image/png", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.ico", "image/x-icon", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.pdf", "application/pdf", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.mp4", "video/mp4", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.mpg", "video/mpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.flv", "video/x-flv", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 
 #ifdef HAVE_PRIVOXY
-	{ "wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL, do_wpad, NULL, NO_HEADER, 0 },
+	{ "wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL, do_wpad, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_ATH9K
-	{ "spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, SEND_HEADER, 0 },
+	{ "spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_SKYTRON
-	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth2, NO_HEADER, 0 },
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth2, NO_HEADER, IGNORE_OPTIONS },
 #elif HAVE_DDLAN
-	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, 0 },
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
 #else
-	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, 0 },
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, SEND_HEADER, 0 },
+	{ "fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_DDLAN
-	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, 0 },
-	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, NULL, NO_HEADER, 0 },
+	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
 #else
-	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, 0 },
-	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, do_auth, NO_HEADER, 0 },
+	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_BUFFALO
-	{ "olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post, do_upgrade_cgi, do_auth, SEND_HEADER, 0 },
+	{ "olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post, do_upgrade_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_DDLAN
-	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, NULL, SEND_HEADER, 0 },
+	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #else
-	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, do_auth, SEND_HEADER, 0 },
+	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "test.bin**", "application/octet-stream", no_cache, NULL, do_file, do_auth, NO_HEADER, 0 },
-	{ "bigfile.bin*", "application/octet-stream", no_cache, NULL, do_bigfile, NULL, NO_HEADER, 1 },
+	{ "test.bin**", "application/octet-stream", no_cache, NULL, do_file, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "bigfile.bin*", "application/octet-stream", no_cache, NULL, do_bigfile, NULL, NO_HEADER, HANDLE_OPTIONS },
 
 #ifdef HAVE_DDLAN
-	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth2, NO_HEADER, 0 },
-	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth2, NO_HEADER, 0 },
-	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL, SEND_HEADER, 0 },
+	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #else
-	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, 0 },
-	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, 0 },
-	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth, SEND_HEADER, 0 },
+	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_WIREGUARD
 	{ "wireguard_config_oet**.conf*", "application/octet-stream", no_cache, NULL,
-	 download_wireguard_config, do_auth, NO_HEADER, 0 },
+	 download_wireguard_config, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-	{ "backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup, do_auth, NO_HEADER, 0 },
+	{ "backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_STATUS_SYSLOG
-	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, SEND_HEADER, 0 },
+	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, SEND_HEADER, 0 },
-	{ "traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup, do_auth, NO_HEADER, 0 },
-	{ "tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi, do_auth, SEND_HEADER, 0 },
-	{ "*", "application/octet-stream", no_cache, NULL, do_file, do_auth, NO_HEADER, 0 },
+	{ "ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "*", "application/octet-stream", no_cache, NULL, do_file, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	// for ddm
-	{ NULL, NULL, NULL, NULL, NULL, NULL, NO_HEADER, 0 }
+	{ NULL, NULL, NULL, NULL, NULL, NULL, NO_HEADER, IGNORE_OPTIONS }
 };
 
 #ifdef HAVE_BUFFALO
