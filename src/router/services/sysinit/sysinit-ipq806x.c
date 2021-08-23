@@ -520,6 +520,18 @@ void start_sysinit(void)
 		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "antairagpio 0x60");
 		eval("hwclock", "-s", "-u");
 		eval("ledtool", "20", "0");
+
+/*
+		if (!nvram_safe_get("sw_cpuport")) {
+			nvram_seti("sw_cpuport", 0);
+			nvram_seti("sw_wan", 5);
+			nvram_seti("sw_lan1", 4);
+			nvram_seti("sw_lan2", 3);
+			nvram_seti("sw_lan3", 2);
+			nvram_seti("sw_lan4", 1);
+			nvram_commit();
+		}
+*/
 #endif				/*HAVE_ANTAIRA */
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");
@@ -527,14 +539,7 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
 
-/*		nvram_seti("sw_cpuport", 0);
-		nvram_seti("sw_wan", 1);
-		nvram_seti("sw_lan1", 2);
-		nvram_seti("sw_lan2", 3);
-		nvram_seti("sw_lan3", 4);
-		nvram_seti("sw_lan4", 5);*/
 //              writeproc("/proc/irq/167/smp_affinity", "2");
-
 		break;
 	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
