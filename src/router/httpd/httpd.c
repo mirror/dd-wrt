@@ -693,18 +693,9 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 {
 
 	size_t len;
-	FILE *web = getWebsFile(stream, path);
-
-	if (web == NULL) {
-		if (!(web = fopen(path, "rb")))
-			return;
-		fseek(web, 0, SEEK_END);
-		len = ftell(web);
-		fseek(web, 0, SEEK_SET);
-
-	} else {
-		len = getWebsFileLen(stream, path);
-	}
+	FILE *web = _getWebsFile(stream, path, &len);
+	if (!web)
+		return;
 	if (!handler->send_headers)
 		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, len, attach, 0);
 	if (DO_SSL(stream)) {
@@ -1257,11 +1248,7 @@ static void *handle_request(void *arg)
 		file_found = 1;
 		if (handler->output == do_file) {
 			if (getWebsFileLen(conn_fp, file) == 0) {
-				if (!(fp = fopen(file, "rb"))) {
-					file_found = 0;
-				} else {
-					fclose(fp);
-				}
+				file_found = 0;
 			}
 		}
 		if (handler->output && file_found) {
@@ -1443,18 +1430,6 @@ int main(int argc, char **argv)
 	const char *pers = "ssl_server";
 #endif
 
-/*	webenv.websGetVar = websGetVar;
-	webenv.websGetVari = websGetVari;
-	webenv.vwebsWrite = vwebsWrite;
-	webenv.do_ej_buffer = do_ej_buffer;
-	webenv.do_ej = do_ej;
-	webenv.getWebsFile = getWebsFile;
-	webenv.wfputs = wfputs;
-	webenv.websRomPageIndex = websRomPageIndex;
-	webenv.live_translate = _live_translate;
-	webenv.GOZILA_GET = _GOZILA_GET;
-	webenv.validate_cgi = _validate_cgi;*/
-//      global_vars.env = &webenv;
 	CRYPT_MUTEX_INIT(&crypt_mutex, NULL);
 	SEM_INIT(&semaphore, 0, HTTP_MAXCONN);
 	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
