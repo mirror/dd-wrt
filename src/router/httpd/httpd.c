@@ -1203,7 +1203,9 @@ static void *handle_request(void *arg)
 	}
 	FILE *fp;
 	int file_found = 1;
-	for (handler = &mime_handlers[0]; handler->pattern && match(handler->pattern, file); handler++) {
+	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
+		if (!match(handler->pattern, file))
+			continue;
 		airbag_setpostinfo(handler->pattern);
 		if (IS_REGISTERED(conn_fp) && !changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
 
@@ -1264,12 +1266,9 @@ static void *handle_request(void *arg)
 		}
 		if (handler->output && file_found) {
 			handler->output(method_type, handler, file, conn_fp);
-		} else {
-			send_error(conn_fp, 404, "Not Found", NULL, "File %s not found.", file);
+			goto out;
 		}
-
-		goto out;
-	}
+	break}
 	send_error(conn_fp, 404, "Not Found", NULL, "File %s not found.", file);
 
       out:;
