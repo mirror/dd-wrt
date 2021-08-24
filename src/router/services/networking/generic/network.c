@@ -649,7 +649,7 @@ void reset_hwaddr(char *ifname)
 				nvram_unset("wan_hwaddr");
 				// fix dlink quirk, by restarting system. utils.c will
 				// automaticly assign the et0macaddr then
-				nvram_async_commit();
+				nvram_commit();
 				eval("event", "5", "1", "15");
 			}
 		}
