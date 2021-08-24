@@ -6175,8 +6175,6 @@ void start_sysinit(void)
 		break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR865:
-		// only rev C is fa capable, A and B is not
-		nvram_set("ctf_fa_cap","0");
 		setdlinkcountry(2, 0);
 
 		if (!nvram_exists("pci/1/1/venid") || nvram_match("0:maxp2ga0", "0x56")) {
