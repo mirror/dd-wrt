@@ -5406,6 +5406,12 @@ void portvlan_remove(webs_t wp)
 	int ports = 5;
 	if (nvram_exists("sw_lan6"))
 		ports = 7;
+	if (!*nvram_safe_get("sw_lan4"))
+		lanports = 4;
+	if (!*nvram_safe_get("sw_lan3"))
+		lanports = 3;
+	if (!*nvram_safe_get("sw_lan2"))
+		lanports = 2;
 	int blen = nvram_default_geti("portvlan_count", 3);
 	int val = websGetVari(wp, "del_value", -1);
 	if (val >= 0) {
