@@ -1563,7 +1563,8 @@ int has_igmpsnooping(void);
 	"tcp_bic", \
 	"tcp_westwood", \
 	"tcp_vegas_cong_avoid" \
-	"osf"
+	"osf" \
+	"tcp_tw_recycle"
 
 void sysctl_apply(void *priv, void (*callback)(char *path, char *nvname, char *name, char *sysval, void *priv));
 
