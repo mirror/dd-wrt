@@ -166,6 +166,15 @@ void start_setup_vlans(void)
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 #endif
+	int lanports = 5;
+	if (nvram_exists("sw_lan6"))
+		lanports = 7;
+	if (!*nvram_safe_get("sw_lan4"))
+		lanports = 4;
+	if (!*nvram_safe_get("sw_lan3"))
+		lanports = 3;
+	if (!*nvram_safe_get("sw_lan2"))
+		lanports = 2;
 	char tagged[18];
 	char snoop[5];
 	memset(&tagged[0], 0, sizeof(tagged));
@@ -190,7 +199,7 @@ void start_setup_vlans(void)
 #ifdef HAVE_R9000
 	for (i = 0; i < 7; i++) {
 #else
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < lanports; i++) {
 #endif
 		char *vlans = nvram_nget("port%dvlans", i);
 		char *next;
