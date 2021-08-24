@@ -266,7 +266,8 @@ void shutdown_system(void)
 	int sig;
 	while (pidof("async_commit") > 0)	// wait for any process of this type to finish
 	{
-
+		dd_loginfo("init", "wait for nvram write to finish\n");
+		sleep(1);
 	}
 
 	/* 
@@ -294,7 +295,8 @@ void shutdown_system(void)
 		nvram_commit();
 		while (pidof("async_commit") > 0)	// wait for any process of this type to finish
 		{
-
+			dd_loginfo("init", "wait for nvram write to finish\n");
+			sleep(1);
 		}
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
 		eval("mount", "-o", "remount,ro", "/usr/local");
