@@ -264,6 +264,10 @@ static void unmount_fs(void)
 void shutdown_system(void)
 {
 	int sig;
+	while (pidof("async_commit") > 0)	// wait for any process of this type to finish
+	{
+
+	}
 
 	/* 
 	 * Disable signal handlers 
@@ -288,6 +292,10 @@ void shutdown_system(void)
 		unmount_fs();	// try it a second time, but consider that kill already could have reached init process
 		nvram_seti("end_time", time(NULL));
 		nvram_commit();
+		while (pidof("async_commit") > 0)	// wait for any process of this type to finish
+		{
+
+		}
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
 		eval("mount", "-o", "remount,ro", "/usr/local");
 		eval("mount", "-o", "remount,ro", "/");
