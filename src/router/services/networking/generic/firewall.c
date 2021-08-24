@@ -3220,7 +3220,7 @@ void start_firewall(void)
 	writeprocsysnet("ipv4/tcp_syn_retries", nvram_default_get("net.ipv4.tcp_syn_retries", "3"));
 	writeprocsysnet("ipv4/tcp_synack_retries", nvram_default_get("net.ipv4.tcp_synack_retries", "3"));
 #ifdef HAVE_MADWIFI
-	writeprocsysnet("ipv4/tcp_tw_recycle", nvram_default_get("net.ipv4.tcp_tw_recycle", "1"));
+	writeprocsysnet("ipv4/tcp_tw_recycle", nvram_default_get("net.ipv4.tcp_tw_recycle", "0"));
 #endif
 	writeprocsysnet("ipv4/tcp_tw_reuse", nvram_default_get("net.ipv4.tcp_tw_reuse", "1"));
 	writeprocsysnet("ipv4/icmp_ignore_bogus_error_responses", nvram_default_get("net.ipv4.icmp_ignore_bogus_error_responses", "1"));
