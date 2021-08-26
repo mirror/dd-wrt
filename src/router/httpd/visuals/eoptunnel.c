@@ -439,8 +439,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							snprintf(temp, sizeof(temp), "oet%d_peerkey%d", tun, peer);
 							char buffer[1024] = "Press F5 to refresh";
 							int len = 0;
-							char command[64];
-							sprintf(command, "/usr/bin/wireguard-state.sh %d %s 2>/dev/null", tun, nvram_safe_get(temp));
+							char command[128];
+							snprintf(command, sizeof(command), "/usr/bin/wireguard-state.sh %d %s 2>/dev/null", tun, nvram_safe_get(temp));
 							FILE *in = popen(command, "r");
 							if (in != NULL) {
 								while ((len = fread(buffer, 1, 1023, in)) == 1023) {

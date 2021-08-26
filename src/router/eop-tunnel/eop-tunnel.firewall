@@ -76,6 +76,8 @@ do
 			#egc: killswitch controled by nvram parameter oet${i}_killswitch
 			if [[ $($nv get oet${i}_killswitch) -eq 1 ]]
 			then
+				#For WAP or Bridge, use br0 as IN_IF
+				[[ $($nv get wan_proto) = "disabled" ]] && { IN_IF="-i br0"; logger -p user.info "WireGuard Killswitch for WAP on br0 only!, oet${i}"; } || IN_IF=""
 				if [[ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]]; then
 					#PBR killswitch
 					logger -p user.info "WireGuard Killswitch on PBR activated for oet${i}"
@@ -97,15 +99,15 @@ do
 						esac
 					done
 					# begin blocking: force LAN->WAN traffic through firewall chain for inspection
-					$ipt -I FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN
+					$ipt -I FORWARD $IN_IF -o $WAN_IF -j $FW_CHAIN
 				else
 					#general killswitch
 					#logger -p user.info "WireGuard Killswitch on br0 activated for all clients!"
 					#echo "$ipt -D FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT" >> $WGDELRT
 					#$ipt -I FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT
 					logger -p user.info "WireGuard Killswitch activated for all clients!"
-					echo "$ipt -D FORWARD -o $WAN_IF -j REJECT" >> $WGDELRT
-					$ipt -I FORWARD -o $WAN_IF -j REJECT
+					echo "$ipt -D FORWARD $IN_IF -o $WAN_IF -j REJECT" >> $WGDELRT
+					$ipt -I FORWARD $IN_IF -o $WAN_IF -j REJECT
 					#todo restart SFE/CTF to cut existing connections
 					#cat /proc/net/ip_conntrack_flush 2>&1
 					#cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1
