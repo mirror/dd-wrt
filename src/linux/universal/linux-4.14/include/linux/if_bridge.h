@@ -53,6 +53,7 @@ struct br_ip_list {
 #define BR_MRP_AWARE		BIT(16)
 #define BR_MRP_LOST_CONT	BIT(17)
 #define BR_MRP_LOST_IN_CONT	BIT(18)
+#define BR_BLOCK_BPDU		BIT(19)
 
 #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
 

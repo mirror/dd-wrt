@@ -165,6 +165,23 @@ static ssize_t store_isolate_mode(struct net_bridge_port *p, unsigned long v)
 static BRPORT_ATTR(isolate_mode, S_IRUGO | S_IWUSR,
 		   show_isolate_mode, store_isolate_mode);
 
+static ssize_t show_block_bpdu(struct net_bridge_port *p, char *buf)
+{
+	int block_bpdu = (p->flags & BR_BLOCK_BPDU) ? 1 : 0;
+	return sprintf(buf, "%d\n", block_bpdu);
+}
+
+static ssize_t store_block_bpdu(struct net_bridge_port *p, unsigned long v)
+{
+	if (v)
+		p->flags |= BR_BLOCK_BPDU;
+	else
+		p->flags &= ~BR_BLOCK_BPDU;
+	return 0;
+}
+static BRPORT_ATTR(block_bpdu, S_IRUGO | S_IWUSR,
+		   show_block_bpdu, store_block_bpdu);
+
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 static ssize_t show_multicast_router(struct net_bridge_port *p, char *buf)
 {
@@ -201,6 +218,7 @@ static struct brport_attribute *brport_attrs[] = {
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 	&brport_attr_multicast_router,
 #endif
+	&brport_attr_block_bpdu,
 	NULL
 };
 

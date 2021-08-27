@@ -200,6 +200,7 @@ static inline size_t br_port_info_size(void)
 #endif
 		+ nla_total_size(sizeof(u8))	/* IFLA_BRPORT_MRP_RING_OPEN */
 		+ nla_total_size(sizeof(u8))	/* IFLA_BRPORT_MRP_IN_OPEN */
+		+ nla_total_size(1)	/* IFLA_BRPORT_BLOCK_BPDU */
 		+ 0;
 }
 
@@ -256,7 +257,8 @@ static int br_port_fill_attrs(struct sk_buff *skb,
 		       p->topology_change_ack) ||
 	    nla_put_u8(skb, IFLA_BRPORT_CONFIG_PENDING, p->config_pending) ||
 	    nla_put_u8(skb, IFLA_BRPORT_VLAN_TUNNEL, !!(p->flags &
-							BR_VLAN_TUNNEL)))
+							BR_VLAN_TUNNEL)) ||
+	    nla_put_u8(skb, IFLA_BRPORT_BLOCK_BPDU, !!(p->flags & BR_BLOCK_BPDU)))
 		return -EMSGSIZE;
 
 	timerval = br_timer_value(&p->message_age_timer);
@@ -765,6 +767,7 @@ static const struct nla_policy br_port_policy[IFLA_BRPORT_MAX + 1] = {
 	[IFLA_BRPORT_MCAST_TO_UCAST] = { .type = NLA_U8 },
 	[IFLA_BRPORT_MCAST_FLOOD] = { .type = NLA_U8 },
 	[IFLA_BRPORT_BCAST_FLOOD] = { .type = NLA_U8 },
+	[IFLA_BRPORT_BLOCK_BPDU]	= { .type = NLA_U8 },
 };
 
 /* Change the state of the port and notify spanning tree */
@@ -860,6 +863,10 @@ static int br_setport(struct net_bridge_port *p, struct nlattr *tb[])
 		return err;
 
 	err = br_set_port_flag(p, tb, IFLA_BRPORT_PROXYARP_WIFI, BR_PROXYARP_WIFI);
+	if (err)
+		return err;
+
+	err = br_set_port_flag(p, tb, IFLA_BRPORT_BLOCK_BPDU, BR_BLOCK_BPDU);
 	if (err)
 		return err;
 

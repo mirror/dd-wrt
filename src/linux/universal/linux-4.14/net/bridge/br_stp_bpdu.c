@@ -87,6 +87,10 @@ void br_send_config_bpdu(struct net_bridge_port *p, struct br_config_bpdu *bpdu)
 	if (p->br->stp_enabled != BR_KERNEL_STP)
 		return;
 
+	if (p->flags & BR_BLOCK_BPDU) {
+		return;
+	}
+
 	buf[0] = 0;
 	buf[1] = 0;
 	buf[2] = 0;
@@ -132,6 +136,10 @@ void br_send_tcn_bpdu(struct net_bridge_port *p)
 	if (p->br->stp_enabled != BR_KERNEL_STP)
 		return;
 
+	if (p->flags & BR_BLOCK_BPDU) {
+		return;
+	}
+
 	buf[0] = 0;
 	buf[1] = 0;
 	buf[2] = 0;
@@ -175,6 +183,9 @@ void br_stp_rcv(const struct stp_proto *proto, struct sk_buff *skb,
 	if (p->state == BR_STATE_DISABLED)
 		goto out;
 
+	if (p->flags & BR_BLOCK_BPDU) {
+		goto out;
+	}
 	if (!ether_addr_equal(eth_hdr(skb)->h_dest, br->group_addr))
 		goto out;
 
