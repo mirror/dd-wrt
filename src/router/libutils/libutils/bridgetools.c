@@ -162,10 +162,9 @@ int br_set_bridge_max_age(const char *br, int sec)
 
 int br_set_port_stp(const char *br, char *port, int on)	// unsupported
 {
-	if (on)
-		return eval("brctl", "filterbpdu", br, port, "on");
-	else
-		return eval("brctl", "filterbpdu", br, port, "off");
+	char set[32];
+	sprintf(set, "%d", on);
+	return eval("brctl", "filterbpdu", br, port, set);
 }
 
 int br_set_bridge_forward_delay(const char *br, int sec)
@@ -191,13 +190,9 @@ int br_set_stp_state(const char *br, int stp_state)
 {
 	if (!ifexists(br))
 		return -1;
-	if (stp_state == 1) {
-		// syslog (LOG_INFO, "stp is set to on\n");
-		return eval("brctl", "stp", br, "on");
-	} else {
-		// syslog (LOG_INFO, "stp is set to off\n");
-		return eval("brctl", "stp", br, "off");
-	}
+	char set[32];
+	sprintf(set, "%d", stp_state);
+	return eval("brctl", "stp", br, set);
 }
 
 int br_set_path_cost(const char *br, const char *port, int cost)
@@ -255,11 +250,7 @@ int br_add_bridge(const char *brname)
 	if (!strcmp(mcast, "1"))
 		eval("igs", "add", "bridge", brname);
 #else
-	if (!strcmp(mcast, "1"))
-		sysprintf("echo 1 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
-	else
-		sysprintf("echo 0 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
-
+	sysprintf("echo %d > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
 #endif
 
 	if (nvram_exists(ipaddr) && nvram_exists(netmask)
