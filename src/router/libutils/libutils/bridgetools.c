@@ -162,7 +162,10 @@ int br_set_bridge_max_age(const char *br, int sec)
 
 int br_set_port_stp(const char *br, char *port, int on)	// unsupported
 {
-	return 0;
+	if (on)
+		return eval("brctl", "filterbpdu", br, port, "on");
+	else
+		return eval("brctl", "filterbpdu", br, port, "off");
 }
 
 int br_set_bridge_forward_delay(const char *br, int sec)
