@@ -105,6 +105,8 @@ extern int br_set_stp_state(const char *br, int stp_state);
 extern int br_set_bridge_priority(const char *br, int bridge_priority);
 extern int br_set_port_priority(const char *br, const char *p, 
 				int port_priority);
+extern int br_set_filterbpdu(const char *br, const char *p, 
+				int on);
 // brcm begin
 extern int br_set_port_snooping(const char *br, const char *p, 
 				const char *addr);

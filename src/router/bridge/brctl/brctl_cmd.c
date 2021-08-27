@@ -274,6 +274,29 @@ static int br_cmd_setportprio(int argc, char *const* argv)
 
 	return err != 0;
 }
+
+static int br_cmd_filterbpdu(int argc, char *const* argv)
+{
+	int bpdu, err;
+
+	if (!strcmp(argv[2], "on") || !strcmp(argv[2], "yes") 
+	    || !strcmp(argv[2], "1"))
+		bpdu = 1;
+	else if (!strcmp(argv[2], "off") || !strcmp(argv[2], "no") 
+		 || !strcmp(argv[2], "0"))
+		bpdu = 0;
+	else {
+		fprintf(stderr, "expect on/off for argument\n");
+		return 1;
+	}
+
+	err = br_set_filterbpdu(argv[1], argv[2], bpdu);
+	if (err)
+		fprintf(stderr, "set filterbpdu failed: %s\n",
+			strerror(errno));
+
+	return err != 0;
+}
 // brcm begin
 static int br_cmd_setportsnooping(int argc, char *const* argv)
 {
@@ -505,6 +528,8 @@ static const struct command commands[] = {
 	  "<bridge> <port> <cost>\tset path cost" },
 	{ 3, "setportprio", br_cmd_setportprio,
 	  "<bridge> <port> <prio>\tset port priority" },
+	{ 3, "filterbpdu", br_cmd_filterbpdu,
+	  "<bridge> <port> {on|off}\tfilter bpdu" },
 // brcm begin
 	{ 3, "setportsnooping", br_cmd_setportsnooping,
 	  "<bridge> <port> <addr>\tset port snooping" },
