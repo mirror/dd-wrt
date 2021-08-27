@@ -279,11 +279,11 @@ static int br_cmd_filterbpdu(int argc, char *const* argv)
 {
 	int bpdu, err;
 
-	if (!strcmp(argv[2], "on") || !strcmp(argv[2], "yes") 
-	    || !strcmp(argv[2], "1"))
+	if (!strcmp(argv[3], "on") || !strcmp(argv[3], "yes") 
+	    || !strcmp(argv[3], "1"))
 		bpdu = 1;
-	else if (!strcmp(argv[2], "off") || !strcmp(argv[2], "no") 
-		 || !strcmp(argv[2], "0"))
+	else if (!strcmp(argv[3], "off") || !strcmp(argv[3], "no") 
+		 || !strcmp(argv[3], "0"))
 		bpdu = 0;
 	else {
 		fprintf(stderr, "expect on/off for argument\n");
