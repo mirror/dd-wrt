@@ -10,17 +10,17 @@ CTLSOURCES = ctl_main.c ctl_socket_client.c
 
 CTLOBJECTS = $(CTLSOURCES:.c=.o)
 
-CFLAGS += $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -I. \
+CFLAGS += $(COPTS) $(MIPS16_OPT) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -I. \
           -D_GNU_SOURCE -DNEED_PRINTF -DMSTPD_PID_FILE='"/var/run/mstpd.pid"'
 
 
 all: mstpd mstpctl
 
 mstpd: $(DOBJECTS)
-	$(CC) $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -o $@ $(DOBJECTS)
+	$(CC) $(COPTS) $(LDLTO) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -o $@ $(DOBJECTS)
 
 mstpctl: $(CTLOBJECTS)
-	$(CC) $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -o $@ $(CTLOBJECTS)
+	$(CC) $(COPTS) $(LDLTO) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -o $@ $(CTLOBJECTS)
 
 -include .depend
 
