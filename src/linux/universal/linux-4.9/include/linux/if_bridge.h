@@ -51,6 +51,7 @@ struct br_ip_list {
 #define BR_MRP_AWARE		BIT(14)
 #define BR_MRP_LOST_CONT	BIT(15)
 #define BR_MRP_LOST_IN_CONT	BIT(16)
+#define BR_BLOCK_BPDU		BIT(17)
 
  
 
