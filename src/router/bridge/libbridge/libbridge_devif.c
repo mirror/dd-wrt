@@ -387,6 +387,13 @@ int br_set_port_priority(const char *bridge, const char *port, int priority)
 	return port_set(bridge, port, "priority", priority, BRCTL_SET_PORT_PRIORITY);
 }
 
+#define BRCTL_SET_FILTERBPDU 25
+
+int br_set_filterbpdu(const char *bridge, const char *port, int on)
+{
+	return port_set(bridge, port, "block_bpdu", on, BRCTL_SET_FILTERBPDU);
+}
+
 // brcm begin
 #define BRCTL_SET_PORT_SNOOPING 21
 #define BRCTL_CLEAR_PORT_SNOOPING 22
