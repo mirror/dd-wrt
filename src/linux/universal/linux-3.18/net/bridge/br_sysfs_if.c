@@ -170,6 +170,7 @@ BRPORT_ATTR_FLAG(bpdu_guard, BR_BPDU_GUARD);
 BRPORT_ATTR_FLAG(root_block, BR_ROOT_BLOCK);
 BRPORT_ATTR_FLAG(learning, BR_LEARNING);
 BRPORT_ATTR_FLAG(unicast_flood, BR_FLOOD);
+BRPORT_ATTR_FLAG(block_bpdu, BR_BLOCK_BPDU);
 
 static ssize_t show_isolate_mode(struct net_bridge_port *p, char *buf)
 {
@@ -232,6 +233,7 @@ static const struct brport_attribute *brport_attrs[] = {
 	&brport_attr_multicast_fast_leave,
 	&brport_attr_multicast_to_unicast,
 #endif
+	&brport_attr_block_bpdu,
 	NULL
 };
 

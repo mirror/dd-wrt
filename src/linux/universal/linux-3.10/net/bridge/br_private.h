@@ -176,6 +176,7 @@ struct net_bridge_port
 #define BR_ADMIN_COST		0x00000010
 #define BR_ISOLATE_MODE		0x00000020
 #define BR_MULTICAST_TO_UCAST	0x00000040
+#define BR_BLOCK_BPDU		0x00000080
 
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 	struct bridge_mcast_query	ip4_query;

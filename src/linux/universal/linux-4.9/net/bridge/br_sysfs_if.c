@@ -172,6 +172,7 @@ BRPORT_ATTR_FLAG(unicast_flood, BR_FLOOD);
 BRPORT_ATTR_FLAG(proxyarp, BR_PROXYARP);
 BRPORT_ATTR_FLAG(proxyarp_wifi, BR_PROXYARP_WIFI);
 BRPORT_ATTR_FLAG(multicast_flood, BR_MCAST_FLOOD);
+BRPORT_ATTR_FLAG(block_bpdu, BR_BLOCK_BPDU);
 
 static ssize_t show_isolate_mode(struct net_bridge_port *p, char *buf)
 {
@@ -237,6 +238,7 @@ static const struct brport_attribute *brport_attrs[] = {
 	&brport_attr_proxyarp_wifi,
 	&brport_attr_multicast_flood,
 	&brport_attr_isolate_mode,
+	&brport_attr_block_bpdu,
 	NULL
 };
 
