@@ -235,6 +235,7 @@ static void maybe_deliver_addr(struct net_bridge_port *p, struct sk_buff *skb,
 void br_flood(struct net_bridge *br, struct sk_buff *skb,
 	      enum br_pkt_type pkt_type, bool local_rcv, bool local_orig)
 {
+	const unsigned char *dest = eth_hdr(skb)->h_dest;
 	u8 igmp_type = br_multicast_igmp_type(skb);
 	struct net_bridge_port *prev = NULL;
 	struct net_bridge_port *p;
@@ -246,9 +247,14 @@ void br_flood(struct net_bridge *br, struct sk_buff *skb,
 		if (pkt_type == BR_PKT_UNICAST && !(p->flags & BR_FLOOD))
 			continue;
 		/* Do not flood if mc off, except for traffic we originate */
-		if (pkt_type == BR_PKT_MULTICAST &&
-		    !(p->flags & BR_MCAST_FLOOD) && skb->dev != br->dev)
+		if (pkt_type == BR_PKT_MULTICAST) {
+		    if (!(p->flags & BR_MCAST_FLOOD) && skb->dev != br->dev)
 			continue;
+		    if ((p->flags & BR_BLOCK_BPDU) &&
+			    unlikely(is_link_local_ether_addr(dest) &&
+			     dest[5] == 0))
+			continue;
+		}
 
 		/* Do not flood to ports that enable proxy ARP */
 		if (p->flags & BR_PROXYARP)
