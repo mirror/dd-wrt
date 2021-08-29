@@ -301,7 +301,7 @@ EJ_VISIBLE void ej_filter_mac_get(webs_t wp, int argc, char_t ** argv)
 EJ_VISIBLE void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
-
+	fprintf(stderr, "filter id %d\n", wp->p->filter_id);
 	for (i = 1; i <= NR_RULES; i++) {
 		char filter[] = "filter_ruleXXX";
 		char *data = "";
@@ -710,7 +710,6 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_filter_init(webs_t wp, int argc, char_t ** argv)
 {
-	wp->p->filter_id = websGetVari(wp, "f_id", 1);
 
 	return;
 }

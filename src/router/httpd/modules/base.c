@@ -1364,6 +1364,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		fprintf(stderr, "name=[%s] type=[%s] service=[%s] action=[%d]\n", act->name, act->type, act->service, act->action);
 		action = act->action;
 		if (act->goname) {
+			fprintf(stderr, "start %s\n",act->goname );
 			start_gozila(act->goname, wp);
 		}
 
@@ -1573,7 +1574,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	cprintf("get change_action = %s\n", value);
 
 	if (value && !strcmp(value, "gozila_cgi")) {
-		fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", NULL));
+		fprintf(stderr, "[GOZILLA_APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", NULL));
 		gozila_cgi(wp, urlPrefix, webDir, arg, url, path);
 		return 1;
 	}

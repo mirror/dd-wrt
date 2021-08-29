@@ -348,7 +348,9 @@ void save_policy(webs_t wp)
 	}
 
 	validate_filter_tod(wp);
+	fprintf(stderr, "save: before fid %d\n", wp->p->filter_id);
 	wp->p->filter_id = atoi(f_id);
+	fprintf(stderr, "save: fid %d\n", f_id);
 	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d", wp->p->filter_id);
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
@@ -364,12 +366,16 @@ void save_policy(webs_t wp)
 
 EJ_VISIBLE sel_filter(webs_t wp)
 {
+	fprintf(stderr, "filter before id %d\n", wp->p->filter_id);
 	wp->p->filter_id = websGetVari(wp, "f_id", 1);
+	fprintf(stderr, "filter id %d\n", wp->p->filter_id);
 }
 
 EJ_VISIBLE void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 {
+	fprintf(stderr, "valid:filter before id %d\n", wp->p->filter_id);
 	wp->p->filter_id = websGetVari(wp, "f_id", 1);
+	fprintf(stderr, "valid:filter before id %d\n", wp->p->filter_id);
 	save_policy(wp);
 }
 
