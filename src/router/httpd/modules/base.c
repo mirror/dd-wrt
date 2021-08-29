@@ -1364,7 +1364,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		fprintf(stderr, "name=[%s] type=[%s] service=[%s] action=[%d]\n", act->name, act->type, act->service, act->action);
 		action = act->action;
 		if (act->goname) {
-^			start_gozila(act->goname, wp);
+			start_gozila(act->goname, wp);
 		}
 
 		if (!nvram_exists("nowebaction")) {
