@@ -223,6 +223,7 @@ function filter_remove_submit(F) {
 
 function SelFilter(num,F) {
 	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "sel_filter";
 	F.f_id.value=F.f_id.options[num].value;
 	apply(F);
 }
