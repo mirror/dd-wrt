@@ -440,6 +440,14 @@ int br_set_port_prio(const char *bridge, char *port, int prio)
 	return port_set(bridge, port, "priority", prio, BRCTL_SET_PORT_PRIORITY);
 }
 
+#define BRCTL_SET_FILTERBPDU 25
+
+int br_set_filterbpdu(const char *bridge, const char *port, int on)
+{
+	return port_set(bridge, port, "block_bpdu", on, BRCTL_SET_FILTERBPDU);
+}
+
+
 int br_set_path_cost(const char *bridge, const char *port, int cost)
 {
 	if (!ifexists(bridge))
