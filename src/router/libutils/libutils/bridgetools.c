@@ -163,7 +163,7 @@ int br_set_bridge_max_age(const char *br, int sec)
 int br_set_port_stp(const char *br, char *port, int on)	// unsupported
 {
 	char set[32];
-	sprintf(set, "%d", on);
+	sprintf(set, "%d", !on);
 	return eval("brctl", "filterbpdu", br, port, set);
 }
 
