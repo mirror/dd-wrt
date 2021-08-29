@@ -219,6 +219,12 @@ void br_stp_set_port_priority(struct net_bridge_port *p, int newprio)
 	}
 }
 
+void br_stp_set_filter_bpdu(struct net_bridge_port *p, int state)
+{
+	p->flags &= ~1;
+	p->flags |= !!state;
+}
+
 /* called under bridge lock */
 void br_stp_set_path_cost(struct net_bridge_port *p, int path_cost)
 {

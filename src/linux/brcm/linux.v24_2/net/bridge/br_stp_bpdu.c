@@ -76,6 +76,9 @@ static __inline__ int br_get_ticks(unsigned char *dest)
 void br_send_config_bpdu(struct net_bridge_port *p, struct br_config_bpdu *bpdu)
 {
 	unsigned char buf[38];
+	
+	if (p->flags & 0x1)
+		return;
 
 	buf[0] = 0x42;
 	buf[1] = 0x42;
@@ -122,6 +125,9 @@ void br_send_tcn_bpdu(struct net_bridge_port *p)
 {
 	unsigned char buf[7];
 
+	if (p->flags & 0x1)
+		return;
+
 	buf[0] = 0x42;
 	buf[1] = 0x42;
 	buf[2] = 0x03;
@@ -142,7 +148,7 @@ int br_stp_handle_bpdu(struct sk_buff *skb)
 
 	p = skb->dev->br_port;
 
-	if (!p->br->stp_enabled ||
+	if (!p->flags & 0x1 || !p->br->stp_enabled ||
 	    !pskb_may_pull(skb, sizeof(header)+1) ||
 	    memcmp(skb->data, header, sizeof(header)))
 		goto err;

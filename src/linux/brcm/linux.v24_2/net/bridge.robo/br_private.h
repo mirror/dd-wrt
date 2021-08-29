@@ -71,6 +71,7 @@ struct net_bridge_port
 	unsigned			topology_change_ack:1;
 	unsigned			config_pending:1;
 	int				priority;
+	int				flags;
 
 	struct br_timer			forward_delay_timer;
 	struct br_timer			hold_timer;

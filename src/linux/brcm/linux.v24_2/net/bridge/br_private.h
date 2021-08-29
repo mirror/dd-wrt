@@ -71,6 +71,7 @@ struct net_bridge_port
 	unsigned			topology_change_ack:1;
 	unsigned			config_pending:1;
 	int				priority;
+	int				flags;
 
 	struct br_timer			forward_delay_timer;
 	struct br_timer			hold_timer;
@@ -200,6 +201,7 @@ extern void br_stp_set_bridge_priority(struct net_bridge *br,
 				int newprio);
 extern void br_stp_set_port_priority(struct net_bridge_port *p,
 			      int newprio);
+extern void br_stp_set_filter_bpdu(struct net_bridge_port *p, int state);
 extern void br_stp_set_path_cost(struct net_bridge_port *p,
 			  int path_cost);
 
