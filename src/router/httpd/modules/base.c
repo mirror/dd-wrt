@@ -1113,7 +1113,7 @@ static struct gozila_action gozila_actions[] = {
 	/*
 	 * Siafu addition 
 	 */
-	{ "Ping", "wol", "", REFRESH, "ping_wol" },
+	{ "Wol", "wol", "", REFRESH, "ping_wol" },
 	/*
 	 * Sveasoft addition 
 	 */
@@ -1134,11 +1134,11 @@ static struct gozila_action gozila_actions[] = {
 	{ "Wireless_WDS-wlan2", "save", "wireless_2", REFRESH, "save_wds" },
 	{ "Wireless_WDS-wlan3", "save", "wireless_2", REFRESH, "save_wds" },
 #endif
-	{ "Ping", "startup", "", REFRESH, "save_startup" },
-	{ "Ping", "shutdown", "", REFRESH, "save_shutdown" },
-	{ "Ping", "firewall", "", SYS_RESTART, "save_firewall" },
-	{ "Ping", "custom", "", REFRESH, "save_custom" },
-	{ "Ping", "usb", "", REFRESH, "save_usb" },
+	{ "Diagnostics", "startup", "", REFRESH, "save_startup" },
+	{ "Diagnostics", "shutdown", "", REFRESH, "save_shutdown" },
+	{ "Diagnostics", "firewall", "", SYS_RESTART, "save_firewall" },
+	{ "Diagnostics", "custom", "", REFRESH, "save_custom" },
+	{ "Diagnostics", "usb", "", REFRESH, "save_usb" },
 	{ "QoS", "add_svc", "", REFRESH, "qos_add_svc" },
 	{ "QoS", "add_ip", "", REFRESH, "qos_add_ip" },
 	{ "QoS", "add_mac", "", REFRESH, "qos_add_mac" },
@@ -1253,9 +1253,9 @@ static struct gozila_action gozila_actions[] = {
 	 "save_services_port" },
 	{ "QOSPort_Services", "save_qosservices", "filters", REFRESH,
 	 "save_services_port" },
-	{ "Ping", "start", "", SERVICE_RESTART, "diag_ping_start" },
-	{ "Ping", "stop", "", REFRESH, "diag_ping_stop" },
-	{ "Ping", "clear", "", REFRESH, "diag_ping_clear" },
+	{ "Diagnostics", "start", "", SERVICE_RESTART, "diag_ping_start" },
+	{ "Diagnostics", "stop", "", REFRESH, "diag_ping_stop" },
+	{ "Diagnostics", "clear", "", REFRESH, "diag_ping_clear" },
 #ifdef HAVE_MILKFISH
 	{ "Milkfish_database", "add_milkfish_user", "", REFRESH,
 	 "milkfish_user_add" },
