@@ -168,6 +168,17 @@ static int br_ioctl_device(struct net_bridge *br,
 		return 0;
 	}
 
+	case BRCTL_SET_FILTER_BPDU:
+	{
+		struct net_bridge_port *p;
+
+		if ((p = br_get_port(br, arg0)) == NULL)
+			return -EINVAL;
+		br_stp_set_filter_bpdu(p, arg1);
+		return 0;
+	}
+
+
 	case BRCTL_SET_PATH_COST:
 	{
 		struct net_bridge_port *p;
