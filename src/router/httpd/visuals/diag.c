@@ -59,7 +59,6 @@ EJ_VISIBLE void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
 	 * wait as long file size increases, but max. 10 s)
 	 */
 	int c, count1 = 0, count2 = -1, timeout = 0;
-	fprintf(stderr, "wait for dump\n");
 	while ((count1 > count2) && (timeout < 10)) {
 		count2 = count1;
 		count1 = 0;
@@ -78,14 +77,12 @@ EJ_VISIBLE void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
 			nanosleep(&tim, &tim2);
 		}
 	}
-	fprintf(stderr, "done\n");
 	/*
 	 * end waiting 
 	 */
 
 	if ((fp = fopen(PING_TMP, "r")) != NULL) {	// show result
 		while (fgets(line, sizeof(line), fp) != NULL) {
-			fprintf(stderr, "line %s\n", line);
 			if (!strcmp(line, ""))
 				continue;
 			int nc = 0;
