@@ -65,7 +65,7 @@ int brctl_main(int argc, char **argv)
 
 int br_set_port_stp(const char *br, char *port, int on)	// unsupported
 {
-	return 0;
+	return br_set_filterbpdu(br, port, int on)
 }
 
 #else
