@@ -1151,6 +1151,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "Forward", "remove_forward", "", REFRESH, "forward_remove" },
 	{ "Filters", "add_filter", "", REFRESH, "filter_add" },
 	{ "Filters", "remove_filter", "", REFRESH, "filter_remove" },
+	{ "Filters", "sel_filter", "", REFRESH, "sel_filter" },
 	{ "Wireless_Basic", "add_vifs", "", REFRESH, "add_vifs" },
 	{ "Wireless_Basic", "remove_vifs", "", REFRESH, "remove_vifs" },
 	{ "Wireless_Basic", "copy_if", "", REFRESH, "copy_if" },

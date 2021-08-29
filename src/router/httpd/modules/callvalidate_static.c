@@ -533,6 +533,7 @@ static struct callmap gozila_map[] = {
 	{ "stop_ppp", &stop_ppp },
 	{ "ttraff_erase", &ttraff_erase },
 	{ "save_policy", &save_policy },
+	{ "sel_filter", &sel_filter },
 	{ "single_delete_policy", &single_delete_policy },
 	{ "summary_delete_policy", &summary_delete_policy },
 	{ "delete_static_route", &delete_static_route },
