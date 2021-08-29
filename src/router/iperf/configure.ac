@@ -161,7 +161,7 @@ fi
 AC_CACHE_CHECK([TCP_CONGESTION socket option],
 [iperf3_cv_header_tcp_congestion],
 AC_COMPILE_IFELSE(
-  [AC_LANG_PROGRAM([[#include <netinet/tcp.h>]],
+  [AC_LANG_PROGRAM([[#include <linux/tcp.h>]],
                    [[int foo = TCP_CONGESTION;]])],
   iperf3_cv_header_tcp_congestion=yes,
   iperf3_cv_header_tcp_congestion=no))
