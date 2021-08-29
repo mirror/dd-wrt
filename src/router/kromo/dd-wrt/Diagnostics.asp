@@ -91,7 +91,7 @@ addEvent(window, "unload", function() {
 									var table = new Array(<% dump_ping_log(""); %>);
 									var h = Math.floor(windo.getWindoSize().height * 0.4);
 
-									if(table.length > 0 && location.href.indexOf("Diagnostics.asp") == -1) {
+									if(table.length > 0) {
 										document.write("<br /><br /><pre style=\"height:" + ((h > 200) ? h : 200) + "px;\">" + table.join("\n") + "</pre>");
 									}
 									//]]>
