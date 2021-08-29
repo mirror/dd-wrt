@@ -74,7 +74,7 @@ addEvent(window, "unload", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="ping" action="apply.cgi" method="post" >
-							<input type="hidden" name="submit_button" value="Ping" />
+							<input type="hidden" name="submit_button" value="Diagnostics" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
