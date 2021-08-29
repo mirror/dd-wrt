@@ -362,6 +362,11 @@ void save_policy(webs_t wp)
 	D("okay");
 }
 
+EJ_VISIBLE sel_filter(webs_t wp)
+{
+	wp->p->filter_id = websGetVari(wp, "f_id", 1);
+}
+
 EJ_VISIBLE void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 {
 	wp->p->filter_id = websGetVari(wp, "f_id", 1);
