@@ -640,6 +640,7 @@ static struct callmap gozila_map[] = {
 	{ "del_wg_client", &del_wg_client },
 	{ "add_peer", &add_peer },
 	{ "del_peer", &del_peer },
+	{ "import_tunnel", &import_tunnel },
 #endif
 	{ "add_tunnel", &add_tunnel },
 	{ "del_tunnel", &del_tunnel },

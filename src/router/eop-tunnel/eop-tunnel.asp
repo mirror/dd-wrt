@@ -49,7 +49,32 @@ function add_peer(F,keyindex)
 	F.submit_type.value = "add_peer";
 	apply(F);
 }
-function del_peer(F,keyindex,peerindex)
+
+//egc
+function import_tunnel(F,myid,keyindex)
+{
+	//this is triggered by on change event of filepicker
+	//alert("getwgfile: F:" + F.name + "; key-tun: " + keyindex + "; myid: " + myid);
+	var wgfileid = document.getElementById(myid).files[0];
+	//console.log("wgfileid.name: " + wgfileid.name + "; F: " + F + "; key-tun: " + keyindex + "; myid: " + myid);
+	if (wgfileid.size > 3000) {
+		alert("filesize of: " + wgfileid.size +"B exceeds limit, is this the right file?");
+	} else {
+		var wgreader = new FileReader();
+		wgreader.readAsText(wgfileid, "UTF-8");
+		wgreader.onload = function () {
+			var wgfile = wgreader.result;
+			//alert("wgconffile: " + wgfile);
+			F.keyindex.value = keyindex;
+			F.wg_conf_file.value = wgfile;
+			F.change_action.value="gozila_cgi";
+			F.submit_type.value = "import_tunnel";
+			apply(F);
+		}
+	}
+}
+
+function del_peer(F, keyindex, peerindex)
 {
 	F.keyindex.value = keyindex;
 	F.peerindex.value = peerindex;
@@ -138,12 +163,14 @@ addEvent(window, "unload", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="eop" action="apply.cgi" method="post">
+						//<form name="eop" action="apply.cgi" method="post" enctype="multipart/form-data">
 							<input type="hidden" name="submit_button" value="eop-tunnel" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="keyindex" />
 							<input type="hidden" name="peerindex" />
 							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="wg_conf_file" />
 							
 							<h2><% tran("eoip.legend"); %></h2>
 							
