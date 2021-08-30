@@ -388,7 +388,7 @@ bool ni_add_subrecord(struct ntfs_inode *ni, CLST rno, struct mft_inode **mi)
 {
 	struct mft_inode *m;
 
-	m = ntfs_zalloc(sizeof(struct mft_inode));
+	m = kzalloc(sizeof(struct mft_inode), GFP_NOFS);
 	if (!m)
 		return false;
 
@@ -752,7 +752,7 @@ static int ni_try_remove_attr_list(struct ntfs_inode *ni)
 	run_deallocate(sbi, &ni->attr_list.run, true);
 	run_close(&ni->attr_list.run);
 	ni->attr_list.size = 0;
-	ntfs_free(ni->attr_list.le);
+	kfree(ni->attr_list.le);
 	ni->attr_list.le = NULL;
 	ni->attr_list.dirty = false;
 
@@ -787,7 +787,7 @@ int ni_create_attr_list(struct ntfs_inode *ni)
 	 * Skip estimating exact memory requirement
 	 * Looks like one record_size is always enough
 	 */
-	le = ntfs_malloc(al_aligned(rs));
+	le = kmalloc(al_aligned(rs), GFP_NOFS);
 	if (!le) {
 		err = -ENOMEM;
 		goto out;
@@ -893,7 +893,7 @@ int ni_create_attr_list(struct ntfs_inode *ni)
 	goto out;
 
 out1:
-	ntfs_free(ni->attr_list.le);
+	kfree(ni->attr_list.le);
 	ni->attr_list.le = NULL;
 	ni->attr_list.size = 0;
 
@@ -1249,7 +1249,7 @@ static int ni_expand_mft_list(struct ntfs_inode *ni)
 	if (err < 0)
 		goto out;
 
-	run_size = QuadAlign(err);
+	run_size = ALIGN(err, 8);
 	err = 0;
 
 	if (plen < svcn) {
@@ -1269,7 +1269,7 @@ static int ni_expand_mft_list(struct ntfs_inode *ni)
 	if (err < 0)
 		goto out;
 
-	run_size = QuadAlign(err);
+	run_size = ALIGN(err, 8);
 	err = 0;
 
 	if (plen < evcn + 1 - svcn) {
@@ -1392,7 +1392,7 @@ int ni_insert_nonresident(struct ntfs_inode *ni, enum ATTR_TYPE type,
 	struct ATTRIB *attr;
 	bool is_ext =
 		(flags & (ATTR_FLAG_SPARSED | ATTR_FLAG_COMPRESSED)) && !svcn;
-	u32 name_size = QuadAlign(name_len * sizeof(short));
+	u32 name_size = ALIGN(name_len * sizeof(short), 8);
 	u32 name_off = is_ext ? SIZEOF_NONRESIDENT_EX : SIZEOF_NONRESIDENT;
 	u32 run_off = name_off + name_size;
 	u32 run_size, asize;
@@ -1403,7 +1403,7 @@ int ni_insert_nonresident(struct ntfs_inode *ni, enum ATTR_TYPE type,
 	if (err < 0)
 		goto out;
 
-	run_size = QuadAlign(err);
+	run_size = ALIGN(err, 8);
 
 	if (plen < len) {
 		err = -EINVAL;
@@ -1463,8 +1463,8 @@ int ni_insert_resident(struct ntfs_inode *ni, u32 data_size,
 		       struct ATTRIB **new_attr, struct mft_inode **mi)
 {
 	int err;
-	u32 name_size = QuadAlign(name_len * sizeof(short));
-	u32 asize = SIZEOF_RESIDENT + name_size + QuadAlign(data_size);
+	u32 name_size = ALIGN(name_len * sizeof(short), 8);
+	u32 asize = SIZEOF_RESIDENT + name_size + ALIGN(data_size, 8);
 	struct ATTRIB *attr;
 
 	err = ni_insert_attr(ni, type, name, name_len, asize, SIZEOF_RESIDENT,
@@ -1782,14 +1782,18 @@ enum REPARSE_SIGN ni_parse_reparse(struct ntfs_inode *ni, struct ATTRIB *attr,
 		break;
 	case IO_REPARSE_TAG_COMPRESS:
 		/*
-		 * WOF - Windows Overlay Filter - used to compress files with lzx/xpress
-		 * Unlike native NTFS file compression, the Windows Overlay Filter supports
-		 * only read operations. This means that it doesn’t need to sector-align each
-		 * compressed chunk, so the compressed data can be packed more tightly together.
-		 * If you open the file for writing, the Windows Overlay Filter just decompresses
+		 * WOF - Windows Overlay Filter - Used to compress files with
+		 * LZX/Xpress.
+		 *
+		 * Unlike native NTFS file compression, the Windows
+		 * Overlay Filter supports only read operations. This means
+		 * that it doesn't need to sector-align each compressed chunk,
+		 * so the compressed data can be packed more tightly together.
+		 * If you open the file for writing, the WOF just decompresses
 		 * the entire file, turning it back into a plain file.
 		 *
-		 * ntfs3 driver decompresses the entire file only on write or change size requests
+		 * Ntfs3 driver decompresses the entire file only on write or
+		 * change size requests.
 		 */
 
 		cmpr = &rp->CompressReparseBuffer;
@@ -2050,7 +2054,7 @@ int ni_readpage_cmpr(struct ntfs_inode *ni, struct page *page)
 	idx = (vbo - frame_vbo) >> PAGE_SHIFT;
 
 	pages_per_frame = frame_size >> PAGE_SHIFT;
-	pages = ntfs_zalloc(pages_per_frame * sizeof(struct page *));
+	pages = kcalloc(pages_per_frame, sizeof(struct page *), GFP_NOFS);
 	if (!pages) {
 		err = -ENOMEM;
 		goto out;
@@ -2088,7 +2092,7 @@ out1:
 
 out:
 	/* At this point, err contains 0 or -EIO depending on the "critical" page */
-	ntfs_free(pages);
+	kfree(pages);
 	unlock_page(page);
 
 	return err;
@@ -2133,7 +2137,7 @@ int ni_decompress_file(struct ntfs_inode *ni)
 	frame_bits = ni_ext_compress_bits(ni);
 	frame_size = 1u << frame_bits;
 	pages_per_frame = frame_size >> PAGE_SHIFT;
-	pages = ntfs_zalloc(pages_per_frame * sizeof(struct page *));
+	pages = kcalloc(pages_per_frame, sizeof(struct page *), GFP_NOFS);
 	if (!pages) {
 		err = -ENOMEM;
 		goto out;
@@ -2294,7 +2298,7 @@ remove_wof:
 	mapping->a_ops = &ntfs_aops;
 
 out:
-	ntfs_free(pages);
+	kfree(pages);
 	if (err) {
 		make_bad_inode(inode);
 		ntfs_set_state(sbi, NTFS_DIRTY_ERROR);
@@ -2560,7 +2564,7 @@ int ni_read_frame(struct ntfs_inode *ni, u64 frame_vbo, struct page **pages,
 		goto out1;
 	}
 
-	pages_disk = ntfs_zalloc(npages_disk * sizeof(struct page *));
+	pages_disk = kzalloc(npages_disk * sizeof(struct page *), GFP_NOFS);
 	if (!pages_disk) {
 		err = -ENOMEM;
 		goto out2;
@@ -2629,7 +2633,7 @@ out3:
 			put_page(pg);
 		}
 	}
-	ntfs_free(pages_disk);
+	kfree(pages_disk);
 
 out2:
 #ifdef CONFIG_NTFS3_LZX_XPRESS
@@ -2705,7 +2709,7 @@ int ni_write_frame(struct ntfs_inode *ni, struct page **pages,
 		goto out;
 	}
 
-	pages_disk = ntfs_zalloc(pages_per_frame * sizeof(struct page *));
+	pages_disk = kcalloc(pages_per_frame, sizeof(struct page *), GFP_NOFS);
 	if (!pages_disk) {
 		err = -ENOMEM;
 		goto out;
@@ -2765,7 +2769,7 @@ int ni_write_frame(struct ntfs_inode *ni, struct page **pages,
 	compr_size = compress_lznt(frame_mem, frame_size, frame_ondisk,
 				   frame_size, sbi->compress.lznt);
 	mutex_unlock(&sbi->compress.mtx_lznt);
-	ntfs_free(lznt);
+	kfree(lznt);
 
 	if (compr_size + sbi->cluster_size > frame_size) {
 		/* frame is not compressed */
@@ -2814,7 +2818,7 @@ out1:
 			put_page(pg);
 		}
 	}
-	ntfs_free(pages_disk);
+	kfree(pages_disk);
 out:
 	return err;
 }
@@ -2849,7 +2853,7 @@ static bool ni_update_parent(struct ntfs_inode *ni, struct NTFS_DUP_INFO *dup,
 		} else if (!attr->non_res) {
 			u32 data_size = le32_to_cpu(attr->res.data_size);
 
-			dup->alloc_size = cpu_to_le64(QuadAlign(data_size));
+			dup->alloc_size = cpu_to_le64(ALIGN(data_size, 8));
 			dup->data_size = cpu_to_le64(data_size);
 		} else {
 			u64 new_valid = ni->i_valid;

@@ -26,9 +26,9 @@
 static inline size_t unpacked_ea_size(const struct EA_FULL *ea)
 {
 	return ea->size ? le32_to_cpu(ea->size)
-			: DwordAlign(struct_size(
-				  ea, name,
-				  1 + ea->name_len + le16_to_cpu(ea->elength)));
+			: ALIGN(struct_size(
+			      ea, name,
+			      1 + ea->name_len + le16_to_cpu(ea->elength)), 4);
 }
 
 static inline size_t packed_ea_size(const struct EA_FULL *ea)
@@ -110,7 +110,7 @@ static int ntfs_read_ea(struct ntfs_inode *ni, struct EA_FULL **ea,
 		return -EFBIG;
 
 	/* Allocate memory for packed Ea */
-	ea_p = ntfs_malloc(size + add_bytes);
+	ea_p = kmalloc(size + add_bytes, GFP_NOFS);
 	if (!ea_p)
 		return -ENOMEM;
 
@@ -142,7 +142,7 @@ static int ntfs_read_ea(struct ntfs_inode *ni, struct EA_FULL **ea,
 	return 0;
 
 out:
-	ntfs_free(ea_p);
+	kfree(ea_p);
 	*ea = NULL;
 	return err;
 }
@@ -193,7 +193,7 @@ static ssize_t ntfs_list_ea(struct ntfs_inode *ni, char *buffer,
 	}
 
 out:
-	ntfs_free(ea_all);
+	kfree(ea_all);
 	return err ? err : ret;
 }
 
@@ -251,7 +251,7 @@ static int ntfs_get_ea(struct inode *inode, const char *name, size_t name_len,
 	err = 0;
 
 out:
-	ntfs_free(ea_all);
+	kfree(ea_all);
 	if (!required)
 		ni_unlock(ni);
 
@@ -289,7 +289,7 @@ static noinline int ntfs_set_ea(struct inode *inode, const char *name,
 		goto out;
 	}
 
-	add = DwordAlign(struct_size(ea_all, name, 1 + name_len + val_size));
+	add = ALIGN(struct_size(ea_all, name, 1 + name_len + val_size), 4);
 
 	err = ntfs_read_ea(ni, &ea_all, add, &info);
 	if (err)
@@ -352,7 +352,7 @@ static noinline int ntfs_set_ea(struct inode *inode, const char *name,
 		}
 
 		if (!ea_all) {
-			ea_all = ntfs_zalloc(add);
+			ea_all = kzalloc(add, GFP_NOFS);
 			if (!ea_all) {
 				err = -ENOMEM;
 				goto out;
@@ -474,7 +474,7 @@ out:
 		ni_unlock(ni);
 
 	run_close(&ea_run);
-	ntfs_free(ea_all);
+	kfree(ea_all);
 
 	return err;
 }
@@ -520,7 +520,7 @@ static struct posix_acl *ntfs_get_acl_ex(struct inode *inode, int type,
 		ni_unlock(ni);
 
 	/* Translate extended attribute to acl */
-	if (err > 0) {
+	if (err >= 0) {
 		acl = posix_acl_from_xattr(&init_user_ns, buf, err);
 		if (!IS_ERR(acl))
 			set_cached_acl(inode, type, acl);
@@ -597,7 +597,7 @@ static noinline int ntfs_set_acl_ex(struct inode *inode, struct posix_acl *acl,
 		value = NULL;
 	} else {
 		size = posix_acl_xattr_size(acl->a_count);
-		value = ntfs_malloc(size);
+		value = kmalloc(size, GFP_NOFS);
 		if (!value)
 			return -ENOMEM;
 
@@ -612,7 +612,7 @@ static noinline int ntfs_set_acl_ex(struct inode *inode, struct posix_acl *acl,
 		set_cached_acl(inode, type, acl);
 
 out:
-	ntfs_free(value);
+	kfree(value);
 
 	return err;
 }
@@ -888,7 +888,7 @@ static int ntfs_getxattr(const struct xattr_handler *handler, struct dentry *de,
 			err = sd_size;
 			memcpy(buffer, sd, sd_size);
 		}
-		ntfs_free(sd);
+		kfree(sd);
 		goto out;
 	}
 
