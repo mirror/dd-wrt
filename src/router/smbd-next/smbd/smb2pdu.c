@@ -5565,7 +5565,7 @@ static int set_file_basic_info(struct ksmbd_file *fp, char *buf,
 {
 	struct smb2_file_all_info *file_info;
 	struct iattr attrs;
-	struct timespec64 ctime;
+	struct timespec ctime;
 	struct file *filp;
 	struct inode *inode;
 	struct user_namespace *user_ns;
