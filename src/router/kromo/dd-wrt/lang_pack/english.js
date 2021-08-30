@@ -2186,7 +2186,7 @@ eoip.shaper="shaper";
 eoip.bridging="Bridging";
 eoip.add=" Add Tunnel ";
 eoip.del="Del Tunnel";
-eoip.importt="Import Tunnel";
+eoip.importt="Import Config";
 eoip.filepicker="Upload configuration, adapt and Apply";
 
 // help page

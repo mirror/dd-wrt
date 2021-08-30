@@ -1873,8 +1873,8 @@ eoip.shaper="shaper";
 eoip.bridging="Br&uuml;cken";
 eoip.add="Tunnel Hinzuf&uuml;gen";
 eoip.del="Tunnel Entfernen";
-eoip.importt="Tunnel Importieren";
-eoip.filepicker="Upload configuration, adapt and Apply";
+eoip.importt="Konfiguration Importieren";
+eoip.filepicker="Lade und Verwende Konfiguration";
 
 // ** Sipath.asp + cgi **//
 
