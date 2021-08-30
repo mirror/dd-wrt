@@ -2184,9 +2184,10 @@ eoip.frag="fragment";
 eoip.mssfix="mssfix";
 eoip.shaper="shaper";
 eoip.bridging="Bridging";
-eoip.add="Add Tunnel";
+eoip.add=" Add Tunnel ";
 eoip.del="Del Tunnel";
-
+eoip.importt="Import Tunnel";
+eoip.filepicker="Upload configuration, adapt and Apply";
 
 // help page
 var heoip=new Object();

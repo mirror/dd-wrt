@@ -432,7 +432,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						}
 					}
 					//Status box
-					websWrite(wp, "<div id=\"idoet%d_statusbox\">\n", tun);	//naming for periodic refresh
+					websWrite(wp, "<div id=\"idoet%d_statusbox\">\n", tun);	//naming for periodic refresh need also peer
 					{
 						websWrite(wp, "<div class=\"setting\">\n");
 						{
@@ -484,12 +484,12 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "</fieldset>\n");
 				}
 
+				websWrite(wp, "<br />\n");	//added <br>
+
 				websWrite(wp, "<div class=\"center\">\n");
 				{
 					websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-					websWrite(wp,
-						  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_peer_button\\\" value=\\\"\" + eoip.wireguard_addpeer + \"\\\" onclick=\\\"add_peer(this.form,%d)\\\" />\");\n",
-						  tun);
+					websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_peer_button\\\" value=\\\"\" + eoip.wireguard_addpeer + \"\\\" onclick=\\\"add_peer(this.form,%d)\\\" />\");\n", tun);
 					websWrite(wp, "//]]>\n</script>\n");
 				}
 				websWrite(wp, "</div>\n");
@@ -572,9 +572,6 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_en", tun) ? "true" : "false");
 		//hide or show advanced settings
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
-		//hide ip address and netmask for and show alternative input for WG (proto 2)
-//              websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idwginput%d', %s);\n", tun, tun, nvram_nmatchi(2, "oet%d_proto", tun) ? "true" : "false");
-		//end
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</fieldset><br/>\n");
 	}
@@ -582,8 +579,31 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	{
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_button\\\" value=\\\"\" + eoip.add + \"\\\" onclick=\\\"add_tunnel(this.form)\\\" />\");\n");
+		//show filepicker
+		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"import_tunnel_button\\\" value=\\\"\" + eoip.importt + \"\\\" onclick=\\\"show_layer_ext(this.form, 'idwgimport', true);\\\" />\");\n");
 		websWrite(wp, "//]]>\n</script>\n");
 	}
 	websWrite(wp, "</div>\n");
+
+	//make hidden filepicker
+	websWrite(wp, "<div id=\"idwgimport\" class=\"setting\">\n");
+	{
+		websWrite(wp, "<br /><fieldset>\n");
+		websWrite(wp, "<legend>");
+		show_caption_simple(wp, "eoip.importt");
+		websWrite(wp, "</legend>\n");
+		show_caption(wp, "label", "eoip.filepicker", NULL);
+		websWrite(wp, "<input id=\"wgimportfile\" type=\"file\" accept=\".conf\" onchange=\"import_tunnel(this.form,id,%d);\" />\n", tun);
+		websWrite(wp, "</fieldset>\n");
+	}
+	websWrite(wp, "</div>\n");
+	//hide file picker 
+	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		//this.form only for *elements* to refer to the form, use 'this' or 'document.eop' or better document.forms['eop']  without an element
+		websWrite(wp, "show_layer_ext(this, 'idwgimport', false);\n");
+	websWrite(wp, "//]]>\n</script>\n");
+
+	websWrite(wp, "<br />\n");
+
 }
 #endif

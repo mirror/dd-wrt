@@ -128,6 +128,7 @@ EJ_VISIBLE void gen_wg_client(webs_t wp);
 EJ_VISIBLE void del_wg_client(webs_t wp);
 EJ_VISIBLE void add_peer(webs_t wp);
 EJ_VISIBLE void del_peer(webs_t wp);
+EJ_VISIBLE void import_tunnel(webs_t wp);
 EJ_VISIBLE void add_tunnel(webs_t wp);
 EJ_VISIBLE void del_tunnel(webs_t wp);
 EJ_VISIBLE void tunnel_save(webs_t wp);
