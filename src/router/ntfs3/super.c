@@ -29,6 +29,7 @@
 #include <linux/exportfs.h>
 #include <linux/fs.h>
 #include <linux/iversion.h>
+#include <linux/log2.h>
 #include <linux/module.h>
 #include <linux/nls.h>
 #include <linux/parser.h>
@@ -124,7 +125,7 @@ void ntfs_inode_printk(struct inode *inode, const char *fmt, ...)
 /*
  * Shared memory struct.
  *
- * on-disk ntfs's upcase table is created by ntfs formater
+ * on-disk ntfs's upcase table is created by ntfs formatter
  * 'upcase' table is 128K bytes of memory
  * we should read it into memory when mounting
  * Several ntfs volumes likely use the same 'upcase' table
@@ -467,9 +468,9 @@ static void init_once(void *foo)
 /* noinline to reduce binary size*/
 static noinline void put_ntfs(struct ntfs_sb_info *sbi)
 {
-	ntfs_free(sbi->new_rec);
-	ntfs_vfree(ntfs_put_shared(sbi->upcase));
-	ntfs_free(sbi->def_table);
+	kfree(sbi->new_rec);
+	kvfree(ntfs_put_shared(sbi->upcase));
+	kfree(sbi->def_table);
 
 	wnd_close(&sbi->mft.bitmap);
 	wnd_close(&sbi->used.bitmap);
@@ -495,14 +496,14 @@ static noinline void put_ntfs(struct ntfs_sb_info *sbi)
 	indx_clear(&sbi->security.index_sdh);
 	indx_clear(&sbi->reparse.index_r);
 	indx_clear(&sbi->objid.index_o);
-	ntfs_free(sbi->compress.lznt);
+	kfree(sbi->compress.lznt);
 #ifdef CONFIG_NTFS3_LZX_XPRESS
 	xpress_free_decompressor(sbi->compress.xpress);
 	lzx_free_decompressor(sbi->compress.lzx);
 #endif
 	clear_mount_options(&sbi->options);
 
-	ntfs_free(sbi);
+	kfree(sbi);
 }
 
 static void ntfs_put_super(struct super_block *sb)
@@ -737,13 +738,13 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 
 	boot_sector_size = (u32)boot->bytes_per_sector[1] << 8;
 	if (boot->bytes_per_sector[0] || boot_sector_size < SECTOR_SIZE ||
-	    !is_power_of2(boot_sector_size)) {
+	    !is_power_of_2(boot_sector_size)) {
 		goto out;
 	}
 
 	/* cluster size: 512, 1K, 2K, 4K, ... 2M */
 	sct_per_clst = true_sectors_per_clst(boot);
-	if (!is_power_of2(sct_per_clst))
+	if (!is_power_of_2(sct_per_clst))
 		goto out;
 
 	mlcn = le64_to_cpu(boot->mft_clst);
@@ -759,14 +760,14 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 	/* Check MFT record size */
 	if ((boot->record_size < 0 &&
 	     SECTOR_SIZE > (2U << (-boot->record_size))) ||
-	    (boot->record_size >= 0 && !is_power_of2(boot->record_size))) {
+	    (boot->record_size >= 0 && !is_power_of_2(boot->record_size))) {
 		goto out;
 	}
 
 	/* Check index record size */
 	if ((boot->index_size < 0 &&
 	     SECTOR_SIZE > (2U << (-boot->index_size))) ||
-	    (boot->index_size >= 0 && !is_power_of2(boot->index_size))) {
+	    (boot->index_size >= 0 && !is_power_of_2(boot->index_size))) {
 		goto out;
 	}
 
@@ -810,9 +811,9 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 	sbi->attr_size_tr = (5 * record_size >> 4); // ~320 bytes
 
 	sbi->max_bytes_per_attr =
-		record_size - QuadAlign(MFTRECORD_FIXUP_OFFSET_1) -
-		QuadAlign(((record_size >> SECTOR_SHIFT) * sizeof(short))) -
-		QuadAlign(sizeof(enum ATTR_TYPE));
+		record_size - ALIGN(MFTRECORD_FIXUP_OFFSET_1, 8) -
+		ALIGN(((record_size >> SECTOR_SHIFT) * sizeof(short)), 8) -
+		ALIGN(sizeof(enum ATTR_TYPE), 8);
 
 	sbi->index_size = boot->index_size < 0
 				  ? 1u << (-boot->index_size)
@@ -849,7 +850,7 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 
 	sbi->used.bitmap.nbits = clusters;
 
-	rec = ntfs_zalloc(record_size);
+	rec = kzalloc(record_size, GFP_NOFS);
 	if (!rec) {
 		err = -ENOMEM;
 		goto out;
@@ -860,9 +861,9 @@ static int ntfs_init_from_boot(struct super_block *sb, u32 sector_size,
 	rec->rhdr.fix_off = cpu_to_le16(MFTRECORD_FIXUP_OFFSET_1);
 	fn = (sbi->record_size >> SECTOR_SHIFT) + 1;
 	rec->rhdr.fix_num = cpu_to_le16(fn);
-	ao = QuadAlign(MFTRECORD_FIXUP_OFFSET_1 + sizeof(short) * fn);
+	ao = ALIGN(MFTRECORD_FIXUP_OFFSET_1 + sizeof(short) * fn, 8);
 	rec->attr_off = cpu_to_le16(ao);
-	rec->used = cpu_to_le32(ao + QuadAlign(sizeof(enum ATTR_TYPE)));
+	rec->used = cpu_to_le32(ao + ALIGN(sizeof(enum ATTR_TYPE), 8));
 	rec->total = cpu_to_le32(sbi->record_size);
 	((struct ATTRIB *)Add2Ptr(rec, ao))->type = ATTR_END;
 
@@ -916,7 +917,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 
 	ref.high = 0;
 
-	sbi = ntfs_zalloc(sizeof(struct ntfs_sb_info));
+	sbi = kzalloc(sizeof(struct ntfs_sb_info), GFP_NOFS);
 	if (!sbi)
 		return -ENOMEM;
 
@@ -1182,7 +1183,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 		goto out;
 	}
 	bytes = inode->i_size;
-	sbi->def_table = t = ntfs_malloc(bytes);
+	sbi->def_table = t = kmalloc(bytes, GFP_NOFS);
 	if (!t) {
 		err = -ENOMEM;
 		goto out;
@@ -1210,7 +1211,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 	sbi->def_entries = 1;
 	done = sizeof(struct ATTR_DEF_ENTRY);
 	sbi->reparse.max_size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
-	sbi->ea_max_size = 0x10000; /* default formater value */
+	sbi->ea_max_size = 0x10000; /* default formatter value */
 
 	while (done + sizeof(struct ATTR_DEF_ENTRY) <= bytes) {
 		u32 t32 = le32_to_cpu(t->type);
@@ -1248,7 +1249,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 		goto out;
 	}
 
-	sbi->upcase = upcase = ntfs_vmalloc(0x10000 * sizeof(short));
+	sbi->upcase = upcase = kvmalloc(0x10000 * sizeof(short), GFP_KERNEL);
 	if (!upcase) {
 		err = -ENOMEM;
 		goto out;
@@ -1278,7 +1279,7 @@ static int ntfs_fill_super(struct super_block *sb, void *data, int silent)
 	shared = ntfs_set_shared(upcase, 0x10000 * sizeof(short));
 	if (shared && upcase != shared) {
 		sbi->upcase = shared;
-		ntfs_vfree(upcase);
+		kvfree(upcase);
 	}
 
 	iput(inode);

@@ -9,6 +9,7 @@
 #include <linux/blkdev.h>
 #include <linux/buffer_head.h>
 #include <linux/fs.h>
+#include <linux/log2.h>
 #include <linux/nls.h>
 
 #include "debug.h"
@@ -253,7 +254,7 @@ void run_truncate_head(struct runs_tree *run, CLST vcn)
 	run->count -= index;
 
 	if (!run->count) {
-		ntfs_vfree(run->runs);
+		kvfree(run->runs);
 		run->runs = NULL;
 		run->allocated = 0;
 	}
@@ -292,7 +293,7 @@ void run_truncate(struct runs_tree *run, CLST vcn)
 
 	/* Do not reallocate array 'runs'. Only free if possible */
 	if (!index) {
-		ntfs_vfree(run->runs);
+		kvfree(run->runs);
 		run->runs = NULL;
 		run->allocated = 0;
 	}
@@ -376,7 +377,7 @@ requires_new_range:
 			if (!used) {
 				bytes = 64;
 			} else if (used <= 16 * PAGE_SIZE) {
-				if (is_power_of2(run->allocated))
+				if (is_power_of_2(run->allocated))
 					bytes = run->allocated << 1;
 				else
 					bytes = (size_t)1
@@ -387,7 +388,7 @@ requires_new_range:
 
 			WARN_ON(!is_mft && bytes > NTFS3_RUN_MAX_BYTES);
 
-			new_ptr = ntfs_vmalloc(bytes);
+			new_ptr = kvmalloc(bytes, GFP_KERNEL);
 
 			if (!new_ptr)
 				return false;
@@ -398,7 +399,7 @@ requires_new_range:
 			memcpy(r + 1, run->runs + index,
 			       sizeof(struct ntfs_run) * (run->count - index));
 
-			ntfs_vfree(run->runs);
+			kvfree(run->runs);
 			run->runs = new_ptr;
 			run->allocated = bytes;
 
@@ -949,7 +950,7 @@ int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 		if (next_vcn > 0x100000000ull || (lcn + len) > 0x100000000ull) {
 			ntfs_err(
 				sbi->sb,
-				"This driver is compiled whitout CONFIG_NTFS3_64BIT_CLUSTER (like windows driver).\n"
+				"This driver is compiled without CONFIG_NTFS3_64BIT_CLUSTER (like windows driver).\n"
 				"Volume contains 64 bits run: vcn %llx, lcn %llx, len %llx.\n"
 				"Activate CONFIG_NTFS3_64BIT_CLUSTER to process this case",
 				vcn64, lcn, len);
