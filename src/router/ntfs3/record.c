@@ -76,14 +76,14 @@ static __le16 mi_new_attt_id(struct mft_inode *mi)
 int mi_get(struct ntfs_sb_info *sbi, CLST rno, struct mft_inode **mi)
 {
 	int err;
-	struct mft_inode *m = ntfs_zalloc(sizeof(struct mft_inode));
+	struct mft_inode *m = kzalloc(sizeof(struct mft_inode), GFP_NOFS);
 
 	if (!m)
 		return -ENOMEM;
 
 	err = mi_init(m, sbi, rno);
 	if (err) {
-		ntfs_free(m);
+		kfree(m);
 		return err;
 	}
 
@@ -100,14 +100,14 @@ int mi_get(struct ntfs_sb_info *sbi, CLST rno, struct mft_inode **mi)
 void mi_put(struct mft_inode *mi)
 {
 	mi_clear(mi);
-	ntfs_free(mi);
+	kfree(mi);
 }
 
 int mi_init(struct mft_inode *mi, struct ntfs_sb_info *sbi, CLST rno)
 {
 	mi->sbi = sbi;
 	mi->rno = rno;
-	mi->mrec = ntfs_malloc(sbi->record_size);
+	mi->mrec = kmalloc(sbi->record_size, GFP_NOFS);
 	if (!mi->mrec)
 		return -ENOMEM;
 
@@ -206,7 +206,7 @@ struct ATTRIB *mi_enum_attr(struct mft_inode *mi, struct ATTRIB *attr)
 			return NULL;
 
 		if (off >= used || off < MFTRECORD_FIXUP_OFFSET_1 ||
-		    !IsDwordAligned(off)) {
+		    !IS_ALIGNED(off, 4)) {
 			return NULL;
 		}
 
@@ -235,7 +235,7 @@ struct ATTRIB *mi_enum_attr(struct mft_inode *mi, struct ATTRIB *attr)
 
 	/* Can we use the first field (attr->type) */
 	if (off + 8 > used) {
-		static_assert(QuadAlign(sizeof(enum ATTR_TYPE)) == 8);
+		static_assert(ALIGN(sizeof(enum ATTR_TYPE), 8) == 8);
 		return NULL;
 	}
 
@@ -539,7 +539,7 @@ bool mi_resize_attr(struct mft_inode *mi, struct ATTRIB *attr, int bytes)
 	next = Add2Ptr(attr, asize);
 
 	if (bytes > 0) {
-		dsize = QuadAlign(bytes);
+		dsize = ALIGN(bytes, 8);
 		if (used + dsize > total)
 			return false;
 		nsize = asize + dsize;
@@ -549,7 +549,7 @@ bool mi_resize_attr(struct mft_inode *mi, struct ATTRIB *attr, int bytes)
 		used += dsize;
 		rsize += dsize;
 	} else {
-		dsize = QuadAlign(-bytes);
+		dsize = ALIGN(-bytes, 8);
 		if (dsize > asize)
 			return false;
 		nsize = asize - dsize;
@@ -596,7 +596,7 @@ int mi_pack_runs(struct mft_inode *mi, struct ATTRIB *attr,
 		return err;
 	}
 
-	new_run_size = QuadAlign(err);
+	new_run_size = ALIGN(err, 8);
 
 	memmove(next + new_run_size - run_size, next + dsize, tail);
 

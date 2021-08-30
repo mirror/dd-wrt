@@ -1871,7 +1871,7 @@ int ntfs_security_init(struct ntfs_sb_info *sbi)
 	struct ATTRIB *attr;
 	struct ATTR_LIST_ENTRY *le;
 	u64 sds_size;
-	size_t cnt, off;
+	size_t off;
 	struct NTFS_DE *ne;
 	struct NTFS_DE_SII *sii_e;
 	struct ntfs_fnd *fnd_sii = NULL;
@@ -1944,9 +1944,8 @@ int ntfs_security_init(struct ntfs_sb_info *sbi)
 	sbi->security.next_id = SECURITY_ID_FIRST;
 	/* Always write new security at the end of bucket */
 	sbi->security.next_off =
-		Quad2Align(sds_size - SecurityDescriptorsBlockSize);
+			ALIGN(sds_size - SecurityDescriptorsBlockSize, 16);
 
-	cnt = 0;
 	off = 0;
 	ne = NULL;
 
@@ -1964,8 +1963,6 @@ int ntfs_security_init(struct ntfs_sb_info *sbi)
 		next_id = le32_to_cpu(sii_e->sec_id) + 1;
 		if (next_id >= sbi->security.next_id)
 			sbi->security.next_id = next_id;
-
-		cnt += 1;
 	}
 
 	sbi->security.ni = ni;
@@ -2038,7 +2035,7 @@ int ntfs_get_security_by_id(struct ntfs_sb_info *sbi, __le32 security_id,
 
 	*size = t32 - SIZEOF_SECURITY_HDR;
 
-	p = ntfs_malloc(*size);
+	p = kmalloc(*size, GFP_NOFS);
 	if (!p) {
 		err = -ENOMEM;
 		goto out;
@@ -2066,7 +2063,7 @@ int ntfs_get_security_by_id(struct ntfs_sb_info *sbi, __le32 security_id,
 	p = NULL;
 
 out:
-	ntfs_free(p);
+	kfree(p);
 	fnd_put(fnd_sii);
 	ni_unlock(ni);
 
@@ -2099,7 +2096,7 @@ int ntfs_insert_security(struct ntfs_sb_info *sbi,
 	struct NTFS_DE_SII sii_e;
 	struct SECURITY_HDR *d_security;
 	u32 new_sec_size = size_sd + SIZEOF_SECURITY_HDR;
-	u32 aligned_sec_size = Quad2Align(new_sec_size);
+	u32 aligned_sec_size = ALIGN(new_sec_size, 16);
 	struct SECURITY_KEY hash_key;
 	struct ntfs_fnd *fnd_sdh = NULL;
 	const struct INDEX_ROOT *root_sdh;
@@ -2118,7 +2115,7 @@ int ntfs_insert_security(struct ntfs_sb_info *sbi,
 	*security_id = SECURITY_ID_INVALID;
 
 	/* Allocate a temporal buffer*/
-	d_security = ntfs_zalloc(aligned_sec_size);
+	d_security = kzalloc(aligned_sec_size, GFP_NOFS);
 	if (!d_security)
 		return -ENOMEM;
 
@@ -2282,7 +2279,7 @@ out:
 	fnd_put(fnd_sdh);
 	mark_inode_dirty(&ni->vfs_inode);
 	ni_unlock(ni);
-	ntfs_free(d_security);
+	kfree(d_security);
 
 	return err;
 }

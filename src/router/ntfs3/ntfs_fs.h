@@ -6,6 +6,9 @@
  */
 
 // clang-format off
+#ifndef _LINUX_NTFS3_NTFS_FS_H
+#define _LINUX_NTFS3_NTFS_FS_H
+
 #define MINUS_ONE_T			((size_t)(-1))
 /* Biggest MFT / smallest cluster */
 #define MAXIMUM_BYTES_PER_MFT		4096
@@ -603,13 +606,13 @@ int indx_used_bit(struct ntfs_index *indx, struct ntfs_inode *ni, size_t *bit);
 void fnd_clear(struct ntfs_fnd *fnd);
 static inline struct ntfs_fnd *fnd_get(void)
 {
-	return ntfs_zalloc(sizeof(struct ntfs_fnd));
+	return kzalloc(sizeof(struct ntfs_fnd), GFP_NOFS);
 }
 static inline void fnd_put(struct ntfs_fnd *fnd)
 {
 	if (fnd) {
 		fnd_clear(fnd);
-		ntfs_free(fnd);
+		kfree(fnd);
 	}
 }
 void indx_clear(struct ntfs_index *idx);
@@ -874,20 +877,20 @@ static inline void run_init(struct runs_tree *run)
 
 static inline struct runs_tree *run_alloc(void)
 {
-	return ntfs_zalloc(sizeof(struct runs_tree));
+	return kzalloc(sizeof(struct runs_tree), GFP_NOFS);
 }
 
 static inline void run_close(struct runs_tree *run)
 {
-	ntfs_vfree(run->runs);
+	kvfree(run->runs);
 	memset(run, 0, sizeof(*run));
 }
 
 static inline void run_free(struct runs_tree *run)
 {
 	if (run) {
-		ntfs_vfree(run->runs);
-		ntfs_free(run);
+		kvfree(run->runs);
+		kfree(run);
 	}
 }
 
@@ -899,7 +902,7 @@ static inline bool run_is_empty(struct runs_tree *run)
 /* NTFS uses quad aligned bitmaps */
 static inline size_t bitmap_size(size_t bits)
 {
-	return QuadAlign((bits + 7) >> 3);
+	return ALIGN((bits + 7) >> 3, 8);
 }
 
 #define _100ns2seconds 10000000
@@ -974,11 +977,6 @@ static inline struct buffer_head *ntfs_bread(struct super_block *sb,
 	return NULL;
 }
 
-static inline bool is_power_of2(size_t v)
-{
-	return v && !(v & (v - 1));
-}
-
 static inline struct ntfs_inode *ntfs_i(struct inode *inode)
 {
 	return container_of(inode, struct ntfs_inode, vfs_inode);
@@ -1048,15 +1046,15 @@ static inline void put_indx_node(struct indx_node *in)
 	if (!in)
 		return;
 
-	ntfs_free(in->index);
+	kfree(in->index);
 	nb_put(&in->nb);
-	ntfs_free(in);
+	kfree(in);
 }
 
 static inline void mi_clear(struct mft_inode *mi)
 {
 	nb_put(&mi->nb);
-	ntfs_free(mi->mrec);
+	kfree(mi->mrec);
 	mi->mrec = NULL;
 }
 
@@ -1092,3 +1090,5 @@ static inline void le64_sub_cpu(__le64 *var, u64 val)
 {
 	*var = cpu_to_le64(le64_to_cpu(*var) - val);
 }
+
+#endif /* _LINUX_NTFS3_NTFS_FS_H */
