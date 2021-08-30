@@ -10,6 +10,7 @@ fi
 
 cd /tmp/oet/pid
 rmmod eoip >/dev/null 2>&1
+# todo move $nv unset wg_get_dns here and restart dnsmasq here instead of using resolv.dnsmasq,oet${i} check with openvpn
 tunnels=`$nv get oet_tunnels`
 for i in `seq 1 $tunnels`
 do

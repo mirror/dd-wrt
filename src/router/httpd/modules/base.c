@@ -1238,6 +1238,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "eop-tunnel", "del_wg_client", "", REFRESH, "del_wg_client" },
 	{ "eop-tunnel", "add_peer", "", REFRESH, "add_peer" },
 	{ "eop-tunnel", "del_peer", "", REFRESH, "del_peer" },
+	{ "eop-tunnel", "import_tunnel", "", REFRESH, "import_tunnel" },
 #endif
 	{ "eop-tunnel", "add_tunnel", "", REFRESH, "add_tunnel" },
 	{ "eop-tunnel", "del_tunnel", "", REFRESH, "del_tunnel" },

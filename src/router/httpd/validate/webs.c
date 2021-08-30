@@ -63,6 +63,11 @@
 #include <jansson.h>
 #endif
 
+//debug
+#include <syslog.h>
+#include <shutils.h>
+
+
 char *cidr_to_nm(char *netmask, unsigned int netmask_cidr);
 
 extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *lanip, char *netmask);
@@ -2026,7 +2031,7 @@ void add_tunnel(webs_t wp)
 	nvram_seti("oet_tunnels", tunnels);
 #define default_set(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nset(val, "oet%d_%s",tunnels,name)
 #define default_seti(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nseti(val, "oet%d_%s",tunnels,name)
-	default_seti("en", 0);
+	default_seti("en", 1);
 	default_seti("mit", 1);
 	default_seti("natout", 1);
 	default_set("pbr", "");
@@ -2059,6 +2064,94 @@ void add_tunnel(webs_t wp)
 #undef default_seti
 }
 
+void import_tunnel(webs_t wp)
+{
+#define upload_set(name,val) if (*(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nset(val, "oet%d_%s%d",key,name,peer)
+//#define upload_seti(name,val) if (*(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nseti(val, "oet%d_%s%d",key,name,peer)
+/*
+Alternatively get the POST data, those will contain the file if enctype="multipart/form-data"
+POST data are written to stdin retrieve with wfgets (router/httpd/httpd.c line 1882)
+Need parsing to get the file data out of the POST data
+*/
+	char buf[128] = { 0 };
+	FILE* fp;
+	char output[64] = { 0 };
+	char *endp_address;
+	char *endp_port;
+	char *wg_conf_file = websGetVar(wp, "wg_conf_file", "");
+
+	dd_loginfo("WireGuard", "WireGuard import tunnel * config file: %s\n", wg_conf_file);
+
+	fp = fopen("/tmp/wgupload.conf", "w");
+	if (fp == NULL) {
+		dd_loginfo("WireGuard", "Cannot open /tmp/wgupload.conf\n");
+	} else {
+		fprintf(fp, "%s\n", wg_conf_file);
+		fclose(fp);
+	}
+
+	fp = fopen("/tmp/wgupload.conf", "r");
+
+	if (fp == NULL) {
+		dd_loginfo("WireGuard", "WireGuard import tunnel config file does not exist\n");
+	} else {
+		add_tunnel(wp);
+		
+		tunnel_save(wp);
+		int key = websGetVari(wp, "keyindex", -1);
+		if (key < 0)
+			return;
+		char idx[32];
+		sprintf(idx, "oet%d_peers", key);
+		nvram_default_geti(idx, 0);
+		int peer = nvram_geti(idx);
+		
+		/*debug
+		dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d", key, peer);
+		char val[32];
+		sprintf(val, "key: %d; peer: %d", key, peer);
+		nvram_nset(val, "oet%d_upload%d", key, peer);
+		*/
+		while (fgets(buf, sizeof buf, fp) != NULL) {
+			if (sscanf(buf, "PrivateKey = %s", output) == 1)
+				nvram_nset(output, "oet%d_private", key);
+			if (sscanf(buf, "ListenPort = %s", output) == 1)
+				nvram_nset(output, "oet%d_port", key);
+			if (sscanf(buf, "Address = %s", output) == 1)
+				nvram_nset(output, "oet%d_ipaddrmask", key);
+			if (sscanf(buf, "MTU = %s", output) == 1)
+				nvram_nset(output, "oet%d_mtu", key);
+			if (sscanf(buf, "DNS = %s", output) == 1)
+				nvram_nset(output, "oet%d_dns", key);
+			if (sscanf(buf, "PublicKey = %s", output) == 1)
+				upload_set("peerkey", output);
+			if (sscanf(buf, "PresharedKey = %s", output) == 1)
+			{
+				upload_set("usepsk", "1");
+				upload_set("psk", output);
+			}
+			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1) //scans until newline otherwise will scan until space
+				upload_set("aip", output);
+			if (sscanf(buf, "Endpoint = %s", output) == 1) {
+				if ((endp_address = strtok(output, ":")) != NULL) {
+					endp_port = strtok(NULL, ":");
+					upload_set("endpoint", "1");
+					upload_set("rem", endp_address);
+					upload_set("peerport", endp_port);
+					
+				}
+			}
+			if (sscanf(buf, "PersistentKeepalive = %s", output) == 1)
+				upload_set("ka", output);
+		}
+		peer++;
+		nvram_seti(idx, peer);
+		fclose(fp);
+	}
+#undef upload_set
+//#undef upload_seti
+}
+
 void del_tunnel(webs_t wp)
 {
 	int peer;
@@ -2066,6 +2159,7 @@ void del_tunnel(webs_t wp)
 	int tun = websGetVari(wp, "keyindex", -1);
 	int tunnels = nvram_geti("oet_tunnels");
 	int i;
+	
 	for (i = tun + 1; i < tunnels + 1; i++) {
 		copytunvalue("en", i, i - 1);
 		copytunvalue("mit", i, i - 1);
@@ -2096,6 +2190,7 @@ void del_tunnel(webs_t wp)
 		int peers = nvram_geti(idx);
 		for (peer = 0; peer < peers; peer++) {
 			copytunpeer(peer, i, i - 1);
+			//dd_loginfo("egc", "copytunvalue: peer=[%d; i=[%d]\n", peer, i);
 		}
 #endif
 	}
@@ -2104,7 +2199,8 @@ void del_tunnel(webs_t wp)
 	sprintf(idx, "oet%d_peers", tunnels);
 	int peers = nvram_geti(idx);
 	for (peer = 0; peer < peers; peer++) {
-		delpeer(tun, peer);
+		delpeer(tunnels, peer);
+		//dd_loginfo("egc", "delpeer: peer=[%d; tunnels=[%d]\n", peer, tunnnels);
 	}
 #endif
 	deltunvalue("en", tunnels);
@@ -2133,6 +2229,10 @@ void del_tunnel(webs_t wp)
 #ifdef HAVE_WIREGUARD
 	deltunvalue("peers", tunnels);
 #endif
+	// todo Delete interface of tunnel which is deleted
+	char thisoet[6] = { 0 };
+	sprintf(thisoet, "oet%d", tunnels);
+	eval("ip", "link", "del", thisoet);
 
 	tunnels--;
 	nvram_seti("oet_tunnels", tunnels);
