@@ -362,11 +362,8 @@ void del_vnc_route(struct rfapi_descriptor *rfd,
 	afi_t afi; /* of the VN address */
 	struct bgp_dest *bn;
 	struct bgp_path_info *bpi;
-	char buf[PREFIX_STRLEN];
 	char buf2[RD_ADDRSTRLEN];
 	struct prefix_rd prd0;
-
-	prefix2str(p, buf, sizeof(buf));
 
 	afi = family2afi(p->family);
 	assert(afi == AFI_IP || afi == AFI_IP6);
@@ -380,9 +377,9 @@ void del_vnc_route(struct rfapi_descriptor *rfd,
 	bn = bgp_afi_node_get(bgp->rib[afi][safi], afi, safi, p, prd);
 
 	vnc_zlog_debug_verbose(
-		"%s: peer=%p, prefix=%s, prd=%s afi=%d, safi=%d bn=%p, bn->info=%p",
-		__func__, peer, buf, prefix_rd2str(prd, buf2, sizeof(buf2)),
-		afi, safi, bn, (bn ? bgp_dest_get_bgp_path_info(bn) : NULL));
+		"%s: peer=%p, prefix=%pFX, prd=%s afi=%d, safi=%d bn=%p, bn->info=%p",
+		__func__, peer, p, prefix_rd2str(prd, buf2, sizeof(buf2)), afi,
+		safi, bn, (bn ? bgp_dest_get_bgp_path_info(bn) : NULL));
 
 	for (bpi = (bn ? bgp_dest_get_bgp_path_info(bn) : NULL); bpi;
 	     bpi = bpi->next) {
@@ -418,8 +415,8 @@ void del_vnc_route(struct rfapi_descriptor *rfd,
 			 * no local nexthops
 			 */
 			vnc_zlog_debug_verbose(
-				"%s: lnh list already empty at prefix %s",
-				__func__, buf);
+				"%s: lnh list already empty at prefix %pFX",
+				__func__, p);
 			goto done;
 		}
 
@@ -445,8 +442,8 @@ void del_vnc_route(struct rfapi_descriptor *rfd,
 			 * list->del on data */
 			rfapi_nexthop_free(pLnh);
 		} else {
-			vnc_zlog_debug_verbose("%s: desired lnh not found %s",
-					       __func__, buf);
+			vnc_zlog_debug_verbose("%s: desired lnh not found %pFX",
+					       __func__, p);
 		}
 		goto done;
 	}
@@ -459,10 +456,9 @@ void del_vnc_route(struct rfapi_descriptor *rfd,
 	rfapiProcessWithdraw(peer, rfd, p, prd, NULL, afi, safi, type, kill);
 
 	if (bpi) {
-		prefix2str(p, buf, sizeof(buf));
 		vnc_zlog_debug_verbose(
-			"%s: Found route (safi=%d) to delete at prefix %s",
-			__func__, safi, buf);
+			"%s: Found route (safi=%d) to delete at prefix %pFX",
+			__func__, safi, p);
 
 		if (safi == SAFI_MPLS_VPN) {
 			struct bgp_dest *pdest = NULL;
@@ -488,8 +484,8 @@ void del_vnc_route(struct rfapi_descriptor *rfd,
 		bgp_process(bgp, bn, afi, safi);
 	} else {
 		vnc_zlog_debug_verbose(
-			"%s: Couldn't find route (safi=%d) at prefix %s",
-			__func__, safi, buf);
+			"%s: Couldn't find route (safi=%d) at prefix %pFX",
+			__func__, safi, p);
 	}
 done:
 	bgp_dest_unlock_node(bn);
@@ -582,9 +578,6 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 	struct bgp_attr_encap_subtlv *encaptlv;
 	char buf[PREFIX_STRLEN];
 	char buf2[RD_ADDRSTRLEN];
-#if 0 /* unused? */
-  struct prefix pfx_buf;
-#endif
 
 	struct rfapi_nexthop *lnh = NULL; /* local nexthop */
 	struct rfapi_vn_option *vo;
@@ -607,20 +600,6 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 		return;
 	}
 
-#if 0 /* unused? */
-  if ((safi == SAFI_MPLS_VPN) && (flags & RFAPI_AHR_SET_PFX_TO_NEXTHOP))
-    {
-
-      if (rfapiRaddr2Qprefix (nexthop, &pfx_buf))
-        {
-          vnc_zlog_debug_verbose
-            ("%s: can't set pfx to vn addr, not adding SAFI_MPLS_VPN route",
-             __func__);
-          return;
-        }
-      p = &pfx_buf;
-    }
-#endif
 	for (vo = options_vn; vo; vo = vo->next) {
 		if (RFAPI_VN_OPTION_TYPE_L2ADDR == vo->type) {
 			l2o = &vo->v.l2addr;
@@ -748,7 +727,7 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 		encaptlv->length = 4;
 		lt = htonl(*lifetime);
 		memcpy(encaptlv->value, &lt, 4);
-		attr.vnc_subtlvs = encaptlv;
+		bgp_attr_set_vnc_subtlvs(&attr, encaptlv);
 		vnc_zlog_debug_verbose(
 			"%s: set Encap Attr Prefix Lifetime to %d", __func__,
 			*lifetime);
@@ -758,7 +737,8 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 	if (rfp_options) {
 
 		if (flags & RFAPI_AHR_RFPOPT_IS_VNCTLV) {
-
+			struct bgp_attr_encap_subtlv *vnc_subtlvs =
+				bgp_attr_get_vnc_subtlvs(&attr);
 			/*
 			 * this flag means we're passing a pointer to an
 			 * existing encap tlv chain which we should copy.
@@ -767,16 +747,15 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 			 */
 			encaptlv = encap_tlv_dup(
 				(struct bgp_attr_encap_subtlv *)rfp_options);
-			if (attr.vnc_subtlvs) {
-				attr.vnc_subtlvs->next = encaptlv;
-			} else {
-				attr.vnc_subtlvs = encaptlv;
-			}
-
+			if (vnc_subtlvs)
+				vnc_subtlvs->next = encaptlv;
+			else
+				bgp_attr_set_vnc_subtlvs(&attr, encaptlv);
 		} else {
 			struct bgp_tea_options *hop;
 			/* XXX max of one tlv present so far from above code */
-			struct bgp_attr_encap_subtlv *tail = attr.vnc_subtlvs;
+			struct bgp_attr_encap_subtlv *tail =
+				bgp_attr_get_vnc_subtlvs(&attr);
 
 			for (hop = rfp_options; hop; hop = hop->next) {
 
@@ -802,11 +781,11 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 				/*
 				 * add to end of subtlv chain
 				 */
-				if (tail) {
+				if (tail)
 					tail->next = encaptlv;
-				} else {
-					attr.vnc_subtlvs = encaptlv;
-				}
+				else
+					bgp_attr_set_vnc_subtlvs(&attr,
+								 encaptlv);
 				tail = encaptlv;
 			}
 		}
@@ -1577,12 +1556,10 @@ rfapi_query_inner(void *handle, struct rfapi_ip_addr *target,
 	}
 
 	{
-		char buf[PREFIX_STRLEN];
 		char *s;
 
-		prefix2str(&p, buf, sizeof(buf));
-		vnc_zlog_debug_verbose("%s(rfd=%p, target=%s, ppNextHop=%p)",
-				       __func__, rfd, buf, ppNextHopEntry);
+		vnc_zlog_debug_verbose("%s(rfd=%p, target=%pFX, ppNextHop=%p)",
+				       __func__, rfd, &p, ppNextHopEntry);
 
 		s = ecommunity_ecom2str(rfd->import_table->rt_import_list,
 					ECOMMUNITY_FORMAT_ROUTE_MAP, 0);
@@ -2397,16 +2374,10 @@ int rfapi_register(void *handle, struct rfapi_ip_prefix *prefix,
 	afi = family2afi(prefix->prefix.addr_family);
 	assert(afi);
 
-
-	{
-		char buf[PREFIX_STRLEN];
-
-		prefix2str(&p, buf, sizeof(buf));
-		vnc_zlog_debug_verbose(
-			"%s(rfd=%p, pfx=%s, lifetime=%d, opts_un=%p, opts_vn=%p, action=%s)",
-			__func__, rfd, buf, lifetime, options_un, options_vn,
-			action_str);
-	}
+	vnc_zlog_debug_verbose(
+		"%s(rfd=%p, pfx=%pFX, lifetime=%d, opts_un=%p, opts_vn=%p, action=%s)",
+		__func__, rfd, &p, lifetime, options_un, options_vn,
+		action_str);
 
 	/*
 	 * These tests come after the prefix conversion so that we can
@@ -3700,20 +3671,16 @@ static void rfapi_print_exported(struct bgp *bgp)
 		if (!table)
 			continue;
 		fprintf(stderr, "%s: encap destn=%p\n", __func__, destn);
-		for (dest = bgp_table_top(table))
-			;
-		dest;
-		     dest = bgp_route_next(dest))
-		     {
-			     bpi = bgp_dest_get_bgp_path_info(dest);
-			     if (!bpi)
-				     continue;
-			     fprintf(stderr, "%s: dest=%p\n", __func__, dest);
-			     for (; bpi; bpi = bpi->next) {
-				     rfapiPrintBi((void *)2,
-						  bpi); /* 2 => stderr */
-			     }
-		     }
+		for (dest = bgp_table_top(table); dest;
+		     dest = bgp_route_next(dest)) {
+			bpi = bgp_dest_get_bgp_path_info(dest);
+			if (!bpi)
+				continue;
+			fprintf(stderr, "%s: dest=%p\n", __func__, dest);
+			for (; bpi; bpi = bpi->next) {
+				rfapiPrintBi((void *)2, bpi); /* 2 => stderr */
+			}
+		}
 	}
 }
 #endif /* defined(DEBUG_RFAPI) */

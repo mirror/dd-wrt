@@ -4,7 +4,7 @@ Documentation=https://frrouting.readthedocs.io/en/latest/setup.html
 Wants=network.target
 After=network-pre.target systemd-sysctl.service
 Before=network.target
-OnFailure=heartbeat-failed@%n.service
+OnFailure=heartbeat-failed@%n
 
 [Service]
 Nice=-5
@@ -17,9 +17,10 @@ WatchdogSec=60s
 RestartSec=5
 Restart=on-abnormal
 LimitNOFILE=1024
-ExecStart=/usr/lib/frr/frrinit.sh start
-ExecStop=/usr/lib/frr/frrinit.sh stop
-ExecReload=/usr/lib/frr/frrinit.sh reload
+PIDFile=/var/run/watchfrr.pid
+ExecStart=/usr/local/sbin/frrinit.sh start
+ExecStop=/usr/local/sbin/frrinit.sh stop
+ExecReload=/usr/local/sbin/frrinit.sh reload
 
 [Install]
 WantedBy=multi-user.target

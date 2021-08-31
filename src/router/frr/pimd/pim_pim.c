@@ -369,7 +369,7 @@ static int pim_sock_read(struct thread *t)
 		 * the right ifindex, so just use it.  We know
 		 * it's the right interface because we bind to it
 		 */
-		ifp = if_lookup_by_index(ifindex, pim_ifp->pim->vrf_id);
+		ifp = if_lookup_by_index(ifindex, pim_ifp->pim->vrf->vrf_id);
 		if (!ifp || !ifp->info) {
 			if (PIM_DEBUG_PIM_PACKETS)
 				zlog_debug(
@@ -407,8 +407,8 @@ static void pim_sock_read_on(struct interface *ifp)
 {
 	struct pim_interface *pim_ifp;
 
-	zassert(ifp);
-	zassert(ifp->info);
+	assert(ifp);
+	assert(ifp->info);
 
 	pim_ifp = ifp->info;
 
@@ -444,7 +444,7 @@ void pim_ifstat_reset(struct interface *ifp)
 {
 	struct pim_interface *pim_ifp;
 
-	zassert(ifp);
+	assert(ifp);
 
 	pim_ifp = ifp->info;
 	if (!pim_ifp) {
@@ -462,8 +462,8 @@ void pim_sock_reset(struct interface *ifp)
 {
 	struct pim_interface *pim_ifp;
 
-	zassert(ifp);
-	zassert(ifp->info);
+	assert(ifp);
+	assert(ifp->info);
 
 	pim_ifp = ifp->info;
 
@@ -484,9 +484,9 @@ void pim_sock_reset(struct interface *ifp)
 	pim_ifp->pim_override_interval_msec =
 		PIM_DEFAULT_OVERRIDE_INTERVAL_MSEC;
 	if (PIM_DEFAULT_CAN_DISABLE_JOIN_SUPPRESSION) {
-		PIM_IF_DO_PIM_CAN_DISABLE_JOIN_SUPRESSION(pim_ifp->options);
+		PIM_IF_DO_PIM_CAN_DISABLE_JOIN_SUPPRESSION(pim_ifp->options);
 	} else {
-		PIM_IF_DONT_PIM_CAN_DISABLE_JOIN_SUPRESSION(pim_ifp->options);
+		PIM_IF_DONT_PIM_CAN_DISABLE_JOIN_SUPPRESSION(pim_ifp->options);
 	}
 
 	/* neighbors without lan_delay */
@@ -652,7 +652,7 @@ static int hello_send(struct interface *ifp, uint16_t holdtime)
 			__func__, dst_str, ifp->name, holdtime,
 			pim_ifp->pim_propagation_delay_msec,
 			pim_ifp->pim_override_interval_msec,
-			PIM_IF_TEST_PIM_CAN_DISABLE_JOIN_SUPRESSION(
+			PIM_IF_TEST_PIM_CAN_DISABLE_JOIN_SUPPRESSION(
 				pim_ifp->options),
 			pim_ifp->pim_dr_priority, pim_ifp->pim_generation_id,
 			listcount(ifp->connected));
@@ -664,15 +664,15 @@ static int hello_send(struct interface *ifp, uint16_t holdtime)
 		pim_ifp->pim_dr_priority, pim_ifp->pim_generation_id,
 		pim_ifp->pim_propagation_delay_msec,
 		pim_ifp->pim_override_interval_msec,
-		PIM_IF_TEST_PIM_CAN_DISABLE_JOIN_SUPRESSION(pim_ifp->options));
+		PIM_IF_TEST_PIM_CAN_DISABLE_JOIN_SUPPRESSION(pim_ifp->options));
 	if (pim_tlv_size < 0) {
 		return -1;
 	}
 
 	pim_msg_size = pim_tlv_size + PIM_PIM_MIN_LEN;
 
-	zassert(pim_msg_size >= PIM_PIM_MIN_LEN);
-	zassert(pim_msg_size <= PIM_PIM_BUFSIZE_WRITE);
+	assert(pim_msg_size >= PIM_PIM_MIN_LEN);
+	assert(pim_msg_size <= PIM_PIM_BUFSIZE_WRITE);
 
 	pim_msg_build_header(pim_msg, pim_msg_size, PIM_MSG_TYPE_HELLO, false);
 
@@ -846,7 +846,7 @@ int pim_sock_add(struct interface *ifp)
 	uint32_t old_genid;
 
 	pim_ifp = ifp->info;
-	zassert(pim_ifp);
+	assert(pim_ifp);
 
 	if (pim_ifp->pim_sock_fd >= 0) {
 		if (PIM_DEBUG_PIM_PACKETS)

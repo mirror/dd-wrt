@@ -33,6 +33,7 @@
 #include "bgpd/bgp_community.h"
 #include "bgpd/bgp_ecommunity.h"
 #include "bgpd/bgp_lcommunity.h"
+#include "bgpd/bgp_community_alias.h"
 #include "bgpd/bgp_aspath.h"
 #include "bgpd/bgp_regex.h"
 #include "bgpd/bgp_clist.h"
@@ -548,6 +549,8 @@ static bool community_regexp_include(regex_t *reg, struct community *com, int i)
 static bool community_regexp_match(struct community *com, regex_t *reg)
 {
 	const char *str;
+	char *regstr;
+	int rv;
 
 	/* When there is no communities attribute it is treated as empty
 	   string.  */
@@ -556,12 +559,14 @@ static bool community_regexp_match(struct community *com, regex_t *reg)
 	else
 		str = community_str(com, false);
 
-	/* Regular expression match.  */
-	if (regexec(reg, str, 0, NULL, 0) == 0)
-		return true;
+	regstr = bgp_alias2community_str(str);
 
-	/* No match.  */
-	return false;
+	/* Regular expression match.  */
+	rv = regexec(reg, regstr, 0, NULL, 0);
+
+	XFREE(MTYPE_TMP, regstr);
+
+	return rv == 0;
 }
 
 static char *lcommunity_str_get(struct lcommunity *lcom, int i)
@@ -618,6 +623,8 @@ static bool lcommunity_regexp_include(regex_t *reg, struct lcommunity *lcom,
 static bool lcommunity_regexp_match(struct lcommunity *com, regex_t *reg)
 {
 	const char *str;
+	char *regstr;
+	int rv;
 
 	/* When there is no communities attribute it is treated as empty
 	   string.  */
@@ -626,12 +633,14 @@ static bool lcommunity_regexp_match(struct lcommunity *com, regex_t *reg)
 	else
 		str = lcommunity_str(com, false);
 
-	/* Regular expression match.  */
-	if (regexec(reg, str, 0, NULL, 0) == 0)
-		return true;
+	regstr = bgp_alias2community_str(str);
 
-	/* No match.  */
-	return false;
+	/* Regular expression match.  */
+	rv = regexec(reg, regstr, 0, NULL, 0);
+
+	XFREE(MTYPE_TMP, regstr);
+
+	return rv == 0;
 }
 
 
@@ -653,86 +662,6 @@ static bool ecommunity_regexp_match(struct ecommunity *ecom, regex_t *reg)
 	/* No match.  */
 	return false;
 }
-
-#if 0
-/* Delete community attribute using regular expression match.  Return
-   modified communites attribute.  */
-static struct community *
-community_regexp_delete (struct community *com, regex_t * reg)
-{
-	int i;
-	uint32_t comval;
-	/* Maximum is "65535:65535" + '\0'. */
-	char c[12];
-	const char *str;
-
-	if (!com)
-		return NULL;
-
-	i = 0;
-	while (i < com->size)
-	{
-		memcpy (&comval, com_nthval (com, i), sizeof(uint32_t));
-		comval = ntohl (comval);
-
-		switch (comval) {
-		case COMMUNITY_INTERNET:
-			str = "internet";
-			break;
-		case COMMUNITY_ACCEPT_OWN:
-			str = "accept-own";
-			break;
-		case COMMUNITY_ROUTE_FILTER_TRANSLATED_v4:
-			str = "route-filter-translated-v4";
-			break;
-		case COMMUNITY_ROUTE_FILTER_v4:
-			str = "route-filter-v4";
-			break;
-		case COMMUNITY_ROUTE_FILTER_TRANSLATED_v6:
-			str = "route-filter-translated-v6";
-			break;
-		case COMMUNITY_ROUTE_FILTER_v6:
-			str = "route-filter-v6";
-			break;
-		case COMMUNITY_LLGR_STALE:
-			str = "llgr-stale";
-			break;
-		case COMMUNITY_NO_LLGR:
-			str = "no-llgr";
-			break;
-		case COMMUNITY_ACCEPT_OWN_NEXTHOP:
-			str = "accept-own-nexthop";
-			break;
-		case COMMUNITY_BLACKHOLE:
-			str = "blackhole";
-			break;
-		case COMMUNITY_NO_EXPORT:
-			str = "no-export";
-			break;
-		case COMMUNITY_NO_ADVERTISE:
-			str = "no-advertise";
-			break;
-		case COMMUNITY_LOCAL_AS:
-			str = "local-AS";
-			break;
-		case COMMUNITY_NO_PEER:
-			str = "no-peer";
-			break;
-		default:
-			sprintf (c, "%d:%d", (comval >> 16) & 0xFFFF,
-			 comval & 0xFFFF);
-			str = c;
-			break;
-		}
-
-		if (regexec (reg, str, 0, NULL, 0) == 0)
-			community_del_val (com, com_nthval (com, i));
-		else
-			i++;
-	}
-	return com;
-}
-#endif
 
 /* When given community attribute matches to the community-list return
    1 else return 0.  */
@@ -1197,9 +1126,6 @@ int lcommunity_list_set(struct community_list_handler *ch, const char *name,
 	}
 
 	if (str) {
-		if (!lcommunity_list_valid(str, style))
-			return COMMUNITY_LIST_ERR_MALFORMED_VAL;
-
 		if (style == LARGE_COMMUNITY_LIST_STANDARD)
 			lcom = lcommunity_str2com(str);
 		else

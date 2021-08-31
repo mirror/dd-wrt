@@ -29,7 +29,6 @@
 #include "stream.h"
 #include "command.h"
 #include "memory.h"
-#include "zebra_memory.h"
 #include "ioctl.h"
 #include "connected.h"
 #include "network.h"
@@ -522,7 +521,8 @@ DEFUN (show_ip_router_id,
 			inet_ntop(AF_INET6, &zvrf->rid6_user_assigned.u.prefix6,
 				  addr_name, sizeof(addr_name));
 		} else {
-			if (zvrf->rid_user_assigned.u.prefix4.s_addr == 0)
+			if (zvrf->rid_user_assigned.u.prefix4.s_addr
+			    == INADDR_ANY)
 				return CMD_SUCCESS;
 			inet_ntop(AF_INET, &zvrf->rid_user_assigned.u.prefix4,
 				  addr_name, sizeof(addr_name));

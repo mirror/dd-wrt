@@ -42,7 +42,7 @@ THE SOFTWARE.
 #include "xroute.h"
 #include "babel_errors.h"
 
-DEFINE_MTYPE_STATIC(BABELD, BABEL_IF, "Babel Interface")
+DEFINE_MTYPE_STATIC(BABELD, BABEL_IF, "Babel Interface");
 
 #define IS_ENABLE(ifp) (babel_enable_if_lookup(ifp->name) >= 0)
 
@@ -693,7 +693,7 @@ interface_recalculate(struct interface *ifp)
 
     rc = resize_receive_buffer(mtu);
     if(rc < 0)
-        zlog_warn("couldn't resize receive buffer for interface %s (%d) (%d bytes).\n",
+        zlog_warn("couldn't resize receive buffer for interface %s (%d) (%d bytes).",
                   ifp->name, ifp->ifindex, mtu);
 
     memset(&mreq, 0, sizeof(mreq));
@@ -1107,6 +1107,7 @@ DEFUN (show_babel_route_addr,
 {
     struct in_addr addr;
     char buf[INET_ADDRSTRLEN + 8];
+    char buf1[INET_ADDRSTRLEN + 8];
     struct route_stream *routes = NULL;
     struct xroute_stream *xroutes = NULL;
     struct prefix prefix;
@@ -1119,7 +1120,8 @@ DEFUN (show_babel_route_addr,
     }
 
     /* Quagga has no convenient prefix constructors. */
-    snprintf(buf, sizeof(buf), "%s/%d", inet_ntoa(addr), 32);
+    snprintf(buf, sizeof(buf), "%s/%d",
+	     inet_ntop(AF_INET, &addr, buf1, sizeof(buf1)), 32);
 
     ret = str2prefix(buf, &prefix);
     if (ret == 0) {

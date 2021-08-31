@@ -24,6 +24,7 @@
 #define ISISD_H
 
 #include "vty.h"
+#include "memory.h"
 
 #include "isisd/isis_constants.h"
 #include "isisd/isis_common.h"
@@ -33,8 +34,11 @@
 #include "isisd/isis_sr.h"
 #include "isis_flags.h"
 #include "isis_lsp.h"
-#include "isis_memory.h"
+#include "isis_lfa.h"
 #include "qobj.h"
+#include "ldp_sync.h"
+
+DECLARE_MGROUP(ISISD);
 
 #ifdef FABRICD
 static const bool fabricd = true;
@@ -85,12 +89,13 @@ struct isis {
 	uint8_t sysid[ISIS_SYS_ID_LEN]; /* SystemID for this IS */
 	uint32_t router_id;		/* Router ID from zebra */
 	struct list *area_list;	/* list of IS-IS areas */
-	struct list *init_circ_list;
 	uint8_t max_area_addrs;		  /* maximumAreaAdresses */
 	struct area_addr *man_area_addrs; /* manualAreaAddresses */
 	time_t uptime;			  /* when did we start */
 	struct thread *t_dync_clean;      /* dynamic hostname cache cleanup thread */
 	uint32_t circuit_ids_used[8];     /* 256 bits to track circuit ids 1 through 255 */
+	int snmp_notifications;
+	struct list *dyn_cache;
 
 	struct route_table *ext_info[REDIST_PROTOCOL_COUNT];
 };
@@ -128,6 +133,7 @@ struct isis_area {
 	struct thread *t_tick; /* LSP walker */
 	struct thread *t_lsp_refresh[ISIS_LEVELS];
 	struct timeval last_lsp_refresh_event[ISIS_LEVELS];
+	struct thread *t_rlfa_rib_update;
 	/* t_lsp_refresh is used in two ways:
 	 * a) regular refresh of LSPs
 	 * b) (possibly throttled) updates to LSPs
@@ -164,8 +170,10 @@ struct isis_area {
 	char is_type; /* level-1 level-1-2 or level-2-only */
 	/* are we overloaded? */
 	char overload_bit;
+	uint32_t overload_counter;
 	/* L1/L2 router identifier for inter-area traffic */
-	char attached_bit;
+	char attached_bit_send;
+	char attached_bit_rcv_ignore;
 	uint16_t lsp_refresh[ISIS_LEVELS];
 	/* minimum time allowed before lsp retransmission */
 	uint16_t lsp_gen_interval[ISIS_LEVELS];
@@ -175,6 +183,9 @@ struct isis_area {
 	int lsp_frag_threshold;
 	uint64_t lsp_gen_count[ISIS_LEVELS];
 	uint64_t lsp_purge_count[ISIS_LEVELS];
+	uint32_t lsp_exceeded_max_counter;
+	uint32_t lsp_seqno_skipped_counter;
+	uint64_t spf_run_count[ISIS_LEVELS];
 	int ip_circuits;
 	/* logging adjacency changes? */
 	uint8_t log_adj_changes;
@@ -186,6 +197,20 @@ struct isis_area {
 	struct isis_sr_db srdb;
 	int ipv6_circuits;
 	bool purge_originator;
+	/* SPF prefix priorities. */
+	struct spf_prefix_priority_acl
+		spf_prefix_priorities[SPF_PREFIX_PRIO_MAX];
+	/* Fast Re-Route information. */
+	size_t lfa_protected_links[ISIS_LEVELS];
+	size_t lfa_load_sharing[ISIS_LEVELS];
+	enum spf_prefix_priority lfa_priority_limit[ISIS_LEVELS];
+	struct lfa_tiebreaker_tree_head lfa_tiebreakers[ISIS_LEVELS];
+	char *rlfa_plist_name[ISIS_LEVELS];
+	struct prefix_list *rlfa_plist[ISIS_LEVELS];
+	size_t rlfa_protected_links[ISIS_LEVELS];
+	size_t tilfa_protected_links[ISIS_LEVELS];
+	/* MPLS LDP-IGP Sync */
+	struct ldp_sync_info_cmd ldp_sync_cmd;
 	/* Counters */
 	uint32_t circuit_state_changes;
 	struct isis_redist redist_settings[REDIST_PROTOCOL_COUNT]
@@ -203,12 +228,23 @@ struct isis_area {
 	pdu_counter_t pdu_rx_counters;
 	uint64_t lsp_rxmt_count;
 
-	QOBJ_FIELDS
+	/* Area counters */
+	uint64_t rej_adjacencies[2];
+	uint64_t auth_type_failures[2];
+	uint64_t auth_failures[2];
+	uint64_t id_len_mismatches[2];
+	uint64_t lsp_error_counter[2];
+
+	QOBJ_FIELDS;
 };
-DECLARE_QOBJ_TYPE(isis_area)
+DECLARE_QOBJ_TYPE(isis_area);
+
+DECLARE_MTYPE(ISIS_ACL_NAME);	/* isis_area->spf_prefix_prioritites */
+DECLARE_MTYPE(ISIS_AREA_ADDR);	/* isis_area->area_addrs */
+
+DECLARE_HOOK(isis_area_overload_bit_update, (struct isis_area * area), (area));
 
 void isis_terminate(void);
-void isis_finish(struct isis *isis);
 void isis_master_init(struct thread_master *master);
 void isis_vrf_link(struct isis *isis, struct vrf *vrf);
 void isis_vrf_unlink(struct isis *isis, struct vrf *vrf);
@@ -221,21 +257,32 @@ void isis_init(void);
 void isis_vrf_init(void);
 
 struct isis *isis_new(const char *vrf_name);
+void isis_finish(struct isis *isis);
+
+void isis_area_add_circuit(struct isis_area *area,
+			   struct isis_circuit *circuit);
+void isis_area_del_circuit(struct isis_area *area,
+			   struct isis_circuit *circuit);
+
 struct isis_area *isis_area_create(const char *, const char *);
 struct isis_area *isis_area_lookup(const char *, vrf_id_t vrf_id);
 struct isis_area *isis_area_lookup_by_vrf(const char *area_tag,
 					  const char *vrf_name);
 int isis_area_get(struct vty *vty, const char *area_tag);
 void isis_area_destroy(struct isis_area *area);
+void isis_filter_update(struct access_list *access);
+void isis_prefix_list_update(struct prefix_list *plist);
 void print_debug(struct vty *, int, int);
-struct isis_lsp *lsp_for_arg(struct lspdb_head *head, const char *argv,
-			     struct isis *isis);
+struct isis_lsp *lsp_for_sysid(struct lspdb_head *head, const char *sysid_str,
+			       struct isis *isis);
 
 void isis_area_invalidate_routes(struct isis_area *area, int levels);
 void isis_area_verify_routes(struct isis_area *area);
 
 void isis_area_overload_bit_set(struct isis_area *area, bool overload_bit);
-void isis_area_attached_bit_set(struct isis_area *area, bool attached_bit);
+void isis_area_attached_bit_send_set(struct isis_area *area, bool attached_bit);
+void isis_area_attached_bit_receive_set(struct isis_area *area,
+					bool attached_bit);
 void isis_area_dynhostname_set(struct isis_area *area, bool dynhostname);
 void isis_area_metricstyle_set(struct isis_area *area, bool old_metric,
 			       bool new_metric);
@@ -275,6 +322,8 @@ extern unsigned long debug_flooding;
 extern unsigned long debug_bfd;
 extern unsigned long debug_tx_queue;
 extern unsigned long debug_sr;
+extern unsigned long debug_ldp_sync;
+extern unsigned long debug_lfa;
 
 #define DEBUG_ADJ_PACKETS                (1<<0)
 #define DEBUG_SNP_PACKETS                (1<<1)
@@ -289,6 +338,8 @@ extern unsigned long debug_sr;
 #define DEBUG_BFD                        (1<<10)
 #define DEBUG_TX_QUEUE                   (1<<11)
 #define DEBUG_SR                         (1<<12)
+#define DEBUG_LDP_SYNC                   (1<<13)
+#define DEBUG_LFA                        (1<<14)
 
 /* Debug related macro. */
 #define IS_DEBUG_ADJ_PACKETS (debug_adj_pkt & DEBUG_ADJ_PACKETS)
@@ -304,6 +355,8 @@ extern unsigned long debug_sr;
 #define IS_DEBUG_BFD (debug_bfd & DEBUG_BFD)
 #define IS_DEBUG_TX_QUEUE (debug_tx_queue & DEBUG_TX_QUEUE)
 #define IS_DEBUG_SR (debug_sr & DEBUG_SR)
+#define IS_DEBUG_LDP_SYNC (debug_ldp_sync & DEBUG_LDP_SYNC)
+#define IS_DEBUG_LFA (debug_lfa & DEBUG_LFA)
 
 #define lsp_debug(...)                                                         \
 	do {                                                                   \

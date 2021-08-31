@@ -22,11 +22,7 @@
 #ifndef _ZEBRA_PREFIX_H
 #define _ZEBRA_PREFIX_H
 
-#ifdef SUNOS_5
-#include <sys/ethernet.h>
-#else
 //#include <linux/if_ether.h>
-#endif
 #include "sockunion.h"
 #include "ipaddr.h"
 #include "compiler.h"
@@ -62,6 +58,7 @@ typedef enum {
 #define EVPN_ETH_TAG_BYTES 4
 #define ESI_BYTES 10
 #define ESI_STR_LEN (3 * ESI_BYTES)
+#define EVPN_DF_ALG_STR_LEN 24
 
 /* Maximum number of VTEPs per-ES -
  * XXX - temporary limit for allocating strings etc.
@@ -407,12 +404,7 @@ static inline void ipv4_addr_copy(struct in_addr *dst,
 
 /* glibc defines s6_addr32 to __in6_u.__u6_addr32 if __USE_{MISC || GNU} */
 #ifndef s6_addr32
-#if defined(SUNOS_5)
-/* Some SunOS define s6_addr32 only to kernel */
-#define s6_addr32 _S6_un._S6_u32
-#else
 #define s6_addr32 __u6_addr.__u6_addr32
-#endif /* SUNOS_5 */
 #endif /*s6_addr32*/
 
 /* Prototypes. */
@@ -480,11 +472,6 @@ extern void prefix_ipv4_free(struct prefix_ipv4 **p);
 extern int str2prefix_ipv4(const char *, struct prefix_ipv4 *);
 extern void apply_mask_ipv4(struct prefix_ipv4 *);
 
-#define PREFIX_COPY(DST, SRC)                                                  \
-	*((struct prefix *)(DST)) = *((const struct prefix *)(SRC))
-#define PREFIX_COPY_IPV4(DST, SRC)                                             \
-	*((struct prefix_ipv4 *)(DST)) = *((const struct prefix_ipv4 *)(SRC));
-
 extern int prefix_ipv4_any(const struct prefix_ipv4 *);
 extern void apply_classful_mask_ipv4(struct prefix_ipv4 *);
 
@@ -495,20 +482,15 @@ extern void masklen2ip(const int, struct in_addr *);
  * special treatment for /31 according to RFC3021 section 3.3 */
 extern in_addr_t ipv4_broadcast_addr(in_addr_t hostaddr, int masklen);
 
-extern int netmask_str2prefix_str(const char *, const char *, char *);
+extern int netmask_str2prefix_str(const char *, const char *, char *, size_t);
 
 extern struct prefix_ipv6 *prefix_ipv6_new(void);
 extern void prefix_ipv6_free(struct prefix_ipv6 **p);
 extern int str2prefix_ipv6(const char *, struct prefix_ipv6 *);
 extern void apply_mask_ipv6(struct prefix_ipv6 *);
 
-#define PREFIX_COPY_IPV6(DST, SRC)                                             \
-	*((struct prefix_ipv6 *)(DST)) = *((const struct prefix_ipv6 *)(SRC));
-
 extern int ip6_masklen(struct in6_addr);
 extern void masklen2ip6(const int, struct in6_addr *);
-
-extern const char *inet6_ntoa(struct in6_addr);
 
 extern int is_zero_mac(const struct ethaddr *mac);
 extern bool is_mcast_mac(const struct ethaddr *mac);
@@ -520,6 +502,7 @@ extern unsigned prefix_hash_key(const void *pp);
 
 extern int str_to_esi(const char *str, esi_t *esi);
 extern char *esi_to_str(const esi_t *esi, char *buf, int size);
+extern char *evpn_es_df_alg2str(uint8_t df_alg, char *buf, int buf_len);
 extern void prefix_evpn_hexdump(const struct prefix_evpn *p);
 
 static inline int ipv6_martian(struct in6_addr *addr)

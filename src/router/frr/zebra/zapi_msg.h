@@ -77,20 +77,21 @@ extern int zsend_interface_link_params(struct zserv *zclient,
 extern int zsend_pw_update(struct zserv *client, struct zebra_pw *pw);
 extern int zsend_route_notify_owner(struct route_entry *re,
 				    const struct prefix *p,
-				    enum zapi_route_notify_owner note);
+				    enum zapi_route_notify_owner note,
+				    afi_t afi, safi_t safi);
 extern int zsend_route_notify_owner_ctx(const struct zebra_dplane_ctx *ctx,
 					enum zapi_route_notify_owner note);
 
 extern void zsend_rule_notify_owner(const struct zebra_dplane_ctx *ctx,
 				    enum zapi_rule_notify_owner note);
-extern void zsend_ipset_notify_owner(struct zebra_pbr_ipset *ipset,
-				     enum zapi_ipset_notify_owner note);
-extern void
-zsend_ipset_entry_notify_owner(struct zebra_pbr_ipset_entry *ipset,
-			       enum zapi_ipset_entry_notify_owner note);
-extern void zsend_iptable_notify_owner(struct zebra_pbr_iptable *iptable,
-				       enum zapi_iptable_notify_owner note);
-extern void zserv_nexthop_num_warn(const char *caller, const struct prefix *p,
+
+extern void zsend_iptable_notify_owner(const struct zebra_dplane_ctx *ctx,
+				       uint16_t note);
+extern void zsend_ipset_notify_owner(const struct zebra_dplane_ctx *ctx,
+				     uint16_t note);
+extern void zsend_ipset_entry_notify_owner(const struct zebra_dplane_ctx *ctx,
+					   uint16_t note);
+extern bool zserv_nexthop_num_warn(const char *caller, const struct prefix *p,
 				   const unsigned int nexthop_num);
 
 extern void zsend_capabilities_all_clients(void);
@@ -103,6 +104,17 @@ extern int zsend_label_manager_connect_response(struct zserv *client,
 extern int zsend_sr_policy_notify_status(uint32_t color,
 					 struct ipaddr *endpoint, char *name,
 					 int status);
+extern void zsend_nhrp_neighbor_notify(int cmd, struct interface *ifp,
+				       struct ipaddr *ipaddr, int ndm_state,
+				       union sockunion *link_layer_ipv4);
+
+extern int zsend_client_close_notify(struct zserv *client,
+				     struct zserv *closed_client);
+
+int zsend_nhg_notify(uint16_t type, uint16_t instance, uint32_t session_id,
+		     uint32_t id, enum zapi_nhg_notify_owner note);
+
+extern void zapi_opaque_free(struct opaque *opaque);
 
 #ifdef __cplusplus
 }

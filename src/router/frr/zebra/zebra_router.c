@@ -25,14 +25,14 @@
 #include "lib/frratomic.h"
 
 #include "zebra_router.h"
-#include "zebra_memory.h"
 #include "zebra_pbr.h"
 #include "zebra_vxlan.h"
 #include "zebra_mlag.h"
 #include "zebra_nhg.h"
 #include "debug.h"
 
-DEFINE_MTYPE_STATIC(ZEBRA, RIB_TABLE_INFO, "RIB table info")
+DEFINE_MTYPE_STATIC(ZEBRA, RIB_TABLE_INFO, "RIB table info");
+DEFINE_MTYPE_STATIC(ZEBRA, ZEBRA_RT_TABLE, "Zebra VRF table");
 
 struct zebra_router zrouter = {
 	.multipath_num = MULTIPATH_NUM,
@@ -121,7 +121,7 @@ struct route_table *zebra_router_get_table(struct zebra_vrf *zvrf,
 	if (zrt)
 		return zrt->table;
 
-	zrt = XCALLOC(MTYPE_ZEBRA_NS, sizeof(*zrt));
+	zrt = XCALLOC(MTYPE_ZEBRA_RT_TABLE, sizeof(*zrt));
 	zrt->tableid = tableid;
 	zrt->afi = afi;
 	zrt->safi = safi;
@@ -185,7 +185,7 @@ static void zebra_router_free_table(struct zebra_router_table *zrt)
 	RB_REMOVE(zebra_router_table_head, &zrouter.tables, zrt);
 
 	XFREE(MTYPE_RIB_TABLE_INFO, table_info);
-	XFREE(MTYPE_ZEBRA_NS, zrt);
+	XFREE(MTYPE_ZEBRA_RT_TABLE, zrt);
 }
 
 void zebra_router_release_table(struct zebra_vrf *zvrf, uint32_t tableid,
@@ -257,7 +257,12 @@ void zebra_router_terminate(void)
 	hash_free(zrouter.iptable_hash);
 }
 
-void zebra_router_init(void)
+bool zebra_router_notify_on_ack(void)
+{
+	return !zrouter.asic_offloaded || zrouter.notify_on_ack;
+}
+
+void zebra_router_init(bool asic_offload, bool notify_on_ack)
 {
 	zrouter.sequence_num = 0;
 
@@ -290,4 +295,7 @@ void zebra_router_init(void)
 	zrouter.nhgs_id =
 		hash_create_size(8, zebra_nhg_id_key, zebra_nhg_hash_id_equal,
 				 "Zebra Router Nexthop Groups ID index");
+
+	zrouter.asic_offloaded = asic_offload;
+	zrouter.notify_on_ack = notify_on_ack;
 }

@@ -61,7 +61,7 @@ static int zclient_lookup_connect(struct thread *t)
 		zlookup->fail = 0; /* reset counter on connection */
 	}
 
-	if (zclient_send_hello(zlookup) < 0) {
+	if (zclient_send_hello(zlookup) == ZCLIENT_SEND_FAILURE) {
 		if (close(zlookup->sock)) {
 			zlog_warn("%s: closing fd=%d: errno=%d %s", __func__,
 				  zlookup->sock, errno, safe_strerror(errno));
@@ -544,7 +544,8 @@ int pim_zlookup_sg_statistics(struct channel_oil *c_oil)
 		return -1;
 
 	stream_reset(s);
-	zclient_create_header(s, ZEBRA_IPMR_ROUTE_STATS, c_oil->pim->vrf_id);
+	zclient_create_header(s, ZEBRA_IPMR_ROUTE_STATS,
+			      c_oil->pim->vrf->vrf_id);
 	stream_put_in_addr(s, &c_oil->oil.mfcc_origin);
 	stream_put_in_addr(s, &c_oil->oil.mfcc_mcastgrp);
 	stream_putl(s, ifp->ifindex);
@@ -600,7 +601,8 @@ int pim_zlookup_sg_statistics(struct channel_oil *c_oil)
 	}
 
 	stream_get(&lastused, s, sizeof(lastused));
-	stream_getl(s);
+	/* signed success value from netlink_talk; currently unused */
+	(void)stream_getl(s);
 
 	c_oil->cc.lastused = lastused;
 

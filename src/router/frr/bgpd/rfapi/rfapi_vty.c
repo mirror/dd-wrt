@@ -456,7 +456,8 @@ void rfapiPrintAttrPtrs(void *stream, struct attr *attr)
 	struct vty *vty;
 	void *out;
 	const char *vty_newline;
-
+	struct transit *transit;
+	struct cluster_list *cluster;
 	char buf[BUFSIZ];
 
 	if (rfapiStream2Vty(stream, &fp, &vty, &out, &vty_newline) == 0)
@@ -477,10 +478,14 @@ void rfapiPrintAttrPtrs(void *stream, struct attr *attr)
 
 	fp(out, "  ecommunity=%p, refcnt=%d%s", attr->ecommunity,
 	   (attr->ecommunity ? attr->ecommunity->refcnt : 0), HVTYNL);
-	fp(out, "  cluster=%p, refcnt=%d%s", attr->cluster,
-	   (attr->cluster ? attr->cluster->refcnt : 0), HVTYNL);
-	fp(out, "  transit=%p, refcnt=%d%s", attr->transit,
-	   (attr->transit ? attr->transit->refcnt : 0), HVTYNL);
+
+	cluster = bgp_attr_get_cluster(attr);
+	fp(out, "  cluster=%p, refcnt=%d%s", cluster,
+	   (cluster ? cluster->refcnt : 0), HVTYNL);
+
+	transit = bgp_attr_get_transit(attr);
+	fp(out, "  transit=%p, refcnt=%d%s", transit,
+	   (transit ? transit->refcnt : 0), HVTYNL);
 }
 
 /*
@@ -591,7 +596,8 @@ void rfapiPrintBi(void *stream, struct bgp_path_info *bpi)
 	}
 
 	/* RFP option lengths */
-	for (pEncap = bpi->attr->vnc_subtlvs; pEncap; pEncap = pEncap->next) {
+	for (pEncap = bgp_attr_get_vnc_subtlvs(bpi->attr); pEncap;
+	     pEncap = pEncap->next) {
 
 		if (pEncap->type == BGP_VNC_SUBTLV_TYPE_RFPOPTION) {
 			if (printed_1st_gol) {
@@ -751,7 +757,7 @@ void rfapiShowItNode(void *stream, struct agg_node *rn)
 	if (rfapiStream2Vty(stream, &fp, &vty, &out, &vty_newline) == 0)
 		return;
 
-	fp(out, "%pRN @%p #%d%s", rn, rn, rn->lock, HVTYNL);
+	fp(out, "%pRN @%p #%d%s", rn, rn, agg_node_get_lock_count(rn), HVTYNL);
 
 	for (bpi = rn->info; bpi; bpi = bpi->next) {
 		rfapiPrintBi(stream, bpi);
@@ -787,7 +793,8 @@ void rfapiShowImportTable(void *stream, const char *label, struct agg_table *rt,
 		}
 
 		fp(out, "%s/%d @%p #%d%s", buf, p->prefixlen, rn,
-		   rn->lock - 1, /* account for loop iterator locking */
+		   agg_node_get_lock_count(rn)
+			   - 1, /* account for loop iterator locking */
 		   HVTYNL);
 
 		for (bpi = rn->info; bpi; bpi = bpi->next) {
@@ -1595,7 +1602,6 @@ void rfapiPrintDescriptor(struct vty *vty, struct rfapi_descriptor *rfd)
 	int rc;
 	afi_t afi;
 	struct rfapi_adb *adb;
-	char buf[PREFIX_STRLEN];
 
 	vty_out(vty, "%-10p ", rfd);
 	rfapiPrintRfapiIpAddr(vty, &rfd->un_addr);
@@ -1647,9 +1653,8 @@ void rfapiPrintDescriptor(struct vty *vty, struct rfapi_descriptor *rfd)
 			if (family != adb->u.s.prefix_ip.family)
 				continue;
 
-			prefix2str(&adb->u.s.prefix_ip, buf, sizeof(buf));
-
-			vty_out(vty, "  Adv Pfx: %s%s", buf, HVTYNL);
+			vty_out(vty, "  Adv Pfx: %pFX%s", &adb->u.s.prefix_ip,
+				HVTYNL);
 			rfapiPrintAdvertisedInfo(vty, rfd, SAFI_MPLS_VPN,
 						 &adb->u.s.prefix_ip);
 		}
@@ -1658,10 +1663,7 @@ void rfapiPrintDescriptor(struct vty *vty, struct rfapi_descriptor *rfd)
 				(void **)&adb, &cursor);
 	     rc == 0; rc = skiplist_next(rfd->advertised.ip0_by_ether, NULL,
 					 (void **)&adb, &cursor)) {
-
-		prefix2str(&adb->u.s.prefix_eth, buf, sizeof(buf));
-
-		vty_out(vty, "  Adv Pfx: %s%s", buf, HVTYNL);
+		vty_out(vty, "  Adv Pfx: %pFX%s", &adb->u.s.prefix_eth, HVTYNL);
 
 		/* TBD update the following function to print ethernet info */
 		/* Also need to pass/use rd */
@@ -1862,11 +1864,9 @@ void rfapiPrintNhl(void *stream, struct rfapi_next_hop_entry *next_hops)
 					break;
 
 				case RFAPI_VN_OPTION_TYPE_LOCAL_NEXTHOP:
-					prefix2str(&vo->v.local_nexthop.addr,
-						   pbuf, sizeof(pbuf));
-					fp(out, "%sLNH %s cost=%d%s", offset,
-					   pbuf, vo->v.local_nexthop.cost,
-					   HVTYNL);
+					fp(out, "%sLNH %pFX cost=%d%s", offset,
+					   &vo->v.local_nexthop.addr,
+					   vo->v.local_nexthop.cost, HVTYNL);
 					break;
 
 				default:

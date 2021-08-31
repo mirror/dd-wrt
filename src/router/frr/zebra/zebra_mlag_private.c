@@ -28,7 +28,7 @@
 #include "thread.h"
 #include "frr_pthread.h"
 #include "libfrr.h"
-#include "version.h"
+#include "lib/version.h"
 #include "network.h"
 
 #include "lib/stream.h"
@@ -74,6 +74,7 @@ static void zebra_mlag_sched_read(void)
 
 static int zebra_mlag_read(struct thread *thread)
 {
+	static uint32_t mlag_rd_buf_offset;
 	uint32_t *msglen;
 	uint32_t h_msglen;
 	uint32_t tot_len, curr_len = mlag_rd_buf_offset;
@@ -159,6 +160,7 @@ static int zebra_mlag_read(struct thread *thread)
 
 	/* Register read thread. */
 	zebra_mlag_reset_read_buffer();
+	mlag_rd_buf_offset = 0;
 	zebra_mlag_sched_read();
 	return 0;
 }
@@ -295,4 +297,4 @@ FRR_MODULE_SETUP(
 	.version = FRR_VERSION,
 	.description = "zebra Cumulus MLAG interface",
 	.init = zebra_mlag_module_init,
-)
+);

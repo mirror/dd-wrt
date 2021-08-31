@@ -37,7 +37,6 @@
 #include "lib_errors.h"
 
 #include "zebra_router.h"
-#include "zebra_memory.h"
 #endif /* defined(HAVE_NETLINK) */
 
 #include "zebra_netns_notify.h"
@@ -53,7 +52,7 @@
 #define ZEBRA_NS_POLLING_INTERVAL_MSEC     1000
 #define ZEBRA_NS_POLLING_MAX_RETRIES  200
 
-DEFINE_MTYPE_STATIC(ZEBRA, NETNS_MISC, "ZebraNetNSInfo")
+DEFINE_MTYPE_STATIC(ZEBRA, NETNS_MISC, "ZebraNetNSInfo");
 static struct thread *zebra_netns_notify_current;
 
 struct zebra_netns_info {
@@ -150,8 +149,6 @@ static int zebra_ns_delete(char *name)
 			  "NS notify : no VRF found using NS %s", name);
 		return 0;
 	}
-	/* Clear configured flag and invoke delete. */
-	UNSET_FLAG(vrf->status, VRF_CONFIGURED);
 	ns = (struct ns *)vrf->ns_ctxt;
 	/* the deletion order is the same
 	 * as the one used when siging signal is received
@@ -378,7 +375,7 @@ void zebra_ns_notify_close(void)
 		fd = zebra_netns_notify_current->u.fd;
 
 	if (zebra_netns_notify_current->master != NULL)
-		thread_cancel(zebra_netns_notify_current);
+		thread_cancel(&zebra_netns_notify_current);
 
 	/* auto-removal of notify items */
 	if (fd > 0)

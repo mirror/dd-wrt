@@ -31,6 +31,7 @@
 #include "nexthop.h"
 #include "vrf.h"
 #include "filter.h"
+#include "nexthop_group.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_table.h"
@@ -54,17 +55,20 @@ static void unregister_zebra_rnh(struct bgp_nexthop_cache *bnc,
 				 int is_bgp_static_route);
 static void evaluate_paths(struct bgp_nexthop_cache *bnc);
 static int make_prefix(int afi, struct bgp_path_info *pi, struct prefix *p);
+static int bgp_nht_ifp_initial(struct thread *thread);
 
 static int bgp_isvalid_nexthop(struct bgp_nexthop_cache *bnc)
 {
 	return (bgp_zebra_num_connects() == 0
-		|| (bnc && CHECK_FLAG(bnc->flags, BGP_NEXTHOP_VALID)));
+		|| (bnc && CHECK_FLAG(bnc->flags, BGP_NEXTHOP_VALID)
+		    && bnc->nexthop_num > 0));
 }
 
 static int bgp_isvalid_labeled_nexthop(struct bgp_nexthop_cache *bnc)
 {
 	return (bgp_zebra_num_connects() == 0
-		|| (bnc && CHECK_FLAG(bnc->flags, BGP_NEXTHOP_LABELED_VALID)));
+		|| (bnc && CHECK_FLAG(bnc->flags, BGP_NEXTHOP_LABELED_VALID)
+		    && bnc->nexthop_num > 0));
 }
 
 static void bgp_unlink_nexthop_check(struct bgp_nexthop_cache *bnc)
@@ -72,7 +76,7 @@ static void bgp_unlink_nexthop_check(struct bgp_nexthop_cache *bnc)
 	if (LIST_EMPTY(&(bnc->paths)) && !bnc->nht_info) {
 		if (BGP_DEBUG(nht, NHT)) {
 			char buf[PREFIX2STR_BUFFER];
-			zlog_debug("bgp_unlink_nexthop: freeing bnc %s(%u)(%s)",
+			zlog_debug("%s: freeing bnc %s(%u)(%s)", __func__,
 				   bnc_str(bnc, buf, PREFIX2STR_BUFFER),
 				   bnc->srte_color, bnc->bgp->name_pretty);
 		}
@@ -94,6 +98,31 @@ void bgp_unlink_nexthop(struct bgp_path_info *path)
 	path_nh_map(path, NULL, false);
 
 	bgp_unlink_nexthop_check(bnc);
+}
+
+void bgp_replace_nexthop_by_peer(struct peer *from, struct peer *to)
+{
+	struct prefix pp;
+	struct prefix pt;
+	struct bgp_nexthop_cache *bncp, *bnct;
+	afi_t afi;
+
+	if (!sockunion2hostprefix(&from->su, &pp))
+		return;
+
+	afi = family2afi(pp.family);
+	bncp = bnc_find(&from->bgp->nexthop_cache_table[afi], &pp, 0);
+
+	if (!sockunion2hostprefix(&to->su, &pt))
+		return;
+
+	bnct = bnc_find(&to->bgp->nexthop_cache_table[afi], &pt, 0);
+
+	if (bnct != bncp)
+		return;
+
+	if (bnct)
+		bnct->nht_info = to;
 }
 
 void bgp_unlink_nexthop_by_peer(struct peer *peer)
@@ -120,14 +149,16 @@ void bgp_unlink_nexthop_by_peer(struct peer *peer)
  * we need both the bgp_route and bgp_nexthop pointers.
  */
 int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
-			    afi_t afi, struct bgp_path_info *pi,
-			    struct peer *peer, int connected)
+			    afi_t afi, safi_t safi, struct bgp_path_info *pi,
+			    struct peer *peer, int connected,
+			    const struct prefix *orig_prefix)
 {
 	struct bgp_nexthop_cache_head *tree = NULL;
 	struct bgp_nexthop_cache *bnc;
 	struct prefix p;
 	uint32_t srte_color = 0;
 	int is_bgp_static_route = 0;
+	ifindex_t ifindex = 0;
 
 	if (pi) {
 		is_bgp_static_route = ((pi->type == ZEBRA_ROUTE_BGP)
@@ -152,8 +183,26 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 		if (make_prefix(afi, pi, &p) < 0)
 			return 1;
 
+		if (!is_bgp_static_route && orig_prefix
+		    && prefix_same(&p, orig_prefix)) {
+			if (BGP_DEBUG(nht, NHT)) {
+				zlog_debug(
+					"%s(%pFX): prefix loops through itself",
+					__func__, &p);
+			}
+			return 0;
+		}
+
 		srte_color = pi->attr->srte_color;
 	} else if (peer) {
+		/*
+		 * Gather the ifindex for if up/down events to be
+		 * tagged into this fun
+		 */
+		if (afi == AFI_IP6
+		    && IN6_IS_ADDR_LINKLOCAL(&peer->su.sin6.sin6_addr))
+			ifindex = peer->su.sin6.sin6_scope_id;
+
 		if (!sockunion2hostprefix(&peer->su, &p)) {
 			if (BGP_DEBUG(nht, NHT)) {
 				zlog_debug(
@@ -174,6 +223,7 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 	if (!bnc) {
 		bnc = bnc_new(tree, &p, srte_color);
 		bnc->bgp = bgp_nexthop;
+		bnc->ifindex = ifindex;
 		if (BGP_DEBUG(nht, NHT)) {
 			char buf[PREFIX2STR_BUFFER];
 
@@ -181,6 +231,16 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 				   bnc_str(bnc, buf, PREFIX2STR_BUFFER),
 				   bnc->srte_color, bnc->bgp->name_pretty,
 				   peer);
+		}
+	} else {
+		if (BGP_DEBUG(nht, NHT)) {
+			char buf[PREFIX2STR_BUFFER];
+
+			zlog_debug(
+				"Found existing bnc %s(%s) flags 0x%x ifindex %d #paths %d peer %p",
+				bnc_str(bnc, buf, PREFIX2STR_BUFFER),
+				bnc->bgp->name_pretty, bnc->flags, bnc->ifindex,
+				bnc->path_count, bnc->nht_info);
 		}
 	}
 
@@ -225,6 +285,11 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 		UNSET_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED);
 		UNSET_FLAG(bnc->flags, BGP_NEXTHOP_VALID);
 	}
+	if (peer && (bnc->ifindex != ifindex)) {
+		UNSET_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED);
+		UNSET_FLAG(bnc->flags, BGP_NEXTHOP_VALID);
+		bnc->ifindex = ifindex;
+	}
 	if (bgp_route->inst_type == BGP_INSTANCE_TYPE_VIEW) {
 		SET_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED);
 		SET_FLAG(bnc->flags, BGP_NEXTHOP_VALID);
@@ -246,8 +311,16 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 			(bgp_path_info_extra_get(pi))->igpmetric = bnc->metric;
 		else if (pi->extra)
 			pi->extra->igpmetric = 0;
-	} else if (peer)
-		bnc->nht_info = (void *)peer; /* NHT peer reference */
+	} else if (peer) {
+		/*
+		 * Let's not accidently save the peer data for a peer
+		 * we are going to throw away in a second or so.
+		 * When we come back around we'll fix up this
+		 * data properly in replace_nexthop_by_peer
+		 */
+		if (CHECK_FLAG(peer->flags, PEER_FLAG_CONFIG_NODE))
+			bnc->nht_info = (void *)peer; /* NHT peer reference */
+	}
 
 	/*
 	 * We are cheating here.  Views have no associated underlying
@@ -256,7 +329,11 @@ int bgp_find_or_add_nexthop(struct bgp *bgp_route, struct bgp *bgp_nexthop,
 	 */
 	if (bgp_route->inst_type == BGP_INSTANCE_TYPE_VIEW)
 		return 1;
-	else
+	else if (safi == SAFI_UNICAST && pi
+		 && pi->sub_type == BGP_ROUTE_IMPORTED && pi->extra
+		 && pi->extra->num_labels) {
+		return bgp_isvalid_labeled_nexthop(bnc);
+	} else
 		return (bgp_isvalid_nexthop(bnc));
 }
 
@@ -316,13 +393,15 @@ static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
 
 	/* debug print the input */
 	if (BGP_DEBUG(nht, NHT)) {
-		char buf[PREFIX2STR_BUFFER];
-		prefix2str(&nhr->prefix, buf, sizeof(buf));
+		char bnc_buf[BNC_FLAG_DUMP_SIZE];
+
 		zlog_debug(
-			"%s(%u): Rcvd NH update %s(%u) - metric %d/%d #nhops %d/%d flags 0x%x",
-			bnc->bgp->name_pretty, bnc->bgp->vrf_id, buf,
+			"%s(%u): Rcvd NH update %pFX(%u) - metric %d/%d #nhops %d/%d flags %s",
+			bnc->bgp->name_pretty, bnc->bgp->vrf_id, &nhr->prefix,
 			bnc->srte_color, nhr->metric, bnc->metric,
-			nhr->nexthop_num, bnc->nexthop_num, bnc->flags);
+			nhr->nexthop_num, bnc->nexthop_num,
+			bgp_nexthop_dump_bnc_flags(bnc, bnc_buf,
+						   sizeof(bnc_buf)));
 	}
 
 	if (nhr->metric != bnc->metric)
@@ -411,6 +490,7 @@ static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
 		bnc->nexthop = nhlist_head;
 	} else {
 		bnc->flags &= ~BGP_NEXTHOP_VALID;
+		bnc->flags &= ~BGP_NEXTHOP_LABELED_VALID;
 		bnc->nexthop_num = nhr->nexthop_num;
 
 		/* notify bgp fsm if nbr ip goes from valid->invalid */
@@ -421,6 +501,116 @@ static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
 	}
 
 	evaluate_paths(bnc);
+}
+
+static void bgp_nht_ifp_table_handle(struct bgp *bgp,
+				     struct bgp_nexthop_cache_head *table,
+				     struct interface *ifp, bool up)
+{
+	struct bgp_nexthop_cache *bnc;
+
+	frr_each (bgp_nexthop_cache, table, bnc) {
+		if (bnc->ifindex != ifp->ifindex)
+			continue;
+
+		bnc->last_update = bgp_clock();
+		bnc->change_flags = 0;
+
+		/*
+		 * For interface based routes ( ala the v6 LL routes
+		 * that this was written for ) the metric received
+		 * for the connected route is 0 not 1.
+		 */
+		bnc->metric = 0;
+		if (up) {
+			SET_FLAG(bnc->flags, BGP_NEXTHOP_VALID);
+			SET_FLAG(bnc->change_flags, BGP_NEXTHOP_CHANGED);
+			bnc->nexthop_num = 1;
+		} else {
+			UNSET_FLAG(bnc->flags, BGP_NEXTHOP_PEER_NOTIFIED);
+			UNSET_FLAG(bnc->flags, BGP_NEXTHOP_VALID);
+			SET_FLAG(bnc->change_flags, BGP_NEXTHOP_CHANGED);
+			bnc->nexthop_num = 0;
+		}
+
+		evaluate_paths(bnc);
+	}
+}
+static void bgp_nht_ifp_handle(struct interface *ifp, bool up)
+{
+	struct bgp *bgp;
+
+	bgp = bgp_lookup_by_vrf_id(ifp->vrf_id);
+	if (!bgp)
+		return;
+
+	bgp_nht_ifp_table_handle(bgp, &bgp->nexthop_cache_table[AFI_IP6], ifp,
+				 up);
+	bgp_nht_ifp_table_handle(bgp, &bgp->import_check_table[AFI_IP6], ifp,
+				 up);
+}
+
+void bgp_nht_ifp_up(struct interface *ifp)
+{
+	bgp_nht_ifp_handle(ifp, true);
+}
+
+void bgp_nht_ifp_down(struct interface *ifp)
+{
+	bgp_nht_ifp_handle(ifp, false);
+}
+
+static int bgp_nht_ifp_initial(struct thread *thread)
+{
+	ifindex_t ifindex = THREAD_VAL(thread);
+	struct interface *ifp = if_lookup_by_index_all_vrf(ifindex);
+
+	if (!ifp)
+		return 0;
+
+	if (BGP_DEBUG(nht, NHT))
+		zlog_debug(
+			"Handle NHT initial update for Intf %s(%d) status %s",
+			ifp->name, ifp->ifindex, if_is_up(ifp) ? "up" : "down");
+
+	if (if_is_up(ifp))
+		bgp_nht_ifp_up(ifp);
+	else
+		bgp_nht_ifp_down(ifp);
+
+	return 0;
+}
+
+/*
+ * So the bnc code has the ability to handle interface up/down
+ * events to properly handle v6 LL peering.
+ * What is happening here:
+ * The event system for peering expects the nht code to
+ * report on the tracking events after we move to active
+ * So let's give the system a chance to report on that event
+ * in a manner that is expected.
+ */
+void bgp_nht_interface_events(struct peer *peer)
+{
+	struct bgp *bgp = peer->bgp;
+	struct bgp_nexthop_cache_head *table;
+	struct bgp_nexthop_cache *bnc;
+	struct prefix p;
+
+	if (!IN6_IS_ADDR_LINKLOCAL(&peer->su.sin6.sin6_addr))
+		return;
+
+	if (!sockunion2hostprefix(&peer->su, &p))
+		return;
+
+	table = &bgp->nexthop_cache_table[AFI_IP6];
+	bnc = bnc_find(table, &p, 0);
+	if (!bnc)
+		return;
+
+	if (bnc->ifindex)
+		thread_add_event(bm->master, bgp_nht_ifp_initial, NULL,
+				 bnc->ifindex, NULL);
 }
 
 void bgp_parse_nexthop_update(int command, vrf_id_t vrf_id)
@@ -441,8 +631,8 @@ void bgp_parse_nexthop_update(int command, vrf_id_t vrf_id)
 	}
 
 	if (!zapi_nexthop_update_decode(zclient->ibuf, &nhr)) {
-		zlog_err("%s[%s]: Failure to decode nexthop update",
-			 __PRETTY_FUNCTION__, bgp->name_pretty);
+		zlog_err("%s[%s]: Failure to decode nexthop update", __func__,
+			 bgp->name_pretty);
 		return;
 	}
 
@@ -454,14 +644,10 @@ void bgp_parse_nexthop_update(int command, vrf_id_t vrf_id)
 
 	bnc = bnc_find(tree, &nhr.prefix, nhr.srte_color);
 	if (!bnc) {
-		if (BGP_DEBUG(nht, NHT)) {
-			char buf[PREFIX2STR_BUFFER];
-
-			prefix2str(&nhr.prefix, buf, sizeof(buf));
+		if (BGP_DEBUG(nht, NHT))
 			zlog_debug(
-				"parse nexthop update(%s(%u)(%s)): bnc info not found",
-				buf, nhr.srte_color, bgp->name_pretty);
-		}
+				"parse nexthop update(%pFX(%u)(%s)): bnc info not found",
+				&nhr.prefix, nhr.srte_color, bgp->name_pretty);
 		return;
 	}
 
@@ -569,7 +755,18 @@ static int make_prefix(int afi, struct bgp_path_info *pi, struct prefix *p)
 				|| IN6_IS_ADDR_LINKLOCAL(
 					&pi->attr->mp_nexthop_global)))
 				p->u.prefix6 = pi->attr->mp_nexthop_local;
-			else
+			/* If we receive MR_REACH with (GA)::(LL)
+			 * then check for route-map to choose GA or LL
+			 */
+			else if (pi->attr->mp_nexthop_len
+				 == BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL) {
+				if (pi->attr->mp_nexthop_prefer_global)
+					p->u.prefix6 =
+						pi->attr->mp_nexthop_global;
+				else
+					p->u.prefix6 =
+						pi->attr->mp_nexthop_local;
+			} else
 				p->u.prefix6 = pi->attr->mp_nexthop_global;
 			p->prefixlen = IPV6_MAX_BITLEN;
 		}
@@ -631,7 +828,7 @@ static void sendmsg_zebra_rnh(struct bgp_nexthop_cache *bnc, int command)
 	ret = zclient_send_rnh(zclient, command, &bnc->prefix, exact_match,
 			       bnc->bgp->vrf_id);
 	/* TBD: handle the failure */
-	if (ret < 0)
+	if (ret == ZCLIENT_SEND_FAILURE)
 		flog_warn(EC_BGP_ZEBRA_SEND,
 			  "sendmsg_nexthop: zclient_send_message() failed");
 
@@ -658,6 +855,12 @@ static void register_zebra_rnh(struct bgp_nexthop_cache *bnc,
 	/* Check if we have already registered */
 	if (bnc->flags & BGP_NEXTHOP_REGISTERED)
 		return;
+
+	if (bnc->ifindex) {
+		SET_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED);
+		return;
+	}
+
 	if (is_bgp_import_route)
 		sendmsg_zebra_rnh(bnc, ZEBRA_IMPORT_ROUTE_REGISTER);
 	else
@@ -677,6 +880,11 @@ static void unregister_zebra_rnh(struct bgp_nexthop_cache *bnc,
 	/* Check if we have already registered */
 	if (!CHECK_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED))
 		return;
+
+	if (bnc->ifindex) {
+		UNSET_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED);
+		return;
+	}
 
 	if (is_bgp_import_route)
 		sendmsg_zebra_rnh(bnc, ZEBRA_IMPORT_ROUTE_UNREGISTER);
@@ -704,11 +912,17 @@ static void evaluate_paths(struct bgp_nexthop_cache *bnc)
 
 	if (BGP_DEBUG(nht, NHT)) {
 		char buf[PREFIX2STR_BUFFER];
+		char bnc_buf[BNC_FLAG_DUMP_SIZE];
+		char chg_buf[BNC_FLAG_DUMP_SIZE];
+
 		bnc_str(bnc, buf, PREFIX2STR_BUFFER);
 		zlog_debug(
-			"NH update for %s(%u)(%s) - flags 0x%x chgflags 0x%x - evaluate paths",
-			buf, bnc->srte_color, bnc->bgp->name_pretty, bnc->flags,
-			bnc->change_flags);
+			"NH update for %s(%u)(%s) - flags %s chgflags %s- evaluate paths",
+			buf, bnc->srte_color, bnc->bgp->name_pretty,
+			bgp_nexthop_dump_bnc_flags(bnc, bnc_buf,
+						   sizeof(bnc_buf)),
+			bgp_nexthop_dump_bnc_change_flags(bnc, chg_buf,
+							  sizeof(bnc_buf)));
 	}
 
 	LIST_FOREACH (path, &(bnc->paths), nh_thread) {
@@ -757,7 +971,7 @@ static void evaluate_paths(struct bgp_nexthop_cache *bnc)
 				    path->sub_type, path->attr, dest)) {
 				if (BGP_DEBUG(nht, NHT))
 					zlog_debug(
-						"%s: prefix %pRN (vrf %s), ignoring path due to martian or self-next-hop",
+						"%s: prefix %pBD (vrf %s), ignoring path due to martian or self-next-hop",
 						__func__, dest, bgp_path->name);
 			} else
 				bnc_is_valid_nexthop =
@@ -771,12 +985,12 @@ static void evaluate_paths(struct bgp_nexthop_cache *bnc)
 				prefix_rd2str((struct prefix_rd *)bgp_dest_get_prefix(dest->pdest),
 					buf1, sizeof(buf1));
 				zlog_debug(
-					"... eval path %d/%d %pRN RD %s %s flags 0x%x",
+					"... eval path %d/%d %pBD RD %s %s flags 0x%x",
 					afi, safi, dest, buf1,
 					bgp_path->name_pretty, path->flags);
 			} else
 				zlog_debug(
-					"... eval path %d/%d %pRN %s flags 0x%x",
+					"... eval path %d/%d %pBD %s flags 0x%x",
 					afi, safi, dest, bgp_path->name_pretty,
 					path->flags);
 		}
@@ -850,10 +1064,11 @@ static void evaluate_paths(struct bgp_nexthop_cache *bnc)
 		if (!CHECK_FLAG(bnc->flags, BGP_NEXTHOP_PEER_NOTIFIED)) {
 			if (BGP_DEBUG(nht, NHT))
 				zlog_debug(
-					"%s: Updating peer (%s(%s)) status with NHT",
+					"%s: Updating peer (%s(%s)) status with NHT nexthops %d",
 					__func__, peer->host,
-					peer->bgp->name_pretty);
-			bgp_fsm_event_update(peer, valid_nexthops);
+					peer->bgp->name_pretty,
+					!!valid_nexthops);
+			bgp_fsm_nht_update(peer, !!valid_nexthops);
 			SET_FLAG(bnc->flags, BGP_NEXTHOP_PEER_NOTIFIED);
 		}
 	}
@@ -980,4 +1195,84 @@ void bgp_nht_dereg_enhe_cap_intfs(struct peer *peer)
 		zclient_send_interface_radv_req(zclient, nhop->vrf_id, ifp, 0,
 						0);
 	}
+}
+
+/****************************************************************************
+ * L3 NHGs are used for fast failover of nexthops in the dplane. These are
+ * the APIs for allocating L3 NHG ids. Management of the L3 NHG itself is
+ * left to the application using it.
+ * PS: Currently EVPN host routes is the only app using L3 NHG for fast
+ * failover of remote ES links.
+ ***************************************************************************/
+static bitfield_t bgp_nh_id_bitmap;
+static uint32_t bgp_l3nhg_start;
+
+/* XXX - currently we do nothing on the callbacks */
+static void bgp_l3nhg_add_cb(const char *name)
+{
+}
+static void bgp_l3nhg_add_nexthop_cb(const struct nexthop_group_cmd *nhgc,
+				     const struct nexthop *nhop)
+{
+}
+static void bgp_l3nhg_del_nexthop_cb(const struct nexthop_group_cmd *nhgc,
+				     const struct nexthop *nhop)
+{
+}
+static void bgp_l3nhg_del_cb(const char *name)
+{
+}
+
+static void bgp_l3nhg_zebra_init(void)
+{
+	static bool bgp_l3nhg_zebra_inited;
+	if (bgp_l3nhg_zebra_inited)
+		return;
+
+	bgp_l3nhg_zebra_inited = true;
+	bgp_l3nhg_start = zclient_get_nhg_start(ZEBRA_ROUTE_BGP);
+	nexthop_group_init(bgp_l3nhg_add_cb, bgp_l3nhg_add_nexthop_cb,
+			   bgp_l3nhg_del_nexthop_cb, bgp_l3nhg_del_cb);
+}
+
+
+#define min(A, B) ((A) < (B) ? (A) : (B))
+void bgp_l3nhg_init(void)
+{
+	uint32_t id_max;
+
+	id_max = min(ZEBRA_NHG_PROTO_SPACING - 1, 16 * 1024);
+	bf_init(bgp_nh_id_bitmap, id_max);
+	bf_assign_zero_index(bgp_nh_id_bitmap);
+
+	if (BGP_DEBUG(nht, NHT) || BGP_DEBUG(evpn_mh, EVPN_MH_ES))
+		zlog_debug("bgp l3_nhg range %u - %u", bgp_l3nhg_start + 1,
+			   bgp_l3nhg_start + id_max);
+}
+
+void bgp_l3nhg_finish(void)
+{
+	bf_free(bgp_nh_id_bitmap);
+}
+
+uint32_t bgp_l3nhg_id_alloc(void)
+{
+	uint32_t nhg_id = 0;
+
+	bgp_l3nhg_zebra_init();
+	bf_assign_index(bgp_nh_id_bitmap, nhg_id);
+	if (nhg_id)
+		nhg_id += bgp_l3nhg_start;
+
+	return nhg_id;
+}
+
+void bgp_l3nhg_id_free(uint32_t nhg_id)
+{
+	if (!nhg_id || (nhg_id <= bgp_l3nhg_start))
+		return;
+
+	nhg_id -= bgp_l3nhg_start;
+
+	bf_release_index(bgp_nh_id_bitmap, nhg_id);
 }

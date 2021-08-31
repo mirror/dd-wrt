@@ -23,6 +23,8 @@
 #include "jhash.h"
 #include "pbr.h"
 
+#include "lib/printfrr.h"
+
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_pbr.h"
 #include "bgpd/bgp_debug.h"
@@ -35,12 +37,12 @@
 #include "bgpd/bgp_flowspec_private.h"
 #include "bgpd/bgp_errors.h"
 
-DEFINE_MTYPE_STATIC(BGPD, PBR_MATCH_ENTRY, "PBR match entry")
-DEFINE_MTYPE_STATIC(BGPD, PBR_MATCH, "PBR match")
-DEFINE_MTYPE_STATIC(BGPD, PBR_ACTION, "PBR action")
-DEFINE_MTYPE_STATIC(BGPD, PBR_RULE, "PBR rule")
-DEFINE_MTYPE_STATIC(BGPD, PBR, "BGP PBR Context")
-DEFINE_MTYPE_STATIC(BGPD, PBR_VALMASK, "BGP PBR Val Mask Value")
+DEFINE_MTYPE_STATIC(BGPD, PBR_MATCH_ENTRY, "PBR match entry");
+DEFINE_MTYPE_STATIC(BGPD, PBR_MATCH, "PBR match");
+DEFINE_MTYPE_STATIC(BGPD, PBR_ACTION, "PBR action");
+DEFINE_MTYPE_STATIC(BGPD, PBR_RULE, "PBR rule");
+DEFINE_MTYPE_STATIC(BGPD, PBR, "BGP PBR Context");
+DEFINE_MTYPE_STATIC(BGPD, PBR_VALMASK, "BGP PBR Val Mask Value");
 
 /* chain strings too long to fit in one line */
 #define FSPEC_ACTION_EXCEED_LIMIT "flowspec actions exceeds limit"
@@ -752,7 +754,7 @@ int bgp_pbr_build_and_validate_entry(const struct prefix *p,
 				     struct bgp_pbr_entry_main *api)
 {
 	int ret;
-	int i, action_count = 0;
+	uint32_t i, action_count = 0;
 	struct ecommunity *ecom;
 	struct ecommunity_val *ecom_eval;
 	struct bgp_pbr_entry_action *api_action;
@@ -913,10 +915,10 @@ int bgp_pbr_build_and_validate_entry(const struct prefix *p,
 			api->action_num++;
 		}
 	}
-	if (path && path->attr && path->attr->ipv6_ecommunity) {
+	if (path && path->attr && bgp_attr_get_ipv6_ecommunity(path->attr)) {
 		struct ecommunity_val_ipv6 *ipv6_ecom_eval;
 
-		ecom = path->attr->ipv6_ecommunity;
+		ecom = bgp_attr_get_ipv6_ecommunity(path->attr);
 		for (i = 0; i < ecom->size; i++) {
 			ipv6_ecom_eval = (struct ecommunity_val_ipv6 *)
 				(ecom->val + (i * ecom->unit_size));
@@ -1070,22 +1072,31 @@ static void *bgp_pbr_rule_alloc_intern(void *arg)
 	return new;
 }
 
+static void bgp_pbr_bpa_remove(struct bgp_pbr_action *bpa)
+{
+	if ((bpa->refcnt == 0) && bpa->installed && bpa->table_id != 0) {
+		bgp_send_pbr_rule_action(bpa, NULL, false);
+		bgp_zebra_announce_default(bpa->bgp, &bpa->nh, bpa->afi,
+					   bpa->table_id, false);
+		bpa->installed = false;
+	}
+}
+
+static void bgp_pbr_bpa_add(struct bgp_pbr_action *bpa)
+{
+	if (!bpa->installed && !bpa->install_in_progress) {
+		bgp_send_pbr_rule_action(bpa, NULL, true);
+		bgp_zebra_announce_default(bpa->bgp, &bpa->nh, bpa->afi,
+					   bpa->table_id, true);
+	}
+}
+
 static void bgp_pbr_action_free(void *arg)
 {
-	struct bgp_pbr_action *bpa;
+	struct bgp_pbr_action *bpa = arg;
 
-	bpa = (struct bgp_pbr_action *)arg;
+	bgp_pbr_bpa_remove(bpa);
 
-	if (bpa->refcnt == 0) {
-		if (bpa->installed && bpa->table_id != 0) {
-			bgp_send_pbr_rule_action(bpa, NULL, false);
-			bgp_zebra_announce_default(bpa->bgp, &(bpa->nh),
-						   AFI_IP,
-						   bpa->table_id,
-						   false);
-			bpa->installed = false;
-		}
-	}
 	XFREE(MTYPE_PBR_ACTION, bpa);
 }
 
@@ -1438,7 +1449,6 @@ void bgp_pbr_print_policy_route(struct bgp_pbr_entry_main *api)
 	int i = 0;
 	char return_string[512];
 	char *ptr = return_string;
-	char buff[64];
 	int nb_items = 0;
 	int delta, len = sizeof(return_string);
 
@@ -1449,12 +1459,10 @@ void bgp_pbr_print_policy_route(struct bgp_pbr_entry_main *api)
 		struct prefix *p = &(api->src_prefix);
 
 		if (api->src_prefix_offset)
-			delta = snprintf(ptr, len, "@src %s/off%u",
-				       prefix2str(p, buff, 64),
-				       api->src_prefix_offset);
+			delta = snprintfrr(ptr, len, "@src %pFX/off%u", p,
+					   api->src_prefix_offset);
 		else
-			delta = snprintf(ptr, len, "@src %s",
-				       prefix2str(p, buff, 64));
+			delta = snprintfrr(ptr, len, "@src %pFX", p);
 		len -= delta;
 		ptr += delta;
 		INCREMENT_DISPLAY(ptr, nb_items, len);
@@ -1464,12 +1472,10 @@ void bgp_pbr_print_policy_route(struct bgp_pbr_entry_main *api)
 
 		INCREMENT_DISPLAY(ptr, nb_items, len);
 		if (api->dst_prefix_offset)
-			delta = snprintf(ptr, len, "@dst %s/off%u",
-				       prefix2str(p, buff, 64),
-				       api->dst_prefix_offset);
+			delta = snprintfrr(ptr, len, "@dst %pFX/off%u", p,
+					   api->dst_prefix_offset);
 		else
-			delta = snprintf(ptr, len, "@dst %s",
-					 prefix2str(p, buff, 64));
+			delta = snprintfrr(ptr, len, "@dst %pFX", p);
 		len -= delta;
 		ptr += delta;
 	}
@@ -1694,16 +1700,7 @@ static void bgp_pbr_flush_iprule(struct bgp *bgp, struct bgp_pbr_action *bpa,
 		}
 	}
 	hash_release(bgp->pbr_rule_hash, bpr);
-	if (bpa->refcnt == 0) {
-		if (bpa->installed && bpa->table_id != 0) {
-			bgp_send_pbr_rule_action(bpa, NULL, false);
-			bgp_zebra_announce_default(bpa->bgp, &(bpa->nh),
-						   AFI_IP,
-						   bpa->table_id,
-						   false);
-			bpa->installed = false;
-		}
-	}
+	bgp_pbr_bpa_remove(bpa);
 }
 
 static void bgp_pbr_flush_entry(struct bgp *bgp, struct bgp_pbr_action *bpa,
@@ -1751,16 +1748,7 @@ static void bgp_pbr_flush_entry(struct bgp *bgp, struct bgp_pbr_action *bpa,
 		 * note that drop does not need to call send_pbr_action
 		 */
 	}
-	if (bpa->refcnt == 0) {
-		if (bpa->installed && bpa->table_id != 0) {
-			bgp_send_pbr_rule_action(bpa, NULL, false);
-			bgp_zebra_announce_default(bpa->bgp, &(bpa->nh),
-						   bpa->afi,
-						   bpa->table_id,
-						   false);
-			bpa->installed = false;
-		}
-	}
+	bgp_pbr_bpa_remove(bpa);
 }
 
 struct bgp_pbr_match_entry_remain {
@@ -2037,6 +2025,9 @@ static void bgp_pbr_icmp_action(struct bgp *bgp, struct bgp_path_info *path,
 		return;
 	if (bpf->protocol != IPPROTO_ICMP)
 		return;
+
+	memset(&srcp, 0, sizeof(srcp));
+	memset(&dstp, 0, sizeof(dstp));
 	bpf->src_port = &srcp;
 	bpf->dst_port = &dstp;
 	/* parse icmp type and lookup appropriate icmp code
@@ -2374,12 +2365,9 @@ static void bgp_pbr_policyroute_add_to_zebra_unit(struct bgp *bgp,
 				return;
 			}
 		}
-		if (!bpa->installed && !bpa->install_in_progress) {
-			bgp_send_pbr_rule_action(bpa, NULL, true);
-			bgp_zebra_announce_default(bgp, nh,
-						   bpa->afi,
-						   bpa->table_id, true);
-		}
+
+		bgp_pbr_bpa_add(bpa);
+
 		/* ip rule add */
 		if (bpr && !bpr->installed)
 			bgp_send_pbr_rule_action(bpa, bpr, true);
@@ -2547,11 +2535,7 @@ static void bgp_pbr_policyroute_add_to_zebra_unit(struct bgp *bgp,
 	 * it will be suppressed subsequently
 	 */
 	/* ip rule add */
-	if (!bpa->installed && !bpa->install_in_progress) {
-		bgp_send_pbr_rule_action(bpa, NULL, true);
-		bgp_zebra_announce_default(bgp, nh,
-					   bpa->afi, bpa->table_id, true);
-	}
+	bgp_pbr_bpa_add(bpa);
 
 	/* ipset create */
 	if (!bpm->installed)
@@ -2687,6 +2671,7 @@ static void bgp_pbr_handle_entry(struct bgp *bgp, struct bgp_path_info *path,
 	struct bgp_pbr_or_filter bpof;
 	struct bgp_pbr_val_mask bpvm;
 
+	memset(&range, 0, sizeof(range));
 	memset(&nh, 0, sizeof(struct nexthop));
 	memset(&bpf, 0, sizeof(struct bgp_pbr_filter));
 	memset(&bpof, 0, sizeof(struct bgp_pbr_or_filter));
@@ -2848,19 +2833,6 @@ static void bgp_pbr_handle_entry(struct bgp *bgp, struct bgp_path_info *path,
 					zlog_warn("PBR: Sample action Ignored");
 				}
 			}
-#if 0
-			if (api->actions[i].u.za.filter
-			    & TRAFFIC_ACTION_DISTRIBUTE) {
-				if (BGP_DEBUG(pbr, PBR)) {
-					bgp_pbr_print_policy_route(api);
-					zlog_warn("PBR: Distribute action Applies");
-				}
-				continue_loop = 0;
-				/* continue forwarding entry as before
-				 * no action
-				 */
-			}
-#endif /* XXX to confirm behaviour of traffic action. for now , ignore */
 			/* terminate action: run other filters
 			 */
 			break;

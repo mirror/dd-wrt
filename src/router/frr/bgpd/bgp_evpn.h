@@ -77,23 +77,36 @@ static inline int advertise_type5_routes(struct bgp *bgp_vrf,
 }
 
 /* Flag if the route's parent is a EVPN route. */
-static inline int is_route_parent_evpn(struct bgp_path_info *ri)
+static inline struct bgp_path_info *
+get_route_parent_evpn(struct bgp_path_info *ri)
 {
 	struct bgp_path_info *parent_ri;
-	struct bgp_table *table;
-	struct bgp_dest *dest;
 
 	/* If not imported (or doesn't have a parent), bail. */
 	if (ri->sub_type != BGP_ROUTE_IMPORTED ||
 	    !ri->extra ||
 	    !ri->extra->parent)
-		return 0;
+		return NULL;
 
 	/* Determine parent recursively */
 	for (parent_ri = ri->extra->parent;
 	     parent_ri->extra && parent_ri->extra->parent;
 	     parent_ri = parent_ri->extra->parent)
 		;
+
+	return parent_ri;
+}
+
+/* Flag if the route's parent is a EVPN route. */
+static inline int is_route_parent_evpn(struct bgp_path_info *ri)
+{
+	struct bgp_path_info *parent_ri;
+	struct bgp_table *table;
+	struct bgp_dest *dest;
+
+	parent_ri = get_route_parent_evpn(ri);
+	if (!parent_ri)
+		return 0;
 
 	/* See if of family L2VPN/EVPN */
 	dest = parent_ri->net;
@@ -154,8 +167,6 @@ extern void bgp_evpn_vrf_delete(struct bgp *bgp_vrf);
 extern void bgp_evpn_handle_router_id_update(struct bgp *bgp, int withdraw);
 extern char *bgp_evpn_label2str(mpls_label_t *label, uint32_t num_labels,
 				char *buf, int len);
-extern char *bgp_evpn_route2str(const struct prefix_evpn *p, char *buf,
-				int len);
 extern void bgp_evpn_route2json(const struct prefix_evpn *p, json_object *json);
 extern void bgp_evpn_encode_prefix(struct stream *s, const struct prefix *p,
 				   const struct prefix_rd *prd,
@@ -195,5 +206,4 @@ extern void bgp_evpn_init(struct bgp *bgp);
 extern int bgp_evpn_get_type5_prefixlen(const struct prefix *pfx);
 extern bool bgp_evpn_is_prefix_nht_supported(const struct prefix *pfx);
 extern void update_advertise_vrf_routes(struct bgp *bgp_vrf);
-
 #endif /* _QUAGGA_BGP_EVPN_H */

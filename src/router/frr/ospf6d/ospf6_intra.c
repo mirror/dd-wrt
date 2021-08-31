@@ -84,7 +84,7 @@ static char *ospf6_router_lsa_get_nbr_id(struct ospf6_lsa *lsa, char *buf,
 					  sizeof(buf1));
 				inet_ntop(AF_INET, &lsdesc->neighbor_router_id,
 					  buf2, sizeof(buf2));
-				sprintf(buf, "%s/%s", buf2, buf1);
+				snprintf(buf, buflen, "%s/%s", buf2, buf1);
 
 				return buf;
 			}
@@ -94,12 +94,15 @@ static char *ospf6_router_lsa_get_nbr_id(struct ospf6_lsa *lsa, char *buf,
 	return NULL;
 }
 
-static int ospf6_router_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
+static int ospf6_router_lsa_show(struct vty *vty, struct ospf6_lsa *lsa,
+				 json_object *json_obj, bool use_json)
 {
 	char *start, *end, *current;
 	char buf[32], name[32], bits[16], options[32];
 	struct ospf6_router_lsa *router_lsa;
 	struct ospf6_router_lsdesc *lsdesc;
+	json_object *json_arr;
+	json_object *json_loop;
 
 	router_lsa =
 		(struct ospf6_router_lsa *)((char *)lsa->header
@@ -107,7 +110,12 @@ static int ospf6_router_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
 
 	ospf6_capability_printbuf(router_lsa->bits, bits, sizeof(bits));
 	ospf6_options_printbuf(router_lsa->options, options, sizeof(options));
-	vty_out(vty, "    Bits: %s Options: %s\n", bits, options);
+	if (use_json) {
+		json_object_string_add(json_obj, "bits", bits);
+		json_object_string_add(json_obj, "options", options);
+		json_arr = json_object_new_array();
+	} else
+		vty_out(vty, "    Bits: %s Options: %s\n", bits, options);
 
 	start = (char *)router_lsa + sizeof(struct ospf6_router_lsa);
 	end = (char *)lsa->header + ntohs(lsa->header->length);
@@ -128,18 +136,43 @@ static int ospf6_router_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
 			snprintf(name, sizeof(name), "Unknown (%#x)",
 				 lsdesc->type);
 
-		vty_out(vty, "    Type: %s Metric: %d\n", name,
-			ntohs(lsdesc->metric));
-		vty_out(vty, "    Interface ID: %s\n",
-			inet_ntop(AF_INET, &lsdesc->interface_id, buf,
-				  sizeof(buf)));
-		vty_out(vty, "    Neighbor Interface ID: %s\n",
-			inet_ntop(AF_INET, &lsdesc->neighbor_interface_id, buf,
-				  sizeof(buf)));
-		vty_out(vty, "    Neighbor Router ID: %s\n",
-			inet_ntop(AF_INET, &lsdesc->neighbor_router_id, buf,
-				  sizeof(buf)));
+		if (use_json) {
+			json_loop = json_object_new_object();
+			json_object_string_add(json_loop, "type", name);
+			json_object_int_add(json_loop, "metric",
+					    ntohs(lsdesc->metric));
+			json_object_string_add(json_loop, "interfaceId",
+					       inet_ntop(AF_INET,
+							 &lsdesc->interface_id,
+							 buf, sizeof(buf)));
+			json_object_string_add(
+				json_loop, "neighborInterfaceId",
+				inet_ntop(AF_INET,
+					  &lsdesc->neighbor_interface_id, buf,
+					  sizeof(buf)));
+			json_object_string_add(
+				json_loop, "neighborRouterId",
+				inet_ntop(AF_INET, &lsdesc->neighbor_router_id,
+					  buf, sizeof(buf)));
+			json_object_array_add(json_arr, json_loop);
+		} else {
+			vty_out(vty, "    Type: %s Metric: %d\n", name,
+				ntohs(lsdesc->metric));
+			vty_out(vty, "    Interface ID: %s\n",
+				inet_ntop(AF_INET, &lsdesc->interface_id, buf,
+					  sizeof(buf)));
+			vty_out(vty, "    Neighbor Interface ID: %s\n",
+				inet_ntop(AF_INET,
+					  &lsdesc->neighbor_interface_id, buf,
+					  sizeof(buf)));
+			vty_out(vty, "    Neighbor Router ID: %s\n",
+				inet_ntop(AF_INET, &lsdesc->neighbor_router_id,
+					  buf, sizeof(buf)));
+		}
 	}
+	if (use_json)
+		json_object_object_add(json_obj, "lsaDescription", json_arr);
+
 	return 0;
 }
 
@@ -149,7 +182,7 @@ static void ospf6_router_lsa_options_set(struct ospf6_area *oa,
 	OSPF6_OPT_CLEAR_ALL(router_lsa->options);
 	memcpy(router_lsa->options, oa->options, 3);
 
-	if (ospf6_is_router_abr(ospf6))
+	if (ospf6_is_router_abr(oa->ospf6))
 		SET_FLAG(router_lsa->bits, OSPF6_ROUTER_BIT_B);
 	else
 		UNSET_FLAG(router_lsa->bits, OSPF6_ROUTER_BIT_B);
@@ -424,29 +457,44 @@ static char *ospf6_network_lsa_get_ar_id(struct ospf6_lsa *lsa, char *buf,
 	return NULL;
 }
 
-static int ospf6_network_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
+static int ospf6_network_lsa_show(struct vty *vty, struct ospf6_lsa *lsa,
+				  json_object *json_obj, bool use_json)
 {
 	char *start, *end, *current;
 	struct ospf6_network_lsa *network_lsa;
 	struct ospf6_network_lsdesc *lsdesc;
 	char buf[128], options[32];
+	json_object *json_arr;
 
 	network_lsa =
 		(struct ospf6_network_lsa *)((caddr_t)lsa->header
 					     + sizeof(struct ospf6_lsa_header));
 
 	ospf6_options_printbuf(network_lsa->options, options, sizeof(options));
-	vty_out(vty, "     Options: %s\n", options);
+	if (use_json)
+		json_object_string_add(json_obj, "options", options);
+	else
+		vty_out(vty, "     Options: %s\n", options);
 
 	start = (char *)network_lsa + sizeof(struct ospf6_network_lsa);
 	end = (char *)lsa->header + ntohs(lsa->header->length);
+	if (use_json)
+		json_arr = json_object_new_array();
+
 	for (current = start;
 	     current + sizeof(struct ospf6_network_lsdesc) <= end;
 	     current += sizeof(struct ospf6_network_lsdesc)) {
 		lsdesc = (struct ospf6_network_lsdesc *)current;
 		inet_ntop(AF_INET, &lsdesc->router_id, buf, sizeof(buf));
-		vty_out(vty, "     Attached Router: %s\n", buf);
+		if (use_json)
+			json_object_array_add(json_arr,
+					      json_object_new_string(buf));
+		else
+			vty_out(vty, "     Attached Router: %s\n", buf);
 	}
+	if (use_json)
+		json_object_object_add(json_obj, "attachedRouter", json_arr);
+
 	return 0;
 }
 
@@ -628,15 +676,18 @@ static char *ospf6_link_lsa_get_prefix_str(struct ospf6_lsa *lsa, char *buf,
 	return NULL;
 }
 
-static int ospf6_link_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
+static int ospf6_link_lsa_show(struct vty *vty, struct ospf6_lsa *lsa,
+			       json_object *json_obj, bool use_json)
 {
 	char *start, *end, *current;
 	struct ospf6_link_lsa *link_lsa;
 	int prefixnum;
 	char buf[128], options[32];
 	struct ospf6_prefix *prefix;
-	const char *p, *mc, *la, *nu;
 	struct in6_addr in6;
+	json_object *json_loop;
+	json_object *json_arr = NULL;
+	char prefix_string[133];
 
 	link_lsa = (struct ospf6_link_lsa *)((caddr_t)lsa->header
 					     + sizeof(struct ospf6_lsa_header));
@@ -645,10 +696,18 @@ static int ospf6_link_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
 	inet_ntop(AF_INET6, &link_lsa->linklocal_addr, buf, sizeof(buf));
 	prefixnum = ntohl(link_lsa->prefix_num);
 
-	vty_out(vty, "     Priority: %d Options: %s\n", link_lsa->priority,
-		options);
-	vty_out(vty, "     LinkLocal Address: %s\n", buf);
-	vty_out(vty, "     Number of Prefix: %d\n", prefixnum);
+	if (use_json) {
+		json_arr = json_object_new_array();
+		json_object_int_add(json_obj, "priority", link_lsa->priority);
+		json_object_string_add(json_obj, "options", options);
+		json_object_string_add(json_obj, "linkLocalAddress", buf);
+		json_object_int_add(json_obj, "numberOfPrefix", prefixnum);
+	} else {
+		vty_out(vty, "     Priority: %d Options: %s\n",
+			link_lsa->priority, options);
+		vty_out(vty, "     LinkLocal Address: %s\n", buf);
+		vty_out(vty, "     Number of Prefix: %d\n", prefixnum);
+	}
 
 	start = (char *)link_lsa + sizeof(struct ospf6_link_lsa);
 	end = (char *)lsa->header + ntohs(lsa->header->length);
@@ -659,28 +718,30 @@ static int ospf6_link_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
 		    || current + OSPF6_PREFIX_SIZE(prefix) > end)
 			break;
 
-		p = (CHECK_FLAG(prefix->prefix_options, OSPF6_PREFIX_OPTION_P)
-			     ? "P"
-			     : "--");
-		mc = (CHECK_FLAG(prefix->prefix_options, OSPF6_PREFIX_OPTION_MC)
-			      ? "MC"
-			      : "--");
-		la = (CHECK_FLAG(prefix->prefix_options, OSPF6_PREFIX_OPTION_LA)
-			      ? "LA"
-			      : "--");
-		nu = (CHECK_FLAG(prefix->prefix_options, OSPF6_PREFIX_OPTION_NU)
-			      ? "NU"
-			      : "--");
-		vty_out(vty, "     Prefix Options: %s|%s|%s|%s\n", p, mc, la,
-			nu);
+		ospf6_prefix_options_printbuf(prefix->prefix_options, buf,
+					      sizeof(buf));
+		if (use_json) {
+			json_loop = json_object_new_object();
+			json_object_string_add(json_loop, "prefixOption", buf);
+		} else
+			vty_out(vty, "     Prefix Options: %s\n", buf);
 
 		memset(&in6, 0, sizeof(in6));
 		memcpy(&in6, OSPF6_PREFIX_BODY(prefix),
 		       OSPF6_PREFIX_SPACE(prefix->prefix_length));
 		inet_ntop(AF_INET6, &in6, buf, sizeof(buf));
-		vty_out(vty, "     Prefix: %s/%d\n", buf,
-			prefix->prefix_length);
+		if (use_json) {
+			snprintf(prefix_string, sizeof(prefix_string), "%s/%d",
+				 buf, prefix->prefix_length);
+			json_object_string_add(json_loop, "prefix",
+					       prefix_string);
+			json_object_array_add(json_arr, json_loop);
+		} else
+			vty_out(vty, "     Prefix: %s/%d\n", buf,
+				prefix->prefix_length);
 	}
+	if (use_json)
+		json_object_object_add(json_obj, "prefix", json_arr);
 
 	return 0;
 }
@@ -696,6 +757,7 @@ int ospf6_link_lsa_originate(struct thread *thread)
 	struct ospf6_link_lsa *link_lsa;
 	struct ospf6_route *route;
 	struct ospf6_prefix *op;
+	int count, max_addr_count;
 
 	oi = (struct ospf6_interface *)THREAD_ARG(thread);
 	oi->thread_link_lsa = NULL;
@@ -739,14 +801,20 @@ int ospf6_link_lsa_originate(struct thread *thread)
 	memcpy(link_lsa->options, oi->area->options, 3);
 	memcpy(&link_lsa->linklocal_addr, oi->linklocal_addr,
 	       sizeof(struct in6_addr));
-	link_lsa->prefix_num = htonl(oi->route_connected->count);
 
 	op = (struct ospf6_prefix *)((caddr_t)link_lsa
 				     + sizeof(struct ospf6_link_lsa));
 
-	/* connected prefix to advertise */
-	for (route = ospf6_route_head(oi->route_connected); route;
-	     route = ospf6_route_next(route)) {
+	/* connected prefix to advertise, number of interface addresses
+	 * supported is based on MTU size of OSPFv3 packets
+	 */
+	if (oi->ifmtu >= OSPF6_JUMBO_MTU)
+		max_addr_count = OSPF6_MAX_IF_ADDRS_JUMBO;
+	else
+		max_addr_count = OSPF6_MAX_IF_ADDRS;
+	for (route = ospf6_route_head(oi->route_connected), count = 0;
+	     route && count < max_addr_count;
+	     route = ospf6_route_next(route), count++) {
 		op->prefix_length = route->prefix.prefixlen;
 		op->prefix_options = route->path.prefix_options;
 		op->prefix_metric = htons(0);
@@ -754,6 +822,8 @@ int ospf6_link_lsa_originate(struct thread *thread)
 		       OSPF6_PREFIX_SPACE(op->prefix_length));
 		op = OSPF6_PREFIX_NEXT(op);
 	}
+
+	link_lsa->prefix_num = htonl(count);
 
 	/* Fill LSA Header */
 	lsa_header->age = 0;
@@ -790,6 +860,7 @@ static char *ospf6_intra_prefix_lsa_get_prefix_str(struct ospf6_lsa *lsa,
 	struct in6_addr in6;
 	int prefixnum, cnt = 0;
 	struct ospf6_prefix *prefix;
+	char tbuf[16];
 
 	if (lsa) {
 		intra_prefix_lsa =
@@ -822,8 +893,9 @@ static char *ospf6_intra_prefix_lsa_get_prefix_str(struct ospf6_lsa *lsa,
 				       OSPF6_PREFIX_SPACE(
 					       prefix->prefix_length));
 				inet_ntop(AF_INET6, &in6, buf, buflen);
-				sprintf(&buf[strlen(buf)], "/%d",
-					prefix->prefix_length);
+				snprintf(tbuf, sizeof(tbuf), "/%d",
+					 prefix->prefix_length);
+				strlcat(buf, tbuf, buflen);
 				return (buf);
 			}
 		}
@@ -831,7 +903,8 @@ static char *ospf6_intra_prefix_lsa_get_prefix_str(struct ospf6_lsa *lsa,
 	return NULL;
 }
 
-static int ospf6_intra_prefix_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
+static int ospf6_intra_prefix_lsa_show(struct vty *vty, struct ospf6_lsa *lsa,
+				       json_object *json_obj, bool use_json)
 {
 	char *start, *end, *current;
 	struct ospf6_intra_prefix_lsa *intra_prefix_lsa;
@@ -839,8 +912,10 @@ static int ospf6_intra_prefix_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
 	char buf[128];
 	struct ospf6_prefix *prefix;
 	char id[16], adv_router[16];
-	const char *p, *mc, *la, *nu;
 	struct in6_addr in6;
+	json_object *json_loop;
+	json_object *json_arr = NULL;
+	char prefix_string[133];
 
 	intra_prefix_lsa = (struct ospf6_intra_prefix_lsa
 				    *)((caddr_t)lsa->header
@@ -848,13 +923,25 @@ static int ospf6_intra_prefix_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
 
 	prefixnum = ntohs(intra_prefix_lsa->prefix_num);
 
-	vty_out(vty, "     Number of Prefix: %d\n", prefixnum);
+	if (use_json) {
+		json_arr = json_object_new_array();
+		json_object_int_add(json_obj, "numberOfPrefix", prefixnum);
+	} else
+		vty_out(vty, "     Number of Prefix: %d\n", prefixnum);
 
 	inet_ntop(AF_INET, &intra_prefix_lsa->ref_id, id, sizeof(id));
 	inet_ntop(AF_INET, &intra_prefix_lsa->ref_adv_router, adv_router,
 		  sizeof(adv_router));
-	vty_out(vty, "     Reference: %s Id: %s Adv: %s\n",
-		ospf6_lstype_name(intra_prefix_lsa->ref_type), id, adv_router);
+	if (use_json) {
+		json_object_string_add(
+			json_obj, "reference",
+			ospf6_lstype_name(intra_prefix_lsa->ref_type));
+		json_object_string_add(json_obj, "referenceId", id);
+		json_object_string_add(json_obj, "referenceAdv", adv_router);
+	} else
+		vty_out(vty, "     Reference: %s Id: %s Adv: %s\n",
+			ospf6_lstype_name(intra_prefix_lsa->ref_type), id,
+			adv_router);
 
 	start = (char *)intra_prefix_lsa
 		+ sizeof(struct ospf6_intra_prefix_lsa);
@@ -866,28 +953,35 @@ static int ospf6_intra_prefix_lsa_show(struct vty *vty, struct ospf6_lsa *lsa)
 		    || current + OSPF6_PREFIX_SIZE(prefix) > end)
 			break;
 
-		p = (CHECK_FLAG(prefix->prefix_options, OSPF6_PREFIX_OPTION_P)
-			     ? "P"
-			     : "--");
-		mc = (CHECK_FLAG(prefix->prefix_options, OSPF6_PREFIX_OPTION_MC)
-			      ? "MC"
-			      : "--");
-		la = (CHECK_FLAG(prefix->prefix_options, OSPF6_PREFIX_OPTION_LA)
-			      ? "LA"
-			      : "--");
-		nu = (CHECK_FLAG(prefix->prefix_options, OSPF6_PREFIX_OPTION_NU)
-			      ? "NU"
-			      : "--");
-		vty_out(vty, "     Prefix Options: %s|%s|%s|%s\n", p, mc, la,
-			nu);
+		ospf6_prefix_options_printbuf(prefix->prefix_options, buf,
+					      sizeof(buf));
+		if (use_json) {
+			json_loop = json_object_new_object();
+			json_object_string_add(json_loop, "prefixOption", buf);
+		} else
+			vty_out(vty, "     Prefix Options: %s\n", buf);
 
 		memset(&in6, 0, sizeof(in6));
 		memcpy(&in6, OSPF6_PREFIX_BODY(prefix),
 		       OSPF6_PREFIX_SPACE(prefix->prefix_length));
 		inet_ntop(AF_INET6, &in6, buf, sizeof(buf));
-		vty_out(vty, "     Prefix: %s/%d\n", buf,
-			prefix->prefix_length);
+		if (use_json) {
+			snprintf(prefix_string, sizeof(prefix_string), "%s/%d",
+				 buf, prefix->prefix_length);
+			json_object_string_add(json_loop, "prefix",
+					       prefix_string);
+			json_object_int_add(json_loop, "metric",
+					    ntohs(prefix->prefix_metric));
+			json_object_array_add(json_arr, json_loop);
+		} else {
+			vty_out(vty, "     Prefix: %s/%d\n", buf,
+				prefix->prefix_length);
+			vty_out(vty, "     Metric: %d\n",
+				ntohs(prefix->prefix_metric));
+		}
 	}
+	if (use_json)
+		json_object_object_add(json_obj, "prefix", json_arr);
 
 	return 0;
 }
@@ -908,9 +1002,9 @@ int ospf6_intra_prefix_lsa_originate_stub(struct thread *thread)
 	struct listnode *i, *j;
 	int full_count = 0;
 	unsigned short prefix_num = 0;
-	char buf[PREFIX2STR_BUFFER];
 	struct ospf6_route_table *route_advertise;
 	int ls_id = 0;
+	int count, max_addr_count;
 
 	oa = (struct ospf6_area *)THREAD_ARG(thread);
 	oa->thread_intra_prefix_lsa = NULL;
@@ -956,6 +1050,8 @@ int ospf6_intra_prefix_lsa_originate_stub(struct thread *thread)
 	intra_prefix_lsa->ref_adv_router = oa->ospf6->router_id;
 
 	route_advertise = ospf6_route_table_create(0, 0);
+	route_advertise->hook_add = NULL;
+	route_advertise->hook_remove = NULL;
 
 	for (ALL_LIST_ELEMENTS_RO(oa->if_list, i, oi)) {
 		if (oi->state == OSPF6_INTERFACE_DOWN) {
@@ -984,12 +1080,16 @@ int ospf6_intra_prefix_lsa_originate_stub(struct thread *thread)
 			zlog_debug("  Interface %s:", oi->interface->name);
 
 		/* connected prefix to advertise */
-		for (route = ospf6_route_head(oi->route_connected); route;
-		     route = ospf6_route_best_next(route)) {
-			if (IS_OSPF6_DEBUG_ORIGINATE(INTRA_PREFIX)) {
-				prefix2str(&route->prefix, buf, sizeof(buf));
-				zlog_debug("    include %s", buf);
-			}
+		if (oi->ifmtu >= OSPF6_JUMBO_MTU)
+			max_addr_count = OSPF6_MAX_IF_ADDRS_JUMBO;
+		else
+			max_addr_count = OSPF6_MAX_IF_ADDRS;
+
+		for (route = ospf6_route_head(oi->route_connected), count = 0;
+		     route && count < max_addr_count;
+		     route = ospf6_route_best_next(route), count++) {
+			if (IS_OSPF6_DEBUG_ORIGINATE(INTRA_PREFIX))
+				zlog_debug("    include %pFX", &route->prefix);
 			ospf6_route_add(ospf6_route_copy(route),
 					route_advertise);
 		}
@@ -1145,7 +1245,6 @@ int ospf6_intra_prefix_lsa_originate_transit(struct thread *thread)
 	struct ospf6_link_lsa *link_lsa;
 	char *start, *end, *current;
 	uint16_t type;
-	char buf[PREFIX2STR_BUFFER];
 
 	oi = (struct ospf6_interface *)THREAD_ARG(thread);
 	oi->thread_intra_prefix_lsa = NULL;
@@ -1203,6 +1302,8 @@ int ospf6_intra_prefix_lsa_originate_transit(struct thread *thread)
 
 	/* connected prefix to advertise */
 	route_advertise = ospf6_route_table_create(0, 0);
+	route_advertise->hook_add = NULL;
+	route_advertise->hook_remove = NULL;
 
 	type = ntohs(OSPF6_LSTYPE_LINK);
 	for (ALL_LSDB_TYPED(oi->lsdb, type, lsa)) {
@@ -1256,10 +1357,8 @@ int ospf6_intra_prefix_lsa_originate_transit(struct thread *thread)
 			route->path.area_id = oi->area->area_id;
 			route->path.type = OSPF6_PATH_TYPE_INTRA;
 
-			if (IS_OSPF6_DEBUG_ORIGINATE(INTRA_PREFIX)) {
-				prefix2str(&route->prefix, buf, sizeof(buf));
-				zlog_debug("    include %s", buf);
-			}
+			if (IS_OSPF6_DEBUG_ORIGINATE(INTRA_PREFIX))
+				zlog_debug("    include %pFX", &route->prefix);
 
 			ospf6_route_add(route, route_advertise);
 			prefix_num--;
@@ -1316,14 +1415,14 @@ int ospf6_intra_prefix_lsa_originate_transit(struct thread *thread)
 	return 0;
 }
 
-static void ospf6_intra_prefix_update_route_origin(struct ospf6_route *oa_route)
+static void ospf6_intra_prefix_update_route_origin(struct ospf6_route *oa_route,
+						   struct ospf6 *ospf6)
 {
 	struct ospf6_path *h_path;
 	struct ospf6_route *g_route, *nroute;
 
 	/* Update Global ospf6 route path */
-	g_route = ospf6_route_lookup(&oa_route->prefix,
-				     ospf6->route_table);
+	g_route = ospf6_route_lookup(&oa_route->prefix, ospf6->route_table);
 
 	assert(g_route);
 
@@ -1445,15 +1544,15 @@ void ospf6_intra_prefix_route_ecmp_path(struct ospf6_area *oa,
 					 * nh_list
 					 */
 					if (oa->route_table->hook_add)
-						(*oa->route_table->hook_add)
-							(old_route);
+						(*oa->route_table->hook_add)(
+							old_route);
 
 					if (old_route->path.origin.id ==
 					route->path.origin.id &&
 					old_route->path.origin.adv_router ==
 						route->path.origin.adv_router) {
 						ospf6_intra_prefix_update_route_origin(
-								old_route);
+							old_route, oa->ospf6);
 					}
 					break;
 				}
@@ -1467,7 +1566,7 @@ void ospf6_intra_prefix_route_ecmp_path(struct ospf6_area *oa,
 				}
 				if (oa->route_table->hook_remove)
 					ospf6_route_remove(old_route,
-						   oa->route_table);
+							   oa->route_table);
 				else
 					SET_FLAG(old_route->flag,
 						 OSPF6_ROUTE_REMOVE);
@@ -1557,11 +1656,9 @@ void ospf6_intra_prefix_route_ecmp_path(struct ospf6_area *oa,
 						ospf6_linkstate_prefix(
 						o_path->origin.adv_router,
 						o_path->origin.id, &adv_prefix);
-						prefix2str(&adv_prefix, buf,
-							   sizeof(buf));
 						zlog_debug(
-							"%s: adv_router %s lsa not found",
-							__func__, buf);
+							"%s: adv_router %pFX lsa not found",
+							__func__, &adv_prefix);
 					}
 					continue;
 				}
@@ -1593,16 +1690,15 @@ void ospf6_intra_prefix_route_ecmp_path(struct ospf6_area *oa,
 				}
 			}
 
-			if (IS_OSPF6_DEBUG_EXAMIN(INTRA_PREFIX)) {
-				prefix2str(&route->prefix, buf, sizeof(buf));
+			if (IS_OSPF6_DEBUG_EXAMIN(INTRA_PREFIX))
 				zlog_debug(
-					"%s: route %s %p with final effective paths %u nh%u",
-					__func__, buf, (void *)old_route,
+					"%s: route %pFX %p with final effective paths %u nh %u",
+					__func__, &route->prefix,
+					(void *)old_route,
 					old_route->paths
 						? listcount(old_route->paths)
 						: 0,
 					listcount(old_route->nh_list));
-			}
 
 			/* used in intra_route_calculation() to add to
 			 * global ospf6 route table.
@@ -1858,7 +1954,8 @@ static void ospf6_intra_prefix_lsa_remove_update_route(struct ospf6_lsa *lsa,
 		if ((route->path.origin.id == lsa->header->id) &&
 		    (route->path.origin.adv_router ==
 				lsa->header->adv_router)) {
-			ospf6_intra_prefix_update_route_origin(route);
+			ospf6_intra_prefix_update_route_origin(route,
+							       oa->ospf6);
 		}
 	}
 
@@ -1995,7 +2092,7 @@ void ospf6_intra_route_calculation(struct ospf6_area *oa)
 			route->flag = 0;
 		} else {
 			/* Redo the summaries as things might have changed */
-			ospf6_abr_originate_summary(route);
+			ospf6_abr_originate_summary(route, oa->ospf6);
 			route->flag = 0;
 		}
 	}
@@ -2231,7 +2328,7 @@ void ospf6_intra_brouter_calculation(struct ospf6_area *oa)
 				zlog_info("brouter %s still exists via area %s",
 					  brouter_name, oa->name);
 			/* But re-originate summaries */
-			ospf6_abr_originate_summary(brouter);
+			ospf6_abr_originate_summary(brouter, oa->ospf6);
 		}
 
 		if (brouter) {

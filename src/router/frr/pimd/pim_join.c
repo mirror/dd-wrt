@@ -71,7 +71,7 @@ static void recv_join(struct interface *ifp, struct pim_neighbor *neigh,
 	}
 
 	pim_ifp = ifp->info;
-	zassert(pim_ifp);
+	assert(pim_ifp);
 
 	++pim_ifp->pim_ifstat_join_recv;
 
@@ -134,7 +134,7 @@ static void recv_prune(struct interface *ifp, struct pim_neighbor *neigh,
 	}
 
 	pim_ifp = ifp->info;
-	zassert(pim_ifp);
+	assert(pim_ifp);
 
 	++pim_ifp->pim_ifstat_prune_recv;
 
@@ -173,6 +173,8 @@ int pim_joinprune_recv(struct interface *ifp, struct pim_neighbor *neigh,
 	uint8_t *pastend;
 	int remain;
 	int group;
+	struct pim_ifchannel *child = NULL;
+	struct listnode *ch_node, *nch_node;
 
 	buf = tlv_buf;
 	pastend = tlv_buf + tlv_buf_size;
@@ -337,9 +339,27 @@ int pim_joinprune_recv(struct interface *ifp, struct pim_neighbor *neigh,
 			 */
 			sg_ch = pim_ifchannel_find(ifp, &sg);
 
+			if (!sg_ch)
+				continue;
+
+			/* (*,G) prune received */
+			for (ALL_LIST_ELEMENTS(sg_ch->sources, ch_node,
+					       nch_node, child)) {
+				if (PIM_IF_FLAG_TEST_S_G_RPT(child->flags)) {
+					if (child->ifjoin_state
+					    == PIM_IFJOIN_PRUNE_PENDING_TMP)
+						THREAD_OFF(
+							child->t_ifjoin_prune_pending_timer);
+					THREAD_OFF(
+						child->t_ifjoin_expiry_timer);
+					PIM_IF_FLAG_UNSET_S_G_RPT(child->flags);
+					child->ifjoin_state = PIM_IFJOIN_NOINFO;
+					delete_on_noinfo(child);
+				}
+			}
+
 			/* Received SG-RPT Prune delete oif from specific S,G */
-			if (starg_ch && sg_ch
-			    && (msg_source_flags & PIM_RPT_BIT_MASK)
+			if (starg_ch && (msg_source_flags & PIM_RPT_BIT_MASK)
 			    && !(msg_source_flags & PIM_WILDCARD_BIT_MASK)) {
 				struct pim_upstream *up = sg_ch->upstream;
 				PIM_IF_FLAG_SET_S_G_RPT(sg_ch->flags);

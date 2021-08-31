@@ -35,24 +35,27 @@
 #define PIM_IF_MASK_PIM                             (1 << 0)
 #define PIM_IF_MASK_IGMP                            (1 << 1)
 #define PIM_IF_MASK_IGMP_LISTEN_ALLROUTERS          (1 << 2)
-#define PIM_IF_MASK_PIM_CAN_DISABLE_JOIN_SUPRESSION (1 << 3)
+#define PIM_IF_MASK_PIM_CAN_DISABLE_JOIN_SUPPRESSION (1 << 3)
 
 #define PIM_IF_IS_DELETED(ifp) ((ifp)->ifindex == IFINDEX_INTERNAL)
 
 #define PIM_IF_TEST_PIM(options) (PIM_IF_MASK_PIM & (options))
 #define PIM_IF_TEST_IGMP(options) (PIM_IF_MASK_IGMP & (options))
 #define PIM_IF_TEST_IGMP_LISTEN_ALLROUTERS(options) (PIM_IF_MASK_IGMP_LISTEN_ALLROUTERS & (options))
-#define PIM_IF_TEST_PIM_CAN_DISABLE_JOIN_SUPRESSION(options) (PIM_IF_MASK_PIM_CAN_DISABLE_JOIN_SUPRESSION & (options))
+#define PIM_IF_TEST_PIM_CAN_DISABLE_JOIN_SUPPRESSION(options)                  \
+	(PIM_IF_MASK_PIM_CAN_DISABLE_JOIN_SUPPRESSION & (options))
 
 #define PIM_IF_DO_PIM(options) ((options) |= PIM_IF_MASK_PIM)
 #define PIM_IF_DO_IGMP(options) ((options) |= PIM_IF_MASK_IGMP)
 #define PIM_IF_DO_IGMP_LISTEN_ALLROUTERS(options) ((options) |= PIM_IF_MASK_IGMP_LISTEN_ALLROUTERS)
-#define PIM_IF_DO_PIM_CAN_DISABLE_JOIN_SUPRESSION(options) ((options) |= PIM_IF_MASK_PIM_CAN_DISABLE_JOIN_SUPRESSION)
+#define PIM_IF_DO_PIM_CAN_DISABLE_JOIN_SUPPRESSION(options)                    \
+	((options) |= PIM_IF_MASK_PIM_CAN_DISABLE_JOIN_SUPPRESSION)
 
 #define PIM_IF_DONT_PIM(options) ((options) &= ~PIM_IF_MASK_PIM)
 #define PIM_IF_DONT_IGMP(options) ((options) &= ~PIM_IF_MASK_IGMP)
 #define PIM_IF_DONT_IGMP_LISTEN_ALLROUTERS(options) ((options) &= ~PIM_IF_MASK_IGMP_LISTEN_ALLROUTERS)
-#define PIM_IF_DONT_PIM_CAN_DISABLE_JOIN_SUPRESSION(options) ((options) &= ~PIM_IF_MASK_PIM_CAN_DISABLE_JOIN_SUPRESSION)
+#define PIM_IF_DONT_PIM_CAN_DISABLE_JOIN_SUPPRESSION(options)                  \
+	((options) &= ~PIM_IF_MASK_PIM_CAN_DISABLE_JOIN_SUPPRESSION)
 
 #define PIM_I_am_DR(pim_ifp) (pim_ifp)->pim_dr_addr.s_addr == (pim_ifp)->primary_address.s_addr
 #define PIM_I_am_DualActive(pim_ifp) (pim_ifp)->activeactive == true
@@ -155,9 +158,16 @@ struct pim_interface {
 	uint32_t pim_ifstat_bsm_cfg_miss;
 	uint32_t pim_ifstat_ucast_bsm_cfg_miss;
 	uint32_t pim_ifstat_bsm_invalid_sz;
-	struct bfd_info *bfd_info;
 	bool bsm_enable; /* bsm processing enable */
 	bool ucast_bsm_accept; /* ucast bsm processing */
+
+	struct {
+		bool enabled;
+		uint32_t min_rx;
+		uint32_t min_tx;
+		uint8_t detection_multiplier;
+		char *profile;
+	} bfd_config;
 };
 
 /*

@@ -53,6 +53,12 @@ struct bgp;
 	" Helper - GR Mode-Helper,\n" \
 	"       Disable - GR Mode-Disable.\n\n"
 
+#define BGP_SHOW_SUMMARY_HEADER_ALL                                            \
+	"V         AS   MsgRcvd   MsgSent   TblVer  InQ OutQ  Up/Down State/PfxRcd   PfxSnt Desc\n"
+#define BGP_SHOW_SUMMARY_HEADER_ALL_WIDE                                       \
+	"V         AS    LocalAS   MsgRcvd   MsgSent   TblVer  InQ OutQ  Up/Down State/PfxRcd   PfxSnt Desc\n"
+#define BGP_SHOW_SUMMARY_HEADER_FAILED "EstdCnt DropCnt ResetTime Reason\n"
+
 #define BGP_SHOW_PEER_GR_CAPABILITY( \
 			vty, p, use_json, json) \
 	do {			\
@@ -148,6 +154,7 @@ struct bgp;
 	} while (0)
 
 extern void bgp_vty_init(void);
+extern void community_alias_vty(void);
 extern const char *get_afi_safi_str(afi_t afi, safi_t safi, bool for_json);
 extern int bgp_get_vty(struct bgp **bgp, as_t *as, const char *name,
 		       enum bgp_instance_type inst_type);
@@ -178,7 +185,6 @@ extern int bgp_vty_find_and_parse_afi_safi_bgp(struct vty *vty,
 int bgp_vty_find_and_parse_bgp(struct vty *vty, struct cmd_token **argv,
 			       int argc, struct bgp **bgp, bool use_json);
 extern int bgp_show_summary_vty(struct vty *vty, const char *name, afi_t afi,
-				safi_t safi, bool show_failed,
-				bool show_established, bool use_json);
+				safi_t safi, uint8_t show_flags);
 
 #endif /* _QUAGGA_BGP_VTY_H */

@@ -76,8 +76,7 @@ static int ack_lsp(struct isis_lsp_hdr *hdr, struct isis_circuit *circuit,
 	lenp = stream_get_endp(circuit->snd_stream);
 
 	stream_putw(circuit->snd_stream, 0); /* PDU length  */
-	stream_put(circuit->snd_stream, circuit->area->isis->sysid,
-		   ISIS_SYS_ID_LEN);
+	stream_put(circuit->snd_stream, circuit->isis->sysid, ISIS_SYS_ID_LEN);
 	stream_putc(circuit->snd_stream, circuit->idx);
 	stream_putc(circuit->snd_stream, 9);  /* code */
 	stream_putc(circuit->snd_stream, 16); /* len */
@@ -143,8 +142,8 @@ static int process_p2p_hello(struct iih_info *iih)
 		}
 
 		if (tw_adj->neighbor_set
-		    && (memcmp(tw_adj->neighbor_id,
-			       iih->circuit->area->isis->sysid, ISIS_SYS_ID_LEN)
+		    && (memcmp(tw_adj->neighbor_id, iih->circuit->isis->sysid,
+			       ISIS_SYS_ID_LEN)
 			|| tw_adj->neighbor_circuit_id
 				   != (uint32_t)iih->circuit->idx)) {
 
@@ -168,7 +167,7 @@ static int process_p2p_hello(struct iih_info *iih)
 	if (adj) {
 		if (memcmp(iih->sys_id, adj->sysid, ISIS_SYS_ID_LEN)) {
 			zlog_debug(
-				"hello source and adjacency do not match, set adj down\n");
+				"hello source and adjacency do not match, set adj down");
 			isis_adj_state_change(&adj, ISIS_ADJ_DOWN,
 					      "adj do not exist");
 			return ISIS_OK;
@@ -206,7 +205,7 @@ static int process_p2p_hello(struct iih_info *iih)
 				      adj);
 
 	/* lets take care of the expiry */
-	THREAD_TIMER_OFF(adj->t_expire);
+	thread_cancel(&adj->t_expire);
 	thread_add_timer(master, isis_adj_expire, adj, (long)adj->hold_time,
 			 &adj->t_expire);
 
@@ -498,7 +497,7 @@ static int process_lan_hello(struct iih_info *iih)
 				      adj);
 
 	/* lets take care of the expiry */
-	THREAD_TIMER_OFF(adj->t_expire);
+	thread_cancel(&adj->t_expire);
 	thread_add_timer(master, isis_adj_expire, adj, (long)adj->hold_time,
 			 &adj->t_expire);
 
@@ -550,6 +549,19 @@ static int pdu_len_validate(uint16_t pdu_len, struct isis_circuit *circuit)
 	return 0;
 }
 
+static void update_rej_adj_count(struct isis_circuit *circuit)
+{
+	circuit->rej_adjacencies++;
+	if (circuit->is_type == IS_LEVEL_1)
+		circuit->area->rej_adjacencies[0]++;
+	else if (circuit->is_type == IS_LEVEL_2)
+		circuit->area->rej_adjacencies[1]++;
+	else {
+		circuit->area->rej_adjacencies[0]++;
+		circuit->area->rej_adjacencies[1]++;
+	}
+}
+
 static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 			 uint8_t *ssnpa)
 {
@@ -582,22 +594,22 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 	if (p2p_hello) {
 		if (circuit->circ_type != CIRCUIT_T_P2P) {
 			zlog_warn("p2p hello on non p2p circuit");
-			circuit->rej_adjacencies++;
+			update_rej_adj_count(circuit);
 #ifndef FABRICD
 			isis_notif_reject_adjacency(
 				circuit, "p2p hello on non p2p circuit",
-				raw_pdu);
+				raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 			return ISIS_WARNING;
 		}
 	} else {
 		if (circuit->circ_type != CIRCUIT_T_BROADCAST) {
 			zlog_warn("lan hello on non broadcast circuit");
-			circuit->rej_adjacencies++;
+			update_rej_adj_count(circuit);
 #ifndef FABRICD
 			isis_notif_reject_adjacency(
 				circuit, "lan hello on non broadcast circuit",
-				raw_pdu);
+				raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 			return ISIS_WARNING;
 		}
@@ -606,12 +618,12 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 			zlog_debug(
 				"level %d LAN Hello received over circuit with externalDomain = true",
 				level);
-			circuit->rej_adjacencies++;
+			update_rej_adj_count(circuit);
 #ifndef FABRICD
 			isis_notif_reject_adjacency(
 				circuit,
 				"LAN Hello received over circuit with externalDomain = true",
-				raw_pdu);
+				raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 			return ISIS_WARNING;
 		}
@@ -623,10 +635,11 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 					circuit->area->area_tag,
 					circuit->interface->name);
 			}
-			circuit->rej_adjacencies++;
+			update_rej_adj_count(circuit);
 #ifndef FABRICD
-			isis_notif_reject_adjacency(
-				circuit, "Interface level mismatch", raw_pdu);
+			isis_notif_reject_adjacency(circuit,
+						    "Interface level mismatch",
+						    raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 			return ISIS_WARNING;
 		}
@@ -653,10 +666,10 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 			"ISIS-Adj (%s): Rcvd %s from (%s) with invalid pdu length %hu",
 			circuit->area->area_tag, pdu_name,
 			circuit->interface->name, iih.pdu_len);
-		circuit->rej_adjacencies++;
+		update_rej_adj_count(circuit);
 #ifndef FABRICD
 		isis_notif_reject_adjacency(circuit, "Invalid PDU length",
-					    raw_pdu);
+					    raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		return ISIS_WARNING;
 	}
@@ -665,10 +678,11 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 		flog_err(EC_ISIS_PACKET,
 			 "Level %d LAN Hello with Circuit Type %d", level,
 			 iih.circ_type);
-		circuit->rej_adjacencies++;
+		update_rej_adj_count(circuit);
 #ifndef FABRICD
-		isis_notif_reject_adjacency(
-			circuit, "LAN Hello with wrong IS-level", raw_pdu);
+		isis_notif_reject_adjacency(circuit,
+					    "LAN Hello with wrong IS-level",
+					    raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		return ISIS_ERROR;
 	}
@@ -679,10 +693,10 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 	if (isis_unpack_tlvs(STREAM_READABLE(circuit->rcv_stream),
 			     circuit->rcv_stream, &iih.tlvs, &error_log)) {
 		zlog_warn("isis_unpack_tlvs() failed: %s", error_log);
-		circuit->rej_adjacencies++;
+		update_rej_adj_count(circuit);
 #ifndef FABRICD
 		isis_notif_reject_adjacency(circuit, "Failed to unpack TLVs",
-					    raw_pdu);
+					    raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		goto out;
 	}
@@ -691,17 +705,18 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 		zlog_warn("No Area addresses TLV in %s", pdu_name);
 #ifndef FABRICD
 		/* send northbound notification */
-		isis_notif_area_mismatch(circuit, raw_pdu);
+		isis_notif_area_mismatch(circuit, raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		goto out;
 	}
 
 	if (!iih.tlvs->protocols_supported.count) {
 		zlog_warn("No supported protocols TLV in %s", pdu_name);
-		circuit->rej_adjacencies++;
+		update_rej_adj_count(circuit);
 #ifndef FABRICD
-		isis_notif_reject_adjacency(
-			circuit, "No supported protocols TLV", raw_pdu);
+		isis_notif_reject_adjacency(circuit,
+					    "No supported protocols TLV",
+					    raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		goto out;
 	}
@@ -717,25 +732,27 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 		stream_get_from(raw_pdu, circuit->rcv_stream, pdu_start,
 				pdu_end - pdu_start);
 		if (auth_code == ISIS_AUTH_FAILURE) {
-			circuit->auth_failures++;
-			isis_notif_authentication_failure(circuit, raw_pdu);
+			update_rej_adj_count(circuit);
+			isis_notif_authentication_failure(circuit, raw_pdu,
+							  sizeof(raw_pdu));
 		} else { /* AUTH_TYPE_FAILURE or NO_VALIDATOR */
-			circuit->auth_type_failures++;
-			isis_notif_authentication_type_failure(circuit,
-							       raw_pdu);
+			update_rej_adj_count(circuit);
+			isis_notif_authentication_type_failure(circuit, raw_pdu,
+							       sizeof(raw_pdu));
 		}
 #endif /* ifndef FABRICD */
 		goto out;
 	}
 
-	if (!memcmp(iih.sys_id, circuit->area->isis->sysid, ISIS_SYS_ID_LEN)) {
+	if (!memcmp(iih.sys_id, circuit->isis->sysid, ISIS_SYS_ID_LEN)) {
 		zlog_warn(
-			"ISIS-Adj (%s): Received IIH with own sysid - discard",
-			circuit->area->area_tag);
-		circuit->rej_adjacencies++;
+			"ISIS-Adj (%s): Received IIH with own sysid on %s - discard",
+			circuit->area->area_tag, circuit->interface->name);
+		update_rej_adj_count(circuit);
 #ifndef FABRICD
-		isis_notif_reject_adjacency(
-			circuit, "Received IIH with our own sysid", raw_pdu);
+		isis_notif_reject_adjacency(circuit,
+					    "Received IIH with our own sysid",
+					    raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		goto out;
 	}
@@ -753,7 +770,7 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 		}
 #ifndef FABRICD
 		/* send northbound notification */
-		isis_notif_area_mismatch(circuit, raw_pdu);
+		isis_notif_area_mismatch(circuit, raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		goto out;
 	}
@@ -770,11 +787,11 @@ static int process_hello(uint8_t pdu_type, struct isis_circuit *circuit,
 				"ISIS-Adj (%s): Neither IPv4 nor IPv6 considered usable. Ignoring IIH",
 				circuit->area->area_tag);
 		}
-		circuit->rej_adjacencies++;
+		update_rej_adj_count(circuit);
 #ifndef FABRICD
 		isis_notif_reject_adjacency(
 			circuit, "Neither IPv4 not IPv6 considered usable",
-			raw_pdu);
+			raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		goto out;
 	}
@@ -858,8 +875,8 @@ static int process_lsp(uint8_t pdu_type, struct isis_circuit *circuit,
 
 #ifndef FABRICD
 	/* send northbound notification */
-	isis_notif_lsp_received(circuit, rawlspid_print(hdr.lsp_id), hdr.seqno,
-				time(NULL), sysid_print(hdr.lsp_id));
+	isis_notif_lsp_received(circuit, hdr.lsp_id, hdr.seqno, time(NULL),
+				sysid_print(hdr.lsp_id));
 #endif /* ifndef FABRICD */
 
 	if (pdu_len_validate(hdr.pdu_len, circuit)) {
@@ -932,8 +949,18 @@ static int process_lsp(uint8_t pdu_type, struct isis_circuit *circuit,
 		 * we change the code above to return those extra fields, we
 		 * will send dummy values which are ignored in the callback
 		 */
-		isis_notif_lsp_error(circuit, rawlspid_print(hdr.lsp_id),
-				     raw_pdu, 0, 0);
+		circuit->lsp_error_counter++;
+		if (circuit->is_type == IS_LEVEL_1) {
+			circuit->area->lsp_error_counter[0]++;
+		} else if (circuit->is_type == IS_LEVEL_2) {
+			circuit->area->lsp_error_counter[1]++;
+		} else {
+			circuit->area->lsp_error_counter[0]++;
+			circuit->area->lsp_error_counter[1]++;
+		}
+
+		isis_notif_lsp_error(circuit, hdr.lsp_id, raw_pdu,
+				     sizeof(raw_pdu), 0, 0);
 #endif /* ifndef FABRICD */
 		goto out;
 	}
@@ -957,11 +984,28 @@ static int process_lsp(uint8_t pdu_type, struct isis_circuit *circuit,
 		/* send northbound notification */
 		if (auth_code == ISIS_AUTH_FAILURE) {
 			circuit->auth_failures++;
-			isis_notif_authentication_failure(circuit, raw_pdu);
+			if (circuit->is_type == IS_LEVEL_1) {
+				circuit->area->auth_failures[0]++;
+			} else if (circuit->is_type == IS_LEVEL_2) {
+				circuit->area->auth_failures[1]++;
+			} else {
+				circuit->area->auth_failures[0]++;
+				circuit->area->auth_failures[1]++;
+			}
+			isis_notif_authentication_failure(circuit, raw_pdu,
+							  sizeof(raw_pdu));
 		} else { /* AUTH_TYPE_FAILURE or NO_VALIDATOR */
 			circuit->auth_type_failures++;
-			isis_notif_authentication_type_failure(circuit,
-							       raw_pdu);
+			if (circuit->is_type == IS_LEVEL_1) {
+				circuit->area->auth_type_failures[0]++;
+			} else if (circuit->is_type == IS_LEVEL_2) {
+				circuit->area->auth_type_failures[1]++;
+			} else {
+				circuit->area->auth_type_failures[0]++;
+				circuit->area->auth_type_failures[1]++;
+			}
+			isis_notif_authentication_type_failure(circuit, raw_pdu,
+							       sizeof(raw_pdu));
 		}
 #endif /* ifndef FABRICD */
 		goto out;
@@ -1044,7 +1088,7 @@ dontcheckadj:
 				ack_lsp(&hdr, circuit, level);
 			goto out; /* FIXME: do we need a purge? */
 		} else {
-			if (memcmp(hdr.lsp_id, circuit->area->isis->sysid,
+			if (memcmp(hdr.lsp_id, circuit->isis->sysid,
 				   ISIS_SYS_ID_LEN)) {
 				/* LSP by some other system -> do 7.3.16.4 b) */
 				/* 7.3.16.4 b) 1)  */
@@ -1106,10 +1150,10 @@ dontcheckadj:
 					if (lsp->hdr.seqno < hdr.seqno) {
 						/* send northbound
 						 * notification */
+						circuit->area
+							->lsp_seqno_skipped_counter++;
 						isis_notif_seqno_skipped(
-							circuit,
-							rawlspid_print(
-								hdr.lsp_id));
+							circuit, hdr.lsp_id);
 					}
 #endif /* ifndef FABRICD */
 					lsp_inc_seqno(lsp, hdr.seqno);
@@ -1130,8 +1174,7 @@ dontcheckadj:
 				/* our own LSP with 0 remaining life time */
 #ifndef FABRICD
 				/* send northbound notification */
-				isis_notif_own_lsp_purge(
-					circuit, rawlspid_print(hdr.lsp_id));
+				isis_notif_own_lsp_purge(circuit, hdr.lsp_id);
 #endif /* ifndef FABRICD */
 			}
 		}
@@ -1139,8 +1182,7 @@ dontcheckadj:
 	}
 	/* 7.3.15.1 c) - If this is our own lsp and we don't have it initiate a
 	 * purge */
-	if (memcmp(hdr.lsp_id, circuit->area->isis->sysid, ISIS_SYS_ID_LEN)
-	    == 0) {
+	if (memcmp(hdr.lsp_id, circuit->isis->sysid, ISIS_SYS_ID_LEN) == 0) {
 		if (!lsp) {
 			/* 7.3.16.4: initiate a purge */
 			lsp_purge_non_exist(level, &hdr, circuit->area);
@@ -1160,8 +1202,8 @@ dontcheckadj:
 			lsp_inc_seqno(lsp, hdr.seqno);
 #ifndef FABRICD
 			/* send northbound notification */
-			isis_notif_seqno_skipped(circuit,
-						 rawlspid_print(hdr.lsp_id));
+			circuit->area->lsp_seqno_skipped_counter++;
+			isis_notif_seqno_skipped(circuit, hdr.lsp_id);
 #endif /* ifndef FABRICD */
 			if (IS_DEBUG_UPDATE_PACKETS) {
 				zlog_debug(
@@ -1390,12 +1432,28 @@ static int process_snp(uint8_t pdu_type, struct isis_circuit *circuit,
 					pdu_end - pdu_start);
 			if (auth_code == ISIS_AUTH_FAILURE) {
 				circuit->auth_failures++;
-				isis_notif_authentication_failure(circuit,
-								  raw_pdu);
+				if (circuit->is_type == IS_LEVEL_1) {
+					circuit->area->auth_failures[0]++;
+				} else if (circuit->is_type == IS_LEVEL_2) {
+					circuit->area->auth_failures[1]++;
+				} else {
+					circuit->area->auth_failures[0]++;
+					circuit->area->auth_failures[1]++;
+				}
+				isis_notif_authentication_failure(
+					circuit, raw_pdu, sizeof(raw_pdu));
 			} else { /* AUTH_TYPE_FAILURE or NO_VALIDATOR */
 				circuit->auth_type_failures++;
-				isis_notif_authentication_type_failure(circuit,
-								       raw_pdu);
+				if (circuit->is_type == IS_LEVEL_1) {
+					circuit->area->auth_type_failures[0]++;
+				} else if (circuit->is_type == IS_LEVEL_2) {
+					circuit->area->auth_type_failures[1]++;
+				} else {
+					circuit->area->auth_type_failures[0]++;
+					circuit->area->auth_type_failures[1]++;
+				}
+				isis_notif_authentication_type_failure(
+					circuit, raw_pdu, sizeof(raw_pdu));
 			}
 #endif /* ifndef FABRICD */
 			goto out;
@@ -1427,7 +1485,7 @@ static int process_snp(uint8_t pdu_type, struct isis_circuit *circuit,
 	     entry = entry->next) {
 		struct isis_lsp *lsp =
 			lsp_search(&circuit->area->lspdb[level - 1], entry->id);
-		bool own_lsp = !memcmp(entry->id, circuit->area->isis->sysid,
+		bool own_lsp = !memcmp(entry->id, circuit->isis->sysid,
 				       ISIS_SYS_ID_LEN);
 		if (lsp) {
 			/* 7.3.15.2 b) 1) is this LSP newer */
@@ -1468,7 +1526,7 @@ static int process_snp(uint8_t pdu_type, struct isis_circuit *circuit,
 			 * insert it and set SSN on it */
 			if (entry->rem_lifetime && entry->checksum
 			    && entry->seqno
-			    && memcmp(entry->id, circuit->area->isis->sysid,
+			    && memcmp(entry->id, circuit->isis->sysid,
 				      ISIS_SYS_ID_LEN)) {
 				struct isis_lsp *lsp0 = NULL;
 
@@ -1622,7 +1680,8 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 		zlog_warn("Unsupported ISIS version %hhu", version1);
 #ifndef FABRICD
 		/* send northbound notification */
-		isis_notif_version_skew(circuit, version1, raw_pdu);
+		isis_notif_version_skew(circuit, version1, raw_pdu,
+					sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		return ISIS_WARNING;
 	}
@@ -1633,9 +1692,19 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 			"IDFieldLengthMismatch: ID Length field in a received PDU  %hhu, while the parameter for this IS is %u",
 			id_len, ISIS_SYS_ID_LEN);
 		circuit->id_len_mismatches++;
+		if (circuit->is_type == IS_LEVEL_1) {
+			circuit->area->id_len_mismatches[0]++;
+		} else if (circuit->is_type == IS_LEVEL_2) {
+			circuit->area->id_len_mismatches[1]++;
+		} else {
+			circuit->area->id_len_mismatches[0]++;
+			circuit->area->id_len_mismatches[1]++;
+		}
+
 #ifndef FABRICD
 		/* send northbound notification */
-		isis_notif_id_len_mismatch(circuit, id_len, raw_pdu);
+		isis_notif_id_len_mismatch(circuit, id_len, raw_pdu,
+					   sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		return ISIS_ERROR;
 	}
@@ -1664,7 +1733,8 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 		zlog_warn("Unsupported ISIS PDU version %hhu", version2);
 #ifndef FABRICD
 		/* send northbound notification */
-		isis_notif_version_skew(circuit, version2, raw_pdu);
+		isis_notif_version_skew(circuit, version2, raw_pdu,
+					sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		return ISIS_WARNING;
 	}
@@ -1679,16 +1749,16 @@ int isis_handle_pdu(struct isis_circuit *circuit, uint8_t *ssnpa)
 	if (pdu_type != FS_LINK_STATE /* FS PDU doesn't contain max area addr
 					 field */
 	    && max_area_addrs != 0
-	    && max_area_addrs != circuit->area->isis->max_area_addrs) {
+	    && max_area_addrs != circuit->isis->max_area_addrs) {
 		flog_err(
 			EC_ISIS_PACKET,
 			"maximumAreaAddressesMismatch: maximumAreaAdresses in a received PDU %hhu while the parameter for this IS is %u",
-			max_area_addrs, circuit->area->isis->max_area_addrs);
+			max_area_addrs, circuit->isis->max_area_addrs);
 		circuit->max_area_addr_mismatches++;
 #ifndef FABRICD
 		/* send northbound notification */
 		isis_notif_max_area_addr_mismatch(circuit, max_area_addrs,
-						  raw_pdu);
+						  raw_pdu, sizeof(raw_pdu));
 #endif /* ifndef FABRICD */
 		return ISIS_ERROR;
 	}
@@ -1792,8 +1862,7 @@ static void put_hello_hdr(struct isis_circuit *circuit, int level,
 	fill_fixed_hdr(pdu_type, circuit->snd_stream);
 
 	stream_putc(circuit->snd_stream, circuit->is_type);
-	stream_put(circuit->snd_stream, circuit->area->isis->sysid,
-		   ISIS_SYS_ID_LEN);
+	stream_put(circuit->snd_stream, circuit->isis->sysid, ISIS_SYS_ID_LEN);
 
 	uint32_t holdtime = circuit->hello_multiplier[level - 1]
 			    * circuit->hello_interval[level - 1];
@@ -1990,7 +2059,7 @@ static void _send_hello_sched(struct isis_circuit *circuit,
 		if (thread_timer_remain_msec(*threadp) < (unsigned long)delay)
 			return;
 
-		thread_cancel(*threadp);
+		thread_cancel(threadp);
 	}
 
 	thread_add_timer_msec(master, send_hello_cb,
@@ -2064,8 +2133,7 @@ int send_csnp(struct isis_circuit *circuit, int level)
 	size_t len_pointer = stream_get_endp(circuit->snd_stream);
 
 	stream_putw(circuit->snd_stream, 0);
-	stream_put(circuit->snd_stream, circuit->area->isis->sysid,
-		   ISIS_SYS_ID_LEN);
+	stream_put(circuit->snd_stream, circuit->isis->sysid, ISIS_SYS_ID_LEN);
 	/* with zero circuit id - ref 9.10, 9.11 */
 	stream_putc(circuit->snd_stream, 0);
 
@@ -2242,8 +2310,7 @@ static int send_psnp(int level, struct isis_circuit *circuit)
 
 	size_t len_pointer = stream_get_endp(circuit->snd_stream);
 	stream_putw(circuit->snd_stream, 0); /* length is filled in later */
-	stream_put(circuit->snd_stream, circuit->area->isis->sysid,
-		   ISIS_SYS_ID_LEN);
+	stream_put(circuit->snd_stream, circuit->isis->sysid, ISIS_SYS_ID_LEN);
 	stream_putc(circuit->snd_stream, circuit->idx);
 
 	struct isis_passwd *passwd = (level == ISIS_LEVEL1)
@@ -2414,7 +2481,7 @@ void send_lsp(struct isis_circuit *circuit, struct isis_lsp *lsp,
 #ifndef FABRICD
 		/* send a northbound notification */
 		isis_notif_lsp_too_large(circuit, stream_get_endp(lsp->pdu),
-					 rawlspid_print(lsp->hdr.lsp_id));
+					 lsp->hdr.lsp_id);
 #endif /* ifndef FABRICD */
 		if (IS_DEBUG_PACKET_DUMP)
 			zlog_dump_data(STREAM_DATA(lsp->pdu),

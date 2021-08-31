@@ -64,7 +64,7 @@ struct ospf6_neighbor {
 	/* Options field (Capability) */
 	char options[3];
 
-	/* IPaddr of I/F on our side link */
+	/* IPaddr of I/F on neighbour's link */
 	struct in6_addr linklocal_addr;
 
 	/* For Database Exchange */
@@ -89,6 +89,9 @@ struct ospf6_neighbor {
 	/* Inactivity timer */
 	struct thread *inactivity_timer;
 
+	/* Timer to release the last dbdesc packet */
+	struct thread *last_dbdesc_release_timer;
+
 	/* Thread for sending message */
 	struct thread *thread_send_dbdesc;
 	struct thread *thread_send_lsreq;
@@ -96,7 +99,7 @@ struct ospf6_neighbor {
 	struct thread *thread_send_lsack;
 
 	/* BFD information */
-	void *bfd_info;
+	struct bfd_session_params *bfd_session;
 };
 
 /* Neighbor state */
@@ -166,6 +169,6 @@ extern void install_element_ospf6_debug_neighbor(void);
 
 DECLARE_HOOK(ospf6_neighbor_change,
 	     (struct ospf6_neighbor * on, int state, int next_state),
-	     (on, state, next_state))
+	     (on, state, next_state));
 
 #endif /* OSPF6_NEIGHBOR_H */

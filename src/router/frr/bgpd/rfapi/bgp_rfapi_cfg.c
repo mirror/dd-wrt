@@ -52,36 +52,36 @@
 #undef BGP_VNC_DEBUG_MATCH_GROUP
 
 
-DEFINE_MGROUP(RFAPI, "rfapi")
-DEFINE_MTYPE(RFAPI, RFAPI_CFG, "NVE Configuration")
-DEFINE_MTYPE(RFAPI, RFAPI_GROUP_CFG, "NVE Group Configuration")
-DEFINE_MTYPE(RFAPI, RFAPI_L2_CFG, "RFAPI L2 Group Configuration")
-DEFINE_MTYPE(RFAPI, RFAPI_RFP_GROUP_CFG, "RFAPI RFP Group Configuration")
-DEFINE_MTYPE(RFAPI, RFAPI, "RFAPI Generic")
-DEFINE_MTYPE(RFAPI, RFAPI_DESC, "RFAPI Descriptor")
-DEFINE_MTYPE(RFAPI, RFAPI_IMPORTTABLE, "RFAPI Import Table")
-DEFINE_MTYPE(RFAPI, RFAPI_MONITOR, "RFAPI Monitor VPN")
-DEFINE_MTYPE(RFAPI, RFAPI_MONITOR_ENCAP, "RFAPI Monitor Encap")
-DEFINE_MTYPE(RFAPI, RFAPI_NEXTHOP, "RFAPI Next Hop")
-DEFINE_MTYPE(RFAPI, RFAPI_VN_OPTION, "RFAPI VN Option")
-DEFINE_MTYPE(RFAPI, RFAPI_UN_OPTION, "RFAPI UN Option")
-DEFINE_MTYPE(RFAPI, RFAPI_WITHDRAW, "RFAPI Withdraw")
-DEFINE_MTYPE(RFAPI, RFAPI_RFG_NAME, "RFAPI RFGName")
-DEFINE_MTYPE(RFAPI, RFAPI_ADB, "RFAPI Advertisement Data")
-DEFINE_MTYPE(RFAPI, RFAPI_ETI, "RFAPI Export Table Info")
-DEFINE_MTYPE(RFAPI, RFAPI_NVE_ADDR, "RFAPI NVE Address")
-DEFINE_MTYPE(RFAPI, RFAPI_PREFIX_BAG, "RFAPI Prefix Bag")
-DEFINE_MTYPE(RFAPI, RFAPI_IT_EXTRA, "RFAPI IT Extra")
-DEFINE_MTYPE(RFAPI, RFAPI_INFO, "RFAPI Info")
-DEFINE_MTYPE(RFAPI, RFAPI_ADDR, "RFAPI Addr")
-DEFINE_MTYPE(RFAPI, RFAPI_UPDATED_RESPONSE_QUEUE, "RFAPI Updated Rsp Queue")
-DEFINE_MTYPE(RFAPI, RFAPI_RECENT_DELETE, "RFAPI Recently Deleted Route")
-DEFINE_MTYPE(RFAPI, RFAPI_L2ADDR_OPT, "RFAPI L2 Address Option")
-DEFINE_MTYPE(RFAPI, RFAPI_AP, "RFAPI Advertised Prefix")
-DEFINE_MTYPE(RFAPI, RFAPI_MONITOR_ETH, "RFAPI Monitor Ethernet")
+DEFINE_MGROUP(RFAPI, "rfapi");
+DEFINE_MTYPE(RFAPI, RFAPI_CFG, "NVE Configuration");
+DEFINE_MTYPE(RFAPI, RFAPI_GROUP_CFG, "NVE Group Configuration");
+DEFINE_MTYPE(RFAPI, RFAPI_L2_CFG, "RFAPI L2 Group Configuration");
+DEFINE_MTYPE(RFAPI, RFAPI_RFP_GROUP_CFG, "RFAPI RFP Group Configuration");
+DEFINE_MTYPE(RFAPI, RFAPI, "RFAPI Generic");
+DEFINE_MTYPE(RFAPI, RFAPI_DESC, "RFAPI Descriptor");
+DEFINE_MTYPE(RFAPI, RFAPI_IMPORTTABLE, "RFAPI Import Table");
+DEFINE_MTYPE(RFAPI, RFAPI_MONITOR, "RFAPI Monitor VPN");
+DEFINE_MTYPE(RFAPI, RFAPI_MONITOR_ENCAP, "RFAPI Monitor Encap");
+DEFINE_MTYPE(RFAPI, RFAPI_NEXTHOP, "RFAPI Next Hop");
+DEFINE_MTYPE(RFAPI, RFAPI_VN_OPTION, "RFAPI VN Option");
+DEFINE_MTYPE(RFAPI, RFAPI_UN_OPTION, "RFAPI UN Option");
+DEFINE_MTYPE(RFAPI, RFAPI_WITHDRAW, "RFAPI Withdraw");
+DEFINE_MTYPE(RFAPI, RFAPI_RFG_NAME, "RFAPI RFGName");
+DEFINE_MTYPE(RFAPI, RFAPI_ADB, "RFAPI Advertisement Data");
+DEFINE_MTYPE(RFAPI, RFAPI_ETI, "RFAPI Export Table Info");
+DEFINE_MTYPE(RFAPI, RFAPI_NVE_ADDR, "RFAPI NVE Address");
+DEFINE_MTYPE(RFAPI, RFAPI_PREFIX_BAG, "RFAPI Prefix Bag");
+DEFINE_MTYPE(RFAPI, RFAPI_IT_EXTRA, "RFAPI IT Extra");
+DEFINE_MTYPE(RFAPI, RFAPI_INFO, "RFAPI Info");
+DEFINE_MTYPE(RFAPI, RFAPI_ADDR, "RFAPI Addr");
+DEFINE_MTYPE(RFAPI, RFAPI_UPDATED_RESPONSE_QUEUE, "RFAPI Updated Rsp Queue");
+DEFINE_MTYPE(RFAPI, RFAPI_RECENT_DELETE, "RFAPI Recently Deleted Route");
+DEFINE_MTYPE(RFAPI, RFAPI_L2ADDR_OPT, "RFAPI L2 Address Option");
+DEFINE_MTYPE(RFAPI, RFAPI_AP, "RFAPI Advertised Prefix");
+DEFINE_MTYPE(RFAPI, RFAPI_MONITOR_ETH, "RFAPI Monitor Ethernet");
 
-DEFINE_QOBJ_TYPE(rfapi_nve_group_cfg)
-DEFINE_QOBJ_TYPE(rfapi_l2_group_cfg)
+DEFINE_QOBJ_TYPE(rfapi_nve_group_cfg);
+DEFINE_QOBJ_TYPE(rfapi_l2_group_cfg);
 /***********************************************************************
  *			RFAPI Support
  ***********************************************************************/
@@ -170,14 +170,8 @@ struct rfapi_nve_group_cfg *bgp_rfapi_cfg_match_group(struct rfapi_cfg *hc,
 
 #ifdef BGP_VNC_DEBUG_MATCH_GROUP
 	{
-		char buf[PREFIX_STRLEN];
-
-		prefix2str(vn, buf, sizeof(buf));
-		vnc_zlog_debug_verbose("%s: vn prefix: %s", __func__, buf);
-
-		prefix2str(un, buf, sizeof(buf));
-		vnc_zlog_debug_verbose("%s: un prefix: %s", __func__, buf);
-
+		vnc_zlog_debug_verbose("%s: vn prefix: %pFX", __func__, vn);
+		vnc_zlog_debug_verbose("%s: un prefix: %pFX", __func__, un);
 		vnc_zlog_debug_verbose(
 			"%s: rn_vn=%p, rn_un=%p, rfg_vn=%p, rfg_un=%p",
 			__func__, rn_vn, rn_un, rfg_vn, rfg_un);
@@ -4215,23 +4209,13 @@ int bgp_rfapi_cfg_write(struct vty *vty, struct bgp *bgp)
 				++write;
 				vty_out(vty, " vnc nve-group %s\n", rfg->name);
 
-				if (rfg->vn_prefix.family && rfg->vn_node) {
-					char buf[PREFIX_STRLEN];
+				if (rfg->vn_prefix.family && rfg->vn_node)
+					vty_out(vty, "  prefix %s %pFX\n", "vn",
+						&rfg->vn_prefix);
 
-					prefix2str(&rfg->vn_prefix, buf,
-						   sizeof(buf));
-					vty_out(vty, "  prefix %s %s\n", "vn",
-						buf);
-				}
-
-				if (rfg->un_prefix.family && rfg->un_node) {
-					char buf[PREFIX_STRLEN];
-
-					prefix2str(&rfg->un_prefix, buf,
-						   sizeof(buf));
-					vty_out(vty, "  prefix %s %s\n", "un",
-						buf);
-				}
+				if (rfg->un_prefix.family && rfg->un_node)
+					vty_out(vty, "  prefix %s %pFX\n", "un",
+						&rfg->un_prefix);
 
 
 				if (rfg->rd.prefixlen) {
