@@ -44,41 +44,6 @@
 #include "zebra/zebra_vxlan_private.h"
 
 /*
- * addr_to_a
- *
- * Returns string representation of an address of the given AF.
- */
-static inline const char *addr_to_a(uint8_t af, void *addr)
-{
-	if (!addr)
-		return "<No address>";
-
-	switch (af) {
-
-	case AF_INET:
-		return inet_ntoa(*((struct in_addr *)addr));
-	case AF_INET6:
-		return inet6_ntoa(*((struct in6_addr *)addr));
-	default:
-		return "<Addr in unknown AF>";
-	}
-}
-
-/*
- * prefix_addr_to_a
- *
- * Convience wrapper that returns a human-readable string for the
- * address in a prefix.
- */
-static const char *prefix_addr_to_a(struct prefix *prefix)
-{
-	if (!prefix)
-		return "<No address>";
-
-	return addr_to_a(prefix->family, &prefix->u.prefix);
-}
-
-/*
  * af_addr_size
  *
  * The size of an address in a given address family.
@@ -168,6 +133,7 @@ struct netlink_nh_info {
  * A structure for holding information for a netlink route message.
  */
 struct netlink_route_info {
+	uint32_t nlmsg_pid;
 	uint16_t nlmsg_type;
 	uint8_t rtm_type;
 	uint32_t rtm_table;
@@ -279,14 +245,20 @@ static int netlink_route_info_fill(struct netlink_route_info *ri, int cmd,
 				   rib_dest_t *dest, struct route_entry *re)
 {
 	struct nexthop *nexthop;
+	struct rib_table_info *table_info =
+		rib_table_info(rib_dest_table(dest));
+	struct zebra_vrf *zvrf = table_info->zvrf;
 
 	memset(ri, 0, sizeof(*ri));
 
 	ri->prefix = rib_dest_prefix(dest);
 	ri->af = rib_dest_af(dest);
 
+	if (zvrf && zvrf->zns)
+		ri->nlmsg_pid = zvrf->zns->netlink_dplane.snl.nl_pid;
+
 	ri->nlmsg_type = cmd;
-	ri->rtm_table = rib_table_info(rib_dest_table(dest))->table_id;
+	ri->rtm_table = table_info->table_id;
 	ri->rtm_protocol = RTPROT_UNSPEC;
 
 	/*
@@ -392,6 +364,7 @@ static int netlink_route_info_encode(struct netlink_route_info *ri,
 
 	req->n.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtmsg));
 	req->n.nlmsg_flags = NLM_F_CREATE | NLM_F_REQUEST;
+	req->n.nlmsg_pid = ri->nlmsg_pid;
 	req->n.nlmsg_type = ri->nlmsg_type;
 	req->r.rtm_family = ri->af;
 
@@ -525,18 +498,23 @@ static void zfpm_log_route_info(struct netlink_route_info *ri,
 {
 	struct netlink_nh_info *nhi;
 	unsigned int i;
+	char buf[PREFIX_STRLEN];
 
-	zfpm_debug("%s : %s %s/%d, Proto: %s, Metric: %u", label,
-		   nl_msg_type_to_str(ri->nlmsg_type),
-		   prefix_addr_to_a(ri->prefix), ri->prefix->prefixlen,
+	zfpm_debug("%s : %s %pFX, Proto: %s, Metric: %u", label,
+		   nl_msg_type_to_str(ri->nlmsg_type), ri->prefix,
 		   nl_rtproto_to_str(ri->rtm_protocol),
 		   ri->metric ? *ri->metric : 0);
 
 	for (i = 0; i < ri->num_nhs; i++) {
 		nhi = &ri->nhs[i];
+
+		if (ri->af == AF_INET)
+			inet_ntop(AF_INET, &nhi->gateway, buf, sizeof(buf));
+		else
+			inet_ntop(AF_INET6, &nhi->gateway, buf, sizeof(buf));
+
 		zfpm_debug("  Intf: %u, Gateway: %s, Recursive: %s, Type: %s, Encap type: %s",
-			   nhi->if_index, addr_to_a(ri->af, nhi->gateway),
-			   nhi->recursive ? "yes" : "no",
+			   nhi->if_index, buf, nhi->recursive ? "yes" : "no",
 			   nexthop_type_to_str(nhi->type),
 			   fpm_nh_encap_type_to_str(nhi->encap_info.encap_type)
 			   );
@@ -578,7 +556,6 @@ int zfpm_netlink_encode_route(int cmd, rib_dest_t *dest, struct route_entry *re,
 int zfpm_netlink_encode_mac(struct fpm_mac_info_t *mac, char *in_buf,
 			    size_t in_buf_len)
 {
-	char buf1[ETHER_ADDR_STRLEN];
 	size_t buf_offset;
 
 	struct macmsg {
@@ -621,11 +598,10 @@ int zfpm_netlink_encode_mac(struct fpm_mac_info_t *mac, char *in_buf,
 
 	assert(req->hdr.nlmsg_len < in_buf_len);
 
-	zfpm_debug("Tx %s family %s ifindex %u MAC %s DEST %s",
+	zfpm_debug("Tx %s family %s ifindex %u MAC %pEA DEST %pI4",
 		   nl_msg_type_to_str(req->hdr.nlmsg_type),
 		   nl_family_to_str(req->ndm.ndm_family), req->ndm.ndm_ifindex,
-		   prefix_mac2str(&mac->macaddr, buf1, sizeof(buf1)),
-		   inet_ntoa(mac->r_vtep_ip));
+		   &mac->macaddr, &mac->r_vtep_ip);
 
 	return req->hdr.nlmsg_len;
 }

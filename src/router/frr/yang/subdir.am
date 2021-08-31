@@ -25,11 +25,17 @@ dist_yangmodels_DATA += yang/frr-nexthop.yang
 dist_yangmodels_DATA += yang/frr-test-module.yang
 dist_yangmodels_DATA += yang/frr-interface.yang
 dist_yangmodels_DATA += yang/frr-route-map.yang
+dist_yangmodels_DATA += yang/frr-zebra-route-map.yang
+dist_yangmodels_DATA += yang/frr-ospf-route-map.yang
+dist_yangmodels_DATA += yang/frr-ospf6-route-map.yang
+dist_yangmodels_DATA += yang/frr-bgp-filter.yang
+dist_yangmodels_DATA += yang/frr-bgp-route-map.yang
 dist_yangmodels_DATA += yang/frr-vrf.yang
 dist_yangmodels_DATA += yang/frr-route-types.yang
 dist_yangmodels_DATA += yang/frr-routing.yang
 dist_yangmodels_DATA += yang/ietf/ietf-routing-types.yang
 dist_yangmodels_DATA += yang/ietf/ietf-interfaces.yang
+dist_yangmodels_DATA += yang/ietf/ietf-bgp-types.yang
 
 if BFDD
 dist_yangmodels_DATA += yang/frr-bfdd.yang
@@ -68,3 +74,26 @@ dist_yangmodels_DATA += yang/frr-igmp.yang
 dist_yangmodels_DATA += yang/frr-pim.yang
 dist_yangmodels_DATA += yang/frr-pim-rp.yang
 endif
+
+if BGPD
+dist_yangmodels_DATA += yang/frr-bgp-common-structure.yang
+dist_yangmodels_DATA += yang/frr-bgp-common.yang
+dist_yangmodels_DATA += yang/frr-bgp-common-multiprotocol.yang
+dist_yangmodels_DATA += yang/frr-bgp-neighbor.yang
+dist_yangmodels_DATA += yang/frr-bgp-peer-group.yang
+dist_yangmodels_DATA += yang/frr-deviations-bgp-datacenter.yang
+dist_yangmodels_DATA += yang/frr-bgp-rpki.yang
+dist_yangmodels_DATA += yang/frr-bgp-bmp.yang
+dist_yangmodels_DATA += yang/frr-bgp-types.yang
+dist_yangmodels_DATA += yang/frr-bgp.yang
+endif
+
+if PATHD
+dist_yangmodels_DATA += yang/frr-pathd.yang
+endif
+
+CLEANFILES += \
+	yang/*.c \
+	yang/ietf/*.c \
+	yang/confd/*.c \
+	#

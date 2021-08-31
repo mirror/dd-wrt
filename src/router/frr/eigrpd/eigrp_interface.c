@@ -52,9 +52,13 @@
 #include "eigrpd/eigrp_vty.h"
 #include "eigrpd/eigrp_network.h"
 #include "eigrpd/eigrp_topology.h"
-#include "eigrpd/eigrp_memory.h"
 #include "eigrpd/eigrp_fsm.h"
 #include "eigrpd/eigrp_dump.h"
+#include "eigrpd/eigrp_types.h"
+#include "eigrpd/eigrp_metric.h"
+
+DEFINE_MTYPE_STATIC(EIGRPD, EIGRP_IF,      "EIGRP interface");
+DEFINE_MTYPE_STATIC(EIGRPD, EIGRP_IF_INFO, "EIGRP Interface Information");
 
 struct eigrp_interface *eigrp_if_new(struct eigrp *eigrp, struct interface *ifp,
 				     struct prefix *p)
@@ -243,8 +247,8 @@ static void eigrp_mtu_convert(struct eigrp_metrics *metric, uint32_t host_mtu)
 
 int eigrp_if_up(struct eigrp_interface *ei)
 {
-	struct eigrp_prefix_entry *pe;
-	struct eigrp_nexthop_entry *ne;
+	struct eigrp_prefix_descriptor *pe;
+	struct eigrp_route_descriptor *ne;
 	struct eigrp_metrics metric;
 	struct eigrp_interface *ei2;
 	struct listnode *node, *nnode;
@@ -275,14 +279,14 @@ int eigrp_if_up(struct eigrp_interface *ei)
 
 	/*Add connected entry to topology table*/
 
-	ne = eigrp_nexthop_entry_new();
+	ne = eigrp_route_descriptor_new();
 	ne->ei = ei;
 	ne->reported_metric = metric;
 	ne->total_metric = metric;
 	ne->distance = eigrp_calculate_metrics(eigrp, metric);
 	ne->reported_distance = 0;
 	ne->adv_router = eigrp->neighbor_self;
-	ne->flags = EIGRP_NEXTHOP_ENTRY_SUCCESSOR_FLAG;
+	ne->flags = EIGRP_ROUTE_DESCRIPTOR_SUCCESSOR_FLAG;
 
 	struct prefix dest_addr;
 
@@ -292,7 +296,7 @@ int eigrp_if_up(struct eigrp_interface *ei)
 					      &dest_addr);
 
 	if (pe == NULL) {
-		pe = eigrp_prefix_entry_new();
+		pe = eigrp_prefix_descriptor_new();
 		pe->serno = eigrp->serno;
 		pe->destination = (struct prefix *)prefix_ipv4_new();
 		prefix_copy(pe->destination, &dest_addr);
@@ -304,10 +308,10 @@ int eigrp_if_up(struct eigrp_interface *ei)
 		pe->state = EIGRP_FSM_STATE_PASSIVE;
 		pe->fdistance = eigrp_calculate_metrics(eigrp, metric);
 		pe->req_action |= EIGRP_FSM_NEED_UPDATE;
-		eigrp_prefix_entry_add(eigrp->topology_table, pe);
+		eigrp_prefix_descriptor_add(eigrp->topology_table, pe);
 		listnode_add(eigrp->topology_changes_internalIPV4, pe);
 
-		eigrp_nexthop_entry_add(eigrp, pe, ne);
+		eigrp_route_descriptor_add(eigrp, pe, ne);
 
 		for (ALL_LIST_ELEMENTS(eigrp->eiflist, node, nnode, ei2)) {
 			eigrp_update_send(ei2);
@@ -319,7 +323,7 @@ int eigrp_if_up(struct eigrp_interface *ei)
 		struct eigrp_fsm_action_message msg;
 
 		ne->prefix = pe;
-		eigrp_nexthop_entry_add(eigrp, pe, ne);
+		eigrp_route_descriptor_add(eigrp, pe, ne);
 
 		msg.packet_type = EIGRP_OPC_UPDATE;
 		msg.eigrp = eigrp;
@@ -343,8 +347,7 @@ int eigrp_if_down(struct eigrp_interface *ei)
 		return 0;
 
 	/* Shutdown packet reception and sending */
-	if (ei->t_hello)
-		THREAD_OFF(ei->t_hello);
+	THREAD_OFF(ei->t_hello);
 
 	eigrp_if_stream_unset(ei);
 
@@ -371,7 +374,7 @@ void eigrp_if_stream_unset(struct eigrp_interface *ei)
 	if (ei->on_write_q) {
 		listnode_delete(eigrp->oi_write_q, ei);
 		if (list_isempty(eigrp->oi_write_q))
-			thread_cancel(eigrp->t_write);
+			thread_cancel(&(eigrp->t_write));
 		ei->on_write_q = 0;
 	}
 }
@@ -429,11 +432,11 @@ uint8_t eigrp_default_iftype(struct interface *ifp)
 void eigrp_if_free(struct eigrp_interface *ei, int source)
 {
 	struct prefix dest_addr;
-	struct eigrp_prefix_entry *pe;
+	struct eigrp_prefix_descriptor *pe;
 	struct eigrp *eigrp = ei->eigrp;
 
 	if (source == INTERFACE_DOWN_BY_VTY) {
-		THREAD_OFF(ei->t_hello);
+		thread_cancel(&ei->t_hello);
 		eigrp_hello_send(ei, EIGRP_HELLO_GRACEFUL_SHUTDOWN, NULL);
 	}
 
@@ -442,7 +445,8 @@ void eigrp_if_free(struct eigrp_interface *ei, int source)
 	pe = eigrp_topology_table_lookup_ipv4(eigrp->topology_table,
 					      &dest_addr);
 	if (pe)
-		eigrp_prefix_entry_delete(eigrp, eigrp->topology_table, pe);
+		eigrp_prefix_descriptor_delete(eigrp, eigrp->topology_table,
+					       pe);
 
 	eigrp_if_down(ei);
 
@@ -506,34 +510,4 @@ struct eigrp_interface *eigrp_if_lookup_by_name(struct eigrp *eigrp,
 	}
 
 	return NULL;
-}
-
-uint32_t eigrp_bandwidth_to_scaled(uint32_t bandwidth)
-{
-	uint64_t temp_bandwidth = (256ull * 10000000) / bandwidth;
-
-	temp_bandwidth = temp_bandwidth < EIGRP_MAX_METRIC ? temp_bandwidth
-							   : EIGRP_MAX_METRIC;
-
-	return (uint32_t)temp_bandwidth;
-}
-
-uint32_t eigrp_scaled_to_bandwidth(uint32_t scaled)
-{
-	uint64_t temp_scaled = scaled * (256ull * 10000000);
-
-	temp_scaled =
-		temp_scaled < EIGRP_MAX_METRIC ? temp_scaled : EIGRP_MAX_METRIC;
-
-	return (uint32_t)temp_scaled;
-}
-
-uint32_t eigrp_delay_to_scaled(uint32_t delay)
-{
-	return delay * 256;
-}
-
-uint32_t eigrp_scaled_to_delay(uint32_t scaled)
-{
-	return scaled / 256;
 }

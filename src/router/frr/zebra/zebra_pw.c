@@ -35,12 +35,12 @@
 #include "zebra/zebra_vrf.h"
 #include "zebra/zebra_pw.h"
 
-DEFINE_MTYPE_STATIC(LIB, PW, "Pseudowire")
+DEFINE_MTYPE_STATIC(LIB, PW, "Pseudowire");
 
-DEFINE_QOBJ_TYPE(zebra_pw)
+DEFINE_QOBJ_TYPE(zebra_pw);
 
-DEFINE_HOOK(pw_install, (struct zebra_pw * pw), (pw))
-DEFINE_HOOK(pw_uninstall, (struct zebra_pw * pw), (pw))
+DEFINE_HOOK(pw_install, (struct zebra_pw * pw), (pw));
+DEFINE_HOOK(pw_uninstall, (struct zebra_pw * pw), (pw));
 
 #define MPLS_NO_LABEL MPLS_INVALID_LABEL
 
@@ -48,7 +48,7 @@ static int zebra_pw_enabled(struct zebra_pw *);
 static void zebra_pw_install(struct zebra_pw *);
 static void zebra_pw_uninstall(struct zebra_pw *);
 static int zebra_pw_install_retry(struct thread *);
-static int zebra_pw_check_reachability(struct zebra_pw *);
+static int zebra_pw_check_reachability(const struct zebra_pw *);
 static void zebra_pw_update_status(struct zebra_pw *, int);
 
 static inline int zebra_pw_compare(const struct zebra_pw *a,
@@ -102,7 +102,7 @@ void zebra_pw_del(struct zebra_vrf *zvrf, struct zebra_pw *pw)
 		hook_call(pw_uninstall, pw);
 		dplane_pw_uninstall(pw);
 	} else if (pw->install_retry_timer)
-		THREAD_TIMER_OFF(pw->install_retry_timer);
+		thread_cancel(&pw->install_retry_timer);
 
 	/* unlink and release memory */
 	RB_REMOVE(zebra_pw_head, &zvrf->pseudowires, pw);
@@ -219,7 +219,7 @@ void zebra_pw_install_failure(struct zebra_pw *pw, int pwstatus)
 			pw->vrf_id, pw->ifname, PW_INSTALL_RETRY_INTERVAL);
 
 	/* schedule to retry later */
-	THREAD_TIMER_OFF(pw->install_retry_timer);
+	thread_cancel(&pw->install_retry_timer);
 	thread_add_timer(zrouter.master, zebra_pw_install_retry, pw,
 			 PW_INSTALL_RETRY_INTERVAL, &pw->install_retry_timer);
 
@@ -243,14 +243,79 @@ static void zebra_pw_update_status(struct zebra_pw *pw, int status)
 		zsend_pw_update(pw->client, pw);
 }
 
-static int zebra_pw_check_reachability(struct zebra_pw *pw)
+static int zebra_pw_check_reachability_strict(const struct zebra_pw *pw,
+					      struct route_entry *re)
 {
-	struct route_entry *re;
-	struct nexthop *nexthop;
+	const struct nexthop *nexthop;
+	const struct nexthop_group *nhg;
+	bool found_p = false;
+	bool fail_p = false;
 
 	/* TODO: consider GRE/L2TPv3 tunnels in addition to MPLS LSPs */
 
-	/* find route to the remote end of the pseudowire */
+	/* All active nexthops must be labelled; look at
+	 * primary and backup fib lists, in case there's been
+	 * a backup nexthop activation.
+	 */
+	nhg = rib_get_fib_nhg(re);
+	if (nhg && nhg->nexthop) {
+		for (ALL_NEXTHOPS_PTR(nhg, nexthop)) {
+			if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_RECURSIVE))
+				continue;
+
+			if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE)) {
+				if (nexthop->nh_label != NULL)
+					found_p = true;
+				else {
+					fail_p = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (fail_p)
+		goto done;
+
+	nhg = rib_get_fib_backup_nhg(re);
+	if (nhg && nhg->nexthop) {
+		for (ALL_NEXTHOPS_PTR(nhg, nexthop)) {
+			if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_RECURSIVE))
+				continue;
+
+			if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE)) {
+				if (nexthop->nh_label != NULL)
+					found_p = true;
+				else {
+					fail_p = true;
+					break;
+				}
+			}
+		}
+	}
+
+done:
+
+	if (fail_p || !found_p) {
+		if (IS_ZEBRA_DEBUG_PW)
+			zlog_debug("%s: unlabeled route for %s",
+				   __func__, pw->ifname);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int zebra_pw_check_reachability(const struct zebra_pw *pw)
+{
+	struct route_entry *re;
+	const struct nexthop *nexthop;
+	const struct nexthop_group *nhg;
+	bool found_p = false;
+
+	/* TODO: consider GRE/L2TPv3 tunnels in addition to MPLS LSPs */
+
+	/* Find route to the remote end of the pseudowire */
 	re = rib_match(family2afi(pw->af), SAFI_UNICAST, pw->vrf_id,
 		       &pw->nexthop, NULL);
 	if (!re) {
@@ -260,17 +325,50 @@ static int zebra_pw_check_reachability(struct zebra_pw *pw)
 		return -1;
 	}
 
-	/*
-	 * Need to ensure that there's a label binding for all nexthops.
-	 * Otherwise, ECMP for this route could render the pseudowire unusable.
+	/* Stricter checking for some OSes (OBSD, e.g.) */
+	if (mpls_pw_reach_strict)
+		return zebra_pw_check_reachability_strict(pw, re);
+
+	/* There must be at least one installed labelled nexthop;
+	 * look at primary and backup fib lists, in case there's been
+	 * a backup nexthop activation.
 	 */
-	for (ALL_NEXTHOPS(re->nhe->nhg, nexthop)) {
-		if (!nexthop->nh_label) {
-			if (IS_ZEBRA_DEBUG_PW)
-				zlog_debug("%s: unlabeled route for %s",
-					   __func__, pw->ifname);
-			return -1;
+	nhg = rib_get_fib_nhg(re);
+	if (nhg && nhg->nexthop) {
+		for (ALL_NEXTHOPS_PTR(nhg, nexthop)) {
+			if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_RECURSIVE))
+				continue;
+
+			if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE) &&
+			    nexthop->nh_label != NULL) {
+				found_p = true;
+				break;
+			}
 		}
+	}
+
+	if (found_p)
+		return 0;
+
+	nhg = rib_get_fib_backup_nhg(re);
+	if (nhg && nhg->nexthop) {
+		for (ALL_NEXTHOPS_PTR(nhg, nexthop)) {
+			if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_RECURSIVE))
+				continue;
+
+			if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE) &&
+			    nexthop->nh_label != NULL) {
+				found_p = true;
+				break;
+			}
+		}
+	}
+
+	if (!found_p) {
+		if (IS_ZEBRA_DEBUG_PW)
+			zlog_debug("%s: unlabeled route for %s",
+				   __func__, pw->ifname);
+		return -1;
 	}
 
 	return 0;

@@ -24,7 +24,7 @@
 #include "command.h"
 #include "debug.h"
 #include "libfrr.h"
-#include "version.h"
+#include "lib/version.h"
 #include "northbound.h"
 
 #include <confd_lib.h>
@@ -32,7 +32,7 @@
 #include <confd_dp.h>
 #include <confd_maapi.h>
 
-DEFINE_MTYPE_STATIC(LIB, CONFD, "ConfD module")
+DEFINE_MTYPE_STATIC(LIB, CONFD, "ConfD module");
 
 static struct debug nb_dbg_client_confd = {0, "Northbound client: ConfD"};
 
@@ -515,7 +515,7 @@ static int frr_confd_init_cdb(void)
 	/* Subscribe to all loaded YANG data modules. */
 	confd_spoints = list_new();
 	RB_FOREACH (module, yang_modules, &yang_modules) {
-		struct lys_node *snode;
+		struct lysc_node *snode;
 
 		module->confd_hash = confd_str2hash(module->info->ns);
 		if (module->confd_hash == 0) {
@@ -531,7 +531,7 @@ static int frr_confd_init_cdb(void)
 		 * entire YANG module. So we have to find the top level
 		 * nodes ourselves and subscribe to their paths.
 		 */
-		LY_TREE_FOR (module->info->data, snode) {
+		LY_LIST_FOR (module->info->data, snode) {
 			struct nb_node *nb_node;
 			int *spoint;
 			int ret;
@@ -550,6 +550,9 @@ static int frr_confd_init_cdb(void)
 				continue;
 
 			nb_node = snode->priv;
+			if (!nb_node)
+				continue;
+
 			DEBUGD(&nb_dbg_client_confd, "%s: subscribing to '%s'",
 			       __func__, nb_node->xpath);
 
@@ -759,7 +762,7 @@ static int frr_confd_data_get_object(struct confd_trans_ctx *tctx,
 				     confd_hkeypath_t *kp)
 {
 	struct nb_node *nb_node;
-	const struct lys_node *child;
+	const struct lysc_node *child;
 	char xpath[XPATH_MAXLEN];
 	char xpath_child[XPATH_MAXLEN * 2];
 	struct list *elements;
@@ -786,7 +789,7 @@ static int frr_confd_data_get_object(struct confd_trans_ctx *tctx,
 	elements = yang_data_list_new();
 
 	/* Loop through list child nodes. */
-	LY_TREE_FOR (nb_node->snode->child, child) {
+	LY_LIST_FOR (lysc_node_child(nb_node->snode), child) {
 		struct nb_node *nb_node_child = child->priv;
 		confd_value_t *v;
 
@@ -866,7 +869,7 @@ static int frr_confd_data_get_next_object(struct confd_trans_ctx *tctx,
 	memset(objects, 0, sizeof(objects));
 	for (int j = 0; j < CONFD_OBJECTS_PER_TIME; j++) {
 		struct confd_next_object *object;
-		struct lys_node *child;
+		struct lysc_node *child;
 		struct yang_data *data;
 		size_t nvalues = 0;
 
@@ -916,7 +919,7 @@ static int frr_confd_data_get_next_object(struct confd_trans_ctx *tctx,
 		}
 
 		/* Loop through list child nodes. */
-		LY_TREE_FOR (nb_node->snode->child, child) {
+		LY_LIST_FOR (lysc_node_child(nb_node->snode), child) {
 			struct nb_node *nb_node_child = child->priv;
 			char xpath_child[XPATH_MAXLEN * 2];
 			confd_value_t *v;
@@ -1068,6 +1071,7 @@ static int frr_confd_action_execute(struct confd_user_info *uinfo,
 	struct yang_data *data;
 	confd_tag_value_t *reply;
 	int ret = CONFD_OK;
+	char errmsg[BUFSIZ] = {0};
 
 	/* Getting the XPath is tricky. */
 	if (kp) {
@@ -1115,7 +1119,9 @@ static int frr_confd_action_execute(struct confd_user_info *uinfo,
 	}
 
 	/* Execute callback registered for this XPath. */
-	if (nb_callback_rpc(nb_node, xpath, input, output) != NB_OK) {
+	if (nb_callback_rpc(nb_node, xpath, input, output, errmsg,
+			    sizeof(errmsg))
+	    != NB_OK) {
 		flog_warn(EC_LIB_NB_CB_RPC, "%s: rpc callback failed: %s",
 			  __func__, xpath);
 		ret = CONFD_ERR;
@@ -1181,12 +1187,12 @@ static int frr_confd_dp_read(struct thread *thread)
 	return 0;
 }
 
-static int frr_confd_subscribe_state(const struct lys_node *snode, void *arg)
+static int frr_confd_subscribe_state(const struct lysc_node *snode, void *arg)
 {
 	struct nb_node *nb_node = snode->priv;
 	struct confd_data_cbs *data_cbs = arg;
 
-	if (!CHECK_FLAG(snode->flags, LYS_CONFIG_R))
+	if (!nb_node || !CHECK_FLAG(snode->flags, LYS_CONFIG_R))
 		return YANG_ITER_CONTINUE;
 	/* We only need to subscribe to the root of the state subtrees. */
 	if (snode->parent && CHECK_FLAG(snode->parent->flags, LYS_CONFIG_R))
@@ -1273,7 +1279,7 @@ static int frr_confd_init_dp(const char *program_name)
 	 * Iterate over all loaded YANG modules and subscribe to the paths
 	 * referent to state data.
 	 */
-	yang_snodes_iterate_all(frr_confd_subscribe_state, 0, &data_cbs);
+	yang_snodes_iterate(NULL, frr_confd_subscribe_state, 0, &data_cbs);
 
 	/* Register notification stream. */
 	memset(&ncbs, 0, sizeof(ncbs));
@@ -1385,12 +1391,13 @@ static void frr_confd_cli_init(void)
 
 /* ------------ Main ------------ */
 
-static int frr_confd_calculate_snode_hash(const struct lys_node *snode,
+static int frr_confd_calculate_snode_hash(const struct lysc_node *snode,
 					  void *arg)
 {
 	struct nb_node *nb_node = snode->priv;
 
-	nb_node->confd_hash = confd_str2hash(snode->name);
+	if (nb_node)
+		nb_node->confd_hash = confd_str2hash(snode->name);
 
 	return YANG_ITER_CONTINUE;
 }
@@ -1423,7 +1430,7 @@ static int frr_confd_init(const char *program_name)
 		goto error;
 	}
 
-	yang_snodes_iterate_all(frr_confd_calculate_snode_hash, 0, NULL);
+	yang_snodes_iterate(NULL, frr_confd_calculate_snode_hash, 0, NULL);
 
 	hook_register(nb_notification_send, frr_confd_notification_send);
 
@@ -1476,4 +1483,5 @@ static int frr_confd_module_init(void)
 
 FRR_MODULE_SETUP(.name = "frr_confd", .version = FRR_VERSION,
 		 .description = "FRR ConfD integration module",
-		 .init = frr_confd_module_init, )
+		 .init = frr_confd_module_init,
+);

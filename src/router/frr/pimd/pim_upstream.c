@@ -267,13 +267,10 @@ struct pim_upstream *pim_upstream_del(struct pim_instance *pim,
 		nht_p.family = AF_INET;
 		nht_p.prefixlen = IPV4_MAX_BITLEN;
 		nht_p.u.prefix4 = up->upstream_addr;
-		if (PIM_DEBUG_PIM_TRACE) {
-			char buf[PREFIX2STR_BUFFER];
-			prefix2str(&nht_p, buf, sizeof(buf));
+		if (PIM_DEBUG_PIM_TRACE)
 			zlog_debug(
-				"%s: Deregister upstream %s addr %s with Zebra NHT",
-				__func__, up->sg_str, buf);
-		}
+				"%s: Deregister upstream %s addr %pFX with Zebra NHT",
+				__func__, up->sg_str, &nht_p);
 		pim_delete_tracked_nexthop(pim, &nht_p, up, NULL, false);
 	}
 
@@ -408,6 +405,28 @@ static void pim_upstream_join_timer_restart_msec(struct pim_upstream *up,
 	THREAD_OFF(up->t_join_timer);
 	thread_add_timer_msec(router->master, on_join_timer, up, interval_msec,
 			      &up->t_join_timer);
+}
+
+void pim_update_suppress_timers(uint32_t suppress_time)
+{
+	struct pim_instance *pim;
+	struct vrf *vrf;
+	unsigned int old_rp_ka_time;
+
+	/* stash the old one so we know which values were manually configured */
+	old_rp_ka_time =  (3 * router->register_suppress_time
+			   + router->register_probe_time);
+	router->register_suppress_time = suppress_time;
+
+	RB_FOREACH (vrf, vrf_name_head, &vrfs_by_name) {
+		pim = vrf->info;
+		if (!pim)
+			continue;
+
+		/* Only adjust if not manually configured */
+		if (pim->rp_keep_alive_time == old_rp_ka_time)
+			pim->rp_keep_alive_time = PIM_RP_KEEPALIVE_PERIOD;
+	}
 }
 
 void pim_upstream_join_suppress(struct pim_upstream *up,
@@ -752,6 +771,13 @@ void pim_upstream_switch(struct pim_instance *pim, struct pim_upstream *up,
 		bool send_xg_jp = false;
 
 		forward_off(up);
+		/*
+		 * RFC 4601 Sec 4.5.7:
+		 * JoinDesired(S,G) -> False, set SPTbit to false.
+		 */
+		if (up->sg.src.s_addr != INADDR_ANY)
+			up->sptbit = PIM_UPSTREAM_SPTBIT_FALSE;
+
 		if (old_state == PIM_UPSTREAM_JOINED)
 			pim_msdp_up_join_state_changed(pim, up);
 
@@ -954,8 +980,8 @@ static struct pim_upstream *pim_upstream_new(struct pim_instance *pim,
 
 	if (PIM_DEBUG_PIM_TRACE) {
 		zlog_debug(
-			"%s: Created Upstream %s upstream_addr %s ref count %d increment",
-			__func__, up->sg_str, inet_ntoa(up->upstream_addr),
+			"%s: Created Upstream %s upstream_addr %pI4 ref count %d increment",
+			__func__, up->sg_str, &up->upstream_addr,
 			up->ref_count);
 	}
 
@@ -1062,15 +1088,13 @@ struct pim_upstream *pim_upstream_add(struct pim_instance *pim,
 	}
 
 	if (PIM_DEBUG_PIM_TRACE) {
-		if (up) {
-			char buf[PREFIX2STR_BUFFER];
-			prefix2str(&up->rpf.rpf_addr, buf, sizeof(buf));
-			zlog_debug("%s(%s): %s, iif %s (%s) found: %d: ref_count: %d",
+		if (up)
+			zlog_debug("%s(%s): %s, iif %pFX (%s) found: %d: ref_count: %d",
 		   __func__, name,
-		   up->sg_str, buf, up->rpf.source_nexthop.interface ?
+		   up->sg_str, &up->rpf.rpf_addr, up->rpf.source_nexthop.interface ?
                    up->rpf.source_nexthop.interface->name : "Unknown" ,
 		   found, up->ref_count);
-		} else
+		else
 			zlog_debug("%s(%s): (%s) failure to create", __func__,
 				   name, pim_str_sg_dump(sg));
 	}
@@ -1773,7 +1797,7 @@ void pim_upstream_start_register_stop_timer(struct pim_upstream *up,
 {
 	uint32_t time;
 
-	THREAD_TIMER_OFF(up->t_rs_timer);
+	THREAD_OFF(up->t_rs_timer);
 
 	if (!null_register) {
 		uint32_t lower = (0.5 * PIM_REGISTER_SUPPRESSION_PERIOD);

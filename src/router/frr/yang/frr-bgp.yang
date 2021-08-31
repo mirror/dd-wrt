@@ -19,9 +19,13 @@ module frr-bgp {
     prefix frr-interface;
   }
 
-  include "frr-bgp-common-structure";
+  import frr-bgp-types {
+    prefix frr-bt;
+  }
 
   include "frr-bgp-common";
+
+  include "frr-bgp-common-structure";
 
   include "frr-bgp-common-multiprotocol";
 
@@ -90,10 +94,10 @@ module frr-bgp {
           "BGP protocol augmentation of ietf-routing module
            control-plane-protocol.";
       }
+      presence "Enables configuration of BGP";
       description
         "Top-level configuration for the BGP router.";
       container global {
-        presence "Enables global configuration of BGP";
         description
           "Global configuration for the BGP router.";
         leaf local-as {
@@ -206,6 +210,25 @@ module frr-bgp {
               "The peer-group with which this neighbor is associated.";
           }
 
+          container neighbor-remote-as {
+            leaf remote-as-type {
+              type frr-bt:as-type;
+              mandatory true;
+              description
+                "Remote AS type.";
+            }
+
+            leaf remote-as {
+              when "../remote-as-type = 'as-specified'";
+              type inet:as-number;
+              description
+                "The remote autonomous system number received in
+                 the BGP OPEN message.";
+              reference
+                "RFC 4271";
+            }
+          }
+
           uses neighbor-parameters;
         }
 
@@ -237,6 +260,8 @@ module frr-bgp {
             description
               "The peer-group with which this neighbor is associated.";
           }
+
+          uses neighbor-remote-as;
 
           uses neighbor-parameters;
         }
@@ -353,6 +378,8 @@ module frr-bgp {
       uses distance-per-route-config;
     }
 
+    uses route-flap-dampening;
+
     uses mp-afi-unicast-common;
 
     uses global-filter-config;
@@ -362,10 +389,14 @@ module frr-bgp {
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/global/afi-safis/afi-safi/ipv4-labeled-unicast" {
     uses global-group-use-multiple-paths;
+
+    uses route-flap-dampening;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/global/afi-safis/afi-safi/ipv6-labeled-unicast" {
     uses global-group-use-multiple-paths;
+
+    uses route-flap-dampening;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/global/afi-safis/afi-safi/ipv4-multicast" {
@@ -411,6 +442,8 @@ module frr-bgp {
         description
           "IPv4 multicast destination prefix.";
       }
+
+      uses distance-per-route-config;
     }
 
     uses admin-distance;
@@ -463,7 +496,11 @@ module frr-bgp {
         description
           "IPv6 multicast destination prefix.";
       }
+
+      uses distance-per-route-config;
     }
+
+    uses route-flap-dampening;
 
     uses admin-distance;
   }
@@ -540,6 +577,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -559,6 +598,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-multicast" {
@@ -566,6 +607,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -585,6 +628,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-multicast" {
@@ -592,6 +637,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -611,13 +658,17 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
-  }
+
+    uses structure-neighbor-group-filter-config;
+   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-labeled-unicast" {
     uses structure-neighbor-group-add-paths;
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -637,6 +688,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-labeled-unicast" {
@@ -644,6 +697,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -663,6 +718,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/l3vpn-ipv4-unicast" {
@@ -687,6 +744,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/l3vpn-ipv6-unicast" {
@@ -711,6 +770,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/l2vpn-evpn" {
@@ -725,6 +786,8 @@ module frr-bgp {
     uses structure-neighbor-route-server;
 
     uses structure-neighbor-group-soft-reconfiguration;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-flowspec" {
@@ -733,6 +796,8 @@ module frr-bgp {
     uses structure-neighbor-route-server;
 
     uses structure-neighbor-group-soft-reconfiguration;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-flowspec" {
@@ -741,6 +806,8 @@ module frr-bgp {
     uses structure-neighbor-route-server;
 
     uses structure-neighbor-group-soft-reconfiguration;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/unnumbered-neighbor/afi-safis/afi-safi/ipv4-unicast" {
@@ -787,6 +854,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -806,6 +875,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/unnumbered-neighbor/afi-safis/afi-safi/ipv4-multicast" {
@@ -813,6 +884,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -832,6 +905,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/unnumbered-neighbor/afi-safis/afi-safi/ipv6-multicast" {
@@ -839,6 +914,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -858,6 +935,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/unnumbered-neighbor/afi-safis/afi-safi/ipv4-labeled-unicast" {
@@ -865,6 +944,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -884,12 +965,16 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/unnumbered-neighbor/afi-safis/afi-safi/ipv6-labeled-unicast" {
     uses structure-neighbor-group-add-paths;
 
     uses structure-neighbor-group-as-path-options;
+
+    uses structure-neighbor-default-originate-options;
 
     uses structure-neighbor-group-attr-unchanged;
 
@@ -972,6 +1057,8 @@ module frr-bgp {
     uses structure-neighbor-route-server;
 
     uses structure-neighbor-group-soft-reconfiguration;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/unnumbered-neighbor/afi-safis/afi-safi/ipv4-flowspec" {
@@ -980,6 +1067,8 @@ module frr-bgp {
     uses structure-neighbor-route-server;
 
     uses structure-neighbor-group-soft-reconfiguration;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/neighbors/unnumbered-neighbor/afi-safis/afi-safi/ipv6-flowspec" {
@@ -988,6 +1077,8 @@ module frr-bgp {
     uses structure-neighbor-route-server;
 
     uses structure-neighbor-group-soft-reconfiguration;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast" {
@@ -1034,6 +1125,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -1053,6 +1146,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-multicast" {
@@ -1060,6 +1155,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -1079,6 +1176,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-multicast" {
@@ -1086,6 +1185,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -1105,6 +1206,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-labeled-unicast" {
@@ -1112,6 +1215,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -1131,6 +1236,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-labeled-unicast" {
@@ -1138,6 +1245,8 @@ module frr-bgp {
 
     uses structure-neighbor-group-as-path-options;
 
+    uses structure-neighbor-default-originate-options;
+
     uses structure-neighbor-group-attr-unchanged;
 
     uses structure-neighbor-group-orf-capability;
@@ -1157,6 +1266,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/l3vpn-ipv4-unicast" {
@@ -1181,6 +1292,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/l3vpn-ipv6-unicast" {
@@ -1205,6 +1318,8 @@ module frr-bgp {
     uses structure-neighbor-group-soft-reconfiguration;
 
     uses structure-neighbor-weight;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/l2vpn-evpn" {
@@ -1219,6 +1334,8 @@ module frr-bgp {
     uses structure-neighbor-route-server;
 
     uses structure-neighbor-group-soft-reconfiguration;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-flowspec" {
@@ -1227,6 +1344,8 @@ module frr-bgp {
     uses structure-neighbor-route-server;
 
     uses structure-neighbor-group-soft-reconfiguration;
+
+    uses structure-neighbor-group-filter-config;
   }
 
   augment "/frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-flowspec" {
@@ -1235,5 +1354,7 @@ module frr-bgp {
     uses structure-neighbor-route-server;
 
     uses structure-neighbor-group-soft-reconfiguration;
+
+    uses structure-neighbor-group-filter-config;
   }
 }

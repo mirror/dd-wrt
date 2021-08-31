@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <zebra.h>
+
 #include "northbound.h"
 #include "libfrr.h"
 #include "vrf.h"
@@ -24,7 +26,7 @@
 #include "routing_nb.h"
 
 
-DEFINE_HOOK(routing_conf_event, (struct nb_cb_create_args *args), (args))
+DEFINE_HOOK(routing_conf_event, (struct nb_cb_create_args *args), (args));
 
 /*
  * XPath: /frr-routing:routing/control-plane-protocols/control-plane-protocol

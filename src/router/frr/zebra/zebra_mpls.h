@@ -50,35 +50,12 @@ extern "C" {
 /* Typedefs */
 
 typedef struct zebra_ile_t_ zebra_ile_t;
-typedef struct zebra_snhlfe_t_ zebra_snhlfe_t;
-typedef struct zebra_slsp_t_ zebra_slsp_t;
 typedef struct zebra_nhlfe_t_ zebra_nhlfe_t;
 typedef struct zebra_lsp_t_ zebra_lsp_t;
 typedef struct zebra_fec_t_ zebra_fec_t;
 
 /* Declare LSP nexthop list types */
-PREDECL_DLIST(snhlfe_list);
 PREDECL_DLIST(nhlfe_list);
-
-/*
- * (Outgoing) nexthop label forwarding entry configuration
- */
-struct zebra_snhlfe_t_ {
-	/* Nexthop information */
-	enum nexthop_types_t gtype;
-	union g_addr gate;
-	char *ifname;
-	ifindex_t ifindex;
-
-	/* Out label. */
-	mpls_label_t out_label;
-
-	/* Backpointer to base entry. */
-	zebra_slsp_t *slsp;
-
-	/* Linkage for LSPs' lists */
-	struct snhlfe_list_item list;
-};
 
 /*
  * (Outgoing) nexthop label forwarding entry
@@ -116,17 +93,6 @@ struct zebra_ile_t_ {
 };
 
 /*
- * Label swap entry static configuration.
- */
-struct zebra_slsp_t_ {
-	/* Incoming label */
-	zebra_ile_t ile;
-
-	/* List of outgoing nexthop static configuration */
-	struct snhlfe_list_head snhlfe_list;
-};
-
-/*
  * Label swap entry (ile -> list of nhlfes)
  */
 struct zebra_lsp_t_ {
@@ -150,6 +116,7 @@ struct zebra_lsp_t_ {
 #define LSP_FLAG_SCHEDULED        (1 << 0)
 #define LSP_FLAG_INSTALLED        (1 << 1)
 #define LSP_FLAG_CHANGED          (1 << 2)
+#define LSP_FLAG_FPM              (1 << 3)
 
 	/* Address-family of NHLFE - saved here for delete. All NHLFEs */
 	/* have to be of the same AF */
@@ -609,6 +576,7 @@ static inline int mpls_should_lsps_be_processed(struct route_node *rn)
 
 /* Global variables. */
 extern int mpls_enabled;
+extern bool mpls_pw_reach_strict; /* Strict pseudowire reachability checking */
 
 #ifdef __cplusplus
 }

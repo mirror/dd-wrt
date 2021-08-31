@@ -29,7 +29,7 @@
 
 #include "ripd/ripd.h"
 
-DEFINE_MTYPE_STATIC(RIPD, RIP_PEER, "RIP peer")
+DEFINE_MTYPE_STATIC(RIPD, RIP_PEER, "RIP peer");
 
 static struct rip_peer *rip_peer_new(void)
 {
@@ -86,8 +86,7 @@ static struct rip_peer *rip_peer_get(struct rip *rip, struct in_addr *addr)
 	peer = rip_peer_lookup(rip, addr);
 
 	if (peer) {
-		if (peer->t_timeout)
-			thread_cancel(peer->t_timeout);
+		thread_cancel(&peer->t_timeout);
 	} else {
 		peer = rip_peer_new();
 		peer->rip = rip;
@@ -155,8 +154,8 @@ void rip_peer_display(struct vty *vty, struct rip *rip)
 	char timebuf[RIP_UPTIME_LEN];
 
 	for (ALL_LIST_ELEMENTS(rip->peer_list, node, nnode, peer)) {
-		vty_out(vty, "    %-16s %9d %9d %9d   %s\n",
-			inet_ntoa(peer->addr), peer->recv_badpackets,
+		vty_out(vty, "    %-16pI4 %9d %9d %9d   %s\n",
+			&peer->addr, peer->recv_badpackets,
 			peer->recv_badroutes, ZEBRA_RIP_DISTANCE_DEFAULT,
 			rip_peer_uptime(peer, timebuf, RIP_UPTIME_LEN));
 	}

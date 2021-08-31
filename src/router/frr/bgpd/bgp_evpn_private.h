@@ -112,10 +112,10 @@ struct bgpevpn {
 	/* List of local ESs */
 	struct list *local_es_evi_list;
 
-	QOBJ_FIELDS
+	QOBJ_FIELDS;
 };
 
-DECLARE_QOBJ_TYPE(bgpevpn)
+DECLARE_QOBJ_TYPE(bgpevpn);
 
 /* Mapping of Import RT to VNIs.
  * The Import RTs of all VNIs are maintained in a hash table with each
@@ -218,6 +218,9 @@ static inline struct list *bgpevpn_get_vrf_import_rtl(struct bgpevpn *vpn)
 	return vpn->bgp_vrf->vrf_import_rtl;
 }
 
+extern void bgp_evpn_es_evi_vrf_ref(struct bgpevpn *vpn);
+extern void bgp_evpn_es_evi_vrf_deref(struct bgpevpn *vpn);
+
 static inline void bgpevpn_unlink_from_l3vni(struct bgpevpn *vpn)
 {
 	/* bail if vpn is not associated to bgp_vrf */
@@ -226,6 +229,8 @@ static inline void bgpevpn_unlink_from_l3vni(struct bgpevpn *vpn)
 
 	UNSET_FLAG(vpn->flags, VNI_FLAG_USE_TWO_LABELS);
 	listnode_delete(vpn->bgp_vrf->l2vnis, vpn);
+
+	bgp_evpn_es_evi_vrf_deref(vpn);
 
 	/* remove the backpointer to the vrf instance */
 	bgp_unlock(vpn->bgp_vrf);
@@ -255,6 +260,8 @@ static inline void bgpevpn_link_to_l3vni(struct bgpevpn *vpn)
 	if (bgp_vrf->l3vni &&
 	    !CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_L3VNI_PREFIX_ROUTES_ONLY))
 		SET_FLAG(vpn->flags, VNI_FLAG_USE_TWO_LABELS);
+
+	bgp_evpn_es_evi_vrf_ref(vpn);
 }
 
 static inline int is_vni_configured(struct bgpevpn *vpn)
@@ -306,6 +313,17 @@ static inline void encode_es_rt_extcomm(struct ecommunity_val *eval,
 	eval->val[0] = ECOMMUNITY_ENCODE_EVPN;
 	eval->val[1] = ECOMMUNITY_EVPN_SUBTYPE_ES_IMPORT_RT;
 	memcpy(&eval->val[2], mac, ETH_ALEN);
+}
+
+static inline void encode_df_elect_extcomm(struct ecommunity_val *eval,
+					   uint16_t pref)
+{
+	memset(eval, 0, sizeof(*eval));
+	eval->val[0] = ECOMMUNITY_ENCODE_EVPN;
+	eval->val[1] = ECOMMUNITY_EVPN_SUBTYPE_DF_ELECTION;
+	eval->val[2] = EVPN_MH_DF_ALG_PREF;
+	eval->val[6] = (pref >> 8) & 0xff;
+	eval->val[7] = pref & 0xff;
 }
 
 static inline void encode_esi_label_extcomm(struct ecommunity_val *eval,
@@ -497,7 +515,7 @@ static inline void evpn_type1_prefix_global_copy(struct prefix_evpn *global_p,
 {
 	memcpy(global_p, vni_p, sizeof(*global_p));
 	global_p->prefix.ead_addr.ip.ipa_type = 0;
-	global_p->prefix.ead_addr.ip.ipaddr_v4.s_addr = 0;
+	global_p->prefix.ead_addr.ip.ipaddr_v4.s_addr = INADDR_ANY;
 }
 
 /* EAD prefix in the global table doesn't include the VTEP-IP so
@@ -603,11 +621,23 @@ extern void delete_evpn_route_entry(struct bgp *bgp, afi_t afi, safi_t safi,
 				    struct bgp_path_info **pi);
 int vni_list_cmp(void *p1, void *p2);
 extern int evpn_route_select_install(struct bgp *bgp, struct bgpevpn *vpn,
-		struct bgp_node *rn);
-extern struct bgp_node *bgp_global_evpn_node_get(
-		struct bgp_table *table, afi_t afi, safi_t safi,
-		const struct prefix_evpn *evp, struct prefix_rd *prd);
-extern struct bgp_node *bgp_global_evpn_node_lookup(
-		struct bgp_table *table, afi_t afi, safi_t safi,
-		const struct prefix_evpn *evp, struct prefix_rd *prd);
+				     struct bgp_dest *dest);
+extern struct bgp_dest *bgp_global_evpn_node_get(struct bgp_table *table,
+						 afi_t afi, safi_t safi,
+						 const struct prefix_evpn *evp,
+						 struct prefix_rd *prd);
+extern struct bgp_dest *
+bgp_global_evpn_node_lookup(struct bgp_table *table, afi_t afi, safi_t safi,
+			    const struct prefix_evpn *evp,
+			    struct prefix_rd *prd);
+extern void bgp_evpn_import_route_in_vrfs(struct bgp_path_info *pi, int import);
+extern void bgp_evpn_update_type2_route_entry(struct bgp *bgp,
+					      struct bgpevpn *vpn,
+					      struct bgp_node *rn,
+					      struct bgp_path_info *local_pi,
+					      const char *caller);
+extern int bgp_evpn_route_entry_install_if_vrf_match(struct bgp *bgp_vrf,
+						     struct bgp_path_info *pi,
+						     int install);
+extern void bgp_evpn_import_type2_route(struct bgp_path_info *pi, int import);
 #endif /* _BGP_EVPN_PRIVATE_H */

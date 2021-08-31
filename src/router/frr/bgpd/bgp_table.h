@@ -102,8 +102,10 @@ struct bgp_node {
 #define BGP_NODE_LABEL_CHANGED          (1 << 2)
 #define BGP_NODE_REGISTERED_FOR_LABEL   (1 << 3)
 #define BGP_NODE_SELECT_DEFER           (1 << 4)
-	/* list node pointer */
-	struct listnode *rt_node;
+#define BGP_NODE_FIB_INSTALL_PENDING    (1 << 5)
+#define BGP_NODE_FIB_INSTALLED          (1 << 6)
+#define BGP_NODE_LABEL_REQUESTED        (1 << 7)
+
 	struct bgp_addpath_node_data tx_addpath;
 
 	enum bgp_path_selection_reason reason;
@@ -469,8 +471,14 @@ static inline const struct prefix *bgp_dest_get_prefix(const struct bgp_dest *de
 	return &dest->p;
 }
 
+static inline unsigned int bgp_dest_get_lock_count(const struct bgp_dest *dest)
+{
+	return dest->lock;
+}
+
 #ifdef _FRR_ATTRIBUTE_PRINTFRR
 #pragma FRR printfrr_ext "%pRN"  (struct bgp_node *)
+#pragma FRR printfrr_ext "%pBD"  (struct bgp_dest *)
 #endif
 
 #endif /* _QUAGGA_BGP_TABLE_H */

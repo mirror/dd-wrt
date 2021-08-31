@@ -34,6 +34,8 @@
 #include "ospf6d.h"
 #include "bitfield.h"
 
+DEFINE_MTYPE_STATIC(OSPF6D, OSPF6_LSDB, "OSPF6 LSA database");
+
 struct ospf6_lsdb *ospf6_lsdb_create(void *data)
 {
 	struct ospf6_lsdb *lsdb;
@@ -68,9 +70,9 @@ static void ospf6_lsdb_set_key(struct prefix_ipv6 *key, const void *value,
 #ifdef DEBUG
 static void _lsdb_count_assert(struct ospf6_lsdb *lsdb)
 {
-	struct ospf6_lsa *debug;
+	struct ospf6_lsa *debug, *debugnext;
 	unsigned int num = 0;
-	for (ALL_LSDB(lsdb, debug))
+	for (ALL_LSDB(lsdb, debug, debugnext))
 		num++;
 
 	if (num == lsdb->count)
@@ -78,7 +80,7 @@ static void _lsdb_count_assert(struct ospf6_lsdb *lsdb)
 
 	zlog_debug("PANIC !! lsdb[%p]->count = %d, real = %d", lsdb,
 		   lsdb->count, num);
-	for (ALL_LSDB(lsdb, debug))
+	for (ALL_LSDB(lsdb, debug, debugnext))
 		zlog_debug("%s lsdb[%p]", debug->name, debug->lsdb);
 	zlog_debug("DUMP END");
 
@@ -207,11 +209,7 @@ struct ospf6_lsa *ospf6_lsdb_lookup_next(uint16_t type, uint32_t id,
 	ospf6_lsdb_set_key(&key, &adv_router, sizeof(adv_router));
 	ospf6_lsdb_set_key(&key, &id, sizeof(id));
 
-	{
-		char buf[PREFIX2STR_BUFFER];
-		prefix2str(&key, buf, sizeof(buf));
-		zlog_debug("lsdb_lookup_next: key: %s", buf);
-	}
+	zlog_debug("lsdb_lookup_next: key: %pFX", &key);
 
 	node = route_table_get_next(lsdb->table, &key);
 
@@ -298,12 +296,12 @@ struct ospf6_lsa *ospf6_lsdb_next(const struct route_node *iterend,
 
 void ospf6_lsdb_remove_all(struct ospf6_lsdb *lsdb)
 {
-	struct ospf6_lsa *lsa;
+	struct ospf6_lsa *lsa, *lsanext;
 
 	if (lsdb == NULL)
 		return;
 
-	for (ALL_LSDB(lsdb, lsa))
+	for (ALL_LSDB(lsdb, lsa, lsanext))
 		ospf6_lsdb_remove(lsa, lsdb);
 }
 
@@ -319,9 +317,9 @@ void ospf6_lsdb_lsa_unlock(struct ospf6_lsa *lsa)
 int ospf6_lsdb_maxage_remover(struct ospf6_lsdb *lsdb)
 {
 	int reschedule = 0;
-	struct ospf6_lsa *lsa;
+	struct ospf6_lsa *lsa, *lsanext;
 
-	for (ALL_LSDB(lsdb, lsa)) {
+	for (ALL_LSDB(lsdb, lsa, lsanext)) {
 		if (!OSPF6_LSA_IS_MAXAGE(lsa))
 			continue;
 		if (lsa->retrans_count != 0) {
@@ -348,55 +346,6 @@ int ospf6_lsdb_maxage_remover(struct ospf6_lsdb *lsdb)
 	}
 
 	return (reschedule);
-}
-
-void ospf6_lsdb_show(struct vty *vty, enum ospf_lsdb_show_level level,
-		     uint16_t *type, uint32_t *id, uint32_t *adv_router,
-		     struct ospf6_lsdb *lsdb)
-{
-	struct ospf6_lsa *lsa;
-	const struct route_node *end = NULL;
-	void (*showfunc)(struct vty *, struct ospf6_lsa *) = NULL;
-
-	switch (level) {
-	case OSPF6_LSDB_SHOW_LEVEL_DETAIL:
-		showfunc = ospf6_lsa_show;
-		break;
-	case OSPF6_LSDB_SHOW_LEVEL_INTERNAL:
-		showfunc = ospf6_lsa_show_internal;
-		break;
-	case OSPF6_LSDB_SHOW_LEVEL_DUMP:
-		showfunc = ospf6_lsa_show_dump;
-		break;
-	case OSPF6_LSDB_SHOW_LEVEL_NORMAL:
-	default:
-		showfunc = ospf6_lsa_show_summary;
-	}
-
-	if (type && id && adv_router) {
-		lsa = ospf6_lsdb_lookup(*type, *id, *adv_router, lsdb);
-		if (lsa) {
-			if (level == OSPF6_LSDB_SHOW_LEVEL_NORMAL)
-				ospf6_lsa_show(vty, lsa);
-			else
-				(*showfunc)(vty, lsa);
-		}
-		return;
-	}
-
-	if (level == OSPF6_LSDB_SHOW_LEVEL_NORMAL)
-		ospf6_lsa_show_summary_header(vty);
-
-	end = ospf6_lsdb_head(lsdb, !!type + !!(type && adv_router),
-			      type ? *type : 0, adv_router ? *adv_router : 0,
-			      &lsa);
-	while (lsa) {
-		if ((!adv_router || lsa->header->adv_router == *adv_router)
-		    && (!id || lsa->header->id == *id))
-			(*showfunc)(vty, lsa);
-
-		lsa = ospf6_lsdb_next(end, lsa);
-	}
 }
 
 uint32_t ospf6_new_ls_id(uint16_t type, uint32_t adv_router,

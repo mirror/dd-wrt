@@ -33,7 +33,6 @@
 #include "northbound_cli.h"
 
 #include "static_vrf.h"
-#include "static_memory.h"
 #include "static_vty.h"
 #include "static_routes.h"
 #include "static_debug.h"
@@ -154,6 +153,37 @@ static int static_route_leak(struct vty *vty, const char *svrf,
 
 	static_get_nh_type(type, buf_nh_type, PREFIX_STRLEN);
 	if (!negate) {
+		if (src_str)
+			snprintf(ab_xpath, sizeof(ab_xpath),
+				 FRR_DEL_S_ROUTE_SRC_NH_KEY_NO_DISTANCE_XPATH,
+				 "frr-staticd:staticd", "staticd", svrf,
+				 buf_prefix,
+				 yang_afi_safi_value2identity(afi, safi),
+				 buf_src_prefix, table_id, buf_nh_type, nh_svrf,
+				 buf_gate_str, ifname);
+		else
+			snprintf(ab_xpath, sizeof(ab_xpath),
+				 FRR_DEL_S_ROUTE_NH_KEY_NO_DISTANCE_XPATH,
+				 "frr-staticd:staticd", "staticd", svrf,
+				 buf_prefix,
+				 yang_afi_safi_value2identity(afi, safi),
+				 table_id, buf_nh_type, nh_svrf, buf_gate_str,
+				 ifname);
+
+		/*
+		 * If there's already the same nexthop but with a different
+		 * distance, then remove it for the replacement.
+		 */
+		dnode = yang_dnode_get(vty->candidate_config->dnode, ab_xpath);
+		if (dnode) {
+			dnode = yang_get_subtree_with_no_sibling(dnode);
+			assert(dnode);
+			yang_dnode_get_path(dnode, ab_xpath, XPATH_MAXLEN);
+
+			nb_cli_enqueue_change(vty, ab_xpath, NB_OP_DESTROY,
+					      NULL);
+		}
+
 		/* route + path procesing */
 		if (src_str)
 			snprintf(xpath_prefix, sizeof(xpath_prefix),
@@ -278,24 +308,26 @@ static int static_route_leak(struct vty *vty, const char *svrf,
 	} else {
 		if (src_str)
 			snprintf(ab_xpath, sizeof(ab_xpath),
-				 FRR_DEL_S_ROUTE_SRC_NH_KEY_XPATH,
+				 FRR_DEL_S_ROUTE_SRC_NH_KEY_NO_DISTANCE_XPATH,
 				 "frr-staticd:staticd", "staticd", svrf,
 				 buf_prefix,
 				 yang_afi_safi_value2identity(afi, safi),
-				 buf_src_prefix, table_id, distance,
-				 buf_nh_type, nh_svrf, buf_gate_str, ifname);
+				 buf_src_prefix, table_id, buf_nh_type, nh_svrf,
+				 buf_gate_str, ifname);
 		else
 			snprintf(ab_xpath, sizeof(ab_xpath),
-				 FRR_DEL_S_ROUTE_NH_KEY_XPATH,
+				 FRR_DEL_S_ROUTE_NH_KEY_NO_DISTANCE_XPATH,
 				 "frr-staticd:staticd", "staticd", svrf,
 				 buf_prefix,
 				 yang_afi_safi_value2identity(afi, safi),
-				 table_id, distance, buf_nh_type, nh_svrf,
-				 buf_gate_str, ifname);
+				 table_id, buf_nh_type, nh_svrf, buf_gate_str,
+				 ifname);
 
 		dnode = yang_dnode_get(vty->candidate_config->dnode, ab_xpath);
-		if (!dnode)
-			return ret;
+		if (!dnode) {
+			/* Silently return */
+			return CMD_SUCCESS;
+		}
 
 		dnode = yang_get_subtree_with_no_sibling(dnode);
 		assert(dnode);
@@ -358,8 +390,7 @@ int static_config(struct vty *vty, struct static_vrf *svrf, afi_t afi,
 
 				switch (nh->type) {
 				case STATIC_IPV4_GATEWAY:
-					vty_out(vty, " %s",
-						inet_ntoa(nh->addr.ipv4));
+					vty_out(vty, " %pI4", &nh->addr.ipv4);
 					break;
 				case STATIC_IPV6_GATEWAY:
 					vty_out(vty, " %s",
@@ -1092,19 +1123,17 @@ DEFPY_YANG(ipv6_route_vrf,
 				 ifname, flag, tag_str, distance_str, label,
 				 table_str, false, color_str);
 }
-DEFPY_YANG(debug_staticd,
-      debug_staticd_cmd,
-      "[no] debug static [{events$events}]",
-      NO_STR
-      DEBUG_STR
-      STATICD_STR
-      "Debug events\n")
+DEFPY_YANG(debug_staticd, debug_staticd_cmd,
+	   "[no] debug static [{events$events|route$route}]",
+	   NO_STR DEBUG_STR STATICD_STR
+	   "Debug events\n"
+	   "Debug route\n")
 {
 	/* If no specific category, change all */
 	if (strmatch(argv[argc - 1]->text, "static"))
-		static_debug_set(vty->node, !no, true);
+		static_debug_set(vty->node, !no, true, true);
 	else
-		static_debug_set(vty->node, !no, !!events);
+		static_debug_set(vty->node, !no, !!events, !!route);
 
 	return CMD_SUCCESS;
 }

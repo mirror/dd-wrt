@@ -423,6 +423,7 @@ void pim_msdp_sa_ref(struct pim_instance *pim, struct pim_msdp_peer *mp,
 					   sa->sg_str);
 			}
 			/* send an immediate SA update to peers */
+			sa->rp = pim->msdp.originator_id;
 			pim_msdp_pkt_sa_tx_one(sa);
 		}
 		sa->flags &= ~PIM_MSDP_SAF_STALE;
@@ -721,7 +722,15 @@ static int pim_msdp_sa_comp(const void *p1, const void *p2)
 /* XXX: this can use a bit of refining and extensions */
 bool pim_msdp_peer_rpf_check(struct pim_msdp_peer *mp, struct in_addr rp)
 {
+	struct pim_nexthop nexthop;
+
 	if (mp->peer.s_addr == rp.s_addr) {
+		return true;
+	}
+
+	/* check if the MSDP peer is the nexthop for the RP */
+	if (pim_nexthop_lookup(mp->pim, &nexthop, rp, 0)
+	    && nexthop.mrib_nexthop_addr.u.prefix4.s_addr == mp->peer.s_addr) {
 		return true;
 	}
 
@@ -1551,6 +1560,26 @@ int pim_msdp_config_write(struct pim_instance *pim, struct vty *vty,
 		++count;
 	}
 	return count;
+}
+
+bool pim_msdp_peer_config_write(struct vty *vty, struct pim_instance *pim,
+				const char *spaces)
+{
+	struct pim_msdp_peer *mp;
+	struct listnode *node;
+	bool written = false;
+
+	for (ALL_LIST_ELEMENTS_RO(pim->msdp.peer_list, node, mp)) {
+		/* Non meshed peers have the group name set to 'default'. */
+		if (strcmp(mp->mesh_group_name, "default"))
+			continue;
+
+		vty_out(vty, "%sip msdp peer %pI4 source %pI4\n", spaces,
+			&mp->peer, &mp->local);
+		written = true;
+	}
+
+	return written;
 }
 
 /* Enable feature including active/periodic timers etc. on the first peer

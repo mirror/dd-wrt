@@ -23,10 +23,12 @@
 
 #include "qobj.h"
 #include "routemap.h"
-
 struct ospf6_master {
 
-	in_addr_t zebra_router_id;
+	/* OSPFv3 instance. */
+	struct list *ospf6;
+	/* OSPFv3 thread master. */
+	struct thread_master *master;
 };
 
 /* ospf6->config_flags */
@@ -35,10 +37,35 @@ enum {
 	OSPF6_LOG_ADJACENCY_DETAIL =	(1 << 1),
 };
 
+/* For processing route-map change update in the callback */
+#define OSPF6_IS_RMAP_CHANGED 0x01
+struct ospf6_redist {
+	uint8_t instance;
+
+	uint8_t flag;
+	/* Redistribute metric info. */
+	struct {
+		int type;  /* External metric type (E1 or E2).  */
+		int value; /* Value for static metric (24-bit).
+			    * -1 means metric value is not set.
+			    */
+	} dmetric;
+
+	/* For redistribute route map. */
+	struct {
+		char *name;
+		struct route_map *map;
+	} route_map;
+#define ROUTEMAP_NAME(R) (R->route_map.name)
+#define ROUTEMAP(R) (R->route_map.map)
+};
+
 /* OSPFv3 top level data structure */
 struct ospf6 {
 	/* The relevant vrf_id */
 	vrf_id_t vrf_id;
+
+	char *name; /* VRF name */
 
 	/* my router id */
 	in_addr_t router_id;
@@ -46,7 +73,7 @@ struct ospf6 {
 	/* static router id */
 	in_addr_t router_id_static;
 
-	struct in_addr router_id_zebra;
+	in_addr_t router_id_zebra;
 
 	/* start time */
 	struct timeval starttime;
@@ -66,17 +93,19 @@ struct ospf6 {
 	struct route_table *external_id_table;
 	uint32_t external_id;
 
-	/* redistribute route-map */
-	struct {
-		char *name;
-		struct route_map *map;
-	} rmap[ZEBRA_ROUTE_MAX];
+	/* OSPF6 redistribute configuration */
+	struct list *redist[ZEBRA_ROUTE_MAX + 1];
 
 	uint8_t flag;
 
+	int redistribute; /* Num of redistributed protocols. */
+
 	/* Configuration bitmask, refer to enum above */
 	uint8_t config_flags;
-
+	int default_originate; /* Default information originate. */
+#define DEFAULT_ORIGINATE_NONE 0
+#define DEFAULT_ORIGINATE_ZEBRA 1
+#define DEFAULT_ORIGINATE_ALWAYS 2
 	/* LSA timer parameters */
 	unsigned int lsa_minarrival; /* LSA minimum arrival in milliseconds. */
 
@@ -92,6 +121,7 @@ struct ospf6 {
 	struct timeval ts_spf_duration; /* Execution time of last SPF */
 	unsigned int last_spf_reason;   /* Last SPF reason */
 
+	int fd;
 	/* Threads */
 	struct thread *t_spf_calc; /* SPF calculation timer. */
 	struct thread *t_ase_calc; /* ASE calculation timer. */
@@ -113,23 +143,39 @@ struct ospf6 {
 	 * update to neighbors immediatly */
 	uint8_t inst_shutdown;
 
-	QOBJ_FIELDS
+	/* Max number of multiple paths
+	 * to support ECMP.
+	 */
+	uint16_t max_multipath;
+
+	QOBJ_FIELDS;
 };
-DECLARE_QOBJ_TYPE(ospf6)
+DECLARE_QOBJ_TYPE(ospf6);
 
 #define OSPF6_DISABLED    0x01
 #define OSPF6_STUB_ROUTER 0x02
+#define OSPF6_FLAG_ASBR   0x04
+#define OSPF6_MAX_IF_ADDRS 100
+#define OSPF6_MAX_IF_ADDRS_JUMBO 200
+#define OSPF6_DEFAULT_MTU 1500
+#define OSPF6_JUMBO_MTU 9000
 
 /* global pointer for OSPF top data structure */
 extern struct ospf6 *ospf6;
 extern struct ospf6_master *om6;
 
 /* prototypes */
-extern void ospf6_master_init(void);
+extern void ospf6_master_init(struct thread_master *master);
 extern void ospf6_top_init(void);
 extern void ospf6_delete(struct ospf6 *o);
-extern void ospf6_router_id_update(void);
+extern void ospf6_router_id_update(struct ospf6 *ospf6);
 
 extern void ospf6_maxage_remove(struct ospf6 *o);
-
+extern struct ospf6 *ospf6_instance_create(const char *name);
+void ospf6_vrf_link(struct ospf6 *ospf6, struct vrf *vrf);
+void ospf6_vrf_unlink(struct ospf6 *ospf6, struct vrf *vrf);
+struct ospf6 *ospf6_lookup_by_vrf_id(vrf_id_t vrf_id);
+struct ospf6 *ospf6_lookup_by_vrf_name(const char *name);
+const char *ospf6_vrf_id_to_name(vrf_id_t vrf_id);
+void ospf6_vrf_init(void);
 #endif /* OSPF6_TOP_H */

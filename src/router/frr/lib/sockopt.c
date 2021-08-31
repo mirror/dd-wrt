@@ -20,14 +20,20 @@
 
 #include <zebra.h>
 
-#ifdef SUNOS_5
-#include <ifaddrs.h>
-#endif
-
 #include "log.h"
 #include "sockopt.h"
 #include "sockunion.h"
 #include "lib_errors.h"
+
+#if (defined(__FreeBSD__)                                                      \
+     && ((__FreeBSD_version >= 500022 && __FreeBSD_version < 700000)           \
+	 || (__FreeBSD_version < 500000 && __FreeBSD_version >= 440000)))      \
+	|| (defined(__NetBSD__) && defined(__NetBSD_Version__)                 \
+	    && __NetBSD_Version__ >= 106010000)                                \
+	|| defined(__OpenBSD__) || defined(__APPLE__)                          \
+	|| defined(__DragonFly__) || defined(__sun)
+#define HAVE_BSD_STRUCT_IP_MREQ_HACK
+#endif
 
 void setsockopt_so_recvbuf(int sock, int size)
 {
@@ -351,35 +357,6 @@ int setsockopt_ipv4_multicast_if(int sock, struct in_addr if_addr,
 
 	return setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (void *)&m,
 			  sizeof(m));
-#elif defined(SUNOS_5)
-	char ifname[IF_NAMESIZE];
-	struct ifaddrs *ifa, *ifap;
-	struct in_addr ifaddr;
-
-	if (if_indextoname(ifindex, ifname) == NULL)
-		return -1;
-
-	if (getifaddrs(&ifa) != 0)
-		return -1;
-
-	for (ifap = ifa; ifap != NULL; ifap = ifap->ifa_next) {
-		struct sockaddr_in *sa;
-
-		if (strcmp(ifap->ifa_name, ifname) != 0)
-			continue;
-		if (ifap->ifa_addr->sa_family != AF_INET)
-			continue;
-		sa = (struct sockaddr_in *)ifap->ifa_addr;
-		memcpy(&ifaddr, &sa->sin_addr, sizeof(ifaddr));
-		break;
-	}
-
-	freeifaddrs(ifa);
-	if (!ifap) /* This means we did not find an IP */
-		return -1;
-
-	return setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (void *)&ifaddr,
-			  sizeof(ifaddr));
 #else
 #error "Unsupported multicast API"
 #endif
@@ -483,15 +460,9 @@ static ifindex_t getsockopt_ipv4_ifindex(struct msghdr *msgh)
 
 /* retrieval based on IP_RECVIF */
 
-#ifndef SUNOS_5
 	/* BSD systems use a sockaddr_dl as the control message payload. */
 	struct sockaddr_dl *sdl;
-#else
-	/* SUNOS_5 uses an integer with the index. */
-	ifindex_t *ifindex_p;
-#endif /* SUNOS_5 */
 
-#ifndef SUNOS_5
 	/* BSD */
 	sdl = (struct sockaddr_dl *)getsockopt_cmsg_data(msgh, IPPROTO_IP,
 							 IP_RECVIF);
@@ -499,18 +470,6 @@ static ifindex_t getsockopt_ipv4_ifindex(struct msghdr *msgh)
 		ifindex = sdl->sdl_index;
 	else
 		ifindex = 0;
-#else
-	/*
-	 * Solaris.  On Solaris 8, IP_RECVIF is defined, but the call to
-	 * enable it fails with errno=99, and the struct msghdr has
-	 * controllen 0.
-	 */
-	ifindex_p = (uint_t *)getsockopt_cmsg_data(msgh, IPPROTO_IP, IP_RECVIF);
-	if (ifindex_p != NULL)
-		ifindex = *ifindex_p;
-	else
-		ifindex = 0;
-#endif /* SUNOS_5 */
 
 #else
 /*
@@ -707,4 +666,40 @@ int sockopt_tcp_signature_ext(int sock, union sockunion *su, uint16_t prefixlen,
 int sockopt_tcp_signature(int sock, union sockunion *su, const char *password)
 {
 	return sockopt_tcp_signature_ext(sock, su, 0, password);
+}
+
+/* set TCP mss value to socket */
+int sockopt_tcp_mss_set(int sock, int tcp_maxseg)
+{
+	int ret = 0;
+	socklen_t tcp_maxseg_len = sizeof(tcp_maxseg);
+
+	ret = setsockopt(sock, IPPROTO_TCP, TCP_MAXSEG, &tcp_maxseg,
+			 tcp_maxseg_len);
+	if (ret != 0) {
+		flog_err_sys(EC_LIB_SYSTEM_CALL,
+			     "%s failed: setsockopt(%d): %s", __func__, sock,
+			     safe_strerror(errno));
+	}
+
+	return ret;
+}
+
+/* get TCP mss value synced by socket */
+int sockopt_tcp_mss_get(int sock)
+{
+	int ret = 0;
+	int tcp_maxseg = 0;
+	socklen_t tcp_maxseg_len = sizeof(tcp_maxseg);
+
+	ret = getsockopt(sock, IPPROTO_TCP, TCP_MAXSEG, &tcp_maxseg,
+			 &tcp_maxseg_len);
+	if (ret != 0) {
+		flog_err_sys(EC_LIB_SYSTEM_CALL,
+			     "%s failed: getsockopt(%d): %s", __func__, sock,
+			     safe_strerror(errno));
+		return 0;
+	}
+
+	return tcp_maxseg;
 }

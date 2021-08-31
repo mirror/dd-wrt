@@ -61,7 +61,7 @@ module frr-nexthop {
     type union {
       type inet:ip-address;
       type string {
-        pattern '';
+        pattern "";
       }
     }
   }
@@ -156,10 +156,11 @@ module frr-nexthop {
     }
 
     leaf vrf {
-      type string;
+      type frr-vrf:vrf-ref;
       description
         "The nexthop vrf name, if different from the route.";
     }
+
     leaf gateway {
       type frr-nexthop:optional-ip-address;
       description
@@ -167,21 +168,18 @@ module frr-nexthop {
     }
 
     leaf interface {
-      type string;
+      type frr-interface:interface-ref;
       description
         "The nexthop egress interface.";
     }
 
     leaf bh-type {
-      when "../nh-type = 'blackhole'";
       type blackhole-type;
       description
         "A blackhole sub-type, if the nexthop is a blackhole type.";
     }
 
     leaf onlink {
-      when "../nh-type = 'ip4-ifindex' or
-            ../nh-type = 'ip6-ifindex'";
       type boolean;
       default "false";
       description

@@ -265,11 +265,12 @@ void rfapiCheckRefcount(struct agg_node *rn, safi_t safi, int lockoffset)
 		}
 	}
 
-	if (count_bpi + count_monitor + lockoffset != rn->lock) {
+	if (count_bpi + count_monitor + lockoffset
+	    != agg_node_get_lock_count(rn)) {
 		vnc_zlog_debug_verbose(
 			"%s: count_bpi=%d, count_monitor=%d, lockoffset=%d, rn->lock=%d",
 			__func__, count_bpi, count_monitor, lockoffset,
-			rn->lock);
+			agg_node_get_lock_count(rn));
 		assert(0);
 	}
 }
@@ -297,10 +298,9 @@ static wq_item_status rfapi_deferred_close_workfunc(struct work_queue *q,
 int rfapiGetL2o(struct attr *attr, struct rfapi_l2address_option *l2o)
 {
 	if (attr) {
-
 		struct bgp_attr_encap_subtlv *pEncap;
 
-		for (pEncap = attr->vnc_subtlvs; pEncap;
+		for (pEncap = bgp_attr_get_vnc_subtlvs(attr); pEncap;
 		     pEncap = pEncap->next) {
 
 			if (pEncap->type == BGP_VNC_SUBTLV_TYPE_RFPOPTION) {
@@ -357,7 +357,7 @@ int rfapiGetVncLifetime(struct attr *attr, uint32_t *lifetime)
 
 	if (attr) {
 
-		for (pEncap = attr->vnc_subtlvs; pEncap;
+		for (pEncap = bgp_attr_get_vnc_subtlvs(attr); pEncap;
 		     pEncap = pEncap->next) {
 
 			if (pEncap->type
@@ -611,11 +611,8 @@ rfapiMonitorMoveShorter(struct agg_node *original_vpn_node, int lockoffset)
 
 #ifdef DEBUG_MONITOR_MOVE_SHORTER
 	{
-		char buf[PREFIX_STRLEN];
-
-		prefix2str(&original_vpn_node->p, buf, sizeof(buf));
-		vnc_zlog_debug_verbose("%s: called with node pfx=%s", __func__,
-				       buf);
+		vnc_zlog_debug_verbose("%s: called with node pfx=%pFX",
+				       __func__, &original_vpn_node->p);
 	}
 #endif
 
@@ -750,11 +747,8 @@ rfapiMonitorMoveShorter(struct agg_node *original_vpn_node, int lockoffset)
 
 #ifdef DEBUG_MONITOR_MOVE_SHORTER
 	{
-		char buf[PREFIX_STRLEN];
-
-		prefix2str(&par->p, buf, sizeof(buf));
-		vnc_zlog_debug_verbose("%s: moved to node pfx=%s", __func__,
-				       buf);
+		vnc_zlog_debug_verbose("%s: moved to node pfx=%pFX", __func__,
+				       &par->p);
 	}
 #endif
 
@@ -863,9 +857,9 @@ static void rfapiBgpInfoChainFree(struct bgp_path_info *bpi)
 		if (CHECK_FLAG(bpi->flags, BGP_PATH_REMOVED)
 		    && bpi->extra->vnc.import.timer) {
 
-			struct thread *t =
-				(struct thread *)bpi->extra->vnc.import.timer;
-			struct rfapi_withdraw *wcb = t->arg;
+			struct thread **t =
+				&(bpi->extra->vnc.import.timer);
+			struct rfapi_withdraw *wcb = (*t)->arg;
 
 			XFREE(MTYPE_RFAPI_WITHDRAW, wcb);
 			thread_cancel(t);
@@ -990,7 +984,7 @@ static int rfapiEcommunitiesMatchBeec(struct ecommunity *ecom,
 
 int rfapiEcommunitiesIntersect(struct ecommunity *e1, struct ecommunity *e2)
 {
-	int i, j;
+	uint32_t i, j;
 
 	if (!e1 || !e2)
 		return 0;
@@ -1020,7 +1014,8 @@ int rfapiEcommunitiesIntersect(struct ecommunity *e1, struct ecommunity *e2)
 int rfapiEcommunityGetLNI(struct ecommunity *ecom, uint32_t *lni)
 {
 	if (ecom) {
-		int i;
+		uint32_t i;
+
 		for (i = 0; i < ecom->size; ++i) {
 			uint8_t *p = ecom->val + (i * ECOMMUNITY_SIZE);
 
@@ -1040,7 +1035,8 @@ int rfapiEcommunityGetEthernetTag(struct ecommunity *ecom, uint16_t *tag_id)
 	struct bgp *bgp = bgp_get_default();
 	*tag_id = 0; /* default to untagged */
 	if (ecom) {
-		int i;
+		uint32_t i;
+
 		for (i = 0; i < ecom->size; ++i) {
 			as_t as = 0;
 			int encode = 0;
@@ -1342,7 +1338,8 @@ rfapiRouteInfo2NextHopEntry(struct rfapi_ip_prefix *rprefix,
 		return NULL;
 	}
 
-	for (pEncap = bpi->attr->vnc_subtlvs; pEncap; pEncap = pEncap->next) {
+	for (pEncap = bgp_attr_get_vnc_subtlvs(bpi->attr); pEncap;
+	     pEncap = pEncap->next) {
 		switch (pEncap->type) {
 		case BGP_VNC_SUBTLV_TYPE_LIFETIME:
 			/* use configured lifetime, not attr lifetime */
@@ -1555,12 +1552,9 @@ static int rfapiNhlAddNodeRoutes(
 		}
 		if (!skiplist_search(seen_nexthops, &pfx_vn, NULL)) {
 #ifdef DEBUG_RETURNED_NHL
-			char buf[PREFIX_STRLEN];
-
-			prefix2str(&pfx_vn, buf, sizeof(buf));
 			vnc_zlog_debug_verbose(
-				"%s: already put VN/nexthop %s, skip", __func__,
-				buf);
+				"%s: already put VN/nexthop %pFX, skip",
+				__func__, &pfx_vn);
 #endif
 			continue;
 		}
@@ -3101,10 +3095,9 @@ static void rfapiBgpInfoFilteredImportEncap(
 				if (CHECK_FLAG(bpi->flags, BGP_PATH_REMOVED)
 				    && bpi->extra->vnc.import.timer) {
 
-					struct thread *t =
-						(struct thread *)bpi->extra->vnc
-							.import.timer;
-					struct rfapi_withdraw *wcb = t->arg;
+					struct thread **t =
+						&(bpi->extra->vnc.import.timer);
+					struct rfapi_withdraw *wcb = (*t)->arg;
 
 					XFREE(MTYPE_RFAPI_WITHDRAW, wcb);
 					thread_cancel(t);
@@ -3194,9 +3187,9 @@ static void rfapiBgpInfoFilteredImportEncap(
 			"%s: removing holddown bpi matching NVE of new route",
 			__func__);
 		if (bpi->extra->vnc.import.timer) {
-			struct thread *t =
-				(struct thread *)bpi->extra->vnc.import.timer;
-			struct rfapi_withdraw *wcb = t->arg;
+			struct thread **t =
+				&(bpi->extra->vnc.import.timer);
+			struct rfapi_withdraw *wcb = (*t)->arg;
 
 			XFREE(MTYPE_RFAPI_WITHDRAW, wcb);
 			thread_cancel(t);
@@ -3557,10 +3550,9 @@ void rfapiBgpInfoFilteredImportVPN(
 				if (CHECK_FLAG(bpi->flags, BGP_PATH_REMOVED)
 				    && bpi->extra->vnc.import.timer) {
 
-					struct thread *t =
-						(struct thread *)bpi->extra->vnc
-							.import.timer;
-					struct rfapi_withdraw *wcb = t->arg;
+					struct thread **t =
+						&(bpi->extra->vnc.import.timer);
+					struct rfapi_withdraw *wcb = (*t)->arg;
 
 					XFREE(MTYPE_RFAPI_WITHDRAW, wcb);
 					thread_cancel(t);
@@ -3633,12 +3625,9 @@ void rfapiBgpInfoFilteredImportVPN(
 		rfapiCopyUnEncap2VPN(ern->info, info_new);
 		agg_unlock_node(ern); /* undo lock in route_note_match */
 	} else {
-		char bpf[PREFIX_STRLEN];
-
-		prefix2str(&vn_prefix, bpf, sizeof(bpf));
 		/* Not a big deal, just means VPN route got here first */
-		vnc_zlog_debug_verbose("%s: no encap route for vn addr %s",
-				       __func__, bpf);
+		vnc_zlog_debug_verbose("%s: no encap route for vn addr %pFX",
+				       __func__, &vn_prefix);
 		info_new->extra->vnc.import.un_family = 0;
 	}
 
@@ -3665,7 +3654,8 @@ void rfapiBgpInfoFilteredImportVPN(
 	}
 
 	vnc_zlog_debug_verbose("%s: inserting bpi %p at prefix %pRN #%d",
-			       __func__, info_new, rn, rn->lock);
+			       __func__, info_new, rn,
+			       agg_node_get_lock_count(rn));
 
 	rfapiBgpInfoAttachSorted(rn, info_new, afi, SAFI_MPLS_VPN);
 	rfapiItBiIndexAdd(rn, info_new);
@@ -3778,9 +3768,9 @@ void rfapiBgpInfoFilteredImportVPN(
 			"%s: removing holddown bpi matching NVE of new route",
 			__func__);
 		if (bpi->extra->vnc.import.timer) {
-			struct thread *t =
-				(struct thread *)bpi->extra->vnc.import.timer;
-			struct rfapi_withdraw *wcb = t->arg;
+			struct thread **t =
+				&(bpi->extra->vnc.import.timer);
+			struct rfapi_withdraw *wcb = (*t)->arg;
 
 			XFREE(MTYPE_RFAPI_WITHDRAW, wcb);
 			thread_cancel(t);
@@ -4439,13 +4429,9 @@ static void rfapiDeleteRemotePrefixesIt(
 			struct bgp_path_info *next;
 			const struct prefix *rn_p = agg_node_get_prefix(rn);
 
-			if (p && VNC_DEBUG(IMPORT_DEL_REMOTE)) {
-				char p1line[PREFIX_STRLEN];
-
-				prefix2str(p, p1line, sizeof(p1line));
-				vnc_zlog_debug_any("%s: want %s, have %pRN",
-						   __func__, p1line, rn);
-			}
+			if (p && VNC_DEBUG(IMPORT_DEL_REMOTE))
+				vnc_zlog_debug_any("%s: want %pFX, have %pRN",
+						   __func__, p, rn);
 
 			if (p && prefix_cmp(p, rn_p))
 				continue;
@@ -4512,12 +4498,11 @@ static void rfapiDeleteRemotePrefixesIt(
 						continue;
 					if (bpi->extra->vnc.import.timer) {
 
-						struct thread *t =
-							(struct thread *)bpi
-								->extra->vnc
-								.import.timer;
+						struct thread **t =
+							&(bpi->extra->vnc
+								.import.timer);
 						struct rfapi_withdraw *wcb =
-							t->arg;
+							(*t)->arg;
 
 						wcb->import_table
 							->holddown_count[afi] -=

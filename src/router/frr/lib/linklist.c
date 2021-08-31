@@ -23,9 +23,10 @@
 
 #include "linklist.h"
 #include "memory.h"
+#include "libfrr_trace.h"
 
-DEFINE_MTYPE_STATIC(LIB, LINK_LIST, "Link List")
-DEFINE_MTYPE_STATIC(LIB, LINK_NODE, "Link Node")
+DEFINE_MTYPE_STATIC(LIB, LINK_LIST, "Link List");
+DEFINE_MTYPE_STATIC(LIB, LINK_NODE, "Link Node");
 
 struct list *list_new(void)
 {
@@ -66,6 +67,8 @@ static void listnode_free(struct list *list, struct listnode *node)
 
 struct listnode *listnode_add(struct list *list, void *val)
 {
+	frrtrace(2, frr_libfrr, list_add, list, val);
+
 	struct listnode *node;
 
 	assert(val != NULL);
@@ -281,6 +284,8 @@ void listnode_move_to_tail(struct list *l, struct listnode *n)
 
 void listnode_delete(struct list *list, const void *val)
 {
+	frrtrace(2, frr_libfrr, list_remove, list, val);
+
 	struct listnode *node = listnode_lookup(list, val);
 
 	if (node)
@@ -315,23 +320,6 @@ void list_delete_all_node(struct list *list)
 	list->count = 0;
 }
 
-void list_filter_out_nodes(struct list *list, bool (*cond)(void *data))
-{
-	struct listnode *node;
-	struct listnode *next;
-	void *data;
-
-	assert(list);
-
-	for (ALL_LIST_ELEMENTS(list, node, next, data)) {
-		if ((cond && cond(data)) || (!cond)) {
-			if (*list->del)
-				(*list->del)(data);
-			list_delete_node(list, node);
-		}
-	}
-}
-
 void list_delete(struct list **list)
 {
 	assert(*list);
@@ -360,6 +348,8 @@ struct listnode *listnode_lookup_nocheck(struct list *list, void *data)
 
 void list_delete_node(struct list *list, struct listnode *node)
 {
+	frrtrace(2, frr_libfrr, list_delete_node, list, node);
+
 	if (node->prev)
 		node->prev->next = node->next;
 	else
@@ -374,6 +364,8 @@ void list_delete_node(struct list *list, struct listnode *node)
 
 void list_sort(struct list *list, int (*cmp)(const void **, const void **))
 {
+	frrtrace(1, frr_libfrr, list_sort, list);
+
 	struct listnode *ln, *nn;
 	int i = -1;
 	void *data;

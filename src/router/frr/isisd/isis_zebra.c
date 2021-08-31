@@ -37,6 +37,7 @@
 #include "nexthop.h"
 #include "vrf.h"
 #include "libfrr.h"
+#include "bfd.h"
 
 #include "isisd/isis_constants.h"
 #include "isisd/isis_common.h"
@@ -47,11 +48,14 @@
 #include "isisd/isis_circuit.h"
 #include "isisd/isis_csm.h"
 #include "isisd/isis_lsp.h"
+#include "isisd/isis_spf.h"
+#include "isisd/isis_spf_private.h"
 #include "isisd/isis_route.h"
 #include "isisd/isis_zebra.h"
 #include "isisd/isis_adjacency.h"
 #include "isisd/isis_te.h"
 #include "isisd/isis_sr.h"
+#include "isisd/isis_ldp_sync.h"
 
 struct zclient *zclient;
 static struct zclient *zclient_sync;
@@ -86,10 +90,6 @@ static int isis_zebra_if_address_add(ZAPI_CALLBACK_ARGS)
 {
 	struct isis_circuit *circuit;
 	struct connected *c;
-#ifdef EXTREME_DEBUG
-	struct prefix *p;
-	char buf[PREFIX2STR_BUFFER];
-#endif /* EXTREME_DEBUG */
 
 	c = zebra_interface_address_read(ZEBRA_INTERFACE_ADDRESS_ADD,
 					 zclient->ibuf, vrf_id);
@@ -98,13 +98,10 @@ static int isis_zebra_if_address_add(ZAPI_CALLBACK_ARGS)
 		return 0;
 
 #ifdef EXTREME_DEBUG
-	p = c->address;
-	prefix2str(p, buf, sizeof(buf));
-
-	if (p->family == AF_INET)
-		zlog_debug("connected IP address %s", buf);
-	if (p->family == AF_INET6)
-		zlog_debug("connected IPv6 address %s", buf);
+	if (c->address->family == AF_INET)
+		zlog_debug("connected IP address %pFX", c->address);
+	if (c->address->family == AF_INET6)
+		zlog_debug("connected IPv6 address %pFX", c->address);
 #endif /* EXTREME_DEBUG */
 
 	if (if_is_operative(c->ifp)) {
@@ -120,10 +117,6 @@ static int isis_zebra_if_address_del(ZAPI_CALLBACK_ARGS)
 {
 	struct isis_circuit *circuit;
 	struct connected *c;
-#ifdef EXTREME_DEBUG
-	struct prefix *p;
-	char buf[PREFIX2STR_BUFFER];
-#endif /* EXTREME_DEBUG */
 
 	c = zebra_interface_address_read(ZEBRA_INTERFACE_ADDRESS_DELETE,
 					 zclient->ibuf, vrf_id);
@@ -132,13 +125,10 @@ static int isis_zebra_if_address_del(ZAPI_CALLBACK_ARGS)
 		return 0;
 
 #ifdef EXTREME_DEBUG
-	p = c->address;
-	prefix2str(p, buf, sizeof(buf));
-
-	if (p->family == AF_INET)
-		zlog_debug("disconnected IP address %s", buf);
-	if (p->family == AF_INET6)
-		zlog_debug("disconnected IPv6 address %s", buf);
+	if (c->address->family == AF_INET)
+		zlog_debug("disconnected IP address %pFX", c->address);
+	if (c->address->family == AF_INET6)
+		zlog_debug("disconnected IPv6 address %pFX", c->address);
 #endif /* EXTREME_DEBUG */
 
 	if (if_is_operative(c->ifp)) {
@@ -155,10 +145,11 @@ static int isis_zebra_if_address_del(ZAPI_CALLBACK_ARGS)
 static int isis_zebra_link_params(ZAPI_CALLBACK_ARGS)
 {
 	struct interface *ifp;
+	bool changed = false;
 
-	ifp = zebra_interface_link_params_read(zclient->ibuf, vrf_id);
+	ifp = zebra_interface_link_params_read(zclient->ibuf, vrf_id, &changed);
 
-	if (ifp == NULL)
+	if (ifp == NULL || !changed)
 		return 0;
 
 	/* Update TE TLV */
@@ -167,42 +158,27 @@ static int isis_zebra_link_params(ZAPI_CALLBACK_ARGS)
 	return 0;
 }
 
-void isis_zebra_route_add_route(struct isis *isis,
-				struct prefix *prefix,
-				struct prefix_ipv6 *src_p,
-				struct isis_route_info *route_info)
+enum isis_zebra_nexthop_type {
+	ISIS_NEXTHOP_MAIN = 0,
+	ISIS_NEXTHOP_BACKUP,
+};
+
+static int isis_zebra_add_nexthops(struct isis *isis, struct list *nexthops,
+				   struct zapi_nexthop zapi_nexthops[],
+				   enum isis_zebra_nexthop_type type,
+				   bool mpls_lsp, uint8_t backup_nhs)
 {
-	struct zapi_route api;
-	struct zapi_nexthop *api_nh;
 	struct isis_nexthop *nexthop;
 	struct listnode *node;
 	int count = 0;
 
-	if (zclient->sock < 0)
-		return;
-
-	memset(&api, 0, sizeof(api));
-	api.vrf_id = isis->vrf_id;
-	api.type = PROTO_TYPE;
-	api.safi = SAFI_UNICAST;
-	api.prefix = *prefix;
-	if (src_p && src_p->prefixlen) {
-		api.src_prefix = *src_p;
-		SET_FLAG(api.message, ZAPI_MESSAGE_SRCPFX);
-	}
-	SET_FLAG(api.message, ZAPI_MESSAGE_NEXTHOP);
-	SET_FLAG(api.message, ZAPI_MESSAGE_METRIC);
-	api.metric = route_info->cost;
-#if 0
-	SET_FLAG(api.message, ZAPI_MESSAGE_DISTANCE);
-	api.distance = route_info->depth;
-#endif
-
 	/* Nexthops */
-	for (ALL_LIST_ELEMENTS_RO(route_info->nexthops, node, nexthop)) {
+	for (ALL_LIST_ELEMENTS_RO(nexthops, node, nexthop)) {
+		struct zapi_nexthop *api_nh;
+
 		if (count >= MULTIPATH_NUM)
 			break;
-		api_nh = &api.nexthops[count];
+		api_nh = &zapi_nexthops[count];
 		if (fabricd)
 			SET_FLAG(api_nh->flags, ZAPI_NEXTHOP_FLAG_ONLINK);
 		api_nh->vrf_id = isis->vrf_id;
@@ -233,11 +209,98 @@ void isis_zebra_route_add_route(struct isis *isis,
 		}
 
 		api_nh->ifindex = nexthop->ifindex;
+
+		/* Add MPLS label(s). */
+		if (nexthop->label_stack) {
+			api_nh->label_num = nexthop->label_stack->num_labels;
+			memcpy(api_nh->labels, nexthop->label_stack->label,
+			       sizeof(mpls_label_t) * api_nh->label_num);
+		} else if (nexthop->sr.present) {
+			api_nh->label_num = 1;
+			api_nh->labels[0] = nexthop->sr.label;
+		} else if (mpls_lsp) {
+			switch (type) {
+			case ISIS_NEXTHOP_MAIN:
+				/*
+				 * Do not use non-SR enabled nexthops to prevent
+				 * broken LSPs from being formed.
+				 */
+				continue;
+			case ISIS_NEXTHOP_BACKUP:
+				/*
+				 * This is necessary because zebra requires
+				 * the nexthops of MPLS LSPs to be labeled.
+				 */
+				api_nh->label_num = 1;
+				api_nh->labels[0] = MPLS_LABEL_IMPLICIT_NULL;
+				break;
+			}
+		}
+
+		/* Backup nexthop handling. */
+		if (backup_nhs) {
+			SET_FLAG(api_nh->flags, ZAPI_NEXTHOP_FLAG_HAS_BACKUP);
+			/*
+			 * If the backup has multiple nexthops, all of them
+			 * protect the same primary nexthop since ECMP routes
+			 * have no backups.
+			 */
+			api_nh->backup_num = backup_nhs;
+			for (int i = 0; i < backup_nhs; i++)
+				api_nh->backup_idx[i] = i;
+		}
 		count++;
 	}
-	if (!count)
+
+	return count;
+}
+
+void isis_zebra_route_add_route(struct isis *isis, struct prefix *prefix,
+				struct prefix_ipv6 *src_p,
+				struct isis_route_info *route_info)
+{
+	struct zapi_route api;
+	int count = 0;
+
+	if (zclient->sock < 0)
 		return;
 
+	/* Uninstall the route if it doesn't have any valid nexthop. */
+	if (list_isempty(route_info->nexthops)) {
+		isis_zebra_route_del_route(isis, prefix, src_p, route_info);
+		return;
+	}
+
+	memset(&api, 0, sizeof(api));
+	api.vrf_id = isis->vrf_id;
+	api.type = PROTO_TYPE;
+	api.safi = SAFI_UNICAST;
+	api.prefix = *prefix;
+	if (src_p && src_p->prefixlen) {
+		api.src_prefix = *src_p;
+		SET_FLAG(api.message, ZAPI_MESSAGE_SRCPFX);
+	}
+	SET_FLAG(api.message, ZAPI_MESSAGE_NEXTHOP);
+	SET_FLAG(api.message, ZAPI_MESSAGE_METRIC);
+	api.metric = route_info->cost;
+
+	/* Add backup nexthops first. */
+	if (route_info->backup) {
+		count = isis_zebra_add_nexthops(
+			isis, route_info->backup->nexthops, api.backup_nexthops,
+			ISIS_NEXTHOP_BACKUP, false, 0);
+		if (count > 0) {
+			SET_FLAG(api.message, ZAPI_MESSAGE_BACKUP_NEXTHOPS);
+			api.backup_nexthop_num = count;
+		}
+	}
+
+	/* Add primary nexthops. */
+	count = isis_zebra_add_nexthops(isis, route_info->nexthops,
+					api.nexthops, ISIS_NEXTHOP_MAIN, false,
+					count);
+	if (!count)
+		return;
 	api.nexthop_num = count;
 
 	zclient_route_send(ZEBRA_ROUTE_ADD, zclient, &api);
@@ -267,30 +330,39 @@ void isis_zebra_route_del_route(struct isis *isis,
 }
 
 /**
- * Install Prefix-SID in the forwarding plane through Zebra.
+ * Install Prefix-SID label entry in the forwarding plane through Zebra.
  *
- * @param srp	Segment Routing Prefix-SID
+ * @param area		IS-IS area
+ * @param prefix	Route prefix
+ * @param rinfo		Route information
+ * @param psid		Prefix-SID information
  */
-static void isis_zebra_prefix_install_prefix_sid(const struct sr_prefix *srp)
+void isis_zebra_prefix_sid_install(struct isis_area *area,
+				   struct prefix *prefix,
+				   struct isis_route_info *rinfo,
+				   struct isis_sr_psid_info *psid)
 {
 	struct zapi_labels zl;
-	struct zapi_nexthop *znh;
-	struct listnode *node;
-	struct isis_nexthop *nexthop;
-	struct interface *ifp;
+	int count = 0;
+
+	sr_debug("ISIS-Sr (%s): update label %u for prefix %pFX",
+		 area->area_tag, psid->label, prefix);
 
 	/* Prepare message. */
 	memset(&zl, 0, sizeof(zl));
 	zl.type = ZEBRA_LSP_ISIS_SR;
-	zl.local_label = srp->input_label;
+	zl.local_label = psid->label;
 
-	switch (srp->type) {
-	case ISIS_SR_PREFIX_LOCAL:
+	/* Local routes don't have any nexthop and require special handling. */
+	if (list_isempty(rinfo->nexthops)) {
+		struct zapi_nexthop *znh;
+		struct interface *ifp;
+
 		ifp = if_lookup_by_name("lo", VRF_DEFAULT);
 		if (!ifp) {
 			zlog_warn(
 				"%s: couldn't install Prefix-SID %pFX: loopback interface not found",
-				__func__, &srp->prefix);
+				__func__, prefix);
 			return;
 		}
 
@@ -299,32 +371,26 @@ static void isis_zebra_prefix_install_prefix_sid(const struct sr_prefix *srp)
 		znh->ifindex = ifp->ifindex;
 		znh->label_num = 1;
 		znh->labels[0] = MPLS_LABEL_IMPLICIT_NULL;
-		break;
-	case ISIS_SR_PREFIX_REMOTE:
-		/* Update route in the RIB too. */
-		SET_FLAG(zl.message, ZAPI_LABELS_FTN);
-		zl.route.prefix = srp->prefix;
-		zl.route.type = ZEBRA_ROUTE_ISIS;
-		zl.route.instance = 0;
-
-		for (ALL_LIST_ELEMENTS_RO(srp->u.remote.rinfo->nexthops, node,
-					  nexthop)) {
-			if (nexthop->sr.label == MPLS_INVALID_LABEL)
-				continue;
-
-			if (zl.nexthop_num >= MULTIPATH_NUM)
-				break;
-
-			znh = &zl.nexthops[zl.nexthop_num++];
-			znh->type = (srp->prefix.family == AF_INET)
-					    ? NEXTHOP_TYPE_IPV4_IFINDEX
-					    : NEXTHOP_TYPE_IPV6_IFINDEX;
-			znh->gate = nexthop->ip;
-			znh->ifindex = nexthop->ifindex;
-			znh->label_num = 1;
-			znh->labels[0] = nexthop->sr.label;
+	} else {
+		/* Add backup nexthops first. */
+		if (rinfo->backup) {
+			count = isis_zebra_add_nexthops(
+				area->isis, rinfo->backup->nexthops,
+				zl.backup_nexthops, ISIS_NEXTHOP_BACKUP, true,
+				0);
+			if (count > 0) {
+				SET_FLAG(zl.message, ZAPI_LABELS_HAS_BACKUPS);
+				zl.backup_nexthop_num = count;
+			}
 		}
-		break;
+
+		/* Add primary nexthops. */
+		count = isis_zebra_add_nexthops(area->isis, rinfo->nexthops,
+						zl.nexthops, ISIS_NEXTHOP_MAIN,
+						true, count);
+		if (!count)
+			return;
+		zl.nexthop_num = count;
 	}
 
 	/* Send message to zebra. */
@@ -332,55 +398,30 @@ static void isis_zebra_prefix_install_prefix_sid(const struct sr_prefix *srp)
 }
 
 /**
- * Uninstall Prefix-SID from the forwarding plane through Zebra.
+ * Uninstall Prefix-SID label entry from the forwarding plane through Zebra.
  *
- * @param srp	Segment Routing Prefix-SID
+ * @param area		IS-IS area
+ * @param prefix	Route prefix
+ * @param rinfo		Route information
+ * @param psid		Prefix-SID information
  */
-static void isis_zebra_uninstall_prefix_sid(const struct sr_prefix *srp)
+void isis_zebra_prefix_sid_uninstall(struct isis_area *area,
+				     struct prefix *prefix,
+				     struct isis_route_info *rinfo,
+				     struct isis_sr_psid_info *psid)
 {
 	struct zapi_labels zl;
+
+	sr_debug("ISIS-Sr (%s): delete label %u for prefix %pFX",
+		 area->area_tag, psid->label, prefix);
 
 	/* Prepare message. */
 	memset(&zl, 0, sizeof(zl));
 	zl.type = ZEBRA_LSP_ISIS_SR;
-	zl.local_label = srp->input_label;
-
-	if (srp->type == ISIS_SR_PREFIX_REMOTE) {
-		/* Update route in the RIB too. */
-		SET_FLAG(zl.message, ZAPI_LABELS_FTN);
-		zl.route.prefix = srp->prefix;
-		zl.route.type = ZEBRA_ROUTE_ISIS;
-		zl.route.instance = 0;
-	}
+	zl.local_label = psid->label;
 
 	/* Send message to zebra. */
 	(void)zebra_send_mpls_labels(zclient, ZEBRA_MPLS_LABELS_DELETE, &zl);
-}
-
-/**
- * Send Prefix-SID to ZEBRA for installation or deletion.
- *
- * @param cmd	ZEBRA_MPLS_LABELS_REPLACE or ZEBRA_ROUTE_DELETE
- * @param srp	Segment Routing Prefix-SID
- */
-void isis_zebra_send_prefix_sid(int cmd, const struct sr_prefix *srp)
-{
-
-	if (cmd != ZEBRA_MPLS_LABELS_REPLACE
-	    && cmd != ZEBRA_MPLS_LABELS_DELETE) {
-		flog_warn(EC_LIB_DEVELOPMENT, "%s: wrong ZEBRA command",
-			  __func__);
-		return;
-	}
-
-	sr_debug("  |- %s label %u for prefix %pFX",
-		 cmd == ZEBRA_MPLS_LABELS_REPLACE ? "Update" : "Delete",
-		 srp->input_label, &srp->prefix);
-
-	if (cmd == ZEBRA_MPLS_LABELS_REPLACE)
-		isis_zebra_prefix_install_prefix_sid(srp);
-	else
-		isis_zebra_uninstall_prefix_sid(srp);
 }
 
 /**
@@ -391,6 +432,7 @@ void isis_zebra_send_prefix_sid(int cmd, const struct sr_prefix *srp)
  */
 void isis_zebra_send_adjacency_sid(int cmd, const struct sr_adjacency *sra)
 {
+	struct isis *isis = sra->adj->circuit->area->isis;
 	struct zapi_labels zl;
 	struct zapi_nexthop *znh;
 
@@ -402,11 +444,11 @@ void isis_zebra_send_adjacency_sid(int cmd, const struct sr_adjacency *sra)
 
 	sr_debug("  |- %s label %u for interface %s",
 		 cmd == ZEBRA_MPLS_LABELS_ADD ? "Add" : "Delete",
-		 sra->nexthop.label, sra->adj->circuit->interface->name);
+		 sra->input_label, sra->adj->circuit->interface->name);
 
 	memset(&zl, 0, sizeof(zl));
 	zl.type = ZEBRA_LSP_ISIS_SR;
-	zl.local_label = sra->nexthop.label;
+	zl.local_label = sra->input_label;
 	zl.nexthop_num = 1;
 	znh = &zl.nexthops[0];
 	znh->gate = sra->nexthop.address;
@@ -416,6 +458,24 @@ void isis_zebra_send_adjacency_sid(int cmd, const struct sr_adjacency *sra)
 	znh->ifindex = sra->adj->circuit->interface->ifindex;
 	znh->label_num = 1;
 	znh->labels[0] = MPLS_LABEL_IMPLICIT_NULL;
+
+	/* Set backup nexthops. */
+	if (sra->type == ISIS_SR_LAN_BACKUP) {
+		int count;
+
+		count = isis_zebra_add_nexthops(isis, sra->backup_nexthops,
+						zl.backup_nexthops,
+						ISIS_NEXTHOP_BACKUP, true, 0);
+		if (count > 0) {
+			SET_FLAG(zl.message, ZAPI_LABELS_HAS_BACKUPS);
+			zl.backup_nexthop_num = count;
+
+			SET_FLAG(znh->flags, ZAPI_NEXTHOP_FLAG_HAS_BACKUP);
+			znh->backup_num = count;
+			for (int i = 0; i < count; i++)
+				znh->backup_idx[i] = i;
+		}
+	}
 
 	(void)zebra_send_mpls_labels(zclient, cmd, &zl);
 }
@@ -451,7 +511,7 @@ static int isis_zebra_read(ZAPI_CALLBACK_ARGS)
 
 	if (cmd == ZEBRA_REDISTRIBUTE_ROUTE_ADD)
 		isis_redist_add(isis, api.type, &api.prefix, &api.src_prefix,
-				api.distance, api.metric);
+				api.distance, api.metric, api.tag);
 	else
 		isis_redist_delete(isis, api.type, &api.prefix,
 				   &api.src_prefix);
@@ -464,24 +524,90 @@ int isis_distribute_list_update(int routetype)
 	return 0;
 }
 
-void isis_zebra_redistribute_set(afi_t afi, int type)
+void isis_zebra_redistribute_set(afi_t afi, int type, vrf_id_t vrf_id)
 {
 	if (type == DEFAULT_ROUTE)
 		zclient_redistribute_default(ZEBRA_REDISTRIBUTE_DEFAULT_ADD,
-					     zclient, afi, VRF_DEFAULT);
+					     zclient, afi, vrf_id);
 	else
 		zclient_redistribute(ZEBRA_REDISTRIBUTE_ADD, zclient, afi, type,
-				     0, VRF_DEFAULT);
+				     0, vrf_id);
 }
 
-void isis_zebra_redistribute_unset(afi_t afi, int type)
+void isis_zebra_redistribute_unset(afi_t afi, int type, vrf_id_t vrf_id)
 {
 	if (type == DEFAULT_ROUTE)
 		zclient_redistribute_default(ZEBRA_REDISTRIBUTE_DEFAULT_DELETE,
-					     zclient, afi, VRF_DEFAULT);
+					     zclient, afi, vrf_id);
 	else
 		zclient_redistribute(ZEBRA_REDISTRIBUTE_DELETE, zclient, afi,
-				     type, 0, VRF_DEFAULT);
+				     type, 0, vrf_id);
+}
+
+/**
+ * Register RLFA with LDP.
+ */
+int isis_zebra_rlfa_register(struct isis_spftree *spftree, struct rlfa *rlfa)
+{
+	struct isis_area *area = spftree->area;
+	struct zapi_rlfa_request zr = {};
+	int ret;
+
+	if (!zclient)
+		return 0;
+
+	zr.igp.vrf_id = area->isis->vrf_id;
+	zr.igp.protocol = ZEBRA_ROUTE_ISIS;
+	strlcpy(zr.igp.isis.area_tag, area->area_tag,
+		sizeof(zr.igp.isis.area_tag));
+	zr.igp.isis.spf.tree_id = spftree->tree_id;
+	zr.igp.isis.spf.level = spftree->level;
+	zr.igp.isis.spf.run_id = spftree->runcount;
+	zr.destination = rlfa->prefix;
+	zr.pq_address = rlfa->pq_address;
+
+	zlog_debug("ISIS-LFA: registering RLFA %pFX@%pI4 with LDP",
+		   &rlfa->prefix, &rlfa->pq_address);
+
+	ret = zclient_send_opaque_unicast(zclient, LDP_RLFA_REGISTER,
+					  ZEBRA_ROUTE_LDP, 0, 0,
+					  (const uint8_t *)&zr, sizeof(zr));
+	if (ret == ZCLIENT_SEND_FAILURE) {
+		zlog_warn("ISIS-LFA: failed to register RLFA with LDP");
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
+ * Unregister all RLFAs from the given SPF tree with LDP.
+ */
+void isis_zebra_rlfa_unregister_all(struct isis_spftree *spftree)
+{
+	struct isis_area *area = spftree->area;
+	struct zapi_rlfa_igp igp = {};
+	int ret;
+
+	if (!zclient || spftree->type != SPF_TYPE_FORWARD
+	    || CHECK_FLAG(spftree->flags, F_SPFTREE_NO_ADJACENCIES))
+		return;
+
+	if (IS_DEBUG_LFA)
+		zlog_debug("ISIS-LFA: unregistering all RLFAs with LDP");
+
+	igp.vrf_id = area->isis->vrf_id;
+	igp.protocol = ZEBRA_ROUTE_ISIS;
+	strlcpy(igp.isis.area_tag, area->area_tag, sizeof(igp.isis.area_tag));
+	igp.isis.spf.tree_id = spftree->tree_id;
+	igp.isis.spf.level = spftree->level;
+	igp.isis.spf.run_id = spftree->runcount;
+
+	ret = zclient_send_opaque_unicast(zclient, LDP_RLFA_UNREGISTER_ALL,
+					  ZEBRA_ROUTE_LDP, 0, 0,
+					  (const uint8_t *)&igp, sizeof(igp));
+	if (ret == ZCLIENT_SEND_FAILURE)
+		zlog_warn("ISIS-LFA: failed to unregister RLFA with LDP");
 }
 
 /* Label Manager Functions */
@@ -563,7 +689,7 @@ int isis_zebra_label_manager_connect(void)
 	set_nonblocking(zclient_sync->sock);
 
 	/* Send hello to notify zebra this is a synchronous client */
-	if (zclient_send_hello(zclient_sync) < 0) {
+	if (zclient_send_hello(zclient_sync) == ZCLIENT_SEND_FAILURE) {
 		zlog_warn("%s: failed sending hello for synchronous zclient!",
 			  __func__);
 		close(zclient_sync->sock);
@@ -599,10 +725,79 @@ void isis_zebra_vrf_register(struct isis *isis)
 	}
 }
 
+void isis_zebra_vrf_deregister(struct isis *isis)
+{
+	if (!zclient || zclient->sock < 0 || !isis)
+		return;
+
+	if (isis->vrf_id != VRF_UNKNOWN) {
+		if (IS_DEBUG_EVENTS)
+			zlog_debug("%s: Deregister VRF %s id %u", __func__,
+				   isis->name, isis->vrf_id);
+		zclient_send_dereg_requests(zclient, isis->vrf_id);
+	}
+}
 
 static void isis_zebra_connected(struct zclient *zclient)
 {
 	zclient_send_reg_requests(zclient, VRF_DEFAULT);
+	zclient_register_opaque(zclient, LDP_RLFA_LABELS);
+	zclient_register_opaque(zclient, LDP_IGP_SYNC_IF_STATE_UPDATE);
+	zclient_register_opaque(zclient, LDP_IGP_SYNC_ANNOUNCE_UPDATE);
+	bfd_client_sendmsg(zclient, ZEBRA_BFD_CLIENT_REGISTER, VRF_DEFAULT);
+}
+
+/*
+ * opaque messages between processes
+ */
+static int isis_opaque_msg_handler(ZAPI_CALLBACK_ARGS)
+{
+	struct stream *s;
+	struct zapi_opaque_msg info;
+	struct ldp_igp_sync_if_state state;
+	struct ldp_igp_sync_announce announce;
+	struct zapi_rlfa_response rlfa;
+	int ret = 0;
+
+	s = zclient->ibuf;
+	if (zclient_opaque_decode(s, &info) != 0)
+		return -1;
+
+	switch (info.type) {
+	case LDP_IGP_SYNC_IF_STATE_UPDATE:
+		STREAM_GET(&state, s, sizeof(state));
+		ret = isis_ldp_sync_state_update(state);
+		break;
+	case LDP_IGP_SYNC_ANNOUNCE_UPDATE:
+		STREAM_GET(&announce, s, sizeof(announce));
+		ret = isis_ldp_sync_announce_update(announce);
+		break;
+	case LDP_RLFA_LABELS:
+		STREAM_GET(&rlfa, s, sizeof(rlfa));
+		isis_rlfa_process_ldp_response(&rlfa);
+		break;
+	default:
+		break;
+	}
+
+stream_failure:
+
+	return ret;
+}
+
+static int isis_zebra_client_close_notify(ZAPI_CALLBACK_ARGS)
+{
+	int ret = 0;
+
+	struct zapi_client_close_info info;
+
+	if (zapi_client_close_notify_decode(zclient->ibuf, &info) < 0)
+		return -1;
+
+	isis_ldp_sync_handle_client_close(&info);
+	isis_ldp_rlfa_handle_client_close(&info);
+
+	return ret;
 }
 
 void isis_zebra_init(struct thread_master *master, int instance)
@@ -631,10 +826,17 @@ void isis_zebra_init(struct thread_master *master, int instance)
 	 */
 	zclient_sync->session_id = 1;
 	zclient_sync->privs = &isisd_privs;
+
+	zclient->opaque_msg_handler = isis_opaque_msg_handler;
+
+	zclient->zebra_client_close_notify = isis_zebra_client_close_notify;
 }
 
 void isis_zebra_stop(void)
 {
+	zclient_unregister_opaque(zclient, LDP_RLFA_LABELS);
+	zclient_unregister_opaque(zclient, LDP_IGP_SYNC_IF_STATE_UPDATE);
+	zclient_unregister_opaque(zclient, LDP_IGP_SYNC_ANNOUNCE_UPDATE);
 	zclient_stop(zclient_sync);
 	zclient_free(zclient_sync);
 	zclient_stop(zclient);

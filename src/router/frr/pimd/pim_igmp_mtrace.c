@@ -66,7 +66,6 @@ static bool mtrace_fwd_info_weak(struct pim_instance *pim,
 	struct pim_nexthop nexthop;
 	struct interface *ifp_in;
 	struct in_addr nh_addr;
-	char nexthop_str[INET_ADDRSTRLEN];
 
 	nh_addr.s_addr = INADDR_ANY;
 
@@ -82,10 +81,8 @@ static bool mtrace_fwd_info_weak(struct pim_instance *pim,
 		zlog_debug("mtrace pim_nexthop_lookup OK");
 
 	if (PIM_DEBUG_MTRACE)
-		zlog_warn("mtrace next_hop=%s",
-			  inet_ntop(nexthop.mrib_nexthop_addr.family,
-				    &nexthop.mrib_nexthop_addr.u.prefix,
-				    nexthop_str, sizeof(nexthop_str)));
+		zlog_debug("mtrace next_hop=%pI4",
+			   &nexthop.mrib_nexthop_addr.u.prefix4);
 
 	if (nexthop.mrib_nexthop_addr.family == AF_INET)
 		nh_addr = nexthop.mrib_nexthop_addr.u.prefix4;
@@ -114,7 +111,6 @@ static bool mtrace_fwd_info(struct pim_instance *pim,
 	struct interface *ifp_in;
 	struct in_addr nh_addr;
 	uint32_t total;
-	char up_str[INET_ADDRSTRLEN];
 
 	memset(&sg, 0, sizeof(struct prefix_sg));
 	sg.src = mtracep->src_addr;
@@ -142,9 +138,7 @@ static bool mtrace_fwd_info(struct pim_instance *pim,
 	total = htonl(MTRACE_UNKNOWN_COUNT);
 
 	if (PIM_DEBUG_MTRACE)
-		zlog_debug("fwd_info: upstream next hop=%s",
-			   inet_ntop(AF_INET, &(nh_addr), up_str,
-				     sizeof(up_str)));
+		zlog_debug("fwd_info: upstream next hop=%pI4", &nh_addr);
 
 	if (up->channel_oil)
 		total = up->channel_oil->cc.pktcnt;
@@ -198,31 +192,19 @@ static void mtrace_rsp_init(struct igmp_mtrace_rsp *mtrace_rspp)
 static void mtrace_rsp_debug(uint32_t qry_id, int rsp,
 			     struct igmp_mtrace_rsp *mrspp)
 {
-	char inc_str[INET_ADDRSTRLEN];
-	char out_str[INET_ADDRSTRLEN];
-	char prv_str[INET_ADDRSTRLEN];
+	struct in_addr incoming = mrspp->incoming;
+	struct in_addr outgoing = mrspp->outgoing;
+	struct in_addr prev_hop = mrspp->prev_hop;
 
 	zlog_debug(
-		"Rx mt(%d) qid=%ud arr=%x in=%s out=%s prev=%s proto=%d fwd=%d",
-		rsp, ntohl(qry_id), mrspp->arrival,
-		inet_ntop(AF_INET, &(mrspp->incoming), inc_str,
-			  sizeof(inc_str)),
-		inet_ntop(AF_INET, &(mrspp->outgoing), out_str,
-			  sizeof(out_str)),
-		inet_ntop(AF_INET, &(mrspp->prev_hop), prv_str,
-			  sizeof(prv_str)),
-		mrspp->rtg_proto, mrspp->fwd_code);
+		"Rx mt(%d) qid=%ud arr=%x in=%pI4 out=%pI4 prev=%pI4 proto=%d fwd=%d",
+		rsp, ntohl(qry_id), mrspp->arrival, &incoming, &outgoing,
+		&prev_hop, mrspp->rtg_proto, mrspp->fwd_code);
 }
 
 static void mtrace_debug(struct pim_interface *pim_ifp,
 			 struct igmp_mtrace *mtracep, int mtrace_len)
 {
-	char inc_str[INET_ADDRSTRLEN];
-	char grp_str[INET_ADDRSTRLEN];
-	char src_str[INET_ADDRSTRLEN];
-	char dst_str[INET_ADDRSTRLEN];
-	char rsp_str[INET_ADDRSTRLEN];
-
 	struct in_addr ga, sa, da, ra;
 
 	ga = mtracep->grp_addr;
@@ -231,19 +213,10 @@ static void mtrace_debug(struct pim_interface *pim_ifp,
 	ra = mtracep->rsp_addr;
 
 	zlog_debug(
-		"Rx mtrace packet incoming on %s: hops=%d type=%d size=%d, grp=%s, src=%s, dst=%s rsp=%s ttl=%d qid=%ud",
-		inet_ntop(AF_INET, &(pim_ifp->primary_address), inc_str,
-			  sizeof(inc_str)),
-		mtracep->hops, mtracep->type, mtrace_len,
-		inet_ntop(AF_INET, &ga, grp_str,
-			  sizeof(grp_str)),
-		inet_ntop(AF_INET, &sa, src_str,
-			  sizeof(src_str)),
-		inet_ntop(AF_INET, &da, dst_str,
-			  sizeof(dst_str)),
-		inet_ntop(AF_INET, &ra, rsp_str,
-			  sizeof(rsp_str)),
-		mtracep->rsp_ttl, ntohl(mtracep->qry_id));
+		"Rx mtrace packet incoming on %pI4: hops=%d type=%d size=%d, grp=%pI4, src=%pI4, dst=%pI4 rsp=%pI4 ttl=%d qid=%ud",
+		&pim_ifp->primary_address, mtracep->hops, mtracep->type,
+		mtrace_len, &ga, &sa, &da, &ra, mtracep->rsp_ttl,
+		ntohl(mtracep->qry_id));
 	if (mtrace_len > (int)sizeof(struct igmp_mtrace)) {
 
 		int i;
@@ -270,8 +243,8 @@ static uint32_t query_arrival_time(void)
 
 	if (gettimeofday(&tv, NULL) < 0) {
 		if (PIM_DEBUG_MTRACE)
-			zlog_warn("Query arrival time lookup failed: errno=%d: %s",
-				  errno, safe_strerror(errno));
+			zlog_debug("Query arrival time lookup failed: errno=%d: %s",
+				   errno, safe_strerror(errno));
 		return 0;
 	}
 	/* not sure second offset correct, as I get different value */
@@ -290,8 +263,6 @@ static int mtrace_send_packet(struct interface *ifp,
 	ssize_t sent;
 	int ret;
 	int fd;
-	char if_str[INET_ADDRSTRLEN];
-	char rsp_str[INET_ADDRSTRLEN];
 	uint8_t ttl;
 
 	memset(&to, 0, sizeof(to));
@@ -301,13 +272,11 @@ static int mtrace_send_packet(struct interface *ifp,
 
 	if (PIM_DEBUG_MTRACE) {
 		struct in_addr if_addr;
+		struct in_addr rsp_addr = mtracep->rsp_addr;
 
 		if_addr = mtrace_primary_address(ifp);
-		zlog_debug(
-			"Sending mtrace packet to %s on %s",
-			inet_ntop(AF_INET, &mtracep->rsp_addr, rsp_str,
-				  sizeof(rsp_str)),
-			inet_ntop(AF_INET, &if_addr, if_str, sizeof(if_str)));
+		zlog_debug("Sending mtrace packet to %pI4 on %pI4", &rsp_addr,
+			   &if_addr);
 	}
 
 	fd = pim_socket_raw(IPPROTO_IGMP);
@@ -336,7 +305,7 @@ static int mtrace_send_packet(struct interface *ifp,
 
 		if (ret < 0) {
 			if (PIM_DEBUG_MTRACE)
-				zlog_warn("Failed to set socket multicast TTL");
+				zlog_debug("Failed to set socket multicast TTL");
 			ret = -1;
 			goto close_fd;
 		}
@@ -354,14 +323,14 @@ static int mtrace_send_packet(struct interface *ifp,
 			       sizeof(group_str));
 		if (sent < 0) {
 			if (PIM_DEBUG_MTRACE)
-				zlog_warn(
+				zlog_debug(
 					"Send mtrace request failed for %s on%s: group=%s msg_size=%zd: errno=%d:  %s",
 					dst_str, ifp->name, group_str,
 					mtrace_buf_len, errno,
 					safe_strerror(errno));
 		} else {
 			if (PIM_DEBUG_MTRACE)
-				zlog_warn(
+				zlog_debug(
 					"Send mtrace request failed for %s on %s: group=%s msg_size=%zd: sent=%zd",
 					dst_str, ifp->name, group_str,
 					mtrace_buf_len, sent);
@@ -411,7 +380,7 @@ static int mtrace_un_forward_packet(struct pim_instance *pim, struct ip *ip_hdr,
 		if (!pim_nexthop_lookup(pim, &nexthop, ip_hdr->ip_dst, 0)) {
 			close(fd);
 			if (PIM_DEBUG_MTRACE)
-				zlog_warn(
+				zlog_debug(
 					"Dropping mtrace packet, no route to destination");
 			return -1;
 		}
@@ -440,15 +409,15 @@ static int mtrace_un_forward_packet(struct pim_instance *pim, struct ip *ip_hdr,
 
 	if (sent < 0) {
 		if (PIM_DEBUG_MTRACE)
-			zlog_warn(
+			zlog_debug(
 				"Failed to forward mtrace packet: sendto errno=%d, %s",
 				errno, safe_strerror(errno));
 		return -1;
 	}
 
 	if (PIM_DEBUG_MTRACE) {
-		zlog_debug("Fwd mtrace packet len=%u to %s ttl=%u",
-			   ntohs(ip_hdr->ip_len), inet_ntoa(ip_hdr->ip_dst),
+		zlog_debug("Fwd mtrace packet len=%u to %pI4 ttl=%u",
+			   ntohs(ip_hdr->ip_len), &ip_hdr->ip_dst,
 			   ip_hdr->ip_ttl);
 	}
 
@@ -472,9 +441,9 @@ static int mtrace_mc_forward_packet(struct pim_instance *pim, struct ip *ip_hdr)
 	if (c_oil == NULL) {
 		if (PIM_DEBUG_MTRACE) {
 			zlog_debug(
-				"Dropping mtrace multicast packet len=%u to %s ttl=%u",
+				"Dropping mtrace multicast packet len=%u to %pI4 ttl=%u",
 				ntohs(ip_hdr->ip_len),
-				inet_ntoa(ip_hdr->ip_dst), ip_hdr->ip_ttl);
+				&ip_hdr->ip_dst, ip_hdr->ip_ttl);
 		}
 		return -1;
 	}
@@ -522,10 +491,11 @@ static int mtrace_send_mc_response(struct pim_instance *pim,
 
 	if (c_oil == NULL) {
 		if (PIM_DEBUG_MTRACE) {
+			struct in_addr rsp_addr = mtracep->rsp_addr;
+
 			zlog_debug(
-				"Dropping mtrace multicast response packet len=%u to %s",
-				(unsigned int)mtrace_len,
-				inet_ntoa(mtracep->rsp_addr));
+				"Dropping mtrace multicast response packet len=%u to %pI4",
+				(unsigned int)mtrace_len, &rsp_addr);
 		}
 		return -1;
 	}
@@ -560,7 +530,6 @@ static int mtrace_send_response(struct pim_instance *pim,
 
 	if (IPV4_CLASS_DE(ntohl(mtracep->rsp_addr.s_addr))) {
 		struct pim_rpf *p_rpf;
-		char grp_str[INET_ADDRSTRLEN];
 
 		if (pim_rp_i_am_rp(pim, mtracep->rsp_addr))
 			return mtrace_send_mc_response(pim, mtracep,
@@ -569,11 +538,11 @@ static int mtrace_send_response(struct pim_instance *pim,
 		p_rpf = pim_rp_g(pim, mtracep->rsp_addr);
 
 		if (p_rpf == NULL) {
-			if (PIM_DEBUG_MTRACE)
-				zlog_warn("mtrace no RP for %s",
-					  inet_ntop(AF_INET,
-						    &(mtracep->rsp_addr),
-						    grp_str, sizeof(grp_str)));
+			if (PIM_DEBUG_MTRACE) {
+				struct in_addr rsp_addr = mtracep->rsp_addr;
+
+				zlog_debug("mtrace no RP for %pI4", &rsp_addr);
+			}
 			return -1;
 		}
 		nexthop = p_rpf->source_nexthop;
@@ -584,7 +553,7 @@ static int mtrace_send_response(struct pim_instance *pim,
 		/* TODO: should use unicast rib lookup */
 		if (!pim_nexthop_lookup(pim, &nexthop, mtracep->rsp_addr, 1)) {
 			if (PIM_DEBUG_MTRACE)
-				zlog_warn(
+				zlog_debug(
 					"Dropped response qid=%ud, no route to response address",
 					mtracep->qry_id);
 			return -1;
@@ -628,12 +597,12 @@ int igmp_mtrace_recv_qry_req(struct igmp_sock *igmp, struct ip *ip_hdr,
 	 */
 	if (!IPV4_CLASS_DE(ntohl(ip_hdr->ip_dst.s_addr)))
 		if (!if_lookup_exact_address(&ip_hdr->ip_dst, AF_INET,
-					     pim->vrf_id))
+					     pim->vrf->vrf_id))
 			return mtrace_forward_packet(pim, ip_hdr);
 
 	if (igmp_msg_len < (int)sizeof(struct igmp_mtrace)) {
 		if (PIM_DEBUG_MTRACE)
-			zlog_warn(
+			zlog_debug(
 				"Recv mtrace packet from %s on %s: too short, len=%d, min=%zu",
 				from_str, ifp->name, igmp_msg_len,
 				sizeof(struct igmp_mtrace));
@@ -650,7 +619,7 @@ int igmp_mtrace_recv_qry_req(struct igmp_sock *igmp, struct ip *ip_hdr,
 
 	if (recv_checksum != checksum) {
 		if (PIM_DEBUG_MTRACE)
-			zlog_warn(
+			zlog_debug(
 				"Recv mtrace packet from %s on %s: checksum mismatch: received=%x computed=%x",
 				from_str, ifp->name, recv_checksum, checksum);
 		return -1;
@@ -700,12 +669,12 @@ int igmp_mtrace_recv_qry_req(struct igmp_sock *igmp, struct ip *ip_hdr,
 			last_rsp_ind = r_len / sizeof(struct igmp_mtrace_rsp);
 		if (last_rsp_ind > MTRACE_MAX_HOPS) {
 			if (PIM_DEBUG_MTRACE)
-				zlog_warn("Mtrace request of excessive size");
+				zlog_debug("Mtrace request of excessive size");
 			return -1;
 		}
 	} else {
 		if (PIM_DEBUG_MTRACE)
-			zlog_warn(
+			zlog_debug(
 				"Recv mtrace packet from %s on %s: invalid length %d",
 				from_str, ifp->name, igmp_msg_len);
 		return -1;
@@ -715,9 +684,9 @@ int igmp_mtrace_recv_qry_req(struct igmp_sock *igmp, struct ip *ip_hdr,
 	if (IPV4_CLASS_DE(ntohl(ip_hdr->ip_dst.s_addr))
 	    && !IPV4_MC_LINKLOCAL(ntohl(ip_hdr->ip_dst.s_addr))) {
 		if (PIM_DEBUG_MTRACE)
-			zlog_warn(
-				"Recv mtrace packet from %s on %s: not link-local multicast %s",
-				from_str, ifp->name, inet_ntoa(ip_hdr->ip_dst));
+			zlog_debug(
+				"Recv mtrace packet from %s on %s: not link-local multicast %pI4",
+				from_str, ifp->name, &ip_hdr->ip_dst);
 		return -1;
 	}
 
@@ -848,7 +817,7 @@ int igmp_mtrace_recv_response(struct igmp_sock *igmp, struct ip *ip_hdr,
 
 	if (igmp_msg_len < (int)sizeof(struct igmp_mtrace)) {
 		if (PIM_DEBUG_MTRACE)
-			zlog_warn(
+			zlog_debug(
 				"Recv mtrace packet from %s on %s: too short, len=%d, min=%zu",
 				from_str, ifp->name, igmp_msg_len,
 				sizeof(struct igmp_mtrace));
@@ -865,7 +834,7 @@ int igmp_mtrace_recv_response(struct igmp_sock *igmp, struct ip *ip_hdr,
 
 	if (recv_checksum != checksum) {
 		if (PIM_DEBUG_MTRACE)
-			zlog_warn(
+			zlog_debug(
 				"Recv mtrace response from %s on %s: checksum mismatch: received=%x computed=%x",
 				from_str, ifp->name, recv_checksum, checksum);
 		return -1;

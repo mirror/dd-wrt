@@ -58,6 +58,7 @@
 #include "isisd/isis_mt.h"
 #include "isisd/fabricd.h"
 #include "isisd/isis_nb.h"
+#include "isisd/isis_ldp_sync.h"
 
 /* Default configuration file name */
 #define ISISD_DEFAULT_CONFIG "isisd.conf"
@@ -192,7 +193,8 @@ FRR_DAEMON_INFO(isisd, ISIS, .vty_port = ISISD_VTY_PORT,
 		.n_signals = array_size(isisd_signals),
 
 		.privs = &isisd_privs, .yang_modules = isisd_yang_modules,
-		.n_yang_modules = array_size(isisd_yang_modules), )
+		.n_yang_modules = array_size(isisd_yang_modules),
+);
 
 /*
  * Main routine of isisd. Parse arguments and handle IS-IS state machine.
@@ -241,8 +243,12 @@ int main(int argc, char **argv, char **envp)
 	 */
 	isis_error_init();
 	access_list_init();
+	access_list_add_hook(isis_filter_update);
+	access_list_delete_hook(isis_filter_update);
 	isis_vrf_init();
 	prefix_list_init();
+	prefix_list_add_hook(isis_prefix_list_update);
+	prefix_list_delete_hook(isis_prefix_list_update);
 	isis_init();
 	isis_circuit_init();
 #ifdef FABRICD
@@ -259,11 +265,9 @@ int main(int argc, char **argv, char **envp)
 	lsp_init();
 	mt_init();
 
-	/* create the global 'isis' instance */
-	isis_global_instance_create(VRF_DEFAULT_NAME);
-
 	isis_zebra_init(master, instance);
-	isis_bfd_init();
+	isis_bfd_init(master);
+	isis_ldp_sync_init();
 	fabricd_init();
 
 	frr_config_fork();

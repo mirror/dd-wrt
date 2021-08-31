@@ -41,7 +41,7 @@
 #include "pbr_debug.h"
 #include "pbr_vrf.h"
 
-DEFINE_MTYPE_STATIC(PBRD, PBR_INTERFACE, "PBR Interface")
+DEFINE_MTYPE_STATIC(PBRD, PBR_INTERFACE, "PBR Interface");
 
 /* Zebra structure to hold current status. */
 struct zclient *zclient;
@@ -50,13 +50,18 @@ struct pbr_interface *pbr_if_new(struct interface *ifp)
 {
 	struct pbr_interface *pbr_ifp;
 
-	zassert(ifp);
-	zassert(!ifp->info);
+	assert(ifp);
+	assert(!ifp->info);
 
 	pbr_ifp = XCALLOC(MTYPE_PBR_INTERFACE, sizeof(*pbr_ifp));
 
 	ifp->info = pbr_ifp;
 	return pbr_ifp;
+}
+
+void pbr_if_del(struct interface *ifp)
+{
+	XFREE(MTYPE_PBR_INTERFACE, ifp->info);
 }
 
 /* Inteface addition message from zebra. */
@@ -102,15 +107,14 @@ static int interface_address_add(ZAPI_CALLBACK_ARGS)
 static int interface_address_delete(ZAPI_CALLBACK_ARGS)
 {
 	struct connected *c;
-	char buf[PREFIX_STRLEN];
 
 	c = zebra_interface_address_read(cmd, zclient->ibuf, vrf_id);
 
 	if (!c)
 		return 0;
 
-	DEBUGD(&pbr_dbg_zebra, "%s: %s deleted %s", __func__, c->ifp->name,
-	       prefix2str(c->address, buf, sizeof(buf)));
+	DEBUGD(&pbr_dbg_zebra, "%s: %s deleted %pFX", __func__, c->ifp->name,
+	       c->address);
 
 	connected_free(&c);
 	return 0;
@@ -162,40 +166,38 @@ static int route_notify_owner(ZAPI_CALLBACK_ARGS)
 	struct prefix p;
 	enum zapi_route_notify_owner note;
 	uint32_t table_id;
-	char buf[PREFIX_STRLEN];
 
-	if (!zapi_route_notify_decode(zclient->ibuf, &p, &table_id, &note))
+	if (!zapi_route_notify_decode(zclient->ibuf, &p, &table_id, &note,
+				      NULL, NULL))
 		return -1;
-
-	prefix2str(&p, buf, sizeof(buf));
 
 	switch (note) {
 	case ZAPI_ROUTE_FAIL_INSTALL:
 		DEBUGD(&pbr_dbg_zebra,
-		       "%s: [%s] Route install failure for table: %u", __func__,
-		       buf, table_id);
+		       "%s: [%pFX] Route install failure for table: %u",
+		       __func__, &p, table_id);
 		break;
 	case ZAPI_ROUTE_BETTER_ADMIN_WON:
 		DEBUGD(&pbr_dbg_zebra,
-		       "%s: [%s] Route better admin distance won for table: %u",
-		       __func__, buf, table_id);
+		       "%s: [%pFX] Route better admin distance won for table: %u",
+		       __func__, &p, table_id);
 		break;
 	case ZAPI_ROUTE_INSTALLED:
 		DEBUGD(&pbr_dbg_zebra,
-		       "%s: [%s] Route installed succeeded for table: %u",
-		       __func__, buf, table_id);
+		       "%s: [%pFX] Route installed succeeded for table: %u",
+		       __func__, &p, table_id);
 		pbr_nht_route_installed_for_table(table_id);
 		break;
 	case ZAPI_ROUTE_REMOVED:
 		DEBUGD(&pbr_dbg_zebra,
-		       "%s: [%s] Route Removed succeeded for table: %u",
-		       __func__, buf, table_id);
+		       "%s: [%pFX] Route Removed succeeded for table: %u",
+		       __func__, &p, table_id);
 		pbr_nht_route_removed_for_table(table_id);
 		break;
 	case ZAPI_ROUTE_REMOVE_FAIL:
 		DEBUGD(&pbr_dbg_zebra,
-		       "%s: [%s] Route remove fail for table: %u", __func__,
-		       buf, table_id);
+		       "%s: [%pFX] Route remove fail for table: %u", __func__,
+		       &p, table_id);
 		break;
 	}
 
@@ -259,14 +261,12 @@ static void route_add_helper(struct zapi_route *api, struct nexthop_group nhg,
 			     uint8_t install_afi)
 {
 	struct zapi_nexthop *api_nh;
-	char buf[PREFIX_STRLEN];
 	struct nexthop *nhop;
 	int i;
 
 	api->prefix.family = install_afi;
 
-	DEBUGD(&pbr_dbg_zebra, "\tEncoding %s",
-	       prefix2str(&api->prefix, buf, sizeof(buf)));
+	DEBUGD(&pbr_dbg_zebra, "    Encoding %pFX", &api->prefix);
 
 	i = 0;
 	for (ALL_NEXTHOPS(nhg, nhop)) {
@@ -397,7 +397,6 @@ void route_delete(struct pbr_nexthop_group_cache *pnhgc, afi_t afi)
 static int pbr_zebra_nexthop_update(ZAPI_CALLBACK_ARGS)
 {
 	struct zapi_route nhr;
-	char buf[PREFIX2STR_BUFFER];
 	uint32_t i;
 
 	if (!zapi_nexthop_update_decode(zclient->ibuf, &nhr)) {
@@ -407,18 +406,18 @@ static int pbr_zebra_nexthop_update(ZAPI_CALLBACK_ARGS)
 
 	if (DEBUG_MODE_CHECK(&pbr_dbg_zebra, DEBUG_MODE_ALL)) {
 
-		DEBUGD(&pbr_dbg_zebra, "%s: Received Nexthop update: %s",
-		       __func__, prefix2str(&nhr.prefix, buf, sizeof(buf)));
+		DEBUGD(&pbr_dbg_zebra, "%s: Received Nexthop update: %pFX",
+		       __func__, &nhr.prefix);
 
-		DEBUGD(&pbr_dbg_zebra, "%s: (\tNexthops(%u)", __func__,
+		DEBUGD(&pbr_dbg_zebra, "%s:   (Nexthops(%u)", __func__,
 		       nhr.nexthop_num);
 
 		for (i = 0; i < nhr.nexthop_num; i++) {
 			DEBUGD(&pbr_dbg_zebra,
-			       "%s: \tType: %d: vrf: %d, ifindex: %d gate: %s",
+			       "%s:     Type: %d: vrf: %d, ifindex: %d gate: %pI4",
 			       __func__, nhr.nexthops[i].type,
 			       nhr.nexthops[i].vrf_id, nhr.nexthops[i].ifindex,
-			       inet_ntoa(nhr.nexthops[i].gate.ipv4));
+			       &nhr.nexthops[i].gate.ipv4);
 		}
 	}
 
@@ -477,8 +476,8 @@ void pbr_send_rnh(struct nexthop *nhop, bool reg)
 		break;
 	}
 
-	if (zclient_send_rnh(zclient, command, &p,
-			     false, nhop->vrf_id) < 0) {
+	if (zclient_send_rnh(zclient, command, &p, false, nhop->vrf_id)
+	    == ZCLIENT_SEND_FAILURE) {
 		zlog_warn("%s: Failure to send nexthop to zebra", __func__);
 	}
 }
@@ -586,7 +585,7 @@ bool pbr_send_pbr_map(struct pbr_map_sequence *pbrms,
 	 */
 	stream_putl(s, 1);
 
-	DEBUGD(&pbr_dbg_zebra, "%s: \t%s %s seq %u %d %s %u", __func__,
+	DEBUGD(&pbr_dbg_zebra, "%s:    %s %s seq %u %d %s %u", __func__,
 	       install ? "Installing" : "Deleting", pbrm->name, pbrms->seqno,
 	       install, pmi->ifp->name, pmi->delete);
 

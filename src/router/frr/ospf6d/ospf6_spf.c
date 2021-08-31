@@ -43,6 +43,8 @@
 #include "ospf6d.h"
 #include "ospf6_abr.h"
 
+DEFINE_MTYPE_STATIC(OSPF6D, OSPF6_VERTEX, "OSPF6 vertex");
+
 unsigned char conf_debug_ospf6_spf = 0;
 
 static void ospf6_spf_copy_nexthops_to_route(struct ospf6_route *rt,
@@ -86,7 +88,7 @@ static int ospf6_vertex_cmp(const struct ospf6_vertex *va,
 	return 0;
 }
 DECLARE_SKIPLIST_NONUNIQ(vertex_pqueue, struct ospf6_vertex, pqi,
-		ospf6_vertex_cmp)
+		ospf6_vertex_cmp);
 
 static int ospf6_vertex_id_cmp(void *a, void *b)
 {
@@ -221,21 +223,25 @@ static char *ospf6_lsdesc_backlink(struct ospf6_lsa *lsa, caddr_t lsdesc,
 		assert(!(OSPF6_LSA_IS_TYPE(NETWORK, lsa)
 			 && VERTEX_IS_TYPE(NETWORK, v)));
 
-		if (OSPF6_LSA_IS_TYPE(NETWORK, lsa)
-		    && NETWORK_LSDESC_GET_NBR_ROUTERID(backlink)
-			       == v->lsa->header->adv_router)
-			found = backlink;
-		else if (VERTEX_IS_TYPE(NETWORK, v)
-			 && ROUTER_LSDESC_IS_TYPE(TRANSIT_NETWORK, backlink)
-			 && ROUTER_LSDESC_GET_NBR_ROUTERID(backlink)
-				    == v->lsa->header->adv_router
-			 && ROUTER_LSDESC_GET_NBR_IFID(backlink)
-				    == ntohl(v->lsa->header->id))
-			found = backlink;
-		else {
+		if (OSPF6_LSA_IS_TYPE(NETWORK, lsa)) {
+			if (NETWORK_LSDESC_GET_NBR_ROUTERID(backlink)
+			    == v->lsa->header->adv_router)
+				found = backlink;
+		} else if (VERTEX_IS_TYPE(NETWORK, v)) {
+			if (ROUTER_LSDESC_IS_TYPE(TRANSIT_NETWORK, backlink)
+			    && ROUTER_LSDESC_GET_NBR_ROUTERID(backlink)
+				       == v->lsa->header->adv_router
+			    && ROUTER_LSDESC_GET_NBR_IFID(backlink)
+				       == ntohl(v->lsa->header->id))
+				found = backlink;
+		} else {
+			assert(OSPF6_LSA_IS_TYPE(ROUTER, lsa)
+			       && VERTEX_IS_TYPE(ROUTER, v));
+
 			if (!ROUTER_LSDESC_IS_TYPE(POINTTOPOINT, backlink)
 			    || !ROUTER_LSDESC_IS_TYPE(POINTTOPOINT, lsdesc))
 				continue;
+
 			if (ROUTER_LSDESC_GET_NBR_IFID(backlink)
 				    != ROUTER_LSDESC_GET_IFID(lsdesc)
 			    || ROUTER_LSDESC_GET_NBR_IFID(lsdesc)
@@ -258,7 +264,7 @@ static char *ospf6_lsdesc_backlink(struct ospf6_lsa *lsa, caddr_t lsdesc,
 }
 
 static void ospf6_nexthop_calc(struct ospf6_vertex *w, struct ospf6_vertex *v,
-			       caddr_t lsdesc)
+			       caddr_t lsdesc, struct ospf6 *ospf6)
 {
 	int i;
 	ifindex_t ifindex;
@@ -320,7 +326,6 @@ static int ospf6_spf_install(struct ospf6_vertex *v,
 {
 	struct ospf6_route *route, *parent_route;
 	struct ospf6_vertex *prev;
-	char pbuf[PREFIX2STR_BUFFER];
 
 	if (IS_OSPF6_DEBUG_SPF(PROCESS))
 		zlog_debug("SPF install %s (lsa %s) hops %d cost %d", v->name,
@@ -335,12 +340,10 @@ static int ospf6_spf_install(struct ospf6_vertex *v,
 		ospf6_vertex_delete(v);
 		return -1;
 	} else if (route && route->path.cost == v->cost) {
-		if (IS_OSPF6_DEBUG_SPF(PROCESS)) {
-			prefix2str(&route->prefix, pbuf, sizeof(pbuf));
+		if (IS_OSPF6_DEBUG_SPF(PROCESS))
 			zlog_debug(
-				"  another path found to route %s lsa %s, merge",
-				pbuf, v->lsa->name);
-		}
+				"  another path found to route %pFX lsa %s, merge",
+				&route->prefix, v->lsa->name);
 		ospf6_spf_merge_nexthops_to_route(route, v);
 
 		prev = (struct ospf6_vertex *)route->route_option;
@@ -435,9 +438,8 @@ void ospf6_spf_table_finish(struct ospf6_route_table *result_table)
 	}
 }
 
-static const char *const ospf6_spf_reason_str[] = {
-	"R+", "R-", "N+", "N-", "L+", "L-", "R*", "N*",
-};
+static const char *const ospf6_spf_reason_str[] = {"R+", "R-", "N+", "N-", "L+",
+						   "L-", "R*", "N*", "C"};
 
 void ospf6_spf_reason_string(unsigned int reason, char *buf, int size)
 {
@@ -544,7 +546,7 @@ void ospf6_spf_calculation(uint32_t router_id,
 					w->nh_list,
 					ROUTER_LSDESC_GET_IFID(lsdesc), NULL);
 			else if (w->hops == 1 && v->hops == 0)
-				ospf6_nexthop_calc(w, v, lsdesc);
+				ospf6_nexthop_calc(w, v, lsdesc, oa->ospf6);
 			else
 				ospf6_copy_nexthops(w->nh_list, v->nh_list);
 
@@ -653,14 +655,10 @@ static int ospf6_spf_calculation_thread(struct thread *t)
 	ospf6_spf_reason_string(ospf6->spf_reason, rbuf, sizeof(rbuf));
 
 	if (IS_OSPF6_DEBUG_SPF(PROCESS) || IS_OSPF6_DEBUG_SPF(TIME))
-		zlog_debug("SPF runtime: %lld sec %lld usec",
-			   (long long)runtime.tv_sec,
-			   (long long)runtime.tv_usec);
-
-	zlog_info(
-		"SPF processing: # Areas: %d, SPF runtime: %lld sec %lld usec, Reason: %s\n",
-		areas_processed, (long long)runtime.tv_sec,
-		(long long)runtime.tv_usec, rbuf);
+		zlog_debug(
+			"SPF processing: # Areas: %d, SPF runtime: %lld sec %lld usec, Reason: %s",
+			areas_processed, (long long)runtime.tv_sec,
+			(long long)runtime.tv_usec, rbuf);
 
 	ospf6->last_spf_reason = ospf6->spf_reason;
 	ospf6_reset_spf_reason(ospf6);
@@ -722,9 +720,7 @@ void ospf6_spf_schedule(struct ospf6 *ospf6, unsigned int reason)
 	}
 
 	if (IS_OSPF6_DEBUG_SPF(PROCESS) || IS_OSPF6_DEBUG_SPF(TIME))
-		zlog_debug("SPF: calculation timer delay = %ld", delay);
-
-	zlog_info("SPF: Scheduled in %ld msec", delay);
+		zlog_debug("SPF: Rescheduling in %ld msec", delay);
 
 	ospf6->t_spf_calc = NULL;
 	thread_add_timer_msec(master, ospf6_spf_calculation_thread, ospf6,
@@ -732,16 +728,24 @@ void ospf6_spf_schedule(struct ospf6 *ospf6, unsigned int reason)
 }
 
 void ospf6_spf_display_subtree(struct vty *vty, const char *prefix, int rest,
-			       struct ospf6_vertex *v)
+			       struct ospf6_vertex *v, json_object *json_obj,
+			       bool use_json)
 {
 	struct listnode *node, *nnode;
 	struct ospf6_vertex *c;
 	char *next_prefix;
 	int len;
 	int restnum;
+	json_object *json_childs = NULL;
+	json_object *json_child = NULL;
 
-	/* "prefix" is the space prefix of the display line */
-	vty_out(vty, "%s+-%s [%d]\n", prefix, v->name, v->cost);
+	if (use_json) {
+		json_childs = json_object_new_object();
+		json_object_int_add(json_obj, "cost", v->cost);
+	} else {
+		/* "prefix" is the space prefix of the display line */
+		vty_out(vty, "%s+-%s [%d]\n", prefix, v->name, v->cost);
+	}
 
 	len = strlen(prefix) + 4;
 	next_prefix = (char *)malloc(len);
@@ -753,10 +757,27 @@ void ospf6_spf_display_subtree(struct vty *vty, const char *prefix, int rest,
 
 	restnum = listcount(v->child_list);
 	for (ALL_LIST_ELEMENTS(v->child_list, node, nnode, c)) {
-		restnum--;
-		ospf6_spf_display_subtree(vty, next_prefix, restnum, c);
-	}
+		if (use_json)
+			json_child = json_object_new_object();
+		else
+			restnum--;
 
+		ospf6_spf_display_subtree(vty, next_prefix, restnum, c,
+					  json_child, use_json);
+
+		if (use_json)
+			json_object_object_add(json_childs, c->name,
+					       json_child);
+	}
+	if (use_json) {
+		json_object_boolean_add(json_obj, "isLeafNode",
+					!listcount(v->child_list));
+		if (listcount(v->child_list))
+			json_object_object_add(json_obj, "children",
+					       json_childs);
+		else
+			json_object_free(json_childs);
+	}
 	free(next_prefix);
 }
 
@@ -915,7 +936,7 @@ int config_write_ospf6_debug_spf(struct vty *vty)
 	return 0;
 }
 
-void ospf6_spf_config_write(struct vty *vty)
+void ospf6_spf_config_write(struct vty *vty, struct ospf6 *ospf6)
 {
 
 	if (ospf6->spf_delay != OSPF_SPF_DELAY_DEFAULT
@@ -1006,13 +1027,8 @@ struct ospf6_lsa *ospf6_create_single_router_lsa(struct ospf6_area *area,
 		return NULL;
 	}
 
-	/* Allocate memory for this LSA */
-	new_header = XMALLOC(MTYPE_OSPF6_LSA_HEADER, total_lsa_length);
-
-	/* LSA information structure */
-	lsa = XCALLOC(MTYPE_OSPF6_LSA, sizeof(struct ospf6_lsa));
-
-	lsa->header = (struct ospf6_lsa_header *)new_header;
+	lsa = ospf6_lsa_alloc(total_lsa_length);
+	new_header = (uint8_t *)lsa->header;
 
 	lsa->lsdb = area->temp_router_lsa_lsdb;
 
@@ -1082,9 +1098,9 @@ struct ospf6_lsa *ospf6_create_single_router_lsa(struct ospf6_area *area,
 
 void ospf6_remove_temp_router_lsa(struct ospf6_area *area)
 {
-	struct ospf6_lsa *lsa = NULL;
+	struct ospf6_lsa *lsa = NULL, *lsanext;
 
-	for (ALL_LSDB(area->temp_router_lsa_lsdb, lsa)) {
+	for (ALL_LSDB(area->temp_router_lsa_lsdb, lsa, lsanext)) {
 		if (IS_OSPF6_DEBUG_SPF(PROCESS))
 			zlog_debug(
 				"%s Remove LSA %s lsa->lock %u lsdb count %u",

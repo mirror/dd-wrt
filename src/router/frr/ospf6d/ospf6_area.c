@@ -44,8 +44,32 @@
 #include "ospf6_abr.h"
 #include "ospf6_asbr.h"
 #include "ospf6d.h"
+#include "lib/json.h"
 
-DEFINE_MTYPE_STATIC(OSPF6D, OSPF6_PLISTNAME, "Prefix list name")
+DEFINE_MTYPE_STATIC(OSPF6D, OSPF6_AREA,      "OSPF6 area");
+DEFINE_MTYPE_STATIC(OSPF6D, OSPF6_PLISTNAME, "Prefix list name");
+
+int str2area_id(const char *str, uint32_t *area_id, int *area_id_fmt)
+{
+	char *ep;
+
+	*area_id = htonl(strtoul(str, &ep, 10));
+	if (*ep && inet_pton(AF_INET, str, area_id) != 1)
+		return -1;
+
+	*area_id_fmt =
+		!*ep ? OSPF6_AREA_FMT_DECIMAL : OSPF6_AREA_FMT_DOTTEDQUAD;
+
+	return 0;
+}
+
+void area_id2str(char *buf, int len, uint32_t area_id, int area_id_fmt)
+{
+	if (area_id_fmt == OSPF6_AREA_FMT_DECIMAL)
+		snprintf(buf, len, "%u", ntohl(area_id));
+	else
+		inet_ntop(AF_INET, &area_id, buf, len);
+}
 
 int ospf6_area_cmp(void *va, void *vb)
 {
@@ -117,6 +141,8 @@ static void ospf6_area_lsdb_hook_remove(struct ospf6_lsa *lsa)
 
 static void ospf6_area_route_hook_add(struct ospf6_route *route)
 {
+	struct ospf6_area *oa = route->table->scope;
+	struct ospf6 *ospf6 = oa->ospf6;
 	struct ospf6_route *copy;
 
 	copy = ospf6_route_copy(route);
@@ -125,6 +151,8 @@ static void ospf6_area_route_hook_add(struct ospf6_route *route)
 
 static void ospf6_area_route_hook_remove(struct ospf6_route *route)
 {
+	struct ospf6_area *oa = route->table->scope;
+	struct ospf6 *ospf6 = oa->ospf6;
 	struct ospf6_route *copy;
 
 	copy = ospf6_route_lookup_identical(route, ospf6->route_table);
@@ -137,11 +165,12 @@ static void ospf6_area_stub_update(struct ospf6_area *area)
 
 	if (IS_AREA_STUB(area)) {
 		if (IS_OSPF6_DEBUG_ORIGINATE(ROUTER))
-			zlog_debug("Stubbing out area for if %s", area->name);
+			zlog_debug("Stubbing out area for area %s", area->name);
 		OSPF6_OPT_CLEAR(area->options, OSPF6_OPT_E);
+		ospf6_asbr_remove_externals_from_area(area);
 	} else if (IS_AREA_ENABLED(area)) {
 		if (IS_OSPF6_DEBUG_ORIGINATE(ROUTER))
-			zlog_debug("Normal area for if %s", area->name);
+			zlog_debug("Normal area for area %s", area->name);
 		OSPF6_OPT_SET(area->options, OSPF6_OPT_E);
 		ospf6_asbr_send_externals_to_area(area);
 	}
@@ -297,6 +326,20 @@ void ospf6_area_delete(struct ospf6_area *oa)
 	XFREE(MTYPE_OSPF6_AREA, oa);
 }
 
+struct ospf6_area *ospf6_area_lookup_by_area_id(uint32_t area_id)
+{
+	struct ospf6_area *oa;
+	struct listnode *n, *node, *nnode;
+	struct ospf6 *ospf6;
+
+	for (ALL_LIST_ELEMENTS(om6->ospf6, node, nnode, ospf6)) {
+		for (ALL_LIST_ELEMENTS_RO(ospf6->area_list, n, oa))
+			if (oa->area_id == area_id)
+				return oa;
+	}
+	return (struct ospf6_area *)NULL;
+}
+
 struct ospf6_area *ospf6_area_lookup(uint32_t area_id, struct ospf6 *ospf6)
 {
 	struct ospf6_area *oa;
@@ -343,40 +386,94 @@ void ospf6_area_disable(struct ospf6_area *oa)
 }
 
 
-void ospf6_area_show(struct vty *vty, struct ospf6_area *oa)
+void ospf6_area_show(struct vty *vty, struct ospf6_area *oa,
+		     json_object *json_areas, bool use_json)
 {
 	struct listnode *i;
 	struct ospf6_interface *oi;
 	unsigned long result;
+	json_object *json_area;
+	json_object *array_interfaces;
 
-	if (!IS_AREA_STUB(oa))
-		vty_out(vty, " Area %s\n", oa->name);
-	else {
-		if (oa->no_summary) {
-			vty_out(vty, " Area %s[Stub, No Summary]\n", oa->name);
-		} else {
-			vty_out(vty, " Area %s[Stub]\n", oa->name);
+	if (use_json) {
+		json_area = json_object_new_object();
+		json_object_boolean_add(json_area, "areaIsStub",
+					IS_AREA_STUB(oa));
+		if (IS_AREA_STUB(oa)) {
+			json_object_boolean_add(json_area, "areaNoSummary",
+						oa->no_summary);
 		}
+
+		json_object_int_add(json_area, "numberOfAreaScopedLsa",
+				    oa->lsdb->count);
+
+		/* Interfaces Attached */
+		array_interfaces = json_object_new_array();
+		for (ALL_LIST_ELEMENTS_RO(oa->if_list, i, oi))
+			json_object_array_add(
+				array_interfaces,
+				json_object_new_string(oi->interface->name));
+
+		json_object_object_add(json_area, "interfacesAttachedToArea",
+				       array_interfaces);
+
+		if (oa->ts_spf.tv_sec || oa->ts_spf.tv_usec) {
+			json_object_boolean_true_add(json_area, "spfHasRun");
+			result = monotime_since(&oa->ts_spf, NULL);
+			if (result / TIMER_SECOND_MICRO > 0) {
+				json_object_int_add(
+					json_area, "spfLastExecutedSecs",
+					result / TIMER_SECOND_MICRO);
+
+				json_object_int_add(
+					json_area, "spfLastExecutedMicroSecs",
+					result % TIMER_SECOND_MICRO);
+			} else {
+				json_object_int_add(json_area,
+						    "spfLastExecutedSecs", 0);
+				json_object_int_add(json_area,
+						    "spfLastExecutedMicroSecs",
+						    result);
+			}
+		} else
+			json_object_boolean_false_add(json_area, "spfHasRun");
+
+
+		json_object_object_add(json_areas, oa->name, json_area);
+
+	} else {
+
+		if (!IS_AREA_STUB(oa))
+			vty_out(vty, " Area %s\n", oa->name);
+		else {
+			if (oa->no_summary) {
+				vty_out(vty, " Area %s[Stub, No Summary]\n",
+					oa->name);
+			} else {
+				vty_out(vty, " Area %s[Stub]\n", oa->name);
+			}
+		}
+		vty_out(vty, "     Number of Area scoped LSAs is %u\n",
+			oa->lsdb->count);
+
+		vty_out(vty, "     Interface attached to this area:");
+		for (ALL_LIST_ELEMENTS_RO(oa->if_list, i, oi))
+			vty_out(vty, " %s", oi->interface->name);
+		vty_out(vty, "\n");
+
+		if (oa->ts_spf.tv_sec || oa->ts_spf.tv_usec) {
+			result = monotime_since(&oa->ts_spf, NULL);
+			if (result / TIMER_SECOND_MICRO > 0) {
+				vty_out(vty, "SPF last executed %ld.%lds ago\n",
+					result / TIMER_SECOND_MICRO,
+					result % TIMER_SECOND_MICRO);
+			} else {
+				vty_out(vty, "SPF last executed %ldus ago\n",
+					result);
+			}
+		} else
+			vty_out(vty, "SPF has not been run\n");
 	}
-	vty_out(vty, "     Number of Area scoped LSAs is %u\n",
-		oa->lsdb->count);
-
-	vty_out(vty, "     Interface attached to this area:");
-	for (ALL_LIST_ELEMENTS_RO(oa->if_list, i, oi))
-		vty_out(vty, " %s", oi->interface->name);
-	vty_out(vty, "\n");
-
-	if (oa->ts_spf.tv_sec || oa->ts_spf.tv_usec) {
-		result = monotime_since(&oa->ts_spf, NULL);
-		if (result / TIMER_SECOND_MICRO > 0) {
-			vty_out(vty, "SPF last executed %ld.%lds ago\n",
-				result / TIMER_SECOND_MICRO,
-				result % TIMER_SECOND_MICRO);
-		} else {
-			vty_out(vty, "SPF last executed %ldus ago\n", result);
-		}
-	} else
-		vty_out(vty, "SPF has not been run\n");
 }
 
 DEFUN (area_range,
@@ -399,9 +496,11 @@ DEFUN (area_range,
 	struct ospf6_area *oa;
 	struct prefix prefix;
 	struct ospf6_route *range;
-	uint32_t cost = OSPF_AREA_RANGE_COST_UNSPEC;
+	uint32_t cost;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, oa);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, oa, ospf6);
 
 	ret = str2prefix(argv[idx_ipv6_prefixlen]->arg, &prefix);
 	if (ret != 1 || prefix.family != AF_INET6) {
@@ -419,16 +518,15 @@ DEFUN (area_range,
 		range->path.cost = OSPF_AREA_RANGE_COST_UNSPEC;
 	}
 
+	/* default settings */
+	cost = OSPF_AREA_RANGE_COST_UNSPEC;
+	UNSET_FLAG(range->flag, OSPF6_ROUTE_DO_NOT_ADVERTISE);
+
 	if (argc > idx_type) {
-		if (strmatch(argv[idx_type]->text, "not-advertise")) {
+		if (strmatch(argv[idx_type]->text, "not-advertise"))
 			SET_FLAG(range->flag, OSPF6_ROUTE_DO_NOT_ADVERTISE);
-		} else if (strmatch(argv[idx_type]->text, "advertise")) {
-			UNSET_FLAG(range->flag, OSPF6_ROUTE_DO_NOT_ADVERTISE);
-			cost = range->path.u.cost_config;
-		} else {
+		else if (strmatch(argv[idx_type]->text, "cost"))
 			cost = strtoul(argv[5]->arg, NULL, 10);
-			UNSET_FLAG(range->flag, OSPF6_ROUTE_DO_NOT_ADVERTISE);
-		}
 	}
 
 	range->path.u.cost_config = cost;
@@ -468,7 +566,9 @@ DEFUN (no_area_range,
 	struct prefix prefix;
 	struct ospf6_route *range, *route;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, oa);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, oa, ospf6);
 
 	ret = str2prefix(argv[idx_ipv6]->arg, &prefix);
 	if (ret != 1 || prefix.family != AF_INET6) {
@@ -488,30 +588,29 @@ DEFUN (no_area_range,
 		SET_FLAG(range->flag, OSPF6_ROUTE_REMOVE);
 
 		/* Redo summaries if required */
-		for (route = ospf6_route_head(ospf6->route_table); route;
+		for (route = ospf6_route_head(oa->ospf6->route_table); route;
 		     route = ospf6_route_next(route))
-			ospf6_abr_originate_summary(route);
+			ospf6_abr_originate_summary(route, oa->ospf6);
 
 		/* purge the old aggregated summary LSA */
-		ospf6_abr_originate_summary(range);
+		ospf6_abr_originate_summary(range, oa->ospf6);
 	}
 	ospf6_route_remove(range, oa->range_table);
 
 	return CMD_SUCCESS;
 }
 
-void ospf6_area_config_write(struct vty *vty)
+void ospf6_area_config_write(struct vty *vty, struct ospf6 *ospf6)
 {
 	struct listnode *node;
 	struct ospf6_area *oa;
 	struct ospf6_route *range;
-	char buf[PREFIX2STR_BUFFER];
 
 	for (ALL_LIST_ELEMENTS_RO(ospf6->area_list, node, oa)) {
 		for (range = ospf6_route_head(oa->range_table); range;
 		     range = ospf6_route_next(range)) {
-			prefix2str(&range->prefix, buf, sizeof(buf));
-			vty_out(vty, " area %s range %s", oa->name, buf);
+			vty_out(vty, " area %s range %pFX", oa->name,
+				&range->prefix);
 
 			if (CHECK_FLAG(range->flag,
 				       OSPF6_ROUTE_DO_NOT_ADVERTISE)) {
@@ -567,7 +666,9 @@ DEFUN (area_filter_list,
 	struct ospf6_area *area;
 	struct prefix_list *plist;
 
-	OSPF6_CMD_AREA_GET(areaid, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(areaid, area, ospf6);
 
 	plist = prefix_list_lookup(AFI_IP6, plistname);
 	if (strmatch(inout, "in")) {
@@ -581,7 +682,9 @@ DEFUN (area_filter_list,
 		XFREE(MTYPE_OSPF6_PLISTNAME, PREFIX_NAME_OUT(area));
 		PREFIX_NAME_OUT(area) =
 			XSTRDUP(MTYPE_OSPF6_PLISTNAME, plistname);
-		ospf6_abr_enable_area(area);
+
+		/* Redo summaries if required */
+		ospf6_abr_reexport(area);
 	}
 
 	return CMD_SUCCESS;
@@ -606,7 +709,8 @@ DEFUN (no_area_filter_list,
 
 	struct ospf6_area *area;
 
-	OSPF6_CMD_AREA_GET(areaid, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+	OSPF6_CMD_AREA_GET(areaid, area, ospf6);
 
 	if (strmatch(inout, "in")) {
 		if (PREFIX_NAME_IN(area))
@@ -622,26 +726,57 @@ DEFUN (no_area_filter_list,
 				return CMD_SUCCESS;
 
 		XFREE(MTYPE_OSPF6_PLISTNAME, PREFIX_NAME_OUT(area));
-		ospf6_abr_enable_area(area);
+		PREFIX_LIST_OUT(area) = NULL;
+		ospf6_abr_reexport(area);
 	}
 
 	return CMD_SUCCESS;
 }
 
+void ospf6_filter_update(struct access_list *access)
+{
+	struct ospf6_area *oa;
+	struct listnode *n, *node, *nnode;
+	struct ospf6 *ospf6;
+
+	for (ALL_LIST_ELEMENTS(om6->ospf6, node, nnode, ospf6)) {
+		for (ALL_LIST_ELEMENTS_RO(ospf6->area_list, n, oa)) {
+			if (IMPORT_NAME(oa)
+			    && strcmp(IMPORT_NAME(oa), access->name) == 0)
+				ospf6_abr_reimport(oa);
+
+			if (EXPORT_NAME(oa)
+			    && strcmp(EXPORT_NAME(oa), access->name) == 0)
+				ospf6_abr_reexport(oa);
+		}
+	}
+}
+
 void ospf6_area_plist_update(struct prefix_list *plist, int add)
 {
+	struct listnode *node, *nnode;
 	struct ospf6_area *oa;
 	struct listnode *n;
 	const char *name = prefix_list_name(plist);
+	struct ospf6 *ospf6 = NULL;
 
-	if (!ospf6)
+
+	if (!om6->ospf6)
 		return;
 
-	for (ALL_LIST_ELEMENTS_RO(ospf6->area_list, n, oa)) {
-		if (PREFIX_NAME_IN(oa) && !strcmp(PREFIX_NAME_IN(oa), name))
-			PREFIX_LIST_IN(oa) = add ? plist : NULL;
-		if (PREFIX_NAME_OUT(oa) && !strcmp(PREFIX_NAME_OUT(oa), name))
-			PREFIX_LIST_OUT(oa) = add ? plist : NULL;
+	for (ALL_LIST_ELEMENTS(om6->ospf6, node, nnode, ospf6)) {
+		for (ALL_LIST_ELEMENTS_RO(ospf6->area_list, n, oa)) {
+			if (PREFIX_NAME_IN(oa)
+			    && !strcmp(PREFIX_NAME_IN(oa), name)) {
+				PREFIX_LIST_IN(oa) = add ? plist : NULL;
+				ospf6_abr_reexport(oa);
+			}
+			if (PREFIX_NAME_OUT(oa)
+			    && !strcmp(PREFIX_NAME_OUT(oa), name)) {
+				PREFIX_LIST_OUT(oa) = add ? plist : NULL;
+				ospf6_abr_reexport(oa);
+			}
+		}
 	}
 }
 
@@ -659,7 +794,9 @@ DEFUN (area_import_list,
 	struct ospf6_area *area;
 	struct access_list *list;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, area, ospf6);
 
 	list = access_list_lookup(AFI_IP6, argv[idx_name]->arg);
 
@@ -687,7 +824,9 @@ DEFUN (no_area_import_list,
 	int idx_ipv4 = 2;
 	struct ospf6_area *area;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, area, ospf6);
 
 	IMPORT_LIST(area) = 0;
 
@@ -714,7 +853,9 @@ DEFUN (area_export_list,
 	struct ospf6_area *area;
 	struct access_list *list;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, area, ospf6);
 
 	list = access_list_lookup(AFI_IP6, argv[idx_name]->arg);
 
@@ -724,7 +865,9 @@ DEFUN (area_export_list,
 		free(EXPORT_NAME(area));
 
 	EXPORT_NAME(area) = strdup(argv[idx_name]->arg);
-	ospf6_abr_enable_area(area);
+
+	/* Redo summaries if required */
+	ospf6_abr_reexport(area);
 
 	return CMD_SUCCESS;
 }
@@ -742,7 +885,9 @@ DEFUN (no_area_export_list,
 	int idx_ipv4 = 2;
 	struct ospf6_area *area;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4]->arg, area, ospf6);
 
 	EXPORT_LIST(area) = 0;
 
@@ -750,70 +895,106 @@ DEFUN (no_area_export_list,
 		free(EXPORT_NAME(area));
 
 	EXPORT_NAME(area) = NULL;
-	ospf6_abr_enable_area(area);
+	ospf6_abr_reexport(area);
 
 	return CMD_SUCCESS;
 }
 
-DEFUN (show_ipv6_ospf6_spf_tree,
-       show_ipv6_ospf6_spf_tree_cmd,
-       "show ipv6 ospf6 spf tree",
-       SHOW_STR
-       IP6_STR
-       OSPF6_STR
-       "Shortest Path First calculation\n"
-       "Show SPF tree\n")
+static int ipv6_ospf6_spf_tree_common(struct vty *vty, struct ospf6 *ospf6,
+				      bool uj)
 {
 	struct listnode *node;
 	struct ospf6_area *oa;
+	struct prefix prefix;
 	struct ospf6_vertex *root;
 	struct ospf6_route *route;
-	struct prefix prefix;
+	json_object *json = NULL;
+	json_object *json_area = NULL;
+	json_object *json_head = NULL;
 
-	OSPF6_CMD_CHECK_RUNNING();
-
+	if (uj)
+		json = json_object_new_object();
 	ospf6_linkstate_prefix(ospf6->router_id, htonl(0), &prefix);
-
 	for (ALL_LIST_ELEMENTS_RO(ospf6->area_list, node, oa)) {
+		if (uj) {
+			json_area = json_object_new_object();
+			json_head = json_object_new_object();
+		}
 		route = ospf6_route_lookup(&prefix, oa->spf_table);
 		if (route == NULL) {
-			vty_out(vty, "LS entry for root not found in area %s\n",
-				oa->name);
+			if (uj) {
+				json_object_string_add(
+					json, oa->name,
+					"LS entry for not not found");
+				json_object_free(json_head);
+				json_object_free(json_area);
+			} else
+				vty_out(vty,
+					"LS entry for root not found in area %s\n",
+					oa->name);
 			continue;
 		}
 		root = (struct ospf6_vertex *)route->route_option;
-		ospf6_spf_display_subtree(vty, "", 0, root);
+		ospf6_spf_display_subtree(vty, "", 0, root, json_head, uj);
+
+		if (uj) {
+			json_object_object_add(json_area, root->name,
+					       json_head);
+			json_object_object_add(json, oa->name, json_area);
+		}
+	}
+
+	if (uj) {
+		vty_out(vty, "%s\n",
+			json_object_to_json_string_ext(
+				json, JSON_C_TO_STRING_PRETTY));
+		json_object_free(json);
 	}
 
 	return CMD_SUCCESS;
 }
 
-DEFUN (show_ipv6_ospf6_area_spf_tree,
-       show_ipv6_ospf6_area_spf_tree_cmd,
-       "show ipv6 ospf6 area A.B.C.D spf tree",
-       SHOW_STR
-       IP6_STR
-       OSPF6_STR
-       OSPF6_AREA_STR
-       OSPF6_AREA_ID_STR
-       "Shortest Path First calculation\n"
-       "Show SPF tree\n")
+DEFUN(show_ipv6_ospf6_spf_tree, show_ipv6_ospf6_spf_tree_cmd,
+      "show ipv6 ospf6 [vrf <NAME|all>] spf tree [json]",
+      SHOW_STR IP6_STR OSPF6_STR VRF_CMD_HELP_STR
+      "All VRFs\n"
+      "Shortest Path First calculation\n"
+      "Show SPF tree\n" JSON_STR)
 {
-	int idx_ipv4 = 4;
-	uint32_t area_id;
-	struct ospf6_area *oa;
-	struct ospf6_vertex *root;
-	struct ospf6_route *route;
-	struct prefix prefix;
+	struct listnode *node;
+	struct ospf6 *ospf6;
+	const char *vrf_name = NULL;
+	bool all_vrf = false;
+	int idx_vrf = 0;
+	bool uj = use_json(argc, argv);
 
 	OSPF6_CMD_CHECK_RUNNING();
+	OSPF6_FIND_VRF_ARGS(argv, argc, idx_vrf, vrf_name, all_vrf);
+
+	for (ALL_LIST_ELEMENTS_RO(om6->ospf6, node, ospf6)) {
+		if (all_vrf || strcmp(ospf6->name, vrf_name) == 0) {
+			ipv6_ospf6_spf_tree_common(vty, ospf6, uj);
+			if (!all_vrf)
+				break;
+		}
+	}
+
+	return CMD_SUCCESS;
+}
+
+static int show_ospf6_area_spf_tree_common(struct vty *vty,
+					   struct cmd_token **argv,
+					   struct ospf6 *ospf6,
+					   uint32_t area_id, int idx_ipv4)
+{
+
+	struct ospf6_area *oa;
+	struct prefix prefix;
+	struct ospf6_vertex *root;
+	struct ospf6_route *route;
 
 	ospf6_linkstate_prefix(ospf6->router_id, htonl(0), &prefix);
 
-	if (inet_pton(AF_INET, argv[idx_ipv4]->arg, &area_id) != 1) {
-		vty_out(vty, "Malformed Area-ID: %s\n", argv[idx_ipv4]->arg);
-		return CMD_SUCCESS;
-	}
 	oa = ospf6_area_lookup(area_id, ospf6);
 	if (oa == NULL) {
 		vty_out(vty, "No such Area: %s\n", argv[idx_ipv4]->arg);
@@ -827,43 +1008,60 @@ DEFUN (show_ipv6_ospf6_area_spf_tree,
 		return CMD_SUCCESS;
 	}
 	root = (struct ospf6_vertex *)route->route_option;
-	ospf6_spf_display_subtree(vty, "", 0, root);
+	ospf6_spf_display_subtree(vty, "", 0, root, NULL, false);
 
 	return CMD_SUCCESS;
 }
 
-DEFUN (show_ipv6_ospf6_simulate_spf_tree_root,
-       show_ipv6_ospf6_simulate_spf_tree_root_cmd,
-       "show ipv6 ospf6 simulate spf-tree A.B.C.D area A.B.C.D",
-       SHOW_STR
-       IP6_STR
-       OSPF6_STR
-       "Shortest Path First calculation\n"
-       "Show SPF tree\n"
-       "Specify root's router-id to calculate another router's SPF tree\n"
-       "OSPF6 area parameters\n"
-       OSPF6_AREA_ID_STR)
+DEFUN(show_ipv6_ospf6_area_spf_tree, show_ipv6_ospf6_area_spf_tree_cmd,
+      "show ipv6 ospf6 [vrf <NAME|all>] area A.B.C.D spf tree",
+      SHOW_STR IP6_STR OSPF6_STR VRF_CMD_HELP_STR
+      "All VRFs\n" OSPF6_AREA_STR OSPF6_AREA_ID_STR
+      "Shortest Path First calculation\n"
+      "Show SPF tree\n")
 {
-	int idx_ipv4 = 5;
-	int idx_ipv4_2 = 7;
+	int idx_ipv4 = 4;
 	uint32_t area_id;
+	struct ospf6 *ospf6;
+	struct listnode *node;
+	const char *vrf_name = NULL;
+	bool all_vrf = false;
+	int idx_vrf = 0;
+
+	OSPF6_CMD_CHECK_RUNNING();
+	OSPF6_FIND_VRF_ARGS(argv, argc, idx_vrf, vrf_name, all_vrf);
+	if (idx_vrf > 0)
+		idx_ipv4 += 2;
+
+	if (inet_pton(AF_INET, argv[idx_ipv4]->arg, &area_id) != 1) {
+		vty_out(vty, "Malformed Area-ID: %s\n", argv[idx_ipv4]->arg);
+		return CMD_SUCCESS;
+	}
+
+	for (ALL_LIST_ELEMENTS_RO(om6->ospf6, node, ospf6)) {
+		if (all_vrf || strcmp(ospf6->name, vrf_name) == 0) {
+			show_ospf6_area_spf_tree_common(vty, argv, ospf6,
+							area_id, idx_ipv4);
+			if (!all_vrf)
+				break;
+		}
+	}
+
+	return CMD_SUCCESS;
+}
+
+static int
+show_ospf6_simulate_spf_tree_commen(struct vty *vty, struct cmd_token **argv,
+				    struct ospf6 *ospf6, uint32_t router_id,
+				    uint32_t area_id, struct prefix prefix,
+				    int idx_ipv4, int idx_ipv4_2)
+{
 	struct ospf6_area *oa;
 	struct ospf6_vertex *root;
 	struct ospf6_route *route;
-	struct prefix prefix;
-	uint32_t router_id;
 	struct ospf6_route_table *spf_table;
 	unsigned char tmp_debug_ospf6_spf = 0;
 
-	OSPF6_CMD_CHECK_RUNNING();
-
-	inet_pton(AF_INET, argv[idx_ipv4]->arg, &router_id);
-	ospf6_linkstate_prefix(router_id, htonl(0), &prefix);
-
-	if (inet_pton(AF_INET, argv[idx_ipv4_2]->arg, &area_id) != 1) {
-		vty_out(vty, "Malformed Area-ID: %s\n", argv[idx_ipv4_2]->arg);
-		return CMD_SUCCESS;
-	}
 	oa = ospf6_area_lookup(area_id, ospf6);
 	if (oa == NULL) {
 		vty_out(vty, "No such Area: %s\n", argv[idx_ipv4_2]->arg);
@@ -885,10 +1083,58 @@ DEFUN (show_ipv6_ospf6_simulate_spf_tree_root,
 		return CMD_SUCCESS;
 	}
 	root = (struct ospf6_vertex *)route->route_option;
-	ospf6_spf_display_subtree(vty, "", 0, root);
+	ospf6_spf_display_subtree(vty, "", 0, root, NULL, false);
 
 	ospf6_spf_table_finish(spf_table);
 	ospf6_route_table_delete(spf_table);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(show_ipv6_ospf6_simulate_spf_tree_root,
+      show_ipv6_ospf6_simulate_spf_tree_root_cmd,
+      "show ipv6 ospf6 [vrf <NAME|all>] simulate spf-tree A.B.C.D area A.B.C.D",
+      SHOW_STR IP6_STR OSPF6_STR VRF_CMD_HELP_STR
+      "All VRFs\n"
+      "Shortest Path First calculation\n"
+      "Show SPF tree\n"
+      "Specify root's router-id to calculate another router's SPF tree\n"
+      "OSPF6 area parameters\n" OSPF6_AREA_ID_STR)
+{
+	int idx_ipv4 = 5;
+	int idx_ipv4_2 = 7;
+	uint32_t area_id;
+	struct prefix prefix;
+	uint32_t router_id;
+	struct ospf6 *ospf6;
+	struct listnode *node;
+	const char *vrf_name = NULL;
+	bool all_vrf = false;
+	int idx_vrf = 0;
+
+	OSPF6_CMD_CHECK_RUNNING();
+	OSPF6_FIND_VRF_ARGS(argv, argc, idx_vrf, vrf_name, all_vrf);
+	if (idx_vrf > 0) {
+		idx_ipv4 += 2;
+		idx_ipv4_2 += 2;
+	}
+	inet_pton(AF_INET, argv[idx_ipv4]->arg, &router_id);
+	ospf6_linkstate_prefix(router_id, htonl(0), &prefix);
+
+	if (inet_pton(AF_INET, argv[idx_ipv4_2]->arg, &area_id) != 1) {
+		vty_out(vty, "Malformed Area-ID: %s\n", argv[idx_ipv4_2]->arg);
+		return CMD_SUCCESS;
+	}
+
+	for (ALL_LIST_ELEMENTS_RO(om6->ospf6, node, ospf6)) {
+		if (all_vrf || strcmp(ospf6->name, vrf_name) == 0) {
+			show_ospf6_simulate_spf_tree_commen(
+				vty, argv, ospf6, router_id, area_id, prefix,
+				idx_ipv4, idx_ipv4_2);
+			if (!all_vrf)
+				break;
+		}
+	}
 
 	return CMD_SUCCESS;
 }
@@ -904,7 +1150,9 @@ DEFUN (ospf6_area_stub,
 	int idx_ipv4_number = 1;
 	struct ospf6_area *area;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4_number]->arg, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4_number]->arg, area, ospf6);
 
 	if (!ospf6_area_stub_set(ospf6, area)) {
 		vty_out(vty,
@@ -929,7 +1177,9 @@ DEFUN (ospf6_area_stub_no_summary,
 	int idx_ipv4_number = 1;
 	struct ospf6_area *area;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4_number]->arg, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4_number]->arg, area, ospf6);
 
 	if (!ospf6_area_stub_set(ospf6, area)) {
 		vty_out(vty,
@@ -954,7 +1204,9 @@ DEFUN (no_ospf6_area_stub,
 	int idx_ipv4_number = 2;
 	struct ospf6_area *area;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4_number]->arg, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4_number]->arg, area, ospf6);
 
 	ospf6_area_stub_unset(ospf6, area);
 	ospf6_area_no_summary_unset(ospf6, area);
@@ -975,7 +1227,9 @@ DEFUN (no_ospf6_area_stub_no_summary,
 	int idx_ipv4_number = 2;
 	struct ospf6_area *area;
 
-	OSPF6_CMD_AREA_GET(argv[idx_ipv4_number]->arg, area);
+	VTY_DECLVAR_CONTEXT(ospf6, ospf6);
+
+	OSPF6_CMD_AREA_GET(argv[idx_ipv4_number]->arg, area, ospf6);
 
 	ospf6_area_stub_unset(ospf6, area);
 	ospf6_area_no_summary_unset(ospf6, area);
@@ -1010,11 +1264,13 @@ void ospf6_area_interface_delete(struct ospf6_interface *oi)
 {
 	struct ospf6_area *oa;
 	struct listnode *node, *nnode;
+	struct ospf6 *ospf6;
 
-	if (!ospf6)
+	if (!om6->ospf6)
 		return;
-	for (ALL_LIST_ELEMENTS(ospf6->area_list, node, nnode, oa))
-		if(listnode_lookup(oa->if_list, oi))
-			listnode_delete(oa->if_list, oi);
-
+	for (ALL_LIST_ELEMENTS(om6->ospf6, node, nnode, ospf6)) {
+		for (ALL_LIST_ELEMENTS(ospf6->area_list, node, nnode, oa))
+			if (listnode_lookup(oa->if_list, oi))
+				listnode_delete(oa->if_list, oi);
+	}
 }

@@ -23,6 +23,7 @@
 
 #include "command.h"
 #include "zclient.h"
+#include "lib/json.h"
 
 #define OSPF6_MULTI_PATH_LIMIT    4
 
@@ -178,6 +179,7 @@ struct ospf6_route {
 #define OSPF6_ROUTE_DO_NOT_ADVERTISE 0x20
 #define OSPF6_ROUTE_WAS_REMOVED      0x40
 #define OSPF6_ROUTE_BLACKHOLE_ADDED  0x80
+struct ospf6;
 
 struct ospf6_route_table {
 	int scope_type;
@@ -232,6 +234,9 @@ extern const char *const ospf6_path_type_substr[OSPF6_PATH_TYPE_MAX];
 #define OSPF6_PATH_TYPE_SUBSTR(x)                                              \
 	(0 < (x) && (x) < OSPF6_PATH_TYPE_MAX ? ospf6_path_type_substr[(x)]    \
 					      : ospf6_path_type_substr[0])
+#define OSPF6_PATH_TYPE_JSON(x)                                                \
+	(0 < (x) && (x) < OSPF6_PATH_TYPE_MAX ? ospf6_path_type_json[(x)]      \
+					      : ospf6_path_type_json[0])
 
 #define OSPF6_ROUTE_ADDRESS_STR "Display the route bestmatches the address\n"
 #define OSPF6_ROUTE_PREFIX_STR  "Display the route\n"
@@ -279,7 +284,7 @@ extern int ospf6_route_cmp_nexthops(struct ospf6_route *a,
 				    struct ospf6_route *b);
 extern void ospf6_route_zebra_copy_nexthops(struct ospf6_route *route,
 					    struct zapi_nexthop nexthops[],
-					    int entries);
+					    int entries, vrf_id_t vrf_id);
 extern int ospf6_route_get_first_nh_index(struct ospf6_route *route);
 
 /* Hide abstraction of nexthop implementation in route from outsiders */
@@ -296,7 +301,6 @@ extern int ospf6_route_cmp(struct ospf6_route *ra, struct ospf6_route *rb);
 
 extern void ospf6_route_lock(struct ospf6_route *route);
 extern void ospf6_route_unlock(struct ospf6_route *route);
-
 extern struct ospf6_route *ospf6_route_lookup(struct prefix *prefix,
 					      struct ospf6_route_table *table);
 extern struct ospf6_route *
@@ -320,17 +324,20 @@ ospf6_route_match_head(struct prefix *prefix, struct ospf6_route_table *table);
 extern struct ospf6_route *ospf6_route_match_next(struct prefix *prefix,
 						  struct ospf6_route *route);
 
-extern void ospf6_route_remove_all(struct ospf6_route_table *);
+extern void ospf6_route_remove_all(struct ospf6_route_table *table);
 extern struct ospf6_route_table *ospf6_route_table_create(int s, int t);
-extern void ospf6_route_table_delete(struct ospf6_route_table *);
+extern void ospf6_route_table_delete(struct ospf6_route_table *table);
 extern void ospf6_route_dump(struct ospf6_route_table *table);
 
 
-extern void ospf6_route_show(struct vty *vty, struct ospf6_route *route);
-extern void ospf6_route_show_detail(struct vty *vty, struct ospf6_route *route);
+extern void ospf6_route_show(struct vty *vty, struct ospf6_route *route,
+			     json_object *json, bool use_json);
+extern void ospf6_route_show_detail(struct vty *vty, struct ospf6_route *route,
+				    json_object *json, bool use_json);
+
 
 extern int ospf6_route_table_show(struct vty *, int, int, struct cmd_token **,
-				  struct ospf6_route_table *);
+				  struct ospf6_route_table *, bool use_json);
 extern int ospf6_linkstate_table_show(struct vty *vty, int idx_ipv4, int argc,
 				      struct cmd_token **argv,
 				      struct ospf6_route_table *table);
@@ -341,7 +348,6 @@ extern void ospf6_brouter_show(struct vty *vty, struct ospf6_route *route);
 extern int config_write_ospf6_debug_route(struct vty *vty);
 extern void install_element_ospf6_debug_route(void);
 extern void ospf6_route_init(void);
-extern void ospf6_clean(void);
 extern void ospf6_path_free(struct ospf6_path *op);
 extern struct ospf6_path *ospf6_path_dup(struct ospf6_path *path);
 extern void ospf6_copy_paths(struct list *dst, struct list *src);

@@ -42,8 +42,7 @@
 #include "static_zebra.h"
 #include "static_nht.h"
 #include "static_vty.h"
-
-bool debug;
+#include "static_debug.h"
 
 /* Zebra structure to hold current status. */
 struct zclient *zclient;
@@ -110,24 +109,22 @@ static int route_notify_owner(ZAPI_CALLBACK_ARGS)
 	struct prefix p;
 	enum zapi_route_notify_owner note;
 	uint32_t table_id;
-	char buf[PREFIX_STRLEN];
 
-	if (!zapi_route_notify_decode(zclient->ibuf, &p, &table_id, &note))
+	if (!zapi_route_notify_decode(zclient->ibuf, &p, &table_id, &note,
+				      NULL, NULL))
 		return -1;
-
-	prefix2str(&p, buf, sizeof(buf));
 
 	switch (note) {
 	case ZAPI_ROUTE_FAIL_INSTALL:
 		static_nht_mark_state(&p, vrf_id, STATIC_NOT_INSTALLED);
-		zlog_warn("%s: Route %s failed to install for table: %u",
-			  __func__, buf, table_id);
+		zlog_warn("%s: Route %pFX failed to install for table: %u",
+			  __func__, &p, table_id);
 		break;
 	case ZAPI_ROUTE_BETTER_ADMIN_WON:
 		static_nht_mark_state(&p, vrf_id, STATIC_NOT_INSTALLED);
 		zlog_warn(
-			"%s: Route %s over-ridden by better route for table: %u",
-			__func__, buf, table_id);
+			"%s: Route %pFX over-ridden by better route for table: %u",
+			__func__, &p, table_id);
 		break;
 	case ZAPI_ROUTE_INSTALLED:
 		static_nht_mark_state(&p, vrf_id, STATIC_INSTALLED);
@@ -137,8 +134,8 @@ static int route_notify_owner(ZAPI_CALLBACK_ARGS)
 		break;
 	case ZAPI_ROUTE_REMOVE_FAIL:
 		static_nht_mark_state(&p, vrf_id, STATIC_INSTALLED);
-		zlog_warn("%s: Route %s failure to remove for table: %u",
-			  __func__, buf, table_id);
+		zlog_warn("%s: Route %pFX failure to remove for table: %u",
+			  __func__, &p, table_id);
 		break;
 	}
 
@@ -313,9 +310,9 @@ void static_zebra_nht_register(struct route_node *rn, struct static_nexthop *nh,
 				static_nht_hash_alloc);
 		nhtd->refcount++;
 
-		if (debug)
-			zlog_debug("Registered nexthop(%pFX) for %pRN %d", &p,
-				   rn, nhtd->nh_num);
+		DEBUGD(&static_dbg_route,
+		       "Registered nexthop(%pFX) for %pRN %d", &p, rn,
+		       nhtd->nh_num);
 		if (nhtd->refcount > 1 && nhtd->nh_num) {
 			static_nht_update(&rn->p, nhtd->nh, nhtd->nh_num, afi,
 					  nh->nh_vrf_id);
@@ -334,7 +331,8 @@ void static_zebra_nht_register(struct route_node *rn, struct static_nexthop *nh,
 		static_nht_hash_free(nhtd);
 	}
 
-	if (zclient_send_rnh(zclient, cmd, &p, false, nh->nh_vrf_id) < 0)
+	if (zclient_send_rnh(zclient, cmd, &p, false, nh->nh_vrf_id)
+	    == ZCLIENT_SEND_FAILURE)
 		zlog_warn("%s: Failure to send nexthop to zebra", __func__);
 }
 /*

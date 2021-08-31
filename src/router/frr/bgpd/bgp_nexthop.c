@@ -33,6 +33,7 @@
 #include "nexthop.h"
 #include "queue.h"
 #include "filter.h"
+#include "printfrr.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_route.h"
@@ -45,7 +46,7 @@
 #include "bgpd/bgp_vty.h"
 #include "bgpd/bgp_rd.h"
 
-DEFINE_MTYPE_STATIC(BGPD, MARTIAN_STRING, "BGP Martian Address Intf String");
+DEFINE_MTYPE_STATIC(BGPD, MARTIAN_STRING, "BGP Martian Addr Intf String");
 
 int bgp_nexthop_cache_compare(const struct bgp_nexthop_cache *a,
 			      const struct bgp_nexthop_cache *b)
@@ -757,10 +758,10 @@ static void bgp_show_nexthop_paths(struct vty *vty, struct bgp *bgp,
 		if (dest->pdest) {
 			prefix_rd2str((struct prefix_rd *)bgp_dest_get_prefix(dest->pdest),
 					buf1, sizeof(buf1));
-			vty_out(vty, "    %d/%d %pRN RD %s %s flags 0x%x\n",
+			vty_out(vty, "    %d/%d %pBD RD %s %s flags 0x%x\n",
 				afi, safi, dest, buf1, bgp_path->name_pretty, path->flags);
 		} else
-			vty_out(vty, "    %d/%d %pRN %s flags 0x%x\n",
+			vty_out(vty, "    %d/%d %pBD %s flags 0x%x\n",
 				afi, safi, dest, bgp_path->name_pretty, path->flags);
 	}
 }
@@ -782,7 +783,9 @@ static void bgp_show_nexthops_detail(struct vty *vty, struct bgp *bgp,
 			vty_out(vty, "  gate %s, if %s\n",
 				inet_ntop(AF_INET6, &nexthop->gate.ipv6, buf,
 					  sizeof(buf)),
-				ifindex2ifname(nexthop->ifindex, bgp->vrf_id));
+				ifindex2ifname(bnc->ifindex ? bnc->ifindex
+							    : nexthop->ifindex,
+					       bgp->vrf_id));
 			break;
 		case NEXTHOP_TYPE_IPV4:
 			vty_out(vty, "  gate %s\n",
@@ -791,13 +794,17 @@ static void bgp_show_nexthops_detail(struct vty *vty, struct bgp *bgp,
 			break;
 		case NEXTHOP_TYPE_IFINDEX:
 			vty_out(vty, "  if %s\n",
-				ifindex2ifname(nexthop->ifindex, bgp->vrf_id));
+				ifindex2ifname(bnc->ifindex ? bnc->ifindex
+							    : nexthop->ifindex,
+					       bgp->vrf_id));
 			break;
 		case NEXTHOP_TYPE_IPV4_IFINDEX:
 			vty_out(vty, "  gate %s, if %s\n",
 				inet_ntop(AF_INET, &nexthop->gate.ipv4, buf,
 					  sizeof(buf)),
-				ifindex2ifname(nexthop->ifindex, bgp->vrf_id));
+				ifindex2ifname(bnc->ifindex ? bnc->ifindex
+							    : nexthop->ifindex,
+					       bgp->vrf_id));
 			break;
 		case NEXTHOP_TYPE_BLACKHOLE:
 			vty_out(vty, "  blackhole\n");
@@ -1019,4 +1026,51 @@ void bgp_scan_finish(struct bgp *bgp)
 		bgp_table_unlock(bgp->connected_table[afi]);
 		bgp->connected_table[afi] = NULL;
 	}
+}
+
+char *bgp_nexthop_dump_bnc_flags(struct bgp_nexthop_cache *bnc, char *buf,
+				 size_t len)
+{
+	if (bnc->flags == 0) {
+		snprintfrr(buf, len, "None ");
+		return buf;
+	}
+
+	snprintfrr(buf, len, "%s%s%s%s%s%s%s",
+		   CHECK_FLAG(bnc->flags, BGP_NEXTHOP_VALID) ? "Valid " : "",
+		   CHECK_FLAG(bnc->flags, BGP_NEXTHOP_REGISTERED) ? "Reg " : "",
+		   CHECK_FLAG(bnc->flags, BGP_NEXTHOP_CONNECTED) ? "Conn " : "",
+		   CHECK_FLAG(bnc->flags, BGP_NEXTHOP_PEER_NOTIFIED) ? "Notify "
+								     : "",
+		   CHECK_FLAG(bnc->flags, BGP_STATIC_ROUTE) ? "Static " : "",
+		   CHECK_FLAG(bnc->flags, BGP_STATIC_ROUTE_EXACT_MATCH)
+			   ? "Static Exact "
+			   : "",
+		   CHECK_FLAG(bnc->flags, BGP_NEXTHOP_LABELED_VALID)
+			   ? "Label Valid "
+			   : "");
+
+	return buf;
+}
+
+char *bgp_nexthop_dump_bnc_change_flags(struct bgp_nexthop_cache *bnc,
+					char *buf, size_t len)
+{
+	if (bnc->flags == 0) {
+		snprintfrr(buf, len, "None ");
+		return buf;
+	}
+
+	snprintfrr(buf, len, "%s%s%s",
+		   CHECK_FLAG(bnc->change_flags, BGP_NEXTHOP_CHANGED)
+			   ? "Changed "
+			   : "",
+		   CHECK_FLAG(bnc->change_flags, BGP_NEXTHOP_METRIC_CHANGED)
+			   ? "Metric "
+			   : "",
+		   CHECK_FLAG(bnc->change_flags, BGP_NEXTHOP_CONNECTED_CHANGED)
+			   ? "Connected "
+			   : "");
+
+	return buf;
 }

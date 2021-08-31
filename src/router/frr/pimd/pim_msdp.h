@@ -208,8 +208,8 @@ struct pim_msdp {
 	thread_add_write(mp->pim->msdp.master, pim_msdp_write, mp, mp->fd,     \
 			 &mp->t_write)
 
-#define PIM_MSDP_PEER_READ_OFF(mp) THREAD_READ_OFF(mp->t_read)
-#define PIM_MSDP_PEER_WRITE_OFF(mp) THREAD_WRITE_OFF(mp->t_write)
+#define PIM_MSDP_PEER_READ_OFF(mp) thread_cancel(&mp->t_read)
+#define PIM_MSDP_PEER_WRITE_OFF(mp) thread_cancel(&mp->t_write)
 
 // struct pim_msdp *msdp;
 struct pim_instance;
@@ -234,6 +234,8 @@ char *pim_msdp_peer_key_dump(struct pim_msdp_peer *mp, char *buf, int buf_size,
 			     bool long_format);
 int pim_msdp_config_write(struct pim_instance *pim, struct vty *vty,
 			  const char *spaces);
+bool pim_msdp_peer_config_write(struct vty *vty, struct pim_instance *pim,
+				const char *spaces);
 void pim_msdp_peer_pkt_txed(struct pim_msdp_peer *mp);
 void pim_msdp_sa_ref(struct pim_instance *pim, struct pim_msdp_peer *mp,
 		     struct prefix_sg *sg, struct in_addr rp);

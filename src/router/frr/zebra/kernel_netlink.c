@@ -29,7 +29,6 @@
 #include "connected.h"
 #include "table.h"
 #include "memory.h"
-#include "zebra_memory.h"
 #include "rib.h"
 #include "thread.h"
 #include "privs.h"
@@ -159,7 +158,7 @@ extern uint32_t nl_rcvbufsize;
 
 extern struct zebra_privs_t zserv_privs;
 
-DEFINE_MTYPE_STATIC(ZEBRA, NL_BUF, "Zebra Netlink buffers")
+DEFINE_MTYPE_STATIC(ZEBRA, NL_BUF, "Zebra Netlink buffers");
 
 size_t nl_batch_tx_bufsize;
 char *nl_batch_tx_buf;
@@ -489,9 +488,24 @@ static void netlink_install_filter(int sock, __u32 pid, __u32 dplane_pid)
 			     safe_strerror(errno));
 }
 
+void netlink_parse_rtattr_flags(struct rtattr **tb, int max,
+		struct rtattr *rta, int len, unsigned short flags)
+{
+	unsigned short type;
+
+	memset(tb, 0, sizeof(struct rtattr *) * (max + 1));
+	while (RTA_OK(rta, len)) {
+		type = rta->rta_type & ~flags;
+		if ((type <= max) && (!tb[type]))
+			tb[type] = rta;
+		rta = RTA_NEXT(rta, len);
+	}
+}
+
 void netlink_parse_rtattr(struct rtattr **tb, int max, struct rtattr *rta,
 			  int len)
 {
+	memset(tb, 0, sizeof(struct rtattr *) * (max + 1));
 	while (RTA_OK(rta, len)) {
 		if (rta->rta_type <= max)
 			tb[rta->rta_type] = rta;
@@ -712,7 +726,11 @@ static ssize_t netlink_send_msg(const struct nlsock *nl, void *buf,
 
 	if (IS_ZEBRA_DEBUG_KERNEL_MSGDUMP_SEND) {
 		zlog_debug("%s: >> netlink message dump [sent]", __func__);
+#ifdef NETLINK_DEBUG
+		nl_dump(buf, buflen);
+#else
 		zlog_hexdump(buf, buflen);
+#endif /* NETLINK_DEBUG */
 	}
 
 	if (status == -1) {
@@ -770,7 +788,11 @@ static int netlink_recv_msg(const struct nlsock *nl, struct msghdr msg,
 
 	if (IS_ZEBRA_DEBUG_KERNEL_MSGDUMP_RECV) {
 		zlog_debug("%s: << netlink message dump [recv]", __func__);
+#ifdef NETLINK_DEBUG
+		nl_dump(buf, status);
+#else
 		zlog_hexdump(buf, status);
+#endif /* NETLINK_DEBUG */
 	}
 
 	return status;
@@ -1131,7 +1153,7 @@ static int nl_batch_read_resp(struct nl_batch *bth)
 					ctx, ZEBRA_DPLANE_REQUEST_FAILURE);
 
 			if (IS_ZEBRA_DEBUG_KERNEL)
-				zlog_debug("%s: netlink error message seq=%d",
+				zlog_debug("%s: netlink error message seq=%d ",
 					   __func__, h->nlmsg_seq);
 			continue;
 		}
@@ -1315,6 +1337,9 @@ static enum netlink_msg_status nl_put_msg(struct nl_batch *bth,
 	case DPLANE_OP_VTEP_ADD:
 	case DPLANE_OP_VTEP_DELETE:
 	case DPLANE_OP_NEIGH_DISCOVER:
+	case DPLANE_OP_NEIGH_IP_INSTALL:
+	case DPLANE_OP_NEIGH_IP_DELETE:
+	case DPLANE_OP_NEIGH_TABLE_UPDATE:
 		return netlink_put_neigh_update_msg(bth, ctx);
 
 	case DPLANE_OP_RULE_ADD:
@@ -1326,7 +1351,19 @@ static enum netlink_msg_status nl_put_msg(struct nl_batch *bth,
 	case DPLANE_OP_SYS_ROUTE_DELETE:
 	case DPLANE_OP_ROUTE_NOTIFY:
 	case DPLANE_OP_LSP_NOTIFY:
+	case DPLANE_OP_BR_PORT_UPDATE:
 		return FRR_NETLINK_SUCCESS;
+
+	case DPLANE_OP_IPTABLE_ADD:
+	case DPLANE_OP_IPTABLE_DELETE:
+	case DPLANE_OP_IPSET_ADD:
+	case DPLANE_OP_IPSET_DELETE:
+	case DPLANE_OP_IPSET_ENTRY_ADD:
+	case DPLANE_OP_IPSET_ENTRY_DELETE:
+		return FRR_NETLINK_ERROR;
+
+	case DPLANE_OP_GRE_SET:
+		return netlink_put_gre_set_msg(bth, ctx);
 
 	case DPLANE_OP_NONE:
 		return FRR_NETLINK_ERROR;
@@ -1506,7 +1543,7 @@ void kernel_init(struct zebra_ns *zns)
 
 void kernel_terminate(struct zebra_ns *zns, bool complete)
 {
-	THREAD_OFF(zns->t_netlink);
+	thread_cancel(&zns->t_netlink);
 
 	if (zns->netlink.sock >= 0) {
 		close(zns->netlink.sock);

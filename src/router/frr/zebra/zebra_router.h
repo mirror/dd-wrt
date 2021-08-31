@@ -61,6 +61,29 @@ enum multicast_mode {
 			      /* on equal value, MRIB wins for last 2 */
 };
 
+/* An interface can be error-disabled if a protocol (such as EVPN or
+ * VRRP) detects a problem with keeping it operationally-up.
+ * If any of the protodown bits are set protodown-on is programmed
+ * in the dataplane. This results in a carrier/L1 down on the
+ * physical device.
+ */
+enum protodown_reasons {
+	/* On startup local ESs are held down for some time to
+	 * allow the underlay to converge and EVPN routes to
+	 * get learnt
+	 */
+	ZEBRA_PROTODOWN_EVPN_STARTUP_DELAY = (1 << 0),
+	/* If all the uplinks are down the switch has lost access
+	 * to the VxLAN overlay and must shut down the access
+	 * ports to allow servers to re-direct their traffic to
+	 * other switches on the Ethernet Segment
+	 */
+	ZEBRA_PROTODOWN_EVPN_UPLINK_DOWN = (1 << 1),
+	ZEBRA_PROTODOWN_EVPN_ALL = (ZEBRA_PROTODOWN_EVPN_UPLINK_DOWN
+				    | ZEBRA_PROTODOWN_EVPN_STARTUP_DELAY)
+};
+#define ZEBRA_PROTODOWN_RC_STR_LEN 80
+
 struct zebra_mlag_info {
 	/* Role this zebra router is playing */
 	enum mlag_role role;
@@ -182,13 +205,19 @@ struct zebra_router {
 	 */
 	struct hash *nhgs;
 	struct hash *nhgs_id;
+
+	/*
+	 * Does the underlying system provide an asic offload
+	 */
+	bool asic_offloaded;
+	bool notify_on_ack;
 };
 
 #define GRACEFUL_RESTART_TIME 60
 
 extern struct zebra_router zrouter;
 
-extern void zebra_router_init(void);
+extern void zebra_router_init(bool asic_offload, bool notify_on_ack);
 extern void zebra_router_cleanup(void);
 extern void zebra_router_terminate(void);
 
@@ -226,6 +255,8 @@ static inline struct zebra_vrf *zebra_vrf_get_evpn(void)
 extern void multicast_mode_ipv4_set(enum multicast_mode mode);
 
 extern enum multicast_mode multicast_mode_ipv4_get(void);
+
+extern bool zebra_router_notify_on_ack(void);
 
 /* zebra_northbound.c */
 extern const struct frr_yang_module_info frr_zebra_info;

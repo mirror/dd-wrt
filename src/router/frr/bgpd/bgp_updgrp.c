@@ -79,8 +79,11 @@ static void update_subgroup_checkin(struct update_subgroup *subgrp,
 	subgrp->uptime = bgp_clock();
 }
 
-static void sync_init(struct update_subgroup *subgrp)
+static void sync_init(struct update_subgroup *subgrp,
+		      struct update_group *updgrp)
 {
+	struct peer *peer = UPDGRP_PEER(updgrp);
+
 	subgrp->sync =
 		XCALLOC(MTYPE_BGP_SYNCHRONISE, sizeof(struct bgp_synchronize));
 	bgp_adv_fifo_init(&subgrp->sync->update);
@@ -91,7 +94,7 @@ static void sync_init(struct update_subgroup *subgrp)
 
 	/* We use a larger buffer for subgrp->work in the event that:
 	 * - We RX a BGP_UPDATE where the attributes alone are just
-	 *   under BGP_MAX_PACKET_SIZE
+	 *   under 4096 or 65535 (if Extended Message capability negotiated).
 	 * - The user configures an outbound route-map that does many as-path
 	 *   prepends or adds many communities.  At most they can have
 	 * CMD_ARGC_MAX
@@ -103,9 +106,9 @@ static void sync_init(struct update_subgroup *subgrp)
 	 * bounds
 	 * checking for every single attribute as we construct an UPDATE.
 	 */
-	subgrp->work =
-		stream_new(BGP_MAX_PACKET_SIZE + BGP_MAX_PACKET_SIZE_OVERFLOW);
-	subgrp->scratch = stream_new(BGP_MAX_PACKET_SIZE);
+	subgrp->work = stream_new(peer->max_packet_size
+				  + BGP_MAX_PACKET_SIZE_OVERFLOW);
+	subgrp->scratch = stream_new(peer->max_packet_size);
 }
 
 static void sync_delete(struct update_subgroup *subgrp)
@@ -143,6 +146,7 @@ static void conf_copy(struct peer *dst, struct peer *src, afi_t afi,
 	dst->flags = src->flags;
 	dst->af_flags[afi][safi] = src->af_flags[afi][safi];
 	dst->pmax_out[afi][safi] = src->pmax_out[afi][safi];
+	dst->max_packet_size = src->max_packet_size;
 	XFREE(MTYPE_BGP_PEER_HOST, dst->host);
 
 	dst->host = XSTRDUP(MTYPE_BGP_PEER_HOST, src->host);
@@ -195,6 +199,19 @@ static void conf_copy(struct peer *dst, struct peer *src, afi_t afi,
 			MTYPE_BGP_FILTER_NAME, UNSUPPRESS_MAP_NAME(srcfilter));
 		UNSUPPRESS_MAP(dstfilter) = UNSUPPRESS_MAP(srcfilter);
 	}
+
+	if (ADVERTISE_MAP_NAME(srcfilter)) {
+		ADVERTISE_MAP_NAME(dstfilter) = XSTRDUP(
+			MTYPE_BGP_FILTER_NAME, ADVERTISE_MAP_NAME(srcfilter));
+		ADVERTISE_MAP(dstfilter) = ADVERTISE_MAP(srcfilter);
+		ADVERTISE_CONDITION(dstfilter) = ADVERTISE_CONDITION(srcfilter);
+	}
+
+	if (CONDITION_MAP_NAME(srcfilter)) {
+		CONDITION_MAP_NAME(dstfilter) = XSTRDUP(
+			MTYPE_BGP_FILTER_NAME, CONDITION_MAP_NAME(srcfilter));
+		CONDITION_MAP(dstfilter) = CONDITION_MAP(srcfilter);
+	}
 }
 
 /**
@@ -217,6 +234,10 @@ static void conf_release(struct peer *src, afi_t afi, safi_t safi)
 	XFREE(MTYPE_BGP_FILTER_NAME, srcfilter->map[RMAP_OUT].name);
 
 	XFREE(MTYPE_BGP_FILTER_NAME, srcfilter->usmap.name);
+
+	XFREE(MTYPE_BGP_FILTER_NAME, srcfilter->advmap.aname);
+
+	XFREE(MTYPE_BGP_FILTER_NAME, srcfilter->advmap.cname);
 
 	XFREE(MTYPE_BGP_PEER_HOST, src->host);
 }
@@ -318,6 +339,7 @@ static unsigned int updgrp_hash_key_make(const void *p)
 			  key);
 	key = jhash_1word(peer->v_routeadv, key);
 	key = jhash_1word(peer->change_local_as, key);
+	key = jhash_1word(peer->max_packet_size, key);
 
 	if (peer->group)
 		key = jhash_1word(jhash(peer->group->name,
@@ -351,6 +373,11 @@ static unsigned int updgrp_hash_key_make(const void *p)
 	if (filter->usmap.name)
 		key = jhash_1word(jhash(filter->usmap.name,
 					strlen(filter->usmap.name), SEED1),
+				  key);
+
+	if (filter->advmap.aname)
+		key = jhash_1word(jhash(filter->advmap.aname,
+					strlen(filter->advmap.aname), SEED1),
 				  key);
 
 	if (peer->default_rmap[afi][safi].name)
@@ -479,6 +506,12 @@ static bool updgrp_hash_cmp(const void *p1, const void *p2)
 	    || (!fl1->usmap.name && fl2->usmap.name)
 	    || (fl1->usmap.name && fl2->usmap.name
 		&& strcmp(fl1->usmap.name, fl2->usmap.name)))
+		return false;
+
+	if ((fl1->advmap.aname && !fl2->advmap.aname)
+	    || (!fl1->advmap.aname && fl2->advmap.aname)
+	    || (fl1->advmap.aname && fl2->advmap.aname
+		&& strcmp(fl1->advmap.aname, fl2->advmap.aname)))
 		return false;
 
 	if ((pe1->default_rmap[afi][safi].name
@@ -772,7 +805,7 @@ update_subgroup_create(struct update_group *updgrp)
 	subgrp = XCALLOC(MTYPE_BGP_UPD_SUBGRP, sizeof(struct update_subgroup));
 	update_subgroup_checkin(subgrp, updgrp);
 	subgrp->v_coalesce = (UPDGRP_INST(updgrp))->coalesce_time;
-	sync_init(subgrp);
+	sync_init(subgrp, updgrp);
 	bpacket_queue_init(SUBGRP_PKTQ(subgrp));
 	bpacket_queue_add(SUBGRP_PKTQ(subgrp), NULL, NULL);
 	TAILQ_INIT(&(subgrp->adjq));
@@ -795,17 +828,12 @@ static void update_subgroup_delete(struct update_subgroup *subgrp)
 	if (subgrp->update_group)
 		UPDGRP_INCR_STAT(subgrp->update_group, subgrps_deleted);
 
-	if (subgrp->t_merge_check)
-		THREAD_OFF(subgrp->t_merge_check);
-
-	if (subgrp->t_coalesce)
-		THREAD_TIMER_OFF(subgrp->t_coalesce);
+	THREAD_OFF(subgrp->t_merge_check);
+	THREAD_OFF(subgrp->t_coalesce);
 
 	bpacket_queue_cleanup(SUBGRP_PKTQ(subgrp));
 	subgroup_clear_table(subgrp);
 
-	if (subgrp->t_coalesce)
-		THREAD_TIMER_OFF(subgrp->t_coalesce);
 	sync_delete(subgrp);
 
 	if (BGP_DEBUG(update_groups, UPDATE_GROUPS) && subgrp->update_group)
@@ -886,7 +914,6 @@ static void update_subgroup_add_peer(struct update_subgroup *subgrp,
 
 	bpacket_add_peer(pkt, paf);
 
-	bpacket_queue_sanity_check(SUBGRP_PKTQ(subgrp));
 	if (BGP_DEBUG(update_groups, UPDATE_GROUPS))
 		zlog_debug("peer %s added to subgroup s%" PRIu64,
 				paf->peer->host, subgrp->id);
@@ -1206,8 +1233,6 @@ static int update_subgroup_copy_packets(struct update_subgroup *dest,
 		pkt = bpacket_next(pkt);
 	}
 
-	bpacket_queue_sanity_check(SUBGRP_PKTQ(dest));
-
 	return count;
 }
 
@@ -1364,6 +1389,11 @@ static int updgrp_policy_update_walkcb(struct update_group *updgrp, void *arg)
 	}
 
 	UPDGRP_FOREACH_SUBGRP (updgrp, subgrp) {
+		/* Avoid supressing duplicate routes later
+		 * when processing in subgroup_announce_table().
+		 */
+		SET_FLAG(subgrp->sflags, SUBGRP_STATUS_FORCE_UPDATES);
+
 		if (changed) {
 			if (bgp_debug_update(NULL, NULL, updgrp, 0))
 				zlog_debug(
@@ -1771,7 +1801,7 @@ int update_group_refresh_default_originate_route_map(struct thread *thread)
 	bgp = THREAD_ARG(thread);
 	update_group_walk(bgp, update_group_default_originate_route_map_walkcb,
 			  reason);
-	THREAD_TIMER_OFF(bgp->t_rmap_def_originate_eval);
+	thread_cancel(&bgp->t_rmap_def_originate_eval);
 	bgp_unlock(bgp);
 
 	return 0;

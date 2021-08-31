@@ -18,16 +18,16 @@
  */
 
 
-#if !defined(GNU_LINUX) && (defined(SUNOS_5) || defined(OPEN_BSD))
-/* SUNOS_5 or OPEN_BSD */
+#if !defined(GNU_LINUX) && defined(OPEN_BSD)
+/* OPEN_BSD */
 
 #include <zebra.h>
 #include "ns.h"
 #include "log.h"
 #include "memory.h"
 
-DEFINE_MTYPE_STATIC(LIB, NS, "NetNS Context")
-DEFINE_MTYPE_STATIC(LIB, NS_NAME, "NetNS Name")
+DEFINE_MTYPE_STATIC(LIB, NS, "NetNS Context");
+DEFINE_MTYPE_STATIC(LIB, NS_NAME, "NetNS Name");
 
 
 static inline int ns_compare(const struct ns *ns, const struct ns *ns2);
