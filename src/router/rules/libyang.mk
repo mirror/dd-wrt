@@ -3,14 +3,14 @@ PKG_INSTALL:=1
 MAKE_FLAGS+=VERBOSE=0
 
 LIBYANG_PKG_BUILD_DIR=$(TOP)/libyang/build
-LIBYANG_CMAKE_OPTIONS=-DPCRE_LIBRARY=$(TOP)/pcre/.libs \
-		    -DPCRE_INCLUDE_DIR=$(TOP)/pcre \
+LIBYANG_CMAKE_OPTIONS=-DPCRE2_LIBRARY=$(TOP)/pcre2/.libs \
+		    -DPCRE2_INCLUDE_DIR=$(TOP)/pcre2/src \
 		    -DENABLE_LYD_PRIV=ON \
 		    -DCMAKE_BUILD_TYPE=Release -Wno-dev
 
 LIBYANG_STAGING_DIR=$(TOP)/_staging/usr
-LIBYANG_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT)
-LIBYANG_EXTRA_LDFLAGS=-L$(TOP)/pcre/.libs -lpcre -lpthread
+LIBYANG_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -D_NEED_PRINTF -I$(TOP)/pcre2/src
+LIBYANG_EXTRA_LDFLAGS=-L$(TOP)/pcre2/.libs -lpcre2-8 -lpthread
 
 
 libyang-configure: zlib openssl
@@ -23,12 +23,24 @@ libyang-configure: zlib openssl
 libyang: zlib
 	$(MAKE) -C libyang/build
 	-mkdir -p $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/build/src/libyang.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/build/src/config.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/build/src/version.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/libyang.h $(TOP)/libyang/build/libyang
 	-cp $(TOP)/libyang/src/tree_schema.h $(TOP)/libyang/build/libyang
 	-cp $(TOP)/libyang/src/tree_data.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/tree.h $(TOP)/libyang/build/libyang
 	-cp $(TOP)/libyang/src/xml.h $(TOP)/libyang/build/libyang
 	-cp $(TOP)/libyang/src/dict.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/user_types.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/context.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/parser_schema.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/parser_data.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/printer_schema.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/printer_data.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/log.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/in.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/out.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/set.h $(TOP)/libyang/build/libyang
+#	-cp $(TOP)/libyang/src/user_types.h $(TOP)/libyang/build/libyang
 
 libyang-install:
 	rm -rf $(INSTALLDIR)/libyang
