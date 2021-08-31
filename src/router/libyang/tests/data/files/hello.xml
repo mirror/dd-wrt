@@ -1,4 +1,0 @@
-<hello xmlns="urn:ietf:params:xml:ns:yang:hello">
-  <foo>text</foo>
-  <bar>1234</bar>
-</hello>

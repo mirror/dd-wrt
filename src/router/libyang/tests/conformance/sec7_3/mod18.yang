@@ -1,9 +1,0 @@
-module mod18 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod18";
-
-    typedef uint64 {
-        type uint32;
-    }
-}

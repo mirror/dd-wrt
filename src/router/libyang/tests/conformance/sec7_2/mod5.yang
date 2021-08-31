@@ -1,7 +1,0 @@
-module mod5 {
-
-    namespace "urn:cesnet:mod5";
-    prefix mm;
-
-    include sub5;
-}

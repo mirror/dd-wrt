@@ -1,8 +1,0 @@
-module mod2 {
-    prefix abc;
-    namespace "urn:cesnet:mod2";
-
-    leaf-list llist {
-        type boolean;
-    }
-}

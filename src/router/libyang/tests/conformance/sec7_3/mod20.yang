@@ -1,9 +1,0 @@
-module mod20 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod20";
-
-    typedef abc {
-        type my_type;
-    }
-}

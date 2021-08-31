@@ -1,7 +1,0 @@
-<login1 xmlns="urn:cesnet:mod5">
-    <is_admin>true</is_admin>
-</login1>
-<user xmlns="urn:cesnet:mod5">
-    <username>admin</username>
-    <password>admin123</password>
-</user>

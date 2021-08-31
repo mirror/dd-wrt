@@ -1,6 +1,0 @@
-submodule sub4 {
-
-    belongs-to mod4 {
-        // missing prefix statement
-    }
-}

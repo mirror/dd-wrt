@@ -1,9 +1,0 @@
-module mod1 {
-    prefix abc;
-    namespace "urn:cesnet:mod1";
-
-    typedef my {
-        type empty;
-        default "";   // empty type cannot have default value
-    }
-}

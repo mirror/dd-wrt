@@ -1,9 +1,0 @@
-module mod5 {
-	
-	prefix my;
-	namespace "www.example.com";
-
-	typedef my_string {
-	   type my:string;
-	}
-}

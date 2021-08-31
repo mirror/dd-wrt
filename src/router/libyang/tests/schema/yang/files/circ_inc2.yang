@@ -1,9 +1,0 @@
-submodule circ_inc2 {
-  belongs-to main-mod {
-    prefix m;
-  }
-
-  include circ_inc3;
-
-  leaf c2 { type string;}
-}

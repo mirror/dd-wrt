@@ -1,4 +1,0 @@
-<interface xmlns="urn:cesnet:mod5">
-    <ifType>ethernet</ifType>
-    <ifMTU>1500</ifMTU>
-</interface>

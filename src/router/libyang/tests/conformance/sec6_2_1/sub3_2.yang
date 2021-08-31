@@ -1,9 +1,0 @@
-submodule sub3_2 {
-
-    belongs-to mod3 {
-        prefix aaa;
-    }
-
-    identity i5;
-
-}

@@ -1,8 +1,0 @@
-submodule sub5_1 {
-	
-	belongs-to mod5 {
-		prefix sb1;
-	}
-
-	revision 2016-08-08;
-}

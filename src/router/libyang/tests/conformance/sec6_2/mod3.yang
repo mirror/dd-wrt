@@ -1,6 +1,0 @@
-module mod3 {
-    namespace "uri://mod";
-    prefix m;
-
-    container "-aaa";
-}

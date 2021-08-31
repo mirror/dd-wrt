@@ -1,8 +1,0 @@
-module mod3 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod3";
-
-    include sub3;
-
-}

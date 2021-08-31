@@ -1,6 +1,0 @@
-<test2 xmlns="urn:cesnet:mod1">
-    <cont>
-        <mandatory>true</mandatory>
-    </cont>
-    <llist>1</llist>
-</test2>

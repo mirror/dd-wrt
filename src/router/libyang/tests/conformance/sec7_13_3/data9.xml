@@ -1,6 +1,0 @@
-<presence xmlns="urn:cesnet:mod1">
-    <conf>
-        <config>ignore</config>
-    </conf>
-    <mandatory>true</mandatory>
-</presence>

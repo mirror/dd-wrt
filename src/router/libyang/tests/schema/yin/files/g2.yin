@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<module name="g2"
-        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
-        xmlns:g2="urn:g2">
-  <namespace uri="urn:g2"/>
-  <prefix value="g2"/>
-  <container name="top"/>
-</module>

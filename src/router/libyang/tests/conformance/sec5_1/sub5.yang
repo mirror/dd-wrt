@@ -1,8 +1,0 @@
-submodule sub5 {
-	
-	belongs-to mod4{
-	  prefix abc;
-	}
-
-	include sub4;
-}

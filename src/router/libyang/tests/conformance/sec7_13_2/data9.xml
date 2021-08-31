@@ -1,8 +1,0 @@
-<test3 xmlns="urn:cesnet:mod1">
-    <presence>
-        <conf>
-            <config>ignore</config>
-        </conf>
-        <mandatory>true</mandatory>
-    </presence>
-</test3>

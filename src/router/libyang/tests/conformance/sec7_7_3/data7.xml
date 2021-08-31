@@ -1,7 +1,0 @@
-<l1 xmlns="urn:cesnet:mod3">string1</l1>
-<l1 xmlns="urn:cesnet:mod3">string2</l1>
-<ccc xmlns="urn:cesnet:mod3">
-    <l4>42</l4>
-    <l4>1024</l4>
-    <l4>512</l4>
-</ccc>

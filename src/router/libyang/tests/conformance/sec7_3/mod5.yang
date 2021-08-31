@@ -1,9 +1,0 @@
-module mod5 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod5";
-
-    typedef empty {
-        type uint32;
-    }
-}

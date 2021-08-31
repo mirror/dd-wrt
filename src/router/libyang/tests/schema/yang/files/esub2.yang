@@ -1,8 +1,0 @@
-submodule esub2 {
-  yang-version 1.1;
-  belongs-to emod {
-    prefix ee;
-  }
-
-  container top;
-}

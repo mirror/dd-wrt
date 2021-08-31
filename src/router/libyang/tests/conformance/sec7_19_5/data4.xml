@@ -1,5 +1,0 @@
-<ccc xmlns="urn:cesnet:mod2">
-    <test>true</test>
-</ccc>
-<ssh xmlns="urn:cesnet:mod2"/>
-<llist xmlns="urn:cesnet:mod3">42</llist>

@@ -1,9 +1,0 @@
-submodule sub1 {
-    belongs-to mod1 {
-        prefix sub;
-    }
-
-    feature f3 {
-        if-feature f1;
-    }
-}

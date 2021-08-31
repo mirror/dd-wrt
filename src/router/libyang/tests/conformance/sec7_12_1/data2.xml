@@ -1,5 +1,0 @@
-<ccc xmlns="urn:cesnet:mod5">
-    <l1>host-adam</l1>
-    <presence/>
-</ccc>
-<leaf xmlns="urn:cesnet:mod5">42</leaf>

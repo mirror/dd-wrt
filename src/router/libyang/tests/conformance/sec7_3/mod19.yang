@@ -1,9 +1,0 @@
-module mod19 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod19";
-
-    typedef union {
-        type uint32;
-    }
-}

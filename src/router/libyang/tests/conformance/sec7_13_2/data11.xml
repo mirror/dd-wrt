@@ -1,5 +1,0 @@
-<test xmlns="urn:cesnet:mod1">
-    <ssh/>
-    <ch_3>string42</ch_3>
-    <ch_1>string</ch_1>
-</test>

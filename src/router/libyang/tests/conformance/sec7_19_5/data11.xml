@@ -1,8 +1,0 @@
-<ccc xmlns="urn:cesnet:mod3">
-    <test>true</test>
-</ccc>
-<server xmlns="urn:cesnet:mod3">
-    <ip>192.168.20.1</ip>
-    <port>21</port>
-</server>
-<llist xmlns="urn:cesnet:mod3">42</llist>

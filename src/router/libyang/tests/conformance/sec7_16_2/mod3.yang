@@ -1,8 +1,0 @@
-module mod3 {
-    prefix abb;
-    namespace "urn:cesnet:mod3";
-
-    identity i1 {
-        base i1;  // reference itself
-    }
-}
