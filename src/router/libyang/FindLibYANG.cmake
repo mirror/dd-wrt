@@ -6,12 +6,8 @@
 #  LIBYANG_LIBRARIES - Link these to use LibYANG
 #  LIBYANG_VERSION - SO version of the found libyang library
 #
-#  LIBYANG_CPP_FOUND - system has LibYANG C++ bindings
-#  LIBYANG_CPP_INCLUDE_DIRS - the LibYANG C++ include directory
-#  LIBYANG_CPP_LIBRARIES - Link these to use LibYANG C++ bindings
-#
-#  Author Radek Krejci <rkrejci@cesnet.cz>
-#  Copyright (c) 2015 CESNET, z.s.p.o.
+#  Author Michal Vasko <mvasko@cesnet.cz>
+#  Copyright (c) 2021 CESNET, z.s.p.o.
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
@@ -70,9 +66,14 @@ else()
     )
 
     if(LIBYANG_INCLUDE_DIR)
-        find_path(LY_HEADER_PATH "libyang/libyang.h" HINTS ${LIBYANG_INCLUDE_DIR})
-        file(READ "${LY_HEADER_PATH}/libyang/libyang.h" LY_HEADER)
-        string(REGEX MATCH "#define LY_VERSION \"[0-9]+\\.[0-9]+\\.[0-9]+\"" LY_VERSION_MACRO "${LY_HEADER}")
+        find_path(LY_VERSION_PATH "libyang/version.h" HINTS ${LIBYANG_INCLUDE_DIR})
+        if(LY_VERSION_PATH)
+            file(READ "${LY_VERSION_PATH}/libyang/version.h" LY_VERSION_FILE)
+        else()
+            find_path(LY_HEADER_PATH "libyang/libyang.h" HINTS ${LIBYANG_INCLUDE_DIR})
+            file(READ "${LY_HEADER_PATH}/libyang/libyang.h" LY_VERSION_FILE)
+        endif()
+        string(REGEX MATCH "#define LY_VERSION \"[0-9]+\\.[0-9]+\\.[0-9]+\"" LY_VERSION_MACRO "${LY_VERSION_FILE}")
         string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" LIBYANG_VERSION "${LY_VERSION_MACRO}")
     endif()
 
@@ -80,54 +81,9 @@ else()
     set(LIBYANG_LIBRARIES ${LIBYANG_LIBRARY})
     mark_as_advanced(LIBYANG_INCLUDE_DIRS LIBYANG_LIBRARIES)
 
-    # handle the QUIETLY and REQUIRED arguments and set SYSREPO_FOUND to TRUE
+    # handle the QUIETLY and REQUIRED arguments and set LIBYANG_FOUND to TRUE
     # if all listed variables are TRUE
     find_package_handle_standard_args(LibYANG FOUND_VAR LIBYANG_FOUND
         REQUIRED_VARS LIBYANG_LIBRARY LIBYANG_INCLUDE_DIR
         VERSION_VAR LIBYANG_VERSION)
-endif()
-
-#C++ bindings
-if (LIBYANG_CPP_LIBRARIES AND LIBYANG_CPP_INCLUDE_DIRS)
-    # in cache already
-    set(LIBYANG_CPP_FOUND TRUE)
-else ()
-    find_path(LIBYANG_CPP_INCLUDE_DIR
-        NAMES
-        libyang/Libyang.hpp
-        PATHS
-        /usr/include
-        /usr/local/include
-        /opt/local/include
-        /sw/include
-        ${CMAKE_INCLUDE_PATH}
-        ${CMAKE_INSTALL_PREFIX}/include
-    )
-
-    find_library(LIBYANG_CPP_LIBRARY
-        NAMES
-        yang-cpp
-        libyang-cpp
-        PATHS
-        /usr/lib
-        /usr/lib64
-        /usr/local/lib
-        /usr/local/lib64
-        /opt/local/lib
-        /sw/lib
-        ${CMAKE_LIBRARY_PATH}
-        ${CMAKE_INSTALL_PREFIX}/lib
-    )
-
-    if (LIBYANG_CPP_INCLUDE_DIR AND LIBYANG_CPP_LIBRARY)
-        set(LIBYANG_CPP_FOUND TRUE)
-    else ()
-        set(LIBYANG_CPP_FOUND FALSE)
-    endif ()
-
-    set(LIBYANG_CPP_INCLUDE_DIRS ${LIBYANG_CPP_INCLUDE_DIR})
-    set(LIBYANG_CPP_LIBRARIES ${LIBYANG_CPP_LIBRARY})
-
-    # show the LIBYANG_CPP_INCLUDE_DIRS and LIBYANG_CPP_LIBRARIES variables only in the advanced view
-    mark_as_advanced(LIBYANG_CPP_INCLUDE_DIRS LIBYANG_CPP_LIBRARIES)
 endif()

@@ -1,0 +1,13 @@
+module b {
+  namespace "b";
+  prefix b;
+
+  extension action {
+    argument name {
+      b:arg-type {
+        type b:identifier;
+      }
+    }
+  }
+}
+

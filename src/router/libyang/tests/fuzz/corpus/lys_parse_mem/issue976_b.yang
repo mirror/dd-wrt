@@ -1,0 +1,32 @@
+module issue976_b {
+  yang-version 1.1;
+  namespace "ns2";
+  prefix acl;
+
+  container acls {
+    list acl {
+      key "name";
+      leaf name {
+        type string;
+      }
+      container aces {
+        list ace {
+          key "name";
+          leaf name {
+            type string {
+              length "1..64";
+            }
+          }
+          container matches {
+            leaf egress-interface {
+              type if:interface-ref;
+            }
+            leaf ingress-interface {
+              type if:interface-ref;
+            }
+          }
+        }
+      }
+    }
+  }
+}

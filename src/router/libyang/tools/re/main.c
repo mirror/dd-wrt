@@ -12,19 +12,20 @@
  *     https://opensource.org/licenses/BSD-3-Clause
  */
 
-#define _GNU_SOURCE
+#define _GNU_SOURCE /* asprintf, strdup */
+#include <sys/cdefs.h>
+
 #include <errno.h>
-#include <fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
+#include <sys/types.h>
+
+#include "libyang.h"
 
 #include "compat.h"
-#include "libyang.h"
+#include "tools/config.h"
 
 void
 help(void)
@@ -36,32 +37,32 @@ help(void)
     fprintf(stdout, "    yangre [-V] -f <file>\n");
     fprintf(stdout, "Returns 0 if string matches the pattern(s), 1 if not and -1 on error.\n\n");
     fprintf(stdout, "Options:\n"
-        "  -h, --help              Show this help message and exit.\n"
-        "  -v, --version           Show version number and exit.\n"
-        "  -V, --verbose           Print the processing information.\n"
-        "  -i, --invert-match      Invert-match modifier for the closest preceding\n"
-        "                          pattern.\n"
-        "  -p, --pattern=\"REGEXP\"  Regular expression including the quoting,\n"
-        "                          which is applied the same way as in a YANG module.\n"
-        "  -f, --file=\"FILE\"     List of patterns and the <string> (separated by an\n"
-        "                          empty line) are taken from <file>. Invert-match is\n"
-        "                          indicated by the single space character at the \n"
-        "                          beginning of the pattern line. YANG quotation around\n"
-        "                          patterns is still expected, but that avoids issues with\n"
-        "                          reading quotation by shell. Avoid newline at the end\n"
-        "                          of the string line to represent empty <string>.");
+            "  -h, --help              Show this help message and exit.\n"
+            "  -v, --version           Show version number and exit.\n"
+            "  -V, --verbose           Print the processing information.\n"
+            "  -i, --invert-match      Invert-match modifier for the closest preceding\n"
+            "                          pattern.\n"
+            "  -p, --pattern=\"REGEXP\"  Regular expression including the quoting,\n"
+            "                          which is applied the same way as in a YANG module.\n"
+            "  -f, --file=\"FILE\"     List of patterns and the <string> (separated by an\n"
+            "                          empty line) are taken from <file>. Invert-match is\n"
+            "                          indicated by the single space character at the \n"
+            "                          beginning of the pattern line. YANG quotation around\n"
+            "                          patterns is still expected, but that avoids issues with\n"
+            "                          reading quotation by shell. Avoid newline at the end\n"
+            "                          of the string line to represent empty <string>.");
     fprintf(stdout, "Examples:\n"
-        "  pattern \"[0-9a-fA-F]*\";      -> yangre -p '\"[0-9a-fA-F]*\"' '1F'\n"
-        "  pattern '[a-zA-Z0-9\\-_.]*';  -> yangre -p \"'[a-zA-Z0-9\\-_.]*'\" 'a-b'\n"
-        "  pattern [xX][mM][lL].*;      -> yangre -p '[xX][mM][lL].*' 'xml-encoding'\n\n");
+            "  pattern \"[0-9a-fA-F]*\";      -> yangre -p '\"[0-9a-fA-F]*\"' '1F'\n"
+            "  pattern '[a-zA-Z0-9\\-_.]*';  -> yangre -p \"'[a-zA-Z0-9\\-_.]*'\" 'a-b'\n"
+            "  pattern [xX][mM][lL].*;      -> yangre -p '[xX][mM][lL].*' 'xml-encoding'\n\n");
     fprintf(stdout, "Note that to pass YANG quoting through your shell, you are supposed to use\n"
-                    "the other quotation around. For not-quoted patterns, use single quotes.\n\n");
+            "the other quotation around. For not-quoted patterns, use single quotes.\n\n");
 }
 
 void
 version(void)
 {
-    fprintf(stdout, "yangre %d.%d.%d\n", LY_VERSION_MAJOR, LY_VERSION_MINOR, LY_VERSION_MICRO);
+    fprintf(stdout, "yangre %s\n", PROJECT_VERSION);
 }
 
 void
@@ -69,17 +70,17 @@ pattern_error(LY_LOG_LEVEL level, const char *msg, const char *path)
 {
     (void) path; /* unused */
 
-    if (level == LY_LLERR && strcmp(msg, "Module \"yangre\" parsing failed.")) {
+    if (level == LY_LLERR) {
         fprintf(stderr, "yangre error: %s\n", msg);
     }
 }
 
 static const char *module_start = "module yangre {"
-    "yang-version 1.1;"
-    "namespace urn:cesnet:libyang:yangre;"
-    "prefix re;"
-    "leaf pattern {"
-    "  type string {";
+        "yang-version 1.1;"
+        "namespace urn:cesnet:libyang:yangre;"
+        "prefix re;"
+        "leaf pattern {"
+        "  type string {";
 static const char *module_invertmatch = " { modifier invert-match; }";
 static const char *module_match = ";";
 static const char *module_end = "}}}";
@@ -107,8 +108,9 @@ add_pattern(char ***patterns, int **inverts, int *counter, char *pattern)
 }
 
 int
-main(int argc, char* argv[])
+main(int argc, char *argv[])
 {
+    LY_ERR match;
     int i, opt_index = 0, ret = -1, verbose = 0, blankline = 0;
     struct option options[] = {
         {"help",             no_argument,       NULL, 'h'},
@@ -151,13 +153,13 @@ main(int argc, char* argv[])
                 goto cleanup;
             }
 
-            while((l = getline(&str, &len, infile)) != -1) {
-                if (!blankline && str[0] == '\n') {
+            while ((l = getline(&str, &len, infile)) != -1) {
+                if (!blankline && (str[0] == '\n')) {
                     /* blank line */
                     blankline = 1;
                     continue;
                 }
-                if (str[0] != '\n' && str[l - 1] == '\n') {
+                if ((str[0] != '\n') && (str[l - 1] == '\n')) {
                     /* remove ending newline */
                     str[l - 1] = '\0';
                 }
@@ -167,7 +169,7 @@ main(int argc, char* argv[])
                     break;
                     /* else read the patterns */
                 } else if (add_pattern(&patterns, &invert_match, &patterns_count,
-                                       str[0] == ' ' ? &str[1] : str)) {
+                        (str[0] == ' ') ? &str[1] : str)) {
                     goto cleanup;
                 }
                 if (str[0] == ' ') {
@@ -238,7 +240,7 @@ main(int argc, char* argv[])
         str = argv[optind];
     }
 
-    for (modstr = (char*)module_start, i = 0; i < patterns_count; i++) {
+    for (modstr = (char *)module_start, i = 0; i < patterns_count; i++) {
         if (asprintf(&s, "%s pattern %s%s", modstr, patterns[i], invert_match[i] ? module_invertmatch : module_match) == -1) {
             fprintf(stderr, "yangre error: memory allocation failed.\n");
             goto cleanup;
@@ -257,29 +259,42 @@ main(int argc, char* argv[])
     }
     modstr = s;
 
-    ctx = ly_ctx_new(NULL, 0);
-    if (!ctx) {
+    if (ly_ctx_new(NULL, 0, &ctx)) {
         goto cleanup;
     }
 
     ly_set_log_clb(pattern_error, 0);
-    mod = lys_parse_mem(ctx, modstr, LYS_IN_YANG);
-    if (!mod || !mod->data) {
+    if (lys_parse_mem(ctx, modstr, LYS_IN_YANG, &mod) || !mod->compiled || !mod->compiled->data) {
         goto cleanup;
     }
 
-    ret = lyd_validate_value(mod->data, str);
+    /* check the value */
+    match = lyd_value_validate(ctx, mod->compiled->data, str, strlen(str), NULL, NULL, NULL);
+
     if (verbose) {
         for (i = 0; i < patterns_count; i++) {
             fprintf(stdout, "pattern  %d: %s\n", i + 1, patterns[i]);
             fprintf(stdout, "matching %d: %s\n", i + 1, invert_match[i] ? "inverted" : "regular");
         }
         fprintf(stdout, "string    : %s\n", str);
-        fprintf(stdout, "result    : %s\n", ret ? "not matching" : "matching");
+        if (match == LY_SUCCESS) {
+            fprintf(stdout, "result    : matching\n");
+        } else if (match == LY_EVALID) {
+            fprintf(stdout, "result    : not matching\n");
+        } else {
+            fprintf(stdout, "result    : error (%s)\n", ly_errmsg(ctx));
+        }
+    }
+    if (match == LY_SUCCESS) {
+        ret = 0;
+    } else if (match == LY_EVALID) {
+        ret = 1;
+    } else {
+        ret = -1;
     }
 
 cleanup:
-    ly_ctx_destroy(ctx, NULL);
+    ly_ctx_destroy(ctx);
     for (i = 0; i < patterns_count; i++) {
         free(patterns[i]);
     }

@@ -1,0 +1,8 @@
+module m {
+	prefix p;
+	namespace "
+
+	list l {
+		must "";
+	}
+}

@@ -1,0 +1,10 @@
+module a {
+  yang-version 1.1;
+  namespace "a";
+  prefix a;
+
+  leaf-list A {
+    type pt8;
+    default 0;
+  }
+}

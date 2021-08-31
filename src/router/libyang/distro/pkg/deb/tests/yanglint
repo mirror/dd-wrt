@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+if test -f /usr/share/doc/libyang-tools/examples/ietf-interfaces.yang.gz; then
+	gunzip -c < /usr/share/doc/libyang-tools/examples/ietf-interfaces.yang.gz > /tmp/ietf-interfaces.yang
+else
+	cp /usr/share/doc/libyang-tools/examples/ietf-interfaces.yang /tmp/ietf-interfaces.yang
+fi
+yanglint /tmp/ietf-interfaces.yang

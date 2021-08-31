@@ -1,0 +1,38 @@
+Debian packaging for libyang
+============================
+
+Where to file issues
+--------------------
+
+Please file issues on the Debian BTS as usual.  You could also open issues
+on github, but if it's something about the Debian packaging it's better to
+stick with the proper Debian ways.  The Debian BTS is where other people
+involved with Debian go look for bugs regarding a package, so that's where
+they should be.
+
+Building straight off git
+-------------------------
+
+Just the normal:
+
+```
+git clone https://github.com/CESNET/libyang -b debian/master
+cd libyang
+dpkg-buildpackage
+```
+
+Building a Debian .dsc
+----------------------
+
+Again, pretty much the normal:
+
+```
+git clone https://github.com/CESNET/libyang -b debian/master
+wget -Olibyang_0.16.105.orig.tar.gz https://github.com/CESNET/libyang/archive/v0.16-r3.tar.gz
+cd libyang
+dpkg-source -b .
+```
+
+(Note the diverging release numbering though.)
+
+ -- Ondřej Surý <Ondřej Surý <ondrej@debian.org>>, Fri, 22 May 2020 11:10:55 +0200

@@ -1,0 +1,7 @@
+module m {
+	prefix p;
+	namespace n;
+	list l {
+		if-feature 0(;
+	}
+}

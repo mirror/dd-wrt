@@ -1,0 +1,17 @@
+module x {
+  namespace "urn:lin:b-vev";
+  prefix b_dev_mod;
+
+    deviation /b_r-leaf {
+        deviate add {
+            unique "uniq1 cont2/uniq2 cont2/uniq3" { 
+                d:annotmeration {
+                    enum:first;
+                    enum last;
+                    enum before;
+                    enum after;
+                 }
+            }
+        }
+    }
+}

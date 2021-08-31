@@ -1,0 +1,13 @@
+module b {
+  namespace "urn:b";
+  prefix b_mod;
+
+    revision 2015-01-01 { 
+        description P:li {
+            n:dule xp{
+                n:libydu{
+                }
+            }
+        }
+    }
+}

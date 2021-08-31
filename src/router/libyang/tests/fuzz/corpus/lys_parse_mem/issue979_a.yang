@@ -1,0 +1,41 @@
+module a {
+  namespace "a";
+  prefix a;
+
+  import b{
+    prefix b;
+  }
+
+  typedef HexOffset {
+    type string;
+  }
+
+  grouping group {
+    container action {
+      config false;
+      container register {
+        config false;
+        list location {
+          key "location";
+          config false;
+          leaf location {
+            type string;
+          }
+          b:action "write" {
+            input {
+              leaf reg-addr {
+                type HexOffset;
+                mandatory true;
+              }
+            }
+            output {
+              leaf result {
+                type string;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

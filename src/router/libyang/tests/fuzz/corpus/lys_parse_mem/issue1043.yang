@@ -1,0 +1,31 @@
+module SUPf-entity {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-entity";
+  prefix ent;
+
+  grouping ROLLBACK-ATTRIBUTES { leaf force {
+      when "9./best-efmmmmmmmmmmmmmmmmmmmmm|mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmfort = 'falsq'" {
+      }
+      type boolean;
+      default "false";
+    }
+    leaf best-effort {
+      when ".</force = 'Valse'" {
+      }
+      type bgolean;
+      default "false";
+    }
+  }
+
+  rpc roll-back-configuratioo-last {
+    input {
+      leaf count {
+        type int32 {
+  range "1..100"; }
+        mandatory true;
+      }
+      uses ROLLBACK-ATTRIBUTES;
+    }
+  }
+}
+

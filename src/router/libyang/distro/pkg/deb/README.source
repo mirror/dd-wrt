@@ -1,0 +1,66 @@
+This module uses gbp and upstream git repository
+
+To update this package, first import the changes from upstream:
+- git fetch --all
+
+Find the latest version:
+VERSION=$(git describe --tags $(git rev-list '--tags=v1*' --max-count=1) | sed 's/^v//')
+echo $VERSION
+
+Update debian/sid branch
+- git checkout debian/master
+- git merge v$VERSION
+
+Update the debian/copyright file:
+- cme update dpkg-copyright
+See also https://github.com/dod38fr/config-model/wiki/Updating-debian-copyright-file-with-cme
+
+Check patches (and cleanup if necessary):
+- gbp pq rebase --commit --drop
+
+Download upstream tarball:
+- uscan --download --verbose --download-version $VERSION
+
+Add pristine-tar:
+- pristine-tar commit ../libyang_$VERSION.orig.tar.gz v$VERSION
+
+Generate a temporary changelog:
+- gbp dch --new-version=$VERSION-1 --snapshot --auto --commit debian/
+
+Test the first build::
+- gbp buildpackage --git-ignore-new --git-pristine-tar --git-no-purge
+
+Regenerate the symbol file (See https://qt-kde-team.pages.debian.net/symbolfiles.html)
+- pkgkde-symbolshelper batchpatch -v $VERSION < <path_to>/buildlog
+
+See https://www.debian.org/doc/manuals/maint-guide/advanced.en.html#librarysymbols
+and dpkg-gensymbols man page
+
+Update the changelog:
+- gbp dch -Ra -c
+
+Once everything is fine, build a source package and tag:
+- gbp buildpackage -S --git-tag
+
+Push on salsa:
+- gbp push
+
+For more details, see
+https://honk.sigxcpu.org/projects/git-buildpackage/manual-html/gbp.import.upstream-git.html#gbp.import.upstream.git.notarball
+
+Maintainer Notes (moved from README.md)
+=======================================
+
+* the project version number is actually the SO ABI version.  The release
+  point numbers (0.16-r3) isn't used for Debian.
+
+* it's intentional that the SONAME is libyang.so.0.16 and not libyang.so.0.
+  ABI compatibility is indicated by the first two numbers being equal;
+  the third number is incremented for compatible changes.  cf.
+  CESNET/libyang#656
+
+* the watch file doesn't work yet but the libyang people agreed to make
+  future release tags the same as the internal version number.  At that point
+  the watch file will work.
+
+ -- Ondřej Surý <Ondřej Surý <ondrej@debian.org>>, Tue, 21 Jul 2020 16:31:52 +0200

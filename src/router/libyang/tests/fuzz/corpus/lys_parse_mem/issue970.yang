@@ -1,0 +1,18 @@
+module p{
+	namespace "";
+	prefix p;
+
+	container ports{
+		list port {
+			key name;
+			leaf name{	
+				type string;}	
+		}	
+	}	
+	augment "/ports/port" {
+		when "0</*=0";
+		leaf i {
+			type int32;
+		}
+	}
+}

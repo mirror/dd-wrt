@@ -11,17 +11,20 @@
  *
  *     https://opensource.org/licenses/BSD-3-Clause
  */
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <pwd.h>
 
 #include "configuration.h"
-#include "../../linenoise/linenoise.h"
+
+#include <errno.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include "linenoise/linenoise.h"
+
+#include "common.h"
 
 /* Yanglint home (appended to ~/) */
 #define YL_DIR ".yanglint"
@@ -34,14 +37,14 @@ get_yanglint_dir(void)
     char *user_home, *yl_dir;
 
     if (!(pw = getpwuid(getuid()))) {
-        fprintf(stderr, "Determining home directory failed (%s).\n", strerror(errno));
+        YLMSG_E("Determining home directory failed (%s).\n", strerror(errno));
         return NULL;
     }
     user_home = pw->pw_dir;
 
     yl_dir = malloc(strlen(user_home) + 1 + strlen(YL_DIR) + 1);
     if (!yl_dir) {
-        fprintf(stderr, "Memory allocation failed (%s).\n", strerror(errno));
+        YLMSG_E("Memory allocation failed (%s).\n", strerror(errno));
         return NULL;
     }
     sprintf(yl_dir, "%s/%s", user_home, YL_DIR);
@@ -50,14 +53,14 @@ get_yanglint_dir(void)
     if (ret == -1) {
         if (errno == ENOENT) {
             /* directory does not exist */
-            fprintf(stdout, "Configuration directory \"%s\" does not exist, creating it.\n", yl_dir);
+            YLMSG_W("Configuration directory \"%s\" does not exist, creating it.\n", yl_dir);
             if (mkdir(yl_dir, 00700)) {
-                fprintf(stderr, "Configuration directory \"%s\" cannot be created (%s).\n", yl_dir, strerror(errno));
+                YLMSG_E("Configuration directory \"%s\" cannot be created (%s).\n", yl_dir, strerror(errno));
                 free(yl_dir);
                 return NULL;
             }
         } else {
-            fprintf(stderr, "Configuration directory \"%s\" exists but cannot be accessed (%s).\n", yl_dir, strerror(errno));
+            YLMSG_E("Configuration directory \"%s\" exists but cannot be accessed (%s).\n", yl_dir, strerror(errno));
             free(yl_dir);
             return NULL;
         }
@@ -70,22 +73,23 @@ void
 load_config(void)
 {
     char *yl_dir, *history_file;
+
     if ((yl_dir = get_yanglint_dir()) == NULL) {
         return;
     }
 
     history_file = malloc(strlen(yl_dir) + 9);
     if (!history_file) {
-        fprintf(stderr, "Memory allocation failed (%s).\n", strerror(errno));
+        YLMSG_E("Memory allocation failed (%s).\n", strerror(errno));
         free(yl_dir);
         return;
     }
 
     sprintf(history_file, "%s/history", yl_dir);
     if (access(history_file, F_OK) && (errno == ENOENT)) {
-        fprintf(stdout, "No saved history.\n");
+        YLMSG_W("No saved history.\n");
     } else if (linenoiseHistoryLoad(history_file)) {
-        fprintf(stderr, "Failed to load history.\n");
+        YLMSG_E("Failed to load history.\n");
     }
 
     free(history_file);
@@ -103,14 +107,14 @@ store_config(void)
 
     history_file = malloc(strlen(yl_dir) + 9);
     if (!history_file) {
-        fprintf(stderr, "Memory allocation failed (%s).\n", strerror(errno));
+        YLMSG_E("Memory allocation failed (%s).\n", strerror(errno));
         free(yl_dir);
         return;
     }
 
     sprintf(history_file, "%s/history", yl_dir);
     if (linenoiseHistorySave(history_file)) {
-        fprintf(stderr, "Failed to save history.\n");
+        YLMSG_E("Failed to save history.\n");
     }
 
     free(history_file);

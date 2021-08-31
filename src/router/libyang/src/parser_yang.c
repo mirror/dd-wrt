@@ -1,9 +1,9 @@
 /**
  * @file parser_yang.c
- * @author Pavol Vican
- * @brief YANG parser for libyang
+ * @author Michal Vasko <mvasko@cesnet.cz>
+ * @brief YANG parser
  *
- * Copyright (c) 2015 CESNET, z.s.p.o.
+ * Copyright (c) 2018 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -11,5144 +11,4674 @@
  *
  *     https://opensource.org/licenses/BSD-3-Clause
  */
+#include "parser_internal.h"
 
-#include <ctype.h>
 #include <assert.h>
-#include "parser_yang.h"
-#include "parser_yang_lex.h"
-#include "parser.h"
-#include "xpath.h"
+#include <ctype.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-static void yang_free_import(struct ly_ctx *ctx, struct lys_import *imp, uint8_t start, uint8_t size);
-static int yang_check_must(struct lys_module *module, struct lys_restr *must, uint size, struct unres_schema *unres);
-static void yang_free_include(struct ly_ctx *ctx, struct lys_include *inc, uint8_t start, uint8_t size);
-static int yang_check_sub_module(struct lys_module *module, struct unres_schema *unres, struct lys_node *node);
-static void free_yang_common(struct lys_module *module, struct lys_node *node);
-static int yang_check_nodes(struct lys_module *module, struct lys_node *parent, struct lys_node *nodes,
-                            int options, struct unres_schema *unres);
-static int yang_fill_ext_substm_index(struct lys_ext_instance_complex *ext, LY_STMT stmt, enum yytokentype keyword);
-static void yang_free_nodes(struct ly_ctx *ctx, struct lys_node *node);
-void lys_iffeature_free(struct ly_ctx *ctx, struct lys_iffeature *iffeature, uint8_t iffeature_size, int shallow,
-                        void (*private_destructor)(const struct lys_node *node, void *priv));
+#include "common.h"
+#include "context.h"
+#include "dict.h"
+#include "in_internal.h"
+#include "log.h"
+#include "parser_schema.h"
+#include "path.h"
+#include "set.h"
+#include "tree.h"
+#include "tree_edit.h"
+#include "tree_schema.h"
+#include "tree_schema_internal.h"
 
-static int
-yang_check_string(struct lys_module *module, const char **target, char *what,
-                  char *where, char *value, struct lys_node *node)
+struct lys_glob_unres;
+
+/**
+ * @brief Insert WORD into the libyang context's dictionary and store as TARGET.
+ * @param[in] CTX yang parser context to access libyang context.
+ * @param[in] BUF buffer in case the word is not a constant and can be inserted directly (zero-copy)
+ * @param[out] TARGET variable where to store the pointer to the inserted value.
+ * @param[in] WORD string to store.
+ * @param[in] LEN length of the string in WORD to store.
+ */
+#define INSERT_WORD_RET(CTX, BUF, TARGET, WORD, LEN) \
+    if (BUF) {LY_CHECK_RET(lydict_insert_zc(PARSER_CTX(CTX), WORD, &(TARGET)));}\
+    else {LY_CHECK_RET(lydict_insert(PARSER_CTX(CTX), LEN ? WORD : "", LEN, &(TARGET)));}
+
+/**
+ * @brief Read from the IN structure COUNT items. Also updates the indent value in yang parser context
+ * @param[in] CTX yang parser context to update its indent value.
+ * @param[in] COUNT number of items for which the DATA pointer is supposed to move on.
+ */
+#define MOVE_INPUT(CTX, COUNT) ly_in_skip((CTX)->in, COUNT);(CTX)->indent+=COUNT
+
+/**
+ * @brief Loop through all substatements.
+ *
+ * @param[in] CTX yang parser context for logging.
+ * @param[out] KW YANG keyword read.
+ * @param[out] WORD Pointer to the keyword itself.
+ * @param[out] WORD_LEN Length of the keyword.
+ * @param[out] ERR Variable for error storing.
+ * @param[in] SUC_CMD Command is applied if a semicolon is found, so no
+ * substatements are available. It is expected to contain a return or goto command.
+ * @param[in] ERR_CMD Command is applied if an error occurs before loop through
+ * substatements. It is expected to contain return or goto command.
+ *
+ * @return In case there are no substatements or a fatal error encountered.
+ */
+#define YANG_READ_SUBSTMT_FOR(CTX, KW, WORD, WORD_LEN, ERR, SUC_CMD, ERR_CMD) \
+    if ((ERR = get_keyword(CTX, &KW, &WORD, &WORD_LEN))) { \
+        ERR_CMD; \
+    } \
+    if (KW == LY_STMT_SYNTAX_SEMICOLON) { \
+        SUC_CMD; \
+    } \
+    if (KW != LY_STMT_SYNTAX_LEFT_BRACE) { \
+        LOGVAL_PARSER(CTX, LYVE_SYNTAX_YANG, "Invalid keyword \"%s\", expected \";\" or \"{\".", ly_stmt2str(KW)); \
+        ERR = LY_EVALID; \
+        ERR_CMD; \
+    } \
+    for (ERR = get_keyword(CTX, &KW, &WORD, &WORD_LEN); \
+            !ERR && (KW != LY_STMT_SYNTAX_RIGHT_BRACE); \
+            ERR = get_keyword(CTX, &KW, &WORD, &WORD_LEN))
+
+LY_ERR parse_container(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent,
+        struct lysp_node **siblings);
+LY_ERR parse_uses(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings);
+LY_ERR parse_choice(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings);
+LY_ERR parse_case(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings);
+LY_ERR parse_list(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings);
+LY_ERR parse_grouping(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node_grp **groupings);
+
+/**
+ * @brief Add another character to dynamic buffer, a low-level function.
+ *
+ * Enlarge if needed. Updates \p input as well as \p buf_used.
+ *
+ * @param[in] ctx libyang context for logging.
+ * @param[in,out] in Input structure.
+ * @param[in] len Number of bytes to get from the input string and copy into the buffer.
+ * @param[in,out] buf Buffer to use, can be moved by realloc().
+ * @param[in,out] buf_len Current size of the buffer.
+ * @param[in,out] buf_used Currently used characters of the buffer.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+buf_add_char(struct ly_ctx *ctx, struct ly_in *in, size_t len, char **buf, size_t *buf_len, size_t *buf_used)
 {
-    if (*target) {
-        LOGVAL(module->ctx, LYE_TOOMANY, (node) ? LY_VLOG_LYS : LY_VLOG_NONE, node, what, where);
-        free(value);
-        return 1;
+#define BUF_STEP 16;
+    if (*buf_len <= (*buf_used) + len) {
+        *buf_len += BUF_STEP;
+        *buf = ly_realloc(*buf, *buf_len);
+        LY_CHECK_ERR_RET(!*buf, LOGMEM(ctx), LY_EMEM);
+    }
+    if (*buf_used) {
+        ly_in_read(in, &(*buf)[*buf_used], len);
     } else {
-        *target = lydict_insert_zc(module->ctx, value);
-        return 0;
+        ly_in_read(in, *buf, len);
     }
+
+    (*buf_used) += len;
+    return LY_SUCCESS;
+#undef BUF_STEP
 }
 
-int
-yang_read_common(struct lys_module *module, char *value, enum yytokentype type)
+/**
+ * @brief Store a single UTF8 character. It depends whether in a dynamically-allocated buffer or just as a pointer to the data.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] arg Type of the input string to select method of checking character validity.
+ * @param[in,out] word_p Word pointer. If buffer (\p word_b) was not yet needed, it is just a pointer to the first
+ * stored character. If buffer was needed (\p word_b is non-NULL or \p need_buf is set), it is pointing to the buffer.
+ * @param[in,out] word_len Current length of the word pointed to by \p word_p.
+ * @param[in,out] word_b Word buffer. Is kept NULL as long as it is not requested (word is a substring of the data).
+ * @param[in,out] buf_len Current length of \p word_b.
+ * @param[in] need_buf Flag if the dynamically allocated buffer is required.
+ * @param[in,out] prefix Storage for internally used flag in case of possible prefixed identifiers:
+ * 0 - colon not yet found (no prefix)
+ * 1 - \p c is the colon character
+ * 2 - prefix already processed, now processing the identifier
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+buf_store_char(struct lys_yang_parser_ctx *ctx, enum yang_arg arg, char **word_p, size_t *word_len,
+        char **word_b, size_t *buf_len, ly_bool need_buf, uint8_t *prefix)
 {
-    int ret = 0;
-    uint8_t i;
-
-    switch (type) {
-    case MODULE_KEYWORD:
-        module->name = lydict_insert_zc(module->ctx, value);
-
-        /* in some really invalid situations there can be a circular import and
-         * we can check it only after we have parsed the module name */
-        for (i = 0; i < module->ctx->models.parsing_sub_modules_count; ++i) {
-            if (module->ctx->models.parsing_sub_modules[i] == module) {
-                /* skip our own module */
-                continue;
-            }
-
-            if (!strcmp(module->ctx->models.parsing_sub_modules[i]->name, module->name)) {
-                LOGVAL(module->ctx, LYE_CIRC_IMPORTS, LY_VLOG_NONE, NULL, module->name);
-                ret = EXIT_FAILURE;
-                break;
-            }
-        }
-        break;
-    case NAMESPACE_KEYWORD:
-        ret = yang_check_string(module, &module->ns, "namespace", "module", value, NULL);
-        break;
-    case ORGANIZATION_KEYWORD:
-        ret = yang_check_string(module, &module->org, "organization", "module", value, NULL);
-        break;
-    case CONTACT_KEYWORD:
-        ret = yang_check_string(module, &module->contact, "contact", "module", value, NULL);
-        break;
-    default:
-        free(value);
-        LOGINT(module->ctx);
-        ret = EXIT_FAILURE;
-        break;
-    }
-
-    return ret;
-}
-
-int
-yang_check_version(struct lys_module *module, struct lys_submodule *submodule, char *value, int repeat)
-{
-    int ret = EXIT_SUCCESS;
-
-    if (repeat) {
-        LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "yang version", "module");
-        ret = EXIT_FAILURE;
-    } else {
-        if (!strcmp(value, "1")) {
-            if (submodule) {
-                if (module->version > 1) {
-                    LOGVAL(module->ctx, LYE_INVER, LY_VLOG_NONE, NULL);
-                    ret = EXIT_FAILURE;
-                 }
-                submodule->version = 1;
-            } else {
-                module->version = 1;
-            }
-        } else if (!strcmp(value, "1.1")) {
-            if (submodule) {
-                if (module->version != 2) {
-                    LOGVAL(module->ctx, LYE_INVER, LY_VLOG_NONE, NULL);
-                    ret = EXIT_FAILURE;
-                }
-                submodule->version = 2;
-            } else {
-                module->version = 2;
-            }
-        } else {
-            LOGVAL(module->ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "yang-version");
-            ret = EXIT_FAILURE;
-        }
-    }
-    free(value);
-    return ret;
-}
-
-int
-yang_read_prefix(struct lys_module *module, struct lys_import *imp, char *value)
-{
-    int ret = 0;
-
-    if (!imp && lyp_check_identifier(module->ctx, value, LY_IDENT_PREFIX, module, NULL)) {
-        free(value);
-        return EXIT_FAILURE;
-    }
-
-    if (imp) {
-        ret = yang_check_string(module, &imp->prefix, "prefix", "import", value, NULL);
-    } else {
-        ret = yang_check_string(module, &module->prefix, "prefix", "module", value, NULL);
-    }
-
-    return ret;
-}
-
-static int
-yang_fill_import(struct lys_module *module, struct lys_import *imp_old, struct lys_import *imp_new,
-                 char *value, struct unres_schema *unres)
-{
-    const char *exp;
-    int rc;
-
-    if (!imp_old->prefix) {
-        LOGVAL(module->ctx, LYE_MISSCHILDSTMT, LY_VLOG_NONE, NULL, "prefix", "import");
-        goto error;
-    } else {
-        if (lyp_check_identifier(module->ctx, imp_old->prefix, LY_IDENT_PREFIX, module, NULL)) {
-            goto error;
-        }
-    }
-    memcpy(imp_new, imp_old, sizeof *imp_old);
-    exp = lydict_insert_zc(module->ctx, value);
-    rc = lyp_check_import(module, exp, imp_new);
-    lydict_remove(module->ctx, exp);
-    module->imp_size++;
-    if (rc || yang_check_ext_instance(module, &imp_new->ext, imp_new->ext_size, imp_new, unres)) {
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    free(value);
-    lydict_remove(module->ctx, imp_old->dsc);
-    lydict_remove(module->ctx, imp_old->ref);
-    lydict_remove(module->ctx, imp_old->prefix);
-    lys_extension_instances_free(module->ctx, imp_old->ext, imp_old->ext_size, NULL);
-    return EXIT_FAILURE;
-}
-
-int
-yang_read_description(struct lys_module *module, void *node, char *value, char *where, enum yytokentype type)
-{
-    int ret;
-    char *dsc = "description";
-
-    switch (type) {
-    case MODULE_KEYWORD:
-        ret = yang_check_string(module, &module->dsc, dsc, "module", value, NULL);
-        break;
-    case REVISION_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_revision *)node)->dsc, dsc, where, value, NULL);
-        break;
-    case IMPORT_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_import *)node)->dsc, dsc, where, value, NULL);
-        break;
-    case INCLUDE_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_include *)node)->dsc, dsc, where, value, NULL);
-        break;
-    case NODE_PRINT:
-        ret = yang_check_string(module, &((struct lys_node *)node)->dsc, dsc, where, value, node);
-        break;
-    default:
-        ret = yang_check_string(module, &((struct lys_node *)node)->dsc, dsc, where, value, NULL);
-        break;
-    }
-    return ret;
-}
-
-int
-yang_read_reference(struct lys_module *module, void *node, char *value, char *where, enum yytokentype type)
-{
-    int ret;
-    char *ref = "reference";
-
-    switch (type) {
-    case MODULE_KEYWORD:
-        ret = yang_check_string(module, &module->ref, ref, "module", value, NULL);
-        break;
-    case REVISION_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_revision *)node)->ref, ref, where, value, NULL);
-        break;
-    case IMPORT_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_import *)node)->ref, ref, where, value, NULL);
-        break;
-    case INCLUDE_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_include *)node)->ref, ref, where, value, NULL);
-        break;
-    case NODE_PRINT:
-        ret = yang_check_string(module, &((struct lys_node *)node)->ref, ref, where, value, node);
-        break;
-    default:
-        ret = yang_check_string(module, &((struct lys_node *)node)->ref, ref, where, value, NULL);
-        break;
-    }
-    return ret;
-}
-
-int
-yang_fill_iffeature(struct lys_module *module, struct lys_iffeature *iffeature, void *parent,
-                    char *value, struct unres_schema *unres, int parent_is_feature)
-{
-    const char *exp;
-    int ret;
-
-    if ((module->version != 2) && ((value[0] == '(') || strchr(value, ' '))) {
-        LOGVAL(module->ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "if-feature");
-        free(value);
-        return EXIT_FAILURE;
-    }
-
-    if (!(exp = transform_iffeat_schema2json(module, value))) {
-        free(value);
-        return EXIT_FAILURE;
-    }
-    free(value);
-
-    ret = resolve_iffeature_compile(iffeature, exp, (struct lys_node *)parent, parent_is_feature, unres);
-    lydict_remove(module->ctx, exp);
-
-    return (ret) ? EXIT_FAILURE : EXIT_SUCCESS;
-}
-
-int
-yang_read_base(struct lys_module *module, struct lys_ident *ident, char *value, struct unres_schema *unres)
-{
-    const char *exp;
-
-    exp = transform_schema2json(module, value);
-    free(value);
-    if (!exp) {
-        return EXIT_FAILURE;
-    }
-
-    if (unres_schema_add_str(module, unres, ident, UNRES_IDENT, exp) == -1) {
-        lydict_remove(module->ctx, exp);
-        return EXIT_FAILURE;
-    }
-
-    lydict_remove(module->ctx, exp);
-    return EXIT_SUCCESS;
-}
-
-int
-yang_read_message(struct lys_module *module,struct lys_restr *save,char *value, char *what, int message)
-{
-    int ret;
-
-    if (message == ERROR_APP_TAG_KEYWORD) {
-        ret = yang_check_string(module, &save->eapptag, "error_app_tag", what, value, NULL);
-    } else {
-        ret = yang_check_string(module, &save->emsg, "error_message", what, value, NULL);
-    }
-    return ret;
-}
-
-int
-yang_read_presence(struct lys_module *module, struct lys_node_container *cont, char *value)
-{
-    if (cont->presence) {
-        LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, cont, "presence", "container");
-        free(value);
-        return EXIT_FAILURE;
-    } else {
-        cont->presence = lydict_insert_zc(module->ctx, value);
-        return EXIT_SUCCESS;
-    }
-}
-
-void *
-yang_read_when(struct lys_module *module, struct lys_node *node, enum yytokentype type, char *value)
-{
-    struct lys_when *retval;
-
-    retval = calloc(1, sizeof *retval);
-    LY_CHECK_ERR_RETURN(!retval, LOGMEM(module->ctx); free(value), NULL);
-    retval->cond = transform_schema2json(module, value);
-    if (!retval->cond) {
-        goto error;
-    }
-    switch (type) {
-    case CONTAINER_KEYWORD:
-        if (((struct lys_node_container *)node)->when) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, node, "when", "container");
-            goto error;
-        }
-        ((struct lys_node_container *)node)->when = retval;
-        break;
-    case ANYDATA_KEYWORD:
-    case ANYXML_KEYWORD:
-        if (((struct lys_node_anydata *)node)->when) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, node, "when", (type == ANYXML_KEYWORD) ? "anyxml" : "anydata");
-            goto error;
-        }
-        ((struct lys_node_anydata *)node)->when = retval;
-        break;
-    case CHOICE_KEYWORD:
-        if (((struct lys_node_choice *)node)->when) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, node, "when", "choice");
-            goto error;
-        }
-        ((struct lys_node_choice *)node)->when = retval;
-        break;
-    case CASE_KEYWORD:
-        if (((struct lys_node_case *)node)->when) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, node, "when", "case");
-            goto error;
-        }
-        ((struct lys_node_case *)node)->when = retval;
-        break;
-    case LEAF_KEYWORD:
-        if (((struct lys_node_leaf *)node)->when) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, node, "when", "leaf");
-            goto error;
-        }
-        ((struct lys_node_leaf *)node)->when = retval;
-        break;
-    case LEAF_LIST_KEYWORD:
-        if (((struct lys_node_leaflist *)node)->when) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, node, "when", "leaflist");
-            goto error;
-        }
-        ((struct lys_node_leaflist *)node)->when = retval;
-        break;
-    case LIST_KEYWORD:
-        if (((struct lys_node_list *)node)->when) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, node, "when", "list");
-            goto error;
-        }
-        ((struct lys_node_list *)node)->when = retval;
-        break;
-    case USES_KEYWORD:
-        if (((struct lys_node_uses *)node)->when) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, node, "when", "uses");
-            goto error;
-        }
-        ((struct lys_node_uses *)node)->when = retval;
-        break;
-    case AUGMENT_KEYWORD:
-        if (((struct lys_node_augment *)node)->when) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_LYS, node, "when", "augment");
-            goto error;
-        }
-        ((struct lys_node_augment *)node)->when = retval;
-        break;
-    case EXTENSION_INSTANCE:
-        *(struct lys_when **)node = retval;
-        break;
-    default:
-        goto error;
-        break;
-    }
-    free(value);
-    return retval;
-
-error:
-    free(value);
-    lydict_remove(module->ctx, retval->cond);
-    free(retval);
-    return NULL;
-}
-
-void *
-yang_read_node(struct lys_module *module, struct lys_node *parent, struct lys_node **root,
-               char *value, int nodetype, int sizeof_struct)
-{
-    struct lys_node *node, **child;
-
-    node = calloc(1, sizeof_struct);
-    LY_CHECK_ERR_RETURN(!node, LOGMEM(module->ctx); free(value), NULL);
-
-    LOGDBG(LY_LDGYANG, "parsing %s statement \"%s\"", strnodetype(nodetype), value);
-    node->name = lydict_insert_zc(module->ctx, value);
-    node->module = module;
-    node->nodetype = nodetype;
-    node->parent = parent;
-
-    /* insert the node into the schema tree */
-    child = (parent) ? &parent->child : root;
-    if (*child) {
-        (*child)->prev->next = node;
-        (*child)->prev = node;
-    } else {
-        *child = node;
-        node->prev = node;
-    }
-    return node;
-}
-
-int
-yang_read_default(struct lys_module *module, void *node, char *value, enum yytokentype type)
-{
-    int ret;
-
-    switch (type) {
-    case LEAF_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_node_leaf *) node)->dflt, "default", "leaf", value, node);
-        break;
-    case TYPEDEF_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_tpdf *) node)->dflt, "default", "typedef", value, NULL);
-        break;
-    default:
-        free(value);
-        LOGINT(module->ctx);
-        ret = EXIT_FAILURE;
-        break;
-    }
-    return ret;
-}
-
-int
-yang_read_units(struct lys_module *module, void *node, char *value, enum yytokentype type)
-{
-    int ret;
-
-    switch (type) {
-    case LEAF_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_node_leaf *) node)->units, "units", "leaf", value, node);
-        break;
-    case LEAF_LIST_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_node_leaflist *) node)->units, "units", "leaflist", value, node);
-        break;
-    case TYPEDEF_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_tpdf *) node)->units, "units", "typedef", value, NULL);
-        break;
-    case ADD_KEYWORD:
-    case REPLACE_KEYWORD:
-    case DELETE_KEYWORD:
-        ret = yang_check_string(module, &((struct lys_deviate *) node)->units, "units", "deviate", value, NULL);
-        break;
-    default:
-        free(value);
-        LOGINT(module->ctx);
-        ret = EXIT_FAILURE;
-        break;
-    }
-    return ret;
-}
-
-int
-yang_read_key(struct lys_module *module, struct lys_node_list *list, struct unres_schema *unres)
-{
-    char *exp, *value;
-
-    exp = value = (char *) list->keys;
-    while ((value = strpbrk(value, " \t\n"))) {
-        list->keys_size++;
-        while (isspace(*value)) {
-            value++;
-        }
-    }
-    list->keys_size++;
-
-    list->keys_str = lydict_insert_zc(module->ctx, exp);
-    list->keys = calloc(list->keys_size, sizeof *list->keys);
-    LY_CHECK_ERR_RETURN(!list->keys, LOGMEM(module->ctx), EXIT_FAILURE);
-
-    if (unres_schema_add_node(module, unres, list, UNRES_LIST_KEYS, NULL) == -1) {
-        return EXIT_FAILURE;
-    }
-    return EXIT_SUCCESS;
-}
-
-int
-yang_fill_unique(struct lys_module *module, struct lys_node_list *list, struct lys_unique *unique, char *value, struct unres_schema *unres)
-{
-    int i, j;
-    char *vaux, c;
-    struct unres_list_uniq *unique_info;
-
-    /* count the number of unique leafs in the value */
-    vaux = value;
-    while ((vaux = strpbrk(vaux, " \t\n"))) {
-       unique->expr_size++;
-        while (isspace(*vaux)) {
-            vaux++;
-        }
-    }
-    unique->expr_size++;
-    unique->expr = calloc(unique->expr_size, sizeof *unique->expr);
-    LY_CHECK_ERR_GOTO(!unique->expr, LOGMEM(module->ctx), error);
-
-    for (i = 0; i < unique->expr_size; i++) {
-        vaux = strpbrk(value, " \t\n");
-        if (vaux) {
-            c = *vaux;
-            *vaux = '\0';
-        }
-
-        /* store token into unique structure (includes converting prefix to the module name) */
-        unique->expr[i] = transform_schema2json(module, value);
-        if (!unique->expr[i]) {
-            LOGVAL(module->ctx, LYE_INARG, LY_VLOG_LYS, list, value, "unique");
-            goto error;
-        }
-        if (vaux) {
-            *vaux = c;
-        }
-
-        /* check that the expression does not repeat */
-        for (j = 0; j < i; j++) {
-            if (ly_strequal(unique->expr[j], unique->expr[i], 1)) {
-                LOGVAL(module->ctx, LYE_INARG, LY_VLOG_LYS, list, unique->expr[i], "unique");
-                LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_LYS, list, "The identifier is not unique");
-                goto error;
-            }
-        }
-        /* try to resolve leaf */
-        if (unres) {
-            unique_info = malloc(sizeof *unique_info);
-            LY_CHECK_ERR_GOTO(!unique_info, LOGMEM(module->ctx), error);
-            unique_info->list = (struct lys_node *)list;
-            unique_info->expr = unique->expr[i];
-            unique_info->trg_type = &unique->trg_type;
-            if (unres_schema_add_node(module, unres, unique_info, UNRES_LIST_UNIQ, NULL) == -1) {
-                goto error;
-            }
-        } else {
-            if (resolve_unique((struct lys_node *)list, unique->expr[i], &unique->trg_type)) {
-                goto error;
-            }
-        }
-
-        /* move to next token */
-        value = vaux;
-        while(value && isspace(*value)) {
-            value++;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_read_unique(struct lys_module *module, struct lys_node_list *list, struct unres_schema *unres)
-{
-    uint8_t k;
-    char *str;
-
-    for (k = 0; k < list->unique_size; k++) {
-        str = (char *)list->unique[k].expr;
-        if (yang_fill_unique(module, list, &list->unique[k], str, unres)) {
-            goto error;
-        }
-        free(str);
-    }
-    return EXIT_SUCCESS;
-
-error:
-    free(str);
-    return EXIT_FAILURE;
-}
-
-int
-yang_read_leafref_path(struct lys_module *module, struct yang_type *stype, char *value)
-{
-    if (stype->base && (stype->base != LY_TYPE_LEAFREF)) {
-        LOGVAL(module->ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "require-instance");
-        goto error;
-    }
-    if (stype->type->info.lref.path) {
-        LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "path", "type");
-        goto error;
-    }
-    stype->type->info.lref.path = lydict_insert_zc(module->ctx, value);
-    stype->base = LY_TYPE_LEAFREF;
-    return EXIT_SUCCESS;
-
-error:
-    free(value);
-    return EXIT_FAILURE;
-}
-
-int
-yang_read_require_instance(struct ly_ctx *ctx, struct yang_type *stype, int req)
-{
-    if (stype->base && (stype->base != LY_TYPE_LEAFREF)) {
-        LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "require-instance");
-        return EXIT_FAILURE;
-    }
-    if (stype->type->info.lref.req) {
-        LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "require-instance", "type");
-        return EXIT_FAILURE;
-    }
-    stype->type->info.lref.req = req;
-    stype->base = LY_TYPE_LEAFREF;
-    return EXIT_SUCCESS;
-}
-
-int
-yang_check_type(struct lys_module *module, struct lys_node *parent, struct yang_type *typ, struct lys_type *type, int tpdftype, struct unres_schema *unres)
-{
-    struct ly_ctx *ctx = module->ctx;
-    int rc, ret = -1;
-    unsigned int i, j;
-    const char *name, *value, *module_name = NULL;
-    LY_DATA_TYPE base = 0, base_tmp;
-    struct lys_node *siter;
-    struct lys_type *dertype;
-    struct lys_type_enum *enms_sc = NULL;
-    struct lys_type_bit *bits_sc = NULL;
-    struct lys_type_bit bit_tmp;
-    struct yang_type *yang;
-
-    value = transform_schema2json(module, typ->name);
-    if (!value) {
-        goto error;
-    }
-
-    i = parse_identifier(value);
-    if (i < 1) {
-        LOGVAL(ctx, LYE_INCHAR, LY_VLOG_NONE, NULL, value[-i], &value[-i]);
-        lydict_remove(ctx, value);
-        goto error;
-    }
-    /* module name */
-    name = value;
-    if (value[i]) {
-        module_name = lydict_insert(ctx, value, i);
-        name += i;
-        if ((name[0] != ':') || (parse_identifier(name + 1) < 1)) {
-            LOGVAL(ctx, LYE_INCHAR, LY_VLOG_NONE, NULL, name[0], name);
-            lydict_remove(ctx, module_name);
-            lydict_remove(ctx, value);
-            goto error;
-        }
-        ++name;
-    }
-
-    rc = resolve_superior_type(name, module_name, module, parent, &type->der);
-    if (rc == -1) {
-        LOGVAL(ctx, LYE_INMOD, LY_VLOG_NONE, NULL, module_name);
-        lydict_remove(ctx, module_name);
-        lydict_remove(ctx, value);
-        goto error;
-
-    /* the type could not be resolved or it was resolved to an unresolved typedef or leafref */
-    } else if (rc == EXIT_FAILURE) {
-        LOGVAL(ctx, LYE_NORESOLV, LY_VLOG_NONE, NULL, "type", name);
-        lydict_remove(ctx, module_name);
-        lydict_remove(ctx, value);
-        ret = EXIT_FAILURE;
-        goto error;
-    }
-    lydict_remove(ctx, module_name);
-    lydict_remove(ctx, value);
-
-    if (type->value_flags & LY_VALUE_UNRESGRP) {
-        /* resolved type in grouping, decrease the grouping's nacm number to indicate that one less
-         * unresolved item left inside the grouping, LYTYPE_GRP used as a flag for types inside a grouping.  */
-        for (siter = parent; siter && (siter->nodetype != LYS_GROUPING); siter = lys_parent(siter));
-        if (siter) {
-            assert(((struct lys_node_grp *)siter)->unres_count);
-            ((struct lys_node_grp *)siter)->unres_count--;
-        } else {
-            LOGINT(ctx);
-            goto error;
-        }
-        type->value_flags &= ~LY_VALUE_UNRESGRP;
-    }
-
-    /* check status */
-    if (lyp_check_status(type->parent->flags, type->parent->module, type->parent->name,
-                         type->der->flags, type->der->module, type->der->name, parent)) {
-        goto error;
-    }
-
-    base = typ->base;
-    base_tmp = type->base;
-    type->base = type->der->type.base;
-    if (base == 0) {
-        base = type->der->type.base;
-    }
-    switch (base) {
-    case LY_TYPE_STRING:
-        if (type->base == LY_TYPE_BINARY) {
-            if (type->info.str.pat_count) {
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Binary type could not include pattern statement.");
-                goto error;
-            }
-            type->info.binary.length = type->info.str.length;
-            if (type->info.binary.length && lyp_check_length_range(ctx, type->info.binary.length->expr, type)) {
-                LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, type->info.binary.length->expr, "length");
-                goto error;
-            }
-        } else if (type->base == LY_TYPE_STRING) {
-            if (type->info.str.length && lyp_check_length_range(ctx, type->info.str.length->expr, type)) {
-                LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, type->info.str.length->expr, "length");
-                goto error;
-            }
-        } else {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid restriction in type \"%s\".", type->parent->name);
-            goto error;
-        }
-        break;
-    case LY_TYPE_DEC64:
-        if (type->base == LY_TYPE_DEC64) {
-            /* mandatory sub-statement(s) check */
-            if (!type->info.dec64.dig && !type->der->type.der) {
-                /* decimal64 type directly derived from built-in type requires fraction-digits */
-                LOGVAL(ctx, LYE_MISSCHILDSTMT, LY_VLOG_NONE, NULL, "fraction-digits", "type");
-                goto error;
-            }
-            if (type->info.dec64.dig && type->der->type.der) {
-                /* type is not directly derived from buit-in type and fraction-digits statement is prohibited */
-                LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "fraction-digits");
-                goto error;
-            }
-
-            /* copy fraction-digits specification from parent type for easier internal use */
-            if (type->der->type.der) {
-                type->info.dec64.dig = type->der->type.info.dec64.dig;
-                type->info.dec64.div = type->der->type.info.dec64.div;
-            }
-            if (type->info.dec64.range && lyp_check_length_range(ctx, type->info.dec64.range->expr, type)) {
-                LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, type->info.dec64.range->expr, "range");
-                goto error;
-            }
-        } else if (type->base >= LY_TYPE_INT8 && type->base <=LY_TYPE_UINT64) {
-            if (type->info.dec64.dig) {
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Numerical type could not include fraction statement.");
-                goto error;
-            }
-            type->info.num.range = type->info.dec64.range;
-            if (type->info.num.range && lyp_check_length_range(ctx, type->info.num.range->expr, type)) {
-                LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, type->info.num.range->expr, "range");
-                goto error;
-            }
-        } else {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid restriction in type \"%s\".", type->parent->name);
-            goto error;
-        }
-        break;
-    case LY_TYPE_ENUM:
-        if (type->base != LY_TYPE_ENUM) {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid restriction in type \"%s\".", type->parent->name);
-            goto error;
-        }
-        dertype = &type->der->type;
-
-        if (!dertype->der) {
-            if (!type->info.enums.count) {
-                /* type is derived directly from buit-in enumeartion type and enum statement is required */
-                LOGVAL(ctx, LYE_MISSCHILDSTMT, LY_VLOG_NONE, NULL, "enum", "type");
-                goto error;
-            }
-        } else {
-            for (; !dertype->info.enums.count; dertype = &dertype->der->type);
-            if (module->version < 2 && type->info.enums.count) {
-                /* type is not directly derived from built-in enumeration type and enum statement is prohibited
-                 * in YANG 1.0, since YANG 1.1 enum statements can be used to restrict the base enumeration type */
-                LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "enum");
-                goto error;
-            }
-
-            /* restricted enumeration type - the name MUST be used in the base type */
-            enms_sc = dertype->info.enums.enm;
-            for (i = 0; i < type->info.enums.count; i++) {
-                for (j = 0; j < dertype->info.enums.count; j++) {
-                    if (ly_strequal(enms_sc[j].name, type->info.enums.enm[i].name, 1)) {
-                        break;
-                    }
-                }
-                if (j == dertype->info.enums.count) {
-                    LOGVAL(ctx, LYE_ENUM_INNAME, LY_VLOG_NONE, NULL, type->info.enums.enm[i].name);
-                    goto error;
-                }
-
-                if (type->info.enums.enm[i].flags & LYS_AUTOASSIGNED) {
-                    /* automatically assign value from base type */
-                    type->info.enums.enm[i].value = enms_sc[j].value;
-                } else {
-                    /* check that the assigned value corresponds to the original
-                     * value of the enum in the base type */
-                    if (type->info.enums.enm[i].value != enms_sc[j].value) {
-                        /* type->info.enums.enm[i].value - assigned value in restricted enum
-                         * enms_sc[j].value - value assigned to the corresponding enum (detected above) in base type */
-                        LOGVAL(ctx, LYE_ENUM_INVAL, LY_VLOG_NONE, NULL, type->info.enums.enm[i].value,
-                               type->info.enums.enm[i].name, enms_sc[j].value);
-                        goto error;
-                    }
-                }
-            }
-        }
-        break;
-    case LY_TYPE_BITS:
-        if (type->base != LY_TYPE_BITS) {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid restriction in type \"%s\".", type->parent->name);
-            goto error;
-        }
-        dertype = &type->der->type;
-
-        if (!dertype->der) {
-            if (!type->info.bits.count) {
-                /* type is derived directly from buit-in bits type and bit statement is required */
-                LOGVAL(ctx, LYE_MISSCHILDSTMT, LY_VLOG_NONE, NULL, "bit", "type");
-                goto error;
-            }
-        } else {
-            for (; !dertype->info.enums.count; dertype = &dertype->der->type);
-            if (module->version < 2 && type->info.bits.count) {
-                /* type is not directly derived from buit-in bits type and bit statement is prohibited,
-                 * since YANG 1.1 the bit statements can be used to restrict the base bits type */
-                LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "bit");
-                goto error;
-            }
-
-            bits_sc = dertype->info.bits.bit;
-            for (i = 0; i < type->info.bits.count; i++) {
-                for (j = 0; j < dertype->info.bits.count; j++) {
-                    if (ly_strequal(bits_sc[j].name, type->info.bits.bit[i].name, 1)) {
-                        break;
-                    }
-                }
-                if (j == dertype->info.bits.count) {
-                    LOGVAL(ctx, LYE_BITS_INNAME, LY_VLOG_NONE, NULL, type->info.bits.bit[i].name);
-                    goto error;
-                }
-
-                /* restricted bits type */
-                if (type->info.bits.bit[i].flags & LYS_AUTOASSIGNED) {
-                    /* automatically assign position from base type */
-                    type->info.bits.bit[i].pos = bits_sc[j].pos;
-                } else {
-                    /* check that the assigned position corresponds to the original
-                     * position of the bit in the base type */
-                    if (type->info.bits.bit[i].pos != bits_sc[j].pos) {
-                        /* type->info.bits.bit[i].pos - assigned position in restricted bits
-                         * bits_sc[j].pos - position assigned to the corresponding bit (detected above) in base type */
-                        LOGVAL(ctx, LYE_BITS_INVAL, LY_VLOG_NONE, NULL, type->info.bits.bit[i].pos,
-                               type->info.bits.bit[i].name, bits_sc[j].pos);
-                        goto error;
-                    }
-                }
-            }
-        }
-
-        for (i = type->info.bits.count; i > 0; i--) {
-            j = i - 1;
-
-            /* keep them ordered by position */
-            while (j && type->info.bits.bit[j - 1].pos > type->info.bits.bit[j].pos) {
-                /* switch them */
-                memcpy(&bit_tmp, &type->info.bits.bit[j], sizeof bit_tmp);
-                memcpy(&type->info.bits.bit[j], &type->info.bits.bit[j - 1], sizeof bit_tmp);
-                memcpy(&type->info.bits.bit[j - 1], &bit_tmp, sizeof bit_tmp);
-                j--;
-            }
-        }
-        break;
-    case LY_TYPE_LEAFREF:
-    case LY_TYPE_INST:
-        if (type->base == LY_TYPE_INST) {
-            if (type->info.lref.path) {
-                LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "path");
-                goto error;
-            }
-            if (type->info.lref.req) {
-                type->info.inst.req = type->info.lref.req;
-            } else if (type->der->type.der) {
-                type->info.inst.req = type->der->type.info.inst.req;
-            }
-        } else if (type->base == LY_TYPE_LEAFREF) {
-            /* require-instance only YANG 1.1 */
-            if (type->info.lref.req && (module->version < 2)) {
-                LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "require-instance");
-                goto error;
-            }
-            /* flag resolving for later use */
-            if (!tpdftype && lys_ingrouping(parent)) {
-                /* just a flag - do not resolve */
-                tpdftype = 1;
-            }
-
-            if (type->info.lref.path) {
-                if (type->der->type.der) {
-                    LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "path");
-                    goto error;
-                }
-
-                value = type->info.lref.path;
-                /* store in the JSON format */
-                type->info.lref.path = transform_schema2json(module, value);
-                lydict_remove(ctx, value);
-                if (!type->info.lref.path) {
-                    goto error;
-                }
-                /* try to resolve leafref path only when this is instantiated
-                 * leaf, so it is not:
-                 * - typedef's type,
-                 * - in  grouping definition,
-                 * - just instantiated in a grouping definition,
-                 * because in those cases the nodes referenced in path might not be present
-                 * and it is not a bug.  */
-                if (!tpdftype && unres_schema_add_node(module, unres, type, UNRES_TYPE_LEAFREF, parent) == -1) {
-                    goto error;
-                }
-            } else if (!type->der->type.der) {
-                LOGVAL(ctx, LYE_MISSCHILDSTMT, LY_VLOG_NONE, NULL, "path", "type");
-                goto error;
-            } else {
-                /* copy leafref definition into the derived type */
-                type->info.lref.path = lydict_insert(ctx, type->der->type.info.lref.path, 0);
-                if (!type->info.lref.req) {
-                    /* inherit require-instance only if not overwritten */
-                    type->info.lref.req = type->der->type.info.lref.req;
-                }
-                /* and resolve the path at the place we are (if not in grouping/typedef) */
-                if (!tpdftype && unres_schema_add_node(module, unres, type, UNRES_TYPE_LEAFREF, parent) == -1) {
-                    goto error;
-                }
-            }
-        } else {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid restriction in type \"%s\".", type->parent->name);
-            goto error;
-        }
-        break;
-    case LY_TYPE_IDENT:
-        if (type->base != LY_TYPE_IDENT) {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid restriction in type \"%s\".", type->parent->name);
-            goto error;
-        }
-        if (type->der->type.der) {
-            if (type->info.ident.ref) {
-                LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "base");
-                goto error;
-            }
-        } else {
-            if (!type->info.ident.ref) {
-                LOGVAL(ctx, LYE_MISSCHILDSTMT, LY_VLOG_NONE, NULL, "base", "type");
-                goto error;
-            }
-        }
-        break;
-    case LY_TYPE_UNION:
-        if (type->base != LY_TYPE_UNION) {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid restriction in type \"%s\".", type->parent->name);
-            goto error;
-        }
-        if (!type->info.uni.types) {
-            if (type->der->type.der) {
-                /* this is just a derived type with no additional type specified/required */
-                assert(type->der->type.base == LY_TYPE_UNION);
-                type->info.uni.has_ptr_type = type->der->type.info.uni.has_ptr_type;
-                break;
-            }
-            LOGVAL(ctx, LYE_MISSCHILDSTMT, LY_VLOG_NONE, NULL, "type", "(union) type");
-            goto error;
-        }
-        for (i = 0; i < type->info.uni.count; i++) {
-            dertype = &type->info.uni.types[i];
-            if (dertype->base == LY_TYPE_DER) {
-                yang = (struct yang_type *)dertype->der;
-                dertype->der = NULL;
-                dertype->parent = type->parent;
-                if (yang_check_type(module, parent, yang, dertype, tpdftype, unres)) {
-                    dertype->der = (struct lys_tpdf *)yang;
-                    ret = EXIT_FAILURE;
-                    type->base = base_tmp;
-                    base = 0;
-                    goto error;
-                } else {
-                    lydict_remove(ctx, yang->name);
-                    free(yang);
-                }
-            }
-            if (module->version < 2) {
-                if (dertype->base == LY_TYPE_EMPTY) {
-                    LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, "empty", typ->name);
-                    goto error;
-                } else if (dertype->base == LY_TYPE_LEAFREF) {
-                    LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, "leafref", typ->name);
-                    goto error;
-                }
-            }
-            if ((dertype->base == LY_TYPE_INST) || (dertype->base == LY_TYPE_LEAFREF)
-                    || ((dertype->base == LY_TYPE_UNION) && dertype->info.uni.has_ptr_type)) {
-                type->info.uni.has_ptr_type = 1;
-            }
-        }
-        break;
-
-    default:
-        if (base >= LY_TYPE_BINARY && base <= LY_TYPE_UINT64) {
-            if (type->base != base) {
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid restriction in type \"%s\".", type->parent->name);
-                goto error;
-            }
-        } else {
-            LOGINT(ctx);
-            goto error;
-        }
-    }
-
-    /* if derived type has extension, which need validate data */
-    dertype = &type->der->type;
-    while (dertype->der) {
-        if (dertype->parent->flags & LYS_VALID_EXT) {
-            type->parent->flags |= LYS_VALID_EXT;
-        }
-        dertype = &dertype->der->type;
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    if (base) {
-        type->base = base_tmp;
-    }
-    return ret;
-}
-
-void
-yang_free_type_union(struct ly_ctx *ctx, struct lys_type *type)
-{
-    struct lys_type *stype;
-    struct yang_type *yang;
-    unsigned int i;
-
-    for (i = 0; i < type->info.uni.count; ++i) {
-        stype = &type->info.uni.types[i];
-        if (stype->base == LY_TYPE_DER) {
-            yang = (struct yang_type *)stype->der;
-            stype->base = yang->base;
-            lydict_remove(ctx, yang->name);
-            free(yang);
-        } else if (stype->base == LY_TYPE_UNION) {
-            yang_free_type_union(ctx, stype);
-        }
-    }
-}
-
-void *
-yang_read_type(struct ly_ctx *ctx, void *parent, char *value, enum yytokentype type)
-{
-    struct yang_type *typ;
-    struct lys_deviate *dev;
-
-    typ = calloc(1, sizeof *typ);
-    LY_CHECK_ERR_RETURN(!typ, LOGMEM(ctx), NULL);
-
-    typ->flags = LY_YANG_STRUCTURE_FLAG;
-    switch (type) {
-    case LEAF_KEYWORD:
-        if (((struct lys_node_leaf *)parent)->type.der) {
-            LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_LYS, parent, "type", "leaf");
-            goto error;
-        }
-        ((struct lys_node_leaf *)parent)->type.der = (struct lys_tpdf *)typ;
-        ((struct lys_node_leaf *)parent)->type.parent = (struct lys_tpdf *)parent;
-        typ->type = &((struct lys_node_leaf *)parent)->type;
-        break;
-    case LEAF_LIST_KEYWORD:
-        if (((struct lys_node_leaflist *)parent)->type.der) {
-            LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_LYS, parent, "type", "leaf-list");
-            goto error;
-        }
-        ((struct lys_node_leaflist *)parent)->type.der = (struct lys_tpdf *)typ;
-        ((struct lys_node_leaflist *)parent)->type.parent = (struct lys_tpdf *)parent;
-        typ->type = &((struct lys_node_leaflist *)parent)->type;
-        break;
-    case UNION_KEYWORD:
-        ((struct lys_type *)parent)->der = (struct lys_tpdf *)typ;
-        typ->type = (struct lys_type *)parent;
-        break;
-    case TYPEDEF_KEYWORD:
-        if (((struct lys_tpdf *)parent)->type.der) {
-            LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "type", "typedef");
-            goto error;
-        }
-        ((struct lys_tpdf *)parent)->type.der = (struct lys_tpdf *)typ;
-        typ->type = &((struct lys_tpdf *)parent)->type;
-        break;
-    case REPLACE_KEYWORD:
-        /* deviation replace type*/
-        dev = (struct lys_deviate *)parent;
-        if (dev->type) {
-            LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "type", "deviation");
-            goto error;
-        }
-        dev->type = calloc(1, sizeof *dev->type);
-        LY_CHECK_ERR_GOTO(!dev->type, LOGMEM(ctx), error);
-        dev->type->der = (struct lys_tpdf *)typ;
-        typ->type = dev->type;
-        break;
-    case EXTENSION_INSTANCE:
-        ((struct lys_type *)parent)->der = (struct lys_tpdf *)typ;
-        typ->type = parent;
-        break;
-    default:
-        goto error;
-        break;
-    }
-    typ->name = lydict_insert_zc(ctx, value);
-    return typ;
-
-error:
-    free(value);
-    free(typ);
-    return NULL;
-}
-
-void *
-yang_read_length(struct ly_ctx *ctx, struct yang_type *stype, char *value, int is_ext_instance)
-{
-    struct lys_restr *length;
-
-    if (is_ext_instance) {
-        length = (struct lys_restr *)stype;
-    } else {
-        if (stype->base == 0 || stype->base == LY_TYPE_STRING) {
-            stype->base = LY_TYPE_STRING;
-        } else {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Unexpected length statement.");
-            goto error;
-        }
-
-        if (stype->type->info.str.length) {
-            LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "length", "type");
-            goto error;
-        }
-        length = calloc(1, sizeof *length);
-        LY_CHECK_ERR_GOTO(!length, LOGMEM(ctx), error);
-        stype->type->info.str.length = length;
-    }
-    length->expr = lydict_insert_zc(ctx, value);
-    return length;
-
-error:
-    free(value);
-    return NULL;
-}
-
-int
-yang_read_pattern(struct ly_ctx *ctx, struct lys_restr *pattern, void **precomp, char *value, char modifier)
-{
-    char *buf;
+    uint32_t c;
     size_t len;
 
-    if (precomp && lyp_precompile_pattern(ctx, value, (pcre**)&precomp[0], (pcre_extra**)&precomp[1])) {
-        free(value);
-        return EXIT_FAILURE;
-    }
+    /* check  valid combination of input paremeters - if need_buf specified, word_b must be provided */
+    assert(!need_buf || (need_buf && word_b));
 
-    len = strlen(value);
-    buf = malloc((len + 2) * sizeof *buf); /* modifier byte + value + terminating NULL byte */
-    LY_CHECK_ERR_RETURN(!buf, LOGMEM(ctx); free(value), EXIT_FAILURE);
-
-    buf[0] = modifier;
-    strcpy(&buf[1], value);
-    free(value);
-
-    pattern->expr = lydict_insert_zc(ctx, buf);
-    return EXIT_SUCCESS;
-}
-
-void *
-yang_read_range(struct ly_ctx *ctx, struct yang_type *stype, char *value, int is_ext_instance)
-{
-    struct lys_restr * range;
-
-    if (is_ext_instance) {
-        range = (struct lys_restr *)stype;
+    /* get UTF8 code point (and number of bytes coding the character) */
+    LY_CHECK_ERR_RET(ly_getutf8(&ctx->in->current, &c, &len),
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHAR, ctx->in->current[-len]), LY_EVALID);
+    ctx->in->current -= len;
+    if (c == '\n') {
+        ctx->indent = 0;
+        LY_IN_NEW_LINE(ctx->in);
     } else {
-        if (stype->base != 0 && stype->base != LY_TYPE_DEC64) {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Unexpected range statement.");
-            goto error;
-        }
-        stype->base = LY_TYPE_DEC64;
-        if (stype->type->info.dec64.range) {
-            LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "range", "type");
-            goto error;
-        }
-        range = calloc(1, sizeof *range);
-        LY_CHECK_ERR_GOTO(!range, LOGMEM(ctx), error);
-        stype->type->info.dec64.range = range;
+        /* note - even the multibyte character is count as 1 */
+        ++ctx->indent;
     }
-    range->expr = lydict_insert_zc(ctx, value);
-    return range;
 
-error:
-    free(value);
-    return NULL;
-}
+    /* check character validity */
+    switch (arg) {
+    case Y_IDENTIF_ARG:
+        LY_CHECK_RET(lysp_check_identifierchar((struct lys_parser_ctx *)ctx, c, !(*word_len), NULL));
+        break;
+    case Y_PREF_IDENTIF_ARG:
+        LY_CHECK_RET(lysp_check_identifierchar((struct lys_parser_ctx *)ctx, c, !(*word_len), prefix));
+        break;
+    case Y_STR_ARG:
+    case Y_MAYBE_STR_ARG:
+        LY_CHECK_RET(lysp_check_stringchar((struct lys_parser_ctx *)ctx, c));
+        break;
+    }
 
-int
-yang_read_fraction(struct ly_ctx *ctx, struct yang_type *typ, uint32_t value)
-{
-    uint32_t i;
+    if (word_b && *word_b) {
+        /* add another character into buffer */
+        if (buf_add_char(PARSER_CTX(ctx), ctx->in, len, word_b, buf_len, word_len)) {
+            return LY_EMEM;
+        }
 
-    if (typ->base == 0 || typ->base == LY_TYPE_DEC64) {
-        typ->base = LY_TYPE_DEC64;
+        /* in case of realloc */
+        *word_p = *word_b;
+    } else if (word_b && need_buf) {
+        /* first time we need a buffer, copy everything read up to now */
+        if (*word_len) {
+            *word_b = malloc(*word_len);
+            LY_CHECK_ERR_RET(!*word_b, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+            *buf_len = *word_len;
+            memcpy(*word_b, *word_p, *word_len);
+        }
+
+        /* add this new character into buffer */
+        if (buf_add_char(PARSER_CTX(ctx), ctx->in, len, word_b, buf_len, word_len)) {
+            return LY_EMEM;
+        }
+
+        /* in case of realloc */
+        *word_p = *word_b;
     } else {
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Unexpected fraction-digits statement.");
-        goto error;
+        /* just remember the first character pointer */
+        if (!*word_p) {
+            *word_p = (char *)ctx->in->current;
+        }
+        /* ... and update the word's length */
+        (*word_len) += len;
+        ly_in_skip(ctx->in, len);
     }
-    if (typ->type->info.dec64.dig) {
-        LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "fraction-digits", "type");
-        goto error;
-    }
-    /* range check */
-    if (value < 1 || value > 18) {
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid value \"%d\" of \"%s\".", value, "fraction-digits");
-        goto error;
-    }
-    typ->type->info.dec64.dig = value;
-    typ->type->info.dec64.div = 10;
-    for (i = 1; i < value; i++) {
-        typ->type->info.dec64.div *= 10;
-    }
-    return EXIT_SUCCESS;
 
-error:
-    return EXIT_FAILURE;
+    return LY_SUCCESS;
 }
 
-int
-yang_read_enum(struct ly_ctx *ctx, struct yang_type *typ, struct lys_type_enum *enm, char *value)
+/**
+ * @brief Skip YANG comment in data.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] comment Type of the comment to process:
+ *                    1 for a one-line comment,
+ *                    2 for a block comment.
+ * @return LY_ERR values.
+ */
+LY_ERR
+skip_comment(struct lys_yang_parser_ctx *ctx, uint8_t comment)
 {
-    int i, j;
+    /* internal statuses: */
+#define COMMENT_NO        0 /* comment ended */
+#define COMMENT_LINE      1 /* in line comment */
+#define COMMENT_BLOCK     2 /* in block comment */
+#define COMMENT_BLOCK_END 3 /* in block comment with last read character '*' */
 
-    typ->base = LY_TYPE_ENUM;
-    if (!value[0]) {
-        LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "enum name");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Enum name must not be empty.");
-        free(value);
-        goto error;
-    }
-
-    enm->name = lydict_insert_zc(ctx, value);
-
-    /* the assigned name MUST NOT have any leading or trailing whitespace characters */
-    if (isspace(enm->name[0]) || isspace(enm->name[strlen(enm->name) - 1])) {
-        LOGVAL(ctx, LYE_ENUM_WS, LY_VLOG_NONE, NULL, enm->name);
-        goto error;
-    }
-
-    j = typ->type->info.enums.count - 1;
-    /* check the name uniqueness */
-    for (i = 0; i < j; i++) {
-        if (ly_strequal(typ->type->info.enums.enm[i].name, enm->name, 1)) {
-            LOGVAL(ctx, LYE_ENUM_DUPNAME, LY_VLOG_NONE, NULL, enm->name);
-            goto error;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_check_enum(struct ly_ctx *ctx, struct yang_type *typ, struct lys_type_enum *enm, int64_t *value, int assign)
-{
-    int i, j;
-
-    if (!assign) {
-        /* assign value automatically */
-        if (*value > INT32_MAX) {
-            LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, "2147483648", "enum/value");
-            goto error;
-        }
-        enm->value = *value;
-        enm->flags |= LYS_AUTOASSIGNED;
-        (*value)++;
-    } else if (typ->type->info.enums.enm == enm) {
-        /* change value, which is assigned automatically, if first enum has value. */
-        *value = typ->type->info.enums.enm[0].value;
-        (*value)++;
-    }
-
-    /* check that the value is unique */
-    j = typ->type->info.enums.count-1;
-    for (i = 0; i < j; i++) {
-        if (typ->type->info.enums.enm[i].value == typ->type->info.enums.enm[j].value) {
-            LOGVAL(ctx, LYE_ENUM_DUPVAL, LY_VLOG_NONE, NULL,
-                   typ->type->info.enums.enm[j].value, typ->type->info.enums.enm[j].name,
-                   typ->type->info.enums.enm[i].name);
-            goto error;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_read_bit(struct ly_ctx *ctx, struct yang_type *typ, struct lys_type_bit *bit, char *value)
-{
-    int i, j;
-
-    typ->base = LY_TYPE_BITS;
-    bit->name = lydict_insert_zc(ctx, value);
-    if (lyp_check_identifier(ctx, bit->name, LY_IDENT_SIMPLE, NULL, NULL)) {
-        goto error;
-    }
-
-    j = typ->type->info.bits.count - 1;
-    /* check the name uniqueness */
-    for (i = 0; i < j; i++) {
-        if (ly_strequal(typ->type->info.bits.bit[i].name, bit->name, 1)) {
-            LOGVAL(ctx, LYE_BITS_DUPNAME, LY_VLOG_NONE, NULL, bit->name);
-            goto error;
-        }
-    }
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_check_bit(struct ly_ctx *ctx, struct yang_type *typ, struct lys_type_bit *bit, int64_t *value, int assign)
-{
-    int i,j;
-
-    if (!assign) {
-        /* assign value automatically */
-        if (*value > UINT32_MAX) {
-            LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, "4294967295", "bit/position");
-            goto error;
-        }
-        bit->pos = (uint32_t)*value;
-        bit->flags |= LYS_AUTOASSIGNED;
-        (*value)++;
-    }
-
-    j = typ->type->info.bits.count - 1;
-    /* check that the value is unique */
-    for (i = 0; i < j; i++) {
-        if (typ->type->info.bits.bit[i].pos == bit->pos) {
-            LOGVAL(ctx, LYE_BITS_DUPVAL, LY_VLOG_NONE, NULL, bit->pos, bit->name, typ->type->info.bits.bit[i].name);
-            goto error;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_read_augment(struct lys_module *module, struct lys_node *parent, struct lys_node_augment *aug, char *value)
-{
-    aug->nodetype = LYS_AUGMENT;
-    aug->target_name = transform_schema2json(module, value);
-    free(value);
-    if (!aug->target_name) {
-        return EXIT_FAILURE;
-    }
-    aug->parent = parent;
-    aug->module = module;
-    return EXIT_SUCCESS;
-}
-
-void *
-yang_read_deviate_unsupported(struct ly_ctx *ctx, struct lys_deviation *dev)
-{
-    if (dev->deviate_size) {
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "\"not-supported\" deviation cannot be combined with any other deviation.");
-        return NULL;
-    }
-    dev->deviate = calloc(1, sizeof *dev->deviate);
-    LY_CHECK_ERR_RETURN(!dev->deviate, LOGMEM(ctx), NULL);
-    dev->deviate[dev->deviate_size].mod = LY_DEVIATE_NO;
-    dev->deviate_size = 1;
-    return dev->deviate;
-}
-
-void *
-yang_read_deviate(struct ly_ctx *ctx, struct lys_deviation *dev, LYS_DEVIATE_TYPE mod)
-{
-    struct lys_deviate *deviate;
-
-    if (dev->deviate_size && dev->deviate[0].mod == LY_DEVIATE_NO) {
-        LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "not-supported");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "\"not-supported\" deviation cannot be combined with any other deviation.");
-        return NULL;
-    }
-    if (!(dev->deviate_size % LY_YANG_ARRAY_SIZE)) {
-        deviate = realloc(dev->deviate, (LY_YANG_ARRAY_SIZE + dev->deviate_size) * sizeof *deviate);
-        LY_CHECK_ERR_RETURN(!deviate, LOGMEM(ctx), NULL);
-        memset(deviate + dev->deviate_size, 0, LY_YANG_ARRAY_SIZE * sizeof *deviate);
-        dev->deviate = deviate;
-    }
-    dev->deviate[dev->deviate_size].mod = mod;
-    return &dev->deviate[dev->deviate_size++];
-}
-
-int
-yang_read_deviate_units(struct ly_ctx *ctx, struct lys_deviate *deviate, struct lys_node *dev_target)
-{
-    const char **stritem;
-    int j;
-
-    /* check target node type */
-    if (dev_target->nodetype == LYS_LEAFLIST) {
-        stritem = &((struct lys_node_leaflist *)dev_target)->units;
-    } else if (dev_target->nodetype == LYS_LEAF) {
-        stritem = &((struct lys_node_leaf *)dev_target)->units;
-    } else {
-        LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "units");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Target node does not allow \"units\" property.");
-        goto error;
-    }
-
-    if (deviate->mod == LY_DEVIATE_DEL) {
-        /* check values */
-        if (!ly_strequal(*stritem, deviate->units, 1)) {
-            LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, deviate->units, "units");
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Value differs from the target being deleted.");
-            goto error;
-        }
-        /* remove current units value of the target */
-        lydict_remove(ctx, *stritem);
-        *stritem = NULL;
-        /* remove its extensions */
-        j = -1;
-        while ((j = lys_ext_iter(dev_target->ext, dev_target->ext_size, j + 1, LYEXT_SUBSTMT_UNITS)) != -1) {
-            lyp_ext_instance_rm(ctx, &dev_target->ext, &dev_target->ext_size, j);
-            --j;
-        }
-    } else {
-        if (deviate->mod == LY_DEVIATE_ADD) {
-            /* check that there is no current value */
-            if (*stritem) {
-                LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "units");
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Adding property that already exists.");
-                goto error;
+    while (ctx->in->current[0] && comment) {
+        switch (comment) {
+        case COMMENT_LINE:
+            if (ctx->in->current[0] == '\n') {
+                comment = COMMENT_NO;
+                LY_IN_NEW_LINE(ctx->in);
             }
-        } else { /* replace */
-            if (!*stritem) {
-                LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "units");
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Replacing a property that does not exist.");
-                goto error;
+            break;
+        case COMMENT_BLOCK:
+            if (ctx->in->current[0] == '*') {
+                comment = COMMENT_BLOCK_END;
+            } else if (ctx->in->current[0] == '\n') {
+                LY_IN_NEW_LINE(ctx->in);
             }
-        }
-        /* remove current units value of the target ... */
-        lydict_remove(ctx, *stritem);
-
-        /* ... and replace it with the value specified in deviation */
-        *stritem = lydict_insert(ctx, deviate->units, 0);
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_read_deviate_unique(struct lys_deviate *deviate, struct lys_node *dev_target)
-{
-    struct ly_ctx *ctx = dev_target->module->ctx;
-    struct lys_node_list *list;
-    struct lys_unique *unique;
-
-    /* check target node type */
-    if (dev_target->nodetype != LYS_LIST) {
-        LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "unique");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Target node does not allow \"unique\" property.");
-        goto error;
-    }
-
-    list = (struct lys_node_list *)dev_target;
-    if (deviate->mod == LY_DEVIATE_ADD) {
-        /* reallocate the unique array of the target */
-        unique = ly_realloc(list->unique, (deviate->unique_size + list->unique_size) * sizeof *unique);
-        LY_CHECK_ERR_GOTO(!unique, LOGMEM(ctx), error);
-        list->unique = unique;
-        memset(unique + list->unique_size, 0, deviate->unique_size * sizeof *unique);
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_fill_deviate_default(struct ly_ctx *ctx, struct lys_deviate *deviate, struct lys_node *dev_target,
-                          struct ly_set *dflt_check, const char *value)
-{
-    struct lys_node *node;
-    struct lys_node_choice *choice;
-    struct lys_node_leaf *leaf;
-    struct lys_node_leaflist *llist;
-    enum int_log_opts prev_ilo;
-    int rc, i, j;
-    unsigned int u;
-    const char *orig_dflt;
-
-    u = strlen(value);
-    if (dev_target->nodetype == LYS_CHOICE) {
-        choice = (struct lys_node_choice *)dev_target;
-        rc = resolve_choice_default_schema_nodeid(value, choice->child, (const struct lys_node **)&node);
-        if (rc || !node) {
-            LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "default");
-            goto error;
-        }
-        if (deviate->mod == LY_DEVIATE_DEL) {
-            if (!choice->dflt || (choice->dflt != node)) {
-                LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "default");
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Value differs from the target being deleted.");
-                goto error;
-            }
-            choice->dflt = NULL;
-            /* remove extensions of this default instance from the target node */
-            j = -1;
-            while ((j = lys_ext_iter(dev_target->ext, dev_target->ext_size, j + 1, LYEXT_SUBSTMT_DEFAULT)) != -1) {
-                lyp_ext_instance_rm(ctx, &dev_target->ext, &dev_target->ext_size, j);
-                --j;
-            }
-        } else { /* add or replace */
-            choice->dflt = node;
-            if (!choice->dflt) {
-                /* default branch not found */
-                LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "default");
-                goto error;
-            }
-        }
-    } else if (dev_target->nodetype == LYS_LEAF) {
-        leaf = (struct lys_node_leaf *)dev_target;
-        if (deviate->mod == LY_DEVIATE_DEL) {
-            orig_dflt = NULL;
-            if (leaf->dflt) {
-                /* transform back into the original value */
-                ly_ilo_change(NULL, ILO_IGNORE, &prev_ilo, NULL);
-                orig_dflt = transform_json2schema(leaf->module, leaf->dflt);
-                ly_ilo_restore(NULL, prev_ilo, NULL, 0);
-                if (!orig_dflt) {
-                    orig_dflt = lydict_insert(ctx, leaf->dflt, 0);
+            break;
+        case COMMENT_BLOCK_END:
+            if (ctx->in->current[0] == '/') {
+                comment = COMMENT_NO;
+            } else if (ctx->in->current[0] != '*') {
+                if (ctx->in->current[0] == '\n') {
+                    LY_IN_NEW_LINE(ctx->in);
                 }
+                comment = COMMENT_BLOCK;
             }
-            if (!orig_dflt || !ly_strequal(orig_dflt, value, 1)) {
-                LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "default");
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Value differs from the target being deleted.");
-                lydict_remove(ctx, orig_dflt);
-                goto error;
-            }
-            lydict_remove(ctx, orig_dflt);
-
-            /* remove value */
-            lydict_remove(ctx, leaf->dflt);
-            leaf->dflt = NULL;
-            leaf->flags &= ~LYS_DFLTJSON;
-            /* remove extensions of this default instance from the target node */
-            j = -1;
-            while ((j = lys_ext_iter(dev_target->ext, dev_target->ext_size, j + 1, LYEXT_SUBSTMT_DEFAULT)) != -1) {
-                lyp_ext_instance_rm(ctx, &dev_target->ext, &dev_target->ext_size, j);
-                --j;
-            }
-        } else { /* add (already checked) and replace */
-            /* remove value */
-            lydict_remove(ctx, leaf->dflt);
-            leaf->flags &= ~LYS_DFLTJSON;
-
-            /* set new value */
-            leaf->dflt = lydict_insert(ctx, value, u);
-
-            /* remember to check it later (it may not fit now, but the type can be deviated too) */
-            ly_set_add(dflt_check, dev_target, 0);
-        }
-    } else { /* LYS_LEAFLIST */
-        llist = (struct lys_node_leaflist *)dev_target;
-        if (deviate->mod == LY_DEVIATE_DEL) {
-            /* find and remove the value in target list */
-            for (i = 0; i < llist->dflt_size; i++) {
-                orig_dflt = NULL;
-                if (llist->dflt[i]) {
-                    /* transform back into the original value */
-                    ly_ilo_change(NULL, ILO_IGNORE, &prev_ilo, NULL);
-                    orig_dflt = transform_json2schema(llist->module, llist->dflt[i]);
-                    ly_ilo_restore(NULL, prev_ilo, NULL, 0);
-                    if (!orig_dflt) {
-                        orig_dflt = lydict_insert(ctx, llist->dflt[i], 0);
-                    }
-                }
-
-                if (orig_dflt && ly_strequal(orig_dflt, value, 1)) {
-                    lydict_remove(ctx, orig_dflt);
-
-                    /* match, remove the value */
-                    lydict_remove(llist->module->ctx, llist->dflt[i]);
-                    llist->dflt[i] = NULL;
-                    /* remove extensions of this default instance from the target node */
-                    j = -1;
-                    while ((j = lys_ext_iter(dev_target->ext, dev_target->ext_size, j + 1, LYEXT_SUBSTMT_DEFAULT)) != -1) {
-                        if (dev_target->ext[j]->insubstmt_index == i) {
-                            lyp_ext_instance_rm(ctx, &dev_target->ext, &dev_target->ext_size, j);
-                            --j;
-                        } else if (dev_target->ext[j]->insubstmt_index > i) {
-                            /* decrease the substatement index of the extension because of the changed array of defaults */
-                            dev_target->ext[j]->insubstmt_index--;
-                        }
-                    }
-                    break;
-                }
-                lydict_remove(ctx, orig_dflt);
-            }
-            if (i == llist->dflt_size) {
-                LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "default");
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "The default value to delete not found in the target node.");
-                goto error;
-            }
-        } else {
-            /* add or replace, anyway we place items into the deviate's list
-               which propagates to the target */
-            /* we just want to check that the value isn't already in the list */
-            for (i = 0; i < llist->dflt_size; i++) {
-                if (ly_strequal(llist->dflt[i], value, 1)) {
-                    LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "default");
-                    LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Duplicated default value \"%s\".", value);
-                    goto error;
-                }
-            }
-            /* store it in target node */
-            llist->dflt[llist->dflt_size++] = lydict_insert(ctx, value, u);
-
-            /* remember to check it later (it may not fit now, but the type can be deviated too) */
-            ly_set_add(dflt_check, dev_target, 0);
-            llist->flags &= ~LYS_DFLTJSON;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_read_deviate_default(struct lys_module *module, struct lys_deviate *deviate,
-                          struct lys_node *dev_target, struct ly_set * dflt_check)
-{
-    struct ly_ctx *ctx = module->ctx;
-    int i;
-    struct lys_node_leaflist *llist;
-    const char **dflt;
-
-    /* check target node type */
-    if (module->version < 2 && dev_target->nodetype == LYS_LEAFLIST) {
-        LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "default");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Target node does not allow \"default\" property.");
-        goto error;
-    } else if (deviate->dflt_size > 1 && dev_target->nodetype != LYS_LEAFLIST) { /* from YANG 1.1 */
-        LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "default");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Target node does not allow multiple \"default\" properties.");
-        goto error;
-    } else if (!(dev_target->nodetype & (LYS_LEAF | LYS_LEAFLIST | LYS_CHOICE))) {
-        LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "default");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Target node does not allow \"default\" property.");
-        goto error;
-    }
-
-    if (deviate->mod == LY_DEVIATE_ADD) {
-        /* check that there is no current value */
-        if ((dev_target->nodetype == LYS_LEAF && ((struct lys_node_leaf *)dev_target)->dflt) ||
-                (dev_target->nodetype == LYS_CHOICE && ((struct lys_node_choice *)dev_target)->dflt)) {
-            LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "default");
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Adding property that already exists.");
-            goto error;
-        }
-
-        /* check collision with mandatory/min-elements */
-        if ((dev_target->flags & LYS_MAND_TRUE) ||
-                (dev_target->nodetype == LYS_LEAFLIST && ((struct lys_node_leaflist *)dev_target)->min)) {
-            LOGVAL(ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, "default", "deviation");
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL,
-                   "Adding the \"default\" statement is forbidden on %s statement.",
-                   (dev_target->flags & LYS_MAND_TRUE) ? "nodes with the \"mandatory\"" : "leaflists with non-zero \"min-elements\"");
-            goto error;
-        }
-    } else if (deviate->mod == LY_DEVIATE_RPL) {
-        /* check that there was a value before */
-        if (((dev_target->nodetype & (LYS_LEAF | LYS_LEAFLIST)) && !((struct lys_node_leaf *)dev_target)->dflt) ||
-                (dev_target->nodetype == LYS_CHOICE && !((struct lys_node_choice *)dev_target)->dflt)) {
-            LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "default");
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Replacing a property that does not exist.");
-            goto error;
-        }
-    }
-
-    if (dev_target->nodetype == LYS_LEAFLIST) {
-        /* reallocate default list in the target */
-        llist = (struct lys_node_leaflist *)dev_target;
-        if (deviate->mod == LY_DEVIATE_ADD) {
-            /* reallocate (enlarge) the unique array of the target */
-            dflt = realloc(llist->dflt, (deviate->dflt_size + llist->dflt_size) * sizeof *dflt);
-            LY_CHECK_ERR_GOTO(!dflt, LOGMEM(ctx), error);
-            llist->dflt = dflt;
-        } else if (deviate->mod == LY_DEVIATE_RPL) {
-            /* reallocate (replace) the unique array of the target */
-            for (i = 0; i < llist->dflt_size; i++) {
-                lydict_remove(ctx, llist->dflt[i]);
-            }
-            dflt = realloc(llist->dflt, deviate->dflt_size * sizeof *dflt);
-            LY_CHECK_ERR_GOTO(!dflt, LOGMEM(ctx), error);
-            llist->dflt = dflt;
-            llist->dflt_size = 0;
-        }
-    }
-
-    for (i = 0; i < deviate->dflt_size; ++i) {
-        if (yang_fill_deviate_default(ctx, deviate, dev_target, dflt_check, deviate->dflt[i])) {
-            goto error;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_check_deviate_mandatory(struct lys_deviate *deviate, struct lys_node *dev_target)
-{
-    struct ly_ctx *ctx = dev_target->module->ctx;
-    struct lys_node *parent;
-
-    /* check target node type */
-    if (!(dev_target->nodetype & (LYS_LEAF | LYS_CHOICE | LYS_ANYDATA))) {
-        LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "mandatory");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Target node does not allow \"mandatory\" property.");
-        goto error;
-    }
-
-    if (deviate->mod == LY_DEVIATE_ADD) {
-        /* check that there is no current value */
-        if (dev_target->flags & LYS_MAND_MASK) {
-            LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "mandatory");
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Adding property that already exists.");
-            goto error;
-        } else {
-            if (dev_target->nodetype == LYS_LEAF && ((struct lys_node_leaf *)dev_target)->dflt) {
-                /* RFC 6020, 7.6.4 - default statement must not with mandatory true */
-                LOGVAL(ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, "mandatory", "leaf");
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "The \"mandatory\" statement is forbidden on leaf with \"default\".");
-                goto error;
-            } else if (dev_target->nodetype == LYS_CHOICE && ((struct lys_node_choice *)dev_target)->dflt) {
-                LOGVAL(ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, "mandatory", "choice");
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "The \"mandatory\" statement is forbidden on choices with \"default\".");
-                goto error;
-            }
-        }
-    } else { /* replace */
-        if (!(dev_target->flags & LYS_MAND_MASK)) {
-            LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "mandatory");
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Replacing a property that does not exist.");
-            goto error;
-        }
-    }
-
-    /* remove current mandatory value of the target ... */
-    dev_target->flags &= ~LYS_MAND_MASK;
-
-    /* ... and replace it with the value specified in deviation */
-    dev_target->flags |= deviate->flags & LYS_MAND_MASK;
-
-    /* check for mandatory node in default case, first find the closest parent choice to the changed node */
-    for (parent = dev_target->parent;
-         parent && !(parent->nodetype & (LYS_CHOICE | LYS_GROUPING | LYS_ACTION));
-         parent = parent->parent) {
-        if (parent->nodetype == LYS_CONTAINER && ((struct lys_node_container *)parent)->presence) {
-            /* stop also on presence containers */
-            break;
-        }
-    }
-    /* and if it is a choice with the default case, check it for presence of a mandatory node in it */
-    if (parent && parent->nodetype == LYS_CHOICE && ((struct lys_node_choice *)parent)->dflt) {
-        if (lyp_check_mandatory_choice(parent)) {
-            goto error;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_read_deviate_minmax(struct lys_deviate *deviate, struct lys_node *dev_target, uint32_t value, int type)
-{
-    struct ly_ctx *ctx = dev_target->module->ctx;
-    uint32_t *ui32val, *min, *max;
-
-    /* check target node type */
-    if (dev_target->nodetype == LYS_LEAFLIST) {
-        max = &((struct lys_node_leaflist *)dev_target)->max;
-        min = &((struct lys_node_leaflist *)dev_target)->min;
-    } else if (dev_target->nodetype == LYS_LIST) {
-        max = &((struct lys_node_list *)dev_target)->max;
-        min = &((struct lys_node_list *)dev_target)->min;
-    } else {
-        LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, (type) ? "max-elements" : "min-elements");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Target node does not allow \"%s\" property.", (type) ? "max-elements" : "min-elements");
-        goto error;
-    }
-
-    ui32val = (type) ? max : min;
-    if (deviate->mod == LY_DEVIATE_ADD) {
-        /* check that there is no current value */
-        if (*ui32val) {
-            LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, (type) ? "max-elements" : "min-elements");
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Adding property that already exists.");
-            goto error;
-        }
-    } else if (deviate->mod == LY_DEVIATE_RPL) {
-        /* unfortunately, there is no way to check reliably that there
-         * was a value before, it could have been the default */
-    }
-
-    /* add (already checked) and replace */
-    /* set new value specified in deviation */
-    *ui32val = value;
-
-    /* check min-elements is smaller than max-elements */
-    if (*max && *min > *max) {
-        if (type) {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid value \"%d\" of \"max-elements\".", value);
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "\"max-elements\" is smaller than \"min-elements\".");
-        } else {
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid value \"%d\" of \"min-elements\".", value);
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "\"min-elements\" is bigger than \"max-elements\".");
-        }
-        goto error;
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-int
-yang_check_deviate_must(struct lys_module *module, struct unres_schema *unres,
-                        struct lys_deviate *deviate, struct lys_node *dev_target)
-{
-    struct ly_ctx *ctx = module->ctx;
-    int i, j, erase_must = 1;
-    struct lys_restr **trg_must, *must;
-    uint8_t *trg_must_size;
-
-    /* check target node type */
-    switch (dev_target->nodetype) {
-        case LYS_LEAF:
-            trg_must = &((struct lys_node_leaf *)dev_target)->must;
-            trg_must_size = &((struct lys_node_leaf *)dev_target)->must_size;
-            break;
-        case LYS_CONTAINER:
-            trg_must = &((struct lys_node_container *)dev_target)->must;
-            trg_must_size = &((struct lys_node_container *)dev_target)->must_size;
-            break;
-        case LYS_LEAFLIST:
-            trg_must = &((struct lys_node_leaflist *)dev_target)->must;
-            trg_must_size = &((struct lys_node_leaflist *)dev_target)->must_size;
-            break;
-        case LYS_LIST:
-            trg_must = &((struct lys_node_list *)dev_target)->must;
-            trg_must_size = &((struct lys_node_list *)dev_target)->must_size;
-            break;
-        case LYS_ANYXML:
-        case LYS_ANYDATA:
-            trg_must = &((struct lys_node_anydata *)dev_target)->must;
-            trg_must_size = &((struct lys_node_anydata *)dev_target)->must_size;
             break;
         default:
-            LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "must");
-            LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Target node does not allow \"must\" property.");
-            goto error;
-    }
-
-    /* flag will be checked again, clear it for now */
-    dev_target->flags &= ~(LYS_XPCONF_DEP | LYS_XPSTATE_DEP);
-
-    if (deviate->mod == LY_DEVIATE_ADD) {
-        /* reallocate the must array of the target */
-        must = ly_realloc(*trg_must, (deviate->must_size + *trg_must_size) * sizeof *must);
-        LY_CHECK_ERR_GOTO(!must, LOGMEM(ctx), error);
-        *trg_must = must;
-        memcpy(&(*trg_must)[*trg_must_size], deviate->must, deviate->must_size * sizeof *must);
-        *trg_must_size = *trg_must_size + deviate->must_size;
-        erase_must = 0;
-    } else if (deviate->mod == LY_DEVIATE_DEL) {
-        /* find must to delete, we are ok with just matching conditions */
-        for (j = 0; j < deviate->must_size; ++j) {
-            for (i = 0; i < *trg_must_size; i++) {
-                if (ly_strequal(deviate->must[j].expr, (*trg_must)[i].expr, 1)) {
-                    /* we have a match, free the must structure ... */
-                    lys_restr_free(module->ctx, &((*trg_must)[i]), NULL);
-                    /* ... and maintain the array */
-                    (*trg_must_size)--;
-                    if (i != *trg_must_size) {
-                        memcpy(&(*trg_must)[i], &(*trg_must)[*trg_must_size], sizeof *must);
-                    }
-                    if (!(*trg_must_size)) {
-                        free(*trg_must);
-                        *trg_must = NULL;
-                    } else {
-                        memset(&(*trg_must)[*trg_must_size], 0, sizeof *must);
-                    }
-
-                    i = -1; /* set match flag */
-                    break;
-                }
-            }
-            if (i != -1) {
-                /* no match found */
-                LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, deviate->must[j].expr, "must");
-                LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Value does not match any must from the target.");
-                goto error;
-            }
+            LOGINT_RET(PARSER_CTX(ctx));
         }
-    }
 
-    if (yang_check_must(module, deviate->must, deviate->must_size, unres)) {
-        goto error;
-    }
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && *trg_must_size
-            && (unres_schema_add_node(module, unres, dev_target, UNRES_XPATH, NULL) == -1)) {
-        goto error;
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    if (deviate->mod == LY_DEVIATE_ADD && erase_must) {
-        for (i = 0; i < deviate->must_size; ++i) {
-            lys_restr_free(module->ctx, &deviate->must[i], NULL);
+        if (ctx->in->current[0] == '\n') {
+            ctx->indent = 0;
+        } else {
+            ++ctx->indent;
         }
-        free(deviate->must);
+        ++ctx->in->current;
     }
-    return EXIT_FAILURE;
+
+    if (!ctx->in->current[0] && (comment >= COMMENT_BLOCK)) {
+        LOGVAL_PARSER(ctx, LYVE_SYNTAX, "Unexpected end-of-input, non-terminated comment.");
+        return LY_EVALID;
+    }
+
+    return LY_SUCCESS;
+
+#undef COMMENT_NO
+#undef COMMENT_LINE
+#undef COMMENT_BLOCK
+#undef COMMENT_BLOCK_END
 }
 
-int
-yang_deviate_delete_unique(struct lys_module *module, struct lys_deviate *deviate,
-                           struct lys_node_list *list, int index, char * value)
+/**
+ * @brief Read a quoted string from data.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] arg Type of YANG keyword argument expected.
+ * @param[out] word_p Pointer to the read quoted string.
+ * @param[out] word_b Pointer to a dynamically-allocated buffer holding the read quoted string. If not needed,
+ * set to NULL. Otherwise equal to \p word_p.
+ * @param[out] word_len Length of the read quoted string.
+ * @param[out] buf_len Length of the dynamically-allocated buffer \p word_b.
+ * @param[in] indent Current indent (number of YANG spaces). Needed for correct multi-line string
+ * indenation in the final quoted string.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+read_qstring(struct lys_yang_parser_ctx *ctx, enum yang_arg arg, char **word_p, char **word_b,
+        size_t *word_len, size_t *buf_len)
 {
-    struct ly_ctx *ctx = module->ctx;
-    int i, j, k;
+    /* string parsing status: */
+#define STRING_ENDED 0 /* string ended */
+#define STRING_SINGLE_QUOTED 1 /* string with ' */
+#define STRING_DOUBLE_QUOTED 2 /* string with " */
+#define STRING_DOUBLE_QUOTED_ESCAPED 3 /* string with " with last character \ */
+#define STRING_PAUSED_NEXTSTRING     4 /* string finished, now skipping whitespaces looking for + */
+#define STRING_PAUSED_CONTINUE       5 /* string continues after +, skipping whitespaces */
 
-    /* find unique structures to delete */
-    for (i = 0; i < list->unique_size; i++) {
-        if (list->unique[i].expr_size != deviate->unique[index].expr_size) {
-            continue;
-        }
+    uint8_t string;
+    uint64_t block_indent = 0, current_indent = 0;
+    ly_bool need_buf = 0;
+    uint8_t prefix = 0;
+    const char *c;
+    uint64_t trailing_ws = 0; /* current number of stored trailing whitespace characters */
 
-        for (j = 0; j < deviate->unique[index].expr_size; j++) {
-            if (!ly_strequal(list->unique[i].expr[j], deviate->unique[index].expr[j], 1)) {
+    if (ctx->in->current[0] == '\"') {
+        string = STRING_DOUBLE_QUOTED;
+        current_indent = block_indent = ctx->indent + 1;
+    } else {
+        assert(ctx->in->current[0] == '\'');
+        string = STRING_SINGLE_QUOTED;
+    }
+    MOVE_INPUT(ctx, 1);
+
+    while (ctx->in->current[0] && string) {
+        switch (string) {
+        case STRING_SINGLE_QUOTED:
+            switch (ctx->in->current[0]) {
+            case '\'':
+                /* string may be finished, but check for + */
+                string = STRING_PAUSED_NEXTSTRING;
+                MOVE_INPUT(ctx, 1);
+                break;
+            default:
+                /* check and store character */
+                LY_CHECK_RET(buf_store_char(ctx, arg, word_p, word_len, word_b, buf_len, need_buf, &prefix));
                 break;
             }
+            break;
+        case STRING_DOUBLE_QUOTED:
+            switch (ctx->in->current[0]) {
+            case '\"':
+                /* string may be finished, but check for + */
+                string = STRING_PAUSED_NEXTSTRING;
+                MOVE_INPUT(ctx, 1);
+                trailing_ws = 0;
+                break;
+            case '\\':
+                /* special character following */
+                string = STRING_DOUBLE_QUOTED_ESCAPED;
+
+                /* the backslash sequence is substituted, so we will need a buffer to store the result */
+                need_buf = 1;
+
+                /* move forward to the escaped character */
+                ++ctx->in->current;
+
+                /* note that the trailing whitespaces are supposed to be trimmed before substitution of
+                 * backslash-escaped characters (RFC 7950, 6.1.3), so we have to zero the trailing whitespaces counter */
+                trailing_ws = 0;
+
+                /* since the backslash-escaped character is handled as first non-whitespace character, stop eating indentation */
+                current_indent = block_indent;
+                break;
+            case ' ':
+                if (current_indent < block_indent) {
+                    ++current_indent;
+                    MOVE_INPUT(ctx, 1);
+                } else {
+                    /* check and store whitespace character */
+                    LY_CHECK_RET(buf_store_char(ctx, arg, word_p, word_len, word_b, buf_len, need_buf, &prefix));
+                    trailing_ws++;
+                }
+                break;
+            case '\t':
+                if (current_indent < block_indent) {
+                    assert(need_buf);
+                    current_indent += Y_TAB_SPACES;
+                    ctx->indent += Y_TAB_SPACES;
+                    for ( ; current_indent > block_indent; --current_indent, --ctx->indent) {
+                        /* store leftover spaces from the tab */
+                        c = ctx->in->current;
+                        ctx->in->current = " ";
+                        LY_CHECK_RET(buf_store_char(ctx, arg, word_p, word_len, word_b, buf_len, need_buf, &prefix));
+                        ctx->in->current = c;
+                        trailing_ws++;
+                    }
+                    ++ctx->in->current;
+                } else {
+                    /* check and store whitespace character */
+                    LY_CHECK_RET(buf_store_char(ctx, arg, word_p, word_len, word_b, buf_len, need_buf, &prefix));
+                    trailing_ws++;
+                    /* additional characters for indentation - only 1 was count in buf_store_char */
+                    ctx->indent += Y_TAB_SPACES - 1;
+                }
+                break;
+            case '\r':
+                if (ctx->in->current[1] != '\n') {
+                    LOGVAL_PARSER(ctx, LY_VCODE_INCHAR, ctx->in->current[0]);
+                    return LY_EVALID;
+                }
+            /* fallthrough */
+            case '\n':
+                if (block_indent) {
+                    /* we will be removing the indents so we need our own buffer */
+                    need_buf = 1;
+
+                    /* remove trailing tabs and spaces */
+                    (*word_len) = *word_len - trailing_ws;
+
+                    /* restart indentation */
+                    current_indent = 0;
+                }
+
+                /* check and store character */
+                LY_CHECK_RET(buf_store_char(ctx, arg, word_p, word_len, word_b, buf_len, need_buf, &prefix));
+
+                /* reset context indentation counter for possible string after this one */
+                ctx->indent = 0;
+                trailing_ws = 0;
+                break;
+            default:
+                /* first non-whitespace character, stop eating indentation */
+                current_indent = block_indent;
+
+                /* check and store character */
+                LY_CHECK_RET(buf_store_char(ctx, arg, word_p, word_len, word_b, buf_len, need_buf, &prefix));
+                trailing_ws = 0;
+                break;
+            }
+            break;
+        case STRING_DOUBLE_QUOTED_ESCAPED:
+            /* string encoded characters */
+            c = ctx->in->current;
+            switch (ctx->in->current[0]) {
+            case 'n':
+                ctx->in->current = "\n";
+                /* fix false newline count in buf_store_char() */
+                ctx->in->line--;
+                break;
+            case 't':
+                ctx->in->current = "\t";
+                break;
+            case '\"':
+            case '\\':
+                /* ok as is */
+                break;
+            default:
+                LOGVAL_PARSER(ctx, LYVE_SYNTAX_YANG, "Double-quoted string unknown special character '\\%c'.",
+                        ctx->in->current[0]);
+                return LY_EVALID;
+            }
+
+            /* check and store character */
+            LY_CHECK_RET(buf_store_char(ctx, arg, word_p, word_len, word_b, buf_len, need_buf, &prefix));
+
+            string = STRING_DOUBLE_QUOTED;
+            ctx->in->current = c + 1;
+            break;
+        case STRING_PAUSED_NEXTSTRING:
+            switch (ctx->in->current[0]) {
+            case '+':
+                /* string continues */
+                string = STRING_PAUSED_CONTINUE;
+                need_buf = 1;
+                break;
+            case '\r':
+                if (ctx->in->current[1] != '\n') {
+                    LOGVAL_PARSER(ctx, LY_VCODE_INCHAR, ctx->in->current[0]);
+                    return LY_EVALID;
+                }
+                MOVE_INPUT(ctx, 1);
+            /* fallthrough */
+            case '\n':
+                LY_IN_NEW_LINE(ctx->in);
+            /* fall through */
+            case ' ':
+            case '\t':
+                /* just skip */
+                break;
+            default:
+                /* string is finished */
+                goto string_end;
+            }
+            MOVE_INPUT(ctx, 1);
+            break;
+        case STRING_PAUSED_CONTINUE:
+            switch (ctx->in->current[0]) {
+            case '\r':
+                if (ctx->in->current[1] != '\n') {
+                    LOGVAL_PARSER(ctx, LY_VCODE_INCHAR, ctx->in->current[0]);
+                    return LY_EVALID;
+                }
+                MOVE_INPUT(ctx, 1);
+            /* fallthrough */
+            case '\n':
+                LY_IN_NEW_LINE(ctx->in);
+            /* fall through */
+            case ' ':
+            case '\t':
+                /* skip */
+                break;
+            case '\'':
+                string = STRING_SINGLE_QUOTED;
+                break;
+            case '\"':
+                string = STRING_DOUBLE_QUOTED;
+                break;
+            default:
+                /* it must be quoted again */
+                LOGVAL_PARSER(ctx, LYVE_SYNTAX_YANG, "Both string parts divided by '+' must be quoted.");
+                return LY_EVALID;
+            }
+            MOVE_INPUT(ctx, 1);
+            break;
+        default:
+            return LY_EINT;
         }
+    }
 
-        if (j == deviate->unique[index].expr_size) {
-            /* we have a match, free the unique structure ... */
-            for (j = 0; j < list->unique[i].expr_size; j++) {
-                lydict_remove(ctx, list->unique[i].expr[j]);
-            }
-            free(list->unique[i].expr);
-            /* ... and maintain the array */
-            list->unique_size--;
-            if (i != list->unique_size) {
-                list->unique[i].expr_size = list->unique[list->unique_size].expr_size;
-                list->unique[i].expr = list->unique[list->unique_size].expr;
-            }
+string_end:
+    if ((arg <= Y_PREF_IDENTIF_ARG) && !(*word_len)) {
+        /* empty identifier */
+        LOGVAL_PARSER(ctx, LYVE_SYNTAX_YANG, "Statement argument is required.");
+        return LY_EVALID;
+    }
+    return LY_SUCCESS;
 
-            if (!list->unique_size) {
-                free(list->unique);
-                list->unique = NULL;
+#undef STRING_ENDED
+#undef STRING_SINGLE_QUOTED
+#undef STRING_DOUBLE_QUOTED
+#undef STRING_DOUBLE_QUOTED_ESCAPED
+#undef STRING_PAUSED_NEXTSTRING
+#undef STRING_PAUSED_CONTINUE
+}
+
+/**
+ * @brief Get another YANG string from the raw data.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] arg Type of YANG keyword argument expected.
+ * @param[out] flags optional output argument to get flag of the argument's quoting (LYS_*QUOTED - see
+ * [schema node flags](@ref snodeflags))
+ * @param[out] word_p Pointer to the read string. Can return NULL if \p arg is #Y_MAYBE_STR_ARG.
+ * @param[out] word_b Pointer to a dynamically-allocated buffer holding the read string. If not needed,
+ * set to NULL. Otherwise equal to \p word_p.
+ * @param[out] word_len Length of the read string.
+ * @return LY_ERR values.
+ */
+LY_ERR
+get_argument(struct lys_yang_parser_ctx *ctx, enum yang_arg arg, uint16_t *flags, char **word_p,
+        char **word_b, size_t *word_len)
+{
+    LY_ERR ret;
+    size_t buf_len = 0;
+    uint8_t prefix = 0;
+
+    /* word buffer - dynamically allocated */
+    *word_b = NULL;
+
+    /* word pointer - just a pointer to data */
+    *word_p = NULL;
+
+    *word_len = 0;
+    while (ctx->in->current[0]) {
+        switch (ctx->in->current[0]) {
+        case '\'':
+        case '\"':
+            if (*word_len) {
+                /* invalid - quotes cannot be in unquoted string and only optsep, ; or { can follow it */
+                LOGVAL_PARSER(ctx, LY_VCODE_INSTREXP, 1, ctx->in->current,
+                        "unquoted string character, optsep, semicolon or opening brace");
+                ret = LY_EVALID;
+                goto error;
+            }
+            if (flags) {
+                (*flags) |= ctx->in->current[0] == '\'' ? LYS_SINGLEQUOTED : LYS_DOUBLEQUOTED;
+            }
+            LY_CHECK_GOTO(ret = read_qstring(ctx, arg, word_p, word_b, word_len, &buf_len), error);
+            goto str_end;
+        case '/':
+            if (ctx->in->current[1] == '/') {
+                /* one-line comment */
+                MOVE_INPUT(ctx, 2);
+                LY_CHECK_GOTO(ret = skip_comment(ctx, 1), error);
+            } else if (ctx->in->current[1] == '*') {
+                /* block comment */
+                MOVE_INPUT(ctx, 2);
+                LY_CHECK_GOTO(ret = skip_comment(ctx, 2), error);
             } else {
-                list->unique[list->unique_size].expr_size = 0;
-                list->unique[list->unique_size].expr = NULL;
+                /* not a comment after all */
+                LY_CHECK_GOTO(ret = buf_store_char(ctx, arg, word_p, word_len, word_b, &buf_len, 0, &prefix), error);
             }
-
-            k = i; /* remember index for removing extensions */
-            i = -1; /* set match flag */
-            break;
-        }
-    }
-
-    if (i != -1) {
-        /* no match found */
-        LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "unique");
-        LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Value differs from the target being deleted.");
-        return EXIT_FAILURE;
-    }
-
-    /* remove extensions of this unique instance from the target node */
-    j = -1;
-    while ((j = lys_ext_iter(list->ext, list->ext_size, j + 1, LYEXT_SUBSTMT_UNIQUE)) != -1) {
-        if (list->ext[j]->insubstmt_index == k) {
-            lyp_ext_instance_rm(ctx, &list->ext, &list->ext_size, j);
-            --j;
-        } else if (list->ext[j]->insubstmt_index > k) {
-            /* decrease the substatement index of the extension because of the changed array of uniques */
-            list->ext[j]->insubstmt_index--;
-        }
-    }
-    return EXIT_SUCCESS;
-}
-
-int yang_check_deviate_unique(struct lys_module *module, struct lys_deviate *deviate, struct lys_node *dev_target)
-{
-    struct lys_node_list *list;
-    char *str;
-    uint i = 0;
-    struct lys_unique *last_unique = NULL;
-
-    if (yang_read_deviate_unique(deviate, dev_target)) {
-        goto error;
-    }
-    list = (struct lys_node_list *)dev_target;
-    last_unique = &list->unique[list->unique_size];
-    for (i = 0; i < deviate->unique_size; ++i) {
-        str = (char *) deviate->unique[i].expr;
-        if (deviate->mod == LY_DEVIATE_ADD) {
-            if (yang_fill_unique(module, list, &list->unique[list->unique_size], str, NULL)) {
-                free(str);
-                goto error;
-            }
-            list->unique_size++;
-        } else if (deviate->mod == LY_DEVIATE_DEL) {
-            if (yang_fill_unique(module, list, &deviate->unique[i], str, NULL)) {
-                free(str);
-                goto error;
-            }
-            if (yang_deviate_delete_unique(module, deviate, list, i, str)) {
-                free(str);
-                goto error;
-            }
-        }
-        free(str);
-    }
-    if (deviate->mod == LY_DEVIATE_ADD) {
-        free(deviate->unique);
-        deviate->unique = last_unique;
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    if (deviate->mod == LY_DEVIATE_ADD) {
-        for (i = i + 1; i < deviate->unique_size; ++i) {
-            free(deviate->unique[i].expr);
-        }
-        free(deviate->unique);
-        deviate->unique = last_unique;
-
-    }
-    return EXIT_FAILURE;
-}
-
-static int
-yang_fill_include(struct lys_module *trg, char *value, struct lys_include *inc,
-                  struct unres_schema *unres)
-{
-    const char *str;
-    int rc;
-    int ret = 0;
-
-    str = lydict_insert_zc(trg->ctx, value);
-    rc = lyp_check_include(trg, str, inc, unres);
-    if (!rc) {
-        /* success, copy the filled data into the final array */
-        memcpy(&trg->inc[trg->inc_size], inc, sizeof *inc);
-        if (yang_check_ext_instance(trg, &trg->inc[trg->inc_size].ext, trg->inc[trg->inc_size].ext_size,
-                                    &trg->inc[trg->inc_size], unres)) {
-            ret = -1;
-        }
-        trg->inc_size++;
-    } else if (rc == -1) {
-        lys_extension_instances_free(trg->ctx, inc->ext, inc->ext_size, NULL);
-        ret = -1;
-    }
-
-    lydict_remove(trg->ctx, str);
-    return ret;
-}
-
-struct lys_ext_instance *
-yang_ext_instance(void *node, enum yytokentype type, int is_ext_instance)
-{
-    struct lys_ext_instance ***ext, **tmp, *instance = NULL;
-    LYEXT_PAR parent_type;
-    uint8_t *size;
-
-    switch (type) {
-    case MODULE_KEYWORD:
-    case SUBMODULE_KEYWORD:
-        ext = &((struct lys_module *)node)->ext;
-        size = &((struct lys_module *)node)->ext_size;
-        parent_type = LYEXT_PAR_MODULE;
-        break;
-    case BELONGS_TO_KEYWORD:
-        if (is_ext_instance) {
-            ext = &((struct lys_ext_instance *)node)->ext;
-            size = &((struct lys_ext_instance *)node)->ext_size;
-            parent_type = LYEXT_PAR_EXTINST;
-        } else {
-            ext = &((struct lys_module *)node)->ext;
-            size = &((struct lys_module *)node)->ext_size;
-            parent_type = LYEXT_PAR_MODULE;
-        }
-        break;
-    case IMPORT_KEYWORD:
-        ext = &((struct lys_import *)node)->ext;
-        size = &((struct lys_import *)node)->ext_size;
-        parent_type = LYEXT_PAR_IMPORT;
-        break;
-    case INCLUDE_KEYWORD:
-        ext = &((struct lys_include *)node)->ext;
-        size = &((struct lys_include *)node)->ext_size;
-        parent_type = LYEXT_PAR_INCLUDE;
-        break;
-    case REVISION_KEYWORD:
-        ext = &((struct lys_revision *)node)->ext;
-        size = &((struct lys_revision *)node)->ext_size;
-        parent_type = LYEXT_PAR_REVISION;
-        break;
-    case GROUPING_KEYWORD:
-    case CONTAINER_KEYWORD:
-    case LEAF_KEYWORD:
-    case LEAF_LIST_KEYWORD:
-    case LIST_KEYWORD:
-    case CHOICE_KEYWORD:
-    case CASE_KEYWORD:
-    case ANYXML_KEYWORD:
-    case ANYDATA_KEYWORD:
-    case USES_KEYWORD:
-    case AUGMENT_KEYWORD:
-    case ACTION_KEYWORD:
-    case RPC_KEYWORD:
-    case INPUT_KEYWORD:
-    case OUTPUT_KEYWORD:
-    case NOTIFICATION_KEYWORD:
-        ext = &((struct lys_node *)node)->ext;
-        size = &((struct lys_node *)node)->ext_size;
-        parent_type = LYEXT_PAR_NODE;
-        break;
-    case ARGUMENT_KEYWORD:
-        if (is_ext_instance) {
-            ext = &((struct lys_ext_instance *)node)->ext;
-            size = &((struct lys_ext_instance *)node)->ext_size;
-            parent_type = LYEXT_PAR_EXTINST;
-        } else {
-            ext = &((struct lys_ext *)node)->ext;
-            size = &((struct lys_ext *)node)->ext_size;
-            parent_type = LYEXT_PAR_EXT;
-        }
-        break;
-    case EXTENSION_KEYWORD:
-        ext = &((struct lys_ext *)node)->ext;
-        size = &((struct lys_ext *)node)->ext_size;
-        parent_type = LYEXT_PAR_EXT;
-        break;
-    case FEATURE_KEYWORD:
-        ext = &((struct lys_feature *)node)->ext;
-        size = &((struct lys_feature *)node)->ext_size;
-        parent_type = LYEXT_PAR_FEATURE;
-        break;
-    case IDENTITY_KEYWORD:
-        ext = &((struct lys_ident *)node)->ext;
-        size = &((struct lys_ident *)node)->ext_size;
-        parent_type = LYEXT_PAR_IDENT;
-        break;
-    case IF_FEATURE_KEYWORD:
-        ext = &((struct lys_iffeature *)node)->ext;
-        size = &((struct lys_iffeature *)node)->ext_size;
-        parent_type = LYEXT_PAR_IFFEATURE;
-        break;
-    case TYPEDEF_KEYWORD:
-        ext = &((struct lys_tpdf *)node)->ext;
-        size = &((struct lys_tpdf *)node)->ext_size;
-        parent_type = LYEXT_PAR_TPDF;
-        break;
-    case TYPE_KEYWORD:
-        ext = &((struct yang_type *)node)->type->ext;
-        size = &((struct yang_type *)node)->type->ext_size;
-        parent_type = LYEXT_PAR_TYPE;
-        break;
-    case LENGTH_KEYWORD:
-    case PATTERN_KEYWORD:
-    case RANGE_KEYWORD:
-    case MUST_KEYWORD:
-        ext = &((struct lys_restr *)node)->ext;
-        size = &((struct lys_restr *)node)->ext_size;
-        parent_type = LYEXT_PAR_RESTR;
-        break;
-    case WHEN_KEYWORD:
-        ext = &((struct lys_when *)node)->ext;
-        size = &((struct lys_when *)node)->ext_size;
-        parent_type = LYEXT_PAR_RESTR;
-        break;
-    case ENUM_KEYWORD:
-        ext = &((struct lys_type_enum *)node)->ext;
-        size = &((struct lys_type_enum *)node)->ext_size;
-        parent_type = LYEXT_PAR_TYPE_ENUM;
-        break;
-    case BIT_KEYWORD:
-        ext = &((struct lys_type_bit *)node)->ext;
-        size = &((struct lys_type_bit *)node)->ext_size;
-        parent_type = LYEXT_PAR_TYPE_BIT;
-        break;
-    case REFINE_KEYWORD:
-        ext = &((struct lys_type_bit *)node)->ext;
-        size = &((struct lys_type_bit *)node)->ext_size;
-        parent_type = LYEXT_PAR_REFINE;
-        break;
-    case DEVIATION_KEYWORD:
-        ext = &((struct lys_deviation *)node)->ext;
-        size = &((struct lys_deviation *)node)->ext_size;
-        parent_type = LYEXT_PAR_DEVIATION;
-        break;
-    case NOT_SUPPORTED_KEYWORD:
-    case ADD_KEYWORD:
-    case DELETE_KEYWORD:
-    case REPLACE_KEYWORD:
-        ext = &((struct lys_deviate *)node)->ext;
-        size = &((struct lys_deviate *)node)->ext_size;
-        parent_type = LYEXT_PAR_DEVIATE;
-        break;
-    case EXTENSION_INSTANCE:
-        ext = &((struct lys_ext_instance *)node)->ext;
-        size = &((struct lys_ext_instance *)node)->ext_size;
-        parent_type = LYEXT_PAR_EXTINST;
-        break;
-    default:
-        LOGINT(NULL);
-        return NULL;
-    }
-
-    instance = calloc(1, sizeof *instance);
-    if (!instance) {
-        goto error;
-    }
-    instance->parent_type = parent_type;
-    tmp = realloc(*ext, (*size + 1) * sizeof *tmp);
-    if (!tmp) {
-        goto error;
-    }
-    tmp[*size] = instance;
-    *ext = tmp;
-    (*size)++;
-    return instance;
-
-error:
-    LOGMEM(NULL);
-    free(instance);
-    return NULL;
-}
-
-void *
-yang_read_ext(struct lys_module *module, void *actual, char *ext_name, char *ext_arg,
-              enum yytokentype actual_type, enum yytokentype backup_type, int is_ext_instance)
-{
-    struct lys_ext_instance *instance;
-    LY_STMT stmt = LY_STMT_UNKNOWN;
-    LYEXT_SUBSTMT insubstmt;
-    uint8_t insubstmt_index = 0;
-
-    if (backup_type != NODE) {
-        switch (actual_type) {
-        case YANG_VERSION_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_VERSION;
-            stmt = LY_STMT_VERSION;
-            break;
-        case NAMESPACE_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_NAMESPACE;
-            stmt = LY_STMT_NAMESPACE;
-            break;
-        case PREFIX_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_PREFIX;
-            stmt = LY_STMT_PREFIX;
-            break;
-        case REVISION_DATE_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_REVISIONDATE;
-            stmt = LY_STMT_REVISIONDATE;
-            break;
-        case DESCRIPTION_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_DESCRIPTION;
-            stmt = LY_STMT_DESCRIPTION;
-            break;
-        case REFERENCE_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_REFERENCE;
-            stmt = LY_STMT_REFERENCE;
-            break;
-        case CONTACT_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_CONTACT;
-            stmt = LY_STMT_CONTACT;
-            break;
-        case ORGANIZATION_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_ORGANIZATION;
-            stmt = LY_STMT_ORGANIZATION;
-            break;
-        case YIN_ELEMENT_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_YINELEM;
-            stmt = LY_STMT_YINELEM;
-            break;
-        case STATUS_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_STATUS;
-            stmt = LY_STMT_STATUS;
-            break;
-        case BASE_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_BASE;
-            stmt = LY_STMT_BASE;
-            if (backup_type == IDENTITY_KEYWORD) {
-                insubstmt_index = ((struct lys_ident *)actual)->base_size;
-            } else if (backup_type == TYPE_KEYWORD) {
-                insubstmt_index = ((struct yang_type *)actual)->type->info.ident.count;
-            }
-            break;
-        case DEFAULT_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_DEFAULT;
-            stmt = LY_STMT_DEFAULT;
-            switch (backup_type) {
-            case LEAF_LIST_KEYWORD:
-                insubstmt_index = ((struct lys_node_leaflist *)actual)->dflt_size;
-                break;
-            case REFINE_KEYWORD:
-                insubstmt_index = ((struct lys_refine *)actual)->dflt_size;
-                break;
-            case ADD_KEYWORD:
-                insubstmt_index = ((struct lys_deviate *)actual)->dflt_size;
-                break;
-            default:
-                /* nothing changes */
-                break;
-            }
-            break;
-        case UNITS_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_UNITS;
-            stmt = LY_STMT_UNITS;
-            break;
-        case REQUIRE_INSTANCE_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_REQINSTANCE;
-            stmt = LY_STMT_REQINSTANCE;
-            break;
-        case PATH_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_PATH;
-            stmt = LY_STMT_PATH;
-            break;
-        case ERROR_MESSAGE_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_ERRMSG;
-            stmt = LY_STMT_ERRMSG;
-            break;
-        case ERROR_APP_TAG_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_ERRTAG;
-            stmt = LY_STMT_ERRTAG;
-            break;
-        case MODIFIER_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_MODIFIER;
-            stmt = LY_STMT_MODIFIER;
-            break;
-        case FRACTION_DIGITS_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_DIGITS;
-            stmt = LY_STMT_DIGITS;
-            break;
-        case VALUE_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_VALUE;
-            stmt = LY_STMT_VALUE;
-            break;
-        case POSITION_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_POSITION;
-            stmt = LY_STMT_POSITION;
-            break;
-        case PRESENCE_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_PRESENCE;
-            stmt = LY_STMT_PRESENCE;
-            break;
-        case CONFIG_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_CONFIG;
-            stmt = LY_STMT_CONFIG;
-            break;
-        case MANDATORY_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_MANDATORY;
-            stmt = LY_STMT_MANDATORY;
-            break;
-        case MIN_ELEMENTS_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_MIN;
-            stmt = LY_STMT_MIN;
-            break;
-        case MAX_ELEMENTS_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_MAX;
-            stmt = LY_STMT_MAX;
-            break;
-        case ORDERED_BY_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_ORDEREDBY;
-            stmt = LY_STMT_ORDEREDBY;
-            break;
-        case KEY_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_KEY;
-            stmt = LY_STMT_KEY;
-            break;
-        case UNIQUE_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_UNIQUE;
-            stmt = LY_STMT_UNIQUE;
-            switch (backup_type) {
-            case LIST_KEYWORD:
-                insubstmt_index = ((struct lys_node_list *)actual)->unique_size;
-                break;
-            case ADD_KEYWORD:
-            case DELETE_KEYWORD:
-            case REPLACE_KEYWORD:
-                insubstmt_index = ((struct lys_deviate *)actual)->unique_size;
-                break;
-            default:
-                /* nothing changes */
-                break;
-            }
-            break;
-        default:
-            LOGINT(module->ctx);
-            return NULL;
-        }
-
-        instance = yang_ext_instance(actual, backup_type, is_ext_instance);
-    } else {
-        switch (actual_type) {
-        case ARGUMENT_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_ARGUMENT;
-            stmt = LY_STMT_ARGUMENT;
-            break;
-        case BELONGS_TO_KEYWORD:
-            insubstmt = LYEXT_SUBSTMT_BELONGSTO;
-            stmt = LY_STMT_BELONGSTO;
-            break;
-        default:
-            insubstmt = LYEXT_SUBSTMT_SELF;
-            break;
-        }
-
-        instance = yang_ext_instance(actual, actual_type, is_ext_instance);
-    }
-
-    if (!instance) {
-        return NULL;
-    }
-    instance->insubstmt = insubstmt;
-    instance->insubstmt_index = insubstmt_index;
-    instance->flags |= LYEXT_OPT_YANG;
-    instance->def = (struct lys_ext *)ext_name;    /* hack for UNRES */
-    instance->arg_value = lydict_insert_zc(module->ctx, ext_arg);
-    if (is_ext_instance && stmt != LY_STMT_UNKNOWN && instance->parent_type == LYEXT_PAR_EXTINST) {
-        instance->insubstmt_index = yang_fill_ext_substm_index(actual, stmt, backup_type);
-    }
-    return instance;
-}
-
-static int
-check_status_flag(struct lys_node *node, struct lys_node *parent)
-{
-    struct ly_ctx *ctx = node->module->ctx;
-    char *str;
-
-    if (node->nodetype & (LYS_OUTPUT | LYS_INPUT)) {
-        return EXIT_SUCCESS;
-    }
-
-    if (parent && (parent->flags & (LYS_STATUS_DEPRC | LYS_STATUS_OBSLT))) {
-        /* status is not inherited by specification, but it not make sense to have
-         * current in deprecated or deprecated in obsolete, so we print warning
-         * and fix the schema by inheriting */
-        if (!(node->flags & (LYS_STATUS_MASK))) {
-            /* status not explicitely specified on the current node -> inherit */
-            str = lys_path(node, LYS_PATH_FIRST_PREFIX);
-            LOGWRN(ctx, "Missing status in %s subtree (%s), inheriting.",
-                   parent->flags & LYS_STATUS_DEPRC ? "deprecated" : "obsolete", str);
-            free(str);
-            node->flags |= parent->flags & LYS_STATUS_MASK;
-        } else if ((parent->flags & LYS_STATUS_MASK) > (node->flags & LYS_STATUS_MASK)) {
-            /* invalid combination of statuses */
-            switch (node->flags & LYS_STATUS_MASK) {
-                case 0:
-                case LYS_STATUS_CURR:
-                    LOGVAL(ctx, LYE_INSTATUS, LY_VLOG_LYS, parent, "current", strnodetype(node->nodetype), "is child of",
-                           parent->flags & LYS_STATUS_DEPRC ? "deprecated" : "obsolete", parent->name);
-                    break;
-                case LYS_STATUS_DEPRC:
-                    LOGVAL(ctx, LYE_INSTATUS, LY_VLOG_LYS, parent, "deprecated", strnodetype(node->nodetype), "is child of",
-                           "obsolete", parent->name);
-                    break;
-            }
-            return EXIT_FAILURE;
-        }
-    }
-
-    return EXIT_SUCCESS;
-}
-
-int
-store_config_flag(struct lys_node *node, int options)
-{
-    switch (node->nodetype) {
-    case LYS_CONTAINER:
-    case LYS_LEAF:
-    case LYS_LEAFLIST:
-    case LYS_LIST:
-    case LYS_CHOICE:
-    case LYS_ANYDATA:
-    case LYS_ANYXML:
-        if (options & LYS_PARSE_OPT_CFG_IGNORE) {
-            node->flags |= node->flags & (~(LYS_CONFIG_MASK | LYS_CONFIG_SET));
-        } else if (!(options & LYS_PARSE_OPT_CFG_NOINHERIT)) {
-            if (!(node->flags & LYS_CONFIG_MASK)) {
-                /* get config flag from parent */
-                if (node->parent) {
-                    node->flags |= node->parent->flags & LYS_CONFIG_MASK;
-                } else {
-                    /* default config is true */
-                    node->flags |= LYS_CONFIG_W;
-                }
-            }
-        }
-        break;
-    case LYS_CASE:
-        if (!(options & (LYS_PARSE_OPT_CFG_IGNORE | LYS_PARSE_OPT_CFG_NOINHERIT))) {
-            if (!(node->flags & LYS_CONFIG_MASK)) {
-                /* get config flag from parent */
-                if (node->parent) {
-                    node->flags |= node->parent->flags & LYS_CONFIG_MASK;
-                } else {
-                    /* default config is true */
-                    node->flags |= LYS_CONFIG_W;
-                }
-            }
-        }
-        break;
-    default:
-        break;
-    }
-
-    return EXIT_SUCCESS;
-}
-
-int
-yang_parse_mem(struct lys_module *module, struct lys_submodule *submodule, struct unres_schema *unres,
-               const char *data, unsigned int size_data, struct lys_node **node)
-{
-    unsigned int size;
-    YY_BUFFER_STATE bp;
-    yyscan_t scanner = NULL;
-    int ret = 0;
-    struct lys_module *trg;
-    struct yang_parameter param;
-
-    size = (size_data) ? size_data : strlen(data) + 2;
-    yylex_init(&scanner);
-    yyset_extra(module->ctx, scanner);
-    bp = yy_scan_buffer((char *)data, size, scanner);
-    yy_switch_to_buffer(bp, scanner);
-    memset(&param, 0, sizeof param);
-    param.module = module;
-    param.submodule = submodule;
-    param.unres = unres;
-    param.node = node;
-    param.flags |= YANG_REMOVE_IMPORT;
-    if (yyparse(scanner, &param)) {
-        if (param.flags & YANG_REMOVE_IMPORT) {
-            trg = (submodule) ? (struct lys_module *)submodule : module;
-            yang_free_import(trg->ctx, trg->imp, 0, trg->imp_size);
-            yang_free_include(trg->ctx, trg->inc, 0, trg->inc_size);
-            trg->inc_size = 0;
-            trg->imp_size = 0;
-        }
-        ret = (param.flags & YANG_EXIST_MODULE) ? 1 : -1;
-    }
-    yy_delete_buffer(bp, scanner);
-    yylex_destroy(scanner);
-    return ret;
-}
-
-int
-yang_parse_ext_substatement(struct lys_module *module, struct unres_schema *unres, const char *data,
-                            char *ext_name, struct lys_ext_instance_complex *ext)
-{
-    unsigned int size;
-    YY_BUFFER_STATE bp;
-    yyscan_t scanner = NULL;
-    int ret = 0;
-    struct yang_parameter param;
-    struct lys_node *node = NULL;
-
-    if (!data) {
-        return EXIT_SUCCESS;
-    }
-    size = strlen(data) + 2;
-    yylex_init(&scanner);
-    bp = yy_scan_buffer((char *)data, size, scanner);
-    yy_switch_to_buffer(bp, scanner);
-    memset(&param, 0, sizeof param);
-    param.module = module;
-    param.unres = unres;
-    param.node = &node;
-    param.actual_node = (void **)ext;
-    param.data_node = (void **)ext_name;
-    param.flags |= EXT_INSTANCE_SUBSTMT;
-    if (yyparse(scanner, &param)) {
-        yang_free_nodes(module->ctx, node);
-        ret = -1;
-    } else {
-        /* success parse, but it needs some sematic controls */
-        if (node && yang_check_nodes(module, (struct lys_node *)ext, node, LYS_PARSE_OPT_CFG_NOINHERIT, unres)) {
-            ret = -1;
-        }
-    }
-    yy_delete_buffer(bp, scanner);
-    yylex_destroy(scanner);
-    return ret;
-}
-
-struct lys_module *
-yang_read_module(struct ly_ctx *ctx, const char* data, unsigned int size, const char *revision, int implement)
-{
-    struct lys_module *module = NULL, *tmp_mod;
-    struct unres_schema *unres = NULL;
-    struct lys_node *node = NULL;
-    int ret;
-
-    unres = calloc(1, sizeof *unres);
-    LY_CHECK_ERR_GOTO(!unres, LOGMEM(ctx), error);
-
-    module = calloc(1, sizeof *module);
-    LY_CHECK_ERR_GOTO(!module, LOGMEM(ctx), error);
-
-    /* initiale module */
-    module->ctx = ctx;
-    module->type = 0;
-    module->implemented = (implement ? 1 : 0);
-
-    /* add into the list of processed modules */
-    if (lyp_check_circmod_add(module)) {
-        goto error;
-    }
-
-    ret = yang_parse_mem(module, NULL, unres, data, size, &node);
-    if (ret == -1) {
-        if (ly_vecode(ctx) == LYVE_SUBMODULE && !module->name) {
-            /* Remove this module from the list of processed modules,
-               as we're about to free it */
-            lyp_check_circmod_pop(ctx);
-
-            free(module);
-            module = NULL;
-        } else {
-            free_yang_common(module, node);
-        }
-        goto error;
-    } else if (ret == 1) {
-        assert(!unres->count);
-    } else {
-        if (yang_check_sub_module(module, unres, node)) {
-            goto error;
-        }
-
-        if (!implement && module->implemented && lys_make_implemented_r(module, unres)) {
-            goto error;
-        }
-
-        if (unres->count && resolve_unres_schema(module, unres)) {
-            goto error;
-        }
-
-        /* check correctness of includes */
-        if (lyp_check_include_missing(module)) {
-            goto error;
-        }
-    }
-
-    lyp_sort_revisions(module);
-
-    if (lyp_rfn_apply_ext(module) || lyp_deviation_apply_ext(module)) {
-        goto error;
-    }
-
-    if (revision) {
-        /* check revision of the parsed model */
-        if (!module->rev_size || strcmp(revision, module->rev[0].date)) {
-            LOGVRB("Module \"%s\" parsed with the wrong revision (\"%s\" instead \"%s\").",
-                   module->name, module->rev[0].date, revision);
-            goto error;
-        }
-    }
-
-    /* add into context if not already there */
-    if (!ret) {
-        if (lyp_ctx_add_module(module)) {
-            goto error;
-        }
-
-        /* remove our submodules from the parsed submodules list */
-        lyp_del_includedup(module, 0);
-    } else {
-        tmp_mod = module;
-
-        /* get the model from the context */
-        module = (struct lys_module *)ly_ctx_get_module(ctx, module->name, revision, 0);
-        assert(module);
-
-        /* free what was parsed */
-        lys_free(tmp_mod, NULL, 0, 0);
-    }
-
-    unres_schema_free(NULL, &unres, 0);
-    lyp_check_circmod_pop(ctx);
-    LOGVRB("Module \"%s%s%s\" successfully parsed as %s.", module->name, (module->rev_size ? "@" : ""),
-           (module->rev_size ? module->rev[0].date : ""), (module->implemented ? "implemented" : "imported"));
-    return module;
-
-error:
-    /* cleanup */
-    unres_schema_free(module, &unres, 1);
-
-    if (!module) {
-        if (ly_vecode(ctx) != LYVE_SUBMODULE) {
-            LOGERR(ctx, ly_errno, "Module parsing failed.");
-        }
-        return NULL;
-    }
-
-    if (module->name) {
-        LOGERR(ctx, ly_errno, "Module \"%s\" parsing failed.", module->name);
-    } else {
-        LOGERR(ctx, ly_errno, "Module parsing failed.");
-    }
-
-    lyp_check_circmod_pop(ctx);
-    lys_sub_module_remove_devs_augs(module);
-    lyp_del_includedup(module, 1);
-    lys_free(module, NULL, 0, 1);
-    return NULL;
-}
-
-struct lys_submodule *
-yang_read_submodule(struct lys_module *module, const char *data, unsigned int size, struct unres_schema *unres)
-{
-    struct lys_submodule *submodule;
-    struct lys_node *node = NULL;
-
-    submodule = calloc(1, sizeof *submodule);
-    LY_CHECK_ERR_GOTO(!submodule, LOGMEM(module->ctx), error);
-
-    submodule->ctx = module->ctx;
-    submodule->type = 1;
-    submodule->implemented = module->implemented;
-    submodule->belongsto = module;
-
-    /* add into the list of processed modules */
-    if (lyp_check_circmod_add((struct lys_module *)submodule)) {
-        goto error;
-    }
-
-    /* module cannot be changed in this case and 1 cannot be returned */
-    if (yang_parse_mem(module, submodule, unres, data, size, &node)) {
-        free_yang_common((struct lys_module *)submodule, node);
-        goto error;
-    }
-
-    lyp_sort_revisions((struct lys_module *)submodule);
-
-    if (yang_check_sub_module((struct lys_module *)submodule, unres, node)) {
-        goto error;
-    }
-
-    lyp_check_circmod_pop(module->ctx);
-
-    LOGVRB("Submodule \"%s\" successfully parsed.", submodule->name);
-    return submodule;
-
-error:
-    /* cleanup */
-    if (!submodule || !submodule->name) {
-        free(submodule);
-        LOGERR(module->ctx, ly_errno, "Submodule parsing failed.");
-        return NULL;
-    }
-
-    LOGERR(module->ctx, ly_errno, "Submodule \"%s\" parsing failed.", submodule->name);
-
-    unres_schema_free((struct lys_module *)submodule, &unres, 0);
-    lyp_check_circmod_pop(module->ctx);
-    lys_sub_module_remove_devs_augs((struct lys_module *)submodule);
-    lys_submodule_module_data_free(submodule);
-    lys_submodule_free(submodule, NULL);
-    return NULL;
-}
-
-static int
-read_indent(const char *input, int indent, int size, int in_index, int *out_index, char *output)
-{
-    int k = 0, j;
-
-    while (in_index < size) {
-        if (input[in_index] == ' ') {
-            k++;
-        } else if (input[in_index] == '\t') {
-            /* RFC 6020 6.1.3 tab character is treated as 8 space characters */
-            k += 8;
-        } else {
-            break;
-        }
-        ++in_index;
-        if (k >= indent) {
-            for (j = k - indent; j > 0; --j) {
-                ++(*out_index);
-                output[*out_index] = ' ';
-            }
-            break;
-        }
-    }
-    return in_index - 1;
-}
-
-char *
-yang_read_string(struct ly_ctx *ctx, const char *input, char *output, int size, int offset, int indent)
-{
-    int i = 0, out_index = offset, space = 0;
-
-    while (i < size) {
-        switch (input[i]) {
-        case '\n':
-            out_index -= space;
-            output[out_index] = '\n';
-            space = 0;
-            i = read_indent(input, indent, size, i + 1, &out_index, output);
             break;
         case ' ':
+            if (*word_len) {
+                /* word is finished */
+                goto str_end;
+            }
+            MOVE_INPUT(ctx, 1);
+            break;
         case '\t':
-            output[out_index] = input[i];
-            ++space;
+            if (*word_len) {
+                /* word is finished */
+                goto str_end;
+            }
+            /* tabs count for 8 spaces */
+            ctx->indent += Y_TAB_SPACES;
+
+            ++ctx->in->current;
             break;
-        case '\\':
-            space = 0;
-            if (input[i + 1] == 'n') {
-                output[out_index] = '\n';
-            } else if (input[i + 1] == 't') {
-                output[out_index] = '\t';
-            } else if (input[i + 1] == '\\') {
-                output[out_index] = '\\';
-            } else if ((i + 1) != size && input[i + 1] == '"') {
-                output[out_index] = '"';
+        case '\r':
+            if (ctx->in->current[1] != '\n') {
+                LOGVAL_PARSER(ctx, LY_VCODE_INCHAR, ctx->in->current[0]);
+                ret = LY_EVALID;
+                goto error;
+            }
+            MOVE_INPUT(ctx, 1);
+        /* fallthrough */
+        case '\n':
+            if (*word_len) {
+                /* word is finished */
+                goto str_end;
+            }
+            LY_IN_NEW_LINE(ctx->in);
+            MOVE_INPUT(ctx, 1);
+
+            /* reset indent */
+            ctx->indent = 0;
+            break;
+        case ';':
+        case '{':
+            if (*word_len || (arg == Y_MAYBE_STR_ARG)) {
+                /* word is finished */
+                goto str_end;
+            }
+
+            LOGVAL_PARSER(ctx, LY_VCODE_INSTREXP, 1, ctx->in->current, "an argument");
+            ret = LY_EVALID;
+            goto error;
+        case '}':
+            /* invalid - braces cannot be in unquoted string (opening braces terminates the string and can follow it) */
+            LOGVAL_PARSER(ctx, LY_VCODE_INSTREXP, 1, ctx->in->current,
+                    "unquoted string character, optsep, semicolon or opening brace");
+            ret = LY_EVALID;
+            goto error;
+        default:
+            LY_CHECK_GOTO(ret = buf_store_char(ctx, arg, word_p, word_len, word_b, &buf_len, 0, &prefix), error);
+            break;
+        }
+    }
+
+    /* unexpected end of loop */
+    LOGVAL_PARSER(ctx, LY_VCODE_EOF);
+    ret = LY_EVALID;
+    goto error;
+
+str_end:
+    /* terminating NULL byte for buf */
+    if (*word_b) {
+        (*word_b) = ly_realloc(*word_b, (*word_len) + 1);
+        LY_CHECK_ERR_RET(!(*word_b), LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+        (*word_b)[*word_len] = '\0';
+        *word_p = *word_b;
+    }
+
+    return LY_SUCCESS;
+
+error:
+    free(*word_b);
+    *word_b = NULL;
+    return ret;
+}
+
+/**
+ * @brief Get another YANG keyword from the raw data.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[out] kw YANG keyword read.
+ * @param[out] word_p Pointer to the keyword in the data. Useful for extension instances.
+ * @param[out] word_len Length of the keyword in the data. Useful for extension instances.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+get_keyword(struct lys_yang_parser_ctx *ctx, enum ly_stmt *kw, char **word_p, size_t *word_len)
+{
+    uint8_t prefix;
+    const char *word_start;
+    size_t len;
+
+    if (word_p) {
+        *word_p = NULL;
+        *word_len = 0;
+    }
+
+    /* first skip "optsep", comments */
+    while (ctx->in->current[0]) {
+        switch (ctx->in->current[0]) {
+        case '/':
+            if (ctx->in->current[1] == '/') {
+                /* one-line comment */
+                MOVE_INPUT(ctx, 2);
+                LY_CHECK_RET(skip_comment(ctx, 1));
+            } else if (ctx->in->current[1] == '*') {
+                /* block comment */
+                MOVE_INPUT(ctx, 2);
+                LY_CHECK_RET(skip_comment(ctx, 2));
             } else {
-                /* backslash must not be followed by any other character */
-                LOGVAL(ctx, LYE_XML_INCHAR, LY_VLOG_NONE, NULL, input + i);
-                return NULL;
+                /* error - not a comment after all, keyword cannot start with slash */
+                LOGVAL_PARSER(ctx, LYVE_SYNTAX_YANG, "Invalid identifier first character '/'.");
+                return LY_EVALID;
             }
-            ++i;
+            continue;
+        case '\n':
+            /* skip whitespaces (optsep) */
+            LY_IN_NEW_LINE(ctx->in);
+            ctx->indent = 0;
             break;
-        default:
-            output[out_index] = input[i];
-            space = 0;
+        case ' ':
+            /* skip whitespaces (optsep) */
+            ++ctx->indent;
             break;
-        }
-        ++i;
-        ++out_index;
-    }
-    output[out_index] = '\0';
-    if (size != out_index) {
-        output = realloc(output, out_index + 1);
-        LY_CHECK_ERR_RETURN(!output, LOGMEM(ctx), NULL);
-    }
-    return output;
-}
-
-/* free function */
-
-void
-yang_type_free(struct ly_ctx *ctx, struct lys_type *type)
-{
-    struct yang_type *stype = (struct yang_type *)type->der;
-    unsigned int i;
-
-    if (!stype) {
-        return ;
-    }
-    if (type->base == LY_TYPE_DER || type->base == LY_TYPE_UNION) {
-        lydict_remove(ctx, stype->name);
-        if (stype->base == LY_TYPE_IDENT && (!(stype->flags & LYS_NO_ERASE_IDENTITY))) {
-            for (i = 0; i < type->info.ident.count; ++i) {
-                free(type->info.ident.ref[i]);
-            }
-        }
-        if (stype->base == LY_TYPE_UNION) {
-            for (i = 0; i < type->info.uni.count; ++i) {
-                yang_type_free(ctx, &type->info.uni.types[i]);
-            }
-            free(type->info.uni.types);
-            type->base = LY_TYPE_DER;
-        } else {
-            type->base = stype->base;
-        }
-        free(stype);
-        type->der = NULL;
-    }
-    lys_type_free(ctx, type, NULL);
-    memset(type, 0, sizeof (struct lys_type));
-}
-
-static void
-yang_tpdf_free(struct ly_ctx *ctx, struct lys_tpdf *tpdf, uint16_t start, uint16_t size)
-{
-    uint16_t i;
-
-    assert(ctx);
-    if (!tpdf) {
-        return;
-    }
-
-    for (i = start; i < size; ++i) {
-        lydict_remove(ctx, tpdf[i].name);
-        lydict_remove(ctx, tpdf[i].dsc);
-        lydict_remove(ctx, tpdf[i].ref);
-
-        yang_type_free(ctx, &tpdf[i].type);
-
-        lydict_remove(ctx, tpdf[i].units);
-        lydict_remove(ctx, tpdf[i].dflt);
-        lys_extension_instances_free(ctx, tpdf[i].ext, tpdf[i].ext_size, NULL);
-    }
-}
-
-static void
-yang_free_import(struct ly_ctx *ctx, struct lys_import *imp, uint8_t start, uint8_t size)
-{
-    uint8_t i;
-
-    for (i = start; i < size; ++i){
-        free((char *)imp[i].module);
-        lydict_remove(ctx, imp[i].prefix);
-        lydict_remove(ctx, imp[i].dsc);
-        lydict_remove(ctx, imp[i].ref);
-        lys_extension_instances_free(ctx, imp[i].ext, imp[i].ext_size, NULL);
-    }
-}
-
-static void
-yang_free_include(struct ly_ctx *ctx, struct lys_include *inc, uint8_t start, uint8_t size)
-{
-    uint8_t i;
-
-    for (i = start; i < size; ++i){
-        free((char *)inc[i].submodule);
-        lydict_remove(ctx, inc[i].dsc);
-        lydict_remove(ctx, inc[i].ref);
-        lys_extension_instances_free(ctx, inc[i].ext, inc[i].ext_size, NULL);
-    }
-}
-
-static void
-yang_free_ident_base(struct lys_ident *ident, uint32_t start, uint32_t size)
-{
-    uint32_t i;
-    uint8_t j;
-
-    /* free base name */
-    for (i = start; i < size; ++i) {
-        for (j = 0; j < ident[i].base_size; ++j) {
-            free(ident[i].base[j]);
-        }
-    }
-}
-
-static void
-yang_free_grouping(struct ly_ctx *ctx, struct lys_node_grp * grp)
-{
-    yang_tpdf_free(ctx, grp->tpdf, 0, grp->tpdf_size);
-    free(grp->tpdf);
-}
-
-static void
-yang_free_container(struct ly_ctx *ctx, struct lys_node_container * cont)
-{
-    uint8_t i;
-
-    yang_tpdf_free(ctx, cont->tpdf, 0, cont->tpdf_size);
-    free(cont->tpdf);
-    lydict_remove(ctx, cont->presence);
-
-    for (i = 0; i < cont->must_size; ++i) {
-        lys_restr_free(ctx, &cont->must[i], NULL);
-    }
-    free(cont->must);
-
-    lys_when_free(ctx, cont->when, NULL);
-}
-
-static void
-yang_free_leaf(struct ly_ctx *ctx, struct lys_node_leaf *leaf)
-{
-    uint8_t i;
-
-    for (i = 0; i < leaf->must_size; i++) {
-        lys_restr_free(ctx, &leaf->must[i], NULL);
-    }
-    free(leaf->must);
-
-    lys_when_free(ctx, leaf->when, NULL);
-
-    yang_type_free(ctx, &leaf->type);
-    lydict_remove(ctx, leaf->units);
-    lydict_remove(ctx, leaf->dflt);
-}
-
-static void
-yang_free_leaflist(struct ly_ctx *ctx, struct lys_node_leaflist *leaflist)
-{
-    uint8_t i;
-
-    for (i = 0; i < leaflist->must_size; i++) {
-        lys_restr_free(ctx, &leaflist->must[i], NULL);
-    }
-    free(leaflist->must);
-
-    for (i = 0; i < leaflist->dflt_size; i++) {
-        lydict_remove(ctx, leaflist->dflt[i]);
-    }
-    free(leaflist->dflt);
-
-    lys_when_free(ctx, leaflist->when, NULL);
-
-    yang_type_free(ctx, &leaflist->type);
-    lydict_remove(ctx, leaflist->units);
-}
-
-static void
-yang_free_list(struct ly_ctx *ctx, struct lys_node_list *list)
-{
-    uint8_t i;
-
-    yang_tpdf_free(ctx, list->tpdf, 0, list->tpdf_size);
-    free(list->tpdf);
-
-    for (i = 0; i < list->must_size; ++i) {
-        lys_restr_free(ctx, &list->must[i], NULL);
-    }
-    free(list->must);
-
-    lys_when_free(ctx, list->when, NULL);
-
-    for (i = 0; i < list->unique_size; ++i) {
-        free(list->unique[i].expr);
-    }
-    free(list->unique);
-
-    free(list->keys);
-}
-
-static void
-yang_free_choice(struct ly_ctx *ctx, struct lys_node_choice *choice)
-{
-    free(choice->dflt);
-    lys_when_free(ctx, choice->when, NULL);
-}
-
-static void
-yang_free_anydata(struct ly_ctx *ctx, struct lys_node_anydata *anydata)
-{
-    uint8_t i;
-
-    for (i = 0; i < anydata->must_size; ++i) {
-        lys_restr_free(ctx, &anydata->must[i], NULL);
-    }
-    free(anydata->must);
-
-    lys_when_free(ctx, anydata->when, NULL);
-}
-
-static void
-yang_free_inout(struct ly_ctx *ctx, struct lys_node_inout *inout)
-{
-    uint8_t i;
-
-    yang_tpdf_free(ctx, inout->tpdf, 0, inout->tpdf_size);
-    free(inout->tpdf);
-
-    for (i = 0; i < inout->must_size; ++i) {
-        lys_restr_free(ctx, &inout->must[i], NULL);
-    }
-    free(inout->must);
-}
-
-static void
-yang_free_notif(struct ly_ctx *ctx, struct lys_node_notif *notif)
-{
-    uint8_t i;
-
-    yang_tpdf_free(ctx, notif->tpdf, 0, notif->tpdf_size);
-    free(notif->tpdf);
-
-    for (i = 0; i < notif->must_size; ++i) {
-        lys_restr_free(ctx, &notif->must[i], NULL);
-    }
-    free(notif->must);
-}
-
-static void
-yang_free_uses(struct ly_ctx *ctx, struct lys_node_uses *uses)
-{
-    int i, j;
-
-    for (i = 0; i < uses->refine_size; i++) {
-        lydict_remove(ctx, uses->refine[i].target_name);
-        lydict_remove(ctx, uses->refine[i].dsc);
-        lydict_remove(ctx, uses->refine[i].ref);
-
-        for (j = 0; j < uses->refine[i].must_size; j++) {
-            lys_restr_free(ctx, &uses->refine[i].must[j], NULL);
-        }
-        free(uses->refine[i].must);
-
-        for (j = 0; j < uses->refine[i].dflt_size; j++) {
-            lydict_remove(ctx, uses->refine[i].dflt[j]);
-        }
-        free(uses->refine[i].dflt);
-
-        if (uses->refine[i].target_type & LYS_CONTAINER) {
-            lydict_remove(ctx, uses->refine[i].mod.presence);
-        }
-        lys_extension_instances_free(ctx, uses->refine[i].ext, uses->refine[i].ext_size, NULL);
-    }
-    free(uses->refine);
-
-    lys_when_free(ctx, uses->when, NULL);
-}
-
-static void
-yang_free_nodes(struct ly_ctx *ctx, struct lys_node *node)
-{
-    struct lys_node *tmp, *child, *sibling;
-
-    if (!node) {
-        return;
-    }
-    tmp = node;
-
-    while (tmp) {
-        child = tmp->child;
-        sibling = tmp->next;
-        /* common part */
-        lydict_remove(ctx, tmp->name);
-        if (!(tmp->nodetype & (LYS_INPUT | LYS_OUTPUT))) {
-            lys_iffeature_free(ctx, tmp->iffeature, tmp->iffeature_size, 0, NULL);
-            lydict_remove(ctx, tmp->dsc);
-            lydict_remove(ctx, tmp->ref);
-        }
-
-        switch (tmp->nodetype) {
-        case LYS_GROUPING:
-        case LYS_RPC:
-        case LYS_ACTION:
-            yang_free_grouping(ctx, (struct lys_node_grp *)tmp);
+        case '\t':
+            /* skip whitespaces (optsep) */
+            ctx->indent += Y_TAB_SPACES;
             break;
-        case LYS_CONTAINER:
-            yang_free_container(ctx, (struct lys_node_container *)tmp);
-            break;
-        case LYS_LEAF:
-            yang_free_leaf(ctx, (struct lys_node_leaf *)tmp);
-            break;
-        case LYS_LEAFLIST:
-            yang_free_leaflist(ctx, (struct lys_node_leaflist *)tmp);
-            break;
-        case LYS_LIST:
-            yang_free_list(ctx, (struct lys_node_list *)tmp);
-            break;
-        case LYS_CHOICE:
-            yang_free_choice(ctx, (struct lys_node_choice *)tmp);
-            break;
-        case LYS_CASE:
-            lys_when_free(ctx, ((struct lys_node_case *)tmp)->when, NULL);
-            break;
-        case LYS_ANYXML:
-        case LYS_ANYDATA:
-            yang_free_anydata(ctx, (struct lys_node_anydata *)tmp);
-            break;
-        case LYS_INPUT:
-        case LYS_OUTPUT:
-            yang_free_inout(ctx, (struct lys_node_inout *)tmp);
-            break;
-        case LYS_NOTIF:
-            yang_free_notif(ctx, (struct lys_node_notif *)tmp);
-            break;
-        case LYS_USES:
-            yang_free_uses(ctx, (struct lys_node_uses *)tmp);
-            break;
-        default:
-            break;
-        }
-        lys_extension_instances_free(ctx, tmp->ext, tmp->ext_size, NULL);
-        yang_free_nodes(ctx, child);
-        free(tmp);
-        tmp = sibling;
-    }
-}
-
-static void
-yang_free_augment(struct ly_ctx *ctx, struct lys_node_augment *aug)
-{
-    lydict_remove(ctx, aug->target_name);
-    lydict_remove(ctx, aug->dsc);
-    lydict_remove(ctx, aug->ref);
-
-    lys_iffeature_free(ctx, aug->iffeature, aug->iffeature_size, 0, NULL);
-    lys_when_free(ctx, aug->when, NULL);
-    yang_free_nodes(ctx, aug->child);
-    lys_extension_instances_free(ctx, aug->ext, aug->ext_size, NULL);
-}
-
-static void
-yang_free_deviate(struct ly_ctx *ctx, struct lys_deviation *dev, uint index)
-{
-    uint i, j;
-
-    for (i = index; i < dev->deviate_size; ++i) {
-        lydict_remove(ctx, dev->deviate[i].units);
-
-        if (dev->deviate[i].type) {
-            yang_type_free(ctx, dev->deviate[i].type);
-            free(dev->deviate[i].type);
-        }
-
-        for (j = 0; j < dev->deviate[i].dflt_size; ++j) {
-            lydict_remove(ctx, dev->deviate[i].dflt[j]);
-        }
-        free(dev->deviate[i].dflt);
-
-        for (j = 0; j < dev->deviate[i].must_size; ++j) {
-            lys_restr_free(ctx, &dev->deviate[i].must[j], NULL);
-        }
-        free(dev->deviate[i].must);
-
-        for (j = 0; j < dev->deviate[i].unique_size; ++j) {
-            free(dev->deviate[i].unique[j].expr);
-        }
-        free(dev->deviate[i].unique);
-        lys_extension_instances_free(ctx, dev->deviate[i].ext, dev->deviate[i].ext_size, NULL);
-    }
-}
-
-void
-yang_free_ext_data(struct yang_ext_substmt *substmt)
-{
-    int i;
-
-    if (!substmt) {
-        return;
-    }
-
-    free(substmt->ext_substmt);
-    if (substmt->ext_modules) {
-        for (i = 0; substmt->ext_modules[i]; ++i) {
-            free(substmt->ext_modules[i]);
-        }
-        free(substmt->ext_modules);
-    }
-    free(substmt);
-}
-
-/* free common item from module and submodule */
-static void
-free_yang_common(struct lys_module *module, struct lys_node *node)
-{
-    uint i;
-    yang_tpdf_free(module->ctx, module->tpdf, 0, module->tpdf_size);
-    module->tpdf_size = 0;
-    yang_free_ident_base(module->ident, 0, module->ident_size);
-    yang_free_nodes(module->ctx, node);
-    for (i = 0; i < module->augment_size; ++i) {
-        yang_free_augment(module->ctx, &module->augment[i]);
-    }
-    module->augment_size = 0;
-    for (i = 0; i < module->deviation_size; ++i) {
-        yang_free_deviate(module->ctx, &module->deviation[i], 0);
-        free(module->deviation[i].deviate);
-        lydict_remove(module->ctx, module->deviation[i].target_name);
-        lydict_remove(module->ctx, module->deviation[i].dsc);
-        lydict_remove(module->ctx, module->deviation[i].ref);
-    }
-    module->deviation_size = 0;
-}
-
-/* check function*/
-
-int
-yang_check_ext_instance(struct lys_module *module, struct lys_ext_instance ***ext, uint size,
-                        void *parent, struct unres_schema *unres)
-{
-    struct unres_ext *info;
-    uint i;
-
-    for (i = 0; i < size; ++i) {
-        info = malloc(sizeof *info);
-        LY_CHECK_ERR_RETURN(!info, LOGMEM(module->ctx), EXIT_FAILURE);
-        info->data.yang = (*ext)[i]->parent;
-        info->datatype = LYS_IN_YANG;
-        info->parent = parent;
-        info->mod = module;
-        info->parent_type = (*ext)[i]->parent_type;
-        info->substmt = (*ext)[i]->insubstmt;
-        info->substmt_index = (*ext)[i]->insubstmt_index;
-        info->ext_index = i;
-        if (unres_schema_add_node(module, unres, ext, UNRES_EXT, (struct lys_node *)info) == -1) {
-            return EXIT_FAILURE;
-        }
-    }
-
-    return EXIT_SUCCESS;
-}
-
-int
-yang_check_imports(struct lys_module *module, struct unres_schema *unres)
-{
-    struct lys_import *imp;
-    struct lys_include *inc;
-    uint8_t imp_size, inc_size, j = 0, i = 0;
-    char *s;
-
-    imp = module->imp;
-    imp_size = module->imp_size;
-    inc = module->inc;
-    inc_size = module->inc_size;
-
-    if (imp_size) {
-        module->imp = calloc(imp_size, sizeof *module->imp);
-        module->imp_size = 0;
-        LY_CHECK_ERR_GOTO(!module->imp, LOGMEM(module->ctx), error);
-    }
-
-    if (inc_size) {
-        module->inc = calloc(inc_size, sizeof *module->inc);
-        module->inc_size = 0;
-        LY_CHECK_ERR_GOTO(!module->inc, LOGMEM(module->ctx), error);
-    }
-
-    for (i = 0; i < imp_size; ++i) {
-        s = (char *) imp[i].module;
-        imp[i].module = NULL;
-        if (yang_fill_import(module, &imp[i], &module->imp[module->imp_size], s, unres)) {
-            ++i;
-            goto error;
-        }
-    }
-    for (j = 0; j < inc_size; ++j) {
-        s = (char *) inc[j].submodule;
-        inc[j].submodule = NULL;
-        if (yang_fill_include(module, s, &inc[j], unres)) {
-            ++j;
-            goto error;
-        }
-    }
-    free(inc);
-    free(imp);
-
-    return EXIT_SUCCESS;
-
-error:
-    yang_free_import(module->ctx, imp, i, imp_size);
-    yang_free_include(module->ctx, inc, j, inc_size);
-    free(imp);
-    free(inc);
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_iffeatures(struct lys_module *module, void *ptr, void *parent, enum yytokentype type, struct unres_schema *unres)
-{
-    struct lys_iffeature *iffeature;
-    uint8_t *ptr_size, size, i;
-    char *s;
-    int parent_is_feature = 0;
-
-    switch (type) {
-    case FEATURE_KEYWORD:
-        iffeature = ((struct lys_feature *)parent)->iffeature;
-        size = ((struct lys_feature *)parent)->iffeature_size;
-        ptr_size = &((struct lys_feature *)parent)->iffeature_size;
-        parent_is_feature = 1;
-        break;
-    case IDENTITY_KEYWORD:
-        iffeature = ((struct lys_ident *)parent)->iffeature;
-        size = ((struct lys_ident *)parent)->iffeature_size;
-        ptr_size = &((struct lys_ident *)parent)->iffeature_size;
-        break;
-    case ENUM_KEYWORD:
-        iffeature = ((struct lys_type_enum *)ptr)->iffeature;
-        size = ((struct lys_type_enum *)ptr)->iffeature_size;
-        ptr_size = &((struct lys_type_enum *)ptr)->iffeature_size;
-        break;
-    case BIT_KEYWORD:
-        iffeature = ((struct lys_type_bit *)ptr)->iffeature;
-        size = ((struct lys_type_bit *)ptr)->iffeature_size;
-        ptr_size = &((struct lys_type_bit *)ptr)->iffeature_size;
-        break;
-    case REFINE_KEYWORD:
-        iffeature = ((struct lys_refine *)ptr)->iffeature;
-        size = ((struct lys_refine *)ptr)->iffeature_size;
-        ptr_size = &((struct lys_refine *)ptr)->iffeature_size;
-        break;
-    default:
-        iffeature = ((struct lys_node *)parent)->iffeature;
-        size = ((struct lys_node *)parent)->iffeature_size;
-        ptr_size = &((struct lys_node *)parent)->iffeature_size;
-        break;
-    }
-
-    *ptr_size = 0;
-    for (i = 0; i < size; ++i) {
-        s = (char *)iffeature[i].features;
-        iffeature[i].features = NULL;
-        if (yang_fill_iffeature(module, &iffeature[i], parent, s, unres, parent_is_feature)) {
-            *ptr_size = size;
-            return EXIT_FAILURE;
-        }
-        if (yang_check_ext_instance(module, &iffeature[i].ext, iffeature[i].ext_size, &iffeature[i], unres)) {
-            *ptr_size = size;
-            return EXIT_FAILURE;
-        }
-        (*ptr_size)++;
-    }
-
-    return EXIT_SUCCESS;
-}
-
-static int
-yang_check_identityref(struct lys_module *module, struct lys_type *type, struct unres_schema *unres)
-{
-    uint size, i;
-    int rc;
-    struct lys_ident **ref;
-    const char *value;
-    char *expr;
-
-    ref = type->info.ident.ref;
-    size = type->info.ident.count;
-    type->info.ident.count = 0;
-    type->info.ident.ref = NULL;
-    ((struct yang_type *)type->der)->flags |= LYS_NO_ERASE_IDENTITY;
-
-    for (i = 0; i < size; ++i) {
-        expr = (char *)ref[i];
-        /* store in the JSON format */
-        value = transform_schema2json(module, expr);
-        free(expr);
-
-        if (!value) {
-            goto error;
-        }
-        rc = unres_schema_add_str(module, unres, type, UNRES_TYPE_IDENTREF, value);
-        lydict_remove(module->ctx, value);
-
-        if (rc == -1) {
-            goto error;
-        }
-    }
-    free(ref);
-
-    return EXIT_SUCCESS;
-error:
-    for (i = i+1; i < size; ++i) {
-        free(ref[i]);
-    }
-    free(ref);
-    return EXIT_FAILURE;
-}
-
-int
-yang_fill_type(struct lys_module *module, struct lys_type *type, struct yang_type *stype,
-               void *parent, struct unres_schema *unres)
-{
-    unsigned int i, j;
-
-    type->parent = parent;
-    if (yang_check_ext_instance(module, &type->ext, type->ext_size, type, unres)) {
-        return EXIT_FAILURE;
-    }
-    for (j = 0; j < type->ext_size; ++j) {
-        if (type->ext[j]->flags & LYEXT_OPT_VALID) {
-            type->parent->flags |= LYS_VALID_EXT;
-            break;
-        }
-    }
-
-    switch (stype->base) {
-    case LY_TYPE_ENUM:
-        for (i = 0; i < type->info.enums.count; ++i) {
-            if (yang_check_iffeatures(module, &type->info.enums.enm[i], parent, ENUM_KEYWORD, unres)) {
-                return EXIT_FAILURE;
-            }
-            if (yang_check_ext_instance(module, &type->info.enums.enm[i].ext, type->info.enums.enm[i].ext_size,
-                                        &type->info.enums.enm[i], unres)) {
-                return EXIT_FAILURE;
-            }
-            for (j = 0; j < type->info.enums.enm[i].ext_size; ++j) {
-                if (type->info.enums.enm[i].ext[j]->flags & LYEXT_OPT_VALID) {
-                    type->parent->flags |= LYS_VALID_EXT;
-                    break;
-                }
-            }
-        }
-        break;
-    case LY_TYPE_BITS:
-        for (i = 0; i < type->info.bits.count; ++i) {
-            if (yang_check_iffeatures(module, &type->info.bits.bit[i], parent, BIT_KEYWORD, unres)) {
-                return EXIT_FAILURE;
-            }
-            if (yang_check_ext_instance(module, &type->info.bits.bit[i].ext, type->info.bits.bit[i].ext_size,
-                                        &type->info.bits.bit[i], unres)) {
-                return EXIT_FAILURE;
-            }
-            for (j = 0; j < type->info.bits.bit[i].ext_size; ++j) {
-                if (type->info.bits.bit[i].ext[j]->flags & LYEXT_OPT_VALID) {
-                    type->parent->flags |= LYS_VALID_EXT;
-                    break;
-                }
-            }
-        }
-        break;
-    case LY_TYPE_IDENT:
-        if (yang_check_identityref(module, type, unres)) {
-            return EXIT_FAILURE;
-        }
-        break;
-    case LY_TYPE_STRING:
-        if (type->info.str.length) {
-            if (yang_check_ext_instance(module, &type->info.str.length->ext,
-                                        type->info.str.length->ext_size, type->info.str.length, unres)) {
-                return EXIT_FAILURE;
-            }
-            for (j = 0; j < type->info.str.length->ext_size; ++j) {
-                if (type->info.str.length->ext[j]->flags & LYEXT_OPT_VALID) {
-                    type->parent->flags |= LYS_VALID_EXT;
-                    break;
-                }
-            }
-        }
-
-        for (i = 0; i < type->info.str.pat_count; ++i) {
-            if (yang_check_ext_instance(module, &type->info.str.patterns[i].ext, type->info.str.patterns[i].ext_size,
-                                        &type->info.str.patterns[i], unres)) {
-                return EXIT_FAILURE;
-            }
-            for (j = 0; j < type->info.str.patterns[i].ext_size; ++j) {
-                if (type->info.str.patterns[i].ext[j]->flags & LYEXT_OPT_VALID) {
-                    type->parent->flags |= LYS_VALID_EXT;
-                    break;
-                }
-            }
-        }
-        break;
-    case LY_TYPE_DEC64:
-        if (type->info.dec64.range) {
-            if (yang_check_ext_instance(module, &type->info.dec64.range->ext,
-                                        type->info.dec64.range->ext_size, type->info.dec64.range, unres)) {
-                return EXIT_FAILURE;
-            }
-            for (j = 0; j < type->info.dec64.range->ext_size; ++j) {
-                if (type->info.dec64.range->ext[j]->flags & LYEXT_OPT_VALID) {
-                    type->parent->flags |= LYS_VALID_EXT;
-                    break;
-                }
-            }
-        }
-        break;
-    case LY_TYPE_UNION:
-        for (i = 0; i < type->info.uni.count; ++i) {
-            if (yang_fill_type(module, &type->info.uni.types[i], (struct yang_type *)type->info.uni.types[i].der,
-                               parent, unres)) {
-                return EXIT_FAILURE;
-            }
-        }
-        break;
-    default:
-        /* nothing checks */
-        break;
-    }
-    return EXIT_SUCCESS;
-}
-
-int
-yang_check_typedef(struct lys_module *module, struct lys_node *parent, struct unres_schema *unres)
-{
-    struct lys_tpdf *tpdf;
-    uint8_t *ptr_tpdf_size = NULL;
-    uint16_t j, i, tpdf_size, *ptr_tpdf_size16 = NULL;
-
-    if (!parent) {
-        tpdf = module->tpdf;
-        //ptr_tpdf_size = &module->tpdf_size;
-        ptr_tpdf_size16 = &module->tpdf_size;
-    } else {
-        switch (parent->nodetype) {
-        case LYS_GROUPING:
-            tpdf = ((struct lys_node_grp *)parent)->tpdf;
-            ptr_tpdf_size16 = &((struct lys_node_grp *)parent)->tpdf_size;
-            break;
-        case LYS_CONTAINER:
-            tpdf = ((struct lys_node_container *)parent)->tpdf;
-            ptr_tpdf_size16 = &((struct lys_node_container *)parent)->tpdf_size;
-            break;
-        case LYS_LIST:
-            tpdf = ((struct lys_node_list *)parent)->tpdf;
-            ptr_tpdf_size = &((struct lys_node_list *)parent)->tpdf_size;
-            break;
-        case LYS_RPC:
-        case LYS_ACTION:
-            tpdf = ((struct lys_node_rpc_action *)parent)->tpdf;
-            ptr_tpdf_size16 = &((struct lys_node_rpc_action *)parent)->tpdf_size;
-            break;
-        case LYS_INPUT:
-        case LYS_OUTPUT:
-            tpdf = ((struct lys_node_inout *)parent)->tpdf;
-            ptr_tpdf_size16 = &((struct lys_node_inout *)parent)->tpdf_size;
-            break;
-        case LYS_NOTIF:
-            tpdf = ((struct lys_node_notif *)parent)->tpdf;
-            ptr_tpdf_size16 = &((struct lys_node_notif *)parent)->tpdf_size;
-            break;
-        default:
-            LOGINT(module->ctx);
-            return EXIT_FAILURE;
-        }
-    }
-
-    if (ptr_tpdf_size16) {
-        tpdf_size = *ptr_tpdf_size16;
-        *ptr_tpdf_size16 = 0;
-    } else {
-        tpdf_size = *ptr_tpdf_size;
-        *ptr_tpdf_size = 0;
-    }
-
-    for (i = 0; i < tpdf_size; ++i) {
-        if (lyp_check_identifier(module->ctx, tpdf[i].name, LY_IDENT_TYPE, module, parent)) {
-            goto error;
-        }
-
-        if (yang_fill_type(module, &tpdf[i].type, (struct yang_type *)tpdf[i].type.der, &tpdf[i], unres)) {
-            goto error;
-        }
-        if (yang_check_ext_instance(module, &tpdf[i].ext, tpdf[i].ext_size, &tpdf[i], unres)) {
-            goto error;
-        }
-        for (j = 0; j < tpdf[i].ext_size; ++j) {
-            if (tpdf[i].ext[j]->flags & LYEXT_OPT_VALID) {
-                tpdf[i].flags |= LYS_VALID_EXT;
+        case '\r':
+            /* possible CRLF endline */
+            if (ctx->in->current[1] == '\n') {
                 break;
             }
-        }
-        if (unres_schema_add_node(module, unres, &tpdf[i].type, UNRES_TYPE_DER_TPDF, parent) == -1) {
-            goto error;
+        /* fallthrough */
+        default:
+            /* either a keyword start or an invalid character */
+            goto keyword_start;
         }
 
-        if (ptr_tpdf_size16) {
-            (*ptr_tpdf_size16)++;
-        } else {
-            (*ptr_tpdf_size)++;
-        }
-        /* check default value*/
-        if (!(module->ctx->models.flags & LY_CTX_TRUSTED)
-                && unres_schema_add_node(module, unres, &tpdf[i].type, UNRES_TYPEDEF_DFLT, (struct lys_node *)(&tpdf[i].dflt)) == -1)  {
-            ++i;
-            goto error;
-        }
+        ly_in_skip(ctx->in, 1);
     }
 
-    return EXIT_SUCCESS;
+keyword_start:
+    word_start = ctx->in->current;
+    *kw = lysp_match_kw(ctx->in, &ctx->indent);
 
-error:
-    yang_tpdf_free(module->ctx, tpdf, i, tpdf_size);
-    return EXIT_FAILURE;
-}
+    if (*kw == LY_STMT_SYNTAX_SEMICOLON) {
+        goto success;
+    } else if (*kw == LY_STMT_SYNTAX_LEFT_BRACE) {
+        ctx->depth++;
+        if (ctx->depth > LY_MAX_BLOCK_DEPTH) {
+            LOGERR(ctx->parsed_mod->mod->ctx, LY_EINVAL,
+                    "The maximum number of block nestings has been exceeded.");
+            return LY_EINVAL;
+        }
+        goto success;
+    } else if (*kw == LY_STMT_SYNTAX_RIGHT_BRACE) {
+        ctx->depth--;
+        goto success;
+    }
 
-static int
-yang_check_identities(struct lys_module *module, struct unres_schema *unres)
-{
-    uint32_t i, size, base_size;
-    uint8_t j;
-
-    size = module->ident_size;
-    module->ident_size = 0;
-    for (i = 0; i < size; ++i) {
-        base_size = module->ident[i].base_size;
-        module->ident[i].base_size = 0;
-        for (j = 0; j < base_size; ++j) {
-            if (yang_read_base(module, &module->ident[i], (char *)module->ident[i].base[j], unres)) {
-                ++j;
-                module->ident_size = size;
-                goto error;
+    if (*kw != LY_STMT_NONE) {
+        /* make sure we have the whole keyword */
+        switch (ctx->in->current[0]) {
+        case '\r':
+            if (ctx->in->current[1] != '\n') {
+                LOGVAL_PARSER(ctx, LY_VCODE_INCHAR, ctx->in->current[0]);
+                return LY_EVALID;
             }
-        }
-        module->ident_size++;
-        if (yang_check_iffeatures(module, NULL, &module->ident[i], IDENTITY_KEYWORD, unres)) {
-            goto error;
-        }
-        if (yang_check_ext_instance(module, &module->ident[i].ext, module->ident[i].ext_size, &module->ident[i], unres)) {
-            goto error;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    for (; j< module->ident[i].base_size; ++j) {
-        free(module->ident[i].base[j]);
-    }
-    yang_free_ident_base(module->ident, i + 1, size);
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_must(struct lys_module *module, struct lys_restr *must, uint size, struct unres_schema *unres)
-{
-    uint i;
-
-    for (i = 0; i < size; ++i) {
-        if (yang_check_ext_instance(module, &must[i].ext, must[i].ext_size, &must[i], unres)) {
-            return EXIT_FAILURE;
-        }
-    }
-    return EXIT_SUCCESS;
-}
-
-static int
-yang_check_container(struct lys_module *module, struct lys_node_container *cont, struct lys_node **child,
-                     int options, struct unres_schema *unres)
-{
-    if (yang_check_typedef(module, (struct lys_node *)cont, unres)) {
-        goto error;
-    }
-
-    if (yang_check_iffeatures(module, NULL, cont, CONTAINER_KEYWORD, unres)) {
-        goto error;
-    }
-
-    if (yang_check_nodes(module, (struct lys_node *)cont, *child, options, unres)) {
-        *child = NULL;
-        goto error;
-    }
-    *child = NULL;
-
-    if (cont->when && yang_check_ext_instance(module, &cont->when->ext, cont->when->ext_size, cont->when, unres)) {
-        goto error;
-    }
-    if (yang_check_must(module, cont->must, cont->must_size, unres)) {
-        goto error;
-    }
-
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && (cont->when || cont->must_size)) {
-        if (options & LYS_PARSE_OPT_INGRP) {
-            if (lyxp_node_check_syntax((struct lys_node *)cont)) {
-                goto error;
-            }
-        } else {
-            if (unres_schema_add_node(module, unres, cont, UNRES_XPATH, NULL) == -1) {
-                goto error;
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-error:
-
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_leaf(struct lys_module *module, struct lys_node_leaf *leaf, int options, struct unres_schema *unres)
-{
-    if (yang_fill_type(module, &leaf->type, (struct yang_type *)leaf->type.der, leaf, unres)) {
-        yang_type_free(module->ctx, &leaf->type);
-        goto error;
-    }
-    if (yang_check_iffeatures(module, NULL, leaf, LEAF_KEYWORD, unres)) {
-        yang_type_free(module->ctx, &leaf->type);
-        goto error;
-    }
-
-    if (unres_schema_add_node(module, unres, &leaf->type, UNRES_TYPE_DER, (struct lys_node *)leaf) == -1) {
-        yang_type_free(module->ctx, &leaf->type);
-        goto error;
-    }
-
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) &&
-            (unres_schema_add_node(module, unres, &leaf->type, UNRES_TYPE_DFLT, (struct lys_node *)&leaf->dflt) == -1)) {
-        goto error;
-    }
-
-    if (leaf->when && yang_check_ext_instance(module, &leaf->when->ext, leaf->when->ext_size, leaf->when, unres)) {
-        goto error;
-    }
-    if (yang_check_must(module, leaf->must, leaf->must_size, unres)) {
-        goto error;
-    }
-
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && (leaf->when || leaf->must_size)) {
-        if (options & LYS_PARSE_OPT_INGRP) {
-            if (lyxp_node_check_syntax((struct lys_node *)leaf)) {
-                goto error;
-            }
-        } else {
-            if (unres_schema_add_node(module, unres, leaf, UNRES_XPATH, NULL) == -1) {
-                goto error;
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_leaflist(struct lys_module *module, struct lys_node_leaflist *leaflist, int options,
-                    struct unres_schema *unres)
-{
-    int i, j;
-
-    if (yang_fill_type(module, &leaflist->type, (struct yang_type *)leaflist->type.der, leaflist, unres)) {
-        yang_type_free(module->ctx, &leaflist->type);
-        goto error;
-    }
-    if (yang_check_iffeatures(module, NULL, leaflist, LEAF_LIST_KEYWORD, unres)) {
-        yang_type_free(module->ctx, &leaflist->type);
-        goto error;
-    }
-
-    if (unres_schema_add_node(module, unres, &leaflist->type, UNRES_TYPE_DER, (struct lys_node *)leaflist) == -1) {
-        yang_type_free(module->ctx, &leaflist->type);
-        goto error;
-    }
-
-    for (i = 0; i < leaflist->dflt_size; ++i) {
-        /* check for duplicity in case of configuration data,
-         * in case of status data duplicities are allowed */
-        if (leaflist->flags & LYS_CONFIG_W) {
-            for (j = i +1; j < leaflist->dflt_size; ++j) {
-                if (ly_strequal(leaflist->dflt[i], leaflist->dflt[j], 1)) {
-                    LOGVAL(module->ctx, LYE_INARG, LY_VLOG_LYS, leaflist, leaflist->dflt[i], "default");
-                    LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_LYS, leaflist, "Duplicated default value \"%s\".", leaflist->dflt[i]);
-                    goto error;
-                }
-            }
-        }
-        /* check default value (if not defined, there still could be some restrictions
-         * that need to be checked against a default value from a derived type) */
-        if (!(module->ctx->models.flags & LY_CTX_TRUSTED) &&
-                (unres_schema_add_node(module, unres, &leaflist->type, UNRES_TYPE_DFLT,
-                                       (struct lys_node *)(&leaflist->dflt[i])) == -1)) {
-            goto error;
-        }
-    }
-
-    if (leaflist->when && yang_check_ext_instance(module, &leaflist->when->ext, leaflist->when->ext_size, leaflist->when, unres)) {
-        goto error;
-    }
-    if (yang_check_must(module, leaflist->must, leaflist->must_size, unres)) {
-        goto error;
-    }
-
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && (leaflist->when || leaflist->must_size)) {
-        if (options & LYS_PARSE_OPT_INGRP) {
-            if (lyxp_node_check_syntax((struct lys_node *)leaflist)) {
-                goto error;
-            }
-        } else {
-            if (unres_schema_add_node(module, unres, leaflist, UNRES_XPATH, NULL) == -1) {
-                goto error;
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_list(struct lys_module *module, struct lys_node_list *list, struct lys_node **child,
-                int options, struct unres_schema *unres)
-{
-    struct lys_node *node;
-
-    if (yang_check_typedef(module, (struct lys_node *)list, unres)) {
-        goto error;
-    }
-
-    if (yang_check_iffeatures(module, NULL, list, LIST_KEYWORD, unres)) {
-        goto error;
-    }
-
-    if (list->flags & LYS_CONFIG_R) {
-        /* RFC 6020, 7.7.5 - ignore ordering when the list represents state data
-         * ignore oredering MASK - 0x7F
-         */
-        list->flags &= 0x7F;
-    }
-    /* check - if list is configuration, key statement is mandatory
-     * (but only if we are not in a grouping or augment, then the check is deferred) */
-    for (node = (struct lys_node *)list; node && !(node->nodetype & (LYS_GROUPING | LYS_AUGMENT | LYS_EXT)); node = node->parent);
-    if (!node && (list->flags & LYS_CONFIG_W) && !list->keys) {
-        LOGVAL(module->ctx, LYE_MISSCHILDSTMT, LY_VLOG_LYS, list, "key", "list");
-        goto error;
-    }
-
-    if (yang_check_nodes(module, (struct lys_node *)list, *child, options, unres)) {
-        *child = NULL;
-        goto error;
-    }
-    *child = NULL;
-
-    if (list->keys && yang_read_key(module, list, unres)) {
-        goto error;
-    }
-
-    if (yang_read_unique(module, list, unres)) {
-        goto error;
-    }
-
-    if (list->when && yang_check_ext_instance(module, &list->when->ext, list->when->ext_size, list->when, unres)) {
-        goto error;
-    }
-    if (yang_check_must(module, list->must, list->must_size, unres)) {
-        goto error;
-    }
-
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && (list->when || list->must_size)) {
-        if (options & LYS_PARSE_OPT_INGRP) {
-            if (lyxp_node_check_syntax((struct lys_node *)list)) {
-                goto error;
-            }
-        } else {
-            if (unres_schema_add_node(module, unres, list, UNRES_XPATH, NULL) == -1) {
-                goto error;
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_choice(struct lys_module *module, struct lys_node_choice *choice, struct lys_node **child,
-                  int options, struct unres_schema *unres)
-{
-    char *value;
-
-    if (yang_check_iffeatures(module, NULL, choice, CHOICE_KEYWORD, unres)) {
-        free(choice->dflt);
-        choice->dflt = NULL;
-        goto error;
-    }
-
-    if (yang_check_nodes(module, (struct lys_node *)choice, *child, options, unres)) {
-        *child = NULL;
-        free(choice->dflt);
-        choice->dflt = NULL;
-        goto error;
-    }
-    *child = NULL;
-
-    if (choice->dflt) {
-        value = (char *)choice->dflt;
-        choice->dflt = NULL;
-        if (unres_schema_add_str(module, unres, choice, UNRES_CHOICE_DFLT, value) == -1) {
-            free(value);
-            goto error;
-        }
-        free(value);
-    }
-
-    if (choice->when && yang_check_ext_instance(module, &choice->when->ext, choice->when->ext_size, choice->when, unres)) {
-        goto error;
-    }
-
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && choice->when) {
-        if (options & LYS_PARSE_OPT_INGRP) {
-            if (lyxp_node_check_syntax((struct lys_node *)choice)) {
-                goto error;
-            }
-        } else {
-            if (unres_schema_add_node(module, unres, choice, UNRES_XPATH, NULL) == -1) {
-                goto error;
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_rpc_action(struct lys_module *module, struct lys_node_rpc_action *rpc, struct lys_node **child,
-                      int options, struct unres_schema *unres)
-{
-    if (yang_check_typedef(module, (struct lys_node *)rpc, unres)) {
-        goto error;
-    }
-
-    if (yang_check_iffeatures(module, NULL, rpc, RPC_KEYWORD, unres)) {
-        goto error;
-    }
-
-    if (yang_check_nodes(module, (struct lys_node *)rpc, *child, options | LYS_PARSE_OPT_CFG_IGNORE, unres)) {
-        *child = NULL;
-        goto error;
-    }
-    *child = NULL;
-
-    if (!(rpc->child->flags & LYS_IMPLICIT) && !rpc->child->child) {
-        LOGVAL(module->ctx, LYE_MISSCHILDSTMT, LY_VLOG_LYS, rpc->child, "schema-node", strnodetype(rpc->child->nodetype));
-        goto error;
-    } else if (!(rpc->child->next->flags & LYS_IMPLICIT) && !rpc->child->next->child) {
-        LOGVAL(module->ctx, LYE_MISSCHILDSTMT, LY_VLOG_LYS, rpc->child->next, "schema-node", strnodetype(rpc->child->next->nodetype));
-        goto error;
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_notif(struct lys_module *module, struct lys_node_notif *notif, struct lys_node **child,
-                 int options, struct unres_schema *unres)
-{
-    if (yang_check_typedef(module, (struct lys_node *)notif, unres)) {
-        goto error;
-    }
-
-    if (yang_check_iffeatures(module, NULL, notif, NOTIFICATION_KEYWORD, unres)) {
-        goto error;
-    }
-
-    if (yang_check_nodes(module, (struct lys_node *)notif, *child, options | LYS_PARSE_OPT_CFG_IGNORE, unres)) {
-        *child = NULL;
-        goto error;
-    }
-    *child = NULL;
-
-    if (yang_check_must(module, notif->must, notif->must_size, unres)) {
-        goto error;
-    }
-
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && notif->must_size) {
-        if (options & LYS_PARSE_OPT_INGRP) {
-            if (lyxp_node_check_syntax((struct lys_node *)notif)) {
-                goto error;
-            }
-        } else {
-            if (unres_schema_add_node(module, unres, notif, UNRES_XPATH, NULL) == -1) {
-                goto error;
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_augment(struct lys_module *module, struct lys_node_augment *augment, int options, struct unres_schema *unres)
-{
-    struct lys_node *child;
-
-    child = augment->child;
-    augment->child = NULL;
-
-    if (yang_check_iffeatures(module, NULL, augment, AUGMENT_KEYWORD, unres)) {
-        yang_free_nodes(module->ctx, child);
-        goto error;
-    }
-
-    if (yang_check_nodes(module, (struct lys_node *)augment, child, options, unres)) {
-        goto error;
-    }
-
-    if (yang_check_ext_instance(module, &augment->ext, augment->ext_size, augment, unres)) {
-        goto error;
-    }
-
-    if (augment->when && yang_check_ext_instance(module, &augment->when->ext, augment->when->ext_size, augment->when, unres)) {
-        goto error;
-    }
-
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && augment->when) {
-        if (options & LYS_PARSE_OPT_INGRP) {
-            if (lyxp_node_check_syntax((struct lys_node *)augment)) {
-                goto error;
-            }
-        } else {
-            if (unres_schema_add_node(module, unres, augment, UNRES_XPATH, NULL) == -1) {
-                goto error;
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_uses(struct lys_module *module, struct lys_node_uses *uses, int options, struct unres_schema *unres)
-{
-    uint i, size;
-
-    size = uses->augment_size;
-    uses->augment_size = 0;
-
-    if (yang_check_iffeatures(module, NULL, uses, USES_KEYWORD, unres)) {
-        goto error;
-    }
-
-    for (i = 0; i < uses->refine_size; ++i) {
-        if (yang_check_iffeatures(module, &uses->refine[i], uses, REFINE_KEYWORD, unres)) {
-            goto error;
-        }
-        if (yang_check_must(module, uses->refine[i].must, uses->refine[i].must_size, unres)) {
-            goto error;
-        }
-        if (yang_check_ext_instance(module, &uses->refine[i].ext, uses->refine[i].ext_size, &uses->refine[i], unres)) {
-            goto error;
-        }
-    }
-
-    for (i = 0; i < size; ++i) {
-        uses->augment_size++;
-        if (yang_check_augment(module, &uses->augment[i], options, unres)) {
-            goto error;
-        }
-    }
-
-    if (unres_schema_add_node(module, unres, uses, UNRES_USES, NULL) == -1) {
-        goto error;
-    }
-
-    if (uses->when && yang_check_ext_instance(module, &uses->when->ext, uses->when->ext_size, uses->when, unres)) {
-        goto error;
-    }
-
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && uses->when) {
-        if (options & LYS_PARSE_OPT_INGRP) {
-            if (lyxp_node_check_syntax((struct lys_node *)uses)) {
-                goto error;
-            }
-        } else {
-            if (unres_schema_add_node(module, unres, uses, UNRES_XPATH, NULL) == -1) {
-                goto error;
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    for (i = uses->augment_size; i < size; ++i) {
-        yang_free_augment(module->ctx, &uses->augment[i]);
-    }
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_anydata(struct lys_module *module, struct lys_node_anydata *anydata, struct lys_node **child,
-                   int options, struct unres_schema *unres)
-{
-    if (yang_check_iffeatures(module, NULL, anydata, ANYDATA_KEYWORD, unres)) {
-        goto error;
-    }
-
-    if (yang_check_nodes(module, (struct lys_node *)anydata, *child, options, unres)) {
-        *child = NULL;
-        goto error;
-    }
-    *child = NULL;
-
-    if (anydata->when && yang_check_ext_instance(module, &anydata->when->ext, anydata->when->ext_size, anydata->when, unres)) {
-        goto error;
-    }
-    if (yang_check_must(module, anydata->must, anydata->must_size, unres)) {
-        goto error;
-    }
-
-    /* check XPath dependencies */
-    if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && (anydata->when || anydata->must_size)) {
-        if (options & LYS_PARSE_OPT_INGRP) {
-            if (lyxp_node_check_syntax((struct lys_node *)anydata)) {
-                goto error;
-            }
-        } else {
-            if (unres_schema_add_node(module, unres, anydata, UNRES_XPATH, NULL) == -1) {
-                goto error;
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_nodes(struct lys_module *module, struct lys_node *parent, struct lys_node *nodes,
-                 int options, struct unres_schema *unres)
-{
-    struct lys_node *node = nodes, *sibling, *child;
-    int i;
-
-    while (node) {
-        sibling = node->next;
-        child = node->child;
-        node->next = NULL;
-        node->child = NULL;
-        node->parent = NULL;
-        node->prev = node;
-
-        if (lys_node_addchild(parent, module->type ? ((struct lys_submodule *)module)->belongsto: module, node, 0) ||
-            check_status_flag(node, parent)) {
-            lys_node_unlink(node);
-            yang_free_nodes(module->ctx, node);
-            goto error;
-        }
-        if (node->parent != parent) {
-            assert(node->parent->parent == parent);
-            assert((node->parent->nodetype == LYS_CASE) && (node->parent->flags & LYS_IMPLICIT));
-            store_config_flag(node->parent, options);
-        }
-        store_config_flag(node, options);
-        if (yang_check_ext_instance(module, &node->ext, node->ext_size, node, unres)) {
-            goto error;
-        }
-        for (i = 0; i < node->ext_size; ++i) {
-            if (node->ext[i]->flags & LYEXT_OPT_VALID) {
-                node->flags |= LYS_VALID_EXT;
-                if (node->ext[i]->flags & LYEXT_OPT_VALID_SUBTREE) {
-                    node->flags |= LYS_VALID_EXT_SUBTREE;
-                    break;
-                }
-            }
-        }
-
-        switch (node->nodetype) {
-        case LYS_GROUPING:
-            if (yang_check_typedef(module, node, unres)) {
-                goto error;
-            }
-            if (yang_check_iffeatures(module, NULL, node, GROUPING_KEYWORD, unres)) {
-                goto error;
-            }
-            if (yang_check_nodes(module, node, child, options | LYS_PARSE_OPT_INGRP, unres)) {
-                child = NULL;
-                goto error;
-            }
+            MOVE_INPUT(ctx, 1);
+        /* fallthrough */
+        case '\n':
+        case '\t':
+        case ' ':
+            /* mandatory "sep" is just checked, not eaten so nothing in the context is updated */
             break;
-        case LYS_CONTAINER:
-            if (yang_check_container(module, (struct lys_node_container *)node, &child, options, unres)) {
-                goto error;
+        case ':':
+            /* keyword is not actually a keyword, but prefix of an extension.
+             * To avoid repeated check of the prefix syntax, move to the point where the colon was read
+             * and we will be checking the keyword (extension instance) itself */
+            prefix = 1;
+            MOVE_INPUT(ctx, 1);
+            goto extension;
+        case '{':
+            /* allowed only for input and output statements which can be without arguments */
+            if ((*kw == LY_STMT_INPUT) || (*kw == LY_STMT_OUTPUT)) {
+                break;
             }
-            break;
-        case LYS_LEAF:
-            if (yang_check_leaf(module, (struct lys_node_leaf *)node, options, unres)) {
-                child = NULL;
-                goto error;
-            }
-            break;
-        case LYS_LEAFLIST:
-            if (yang_check_leaflist(module, (struct lys_node_leaflist *)node, options, unres)) {
-                child = NULL;
-                goto error;
-            }
-            break;
-        case LYS_LIST:
-            if (yang_check_list(module, (struct lys_node_list *)node, &child, options, unres)) {
-                goto error;
-            }
-            break;
-        case LYS_CHOICE:
-            if (yang_check_choice(module, (struct lys_node_choice *)node, &child, options, unres)) {
-                goto error;
-            }
-            break;
-        case LYS_CASE:
-            if (yang_check_iffeatures(module, NULL, node, CASE_KEYWORD, unres)) {
-                goto error;
-            }
-            if (yang_check_nodes(module, node, child, options, unres)) {
-                child = NULL;
-                goto error;
-            }
-            if (((struct lys_node_case *)node)->when) {
-                if (yang_check_ext_instance(module, &((struct lys_node_case *)node)->when->ext,
-                        ((struct lys_node_case *)node)->when->ext_size, ((struct lys_node_case *)node)->when, unres)) {
-                    goto error;
-                }
-                /* check XPath dependencies */
-                if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && (options & LYS_PARSE_OPT_INGRP)) {
-                    if (lyxp_node_check_syntax(node)) {
-                        goto error;
-                    }
-                } else {
-                    if (unres_schema_add_node(module, unres, node, UNRES_XPATH, NULL) == -1) {
-                        goto error;
-                    }
-                }
-            }
-            break;
-        case LYS_ANYDATA:
-        case LYS_ANYXML:
-            if (yang_check_anydata(module, (struct lys_node_anydata *)node, &child, options, unres)) {
-                goto error;
-            }
-            break;
-        case LYS_RPC:
-        case LYS_ACTION:
-            if (yang_check_rpc_action(module, (struct lys_node_rpc_action *)node, &child, options, unres)){
-                goto error;
-            }
-            break;
-        case LYS_INPUT:
-        case LYS_OUTPUT:
-            if (yang_check_typedef(module, node, unres)) {
-                goto error;
-            }
-            if (yang_check_nodes(module, node, child, options, unres)) {
-                child = NULL;
-                goto error;
-            }
-            if (((struct lys_node_inout *)node)->must_size) {
-                if (yang_check_must(module, ((struct lys_node_inout *)node)->must, ((struct lys_node_inout *)node)->must_size, unres)) {
-                    goto error;
-                }
-                /* check XPath dependencies */
-                if (!(module->ctx->models.flags & LY_CTX_TRUSTED) && (options & LYS_PARSE_OPT_INGRP)) {
-                    if (lyxp_node_check_syntax(node)) {
-                        goto error;
-                    }
-                } else {
-                    if (unres_schema_add_node(module, unres, node, UNRES_XPATH, NULL) == -1) {
-                        goto error;
-                    }
-                }
-            }
-            break;
-        case LYS_NOTIF:
-            if (yang_check_notif(module, (struct lys_node_notif *)node, &child, options, unres)) {
-                goto error;
-            }
-            break;
-        case LYS_USES:
-            if (yang_check_uses(module, (struct lys_node_uses *)node, options, unres)) {
-                child = NULL;
-                goto error;
-            }
+        /* fall through */
+        default:
+            MOVE_INPUT(ctx, 1);
+            LOGVAL_PARSER(ctx, LY_VCODE_INSTREXP, (int)(ctx->in->current - word_start), word_start,
+                    "a keyword followed by a separator");
+            return LY_EVALID;
+        }
+    } else {
+        /* still can be an extension */
+        prefix = 0;
+
+extension:
+        while (ctx->in->current[0] && (ctx->in->current[0] != ' ') && (ctx->in->current[0] != '\t') &&
+                (ctx->in->current[0] != '\n') && (ctx->in->current[0] != '\r') && (ctx->in->current[0] != '{') &&
+                (ctx->in->current[0] != ';')) {
+            uint32_t c = 0;
+
+            LY_CHECK_ERR_RET(ly_getutf8(&ctx->in->current, &c, &len),
+                    LOGVAL_PARSER(ctx, LY_VCODE_INCHAR, ctx->in->current[-len]), LY_EVALID);
+            ++ctx->indent;
+            /* check character validity */
+            LY_CHECK_RET(lysp_check_identifierchar((struct lys_parser_ctx *)ctx, c,
+                    ctx->in->current - len == word_start ? 1 : 0, &prefix));
+        }
+        if (!ctx->in->current[0]) {
+            LOGVAL_PARSER(ctx, LY_VCODE_EOF);
+            return LY_EVALID;
+        }
+
+        /* prefix is mandatory for extension instances */
+        if (prefix != 2) {
+            LOGVAL_PARSER(ctx, LY_VCODE_INSTREXP, (int)(ctx->in->current - word_start), word_start, "a keyword");
+            return LY_EVALID;
+        }
+
+        *kw = LY_STMT_EXTENSION_INSTANCE;
+    }
+
+success:
+    if (word_p) {
+        *word_p = (char *)word_start;
+        *word_len = ctx->in->current - word_start;
+    }
+
+    return LY_SUCCESS;
+}
+
+/**
+ * @brief Parse extension instance substatements.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] kw Statement keyword value matching @p word value.
+ * @param[in] word Extension instance substatement name (keyword).
+ * @param[in] word_len Extension instance substatement name length.
+ * @param[in,out] child Children of this extension instance to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_ext_substmt(struct lys_yang_parser_ctx *ctx, enum ly_stmt kw, char *word, size_t word_len,
+        struct lysp_stmt **child)
+{
+    char *buf;
+    LY_ERR ret = LY_SUCCESS;
+    enum ly_stmt child_kw;
+    struct lysp_stmt *stmt, *par_child;
+
+    stmt = calloc(1, sizeof *stmt);
+    LY_CHECK_ERR_RET(!stmt, LOGMEM(NULL), LY_EMEM);
+
+    /* insert into parent statements */
+    if (!*child) {
+        *child = stmt;
+    } else {
+        for (par_child = *child; par_child->next; par_child = par_child->next) {}
+        par_child->next = stmt;
+    }
+
+    /* statement */
+    LY_CHECK_RET(lydict_insert(PARSER_CTX(ctx), word, word_len, &stmt->stmt));
+
+    /* get optional argument */
+    LY_CHECK_RET(get_argument(ctx, Y_MAYBE_STR_ARG, &stmt->flags, &word, &buf, &word_len));
+    if (word) {
+        INSERT_WORD_RET(ctx, buf, stmt->arg, word, word_len);
+    }
+
+    stmt->format = LY_VALUE_SCHEMA;
+    stmt->prefix_data = ctx->parsed_mod;
+    stmt->kw = kw;
+
+    YANG_READ_SUBSTMT_FOR(ctx, child_kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        LY_CHECK_RET(parse_ext_substmt(ctx, child_kw, word, word_len, &stmt->child));
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse extension instance.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] ext_name Extension instance substatement name (keyword).
+ * @param[in] ext_name_len Extension instance substatement name length.
+ * @param[in] insubstmt The statement this extension instance is a substatement of.
+ * @param[in] insubstmt_index Index of the keyword instance this extension instance is a substatement of.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_ext(struct lys_yang_parser_ctx *ctx, const char *ext_name, size_t ext_name_len, enum ly_stmt insubstmt,
+        LY_ARRAY_COUNT_TYPE insubstmt_index, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    struct lysp_ext_instance *e;
+    enum ly_stmt kw;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *exts, e, LY_EMEM);
+
+    if (!ly_strnchr(ext_name, ':', ext_name_len)) {
+        LOGVAL_PARSER(ctx, LYVE_SYNTAX, "Extension instance \"%*.s\" without the mandatory prefix.", ext_name_len, ext_name);
+        return LY_EVALID;
+    }
+
+    /* store name */
+    LY_CHECK_RET(lydict_insert(PARSER_CTX(ctx), ext_name, ext_name_len, &e->name));
+
+    /* get optional argument */
+    LY_CHECK_RET(get_argument(ctx, Y_MAYBE_STR_ARG, NULL, &word, &buf, &word_len));
+    if (word) {
+        INSERT_WORD_RET(ctx, buf, e->argument, word, word_len);
+    }
+
+    /* store the rest of information */
+    e->format = LY_VALUE_SCHEMA;
+    e->parsed = NULL;
+    e->prefix_data = ctx->parsed_mod;
+    e->parent_stmt = insubstmt;
+    e->parent_stmt_index = insubstmt_index;
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        LY_CHECK_RET(parse_ext_substmt(ctx, kw, word, word_len, &e->child));
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse a generic text field without specific constraints. Those are contact, organization,
+ * description, etc...
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] substmt Type of this substatement.
+ * @param[in] substmt_index Index of this substatement.
+ * @param[in,out] value Place to store the parsed value.
+ * @param[in] arg Type of the YANG keyword argument (of the value).
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_text_field(struct lys_yang_parser_ctx *ctx, enum ly_stmt substmt, uint32_t substmt_index,
+        const char **value, enum yang_arg arg, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    if (*value) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, ly_stmt2str(substmt));
+        return LY_EVALID;
+    }
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, arg, NULL, &word, &buf, &word_len));
+
+    /* store value and spend buf if allocated */
+    INSERT_WORD_RET(ctx, buf, *value, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, substmt, substmt_index, exts));
             break;
         default:
-            LOGINT(module->ctx);
-            goto error;
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), ly_stmt2str(substmt));
+            return LY_EVALID;
         }
-        node = sibling;
     }
-
-    return EXIT_SUCCESS;
-
-error:
-    yang_free_nodes(module->ctx, sibling);
-    yang_free_nodes(module->ctx, child);
-    return EXIT_FAILURE;
+    return ret;
 }
 
-static int
-yang_check_deviate(struct lys_module *module, struct unres_schema *unres, struct lys_deviate *deviate,
-                   struct lys_node *dev_target, struct ly_set *dflt_check)
+/**
+ * @brief Parse the yang-version statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[out] version Storage for the parsed information.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_yangversion(struct lys_yang_parser_ctx *ctx, uint8_t *version, struct lysp_ext_instance **exts)
 {
-    struct lys_node_leaflist *llist;
-    struct lys_type *type;
-    struct lys_tpdf *tmp_parent;
-    int i, j;
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
 
-    if (yang_check_ext_instance(module, &deviate->ext, deviate->ext_size, deviate, unres)) {
-        goto error;
-    }
-    if (deviate->must_size && yang_check_deviate_must(module, unres, deviate, dev_target)) {
-        goto error;
-    }
-    if (deviate->unique && yang_check_deviate_unique(module, deviate, dev_target)) {
-        goto error;
-    }
-    if (deviate->dflt_size) {
-        if (yang_read_deviate_default(module, deviate, dev_target, dflt_check)) {
-            goto error;
-        }
-        if (dev_target->nodetype == LYS_LEAFLIST && deviate->mod == LY_DEVIATE_DEL) {
-            /* consolidate the final list in the target after removing items from it */
-            llist = (struct lys_node_leaflist *)dev_target;
-            for (i = j = 0; j < llist->dflt_size; j++) {
-                llist->dflt[i] = llist->dflt[j];
-                if (llist->dflt[i]) {
-                    i++;
-                }
-            }
-            llist->dflt_size = i + 1;
-        }
+    if (*version) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "yang-version");
+        return LY_EVALID;
     }
 
-    if (deviate->max_set && yang_read_deviate_minmax(deviate, dev_target, deviate->max, 1)) {
-        goto error;
-    }
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
 
-    if (deviate->min_set && yang_read_deviate_minmax(deviate, dev_target, deviate->min, 0)) {
-        goto error;
-    }
-
-    if (deviate->units && yang_read_deviate_units(module->ctx, deviate, dev_target)) {
-        goto error;
-    }
-
-    if ((deviate->flags & LYS_CONFIG_MASK)) {
-        /* cannot add if it was explicitly set */
-        if ((deviate->mod == LY_DEVIATE_ADD) && (dev_target->flags & LYS_CONFIG_SET)) {
-            LOGVAL(module->ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "config");
-            LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Adding property that already exists.");
-            goto error;
-        } else if ((deviate->mod == LY_DEVIATE_RPL) && !(dev_target->flags & LYS_CONFIG_SET)) {
-            LOGVAL(module->ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "config");
-            LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Replacing a property that does not exist.");
-            goto error;
-        }
-
-        /* add and replace are the same in this case */
-        /* remove current config value of the target ... */
-        dev_target->flags &= ~LYS_CONFIG_MASK;
-
-        /* ... and replace it with the value specified in deviation */
-        dev_target->flags |= deviate->flags & LYS_CONFIG_MASK;
-    }
-
-    if ((deviate->flags & LYS_MAND_MASK) && yang_check_deviate_mandatory(deviate, dev_target)) {
-        goto error;
-    }
-
-    if (deviate->type) {
-        /* check target node type */
-        if (dev_target->nodetype == LYS_LEAF) {
-            type = &((struct lys_node_leaf *)dev_target)->type;
-        } else if (dev_target->nodetype == LYS_LEAFLIST) {
-            type = &((struct lys_node_leaflist *)dev_target)->type;
-        } else {
-            LOGVAL(module->ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "type");
-            LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Target node does not allow \"type\" property.");
-            goto error;
-        }
-        /* remove type and initialize it */
-        tmp_parent = type->parent;
-        lys_type_free(module->ctx, type, NULL);
-        memcpy(type, deviate->type, sizeof *deviate->type);
-        free(deviate->type);
-        deviate->type = type;
-        deviate->type->parent = tmp_parent;
-        if (yang_fill_type(module, type, (struct yang_type *)type->der, tmp_parent, unres)) {
-            goto error;
-        }
-
-        if (unres_schema_add_node(module, unres, deviate->type, UNRES_TYPE_DER, dev_target) == -1) {
-            goto error;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    if (deviate->type) {
-        yang_type_free(module->ctx, deviate->type);
-        deviate->type = NULL;
-    }
-    return EXIT_FAILURE;
-}
-
-static int
-yang_check_deviation(struct lys_module *module, struct unres_schema *unres, struct lys_deviation *dev)
-{
-    int rc;
-    uint i;
-    struct lys_node *dev_target = NULL, *parent;
-    struct ly_set *dflt_check = ly_set_new(), *set;
-    unsigned int u;
-    const char *value, *target_name;
-    struct lys_node_leaflist *llist;
-    struct lys_node_leaf *leaf;
-    struct lys_node_inout *inout;
-    struct unres_schema *tmp_unres;
-    struct lys_module *mod;
-
-    /* resolve target node */
-    rc = resolve_schema_nodeid(dev->target_name, NULL, module, &set, 0, 1);
-    if (rc == -1) {
-        LOGVAL(module->ctx, LYE_INARG, LY_VLOG_NONE, NULL, dev->target_name, "deviation");
-        ly_set_free(set);
-        i = 0;
-        goto free_type_error;
-    }
-    dev_target = set->set.s[0];
-    ly_set_free(set);
-
-    if (dev_target->module == lys_main_module(module)) {
-        LOGVAL(module->ctx, LYE_INARG, LY_VLOG_NONE, NULL, dev->target_name, "deviation");
-        LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Deviating own module is not allowed.");
-        i = 0;
-        goto free_type_error;
-    }
-
-    if (!dflt_check) {
-        LOGMEM(module->ctx);
-        i = 0;
-        goto free_type_error;
-    }
-
-    if (dev->deviate[0].mod == LY_DEVIATE_NO) {
-        /* you cannot remove a key leaf */
-        if ((dev_target->nodetype == LYS_LEAF) && dev_target->parent && (dev_target->parent->nodetype == LYS_LIST)) {
-            for (i = 0; i < ((struct lys_node_list *)dev_target->parent)->keys_size; ++i) {
-                if (((struct lys_node_list *)dev_target->parent)->keys[i] == (struct lys_node_leaf *)dev_target) {
-                    LOGVAL(module->ctx, LYE_INARG, LY_VLOG_NONE, NULL, "not-supported", "deviation");
-                    LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "\"not-supported\" deviation cannot remove a list key.");
-                    i = 0;
-                    goto free_type_error;
-                }
-            }
-        }
-        /* unlink and store the original node */
-        parent = dev_target->parent;
-        lys_node_unlink(dev_target);
-        if (parent) {
-            if (parent->nodetype & (LYS_AUGMENT | LYS_USES)) {
-                /* hack for augment, because when the original will be sometime reconnected back, we actually need
-                 * to reconnect it to both - the augment and its target (which is deduced from the deviations target
-                 * path), so we need to remember the augment as an addition */
-                /* remember uses parent so we can reconnect to it */
-                dev_target->parent = parent;
-            } else if (parent->nodetype & (LYS_RPC | LYS_ACTION)) {
-                /* re-create implicit node */
-                inout = calloc(1, sizeof *inout);
-                LY_CHECK_ERR_GOTO(!inout, LOGMEM(module->ctx), error);
-
-                inout->nodetype = dev_target->nodetype;
-                inout->name = lydict_insert(module->ctx, (inout->nodetype == LYS_INPUT) ? "input" : "output", 0);
-                inout->module = dev_target->module;
-                inout->flags = LYS_IMPLICIT;
-
-                /* insert it manually */
-                assert(parent->child && !parent->child->next
-                    && (parent->child->nodetype == (inout->nodetype == LYS_INPUT ? LYS_OUTPUT : LYS_INPUT)));
-                parent->child->next = (struct lys_node *)inout;
-                inout->prev = parent->child;
-                parent->child->prev = (struct lys_node *)inout;
-                inout->parent = parent;
-            }
-        }
-        dev->orig_node = dev_target;
+    if ((word_len == 1) && !strncmp(word, "1", word_len)) {
+        *version = LYS_VERSION_1_0;
+    } else if ((word_len == ly_strlen_const("1.1")) && !strncmp(word, "1.1", word_len)) {
+        *version = LYS_VERSION_1_1;
     } else {
-        /* store a shallow copy of the original node */
-        tmp_unres = calloc(1, sizeof *tmp_unres);
-        dev->orig_node = lys_node_dup(dev_target->module, NULL, dev_target, tmp_unres, 1);
-        /* such a case is not really supported but whatever */
-        unres_schema_free(dev_target->module, &tmp_unres, 1);
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "yang-version");
+        free(buf);
+        return LY_EVALID;
     }
+    free(buf);
 
-    if (yang_check_ext_instance(module, &dev->ext, dev->ext_size, dev, unres)) {
-        i = 0;
-        goto free_type_error;
-    }
-
-    for (i = 0; i < dev->deviate_size; ++i) {
-        if (yang_check_deviate(module, unres, &dev->deviate[i], dev_target, dflt_check)) {
-            yang_free_deviate(module->ctx, dev, i + 1);
-            dev->deviate_size = i + 1;
-            goto free_type_error;
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_YANG_VERSION, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "yang-version");
+            return LY_EVALID;
         }
     }
-    /* now check whether default value, if any, matches the type */
-    for (u = 0; u < dflt_check->number; ++u) {
-        value = NULL;
-        rc = EXIT_SUCCESS;
-        if (dflt_check->set.s[u]->nodetype == LYS_LEAF) {
-            leaf = (struct lys_node_leaf *)dflt_check->set.s[u];
-            target_name = leaf->name;
-            value = leaf->dflt;
-            rc = unres_schema_add_node(module, unres, &leaf->type, UNRES_TYPE_DFLT, (struct lys_node *)(&leaf->dflt));
-        } else { /* LYS_LEAFLIST */
-            llist = (struct lys_node_leaflist *)dflt_check->set.s[u];
-            target_name = llist->name;
-            for (i = 0; i < llist->dflt_size; i++) {
-                rc = unres_schema_add_node(module, unres, &llist->type, UNRES_TYPE_DFLT,
-                                           (struct lys_node *)(&llist->dflt[i]));
-                if (rc == -1) {
-                    value = llist->dflt[i];
-                    break;
-                }
-            }
-        }
-        if (rc == -1) {
-            LOGVAL(module->ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "default");
-            LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_NONE, NULL,
-                "The default value \"%s\" of the deviated node \"%s\"no longer matches its type.",
-                target_name);
-            goto error;
-        }
-    }
-    ly_set_free(dflt_check);
-    dflt_check = NULL;
-
-    /* mark all the affected modules as deviated and implemented */
-    for (parent = dev_target; parent; parent = lys_parent(parent)) {
-        mod = lys_node_module(parent);
-        if (module != mod) {
-            mod->deviated = 1;            /* main module */
-            parent->module->deviated = 1; /* possible submodule */
-            if (!mod->implemented) {
-                mod->implemented = 1;
-                if (unres_schema_add_node(mod, unres, NULL, UNRES_MOD_IMPLEMENT, NULL) == -1) {
-                    goto error;
-                }
-            }
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-free_type_error:
-    /* we need to free types because they are for now allocated dynamically (use i as it is now, is set correctly) */
-    for (; i < dev->deviate_size; ++i) {
-        if (dev->deviate[i].type) {
-            yang_type_free(module->ctx, dev->deviate[i].type);
-            free(dev->deviate[i].type);
-            dev->deviate[i].type = NULL;
-        }
-    }
-error:
-    ly_set_free(dflt_check);
-    return EXIT_FAILURE;
+    return ret;
 }
 
-static int
-yang_check_sub_module(struct lys_module *module, struct unres_schema *unres, struct lys_node *node)
+/**
+ * @brief Parse the belongs-to statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] prefix Place to store the parsed belongs-to prefix value.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_belongsto(struct lys_yang_parser_ctx *ctx, const char **prefix, struct lysp_ext_instance **exts)
 {
-    uint i, erase_identities = 1, erase_nodes = 1, aug_size, dev_size = 0;
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
 
-    aug_size = module->augment_size;
-    module->augment_size = 0;
-    dev_size = module->deviation_size;
-    module->deviation_size = 0;
-
-    if (yang_check_typedef(module, NULL, unres)) {
-        goto error;
+    if (*prefix) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "belongs-to");
+        return LY_EVALID;
     }
 
-    if (yang_check_ext_instance(module, &module->ext, module->ext_size, module, unres)) {
-        goto error;
+    /* get value, it must match the main module */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    if (ly_strncmp(ctx->parsed_mod->mod->name, word, word_len)) {
+        LOGVAL_PARSER(ctx, LYVE_SYNTAX_YANG, "Submodule \"belongs-to\" value \"%.*s\" does not match its module name \"%s\".",
+                (int)word_len, word, ctx->parsed_mod->mod->name);
+        free(buf);
+        return LY_EVALID;
     }
+    free(buf);
 
-    /* check extension in revision */
-    for (i = 0; i < module->rev_size; ++i) {
-        if (yang_check_ext_instance(module, &module->rev[i].ext, module->rev[i].ext_size, &module->rev[i], unres)) {
-            goto error;
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+        switch (kw) {
+        case LY_STMT_PREFIX:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_PREFIX, 0, prefix, Y_IDENTIF_ARG, exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_BELONGS_TO, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "belongs-to");
+            return LY_EVALID;
         }
     }
-
-    /* check extension in definition of extension */
-    for (i = 0; i < module->extensions_size; ++i) {
-        if (yang_check_ext_instance(module, &module->extensions[i].ext, module->extensions[i].ext_size, &module->extensions[i], unres)) {
-            goto error;
-        }
+    LY_CHECK_RET(ret);
+checks:
+    /* mandatory substatements */
+    if (!*prefix) {
+        LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "prefix", "belongs-to");
+        return LY_EVALID;
     }
-
-    /* check features */
-    for (i = 0; i < module->features_size; ++i) {
-        if (yang_check_iffeatures(module, NULL, &module->features[i], FEATURE_KEYWORD, unres)) {
-            goto error;
-        }
-        if (yang_check_ext_instance(module, &module->features[i].ext, module->features[i].ext_size, &module->features[i], unres)) {
-            goto error;
-        }
-
-        /* check for circular dependencies */
-        if (module->features[i].iffeature_size && (unres_schema_add_node(module, unres, &module->features[i], UNRES_FEATURE, NULL) == -1)) {
-            goto error;
-        }
-    }
-    erase_identities = 0;
-    if (yang_check_identities(module, unres)) {
-        goto error;
-    }
-    erase_nodes = 0;
-    if (yang_check_nodes(module, NULL, node, 0, unres)) {
-        goto error;
-    }
-
-    /* check deviation */
-    for (i = 0; i < dev_size; ++i) {
-        module->deviation_size++;
-        if (yang_check_deviation(module, unres, &module->deviation[i])) {
-            goto error;
-        }
-    }
-
-    /* check augments */
-    for (i = 0; i < aug_size; ++i) {
-        module->augment_size++;
-        if (yang_check_augment(module, &module->augment[i], 0, unres)) {
-            goto error;
-        }
-        if (unres_schema_add_node(module, unres, &module->augment[i], UNRES_AUGMENT, NULL) == -1) {
-            goto error;
-        }
-    }
-
-    return EXIT_SUCCESS;
-
-error:
-    if (erase_identities) {
-        yang_free_ident_base(module->ident, 0, module->ident_size);
-    }
-    if (erase_nodes) {
-        yang_free_nodes(module->ctx, node);
-    }
-    for (i = module->augment_size; i < aug_size; ++i) {
-        yang_free_augment(module->ctx, &module->augment[i]);
-    }
-    for (i = module->deviation_size; i < dev_size; ++i) {
-        yang_free_deviate(module->ctx, &module->deviation[i], 0);
-        free(module->deviation[i].deviate);
-        lydict_remove(module->ctx, module->deviation[i].target_name);
-        lydict_remove(module->ctx, module->deviation[i].dsc);
-        lydict_remove(module->ctx, module->deviation[i].ref);
-    }
-    return EXIT_FAILURE;
+    return ret;
 }
 
-int
-yang_read_extcomplex_str(struct lys_module *module, struct lys_ext_instance_complex *ext, const char *arg_name,
-                         const char *parent_name, char **value, int parent_stmt, LY_STMT stmt)
+/**
+ * @brief Parse the revision-date statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] rev Array to store the parsed value in.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_revisiondate(struct lys_yang_parser_ctx *ctx, char *rev, struct lysp_ext_instance **exts)
 {
-    int c;
-    const char **str, ***p = NULL;
-    void *reallocated;
-    struct lyext_substmt *info;
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
 
-    c = 0;
-    if (stmt == LY_STMT_PREFIX && parent_stmt == LY_STMT_BELONGSTO) {
-        /* str contains no NULL value */
-        str = lys_ext_complex_get_substmt(LY_STMT_BELONGSTO, ext, &info);
-        if (info->cardinality < LY_STMT_CARD_SOME) {
-            str++;
-        } else {
-           /* get the index in the array to add new item */
-            p = (const char ***)str;
-            for (c = 0; p[0][c + 1]; c++);
-            str = p[1];
-        }
-        str[c] = lydict_insert_zc(module->ctx, *value);
-        *value = NULL;
-    }  else {
-        str = lys_ext_complex_get_substmt(stmt, ext, &info);
-        if (!str) {
-            LOGVAL(module->ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, arg_name, parent_name);
-            goto error;
-        }
-        if (info->cardinality < LY_STMT_CARD_SOME && *str) {
-            LOGVAL(module->ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, arg_name, parent_name);
-            goto error;
-        }
-
-        if (info->cardinality >= LY_STMT_CARD_SOME) {
-            /* there can be multiple instances, str is actually const char *** */
-            p = (const char ***)str;
-            if (!p[0]) {
-                /* allocate initial array */
-                p[0] = calloc(2, sizeof(const char *));
-                LY_CHECK_ERR_GOTO(!p[0], LOGMEM(module->ctx), error);
-                if (stmt == LY_STMT_BELONGSTO) {
-                    /* allocate another array for the belongs-to's prefixes */
-                    p[1] = calloc(2, sizeof(const char *));
-                    LY_CHECK_ERR_GOTO(!p[1], LOGMEM(module->ctx), error);
-                } else if (stmt == LY_STMT_ARGUMENT) {
-                    /* allocate another array for the yin element */
-                    ((uint8_t **)p)[1] = calloc(2, sizeof(uint8_t));
-                    LY_CHECK_ERR_GOTO(!p[1], LOGMEM(module->ctx), error);
-                    /* default value of yin element */
-                    ((uint8_t *)p[1])[0] = 2;
-                }
-            } else {
-                /* get the index in the array to add new item */
-                for (c = 0; p[0][c]; c++);
-            }
-            str = p[0];
-        }
-
-        str[c] = lydict_insert_zc(module->ctx, *value);
-        *value = NULL;
-
-        if (c) {
-            /* enlarge the array(s) */
-            reallocated = realloc(p[0], (c + 2) * sizeof(const char *));
-            if (!reallocated) {
-                LOGMEM(module->ctx);
-                lydict_remove(module->ctx, p[0][c]);
-                p[0][c] = NULL;
-                return EXIT_FAILURE;
-            }
-            p[0] = reallocated;
-            p[0][c + 1] = NULL;
-
-            if (stmt == LY_STMT_BELONGSTO) {
-                /* enlarge the second belongs-to's array with prefixes */
-                reallocated = realloc(p[1], (c + 2) * sizeof(const char *));
-                if (!reallocated) {
-                    LOGMEM(module->ctx);
-                    lydict_remove(module->ctx, p[1][c]);
-                    p[1][c] = NULL;
-                    return EXIT_FAILURE;
-                }
-                p[1] = reallocated;
-                p[1][c + 1] = NULL;
-            } else if (stmt == LY_STMT_ARGUMENT) {
-                /* enlarge the second argument's array with yin element */
-                reallocated = realloc(p[1], (c + 2) * sizeof(uint8_t));
-                if (!reallocated) {
-                    LOGMEM(module->ctx);
-                    ((uint8_t *)p[1])[c] = 0;
-                    return EXIT_FAILURE;
-                }
-                p[1] = reallocated;
-                ((uint8_t *)p[1])[c + 1] = 0;
-            }
-        }
+    if (rev[0]) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "revision-date");
+        return LY_EVALID;
     }
 
-    return EXIT_SUCCESS;
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
 
-error:
-    free(*value);
-    *value = NULL;
-    return EXIT_FAILURE;
+    /* check value */
+    if (lysp_check_date((struct lys_parser_ctx *)ctx, word, word_len, "revision-date")) {
+        free(buf);
+        return LY_EVALID;
+    }
+
+    /* store value and spend buf if allocated */
+    strncpy(rev, word, word_len);
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_REVISION_DATE, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "revision-date");
+            return LY_EVALID;
+        }
+    }
+    return ret;
 }
 
-static int
-yang_fill_ext_substm_index(struct lys_ext_instance_complex *ext, LY_STMT stmt, enum yytokentype keyword)
+/**
+ * @brief Parse the include statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] module_name Name of the module to check name collisions.
+ * @param[in,out] includes Parsed includes to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_include(struct lys_yang_parser_ctx *ctx, const char *module_name, struct lysp_include **includes)
 {
-    int c = 0, decrement = 0;
-    const char **str, ***p = NULL;
-    struct lyext_substmt *info;
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_include *inc;
 
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *includes, inc, LY_EMEM);
 
-    if (keyword == BELONGS_TO_KEYWORD || stmt == LY_STMT_BELONGSTO) {
-        stmt = LY_STMT_BELONGSTO;
-        decrement = -1;
-    } else if (keyword == ARGUMENT_KEYWORD || stmt == LY_STMT_ARGUMENT) {
-        stmt = LY_STMT_ARGUMENT;
-        decrement = -1;
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+
+    INSERT_WORD_RET(ctx, buf, inc->name, word, word_len);
+
+    /* submodules share the namespace with the module names, so there must not be
+     * a module of the same name in the context, no need for revision matching */
+    if (!strcmp(module_name, inc->name) || ly_ctx_get_module_latest(PARSER_CTX(ctx), inc->name)) {
+        LOGVAL_PARSER(ctx, LY_VCODE_NAME2_COL, "module", "submodule", inc->name);
+        return LY_EVALID;
     }
 
-    str = lys_ext_complex_get_substmt(stmt, ext, &info);
-    if (!str || info->cardinality < LY_STMT_CARD_SOME || !((const char ***)str)[0]) {
-        return 0;
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "description", "include");
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &inc->dsc, Y_STR_ARG, &inc->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            PARSER_CHECK_STMTVER2_RET(ctx, "reference", "include");
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &inc->ref, Y_STR_ARG, &inc->exts));
+            break;
+        case LY_STMT_REVISION_DATE:
+            LY_CHECK_RET(parse_revisiondate(ctx, inc->rev, &inc->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_INCLUDE, 0, &inc->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "include");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the import statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] module_prefix Prefix of the module to check prefix collisions.
+ * @param[in,out] imports Parsed imports to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_import(struct lys_yang_parser_ctx *ctx, const char *module_prefix, struct lysp_import **imports)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_import *imp;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *imports, imp, LY_EVALID);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, imp->name, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+        switch (kw) {
+        case LY_STMT_PREFIX:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_PREFIX, 0, &imp->prefix, Y_IDENTIF_ARG, &imp->exts));
+            LY_CHECK_RET(lysp_check_prefix((struct lys_parser_ctx *)ctx, *imports, module_prefix, &imp->prefix), LY_EVALID);
+            break;
+        case LY_STMT_DESCRIPTION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "description", "import");
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &imp->dsc, Y_STR_ARG, &imp->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            PARSER_CHECK_STMTVER2_RET(ctx, "reference", "import");
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &imp->ref, Y_STR_ARG, &imp->exts));
+            break;
+        case LY_STMT_REVISION_DATE:
+            LY_CHECK_RET(parse_revisiondate(ctx, imp->rev, &imp->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_IMPORT, 0, &imp->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "import");
+            return LY_EVALID;
+        }
+    }
+    LY_CHECK_RET(ret);
+checks:
+    /* mandatory substatements */
+    LY_CHECK_ERR_RET(!imp->prefix, LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "prefix", "import"), LY_EVALID);
+
+    return ret;
+}
+
+/**
+ * @brief Parse the revision statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] revs Parsed revisions to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_revision(struct lys_yang_parser_ctx *ctx, struct lysp_revision **revs)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_revision *rev;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *revs, rev, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    /* check value */
+    if (lysp_check_date((struct lys_parser_ctx *)ctx, word, word_len, "revision")) {
+        free(buf);
+        return LY_EVALID;
+    }
+
+    strncpy(rev->date, word, word_len);
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &rev->dsc, Y_STR_ARG, &rev->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &rev->ref, Y_STR_ARG, &rev->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_REVISION, 0, &rev->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "revision");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse a generic text field that can have more instances such as base.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] substmt Type of this substatement.
+ * @param[in,out] texts Parsed values to add to.
+ * @param[in] arg Type of the expected argument.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_text_fields(struct lys_yang_parser_ctx *ctx, enum ly_stmt substmt, const char ***texts, enum yang_arg arg,
+        struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    const char **item;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    /* allocate new pointer */
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *texts, item, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, arg, NULL, &word, &buf, &word_len));
+
+    INSERT_WORD_RET(ctx, buf, *item, word, word_len);
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, substmt, LY_ARRAY_COUNT(*texts) - 1, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), ly_stmt2str(substmt));
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse a generic text field that can have more instances such as base.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] substmt Type of this substatement.
+ * @param[in,out] qnames Parsed qnames to add to.
+ * @param[in] arg Type of the expected argument.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_qnames(struct lys_yang_parser_ctx *ctx, enum ly_stmt substmt, struct lysp_qname **qnames,
+        enum yang_arg arg, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    struct lysp_qname *item;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    /* allocate new pointer */
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *qnames, item, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, arg, NULL, &word, &buf, &word_len));
+
+    INSERT_WORD_RET(ctx, buf, item->str, word, word_len);
+    item->mod = ctx->parsed_mod;
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, substmt, LY_ARRAY_COUNT(*qnames) - 1, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), ly_stmt2str(substmt));
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the config statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] flags Flags to add to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_config(struct lys_yang_parser_ctx *ctx, uint16_t *flags, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    if (*flags & LYS_CONFIG_MASK) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "config");
+        return LY_EVALID;
+    }
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if ((word_len == ly_strlen_const("true")) && !strncmp(word, "true", word_len)) {
+        *flags |= LYS_CONFIG_W;
+    } else if ((word_len == ly_strlen_const("false")) && !strncmp(word, "false", word_len)) {
+        *flags |= LYS_CONFIG_R;
     } else {
-        p = (const char ***)str;
-        /* get the index in the array */
-        for (c = 0; p[0][c]; c++);
-        return c + decrement;
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "config");
+        free(buf);
+        return LY_EVALID;
     }
-}
+    free(buf);
 
-void **
-yang_getplace_for_extcomplex_struct(struct lys_ext_instance_complex *ext, int *index,
-                                    char *parent_name, char *node_name, LY_STMT stmt)
-{
-    struct ly_ctx *ctx = ext->module->ctx;
-    int c;
-    void **data, ***p = NULL;
-    void *reallocated;
-    struct lyext_substmt *info;
-
-    data = lys_ext_complex_get_substmt(stmt, ext, &info);
-    if (!data) {
-        LOGVAL(ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, node_name, parent_name);
-        return NULL;
-    }
-    if (info->cardinality < LY_STMT_CARD_SOME && *data) {
-        LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, node_name, parent_name);
-        return NULL;
-    }
-
-    c = 0;
-    if (info->cardinality >= LY_STMT_CARD_SOME) {
-        /* there can be multiple instances, so instead of pointer to array,
-         * we have in data pointer to pointer to array */
-        p = (void ***)data;
-        data = *p;
-        if (!data) {
-            /* allocate initial array */
-            *p = data = calloc(2, sizeof(void *));
-            LY_CHECK_ERR_RETURN(!data, LOGMEM(ctx), NULL);
-        } else {
-            for (c = 0; *data; data++, c++);
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_CONFIG, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "config");
+            return LY_EVALID;
         }
     }
+    return ret;
+}
 
-    if (c) {
-        /* enlarge the array */
-        reallocated = realloc(*p, (c + 2) * sizeof(void *));
-        LY_CHECK_ERR_RETURN(!reallocated, LOGMEM(ctx), NULL);
-        *p = reallocated;
-        data = *p;
-        data[c + 1] = NULL;
+/**
+ * @brief Parse the mandatory statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] flags Flags to add to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_mandatory(struct lys_yang_parser_ctx *ctx, uint16_t *flags, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    if (*flags & LYS_MAND_MASK) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "mandatory");
+        return LY_EVALID;
     }
 
-    if (index) {
-        *index = c;
-        return data;
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if ((word_len == ly_strlen_const("true")) && !strncmp(word, "true", word_len)) {
+        *flags |= LYS_MAND_TRUE;
+    } else if ((word_len == ly_strlen_const("false")) && !strncmp(word, "false", word_len)) {
+        *flags |= LYS_MAND_FALSE;
     } else {
-        return &data[c];
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "mandatory");
+        free(buf);
+        return LY_EVALID;
     }
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_MANDATORY, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "mandatory");
+            return LY_EVALID;
+        }
+    }
+    return ret;
 }
 
-int
-yang_fill_extcomplex_flags(struct lys_ext_instance_complex *ext, char *parent_name, char *node_name,
-                           LY_STMT stmt, uint16_t value, uint16_t mask)
+/**
+ * @brief Parse a restriction such as range or length.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] restr_kw Type of this particular restriction.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_restr(struct lys_yang_parser_ctx *ctx, enum ly_stmt restr_kw, struct lysp_restr *restr)
 {
-    uint16_t *data;
-    struct lyext_substmt *info;
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
 
-    data = lys_ext_complex_get_substmt(stmt, ext, &info);
-    if (!data) {
-        LOGVAL(ext->module->ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, node_name, parent_name);
-        return EXIT_FAILURE;
-    }
-    if (info->cardinality < LY_STMT_CARD_SOME && (*data & mask)) {
-        LOGVAL(ext->module->ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, node_name, parent_name);
-        return EXIT_FAILURE;
-    }
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
 
-    *data |= value;
-    return EXIT_SUCCESS;
+    CHECK_NONEMPTY(ctx, word_len, ly_stmt2str(restr_kw));
+    INSERT_WORD_RET(ctx, buf, restr->arg.str, word, word_len);
+    restr->arg.mod = ctx->parsed_mod;
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &restr->dsc, Y_STR_ARG, &restr->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &restr->ref, Y_STR_ARG, &restr->exts));
+            break;
+        case LY_STMT_ERROR_APP_TAG:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_ERROR_APP_TAG, 0, &restr->eapptag, Y_STR_ARG, &restr->exts));
+            break;
+        case LY_STMT_ERROR_MESSAGE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_ERROR_MESSAGE, 0, &restr->emsg, Y_STR_ARG, &restr->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, restr_kw, 0, &restr->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), ly_stmt2str(restr_kw));
+            return LY_EVALID;
+        }
+    }
+    return ret;
 }
 
-int
-yang_fill_extcomplex_uint8(struct lys_ext_instance_complex *ext, char *parent_name, char *node_name,
-                           LY_STMT stmt, uint8_t value)
+/**
+ * @brief Parse a restriction that can have more instances such as must.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] restr_kw Type of this particular restriction.
+ * @param[in,out] restrs Restrictions to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_restrs(struct lys_yang_parser_ctx *ctx, enum ly_stmt restr_kw, struct lysp_restr **restrs)
 {
-    struct ly_ctx *ctx = ext->module->ctx;
-    uint8_t *val, **pp = NULL, *reallocated;
-    struct lyext_substmt *info;
-    int i = 0;
+    struct lysp_restr *restr;
 
-    val = lys_ext_complex_get_substmt(stmt, ext, &info);
-    if (!val) {
-        LOGVAL(ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, node_name, parent_name);
-        return EXIT_FAILURE;
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *restrs, restr, LY_EMEM);
+    return parse_restr(ctx, restr_kw, restr);
+}
+
+/**
+ * @brief Parse the status statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] flags Flags to add to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_status(struct lys_yang_parser_ctx *ctx, uint16_t *flags, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    if (*flags & LYS_STATUS_MASK) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "status");
+        return LY_EVALID;
     }
-    if (stmt == LY_STMT_DIGITS) {
-        if (info->cardinality < LY_STMT_CARD_SOME && *val) {
-            LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, node_name, parent_name);
-            return EXIT_FAILURE;
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if ((word_len == ly_strlen_const("current")) && !strncmp(word, "current", word_len)) {
+        *flags |= LYS_STATUS_CURR;
+    } else if ((word_len == ly_strlen_const("deprecated")) && !strncmp(word, "deprecated", word_len)) {
+        *flags |= LYS_STATUS_DEPRC;
+    } else if ((word_len == ly_strlen_const("obsolete")) && !strncmp(word, "obsolete", word_len)) {
+        *flags |= LYS_STATUS_OBSLT;
+    } else {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "status");
+        free(buf);
+        return LY_EVALID;
+    }
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_STATUS, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "status");
+            return LY_EVALID;
         }
+    }
+    return ret;
+}
 
-        if (info->cardinality >= LY_STMT_CARD_SOME) {
-            /* there can be multiple instances */
-            pp = (uint8_t**)val;
-            if (!(*pp)) {
-                *pp = calloc(2, sizeof(uint8_t)); /* allocate initial array */
-                LY_CHECK_ERR_RETURN(!*pp, LOGMEM(ctx), EXIT_FAILURE);
-            } else {
-                for (i = 0; (*pp)[i]; i++);
-            }
-            val = &(*pp)[i];
+/**
+ * @brief Parse the when statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] when_p When pointer to parse to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_when(struct lys_yang_parser_ctx *ctx, struct lysp_when **when_p)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_when *when;
+
+    if (*when_p) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "when");
+        return LY_EVALID;
+    }
+
+    when = calloc(1, sizeof *when);
+    LY_CHECK_ERR_RET(!when, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+    *when_p = when;
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+    CHECK_NONEMPTY(ctx, word_len, "when");
+    INSERT_WORD_RET(ctx, buf, when->cond, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &when->dsc, Y_STR_ARG, &when->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &when->ref, Y_STR_ARG, &when->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_WHEN, 0, &when->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "when");
+            return LY_EVALID;
         }
+    }
+    return ret;
+}
 
-        /* stored value */
-        *val = value;
+/**
+ * @brief Parse the anydata or anyxml statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] any_kw Type of this particular keyword.
+ * @param[in,out] siblings Siblings to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_any(struct lys_yang_parser_ctx *ctx, enum ly_stmt any_kw, struct lysp_node *parent, struct lysp_node **siblings)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    struct lysp_node_anydata *any;
+    enum ly_stmt kw;
 
-        if (i) {
-            /* enlarge the array */
-            reallocated = realloc(*pp, (i + 2) * sizeof *val);
-            LY_CHECK_ERR_RETURN(!reallocated, LOGMEM(ctx), EXIT_FAILURE);
-            *pp = reallocated;
-            (*pp)[i + 1] = 0;
+    /* create new structure and insert into siblings */
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), siblings, any, next, LY_EMEM);
+
+    any->nodetype = any_kw == LY_STMT_ANYDATA ? LYS_ANYDATA : LYS_ANYXML;
+    any->parent = parent;
+
+    /* get name */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, any->name, word, word_len);
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_CONFIG:
+            LY_CHECK_RET(parse_config(ctx, &any->flags, &any->exts));
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &any->dsc, Y_STR_ARG, &any->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &any->iffeatures, Y_STR_ARG, &any->exts));
+            break;
+        case LY_STMT_MANDATORY:
+            LY_CHECK_RET(parse_mandatory(ctx, &any->flags, &any->exts));
+            break;
+        case LY_STMT_MUST:
+            LY_CHECK_RET(parse_restrs(ctx, kw, &any->musts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &any->ref, Y_STR_ARG, &any->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &any->flags, &any->exts));
+            break;
+        case LY_STMT_WHEN:
+            LY_CHECK_RET(parse_when(ctx, &any->when));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, any_kw, 0, &any->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), ly_stmt2str(any_kw));
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the value or position statement. Substatement of type enum statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] val_kw Type of this particular keyword.
+ * @param[in,out] value Value to write to.
+ * @param[in,out] flags Flags to write to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_type_enum_value_pos(struct lys_yang_parser_ctx *ctx, enum ly_stmt val_kw, int64_t *value, uint16_t *flags,
+        struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word, *ptr;
+    size_t word_len;
+    long int num = 0;
+    unsigned long int unum = 0;
+    enum ly_stmt kw;
+
+    if (*flags & LYS_SET_VALUE) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, ly_stmt2str(val_kw));
+        return LY_EVALID;
+    }
+    *flags |= LYS_SET_VALUE;
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if (!word_len || (word[0] == '+') || ((word[0] == '0') && (word_len > 1)) || ((val_kw == LY_STMT_POSITION) && !strncmp(word, "-0", 2))) {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, ly_stmt2str(val_kw));
+        goto error;
+    }
+
+    errno = 0;
+    if (val_kw == LY_STMT_VALUE) {
+        num = strtol(word, &ptr, LY_BASE_DEC);
+        if ((num < INT64_C(-2147483648)) || (num > INT64_C(2147483647))) {
+            LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, ly_stmt2str(val_kw));
+            goto error;
         }
     } else {
-        if (*val) {
-            LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, node_name, parent_name);
-            return EXIT_FAILURE;
+        unum = strtoul(word, &ptr, LY_BASE_DEC);
+        if (unum > UINT64_C(4294967295)) {
+            LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, ly_stmt2str(val_kw));
+            goto error;
+        }
+    }
+    /* we have not parsed the whole argument */
+    if ((size_t)(ptr - word) != word_len) {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, ly_stmt2str(val_kw));
+        goto error;
+    }
+    if (errno == ERANGE) {
+        LOGVAL_PARSER(ctx, LY_VCODE_OOB, word_len, word, ly_stmt2str(val_kw));
+        goto error;
+    }
+    if (val_kw == LY_STMT_VALUE) {
+        *value = num;
+    } else {
+        *value = unum;
+    }
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, val_kw == LY_STMT_VALUE ? LY_STMT_VALUE : LY_STMT_POSITION, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), ly_stmt2str(val_kw));
+            return LY_EVALID;
+        }
+    }
+    return ret;
+
+error:
+    free(buf);
+    return LY_EVALID;
+}
+
+/**
+ * @brief Parse the enum or bit statement. Substatement of type statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] enum_kw Type of this particular keyword.
+ * @param[in,out] enums Enums or bits to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_type_enum(struct lys_yang_parser_ctx *ctx, enum ly_stmt enum_kw, struct lysp_type_enum **enums)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_type_enum *enm;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *enums, enm, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, enum_kw == LY_STMT_ENUM ? Y_STR_ARG : Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    if (enum_kw == LY_STMT_ENUM) {
+        ret = lysp_check_enum_name((struct lys_parser_ctx *)ctx, (const char *)word, word_len);
+        LY_CHECK_ERR_RET(ret, free(buf), ret);
+    } /* else nothing specific for YANG_BIT */
+
+    INSERT_WORD_RET(ctx, buf, enm->name, word, word_len);
+    CHECK_UNIQUENESS(ctx, *enums, name, ly_stmt2str(enum_kw), enm->name);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &enm->dsc, Y_STR_ARG, &enm->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            PARSER_CHECK_STMTVER2_RET(ctx, "if-feature", ly_stmt2str(enum_kw));
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &enm->iffeatures, Y_STR_ARG, &enm->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &enm->ref, Y_STR_ARG, &enm->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &enm->flags, &enm->exts));
+            break;
+        case LY_STMT_VALUE:
+            LY_CHECK_ERR_RET(enum_kw == LY_STMT_BIT, LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw),
+                    ly_stmt2str(enum_kw)), LY_EVALID);
+            LY_CHECK_RET(parse_type_enum_value_pos(ctx, kw, &enm->value, &enm->flags, &enm->exts));
+            break;
+        case LY_STMT_POSITION:
+            LY_CHECK_ERR_RET(enum_kw == LY_STMT_ENUM, LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw),
+                    ly_stmt2str(enum_kw)), LY_EVALID);
+            LY_CHECK_RET(parse_type_enum_value_pos(ctx, kw, &enm->value, &enm->flags, &enm->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, enum_kw, 0, &enm->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), ly_stmt2str(enum_kw));
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the fraction-digits statement. Substatement of type statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] fracdig Value to write to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_type_fracdigits(struct lys_yang_parser_ctx *ctx, uint8_t *fracdig, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word, *ptr;
+    size_t word_len;
+    unsigned long int num;
+    enum ly_stmt kw;
+
+    if (*fracdig) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "fraction-digits");
+        return LY_EVALID;
+    }
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if (!word_len || (word[0] == '0') || !isdigit(word[0])) {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "fraction-digits");
+        free(buf);
+        return LY_EVALID;
+    }
+
+    errno = 0;
+    num = strtoul(word, &ptr, LY_BASE_DEC);
+    /* we have not parsed the whole argument */
+    if ((size_t)(ptr - word) != word_len) {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "fraction-digits");
+        free(buf);
+        return LY_EVALID;
+    }
+    if ((errno == ERANGE) || (num > LY_TYPE_DEC64_FD_MAX)) {
+        LOGVAL_PARSER(ctx, LY_VCODE_OOB, word_len, word, "fraction-digits");
+        free(buf);
+        return LY_EVALID;
+    }
+    *fracdig = num;
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_FRACTION_DIGITS, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "fraction-digits");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the require-instance statement. Substatement of type statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] reqinst Value to write to.
+ * @param[in,out] flags Flags to write to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_type_reqinstance(struct lys_yang_parser_ctx *ctx, uint8_t *reqinst, uint16_t *flags,
+        struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    if (*flags & LYS_SET_REQINST) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "require-instance");
+        return LY_EVALID;
+    }
+    *flags |= LYS_SET_REQINST;
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if ((word_len == ly_strlen_const("true")) && !strncmp(word, "true", word_len)) {
+        *reqinst = 1;
+    } else if ((word_len != ly_strlen_const("false")) || strncmp(word, "false", word_len)) {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "require-instance");
+        free(buf);
+        return LY_EVALID;
+    }
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_REQUIRE_INSTANCE, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "require-instance");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the modifier statement. Substatement of type pattern statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] pat Value to write to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_type_pattern_modifier(struct lys_yang_parser_ctx *ctx, const char **pat, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    if ((*pat)[0] == LYSP_RESTR_PATTERN_NACK) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "modifier");
+        return LY_EVALID;
+    }
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if ((word_len != ly_strlen_const("invert-match")) || strncmp(word, "invert-match", word_len)) {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "modifier");
+        free(buf);
+        return LY_EVALID;
+    }
+    free(buf);
+
+    /* replace the value in the dictionary */
+    buf = malloc(strlen(*pat) + 1);
+    LY_CHECK_ERR_RET(!buf, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+    strcpy(buf, *pat);
+    lydict_remove(PARSER_CTX(ctx), *pat);
+
+    assert(buf[0] == LYSP_RESTR_PATTERN_ACK);
+    buf[0] = LYSP_RESTR_PATTERN_NACK;
+    LY_CHECK_RET(lydict_insert_zc(PARSER_CTX(ctx), buf, pat));
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_MODIFIER, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "modifier");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the pattern statement. Substatement of type statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] patterns Restrictions to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_type_pattern(struct lys_yang_parser_ctx *ctx, struct lysp_restr **patterns)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_restr *restr;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *patterns, restr, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    /* add special meaning first byte */
+    if (buf) {
+        buf = ly_realloc(buf, word_len + 2);
+        word = buf;
+    } else {
+        buf = malloc(word_len + 2);
+    }
+    LY_CHECK_ERR_RET(!buf, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+    memmove(buf + 1, word, word_len);
+    buf[0] = LYSP_RESTR_PATTERN_ACK; /* pattern's default regular-match flag */
+    buf[word_len + 1] = '\0'; /* terminating NULL byte */
+    LY_CHECK_RET(lydict_insert_zc(PARSER_CTX(ctx), buf, &restr->arg.str));
+    restr->arg.mod = ctx->parsed_mod;
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &restr->dsc, Y_STR_ARG, &restr->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &restr->ref, Y_STR_ARG, &restr->exts));
+            break;
+        case LY_STMT_ERROR_APP_TAG:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_ERROR_APP_TAG, 0, &restr->eapptag, Y_STR_ARG, &restr->exts));
+            break;
+        case LY_STMT_ERROR_MESSAGE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_ERROR_MESSAGE, 0, &restr->emsg, Y_STR_ARG, &restr->exts));
+            break;
+        case LY_STMT_MODIFIER:
+            PARSER_CHECK_STMTVER2_RET(ctx, "modifier", "pattern");
+            LY_CHECK_RET(parse_type_pattern_modifier(ctx, &restr->arg.str, &restr->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_PATTERN, 0, &restr->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "pattern");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the type statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] type Type to wrote to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_type(struct lys_yang_parser_ctx *ctx, struct lysp_type *type)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    const char *str_path = NULL;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_type *nest_type;
+
+    if (type->name) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "type");
+        return LY_EVALID;
+    }
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_PREF_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, type->name, word, word_len);
+
+    /* set module */
+    type->pmod = ctx->parsed_mod;
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_BASE:
+            LY_CHECK_RET(parse_text_fields(ctx, LY_STMT_BASE, &type->bases, Y_PREF_IDENTIF_ARG, &type->exts));
+            type->flags |= LYS_SET_BASE;
+            break;
+        case LY_STMT_BIT:
+            LY_CHECK_RET(parse_type_enum(ctx, kw, &type->bits));
+            type->flags |= LYS_SET_BIT;
+            break;
+        case LY_STMT_ENUM:
+            LY_CHECK_RET(parse_type_enum(ctx, kw, &type->enums));
+            type->flags |= LYS_SET_ENUM;
+            break;
+        case LY_STMT_FRACTION_DIGITS:
+            LY_CHECK_RET(parse_type_fracdigits(ctx, &type->fraction_digits, &type->exts));
+            type->flags |= LYS_SET_FRDIGITS;
+            break;
+        case LY_STMT_LENGTH:
+            if (type->length) {
+                LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, ly_stmt2str(kw));
+                return LY_EVALID;
+            }
+            type->length = calloc(1, sizeof *type->length);
+            LY_CHECK_ERR_RET(!type->length, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+
+            LY_CHECK_RET(parse_restr(ctx, kw, type->length));
+            type->flags |= LYS_SET_LENGTH;
+            break;
+        case LY_STMT_PATH:
+            if (type->path) {
+                LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, ly_stmt2str(LY_STMT_PATH));
+                return LY_EVALID;
+            }
+
+            /* Usually, in the parser_yang.c, the result of the parsing is stored directly in the
+             * corresponding structure, so in case of failure, the lysp_module_free function will take
+             * care of removing the parsed value from the dictionary. But in this case, it is not possible
+             * to rely on lysp_module_free because the result of the parsing is stored in a local variable.
+             */
+            LY_CHECK_ERR_RET(ret = parse_text_field(ctx, LY_STMT_PATH, 0, &str_path, Y_STR_ARG, &type->exts),
+                    lydict_remove(PARSER_CTX(ctx), str_path), ret);
+            ret = ly_path_parse(PARSER_CTX(ctx), NULL, str_path, 0, LY_PATH_BEGIN_EITHER, LY_PATH_LREF_TRUE,
+                    LY_PATH_PREFIX_OPTIONAL, LY_PATH_PRED_LEAFREF, &type->path);
+            /* Moreover, even if successful, the string is removed from the dictionary. */
+            lydict_remove(PARSER_CTX(ctx), str_path);
+            LY_CHECK_RET(ret);
+            type->flags |= LYS_SET_PATH;
+            break;
+        case LY_STMT_PATTERN:
+            LY_CHECK_RET(parse_type_pattern(ctx, &type->patterns));
+            type->flags |= LYS_SET_PATTERN;
+            break;
+        case LY_STMT_RANGE:
+            if (type->range) {
+                LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, ly_stmt2str(kw));
+                return LY_EVALID;
+            }
+            type->range = calloc(1, sizeof *type->range);
+            LY_CHECK_ERR_RET(!type->range, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+
+            LY_CHECK_RET(parse_restr(ctx, kw, type->range));
+            type->flags |= LYS_SET_RANGE;
+            break;
+        case LY_STMT_REQUIRE_INSTANCE:
+            LY_CHECK_RET(parse_type_reqinstance(ctx, &type->require_instance, &type->flags, &type->exts));
+            /* LYS_SET_REQINST checked and set inside parse_type_reqinstance() */
+            break;
+        case LY_STMT_TYPE:
+            LY_ARRAY_NEW_RET(PARSER_CTX(ctx), type->types, nest_type, LY_EMEM);
+            LY_CHECK_RET(parse_type(ctx, nest_type));
+            type->flags |= LYS_SET_TYPE;
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_TYPE, 0, &type->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "type");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the leaf statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] siblings Siblings to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_leaf(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_leaf *leaf;
+
+    /* create new leaf structure */
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), siblings, leaf, next, LY_EMEM);
+    leaf->nodetype = LYS_LEAF;
+    leaf->parent = parent;
+
+    /* get name */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, leaf->name, word, word_len);
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+        switch (kw) {
+        case LY_STMT_CONFIG:
+            LY_CHECK_RET(parse_config(ctx, &leaf->flags, &leaf->exts));
+            break;
+        case LY_STMT_DEFAULT:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DEFAULT, 0, &leaf->dflt.str, Y_STR_ARG, &leaf->exts));
+            leaf->dflt.mod = ctx->parsed_mod;
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &leaf->dsc, Y_STR_ARG, &leaf->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &leaf->iffeatures, Y_STR_ARG, &leaf->exts));
+            break;
+        case LY_STMT_MANDATORY:
+            LY_CHECK_RET(parse_mandatory(ctx, &leaf->flags, &leaf->exts));
+            break;
+        case LY_STMT_MUST:
+            LY_CHECK_RET(parse_restrs(ctx, kw, &leaf->musts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &leaf->ref, Y_STR_ARG, &leaf->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &leaf->flags, &leaf->exts));
+            break;
+        case LY_STMT_TYPE:
+            LY_CHECK_RET(parse_type(ctx, &leaf->type));
+            break;
+        case LY_STMT_UNITS:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_UNITS, 0, &leaf->units, Y_STR_ARG, &leaf->exts));
+            break;
+        case LY_STMT_WHEN:
+            LY_CHECK_RET(parse_when(ctx, &leaf->when));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_LEAF, 0, &leaf->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "leaf");
+            return LY_EVALID;
+        }
+    }
+    LY_CHECK_RET(ret);
+checks:
+    /* mandatory substatements */
+    if (!leaf->type.name) {
+        LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "type", "leaf");
+        return LY_EVALID;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the max-elements statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] max Value to write to.
+ * @param[in,out] flags Flags to write to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_maxelements(struct lys_yang_parser_ctx *ctx, uint32_t *max, uint16_t *flags, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word, *ptr;
+    size_t word_len;
+    unsigned long int num;
+    enum ly_stmt kw;
+
+    if (*flags & LYS_SET_MAX) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "max-elements");
+        return LY_EVALID;
+    }
+    *flags |= LYS_SET_MAX;
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if (!word_len || (word[0] == '0') || ((word[0] != 'u') && !isdigit(word[0]))) {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "max-elements");
+        free(buf);
+        return LY_EVALID;
+    }
+
+    if (ly_strncmp("unbounded", word, word_len)) {
+        errno = 0;
+        num = strtoul(word, &ptr, LY_BASE_DEC);
+        /* we have not parsed the whole argument */
+        if ((size_t)(ptr - word) != word_len) {
+            LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "max-elements");
+            free(buf);
+            return LY_EVALID;
+        }
+        if ((errno == ERANGE) || (num > UINT32_MAX)) {
+            LOGVAL_PARSER(ctx, LY_VCODE_OOB, word_len, word, "max-elements");
+            free(buf);
+            return LY_EVALID;
         }
 
-        if (stmt == LY_STMT_REQINSTANCE) {
-            *val = (value == 1) ? 1 : 2;
-        } else if (stmt == LY_STMT_MODIFIER) {
-            *val =  1;
+        *max = num;
+    } else {
+        /* unbounded */
+        *max = 0;
+    }
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_MAX_ELEMENTS, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "max-elements");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the min-elements statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] min Value to write to.
+ * @param[in,out] flags Flags to write to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_minelements(struct lys_yang_parser_ctx *ctx, uint32_t *min, uint16_t *flags, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word, *ptr;
+    size_t word_len;
+    unsigned long int num;
+    enum ly_stmt kw;
+
+    if (*flags & LYS_SET_MIN) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "min-elements");
+        return LY_EVALID;
+    }
+    *flags |= LYS_SET_MIN;
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if (!word_len || !isdigit(word[0]) || ((word[0] == '0') && (word_len > 1))) {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "min-elements");
+        free(buf);
+        return LY_EVALID;
+    }
+
+    errno = 0;
+    num = strtoul(word, &ptr, LY_BASE_DEC);
+    /* we have not parsed the whole argument */
+    if ((size_t)(ptr - word) != word_len) {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "min-elements");
+        free(buf);
+        return LY_EVALID;
+    }
+    if ((errno == ERANGE) || (num > UINT32_MAX)) {
+        LOGVAL_PARSER(ctx, LY_VCODE_OOB, word_len, word, "min-elements");
+        free(buf);
+        return LY_EVALID;
+    }
+    *min = num;
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_MIN_ELEMENTS, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "min-elements");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the ordered-by statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] flags Flags to write to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_orderedby(struct lys_yang_parser_ctx *ctx, uint16_t *flags, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    if (*flags & LYS_ORDBY_MASK) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "ordered-by");
+        return LY_EVALID;
+    }
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if ((word_len == ly_strlen_const("system")) && !strncmp(word, "system", word_len)) {
+        *flags |= LYS_ORDBY_SYSTEM;
+    } else if ((word_len == ly_strlen_const("user")) && !strncmp(word, "user", word_len)) {
+        *flags |= LYS_ORDBY_USER;
+    } else {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "ordered-by");
+        free(buf);
+        return LY_EVALID;
+    }
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_ORDERED_BY, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "ordered-by");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the leaf-list statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] siblings Siblings to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_leaflist(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_leaflist *llist;
+
+    /* create new leaf-list structure */
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), siblings, llist, next, LY_EMEM);
+    llist->nodetype = LYS_LEAFLIST;
+    llist->parent = parent;
+
+    /* get name */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, llist->name, word, word_len);
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+        switch (kw) {
+        case LY_STMT_CONFIG:
+            LY_CHECK_RET(parse_config(ctx, &llist->flags, &llist->exts));
+            break;
+        case LY_STMT_DEFAULT:
+            PARSER_CHECK_STMTVER2_RET(ctx, "default", "leaf-list");
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_DEFAULT, &llist->dflts, Y_STR_ARG, &llist->exts));
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &llist->dsc, Y_STR_ARG, &llist->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &llist->iffeatures, Y_STR_ARG, &llist->exts));
+            break;
+        case LY_STMT_MAX_ELEMENTS:
+            LY_CHECK_RET(parse_maxelements(ctx, &llist->max, &llist->flags, &llist->exts));
+            break;
+        case LY_STMT_MIN_ELEMENTS:
+            LY_CHECK_RET(parse_minelements(ctx, &llist->min, &llist->flags, &llist->exts));
+            break;
+        case LY_STMT_MUST:
+            LY_CHECK_RET(parse_restrs(ctx, kw, &llist->musts));
+            break;
+        case LY_STMT_ORDERED_BY:
+            LY_CHECK_RET(parse_orderedby(ctx, &llist->flags, &llist->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &llist->ref, Y_STR_ARG, &llist->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &llist->flags, &llist->exts));
+            break;
+        case LY_STMT_TYPE:
+            LY_CHECK_RET(parse_type(ctx, &llist->type));
+            break;
+        case LY_STMT_UNITS:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_UNITS, 0, &llist->units, Y_STR_ARG, &llist->exts));
+            break;
+        case LY_STMT_WHEN:
+            LY_CHECK_RET(parse_when(ctx, &llist->when));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_LEAF_LIST, 0, &llist->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "llist");
+            return LY_EVALID;
+        }
+    }
+    LY_CHECK_RET(ret);
+checks:
+    /* mandatory substatements */
+    if (!llist->type.name) {
+        LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "type", "leaf-list");
+        return LY_EVALID;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the refine statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] refines Refines to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_refine(struct lys_yang_parser_ctx *ctx, struct lysp_refine **refines)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_refine *rf;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *refines, rf, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+    CHECK_NONEMPTY(ctx, word_len, "refine");
+    INSERT_WORD_RET(ctx, buf, rf->nodeid, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_CONFIG:
+            LY_CHECK_RET(parse_config(ctx, &rf->flags, &rf->exts));
+            break;
+        case LY_STMT_DEFAULT:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_DEFAULT, &rf->dflts, Y_STR_ARG, &rf->exts));
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &rf->dsc, Y_STR_ARG, &rf->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            PARSER_CHECK_STMTVER2_RET(ctx, "if-feature", "refine");
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &rf->iffeatures, Y_STR_ARG, &rf->exts));
+            break;
+        case LY_STMT_MAX_ELEMENTS:
+            LY_CHECK_RET(parse_maxelements(ctx, &rf->max, &rf->flags, &rf->exts));
+            break;
+        case LY_STMT_MIN_ELEMENTS:
+            LY_CHECK_RET(parse_minelements(ctx, &rf->min, &rf->flags, &rf->exts));
+            break;
+        case LY_STMT_MUST:
+            LY_CHECK_RET(parse_restrs(ctx, kw, &rf->musts));
+            break;
+        case LY_STMT_MANDATORY:
+            LY_CHECK_RET(parse_mandatory(ctx, &rf->flags, &rf->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &rf->ref, Y_STR_ARG, &rf->exts));
+            break;
+        case LY_STMT_PRESENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_PRESENCE, 0, &rf->presence, Y_STR_ARG, &rf->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_REFINE, 0, &rf->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "refine");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the typedef statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] typedefs Typedefs to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_typedef(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_tpdf **typedefs)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_tpdf *tpdf;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *typedefs, tpdf, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, tpdf->name, word, word_len);
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+        switch (kw) {
+        case LY_STMT_DEFAULT:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DEFAULT, 0, &tpdf->dflt.str, Y_STR_ARG, &tpdf->exts));
+            tpdf->dflt.mod = ctx->parsed_mod;
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &tpdf->dsc, Y_STR_ARG, &tpdf->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &tpdf->ref, Y_STR_ARG, &tpdf->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &tpdf->flags, &tpdf->exts));
+            break;
+        case LY_STMT_TYPE:
+            LY_CHECK_RET(parse_type(ctx, &tpdf->type));
+            break;
+        case LY_STMT_UNITS:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_UNITS, 0, &tpdf->units, Y_STR_ARG, &tpdf->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_TYPEDEF, 0, &tpdf->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "typedef");
+            return LY_EVALID;
+        }
+    }
+    LY_CHECK_RET(ret);
+checks:
+    /* mandatory substatements */
+    if (!tpdf->type.name) {
+        LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "type", "typedef");
+        return LY_EVALID;
+    }
+
+    /* store data for collision check */
+    if (parent && !(parent->nodetype & (LYS_GROUPING | LYS_RPC | LYS_ACTION | LYS_INPUT | LYS_OUTPUT | LYS_NOTIF))) {
+        LY_CHECK_RET(ly_set_add(&ctx->tpdfs_nodes, parent, 0, NULL));
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the input or output statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in] kw Type of this particular keyword
+ * @param[in,out] inout_p Input/output pointer to write to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_inout(struct lys_yang_parser_ctx *ctx, enum ly_stmt inout_kw, struct lysp_node *parent,
+        struct lysp_node_action_inout *inout_p)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    ly_bool input = &((struct lysp_node_action *)parent)->input == inout_p ? 1 : 0;
+
+    if (inout_p->nodetype) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, ly_stmt2str(inout_kw));
+        return LY_EVALID;
+    }
+
+    /* initiate structure */
+    LY_CHECK_RET(lydict_insert(PARSER_CTX(ctx), input ? "input" : "output", 0, &inout_p->name));
+    inout_p->nodetype = input ? LYS_INPUT : LYS_OUTPUT;
+    inout_p->parent = parent;
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+        switch (kw) {
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", ly_stmt2str(inout_kw));
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, (struct lysp_node *)inout_p, &inout_p->child));
+            break;
+        case LY_STMT_CHOICE:
+            LY_CHECK_RET(parse_choice(ctx, (struct lysp_node *)inout_p, &inout_p->child));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, (struct lysp_node *)inout_p, &inout_p->child));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, (struct lysp_node *)inout_p, &inout_p->child));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, (struct lysp_node *)inout_p, &inout_p->child));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, (struct lysp_node *)inout_p, &inout_p->child));
+            break;
+        case LY_STMT_USES:
+            LY_CHECK_RET(parse_uses(ctx, (struct lysp_node *)inout_p, &inout_p->child));
+            break;
+        case LY_STMT_TYPEDEF:
+            LY_CHECK_RET(parse_typedef(ctx, (struct lysp_node *)inout_p, &inout_p->typedefs));
+            break;
+        case LY_STMT_MUST:
+            PARSER_CHECK_STMTVER2_RET(ctx, "must", ly_stmt2str(inout_kw));
+            LY_CHECK_RET(parse_restrs(ctx, kw, &inout_p->musts));
+            break;
+        case LY_STMT_GROUPING:
+            LY_CHECK_RET(parse_grouping(ctx, (struct lysp_node *)inout_p, &inout_p->groupings));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, inout_kw, 0, &inout_p->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), ly_stmt2str(inout_kw));
+            return LY_EVALID;
+        }
+    }
+    LY_CHECK_RET(ret);
+
+checks:
+    if (!inout_p->child) {
+        LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "data-def-stmt", ly_stmt2str(inout_kw));
+        return LY_EVALID;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the action statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] actions Actions to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_action(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node_action **actions)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_action *act;
+
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), actions, act, next, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, act->name, word, word_len);
+    act->nodetype = parent ? LYS_ACTION : LYS_RPC;
+    act->parent = parent;
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &act->dsc, Y_STR_ARG, &act->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &act->iffeatures, Y_STR_ARG, &act->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &act->ref, Y_STR_ARG, &act->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &act->flags, &act->exts));
+            break;
+
+        case LY_STMT_INPUT:
+            LY_CHECK_RET(parse_inout(ctx, kw, (struct lysp_node *)act, &act->input));
+            break;
+        case LY_STMT_OUTPUT:
+            LY_CHECK_RET(parse_inout(ctx, kw, (struct lysp_node *)act, &act->output));
+            break;
+
+        case LY_STMT_TYPEDEF:
+            LY_CHECK_RET(parse_typedef(ctx, (struct lysp_node *)act, &act->typedefs));
+            break;
+        case LY_STMT_GROUPING:
+            LY_CHECK_RET(parse_grouping(ctx, (struct lysp_node *)act, &act->groupings));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, parent ? LY_STMT_ACTION : LY_STMT_RPC, 0, &act->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), parent ? "action" : "rpc");
+            return LY_EVALID;
+        }
+    }
+    LY_CHECK_RET(ret);
+
+checks:
+    /* always initialize inout, they are technically present (needed for later deviations/refines) */
+    if (!act->input.nodetype) {
+        act->input.nodetype = LYS_INPUT;
+        act->input.parent = (struct lysp_node *)act;
+        LY_CHECK_RET(lydict_insert(PARSER_CTX(ctx), "input", 0, &act->input.name));
+    }
+    if (!act->output.nodetype) {
+        act->output.nodetype = LYS_OUTPUT;
+        act->output.parent = (struct lysp_node *)act;
+        LY_CHECK_RET(lydict_insert(PARSER_CTX(ctx), "output", 0, &act->output.name));
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the notification statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] notifs Notifications to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_notif(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node_notif **notifs)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_notif *notif;
+
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), notifs, notif, next, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, notif->name, word, word_len);
+    notif->nodetype = LYS_NOTIF;
+    notif->parent = parent;
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &notif->dsc, Y_STR_ARG, &notif->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &notif->iffeatures, Y_STR_ARG, &notif->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &notif->ref, Y_STR_ARG, &notif->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &notif->flags, &notif->exts));
+            break;
+
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", "notification");
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, (struct lysp_node *)notif, &notif->child));
+            break;
+        case LY_STMT_CHOICE:
+            LY_CHECK_RET(parse_choice(ctx, (struct lysp_node *)notif, &notif->child));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, (struct lysp_node *)notif, &notif->child));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, (struct lysp_node *)notif, &notif->child));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, (struct lysp_node *)notif, &notif->child));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, (struct lysp_node *)notif, &notif->child));
+            break;
+        case LY_STMT_USES:
+            LY_CHECK_RET(parse_uses(ctx, (struct lysp_node *)notif, &notif->child));
+            break;
+
+        case LY_STMT_MUST:
+            PARSER_CHECK_STMTVER2_RET(ctx, "must", "notification");
+            LY_CHECK_RET(parse_restrs(ctx, kw, &notif->musts));
+            break;
+        case LY_STMT_TYPEDEF:
+            LY_CHECK_RET(parse_typedef(ctx, (struct lysp_node *)notif, &notif->typedefs));
+            break;
+        case LY_STMT_GROUPING:
+            LY_CHECK_RET(parse_grouping(ctx, (struct lysp_node *)notif, &notif->groupings));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_NOTIFICATION, 0, &notif->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "notification");
+            return LY_EVALID;
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the grouping statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] groupings Groupings to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_grouping(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node_grp **groupings)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_grp *grp;
+
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), groupings, grp, next, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, grp->name, word, word_len);
+    grp->nodetype = LYS_GROUPING;
+    grp->parent = parent;
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &grp->dsc, Y_STR_ARG, &grp->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &grp->ref, Y_STR_ARG, &grp->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &grp->flags, &grp->exts));
+            break;
+
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", "grouping");
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, &grp->node, &grp->child));
+            break;
+        case LY_STMT_CHOICE:
+            LY_CHECK_RET(parse_choice(ctx, &grp->node, &grp->child));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, &grp->node, &grp->child));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, &grp->node, &grp->child));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, &grp->node, &grp->child));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, &grp->node, &grp->child));
+            break;
+        case LY_STMT_USES:
+            LY_CHECK_RET(parse_uses(ctx, &grp->node, &grp->child));
+            break;
+
+        case LY_STMT_TYPEDEF:
+            LY_CHECK_RET(parse_typedef(ctx, &grp->node, &grp->typedefs));
+            break;
+        case LY_STMT_ACTION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "action", "grouping");
+            LY_CHECK_RET(parse_action(ctx, &grp->node, &grp->actions));
+            break;
+        case LY_STMT_GROUPING:
+            LY_CHECK_RET(parse_grouping(ctx, &grp->node, &grp->groupings));
+            break;
+        case LY_STMT_NOTIFICATION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "notification", "grouping");
+            LY_CHECK_RET(parse_notif(ctx, &grp->node, &grp->notifs));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_GROUPING, 0, &grp->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "grouping");
+            return LY_EVALID;
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the augment statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] augments Augments to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_augment(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node_augment **augments)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_augment *aug;
+
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), augments, aug, next, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+    CHECK_NONEMPTY(ctx, word_len, "augment");
+    INSERT_WORD_RET(ctx, buf, aug->nodeid, word, word_len);
+    aug->nodetype = LYS_AUGMENT;
+    aug->parent = parent;
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &aug->dsc, Y_STR_ARG, &aug->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &aug->iffeatures, Y_STR_ARG, &aug->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &aug->ref, Y_STR_ARG, &aug->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &aug->flags, &aug->exts));
+            break;
+        case LY_STMT_WHEN:
+            LY_CHECK_RET(parse_when(ctx, &aug->when));
+            break;
+
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", "augment");
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, (struct lysp_node *)aug, &aug->child));
+            break;
+        case LY_STMT_CASE:
+            LY_CHECK_RET(parse_case(ctx, (struct lysp_node *)aug, &aug->child));
+            break;
+        case LY_STMT_CHOICE:
+            LY_CHECK_RET(parse_choice(ctx, (struct lysp_node *)aug, &aug->child));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, (struct lysp_node *)aug, &aug->child));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, (struct lysp_node *)aug, &aug->child));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, (struct lysp_node *)aug, &aug->child));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, (struct lysp_node *)aug, &aug->child));
+            break;
+        case LY_STMT_USES:
+            LY_CHECK_RET(parse_uses(ctx, (struct lysp_node *)aug, &aug->child));
+            break;
+
+        case LY_STMT_ACTION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "action", "augment");
+            LY_CHECK_RET(parse_action(ctx, (struct lysp_node *)aug, &aug->actions));
+            break;
+        case LY_STMT_NOTIFICATION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "notification", "augment");
+            LY_CHECK_RET(parse_notif(ctx, (struct lysp_node *)aug, &aug->notifs));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_AUGMENT, 0, &aug->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "augment");
+            return LY_EVALID;
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the uses statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] siblings Siblings to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_uses(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_uses *uses;
+
+    /* create uses structure */
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), siblings, uses, next, LY_EMEM);
+    uses->nodetype = LYS_USES;
+    uses->parent = parent;
+
+    /* get name */
+    LY_CHECK_RET(get_argument(ctx, Y_PREF_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, uses->name, word, word_len);
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &uses->dsc, Y_STR_ARG, &uses->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &uses->iffeatures, Y_STR_ARG, &uses->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &uses->ref, Y_STR_ARG, &uses->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &uses->flags, &uses->exts));
+            break;
+        case LY_STMT_WHEN:
+            LY_CHECK_RET(parse_when(ctx, &uses->when));
+            break;
+
+        case LY_STMT_REFINE:
+            LY_CHECK_RET(parse_refine(ctx, &uses->refines));
+            break;
+        case LY_STMT_AUGMENT:
+            LY_CHECK_RET(parse_augment(ctx, (struct lysp_node *)uses, &uses->augments));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_USES, 0, &uses->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "uses");
+            return LY_EVALID;
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the case statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] siblings Siblings to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_case(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_case *cas;
+
+    /* create new case structure */
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), siblings, cas, next, LY_EMEM);
+    cas->nodetype = LYS_CASE;
+    cas->parent = parent;
+
+    /* get name */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, cas->name, word, word_len);
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &cas->dsc, Y_STR_ARG, &cas->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &cas->iffeatures, Y_STR_ARG, &cas->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &cas->ref, Y_STR_ARG, &cas->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &cas->flags, &cas->exts));
+            break;
+        case LY_STMT_WHEN:
+            LY_CHECK_RET(parse_when(ctx, &cas->when));
+            break;
+
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", "case");
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, (struct lysp_node *)cas, &cas->child));
+            break;
+        case LY_STMT_CHOICE:
+            LY_CHECK_RET(parse_choice(ctx, (struct lysp_node *)cas, &cas->child));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, (struct lysp_node *)cas, &cas->child));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, (struct lysp_node *)cas, &cas->child));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, (struct lysp_node *)cas, &cas->child));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, (struct lysp_node *)cas, &cas->child));
+            break;
+        case LY_STMT_USES:
+            LY_CHECK_RET(parse_uses(ctx, (struct lysp_node *)cas, &cas->child));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_CASE, 0, &cas->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "case");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the choice statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] siblings Siblings to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_choice(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_choice *choice;
+
+    /* create new choice structure */
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), siblings, choice, next, LY_EMEM);
+    choice->nodetype = LYS_CHOICE;
+    choice->parent = parent;
+
+    /* get name */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, choice->name, word, word_len);
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_CONFIG:
+            LY_CHECK_RET(parse_config(ctx, &choice->flags, &choice->exts));
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &choice->dsc, Y_STR_ARG, &choice->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &choice->iffeatures, Y_STR_ARG, &choice->exts));
+            break;
+        case LY_STMT_MANDATORY:
+            LY_CHECK_RET(parse_mandatory(ctx, &choice->flags, &choice->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &choice->ref, Y_STR_ARG, &choice->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &choice->flags, &choice->exts));
+            break;
+        case LY_STMT_WHEN:
+            LY_CHECK_RET(parse_when(ctx, &choice->when));
+            break;
+        case LY_STMT_DEFAULT:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DEFAULT, 0, &choice->dflt.str, Y_PREF_IDENTIF_ARG,
+                    &choice->exts));
+            choice->dflt.mod = ctx->parsed_mod;
+            break;
+
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", "choice");
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, (struct lysp_node *)choice, &choice->child));
+            break;
+        case LY_STMT_CASE:
+            LY_CHECK_RET(parse_case(ctx, (struct lysp_node *)choice, &choice->child));
+            break;
+        case LY_STMT_CHOICE:
+            PARSER_CHECK_STMTVER2_RET(ctx, "choice", "choice");
+            LY_CHECK_RET(parse_choice(ctx, (struct lysp_node *)choice, &choice->child));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, (struct lysp_node *)choice, &choice->child));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, (struct lysp_node *)choice, &choice->child));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, (struct lysp_node *)choice, &choice->child));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, (struct lysp_node *)choice, &choice->child));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_CHOICE, 0, &choice->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "choice");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the container statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] siblings Siblings to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_container(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings)
+{
+    LY_ERR ret = 0;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_container *cont;
+
+    /* create new container structure */
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), siblings, cont, next, LY_EMEM);
+    cont->nodetype = LYS_CONTAINER;
+    cont->parent = parent;
+
+    /* get name */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, cont->name, word, word_len);
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_CONFIG:
+            LY_CHECK_RET(parse_config(ctx, &cont->flags, &cont->exts));
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &cont->dsc, Y_STR_ARG, &cont->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &cont->iffeatures, Y_STR_ARG, &cont->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &cont->ref, Y_STR_ARG, &cont->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &cont->flags, &cont->exts));
+            break;
+        case LY_STMT_WHEN:
+            LY_CHECK_RET(parse_when(ctx, &cont->when));
+            break;
+        case LY_STMT_PRESENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_PRESENCE, 0, &cont->presence, Y_STR_ARG, &cont->exts));
+            break;
+
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", "container");
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, (struct lysp_node *)cont, &cont->child));
+            break;
+        case LY_STMT_CHOICE:
+            LY_CHECK_RET(parse_choice(ctx, (struct lysp_node *)cont, &cont->child));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, (struct lysp_node *)cont, &cont->child));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, (struct lysp_node *)cont, &cont->child));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, (struct lysp_node *)cont, &cont->child));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, (struct lysp_node *)cont, &cont->child));
+            break;
+        case LY_STMT_USES:
+            LY_CHECK_RET(parse_uses(ctx, (struct lysp_node *)cont, &cont->child));
+            break;
+
+        case LY_STMT_TYPEDEF:
+            LY_CHECK_RET(parse_typedef(ctx, (struct lysp_node *)cont, &cont->typedefs));
+            break;
+        case LY_STMT_MUST:
+            LY_CHECK_RET(parse_restrs(ctx, kw, &cont->musts));
+            break;
+        case LY_STMT_ACTION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "action", "container");
+            LY_CHECK_RET(parse_action(ctx, (struct lysp_node *)cont, &cont->actions));
+            break;
+        case LY_STMT_GROUPING:
+            LY_CHECK_RET(parse_grouping(ctx, (struct lysp_node *)cont, &cont->groupings));
+            break;
+        case LY_STMT_NOTIFICATION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "notification", "container");
+            LY_CHECK_RET(parse_notif(ctx, (struct lysp_node *)cont, &cont->notifs));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_CONTAINER, 0, &cont->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "container");
+            return LY_EVALID;
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the list statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] siblings Siblings to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_list(struct lys_yang_parser_ctx *ctx, struct lysp_node *parent, struct lysp_node **siblings)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_node_list *list;
+
+    /* create new list structure */
+    LY_LIST_NEW_RET(PARSER_CTX(ctx), siblings, list, next, LY_EMEM);
+    list->nodetype = LYS_LIST;
+    list->parent = parent;
+
+    /* get name */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, list->name, word, word_len);
+
+    /* parse substatements */
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_CONFIG:
+            LY_CHECK_RET(parse_config(ctx, &list->flags, &list->exts));
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &list->dsc, Y_STR_ARG, &list->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &list->iffeatures, Y_STR_ARG, &list->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &list->ref, Y_STR_ARG, &list->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &list->flags, &list->exts));
+            break;
+        case LY_STMT_WHEN:
+            LY_CHECK_RET(parse_when(ctx, &list->when));
+            break;
+        case LY_STMT_KEY:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_KEY, 0, &list->key, Y_STR_ARG, &list->exts));
+            break;
+        case LY_STMT_MAX_ELEMENTS:
+            LY_CHECK_RET(parse_maxelements(ctx, &list->max, &list->flags, &list->exts));
+            break;
+        case LY_STMT_MIN_ELEMENTS:
+            LY_CHECK_RET(parse_minelements(ctx, &list->min, &list->flags, &list->exts));
+            break;
+        case LY_STMT_ORDERED_BY:
+            LY_CHECK_RET(parse_orderedby(ctx, &list->flags, &list->exts));
+            break;
+        case LY_STMT_UNIQUE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_UNIQUE, &list->uniques, Y_STR_ARG, &list->exts));
+            break;
+
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", "list");
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, (struct lysp_node *)list, &list->child));
+            break;
+        case LY_STMT_CHOICE:
+            LY_CHECK_RET(parse_choice(ctx, (struct lysp_node *)list, &list->child));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, (struct lysp_node *)list, &list->child));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, (struct lysp_node *)list, &list->child));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, (struct lysp_node *)list, &list->child));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, (struct lysp_node *)list, &list->child));
+            break;
+        case LY_STMT_USES:
+            LY_CHECK_RET(parse_uses(ctx, (struct lysp_node *)list, &list->child));
+            break;
+
+        case LY_STMT_TYPEDEF:
+            LY_CHECK_RET(parse_typedef(ctx, (struct lysp_node *)list, &list->typedefs));
+            break;
+        case LY_STMT_MUST:
+            LY_CHECK_RET(parse_restrs(ctx, kw, &list->musts));
+            break;
+        case LY_STMT_ACTION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "action", "list");
+            LY_CHECK_RET(parse_action(ctx, (struct lysp_node *)list, &list->actions));
+            break;
+        case LY_STMT_GROUPING:
+            LY_CHECK_RET(parse_grouping(ctx, (struct lysp_node *)list, &list->groupings));
+            break;
+        case LY_STMT_NOTIFICATION:
+            PARSER_CHECK_STMTVER2_RET(ctx, "notification", "list");
+            LY_CHECK_RET(parse_notif(ctx, (struct lysp_node *)list, &list->notifs));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_LIST, 0, &list->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "list");
+            return LY_EVALID;
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the yin-element statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] flags Flags to write to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_yinelement(struct lys_yang_parser_ctx *ctx, uint16_t *flags, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    if (*flags & LYS_YINELEM_MASK) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "yin-element");
+        return LY_EVALID;
+    }
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if ((word_len == ly_strlen_const("true")) && !strncmp(word, "true", word_len)) {
+        *flags |= LYS_YINELEM_TRUE;
+    } else if ((word_len == ly_strlen_const("false")) && !strncmp(word, "false", word_len)) {
+        *flags |= LYS_YINELEM_FALSE;
+    } else {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "yin-element");
+        free(buf);
+        return LY_EVALID;
+    }
+    free(buf);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_YIN_ELEMENT, 0, exts));
+            LY_CHECK_RET(ret);
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "yin-element");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the argument statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] argument Value to write to.
+ * @param[in,out] flags Flags to write to.
+ * @param[in,out] exts Extension instances to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_argument(struct lys_yang_parser_ctx *ctx, const char **argument, uint16_t *flags, struct lysp_ext_instance **exts)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+
+    if (*argument) {
+        LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, "argument");
+        return LY_EVALID;
+    }
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, *argument, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_YIN_ELEMENT:
+            LY_CHECK_RET(parse_yinelement(ctx, flags, exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_ARGUMENT, 0, exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "argument");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the extension statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] extensions Extensions to add to.
+ *
+ * @return LY_ERR values.
+ */
+static LY_ERR
+parse_extension(struct lys_yang_parser_ctx *ctx, struct lysp_ext **extensions)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_ext *ex;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *extensions, ex, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, ex->name, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &ex->dsc, Y_STR_ARG, &ex->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &ex->ref, Y_STR_ARG, &ex->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &ex->flags, &ex->exts));
+            break;
+        case LY_STMT_ARGUMENT:
+            LY_CHECK_RET(parse_argument(ctx, &ex->argname, &ex->flags, &ex->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_EXTENSION, 0, &ex->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "extension");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the deviate statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] deviates Deviates to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_deviate(struct lys_yang_parser_ctx *ctx, struct lysp_deviate **deviates)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len, dev_mod;
+    enum ly_stmt kw;
+    struct lysp_deviate *d;
+    struct lysp_deviate_add *d_add = NULL;
+    struct lysp_deviate_rpl *d_rpl = NULL;
+    struct lysp_deviate_del *d_del = NULL;
+    const char **d_units = NULL;
+    struct lysp_qname **d_uniques = NULL, **d_dflts = NULL;
+    struct lysp_restr **d_musts = NULL;
+    uint16_t *d_flags = 0;
+    uint32_t *d_min = 0, *d_max = 0;
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+
+    if ((word_len == ly_strlen_const("not-supported")) && !strncmp(word, "not-supported", word_len)) {
+        dev_mod = LYS_DEV_NOT_SUPPORTED;
+    } else if ((word_len == ly_strlen_const("add")) && !strncmp(word, "add", word_len)) {
+        dev_mod = LYS_DEV_ADD;
+    } else if ((word_len == ly_strlen_const("replace")) && !strncmp(word, "replace", word_len)) {
+        dev_mod = LYS_DEV_REPLACE;
+    } else if ((word_len == ly_strlen_const("delete")) && !strncmp(word, "delete", word_len)) {
+        dev_mod = LYS_DEV_DELETE;
+    } else {
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, word_len, word, "deviate");
+        free(buf);
+        return LY_EVALID;
+    }
+    free(buf);
+
+    /* create structure */
+    switch (dev_mod) {
+    case LYS_DEV_NOT_SUPPORTED:
+        d = calloc(1, sizeof *d);
+        LY_CHECK_ERR_RET(!d, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+        break;
+    case LYS_DEV_ADD:
+        d_add = calloc(1, sizeof *d_add);
+        LY_CHECK_ERR_RET(!d_add, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+        d = (struct lysp_deviate *)d_add;
+        d_units = &d_add->units;
+        d_uniques = &d_add->uniques;
+        d_dflts = &d_add->dflts;
+        d_musts = &d_add->musts;
+        d_flags = &d_add->flags;
+        d_min = &d_add->min;
+        d_max = &d_add->max;
+        break;
+    case LYS_DEV_REPLACE:
+        d_rpl = calloc(1, sizeof *d_rpl);
+        LY_CHECK_ERR_RET(!d_rpl, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+        d = (struct lysp_deviate *)d_rpl;
+        d_units = &d_rpl->units;
+        d_flags = &d_rpl->flags;
+        d_min = &d_rpl->min;
+        d_max = &d_rpl->max;
+        break;
+    case LYS_DEV_DELETE:
+        d_del = calloc(1, sizeof *d_del);
+        LY_CHECK_ERR_RET(!d_del, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+        d = (struct lysp_deviate *)d_del;
+        d_units = &d_del->units;
+        d_uniques = &d_del->uniques;
+        d_dflts = &d_del->dflts;
+        d_musts = &d_del->musts;
+        break;
+    default:
+        assert(0);
+        LOGINT_RET(PARSER_CTX(ctx));
+    }
+    d->mod = dev_mod;
+
+    /* insert into siblings */
+    LY_LIST_INSERT(deviates, d, next);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_CONFIG:
+            switch (dev_mod) {
+            case LYS_DEV_NOT_SUPPORTED:
+            case LYS_DEV_DELETE:
+                LOGVAL_PARSER(ctx, LY_VCODE_INDEV, ly_devmod2str(dev_mod), ly_stmt2str(kw));
+                return LY_EVALID;
+            default:
+                LY_CHECK_RET(parse_config(ctx, d_flags, &d->exts));
+                break;
+            }
+            break;
+        case LY_STMT_DEFAULT:
+            switch (dev_mod) {
+            case LYS_DEV_NOT_SUPPORTED:
+                LOGVAL_PARSER(ctx, LY_VCODE_INDEV, ly_devmod2str(dev_mod), ly_stmt2str(kw));
+                return LY_EVALID;
+            case LYS_DEV_REPLACE:
+                LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DEFAULT, 0, &d_rpl->dflt.str, Y_STR_ARG, &d->exts));
+                d_rpl->dflt.mod = ctx->parsed_mod;
+                break;
+            default:
+                LY_CHECK_RET(parse_qnames(ctx, LY_STMT_DEFAULT, d_dflts, Y_STR_ARG, &d->exts));
+                break;
+            }
+            break;
+        case LY_STMT_MANDATORY:
+            switch (dev_mod) {
+            case LYS_DEV_NOT_SUPPORTED:
+            case LYS_DEV_DELETE:
+                LOGVAL_PARSER(ctx, LY_VCODE_INDEV, ly_devmod2str(dev_mod), ly_stmt2str(kw));
+                return LY_EVALID;
+            default:
+                LY_CHECK_RET(parse_mandatory(ctx, d_flags, &d->exts));
+                break;
+            }
+            break;
+        case LY_STMT_MAX_ELEMENTS:
+            switch (dev_mod) {
+            case LYS_DEV_NOT_SUPPORTED:
+            case LYS_DEV_DELETE:
+                LOGVAL_PARSER(ctx, LY_VCODE_INDEV, ly_devmod2str(dev_mod), ly_stmt2str(kw));
+                return LY_EVALID;
+            default:
+                LY_CHECK_RET(parse_maxelements(ctx, d_max, d_flags, &d->exts));
+                break;
+            }
+            break;
+        case LY_STMT_MIN_ELEMENTS:
+            switch (dev_mod) {
+            case LYS_DEV_NOT_SUPPORTED:
+            case LYS_DEV_DELETE:
+                LOGVAL_PARSER(ctx, LY_VCODE_INDEV, ly_devmod2str(dev_mod), ly_stmt2str(kw));
+                return LY_EVALID;
+            default:
+                LY_CHECK_RET(parse_minelements(ctx, d_min, d_flags, &d->exts));
+                break;
+            }
+            break;
+        case LY_STMT_MUST:
+            switch (dev_mod) {
+            case LYS_DEV_NOT_SUPPORTED:
+            case LYS_DEV_REPLACE:
+                LOGVAL_PARSER(ctx, LY_VCODE_INDEV, ly_devmod2str(dev_mod), ly_stmt2str(kw));
+                return LY_EVALID;
+            default:
+                LY_CHECK_RET(parse_restrs(ctx, kw, d_musts));
+                break;
+            }
+            break;
+        case LY_STMT_TYPE:
+            switch (dev_mod) {
+            case LYS_DEV_NOT_SUPPORTED:
+            case LYS_DEV_ADD:
+            case LYS_DEV_DELETE:
+                LOGVAL_PARSER(ctx, LY_VCODE_INDEV, ly_devmod2str(dev_mod), ly_stmt2str(kw));
+                return LY_EVALID;
+            default:
+                if (d_rpl->type) {
+                    LOGVAL_PARSER(ctx, LY_VCODE_DUPSTMT, ly_stmt2str(kw));
+                    return LY_EVALID;
+                }
+                d_rpl->type = calloc(1, sizeof *d_rpl->type);
+                LY_CHECK_ERR_RET(!d_rpl->type, LOGMEM(PARSER_CTX(ctx)), LY_EMEM);
+                LY_CHECK_RET(parse_type(ctx, d_rpl->type));
+                break;
+            }
+            break;
+        case LY_STMT_UNIQUE:
+            switch (dev_mod) {
+            case LYS_DEV_NOT_SUPPORTED:
+            case LYS_DEV_REPLACE:
+                LOGVAL_PARSER(ctx, LY_VCODE_INDEV, ly_devmod2str(dev_mod), ly_stmt2str(kw));
+                return LY_EVALID;
+            default:
+                LY_CHECK_RET(parse_qnames(ctx, LY_STMT_UNIQUE, d_uniques, Y_STR_ARG, &d->exts));
+                break;
+            }
+            break;
+        case LY_STMT_UNITS:
+            switch (dev_mod) {
+            case LYS_DEV_NOT_SUPPORTED:
+                LOGVAL_PARSER(ctx, LY_VCODE_INDEV, ly_devmod2str(dev_mod), ly_stmt2str(kw));
+                return LY_EVALID;
+            default:
+                LY_CHECK_RET(parse_text_field(ctx, LY_STMT_UNITS, 0, d_units, Y_STR_ARG, &d->exts));
+                break;
+            }
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_DEVIATE, 0, &d->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "deviate");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the deviation statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] deviations Deviations to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_deviation(struct lys_yang_parser_ctx *ctx, struct lysp_deviation **deviations)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_deviation *dev;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *deviations, dev, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_STR_ARG, NULL, &word, &buf, &word_len));
+    CHECK_NONEMPTY(ctx, word_len, "deviation");
+    INSERT_WORD_RET(ctx, buf, dev->nodeid, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &dev->dsc, Y_STR_ARG, &dev->exts));
+            break;
+        case LY_STMT_DEVIATE:
+            LY_CHECK_RET(parse_deviate(ctx, &dev->deviates));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &dev->ref, Y_STR_ARG, &dev->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_DEVIATION, 0, &dev->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "deviation");
+            return LY_EVALID;
+        }
+    }
+    LY_CHECK_RET(ret);
+checks:
+    /* mandatory substatements */
+    if (!dev->deviates) {
+        LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "deviate", "deviation");
+        return LY_EVALID;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse the feature statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] features Features to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_feature(struct lys_yang_parser_ctx *ctx, struct lysp_feature **features)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_feature *feat;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *features, feat, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, feat->name, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &feat->dsc, Y_STR_ARG, &feat->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &feat->iffeatures, Y_STR_ARG, &feat->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &feat->ref, Y_STR_ARG, &feat->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &feat->flags, &feat->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_FEATURE, 0, &feat->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "feature");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse the identity statement.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] identities Identities to add to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_identity(struct lys_yang_parser_ctx *ctx, struct lysp_ident **identities)
+{
+    LY_ERR ret = LY_SUCCESS;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_ident *ident;
+
+    LY_ARRAY_NEW_RET(PARSER_CTX(ctx), *identities, ident, LY_EMEM);
+
+    /* get value */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, ident->name, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, return LY_SUCCESS, return ret) {
+        switch (kw) {
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &ident->dsc, Y_STR_ARG, &ident->exts));
+            break;
+        case LY_STMT_IF_FEATURE:
+            PARSER_CHECK_STMTVER2_RET(ctx, "if-feature", "identity");
+            LY_CHECK_RET(parse_qnames(ctx, LY_STMT_IF_FEATURE, &ident->iffeatures, Y_STR_ARG, &ident->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &ident->ref, Y_STR_ARG, &ident->exts));
+            break;
+        case LY_STMT_STATUS:
+            LY_CHECK_RET(parse_status(ctx, &ident->flags, &ident->exts));
+            break;
+        case LY_STMT_BASE:
+            if (ident->bases && (ctx->parsed_mod->version < LYS_VERSION_1_1)) {
+                LOGVAL_PARSER(ctx, LYVE_SYNTAX_YANG, "Identity can be derived from multiple base identities only in YANG 1.1 modules");
+                return LY_EVALID;
+            }
+            LY_CHECK_RET(parse_text_fields(ctx, LY_STMT_BASE, &ident->bases, Y_PREF_IDENTIF_ARG, &ident->exts));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_IDENTITY, 0, &ident->exts));
+            break;
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "identity");
+            return LY_EVALID;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Parse module substatements.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[in,out] mod Module to write to.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_module(struct lys_yang_parser_ctx *ctx, struct lysp_module *mod)
+{
+    LY_ERR ret = 0;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw, prev_kw = 0;
+    enum yang_module_stmt mod_stmt = Y_MOD_MODULE_HEADER;
+    const struct lysp_submodule *dup;
+
+    mod->is_submod = 0;
+
+    /* module name */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, mod->mod->name, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+
+#define CHECK_ORDER(SECTION) \
+        if (mod_stmt > SECTION) {LOGVAL_PARSER(ctx, LY_VCODE_INORD, ly_stmt2str(kw), ly_stmt2str(prev_kw)); return LY_EVALID;}mod_stmt = SECTION
+
+        switch (kw) {
+        /* module header */
+        case LY_STMT_NAMESPACE:
+        case LY_STMT_PREFIX:
+            CHECK_ORDER(Y_MOD_MODULE_HEADER);
+            break;
+        case LY_STMT_YANG_VERSION:
+            CHECK_ORDER(Y_MOD_MODULE_HEADER);
+            break;
+        /* linkage */
+        case LY_STMT_INCLUDE:
+        case LY_STMT_IMPORT:
+            CHECK_ORDER(Y_MOD_LINKAGE);
+            break;
+        /* meta */
+        case LY_STMT_ORGANIZATION:
+        case LY_STMT_CONTACT:
+        case LY_STMT_DESCRIPTION:
+        case LY_STMT_REFERENCE:
+            CHECK_ORDER(Y_MOD_META);
+            break;
+
+        /* revision */
+        case LY_STMT_REVISION:
+            CHECK_ORDER(Y_MOD_REVISION);
+            break;
+        /* body */
+        case LY_STMT_ANYDATA:
+        case LY_STMT_ANYXML:
+        case LY_STMT_AUGMENT:
+        case LY_STMT_CHOICE:
+        case LY_STMT_CONTAINER:
+        case LY_STMT_DEVIATION:
+        case LY_STMT_EXTENSION:
+        case LY_STMT_FEATURE:
+        case LY_STMT_GROUPING:
+        case LY_STMT_IDENTITY:
+        case LY_STMT_LEAF:
+        case LY_STMT_LEAF_LIST:
+        case LY_STMT_LIST:
+        case LY_STMT_NOTIFICATION:
+        case LY_STMT_RPC:
+        case LY_STMT_TYPEDEF:
+        case LY_STMT_USES:
+        case LY_STMT_EXTENSION_INSTANCE:
+            mod_stmt = Y_MOD_BODY;
+            break;
+        default:
+            /* error handled in the next switch */
+            break;
+        }
+#undef CHECK_ORDER
+
+        prev_kw = kw;
+        switch (kw) {
+        /* module header */
+        case LY_STMT_YANG_VERSION:
+            LY_CHECK_RET(parse_yangversion(ctx, &mod->version, &mod->exts));
+            break;
+        case LY_STMT_NAMESPACE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_NAMESPACE, 0, &mod->mod->ns, Y_STR_ARG, &mod->exts));
+            break;
+        case LY_STMT_PREFIX:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_PREFIX, 0, &mod->mod->prefix, Y_IDENTIF_ARG, &mod->exts));
+            break;
+
+        /* linkage */
+        case LY_STMT_INCLUDE:
+            LY_CHECK_RET(parse_include(ctx, mod->mod->name, &mod->includes));
+            break;
+        case LY_STMT_IMPORT:
+            LY_CHECK_RET(parse_import(ctx, mod->mod->prefix, &mod->imports));
+            break;
+
+        /* meta */
+        case LY_STMT_ORGANIZATION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_ORGANIZATION, 0, &mod->mod->org, Y_STR_ARG, &mod->exts));
+            break;
+        case LY_STMT_CONTACT:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_CONTACT, 0, &mod->mod->contact, Y_STR_ARG, &mod->exts));
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &mod->mod->dsc, Y_STR_ARG, &mod->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &mod->mod->ref, Y_STR_ARG, &mod->exts));
+            break;
+
+        /* revision */
+        case LY_STMT_REVISION:
+            LY_CHECK_RET(parse_revision(ctx, &mod->revs));
+            break;
+
+        /* body */
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", "module");
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, NULL, &mod->data));
+            break;
+        case LY_STMT_CHOICE:
+            LY_CHECK_RET(parse_choice(ctx, NULL, &mod->data));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, NULL, &mod->data));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, NULL, &mod->data));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, NULL, &mod->data));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, NULL, &mod->data));
+            break;
+        case LY_STMT_USES:
+            LY_CHECK_RET(parse_uses(ctx, NULL, &mod->data));
+            break;
+
+        case LY_STMT_AUGMENT:
+            LY_CHECK_RET(parse_augment(ctx, NULL, &mod->augments));
+            break;
+        case LY_STMT_DEVIATION:
+            LY_CHECK_RET(parse_deviation(ctx, &mod->deviations));
+            break;
+        case LY_STMT_EXTENSION:
+            LY_CHECK_RET(parse_extension(ctx, &mod->extensions));
+            break;
+        case LY_STMT_FEATURE:
+            LY_CHECK_RET(parse_feature(ctx, &mod->features));
+            break;
+        case LY_STMT_GROUPING:
+            LY_CHECK_RET(parse_grouping(ctx, NULL, &mod->groupings));
+            break;
+        case LY_STMT_IDENTITY:
+            LY_CHECK_RET(parse_identity(ctx, &mod->identities));
+            break;
+        case LY_STMT_NOTIFICATION:
+            LY_CHECK_RET(parse_notif(ctx, NULL, &mod->notifs));
+            break;
+        case LY_STMT_RPC:
+            LY_CHECK_RET(parse_action(ctx, NULL, &mod->rpcs));
+            break;
+        case LY_STMT_TYPEDEF:
+            LY_CHECK_RET(parse_typedef(ctx, NULL, &mod->typedefs));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_MODULE, 0, &mod->exts));
+            break;
+
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "module");
+            return LY_EVALID;
+        }
+    }
+    LY_CHECK_RET(ret);
+
+checks:
+    /* mandatory substatements */
+    if (!mod->mod->ns) {
+        LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "namespace", "module");
+        return LY_EVALID;
+    } else if (!mod->mod->prefix) {
+        LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "prefix", "module");
+        return LY_EVALID;
+    }
+
+    /* submodules share the namespace with the module names, so there must not be
+     * a submodule of the same name in the context, no need for revision matching */
+    dup = ly_ctx_get_submodule_latest(PARSER_CTX(ctx), mod->mod->name);
+    if (dup) {
+        LOGVAL_PARSER(ctx, LY_VCODE_NAME2_COL, "module", "submodule", mod->mod->name);
+        return LY_EVALID;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Parse submodule substatements.
+ *
+ * @param[in] ctx yang parser context for logging.
+ * @param[out] submod Parsed submodule structure.
+ *
+ * @return LY_ERR values.
+ */
+LY_ERR
+parse_submodule(struct lys_yang_parser_ctx *ctx, struct lysp_submodule *submod)
+{
+    LY_ERR ret = 0;
+    char *buf, *word;
+    size_t word_len;
+    enum ly_stmt kw, prev_kw = 0;
+    enum yang_module_stmt mod_stmt = Y_MOD_MODULE_HEADER;
+    const struct lysp_submodule *dup;
+
+    submod->is_submod = 1;
+
+    /* submodule name */
+    LY_CHECK_RET(get_argument(ctx, Y_IDENTIF_ARG, NULL, &word, &buf, &word_len));
+    INSERT_WORD_RET(ctx, buf, submod->name, word, word_len);
+
+    YANG_READ_SUBSTMT_FOR(ctx, kw, word, word_len, ret, goto checks, return ret) {
+
+#define CHECK_ORDER(SECTION) \
+        if (mod_stmt > SECTION) {LOGVAL_PARSER(ctx, LY_VCODE_INORD, ly_stmt2str(kw), ly_stmt2str(prev_kw)); return LY_EVALID;}mod_stmt = SECTION
+
+        switch (kw) {
+        /* module header */
+        case LY_STMT_BELONGS_TO:
+            CHECK_ORDER(Y_MOD_MODULE_HEADER);
+            break;
+        case LY_STMT_YANG_VERSION:
+            CHECK_ORDER(Y_MOD_MODULE_HEADER);
+            break;
+        /* linkage */
+        case LY_STMT_INCLUDE:
+        case LY_STMT_IMPORT:
+            CHECK_ORDER(Y_MOD_LINKAGE);
+            break;
+        /* meta */
+        case LY_STMT_ORGANIZATION:
+        case LY_STMT_CONTACT:
+        case LY_STMT_DESCRIPTION:
+        case LY_STMT_REFERENCE:
+            CHECK_ORDER(Y_MOD_META);
+            break;
+
+        /* revision */
+        case LY_STMT_REVISION:
+            CHECK_ORDER(Y_MOD_REVISION);
+            break;
+        /* body */
+        case LY_STMT_ANYDATA:
+        case LY_STMT_ANYXML:
+        case LY_STMT_AUGMENT:
+        case LY_STMT_CHOICE:
+        case LY_STMT_CONTAINER:
+        case LY_STMT_DEVIATION:
+        case LY_STMT_EXTENSION:
+        case LY_STMT_FEATURE:
+        case LY_STMT_GROUPING:
+        case LY_STMT_IDENTITY:
+        case LY_STMT_LEAF:
+        case LY_STMT_LEAF_LIST:
+        case LY_STMT_LIST:
+        case LY_STMT_NOTIFICATION:
+        case LY_STMT_RPC:
+        case LY_STMT_TYPEDEF:
+        case LY_STMT_USES:
+        case LY_STMT_EXTENSION_INSTANCE:
+            mod_stmt = Y_MOD_BODY;
+            break;
+        default:
+            /* error handled in the next switch */
+            break;
+        }
+#undef CHECK_ORDER
+
+        prev_kw = kw;
+        switch (kw) {
+        /* module header */
+        case LY_STMT_YANG_VERSION:
+            LY_CHECK_RET(parse_yangversion(ctx, &submod->version, &submod->exts));
+            break;
+        case LY_STMT_BELONGS_TO:
+            LY_CHECK_RET(parse_belongsto(ctx, &submod->prefix, &submod->exts));
+            break;
+
+        /* linkage */
+        case LY_STMT_INCLUDE:
+            if (submod->version == LYS_VERSION_1_1) {
+                LOGWRN(PARSER_CTX(ctx), "YANG version 1.1 expects all includes in main module, includes in submodules (%s) are not necessary.",
+                        submod->name);
+            }
+            LY_CHECK_RET(parse_include(ctx, submod->name, &submod->includes));
+            break;
+        case LY_STMT_IMPORT:
+            LY_CHECK_RET(parse_import(ctx, submod->prefix, &submod->imports));
+            break;
+
+        /* meta */
+        case LY_STMT_ORGANIZATION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_ORGANIZATION, 0, &submod->org, Y_STR_ARG, &submod->exts));
+            break;
+        case LY_STMT_CONTACT:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_CONTACT, 0, &submod->contact, Y_STR_ARG, &submod->exts));
+            break;
+        case LY_STMT_DESCRIPTION:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_DESCRIPTION, 0, &submod->dsc, Y_STR_ARG, &submod->exts));
+            break;
+        case LY_STMT_REFERENCE:
+            LY_CHECK_RET(parse_text_field(ctx, LY_STMT_REFERENCE, 0, &submod->ref, Y_STR_ARG, &submod->exts));
+            break;
+
+        /* revision */
+        case LY_STMT_REVISION:
+            LY_CHECK_RET(parse_revision(ctx, &submod->revs));
+            break;
+
+        /* body */
+        case LY_STMT_ANYDATA:
+            PARSER_CHECK_STMTVER2_RET(ctx, "anydata", "submodule");
+        /* fall through */
+        case LY_STMT_ANYXML:
+            LY_CHECK_RET(parse_any(ctx, kw, NULL, &submod->data));
+            break;
+        case LY_STMT_CHOICE:
+            LY_CHECK_RET(parse_choice(ctx, NULL, &submod->data));
+            break;
+        case LY_STMT_CONTAINER:
+            LY_CHECK_RET(parse_container(ctx, NULL, &submod->data));
+            break;
+        case LY_STMT_LEAF:
+            LY_CHECK_RET(parse_leaf(ctx, NULL, &submod->data));
+            break;
+        case LY_STMT_LEAF_LIST:
+            LY_CHECK_RET(parse_leaflist(ctx, NULL, &submod->data));
+            break;
+        case LY_STMT_LIST:
+            LY_CHECK_RET(parse_list(ctx, NULL, &submod->data));
+            break;
+        case LY_STMT_USES:
+            LY_CHECK_RET(parse_uses(ctx, NULL, &submod->data));
+            break;
+
+        case LY_STMT_AUGMENT:
+            LY_CHECK_RET(parse_augment(ctx, NULL, &submod->augments));
+            break;
+        case LY_STMT_DEVIATION:
+            LY_CHECK_RET(parse_deviation(ctx, &submod->deviations));
+            break;
+        case LY_STMT_EXTENSION:
+            LY_CHECK_RET(parse_extension(ctx, &submod->extensions));
+            break;
+        case LY_STMT_FEATURE:
+            LY_CHECK_RET(parse_feature(ctx, &submod->features));
+            break;
+        case LY_STMT_GROUPING:
+            LY_CHECK_RET(parse_grouping(ctx, NULL, &submod->groupings));
+            break;
+        case LY_STMT_IDENTITY:
+            LY_CHECK_RET(parse_identity(ctx, &submod->identities));
+            break;
+        case LY_STMT_NOTIFICATION:
+            LY_CHECK_RET(parse_notif(ctx, NULL, &submod->notifs));
+            break;
+        case LY_STMT_RPC:
+            LY_CHECK_RET(parse_action(ctx, NULL, &submod->rpcs));
+            break;
+        case LY_STMT_TYPEDEF:
+            LY_CHECK_RET(parse_typedef(ctx, NULL, &submod->typedefs));
+            break;
+        case LY_STMT_EXTENSION_INSTANCE:
+            LY_CHECK_RET(parse_ext(ctx, word, word_len, LY_STMT_SUBMODULE, 0, &submod->exts));
+            break;
+
+        default:
+            LOGVAL_PARSER(ctx, LY_VCODE_INCHILDSTMT, ly_stmt2str(kw), "submodule");
+            return LY_EVALID;
+        }
+    }
+    LY_CHECK_RET(ret);
+
+checks:
+    /* mandatory substatements */
+    if (!submod->prefix) {
+        LOGVAL_PARSER(ctx, LY_VCODE_MISSTMT, "belongs-to", "submodule");
+        return LY_EVALID;
+    }
+
+    /* submodules share the namespace with the module names, so there must not be
+     * a submodule of the same name in the context, no need for revision matching */
+    dup = ly_ctx_get_submodule_latest(PARSER_CTX(ctx), submod->name);
+    /* main modules may have different revisions */
+    if (dup && strcmp(dup->mod->name, submod->mod->name)) {
+        LOGVAL_PARSER(ctx, LY_VCODE_NAME_COL, "submodules", dup->name);
+        return LY_EVALID;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Skip any redundant characters, namely whitespaces and comments.
+ *
+ * @param[in] ctx Yang parser context.
+ * @return LY_SUCCESS on success.
+ * @return LY_EVALID on invalid comment.
+ */
+static LY_ERR
+skip_redundant_chars(struct lys_yang_parser_ctx *ctx)
+{
+    /* read some trailing spaces, new lines, or comments */
+    while (ctx->in->current[0]) {
+        if (!strncmp(ctx->in->current, "//", 2)) {
+            /* one-line comment */
+            ly_in_skip(ctx->in, 2);
+            LY_CHECK_RET(skip_comment(ctx, 1));
+        } else if (!strncmp(ctx->in->current, "/*", 2)) {
+            /* block comment */
+            ly_in_skip(ctx->in, 2);
+            LY_CHECK_RET(skip_comment(ctx, 2));
+        } else if (isspace(ctx->in->current[0])) {
+            /* whitespace */
+            if (ctx->in->current[0] == '\n') {
+                LY_IN_NEW_LINE(ctx->in);
+            }
+            ly_in_skip(ctx->in, 1);
         } else {
-            LOGINT(ctx);
-            return EXIT_FAILURE;
+            break;
         }
     }
 
-    return EXIT_SUCCESS;
+    return LY_SUCCESS;
 }
 
-int
-yang_extcomplex_node(struct lys_ext_instance_complex *ext, char *parent_name, char *node_name,
-                     struct lys_node *node, LY_STMT stmt)
+LY_ERR
+yang_parse_submodule(struct lys_yang_parser_ctx **context, struct ly_ctx *ly_ctx, struct lys_parser_ctx *main_ctx,
+        struct ly_in *in, struct lysp_submodule **submod)
 {
-    struct lyext_substmt *info;
-    struct lys_node **snode, *siter;
+    LY_ERR ret = LY_SUCCESS;
+    char *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_submodule *mod_p = NULL;
 
-    snode = lys_ext_complex_get_substmt(stmt, ext, &info);
-    if (!snode) {
-        LOGVAL(ext->module->ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, node_name, parent_name);
-        return EXIT_FAILURE;
-    }
-    if (info->cardinality < LY_STMT_CARD_SOME) {
-        LY_TREE_FOR(node, siter) {
-            if (stmt == lys_snode2stmt(siter->nodetype)) {
-                LOGVAL(ext->module->ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, node_name, parent_name);
-                return EXIT_FAILURE;
-            }
-        }
+    /* create context */
+    *context = calloc(1, sizeof **context);
+    LY_CHECK_ERR_RET(!(*context), LOGMEM(ly_ctx), LY_EMEM);
+    (*context)->format = LYS_IN_YANG;
+    (*context)->unres = main_ctx->unres;
+    (*context)->in = in;
+
+    mod_p = calloc(1, sizeof *mod_p);
+    LY_CHECK_ERR_GOTO(!mod_p, LOGMEM(ly_ctx); ret = LY_EMEM, cleanup);
+    mod_p->mod = main_ctx->parsed_mod->mod;
+    mod_p->parsing = 1;
+    (*context)->parsed_mod = (struct lysp_module *)mod_p;
+
+    LOG_LOCINIT(NULL, NULL, NULL, in);
+
+    /* map the typedefs and groupings list from main context to the submodule's context */
+    memcpy(&(*context)->tpdfs_nodes, &main_ctx->tpdfs_nodes, sizeof main_ctx->tpdfs_nodes);
+    memcpy(&(*context)->grps_nodes, &main_ctx->grps_nodes, sizeof main_ctx->grps_nodes);
+
+    /* skip redundant but valid characters at the beginning */
+    ret = skip_redundant_chars(*context);
+    LY_CHECK_GOTO(ret, cleanup);
+
+    /* "module"/"submodule" */
+    ret = get_keyword(*context, &kw, &word, &word_len);
+    LY_CHECK_GOTO(ret, cleanup);
+
+    if (kw == LY_STMT_MODULE) {
+        LOGERR(ly_ctx, LY_EDENIED, "Input data contains module in situation when a submodule is expected.");
+        ret = LY_EINVAL;
+        goto cleanup;
+    } else if (kw != LY_STMT_SUBMODULE) {
+        LOGVAL_PARSER(*context, LY_VCODE_MOD_SUBOMD, ly_stmt2str(kw));
+        ret = LY_EVALID;
+        goto cleanup;
     }
 
-    return EXIT_SUCCESS;
+    /* substatements */
+    ret = parse_submodule(*context, mod_p);
+    LY_CHECK_GOTO(ret, cleanup);
+
+    /* skip redundant but valid characters at the end */
+    ret = skip_redundant_chars(*context);
+    LY_CHECK_GOTO(ret, cleanup);
+    if (in->current[0]) {
+        LOGVAL_PARSER(*context, LY_VCODE_TRAILING_SUBMOD, 15, in->current, strlen(in->current) > 15 ? "..." : "");
+        ret = LY_EVALID;
+        goto cleanup;
+    }
+
+    mod_p->parsing = 0;
+    *submod = mod_p;
+
+cleanup:
+    LOG_LOCBACK(0, 0, 0, 1);
+    if (ret) {
+        lysp_module_free((struct lysp_module *)mod_p);
+        yang_parser_ctx_free(*context);
+        *context = NULL;
+    }
+
+    return ret;
 }
 
-int
-yang_fill_extcomplex_module(struct ly_ctx *ctx, struct lys_ext_instance_complex *ext,
-                            char *parent_name, char **values, int implemented)
+LY_ERR
+yang_parse_module(struct lys_yang_parser_ctx **context, struct ly_in *in, struct lys_module *mod, struct lys_glob_unres *unres)
 {
-    int c, i;
-    struct lys_module **modules, ***p, *reallocated, **pp;
-    struct lyext_substmt *info;
+    LY_ERR ret = LY_SUCCESS;
+    char *word;
+    size_t word_len;
+    enum ly_stmt kw;
+    struct lysp_module *mod_p = NULL;
 
-    if (!values) {
-        return EXIT_SUCCESS;
-    }
-    pp = modules = lys_ext_complex_get_substmt(LY_STMT_MODULE, ext, &info);
-    if (!modules) {
-        LOGVAL(ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, "module", parent_name);
-        return EXIT_FAILURE;
-    }
+    /* create context */
+    *context = calloc(1, sizeof **context);
+    LY_CHECK_ERR_RET(!(*context), LOGMEM(mod->ctx), LY_EMEM);
+    (*context)->format = LYS_IN_YANG;
+    (*context)->unres = unres;
+    (*context)->in = in;
 
-    for (i = 0; values[i]; ++i) {
-        c = 0;
-        if (info->cardinality < LY_STMT_CARD_SOME && *modules) {
-            LOGVAL(ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "module", parent_name);
-            return EXIT_FAILURE;
-        }
-        if (info->cardinality >= LY_STMT_CARD_SOME) {
-            /* there can be multiple instances, so instead of pointer to array,
-             * we have in modules pointer to pointer to array */
-            p = (struct lys_module ***)pp;
-            modules = *p;
-            if (!modules) {
-                /* allocate initial array */
-                *p = modules = calloc(2, sizeof(struct lys_module *));
-                LY_CHECK_ERR_RETURN(!*p, LOGMEM(ctx), EXIT_FAILURE);
-            } else {
-                for (c = 0; *modules; modules++, c++);
-            }
-        }
+    mod_p = calloc(1, sizeof *mod_p);
+    LY_CHECK_ERR_GOTO(!mod_p, LOGMEM(mod->ctx), cleanup);
+    mod_p->mod = mod;
+    mod_p->parsing = 1;
+    (*context)->parsed_mod = mod_p;
 
-        if (c) {
-            /* enlarge the array */
-            reallocated = realloc(*p, (c + 2) * sizeof(struct lys_module *));
-            LY_CHECK_ERR_RETURN(!reallocated, LOGMEM(ctx), EXIT_FAILURE);
-            *p = (struct lys_module **)reallocated;
-            modules = *p;
-            modules[c + 1] = NULL;
-        }
+    LOG_LOCINIT(NULL, NULL, NULL, in);
 
-        modules[c] = yang_read_module(ctx, values[i], 0, NULL, implemented);
-        if (!modules[c]) {
-            return EXIT_FAILURE;
-        }
+    /* skip redundant but valid characters at the beginning */
+    ret = skip_redundant_chars(*context);
+    LY_CHECK_GOTO(ret, cleanup);
+
+    /* "module"/"submodule" */
+    ret = get_keyword(*context, &kw, &word, &word_len);
+    LY_CHECK_GOTO(ret, cleanup);
+
+    if (kw == LY_STMT_SUBMODULE) {
+        LOGERR(mod->ctx, LY_EDENIED, "Input data contains submodule which cannot be parsed directly without its main module.");
+        ret = LY_EINVAL;
+        goto cleanup;
+    } else if (kw != LY_STMT_MODULE) {
+        LOGVAL_PARSER((*context), LY_VCODE_MOD_SUBOMD, ly_stmt2str(kw));
+        ret = LY_EVALID;
+        goto cleanup;
     }
 
-    return EXIT_SUCCESS;
+    /* substatements */
+    ret = parse_module(*context, mod_p);
+    LY_CHECK_GOTO(ret, cleanup);
+
+    /* skip redundant but valid characters at the end */
+    ret = skip_redundant_chars(*context);
+    LY_CHECK_GOTO(ret, cleanup);
+    if (in->current[0]) {
+        LOGVAL_PARSER(*context, LY_VCODE_TRAILING_MOD, 15, in->current, strlen(in->current) > 15 ? "..." : "");
+        ret = LY_EVALID;
+        goto cleanup;
+    }
+
+    mod_p->parsing = 0;
+    mod->parsed = mod_p;
+
+cleanup:
+    LOG_LOCBACK(0, 0, 0, 1);
+    if (ret) {
+        lysp_module_free(mod_p);
+        yang_parser_ctx_free(*context);
+        *context = NULL;
+    }
+
+    return ret;
 }
