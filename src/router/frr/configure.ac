@@ -1872,12 +1872,12 @@ PKG_CHECK_MODULES([LIBYANG], [libyang >= 2.0.0], , [
 ])
 ac_cflags_save="$CFLAGS"
 CFLAGS="$CFLAGS $LIBYANG_CFLAGS"
-AC_CHECK_MEMBER([struct lyd_node.priv], [], [
-  AC_MSG_ERROR([m4_normalize([
-    libyang needs to be compiled with ENABLE_LYD_PRIV=ON.
-    Instructions for this are included in the build documentation for your platform at http://docs.frrouting.org/projects/dev-guide/en/latest/building.html])
-  ])
-], [[#include <libyang/libyang.h>]])
+#AC_CHECK_MEMBER([struct lyd_node.priv], [], [
+#  AC_MSG_ERROR([m4_normalize([
+#    libyang needs to be compiled with ENABLE_LYD_PRIV=ON.
+#    Instructions for this are included in the build documentation for your platform at http://docs.frrouting.org/projects/dev-guide/en/latest/building.html])
+#  ])
+#], [[#include <libyang/libyang.h>]])
 CFLAGS="$ac_cflags_save"
 
 dnl ---------------
