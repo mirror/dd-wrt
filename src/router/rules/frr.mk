@@ -40,6 +40,7 @@ frr-configure: ncurses json-c readline libyang libcap libcares
 		--disable-nhrpd \
 		--disable-fabricd \
 		--disable-vrrpd \
+		--disable-pathd \
 		--enable-ospf-te --disable-ospfclient --enable-multipath=64  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d \
 		--enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd \
 		--disable-staticd --enable-bfdd --disable-babeld --enable-pie=no --with-libreadline=$(TOP)/readline \
