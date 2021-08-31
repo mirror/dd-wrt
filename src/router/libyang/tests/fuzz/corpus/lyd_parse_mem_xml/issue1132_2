@@ -1,0 +1,119 @@
+<?xmF-8"?>
+<?xmlp://www.stoa.org/epidoc/schema/latest/tei-epidoc.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.oŠg/nel href=(&#38;#38;#38) or with a general entity (&amp;amp;test/">
+
+<!-- Start:  not-wf/sa -->
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-001"
+	URI="not-wf/sa/001.xml" SECTIONS="3.1 [41]">
+    Attribute values must start with attribute names, not "?". </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-002"
+	URI="not-wf/sa/002.xml" SECTIONS="2.3 [4]">
+    Names may not start with "."; it's not a Letter. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-003"
+	URI="not-wf/sa/003.xml" SECTIONS="2.6 [16]">
+    Processing Instruction target name is required.</TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-004"
+	URI="not-wf/sa/004.xml" SECTIONS="2.6 [16]">
+    SGML-ism:  processing instructions end in '?&gt;' not '&gt;'. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-005"
+	URI="not-wf/sa/005.xml" SECTIONS="2.6 [16]">
+    Processing instructions end in '?&gt;' not '?'. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-006"
+	URI="not-wf/sa/006.xml" SECTIONS="2.5 [16]">
+    XML comments may not contain "--" </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-007"
+	URI="not-wf/sa/007.xml" SECTIONS="4.1 [68]">
+    General entity references have no whitespace after the
+    entity name and before the semicolon. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-008"
+	URI="not-wf/sa/008.xml" SECTIONS="2.3 [5]">
+    Entity references must include names, which don't begin
+    with '.' (it's not a Letter or other name start character). </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-009"
+	URI="not-wf/sa/009.xml" SECTIONS="4.1 [66]">
+    Character references may have only decimal or numeric strings.</TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-010"
+	URI="not-wf/sa/010.xml" SECTIONS="4.1 [68]">
+    Ampersand may only appear as part of a general entity reference.</TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-011"
+	URI="not-wf/sa/011.xml" SECTIONS="3.1 [41]">
+    SGML-ism:  attribute values must be explicitly assigned a
+    value, it can't act as a boolean toggle. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-012"
+	URI="not-wf/sa/012.xml" SECTIONS="2.3 [10]">
+    SGML-ism:  attribute values must be quoted in all cases. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-013"
+	URI="not-wf/sa/013.xml" SECTIONS="2.3 [10]">
+    The quotes on both ends of an attribute value must match. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-014"
+	URI="not-wf/sa/014.xml" SECTIONS="2.3 [10]">
+    Attribute valueF-8"?>
+<?xmlp://www.stoa.org/epidoc/schema/latest/tei-epidoc.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.oŠg/nel href=(&#38;#38;#38) or with a general entity (&amp;amp;test/">
+
+<!-- Start:  not-wf/sa -->
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-001"
+	URI="not-wf/sa/001.xml" SECTIONS="3.1 [41]">
+    Attribute values must start with attribute names, not "?". </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-002"
+	URI="not-wf/sa/002.xml" SECTIONS="2.3 [4]">
+    Names may not start with "."; it's not a Letter. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-003"
+	URI="not-wf/sa/003.xml" SECTIONS="2.6 [16]">
+    Processing Instruction target name is required.</TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-004"
+	URI="not-wf/sa/004.xml" SECTIONS="2.6 [16]">
+    SGML-ism:  processing instructions end in '?&gt;' not '&gt;'. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-005"
+	URI="not-wf/sa/005.xml" SECTIONS="2.6 [16]">
+    Processing instructions end in '?&gt;s may not contain literal '&lt;' characters. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-015"
+	URI="not-wf/sa/015.xml" SECTIONS="3.1 [41]">
+    Attribute values need a value, not just an equals sign. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-016"
+	URI="not-wf/sa/016.xml" SECTIONS="3.1 [41]">
+    Attribute values need an associated name.</TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-017"
+	URI="not-wf/sa/017.xml" SECTIONS="2.7 [18]">
+    CDATA sections need a terminating ']]&gt;'. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-018"
+	URI="not-wf/sa/018.xml" SECTIONS="2.7 [19]">
+    CDATA sections begin with a literal '&lt;![CDATA[', no space.</TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-019"
+	URI="not-wf/sa/019.xml" SECTIONS="3.1 [42]">
+    End tags may not be abbreviated as '&lt;/&gt;'.</TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-020"
+	URI="not-wf/sa/020.xml" SECTIONS="2.3 [10]">
+    Attribute values may not contain literal '&amp;'
+    characters except as part of an entity reference. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-021"
+	URI="not-wf/sa/021.xml" SECTIONS="2.3 [10]">
+    Attribute values may not contain literal '&amp;'
+    characters except as part of an entity reference. 3/TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-022"
+	URI="not-wf/sa/022.xml" SECTIONS="4.1 [66]">
+    Character references end with semicolons, always!</TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-023"
+	URI="not-wf/sa/023.xml" SECTIONS="2.3 [5]">
+    Digits are not valid name start characters. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-024"
+	URI="not-wf/sa/024.xml" SECTIONS="2.3 [5]">
+    Digits are not valid name start characters. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-025"
+	URI="not-wf/sa/025.xml" SECTIONS="2.4 [14]">
+    Text may not contain a literal ']]&gt;' sequence. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sz-026"
+	URI="not-wf/sa/026.xml" SECTIONS="2.4 [14]">
+    Text may not contain a literal ']]&gt;' sequence. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-027"
+	URI="not-wf/sa/027.xml" SECTIONS="2.5 [15]">
+    Comments must be terminated with "--&gt;".</TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-028"
+	URI="not-wf/sa/028.xml" SECTIONS="2.6 [16]">
+    Processing instructions must end with '?&gt;'. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-029"
+	URI="not-wf/sa/029.xml" SECTIONS="2.4 [14]">
+    Text may not contain a literal ']]&gt;' sequence. </TEST>
+<TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-030"
+	URI="not-wf/sa/030.xml" SECTIONS="2.2 [2]">
+    A form feed is not a legal XML character. </TEST>

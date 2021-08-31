@@ -1,0 +1,28 @@
+module example-ietf-interfaces {
+  yang-version 1.1;
+
+  namespace "urn:ietf:params:xml:ns:yang:example-ietf-interfaces";
+
+  prefix if;
+  import ietf-yang-types {
+    prefix yang;
+  }
+
+  container interfaces-state {
+    config false;
+    list interface {
+      key "name";
+      leaf name {
+        type string;
+      }
+      container statistics {
+        leaf in-broadcast-pkts {
+          when "derived-from(if:type, 'ianaifp:multicast')" {
+          }
+
+          type yang:counter64;
+        }
+      }
+    }
+  }
+}

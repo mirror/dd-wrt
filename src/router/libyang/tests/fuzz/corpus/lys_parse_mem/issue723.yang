@@ -1,0 +1,17 @@
+module links {
+  namespace "urn:module2";
+  prefix mod2;
+
+  list list-for-augment {
+    key "keyleaf";
+
+    leaf keyleaf {
+      if-feature foo;
+      type string;
+    }
+
+    leaf test {
+      type string;
+    }
+  }
+}

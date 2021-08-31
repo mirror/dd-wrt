@@ -1,0 +1,13 @@
+module m {
+    namespace "n";
+    prefix p;
+
+    container c {
+        leaf trg-bits {
+			type bits {
+				bit b1;
+				bit "";
+			}
+		}
+	}
+}

@@ -1,0 +1,13 @@
+module issue1042_test-type-provider-b {
+    yang-version 1.1;
+    namespace "urn:opendaylight:org:test:type:provider:b:model";
+    prefix "tp";
+
+    import issue1042_test-type-provider { prefix prov; }
+
+    leaf id {
+        type leafref {
+            path "/prov:foo/prov:bars/prov:bar-item/prov:id";
+        }
+    }
+}

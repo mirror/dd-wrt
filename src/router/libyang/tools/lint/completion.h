@@ -1,5 +1,5 @@
 /**
- * @file main.c
+ * @file completion.h
  * @author Michal Vasko <mvasko@cesnet.cz>
  * @brief libyang's yanglint tool auto completion header
  *
@@ -15,7 +15,7 @@
 #ifndef COMPLETION_H_
 #define COMPLETION_H_
 
-#include "../../linenoise/linenoise.h"
+#include "./linenoise/linenoise.h"
 
 void complete_cmd(const char *buf, const char *hint, linenoiseCompletions *lc);
 

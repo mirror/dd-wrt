@@ -30,7 +30,7 @@ find_path(CMOCKA_INCLUDE_DIR
 
 find_library(CMOCKA_LIBRARY
     NAMES
-        cmocka cmocka_shared
+        cmocka
     PATHS
         ${CMOCKA_ROOT_DIR}/include
 )

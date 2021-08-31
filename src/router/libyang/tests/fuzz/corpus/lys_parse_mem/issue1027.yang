@@ -1,0 +1,9 @@
+module d{
+	namespace "";
+	prefix d;
+	leaf f {
+		type string;
+		must ":e";
+		default "";
+	}
+}

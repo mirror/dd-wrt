@@ -1,9 +1,9 @@
 /**
  * @file validation.h
- * @author Radek Krejci <rkrejci@cesnet.cz>
- * @brief Data tree validation for libyang
+ * @author Michal Vasko <mvasko@cesnet.cz>
+ * @brief Validation routines.
  *
- * Copyright (c) 2015 CESNET, z.s.p.o.
+ * Copyright (c) 2019 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -15,74 +15,87 @@
 #ifndef LY_VALIDATION_H_
 #define LY_VALIDATION_H_
 
-#include "libyang.h"
-#include "resolve.h"
-#include "tree_data.h"
+#include <stdint.h>
+
+#include "log.h"
+
+struct ly_ctx;
+struct ly_set;
+struct lyd_node;
+struct lys_module;
+struct lysc_node;
+
+enum lyd_diff_op;
 
 /**
- * @brief Check, that the data node of the given schema node can even appear in a data tree.
+ * @brief Add information about the node's extensions having their own validation callback into an unres set.
  *
- * Checks included:
- * - data node is not disabled via if-features
- * - data node's when-stmt condition - if false, 1 is returned and ly_vecode is set to LYE_NOCOND,
- * - data node is not status in case of edit-config content (options includes LYD_OPT_EDIT)
- * - data node is in correct place (options includes LYD_OPT_RPC or LYD_OPT_RPCREPLY), since elements order matters
- *   in RPCs and RPC replies.
- *
- * @param[in] node Data tree node to be checked.
- * @param[in] options Parser options, see @ref parseroptions.
- * @param[out] unres Structure to store unresolved items into. Cannot be NULL.
- * @return 0 on success, non-zero on error.
+ * @param[in,out] node_exts Unres set for holding information for validating extension instances.
+ * @param[in] node Data node to be examined.
+ * @return LY_ERR values.
  */
-int lyv_data_context(struct lyd_node *node, int options, struct unres_data *unres);
+LY_ERR lysc_node_ext_tovalidate(struct ly_set *node_exts, struct lyd_node *node);
 
 /**
- * @brief Validate if the node's content is valid in the context it is placed.
+ * @brief Add new changes into a diff. They are always merged.
  *
- * Expects that the node is already interconnected to the target tree and all its children
- * are already resolved. All currently connected siblings are included to the tests.
- *
- * @param[in] node Data tree node to be checked.
- * @param[in] options Parser options, see @ref parseroptions.
- * @param[out] unres Structure to store unresolved items into. Cannot be NULL.
- * @return 0 on success, non-zero on error.
+ * @param[in] node Node/subtree to add.
+ * @param[in] op Operation of the change.
+ * @param[in,out] diff Diff to update.
+ * @return LY_ERR value.
  */
-int lyv_data_content(struct lyd_node *node, int options, struct unres_data *unres);
+LY_ERR lyd_val_diff_add(const struct lyd_node *node, enum lyd_diff_op op, struct lyd_node **diff);
 
 /**
- * @brief Check list unique leaves.
+ * @brief Finish validation of nodes and attributes. Specifically, when (is processed first) and type validation.
  *
- * @param[in] list List node to be checked.
- * @return 0 on success, non-zero on error.
+ * !! It is assumed autodeleted nodes cannot be in the unresolved node type set !!
+ *
+ * @param[in,out] tree Data tree, is updated if some nodes are autodeleted.
+ * @param[in] mod Module of the @p tree to take into consideration when deleting @p tree and moving it.
+ * If set, it is expected @p tree should point to the first node of @p mod. Otherwise it will simply be
+ * the first top-level sibling.
+ * @param[in] node_when Set with nodes with "when" conditions, can be NULL.
+ * @param[in] node_exts Set with nodes with extension instances with validation plugin callback, can be NULL.
+ * @param[in] node_types Set with nodes with unresolved types, can be NULL
+ * @param[in] meta_types Set with metdata with unresolved types, can be NULL.
+ * @param[in,out] diff Validation diff.
+ * @return LY_ERR value.
  */
-int lyv_data_unique(struct lyd_node *list);
+LY_ERR lyd_validate_unres(struct lyd_node **tree, const struct lys_module *mod, struct ly_set *node_when,
+        struct ly_set *node_exts, struct ly_set *node_types, struct ly_set *meta_types, struct lyd_node **diff);
 
 /**
- * @brief Check for list/leaflist instance duplications.
+ * @brief Validate new siblings. Specifically, check duplicated instances, autodelete default values and cases.
  *
- * Function is used by lyv_data_context for inner lists/leaflists. Due to optimization, the function
- * is used separatedly for the top-level lists/leaflists.
+ * !! It is assumed autodeleted nodes cannot yet be in the unresolved node type set !!
  *
- * @param[in] node List/leaflist node to be checked.
- * @param[in] start First sibling of the \p node for searching for other instances of the same list/leaflist.
- *                  Used for optimization, but can be NULL and the first sibling will be found.
- * @return 0 on success, non-zero on error.
+ * @param[in,out] first First sibling.
+ * @param[in] sparent Schema parent of the siblings, NULL for top-level siblings.
+ * @param[in] mod Module of the siblings, NULL for nested siblings.
+ * @param[in,out] diff Validation diff.
+ * @return LY_ERR value.
  */
-int lyv_data_dup(struct lyd_node *node, struct lyd_node *start);
+LY_ERR lyd_validate_new(struct lyd_node **first, const struct lysc_node *sparent, const struct lys_module *mod,
+        struct lyd_node **diff);
 
 /**
- * @brief Validate if the \p node has a sibling from another choice's case. It can report an error or automatically
- * remove the nodes from other case than \p node.
+ * @brief Validate a data tree.
  *
- * @param[in] node Data tree node to be checked.
- * @param[in] schemanode Alternative to \p node (node is preferred), schema of the (potential) node
- * @param[in,out] first_sibling The first sibling of the node where the searching will always start. It is updated
- * when the first_sibling is (even repeatedly) autodeleted.
- * @param[in] autodelete Flag to select if the conflicting nodes are supposed to be removed silently or reported.
- * @param[in] nodel Exception for autodelete, if the \p nodel node would be removed, report an error.
- * @return 0 on success (possible implicit autodelete), 1 on reported autodelete.
+ * @param[in,out] tree Data tree to validate, nodes may be autodeleted.
+ * @param[in] module Module whose data (and schema restrictions) to validate, NULL for all modules.
+ * @param[in] ctx libyang context.
+ * @param[in] val_opts Validation options, see @ref datavalidationoptions.
+ * @param[in] validate_subtree Whether subtree was already validated (as part of data parsing) or not (separate validation).
+ * @param[in] node_when_p Set of nodes with when conditions, if NULL a local set is used.
+ * @param[in] node_exts Set with nodes with extension instances with validation plugin callback, if NULL a local set is used.
+ * @param[in] node_types_p Set of unres node types, if NULL a local set is used.
+ * @param[in] meta_types_p Set of unres metadata types, if NULL a local set is used.
+ * @param[out] diff Generated validation diff, not generated if NULL.
+ * @return LY_ERR value.
  */
-int lyv_multicases(struct lyd_node *node, struct lys_node *schemanode, struct lyd_node **first_sibling, int autodelete,
-                   struct lyd_node *nodel);
+LY_ERR lyd_validate(struct lyd_node **tree, const struct lys_module *module, const struct ly_ctx *ctx, uint32_t val_opts,
+        ly_bool validate_subtree, struct ly_set *node_when_p, struct ly_set *node_exts_p,
+        struct ly_set *node_types_p, struct ly_set *meta_types_p, struct lyd_node **diff);
 
 #endif /* LY_VALIDATION_H_ */

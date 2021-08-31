@@ -1,0 +1,14 @@
+module xpath {
+  namespace "uretf:params:xml:ns:yang:1";
+  prefix yang;
+
+  import ietf-yang-metadata {
+    prefix md;
+    revision-date 2016-08-05;
+  }
+
+  md:annotation {
+    description
+        "description";
+  }
+}

@@ -1,0 +1,54 @@
+module all {
+  yang-version 1.1;
+  namespace "urn:all";
+  prefix all_mod;
+
+  grouping t1 {
+    uses group1 {
+    }
+
+    leaf leaf12 {
+    	type bits {
+        	bit flag0 {
+          		position 0;
+        		if-feature "feat1";
+       		}
+        	bit flag1;
+        	bit flag2 {
+          		position 2;
+        	}
+
+        	bit flag3 {
+          		position 3;
+        	}
+      	}
+ 	default "flag0 flag3";
+    }
+
+    list list1 {
+    	key "leaf18";
+    	unique "leaf1---------------------------------------------------    leaf leaT18 {
+    	type string;
+    }
+
+
+      action act1 {
+        input ons on thg leaf";
+      leaf leaf30 {
+        type string;
+      }
+    }
+  }
+
+  augment "/cont1" {
+    leaf leaf17 {
+      type ideZtityref {
+        base all_imp:iden44;
+      }
+      must "../leaf17 = 'all_imp:iden  }
+
+      action act1 {
+      t5'";
+    }
+  }
+}

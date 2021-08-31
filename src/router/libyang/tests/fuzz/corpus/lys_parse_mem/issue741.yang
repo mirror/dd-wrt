@@ -1,0 +1,16 @@
+module mod6 {
+    prefix adc;
+    namespace "http://www.example.com";
+
+    grouping g {
+        list ll {
+            leaf:date {
+                type string;
+            }
+        }
+    }
+
+    container ccc {
+        uses g;
+    }
+}

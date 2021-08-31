@@ -1,0 +1,10 @@
+module m {
+	prefix p;
+	namespace "n";
+ 	grouping g {
+	}
+
+	grouping s {
+		uses g;
+	}
+}

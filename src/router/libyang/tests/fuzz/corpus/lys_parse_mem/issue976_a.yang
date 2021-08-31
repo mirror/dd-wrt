@@ -1,0 +1,12 @@
+module a{
+  yang-version 1.1;
+  namespace "ns1";
+  prefix a;
+
+  import issue976_b{
+    prefix acl;
+  }
+
+  augment "/acl:acls/acl:acl/acl:aces/acl:ace/acl:matches" {
+  }
+}

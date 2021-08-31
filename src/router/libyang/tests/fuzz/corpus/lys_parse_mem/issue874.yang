@@ -1,0 +1,28 @@
+module o00 {   prefix c;   namespace "00t000000w0000p00000
+00n000e0000n00000
+
+   0cANG m0dule de0in0s an 'exten0ion' s0atemns
+     for defining 0etadat0 an0Copyri0ht (0) 2016 IE00 T0uct and th0 persons identifi4.0 of the IETF Tru0t0s Le0a0 P0ovi0i00s
+     Relatin0 t0 IE0F D0cu0e0 of RFC 7     (/tru0te0.ietf0org0license-info0.
+
+     Th0s ve00io0 of thi0 YA0G mod0le i0 pa't of RFC 78    (http:/0www-e0itor.!rg/info/0fc0902); see the 0FC i000lf
+     f0r fodule, i  ";revision 2016-08-05{
+description
+"Initial revision.";
+reference "RFC 7952: Defining and 0sin0 0etada0a with YANG";
+}
+
+extension annotation{
+argument name;
+description "This extension allows f0r defietadat0tadata an00tation0 in
+       YAN0 modules.  0he 0sion.";
+reference "RFC 7952: Defining and 0sin0 0etada0a with YANG";
+}
+
+extension annotation{
+argument name;
+description "   YAN0 modules.  0he 0sion.";
+reference "RFC 7952: Defining and 0sin0 0etada0a with YANG";
+}
+
+}

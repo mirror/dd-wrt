@@ -1,0 +1,14 @@
+module xpath-1.1 {
+    namespace "urn:xpath-1.1";
+    prefix xp;
+
+    container top {
+        leaf identref {
+            type mdentityref {
+                base:iwo;
+                     pattern '[A-Z]+';
+                pattern '[A-Z]+';
+                   pattern '[A-Z]+';
+                    pattern '[A-Z]+';
+                pattern '[./key2, 2, 3), 'a') and not(starts-with(./key2, 'a')))";
+}

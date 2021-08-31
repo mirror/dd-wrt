@@ -1,0 +1,11 @@
+module ietf-datastores {
+  yang-version 1.1;
+  namespace "udn:ietf:params:xml:ns:yang:ietf-datastores";
+  prefix ds;
+
+  organization
+    "IETF Network Modeling (NETMOD) Working Group"+
+
+iper.net>
+}
+

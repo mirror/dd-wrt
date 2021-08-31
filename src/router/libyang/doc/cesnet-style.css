@@ -1,0 +1,106 @@
+/* CESNET blue: #0068a2 */
+
+body {
+    background-color: #fff;
+}
+
+div.header {
+    background-image: none;
+    background-color: #fff;
+}
+
+div.contents {
+    background-color: #fff;
+    padding: 1.618em 3.236em;
+    max-width: 60em;
+    margin: auto;
+    margin-left: 0;
+    text-align: justify;
+}
+
+.sm-dox {
+    background-image: none;
+    background-color: #0068a2;
+    border-bottom: 1px solid white;
+}
+
+.sm-dox a {
+    background-image: none;
+    border-right: 1px solid white;
+    color: white;
+    text-shadow: none;
+}
+
+.sm-dox a:hover {
+    background-image: none;
+    background-color: rgba(0,0,0,0.3);
+}
+
+.sm-dox ul a:hover {
+    background-image: none;
+    background-color: #ddd;
+    text-shadow: none;
+    color: #555;
+}
+
+.navpath ul {
+    background-image: none;
+    background-color: #0068a2;
+}
+
+.navpath li.footer {
+    color: white;
+}
+img.footer {
+    height: 20px;
+}
+
+.navpath li.navelem a {
+    color: white;
+    text-shadow: none;
+}
+
+#side-nav {
+    background-color: #343131;
+}
+
+#nav-tree::-webkit-scrollbar {
+    width: 5px;
+}
+
+#nav-tree::-webkit-scrollbar-track {
+    background: #333;
+    border-radius: 50px;
+  }
+
+#nav-tree::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 50px;
+}
+
+#nav-tree {
+    background: none;
+}
+
+#nav-tree .item {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#nav-tree .item:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+#nav-tree a {
+    color: #fff;
+    font-size: 1.2em;
+}
+
+#nav-tree .selected {
+    background-image: none;
+    background-color: #0068a2;
+}
+
+#nav-tree-contents {
+    margin: 0;
+}
