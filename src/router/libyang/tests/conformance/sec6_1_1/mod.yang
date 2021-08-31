@@ -1,7 +1,0 @@
-module mod {
-    namespace "uri://mod";
-    /* this must be ignored */
-    prefix m;
-
-    container cont;// this as well
-}

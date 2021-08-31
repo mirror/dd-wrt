@@ -1,9 +1,0 @@
-submodule atop {
-  belongs-to a {
-    prefix a_pref2;
-  }
-
-  feature bar;
-
-  container top;
-}

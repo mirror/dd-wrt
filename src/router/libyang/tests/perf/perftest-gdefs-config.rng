@@ -1,2 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<grammar xmlns="http://relaxng.org/ns/structure/1.0" xmlns:pt="urn:libyang:performance:test" xmlns:nma="urn:ietf:params:xml:ns:netmod:dsdl-annotations:1" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"/>

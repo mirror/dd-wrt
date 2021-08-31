@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<module name="imp_aug_m1"
-        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
-        xmlns:m1="urn:fri:params:xml:ns:yang:imp_aug_m1">
-  <namespace uri="urn:fri:params:xml:ns:yang:imp_aug_m1"/>
-  <prefix value="m1"/>
-  <include module="imp_aug_m1-s1"/>
-</module>

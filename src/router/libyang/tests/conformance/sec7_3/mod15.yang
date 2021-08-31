@@ -1,9 +1,0 @@
-module mod15 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod15";
-
-    typedef uint8 {
-        type uint32;
-    }
-}

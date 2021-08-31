@@ -1,9 +1,0 @@
-module mod7 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod7";
-
-    typedef identityref {
-        type uint32;
-    }
-}

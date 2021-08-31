@@ -1,5 +1,0 @@
-<login xmlns="urn:cesnet:mod5">
-    <login>palino</login>
-    <hostname>atlas</hostname>
-</login>
-<cislo xmlns="urn:cesnet:mod5">10</cislo>

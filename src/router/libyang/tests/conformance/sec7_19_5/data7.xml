@@ -1,7 +1,0 @@
-<ccc xmlns="urn:cesnet:mod2">
-    <test>true</test>
-</ccc>
-<cont2 xmlns="urn:cesnet:mod2">
-    <leaf>string</leaf>
-</cont2>
-<llist xmlns="urn:cesnet:mod3">42</llist>

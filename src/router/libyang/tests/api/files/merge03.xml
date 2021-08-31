@@ -1,7 +1,0 @@
-<modules-state xmlns="urn:ietf:params:xml:ns:yang:ietf-yang-library">
-  <module>
-    <name>ietf-netconf</name>
-    <revision>2011-06-01</revision>
-    <conformance-type>implement</conformance-type>
-  </module>
-</modules-state>

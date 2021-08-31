@@ -1,7 +1,0 @@
-<presence xmlns="urn:cesnet:mod1">
-    <augment>
-        <test>false</test>
-    </augment>
-</presence>
-<test xmlns="urn:cesnet:mod1">true</test>
-<llist xmlns="urn:cesnet:mod3">42</llist>

@@ -1,5 +1,0 @@
-<test xmlns="urn:cesnet:mod1">42</test>
-<mand xmlns="urn:cesnet:mod1">true</mand>
-<cont xmlns="urn:cesnet:mod1">
-    <mandatory>true</mandatory>
-</cont>

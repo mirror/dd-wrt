@@ -1,9 +1,0 @@
-<test6 xmlns="urn:cesnet:mod1">
-    <test>42</test>
-    <mand>true</mand>
-    <cont>
-        <mandatory>true</mandatory>
-    </cont>
-    <llist>string42</llist>
-    <llist>string</llist>
-</test6>

@@ -1,9 +1,0 @@
-module mod4 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod4";
-
-    typedef decimal64 {
-        type uint32;
-    }
-}

@@ -1,9 +1,0 @@
-module mod3 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod3";
-
-    typedef boolean {
-        type uint32;
-    }
-}

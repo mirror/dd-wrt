@@ -1,5 +1,0 @@
-<test xmlns="urn:cesnet:mod1">
-    <test>test leaf</test>
-    <list>8</list>
-    <list>10</list>
-</test>

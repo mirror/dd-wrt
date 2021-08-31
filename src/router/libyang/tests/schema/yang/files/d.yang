@@ -1,6 +1,0 @@
-module d {
-  namespace "urn:d";
-  prefix d_mod;
-
-  include dsub;
-}

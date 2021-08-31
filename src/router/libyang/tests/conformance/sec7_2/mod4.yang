@@ -1,7 +1,0 @@
-module mod4 {
-
-    namespace "urn:cesnet:mod4";
-    prefix mm;
-
-    include sub4;
-}

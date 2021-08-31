@@ -1,8 +1,0 @@
-module g1 {
-    namespace "urn:g1";
-    prefix g1;
-
-    import g4 {
-        prefix g4;
-    }
-}

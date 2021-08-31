@@ -1,8 +1,0 @@
-{
-  "Name":           "libyang",
-  "SourceDir":      "src/libyang/",
-  "BuildScript":    "build.sh",
-  "ChangeLog":      "On",
-  "HeadersDiff":    "On",
-  "PkgDiff":        "On",
-}

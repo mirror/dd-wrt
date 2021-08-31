@@ -1,4 +1,0 @@
-<cont xmlns="urn:cesnet:mod1">
-    <ssh/>
-</cont>
-<test xmlns="urn:cesnet:mod1">42</test>

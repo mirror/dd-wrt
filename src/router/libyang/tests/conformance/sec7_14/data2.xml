@@ -1,7 +1,0 @@
-<notif3 xmlns="urn:cesnet:mod4">
-    <mand>1</mand>
-    <list>
-        <keys>45</keys>
-        <mand>true</mand>
-    </list>
-</notif3>

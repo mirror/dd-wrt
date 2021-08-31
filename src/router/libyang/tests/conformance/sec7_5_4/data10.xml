@@ -1,5 +1,0 @@
-<rpc_test xmlns="urn:cesnet:mod5">
-    <login>
-        <is_admin>true</is_admin>
-    </login>
-</rpc_test>

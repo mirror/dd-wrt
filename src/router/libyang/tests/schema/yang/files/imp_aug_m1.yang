@@ -1,7 +1,0 @@
-module imp_aug_m1 {
-
-  namespace "urn:fri:params:xml:ns:yang:imp_aug_m1";
-  prefix m1;
-
-  include imp_aug_m1-s1;
-}

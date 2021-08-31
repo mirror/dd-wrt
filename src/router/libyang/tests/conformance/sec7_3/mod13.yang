@@ -1,9 +1,0 @@
-module mod13 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod13";
-
-    typedef leafref {
-        type uint32;
-    }
-}

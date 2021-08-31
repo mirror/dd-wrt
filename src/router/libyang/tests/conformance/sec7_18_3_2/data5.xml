@@ -1,7 +1,0 @@
-<cont xmlns="urn:cesnet:mod">
-    <user>admin</user>
-    <password>hello123</password>
-</cont>
-<lleaf xmlns="urn:cesnet:mod">42</lleaf>
-<default xmlns="urn:cesnet:mod">my</default>
-<test1 xmlns="urn:cesnet:mod">true</test1>

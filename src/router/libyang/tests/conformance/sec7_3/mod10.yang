@@ -1,9 +1,0 @@
-module mod10 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod10";
-
-    typedef int16 {
-        type uint32;
-    }
-}

@@ -1,6 +1,0 @@
-<abc xmlns="urn:cesnet:mod2">162</abc>
-<aa xmlns="urn:cesnet:mod2">hello</aa>
-<ccc xmlns="urn:cesnet:mod2">
-    <aa>42</aa>
-</ccc>
-<cont xmlns="urn:cesnet:mod2"/>

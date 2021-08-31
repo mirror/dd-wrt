@@ -1,7 +1,0 @@
-<top xmlns="urn:cesnet:mod9">40000</top>
-<bb xmlns="urn:cesnet:mod9">
-    <ref>string</ref>
-</bb>
-<ccc xmlns="urn:cesnet:mod9">
-    <target1>string42</target1>
-</ccc>

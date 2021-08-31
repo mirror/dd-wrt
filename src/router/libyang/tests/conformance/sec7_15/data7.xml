@@ -1,5 +1,0 @@
-<cont xmlns="urn:cesnet:mod">
-    <llist xmlns="urn:cesnet:mod11">llist1</llist>
-    <llist xmlns="urn:cesnet:mod11">llist2</llist>
-    <presence xmlns="urn:cesnet:mod"/>
-</cont>

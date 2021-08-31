@@ -1,8 +1,0 @@
-<modules-state xmlns="urn:ietf:params:xml:ns:yang:ietf-yang-library">
-  <module>
-    <name>yang</name>
-    <revision>2016-02-11</revision>
-    <namespace>urn:ietf:params:xml:ns:yang:1</namespace>
-    <conformance-type>implement</conformance-type>
-  </module>
-</modules-state>

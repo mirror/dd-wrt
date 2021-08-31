@@ -1,7 +1,0 @@
-<server xmlns="urn:cesnet:mod">
-    <name>skola.cz</name>
-    <ip xmlns="urn:cesnet:mod8">172.10.25.10</ip>
-    <port xmlns="urn:cesnet:mod8">8080</port>
-</server>
-<error xmlns="urn:cesnet:mod8">0</error>
-<ssh xmlns="urn:cesnet:mod"/>
