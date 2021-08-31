@@ -3560,22 +3560,14 @@ static void lock_dir(struct ksmbd_file *dir_fp)
 {
 	struct dentry *dir = dir_fp->filp->f_path.dentry;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_lock_nested(d_inode(dir), I_MUTEX_PARENT);
-#else
-	mutex_lock_nested(&d_inode(dir)->i_mutex, I_MUTEX_PARENT);
-#endif
 }
 
 static void unlock_dir(struct ksmbd_file *dir_fp)
 {
 	struct dentry *dir = dir_fp->filp->f_path.dentry;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_unlock(d_inode(dir));
-#else
-	mutex_unlock(&d_inode(dir)->i_mutex);
-#endif
 }
 
 static int process_query_dir_entries(struct smb2_query_dir_private *priv)
@@ -5639,7 +5631,6 @@ static int set_file_basic_info(struct ksmbd_file *fp, char *buf,
 		if (IS_IMMUTABLE(inode) || IS_APPEND(inode))
 			return -EACCES;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 		inode_lock(inode);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 		rc = notify_change(user_ns, dentry, &attrs, NULL);
@@ -5651,19 +5642,6 @@ static int set_file_basic_info(struct ksmbd_file *fp, char *buf,
 			mark_inode_dirty(inode);
 		}
 		inode_unlock(inode);
-#else
-		mutex_lock(&inode->i_mutex);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-		rc = notify_change(dentry, &attrs);
-#else
-		rc = notify_change(dentry, &attrs, NULL);
-#endif
-		if (!rc) {
-			inode->i_ctime = ctime;
-			mark_inode_dirty(inode);
-		}
-		mutex_unlock(&inode->i_mutex);
-#endif
 		if (rc)
 			return -EINVAL;
 	}

@@ -93,11 +93,7 @@ int ksmbd_vfs_inode_permission(struct dentry *dentry, int acc_mode, bool delete)
 		struct dentry *child, *parent;
 
 		parent = dget_parent(dentry);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 		inode_lock_nested(d_inode(parent), I_MUTEX_PARENT);
-#else
-		mutex_lock_nested(&d_inode(parent)->i_mutex, I_MUTEX_PARENT);
-#endif
 		child = lookup_one_len(dentry->d_name.name, parent,
 				       dentry->d_name.len);
 		if (IS_ERR(child)) {
@@ -121,11 +117,7 @@ int ksmbd_vfs_inode_permission(struct dentry *dentry, int acc_mode, bool delete)
 			goto out_lock;
 		}
 out_lock:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 		inode_unlock(d_inode(parent));
-#else
-		mutex_unlock(&d_inode(parent)->i_mutex);
-#endif
 		dput(parent);
 	}
 	return ret;
@@ -164,11 +156,7 @@ int ksmbd_vfs_query_maximal_access(struct user_namespace *user_ns,
 		*daccess |= FILE_EXECUTE_LE;
 
 	parent = dget_parent(dentry);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_lock_nested(d_inode(parent), I_MUTEX_PARENT);
-#else
-	mutex_lock_nested(&d_inode(parent)->i_mutex, I_MUTEX_PARENT);
-#endif
 	child = lookup_one_len(dentry->d_name.name, parent,
 			       dentry->d_name.len);
 	if (IS_ERR(child)) {
@@ -191,11 +179,7 @@ int ksmbd_vfs_query_maximal_access(struct user_namespace *user_ns,
 		*daccess |= FILE_DELETE_LE;
 
 out_lock:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_unlock(d_inode(parent));
-#else
-	mutex_unlock(&d_inode(parent)->i_mutex);
-#endif
 	dput(parent);
 	return ret;
 }
@@ -800,7 +784,6 @@ int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name, u64 fid,
 
 	attrs->ia_valid |= ATTR_CTIME;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_lock(inode);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 	err = notify_change(user_ns, dentry, attrs, NULL);
@@ -808,15 +791,6 @@ int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name, u64 fid,
 	err = notify_change(dentry, attrs, NULL);
 #endif
 	inode_unlock(inode);
-#else
-	mutex_lock(&inode->i_mutex);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	err = notify_change(dentry, attrs);
-#else
-	err = notify_change(dentry, attrs, NULL);
-#endif
-	mutex_unlock(&inode->i_mutex);
-#endif
 
 	if (update_size)
 		put_write_access(inode);
@@ -1022,11 +996,7 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 
 
 	parent = dget_parent(path.dentry);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_lock_nested(d_inode(parent), I_MUTEX_PARENT);
-#else
-	mutex_lock_nested(&d_inode(parent)->i_mutex, I_MUTEX_PARENT);
-#endif
 
 	dentry = lookup_one_len(path.dentry->d_name.name, parent,
 			strlen(path.dentry->d_name.name));
@@ -1054,9 +1024,7 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 			ksmbd_debug(VFS, "%s: rmdir failed, err %d\n", name,
 				    err);
 	} else {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-		err = vfs_unlink(d_inode(parent), dentry);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 		err = vfs_unlink(mnt_user_ns(path.mnt), d_inode(parent), dentry,
 #else
 		err = vfs_unlink(d_inode(parent), dentry, NULL);
@@ -1068,11 +1036,7 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 
 	dput(dentry);
 out_err:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_unlock(d_inode(parent));
-#else
-	mutex_unlock(&d_inode(parent)->i_mutex);
-#endif
 	dput(parent);
 	path_put(&path);
 
@@ -1125,9 +1089,7 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 		goto out3;
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	err = vfs_link(oldpath.dentry, d_inode(newpath.dentry), dentry);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 	err = vfs_link(oldpath.dentry, mnt_user_ns(path.mnt), d_inode(newpath.dentry),
 		       dentry, NULL);
 #else
@@ -1209,12 +1171,7 @@ static int __ksmbd_vfs_rename(struct ksmbd_work *work,
 
 	err = -ENOTEMPTY;
 	if (dst_dent != trap_dent && !d_really_is_positive(dst_dent)) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-		err = vfs_rename(d_inode(src_dent_parent),
-				 src_dent,
-				 d_inode(dst_dent_parent),
-				 dst_dent);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 		struct renamedata rd = {
 			.old_mnt_userns	= src_user_ns,
 			.old_dir	= d_inode(src_dent_parent),
@@ -2099,11 +2056,7 @@ int ksmbd_vfs_unlink(struct user_namespace *user_ns,
 	struct dentry *child;
 	int err = 0;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_lock_nested(d_inode(dir), I_MUTEX_PARENT);
-#else
-	mutex_lock_nested(&d_inode(dir)->i_mutex, I_MUTEX_PARENT);
-#endif
 	dget(dentry);
 	child = lookup_one_len(dentry->d_name.name, dir, dentry->d_name.len);
 	if (IS_ERR(child)) {
@@ -2118,12 +2071,8 @@ int ksmbd_vfs_unlink(struct user_namespace *user_ns,
 	}
 	dput(child);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 	if (S_ISDIR(d_inode(dentry)->i_mode))
-		err = vfs_rmdir(d_inode(dir), dentry);
-	else
-		err = vfs_unlink(d_inode(dir), dentry);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 		err = vfs_rmdir(user_ns, d_inode(dir), dentry);
 	else
 		err = vfs_unlink(user_ns, d_inode(dir), dentry, NULL);
@@ -2135,11 +2084,7 @@ int ksmbd_vfs_unlink(struct user_namespace *user_ns,
 #endif
 out:
 	dput(dentry);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_unlock(d_inode(dir));
-#else
-	mutex_unlock(&d_inode(dir)->i_mutex);
-#endif
 	if (err)
 		ksmbd_debug(VFS, "failed to delete, err %d\n", err);
 
