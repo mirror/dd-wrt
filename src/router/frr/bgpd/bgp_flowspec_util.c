@@ -20,6 +20,8 @@
 
 #include "zebra.h"
 
+#include "lib/printfrr.h"
+
 #include "prefix.h"
 #include "lib_errors.h"
 
@@ -211,14 +213,11 @@ int bgp_flowspec_ip_address(enum bgp_flowspec_util_nlri_t type,
 	switch (type) {
 	case BGP_FLOWSPEC_RETURN_STRING:
 		if (prefix_local.family == AF_INET6) {
-			char str[BGP_FLOWSPEC_STRING_DISPLAY_MAX];
 			int ret;
 
-			prefix2str(&prefix_local, str,
-				   BGP_FLOWSPEC_STRING_DISPLAY_MAX);
-			ret = snprintf(display, BGP_FLOWSPEC_STRING_DISPLAY_MAX,
-				       "%s/off %u",
-				       str, prefix_offset);
+			ret = snprintfrr(
+				display, BGP_FLOWSPEC_STRING_DISPLAY_MAX,
+				"%pFX/off %u", &prefix_local, prefix_offset);
 			if (ret < 0) {
 				*error = -1;
 				break;
@@ -228,12 +227,8 @@ int bgp_flowspec_ip_address(enum bgp_flowspec_util_nlri_t type,
 				   BGP_FLOWSPEC_STRING_DISPLAY_MAX);
 		break;
 	case BGP_FLOWSPEC_CONVERT_TO_NON_OPAQUE:
-		if (prefix) {
-			if (prefix_local.family == AF_INET)
-				PREFIX_COPY_IPV4(prefix, &prefix_local)
-			else
-				PREFIX_COPY_IPV6(prefix, &prefix_local)
-		}
+		if (prefix)
+			prefix_copy(prefix, &prefix_local);
 		break;
 	case BGP_FLOWSPEC_VALIDATE_ONLY:
 	default:
@@ -638,7 +633,7 @@ int bgp_flowspec_match_rules_fill(uint8_t *nlri_content, int len,
 			offset += ret;
 			break;
 		default:
-			flog_err(EC_LIB_DEVELOPMENT, "%s: unknown type %d\n",
+			flog_err(EC_LIB_DEVELOPMENT, "%s: unknown type %d",
 				 __func__, type);
 		}
 	}

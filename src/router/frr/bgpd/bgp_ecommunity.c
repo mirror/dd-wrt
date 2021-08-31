@@ -29,6 +29,8 @@
 #include "jhash.h"
 #include "stream.h"
 
+#include "lib/printfrr.h"
+
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_ecommunity.h"
 #include "bgpd/bgp_lcommunity.h"
@@ -93,7 +95,7 @@ static bool ecommunity_add_val_internal(struct ecommunity *ecom,
 					bool unique, bool overwrite,
 					uint8_t ecom_size)
 {
-	int c, ins_idx;
+	uint32_t c, ins_idx;
 	const struct ecommunity_val *eval4 = (struct ecommunity_val *)eval;
 	const struct ecommunity_val_ipv6 *eval6 =
 		(struct ecommunity_val_ipv6 *)eval;
@@ -111,7 +113,7 @@ static bool ecommunity_add_val_internal(struct ecommunity *ecom,
 	/* check also if the extended community itself exists. */
 	c = 0;
 
-	ins_idx = -1;
+	ins_idx = UINT32_MAX;
 	for (uint8_t *p = ecom->val; c < ecom->size;
 	     p += ecom_size, c++) {
 		if (unique) {
@@ -143,12 +145,12 @@ static bool ecommunity_add_val_internal(struct ecommunity *ecom,
 		if (ret > 0) {
 			if (!unique)
 				break;
-			if (ins_idx == -1)
+			if (ins_idx == UINT32_MAX)
 				ins_idx = c;
 		}
 	}
 
-	if (ins_idx == -1)
+	if (ins_idx == UINT32_MAX)
 		ins_idx = c;
 
 	/* Add the value to the structure with numerical sorting.  */
@@ -191,7 +193,7 @@ static struct ecommunity *
 ecommunity_uniq_sort_internal(struct ecommunity *ecom,
 			      unsigned short ecom_size)
 {
-	int i;
+	uint32_t i;
 	struct ecommunity *new;
 	const void *eval;
 
@@ -324,6 +326,9 @@ struct ecommunity *ecommunity_intern(struct ecommunity *ecom)
 void ecommunity_unintern(struct ecommunity **ecom)
 {
 	struct ecommunity *ret;
+
+	if (!*ecom)
+		return;
 
 	if ((*ecom)->refcnt)
 		(*ecom)->refcnt--;
@@ -819,8 +824,8 @@ static int ecommunity_rt_soo_str_internal(char *buf, size_t bufsz,
 		eip.val = (*pnt++ << 8);
 		eip.val |= (*pnt++);
 
-		len = snprintf(buf, bufsz, "%s%s:%u", prefix, inet_ntoa(eip.ip),
-			       eip.val);
+		len = snprintfrr(buf, bufsz, "%s%pI4:%u", prefix, &eip.ip,
+				 eip.val);
 	}
 
 	/* consume value */
@@ -890,11 +895,10 @@ static int ecommunity_lb_str(char *buf, size_t bufsz, const uint8_t *pnt)
 */
 char *ecommunity_ecom2str(struct ecommunity *ecom, int format, int filter)
 {
-	int i;
+	uint32_t i;
 	uint8_t *pnt;
 	uint8_t type = 0;
 	uint8_t sub_type = 0;
-#define ECOMMUNITY_STRLEN 64
 	int str_size;
 	char *str_buf;
 
@@ -1036,6 +1040,27 @@ char *ecommunity_ecom2str(struct ecommunity *ecom, int format, int filter)
 					(flags &
 					 ECOMMUNITY_EVPN_SUBTYPE_ESI_SA_FLAG) ?
 					"SA":"AA");
+			} else if (*pnt
+				   == ECOMMUNITY_EVPN_SUBTYPE_DF_ELECTION) {
+				uint8_t alg;
+				uint16_t pref;
+				uint16_t bmap;
+
+				alg = *(pnt + 1);
+				memcpy(&bmap, pnt + 2, 2);
+				bmap = ntohs(bmap);
+				memcpy(&pref, pnt + 5, 2);
+				pref = ntohs(pref);
+
+				if (bmap)
+					snprintf(
+						encbuf, sizeof(encbuf),
+						"DF: (alg: %u, bmap: 0x%x pref: %u)",
+						alg, bmap, pref);
+				else
+					snprintf(encbuf, sizeof(encbuf),
+						 "DF: (alg: %u, pref: %u)", alg,
+						 pref);
 			} else
 				unk_ecom = 1;
 		} else if (type == ECOMMUNITY_ENCODE_REDIRECT_IP_NH) {
@@ -1150,8 +1175,8 @@ char *ecommunity_ecom2str(struct ecommunity *ecom, int format, int filter)
 bool ecommunity_match(const struct ecommunity *ecom1,
 		      const struct ecommunity *ecom2)
 {
-	int i = 0;
-	int j = 0;
+	uint32_t i = 0;
+	uint32_t j = 0;
 
 	if (ecom1 == NULL && ecom2 == NULL)
 		return true;
@@ -1183,7 +1208,7 @@ extern struct ecommunity_val *ecommunity_lookup(const struct ecommunity *ecom,
 						uint8_t type, uint8_t subtype)
 {
 	uint8_t *p;
-	int c;
+	uint32_t c;
 
 	/* If the value already exists in the structure return 0.  */
 	c = 0;
@@ -1204,7 +1229,7 @@ bool ecommunity_strip(struct ecommunity *ecom, uint8_t type,
 		      uint8_t subtype)
 {
 	uint8_t *p, *q, *new;
-	int c, found = 0;
+	uint32_t c, found = 0;
 	/* When this is fist value, just add it.  */
 	if (ecom == NULL || ecom->val == NULL)
 		return false;
@@ -1252,7 +1277,7 @@ bool ecommunity_strip(struct ecommunity *ecom, uint8_t type,
 bool ecommunity_del_val(struct ecommunity *ecom, struct ecommunity_val *eval)
 {
 	uint8_t *p;
-	int c, found = 0;
+	uint32_t c, found = 0;
 
 	/* Make sure specified value exists. */
 	if (ecom == NULL || ecom->val == NULL)
@@ -1269,15 +1294,19 @@ bool ecommunity_del_val(struct ecommunity *ecom, struct ecommunity_val *eval)
 
 	/* Delete the selected value */
 	ecom->size--;
-	p = XMALLOC(MTYPE_ECOMMUNITY_VAL, ecom->size * ecom->unit_size);
-	if (c != 0)
-		memcpy(p, ecom->val, c * ecom->unit_size);
-	if ((ecom->size - c) != 0)
-		memcpy(p + (c)*ecom->unit_size,
-		       ecom->val + (c + 1) * ecom->unit_size,
-		       (ecom->size - c) * ecom->unit_size);
-	XFREE(MTYPE_ECOMMUNITY_VAL, ecom->val);
-	ecom->val = p;
+	if (ecom->size) {
+		p = XMALLOC(MTYPE_ECOMMUNITY_VAL, ecom->size * ecom->unit_size);
+		if (c != 0)
+			memcpy(p, ecom->val, c * ecom->unit_size);
+		if ((ecom->size - c) != 0)
+			memcpy(p + (c)*ecom->unit_size,
+			       ecom->val + (c + 1) * ecom->unit_size,
+			       (ecom->size - c) * ecom->unit_size);
+		XFREE(MTYPE_ECOMMUNITY_VAL, ecom->val);
+		ecom->val = p;
+	} else
+		ecom->val = NULL;
+
 	return true;
 }
 
@@ -1486,7 +1515,7 @@ void bgp_remove_ecomm_from_aggregate_hash(struct bgp_aggregate *aggregate,
 const uint8_t *ecommunity_linkbw_present(struct ecommunity *ecom, uint32_t *bw)
 {
 	const uint8_t *eval;
-	int i;
+	uint32_t i;
 
 	if (bw)
 		*bw = 0;

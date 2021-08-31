@@ -43,10 +43,10 @@
 #include "ripd/rip_debug.h"
 #include "ripd/rip_interface.h"
 
-DEFINE_MTYPE_STATIC(RIPD, RIP_INTERFACE, "RIP interface")
-DEFINE_MTYPE(RIPD, RIP_INTERFACE_STRING, "RIP Interface String")
-DEFINE_HOOK(rip_ifaddr_add, (struct connected * ifc), (ifc))
-DEFINE_HOOK(rip_ifaddr_del, (struct connected * ifc), (ifc))
+DEFINE_MTYPE_STATIC(RIPD, RIP_INTERFACE, "RIP interface");
+DEFINE_MTYPE(RIPD, RIP_INTERFACE_STRING, "RIP Interface String");
+DEFINE_HOOK(rip_ifaddr_add, (struct connected * ifc), (ifc));
+DEFINE_HOOK(rip_ifaddr_del, (struct connected * ifc), (ifc));
 
 /* static prototypes */
 static void rip_enable_apply(struct interface *);
@@ -172,8 +172,8 @@ static void rip_request_interface_send(struct interface *ifp, uint8_t version)
 				continue;
 
 			if (IS_RIP_DEBUG_EVENT)
-				zlog_debug("SEND request to %s",
-					   inet_ntoa(to.sin_addr));
+				zlog_debug("SEND request to %pI4",
+					   &to.sin_addr);
 
 			rip_request_send(&to, ifp, version, connected);
 		}
@@ -207,39 +207,6 @@ static void rip_request_interface(struct interface *ifp)
 	if (vsend & RIPv2)
 		rip_request_interface_send(ifp, RIPv2);
 }
-
-#if 0
-/* Send RIP request to the neighbor. */
-static void
-rip_request_neighbor (struct in_addr addr)
-{
-  struct sockaddr_in to;
-
-  memset (&to, 0, sizeof(struct sockaddr_in));
-  to.sin_port = htons (RIP_PORT_DEFAULT);
-  to.sin_addr = addr;
-
-  rip_request_send (&to, NULL, rip->version_send, NULL);
-}
-
-/* Request routes at all interfaces. */
-static void
-rip_request_neighbor_all (void)
-{
-  struct route_node *rp;
-
-  if (! rip)
-    return;
-
-  if (IS_RIP_DEBUG_EVENT)
-    zlog_debug ("request to the all neighbor");
-
-  /* Send request to all neighbor. */
-  for (rp = route_top (rip->neighbor); rp; rp = route_next (rp))
-    if (rp->info)
-      rip_request_neighbor (rp->p.u.prefix4);
-}
-#endif
 
 /* Multicast packet receive socket. */
 static int rip_multicast_join(struct interface *ifp, int sock)
@@ -468,10 +435,7 @@ static void rip_interface_clean(struct rip_interface *ri)
 	ri->enable_interface = 0;
 	ri->running = 0;
 
-	if (ri->t_wakeup) {
-		thread_cancel(ri->t_wakeup);
-		ri->t_wakeup = NULL;
-	}
+	thread_cancel(&ri->t_wakeup);
 }
 
 void rip_interfaces_clean(struct rip *rip)
@@ -529,6 +493,9 @@ int rip_if_down(struct interface *ifp)
 	struct listnode *listnode = NULL, *nextnode = NULL;
 
 	ri = ifp->info;
+
+	THREAD_OFF(ri->t_wakeup);
+
 	rip = ri->rip;
 	if (rip) {
 		for (rp = route_top(rip->table); rp; rp = route_next(rp))
@@ -603,8 +570,7 @@ int rip_interface_address_add(ZAPI_CALLBACK_ARGS)
 
 	if (p->family == AF_INET) {
 		if (IS_RIP_DEBUG_ZEBRA)
-			zlog_debug("connected address %s/%d is added",
-				   inet_ntoa(p->u.prefix4), p->prefixlen);
+			zlog_debug("connected address %pFX is added", p);
 
 		rip_enable_apply(ifc->ifp);
 		/* Check if this prefix needs to be redistributed */
@@ -653,9 +619,8 @@ int rip_interface_address_delete(ZAPI_CALLBACK_ARGS)
 		p = ifc->address;
 		if (p->family == AF_INET) {
 			if (IS_RIP_DEBUG_ZEBRA)
-				zlog_debug("connected address %s/%d is deleted",
-					   inet_ntoa(p->u.prefix4),
-					   p->prefixlen);
+				zlog_debug("connected address %pFX is deleted",
+					   p);
 
 			hook_call(rip_ifaddr_del, ifc);
 
@@ -1151,7 +1116,7 @@ static int rip_interface_config_write(struct vty *vty)
 		FOR_ALL_INTERFACES (vrf, ifp) {
 			struct lyd_node *dnode;
 
-			dnode = yang_dnode_get(
+			dnode = yang_dnode_getf(
 				running_config->dnode,
 				"/frr-interface:lib/interface[name='%s'][vrf='%s']",
 				ifp->name, vrf->name);
@@ -1176,9 +1141,7 @@ int rip_show_network_config(struct vty *vty, struct rip *rip)
 	for (node = route_top(rip->enable_network); node;
 	     node = route_next(node))
 		if (node->info)
-			vty_out(vty, "    %s/%u\n",
-				inet_ntoa(node->p.u.prefix4),
-				node->p.prefixlen);
+			vty_out(vty, "    %pFX\n", &node->p);
 
 	/* Interface name RIP enable statement. */
 	for (i = 0; i < vector_active(rip->enable_interface); i++)
@@ -1188,7 +1151,7 @@ int rip_show_network_config(struct vty *vty, struct rip *rip)
 	/* RIP neighbors listing. */
 	for (node = route_top(rip->neighbor); node; node = route_next(node))
 		if (node->info)
-			vty_out(vty, "    %s\n", inet_ntoa(node->p.u.prefix4));
+			vty_out(vty, "    %pI4\n", &node->p.u.prefix4);
 
 	return 0;
 }

@@ -301,6 +301,8 @@ static void set_ext_prefix(struct ext_itf *exti, uint8_t route_type,
 	exti->prefix.af = 0;
 	exti->prefix.pref_length = p.prefixlen;
 	exti->prefix.address = p.prefix;
+
+	SET_FLAG(exti->flags, EXT_LPFLG_LSA_ACTIVE);
 }
 
 /* Extended Link TLV - RFC7684 section 3.1 */
@@ -461,6 +463,10 @@ static void set_rmt_itf_addr(struct ext_itf *exti, struct in_addr rmtif)
 /* Delete Extended LSA */
 static void ospf_extended_lsa_delete(struct ext_itf *exti)
 {
+
+	/* Avoid deleting LSA if Extended is not enable */
+	if (!OspfEXT.enabled)
+		return;
 
 	/* Process only Active Extended Prefix/Link LSA */
 	if (!CHECK_FLAG(exti->flags, EXT_LPFLG_LSA_ACTIVE))
@@ -755,16 +761,15 @@ static void ospf_ext_ism_change(struct ospf_interface *oi, int old_status)
 	if (oi->type == OSPF_IFTYPE_LOOPBACK) {
 		exti->stype = PREF_SID;
 		exti->type = OPAQUE_TYPE_EXTENDED_PREFIX_LSA;
-		exti->flags = EXT_LPFLG_LSA_ACTIVE;
 		exti->instance = get_ext_pref_instance_value();
 		exti->area = oi->area;
 
-		osr_debug("EXT (%s): Set Prefix SID to interface %s ",
-			  __func__, oi->ifp->name);
-
 		/* Complete SRDB if the interface belongs to a Prefix */
-		if (OspfEXT.enabled)
+		if (OspfEXT.enabled) {
+			osr_debug("EXT (%s): Set Prefix SID to interface %s ",
+				  __func__, oi->ifp->name);
 			ospf_sr_update_local_prefix(oi->ifp, oi->address);
+		}
 	} else {
 		/* Determine if interface is related to Adj. or LAN Adj. SID */
 		if (oi->state == ISM_DR)
@@ -780,9 +785,11 @@ static void ospf_ext_ism_change(struct ospf_interface *oi, int old_status)
 		 * Note: Adjacency SID information are completed when ospf
 		 * adjacency become up see ospf_ext_link_nsm_change()
 		 */
-		osr_debug("EXT (%s): Set %sAdjacency SID for interface %s ",
-			  __func__, exti->stype == ADJ_SID ? "" : "LAN-",
-			  oi->ifp->name);
+		if (OspfEXT.enabled)
+			osr_debug(
+				"EXT (%s): Set %sAdjacency SID for interface %s ",
+				__func__, exti->stype == ADJ_SID ? "" : "LAN-",
+				oi->ifp->name);
 	}
 }
 
@@ -817,7 +824,8 @@ static void ospf_ext_link_nsm_change(struct ospf_neighbor *nbr, int old_status)
 	}
 
 	/* Remove Extended Link if Neighbor State goes Down or Deleted */
-	if (nbr->state == NSM_Down || nbr->state == NSM_Deleted) {
+	if (OspfEXT.enabled
+	    && (nbr->state == NSM_Down || nbr->state == NSM_Deleted)) {
 		ospf_ext_link_delete_adj_sid(exti);
 		if (CHECK_FLAG(exti->flags, EXT_LPFLG_LSA_ENGAGED))
 			ospf_ext_link_lsa_schedule(exti, FLUSH_THIS_LSA);
@@ -1707,17 +1715,27 @@ static void ospf_ext_lsa_schedule(struct ext_itf *exti, enum lsa_opcode op)
  * ------------------------------------
  */
 
+#define check_tlv_size(size, msg)                                              \
+	do {                                                                   \
+		if (ntohs(tlvh->length) != size) {                             \
+			vty_out(vty, "  Wrong %s TLV size: %d(%d). Abort!\n",  \
+				msg, ntohs(tlvh->length), size);               \
+			return size + TLV_HDR_SIZE;                            \
+		}                                                              \
+	} while (0)
+
 /* Cisco experimental SubTLV */
 static uint16_t show_vty_ext_link_rmt_itf_addr(struct vty *vty,
 					       struct tlv_header *tlvh)
 {
-	struct ext_subtlv_rmt_itf_addr *top;
+	struct ext_subtlv_rmt_itf_addr *top =
+		(struct ext_subtlv_rmt_itf_addr *)tlvh;
 
-	top = (struct ext_subtlv_rmt_itf_addr *)tlvh;
+	check_tlv_size(EXT_SUBTLV_RMT_ITF_ADDR_SIZE, "Remote Itf. Address");
 
 	vty_out(vty,
-		"  Remote Interface Address Sub-TLV: Length %u\n	Address: %s\n",
-		ntohs(top->header.length), inet_ntoa(top->value));
+		"  Remote Interface Address Sub-TLV: Length %u\n	Address: %pI4\n",
+		ntohs(top->header.length), &top->value);
 
 	return TLV_SIZE(tlvh);
 }
@@ -1727,6 +1745,8 @@ static uint16_t show_vty_ext_link_adj_sid(struct vty *vty,
 					  struct tlv_header *tlvh)
 {
 	struct ext_subtlv_adj_sid *top = (struct ext_subtlv_adj_sid *)tlvh;
+
+	check_tlv_size(EXT_SUBTLV_ADJ_SID_SIZE, "Adjacency SID");
 
 	vty_out(vty,
 		"  Adj-SID Sub-TLV: Length %u\n\tFlags: 0x%x\n\tMT-ID:0x%x\n\tWeight: 0x%x\n\t%s: %u\n",
@@ -1747,10 +1767,12 @@ static uint16_t show_vty_ext_link_lan_adj_sid(struct vty *vty,
 	struct ext_subtlv_lan_adj_sid *top =
 		(struct ext_subtlv_lan_adj_sid *)tlvh;
 
+	check_tlv_size(EXT_SUBTLV_LAN_ADJ_SID_SIZE, "Lan-Adjacency SID");
+
 	vty_out(vty,
-		"  LAN-Adj-SID Sub-TLV: Length %u\n\tFlags: 0x%x\n\tMT-ID:0x%x\n\tWeight: 0x%x\n\tNeighbor ID: %s\n\t%s: %u\n",
+		"  LAN-Adj-SID Sub-TLV: Length %u\n\tFlags: 0x%x\n\tMT-ID:0x%x\n\tWeight: 0x%x\n\tNeighbor ID: %pI4\n\t%s: %u\n",
 		ntohs(top->header.length), top->flags, top->mtid, top->weight,
-		inet_ntoa(top->neighbor_id),
+		&top->neighbor_id,
 		CHECK_FLAG(top->flags, EXT_SUBTLV_LINK_ADJ_SID_VFLG) ? "Label"
 								     : "Index",
 		CHECK_FLAG(top->flags, EXT_SUBTLV_LINK_ADJ_SID_VFLG)
@@ -1760,8 +1782,15 @@ static uint16_t show_vty_ext_link_lan_adj_sid(struct vty *vty,
 	return TLV_SIZE(tlvh);
 }
 
-static uint16_t show_vty_unknown_tlv(struct vty *vty, struct tlv_header *tlvh)
+static uint16_t show_vty_unknown_tlv(struct vty *vty, struct tlv_header *tlvh,
+				     size_t buf_size)
 {
+	if (TLV_SIZE(tlvh) > buf_size) {
+		vty_out(vty, "    TLV size %d exceeds buffer size. Abort!",
+			TLV_SIZE(tlvh));
+		return buf_size;
+	}
+
 	vty_out(vty, "    Unknown TLV: [type(0x%x), length(0x%x)]\n",
 		ntohs(tlvh->type), ntohs(tlvh->length));
 
@@ -1769,23 +1798,34 @@ static uint16_t show_vty_unknown_tlv(struct vty *vty, struct tlv_header *tlvh)
 }
 
 /* Extended Link Sub TLVs */
-static uint16_t show_vty_link_info(struct vty *vty, struct tlv_header *ext)
+static uint16_t show_vty_link_info(struct vty *vty, struct tlv_header *ext,
+				   size_t buf_size)
 {
 	struct ext_tlv_link *top = (struct ext_tlv_link *)ext;
 	struct tlv_header *tlvh;
-	uint16_t length = ntohs(top->header.length) - 3 * sizeof(uint32_t);
+	uint16_t length = ntohs(top->header.length);
 	uint16_t sum = 0;
+
+	/* Verify that TLV length is valid against remaining buffer size */
+	if (length > buf_size) {
+		vty_out(vty,
+			"  Extended Link TLV size %d exceeds buffer size. Abort!\n",
+			length);
+		return buf_size;
+	}
 
 	vty_out(vty,
 		"  Extended Link TLV: Length %u\n	Link Type: 0x%x\n"
-		"	Link ID: %s\n",
+		"	Link ID: %pI4\n",
 		ntohs(top->header.length), top->link_type,
-		inet_ntoa(top->link_id));
-	vty_out(vty, "	Link data: %s\n", inet_ntoa(top->link_data));
+		&top->link_id);
+	vty_out(vty, "	Link data: %pI4\n", &top->link_data);
 
+	/* Skip Extended TLV and parse sub-TLVs */
+	length -= EXT_TLV_LINK_SIZE;
 	tlvh = (struct tlv_header *)((char *)(ext) + TLV_HDR_SIZE
 				     + EXT_TLV_LINK_SIZE);
-	for (; sum < length; tlvh = TLV_HDR_NEXT(tlvh)) {
+	for (; sum < length && tlvh; tlvh = TLV_HDR_NEXT(tlvh)) {
 		switch (ntohs(tlvh->type)) {
 		case EXT_SUBTLV_ADJ_SID:
 			sum += show_vty_ext_link_adj_sid(vty, tlvh);
@@ -1797,7 +1837,7 @@ static uint16_t show_vty_link_info(struct vty *vty, struct tlv_header *ext)
 			sum += show_vty_ext_link_rmt_itf_addr(vty, tlvh);
 			break;
 		default:
-			sum += show_vty_unknown_tlv(vty, tlvh);
+			sum += show_vty_unknown_tlv(vty, tlvh, length - sum);
 			break;
 		}
 	}
@@ -1813,16 +1853,16 @@ static void ospf_ext_link_show_info(struct vty *vty, struct ospf_lsa *lsa)
 	uint16_t length = 0, sum = 0;
 
 	/* Initialize TLV browsing */
-	length = ntohs(lsah->length) - OSPF_LSA_HEADER_SIZE;
+	length = lsa->size - OSPF_LSA_HEADER_SIZE;
 
-	for (tlvh = TLV_HDR_TOP(lsah); sum < length;
+	for (tlvh = TLV_HDR_TOP(lsah); sum < length && tlvh;
 	     tlvh = TLV_HDR_NEXT(tlvh)) {
 		switch (ntohs(tlvh->type)) {
 		case EXT_TLV_LINK:
-			sum += show_vty_link_info(vty, tlvh);
+			sum += show_vty_link_info(vty, tlvh, length - sum);
 			break;
 		default:
-			sum += show_vty_unknown_tlv(vty, tlvh);
+			sum += show_vty_unknown_tlv(vty, tlvh, length - sum);
 			break;
 		}
 	}
@@ -1834,6 +1874,8 @@ static uint16_t show_vty_ext_pref_pref_sid(struct vty *vty,
 {
 	struct ext_subtlv_prefix_sid *top =
 		(struct ext_subtlv_prefix_sid *)tlvh;
+
+	check_tlv_size(EXT_SUBTLV_PREFIX_SID_SIZE, "Prefix SID");
 
 	vty_out(vty,
 		"  Prefix SID Sub-TLV: Length %u\n\tAlgorithm: %u\n\tFlags: 0x%x\n\tMT-ID:0x%x\n\t%s: %u\n",
@@ -1849,28 +1891,39 @@ static uint16_t show_vty_ext_pref_pref_sid(struct vty *vty,
 }
 
 /* Extended Prefix SubTLVs */
-static uint16_t show_vty_pref_info(struct vty *vty, struct tlv_header *ext)
+static uint16_t show_vty_pref_info(struct vty *vty, struct tlv_header *ext,
+				   size_t buf_size)
 {
 	struct ext_tlv_prefix *top = (struct ext_tlv_prefix *)ext;
 	struct tlv_header *tlvh;
-	uint16_t length = ntohs(top->header.length) - 2 * sizeof(uint32_t);
+	uint16_t length = ntohs(top->header.length);
 	uint16_t sum = 0;
+
+	/* Verify that TLV length is valid against remaining buffer size */
+	if (length > buf_size) {
+		vty_out(vty,
+			"  Extended Link TLV size %d exceeds buffer size. Abort!\n",
+			length);
+		return buf_size;
+	}
 
 	vty_out(vty,
 		"  Extended Prefix TLV: Length %u\n\tRoute Type: %u\n"
-		"\tAddress Family: 0x%x\n\tFlags: 0x%x\n\tAddress: %s/%u\n",
+		"\tAddress Family: 0x%x\n\tFlags: 0x%x\n\tAddress: %pI4/%u\n",
 		ntohs(top->header.length), top->route_type, top->af, top->flags,
-		inet_ntoa(top->address), top->pref_length);
+		&top->address, top->pref_length);
 
+	/* Skip Extended Prefix TLV and parse sub-TLVs */
+	length -= EXT_TLV_PREFIX_SIZE;
 	tlvh = (struct tlv_header *)((char *)(ext) + TLV_HDR_SIZE
 				     + EXT_TLV_PREFIX_SIZE);
-	for (; sum < length; tlvh = TLV_HDR_NEXT(tlvh)) {
+	for (; sum < length && tlvh; tlvh = TLV_HDR_NEXT(tlvh)) {
 		switch (ntohs(tlvh->type)) {
 		case EXT_SUBTLV_PREFIX_SID:
 			sum += show_vty_ext_pref_pref_sid(vty, tlvh);
 			break;
 		default:
-			sum += show_vty_unknown_tlv(vty, tlvh);
+			sum += show_vty_unknown_tlv(vty, tlvh, length - sum);
 			break;
 		}
 	}
@@ -1886,16 +1939,16 @@ static void ospf_ext_pref_show_info(struct vty *vty, struct ospf_lsa *lsa)
 	uint16_t length = 0, sum = 0;
 
 	/* Initialize TLV browsing */
-	length = ntohs(lsah->length) - OSPF_LSA_HEADER_SIZE;
+	length = lsa->size - OSPF_LSA_HEADER_SIZE;
 
-	for (tlvh = TLV_HDR_TOP(lsah); sum < length;
+	for (tlvh = TLV_HDR_TOP(lsah); sum < length && tlvh;
 	     tlvh = TLV_HDR_NEXT(tlvh)) {
 		switch (ntohs(tlvh->type)) {
 		case EXT_TLV_PREFIX:
-			sum += show_vty_pref_info(vty, tlvh);
+			sum += show_vty_pref_info(vty, tlvh, length - sum);
 			break;
 		default:
-			sum += show_vty_unknown_tlv(vty, tlvh);
+			sum += show_vty_unknown_tlv(vty, tlvh, length - sum);
 			break;
 		}
 	}

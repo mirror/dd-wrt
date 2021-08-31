@@ -83,6 +83,21 @@ extern void vrf_import_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 void vrf_unimport_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 			   afi_t afi, safi_t safi);
 
+static inline bool is_bgp_vrf_mplsvpn(struct bgp *bgp)
+{
+	afi_t afi;
+
+	if (bgp->inst_type == BGP_INSTANCE_TYPE_VRF)
+		for (afi = 0; afi < AFI_MAX; ++afi) {
+			if (CHECK_FLAG(bgp->af_flags[afi][SAFI_UNICAST],
+				       BGP_CONFIG_VRF_TO_MPLSVPN_EXPORT)
+			    || CHECK_FLAG(bgp->af_flags[afi][SAFI_UNICAST],
+					  BGP_CONFIG_MPLSVPN_TO_VRF_IMPORT))
+				return true;
+		}
+	return false;
+}
+
 static inline int vpn_leak_to_vpn_active(struct bgp *bgp_vrf, afi_t afi,
 					 const char **pmsg)
 {
@@ -266,7 +281,7 @@ extern vrf_id_t get_first_vrf_for_redirect_with_rt(struct ecommunity *eckey);
 extern void vpn_leak_postchange_all(void);
 extern void vpn_handle_router_id_update(struct bgp *bgp, bool withdraw,
 					bool is_config);
-extern int bgp_vpn_leak_unimport(struct bgp *from_bgp);
+extern void bgp_vpn_leak_unimport(struct bgp *from_bgp);
 extern void bgp_vpn_leak_export(struct bgp *from_bgp);
 
 #endif /* _QUAGGA_BGP_MPLSVPN_H */

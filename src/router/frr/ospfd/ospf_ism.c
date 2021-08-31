@@ -45,7 +45,7 @@
 
 DEFINE_HOOK(ospf_ism_change,
 	    (struct ospf_interface * oi, int state, int oldstate),
-	    (oi, state, oldstate))
+	    (oi, state, oldstate));
 
 /* elect DR and BDR. Refer to RFC2319 section 9.4 */
 static struct ospf_neighbor *ospf_dr_election_sub(struct list *routers)
@@ -201,7 +201,7 @@ static void ospf_dr_change(struct ospf *ospf, struct route_table *nbrs)
 	}
 }
 
-static int ospf_dr_election(struct ospf_interface *oi)
+int ospf_dr_election(struct ospf_interface *oi)
 {
 	struct in_addr old_dr, old_bdr;
 	int old_state, new_state;
@@ -223,8 +223,8 @@ static int ospf_dr_election(struct ospf_interface *oi)
 
 	new_state = ospf_ism_state(oi);
 
-	zlog_debug("DR-Election[1st]: Backup %s", inet_ntoa(BDR(oi)));
-	zlog_debug("DR-Election[1st]: DR     %s", inet_ntoa(DR(oi)));
+	zlog_debug("DR-Election[1st]: Backup %pI4", &BDR(oi));
+	zlog_debug("DR-Election[1st]: DR     %pI4", &DR(oi));
 
 	if (new_state != old_state
 	    && !(new_state == ISM_DROther && old_state < ISM_DROther)) {
@@ -233,8 +233,8 @@ static int ospf_dr_election(struct ospf_interface *oi)
 
 		new_state = ospf_ism_state(oi);
 
-		zlog_debug("DR-Election[2nd]: Backup %s", inet_ntoa(BDR(oi)));
-		zlog_debug("DR-Election[2nd]: DR     %s", inet_ntoa(DR(oi)));
+		zlog_debug("DR-Election[2nd]: Backup %pI4", &BDR(oi));
+		zlog_debug("DR-Election[2nd]: DR     %pI4", &DR(oi));
 	}
 
 	list_delete(&el_list);

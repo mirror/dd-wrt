@@ -12,6 +12,9 @@ module frr-bfdd {
   import frr-interface {
     prefix frr-interface;
   }
+  import frr-vrf {
+    prefix frr-vrf;
+  }
   import frr-route-types {
     prefix frr-route-types;
   }
@@ -207,7 +210,14 @@ module frr-bfdd {
       type uint32;
       units microseconds;
       default 50000;
-      description "Minimum desired control packet transmission interval";
+      description "Minimum desired echo packet transmission interval";
+    }
+
+    leaf required-echo-receive-interval {
+      type uint32;
+      units microseconds;
+      default 50000;
+      description "Minimum required echo packet receive interval";
     }
   }
 
@@ -396,14 +406,12 @@ module frr-bfdd {
           }
 
           leaf interface {
-            type string {
-              length "0..16";
-            }
+            type frr-interface:interface-ref;
             description "Interface to use to contact peer";
           }
 
           leaf vrf {
-            type string;
+            type frr-vrf:vrf-ref;
             description "Virtual Routing Domain name";
           }
 
@@ -427,7 +435,7 @@ module frr-bfdd {
         }
 
         list multi-hop {
-          key "source-addr dest-addr interface vrf";
+          key "source-addr dest-addr vrf";
           description "List of multi hop sessions";
 
           leaf source-addr {
@@ -440,15 +448,8 @@ module frr-bfdd {
             description "IP address of the peer";
           }
 
-          leaf interface {
-            type string {
-              length "0..16";
-            }
-            description "Interface to use to contact peer";
-          }
-
           leaf vrf {
-            type string;
+            type frr-vrf:vrf-ref;
             description "Virtual Routing Domain name";
           }
 

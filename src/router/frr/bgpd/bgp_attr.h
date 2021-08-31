@@ -185,7 +185,7 @@ struct attr {
 	struct lcommunity *lcommunity;
 
 	/* Route-Reflector Cluster attribute */
-	struct cluster_list *cluster;
+	struct cluster_list *cluster1;
 
 	/* Unknown transitive attribute. */
 	struct transit *transit;
@@ -243,6 +243,15 @@ struct attr {
 	 */
 #define ATTR_ES_PEER_ROUTER (1 << 4)
 
+	/* These two flags are only set on L3 routes installed in a
+	 * VRF as a result of EVPN MAC-IP route
+	 * XXX - while splitting up per-family attrs these need to be
+	 * classified as non-EVPN
+	 */
+#define ATTR_ES_L3_NHG_USE (1 << 5)
+#define ATTR_ES_L3_NHG_ACTIVE (1 << 6)
+#define ATTR_ES_L3_NHG (ATTR_ES_L3_NHG_USE | ATTR_ES_L3_NHG_ACTIVE)
+
 	/* route tag */
 	route_tag_t tag;
 
@@ -294,6 +303,10 @@ struct attr {
 
 	/* SR-TE Color */
 	uint32_t srte_color;
+
+	/* EVPN DF preference and algorithm for DF election on local ESs */
+	uint16_t df_pref;
+	uint8_t df_alg;
 };
 
 /* rmap_change_flags definition */
@@ -327,7 +340,7 @@ struct transit {
 
 #define BGP_CLUSTER_LIST_LENGTH(attr)                                          \
 	(((attr)->flag & ATTR_FLAG_BIT(BGP_ATTR_CLUSTER_LIST))                 \
-		 ? (attr)->cluster->length                                     \
+		 ? bgp_attr_get_cluster((attr))->length                        \
 		 : 0)
 
 typedef enum {
@@ -453,4 +466,81 @@ static inline uint32_t mac_mobility_seqnum(struct attr *attr)
 {
 	return (attr) ? attr->mm_seqnum : 0;
 }
+
+static inline enum pta_type bgp_attr_get_pmsi_tnl_type(struct attr *attr)
+{
+	return attr->pmsi_tnl_type;
+}
+
+static inline void bgp_attr_set_pmsi_tnl_type(struct attr *attr,
+					      enum pta_type pmsi_tnl_type)
+{
+	attr->pmsi_tnl_type = pmsi_tnl_type;
+}
+
+static inline struct ecommunity *
+bgp_attr_get_ipv6_ecommunity(const struct attr *attr)
+{
+	return attr->ipv6_ecommunity;
+}
+
+static inline void bgp_attr_set_ipv6_ecommunity(struct attr *attr,
+						struct ecommunity *ipv6_ecomm)
+{
+	attr->ipv6_ecommunity = ipv6_ecomm;
+}
+
+static inline struct transit *bgp_attr_get_transit(const struct attr *attr)
+{
+	return attr->transit;
+}
+
+static inline void bgp_attr_set_transit(struct attr *attr,
+					struct transit *transit)
+{
+	attr->transit = transit;
+}
+
+static inline struct cluster_list *bgp_attr_get_cluster(const struct attr *attr)
+{
+	return attr->cluster1;
+}
+
+static inline void bgp_attr_set_cluster(struct attr *attr,
+					struct cluster_list *cl)
+{
+	attr->cluster1 = cl;
+}
+
+static inline const struct bgp_route_evpn *
+bgp_attr_get_evpn_overlay(const struct attr *attr)
+{
+	return &attr->evpn_overlay;
+}
+
+static inline void bgp_attr_set_evpn_overlay(struct attr *attr,
+					     struct bgp_route_evpn *eo)
+{
+	memcpy(&attr->evpn_overlay, eo, sizeof(struct bgp_route_evpn));
+}
+
+static inline struct bgp_attr_encap_subtlv *
+bgp_attr_get_vnc_subtlvs(const struct attr *attr)
+{
+#ifdef ENABLE_BGP_VNC
+	return attr->vnc_subtlvs;
+#else
+	return NULL;
+#endif
+}
+
+static inline void
+bgp_attr_set_vnc_subtlvs(struct attr *attr,
+			 struct bgp_attr_encap_subtlv *vnc_subtlvs)
+{
+#ifdef ENABLE_BGP_VNC
+	attr->vnc_subtlvs = vnc_subtlvs;
+#endif
+}
+
 #endif /* _QUAGGA_BGP_ATTR_H */

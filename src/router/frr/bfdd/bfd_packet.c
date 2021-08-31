@@ -267,7 +267,7 @@ void ptm_bfd_snd(struct bfd_session *bfd, int fbit)
 		cp.timers.required_min_rx =
 			htonl(bfd->cur_timers.required_min_rx);
 	}
-	cp.timers.required_min_echo = htonl(bfd->timers.required_min_echo);
+	cp.timers.required_min_echo = htonl(bfd->timers.required_min_echo_rx);
 
 	if (_ptm_bfd_send(bfd, NULL, &cp, BFD_PKT_LEN) != 0)
 		return;
@@ -656,7 +656,7 @@ int bfd_recv_cb(struct thread *t)
 	 * If no interface was detected, save the interface where the
 	 * packet came in.
 	 */
-	if (bfd->ifp == NULL)
+	if (!is_mhop && bfd->ifp == NULL)
 		bfd->ifp = if_lookup_by_index(ifindex, vrfid);
 
 	/* Log remote discriminator changes. */

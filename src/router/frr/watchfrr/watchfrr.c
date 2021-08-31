@@ -61,8 +61,8 @@
 
 #define PING_TOKEN	"PING"
 
-DEFINE_MGROUP(WATCHFRR, "watchfrr")
-DEFINE_MTYPE_STATIC(WATCHFRR, WATCHFRR_DAEMON, "watchfrr daemon entry")
+DEFINE_MGROUP(WATCHFRR, "watchfrr");
+DEFINE_MTYPE_STATIC(WATCHFRR, WATCHFRR_DAEMON, "watchfrr daemon entry");
 
 /* Needs to be global, referenced somewhere inside libfrr. */
 struct thread_master *master;
@@ -316,7 +316,7 @@ static pid_t run_background(char *shell_cmd)
 		/* Use separate process group so child processes can be killed
 		 * easily. */
 		if (setpgid(0, 0) < 0)
-			zlog_warn("warning: setpgid(0,0) failed: %s",
+			zlog_warn("setpgid(0,0) failed: %s",
 				  safe_strerror(errno));
 		{
 			char shell[] = "sh";
@@ -356,7 +356,7 @@ static int restart_kill(struct thread *t_kill)
 
 	time_elapsed(&delay, &restart->time);
 	zlog_warn(
-		"Warning: %s %s child process %d still running after %ld seconds, sending signal %d",
+		"%s %s child process %d still running after %ld seconds, sending signal %d",
 		restart->what, restart->name, (int)restart->pid,
 		(long)delay.tv_sec, (restart->kills ? SIGKILL : SIGTERM));
 	kill(-restart->pid, (restart->kills ? SIGKILL : SIGTERM));
@@ -409,8 +409,8 @@ static void sigchild(void)
 		what = restart->what;
 		restart->pid = 0;
 		gs.numpids--;
-		thread_cancel(restart->t_kill);
-		restart->t_kill = NULL;
+		thread_cancel(&restart->t_kill);
+
 		/* Update restart time to reflect the time the command
 		 * completed. */
 		gettimeofday(&restart->time, NULL);
@@ -423,7 +423,7 @@ static void sigchild(void)
 		what = "background";
 	}
 	if (WIFSTOPPED(status))
-		zlog_warn("warning: %s %s process %d is stopped", what, name,
+		zlog_warn("%s %s process %d is stopped", what, name,
 			  (int)child);
 	else if (WIFSIGNALED(status))
 		zlog_warn("%s %s process %d terminated due to signal %d", what,
@@ -585,8 +585,8 @@ static void restart_done(struct daemon *dmn)
 			dmn->name, state_str[dmn->state]);
 		return;
 	}
-	if (dmn->t_wakeup)
-		THREAD_OFF(dmn->t_wakeup);
+	THREAD_OFF(dmn->t_wakeup);
+
 	if (try_connect(dmn) < 0)
 		SET_WAKEUP_DOWN(dmn);
 }
@@ -679,8 +679,7 @@ static int handle_read(struct thread *t_read)
 			   dmn->name, (long)delay.tv_sec, (long)delay.tv_usec);
 
 	SET_READ_HANDLER(dmn);
-	if (dmn->t_wakeup)
-		thread_cancel(dmn->t_wakeup);
+	thread_cancel(&dmn->t_wakeup);
 	SET_WAKEUP_ECHO(dmn);
 
 	return 0;
@@ -867,9 +866,8 @@ static int phase_hanging(struct thread *t_hanging)
 static void set_phase(restart_phase_t new_phase)
 {
 	gs.phase = new_phase;
-	if (gs.t_phase_hanging)
-		thread_cancel(gs.t_phase_hanging);
-	gs.t_phase_hanging = NULL;
+	thread_cancel(&gs.t_phase_hanging);
+
 	thread_add_timer(master, phase_hanging, NULL, PHASE_TIMEOUT,
 			 &gs.t_phase_hanging);
 }
@@ -1338,7 +1336,8 @@ FRR_DAEMON_INFO(watchfrr, WATCHFRR,
 		.signals = watchfrr_signals,
 		.n_signals = array_size(watchfrr_signals),
 
-		.privs = &watchfrr_privs, )
+		.privs = &watchfrr_privs,
+);
 
 #define DEPRECATED_OPTIONS "aAezR:"
 

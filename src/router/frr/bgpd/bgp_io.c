@@ -31,14 +31,14 @@
 #include "network.h"		// for ERRNO_IO_RETRY
 #include "stream.h"		// for stream_get_endp, stream_getw_from, str...
 #include "ringbuf.h"		// for ringbuf_remain, ringbuf_peek, ringbuf_...
-#include "thread.h"		// for THREAD_OFF, THREAD_ARG, thread, thread...
-#include "zassert.h"		// for assert
+#include "thread.h"		// for THREAD_OFF, THREAD_ARG, thread...
 
 #include "bgpd/bgp_io.h"
 #include "bgpd/bgp_debug.h"	// for bgp_debug_neighbor_events, bgp_type_str
 #include "bgpd/bgp_errors.h"	// for expanded error reference information
 #include "bgpd/bgp_fsm.h"	// for BGP_EVENT_ADD, bgp_event
 #include "bgpd/bgp_packet.h"	// for bgp_notify_send_with_data, bgp_notify...
+#include "bgpd/bgp_trace.h"	// for frrtraces
 #include "bgpd/bgpd.h"		// for peer, BGP_MARKER_SIZE, bgp_master, bm
 /* clang-format on */
 
@@ -111,6 +111,7 @@ void bgp_reads_off(struct peer *peer)
 
 	thread_cancel_async(fpt->master, &peer->t_read, NULL);
 	THREAD_OFF(peer->t_process_packet);
+	THREAD_OFF(peer->t_process_packet_error);
 
 	UNSET_FLAG(peer->thread_flags, PEER_THREAD_READS_ON);
 }
@@ -148,12 +149,17 @@ static int bgp_process_writes(struct thread *thread)
 		fatal = true;
 	}
 
+	/* If suppress fib pending is enabled, route is advertised to peers when
+	 * the status is received from the FIB. The delay is added
+	 * to update group packet generate which will allow more routes to be
+	 * sent in the update message
+	 */
 	if (reschedule) {
 		thread_add_write(fpt->master, bgp_process_writes, peer,
 				 peer->fd, &peer->t_write);
 	} else if (!fatal) {
-		BGP_TIMER_ON(peer->t_generate_updgrp_packets,
-			     bgp_generate_updgrp_packets, 0);
+		BGP_UPDATE_GROUP_TIMER_ON(&peer->t_generate_updgrp_packets,
+					  bgp_generate_updgrp_packets);
 	}
 
 	return 0;
@@ -174,8 +180,8 @@ static int bgp_process_reads(struct thread *thread)
 	bool more = true;		// whether we got more data
 	bool fatal = false;		// whether fatal error occurred
 	bool added_pkt = false;		// whether we pushed onto ->ibuf
+	int code = 0;			// FSM code if error occurred
 	/* clang-format on */
-	int code;
 
 	peer = THREAD_ARG(thread);
 
@@ -203,7 +209,7 @@ static int bgp_process_reads(struct thread *thread)
 		 * specific state change from 'bgp_read'.
 		 */
 		thread_add_event(bm->master, bgp_packet_process_error,
-				 peer, code, NULL);
+				 peer, code, &peer->t_process_packet_error);
 	}
 
 	while (more) {
@@ -229,7 +235,7 @@ static int bgp_process_reads(struct thread *thread)
 		pktsize = ntohs(pktsize);
 
 		/* if this fails we are seriously screwed */
-		assert(pktsize <= BGP_MAX_PACKET_SIZE);
+		assert(pktsize <= peer->max_packet_size);
 
 		/*
 		 * If we have that much data, chuck it into its own
@@ -242,6 +248,7 @@ static int bgp_process_reads(struct thread *thread)
 			assert(ringbuf_get(ibw, pkt->data, pktsize) == pktsize);
 			stream_set_endp(pkt, pktsize);
 
+			frrtrace(2, frr_bgp, packet_read, peer, pkt);
 			frr_with_mutex(&peer->io_mtx) {
 				stream_fifo_push(peer->ibuf, pkt);
 			}
@@ -256,13 +263,13 @@ static int bgp_process_reads(struct thread *thread)
 		/* wipe buffer just in case someone screwed up */
 		ringbuf_wipe(peer->ibuf_work);
 	} else {
-		assert(ringbuf_space(peer->ibuf_work) >= BGP_MAX_PACKET_SIZE);
+		assert(ringbuf_space(peer->ibuf_work) >= peer->max_packet_size);
 
 		thread_add_read(fpt->master, bgp_process_reads, peer, peer->fd,
 				&peer->t_read);
 		if (added_pkt)
-			thread_add_timer_msec(bm->master, bgp_process_packet,
-					      peer, 0, &peer->t_process_packet);
+			thread_add_event(bm->master, bgp_process_packet,
+					 peer, 0, &peer->t_process_packet);
 	}
 
 	return 0;
@@ -448,6 +455,9 @@ done : {
 /*
  * Reads a chunk of data from peer->fd into peer->ibuf_work.
  *
+ * code_p
+ *    Pointer to location to store FSM event code in case of fatal error.
+ *
  * @return status flag (see top-of-file)
  */
 static uint16_t bgp_read(struct peer *peer, int *code_p)
@@ -455,10 +465,10 @@ static uint16_t bgp_read(struct peer *peer, int *code_p)
 	size_t readsize; // how many bytes we want to read
 	ssize_t nbytes;  // how many bytes we actually read
 	uint16_t status = 0;
-	static uint8_t ibw[BGP_MAX_PACKET_SIZE * BGP_READ_PACKET_MAX];
 
-	readsize = MIN(ringbuf_space(peer->ibuf_work), sizeof(ibw));
-	nbytes = read(peer->fd, ibw, readsize);
+	readsize =
+		MIN(ringbuf_space(peer->ibuf_work), sizeof(peer->ibuf_scratch));
+	nbytes = read(peer->fd, peer->ibuf_scratch, readsize);
 
 	/* EAGAIN or EWOULDBLOCK; come back later */
 	if (nbytes < 0 && ERRNO_IO_RETRY(errno)) {
@@ -487,7 +497,7 @@ static uint16_t bgp_read(struct peer *peer, int *code_p)
 
 		SET_FLAG(status, BGP_IO_FATAL_ERR);
 	} else {
-		assert(ringbuf_put(peer->ibuf_work, ibw, nbytes)
+		assert(ringbuf_put(peer->ibuf_work, peer->ibuf_scratch, nbytes)
 		       == (size_t)nbytes);
 	}
 
@@ -544,7 +554,7 @@ static bool validate_header(struct peer *peer)
 	}
 
 	/* Minimum packet length check. */
-	if ((size < BGP_HEADER_SIZE) || (size > BGP_MAX_PACKET_SIZE)
+	if ((size < BGP_HEADER_SIZE) || (size > peer->max_packet_size)
 	    || (type == BGP_MSG_OPEN && size < BGP_MSG_OPEN_MIN_SIZE)
 	    || (type == BGP_MSG_UPDATE && size < BGP_MSG_UPDATE_MIN_SIZE)
 	    || (type == BGP_MSG_NOTIFY && size < BGP_MSG_NOTIFY_MIN_SIZE)

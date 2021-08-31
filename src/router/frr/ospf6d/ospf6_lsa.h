@@ -20,12 +20,20 @@
 
 #ifndef OSPF6_LSA_H
 #define OSPF6_LSA_H
+#include "ospf6_top.h"
+#include "lib/json.h"
 
 /* Debug option */
 #define OSPF6_LSA_DEBUG           0x01
 #define OSPF6_LSA_DEBUG_ORIGINATE 0x02
 #define OSPF6_LSA_DEBUG_EXAMIN    0x04
 #define OSPF6_LSA_DEBUG_FLOOD     0x08
+
+/* OSPF LSA Default metric values */
+#define DEFAULT_DEFAULT_METRIC 20
+#define DEFAULT_DEFAULT_ORIGINATE_METRIC 10
+#define DEFAULT_DEFAULT_ALWAYS_METRIC 1
+#define DEFAULT_METRIC_TYPE 2
 
 #define IS_OSPF6_DEBUG_LSA(name)                                               \
 	(ospf6_lstype_debug(htons(OSPF6_LSTYPE_##name)) & OSPF6_LSA_DEBUG)
@@ -140,9 +148,10 @@ struct ospf6_lsa_handler {
 	uint16_t lh_type; /* host byte order */
 	const char *lh_name;
 	const char *lh_short_name;
-	int (*lh_show)(struct vty *, struct ospf6_lsa *);
-	char *(*lh_get_prefix_str)(struct ospf6_lsa *, char *buf,
-				   int buflen, int pos);
+	int (*lh_show)(struct vty *, struct ospf6_lsa *, json_object *json_obj,
+		       bool use_json);
+	char *(*lh_get_prefix_str)(struct ospf6_lsa *, char *buf, int buflen,
+				   int pos);
 
 	uint8_t lh_debug;
 };
@@ -156,46 +165,36 @@ extern vector ospf6_lsa_handler_vector;
 /* addr is (struct prefix *) */
 #define CONTINUE_IF_ADDRESS_LINKLOCAL(debug, addr)                             \
 	if (IN6_IS_ADDR_LINKLOCAL(&(addr)->u.prefix6)) {                       \
-		char buf[PREFIX2STR_BUFFER];                                   \
-		prefix2str(addr, buf, sizeof(buf));                            \
 		if (debug)                                                     \
-			zlog_debug("Filter out Linklocal: %s", buf);           \
+			zlog_debug("Filter out Linklocal: %pFX", addr);        \
 		continue;                                                      \
 	}
 
 #define CONTINUE_IF_ADDRESS_UNSPECIFIED(debug, addr)                           \
 	if (IN6_IS_ADDR_UNSPECIFIED(&(addr)->u.prefix6)) {                     \
-		char buf[PREFIX2STR_BUFFER];                                   \
-		prefix2str(addr, buf, sizeof(buf));                            \
 		if (debug)                                                     \
-			zlog_debug("Filter out Unspecified: %s", buf);         \
+			zlog_debug("Filter out Unspecified: %pFX", addr);      \
 		continue;                                                      \
 	}
 
 #define CONTINUE_IF_ADDRESS_LOOPBACK(debug, addr)                              \
 	if (IN6_IS_ADDR_LOOPBACK(&(addr)->u.prefix6)) {                        \
-		char buf[PREFIX2STR_BUFFER];                                   \
-		prefix2str(addr, buf, sizeof(buf));                            \
 		if (debug)                                                     \
-			zlog_debug("Filter out Loopback: %s", buf);            \
+			zlog_debug("Filter out Loopback: %pFX", addr);         \
 		continue;                                                      \
 	}
 
 #define CONTINUE_IF_ADDRESS_V4COMPAT(debug, addr)                              \
 	if (IN6_IS_ADDR_V4COMPAT(&(addr)->u.prefix6)) {                        \
-		char buf[PREFIX2STR_BUFFER];                                   \
-		prefix2str(addr, buf, sizeof(buf));                            \
 		if (debug)                                                     \
-			zlog_debug("Filter out V4Compat: %s", buf);            \
+			zlog_debug("Filter out V4Compat: %pFX", addr);         \
 		continue;                                                      \
 	}
 
 #define CONTINUE_IF_ADDRESS_V4MAPPED(debug, addr)                              \
 	if (IN6_IS_ADDR_V4MAPPED(&(addr)->u.prefix6)) {                        \
-		char buf[PREFIX2STR_BUFFER];                                   \
-		prefix2str(addr, buf, sizeof(buf));                            \
 		if (debug)                                                     \
-			zlog_debug("Filter out V4Mapped: %s", buf);            \
+			zlog_debug("Filter out V4Mapped: %pFX", addr);         \
 		continue;                                                      \
 	}
 
@@ -204,6 +203,8 @@ extern vector ospf6_lsa_handler_vector;
 extern const char *ospf6_lstype_name(uint16_t type);
 extern const char *ospf6_lstype_short_name(uint16_t type);
 extern uint8_t ospf6_lstype_debug(uint16_t type);
+extern int metric_type(struct ospf6 *ospf6, int type, uint8_t instance);
+extern int metric_value(struct ospf6 *ospf6, int type, uint8_t instance);
 extern int ospf6_lsa_is_differ(struct ospf6_lsa *lsa1, struct ospf6_lsa *lsa2);
 extern int ospf6_lsa_is_changed(struct ospf6_lsa *lsa1, struct ospf6_lsa *lsa2);
 extern uint16_t ospf6_lsa_age_current(struct ospf6_lsa *);
@@ -215,19 +216,24 @@ extern char *ospf6_lsa_printbuf(struct ospf6_lsa *lsa, char *buf, int size);
 extern void ospf6_lsa_header_print_raw(struct ospf6_lsa_header *header);
 extern void ospf6_lsa_header_print(struct ospf6_lsa *lsa);
 extern void ospf6_lsa_show_summary_header(struct vty *vty);
-extern void ospf6_lsa_show_summary(struct vty *vty, struct ospf6_lsa *lsa);
-extern void ospf6_lsa_show_dump(struct vty *vty, struct ospf6_lsa *lsa);
-extern void ospf6_lsa_show_internal(struct vty *vty, struct ospf6_lsa *lsa);
-extern void ospf6_lsa_show(struct vty *vty, struct ospf6_lsa *lsa);
+extern void ospf6_lsa_show_summary(struct vty *vty, struct ospf6_lsa *lsa,
+				   json_object *json, bool use_json);
+extern void ospf6_lsa_show_dump(struct vty *vty, struct ospf6_lsa *lsa,
+				json_object *json, bool use_json);
+extern void ospf6_lsa_show_internal(struct vty *vty, struct ospf6_lsa *lsa,
+				    json_object *json, bool use_json);
+extern void ospf6_lsa_show(struct vty *vty, struct ospf6_lsa *lsa,
+			   json_object *json, bool use_json);
 
+extern struct ospf6_lsa *ospf6_lsa_alloc(size_t lsa_length);
 extern struct ospf6_lsa *ospf6_lsa_create(struct ospf6_lsa_header *header);
 extern struct ospf6_lsa *
 ospf6_lsa_create_headeronly(struct ospf6_lsa_header *header);
 extern void ospf6_lsa_delete(struct ospf6_lsa *lsa);
 extern struct ospf6_lsa *ospf6_lsa_copy(struct ospf6_lsa *);
 
-extern void ospf6_lsa_lock(struct ospf6_lsa *);
-extern struct ospf6_lsa *ospf6_lsa_unlock(struct ospf6_lsa *);
+extern struct ospf6_lsa *ospf6_lsa_lock(struct ospf6_lsa *lsa);
+extern struct ospf6_lsa *ospf6_lsa_unlock(struct ospf6_lsa *lsa);
 
 extern int ospf6_lsa_expire(struct thread *);
 extern int ospf6_lsa_refresh(struct thread *);
@@ -246,6 +252,6 @@ extern void ospf6_lsa_terminate(void);
 extern int config_write_ospf6_debug_lsa(struct vty *vty);
 extern void install_element_ospf6_debug_lsa(void);
 extern void ospf6_lsa_age_set(struct ospf6_lsa *lsa);
-extern void ospf6_flush_self_originated_lsas_now(void);
-
+extern void ospf6_flush_self_originated_lsas_now(struct ospf6 *ospf6);
+extern struct ospf6 *ospf6_get_by_lsdb(struct ospf6_lsa *lsa);
 #endif /* OSPF6_LSA_H */

@@ -23,7 +23,6 @@
 #include <zebra.h>
 
 #include "memory.h"
-#include "zebra_memory.h"
 #include "sockopt.h"
 #include "thread.h"
 #include "if.h"
@@ -54,7 +53,7 @@ extern struct zebra_privs_t zserv_privs;
 #include "zebra/rtadv_clippy.c"
 #endif
 
-DEFINE_MTYPE_STATIC(ZEBRA, RTADV_PREFIX, "Router Advertisement Prefix")
+DEFINE_MTYPE_STATIC(ZEBRA, RTADV_PREFIX, "Router Advertisement Prefix");
 
 #ifdef OPEN_BSD
 #include <netinet/icmp6.h>
@@ -71,8 +70,8 @@ DEFINE_MTYPE_STATIC(ZEBRA, RTADV_PREFIX, "Router Advertisement Prefix")
 #define ALLNODE   "ff02::1"
 #define ALLROUTER "ff02::2"
 
-DEFINE_MTYPE_STATIC(ZEBRA, RTADV_RDNSS, "Router Advertisement RDNSS")
-DEFINE_MTYPE_STATIC(ZEBRA, RTADV_DNSSL, "Router Advertisement DNSSL")
+DEFINE_MTYPE_STATIC(ZEBRA, RTADV_RDNSS, "Router Advertisement RDNSS");
+DEFINE_MTYPE_STATIC(ZEBRA, RTADV_DNSSL, "Router Advertisement DNSSL");
 
 /* Order is intentional.  Matches RFC4191.  This array is also used for
    command matching, so only modify with care. */
@@ -1064,22 +1063,13 @@ static void zebra_interface_radv_set(ZAPI_HANDLER_ARGS, int enable)
 	ifindex_t ifindex;
 	struct interface *ifp;
 	struct zebra_if *zif;
-	int ra_interval_rxd;
+	uint32_t ra_interval;
 
 	s = msg;
 
 	/* Get interface index and RA interval. */
 	STREAM_GETL(s, ifindex);
-	STREAM_GETL(s, ra_interval_rxd);
-
-	if (ra_interval_rxd < 0) {
-		zlog_warn(
-			"Requested RA interval %d is garbage; ignoring request",
-			ra_interval_rxd);
-		return;
-	}
-
-	unsigned int ra_interval = ra_interval_rxd;
+	STREAM_GETL(s, ra_interval);
 
 	if (IS_ZEBRA_DEBUG_EVENT) {
 		struct vrf *vrf = zvrf->vrf;
@@ -2337,7 +2327,6 @@ static int rtadv_config_write(struct vty *vty, struct interface *ifp)
 	struct rtadv_prefix *rprefix;
 	struct rtadv_rdnss *rdnss;
 	struct rtadv_dnssl *dnssl;
-	char buf[PREFIX_STRLEN];
 	int interval;
 
 	zif = ifp->info;
@@ -2408,8 +2397,7 @@ static int rtadv_config_write(struct vty *vty, struct interface *ifp)
 	for (ALL_LIST_ELEMENTS_RO(zif->rtadv.AdvPrefixList, node, rprefix)) {
 		if ((rprefix->AdvPrefixCreate == PREFIX_SRC_MANUAL)
 		    || (rprefix->AdvPrefixCreate == PREFIX_SRC_BOTH)) {
-			vty_out(vty, " ipv6 nd prefix %s",
-				prefix2str(&rprefix->prefix, buf, sizeof(buf)));
+			vty_out(vty, " ipv6 nd prefix %pFX", &rprefix->prefix);
 			if ((rprefix->AdvValidLifetime != RTADV_VALID_LIFETIME)
 			    || (rprefix->AdvPreferredLifetime
 				!= RTADV_PREFERRED_LIFETIME)) {

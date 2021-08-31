@@ -255,7 +255,7 @@ ldp_config_write(struct vty *vty)
 	vty_out (vty, "mpls ldp\n");
 
 	if (ldpd_conf->rtr_id.s_addr != INADDR_ANY)
-		vty_out(vty, " router-id %s\n", inet_ntoa(ldpd_conf->rtr_id));
+		vty_out(vty, " router-id %pI4\n", &ldpd_conf->rtr_id);
 
 	if (ldpd_conf->lhello_holdtime != LINK_DFLT_HOLDTIME &&
 	    ldpd_conf->lhello_holdtime != 0)
@@ -285,22 +285,30 @@ ldp_config_write(struct vty *vty)
 	if (ldpd_conf->flags & F_LDPD_ORDERED_CONTROL)
 		vty_out (vty, " ordered-control\n");
 
+	if (ldpd_conf->wait_for_sync_interval != DFLT_WAIT_FOR_SYNC &&
+	    ldpd_conf->wait_for_sync_interval != 0)
+		vty_out (vty, " wait-for-sync %u\n",
+		    ldpd_conf->wait_for_sync_interval);
+
+	if (ldpd_conf->flags & F_LDPD_ALLOW_BROKEN_LSP)
+		vty_out(vty, " install allow-broken-lsp\n");
+
 	RB_FOREACH(nbrp, nbrp_head, &ldpd_conf->nbrp_tree) {
 		if (nbrp->flags & F_NBRP_KEEPALIVE)
-			vty_out (vty, " neighbor %s session holdtime %u\n",
-			    inet_ntoa(nbrp->lsr_id),nbrp->keepalive);
+			vty_out (vty, " neighbor %pI4 session holdtime %u\n",
+			    &nbrp->lsr_id,nbrp->keepalive);
 
 		if (nbrp->flags & F_NBRP_GTSM) {
 			if (nbrp->gtsm_enabled)
-				vty_out (vty, " neighbor %s ttl-security hops %u\n",  inet_ntoa(nbrp->lsr_id),
+				vty_out (vty, " neighbor %pI4 ttl-security hops %u\n",  &nbrp->lsr_id,
 				    nbrp->gtsm_hops);
 			else
-				vty_out (vty, " neighbor %s ttl-security disable\n",inet_ntoa(nbrp->lsr_id));
+				vty_out (vty, " neighbor %pI4 ttl-security disable\n",&nbrp->lsr_id);
 		}
 
 		if (nbrp->auth.method == AUTH_MD5SIG)
-			vty_out (vty, " neighbor %s password %s\n",
-			    inet_ntoa(nbrp->lsr_id),nbrp->auth.md5key);
+			vty_out (vty, " neighbor %pI4 password %s\n",
+			    &nbrp->lsr_id,nbrp->auth.md5key);
 	}
 
 	ldp_af_config_write(vty, AF_INET, ldpd_conf, &ldpd_conf->ipv4);
@@ -321,7 +329,7 @@ ldp_l2vpn_pw_config_write(struct vty *vty, struct l2vpn_pw *pw)
 	vty_out (vty, " member pseudowire %s\n", pw->ifname);
 
 	if (pw->lsr_id.s_addr != INADDR_ANY)
-		vty_out (vty, "  neighbor lsr-id %s\n",inet_ntoa(pw->lsr_id));
+		vty_out (vty, "  neighbor lsr-id %pI4\n",&pw->lsr_id);
 		else
 			missing_lsrid = 1;
 
@@ -424,6 +432,9 @@ ldp_vty_mpls_ldp(struct vty *vty, const char *negate)
 		vty_conf->flags |= F_LDPD_ENABLED;
 	}
 
+	/* register / de-register to recv info from zebra */
+	ldp_zebra_regdereg_zebra_info(!negate);
+
 	ldp_config_apply(vty, vty_conf);
 
 	return (CMD_SUCCESS);
@@ -477,7 +488,6 @@ int ldp_vty_disc_holdtime(struct vty *vty, const char *negate,
 	struct iface		*iface;
 	struct iface_af		*ia;
 	int			 af;
-
 	switch (vty->node) {
 	case LDP_NODE:
 		if (negate) {
@@ -1008,6 +1018,37 @@ ldp_vty_ordered_control(struct vty *vty, const char *negate)
 		vty_conf->flags &= ~F_LDPD_ORDERED_CONTROL;
 	else
 		vty_conf->flags |= F_LDPD_ORDERED_CONTROL;
+
+	ldp_config_apply(vty, vty_conf);
+
+	return (CMD_SUCCESS);
+}
+
+int ldp_vty_wait_for_sync_interval(struct vty *vty, const char *negate,
+    long secs)
+{
+	switch (vty->node) {
+	case LDP_NODE:
+		if (negate)
+			vty_conf->wait_for_sync_interval = DFLT_WAIT_FOR_SYNC;
+		else
+			vty_conf->wait_for_sync_interval = secs;
+
+		ldp_config_apply(vty, vty_conf);
+		break;
+	default:
+		fatalx("ldp_vty_wait_for_sync_interval: unexpected node");
+	}
+	return (CMD_SUCCESS);
+}
+
+int
+ldp_vty_allow_broken_lsp(struct vty *vty, const char *negate)
+{
+	if (negate)
+		vty_conf->flags &= ~F_LDPD_ALLOW_BROKEN_LSP;
+	else
+		vty_conf->flags |= F_LDPD_ALLOW_BROKEN_LSP;
 
 	ldp_config_apply(vty, vty_conf);
 

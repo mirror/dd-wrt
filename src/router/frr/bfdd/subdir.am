@@ -5,9 +5,9 @@
 if BFDD
 noinst_LIBRARIES += bfdd/libbfd.a
 sbin_PROGRAMS += bfdd/bfdd
-dist_examples_DATA += bfdd/bfdd.conf.sample
 vtysh_scan += bfdd/bfdd_vty.c
 vtysh_scan += bfdd/bfdd_cli.c
+vtysh_daemons += bfdd
 man8 += $(MANBUILD)/frr-bfdd.8
 endif
 
@@ -21,8 +21,16 @@ bfdd_libbfd_a_SOURCES = \
 	bfdd/bfd_packet.c \
 	bfdd/config.c \
 	bfdd/control.c \
+	bfdd/dplane.c \
 	bfdd/event.c \
 	bfdd/ptm_adapter.c \
+	# end
+
+# Install headers so it can be used by external data plane
+# implementations.
+bfdd_headersdir = $(pkgincludedir)/bfdd
+bfdd_headers_HEADERS = \
+	bfdd/bfddp_packet.h \
 	# end
 
 clippy_scan += \

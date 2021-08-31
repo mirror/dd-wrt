@@ -25,14 +25,14 @@
 #include "debug.h"
 #include "memory.h"
 #include "libfrr.h"
-#include "version.h"
+#include "lib/version.h"
 #include "northbound.h"
 
 #include <sysrepo.h>
 #include <sysrepo/values.h>
 #include <sysrepo/xpath.h>
 
-DEFINE_MTYPE_STATIC(LIB, SYSREPO, "Sysrepo module")
+DEFINE_MTYPE_STATIC(LIB, SYSREPO, "Sysrepo module");
 
 static struct debug nb_dbg_client_sysrepo = {0, "Northbound client: Sysrepo"};
 
@@ -48,10 +48,10 @@ static int frr_sr_finish(void);
 static int yang_data_frr2sr(struct yang_data *frr_data, sr_val_t *sr_data)
 {
 	struct nb_node *nb_node;
-	const struct lys_node *snode;
-	struct lys_node_container *scontainer;
-	struct lys_node_leaf *sleaf;
-	struct lys_node_leaflist *sleaflist;
+	const struct lysc_node *snode;
+	struct lysc_node_container *scontainer;
+	struct lysc_node_leaf *sleaf;
+	struct lysc_node_leaflist *sleaflist;
 	LY_DATA_TYPE type;
 
 	sr_val_set_xpath(sr_data, frr_data->xpath);
@@ -67,8 +67,8 @@ static int yang_data_frr2sr(struct yang_data *frr_data, sr_val_t *sr_data)
 	snode = nb_node->snode;
 	switch (snode->nodetype) {
 	case LYS_CONTAINER:
-		scontainer = (struct lys_node_container *)snode;
-		if (!scontainer->presence)
+		scontainer = (struct lysc_node_container *)snode;
+		if (!CHECK_FLAG(scontainer->flags, LYS_PRESENCE))
 			return -1;
 		sr_data->type = SR_CONTAINER_PRESENCE_T;
 		return 0;
@@ -76,11 +76,11 @@ static int yang_data_frr2sr(struct yang_data *frr_data, sr_val_t *sr_data)
 		sr_data->type = SR_LIST_T;
 		return 0;
 	case LYS_LEAF:
-		sleaf = (struct lys_node_leaf *)snode;
+		sleaf = (struct lysc_node_leaf *)snode;
 		type = sleaf->type.base;
 		break;
 	case LYS_LEAFLIST:
-		sleaflist = (struct lys_node_leaflist *)snode;
+		sleaflist = (struct lysc_node_leaflist *)snode;
 		type = sleaflist->type.base;
 		break;
 	default:
@@ -359,7 +359,7 @@ static int frr_sr_config_change_cb(sr_session_ctx_t *session,
 	}
 }
 
-static int frr_sr_state_data_iter_cb(const struct lys_node *snode,
+static int frr_sr_state_data_iter_cb(const struct lysc_node *snode,
 				     struct yang_translator *translator,
 				     struct yang_data *data, void *arg)
 {
@@ -414,6 +414,7 @@ static int frr_sr_config_rpc_cb(sr_session_ctx_t *session, const char *xpath,
 	struct yang_data *data;
 	size_t cb_output_cnt;
 	int ret = SR_ERR_OK;
+	char errmsg[BUFSIZ] = {0};
 
 	nb_node = nb_node_find(xpath);
 	if (!nb_node) {
@@ -436,7 +437,9 @@ static int frr_sr_config_rpc_cb(sr_session_ctx_t *session, const char *xpath,
 	}
 
 	/* Execute callback registered for this XPath. */
-	if (nb_callback_rpc(nb_node, xpath, input, output) != NB_OK) {
+	if (nb_callback_rpc(nb_node, xpath, input, output, errmsg,
+			    sizeof(errmsg))
+	    != NB_OK) {
 		flog_warn(EC_LIB_NB_CB_RPC, "%s: rpc callback failed: %s",
 			  __func__, xpath);
 		ret = SR_ERR_OPERATION_FAILED;
@@ -559,7 +562,7 @@ static void frr_sr_subscribe_config(struct yang_module *module)
 			 sr_strerror(ret));
 }
 
-static int frr_sr_subscribe_state(const struct lys_node *snode, void *arg)
+static int frr_sr_subscribe_state(const struct lysc_node *snode, void *arg)
 {
 	struct yang_module *module = arg;
 	struct nb_node *nb_node;
@@ -572,6 +575,8 @@ static int frr_sr_subscribe_state(const struct lys_node *snode, void *arg)
 		return YANG_ITER_CONTINUE;
 
 	nb_node = snode->priv;
+	if (!nb_node)
+		return YANG_ITER_CONTINUE;
 
 	DEBUGD(&nb_dbg_client_sysrepo, "sysrepo: providing data to '%s'",
 	       nb_node->xpath);
@@ -586,7 +591,7 @@ static int frr_sr_subscribe_state(const struct lys_node *snode, void *arg)
 	return YANG_ITER_CONTINUE;
 }
 
-static int frr_sr_subscribe_rpc(const struct lys_node *snode, void *arg)
+static int frr_sr_subscribe_rpc(const struct lysc_node *snode, void *arg)
 {
 	struct yang_module *module = arg;
 	struct nb_node *nb_node;
@@ -596,6 +601,8 @@ static int frr_sr_subscribe_rpc(const struct lys_node *snode, void *arg)
 		return YANG_ITER_CONTINUE;
 
 	nb_node = snode->priv;
+	if (!nb_node)
+		return YANG_ITER_CONTINUE;
 
 	DEBUGD(&nb_dbg_client_sysrepo, "sysrepo: providing RPC to '%s'",
 	       nb_node->xpath);
@@ -683,10 +690,10 @@ static int frr_sr_init(void)
 		int event_pipe;
 
 		frr_sr_subscribe_config(module);
-		yang_snodes_iterate_module(module->info, frr_sr_subscribe_state,
-					   0, module);
-		yang_snodes_iterate_module(module->info, frr_sr_subscribe_rpc,
-					   0, module);
+		yang_snodes_iterate(module->info, frr_sr_subscribe_state, 0,
+				    module);
+		yang_snodes_iterate(module->info, frr_sr_subscribe_rpc, 0,
+				    module);
 
 		/* Watch subscriptions. */
 		ret = sr_get_event_pipe(module->sr_subscription, &event_pipe);
@@ -729,7 +736,7 @@ static int frr_sr_finish(void)
 	return 0;
 }
 
-static int frr_sr_module_very_late_init(struct thread_master *tm)
+static int frr_sr_module_config_loaded(struct thread_master *tm)
 {
 	master = tm;
 
@@ -754,11 +761,12 @@ static int frr_sr_module_late_init(struct thread_master *tm)
 static int frr_sr_module_init(void)
 {
 	hook_register(frr_late_init, frr_sr_module_late_init);
-	hook_register(frr_very_late_init, frr_sr_module_very_late_init);
+	hook_register(frr_config_post, frr_sr_module_config_loaded);
 
 	return 0;
 }
 
 FRR_MODULE_SETUP(.name = "frr_sysrepo", .version = FRR_VERSION,
 		 .description = "FRR sysrepo integration module",
-		 .init = frr_sr_module_init, )
+		 .init = frr_sr_module_init,
+);

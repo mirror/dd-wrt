@@ -177,13 +177,6 @@ extern int zebra_vxlan_local_mac_add_update(struct interface *ifp,
 extern int zebra_vxlan_local_mac_del(struct interface *ifp,
 				     struct interface *br_if,
 				     struct ethaddr *mac, vlanid_t vid);
-extern int zebra_vxlan_check_readd_remote_mac(struct interface *ifp,
-					      struct interface *br_if,
-					      struct ethaddr *mac,
-					      vlanid_t vid);
-extern int zebra_vxlan_check_del_local_mac(struct interface *ifp,
-					   struct interface *br_if,
-					   struct ethaddr *mac, vlanid_t vid);
 extern int zebra_vxlan_check_readd_vtep(struct interface *ifp,
 					struct in_addr vtep_ip);
 extern int zebra_vxlan_if_up(struct interface *ifp);
@@ -208,9 +201,12 @@ extern void zebra_vxlan_evpn_vrf_route_del(vrf_id_t vrf_id,
 					   struct prefix *host_prefix);
 extern int zebra_vxlan_clear_dup_detect_vni_mac(struct zebra_vrf *zvrf,
 						vni_t vni,
-						struct ethaddr *macaddr);
+						struct ethaddr *macaddr,
+						char *errmsg,
+						size_t errmsg_len);
 extern int zebra_vxlan_clear_dup_detect_vni_ip(struct zebra_vrf *zvrf,
-					       vni_t vni, struct ipaddr *ip);
+					       vni_t vni, struct ipaddr *ip,
+					       char *errmsg, size_t errmsg_len);
 extern int zebra_vxlan_clear_dup_detect_vni_all(struct zebra_vrf *zvrf);
 extern int zebra_vxlan_clear_dup_detect_vni(struct zebra_vrf *zvrf, vni_t vni);
 extern void zebra_vxlan_handle_result(struct zebra_dplane_ctx *ctx);
@@ -219,6 +215,15 @@ extern void zebra_evpn_init(void);
 extern void zebra_vxlan_macvlan_up(struct interface *ifp);
 extern void zebra_vxlan_macvlan_down(struct interface *ifp);
 extern int vni_list_cmp(void *p1, void *p2);
+extern int zebra_vxlan_dp_network_mac_add(struct interface *ifp,
+					  struct interface *br_if,
+					  struct ethaddr *macaddr, vlanid_t vid,
+					  uint32_t nhg_id, bool sticky,
+					  bool dp_static);
+extern int zebra_vxlan_dp_network_mac_del(struct interface *ifp,
+					  struct interface *br_if,
+					  struct ethaddr *macaddr,
+					  vlanid_t vid);
 
 #ifdef __cplusplus
 }

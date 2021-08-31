@@ -28,9 +28,11 @@
 #include "memory.h"
 #include "linklist.h"
 #include "zlog.h"
+#include "libfrr.h"
+#include "libfrr_trace.h"
 
-DEFINE_MTYPE_STATIC(LIB, FRR_PTHREAD, "FRR POSIX Thread")
-DEFINE_MTYPE_STATIC(LIB, PTHREAD_PRIM, "POSIX sync primitives")
+DEFINE_MTYPE_STATIC(LIB, FRR_PTHREAD, "FRR POSIX Thread");
+DEFINE_MTYPE_STATIC(LIB, PTHREAD_PRIM, "POSIX sync primitives");
 
 /* default frr_pthread start/stop routine prototypes */
 static void *fpt_run(void *arg);
@@ -161,11 +163,15 @@ int frr_pthread_run(struct frr_pthread *fpt, const pthread_attr_t *attr)
 	int ret;
 	sigset_t oldsigs, blocksigs;
 
+	assert(frr_is_after_fork || !"trying to start thread before fork()");
+
 	/* Ensure we never handle signals on a background thread by blocking
 	 * everything here (new thread inherits signal mask)
 	 */
 	sigfillset(&blocksigs);
 	pthread_sigmask(SIG_BLOCK, &blocksigs, &oldsigs);
+
+	frrtrace(1, frr_libfrr, frr_pthread_run, fpt->name);
 
 	fpt->rcu_thread = rcu_thread_prepare();
 	ret = pthread_create(&fpt->thread, attr, frr_pthread_inner, fpt);
@@ -204,6 +210,8 @@ void frr_pthread_notify_running(struct frr_pthread *fpt)
 
 int frr_pthread_stop(struct frr_pthread *fpt, void **result)
 {
+	frrtrace(1, frr_libfrr, frr_pthread_stop, fpt->name);
+
 	int ret = (*fpt->attr.stop)(fpt, result);
 	memset(&fpt->thread, 0x00, sizeof(fpt->thread));
 	return ret;

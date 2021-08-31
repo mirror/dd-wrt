@@ -32,7 +32,7 @@
 #include "lib/nexthop_group_clippy.c"
 #endif
 
-DEFINE_MTYPE_STATIC(LIB, NEXTHOP_GROUP, "Nexthop Group")
+DEFINE_MTYPE_STATIC(LIB, NEXTHOP_GROUP, "Nexthop Group");
 
 /*
  * Internal struct used to hold nhg config strings
@@ -41,6 +41,7 @@ struct nexthop_hold {
 	char *nhvrf_name;
 	union sockunion *addr;
 	char *intf;
+	bool onlink;
 	char *labels;
 	uint32_t weight;
 	char *backup_str;
@@ -480,7 +481,7 @@ void nexthop_group_mark_duplicates(struct nexthop_group *nhg)
 		for (ALL_NEXTHOPS_PTR(nhg, prev)) {
 			if (prev == nexthop)
 				break;
-			if (nexthop_same_firsthop(nexthop, prev)) {
+			if (nexthop_same(nexthop, prev)) {
 				SET_FLAG(nexthop->flags,
 					 NEXTHOP_FLAG_DUPLICATE);
 				break;
@@ -560,6 +561,10 @@ static int nhgl_cmp(struct nexthop_hold *nh1, struct nexthop_hold *nh2)
 	if (ret)
 		return ret;
 
+	ret = ((int)nh2->onlink) - ((int)nh1->onlink);
+	if (ret)
+		return ret;
+
 	return nhgc_cmp_helper(nh1->labels, nh2->labels);
 }
 
@@ -615,7 +620,7 @@ static void nhgc_delete(struct nexthop_group_cmd *nhgc)
 	XFREE(MTYPE_TMP, nhgc);
 }
 
-DEFINE_QOBJ_TYPE(nexthop_group_cmd)
+DEFINE_QOBJ_TYPE(nexthop_group_cmd);
 
 DEFUN_NOSH(nexthop_group, nexthop_group_cmd, "nexthop-group NHGNAME",
 	   "Enter into the nexthop-group submode\n"
@@ -673,8 +678,8 @@ DEFPY(no_nexthop_group_backup, no_nexthop_group_backup_cmd,
 static void nexthop_group_save_nhop(struct nexthop_group_cmd *nhgc,
 				    const char *nhvrf_name,
 				    const union sockunion *addr,
-				    const char *intf, const char *labels,
-				    const uint32_t weight,
+				    const char *intf, bool onlink,
+				    const char *labels, const uint32_t weight,
 				    const char *backup_str)
 {
 	struct nexthop_hold *nh;
@@ -689,6 +694,8 @@ static void nexthop_group_save_nhop(struct nexthop_group_cmd *nhgc,
 		nh->addr = sockunion_dup(addr);
 	if (labels)
 		nh->labels = XSTRDUP(MTYPE_TMP, labels);
+
+	nh->onlink = onlink;
 
 	nh->weight = weight;
 
@@ -738,9 +745,10 @@ static void nexthop_group_unsave_nhop(struct nexthop_group_cmd *nhgc,
  */
 static bool nexthop_group_parse_nexthop(struct nexthop *nhop,
 					const union sockunion *addr,
-					const char *intf, const char *name,
-					const char *labels, int *lbl_ret,
-					uint32_t weight, const char *backup_str)
+					const char *intf, bool onlink,
+					const char *name, const char *labels,
+					int *lbl_ret, uint32_t weight,
+					const char *backup_str)
 {
 	int ret = 0;
 	struct vrf *vrf;
@@ -763,6 +771,9 @@ static bool nexthop_group_parse_nexthop(struct nexthop *nhop,
 		if (nhop->ifindex == IFINDEX_INTERNAL)
 			return false;
 	}
+
+	if (onlink)
+		SET_FLAG(nhop->flags, NEXTHOP_FLAG_ONLINK);
 
 	if (addr) {
 		if (addr->sa.sa_family == AF_INET) {
@@ -820,15 +831,15 @@ static bool nexthop_group_parse_nexthop(struct nexthop *nhop,
 static bool nexthop_group_parse_nhh(struct nexthop *nhop,
 				    const struct nexthop_hold *nhh)
 {
-	return (nexthop_group_parse_nexthop(nhop, nhh->addr, nhh->intf,
-					    nhh->nhvrf_name, nhh->labels, NULL,
-					    nhh->weight, nhh->backup_str));
+	return (nexthop_group_parse_nexthop(
+		nhop, nhh->addr, nhh->intf, nhh->onlink, nhh->nhvrf_name,
+		nhh->labels, NULL, nhh->weight, nhh->backup_str));
 }
 
 DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
       "[no] nexthop\
         <\
-	  <A.B.C.D|X:X::X:X>$addr [INTERFACE$intf]\
+	  <A.B.C.D|X:X::X:X>$addr [INTERFACE$intf [onlink$onlink]]\
 	  |INTERFACE$intf\
 	>\
 	[{ \
@@ -842,6 +853,7 @@ DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
       "v4 Address\n"
       "v6 Address\n"
       "Interface to use\n"
+      "Treat nexthop as directly attached to the interface\n"
       "Interface to use\n"
       "If the nexthop is in a different vrf tell us\n"
       "The nexthop-vrf Name\n"
@@ -870,8 +882,9 @@ DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
 		}
 	}
 
-	legal = nexthop_group_parse_nexthop(&nhop, addr, intf, vrf_name, label,
-					    &lbl_ret, weight, backup_idx);
+	legal = nexthop_group_parse_nexthop(&nhop, addr, intf, !!onlink,
+					    vrf_name, label, &lbl_ret, weight,
+					    backup_idx);
 
 	if (nhop.type == NEXTHOP_TYPE_IPV6
 	    && IN6_IS_ADDR_LINKLOCAL(&nhop.gate.ipv6)) {
@@ -933,8 +946,8 @@ DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
 		}
 
 		/* Save config always */
-		nexthop_group_save_nhop(nhgc, vrf_name, addr, intf, label,
-					weight, backup_idx);
+		nexthop_group_save_nhop(nhgc, vrf_name, addr, intf, !!onlink,
+					label, weight, backup_idx);
 
 		if (legal && nhg_hooks.add_nexthop)
 			nhg_hooks.add_nexthop(nhgc, nh);
@@ -962,7 +975,6 @@ void nexthop_group_write_nexthop_simple(struct vty *vty,
 					const struct nexthop *nh,
 					char *altifname)
 {
-	char buf[100];
 	char *ifname;
 
 	vty_out(vty, "nexthop ");
@@ -977,19 +989,16 @@ void nexthop_group_write_nexthop_simple(struct vty *vty,
 		vty_out(vty, "%s", ifname);
 		break;
 	case NEXTHOP_TYPE_IPV4:
-		vty_out(vty, "%s", inet_ntoa(nh->gate.ipv4));
+		vty_out(vty, "%pI4", &nh->gate.ipv4);
 		break;
 	case NEXTHOP_TYPE_IPV4_IFINDEX:
-		vty_out(vty, "%s %s", inet_ntoa(nh->gate.ipv4), ifname);
+		vty_out(vty, "%pI4 %s", &nh->gate.ipv4, ifname);
 		break;
 	case NEXTHOP_TYPE_IPV6:
-		vty_out(vty, "%s",
-			inet_ntop(AF_INET6, &nh->gate.ipv6, buf, sizeof(buf)));
+		vty_out(vty, "%pI6", &nh->gate.ipv6);
 		break;
 	case NEXTHOP_TYPE_IPV6_IFINDEX:
-		vty_out(vty, "%s %s",
-			inet_ntop(AF_INET6, &nh->gate.ipv6, buf, sizeof(buf)),
-			ifname);
+		vty_out(vty, "%pI6 %s", &nh->gate.ipv6, ifname);
 		break;
 	case NEXTHOP_TYPE_BLACKHOLE:
 		break;
@@ -1043,10 +1052,14 @@ void nexthop_group_json_nexthop(json_object *j, const struct nexthop *nh)
 				       ifindex2ifname(nh->ifindex, nh->vrf_id));
 		break;
 	case NEXTHOP_TYPE_IPV4:
-		json_object_string_add(j, "nexthop", inet_ntoa(nh->gate.ipv4));
+		json_object_string_add(
+			j, "nexthop",
+			inet_ntop(AF_INET, &nh->gate.ipv4, buf, sizeof(buf)));
 		break;
 	case NEXTHOP_TYPE_IPV4_IFINDEX:
-		json_object_string_add(j, "nexthop", inet_ntoa(nh->gate.ipv4));
+		json_object_string_add(
+			j, "nexthop",
+			inet_ntop(AF_INET, &nh->gate.ipv4, buf, sizeof(buf)));
 		json_object_string_add(j, "vrfId",
 				       ifindex2ifname(nh->ifindex, nh->vrf_id));
 		break;
@@ -1105,6 +1118,9 @@ static void nexthop_group_write_nexthop_internal(struct vty *vty,
 
 	if (nh->intf)
 		vty_out(vty, " %s", nh->intf);
+
+	if (nh->onlink)
+		vty_out(vty, " onlink");
 
 	if (nh->nhvrf_name)
 		vty_out(vty, " nexthop-vrf %s", nh->nhvrf_name);

@@ -39,6 +39,7 @@ import string
 import subprocess
 import sys
 from collections import OrderedDict
+
 try:
     from ipaddress import IPv6Address, ip_network
 except ImportError:
@@ -51,10 +52,13 @@ except AttributeError:
     # Python 3
     def iteritems(d):
         return iter(d.items())
+
+
 else:
     # Python 2
     def iteritems(d):
         return d.iteritems()
+
 
 log = logging.getLogger(__name__)
 
@@ -62,37 +66,38 @@ log = logging.getLogger(__name__)
 class VtyshException(Exception):
     pass
 
+
 class Vtysh(object):
     def __init__(self, bindir=None, confdir=None, sockdir=None, pathspace=None):
         self.bindir = bindir
         self.confdir = confdir
         self.pathspace = pathspace
-        self.common_args = [os.path.join(bindir or '', 'vtysh')]
+        self.common_args = [os.path.join(bindir or "", "vtysh")]
         if confdir:
-            self.common_args.extend(['--config_dir', confdir])
+            self.common_args.extend(["--config_dir", confdir])
         if sockdir:
-            self.common_args.extend(['--vty_socket', sockdir])
+            self.common_args.extend(["--vty_socket", sockdir])
         if pathspace:
-            self.common_args.extend(['-N', pathspace])
+            self.common_args.extend(["-N", pathspace])
 
     def _call(self, args, stdin=None, stdout=None, stderr=None):
         kwargs = {}
         if stdin is not None:
-            kwargs['stdin'] = stdin
+            kwargs["stdin"] = stdin
         if stdout is not None:
-            kwargs['stdout'] = stdout
+            kwargs["stdout"] = stdout
         if stderr is not None:
-            kwargs['stderr'] = stderr
+            kwargs["stderr"] = stderr
         return subprocess.Popen(self.common_args + args, **kwargs)
 
     def _call_cmd(self, command, stdin=None, stdout=None, stderr=None):
         if isinstance(command, list):
-            args = [item for sub in command for item in ['-c', sub]]
+            args = [item for sub in command for item in ["-c", sub]]
         else:
-            args = ['-c', command]
+            args = ["-c", command]
         return self._call(args, stdin, stdout, stderr)
 
-    def __call__(self, command):
+    def __call__(self, command, stdouts=None):
         """
         Call a CLI command (e.g. "show running-config")
 
@@ -102,9 +107,12 @@ class Vtysh(object):
         proc = self._call_cmd(command, stdout=subprocess.PIPE)
         stdout, stderr = proc.communicate()
         if proc.wait() != 0:
-            raise VtyshException('vtysh returned status %d for command "%s"'
-                    % (proc.returncode, command))
-        return stdout.decode('UTF-8')
+            if stdouts is not None:
+                stdouts.append(stdout.decode("UTF-8"))
+            raise VtyshException(
+                'vtysh returned status %d for command "%s"' % (proc.returncode, command)
+            )
+        return stdout.decode("UTF-8")
 
     def is_config_available(self):
         """
@@ -113,71 +121,84 @@ class Vtysh(object):
         configuration changes.
         """
 
-        output = self('configure')
+        output = self("configure")
 
-        if 'VTY configuration is locked by other VTY' in output:
+        if "VTY configuration is locked by other VTY" in output:
             log.error("vtysh 'configure' returned\n%s\n" % (output))
             return False
 
         return True
 
     def exec_file(self, filename):
-        child = self._call(['-f', filename])
+        child = self._call(["-f", filename])
         if child.wait() != 0:
-            raise VtyshException('vtysh (exec file) exited with status %d'
-                    % (child.returncode))
+            raise VtyshException(
+                "vtysh (exec file) exited with status %d" % (child.returncode)
+            )
 
     def mark_file(self, filename, stdin=None):
-        child = self._call(['-m', '-f', filename],
-                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        child = self._call(
+            ["-m", "-f", filename],
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         try:
             stdout, stderr = child.communicate()
         except subprocess.TimeoutExpired:
             child.kill()
             stdout, stderr = child.communicate()
-            raise VtyshException('vtysh call timed out!')
+            raise VtyshException("vtysh call timed out!")
 
         if child.wait() != 0:
-            raise VtyshException('vtysh (mark file) exited with status %d:\n%s'
-                    % (child.returncode, stderr))
+            raise VtyshException(
+                "vtysh (mark file) exited with status %d:\n%s"
+                % (child.returncode, stderr)
+            )
 
-        return stdout.decode('UTF-8')
+        return stdout.decode("UTF-8")
 
-    def mark_show_run(self, daemon = None):
-        cmd = 'show running-config'
+    def mark_show_run(self, daemon=None):
+        cmd = "show running-config"
         if daemon:
-            cmd += ' %s' % daemon
-        cmd += ' no-header'
+            cmd += " %s" % daemon
+        cmd += " no-header"
         show_run = self._call_cmd(cmd, stdout=subprocess.PIPE)
-        mark = self._call(['-m', '-f', '-'], stdin=show_run.stdout, stdout=subprocess.PIPE)
+        mark = self._call(
+            ["-m", "-f", "-"], stdin=show_run.stdout, stdout=subprocess.PIPE
+        )
 
         show_run.wait()
         stdout, stderr = mark.communicate()
         mark.wait()
 
         if show_run.returncode != 0:
-            raise VtyshException('vtysh (show running-config) exited with status %d:'
-                    % (show_run.returncode))
+            raise VtyshException(
+                "vtysh (show running-config) exited with status %d:"
+                % (show_run.returncode)
+            )
         if mark.returncode != 0:
-            raise VtyshException('vtysh (mark running-config) exited with status %d'
-                    % (mark.returncode))
+            raise VtyshException(
+                "vtysh (mark running-config) exited with status %d" % (mark.returncode)
+            )
 
-        return stdout.decode('UTF-8')
+        return stdout.decode("UTF-8")
+
 
 class Context(object):
 
     """
-    A Context object represents a section of frr configuration such as:
-!
-interface swp3
- description swp3 -> r8's swp1
- ipv6 nd suppress-ra
- link-detect
-!
+        A Context object represents a section of frr configuration such as:
+    !
+    interface swp3
+     description swp3 -> r8's swp1
+     ipv6 nd suppress-ra
+     link-detect
+    !
 
-or a single line context object such as this:
+    or a single line context object such as this:
 
-ip forwarding
+    ip forwarding
 
     """
 
@@ -202,6 +223,7 @@ ip forwarding
         for ligne in lines:
             self.dlines[ligne] = True
 
+
 def get_normalized_es_id(line):
     """
     The es-id or es-sys-mac need to be converted to lower case
@@ -214,6 +236,7 @@ def get_normalized_es_id(line):
             break
     return line
 
+
 def get_normalized_mac_ip_line(line):
     if line.startswith("evpn mh es"):
         return get_normalized_es_id(line)
@@ -222,6 +245,7 @@ def get_normalized_mac_ip_line(line):
         return get_normalized_ipv6_line(line)
 
     return line
+
 
 class Config(object):
 
@@ -242,18 +266,47 @@ class Config(object):
         The internal representation has been marked appropriately by passing it
         through vtysh with the -m parameter
         """
-        log.info('Loading Config object from file %s', filename)
+        log.info("Loading Config object from file %s", filename)
 
         file_output = self.vtysh.mark_file(filename)
 
-        for line in file_output.split('\n'):
+        for line in file_output.split("\n"):
             line = line.strip()
 
             # Compress duplicate whitespaces
-            line = ' '.join(line.split())
+            line = " ".join(line.split())
 
             if ":" in line:
                 line = get_normalized_mac_ip_line(line)
+
+            """
+              vrf static routes can be added in two ways. The old way is:
+
+              "ip route x.x.x.x/x y.y.y.y vrf <vrfname>"
+
+              but it's rendered in the configuration as the new way::
+
+              vrf <vrf-name>
+               ip route x.x.x.x/x y.y.y.y
+               exit-vrf
+
+              this difference causes frr-reload to not consider them a
+              match and delete vrf static routes incorrectly.
+              fix the old way to match new "show running" output so a
+              proper match is found.
+            """
+            if (
+                line.startswith("ip route ") or line.startswith("ipv6 route ")
+            ) and " vrf " in line:
+                newline = line.split(" ")
+                vrf_index = newline.index("vrf")
+                vrf_ctx = newline[vrf_index] + " " + newline[vrf_index + 1]
+                del newline[vrf_index : vrf_index + 2]
+                newline = " ".join(newline)
+                self.lines.append(vrf_ctx)
+                self.lines.append(newline)
+                self.lines.append("exit-vrf")
+                line = "end"
 
             self.lines.append(line)
 
@@ -265,16 +318,18 @@ class Config(object):
         The internal representation has been marked appropriately by passing it
         through vtysh with the -m parameter
         """
-        log.info('Loading Config object from vtysh show running')
+        log.info("Loading Config object from vtysh show running")
 
         config_text = self.vtysh.mark_show_run(daemon)
 
-        for line in config_text.split('\n'):
+        for line in config_text.split("\n"):
             line = line.strip()
 
-            if (line == 'Building configuration...' or
-                line == 'Current configuration:' or
-                    not line):
+            if (
+                line == "Building configuration..."
+                or line == "Current configuration:"
+                or not line
+            ):
                 continue
 
             self.lines.append(line)
@@ -286,7 +341,7 @@ class Config(object):
         Return the lines read in from the configuration
         """
 
-        return '\n'.join(self.lines)
+        return "\n".join(self.lines)
 
     def get_contexts(self):
         """
@@ -294,7 +349,7 @@ class Config(object):
         """
 
         for (_, ctx) in sorted(iteritems(self.contexts)):
-            print(str(ctx) + '\n')
+            print(str(ctx) + "\n")
 
     def save_contexts(self, key, lines):
         """
@@ -304,99 +359,105 @@ class Config(object):
         if not key:
             return
 
-        '''
+        """
             IP addresses specified in "network" statements, "ip prefix-lists"
             etc. can differ in the host part of the specification the user
             provides and what the running config displays. For example, user
             can specify 11.1.1.1/24, and the running config displays this as
             11.1.1.0/24. Ensure we don't do a needless operation for such
             lines. IS-IS & OSPFv3 have no "network" support.
-        '''
-        re_key_rt = re.match(r'(ip|ipv6)\s+route\s+([A-Fa-f:.0-9/]+)(.*)$', key[0])
+        """
+        re_key_rt = re.match(r"(ip|ipv6)\s+route\s+([A-Fa-f:.0-9/]+)(.*)$", key[0])
         if re_key_rt:
             addr = re_key_rt.group(2)
-            if '/' in addr:
+            if "/" in addr:
                 try:
-                    if 'ipaddress' not in sys.modules:
+                    if "ipaddress" not in sys.modules:
                         newaddr = IPNetwork(addr)
-                        key[0] = '%s route %s/%s%s' % (re_key_rt.group(1),
-                                                       newaddr.network,
-                                                       newaddr.prefixlen,
-                                                       re_key_rt.group(3))
+                        key[0] = "%s route %s/%s%s" % (
+                            re_key_rt.group(1),
+                            newaddr.network,
+                            newaddr.prefixlen,
+                            re_key_rt.group(3),
+                        )
                     else:
                         newaddr = ip_network(addr, strict=False)
-                        key[0] = '%s route %s/%s%s' % (re_key_rt.group(1),
-                                                       str(newaddr.network_address),
-                                                       newaddr.prefixlen,
-                                                       re_key_rt.group(3))
+                        key[0] = "%s route %s/%s%s" % (
+                            re_key_rt.group(1),
+                            str(newaddr.network_address),
+                            newaddr.prefixlen,
+                            re_key_rt.group(3),
+                        )
                 except ValueError:
                     pass
 
         re_key_rt = re.match(
-            r'(ip|ipv6)\s+prefix-list(.*)(permit|deny)\s+([A-Fa-f:.0-9/]+)(.*)$',
-            key[0]
+            r"(ip|ipv6)\s+prefix-list(.*)(permit|deny)\s+([A-Fa-f:.0-9/]+)(.*)$", key[0]
         )
         if re_key_rt:
             addr = re_key_rt.group(4)
-            if '/' in addr:
+            if "/" in addr:
                 try:
-                    if 'ipaddress' not in sys.modules:
-                        newaddr = '%s/%s' % (IPNetwork(addr).network,
-                                             IPNetwork(addr).prefixlen)
+                    if "ipaddress" not in sys.modules:
+                        newaddr = "%s/%s" % (
+                            IPNetwork(addr).network,
+                            IPNetwork(addr).prefixlen,
+                        )
                     else:
                         network_addr = ip_network(addr, strict=False)
-                        newaddr = '%s/%s' % (str(network_addr.network_address),
-                                             network_addr.prefixlen)
+                        newaddr = "%s/%s" % (
+                            str(network_addr.network_address),
+                            network_addr.prefixlen,
+                        )
                 except ValueError:
                     newaddr = addr
             else:
                 newaddr = addr
 
             legestr = re_key_rt.group(5)
-            re_lege = re.search(r'(.*)le\s+(\d+)\s+ge\s+(\d+)(.*)', legestr)
+            re_lege = re.search(r"(.*)le\s+(\d+)\s+ge\s+(\d+)(.*)", legestr)
             if re_lege:
-                legestr = '%sge %s le %s%s' % (re_lege.group(1),
-                                               re_lege.group(3),
-                                               re_lege.group(2),
-                                               re_lege.group(4))
-            re_lege = re.search(r'(.*)ge\s+(\d+)\s+le\s+(\d+)(.*)', legestr)
+                legestr = "%sge %s le %s%s" % (
+                    re_lege.group(1),
+                    re_lege.group(3),
+                    re_lege.group(2),
+                    re_lege.group(4),
+                )
 
-            if (re_lege and ((re_key_rt.group(1) == "ip" and
-                              re_lege.group(3) == "32") or
-                             (re_key_rt.group(1) == "ipv6" and
-                              re_lege.group(3) == "128"))):
-                legestr = '%sge %s%s' % (re_lege.group(1),
-                                         re_lege.group(2),
-                                         re_lege.group(4))
+            key[0] = "%s prefix-list%s%s %s%s" % (
+                re_key_rt.group(1),
+                re_key_rt.group(2),
+                re_key_rt.group(3),
+                newaddr,
+                legestr,
+            )
 
-            key[0] = '%s prefix-list%s%s %s%s' % (re_key_rt.group(1),
-                                                  re_key_rt.group(2),
-                                                  re_key_rt.group(3),
-                                                  newaddr,
-                                                  legestr)
-
-        if lines and key[0].startswith('router bgp'):
+        if lines and key[0].startswith("router bgp"):
             newlines = []
             for line in lines:
-                re_net = re.match(r'network\s+([A-Fa-f:.0-9/]+)(.*)$', line)
+                re_net = re.match(r"network\s+([A-Fa-f:.0-9/]+)(.*)$", line)
                 if re_net:
                     addr = re_net.group(1)
-                    if '/' not in addr and key[0].startswith('router bgp'):
+                    if "/" not in addr and key[0].startswith("router bgp"):
                         # This is most likely an error because with no
                         # prefixlen, BGP treats the prefixlen as 8
-                        addr = addr + '/8'
+                        addr = addr + "/8"
 
                     try:
-                        if 'ipaddress' not in sys.modules:
+                        if "ipaddress" not in sys.modules:
                             newaddr = IPNetwork(addr)
-                            line = 'network %s/%s %s' % (newaddr.network,
-                                                         newaddr.prefixlen,
-                                                         re_net.group(2))
+                            line = "network %s/%s %s" % (
+                                newaddr.network,
+                                newaddr.prefixlen,
+                                re_net.group(2),
+                            )
                         else:
                             network_addr = ip_network(addr, strict=False)
-                            line = 'network %s/%s %s' % (str(network_addr.network_address),
-                                                         network_addr.prefixlen,
-                                                         re_net.group(2))
+                            line = "network %s/%s %s" % (
+                                str(network_addr.network_address),
+                                network_addr.prefixlen,
+                                re_net.group(2),
+                            )
                         newlines.append(line)
                     except ValueError:
                         # Really this should be an error. Whats a network
@@ -406,13 +467,33 @@ class Config(object):
                     newlines.append(line)
             lines = newlines
 
-        '''
+        """
           More fixups in user specification and what running config shows.
           "null0" in routes must be replaced by Null0.
-        '''
-        if (key[0].startswith('ip route') or key[0].startswith('ipv6 route') and
-                'null0' in key[0]):
-            key[0] = re.sub(r'\s+null0(\s*$)', ' Null0', key[0])
+        """
+        if (
+            key[0].startswith("ip route")
+            or key[0].startswith("ipv6 route")
+            and "null0" in key[0]
+        ):
+            key[0] = re.sub(r"\s+null0(\s*$)", " Null0", key[0])
+
+        """
+          Similar to above, but when the static is in a vrf, it turns into a
+          blackhole nexthop for both null0 and Null0.  Fix it accordingly
+        """
+        if lines and key[0].startswith("vrf "):
+            newlines = []
+            for line in lines:
+                if line.startswith("ip route ") or line.startswith("ipv6 route "):
+                    if "null0" in line:
+                        line = re.sub(r"\s+null0(\s*$)", " blackhole", line)
+                    elif "Null0" in line:
+                        line = re.sub(r"\s+Null0(\s*$)", " blackhole", line)
+                    newlines.append(line)
+                else:
+                    newlines.append(line)
+            lines = newlines
 
         if lines:
             if tuple(key) not in self.contexts:
@@ -435,7 +516,7 @@ class Config(object):
         current_context_lines = []
         ctx_keys = []
 
-        '''
+        """
         The end of a context is flagged via the 'end' keyword:
 
 !
@@ -479,7 +560,7 @@ router ospf
  timers throttle spf 0 50 5000
 !
 end
-        '''
+        """
 
         # The code assumes that its working on the output from the "vtysh -m"
         # command. That provides the appropriate markers to signify end of
@@ -499,45 +580,52 @@ end
 
         # the keywords that we know are single line contexts. bgp in this case
         # is not the main router bgp block, but enabling multi-instance
-        oneline_ctx_keywords = ("access-list ",
-                                "agentx",
-                                "allow-external-route-update",
-                                "bgp ",
-                                "debug ",
-                                "domainname ",
-                                "dump ",
-                                "enable ",
-                                "frr ",
-                                "hostname ",
-                                "ip ",
-                                "ipv6 ",
-                                "log ",
-                                "mpls lsp",
-                                "mpls label",
-                                "no ",
-                                "password ",
-                                "ptm-enable",
-                                "router-id ",
-                                "service ",
-                                "table ",
-                                "username ",
-                                "zebra ",
-                                "vrrp autoconfigure",
-                                "evpn mh")
+        oneline_ctx_keywords = (
+            "access-list ",
+            "agentx",
+            "allow-external-route-update",
+            "bgp ",
+            "debug ",
+            "domainname ",
+            "dump ",
+            "enable ",
+            "frr ",
+            "fpm ",
+            "hostname ",
+            "ip ",
+            "ipv6 ",
+            "log ",
+            "mac access-list ",
+            "mpls lsp",
+            "mpls label",
+            "no ",
+            "password ",
+            "pbr ",
+            "ptm-enable",
+            "router-id ",
+            "service ",
+            "table ",
+            "username ",
+            "zebra ",
+            "vrrp autoconfigure",
+            "evpn mh",
+        )
 
         for line in self.lines:
 
             if not line:
                 continue
 
-            if line.startswith('!') or line.startswith('#'):
+            if line.startswith("!") or line.startswith("#"):
                 continue
 
-            if (len(ctx_keys) == 2
-                and ctx_keys[0].startswith('bfd')
-                and ctx_keys[1].startswith('profile ')
-                and line == 'end'):
-                log.debug('LINE %-50s: popping from sub context, %-50s', line, ctx_keys)
+            if (
+                len(ctx_keys) == 2
+                and ctx_keys[0].startswith("bfd")
+                and ctx_keys[1].startswith("profile ")
+                and line == "end"
+            ):
+                log.debug("LINE %-50s: popping from sub context, %-50s", line, ctx_keys)
 
                 if main_ctx_key:
                     self.save_contexts(ctx_keys, current_context_lines)
@@ -550,22 +638,31 @@ end
             # as part of its 'mpls ldp' config context. If we are processing
             # ldp configuration and encounter a router-id we should NOT switch
             # to a new context
-            if new_ctx is True and any(line.startswith(keyword) for keyword in oneline_ctx_keywords) and not (
-                ctx_keys and ctx_keys[0].startswith("mpls ldp") and line.startswith("router-id ")):
+            if (
+                new_ctx is True
+                and any(line.startswith(keyword) for keyword in oneline_ctx_keywords)
+                and not (
+                    ctx_keys
+                    and ctx_keys[0].startswith("mpls ldp")
+                    and line.startswith("router-id ")
+                )
+            ):
                 self.save_contexts(ctx_keys, current_context_lines)
 
                 # Start a new context
                 main_ctx_key = []
-                ctx_keys = [line, ]
+                ctx_keys = [
+                    line,
+                ]
                 current_context_lines = []
 
-                log.debug('LINE %-50s: entering new context, %-50s', line, ctx_keys)
+                log.debug("LINE %-50s: entering new context, %-50s", line, ctx_keys)
                 self.save_contexts(ctx_keys, current_context_lines)
                 new_ctx = True
 
             elif line == "end":
                 self.save_contexts(ctx_keys, current_context_lines)
-                log.debug('LINE %-50s: exiting old context, %-50s', line, ctx_keys)
+                log.debug("LINE %-50s: exiting old context, %-50s", line, ctx_keys)
 
                 # Start a new context
                 new_ctx = True
@@ -586,13 +683,31 @@ end
             elif line == "exit-vrf":
                 self.save_contexts(ctx_keys, current_context_lines)
                 current_context_lines.append(line)
-                log.debug('LINE %-50s: append to current_context_lines, %-50s', line, ctx_keys)
+                log.debug(
+                    "LINE %-50s: append to current_context_lines, %-50s", line, ctx_keys
+                )
 
-                #Start a new context
+                # Start a new context
                 new_ctx = True
                 main_ctx_key = []
                 ctx_keys = []
                 current_context_lines = []
+
+            elif (
+                line == "exit"
+                and len(ctx_keys) > 1
+                and ctx_keys[0].startswith("segment-routing")
+            ):
+                self.save_contexts(ctx_keys, current_context_lines)
+
+                # Start a new context
+                ctx_keys = ctx_keys[:-1]
+                current_context_lines = []
+                log.debug(
+                    "LINE %-50s: popping segment routing sub-context to ctx%-50s",
+                    line,
+                    ctx_keys,
+                )
 
             elif line in ["exit-address-family", "exit", "exit-vnc"]:
                 # if this exit is for address-family ipv4 unicast, ignore the pop
@@ -602,7 +717,11 @@ end
                     # Start a new context
                     ctx_keys = copy.deepcopy(main_ctx_key)
                     current_context_lines = []
-                    log.debug('LINE %-50s: popping from subcontext to ctx%-50s', line, ctx_keys)
+                    log.debug(
+                        "LINE %-50s: popping from subcontext to ctx%-50s",
+                        line,
+                        ctx_keys,
+                    )
 
             elif line in ["exit-vni", "exit-ldp-if"]:
                 if sub_main_ctx_key:
@@ -611,70 +730,225 @@ end
                     # Start a new context
                     ctx_keys = copy.deepcopy(sub_main_ctx_key)
                     current_context_lines = []
-                    log.debug('LINE %-50s: popping from sub-subcontext to ctx%-50s', line, ctx_keys)
+                    log.debug(
+                        "LINE %-50s: popping from sub-subcontext to ctx%-50s",
+                        line,
+                        ctx_keys,
+                    )
 
             elif new_ctx is True:
                 if not main_ctx_key:
-                    ctx_keys = [line, ]
+                    ctx_keys = [
+                        line,
+                    ]
                 else:
                     ctx_keys = copy.deepcopy(main_ctx_key)
                     main_ctx_key = []
 
                 current_context_lines = []
                 new_ctx = False
-                log.debug('LINE %-50s: entering new context, %-50s', line, ctx_keys)
-            elif (line.startswith("address-family ") or
-                  line.startswith("vnc defaults") or
-                  line.startswith("vnc l2-group") or
-                  line.startswith("vnc nve-group") or
-                  line.startswith("peer") or
-                  line.startswith("key ") or
-                  line.startswith("member pseudowire")):
+                log.debug("LINE %-50s: entering new context, %-50s", line, ctx_keys)
+
+            elif (
+                line.startswith("address-family ")
+                or line.startswith("vnc defaults")
+                or line.startswith("vnc l2-group")
+                or line.startswith("vnc nve-group")
+                or line.startswith("peer")
+                or line.startswith("key ")
+                or line.startswith("member pseudowire")
+            ):
                 main_ctx_key = []
 
                 # Save old context first
                 self.save_contexts(ctx_keys, current_context_lines)
                 current_context_lines = []
                 main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug('LINE %-50s: entering sub-context, append to ctx_keys', line)
+                log.debug("LINE %-50s: entering sub-context, append to ctx_keys", line)
 
-                if line == "address-family ipv6" and not ctx_keys[0].startswith("mpls ldp"):
+                if line == "address-family ipv6" and not ctx_keys[0].startswith(
+                    "mpls ldp"
+                ):
                     ctx_keys.append("address-family ipv6 unicast")
-                elif line == "address-family ipv4" and not ctx_keys[0].startswith("mpls ldp"):
+                elif line == "address-family ipv4" and not ctx_keys[0].startswith(
+                    "mpls ldp"
+                ):
                     ctx_keys.append("address-family ipv4 unicast")
                 elif line == "address-family evpn":
                     ctx_keys.append("address-family l2vpn evpn")
                 else:
                     ctx_keys.append(line)
 
-            elif ((line.startswith("vni ") and
-                   len(ctx_keys) == 2 and
-                   ctx_keys[0].startswith('router bgp') and
-                   ctx_keys[1] == 'address-family l2vpn evpn')):
+            elif (
+                line.startswith("vni ")
+                and len(ctx_keys) == 2
+                and ctx_keys[0].startswith("router bgp")
+                and ctx_keys[1] == "address-family l2vpn evpn"
+            ):
 
                 # Save old context first
                 self.save_contexts(ctx_keys, current_context_lines)
                 current_context_lines = []
                 sub_main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug('LINE %-50s: entering sub-sub-context, append to ctx_keys', line)
-                ctx_keys.append(line)
-            
-            elif ((line.startswith("interface ") and
-                   len(ctx_keys) == 2 and
-                   ctx_keys[0].startswith('mpls ldp') and
-                   ctx_keys[1].startswith('address-family'))):
-
-                # Save old context first
-                self.save_contexts(ctx_keys, current_context_lines)
-                current_context_lines = []
-                sub_main_ctx_key = copy.deepcopy(ctx_keys)
-                log.debug('LINE %-50s: entering sub-sub-context, append to ctx_keys', line)
+                log.debug(
+                    "LINE %-50s: entering sub-sub-context, append to ctx_keys", line
+                )
                 ctx_keys.append(line)
 
             elif (
-                line.startswith('profile ')
+                line.startswith("interface ")
+                and len(ctx_keys) == 2
+                and ctx_keys[0].startswith("mpls ldp")
+                and ctx_keys[1].startswith("address-family")
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                sub_main_ctx_key = copy.deepcopy(ctx_keys)
+                log.debug(
+                    "LINE %-50s: entering sub-sub-context, append to ctx_keys", line
+                )
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith("traffic-eng")
                 and len(ctx_keys) == 1
-                and ctx_keys[0].startswith('bfd')
+                and ctx_keys[0].startswith("segment-routing")
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                log.debug(
+                    "LINE %-50s: entering segment routing sub-context, append to ctx_keys",
+                    line,
+                )
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith("segment-list ")
+                and len(ctx_keys) == 2
+                and ctx_keys[0].startswith("segment-routing")
+                and ctx_keys[1].startswith("traffic-eng")
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                log.debug(
+                    "LINE %-50s: entering segment routing sub-context, append to ctx_keys",
+                    line,
+                )
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith("policy ")
+                and len(ctx_keys) == 2
+                and ctx_keys[0].startswith("segment-routing")
+                and ctx_keys[1].startswith("traffic-eng")
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                log.debug(
+                    "LINE %-50s: entering segment routing sub-context, append to ctx_keys",
+                    line,
+                )
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith("candidate-path ")
+                and line.endswith(" dynamic")
+                and len(ctx_keys) == 3
+                and ctx_keys[0].startswith("segment-routing")
+                and ctx_keys[1].startswith("traffic-eng")
+                and ctx_keys[2].startswith("policy")
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                main_ctx_key = copy.deepcopy(ctx_keys)
+                log.debug(
+                    "LINE %-50s: entering candidate-path sub-context, append to ctx_keys",
+                    line,
+                )
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith("pcep")
+                and len(ctx_keys) == 2
+                and ctx_keys[0].startswith("segment-routing")
+                and ctx_keys[1].startswith("traffic-eng")
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                main_ctx_key = copy.deepcopy(ctx_keys)
+                log.debug(
+                    "LINE %-50s: entering pcep sub-context, append to ctx_keys", line
+                )
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith("pce-config ")
+                and len(ctx_keys) == 3
+                and ctx_keys[0].startswith("segment-routing")
+                and ctx_keys[1].startswith("traffic-eng")
+                and ctx_keys[2].startswith("pcep")
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                main_ctx_key = copy.deepcopy(ctx_keys)
+                log.debug(
+                    "LINE %-50s: entering pce-config sub-context, append to ctx_keys",
+                    line,
+                )
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith("pce ")
+                and len(ctx_keys) == 3
+                and ctx_keys[0].startswith("segment-routing")
+                and ctx_keys[1].startswith("traffic-eng")
+                and ctx_keys[2].startswith("pcep")
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                main_ctx_key = copy.deepcopy(ctx_keys)
+                log.debug(
+                    "LINE %-50s: entering pce sub-context, append to ctx_keys", line
+                )
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith("pcc")
+                and len(ctx_keys) == 3
+                and ctx_keys[0].startswith("segment-routing")
+                and ctx_keys[1].startswith("traffic-eng")
+                and ctx_keys[2].startswith("pcep")
+            ):
+
+                # Save old context first
+                self.save_contexts(ctx_keys, current_context_lines)
+                current_context_lines = []
+                main_ctx_key = copy.deepcopy(ctx_keys)
+                log.debug(
+                    "LINE %-50s: entering pcc sub-context, append to ctx_keys", line
+                )
+                ctx_keys.append(line)
+
+            elif (
+                line.startswith("profile ")
+                and len(ctx_keys) == 1
+                and ctx_keys[0].startswith("bfd")
             ):
 
                 # Save old context first
@@ -683,14 +957,16 @@ end
                 main_ctx_key = copy.deepcopy(ctx_keys)
                 log.debug(
                     "LINE %-50s: entering BFD profile sub-context, append to ctx_keys",
-                    line
+                    line,
                 )
                 ctx_keys.append(line)
 
             else:
                 # Continuing in an existing context, add non-commented lines to it
                 current_context_lines.append(line)
-                log.debug('LINE %-50s: append to current_context_lines, %-50s', line, ctx_keys)
+                log.debug(
+                    "LINE %-50s: append to current_context_lines, %-50s", line, ctx_keys
+                )
 
         # Save the context of the last one
         self.save_contexts(ctx_keys, current_context_lines)
@@ -704,20 +980,20 @@ def lines_to_config(ctx_keys, line, delete):
 
     if line:
         for (i, ctx_key) in enumerate(ctx_keys):
-            cmd.append(' ' * i + ctx_key)
+            cmd.append(" " * i + ctx_key)
 
         line = line.lstrip()
-        indent = len(ctx_keys) * ' '
+        indent = len(ctx_keys) * " "
 
         # There are some commands that are on by default so their "no" form will be
         # displayed in the config.  "no bgp default ipv4-unicast" is one of these.
         # If we need to remove this line we do so by adding "bgp default ipv4-unicast",
         # not by doing a "no no bgp default ipv4-unicast"
         if delete:
-            if line.startswith('no '):
-                cmd.append('%s%s' % (indent, line[3:]))
+            if line.startswith("no "):
+                cmd.append("%s%s" % (indent, line[3:]))
             else:
-                cmd.append('%sno %s' % (indent, line))
+                cmd.append("%sno %s" % (indent, line))
 
         else:
             cmd.append(indent + line)
@@ -726,16 +1002,16 @@ def lines_to_config(ctx_keys, line, delete):
     # context ('no router ospf' for example)
     else:
         for i, ctx_key in enumerate(ctx_keys[:-1]):
-            cmd.append('%s%s' % (' ' * i, ctx_key))
+            cmd.append("%s%s" % (" " * i, ctx_key))
 
         # Only put the 'no' on the last sub-context
         if delete:
-            if ctx_keys[-1].startswith('no '):
-                cmd.append('%s%s' % (' ' * (len(ctx_keys) - 1), ctx_keys[-1][3:]))
+            if ctx_keys[-1].startswith("no "):
+                cmd.append("%s%s" % (" " * (len(ctx_keys) - 1), ctx_keys[-1][3:]))
             else:
-                cmd.append('%sno %s' % (' ' * (len(ctx_keys) - 1), ctx_keys[-1]))
+                cmd.append("%sno %s" % (" " * (len(ctx_keys) - 1), ctx_keys[-1]))
         else:
-            cmd.append('%s%s' % (' ' * (len(ctx_keys) - 1), ctx_keys[-1]))
+            cmd.append("%s%s" % (" " * (len(ctx_keys) - 1), ctx_keys[-1]))
 
     return cmd
 
@@ -748,23 +1024,26 @@ def get_normalized_ipv6_line(line):
     the IPv6 word is a network
     """
     norm_line = ""
-    words = line.split(' ')
+    words = line.split(" ")
     for word in words:
         if ":" in word:
             norm_word = None
             if "/" in word:
                 try:
-                    if 'ipaddress' not in sys.modules:
+                    if "ipaddress" not in sys.modules:
                         v6word = IPNetwork(word)
-                        norm_word = '%s/%s' % (v6word.network, v6word.prefixlen)
+                        norm_word = "%s/%s" % (v6word.network, v6word.prefixlen)
                     else:
                         v6word = ip_network(word, strict=False)
-                        norm_word = '%s/%s' % (str(v6word.network_address), v6word.prefixlen)
+                        norm_word = "%s/%s" % (
+                            str(v6word.network_address),
+                            v6word.prefixlen,
+                        )
                 except ValueError:
                     pass
             if not norm_word:
                 try:
-                    norm_word = '%s' % IPv6Address(word)
+                    norm_word = "%s" % IPv6Address(word)
                 except ValueError:
                     norm_word = word
         else:
@@ -785,6 +1064,7 @@ def line_exist(lines, target_ctx_keys, target_line, exact_match=True):
                     return True
     return False
 
+
 def check_for_exit_vrf(lines_to_add, lines_to_del):
 
     # exit-vrf is a bit tricky.  If the new config is missing it but we
@@ -797,24 +1077,25 @@ def check_for_exit_vrf(lines_to_add, lines_to_del):
     for (ctx_keys, line) in lines_to_add:
         if add_exit_vrf == True:
             if ctx_keys[0] != prior_ctx_key:
-                insert_key=(prior_ctx_key),
+                insert_key = ((prior_ctx_key),)
                 lines_to_add.insert(index, ((insert_key, "exit-vrf")))
                 add_exit_vrf = False
 
-        if ctx_keys[0].startswith('vrf') and line:
-            if line is not "exit-vrf":
+        if ctx_keys[0].startswith("vrf") and line:
+            if line != "exit-vrf":
                 add_exit_vrf = True
-                prior_ctx_key = (ctx_keys[0])
+                prior_ctx_key = ctx_keys[0]
             else:
                 add_exit_vrf = False
-        index+=1
+        index += 1
 
     for (ctx_keys, line) in lines_to_del:
         if line == "exit-vrf":
-            if (line_exist(lines_to_add, ctx_keys, line)):
+            if line_exist(lines_to_add, ctx_keys, line):
                 lines_to_del.remove((ctx_keys, line))
 
     return (lines_to_add, lines_to_del)
+
 
 def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
 
@@ -825,10 +1106,23 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
     for (ctx_keys, line) in lines_to_del:
         deleted = False
 
-        if ctx_keys[0].startswith('router bgp') and line:
+        # If there is a change in the segment routing block ranges, do it
+        # in-place, to avoid requesting spurious label chunks which might fail
+        if line and "segment-routing global-block" in line:
+            for (add_key, add_line) in lines_to_add:
+                if (
+                    ctx_keys[0] == add_key[0]
+                    and add_line
+                    and "segment-routing global-block" in add_line
+                ):
+                    lines_to_del_to_del.append((ctx_keys, line))
+                    break
+            continue
 
-            if line.startswith('neighbor '):
-                '''
+        if ctx_keys[0].startswith("router bgp") and line:
+
+            if line.startswith("neighbor "):
+                """
                 BGP changed how it displays swpX peers that are part of peer-group. Older
                 versions of frr would display these on separate lines:
                     neighbor swp1 interface
@@ -845,10 +1139,14 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                     neighbor swp1 peer-group FOO
 
                 If so then chop the del line and the corresponding add lines
-                '''
+                """
 
-                re_swpx_int_peergroup = re.search('neighbor (\S+) interface peer-group (\S+)', line)
-                re_swpx_int_v6only_peergroup = re.search('neighbor (\S+) interface v6only peer-group (\S+)', line)
+                re_swpx_int_peergroup = re.search(
+                    "neighbor (\S+) interface peer-group (\S+)", line
+                )
+                re_swpx_int_v6only_peergroup = re.search(
+                    "neighbor (\S+) interface v6only peer-group (\S+)", line
+                )
 
                 if re_swpx_int_peergroup or re_swpx_int_v6only_peergroup:
                     swpx_interface = None
@@ -864,21 +1162,29 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                         swpx_interface = "neighbor %s interface v6only" % swpx
 
                     swpx_peergroup = "neighbor %s peer-group %s" % (swpx, peergroup)
-                    found_add_swpx_interface = line_exist(lines_to_add, ctx_keys, swpx_interface)
-                    found_add_swpx_peergroup = line_exist(lines_to_add, ctx_keys, swpx_peergroup)
+                    found_add_swpx_interface = line_exist(
+                        lines_to_add, ctx_keys, swpx_interface
+                    )
+                    found_add_swpx_peergroup = line_exist(
+                        lines_to_add, ctx_keys, swpx_peergroup
+                    )
                     tmp_ctx_keys = tuple(list(ctx_keys))
 
                     if not found_add_swpx_peergroup:
                         tmp_ctx_keys = list(ctx_keys)
-                        tmp_ctx_keys.append('address-family ipv4 unicast')
+                        tmp_ctx_keys.append("address-family ipv4 unicast")
                         tmp_ctx_keys = tuple(tmp_ctx_keys)
-                        found_add_swpx_peergroup = line_exist(lines_to_add, tmp_ctx_keys, swpx_peergroup)
+                        found_add_swpx_peergroup = line_exist(
+                            lines_to_add, tmp_ctx_keys, swpx_peergroup
+                        )
 
                         if not found_add_swpx_peergroup:
                             tmp_ctx_keys = list(ctx_keys)
-                            tmp_ctx_keys.append('address-family ipv6 unicast')
+                            tmp_ctx_keys.append("address-family ipv6 unicast")
                             tmp_ctx_keys = tuple(tmp_ctx_keys)
-                            found_add_swpx_peergroup = line_exist(lines_to_add, tmp_ctx_keys, swpx_peergroup)
+                            found_add_swpx_peergroup = line_exist(
+                                lines_to_add, tmp_ctx_keys, swpx_peergroup
+                            )
 
                     if found_add_swpx_interface and found_add_swpx_peergroup:
                         deleted = True
@@ -886,30 +1192,83 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                         lines_to_add_to_del.append((ctx_keys, swpx_interface))
                         lines_to_add_to_del.append((tmp_ctx_keys, swpx_peergroup))
 
-                '''
+                """
                 Changing the bfd timers on neighbors is allowed without doing
                 a delete/add process. Since doing a "no neighbor blah bfd ..."
                 will cause the peer to bounce unnecessarily, just skip the delete
                 and just do the add.
-                '''
-                re_nbr_bfd_timers = re.search(r'neighbor (\S+) bfd (\S+) (\S+) (\S+)', line)
+                """
+                re_nbr_bfd_timers = re.search(
+                    r"neighbor (\S+) bfd (\S+) (\S+) (\S+)", line
+                )
 
                 if re_nbr_bfd_timers:
                     nbr = re_nbr_bfd_timers.group(1)
                     bfd_nbr = "neighbor %s" % nbr
-                    bfd_search_string =  bfd_nbr + r' bfd (\S+) (\S+) (\S+)'
+                    bfd_search_string = bfd_nbr + r" bfd (\S+) (\S+) (\S+)"
 
                     for (ctx_keys, add_line) in lines_to_add:
-                        if ctx_keys[0].startswith('router bgp'):
-                            re_add_nbr_bfd_timers = re.search(bfd_search_string, add_line)
+                        if ctx_keys[0].startswith("router bgp"):
+                            re_add_nbr_bfd_timers = re.search(
+                                bfd_search_string, add_line
+                            )
 
                             if re_add_nbr_bfd_timers:
-                                found_add_bfd_nbr = line_exist(lines_to_add, ctx_keys, bfd_nbr, False)
+                                found_add_bfd_nbr = line_exist(
+                                    lines_to_add, ctx_keys, bfd_nbr, False
+                                )
 
                                 if found_add_bfd_nbr:
                                     lines_to_del_to_del.append((ctx_keys, line))
 
-                '''
+                """
+                Neighbor changes of route-maps need to be accounted for in that we
+                do not want to do a `no route-map...` `route-map ....` when changing
+                a route-map.  This is bad mojo as that we will send/receive
+                data we don't want.
+                Additionally we need to ensure that if we have different afi/safi
+                variants that they actually match and if we are going from a very
+                old style command such that the neighbor command is under the
+                `router bgp ..` node that we need to handle that appropriately
+                """
+                re_nbr_rm = re.search("neighbor(.*)route-map(.*)(in|out)$", line)
+                if re_nbr_rm:
+                    adjust_for_bgp_node = 0
+                    neighbor_name = re_nbr_rm.group(1)
+                    rm_name_del = re_nbr_rm.group(2)
+                    dir = re_nbr_rm.group(3)
+                    search = "neighbor%sroute-map(.*)%s" % (neighbor_name, dir)
+                    save_line = "EMPTY"
+                    for (ctx_keys_al, add_line) in lines_to_add:
+                        if ctx_keys_al[0].startswith("router bgp"):
+                            if add_line:
+                                rm_match = re.search(search, add_line)
+                            if rm_match:
+                                rm_name_add = rm_match.group(1)
+                                if rm_name_add == rm_name_del:
+                                    continue
+                                if len(ctx_keys_al) == 1:
+                                    save_line = line
+                                    adjust_for_bgp_node = 1
+                                else:
+                                    if (
+                                        len(ctx_keys) > 1
+                                        and len(ctx_keys_al) > 1
+                                        and ctx_keys[1] == ctx_keys_al[1]
+                                    ):
+                                        lines_to_del_to_del.append((ctx_keys_al, line))
+
+                    if adjust_for_bgp_node == 1:
+                        for (ctx_keys_dl, dl_line) in lines_to_del:
+                            if (
+                                ctx_keys_dl[0].startswith("router bgp")
+                                and len(ctx_keys_dl) > 1
+                                and ctx_keys_dl[1] == "address-family ipv4 unicast"
+                            ):
+                                if save_line == dl_line:
+                                    lines_to_del_to_del.append((ctx_keys_dl, save_line))
+
+                """
                 We changed how we display the neighbor interface command. Older
                 versions of frr would display the following:
                     neighbor swp1 interface
@@ -931,9 +1290,13 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                     neighbor swp1 capability extended-nexthop
 
                 If so then chop the del line and the corresponding add lines
-                '''
-                re_swpx_int_remoteas = re.search('neighbor (\S+) interface remote-as (\S+)', line)
-                re_swpx_int_v6only_remoteas = re.search('neighbor (\S+) interface v6only remote-as (\S+)', line)
+                """
+                re_swpx_int_remoteas = re.search(
+                    "neighbor (\S+) interface remote-as (\S+)", line
+                )
+                re_swpx_int_v6only_remoteas = re.search(
+                    "neighbor (\S+) interface v6only remote-as (\S+)", line
+                )
 
                 if re_swpx_int_remoteas or re_swpx_int_v6only_remoteas:
                     swpx_interface = None
@@ -949,8 +1312,12 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                         swpx_interface = "neighbor %s interface v6only" % swpx
 
                     swpx_remoteas = "neighbor %s remote-as %s" % (swpx, remoteas)
-                    found_add_swpx_interface = line_exist(lines_to_add, ctx_keys, swpx_interface)
-                    found_add_swpx_remoteas = line_exist(lines_to_add, ctx_keys, swpx_remoteas)
+                    found_add_swpx_interface = line_exist(
+                        lines_to_add, ctx_keys, swpx_interface
+                    )
+                    found_add_swpx_remoteas = line_exist(
+                        lines_to_add, ctx_keys, swpx_remoteas
+                    )
                     tmp_ctx_keys = tuple(list(ctx_keys))
 
                     if found_add_swpx_interface and found_add_swpx_remoteas:
@@ -959,7 +1326,7 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                         lines_to_add_to_del.append((ctx_keys, swpx_interface))
                         lines_to_add_to_del.append((tmp_ctx_keys, swpx_remoteas))
 
-            '''
+            """
             We made the 'bgp bestpath as-path multipath-relax' command
             automatically assume 'no-as-set' since the lack of this option caused
             weird routing problems. When the running config is shown in
@@ -967,10 +1334,12 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
             is the default. This causes frr-reload to unnecessarily unapply
             this option only to apply it back again, causing unnecessary session
             resets.
-            '''
-            if 'multipath-relax' in line:
-                re_asrelax_new = re.search('^bgp\s+bestpath\s+as-path\s+multipath-relax$', line)
-                old_asrelax_cmd = 'bgp bestpath as-path multipath-relax no-as-set'
+            """
+            if "multipath-relax" in line:
+                re_asrelax_new = re.search(
+                    "^bgp\s+bestpath\s+as-path\s+multipath-relax$", line
+                )
+                old_asrelax_cmd = "bgp bestpath as-path multipath-relax no-as-set"
                 found_asrelax_old = line_exist(lines_to_add, ctx_keys, old_asrelax_cmd)
 
                 if re_asrelax_new and found_asrelax_old:
@@ -978,59 +1347,87 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                     lines_to_del_to_del.append((ctx_keys, line))
                     lines_to_add_to_del.append((ctx_keys, old_asrelax_cmd))
 
-            '''
+            """
             If we are modifying the BGP table-map we need to avoid a del/add and
             instead modify the table-map in place via an add.  This is needed to
             avoid installing all routes in the RIB the second the 'no table-map'
             is issued.
-            '''
-            if line.startswith('table-map'):
-                found_table_map = line_exist(lines_to_add, ctx_keys, 'table-map', False)
+            """
+            if line.startswith("table-map"):
+                found_table_map = line_exist(lines_to_add, ctx_keys, "table-map", False)
 
                 if found_table_map:
                     lines_to_del_to_del.append((ctx_keys, line))
 
-        '''
+        """
         More old-to-new config handling. ip import-table no longer accepts
         distance, but we honor the old syntax. But 'show running' shows only
         the new syntax. This causes an unnecessary 'no import-table' followed
         by the same old 'ip import-table' which causes perturbations in
         announced routes leading to traffic blackholes. Fix this issue.
-        '''
-        re_importtbl = re.search('^ip\s+import-table\s+(\d+)$', ctx_keys[0])
+        """
+        re_importtbl = re.search("^ip\s+import-table\s+(\d+)$", ctx_keys[0])
         if re_importtbl:
             table_num = re_importtbl.group(1)
             for ctx in lines_to_add:
-                if ctx[0][0].startswith('ip import-table %s distance' % table_num):
-                    lines_to_del_to_del.append((('ip import-table %s' % table_num,), None))
+                if ctx[0][0].startswith("ip import-table %s distance" % table_num):
+                    lines_to_del_to_del.append(
+                        (("ip import-table %s" % table_num,), None)
+                    )
                     lines_to_add_to_del.append((ctx[0], None))
 
-        '''
-        ip/ipv6 prefix-list can be specified without a seq number. However,
-        the running config always adds 'seq x', where x is a number incremented
-        by 5 for every element, to the prefix list. So, ignore such lines as
-        well. Sample prefix-list lines:
+        """
+        ip/ipv6 prefix-lists and access-lists can be specified without a seq number.
+        However, the running config always adds 'seq x', where x is a number
+        incremented by 5 for every element of the prefix/access list.
+        So, ignore such lines as well. Sample prefix-list and acces-list lines:
              ip prefix-list PR-TABLE-2 seq 5 permit 20.8.2.0/24 le 32
              ip prefix-list PR-TABLE-2 seq 10 permit 20.8.2.0/24 le 32
              ipv6 prefix-list vrfdev6-12 permit 2000:9:2::/64 gt 64
-        '''
-        re_ip_pfxlst = re.search('^(ip|ipv6)(\s+prefix-list\s+)(\S+\s+)(seq \d+\s+)(permit|deny)(.*)$',
-                                 ctx_keys[0])
-        if re_ip_pfxlst:
-            tmpline = (re_ip_pfxlst.group(1) + re_ip_pfxlst.group(2) +
-                       re_ip_pfxlst.group(3) + re_ip_pfxlst.group(5) +
-                       re_ip_pfxlst.group(6))
+             access-list FOO seq 5 permit 2.2.2.2/32
+             ipv6 access-list BAR seq 5 permit 2:2:2::2/128
+        """
+        re_acl_pfxlst = re.search(
+            "^(ip |ipv6 |)(prefix-list|access-list)(\s+\S+\s+)(seq \d+\s+)(permit|deny)(.*)$",
+            ctx_keys[0],
+        )
+        if re_acl_pfxlst:
+            found = False
+            tmpline = (
+                re_acl_pfxlst.group(1)
+                + re_acl_pfxlst.group(2)
+                + re_acl_pfxlst.group(3)
+                + re_acl_pfxlst.group(5)
+                + re_acl_pfxlst.group(6)
+            )
             for ctx in lines_to_add:
                 if ctx[0][0] == tmpline:
                     lines_to_del_to_del.append((ctx_keys, None))
                     lines_to_add_to_del.append(((tmpline,), None))
+                    found = True
+            """
+            If prefix-lists or access-lists are being deleted and
+            not added (see comment above), add command with 'no' to
+            lines_to_add and remove from lines_to_del to improve
+            scaling performance.
+            """
+            if found is False:
+                add_cmd = ("no " + ctx_keys[0],)
+                lines_to_add.append((add_cmd, None))
+                lines_to_del_to_del.append((ctx_keys, None))
 
-        if (len(ctx_keys) == 3 and
-            ctx_keys[0].startswith('router bgp') and
-            ctx_keys[1] == 'address-family l2vpn evpn' and
-            ctx_keys[2].startswith('vni')):
+        if (
+            len(ctx_keys) == 3
+            and ctx_keys[0].startswith("router bgp")
+            and ctx_keys[1] == "address-family l2vpn evpn"
+            and ctx_keys[2].startswith("vni")
+        ):
 
-            re_route_target = re.search('^route-target import (.*)$', line) if line is not None else False
+            re_route_target = (
+                re.search("^route-target import (.*)$", line)
+                if line is not None
+                else False
+            )
 
             if re_route_target:
                 rt = re_route_target.group(1).strip()
@@ -1038,10 +1435,14 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                 route_target_export_line = "route-target export %s" % rt
                 route_target_both_line = "route-target both %s" % rt
 
-                found_route_target_export_line = line_exist(lines_to_del, ctx_keys, route_target_export_line)
-                found_route_target_both_line = line_exist(lines_to_add, ctx_keys, route_target_both_line)
+                found_route_target_export_line = line_exist(
+                    lines_to_del, ctx_keys, route_target_export_line
+                )
+                found_route_target_both_line = line_exist(
+                    lines_to_add, ctx_keys, route_target_both_line
+                )
 
-                '''
+                """
                 If the running configs has
                     route-target import 1:1
                     route-target export 1:1
@@ -1050,7 +1451,7 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                     route-target both 1:1
 
                 then we can ignore deleting the import/export and ignore adding the 'both'
-                '''
+                """
                 if found_route_target_export_line and found_route_target_both_line:
                     lines_to_del_to_del.append((ctx_keys, route_target_import_line))
                     lines_to_del_to_del.append((ctx_keys, route_target_export_line))
@@ -1059,10 +1460,9 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
         # Deleting static routes under a vrf can lead to time-outs if each is sent
         # as separate vtysh -c commands. Change them from being in lines_to_del and
         # put the "no" form in lines_to_add
-        if ctx_keys[0].startswith('vrf ') and line:
-            if (line.startswith('ip route') or
-                line.startswith('ipv6 route')):
-                add_cmd = ('no ' + line)
+        if ctx_keys[0].startswith("vrf ") and line:
+            if line.startswith("ip route") or line.startswith("ipv6 route"):
+                add_cmd = "no " + line
                 lines_to_add.append((ctx_keys, add_cmd))
                 lines_to_del_to_del.append((ctx_keys, line))
 
@@ -1073,7 +1473,7 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                 lines_to_del_to_del.append((ctx_keys, line))
                 lines_to_add_to_del.append((ctx_keys, line))
             else:
-                '''
+                """
                 We have commands that used to be displayed in the global part
                 of 'router bgp' that are now displayed under 'address-family ipv4 unicast'
 
@@ -1089,8 +1489,12 @@ def ignore_delete_re_add_lines(lines_to_add, lines_to_del):
                     neighbor ISL advertisement-interval 0
 
                 Look to see if we are deleting it in one format just to add it back in the other
-                '''
-                if ctx_keys[0].startswith('router bgp') and len(ctx_keys) > 1 and ctx_keys[1] == 'address-family ipv4 unicast':
+                """
+                if (
+                    ctx_keys[0].startswith("router bgp")
+                    and len(ctx_keys) > 1
+                    and ctx_keys[1] == "address-family ipv4 unicast"
+                ):
                     tmp_ctx_keys = list(ctx_keys)[:-1]
                     tmp_ctx_keys = tuple(tmp_ctx_keys)
 
@@ -1118,16 +1522,18 @@ def ignore_unconfigurable_lines(lines_to_add, lines_to_del):
 
     for (ctx_keys, line) in lines_to_del:
 
-        if (ctx_keys[0].startswith('frr version') or
-            ctx_keys[0].startswith('frr defaults') or
-            ctx_keys[0].startswith('username') or
-            ctx_keys[0].startswith('password') or
-            ctx_keys[0].startswith('line vty') or
-
+        if (
+            ctx_keys[0].startswith("frr version")
+            or ctx_keys[0].startswith("frr defaults")
+            or ctx_keys[0].startswith("username")
+            or ctx_keys[0].startswith("password")
+            or ctx_keys[0].startswith("line vty")
+            or
             # This is technically "no"able but if we did so frr-reload would
             # stop working so do not let the user shoot themselves in the foot
             # by removing this.
-            ctx_keys[0].startswith('service integrated-vtysh-config')):
+            ctx_keys[0].startswith("service integrated-vtysh-config")
+        ):
 
             log.info('"%s" cannot be removed' % (ctx_keys[-1],))
             lines_to_del_to_del.append((ctx_keys, line))
@@ -1146,6 +1552,11 @@ def compare_context_objects(newconf, running):
     # Compare the two Config objects to find the lines that we need to add/del
     lines_to_add = []
     lines_to_del = []
+    pollist_to_del = []
+    seglist_to_del = []
+    pceconf_to_del = []
+    pcclist_to_del = []
+    candidates_to_add = []
     delete_bgpd = False
 
     # Find contexts that are in newconf but not in running
@@ -1163,25 +1574,35 @@ def compare_context_objects(newconf, running):
                 lines_to_del.append((running_ctx_keys, None))
 
             # We cannot do 'no interface' or 'no vrf' in FRR, and so deal with it
-            elif running_ctx_keys[0].startswith('interface') or running_ctx_keys[0].startswith('vrf'):
+            elif running_ctx_keys[0].startswith("interface") or running_ctx_keys[
+                0
+            ].startswith("vrf"):
                 for line in running_ctx.lines:
                     lines_to_del.append((running_ctx_keys, line))
 
             # If this is an address-family under 'router bgp' and we are already deleting the
             # entire 'router bgp' context then ignore this sub-context
-            elif "router bgp" in running_ctx_keys[0] and len(running_ctx_keys) > 1 and delete_bgpd:
+            elif (
+                "router bgp" in running_ctx_keys[0]
+                and len(running_ctx_keys) > 1
+                and delete_bgpd
+            ):
                 continue
 
             # Delete an entire vni sub-context under "address-family l2vpn evpn"
-            elif ("router bgp" in running_ctx_keys[0] and
-                  len(running_ctx_keys) > 2 and
-                  running_ctx_keys[1].startswith('address-family l2vpn evpn') and
-                  running_ctx_keys[2].startswith('vni ')):
+            elif (
+                "router bgp" in running_ctx_keys[0]
+                and len(running_ctx_keys) > 2
+                and running_ctx_keys[1].startswith("address-family l2vpn evpn")
+                and running_ctx_keys[2].startswith("vni ")
+            ):
                 lines_to_del.append((running_ctx_keys, None))
 
-            elif ("router bgp" in running_ctx_keys[0] and
-                  len(running_ctx_keys) > 1 and
-                  running_ctx_keys[1].startswith('address-family')):
+            elif (
+                "router bgp" in running_ctx_keys[0]
+                and len(running_ctx_keys) > 1
+                and running_ctx_keys[1].startswith("address-family")
+            ):
                 # There's no 'no address-family' support and so we have to
                 # delete each line individually again
                 for line in running_ctx.lines:
@@ -1191,30 +1612,85 @@ def compare_context_objects(newconf, running):
             # doing vtysh -c inefficient (and can time out.)  For
             # these commands, instead of adding them to lines_to_del,
             # add the "no " version to lines_to_add.
-            elif (running_ctx_keys[0].startswith('ip route') or
-                  running_ctx_keys[0].startswith('ipv6 route') or
-                  running_ctx_keys[0].startswith('access-list') or
-                  running_ctx_keys[0].startswith('ipv6 access-list') or
-                  running_ctx_keys[0].startswith('ip prefix-list') or
-                  running_ctx_keys[0].startswith('ipv6 prefix-list')):
-                add_cmd = ('no ' + running_ctx_keys[0],)
+            elif running_ctx_keys[0].startswith("ip route") or running_ctx_keys[
+                0
+            ].startswith("ipv6 route"):
+                add_cmd = ("no " + running_ctx_keys[0],)
                 lines_to_add.append((add_cmd, None))
 
             # if this an interface sub-subcontext in an address-family block in ldpd and
             # we are already deleting the whole context, then ignore this
-            elif (len(running_ctx_keys) > 2 and running_ctx_keys[0].startswith('mpls ldp') and
-                  running_ctx_keys[1].startswith('address-family') and
-                  (running_ctx_keys[:2], None) in lines_to_del):
+            elif (
+                len(running_ctx_keys) > 2
+                and running_ctx_keys[0].startswith("mpls ldp")
+                and running_ctx_keys[1].startswith("address-family")
+                and (running_ctx_keys[:2], None) in lines_to_del
+            ):
                 continue
 
             # same thing for a pseudowire sub-context inside an l2vpn context
-            elif (len(running_ctx_keys) > 1 and running_ctx_keys[0].startswith('l2vpn') and
-                  running_ctx_keys[1].startswith('member pseudowire') and
-                  (running_ctx_keys[:1], None) in lines_to_del):
+            elif (
+                len(running_ctx_keys) > 1
+                and running_ctx_keys[0].startswith("l2vpn")
+                and running_ctx_keys[1].startswith("member pseudowire")
+                and (running_ctx_keys[:1], None) in lines_to_del
+            ):
                 continue
 
+            # Segment routing and traffic engineering never need to be deleted
+            elif (
+                running_ctx_keys[0].startswith("segment-routing")
+                and len(running_ctx_keys) < 3
+            ):
+                continue
+
+            # Neither the pcep command
+            elif (
+                len(running_ctx_keys) == 3
+                and running_ctx_keys[0].startswith("segment-routing")
+                and running_ctx_keys[2].startswith("pcep")
+            ):
+                continue
+
+            # Segment lists can only be deleted after we removed all the candidate paths that
+            # use them, so add them to a separate array that is going to be appended at the end
+            elif (
+                len(running_ctx_keys) == 3
+                and running_ctx_keys[0].startswith("segment-routing")
+                and running_ctx_keys[2].startswith("segment-list")
+            ):
+                seglist_to_del.append((running_ctx_keys, None))
+
+            # Policies must be deleted after there candidate path, to be sure
+            # we add them to a separate array that is going to be appended at the end
+            elif (
+                len(running_ctx_keys) == 3
+                and running_ctx_keys[0].startswith("segment-routing")
+                and running_ctx_keys[2].startswith("policy")
+            ):
+                pollist_to_del.append((running_ctx_keys, None))
+
+            # pce-config must be deleted after the pce, to be sure we add them
+            # to a separate array that is going to be appended at the end
+            elif (
+                len(running_ctx_keys) >= 4
+                and running_ctx_keys[0].startswith("segment-routing")
+                and running_ctx_keys[3].startswith("pce-config")
+            ):
+                pceconf_to_del.append((running_ctx_keys, None))
+
+            # pcc must be deleted after the pce and pce-config too
+            elif (
+                len(running_ctx_keys) >= 4
+                and running_ctx_keys[0].startswith("segment-routing")
+                and running_ctx_keys[3].startswith("pcc")
+            ):
+                pcclist_to_del.append((running_ctx_keys, None))
+
             # Non-global context
-            elif running_ctx_keys and not any("address-family" in key for key in running_ctx_keys):
+            elif running_ctx_keys and not any(
+                "address-family" in key for key in running_ctx_keys
+            ):
                 lines_to_del.append((running_ctx_keys, None))
 
             elif running_ctx_keys and not any("vni" in key for key in running_ctx_keys):
@@ -1225,6 +1701,22 @@ def compare_context_objects(newconf, running):
                 for line in running_ctx.lines:
                     lines_to_del.append((running_ctx_keys, line))
 
+    # if we have some policies commands to delete, append them to lines_to_del
+    if len(pollist_to_del) > 0:
+        lines_to_del.extend(pollist_to_del)
+
+    # if we have some segment list commands to delete, append them to lines_to_del
+    if len(seglist_to_del) > 0:
+        lines_to_del.extend(seglist_to_del)
+
+    # if we have some pce list commands to delete, append them to lines_to_del
+    if len(pceconf_to_del) > 0:
+        lines_to_del.extend(pceconf_to_del)
+
+    # if we have some pcc list commands to delete, append them to lines_to_del
+    if len(pcclist_to_del) > 0:
+        lines_to_del.extend(pcclist_to_del)
+
     # Find the lines within each context to add
     # Find the lines within each context to del
     for (newconf_ctx_keys, newconf_ctx) in iteritems(newconf.contexts):
@@ -1234,7 +1726,19 @@ def compare_context_objects(newconf, running):
 
             for line in newconf_ctx.lines:
                 if line not in running_ctx.dlines:
-                    lines_to_add.append((newconf_ctx_keys, line))
+
+                    # candidate paths can only be added after the policy and segment list,
+                    # so add them to a separate array that is going to be appended at the end
+                    if (
+                        len(newconf_ctx_keys) == 3
+                        and newconf_ctx_keys[0].startswith("segment-routing")
+                        and newconf_ctx_keys[2].startswith("policy ")
+                        and line.startswith("candidate-path ")
+                    ):
+                        candidates_to_add.append((newconf_ctx_keys, line))
+
+                    else:
+                        lines_to_add.append((newconf_ctx_keys, line))
 
             for line in running_ctx.lines:
                 if line not in newconf_ctx.dlines:
@@ -1243,39 +1747,101 @@ def compare_context_objects(newconf, running):
     for (newconf_ctx_keys, newconf_ctx) in iteritems(newconf.contexts):
 
         if newconf_ctx_keys not in running.contexts:
-            lines_to_add.append((newconf_ctx_keys, None))
 
-            for line in newconf_ctx.lines:
-                lines_to_add.append((newconf_ctx_keys, line))
+            # candidate paths can only be added after the policy and segment list,
+            # so add them to a separate array that is going to be appended at the end
+            if (
+                len(newconf_ctx_keys) == 4
+                and newconf_ctx_keys[0].startswith("segment-routing")
+                and newconf_ctx_keys[3].startswith("candidate-path")
+            ):
+                candidates_to_add.append((newconf_ctx_keys, None))
+                for line in newconf_ctx.lines:
+                    candidates_to_add.append((newconf_ctx_keys, line))
+
+            else:
+                lines_to_add.append((newconf_ctx_keys, None))
+
+                for line in newconf_ctx.lines:
+                    lines_to_add.append((newconf_ctx_keys, line))
+
+    # if we have some candidate paths commands to add, append them to lines_to_add
+    if len(candidates_to_add) > 0:
+        lines_to_add.extend(candidates_to_add)
 
     (lines_to_add, lines_to_del) = check_for_exit_vrf(lines_to_add, lines_to_del)
-    (lines_to_add, lines_to_del) = ignore_delete_re_add_lines(lines_to_add, lines_to_del)
-    (lines_to_add, lines_to_del) = ignore_unconfigurable_lines(lines_to_add, lines_to_del)
+    (lines_to_add, lines_to_del) = ignore_delete_re_add_lines(
+        lines_to_add, lines_to_del
+    )
+    (lines_to_add, lines_to_del) = ignore_unconfigurable_lines(
+        lines_to_add, lines_to_del
+    )
 
     return (lines_to_add, lines_to_del)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Command line options
-    parser = argparse.ArgumentParser(description='Dynamically apply diff in frr configs')
-    parser.add_argument('--input', help='Read running config from file instead of "show running"')
+    parser = argparse.ArgumentParser(
+        description="Dynamically apply diff in frr configs"
+    )
+    parser.add_argument(
+        "--input", help='Read running config from file instead of "show running"'
+    )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--reload', action='store_true', help='Apply the deltas', default=False)
-    group.add_argument('--test', action='store_true', help='Show the deltas', default=False)
+    group.add_argument(
+        "--reload", action="store_true", help="Apply the deltas", default=False
+    )
+    group.add_argument(
+        "--test", action="store_true", help="Show the deltas", default=False
+    )
     level_group = parser.add_mutually_exclusive_group()
-    level_group.add_argument('--debug', action='store_true',
-                             help='Enable debugs (synonym for --log-level=debug)', default=False)
-    level_group.add_argument('--log-level', help='Log level', default="info",
-                             choices=("critical", "error", "warning", "info", "debug"))
-    parser.add_argument('--stdout', action='store_true', help='Log to STDOUT', default=False)
-    parser.add_argument('--pathspace', '-N', metavar='NAME', help='Reload specified path/namespace', default=None)
-    parser.add_argument('filename', help='Location of new frr config file')
-    parser.add_argument('--overwrite', action='store_true', help='Overwrite frr.conf with running config output', default=False)
-    parser.add_argument('--bindir', help='path to the vtysh executable', default='/usr/bin')
-    parser.add_argument('--confdir', help='path to the daemon config files', default='/etc/frr')
-    parser.add_argument('--rundir', help='path for the temp config file', default='/var/run/frr')
-    parser.add_argument('--vty_socket', help='socket to be used by vtysh to connect to the daemons', default=None)
-    parser.add_argument('--daemon', help='daemon for which want to replace the config', default='')
+    level_group.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debugs (synonym for --log-level=debug)",
+        default=False,
+    )
+    level_group.add_argument(
+        "--log-level",
+        help="Log level",
+        default="info",
+        choices=("critical", "error", "warning", "info", "debug"),
+    )
+    parser.add_argument(
+        "--stdout", action="store_true", help="Log to STDOUT", default=False
+    )
+    parser.add_argument(
+        "--pathspace",
+        "-N",
+        metavar="NAME",
+        help="Reload specified path/namespace",
+        default=None,
+    )
+    parser.add_argument("filename", help="Location of new frr config file")
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite frr.conf with running config output",
+        default=False,
+    )
+    parser.add_argument(
+        "--bindir", help="path to the vtysh executable", default="/usr/bin"
+    )
+    parser.add_argument(
+        "--confdir", help="path to the daemon config files", default="/etc/frr"
+    )
+    parser.add_argument(
+        "--rundir", help="path for the temp config file", default="/var/run/frr"
+    )
+    parser.add_argument(
+        "--vty_socket",
+        help="socket to be used by vtysh to connect to the daemons",
+        default=None,
+    )
+    parser.add_argument(
+        "--daemon", help="daemon for which want to replace the config", default=""
+    )
 
     args = parser.parse_args()
 
@@ -1283,22 +1849,28 @@ if __name__ == '__main__':
     # For --test log to stdout
     # For --reload log to /var/log/frr/frr-reload.log
     if args.test or args.stdout:
-        logging.basicConfig(format='%(asctime)s %(levelname)5s: %(message)s')
+        logging.basicConfig(format="%(asctime)s %(levelname)5s: %(message)s")
 
         # Color the errors and warnings in red
-        logging.addLevelName(logging.ERROR, "\033[91m  %s\033[0m" % logging.getLevelName(logging.ERROR))
-        logging.addLevelName(logging.WARNING, "\033[91m%s\033[0m" % logging.getLevelName(logging.WARNING))
+        logging.addLevelName(
+            logging.ERROR, "\033[91m  %s\033[0m" % logging.getLevelName(logging.ERROR)
+        )
+        logging.addLevelName(
+            logging.WARNING, "\033[91m%s\033[0m" % logging.getLevelName(logging.WARNING)
+        )
 
     elif args.reload:
-        if not os.path.isdir('/var/log/frr/'):
-            os.makedirs('/var/log/frr/')
+        if not os.path.isdir("/var/log/frr/"):
+            os.makedirs("/var/log/frr/")
 
-        logging.basicConfig(filename='/var/log/frr/frr-reload.log',
-                            format='%(asctime)s %(levelname)5s: %(message)s')
+        logging.basicConfig(
+            filename="/var/log/frr/frr-reload.log",
+            format="%(asctime)s %(levelname)5s: %(message)s",
+        )
 
     # argparse should prevent this from happening but just to be safe...
     else:
-        raise Exception('Must specify --reload or --test')
+        raise Exception("Must specify --reload or --test")
     log = logging.getLogger(__name__)
 
     if args.debug:
@@ -1332,40 +1904,61 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Verify that bindir is correct
-    if not os.path.isdir(args.bindir) or not os.path.isfile(args.bindir + '/vtysh'):
+    if not os.path.isdir(args.bindir) or not os.path.isfile(args.bindir + "/vtysh"):
         log.error("Bindir %s is not a valid path to vtysh" % args.bindir)
         sys.exit(1)
 
     # verify that the vty_socket, if specified, is valid
     if args.vty_socket and not os.path.isdir(args.vty_socket):
-        log.error('vty_socket %s is not a valid path' % args.vty_socket)
+        log.error("vty_socket %s is not a valid path" % args.vty_socket)
         sys.exit(1)
 
     # verify that the daemon, if specified, is valid
-    if args.daemon and args.daemon not in ['zebra', 'bgpd', 'fabricd', 'isisd', 'ospf6d', 'ospfd', 'pbrd', 'pimd', 'ripd', 'ripngd', 'sharpd', 'staticd', 'vrrpd', 'ldpd']:
-        log.error("Daemon %s is not a valid option for 'show running-config'" % args.daemon)
+    if args.daemon and args.daemon not in [
+        "zebra",
+        "bgpd",
+        "fabricd",
+        "isisd",
+        "ospf6d",
+        "ospfd",
+        "pbrd",
+        "pimd",
+        "ripd",
+        "ripngd",
+        "sharpd",
+        "staticd",
+        "vrrpd",
+        "ldpd",
+        "pathd",
+        "bfdd",
+    ]:
+        msg = "Daemon %s is not a valid option for 'show running-config'" % args.daemon
+        print(msg)
+        log.error(msg)
         sys.exit(1)
 
     vtysh = Vtysh(args.bindir, args.confdir, args.vty_socket, args.pathspace)
 
     # Verify that 'service integrated-vtysh-config' is configured
     if args.pathspace:
-        vtysh_filename = args.confdir + '/' + args.pathspace + '/vtysh.conf'
+        vtysh_filename = args.confdir + "/" + args.pathspace + "/vtysh.conf"
     else:
-        vtysh_filename = args.confdir + '/vtysh.conf'
+        vtysh_filename = args.confdir + "/vtysh.conf"
     service_integrated_vtysh_config = True
 
     if os.path.isfile(vtysh_filename):
-        with open(vtysh_filename, 'r') as fh:
+        with open(vtysh_filename, "r") as fh:
             for line in fh.readlines():
                 line = line.strip()
 
-                if line == 'no service integrated-vtysh-config':
+                if line == "no service integrated-vtysh-config":
                     service_integrated_vtysh_config = False
                     break
 
     if not service_integrated_vtysh_config and not args.daemon:
-        log.error("'service integrated-vtysh-config' is not configured, this is required for 'service frr reload'")
+        log.error(
+            "'service integrated-vtysh-config' is not configured, this is required for 'service frr reload'"
+        )
         sys.exit(1)
 
     log.info('Called via "%s"', str(args))
@@ -1398,10 +1991,10 @@ if __name__ == '__main__':
 
             for (ctx_keys, line) in lines_to_del:
 
-                if line == '!':
+                if line == "!":
                     continue
 
-                cmd = '\n'.join(lines_to_config(ctx_keys, line, True))
+                cmd = "\n".join(lines_to_config(ctx_keys, line, True))
                 lines_to_configure.append(cmd)
                 print(cmd)
 
@@ -1411,10 +2004,10 @@ if __name__ == '__main__':
 
             for (ctx_keys, line) in lines_to_add:
 
-                if line == '!':
+                if line == "!":
                     continue
 
-                cmd = '\n'.join(lines_to_config(ctx_keys, line, False))
+                cmd = "\n".join(lines_to_config(ctx_keys, line, False))
                 lines_to_configure.append(cmd)
                 print(cmd)
 
@@ -1424,7 +2017,7 @@ if __name__ == '__main__':
         if not vtysh.is_config_available():
             sys.exit(1)
 
-        log.debug('New Frr Config\n%s', newconf.get_lines())
+        log.debug("New Frr Config\n%s", newconf.get_lines())
 
         # This looks a little odd but we have to do this twice...here is why
         # If the user had this running bgp config:
@@ -1466,7 +2059,7 @@ if __name__ == '__main__':
         for x in range(2):
             running = Config(vtysh)
             running.load_from_show_running(args.daemon)
-            log.debug('Running Frr Config (Pass #%d)\n%s', x, running.get_lines())
+            log.debug("Running Frr Config (Pass #%d)\n%s", x, running.get_lines())
 
             (lines_to_add, lines_to_del) = compare_context_objects(newconf, running)
 
@@ -1491,7 +2084,7 @@ if __name__ == '__main__':
             if lines_to_del and x == 0:
                 for (ctx_keys, line) in lines_to_del:
 
-                    if line == '!':
+                    if line == "!":
                         continue
 
                     # 'no' commands are tricky, we can't just put them in a file and
@@ -1514,9 +2107,10 @@ if __name__ == '__main__':
                     # frr(config-if)# no ip ospf authentication
                     # frr(config-if)#
 
+                    stdouts = []
                     while True:
                         try:
-                            vtysh(['configure'] + cmd)
+                            vtysh(["configure"] + cmd, stdouts)
 
                         except VtyshException:
 
@@ -1524,17 +2118,24 @@ if __name__ == '__main__':
                             #   'no ip ospf authentication message-digest 1.1.1.1' in
                             #   our example above
                             # - Split that last entry by whitespace and drop the last word
-                            log.info('Failed to execute %s', ' '.join(cmd))
-                            last_arg = cmd[-1].split(' ')
+                            log.info("Failed to execute %s", " ".join(cmd))
+                            last_arg = cmd[-1].split(" ")
 
                             if len(last_arg) <= 2:
-                                log.error('"%s" we failed to remove this command', ' -- '.join(original_cmd))
+                                log.error(
+                                    '"%s" we failed to remove this command',
+                                    " -- ".join(original_cmd),
+                                )
+                                # Log first error msg for original_cmd
+                                if stdouts:
+                                    log.error(stdouts[0])
+                                reload_ok = False
                                 break
 
                             new_last_arg = last_arg[0:-1]
-                            cmd[-1] = ' '.join(new_last_arg)
+                            cmd[-1] = " ".join(new_last_arg)
                         else:
-                            log.info('Executed "%s"', ' '.join(cmd))
+                            log.info('Executed "%s"', " ".join(cmd))
                             break
 
             if lines_to_add:
@@ -1542,28 +2143,31 @@ if __name__ == '__main__':
 
                 for (ctx_keys, line) in lines_to_add:
 
-                    if line == '!':
+                    if line == "!":
                         continue
 
                     # Don't run "no" commands twice since they can error
                     # out the second time due to first deletion
-                    if x == 1 and ctx_keys[0].startswith('no '):
+                    if x == 1 and ctx_keys[0].startswith("no "):
                         continue
 
-                    cmd = '\n'.join(lines_to_config(ctx_keys, line, False)) + '\n'
+                    cmd = "\n".join(lines_to_config(ctx_keys, line, False)) + "\n"
                     lines_to_configure.append(cmd)
 
                 if lines_to_configure:
-                    random_string = ''.join(random.SystemRandom().choice(
-                                            string.ascii_uppercase +
-                                            string.digits) for _ in range(6))
+                    random_string = "".join(
+                        random.SystemRandom().choice(
+                            string.ascii_uppercase + string.digits
+                        )
+                        for _ in range(6)
+                    )
 
                     filename = args.rundir + "/reload-%s.txt" % random_string
                     log.info("%s content\n%s" % (filename, pformat(lines_to_configure)))
 
-                    with open(filename, 'w') as fh:
+                    with open(filename, "w") as fh:
                         for line in lines_to_configure:
-                            fh.write(line + '\n')
+                            fh.write(line + "\n")
 
                     try:
                         vtysh.exec_file(filename)
@@ -1573,9 +2177,9 @@ if __name__ == '__main__':
                     os.unlink(filename)
 
         # Make these changes persistent
-        target = str(args.confdir + '/frr.conf')
+        target = str(args.confdir + "/frr.conf")
         if args.overwrite or (not args.daemon and args.filename != target):
-            vtysh('write')
+            vtysh("write")
 
     if not reload_ok:
         sys.exit(1)

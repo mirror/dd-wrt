@@ -258,6 +258,12 @@ struct nb_cb_rpc_args {
 
 	/* List of output parameters to be populated by the callback. */
 	struct list *output;
+
+	/* Buffer to store human-readable error message in case of error. */
+	char *errmsg;
+
+	/* Size of errmsg. */
+	size_t errmsg_len;
 };
 
 /*
@@ -468,6 +474,23 @@ struct nb_callbacks {
 	int (*rpc)(struct nb_cb_rpc_args *args);
 
 	/*
+	 * Optional callback to compare the data nodes when printing
+	 * the CLI commands associated with them.
+	 *
+	 * dnode1
+	 *    The first data node to compare.
+	 *
+	 * dnode2
+	 *    The second data node to compare.
+	 *
+	 * Returns:
+	 *    <0 when the CLI command for the dnode1 should be printed first
+	 *    >0 when the CLI command for the dnode2 should be printed first
+	 *     0 when there is no difference
+	 */
+	int (*cli_cmp)(struct lyd_node *dnode1, struct lyd_node *dnode2);
+
+	/*
 	 * Optional callback to show the CLI command associated to the given
 	 * YANG data node.
 	 *
@@ -514,7 +537,7 @@ struct nb_dependency_callbacks {
  */
 struct nb_node {
 	/* Back pointer to the libyang schema node. */
-	const struct lys_node *snode;
+	const struct lysc_node *snode;
 
 	/* Data path of this YANG node. */
 	char xpath[XPATH_MAXLEN];
@@ -553,7 +576,7 @@ struct nb_node {
  * from working properly on shared libraries. For those compilers, use a fixed
  * size array to work around the problem.
  */
-#define YANG_MODULE_MAX_NODES 1024
+#define YANG_MODULE_MAX_NODES 2000
 
 struct frr_yang_module_info {
 	/* YANG module name. */
@@ -597,6 +620,7 @@ enum nb_client {
 	NB_CLIENT_CONFD,
 	NB_CLIENT_SYSREPO,
 	NB_CLIENT_GRPC,
+	NB_CLIENT_PCEP,
 };
 
 /* Northbound context. */
@@ -618,6 +642,8 @@ struct nb_context {
 		} sysrepo;
 		struct {
 		} grpc;
+		struct {
+		} pcep;
 	} client_data;
 #endif
 };
@@ -655,7 +681,7 @@ struct nb_transaction {
 };
 
 /* Callback function used by nb_oper_data_iterate(). */
-typedef int (*nb_oper_data_cb)(const struct lys_node *snode,
+typedef int (*nb_oper_data_cb)(const struct lysc_node *snode,
 			       struct yang_translator *translator,
 			       struct yang_data *data, void *arg);
 
@@ -664,9 +690,9 @@ typedef int (*nb_oper_data_cb)(const struct lys_node *snode,
 
 /* Hooks. */
 DECLARE_HOOK(nb_notification_send, (const char *xpath, struct list *arguments),
-	     (xpath, arguments))
-DECLARE_HOOK(nb_client_debug_config_write, (struct vty *vty), (vty))
-DECLARE_HOOK(nb_client_debug_set_all, (uint32_t flags, bool set), (flags, set))
+	     (xpath, arguments));
+DECLARE_HOOK(nb_client_debug_config_write, (struct vty *vty), (vty));
+DECLARE_HOOK(nb_client_debug_set_all, (uint32_t flags, bool set), (flags, set));
 
 /* Northbound debugging records */
 extern struct debug nb_dbg_cbs_config;
@@ -674,6 +700,7 @@ extern struct debug nb_dbg_cbs_state;
 extern struct debug nb_dbg_cbs_rpc;
 extern struct debug nb_dbg_notif;
 extern struct debug nb_dbg_events;
+extern struct debug nb_dbg_libyang;
 
 /* Global running configuration. */
 extern struct nb_config *running_config;
@@ -692,7 +719,8 @@ extern const void *nb_callback_lookup_entry(const struct nb_node *nb_node,
 					    const void *parent_list_entry,
 					    const struct yang_list_keys *keys);
 extern int nb_callback_rpc(const struct nb_node *nb_node, const char *xpath,
-			   const struct list *input, struct list *output);
+			   const struct list *input, struct list *output,
+			   char *errmsg, size_t errmsg_len);
 
 /*
  * Create a northbound node for all YANG schema nodes.
@@ -1083,7 +1111,7 @@ extern int nb_oper_data_iterate(const char *xpath,
  *    true if the operation is valid, false otherwise.
  */
 extern bool nb_operation_is_valid(enum nb_operation operation,
-				  const struct lys_node *snode);
+				  const struct lysc_node *snode);
 
 /*
  * Send a YANG notification. This is a no-op unless the 'nb_notification_send'
@@ -1238,6 +1266,20 @@ extern const char *nb_err_name(enum nb_error error);
  *    String representation of the given northbound client.
  */
 extern const char *nb_client_name(enum nb_client client);
+
+/*
+ * Validate all northbound callbacks.
+ *
+ * Some errors, like missing callbacks or invalid priorities, are fatal and
+ * can't be recovered from. Other errors, like unneeded callbacks, are logged
+ * but otherwise ignored.
+ *
+ * Whenever a YANG module is loaded after startup, *all* northbound callbacks
+ * need to be validated and not only the callbacks from the newly loaded module.
+ * This is because augmentations can change the properties of the augmented
+ * module, making mandatory the implementation of additional callbacks.
+ */
+void nb_validate_callbacks(void);
 
 /*
  * Initialize the northbound layer. Should be called only once during the

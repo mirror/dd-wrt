@@ -34,6 +34,7 @@
 #include "eigrp_interface.h"
 #include "eigrp_network.h"
 #include "eigrp_zebra.h"
+#include "eigrp_cli.h"
 
 /* Helper functions. */
 static void redistribute_get_metrics(const struct lyd_node *dnode,
@@ -243,10 +244,12 @@ static int eigrpd_instance_active_time_modify(struct nb_cb_modify_args *args)
 	switch (args->event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
-		return NB_ERR_INCONSISTENCY;
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		return NB_OK;
 	case NB_EV_APPLY:
+		snprintf(args->errmsg, args->errmsg_len,
+			 "active time not implemented yet");
 		/* NOTHING */
 		break;
 	}
@@ -677,11 +680,12 @@ static int eigrpd_instance_neighbor_create(struct nb_cb_create_args *args)
 	switch (args->event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
-		return NB_ERR_INCONSISTENCY;
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		return NB_OK;
 	case NB_EV_APPLY:
-		/* NOTHING */
+		snprintf(args->errmsg, args->errmsg_len,
+			 "neighbor Command is not implemented yet");
 		break;
 	}
 
@@ -693,11 +697,12 @@ static int eigrpd_instance_neighbor_destroy(struct nb_cb_destroy_args *args)
 	switch (args->event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
-		return NB_ERR_INCONSISTENCY;
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		return NB_OK;
 	case NB_EV_APPLY:
-		/* NOTHING */
+		snprintf(args->errmsg, args->errmsg_len,
+			 "no neighbor Command is not implemented yet");
 		break;
 	}
 
@@ -768,11 +773,13 @@ eigrpd_instance_redistribute_route_map_modify(struct nb_cb_modify_args *args)
 	switch (args->event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
-		return NB_ERR_INCONSISTENCY;
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		return NB_OK;
 	case NB_EV_APPLY:
-		/* NOTHING */
+		snprintf(
+			args->errmsg, args->errmsg_len,
+			"'redistribute X route-map FOO' command not implemented yet");
 		break;
 	}
 
@@ -785,11 +792,13 @@ eigrpd_instance_redistribute_route_map_destroy(struct nb_cb_destroy_args *args)
 	switch (args->event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
-		return NB_ERR_INCONSISTENCY;
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		return NB_OK;
 	case NB_EV_APPLY:
-		/* NOTHING */
+		snprintf(
+			args->errmsg, args->errmsg_len,
+			"'no redistribute X route-map FOO' command not implemented yet");
 		break;
 	}
 
@@ -1079,10 +1088,12 @@ lib_interface_eigrp_split_horizon_modify(struct nb_cb_modify_args *args)
 	switch (args->event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
-		return NB_ERR_INCONSISTENCY;
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		return NB_OK;
 	case NB_EV_APPLY:
+		snprintf(args->errmsg, args->errmsg_len,
+			 "split-horizon command not implemented yet");
 		/* NOTHING */
 		break;
 	}
@@ -1161,11 +1172,12 @@ static int lib_interface_eigrp_instance_summarize_addresses_create(
 	switch (args->event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
-		return NB_ERR_INCONSISTENCY;
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		return NB_OK;
 	case NB_EV_APPLY:
-		/* NOTHING */
+		snprintf(args->errmsg, args->errmsg_len,
+			 "summary command not implemented yet");
 		break;
 	}
 
@@ -1178,10 +1190,12 @@ static int lib_interface_eigrp_instance_summarize_addresses_destroy(
 	switch (args->event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
-		return NB_ERR_INCONSISTENCY;
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		return NB_OK;
 	case NB_EV_APPLY:
+		snprintf(args->errmsg, args->errmsg_len,
+			 "no summary command not implemented yet");
 		/* NOTHING */
 		break;
 	}

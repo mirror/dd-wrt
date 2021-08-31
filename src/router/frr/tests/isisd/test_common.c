@@ -69,6 +69,24 @@ test_find_adjacency(const struct isis_test_node *tnode, const char *hostname)
 	return NULL;
 }
 
+mpls_label_t test_topology_node_ldp_label(const struct isis_topology *topology,
+					  struct in_addr router_id)
+{
+	for (size_t i = 0; topology->nodes[i].hostname[0]; i++) {
+		const struct isis_test_node *tnode = &topology->nodes[i];
+		struct in_addr node_router_id;
+
+		if (!tnode->router_id)
+			continue;
+
+		(void)inet_pton(AF_INET, tnode->router_id, &node_router_id);
+		if (IPV4_ADDR_SAME(&router_id, &node_router_id))
+			return (50000 + (i + 1) * 100);
+	}
+
+	return MPLS_INVALID_LABEL;
+}
+
 static struct isis_lsp *lsp_add(struct lspdb_head *lspdb,
 				struct isis_area *area, int level,
 				const uint8_t *sysid, uint8_t pseudonode_id)
@@ -106,6 +124,7 @@ static void lsp_add_ip_reach(struct isis_lsp *lsp,
 		pcfg.sid = *next_sid_index;
 		*next_sid_index = *next_sid_index + 1;
 		pcfg.sid_type = SR_SID_VALUE_TYPE_INDEX;
+		pcfg.node_sid = true;
 		pcfg.last_hop_behavior = SR_LAST_HOP_BEHAVIOR_PHP;
 	}
 
@@ -290,7 +309,8 @@ static int topology_load_node(const struct isis_topology *topology,
 {
 	int ret;
 
-	isis_dynhn_insert(tnode->sysid, tnode->hostname, tnode->level);
+	isis_dynhn_insert(area->isis, tnode->sysid, tnode->hostname,
+			  tnode->level);
 
 	for (int level = IS_LEVEL_1; level <= IS_LEVEL_2; level++) {
 		if ((tnode->level & level) == 0)
