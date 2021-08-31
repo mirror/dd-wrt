@@ -1,6 +1,0 @@
-<test5 xmlns="urn:cesnet:mod1">
-    <cont>
-        <top>false</top>
-    </cont>
-    <ssh/>
-</test5>

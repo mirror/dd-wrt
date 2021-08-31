@@ -1,3 +1,0 @@
-usr/lib/*/libyang.so
-usr/lib/*/pkgconfig/libyang.pc
-usr/include/libyang/*.h

@@ -1,9 +1,0 @@
-module mod6 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod6";
-
-    typedef enumeration {
-        type uint32;
-    }
-}

@@ -1,9 +1,0 @@
-<server xmlns="urn:cesnet:mod">
-    <name>skola.cz</name>
-    <ip xmlns="urn:cesnet:mod8">172.10.25.10</ip>
-    <port xmlns="urn:cesnet:mod8">8080</port>
-</server>
-<cont xmlns="urn:cesnet:mod">
-    <llist xmlns="urn:cesnet:mod11">llist1</llist>
-    <llist xmlns="urn:cesnet:mod11">llist2</llist>
-</cont>

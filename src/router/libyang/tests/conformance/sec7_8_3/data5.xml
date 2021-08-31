@@ -1,9 +1,0 @@
-<presence xmlns="urn:cesnet:mod4">
-    <ll>
-        <keys>42</keys>
-    </ll>
-    <ll>
-        <keys>43</keys>
-        <test>test</test>
-    </ll>
-</presence>

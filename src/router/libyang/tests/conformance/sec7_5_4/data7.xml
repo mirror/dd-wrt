@@ -1,5 +1,0 @@
-<notif xmlns="urn:cesnet:mod5">
-    <login>
-        <is_admin>true</is_admin>
-    </login>
-</notif>

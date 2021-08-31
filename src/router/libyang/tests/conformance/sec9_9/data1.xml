@@ -1,7 +1,0 @@
-<interface xmlns="urn:cesnet:mod8">
-    <name>eth0</name>
-</interface>
-<interface xmlns="urn:cesnet:mod8">
-    <name>lo</name>
-</interface>
-<mgmt-interface xmlns="urn:cesnet:mod8">eth0</mgmt-interface>

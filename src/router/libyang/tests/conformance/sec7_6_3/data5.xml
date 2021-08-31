@@ -1,7 +1,0 @@
-<leaf1 xmlns="urn:cesnet:mod1">string</leaf1>
-<leaf2 xmlns="urn:cesnet:mod1">1000</leaf2>
-<ccc xmlns="urn:cesnet:mod1">
-    <leaf1>1</leaf1>
-    <leaf2>1000</leaf2>
-    <leaf3>500</leaf3>
-</ccc>

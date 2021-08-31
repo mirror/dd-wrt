@@ -1,8 +1,0 @@
-<ccc xmlns="urn:cesnet:mod3">
-    <test>true</test>
-</ccc>
-<login xmlns="urn:cesnet:mod3">
-    <user>admin</user>
-    <password>admin123</password>
-</login>
-<llist xmlns="urn:cesnet:mod3">42</llist>

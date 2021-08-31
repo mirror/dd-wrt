@@ -1,9 +1,0 @@
-<list xmlns="urn:cesnet:mod6">
-    <keys>string</keys>
-    <l1>host-adam</l1>
-    <presence>
-        <ccc>
-            <empty/>
-        </ccc>
-    </presence>
-</list>

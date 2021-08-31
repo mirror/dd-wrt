@@ -1,8 +1,0 @@
-<ccc xmlns="urn:cesnet:mod8">
-    <any>
-        <interface xmlns="http://example.com/ns/interface">
-            <ifIndex type="int8">1</ifIndex>
-        </interface>
-    </any>
-</ccc>
-<name xmlns="urn:cesnet:mod8">server123</name>

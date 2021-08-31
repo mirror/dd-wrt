@@ -1,6 +1,0 @@
-<l1 xmlns="urn:cesnet:mod3">string1</l1>
-<l1 xmlns="urn:cesnet:mod3">string2</l1>
-<presence xmlns="urn:cesnet:mod3"/>
-<l2 xmlns="urn:cesnet:mod3">123</l2>
-<l2 xmlns="urn:cesnet:mod3">321</l2>
-<l2 xmlns="urn:cesnet:mod3">666</l2>

@@ -1,9 +1,0 @@
-<notif xmlns="urn:cesnet:mod5">
-    <login>
-        <is_admin>true</is_admin>
-    </login>
-    <user>
-        <username>admin</username>
-        <password>admin123</password>
-    </user>
-</notif>

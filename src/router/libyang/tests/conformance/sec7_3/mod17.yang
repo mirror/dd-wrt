@@ -1,9 +1,0 @@
-module mod17 {
-
-    prefix abc;
-    namespace "urn:cesnet:mod17";
-
-    typedef uint32 {
-        type uint32;
-    }
-}

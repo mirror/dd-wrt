@@ -1,6 +1,0 @@
-module g2 {
-    namespace "urn:g2";
-    prefix g2;
-
-    container top;
-}

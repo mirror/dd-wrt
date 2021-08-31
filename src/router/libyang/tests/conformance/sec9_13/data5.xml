@@ -1,7 +1,0 @@
-<instance xmlns="urn:cesnet:mod3">
-    <llist1 xmlns:pref="urn:cesnet:mod3">/pref:ccc/pref:llist[.="two"]</llist1>
-</instance>
-<ccc xmlns="urn:cesnet:mod3">
-    <llist>one</llist>
-    <llist>unknown</llist>
-</ccc>

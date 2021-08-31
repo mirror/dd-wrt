@@ -1,7 +1,0 @@
-<server xmlns="urn:cesnet:mod12">
-    <ssh>
-        <key>kdfhakiawd416w</key>
-        <abc/>
-    </ssh>
-    <presence/>
-</server>

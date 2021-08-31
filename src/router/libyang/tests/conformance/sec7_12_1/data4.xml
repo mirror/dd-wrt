@@ -1,9 +1,0 @@
-<login xmlns="urn:cesnet:mod6">
-    <username>xabcde06</username>
-    <password>user123456</password>
-</login>
-<ccc xmlns="urn:cesnet:mod6">
-    <l1>host-adam</l1>
-    <presence/>
-</ccc>
-<leaf xmlns="urn:cesnet:mod6">42</leaf>

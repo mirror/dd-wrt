@@ -1,7 +1,0 @@
-<lrtests xmlns="urn:libyang:tests:leafrefs">
-  <target><id>1</id><name>jedna</name></target>
-  <target><id>2</id><name>dva</name></target>
-  <target><id>3</id><name>tri</name></target>
-  <target><id>4</id><name>ctyri</name></target>
-  <link>jedna</link>
-</lrtests>

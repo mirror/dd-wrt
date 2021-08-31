@@ -1,8 +1,0 @@
-<leaf1 xmlns="urn:cesnet:mod10"></leaf1>
-<leaf3 xmlns="urn:cesnet:mod10">my_string</leaf3>
-<llist xmlns="urn:cesnet:mod10">test123</llist>
-<llist xmlns="urn:cesnet:mod10">t</llist>
-<llist xmlns="urn:cesnet:mod10">test</llist>
-<llist xmlns="urn:cesnet:mod10">test llist</llist>
-<llist xmlns="urn:cesnet:mod10">test references</llist>
-<llist xmlns="urn:cesnet:mod10">This is a example sentence. This string is not long.</llist>

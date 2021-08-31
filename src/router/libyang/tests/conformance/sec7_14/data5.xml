@@ -1,6 +1,0 @@
-<notif5 xmlns="urn:cesnet:mod4">
-    <any>
-        <data>abc</data>
-    </any>
-    <ssh/>
-</notif5>
