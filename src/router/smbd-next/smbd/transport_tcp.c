@@ -14,6 +14,7 @@
 #include "buffer_pool.h"
 #include "connection.h"
 #include "transport_tcp.h"
+#include "misc.h"
 
 static uint ksmbd_connection_limit;
 module_param_named(connlimit, ksmbd_connection_limit, uint, 0644);

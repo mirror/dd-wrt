@@ -41,12 +41,17 @@ extern int ksmbd_debug_types;
 #define pr_fmt(fmt)	"ksmbd: " fmt
 #endif
 
+#if 0
 #define ksmbd_debug(type, fmt, ...)				\
 	do {							\
 		if (ksmbd_debug_types & KSMBD_DEBUG_##type)	\
 			pr_info(fmt, ##__VA_ARGS__);		\
 	} while (0)
-
+#else
+#define ksmbd_debug(type, fmt, ...)				\
+	do {							\
+	} while (0)
+#endif
 #define UNICODE_LEN(x)		((x) * 2)
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
