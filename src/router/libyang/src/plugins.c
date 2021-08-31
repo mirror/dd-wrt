@@ -1,10 +1,9 @@
 /**
  * @file plugins.c
  * @author Radek Krejci <rkrejci@cesnet.cz>
- * @author Michal Vasko <mvasko@cesnet.cz>
- * @brief YANG plugin routines implementation
+ * @brief Manipulate with the type and extension plugins.
  *
- * Copyright (c) 2015 - 2018 CESNET, z.s.p.o.
+ * Copyright (c) 2021 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -12,671 +11,476 @@
  *
  *     https://opensource.org/licenses/BSD-3-Clause
  */
+
 #define _GNU_SOURCE
 
+#include "plugins.h"
+#include "plugins_internal.h"
+
 #include <assert.h>
-#include <errno.h>
 #include <dirent.h>
 #include <dlfcn.h>
+#include <errno.h>
+#include <limits.h>
 #include <pthread.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 
 #include "common.h"
-#include "extensions.h"
-#include "user_types.h"
-#include "plugin_config.h"
-#include "libyang.h"
-#include "parser.h"
+#include "config.h"
+#include "plugins_exts.h"
+#include "plugins_types.h"
+#include "set.h"
 
-/* internal structures storing the plugins */
-static struct lyext_plugin_list *ext_plugins = NULL;
-static uint16_t ext_plugins_count = 0; /* size of the ext_plugins array */
+/*
+ * internal type plugins records
+ */
+extern const struct lyplg_type_record plugins_binary[];
+extern const struct lyplg_type_record plugins_bits[];
+extern const struct lyplg_type_record plugins_boolean[];
+extern const struct lyplg_type_record plugins_decimal64[];
+extern const struct lyplg_type_record plugins_empty[];
+extern const struct lyplg_type_record plugins_enumeration[];
+extern const struct lyplg_type_record plugins_identityref[];
+extern const struct lyplg_type_record plugins_instanceid[];
+extern const struct lyplg_type_record plugins_integer[];
+extern const struct lyplg_type_record plugins_leafref[];
+extern const struct lyplg_type_record plugins_string[];
+extern const struct lyplg_type_record plugins_union[];
 
-static struct lytype_plugin_list *type_plugins = NULL;
-static uint16_t type_plugins_count = 0;
+/*
+ * ietf-inet-types
+ */
+extern const struct lyplg_type_record plugins_ipv4_address[];
+extern const struct lyplg_type_record plugins_ipv4_address_no_zone[];
+extern const struct lyplg_type_record plugins_ipv6_address[];
+extern const struct lyplg_type_record plugins_ipv6_address_no_zone[];
+extern const struct lyplg_type_record plugins_ipv4_prefix[];
+extern const struct lyplg_type_record plugins_ipv6_prefix[];
 
-static struct ly_set dlhandlers = {0, 0, {NULL}};
-static pthread_mutex_t plugins_lock = PTHREAD_MUTEX_INITIALIZER;
+/*
+ * ietf-yang-types
+ */
+extern const struct lyplg_type_record plugins_date_and_time[];
+extern const struct lyplg_type_record plugins_xpath10[];
 
-static char **loaded_plugins = NULL; /* both ext and type plugin names */
-static uint16_t loaded_plugins_count = 0;
+/*
+ * internal extension plugins records
+ */
+extern struct lyplg_ext_record plugins_metadata[];
+extern struct lyplg_ext_record plugins_nacm[];
+extern struct lyplg_ext_record plugins_yangdata[];
+
+static pthread_mutex_t plugins_guard = PTHREAD_MUTEX_INITIALIZER;
 
 /**
- * @brief reference counter for the plugins, it actually counts number of contexts
+ * @brief Counter for currently present contexts able to refer to the loaded plugins.
+ *
+ * Plugins are shared among all the created contexts. They are loaded with the creation of the very first context and
+ * unloaded with the destroy of the last context. Therefore, to reload the list of plugins, all the contexts must be
+ * destroyed and with the creation of a first new context after that, the plugins will be reloaded.
  */
-static uint32_t plugin_refs;
+static uint32_t context_refcount = 0;
 
-API const char * const *
-ly_get_loaded_plugins(void)
+/**
+ * @brief Record describing an implemented extension.
+ *
+ * Matches ::lyplg_ext_record and ::lyplg_type_record
+ */
+struct lyplg_record {
+    const char *module;          /**< name of the module where the extension/type is defined */
+    const char *revision;        /**< optional module revision - if not specified, the plugin applies to any revision,
+                                      which is not an optimal approach due to a possible future revisions of the module.
+                                      Instead, there should be defined multiple items in the plugins list, each with the
+                                      different revision, but all with the same pointer to the plugin functions. The
+                                      only valid use case for the NULL revision is the case the module has no revision. */
+    const char *name;            /**< name of the extension/typedef */
+    int8_t plugin[];             /**< specific plugin type's data - ::lyplg_ext or ::lyplg_type */
+};
+
+static struct ly_set plugins_handlers = {0};
+static struct ly_set plugins_types = {0};
+static struct ly_set plugins_extensions = {0};
+
+/**
+ * @brief Just a variadic data to cover extension and type plugins by a single ::plugins_load() function.
+ *
+ * The values are taken from ::LY_PLUGINS_EXTENSIONS and ::LYPLG_TYPES macros.
+ */
+static const struct {
+    const char *id;          /**< string identifier: type/extension */
+    const char *apiver_var;  /**< expected variable name holding API version value */
+    const char *plugins_var; /**< expected variable name holding plugin records */
+    const char *envdir;      /**< environment variable containing directory with the plugins */
+    const char *dir;         /**< default directory with the plugins (has less priority than envdir) */
+    uint32_t apiver;         /**< expected API version */
+} plugins_load_info[] = {
+    {   /* LYPLG_TYPE */
+        .id = "type",
+        .apiver_var = "plugins_types_apiver__",
+        .plugins_var = "plugins_types__",
+        .envdir = "LIBYANG_TYPES_PLUGINS_DIR",
+        .dir = LYPLG_TYPE_DIR,
+        .apiver = LYPLG_TYPE_API_VERSION
+    }, {/* LYPLG_EXTENSION */
+        .id = "extension",
+        .apiver_var = "plugins_extensions_apiver__",
+        .plugins_var = "plugins_extensions__",
+        .envdir = "LIBYANG_EXTENSIONS_PLUGINS_DIR",
+        .dir = LYPLG_EXT_DIR,
+        .apiver = LYPLG_EXT_API_VERSION
+    }
+};
+
+/**
+ * @brief Iterate over list of loaded plugins of the given @p type.
+ *
+ * @param[in] type Type of the plugins to iterate.
+ * @param[in,out] index The iterator - set to 0 for the first call.
+ * @return The plugin records, NULL if no more record is available.
+ */
+static struct lyplg_record *
+plugins_iter(enum LYPLG type, uint32_t *index)
 {
-    FUN_IN;
+    struct ly_set *plugins;
 
-    return (const char * const *)loaded_plugins;
-}
+    assert(index);
 
-API int
-ly_clean_plugins(void)
-{
-    FUN_IN;
-
-    unsigned int u;
-    int ret = EXIT_SUCCESS;
-
-#ifdef STATIC
-    /* lock the extension plugins list */
-    pthread_mutex_lock(&plugins_lock);
-
-    if(ext_plugins) {
-        free(ext_plugins);
-        ext_plugins = NULL;
-        ext_plugins_count = 0;
-    }
-
-    if(type_plugins) {
-        free(type_plugins);
-        type_plugins = NULL;
-        type_plugins_count = 0;
-    }
-
-    for (u = 0; u < loaded_plugins_count; ++u) {
-        free(loaded_plugins[u]);
-    }
-    free(loaded_plugins);
-    loaded_plugins = NULL;
-    loaded_plugins_count = 0;
-
-    /* unlock the global structures */
-    pthread_mutex_unlock(&plugins_lock);
-    return ret;
-#endif /* STATIC */
-
-    /* lock the extension plugins list */
-    pthread_mutex_lock(&plugins_lock);
-
-    if (--plugin_refs) {
-        /* there is a context that may refer to the plugins, so we cannot remove them */
-        ret = EXIT_FAILURE;
-        goto cleanup;
-    }
-
-    if (!ext_plugins_count && !type_plugins_count) {
-        /* no plugin loaded - nothing to do */
-        goto cleanup;
-    }
-
-    /* clean the lists */
-    free(ext_plugins);
-    ext_plugins = NULL;
-    ext_plugins_count = 0;
-
-    free(type_plugins);
-    type_plugins = NULL;
-    type_plugins_count = 0;
-
-    for (u = 0; u < loaded_plugins_count; ++u) {
-        free(loaded_plugins[u]);
-    }
-    free(loaded_plugins);
-    loaded_plugins = NULL;
-    loaded_plugins_count = 0;
-
-    /* close the dl handlers */
-    for (u = 0; u < dlhandlers.number; u++) {
-        dlclose(dlhandlers.set.g[u]);
-    }
-    free(dlhandlers.set.g);
-    dlhandlers.set.g = NULL;
-    dlhandlers.size = 0;
-    dlhandlers.number = 0;
-
-cleanup:
-    /* unlock the global structures */
-    pthread_mutex_unlock(&plugins_lock);
-
-    return ret;
-}
-
-static int
-lytype_load_plugin(void *dlhandler, const char *file_name)
-{
-    struct lytype_plugin_list *plugin;
-    char *str;
-    int *version;
-
-#ifdef STATIC
-    return 0;
-#endif /* STATIC */
-
-    /* get the plugin data */
-    plugin = dlsym(dlhandler, file_name);
-    str = dlerror();
-    if (str) {
-        LOGERR(NULL, LY_ESYS, "Processing \"%s\" user type plugin failed, missing plugin list object (%s).", file_name, str);
-        return 1;
-    }
-    version = dlsym(dlhandler, "lytype_api_version");
-    if (dlerror() || *version != LYTYPE_API_VERSION) {
-        LOGWRN(NULL, "Processing \"%s\" user type plugin failed, wrong API version - %d expected, %d found.",
-               file_name, LYTYPE_API_VERSION, version ? *version : 0);
-        return 1;
-    }
-    return ly_register_types(plugin, file_name);
-}
-
-API int
-ly_register_types(struct lytype_plugin_list *plugin, const char *log_name)
-{
-    FUN_IN;
-
-    struct lytype_plugin_list *p;
-    uint32_t u, v;
-
-    for (u = 0; plugin[u].name; u++) {
-        /* check user type implementations for collisions */
-        for (v = 0; v < type_plugins_count; v++) {
-            if (!strcmp(plugin[u].name, type_plugins[v].name) &&
-                    !strcmp(plugin[u].module, type_plugins[v].module) &&
-                    (!plugin[u].revision || !type_plugins[v].revision || !strcmp(plugin[u].revision, type_plugins[v].revision))) {
-                LOGERR(NULL, LY_ESYS, "Processing \"%s\" extension plugin failed,"
-                        "implementation collision for extension %s from module %s%s%s.",
-                        log_name, plugin[u].name, plugin[u].module, plugin[u].revision ? "@" : "",
-                        plugin[u].revision ? plugin[u].revision : "");
-                return 1;
-            }
-        }
-    }
-
-    /* add the new plugins, we have number of new plugins as u */
-    p = realloc(type_plugins, (type_plugins_count + u) * sizeof *type_plugins);
-    if (!p) {
-        LOGMEM(NULL);
-        return -1;
-    }
-    type_plugins = p;
-    for (; u; u--) {
-        memcpy(&type_plugins[type_plugins_count], &plugin[u - 1], sizeof *plugin);
-        type_plugins_count++;
-    }
-
-    return 0;
-}
-
-static int
-lyext_load_plugin(void *dlhandler, const char *file_name)
-{
-    struct lyext_plugin_list *plugin;
-    char *str;
-    int *version;
-
-#ifdef STATIC
-    return 0;
-#endif /* STATIC */
-
-    /* get the plugin data */
-    plugin = dlsym(dlhandler, file_name);
-    str = dlerror();
-    if (str) {
-        LOGERR(NULL, LY_ESYS, "Processing \"%s\" extension plugin failed, missing plugin list object (%s).", file_name, str);
-        return 1;
-    }
-    version = dlsym(dlhandler, "lyext_api_version");
-    if (dlerror() || *version != LYEXT_API_VERSION) {
-        LOGWRN(NULL, "Processing \"%s\" extension plugin failed, wrong API version - %d expected, %d found.",
-               file_name, LYEXT_API_VERSION, version ? *version : 0);
-        return 1;
-    }
-    return ly_register_exts(plugin, file_name);
-}
-
-API int
-ly_register_exts(struct lyext_plugin_list *plugin, const char *log_name)
-{
-    FUN_IN;
-
-    struct lyext_plugin_list *p;
-    struct lyext_plugin_complex *pluginc;
-    uint32_t u, v;
-
-    for (u = 0; plugin[u].name; u++) {
-        /* check extension implementations for collisions */
-        for (v = 0; v < ext_plugins_count; v++) {
-            if (!strcmp(plugin[u].name, ext_plugins[v].name) &&
-                    !strcmp(plugin[u].module, ext_plugins[v].module) &&
-                    (!plugin[u].revision || !ext_plugins[v].revision || !strcmp(plugin[u].revision, ext_plugins[v].revision))) {
-                LOGERR(NULL, LY_ESYS, "Processing \"%s\" extension plugin failed,"
-                        "implementation collision for extension %s from module %s%s%s.",
-                        log_name, plugin[u].name, plugin[u].module, plugin[u].revision ? "@" : "",
-                        plugin[u].revision ? plugin[u].revision : "");
-                return 1;
-            }
-        }
-
-        /* check for valid supported substatements in case of complex extension */
-        if (plugin[u].plugin->type == LYEXT_COMPLEX && ((struct lyext_plugin_complex *)plugin[u].plugin)->substmt) {
-            pluginc = (struct lyext_plugin_complex *)plugin[u].plugin;
-            for (v = 0; pluginc->substmt[v].stmt; v++) {
-                if (pluginc->substmt[v].stmt >= LY_STMT_SUBMODULE ||
-                        pluginc->substmt[v].stmt == LY_STMT_VERSION ||
-                        pluginc->substmt[v].stmt == LY_STMT_YINELEM) {
-                    LOGERR(NULL, LY_EINVAL,
-                            "Extension plugin \"%s\" (extension %s) allows not supported extension substatement (%s)",
-                            log_name, plugin[u].name, ly_stmt_str[pluginc->substmt[v].stmt]);
-                    return 1;
-                }
-                if (pluginc->substmt[v].cardinality > LY_STMT_CARD_MAND &&
-                        pluginc->substmt[v].stmt >= LY_STMT_MODIFIER &&
-                        pluginc->substmt[v].stmt <= LY_STMT_STATUS) {
-                    LOGERR(NULL, LY_EINVAL, "Extension plugin \"%s\" (extension %s) allows multiple instances on \"%s\" "
-                           "substatement, which is not supported.",
-                           log_name, plugin[u].name, ly_stmt_str[pluginc->substmt[v].stmt]);
-                    return 1;
-                }
-            }
-        }
-    }
-
-    /* add the new plugins, we have number of new plugins as u */
-    p = realloc(ext_plugins, (ext_plugins_count + u) * sizeof *ext_plugins);
-    if (!p) {
-        LOGMEM(NULL);
-        return -1;
-    }
-    ext_plugins = p;
-    for (; u; u--) {
-        memcpy(&ext_plugins[ext_plugins_count], &plugin[u - 1], sizeof *plugin);
-        ext_plugins_count++;
-    }
-
-    return 0;
-}
-
-/* spends name */
-static void
-ly_add_loaded_plugin(char *name)
-{
-    loaded_plugins = ly_realloc(loaded_plugins, (loaded_plugins_count + 2) * sizeof *loaded_plugins);
-    LY_CHECK_ERR_RETURN(!loaded_plugins, free(name); LOGMEM(NULL), );
-    ++loaded_plugins_count;
-
-    loaded_plugins[loaded_plugins_count - 1] = name;
-    loaded_plugins[loaded_plugins_count] = NULL;
-}
-
-static void
-ly_load_plugins_dir(DIR *dir, const char *dir_path, int ext_or_type)
-{
-    struct dirent *file;
-    size_t len;
-    char *str, *name;
-    void *dlhandler;
-    int ret;
-
-#ifdef STATIC
-    return;
-#endif /* STATIC */
-
-    while ((file = readdir(dir))) {
-        /* required format of the filename is *LY_PLUGIN_SUFFIX */
-        len = strlen(file->d_name);
-        if (len < LY_PLUGIN_SUFFIX_LEN + 1 ||
-                strcmp(&file->d_name[len - LY_PLUGIN_SUFFIX_LEN], LY_PLUGIN_SUFFIX)) {
-            continue;
-        }
-
-        /* and construct the filepath */
-        if (asprintf(&str, "%s/%s", dir_path, file->d_name) == -1) {
-            LOGMEM(NULL);
-            return;
-        }
-
-        /* load the plugin */
-        dlhandler = dlopen(str, RTLD_NOW);
-        if (!dlhandler) {
-            LOGERR(NULL, LY_ESYS, "Loading \"%s\" as a plugin failed (%s).", str, dlerror());
-            free(str);
-            continue;
-        }
-        if (ly_set_contains(&dlhandlers, dlhandler) != -1) {
-            /* the plugin is already loaded */
-            LOGVRB("Plugin \"%s\" already loaded.", str);
-            free(str);
-
-            /* keep the refcount of the shared object correct */
-            dlclose(dlhandler);
-            continue;
-        }
-        dlerror();    /* Clear any existing error */
-
-        /* store the name without the suffix */
-        name = strndup(file->d_name, len - LY_PLUGIN_SUFFIX_LEN);
-        if (!name) {
-            LOGMEM(NULL);
-            dlclose(dlhandler);
-            free(str);
-            return;
-        }
-
-        if (ext_or_type) {
-            ret = lyext_load_plugin(dlhandler, name);
-        } else {
-            ret = lytype_load_plugin(dlhandler, name);
-        }
-        if (!ret) {
-            LOGVRB("Plugin \"%s\" successfully loaded.", str);
-            /* spends name */
-            ly_add_loaded_plugin(name);
-            /* keep the handler */
-            ly_set_add(&dlhandlers, dlhandler, LY_SET_OPT_USEASLIST);
-        } else {
-            free(name);
-            dlclose(dlhandler);
-        }
-        free(str);
-
-        if (ret == -1) {
-            /* finish on error */
-            break;
-        }
-    }
-}
-
-API void
-ly_load_plugins(void)
-{
-    FUN_IN;
-
-    DIR* dir;
-    const char *pluginsdir;
-
-#ifdef STATIC
-    /* lock the extension plugins list */
-    pthread_mutex_lock(&plugins_lock);
-
-    ext_plugins = static_load_lyext_plugins(&ext_plugins_count);
-    type_plugins = static_load_lytype_plugins(&type_plugins_count);
-
-    int u;
-    for (u = 0; u < static_loaded_plugins_count; u++) {
-        ly_add_loaded_plugin(strdup(static_loaded_plugins[u]));
-    }
-
-    /* unlock the global structures */
-    pthread_mutex_unlock(&plugins_lock);
-    return;
-#endif /* STATIC */
-
-    /* lock the extension plugins list */
-    pthread_mutex_lock(&plugins_lock);
-
-    /* increase references */
-    ++plugin_refs;
-
-    /* try to get the plugins directory from environment variable */
-    pluginsdir = getenv("LIBYANG_EXTENSIONS_PLUGINS_DIR");
-    if (!pluginsdir) {
-        pluginsdir = LYEXT_PLUGINS_DIR;
-    }
-
-    dir = opendir(pluginsdir);
-    if (!dir) {
-        /* no directory (or no access to it), no extension plugins */
-        LOGWRN(NULL, "Failed to open libyang extensions plugins directory \"%s\" (%s).", pluginsdir, strerror(errno));
+    if (type == LYPLG_EXTENSION) {
+        plugins = &plugins_extensions;
     } else {
-        ly_load_plugins_dir(dir, pluginsdir, 1);
-        closedir(dir);
+        plugins = &plugins_types;
     }
 
-    /* try to get the plugins directory from environment variable */
-    pluginsdir = getenv("LIBYANG_USER_TYPES_PLUGINS_DIR");
-    if (!pluginsdir) {
-        pluginsdir = LY_USER_TYPES_PLUGINS_DIR;
+    if (*index == plugins->count) {
+        return NULL;
     }
 
-    dir = opendir(pluginsdir);
-    if (!dir) {
-        /* no directory (or no access to it), no extension plugins */
-        LOGWRN(NULL, "Failed to open libyang user types plugins directory \"%s\" (%s).", pluginsdir, strerror(errno));
-    } else {
-        ly_load_plugins_dir(dir, pluginsdir, 0);
-        closedir(dir);
-    }
-
-    /* unlock the global structures */
-    pthread_mutex_unlock(&plugins_lock);
+    *index += 1;
+    return plugins->objs[*index - 1];
 }
 
-struct lyext_plugin *
-ext_get_plugin(const char *name, const char *module, const char *revision)
+void *
+lyplg_find(enum LYPLG type, const char *module, const char *revision, const char *name)
 {
-    uint16_t u;
+    uint32_t i = 0;
+    struct lyplg_record *item;
 
-    assert(name);
     assert(module);
+    assert(name);
 
-    for (u = 0; u < ext_plugins_count; u++) {
-        if (!strcmp(name, ext_plugins[u].name) &&
-                !strcmp(module, ext_plugins[u].module) &&
-                (!ext_plugins[u].revision || !strcmp(revision, ext_plugins[u].revision))) {
-            /* we have the match */
-            return ext_plugins[u].plugin;
-        }
-    }
-
-    /* plugin not found */
-    return NULL;
-}
-
-API int
-lys_ext_instance_presence(struct lys_ext *def, struct lys_ext_instance **ext, uint8_t ext_size)
-{
-    FUN_IN;
-
-    uint8_t index;
-
-    if (!def || (ext_size && !ext)) {
-        LOGARG;
-        return -1;
-    }
-
-    /* search for the extension instance */
-    for (index = 0; index < ext_size; index++) {
-        if (ext[index]->module->ctx == def->module->ctx) {
-            /* from the same context */
-            if (ext[index]->def == def) {
-                return index;
+    while ((item = plugins_iter(type, &i)) != NULL) {
+        if (!strcmp(item->module, module) && !strcmp(item->name, name)) {
+            if (item->revision && revision && strcmp(item->revision, revision)) {
+                continue;
+            } else if (!revision && item->revision) {
+                continue;
             }
-        } else {
-            /* from different contexts */
-            if (ly_strequal0(ext[index]->def->name, def->name)
-                    && ly_strequal0(lys_main_module(ext[index]->def->module)->name, lys_main_module(def->module)->name)) {
-                return index;
-            }
-        }
-    }
 
-    /* not found */
-    return -1;
-}
-
-API void *
-lys_ext_complex_get_substmt(LY_STMT stmt, struct lys_ext_instance_complex *ext, struct lyext_substmt **info)
-{
-    FUN_IN;
-
-    int i;
-
-    if (!ext || !ext->def || !ext->def->plugin || ext->def->plugin->type != LYEXT_COMPLEX) {
-        LOGARG;
-        return NULL;
-    }
-
-    if (!ext->substmt) {
-        /* no substatement defined in the plugin */
-        if (info) {
-            *info = NULL;
-        }
-        return NULL;
-    }
-
-    /* search the substatements defined by the plugin */
-    for (i = 0; ext->substmt[i].stmt; i++) {
-        if (stmt == LY_STMT_NODE) {
-            if (ext->substmt[i].stmt >= LY_STMT_ACTION && ext->substmt[i].stmt <= LY_STMT_USES) {
-                if (info) {
-                    *info = &ext->substmt[i];
-                }
-                break;
-            }
-        } else if (ext->substmt[i].stmt == stmt) {
-            if (info) {
-                *info = &ext->substmt[i];
-            }
-            break;
-        }
-    }
-
-    if (ext->substmt[i].stmt) {
-        return &ext->content[ext->substmt[i].offset];
-    } else {
-        return NULL;
-    }
-}
-
-LY_STMT
-lys_snode2stmt(LYS_NODE nodetype)
-{
-    switch(nodetype) {
-    case LYS_CONTAINER:
-        return LY_STMT_CONTAINER;
-    case LYS_CHOICE:
-        return LY_STMT_CHOICE;
-    case LYS_LEAF:
-        return LY_STMT_LEAF;
-    case LYS_LEAFLIST:
-        return LY_STMT_LEAFLIST;
-    case LYS_LIST:
-        return LY_STMT_LIST;
-    case LYS_ANYXML:
-    case LYS_ANYDATA:
-        return LY_STMT_ANYDATA;
-    case LYS_CASE:
-        return LY_STMT_CASE;
-    case LYS_NOTIF:
-        return LY_STMT_NOTIFICATION;
-    case LYS_RPC:
-        return LY_STMT_RPC;
-    case LYS_INPUT:
-        return LY_STMT_INPUT;
-    case LYS_OUTPUT:
-        return LY_STMT_OUTPUT;
-    case LYS_GROUPING:
-        return LY_STMT_GROUPING;
-    case LYS_USES:
-        return LY_STMT_USES;
-    case LYS_AUGMENT:
-        return LY_STMT_AUGMENT;
-    case LYS_ACTION:
-        return LY_STMT_ACTION;
-    default:
-        return LY_STMT_NODE;
-    }
-}
-
-static struct lytype_plugin_list *
-lytype_find(const char *module, const char *revision, const char *type_name)
-{
-    uint16_t u;
-
-    for (u = 0; u < type_plugins_count; ++u) {
-        if (ly_strequal(module, type_plugins[u].module, 0) && ((!revision && !type_plugins[u].revision)
-                || (revision && ly_strequal(revision, type_plugins[u].revision, 0)))
-                && ly_strequal(type_name, type_plugins[u].name, 0)) {
-            return &(type_plugins[u]);
+            return &item->plugin;
         }
     }
 
     return NULL;
 }
 
-int
-lytype_store(const struct lys_module *mod, const char *type_name, const char **value_str, lyd_val *value)
+/**
+ * @brief Insert the provided extension plugin records into the internal set of extension plugins for use by libyang.
+ *
+ * @param[in] recs An array of plugin records provided by the plugin implementation. The array must be terminated by a zeroed
+ * record.
+ * @return LY_SUCCESS in case of success
+ * @return LY_EINVAL for invalid information in @p recs.
+ * @return LY_EMEM in case of memory allocation failure.
+ */
+static LY_ERR
+plugins_insert(enum LYPLG type, const void *recs)
 {
-    struct lytype_plugin_list *p;
-    char *err_msg = NULL;
-
-    assert(mod && type_name && value_str && value);
-
-    p = lytype_find(mod->name, mod->rev_size ? mod->rev[0].date : NULL, type_name);
-    if (p) {
-        if (p->store_clb(mod->ctx, type_name, value_str, value, &err_msg)) {
-            if (!err_msg) {
-                if (asprintf(&err_msg, "Failed to store value \"%s\" of user type \"%s\".", *value_str, type_name) == -1) {
-                    LOGMEM(mod->ctx);
-                    return -1;
-                }
-            }
-            LOGERR(mod->ctx, LY_EPLUGIN, err_msg);
-            free(err_msg);
-            return -1;
-        }
-
-        /* value successfully stored */
-        return 0;
+    if (!recs) {
+        return LY_SUCCESS;
     }
 
-    return 1;
+    if (type == LYPLG_EXTENSION) {
+        const struct lyplg_ext_record *rec = (const struct lyplg_ext_record *)recs;
+
+        for (uint32_t i = 0; rec[i].name; i++) {
+            LY_CHECK_RET(ly_set_add(&plugins_extensions, (void *)&rec[i], 0, NULL));
+        }
+    } else { /* LYPLG_TYPE */
+        const struct lyplg_type_record *rec = (const struct lyplg_type_record *)recs;
+
+        for (uint32_t i = 0; rec[i].name; i++) {
+            LY_CHECK_RET(ly_set_add(&plugins_types, (void *)&rec[i], 0, NULL));
+        }
+    }
+
+    return LY_SUCCESS;
+}
+
+static void
+lyplg_close_cb(void *handle)
+{
+    dlclose(handle);
+}
+
+static void
+lyplg_clean_(void)
+{
+    if (--context_refcount) {
+        /* there is still some other context, do not remove the plugins */
+        return;
+    }
+
+    ly_set_erase(&plugins_types, NULL);
+    ly_set_erase(&plugins_extensions, NULL);
+    ly_set_erase(&plugins_handlers, lyplg_close_cb);
 }
 
 void
-lytype_free(const struct lys_type *type, lyd_val value, const char *value_str)
+lyplg_clean(void)
 {
-    struct lytype_plugin_list *p;
-    struct lys_node_leaf sleaf;
-    struct lyd_node_leaf_list leaf;
-    struct lys_module *mod;
+    pthread_mutex_lock(&plugins_guard);
+    lyplg_clean_();
+    pthread_mutex_unlock(&plugins_guard);
+}
 
-    memset(&sleaf, 0, sizeof sleaf);
-    memset(&leaf, 0, sizeof leaf);
+/**
+ * @brief Get the expected plugin objects from the loaded dynamic object and add the defined plugins into the lists of
+ * available extensions/types plugins.
+ *
+ * @param[in] dlhandler Loaded dynamic library handler.
+ * @param[in] pathname Path of the loaded library for logging.
+ * @param[in] type Type of the plugins to get from the dynamic library. Note that a single library can hold both types
+ * and extensions plugins implementations, so this function should be called twice (once for each plugin type) with
+ * different @p type values
+ * @return LY_ERR values.
+ */
+static LY_ERR
+plugins_load(void *dlhandler, const char *pathname, enum LYPLG type)
+{
+    const void *plugins;
+    uint32_t *version;
 
-    while (type->base == LY_TYPE_LEAFREF) {
-        type = &type->info.lref.target->type;
-    }
-    if (type->base == LY_TYPE_UNION) {
-        /* create a fake schema node */
-        sleaf.module = type->parent->module;
-        sleaf.name = "fake-leaf";
-        sleaf.type = *type;
-        sleaf.nodetype = LYS_LEAF;
-
-        /* and a fake data node */
-        leaf.schema = (struct lys_node *)&sleaf;
-        leaf.value = value;
-        leaf.value_str = value_str;
-
-        /* find the original type */
-        type = lyd_leaf_type(&leaf);
-        if (!type) {
-            LOGINT(sleaf.module->ctx);
-            return;
+    /* type plugin */
+    version = dlsym(dlhandler, plugins_load_info[type].apiver_var);
+    if (version) {
+        /* check version ... */
+        if (*version != plugins_load_info[type].apiver) {
+            LOGERR(NULL, LY_EINVAL, "Processing user %s plugin \"%s\" failed, wrong API version - %d expected, %d found.",
+                    plugins_load_info[type].id, pathname, plugins_load_info[type].apiver, *version);
+            return LY_EINVAL;
         }
+
+        /* ... get types plugins information ... */
+        if (!(plugins = dlsym(dlhandler, plugins_load_info[type].plugins_var))) {
+            char *errstr = dlerror();
+            LOGERR(NULL, LY_EINVAL, "Processing user %s plugin \"%s\" failed, missing %s plugins information (%s).",
+                    plugins_load_info[type].id, pathname, plugins_load_info[type].id, errstr);
+            return LY_EINVAL;
+        }
+
+        /* ... and load all the types plugins */
+        LY_CHECK_RET(plugins_insert(type, plugins));
     }
 
-    mod = type->der->module;
-    if (!mod) {
-        LOGINT(type->parent->module->ctx);
-        return;
+    return LY_SUCCESS;
+}
+
+static LY_ERR
+plugins_load_module(const char *pathname)
+{
+    LY_ERR ret = LY_SUCCESS;
+    void *dlhandler;
+    uint32_t types_count = 0, extensions_count = 0;
+
+    dlerror();    /* Clear any existing error */
+
+    dlhandler = dlopen(pathname, RTLD_NOW);
+    if (!dlhandler) {
+        LOGERR(NULL, LY_ESYS, "Loading \"%s\" as a plugin failed (%s).", pathname, dlerror());
+        return LY_ESYS;
     }
 
-    p = lytype_find(mod->name, mod->rev_size ? mod->rev[0].date : NULL, type->der->name);
-    if (!p) {
-        LOGINT(mod->ctx);
-        return;
+    if (ly_set_contains(&plugins_handlers, dlhandler, NULL)) {
+        /* the plugin is already loaded */
+        LOGVRB("Plugin \"%s\" already loaded.", pathname);
+
+        /* keep the correct refcount */
+        dlclose(dlhandler);
+        return LY_SUCCESS;
     }
 
-    if (p->free_clb) {
-        p->free_clb(value.ptr);
+    /* remember the current plugins lists for recovery */
+    types_count = plugins_types.count;
+    extensions_count = plugins_extensions.count;
+
+    /* type plugin */
+    ret = plugins_load(dlhandler, pathname, LYPLG_TYPE);
+    LY_CHECK_GOTO(ret, error);
+
+    /* extension plugin */
+    ret = plugins_load(dlhandler, pathname, LYPLG_EXTENSION);
+    LY_CHECK_GOTO(ret, error);
+
+    /* remember the dynamic plugin */
+    ret = ly_set_add(&plugins_handlers, dlhandler, 1, NULL);
+    LY_CHECK_GOTO(ret, error);
+
+    return LY_SUCCESS;
+
+error:
+    dlclose(dlhandler);
+
+    /* revert changes in the lists */
+    while (plugins_types.count > types_count) {
+        ly_set_rm_index(&plugins_types, plugins_types.count - 1, NULL);
     }
+    while (plugins_extensions.count > extensions_count) {
+        ly_set_rm_index(&plugins_extensions, plugins_extensions.count - 1, NULL);
+    }
+
+    return ret;
+}
+
+static LY_ERR
+plugins_insert_dir(enum LYPLG type)
+{
+    LY_ERR ret = LY_SUCCESS;
+    const char *pluginsdir;
+    DIR *dir;
+    ly_bool default_dir = 0;
+
+    /* try to get the plugins directory from environment variable */
+    pluginsdir = getenv(plugins_load_info[type].envdir);
+    if (!pluginsdir) {
+        /* remember that we are going to a default dir and do not print warning if the directory doesn't exist */
+        default_dir = 1;
+        pluginsdir = plugins_load_info[type].dir;
+    }
+
+    dir = opendir(pluginsdir);
+    if (!dir) {
+        /* no directory (or no access to it), no extension plugins */
+        if (!default_dir || (errno != ENOENT)) {
+            LOGWRN(NULL, "Failed to open libyang %s plugins directory \"%s\" (%s).", plugins_load_info[type].id,
+                    pluginsdir, strerror(errno));
+        }
+    } else {
+        struct dirent *file;
+
+        while ((file = readdir(dir))) {
+            size_t len;
+            char pathname[PATH_MAX];
+
+            /* required format of the filename is *LYPLG_SUFFIX */
+            len = strlen(file->d_name);
+            if ((len < LYPLG_SUFFIX_LEN + 1) || strcmp(&file->d_name[len - LYPLG_SUFFIX_LEN], LYPLG_SUFFIX)) {
+                continue;
+            }
+
+            /* and construct the filepath */
+            snprintf(pathname, PATH_MAX, "%s/%s", pluginsdir, file->d_name);
+
+            ret = plugins_load_module(pathname);
+            if (ret) {
+                break;
+            }
+        }
+        closedir(dir);
+    }
+
+    return ret;
+}
+
+LY_ERR
+lyplg_init(void)
+{
+    LY_ERR ret;
+
+    pthread_mutex_lock(&plugins_guard);
+    /* let only the first context to initiate plugins, but let others wait for finishing the initiation */
+    if (context_refcount++) {
+        /* already initiated */
+        pthread_mutex_unlock(&plugins_guard);
+        return LY_SUCCESS;
+    }
+
+    /* internal types */
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_binary), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_bits), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_boolean), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_decimal64), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_empty), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_enumeration), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_identityref), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_instanceid), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_integer), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_leafref), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_string), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_union), error);
+
+    /* ietf-inet-types */
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_ipv4_address), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_ipv4_address_no_zone), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_ipv6_address), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_ipv6_address_no_zone), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_ipv4_prefix), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_ipv6_prefix), error);
+
+    /* ietf-yang-types */
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_date_and_time), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_TYPE, plugins_xpath10), error);
+
+    /* internal extensions */
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_EXTENSION, plugins_metadata), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_EXTENSION, plugins_nacm), error);
+    LY_CHECK_GOTO(ret = plugins_insert(LYPLG_EXTENSION, plugins_yangdata), error);
+
+    /* external types */
+    LY_CHECK_GOTO(ret = plugins_insert_dir(LYPLG_TYPE), error);
+
+    /* external extensions */
+    LY_CHECK_GOTO(ret = plugins_insert_dir(LYPLG_EXTENSION), error);
+
+    /* initiation done, wake-up possibly waiting threads creating another contexts */
+    pthread_mutex_unlock(&plugins_guard);
+
+    return LY_SUCCESS;
+
+error:
+    /* initiation was not successful - cleanup (and let others to try) */
+    lyplg_clean_();
+    pthread_mutex_unlock(&plugins_guard);
+
+    if (ret == LY_EINVAL) {
+        /* all the plugins here are internal, invalid record actually means an internal libyang error */
+        ret = LY_EINT;
+    }
+    return ret;
+}
+
+API LY_ERR
+lyplg_add(const char *pathname)
+{
+    LY_ERR ret = LY_SUCCESS;
+
+    LY_CHECK_ARG_RET(NULL, pathname, LY_EINVAL);
+
+    /* works only in case a context exists */
+    pthread_mutex_lock(&plugins_guard);
+    if (!context_refcount) {
+        /* no context */
+        pthread_mutex_unlock(&plugins_guard);
+        LOGERR(NULL, LY_EDENIED, "To add a plugin, at least one context must exists.");
+        return LY_EDENIED;
+    }
+
+    ret = plugins_load_module(pathname);
+
+    pthread_mutex_unlock(&plugins_guard);
+
+    return ret;
 }

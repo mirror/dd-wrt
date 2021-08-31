@@ -1,0 +1,5 @@
+libyang2 ({{ version }}-{{ release }}) unstable; urgency=medium
+
+  * upstream packaging
+
+ -- Ondřej Surý <ondrej@debian.org>  Tue, 04 May 2021 22:20:03 +0200

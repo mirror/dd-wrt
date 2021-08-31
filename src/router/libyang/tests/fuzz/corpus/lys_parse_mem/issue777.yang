@@ -1,0 +1,16 @@
+module m0d0 {
+    prefix a0c;
+    namespace ¢0000000000000000000000";
+
+    list list0 {
+key "key1";
+    unique "0n000";
+        leaf key1 {
+            type string;
+        }
+
+        leaf uniq0 {
+            type string;
+        }
+    }
+}

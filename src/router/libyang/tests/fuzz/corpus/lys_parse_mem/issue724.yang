@@ -1,0 +1,22 @@
+module mod1 {
+    namespace "urn:all";
+    prefix av;
+    yang-version 1.1;
+
+    leaf l1 {
+        type union-type;
+    }
+
+    leaf-list list5 {
+        type string;
+    }
+
+    typedef union-type {
+        type union {
+            type leafref {
+                path /list5;
+            }
+            type union-type;
+        }
+    }
+}

@@ -1,0 +1,10 @@
+module p{
+	namespace "";
+	prefix p;
+
+	leaf mgmt-interface {
+		type leafref {
+			path "";
+		}
+	}
+}

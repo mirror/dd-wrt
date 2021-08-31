@@ -1,9 +1,9 @@
 /**
  * @file printer_yin.c
- * @author Michal Vasko <mvasko@cesnet.cz>
- * @brief YIN printer for libyang data model structure
+ * @author Fred Gan <ganshaolong@vip.qq.com>
+ * @brief YIN printer
  *
- * Copyright (c) 2016 CESNET, z.s.p.o.
+ * Copyright (c) 2015 - 2019 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -11,65 +11,66 @@
  *
  *     https://opensource.org/licenses/BSD-3-Clause
  */
+
 #define _GNU_SOURCE
+
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <assert.h>
 
 #include "common.h"
-#include "context.h"
-#include "printer.h"
+#include "compat.h"
+#include "log.h"
+#include "out.h"
+#include "out_internal.h"
+#include "printer_internal.h"
+#include "tree.h"
 #include "tree_schema.h"
-#include "xml_internal.h"
+#include "tree_schema_internal.h"
+#include "xml.h"
+#include "xpath.h"
 
-#define INDENT ""
-#define LEVEL (level*2)
-
-static void yin_print_snode(struct lyout *out, int level, const struct lys_node *node, int mask);
-static void yin_print_extension_instances(struct lyout *out, int level, const struct lys_module *module,
-                                          LYEXT_SUBSTMT substmt, uint8_t substmt_index,
-                                          struct lys_ext_instance **ext, unsigned int count);
-
-/* endflag :
- * -1: />  - empty element
- *  0:     - no end
- *  1: >   - element with children
+/**
+ * @brief YIN printer context.
  */
+struct lys_ypr_ctx {
+    union {
+        struct {
+            struct ly_out *out;              /**< output specification */
+            uint16_t level;                  /**< current indentation level: 0 - no formatting, >= 1 indentation levels */
+            uint32_t options;                /**< Schema output options (see @ref schemaprinterflags). */
+            const struct lys_module *module; /**< schema to print */
+        };
+        struct lyspr_ctx printer_ctx;
+    };
+
+    /* YIN printer specific members */
+};
+
+static void yprp_extension_instances(struct lys_ypr_ctx *ctx, enum ly_stmt substmt, uint8_t substmt_index,
+        struct lysp_ext_instance *ext, int8_t *flag, LY_ARRAY_COUNT_TYPE count);
+
 static void
-yin_print_open(struct lyout *out, int level, const char *elem_prefix, const char *elem_name,
-               const char *attr_name, const char *attr_value, int endflag)
+ypr_open(struct lys_ypr_ctx *ctx, const char *elem_name, const char *attr_name, const char *attr_value, int8_t flag)
 {
-    if (elem_prefix) {
-        ly_print(out, "%*s<%s:%s", LEVEL, INDENT, elem_prefix, elem_name);
-    } else {
-        ly_print(out, "%*s<%s", LEVEL, INDENT, elem_name);
-    }
+    ly_print_(ctx->out, "%*s<%s", INDENT, elem_name);
 
     if (attr_name) {
-        ly_print(out, " %s=\"", attr_name);
-        lyxml_dump_text(out, attr_value, LYXML_DATA_ATTR);
-        ly_print(out, "\"%s", endflag == -1 ? "/>\n" : endflag == 1 ? ">\n" : "");
-    } else if (endflag) {
-        ly_print(out, endflag == -1 ? "/>\n" : ">\n");
+        ly_print_(ctx->out, " %s=\"", attr_name);
+        lyxml_dump_text(ctx->out, attr_value, 1);
+        ly_print_(ctx->out, "\"%s", flag == -1 ? "/>\n" : flag == 1 ? ">\n" : "");
+    } else if (flag) {
+        ly_print_(ctx->out, flag == -1 ? "/>\n" : ">\n");
     }
 }
 
-/*
- * endflag:
- * 0: />           - closing empty element
- * 1: </elem_name> - closing element with children
- */
 static void
-yin_print_close(struct lyout *out, int level, const char *elem_prefix, const char *elem_name, int endflag)
+ypr_close(struct lys_ypr_ctx *ctx, const char *elem_name, int8_t flag)
 {
-    if (endflag) {
-        if (elem_prefix) {
-            ly_print(out, "%*s</%s:%s>\n", LEVEL, INDENT, elem_prefix, elem_name);
-        } else {
-            ly_print(out, "%*s</%s>\n", LEVEL, INDENT, elem_name);
-        }
+    if (flag) {
+        ly_print_(ctx->out, "%*s</%s>\n", INDENT, elem_name);
     } else {
-        ly_print(out, "/>\n");
+        ly_print_(ctx->out, "/>\n");
     }
 }
 
@@ -79,1516 +80,1015 @@ yin_print_close(struct lyout *out, int level, const char *elem_prefix, const cha
  * 1 or NULL - parent already closed, do nothing
  */
 static void
-yin_print_close_parent(struct lyout *out, int *par_close_flag)
+ypr_close_parent(struct lys_ypr_ctx *ctx, int8_t *par_close_flag)
 {
     if (par_close_flag && !(*par_close_flag)) {
         (*par_close_flag) = 1;
-        ly_print(out, ">\n");
+        ly_print_(ctx->out, ">\n");
     }
 }
 
 static void
-yin_print_arg(struct lyout *out, int level, const char *arg, const char *text)
+ypr_yin_arg(struct lys_ypr_ctx *ctx, const char *arg, const char *text)
 {
-    ly_print(out, "%*s<%s>", LEVEL, INDENT, arg);
-    lyxml_dump_text(out, text, LYXML_DATA_ELEM);
-    ly_print(out, "</%s>\n", arg);
+    ly_print_(ctx->out, "%*s<%s>", INDENT, arg);
+    lyxml_dump_text(ctx->out, text, 0);
+    ly_print_(ctx->out, "</%s>\n", arg);
 }
 
 static void
-yin_print_substmt(struct lyout *out, int level, LYEXT_SUBSTMT substmt, uint8_t substmt_index, const char *text,
-                   const struct lys_module *module, struct lys_ext_instance **ext, unsigned int ext_size)
+ypr_substmt(struct lys_ypr_ctx *ctx, enum ly_stmt substmt, uint8_t substmt_index, const char *text, void *ext)
 {
-    int i, content = 0;
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t extflag = 0;
 
     if (!text) {
         /* nothing to print */
         return;
     }
 
-    if (ext_substmt_info[substmt].flags & SUBST_FLAG_YIN) {
-        content = 1;
-        yin_print_open(out, level, NULL, ext_substmt_info[substmt].name,
-                       NULL, NULL, content);
+    if (stmt_attr_info[substmt].flags & STMT_FLAG_YIN) {
+        extflag = 1;
+        ypr_open(ctx, stmt_attr_info[substmt].name, NULL, NULL, extflag);
     } else {
-        yin_print_open(out, level, NULL, ext_substmt_info[substmt].name,
-                       ext_substmt_info[substmt].arg, text, content);
+        ypr_open(ctx, stmt_attr_info[substmt].name, stmt_attr_info[substmt].arg, text, extflag);
     }
-    /* extensions */
-    i = -1;
-    do {
-        i = lys_ext_iter(ext, ext_size, i + 1, substmt);
-    } while (i != -1 && ext[i]->insubstmt_index != substmt_index);
-    if (i != -1) {
-        yin_print_close_parent(out, &content);
-        do {
-            yin_print_extension_instances(out, level + 1, module, substmt, substmt_index, &ext[i], 1);
-            do {
-                i = lys_ext_iter(ext, ext_size, i + 1, substmt);
-            } while (i != -1 && ext[i]->insubstmt_index != substmt_index);
-        } while (i != -1);
+
+    LEVEL++;
+    LY_ARRAY_FOR(ext, u) {
+        if ((((struct lysp_ext_instance *)ext)[u].parent_stmt != substmt) || (((struct lysp_ext_instance *)ext)[u].parent_stmt_index != substmt_index)) {
+            continue;
+        }
+        yprp_extension_instances(ctx, substmt, substmt_index, &((struct lysp_ext_instance *)ext)[u], &extflag, 1);
     }
 
     /* argument as yin-element */
-    if (ext_substmt_info[substmt].flags & SUBST_FLAG_YIN) {
-        yin_print_arg(out, level + 1, ext_substmt_info[substmt].arg, text);
+    if (stmt_attr_info[substmt].flags & STMT_FLAG_YIN) {
+        ypr_yin_arg(ctx, stmt_attr_info[substmt].arg, text);
     }
 
-    yin_print_close(out, level, NULL, ext_substmt_info[substmt].name, content);
+    LEVEL--;
+    ypr_close(ctx, stmt_attr_info[substmt].name, extflag);
 }
 
 static void
-yin_print_iffeature(struct lyout *out, int level, const struct lys_module *module, struct lys_iffeature *iffeature)
+ypr_unsigned(struct lys_ypr_ctx *ctx, enum ly_stmt substmt, uint8_t substmt_index, void *exts, unsigned long int attr_value)
 {
-    ly_print(out, "%*s<if-feature name=\"", LEVEL, INDENT);
-    ly_print_iffeature(out, module, iffeature, 0);
+    char *str;
 
-    /* extensions */
-    if (iffeature->ext_size) {
-        ly_print(out, "\">\n");
-        yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_SELF, 0, iffeature->ext, iffeature->ext_size);
-        ly_print(out, "%*s</if-feature>\n", LEVEL, INDENT);
+    if (asprintf(&str, "%lu", attr_value) == -1) {
+        LOGMEM(ctx->module->ctx);
+        return;
+    }
+    ypr_substmt(ctx, substmt, substmt_index, str, exts);
+    free(str);
+}
+
+static void
+ypr_signed(struct lys_ypr_ctx *ctx, enum ly_stmt substmt, uint8_t substmt_index, void *exts, signed long int attr_value)
+{
+    char *str;
+
+    if (asprintf(&str, "%ld", attr_value) == -1) {
+        LOGMEM(ctx->module->ctx);
+        return;
+    }
+    ypr_substmt(ctx, substmt, substmt_index, str, exts);
+    free(str);
+}
+
+static void
+yprp_revision(struct lys_ypr_ctx *ctx, const struct lysp_revision *rev)
+{
+    if (rev->dsc || rev->ref || rev->exts) {
+        ypr_open(ctx, "revision", "date", rev->date, 1);
+        LEVEL++;
+        yprp_extension_instances(ctx, LY_STMT_REVISION, 0, rev->exts, NULL, 0);
+        ypr_substmt(ctx, LY_STMT_DESCRIPTION, 0, rev->dsc, rev->exts);
+        ypr_substmt(ctx, LY_STMT_REFERENCE, 0, rev->ref, rev->exts);
+        LEVEL--;
+        ypr_close(ctx, "revision", 1);
     } else {
-        ly_print(out, "\"/>\n");
+        ypr_open(ctx, "revision", "date", rev->date, -1);
     }
 }
 
-/*
- * Covers:
- * extension (instances), if-features, config, mandatory, status, description, reference
- */
-#define SNODE_COMMON_EXT    0x01
-#define SNODE_COMMON_IFF    0x02
-#define SNODE_COMMON_CONFIG 0x04
-#define SNODE_COMMON_MAND   0x08
-#define SNODE_COMMON_STATUS 0x10
-#define SNODE_COMMON_DSC    0x20
-#define SNODE_COMMON_REF    0x40
 static void
-yin_print_snode_common(struct lyout *out, int level, const struct lys_node *node, const struct lys_module *module,
-                       int *par_close_flag, int mask)
+ypr_mandatory(struct lys_ypr_ctx *ctx, uint16_t flags, void *exts, int8_t *flag)
 {
-    int i;
+    if (flags & LYS_MAND_MASK) {
+        ypr_close_parent(ctx, flag);
+        ypr_substmt(ctx, LY_STMT_MANDATORY, 0, (flags & LYS_MAND_TRUE) ? "true" : "false", exts);
+    }
+}
+
+static void
+ypr_config(struct lys_ypr_ctx *ctx, uint16_t flags, void *exts, int8_t *flag)
+{
+    if (flags & LYS_CONFIG_MASK) {
+        ypr_close_parent(ctx, flag);
+        ypr_substmt(ctx, LY_STMT_CONFIG, 0, (flags & LYS_CONFIG_W) ? "true" : "false", exts);
+    }
+}
+
+static void
+ypr_status(struct lys_ypr_ctx *ctx, uint16_t flags, void *exts, int8_t *flag)
+{
     const char *status = NULL;
 
-    /* extensions */
-    if ((mask & SNODE_COMMON_EXT) && node->ext_size) {
-        yin_print_close_parent(out, par_close_flag);
-        yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0, node->ext, node->ext_size);
+    if (flags & LYS_STATUS_CURR) {
+        ypr_close_parent(ctx, flag);
+        status = "current";
+    } else if (flags & LYS_STATUS_DEPRC) {
+        ypr_close_parent(ctx, flag);
+        status = "deprecated";
+    } else if (flags & LYS_STATUS_OBSLT) {
+        ypr_close_parent(ctx, flag);
+        status = "obsolete";
     }
 
-    /* if-features */
-    if (mask & SNODE_COMMON_IFF) {
-        for (i = 0; i < node->iffeature_size; ++i) {
-            yin_print_close_parent(out, par_close_flag);
-            yin_print_iffeature(out, level, module, &node->iffeature[i]);
-        }
-    }
+    ypr_substmt(ctx, LY_STMT_STATUS, 0, status, exts);
+}
 
-    /* config */
-    if (mask & SNODE_COMMON_CONFIG) {
-        /* get info if there is an extension for the config statement */
-        i = lys_ext_iter(node->ext, node->ext_size, 0, LYEXT_SUBSTMT_CONFIG);
-
-        if (lys_parent(node)) {
-            if ((node->flags & LYS_CONFIG_SET) || i != -1) {
-                /* print config when it differs from the parent or if it has an extension instance ... */
-                if (node->flags & LYS_CONFIG_W) {
-                    yin_print_close_parent(out, par_close_flag);
-                    yin_print_substmt(out, level, LYEXT_SUBSTMT_CONFIG, 0, "true",
-                                      module, node->ext, node->ext_size);
-                } else if (node->flags & LYS_CONFIG_R) {
-                    yin_print_close_parent(out, par_close_flag);
-                    yin_print_substmt(out, level, LYEXT_SUBSTMT_CONFIG, 0, "false",
-                                      module, node->ext, node->ext_size);
-                }
-            }
-        } else if (node->flags & LYS_CONFIG_R) {
-            /* ... or it's a top-level state node */
-            yin_print_close_parent(out, par_close_flag);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_CONFIG, 0, "false",
-                              module, node->ext, node->ext_size);
-        } else if (i != -1) {
-            /* the config has an extension, so we have to print it */
-            yin_print_close_parent(out, par_close_flag);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_CONFIG, 0, "true",
-                              module, node->ext, node->ext_size);
-        }
-    }
-
-    /* mandatory */
-    if ((mask & SNODE_COMMON_MAND) && (node->nodetype & (LYS_LEAF | LYS_CHOICE | LYS_ANYDATA))) {
-        if (node->flags & LYS_MAND_TRUE) {
-            yin_print_close_parent(out, par_close_flag);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_MANDATORY, 0, "true",
-                              module, node->ext, node->ext_size);
-        } else if (node->flags & LYS_MAND_FALSE) {
-            yin_print_close_parent(out, par_close_flag);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_MANDATORY, 0, "false",
-                              module, node->ext, node->ext_size);
-        }
-    }
-
-    /* status */
-    if (mask & SNODE_COMMON_STATUS) {
-        if (node->flags & LYS_STATUS_CURR) {
-            yin_print_close_parent(out, par_close_flag);
-            status = "current";
-        } else if (node->flags & LYS_STATUS_DEPRC) {
-            yin_print_close_parent(out, par_close_flag);
-            status = "deprecated";
-        } else if (node->flags & LYS_STATUS_OBSLT) {
-            yin_print_close_parent(out, par_close_flag);
-            status = "obsolete";
-        }
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_STATUS, 0, status, module, node->ext, node->ext_size);
-    }
-
-    /* description */
-    if ((mask & SNODE_COMMON_DSC) && node->dsc) {
-        yin_print_close_parent(out, par_close_flag);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DESCRIPTION, 0, node->dsc,
-                           module, node->ext, node->ext_size);
-    }
-
-    /* reference */
-    if ((mask & SNODE_COMMON_REF) && node->ref) {
-        yin_print_close_parent(out, par_close_flag);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_REFERENCE, 0, node->ref,
-                          module, node->ext, node->ext_size);
+static void
+ypr_description(struct lys_ypr_ctx *ctx, const char *dsc, void *exts, int8_t *flag)
+{
+    if (dsc) {
+        ypr_close_parent(ctx, flag);
+        ypr_substmt(ctx, LY_STMT_DESCRIPTION, 0, dsc, exts);
     }
 }
 
 static void
-yin_print_extension(struct lyout *out, int level, const struct lys_ext *ext)
+ypr_reference(struct lys_ypr_ctx *ctx, const char *ref, void *exts, int8_t *flag)
 {
-    int close = 0, close2 = 0, i;
-
-    yin_print_open(out, level, NULL, "extension", "name", ext->name, close);
-    level++;
-
-    yin_print_snode_common(out, level, (struct lys_node *)ext, ext->module, &close,
-                           SNODE_COMMON_EXT);
-
-    if (ext->argument) {
-        yin_print_close_parent(out, &close);
-        yin_print_open(out, level, NULL, "argument", "name", ext->argument, close2);
-        i = -1;
-        while ((i = lys_ext_iter(ext->ext, ext->ext_size, i + 1, LYEXT_SUBSTMT_ARGUMENT)) != -1) {
-            yin_print_close_parent(out, &close2);
-            yin_print_extension_instances(out, level + 1, ext->module, LYEXT_SUBSTMT_ARGUMENT, 0, &ext->ext[i], 1);
-        }
-        if ((ext->flags & LYS_YINELEM) || lys_ext_iter(ext->ext, ext->ext_size, 0, LYEXT_SUBSTMT_YINELEM) != -1) {
-            yin_print_close_parent(out, &close2);
-            yin_print_substmt(out, level + 1, LYEXT_SUBSTMT_YINELEM, 0,
-                              (ext->flags & LYS_YINELEM) ? "true" : "false", ext->module, ext->ext, ext->ext_size);
-        }
-        yin_print_close(out, level, NULL, "argument", close2);
-    }
-
-    yin_print_snode_common(out, level, (struct lys_node *)ext, ext->module, &close,
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-
-    level--;
-    yin_print_close(out, level, NULL, "extension", close);
-}
-
-static void
-yin_print_restr(struct lyout *out, int level, const struct lys_module *module, const struct lys_restr *restr,
-                    int *flag)
-{
-    if (restr->ext_size) {
-        yin_print_close_parent(out, flag);
-        yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0,
-                                      restr->ext, restr->ext_size);
-    }
-    if (restr->expr[0] == 0x15) {
-        /* special byte value in pattern's expression: 0x15 - invert-match, 0x06 - match */
-        yin_print_close_parent(out, flag);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_MODIFIER, 0, "invert-match", module,
-                          restr->ext, restr->ext_size);
-    }
-    if (restr->emsg != NULL) {
-        yin_print_close_parent(out, flag);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_ERRMSG, 0, restr->emsg,
-                          module, restr->ext, restr->ext_size);
-    }
-    if (restr->eapptag != NULL) {
-        yin_print_close_parent(out, flag);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_ERRTAG, 0, restr->eapptag,
-                          module, restr->ext, restr->ext_size);
-    }
-    if (restr->dsc != NULL) {
-        yin_print_close_parent(out, flag);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DESCRIPTION, 0, restr->dsc,
-                          module, restr->ext, restr->ext_size);
-    }
-    if (restr->ref != NULL) {
-        yin_print_close_parent(out, flag);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_REFERENCE, 0, restr->ref,
-                          module, restr->ext, restr->ext_size);
-    }
-}
-
-/* covers length, range, pattern*/
-static void
-yin_print_typerestr(struct lyout *out, int level, const struct lys_module *module,
-                    const struct lys_restr *restr, const char *elem_name)
-{
-    int content = 0;
-    int pattern = 0;
-
-    if (restr->expr[0] == 0x06 || restr->expr[0] == 0x15) {
-        pattern = 1;
-    }
-
-    yin_print_open(out, level, NULL, elem_name, "value", pattern ? &restr->expr[1] : restr->expr , content);
-    yin_print_restr(out, level + 1, module, restr, &content);
-    yin_print_close(out, level, NULL, elem_name, content);
-}
-
-static void
-yin_print_feature(struct lyout *out, int level, const struct lys_feature *feat)
-{
-    int close = 0;
-
-    yin_print_open(out, level, NULL, "feature", "name", feat->name, close);
-    yin_print_snode_common(out, level + 1, (struct lys_node *)feat, feat->module, &close, SNODE_COMMON_EXT |
-                            SNODE_COMMON_IFF | SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-    yin_print_close(out, level, NULL, "feature", close);
-}
-
-static void
-yin_print_when(struct lyout *out, int level, const struct lys_module *module, const struct lys_when *when)
-{
-    int flag = 0;
-    const char *str;
-
-    str = transform_json2schema(module, when->cond);
-    if (!str) {
-        ly_print(out, "(!error!)");
-        return;
-    }
-
-    ly_print(out, "%*s<when condition=\"", LEVEL, INDENT);
-    lyxml_dump_text(out, str, LYXML_DATA_ATTR);
-    ly_print(out, "\"");
-    lydict_remove(module->ctx, str);
-
-    level++;
-
-    if (when->ext_size) {
-        /* extension is stored in lys_when incompatible with lys_node, so we cannot use yang_print_snode_common() */
-        yin_print_close_parent(out, &flag);
-        yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0, when->ext, when->ext_size);
-    }
-    if (when->dsc != NULL) {
-        yin_print_close_parent(out, &flag);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DESCRIPTION, 0, when->dsc,
-                          module, when->ext, when->ext_size);
-    }
-    if (when->ref != NULL) {
-        yin_print_close_parent(out, &flag);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_REFERENCE, 0, when->ref,
-                          module, when->ext, when->ext_size);
-    }
-
-    level--;
-    yin_print_close(out, level, NULL, "when", flag);
-}
-
-static void
-yin_print_unsigned(struct lyout *out, int level, LYEXT_SUBSTMT substmt, uint8_t substmt_index,
-                   const struct lys_module *module, struct lys_ext_instance **ext, unsigned int ext_size,
-                   unsigned int attr_value)
-{
-    char *str;
-
-    if (asprintf(&str, "%u", attr_value) == -1) {
-        LOGMEM(module->ctx);
-    } else {
-        yin_print_substmt(out, level, substmt, substmt_index, str, module, ext, ext_size);
-        free(str);
+    if (ref) {
+        ypr_close_parent(ctx, flag);
+        ypr_substmt(ctx, LY_STMT_REFERENCE, 0, ref, exts);
     }
 }
 
 static void
-yin_print_signed(struct lyout *out, int level, LYEXT_SUBSTMT substmt, uint8_t substmt_index,
-                 const struct lys_module *module, struct lys_ext_instance **ext, unsigned int ext_size,
-                 signed int attr_value)
+yprp_iffeatures(struct lys_ypr_ctx *ctx, struct lysp_qname *iffs, struct lysp_ext_instance *exts, int8_t *flag)
 {
-    char *str;
+    LY_ARRAY_COUNT_TYPE u, v;
+    int8_t extflag;
 
-    if (asprintf(&str, "%d", attr_value) == -1) {
-        LOGMEM(module->ctx);
-    } else {
-        yin_print_substmt(out, level, substmt, substmt_index, str, module, ext, ext_size);
-        free(str);
-    }
-}
+    LY_ARRAY_FOR(iffs, u) {
+        ypr_close_parent(ctx, flag);
+        extflag = 0;
 
-static void
-yin_print_type(struct lyout *out, int level, const struct lys_module *module, const struct lys_type *type)
-{
-    unsigned int i;
-    int content = 0, content2 = 0;
-    const char *str;
-    char *s;
-    struct lys_module *mod;
-
-    if (!lys_type_is_local(type)) {
-        ly_print(out, "%*s<type name=\"%s:%s\"", LEVEL, INDENT,
-                 transform_module_name2import_prefix(module, lys_main_module(type->der->module)->name), type->der->name);
-    } else {
-        yin_print_open(out, level, NULL, "type", "name", type->der->name, content);
-    }
-    level++;
-
-    /* extensions */
-    if (type->ext_size) {
-        yin_print_close_parent(out, &content);
-        yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0, type->ext, type->ext_size);
-    }
-
-
-    switch (type->base) {
-    case LY_TYPE_BINARY:
-        if (type->info.binary.length) {
-            yin_print_close_parent(out, &content);
-            yin_print_typerestr(out, level, module, type->info.binary.length, "length");
-        }
-        break;
-    case LY_TYPE_BITS:
-        for (i = 0; i < type->info.bits.count; ++i) {
-            content2 = 0;
-            yin_print_close_parent(out, &content);
-            yin_print_open(out, level, NULL, "bit", "name", type->info.bits.bit[i].name, content2);
-            yin_print_snode_common(out, level + 1, (struct lys_node *)&type->info.bits.bit[i], module, &content2,
-                                   SNODE_COMMON_EXT | SNODE_COMMON_IFF);
-            if (!(type->info.bits.bit[i].flags & LYS_AUTOASSIGNED)) {
-                yin_print_close_parent(out, &content2);
-                yin_print_unsigned(out, level + 1, LYEXT_SUBSTMT_POSITION, 0, module,
-                                   type->info.bits.bit[i].ext, type->info.bits.bit[i].ext_size,
-                                   type->info.bits.bit[i].pos);
-            }
-            yin_print_snode_common(out, level + 1, (struct lys_node *)&type->info.bits.bit[i], module, &content2,
-                                   SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-            yin_print_close(out, level, NULL, "bit", content2);
-        }
-        break;
-    case LY_TYPE_DEC64:
-        if (!type->der->type.der) {
-            yin_print_close_parent(out, &content);
-            yin_print_unsigned(out, level, LYEXT_SUBSTMT_DIGITS, 0, module,
-                               type->ext, type->ext_size, type->info.dec64.dig);
-        }
-        if (type->info.dec64.range) {
-            yin_print_close_parent(out, &content);
-            yin_print_typerestr(out, level, module, type->info.dec64.range, "range");
-        }
-        break;
-    case LY_TYPE_ENUM:
-        for (i = 0; i < type->info.enums.count; i++) {
-            content2 = 0;
-            yin_print_close_parent(out, &content);
-            yin_print_open(out, level, NULL, "enum", "name", type->info.enums.enm[i].name, content2);
-            yin_print_snode_common(out, level + 1, (struct lys_node *)&type->info.enums.enm[i], module, &content2,
-                                   SNODE_COMMON_EXT | SNODE_COMMON_IFF);
-            if (!(type->info.enums.enm[i].flags & LYS_AUTOASSIGNED)) {
-                yin_print_close_parent(out, &content2);
-                yin_print_signed(out, level + 1, LYEXT_SUBSTMT_VALUE, 0, module,
-                                 type->info.enums.enm[i].ext, type->info.enums.enm[i].ext_size,
-                                 type->info.enums.enm[i].value);
-            }
-            yin_print_snode_common(out, level + 1, (struct lys_node *)&type->info.enums.enm[i], module, &content2,
-                                   SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-            yin_print_close(out, level, NULL, "enum", content2);
-        }
-        break;
-    case LY_TYPE_IDENT:
-        if (type->info.ident.count) {
-            yin_print_close_parent(out, &content);
-            for (i = 0; i < type->info.ident.count; ++i) {
-                mod = lys_main_module(type->info.ident.ref[i]->module);
-                if (lys_main_module(module) == mod) {
-                    yin_print_substmt(out, level, LYEXT_SUBSTMT_BASE, 0, type->info.ident.ref[i]->name,
-                                      module, type->info.ident.ref[i]->ext, type->info.ident.ref[i]->ext_size);
-                } else {
-                    if (asprintf(&s, "%s:%s", transform_module_name2import_prefix(module, mod->name),
-                                 type->info.ident.ref[i]->name) == -1) {
-                        LOGMEM(module->ctx);
-                    } else {
-                        yin_print_substmt(out, level, LYEXT_SUBSTMT_BASE, 0, s,
-                                          module, type->info.ident.ref[i]->ext, type->info.ident.ref[i]->ext_size);
-                        free(s);
-                    }
-                }
-            }
-        }
-        break;
-    case LY_TYPE_INST:
-        if (type->info.inst.req == 1) {
-            yin_print_close_parent(out, &content);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_REQINSTANCE, 0, "true", module, type->ext, type->ext_size);
-        } else if (type->info.inst.req == -1) {
-            yin_print_close_parent(out, &content);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_REQINSTANCE, 0, "false", module, type->ext, type->ext_size);
-        }
-        break;
-    case LY_TYPE_INT8:
-    case LY_TYPE_INT16:
-    case LY_TYPE_INT32:
-    case LY_TYPE_INT64:
-    case LY_TYPE_UINT8:
-    case LY_TYPE_UINT16:
-    case LY_TYPE_UINT32:
-    case LY_TYPE_UINT64:
-        if (type->info.num.range) {
-            yin_print_close_parent(out, &content);
-            yin_print_typerestr(out, level, module, type->info.num.range, "range");
-        }
-        break;
-    case LY_TYPE_LEAFREF:
-        if (ly_strequal(type->der->name, "leafref", 0)) {
-            yin_print_close_parent(out, &content);
-            str = transform_json2schema(module, type->info.lref.path);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_PATH, 0, str, module, type->ext, type->ext_size);
-            lydict_remove(module->ctx, str);
-        }
-        if (type->info.lref.req == 1) {
-            yin_print_close_parent(out, &content);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_REQINSTANCE, 0, "true", module, type->ext, type->ext_size);
-        } else if (type->info.lref.req == -1) {
-            yin_print_close_parent(out, &content);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_REQINSTANCE, 0, "false", module, type->ext, type->ext_size);
-        }
-        break;
-    case LY_TYPE_STRING:
-        if (type->info.str.length) {
-            yin_print_close_parent(out, &content);
-            yin_print_typerestr(out, level, module, type->info.str.length, "length");
-        }
-        for (i = 0; i < type->info.str.pat_count; i++) {
-            yin_print_close_parent(out, &content);
-            yin_print_typerestr(out, level, module, &type->info.str.patterns[i], "pattern");
-        }
-        break;
-    case LY_TYPE_UNION:
-        for (i = 0; i < type->info.uni.count; ++i) {
-            yin_print_close_parent(out, &content);
-            yin_print_type(out, level, module, &type->info.uni.types[i]);
-        }
-        break;
-    default:
-        /* other types do not have substatements */
-        break;
-    }
-
-    level--;
-    yin_print_close(out, level, NULL, "type", content);
-}
-
-static void
-yin_print_must(struct lyout *out, int level, const struct lys_module *module, const struct lys_restr *must)
-{
-    const char *str;
-    int content = 0;
-
-    str = transform_json2schema(module, must->expr);
-    if (!str) {
-        ly_print(out, "(!error!)");
-        return;
-    }
-
-    ly_print(out, "%*s<must condition=\"", LEVEL, INDENT);
-    lyxml_dump_text(out, str, LYXML_DATA_ATTR);
-    ly_print(out, "\"");
-    lydict_remove(module->ctx, str);
-
-    yin_print_restr(out, level + 1, module, must, &content);
-    yin_print_close(out, level, NULL, "must", content);
-}
-
-static void
-yin_print_unique(struct lyout *out, int level, const struct lys_module *module, const struct lys_unique *uniq)
-{
-    int i;
-    const char *str;
-
-    ly_print(out, "%*s<unique tag=\"", LEVEL, INDENT);
-    for (i = 0; i < uniq->expr_size; i++) {
-        str = transform_json2schema(module, uniq->expr[i]);
-        ly_print(out, "%s%s", str, i + 1 < uniq->expr_size ? " " : "");
-        lydict_remove(module->ctx, str);
-    }
-    ly_print(out, "\"");
-}
-
-static void
-yin_print_refine(struct lyout *out, int level, const struct lys_module *module, const struct lys_refine *refine)
-{
-    int i, content = 0;
-    const char *str;
-
-    str = transform_json2xml(module, refine->target_name, 0, NULL, NULL, NULL);
-    yin_print_open(out, level, NULL, "refine", "target-node", str, content);
-    lydict_remove(module->ctx, str);
-
-    level++;
-    yin_print_snode_common(out, level, (struct lys_node *)refine, module, &content,
-                           SNODE_COMMON_EXT | SNODE_COMMON_IFF);
-    for (i = 0; i < refine->must_size; ++i) {
-        yin_print_close_parent(out, &content);
-        yin_print_must(out, level, module, &refine->must[i]);
-    }
-    if (refine->target_type == LYS_CONTAINER && refine->mod.presence) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_PRESENCE, 0, refine->mod.presence,
-                          module, refine->ext, refine->ext_size);
-    }
-    for (i = 0; i < refine->dflt_size; ++i) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DEFAULT, i, refine->dflt[i],
-                          module, refine->ext, refine->ext_size);
-    }
-    if (refine->flags & LYS_CONFIG_W) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_CONFIG, 0, "true", module, refine->ext, refine->ext_size);
-    } else if (refine->flags & LYS_CONFIG_R) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_CONFIG, 0, "false", module, refine->ext, refine->ext_size);
-    }
-    if (refine->flags & LYS_MAND_TRUE) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_MANDATORY, 0, "true", module, refine->ext, refine->ext_size);
-    } else if (refine->flags & LYS_MAND_FALSE) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_MANDATORY, 0, "false", module, refine->ext, refine->ext_size);
-    }
-    if (refine->target_type & (LYS_LIST | LYS_LEAFLIST)) {
-        if (refine->flags & LYS_RFN_MINSET) {
-            yin_print_close_parent(out, &content);
-            yin_print_unsigned(out, level, LYEXT_SUBSTMT_MIN, 0, module, refine->ext, refine->ext_size,
-                               refine->mod.list.min);
-        }
-        if (refine->flags & LYS_RFN_MAXSET) {
-            yin_print_close_parent(out, &content);
-            if (refine->mod.list.max) {
-                yin_print_unsigned(out, level, LYEXT_SUBSTMT_MAX, 0, module, refine->ext, refine->ext_size,
-                                   refine->mod.list.max);
-            } else {
-                yin_print_substmt(out, level, LYEXT_SUBSTMT_MAX, 0, "unbounded", module,
-                                  refine->ext, refine->ext_size);
-            }
-        }
-    }
-    yin_print_snode_common(out, level, (struct lys_node *)refine, module, &content,
-                           SNODE_COMMON_DSC | SNODE_COMMON_REF);
-    level--;
-
-    yin_print_close(out, level, NULL, "refine", content);
-}
-
-static void
-yin_print_deviation(struct lyout *out, int level, const struct lys_module *module,
-                    const struct lys_deviation *deviation)
-{
-    int i, j, p, content;
-    const char *str;
-
-    str = transform_json2schema(module, deviation->target_name);
-    yin_print_open(out, level, NULL, "deviation", "target-node", str, 1);
-    lydict_remove(module->ctx, str);
-
-    level++;
-
-    if (deviation->ext_size) {
-        yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0, deviation->ext, deviation->ext_size);
-    }
-    yin_print_substmt(out, level, LYEXT_SUBSTMT_DESCRIPTION, 0, deviation->dsc,
-                      module, deviation->ext, deviation->ext_size);
-    yin_print_substmt(out, level, LYEXT_SUBSTMT_REFERENCE, 0, deviation->ref,
-                      module, deviation->ext, deviation->ext_size);
-
-    for (i = 0; i < deviation->deviate_size; ++i) {
-        ly_print(out, "%*s<deviate value=", LEVEL, INDENT);
-        if (deviation->deviate[i].mod == LY_DEVIATE_NO) {
-            if (deviation->deviate[i].ext_size) {
-                ly_print(out, "\"not-supported\">\n");
-            } else {
-                ly_print(out, "\"not-supported\"/>\n");
-                continue;
-            }
-        } else if (deviation->deviate[i].mod == LY_DEVIATE_ADD) {
-            ly_print(out, "\"add\">\n");
-        } else if (deviation->deviate[i].mod == LY_DEVIATE_RPL) {
-            ly_print(out, "\"replace\">\n");
-        } else if (deviation->deviate[i].mod == LY_DEVIATE_DEL) {
-            ly_print(out, "\"delete\">\n");
-        }
-        level++;
+        ly_print_(ctx->out, "%*s<if-feature name=\"%s",  INDENT, iffs[u].str);
 
         /* extensions */
-        if (deviation->deviate[i].ext_size) {
-            yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0,
-                                          deviation->deviate[i].ext, deviation->deviate[i].ext_size);
+        LEVEL++;
+        LY_ARRAY_FOR(exts, v) {
+            yprp_extension_instances(ctx, LY_STMT_IF_FEATURE, u, &exts[v], &extflag, 1);
         }
-
-        /* type */
-        if (deviation->deviate[i].type) {
-            yin_print_type(out, level, module, deviation->deviate[i].type);
-        }
-
-        /* units */
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_UNITS, 0, deviation->deviate[i].units, module,
-                          deviation->deviate[i].ext, deviation->deviate[i].ext_size);
-
-        /* must */
-        for (j = 0; j < deviation->deviate[i].must_size; ++j) {
-            yin_print_must(out, level, module, &deviation->deviate[i].must[j]);
-        }
-
-        /* unique */
-        for (j = 0; j < deviation->deviate[i].unique_size; ++j) {
-            yin_print_unique(out, level, module, &deviation->deviate[i].unique[j]);
-            content = 0;
-            /* unique's extensions */
-            p = -1;
-            do {
-                p = lys_ext_iter(deviation->deviate[i].ext, deviation->deviate[i].ext_size,
-                                      p + 1, LYEXT_SUBSTMT_UNIQUE);
-            } while (p != -1 && deviation->deviate[i].ext[p]->insubstmt_index != j);
-            if (p != -1) {
-                yin_print_close_parent(out, &content);
-                do {
-                    yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_UNIQUE, j,
-                                                  &deviation->deviate[i].ext[p], 1);
-                    do {
-                        p = lys_ext_iter(deviation->deviate[i].ext, deviation->deviate[i].ext_size,
-                                              p + 1, LYEXT_SUBSTMT_UNIQUE);
-                    } while (p != -1 && deviation->deviate[i].ext[p]->insubstmt_index != j);
-                } while (p != -1);
-            }
-            yin_print_close(out, level, NULL, "unique", content);
-        }
-
-        /* default */
-        for (j = 0; j < deviation->deviate[i].dflt_size; ++j) {
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_DEFAULT, j, deviation->deviate[i].dflt[j], module,
-                              deviation->deviate[i].ext, deviation->deviate[i].ext_size);
-        }
-
-        /* config */
-        if (deviation->deviate[i].flags & LYS_CONFIG_W) {
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_CONFIG, 0, "true", module,
-                              deviation->deviate->ext, deviation->deviate[i].ext_size);
-        } else if (deviation->deviate[i].flags & LYS_CONFIG_R) {
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_CONFIG, 0, "false", module,
-                               deviation->deviate->ext, deviation->deviate[i].ext_size);
-        }
-
-        /* mandatory */
-        if (deviation->deviate[i].flags & LYS_MAND_TRUE) {
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_MANDATORY, 0, "true", module,
-                              deviation->deviate[i].ext, deviation->deviate[i].ext_size);
-        } else if (deviation->deviate[i].flags & LYS_MAND_FALSE) {
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_MANDATORY, 0, "false", module,
-                              deviation->deviate[i].ext, deviation->deviate[i].ext_size);
-        }
-
-        /* min-elements */
-        if (deviation->deviate[i].min_set) {
-            yin_print_unsigned(out, level, LYEXT_SUBSTMT_MIN, 0, module,
-                               deviation->deviate[i].ext, deviation->deviate[i].ext_size,
-                               deviation->deviate[i].min);
-        }
-
-        /* max-elements */
-        if (deviation->deviate[i].max_set) {
-            if (deviation->deviate[i].max) {
-                yin_print_unsigned(out, level, LYEXT_SUBSTMT_MAX, 0, module,
-                                   deviation->deviate[i].ext, deviation->deviate[i].ext_size,
-                                   deviation->deviate[i].max);
-            } else {
-                yin_print_substmt(out, level, LYEXT_SUBSTMT_MAX, 0, "unbounded", module,
-                                  deviation->deviate[i].ext, deviation->deviate[i].ext_size);
-            }
-        }
-        level--;
-
-        yin_print_close(out, level, NULL, "deviate", 1);
+        LEVEL--;
+        ly_print_(ctx->out, "\"/>\n");
     }
-
-    level--;
-    yin_print_close(out, level, NULL, "deviation", 1);
 }
 
 static void
-yin_print_augment(struct lyout *out, int level, const struct lys_module *module,
-                  const struct lys_node_augment *augment)
+yprp_extension(struct lys_ypr_ctx *ctx, const struct lysp_ext *ext)
 {
-    struct lys_node *sub;
-    const char *str;
+    int8_t flag = 0, flag2 = 0;
+    LY_ARRAY_COUNT_TYPE u;
 
-    str = transform_json2schema(module, augment->target_name);
-    yin_print_open(out, level, NULL, "augment", "target-node", str, 1);
-    lydict_remove(module->ctx, str);
-    level++;
+    ypr_open(ctx, "extension", "name", ext->name, flag);
+    LEVEL++;
 
-    yin_print_snode_common(out, level, (struct lys_node *)augment, augment->module, NULL, SNODE_COMMON_EXT);
-    if (augment->when) {
-        yin_print_when(out, level, module, augment->when);
+    if (ext->exts) {
+        ypr_close_parent(ctx, &flag);
+        yprp_extension_instances(ctx, LY_STMT_EXTENSION, 0, ext->exts, &flag, 0);
     }
-    yin_print_snode_common(out, level, (struct lys_node *)augment, augment->module, NULL,
-                           SNODE_COMMON_IFF | SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
 
+    if (ext->argname) {
+        ypr_close_parent(ctx, &flag);
+        ypr_open(ctx, "argument", "name", ext->argname, flag2);
 
-    LY_TREE_FOR(augment->child, sub) {
-        /* only our augment */
-        if (sub->parent != (struct lys_node *)augment) {
-            continue;
+        LEVEL++;
+        if (ext->exts) {
+            u = -1;
+            while ((u = lysp_ext_instance_iter(ext->exts, u + 1, LY_STMT_ARGUMENT)) != LY_ARRAY_COUNT(ext->exts)) {
+                ypr_close_parent(ctx, &flag2);
+                yprp_extension_instances(ctx, LY_STMT_ARGUMENT, 0, &ext->exts[u], &flag2, 1);
+            }
         }
-        yin_print_snode(out, level, sub,
-                        LYS_CHOICE | LYS_CONTAINER | LYS_LEAF | LYS_LEAFLIST | LYS_LIST |
-                        LYS_USES | LYS_ANYDATA | LYS_CASE | LYS_ACTION | LYS_NOTIF);
+        if ((ext->flags & LYS_YINELEM_MASK) ||
+                (ext->exts && (lysp_ext_instance_iter(ext->exts, 0, LY_STMT_YIN_ELEMENT) != LY_ARRAY_COUNT(ext->exts)))) {
+            ypr_close_parent(ctx, &flag2);
+            ypr_substmt(ctx, LY_STMT_YIN_ELEMENT, 0, (ext->flags & LYS_YINELEM_TRUE) ? "true" : "false", ext->exts);
+        }
+        LEVEL--;
+        ypr_close(ctx, "argument", flag2);
     }
-    level--;
 
-    yin_print_close(out, level, NULL, "augment", 1);
+    ypr_status(ctx, ext->flags, ext->exts, &flag);
+    ypr_description(ctx, ext->dsc, ext->exts, &flag);
+    ypr_reference(ctx, ext->ref, ext->exts, &flag);
+
+    LEVEL--;
+    ypr_close(ctx, "extension", flag);
 }
 
 static void
-yin_print_typedef(struct lyout *out, int level, const struct lys_module *module, const struct lys_tpdf *tpdf)
+yprp_feature(struct lys_ypr_ctx *ctx, const struct lysp_feature *feat)
 {
-    const char *dflt;
+    int8_t flag = 0;
 
-    yin_print_open(out, level, NULL, "typedef", "name", tpdf->name, 1);
-    level++;
+    ypr_open(ctx, "feature", "name", feat->name, flag);
+    LEVEL++;
+    yprp_extension_instances(ctx, LY_STMT_FEATURE, 0, feat->exts, &flag, 0);
+    yprp_iffeatures(ctx, feat->iffeatures, feat->exts, &flag);
+    ypr_status(ctx, feat->flags, feat->exts, &flag);
+    ypr_description(ctx, feat->dsc, feat->exts, &flag);
+    ypr_reference(ctx, feat->ref, feat->exts, &flag);
+    LEVEL--;
+    ypr_close(ctx, "feature", flag);
+}
 
-    yin_print_snode_common(out, level, (struct lys_node *)tpdf, module, NULL, SNODE_COMMON_EXT);
-    yin_print_type(out, level, module, &tpdf->type);
+static void
+yprp_identity(struct lys_ypr_ctx *ctx, const struct lysp_ident *ident)
+{
+    int8_t flag = 0;
+    LY_ARRAY_COUNT_TYPE u;
+
+    ypr_open(ctx, "identity", "name", ident->name, flag);
+    LEVEL++;
+
+    yprp_extension_instances(ctx, LY_STMT_IDENTITY, 0, ident->exts, &flag, 0);
+    yprp_iffeatures(ctx, ident->iffeatures, ident->exts, &flag);
+
+    LY_ARRAY_FOR(ident->bases, u) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_BASE, u, ident->bases[u], ident->exts);
+    }
+
+    ypr_status(ctx, ident->flags, ident->exts, &flag);
+    ypr_description(ctx, ident->dsc, ident->exts, &flag);
+    ypr_reference(ctx, ident->ref, ident->exts, &flag);
+
+    LEVEL--;
+    ypr_close(ctx, "identity", flag);
+}
+
+static void
+yprp_restr(struct lys_ypr_ctx *ctx, const struct lysp_restr *restr, enum ly_stmt stmt, const char *attr, int8_t *flag)
+{
+    (void)flag;
+    int8_t inner_flag = 0;
+
+    if (!restr) {
+        return;
+    }
+
+    ly_print_(ctx->out, "%*s<%s %s=\"", INDENT, ly_stmt2str(stmt), attr);
+    lyxml_dump_text(ctx->out,
+            (restr->arg.str[0] != LYSP_RESTR_PATTERN_NACK && restr->arg.str[0] != LYSP_RESTR_PATTERN_ACK) ?
+            restr->arg.str : &restr->arg.str[1], 1);
+    ly_print_(ctx->out, "\"");
+
+    LEVEL++;
+    yprp_extension_instances(ctx, stmt, 0, restr->exts, &inner_flag, 0);
+    if (restr->arg.str[0] == LYSP_RESTR_PATTERN_NACK) {
+        ypr_close_parent(ctx, &inner_flag);
+        /* special byte value in pattern's expression: 0x15 - invert-match, 0x06 - match */
+        ypr_substmt(ctx, LY_STMT_MODIFIER, 0, "invert-match", restr->exts);
+    }
+    if (restr->emsg) {
+        ypr_close_parent(ctx, &inner_flag);
+        ypr_substmt(ctx, LY_STMT_ERROR_MESSAGE, 0, restr->emsg, restr->exts);
+    }
+    if (restr->eapptag) {
+        ypr_close_parent(ctx, &inner_flag);
+        ypr_substmt(ctx, LY_STMT_ERROR_APP_TAG, 0, restr->eapptag, restr->exts);
+    }
+    ypr_description(ctx, restr->dsc, restr->exts, &inner_flag);
+    ypr_reference(ctx, restr->ref, restr->exts, &inner_flag);
+
+    LEVEL--;
+    ypr_close(ctx, ly_stmt2str(stmt), inner_flag);
+}
+
+static void
+yprp_when(struct lys_ypr_ctx *ctx, struct lysp_when *when, int8_t *flag)
+{
+    int8_t inner_flag = 0;
+
+    (void)flag;
+
+    if (!when) {
+        return;
+    }
+
+    ly_print_(ctx->out, "%*s<when condition=\"", INDENT);
+    lyxml_dump_text(ctx->out, when->cond, 1);
+    ly_print_(ctx->out, "\"");
+
+    LEVEL++;
+    yprp_extension_instances(ctx, LY_STMT_WHEN, 0, when->exts, &inner_flag, 0);
+    ypr_description(ctx, when->dsc, when->exts, &inner_flag);
+    ypr_reference(ctx, when->ref, when->exts, &inner_flag);
+    LEVEL--;
+    ypr_close(ctx, "when", inner_flag);
+}
+
+static void
+yprp_enum(struct lys_ypr_ctx *ctx, const struct lysp_type_enum *items, LY_DATA_TYPE type, int8_t *flag)
+{
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t inner_flag;
+
+    (void)flag;
+
+    LY_ARRAY_FOR(items, u) {
+        if (type == LY_TYPE_BITS) {
+            ly_print_(ctx->out, "%*s<bit name=\"", INDENT);
+            lyxml_dump_text(ctx->out, items[u].name, 1);
+            ly_print_(ctx->out, "\"");
+        } else { /* LY_TYPE_ENUM */
+            ly_print_(ctx->out, "%*s<enum name=\"", INDENT);
+            lyxml_dump_text(ctx->out, items[u].name, 1);
+            ly_print_(ctx->out, "\"");
+        }
+        inner_flag = 0;
+        LEVEL++;
+        yprp_extension_instances(ctx, LY_STMT_ENUM, 0, items[u].exts, &inner_flag, 0);
+        yprp_iffeatures(ctx, items[u].iffeatures, items[u].exts, &inner_flag);
+        if (items[u].flags & LYS_SET_VALUE) {
+            if (type == LY_TYPE_BITS) {
+                ypr_close_parent(ctx, &inner_flag);
+                ypr_unsigned(ctx, LY_STMT_POSITION, 0, items[u].exts, items[u].value);
+            } else { /* LY_TYPE_ENUM */
+                ypr_close_parent(ctx, &inner_flag);
+                ypr_signed(ctx, LY_STMT_VALUE, 0, items[u].exts, items[u].value);
+            }
+        }
+        ypr_status(ctx, items[u].flags, items[u].exts, &inner_flag);
+        ypr_description(ctx, items[u].dsc, items[u].exts, &inner_flag);
+        ypr_reference(ctx, items[u].ref, items[u].exts, &inner_flag);
+        LEVEL--;
+        ypr_close(ctx, type == LY_TYPE_BITS ? "bit" : "enum", inner_flag);
+    }
+}
+
+static void
+yprp_type(struct lys_ypr_ctx *ctx, const struct lysp_type *type)
+{
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t flag = 0;
+
+    if (!ctx || !type) {
+        return;
+    }
+
+    ypr_open(ctx, "type", "name", type->name, flag);
+    LEVEL++;
+
+    yprp_extension_instances(ctx, LY_STMT_TYPE, 0, type->exts, &flag, 0);
+
+    if (type->range || type->length || type->patterns || type->bits || type->enums) {
+        ypr_close_parent(ctx, &flag);
+    }
+    yprp_restr(ctx, type->range, LY_STMT_RANGE, "value", &flag);
+    yprp_restr(ctx, type->length, LY_STMT_LENGTH, "value", &flag);
+    LY_ARRAY_FOR(type->patterns, u) {
+        yprp_restr(ctx, &type->patterns[u], LY_STMT_PATTERN, "value", &flag);
+    }
+    yprp_enum(ctx, type->bits, LY_TYPE_BITS, &flag);
+    yprp_enum(ctx, type->enums, LY_TYPE_ENUM, &flag);
+
+    if (type->path) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_PATH, 0, type->path->expr, type->exts);
+    }
+    if (type->flags & LYS_SET_REQINST) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_REQUIRE_INSTANCE, 0, type->require_instance ? "true" : "false", type->exts);
+    }
+    if (type->flags & LYS_SET_FRDIGITS) {
+        ypr_close_parent(ctx, &flag);
+        ypr_unsigned(ctx, LY_STMT_FRACTION_DIGITS, 0, type->exts, type->fraction_digits);
+    }
+    LY_ARRAY_FOR(type->bases, u) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_BASE, u, type->bases[u], type->exts);
+    }
+    LY_ARRAY_FOR(type->types, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_type(ctx, &type->types[u]);
+    }
+
+    LEVEL--;
+    ypr_close(ctx, "type", flag);
+}
+
+static void
+yprp_typedef(struct lys_ypr_ctx *ctx, const struct lysp_tpdf *tpdf)
+{
+    ypr_open(ctx, "typedef", "name", tpdf->name, 1);
+    LEVEL++;
+
+    yprp_extension_instances(ctx, LY_STMT_TYPEDEF, 0, tpdf->exts, NULL, 0);
+
+    yprp_type(ctx, &tpdf->type);
+
     if (tpdf->units) {
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_UNITS, 0, tpdf->units, module, tpdf->ext, tpdf->ext_size);
+        ypr_substmt(ctx, LY_STMT_UNITS, 0, tpdf->units, tpdf->exts);
     }
-    if (tpdf->dflt) {
-        if (tpdf->flags & LYS_DFLTJSON) {
-            assert(strchr(tpdf->dflt, ':'));
-            if (!strncmp(tpdf->dflt, module->name, strchr(tpdf->dflt, ':') - tpdf->dflt)) {
-                /* local module */
-                dflt = lydict_insert(module->ctx, strchr(tpdf->dflt, ':') + 1, 0);
-            } else {
-                dflt = transform_json2schema(module, tpdf->dflt);
-            }
-        } else {
-            dflt = tpdf->dflt;
-        }
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DEFAULT, 0, dflt, module, tpdf->ext, tpdf->ext_size);
-        if (tpdf->flags & LYS_DFLTJSON) {
-            lydict_remove(module->ctx, dflt);
-        }
+    if (tpdf->dflt.str) {
+        ypr_substmt(ctx, LY_STMT_DEFAULT, 0, tpdf->dflt.str, tpdf->exts);
     }
-    yin_print_snode_common(out, level, (struct lys_node *)tpdf, module, NULL,
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
 
-    level--;
-    yin_print_close(out, level, NULL, "typedef", 1);
+    ypr_status(ctx, tpdf->flags, tpdf->exts, NULL);
+    ypr_description(ctx, tpdf->dsc, tpdf->exts, NULL);
+    ypr_reference(ctx, tpdf->ref, tpdf->exts, NULL);
+
+    LEVEL--;
+    ypr_close(ctx, "typedef", 1);
+}
+
+static void yprp_node(struct lys_ypr_ctx *ctx, const struct lysp_node *node);
+static void yprp_action(struct lys_ypr_ctx *ctx, const struct lysp_node_action *action);
+static void yprp_notification(struct lys_ypr_ctx *ctx, const struct lysp_node_notif *notif);
+
+static void
+yprp_grouping(struct lys_ypr_ctx *ctx, const struct lysp_node_grp *grp)
+{
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t flag = 0;
+    struct lysp_node *data;
+    struct lysp_node_action *action;
+    struct lysp_node_notif *notif;
+    struct lysp_node_grp *subgrp;
+
+    ypr_open(ctx, "grouping", "name", grp->name, flag);
+    LEVEL++;
+
+    yprp_extension_instances(ctx, LY_STMT_GROUPING, 0, grp->exts, &flag, 0);
+    ypr_status(ctx, grp->flags, grp->exts, &flag);
+    ypr_description(ctx, grp->dsc, grp->exts, &flag);
+    ypr_reference(ctx, grp->ref, grp->exts, &flag);
+
+    LY_ARRAY_FOR(grp->typedefs, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_typedef(ctx, &grp->typedefs[u]);
+    }
+
+    LY_LIST_FOR(grp->groupings, subgrp) {
+        ypr_close_parent(ctx, &flag);
+        yprp_grouping(ctx, subgrp);
+    }
+
+    LY_LIST_FOR(grp->child, data) {
+        ypr_close_parent(ctx, &flag);
+        yprp_node(ctx, data);
+    }
+
+    LY_LIST_FOR(grp->actions, action) {
+        ypr_close_parent(ctx, &flag);
+        yprp_action(ctx, action);
+    }
+
+    LY_LIST_FOR(grp->notifs, notif) {
+        ypr_close_parent(ctx, &flag);
+        yprp_notification(ctx, notif);
+    }
+
+    LEVEL--;
+    ypr_close(ctx, "grouping", flag);
 }
 
 static void
-yin_print_identity(struct lyout *out, int level, const struct lys_ident *ident)
+yprp_inout(struct lys_ypr_ctx *ctx, const struct lysp_node_action_inout *inout, int8_t *flag)
 {
-    int content = 0, i;
-    struct lys_module *mod;
-    char *str;
+    LY_ARRAY_COUNT_TYPE u;
+    struct lysp_node *data;
+    struct lysp_node_grp *grp;
 
-    yin_print_open(out, level, NULL, "identity", "name", ident->name, content);
-    level++;
-
-    yin_print_snode_common(out, level, (struct lys_node *)ident, ident->module, &content,
-                           SNODE_COMMON_EXT | SNODE_COMMON_IFF);
-    for (i = 0; i < ident->base_size; i++) {
-        yin_print_close_parent(out, &content);
-        mod = lys_main_module(ident->base[i]->module);
-        if (lys_main_module(ident->module) == mod) {
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_BASE, i, ident->base[i]->name,
-                              ident->module, ident->ext, ident->ext_size);
-        } else {
-            if (asprintf(&str, "%s:%s", transform_module_name2import_prefix(ident->module, mod->name), ident->base[i]->name) == -1) {
-                LOGMEM(mod->ctx);
-            } else {
-                yin_print_substmt(out, level, LYEXT_SUBSTMT_BASE, i, str,
-                                  ident->module, ident->ext, ident->ext_size);
-                free(str);
-            }
-        }
+    if (!inout->child) {
+        /* input/output is empty */
+        return;
     }
-    yin_print_snode_common(out, level, (struct lys_node *)ident, ident->module, &content,
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
+    ypr_close_parent(ctx, flag);
 
-    level--;
-    yin_print_close(out, level, NULL, "identity", content);
+    ypr_open(ctx, inout->name, NULL, NULL, *flag);
+    LEVEL++;
+
+    yprp_extension_instances(ctx, lys_nodetype2stmt(inout->nodetype), 0, inout->exts, NULL, 0);
+    LY_ARRAY_FOR(inout->musts, u) {
+        yprp_restr(ctx, &inout->musts[u], LY_STMT_MUST, "condition", NULL);
+    }
+    LY_ARRAY_FOR(inout->typedefs, u) {
+        yprp_typedef(ctx, &inout->typedefs[u]);
+    }
+    LY_LIST_FOR(inout->groupings, grp) {
+        yprp_grouping(ctx, grp);
+    }
+
+    LY_LIST_FOR(inout->child, data) {
+        yprp_node(ctx, data);
+    }
+
+    LEVEL--;
+    ypr_close(ctx, inout->name, 1);
 }
 
 static void
-yin_print_container(struct lyout *out, int level, const struct lys_node *node)
+yprp_notification(struct lys_ypr_ctx *ctx, const struct lysp_node_notif *notif)
 {
-    int i, content = 0;
-    struct lys_node *sub;
-    struct lys_node_container *cont = (struct lys_node_container *)node;
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t flag = 0;
+    struct lysp_node *data;
+    struct lysp_node_grp *grp;
 
-    yin_print_open(out, level, NULL, "container", "name", node->name, content);
-    level++;
+    ypr_open(ctx, "notification", "name", notif->name, flag);
 
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_EXT);
-    if (cont->when) {
-        yin_print_close_parent(out, &content);
-        yin_print_when(out, level, node->module, cont->when);
+    LEVEL++;
+    yprp_extension_instances(ctx, LY_STMT_NOTIFICATION, 0, notif->exts, &flag, 0);
+    yprp_iffeatures(ctx, notif->iffeatures, notif->exts, &flag);
+
+    LY_ARRAY_FOR(notif->musts, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_restr(ctx, &notif->musts[u], LY_STMT_MUST, "condition", &flag);
+    }
+    ypr_status(ctx, notif->flags, notif->exts, &flag);
+    ypr_description(ctx, notif->dsc, notif->exts, &flag);
+    ypr_reference(ctx, notif->ref, notif->exts, &flag);
+
+    LY_ARRAY_FOR(notif->typedefs, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_typedef(ctx, &notif->typedefs[u]);
     }
 
-    for (i = 0; i < cont->iffeature_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_iffeature(out, level, node->module, &cont->iffeature[i]);
+    LY_LIST_FOR(notif->groupings, grp) {
+        ypr_close_parent(ctx, &flag);
+        yprp_grouping(ctx, grp);
     }
 
-    for (i = 0; i < cont->must_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_must(out, level, node->module, &cont->must[i]);
+    LY_LIST_FOR(notif->child, data) {
+        ypr_close_parent(ctx, &flag);
+        yprp_node(ctx, data);
     }
 
+    LEVEL--;
+    ypr_close(ctx, "notification", flag);
+}
+
+static void
+yprp_action(struct lys_ypr_ctx *ctx, const struct lysp_node_action *action)
+{
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t flag = 0;
+    struct lysp_node_grp *grp;
+
+    ypr_open(ctx, action->parent ? "action" : "rpc", "name", action->name, flag);
+
+    LEVEL++;
+    yprp_extension_instances(ctx, lys_nodetype2stmt(action->nodetype), 0, action->exts, &flag, 0);
+    yprp_iffeatures(ctx, action->iffeatures, action->exts, &flag);
+    ypr_status(ctx, action->flags, action->exts, &flag);
+    ypr_description(ctx, action->dsc, action->exts, &flag);
+    ypr_reference(ctx, action->ref, action->exts, &flag);
+
+    LY_ARRAY_FOR(action->typedefs, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_typedef(ctx, &action->typedefs[u]);
+    }
+
+    LY_LIST_FOR(action->groupings, grp) {
+        ypr_close_parent(ctx, &flag);
+        yprp_grouping(ctx, grp);
+    }
+
+    yprp_inout(ctx, &action->input, &flag);
+    yprp_inout(ctx, &action->output, &flag);
+
+    LEVEL--;
+    ypr_close(ctx, action->parent ? "action" : "rpc", flag);
+}
+
+static void
+yprp_node_common1(struct lys_ypr_ctx *ctx, const struct lysp_node *node, int8_t *flag)
+{
+    ypr_open(ctx, lys_nodetype2str(node->nodetype), "name", node->name, *flag);
+    LEVEL++;
+
+    yprp_extension_instances(ctx, lys_nodetype2stmt(node->nodetype), 0, node->exts, flag, 0);
+    yprp_when(ctx, lysp_node_when(node), flag);
+    yprp_iffeatures(ctx, node->iffeatures, node->exts, flag);
+}
+
+static void
+yprp_node_common2(struct lys_ypr_ctx *ctx, const struct lysp_node *node, int8_t *flag)
+{
+    ypr_config(ctx, node->flags, node->exts, flag);
+    if (node->nodetype & (LYS_CHOICE | LYS_LEAF | LYS_ANYDATA)) {
+        ypr_mandatory(ctx, node->flags, node->exts, flag);
+    }
+    ypr_status(ctx, node->flags, node->exts, flag);
+    ypr_description(ctx, node->dsc, node->exts, flag);
+    ypr_reference(ctx, node->ref, node->exts, flag);
+}
+
+static void
+yprp_container(struct lys_ypr_ctx *ctx, const struct lysp_node *node)
+{
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t flag = 0;
+    struct lysp_node *child;
+    struct lysp_node_action *action;
+    struct lysp_node_notif *notif;
+    struct lysp_node_grp *grp;
+    struct lysp_node_container *cont = (struct lysp_node_container *)node;
+
+    yprp_node_common1(ctx, node, &flag);
+
+    LY_ARRAY_FOR(cont->musts, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_restr(ctx, &cont->musts[u], LY_STMT_MUST, "condition", &flag);
+    }
     if (cont->presence) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_PRESENCE, 0, cont->presence,
-                          node->module, node->ext, node->ext_size);
-    }
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_CONFIG |
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-
-    for (i = 0; i < cont->tpdf_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_typedef(out, level, node->module, &cont->tpdf[i]);
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_PRESENCE, 0, cont->presence, cont->exts);
     }
 
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_GROUPING);
-    }
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_CHOICE | LYS_CONTAINER | LYS_LEAF | LYS_LEAFLIST | LYS_LIST |
-                         LYS_USES | LYS_ANYDATA );
-    }
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_ACTION);
-    }
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_NOTIF);
+    yprp_node_common2(ctx, node, &flag);
+
+    LY_ARRAY_FOR(cont->typedefs, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_typedef(ctx, &cont->typedefs[u]);
     }
 
-    level--;
-    yin_print_close(out, level, NULL, "container", content);
+    LY_LIST_FOR(cont->groupings, grp) {
+        ypr_close_parent(ctx, &flag);
+        yprp_grouping(ctx, grp);
+    }
+
+    LY_LIST_FOR(cont->child, child) {
+        ypr_close_parent(ctx, &flag);
+        yprp_node(ctx, child);
+    }
+
+    LY_LIST_FOR(cont->actions, action) {
+        ypr_close_parent(ctx, &flag);
+        yprp_action(ctx, action);
+    }
+
+    LY_LIST_FOR(cont->notifs, notif) {
+        ypr_close_parent(ctx, &flag);
+        yprp_notification(ctx, notif);
+    }
+
+    LEVEL--;
+    ypr_close(ctx, "container", flag);
 }
 
 static void
-yin_print_case(struct lyout *out, int level, const struct lys_node *node)
+yprp_case(struct lys_ypr_ctx *ctx, const struct lysp_node *node)
 {
-    int content = 0;
-    struct lys_node *sub;
-    struct lys_node_case *cas = (struct lys_node_case *)node;
+    int8_t flag = 0;
+    struct lysp_node *child;
+    struct lysp_node_case *cas = (struct lysp_node_case *)node;
 
-    if (!(node->flags & LYS_IMPLICIT)) {
-        yin_print_open(out, level, NULL, "case", "name", cas->name, content);
-        level++;
+    yprp_node_common1(ctx, node, &flag);
+    yprp_node_common2(ctx, node, &flag);
 
-        yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_EXT);
-        if (cas->when) {
-            yin_print_close_parent(out, &content);
-            yin_print_when(out, level, node->module, cas->when);
-        }
-        yin_print_snode_common(out, level, node, node->module, &content,
-                               SNODE_COMMON_IFF | SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-    } else {
-        content = 1;
+    LY_LIST_FOR(cas->child, child) {
+        ypr_close_parent(ctx, &flag);
+        yprp_node(ctx, child);
     }
 
-    /* print children */
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub,
-                        LYS_CHOICE | LYS_CONTAINER | LYS_LEAF | LYS_LEAFLIST | LYS_LIST |
-                        LYS_USES | LYS_ANYDATA);
-    }
-
-    if (node->flags & LYS_IMPLICIT) {
-        /* do not print anything about the case, it was implicitely added by libyang */
-        return;
-    }
-
-    level--;
-    yin_print_close(out, level, NULL, "case", content);
+    LEVEL--;
+    ypr_close(ctx, "case", flag);
 }
 
 static void
-yin_print_choice(struct lyout *out, int level, const struct lys_node *node)
+yprp_choice(struct lys_ypr_ctx *ctx, const struct lysp_node *node)
 {
-    int i, content = 0;
-    struct lys_node *sub;
-    struct lys_node_choice *choice = (struct lys_node_choice *)node;
+    int8_t flag = 0;
+    struct lysp_node *child;
+    struct lysp_node_choice *choice = (struct lysp_node_choice *)node;
 
-    yin_print_open(out, level, NULL, "choice", "name", node->name, content);
-    level++;
+    yprp_node_common1(ctx, node, &flag);
 
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_EXT);
-    if (choice->when) {
-        yin_print_close_parent(out, &content);
-        yin_print_when(out, level, node->module, choice->when);
-    }
-    for (i = 0; i < choice->iffeature_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_iffeature(out, level, node->module, &choice->iffeature[i]);
-    }
-    if (choice->dflt) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DEFAULT, 0, choice->dflt->name,
-                          node->module, node->ext, node->ext_size);
+    if (choice->dflt.str) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_DEFAULT, 0, choice->dflt.str, choice->exts);
     }
 
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_CONFIG | SNODE_COMMON_MAND |
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
+    yprp_node_common2(ctx, node, &flag);
 
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub,
-                        LYS_CHOICE |LYS_CONTAINER | LYS_LEAF | LYS_LEAFLIST | LYS_LIST | LYS_ANYDATA | LYS_CASE);
+    LY_LIST_FOR(choice->child, child) {
+        ypr_close_parent(ctx, &flag);
+        yprp_node(ctx, child);
     }
 
-    level--;
-    yin_print_close(out, level, NULL, "choice", content);
+    LEVEL--;
+    ypr_close(ctx, "choice", flag);
 }
 
 static void
-yin_print_leaf(struct lyout *out, int level, const struct lys_node *node)
+yprp_leaf(struct lys_ypr_ctx *ctx, const struct lysp_node *node)
 {
-    int i;
-    struct lys_node_leaf *leaf = (struct lys_node_leaf *)node;
-    const char *dflt;
+    LY_ARRAY_COUNT_TYPE u;
+    struct lysp_node_leaf *leaf = (struct lysp_node_leaf *)node;
 
-    yin_print_open(out, level, NULL, "leaf", "name", node->name, 1);
-    level++;
+    int8_t flag = 1;
 
-    yin_print_snode_common(out, level, node, node->module, NULL, SNODE_COMMON_EXT);
-    if (leaf->when) {
-        yin_print_when(out, level, node->module, leaf->when);
+    yprp_node_common1(ctx, node, &flag);
+
+    yprp_type(ctx, &leaf->type);
+    ypr_substmt(ctx, LY_STMT_UNITS, 0, leaf->units, leaf->exts);
+    LY_ARRAY_FOR(leaf->musts, u) {
+        yprp_restr(ctx, &leaf->musts[u], LY_STMT_MUST, "condition", &flag);
     }
-    for (i = 0; i < leaf->iffeature_size; i++) {
-        yin_print_iffeature(out, level, node->module, &leaf->iffeature[i]);
+    ypr_substmt(ctx, LY_STMT_DEFAULT, 0, leaf->dflt.str, leaf->exts);
+
+    yprp_node_common2(ctx, node, &flag);
+
+    LEVEL--;
+    ypr_close(ctx, "leaf", flag);
+}
+
+static void
+yprp_leaflist(struct lys_ypr_ctx *ctx, const struct lysp_node *node)
+{
+    LY_ARRAY_COUNT_TYPE u;
+    struct lysp_node_leaflist *llist = (struct lysp_node_leaflist *)node;
+    int8_t flag = 1;
+
+    yprp_node_common1(ctx, node, &flag);
+
+    yprp_type(ctx, &llist->type);
+    ypr_substmt(ctx, LY_STMT_UNITS, 0, llist->units, llist->exts);
+    LY_ARRAY_FOR(llist->musts, u) {
+        yprp_restr(ctx, &llist->musts[u], LY_STMT_MUST, "condition", NULL);
     }
-    yin_print_type(out, level, node->module, &leaf->type);
-    yin_print_substmt(out, level, LYEXT_SUBSTMT_UNITS, 0, leaf->units,
-                      node->module, node->ext, node->ext_size);
-    for (i = 0; i < leaf->must_size; i++) {
-        yin_print_must(out, level, node->module, &leaf->must[i]);
+    LY_ARRAY_FOR(llist->dflts, u) {
+        ypr_substmt(ctx, LY_STMT_DEFAULT, u, llist->dflts[u].str, llist->exts);
     }
-    if (leaf->dflt) {
-        if (leaf->flags & LYS_DFLTJSON) {
-            assert(strchr(leaf->dflt, ':'));
-            if (!strncmp(leaf->dflt, lys_node_module(node)->name, strchr(leaf->dflt, ':') - leaf->dflt)) {
-                /* local module */
-                dflt = lydict_insert(node->module->ctx, strchr(leaf->dflt, ':') + 1, 0);
-            } else {
-                dflt = transform_json2schema(node->module, leaf->dflt);
-            }
+
+    ypr_config(ctx, node->flags, node->exts, NULL);
+
+    if (llist->flags & LYS_SET_MIN) {
+        ypr_unsigned(ctx, LY_STMT_MIN_ELEMENTS, 0, llist->exts, llist->min);
+    }
+    if (llist->flags & LYS_SET_MAX) {
+        if (llist->max) {
+            ypr_unsigned(ctx, LY_STMT_MAX_ELEMENTS, 0, llist->exts, llist->max);
         } else {
-            dflt = leaf->dflt;
-        }
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DEFAULT, 0, dflt,
-                          node->module, node->ext, node->ext_size);
-        if (leaf->flags & LYS_DFLTJSON) {
-            lydict_remove(node->module->ctx, dflt);
+            ypr_substmt(ctx, LY_STMT_MAX_ELEMENTS, 0, "unbounded", llist->exts);
         }
     }
-    yin_print_snode_common(out, level, node, node->module, NULL, SNODE_COMMON_CONFIG | SNODE_COMMON_MAND |
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
 
-    level--;
-    yin_print_close(out, level, NULL, "leaf", 1);
+    if (llist->flags & LYS_ORDBY_MASK) {
+        ypr_substmt(ctx, LY_STMT_ORDERED_BY, 0, (llist->flags & LYS_ORDBY_USER) ? "user" : "system", llist->exts);
+    }
+
+    ypr_status(ctx, node->flags, node->exts, &flag);
+    ypr_description(ctx, node->dsc, node->exts, &flag);
+    ypr_reference(ctx, node->ref, node->exts, &flag);
+
+    LEVEL--;
+    ypr_close(ctx, "leaf-list", flag);
 }
 
 static void
-yin_print_anydata(struct lyout *out, int level, const struct lys_node *node)
+yprp_list(struct lys_ypr_ctx *ctx, const struct lysp_node *node)
 {
-    int i, content = 0;
-    struct lys_node_anydata *any = (struct lys_node_anydata *)node;
-    const char *name;
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t flag = 0;
+    struct lysp_node *child;
+    struct lysp_node_action *action;
+    struct lysp_node_notif *notif;
+    struct lysp_node_grp *grp;
+    struct lysp_node_list *list = (struct lysp_node_list *)node;
 
-    if (!lys_parent(node) && !strcmp(node->name, "config") && !strcmp(node->module->name, "ietf-netconf")) {
-        /* node added by libyang, not actually in the model */
-        return;
+    yprp_node_common1(ctx, node, &flag);
+
+    LY_ARRAY_FOR(list->musts, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_restr(ctx, &list->musts[u], LY_STMT_MUST, "condition", &flag);
+    }
+    if (list->key) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_KEY, 0, list->key, list->exts);
+    }
+    LY_ARRAY_FOR(list->uniques, u) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_UNIQUE, u, list->uniques[u].str, list->exts);
     }
 
-    name = any->nodetype == LYS_ANYXML ? "anyxml" : "anydata";
-    yin_print_open(out, level, NULL, name, "name", any->name, content);
+    ypr_config(ctx, node->flags, node->exts, NULL);
 
-    level++;
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_EXT);
-    if (any->when) {
-        yin_print_close_parent(out, &content);
-        yin_print_when(out, level, node->module, any->when);
+    if (list->flags & LYS_SET_MIN) {
+        ypr_unsigned(ctx, LY_STMT_MIN_ELEMENTS, 0, list->exts, list->min);
     }
-    for (i = 0; i < any->iffeature_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_iffeature(out, level, node->module, &any->iffeature[i]);
-    }
-    for (i = 0; i < any->must_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_must(out, level, node->module, &any->must[i]);
-    }
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_CONFIG | SNODE_COMMON_MAND |
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-
-    level--;
-    yin_print_close(out, level, NULL, name, content);
-}
-
-static void
-yin_print_leaflist(struct lyout *out, int level, const struct lys_node *node)
-{
-    int i;
-    struct lys_node_leaflist *llist = (struct lys_node_leaflist *)node;
-    const char *dflt;
-
-    yin_print_open(out, level, NULL, "leaf-list", "name", node->name, 1);
-    level++;
-
-    yin_print_snode_common(out, level, node, node->module, NULL, SNODE_COMMON_EXT);
-    if (llist->when) {
-        yin_print_when(out, level, llist->module, llist->when);
-    }
-    for (i = 0; i < llist->iffeature_size; i++) {
-        yin_print_iffeature(out, level, node->module, &llist->iffeature[i]);
-    }
-    yin_print_type(out, level, node->module, &llist->type);
-    yin_print_substmt(out, level, LYEXT_SUBSTMT_UNITS, 0, llist->units,
-                      node->module, node->ext, node->ext_size);
-    for (i = 0; i < llist->must_size; i++) {
-        yin_print_must(out, level, node->module, &llist->must[i]);
-    }
-    for (i = 0; i < llist->dflt_size; i++) {
-        if (llist->flags & LYS_DFLTJSON) {
-            assert(strchr(llist->dflt[i], ':'));
-            if (!strncmp(llist->dflt[i], lys_node_module(node)->name, strchr(llist->dflt[i], ':') - llist->dflt[i])) {
-                /* local module */
-                dflt = lydict_insert(node->module->ctx, strchr(llist->dflt[i], ':') + 1, 0);
-            } else {
-                dflt = transform_json2schema(node->module, llist->dflt[i]);
-            }
+    if (list->flags & LYS_SET_MAX) {
+        if (list->max) {
+            ypr_unsigned(ctx, LY_STMT_MAX_ELEMENTS, 0, list->exts, list->max);
         } else {
-            dflt = llist->dflt[i];
-        }
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DEFAULT, i, dflt,
-                          node->module, node->ext, node->ext_size);
-        if (llist->flags & LYS_DFLTJSON) {
-            lydict_remove(node->module->ctx, dflt);
+            ypr_substmt(ctx, LY_STMT_MAX_ELEMENTS, 0, "unbounded", list->exts);
         }
     }
-    yin_print_snode_common(out, level, node, node->module, NULL, SNODE_COMMON_CONFIG);
-    if (llist->min > 0) {
-        yin_print_unsigned(out, level, LYEXT_SUBSTMT_MIN, 0, node->module, node->ext, node->ext_size, llist->min);
-    }
-    if (llist->max > 0) {
-        yin_print_unsigned(out, level, LYEXT_SUBSTMT_MAX, 0, node->module, node->ext, node->ext_size, llist->max);
-    }
-    if (llist->flags & LYS_USERORDERED) {
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_ORDEREDBY, 0, "user",
-                          node->module, node->ext, node->ext_size);
-    } else if (lys_ext_iter(node->ext, node->ext_size, 0, LYEXT_SUBSTMT_ORDEREDBY) != -1) {
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_ORDEREDBY, 0, "system",
-                          node->module, node->ext, node->ext_size);
-    }
-    yin_print_snode_common(out, level, node, node->module, NULL,
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
 
-    level--;
-    yin_print_close(out, level, NULL, "leaf-list", 1);
+    if (list->flags & LYS_ORDBY_MASK) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_ORDERED_BY, 0, (list->flags & LYS_ORDBY_USER) ? "user" : "system", list->exts);
+    }
+
+    ypr_status(ctx, node->flags, node->exts, &flag);
+    ypr_description(ctx, node->dsc, node->exts, &flag);
+    ypr_reference(ctx, node->ref, node->exts, &flag);
+
+    LY_ARRAY_FOR(list->typedefs, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_typedef(ctx, &list->typedefs[u]);
+    }
+
+    LY_LIST_FOR(list->groupings, grp) {
+        ypr_close_parent(ctx, &flag);
+        yprp_grouping(ctx, grp);
+    }
+
+    LY_LIST_FOR(list->child, child) {
+        ypr_close_parent(ctx, &flag);
+        yprp_node(ctx, child);
+    }
+
+    LY_LIST_FOR(list->actions, action) {
+        ypr_close_parent(ctx, &flag);
+        yprp_action(ctx, action);
+    }
+
+    LY_LIST_FOR(list->notifs, notif) {
+        ypr_close_parent(ctx, &flag);
+        yprp_notification(ctx, notif);
+    }
+
+    LEVEL--;
+    ypr_close(ctx, "list", flag);
 }
 
 static void
-yin_print_list(struct lyout *out, int level, const struct lys_node *node)
+yprp_refine(struct lys_ypr_ctx *ctx, struct lysp_refine *refine)
 {
-    int i, p, content = 0, content2;
-    struct lys_node *sub;
-    struct lys_node_list *list = (struct lys_node_list *)node;
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t flag = 0;
 
-    yin_print_open(out, level, NULL, "list", "name", node->name, content);
-    level++;
+    ypr_open(ctx, "refine", "target-node", refine->nodeid, flag);
+    LEVEL++;
 
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_EXT);
-    if (list->when) {
-        yin_print_close_parent(out, &content);
-        yin_print_when(out, level, list->module, list->when);
+    yprp_extension_instances(ctx, LY_STMT_REFINE, 0, refine->exts, &flag, 0);
+    yprp_iffeatures(ctx, refine->iffeatures, refine->exts, &flag);
+
+    LY_ARRAY_FOR(refine->musts, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_restr(ctx, &refine->musts[u], LY_STMT_MUST, "condition", &flag);
     }
-    for (i = 0; i < list->iffeature_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_iffeature(out, level, node->module, &list->iffeature[i]);
+
+    if (refine->presence) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_PRESENCE, 0, refine->presence, refine->exts);
     }
-    for (i = 0; i < list->must_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_must(out, level, list->module, &list->must[i]);
+
+    LY_ARRAY_FOR(refine->dflts, u) {
+        ypr_close_parent(ctx, &flag);
+        ypr_substmt(ctx, LY_STMT_DEFAULT, u, refine->dflts[u].str, refine->exts);
     }
-    if (list->keys_size) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_KEY, 0, list->keys_str,
-                          node->module, node->ext, node->ext_size);
+
+    ypr_config(ctx, refine->flags, refine->exts, &flag);
+    ypr_mandatory(ctx, refine->flags, refine->exts, &flag);
+
+    if (refine->flags & LYS_SET_MIN) {
+        ypr_close_parent(ctx, &flag);
+        ypr_unsigned(ctx, LY_STMT_MIN_ELEMENTS, 0, refine->exts, refine->min);
     }
-    for (i = 0; i < list->unique_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_unique(out, level, node->module, &list->unique[i]);
-        content2 = 0;
-        /* unique's extensions */
-        p = -1;
-        do {
-            p = lys_ext_iter(list->ext, list->ext_size, p + 1, LYEXT_SUBSTMT_UNIQUE);
-        } while (p != -1 && list->ext[p]->insubstmt_index != i);
-        if (p != -1) {
-            yin_print_close_parent(out, &content2);
-            do {
-                yin_print_extension_instances(out, level + 1, list->module, LYEXT_SUBSTMT_UNIQUE, i, &list->ext[p], 1);
-                do {
-                    p = lys_ext_iter(list->ext, list->ext_size, p + 1, LYEXT_SUBSTMT_UNIQUE);
-                } while (p != -1 && list->ext[p]->insubstmt_index != i);
-            } while (p != -1);
+    if (refine->flags & LYS_SET_MAX) {
+        ypr_close_parent(ctx, &flag);
+        if (refine->max) {
+            ypr_unsigned(ctx, LY_STMT_MAX_ELEMENTS, 0, refine->exts, refine->max);
+        } else {
+            ypr_substmt(ctx, LY_STMT_MAX_ELEMENTS, 0, "unbounded", refine->exts);
         }
-        yin_print_close(out, level, NULL, "unique", content2);
-    }
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_CONFIG);
-    if (list->min > 0) {
-        yin_print_close_parent(out, &content);
-        yin_print_unsigned(out, level, LYEXT_SUBSTMT_MIN, 0, node->module, node->ext, node->ext_size, list->min);
-    }
-    if (list->max > 0) {
-        yin_print_close_parent(out, &content);
-        yin_print_unsigned(out, level, LYEXT_SUBSTMT_MAX, 0, node->module, node->ext, node->ext_size, list->max);
-    }
-    if (list->flags & LYS_USERORDERED) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_ORDEREDBY, 0, "user",
-                          node->module, node->ext, node->ext_size);
-    } else if (lys_ext_iter(node->ext, node->ext_size, 0, LYEXT_SUBSTMT_ORDEREDBY) != -1) {
-        yin_print_close_parent(out, &content);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_ORDEREDBY, 0, "system",
-                          node->module, node->ext, node->ext_size);
-    }
-    yin_print_snode_common(out, level, node, node->module, &content,
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-    for (i = 0; i < list->tpdf_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_typedef(out, level, list->module, &list->tpdf[i]);
     }
 
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_GROUPING);
-    }
+    ypr_description(ctx, refine->dsc, refine->exts, &flag);
+    ypr_reference(ctx, refine->ref, refine->exts, &flag);
 
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_CHOICE | LYS_CONTAINER | LYS_LEAF | LYS_LEAFLIST | LYS_LIST |
-                        LYS_USES | LYS_ANYDATA);
-    }
-
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_ACTION);
-    }
-
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_NOTIF);
-    }
-
-    level--;
-    yin_print_close(out, level, NULL, "list", content);
+    LEVEL--;
+    ypr_close(ctx, "refine", flag);
 }
 
 static void
-yin_print_grouping(struct lyout *out, int level, const struct lys_node *node)
+yprp_augment(struct lys_ypr_ctx *ctx, const struct lysp_node_augment *aug)
 {
-    int i, content = 0;
-    struct lys_node *sub;
-    struct lys_node_grp *grp = (struct lys_node_grp *)node;
+    struct lysp_node *child;
+    struct lysp_node_action *action;
+    struct lysp_node_notif *notif;
 
-    yin_print_open(out, level, NULL, "grouping", "name", node->name, content);
-    level++;
+    ypr_open(ctx, "augment", "target-node", aug->nodeid, 1);
+    LEVEL++;
 
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_EXT | SNODE_COMMON_STATUS |
-                           SNODE_COMMON_DSC | SNODE_COMMON_REF);
+    yprp_extension_instances(ctx, LY_STMT_AUGMENT, 0, aug->exts, NULL, 0);
+    yprp_when(ctx, aug->when, NULL);
+    yprp_iffeatures(ctx, aug->iffeatures, aug->exts, NULL);
+    ypr_status(ctx, aug->flags, aug->exts, NULL);
+    ypr_description(ctx, aug->dsc, aug->exts, NULL);
+    ypr_reference(ctx, aug->ref, aug->exts, NULL);
 
-    for (i = 0; i < grp->tpdf_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_typedef(out, level, node->module, &grp->tpdf[i]);
+    LY_LIST_FOR(aug->child, child) {
+        yprp_node(ctx, child);
     }
 
-    LY_TREE_FOR(node->child, sub) {
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_GROUPING);
+    LY_LIST_FOR(aug->actions, action) {
+        yprp_action(ctx, action);
     }
 
-    LY_TREE_FOR(node->child, sub) {
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_CHOICE | LYS_CONTAINER | LYS_LEAF | LYS_LEAFLIST | LYS_LIST |
-                         LYS_USES | LYS_ANYDATA);
+    LY_LIST_FOR(aug->notifs, notif) {
+        yprp_notification(ctx, notif);
     }
 
-    LY_TREE_FOR(node->child, sub) {
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_ACTION);
-    }
-
-    LY_TREE_FOR(node->child, sub) {
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_NOTIF);
-    }
-
-    level--;
-    yin_print_close(out, level, NULL, "grouping", content);
+    LEVEL--;
+    ypr_close(ctx, "augment", 1);
 }
 
 static void
-yin_print_uses(struct lyout *out, int level, const struct lys_node *node)
+yprp_uses(struct lys_ypr_ctx *ctx, const struct lysp_node *node)
 {
-    int i, content = 0;
-    struct lys_node_uses *uses = (struct lys_node_uses *)node;
-    struct lys_module *mod;
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t flag = 0;
+    struct lysp_node_uses *uses = (struct lysp_node_uses *)node;
+    struct lysp_node_augment *aug;
 
-    ly_print(out, "%*s<uses name=\"", LEVEL, INDENT);
-    if (node->child) {
-        mod = lys_node_module(node->child);
-        if (lys_node_module(node) != mod) {
-            ly_print(out, "%s:", transform_module_name2import_prefix(node->module, mod->name));
-        }
-    }
-    ly_print(out, "%s\"", uses->name);
-    level++;
+    yprp_node_common1(ctx, node, &flag);
+    yprp_node_common2(ctx, node, &flag);
 
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_EXT);
-    if (uses->when) {
-        yin_print_close_parent(out, &content);
-        yin_print_when(out, level, node->module, uses->when);
-    }
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_IFF |
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-    for (i = 0; i < uses->refine_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_refine(out, level, node->module, &uses->refine[i]);
-    }
-    for (i = 0; i < uses->augment_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_augment(out, level, node->module, &uses->augment[i]);
+    LY_ARRAY_FOR(uses->refines, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_refine(ctx, &uses->refines[u]);
     }
 
-    level--;
-    yin_print_close(out, level, NULL, "uses", content);
+    LY_LIST_FOR(uses->augments, aug) {
+        ypr_close_parent(ctx, &flag);
+        yprp_augment(ctx, aug);
+    }
+
+    LEVEL--;
+    ypr_close(ctx, "uses", flag);
 }
 
 static void
-yin_print_input_output(struct lyout *out, int level, const struct lys_node *node)
+yprp_anydata(struct lys_ypr_ctx *ctx, const struct lysp_node *node)
 {
-    int i;
-    struct lys_node *sub;
-    struct lys_node_inout *inout = (struct lys_node_inout *)node;
+    LY_ARRAY_COUNT_TYPE u;
+    int8_t flag = 0;
+    struct lysp_node_anydata *any = (struct lysp_node_anydata *)node;
 
-    yin_print_open(out, level, NULL, inout->nodetype == LYS_INPUT ? "input" : "output", NULL, NULL, 1);
-    level++;
+    yprp_node_common1(ctx, node, &flag);
 
-    if (inout->ext_size) {
-        yin_print_extension_instances(out, level, node->module, LYEXT_SUBSTMT_SELF, 0, inout->ext, inout->ext_size);
-    }
-    for (i = 0; i < inout->must_size; i++) {
-        yin_print_must(out, level, node->module, &inout->must[i]);
-    }
-    for (i = 0; i < inout->tpdf_size; i++) {
-        yin_print_typedef(out, level, node->module, &inout->tpdf[i]);
+    LY_ARRAY_FOR(any->musts, u) {
+        ypr_close_parent(ctx, &flag);
+        yprp_restr(ctx, &any->musts[u], LY_STMT_MUST, "condition", &flag);
     }
 
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_snode(out, level, sub, LYS_GROUPING);
-    }
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_snode(out, level, sub, LYS_CHOICE | LYS_CONTAINER | LYS_LEAF | LYS_LEAFLIST | LYS_LIST |
-                        LYS_USES | LYS_ANYDATA);
-    }
-    level--;
+    yprp_node_common2(ctx, node, &flag);
 
-    yin_print_close(out, level, NULL, (inout->nodetype == LYS_INPUT ? "input" : "output"), 1);
+    LEVEL--;
+    ypr_close(ctx, lys_nodetype2str(node->nodetype), flag);
 }
 
 static void
-yin_print_rpc_action(struct lyout *out, int level, const struct lys_node *node)
+yprp_node(struct lys_ypr_ctx *ctx, const struct lysp_node *node)
 {
-    int i, content = 0;
-    struct lys_node *sub;
-    struct lys_node_rpc_action *rpc = (struct lys_node_rpc_action *)node;
-
-    yin_print_open(out, level, NULL, (node->nodetype == LYS_RPC ? "rpc" : "action"), "name", node->name, content);
-    level++;
-
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_EXT | SNODE_COMMON_IFF |
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-
-    for (i = 0; i < rpc->tpdf_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_typedef(out, level, node->module, &rpc->tpdf[i]);
-    }
-
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if ((sub->parent != node) || (((sub->nodetype & (LYS_INPUT | LYS_OUTPUT)) && (sub->flags & LYS_IMPLICIT)))) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_INPUT | LYS_OUTPUT | LYS_GROUPING);
-    }
-
-    level--;
-    yin_print_close(out, level, NULL, (node->nodetype == LYS_RPC ? "rpc" : "action"), content);
-}
-
-static void
-yin_print_notif(struct lyout *out, int level, const struct lys_node *node)
-{
-    int i, content = 0;
-    struct lys_node *sub;
-    struct lys_node_notif *notif = (struct lys_node_notif *)node;
-
-    yin_print_open(out, level, NULL, "notification", "name", node->name, content);
-    level++;
-
-    yin_print_snode_common(out, level, node, node->module, &content, SNODE_COMMON_EXT | SNODE_COMMON_IFF);
-    for (i = 0; i < notif->must_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_must(out, level, node->module, &notif->must[i]);
-    }
-    yin_print_snode_common(out, level, node, node->module, &content,
-                           SNODE_COMMON_STATUS | SNODE_COMMON_DSC | SNODE_COMMON_REF);
-    for (i = 0; i < notif->tpdf_size; i++) {
-        yin_print_close_parent(out, &content);
-        yin_print_typedef(out, level, node->module, &notif->tpdf[i]);
-    }
-
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub, LYS_GROUPING);
-    }
-    LY_TREE_FOR(node->child, sub) {
-        /* augments */
-        if (sub->parent != node) {
-            continue;
-        }
-        yin_print_close_parent(out, &content);
-        yin_print_snode(out, level, sub,
-                         LYS_CHOICE | LYS_CONTAINER | LYS_LEAF | LYS_LEAFLIST | LYS_LIST |
-                         LYS_USES | LYS_ANYDATA);
-    }
-
-    level--;
-    yin_print_close(out, level, NULL, "notification", content);
-}
-
-static void
-yin_print_snode(struct lyout *out, int level, const struct lys_node *node, int mask)
-{
-    switch (node->nodetype & mask) {
+    switch (node->nodetype) {
     case LYS_CONTAINER:
-        yin_print_container(out, level, node);
+        yprp_container(ctx, node);
         break;
     case LYS_CHOICE:
-        yin_print_choice(out, level, node);
+        yprp_choice(ctx, node);
         break;
     case LYS_LEAF:
-        yin_print_leaf(out, level, node);
+        yprp_leaf(ctx, node);
         break;
     case LYS_LEAFLIST:
-        yin_print_leaflist(out, level, node);
+        yprp_leaflist(ctx, node);
         break;
     case LYS_LIST:
-        yin_print_list(out, level, node);
+        yprp_list(ctx, node);
         break;
     case LYS_USES:
-        yin_print_uses(out, level, node);
-        break;
-    case LYS_GROUPING:
-        yin_print_grouping(out, level, node);
+        yprp_uses(ctx, node);
         break;
     case LYS_ANYXML:
     case LYS_ANYDATA:
-        yin_print_anydata(out, level, node);
+        yprp_anydata(ctx, node);
         break;
     case LYS_CASE:
-        yin_print_case(out, level, node);
-        break;
-    case LYS_RPC:
-    case LYS_ACTION:
-        yin_print_rpc_action(out, level, node);
-        break;
-    case LYS_INPUT:
-    case LYS_OUTPUT:
-        yin_print_input_output(out, level, node);
-        break;
-    case LYS_NOTIF:
-        yin_print_notif(out, level, node);
+        yprp_case(ctx, node);
         break;
     default:
         break;
@@ -1596,712 +1096,431 @@ yin_print_snode(struct lyout *out, int level, const struct lys_node *node, int m
 }
 
 static void
-yin_print_revision(struct lyout *out, int level, const struct lys_module *module, const struct lys_revision *rev)
+yprp_deviation(struct lys_ypr_ctx *ctx, const struct lysp_deviation *deviation)
 {
-    if (rev->dsc || rev->ref || rev->ext_size) {
-        yin_print_open(out, level, NULL, "revision", "date", rev->date, 1);
-        level++;
-        yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0, rev->ext, rev->ext_size);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DESCRIPTION, 0, rev->dsc, module, rev->ext, rev->ext_size);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_REFERENCE, 0, rev->ref, module, rev->ext, rev->ext_size);
-        level--;
-        yin_print_close(out, level, NULL, "revision", 1);
-    } else {
-        yin_print_open(out, level, NULL, "revision", "date", rev->date, -1);
+    LY_ARRAY_COUNT_TYPE u;
+    struct lysp_deviate_add *add;
+    struct lysp_deviate_rpl *rpl;
+    struct lysp_deviate_del *del;
+    struct lysp_deviate *elem;
+
+    ypr_open(ctx, "deviation", "target-node", deviation->nodeid, 1);
+    LEVEL++;
+
+    yprp_extension_instances(ctx, LY_STMT_DEVIATION, 0, deviation->exts, NULL, 0);
+    ypr_description(ctx, deviation->dsc, deviation->exts, NULL);
+    ypr_reference(ctx, deviation->ref, deviation->exts, NULL);
+
+    LY_LIST_FOR(deviation->deviates, elem) {
+        ly_print_(ctx->out, "%*s<deviate value=\"", INDENT);
+        if (elem->mod == LYS_DEV_NOT_SUPPORTED) {
+            if (elem->exts) {
+                ly_print_(ctx->out, "not-supported\"/>\n");
+                LEVEL++;
+
+                yprp_extension_instances(ctx, LY_STMT_DEVIATE, 0, elem->exts, NULL, 0);
+            } else {
+                ly_print_(ctx->out, "not-supported\"/>\n");
+                continue;
+            }
+        } else if (elem->mod == LYS_DEV_ADD) {
+            add = (struct lysp_deviate_add *)elem;
+            ly_print_(ctx->out, "add\">\n");
+            LEVEL++;
+
+            yprp_extension_instances(ctx, LY_STMT_DEVIATE, 0, add->exts, NULL, 0);
+            ypr_substmt(ctx, LY_STMT_UNITS, 0, add->units, add->exts);
+            LY_ARRAY_FOR(add->musts, u) {
+                yprp_restr(ctx, &add->musts[u], LY_STMT_MUST, "condition", NULL);
+            }
+            LY_ARRAY_FOR(add->uniques, u) {
+                ypr_substmt(ctx, LY_STMT_UNIQUE, u, add->uniques[u].str, add->exts);
+            }
+            LY_ARRAY_FOR(add->dflts, u) {
+                ypr_substmt(ctx, LY_STMT_DEFAULT, u, add->dflts[u].str, add->exts);
+            }
+            ypr_config(ctx, add->flags, add->exts, NULL);
+            ypr_mandatory(ctx, add->flags, add->exts, NULL);
+            if (add->flags & LYS_SET_MIN) {
+                ypr_unsigned(ctx, LY_STMT_MIN_ELEMENTS, 0, add->exts, add->min);
+            }
+            if (add->flags & LYS_SET_MAX) {
+                if (add->max) {
+                    ypr_unsigned(ctx, LY_STMT_MAX_ELEMENTS, 0, add->exts, add->max);
+                } else {
+                    ypr_substmt(ctx, LY_STMT_MAX_ELEMENTS, 0, "unbounded", add->exts);
+                }
+            }
+        } else if (elem->mod == LYS_DEV_REPLACE) {
+            rpl = (struct lysp_deviate_rpl *)elem;
+            ly_print_(ctx->out, "replace\">\n");
+            LEVEL++;
+
+            yprp_extension_instances(ctx, LY_STMT_DEVIATE, 0, rpl->exts, NULL, 0);
+            if (rpl->type) {
+                yprp_type(ctx, rpl->type);
+            }
+            ypr_substmt(ctx, LY_STMT_UNITS, 0, rpl->units, rpl->exts);
+            ypr_substmt(ctx, LY_STMT_DEFAULT, 0, rpl->dflt.str, rpl->exts);
+            ypr_config(ctx, rpl->flags, rpl->exts, NULL);
+            ypr_mandatory(ctx, rpl->flags, rpl->exts, NULL);
+            if (rpl->flags & LYS_SET_MIN) {
+                ypr_unsigned(ctx, LY_STMT_MIN_ELEMENTS, 0, rpl->exts, rpl->min);
+            }
+            if (rpl->flags & LYS_SET_MAX) {
+                if (rpl->max) {
+                    ypr_unsigned(ctx, LY_STMT_MAX_ELEMENTS, 0, rpl->exts, rpl->max);
+                } else {
+                    ypr_substmt(ctx, LY_STMT_MAX_ELEMENTS, 0, "unbounded", rpl->exts);
+                }
+            }
+        } else if (elem->mod == LYS_DEV_DELETE) {
+            del = (struct lysp_deviate_del *)elem;
+            ly_print_(ctx->out, "delete\">\n");
+            LEVEL++;
+
+            yprp_extension_instances(ctx, LY_STMT_DEVIATE, 0, del->exts, NULL, 0);
+            ypr_substmt(ctx, LY_STMT_UNITS, 0, del->units, del->exts);
+            LY_ARRAY_FOR(del->musts, u) {
+                yprp_restr(ctx, &del->musts[u], LY_STMT_MUST, "condition", NULL);
+            }
+            LY_ARRAY_FOR(del->uniques, u) {
+                ypr_substmt(ctx, LY_STMT_UNIQUE, u, del->uniques[u].str, del->exts);
+            }
+            LY_ARRAY_FOR(del->dflts, u) {
+                ypr_substmt(ctx, LY_STMT_DEFAULT, u, del->dflts[u].str, del->exts);
+            }
+        }
+
+        LEVEL--;
+        ypr_close(ctx, "deviate", 1);
+    }
+
+    LEVEL--;
+    ypr_close(ctx, "deviation", 1);
+}
+
+static void
+ypr_xmlns(struct lys_ypr_ctx *ctx, const struct lys_module *module, uint16_t indent)
+{
+    ly_print_(ctx->out, "%*sxmlns=\"%s\"", indent + INDENT, YIN_NS_URI);
+    ly_print_(ctx->out, "\n%*sxmlns:%s=\"%s\"", indent + INDENT, module->prefix, module->ns);
+}
+
+static void
+ypr_import_xmlns(struct lys_ypr_ctx *ctx, const struct lysp_module *modp, uint16_t indent)
+{
+    LY_ARRAY_COUNT_TYPE u;
+
+    LY_ARRAY_FOR(modp->imports, u){
+        ly_print_(ctx->out, "\n%*sxmlns:%s=\"%s\"", indent + INDENT, modp->imports[u].prefix, modp->imports[u].module->ns);
     }
 }
 
 static void
-yin_print_xmlns(struct lyout *out, const struct lys_module *module)
+yprp_stmt(struct lys_ypr_ctx *ctx, struct lysp_stmt *stmt)
 {
-    unsigned int i, lvl;
+    struct lysp_stmt *childstmt;
+    int8_t flag = stmt->child ? 1 : -1;
 
-    if (module->type) {
-        lvl = 11;
-    } else {
-        lvl = 8;
+    /* TODO:
+             the extension instance substatements in extension instances (LY_STMT_EXTENSION_INSTANCE)
+             cannot find the compiled information, so it is needed to be done,
+             currently it is ignored */
+    if (stmt_attr_info[stmt->kw].name) {
+        if (stmt_attr_info[stmt->kw].flags & STMT_FLAG_YIN) {
+            ypr_open(ctx, stmt->stmt, NULL, NULL, flag);
+            ypr_yin_arg(ctx, stmt_attr_info[stmt->kw].arg, stmt->arg);
+        } else {
+            ypr_open(ctx, stmt->stmt, stmt_attr_info[stmt->kw].arg, stmt->arg, flag);
+        }
     }
 
-    ly_print(out, "%*sxmlns=\"%s\"", lvl, INDENT, LY_NSYIN);
-    if (!module->type) {
-        ly_print(out, "\n%*sxmlns:%s=\"%s\"", lvl, INDENT, module->prefix, module->ns);
-    } else {
-        ly_print(out, "\n%*sxmlns:%s=\"%s\"", lvl, INDENT, module->prefix, ((struct lys_submodule*)module)->belongsto->ns);
-    }
-    for (i = 0; i < module->imp_size; ++i) {
-        ly_print(out, "\n%*sxmlns:%s=\"%s\"", lvl, INDENT, module->imp[i].prefix, module->imp[i].module->ns);
+    if (stmt->child) {
+        LEVEL++;
+        LY_LIST_FOR(stmt->child, childstmt) {
+            yprp_stmt(ctx, childstmt);
+        }
+        LEVEL--;
+        ypr_close(ctx, stmt->stmt, flag);
     }
 }
 
-static int
-yin_print_model_(struct lyout *out, int level, const struct lys_module *module)
+/**
+ * @param[in] count Number of extensions to print, 0 to print them all.
+ */
+static void
+yprp_extension_instances(struct lys_ypr_ctx *ctx, enum ly_stmt substmt, uint8_t substmt_index,
+        struct lysp_ext_instance *ext, int8_t *flag, LY_ARRAY_COUNT_TYPE count)
 {
-    unsigned int i;
-    int p;
-    struct lys_node *node;
+    LY_ARRAY_COUNT_TYPE u;
+    struct lysp_stmt *stmt;
+    int8_t inner_flag = 0;
 
-    if (module->deviated == 1) {
-        ly_print(out, "<!-- DEVIATED -->\n");
+    if (!count && ext) {
+        count = LY_ARRAY_COUNT(ext);
     }
+    LY_ARRAY_FOR(ext, u) {
+        struct lysp_ext *ext_def = NULL;
 
-    /* (sub)module-header-stmts */
-    if (module->type) {
-        ly_print(out, "%*s<submodule name=\"%s\"\n", LEVEL, INDENT, module->name);
-        yin_print_xmlns(out, module);
-        ly_print(out, ">\n");
-
-        level++;
-        if (module->version) {
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_VERSION, 0, module->version == LYS_VERSION_1_1 ? "1.1" : "1",
-                              module, module->ext, module->ext_size);
+        if (!count) {
+            break;
         }
-        yin_print_open(out, level, NULL, "belongs-to", "module", ((struct lys_submodule *)module)->belongsto->name, 1);
-        p = -1;
-        while ((p = lys_ext_iter(module->ext, module->ext_size, p + 1, LYEXT_SUBSTMT_BELONGSTO)) != -1) {
-            yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_BELONGSTO, 0, &module->ext[p], 1);
+
+        count--;
+        if ((ext->flags & LYS_INTERNAL) || (ext->parent_stmt != substmt) || (ext->parent_stmt_index != substmt_index)) {
+            continue;
         }
-        yin_print_substmt(out, level + 1, LYEXT_SUBSTMT_PREFIX, 0, module->prefix,
-                          module, module->ext, module->ext_size);
-        yin_print_close(out, level, NULL, "belongs-to", 1);
-    } else {
-        ly_print(out, "%*s<module name=\"%s\"\n", LEVEL, INDENT, module->name);
-        yin_print_xmlns(out, module);
-        ly_print(out, ">\n");
 
-        level++;
-        if (module->version) {
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_VERSION, 0, module->version == LYS_VERSION_1_1 ? "1.1" : "1",
-                              module, module->ext, module->ext_size);
+        lysp_ext_find_definition(ctx->module->ctx, &ext[u], NULL, &ext_def);
+        if (!ext_def) {
+            continue;
         }
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_NAMESPACE, 0, module->ns,
-                          module, module->ext, module->ext_size);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_PREFIX, 0, module->prefix,
-                           module, module->ext, module->ext_size);
-    }
 
-    /* linkage-stmts */
-    for (i = 0; i < module->imp_size; i++) {
-        yin_print_open(out, level, NULL, "import", "module", module->imp[i].module->name, 1);
-        level++;
+        ypr_close_parent(ctx, flag);
+        inner_flag = 0;
 
-        yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0,
-                                       module->imp[i].ext, module->imp[i].ext_size);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_PREFIX, 0, module->imp[i].prefix,
-                          module, module->imp[i].ext, module->imp[i].ext_size);
-        if (module->imp[i].rev[0]) {
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_REVISIONDATE, 0, module->imp[i].rev,
-                              module, module->imp[i].ext, module->imp[i].ext_size);
+        if (ext_def->argname) {
+            lysp_ext_instance_resolve_argument(ctx->module->ctx, &ext[u], ext_def);
         }
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_DESCRIPTION, 0, module->imp[i].dsc,
-                          module, module->imp[i].ext, module->imp[i].ext_size);
-        yin_print_substmt(out, level, LYEXT_SUBSTMT_REFERENCE, 0, module->imp[i].ref,
-                          module, module->imp[i].ext, module->imp[i].ext_size);
 
-        level--;
-        yin_print_close(out, level, NULL, "import", 1);
-    }
-    for (i = 0; i < module->inc_size; i++) {
-        if (module->inc[i].rev[0] || module->inc[i].dsc || module->inc[i].ref || module->inc[i].ext_size) {
-            yin_print_open(out, level, NULL, "include", "module", module->inc[i].submodule->name, 1);
-            level++;
+        ypr_open(ctx, ext[u].name, (ext_def->flags & LYS_YINELEM_TRUE) ? NULL : ext_def->argname, ext[u].argument, inner_flag);
+        LEVEL++;
+        if (ext_def->flags & LYS_YINELEM_TRUE) {
+            const char *prefix, *name, *id;
+            size_t prefix_len, name_len;
 
-            yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0,
-                                          module->inc[i].ext, module->inc[i].ext_size);
-            if (module->inc[i].rev[0]) {
-                yin_print_substmt(out, level, LYEXT_SUBSTMT_REVISIONDATE, 0, module->inc[i].rev,
-                                  module, module->inc[i].ext, module->inc[i].ext_size);
+            ypr_close_parent(ctx, &inner_flag);
+
+            /* we need to use the same namespace as for the extension instance element */
+            id = ext[u].name;
+            ly_parse_nodeid(&id, &prefix, &prefix_len, &name, &name_len);
+            ly_print_(ctx->out, "%*s<%.*s:%s>", INDENT, (int)prefix_len, prefix, ext_def->argname);
+            lyxml_dump_text(ctx->out, ext[u].argument, 0);
+            ly_print_(ctx->out, "</%.*s:%s>\n", (int)prefix_len, prefix, ext_def->argname);
+        }
+        LY_LIST_FOR(ext[u].child, stmt) {
+            if (stmt->flags & (LYS_YIN_ATTR | LYS_YIN_ARGUMENT)) {
+                continue;
             }
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_DESCRIPTION, 0, module->inc[i].dsc,
-                               module, module->inc[i].ext, module->inc[i].ext_size);
-            yin_print_substmt(out, level, LYEXT_SUBSTMT_REFERENCE, 0, module->inc[i].ref,
-                              module, module->inc[i].ext, module->inc[i].ext_size);
 
-            level--;
-            yin_print_close(out, level, NULL, "include", 1);
+            ypr_close_parent(ctx, &inner_flag);
+            yprp_stmt(ctx, stmt);
+        }
+        LEVEL--;
+        ypr_close(ctx, ext[u].name, inner_flag);
+    }
+}
+
+static void
+yin_print_parsed_linkage(struct lys_ypr_ctx *ctx, const struct lysp_module *modp)
+{
+    LY_ARRAY_COUNT_TYPE u;
+
+    LY_ARRAY_FOR(modp->imports, u) {
+        if (modp->imports[u].flags & LYS_INTERNAL) {
+            continue;
+        }
+
+        ypr_open(ctx, "import", "module", modp->imports[u].name, 1);
+        LEVEL++;
+        yprp_extension_instances(ctx, LY_STMT_IMPORT, 0, modp->imports[u].exts, NULL, 0);
+        ypr_substmt(ctx, LY_STMT_PREFIX, 0, modp->imports[u].prefix, modp->imports[u].exts);
+        if (modp->imports[u].rev[0]) {
+            ypr_substmt(ctx, LY_STMT_REVISION_DATE, 0, modp->imports[u].rev, modp->imports[u].exts);
+        }
+        ypr_substmt(ctx, LY_STMT_DESCRIPTION, 0, modp->imports[u].dsc, modp->imports[u].exts);
+        ypr_substmt(ctx, LY_STMT_REFERENCE, 0, modp->imports[u].ref, modp->imports[u].exts);
+        LEVEL--;
+        ypr_close(ctx, "import", 1);
+    }
+    LY_ARRAY_FOR(modp->includes, u) {
+        if (modp->includes[u].injected) {
+            /* do not print the includes injected from submodules */
+            continue;
+        }
+        if (modp->includes[u].rev[0] || modp->includes[u].dsc || modp->includes[u].ref || modp->includes[u].exts) {
+            ypr_open(ctx, "include", "module", modp->includes[u].name, 1);
+            LEVEL++;
+            yprp_extension_instances(ctx, LY_STMT_INCLUDE, 0, modp->includes[u].exts, NULL, 0);
+            if (modp->includes[u].rev[0]) {
+                ypr_substmt(ctx, LY_STMT_REVISION_DATE, 0, modp->includes[u].rev, modp->includes[u].exts);
+            }
+            ypr_substmt(ctx, LY_STMT_DESCRIPTION, 0, modp->includes[u].dsc, modp->includes[u].exts);
+            ypr_substmt(ctx, LY_STMT_REFERENCE, 0, modp->includes[u].ref, modp->includes[u].exts);
+            LEVEL--;
+            ly_print_(ctx->out, "%*s}\n", INDENT);
         } else {
-            yin_print_open(out, level, NULL, "include", "module", module->inc[i].submodule->name, -1);
+            ypr_open(ctx, "include", "module", modp->includes[u].name, -1);
         }
     }
+}
+
+static void
+yin_print_parsed_body(struct lys_ypr_ctx *ctx, const struct lysp_module *modp)
+{
+    LY_ARRAY_COUNT_TYPE u;
+    struct lysp_node *data;
+    struct lysp_node_action *action;
+    struct lysp_node_notif *notif;
+    struct lysp_node_grp *grp;
+    struct lysp_node_augment *aug;
+
+    LY_ARRAY_FOR(modp->extensions, u) {
+        ly_print_(ctx->out, "\n");
+        yprp_extension(ctx, &modp->extensions[u]);
+    }
+    if (modp->exts) {
+        ly_print_(ctx->out, "\n");
+        yprp_extension_instances(ctx, LY_STMT_MODULE, 0, modp->exts, NULL, 0);
+    }
+
+    LY_ARRAY_FOR(modp->features, u) {
+        yprp_feature(ctx, &modp->features[u]);
+    }
+
+    LY_ARRAY_FOR(modp->identities, u) {
+        yprp_identity(ctx, &modp->identities[u]);
+    }
+
+    LY_ARRAY_FOR(modp->typedefs, u) {
+        yprp_typedef(ctx, &modp->typedefs[u]);
+    }
+
+    LY_LIST_FOR(modp->groupings, grp) {
+        yprp_grouping(ctx, grp);
+    }
+
+    LY_LIST_FOR(modp->data, data) {
+        yprp_node(ctx, data);
+    }
+
+    LY_LIST_FOR(modp->augments, aug) {
+        yprp_augment(ctx, aug);
+    }
+
+    LY_LIST_FOR(modp->rpcs, action) {
+        yprp_action(ctx, action);
+    }
+
+    LY_LIST_FOR(modp->notifs, notif) {
+        yprp_notification(ctx, notif);
+    }
+
+    LY_ARRAY_FOR(modp->deviations, u) {
+        yprp_deviation(ctx, &modp->deviations[u]);
+    }
+}
+
+LY_ERR
+yin_print_parsed_module(struct ly_out *out, const struct lysp_module *modp, uint32_t options)
+{
+    LY_ARRAY_COUNT_TYPE u;
+    const struct lys_module *module = modp->mod;
+    struct lys_ypr_ctx ctx_ = {.out = out, .level = 0, .module = module, .options = options}, *ctx = &ctx_;
+
+    ly_print_(ctx->out, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    ly_print_(ctx->out, "%*s<module name=\"%s\"\n", INDENT, module->name);
+    ypr_xmlns(ctx, module, XML_NS_INDENT);
+    ypr_import_xmlns(ctx, modp, XML_NS_INDENT);
+    ly_print_(ctx->out, ">\n");
+
+    LEVEL++;
+
+    /* module-header-stmts */
+    if (modp->version) {
+        ypr_substmt(ctx, LY_STMT_YANG_VERSION, 0, modp->version == LYS_VERSION_1_1 ? "1.1" : "1", modp->exts);
+    }
+    ypr_substmt(ctx, LY_STMT_NAMESPACE, 0, module->ns, modp->exts);
+    ypr_substmt(ctx, LY_STMT_PREFIX, 0, module->prefix, modp->exts);
+
+    /* linkage-stmts (import/include) */
+    yin_print_parsed_linkage(ctx, modp);
 
     /* meta-stmts */
-    yin_print_substmt(out, level, LYEXT_SUBSTMT_ORGANIZATION, 0, module->org,
-                      module, module->ext, module->ext_size);
-    yin_print_substmt(out, level, LYEXT_SUBSTMT_CONTACT, 0, module->contact,
-                      module, module->ext, module->ext_size);
-    yin_print_substmt(out, level, LYEXT_SUBSTMT_DESCRIPTION, 0, module->dsc,
-                      module, module->ext, module->ext_size);
-    yin_print_substmt(out, level, LYEXT_SUBSTMT_REFERENCE, 0, module->ref,
-                      module, module->ext, module->ext_size);
+    if (module->org || module->contact || module->dsc || module->ref) {
+        ly_print_(out, "\n");
+    }
+    ypr_substmt(ctx, LY_STMT_ORGANIZATION, 0, module->org, modp->exts);
+    ypr_substmt(ctx, LY_STMT_CONTACT, 0, module->contact, modp->exts);
+    ypr_substmt(ctx, LY_STMT_DESCRIPTION, 0, module->dsc, modp->exts);
+    ypr_substmt(ctx, LY_STMT_REFERENCE, 0, module->ref, modp->exts);
 
     /* revision-stmts */
-    for (i = 0; i < module->rev_size; i++) {
-        yin_print_revision(out, level, module, &module->rev[i]);
+    if (modp->revs) {
+        ly_print_(out, "\n");
+    }
+    LY_ARRAY_FOR(modp->revs, u) {
+        yprp_revision(ctx, &modp->revs[u]);
     }
 
     /* body-stmts */
-    for (i = 0; i < module->extensions_size; ++i) {
-        yin_print_extension(out, level, &module->extensions[i]);
-    }
-    if (module->ext_size) {
-        yin_print_extension_instances(out, level, module, LYEXT_SUBSTMT_SELF, 0, module->ext, module->ext_size);
-    }
+    yin_print_parsed_body(ctx, modp);
 
-    for (i = 0; i < module->features_size; i++) {
-        yin_print_feature(out, level, &module->features[i]);
-    }
-
-    for (i = 0; i < module->ident_size; i++) {
-        yin_print_identity(out, level, &module->ident[i]);
-    }
-
-    for (i = 0; i < module->tpdf_size; i++) {
-        yin_print_typedef(out, level, module, &module->tpdf[i]);
-    }
-
-    LY_TREE_FOR(lys_main_module(module)->data, node) {
-        if (node->module != module) {
-            /* data from submodules */
-            continue;
-        }
-        yin_print_snode(out, level, node, LYS_GROUPING);
-    }
-
-    LY_TREE_FOR(lys_main_module(module)->data, node) {
-        if (node->module != module) {
-            /* data from submodules */
-            continue;
-        }
-        yin_print_snode(out, level, node, LYS_CHOICE | LYS_CONTAINER | LYS_LEAF | LYS_LEAFLIST | LYS_LIST |
-                        LYS_USES | LYS_ANYDATA);
-    }
-
-    for (i = 0; i < module->augment_size; i++) {
-        yin_print_augment(out, level, module, &module->augment[i]);
-    }
-
-    LY_TREE_FOR(lys_main_module(module)->data, node) {
-        if (node->module != module) {
-            /* data from submodules */
-            continue;
-        }
-        yin_print_snode(out, level, node, LYS_RPC | LYS_ACTION);
-    }
-
-    LY_TREE_FOR(lys_main_module(module)->data, node) {
-        if (node->module != module) {
-            /* data from submodules */
-            continue;
-        }
-        yin_print_snode(out, level, node, LYS_NOTIF);
-    }
-
-    for (i = 0; i < module->deviation_size; ++i) {
-        yin_print_deviation(out, level, module, &module->deviation[i]);
-    }
-
-    level--;
-    if (module->type) {
-        ly_print(out, "%*s</submodule>\n", LEVEL, INDENT);
-    } else {
-        ly_print(out, "%*s</module>\n", LEVEL, INDENT);
-    }
+    LEVEL--;
+    ly_print_(out, "%*s</module>\n", INDENT);
     ly_print_flush(out);
 
-    return EXIT_SUCCESS;
-}
-
-int
-yin_print_model(struct lyout *out, const struct lys_module *module)
-{
-    int level = 0;
-
-    ly_print(out, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    return yin_print_model_(out, level, module);
+    return LY_SUCCESS;
 }
 
 static void
-yin_print_extcomplex_bool(struct lyout *out, int level, const struct lys_module *module,
-                          struct lys_ext_instance_complex *ext, LY_STMT stmt,
-                          const char *true_val, const char *false_val, int *content)
+yprp_belongsto(struct lys_ypr_ctx *ctx, const struct lysp_submodule *submodp)
 {
-    struct lyext_substmt *info;
-    uint8_t *val;
-
-    val = lys_ext_complex_get_substmt(stmt, ext, &info);
-    if (!val || !(*val)) {
-        return;
-    }
-
-    yin_print_close_parent(out, content);
-    if (*val == 1) {
-        yin_print_substmt(out, level, (LYEXT_SUBSTMT)stmt, 0, true_val, module, ext->ext, ext->ext_size);
-    } else if (*val == 2) {
-        yin_print_substmt(out, level, (LYEXT_SUBSTMT)stmt, 0, false_val, module, ext->ext, ext->ext_size);
-    } else {
-        LOGINT(module->ctx);
-    }
+    ypr_open(ctx, "belongs-to", "module", submodp->mod->name, 1);
+    LEVEL++;
+    yprp_extension_instances(ctx, LY_STMT_BELONGS_TO, 0, submodp->exts, NULL, 0);
+    ypr_substmt(ctx, LY_STMT_PREFIX, 0, submodp->prefix, submodp->exts);
+    LEVEL--;
+    ypr_close(ctx, "belongs-to", 1);
 }
 
-static void
-yin_print_extcomplex_str(struct lyout *out, int level, const struct lys_module *module,
-                         struct lys_ext_instance_complex *ext, LY_STMT stmt, int *content)
+LY_ERR
+yin_print_parsed_submodule(struct ly_out *out, const struct lysp_submodule *submodp, uint32_t options)
 {
-    struct lyext_substmt *info;
-    const char **str;
-    int c;
+    LY_ARRAY_COUNT_TYPE u;
+    struct lys_ypr_ctx ctx_ = {.out = out, .level = 0, .module = submodp->mod, .options = options}, *ctx = &ctx_;
 
-    str = lys_ext_complex_get_substmt(stmt, ext, &info);
-    if (!str || !(*str)) {
-        return;
+    ly_print_(ctx->out, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    ly_print_(ctx->out, "%*s<submodule name=\"%s\"\n", INDENT, submodp->name);
+    ypr_xmlns(ctx, submodp->mod, XML_NS_INDENT);
+    ypr_import_xmlns(ctx, (struct lysp_module *)submodp, XML_NS_INDENT);
+    ly_print_(ctx->out, ">\n");
+
+    LEVEL++;
+
+    /* submodule-header-stmts */
+    if (submodp->version) {
+        ypr_substmt(ctx, LY_STMT_YANG_VERSION, 0, submodp->version == LYS_VERSION_1_1 ? "1.1" : "1", submodp->exts);
     }
-    if (info->cardinality >= LY_STMT_CARD_SOME) {
-        /* we have array */
-        for (str = (const char **)(*str), c = 0; *str; str++, c++) {
-            yin_print_close_parent(out, content);
-            yin_print_substmt(out, level, (LYEXT_SUBSTMT)stmt, c, *str, module, ext->ext, ext->ext_size);
-        }
-    } else {
-        yin_print_close_parent(out, content);
-        yin_print_substmt(out, level, (LYEXT_SUBSTMT)stmt, 0, *str, module, ext->ext, ext->ext_size);
+    yprp_belongsto(ctx, submodp);
+
+    /* linkage-stmts (import/include) */
+    yin_print_parsed_linkage(ctx, (struct lysp_module *)submodp);
+
+    /* meta-stmts */
+    if (submodp->org || submodp->contact || submodp->dsc || submodp->ref) {
+        ly_print_(out, "\n");
     }
-}
+    ypr_substmt(ctx, LY_STMT_ORGANIZATION, 0, submodp->org, submodp->exts);
+    ypr_substmt(ctx, LY_STMT_CONTACT, 0, submodp->contact, submodp->exts);
+    ypr_substmt(ctx, LY_STMT_DESCRIPTION, 0, submodp->dsc, submodp->exts);
+    ypr_substmt(ctx, LY_STMT_REFERENCE, 0, submodp->ref, submodp->exts);
 
-/* val1 is supposed to be the default value */
-static void
-yin_print_extcomplex_flags(struct lyout *out, int level, const struct lys_module *module,
-                           struct lys_ext_instance_complex *ext, LY_STMT stmt,
-                           const char *val1_str, const char *val2_str, uint16_t val1, uint16_t val2,
-                           int *content)
-{
-    const char *str;
-    uint16_t *flags;
-
-    flags = lys_ext_complex_get_substmt(stmt, ext, NULL);
-    if (!flags) {
-        return;
+    /* revision-stmts */
+    if (submodp->revs) {
+        ly_print_(out, "\n");
     }
-
-    if (val1 & *flags) {
-        str = val1_str;
-    } else if (val2 & *flags) {
-        str = val2_str;
-    } else if (lys_ext_iter(ext->ext, ext->ext_size, 0, (LYEXT_SUBSTMT)stmt) != -1) {
-        /* flag not set, but since there are some extension, we are going to print the default value */
-        str = val1_str;
-    } else {
-        return;
+    LY_ARRAY_FOR(submodp->revs, u) {
+        yprp_revision(ctx, &submodp->revs[u]);
     }
 
-    yin_print_close_parent(out, content);
-    yin_print_substmt(out, level, (LYEXT_SUBSTMT)stmt, 0, str, module, ext->ext, ext->ext_size);
-}
+    /* body-stmts */
+    yin_print_parsed_body(ctx, (struct lysp_module *)submodp);
 
-static void
-yin_print_extension_instances(struct lyout *out, int level, const struct lys_module *module,
-                              LYEXT_SUBSTMT substmt, uint8_t substmt_index,
-                              struct lys_ext_instance **ext, unsigned int count)
-{
-    unsigned int u, x;
-    struct lys_module *mod;
-    const char *prefix = NULL;
-    struct lyext_substmt *info;
-    int content, content2, i, j, c;
-    uint16_t *flags;
-    const char *str;
-    void **pp, *p;
-    struct lys_node *siter;
+    LEVEL--;
+    ly_print_(out, "%*s</submodule>\n", INDENT);
+    ly_print_flush(out);
 
-#define YIN_PRINT_EXTCOMPLEX_SNODE(STMT)                                                      \
-    pp = lys_ext_complex_get_substmt(STMT, (struct lys_ext_instance_complex *)ext[u], NULL);  \
-    if (!pp || !(*pp)) { break; }                                                             \
-    LY_TREE_FOR((struct lys_node*)(*pp), siter) {                                             \
-        if (lys_snode2stmt(siter->nodetype) == STMT) {                                        \
-            yin_print_close_parent(out, &content);                                            \
-            yin_print_snode(out, level, siter, LYS_ANY);                                      \
-        }                                                                                     \
-    }
-#define YIN_PRINT_EXTCOMPLEX_STRUCT(STMT, TYPE, FUNC)                                         \
-    pp = lys_ext_complex_get_substmt(STMT, (struct lys_ext_instance_complex *)ext[u], NULL);  \
-    if (!pp || !(*pp)) { break; }                                                             \
-    if (info[i].cardinality >= LY_STMT_CARD_SOME) { /* process array */                       \
-        for (pp = *pp; *pp; pp++) {                                                           \
-            yin_print_close_parent(out, &content);                                            \
-            FUNC(out, level, (TYPE *)(*pp));                                                  \
-        }                                                                                     \
-    } else { /* single item */                                                                \
-        yin_print_close_parent(out, &content);                                                \
-        FUNC(out, level, (TYPE *)(*pp));                                                      \
-    }
-#define YIN_PRINT_EXTCOMPLEX_STRUCT_M(STMT, TYPE, FUNC, ARGS...)                              \
-    pp = lys_ext_complex_get_substmt(STMT, (struct lys_ext_instance_complex *)ext[u], NULL);  \
-    if (!pp || !(*pp)) { break; }                                                             \
-    if (info[i].cardinality >= LY_STMT_CARD_SOME) { /* process array */                       \
-        for (pp = *pp; *pp; pp++) {                                                           \
-            yin_print_close_parent(out, &content);                                            \
-            FUNC(out, level, module, (TYPE *)(*pp), ##ARGS);                                  \
-        }                                                                                     \
-    } else { /* single item */                                                                \
-        yin_print_close_parent(out, &content);                                                \
-        FUNC(out, level, module, (TYPE *)(*pp), ##ARGS);                                      \
-    }
-#define YIN_PRINT_EXTCOMPLEX_INT(STMT, TYPE, SIGN)                                 \
-    p = &((struct lys_ext_instance_complex*)ext[u])->content[info[i].offset];      \
-    if (!p || !*(TYPE**)p) { break; }                                              \
-    if (info[i].cardinality >= LY_STMT_CARD_SOME) { /* we have array */            \
-        for (c = 0; (*(TYPE***)p)[c]; c++) {                                       \
-            yin_print_close_parent(out, &content);                                 \
-            yin_print_##SIGN(out, level, STMT, c, module,                          \
-                             ext[u]->ext, ext[u]->ext_size, *(*(TYPE***)p)[c]);    \
-        }                                                                          \
-    } else {                                                                       \
-        yin_print_close_parent(out, &content);                                     \
-        yin_print_##SIGN(out, level, STMT, 0, module,                              \
-                         ext[u]->ext, ext[u]->ext_size, (**(TYPE**)p));            \
-    }
-
-    for (u = 0; u < count; u++) {
-        if (ext[u]->flags & LYEXT_OPT_INHERIT) {
-            /* ignore the inherited extensions which were not explicitely instantiated in the module */
-            continue;
-        } else if (ext[u]->insubstmt != substmt || ext[u]->insubstmt_index != substmt_index) {
-            /* do not print the other substatement than the required */
-            continue;
-        } else if (ext[u]->def->module == module->ctx->models.list[0] &&
-                 (!strcmp(ext[u]->arg_value, "operation") ||
-                  !strcmp(ext[u]->arg_value, "select") ||
-                  !strcmp(ext[u]->arg_value, "type"))) {
-            /* hack for NETCONF's edit-config's operation and filter's attributes
-             * - the annotation definition is only internal, do not print it */
-            continue;
-        }
-
-        mod = lys_main_module(ext[u]->def->module);
-        if (mod == lys_main_module(module)) {
-            prefix = module->prefix;
-        } else {
-            for (x = 0; x < module->imp_size; x++) {
-                if (mod == module->imp[x].module) {
-                    prefix = module->imp[x].prefix;
-                    break;
-                }
-            }
-        }
-        assert(prefix);
-
-        content = 0;
-        if (ext[u]->arg_value) {
-            if (ext[u]->def->flags & LYS_YINELEM) {
-                /* argument as element */
-                content = 1;
-                yin_print_open(out, level, prefix, ext[u]->def->name, NULL, NULL, content);
-                level++;
-                ly_print(out, "%*s<%s:%s>", LEVEL, INDENT, prefix, ext[u]->def->argument);
-                lyxml_dump_text(out, ext[u]->arg_value, LYXML_DATA_ELEM);
-                ly_print(out, "</%s:%s>\n", prefix, ext[u]->def->argument);
-                level--;
-            } else {
-                /* argument as attribute */
-                yin_print_open(out, level, prefix, ext[u]->def->name,
-                               ext[u]->def->argument, ext[u]->arg_value, content);
-            }
-        } else {
-            yin_print_open(out, level, prefix, ext[u]->def->name, NULL, NULL, content);
-        }
-
-        /* extensions */
-        if (ext[u]->ext_size) {
-            yin_print_close_parent(out, &content);
-            yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_SELF, 0,
-                                          ext[u]->ext, ext[u]->ext_size);
-        }
-
-        /* extension - type-specific part */
-        switch (ext[u]->ext_type) {
-        case LYEXT_FLAG:
-            /* flag extension - nothing special */
-            break;
-        case LYEXT_COMPLEX:
-            info = ((struct lys_ext_instance_complex*)ext[u])->substmt; /* shortcut */
-            if (!info) {
-                /* no content */
-                break;
-            }
-            level++;
-            for (i = 0; info[i].stmt; i++) {
-                switch(info[i].stmt) {
-                case LY_STMT_DESCRIPTION:
-                case LY_STMT_REFERENCE:
-                case LY_STMT_UNITS:
-                case LY_STMT_DEFAULT:
-                case LY_STMT_ERRTAG:
-                case LY_STMT_ERRMSG:
-                case LY_STMT_PREFIX:
-                case LY_STMT_NAMESPACE:
-                case LY_STMT_PRESENCE:
-                case LY_STMT_REVISIONDATE:
-                case LY_STMT_KEY:
-                case LY_STMT_BASE:
-                case LY_STMT_CONTACT:
-                case LY_STMT_ORGANIZATION:
-                case LY_STMT_PATH:
-                    yin_print_extcomplex_str(out, level, module, (struct lys_ext_instance_complex*)ext[u],
-                                             info[i].stmt, &content);
-                    break;
-                case LY_STMT_ARGUMENT:
-                    pp = lys_ext_complex_get_substmt(LY_STMT_ARGUMENT, (struct lys_ext_instance_complex*)ext[u], NULL);
-                    if (!pp || !(*pp)) {
-                        break;
-                    }
-                    yin_print_close_parent(out, &content);
-                    if (info->cardinality >= LY_STMT_CARD_SOME) {
-                        /* we have array */
-                        for (c = 0; ((const char***)pp)[0][c]; c++) {
-                            content2 = 0;
-                            yin_print_open(out, level, NULL, "argument", "name", ((const char ***)pp)[0][c], 0);
-                            j = -1;
-                            while ((j = lys_ext_iter(ext[u]->ext, ext[u]->ext_size, j + 1, LYEXT_SUBSTMT_ARGUMENT)) != -1) {
-                                if (ext[u]->ext[j]->insubstmt_index != c) {
-                                    continue;
-                                }
-                                yin_print_close_parent(out, &content2);
-                                yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_ARGUMENT, c,
-                                                              &ext[u]->ext[j], 1);
-                            }
-                            if (((uint8_t *)pp[1])[c] == 1) {
-                                yin_print_close_parent(out, &content2);
-                                yin_print_substmt(out, level + 1, LYEXT_SUBSTMT_YINELEM, c,
-                                                 (((uint8_t *)pp[1])[c] == 1) ? "true" : "false", module, ext[u]->ext, ext[u]->ext_size);
-                            } else {
-                                j = -1;
-                                while ((j = lys_ext_iter(ext[u]->ext, ext[u]->ext_size, j + 1, LYEXT_SUBSTMT_YINELEM)) != -1) {
-                                    if (ext[u]->ext[j]->insubstmt_index == c) {
-                                        yin_print_close_parent(out, &content2);
-                                        yin_print_substmt(out, level + 1, LYEXT_SUBSTMT_YINELEM, c, (((uint8_t *)pp[1])[c] == 1) ? "true" : "false",
-                                                          module, ext[u]->ext + j, ext[u]->ext_size - j);
-                                        break;
-                                    }
-                                }
-                            }
-                            yin_print_close(out, level, NULL, "argument", content2);
-                        }
-                    } else {
-                        content2 = 0;
-                        yin_print_open(out, level, NULL, "argument", "name", (const char *)pp[0], 0);
-                        j = -1;
-                        while ((j = lys_ext_iter(ext[u]->ext, ext[u]->ext_size, j + 1, LYEXT_SUBSTMT_ARGUMENT)) != -1) {
-                            yin_print_close_parent(out, &content2);
-                            yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_ARGUMENT, 0,
-                                                          &ext[u]->ext[j], 1);
-                        }
-                        if (*(uint8_t*)(pp + 1) == 1 || lys_ext_iter(ext[u]->ext, ext[u]->ext_size, 0, LYEXT_SUBSTMT_YINELEM) != -1) {
-                            yin_print_close_parent(out, &content2);
-                            yin_print_substmt(out, level + 1, LYEXT_SUBSTMT_YINELEM, 0,
-                                             (*(uint8_t*)(pp + 1) == 1) ? "true" : "false", module, ext[u]->ext, ext[u]->ext_size);
-                        }
-                        yin_print_close(out, level, NULL, "argument", content2);
-                    }
-                    break;
-                case LY_STMT_BELONGSTO:
-                    pp = lys_ext_complex_get_substmt(LY_STMT_BELONGSTO, (struct lys_ext_instance_complex*)ext[u], NULL);
-                    if (!pp || !(*pp)) {
-                        break;
-                    }
-                    if (info->cardinality >= LY_STMT_CARD_SOME) {
-                        /* we have array */
-                        for (c = 0; ((const char***)pp)[0][c]; c++) {
-                            yin_print_close_parent(out, &content);
-                            yin_print_open(out, level, NULL, "belongs-to", "module", ((const char ***)pp)[0][c], 1);
-                            j = -1;
-                            while ((j = lys_ext_iter(ext[u]->ext, ext[u]->ext_size, j + 1, LYEXT_SUBSTMT_BELONGSTO)) != -1) {
-                                yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_BELONGSTO, c,
-                                                              &ext[u]->ext[j], 1);
-                            }
-                            yin_print_substmt(out, level + 1, LYEXT_SUBSTMT_PREFIX, c, ((const char ***)pp)[1][c],
-                                              module, ext[u]->ext, ext[u]->ext_size);
-                            yin_print_close(out, level, NULL, "belongs-to", 1);
-                        }
-                    } else {
-                        yin_print_close_parent(out, &content);
-                        yin_print_open(out, level, NULL, "belongs-to", "module", (const char *)pp[0], 1);
-                        j = -1;
-                        while ((j = lys_ext_iter(ext[u]->ext, ext[u]->ext_size, j + 1, LYEXT_SUBSTMT_BELONGSTO)) != -1) {
-                            yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_BELONGSTO, 0,
-                                                          &ext[u]->ext[j], 1);
-                        }
-                        yin_print_substmt(out, level + 1, LYEXT_SUBSTMT_PREFIX, 0, (const char *)pp[1],
-                                          module, ext[u]->ext, ext[u]->ext_size);
-                        yin_print_close(out, level, NULL, "belongs-to", 1);
-                    }
-                    break;
-                case LY_STMT_TYPE:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT_M(LY_STMT_TYPE, struct lys_type, yin_print_type);
-                    break;
-                case LY_STMT_TYPEDEF:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT_M(LY_STMT_TYPEDEF, struct lys_tpdf, yin_print_typedef);
-                    break;
-                case LY_STMT_IFFEATURE:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT_M(LY_STMT_IFFEATURE, struct lys_iffeature, yin_print_iffeature);
-                    break;
-                case LY_STMT_STATUS:
-                    flags = (uint16_t*)&((struct lys_ext_instance_complex*)ext[u])->content[info[i].offset];
-                    if (!flags || !(*flags)) {
-                        break;
-                    }
-
-                    if (*flags & LYS_STATUS_CURR) {
-                        yin_print_close_parent(out, &content);
-                        str = "current";
-                    } else if (*flags & LYS_STATUS_DEPRC) {
-                        yin_print_close_parent(out, &content);
-                        str = "deprecated";
-                    } else if (*flags & LYS_STATUS_OBSLT) {
-                        yin_print_close_parent(out, &content);
-                        str = "obsolete";
-                    } else {
-                        /* no status flag */
-                        break;
-                    }
-                    yin_print_substmt(out, level, LYEXT_SUBSTMT_STATUS, 0, str, module, ext[u]->ext, ext[u]->ext_size);
-                    break;
-                case LY_STMT_CONFIG:
-                    yin_print_extcomplex_flags(out, level, module, (struct lys_ext_instance_complex*)ext[u],
-                                               LY_STMT_CONFIG, "true", "false",
-                                               LYS_CONFIG_W | LYS_CONFIG_SET, LYS_CONFIG_R | LYS_CONFIG_SET, &content);
-                    break;
-                case LY_STMT_MANDATORY:
-                    yin_print_extcomplex_flags(out, level, module, (struct lys_ext_instance_complex*)ext[u],
-                                               LY_STMT_MANDATORY, "false", "true", LYS_MAND_FALSE, LYS_MAND_TRUE,
-                                               &content);
-                    break;
-                case LY_STMT_ORDEREDBY:
-                    yin_print_extcomplex_flags(out, level, module, (struct lys_ext_instance_complex*)ext[u],
-                                               LY_STMT_ORDEREDBY, "system", "user", 0, LYS_USERORDERED, &content);
-                    break;
-                case LY_STMT_REQINSTANCE:
-                    yin_print_extcomplex_bool(out, level, module, (struct lys_ext_instance_complex*)ext[u],
-                                              info[i].stmt, "true", "false", &content);
-                    break;
-                case LY_STMT_MODIFIER:
-                    yin_print_extcomplex_bool(out, level, module, (struct lys_ext_instance_complex*)ext[u],
-                                              LY_STMT_MODIFIER, "invert-match", NULL, &content);
-                    break;
-                case LY_STMT_DIGITS:
-                    p = &((struct lys_ext_instance_complex*)ext[u])->content[info[i].offset];
-                    if (!p) {
-                        break;
-                    }
-                    if (info->cardinality >= LY_STMT_CARD_SOME && *(uint8_t**)p) { /* we have array */
-                        for (c = 0; (*(uint8_t**)p)[c]; c++) {
-                            yin_print_close_parent(out, &content);
-                            yin_print_unsigned(out, level, LYEXT_SUBSTMT_DIGITS, c, module,
-                                               ext[u]->ext, ext[u]->ext_size, (*(uint8_t**)p)[c]);
-                        }
-                    } else if ((*(uint8_t*)p)) {
-                        yin_print_close_parent(out, &content);
-                        yin_print_unsigned(out, level, LYEXT_SUBSTMT_DIGITS, 0, module,
-                                           ext[u]->ext, ext[u]->ext_size, (*(uint8_t*)p));
-                    }
-                    break;
-                case LY_STMT_MAX:
-                    YIN_PRINT_EXTCOMPLEX_INT(LYEXT_SUBSTMT_MAX, uint32_t, unsigned);
-                    break;
-                case LY_STMT_MIN:
-                    YIN_PRINT_EXTCOMPLEX_INT(LYEXT_SUBSTMT_MIN, uint32_t, unsigned);
-                    break;
-                case LY_STMT_POSITION:
-                    YIN_PRINT_EXTCOMPLEX_INT(LYEXT_SUBSTMT_POSITION, uint32_t, unsigned);
-                    break;
-                case LY_STMT_VALUE:
-                    YIN_PRINT_EXTCOMPLEX_INT(LYEXT_SUBSTMT_VALUE, int32_t, signed);
-                    break;
-                case LY_STMT_UNIQUE:
-                    pp = lys_ext_complex_get_substmt(LY_STMT_UNIQUE, (struct lys_ext_instance_complex *)ext[u], NULL);
-                    if (!pp || !(*pp)) {
-                        break;
-                    }
-                    if (info[i].cardinality >= LY_STMT_CARD_SOME) { /* process array */
-                        for (pp = *pp, c = 0; *pp; pp++, c++) {
-                            yin_print_close_parent(out, &content);
-                            yin_print_unique(out, level, module, (struct lys_unique*)(*pp));
-                            /* unique's extensions */
-                            j = -1; content2 = 0;
-                            do {
-                                j = lys_ext_iter(ext[u]->ext, ext[u]->ext_size, j + 1, LYEXT_SUBSTMT_UNIQUE);
-                            } while (j != -1 && ext[u]->ext[j]->insubstmt_index != c);
-                            if (j != -1) {
-                                yin_print_close_parent(out, &content2);
-                                do {
-                                    yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_UNIQUE, c, &ext[u]->ext[j], 1);
-                                    do {
-                                        j = lys_ext_iter(ext[u]->ext, ext[u]->ext_size, j + 1, LYEXT_SUBSTMT_UNIQUE);
-                                    } while (j != -1 && ext[u]->ext[j]->insubstmt_index != c);
-                                } while (j != -1);
-                            }
-                            yin_print_close(out, level, NULL, "unique", content2);
-                        }
-                    } else { /* single item */
-                        yin_print_close_parent(out, &content);
-                        yin_print_unique(out, level, module, (struct lys_unique*)(*pp));
-                        /* unique's extensions */
-                        j = -1; content2 = 0;
-                        while ((j = lys_ext_iter(ext[u]->ext, ext[u]->ext_size, j + 1, LYEXT_SUBSTMT_UNIQUE)) != -1) {
-                            yin_print_close_parent(out, &content2);
-                            yin_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_UNIQUE, 0, &ext[u]->ext[j], 1);
-                        }
-                        yin_print_close(out, level, NULL, "unique", content2);
-                    }
-                    break;
-                case LY_STMT_MODULE:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT(LY_STMT_MODULE, struct lys_module, yin_print_model_);
-                    break;
-                case LY_STMT_ACTION:
-                case LY_STMT_ANYDATA:
-                case LY_STMT_ANYXML:
-                case LY_STMT_CASE:
-                case LY_STMT_CHOICE:
-                case LY_STMT_CONTAINER:
-                case LY_STMT_GROUPING:
-                case LY_STMT_INPUT:
-                case LY_STMT_OUTPUT:
-                case LY_STMT_LEAF:
-                case LY_STMT_LEAFLIST:
-                case LY_STMT_LIST:
-                case LY_STMT_NOTIFICATION:
-                case LY_STMT_USES:
-                    YIN_PRINT_EXTCOMPLEX_SNODE(info[i].stmt);
-                    break;
-                case LY_STMT_LENGTH:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT_M(LY_STMT_LENGTH, struct lys_restr, yin_print_typerestr, "length");
-                    break;
-                case LY_STMT_MUST:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT_M(LY_STMT_MUST, struct lys_restr, yin_print_must);
-                    break;
-                case LY_STMT_PATTERN:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT_M(LY_STMT_PATTERN, struct lys_restr, yin_print_typerestr, "pattern");
-                    break;
-                case LY_STMT_RANGE:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT_M(LY_STMT_RANGE, struct lys_restr, yin_print_typerestr, "range");
-                    break;
-                case LY_STMT_WHEN:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT_M(LY_STMT_WHEN, struct lys_when, yin_print_when);
-                    break;
-                case LY_STMT_REVISION:
-                    YIN_PRINT_EXTCOMPLEX_STRUCT_M(LY_STMT_REVISION, struct lys_revision, yin_print_revision);
-                    break;
-                default:
-                    /* TODO */
-                    break;
-                }
-            }
-            level--;
-            break;
-        }
-
-        /* close extension */
-        yin_print_close(out, level, prefix, ext[u]->def->name, content);
-    }
-
-#undef YIN_PRINT_EXTCOMPLEX_STRUCT
-#undef YIN_PRINT_EXTCOMPLEX_STRUCT_M
-#undef YIN_PRINT_EXTCOMPLEX_INT
+    return LY_SUCCESS;
 }

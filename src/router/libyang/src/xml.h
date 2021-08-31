@@ -1,9 +1,9 @@
 /**
  * @file xml.h
  * @author Radek Krejci <rkrejci@cesnet.cz>
- * @brief Public API of libyang XML parser
+ * @brief Generic XML parser routines.
  *
- * Copyright (c) 2015 CESNET, z.s.p.o.
+ * Copyright (c) 2015 - 2018 CESNET, z.s.p.o.
  *
  * This source code is licensed under BSD 3-Clause License (the "License").
  * You may not use this file except in compliance with the License.
@@ -15,296 +15,167 @@
 #ifndef LY_XML_H_
 #define LY_XML_H_
 
-#include <sys/types.h>
-#include <stdio.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "log.h"
+#include "set.h"
 
-/**
- * @defgroup xmlparser XML Parser
- *
- * Simplified libyang XML parser for XML data modeled by YANG.
- *
- * @{
- */
-
-/*
- * Structures
- */
-
-/*
- * structure definition from context.h
- */
 struct ly_ctx;
+struct ly_in;
+struct ly_out;
 
-/**
- * @brief enumeration of attribute types
- */
-typedef enum lyxml_attr_type {
-    LYXML_ATTR_STD = 1,              /**< standard XML attribute */
-    LYXML_ATTR_NS = 2,               /**< XML namespace definition */
-    LYXML_ATTR_STD_UNRES = 3         /**< standard XML attribute with unresolved namespace, its ns attribute is actually prefix */
-} LYXML_ATTR_TYPE;
+/* Macro to test if character is whitespace */
+#define is_xmlws(c) (c == 0x20 || c == 0x9 || c == 0xa || c == 0xd)
 
-/**
- * @brief Namespace definition.
- *
- * The structure is actually casted lyxml_attr structure which covers all
- * attributes defined in an element. The namespace definition is in this case
- * also covered by lyxml_attr structure.
- */
+/* Macro to test if character is allowed to be a first character of an qualified identifier */
+#define is_xmlqnamestartchar(c) ((c >= 'a' && c <= 'z') || c == '_' || \
+        (c >= 'A' && c <= 'Z') || /* c == ':' || */ \
+        (c >= 0x370 && c <= 0x1fff && c != 0x37e ) || \
+        (c >= 0xc0 && c <= 0x2ff && c != 0xd7 && c != 0xf7) || c == 0x200c || \
+        c == 0x200d || (c >= 0x2070 && c <= 0x218f) || \
+        (c >= 0x2c00 && c <= 0x2fef) || (c >= 0x3001 && c <= 0xd7ff) || \
+        (c >= 0xf900 && c <= 0xfdcf) || (c >= 0xfdf0 && c <= 0xfffd) || \
+        (c >= 0x10000 && c <= 0xeffff))
+
+/* Macro to test if character is allowed to be used in an qualified identifier */
+#define is_xmlqnamechar(c) ((c >= 'a' && c <= 'z') || c == '_' || c == '-' || \
+        (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || /* c == ':' || */ \
+        c == '.' || c == 0xb7 || (c >= 0x370 && c <= 0x1fff && c != 0x37e ) ||\
+        (c >= 0xc0 && c <= 0x2ff && c != 0xd7 && c != 0xf7) || c == 0x200c || \
+        c == 0x200d || (c >= 0x300 && c <= 0x36f) || \
+        (c >= 0x2070 && c <= 0x218f) || (c >= 0x203f && c <= 0x2040) || \
+        (c >= 0x2c00 && c <= 0x2fef) || (c >= 0x3001 && c <= 0xd7ff) || \
+        (c >= 0xf900 && c <= 0xfdcf) || (c >= 0xfdf0 && c <= 0xfffd) || \
+        (c >= 0x10000 && c <= 0xeffff))
+
 struct lyxml_ns {
-    LYXML_ATTR_TYPE type;            /**< type of the attribute = LYXML_ATTR_NS */
-    struct lyxml_ns *next;           /**< next sibling attribute */
-    struct lyxml_elem *parent;       /**< parent node of the attribute */
-    const char *prefix;              /**< the namespace prefix if defined, NULL for default namespace */
-    const char *value;               /**< the namespace value */
+    char *prefix;         /* prefix of the namespace, NULL for the default namespace */
+    char *uri;            /* namespace URI */
+    uint32_t depth;       /* depth level of the element to maintain the list of accessible namespace definitions */
 };
 
-/**
- * @brief Element's attribute definition
- *
- * The structure actually covers both the attributes as well as namespace
- * definitions.
- *
- * Attributes are being connected only into a singly linked list (compare it
- * with the elements).
- */
-struct lyxml_attr {
-    LYXML_ATTR_TYPE type;            /**< type of the attribute */
-    struct lyxml_attr *next;         /**< next sibling attribute */
-    const struct lyxml_ns *ns;       /**< pointer to the namespace of the attribute if any */
-    const char *name;                /**< name of the attribute (the LocalPart of the qualified name) */
-    const char *value;               /**< data stored in the attribute */
-};
-
-/**
- * @brief Structure describing an element in an XML tree.
- *
- * If the name item is NULL, then the content is part of the mixed content.
- *
- * Children elements are connected in a half ring doubly linked list:
- * - first's prev pointer points to the last children
- * - last's next pointer is NULL
- */
+/* element tag identifier for matching opening and closing tags */
 struct lyxml_elem {
-    char flags;                      /**< special flags */
-#define LYXML_ELEM_MIXED 0x01 /* element contains mixed content */
-/* 0x80 is reserved and cannot be set! */
-
-    struct lyxml_elem *parent;       /**< parent node */
-    struct lyxml_attr *attr;         /**< first attribute declared in the element */
-    struct lyxml_elem *child;        /**< first children element */
-    struct lyxml_elem *next;         /**< next sibling node */
-    struct lyxml_elem *prev;         /**< previous sibling node */
-
-    const char *name;                /**< name of the element */
-    const struct lyxml_ns *ns;       /**< namespace of the element */
-    const char *content;             /**< text content of the node if any */
+    const char *prefix;
+    const char *name;
+    size_t prefix_len;
+    size_t name_len;
 };
 
-/*
- * Functions
- * Parser
+/**
+ * @brief Status of the parser providing information what is expected next (which function is supposed to be called).
  */
+enum LYXML_PARSER_STATUS {
+    LYXML_ELEMENT,        /* opening XML element parsed */
+    LYXML_ELEM_CLOSE,     /* closing XML element parsed */
+    LYXML_ELEM_CONTENT,   /* XML element context parsed */
+    LYXML_ATTRIBUTE,      /* XML attribute parsed */
+    LYXML_ATTR_CONTENT,   /* XML attribute content parsed */
+    LYXML_END             /* end of input data */
+};
+
+struct lyxml_ctx {
+    const struct ly_ctx *ctx;
+    struct ly_in *in;       /* input structure */
+
+    enum LYXML_PARSER_STATUS status; /* status providing information about the last parsed object, following attributes
+                                        are filled based on it */
+    union {
+        const char *prefix; /* LYXML_ELEMENT, LYXML_ATTRIBUTE - elem/attr prefix */
+        const char *value;  /* LYXML_ELEM_CONTENT, LYXML_ATTR_CONTENT - elem/attr value */
+    };
+    union {
+        size_t prefix_len;  /* LYXML_ELEMENT, LYXML_ATTRIBUTE - elem/attr prefix length */
+        size_t value_len;   /* LYXML_ELEM_CONTENT, LYXML_ATTR_CONTENT - elem/attr value length */
+    };
+    union {
+        const char *name;   /* LYXML_ELEMENT, LYXML_ATTRIBUTE - elem/attr name */
+        ly_bool ws_only;    /* LYXML_ELEM_CONTENT, LYXML_ATTR_CONTENT - whether elem/attr value is empty/white-space only */
+    };
+    union {
+        size_t name_len;    /* LYXML_ELEMENT, LYXML_ATTRIBUTE - elem/attr name length */
+        ly_bool dynamic;    /* LYXML_ELEM_CONTENT, LYXML_ATTR_CONTENT - whether elem/attr value is dynamically allocated */
+    };
+
+    struct ly_set elements; /* list of not-yet-closed elements */
+    struct ly_set ns;       /* handled with LY_SET_OPT_USEASLIST */
+};
 
 /**
- * @defgroup xmlreadoptions XML parser options
- * @ingroup xmlparser
+ * @brief Create a new XML parser context and start parsing.
  *
- * Various options to change behavior of XML read functions (lyxml_parse_*()).
- *
- * @{
+ * @param[in] ctx libyang context.
+ * @param[in] in Input structure.
+ * @param[out] xmlctx New XML context with status ::LYXML_ELEMENT.
+ * @return LY_ERR value.
  */
-#define LYXML_PARSE_MULTIROOT 0x01 /**< By default, XML is supposed to be well-formed so the input file or memory chunk
-                                        contains only a single XML tree. This option make parser to read multiple XML
-                                        trees from a single source (regular file terminated by EOF or memory chunk
-                                        terminated by NULL byte). In such a case, the returned XML element has other
-                                        siblings representing the other XML trees from the source. */
-#define LYXML_PARSE_NOMIXEDCONTENT 0x02 /**< By default, the parser allows elements with mixed content (text content
-                                        mixed with standard XML children). This option cases to handle such elements
-                                        as invalid input (#LYVE_XML_INVAL). */
+LY_ERR lyxml_ctx_new(const struct ly_ctx *ctx, struct ly_in *in, struct lyxml_ctx **xmlctx);
 
 /**
- * @}
+ * @brief Move to the next XML artefact and update parser status.
+ *
+ * LYXML_ELEMENT (-> LYXML_ATTRIBUTE -> LYXML_ATTR_CONTENT)* -> LYXML_ELEM_CONTENT -> LYXML_ELEM_CLOSE ...
+ *                                                                                 -> LYXML_ELEMENT ...
+ *
+ * @param[in] xmlctx XML context to move.
+ * @return LY_ERR value.
  */
+LY_ERR lyxml_ctx_next(struct lyxml_ctx *xmlctx);
 
 /**
- * @brief Parse XML from in-memory string
+ * @brief Peek at the next XML parser status without changing it.
  *
- * @param[in] ctx libyang context to use
- * @param[in] data Pointer to a NULL-terminated string containing XML data to
- * parse.
- * @param[in] options Parser options, see @ref xmlreadoptions.
- * @return Pointer to the root of the parsed XML document tree or NULL in case of empty \p data. To free the
- *         returned data, use lyxml_free(). In these cases, the function sets #ly_errno to LY_SUCCESS. In case
- *         of error, #ly_errno contains appropriate error code (see #LY_ERR).
+ * @param[in] xmlctx XML context to use.
+ * @param[out] next Next XML parser status.
+ * @return LY_ERR value.
  */
-struct lyxml_elem *lyxml_parse_mem(struct ly_ctx *ctx, const char *data, int options);
+LY_ERR lyxml_ctx_peek(struct lyxml_ctx *xmlctx, enum LYXML_PARSER_STATUS *next);
 
 /**
- * @brief Parse XML from filesystem
+ * @brief Get a namespace record for the given prefix in the current context.
  *
- * @param[in] ctx libyang context to use
- * @param[in] filename Path to the file where read data to parse
- * @param[in] options Parser options, see @ref xmlreadoptions.
- * @return Pointer to the root of the parsed XML document tree or NULL in case of empty file. To free the
- *         returned data, use lyxml_free(). In these cases, the function sets #ly_errno to LY_SUCCESS. In case
- *         of error, #ly_errno contains appropriate error code (see #LY_ERR).
+ * @param[in] ns_set Set with namespaces from the XML context.
+ * @param[in] prefix Pointer to the namespace prefix as taken from ::lyxml_get_attribute() or ::lyxml_get_element().
+ * Can be NULL for default namespace.
+ * @param[in] prefix_len Length of the prefix string (since it is not NULL-terminated when returned from ::lyxml_get_attribute() or
+ * ::lyxml_get_element()).
+ * @return The namespace record or NULL if the record for the specified prefix not found.
  */
-struct lyxml_elem *lyxml_parse_path(struct ly_ctx *ctx, const char *filename, int options);
+const struct lyxml_ns *lyxml_ns_get(const struct ly_set *ns_set, const char *prefix, size_t prefix_len);
 
 /**
- * @defgroup xmldumpoptions XML printer options
- * @ingroup xmlparser
+ * @brief Print the given @p text as XML string which replaces some of the characters which cannot appear in XML data.
  *
- * Various options to change behavior of XML dump functions (lyxml_print_*()).
- *
- * When no option is specified (value 0), dumper prints all the content at once.
- *
- * @{
+ * @param[in] out Output structure for printing.
+ * @param[in] text String to print.
+ * @param[in] attribute Flag for attribute's value where a double quotes must be replaced.
+ * @return LY_ERR values.
  */
-#define LYXML_PRINT_OPEN   0x01  /**< print only the open part of the XML element.
-                                   If used in combination with #LYXML_PRINT_CLOSE, it prints the element without
-                                   its children: \<element/\>. If none of these two options is used, the element
-                                   is printed including all its children. */
-#define LYXML_PRINT_FORMAT 0x02  /**< format the output.
-                                   If option is not used, the element and its children are printed without indentantion.
-                                   If used in combination with #LYXML_PRINT_CLOSE or LYXML_PRINT_ATTRS or LYXML_PRINT_OPEN,
-                                   it has no effect.*/
-#define LYXML_PRINT_CLOSE  0x04  /**< print only the closing part of the XML element.
-                                   If used in combination with #LYXML_PRINT_OPEN, it prints the element without
-                                   its children: \<element/\>. If none of these two options is used, the element
-                                   is printed including all its children. */
-#define LYXML_PRINT_ATTRS  0x08  /**< dump only attributes and namespace declarations of the element (element name
-                                   is not printed). This option cannot be used in combination with
-                                   #LYXML_PRINT_OPEN and/or #LYXML_PRINT_CLOSE */
-#define LYXML_PRINT_SIBLINGS 0x10/**< dump all top-level siblings. By default, the given XML element is supposed to be
-                                   the only root element (and document is supposed to be well-formed XML). With this
-                                   option the printer consider that the given XML element can has some sibling
-                                   elements and print them all (so the given element is not necessarily printed as
-                                   the first one). */
-#define LYXML_PRINT_NO_LAST_NEWLINE 0x20 /**< makes sense only combined with LYXML_PRINT_FORMAT and causes the very
-                                           last newline not to be printed - necessary for correct anyxml XML structure
-                                           print. */
+LY_ERR lyxml_dump_text(struct ly_out *out, const char *text, ly_bool attribute);
 
 /**
- * @}
+ * @brief Remove the allocated working memory of the context.
+ *
+ * @param[in] xmlctx XML context to clear.
  */
+void lyxml_ctx_free(struct lyxml_ctx *xmlctx);
 
 /**
- * @brief Dump XML tree to a IO stream
+ * @brief Compare values and their prefix mappings.
  *
- * To write data into a file descriptor instead of file stream, use lyxml_print_fd().
- *
- * @param[in] stream IO stream to print out the tree.
- * @param[in] elem Root element of the XML tree to print
- * @param[in] options Dump options, see @ref xmldumpoptions.
- * @return number of printed characters.
+ * @param[in] ctx1 Libyang context for resolving prefixes in @p value1.
+ * @param[in] value1 First value.
+ * @param[in] val_prefix_data1 First value prefix data.
+ * @param[in] ctx2 Libyang context for resolving prefixes in @p value2.
+ * Can be set to NULL if @p ctx1 is equal to @p ctx2.
+ * @param[in] value2 Second value.
+ * @param[in] val_prefix_data2 Second value prefix data.
+ * @return LY_SUCCESS if values are equal.
+ * @return LY_ENOT if values are not equal.
+ * @return LY_ERR on error.
  */
-int lyxml_print_file(FILE * stream, const struct lyxml_elem *elem, int options);
-
-/**
- * @brief Dump XML tree to a IO stream
- *
- * Same as lyxml_dump(), but it writes data into the given file descriptor.
- *
- * @param[in] fd File descriptor to print out the tree.
- * @param[in] elem Root element of the XML tree to print
- * @param[in] options Dump options, see @ref xmldumpoptions.
- * @return number of printed characters.
- */
-int lyxml_print_fd(int fd, const struct lyxml_elem *elem, int options);
-
-/**
- * @brief Dump XML tree to a IO stream
- *
- * Same as lyxml_dump(), but it allocates memory and store the data into it.
- * It is up to caller to free the returned string by free().
- *
- * @param[out] strp Pointer to store the resulting dump.
- * @param[in] elem Root element of the XML tree to print
- * @param[in] options Dump options, see @ref xmldumpoptions.
- * @return number of printed characters.
- */
-int lyxml_print_mem(char **strp, const struct lyxml_elem *elem, int options);
-
-/**
- * @brief Dump XML tree to a IO stream
- *
- * Same as lyxml_dump(), but it writes data via the provided callback.
- *
- * @param[in] writeclb Callback function to write the data (see write(1)).
- * @param[in] arg Optional caller-specific argument to be passed to the \p writeclb callback.
- * @param[in] elem Root element of the XML tree to print
- * @param[in] options Dump options, see @ref xmldumpoptions.
- * @return number of printed characters.
- */
-int lyxml_print_clb(ssize_t (*writeclb)(void *arg, const void *buf, size_t count), void *arg, const struct lyxml_elem *elem, int options);
-
-/**
- * @brief Duplicate the XML tree into the different content.
- *
- * Date parser requires to have the input XML tree in the same context as the resulting data tree. Therefore,
- * if you need to parse a single XML tree into a different contexts, you have to duplicate the source XML
- * tree into the required context first.
- *
- * @param[in] ctx Target context for the result.
- * @param[in] root Root node of the XML tree to duplicate. If an internal node is provided,
- *            the parents are not duplicated and only the specified subtree is duplicated.
- * @result Pointer to the duplicated tree or NULL on error.
- */
-struct lyxml_elem *lyxml_dup(struct ly_ctx *ctx, struct lyxml_elem *root);
-
-/**
- * @brief Free (and unlink from the XML tree) the specified element with all
- * its attributes and namespace definitions.
- *
- * @param[in] ctx libyang context to use
- * @param[in] elem Pointer to the element to free.
- */
-void lyxml_free(struct ly_ctx *ctx, struct lyxml_elem *elem);
-
-/**
- * @brief Free (and unlink from the XML tree) the specified (sub)tree with all
- * its attributes and namespace definitions. In contrast to lyxml_free(), free also
- * all the element's siblings (preceding as well as following).
- *
- * @param[in] ctx libyang context to use
- * @param[in] elem Pointer to the element to free.
- */
-void lyxml_free_withsiblings(struct ly_ctx *ctx, struct lyxml_elem *elem);
-
-/**
- * @brief Unlink the element from its parent. In contrast to lyxml_free(),
- * after return the caller can still manipulate with the elem. Any namespaces
- * are corrected and copied, if needed.
- *
- * @param[in] ctx libyang context to use.
- * @param[in] elem Element to unlink from its parent (if any).
- */
-void lyxml_unlink(struct ly_ctx *ctx, struct lyxml_elem *elem);
-
-/**
- * @brief Get value of the attribute in the specified element.
- */
-const char *lyxml_get_attr(const struct lyxml_elem *elem, const char *name, const char *ns);
-
-/**
- * @brief Get namespace definition of the given prefix in context of the specified element.
- *
- * @param[in] elem Element where start namespace searching
- * @param[in] prefix Prefix of the namespace to search for
- * @return Namespace definition or NULL if no such namespace exists
- */
-const struct lyxml_ns *lyxml_get_ns(const struct lyxml_elem *elem, const char *prefix);
-
-/**@}*/
-
-#ifdef __cplusplus
-}
-#endif
+LY_ERR lyxml_value_compare(const struct ly_ctx *ctx1, const char *value1, void *val_prefix_data1,
+        const struct ly_ctx *ctx2, const char *value2, void *val_prefix_data2);
 
 #endif /* LY_XML_H_ */

@@ -1,0 +1,7 @@
+module d{
+	namespace n;
+	prefix p;
+	list l {
+		when "";
+	}
+}

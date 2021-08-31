@@ -1,0 +1,13 @@
+module issue1042_test-type-provider {
+    yang-version 1.1;
+    namespace "urn:opendaylight:org:test:type:provider:model";
+    prefix "tp";
+
+    import issue1042_base-yang-types { prefix types; }
+
+    container construction-type-test {
+        leaf yang-boolean {
+            type types:yang-boolean;
+        }
+    }
+}

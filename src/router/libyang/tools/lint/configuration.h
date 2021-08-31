@@ -15,7 +15,6 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-
 /**
  * @brief Finds the current user's yanglint dir
  * @return NULL on failure, dynamically allocated yanglint dir path

@@ -1,15 +1,24 @@
 # libyang
 
 [![BSD license](https://img.shields.io/badge/License-BSD-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Build Status](https://secure.travis-ci.org/CESNET/libyang.png?branch=master)](http://travis-ci.org/CESNET/libyang/branches)
+[![Build](https://github.com/CESNET/libyang/workflows/libyang%20CI/badge.svg)](https://github.com/CESNET/libyang/actions?query=workflow%3A%22libyang+CI%22)
+[![Docs](https://img.shields.io/badge/docs-link-blue)](https://netopeer.liberouter.org/doc/libyang/)
 [![codecov.io](https://codecov.io/github/CESNET/libyang/coverage.svg?branch=master)](https://codecov.io/github/CESNET/libyang?branch=master)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/5259/badge.svg)](https://scan.coverity.com/projects/5259)
 [![Ohloh Project Status](https://www.openhub.net/p/libyang/widgets/project_thin_badge.gif)](https://www.openhub.net/p/libyang)
 
 libyang is a YANG data modelling language parser and toolkit written (and
 providing API) in C. The library is used e.g. in [libnetconf2](https://github.com/CESNET/libnetconf2),
-[Netopeer2](https://github.com/CESNET/Netopeer2), [sysrepo](https://github.com/sysrepo/sysrepo) and
-[FRRouting](https://github.com/frrouting/frr) projects.
+[Netopeer2](https://github.com/CESNET/Netopeer2) or [sysrepo](https://github.com/sysrepo/sysrepo) projects.
+
+If you are interested in future plans announcements, please subscribe to the
+[Future Plans issue](https://github.com/CESNET/libyang/issues/880).
+
+## Migration from libyang version 1 or older
+
+Look into the documentation and the section `Transition Manual`. That should help with basic migration and the
+ability to compile a project. But to actually make use of the new features, it is required to read through
+the whole documentation and the API.
 
 ## Provided Features
 
@@ -27,43 +36,28 @@ providing API) in C. The library is used e.g. in [libnetconf2](https://github.co
 Current implementation covers YANG 1.0 ([RFC 6020](https://tools.ietf.org/html/rfc6020))
 as well as YANG 1.1 ([RFC 7950](https://tools.ietf.org/html/rfc7950)).
 
-## Branches
-
-The project uses 2 main branches `master` and `devel`. Other branches should not be cloned. In `master` there are files of the
-last official *release*. Any latest improvements and changes, which were tested at least briefly are found in `devel`. On every
-new *release*, `devel` is merged into `master`.
-
-This means that when only stable official releases are to be used, either `master` can be used or specific *releases* downloaded.
-If all the latest bugfixes should be applied, `devel` branch is the  one to be used. Note that whenever **a new issue is created**
-and it occurs on the `master` branch, the **first response will likely be** to use `devel` before any further provided support.
-
-## Packages
-
-We are using openSUSE Build Service to automaticaly prepare binary packages for number of GNU/Linux distros.
-The [libyang](https://software.opensuse.org//download.html?project=home%3Aliberouter&package=libyang)
-packages are always build from current `master` branch (latest release). If you are interested in any other packages
-(such as *devel* or C++ and Python bindings), you can browse
-[all packages](https://download.opensuse.org/repositories/home:/liberouter/) from our repository.
-
 ## Requirements
 
 ### Build Requirements
 
-* C compiler (gcc >= 4.8.4, clang >= 3.0, ...)
+* C compiler
 * cmake >= 2.8.12
-* libpcre (devel package)
+* libpcre2 >= 10.21 (including devel package)
  * note, that PCRE is supposed to be compiled with unicode support (configure's options
    `--enable-utf` and `--enable-unicode-properties`)
-* cmocka >= 1.0.0 (for tests only, see [Tests](#Tests))
 
 #### Optional
 
 * doxygen (for generating documentation)
+* cmocka >= 1.0.0 (for [tests](#Tests))
 * valgrind (for enhanced testing)
+* gcov (for code coverage)
+* lcov (for code coverage)
+* genhtml (for code coverage)
 
 ### Runtime Requirements
 
-* libpcre
+* libpcre2 >= 10.21
 
 ## Building
 
@@ -73,18 +67,6 @@ $ cmake ..
 $ make
 # make install
 ```
-
-### Documentation
-
-The library documentation can be generated directly from the source codes using
-Doxygen tool:
-```
-$ make doc
-$ google-chrome ../doc/html/index.html
-```
-
-The documentation is also built hourly and available at
-[netopeer.liberouter.org](https://netopeer.liberouter.org/doc/libyang/master/).
 
 ### Useful CMake Options
 
@@ -149,14 +131,6 @@ libyang to always search for the schema anew by:
 $ cmake -DENABLE_LATEST_REVISIONS=OFF ..
 ```
 
-Also, it can be efficient to store certain information about schemas that is generated during parsing
-so that it does not need to be generated every time the schema is used, but it will consume some
-additional space. You can enable this cache with:
-
-```
-$ cmake -DENABLE_CACHE=ON ..
-```
-
 ### CMake Notes
 
 Note that, with CMake, if you want to change the compiler or its options after
@@ -184,6 +158,13 @@ linker. To help with setting all the compiler's options, there is `libyang.pc` f
 If you are using `cmake` in you project, it is also possible to use the provided
 `FindLibYANG.cmake` file to detect presence of the libyang library in the system.
 
+## Bindings
+
+There are no bindings for other languages directly in this project but they are
+available separately.
+
+* [Rust](https://github.com/rwestphal/yang2-rs/)
+
 ## yanglint
 
 libyang project includes a feature-rich tool called `yanglint(1)` for validation
@@ -195,27 +176,15 @@ well as its man page are installed together with the library itself.
 There is also [README](./tools/lint/examples/README.md) describing some examples of
 using `yanglint`.
 
-libyang supports YANG extensions via a plugin mechanism. Some of the plugins (for
-NACM or Metadata) are available out of the box and installed together with libyang.
-However, when libyang is not installed and `yanglint(1)` is used from the build
-directory, the plugins are not available. There are two options:
-
-1. Install libyang.
-```
-# make install
-```
-
-2. Set environment variable `LIBYANG_EXTENSIONS_PLUGINS_DIR` to contain path to the
-   built extensions plugin (`./src/extensions` from the build directory).
-```
-$ LIBYANG_EXTENSIONS_PLUGINS_DIR="`pwd`/src/extensions" ./yanglint
-```
-
 ## Tests
 
 libyang includes several tests built with [cmocka](https://cmocka.org/). The tests
 can be found in `tests` subdirectory and they are designed for checking library
-functionality after code changes.
+functionality after code changes. Additional regression tests done with
+a corpus of fuzzing inputs that previously caused crashes are done.
+Those are available in `tests/fuzz` and are built automatically with the
+cmocka unit tests.
+
 
 The tests are by default built in the `Debug` build mode by running
 ```
@@ -237,35 +206,20 @@ Tests can be run by the make's `test` target:
 $ make test
 ```
 
+### Code Coverage
+
+Based on the tests run, it is possible to generate code coverage report via the
+make's `coverage` target:
+```
+$ make coverage
+```
+
 ## Fuzzing
 
-Simple fuzzing targets, fuzzing instructions and a Dockerfile that builds the fuzz targets
-and the AFL fuzzer are available in the `tests/fuzz` directory.
+Multiple YANG fuzzing targets and fuzzing instructions are available in the
+`tests/fuzz` directory.
 
-The `tests/fuzz` directory also contains a README file that describes the whole process in more detail.
-
-## Bindings
-
-We provide bindings for high-level languages using [SWIG](http://www.swig.org/)
-generator. The bindings are optional and to enable building of the specific
-binding, the appropriate cmake option must be enabled, for example:
-```
-$ cmake -DJAVASCRIPT_BINDING=ON ..
-```
-
-More information about the specific binding can be found in their README files.
-
-Currently supported bindings are:
-
-* JavaScript
-    - cmake option: `JAVASCRIPT_BINDING`
-    - [README](./swig/javascript/README.md)
-* Python SWIG (uses SWIG, enabled by default if `GEN_LANGUAGE_BINDINGS` is set)
-    - cmake option: `GEN_PYTHON_BINDINGS` (depends on `GEN_CPP_BINDINGS`)
-    - [README](./swig/python/README.md)
-* Python CFFI (more "pythonic" API)
-    - Hosted in a separate project: https://github.com/CESNET/libyang-python
-
-## Project Information
-
-Project is hosted on [GitHub](https://github.com/CESNET/libyang) where you can find additional information and contact developers via the project's issue tracker. If you are interested in future plans announcements, please subscribe to the [Future Plans issue](https://github.com/CESNET/libyang/issues/880).
+All of the targets can be fuzzed with LLVM's LibFuzzer and AFL, and new targets
+can easily be added.
+Asciinema examples which describe the fuzzing setup for both AFL (https://asciinema.org/a/311060)
+and LibFuzzer (https://asciinema.org/a/311035) are available.

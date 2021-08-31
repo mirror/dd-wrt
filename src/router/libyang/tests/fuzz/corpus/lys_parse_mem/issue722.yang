@@ -1,0 +1,16 @@
+module mod6 {
+    prefix abc;
+    namespace "http://www.example.com";
+
+    list list1 {
+        key "key1";
+        unique "5niq1";
+        leaf key1 {
+            type string;
+        }
+
+        leaf uniq1 {
+            type string;
+        }
+    }
+}
