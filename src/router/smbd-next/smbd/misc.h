@@ -41,6 +41,20 @@ char *ksmbd_convert_dir_info_name(struct ksmbd_dir_info *d_info,
 
 #define NTFS_TIME_OFFSET	((u64)(369 * 365 + 89) * 24 * 3600 * 10000000)
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+#define notify_change(a, b, c) notify_change(a, b)
+#define vfs_unlink(a, b, c) vfs_unlink(a, b)
+#define vfs_link(a, b, c, d) vfs_link(a, b, c)
+#define vfs_rename(a, b, c, d, e, f) vfs_rename(a, b, c, d)
+#define netdev_notifier_info_to_dev(ptr) ptr
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 21)
+#define inode_lock(inode) mutex_lock(&inode->i_mutex)
+#define inode_unlock(inode) mutex_unlock(&inode->i_mutex)
+#define inode_lock_nested(inode, b) mutex_lock_nested(&inode->i_mutex, b)
+#endif
+
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
 struct timespec ksmbd_NTtimeToUnix(__le64 ntutc);
 #else

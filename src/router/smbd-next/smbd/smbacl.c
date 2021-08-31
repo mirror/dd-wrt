@@ -1349,21 +1349,13 @@ int set_info_sec(struct ksmbd_conn *conn, struct ksmbd_tree_connect *tcon,
 						     fattr.cf_dacls);
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_lock(inode);
-#else
-	mutex_lock(&inode->i_mutex);
-#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 	rc = notify_change(user_ns, path->dentry, &newattrs, NULL);
 #else
 	rc = notify_change(path->dentry, &newattrs, NULL);
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_unlock(inode);
-#else
-	mutex_unlock(&inode->i_mutex);
-#endif
 	if (rc)
 		goto out;
 
