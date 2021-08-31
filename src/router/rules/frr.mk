@@ -14,6 +14,7 @@ libcap-install:
 
 frr-configure: ncurses json-c readline libyang libcap libcares
 	cd frr && autoreconf --force --install
+	cd frr && chmod 777 configure
 	rm -rf frr/build
 	-mkdir -p frr/build
 	cd frr/build && ../configure CC="" CFLAGS="" LDFLAGS="" LD="" --with-vtysh-pager=less --disable-eigrpd --disable-ldpd --enable-shared --disable-pbrd --disable-rfptest --disable-ssd  --disable-doc --enable-clippy-only --enable-shared --disable-zeromq --enable-opaque-lsa --disable-nhrpd --enable-ospf-te --disable-ospfclient --enable-multipath=64  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd --disable-staticd --disable-bfdd --disable-babeld --enable-pie=no PYTHON=/usr/bin/python3
