@@ -13,7 +13,7 @@ LIBYANG_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -D_NEED_PRINTF -I$(TOP)/pcre2/src
 LIBYANG_EXTRA_LDFLAGS=-L$(TOP)/pcre2/.libs -lpcre2-8 -lpthread
 
 
-libyang-configure: zlib openssl
+libyang-configure: zlib openssl pcre2
 	rm -f $(TOP)/libyang/CMakeCache.txt
 	rm -f $(TOP)/libyang/build/CMakeCache.txt
 	mkdir -p $(TOP)/libyang/build
