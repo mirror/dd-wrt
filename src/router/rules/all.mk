@@ -257,6 +257,7 @@ include rules/libnetfilter_log.mk
 include rules/libdnet.mk
 include rules/daq.mk
 include rules/pcre.mk
+include rules/pcre2.mk
 include rules/snort.mk
 include rules/swconfig.mk
 include rules/dlna.mk
