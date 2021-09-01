@@ -450,10 +450,6 @@ SUFFIXES += _clippy.c
 
 # xrelfo, the ELF xref extractor
 
-AM_V_XRELFO = $(am__v_XRELFO_$(V))
-am__v_XRELFO_ = $(am__v_XRELFO_$(AM_DEFAULT_VERBOSITY))
-am__v_XRELFO_0 = @echo "  XRELFO  " $@;
-am__v_XRELFO_1 =
 
 if DEV_BUILD
 XRELFO_FLAGS = -Wlog-format -Wlog-args
@@ -463,11 +459,12 @@ endif
 
 SUFFIXES += .xref
 %.xref: % $(CLIPPY)
-	$(AM_V_XRELFO) $(CLIPPY) $(top_srcdir)/python/xrelfo.py $(XRELFO_FLAGS) -o $@ $<
+	@true
 
 # dependencies added in python/makefile.py
 frr.xref:
-	$(AM_V_XRELFO) $(CLIPPY) $(top_srcdir)/python/xrelfo.py -o $@ $^
+	@true
+
 all-am: frr.xref
 
 clean-xref:
