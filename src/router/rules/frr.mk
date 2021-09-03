@@ -70,6 +70,7 @@ frr-install:
 	rm -rf $(INSTALLDIR)/frr/usr/man
 	rm -f $(INSTALLDIR)/frr/usr/lib/*.a
 	rm -f $(INSTALLDIR)/frr/usr/lib/*.la
+	rm -f $(INSTALLDIR)/frr/usr/lib/frr/modules/*.la
 	rm -f $(INSTALLDIR)/frr/usr/bin/bgp_btoa
 	rm -f $(INSTALLDIR)/frr/usr/bin/test_igmpv3_join
 	mkdir -p $(INSTALLDIR)/frr/usr/bin
