@@ -10,5 +10,5 @@ pcre2-clean:
 	$(MAKE) -C pcre2 clean CFLAGS="$(COPTS) $(MIPS16_OPT)"
 
 pcre2-install:
-	install -D pcre2/.libs/libpcre2-8.so.0 $(INSTALLDIR)/pcre/usr/lib/libpcre2-8.so.0
-	install -D pcre2/.libs/libpcre2-posix.so.3 $(INSTALLDIR)/pcre/usr/lib/libpcre2-posix.so.3
+	install -D pcre2/.libs/libpcre2-8.so.0 $(INSTALLDIR)/pcre2/usr/lib/libpcre2-8.so.0
+	install -D pcre2/.libs/libpcre2-posix.so.3 $(INSTALLDIR)/pcre2/usr/lib/libpcre2-posix.so.3
