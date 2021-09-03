@@ -180,7 +180,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 	} else {
 		status1 = "share.disable";	// only for nonbrand
 		status2 = "\"&nbsp;\"";
-		button1 = "\"&nbsp;\"";
+		button1 = "dummy";
 		hidden1 = "<!--";
 		hidden2 = "-->";
 	}
