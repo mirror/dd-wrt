@@ -26,4 +26,4 @@
 
   </form> 
 </body>
-</html>
+<% footer(); %></html>

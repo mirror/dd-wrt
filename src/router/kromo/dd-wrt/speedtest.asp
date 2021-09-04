@@ -23,4 +23,4 @@ if (val==1) {
 </head>
 <body>
 </body>
-</html>
+<% footer(); %></html>

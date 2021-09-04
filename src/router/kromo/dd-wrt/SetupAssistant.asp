@@ -867,4 +867,4 @@ function submitSavePrevButtons() {
 			</div>
 		</div>
 	</body>
-</html>
+<% footer(); %></html>

@@ -758,4 +758,4 @@ function initChannelProperties() {
 			</div>
 		</div>
 	</body>
-</html>
+<% footer(); %></html>

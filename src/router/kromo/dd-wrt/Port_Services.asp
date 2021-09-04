@@ -302,4 +302,4 @@ addEvent(window, "unload", function() {
 			</div>
 		</form>
 	</body>
-</html>
+<% footer(); %></html>

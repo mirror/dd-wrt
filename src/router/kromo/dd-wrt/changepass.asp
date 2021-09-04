@@ -352,4 +352,4 @@ if (valid_password(F))
 			</div>
 		</div>
 	</body>
-</html>
+<% footer(); %></html>
