@@ -2428,7 +2428,7 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n"	//
 		  " fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n"	//
 		  "</head>\n<body>\n<fieldset><legend>System Log</legend>", charset);
-
+	do_style(stream);
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
