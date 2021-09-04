@@ -488,6 +488,8 @@ static void send_authenticate(webs_t conn_fp)
 	free(header);
 }
 
+void ej_footer(webs_t wp, int argc, char_t ** argv);
+
 static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, const char *fmt, ...)
 {
 	char *text;
@@ -498,9 +500,12 @@ static void send_error(webs_t conn_fp, int status, char *title, char *extra_head
 	dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> websWrite, fflush -> wfflush
 	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
-	(void)websWrite(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
-	(void)websWrite(conn_fp, "%s\n", text);
-	(void)websWrite(conn_fp, "</BODY></HTML>\n");
+	websWrite(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
+	websWrite(conn_fp, "%s\n", text);
+	websWrite(conn_fp, "</BODY>");
+	ej_footer(conn_fp, 0, NULL);
+	websWrite(conn_fp,"</HTML>\n");
+
 	(void)wfflush(conn_fp);
 	free(text);
 }
