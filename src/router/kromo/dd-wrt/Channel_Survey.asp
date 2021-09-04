@@ -62,4 +62,4 @@
 			</div>
 		</form>
 	</body>
-<% footer(); %></html>
+</html>

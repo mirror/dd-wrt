@@ -900,4 +900,4 @@ addEvent(window, "unload", function() {
 			</div>
 		</div>
 	</body>
-<% footer(); %></html>
+</html>

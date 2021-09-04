@@ -15,4 +15,4 @@
 			</dl>
 		</div>
 	</body>
-<% footer(); %></html>
+</html>

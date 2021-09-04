@@ -23,4 +23,4 @@ if (val==1) {
     <script src="https://speedchecker.dd-wrt.com/public/demo/page-wifiSpeedchecker.js"></script>
 </head>
 <body></body>
-<% footer(); %></html>
+</html>

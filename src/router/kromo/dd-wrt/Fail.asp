@@ -32,4 +32,4 @@ function to_submit() {
 			</div>
 		</div>
 	</body>
-<% footer(); %></html>
+</html>

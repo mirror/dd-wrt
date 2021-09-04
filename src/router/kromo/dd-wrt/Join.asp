@@ -28,4 +28,4 @@ function to_send(url)
 		</div>
 	</div>
 	</body>
-<% footer(); %></html>
+</html>
