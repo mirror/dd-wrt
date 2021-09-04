@@ -1,9 +1,9 @@
-/*
+<!--
  dd-wrt-inspired-themes
  © 2021 Style-it-themes - the-j0k3r
  License: MIT
  URL: https://github.com/style-it-themes/dd-wrt-inspired-themes
-*/
+-->
 
 <style id="stylus-1" type="text/css" class="stylus">:root {
     --f-mono: 'font_name', Cascadia Code, Fira Code, SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
