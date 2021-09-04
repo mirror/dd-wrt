@@ -15,5 +15,5 @@
 					</div><br />
 				<% tran("service.hmilkfish_page2"); %>
 	</body>
-</html>
+<% footer(); %></html>
 

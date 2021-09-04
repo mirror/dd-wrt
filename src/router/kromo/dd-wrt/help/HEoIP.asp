@@ -20,4 +20,4 @@
 			</ul>
 		</div>
 	</body>
-</html>
+<% footer(); %></html>

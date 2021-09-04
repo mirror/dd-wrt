@@ -25,4 +25,4 @@
 			</form>
 		</div>
 	</body>
-</html>
+<% footer(); %></html>

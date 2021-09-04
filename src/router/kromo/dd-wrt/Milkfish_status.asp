@@ -64,4 +64,4 @@ function to_submit(F) {
 			</div>
 		</form>
 	</body>
-</html>
+<% footer(); %></html>

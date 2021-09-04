@@ -342,4 +342,4 @@ No amendment or modification hereof shall be valid or binding upon the parties u
 			</div>
 		</div>
 	</body>
-</html>
+<% footer(); %></html>

@@ -5,7 +5,7 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2><%% tran("wds.h2"); %%></h2>
+			<h2><% tran("wds.h2"); %></h2>
 			<dl>
 				<dd>WDS (Wireless Distribution System)はアクセスポイント同士のみ、またはInfrastructureモードの混在を含むアクセスポイント同士の通信を行うことができる機能です。(Infrastructureモードを混在する場合は、パフォーマンスが低下します)この製品では「WDS」,「Point to Point」の2つのモードを使用することができます。</dd>
 				
