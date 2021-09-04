@@ -2428,7 +2428,9 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n"	//
 		  " fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n"	//
 		  "</head>\n<body>\n<fieldset><legend>System Log</legend>", charset);
+#ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(stream);
+#endif
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
@@ -2595,7 +2597,9 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 		websWrite(stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n", smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
 	}
 	websWrite(stream, "</li>\n\n<li id=\"label\">\n%s %d (%s: %lu MB / %s: %lu MB)\n</li>\n" "</ul>\n\n" "</body>" "\n\n", monthname, year, incom, totin, outcom, totout);
+#ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(stream);
+#endif
 	websWrite(stream, "</html>");
 
 }
