@@ -98,4 +98,4 @@ function milkfish_sip_message_submit(F) {
 			</div>
 		</form>
 	</body>
-</html>
+<% footer(); %></html>

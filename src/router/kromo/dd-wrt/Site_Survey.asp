@@ -91,4 +91,4 @@ function do_join (F,SSID) {
 			</div>
 		</form>
 	</body>
-</html>
+<%% footer(); %%></html>

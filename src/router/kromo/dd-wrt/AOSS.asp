@@ -312,4 +312,4 @@ document.write("<\/tr>");
 			</div>
 		</div>
 	</body>
-</html>
+<% footer(); %></html>

@@ -45,4 +45,4 @@ function ttraff_restore_submit(F) {
 				</div>
 		</form>
 	</body>
-</html>
+<% footer(); %></html>

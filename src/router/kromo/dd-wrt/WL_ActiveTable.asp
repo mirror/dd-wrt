@@ -110,4 +110,4 @@ refreshParent = function() {
 			</div>
 		</form>
 	</body>
-</html>
+<%% footer(); %%></html>

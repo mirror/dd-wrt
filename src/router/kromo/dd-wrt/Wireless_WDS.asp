@@ -442,4 +442,4 @@ document.write("<option value='<%% nvsm("%s_br1_nat", "2", "selected"); %%>'>" +
 			</div>
 		</div>
 	</body>
-</html>
+<%% footer(); %%></html>

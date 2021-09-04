@@ -99,4 +99,4 @@ function milkfish_user_remove_submit(F) {
 			</div>
 		</form>
 	</body>
-</html>
+<% footer(); %></html>
