@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6350 | brainslayer | 2021-09-04 11:57:36 +0700 (Sat, 04 Sep 2021) | 1 line
+
+reenable fils
+------------------------------------------------------------------------
 r6349 | brainslayer | 2021-08-22 20:27:38 +0700 (Sun, 22 Aug 2021) | 1 line
 
 the 10.4 based firmware for qca988x seem to be unreliable. so use latest known good one
