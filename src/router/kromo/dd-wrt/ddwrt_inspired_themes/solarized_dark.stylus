@@ -927,8 +927,8 @@
     bottom: 0.15rem;
     cursor: pointer;
     position: relative;
-    height: 1rem;
-    width: 1rem;
+    height: .88rem;
+    width: .88rem;
     vertical-align: middle;
   }
   [type='radio'i]:disabled,
