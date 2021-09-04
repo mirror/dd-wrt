@@ -125,7 +125,7 @@ document.forms[0].onreset = function() {
 	<div class="setting">
 		<div class="label"><% tran("share.stylus"); %></div>
 		<select name="stylus">
-		    <% show_stylus(); %>
+		    <% show_ddwrt_inspired_themes(); %>
 		</select>
 	</div>
 	<div class="setting">
