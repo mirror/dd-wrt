@@ -1050,7 +1050,7 @@ EJ_VISIBLE void ej_show_stylus(webs_t wp, int argc, char_t ** argv)
 
 size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
 
-EJ_VISIBLE void ej_footer(webs_t wp, int argc, char_t ** argv)
+void do_stylus(webs_t wp)
 {
 	char path[128];
 	int len = 0;
@@ -2167,6 +2167,7 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	if ((startswith(wp->request_url, "Wireless") || startswith(wp->request_url, "WL_WPA")) && get_wl_instances() == 3)
 		websWrite(wp, "\t\t<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
+	do_stylus(wp);
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
 #elif HAVE_ESPOD

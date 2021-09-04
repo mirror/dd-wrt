@@ -668,7 +668,6 @@ static void show_certfield(webs_t wp, char *title, char *file)
 		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n//]]>\n</script>\n</div>\n", title, file);
 }
 
-void ej_footer(webs_t wp, int argc, char_t ** argv);
 
 static void do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
@@ -707,7 +706,6 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 			  "<div class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
 			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "\n", _tran_string(buf, "freeradius.clientcert"));
-		ej_footer(stream, 0, NULL);
 		websWrite(stream, "</html>");
 		goto out;
 	}
@@ -818,7 +816,6 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Private Key PEM", filename);
 	websWrite(wp, "<div class=\"submitFooter\">\n" "<script type=\"text/javascript\">\n" "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n");
-	ej_footer(wp, 0, NULL);
 	websWrite(wp, "</html>");
 
 	//make certificates
@@ -2464,12 +2461,12 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 		websWrite(stream, "<table><tr align=\"center\"><td>No messages available! Syslogd is not enabled!</td></tr></table>");
 	}
 	websWrite(stream, "</fieldset><p></body>");
-	ej_footer(stream, 0, NULL);
 	websWrite(stream, "</html>");
 	return;
 }
 #endif
 
+void do_stylus(webs_t wp);
 static void do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	if (!charset)
@@ -2598,7 +2595,7 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 		websWrite(stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n", smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
 	}
 	websWrite(stream, "</li>\n\n<li id=\"label\">\n%s %d (%s: %lu MB / %s: %lu MB)\n</li>\n" "</ul>\n\n" "</body>" "\n\n", monthname, year, incom, totin, outcom, totout);
-	ej_footer(stream, 0, NULL);
+	do_stylus(stream);
 	websWrite(stream, "</html>");
 
 }
