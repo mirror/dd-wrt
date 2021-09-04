@@ -1032,7 +1032,7 @@ EJ_VISIBLE void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJ_VISIBLE void ej_show_stylus(webs_t wp, int argc, char_t ** argv)
+EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** argv)
 {
 	/* todo, read dir content and generate this */
 	char buf[128];
@@ -1054,7 +1054,7 @@ void do_ddwrt_inspired_themes(webs_t wp)
 {
 	char path[128];
 	int len = 0;
-	sprintf(path, "stylus/%s.stylus", nvram_safe_get("stylus"));
+	sprintf(path, "ddwrt_inspired_themes/%s.stylus", nvram_safe_get("stylus"));
 	FILE *web = _getWebsFile(wp, path, &len);
 	if (!web)
 		return;
