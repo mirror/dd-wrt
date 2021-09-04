@@ -177,6 +177,7 @@ share.key="Schl&uuml;ssel";
 share.wireless="WLAN";
 share.dhcp="DHCP";
 share.styl="Aussehen";
+share.theme="Thema";
 share.err="Fehler";
 share.errs="Fehler";
 share.meters="Meter";
