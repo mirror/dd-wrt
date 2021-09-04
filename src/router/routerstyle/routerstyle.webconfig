@@ -123,7 +123,7 @@ document.forms[0].onreset = function() {
 		</script>
 		<div class="label"><% tran("share.stylus"); %></div>
 		<select name="stylus">
-		    <% show_stylus); %>
+		    <% show_stylus(); %>
 		</select>&nbsp;
 	</div>
 	<div class="setting">
