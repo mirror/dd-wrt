@@ -480,4 +480,4 @@ document.write("<option value='<% nvram_selmatch("wl_br1_nat", "2", "selected");
 			</div>
 		</div>
 	</body>
-<% footer(); %></html>
+</html>

@@ -56,4 +56,4 @@ function openGeotool(IP) {
 			</form>
 		</div>
 	</body>
-<% footer(); %></html>
+</html>

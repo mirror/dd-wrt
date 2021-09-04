@@ -155,4 +155,4 @@
 <iframe class='wiviz' id='wivizGetFrame' src='about:blank'></iframe>
 <iframe class='wiviz' id='wivizSetFrame' name='wivizSetFrame' src='about:blank'></iframe>
 </body>
-<% footer(); %></html>
+</html>
