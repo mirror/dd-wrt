@@ -668,6 +668,8 @@ static void show_certfield(webs_t wp, char *title, char *file)
 		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n//]]>\n</script>\n</div>\n", title, file);
 }
 
+void ej_footer(webs_t wp, int argc, char_t ** argv);
+
 static void do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char buf[128];
@@ -704,7 +706,9 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 			  "Error: please specify a value username and password\n"
 			  "<div class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
-			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n", _tran_string(buf, "freeradius.clientcert"));
+			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "\n", _tran_string(buf, "freeradius.clientcert"));
+		ej_footer(stream, 0, NULL);
+		websWrite(stream, "</html>");
 		goto out;
 	}
 	char filename[128];
@@ -813,8 +817,9 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 	show_certfield(wp, "Certificate Request", filename);
 	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Private Key PEM", filename);
-	websWrite(wp, "<div class=\"submitFooter\">\n"
-		  "<script type=\"text/javascript\">\n" "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n");
+	websWrite(wp, "<div class=\"submitFooter\">\n" "<script type=\"text/javascript\">\n" "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n");
+	ej_footer(wp, 0, NULL);
+	websWrite(wp, "</html>");
 
 	//make certificates
       out:;
@@ -1823,7 +1828,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (nvram_matchi("info_passwd", 0))
+	if(nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1831,7 +1836,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (!wp->isregistered)
+	if(!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -2458,7 +2463,9 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 	} else {
 		websWrite(stream, "<table><tr align=\"center\"><td>No messages available! Syslogd is not enabled!</td></tr></table>");
 	}
-	websWrite(stream, "</fieldset><p></body></html>");
+	websWrite(stream, "</fieldset><p></body>");
+	ej_footer(stream, 0, NULL);
+	websWrite(stream, "</html>");
 	return;
 }
 #endif
@@ -2590,7 +2597,9 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 	{
 		websWrite(stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n", smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
 	}
-	websWrite(stream, "</li>\n\n<li id=\"label\">\n%s %d (%s: %lu MB / %s: %lu MB)\n</li>\n" "</ul>\n\n" "</body>\n" "</html>\n", monthname, year, incom, totin, outcom, totout);
+	websWrite(stream, "</li>\n\n<li id=\"label\">\n%s %d (%s: %lu MB / %s: %lu MB)\n</li>\n" "</ul>\n\n" "</body>" "\n\n", monthname, year, incom, totin, outcom, totout);
+	ej_footer(stream, 0, NULL);
+	websWrite(stream, "</html>");
 
 }
 
