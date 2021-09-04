@@ -1032,6 +1032,7 @@ EJ_VISIBLE void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+#ifndef HAVE_MICRO
 EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** argv)
 {
 	/* todo, read dir content and generate this */
@@ -1050,7 +1051,6 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 
 size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
 
-#ifndef HAVE_MICRO
 void do_ddwrt_inspired_themes(webs_t wp)
 {
 	char path[128];
