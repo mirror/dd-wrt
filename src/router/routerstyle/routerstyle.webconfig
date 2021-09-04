@@ -116,14 +116,15 @@ document.forms[0].onreset = function() {
 		<select name="router_style">
 		    <% show_styles(); %>
 		</select>&nbsp;
-		<select name="stylus">
-		    <% show_stylus); %>
-		</select>&nbsp;
 		<script type="text/javascript">
 		//<![CDATA[
 		document.write("<input class=\"button\" type=\"button\" name=\"preview_button\" value=\"" + sbutton.preview + "\" onclick=\"previewStyle(this.form.router_style.value)\" />");
 		//]]>
 		</script>
+		<div class="label"><% tran("share.stylus"); %></div>
+		<select name="stylus">
+		    <% show_stylus); %>
+		</select>&nbsp;
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("share.styl_dark"); %></div>
