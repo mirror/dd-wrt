@@ -35,7 +35,7 @@
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp, int *eof);
 size_t websWrite(webs_t wp, char *fmt, ...);
-static size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
+size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
 static int wfflush(webs_t fp);
@@ -2000,7 +2000,7 @@ size_t websWrite(webs_t wp, char *fmt, ...)
 	return ret;
 }
 
-static size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
+size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 {
 
 	FILE *fp = wp->fp;
