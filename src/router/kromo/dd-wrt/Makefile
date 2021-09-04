@@ -776,8 +776,10 @@ ifeq ($(CONFIG_MADWIFI),y)
 	rm -f $(INSTALLDIR)/www/Wireless_Advanced.asp
 endif
 
-ifneq ($(CONFIG_NO_STYLUS),y)
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 	cp -a ddwrt_inspired_themes $(INSTALLDIR)/www
+endif
 endif
 
 ifeq ($(CONFIG_SKYTRON),y)
