@@ -347,13 +347,13 @@
     line-height: 2rem;
   }
   body[bgcolor="#cc9999"]::after {
-    content: '\A 🛈 Note that the default username is "root" in all newer releases';
+    content: '\A &#9432; Authorization required. Wrong username and/or password!';
     color: var(--v9-9);
     font-size: 1rem;
     line-height: 1.3rem;
     text-shadow: 0 1px 0 var(--v1-1);
     white-space: pre;
-    content: '\A 🛈 Note that the default username is "root" in all newer releases\A\A DD-WRT Inspired Themes v3.1.1';
+    content: '\A &#9432; Authorization required. Wrong username and/or password!';
     white-space: pre-wrap;
   }
   form[name='wds'] .label {
