@@ -32,4 +32,4 @@ For more information please visit <li><a href="http://www.anchorfree.com/ddwrt" 
 			</dl>
 		</div>
 	</body>
-<% footer(); %></html>
+</html>

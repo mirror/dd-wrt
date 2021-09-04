@@ -39,4 +39,4 @@ function filter_del(F) {
 			</div>
 		</form>
 	</body>
-<% footer(); %></html>
+</html>

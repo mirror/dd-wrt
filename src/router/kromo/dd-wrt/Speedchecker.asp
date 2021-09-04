@@ -114,4 +114,4 @@ function speedchecker_toggle_desc(value) {
 			</div>
 		</div>
 	</body>
-<% footer(); %></html>
+</html>

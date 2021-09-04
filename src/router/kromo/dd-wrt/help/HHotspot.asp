@@ -107,4 +107,4 @@
 			</ul>
 		</div>
 	</body>
-<% footer(); %></html>
+</html>

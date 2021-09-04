@@ -8,4 +8,4 @@
 	</head>
 	<body>
 	</body>
-<% footer(); %></html>
+</html>
