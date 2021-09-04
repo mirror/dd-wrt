@@ -1050,6 +1050,7 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 
 size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
 
+#ifndef HAVE_MICRO
 void do_ddwrt_inspired_themes(webs_t wp)
 {
 	char path[128];
@@ -1076,7 +1077,7 @@ void do_ddwrt_inspired_themes(webs_t wp)
 	fclose(web);
 	free(mem);
 }
-
+#endif
 #include "../webs.h"
 extern const websRomPageIndexType websRomPageIndex[];
 
@@ -2167,7 +2168,9 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	if ((startswith(wp->request_url, "Wireless") || startswith(wp->request_url, "WL_WPA")) && get_wl_instances() == 3)
 		websWrite(wp, "\t\t<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
+#ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(wp);
+#endif
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
 #elif HAVE_ESPOD
