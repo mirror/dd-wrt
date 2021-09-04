@@ -44,7 +44,7 @@
 
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp, int *eof);
-static size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
+size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
 static int wfflush(webs_t fp);
