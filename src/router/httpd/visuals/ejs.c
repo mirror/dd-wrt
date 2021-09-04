@@ -1042,7 +1042,7 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 	websWrite(wp, "<option value=\"dracula\" %s>Dracula</option>\n", nvram_match("stylus", "dracula") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"material\" %s>Material</option>\n", nvram_match("stylus", "material") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"material_darker\" %s>Material Darker</option>\n", nvram_match("stylus", "material_darker") ? "selected=\"selected\"" : "");
-	websWrite(wp, "<option value=\"solarized\" %s>Solarized</option>\n", nvram_match("stylus", "solarized") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"solarized_dark\" %s>Solarized Dark</option>\n", nvram_match("stylus", "solarized_dark") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"the_matrix\" %s>The Matrix</option>\n", nvram_match("stylus", "the_matrix") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"twilight\" %s>Twilight</option>\n", nvram_match("stylus", "twilight") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"ubuntu\" %s>Ubuntu</option>\n", nvram_match("stylus", "ubuntu") ? "selected=\"selected\"" : "");
