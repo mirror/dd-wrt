@@ -305,7 +305,7 @@ static void do_ej_file(FILE * fp, int len, webs_t stream)
 
 #include "../html.c"
 
-static FILE *_getWebsFile(webs_t wp, char *path2, int *len)
+FILE *_getWebsFile(webs_t wp, char *path2, int *len)
 {
 	FILE *web;
 
