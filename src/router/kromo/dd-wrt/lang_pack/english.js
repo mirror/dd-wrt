@@ -179,6 +179,7 @@ share.key="Key";
 share.wireless="Wireless";
 share.dhcp="DHCP";
 share.styl="Style";
+share.stylus="DD-WRT Inspired Styles by the-j0k3r";
 share.styl_dark="Use Dark Styles";
 share.err="error";
 share.errs="errors";
