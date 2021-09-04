@@ -1048,6 +1048,8 @@ EJ_VISIBLE void ej_show_stylus(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
+
 EJ_VISIBLE void ej_footer(webs_t wp, int argc, char_t ** argv)
 {
 	char path[128];
@@ -1060,14 +1062,18 @@ EJ_VISIBLE void ej_footer(webs_t wp, int argc, char_t ** argv)
 		fclose(web);
 		return;
 	}
-	char *mem = malloc(len);
+
+	char *mem = malloc(1024);
 	if (!mem) {
 		fclose(web);
 		return;
 	}
-	fread(mem, 1, len, web);
+	while (len >= 0) {
+		fread(mem, 1, len > 1024 ? 1024 : len, web);
+		wfwrite(mem, 1, len > 1024 ? 1024 : len, wp);
+		len -= 1024;
+	}
 	fclose(web);
-	websWrite(wp, mem);
 	free(mem);
 }
 
