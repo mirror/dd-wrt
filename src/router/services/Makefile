@@ -415,9 +415,9 @@ endif
 ifeq ($(CONFIG_SYSLOG),y)
 CFLAGS_EXTRA += -DHAVE_SYSLOG
 endif
-ifeq ($(CONFIG_SPUTNIK),y)
-CFLAGS_EXTRA += -DHAVE_SPUTNIK
-endif
+#ifeq ($(CONFIG_SPUTNIK),y)
+#CFLAGS_EXTRA += -DHAVE_SPUTNIK
+#endif
 ifeq ($(CONFIG_DLM101),y)
   CFLAGS_EXTRA += -DHAVE_DLM101
 endif
@@ -1843,10 +1843,10 @@ CFLAGS_EXTRA += -DHAVE_SPEEDCHECKER
 OBJS += speedchecker.o
 endif
 
-ifeq ($(CONFIG_SPUTNIK_APD),y)
-CFLAGS_EXTRA += -DHAVE_SPUTNIK_APD
-OBJS += sputnik.o
-endif
+#ifeq ($(CONFIG_SPUTNIK_APD),y)
+#CFLAGS_EXTRA += -DHAVE_SPUTNIK_APD
+#OBJS += sputnik.o
+#endif
 
 ifeq ($(CONFIG_RT2880),y)
   CFLAGS_EXTRA += -DHAVE_RT2880
