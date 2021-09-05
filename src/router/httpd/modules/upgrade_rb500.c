@@ -37,22 +37,21 @@
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
-static void
+static int
 // do_upgrade_cgi(char *url, FILE *stream)
 do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t streamm)	// jimmy,
 								// https,
 								// 8/6/2003
 {
 #ifndef ANTI_FLASH
-	fprintf(stderr, "do post\n");
+	int ret;
 	if (upgrade_ret)
-		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
+		ret = do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
 	else
-		do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
-	fprintf(stderr, "websdone\n");
-
+		ret = do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
+	if (ret)
+		return ret;
 	websDone(stream, 200);
-	fprintf(stderr, "reboot\n");
 
 	/*
 	 * Reboot if successful 
@@ -65,9 +64,12 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 		sys_reboot();
 	}
 #else
-	do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
+	int ret = do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
+	if (ret)
+		return ret;
 	websDone(stream, 200);
 #endif
+	return 0;
 }
 
 static int

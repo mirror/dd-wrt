@@ -313,7 +313,7 @@ FILE *_getWebsFile(webs_t wp, char *path2, int *len)
 	char *query = strchr(path, '?');
 	if (query)
 		*query++ = 0;
-//	fprintf(stderr, "open %s\n", path);
+//      fprintf(stderr, "open %s\n", path);
 	cprintf("opening %s\n", path);
 	int i = 0;
 	unsigned int curoffset = 0;
@@ -328,14 +328,14 @@ FILE *_getWebsFile(webs_t wp, char *path2, int *len)
 			if (web == NULL)
 				goto err;
 			fseek(web, curoffset, SEEK_SET);
-		//	fprintf(stderr, "found %s\n", path);
+			//      fprintf(stderr, "found %s\n", path);
 			free(path);
 			return web;
 		}
 		curoffset += *len;
 		i++;
 	}
-//	fprintf(stderr, "not found %s\n", path);
+//      fprintf(stderr, "not found %s\n", path);
 
 err:
 	*len = 0;
@@ -365,7 +365,7 @@ int getWebsFileLen(webs_t wp, char *path2)
 	return len;
 }
 
-void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, https, 8/4/2003
+int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
 	FILE *fp = NULL;
 	unsigned int len;
@@ -378,7 +378,10 @@ void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_
 	if (fp) {
 		do_ej_file(fp, len, stream);
 		fclose(fp);
-	}
+		return 0;
+	} else
+		return -1;
+
 	memdebug_leave_info(path);
 
 }

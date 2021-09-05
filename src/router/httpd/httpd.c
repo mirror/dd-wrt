@@ -506,7 +506,7 @@ static void send_error(webs_t conn_fp, int status, char *title, char *extra_head
 #ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(conn_fp);
 #endif
-	websWrite(conn_fp,"</HTML>\n");
+	websWrite(conn_fp, "</HTML>\n");
 
 	(void)wfflush(conn_fp);
 	free(text);
@@ -696,13 +696,13 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 	return 0;
 }
 
-static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *attach)	//jimmy, https, 8/4/2003
+static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *attach)	//jimmy, https, 8/4/2003
 {
 
 	size_t len;
 	FILE *web = _getWebsFile(stream, path, &len);
 	if (!web)
-		return;
+		return -1;
 	if (!handler->send_headers)
 		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, len, attach, 0);
 	if (DO_SSL(stream)) {
@@ -722,20 +722,21 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		wfsendfile(fileno(web), ftell(web), len, stream);
 	}
 	fclose(web);
+	return 0;
 }
 
-static void
+static int
 //do_file(char *path, FILE *stream)
 do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
 
-	do_file_2(handler, path, stream, NULL);
+	return do_file_2(handler, path, stream, NULL);
 }
 
-static void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment)	//jimmy, https, 8/4/2003
+static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment)	//jimmy, https, 8/4/2003
 {
 
-	do_file_2(handler, path, stream, attachment);
+	return do_file_2(handler, path, stream, attachment);
 }
 
 static int check_connect_type(webs_t wp)
@@ -1200,7 +1201,7 @@ static void *handle_request(void *arg)
 		}
 	}
 	FILE *fp;
-	int file_found = 1;
+	int file_error;
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (!match(handler->pattern, file))
 			continue;
@@ -1252,15 +1253,10 @@ static void *handle_request(void *arg)
 		if (handler->send_headers)
 			send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 		// check for do_file handler and check if file exists
-		file_found = 1;
-		if (handler->output == do_file) {
-			if (getWebsFileLen(conn_fp, file) == 0) {
-				file_found = 0;
-			}
-		}
-		if (handler->output && file_found) {
-			handler->output(method_type, handler, file, conn_fp);
-			goto out;
+		if (handler->output) {
+			file_error = handler->output(method_type, handler, file, conn_fp);
+			if (!file_error)
+				goto out;
 		}
 		break;
 	}
