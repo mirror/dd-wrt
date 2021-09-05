@@ -172,6 +172,7 @@ tcp_print(netdissect_options *ndo,
         uint16_t magic;
         int rev;
         const struct ip6_hdr *ip6;
+        u_int header_len;	/* Header length in bytes */
 
         ndo->ndo_protocol = "tcp";
         tp = (const struct tcphdr *)bp;
@@ -612,11 +613,28 @@ tcp_print(netdissect_options *ndo,
                                 break;
 
                         case TCPOPT_MPTCP:
+                            {
+                                const u_char *snapend_save;
+                                int ret;
+
                                 datalen = len - 2;
                                 LENCHECK(datalen);
-                                if (!mptcp_print(ndo, cp-2, len, flags))
+                                /* Update the snapend to the end of the option
+                                 * before calling mptcp_print(). Some options
+                                 * (MPTCP or others) may be present after a
+                                 * MPTCP option. This prevents that, in
+                                 * mptcp_print(), the remaining length < the
+                                 * remaining caplen.
+                                 */
+                                snapend_save = ndo->ndo_snapend;
+                                ndo->ndo_snapend = ND_MIN(cp - 2 + len,
+                                                          ndo->ndo_snapend);
+                                ret = mptcp_print(ndo, cp - 2, len, flags);
+                                ndo->ndo_snapend = snapend_save;
+                                if (!ret)
                                         goto bad;
                                 break;
+                            }
 
                         case TCPOPT_FASTOPEN:
                                 datalen = len - 2;
@@ -686,7 +704,17 @@ tcp_print(netdissect_options *ndo,
         /*
          * Decode payload if necessary.
          */
-        bp += TH_OFF(tp) * 4;
+        header_len = TH_OFF(tp) * 4;
+        /*
+         * Do a bounds check before decoding the payload.
+         * At least the header data is required.
+         */
+        if (!ND_TTEST_LEN(bp, header_len)) {
+                ND_PRINT(" [remaining caplen(%u) < header length(%u)]",
+                         ND_BYTES_AVAILABLE_AFTER(bp), header_len);
+                nd_trunc_longjmp(ndo);
+        }
+        bp += header_len;
         if ((flags & TH_RST) && ndo->ndo_vflag) {
                 print_tcp_rst_data(ndo, bp, length);
                 return;

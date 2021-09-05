@@ -226,7 +226,7 @@ struct id_rdiscovery {
  * The Destination Unreachable, Time Exceeded
  * and Parameter Problem messages are slightly changed as per
  * the above draft. A new Length field gets added to give
- * the caller an idea about the length of the piggypacked
+ * the caller an idea about the length of the piggybacked
  * IP packet before the MPLS extension header starts.
  *
  * The Length field represents length of the padded "original datagram"
@@ -305,7 +305,6 @@ icmp_print(netdissect_options *ndo, const u_char *bp, u_int plen, const u_char *
 	const struct udphdr *ouh;
         const uint8_t *obj_tptr;
         uint32_t raw_label;
-        const u_char *snapend_save;
 	const struct icmp_mpls_ext_object_header_t *icmp_mpls_ext_object_header;
 	u_int hlen, mtu, obj_tlen, obj_class_num, obj_ctype;
 	uint16_t dport;
@@ -651,12 +650,25 @@ icmp_print(netdissect_options *ndo, const u_char *bp, u_int plen, const u_char *
          * save the snaplength as this may get overridden in the IP printer.
          */
 	if (ndo->ndo_vflag >= 1 && ICMP_ERRTYPE(icmp_type)) {
+		const u_char *snapend_save;
+
 		bp += 8;
 		ND_PRINT("\n\t");
 		ip = (const struct ip *)bp;
-                snapend_save = ndo->ndo_snapend;
+		snapend_save = ndo->ndo_snapend;
+		/*
+		 * Update the snapend because extensions (MPLS, ...) may be
+		 * present after the IP packet. In this case the current
+		 * (outer) packet's snapend is not what ip_print() needs to
+		 * decode an IP packet nested in the middle of an ICMP payload.
+		 *
+		 * This prevents that, in ip_print(), for the nested IP packet,
+		 * the remaining length < remaining caplen.
+		 */
+		ndo->ndo_snapend = ND_MIN(bp + GET_BE_U_2(ip->ip_len),
+					  ndo->ndo_snapend);
 		ip_print(ndo, bp, GET_BE_U_2(ip->ip_len));
-                ndo->ndo_snapend = snapend_save;
+		ndo->ndo_snapend = snapend_save;
 	}
 
 	/* ndo_protocol reassignment after ip_print() call */

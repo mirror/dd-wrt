@@ -484,7 +484,7 @@ bfd-raw-auth-sha1 bfd-raw-auth-sha1.pcap bfd-raw-auth-sha1.out
 bfd-raw-auth-sha1-v bfd-raw-auth-sha1.pcap bfd-raw-auth-sha1-v.out -v
 
 # bad packets from Hanno Böck
-heap-overflow-1	heap-overflow-1.pcap		heap-overflow-1.out	-v
+# heap-overflow-1 is in non-bsd.tests
 heap-overflow-2	heap-overflow-2.pcap		heap-overflow-2.out	-v
 heapoverflow-atalk_print	heapoverflow-atalk_print.pcap	heapoverflow-atalk_print.out	-v
 heapoverflow-EXTRACT_16BITS	heapoverflow-EXTRACT_16BITS.pcap	heapoverflow-EXTRACT_16BITS.out	-v
@@ -725,13 +725,13 @@ rtp-seg-fault-2  rtp-seg-fault-2.pcapng  rtp-seg-fault-2.out  -v -T rtp
 ssh			ssh.pcap		ssh.out
 
 # MACsec
-macsec-encrypted       macsec-encrypted.pcap          macsec-encrypted.out        -t -e
-macsec-changed         macsec-changed.pcap            macsec-changed.out          -t -e
-macsec-integonly       macsec-integonly.pcap          macsec-integonly.out        -t -e
-macsec-snap            macsec-snap.pcap               macsec-snap.out             -t -e
-macsec-short-shorter   macsec-short-shorter.pcap      macsec-short-shorter.out    -t -e
-macsec-short-longer    macsec-short-longer.pcap       macsec-short-longer.out     -t -e
-macsec-short-valid     macsec-short-valid.pcap        macsec-short-valid.out      -t -e
+macsec-encrypted     macsec-encrypted.pcap     macsec-encrypted.out     -e
+macsec-changed       macsec-changed.pcap       macsec-changed.out       -e
+macsec-integonly     macsec-integonly.pcap     macsec-integonly.out     -e
+macsec-snap          macsec-snap.pcap          macsec-snap.out          -e
+macsec-short-shorter macsec-short-shorter.pcap macsec-short-shorter.out -e
+macsec-short-longer  macsec-short-longer.pcap  macsec-short-longer.out  -e
+macsec-short-valid   macsec-short-valid.pcap   macsec-short-valid.out   -e
 
 # NFS tests
 # fuzzed pcap
