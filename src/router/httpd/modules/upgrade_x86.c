@@ -41,21 +41,22 @@
 #define CODE_PATTERN_ERROR 9999
 #define HAVE_NEW_UPGRADE
 
-static void
+static int
 // do_upgrade_cgi(char *url, FILE *stream)
 do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)	// jimmy, https,
 							// 8/6/2003
 {
+	int ret;
 #ifndef ANTI_FLASH
 	fprintf(stderr, "do post\n");
 	if (stream->upgrade_ret)
-		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
+		ret = do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
 	else
-		do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
-	fprintf(stderr, "websdone\n");
+		ret = do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
+	if (ret)
+		return ret;
 
 	websDone(stream, 200);
-	fprintf(stderr, "reboot\n");
 
 	/*
 	 * Reboot if successful 
@@ -66,9 +67,12 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 		sys_reboot();
 	}
 #else
-	do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
+	ret = do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
+	if (ret)
+		return ret;
 	websDone(stream, 200);
 #endif
+	return 0;
 }
 
 #ifdef HAVE_RB600

@@ -168,15 +168,17 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	return 0;
 }
 
-void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
+int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 
-static void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
+static int sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
+	int ret;
 	if (wp->restore_ret != 0)
-		do_ej(METHOD_GET, handler, "Fail.asp", wp);
+		ret = do_ej(METHOD_GET, handler, "Fail.asp", wp);
 	else
-		do_ej(METHOD_GET, handler, "Success_rest.asp", wp);
-
+		ret = do_ej(METHOD_GET, handler, "Success_rest.asp", wp);
+	if (ret)
+		return ret;
 	websDone(wp, 200);
 
 	/*
@@ -190,18 +192,19 @@ static void sr_config_cgi(unsigned char method, struct mime_handler *handler, ch
 		nanosleep(&tim, &tim2);
 		sys_reboot();
 	}
+	return 0;
 }
 
-static void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
+static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 
 #define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
 
-static void nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
+static int nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
-
+	int ret;
 #ifdef HAVE_REGISTER
 	if (!wp->isregistered_real) {
-		return;
+		return -1;
 	}
 #endif
 	char *name = nvram_safe_get("router_name");
@@ -214,9 +217,9 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 		xorFileMove("/tmp/nvrambak.bin", 'K');
 #endif				/*HAVE_ANTAIRA */
 
-	do_file_attach(handler, "/tmp/nvrambak.bin", wp, fname);
+	ret = do_file_attach(handler, "/tmp/nvrambak.bin", wp, fname);
 	unlink("/tmp/nvrambak.bin");
-	return;
+	return ret;
 }
 
 static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load and set traffic data from config file
@@ -284,8 +287,11 @@ static int td_file_in(char *url, webs_t wp, size_t len, char *boundary)	//load a
 	return 0;
 }
 
-static void td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
+static int td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
-	do_ej(METHOD_GET, handler, "Traff_admin.asp", wp);
+	int ret = do_ej(METHOD_GET, handler, "Traff_admin.asp", wp);
+	if (ret)
+		return ret;
 	websDone(wp, 200);
+	return 0;
 }
