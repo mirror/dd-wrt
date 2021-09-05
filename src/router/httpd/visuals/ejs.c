@@ -1059,7 +1059,7 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 
 size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
 
-void do_ddwrt_inspired_themes(webs_t wp)
+void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
 {
 	char path[128];
 	int len = 0;
@@ -1072,21 +1072,22 @@ void do_ddwrt_inspired_themes(webs_t wp)
 		return;
 	}
 
-	char *mem = malloc(1024);
+	char *mem = malloc(len+1);
 	if (!mem) {
 		fclose(web);
 		return;
 	}
-	while (len >= 0) {
-		fread(mem, 1, len > 1024 ? 1024 : len, web);
-		wfwrite(mem, 1, len > 1024 ? 1024 : len, wp);
-		len -= 1024;
-	}
+	fread(mem, 1, len, web);
+	mem[len]=0;
+	if (status)
+		websWrite(wp, mem, status, title, text, text);
+	else
+		wfwrite(mem, 1, len, wp);
 	fclose(web);
 	free(mem);
 }
 #else
-void do_ddwrt_inspired_themes(webs_t wp)
+void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
 {
 }
 #endif
@@ -2182,7 +2183,7 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	if ((startswith(wp->request_url, "Wireless") || startswith(wp->request_url, "WL_WPA")) && get_wl_instances() == 3)
 		websWrite(wp, "\t\t<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
 #ifndef HAVE_MICRO
-	do_ddwrt_inspired_themes(wp);
+	do_ddwrt_inspired_themes(wp, 0, NULL, NULL);
 #endif
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");

@@ -488,7 +488,7 @@ static void send_authenticate(webs_t conn_fp)
 	free(header);
 }
 
-void do_ddwrt_inspired_themes(webs_t wp);
+void do_ddwrt_inspired_themes(webs_t wp, int code, char *title, char *text);
 
 static void send_error(webs_t conn_fp, int noheader, int status, char *title, char *extra_header, const char *fmt, ...)
 {
@@ -503,7 +503,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	websWrite(conn_fp, "<HTML>\n");
 	#ifndef HAVE_MICRO
-	do_ddwrt_inspired_themes(conn_fp);
+	do_ddwrt_inspired_themes(conn_fp, status, title, text);
 	#endif
 	websWrite(conn_fp, "<HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
 	websWrite(conn_fp, "%s\n", text);
