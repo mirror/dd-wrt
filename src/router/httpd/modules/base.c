@@ -2452,7 +2452,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  " fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n"	//
 		  "</head>\n<body>\n<fieldset><legend>System Log</legend>", charset);
 #ifndef HAVE_MICRO
-	do_ddwrt_inspired_themes(stream);
+	do_ddwrt_inspired_themes(stream,0,NULL,NULL);
 #endif
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
@@ -2491,7 +2491,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 }
 #endif
 
-void do_ddwrt_inspired_themes(webs_t wp);
+void do_ddwrt_inspired_themes(webs_t wp,int status, char *title, char *text);
 static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	if (!charset)
@@ -2603,7 +2603,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n"	//
 		  "</style>\n" "</head>\n\n", days * COL_WIDTH, days * COL_WIDTH);
 #ifndef HAVE_MICRO
-	do_ddwrt_inspired_themes(stream);
+	do_ddwrt_inspired_themes(stream, 0, NULL, NULL);
 #endif
 	websWrite(stream, "<body>\n" "<ul id=\"t-graph\">\n");
 	for (i = 0; i < days; i++) {
