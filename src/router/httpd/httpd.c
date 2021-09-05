@@ -484,7 +484,7 @@ static void send_authenticate(webs_t conn_fp)
 {
 	char *header;
 	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
-	send_error(conn_fp, 0, 401, "Unauthorized", header, "Authorization required. Wrong username and/or password!");
+	send_error(conn_fp, 0, 401, "UNAUTHORIZED", header, "Authorization required. Wrong username and/or password!");
 	free(header);
 }
 
@@ -502,9 +502,9 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	if (!noheader)
 		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	websWrite(conn_fp, "<HTML>\n");
-	#ifndef HAVE_MICRO
+#ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(conn_fp, status, title, text);
-	#endif
+#endif
 	websWrite(conn_fp, "<HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
 	websWrite(conn_fp, "%s\n", text);
 	websWrite(conn_fp, "</BODY>");
