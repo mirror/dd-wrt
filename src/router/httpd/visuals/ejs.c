@@ -1033,11 +1033,16 @@ EJ_VISIBLE void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifndef HAVE_MICRO
+#ifndef HAVE_NO_STYLUS
 EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** argv)
 {
 	/* todo, read dir content and generate this */
 	char buf[128];
-
+	websWrite(wp, "<fieldset>\n");
+	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "management.inspired_theme"));
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\">%s</div>\n",tran_string(buf, "share.theme"));
+	websWrite(wp, "<select name=\"stylus\">\n");
 	websWrite(wp, "<option value=\"off\" %s>%s</option>\n", nvram_match("stylus", "off") ? "selected=\"selected\"" : "", tran_string(buf, "share.off"));
 	websWrite(wp, "<option value=\"dracula\" %s>Dracula</option>\n", nvram_match("stylus", "dracula") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"material\" %s>Material</option>\n", nvram_match("stylus", "material") ? "selected=\"selected\"" : "");
@@ -1046,6 +1051,9 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 	websWrite(wp, "<option value=\"the_matrix\" %s>The Matrix</option>\n", nvram_match("stylus", "the_matrix") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"twilight\" %s>Twilight</option>\n", nvram_match("stylus", "twilight") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"ubuntu\" %s>Ubuntu</option>\n", nvram_match("stylus", "ubuntu") ? "selected=\"selected\"" : "");
+	websWrite(wp, "</select>\n");
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</fieldset>\n");
 	return;
 }
 
@@ -1077,6 +1085,11 @@ void do_ddwrt_inspired_themes(webs_t wp)
 	fclose(web);
 	free(mem);
 }
+#else
+void do_ddwrt_inspired_themes(webs_t wp)
+{
+}
+#endif
 #endif
 #include "../webs.h"
 extern const websRomPageIndexType websRomPageIndex[];
