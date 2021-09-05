@@ -305,7 +305,7 @@ static void do_ej_file(FILE * fp, int len, webs_t stream)
 
 #include "../html.c"
 
-FILE *_getWebsFile(webs_t wp, char *path2, int *len)
+FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 {
 	FILE *web;
 
@@ -316,7 +316,7 @@ FILE *_getWebsFile(webs_t wp, char *path2, int *len)
 //      fprintf(stderr, "open %s\n", path);
 	cprintf("opening %s\n", path);
 	int i = 0;
-	unsigned int curoffset = 0;
+	size_t curoffset = 0;
 	while (websRomPageIndex[i].path != NULL) {
 
 		*len = websRomPageIndex[i].size - WEBSOFFSET;
@@ -356,9 +356,9 @@ FILE *getWebsFile(webs_t wp, char *path2)
 	return _getWebsFile(wp, path2, &len);
 }
 
-int getWebsFileLen(webs_t wp, char *path2)
+size_t getWebsFileLen(webs_t wp, char *path2)
 {
-	int len = 0;
+	size_t len = 0;
 	FILE *fp = _getWebsFile(wp, path2, &len);
 	if (fp)
 		fclose(fp);
