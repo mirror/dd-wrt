@@ -332,14 +332,14 @@
     cursor: not-allowed;
   }
   body[bgcolor="#cc9999"] h4::before {
-    content: '401\A';
+    content: '%d\A';
     font-size: 7rem;
     line-height: 10rem;
     text-shadow: 0 -1px 0 var(--v9-9), 0 1px 0 var(--v9-4), 0 2px 0 var(--v9-4), 0 3px 0 var(--v9-4), 0 4px 0 var(--v9-4), 0 5px 0 var(--v9-4), 0 6px 0 var(--v9-4), 0 7px 0 var(--v9-4), 0 8px 0 var(--v9-4), 0 10px 5px rgba(0,43,54,0.4), 0 20px 10px rgba(0,43,54,0.4);
     white-space: pre-wrap;
   }
   body[bgcolor="#cc9999"] h4::after {
-    content: 'UNAUTHORIZED';
+    content: '%s';
     animation: color_change 1s ease-in-out infinite alternate;
     font-variant: small-caps;
     font-size: 1.8rem;
@@ -347,13 +347,13 @@
     line-height: 2rem;
   }
   body[bgcolor="#cc9999"]::after {
-    content: '\A \24D8 Authorization required. Wrong username and/or password!';
+    content: '\A \24D8 %s';
     color: var(--v9-9);
     font-size: 1rem;
     line-height: 1.3rem;
     text-shadow: 0 1px 0 var(--v1-1);
     white-space: pre;
-    content: '\A \24D8 Authorization required. Wrong username and/or password!';
+    content: '\A \24D8 %s';
     white-space: pre-wrap;
   }
   form[name='wds'] .label {
