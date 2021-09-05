@@ -1,5 +1,5 @@
 libpcap-configure:
-	rm libpcap/libpcap*.so*
+	rm -f libpcap/libpcap*.so*
 	cd libpcap ; ac_cv_linux_vers=2; ac_cv_prog_cc_c99=yes; ./configure \
 		--target=$(ARCH)-openwrt-linux \
 		--host=$(ARCH)-linux-uclibc  \
