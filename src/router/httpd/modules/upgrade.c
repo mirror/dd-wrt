@@ -60,19 +60,21 @@ static void set_upgrade_ret(webs_t stream, int result)
 	}
 }
 
-static void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)	// jimmy, https,
+static int do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)	// jimmy, https,
 							// 8/6/2003
 {
+	int ret;
 #ifndef ANTI_FLASH
 
-	fprintf(stderr, "[UPGRADE] ret: %d\n", stream->upgrade_ret);
 	if (stream->upgrade_ret) {
-		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
+		ret = do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
 		killall("ledtool", SIGTERM);
 		led_control(LED_DIAG, LED_OFF);
 	} else {
-		do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
+		ret = do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
 	}
+	if (ret)
+		return ret;
 	websDone(stream, 200);
 
 	/*
@@ -87,10 +89,13 @@ static void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, c
 	}
 #else
 
-	do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
+	ret = do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
+	if (ret)
+		return ret;
 	websDone(stream, 200);
 
 #endif
+	return 0;
 }
 
 typedef struct {
