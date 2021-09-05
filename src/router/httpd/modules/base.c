@@ -1953,7 +1953,7 @@ static int do_wpad(unsigned char method, struct mime_handler *handler, char *url
 		fclose(fp);
 	}
 
-	return = do_file_attach(handler, "/tmp/wpad.dat", stream, "wpad.dat");
+	return do_file_attach(handler, "/tmp/wpad.dat", stream, "wpad.dat");
 }
 #endif
 
