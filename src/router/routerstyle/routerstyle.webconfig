@@ -129,12 +129,4 @@ document.forms[0].onreset = function() {
 	</div>
 
 </fieldset><br />
-<fieldset>
-	<legend><% tran("management.inspired_theme"); %></legend>
-	<div class="setting">
-		<div class="label"><% tran("share.theme"); %></div>
-		<select name="stylus">
-		    <% show_ddwrt_inspired_themes(); %>
-		</select>
-	</div>
-</fieldset><br />
+<% show_ddwrt_inspired_themes(); %>
