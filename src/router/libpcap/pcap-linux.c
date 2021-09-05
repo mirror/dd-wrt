@@ -117,6 +117,19 @@
 # define HAVE_TPACKET3
 #endif /* TPACKET3_HDRLEN */
 
+/*
+ * Not all compilers that are used to compile code to run on Linux have
+ * these builtins.  For example, older versions of GCC don't, and at
+ * least some people are doing cross-builds for MIPS with older versions
+ * of GCC.
+ */
+#ifndef HAVE___ATOMIC_LOAD_N
+#define __atomic_load_n(ptr, memory_model)		(*(ptr))
+#endif
+#ifndef HAVE___ATOMIC_STORE_N
+#define __atomic_store_n(ptr, val, memory_model)	*(ptr) = (val)
+#endif
+
 #define packet_mmap_acquire(pkt) \
 	(__atomic_load_n(&pkt->tp_status, __ATOMIC_ACQUIRE) != TP_STATUS_KERNEL)
 #define packet_mmap_release(pkt) \
@@ -3884,7 +3897,7 @@ static int pcap_handle_packet_mmap(
 	}
 
 	if (handlep->filter_in_userland && handle->fcode.bf_insns) {
-		struct bpf_aux_data aux_data;
+		struct pcap_bpf_aux_data aux_data;
 
 		aux_data.vlan_tag_present = tp_vlan_tci_valid;
 		aux_data.vlan_tag = tp_vlan_tci & 0x0fff;

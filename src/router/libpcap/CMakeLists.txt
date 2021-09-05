@@ -319,7 +319,7 @@ if(WIN32)
     endif(PACKET_FOUND)
 
     message(STATUS "checking for Npcap's version.h")
-    check_symbol_exists(WINPCAP_PRODUCT_NAME "../../version.h" HAVE_VERSION_H)
+    check_symbol_exists(WINPCAP_PRODUCT_NAME "${CMAKE_SOURCE_DIR}/../../version.h" HAVE_VERSION_H)
     if(HAVE_VERSION_H)
         message(STATUS "HAVE version.h")
     else(HAVE_VERSION_H)
@@ -404,6 +404,42 @@ endif(NOT WIN32)
 
 #
 # Functions.
+#
+# First, check for the __atomic_load_n() and __atomic_store_n()
+# builtins.
+#
+# We can't use check_function_exists(), as it tries to declare
+# the function, and attempting to declare a compiler builtin
+# can produce an error.
+#
+# We don't use check_symbol_exists(), as it expects a header
+# file to be specified to declare the function, but there isn't
+# such a header file.
+#
+# So we use check_c_source_compiles().
+#
+check_c_source_compiles(
+"int
+main(void)
+{
+	int i = 17;
+	return __atomic_load_n(&i, __ATOMIC_RELAXED);
+}
+"
+            HAVE___ATOMIC_LOAD_N)
+check_c_source_compiles(
+"int
+main(void)
+{
+	int i;
+	__atomic_store_n(&i, 17, __ATOMIC_RELAXED);
+	return 0;
+}
+"
+            HAVE___ATOMIC_STORE_N)
+
+#
+# Now check for various system functions.
 #
 check_function_exists(strerror HAVE_STRERROR)
 check_function_exists(strerror_r HAVE_STRERROR_R)
@@ -2072,7 +2108,7 @@ else()
     # "%pure-parser".
     #
     execute_process(COMMAND ${YACC_EXECUTABLE} -V OUTPUT_VARIABLE bison_full_version)
-    string(REGEX MATCH "[1-9][0-9]*[.][1-9][0-9]*" bison_major_minor ${bison_full_version})
+    string(REGEX MATCH "[1-9][0-9]*[.][0-9]+" bison_major_minor ${bison_full_version})
     if (bison_major_minor VERSION_LESS "2.4")
         set(REENTRANT_PARSER "%pure-parser")
     else()
@@ -2084,17 +2120,11 @@ message(STATUS "Parser generator: ${YACC_EXECUTABLE}")
 
 #
 # Create custom command for the scanner.
-# Find out whether it's Bison or not by looking at the last component
-# of the path (without a .exe extension, if this is Windows).
 #
-get_filename_component(YACC_NAME ${YACC_EXECUTABLE} NAME_WE)
-if("${YACC_NAME}" STREQUAL "bison" OR "${YACC_NAME}" STREQUAL "win_bison")
-    set(YACC_COMPATIBILITY_FLAG "-y")
-endif()
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/grammar.c ${CMAKE_CURRENT_BINARY_DIR}/grammar.h
     SOURCE ${pcap_BINARY_DIR}/grammar.y
-    COMMAND ${YACC_EXECUTABLE} ${YACC_COMPATIBILITY_FLAG} -p pcap_ -o ${CMAKE_CURRENT_BINARY_DIR}/grammar.c -d ${pcap_BINARY_DIR}/grammar.y
+    COMMAND ${YACC_EXECUTABLE} -p pcap_ -o ${CMAKE_CURRENT_BINARY_DIR}/grammar.c -d ${pcap_BINARY_DIR}/grammar.y
     DEPENDS ${pcap_BINARY_DIR}/grammar.y
 )
 
@@ -2510,14 +2540,14 @@ function(install_manpage_symlink SOURCE TARGET MANDIR)
     endif(MINGW)
 
     install(CODE
-        "message(STATUS \"Symlinking: ${CMAKE_INSTALL_PREFIX}/${MANDIR}/${SOURCE} to ${TARGET}\")
+        "message(STATUS \"Symlinking: \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${MANDIR}/${SOURCE} to ${TARGET}\")
          execute_process(
             COMMAND \"${CMAKE_COMMAND}\" \"-E\" \"remove\" \"${TARGET}\"
-            WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${MANDIR}
+            WORKING_DIRECTORY \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${MANDIR}
           )
          execute_process(
             COMMAND ${LINK_COMMAND}
-            WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${MANDIR}
+            WORKING_DIRECTORY \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${MANDIR}
             RESULT_VARIABLE EXIT_STATUS
           )
           if(NOT EXIT_STATUS EQUAL 0)
@@ -2596,17 +2626,19 @@ set(MANMISC_EXPAND
     pcap-tstamp.manmisc.in
 )
 
-if(NOT BUILD_SHARED_LIBS)
-    unset(LIBRARY_NAME)
-endif(NOT BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS)
+    set(LIBRARIES_TO_INSTALL "${LIBRARY_NAME}" "${LIBRARY_NAME_STATIC}")
+else(BUILD_SHARED_LIBS)
+    set(LIBRARIES_TO_INSTALL "${LIBRARY_NAME_STATIC}")
+endif(BUILD_SHARED_LIBS)
 
-if(WIN32)
+if(WIN32 OR CYGWIN OR MSYS)
     if(MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
         #
         # Install 64-bit code built with MSVC in the x64 subdirectories,
         # as that's where it expects it to be.
         #
-        install(TARGETS ${LIBRARY_NAME} ${LIBRARY_NAME_STATIC}
+        install(TARGETS ${LIBRARIES_TO_INSTALL}
                 RUNTIME DESTINATION bin/x64
                 LIBRARY DESTINATION lib/x64
                 ARCHIVE DESTINATION lib/x64)
@@ -2624,22 +2656,22 @@ if(WIN32)
         # in the top-level directories, as those are where they
         # expect it to be.
         #
-        install(TARGETS ${LIBRARY_NAME} ${LIBRARY_NAME_STATIC}
+        install(TARGETS ${LIBRARIES_TO_INSTALL}
                 RUNTIME DESTINATION bin
                 LIBRARY DESTINATION lib
                 ARCHIVE DESTINATION lib)
-        if(NOT MINGW)
+        if(MSVC)
             install(FILES $<TARGET_FILE_DIR:${LIBRARY_NAME_STATIC}>/${LIBRARY_NAME_STATIC}.pdb
                     DESTINATION bin OPTIONAL)
             if(BUILD_SHARED_LIBS)
                 install(FILES $<TARGET_PDB_FILE:${LIBRARY_NAME}>
                         DESTINATION bin OPTIONAL)
             endif(BUILD_SHARED_LIBS)
-        endif(NOT MINGW)
+        endif(MSVC)
     endif(MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-else(WIN32)
-    install(TARGETS ${LIBRARY_NAME} ${LIBRARY_NAME_STATIC} DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR})
-endif(WIN32)
+else(WIN32 OR CYGWIN OR MSYS)
+    install(TARGETS ${LIBRARIES_TO_INSTALL} DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR})
+endif(WIN32 OR CYGWIN OR MSYS)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/pcap/ DESTINATION include/pcap)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pcap.h DESTINATION include)
@@ -2649,7 +2681,6 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pcap-namedb.h DESTINATION include)
 # On UN*X, and on Windows when not using MSVC, generate libpcap.pc and
 # pcap-config and process man pages and arrange that they be installed.
 if(NOT MSVC)
-    set(PACKAGE_NAME ${LIBRARY_NAME})
     set(prefix ${CMAKE_INSTALL_PREFIX})
     set(exec_prefix "\${prefix}")
     set(includedir "\${prefix}/include")
