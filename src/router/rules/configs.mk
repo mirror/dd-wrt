@@ -100,7 +100,7 @@ ifeq ($(CONFIG_IPV6),y)
 obj-$(CONFIG_RADVD) += radvd aiccu
 endif
 obj-$(CONFIG_L2TPV3TUN) += l2tpv3tun
-obj-$(CONFIG_SPUTNIK_APD) += sputnik
+#obj-$(CONFIG_SPUTNIK_APD) += sputnik
 
 #obj-$(CONFIG_ADM6996) += adm6996
 ##################################################################
@@ -188,7 +188,7 @@ obj-$(CONFIG_XFSPROGS) += ncurses util-linux xfsprogs
 obj-$(CONFIG_BTRFSPROGS) += ncurses util-linux zstd btrfsprogs
 obj-$(CONFIG_HTTPREDIRECT) += http-redirect
 obj-$(CONFIG_SMTPREDIRECT) += smtp-redirect
-obj-$(CONFIG_SPUTNIK_APD) += sputnik
+#obj-$(CONFIG_SPUTNIK_APD) += sputnik
 obj-$(CONFIG_OVERCLOCKING) += overclocking
 obj-$(CONFIG_PROXYWATCHDOG) += proxywatchdog
 obj-$(CONFIG_JFFS2) += jffs2
