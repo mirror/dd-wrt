@@ -360,7 +360,7 @@
   pre {
     background-color: var(--bg-0);
   }
-  #wrapper #content {
+    #wrapper #content {
     background-color: var(--bg-1);
   }
   .popup {

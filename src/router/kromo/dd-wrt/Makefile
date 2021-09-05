@@ -92,9 +92,9 @@ ifeq ($(CONFIG_WIKAR),y)
 endif
 
 
-ifeq ($(CONFIG_SPUTNIK_APD),y)
-	cp sputnik/sputnik.png $(INSTALLDIR)/www/images
-endif
+#ifeq ($(CONFIG_SPUTNIK_APD),y)
+#	cp sputnik/sputnik.png $(INSTALLDIR)/www/images
+#endif
 ifeq ($(CONFIG_WIFIDOG),y)
 	cp wifidog/*.png $(INSTALLDIR)/www/images
 endif
@@ -463,9 +463,9 @@ ifeq ($(CONFIG_ALLNET),y)
 	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
 
-ifeq ($(CONFIG_SPUTNIK),y)
-	cp -f sputnik/logo.png $(INSTALLDIR)/www/style
-endif
+#ifeq ($(CONFIG_SPUTNIK),y)
+#	cp -f sputnik/logo.png $(INSTALLDIR)/www/style
+#endif
 
 ifeq ($(CONFIG_TELCOM),y)
 	cp -f telcom/logo.png $(INSTALLDIR)/www/style
@@ -1044,10 +1044,10 @@ endif
 ifneq ($(CONFIG_3G),y)
 	rm -f $(INSTALLDIR)/www/index_3g.asp
 endif
-ifneq ($(CONFIG_SPUTNIK_APD),y)
-	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.asp
-	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.live.asp
-endif
+#ifneq ($(CONFIG_SPUTNIK_APD),y)
+#	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.asp
+#	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.live.asp
+#endif
 ifneq ($(CONFIG_CTORRENT),y)
 	rm -f $(INSTALLDIR)/www/P2P.asp
 endif
