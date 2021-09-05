@@ -950,10 +950,10 @@ ifeq ($(CONFIG_WEBSERVER),y)
 CFLAGS += -DHAVE_WEBSERVER
 endif
 
-ifeq ($(CONFIG_SPUTNIK_APD),y)
-CFLAGS += -DHAVE_SPUTNIK_APD
-VISOBJS += sputnik.o
-endif
+#ifeq ($(CONFIG_SPUTNIK_APD),y)
+#CFLAGS += -DHAVE_SPUTNIK_APD
+#VISOBJS += sputnik.o
+#endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
 endif
