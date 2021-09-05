@@ -501,12 +501,13 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	// jimmy, https, 8/4/2003, fprintf -> websWrite, fflush -> wfflush
 	if (!noheader)
 		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
-	websWrite(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
+	websWrite(conn_fp, "<HTML>\n");
+	#ifndef HAVE_MICRO
+	do_ddwrt_inspired_themes(conn_fp);
+	#endif
+	websWrite(conn_fp, "<HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
 	websWrite(conn_fp, "%s\n", text);
 	websWrite(conn_fp, "</BODY>");
-#ifndef HAVE_MICRO
-	do_ddwrt_inspired_themes(conn_fp);
-#endif
 	websWrite(conn_fp, "</HTML>\n");
 
 	(void)wfflush(conn_fp);
