@@ -99,7 +99,7 @@ typedef unsigned char nd_ipv6[16];
 /*
  * Use this for MAC addresses.
  */
-#define MAC_ADDR_LEN	6		/* length of MAC addresses */
+#define MAC_ADDR_LEN	6U		/* length of MAC addresses */
 typedef unsigned char nd_mac_addr[MAC_ADDR_LEN];
 
 /*
@@ -391,7 +391,6 @@ extern void unsigned_relts_print(netdissect_options *, uint32_t);
 
 extern void fn_print_char(netdissect_options *, u_char);
 extern void fn_print_str(netdissect_options *, const u_char *);
-extern int nd_print(netdissect_options *, const u_char *, const u_char *);
 extern u_int nd_printztn(netdissect_options *, const u_char *, u_int, const u_char *);
 extern int nd_printn(netdissect_options *, const u_char *, u_int, const u_char *);
 extern void nd_printjnp(netdissect_options *, const u_char *, u_int);
@@ -704,12 +703,12 @@ extern void udp_print(netdissect_options *, const u_char *, u_int, const u_char 
 extern int vjc_print(netdissect_options *, const u_char *, u_short);
 extern void vqp_print(netdissect_options *, const u_char *, u_int);
 extern void vrrp_print(netdissect_options *, const u_char *, u_int, const u_char *, int);
-extern void vtp_print(netdissect_options *, const u_char *, u_int);
+extern void vtp_print(netdissect_options *, const u_char *, const u_int);
 extern void vxlan_gpe_print(netdissect_options *, const u_char *, u_int);
 extern void vxlan_print(netdissect_options *, const u_char *, u_int);
 extern void wb_print(netdissect_options *, const u_char *, u_int);
 extern void zep_print(netdissect_options *, const u_char *, u_int);
-extern void zephyr_print(netdissect_options *, const u_char *, int);
+extern void zephyr_print(netdissect_options *, const u_char *, u_int);
 extern void zmtp1_print(netdissect_options *, const u_char *, u_int);
 extern void zmtp1_datagram_print(netdissect_options *, const u_char *, const u_int);
 extern void someip_print(netdissect_options *, const u_char *, const u_int);
