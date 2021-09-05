@@ -48,6 +48,20 @@
 #include "pcap-dos.h"
 #endif
 
+#ifdef HAVE_NET_PFVAR_H
+/*
+ * In NetBSD <net/if.h> includes <net/dlt.h>, which is an older version of
+ * "pcap/dlt.h" with a lower value of DLT_MATCHING_MAX. Include the headers
+ * below before "pcap-int.h", which eventually includes "pcap/dlt.h", which
+ * redefines DLT_MATCHING_MAX from what this version of NetBSD has to what
+ * this version of libpcap has.
+ */
+#include <sys/socket.h>
+#include <net/if.h>
+#include <net/pfvar.h>
+#include <net/if_pflog.h>
+#endif /* HAVE_NET_PFVAR_H */
+
 #include "pcap-int.h"
 
 #include "extract.h"
@@ -71,13 +85,6 @@
 #include <linux/types.h>
 #include <linux/if_packet.h>
 #include <linux/filter.h>
-#endif
-
-#ifdef HAVE_NET_PFVAR_H
-#include <sys/socket.h>
-#include <net/if.h>
-#include <net/pfvar.h>
-#include <net/if_pflog.h>
 #endif
 
 #ifndef offsetof
@@ -6080,7 +6087,18 @@ gen_protochain(compiler_state_t *cstate, bpf_u_int32 v, int proto)
 	if (cstate->off_linkpl.is_variable)
 		bpf_error(cstate, "'protochain' not supported with variable length headers");
 
-	cstate->no_optimize = 1; /* this code is not compatible with optimizer yet */
+	/*
+	 * To quote a comment in optimize.c:
+	 *
+	 * "These data structures are used in a Cocke and Shwarz style
+	 * value numbering scheme.  Since the flowgraph is acyclic,
+	 * exit values can be propagated from a node's predecessors
+	 * provided it is uniquely defined."
+	 *
+	 * "Acyclic" means "no backward branches", which means "no
+	 * loops", so we have to turn the optimizer off.
+	 */
+	cstate->no_optimize = 1;
 
 	/*
 	 * s[0] is a dummy entry to protect other BPF insn from damage

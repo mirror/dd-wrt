@@ -375,7 +375,7 @@ daemon_serviceloop(SOCKET sockctrl, int isactive, char *passiveClients,
 				// Immediate EOF
 				goto end;
 			}
-			plen = (tls_header.length_hi << 8) | tls_header.length_lo;
+			plen = (tls_header.length_hi << 8U) | tls_header.length_lo;
 
 			// Discard the rest of the message.
 			if (rpcapd_discard(sockctrl, NULL, plen) == -1)
@@ -2421,7 +2421,7 @@ daemon_msg_updatefilter_req(uint8 ver, struct daemon_slpars *pars,
 	// A response is needed, otherwise the other host does not know that everything went well
 	rpcap_createhdr(&header, ver, RPCAP_MSG_UPDATEFILTER_REPLY, 0, 0);
 
-	if (sock_send(pars->sockctrl, pars->ssl, (char *) &header, sizeof (struct rpcap_header), pcap_geterr(session->fp), PCAP_ERRBUF_SIZE))
+	if (sock_send(pars->sockctrl, pars->ssl, (char *) &header, sizeof (struct rpcap_header), errbuf, PCAP_ERRBUF_SIZE))
 	{
 		// That failed; log a message and give up.
 		rpcapd_log(LOGPRIO_ERROR, "Send to client failed: %s", errbuf);
