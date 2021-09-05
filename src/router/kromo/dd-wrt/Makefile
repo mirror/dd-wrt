@@ -778,7 +778,9 @@ endif
 
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
+ifneq ($(CONFIG_NO_STYLUS),y)
 	cp -a ddwrt_inspired_themes $(INSTALLDIR)/www
+endif
 endif
 endif
 
