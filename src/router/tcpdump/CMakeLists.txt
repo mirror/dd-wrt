@@ -4,6 +4,18 @@ if(WIN32)
     # below.
     cmake_minimum_required(VERSION 3.12)
 else(WIN32)
+    #
+    # For now, require only 2.8.6, just in case somebody is
+    # configuring with CMake on a "long-term support" version
+    # of some OS and that version supplies an older version of
+    # CMake.
+    #
+    # If this is ever updated to CMake 3.1 or later, remove the
+    # stuff in cmake/Modules/FindPCAP.cmake that appends subdirectories
+    # of directories from CMAKE_PREFIX_PATH to the PKG_CONFIG_PATH
+    # environment variable when running pkg-config, to make sure
+    # it finds any .pc file from there.
+    #
     cmake_minimum_required(VERSION 2.8.6)
 endif(WIN32)
 
@@ -114,7 +126,7 @@ option(WITH_SMI "Build with libsmi, if available" ON)
 option(WITH_CRYPTO "Build with OpenSSL/libressl libcrypto, if available" ON)
 option(WITH_CAPSICUM "Build with Capsicum security functions, if available" ON)
 option(WITH_CAP_NG "Use libcap-ng, if available" ON)
-option(ENABLE_SMB "Build with the SMB dissector" ON)
+option(ENABLE_SMB "Build with the SMB dissector" OFF)
 
 #
 # String parameters.  Neither of them are set, initially; only if the
