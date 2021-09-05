@@ -1041,7 +1041,7 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "management.inspired_theme"));
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n",tran_string(buf, "share.theme"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "share.theme"));
 	websWrite(wp, "<select name=\"stylus\">\n");
 	websWrite(wp, "<option value=\"off\" %s>%s</option>\n", nvram_match("stylus", "off") ? "selected=\"selected\"" : "", tran_string(buf, "share.off"));
 	websWrite(wp, "<option value=\"dracula\" %s>Dracula</option>\n", nvram_match("stylus", "dracula") ? "selected=\"selected\"" : "");
@@ -1071,19 +1071,47 @@ void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
 		fclose(web);
 		return;
 	}
-
-	char *mem = malloc(len+1);
+	char *mem;
+	if (status)
+		mem = malloc(len + 1 + 16 + strlen(title) + strlen(text) + strlen(text));
+	else
+		mem = malloc(len + 1);
 	if (!mem) {
 		fclose(web);
 		return;
 	}
 	fread(mem, 1, len, web);
-	mem[len]=0;
-	if (status)
-		websWrite(wp, mem, status, title, text, text);
-	else
-		wfwrite(mem, 1, len, wp);
 	fclose(web);
+	mem[len] = 0;
+	if (status) {
+		int i;
+		char stat[32];
+		sprintf(stat, "%d", status);
+		for (i = 0; i < len; i++) {
+			if (mem[i] == '%' && mem[i + 1] == 'd') {
+				memmove(&mem[i + strlen(stat)], &mem[i + 2], len - i);
+				memcpy(&mem[i], stat, strlen(stat));
+				len += strlen(stat);
+				break;
+			}
+		}
+		for (i = 0; i < len; i++) {
+			if (mem[i] == '%' && mem[i + 1] == 's') {
+				memmove(&mem[i + strlen(title)], &mem[i + 2], len - i);
+				memcpy(&mem[i], title, strlen(title));
+				len += strlen(title);
+				break;
+			}
+		}
+		for (i = 0; i < len; i++) {
+			if (mem[i] == '%' && mem[i + 1] == 's') {
+				memmove(&mem[i + strlen(text)], &mem[i + 2], len - i);
+				memcpy(&mem[i], text, strlen(text));
+				len += strlen(text);
+			}
+		}
+	}
+	wfwrite(mem, 1, len, wp);
 	free(mem);
 }
 #else
