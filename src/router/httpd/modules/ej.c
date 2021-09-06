@@ -352,7 +352,7 @@ err2:
 
 FILE *getWebsFile(webs_t wp, char *path2)
 {
-	int len;
+	size_t len;
 	return _getWebsFile(wp, path2, &len);
 }
 
@@ -369,7 +369,7 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
 	FILE *fp = NULL;
-	unsigned int len;
+	size_t len;
 	int i;
 	memdebug_enter();
 
