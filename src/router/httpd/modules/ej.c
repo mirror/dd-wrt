@@ -364,6 +364,7 @@ size_t getWebsFileLen(webs_t wp, char *path2)
 		fclose(fp);
 	return len;
 }
+static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
 
 int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
@@ -376,6 +377,8 @@ int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t
 	len = 0;
 	fp = _getWebsFile(stream, path, &len);
 	if (fp) {
+		if (handler && !handler->send_headers) 
+			send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 		do_ej_file(fp, len, stream);
 		fclose(fp);
 		return 0;
