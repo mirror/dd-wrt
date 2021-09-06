@@ -642,6 +642,8 @@ static int do_filtertable(unsigned char method, struct mime_handler *handler, ch
 	char *temp = insert(stream, ifname, "0", "WL_FilterTable.asp");
 	if (!temp)
 		return -1;
+	if (handler && !handler->send_headers) 
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -875,6 +877,8 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		return -1;
 	}
 	char *buffer = malloc(65536 + 1);
+	if (handler && !handler->send_headers) 
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "{ \"epoch\": %d, \"samples\":\n", time(NULL));
 	int result = 0;
 	while (!feof(fp)) {
@@ -932,6 +936,8 @@ static int do_activetable(unsigned char method, struct mime_handler *handler, ch
 	char *temp = insert(stream, ifname, "0", "WL_ActiveTable.asp");
 	if (!temp)
 		return -1;
+	if (handler && !handler->send_headers) 
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -948,6 +954,8 @@ static int do_sitesurvey(unsigned char method, struct mime_handler *handler, cha
 	char *temp = insert(stream, ifname, "0", "Site_Survey.asp");
 	if (!temp)
 		return -1;
+	if (handler && !handler->send_headers) 
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -966,6 +974,8 @@ static int do_wds(unsigned char method, struct mime_handler *handler, char *path
 	char *temp = insert(stream, ifname, "0", "Wireless_WDS.asp");
 	if (!temp)
 		return -1;
+	if (handler && !handler->send_headers) 
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -989,6 +999,8 @@ static int do_wireless_adv(unsigned char method, struct mime_handler *handler, c
 	char *temp = insert(stream, ifname, index, "Wireless_Advanced.asp");
 	if (!temp)
 		return -1;
+	if (handler && !handler->send_headers) 
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	do_ej_buffer(temp, stream);
 	free(temp);
 	return 0;
@@ -2109,7 +2121,7 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 	char *next;
 	char sname[128];
 	char buf[512];
-	int ret;
+	int ret = -1;
 	int qnum;
 	int i = 1;
 	char *query = strchr(url, '?');
@@ -2129,10 +2141,14 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 				while (fgets(buf, 512, fp) != NULL)
 					fprintf(out, "%s", buf);
 				pclose(fp);
+			} else {
+				fclose(out);
+				return -1;
 			}
 
 			fclose(out);
-
+			if (handler && !handler->send_headers) 
+				send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 			ret = do_file_attach(handler, "/tmp/mypage.tmp", stream, "MyPage.asp");
 			unlink("/tmp/mypage.tmp");
 		}
@@ -2202,6 +2218,8 @@ static int do_fetchif(unsigned char method, struct mime_handler *handler, char *
 	fclose(in);
 
 	buffer[strbuffer] = 0;
+	if (handler && !handler->send_headers) 
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "%s", buffer);
 	free(buffer);
 	return 0;
@@ -2431,6 +2449,7 @@ char *live_translate(webs_t wp, const char *tran)	// todo: add locking to be thr
 	}
 	return entry->translation;
 }
+void do_ddwrt_inspired_themes(webs_t wp,int status, char *title, char *text);
 
 static char *charset = NULL;
 #ifdef HAVE_STATUS_SYSLOG
@@ -2446,6 +2465,8 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	if (!query || sscanf(query + 1, "%d", &offset) != 1)
 		return -1;
 
+	if (handler && !handler->send_headers) 
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
 		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n"	//
@@ -2491,7 +2512,6 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 }
 #endif
 
-void do_ddwrt_inspired_themes(webs_t wp,int status, char *title, char *text);
 static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	if (!charset)
@@ -2526,9 +2546,9 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	unsigned long totout = 0;
 	char *query = strchr(url, '?');
 	if (!query || sscanf(query + 1, "%u-%u", &month, &year) != 2)
-		return;
+		return -1;
 	if (month < 1 || month > 12)
-		return;
+		return -1;
 
 	days = daysformonth(month, year);
 	wd = weekday(month, 1, year);	// first day in month (mon=0, tue=1,
@@ -2569,6 +2589,8 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	char *incom = live_translate(stream, "status_inet.traffin");
 	char *outcom = live_translate(stream, "status_inet.traffout");
 	char *monthname = live_translate(stream, months[month - 1]);
+	if (handler && !handler->send_headers) 
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
@@ -2702,42 +2724,42 @@ static char do_cache[] = "Cache-Control: private, max-age=600\r\n";
 
 static struct mime_handler mime_handlers[] = {
 #ifdef HAVE_SKYTRON
-	{ "setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_POKER
-	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_DDLAN
-	{ "Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Management*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Services*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Log*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Management*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Services*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Log*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
 #endif
 
-	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_REGISTER
-	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, SEND_HEADER, IGNORE_OPTIONS },
+	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_FREERADIUS
 	{ "FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 	{ "freeradius-certs/*", "application/octet-stream", no_cache, NULL, cert_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_LANGUAGE
@@ -2745,29 +2767,29 @@ static struct mime_handler mime_handlers[] = {
 #endif
 #ifdef HAVE_BUFFALO
 	{ "intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_SKYTRON
-	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
-	{ "**.html", "text/html", no_cache, NULL, do_ej, do_auth2, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.html", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
 #else
-	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, NO_HEADER, IGNORE_OPTIONS },
+	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 
 #endif
 #ifdef HAVE_ROUTERSTYLE
 	{ "style/blue/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
 	{ "style/cyan/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
 	{ "style/elegant/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/elegant/fresh.css", "text/css", do_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
-	{ "style/elegant/fresh-dark.css", "text/css", do_cache, NULL, do_ej, NULL, SEND_HEADER, IGNORE_OPTIONS },
+	{ "style/elegant/fresh.css", "text/css", do_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "style/elegant/fresh-dark.css", "text/css", do_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "style/green/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
 	{ "style/orange/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
 	{ "style/red/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, SEND_HEADER, IGNORE_OPTIONS },
@@ -2804,7 +2826,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL, do_wpad, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_ATH9K
-	{ "spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_SKYTRON
 	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth2, NO_HEADER, IGNORE_OPTIONS },
@@ -2813,7 +2835,7 @@ static struct mime_handler mime_handlers[] = {
 #else
 	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_DDLAN
 	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
@@ -2849,9 +2871,9 @@ static struct mime_handler mime_handlers[] = {
 	{ "backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_STATUS_SYSLOG
-	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
-	{ "ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 	{ "*", "application/octet-stream", no_cache, NULL, do_file, do_auth, NO_HEADER, IGNORE_OPTIONS },
