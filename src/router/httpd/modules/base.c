@@ -1428,8 +1428,23 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		sprintf(path, "%s", next_page);
 	} else
 		sprintf(path, "%s.asp", submit_button);
+	if (!strncmp(path, "WL_FilterTable", 14))
+		do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
+#ifdef HAVE_FREERADIUS
+	else if (!strncmp(path, "FreeRadiusCert", 14))
+		do_radiuscert(METHOD_GET, NULL, path, wp);	// refresh
+#endif
+	// #ifdef HAVE_MADWIFI
+	else if (!strncmp(path, "WL_ActiveTable", 14))
+		do_activetable(METHOD_GET, NULL, path, wp);	// refresh
+	else if (!strncmp(path, "Wireless_WDS", 12))
+		do_wds(METHOD_GET, NULL, path, wp);	// refresh
+	// #endif
+	else if (!strncmp(path, "Wireless_Advanced", 17))
+		do_wireless_adv(METHOD_GET, NULL, path, wp);	// refresh
+	else
+		do_ej(METHOD_GET, NULL, path, wp);	// refresh
 
-	do_redirect(METHOD_GET, NULL, path, wp);
 #ifdef HAVE_ANTAIRA
 	// @markus. this is wrong here, it works as a hack but structural it should use handlers
 	if (!strcmp(submit_type, "browser_date")) {
