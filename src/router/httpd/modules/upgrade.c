@@ -176,7 +176,7 @@ static int checkmagic(char *magic, char *check[])
 
 static int
 // sys_upgrade(char *url, FILE *stream, int *total)
-sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
+sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 								// https,
 								// 8/6/2003
 {

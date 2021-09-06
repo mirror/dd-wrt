@@ -1062,7 +1062,7 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
 void do_ddwrt_inspired_themes(webs_t wp, int status, char *title, char *text)
 {
 	char path[128];
-	int len = 0;
+	size_t len = 0;
 	sprintf(path, "ddwrt_inspired_themes/%s.stylus", nvram_safe_get("stylus"));
 	FILE *web = _getWebsFile(wp, path, &len);
 	if (!web)
