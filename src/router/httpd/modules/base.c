@@ -455,7 +455,7 @@ static char *_tran_string(char *buf, char *str)
 
 static char *readweb(webs_t wp, char *filename)
 {
-	int len;
+	size_t len;
 	FILE *web = _getWebsFile(wp, filename, &len);
 	if (!web) {
 		return NULL;
@@ -2244,7 +2244,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 	char *temp = malloc(256);
 	char *temp2;
 	char *temp1;
-	int filelen;
+	size_t filelen;
 	FILE *fp = _getWebsFile(wp, buf, &filelen);
 	if (fp) {
 		temp1 = malloc(strlen(tran) + 3);
