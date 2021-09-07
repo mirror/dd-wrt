@@ -618,6 +618,7 @@ static int do_filtertable(unsigned char method, struct mime_handler *handler, ch
 {
 	char ifname[32];
 	char *temp2;
+	stream->path = path;
 	bzero(ifname, sizeof(ifname));
 	char *idx = strchr(path, '-');
 	if (idx) {
@@ -679,6 +680,7 @@ static void show_certfield(webs_t wp, char *title, char *file)
 static int do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char buf[128];
+	stream->path = path;
 	char *idx = strchr(path, '-');
 	if (!idx)
 		return -1;
@@ -923,6 +925,7 @@ static int sanitize_ifname(char *ifname)
 static int do_activetable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char ifname[32];
+	stream->path = path;
 	getiffromurl(ifname, sizeof(ifname), path);
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3 != NULL) {
@@ -946,6 +949,7 @@ static int do_activetable(unsigned char method, struct mime_handler *handler, ch
 static int do_sitesurvey(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char ifname[32];
+	stream->path = path;
 	getiffromurl(ifname, sizeof(ifname), path);
 	filteralphanum(ifname);
 	if (sanitize_ifname(ifname)) {
@@ -964,6 +968,7 @@ static int do_sitesurvey(unsigned char method, struct mime_handler *handler, cha
 static int do_wds(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char ifname[32];
+	stream->path = path;
 	getiffromurl(ifname, sizeof(ifname), path);
 	if (!*(ifname))
 		return -1;
@@ -984,6 +989,7 @@ static int do_wds(unsigned char method, struct mime_handler *handler, char *path
 static int do_wireless_adv(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char ifname[32];
+	stream->path = path;
 	getiffromurl(ifname, sizeof(ifname), path);
 	if (!*(ifname))
 		return -1;
