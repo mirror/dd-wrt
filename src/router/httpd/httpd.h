@@ -73,7 +73,7 @@ typedef struct {
 #ifdef HAVE_MATRIXSSL
 	ssl_t *ssl;
 #endif
-
+	char *path;
 	char *post_buf;
 	char *request_url;
 	char auth_realm[AUTH_MAX];

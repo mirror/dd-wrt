@@ -2226,7 +2226,13 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, " - %s", live_translate(wp, argv[0]));
 	}
 	websWrite(wp, "</title>\n");
-
+	if (stream->path) {
+		if (!*(argv[0])) {
+			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s)\", '%s')\n", stream->path, nvram_safe_get("router_name"), SVN_REVISION, stream->path);
+		} else {
+			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s) - %s\", '%s')\n", stream->path, nvram_safe_get("router_name"), SVN_REVISION, live_translate(wp, argv[0]), stream->path);
+		}
+	}
 }
 
 EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
