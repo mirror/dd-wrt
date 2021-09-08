@@ -281,6 +281,7 @@ sbutton.policytab="Regeltabelle anzeigen";
 sbutton.wanmac="Zeige aktuelle PC-MAC-Adresse";
 sbutton.dhcprel="DHCP freigeben";
 sbutton.dhcpren="DHCP erneuern";
+sbutton.spectral_survey="Spektrum";
 sbutton.survey="WLAN-Suche";
 sbutton.csurvey="Kanal Analyse";
 sbutton.wsurvey="Wiviz Visualisierung";
