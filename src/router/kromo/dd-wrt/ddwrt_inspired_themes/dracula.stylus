@@ -319,7 +319,7 @@
     line-height: 2rem;
   }
   body[bgcolor="#cc9999"]::after {
-    content: '\A \24D8 %s!';
+    content: '\A \24D8 %s';
     color: var(--v9-9);
     font-size: 1rem;
     line-height: 1.3rem;
