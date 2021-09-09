@@ -1264,7 +1264,7 @@ static void *handle_request(void *arg)
 		}
 		break;
 	}
-	send_error(conn_fp, noheader, 404, live_translate(conn_fp, "share.not found"), NULL, " File %s not found.", file);
+	send_error(conn_fp, noheader, 404, live_translate(conn_fp, "share.not_found"), NULL, live_translate(conn_fp, "share.file_not_found"), file);
 
       out:;
 	setnaggle(conn_fp, 0);
