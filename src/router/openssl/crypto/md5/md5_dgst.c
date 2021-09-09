@@ -13,6 +13,9 @@
  */
 #include "internal/deprecated.h"
 
+#ifdef OCTEON_OPENSSL
+#include "md5_dgst_octeon.c"
+#else
 #include <stdio.h>
 #include "md5_local.h"
 #include <openssl/opensslv.h>
@@ -167,4 +170,5 @@ void md5_block_data_order(MD5_CTX *c, const void *data_, size_t num)
         D = c->D += D;
     }
 }
+#endif
 #endif
