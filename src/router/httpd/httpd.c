@@ -484,7 +484,7 @@ static void send_authenticate(webs_t conn_fp)
 {
 	char *header;
 	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
-	send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.unauthorized"), header, " Authorization required. Wrong username and/or password!");
+	send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.unauthorized"), header, live_translate(conn_fp, "share.auth_required"));
 	free(header);
 }
 
@@ -823,7 +823,7 @@ static void *handle_request(void *arg)
 			break;
 		wfgets(line, LINE_LEN, conn_fp, &eof);
 		if (eof) {
-			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, " Unexpected connection close in intitial request");
+			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close");
 			goto out;
 		}
 		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
@@ -837,7 +837,7 @@ static void *handle_request(void *arg)
 		break;
 	}
 	if (!*(line)) {
-		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.request_timeout"), NULL, " No request appeared within a reasonable time period.");
+		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.request_timeout"), NULL, live_translate(conn_fp, "share.request_timeout_desc"));
 
 		goto out;
 	}
@@ -849,7 +849,7 @@ static void *handle_request(void *arg)
 	method = path = line;
 	strsep(&path, " ");
 	if (!path) {		// Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, " Can't parse request. (no path given)");
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cant_parse_no_path"));
 		goto out;
 	}
 	while (*path == ' ')
@@ -857,7 +857,7 @@ static void *handle_request(void *arg)
 	protocol = path;
 	strsep(&protocol, " ");
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, " Can't parse request. (no protocol given)");
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cant_parse_no_proto");
 		goto out;
 	}
 	while (*protocol == ' ')
@@ -870,7 +870,7 @@ static void *handle_request(void *arg)
 	while ((line + LINE_LEN - cur) > 1 && wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0)	//jimmy,https,8/4/2003
 	{
 		if (eof) {
-			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, " Unexpected connection close");
+			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close_2");
 			goto out;
 		}
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
@@ -923,18 +923,18 @@ static void *handle_request(void *arg)
 		method_type = METHOD_OPTIONS;
 
 	if (method_type == METHOD_INVALID) {
-		send_error(conn_fp, 0, 501, live_translate(conn_fp, "share.not_implemented"), NULL, " Method %s is not implemented.", method);
+		send_error(conn_fp, 0, 501, live_translate(conn_fp, "share.not_implemented"), NULL, live_translate(conn_fp, "share.method_unimpl"), method);
 		goto out;
 	}
 
 	if (path[0] != '/') {
-		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, " Bad filename. (no leading slash)");
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.no_slash"));
 		goto out;
 	}
 	file = &(path[1]);
 	len = strlen(file);
 	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL || strcmp(&(file[len - 3]), "/..") == 0) {
-		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, " Illegal filename. (filename will threaten local filesystem)");
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.threaten_fs"));
 		goto out;
 	}
 
@@ -1008,7 +1008,7 @@ static void *handle_request(void *arg)
 #endif
 
 	if (!referer && method_type == METHOD_POST && nodetect == 0) {
-		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, " Cross Site Action detected!");
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cross_site"));
 		goto out;
 	}
 
@@ -1036,11 +1036,11 @@ static void *handle_request(void *arg)
 			hlen = strlen(host);
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
-					send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, " Cross Site Action detected! (referer %s)", referer);
+					send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cross_site_ref"), referer);
 					goto out;
 				}
 				if (host[c++] != referer[a]) {
-					send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, " Cross Site Action detected! (referer %s)", referer);
+					send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cross_site_ref"), referer);
 					goto out;
 				}
 				if (c == hlen) {
@@ -1049,7 +1049,7 @@ static void *handle_request(void *arg)
 				}
 			}
 			if (c != hlen || referer[a] != '/') {
-				send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, " Cross Site Action detected! (referer %s)", referer);
+				send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cross_site_ref"), referer);
 				goto out;
 			}
 		}
@@ -1249,7 +1249,7 @@ static void *handle_request(void *arg)
 		}
 #endif
 		if (check_connect_type(conn_fp) < 0) {
-			send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.bad_request"), NULL, " Can't use wireless interface to access GUI.");
+			send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.no_wifi_access"));
 			goto out;
 		}
 		if (handler->send_headers) {
