@@ -1603,10 +1603,10 @@ static int load_dh_params(SSL_CTX *ctx, char *file)
 	 * Change suggested by @t8m
 	 */
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
-	if (FIPS_mode() > 0) {
+/*	if (FIPS_mode() > 0) {
 		WARN(LOG_PREFIX ": Ignoring user-selected DH parameters in FIPS mode. Using defaults.");
 		return 0;
-	}
+	}*/
 #endif
 
 	if ((bio = BIO_new_file(file, "r")) == NULL) {
