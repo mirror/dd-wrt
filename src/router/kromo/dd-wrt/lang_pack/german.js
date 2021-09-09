@@ -237,7 +237,7 @@ share.tcp_error="TCP FEHLER";
 share.request_timeout="ZEIT&Uuml;BERSCHREITUNG DER ANFORDERUNG";
 share.not_implemented="NICHT IMPLEMENTIERT";
 share.not_found="NICHT GEFUNDEN";
-share.file_not_found=" Datei %s nicht gefunden.";
+share.file_not_found=" Die Datei %s wurde nicht gefunden.";
 
 sbutton.save="Speichern";
 sbutton.download_config="Exportiere Partner Konfiguration";
