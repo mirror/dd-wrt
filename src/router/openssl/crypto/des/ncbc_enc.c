@@ -1,7 +1,7 @@
 /*
  * Copyright 1998-2016 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -24,7 +24,6 @@ void DES_ncbc_encrypt(const unsigned char *in, unsigned char *out,
                       DES_cblock *ivec, int enc)
 #endif
 {
-#ifndef OCTEON_OPENSSL
     register DES_LONG tin0, tin1;
     register DES_LONG tout0, tout1, xor0, xor1;
     register long l = length;
@@ -104,15 +103,4 @@ void DES_ncbc_encrypt(const unsigned char *in, unsigned char *out,
     }
     tin0 = tin1 = tout0 = tout1 = xor0 = xor1 = 0;
     tin[0] = tin[1] = 0;
-#else
-  DES_ede3_cbc_encrypt(
-    in,
-    out,
-    length,
-    _schedule,  
-    _schedule,  
-    _schedule, 
-    ivec,
-    enc); 
-#endif
 }
