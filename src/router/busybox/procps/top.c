@@ -712,7 +712,7 @@ static NOINLINE void display_process_list(int lines_rem, int scr_width)
 		);
 		if ((int)(scr_width - col) > 1)
 			read_cmdline(line_buf + col, scr_width - col, s->pid, s->comm);
-		fputs(line_buf, stdout);
+		fputs_stdout(line_buf);
 		/* printf(" %d/%d %lld/%lld", s->pcpu, total_pcpu,
 			cur_jif.busy - prev_jif.busy, cur_jif.total - prev_jif.total); */
 		s++;
@@ -1052,9 +1052,9 @@ static unsigned handle_input(unsigned scan_mask, duration_t interval)
 //usage:       "[-b"IF_FEATURE_TOPMEM("m")IF_FEATURE_SHOW_THREADS("H")"]"
 //usage:       " [-n COUNT] [-d SECONDS]"
 //usage:#define top_full_usage "\n\n"
-//usage:       "Provide a view of process activity in real time."
+//usage:       "Show a view of process activity in real time."
 //usage:   "\n""Read the status of all processes from /proc each SECONDS"
-//usage:   "\n""and display a screenful of them."
+//usage:   "\n""and show a screenful of them."
 //usage:   "\n"
 //usage:	IF_FEATURE_TOP_INTERACTIVE(
 //usage:       "Keys:"

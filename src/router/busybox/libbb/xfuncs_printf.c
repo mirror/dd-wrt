@@ -226,7 +226,7 @@ int FAST_FUNC rename_or_warn(const char *oldpath, const char *newpath)
 	return n;
 }
 
-void FAST_FUNC xpipe(int filedes[2])
+void FAST_FUNC xpipe(int *filedes)
 {
 	if (pipe(filedes))
 		bb_simple_perror_msg_and_die("can't create pipe");
@@ -318,6 +318,11 @@ int FAST_FUNC fflush_all(void)
 int FAST_FUNC bb_putchar(int ch)
 {
 	return putchar(ch);
+}
+
+int FAST_FUNC fputs_stdout(const char *s)
+{
+	return fputs(s, stdout);
 }
 
 /* Die with an error message if we can't copy an entire FILE* to stdout,
@@ -725,4 +730,15 @@ void FAST_FUNC xsettimeofday(const struct timeval *tv)
 {
 	if (settimeofday(tv, NULL))
 		bb_simple_perror_msg_and_die("settimeofday");
+}
+
+void FAST_FUNC xgettimeofday(struct timeval *tv)
+{
+#if 0
+	if (gettimeofday(tv, NULL))
+		bb_simple_perror_msg_and_die("gettimeofday");
+#else
+	/* Never fails on Linux */
+	gettimeofday(tv, NULL);
+#endif
 }

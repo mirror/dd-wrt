@@ -52,7 +52,7 @@
 //usage:#define groups_trivial_usage
 //usage:       "[USER]"
 //usage:#define groups_full_usage "\n\n"
-//usage:       "Print the group memberships of USER or for the current process"
+//usage:       "Print the groups USER is in"
 //usage:
 //usage:#define groups_example_usage
 //usage:       "$ groups\n"
@@ -258,7 +258,7 @@ int id_main(int argc UNUSED_PARAM, char **argv)
 			bb_error_msg_and_die("can't get process context%s",
 				username ? " for a different user" : "");
 		}
-		fputs(scontext, stdout);
+		fputs_stdout(scontext);
 	}
 	/* freecon(NULL) seems to be harmless */
 	if (ENABLE_FEATURE_CLEAN_UP)

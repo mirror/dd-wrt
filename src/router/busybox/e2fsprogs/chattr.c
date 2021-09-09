@@ -20,40 +20,52 @@
 //kbuild:lib-$(CONFIG_CHATTR) += chattr.o e2fs_lib.o
 
 //usage:#define chattr_trivial_usage
-//usage:       "[-R] [-v VERSION] [-+=AacDdijsStTu] FILE..."
+//usage:       "[-R] [-v VERSION] [-p PROJID] [-+=AacDdijsStTu] FILE..."
 //usage:#define chattr_full_usage "\n\n"
 //usage:       "Change ext2 file attributes\n"
 //usage:     "\n	-R	Recurse"
-//usage:     "\n	-v VER	Set version/generation number"
+//usage:     "\n	-v NUM	Set version/generation number"
+//usage:     "\n	-p NUM	Set project number"
 //-V, -f accepted but ignored
 //usage:     "\nModifiers:"
 //usage:     "\n	-,+,=	Remove/add/set attributes"
 //usage:     "\nAttributes:"
-//usage:     "\n	A	Don't track atime"
-//usage:     "\n	a	Append mode only"
-//usage:     "\n	c	Enable compress"
-//usage:     "\n	D	Write dir contents synchronously"
+//usage:     "\n	A	No atime"
+//usage:     "\n	a	Append only"
+//usage:     "\n	C	No copy-on-write"
+//usage:     "\n	c	Compressed"
+//usage:     "\n	D	Synchronous dir updates"
 //usage:     "\n	d	Don't backup with dump"
-//usage:     "\n	i	Cannot be modified (immutable)"
-//usage:     "\n	j	Write all data to journal first"
-//usage:     "\n	s	Zero disk storage when deleted"
-//usage:     "\n	S	Write synchronously"
-//usage:     "\n	t	Disable tail-merging of partial blocks with other files"
-//usage:     "\n	u	Allow file to be undeleted"
+//usage:     "\n	E	Encrypted"
+//usage:     "\n	e	File uses extents"
+//usage:     "\n	F	Case-insensitive dir"
+//usage:     "\n	I	Indexed dir"
+//usage:     "\n	i	Immutable"
+//usage:     "\n	j	Write data to journal first"
+//usage:     "\n	N	File is stored in inode"
+//usage:     "\n	P	Hierarchical project ID dir"
+//usage:     "\n	S	Synchronous file updates"
+//usage:     "\n	s	Zero storage when deleted"
+//usage:     "\n	T	Top of dir hierarchy"
+//usage:     "\n	t	Don't tail-merge with other files"
+//usage:     "\n	u	Allow undelete"
+//usage:     "\n	V	Verity"
 
 #include "libbb.h"
 #include "e2fs_lib.h"
 
-#define OPT_ADD 1
-#define OPT_REM 2
-#define OPT_SET 4
-#define OPT_SET_VER 8
+#define OPT_ADD      (1 << 0)
+#define OPT_REM      (1 << 1)
+#define OPT_SET      (1 << 2)
+#define OPT_SET_VER  (1 << 3)
+#define OPT_SET_PROJ (1 << 4)
 
 struct globals {
-	unsigned long version;
-	unsigned long af;
-	unsigned long rf;
+	unsigned version;
+	unsigned af;
+	unsigned rf;
 	int flags;
+	uint32_t projid;
 	smallint recursive;
 };
 
@@ -67,13 +79,15 @@ static unsigned long get_flag(char c)
 
 static char** decode_arg(char **argv, struct globals *gp)
 {
-	unsigned long *fl;
+	unsigned *fl;
 	const char *arg = *argv;
 	char opt = *arg;
 
 	fl = &gp->af;
 	if (opt == '-') {
-		gp->flags |= OPT_REM;
+		/* gp->flags |= OPT_REM; - WRONG, it can be an option */
+		/* testcase: chattr =ae -R FILE should not complain "= is incompatible with - and +" */
+		/* (and should not read flags, with =FLAGS they can be just set directly) */
 		fl = &gp->rf;
 	} else if (opt == '+') {
 		gp->flags |= OPT_ADD;
@@ -103,14 +117,21 @@ static char** decode_arg(char **argv, struct globals *gp)
 			if (*arg == 'v') {
 				if (!*++argv)
 					bb_show_usage();
-				gp->version = xatoul(*argv);
+				gp->version = xatou(*argv);
 				gp->flags |= OPT_SET_VER;
 				continue;
 			}
-//TODO: "-p PROJECT_NUM" ?
+			if (*arg == 'p') {
+				if (!*++argv)
+					bb_show_usage();
+				gp->projid = xatou32(*argv);
+				gp->flags |= OPT_SET_PROJ;
+				continue;
+			}
 			/* not a known option, try as an attribute */
+			gp->flags |= OPT_REM;
 		}
-		*fl |= get_flag(*arg);
+		*fl |= get_flag(*arg); /* aborts on bad flag letter */
 	}
 
 	return argv;
@@ -120,6 +141,8 @@ static void change_attributes(const char *name, struct globals *gp);
 
 static int FAST_FUNC chattr_dir_proc(const char *dir_name, struct dirent *de, void *gp)
 {
+//TODO: use de->d_type (if it's not DT_UNKNOWN) to skip !(REG || DIR || LNK) entries without lstat?
+
 	char *path = concat_subpath_file(dir_name, de->d_name);
 	/* path is NULL if de->d_name is "." or "..", else... */
 	if (path) {
@@ -131,15 +154,14 @@ static int FAST_FUNC chattr_dir_proc(const char *dir_name, struct dirent *de, vo
 
 static void change_attributes(const char *name, struct globals *gp)
 {
-	unsigned long fsflags;
+	unsigned fsflags;
+	int fd;
 	struct stat st;
 
 	if (lstat(name, &st) != 0) {
-		bb_perror_msg("stat %s", name);
+		bb_perror_msg("can't stat '%s'", name);
 		return;
 	}
-	if (S_ISLNK(st.st_mode) && gp->recursive)
-		return;
 
 	/* Don't try to open device files, fifos etc.  We probably
 	 * ought to display an error if the file was explicitly given
@@ -148,29 +170,58 @@ static void change_attributes(const char *name, struct globals *gp)
 	if (!S_ISREG(st.st_mode) && !S_ISLNK(st.st_mode) && !S_ISDIR(st.st_mode))
 		return;
 
-	if (gp->flags & OPT_SET_VER)
-		if (fsetversion(name, gp->version) != 0)
-			bb_perror_msg("setting version on %s", name);
+	/* There is no way to run needed ioctls on a symlink.
+	 * open(O_PATH | O_NOFOLLOW) _can_ be used to get a fd referring to the symlink,
+	 * but ioctls fail on such a fd (tried on 4.12.0 kernel).
+	 * e2fsprogs-1.46.2 uses open(O_NOFOLLOW), it fails on symlinks.
+	 */
+	fd = open_or_warn(name, O_RDONLY | O_NONBLOCK | O_NOCTTY | O_NOFOLLOW);
+	if (fd >= 0) {
+		int r;
 
-	if (gp->flags & OPT_SET) {
-		fsflags = gp->af;
-	} else {
-		if (fgetflags(name, &fsflags) != 0) {
-			bb_perror_msg("reading flags on %s", name);
-			goto skip_setflags;
+		if (gp->flags & OPT_SET_VER) {
+			r = ioctl(fd, EXT2_IOC_SETVERSION, &gp->version);
+			if (r != 0)
+				bb_perror_msg("setting %s on %s", "version", name);
 		}
-		/*if (gp->flags & OPT_REM) - not needed, rf is zero otherwise */
-			fsflags &= ~gp->rf;
-		/*if (gp->flags & OPT_ADD) - not needed, af is zero otherwise */
-			fsflags |= gp->af;
-// What is this? And why it's not done for SET case?
-		if (!S_ISDIR(st.st_mode))
-			fsflags &= ~EXT2_DIRSYNC_FL;
-	}
-	if (fsetflags(name, fsflags) != 0)
-		bb_perror_msg("setting flags on %s", name);
 
+		if (gp->flags & OPT_SET_PROJ) {
+			struct ext2_fsxattr fsxattr;
+			r = ioctl(fd, EXT2_IOC_FSGETXATTR, &fsxattr);
+			/* note: ^^^ may fail in 32-bit userspace on 64-bit kernel (seen on 4.12.0) */
+			if (r != 0) {
+				bb_perror_msg("getting %s on %s", "project ID", name);
+			} else {
+				fsxattr.fsx_projid = gp->projid;
+				r = ioctl(fd, EXT2_IOC_FSSETXATTR, &fsxattr);
+				if (r != 0)
+					bb_perror_msg("setting %s on %s", "project ID", name);
+			}
+		}
+
+		if (gp->flags & OPT_SET) {
+			fsflags = gp->af;
+		} else {
+			r = ioctl(fd, EXT2_IOC_GETFLAGS, &fsflags);
+			if (r != 0) {
+				bb_perror_msg("getting %s on %s", "flags", name);
+				goto skip_setflags;
+			}
+			/*if (gp->flags & OPT_REM) - not needed, rf is zero otherwise */
+				fsflags &= ~gp->rf;
+			/*if (gp->flags & OPT_ADD) - not needed, af is zero otherwise */
+				fsflags |= gp->af;
+// What is this? And why it's not done for SET case?
+			if (!S_ISDIR(st.st_mode))
+				fsflags &= ~EXT2_DIRSYNC_FL;
+		}
+		r = ioctl(fd, EXT2_IOC_SETFLAGS, &fsflags);
+		if (r != 0)
+			bb_perror_msg("setting %s on %s", "flags", name);
  skip_setflags:
+		close(fd);
+	}
+
 	if (gp->recursive && S_ISDIR(st.st_mode))
 		iterate_on_dir(name, chattr_dir_proc, gp);
 }
@@ -200,7 +251,7 @@ int chattr_main(int argc UNUSED_PARAM, char **argv)
 	if (g.rf & g.af)
 		bb_simple_error_msg_and_die("can't set and unset a flag");
 	if (!g.flags)
-		bb_simple_error_msg_and_die("must use '-v', =, - or +");
+		bb_simple_error_msg_and_die("must use -v, -p, =, - or +");
 
 	/* now run chattr on all the files passed to us */
 	do change_attributes(*argv, &g); while (*++argv);

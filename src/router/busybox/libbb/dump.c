@@ -34,7 +34,6 @@ typedef struct priv_dumper_t {
 	FU *endfu;
 	off_t savaddress;        /* saved address/offset in stream */
 	off_t eaddress;          /* end address */
-	off_t address;           /* address/offset in stream */
 	int blocksize;
 	smallint exitval;        /* final exit value */
 
@@ -211,7 +210,7 @@ static NOINLINE void rewrite(priv_dumper_t *dumper, FS *fs)
 				pr->bcnt = fu->bcnt;
 				if (fu->bcnt == 0) {
 					if (!prec)
-						bb_simple_error_msg_and_die("%%s needs precision or byte count");
+						bb_simple_error_msg_and_die("%s needs precision or byte count");
 					pr->bcnt = atoi(prec);
 				}
 			} else
@@ -228,7 +227,8 @@ static NOINLINE void rewrite(priv_dumper_t *dumper, FS *fs)
 					if ((p1[2] != 'd') && (p1[2] != 'o') && (p1[2] != 'x')) {
 						goto DO_BAD_CONV_CHAR;
 					}
-					*p1 = p1[2];
+					*p1++ = 'l';
+					*p1++ = 'l';
 					break;
 				case 'c':	/* %_c: chars, \ooo, \n \r \t etc */
 					pr->flags = F_C;
@@ -334,14 +334,14 @@ static void do_skip(priv_dumper_t *dumper, const char *fname)
 	) {
 		/* If st_size is valid and pub.dump_skip >= st_size */
 		dumper->pub.dump_skip -= sbuf.st_size;
-		dumper->address += sbuf.st_size;
+		dumper->pub.address += sbuf.st_size;
 		return;
 	}
 	if (fseeko(stdin, dumper->pub.dump_skip, SEEK_SET)) {
 		bb_simple_perror_msg_and_die(fname);
 	}
-	dumper->address += dumper->pub.dump_skip;
-	dumper->savaddress = dumper->address;
+	dumper->pub.address += dumper->pub.dump_skip;
+	dumper->savaddress = dumper->pub.address;
 	dumper->pub.dump_skip = 0;
 }
 
@@ -356,6 +356,7 @@ static NOINLINE int next(priv_dumper_t *dumper)
 				if (!freopen(fname, "r", stdin)) {
 					bb_simple_perror_msg(fname);
 					dumper->exitval = 1;
+					dumper->next__done = 1;
 					continue;
 				}
 			}
@@ -379,7 +380,7 @@ static unsigned char *get(priv_dumper_t *dumper)
 	int blocksize = dumper->blocksize;
 
 	if (!dumper->get__curp) {
-		dumper->address = (off_t)0; /*DBU:[dave@cray.com] initialize,initialize..*/
+		dumper->pub.address = (off_t)0; /*DBU:[dave@cray.com] initialize,initialize..*/
 		dumper->get__curp = xmalloc(blocksize);
 		dumper->get__savp = xzalloc(blocksize); /* need to be initialized */
 	} else {
@@ -387,7 +388,7 @@ static unsigned char *get(priv_dumper_t *dumper)
 		dumper->get__curp = dumper->get__savp;
 		dumper->get__savp = tmp;
 		dumper->savaddress += blocksize;
-		dumper->address = dumper->savaddress;
+		dumper->pub.address = dumper->savaddress;
 	}
 	need = blocksize;
 	nread = 0;
@@ -410,7 +411,7 @@ static unsigned char *get(priv_dumper_t *dumper)
 				}
 			}
 			memset(dumper->get__curp + nread, 0, need);
-			dumper->eaddress = dumper->address + nread;
+			dumper->eaddress = dumper->pub.address + nread;
 			return dumper->get__curp;
 		}
 		n = fread(dumper->get__curp + nread, sizeof(unsigned char),
@@ -442,7 +443,7 @@ static unsigned char *get(priv_dumper_t *dumper)
 			}
 			dumper->pub.dump_vflag = DUP;
 			dumper->savaddress += blocksize;
-			dumper->address = dumper->savaddress;
+			dumper->pub.address = dumper->savaddress;
 			need = blocksize;
 			nread = 0;
 		} else {
@@ -543,8 +544,8 @@ static void display(priv_dumper_t* dumper)
 
 		fs = dumper->pub.fshead;
 		savebp = bp;
-		saveaddress = dumper->address;
-		for (; fs; fs = fs->nextfs, bp = savebp, dumper->address = saveaddress) {
+		saveaddress = dumper->pub.address;
+		for (; fs; fs = fs->nextfs, bp = savebp, dumper->pub.address = saveaddress) {
 			FU *fu;
 			for (fu = fs->nextfu; fu; fu = fu->nextfu) {
 				int cnt;
@@ -553,14 +554,14 @@ static void display(priv_dumper_t* dumper)
 				}
 				for (cnt = fu->reps; cnt; --cnt) {
 					PR *pr;
-					for (pr = fu->nextpr; pr; dumper->address += pr->bcnt,
+					for (pr = fu->nextpr; pr; dumper->pub.address += pr->bcnt,
 								bp += pr->bcnt, pr = pr->nextpr) {
 						if (dumper->eaddress
-						 && dumper->address >= dumper->eaddress
+						 && dumper->pub.address >= dumper->eaddress
 						) {
-							if (dumper->pub.eofstring) {
+							if (dumper->pub.xxd_eofstring) {
 								/* xxd support: requested to not pad incomplete blocks */
-								fputs(dumper->pub.eofstring, stdout);
+								fputs_stdout(dumper->pub.xxd_eofstring);
 								return;
 							}
 							if (!(pr->flags & (F_TEXT | F_BPAD)))
@@ -572,7 +573,7 @@ static void display(priv_dumper_t* dumper)
 						}
 						switch (pr->flags) {
 						case F_ADDRESS:
-							printf(pr->fmt, (unsigned) dumper->address);
+							printf(pr->fmt, (unsigned long long) dumper->pub.address + dumper->pub.xxd_displayoff);
 							break;
 						case F_BPAD:
 							printf(pr->fmt, "");
@@ -666,15 +667,15 @@ static void display(priv_dumper_t* dumper)
 		 * of blocksize, and no partial block ever found.
 		 */
 		if (!dumper->eaddress) {
-			if (!dumper->address) {
+			if (!dumper->pub.address) {
 				return;
 			}
-			dumper->eaddress = dumper->address;
+			dumper->eaddress = dumper->pub.address;
 		}
 		for (pr = dumper->endfu->nextpr; pr; pr = pr->nextpr) {
 			switch (pr->flags) {
 			case F_ADDRESS:
-				printf(pr->fmt, (unsigned) dumper->eaddress);
+				printf(pr->fmt, (unsigned long long) dumper->eaddress + dumper->pub.xxd_displayoff);
 				break;
 			case F_TEXT:
 				printf(pr->fmt);

@@ -127,17 +127,17 @@
 //config:	help
 //config:	Enable {abc,def} extension.
 //config:
-//config:config HUSH_LINENO_VAR
-//config:	bool "$LINENO variable"
-//config:	default y
-//config:	depends on HUSH_BASH_COMPAT
-//config:
 //config:config HUSH_BASH_SOURCE_CURDIR
 //config:	bool "'source' and '.' builtins search current directory after $PATH"
 //config:	default n   # do not encourage non-standard behavior
 //config:	depends on HUSH_BASH_COMPAT
 //config:	help
 //config:	This is not compliant with standards. Avoid if possible.
+//config:
+//config:config HUSH_LINENO_VAR
+//config:	bool "$LINENO variable (bashism)"
+//config:	default y
+//config:	depends on SHELL_HUSH
 //config:
 //config:config HUSH_INTERACTIVE
 //config:	bool "Interactive mode"
@@ -339,7 +339,7 @@
  * therefore we don't show them either.
  */
 //usage:#define hush_trivial_usage
-//usage:	"[-enxl] [-c 'SCRIPT' [ARG0 [ARGS]] / FILE [ARGS] / -s [ARGS]]"
+//usage:	"[-enxl] [-c 'SCRIPT' [ARG0 ARGS] | FILE [ARGS] | -s [ARGS]]"
 //usage:#define hush_full_usage "\n\n"
 //usage:	"Unix shell interpreter"
 
@@ -384,6 +384,7 @@
 #define BASH_PATTERN_SUBST ENABLE_HUSH_BASH_COMPAT
 #define BASH_SUBSTR        ENABLE_HUSH_BASH_COMPAT
 #define BASH_SOURCE        ENABLE_HUSH_BASH_COMPAT
+#define BASH_DOLLAR_SQUOTE ENABLE_HUSH_BASH_COMPAT
 #define BASH_HOSTNAME_VAR  ENABLE_HUSH_BASH_COMPAT
 #define BASH_EPOCH_VARS    ENABLE_HUSH_BASH_COMPAT
 #define BASH_TEST2         (ENABLE_HUSH_BASH_COMPAT && ENABLE_HUSH_TEST)
@@ -1027,7 +1028,7 @@ struct globals {
 	struct sigaction sa;
 	char optstring_buf[sizeof("eixcs")];
 #if BASH_EPOCH_VARS
-	char epoch_buf[sizeof("%lu.nnnnnn") + sizeof(long)*3];
+	char epoch_buf[sizeof("%llu.nnnnnn") + sizeof(long long)*3];
 #endif
 #if ENABLE_FEATURE_EDITING
 	char user_input_buf[CONFIG_FEATURE_EDITING_MAX_LEN];
@@ -2277,13 +2278,13 @@ static const char* FAST_FUNC get_local_var_value(const char *name)
 	{
 		const char *fmt = NULL;
 		if (strcmp(name, "EPOCHSECONDS") == 0)
-			fmt = "%lu";
+			fmt = "%llu";
 		else if (strcmp(name, "EPOCHREALTIME") == 0)
-			fmt = "%lu.%06u";
+			fmt = "%llu.%06u";
 		if (fmt) {
 			struct timeval tv;
-			gettimeofday(&tv, NULL);
-			sprintf(G.epoch_buf, fmt, (unsigned long)tv.tv_sec,
+			xgettimeofday(&tv);
+			sprintf(G.epoch_buf, fmt, (unsigned long long)tv.tv_sec,
 					(unsigned)tv.tv_usec);
 			return G.epoch_buf;
 		}
@@ -2670,6 +2671,8 @@ static int get_user_input(struct in_str *i)
 	}
 	if (r < 0) {
 		/* EOF/error detected */
+		/* ^D on interactive input goes to next line before exiting: */
+		write(STDOUT_FILENO, "\n", 1);
 		i->p = NULL;
 		i->peek_buf[0] = r = EOF;
 		return r;
@@ -2692,7 +2695,7 @@ static int get_user_input(struct in_str *i)
 			 * Without check_and_run_traps, handler never runs.
 			 */
 			check_and_run_traps();
-			fputs(prompt_str, stdout);
+			fputs_stdout(prompt_str);
 			fflush_all();
 		}
 		r = hfgetc(i->file);
@@ -3694,9 +3697,10 @@ static void debug_print_tree(struct pipe *pi, int lvl)
 
 	pin = 0;
 	while (pi) {
-		fdprintf(2, "%*spipe %d %sres_word=%s followup=%d %s\n",
+		fdprintf(2, "%*spipe %d #cmds:%d %sres_word=%s followup=%d %s\n",
 				lvl*2, "",
 				pin,
+				pi->num_cmds,
 				(IF_HAS_KEYWORDS(pi->pi_inverted ? "! " :) ""),
 				RES[pi->res_word],
 				pi->followup, PIPE[pi->followup]
@@ -3839,6 +3843,9 @@ static void done_pipe(struct parse_context *ctx, pipe_style type)
 #endif
 		/* Replace all pipes in ctx with one newly created */
 		ctx->list_head = ctx->pipe = pi;
+		/* for cases like "cmd && &", do not be tricked by last command
+		 * being null - the entire {...} & is NOT null! */
+		not_null = 1;
 	} else {
  no_conv:
 		ctx->pipe->followup = type;
@@ -4249,7 +4256,7 @@ static int done_word(struct parse_context *ctx)
 		 || endofname(command->argv[0])[0] != '\0'
 		) {
 			/* bash says just "not a valid identifier" */
-			syntax_error("not a valid identifier in for");
+			syntax_error("bad variable name in for");
 			return 1;
 		}
 		/* Force FOR to have just one word (variable name) */
@@ -4913,6 +4920,101 @@ static int add_till_closing_bracket(o_string *dest, struct in_str *input, unsign
 }
 #endif /* ENABLE_HUSH_TICK || ENABLE_FEATURE_SH_MATH || ENABLE_HUSH_DOLLAR_OPS */
 
+#if BASH_DOLLAR_SQUOTE
+/* Return code: 1 for "found and parsed", 0 for "seen something else" */
+# if BB_MMU
+#define parse_dollar_squote(as_string, dest, input) \
+	parse_dollar_squote(dest, input)
+#define as_string NULL
+# endif
+static int parse_dollar_squote(o_string *as_string, o_string *dest, struct in_str *input)
+{
+	int start;
+	int ch = i_peek_and_eat_bkslash_nl(input);  /* first character after the $ */
+	debug_printf_parse("parse_dollar_squote entered: ch='%c'\n", ch);
+	if (ch != '\'')
+		return 0;
+
+	dest->has_quoted_part = 1;
+	start = dest->length;
+
+	ch = i_getch(input); /* eat ' */
+	nommu_addchr(as_string, ch);
+	while (1) {
+		ch = i_getch(input);
+		nommu_addchr(as_string, ch);
+		if (ch == EOF) {
+			syntax_error_unterm_ch('\'');
+			return 0;
+		}
+		if (ch == '\'')
+			break;
+		if (ch == SPECIAL_VAR_SYMBOL) {
+			/* Convert raw ^C to corresponding special variable reference */
+			o_addchr(dest, SPECIAL_VAR_SYMBOL);
+			o_addchr(dest, SPECIAL_VAR_QUOTED_SVS);
+			/* will addchr() another SPECIAL_VAR_SYMBOL (see after the if() block) */
+		} else if (ch == '\\') {
+			static const char C_escapes[] ALIGN1 = "nrbtfav""x\\01234567";
+
+			ch = i_getch(input);
+			nommu_addchr(as_string, ch);
+			if (strchr(C_escapes, ch)) {
+				char buf[4];
+				char *p = buf;
+				int cnt = 2;
+
+				buf[0] = ch;
+				if ((unsigned char)(ch - '0') <= 7) { /* \ooo */
+					do {
+						ch = i_peek(input);
+						if ((unsigned char)(ch - '0') > 7)
+							break;
+						*++p = ch = i_getch(input);
+						nommu_addchr(as_string, ch);
+					} while (--cnt != 0);
+				} else if (ch == 'x') { /* \xHH */
+					do {
+						ch = i_peek(input);
+						if (!isxdigit(ch))
+							break;
+						*++p = ch = i_getch(input);
+						nommu_addchr(as_string, ch);
+					} while (--cnt != 0);
+					if (cnt == 2) { /* \x but next char is "bad" */
+						ch = 'x';
+						goto unrecognized;
+					}
+				} /* else simple seq like \\ or \t */
+				*++p = '\0';
+				p = buf;
+				ch = bb_process_escape_sequence((void*)&p);
+				//bb_error_msg("buf:'%s' ch:%x", buf, ch);
+				if (ch == '\0')
+					continue; /* bash compat: $'...\0...' emits nothing */
+			} else { /* unrecognized "\z": encode both chars unless ' or " */
+				if (ch != '\'' && ch != '"') {
+ unrecognized:
+					o_addqchr(dest, '\\');
+				}
+			}
+		} /* if (\...) */
+		o_addqchr(dest, ch);
+	}
+
+	if (dest->length == start) {
+		/* $'', $'\0', $'\000\x00' and the like */
+		o_addchr(dest, SPECIAL_VAR_SYMBOL);
+		o_addchr(dest, SPECIAL_VAR_SYMBOL);
+	}
+
+	return 1;
+# undef as_string
+}
+#else
+# define parse_dollar_squote(as_string, dest, input) 0
+#endif /* BASH_DOLLAR_SQUOTE */
+
 /* Return code: 0 for OK, 1 for syntax error */
 #if BB_MMU
 #define parse_dollar(as_string, dest, input, quote_mask) \
@@ -4925,7 +5027,7 @@ static int parse_dollar(o_string *as_string,
 {
 	int ch = i_peek_and_eat_bkslash_nl(input);  /* first character after the $ */
 
-	debug_printf_parse("parse_dollar entered: ch='%c'\n", ch);
+	debug_printf_parse("parse_dollar entered: ch='%c' quote_mask:0x%x\n", ch, quote_mask);
 	if (isalpha(ch)) {
  make_var:
 		ch = i_getch(input);
@@ -4992,6 +5094,32 @@ static int parse_dollar(o_string *as_string,
 		 * which check invalid constructs like ${%}.
 		 * Oh well... let's check that the var name part is fine... */
 
+		if (isdigit(len_single_ch)
+		 || (len_single_ch == '#' && isdigit(i_peek_and_eat_bkslash_nl(input)))
+		) {
+			/* Execution engine uses plain xatoi_positive()
+			 * to interpret ${NNN} and {#NNN},
+			 * check syntax here in the parser.
+			 * (bash does not support expressions in ${#NN},
+			 * e.g. ${#$var} and {#1:+WORD} are not supported).
+			 */
+			unsigned cnt = 9; /* max 9 digits for ${NN} and 8 for {#NN} */
+			while (1) {
+				o_addchr(dest, ch);
+				debug_printf_parse(": '%c'\n", ch);
+				ch = i_getch_and_eat_bkslash_nl(input);
+				nommu_addchr(as_string, ch);
+				if (ch == '}')
+					break;
+				if (--cnt == 0)
+					goto bad_dollar_syntax;
+				if (len_single_ch != '#' && strchr(VAR_SUBST_OPS, ch))
+					/* ${NN<op>...} is valid */
+					goto eat_until_closing;
+				if (!isdigit(ch))
+					goto bad_dollar_syntax;
+			}
+		} else
 		while (1) {
 			unsigned pos;
 
@@ -5002,7 +5130,6 @@ static int parse_dollar(o_string *as_string,
 			nommu_addchr(as_string, ch);
 			if (ch == '}')
 				break;
-
 			if (!isalnum(ch) && ch != '_') {
 				unsigned end_ch;
 				unsigned char last_ch;
@@ -5021,6 +5148,7 @@ static int parse_dollar(o_string *as_string,
 					 * special var name, e.g. ${#!}.
 					 */
 				}
+ eat_until_closing:
 				/* Eat everything until closing '}' (or ':') */
 				end_ch = '}';
 				if (BASH_SUBSTR
@@ -5215,6 +5343,8 @@ static int encode_string(o_string *as_string,
 		goto again;
 	}
 	if (ch == '$') {
+		//if (parse_dollar_squote(as_string, dest, input))
+		//	goto again;
 		if (!parse_dollar(as_string, dest, input, /*quote_mask:*/ 0x80)) {
 			debug_printf_parse("encode_string return 0: "
 					"parse_dollar returned 0 (error)\n");
@@ -5235,6 +5365,11 @@ static int encode_string(o_string *as_string,
 	}
 #endif
 	o_addQchr(dest, ch);
+	if (ch == SPECIAL_VAR_SYMBOL) {
+		/* Convert "^C" to corresponding special variable reference */
+		o_addchr(dest, SPECIAL_VAR_QUOTED_SVS);
+		o_addchr(dest, SPECIAL_VAR_SYMBOL);
+	}
 	goto again;
 #undef as_string
 }
@@ -5346,6 +5481,11 @@ static struct pipe *parse_stream(char **pstring,
 			if (ch == '\n')
 				continue; /* drop \<newline>, get next char */
 			nommu_addchr(&ctx.as_string, '\\');
+			if (ch == SPECIAL_VAR_SYMBOL) {
+				nommu_addchr(&ctx.as_string, ch);
+				/* Convert \^C to corresponding special variable reference */
+				goto case_SPECIAL_VAR_SYMBOL;
+			}
 			o_addchr(&ctx.word, '\\');
 			if (ch == EOF) {
 				/* Testcase: eval 'echo Ok\' */
@@ -5670,6 +5810,7 @@ static struct pipe *parse_stream(char **pstring,
 		/* Note: nommu_addchr(&ctx.as_string, ch) is already done */
 
 		switch (ch) {
+		case_SPECIAL_VAR_SYMBOL:
 		case SPECIAL_VAR_SYMBOL:
 			/* Convert raw ^C to corresponding special variable reference */
 			o_addchr(&ctx.word, SPECIAL_VAR_SYMBOL);
@@ -5680,6 +5821,8 @@ static struct pipe *parse_stream(char **pstring,
 			o_addchr(&ctx.word, ch);
 			continue; /* get next char */
 		case '$':
+			if (parse_dollar_squote(&ctx.as_string, &ctx.word, input))
+				continue; /* get next char */
 			if (!parse_dollar(&ctx.as_string, &ctx.word, input, /*quote_mask:*/ 0)) {
 				debug_printf_parse("parse_stream parse error: "
 					"parse_dollar returned 0 (error)\n");
@@ -5807,7 +5950,6 @@ static struct pipe *parse_stream(char **pstring,
 			if (ctx.ctx_res_w == RES_MATCH)
 				goto case_semi;
 #endif
-
 		case '}':
 			/* proper use of this character is caught by end_trigger:
 			 * if we see {, we call parse_group(..., end_trigger='}')
@@ -6123,6 +6265,8 @@ static char *encode_then_expand_vararg(const char *str, int handle_squotes, int 
 			continue;
 		}
 		if (ch == '$') {
+			if (parse_dollar_squote(NULL, &dest, &input))
+				continue;
 			if (!parse_dollar(NULL, &dest, &input, /*quote_mask:*/ 0x80)) {
 				debug_printf_parse("%s: error: parse_dollar returned 0 (error)\n", __func__);
 				goto ret;
@@ -6322,6 +6466,18 @@ static arith_t expand_and_evaluate_arith(const char *arg, const char **errmsg_p)
 /* ${var/[/]pattern[/repl]} helpers */
 static char *strstr_pattern(char *val, const char *pattern, int *size)
 {
+	int sz = strcspn(pattern, "*?[\\");
+	if (pattern[sz] == '\0') {
+		/* Optimization for trivial patterns.
+		 * Testcase for very slow replace (performs about 22k replaces):
+		 * x=::::::::::::::::::::::
+		 * x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;echo ${#x}
+		 * echo "${x//:/|}"
+		 */
+		*size = sz;
+		return strstr(val, pattern);
+	}
+
 	while (1) {
 		char *end = scan_and_match(val, pattern, SCAN_MOVE_FROM_RIGHT + SCAN_MATCH_LEFT_HALF);
 		debug_printf_varexp("val:'%s' pattern:'%s' end:'%s'\n", val, pattern, end);
@@ -10163,7 +10319,8 @@ int hush_main(int argc, char **argv)
 	/* http://www.opengroup.org/onlinepubs/9699919799/utilities/sh.html */
 	flags = (argv[0] && argv[0][0] == '-') ? OPT_login : 0;
 	while (1) {
-		int opt = getopt(argc, argv, "+cexinsl"
+		int opt = getopt(argc, argv, "+" /* stop at 1st non-option */
+				"cexinsl"
 #if !BB_MMU
 				"<:$:R:V:"
 # if ENABLE_HUSH_FUNCTIONS
@@ -10255,12 +10412,13 @@ int hush_main(int argc, char **argv)
 		}
 # endif
 #endif
-		case 'n':
-		case 'x':
-		case 'e':
+		/*case '?': invalid option encountered (set_mode('?') will fail) */
+		/*case 'n':*/
+		/*case 'x':*/
+		/*case 'e':*/
+		default:
 			if (set_mode(1, opt, NULL) == 0) /* no error */
 				break;
-		default:
 			bb_show_usage();
 		}
 	} /* option parsing loop */
@@ -10795,10 +10953,17 @@ static int FAST_FUNC builtin_read(char **argv)
 	 */
 	params.read_flags = getopt32(argv,
 # if BASH_READ_D
-		"!srn:p:t:u:d:", &params.opt_n, &params.opt_p, &params.opt_t, &params.opt_u, &params.opt_d
+		IF_NOT_HUSH_BASH_COMPAT("^")
+		"!srn:p:t:u:d:" IF_NOT_HUSH_BASH_COMPAT("\0" "-1"/*min 1 arg*/),
+		&params.opt_n, &params.opt_p, &params.opt_t, &params.opt_u, &params.opt_d
 # else
-		"!srn:p:t:u:", &params.opt_n, &params.opt_p, &params.opt_t, &params.opt_u
+		IF_NOT_HUSH_BASH_COMPAT("^")
+		"!srn:p:t:u:" IF_NOT_HUSH_BASH_COMPAT("\0" "-1"/*min 1 arg*/),
+		&params.opt_n, &params.opt_p, &params.opt_t, &params.opt_u
 # endif
+//TODO: print "read: need variable name"
+//for the case of !BASH "read" with no args (now it fails silently)
+//(or maybe extend getopt32() to emit a message if "-1" fails)
 	);
 	if ((uint32_t)params.read_flags == (uint32_t)-1)
 		return EXIT_FAILURE;
