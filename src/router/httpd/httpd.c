@@ -823,7 +823,7 @@ static void *handle_request(void *arg)
 			break;
 		wfgets(line, LINE_LEN, conn_fp, &eof);
 		if (eof) {
-			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close");
+			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close"));
 			goto out;
 		}
 		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
@@ -857,7 +857,7 @@ static void *handle_request(void *arg)
 	protocol = path;
 	strsep(&protocol, " ");
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cant_parse_no_proto");
+		send_error(conn_fp, 0, 400, live_translate(conn_fp, "share.bad_request"), NULL, live_translate(conn_fp, "share.cant_parse_no_proto"));
 		goto out;
 	}
 	while (*protocol == ' ')
@@ -870,7 +870,7 @@ static void *handle_request(void *arg)
 	while ((line + LINE_LEN - cur) > 1 && wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0)	//jimmy,https,8/4/2003
 	{
 		if (eof) {
-			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close_2");
+			send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL, live_translate(conn_fp, "share.unexpected_connection_close_2"));
 			goto out;
 		}
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
