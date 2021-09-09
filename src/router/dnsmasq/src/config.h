@@ -23,7 +23,7 @@
 #define SAFE_PKTSZ 1280 /* "go anywhere" UDP packet size */
 #define KEYBLOCK_LEN 40 /* choose to minimise fragmentation when storing DNSSEC keys */
 #define DNSSEC_WORK 50 /* Max number of queries to validate one question */
-#define TIMEOUT 10 /* drop UDP queries after TIMEOUT seconds */
+#define TIMEOUT 10     /* drop UDP queries after TIMEOUT seconds */
 #define FORWARD_TEST 50 /* try all servers every 50 queries */
 #define FORWARD_TIME 20 /* or 20 seconds */
 #define UDP_TEST_TIME 60 /* How often to reset our idea of max packet size. */
@@ -143,6 +143,7 @@ NO_SCRIPT
 NO_LARGEFILE
 NO_AUTH
 NO_DUMPFILE
+NO_LOOP
 NO_INOTIFY
    these are avilable to explicitly disable compile time options which would 
    otherwise be enabled automatically or which are enabled  by default 
@@ -451,7 +452,4 @@ static char *compile_opts =
 #endif
 "dumpfile";
 
-#endif
-
-
-
+#endif /* defined(HAVE_DHCP) */
