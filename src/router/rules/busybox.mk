@@ -609,6 +609,12 @@ endif
 	echo "# CONFIG_FEATURE_DC_BIG is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_DC_LIBM is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_EMBEDDED_SCRIPTS is not set" >> busybox/.config
+	echo "# CONFIG_CRC32 is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_CUT_REGEX is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VI_COLON_EXPAND is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VI_VERBOSE_STATUS is not set" >> busybox/.config
+	echo "# CONFIG_ASCII is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_WGET_FTP is not set" >> busybox/.config
 ifeq ($(CONFIG_RAID),y)
 	sed -i 's/\# CONFIG_FEATURE_GETOPT_LONG is not set/CONFIG_FEATURE_GETOPT_LONG=y/g' busybox/.config
 	sed -i 's/\# CONFIG_READLINK is not set/CONFIG_READLINK=y/g' busybox/.config
