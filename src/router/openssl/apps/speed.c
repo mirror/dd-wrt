@@ -7,7 +7,7 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-
+#define NEED_PRINTF
 #undef SECONDS
 #define SECONDS          3
 #define PKEY_SECONDS    10
