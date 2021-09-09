@@ -237,6 +237,12 @@ share.secondcharacter="s";
 share.change="User Password Change";
 share.copy="Copy";
 share.paste="Paste";
+share.bad_request="BAD REQUEST";
+share.unauthorized="UNAUTHORIZED";
+share.tcp_error="TCP ERROR";
+share.request_timeout="REQUEST TIMEOUT";
+share.not_implemented="NOT IMPLEMENTED";
+share.not_found="NOT FOUND";
 
 var sbutton=new Object();
 sbutton.save="Save";
