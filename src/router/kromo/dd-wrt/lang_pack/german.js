@@ -231,6 +231,12 @@ share.secondcharacter="s";
 share.change="Benutzer Kennwort &auml;ndern";
 share.copy="Kopieren";
 share.paste="Einf&uuml;gen";
+share.bad_request="UNG&Uuml;LTIGE ANFORDERUNG";
+share.unauthorized="NICHT AUTHORISIERT";
+share.tcp_error="TCP FEHLER";
+share.request_timeout="ZEIT&Uuml;BERSCHREITUNG DER ANFORDERUNG";
+share.not_implemented="NICHT IMPLEMENTIERT";
+share.not_found="NICHT GEFUNDEN";
 
 
 sbutton.save="Speichern";
