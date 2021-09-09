@@ -243,6 +243,7 @@ share.tcp_error="TCP ERROR";
 share.request_timeout="REQUEST TIMEOUT";
 share.not_implemented="NOT IMPLEMENTED";
 share.not_found="NOT FOUND";
+share.file_not_found=" File %s not found.";
 
 var sbutton=new Object();
 sbutton.save="Save";
