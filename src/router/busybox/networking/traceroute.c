@@ -505,7 +505,7 @@ send_probe(int seq, int ttl)
 		struct outdata6_t *pkt = (void *) outdata;
 		pkt->ident6 = ident;
 		pkt->seq6   = htonl(seq);
-		/*gettimeofday(&pkt->tv, &tz);*/
+		/*xgettimeofday(&pkt->tv);*/
 		icp = outicmp6;
 	} else
 #endif
@@ -713,11 +713,16 @@ packet4_ok(int read_len, int seq)
 			up = (struct udphdr *)((char *)hip + hlen);
 			if (hlen + 12 <= read_len
 			 && hip->ip_p == IPPROTO_UDP
-// Off: since we do not form the entire IP packet,
+#if !defined(__FreeBSD__)
+// Disabled source check: since we do not form the entire IP packet,
 // but defer it to kernel, we can't set source port,
 // and thus can't check it here in the reply
 			/* && up->source == ident */
 			 && up->dest == htons(port + seq)
+#else
+			/* && up->uh_sport == ident */
+			 && up->uh_dport == htons(port + seq)
+#endif
 			) {
 				return (type == ICMP_TIMXCEED ? -1 : code + 1);
 			}
@@ -985,8 +990,13 @@ traceroute_init(int op, char **argv)
 				snd = xsocket(AF_INET, SOCK_DGRAM, 0);
 		}
 #if ENABLE_TRACEROUTE6
+# if defined(__FreeBSD__)
+#  define SOL_V6_OPTION SOL_IPV6
+# else
+#  define SOL_V6_OPTION SOL_RAW
+# endif
 		else {
-			if (setsockopt_int(rcvsock, SOL_RAW, IPV6_CHECKSUM, 2) != 0)
+			if (setsockopt_int(rcvsock, SOL_V6_OPTION, IPV6_CHECKSUM, 2) != 0)
 				bb_perror_msg_and_die("setsockopt(%s)", "IPV6_CHECKSUM");
 			if (op & OPT_USE_ICMP)
 				snd = xsocket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);

@@ -13,7 +13,10 @@
 
 //usage:#define ts_trivial_usage
 //usage:       "[-is] [STRFTIME]"
-//usage:#define ts_full_usage ""
+//usage:#define ts_full_usage "\n\n"
+//usage:       "Pipe stdin to stdout, add timestamp to each line\n"
+//usage:     "\n	-s	Time since start"
+//usage:     "\n	-i	Time since previous line"
 
 #include "libbb.h"
 #include "common_bufsiz.h"
@@ -47,13 +50,13 @@ int ts_main(int argc UNUSED_PARAM, char **argv)
 
 #define date_buf bb_common_bufsiz1
 	setup_common_bufsiz();
-	gettimeofday(&base, NULL);
+	xgettimeofday(&base);
 
 	while ((line = xmalloc_fgets(stdin)) != NULL) {
 		struct timeval ts;
 		struct tm tm_time;
 
-		gettimeofday(&ts, NULL);
+		xgettimeofday(&ts);
 		if (opt) {
 			/* -i and/or -s */
 			struct timeval ts1 = ts1;

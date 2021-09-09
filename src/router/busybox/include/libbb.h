@@ -106,7 +106,11 @@
 #  define updwtmpx updwtmp
 #  define _PATH_UTMPX _PATH_UTMP
 # else
-#  include <utmp.h>
+#  if !defined(__FreeBSD__)
+#   include <utmp.h>
+#  else
+#   define _PATH_UTMPX "/var/run/utx.active"
+#  endif
 #  include <utmpx.h>
 #  if defined _PATH_UTMP && !defined _PATH_UTMPX
 #   define _PATH_UTMPX _PATH_UTMP
@@ -188,6 +192,28 @@ int klogctl(int type, char *b, int len);
 # define BUFSIZ 4096
 #endif
 
+#if __GNUC_PREREQ(5,0)
+/* Since musl is apparently unable to get it right and would use
+ * a function call to a single-instruction function of "bswap %eax",
+ * reroute to gcc builtins:
+ */
+# undef  bswap_16
+# undef  bswap_32
+# undef  bswap_64
+# define bswap_16(x) __builtin_bswap16(x)
+# define bswap_32(x) __builtin_bswap32(x)
+# define bswap_64(x) __builtin_bswap64(x)
+# if BB_LITTLE_ENDIAN
+#   undef ntohs
+#   undef htons
+#   undef ntohl
+#   undef htonl
+#   define ntohs(x) __builtin_bswap16(x)
+#   define htons(x) __builtin_bswap16(x)
+#   define ntohl(x) __builtin_bswap32(x)
+#   define htonl(x) __builtin_bswap32(x)
+# endif
+#endif
 
 /* Busybox does not use threads, we can speed up stdio. */
 #ifdef HAVE_UNLOCKED_STDIO
@@ -432,23 +458,29 @@ enum {	/* cp.c, mv.c, install.c depend on these values. CAREFUL when changing th
 	FILEUTILS_RECUR           = 1 << 2, /* -R */
 	FILEUTILS_FORCE           = 1 << 3, /* -f */
 	FILEUTILS_INTERACTIVE     = 1 << 4, /* -i */
-	FILEUTILS_MAKE_HARDLINK   = 1 << 5, /* -l */
-	FILEUTILS_MAKE_SOFTLINK   = 1 << 6, /* -s */
-	FILEUTILS_DEREF_SOFTLINK  = 1 << 7, /* -L */
-	FILEUTILS_DEREFERENCE_L0  = 1 << 8, /* -H */
+	FILEUTILS_NO_OVERWRITE    = 1 << 5, /* -n */
+	FILEUTILS_MAKE_HARDLINK   = 1 << 6, /* -l */
+	FILEUTILS_MAKE_SOFTLINK   = 1 << 7, /* -s */
+	FILEUTILS_DEREF_SOFTLINK  = 1 << 8, /* -L */
+	FILEUTILS_DEREFERENCE_L0  = 1 << 9, /* -H */
 	/* -a = -pdR (mapped in cp.c) */
 	/* -r = -dR  (mapped in cp.c) */
 	/* -P = -d   (mapped in cp.c) */
-	FILEUTILS_VERBOSE         = (1 << 12) * ENABLE_FEATURE_VERBOSE,	/* -v */
-	FILEUTILS_UPDATE          = 1 << 13, /* -u */
-	FILEUTILS_NO_TARGET_DIR	  = 1 << 14, /* -T */
+	FILEUTILS_VERBOSE         = (1 << 13) * ENABLE_FEATURE_VERBOSE,	/* -v */
+	FILEUTILS_UPDATE          = 1 << 14, /* -u */
+	FILEUTILS_NO_TARGET_DIR	  = 1 << 15, /* -T */
+	FILEUTILS_TARGET_DIR	  = 1 << 16, /* -t DIR */
 #if ENABLE_SELINUX
-	FILEUTILS_PRESERVE_SECURITY_CONTEXT = 1 << 15, /* -c */
+	FILEUTILS_PRESERVE_SECURITY_CONTEXT = 1 << 17, /* -c */
 #endif
-	FILEUTILS_RMDEST          = 1 << (16 - !ENABLE_SELINUX), /* --remove-destination */
-	/* bit 17 skipped for "cp --parents" */
-	FILEUTILS_REFLINK         = 1 << (18 - !ENABLE_SELINUX), /* cp --reflink=auto */
-	FILEUTILS_REFLINK_ALWAYS  = 1 << (19 - !ENABLE_SELINUX), /* cp --reflink[=always] */
+#define FILEUTILS_CP_OPTSTR "pdRfinlsLHarPvuTt:" IF_SELINUX("c")
+/* How many bits in FILEUTILS_CP_OPTSTR? */
+	FILEUTILS_CP_OPTBITS      = 18 - !ENABLE_SELINUX,
+
+	FILEUTILS_RMDEST          = 1 << (19 - !ENABLE_SELINUX), /* cp --remove-destination */
+	/* bit 18 skipped for "cp --parents" */
+	FILEUTILS_REFLINK         = 1 << (20 - !ENABLE_SELINUX), /* cp --reflink=auto */
+	FILEUTILS_REFLINK_ALWAYS  = 1 << (21 - !ENABLE_SELINUX), /* cp --reflink[=always] */
 	/*
 	 * Hole. cp may have some bits set here,
 	 * they should not affect remove_file()/copy_file()
@@ -458,7 +490,7 @@ enum {	/* cp.c, mv.c, install.c depend on these values. CAREFUL when changing th
 #endif
 	FILEUTILS_IGNORE_CHMOD_ERR = 1 << 31,
 };
-#define FILEUTILS_CP_OPTSTR "pdRfilsLHarPvuT" IF_SELINUX("c")
+
 extern int remove_file(const char *path, int flags) FAST_FUNC;
 /* NB: without FILEUTILS_RECUR in flags, it will basically "cat"
  * the source, not copy (unless "source" is a directory).
@@ -487,6 +519,11 @@ int recursive_action(const char *fileName, unsigned flags,
 	int FAST_FUNC  (*dirAction)(struct recursive_state *state, const char *fileName, struct stat* statbuf),
 	void *userData
 ) FAST_FUNC;
+
+/* Simpler version: call a function on each dirent in a directory */
+int iterate_on_dir(const char *dir_name,
+		int FAST_FUNC (*func)(const char *, struct dirent *, void *),
+		void *private) FAST_FUNC;
 
 extern int device_open(const char *device, int mode) FAST_FUNC;
 enum { GETPTY_BUFSIZE = 16 }; /* more than enough for "/dev/ttyXXX" */
@@ -575,7 +612,7 @@ void bb_signals(int sigs, void (*f)(int)) FAST_FUNC;
 /* Unlike signal() and bb_signals, sets handler with sigaction()
  * and in a way that while signal handler is run, no other signals
  * will be blocked; syscalls will not be restarted: */
-void bb_signals_recursive_norestart(int sigs, void (*f)(int)) FAST_FUNC;
+void bb_signals_norestart(int sigs, void (*f)(int)) FAST_FUNC;
 /* syscalls like read() will be interrupted with EINTR: */
 void signal_no_SA_RESTART_empty_mask(int sig, void (*handler)(int)) FAST_FUNC;
 /* syscalls like read() won't be interrupted (though select/poll will be): */
@@ -627,7 +664,7 @@ uoff_t FAST_FUNC get_volume_size_in_bytes(int fd,
 		unsigned override_units,
 		int extend);
 
-void xpipe(int filedes[2]) FAST_FUNC;
+void xpipe(int *filedes) FAST_FUNC;
 /* In this form code with pipes is much more readable */
 struct fd_pair { int rd; int wr; };
 #define piped_pair(pair)  pipe(&((pair).rd))
@@ -665,6 +702,7 @@ void parse_datestr(const char *date_str, struct tm *ptm) FAST_FUNC;
 time_t validate_tm_time(const char *date_str, struct tm *ptm) FAST_FUNC;
 char *strftime_HHMMSS(char *buf, unsigned len, time_t *tp) FAST_FUNC;
 char *strftime_YYYYMMDDHHMMSS(char *buf, unsigned len, time_t *tp) FAST_FUNC;
+void xgettimeofday(struct timeval *tv) FAST_FUNC;
 void xsettimeofday(const struct timeval *tv) FAST_FUNC;
 
 
@@ -877,6 +915,7 @@ char *xmalloc_substitute_string(const char *src, int count, const char *sub, con
 int bb_putchar(int ch) FAST_FUNC;
 /* Note: does not use stdio, writes to fd 2 directly */
 int bb_putchar_stderr(char ch) FAST_FUNC;
+int fputs_stdout(const char *s) FAST_FUNC;
 char *xasprintf(const char *format, ...) __attribute__ ((format(printf, 1, 2))) FAST_FUNC RETURNS_MALLOC;
 char *auto_string(char *str) FAST_FUNC;
 // gcc-4.1.1 still isn't good enough at optimizing it
@@ -1045,10 +1084,10 @@ char *smart_ulltoa5(unsigned long long ul, char buf[5], const char *scale) FAST_
 /* If block_size == 0, display size without fractional part,
  * else display (size * block_size) with one decimal digit.
  * If display_unit == 0, show value no bigger than 1024 with suffix (K,M,G...),
- * else divide by display_unit and do not use suffix. */
+ * else divide by display_unit and do not use suffix.
+ * Returns "auto pointer" */
 #define HUMAN_READABLE_MAX_WIDTH      7  /* "1024.0G" */
 #define HUMAN_READABLE_MAX_WIDTH_STR "7"
-//TODO: provide pointer to buf (avoid statics)?
 const char *make_human_readable_str(unsigned long long size,
 		unsigned long block_size, unsigned long display_unit) FAST_FUNC;
 /* Put a string of hex bytes ("1b2e66fe"...), return advanced pointer */
@@ -1221,6 +1260,7 @@ void run_noexec_applet_and_exit(int a, const char *name, char **argv) NORETURN F
 int find_applet_by_name(const char *name) FAST_FUNC;
 void run_applet_no_and_exit(int a, const char *name, char **argv) NORETURN FAST_FUNC;
 #endif
+void show_usage_if_dash_dash_help(int applet_no, char **argv) FAST_FUNC;
 #if defined(__linux__)
 void set_task_comm(const char *comm) FAST_FUNC;
 #else
@@ -1800,6 +1840,7 @@ extern void print_login_issue(const char *issue_file, const char *tty) FAST_FUNC
 extern void print_login_prompt(void) FAST_FUNC;
 
 char *xmalloc_ttyname(int fd) FAST_FUNC RETURNS_MALLOC;
+int is_TERM_dumb(void) FAST_FUNC;
 /* NB: typically you want to pass fd 0, not 1. Think 'applet | grep something' */
 int get_terminal_width_height(int fd, unsigned *width, unsigned *height) FAST_FUNC;
 int get_terminal_width(int fd) FAST_FUNC;

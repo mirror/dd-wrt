@@ -229,6 +229,14 @@
 #define    BASH_READ_D          ENABLE_ASH_BASH_COMPAT
 #define IF_BASH_READ_D              IF_ASH_BASH_COMPAT
 #define    BASH_WAIT_N          ENABLE_ASH_BASH_COMPAT
+/* <(...) and >(...) */
+#if HAVE_DEV_FD
+# define    BASH_PROCESS_SUBST   ENABLE_ASH_BASH_COMPAT
+# define IF_BASH_PROCESS_SUBST       IF_ASH_BASH_COMPAT
+#else
+# define    BASH_PROCESS_SUBST 0
+# define IF_BASH_PROCESS_SUBST(...)
+#endif
 
 #if defined(__ANDROID_API__) && __ANDROID_API__ <= 24
 /* Bionic at least up to version 24 has no glob() */
@@ -314,9 +322,12 @@ typedef long arith_t;
 
 /* ============ Shell options */
 
+/* If you add/change options hare, update --help text too */
 static const char *const optletters_optnames[] = {
 	"e"   "errexit",
 	"f"   "noglob",
+/* bash has '-o ignoreeof', but no short synonym -I for it */
+/* (in bash, set -I disables invisible variables (what's that?)) */
 	"I"   "ignoreeof",
 /* The below allowed this invocation:
  * ash -c 'set -i; echo $-; sleep 5; echo $-'
@@ -325,9 +336,10 @@ static const char *const optletters_optnames[] = {
  * In our code, this is denoted by empty long name:
  */
 	"i"   "",
+/* (removing "i" altogether would remove it from "$-", not good) */
 	"m"   "monitor",
 	"n"   "noexec",
-/* Ditto: bash has no "set -s" */
+/* Ditto: bash has no "set -s", "set -c" */
 	"s"   "",
 	"c"   "",
 	"x"   "xtrace",
@@ -800,6 +812,12 @@ out2str(const char *p)
 #define CTLENDARI    ((unsigned char)'\207')
 #define CTLQUOTEMARK ((unsigned char)'\210')
 #define CTL_LAST CTLQUOTEMARK
+#if BASH_PROCESS_SUBST
+# define CTLTOPROC    ((unsigned char)'\211')
+# define CTLFROMPROC  ((unsigned char)'\212')
+# undef CTL_LAST
+# define CTL_LAST CTLFROMPROC
+#endif
 
 /* variable substitution byte (follows CTLVAR) */
 #define VSTYPE  0x0f            /* type of variable substitution */
@@ -1071,6 +1089,10 @@ trace_puts_quoted(char *s)
 		case CTLESC: c = 'e'; goto backslash;
 		case CTLVAR: c = 'v'; goto backslash;
 		case CTLBACKQ: c = 'q'; goto backslash;
+#if BASH_PROCESS_SUBST
+		case CTLTOPROC: c = 'p'; goto backslash;
+		case CTLFROMPROC: c = 'P'; goto backslash;
+#endif
  backslash:
 			putc('\\', tracefile);
 			putc(c, tracefile);
@@ -1232,8 +1254,17 @@ sharg(union node *arg, FILE *fp)
 		case CTLENDVAR:
 			putc('}', fp);
 			break;
+#if BASH_PROCESS_SUBST
+		case CTLTOPROC:
+			putc('>', fp);
+			goto backq;
+		case CTLFROMPROC:
+			putc('<', fp);
+			goto backq;
+#endif
 		case CTLBACKQ:
 			putc('$', fp);
+ IF_BASH_PROCESS_SUBST(backq:)
 			putc('(', fp);
 			shtree(bqlist->n, -1, NULL, fp);
 			putc(')', fp);
@@ -3230,8 +3261,13 @@ static const uint8_t syntax_index_table[] ALIGN1 = {
 	/* 134 CTLARI       */ CCTL_CCTL_CCTL_CCTL,
 	/* 135 CTLENDARI    */ CCTL_CCTL_CCTL_CCTL,
 	/* 136 CTLQUOTEMARK */ CCTL_CCTL_CCTL_CCTL,
+#if BASH_PROCESS_SUBST
+	/* 137 CTLTOPROC    */ CCTL_CCTL_CCTL_CCTL,
+	/* 138 CTLFROMPROC  */ CCTL_CCTL_CCTL_CCTL,
+#else
 	/* 137      */ CWORD_CWORD_CWORD_CWORD,
 	/* 138      */ CWORD_CWORD_CWORD_CWORD,
+#endif
 	/* 139      */ CWORD_CWORD_CWORD_CWORD,
 	/* 140      */ CWORD_CWORD_CWORD_CWORD,
 	/* 141      */ CWORD_CWORD_CWORD_CWORD,
@@ -4259,9 +4295,7 @@ sprint_status48(char *os, int status, int sigonly)
 #endif
 		}
 		st &= 0x7f;
-//TODO: use bbox's get_signame? strsignal adds ~600 bytes to text+rodata
-		//s = stpncpy(s, strsignal(st), 32); //not all libc have stpncpy()
-		s += fmtstr(s, 32, strsignal(st));
+		s = stpncpy(s, strsignal(st), 32);
 		if (WCOREDUMP(status)) {
 			s = stpcpy(s, " (core dumped)");
 		}
@@ -4847,9 +4881,24 @@ cmdputs(const char *s)
 			quoted >>= 1;
 			subtype = 0;
 			goto dostr;
+#if BASH_PROCESS_SUBST
+		case CTLBACKQ:
+			c = '$';
+			str = "(...)";
+			break;
+		case CTLTOPROC:
+			c = '>';
+			str = "(...)";
+			break;
+		case CTLFROMPROC:
+			c = '<';
+			str = "(...)";
+			break;
+#else
 		case CTLBACKQ:
 			str = "$(...)";
 			goto dostr;
+#endif
 #if ENABLE_FEATURE_SH_MATH
 		case CTLARI:
 			str = "$((";
@@ -5889,6 +5938,21 @@ redirectsafe(union node *redir, int flags)
 	return err;
 }
 
+#if BASH_PROCESS_SUBST
+static void
+pushfd(int fd)
+{
+	struct redirtab *sv;
+
+	sv = ckzalloc(sizeof(*sv) + sizeof(sv->two_fd[0]));
+	sv->pair_count = 1;
+	sv->two_fd[0].orig_fd = fd;
+	sv->two_fd[0].moved_to = CLOSED;
+	sv->next = redirlist;
+	redirlist = sv;
+}
+#endif
+
 static struct redirtab*
 pushredir(union node *redir)
 {
@@ -6527,10 +6591,20 @@ evaltreenr(union node *n, int flags)
 }
 
 static void FAST_FUNC
-evalbackcmd(union node *n, struct backcmd *result)
+evalbackcmd(union node *n, struct backcmd *result
+				IF_BASH_PROCESS_SUBST(, int ctl))
 {
 	int pip[2];
 	struct job *jp;
+#if BASH_PROCESS_SUBST
+	/* determine end of pipe used by parent (ip) and child (ic) */
+	const int ip = (ctl == CTLTOPROC);
+	const int ic = !(ctl == CTLTOPROC);
+#else
+	const int ctl = CTLBACKQ;
+	const int ip = 0;
+	const int ic = 1;
+#endif
 
 	result->fd = -1;
 	result->buf = NULL;
@@ -6542,15 +6616,17 @@ evalbackcmd(union node *n, struct backcmd *result)
 
 	if (pipe(pip) < 0)
 		ash_msg_and_raise_perror("can't create pipe");
-	jp = makejob(/*n,*/ 1);
-	if (forkshell(jp, n, FORK_NOJOB) == 0) {
+	/* process substitution uses NULL job/node, like openhere() */
+	jp = (ctl == CTLBACKQ) ? makejob(/*n,*/ 1) : NULL;
+	if (forkshell(jp, (ctl == CTLBACKQ) ? n : NULL, FORK_NOJOB) == 0) {
 		/* child */
 		FORCE_INT_ON;
-		close(pip[0]);
-		if (pip[1] != 1) {
-			/*close(1);*/
-			dup2_or_raise(pip[1], 1);
-			close(pip[1]);
+		close(pip[ip]);
+		/* ic is index of child end of pipe *and* fd to connect it to */
+		if (pip[ic] != ic) {
+			/*close(ic);*/
+			dup2_or_raise(pip[ic], ic);
+			close(pip[ic]);
 		}
 /* TODO: eflag clearing makes the following not abort:
  *  ash -c 'set -e; z=$(false;echo foo); echo $z'
@@ -6566,8 +6642,18 @@ evalbackcmd(union node *n, struct backcmd *result)
 		/* NOTREACHED */
 	}
 	/* parent */
-	close(pip[1]);
-	result->fd = pip[0];
+#if BASH_PROCESS_SUBST
+	if (ctl != CTLBACKQ) {
+		int fd = fcntl(pip[ip], F_DUPFD, 64);
+		if (fd > 0) {
+			close(pip[ip]);
+			pip[ip] = fd;
+		}
+		pushfd(pip[ip]);
+	}
+#endif
+	close(pip[ic]);
+	result->fd = pip[ip];
 	result->jp = jp;
 
  out:
@@ -6579,8 +6665,11 @@ evalbackcmd(union node *n, struct backcmd *result)
  * Expand stuff in backwards quotes.
  */
 static void
-expbackq(union node *cmd, int flag)
+expbackq(union node *cmd, int flag IF_BASH_PROCESS_SUBST(, int ctl))
 {
+#if !BASH_PROCESS_SUBST
+	const int ctl = CTLBACKQ;
+#endif
 	struct backcmd in;
 	int i;
 	char buf[128];
@@ -6595,8 +6684,14 @@ expbackq(union node *cmd, int flag)
 	INT_OFF;
 	startloc = expdest - (char *)stackblock();
 	pushstackmark(&smark, startloc);
-	evalbackcmd(cmd, &in);
+	evalbackcmd(cmd, &in IF_BASH_PROCESS_SUBST(, ctl));
 	popstackmark(&smark);
+
+	if (ctl != CTLBACKQ) {
+		sprintf(buf, DEV_FD_PREFIX"%d", in.fd);
+		strtodest(buf, BASESYNTAX);
+		goto done;
+	}
 
 	p = in.buf;
 	i = in.nleft;
@@ -6619,6 +6714,7 @@ expbackq(union node *cmd, int flag)
 		close(in.fd);
 		back_exitstatus = waitforjob(in.jp);
 	}
+ done:
 	INT_ON;
 
 	/* Eat all trailing newlines */
@@ -6706,6 +6802,10 @@ argstr(char *p, int flag)
 		CTLESC,
 		CTLVAR,
 		CTLBACKQ,
+#if BASH_PROCESS_SUBST
+		CTLTOPROC,
+		CTLFROMPROC,
+#endif
 #if ENABLE_FEATURE_SH_MATH
 		CTLARI,
 		CTLENDARI,
@@ -6805,8 +6905,12 @@ argstr(char *p, int flag)
 			p = evalvar(p, flag | inquotes);
 			TRACE(("argstr: evalvar:'%s'\n", (char *)stackblock()));
 			goto start;
+#if BASH_PROCESS_SUBST
+		case CTLTOPROC:
+		case CTLFROMPROC:
+#endif
 		case CTLBACKQ:
-			expbackq(argbackq->n, flag | inquotes);
+			expbackq(argbackq->n, flag | inquotes IF_BASH_PROCESS_SUBST(, c));
 			goto start;
 #if ENABLE_FEATURE_SH_MATH
 		case CTLARI:
@@ -6866,7 +6970,8 @@ scanright(char *startp, char *rmesc, char *rmescend,
 	 * Logic:
 	 * loc starts at NUL at the end of startp, loc2 starts at the end of rmesc,
 	 * and on each iteration they go back two/one char until they reach the beginning.
-	 * We try to find a match in "raw_value_of_v", "raw_value_of_", "raw_value_of" etc.
+	 * We try to match "raw_value_of_v", "raw_value_of_", "raw_value_of" etc.
+	 * If one of these matches, return pointer past last matched char in startp.
 	 */
 	/* TODO: document in what other circumstances we are called. */
 
@@ -7154,6 +7259,7 @@ subevalvar(char *start, char *str, int strloc,
 #if BASH_PATTERN_SUBST
 	workloc = expdest - (char *)stackblock();
 	if (subtype == VSREPLACE || subtype == VSREPLACEALL) {
+		size_t no_meta_len;
 		int len;
 		char *idx, *end;
 
@@ -7171,17 +7277,44 @@ subevalvar(char *start, char *str, int strloc,
 		if (str[0] == '\0')
 			goto out1;
 
+		no_meta_len = (ENABLE_ASH_OPTIMIZE_FOR_SIZE || strpbrk(str, "*?[\\")) ? 0 : strlen(str);
 		len = 0;
 		idx = startp;
 		end = str - 1;
-		while (idx < end) {
+		while (idx <= end) {
  try_to_match:
-			loc = scanright(idx, rmesc, rmescend, str, quotes, 1);
+			if (no_meta_len == 0) {
+				/* pattern has meta chars, have to glob; or ENABLE_ASH_OPTIMIZE_FOR_SIZE */
+				loc = scanright(idx, rmesc, rmescend, str, quotes, /*match_at_start:*/ 1);
+			} else {
+				/* Testcase for very slow replace (performs about 22k replaces):
+				 * x=::::::::::::::::::::::
+				 * x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;x=$x$x;echo ${#x}
+				 * echo "${x//:/|}"
+				 */
+				if (strncmp(rmesc, str, no_meta_len) != 0)
+					goto no_match;
+				loc = idx;
+				if (!quotes) {
+					loc += no_meta_len;
+				} else {
+					size_t n = no_meta_len;
+					do {
+						if ((unsigned char)*loc == CTLESC)
+							loc++;
+						loc++;
+					} while (--n != 0);
+				}
+			}
 			//bb_error_msg("scanright('%s'):'%s'", str, loc);
 			if (!loc) {
+				char *restart_detect;
+ no_match:
 				/* No match, advance */
-				char *restart_detect = stackblock();
+				restart_detect = stackblock();
  skip_matching:
+				if (idx >= end)
+					break;
 				STPUTC(*idx, expdest);
 				if (quotes && (unsigned char)*idx == CTLESC) {
 					idx++;
@@ -7194,8 +7327,6 @@ subevalvar(char *start, char *str, int strloc,
 				len++;
 				rmesc++;
 				/* continue; - prone to quadratic behavior, smarter code: */
-				if (idx >= end)
-					break;
 				if (str[0] == '*') {
 					/* Pattern is "*foo". If "*foo" does not match "long_string",
 					 * it would never match "ong_string" etc, no point in trying.
@@ -11372,10 +11503,10 @@ static void FAST_FUNC
 change_epoch(struct var *vepoch, const char *fmt)
 {
 	struct timeval tv;
-	char buffer[sizeof("%lu.nnnnnn") + sizeof(long)*3];
+	char buffer[sizeof("%llu.nnnnnn") + sizeof(long long)*3];
 
-	gettimeofday(&tv, NULL);
-	sprintf(buffer, fmt, (unsigned long)tv.tv_sec, (unsigned)tv.tv_usec);
+	xgettimeofday(&tv);
+	sprintf(buffer, fmt, (unsigned long long)tv.tv_sec, (unsigned)tv.tv_usec);
 	setvar(vepoch->var_text, buffer, VNOFUNC);
 	vepoch->flags &= ~VNOFUNC;
 }
@@ -11383,13 +11514,13 @@ change_epoch(struct var *vepoch, const char *fmt)
 static void FAST_FUNC
 change_seconds(const char *value UNUSED_PARAM)
 {
-	change_epoch(&vepochs, "%lu");
+	change_epoch(&vepochs, "%llu");
 }
 
 static void FAST_FUNC
 change_realtime(const char *value UNUSED_PARAM)
 {
-	change_epoch(&vepochr, "%lu.%06u");
+	change_epoch(&vepochr, "%llu.%06u");
 }
 #endif
 
@@ -12196,8 +12327,9 @@ realeofmark(const char *eofmark)
 #define CHECKEND()      {goto checkend; checkend_return:;}
 #define PARSEREDIR()    {goto parseredir; parseredir_return:;}
 #define PARSESUB()      {goto parsesub; parsesub_return:;}
-#define PARSEBACKQOLD() {oldstyle = 1; goto parsebackq; parsebackq_oldreturn:;}
-#define PARSEBACKQNEW() {oldstyle = 0; goto parsebackq; parsebackq_newreturn:;}
+#define PARSEBACKQOLD() {style = OLD; goto parsebackq; parsebackq_oldreturn:;}
+#define PARSEBACKQNEW() {style = NEW; goto parsebackq; parsebackq_newreturn:;}
+#define PARSEPROCSUB()  {style = PSUB; goto parsebackq; parsebackq_psreturn:;}
 #define PARSEARITH()    {goto parsearith; parsearith_return:;}
 static int
 readtoken1(int c, int syntax, char *eofmark, int striptabs)
@@ -12208,7 +12340,9 @@ readtoken1(int c, int syntax, char *eofmark, int striptabs)
 	size_t len;
 	struct nodelist *bqlist;
 	smallint quotef;
-	smallint oldstyle;
+	smallint style;
+	enum { OLD, NEW, PSUB };
+#define oldstyle (style == OLD)
 	smallint pssyntax;   /* we are expanding a prompt string */
 	IF_BASH_DOLLAR_SQUOTE(smallint bash_dollar_squote = 0;)
 	/* syntax stack */
@@ -12387,6 +12521,15 @@ readtoken1(int c, int syntax, char *eofmark, int striptabs)
 //Can't call pgetc_eatbnl() here, this requires three-deep pungetc()
 					if (pgetc() == '>')
 						c = 0x100 + '>'; /* flag &> */
+					pungetc();
+				}
+#endif
+#if BASH_PROCESS_SUBST
+				if (c == '<' || c == '>') {
+					if (pgetc() == '(') {
+						PARSEPROCSUB();
+						break;
+					}
 					pungetc();
 				}
 #endif
@@ -12635,7 +12778,7 @@ parsesub: {
 			do {
 				STPUTC(c, out);
 				c = pgetc_eatbnl();
-			} while (!subtype && isdigit(c));
+			} while ((subtype == 0 || subtype == VSLENGTH) && isdigit(c));
 		} else if (c != '}') {
 			/* $[{[#]]<specialchar>[}] */
 			int cc = c;
@@ -12664,11 +12807,6 @@ parsesub: {
 			USTPUTC(cc, out);
 		} else
 			goto badsub;
-
-		if (c != '}' && subtype == VSLENGTH) {
-			/* ${#VAR didn't end with } */
-			goto badsub;
-		}
 
 		if (subtype == 0) {
 			static const char types[] ALIGN1 = "}-+?=";
@@ -12726,6 +12864,8 @@ parsesub: {
 #endif
 			}
 		} else {
+			if (subtype == VSLENGTH && c != '}')
+				subtype = 0;
  badsub:
 			pungetc();
 		}
@@ -12874,9 +13014,18 @@ parsebackq: {
 		memcpy(out, str, savelen);
 		STADJUST(savelen, out);
 	}
-	USTPUTC(CTLBACKQ, out);
+#if BASH_PROCESS_SUBST
+	if (style == PSUB)
+		USTPUTC(c == '<' ? CTLFROMPROC : CTLTOPROC, out);
+	else
+#endif
+		USTPUTC(CTLBACKQ, out);
 	if (oldstyle)
 		goto parsebackq_oldreturn;
+#if BASH_PROCESS_SUBST
+	else if (style == PSUB)
+		goto parsebackq_psreturn;
+#endif
 	goto parsebackq_newreturn;
 }
 
@@ -13327,6 +13476,9 @@ cmdloop(int top)
 #if JOBS
 		if (doing_jobctl)
 			showjobs(SHOW_CHANGED|SHOW_STDERR);
+#endif
+#if BASH_PROCESS_SUBST
+		unwindredir(NULL);
 #endif
 		inter = 0;
 		if (iflag && top) {
@@ -14033,6 +14185,10 @@ readcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 		}
 	}
 
+	if (!ENABLE_ASH_BASH_COMPAT && !argptr) {
+		bb_simple_error_msg("read: need variable name");
+		return 1;
+	}
 	params.argv = argptr;
 	params.setvar = setvar0;
 	params.ifs = bltinlookup("IFS"); /* can be NULL */
@@ -14266,7 +14422,8 @@ init(void)
 
 
 //usage:#define ash_trivial_usage
-//usage:	"[-/+OPTIONS] [-/+o OPT]... [-c 'SCRIPT' [ARG0 [ARGS]] / FILE [ARGS] / -s [ARGS]]"
+//usage:	"[-il] [-|+Cabefmnuvx] [-|+o OPT]... [-c 'SCRIPT' [ARG0 ARGS] | FILE [ARGS] | -s [ARGS]]"
+////////	comes from ^^^^^^^^^^optletters
 //usage:#define ash_full_usage "\n\n"
 //usage:	"Unix shell interpreter"
 
@@ -14313,9 +14470,9 @@ procargs(char **argv)
 	}
 	if (mflag == 2)
 		mflag = iflag;
+	/* Unset options which weren't explicitly set or unset */
 	for (i = 0; i < NOPTS; i++)
-		if (optlist[i] == 2)
-			optlist[i] = 0;
+		optlist[i] &= 1; /* same effect as "if (optlist[i] == 2) optlist[i] = 0;" */
 #if DEBUG == 2
 	debug = 1;
 #endif

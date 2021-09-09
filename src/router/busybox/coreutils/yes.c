@@ -27,7 +27,7 @@
 //usage:#define yes_trivial_usage
 //usage:       "[STRING]"
 //usage:#define yes_full_usage "\n\n"
-//usage:       "Repeatedly output a line with STRING, or 'y'"
+//usage:       "Repeatedly print a line with STRING, or 'y'"
 
 #include "libbb.h"
 
@@ -43,7 +43,7 @@ int yes_main(int argc UNUSED_PARAM, char **argv)
 	do {
 		pp = argv;
 		while (1) {
-			fputs(*pp, stdout);
+			fputs_stdout(*pp);
 			if (!*++pp)
 				break;
 			putchar(' ');

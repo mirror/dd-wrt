@@ -178,7 +178,7 @@ void FAST_FUNC bb_show_usage(void)
 #endif
 int FAST_FUNC find_applet_by_name(const char *name)
 {
-	unsigned i, max;
+	unsigned i;
 	int j;
 	const char *p;
 
@@ -202,105 +202,43 @@ int FAST_FUNC find_applet_by_name(const char *name)
 #endif
 
 	p = applet_names;
-	i = 0;
 #if KNOWN_APPNAME_OFFSETS <= 0
-	max = NUM_APPLETS;
+	i = 0;
 #else
-	max = NUM_APPLETS * KNOWN_APPNAME_OFFSETS;
+	i = NUM_APPLETS * (KNOWN_APPNAME_OFFSETS - 1);
 	for (j = ARRAY_SIZE(applet_nameofs)-1; j >= 0; j--) {
 		const char *pp = applet_names + applet_nameofs[j];
 		if (strcmp(name, pp) >= 0) {
 			//bb_error_msg("name:'%s' >= pp:'%s'", name, pp);
 			p = pp;
-			i = max - NUM_APPLETS;
 			break;
 		}
-		max -= NUM_APPLETS;
+		i -= NUM_APPLETS;
 	}
-	max /= (unsigned)KNOWN_APPNAME_OFFSETS;
 	i /= (unsigned)KNOWN_APPNAME_OFFSETS;
-	//bb_error_msg("name:'%s' starting from:'%s' i:%u max:%u", name, p, i, max);
+	//bb_error_msg("name:'%s' starting from:'%s' i:%u", name, p, i);
 #endif
 
 	/* Open-coded linear search without strcmp/strlen calls for speed */
-
-#if 0 /*BB_UNALIGNED_MEMACCESS_OK && BB_LITTLE_ENDIAN*/
-	/* skip "[\0" name, it's surely not it */
-	if (ENABLE_TEST && LONE_CHAR(p, '['))
-		i++, p += 2;
-	/* All remaining applet names in p[] are at least 2 chars long */
-	/* name[] is also at least 2 chars long */
-
-	n32 = (name[0] << 0) | (name[1] << 8) | (name[2] << 16);
-	while (i < max) {
-		uint32_t p32;
-		char ch;
-
-		/* Quickly check match of the first 3 bytes */
-		move_from_unaligned32(p32, p);
-		p += 3;
-		if ((p32 & 0x00ffffff) != n32) {
-			/* Most likely case: 3 first bytes do not match */
-			i++;
-			if ((p32 & 0x00ff0000) == '\0')
-				continue; // p[2] was NUL
-			p++;
-			if ((p32 & 0xff000000) == '\0')
-				continue; // p[3] was NUL
-			/* p[0..3] aren't matching and none is NUL, check the rest */
-			while (*p++ != '\0')
-				continue;
-			continue;
-		}
-
-		/* Unlikely branch: first 3 bytes ([0..2]) match */
-		if ((p32 & 0x00ff0000) == '\0') {
-			/* name is 2-byte long, it is full match */
-			//bb_error_msg("found:'%s' i:%u", name, i);
-			return i;
-		}
-		/* Check remaining bytes [3..NUL] */
-		ch = (p32 >> 24);
-		j = 3;
-		while (ch == name[j]) {
-			if (ch == '\0') {
-				//bb_error_msg("found:'%s' i:%u", name, i);
-				return i;
-			}
-			ch = *++p;
-			j++;
-		}
-		/* Not a match. Skip it, including NUL */
-		while (ch != '\0')
-			ch = *++p;
-		p++;
-		i++;
-	}
-	return -1;
-#else
-	while (i < max) {
-		char ch;
-		j = 0;
-		/* Do we see "name\0" in applet_names[p] position? */
-		while ((ch = *p) == name[j]) {
-			if (ch == '\0') {
+	while (*p) {
+		/* Do we see "name\0" at current position in applet_names? */
+		for (j = 0; *p == name[j]; ++j) {
+			if (*p++ == '\0') {
 				//bb_error_msg("found:'%s' i:%u", name, i);
 				return i; /* yes */
 			}
-			p++;
-			j++;
 		}
-		/* No.
-		 * p => 1st non-matching char in applet_names[],
-		 * skip to and including NUL.
-		 */
-		while (ch != '\0')
-			ch = *++p;
-		p++;
+		/* No. Have we gone too far, alphabetically? */
+		if (*p > name[j]) {
+			//bb_error_msg("break:'%s' i:%u", name, i);
+			break;
+		}
+		/* No. Move to the start of the next applet name. */
+		while (*p++ != '\0')
+			continue;
 		i++;
 	}
 	return -1;
-#endif
 }
 
 
@@ -327,9 +265,14 @@ void lbb_prepare(const char *applet
 	 && strcmp(argv[1], "--help") == 0
 	 && !is_prefixed_with(applet, "busybox")
 	) {
-		/* Special case. POSIX says "test --help"
-		 * should be no different from e.g. "test --foo".  */
-		if (!ENABLE_TEST || strcmp(applet_name, "test") != 0)
+		/* Special cases. POSIX says "test --help"
+		 * should be no different from e.g. "test --foo".
+		 */
+		if (!(ENABLE_TEST && strcmp(applet_name, "test") == 0)
+		 && !(ENABLE_TRUE && strcmp(applet_name, "true") == 0)
+		 && !(ENABLE_FALSE && strcmp(applet_name, "false") == 0)
+		 && !(ENABLE_ECHO && strcmp(applet_name, "echo") == 0)
+		)
 			bb_show_usage();
 	}
 #endif
@@ -954,37 +897,39 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 
 	if (strcmp(argv[1], "--help") == 0) {
 		/* "busybox --help [<applet>]" */
-		if (!argv[2])
+		if (!argv[2]
+#  if ENABLE_FEATURE_SH_STANDALONE && ENABLE_FEATURE_TAB_COMPLETION
+		 || strcmp(argv[2], "busybox") == 0 /* prevent getting "No help available" */
+#  endif
+		)
 			goto help;
 		/* convert to "<applet> --help" */
-		argv[0] = argv[2];
+		applet_name = argv[0] = argv[2];
 		argv[2] = NULL;
+		if (find_applet_by_name(applet_name) >= 0) {
+			/* Make "--help foo" exit with 0: */
+			xfunc_error_retval = 0;
+			bb_show_usage();
+		} /* else: unknown applet, fall through (causes "applet not found" later) */
 	} else {
 		/* "busybox <applet> arg1 arg2 ..." */
 		argv++;
+		/* We support "busybox /a/path/to/applet args..." too. Allows for
+		 * "#!/bin/busybox"-style wrappers
+		 */
+		applet_name = bb_get_last_path_component_nostrip(argv[0]);
 	}
-	/* We support "busybox /a/path/to/applet args..." too. Allows for
-	 * "#!/bin/busybox"-style wrappers */
-	applet_name = bb_get_last_path_component_nostrip(argv[0]);
 	run_applet_and_exit(applet_name, argv);
 }
 # endif
 
 # if NUM_APPLETS > 0
-void FAST_FUNC run_applet_no_and_exit(int applet_no, const char *name, char **argv)
+void FAST_FUNC show_usage_if_dash_dash_help(int applet_no, char **argv)
 {
-	int argc = string_array_len(argv);
-
-	/*
-	 * We do not use argv[0]: do not want to repeat massaging of
-	 * "-/sbin/halt" -> "halt", for example.
-	 */
-	applet_name = name;
-
 	/* Special case. POSIX says "test --help"
 	 * should be no different from e.g. "test --foo".
 	 * Thus for "test", we skip --help check.
-	 * "true" and "false" are also special.
+	 * "true", "false", "echo" are also special.
 	 */
 	if (1
 #  if defined APPLET_NO_test
@@ -996,16 +941,36 @@ void FAST_FUNC run_applet_no_and_exit(int applet_no, const char *name, char **ar
 #  if defined APPLET_NO_false
 	 && applet_no != APPLET_NO_false
 #  endif
+#  if defined APPLET_NO_echo
+	 && applet_no != APPLET_NO_echo
+#  endif
 	) {
-		if (argc == 2 && strcmp(argv[1], "--help") == 0) {
+		if (argv[1] && !argv[2] && strcmp(argv[1], "--help") == 0) {
 			/* Make "foo --help" exit with 0: */
 			xfunc_error_retval = 0;
 			bb_show_usage();
 		}
 	}
+}
+
+void FAST_FUNC run_applet_no_and_exit(int applet_no, const char *name, char **argv)
+{
+	int argc;
+
+	/*
+	 * We do not use argv[0]: do not want to repeat massaging of
+	 * "-/sbin/halt" -> "halt", for example.
+	 */
+	applet_name = name;
+
+	show_usage_if_dash_dash_help(applet_no, argv);
+
 	if (ENABLE_FEATURE_SUID)
 		check_suid(applet_no);
+
+	argc = string_array_len(argv);
 	xfunc_error_retval = applet_main[applet_no](argc, argv);
+
 	/* Note: applet_main() may also not return (die on a xfunc or such) */
 	xfunc_die();
 }
