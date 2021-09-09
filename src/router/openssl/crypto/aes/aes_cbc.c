@@ -14,6 +14,9 @@
  */
 #include "internal/deprecated.h"
 
+#ifdef OCTEON_OPENSSL
+#include "aes_cbc_octeon.c"
+#else
 #include <openssl/aes.h>
 #include <openssl/modes.h>
 
@@ -29,3 +32,4 @@ void AES_cbc_encrypt(const unsigned char *in, unsigned char *out,
         CRYPTO_cbc128_decrypt(in, out, len, key, ivec,
                               (block128_f) AES_decrypt);
 }
+#endif
