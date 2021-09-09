@@ -407,6 +407,4 @@ static unsigned nl_async(struct nlmsghdr *h, unsigned state)
     }
   return state;
 }
-#endif
-
-      
+#endif /* HAVE_LINUX_NETWORK */
